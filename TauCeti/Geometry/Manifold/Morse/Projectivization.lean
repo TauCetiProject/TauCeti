@@ -8,11 +8,11 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Manifold.Morse.Hessian
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Data.Set.Card
-import TauCeti.Geometry.Manifold.Morse.Hessian
 
 /-!
 # Moment functions on projective space
@@ -44,8 +44,11 @@ forces `z = 0` when no `ν j` equals `w k`. The second derivative at the origin 
 `2 ∑ j, (ν j - w k) ⟪v j, v' j⟫`. Each coordinate of `𝕜` contributes a `dim_ℝ 𝕜`-dimensional
 block of the same sign to its inertia. More generally, at any critical point `z` of the model,
 `1 + ∑ j, ‖z j‖ ^ 2` times its second derivative is `2 ∑ j, (ν j - w k) ⟪v j, v' j⟫`, whose
-kernel consists of the vectors supported on the coordinates `j` with `ν j = w k`. For repeated
-weights this makes the moment function Morse–Bott.
+kernel consists of the vectors supported on the coordinates `j` with `ν j = w k`. So at every
+critical point the Hessian is a positive multiple of the one at the origin, which gives the Morse
+index at an arbitrary critical point, and the kernel of the critical Hessian has real dimension
+`dim_ℝ 𝕜` times the number of other coordinates of the same weight. For repeated weights this
+makes the moment function Morse–Bott.
 
 ## Main declarations
 
@@ -55,16 +58,22 @@ weights this makes the moment function Morse–Bott.
   points are the eigenlines of the diagonal form.
 * `TauCeti.mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff`: the critical points of
   value `c` are the lines in the weight space of `c`.
+* `TauCeti.image_criticalPoints_projectiveMomentFunction`: the critical values are the weights.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
 * `TauCeti.ProjectiveMomentChart.one_add_sum_mul_fderiv_fderiv_model_apply` and
   `TauCeti.ProjectiveMomentChart.fderiv_fderiv_model_apply_eq_zero_iff`: the Hessian of the chart
   model at an arbitrary critical point, and its kernel.
+* `TauCeti.finrank_ker_criticalHessian_projectiveMomentFunction`: the kernel of the critical
+  Hessian at a critical point `x` of the moment function `f` has real dimension
+  `dim_ℝ 𝕜 * (#{i | w i = f x} - 1)`.
 * `TauCeti.isMorse_projectiveMomentFunction`: for distinct weights it is a Morse function.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff` and
   `TauCeti.isMorse_projectiveMomentFunction_iff`: `[eₖ]` is nondegenerate exactly when `w k` is a
   simple weight, and the function is Morse exactly when the weights are distinct.
-* `TauCeti.manifoldMorseIndex_projectiveMomentFunction`: the Morse index at `[eₖ]` is
+* `TauCeti.manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints` and
+  `TauCeti.manifoldMorseIndex_projectiveMomentFunction`: the Morse index of the moment function
+  `f` at a critical point `x` is `dim_ℝ 𝕜 * #{i | w i < f x}`, and at `[eₖ]` it is
   `dim_ℝ 𝕜 * #{i | w i < w k}`.
 * `TauCeti.totalCriticalCount_projectiveMomentFunction` and
   `TauCeti.criticalCount_projectiveMomentFunction`: the critical counts.
@@ -319,6 +328,32 @@ theorem fderiv_fderiv_model_apply_eq_zero_iff {a : ℝ} {ν : Fin n → ℝ} {z 
     rw [hsum, mul_zero] at h
     exact (mul_eq_zero.mp h).resolve_left hpos.ne'
 
+/-- **The dimension of the kernel of the Hessian of the chart model at a critical point.** If
+every nonzero coordinate `z j` carries the weight `ν j = a`, the kernel of the second derivative
+of the model at `z` has real dimension `dim_ℝ 𝕜` times the number of weights `ν j` equal to `a`:
+it consists of the vectors supported on these coordinates. -/
+theorem finrank_ker_fderiv_fderiv_model {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
+    (hz : ∀ j, z j = 0 ∨ ν j = a) :
+    Module.finrank ℝ (fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z).ker =
+      Module.finrank ℝ 𝕜 * {j | ν j = a}.ncard := by
+  set s : Set (Fin n) := {j | ν j = a}
+  -- Restricting a vector of the kernel to the coordinates of weight `a` is a linear isomorphism.
+  let φ : (fderiv ℝ (fderiv ℝ (model 𝕜 a ν)) z).ker →ₗ[ℝ] s → 𝕜 :=
+    LinearMap.funLeft ℝ 𝕜 (Subtype.val : s → Fin n) ∘ₗ Submodule.subtype _
+  have hφ : Bijective φ := by
+    refine ⟨fun u u' h ↦ Subtype.ext (funext fun j ↦ ?_), fun g ↦ ?_⟩
+    · by_cases hj : ν j = a
+      · exact congrFun h ⟨j, hj⟩
+      · rw [(fderiv_fderiv_model_apply_eq_zero_iff hz _).1 u.2 j hj,
+          (fderiv_fderiv_model_apply_eq_zero_iff hz _).1 u'.2 j hj]
+    · refine ⟨⟨Function.ExtendByZero.linearMap ℝ 𝕜 (Subtype.val : s → Fin n) g,
+        (fderiv_fderiv_model_apply_eq_zero_iff hz _).2 fun j hj ↦ ?_⟩, ?_⟩
+      · exact Function.extend_apply' _ _ _ fun ⟨j', hj'⟩ ↦ hj (hj' ▸ j'.2)
+      · funext j
+        exact Subtype.val_injective.extend_apply _ _ j
+  rw [(LinearEquiv.ofBijective φ hφ).finrank_eq, Module.finrank_pi_fintype, Finset.sum_const,
+    Finset.card_univ, smul_eq_mul, mul_comm, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+
 /-- The Hessian quadratic form of the chart model at the origin is
 `v ↦ 2 * ∑ j, (ν j - a) * ‖v j‖ ^ 2`. -/
 theorem hessianQuadraticForm_model_zero (a : ℝ) (ν : Fin n → ℝ) (v : Fin n → 𝕜) :
@@ -379,6 +414,24 @@ theorem morseIndex_model_zero (a : ℝ) (ν : Fin n → ℝ) :
     simp only [mem_ofPred_eq, mem_prod, mem_univ, and_true]
     constructor <;> intro h <;> linarith
   rw [hset, Set.ncard_prod, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin, mul_comm]
+
+/-- **The Morse index of the chart model at a critical point.** If every nonzero coordinate `z j`
+carries the weight `ν j = a`, the Morse index of the chart model at `z` is the real dimension of
+`𝕜` times the number of weights `ν j` below `a`: its Hessian at `z` is a positive multiple of the
+Hessian at the origin. -/
+theorem morseIndex_model {a : ℝ} {ν : Fin n → ℝ} {z : Fin n → 𝕜}
+    (hz : ∀ j, z j = 0 ∨ ν j = a) :
+    morseIndex (model 𝕜 a ν) z = Module.finrank ℝ 𝕜 * {j | ν j < a}.ncard := by
+  have hpos := one_add_weightedNormSq_one_pos z
+  have hQ : hessianQuadraticForm (model 𝕜 a ν) z =
+      (1 + weightedNormSq 1 z)⁻¹ • hessianQuadraticForm (model 𝕜 a ν) 0 := by
+    ext v
+    rw [_root_.smul_apply, hessianQuadraticForm_apply, hessianQuadraticForm_apply,
+      smul_eq_mul, eq_inv_mul_iff_mul_eq₀ hpos.ne',
+      one_add_weightedNormSq_one_mul_fderiv_fderiv_model hz, fderiv_fderiv_model_zero, smul_apply,
+      smul_apply, nsmul_eq_mul, Nat.cast_ofNat]
+  rw [morseIndex_def, hQ, QuadraticForm.sigNeg_smul_of_pos _ (inv_pos.2 hpos), ← morseIndex_def,
+    morseIndex_model_zero]
 
 end ProjectiveMomentChart
 
@@ -545,6 +598,35 @@ theorem mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff {w : Fin (n + 
   · exact Or.inr hi
   · exact Or.inl (h i hi)
 
+/-- At a critical point in the affine open where the `k`-th homogeneous coordinate is nonzero, the
+moment function takes the value `w k`. -/
+theorem projectiveMomentFunction_eq_of_mem_criticalPoints {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
+    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
+    (hk : x ∈ affineOpen k) : projectiveMomentFunction 𝕜 w x = w k := by
+  induction x using ind with | h v hv =>
+  exact (((mk_mem_criticalPoints_projectiveMomentFunction_iff hv).1 hx k).resolve_left
+    ((mk_mem_affineOpen_iff k v hv).1 hk)).symm
+
+/-- Every critical value of the moment function is one of the weights. -/
+theorem projectiveMomentFunction_mem_range_of_mem_criticalPoints {w : Fin (n + 1) → ℝ}
+    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)) :
+    projectiveMomentFunction 𝕜 w x ∈ range w := by
+  obtain ⟨k, hk⟩ := exists_mem_affineOpen x
+  exact ⟨k, (projectiveMomentFunction_eq_of_mem_criticalPoints hx hk).symm⟩
+
+/-- **The critical values of the moment function** are exactly the weights. -/
+theorem image_criticalPoints_projectiveMomentFunction (w : Fin (n + 1) → ℝ) :
+    projectiveMomentFunction 𝕜 w '' criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) =
+      range w := by
+  refine subset_antisymm ?_ ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    exact projectiveMomentFunction_mem_range_of_mem_criticalPoints hx
+  rintro _ ⟨k, rfl⟩
+  exact ⟨_, mk_single_mem_criticalPoints_projectiveMomentFunction w k,
+    projectiveMomentFunction_mk_single w k⟩
+
 /-- **The critical points of the moment function.** For pairwise distinct weights, the critical
 points of the moment function are exactly the `n + 1` coordinate points `[eₖ]`. -/
 theorem criticalPoints_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : Injective w) :
@@ -583,26 +665,77 @@ theorem isManifoldNondegenerateCriticalPoint_projectiveMomentFunction_iff {w : F
     isNondegenerateCriticalPoint_model_zero_iff]
   simp [Fin.forall_iff_succAbove k, Fin.succAbove_ne]
 
+/-- The coordinates `j` of the affine chart at `k` whose weight `w (k.succAbove j)` satisfies `p`
+correspond to the homogeneous coordinates other than `k` whose weight satisfies `p`. -/
+private theorem ncard_setOf_succAbove (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) (p : ℝ → Prop) :
+    {j | p (w (k.succAbove j))}.ncard = ({i | p (w i)} \ {k}).ncard := by
+  refine (Fin.succAbove_right_injective (p := k)).injOn.ncard_image.symm.trans
+    (congrArg ncard ?_)
+  ext i
+  simp only [mem_image, mem_ofPred_eq, mem_sdiff, mem_singleton_iff]
+  refine ⟨fun ⟨j, hj, hji⟩ ↦ hji ▸ ⟨hj, Fin.succAbove_ne k j⟩, fun ⟨hi, hik⟩ ↦ ?_⟩
+  obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hik
+  exact ⟨j, hi, rfl⟩
+
+/-- A critical point of the moment function in the affine chart at `k` is a critical point of the
+chart model: every nonzero chart coordinate carries the weight `w k`. -/
+private theorem extend_apply_eq_zero_or_of_mem_criticalPoints {w : Fin (n + 1) → ℝ}
+    {k : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w))
+    (hk : x ∈ affineOpen k) (j : Fin n) :
+    (affineOpenPartialHomeomorph (K := 𝕜) k).extend 𝓘(ℝ, Fin n → 𝕜) x j = 0 ∨
+      (w ∘ k.succAbove) j = w k := by
+  revert j
+  rw [← fderiv_model_eq_zero_iff_forall, ← projectiveMomentFunction_comp_extend_symm,
+    ← mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
+      (affineOpenPartialHomeomorph_mem_maximalAtlas k) (by simpa using hk)]
+  exact mem_criticalPoints.1 hx
+
+/-- **The kernel of the critical Hessian of the moment function.** At a critical point `x`, the
+kernel of the critical Hessian has real dimension `dim_ℝ 𝕜` times the number of coordinates whose
+weight is the value at `x`, less one. It is computed in the affine chart at a nonzero coordinate. -/
+theorem finrank_ker_criticalHessian_projectiveMomentFunction {w : Fin (n + 1) → ℝ}
+    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)) :
+    Module.finrank ℝ (criticalHessian 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x).ker =
+      Module.finrank ℝ 𝕜 * ({i | w i = projectiveMomentFunction 𝕜 w x}.ncard - 1) := by
+  obtain ⟨k, hk⟩ := exists_mem_affineOpen x
+  rw [finrank_ker_criticalHessian_eq_of_mem_maximalAtlas
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
+    ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
+    projectiveMomentFunction_comp_extend_symm,
+    finrank_ker_fderiv_fderiv_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
+    projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
+  exact congrArg _ ((ncard_setOf_succAbove w k (· = w k)).trans
+    (ncard_sdiff_singleton_of_mem (s := {i | w i = w k}) rfl))
+
+/-- **The Morse index of the moment function at a critical point.** At a critical point `x`, the
+Morse index of the moment function is the real dimension of `𝕜` times the number of weights below
+the value at `x`. Over `ℂ` this is twice that number. -/
+theorem manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints
+    {w : Fin (n + 1) → ℝ} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)) :
+    manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) x =
+      Module.finrank ℝ 𝕜 * {i | w i < projectiveMomentFunction 𝕜 w x}.ncard := by
+  obtain ⟨k, hk⟩ := exists_mem_affineOpen x
+  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k) (by simpa using hk)
+    ((contMDiff_projectiveMomentFunction w) _) (mem_criticalPoints.1 hx),
+    projectiveMomentFunction_comp_extend_symm,
+    morseIndex_model (extend_apply_eq_zero_or_of_mem_criticalPoints hx hk),
+    projectiveMomentFunction_eq_of_mem_criticalPoints hx hk]
+  -- The weights below `w k` all sit at indices other than `k`.
+  exact congrArg _ ((ncard_setOf_succAbove w k (· < w k)).trans
+    (congrArg ncard (sdiff_singleton_eq_self (lt_irrefl (w k)))))
+
 /-- **The Morse index of the moment function.** At the coordinate point `[eₖ]` the Morse index of
 the moment function is the real dimension of `𝕜` times the number of weights below `w k`. Over `ℂ`
 this is twice that number. -/
 theorem manifoldMorseIndex_projectiveMomentFunction (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
     manifoldMorseIndex 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w)
       (mk 𝕜 (Pi.single k 1) (by simp)) = Module.finrank ℝ 𝕜 * {i | w i < w k}.ncard := by
-  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
-    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k)
-    (mk_single_mem_source k) ((contMDiff_projectiveMomentFunction w) _)
-    (mem_criticalPoints.mp (mk_single_mem_criticalPoints_projectiveMomentFunction (𝕜 := 𝕜) w k)),
-    projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single,
-    morseIndex_model_zero]
-  -- The weights below `w k` all sit at indices other than `k`.
-  have himage : k.succAbove '' {j | (w ∘ k.succAbove) j < w k} = {i | w i < w k} := by
-    ext i
-    simp only [mem_image, mem_ofPred_eq, comp_apply]
-    refine ⟨fun ⟨j, hj, hji⟩ ↦ hji ▸ hj, fun hi ↦ ?_⟩
-    obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq (x := i) (y := k) fun h ↦ (h ▸ hi).false
-    exact ⟨j, hi, rfl⟩
-  rw [← himage, Fin.succAbove_right_injective.injOn.ncard_image]
+  rw [manifoldMorseIndex_projectiveMomentFunction_of_mem_criticalPoints
+    (mk_single_mem_criticalPoints_projectiveMomentFunction w k), projectiveMomentFunction_mk_single]
 
 /-- For pairwise distinct weights the moment function is a Morse function. -/
 theorem isMorse_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : Injective w) :

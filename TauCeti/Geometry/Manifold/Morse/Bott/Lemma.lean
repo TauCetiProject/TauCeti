@@ -124,10 +124,7 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     hQ2.comp (a, 0) L.contDiff.contDiffAt
   -- The Hessian at `(a, 0)` is the critical Hessian at `i s` read through `N = T⁻¹ ∘ L`, where
   -- `T` is the derivative of the chart.
-  obtain ⟨T, hT⟩ : (mvfderiv I (e.extend I) (i s)).IsInvertible := by
-    unfold mvfderiv
-    exact ContinuousLinearMap.IsInvertible.comp
-      ⟨NormedSpace.fromTangentSpace (e.extend I (i s)), rfl⟩ (isInvertible_mfderiv_extend he1 hx)
+  obtain ⟨T, hT⟩ := isInvertible_mvfderiv_extend he1 hx
   let N := L.toLinearEquiv.trans T.symm.toLinearEquiv
   -- In the chart, the critical Hessian is the Hessian of `f ∘ (e.extend I).symm` read through `T`.
   have hchart (v w : E) : criticalHessian I f (i s) (T.symm v) (T.symm w) =

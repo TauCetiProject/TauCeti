@@ -41,6 +41,8 @@ Morse index is the negative index of inertia of the critical Hessian.
   second derivative in the preferred chart is the critical Hessian.
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
+* `TauCeti.finrank_ker_criticalHessian_eq_of_mem_maximalAtlas`: at a critical point the kernel of
+  the critical Hessian has the dimension of the kernel of the Hessian in any chart.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
 * `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
   computes the Hessian against the value of the vector field `Y`.
@@ -691,6 +693,18 @@ theorem criticalHessian_comp_apply {x : M} (hφx : φ y = x) (hf : ContMDiffAt I
 
 end Comp
 
+omit [I.Boundaryless] in
+/-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
+space, is invertible at every point of the chart source. -/
+theorem isInvertible_mvfderiv_extend {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source) :
+    (mvfderiv I (e.extend I) x).IsInvertible := by
+  -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
+  -- space of `E` with `E`; both factors are invertible.
+  unfold mvfderiv
+  exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
+    (isInvertible_mfderiv_extend he hx)
+
 section Chart
 
 variable {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 2 M)
@@ -714,12 +728,7 @@ private theorem exists_transition :
   have hext := e.contMDiffAt_extend he hx
   have hD := (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I) (f := e.extend I)
     (x := x)).symm
-  have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
-    -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
-    -- space of `E` with `E`; both factors are invertible.
-    unfold mvfderiv
-    exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
-      (isInvertible_mfderiv_extend he1 hx)
+  have hinv := isInvertible_mvfderiv_extend he1 hx
   have hφx : (e.extend I ∘ (extChartAt I x).symm) (extChartAt I x x) = e.extend I x := by simp
   refine ⟨e.extend I ∘ (extChartAt I x).symm, hφx,
     contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hext, hD, hD ▸ hinv, fun f ↦ ?_,
@@ -746,6 +755,30 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mp hcrit) v w
   rw [← (hfg f).fderiv.fderiv_eq, hDφ, hφx] at key
   exact key
+
+/-- **The kernel of the critical Hessian in an arbitrary chart.** At a critical point of a `C²`
+function on a boundaryless manifold, the kernel of the critical Hessian has the dimension of the
+kernel of the Hessian of the coordinate expression in any chart `e` of the `C²` maximal atlas. -/
+theorem finrank_ker_criticalHessian_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hcrit : mvfderiv I f x = 0) :
+    Module.finrank ℝ (criticalHessian I f x).ker =
+      Module.finrank ℝ (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
+  obtain ⟨D, hD⟩ :=
+    isInvertible_mvfderiv_extend (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
+  have hH (u t : TangentSpace I x) : criticalHessian I f x u t =
+      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x) (D u) (D t) := by
+    rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hf hcrit, ← hD]
+    rfl
+  -- The derivative `D` of the chart carries one kernel onto the other.
+  have hmap : (criticalHessian I f x).ker.map (D.toLinearEquiv : TangentSpace I x →ₗ[ℝ] E) =
+      (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (e.extend I x)).ker := by
+    ext u
+    rw [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.mem_ker]
+    refine ⟨fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun t ↦ ?_⟩
+    · have ht := congr($h (D.symm t))
+      simpa [hH] using ht
+    · simpa [hH] using congr($h (D t))
+  rw [← hmap, LinearEquiv.finrank_map_eq]
 
 /-- **Nondegeneracy in an arbitrary chart.** On a boundaryless manifold, `x` is a nondegenerate
 critical point of `f` exactly when the coordinate expression of `f` in any chart `e` of the `C²`

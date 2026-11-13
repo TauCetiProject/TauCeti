@@ -36,10 +36,10 @@ general linear group, acts on `ℙ 𝕜 (Fin (n + 1) → 𝕜)` by analytic maps
 holomorphic maps of complex projective spaces induced by linear maps, and the projective linear
 transformations act on `ℂℙⁿ` by biholomorphisms.
 
-Over `ℝ` and `ℂ` the map induced by an injective linear map is moreover a closed `C^r` embedding
-for every `r ≥ 1`, also for the underlying real structures
-(`Projectivization.isSmoothEmbedding_map`): a linear left inverse induces a `C^r` left inverse near
-its image.
+Over `ℝ` and `ℂ` the map induced by an injective linear map is moreover a closed embedding, since
+projective space is compact (`Projectivization.isClosedEmbedding_map`), and a `C^r` embedding for
+every `r ≥ 1`, also for the underlying real structures (`Projectivization.isSmoothEmbedding_map`): a
+linear left inverse induces a `C^r` left inverse near its image.
 
 A linear map `G : 𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` which is not injective still induces the map `[v] ↦ [G v]` on the
 open set where `G` does not vanish, and it is `C^r` there
@@ -53,8 +53,10 @@ open set where `G` does not vanish, and it is `C^r` there
   `r`.
 * `Projectivization.contMDiffOn_linearProjection`: the map induced by a linear map is `C^r` where
   the linear map does not vanish.
+* `Projectivization.isClosedEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
+  linear map is a closed embedding.
 * `Projectivization.isSmoothEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
-  linear map is a closed `C^r` embedding for every `r ≥ 1`.
+  linear map is a `C^r` embedding for every `r ≥ 1`.
 * `Projectivization.mapDiffeomorph`: the `C^r` diffeomorphism induced by a linear equivalence.
 * `Projectivization.instContMDiffConstSMul`, `Projectivization.instContMDiffConstSMulPGL`: linear
   group actions on projective space are by analytic maps.
@@ -216,9 +218,17 @@ namespace Projectivization
 variable {𝕜 𝕜' : Type*} [RCLike 𝕜] [RCLike 𝕜'] [NormedAlgebra 𝕜' 𝕜] [FiniteDimensional 𝕜' 𝕜]
   {m n : ℕ}
 
+/-- Over `ℝ` or `ℂ`, the map of projective spaces induced by an injective linear map out of a
+finite-dimensional normed space is a closed embedding, since projective space is compact. -/
+theorem isClosedEmbedding_map {V W : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [FiniteDimensional 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W] (f : V →ₗ[𝕜] W)
+    (hf : Function.Injective f) : Topology.IsClosedEmbedding (map f hf) :=
+  (continuous_map hf f.continuous_of_finiteDimensional).isClosedEmbedding (map_injective f hf)
+
 /-- **Linear embeddings of projective spaces.** Over `ℝ` or `ℂ`, the map `ℙᵐ → ℙⁿ` induced by an
-injective linear map `𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` is a closed `C^r` embedding for every `r ≥ 1`, for the manifold
-structures over `𝕜` as well as for the underlying ones over a subfield `𝕜'` such as `ℝ`. -/
+injective linear map `𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` is a `C^r` embedding for every `r ≥ 1`, for the manifold
+structures over `𝕜` as well as for the underlying ones over a subfield `𝕜'` such as `ℝ`. Its image
+is closed by `Projectivization.isClosedEmbedding_map`. -/
 theorem isSmoothEmbedding_map (f : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜)
     (hf : Function.Injective f) {r : ℕ∞ω} (hr : 1 ≤ r) :
     Manifold.IsSmoothEmbedding 𝓘(𝕜', Fin m → 𝕜) 𝓘(𝕜', Fin n → 𝕜) r (map f hf) := by
@@ -241,10 +251,8 @@ theorem isSmoothEmbedding_map (f : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 
     induction x using ind with | h v hv => simp [map_mk, hgf, hv]
   have hleft (x : ℙ 𝕜 (Fin (m + 1) → 𝕜)) : linearProjection g (map f hf x) = x := by
     induction x using ind with | h v hv => simp [map_mk, hgf, hv]
-  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦ ?_,
-    (hsmooth.continuous.isClosedEmbedding (map_injective f hf)).isEmbedding⟩
-  exact hsmooth.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hr
-    ((hg'.contMDiffAt ((isOpen_linearProjectionDomain (LinearMap.continuous_on_pi g)).mem_nhds
-      (hmem x))).mdifferentiableAt hr0) (Filter.Eventually.of_forall hleft)
+  exact ⟨hsmooth.isImmersion_of_leftInverse hr (fun x ↦ (hg'.contMDiffAt
+    ((isOpen_linearProjectionDomain (LinearMap.continuous_on_pi g)).mem_nhds
+      (hmem x))).mdifferentiableAt hr0) hleft, (isClosedEmbedding_map f hf).isEmbedding⟩
 
 end Projectivization
