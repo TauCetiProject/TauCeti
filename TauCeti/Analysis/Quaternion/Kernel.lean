@@ -120,11 +120,27 @@ theorem contDiffAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) {n : With
   funext x
   simp [cauchyFueterKernel_eq, hC, ← pow_mul]
 
+/-- The kernel is smooth in its second argument away from the first argument. -/
+theorem contDiffAt_cauchyFueterKernel_right {q q₀ : ℍ} (hq : q ≠ q₀)
+    {n : WithTop ℕ∞} : ContDiffAt ℝ n (cauchyFueterKernel q) q₀ := by
+  -- Eta-expand so the pointwise kernel formula can rewrite the partially applied function.
+  change ContDiffAt ℝ n (fun x ↦ cauchyFueterKernel q x) q₀
+  simpa [Function.comp_def, cauchyFueterKernel_eq] using
+    (contDiffAt_cauchyFueterKernel (sub_ne_zero.mpr hq) (n := n)).comp q₀
+      (contDiffAt_const.sub contDiffAt_id)
+
 /-- The kernel is continuous on every set that avoids its pole. -/
 theorem continuousOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
     ContinuousOn (fun q ↦ cauchyFueterKernel q q₀) s := by
   intro q hq
   exact (contDiffAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+    (n := 0)).continuousAt.continuousWithinAt
+
+/-- The kernel is continuous in its second argument on every set avoiding the first argument. -/
+theorem continuousOn_cauchyFueterKernel_right {s : Set ℍ} {q : ℍ} (h : q ∉ s) :
+    ContinuousOn (cauchyFueterKernel q) s := by
+  intro q₀ hq₀
+  exact (contDiffAt_cauchyFueterKernel_right (ne_of_mem_of_not_mem hq₀ h).symm
     (n := 0)).continuousAt.continuousWithinAt
 
 /-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. At the pole
