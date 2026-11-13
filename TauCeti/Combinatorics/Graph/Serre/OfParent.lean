@@ -229,10 +229,12 @@ def ofParentAction (h : ∀ (g : G) (v : V), p (g • v) = g • p v) : G →* (
         cases d
         exacts [h g v, rfl]
       map_rev _ := rfl }
-  map_one' := Aut.ext (fun v : V => one_smul G v) fun e : V × Bool =>
-    Prod.ext (one_smul G e.1) rfl
-  map_mul' g g' := Aut.ext (fun v : V => mul_smul g g' v) fun e : V × Bool =>
-    Prod.ext (mul_smul g g' e.1) rfl
+  map_one' := Iso.ext (fun v : V => by simp) fun e : V × Bool => by
+    rw [Aut.one_equivE]
+    exact Prod.ext (one_smul G e.1) rfl
+  map_mul' g g' := Iso.ext (fun v : V => by simp [mul_smul]) fun e : V × Bool => by
+    rw [Aut.mul_equivE]
+    exact Prod.ext (mul_smul g g' e.1) rfl
 
 variable {p}
 
