@@ -42,6 +42,8 @@ lies in `H^s`, and for a real `f ∈ H^s` so do `exp (c f) - 1`, `cos f - 1` and
   `exp U - 1` is an `L²` function in `H^s`.
 * `TemperedDistribution.exists_memSobolev_ae_eq_exp_mul_sub_one`: for a real `f ∈ H^s` and a
   complex constant `c`, `exp (c f) - 1` is an `L²` function in `H^s`.
+* `TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`: for a real `f ∈ H^s` and a
+  real constant `c`, the real function `exp (c f) - 1` lies in `H^s`.
 * `TemperedDistribution.cos_sub_one_mem_realSobolevFunctions`,
   `TemperedDistribution.sin_mem_realSobolevFunctions`: for a real `f ∈ H^s`, the real functions
   `cos f - 1` and `sin f` lie in `H^s`.
@@ -169,6 +171,17 @@ theorem exists_memSobolev_ae_eq_exp_mul_sub_one {s : ℝ} (hs : finrank ℝ E < 
   filter_upwards [hv, Lp.coeFn_smul c (Complex.ofRealCLM.compLp u),
     Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) u, huf] with x hx hUx hcx hfx
   rw [hx, hUx, Pi.smul_apply, hcx, Complex.ofRealCLM_apply, hfx, smul_eq_mul]
+
+/-- **The real exponential of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s` and a
+real constant `c`, the real function `exp (c f) - 1` lies in `H^s`. This is
+`exists_memSobolev_ae_eq_exp_mul_sub_one`, whose `L²` representative is real valued. -/
+theorem exp_mul_sub_one_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s 2) (c : ℝ) :
+    (fun x ↦ Real.exp (c * f x) - 1) ∈ realSobolevFunctions E s 2 := by
+  obtain ⟨v, hv, hvs⟩ := exists_memSobolev_ae_eq_exp_mul_sub_one hs hf c
+  refine mem_realSobolevFunctions_of_ae_eq_ofReal hvs ?_
+  filter_upwards [hv] with x hx
+  rw [hx, Complex.ofReal_sub, Complex.ofReal_exp, Complex.ofReal_mul, Complex.ofReal_one]
 
 /-- **The cosine of a real `H^s` function, `s > n / 2`.** For a real `f ∈ H^s`, the function
 `cos f - 1` lies in `H^s`: it is the half sum of `exp (i f) - 1` and `exp (-i f) - 1`. -/

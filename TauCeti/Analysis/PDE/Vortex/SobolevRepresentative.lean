@@ -46,7 +46,8 @@ with `k` smooth and compactly supported. The function `g` is bounded and square 
 functions (`TemperedDistribution.mem_realSobolevFunctions_add_two_of_neg_laplacian_add_smul`)
 then raises the order of `g` by two at each step: the nonlinearity is square integrable because
 `g` is bounded, and lies in `H^s` together with `g` once `s > 1`, by the power series of the
-exponential on the Sobolev algebra (`TemperedDistribution.exists_memSobolev_ae_eq_exp_mul_sub_one`).
+exponential on the Sobolev algebra
+(`TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`).
 No pointwise decay of the derivatives of the field is used.
 
 ## Main results
@@ -96,6 +97,37 @@ private def modelField (f : ContDiffBump (0 : ℝ)) (m : ℕ) (g : ℂ → ℝ) 
   !₂[-fderiv ℝ g z I, fderiv ℝ g z 1, (Real.exp (g z) - 1) * referenceField f m z 2,
     (Real.exp (g z) - 1) * referenceField f m z 3]
 
+/-- **Connection coordinates of a solution with a positive real section.** If near `z` the section
+of a solution `y` of the vortex equations is the positive real function `exp ψ`, with coordinates
+`(exp ψ / 2, 0)`, then the holomorphicity rows force its connection coordinates at `z` to be
+`(-∂₂ ψ, ∂₁ ψ)`. -/
+private theorem connection_eq_of_section_eq_exp {y : ℂ → EuclideanSpace ℝ (Fin 4)} {ψ : ℂ → ℝ}
+    {z : ℂ} (hψ : DifferentiableAt ℝ ψ z) (hsol : equation y z = 0)
+    (hsec : ∀ᶠ w in 𝓝 z, y w 2 = Real.exp (ψ w) / 2 ∧ y w 3 = 0) :
+    y z 0 = -fderiv ℝ ψ z I ∧ y z 1 = fderiv ℝ ψ z 1 := by
+  obtain ⟨hy2, hy3⟩ := hsec.self_of_nhds
+  have hd2 : fderiv ℝ (fun w ↦ y w 2) z = (Real.exp (ψ z) / 2) • fderiv ℝ ψ z := by
+    have h : (fun w ↦ y w 2) =ᶠ[𝓝 z] fun w ↦ Real.exp (ψ w) * 2⁻¹ :=
+      hsec.mono fun w hw ↦ hw.1.trans (div_eq_mul_inv _ _)
+    rw [h.fderiv_eq, (hψ.hasFDerivAt.exp.mul_const _).fderiv, smul_smul, div_eq_mul_inv,
+      mul_comm]
+  have hd3 : fderiv ℝ (fun w ↦ y w 3) z = 0 := by
+    have h : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := hsec.mono fun w hw ↦ hw.2
+    rw [h.fderiv_eq]
+    exact fderiv_const_apply 0
+  have hr1 := equation_apply_one y z
+  have hr2 := equation_apply_two y z
+  rw [hsol] at hr1 hr2
+  simp only [PiLp.zero_apply, hd2, hd3, hy2, hy3, FunLike.coe_smul, Pi.smul_apply,
+    zero_apply, smul_eq_mul] at hr1 hr2
+  constructor
+  · have h : Real.exp (ψ z) / 2 * (y z 0 + fderiv ℝ ψ z I) = 0 := by
+      linear_combination -hr2
+    linarith [(mul_eq_zero.1 h).resolve_left (by positivity)]
+  · have h : Real.exp (ψ z) / 2 * (y z 1 - fderiv ℝ ψ z 1) = 0 := by
+      linear_combination hr1
+    linarith [(mul_eq_zero.1 h).resolve_left (by positivity)]
+
 /-- **The field in the end region.** At a point `z` outside the cutoff disc near which the
 section of a smooth vortex `x` is `|α|` times the winding phase and does not vanish, the
 difference from the reference field is the model field of `ψ = log |α|`: its connection
@@ -133,7 +165,6 @@ private theorem sub_referenceField_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
     · have := congrArg Complex.im hs
       simp only [mul_im, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at this
       linarith
-  obtain ⟨hy2, hy3⟩ := hsec.self_of_nhds
   have hψ : DifferentiableAt ℝ (logModulus x) z := by
     have hs : DifferentiableAt ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z :=
       ((((hxd 2).differentiable (by simp) z).pow 2).add
@@ -143,29 +174,7 @@ private theorem sub_referenceField_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
       rw [logModulus, div_eq_mul_inv]
     rw [hfun]
     exact (hs.log (by simpa using hpos.self_of_nhds)).mul_const _
-  have hd2 : fderiv ℝ (fun w ↦ y w 2) z =
-      (Real.exp (logModulus x z) / 2) • fderiv ℝ (logModulus x) z := by
-    have h : (fun w ↦ y w 2) =ᶠ[𝓝 z] fun w ↦ Real.exp (logModulus x w) * 2⁻¹ :=
-      hsec.mono fun w hw ↦ hw.1.trans (div_eq_mul_inv _ _)
-    rw [h.fderiv_eq, (hψ.hasFDerivAt.exp.mul_const _).fderiv, smul_smul, div_eq_mul_inv,
-      mul_comm]
-  have hd3 : fderiv ℝ (fun w ↦ y w 3) z = 0 := by
-    have h : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) := hsec.mono fun w hw ↦ hw.2
-    rw [h.fderiv_eq]
-    exact fderiv_const_apply 0
-  have hr1 := equation_apply_one y z
-  have hr2 := equation_apply_two y z
-  rw [hysol] at hr1 hr2
-  simp only [PiLp.zero_apply, hd2, hd3, hy2, hy3, FunLike.coe_smul, Pi.smul_apply,
-    zero_apply, smul_eq_mul] at hr1 hr2
-  have hy0 : y z 0 = -fderiv ℝ (logModulus x) z I := by
-    have h : Real.exp (logModulus x z) / 2 * (y z 0 + fderiv ℝ (logModulus x) z I) = 0 := by
-      linear_combination -hr2
-    linarith [(mul_eq_zero.1 h).resolve_left (by positivity)]
-  have hy1 : y z 1 = fderiv ℝ (logModulus x) z 1 := by
-    have h : Real.exp (logModulus x z) / 2 * (y z 1 - fderiv ℝ (logModulus x) z 1) = 0 := by
-      linear_combination hr1
-    linarith [(mul_eq_zero.1 h).resolve_left (by positivity)]
+  obtain ⟨hy0, hy1⟩ := connection_eq_of_section_eq_exp hψ hysol hsec
   -- The end trivialization fixes the connection coordinates of `x - x_ref`.
   have hiso : y z - vacuumField z =
       gaugeLinearAction (windingPhase m)⁻¹ (x - referenceField f m) z := by
@@ -301,6 +310,35 @@ private theorem hasCompactSupport_cutoffLogModulus_remainder (b : ContDiffBump (
     logModulus]
   ring
 
+/-- **The nonlinearity lies in `H^(2n)` with `g`.** For a square integrable `g` with
+`|g| ≤ 1 / 2`, the function `exp (2g) - 1 - 2g` lies in `H^(2n)` whenever `g` does: for `n = 0`
+because `|exp (2g) - 1 - 2g| ≤ 4 g² ≤ 2 |g|`, and for `n ≥ 1` by the exponential on the Sobolev
+algebra. -/
+private theorem exp_two_mul_sub_one_sub_mem_realSobolevFunctions {g : ℂ → ℝ}
+    (hL : MemLp g 2 volume) (hbd : ∀ z, |g z| ≤ 1 / 2) {n : ℕ}
+    (hn : g ∈ realSobolevFunctions ℂ (2 * n) 2) :
+    (fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z) ∈ realSobolevFunctions ℂ (2 * n) 2 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hpos
+  · rw [Nat.cast_zero, mul_zero, mem_realSobolevFunctions_zero_iff]
+    have h2g := hL.aestronglyMeasurable.const_mul 2
+    have hm : AEStronglyMeasurable (fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z) volume :=
+      ((Real.continuous_exp.comp_aestronglyMeasurable h2g).sub aestronglyMeasurable_const).sub h2g
+    refine (hL.norm.const_mul 2).of_le hm (.of_forall fun z ↦ ?_)
+    have h := Real.abs_exp_sub_one_sub_id_le (x := 2 * g z) (by
+      rw [abs_mul, abs_two]
+      linarith [hbd z])
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (by positivity : 0 ≤ 2 * |g z|)]
+    calc |Real.exp (2 * g z) - 1 - 2 * g z| ≤ (2 * g z) ^ 2 := h
+      _ = 4 * |g z| * |g z| := by rw [mul_pow, ← sq_abs (g z)]; ring
+      _ ≤ 2 * |g z| := by nlinarith [abs_nonneg (g z), hbd z]
+  · have hs : Module.finrank ℝ ℂ < 2 * (2 * (n : ℝ)) := by
+      refine finrank_real_complex_lt_two_mul ?_
+      have : (1 : ℝ) ≤ n := by exact_mod_cast hpos
+      linarith
+    exact sub_mem (exp_mul_sub_one_mem_realSobolevFunctions hs hn 2)
+      (Submodule.smul_mem _ (2 : ℝ) hn)
+
 /-- **The cut-off logarithmic modulus lies in every Sobolev space.** It is square integrable,
 since `g² ≤ 1 - |α|²`, and the elliptic regularity of `-Δ + 1 / 4` raises its order by two at
 each step: the nonlinearity `exp (2g) - 1 - 2g` is square integrable because `g` is bounded, and
@@ -325,36 +363,6 @@ private theorem cutoffLogModulus_mem_realSobolevFunctions (b : ContDiffBump (0 :
     rw [Real.norm_eq_abs, abs_pow, sq_abs]
     nlinarith [abs_nonneg (g z), sq_abs (g z)]
   set G : ℂ → ℝ := fun z ↦ Real.exp (2 * g z) - 1 - 2 * g z
-  -- The nonlinearity lies in `H^(2n)` with `g`.
-  have hG (n : ℕ) (hn : g ∈ realSobolevFunctions ℂ (2 * n) 2) :
-      G ∈ realSobolevFunctions ℂ (2 * n) 2 := by
-    rcases Nat.eq_zero_or_pos n with rfl | hpos
-    · -- `|G| ≤ 4 g² ≤ 2 |g|`, since `|g| ≤ 1 / 2`.
-      rw [Nat.cast_zero, mul_zero, mem_realSobolevFunctions_zero_iff]
-      have hGc : Continuous G := by
-        have := hg.continuous
-        fun_prop
-      refine (hL.norm.const_mul 2).of_le hGc.aestronglyMeasurable (.of_forall fun z ↦ ?_)
-      have h := Real.abs_exp_sub_one_sub_id_le (x := 2 * g z) (by
-        rw [abs_mul, abs_two]
-        linarith [(hbd z).2])
-      rw [Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs,
-        abs_of_nonneg (by positivity : 0 ≤ 2 * |g z|)]
-      calc |G z| ≤ (2 * g z) ^ 2 := h
-        _ = 4 * |g z| * |g z| := by rw [mul_pow, ← sq_abs (g z)]; ring
-        _ ≤ 2 * |g z| := by nlinarith [abs_nonneg (g z), (hbd z).2]
-    · have hs : Module.finrank ℝ ℂ < 2 * (2 * (n : ℝ)) := by
-        refine finrank_real_complex_lt_two_mul ?_
-        have : (1 : ℝ) ≤ n := by exact_mod_cast hpos
-        linarith
-      obtain ⟨v, hv, hvs⟩ := exists_memSobolev_ae_eq_exp_mul_sub_one hs hn 2
-      have hexp : (fun z ↦ Real.exp (2 * g z) - 1) ∈ realSobolevFunctions ℂ (2 * n) 2 :=
-        mem_realSobolevFunctions_of_ae_eq_ofReal hvs (hv.mono fun z hz ↦ by
-          rw [hz]
-          push_cast
-          rfl)
-      have h := sub_mem hexp (Submodule.smul_mem _ (2 : ℝ) hn)
-      convert h using 1
   -- The compactly supported remainder lies in every Sobolev space.
   have hk (s' : ℝ) : (fun z ↦ -Δ g z + g z / 4 + G z / 8) ∈ realSobolevFunctions ℂ s' 2 := by
     refine mem_realSobolevFunctions_of_hasCompactSupport ?_
@@ -380,7 +388,8 @@ private theorem cutoffLogModulus_mem_realSobolevFunctions (b : ContDiffBump (0 :
           simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
           ring
         rw [hfun]
-        exact sub_mem (hk _) (Submodule.smul_mem _ _ (hG n ih))
+        exact sub_mem (hk _) (Submodule.smul_mem _ _
+          (exp_two_mul_sub_one_sub_mem_realSobolevFunctions hL (fun z ↦ (hbd z).2) ih))
   obtain ⟨n, hn⟩ := exists_nat_ge (s / 2)
   exact realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith) (hstep n)
 
@@ -408,15 +417,11 @@ private theorem modelField_mem_sobolevFields (f : ContDiffBump (0 : ℝ)) (m : �
     fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) (Nat.cast_nonneg k)
       (hg.of_le (by norm_cast)) (hgs (k + 1)) v
   have hexp : (fun z ↦ Real.exp (g z) - 1) ∈ realSobolevFunctions ℂ k 2 := by
-    obtain ⟨v, hv, hvs⟩ := exists_memSobolev_ae_eq_exp_mul_sub_one
+    have h := exp_mul_sub_one_mem_realSobolevFunctions
       (finrank_real_complex_lt_two_mul (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]))
       (hgs (k + 2)) 1
-    refine realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith)
-      (mem_realSobolevFunctions_of_ae_eq_ofReal hvs (hv.mono fun z hz ↦ ?_))
-    rw [hz]
-    simp only [one_mul]
-    push_cast
-    rfl
+    simp only [one_mul] at h
+    exact realSobolevFunctions_mono (by norm_num) (by norm_num) (by linarith) h
   have hmul (i : Fin 4) :
       (fun z ↦ referenceField f m z i * (Real.exp (g z) - 1)) ∈ realSobolevFunctions ℂ k 2 :=
     mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k

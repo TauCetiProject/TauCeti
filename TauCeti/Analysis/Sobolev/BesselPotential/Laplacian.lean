@@ -64,7 +64,7 @@ theorem mem_realSobolevFunctions_add_two_of_neg_laplacian_add_smul {c s : ℝ} (
   let ψ : 𝓓((⊤ : Opens E), ℝ) := ⟨φ, φ.smooth ⊤, hφ, by simp⟩
   have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume)
     (hf.contDiffOn (s := ((⊤ : Opens E) : Set E))) ψ
-  change ∫ x, Δ (φ : E → ℝ) x * f x = ∫ x, φ x * Δ f x at hgreen
+  simp only [ψ, TestFunction.coe_mk, smul_eq_mul] at hgreen
   have hi₂ : Integrable (fun x ↦ φ x * f x) volume :=
     (φ.continuous.mul hf.continuous).integrable_of_hasCompactSupport hφ.mul_right
   have hi₃ : Integrable (fun x ↦ φ x * Δ f x) volume :=
