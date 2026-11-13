@@ -22,14 +22,17 @@ Let `g : F → G` be `C¹` on an open set `W`. For a continuous map `u : ℂ →
 * **Composition bound.** If `‖g ∘ u‖ ≤ C₀` and `‖Dg ∘ u‖ ≤ C₁` on `K`, then
   `‖g ∘ u‖_{W^{1,p}(K)} ≤ C₀ vol(K)^{1/p} + C₁ ‖u‖_{W^{1,p}(K)}`. For a compact `L ⊆ W` the
   constants can be chosen depending only on `g` and `L`, uniformly over all `u` with `u(K) ⊆ L`.
-* **Continuity of composition.** If `uₙ → u` uniformly on a compact set `K` and
+* **Continuity of composition.** Let `K` be compact, let `u` have finite `W^{1,p}(K)` size with
+  `u(K) ⊆ W`, and let `uₙ` be eventually continuous on `K`. If `uₙ → u` uniformly on `K` and
   `‖uₙ - u‖_{W^{1,p}(K)} → 0`, then `‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0`. The weak derivative of the
   difference splits as `(Dg(uₙ) - Dg(u)) ∘ Du + Dg(uₙ) ∘ D(uₙ - u)`. The first term tends to `0`
   because `Dg` is uniformly continuous near the compact set `u(K)` inside `W`, and the second
   because `Dg(uₙ)` is eventually bounded on `K`. Only the first derivative of `g` is used.
 
-The uniform convergence hypothesis is not implied by `W^{1,p}` convergence for `p ≤ 2`; for
-`p > 2` it follows from Morrey's embedding, and that consequence is not proved here.
+The uniform convergence hypothesis is not implied by `W^{1,p}(K)` convergence on an arbitrary
+compact set `K`, nor for `p ≤ 2`. For `p > 2` and continuous maps on an open planar domain,
+Morrey's embedding turns `W^{1,p}_loc` convergence into locally uniform convergence; that
+consequence is not proved here.
 
 ## Main declarations
 
@@ -183,7 +186,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
   have hcpt : IsCompact (u₀ '' K) := hK.image_of_continuousOn hu₀c
   have hu₀KW : u₀ '' K ⊆ W := image_subset_iff.2 hu₀W
-  have hmaps := hunif.eventually_mapsTo_of_isCompact_image hcpt (hW.mem_nhdsSet.2 hu₀KW)
+  have hmaps := hunif.eventually_mapsTo (mapsTo_image u₀ K) hcpt (hW.mem_nhdsSet.2 hu₀KW)
   -- `g ∘ u n` and `Dg ∘ u n` converge uniformly on `K`.
   have hgu := hcpt.comp_tendstoUniformlyOn
     (fun y hy => hg.continuousOn.continuousAt (hW.mem_nhds (hu₀KW hy))) hunif
@@ -219,7 +222,8 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
         (hg.continuousOn.comp hu₀c hu₀W)).aestronglyMeasurable hKm
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 hgu ε hε] with n hn
     filter_upwards [ae_restrict_mem hKm] with z hz
-    rw [Pi.sub_apply, Function.comp_apply, Function.comp_apply, ← dist_eq_norm, dist_comm]
+    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, Pi.sub_apply, Function.comp_apply,
+      Function.comp_apply, ← dist_eq_norm, dist_comm]
     exact (hn z hz).le
   have h2 : Tendsto (fun n => eLpNorm (fun z => (fderiv ℝ g (u n z) - fderiv ℝ g (u₀ z)).comp
       (Du z)) p (volume.restrict K)) l (𝓝 0) := by
@@ -230,6 +234,7 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
         (aestronglyMeasurable_of_eLpNorm_ne_top hDup)
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 hDgu ε hε] with n hn
     filter_upwards [ae_restrict_mem hKm] with z hz
+    rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe]
     refine (ContinuousLinearMap.opNNNorm_comp_le _ _).trans ?_
     gcongr
     rw [← NNReal.coe_le_coe, coe_nnNorm, ← dist_eq_norm, dist_comm]
@@ -243,18 +248,20 @@ theorem tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι →
     (.of_forall fun _ => zero_le) key
 
 /-- **Continuity of composition with a `C¹` map in `W^{1,p}_loc`.** Let `g` be `C¹` on an open set
-`W`, and let `u` be in `W^{1,p}_loc(U)` with `u(U) ⊆ W`. If continuous maps `uₙ` converge to `u`
-locally uniformly on `U`, and `‖uₙ - u‖_{W^{1,p}(K)} → 0` for every compact `K ⊆ U`, then
-`‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0` for every compact `K ⊆ U`. -/
+`W`, and let `u` be in `W^{1,p}_loc(U)` with `u(U) ⊆ W`. Let maps `uₙ` converge to `u` locally
+uniformly on `U`, and for every compact `K ⊆ U` let `uₙ` be eventually continuous on `K` with
+`‖uₙ - u‖_{W^{1,p}(K)} → 0`. Then `‖g ∘ uₙ - g ∘ u‖_{W^{1,p}(K)} → 0` for every compact
+`K ⊆ U`. -/
 theorem MemWkpLoc.tendsto_eLpNormWkp_one_comp_sub {ι : Type*} {l : Filter ι} {u : ι → ℂ → F}
     {u₀ : ℂ → F} {g : F → G} {W : Set F} (hu₀ : MemWkpLoc p U 1 u₀)
     (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (hu₀W : MapsTo u₀ U W)
-    (huc : ∀ᶠ n in l, ContinuousOn (u n) U) (hunif : TendstoLocallyUniformlyOn u u₀ l U)
+    (huc : ∀ K ⊆ U, IsCompact K → ∀ᶠ n in l, ContinuousOn (u n) K)
+    (hunif : TendstoLocallyUniformlyOn u u₀ l U)
     (hlim : ∀ K ⊆ U, IsCompact K → Tendsto (fun n => eLpNormWkp p K 1 (u n - u₀)) l (𝓝 0)) :
     ∀ K ⊆ U, IsCompact K → Tendsto (fun n => eLpNormWkp p K 1 (g ∘ u n - g ∘ u₀)) l (𝓝 0) :=
   fun K hKU hK => TauCeti.tendsto_eLpNormWkp_one_comp_sub hK hW hg
     (hu₀.eLpNormWkp_ne_top_of_isCompact hKU hK) (hu₀W.mono_left hKU)
-    (huc.mono fun _ h => h.mono hKU)
+    (huc K hKU hK)
     ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1 (hunif.mono hKU))
     (hlim K hKU hK)
 
@@ -282,6 +289,8 @@ example [CompleteSpace F] {u₀ : ℂ → F} {g : F → G} {W : Set F} {c : ℕ 
     refine tendsto_eLpNorm_zero_of_eventually_ae_le
       (.of_forall fun _ => aestronglyMeasurable_const) fun ε hε => ?_
     filter_upwards [Metric.tendsto_nhds.1 hc ε hε] with n hn
-    exact .of_forall fun _ => by simpa [dist_eq_norm] using hn.le
+    refine .of_forall fun _ => ?_
+    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
+    simpa [dist_eq_norm] using hn.le
 
 end TauCeti
