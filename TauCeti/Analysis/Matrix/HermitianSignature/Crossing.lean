@@ -250,7 +250,10 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
     simpa using hN ⟨x, hx⟩ (by simpa using hx0)
   filter_upwards [eventually_forall_lt_zero hsymm hh hpos hrem hN' hMK hM] with t ht
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq N M
-  rw [inf_eq_bot_of_le_ker (fun x hx hx0 ↦ (hN' x hx hx0).ne) hMK, finrank_bot, add_zero] at hdim
+  rw [inf_eq_bot_of_forall_apply_self_eq_zero (fun x hx hx0 ↦ (hN' x hx hx0).ne)
+    (fun x hx ↦ by
+      have h : V t₀ x = 0 := hMK hx
+      simp [h]), finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
   exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
 
