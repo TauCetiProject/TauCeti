@@ -42,48 +42,48 @@ variable {I K I' K' : Type*} [DecidableEq I] [Fintype I]
 /-- Mutation of an integral form using the positive-sign left factor. If the form is
 alternating, `B (row k) k = 0`, and row `k` of `Bᵀ * Λ` vanishes outside `row k`, either
 choice of sign gives this form. -/
-def matrixFormMutation (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ) (k : K) :
+def formMutation (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ) (k : K) :
     Matrix I I ℤ :=
   (matrixMutationLeft row B k 1)ᵀ * Λ * matrixMutationLeft row B k 1
 
 /-- The unconditional congruence formula defining form mutation. -/
-theorem matrixFormMutation_def (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_def (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
-    matrixFormMutation row B Λ k =
+    formMutation row B Λ k =
       (matrixMutationLeft row B k 1)ᵀ * Λ * matrixMutationLeft row B k 1 := by rfl
 
 /-- Congruence mutation preserves alternation, independently of compatibility. -/
-theorem isAlt_toBilin'_matrixFormMutation (row : K ↪ I) (B : Matrix I K ℤ) {Λ : Matrix I I ℤ}
-    (hΛ : Λ.toBilin'.IsAlt) (k : K) : (matrixFormMutation row B Λ k).toBilin'.IsAlt :=
+theorem isAlt_toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ) {Λ : Matrix I I ℤ}
+    (hΛ : Λ.toBilin'.IsAlt) (k : K) : (formMutation row B Λ k).toBilin'.IsAlt :=
   Matrix.isAlt_toBilin'_transpose_mul_mul hΛ _
 
 /-- Alternation is reflected as well as preserved by congruence mutation. -/
 @[simp]
-theorem isAlt_toBilin'_matrixFormMutation_iff (row : K ↪ I) (B : Matrix I K ℤ)
+theorem isAlt_toBilin'_formMutation_iff (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
-    (matrixFormMutation row B Λ k).toBilin'.IsAlt ↔ Λ.toBilin'.IsAlt := by
+    (formMutation row B Λ k).toBilin'.IsAlt ↔ Λ.toBilin'.IsAlt := by
   constructor
   · intro hΛ
     set E := matrixMutationLeft row B k 1 with hE
     have hEE : E * E = 1 := matrixMutationLeft_mul_self row B k 1
     have hEt : Eᵀ * Eᵀ = 1 := by rw [← Matrix.transpose_mul, hEE, Matrix.transpose_one]
     have h := Matrix.isAlt_toBilin'_transpose_mul_mul hΛ E
-    have heq : Eᵀ * matrixFormMutation row B Λ k * E = Λ := by
-      rw [matrixFormMutation_def, ← hE]
+    have heq : Eᵀ * formMutation row B Λ k * E = Λ := by
+      rw [formMutation_def, ← hE]
       calc
         Eᵀ * (Eᵀ * Λ * E) * E = (Eᵀ * Eᵀ) * Λ * (E * E) := by
           simp only [Matrix.mul_assoc]
         _ = Λ := by rw [hEt, hEE, Matrix.one_mul, Matrix.mul_one]
     rwa [heq] at h
   · intro hΛ
-    exact isAlt_toBilin'_matrixFormMutation row B hΛ k
+    exact isAlt_toBilin'_formMutation row B hΛ k
 
 /-- Transposing a form commutes with its congruence mutation. -/
 @[simp]
-theorem transpose_matrixFormMutation (row : K ↪ I) (B : Matrix I K ℤ)
+theorem transpose_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
-    (matrixFormMutation row B Λ k)ᵀ = matrixFormMutation row B Λᵀ k := by
-  simp [matrixFormMutation_def, Matrix.transpose_mul, Matrix.mul_assoc]
+    (formMutation row B Λ k)ᵀ = formMutation row B Λᵀ k := by
+  simp [formMutation_def, Matrix.transpose_mul, Matrix.mul_assoc]
 
 private theorem transpose_mul_mul_apply_of_ne (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) (ε : ℤ) (i : I) {j : I} (hj : j ≠ row k) :
@@ -92,29 +92,29 @@ private theorem transpose_mul_mul_apply_of_ne (row : K ↪ I) (B : Matrix I K �
   simp [Matrix.mul_apply, matrixMutationLeft_apply_of_ne row B k ε _ hj, Matrix.one_apply]
 
 /-- The entries of form mutation are the usual double sum for congruence. -/
-theorem matrixFormMutation_apply (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ)
+theorem formMutation_apply (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ)
     (k : K) (i j : I) :
-    matrixFormMutation row B Λ k i j =
+    formMutation row B Λ k i j =
       ∑ a, ∑ b, matrixMutationLeft row B k 1 a i * Λ a b *
         matrixMutationLeft row B k 1 b j := by
-  rw [matrixFormMutation_def, Matrix.mul_assoc]
+  rw [formMutation_def, Matrix.mul_assoc]
   simp only [Matrix.mul_apply, Matrix.transpose_apply, Finset.mul_sum, mul_assoc]
 
 /-- Entries outside the selected row and column are unchanged, without assumptions on the form. -/
 @[simp]
-theorem matrixFormMutation_apply_of_ne (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_apply_of_ne (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) {i j : I} (hi : i ≠ row k) (hj : j ≠ row k) :
-    matrixFormMutation row B Λ k i j = Λ i j := by
-  rw [matrixFormMutation_def, transpose_mul_mul_apply_of_ne row B Λ k 1 i hj]
+    formMutation row B Λ k i j = Λ i j := by
+  rw [formMutation_def, transpose_mul_mul_apply_of_ne row B Λ k 1 i hj]
   simp [matrixMutationLeft_apply_of_ne row B k 1 _ hi, Matrix.one_apply]
 
 /-- An off-diagonal entry in the selected row is its negative plus the weighted other rows.
 No alternation or compatibility hypothesis is needed. -/
-theorem matrixFormMutation_apply_row (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_apply_row (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) {j : I} (hj : j ≠ row k) :
-    matrixFormMutation row B Λ k (row k) j =
+    formMutation row B Λ k (row k) j =
       -Λ (row k) j + ∑ l ∈ Finset.univ.erase (row k), (-B l k)⁺ * Λ l j := by
-  rw [matrixFormMutation_def, transpose_mul_mul_apply_of_ne row B Λ k 1 _ hj,
+  rw [formMutation_def, transpose_mul_mul_apply_of_ne row B Λ k 1 _ hj,
     ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ (row k))]
   simp only [matrixMutationLeft_apply_col, ite_true, neg_mul, one_mul]
   congr 1
@@ -124,20 +124,20 @@ theorem matrixFormMutation_apply_row (row : K ↪ I) (B : Matrix I K ℤ)
 
 /-- An off-diagonal entry in the selected column is its negative plus the weighted other
 columns. No alternation or compatibility hypothesis is needed. -/
-theorem matrixFormMutation_apply_col (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_apply_col (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) {i : I} (hi : i ≠ row k) :
-    matrixFormMutation row B Λ k i (row k) =
+    formMutation row B Λ k i (row k) =
       -Λ i (row k) + ∑ l ∈ Finset.univ.erase (row k), (-B l k)⁺ * Λ i l := by
-  have hh := matrixFormMutation_apply_row row B Λᵀ k hi
-  rw [← transpose_matrixFormMutation] at hh
+  have hh := formMutation_apply_row row B Λᵀ k hi
+  rw [← transpose_formMutation] at hh
   simpa only [Matrix.transpose_apply] using hh
 
 /-- Every diagonal entry of an alternating form remains zero under mutation. -/
 @[simp]
-theorem matrixFormMutation_apply_self (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_apply_self (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K) (i : I) :
-    matrixFormMutation row B Λ k i i = 0 :=
-  Matrix.apply_self_eq_zero_of_isAlt_toBilin' (isAlt_toBilin'_matrixFormMutation row B hΛ k) _
+    formMutation row B Λ k i i = 0 :=
+  Matrix.apply_self_eq_zero_of_isAlt_toBilin' (isAlt_toBilin'_formMutation row B hΛ k) _
 
 private theorem transpose_mul_mul_sign (row : K ↪ I) (B : Matrix I K ℤ) {Λ : Matrix I I ℤ}
     (hΛ : Λ.toBilin'.IsAlt) (k : K) (hkk : B (row k) k = 0)
@@ -185,12 +185,12 @@ private theorem transpose_mul_mul_sign (row : K ↪ I) (B : Matrix I K ℤ) {Λ 
 
 /-- For an alternating form, either signed congruence computes form mutation when
 `B (row k) k = 0` and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
-theorem matrixFormMutation_eq_transpose_mul_mul (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_eq_transpose_mul_mul (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
     (hkk : B (row k) k = 0)
     (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0)
     {ε : ℤ} (hε : ε = 1 ∨ ε = -1) :
-    matrixFormMutation row B Λ k =
+    formMutation row B Λ k =
       (matrixMutationLeft row B k ε)ᵀ * Λ * matrixMutationLeft row B k ε := by
   rcases hε with rfl | rfl
   · rfl
@@ -252,11 +252,11 @@ variable [DecidableEq K]
 /-- Simultaneous matrix and form mutation preserves column compatibility of an alternating
 form with the same, possibly zero or negative, weights, when the principal block has a
 positive skew-symmetrizer. -/
-theorem transpose_matrixMutation_mul_matrixFormMutation (row : K ↪ I)
+theorem transpose_matrixMutation_mul_formMutation (row : K ↪ I)
     (B : Matrix I K ℤ) {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt)
     {d w : K → ℤ} (hd : (B.submatrix row id).IsSkewSymmetrizer d)
     (h : Bᵀ * Λ = Matrix.of fun i j ↦ if j = row i then w i else 0) (k : K) :
-    (matrixMutation row B k)ᵀ * matrixFormMutation row B Λ k =
+    (matrixMutation row B k)ᵀ * formMutation row B Λ k =
       Matrix.of fun i j ↦ if j = row i then w i else 0 := by
   let : Fintype K := Fintype.ofInjective row row.injective
   set W : Matrix K I ℤ := Matrix.of fun i j ↦ if j = row i then w i else 0 with hW
@@ -286,7 +286,7 @@ theorem transpose_matrixMutation_mul_matrixFormMutation (row : K ↪ I)
   have hEE : E * E = 1 := matrixMutationLeft_mul_self row B k 1
   have hEt : Eᵀ * Eᵀ = 1 := by rw [← Matrix.transpose_mul, hEE, Matrix.transpose_one]
   rw [matrixMutation_eq_mul row B k 1 (hd.apply_self k) (Or.inl rfl),
-    matrixFormMutation_def, ← hE, ← hF]
+    formMutation_def, ← hE, ← hF]
   calc
     (E * B * F)ᵀ * (Eᵀ * Λ * E) = Fᵀ * Bᵀ * (Eᵀ * Eᵀ) * Λ * E := by
       simp [Matrix.transpose_mul, Matrix.mul_assoc]
@@ -299,14 +299,14 @@ end Compatibility
 /-- For an alternating form, mutating along `B` and its mutation in the same direction
 recovers the form if `B (row k) k = 0` and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
 @[simp]
-theorem matrixFormMutation_matrixFormMutation [DecidableEq K]
+theorem formMutation_formMutation [DecidableEq K]
     (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
     (hkk : B (row k) k = 0)
     (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0) :
-    matrixFormMutation row (matrixMutation row B k) (matrixFormMutation row B Λ k) k = Λ := by
-  rw [matrixFormMutation_def, matrixMutationLeft_matrixMutation,
-    matrixFormMutation_eq_transpose_mul_mul row B hΛ k hkk h (Or.inr rfl)]
+    formMutation row (matrixMutation row B k) (formMutation row B Λ k) k = Λ := by
+  rw [formMutation_def, matrixMutationLeft_matrixMutation,
+    formMutation_eq_transpose_mul_mul row B hΛ k hkk h (Or.inr rfl)]
   set E := matrixMutationLeft row B k (-1) with hE
   have hEE : E * E = 1 := by rw [hE, matrixMutationLeft_mul_self]
   have hEt : Eᵀ * Eᵀ = 1 := by rw [← Matrix.transpose_mul, hEE, Matrix.transpose_one]
@@ -317,45 +317,37 @@ theorem matrixFormMutation_matrixFormMutation [DecidableEq K]
 
 /-- Form mutation commutes with bijective relabelling of all rows and any compatible
 map of mutable columns. In particular mutable columns can be frozen. -/
-theorem matrixFormMutation_submatrix [DecidableEq I'] [Fintype I']
+theorem formMutation_submatrix [DecidableEq I'] [Fintype I']
     (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ) {row' : K' ↪ I'}
     {f : I' → I} {g : K' → K} (hf : Function.Bijective f)
     (h : ∀ a, f (row' a) = row (g a)) (k : K') :
-    matrixFormMutation row' (B.submatrix f g) (Λ.submatrix f f) k =
-      (matrixFormMutation row B Λ (g k)).submatrix f f := by
-  simp only [matrixFormMutation_def,
+    formMutation row' (B.submatrix f g) (Λ.submatrix f f) k =
+      (formMutation row B Λ (g k)).submatrix f f := by
+  simp only [formMutation_def,
     matrixMutationLeft_submatrix row B 1 hf.injective h k, Matrix.transpose_submatrix]
   rw [← Matrix.submatrix_mul _ _ f f f hf, ← Matrix.submatrix_mul _ _ f f f hf]
 
 /-- Negating the form negates its mutation, without compatibility or alternation assumptions. -/
 @[simp]
-theorem matrixFormMutation_neg (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_neg (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
-    matrixFormMutation row B (-Λ) k = -matrixFormMutation row B Λ k := by
-  simp [matrixFormMutation_def]
+    formMutation row B (-Λ) k = -formMutation row B Λ k := by
+  simp [formMutation_def]
 
 /-- For an alternating form, negating the exchange matrix fixes its mutation when
 `B (row k) k = 0` and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
 @[simp]
-theorem matrixFormMutation_neg_left (row : K ↪ I) (B : Matrix I K ℤ)
+theorem formMutation_neg_left (row : K ↪ I) (B : Matrix I K ℤ)
     {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
     (hkk : B (row k) k = 0) (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0) :
-    matrixFormMutation row (-B) Λ k = matrixFormMutation row B Λ k := by
-  rw [matrixFormMutation_def, matrixMutationLeft_neg]
-  exact (matrixFormMutation_eq_transpose_mul_mul row B hΛ k hkk h (Or.inr rfl)).symm
-
-/-- Negating both arguments negates the mutated alternating form when `B (row k) k = 0`
-and row `k` of `Bᵀ * Λ` vanishes outside `row k`. -/
-theorem matrixFormMutation_neg_neg (row : K ↪ I) (B : Matrix I K ℤ)
-    {Λ : Matrix I I ℤ} (hΛ : Λ.toBilin'.IsAlt) (k : K)
-    (hkk : B (row k) k = 0) (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0) :
-    matrixFormMutation row (-B) (-Λ) k = -matrixFormMutation row B Λ k := by
-  rw [matrixFormMutation_neg, matrixFormMutation_neg_left row B hΛ k hkk h]
+    formMutation row (-B) Λ k = formMutation row B Λ k := by
+  rw [formMutation_def, matrixMutationLeft_neg]
+  exact (formMutation_eq_transpose_mul_mul row B hΛ k hkk h (Or.inr rfl)).symm
 
 /-- The zero form stays zero, including for rank-deficient exchange matrices. -/
 @[simp]
-theorem matrixFormMutation_zero (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
-    matrixFormMutation row B 0 k = 0 := by
-  simp [matrixFormMutation]
+theorem formMutation_zero (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
+    formMutation row B 0 k = 0 := by
+  simp [formMutation]
 
 end TauCeti
