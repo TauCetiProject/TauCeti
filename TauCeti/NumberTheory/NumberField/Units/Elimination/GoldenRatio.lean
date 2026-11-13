@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
+import TauCeti.NumberTheory.NumberField.Units.Normalization
+import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # The elimination certificate at the golden ratio
@@ -16,12 +20,15 @@ In a quadratic field, the candidate minimal polynomials of a unit below
 `|m| ≤ φ + 1`, hence `|m| ≤ 2`, and none of them has a real root in the open interval `(1, φ)`:
 the elimination certificate at `B = φ` holds by the root test alone, uniformly in the field.
 It certifies a unit of value `φ` at a real place as a generator of the units modulo torsion,
-which is the case of `ℚ(√5)` presented by the golden ratio.
+which is the case of `ℚ(√5)` presented by the golden ratio, and yields the sharp uniform lower
+bound `log φ ≤ regulator K` for every real quadratic number field `K`.
 
 ## Main results
 
 * `TauCeti.NumberField.Units.unitCandidateEliminationCertificate_goldenRatio`: the certificate
   `UnitCandidateEliminationCertificate K Real.goldenRatio` for every quadratic field `K`.
+* `TauCeti.NumberField.Units.log_goldenRatio_le_regulator`: `log φ ≤ regulator K` for every real
+  quadratic number field `K`.
 
 ## References
 
@@ -72,5 +79,26 @@ theorem unitCandidateEliminationCertificate_goldenRatio (hdeg : Module.finrank �
   have hC : 0 < (x - 1) * (x - 1) := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
   generalize g.coeff 1 = m at hm1 hm3
   interval_cases m <;> rcases h0 with h0 | h0 <;> rw [h0] <;> push_cast <;> nlinarith
+
+/-- **Sharp lower bound on the regulator of a real quadratic field.** Every real quadratic field `K`
+has regulator at least `log φ`, where `φ = (1 + √5) / 2` is the golden ratio (attained at
+`ℚ(√5)`). -/
+theorem log_goldenRatio_le_regulator [IsTotallyReal K] (hdeg : Module.finrank ℚ K = 2) :
+    Real.log Real.goldenRatio ≤ NumberField.Units.regulator K := by
+  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  have hw : w.IsReal := IsTotallyReal.isReal w
+  have hr : NumberField.Units.rank K = 1 :=
+    NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal hdeg hw
+  obtain ⟨u, hu⟩ := NumberField.Units.exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
+  have hreg := regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w
+  rw [hw.mult_eq_one, Nat.cast_one, one_mul] at hreg
+  rw [hreg]
+  by_contra! hlt
+  have hpos : 0 < |Real.log (w u)| := hreg ▸ NumberField.Units.regulator_pos K
+  have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
+  obtain ⟨ε, δ, -, hlo, hhi⟩ :=
+    exists_normalized_unit_between Real.goldenRatio u w hw Real.goldenRatio_pos hne hlt
+  exact (unitCandidateEliminationCertificate_goldenRatio hdeg).no_unit_between_real hr hw
+    ⟨ε.1 * δ, hlo, hhi⟩
 
 end TauCeti.NumberField.Units

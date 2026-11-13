@@ -43,6 +43,9 @@ zero and one.
 * `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
   `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
   is the Abelian theorem for Dirichlet series.
+* `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
+  integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
+  c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
 -/
 
 public section
@@ -345,5 +348,76 @@ theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
+
+/-- For `a < -1` and `0 < c`, the function `t ↦ t ^ a * log t` is integrable on `(c, ∞)`. -/
+theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi c) := by
+  set M := max c 1
+  have hM1 : 1 ≤ M := le_max_right c 1
+  have hM0 : 0 < M := zero_lt_one.trans_le hM1
+  -- On `(c, M]` the integrand is continuous on `[c, M]`; beyond `M ≥ 1` absorb `log t` into
+  -- half of the spare power decay `-(a + 1) > 0`.
+  have h_cpt : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioc c M) := by
+    refine (ContinuousOn.integrableOn_Icc (a := c) (b := M) ?_).mono_set Ioc_subset_Icc_self
+    exact (continuousOn_id.rpow_const fun t (ht : t ∈ Icc c M) ↦ Or.inl (hc.trans_le ht.1).ne').mul
+      (continuousOn_log.mono fun t (ht : t ∈ Icc c M) ↦ (hc.trans_le ht.1).ne')
+  have h_tail : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi M) := by
+    set δ := -(a + 1) / 2
+    have hδ : 0 < δ := div_pos (by linarith) two_pos
+    have haδ : a + δ < -1 := by simp only [δ]; linarith
+    refine ((integrableOn_Ioi_rpow_of_lt haδ hM0).div_const δ).mono' (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : M < t)
+    have ht0 : 0 < t := hM0.trans ht
+    rw [norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg ht0.le _),
+      Real.norm_of_nonneg (Real.log_nonneg (hM1.trans ht.le))]
+    calc
+      t ^ a * Real.log t ≤ t ^ a * (t ^ δ / δ) :=
+        mul_le_mul_of_nonneg_left (Real.log_le_rpow_div ht0.le hδ) (Real.rpow_nonneg ht0.le _)
+      _ = t ^ (a + δ) / δ := by rw [← mul_div_assoc, ← Real.rpow_add ht0]
+  rw [← Ioc_union_Ioi_eq_Ioi (le_max_left c 1)]
+  exact h_cpt.union h_tail
+
+/-- **The improper integral `∫_c^∞ t ^ a * log t dt`** for `a < -1` and `0 < c`. -/
+theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    ∫ t in Ioi c, t ^ a * Real.log t =
+      c ^ (a + 1) * (1 - (a + 1) * Real.log c) / (a + 1) ^ 2 := by
+  have ha1 : a + 1 ≠ 0 := by linarith
+  have hd : ∀ t ∈ Ici c,
+      HasDerivAt (fun x : ℝ ↦ x ^ (a + 1) * ((a + 1) * Real.log x - 1) / (a + 1) ^ 2)
+        (t ^ a * Real.log t) t := by
+    intro t (ht : c ≤ t)
+    have ht0 : 0 < t := hc.trans_le ht
+    have h1 := Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0.ne')
+    have h2 := ((Real.hasDerivAt_log ht0.ne').const_mul (a + 1)).sub_const 1
+    convert (h1.mul h2).div_const ((a + 1) ^ 2) using 1
+    rw [add_sub_cancel_right]
+    have ht_mul : t ^ (a + 1) * t⁻¹ = t ^ a := by
+      rw [← Real.rpow_neg_one, ← Real.rpow_add ht0, add_neg_cancel_right]
+    calc
+      t ^ a * Real.log t = (a + 1) ^ 2 * (t ^ a * Real.log t) / (a + 1) ^ 2 := by field_simp
+      _ = ((a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+            t ^ (a + 1) * ((a + 1) * t⁻¹)) / (a + 1) ^ 2 := by
+          congr 1
+          calc
+            (a + 1) ^ 2 * (t ^ a * Real.log t)
+                = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) + (a + 1) * t ^ a := by ring
+            _ = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+                  t ^ (a + 1) * ((a + 1) * t⁻¹) := by rw [← ht_mul]; ring
+  have hlim_log : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * Real.log t) atTop (𝓝 0) := by
+    refine (isLittleO_log_rpow_atTop (by linarith : 0 < -(a + 1))).tendsto_div_nhds_zero.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [div_eq_mul_inv, ← Real.rpow_neg ht.le, neg_neg, mul_comm]
+  have hlim_rpow : Tendsto (fun t : ℝ ↦ t ^ (a + 1)) atTop (𝓝 0) :=
+    by simpa only [neg_neg] using tendsto_rpow_neg_atTop (by linarith : 0 < -(a + 1))
+  have ht : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * ((a + 1) * Real.log t - 1) / (a + 1) ^ 2)
+      atTop (𝓝 0) := by
+    have h0 : (((a + 1) * 0 - 0) / (a + 1) ^ 2 : ℝ) = 0 := by simp
+    rw [← h0]
+    refine (((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)).congr' ?_
+    filter_upwards with t
+    congr 1
+    ring
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
+  ring
 
 end TauCeti

@@ -30,6 +30,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 ## Main results
 
 * `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
+* `DirichletCharacter.three_le_of_ne_one`: any nonprincipal character at a nonzero level has level
+  at least `3`.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -109,6 +111,18 @@ theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : �
         (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
         (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
     _ = 0 := χ.sum_eq_zero_of_ne_one hχ
+
+/-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
+`(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
+theorem three_le_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
+  match N, NeZero.ne N, χ, hχ with
+  | 1, _, χ, hχ => exact absurd χ.level_one hχ
+  | 2, _, χ, hχ =>
+    refine absurd (MulChar.ext fun u ↦ ?_) hχ
+    rw [(by decide : ∀ u : (ZMod 2)ˣ, (u : ZMod 2) = 1) u]
+    simp
+  | _ + 3, _, _, _ => omega
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
