@@ -459,9 +459,7 @@ theorem qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive (hk : 2 ≤ k)
     (qExpansion 1 f).coeff n =
       2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum φ⁻¹ stdAddChar *
         DirichletCharacter.twistedDivisorSum (k - 1) ψ φ n := by
-  have hφ' : (φ⁻¹).IsPrimitive := by
-    rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-    exact hφ
+  have hφ' : (φ⁻¹).IsPrimitive := hφ.inv
   rw [qExpansion_coeff_of_apply_eq_tsum_charRow ψ φ hk hpar hf]
   simp only [hn, ↓reduceIte]
   rw [DirichletCharacter.twistedDivisorSum_apply,
