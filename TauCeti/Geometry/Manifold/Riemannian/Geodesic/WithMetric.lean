@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 # A metric dominating a complete metric is geodesically complete
 
 Let `M` be complete for its Riemannian extended distance and let `g` be a smooth Riemannian
-metric dominating the given tangent norms. Then the copy `TauCeti.WithMetric g` is metrically
-complete by `TauCeti.WithMetric.completeSpace_of_sq_norm_le`, hence geodesically complete by
-`TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`. Its maximal geodesics, read in
-`M`, are Lipschitz with their constant `g`-speed as Lipschitz constant.
+metric uniformly dominating the given tangent norms. Then the copy `TauCeti.WithMetric g` is
+metrically complete by `TauCeti.WithMetric.completeSpace_of_sq_norm_le_mul`, hence geodesically
+complete by `TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`. Its maximal geodesics,
+read in `M`, are Lipschitz with a uniform multiple of their constant `g`-speed as Lipschitz
+constant.
 
 ## References
 
@@ -27,7 +28,7 @@ complete by `TauCeti.WithMetric.completeSpace_of_sq_norm_le`, hence geodesically
 public section
 
 open Bundle Manifold TauCeti.Manifold
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold NNReal
 
 noncomputable section
 
@@ -40,27 +41,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
 
 /-- **A maximal geodesic of a dominating metric is Lipschitz for the given distance.** If `g`
-dominates the given metric of `M`, a maximal geodesic of `g`, read in `M`, is Lipschitz on its
-maximal interval for the Riemannian distance of `M`, with its `g`-speed as constant. -/
+uniformly dominates the given metric of `M` with positive comparison factor `C`, a maximal
+geodesic of `g`, read in `M`, is Lipschitz on its maximal interval for the Riemannian distance
+of `M`, with `C` times its `g`-speed as constant. -/
 theorem lipschitzOnWith_ofWithMetric_maximalGeodesic
-    (hg : ∀ x (v : TangentSpace I x), ‖v‖ ^ 2 ≤ g.inner x v v) (p : WithMetric g)
-    (v : TangentSpace I p) :
-    LipschitzOnWith ‖v‖₊ (ofWithMetric ∘ maximalGeodesic I (WithMetric g) p v)
+    {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hg : ∀ x (v : TangentSpace I x), ‖v‖ ^ 2 ≤ (C : ℝ) ^ 2 * g.inner x v v)
+    (p : WithMetric g) (v : TangentSpace I p) :
+    LipschitzOnWith (C * ‖v‖₊) (ofWithMetric ∘ maximalGeodesic I (WithMetric g) p v)
       (geodesicInterval I (WithMetric g) p v) := by
   let : EMetricSpace (WithMetric g) := .ofRiemannianMetric I (WithMetric g)
-  simpa only [one_mul] using
-    (lipschitzWith_ofWithMetric hg).comp_lipschitzOnWith
-      (lipschitzOnWith_maximalGeodesic (I := I) (p := p) (v := v))
+  exact (lipschitzWith_ofWithMetric hC0 hg).comp_lipschitzOnWith
+    (lipschitzOnWith_maximalGeodesic (I := I) (p := p) (v := v))
 
 /-- **A metric dominating a complete Riemannian metric is geodesically complete.** If `M` is
 complete for its Riemannian distance and `g` is a Riemannian metric on `M` with
-`|v|² ≤ g(v, v)` for every tangent vector `v`, then every maximal geodesic of `g` is defined for
-all time. -/
-theorem isGeodesicallyCompleteAt_of_sq_norm_le [CompleteSpace M]
-    (hg : ∀ x (v : TangentSpace I x), ‖v‖ ^ 2 ≤ g.inner x v v) (p : WithMetric g) :
+`|v|² ≤ C² g(v, v)` for a fixed positive `C` and every tangent vector `v`, then every maximal
+geodesic of `g` is defined for all time. -/
+theorem isGeodesicallyCompleteAt_of_sq_norm_le_mul [CompleteSpace M]
+    {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hg : ∀ x (v : TangentSpace I x), ‖v‖ ^ 2 ≤ (C : ℝ) ^ 2 * g.inner x v v)
+    (p : WithMetric g) :
     IsGeodesicallyCompleteAt I (WithMetric g) p := by
   let : EMetricSpace (WithMetric g) := .ofRiemannianMetric I (WithMetric g)
-  have : CompleteSpace (WithMetric g) := completeSpace_of_sq_norm_le hg
+  have : CompleteSpace (WithMetric g) := completeSpace_of_sq_norm_le_mul hC0 hg
   exact isGeodesicallyCompleteAt_of_completeSpace p
 
 end TauCeti.WithMetric
