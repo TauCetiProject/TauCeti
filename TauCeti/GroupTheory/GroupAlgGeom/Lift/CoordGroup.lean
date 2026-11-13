@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Basic
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
 
@@ -30,6 +31,10 @@ group `H` receiving the coefficients through `ι : G →* H`. The system `S ∪ 
 
 ## Main results
 
+* `TauCeti.GroupAlgGeom.Lift.existsUnique_gHom_genericPoint_inr_eq_of_isSeparatedBy`: for a group
+  `K` separated by `H` over `G`, a `G`-homomorphism `G_{R(S)} → K` extends uniquely along
+  `coordGroupMap` to `G_{R(S ∪ T)}` with prescribed values on `Y`, whenever these values solve `T`
+  at the image of the generic point of `S`.
 * `TauCeti.GroupAlgGeom.Lift.isCompatible_iff_forall_exists_gHom`: compatibility as extension of
   homomorphisms.
 * `TauCeti.GroupAlgGeom.Lift.IsCompatible.coordGroupMap_injective`: for a compatible system the
@@ -142,6 +147,38 @@ theorem genericPoint_inr_mem_V_of_comp_eq {K : Type*} [Group K] {κ : G →* K}
   rw [h]
   exact (mem_V_jointSystem.1 (ρ.comp_mem_V (CoordGroup.genericPoint_mem_V _))).2
 
+/-- Let `K` be separated by `H` over `G`. If `φ` is a `G`-homomorphism from the coordinate group of
+`S` to `K` and `w` is a solution of `T` in `K` at the image under `φ` of the generic point of `S`,
+then there is a unique `G`-homomorphism from the coordinate group of `S ∪ T` to `K` that extends
+`φ` along `coordGroupMap` and takes the values `w` on the variables `Y`. -/
+theorem existsUnique_gHom_genericPoint_inr_eq_of_isSeparatedBy {K : Type*} [Group K]
+    {κ : G →* K} (hK : IsSeparatedBy κ ι) {φ : GHom (CoordGroup.coeff ι S) κ} {w : Y → K}
+    (hw : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈ V κ T) :
+    ∃! ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ, ρ.comp (coordGroupMap ι S T) = φ ∧
+      ∀ y, ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y)) = w y := by
+  -- The point `(φ ∘ μ, w)` solves `S ∪ T` in `K`; as `K` is separated by `H`, every equation in
+  -- the radical of `S ∪ T` over `H` vanishes there too, so evaluation descends to `G_{R(S ∪ T)}`.
+  have hp : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈ V κ (jointSystem S T) :=
+    mem_V_jointSystem.2 ⟨φ.comp_mem_V (CoordGroup.genericPoint_mem_V S), hw⟩
+  have hRad : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈
+      V κ (Rad ι (jointSystem S T) : Set (GX G (X ⊕ Y))) :=
+    mem_V.2 fun s hs => by
+      rw [SetLike.mem_coe, Rad_def] at hs
+      rw [← MonoidHom.mem_ker, ← hK.I_range_comp_eq_ker_eval]
+      exact I_antitone ι (Set.range_subset_iff.2 fun ψ : GHom κ ι => ψ.comp_mem_V hp) hs
+  obtain ⟨ρ₀, hρ₀⟩ : ∃ ρ₀ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ,
+      ∀ u : GX G (X ⊕ Y), ρ₀ (u : CoordGroup ι (jointSystem S T)) =
+        eval κ (Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w) u := by
+    -- `G_{R(S ∪ T)}` is the quotient of `G[X ⊔ Y]` by the radical, with its coefficient map.
+    rw [CoordGroup.coeff_def]
+    exact ⟨GX.quotientEvalGHom _ hRad, GX.quotientEvalGHom_mk _⟩
+  refine ⟨ρ₀, ⟨comp_coordGroupMap_eq_iff.2 fun x => ?_, fun y => ?_⟩,
+    fun ρ ⟨hρ, hρw⟩ => CoordGroup.gHom_ext <| Sum.forall.2 ⟨fun x => ?_, fun y => ?_⟩⟩
+  · simp [CoordGroup.genericPoint_apply, hρ₀]
+  · simp [CoordGroup.genericPoint_apply, hρ₀]
+  · simpa [CoordGroup.genericPoint_apply, hρ₀] using comp_coordGroupMap_eq_iff.1 hρ x
+  · simpa [CoordGroup.genericPoint_apply, hρ₀] using hρw y
+
 /-! ### Compatibility -/
 
 /-- A system `T` is compatible with `S` if and only if every `G`-homomorphism from the coordinate
@@ -151,10 +188,10 @@ theorem isCompatible_iff_forall_exists_gHom : IsCompatible ι S T ↔
       α'.comp (coordGroupMap ι S T) = α := by
   rw [isCompatible_iff]
   refine ⟨fun h α => ?_, fun h v hv => ?_⟩
-  · -- Extend the solution of `S` corresponding to `α` and evaluate there.
-    obtain ⟨w, hw⟩ := h _ (CoordGroup.homEquiv ι S α).2
-    exact ⟨CoordGroup.evalGHom _ (mem_V_jointSystem.2 ⟨by simp, hw⟩),
-      comp_coordGroupMap_eq_iff.2 fun x => by simp [CoordGroup.genericPoint_apply]⟩
+  · -- Extend the solution `α ∘ μ` of `S` to a solution of `T`, then extend `α` along it.
+    obtain ⟨w, hw⟩ := h _ (α.comp_mem_V (CoordGroup.genericPoint_mem_V S))
+    exact (existsUnique_gHom_genericPoint_inr_eq_of_isSeparatedBy
+      (IsDiscriminatedBy.self ι).isSeparatedBy hw).exists.imp fun _ => And.left
   · -- An extension of evaluation at `v` gives a solution of `T` over `v`.
     obtain ⟨α', hα'⟩ := h (CoordGroup.evalGHom v hv)
     have hT := genericPoint_inr_mem_V_of_comp_eq hα'
@@ -191,26 +228,8 @@ theorem existsUnique_gHom_genericPoint_inr_eq {w : Y → CoordGroup ι S}
     ∃! ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) (CoordGroup.coeff ι S),
       ρ.comp (coordGroupMap ι S T) = GHom.id _ ∧
         ∀ y, ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y)) = w y := by
-  -- Represent `w` by words `u` in `G[X]`; the words `(X, u)` map `V(S)` into `V(S ∪ T)`.
-  obtain ⟨u, rfl⟩ := (QuotientGroup.mk_surjective (s := Rad ι S)).comp_left w
-  have hmaps : CoordGroup.MapsToWordMap ι S (jointSystem S T)
-      (Sum.elim (fun x => inr (FreeGroup.of x)) u) := by
-    refine (CoordGroup.mapsToWordMap_iff ..).2 fun v hv => ?_
-    -- At a solution `v` of `S`, the words `(X, u)` take the value of `(μ, w)` under evaluation
-    -- at `v`, which solves `T` because `(μ, w)` does.
-    have h : wordMap ι (Sum.elim (fun x => inr (FreeGroup.of x)) u) v =
-        CoordGroup.evalGHom v hv ∘
-          Sum.elim (CoordGroup.genericPoint ι S) fun y => (u y : CoordGroup ι S) :=
-      funext <| Sum.forall.2 ⟨fun _ => by simp, fun _ => by simp⟩
-    rw [h, mem_V_jointSystem]
-    exact ⟨by simpa [Function.comp_assoc] using hv, (CoordGroup.evalGHom v hv).comp_mem_V hw⟩
-  refine ⟨CoordGroup.homOfMapsToWordMap ι S _ _ hmaps,
-    ⟨comp_coordGroupMap_eq_id_iff.2 fun x => by simp [CoordGroup.genericPoint_apply],
-      fun y => by simp [CoordGroup.genericPoint_apply]⟩,
-    fun ρ ⟨hρ, hρw⟩ => CoordGroup.gHom_ext <| Sum.forall.2 ⟨fun x => ?_, fun y => ?_⟩⟩
-  -- Uniqueness: a retraction is determined by its values on the variables `X` and `Y`.
-  · simpa [CoordGroup.genericPoint_apply] using comp_coordGroupMap_eq_id_iff.1 hρ x
-  · simpa [CoordGroup.genericPoint_apply] using hρw y
+  simpa using existsUnique_gHom_genericPoint_inr_eq_of_isSeparatedBy
+    (CoordGroup.isSeparatedBy_coeff S) (φ := GHom.id _) (by simpa using hw)
 
 /-- If a `G`-homomorphism `ρ` from the coordinate group of `S ∪ T` to the coordinate group of `S` is
 a left inverse of `coordGroupMap`, its values on the variables `Y` form a solution of `T` at the
