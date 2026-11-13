@@ -123,7 +123,7 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
   exact mem_span_singleton'.mpr ⟨d, mul_comm _ _⟩
 
 /-- A finite injective algebra over a two-dimensional regular local ring is flat if it is a
-normal domain. The algebra need not be local, and is then free. -/
+normal domain. The algebra need not be local; see `free_of_normal_dim_two` for freeness. -/
 theorem flat_of_normal_dim_two [IsDomain B] [IsIntegrallyClosed B]
     (hinj : Function.Injective (algebraMap A B)) (hdim : ringKrullDim A = 2) :
     Module.Flat A B := by
