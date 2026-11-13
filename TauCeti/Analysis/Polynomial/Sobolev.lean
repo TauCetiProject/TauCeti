@@ -62,16 +62,15 @@ variable {P : ℂ[X]}
 private def weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) (z : ℂ) : ℂ :=
   (((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) : ℂ) * (conj (A.eval z) * B.eval z)
 
-private theorem contDiff_eval (A : ℂ[X]) : ContDiff ℝ ∞ fun z ↦ A.eval z :=
-  by simpa using (A.contDiff_aeval (𝕜 := ℂ) ∞).restrict_scalars ℝ
-
 private theorem contDiff_weightTerm (P : ℂ[X]) (n : ℕ) (A B : ℂ[X]) :
     ContDiff ℝ ∞ (weightTerm P n A B) := by
+  have heval (A : ℂ[X]) : ContDiff ℝ ∞ fun z ↦ A.eval z := by
+    simpa using (A.contDiff_aeval (𝕜 := ℂ) ∞).restrict_scalars ℝ
   have hN : ContDiff ℝ ∞ fun z ↦ ((1 + ‖P.eval z‖ ^ 2)⁻¹ ^ n : ℝ) :=
-    ((contDiff_const.add ((contDiff_norm_sq ℝ).comp (contDiff_eval P))).inv
+    ((contDiff_const.add ((contDiff_norm_sq ℝ).comp (heval P))).inv
       fun z ↦ (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne').pow n
   exact (Complex.ofRealCLM.contDiff.comp hN).mul
-    ((Complex.conjCLE.contDiff.comp (contDiff_eval A)).mul (contDiff_eval B))
+    ((Complex.conjCLE.contDiff.comp (heval A)).mul (heval B))
 
 /-- The derivative of `φ ^ n conj A B` along the line `t ↦ z + t v` is again a sum of four
 functions of the same form. -/
