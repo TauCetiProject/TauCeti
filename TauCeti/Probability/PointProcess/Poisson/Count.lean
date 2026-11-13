@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
-public import TauCeti.Probability.PointProcess.Poisson.Superposition
+public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
