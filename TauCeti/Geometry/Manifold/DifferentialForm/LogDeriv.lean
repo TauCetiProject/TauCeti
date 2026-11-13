@@ -207,7 +207,7 @@ private theorem exists_mlogDeriv_eq_mextDerivWithin {n : WithTop ℕ∞} [IsMani
 
 section Regularity
 
-variable [IsManifold I 2 M]
+variable [IsManifold I 1 M]
 
 /-- If `u` is `C^(n+1)` at a point where it does not vanish, its logarithmic derivative is a
 `C^n` section of the bundle of `1`-forms at that point. -/
@@ -234,6 +234,8 @@ theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} {x : M}
 theorem isSmoothForm_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
     (hu₀ : ∀ x, u x ≠ 0) : IsSmoothForm I n (mlogDeriv I u) :=
   (isSmoothForm_def n _).mpr fun x ↦ contMDiffAt_mlogDeriv (hu x) (hu₀ x)
+
+variable [IsManifold I 2 M]
 
 /-- If `u` is `C²` at a point where it does not vanish, its logarithmic derivative is closed
 at that point. -/

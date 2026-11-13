@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
-import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -46,9 +46,6 @@ derivative applies.
   the cotangent bundle.
 * `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
   evaluates a tangent vector through the differential of the map.
-* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
-  `C^n` section of the bundle of linear maps;
-  `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv` is the pointwise statement.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
   smooth function is its manifold derivative.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
@@ -219,32 +216,6 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
   exact isSmoothBundleForm_ofSubsingleton_iff
 
 end OnceDifferentiable
-
-/-- The differential of a function that is `C^(n+1)` at a point is a `C^n` section of the
-bundle of linear maps at that point. -/
-theorem _root_.ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv [IsManifold I 1 M]
-    {n : WithTop ℕ∞} {f : M → F} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, F) (n + 1) f x) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun y : M ↦ TangentSpace I y →L[ℝ] F) y (mvfderiv I f y)) x := by
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, (hf.mfderiv_const le_rfl).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun y ↦ ?_)⟩
-  -- The target trivialization and its tangent coordinates are identities; the remaining
-  -- comparison is the evaluation lemma for the vector-valued derivative.
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    inTangentCoordinates, TangentBundle.continuousLinearMapAt_model_space]
-  ext v
-  exact mvfderiv_apply_eq_mfderiv_apply f y _
-
-/-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
-section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
-when `F = ℝ`. -/
-theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 1 M] {n : WithTop ℕ∞}
-    {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) x (mvfderiv I f x)) :=
-  fun x ↦ (hf x).contMDiffAt_totalSpaceMk_mvfderiv
 
 section OnceDifferentiable
 
