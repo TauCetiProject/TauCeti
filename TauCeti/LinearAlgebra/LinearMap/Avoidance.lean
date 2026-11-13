@@ -30,13 +30,13 @@ public section
 
 namespace LinearMap
 
-variable {R M ι : Type*} [CommRing R] [IsDomain R] [Infinite R]
+variable {R M ι : Type*} [Ring R] [IsDomain R] [Infinite R]
   [AddCommGroup M] [Module R M]
   {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
   [∀ i, Module.IsTorsionFree R (N i)]
 
-/-- Finitely many linear maps to torsion-free modules can simultaneously be made nonzero
-in any coset of a submodule on which each map is nonzero. -/
+/-- Over an infinite domain, finitely many linear maps to torsion-free modules can
+simultaneously be made nonzero in any coset of a submodule on which each map is nonzero. -/
 theorem exists_mem_forall_apply_add_ne_zero [Finite ι] (f : ∀ i, M →ₗ[R] N i)
     (U : Submodule R M) (hU : ∀ i, ∃ y ∈ U, f i y ≠ 0) (z : M) :
     ∃ x ∈ U, ∀ i, f i (z + x) ≠ 0 := by

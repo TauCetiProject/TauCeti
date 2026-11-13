@@ -6,23 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
-public import Mathlib.RingTheory.Localization.Defs
+public import Mathlib.RingTheory.Unramified.Basic
 import TauCeti.LinearAlgebra.LinearMap.Avoidance
-import TauCeti.RingTheory.Derivation.Localization
+import TauCeti.RingTheory.Derivation.FormallyEtale
 
 /-!
 # Simultaneous separating lifts in a prescribed congruence class
 
-Let `R` be an infinite domain embedded in a field `K`, and let `A` be an `R`-algebra.
-Suppose finitely many localizations `Fᵢ` of `A` are finitely generated transcendental field
-extensions of `K` with one-dimensional Kähler differentials. For any `a : A` and nonzero
+Let `R` be an infinite ring embedded in a field `K` (hence a domain), and let `A` be an
+`R`-algebra. Suppose finitely many formally unramified `A`-algebras `Fᵢ` (for example
+localizations of `A`) are finitely generated transcendental field extensions of `K` with
+one-dimensional Kähler differentials. For any `a : A` and nonzero
 `π : R`, there is a perturbation `a + π • b` that is a separating transcendental in every
 `Fᵢ`. Thus a lift of a function on the special fibre of a model over a discrete valuation
 ring can be made separating on all generic components without changing its reduction.
 No perfectness assumption on `K` is needed, and `A` need not be a domain.
 
 The proof uses the differential criterion for a separating element. A nonzero derivation
-of a localization cannot vanish on the original ring. One can then avoid the finitely many
+of a formally unramified `A`-algebra cannot vanish on `A`. One can then avoid the finitely many
 kernels on the coset `a + πA`, because `R` is infinite and the differential modules are
 torsion-free over `R`.
 
@@ -44,22 +45,26 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-variable {R K A ι : Type*} [CommRing R] [IsDomain R] [Infinite R]
+variable {R K A ι : Type*} [CommRing R] [Infinite R]
   [Field K] [Algebra R K] [FaithfulSMul R K] [CommRing A] [Algebra R A]
   [Finite ι] (F : ι → Type*) [∀ i, Field (F i)]
   [∀ i, Algebra K (F i)] [∀ i, Algebra R (F i)] [∀ i, IsScalarTower R K (F i)]
   [∀ i, Algebra A (F i)] [∀ i, IsScalarTower R A (F i)]
   [∀ i, Algebra.EssFiniteType K (F i)] [∀ i, Algebra.Transcendental K (F i)]
 
-/-- In a prescribed congruence class modulo a nonzero scalar, choose an element that is
-simultaneously separating in finitely many one-variable function fields obtained by localizing
-`A`. This includes the generic component fields of a smooth curve over the fraction field of
-a discrete valuation ring. -/
+/-- Let `R` be an infinite ring embedded in a field `K`, and let finitely many formally
+unramified `A`-algebras `F i` (for example localizations of `A`) be finitely generated
+transcendental field extensions of `K` with one-dimensional Kähler differentials `Ω[F i⁄K]`.
+Then in a prescribed congruence class `a + π • A` modulo a nonzero `π : R` there is an element
+whose image in every `F i` is transcendental and separating over `K`. This applies to the
+generic component fields of an affine chart `Spec A` of a model of a smooth curve over a
+discrete valuation ring. -/
 theorem exists_forall_transcendental_and_isSeparable_adjoin_add_smul
-    (S : ι → Submonoid A) [∀ i, IsLocalization (S i) (F i)]
+    [∀ i, Algebra.FormallyUnramified A (F i)]
     (hdim : ∀ i, Module.finrank (F i) Ω[F i⁄K] = 1) (a : A) {π : R} (hπ : π ≠ 0) :
     ∃ b : A, ∀ i, Transcendental K (algebraMap A (F i) (a + π • b)) ∧
       Algebra.IsSeparable K⟮algebraMap A (F i) (a + π • b)⟯ (F i) := by
+  have := IsDomain.of_faithfulSMul R K
   have (i : ι) : Module.IsTorsionFree R Ω[F i⁄K] := by
     have : Module.IsTorsionFree R (F i) :=
       Module.IsTorsionFree.trans K
@@ -71,12 +76,10 @@ theorem exists_forall_transcendental_and_isSeparable_adjoin_add_smul
   have hf (i : ι) (x : A) : f i x = D K (F i) (algebraMap A (F i) x) := rfl
   have hnonzero (i : ι) : ∃ x : A, f i x ≠ 0 := by
     by_contra! h
-    have hzero : (D K (F i) : F i → Ω[F i⁄K]) = fun _ ↦ 0 := by
-      apply IsLocalization.eq_of_leibniz (S i) (D K (F i)).leibniz
-      · simp
-      · exact fun x ↦ (hf i x).symm.trans (h x)
+    have hzero : D K (F i) = 0 :=
+      Derivation.eq_of_formallyUnramified (S := A) fun x ↦ (hf i x).symm.trans (h x)
     obtain ⟨y, hy, hsep⟩ := finrank_kaehlerDifferential_eq_one_iff.mp (hdim i)
-    exact D_ne_zero_of_separating hy (congrFun hzero y)
+    exact D_ne_zero_of_separating hy (DFunLike.congr_fun hzero y)
   let U := LinearMap.range (LinearMap.lsmul R A π)
   have hU (i : ι) : ∃ x ∈ U, f i x ≠ 0 := by
     obtain ⟨x, hx⟩ := hnonzero i
