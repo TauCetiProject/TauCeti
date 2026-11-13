@@ -50,24 +50,6 @@ open Polynomial IsLocalRing
 
 namespace TauCeti
 
-section Lift
-
-variable {B S : Type*} [CommRing B] [CommRing S] [Algebra B S] {ϖ u : B} {e d : ℕ}
-
-/-- The `B`-algebra map from the Abhyankar model `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)` sending
-`y` to `s` and `x` to `t`, for `s ^ e = u` and `t ^ d = ϖ s`. -/
-private noncomputable def abhyankarModelLift {s t : S} (hs : s ^ e = algebraMap B S u)
-    (ht : t ^ d = algebraMap B S ϖ * s) : abhyankarModel ϖ u e d →ₐ[B] S :=
-  AdjoinRoot.liftAlgHom _ (AdjoinRoot.liftAlgHom (X ^ e - C u) (Algebra.ofId B S) s (by simp [hs]))
-    t (by simp [ht])
-
-private theorem abhyankarModelLift_root {s t : S} (hs : s ^ e = algebraMap B S u)
-    (ht : t ^ d = algebraMap B S ϖ * s) :
-    abhyankarModelLift hs ht (abhyankarModelRoot ϖ u e d) = t :=
-  AdjoinRoot.liftAlgHom_root ..
-
-end Lift
-
 variable {A B S : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
   [CommRing S] [IsDomain S] [ValuationRing S] [Algebra B S] [IsLocalHom (algebraMap B S)]

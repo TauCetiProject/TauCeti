@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import Mathlib.RingTheory.RingHom.Unramified
 import Mathlib.RingTheory.Unramified.LocalRing
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -147,11 +148,8 @@ theorem isSeparable_abhyankarModelKummerHom
   have := isSeparable_abhyankarModel_quotient M
     ((mem_maximalIdeal ϖ).mpr hϖ.not_isUnit) hu he hd
   -- Localization at a maximal ideal does not change its residue field.
-  let σ := (IsLocalization.AtPrime.equivQuotMaximalIdeal M S).restrictScalars B
-  let τ := σ.extendScalarsOfSurjective (R := B) (S := B ⧸ maximalIdeal B)
-    Ideal.Quotient.mk_surjective
   have : Algebra.IsSeparable (ResidueField B) (ResidueField S) :=
-    (AlgEquiv.Algebra.isSeparable_iff τ).mp inferInstance
+    isSeparable_residueField_localization M inferInstance
   have : IsLocalHom (algebraMap A S) := by
     rw [IsScalarTower.algebraMap_eq A B S]
     infer_instance
