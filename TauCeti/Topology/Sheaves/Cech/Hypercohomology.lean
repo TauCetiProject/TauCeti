@@ -48,9 +48,9 @@ variable (X : Type u) [TopologicalSpace X] (A : Type u') [Category.{v'} A] [Prea
   [HasZeroObject A] [HasProducts.{u} A] [HasCoproducts.{0} A] [CategoryWithHomology A]
   [HasColimitsOfShape (PointOpenCover X) A] (n : ℤ)
 
-/-- Degree `n` Čech hypercohomology of presheaves of complexes on `X`, as the colimit of total
-Čech cohomology over point-neighborhood covers. In particular this applies to module-valued
-presheaves and to the presheaves underlying complexes of sheaves. -/
+/-- Degree `n` Čech hypercohomology of presheaves of integer-graded complexes on `X`, as the
+colimit of total Čech cohomology over point-neighborhood covers. Taking `A = ModuleCat R`
+gives hypercohomology of presheaves of complexes of modules. -/
 abbrev cechHypercohomology : ((Opens X)ᵒᵖ ⥤ CochainComplex A ℤ) ⥤ A :=
   TauCeti.CategoryTheory.cechHypercohomology A PointOpenCover.toFormalCoproduct
     (fun _ _ h ↦ h) n

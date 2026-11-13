@@ -165,6 +165,7 @@ lemma homologyMap_cechTotalComplexMap_eq
       HomologicalComplex.homologyMap (cechTotalComplexMap P ψ) n :=
   (cechTotalComplexMapHomotopy P φ ψ).homologyMap_eq n
 
+variable (U) in
 /-- An empty family has zero total Čech complex, without requiring any value of the
 coefficient presheaf to vanish. -/
 lemma isZero_cechTotalComplexFunctor_obj [IsEmpty ι] :
