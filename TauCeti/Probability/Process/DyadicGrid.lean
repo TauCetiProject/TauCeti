@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.Probability.Martingale.Convergence
 public import TauCeti.Topology.Instances.Real.DyadicGrid
 import Mathlib.MeasureTheory.Function.FactorsThrough
-import TauCeti.Probability.Process.Filtration.Dense
+import TauCeti.Probability.Process.DenseObservations
 
 /-!
 # Dyadic observations of continuous paths
@@ -21,12 +21,15 @@ every real or complex `Lᵖ` claim, for `1 ≤ p < ∞`.
 In particular this gives the finite-grid density needed to pass from Gaussian
 cylinder expansions to arbitrary square-integrable claims on real path space.
 
-For an almost surely continuous process on any sample space, the same approximation
-holds for claims almost surely measurable from the full process. These results transfer
-finite-grid approximation to the original sample space without requiring literally
-continuous paths on its exceptional set.
+For an almost surely continuous process on any sample space with finite measure `P`,
+`1 ≤ p < ∞`, and a completely metrizable Borel state space `Y`, the same approximation holds
+for claims almost surely strongly measurable from the full process, provided each dyadic
+evaluation is strongly measurable. These results transfer finite-grid approximation to the
+original sample space without requiring literally continuous paths on its exceptional set
+or second-countability of `Y`.
 
-The measure on path space may be any finite measure, not necessarily Wiener measure.
+Both the path-space measure and the sample-space measure `P` may be any finite measure,
+not necessarily Wiener measure.
 Claims need only be almost surely measurable, so the approximation includes claims
 with completed-measurable representatives. No right-continuity assertion about an
 augmented natural filtration is made here.
@@ -120,14 +123,15 @@ theorem tendsto_eLpNorm_condExp_dyadicObservationFiltration {T : ℝ≥0}
 section Process
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
-  [IsCompletelyMetrizableSpace Y] [Nonempty Y] {T : ℝ≥0}
+  [IsCompletelyMetrizableSpace Y] {T : ℝ≥0}
   {X : Icc (0 : ℝ) T → Ω → Y}
 
-omit [PseudoMetrizableSpace Y] in
-/-- On the original sample space of an almost surely continuous process, conditioning on
-finite dyadic observations converges in `Lᵖ` to every observation-measurable `Lᵖ` claim.
-The claim need only have an almost surely observation-measurable representative. -/
-theorem tendsto_eLpNorm_condExp_dyadic_process
+omit [SecondCountableTopology Y] [PseudoMetrizableSpace Y] in
+/-- For a finite measure `P`, `1 ≤ p < ∞`, and an almost surely continuous process into a
+completely metrizable Borel space `Y` with strongly measurable dyadic evaluations,
+conditioning on finite dyadic observations converges in `Lᵖ` on the original sample space.
+The `Lᵖ` claim need only be almost surely strongly measurable from the full process. -/
+theorem tendsto_eLpNorm_condExp_comap_dyadicPoint_process
     (hX : ∀ n k, StronglyMeasurable (X (dyadicPoint T.coe_nonneg n k)))
     (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
     {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
@@ -137,37 +141,35 @@ theorem tendsto_eLpNorm_condExp_dyadic_process
       (P[f | MeasurableSpace.comap (fun ω k ↦ X (dyadicPoint T.coe_nonneg n k) ω)
         inferInstance] - f) p P) atTop (𝓝 0) := by
   let V (n : ℕ) (ω : Ω) (k : Fin (2 ^ n + 1)) := X (dyadicPoint T.coe_nonneg n k) ω
-  have hV (n : ℕ) : StronglyMeasurable (V n) :=
-    (Measurable.of_eval fun k ↦ (hX n k).measurable).stronglyMeasurable
-  let ℱ := Filtration.natural V hV
-  -- Nested grids make the finite history equivalent to its last observation vector.
-  have hfield (n : ℕ) : ℱ n = MeasurableSpace.comap (V n) inferInstance := by
-    apply le_antisymm
-    · refine iSup₂_le fun j hj ↦ ?_
-      rw [MeasurableSpace.comap_process_pi, MeasurableSpace.comap_process_pi]
-      refine iSup_le fun k ↦ ?_
-      obtain ⟨l, hl⟩ := exists_dyadicPoint_eq_of_le T.coe_nonneg k hj
-      exact le_iSup_of_le l (by simp only [hl]; exact le_rfl)
-    · exact le_iSup₂_of_le n le_rfl le_rfl
+  let ℱ : Filtration ℕ mΩ :=
+    { seq n := MeasurableSpace.comap (V n) inferInstance
+      mono' i j hij := by
+        dsimp only [V]
+        rw [MeasurableSpace.comap_process_pi, MeasurableSpace.comap_process_pi]
+        refine iSup_le fun k ↦ ?_
+        obtain ⟨l, hl⟩ := exists_dyadicPoint_eq_of_le T.coe_nonneg k hij
+        exact le_iSup_of_le l (by rw [hl])
+      le' n := (Measurable.of_eval fun k ↦ (hX n k).measurable).comap_le }
   have hmf : AEStronglyMeasurable[⨆ n, ℱ n] f P := by
-    apply aestronglyMeasurable_of_dense_observations
+    apply aestronglyMeasurable_of_dense_of_aestronglyMeasurable_comap
       (dense_iUnion_range_dyadicPoint T.coe_nonneg) hc (hf := hm)
     intro t ht
     obtain ⟨n, k, rfl⟩ := mem_iUnion.1 ht
     have hcoord : Measurable[MeasurableSpace.comap (V n) inferInstance]
         (fun ω ↦ V n ω k) := (measurable_pi_apply k).comp (comap_measurable (V n))
-    exact hcoord.stronglyMeasurable.mono
-      ((hfield n).symm.le.trans (le_iSup ℱ n))
+    exact (stronglyMeasurable_iff_measurable_separable.2
+      ⟨hcoord, (hX n k).isSeparable_range⟩).mono (le_iSup ℱ n)
   have heq := condExp_of_aestronglyMeasurable' (iSup_le ℱ.le) hmf (hf.integrable hp)
   have hlim := hf.tendsto_eLpNorm_condExp (ℱ := ℱ) hp'
   refine hlim.congr fun n ↦ ?_
-  rw [hfield]
   exact eLpNorm_congr_ae ((Filter.EventuallyEq.refl _ _).sub heq)
 
-omit [PseudoMetrizableSpace Y] in
-/-- Every observation-measurable `Lᵖ` claim of an almost surely continuous process admits
-arbitrarily accurate approximation by a measurable function of one finite dyadic vector.
-This includes raw versions with an exceptional set of discontinuous paths. -/
+omit [SecondCountableTopology Y] [PseudoMetrizableSpace Y] in
+/-- For a finite measure `P` and `1 ≤ p < ∞`, every `Lᵖ` claim almost surely strongly
+measurable from an almost surely continuous process into a completely metrizable Borel
+space `Y` admits arbitrarily accurate `Lᵖ` approximation by a measurable function of one
+finite dyadic vector. Dyadic evaluations must be strongly measurable; raw paths may be
+discontinuous on an exceptional set. -/
 theorem exists_eLpNorm_comp_dyadicPoint_process_sub_lt
     (hX : ∀ n k, StronglyMeasurable (X (dyadicPoint T.coe_nonneg n k)))
     (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
@@ -179,7 +181,7 @@ theorem exists_eLpNorm_comp_dyadicPoint_process_sub_lt
       MemLp (fun ω ↦ g (fun k ↦ X (dyadicPoint T.coe_nonneg n k) ω)) p P ∧
       eLpNorm ((fun ω ↦ g (fun k ↦ X (dyadicPoint T.coe_nonneg n k) ω)) - f) p P < ε := by
   obtain ⟨n, hn⟩ := ((tendsto_order.1
-    (tendsto_eLpNorm_condExp_dyadic_process hX hc hp hp' hf hm)).2 ε hε).exists
+    (tendsto_eLpNorm_condExp_comap_dyadicPoint_process hX hc hp hp' hf hm)).2 ε hε).exists
   obtain ⟨g, hg, heq⟩ := (stronglyMeasurable_condExp (μ := P) (f := f)
     (m := MeasurableSpace.comap (fun ω k ↦ X (dyadicPoint T.coe_nonneg n k) ω)
       inferInstance)).exists_eq_measurable_comp
