@@ -219,19 +219,22 @@ theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ →
   rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
     WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
 
-/-- **Negative gradient trajectories of a separated sum** are exactly the pairs of negative
-gradient trajectories of the summands. -/
-theorem isIntegralCurve_separatedSum_iff {γ : ℝ → WithLp 2 (E × F)}
-    (hf : ∀ s, DifferentiableAt ℝ f (γ s).fst) (hg : ∀ s, DifferentiableAt ℝ g (γ s).snd) :
-    IsIntegralCurve γ (fun _ z ↦ -∇ (separatedSum f g) z) ↔
-      IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ x ↦ -∇ f x) ∧
-        IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ y ↦ -∇ g y) := by
-  refine ⟨fun h ↦ ⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun h ↦ ?_⟩
+/-- **Negative gradient trajectories of a separated sum are pairs of trajectories.** A curve in the
+`L²` product, along which both summands are differentiable, is a negative gradient trajectory of
+`separatedSum f g` exactly when its two components are negative gradient trajectories of `f` and of
+`g`. -/
+theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (z s).fst) (hg : ∀ s, DifferentiableAt ℝ g (z s).snd) :
+    IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum f g) w) ↔
+      IsIntegralCurve (fun s ↦ (z s).fst) (fun _ x ↦ -∇ f x) ∧
+        IsIntegralCurve (fun s ↦ (z s).snd) (fun _ y ↦ -∇ g y) := by
+  -- Conversely, `WithLp.toLp 2 ((z s).fst, (z s).snd)` is `z s` by structure eta for `WithLp` and
+  -- `Prod`, so the pair of trajectories is `z` itself.
+  refine ⟨fun hz ↦ ⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun ⟨h₁, h₂⟩ ↦ h₁.separatedSum h₂ hf hg⟩
   · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
-      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
+      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
   · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
-      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
-  · exact h.1.separatedSum h.2 hf hg
+      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
 
 /-- **The Hessian operator of a separated sum** acts on each factor by the Hessian operator of the
 corresponding summand. -/

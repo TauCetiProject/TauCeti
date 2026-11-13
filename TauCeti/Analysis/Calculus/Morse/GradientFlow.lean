@@ -61,9 +61,10 @@ route to Morse homology.
   consists entirely of critical points and is constant.
 * `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
   not stationary.
-* `IsIntegralCurve.eq_of_tendsto_value_atBot_of_tendsto_value_atTop` and
-  `IsIntegralCurve.eq_of_tendsto_atBot_of_tendsto_atTop`: a trajectory along which the value, or
-  the point itself, has the same limit at both ends is constant.
+* `IsIntegralCurve.eq_of_tendsto_value_atBot_of_tendsto_value_atTop`: a trajectory along which
+  the value has the same limit at both ends is constant.
+* `IsIntegralCurve.eq_const_of_tendsto`: a trajectory with the same limit at both ends is
+  constant.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.
 * `Flow.IsNegativeGradient.isIntegralCurve`: the orbit curve through a point, as an integral
@@ -278,14 +279,13 @@ theorem eq_of_tendsto_value_atBot_of_tendsto_value_atTop
     simp only [(hγ v).deriv,
       gradient_eq_zero_of_eventually_const_value hγ (Eventually.of_forall hval), neg_zero]) t u
 
-/-- **A negative gradient trajectory with the same limit at both ends is constant.** The value of
-`f` has the same limit `f p` at both ends, so the trajectory is constant, and it stays at its limit
-`p`. -/
-theorem eq_of_tendsto_atBot_of_tendsto_atTop
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E}
-    (hfp : ContinuousAt f p) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p))
-    (t : ℝ) : γ t = p :=
-  tendsto_nhds_unique (tendsto_const_nhds.congr fun u ↦
+/-- **A negative gradient trajectory with the same limit at both ends is constant.** If `f` is
+differentiable along the trajectory and continuous at the common limit `p`, then the value of `f`
+has the same limit `f p` at both ends, so the trajectory is constant and stays at `p`. -/
+theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p :=
+  funext fun t ↦ tendsto_nhds_unique (tendsto_const_nhds.congr fun u ↦
     hγ.eq_of_tendsto_value_atBot_of_tendsto_value_atTop hf (hfp.tendsto.comp hbot)
       (hfp.tendsto.comp htop) t u) htop
 

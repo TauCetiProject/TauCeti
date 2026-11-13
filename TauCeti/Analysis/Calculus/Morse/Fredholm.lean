@@ -40,15 +40,11 @@ The kernel of `D_γ` contains the velocity of `γ`: differentiating `γ' = -∇f
 trajectory is finite. This reflects the invariance of the trajectory equation under time shifts.
 When `p ≠ q` the trajectory is not constant, so the kernel is nonzero. Hence if `D_γ` is
 surjective, its index is the positive dimension of its kernel, and `ind(q) < ind(p)`: a trajectory
-along which the linearized operator is onto can only lower the Morse index.
-
-Surjectivity of `D_γ` is the analytic form of the transversality of the unstable set of `p` and
-the stable set of `q` along `γ`. Its linear form is proved here: `D_γ` is onto exactly when the
-initial values of the solutions of the linearized equation `v' + Hess f(γ) v = 0` that decay at
-`-∞` and those that decay at `+∞` span `E`. These two spaces have dimensions `morseIndex f p` and
-`dim E - morseIndex f q`, the dimensions of the unstable set of `p` and of the stable set of `q`.
-Identifying them with the tangent spaces of those sets at `γ 0`, which turns this into the
-transversality of the two sets, is not done here.
+along which the linearized operator is onto can only lower the Morse index. Surjectivity of `D_γ`
+is the analytic form of the transversality of the unstable set of `p` and the stable set of `q`
+along `γ`: this equivalence is
+`TauCeti.surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff` in
+`TauCeti.Analysis.Calculus.Morse.LinearizedTransversality`.
 
 At the constant trajectory at a nondegenerate critical point the linearized operator has constant
 invertible coefficient, so it is bijective.
@@ -271,15 +267,11 @@ private theorem exists_pos_mul_norm_le_hessianOperator (hp : IsNondegenerateCrit
     (hq : IsNondegenerateCriticalPoint f q) :
     ∃ α > 0, (∀ v, α * ‖v‖ ≤ ‖hessianOperator f p v‖) ∧
       ∀ v, α * ‖v‖ ≤ ‖hessianOperator f q v‖ := by
-  obtain ⟨e₁, he₁⟩ := hp.isInvertible_hessianOperator
-  obtain ⟨e₂, he₂⟩ := hq.isInvertible_hessianOperator
-  obtain ⟨c₁, hc₁, h₁⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₁.antilipschitzWith⟩
-  obtain ⟨c₂, hc₂, h₂⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₂.antilipschitzWith⟩
+  obtain ⟨c₁, hc₁, h₁⟩ := hp.exists_pos_mul_norm_le_hessianOperator
+  obtain ⟨c₂, hc₂, h₂⟩ := hq.exists_pos_mul_norm_le_hessianOperator
   refine ⟨min c₁ c₂, lt_min hc₁ hc₂, fun v ↦ ?_, fun v ↦ ?_⟩
-  · rw [← he₁]
-    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
-  · rw [← he₂]
-    exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
 
 /-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator is a continuous family of
 symmetric operators with invertible limits `Hess f(p)` and `Hess f(q)`. -/
@@ -527,8 +519,7 @@ theorem squareIntegrableSolutions_hessianOperator_eq_bot
     (htop : Tendsto γ atTop (𝓝 p)) :
     squareIntegrableSolutions (fun s ↦ hessianOperator f (γ s)) = ⊥ := by
   have hγp : (fun s ↦ hessianOperator f (γ s)) = fun _ ↦ hessianOperator f p := funext fun s ↦ by
-    rw [hγ.eq_of_tendsto_atBot_of_tendsto_atTop (fun _ ↦ hf _) hf.continuous.continuousAt hbot
-      htop s]
+    rw [hγ.eq_const_of_tendsto (fun _ ↦ hf _) hf.continuous.continuousAt hbot htop]
   rw [hγp]
   exact hp.squareIntegrableSolutions_hessianOperator_eq_bot
 
