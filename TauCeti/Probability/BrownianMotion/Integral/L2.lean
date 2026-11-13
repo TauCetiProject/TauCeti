@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Covariance
 public import TauCeti.Probability.Process.Predictable.Measure
+public import Mathlib.Probability.Martingale.Basic
 import TauCeti.Probability.Process.ElementaryDensity
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.LinearCombination
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.Martingale.ContinuousLimit
 
 /-!
 # The finite-horizon predictable L² Brownian integral
@@ -21,10 +24,16 @@ On a predictable rectangle `(s,t] × A` its value is `1_A (W_t − W_s)`, with c
 the declared horizon. The map is uniquely determined by these elementary values.
 Linearity and the isometry are supplied by the bundled map, not separate operations on
 chosen representatives. The result is a terminal-time map on L² classes, not a
-time-indexed integral process.
+time-indexed integral process by itself. With almost-surely continuous Brownian paths,
+`exists_continuous_martingale_l2Integral` realizes every terminal integral as the final
+value of a predictable, square-integrable, almost-surely continuous martingale, frozen after
+the horizon and starting at zero. Continuity holds outside one common null set on the
+original raw filtration; no usual conditions or everywhere-continuous raw version are assumed.
 
 The construction uses the overlapping-increment Gram identity and the density of predictable
-rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`.
+rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`. The continuous realization
+uses `MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` on finite linear
+combinations of rectangle integrals; conditional L² projection controls intermediate dates.
 
 ## References
 
@@ -36,7 +45,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory ProbabilityTheory Set Filter
+open scoped Topology
 open scoped NNReal ENNReal InnerProductSpace
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
@@ -255,5 +265,176 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   have h := congrArg (fun J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] ℝ ↦ J f) hz
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
+
+/-! ## Continuous martingale realization -/
+
+private def Rectangle.process (T : ℝ≥0) (R : Rectangle ℱ) (W : ℝ≥0 → Ω → ℝ)
+    (u : ℝ≥0) (ω : Ω) : ℝ :=
+  R.height ω * (W (min (max R.s (min R.t T)) u) ω - W (min R.s u) ω)
+
+private theorem Rectangle.process_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) (u : ℝ≥0) : MemLp (R.process T W u) 2 P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  unfold Rectangle.process
+  by_cases hsu : R.s ≤ u
+  · simpa only [min_eq_left hsu] using hW.memLp_mul_sub
+      (le_min (le_max_left R.s (min R.t T)) hsu) R.height_measurable R.height_memLp
+  · have hus := le_of_not_ge hsu
+    have hue : u ≤ max R.s (min R.t T) := hus.trans (le_max_left _ _)
+    simpa only [min_eq_right hus, min_eq_right hue, sub_self, mul_zero]
+      using (MemLp.zero' : MemLp (fun _ : Ω ↦ (0 : ℝ)) 2 P)
+
+private theorem Rectangle.process_martingale (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) : Martingale (R.process T W) ℱ P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hM := (hW.martingale.const_min (max R.s (min R.t T))).sub
+    (hW.martingale.const_min R.s)
+  exact hM.mul_left_of_eq_zero (r := R.s)
+    (fun u hu ↦ by
+      ext ω
+      simp [min_eq_right hu, min_eq_right (hu.trans (le_max_left _ _))])
+    R.height_measurable (fun u ↦ (R.process_memLp hW T u).integrable (by norm_num))
+
+private theorem Rectangle.process_terminal (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) : R.process T W T =ᵐ[P] increment hW T R := by
+  apply EventuallyEq.trans _ (increment_ae hW T R).symm
+  apply Eventually.of_forall
+  intro ω
+  by_cases hs : R.s ≤ T
+  · simp only [Rectangle.process, min_eq_left hs,
+      min_eq_left (max_le hs (min_le_right _ _))]
+  · have hTs := le_of_not_ge hs
+    simp [Rectangle.process, hTs]
+
+private theorem Rectangle.process_frozen (T : ℝ≥0) (R : Rectangle ℱ)
+    (u : ℝ≥0) (ω : Ω) : R.process T W (min T u) ω = R.process T W u ω := by
+  by_cases hs : R.s ≤ T
+  · have he : max R.s (min R.t T) ≤ T := max_le hs (min_le_right _ _)
+    simp only [Rectangle.process, ← min_assoc, min_eq_left he, min_eq_left hs]
+  · simp only [Rectangle.process, max_eq_left ((min_le_right _ _).trans (le_of_not_ge hs)),
+      sub_self, mul_zero]
+
+private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (T : ℝ≥0)
+    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    ∃ (M : ℕ → ℝ≥0 → Ω → ℝ) (hmem : ∀ n u, MemLp (M n u) 2 P),
+      (∀ n, Martingale (M n) ℱ P) ∧
+      (∀ n, ∀ᵐ ω ∂P, Continuous (fun u ↦ M n u ω)) ∧
+      (∀ n, M n 0 = 0) ∧ (∀ n u, M n (min T u) = M n u) ∧
+      Tendsto (fun n ↦ (hmem n T).toLp (M n T)) atTop (𝓝 (hW.l2Integral T f)) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let L := Finsupp.linearCombination ℝ (step (ℱ := ℱ) (P := P) T)
+  obtain ⟨a, ha, halim⟩ := mem_closure_iff_seq_limit.mp
+    (dense_step (ℱ := ℱ) (P := P) T f)
+  choose c hca using ha
+  have hclim : Tendsto (fun n ↦ L (c n)) atTop (𝓝 f) := by
+    simpa only [L, hca] using halim
+  let M (n : ℕ) := Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) (c n)
+  have hM (n : ℕ) : Martingale (M n) ℱ P := by
+    classical
+    dsimp only [M, Finsupp.linearCombination_apply, Finsupp.sum]
+    exact Finset.sum_induction _ (fun X ↦ Martingale X ℱ P)
+      (fun X Y hX hY ↦ hX.add hY) (martingale_zero ℝ ℱ P)
+      (fun R _ ↦ (R.process_martingale hW T).smul ((c n) R))
+  have hmem (n : ℕ) (u : ℝ≥0) : MemLp (M n u) 2 P := by
+    classical
+    simpa only [M, Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_apply,
+      Pi.smul_apply, smul_eq_mul] using memLp_finsetSum' (c n).support
+        (fun R _ ↦ (R.process_memLp hW T u).const_smul ((c n) R))
+  -- Identify the terminal L² classes before using any martingale completion theorem.
+  have hterm (n : ℕ) : (hmem n T).toLp (M n T) = hW.l2Integral T (L (c n)) := by
+    classical
+    apply Lp.ext
+    refine (hmem n T).coeFn_toLp.trans ?_
+    have hlin := (hW.l2Integral T).toLinearMap.map_finsupp_linearCombination
+      (g := step (ℱ := ℱ) (P := P) T) (c n)
+    simp only [LinearIsometry.coe_toLinearMap] at hlin
+    dsimp only [L]
+    rw [hlin]
+    have hi : ∀ R ∈ (c n).support, R.process T W T =ᵐ[P]
+        hW.l2Integral T (step (P := P) T R) := fun R _ ↦ by
+      rw [l2Integral_step]
+      exact R.process_terminal hW T
+    filter_upwards [(eventually_all_finset (c n).support).mpr hi,
+      Lp.coeFn_linearCombination (c n) (fun R ↦ hW.l2Integral T (step T R))] with ω hω hs
+    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum, Pi.smul_apply,
+      smul_eq_mul, Finset.sum_apply, Function.comp_apply] at hs ⊢
+    rw [hs]
+    exact Finset.sum_congr rfl fun R hR ↦ congrArg (((c n) R) * ·) (hω R hR)
+  have hfrozen (n : ℕ) (u : ℝ≥0) : M n (min T u) = M n u := by
+    classical
+    ext ω
+    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum,
+      Pi.smul_apply, Finset.sum_apply, Rectangle.process_frozen]
+  have htermLim : Tendsto (fun n ↦ (hmem n T).toLp (M n T)) atTop
+      (𝓝 (hW.l2Integral T f)) := by
+    simpa only [Function.comp_def, hterm] using
+      (hW.l2Integral T).continuous.continuousAt.tendsto.comp hclim
+  refine ⟨M, hmem, hM, ?_, ?_, hfrozen, htermLim⟩
+  · intro n
+    filter_upwards [hc] with ω hω
+    classical
+    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum,
+      Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Rectangle.process]
+    exact continuous_finsetSum _ fun R _ ↦ continuous_const.mul
+      (continuous_const.mul ((hω.comp (continuous_const.min continuous_id)).sub
+        (hω.comp (continuous_const.min continuous_id))))
+  · intro n
+    classical
+    ext ω
+    simp [M, Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process]
+
+/-- Every finite-horizon predictable L² Brownian integral is the terminal value of a
+predictable square-integrable martingale with almost-surely continuous paths. The martingale
+starts at zero and is frozen after the declared horizon. Path continuity uses one common
+sample-full event and requires no completeness or right continuity of the filtration.
+This is a continuous realization of the terminal map, not a cross-horizon identification
+of separate L² representatives. -/
+theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hc : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (T : ℝ≥0)
+    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    ∃ I : ℝ≥0 → Ω → ℝ, Martingale I ℱ P ∧ IsStronglyPredictable ℱ I ∧
+      (∀ t, MemLp (I t) 2 P) ∧
+      (∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω) ∧ I 0 ω = 0 ∧
+        ∀ t, I (min T t) ω = I t ω) ∧ I T =ᵐ[P] hW.l2Integral T f := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  obtain ⟨M, hmem, hM, hcont, hzero, hfrozen, htermLim⟩ :=
+    exists_approximating_martingales hW hc T f
+  -- Conditional expectation contracts terminal L² errors at every observation time.
+  have hcond (n : ℕ) (u : ℝ≥0) : (hmem n u).toLp (M n u) =
+      (condExpL2 ℝ ℝ (ℱ.le u) ((hmem n T).toLp (M n T)) : Lp ℝ 2 P) := by
+    apply Lp.ext
+    refine (hmem n u).coeFn_toLp.trans ?_
+    apply EventuallyEq.trans _
+      (MemLp.condExpL2_ae_eq_condExp (𝕜 := ℝ) (ℱ.le u) (hmem n T)).symm
+    have hm := (hM n).condExp_ae_eq (le_max_right T u)
+    have he : M n (max T u) = M n T := by
+      rw [← hfrozen, min_eq_left (le_max_left _ _)]
+    rw [he] at hm
+    exact hm.symm
+  have hcau (u : ℝ≥0) : CauchySeq (fun n ↦ (hmem n u).toLp (M n u)) := by
+    have h := ((lpMeas ℝ ℝ (ℱ u) 2 P).subtypeL.comp
+      (condExpL2 ℝ ℝ (ℱ.le u))).continuous
+    have hlim := (h.tendsto (hW.l2Integral T f)).comp htermLim
+    have heq : (fun n ↦ (hmem n u).toLp (M n u)) =
+        fun n ↦ (condExpL2 ℝ ℝ (ℱ.le u) ((hmem n T).toLp (M n T)) : Lp ℝ 2 P) :=
+      funext fun n ↦ hcond n u
+    rw [heq]
+    exact hlim.cauchySeq
+  -- Complete the continuous martingales on the raw filtration, retaining a common path event.
+  obtain ⟨I, hI, hp, hlim, -, φ, -, hpath⟩ :=
+    exists_continuous_martingale_of_cauchySeq_Lp hM hcont hmem hcau
+  refine ⟨I, hI, hp, fun u ↦ (hlim u).1, ?_, ?_⟩
+  · filter_upwards [hpath] with ω hω
+    refine ⟨hω.1, ?_, fun u ↦ ?_⟩
+    · have hz := (hω.2 0).tendsto_at le_rfl
+      simp only [hzero, Pi.zero_apply] at hz
+      exact tendsto_nhds_unique hz tendsto_const_nhds
+    · exact tendsto_nhds_unique ((hω.2 (min T u)).tendsto_at le_rfl)
+        (by simpa only [hfrozen] using (hω.2 u).tendsto_at le_rfl)
+  · exact tendstoInMeasure_ae_unique
+      (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0) (hlim T).2)
+      ((tendstoInMeasure_of_tendsto_Lp htermLim).congr
+        (fun n ↦ (hmem n T).coeFn_toLp) EventuallyEq.rfl)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
