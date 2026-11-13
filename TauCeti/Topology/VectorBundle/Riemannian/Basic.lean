@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
-# Compactness of norm-bounded parts of a Riemannian vector bundle
+# Continuity and compactness in Riemannian vector bundles
 
 In a vector bundle whose fibers carry inner products depending continuously on the base point,
 the fiber norm is a continuous function on the total space.  When the model fiber is
@@ -26,6 +26,10 @@ the statement true.  The proof is local: near each point of the base, the fiber 
 model norm of the coordinates in the trivialization at that point (in the Riemannian case by
 `eventually_norm_trivializationAt_lt`), so the coordinates of a convergent ultrafilter of bounded
 vectors converge too.
+
+Pulling a continuous metric back along a continuously evaluated family of linear maps gives a
+continuous family of bilinear forms on a fixed finite-dimensional model. This does not require
+continuous reference inner products on the fibres.
 
 ## Main results
 
@@ -156,3 +160,24 @@ theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :
   LinearMap.BilinForm.isSymm_def.mpr (g.symm b)
 
 end Bundle.RiemannianMetric
+
+namespace Bundle.ContinuousRiemannianMetric
+
+variable [∀ x, NormedSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Pulling a continuous Riemannian metric back along a family of linear maps whose evaluations
+are continuous gives a continuous family of bilinear forms on a fixed model. -/
+theorem continuous_inner_bilinearComp (h : ContinuousRiemannianMetric F E)
+    {X V : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {f : X → B}
+    (σ : ∀ x, V →L[ℝ] E (f x))
+    (hσ : ∀ w, Continuous fun x ↦ TotalSpace.mk' F (f x) (σ x w)) :
+    Continuous fun x ↦ (h.inner (f x)).bilinearComp (σ x) (σ x) := by
+  have hf : Continuous f := (FiberBundle.continuous_proj F E).comp (hσ 0)
+  refine continuous_clm_apply.2 fun w ↦ continuous_clm_apply.2 fun w' ↦ ?_
+  have : Continuous fun x ↦
+      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) (f x) (h.inner (f x) (σ x w) (σ x w')) :=
+    (h.continuous.comp hf).clm_bundle_apply₂ (F₁ := F) (F₂ := F) (hσ w) (hσ w')
+  exact continuous_snd.comp ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp this)
+
+end Bundle.ContinuousRiemannianMetric
