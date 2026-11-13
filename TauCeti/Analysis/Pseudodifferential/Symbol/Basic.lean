@@ -435,6 +435,10 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩
 
+theorem IsUniform.sum {ι : Type*} {s : Finset ι} {a : ι → Symbol n V W m}
+    (ha : ∀ i ∈ s, (a i).IsUniform) : (∑ i ∈ s, a i).IsUniform :=
+  Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero ha
+
 theorem hasCompactSpatialSupport_zero : (0 : Symbol n V W m).HasCompactSpatialSupport :=
   ⟨∅, isCompact_empty, fun _ _ _ => rfl⟩
 
