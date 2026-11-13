@@ -51,7 +51,7 @@ root of unity of order prime to `p`.
   `TauCeti.LocalFieldsRamification.relIndex_lowerRamificationGroup_one_zero`: for `L/K` Galois,
   the order of `G_0 / G_1` and the relative index of wild inertia are the tame index.
 * `TauCeti.tameRamificationIndex_dvd_card_residueField_sub_one` and
-  `TauCeti.tameRamificationIndex_dvd_card_pow_inertiaDegree_sub_one`: for `L/K` Galois, the tame
+  `TauCeti.tameRamificationIndex_dvd_natCard_pow_inertiaDegree_sub_one`: for `L/K` Galois, the tame
   index divides `#𝓀[L] - 1 = #𝓀[K] ^ f(L/K) - 1`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified`: for
   `L/K` Galois, `G_1 = 1` if and only if `L/K` is tamely ramified.
@@ -170,7 +170,7 @@ theorem tameRamificationIndex_dvd_card_residueField_sub_one :
 
 /-- For a Galois extension `L/K`, the tame index divides `q ^ f - 1`, where `q` is the residue
 cardinality of the base. -/
-theorem tameRamificationIndex_dvd_card_pow_inertiaDegree_sub_one :
+theorem tameRamificationIndex_dvd_natCard_pow_inertiaDegree_sub_one :
     tameRamificationIndex K L ∣ Nat.card 𝓀[K] ^ inertiaDegree K L - 1 := by
   rw [← natCard_residueField K L]
   exact tameRamificationIndex_dvd_card_residueField_sub_one K L

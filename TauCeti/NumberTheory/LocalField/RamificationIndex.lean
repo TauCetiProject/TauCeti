@@ -709,7 +709,7 @@ theorem IsTamelyRamified.wildRamificationExponent_eq_zero (h : IsTamelyRamified 
 variable {K L} in
 /-- For a tame extension the tame index is the full ramification index. -/
 @[simp]
-theorem IsTamelyRamified.tameRamificationIndex_eq (h : IsTamelyRamified K L) :
+theorem IsTamelyRamified.tameRamificationIndex_eq_ramificationIndex (h : IsTamelyRamified K L) :
     tameRamificationIndex K L = ramificationIndex K L := by
   simp [tameRamificationIndex_def, h.wildRamificationExponent_eq_zero]
 
