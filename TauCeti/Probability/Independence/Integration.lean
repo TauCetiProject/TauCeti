@@ -19,6 +19,12 @@ The product of two independent square-integrable real random variables is square
 mean-zero square-integrable `RCLike`-valued random variables `W` and `A : Matrix ι ι 𝕜`,
 `star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
 (`TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun`).
+
+For an independent family `Y`, the expectation of a finite product of functions of members of
+`Y`, several factors possibly reading the same member, is the product over the members of the
+expectations of the products of the factors reading them
+(`ProbabilityTheory.iIndepFun.integral_fun_prod_comp_fiberwise`). This is the factorization
+used to evaluate expected products of entries of random matrices along trace words.
 -/
 
 public section
@@ -38,6 +44,27 @@ theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
       hX.integrable_sq hY.integrable_sq
 
 end ProbabilityTheory.IndepFun
+
+namespace ProbabilityTheory.iIndepFun
+
+/-- **Expected products of functions of independent variables.** Let `Y` be an independent
+family indexed by a finite type, and let the factors `φ s (Y (e s))` of a finite product read
+members of `Y`, several factors possibly reading the same member. The expectation of the product
+is the product, over the members `j`, of the expectations of the products of the factors reading
+`j`. -/
+theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} {mΩ : MeasurableSpace Ω}
+    {mβ : MeasurableSpace β} [RCLike 𝕜] [Fintype κ] [DecidableEq κ] [Fintype ι]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)
+    (e : ι → κ) {φ : ι → β → 𝕜} (hφ : ∀ s, Measurable (φ s)) :
+    ∫ ω, ∏ s, φ s (Y (e s) ω) ∂P = ∏ j, ∫ ω, ∏ s with e s = j, φ s (Y j ω) ∂P := by
+  rw [← hY.integral_fun_prod_comp mY fun j ↦
+    (Finset.measurable_prod _ fun s _ ↦ hφ s).aestronglyMeasurable]
+  congr with ω
+  rw [← Finset.prod_fiberwise Finset.univ e]
+  exact Finset.prod_congr rfl fun j _ ↦ Finset.prod_congr rfl fun s hs ↦ by
+    rw [(Finset.mem_filter.1 hs).2]
+
+end ProbabilityTheory.iIndepFun
 
 open ProbabilityTheory Matrix
 
