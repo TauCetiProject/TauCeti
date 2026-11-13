@@ -148,6 +148,22 @@ private theorem isOpen_image_ball (hEF : finrank ℝ E = finrank ℝ F) {f : E �
     (hinj.comp ha_inj.injOn ha_maps)
   rwa [image_comp, ha_ball] at this
 
+/-- **Invariance of domain for normed spaces.** If `f` is continuous and injective on an open set
+`V` of a finite-dimensional real normed space, with values in a normed space of the same
+dimension, then `f '' V` is open. -/
+private theorem isOpen_image_of_continuousOn_of_injOn (hEF : finrank ℝ E = finrank ℝ F)
+    {f : E → F} {V : Set E} (hV : IsOpen V) (hf : ContinuousOn f V) (hinj : InjOn f V) :
+    IsOpen (f '' V) := by
+  rw [isOpen_iff_mem_nhds]
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨ε, hε, hεV⟩ := Metric.isOpen_iff.1 hV x hx
+  have hball : closedBall x (ε / 2) ⊆ V :=
+    (closedBall_subset_ball (half_lt_self hε)).trans hεV
+  exact Filter.mem_of_superset
+    ((isOpen_image_ball hEF (half_pos hε) (hf.mono hball) (hinj.mono hball)).mem_nhds
+      ⟨x, mem_ball_self (half_pos hε), rfl⟩)
+    (image_mono (ball_subset_closedBall.trans hball))
+
 end TauCeti
 
 variable {E F M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -191,19 +207,15 @@ theorem IsOpen.image_of_continuousOn_of_injOn {f : M → N} {U : Set M} (hU : Is
   have hginj : InjOn g (φ '' W) := fun y hy z hz hyz ↦
     φ.symm.injOn (φ.symm_source ▸ hVt hy) (φ.symm_source ▸ hVt hz) <|
       hinj (hVW hy).2.1 (hVW hz).2.1 (ψ.injOn (hVW hy).2.2 (hVW hz).2.2 hyz)
-  -- A closed ball around `φ x` in `φ '' W` has open image under `g`.
-  obtain ⟨ε, hε, hεV⟩ := Metric.isOpen_iff.1 hV (φ x) ⟨x, hxW, rfl⟩
-  have hball : closedBall (φ x) (ε / 2) ⊆ φ '' W :=
-    (closedBall_subset_ball (half_lt_self hε)).trans hεV
-  have hO := TauCeti.isOpen_image_ball hEF (half_pos hε) (hg.mono hball) (hginj.mono hball)
-  have hOt : g '' ball (φ x) (ε / 2) ⊆ ψ.target := by
+  have hO := TauCeti.isOpen_image_of_continuousOn_of_injOn hEF hV hg hginj
+  have hOt : g '' (φ '' W) ⊆ ψ.target := by
     rintro _ ⟨y, hy, rfl⟩
-    exact ψ.map_source (hVW (hball (ball_subset_closedBall hy))).2.2
+    exact ψ.map_source (hVW hy).2.2
   refine Filter.mem_of_superset ((ψ.symm.isOpen_image_of_subset_source hO
-    (ψ.symm_source ▸ hOt)).mem_nhds ⟨g (φ x), ⟨φ x, mem_ball_self (half_pos hε), rfl⟩, ?_⟩) ?_
+    (ψ.symm_source ▸ hOt)).mem_nhds ⟨g (φ x), ⟨φ x, ⟨x, hxW, rfl⟩, rfl⟩, ?_⟩) ?_
   · simp [g, φ.left_inv (mem_chart_source E x), ψ.left_inv (mem_chart_source F (f x))]
   · rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    have hyW := hVW (hball (ball_subset_closedBall hy))
+    have hyW := hVW hy
     exact ⟨φ.symm y, hyW.2.1, (ψ.left_inv hyW.2.2).symm⟩
 
 omit [FiniteDimensional ℝ E] in
