@@ -11,9 +11,10 @@ public import Mathlib.Algebra.Module.Submodule.Ker
 # Kernels in commuting squares
 
 Two commuting squares of linear maps whose horizontal sides are linear isomorphisms and which
-share a vertical side paste to a commuting square. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose
-source side `e₁` is surjective and whose target side `e₂` is injective, `e₁` carries the kernel
-of `f` onto the kernel of `g`.
+share a vertical side paste to a commuting square. In a commuting square `f' ∘ d = e ∘ f`, `f`
+sends the kernel of `d` into the kernel of `e`; with `f' = f`, this is how a chain map acts on
+cycles. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁` is surjective and whose
+target side `e₂` is injective, `e₁` carries the kernel of `f` onto the kernel of `g`.
 -/
 
 public section
@@ -32,6 +33,12 @@ theorem comp_trans_eq_of_comp_eq {M'' N'' : Type*} [AddCommMonoid M''] [Module R
     (h' : k ∘ₗ e₁'.toLinearMap = e₂'.toLinearMap ∘ₗ g) :
     k ∘ₗ (e₁.trans e₁').toLinearMap = (e₂.trans e₂').toLinearMap ∘ₗ f := by
   rw [LinearEquiv.coe_trans, LinearEquiv.coe_trans, ← comp_assoc, h', comp_assoc, h, comp_assoc]
+
+/-- In a commuting square `f' ∘ d = e ∘ f` of linear maps, `f` sends the kernel of `d` into the
+kernel of `e`. -/
+theorem map_mem_ker_of_comp_eq {d : M →ₗ[R] M'} {e : N →ₗ[R] N'} (f : M →ₗ[R] N)
+    {f' : M' →ₗ[R] N'} (hf : f' ∘ₗ d = e ∘ₗ f) {x : M} (hx : x ∈ ker d) : f x ∈ ker e := by
+  rw [mem_ker, ← comp_apply e f, ← hf, comp_apply, mem_ker.mp hx, map_zero]
 
 /-- In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps with `e₁` surjective and `e₂`
 injective, `e₁` carries the kernel of `f` onto that of `g`. -/

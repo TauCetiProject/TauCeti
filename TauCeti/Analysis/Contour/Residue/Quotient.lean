@@ -20,7 +20,7 @@ simple pole at `z₀` and
 This is the textbook recipe for the residue at a *simple* pole of a quotient: it applies exactly
 when the denominator's zero at `z₀` is simple, and says nothing about higher-order zeros of `h` or
 about more general meromorphic singularities. Within that range it is the computational input to
-the roadmap's applications: the classical residue theorem
+the applications of the residue theorems: the classical residue theorem
 (`TauCeti.Contour.classicalResidueTheorem_circle`) and the improper integrals reached by the
 Hungerbühler–Wasem generalized residue theorem
 (`TauCeti.Contour.hungerbuhlerWasem_residueTheorem`) both reduce an integral to a sum of residues,
@@ -56,8 +56,8 @@ that `TauCeti.Contour.hasCauchyPV_half_residue_of_simple_pole` and
   `TauCeti.Contour.residue_inv_sq_add_one_I` — `residue (fun z => (z ^ 2 + 1)⁻¹) I = −(I / 2)`, the
   residue behind the improper integral `∫ dx / (1 + x²)`.
 
-These are Layer 2 results of the contour-integration roadmap: the residue against Mathlib's
-`meromorphicOrderAt` API, in the form the residue theorems' right-hand sides are evaluated with.
+These compute the residue against Mathlib's `meromorphicOrderAt` API, in the form the residue
+theorems' right-hand sides are evaluated with.
 
 ## Implementation notes
 

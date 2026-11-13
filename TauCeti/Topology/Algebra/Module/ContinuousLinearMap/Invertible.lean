@@ -25,6 +25,9 @@ Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibil
 of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
 maps is seen to be homogeneous of the opposite degree.
 
+An endomorphism is invertible exactly when it is a unit of the endomorphism ring
+(`ContinuousLinearMap.isInvertible_iff_isUnit`).
+
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
@@ -46,6 +49,18 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+section IsUnit
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- An endomorphism is invertible, that is, a continuous linear equivalence, exactly when it is a
+unit of the ring of continuous endomorphisms. -/
+theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f :=
+  ⟨fun ⟨e, he⟩ ↦ he ▸ ((ContinuousLinearEquiv.unitsEquiv R M).symm e).isUnit,
+    fun ⟨u, hu⟩ ↦ ⟨ContinuousLinearEquiv.unitsEquiv R M u, hu ▸ rfl⟩⟩
+
+end IsUnit
 
 section Sub
 

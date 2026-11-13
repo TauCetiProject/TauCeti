@@ -133,7 +133,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_mul_rp
     ContinuousLinearMap.opNorm_le_bound _ δ.coe_nonneg fun y => by
       rw [ContinuousLinearEquiv.coe_coe, he, norm_smul, Real.norm_of_nonneg δ.coe_nonneg]
   have hnorms : ‖(e.symm : E →L[ℝ] E)‖₊ ≤ δ⁻¹ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y => ?_
     rw [ContinuousLinearEquiv.coe_coe, show e.symm y = (δ : ℝ)⁻¹ • y by
       rw [e.symm_apply_eq, he, smul_inv_smul₀ hδ'.ne'], norm_smul,
