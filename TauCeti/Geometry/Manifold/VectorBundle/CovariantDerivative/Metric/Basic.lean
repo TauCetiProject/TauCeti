@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 
 -- Only the characterization lemma below accesses the unexposed defining tensor equality.
 import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
@@ -19,6 +20,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 This module characterizes metric compatibility as the vanishing of `derivMetricTensor`, without
 assuming manifold regularity
 (`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
+
+For differentiable sections with locally constant inner product, metric compatibility gives
+the skew-symmetry identity for their covariant derivatives, including orthogonality to a
+section of locally constant length.
 
 It also records the twice-differentiated product rule for a metric-compatible covariant
 derivative. It supplies the second-derivative calculation used to establish curvature
@@ -38,7 +43,7 @@ derivative of the metric through `∇`:
 public section
 
 open Bundle FiberBundle VectorField
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace CovariantDerivative
 
@@ -70,6 +75,29 @@ theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCom
       inner_zero_left, inner_zero_right, add_zero, map_zero] using
       hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
   simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
+
+/-- For a metric-compatible connection, two differentiable sections with locally constant
+inner product have skew-symmetric covariant derivatives at the point. -/
+theorem IsMetricCompatible.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ τ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (τ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) :
+    inner ℝ (cov σ x v) (τ x) + inner ℝ (σ x) (cov τ x v) = 0 := by
+  have hmetric := hcov.mvfderiv_inner_eq (fun _ ↦ v) hσ hτ
+  rw [hc.mvfderiv_eq, mvfderiv_const] at hmetric
+  exact hmetric.symm
+
+/-- The covariant derivative of a section of locally constant length is orthogonal to that
+section for a metric-compatible connection. -/
+theorem IsMetricCompatible.inner_apply_self_eq_zero_of_eventuallyEq_const
+    (hcov : cov.IsMetricCompatible) {σ : Π x : M, V x} {x : M}
+    (hσ : MDiffAt (T% σ) x) {c : ℝ}
+    (hc : (fun y ↦ inner ℝ (σ y) (σ y)) =ᶠ[𝓝 x] fun _ ↦ c)
+    (v : TangentSpace I x) : inner ℝ (cov σ x v) (σ x) = 0 := by
+  have h := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const hσ hσ hc v
+  rw [real_inner_comm (cov σ x v) (σ x)] at h
+  linarith
 
 variable [IsManifold I 1 M] {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
 

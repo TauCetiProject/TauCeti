@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ConnectionForm
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # Connection operators in normal orthonormal frames
@@ -191,7 +191,8 @@ one-form of the normal orthonormal frame, with input index `j` and output index 
 the normal-coordinate field. -/
 theorem normalFrameConnectionCoefficient_eq_connectionForm (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))
-    (hs : IsLocalFrameOn I E 2 (normalOrthonormalFrame I M p U b) (riemannianExp I M p '' U))
+    {n : ℕ∞ω}
+    (hs : IsLocalFrameOn I E n (normalOrthonormalFrame I M p U b) (riemannianExp I M p '' U))
     (v : TangentSpace I p) (i j : ι) {q : M} (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q =
       hs.connectionForm (leviCivitaConnection I M) j i q ![normalCoordinateField I M p U v q] := by
@@ -207,14 +208,19 @@ theorem normalFrameConnectionCoefficient_add_swap (h : IsNormalDomain I M p U)
     (hq : q ∈ riemannianExp I M p '' U) :
     b.normalFrameConnectionCoefficient (U := U) v i j q +
       b.normalFrameConnectionCoefficient (U := U) v j i q = 0 := by
-  have hs := h.isLocalFrameOn_normalOrthonormalFrame b
-  have ho (y : M) (hy : y ∈ riemannianExp I M p '' U) :=
-    h.orthonormal_normalOrthonormalFrame b hy
-  have hskew := hs.coeff_covariantDerivative_add_eq_zero (by simp) h.isOpen_image ho
-    (isMetricCompatible_leviCivitaConnection I) hq i j (normalCoordinateField I M p U v q)
-  rw [hs.coeff_eq_inner hq (ho q hq), hs.coeff_eq_inner hq (ho q hq)] at hskew
-  simpa only [OrthonormalBasis.normalFrameConnectionCoefficient_apply, real_inner_comm] using
-    hskew
+  have hconstant : (fun y ↦ inner ℝ (normalOrthonormalFrame I M p U b i y)
+      (normalOrthonormalFrame I M p U b j y)) =ᶠ[𝓝 q] fun _ ↦ if i = j then 1 else 0 := by
+    filter_upwards [h.isOpen_image.mem_nhds hq] with y hy
+    exact (orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hy)) i j
+  have hcov := isMetricCompatible_leviCivitaConnection I (M := M)
+  have hskew := hcov.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+      (((h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
+        (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp))
+      (((h.contMDiffOn_normalOrthonormalFrame b j).contMDiffAt
+        (h.isOpen_image.mem_nhds hq)).mdifferentiableAt (by simp))
+      hconstant (normalCoordinateField I M p U v q)
+  simpa only [OrthonormalBasis.normalFrameConnectionCoefficient_apply, real_inner_comm,
+    add_comm] using hskew
 
 end IsNormalDomain
 

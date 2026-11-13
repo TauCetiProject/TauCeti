@@ -48,8 +48,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {ι : Type*} {s : ι → Π x, V x} {u : Set M}
-  (hs : IsLocalFrameOn I F 2 s u) (cov : CovariantDerivative I F V)
+  {ι : Type*} {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  (hs : IsLocalFrameOn I F n s u) (cov : CovariantDerivative I F V)
 
 /-- The connection coefficient one-form `Aˡⱼ` in a local frame. The input frame
 index `j` precedes the output coefficient `l`, as in the Christoffel-symbol API. -/
@@ -66,6 +66,7 @@ theorem connectionForm_apply (j l : ι) (x : M) (v : Fin 1 → TangentSpace I x)
 
 variable [IsManifold I 2 M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle 2 F V I]
+  (hs : IsLocalFrameOn I F 2 s u)
   (hu : IsOpen u) [ContMDiffCovariantDerivativeOn F 1 cov.toFun u]
 
 include hu in
