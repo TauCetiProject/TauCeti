@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
@@ -55,15 +56,17 @@ Then:
 
 **Cup products.** With coefficients `M = k`, the decomposition turns the cup product into a
 multiplication table. The generator satisfies `θ ⌣ θ = 0`
-(`TopCat.singularCup_singularCohomologyTopCatSphereGenerator_self`), so by the interchange law for
-cross products (`TopCat.singularCup_singularCohomologyMap_snd_add_singularCup`), for
-`b ∈ Hᵖ⁺ᵈ⁺¹(Y)` and `c ∈ Hᵖ(Y)`,
-`(b, c) ⌣ (b', c') = (b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`
+(`TauCeti.singularCup_singularCohomologyTopCatSphereGenerator_self`), so by the interchange law for
+cross products (`TopCat.singularCup_singularCohomologyMap_snd_add_singularCup`), if `φ` and `ψ`
+decompose as `(b, c)` and `(b', c')` with `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` and `c ∈ Hᵖ(Y)`, then `φ ⌣ ψ` decomposes
+as `(b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`
 (`TopCat.singularCohomologySphereProdSlantEquiv_singularCup`). On `H²(S¹ × Y)` the cup product
 therefore pairs the summand pulled back from `Y` with the summand `θ ⌣ pr₂^* H¹(Y)`, which is
-isotropic. When `Y` is a compact manifold whose dimension is below the degree of `b ⌣ b'`, the
-component `b ⌣ b'` vanishes
-(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace`); for a closed
+isotropic. When the cohomology of `Y` vanishes in the degree of `b ⌣ b'`, so does that component
+(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_isZero`). This holds when `Y` is a
+compact manifold without boundary of dimension below that degree and every `k`-module has
+projective dimension at most one, as over `ℤ` or a field
+(`TauCeti.singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace`); for a closed
 three-manifold `Y` the cup product on `H²(S¹ × Y)` is thus off-diagonal in the decomposition.
 
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
@@ -289,77 +292,114 @@ end Coefficients
 section Cup
 
 /-- **The cup product on `Sᵈ⁺¹ × Y` in the slant decomposition**: with coefficients in a
-commutative ring `k`, write classes of `Sᵈ⁺¹ × Y` as `(b, c) = pr₂^* b + pr₁^* θ ⌣ pr₂^* c` through
-`TopCat.singularCohomologySphereProdSlantEquiv`. Then for `b ∈ Hᵖ⁺ᵈ⁺¹(Y)`, `c ∈ Hᵖ(Y)`,
-`b' ∈ H^(q+d+1)(Y)` and `c' ∈ H^q(Y)`,
+commutative ring `k`, decompose classes `φ` of `Sᵈ⁺¹ × Y` as `(b, c)`, where
+`φ = pr₂^* b + pr₁^* θ ⌣ pr₂^* c`, through `TopCat.singularCohomologySphereProdSlantEquiv`. If `φ`
+and `ψ` decompose as `(b, c)` and `(b', c')` with `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` and `c ∈ Hᵖ(Y)`, then `φ ⌣ ψ`
+decomposes as
 
-`(b, c) ⌣ (b', c') = (b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`.
+`(b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`.
 
 For `d = 0` and `p = q = 1` this is the cup product `H²(S¹ × Y) × H²(S¹ × Y) → H⁴(S¹ × Y)`: the
 summands `pr₂^* H²(Y)` and `pr₁^* θ ⌣ pr₂^* H¹(Y)` are paired by `(b, c') ↦ b ⌣ c' ∈ H³(Y)`, the
-second summand is isotropic, and the first is isotropic whenever `H⁴(Y) = 0`, for instance when
-`Y` is a closed three-manifold (`TauCeti.isZero_singularCohomology_of_compactSpace`). -/
-theorem singularCohomologySphereProdSlantEquiv_singularCup {d : ℕ}
-    (x₀ : TopCat.sphere.{w} (d + 1)) (p q : ℕ)
-    (bc : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)) ×
-      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (bc' : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) (q + (d + 1)) ×
-      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ (p + q + (d + 1))
+second summand is isotropic, and the first is isotropic whenever `H⁴(Y) = 0`
+(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_isZero`). -/
+theorem singularCohomologySphereProdSlantEquiv_singularCup (Y : TopCat.{w}) {d : ℕ}
+    (x₀ : TopCat.sphere.{w} (d + 1)) {p q r : ℕ} (h : p + (d + 1) + (q + (d + 1)) = r + (d + 1))
+    (φ : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))
+    (ψ : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (q + (d + 1))) :
+    singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ r
         ((TopCat.sphere.{w} (d + 1) ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1))
-          (q + (d + 1)) (p + q + (d + 1) + (d + 1)) (by omega)
-          ((singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p).symm bc)
-          ((singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ q).symm bc')) =
-      (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) (q + (d + 1))
-          (p + q + (d + 1) + (d + 1)) (by omega) bc.1 bc'.1,
-        Y.singularCup k (λ_ _).inv (λ_ _).hom p (q + (d + 1)) (p + q + (d + 1)) (by omega)
-            bc.2 bc'.1 +
+          (q + (d + 1)) (r + (d + 1)) h φ ψ) =
+      (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) (q + (d + 1)) (r + (d + 1)) h
+          (singularCohomologySphereProdSlantEquiv _ Y x₀ p φ).1
+          (singularCohomologySphereProdSlantEquiv _ Y x₀ q ψ).1,
+        Y.singularCup k (λ_ _).inv (λ_ _).hom p (q + (d + 1)) r (by omega)
+            (singularCohomologySphereProdSlantEquiv _ Y x₀ p φ).2
+            (singularCohomologySphereProdSlantEquiv _ Y x₀ q ψ).1 +
           ((-1 : ℤ) ^ ((d + 1) * (p + (d + 1)))) •
-            Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q (p + q + (d + 1)) (by omega)
-              bc.1 bc'.2) := by
+            Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q r (by omega)
+              (singularCohomologySphereProdSlantEquiv _ Y x₀ p φ).1
+              (singularCohomologySphereProdSlantEquiv _ Y x₀ q ψ).2) := by
+  obtain rfl : r = p + q + (d + 1) := by omega
+  obtain ⟨bc, rfl⟩ := (singularCohomologySphereProdSlantEquiv _ Y x₀ p).symm.surjective φ
+  obtain ⟨bc', rfl⟩ := (singularCohomologySphereProdSlantEquiv _ Y x₀ q).symm.surjective ψ
+  simp only [LinearEquiv.apply_symm_apply]
   rw [← LinearEquiv.eq_symm_apply, singularCohomologySphereProdSlantEquiv_symm_apply,
     singularCohomologySphereProdSlantEquiv_symm_apply,
     singularCohomologySphereProdSlantEquiv_symm_apply]
-  exact singularCup_singularCohomologyMap_snd_add_singularCup (add_comm (d + 1) p)
-    (add_comm (d + 1) q) _ (add_comm (d + 1) _) _
-    (singularCup_singularCohomologyTopCatSphereGenerator_self d) _ _ _ _
+  -- the coefficient morphism and pairing `k ≅ k ⊗ k` are cocommutative, coassociative,
+  -- commutative and associative
+  exact singularCup_singularCohomologyMap_snd_add_singularCup _ Y k
+    (by rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) (by monoidal)
+    (by rw [braiding_tensorUnit_left, Category.assoc, unitors_equal, Iso.inv_hom_id,
+      Category.comp_id]) (by monoidal)
+    (add_comm (d + 1) p) (add_comm (d + 1) q) _ (add_comm (d + 1) _) _
+    (TauCeti.singularCup_singularCohomologyTopCatSphereGenerator_self k d _) _ _ _ _
 
-/-- **The cup product on `Sᵈ⁺¹ × Y` for a compact manifold `Y`**: if `Y` is a compact manifold of
-dimension `n` and the cup product lands above degree `n`, its component pulled back from
-`Y` vanishes, so in the slant decomposition
-`(b, c) ⌣ (b', c') = (0, c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`. Here `k` is a commutative
-ring over which every module has projective dimension at most one, such as `ℤ` or a field. For a
-closed three-manifold `Y`, `d = 0` and `p = q = 1`, this says that the cup product
-`H²(S¹ × Y) × H²(S¹ × Y) → H⁴(S¹ × Y) ≅ H³(Y)` is off-diagonal: it vanishes on each of the
-summands `pr₂^* H²(Y)` and `θ ⌣ pr₂^* H¹(Y)` and pairs them by `(b, c') ↦ b ⌣ c'`. -/
-theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace
-    [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] {M E : Type w} [TopologicalSpace M]
-    [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [ChartedSpace E M] [CompactSpace M] {d : ℕ} (x₀ : TopCat.sphere.{w} (d + 1)) {n p q : ℕ}
-    (hn : Module.finrank ℝ E = n) (hpq : n < p + q + (d + 1) + (d + 1))
-    (bc : (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-        (p + (d + 1)) ×
-      (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (bc' : (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
-        (q + (d + 1)) ×
-      (TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) (TopCat.of M) x₀
-        (p + q + (d + 1))
-        ((TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom
-          (p + (d + 1)) (q + (d + 1)) (p + q + (d + 1) + (d + 1)) (by omega)
-          ((singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p).symm bc)
-          ((singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ q).symm bc')) =
-      (0, (TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom p (q + (d + 1)) (p + q + (d + 1))
-            (by omega) bc.2 bc'.1 +
+/-- **The cup product on `Sᵈ⁺¹ × Y` when `Y` has no cohomology in the target degree**: in the
+slant decomposition of `TopCat.singularCohomologySphereProdSlantEquiv_singularCup`, the component
+`b ⌣ b'` of `φ ⌣ ψ` pulled back from `Y` vanishes when `Hʳ⁺ᵈ⁺¹(Y; k) = 0`, so `φ ⌣ ψ` decomposes as
+`(0, c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`. -/
+theorem singularCohomologySphereProdSlantEquiv_singularCup_of_isZero (Y : TopCat.{w}) {d : ℕ}
+    (x₀ : TopCat.sphere.{w} (d + 1)) {p q r : ℕ} (h : p + (d + 1) + (q + (d + 1)) = r + (d + 1))
+    (hY : IsZero (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k))
+      (r + (d + 1))))
+    (φ : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))
+    (ψ : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (q + (d + 1))) :
+    singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ r
+        ((TopCat.sphere.{w} (d + 1) ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1))
+          (q + (d + 1)) (r + (d + 1)) h φ ψ) =
+      (0, Y.singularCup k (λ_ _).inv (λ_ _).hom p (q + (d + 1)) r (by omega)
+            (singularCohomologySphereProdSlantEquiv _ Y x₀ p φ).2
+            (singularCohomologySphereProdSlantEquiv _ Y x₀ q ψ).1 +
           ((-1 : ℤ) ^ ((d + 1) * (p + (d + 1)))) •
-            (TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q (p + q + (d + 1))
-              (by omega) bc.1 bc'.2) := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
-  have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
-    (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hpq)
+            Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q r (by omega)
+              (singularCohomologySphereProdSlantEquiv _ Y x₀ p φ).1
+              (singularCohomologySphereProdSlantEquiv _ Y x₀ q ψ).2) := by
+  have := ModuleCat.subsingleton_of_isZero hY
   rw [singularCohomologySphereProdSlantEquiv_singularCup]
   exact Prod.ext (Subsingleton.elim _ _) rfl
 
 end Cup
 
 end TopCat
+
+namespace TauCeti
+
+/-- **The cup product on `Sᵈ⁺¹ × Y` for a compact manifold `Y`**: let `k` be a commutative ring
+over which every module has projective dimension at most one, such as `ℤ` or a field, and let `Y`
+be a compact manifold without boundary, modelled on a real normed space `E` of finite dimension.
+If the cup product `φ ⌣ ψ` lands in degree `r + d + 1 > dim E`, then in the slant decomposition of
+`TopCat.singularCohomologySphereProdSlantEquiv_singularCup` its component pulled back from `Y`
+vanishes: `φ ⌣ ψ` decomposes as `(0, c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`. For a closed
+three-manifold `Y`, `d = 0` and `p = q = 1`, this says that the cup product
+`H²(S¹ × Y) × H²(S¹ × Y) → H⁴(S¹ × Y) ≅ H³(Y)` is off-diagonal: it vanishes on each of the
+summands `pr₂^* H²(Y)` and `θ ⌣ pr₂^* H¹(Y)` and pairs them by `(b, c') ↦ b ⌣ c'`. -/
+theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace {k : Type w}
+    [CommRing k] [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] {Y E : Type w}
+    [TopologicalSpace Y] [T2Space Y] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [ChartedSpace E Y] [CompactSpace Y] {d : ℕ}
+    (x₀ : TopCat.sphere.{w} (d + 1)) {p q r : ℕ} (h : p + (d + 1) + (q + (d + 1)) = r + (d + 1))
+    (hr : Module.finrank ℝ E < r + (d + 1))
+    (φ : (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))
+    (ψ : (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (q + (d + 1))) :
+    TopCat.singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) (TopCat.of Y) x₀ r
+        ((TopCat.sphere.{w} (d + 1) ⊗ TopCat.of Y).singularCup k (λ_ _).inv (λ_ _).hom
+          (p + (d + 1)) (q + (d + 1)) (r + (d + 1)) h φ ψ) =
+      (0, (TopCat.of Y).singularCup k (λ_ _).inv (λ_ _).hom p (q + (d + 1)) r (by omega)
+            (TopCat.singularCohomologySphereProdSlantEquiv _ _ x₀ p φ).2
+            (TopCat.singularCohomologySphereProdSlantEquiv _ _ x₀ q ψ).1 +
+          ((-1 : ℤ) ^ ((d + 1) * (p + (d + 1)))) •
+            (TopCat.of Y).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) q r (by omega)
+              (TopCat.singularCohomologySphereProdSlantEquiv _ _ x₀ p φ).1
+              (TopCat.singularCohomologySphereProdSlantEquiv _ _ x₀ q ψ).2) :=
+  TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_isZero _ x₀ h
+    (isZero_singularCohomology_of_compactSpace (M := Y) _ _ rfl hr) φ ψ
+
+end TauCeti

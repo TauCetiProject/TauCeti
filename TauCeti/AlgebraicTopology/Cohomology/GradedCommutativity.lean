@@ -29,8 +29,11 @@ the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
 * `TopCat.singularCup_gradedComm`: graded commutativity for braided coefficient data.
 * `TopCat.singularCup_gradedComm_tensorUnit`: graded commutativity for a commutative pairing on
   cohomology with unit coefficient object.
-* `TopCat.singularCup_left_comm_tensorUnit`: `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for a
-  commutative and associative pairing, combining graded commutativity with associativity.
+* `TopCat.singularCup_left_gradedComm`: `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for a
+  cocommutative and coassociative coefficient morphism and a commutative and associative pairing,
+  combining graded commutativity with associativity.
+* `TopCat.singularCup_left_gradedComm_tensorUnit`: its form along the left unitor of the unit
+  object.
 
 ## References
 
@@ -87,20 +90,36 @@ theorem singularCup_gradedComm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing
   singularCup_gradedComm X k (by
     rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) hμ h a b
 
-/-- **Left commutativity of the cup product with commutative coefficients**: for coefficients in an
-object `M` with a commutative and associative pairing `μ : M ⊗ M ⟶ M`, the cup product along the
-left unitor of the unit object satisfies `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for `a` of
+/-- **Graded left commutativity of the cup product**: for a coefficient morphism `u : R ⟶ R ⊗ R`
+that is cocommutative (`hu`) and coassociative (`hu'`), and a pairing `μ : M ⊗ M ⟶ M` that is
+commutative (`hμ`) and associative (`hμ'`), `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for `a` of
 degree `p` and `b` of degree `q`. -/
-theorem singularCup_left_comm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
-    [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : (β_ M M).hom ≫ μ = μ)
+theorem singularCup_left_gradedComm (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {u : R ⟶ R ⊗ R} (hu : u ≫ (β_ R R).hom = u)
+    (hu' : u ≫ u ▷ R ≫ (α_ R R R).hom = u ≫ R ◁ u) {μ : M ⊗ M ⟶ M} (hμ : (β_ M M).hom ≫ μ = μ)
+    (hμ' : μ ▷ M ≫ μ = (α_ M M M).hom ≫ M ◁ μ ≫ μ) {p q r m m' n : ℕ} (hm : q + r = m)
+    (hn : p + m = n) (hm' : p + r = m') (hn' : q + m' = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology R k M q) (c : X.singularCohomology R k M r) :
+    X.singularCup k u μ q m' n hn' b (X.singularCup k u μ p r m' hm' a c) =
+      ((-1 : ℤ) ^ (p * q)) • X.singularCup k u μ p m n hn a (X.singularCup k u μ q r m hm b c) := by
+  rw [← singularCup_assoc X k hu' hμ' rfl (by omega) hm' hn',
+    singularCup_gradedComm X k hu hμ (add_comm p q), map_zsmul, LinearMap.smul_apply,
+    singularCup_assoc X k hu' hμ' (add_comm p q) (by omega) hm hn]
+
+/-- **Graded left commutativity of the cup product with commutative coefficients**: for
+coefficients in an object `M` with a commutative and associative pairing `μ : M ⊗ M ⟶ M`, the cup
+product along the left unitor of the unit object satisfies
+`b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for `a` of degree `p` and `b` of degree `q`. -/
+theorem singularCup_left_gradedComm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : (β_ M M).hom ≫ μ = μ)
     (hμ' : μ ▷ M ≫ μ = (α_ M M M).hom ≫ M ◁ μ ≫ μ) {p q r m m' n : ℕ} (hm : q + r = m)
     (hn : p + m = n) (hm' : p + r = m') (hn' : q + m' = n) (a : X.singularCohomology (𝟙_ C) k M p)
     (b : X.singularCohomology (𝟙_ C) k M q) (c : X.singularCohomology (𝟙_ C) k M r) :
     X.singularCup k (λ_ _).inv μ q m' n hn' b (X.singularCup k (λ_ _).inv μ p r m' hm' a c) =
       ((-1 : ℤ) ^ (p * q)) •
-        X.singularCup k (λ_ _).inv μ p m n hn a (X.singularCup k (λ_ _).inv μ q r m hm b c) := by
-  rw [← singularCup_assoc_tensorUnit X k hμ' rfl (by omega) hm' hn',
-    singularCup_gradedComm_tensorUnit X k hμ (add_comm p q), map_zsmul, LinearMap.smul_apply,
-    singularCup_assoc_tensorUnit X k hμ' (add_comm p q) (by omega) hm hn]
+        X.singularCup k (λ_ _).inv μ p m n hn a (X.singularCup k (λ_ _).inv μ q r m hm b c) :=
+  singularCup_left_gradedComm X k
+    (by rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal]) (by monoidal) hμ
+    hμ' hm hn hm' hn' a b c
 
 end TopCat

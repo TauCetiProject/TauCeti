@@ -26,8 +26,10 @@ applied to a nonzero coefficient gives a nonzero top cohomology class.
 
 Dually to the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
 `Hₙ₊₁(Sⁿ⁺¹; k)`, the class `TauCeti.singularCohomologyTopCatSphereGenerator` of `Hⁿ⁺¹(Sⁿ⁺¹; k)`
-takes the value `1` on it. Its cup square vanishes, since `H²ⁿ⁺²(Sⁿ⁺¹; k) = 0`
-(`TopCat.singularCup_singularCohomologyTopCatSphereGenerator_self`).
+takes the value `1` on it. Cup products on `Sᵈ` vanish in every degree other than `0` and `d`
+(`TauCeti.singularCup_topCatSphere_eq_zero`); in particular the cup square of the generator
+vanishes, since `H²ⁿ⁺²(Sⁿ⁺¹; k) = 0`
+(`TauCeti.singularCup_singularCohomologyTopCatSphereGenerator_self`).
 
 Since the homology of a sphere is free of finite rank, the Künneth theorem for cohomology applies
 to a product with a sphere over every commutative ring and with no hypothesis on the other factor
@@ -130,6 +132,33 @@ theorem isZero_singularCohomology_topCatSphere_of_ne (d q : ℕ) (h : q + 1 ≠ 
     (ModuleCat.of k k) M (q + 1)).1.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
 
+/-- **Cup products on a sphere vanish away from degrees `0` and `d`**: for any coefficient
+morphism `u : k ⟶ R ⊗ S` and pairing `μ : A ⊗ B ⟶ P`, the cup product
+`Hᵖ(Sᵈ; R, A) × H^q(Sᵈ; S, B) ⟶ Hⁿ(Sᵈ; k, P)` vanishes when `n ≠ 0` and `n ≠ d`, since its
+target does. -/
+theorem singularCup_topCatSphere_eq_zero {R S A B P : ModuleCat.{w} k}
+    (u : 𝟙_ (ModuleCat.{w} k) ⟶ R ⊗ S) (μ : A ⊗ B ⟶ P) {d p q n : ℕ} (h : p + q = n)
+    (hn : n ≠ 0) (hd : n ≠ d) (a : (TopCat.sphere.{w} d).singularCohomology R k A p)
+    (b : (TopCat.sphere.{w} d).singularCohomology S k B q) :
+    (TopCat.sphere.{w} d).singularCup k u μ p q n h a b = 0 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  -- the vanishing theorem takes chain coefficients `ModuleCat.of k k`, which is `𝟙_ (ModuleCat k)`
+  -- by definition
+  have hz : IsZero ((TopCat.sphere.{w} d).singularCohomology (𝟙_ (ModuleCat.{w} k)) k P
+      (n + 1)) := isZero_singularCohomology_topCatSphere_of_ne k P d n hd
+  have := ModuleCat.subsingleton_of_isZero hz
+  exact Subsingleton.elim _ _
+
+/-- The cup square of the generator `θ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` vanishes, since
+`H²ᵈ⁺²(Sᵈ⁺¹; k) = 0`. -/
+@[simp]
+theorem singularCup_singularCohomologyTopCatSphereGenerator_self (d : ℕ) {n : ℕ}
+    (h : d + 1 + (d + 1) = n) :
+    (TopCat.sphere.{w} (d + 1)).singularCup k (λ_ _).inv (λ_ _).hom (d + 1) (d + 1) n h
+      (singularCohomologyTopCatSphereGenerator k d)
+      (singularCohomologyTopCatSphereGenerator k d) = 0 :=
+  singularCup_topCatSphere_eq_zero k _ _ h (by omega) (by omega) _ _
+
 /-- Evaluation on the sphere generator commutes with every coefficient-module map.
 The map on cohomology is induced by postcomposition on the actual singular cochains. -/
 lemma singularCohomologyTopCatSphereEquiv_naturality {N : ModuleCat.{w} k}
@@ -159,20 +188,6 @@ theorem singularCohomologyKunneth_sphere_bijective (d n : ℕ) :
     Function.Bijective (singularCohomologyKunneth (TopCat.sphere.{w} d) Y (𝟙_ (ModuleCat.{w} k))
       (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
   singularCohomologyKunneth_bijective _ Y n fun _ _ ↦ inferInstance
-
-/-- The cup square of the generator `θ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` vanishes, since
-`H²ᵈ⁺²(Sᵈ⁺¹; k) = 0`. -/
-@[simp]
-theorem singularCup_singularCohomologyTopCatSphereGenerator_self (d : ℕ) :
-    (TopCat.sphere.{w} (d + 1)).singularCup k (λ_ _).inv (λ_ _).hom (d + 1) (d + 1)
-      (d + 1 + (d + 1)) rfl (TauCeti.singularCohomologyTopCatSphereGenerator k d)
-      (TauCeti.singularCohomologyTopCatSphereGenerator k d) = 0 := by
-  have hz : IsZero ((TopCat.sphere.{w} (d + 1)).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
-      (𝟙_ (ModuleCat.{w} k)) (d + 1 + (d + 1))) := by
-    rw [show d + 1 + (d + 1) = 2 * d + 1 + 1 by omega]
-    exact TauCeti.isZero_singularCohomology_topCatSphere_of_ne k _ (d + 1) (2 * d + 1) (by omega)
-  have := ModuleCat.subsingleton_of_isZero hz
-  exact Subsingleton.elim _ _
 
 end TopCat
 
