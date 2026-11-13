@@ -16,11 +16,13 @@ Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is use
 free product of fundamental groups one factor at a time, for instance to recognise the
 fundamental group of a wedge of circles as a free group.
 
-The free product of a family indexed by a type with a unique element is that single monoid.
+The free product of an empty family is trivial, and the free product of a family indexed by a
+type with a unique element is that single monoid.
 
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
+* `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
 -/
@@ -28,6 +30,17 @@ The free product of a family indexed by a type with a unique element is that sin
 public section
 
 open Monoid
+
+namespace Monoid.CoprodI
+
+variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
+
+/-- The free product of an empty family of monoids is trivial. -/
+instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) where
+  default := 1
+  uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 isEmptyElim) x
+
+end Monoid.CoprodI
 
 namespace MulEquiv
 
@@ -60,7 +73,7 @@ def coprodIUnique : CoprodI M ≃* M default :=
     (by ext; simp)
 
 @[simp]
-theorem coprodIUnique_of (m : M default) : coprodIUnique M (CoprodI.of m) = m := by
+theorem coprodIUnique_apply_of (m : M default) : coprodIUnique M (CoprodI.of m) = m := by
   simp [coprodIUnique]
 
 @[simp]

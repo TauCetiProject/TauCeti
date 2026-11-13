@@ -25,7 +25,7 @@ open scoped Monoid.Coprod
 namespace TauCeti.Examples.FreelyIndecomposable
 
 /-- The group `ℤ²` is not infinite cyclic. -/
-theorem isEmpty_mulEquiv_int : IsEmpty (Multiplicative (ℤ × ℤ) ≃* Multiplicative ℤ) :=
+theorem isEmpty_int_prod_int_mulEquiv_int : IsEmpty (Multiplicative (ℤ × ℤ) ≃* Multiplicative ℤ) :=
   ⟨fun e => not_isAddCyclic_prod_of_infinite_nontrivial ℤ ℤ <|
     isCyclic_multiplicative_iff.1 <| isCyclic_of_surjective e.symm e.symm.surjective⟩
 
@@ -33,7 +33,8 @@ theorem isEmpty_mulEquiv_int : IsEmpty (Multiplicative (ℤ × ℤ) ≃* Multipl
 rank `2`. -/
 def intProdIntCoprodFreeGroup :
     GrushkoDecomposition (Multiplicative (ℤ × ℤ) ∗ FreeGroup (Fin 2)) :=
-  .coprodFreeGroup (isFreelyIndecomposable_of_isMulCommutative _) isEmpty_mulEquiv_int 2
+  .coprodFreeGroup (isFreelyIndecomposable_of_isMulCommutative _)
+    isEmpty_int_prod_int_mulEquiv_int 2
 
 /-- The decomposition of `ℤ² ∗ F₂` has a single freely indecomposable factor. -/
 theorem intProdIntCoprodFreeGroup_p : intProdIntCoprodFreeGroup.p = 1 :=
