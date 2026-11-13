@@ -56,7 +56,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
   [StarRing R] [ContinuousStar R]
 
-private local instance : CompleteSpace R := FiniteDimensional.complete ℝ R
+private local instance : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
 
 local notation "𝕂" => unitarySubgroup Rˣ
 local notation "𝔩" => LieSubalgebra.toSubmodule
