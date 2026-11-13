@@ -155,24 +155,16 @@ theorem isWeaklyTransverse_iff_isCompl (σ : OrientedCell h k) (v : Fin (k + 1) 
 /-- Weak transversality is preserved by re-indexing the vertices. -/
 theorem IsWeaklyTransverse.comp_equiv (hv : σ.IsWeaklyTransverse v)
     (e : Fin (k + 1) ≃ Fin (k + 1)) : σ.IsWeaklyTransverse (v ∘ e) := by
-  have hrange : range (v ∘ e) = range v := e.surjective.range_comp v
-  by_cases hmeet : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty
-  · refine σ.isWeaklyTransverse_of_isCompl ?_ ?_
-    · rw [hrange]
-      exact hv.isCompl hmeet
-    · simpa only [hrange] using hv.disjoint_intrinsicFrontier
-  · apply σ.isWeaklyTransverse_of_disjoint
-    rw [hrange]
-    exact disjoint_iff_inter_eq_empty.mpr (not_nonempty_iff_eq_empty.mp hmeet)
+  rwa [σ.isWeaklyTransverse_iff_isCompl (v ∘ e), e.surjective.range_comp v,
+    ← σ.isWeaklyTransverse_iff_isCompl v]
 
 /-- Weak transversality is independent of the vertex ordering. -/
 @[simp]
 theorem isWeaklyTransverse_comp_equiv_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     (e : Fin (k + 1) ≃ Fin (k + 1)) :
     σ.IsWeaklyTransverse (v ∘ e) ↔ σ.IsWeaklyTransverse v := by
-  refine ⟨fun hv => ?_, fun hv => hv.comp_equiv e⟩
-  simpa only [Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id] using
-    hv.comp_equiv e.symm
+  rw [σ.isWeaklyTransverse_iff_isCompl (v ∘ e), e.surjective.range_comp v,
+    σ.isWeaklyTransverse_iff_isCompl v]
 
 /-- Reversing a cell's orientation preserves weak transversality. -/
 @[simp]
@@ -256,6 +248,19 @@ theorem IsWeaklyTransverse.of_subset_convexHull {σ : OrientedCell h k}
   rw [heq]
   exact hc
 
+/-- A subsegment of a weakly transverse segment is weakly transverse whenever it is
+nondegenerate where it meets the cell. -/
+theorem IsWeaklyTransverse.of_mem_segment {σ : OrientedCell h 1} {x y a b : V}
+    (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y)
+    (hb : b ∈ segment ℝ x y) (hab : (segment ℝ a b ∩ σ.carrier).Nonempty → a ≠ b) :
+    σ.IsWeaklyTransverse ![a, b] := by
+  apply hv.of_subset_convexHull
+  · rw [Matrix.range_cons_cons_empty, Matrix.range_cons_cons_empty,
+      convexHull_pair, convexHull_pair]
+    exact (convex_segment x y).segment_subset ha hb
+  · exact fun hm => affineIndependent_of_ne ℝ (hab (by rwa [← convexHull_pair,
+      ← Matrix.range_cons_cons_empty]))
+
 /-- Restricting a weakly transverse segment to a nontrivial parameter interval preserves
 weak transversality, including when a new endpoint lies on the cell. The parameters
 may occur in either order. -/
@@ -264,28 +269,11 @@ theorem IsWeaklyTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
     (hs : s ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) (hsu : s ≠ u)
     (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u) :
     σ.IsWeaklyTransverse ![a, b] := by
-  have hseg : segment ℝ a b ⊆ segment ℝ x y :=
-    (convex_segment x y).segment_subset (ha ▸ lineMap_mem_segment ℝ x y hs)
-      (hb ▸ lineMap_mem_segment ℝ x y hu)
-  have hdiff : b - a = (u - s) • (y - x) := by
-    rw [ha, hb, AffineMap.lineMap_apply_module', AffineMap.lineMap_apply_module']
-    module
-  rw [σ.isWeaklyTransverse_pair_iff] at hv ⊢
-  refine ⟨hv.1.mono_left hseg, fun hm => ?_⟩
-  intro hmem
-  have hscaled : (u - s) • (y - x) ∈ (affineSpan ℝ σ.carrier).direction := hdiff ▸ hmem
-  exact hv.2 (hm.mono (inter_subset_inter_left _ hseg))
-    ((Submodule.smul_mem_iff _ (sub_ne_zero.mpr hsu.symm)).mp hscaled)
-
-/-- Any nondegenerate subsegment of a weakly transverse segment is weakly transverse. -/
-theorem IsWeaklyTransverse.of_mem_segment {σ : OrientedCell h 1} {x y a b : V}
-    (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y)
-    (hb : b ∈ segment ℝ x y) (hab : a ≠ b) : σ.IsWeaklyTransverse ![a, b] := by
-  apply hv.of_subset_convexHull
-  · rw [Matrix.range_cons_cons_empty, Matrix.range_cons_cons_empty,
-      convexHull_pair, convexHull_pair]
-    exact (convex_segment x y).segment_subset ha hb
-  · exact fun _ => affineIndependent_of_ne ℝ hab
+  subst ha hb
+  rcases eq_or_ne x y with rfl | hxy
+  · rwa [AffineMap.lineMap_same_apply, AffineMap.lineMap_same_apply]
+  · exact hv.of_mem_segment (lineMap_mem_segment ℝ x y hs) (lineMap_mem_segment ℝ x y hu)
+      fun _ => (AffineMap.lineMap_injective ℝ hxy).ne hsu
 
 /-- A weakly transverse test whose proper parameter faces all avoid the cell. -/
 structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop
@@ -394,15 +382,15 @@ theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     exact ⟨(σ.isWeaklyTransverse_reverse_iff v).mpr hv.toIsWeaklyTransverse,
       by simpa only [reverse_carrier] using hv.disjoint_faces⟩
 
-/-- An affinely independent subtest of a transverse test is transverse when its proper
+/-- An affinely independent subtest of a weakly transverse test is transverse when its proper
 parameter faces avoid the cell. -/
-theorem IsTransverse.of_subset_convexHull {σ : OrientedCell h k}
-    {v w : Fin (k + 1) → V} (hv : σ.IsTransverse v)
+theorem IsWeaklyTransverse.isTransverse_of_subset_convexHull {σ : OrientedCell h k}
+    {v w : Fin (k + 1) → V} (hv : σ.IsWeaklyTransverse v)
     (hw : convexHull ℝ (range w) ⊆ convexHull ℝ (range v))
     (hi : (convexHull ℝ (range w) ∩ σ.carrier).Nonempty → AffineIndependent ℝ w)
     (hb : ∀ j : Fin (k + 1), Disjoint (convexHull ℝ (range (w ∘ j.succAbove))) σ.carrier) :
     σ.IsTransverse w :=
-  ⟨hv.toIsWeaklyTransverse.of_subset_convexHull hw hi, hb⟩
+  ⟨hv.of_subset_convexHull hw hi, hb⟩
 
 /-- Restricting a weakly transverse segment to a segment whose endpoints avoid the cell
 gives a transverse segment. The new segment may be stationary. -/
@@ -410,10 +398,11 @@ theorem IsWeaklyTransverse.isTransverse_of_mem_segment {σ : OrientedCell h 1} {
     (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y) (hb : b ∈ segment ℝ x y)
     (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
     σ.IsTransverse ![a, b] := by
-  rcases eq_or_ne a b with rfl | hab
-  · exact σ.isTransverse_of_disjoint (by
-      simpa [Matrix.range_cons_cons_empty, Set.disjoint_singleton_left] using haσ)
-  · exact (σ.isTransverse_pair_iff a b).mpr ⟨hv.of_mem_segment ha hb hab, haσ, hbσ⟩
+  refine (σ.isTransverse_pair_iff a b).mpr ⟨hv.of_mem_segment ha hb ?_, haσ, hbσ⟩
+  rintro ⟨z, hz, hzσ⟩ rfl
+  simp only [segment_same, mem_singleton_iff] at hz
+  subst z
+  exact haσ hzσ
 
 /-- A weakly transverse test meets the affine span in at most one point if it meets
 the cell. -/
