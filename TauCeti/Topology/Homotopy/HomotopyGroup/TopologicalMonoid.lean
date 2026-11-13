@@ -120,7 +120,7 @@ end Group
 induces a bijection on a homotopy group of positive dimension if some homomorphism `ψ` out of the
 homotopy group of `M` becomes bijective after `f_*`, and `g_*` is injective with image the kernel
 of `ψ`. This is the situation of a split exact sequence `1 → π(Y) → π(M) → G → 1`, split by `f_*`
-up to the automorphism `ψ ∘ f_*` of `G`. -/
+up to the bijection `ψ ∘ f_* : π(X) → G`. -/
 theorem bijective_map_mul_of_bijective_comp [DecidableEq N] [Nonempty N] {G : Type*} [Group G]
     {f : C(X, M)} {g : C(Y, M)} (hf : f x = 1) (hg : g y = 1)
     (ψ : HomotopyGroup N M 1 →* G) (hψf : Function.Bijective (ψ ∘ map (N := N) f hf))
