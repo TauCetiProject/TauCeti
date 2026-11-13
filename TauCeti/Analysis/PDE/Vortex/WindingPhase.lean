@@ -44,8 +44,8 @@ smooth framed gauge group to one normalized at its end
 does this, without choosing a logarithm of the phase. Hence every smooth framed vortex has a
 framed-gauge representative which converges exponentially to the reference field
 (`TauCeti.Vortex.exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp`). This is the
-zeroth-order decay of the fields in the end trivialization; decay of their derivatives is not
-treated here.
+zeroth-order decay of the fields in the end trivialization; the decay of their derivatives is
+`TauCeti.Vortex.isBigO_iteratedFDeriv_gaugeTransform_inv_windingPhase_sub_vacuumField`.
 
 ## Main definitions
 

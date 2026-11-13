@@ -64,6 +64,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
 * `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
   compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
+* `TauCeti.Symbol.quantizeSobolev_sharp`: if `a` also has compact spatial support, then
+  `Op(a # b) = Op(a) ∘ Op(b)` as operators between Bessel-potential spaces.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -1010,6 +1012,41 @@ theorem sharp_assoc (a : Symbol n U U' m'') {b : Symbol n W U m'} {c : Symbol n 
     quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hc]
 
 end Assoc
+/-! ### The composition on Bessel-potential spaces -/
+
+section Sobolev
+
+variable {V W U : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  [NormedAddCommGroup U] [InnerProductSpace ℂ U] [CompleteSpace U]
+  {a : Symbol n W U m'} {b : Symbol n V W m}
+
+/-- **Composition of quantizations on Bessel-potential spaces.** For symbols `a` and `b` with
+compact spatial support, the operator `Op(a # b) : H^s → H^{s - (m' + m)}` is the composition of
+`Op(b) : H^s → H^{s - m}` and `Op(a) : H^{s - m} → H^{s - m - m'}`. -/
+theorem quantizeSobolev_sharp (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hab : (a.sharp b hb).HasCompactSpatialSupport) (s : ℝ) :
+    (a.sharp b hb).quantizeSobolev hab s =
+      BesselPotentialSpace.inclusion (by linarith) ∘L
+        (a.quantizeSobolev ha (s - m) ∘L b.quantizeSobolev hb s) := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  -- On a Schwartz function `u`, `Op(b) u` is the test function `w`.
+  set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+    (b.contDiff_quantizeSchwartzValue u)
+  have hw : b.quantizeSobolev hb s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2 w := by
+    refine BesselPotentialSpace.ext ?_
+    ext φ
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      SchwartzMap.toTemperedDistributionCLM_apply_apply, w, HasCompactSupport.toSchwartzMap_toFun]
+  ext φ
+  simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion, hw,
+    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb, w]
+
+end Sobolev
 
 end Symbol
 
