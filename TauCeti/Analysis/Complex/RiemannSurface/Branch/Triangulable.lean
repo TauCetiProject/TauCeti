@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
-public import TauCeti.Geometry.Manifold.Triangulation.Puncture
 public import TauCeti.Topology.Triangulable.FiniteCWType
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.Triangulation.Complex
 
 /-!
 # The branched-cover Euler formula for triangulable surfaces
@@ -54,12 +52,9 @@ theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulab
   obtain ⟨x, _, _⟩ := f.nonconstant
   have : ConnectedSpace Y := ⟨⟨f x⟩⟩
   have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
-  have : IsManifold 𝓘(ℝ, ℂ) 2 Y :=
-    (inferInstance : IsManifold 𝓘(ℂ) 1 Y).restrictScalars_of_ne_zero 2 (by norm_num)
   have := hX.finiteCWType
   have := hY.finiteCWType
-  have := f.finite_branchValues.finiteCWType_compl_of_isTriangulable (E := ℂ)
-    (by rw [← Module.finrank_eq_rank, Complex.finrank_real_complex]; norm_num) hY
+  have := f.finite_branchValues.finiteCWType_compl_of_isTriangulable_complex hY
   exact f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap

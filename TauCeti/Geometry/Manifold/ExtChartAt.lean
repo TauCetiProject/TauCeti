@@ -64,6 +64,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
 * `TauCeti.comp_extChartAt_symm_prodMk_left`, `TauCeti.comp_extChartAt_symm_prodMk_right` and
   `TauCeti.eventually_comp_extChartAt_symm_eq`: slices of coordinate expressions on `M × 𝕜`.
+* `TauCeti.extChartAt_model_symm_eq_chartAt_symm`,
+  `TauCeti.extChartAt_model_apply_eq_chartAt_apply`: on a manifold modelled on its model space, the
+  preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
 * `TauCeti.measurableEmbedding_extChartAt_restrict`: an extended chart restricted to its source is
@@ -776,6 +779,25 @@ theorem isCompact_extChartAt_symm_image_closedBall [FiniteDimensional ℝ E] {r 
   (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hr)
 
 end ClosedBall
+
+section SelfModel
+
+variable {𝕜 E N : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace N] [ChartedSpace E N] {z : N}
+
+/-- On a manifold modelled on its model space, the inverse of the preferred extended chart is the
+inverse of the preferred chart. -/
+theorem extChartAt_model_symm_eq_chartAt_symm :
+    ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by
+  ext; simp
+
+/-- On a manifold modelled on its model space, the preferred extended chart sends every point to
+the same coordinate as the preferred chart. -/
+theorem extChartAt_model_apply_eq_chartAt_apply (x : N) :
+    extChartAt 𝓘(𝕜, E) z x = chartAt E z x := by
+  simp
+
+end SelfModel
 
 end TauCeti
 

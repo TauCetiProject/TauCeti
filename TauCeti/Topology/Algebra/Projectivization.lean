@@ -44,6 +44,8 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `Projectivization.continuousAt_linearProjection`: the map induced by a linear map depends
+  jointly continuously on the linear map and the point, where it is defined.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -58,7 +60,9 @@ of projective space.
   `V` over `ℝ` or `ℂ`.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
-  homeomorphism from `U_i` onto `Fin n → K`.
+  homeomorphism from `U_i` onto `Fin n → K`, with
+  `Projectivization.isOpenEmbedding_affineChart_symm` showing that its inverse is an open
+  embedding.
 * `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
   set `X` with its image in `Fin n → K`.
 -/
@@ -87,6 +91,31 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   simp [mk'_eq_mk]
 
 variable [ContinuousConstSMul Kˣ V]
+
+/-- **The map induced by a linear map depends continuously on the linear map.** For a family of
+linear maps `G t` such that `G t v` depends jointly continuously on `t` and `v`, the point
+`linearProjection (G t) y` depends continuously on `(t, y)` at every `(t₀, y₀)` with `y₀` in the
+domain `linearProjectionDomain (G t₀)`. -/
+theorem continuousAt_linearProjection {T W : Type*} [TopologicalSpace T] [AddCommGroup W]
+    [Module K W] [TopologicalSpace W] [T1Space W] [Nonempty (ℙ K W)] {G : T → V →ₗ[K] W}
+    (hG : Continuous fun p : T × V ↦ G p.1 p.2) {t₀ : T} {y₀ : ℙ K V}
+    (hy₀ : y₀ ∈ linearProjectionDomain (G t₀)) :
+    ContinuousAt (fun p : T × ℙ K V ↦ linearProjection (G p.1) p.2) (t₀, y₀) := by
+  have hq : IsOpenQuotientMap (Prod.map id (mk' K) : T × {v : V // v ≠ 0} → T × ℙ K V) :=
+    IsOpenQuotientMap.id.prodMap isOpenQuotientMap_mk'
+  obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective y₀
+  rw [show (t₀, mk' K v) = Prod.map id (mk' K) (t₀, v) from rfl, ← hq.continuousAt_comp_iff]
+  -- On the open set of pairs `(t, v)` with `G t v ≠ 0`, the composite is `(t, v) ↦ [G t v]`.
+  have hGv : Continuous fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2 :=
+    hG.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+  let U := (fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2) ⁻¹' {0}ᶜ
+  have hx : (t₀, v) ∈ U := by
+    simpa [U, mk'_eq_mk, mk_mem_linearProjectionDomain_iff] using hy₀
+  refine ContinuousOn.continuousAt ?_ ((isOpen_compl_singleton.preimage hGv).mem_nhds hx)
+  rw [continuousOn_iff_continuous_domRestrict]
+  refine (continuous_mk (K := K) (hGv.comp continuous_subtype_val) fun x : U ↦ x.2).congr
+    fun x ↦ ?_
+  simp [mk'_eq_mk, linearProjection_mk _ _ x.2]
 
 /-- Projective space is second countable when the vector space is. -/
 instance instSecondCountableTopology [SecondCountableTopology V] :
@@ -274,6 +303,12 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- The inverse of the standard affine chart is an open embedding onto `affineOpen i`. -/
+theorem isOpenEmbedding_affineChart_symm (i : Fin (n + 1)) :
+    IsOpenEmbedding (affineChart (K := K) i).symm :=
+  coe_affineOpenPartialHomeomorph_symm (K := K) i ▸
+    (affineOpenPartialHomeomorph (K := K) i).symm.isOpenEmbedding (by simp)
 
 /-- **The affine part of a subset of projective space.** The standard affine chart at the
 coordinate `i` restricts to a homeomorphism from the part `X ∩ U_i` of a set `X` inside the affine

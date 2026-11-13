@@ -28,7 +28,8 @@ The extension from finite vectors uses Mathlib's `IndepFun.process_indepFun`; eq
 path laws uses `HasIndepIncrements.identDistrib_finset`, `isProjectiveLimit_map` and uniqueness
 of projective limits. `HasIndepIncrements.shift` preserves independent increments, and
 `HasIndepIncrements.identDistrib_shift` gives the path law of a centered deterministic shift
-under fixed-shift stationarity of increment laws.
+under fixed-shift stationarity of increment laws. `HasIndepIncrements.identDistrib_nat`
+gives full path-law uniqueness for nondecreasing natural-valued count processes.
 -/
 
 public section
@@ -332,6 +333,56 @@ theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
 end ProbabilityTheory
 
 namespace ProbabilityTheory
+
+/-- Equal laws of differences of natural-valued random variables remain equal after casting
+to the integers, provided the subtrahends are a.e. at most the minuends.
+The sample spaces may differ. -/
+theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {a b : Ω → ℕ} {a' b' : Ω' → ℕ}
+    (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
+    (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
+    IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
+      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
+  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
+  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
+      (fun ω ↦ (b ω : ℤ) - a ω) := by
+    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
+  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
+      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
+    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
+  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
+    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
+
+/-- Nondecreasing count processes starting at zero have the same full path law if they have
+independent increments and corresponding increment laws agree. The sample spaces may differ.
+Monotonicity makes natural-number subtraction agree with subtraction after casting to integers. -/
+theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [OrderBot T]
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {X : T → Ω → ℕ} {Y : T → Ω' → ℕ}
+    (hX : HasIndepIncrements X P) (hY : HasIndepIncrements Y Q)
+    (hmX : ∀ t, Measurable (X t)) (hmY : ∀ t, Measurable (Y t))
+    (h0X : ∀ᵐ ω ∂P, X ⊥ ω = 0) (h0Y : ∀ᵐ ω ∂Q, Y ⊥ ω = 0)
+    (hmonoX : ∀ᵐ ω ∂P, Monotone (fun t ↦ X t ω))
+    (hmonoY : ∀ᵐ ω ∂Q, Monotone (fun t ↦ Y t ω))
+    (hlaw : ∀ s t, s ≤ t → IdentDistrib (fun ω ↦ X t ω - X s ω)
+      (fun ω ↦ Y t ω - Y s ω) P Q) :
+    IdentDistrib (fun ω t ↦ X t ω) (fun ω t ↦ Y t ω) P Q := by
+  have hmXZ (t : T) : Measurable (fun ω ↦ (X t ω : ℤ)) :=
+    (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hmX t)
+  have hmYZ (t : T) : Measurable (fun ω ↦ (Y t ω : ℤ)) :=
+    (measurable_of_countable (fun n : ℕ ↦ (n : ℤ))).comp (hmY t)
+  have h0XZ : ∀ᵐ ω ∂P, (X ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0X] with ω hω using by simp [hω]
+  have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
+    filter_upwards [h0Y] with ω hω using by simp [hω]
+  have hdist := (hX.natCast hmonoX).identDistrib (hY.natCast hmonoY)
+    hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
+      (hlaw s t hst).natCast_sub_of_le
+        (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
+  simpa only [Function.comp_def, Int.toNat_natCast] using
+    hdist.comp (Measurable.of_eval fun _ ↦
+      (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))
 
 /-- A measurable process starting at zero with independent increments has its original full
 path law after shifting time by `t` and subtracting its current value, provided its increment

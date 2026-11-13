@@ -106,7 +106,7 @@ theorem map_coeff_map_C_mul [Semiring R] {m p : Type*}
     (d : ℕ) :
     (A.map C * P).map (fun p ↦ p.coeff d) = A * P.map (fun p ↦ p.coeff d) := by
   ext i j
-  simp [Matrix.mul_apply, finsetSum_coeff, coeff_C_mul]
+  simp [Matrix.mul_apply, coeff_C_mul]
 
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the right by a
@@ -117,7 +117,7 @@ theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
     (d : ℕ) :
     (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
   ext i j
-  simp [Matrix.mul_apply, finsetSum_coeff, coeff_mul_C]
+  simp [Matrix.mul_apply, coeff_mul_C]
 
 variable [CommRing R]
 
