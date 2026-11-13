@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.DiskFunction
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Reproducing kernels of the boundary Hardy space
@@ -14,11 +13,25 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 Point evaluation of the holomorphic disk function is a bounded linear functional on
 `TauCeti.HardySpace`. Its Riesz representative is the Szegő kernel, whose nonnegative
 Fourier coefficients are the powers of the conjugate evaluation point. Its disk function is
-`z ↦ (1 - conj w * z)⁻¹`. The exact norm of this vector gives the sharp norm of evaluation.
+`z ↦ (1 - conj w * z)⁻¹` on the open unit disk. The exact norm of this vector gives the sharp
+norm of evaluation.
 
 The normalized kernels, Mathlib's `NormedSpace.normalize` of the Szegő kernels, have norm one
 and reproduce evaluation multiplied by `√(1 - ‖w‖ ^ 2)`. Points are carried by the open unit
 disk, so the constructions require no choices of values at boundary or exterior points.
+
+## Main definitions
+
+* `TauCeti.HardySpace.diskEvaluation`: evaluation of the disk function at a point of the open unit
+  disk, as a bounded linear functional.
+* `TauCeti.HardySpace.reproducingKernel`: its Riesz representative, the Szegő kernel.
+
+## Main results
+
+* `TauCeti.HardySpace.inner_reproducingKernel`: pairing with the kernel is evaluation.
+* `TauCeti.HardySpace.norm_reproducingKernel`: the norm of the kernel, `(√(1 - ‖w‖ ^ 2))⁻¹`.
+* `TauCeti.HardySpace.norm_diskEvaluation`: the sharp norm of evaluation.
+* `TauCeti.HardySpace.normalize_reproducingKernel`: the normalized kernel.
 
 ## References
 
@@ -26,7 +39,7 @@ disk, so the constructions require no choices of values at boundary or exterior 
 * P. L. Duren, *Theory of Hᵖ Spaces*, chapter 1.
 
 The construction uses Mathlib's Riesz equivalence `InnerProductSpace.toDual` and the bounded
-evaluation theorem for `HardySpace.diskFunction`.
+evaluation theorem `TauCeti.HardySpace.norm_diskFunction_le`.
 -/
 
 public section
