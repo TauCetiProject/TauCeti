@@ -134,13 +134,10 @@ theorem flux_sub_flux_mem_fluxGroup {Φ Ψ : Diffeotopy J ∞ M}
     (hΨ : ∀ t, Ψ.timeSlice t ∈ diffeomorphStabilizer σ.1) (h : Φ.final = Ψ.final) :
     Φ.flux σ (final_mem_diffeomorphStabilizer hΦ) - Ψ.flux σ (final_mem_diffeomorphStabilizer hΨ) ∈
       fluxGroup σ := by
-  have hΨs := timeSlice_symm_mem_diffeomorphStabilizer hΨ
-  refine ⟨Ψ.symm.trans Φ, timeSlice_trans_mem_diffeomorphStabilizer hΨs hΦ, ?_, ?_⟩
-  · rw [Diffeotopy.final_trans, Diffeotopy.final_symm, h, ← Diffeomorph.inv_def,
-      ← Diffeomorph.mul_def, mul_inv_cancel]
-  · rw [Diffeotopy.flux_trans Ψ.symm Φ σ (final_mem_diffeomorphStabilizer hΨs)
-      (final_mem_diffeomorphStabilizer hΦ), Diffeotopy.flux_symm Ψ σ
-      (final_mem_diffeomorphStabilizer hΨ), sub_eq_add_neg]
+  refine ⟨Ψ.symm.trans Φ, timeSlice_trans_mem_diffeomorphStabilizer
+    (timeSlice_symm_mem_diffeomorphStabilizer hΨ) hΦ, ?_, ?_⟩
+  · rw [Diffeotopy.final_symm_trans, h, mul_inv_cancel]
+  · exact Φ.flux_symm_trans Ψ σ _ _ _
 
 /-- **Naturality of the flux group.** For a diffeomorphism `f` preserving `σ`, the pullback along
 `f⁻¹` maps the flux group into itself: it transports the flux of a loop `φ_t` to the flux of the
@@ -151,7 +148,7 @@ theorem map_symm_mem_fluxGroup {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ diffeomorp
   obtain ⟨Φ, hΦ, hΦ₁, rfl⟩ := hc
   refine ⟨Φ.transDiffeomorph f, timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ, ?_,
     ?_⟩
-  · rw [Diffeotopy.final_transDiffeomorph, hΦ₁, ← Diffeomorph.diffCongr_apply, map_one]
+  · rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv, hΦ₁, mul_one, mul_inv_cancel]
   · exact Φ.flux_transDiffeomorph_of_mem_diffeomorphStabilizer hf _ _
 
 /-- **The flux group of an exact form is trivial.** For `σ = dθ` the flux of a diffeotopy is the
@@ -224,13 +221,11 @@ theorem mem_ker_endpointFlux_iff {φ : isotopyStabilizer σ.1} :
       QuotientAddGroup.eq_zero_iff] at hker
     obtain ⟨L, hL, hL₁, hLΦ⟩ := hker
     -- Removing the loop `L` from `Φ` gives a path to `φ` with zero flux.
-    have hLs := timeSlice_symm_mem_diffeomorphStabilizer hL
-    refine ⟨L.symm.trans Φ, timeSlice_trans_mem_diffeomorphStabilizer hLs hΦ, ?_, ?_⟩
-    · rw [Diffeotopy.final_trans, Diffeotopy.final_symm, hL₁, ← hfin, ← Diffeomorph.inv_def,
-        ← Diffeomorph.mul_def, inv_one, mul_one]
-    · rw [Diffeotopy.flux_trans L.symm Φ σ (final_mem_diffeomorphStabilizer hLs)
-        (final_mem_diffeomorphStabilizer hΦ), Diffeotopy.flux_symm L σ
-        (final_mem_diffeomorphStabilizer hL), hLΦ, add_neg_cancel]
+    refine ⟨L.symm.trans Φ, timeSlice_trans_mem_diffeomorphStabilizer
+      (timeSlice_symm_mem_diffeomorphStabilizer hL) hΦ, ?_, ?_⟩
+    · rw [Diffeotopy.final_symm_trans, hL₁, inv_one, mul_one, hfin]
+    · rw [Φ.flux_symm_trans L σ (final_mem_diffeomorphStabilizer hΦ)
+        (final_mem_diffeomorphStabilizer hL), hLΦ, sub_self]
   · rintro ⟨Φ, hΦ, hfin, h₀⟩
     rw [MonoidHom.mem_ker, endpointFlux_apply φ hΦ hfin, h₀, QuotientAddGroup.mk_zero, ofAdd_zero]
 
@@ -246,11 +241,12 @@ theorem endpointFlux_mul_mul_inv {f : M ≃ₘ⟮J, J⟯ M} (hf : f ∈ diffeomo
   obtain ⟨Φ, hΦ, h⟩ := mem_isotopyStabilizer.1 φ.2
   rw [endpointFlux_apply φ hΦ h, endpointFlux_apply _
       (timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ) (by
-      rw [Diffeotopy.final_transDiffeomorph, h, ← Diffeomorph.diffCongr_apply,
-        Diffeomorph.diffCongr_apply_eq_mul_mul_inv]),
+      rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv, h]),
     Φ.flux_transDiffeomorph_of_mem_diffeomorphStabilizer hf (final_mem_diffeomorphStabilizer hΦ),
     toAdd_ofAdd]
-  rfl
+  -- The coercion of `g.toAddMonoidHom` is `g` (`LinearMap.toAddMonoidHom_coe`).
+  exact congrArg Multiplicative.ofAdd (QuotientAddGroup.map_mk (fluxGroup σ) (fluxGroup σ)
+    (deRhamCohomology.map f.symm f.symm.contMDiff 1).toAddMonoidHom _ _).symm
 
 /-- **Surjectivity of the endpoint flux.** On a compact Hausdorff boundaryless finite-dimensional
 manifold with a symplectic form `σ`, the endpoint flux `G_σ → H¹_dR(M) / Γ_σ` is surjective. -/

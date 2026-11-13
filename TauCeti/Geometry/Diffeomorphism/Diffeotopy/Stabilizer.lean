@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Congr
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
@@ -94,8 +93,7 @@ theorem timeSlice_transDiffeomorph_mem_diffeomorphStabilizer {f : M ≃ₘ⟮J, 
     {Φ : Diffeotopy J ∞ M} (hf : f ∈ diffeomorphStabilizer σ)
     (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) (t : unitInterval) :
     (Φ.transDiffeomorph f).timeSlice t ∈ diffeomorphStabilizer σ := by
-  rw [Diffeotopy.timeSlice_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
-    Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
+  rw [Diffeotopy.timeSlice_transDiffeomorph_eq_mul_mul_inv]
   exact (diffeomorphStabilizer σ).mul_mem ((diffeomorphStabilizer σ).mul_mem hf (hΦ t))
     ((diffeomorphStabilizer σ).inv_mem hf)
 
@@ -150,8 +148,7 @@ theorem mul_mul_inv_mem_isotopyStabilizer {f φ : M ≃ₘ⟮J, J⟯ M}
     f * φ * f⁻¹ ∈ isotopyStabilizer σ := by
   obtain ⟨Φ, hΦ, rfl⟩ := hφ
   refine ⟨Φ.transDiffeomorph f, timeSlice_transDiffeomorph_mem_diffeomorphStabilizer hf hΦ, ?_⟩
-  rw [Diffeotopy.final_transDiffeomorph, ← Diffeomorph.diffCongr_apply,
-    Diffeomorph.diffCongr_apply_eq_mul_mul_inv]
+  rw [Diffeotopy.final_transDiffeomorph_eq_mul_mul_inv]
 
 /-- The isotopy stabilizer of `σ` is a normal subgroup of the stabilizer of `σ`. For a
 symplectic form, the symplectomorphisms joined to the identity by a smooth symplectic isotopy form

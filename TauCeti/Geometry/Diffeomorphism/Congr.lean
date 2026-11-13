@@ -49,8 +49,6 @@ the forgetful naturality below, lives in `TauCeti.Topology.Homeomorph.Congr`.
 
 * `Diffeomorph.diffCongr_apply_apply`: the pointwise action
   `diffCongr e φ x = e (φ (e.symm x))`.
-* `Diffeomorph.diffCongr_apply_eq_mul_mul_inv`: for a self-diffeomorphism `e`, `diffCongr e` is
-  conjugation by `e` in the self-diffeomorphism group.
 * `Diffeomorph.diffCongr_refl`: conjugating by the identity is the identity isomorphism.
 * `Diffeomorph.diffCongr_trans`: `diffCongr` turns `Diffeomorph.trans` into
   `MulEquiv.trans`, so it is functorial on the groupoid of diffeomorphisms.
@@ -107,12 +105,6 @@ theorem diffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I,
 /-- The underlying diffeomorphism of `diffCongr e φ` is `e ∘ φ ∘ e⁻¹`. -/
 theorem diffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
     diffCongr e φ = (e.symm.trans φ).trans e := (rfl)
-
-/-- For a self-diffeomorphism `e`, `diffCongr e` is conjugation by `e` in the self-diffeomorphism
-group. -/
-theorem diffCongr_apply_eq_mul_mul_inv (e φ : M ≃ₘ^n⟮I, I⟯ M) : diffCongr e φ = e * φ * e⁻¹ := by
-  ext x
-  simp
 
 /-- The inverse of `diffCongr e φ` is `diffCongr e φ⁻¹`, since conjugation is a homomorphism. -/
 theorem diffCongr_inv (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
