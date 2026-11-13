@@ -8,10 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Open
 
 /-!
 # Maps of injective differential into regular levels
@@ -40,6 +42,11 @@ zero set, every zero of the function lies on the curve.
 * `TauCeti.IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero`: a `C¹` curve on an
   open parameter set, with values in a level of dimension one and nonzero velocity at `s₀`,
   covers the level near its value at `s₀`.
+
+* `TauCeti.IsRegularPoint.eventually_mem_image`: a map with injective differential covers a
+  level locally under regularity and `C¹` hypotheses only at the chosen points.
+* `TauCeti.IsRegularPoint.eventually_mem_image_of_curveVelocity_ne_zero`: the corresponding
+  pointwise result for a curve in a level of dimension one.
 
 ## References
 
@@ -125,5 +132,72 @@ theorem IsRegularValue.eventually_mem_image_of_curveVelocity_ne_zero
   filter_upwards [hmem] with x hx hxc
   obtain ⟨q, rfl⟩ := hx hxc
   exact mem_image_of_mem δ q.2
+
+/-- A map into a level near an interior point, with injective differential and source dimension
+`dim E - dim F`, covers that level near its image. Regularity of `f` and `C¹` regularity of both
+maps are required only at the chosen points; the image can be restricted to any source
+neighbourhood `S`. -/
+theorem IsRegularPoint.eventually_mem_image
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 G H'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace H' P] [IsManifold J 1 P]
+    {g : P → M} {q₀ : P} (hreg : IsRegularPoint I 𝓘(𝕜, F) f (g q₀))
+    (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f (g q₀))
+    (hdim : finrank 𝕜 G + finrank 𝕜 F = finrank 𝕜 E)
+    {S : Set P} (hS : S ∈ 𝓝 q₀) (hg : ContMDiffAt J I 1 g q₀)
+    (hgc : ∀ᶠ q in 𝓝 q₀, f (g q) = c)
+    (hinj : Injective (mfderiv J I g q₀)) (hq₀ : J.IsInteriorPoint q₀) :
+    ∀ᶠ x in 𝓝 (g q₀), f x = c → x ∈ g '' S := by
+  have hnear := ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hf).and
+    (hreg.eventually_isRegularPoint hf le_rfl)
+  obtain ⟨U, hUsub, hUopen, hUmem⟩ := mem_nhds_iff.mp hnear
+  let U' : TopologicalSpace.Opens M := ⟨U, hUopen⟩
+  have hsource := (show ∀ᶠ q in 𝓝 q₀, q ∈ S from hS).and (hgc.and
+    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hg).and
+      (hg.continuousAt.preimage_mem_nhds (hUopen.mem_nhds hUmem))))
+  obtain ⟨V, hVsub, hVopen, hVmem⟩ := mem_nhds_iff.mp hsource
+  let V' : TopologicalSpace.Opens P := ⟨V, hVopen⟩
+  let g' : V' → U' := fun q ↦ ⟨g q, (hVsub q.property).2.2.2⟩
+  have hg' : ContMDiff J I 1 g' := by
+    apply (ContMDiff.subtypeVal_comp_iff U' g').mp
+    exact fun q ↦ ((hVsub q.property).2.2.1.comp q
+      (contMDiff_subtype_val q)).contMDiffWithinAt
+  have hregU : IsRegularValue I 𝓘(𝕜, F) (f ∘ (Subtype.val : U' → M)) c :=
+    isRegularValue_iff.mpr fun p _ ↦ (hUsub p.property).2.comp (isRegularPoint_subtype_val p)
+  have hinj' : Injective (mfderiv J I g' ⟨q₀, hVmem⟩) := by
+    intro v w hvw
+    apply hinj
+    have hval : (Subtype.val : U' → M) ∘ g' = g ∘ (Subtype.val : V' → P) := rfl
+    have hvw' : mfderiv J I ((Subtype.val : U' → M) ∘ g') ⟨q₀, hVmem⟩ v =
+        mfderiv J I ((Subtype.val : U' → M) ∘ g') ⟨q₀, hVmem⟩ w := by
+      rwa [Manifold.mfderiv_subtype_val_comp_apply, Manifold.mfderiv_subtype_val_comp_apply]
+    rwa [hval, Manifold.mfderiv_comp_subtype_val_apply,
+      Manifold.mfderiv_comp_subtype_val_apply] at hvw'
+  have hmem := hregU.eventually_mem_range
+    (fun p _ ↦ (hUsub p.property).1.comp p (contMDiff_subtype_val p)) hdim hg'
+    (fun q ↦ (hVsub q.property).2.1) hinj'
+    (ModelWithCorners.isInteriorPoint_iff_isInteriorPoint_val.mpr hq₀)
+  have hmap := map_nhds_subtype_coe_eq_nhds (g' ⟨q₀, hVmem⟩).property
+    (hUopen.mem_nhds hUmem)
+  rw [← hmap, eventually_map]
+  filter_upwards [hmem] with x hx hxc
+  obtain ⟨q, hq⟩ := hx hxc
+  exact ⟨q, (hVsub q.property).1, congrArg Subtype.val hq⟩
+
+/-- A curve with nonzero velocity in a level of dimension one covers that level locally.
+The defining function need only be regular and `C¹` at `δ s₀`, the curve need only be `C¹`
+at `s₀`, and its values need lie in the level only near `s₀`. Coverage holds using parameters
+in any prescribed neighbourhood `S` of `s₀`. -/
+theorem IsRegularPoint.eventually_mem_image_of_curveVelocity_ne_zero
+    {δ : 𝕜 → M} {s₀ : 𝕜} (hreg : IsRegularPoint I 𝓘(𝕜, F) f (δ s₀))
+    (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f (δ s₀))
+    (hdim : finrank 𝕜 F + 1 = finrank 𝕜 E) {S : Set 𝕜} (hS : S ∈ 𝓝 s₀)
+    (hδ : ContMDiffAt 𝓘(𝕜, 𝕜) I 1 δ s₀) (hδc : ∀ᶠ s in 𝓝 s₀, f (δ s) = c)
+    (hv : Manifold.curveVelocity I δ s₀ ≠ 0) :
+    ∀ᶠ x in 𝓝 (δ s₀), f x = c → x ∈ δ '' S := by
+  apply hreg.eventually_mem_image hf (by rw [finrank_self, add_comm, hdim]) hS hδ hδc
+    _ BoundarylessManifold.isInteriorPoint
+  rw [(Manifold.hasMFDerivAt_curveVelocity (hδ.mdifferentiableAt one_ne_zero)).mfderiv]
+  exact smul_left_injective 𝕜 hv
 
 end TauCeti
