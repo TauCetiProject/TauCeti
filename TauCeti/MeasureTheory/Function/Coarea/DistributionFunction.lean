@@ -52,7 +52,7 @@ and the image `h({Dh = 0})` is a null set, then `m(t) = -μ'(t)` at almost every
 (`MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv`). The critical set may
 still have positive volume. Its contribution to the distribution function is the cumulative
 function of the pushforward of volume on it under `h`. That measure is carried by the null set of
-critical values, so it is singular, and by the Besicovitch differentiation theorem its ratio to
+critical values, so it is singular, and by the Vitali differentiation theorem its ratio to
 Lebesgue measure on small intervals tends to zero almost everywhere. This is the case of a radial
 rearrangement, whose critical values form a null set.
 
@@ -73,7 +73,7 @@ rearrangement, whose critical values form a null set.
 
 public section
 
-open MeasureTheory Measure Set Filter Module Function Metric
+open MeasureTheory Measure Set Filter Module Function
 open scoped ENNReal Topology
 
 namespace MeasureTheory
@@ -240,6 +240,27 @@ private theorem measureReal_setOf_lt_eq_add_add {c u v : ℝ} (hh : AEMeasurable
     ENNReal.toReal_add (ne_top_of_le_ne_top hfin (le_self_add.trans le_self_add))
       (ne_top_of_le_ne_top hfin (le_add_self.trans le_self_add))]
 
+/-- A locally finite measure on `ℝ` that is singular with respect to Lebesgue measure has right
+difference quotients `ρ (t, t + δ] / δ` tending to zero at almost every `t`. -/
+private theorem ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular {ρ : Measure ℝ}
+    [IsLocallyFiniteMeasure ρ] (hρ : ρ ⟂ₘ volume) :
+    ∀ᵐ t, Tendsto (fun δ : ℝ ↦ δ⁻¹ * ρ.real (Ioc t (t + δ))) (𝓝[>] 0) (𝓝 0) := by
+  set v := IsUnifLocDoublingMeasure.vitaliFamily (volume : Measure ℝ) 1
+  filter_upwards [v.ae_eventually_measure_zero_of_singular hρ] with t ht
+  have hshift : Tendsto (fun δ : ℝ ↦ t + δ) (𝓝[>] 0) (𝓝[>] t) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (((continuous_const_add t).tendsto' 0 t (add_zero t)).mono_left nhdsWithin_le_nhds)
+      (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ lt_add_of_pos_right t hδ)
+  refine squeeze_zero' (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ by positivity)
+    (eventually_nhdsWithin_of_forall fun δ (hδ : 0 < δ) ↦ ?_)
+    ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+      (ht.comp ((Real.tendsto_Icc_vitaliFamily_right t).comp hshift)))
+  calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (Icc t (t + δ)) := by
+        gcongr
+        exacts [measure_Icc_lt_top.ne, Ioc_subset_Icc_self]
+    _ = (ρ (Icc t (t + δ)) / volume (Icc t (t + δ))).toReal := by
+        simp [ENNReal.toReal_div, measureReal_def, hδ.le, inv_mul_eq_div]
+
 /-- The equality `m(t) = -μ'(t)` at almost every `t > c`, for a fixed `c > 0`, when the critical
 values of `h` form a null set. -/
 private theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt (hh : AEMeasurable h)
@@ -283,29 +304,17 @@ private theorem ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv_of_lt (hh :
     measureReal_mono (fun x hx ↦ huv.trans_lt hx) (hfin u hu)
   filter_upwards [hμr.neg.ae_differentiableWithinAt_of_mem,
     LocallyIntegrable.ae_hasDerivAt_integral hg.locallyIntegrable,
-    (ae_restrict_iff' measurableSet_Ioi).1 hfinite, hsing.rnDeriv_ae_eq_zero,
-    Besicovitch.ae_tendsto_rnDeriv ρ volume] with t hdiff hderiv hfin_t hρt hbt hct
+    (ae_restrict_iff' measurableSet_Ioi).1 hfinite,
+    ae_tendsto_inv_mul_measureReal_Ioc_of_mutuallySingular hsing] with t hdiff hderiv hfin_t hρt hct
   have hdμ : DifferentiableAt ℝ μr t := by
     simpa using ((hdiff (hc.trans hct)).differentiableAt (Ioi_mem_nhds (hc.trans hct))).neg
   have hF := (hdμ.hasDerivAt.add (hderiv c)).tendsto_slope_zero_right
-  -- The right difference quotients of `μr + ∫_c g` at `t` are bounded by twice the ratio of
-  -- `ρ` to volume on balls around `t`, which tends to the density `0` of the singular `ρ`.
-  have hlim : Tendsto (fun δ ↦ 2 * (ρ (closedBall t δ) / volume (closedBall t δ)).toReal)
-      (𝓝[>] 0) (𝓝 0) := by
-    rw [hρt, Pi.zero_apply] at hbt
-    simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hbt).const_mul 2
+  -- The right difference quotients of `μr + ∫_c g` at `t` are those of `-ρ`, which tend to `0`.
   have hzero : Tendsto (fun δ : ℝ ↦ δ⁻¹ •
       ((μr (t + δ) + ∫ s in c..t + δ, g s) - (μr t + ∫ s in c..t, g s))) (𝓝[>] 0) (𝓝 0) := by
-    refine squeeze_zero_norm' ?_ hlim
+    refine (neg_zero (G := ℝ) ▸ hρt.neg).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with δ (hδ : 0 < δ)
-    have hball : ρ.real (Ioc t (t + δ)) ≤ ρ.real (closedBall t δ) :=
-      measureReal_mono (fun s hs ↦ by
-        rw [Real.closedBall_eq_Icc]; exact ⟨by linarith [hs.1], by linarith [hs.2]⟩)
-    rw [hdrop hct (by linarith), smul_eq_mul, norm_mul, norm_neg, Real.norm_of_nonneg
-      measureReal_nonneg, norm_inv, Real.norm_of_nonneg hδ.le, Real.volume_closedBall,
-      ENNReal.toReal_div, ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
-    calc δ⁻¹ * ρ.real (Ioc t (t + δ)) ≤ δ⁻¹ * ρ.real (closedBall t δ) := by gcongr
-      _ = 2 * (ρ.real (closedBall t δ) / (2 * δ)) := by field_simp
+    rw [hdrop hct (by linarith), smul_eq_mul, mul_neg]
   have hsum : deriv μr t + g t = 0 := tendsto_nhds_unique hF hzero
   rw [show g t = (m t).toReal from indicator_of_mem hct _] at hsum
   calc m t = ENNReal.ofReal (m t).toReal := (ENNReal.ofReal_toReal (hfin_t hct).ne).symm

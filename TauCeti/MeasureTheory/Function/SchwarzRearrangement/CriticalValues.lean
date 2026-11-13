@@ -82,38 +82,12 @@ theorem ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_n
         ‖fderiv ℝ (fun z ↦ (TauCeti.schwarzRearrangement volume
           (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1] =
         ENNReal.ofReal (-deriv (fun s ↦ volume.real {x | s < h x}) t) := by
-  set f := TauCeti.schwarzRearrangement volume fun y ↦ ENNReal.ofReal (h y)
-  set v : E → ℝ := fun z ↦ (f z).toReal
-  -- Superlevel sets of `f` at real levels are those of `h`, by equimeasurability.
-  have hlevel (s : ℝ) (hs : 0 ≤ s) :
-      volume {x | ENNReal.ofReal s < f x} = volume {x | s < h x} := by
-    rw [TauCeti.addHaar_setOf_lt_schwarzRearrangement]
-    congr 1
-    ext x
-    exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
-  -- The extended rearrangement is finite almost everywhere.
-  have htop : volume {x | f x = ∞} = 0 := by
-    have hlim := tendsto_measure_iInter_atTop (μ := volume)
-      (s := fun n : ℕ ↦ {x | (n : ℝ) < h x})
-      (fun n ↦ (measurableSet_lt measurable_const hh.continuous.measurable).nullMeasurableSet)
-      (fun m n hmn x (hx : (n : ℝ) < h x) ↦ (Nat.cast_le.2 hmn).trans_lt hx)
-      ⟨1, by simpa using hfin 1 one_pos⟩
-    have hempty : ⋂ n : ℕ, {x | (n : ℝ) < h x} = ∅ :=
-      eq_empty_of_forall_notMem fun x hx ↦ by
-        obtain ⟨n, hn⟩ := exists_nat_ge (h x)
-        exact (mem_iInter.1 hx n).not_ge hn
-    rw [hempty, measure_empty] at hlim
-    refine le_antisymm (ge_of_tendsto' hlim fun n ↦ ?_) zero_le
-    calc volume {x | f x = ∞}
-        ≤ volume {x | ENNReal.ofReal n < f x} := measure_mono fun x (hx : f x = ∞) ↦ by
-          simp [mem_ofPred_eq, hx]
-      _ = volume {x | (n : ℝ) < h x} := hlevel n n.cast_nonneg
-  -- Hence `v` has the same distribution function as `h` at positive levels.
-  have hdist (s : ℝ) (hs : 0 < s) : volume {x | s < v x} = volume {x | s < h x} := by
-    rw [← hlevel s hs.le]
-    refine measure_congr ?_
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 htop] with x hx
-    exact (ENNReal.ofReal_lt_iff_lt_toReal hs.le hx).symm
+  -- The real rearrangement has the same distribution function as `h` at positive levels.
+  have hdist (s : ℝ) (hs : 0 < s) : volume {x | s < (TauCeti.schwarzRearrangement volume
+      (fun y ↦ ENNReal.ofReal (h y)) x).toReal} = volume {x | s < h x} :=
+    TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement
+      (TauCeti.ae_schwarzRearrangement_ofReal_ne_top hh.continuous.aemeasurable (hfin 1 one_pos))
+      hs.le
   have hv := TauCeti.lipschitzWith_toReal_schwarzRearrangement volume hh
   filter_upwards [ae_setLIntegral_inv_enorm_fderiv_eq_ofReal_neg_deriv
     hv.continuous.measurable.aemeasurable (fun t ht ↦ hdist t ht ▸ hfin t ht)
