@@ -36,7 +36,8 @@ Weyl automorphisms of `L` permute its weight spaces accordingly, so the simple-r
 
 Now let `P` be the root system of a finite-dimensional Lie algebra `L` with nondegenerate Killing
 form and a splitting Cartan subalgebra `H`, and let the Serre system come from `sl₂` triples for the
-simple roots generating `L`. Serre's theorem says that the resulting surjection
+simple roots; such a system generates `L` (`TauCeti.lieSpan_eq_top_of_isSerreSystem`). Serre's
+theorem says that the resulting surjection
 `TauCeti.serreLift : Matrix.ToLieAlgebra K b.cartanMatrixᵀ → L` is injective. This file proves that
 its kernel can only live on weights that are neither zero nor a root:
 
@@ -174,57 +175,12 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsTriangularizable K H L] {b : (rootSystem H).Base} [DecidableEq b.support]
   {e f : b.support → L}
   (hS : IsSerreSystem K b.cartanMatrixᵀ (fun i ↦ (((rootSystem H).coroot i : H) : L)) e f)
-  (hspan : lieSpan K L (Set.range e ∪ Set.range f) = ⊤)
-
-omit [DecidableEq b.support] in
-/-- A common eigenvector of the simple coroots, with the eigenvalues of a root `χ`, lies in the
-root space of `χ`, because the simple coroots span the Cartan subalgebra. -/
-private lemma mem_rootSpace_of_lie_coroot_eq_smul (χ : Weight K H L) {x : L}
-    (hx : ∀ k : b.support,
-      ⁅(((rootSystem H).coroot k : H) : L), x⁆ = χ ((rootSystem H).coroot k) • x) :
-    x ∈ rootSpace H (χ : H → K) := by
-  refine weightSpace_le_genWeightSpace L _ ((mem_weightSpace _ _).2 fun u ↦ ?_)
-  have hu : u ∈ Submodule.span K ((rootSystem H).coroot '' b.support) := by
-    rw [b.span_coroot_support]
-    exact (RootPairing.IsRootSystem.span_coroot_eq_top (P := rootSystem H)).ge Submodule.mem_top
-  induction hu using Submodule.span_induction with
-  | mem _ hu =>
-    obtain ⟨k, hk, rfl⟩ := hu
-    exact hx ⟨k, hk⟩
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => simp [add_lie, add_smul, h₁, h₂]
-  | smul c _ _ h₁ => simp [smul_lie, mul_smul, h₁]
-
-omit [DecidableEq b.support] in
-include hS in
-/-- A Serre system of simple-root `sl₂` triples in a split semisimple Lie algebra generates it. -/
-private lemma lieSpan_eq_top_of_isSerreSystem :
-    lieSpan K L (Set.range e ∪ Set.range f) = ⊤ := by
-  have hpair (i k : b.support) : (((b.cartanMatrixᵀ k i : ℤ)) : K) =
-      ((i : H.root) : Weight K H L) ((rootSystem H).coroot k) := by
-    rw [Matrix.transpose_apply]
-    exact cartanMatrix_eq_apply_coroot b k i
-  have he (i : b.support) : e i ∈ rootSpace H (((i : H.root) : Weight K H L) : H → K) :=
-    mem_rootSpace_of_lie_coroot_eq_smul (b := b) _ fun k ↦ by
-      rw [hS.lie_H_E, ← hpair, Int.cast_smul_eq_zsmul]
-  have hf (i : b.support) : f i ∈ rootSpace H (-((i : H.root) : Weight K H L) : H → K) := by
-    rw [← Weight.coe_neg]
-    refine mem_rootSpace_of_lie_coroot_eq_smul (b := b) _ fun k ↦ ?_
-    rw [hS.lie_H_F, Weight.coe_neg, Pi.neg_apply, ← hpair, neg_smul, Int.cast_smul_eq_zsmul]
-  refine lieSpan_range_union_eq_top_of_mem_rootSpace b e f (fun i ↦ ⟨?_, hS.lie_E_F_self i, ?_, ?_⟩)
-    he hf
-  · exact fun h ↦ (rootSystem H).ne_zero' i (Subtype.ext h)
-  · have := hS.lie_H_E i i
-    rw [Matrix.transpose_apply, b.cartanMatrix_apply_same] at this
-    simpa [two_smul] using this
-  · have := hS.lie_H_F i i
-    rw [Matrix.transpose_apply, b.cartanMatrix_apply_same] at this
-    simpa [two_smul] using this
 
 /-- **The Serre lift carries the weight space of a root onto its root space.** Let `L` be a split
-semisimple Lie algebra with a Serre system of simple-root `sl₂` triples, which generates it. The
-induced surjection from the Lie algebra presented by Serre's relations carries the weight space with
-eigenvalues `⟨α, αₖ∨⟩` onto `rootSpace H α`, for every root `α`. -/
+semisimple Lie algebra with a Serre system of simple-root `sl₂` triples, which generates it
+(`TauCeti.lieSpan_eq_top_of_isSerreSystem`). The induced surjection from the Lie algebra presented
+by Serre's relations carries the weight space with eigenvalues `⟨α, αₖ∨⟩` onto `rootSpace H α`,
+for every root `α`. -/
 theorem map_serreLift_iInf_eigenspace_ad_pairingIn (j : H.root) :
     (⨅ k : b.support, (ad K (Matrix.ToLieAlgebra K b.cartanMatrixᵀ)
         (serreH K b.cartanMatrixᵀ k)).eigenspace (((rootSystem H).pairingIn ℤ j k : ℤ) : K)).map
@@ -241,19 +197,7 @@ theorem map_serreLift_iInf_eigenspace_ad_pairingIn (j : H.root) :
   ext x
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff, ad_apply, hpair,
     LieSubmodule.mem_toSubmodule]
-  refine ⟨fun hx ↦ weightSpace_le_genWeightSpace L _ ((mem_weightSpace _ _).2 fun u ↦ ?_),
-    fun hx k ↦ lie_eq_smul_of_mem_rootSpace hx _⟩
-  -- The simple coroots span `H`, so the eigenvalue equations extend to all of `H`.
-  have hu : u ∈ Submodule.span K ((rootSystem H).coroot '' b.support) := by
-    rw [b.span_coroot_support]
-    exact (RootPairing.IsRootSystem.span_coroot_eq_top (P := rootSystem H)).ge Submodule.mem_top
-  induction hu using Submodule.span_induction with
-  | mem _ hu =>
-    obtain ⟨k, hk, rfl⟩ := hu
-    exact hx ⟨k, hk⟩
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => simp [add_lie, add_smul, h₁, h₂]
-  | smul c _ _ h₁ => simp [smul_lie, mul_smul, h₁]
+  exact (mem_rootSpace_iff_forall_lie_coroot b (j : Weight K H L).toLinear).symm
 
 /-- **The Serre lift is injective on the weight space of a root.** -/
 theorem ker_serreLift_inf_iInf_eigenspace_ad_pairingIn (j : H.root) :
@@ -290,7 +234,6 @@ theorem ker_serreLift_inf_iInf_eigenspace_ad_zero :
     (f := (serreLift hS : Matrix.ToLieAlgebra K b.cartanMatrixᵀ →ₗ[K] L)) ?_).symm.eq_bot
   simpa only [Function.comp_def, LieHom.coe_toLinearMap, serreLift_serreH] using hli
 
-include hspan in
 /-- **The kernel of the Serre lift lives on the weights that are neither zero nor a root.** The
 kernel of the surjection from the Lie algebra presented by Serre's relations onto `L` lies in the
 sum of the weight spaces whose weight is neither zero nor the weight `k ↦ ⟨α, αₖ∨⟩` of a root. -/
@@ -306,7 +249,7 @@ theorem ker_serreLift_le_iSup_iInf_eigenspace_ad :
     hS.iSupIndep_iInf_eigenspace_ad fun χ ↦ by
       simpa only [serreLift_serreH] using
         (hS'.map_iInf_eigenspace_ad_of_surjective hgen (serreLift hS)
-          (serreLift_surjective hS hspan) χ).le]
+          (serreLift_surjective hS (lieSpan_eq_top_of_isSerreSystem hS)) χ).le]
   refine iSup_le fun χ ↦ ?_
   by_cases hχ : χ ≠ 0 ∧ ∀ j : H.root, χ ≠ fun k : b.support ↦ (rootSystem H).pairingIn ℤ j k
   · exact inf_le_right.trans (le_biSup (fun χ : b.support → ℤ ↦ ⨅ k, (ad K (Matrix.ToLieAlgebra K

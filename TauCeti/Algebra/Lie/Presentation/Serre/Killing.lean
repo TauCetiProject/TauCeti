@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import Mathlib.Algebra.Lie.Basis.Base
+import TauCeti.Algebra.Lie.Weights.Basic
 
 /-!
 # Serre systems in a split semisimple Lie algebra
@@ -40,14 +41,18 @@ convention `⁅Hᵢ, Eⱼ⁆ = CMᵢⱼ Eⱼ`, whereas `RootPairing.Base.cartanM
 
 ## Main results
 
-* `TauCeti.chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot`: a root string has no lower part as soon
-  as one step down from its base is not a root.
+* `TauCeti.chainBotCoeff_eq_zero_of_genWeightSpace_sub_eq_bot`: a weight string has no lower part
+  as soon as one step down from its base is not a weight.
 * `TauCeti.ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot`: the higher Serre relation for a pair of
   root vectors whose difference of roots is not a root.
 * `TauCeti.rootSpace_sub_eq_bot_of_base`: the difference of two distinct simple roots is not a
   root.
+* `TauCeti.mem_rootSpace_iff_forall_lie_coroot`: membership in a root space can be checked on
+  the simple coroots.
 * `TauCeti.isSerreSystem_coroot`: simple-root `sl₂` triples form a Serre system for the transposed
   Cartan matrix of the base.
+* `TauCeti.lieSpan_eq_top_of_isSerreSystem`: the raising and lowering families of any Serre system
+  for the simple coroots generate `L`.
 * `TauCeti.exists_isSerreSystem_of_base`: such a Serre system exists, and its raising and lowering
   families generate `L`.
 * `TauCeti.exists_surjective_serreLift_of_base`: `L` is a quotient of the Serre algebra of its
@@ -73,23 +78,21 @@ namespace TauCeti
 open LieAlgebra LieAlgebra.IsKilling LieModule LieSubalgebra Module RootPairing Set
 open scoped Matrix
 
+/-! ## The higher Serre relation from a root string -/
+
+/-- If `β - α` is not a weight then the `α`-string through the weight `β` has no lower part. -/
+theorem chainBotCoeff_eq_zero_of_genWeightSpace_sub_eq_bot {R L M : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L] [AddCommGroup M] [Module R M]
+    [LieRingModule L M] [LieModule R L M] [HasUniqueDiv R] [IsDomain R] [IsTorsionFree R M]
+    [IsNoetherian R M] {α : L → R} {β : Weight R L M} (hsub : genWeightSpace M (⇑β - α) = ⊥) :
+    chainBotCoeff α β = 0 := by
+  by_contra hne
+  refine genWeightSpace_neg_zsmul_add_ne_bot α β (n := 1) (by omega) ?_
+  rwa [Nat.cast_one, neg_one_zsmul, neg_add_eq_sub]
+
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
   [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-
-/-! ## The higher Serre relation from a root string -/
-
-/-- If `β - α` is not a root then the `α`-root string through `β` has no lower part. -/
-theorem chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L}
-    (hsub : rootSpace H (⇑β - ⇑α) = ⊥) :
-    chainBotCoeff (⇑α) β = 0 := by
-  by_cases hα : α.IsZero
-  · rw [hα.eq]
-    exact chainBotCoeff_zero β
-  by_contra hne
-  refine (rootSpace_zsmul_add_ne_bot_iff α β hα (-1)).2 ⟨by omega, by omega⟩ ?_
-  rw [neg_one_zsmul, neg_add_eq_sub]
-  exact hsub
 
 /-- **The higher Serre relation.** If `x` and `y` are root vectors for roots `α` and `β` whose
 difference `β - α` is not a root, and `n = ⟨β, α∨⟩`, then `ad x` kills `⁅x, y⁆` after `-n` further
@@ -102,7 +105,7 @@ theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L}
   · have hβ : rootSpace H (⇑β) = ⊥ := by simpa [hα.eq] using hsub
     have hy0 : y = 0 := by simpa [hβ] using hy
     simp [hy0]
-  have hbot := chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot hsub
+  have hbot := chainBotCoeff_eq_zero_of_genWeightSpace_sub_eq_bot hsub
   have hcast : ((n : ℤ) : K) = (((chainBotCoeff (⇑α) β : ℤ) - chainTopCoeff (⇑α) β : ℤ) : K) :=
     hn.trans (apply_coroot_eq_cast α β)
   have hn' : n = (chainBotCoeff (⇑α) β : ℤ) - chainTopCoeff (⇑α) β := by exact_mod_cast hcast
@@ -141,6 +144,14 @@ theorem cartanMatrix_eq_apply_coroot (b : (rootSystem H).Base) (i j : ↥b.suppo
   have h := (rootSystem H).algebraMap_pairingIn ℤ (j : H.root) (i : H.root)
   rw [rootSystem_pairing_apply, algebraMap_int_eq] at h
   simpa [Base.cartanMatrix, Base.cartanMatrixIn_def] using h
+
+/-- **Membership in a root space can be checked on the simple coroots**, because they form a basis
+of the Cartan subalgebra. -/
+theorem mem_rootSpace_iff_forall_lie_coroot (b : (rootSystem H).Base) (χ : Module.Dual K H)
+    {x : L} : x ∈ rootSpace H (χ : H → K) ↔
+      ∀ k : b.support, ⁅(((rootSystem H).coroot k : H) : L), x⁆ = χ ((rootSystem H).coroot k) • x :=
+  ⟨fun hx _ ↦ lie_eq_smul_of_mem_rootSpace hx _, fun hx ↦ weightSpace_le_genWeightSpace L _
+    ((b.toCoweightBasis.mem_weightSpace_iff_forall_basis χ x).2 fun k ↦ by simpa using hx k)⟩
 
 /-! ## Serre systems from simple-root `sl₂` triples -/
 
@@ -193,6 +204,28 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
       rw [coroot_neg, Weight.coe_neg, Pi.neg_apply, map_neg, neg_neg, Matrix.transpose_apply]
       exact cartanMatrix_eq_apply_coroot b i j
     exact ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot hsub hn hx hy
+
+/-- **A Serre system for the simple coroots generates the split semisimple Lie algebra.** Its
+raising and lowering generators are root vectors for the simple roots and its coroots are those of
+the base, so they are simple-root `sl₂` triples. -/
+theorem lieSpan_eq_top_of_isSerreSystem {b : (rootSystem H).Base} {e f : ↥b.support → L}
+    (hS : IsSerreSystem K b.cartanMatrixᵀ (fun i ↦ (((rootSystem H).coroot i : H) : L)) e f) :
+    lieSpan K L (range e ∪ range f) = ⊤ := by
+  have hpair (i k : b.support) : ((b.cartanMatrixᵀ k i : ℤ) : K) =
+      ((i : H.root) : Weight K H L) ((rootSystem H).coroot k) := by
+    rw [Matrix.transpose_apply, rootSystem_coroot_apply]
+    exact cartanMatrix_eq_apply_coroot b k i
+  refine lieSpan_range_union_eq_top_of_mem_rootSpace b e f (fun i ↦ hS.isSl2Triple
+    (by rw [Matrix.transpose_apply, b.cartanMatrix_apply_same])
+    fun h ↦ (rootSystem H).ne_zero' i (Subtype.ext h)) (fun i ↦ ?_) fun i ↦ ?_
+  · refine (mem_rootSpace_iff_forall_lie_coroot b ((i : H.root) : Weight K H L).toLinear).2
+      fun k ↦ ?_
+    rw [hS.lie_H_E_smul, hpair]
+    rfl
+  · refine (mem_rootSpace_iff_forall_lie_coroot b (-((i : H.root) : Weight K H L).toLinear)).2
+      fun k ↦ ?_
+    rw [hS.lie_H_F_smul, hpair]
+    rfl
 
 /-- **A split semisimple Lie algebra carries a Serre system for its Cartan matrix**, whose
 raising and lowering families generate it. -/
