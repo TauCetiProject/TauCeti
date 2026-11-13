@@ -451,6 +451,9 @@ vertex `b` to the vertex `!b`. -/
 
 @[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
 
+/-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
+theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl
@@ -477,8 +480,11 @@ end TauCeti
 
 namespace SimpleGraph
 
-/-- The Serre graph of a simple graph has its darts as directed edges. -/
-@[expose] def toSerreGraph {V : Type u} (G : SimpleGraph V) : TauCeti.SerreGraph.{u, u} where
+/-- The Serre graph of a simple graph has its darts as directed edges. The definition unfolds at
+instance transparency, so that a vertex or a dart of the simple graph is accepted as a vertex or a
+dart of its Serre graph by rewriting and simplification. -/
+@[expose, instance_reducible] def toSerreGraph {V : Type u} (G : SimpleGraph V) :
+    TauCeti.SerreGraph.{u, u} where
   V := V
   E := G.Dart
   src := fun e => e.fst

@@ -206,7 +206,7 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv
         (hu.continuous_iteratedFDeriv (by simp) |>.aestronglyMeasurable)
         (.of_forall fun x => norm_iteratedFDeriv_zero.symm)
     · have hdi : Integrable (fderiv ℝ u) μ := ⟨hdu, by
-        rwa [HasFiniteIntegral, ← eLpNorm_one_eq_lintegral_enorm hdu, lt_top_iff_ne_top]⟩
+        rwa [HasFiniteIntegral, ← eLpNorm_one_eq_lintegral_eNorm hdu, lt_top_iff_ne_top]⟩
       exact (memLp_one_iff_integrable.2 hdi).congr_norm
         (hu.continuous_iteratedFDeriv le_rfl |>.aestronglyMeasurable)
         (.of_forall fun x => (norm_iteratedFDeriv_one u).symm)

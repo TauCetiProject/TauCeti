@@ -75,16 +75,14 @@ namespace TauCeti.WorkedExamples
 
 /-- The rational point `(1, 1)` of `y² = x³ - x + 1`. -/
 def curveX3SubXAddOnePoint : (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=
-  .some 1 1 <| equation_iff_nonsingular.1 <| by
-    rw [equation_iff]
-    simp [curveX3SubXAddOne]
+  .some 1 1 <| equation_iff_nonsingular.1 <| (equation_curveX3SubXAddOne_iff 1 1).2 (by norm_num)
 
 /-- `curveX3SubXAddOnePoint` is the point `(1, 1)`. -/
 @[simp]
 theorem curveX3SubXAddOnePoint_def :
-    curveX3SubXAddOnePoint = .some 1 1 (equation_iff_nonsingular.1 <| by
-      rw [equation_iff]
-      simp [curveX3SubXAddOne]) := (rfl)
+    curveX3SubXAddOnePoint = .some 1 1
+      (equation_iff_nonsingular.1 <| (equation_curveX3SubXAddOne_iff 1 1).2 (by norm_num)) :=
+  (rfl)
 
 /-- `(1, 1)` has infinite order. -/
 theorem not_isOfFinAddOrder_curveX3SubXAddOnePoint :

@@ -45,6 +45,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le` by the scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
+  coefficient matrix at a point.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
@@ -332,6 +334,28 @@ theorem euclideanParabolicOperatorL_one_apply
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
   simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
   simp [Matrix.one_apply]
+
+/-- **Freezing the coefficients at a point.** The operator `∂ₜ - ∑ᵢⱼ aⁱʲ(z₀) ∂ᵢ∂ⱼ` with the
+coefficient matrix frozen at `z₀` and no lower-order terms is `P` plus the frozen principal error
+`(a - a(z₀))·D_x²` and the lower-order part `b·D_x + c`. -/
+theorem euclideanParabolicOperatorL_const_apply_eq_add {t₀ t₁ : ℝ} {ht : t₀ < t₁} (hα : α ≤ 1)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (z₀ : slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (a i j z₀)) 0 0 u =
+      euclideanParabolicOperatorL hα a b c u +
+        spatialOperatorL hα (euclideanSecondOrderCoeff a -
+          HolderSpace.const (euclideanSecondOrderCoeff a z₀)) 0 0 u +
+        spatialOperatorL hα 0 (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u := by
+  ext p
+  simp only [euclideanParabolicOperatorL_apply, HolderSpace.add_apply, spatialOperatorL_apply,
+    HolderSpace.sub_apply, _root_.sub_apply, euclideanSecondOrderCoeff_apply,
+    HolderSpace.const_apply, HolderSpace.zero_apply, _root_.zero_apply,
+    Pi.zero_apply, zero_mul, Finset.sum_const_zero, euclideanFirstOrderCoeff_apply,
+    euclideanZerothOrderCoeff_apply]
+  ring
 
 /-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
 time derivative as its ordinary derivative. -/

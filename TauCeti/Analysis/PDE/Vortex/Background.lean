@@ -22,11 +22,13 @@ when `u` solves the regularized scalar equation
 
 (`TauCeti.Vortex.equation_amplitudeField_eq_zero_iff`,
 `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`, for `C²` amplitudes
-`u`). Bringing an arbitrary vortex with zero divisor `P` into this form is a gauge choice that is
-not treated here. For `m ≥ 1` the solution `u` grows like `-m log |z|`, so it is not square
-integrable on `ℂ` and in particular does not lie in the unweighted space `H¹(ℂ)`. Following
-Taubes, this file subtracts an explicit smooth background with the same growth. Here the
-background is
+`u`). Conversely, every smooth vortex with this end framing and zero divisor `P` is a framed gauge
+transform of such an amplitude field
+(`TauCeti.Vortex.exists_framedGaugeGroup_smul_amplitudeField_eq`, in
+`TauCeti.Analysis.PDE.Vortex.AmplitudeForm`). For `m ≥ 1` the solution `u` grows like
+`-m log |z|`, so it is not square integrable on `ℂ` and in particular does not lie in the
+unweighted space `H¹(ℂ)`. Following Taubes, this file subtracts an explicit smooth background with
+the same growth. Here the background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
