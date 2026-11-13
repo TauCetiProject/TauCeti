@@ -82,6 +82,7 @@ noncomputable def doubleι₁ : (single C c i₁).obj X₁ ⟶ double g hi₀₁
   mkHomFromSingle (doubleXIso₁ g hi₀₁ h).inv fun k _ ↦ by
     rw [double_d_eq_zero₀ g hi₀₁ _ _ h.symm, comp_zero]
 
+@[simp]
 theorem doubleι₁_f₁ : (doubleι₁ g hi₀₁ h).f i₁ =
     (singleObjXSelf c i₁ X₁).hom ≫ (doubleXIso₁ g hi₀₁ h).inv :=
   mkHomFromSingle_f _ _
@@ -94,6 +95,7 @@ instance : IsIso ((doubleι₁ g hi₀₁ h).f i₁) := by
 noncomputable def doubleπ₀ : double g hi₀₁ ⟶ (single C c i₀).obj X₀ :=
   mkHomFromDouble hi₀₁ h (singleObjXSelf c i₀ X₀).inv 0 (by simp [single_obj_d]) (by simp)
 
+@[simp]
 theorem doubleπ₀_f₀ : (doubleπ₀ g hi₀₁ h).f i₀ =
     (doubleXIso₀ g hi₀₁).hom ≫ (singleObjXSelf c i₀ X₀).inv :=
   mkHomFromDouble_f₀ _ _ _ _ _ _

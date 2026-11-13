@@ -87,6 +87,7 @@ noncomputable def doubleι : (HomologicalComplex.single C (.up ℤ) 0).obj S.X�
       obtain rfl : k = 1 := (ComplexShape.up ℤ).next_eq hk ComplexShape.up_rel_zero_one
       simp [HomologicalComplex.double_d S.g ComplexShape.up_rel_zero_one zero_ne_one])
 
+@[simp]
 theorem doubleι_f_zero : S.doubleι.f 0 =
     (HomologicalComplex.singleObjXSelf (.up ℤ) 0 S.X₁).hom ≫ S.f ≫
       (HomologicalComplex.doubleXIso₀ S.g ComplexShape.up_rel_zero_one).inv :=
