@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 -- Private: used only inside proofs.
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Calculus.TangentCone.Chart
 
 /-!
 # Graph coordinates over the tangent space
