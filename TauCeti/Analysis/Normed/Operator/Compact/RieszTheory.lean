@@ -14,10 +14,13 @@ import TauCeti.LinearAlgebra.End.RangePow
 # Riesz theory for compact perturbations of the identity
 
 Let `K` be a compact operator on a normed space `X` over `ℝ` or `ℂ` and write `A = 1 - K`. This
-file proves the three finiteness facts that make `A` a Fredholm operator: its kernel is finite
-dimensional, its range is closed, and its cokernel is finite dimensional. Together they are the
-operator-theoretic half of the Riesz--Schauder theory, and they are what upgrades Mathlib's
-spectral Fredholm alternative for compact operators to a statement about Fredholm operators.
+file proves three finiteness facts about `A`: its kernel is finite dimensional, its range is
+closed, and its cokernel is finite dimensional. Together they are the operator-theoretic half of
+the Riesz--Schauder theory. When `X` is a Banach space they make `A` a Fredholm operator
+(`TauCeti.isFredholm_one_sub`) and they upgrade Mathlib's spectral Fredholm alternative for compact
+operators to a statement about Fredholm operators. On a general normed space a Fredholm operator
+also needs `A` to be a strict map, which uses the lower bound
+`IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker` below.
 
 The kernel argument specializes the compact-error estimate API from
 `TauCeti.Analysis.Normed.Operator.Compact.Estimate` using
@@ -44,6 +47,7 @@ The kernel argument specializes the compact-error estimate API from
 * `IsCompactOperator.isCompactOperator_one_sub_pow`: `1 - (1 - K) ^ n` is compact, so
   every power of `1 - K` is again a compact perturbation of the identity. This holds for any
   continuous endomorphism of a topological module.
+* `IsCompactOperator.finiteDimensional_ker_one_sub`: `ker (1 - K)` is finite dimensional.
 * `IsCompactOperator.finiteDimensional_ker_pow_one_sub`: `ker ((1 - K) ^ n)` is finite dimensional.
 * `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed; `X` need not be complete.
 * `IsCompactOperator.isClosed_range_pow_one_sub`: `range ((1 - K) ^ n)` is closed.
@@ -155,17 +159,19 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
   rw [dist_eq_norm] at hlt
   exact (key m n hmn).not_gt hlt
 
+/-- The kernel of a compact perturbation of the identity is finite dimensional. -/
+theorem _root_.IsCompactOperator.finiteDimensional_ker_one_sub [CompleteSpace 𝕜]
+    (hK : IsCompactOperator K) :
+    FiniteDimensional 𝕜 (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) :=
+  (1 - K : X →L[𝕜] X).finiteDimensional_ker_of_compact_estimate hK (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_sub_add x (K x))
+
 /-- The kernel of every power of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_ker_pow_one_sub [CompleteSpace 𝕜]
     (hK : IsCompactOperator K) (n : ℕ) :
     FiniteDimensional 𝕜 (LinearMap.ker (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n)) := by
-  set A : X →L[𝕜] X := 1 - K with hA
-  have hKp : IsCompactOperator (1 - A ^ n : X →L[𝕜] X) := by
-    simpa only [hA] using hK.isCompactOperator_one_sub_pow n
-  have h := (A ^ n).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
-    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
-  rw [← ContinuousLinearMap.toLinearMap_pow]
-  exact h
+  have h := (hK.isCompactOperator_one_sub_pow n).finiteDimensional_ker_one_sub
+  rwa [sub_sub_cancel, ContinuousLinearMap.toLinearMap_pow] at h
 
 variable [IsRCLikeNormedField 𝕜]
 
@@ -177,9 +183,8 @@ theorem _root_.IsCompactOperator.isClosed_range_one_sub (hK : IsCompactOperator 
     infer_instance
   obtain ⟨A, hA⟩ : ∃ A : X →L[𝕜] X, A = 1 - K := ⟨_, rfl⟩
   rw [← hA]
-  have hbound : ∀ x, ‖x‖ ≤ 1 * ‖A x‖ + ‖K x‖ :=
-    fun x ↦ by simpa [hA] using norm_le_norm_add_norm_sub' x (A x)
-  have := A.finiteDimensional_ker_of_compact_estimate hK hbound
+  have : FiniteDimensional 𝕜 (LinearMap.ker (A : X →ₗ[𝕜] X)) :=
+    hA ▸ hK.finiteDimensional_ker_one_sub
   obtain ⟨M, hMclosed, hMcompl⟩ :=
     (Submodule.ClosedComplemented.of_finiteDimensional A.ker).exists_isClosed_isCompl
   obtain ⟨c, hcpos, hc⟩ := hK.exists_pos_mul_norm_le_of_disjoint_ker hMclosed

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
-import Mathlib.Analysis.Normed.Module.Complemented
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 import TauCeti.Analysis.Normed.Module.RieszLemma
 import TauCeti.LinearAlgebra.End.RangePow
