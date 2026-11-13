@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SemidirectProduct
-public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Gluing homomorphisms on a subgroup and a normalizing subgroup
@@ -20,8 +20,6 @@ they agree on `H ⊓ K`. No trivial-intersection hypothesis is needed.
 its restrictions to both factors, and its uniqueness characterize it without choosing a
 factorization. This permits extending a map on an elementary group by a compatible map on
 its torus, even when their intersection is nontrivial.
-`Subgroup.existsUnique_liftSupOfRightLeNormalizer_iff` characterizes when this unique extension
-exists, and `Subgroup.sup_hom_ext` gives extensionality without a normalization hypothesis.
 
 The construction uses Mathlib's `SemidirectProduct.lift` and `MonoidHom.liftOfSurjective`,
 and `SemidirectProduct.range_monoidHomSubgroup` for the image of multiplication.
@@ -114,68 +112,10 @@ theorem eq_liftSupOfRightLeNormalizer (F : ↥(H ⊔ K) →* D)
     (hF : F.comp (inclusion le_sup_left) = f)
     (hG : F.comp (inclusion le_sup_right) = g) :
     F = liftSupOfRightLeNormalizer H K hLE f g hconj hagree := by
-  apply MonoidHom.ext
-  intro x
-  obtain ⟨a, ha, b, hb, hab⟩ := (mem_sup_of_right_le_normalizer_left hLE).mp x.property
-  have hfactor : x = inclusion le_sup_left ⟨a, ha⟩ * inclusion le_sup_right ⟨b, hb⟩ := by
-    apply Subtype.ext
-    exact hab.symm
-  rw [hfactor, map_mul, map_mul, liftSupOfRightLeNormalizer_left,
-    liftSupOfRightLeNormalizer_right]
-  exact congrArg₂ (· * ·) (DFunLike.congr_fun hF ⟨a, ha⟩) (DFunLike.congr_fun hG ⟨b, hb⟩)
-
-/-- A homomorphism out of a join of subgroups is determined by its restrictions to both
-factors, without any normalization hypothesis. -/
-theorem sup_hom_ext {M : Type*} [Monoid M] {F F' : ↥(H ⊔ K) →* M}
-    (hH : ∀ a : H, F (inclusion le_sup_left a) = F' (inclusion le_sup_left a))
-    (hK : ∀ b : K, F (inclusion le_sup_right b) = F' (inclusion le_sup_right b)) : F = F' := by
-  have hsup : H ⊔ K ≤ (F.eqLocus F').map (H ⊔ K).subtype := by
-    apply sup_le
-    · intro a ha
-      exact ⟨inclusion le_sup_left (⟨a, ha⟩ : H), hH ⟨a, ha⟩, by simp⟩
-    · intro b hb
-      exact ⟨inclusion le_sup_right (⟨b, hb⟩ : K), hK ⟨b, hb⟩, by simp⟩
-  apply MonoidHom.ext
-  intro x
-  obtain ⟨y, hy, heq⟩ := hsup x.property
-  have hxy : y = x := Subtype.ext heq
-  exact hxy ▸ hy
-
-/-- The two compatibility conditions are necessary and sufficient for a unique extension to
-the join. In particular, agreement on the intersection cannot be omitted when the factors
-are not complementary. -/
-theorem existsUnique_liftSupOfRightLeNormalizer_iff :
-    (∃! F : ↥(H ⊔ K) →* D,
-      (∀ a : H, F (inclusion le_sup_left a) = f a) ∧
-        ∀ b : K, F (inclusion le_sup_right b) = g b) ↔
-    (∀ b : K,
-      f.comp (((H.normalizerMonoidHom).comp (inclusion hLE)) b).toMonoidHom =
-        (MulAut.conj (g b)).toMonoidHom.comp f) ∧
-      ∀ a : ↥(H ⊓ K), f ⟨a, a.property.1⟩ = g ⟨a, a.property.2⟩ := by
-  constructor
-  · rintro ⟨F, ⟨hH, hK⟩, _⟩
-    constructor
-    · intro b
-      apply MonoidHom.ext
-      intro a
-      have hval : inclusion le_sup_left
-          (((H.normalizerMonoidHom).comp (inclusion hLE)) b a) =
-          inclusion le_sup_right b * inclusion le_sup_left a * (inclusion le_sup_right b)⁻¹ := by
-        -- The normalizer action is defined by conjugation in the ambient group.
-        apply Subtype.ext
-        rfl
-      simp only [MonoidHom.comp_apply] at hval
-      simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply]
-      rw [← hH, hval, map_mul, map_mul, map_inv, hH, hK]
-    · intro a
-      rw [← hH, ← hK]
-      congr 1
-  · rintro ⟨hc, ha⟩
-    refine ⟨H.liftSupOfRightLeNormalizer K hLE f g hc ha, ⟨?_, ?_⟩, ?_⟩
-    · exact H.liftSupOfRightLeNormalizer_left K hLE f g hc ha
-    · exact H.liftSupOfRightLeNormalizer_right K hLE f g hc ha
-    · intro F hF
-      exact H.eq_liftSupOfRightLeNormalizer K hLE f g hc ha F
-        (MonoidHom.ext hF.1) (MonoidHom.ext hF.2)
+  apply H.sup_hom_ext K
+  · intro a
+    simpa using DFunLike.congr_fun hF a
+  · intro b
+    simpa using DFunLike.congr_fun hG b
 
 end Subgroup
