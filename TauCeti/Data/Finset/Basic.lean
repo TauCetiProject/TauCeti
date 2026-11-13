@@ -183,9 +183,7 @@ theorem card_even_card_finset {ι : Type*} [Finite ι] :
   have htot : (Finset.univ.filter fun s : Finset ι => Even s.card).card
       + (Finset.univ.filter fun s : Finset ι => ¬ Even s.card).card = 2 ^ Fintype.card ι := by
     rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_finset]
-  have hpow : 2 ^ Fintype.card ι = 2 * 2 ^ (Fintype.card ι - 1) := by
-    have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
-    rw [← pow_succ', Nat.sub_add_cancel hpos]
+  have hpow := (mul_pow_sub_one (Fintype.card_pos_iff.mpr ⟨i⟩).ne' (2 : ℕ)).symm
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card]
   omega
 
@@ -199,9 +197,7 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
   rw [Nat.card_sum, TauCeti.card_even_card_finset,
     Nat.card_congr (Equiv.subtypeEquivRight fun S : Finset ι => Nat.not_even_iff_odd),
     Nat.card_eq_fintype_card (α := Finset ι), Fintype.card_finset,
-    ← Nat.card_eq_fintype_card (α := ι)] at h
-  have h2 : 2 ^ Nat.card ι = 2 * 2 ^ (Nat.card ι - 1) := by
-    rw [← pow_succ', Nat.sub_add_cancel Nat.card_pos]
+    ← Nat.card_eq_fintype_card (α := ι), ← mul_pow_sub_one Nat.card_pos.ne' (2 : ℕ)] at h
   omega
 
 end TauCeti
