@@ -25,7 +25,6 @@ requiring a zero in the ambient monoid.
   homomorphism exactly when it is the image of a unit under `Units.map`.
 * `Units.eq_of_mul_mul_inv_eq_of_commute`: if the conjugate of `a` by a unit `u` is an element
   commuting with `u`, then `a` equals it.
-* `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
 * `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
 
@@ -53,13 +52,6 @@ theorem eq_of_mul_mul_inv_eq_of_commute {A : Type*} [Monoid A] {a z : A} (u : A�
     (h : (u : A) * a * ↑u⁻¹ = z) (hz : Commute z u) : a = z := by
   calc a = ↑u⁻¹ * ((u : A) * a * ↑u⁻¹) * u := by simp [mul_assoc]
     _ = z := by rw [h, mul_assoc, hz.eq, Units.inv_mul_cancel_left]
-
-/-- A nonnegative power of the product of two units gives consecutive monomial exponents
-after multiplication by the first unit. -/
-theorem val_mul_zpow_natCast_mul {M : Type*} [DivisionCommMonoid M] (u v : Mˣ) (n : ℕ) :
-    ((u * v : Mˣ) : M) ^ (n : ℤ) * (u : M) = (u : M) ^ (n + 1) * (v : M) ^ n := by
-  simp only [Units.val_mul, zpow_natCast, mul_pow, pow_succ]
-  ac_rfl
 
 /-- A strictly negative power of the product of two units gives the inverse monomial with
 the consecutive exponents exchanged. -/
