@@ -144,14 +144,10 @@ def cutoffSupportedInCLM (hχ : ContDiff ℝ ∞ χ) {K : Compacts E}
         (Seminorm.IsBounded.of_real fun i ↦ ?_)
       -- Leibniz's rule bounds the `i`-th derivative of `χ f` by the derivatives of `f` of order
       -- at most `i`, with coefficients bounded by those of `χ`.
-      have hbdd (j : ℕ) : ∃ M, ∀ x, ‖iteratedFDeriv ℝ j χ x‖ ≤ M :=
-        ((hχ.continuous_iteratedFDeriv (mod_cast le_top)).norm.bddAbove_range_of_hasCompactSupport
-          ((HasCompactSupport.intro K.isCompact fun x hx ↦
-            notMem_support.1 fun h ↦ hx (hχK h)).iteratedFDeriv j).norm).imp
-          fun M hM x ↦ hM ⟨x, rfl⟩
-      choose M hM using hbdd
+      obtain ⟨M, hM₀, hM⟩ := (HasCompactSupport.intro K.isCompact fun x hx ↦
+        notMem_support.1 fun h ↦ hx (hχK h)).exists_bound_iteratedFDeriv hχ i
       let s : Finset (ℕ × ℕ) := (Finset.range (i + 1)).image fun j ↦ (0, j)
-      refine ⟨s, ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * max (M j) 0, fun f ↦ ?_⟩
+      refine ⟨s, ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * M, fun f ↦ ?_⟩
       have hs (j : ℕ) (hj : j ∈ Finset.range (i + 1)) :
           SchwartzMap.seminorm 𝕜 0 j f ≤ (s.sup (schwartzSeminormFamily 𝕜 E F)) f :=
         Seminorm.le_finset_sup_apply (p := schwartzSeminormFamily 𝕜 E F)
@@ -159,15 +155,16 @@ def cutoffSupportedInCLM (hχ : ContDiff ℝ ∞ χ) {K : Compacts E}
       refine (ContDiffMapSupportedIn.seminorm_top_le_iff 𝕜
         (mul_nonneg (Finset.sum_nonneg fun j _ ↦ by positivity) (apply_nonneg _ _)) i _).2
         fun x _ ↦ ?_
-      rw [show ⇑(A f) = fun x ↦ χ x • f x from
+      have hA : ⇑(A f) = fun x ↦ χ x • f x :=
         funext <| ContDiffMapSupportedIn.coe_of_support_subset _
-          ((support_smul_subset_left _ _).trans hχK)]
+          ((support_smul_subset_left _ _).trans hχK)
+      rw [hA]
       refine (norm_iteratedFDeriv_smul_le hχ (f.smooth ⊤) x (mod_cast le_top)).trans ?_
       rw [Finset.sum_mul]
-      refine Finset.sum_le_sum fun j _ ↦ ?_
+      refine Finset.sum_le_sum fun j hj ↦ ?_
       rw [mul_assoc, mul_assoc]
       gcongr
-      · exact (hM j x).trans (le_max_left _ _)
+      · exact hM j (Finset.mem_range_succ_iff.1 hj) x
       · exact (norm_iteratedFDeriv_le_seminorm 𝕜 f _ x).trans
           (hs _ (Finset.mem_range_succ_iff.2 (Nat.sub_le i j))) }
 

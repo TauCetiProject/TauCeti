@@ -37,8 +37,9 @@ test function on `Ω` (`SchwartzMap.cutoffCLM`), and
 `Distribution.toTemperedDistribution T f = T (χ f)`
 does not depend on `χ` (`Distribution.toTemperedDistribution_apply_of_eventuallyEq`). This is a
 tempered distribution whose restriction to `Ω` is `T`
-(`Distribution.toDistribution_toTemperedDistribution`), and it is the only tempered distribution
-with that restriction which vanishes on Schwartz functions vanishing near the support of `T`
+(`Distribution.toDistribution_toTemperedDistribution`) and which vanishes on Schwartz functions
+vanishing near the support of `T` (`Distribution.toTemperedDistribution_apply_eq_zero`), and it
+is the only tempered distribution with these two properties
 (`Distribution.eq_toTemperedDistribution`). On the whole space it is the unique tempered
 distribution restricting to `T` (`Distribution.toTemperedDistribution_eq_iff`).
 
@@ -51,6 +52,8 @@ distribution restricting to `T` (`Distribution.toTemperedDistribution_eq_iff`).
 * `TemperedDistribution.toDistribution_injective`: restriction to the whole space is injective.
 * `Distribution.toTemperedDistribution`: the tempered extension of a compactly supported
   distribution, with `Distribution.toTemperedDistribution_apply_of_eventuallyEq`,
+  `Distribution.toTemperedDistribution_eq_of_eventuallyEq`,
+  `Distribution.toTemperedDistribution_apply_eq_zero`,
   `Distribution.toDistribution_toTemperedDistribution`, `Distribution.eq_toTemperedDistribution`
   and `Distribution.toTemperedDistribution_eq_iff`.
 
@@ -194,6 +197,27 @@ theorem toTemperedDistribution_apply_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) {χ : 
   refine complexPairing_eq_of_eventuallyEq T ?_
   filter_upwards [h.choose_spec, hχ] with x h₁ h₂
   rw [cutoff_apply, hg, h₁, h₂, ofReal_one, one_mul, one_smul]
+
+/-- The tempered extension of `T` depends only on the germ of the Schwartz function along the
+support of `T`. -/
+theorem toTemperedDistribution_eq_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) (hT : IsCompact (dsupport T))
+    (hTΩ : dsupport T ⊆ Ω) {f g : 𝓢(E, ℂ)} (h : (f : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] g) :
+    T.toTemperedDistribution f = T.toTemperedDistribution g := by
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
+  rw [toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ f)
+      fun x ↦ by rw [cutoff_apply, real_smul],
+    toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ g)
+      fun x ↦ by rw [cutoff_apply, real_smul]]
+  refine complexPairing_eq_of_eventuallyEq T ?_
+  filter_upwards [h] with x hx
+  rw [cutoff_apply, cutoff_apply, hx]
+
+/-- The tempered extension of `T` vanishes on every Schwartz function vanishing near the support
+of `T`. -/
+theorem toTemperedDistribution_apply_eq_zero (T : 𝓓'(Ω, ℂ)) (hT : IsCompact (dsupport T))
+    (hTΩ : dsupport T ⊆ Ω) {f : 𝓢(E, ℂ)} (hf : ∀ᶠ x in 𝓝ˢ (dsupport T), f x = 0) :
+    T.toTemperedDistribution f = 0 := by
+  rw [toTemperedDistribution_eq_of_eventuallyEq T hT hTΩ (g := 0) hf, map_zero]
 
 /-- **The tempered extension restricts to `T`.** -/
 @[simp]
