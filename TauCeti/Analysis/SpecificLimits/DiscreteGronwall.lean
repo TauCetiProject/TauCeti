@@ -32,9 +32,10 @@ halves where `g` is nonpositive. Then the increase of `g` over `[a + T, b - T]` 
 (`TauCeti.sub_le_two_mul_exp_mul_sub`): the increase concentrates exponentially at the two ends
 of the interval.
 
-The second estimate is the shape of the a priori bound for implicit Euler schemes of gradient
-flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps
-`D (n + 1) ≤ D n + d n` whose squared lengths are bounded by the energy dissipated,
+The discrete Grönwall bound `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub` is the shape of
+the a priori bound for implicit Euler schemes of gradient flows whose energy is not bounded
+below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps `D (n + 1) ≤ D n + d n` whose squared
+lengths are bounded by the energy dissipated,
 `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the coercivity bound
 `2τ' (A - e n) ≤ D n ²`. Then `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` whenever `4τ ≤ τ'`.
 

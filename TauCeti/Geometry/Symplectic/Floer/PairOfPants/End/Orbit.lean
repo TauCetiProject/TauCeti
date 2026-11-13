@@ -256,7 +256,7 @@ omit [FiniteDimensional ℝ V] in
 private theorem apply_pos_of_tame (hc : 0 < c)
     (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) {v : V} (hv : v ≠ 0) : 0 < ω v (J z v) :=
-  (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  ω.tames_of_mul_norm_sq_le hc (hJc z hz) v hv
 
 /-- The positive end chart maps the half-cylinder `(max T₀ 0, ∞) × ℝ` into `S`. -/
 private theorem mapsTo_positiveEndChart (q : Puncture) :

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Floer cylinders in a neck near a nondegenerate orbit
@@ -120,11 +119,7 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_two_mul_exp_mul
   set g : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t)) - ω.hamiltonianAction H x
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   have he0 (z : ℝ × ℝ) (hz : z ∈ Icc a b ×ˢ Icc (0 : ℝ) 1) : 0 ≤ e z :=
-    ω.floerEnergyDensity_nonneg (fun v hv ↦
-      (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)) (hfloer z hz)
-  have hec : ContinuousOn e U :=
-    ω.continuousOn_floerEnergyDensity hU (hu.of_le one_le_two) contDiffOn_const
-      (contDiff_uncurry_cylindrical hH1).contDiffOn
+    ω.floerEnergyDensity_nonneg (ω.tames_of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
   have hsub {s₁ s₂ : ℝ} (h₁ : a ≤ s₁) (h₂ : s₂ ≤ b) :
       Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ Icc a b ×ˢ Icc 0 1 :=
     prod_mono (Icc_subset_Icc h₁ h₂) le_rfl
@@ -142,19 +137,6 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_two_mul_exp_mul
       setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
         he0 z (hsub hs₁.1 hs₂.2 hz)
     linarith [henergy hs₁.1 h hs₂.2]
-  -- By Fubini, the same increase is the integral of the slice energies `ε`.
-  have hslab {s₁ s₂ : ℝ} (h₁ : a ≤ s₁) (h₁₂ : s₁ ≤ s₂) (h₂ : s₂ ≤ b) :
-      IntegrableOn ε (Icc s₁ s₂) ∧ ∫ r in Icc s₁ s₂, ε r = g s₂ - g s₁ := by
-    have hRint : IntegrableOn e (Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1) :=
-      (hec.mono (hRU h₁ h₂)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-    have h := henergy h₁ h₁₂ h₂
-    rw [Measure.volume_eq_prod, setIntegral_prod e (by rwa [Measure.volume_eq_prod] at hRint)] at h
-    refine ⟨?_, h⟩
-    have h' : Integrable e ((volume.restrict (Icc s₁ s₂)).prod
-        (volume.restrict (Icc (0 : ℝ) 1))) := by
-      rw [Measure.prod_restrict]
-      exact hRint
-    exact h'.integral_prod_left
   -- Near `x`, the action defect is controlled by the slice energy.
   have hg (r : ℝ) (hr : r ∈ Icc a b) : |g r| ≤ K * ε r :=
     hslice hU (hu.of_le one_le_two) (fun t ↦ hUab ⟨hr, mem_univ t⟩) (hper r hr)
@@ -163,13 +145,10 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_two_mul_exp_mul
   -- Over a step of length `K`, a lower bound `m ≤ K ε` integrates to `m ≤ g(s + K) - g(s)`.
   have hstep {s m : ℝ} (hs : a ≤ s) (hsb : s + K ≤ b)
       (hm : ∀ r ∈ Icc s (s + K), m ≤ K * ε r) : m ≤ g (s + K) - g s := by
-    obtain ⟨hεint, hint⟩ := hslab hs (by linarith) hsb
-    have hlow : ∫ _ in Icc s (s + K), m / K ≤ ∫ r in Icc s (s + K), ε r :=
-      setIntegral_mono_on (integrableOn_const (by simp)) hεint measurableSet_Icc fun r hr ↦ by
-        rw [div_le_iff₀' hK]
-        exact hm r hr
-    rwa [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul,
-      add_sub_cancel_left, mul_div_cancel₀ _ hK.ne', hint] at hlow
+    have h := le_hamiltonianAction_sub_of_forall_le_mul_setIntegral_floerEnergyDensity hH1 hU hu
+      hK (hRU hs hsb) (fun r hr ↦ hper r ⟨hs.trans hr.1, hr.2.trans hsb⟩) hm
+    simp only [g]
+    linarith
   have hpos (s : ℝ) (hs : a ≤ s) (hsb : s + K ≤ b) : 2 * g s ≤ g (s + K) := by
     have := hstep hs hsb fun r hr ↦
       (hmono ⟨hs, by linarith⟩ ⟨hs.trans hr.1, hr.2.trans hsb⟩ hr.1).trans
@@ -188,6 +167,37 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_two_mul_exp_mul
   · rw [Icc_eq_empty hab, empty_prod, Measure.restrict_empty, integral_zero_measure]
     exact mul_nonneg (by positivity) (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc)
       fun z hz ↦ he0 z hz)
+
+/-- A nonnegative function on the strip `ℝ × T` whose integral vanishes over every finite part
+`[-n, n] × T` has vanishing integral over the whole strip. -/
+private theorem setLIntegral_univ_prod_eq_zero {f : ℝ × ℝ → ENNReal} {T : Set ℝ}
+    (h : ∀ n : ℕ, ∫⁻ z in Icc (-n : ℝ) n ×ˢ T, f z = 0) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z = 0 := by
+  refine le_antisymm ?_ zero_le
+  have hcover : (univ : Set ℝ) ×ˢ T ⊆ ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ T := by
+    rintro ⟨s, t⟩ ⟨-, ht⟩
+    obtain ⟨n, hn⟩ := exists_nat_ge |s|
+    exact mem_iUnion.2 ⟨n, ⟨abs_le.1 hn, ht⟩⟩
+  calc ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ≤ ∫⁻ z in ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ T, f z :=
+        lintegral_mono_set hcover
+    _ ≤ ∑' n : ℕ, ∫⁻ z in Icc (-n : ℝ) n ×ˢ T, f z := lintegral_iUnion_le _ _
+    _ = 0 := tsum_eq_zero_iff.2 h
+
+/-- Where a solution of the Floer equation is stationary in `s`, its loop solves Hamilton's
+equation: since `∂_s u = 0` there, the Floer equation kills the defect `∂_t u - X_{H_t}(u)`. -/
+private theorem fderiv_apply_sub_hamiltonianVectorField_eq_zero_of_forall_eq {u : ℝ × ℝ → V}
+    {J : AlmostComplexStructure V} {s t : ℝ} (hu : DifferentiableAt ℝ u (s, t))
+    (hstat : ∀ r, u (r, t) = u (s, t))
+    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) : ℝ × ℝ →ₗ[ℝ] V)) :
+    fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t)) = 0 := by
+  have hds : fderiv ℝ u (s, t) (1, 0) = 0 :=
+    (hasDerivAt_slice_left hu).unique
+      ((hasDerivAt_const s (u (s, t))).congr_of_eventuallyEq (Eventually.of_forall hstat))
+  have h := (isComplexLinearMap_stdComplexLine_iff _).1 hfloer
+  simp only [ContinuousLinearMap.coe_coe, perturbedFDeriv_cylindrical_apply_stdComplexLineImag,
+    perturbedFDeriv_cylindrical_apply_stdComplexLineReal, hds, map_zero] at h
+  exact h
 
 /-- **Local uniqueness at a nondegenerate orbit.** Let `H` be a `C²` Hamiltonian and `x` an orbit
 of its Hamiltonian vector field with `x 1 = x 0` which is nondegenerate, and fix taming constants
@@ -220,8 +230,8 @@ theorem exists_pos_forall_eq_of_forall_norm_sub_le
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   set E := ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (e z)
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
-  have hJ (z : ℝ × ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1) : ω.Tames (J z) := fun v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ (z : ℝ × ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1) : ω.Tames (J z) :=
+    ω.tames_of_mul_norm_sq_le hc (hJc z hz)
   have hec : ContinuousOn e univ :=
     ω.continuousOn_floerEnergyDensity isOpen_univ (hu.of_le one_le_two).contDiffOn contDiffOn_const
       (contDiff_uncurry_cylindrical hH1).contDiffOn
@@ -256,32 +266,16 @@ theorem exists_pos_forall_eq_of_forall_norm_sub_le
       simpa using (h.const_mul 2).mul_const E.toReal
     exact ge_of_tendsto htend ((eventually_ge_atTop 0).mono hbound)
   -- Hence the total energy vanishes and `u` is stationary.
-  have hE0 : E = 0 := by
-    refine le_antisymm ?_ zero_le
-    have hcover : (univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1 ⊆ ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ Icc 0 1 := by
-      rintro ⟨s, t⟩ ⟨-, ht⟩
-      obtain ⟨n, hn⟩ := exists_nat_ge |s|
-      exact mem_iUnion.2 ⟨n, ⟨abs_le.1 hn, ht⟩⟩
-    calc E ≤ ∫⁻ z in ⋃ n : ℕ, Icc (-n : ℝ) n ×ˢ Icc 0 1, ENNReal.ofReal (e z) :=
-          lintegral_mono_set hcover
-      _ ≤ ∑' n : ℕ, ∫⁻ z in Icc (-n : ℝ) n ×ˢ Icc 0 1, ENNReal.ofReal (e z) :=
-          lintegral_iUnion_le _ _
-      _ = 0 := tsum_eq_zero_iff.2 fun n ↦ by
-          rw [← hlint, hR0, ENNReal.ofReal_zero]
+  have hE0 : E = 0 := setLIntegral_univ_prod_eq_zero fun n ↦ by
+    rw [← hlint, hR0, ENNReal.ofReal_zero]
   have hstat := (ω.lintegral_floerEnergyDensity_eq_zero_iff hH1 isOpen_univ
     (hu.of_le one_le_two).contDiffOn (subset_univ _) hJ hfloer).1 hE0
   -- The loop `u(0, ·)` is an orbit: since `∂_s u = 0`, the Floer equation kills the defect.
   have hdu := hu.differentiable two_ne_zero
   have hdefect (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
-      fderiv ℝ u (0, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (0, t)) = 0 := by
-    have hds : fderiv ℝ u (0, t) (1, 0) = 0 :=
-      (hasDerivAt_slice_left (hdu (0, t))).unique
-        ((hasDerivAt_const (0 : ℝ) (u (0, t))).congr_of_eventuallyEq
-          (Eventually.of_forall fun r ↦ hstat r t ht))
-    have h := (isComplexLinearMap_stdComplexLine_iff _).1 (hfloer (0, t) ⟨mem_univ _, ht⟩)
-    simp only [ContinuousLinearMap.coe_coe, perturbedFDeriv_cylindrical_apply_stdComplexLineImag,
-      perturbedFDeriv_cylindrical_apply_stdComplexLineReal, hds, map_zero] at h
-    exact h
+      fderiv ℝ u (0, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (0, t)) = 0 :=
+    fderiv_apply_sub_hamiltonianVectorField_eq_zero_of_forall_eq (hdu (0, t))
+      (fun r ↦ hstat r t ht) (hfloer (0, t) ⟨mem_univ _, ht⟩)
   have hiso' := hiso (γ := fun t ↦ u (0, t)) (γ' := fun t ↦ fderiv ℝ u (0, t) (0, 1))
     (((hu.continuous_fderiv two_ne_zero).clm_apply continuous_const).comp
       (continuous_const.prodMk continuous_id))
