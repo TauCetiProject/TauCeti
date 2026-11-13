@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Locality
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Topology.ContinuousOn.NhdsWithin
 
 /-!
 # Weak pseudoholomorphic maps from a Riemann surface
@@ -44,6 +44,11 @@ product targets such as `X × M`, on which graphs of solutions live.
 * `TauCeti.IsWeakPseudoholomorphicOn`, `TauCeti.IsWeakPseudoholomorphic`: the predicate on a set
   and on the whole surface, with their unfolding, reading-off and monotonicity lemmas and
   `TauCeti.isWeakPseudoholomorphicOn_univ`.
+* `TauCeti.isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn`,
+  `TauCeti.isWeakPseudoholomorphic_iff_continuous_isWeakCauchyRiemannOn`: continuity together with
+  the coordinate equations already gives the Sobolev class.
+* `TauCeti.isWeakPseudoholomorphicOn_ofLE`, `TauCeti.isWeakPseudoholomorphic_ofLE`: the predicate
+  does not change when `J` and `ν` are regarded as being of lower regularity.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_locally`, `TauCeti.isWeakPseudoholomorphic_iff_locally`,
   `TauCeti.isWeakPseudoholomorphicOn_iSup_iff`: it is a sheaf condition on `X`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_isPseudoholomorphicOn`,
@@ -52,7 +57,8 @@ product targets such as `X × M`, on which graphs of solutions live.
   is Tau Ceti's `IsPseudoholomorphicOn` for `j` and `J`. In particular holomorphic maps into a
   complex manifold solve the equation for its structure
   (`MDifferentiableOn.isWeakPseudoholomorphicOn`, `MDifferentiable.isWeakPseudoholomorphic`),
-  and so does the identity of `X` (`TauCeti.isWeakPseudoholomorphicOn_id`).
+  and so does the identity of `X` (`TauCeti.isWeakPseudoholomorphicOn_id`,
+  `TauCeti.isWeakPseudoholomorphic_id`).
 * `TauCeti.isWeakPseudoholomorphicOn_const`, `TauCeti.isWeakPseudoholomorphic_const`: constant
   maps solve the homogeneous equation for every `J`.
 * Check on `X = M = ℂ`: conjugation does not solve the equation for the structure `i`
@@ -213,12 +219,71 @@ theorem isWeakPseudoholomorphicOn (h : IsWeakPseudoholomorphic J ν p u) :
     IsWeakPseudoholomorphicOn J ν p u s :=
   (isWeakPseudoholomorphicOn_univ.2 h).mono (subset_univ s)
 
+/-- **Reading off the coordinate equation.** In a holomorphic chart `φ` and a smooth chart `ψ`,
+a weak pseudoholomorphic map solves the planar weak equation with the structure and term read in
+the charts. -/
+theorem isWeakCauchyRiemannOn_chart (h : IsWeakPseudoholomorphic J ν p u)
+    {φ : OpenPartialHomeomorph X ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M) :
+    IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source))
+      (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+      (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+      (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) :=
+  h.2 φ hφ ψ hψ
+
 /-- Decreasing the exponent preserves weak solutions. -/
 theorem mono_exponent (h : IsWeakPseudoholomorphic J ν p u) (hqp : q ≤ p) :
     IsWeakPseudoholomorphic J ν q u :=
   isWeakPseudoholomorphicOn_univ.1 ((isWeakPseudoholomorphicOn_univ.2 h).mono_exponent hqp)
 
 end IsWeakPseudoholomorphic
+
+/-- **Continuity suffices for the Sobolev class.** A map is weakly pseudoholomorphic on `s`
+exactly when it is continuous on `s` and solves the coordinate equation in every pair of charts:
+each coordinate solution is already in `W^{1,p}_loc`. -/
+theorem isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn :
+    IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧
+      ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
+        IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))
+          (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+          (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+          (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) := by
+  refine ⟨fun h ↦ ⟨h.continuousOn, h.2⟩, fun h ↦ ⟨memWkpLocMapOn_iff.2 ⟨h.1, fun φ hφ ψ hψ ↦ ?_⟩,
+    h.2⟩⟩
+  rw [← ψ.coe_extendTrans_refl I]
+  exact (h.2 φ hφ ψ hψ).memWkpLoc_one
+
+/-- **Continuity suffices for the Sobolev class.** A map is weakly pseudoholomorphic exactly when
+it is continuous and solves the coordinate equation in every pair of charts. -/
+theorem isWeakPseudoholomorphic_iff_continuous_isWeakCauchyRiemannOn :
+    IsWeakPseudoholomorphic J ν p u ↔ Continuous u ∧
+      ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
+        IsWeakCauchyRiemannOn p (φ.target ∩ φ.symm ⁻¹' (u ⁻¹' ψ.source))
+          (J.chartField φ (ψ.extendTrans I (Homeomorph.refl E)))
+          (ν.chartTerm φ (ψ.extendTrans I (Homeomorph.refl E)))
+          (ψ.extendTrans I (Homeomorph.refl E) ∘ u ∘ φ.symm) := by
+  simp only [← isWeakPseudoholomorphicOn_univ,
+    isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn, continuousOn_univ,
+    univ_inter]
+
+/-- **Regularity downgrade.** Regarding a `C^ℓ` structure `J` and an inhomogeneous term `ν` for
+it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic on `s`. -/
+@[simp]
+theorem isWeakPseudoholomorphicOn_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
+    IsWeakPseudoholomorphicOn (J.ofLE hmℓ)
+        ((ν.ofLE hmℓ).ofEq (SmoothAlmostComplexStructure.toContMDiff_ofLE _ hmℓ) rfl) p u s ↔
+      IsWeakPseudoholomorphicOn J ν p u s := by
+  simp only [isWeakPseudoholomorphicOn_iff, ContMDiffAlmostComplexStructureFamily.chartField_ofLE,
+    InhomogeneousTerm.chartTerm_ofEq, InhomogeneousTerm.chartTerm_ofLE]
+
+/-- **Regularity downgrade.** Regarding a `C^ℓ` structure `J` and an inhomogeneous term `ν` for
+it as `C^m`, for `m ≤ ℓ`, does not change which maps are weakly pseudoholomorphic. -/
+@[simp]
+theorem isWeakPseudoholomorphic_ofLE {m : ℕ∞} (hmℓ : m ≤ ℓ) :
+    IsWeakPseudoholomorphic (J.ofLE hmℓ)
+        ((ν.ofLE hmℓ).ofEq (SmoothAlmostComplexStructure.toContMDiff_ofLE _ hmℓ) rfl) p u ↔
+      IsWeakPseudoholomorphic J ν p u := by
+  simp only [← isWeakPseudoholomorphicOn_univ, isWeakPseudoholomorphicOn_ofLE]
 
 /-! ### Locality -/
 
@@ -232,11 +297,11 @@ theorem isWeakPseudoholomorphicOn_iff_locally :
     IsWeakPseudoholomorphicOn J ν p u s ↔
       ∀ x ∈ s, ∃ t ∈ 𝓝[s] x, IsWeakPseudoholomorphicOn J ν p u t := by
   refine ⟨fun h _ _ ↦ ⟨s, self_mem_nhdsWithin, h⟩, fun h ↦ ⟨?_, fun φ hφ ψ hψ ↦ ?_⟩⟩
-  · exact memWkpLocMapOn_iff_locally.2 fun x hx ↦
+  · exact memWkpLocMapOnGroupoid_iff_locally.2 fun x hx ↦
       (h x hx).imp fun _ ht ↦ ⟨ht.1, ht.2.memWkpLocMapOn⟩
   · refine isWeakCauchyRiemannOn_iff_locally.2 fun z hz ↦ ?_
     obtain ⟨t, ht, hut⟩ := h _ hz.2.1
-    exact ⟨_, φ.target_inter_preimage_symm_mem_nhdsWithin hz.1 ht,
+    exact ⟨_, (φ.continuousOn_symm z hz.1).inter_preimage_inter_mem_nhdsWithin ht,
       hut.isWeakCauchyRiemannOn_chart hφ hψ⟩
 
 /-- **Locality on the whole surface.** A map is weakly pseudoholomorphic exactly when every
@@ -296,8 +361,8 @@ private theorem isWeakCauchyRiemannOn_chart_iff (J₀ : SmoothAlmostComplexStruc
         fun _ hz ↦ by simpa [ψ'] using hz.2.2)
   have hJ : ContinuousOn (fun z ↦ (J₀.toContMDiff ℓ).chartPushforward ψ' ((ψ' ∘ u ∘ φ.symm) z))
       (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-    ((J₀.toContMDiff ℓ).contDiffOn_chartPushforward
-      (OpenPartialHomeomorph.isExtendTransChart_extendTrans hψ hΨ hΨs)).continuousOn.comp
+    ((J₀.toContMDiff ℓ).contDiffOn_chartPushforward (ψ.contMDiffOn_extendTrans hψ hΨ)
+      (ψ.contMDiffOn_extendTrans_symm hψ hΨs) le_top).continuousOn.comp
         hf.continuousOn fun _ hz ↦ ψ'.map_source (by simpa [ψ'] using hz.2.2)
   rw [ContMDiffAlmostComplexStructureFamily.chartField_const, InhomogeneousTerm.chartTerm_zero]
   -- For `C¹` maps the weak equation is the pointwise one, which the chart reading translates.
@@ -408,10 +473,19 @@ theorem _root_.MDifferentiable.isWeakPseudoholomorphic {F : Type*} [NormedAddCom
 
 /-- **The identity is a solution.** The identity of a Riemann surface is weakly pseudoholomorphic
 on every set for its own structure and `ν = 0`, for every exponent. -/
+@[simp]
 theorem isWeakPseudoholomorphicOn_id (s : Set X) :
     IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ)) 0 p id s :=
   (mdifferentiableOn_id.isWeakPseudoholomorphicOn isOpen_univ).mono (subset_univ s)
+
+/-- **The identity is a solution.** The identity of a Riemann surface is weakly pseudoholomorphic
+for its own structure and `ν = 0`, for every exponent. -/
+@[simp]
+theorem isWeakPseudoholomorphic_id :
+    IsWeakPseudoholomorphic (ContMDiffAlmostComplexStructureFamily.const
+      ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ)) 0 p (id : X → X) :=
+  isWeakPseudoholomorphicOn_univ.1 (isWeakPseudoholomorphicOn_id univ)
 
 end Comparison
 
@@ -423,6 +497,7 @@ variable [CompleteSpace E]
 
 /-- **Constant maps solve the homogeneous equation** on every set, for every domain-dependent
 structure. -/
+@[simp]
 theorem isWeakPseudoholomorphicOn_const (y : M) :
     IsWeakPseudoholomorphicOn J 0 p (fun _ ↦ y) s := by
   refine ⟨(contMDiff_const.memWkpLocMap (n := 1) le_rfl).memWkpLocMapOnGroupoid, fun φ _ ψ _ ↦ ?_⟩
@@ -430,6 +505,7 @@ theorem isWeakPseudoholomorphicOn_const (y : M) :
   exact isWeakCauchyRiemannOn_const (ψ.extendTrans I (Homeomorph.refl E) y)
 
 /-- **Constant maps solve the homogeneous equation** for every domain-dependent structure. -/
+@[simp]
 theorem isWeakPseudoholomorphic_const (y : M) : IsWeakPseudoholomorphic J 0 p (fun _ ↦ y) :=
   isWeakPseudoholomorphicOn_univ.1 (isWeakPseudoholomorphicOn_const y)
 

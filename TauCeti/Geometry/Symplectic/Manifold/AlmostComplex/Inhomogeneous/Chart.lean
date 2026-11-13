@@ -30,7 +30,8 @@ So the equation tested on `∂ₛ` alone loses no information.
 ## Main declarations
 
 * `TauCeti.InhomogeneousTerm.chartTerm`: an inhomogeneous term read in charts, with its
-  interaction with the module operations, with regularity downgrades and with identity charts.
+  interaction with the module operations, with regularity downgrades, with replacing the
+  structures by equal ones and with identity charts.
 * `TauCeti.InhomogeneousTerm.chartTerm_apply_eq_zero_iff`: the term read in charts vanishes at a
   point exactly when the term vanishes on `∂ₛ` there.
 * `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_one_eq_zero`: on a Riemann surface, an
@@ -131,6 +132,16 @@ theorem chartTerm_ofLE (ν : InhomogeneousTerm j J) (hmn : m ≤ n)
   generalize mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ) = w
   rw [DomainDependentHomSection.tangentHom_apply, DomainDependentHomSection.tangentHom_apply,
     ofLE_val_apply]
+
+/-- Replacing the structures of an inhomogeneous term by equal ones does not change it read in
+charts. -/
+@[simp]
+theorem chartTerm_ofEq (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J')
+    (φ : OpenPartialHomeomorph P ℂ) (ψ : OpenPartialHomeomorph M G) :
+    (ν.ofEq hj hJ).chartTerm φ ψ = ν.chartTerm φ ψ := by
+  funext z v
+  rw [chartTerm_apply, chartTerm_apply, ofEq_val]
 
 /-- On a normed space, read in the identity chart, an inhomogeneous term is twice its value on
 `∂ₛ` at the domain point `φ⁻¹ z`. -/

@@ -84,7 +84,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
   charts read in the model vector space and moved by a homeomorphism, and their smooth transition
-  maps.
+  maps; `OpenPartialHomeomorph.coe_extendTrans` and
+  `OpenPartialHomeomorph.toPartialEquiv_extendTrans_refl` relate them to
+  `OpenPartialHomeomorph.extend`.
 * `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
   `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
   `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
@@ -844,6 +846,22 @@ theorem extendTrans_apply (w : M) : c.extendTrans I Ψ w = Ψ (I (c w)) := by
 theorem extendTrans_symm_apply (v : F) :
     (c.extendTrans I Ψ).symm v = c.symm (I.symm (Ψ.symm v)) := by
   simp [extendTrans, mfld_simps, ModelWithCorners.toHomeomorph_symm_apply]
+
+/-- The coordinates of `c.extendTrans I Ψ` are those of the extended chart `c.extend I`, moved
+by `Ψ`. -/
+theorem coe_extendTrans : ⇑(c.extendTrans I Ψ) = Ψ ∘ c.extend I := by
+  funext w
+  simp
+
+/-- Moved by the identity, the chart `c.extendTrans I` is the extended chart `c.extend I`. -/
+theorem toPartialEquiv_extendTrans_refl :
+    (c.extendTrans I (Homeomorph.refl E)).toPartialEquiv = c.extend I :=
+  PartialEquiv.ext (fun w ↦ by simp) (fun v ↦ by simp) (by simp)
+
+/-- Moved by the identity, the coordinates of `c.extendTrans I` are those of the extended chart
+`c.extend I`. -/
+theorem coe_extendTrans_refl : ⇑(c.extendTrans I (Homeomorph.refl E)) = c.extend I :=
+  congrArg (⇑) (c.toPartialEquiv_extendTrans_refl I)
 
 /-- A chart with values in a normed space, read in its own self model and moved by the identity,
 is the chart itself. -/

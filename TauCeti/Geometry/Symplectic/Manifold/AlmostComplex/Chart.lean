@@ -51,8 +51,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   the derivative of `g` there intertwines multiplication by `i` with `J`.
 * `ContMDiffAlmostComplexStructure.contDiffOn_chartPushforward`,
   `SmoothAlmostComplexStructure.contDiffOn_chartPushforward`: on a boundaryless manifold, the
-  structure pushed forward along a chart read in the model vector space is `C^n` on the chart
-  target.
+  structure pushed forward along a chart with values in a normed space, of class `C^r` with
+  inverse of class `C^r` for some `r ≥ n + 1`, is `C^n` on the chart target.
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
 * `TauCeti.SmoothAlmostComplexStructure.chartPushforward`: the smooth structure pushed forward
@@ -626,47 +626,52 @@ end SmoothAlmostComplexStructure
 
 section ChartRegularity
 
-variable [I.Boundaryless] {n : ℕ∞}
+variable [I.Boundaryless] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {n r : ℕ∞}
 
 /-- **Regularity of a pushed-forward structure.** On a boundaryless manifold, a `C^n` almost
-complex structure pushed forward along a chart `ψ` of `M` read in the model vector space (a chart
-of the maximal smooth atlas moved by a smooth homeomorphism, `ψ.IsExtendTransChart I ∞`) is
-`C^n` on the target of `ψ`. -/
+complex structure pushed forward along a chart `ψ` of `M` with values in a normed space `G`,
+which is `C^r` with `C^r` inverse for some `r ≥ n + 1`, is `C^n` on the target of `ψ`. -/
 theorem ContMDiffAlmostComplexStructure.contDiffOn_chartPushforward
-    (J : ContMDiffAlmostComplexStructure I n M) {ψ : OpenPartialHomeomorph M E}
-    (hψ : ψ.IsExtendTransChart I ∞) : ContDiffOn ℝ n (J.chartPushforward ψ) ψ.target := by
+    (J : ContMDiffAlmostComplexStructure I n M) {ψ : OpenPartialHomeomorph M G}
+    (hψ : ContMDiffOn I 𝓘(ℝ, G) r ψ ψ.source) (hψs : ContMDiffOn 𝓘(ℝ, G) I r ψ.symm ψ.target)
+    (hn : n + 1 ≤ r) : ContDiffOn ℝ n (J.chartPushforward ψ) ψ.target := by
   -- Near each point it is the pullback of the structure read in the chart at the corresponding
-  -- point of `M`, by the smooth transition map `e`.
+  -- point of `M`, by the `C^r` transition map `e`.
   refine contDiffOn_of_locally_contDiffOn fun p₀ hp₀ ↦ ?_
   set x := ψ.symm p₀
   set χ := (chartAt H x).extendTrans I (Homeomorph.refl E)
-  have hχ : χ.IsExtendTransChart I ∞ :=
-    OpenPartialHomeomorph.isExtendTransChart_extendTrans (IsManifold.chart_mem_maximalAtlas x)
-      contDiff_id contDiff_id
+  have hχ : ContMDiffOn I 𝓘(ℝ, E) r χ χ.source :=
+    ((chartAt H x).contMDiffOn_extendTrans (n := ∞) (IsManifold.chart_mem_maximalAtlas x)
+      contDiff_id).of_le (by exact_mod_cast le_top)
+  have hχs : ContMDiffOn 𝓘(ℝ, E) I r χ.symm χ.target :=
+    ((chartAt H x).contMDiffOn_extendTrans_symm (n := ∞) (IsManifold.chart_mem_maximalAtlas x)
+      contDiff_id).of_le (by exact_mod_cast le_top)
   set e := ψ.symm.trans χ
   have hes : e.source = ψ.target ∩ ψ.symm ⁻¹' (chartAt H x).source := by
     simp [e, χ]
   have hp₀e : p₀ ∈ e.source := by
     rw [hes]
     exact ⟨hp₀, mem_chart_source H x⟩
-  have he : ContDiffOn ℝ ∞ e e.source := hψ.contDiffOn_comp_symm hχ
-  have hesymm : ContDiffOn ℝ ∞ e.symm e.target := by
-    rw [← e.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm]
-    exact hχ.contDiffOn_comp_symm hψ
+  have he : ContDiffOn ℝ r e e.source :=
+    contMDiffOn_iff_contDiffOn.1 (hχ.comp (hψs.mono Set.inter_subset_left) fun _ hp ↦ hp.2)
+  have hesymm : ContDiffOn ℝ r e.symm e.target :=
+    contMDiffOn_iff_contDiffOn.1 (hψ.comp (hχs.mono Set.inter_subset_left) fun _ hp ↦ hp.2)
+  have hr : (r : ℕ∞ω) ≠ 0 := by
+    have h1 : (1 : ℕ∞) ≤ r := le_add_self.trans hn
+    exact_mod_cast (zero_lt_one.trans_le h1).ne'
   have htgt : e.target ⊆ (extChartAt I x).target := fun q hq ↦ by
     simpa [e, χ, extChartAt_target, I.range_eq_univ] using hq.1
   have hpull : ContDiffOn ℝ n (e.pullbackEnd (J.inChart x)) e.source :=
     e.contDiffOn_pullbackEnd he hesymm ((J.contDiffOn_inChart x).mono htgt)
-      (by exact_mod_cast le_top)
+      (by exact_mod_cast hn)
   refine ⟨e.source, e.open_source, hp₀e, (hpull.congr fun p hp ↦ ?_).mono Set.inter_subset_right⟩
   have hp' : p ∈ ψ.target ∧ ψ.symm p ∈ (chartAt H x).source := by
     rw [hes] at hp
     exact hp
   have hdiff : DifferentiableAt ℝ e p :=
-    (he.contDiffAt (e.open_source.mem_nhds hp)).differentiableAt (by simp)
+    (he.contDiffAt (e.open_source.mem_nhds hp)).differentiableAt hr
   have hdiffs : DifferentiableAt ℝ e.symm (e p) :=
-    (hesymm.contDiffAt (e.open_target.mem_nhds (e.map_source hp))).differentiableAt (by simp)
+    (hesymm.contDiffAt (e.open_target.mem_nhds (e.map_source hp))).differentiableAt hr
   refine J.chartPushforward_eq_pullbackEnd_inChart x ψ e (htgt (e.map_source hp)) ?_ ?_ hdiff
     hdiffs
   · filter_upwards [(chartAt H x).open_source.mem_nhds hp'.2] with y hy
@@ -676,13 +681,14 @@ theorem ContMDiffAlmostComplexStructure.contDiffOn_chartPushforward
     simp [e, χ, (chartAt H x).left_inv hq.2]
 
 /-- **Regularity of a pushed-forward smooth structure.** On a boundaryless manifold, a smooth
-almost complex structure pushed forward along a chart `ψ` of `M` read in the model vector space
-is smooth on the target of `ψ`. -/
+almost complex structure pushed forward along a smooth chart `ψ` of `M` with values in a normed
+space, with smooth inverse, is smooth on the target of `ψ`. -/
 theorem SmoothAlmostComplexStructure.contDiffOn_chartPushforward
-    (J : SmoothAlmostComplexStructure I M) {ψ : OpenPartialHomeomorph M E}
-    (hψ : ψ.IsExtendTransChart I ∞) : ContDiffOn ℝ ∞ (J.chartPushforward ψ) ψ.target := by
+    (J : SmoothAlmostComplexStructure I M) {ψ : OpenPartialHomeomorph M G}
+    (hψ : ContMDiffOn I 𝓘(ℝ, G) ∞ ψ ψ.source) (hψs : ContMDiffOn 𝓘(ℝ, G) I ∞ ψ.symm ψ.target) :
+    ContDiffOn ℝ ∞ (J.chartPushforward ψ) ψ.target := by
   simpa only [toContMDiff_chartPushforward] using
-    (J.toContMDiff ⊤).contDiffOn_chartPushforward hψ
+    (J.toContMDiff ⊤).contDiffOn_chartPushforward hψ hψs le_top
 
 end ChartRegularity
 
