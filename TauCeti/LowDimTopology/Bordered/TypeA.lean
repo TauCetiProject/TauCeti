@@ -1077,10 +1077,10 @@ private theorem sum_typeABoxMap_idMorphism (hMm : Mm.IsStrictlyUnital ι) {K : �
     rw [← (piFinTwoEquiv fun _ => X ⊕ X).symm.sum_comp, Fintype.sum_prod_type,
       Fintype.sum_sum_type]
     simp only [Fin.fin_one_eq_zero]
-    simp only [Fin.reduceLast, piFinTwoEquiv_symm_apply, Fin.isValue, Fin.cons_one, Fin.cons_zero,
-      Fin.castSucc_zero, Fin.succ_zero_eq_one, Function.const_apply, Sum.elim_inl, sum_ite_eq',
-      mem_univ, ↓reduceIte, Matrix.fromBlocks_apply₁₂, idMorphism_apply, Sum.elim_inr,
-      Pi.zero_apply, map_zero, ite_self, sum_const_zero, add_zero]
+    suffices ∑ y, Mm.act 1 (fun _ => if y = z then ι (N.idem y) else 0) (φ y) =
+        Mm.act 1 (fun _ => ι (N.idem z)) (φ z) by
+      simpa [Matrix.fromBlocks_apply₁₂, idMorphism_apply] using this
+    -- Only the path through `z` survives.
     rw [Finset.sum_eq_single z (fun y _ hy => by
       rw [(Mm.act 1).map_coord_zero 0 (by simp [hy]), LinearMap.zero_apply]) (by simp)]
     simp
@@ -1137,6 +1137,14 @@ theorem typeABoxMap_idMorphism_of_lt (hMm : Mm.IsStrictlyUnital ι) (h : X → �
     typeABoxMap N N Mm N.idMorphism φ = φ :=
   funext fun z => (typeABoxMap_idMorphism_apply_of_lt hMm h hh φ z).trans (hφ z)
 
+/-- Adding two homotopies over a ring of characteristic two: from `a + p = D k + k'` and
+`p + b = D t + t'` deduce `a + b = D (k + t) + (k' + t')`. -/
+private theorem add_eq_map_add_add_of_charTwo [CharP R 2] {V : Type*} [AddCommGroup V]
+    [Module R V] (D : V →ₗ[R] V) {a b p k k' t t' : V} (h₁ : a + p = D k + k')
+    (h₂ : p + b = D t + t') : a + b = D (k + t) + (k' + t') := by
+  rw [map_add, add_add_add_comm, ← h₁, ← h₂, add_assoc, ← add_assoc p,
+    add_self_eq_zero_of_charTwo R, zero_add]
+
 /-- **Homotopy invariance of the box tensor product with a bounded module.** Over a ring of
 characteristic two, let `M` be strictly unital with operations `m_{k+1}` vanishing for `k ≥ K`.
 Let `F` from `N` to `N'` and `G` from `N'` to `N` be homomorphisms of type `D` structures whose
@@ -1160,10 +1168,8 @@ theorem typeABoxMap_typeABoxMap_add_of_act_eq_zero [CharP R 2] (hMm : Mm.IsStric
   have h₂ := typeABoxMap_add_typeABoxMap_of_act_eq_zero N N Mm hK hH φ
   rw [typeABoxMap_idMorphism_of_act_eq_zero hMm hK hφ] at h₂
   -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
-  rw [map_add, add_add_add_comm, ← h₂,
-    ← typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero N N' N Mm hK hF hG hG' φ,
-    add_assoc, ← add_assoc (typeABoxMap N N Mm (F * G) φ), add_self_eq_zero_of_charTwo R,
-    zero_add]
+  exact add_eq_map_add_add_of_charTwo _
+    (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero N N' N Mm hK hF hG hG' φ) h₂
 
 /-- **Homotopy invariance of the box tensor product of bounded type `D` structures.** Over a ring
 of characteristic two, let `M` be strictly unital, and let heights on the generators of `N` and
@@ -1186,10 +1192,8 @@ theorem typeABoxMap_typeABoxMap_add_of_lt [CharP R 2] (hMm : Mm.IsStrictlyUnital
   have h₂ := typeABoxMap_add_typeABoxMap_of_lt N N Mm h hh h hh hH φ
   rw [typeABoxMap_idMorphism_of_lt hMm h hh hφ] at h₂
   -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
-  rw [map_add, add_add_add_comm, ← h₂,
-    ← typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt N N' N Mm h hh h' hh' h hh hF hG hG' φ,
-    add_assoc, ← add_assoc (typeABoxMap N N Mm (F * G) φ), add_self_eq_zero_of_charTwo R,
-    zero_add]
+  exact add_eq_map_add_add_of_charTwo _
+    (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt N N' N Mm h hh h' hh' h hh hF hG hG' φ) h₂
 
 end StrictUnit
 

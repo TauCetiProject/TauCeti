@@ -359,6 +359,12 @@ a ring of idempotents it is the action of `ι s`, a projection onto a summand of
 def IsStrictlyUnital (ι : S → A) : Prop :=
   ∀ n, 2 ≤ n → ∀ (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → Mm.act n a = 0
 
+/-- The defining property of a strictly unital module, for proving strict unitality without
+unfolding the definition. -/
+theorem isStrictlyUnital_iff : Mm.IsStrictlyUnital ι ↔
+    ∀ n, 2 ≤ n → ∀ (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → Mm.act n a = 0 :=
+  Iff.rfl
+
 variable {Mm}
 
 /-- A strictly unital module's operations of arity at least three vanish on a unit input. -/
@@ -686,7 +692,7 @@ variable {S : Type*} {ι : S → A} {Mm}
 matrices of units. -/
 theorem IsStrictlyUnital.matrix (hMm : Mm.IsStrictlyUnital ι) :
     (Mm.matrix X).IsStrictlyUnital fun e : X → S => Matrix.diagonal fun x => ι (e x) := by
-  intro n hn F i e hFi
+  refine (isStrictlyUnital_iff _).2 fun n hn F i e hFi => ?_
   refine LinearMap.ext fun φ => funext fun z => ?_
   rw [matrix_act, matrixAct_apply, LinearMap.zero_apply, Pi.zero_apply]
   refine Finset.sum_eq_zero fun x _ => ?_
@@ -996,7 +1002,7 @@ elements: its operations `m_{n+1}`, `n ≥ 2`, vanish. -/
 theorem isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2]
     (hM : IsUngradedDGRightModule d dM) {S : Type*} (ι : S → A) :
     hM.toUngradedAInfinityRightModule.IsStrictlyUnital ι := by
-  intro n hn a _ _ _
+  refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a _ _ _ => ?_
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
   rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
 
