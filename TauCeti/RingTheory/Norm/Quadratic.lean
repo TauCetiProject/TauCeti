@@ -92,6 +92,8 @@ field-theoretic norm and ramification criteria.
 norm equation after scalar extension to any nontrivial commutative algebra over the base field.
 It applies even when the scalar extension is split or nonreduced, as is needed when reading
 local norm conditions at all places of a quadratic number field.
+`RingEquiv.exists_sq_sub_mul_sq_iff` and `RingEquiv.exists_sq_sub_mul_sq_algebraMap_iff` transport
+solvability of `a = x² - d y²` along ring isomorphisms and compatible `algebraMap` extensions.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/RingTheory/Norm/Quadratic.lean` at revision `bc2fe8ff7396`, FLT PR #1088,
@@ -471,5 +473,29 @@ theorem exists_discrim_ne_zero :
 end Algebra.IsQuadraticExtension
 
 end Field
+
+namespace RingEquiv
+
+/-- A ring isomorphism preserves solvability of the binary quadratic norm equation
+`a = x² - d y²`. -/
+theorem exists_sq_sub_mul_sq_iff {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S) (a d : R) :
+    (∃ x y : S, e a = x ^ 2 - e d * y ^ 2) ↔ ∃ x y : R, a = x ^ 2 - d * y ^ 2 := by
+  constructor
+  · rintro ⟨x, y, h⟩
+    exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+  · rintro ⟨x, y, rfl⟩
+    exact ⟨e x, e y, by simp⟩
+
+/-- A ring isomorphism `τ : A ≃+* B` intertwining `algebraMap` along `e : K → L` preserves
+solvability of `a = x² - d y²` for coefficients in the base. -/
+theorem exists_sq_sub_mul_sq_algebraMap_iff {K L A B : Type*} [CommSemiring K] [CommSemiring L]
+    [Ring A] [Ring B] [Algebra K A] [Algebra L B] {e : K → L} (τ : A ≃+* B)
+    (hτ : ∀ c : K, τ (algebraMap K A c) = algebraMap L B (e c)) (a d : K) :
+    (∃ x y : B, algebraMap L B (e a) = x ^ 2 - algebraMap L B (e d) * y ^ 2) ↔
+      ∃ x y : A, algebraMap K A a = x ^ 2 - algebraMap K A d * y ^ 2 := by
+  rw [← hτ a, ← hτ d]
+  exact τ.exists_sq_sub_mul_sq_iff _ _
+
+end RingEquiv
 
 end
