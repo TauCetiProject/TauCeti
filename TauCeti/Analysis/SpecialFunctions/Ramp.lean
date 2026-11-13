@@ -31,7 +31,7 @@ one-sided approximations and as test functions.
   `(-∞, s]` and equals `1` exactly on `[s + δ, ∞)`.
 * `TauCeti.monotone_ramp`, `TauCeti.ramp_left_antitone`: for `δ ≥ 0` the ramp is monotone in `x`
   and antitone in its start `s`.
-* `TauCeti.lipschitzWith_ramp`: for `δ > 0` the ramp is `δ⁻¹`-Lipschitz.
+* `TauCeti.lipschitzWith_ramp`: the ramp is `|δ|⁻¹`-Lipschitz.
 * `TauCeti.hasDerivAt_ramp`: for `δ > 0`, away from its two corners the ramp has derivative `δ⁻¹`
   on `(s, s + δ)` and `0` elsewhere.
 * `TauCeti.deriv_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp`: for `δ > 0` the derivative of the ramp
@@ -39,8 +39,8 @@ one-sided approximations and as test functions.
 * `TauCeti.ramp_sub_ramp_mem_Icc`, `TauCeti.ramp_sub_ramp_eq_zero_of_notMem`: for `δ ≥ 0` and
   `s ≤ t`, the difference `ramp s δ - ramp t δ` takes values in `[0, 1]`, and for `δ > 0` it
   vanishes off `(s, t + δ)`.
-* `TauCeti.deriv_ramp_sub_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp_sub_ramp`: for `δ > 0` the
-  derivative of `ramp s δ - ramp t δ` is almost everywhere the difference of the two normalized
+* `TauCeti.deriv_ramp_sub_ramp_ae_eq`, `TauCeti.memLp_deriv_ramp_sub_ramp`: for `δ₁, δ₂ > 0` the
+  derivative of `ramp s δ₁ - ramp t δ₂` is almost everywhere the difference of the two normalized
   indicators, so it lies in every `Lᵖ`.
 -/
 
@@ -136,13 +136,13 @@ theorem ramp_sub_ramp_eq_zero_of_notMem {s t δ x : ℝ} (hδ : 0 < δ) (h : s �
   · have htx : t + δ ≤ x := not_lt.1 fun h' ↦ hx ⟨hxs, h'⟩
     rw [ramp_eq_one hδ (by linarith), ramp_eq_one hδ htx]
 
-/-- For `δ > 0` the ramp is Lipschitz with constant `δ⁻¹`. -/
-theorem lipschitzWith_ramp {s δ : ℝ} (hδ : 0 < δ) :
-    LipschitzWith (Real.toNNReal δ⁻¹) (ramp s δ) := by
-  have hlin : LipschitzWith (Real.toNNReal δ⁻¹) fun x : ℝ ↦ (x - s) / δ :=
+/-- The ramp is Lipschitz with constant `|δ|⁻¹`. For `δ = 0` both sides vanish: the ramp is
+identically zero and `0⁻¹ = 0`. -/
+theorem lipschitzWith_ramp (s δ : ℝ) : LipschitzWith ‖δ‖₊⁻¹ (ramp s δ) := by
+  have hlin : LipschitzWith ‖δ‖₊⁻¹ fun x : ℝ ↦ (x - s) / δ :=
     LipschitzWith.of_dist_le_mul fun x y ↦ by
-      rw [Real.dist_eq, Real.dist_eq, Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), ← sub_div,
-        sub_sub_sub_cancel_right, abs_div, abs_of_pos hδ, div_eq_inv_mul]
+      rw [Real.dist_eq, Real.dist_eq, NNReal.coe_inv, coe_nnNorm, Real.norm_eq_abs, ← sub_div,
+        sub_sub_sub_cancel_right, abs_div, div_eq_inv_mul]
   rw [funext (ramp_def s δ)]
   exact (hlin.const_min 1).const_max 0
 
@@ -187,20 +187,21 @@ theorem memLp_deriv_ramp {s δ : ℝ} (hδ : 0 < δ) (p : ENNReal) :
   (memLp_indicator_const p measurableSet_Ioo.nullMeasurableSet δ⁻¹
     (Or.inr measure_Ioo_lt_top.ne)).ae_eq (deriv_ramp_ae_eq hδ).symm
 
-/-- For `δ > 0` the derivative of `ramp s δ - ramp t δ` is almost everywhere the difference of
-the normalized indicators of `(s, s + δ)` and `(t, t + δ)`. -/
-theorem deriv_ramp_sub_ramp_ae_eq {s t δ : ℝ} (hδ : 0 < δ) :
-    deriv (ramp s δ - ramp t δ) =ᵐ[volume] fun y ↦
-      (Ioo s (s + δ)).indicator (fun _ ↦ δ⁻¹) y - (Ioo t (t + δ)).indicator (fun _ ↦ δ⁻¹) y := by
-  filter_upwards [ae_hasDerivAt_ramp (s := s) hδ, ae_hasDerivAt_ramp (s := t) hδ] with y h₁ h₂
+/-- For `δ₁, δ₂ > 0` the derivative of `ramp s δ₁ - ramp t δ₂` is almost everywhere the
+difference of the normalized indicators of `(s, s + δ₁)` and `(t, t + δ₂)`. -/
+theorem deriv_ramp_sub_ramp_ae_eq {s t δ₁ δ₂ : ℝ} (hδ₁ : 0 < δ₁) (hδ₂ : 0 < δ₂) :
+    deriv (ramp s δ₁ - ramp t δ₂) =ᵐ[volume] fun y ↦
+      (Ioo s (s + δ₁)).indicator (fun _ ↦ δ₁⁻¹) y -
+        (Ioo t (t + δ₂)).indicator (fun _ ↦ δ₂⁻¹) y := by
+  filter_upwards [ae_hasDerivAt_ramp (s := s) hδ₁, ae_hasDerivAt_ramp (s := t) hδ₂] with y h₁ h₂
   exact (h₁.sub h₂).deriv
 
-/-- For `δ > 0` the derivative of `ramp s δ - ramp t δ` lies in every `Lᵖ`. -/
-theorem memLp_deriv_ramp_sub_ramp {s t δ : ℝ} (hδ : 0 < δ) (p : ENNReal) :
-    MemLp (deriv (ramp s δ - ramp t δ)) p :=
-  ((memLp_deriv_ramp (s := s) hδ p).sub (memLp_deriv_ramp (s := t) hδ p)).ae_eq (by
-    filter_upwards [deriv_ramp_sub_ramp_ae_eq (s := s) (t := t) hδ, deriv_ramp_ae_eq (s := s) hδ,
-      deriv_ramp_ae_eq (s := t) hδ] with y h h₁ h₂
+/-- For `δ₁, δ₂ > 0` the derivative of `ramp s δ₁ - ramp t δ₂` lies in every `Lᵖ`. -/
+theorem memLp_deriv_ramp_sub_ramp {s t δ₁ δ₂ : ℝ} (hδ₁ : 0 < δ₁) (hδ₂ : 0 < δ₂) (p : ENNReal) :
+    MemLp (deriv (ramp s δ₁ - ramp t δ₂)) p :=
+  ((memLp_deriv_ramp (s := s) hδ₁ p).sub (memLp_deriv_ramp (s := t) hδ₂ p)).ae_eq (by
+    filter_upwards [deriv_ramp_sub_ramp_ae_eq (s := s) (t := t) hδ₁ hδ₂,
+      deriv_ramp_ae_eq (s := s) hδ₁, deriv_ramp_ae_eq (s := t) hδ₂] with y h h₁ h₂
     rw [h, Pi.sub_apply, h₁, h₂])
 
 end TauCeti
