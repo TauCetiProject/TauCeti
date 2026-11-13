@@ -58,24 +58,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
-/-- **A local summand of a finite biproduct is a summand of one term**: if `End X` is local and `X`
-is a retract of `⨁ Y`, then `X` is a retract of some `Y j`. -/
-theorem exists_nonempty_retract_of_retract_biproduct {κ : Type w} [Finite κ] (Y : κ → C) {X : C}
-    [IsLocalRing (End X)] (h : Retract X (⨁ Y)) : ∃ j, Nonempty (Retract X (Y j)) := by
-  have := Fintype.ofFinite κ
-  -- The identity of `X` is the sum of its composites through the `Y j`; one is invertible.
-  have hsum : ∑ j, End.of (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r) = 1 := by
-    ext
-    have hr : ∑ j, biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r = h.r := by
-      simp only [← Category.assoc, ← Preadditive.sum_comp, biproduct.total, Category.id_comp]
-    simp only [End.sum_asHom, End.one_asHom, ← Preadditive.comp_sum, hr, h.retract]
-  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hsum ▸ isUnit_one : IsUnit (∑ j, _))
-  have := (isUnit_iff_isIso _).1 hj
-  exact ⟨j, ⟨⟨h.i ≫ biproduct.π Y j, biproduct.ι Y j ≫ h.r ≫
-    inv (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r), by
-      simpa only [Category.assoc] using
-        IsIso.hom_inv_id (h.i ≫ biproduct.π Y j ≫ biproduct.ι Y j ≫ h.r)⟩⟩⟩
-
 /-- An object with a local endomorphism ring lies in the additive closure of `G` exactly when it
 is a direct summand of `G`. -/
 theorem additiveClosure_iff_nonempty_retract {G X : C} [IsLocalRing (End X)] :
