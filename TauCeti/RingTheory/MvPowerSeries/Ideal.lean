@@ -15,9 +15,10 @@ If a multivariate formal power series `f : MvPowerSeries σ R` lies in the left 
 set of pure monomials `monomial α 1` (`α ∈ S`), then every exponent `γ` with `coeff γ f ≠ 0`
 dominates some `α ∈ S` (`MvPowerSeries.exists_le_of_mem_span_monomial_of_coeff_ne_zero`). This is
 the forward direction of `MvPolynomial.mem_ideal_span_monomial_image` over an arbitrary semiring
-`R`; unlike in `MvPolynomial`, the converse requires finiteness of `S` because `Ideal.span`
-consists of finite linear combinations whereas a power series may have infinitely many nonzero
-coefficients.
+`R`. Unlike in `MvPolynomial`, the converse can fail for infinitely many variables and generators
+because `Ideal.span` consists of finite linear combinations whereas a power series may have
+infinitely many nonzero coefficients; however, finiteness of `S` suffices, as does finite `σ` for
+arbitrary `S` by Dickson's lemma.
 
 ## Main results
 
