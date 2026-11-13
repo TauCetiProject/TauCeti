@@ -55,8 +55,10 @@ the position and the frequency.
 * `TauCeti.Symbol.sharp_eq_comp_add_sharpRemainder_one`: in particular `a # b` agrees with the
   pointwise composition `a ∘ b` up to a symbol of order `m' + m - 1`.
 * `TauCeti.Symbol.IsUniform.sharpTerm`, `TauCeti.Symbol.IsUniform.sharpRemainder`: **the uniform
-  expansion**. If the estimates of `a` hold uniformly in the position, then so do those of every
-  term and every remainder of the expansion, so the expansion holds in the uniform symbol classes.
+  expansion**. If the estimates of `a` and `b` hold uniformly in the position, then so do those of
+  every term of the expansion. If those of `a` do and `b` has compact spatial support (hence is
+  uniform, `TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), then so do those of every
+  remainder, so the expansion holds in the uniform symbol classes.
 * `TauCeti.Symbol.isSmoothing_sharp_sub_comp`: if `a` vanishes outside `K` and `b` does not depend
   on the position near `K`, then `a # b` and `a ∘ b` differ by a smoothing symbol.
 * `TauCeti.Symbol.isAsymptoticSum_sharp`: `a # b ∼ ∑ₖ sharpTerm a b k` as an asymptotic sum
