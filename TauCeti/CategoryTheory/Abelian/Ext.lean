@@ -59,6 +59,12 @@ on `Hom(-, Y)` corresponds to the action of `Ext k C 0` on `f`. -/
 theorem extZeroIso_hom_naturality_left {X X' : C} (f : X' ⟶ X) (Y : C) :
     ((Ext k C 0).map f.op).app Y ≫ (extZeroIso X' Y).hom =
       (extZeroIso X Y).hom ≫ ((linearYoneda k C).obj Y).map f.op :=
+  -- `Ext k C 0` is by definition `Hom(-, Y)` derived in the opposite category of `k`-modules, and
+  -- Mathlib's `Ext` has no `simps` lemmas; the statement is the naturality square at `f` of the
+  -- comparison `L₀ Hom(-, Y) ≅ Hom(-, Y)`, read in the opposite category. The two sides are typed
+  -- in `ModuleCat.of k (X ⟶ Y)` and in `((linearYoneda k C).obj Y).obj (op X)`, which agree only
+  -- after unfolding, so the square is transported with `Quiver.Hom.op_inj` rather than by
+  -- rewriting.
   Quiver.Hom.op_inj
     (((linearYoneda k C).obj Y).rightOp.leftDerivedZeroIsoSelf.inv.naturality f).symm
 
@@ -68,6 +74,14 @@ on `Hom(X, -)` corresponds to the action of `Ext k C 0` on `g`. -/
 theorem extZeroIso_hom_naturality_right (X : C) {Y Y' : C} (g : Y ⟶ Y') :
     ((Ext k C 0).obj (op X)).map g ≫ (extZeroIso X Y').hom =
       (extZeroIso X Y).hom ≫ ((linearCoyoneda k C).obj (op X)).map g := by
+  -- `Ext k C 0` acts on `g` by the natural transformation of left derived functors induced by
+  -- `(linearYoneda k C).map g`, and `((linearCoyoneda k C).obj (op X)).map g` is the component of
+  -- `(linearYoneda k C).map g` at `X`; Mathlib's `Ext` has no `simps` lemmas. `h` is therefore the
+  -- `unop` of the naturality of `fromLeftDerivedZero` in the functor at `X`, with
+  -- `extZeroIso_inv` and `unop_comp` holding by definition. The two sides are typed in
+  -- `ModuleCat.of k (X ⟶ Y)` and in `((linearCoyoneda k C).obj (op X)).obj Y`, which agree only
+  -- after unfolding, so `extZeroIso` is cancelled with `Iso.inv_comp_eq` and `Iso.eq_comp_inv`
+  -- rather than by rewriting.
   have h : (extZeroIso X Y).inv ≫ ((Ext k C 0).obj (op X)).map g =
       ((linearCoyoneda k C).obj (op X)).map g ≫ (extZeroIso X Y').inv :=
     congrArg Quiver.Hom.unop (NatTrans.congr_app

@@ -89,17 +89,27 @@ private theorem evalOne_naturality {N : ModuleCat.{u} R} (f : M ⟶ N) :
     ((linearCoyoneda R (ModuleCat R)).obj (op (ModuleCat.of R (R ⧸ I)))).map f ≫ evalOne N I =
       evalOne M I ≫ f := by
   ext g
+  -- `Hom(R ⧸ I, -)` acts on `g` by postcomposition, `g ≫ f`, by definition
+  -- (`linearCoyoneda_obj_map`). The domain of `evalOne` is `Hom(R ⧸ I, M)` only after unfolding
+  -- `linearCoyoneda`, so the goal is not type-correct at reducible transparency and cannot be
+  -- rewritten; the steps are chained with `Eq.trans`.
   exact (evalOne_apply N I (((linearCoyoneda R (ModuleCat R)).obj _).map f g)).trans
-    (congrArg f (evalOne_apply M I g)).symm
+    ((ConcreteCategory.comp_apply g f _).trans (congrArg f (evalOne_apply M I g)).symm)
 
 /-- Evaluation at `1` is compatible with the quotient maps `R ⧸ I ⟶ R ⧸ I'` for `I ≤ I'`, which
 send `1` to `1`. -/
 private theorem evalOne_precomp {I' : Ideal R} (h : I ≤ I') :
     ((linearYoneda R (ModuleCat R)).obj M).map
         (ModuleCat.ofHom (Submodule.mapQ I I' LinearMap.id h)).op ≫ evalOne M I = evalOne M I' := by
-  ext g
-  -- Precomposition with the quotient map, which sends `1` to `1`.
-  exact (evalOne_apply M I _).trans (evalOne_apply M I' g).symm
+  have h1 : Submodule.mapQ I I' LinearMap.id h (1 : R ⧸ I) = 1 := by
+    rw [← map_one (Ideal.Quotient.mk I), ← Ideal.Quotient.mk_eq_mk, Submodule.mapQ_apply,
+      LinearMap.id_apply, Ideal.Quotient.mk_eq_mk, map_one]
+  ext (g : ModuleCat.of R (R ⧸ I') ⟶ M)
+  -- `Hom(-, M)` acts on `g` by precomposition with the quotient map, by definition
+  -- (`linearYoneda_obj_map`), and the quotient map sends `1` to `1` (`h1`). As in
+  -- `evalOne_naturality`, the goal is only type-correct up to unfolding `linearYoneda`, so the
+  -- steps are chained with `Eq.trans`.
+  exact (evalOne_apply M I _).trans ((congrArg g h1).trans (evalOne_apply M I' g).symm)
 
 end EvalOne
 
@@ -170,6 +180,13 @@ theorem degreeZeroToModule_ι (t : ℕᵒᵖᵒᵖ)
 @[reassoc]
 theorem degreeZeroToModule_naturality {M N : ModuleCat.{u} R} (f : M ⟶ N) :
     (localCohomology J 0).map f ≫ degreeZeroToModule J N = degreeZeroToModule J M ≫ f := by
+  -- `localCohomology J 0` is by definition the colimit of `diagram (idealPowersDiagram J) 0`, and
+  -- the legs of the evaluated colimit cocone are the components `(colimit.ι _ t).app M`. The
+  -- composites below are only type-correct up to this unfolding, so `rw` cannot be used for the
+  -- first and last steps and they are chained with `Eq.trans`: the naturality of the colimit leg,
+  -- the leg of `degreeZeroToModule` at `N` (`ι_app_degreeZeroToModule`), the naturality of
+  -- `extZeroIso` and of evaluation at `1` in the module, and the leg of `degreeZeroToModule` at
+  -- `M`.
   refine (isColimitEvaluation J M).hom_ext fun t ↦
     ((colimit.ι (diagram (idealPowersDiagram J) 0) t).naturality_assoc f _).symm.trans ?_
   rw [ι_app_degreeZeroToModule]
