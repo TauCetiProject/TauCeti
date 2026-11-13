@@ -16,7 +16,8 @@ public import Mathlib.Topology.DenseEmbedding
 For a separable source, approximate unitary equivalence with target unitaries is
 implemented by a single sequence of unitaries converging pointwise after conjugation.
 This replaces finite-set tests by sequences when constructing approximate intertwining
-maps. The converse works for any net along a nontrivial filter, without separability.
+maps. The converse and closure under point-norm limits work for any net along a
+nontrivial filter, without separability.
 
 The diagonal argument follows Kirchberg–Phillips, *Embedding of exact C*-algebras in
 the Cuntz algebra O₂*, Definition 0.5 and the paragraph immediately following it.
@@ -46,6 +47,41 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary B)
       simpa only [dist_eq_norm] using hi
   obtain ⟨i, hi⟩ := (F.eventually_all.mpr fun a _ ↦ he a).exists
   exact ⟨u i, hi⟩
+
+/-- Approximate unitary equivalence is closed in the left argument under point-norm convergence
+along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot] {Φ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) ψ)
+    (hlim : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ := by
+  rw [approximatelyUnitarilyEquivalent_def]
+  intro F ε hε
+  have hε₂ : 0 < ε / 2 := half_pos hε
+  have he (a : A) : ∀ᶠ i in l, ‖Φ i a - φ a‖ < ε / 2 :=
+    (Metric.tendsto_nhds.mp (hlim a) (ε / 2) hε₂).mono fun _ hi ↦ by
+      simpa only [dist_eq_norm] using hi
+  obtain ⟨i, hi, hFi⟩ := (h.and (F.eventually_all.mpr fun a _ ↦ he a)).exists
+  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hi F (ε / 2) hε₂
+  refine ⟨u, fun a ha ↦ ?_⟩
+  let e := Unitary.conjStarAlgAut ℂ B u
+  have hsub : ‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ = ‖Φ i a - φ a‖ := by
+    simpa only [e, Unitary.conjStarAlgAut_apply, mul_sub, sub_mul, norm_sub_rev] using
+      StarAlgEquiv.norm_map e (φ a - Φ i a)
+  calc
+    ‖(u : B) * φ a * star (u : B) - ψ a‖
+      ≤ ‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ +
+          ‖(u : B) * Φ i a * star (u : B) - ψ a‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - ψ a‖ := by rw [hsub]
+    _ < ε / 2 + ε / 2 := add_lt_add (hFi a ha) (hu a ha)
+    _ = ε := add_halves ε
+
+/-- Approximate unitary equivalence is closed in the right argument under point-norm convergence
+along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_right {ι : Type*} {l : Filter ι} [l.NeBot] {Ψ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent φ (Ψ i))
+    (hlim : ∀ a, Tendsto (fun i ↦ Ψ i a) l (𝓝 (ψ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  (of_tendsto_left (h.mono fun _ hi ↦ hi.symm) hlim).symm
 
 /-- For a separable source, approximate unitary equivalence is equivalent to pointwise
 convergence of conjugates along a sequence of target unitaries. -/

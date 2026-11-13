@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Algebra.Ring.Idempotent
 
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, an estimate
+for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and norm bounds forcing an
+idempotent in a normed ring to be `0` or `1`.
 -/
 
 public section
@@ -113,5 +115,31 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
   simp at hz
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+/-- A nonzero idempotent in a nonunital normed ring has norm at least one, since
+`‖e‖ = ‖e * e‖ ≤ ‖e‖ * ‖e‖` with `‖e‖ > 0`. No normalization of the norm is needed. -/
+theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {e : R}
+    (he : IsIdempotentElem e) (he₀ : e ≠ 0) : 1 ≤ ‖e‖ := by
+  have hpos : 0 < ‖e‖ := norm_pos_iff.mpr he₀
+  have hmul : ‖e‖ * 1 ≤ ‖e‖ * ‖e‖ := by
+    simpa only [mul_one, he.eq] using norm_mul_le e e
+  exact le_of_mul_le_mul_left hmul hpos
+
+/-- An idempotent of norm strictly less than one in a nonunital normed ring is zero. -/
+theorem eq_zero_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e‖ < 1) : e = 0 := by
+  by_contra he₀
+  exact (he.one_le_norm he₀).not_gt h
+
+/-- An idempotent within norm distance `1` of `1` in a normed ring is `1`, since `1 - e` is an
+idempotent of norm strictly less than `1`. -/
+theorem eq_one_of_norm_sub_one_lt_one {R : Type*} [NormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e - 1‖ < 1) : e = 1 :=
+  sub_eq_zero.mp <| neg_eq_zero.mp <| by
+    simpa only [neg_sub] using he.one_sub.eq_zero_of_norm_lt_one (by rwa [norm_sub_rev])
+
+end IsIdempotentElem
 
 end
