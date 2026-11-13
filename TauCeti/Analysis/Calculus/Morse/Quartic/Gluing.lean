@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Quartic.Basic
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Data.Finset.Piecewise
 
 /-!

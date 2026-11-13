@@ -622,17 +622,23 @@ private theorem exp_two_mul_log {ρ : ℝ} (hρ : 0 < ρ) : exp (2 * log ρ) = �
 theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (a + log ρ) = intervalBaseSourceGluing a ρ := by
   have hρ2 : 0 < ρ ^ 2 := pow_pos hρ 2
+  -- Split the `log ρ` part off the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1`, so that
+  -- it becomes the factor `ρ⁻²`.
+  have hexp : -(2 * 1 * (a + log ρ)) = -(2 * a) - 2 * log ρ := by ring
   have he : exp (-(2 * 1 * (a + log ρ))) = exp (-(2 * a)) / ρ ^ 2 := by
-    rw [show -(2 * 1 * (a + log ρ)) = -(2 * a) - 2 * log ρ by ring, exp_sub, exp_two_mul_log hρ]
-  rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply,
-    show 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 by field_simp,
+    rw [hexp, exp_sub, exp_two_mul_log hρ]
+  -- Put the radicand over the common denominator `ρ²`, whose square root is `ρ`.
+  have hsum : 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 := by field_simp
+  rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply, hsum,
     sqrt_div' _ hρ2.le, sqrt_sq hρ.le, inv_div]
 
 /-- **The target end in the gluing parameter**: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)`. -/
 theorem intervalBaseOrbit_one_sub_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
     intervalBaseOrbit 1 (a - log ρ) = intervalBaseTargetGluing a ρ := by
-  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply,
-    show -(2 * 1 * (a - log ρ)) = -(2 * a) + 2 * log ρ by ring, exp_add, exp_two_mul_log hρ]
+  -- Split the `log ρ` part off the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1`, so that
+  -- it becomes the factor `ρ²`.
+  have hexp : -(2 * 1 * (a - log ρ)) = -(2 * a) + 2 * log ρ := by ring
+  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply, hexp, exp_add, exp_two_mul_log hρ]
 
 @[simp]
 theorem intervalBaseSourceGluing_zero (a : ℝ) : intervalBaseSourceGluing a 0 = 0 := by
