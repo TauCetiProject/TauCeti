@@ -27,22 +27,22 @@ polynomial exists: `p₁² - p₂ = 2 e₂`.
 
 ## Main definitions
 
-* `TauCeti.SymmetricFunction.esymmPsumPoly R n`: for a `ℚ`-algebra `R`, the polynomial `E_n`
+* `TauCeti.esymmPsumPoly R n`: for a `ℚ`-algebra `R`, the polynomial `E_n`
   expressing `e_n` through the power sums.
 
 ## Main results
 
 * `TauCeti.mul_esymm_succ_eq_sum`: **Newton's identities** in the form
   `(n + 1) e_(n + 1) = ∑_{i + j = n} (-1)ʲ eᵢ p_(j + 1)`.
-* `TauCeti.SymmetricFunction.esymmPsumPoly_succ`,
-  `TauCeti.SymmetricFunction.mul_esymmPsumPoly_succ`: Newton's recursion for `E_n`.
-* `TauCeti.SymmetricFunction.aeval_psum_esymmPsumPoly`: in a finite alphabet, `E_n` evaluated at
+* `TauCeti.esymmPsumPoly_succ`,
+  `TauCeti.mul_esymmPsumPoly_succ`: Newton's recursion for `E_n`.
+* `TauCeti.aeval_psum_esymmPsumPoly`: in a finite alphabet, `E_n` evaluated at
   the power sums is the elementary symmetric polynomial `e_n`.
-* `TauCeti.SymmetricFunction.map_esymmPsumPoly`: `E_n` is natural in the coefficient ring.
-* `TauCeti.SymmetricFunction.isWeightedHomogeneous_esymmPsumPoly`: `E_n` has weighted degree `n`
+* `TauCeti.map_esymmPsumPoly`: `E_n` is natural in the coefficient ring.
+* `TauCeti.isWeightedHomogeneous_esymmPsumPoly`: `E_n` has weighted degree `n`
   for the weight `X r ↦ r + 1`.
-* `TauCeti.SymmetricFunction.two_mul_esymmPsumPoly_two`,
-  `TauCeti.SymmetricFunction.six_mul_esymmPsumPoly_three`: `2 E₂ = X₀² - X₁` and
+* `TauCeti.two_mul_esymmPsumPoly_two`,
+  `TauCeti.six_mul_esymmPsumPoly_three`: `2 E₂ = X₀² - X₁` and
   `6 E₃ = X₀³ - 3 X₀ X₁ + 2 X₂`, representing `2 e₂ = p₁² - p₂` and
   `6 e₃ = p₁³ - 3 p₁ p₂ + 2 p₃`.
 
@@ -77,7 +77,7 @@ theorem mul_esymm_succ_eq_sum (σ : Type*) [Fintype σ] (R : Type*) [CommRing R]
     show x.1 + x.2 + 1 + 1 + x.1 = x.2 + 2 * (x.1 + 1) by ring, pow_add, pow_mul]
   simp
 
-namespace SymmetricFunction
+section
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
 
@@ -96,7 +96,7 @@ decreasing_by
 theorem esymmPsumPoly_zero : esymmPsumPoly R 0 = 1 := by
   rw [esymmPsumPoly]
 
-/-- **Newton's recursion** for `TauCeti.SymmetricFunction.esymmPsumPoly`. -/
+/-- **Newton's recursion** for `TauCeti.esymmPsumPoly`. -/
 theorem esymmPsumPoly_succ (n : ℕ) :
     esymmPsumPoly R (n + 1) = algebraMap ℚ R ((n : ℚ) + 1)⁻¹ •
       ∑ x ∈ antidiagonal n, (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2 := by
@@ -104,7 +104,7 @@ theorem esymmPsumPoly_succ (n : ℕ) :
   congr 1
   exact sum_attach (antidiagonal n) fun x => (-1) ^ x.2 * esymmPsumPoly R x.1 * X x.2
 
-/-- Newton's recursion for `TauCeti.SymmetricFunction.esymmPsumPoly` with the denominator cleared:
+/-- Newton's recursion for `TauCeti.esymmPsumPoly` with the denominator cleared:
 `(n + 1) E_(n + 1) = ∑_{i + j = n} (-1)ʲ Eᵢ X_j`. -/
 theorem mul_esymmPsumPoly_succ (n : ℕ) :
     (n + 1 : MvPolynomial ℕ R) * esymmPsumPoly R (n + 1) =
@@ -176,6 +176,6 @@ theorem isWeightedHomogeneous_esymmPsumPoly (n : ℕ) :
     simp only [smul_zero, zero_add]
     omega
 
-end SymmetricFunction
+end
 
 end TauCeti

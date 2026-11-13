@@ -22,7 +22,7 @@ they are algebraically independent as well. Over `ℤ` this fails: `p₁² - p�
 a polynomial in the power sums.
 
 The inverse of the presentation is described by the polynomials
-`TauCeti.SymmetricFunction.esymmPsumPoly R n`, written `E_n`, in the variables `X r`, which stand
+`TauCeti.esymmPsumPoly R n`, written `E_n`, in the variables `X r`, which stand
 for `p_(r + 1)`: they are determined by `E₀ = 1` and Newton's recursion, and specialise in every
 finite alphabet to Newton's expression of `e_n` through the power sums.
 
