@@ -411,9 +411,9 @@ theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
     ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) n (tangentCoordChange I x y) x :=
   ((tangentBundleCore.isContMDiff (I := I) (M := M) (n := n)).contMDiffOn_coordChange
-    (achart H x) (achart H y)).contMDiffAt
-    (((chartAt H x).open_source.inter (chartAt H y).open_source).mem_nhds
-      ⟨mem_chart_source H x, by simpa using hy⟩)
+    (achart H x) (achart H y)).contMDiffAt (by
+      simp only [tangentBundleCore_baseSet, coe_achart, ← extChartAt_source I]
+      exact Filter.inter_mem (extChartAt_source_mem_nhds x) (extChartAt_source_mem_nhds' hy))
 
 /-! ### Coordinate changes on the tangent of the tangent bundle -/
 
@@ -1106,7 +1106,7 @@ theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
   have hφ := differentiableAt_of_deriv_ne_zero hφ'
   isInvertible_mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt
     ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
-    ⟨_, (hφ.hasDerivAt.hasFDerivAt_equiv hφ').hasMFDerivAt.mfderiv.symm⟩
+    (by simp [mfderiv_eq_fderiv, (hφ.hasDerivAt.hasFDerivAt_equiv hφ').fderiv])
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
