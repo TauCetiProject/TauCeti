@@ -37,40 +37,67 @@ open IntegralLattice
 classes modulo twice the lattice. -/
 noncomputable def leechAntipodalPairsEquivModTwo :
     leechLattice.antipodalPairs 4 ≃ leechLattice.normClassesModTwo 4 :=
-  leechLattice.antipodalPairsEquivModTwo (by norm_num) fun z hz ↦
-    four_le_norm_leechLattice z.property fun h ↦ hz (Subtype.ext h)
+  leechLattice.antipodalPairsEquivModTwo fun z hz ↦ by
+    have := four_le_norm_leechLattice z.property fun h ↦ hz (Subtype.ext h)
+    linarith
 
 /-- The Leech identification is the sign-independent pair-to-residue map. -/
-@[simp]
 theorem leechAntipodalPairsEquivModTwo_apply (p : leechLattice.antipodalPairs 4) :
     leechAntipodalPairsEquivModTwo p = leechLattice.antipodalPairsToModTwo 4 p := by
   unfold leechAntipodalPairsEquivModTwo
   rw [antipodalPairsEquivModTwo_apply]
 
+/-- Evaluate the Leech identification on an explicit minimal pair. -/
+@[simp]
+theorem coe_leechAntipodalPairsEquivModTwo_mk (x : leechLattice)
+    (hp : s(x, -x) ∈ leechLattice.antipodalPairs 4) :
+    (leechAntipodalPairsEquivModTwo ⟨s(x, -x), hp⟩ :
+      QuotSMulTop (2 : ℤ) leechLattice) = Submodule.Quotient.mk x := by
+  rw [leechAntipodalPairsEquivModTwo_apply, coe_antipodalPairsToModTwo_mk]
+
+/-- The inverse Leech identification recovers the sign pair of a minimal representative. -/
+@[simp]
+theorem leechAntipodalPairsEquivModTwo_symm_mk (x : leechLattice)
+    (hx : x ∈ leechLattice.vectorsOfNorm 4)
+    (hc : (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) leechLattice) ∈
+      leechLattice.normClassesModTwo 4) :
+    leechAntipodalPairsEquivModTwo.symm ⟨Submodule.Quotient.mk x, hc⟩ =
+      ⟨s(x, -x), (mk_mem_antipodalPairs_iff x).mpr hx⟩ := by
+  apply leechAntipodalPairsEquivModTwo.symm_apply_eq.mpr
+  exact Subtype.ext (coe_leechAntipodalPairsEquivModTwo_mk x _).symm
+
+/-- There are finitely many type-2 classes in the Leech mod-two module. -/
+instance instFiniteNormClassesModTwoFourLeechLattice :
+    Finite (leechLattice.normClassesModTwo 4) :=
+  Finite.of_equiv _ leechAntipodalPairsEquivModTwo
+
 /-- There are exactly 98280 type-2 classes in the Leech mod-two module. -/
 theorem ncard_normClassesModTwo_four_leechLattice :
     (leechLattice.normClassesModTwo 4).ncard = 98280 :=
-  (Nat.card_congr leechAntipodalPairsEquivModTwo).symm.trans
+  (Set.ncard_congr' leechAntipodalPairsEquivModTwo).symm.trans
     ncard_antipodalPairs_four_leechLattice
 
 /-- The identification of minimal pairs with type-2 classes is equivariant for the actual
 Leech lattice isometry group and its reduction on `Λ / 2Λ`. -/
-theorem leechAntipodalPairsEquivModTwo_isometry (g : Isometry leechLattice leechLattice)
+theorem coe_leechAntipodalPairsEquivModTwo_antipodalPairsEquiv
+    (g : Isometry leechLattice leechLattice)
     (p : leechLattice.antipodalPairs 4) :
     (leechAntipodalPairsEquivModTwo (g.antipodalPairsEquiv 4 p) :
       QuotSMulTop (2 : ℤ) leechLattice) =
       Isometry.reductionHom leechLattice 2 g (leechAntipodalPairsEquivModTwo p) := by
   simpa only [leechAntipodalPairsEquivModTwo_apply] using
-    leechLattice.antipodalPairsToModTwo_isometry 4 g p
+    leechLattice.coe_antipodalPairsToModTwo_antipodalPairsEquiv 4 g p
 
-/-- A Leech isometry fixes a minimal pair exactly when it fixes the corresponding type-2
-class. This compares the actual stabilizers, not just their cardinalities. -/
-theorem leechAntipodalPairsEquivModTwo_isometry_eq_iff
-    (g : Isometry leechLattice leechLattice) (p : leechLattice.antipodalPairs 4) :
-    g.antipodalPairsEquiv 4 p = p ↔
+/-- A Leech isometry carries one minimal pair to another exactly when its reduction carries
+their type-2 classes. Taking the same pair on both sides compares the actual stabilizers. -/
+theorem antipodalPairsEquiv_four_leechLattice_eq_iff
+    (g : Isometry leechLattice leechLattice) (p q : leechLattice.antipodalPairs 4) :
+    g.antipodalPairsEquiv 4 p = q ↔
       Isometry.reductionHom leechLattice 2 g (leechAntipodalPairsEquivModTwo p) =
-        (leechAntipodalPairsEquivModTwo p : QuotSMulTop (2 : ℤ) leechLattice) := by
-  rw [← leechAntipodalPairsEquivModTwo.injective.eq_iff, Subtype.ext_iff,
-    leechAntipodalPairsEquivModTwo_isometry]
+        (leechAntipodalPairsEquivModTwo q : QuotSMulTop (2 : ℤ) leechLattice) := by
+  simpa only [leechAntipodalPairsEquivModTwo_apply] using
+    leechLattice.antipodalPairsEquiv_eq_iff (fun z hz ↦ by
+      have := four_le_norm_leechLattice z.property fun h ↦ hz (Subtype.ext h)
+      linarith) g p q
 
 end TauCeti
