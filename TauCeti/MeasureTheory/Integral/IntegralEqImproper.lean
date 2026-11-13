@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -18,6 +19,11 @@ has strict derivative `-f t` at each `t > a` where `f` is continuous. If `f` is 
 the whole ray, the derivative identity also gives a formula for every higher iterated
 derivative. These results apply to Banach-space-valued integrands and support differential
 closure arguments for improper integrals.
+
+For a real function `g` integrable and continuous on `(x, ∞)`, with tail integral
+`Ψ v = ∫ u in Ioi v, g u`, the product `g * Ψ ^ k` is integrable on `(x, ∞)`
+(`MeasureTheory.IntegrableOn.integrableOn_mul_pow_integral_Ioi`) with integral
+`Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
@@ -87,6 +93,57 @@ theorem iteratedDeriv_integral_Ioi (hint : IntegrableOn f (Ioi a))
     filter_upwards [Ioi_mem_nhds ht] with u hu
     exact hint.deriv_integral_Ioi (hcont.continuousAt (isOpen_Ioi.mem_nhds hu)) hu
   rw [iteratedDeriv_succ', heq.iteratedDeriv_eq n, iteratedDeriv_fun_neg]
+
+section Real
+
+variable {g : ℝ → ℝ} {x : ℝ}
+
+/-- If `g` is integrable on `(x, ∞)` and continuous there, then so is `g v * Ψ v ^ k` for the
+tail integral `Ψ v = ∫ u in Ioi v, g u`, which is bounded by `∫ u in Ioi x, |g u|`. -/
+theorem integrableOn_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x))
+    (hcont : ContinuousOn g (Ioi x)) (k : ℕ) :
+    IntegrableOn (fun v ↦ g v * (∫ u in Ioi v, g u) ^ k) (Ioi x) := by
+  have hΨ : ContinuousOn (fun v ↦ ∫ u in Ioi v, g u) (Ioi x) :=
+    hint.continuousOn_Ici_primitive_Ioi.mono Ioi_subset_Ici_self
+  refine Integrable.mono' (hint.norm.mul_const ((∫ u in Ioi x, ‖g u‖) ^ k))
+    ((hcont.mul (hΨ.pow k)).aestronglyMeasurable measurableSet_Ioi) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with v hv
+  rw [norm_mul, norm_pow]
+  gcongr
+  exact (norm_integral_le_integral_norm _).trans (setIntegral_mono_set hint.norm
+    (ae_of_all _ fun _ ↦ norm_nonneg _) (Ioi_subset_Ioi hv.le).eventuallySubset)
+
+/-- For `g` integrable and continuous on `(x, ∞)`, with tail integral
+`Ψ v = ∫ u in Ioi v, g u`, the integral of `g * Ψ ^ k` over `(x, ∞)` is
+`Ψ x ^ (k + 1) / (k + 1)`, since `-Ψ ^ (k + 1) / (k + 1)` is a primitive of `g * Ψ ^ k`
+tending to `0` at infinity. This is the estimate behind the factorial decay of Picard iterates
+of Volterra integral equations on a half-line. -/
+theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x))
+    (hcont : ContinuousOn g (Ioi x)) (k : ℕ) :
+    ∫ v in Ioi x, g v * (∫ u in Ioi v, g u) ^ k = (∫ u in Ioi x, g u) ^ (k + 1) / (k + 1) := by
+  set Ψ : ℝ → ℝ := fun v ↦ ∫ u in Ioi v, g u
+  have hderiv : ∀ y ∈ Ioi x, HasDerivAt (fun v ↦ -(Ψ v ^ (k + 1) / (k + 1))) (g y * Ψ y ^ k) y :=
+    fun y hy ↦ by
+      convert ((HasDerivAt.pow (hint.hasDerivAt_integral_Ioi
+        (hcont.continuousAt (isOpen_Ioi.mem_nhds hy)) hy) (k + 1)).div_const ((k : ℝ) + 1)).neg
+        using 1
+      push_cast
+      field_simp
+      ring
+  have htend : Tendsto Ψ atTop (𝓝 0) := by
+    have := (intervalIntegral_tendsto_integral_Ioi x hint tendsto_id).const_sub (Ψ x)
+    rw [sub_self] at this
+    refine this.congr' ?_
+    filter_upwards [eventually_ge_atTop x] with y hy
+    rw [id, ← integral_Ioi_sub_Ioi hint hy, sub_sub_cancel]
+  have hcontΨ : ContinuousWithinAt (fun v ↦ -(Ψ v ^ (k + 1) / (k + 1))) (Ici x) x :=
+    (((hint.continuousOn_Ici_primitive_Ioi x self_mem_Ici).pow (k + 1)).div_const _).neg
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcontΨ hderiv
+    (hint.integrableOn_mul_pow_integral_Ioi hcont k)
+    (((htend.pow (k + 1)).div_const ((k : ℝ) + 1)).neg)]
+  simp [Ψ]
+
+end Real
 
 end MeasureTheory.IntegrableOn
 
