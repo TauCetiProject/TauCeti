@@ -71,6 +71,12 @@ theorem quarticTrajectoryPoint_apply (p q u : ι → ℝ) (i : ι) :
     quarticTrajectoryPoint p q u i = if p i = q i then p i else q i * intervalBaseOrbit 1 (u i) :=
   (rfl)
 
+/-- With equal endpoints the trajectory point is the constant trajectory at `p`. -/
+@[simp]
+theorem quarticTrajectoryPoint_same (p u : ι → ℝ) : quarticTrajectoryPoint p p u = p := by
+  funext i
+  simp
+
 /-- The flow of the quartic translates all time coordinates of a trajectory point at once. -/
 theorem quarticWellSumFlow_quarticTrajectoryPoint {p q : ι → ℝ}
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (s : ℝ) (u : ι → ℝ) :

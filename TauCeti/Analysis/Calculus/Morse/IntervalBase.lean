@@ -76,7 +76,9 @@ bijective.
   every flow line through `(0, 1)` as a reparametrization of `q`.
 * `TauCeti.intervalBaseOrbit_one_add_log` and `TauCeti.intervalBaseOrbit_one_sub_log`: the unit-rate
   trajectory at times `c ∓ T` in the gluing parameter `ρ = e^{-T}`, `ρ` times a function of `ρ²`
-  near `0` and a function of `ρ²` near `1`.
+  near `0` and a function of `ρ²` near `1`; `TauCeti.intervalBaseFlow_one_mul_inv_sqrt_one_add_sq`
+  and `TauCeti.intervalBaseFlow_one_inv_sqrt_one_add_sq`: the flow acts on these two forms by
+  scaling `x` with `e^{s}` and `y` with `e^{-s}`.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -487,6 +489,34 @@ theorem intervalBaseFlow_mul_intervalBaseOrbit (C s : ℝ) {a : ℝ} (ha : a = -
     (t : ℝ) :
     intervalBaseFlow C s (a * intervalBaseOrbit C t) = a * intervalBaseOrbit C (s + t) := by
   rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
+
+/-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the unit-rate
+trajectory (`TauCeti.intervalBaseOrbit_one_add_log`) by `x ↦ e^{s} x`, for every real `x`. -/
+theorem intervalBaseFlow_one_mul_inv_sqrt_one_add_sq (s x : ℝ) :
+    intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := by
+  have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
+    have h0 := intervalBaseOrbit_one_add_log 0 hx
+    rw [Real.exp_zero, one_mul, zero_add] at h0
+    rw [← h0, intervalBaseFlow_intervalBaseOrbit, intervalBaseOrbit_one_add_log s hx]
+  rcases lt_trichotomy x 0 with hx | rfl | hx
+  · simpa only [neg_sq, mul_neg, neg_mul, intervalBaseFlow_neg, neg_inj] using
+      key (-x) (by linarith)
+  · simp
+  · exact key x hx
+
+/-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the unit-rate
+trajectory (`TauCeti.intervalBaseOrbit_one_sub_log`) by `y ↦ e^{-s} y`, for every real `y`. -/
+theorem intervalBaseFlow_one_inv_sqrt_one_add_sq (s y : ℝ) :
+    intervalBaseFlow 1 s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-s) * y) ^ 2))⁻¹ := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have h0 := intervalBaseOrbit_one_sub_log 0 (abs_pos.2 hy)
+  have hs := intervalBaseOrbit_one_sub_log s (abs_pos.2 hy)
+  rw [neg_zero, Real.exp_zero, one_mul, sq_abs, zero_sub] at h0
+  rw [mul_pow, sq_abs, ← mul_pow] at hs
+  rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, hs]
 
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
