@@ -111,8 +111,8 @@ theorem entireExtension_eq_of_differentiable {F : ℂ → A} (hF : Differentiabl
   exact (differentiable_entireExtension α a).eq_of_ofReal_eq hF fun t => by
     rw [h.entireExtension_ofReal, hFt]
 
-/-- An element is entire analytic exactly when its complex-time extension is an entire
-extension of its orbit. -/
+/-- An element is entire analytic exactly when its complex-time extension agrees with the action
+at real times. -/
 theorem isEntireAnalytic_iff (α : CStarAction (Multiplicative ℝ) A) (a : A) :
     α.IsEntireAnalytic a ↔ ∀ t : ℝ, α.entireExtension a t = α (Multiplicative.ofAdd t) a :=
   ⟨fun h => h.entireExtension_ofReal, fun h => ⟨_, differentiable_entireExtension α a, h⟩⟩
@@ -154,7 +154,7 @@ theorem entireExtension_add_ofReal (α : CStarAction (Multiplicative ℝ) A) (a 
       · simp [entireExtension_of_not_isEntireAnalytic h]
   simpa using congrFun this z
 
-/-- The values of the complex-time extension are again entire analytic. -/
+/-- The values of the complex-time extension are entire analytic. -/
 @[simp]
 theorem isEntireAnalytic_entireExtension (α : CStarAction (Multiplicative ℝ) A) (a : A) (z : ℂ) :
     α.IsEntireAnalytic (α.entireExtension a z) :=
@@ -260,8 +260,8 @@ theorem entireExtension_smul (α : CStarAction (Multiplicative ℝ) A) (c : ℂ)
 
 namespace IsEntireAnalytic
 
-/-- The pointwise product of the complex-time extensions of two entire analytic elements is
-entire. The bilinear form of the product rule applies in a possibly nonunital algebra. -/
+-- The bilinear form of the product rule applies in a possibly nonunital algebra.
+/-- The pointwise product of two complex-time extensions is entire. -/
 private theorem differentiable_entireExtension_mul (α : CStarAction (Multiplicative ℝ) A)
     (a b : A) :
     Differentiable ℂ fun z => α.entireExtension a z * α.entireExtension b z :=
