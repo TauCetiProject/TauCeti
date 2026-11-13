@@ -18,15 +18,15 @@ real place doubles the normalization exponent. Multiplying over all places above
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
 
-In the `TauCeti.InfinitePlace.LiesOver` scope, `L_w` is a `K_v`-algebra through
-`AbsoluteValue.Completion.map` whenever `w` lies over `v`, with the scalar tower and continuity
-instances that Mathlib's `AbsoluteValue.Completion.algebraOfLiesOver` provides. Completed
+In the `TauCeti.InfinitePlace.LiesOver` scope, `L_w` carries Mathlib's
+`AbsoluteValue.Completion.algebraOfLiesOver` `K_v`-algebra structure whenever `w` lies over `v`,
+together with its scalar tower and continuity instances. Completed
 extensions at infinite places are finite dimensional, with degree one or two. A place indexed by
 the places above `v` carries its proof of lying over `v` as an instance.
 
 The formulas are in `NumberField.InfinitePlace`, alongside
 `completionNormalizedAbsValue`. For the ordinary norm, use
-`NumberField.InfinitePlace.Completion.norm_completionMap (w := w) x`. For the normalized value, use
+`AbsoluteValue.Completion.norm_map x`. For the normalized value, use
 `completionNormalizedAbsValue_completionMap (w := w) x` for a completion element,
 and `prod_completionNormalizedAbsValue_completionMap (L := L) v x` for the product
 over places above `v`. Both are pre-simplification rules: `simp` applies them before
@@ -51,23 +51,29 @@ namespace TauCeti.InfinitePlace.LiesOver
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
   (v : NumberField.InfinitePlace K) (w : NumberField.InfinitePlace L) [w.LiesOver v]
 
-/-- If `w` lies over `v`, then `L_w` is a `K_v`-algebra through
-`AbsoluteValue.Completion.map`, so that `algebraMap K_v L_w` unfolds to the completion map. -/
+/-- If `w` lies over `v`, then `L_w` is a `K_v`-algebra through Mathlib's
+`AbsoluteValue.Completion.algebraOfLiesOver`, whose `algebraMap` is the completion map. -/
 scoped instance instAlgebra : Algebra v.Completion w.Completion :=
-  (AbsoluteValue.Completion.map v.1 w.1).toAlgebra
+  AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
 
 scoped instance instIsScalarTower : IsScalarTower K v.Completion w.Completion :=
-  IsScalarTower.of_algebraMap_eq fun x ↦ by
-    change _ = AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)
-    simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
+  inferInstanceAs <| letI := AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
+    IsScalarTower K v.Completion w.Completion
 
 scoped instance instContinuousSMul : ContinuousSMul v.Completion w.Completion :=
-  continuousSMul_of_algebraMap v.Completion w.Completion
-    (AbsoluteValue.Completion.continuous_map v.1 w.1)
+  inferInstanceAs <| letI := AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
+    ContinuousSMul v.Completion w.Completion
 
 end TauCeti.InfinitePlace.LiesOver
 
 open scoped TauCeti.InfinitePlace.LiesOver
+
+/-- The completion map along an extension of absolute values preserves the norm. -/
+@[simp]
+theorem AbsoluteValue.Completion.norm_map {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {v : AbsoluteValue K ℝ} {w : AbsoluteValue L ℝ} [w.LiesOver v] (x : v.Completion) :
+    ‖AbsoluteValue.Completion.map v w x‖ = ‖x‖ :=
+  (AbsoluteValue.Completion.isometry_map v w).norm_map_of_map_zero (map_zero _) x
 
 namespace NumberField.InfinitePlace
 
@@ -85,13 +91,6 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
   exact Nat.pos_of_ne_zero h.2
 
-/-- Extension of archimedean completions preserves the ordinary norm. -/
-@[simp]
-theorem Completion.norm_completionMap
-    {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    ‖AbsoluteValue.Completion.map v.1 w.1 x‖ = ‖x‖ :=
-  (AbsoluteValue.Completion.isometry_map v.1 w.1).norm_map_of_map_zero (map_zero _) x
-
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
@@ -99,7 +98,7 @@ theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
     completionNormalizedAbsValue w (AbsoluteValue.Completion.map v.1 w.1 x) =
       completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
-  rw [completionNormalizedAbsValue_apply, Completion.norm_completionMap,
+  rw [completionNormalizedAbsValue_apply, AbsoluteValue.Completion.norm_map,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
 
 variable [NumberField K] [NumberField L]

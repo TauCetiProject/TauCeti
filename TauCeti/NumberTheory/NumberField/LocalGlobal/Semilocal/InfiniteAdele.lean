@@ -101,8 +101,8 @@ theorem infiniteAdeleSemilocalHom_algebraMap (x : L) :
   rw [infiniteAdeleSemilocalHom_apply, ← infiniteSemilocalEquiv_symm_algebraMap L v x]
   exact congrArg (infiniteSemilocalEquiv L v).symm
     (funext fun w ↦ by
-      rw [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.algebraMap_def,
-        WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply])
+      rw [InfiniteAdeleRing.algebraMap_apply,
+        NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
 
 /-! ### The product over all infinite places -/
 

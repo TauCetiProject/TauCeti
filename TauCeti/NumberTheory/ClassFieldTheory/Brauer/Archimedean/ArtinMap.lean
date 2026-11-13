@@ -114,28 +114,6 @@ theorem infiniteArtinAt_apply (w : InfinitePlace K) (x : w.Completionˣ) :
             (fixedField_toSubgroup_top_eq_fieldRange w.Completion) (Additive.ofMul x))).toMul :=
   (infiniteClassFormation w).fieldArtinMap_apply x
 
-/-- The layer form of a field Artin map: if `σ` represents the Artin symbol of `x` for a class
-formation `cf` on the units of `F`, then on every layer `V ◁ G_F` the Artin map of `cf` sends `x` to
-the class of the restriction of `σ`. -/
-private theorem artinMap_layer_of_mk_eq_fieldArtinMap {F : Type} [Field F]
-    (cf : ClassFormation (unitsFormation F)) (V : OpenNormalSubgroup (AbsoluteGaloisGroup F))
-    (x : Fˣ) (σ : Field.absoluteGaloisGroup F)
-    (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = cf.fieldArtinMap x) :
-    cf.artinMap (ofOpenNormal V) (localGroundEquiv F V (Additive.ofMul x)) =
-      Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
-        (absoluteGaloisGroupRestrictEquiv F σ : AbsoluteGaloisGroup F ⧸ V.toSubgroup))) := by
-  have hmem : (absoluteGaloisGroupRestrictEquiv F σ : AbsoluteGaloisGroup F)
-      ∈ (ofOpenNormal V).ground := by
-    simp
-  have hsymm : (galOfOpenNormalEquiv V).symm
-      (absoluteGaloisGroupRestrictEquiv F σ : AbsoluteGaloisGroup F ⧸ V.toSubgroup) =
-      ((⟨_, hmem⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
-    rw [MulEquiv.symm_apply_eq, galOfOpenNormalEquiv_mk]
-  rw [← groundEquivOfOpenNormal_unitsLevelEquiv F V x,
-    ← ClassFormation.abelianizationRestrict_absoluteArtinMap,
-    cf.absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x σ hσ,
-    abelianizationRestrict_mk V ⟨_, hmem⟩, hsymm]
-
 /-- **The archimedean Artin map on a layer.** If `σ ∈ Gal(AlgebraicClosure K_w/K_w)` represents
 `Art_w(x)`, then for every open normal subgroup `V` of `G_{K_w}` the Artin map of
 `infiniteClassFormation w` on the layer `V ◁ G_{K_w}` sends `x` to the class of the restriction of
@@ -149,7 +127,8 @@ theorem infiniteArtinAt_layer (w : InfinitePlace K)
       Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
         (absoluteGaloisGroupRestrictEquiv w.Completion σ :
           AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup))) :=
-  artinMap_layer_of_mk_eq_fieldArtinMap (infiniteClassFormation w) V x σ hσ
+  artinMap_localGroundEquiv_of_mk_eq_fieldArtinMap w.Completion (infiniteClassFormation w) V x σ
+    hσ
 
 /-- **The archimedean character formula** `χ(Art_w x) = inv_w(x ∪ δχ)`. If `σ` represents
 `Art_w(x)`, then for every character `χ` of the abelianized Galois group of a layer

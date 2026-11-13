@@ -56,8 +56,8 @@ theorem eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles {x : K}
   have hlt (w : InfinitePlace K) : w (algebraMap (𝓞 K) K a) < 1 :=
     by
     simpa only [NumberField.AdeleRing.algebraMap_fst_apply,
-      InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.algebraMap_def,
-      WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
+      InfiniteAdeleRing.algebraMap_apply,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       AbsoluteValue.Completion.norm_coe, WithAbs.ofAbs_toAbs, WithAbs.equiv_apply,
       InfinitePlace.coe_apply] using hinf w
   by_contra ha

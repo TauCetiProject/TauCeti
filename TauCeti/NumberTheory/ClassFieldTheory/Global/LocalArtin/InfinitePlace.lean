@@ -167,8 +167,7 @@ theorem infiniteLocalArtinAt_eq_of_decompositionHom {x : v.Completionˣ}
   refine infiniteLocalArtinAt_eq_of_mk_eq_infiniteArtinAt v τ hτ
     ((ι.restrictScalars K).comp (IsScalarTower.toAlgHom K L w.Completion)) σ fun y ↦ ?_
   simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, IsScalarTower.coe_toAlgHom',
-    AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-    Algebra.algebraMap_self_apply]
+    NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   rw [← decompositionHom_algebraMap (v := v) σ y, hσ]
 
 include w in

@@ -179,8 +179,7 @@ private def unitsToInfiniteDecompositionUnits :
       -- State that equality explicitly so the public completion comparison applies.
       change algebraMap L w.Completion ((d : L ≃ₐ[K] L) ((Additive.toMul a : Lˣ) : L)) =
         (decompositionHom v w d) (algebraMap L w.Completion ((Additive.toMul a : Lˣ) : L))
-      simpa only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-        Algebra.algebraMap_self_apply] using
+      simpa only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe] using
         (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
 omit [NumberField K] [NumberField L] in

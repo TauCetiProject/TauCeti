@@ -81,8 +81,7 @@ theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
   change (infiniteAdeleExtension K L a) w *
     (algebraMap L (InfiniteAdeleRing L) x) w = _
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-  rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-    Algebra.algebraMap_self_apply]
+  rw [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
 
 /-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
 product over the infinite places `v` of `K` of the families of components at the places of `L`
@@ -147,8 +146,8 @@ private theorem baseChangeLinearEquiv_apply [NumberField K] (t : InfiniteAdeleRi
     change _ = (infiniteAdeleExtension K L a) w *
       (algebraMap L (InfiniteAdeleRing L) x) w
     rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-    rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-      Algebra.algebraMap_self_apply, AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
+    rw [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+      AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
   | add t u ht hu => simp [ht, hu]
 
 /-- The archimedean semilocal decompositions assemble to a bijective base-change map. -/

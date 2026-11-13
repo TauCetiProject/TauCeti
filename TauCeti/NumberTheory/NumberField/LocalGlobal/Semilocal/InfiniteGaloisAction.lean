@@ -86,9 +86,8 @@ theorem infiniteSemilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
   | tmul a x =>
     rw [Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul,
       infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes,
-      AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-      Algebra.algebraMap_self_apply, AbsoluteValue.Completion.algebraMap_def,
-      WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply, completionCongr_algebraMap]
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom

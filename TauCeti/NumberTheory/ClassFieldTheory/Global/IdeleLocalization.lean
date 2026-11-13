@@ -902,8 +902,9 @@ theorem exists_ideleCoeffInfiniteComponent_ideleExtension_eq (w : InfinitePlace 
   refine (h (GlobalNumberFields.ideleExtension K E₀ a)).trans ?_
   simp only [GlobalNumberFields.ideleInfiniteCoord_ideleExtension,
     toMul_coe_baseUnitsEquivInvariants, toMul_ofMul]
-  -- The algebra structure of `u.Completion` over the completion below is `completionMap`.
-  exact Units.ext (τ'.commutes _)
+  -- The algebra structure of `u.Completion` over the completion below is the completion map.
+  exact Units.ext ((congrArg τ'
+    (AbsoluteValue.Completion.algebraMap_apply_of_liesOver _ _ _).symm).trans (τ'.commutes _))
 
 end Ground
 

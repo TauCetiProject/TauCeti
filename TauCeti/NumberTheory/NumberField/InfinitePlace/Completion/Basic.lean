@@ -49,6 +49,12 @@ instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
       (map_zero _), map_ofNat]
     norm_num
 
+/-- The algebra map of `K` into its completion at an infinite place is the coercion. -/
+theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :
+    algebraMap K w.Completion x = (x : w.Completion) := by
+  rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+    Algebra.algebraMap_self_apply]
+
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
 instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :
     IsScalarTower R K w.Completion := by
@@ -71,8 +77,7 @@ theorem completionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completi
 @[simp↓]
 theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
-  rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-    Algebra.algebraMap_self_apply]
+  rw [Completion.algebraMap_apply_eq_coe]
   exact AbsoluteValue.Completion.norm_coe (WithAbs.toAbs w.1 x)
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
@@ -84,8 +89,7 @@ theorem Completion.funext_of_continuous {w : InfinitePlace K} {B : Type*} [Topol
   induction a using AbsoluteValue.Completion.induction_on with
   | hp => exact isClosed_eq hf hg
   | ih a =>
-    simpa only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-      Algebra.algebraMap_self_apply, WithAbs.toAbs_ofAbs] using h a.ofAbs
+    simpa only [Completion.algebraMap_apply_eq_coe, WithAbs.toAbs_ofAbs] using h a.ofAbs
 
 /-- On the dense copy of `K`, the infinite completion value is the normalized
 infinite-place value. -/

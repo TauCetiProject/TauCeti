@@ -100,8 +100,8 @@ private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : Infinite
         (AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)) := by
   rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
     ← IsScalarTower.algebraMap_apply K L w.Completion,
-    IsScalarTower.algebraMap_apply K v.Completion w.Completion]
-  rfl
+    IsScalarTower.algebraMap_apply K v.Completion w.Completion,
+    AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
 
 /-- **Normalized absolute values at an infinite place under extension.** If the infinite place `w`
 of `L` lies over the infinite place `v` of `K`, then `‖x‖_w = ‖x‖_v ^ [L_w : K_v]` for `x ∈ K`.

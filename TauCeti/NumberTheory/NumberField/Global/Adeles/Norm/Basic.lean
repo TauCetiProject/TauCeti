@@ -241,7 +241,7 @@ theorem infiniteAdeleNorm_infiniteAdeleExtension (a : InfiniteAdeleRing K) :
         a v ^ Module.finrank v.Completion w.1.Completion := by
     obtain ⟨w, hw⟩ := w
     obtain rfl : w.comap (algebraMap K L) = v := InfinitePlace.LiesOver.comap_eq w v
-    rw [infiniteAdeleExtension_apply]
+    rw [infiniteAdeleExtension_apply, ← AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
     exact Algebra.norm_algebraMap _
   rw [infiniteAdeleNorm_apply, finprod_eq_prod_of_fintype, Finset.prod_congr rfl fun w _ ↦ h w,
     Finset.prod_pow_eq_pow_sum, sum_finrank_infiniteCompletion_eq_finrank]
@@ -274,8 +274,9 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
   rw [show e p = ⟨p.2.1, inferInstance⟩ from
     Subtype.ext (InfinitePlace.liesOverTowerEquiv_apply v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
-  exact IsScalarTower.of_algebraMap_eq fun y ↦
-    (RingHom.congr_fun (AbsoluteValue.Completion.map_comp_map v.1 p.1.1.1 p.2.1.1) y).symm
+  exact IsScalarTower.of_algebraMap_eq fun y ↦ by
+    simp only [AbsoluteValue.Completion.algebraMap_apply_of_liesOver,
+      AbsoluteValue.Completion.map_map]
 
 /-! ### Adeles -/
 

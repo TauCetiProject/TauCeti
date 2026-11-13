@@ -11,6 +11,7 @@ public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
 public import TauCeti.NumberTheory.Padics.AlgebraicClosure
 public import TauCeti.RingTheory.Valuation.Approximation
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # Weak approximation at finite and infinite places
@@ -222,8 +223,7 @@ theorem weakApproximation_denseRange
     (v.1.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
   have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
       DenseRange (fun x : K => algebraMap K w.1.Completion x) := by
-    simp only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-      Algebra.algebraMap_self_apply]
+    simp only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
     change DenseRange
       (((↑) : WithAbs w.1.1 → w.1.Completion) ∘ (WithAbs.equiv w.1.1).symm)
     exact (AbsoluteValue.Completion.denseRange_coe (v := w.1.1)).comp
@@ -271,8 +271,7 @@ theorem weakApproximation_denseRange
     -- `Metric.mem_nhds_iff` presents the chosen neighbourhood as this open ball.
     change dist (algebraMap K w.1.Completion x)
       (algebraMap K w.1.Completion (ainf w)) < einf w
-    rw [dist_eq_norm, ← map_sub, AbsoluteValue.Completion.algebraMap_def,
-      WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
+    rw [dist_eq_norm, ← map_sub, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
       AbsoluteValue.Completion.norm_coe]
     exact hxinf w
@@ -459,8 +458,7 @@ theorem denseRange_algebraMap_embedding_of_isReal
   ext w
   · rw [Function.comp_apply, Prod.map_fst, id]
   · rw [Function.comp_apply, Prod.map_snd]
-    simp only [r, AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
-      Algebra.algebraMap_self_apply]
+    simp only [r, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
     exact ((Completion.extensionEmbeddingOfIsReal_coe w.1.2 (WithAbs.toAbs _ x)).trans
       (by simp)).symm
 
