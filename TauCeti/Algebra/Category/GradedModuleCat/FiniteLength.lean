@@ -110,7 +110,7 @@ theorem exists_simple_quotient (M : GradedModuleCat.{v} 𝒜) [Module.Finite k M
   | _ n ih =>
     by_cases hs : Simple M
     · exact ⟨M, 𝟙 M, inferInstance, hs, inferInstance⟩
-    obtain ⟨Y, i, hi, hYfinite, hQfinite, hQ, _, hdim⟩ :=
+    obtain ⟨Y, i, _, _, hQfinite, hQ, _, hdim⟩ :=
       M.exists_mono_cokernel_finrank_lt hM hs
     have : Module.Finite k (cokernelObj i) := hQfinite
     obtain ⟨N, f, hN, hsN, hf⟩ := ih _ (hn ▸ hdim) (cokernelObj i) hQ rfl

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.Derivation
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.TwoTorsion
 
 /-!
 # The affine group-law formulae under a change of variables
@@ -240,7 +240,7 @@ private lemma variableChange_slope_of_Y_ne [DecidableEq F] {x y : F}
     rw [variableChange_negY]
     exact fun h ↦ hy (mul_left_cancel₀ (pow_ne_zero 3 hu) (by linear_combination h))
   have hY : (C • W).toAffine.polynomialY.evalEval x y ≠ 0 :=
-    (C • W).toAffine.evalEval_polynomialY_ne_zero_of_Y_ne hy
+    mt evalEval_polynomialY_eq_zero_iff.1 hy
   rw [slope_of_Y_ne_eq_evalEval rfl hΦy, slope_of_Y_ne_eq_evalEval rfl hy,
     variableChange_evalEval_polynomialX, variableChange_evalEval_polynomialY]
   field
