@@ -30,9 +30,9 @@ Fourier transforms `η ↦ (ℓ ∘ T) (φ e_η)` rapidly decreasing in one open
 
 A change of frame by a smooth function `G : E → (F →L[ℂ] F')` multiplies `T` by `G`. Writing `G`
 in a real basis `(Aᵢ)` of the finite-dimensional space `F →L[ℂ] F'` as `G = ∑ gᵢ Aᵢ` with smooth
-real coefficients `gᵢ`, the product `G T` is the distribution `∑ Aᵢ (gᵢ T)`. Such sums do not
-enlarge the wave front set (`Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`), so an
-invertible smooth frame change preserves it.
+real coefficients `gᵢ`, the product `G T` is the distribution `∑ Aᵢ (gᵢ T)`. The wave front set of
+such a sum is contained in that of `T`
+(`Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`).
 
 ## Main declarations
 
@@ -46,8 +46,9 @@ invertible smooth frame change preserves it.
   it is closed in `Ω × (E \ {0})` for finite-dimensional `F`, and conic.
 * `Distribution.vectorWaveFrontSet_mapCLM_subset`, `Distribution.vectorWaveFrontSet_mapCLM_equiv`:
   a complex-linear map of the values does not enlarge it, and an isomorphism preserves it.
-* `Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`: multiplication by a smooth
-  `Hom(F, F')`-valued function does not enlarge it.
+* `Distribution.vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset`: a sum `∑ᵢ Aᵢ (gᵢ T)` of
+  complex-linear maps `Aᵢ` applied to smooth multiples `gᵢ T` has wave front set contained in
+  that of `T`.
 * `Distribution.vectorWaveFrontSet_add_subset`,
   `Distribution.vectorWaveFrontSet_smulLeftCLM_subset`,
   `Distribution.vectorWaveFrontSet_restrictCLM`,
@@ -230,11 +231,9 @@ theorem vectorWaveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, F)) (hg : ContD
     (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).vectorWaveFrontSet = T.vectorWaveFrontSet := by
   simp only [vectorWaveFrontSet, mapCLM_smulLeftCLM, waveFrontSet_smulLeftCLM_of_ne_zero _ hg hg0]
 
-/-- **Smooth changes of frame.** Multiplication of `T` by a smooth function
-`G = ∑ᵢ gᵢ Aᵢ : E → (F →L[ℂ] F')`, with smooth real coefficients `gᵢ` and fixed complex-linear maps
-`Aᵢ`, does not enlarge the wave front set: the product `G T = ∑ᵢ Aᵢ (gᵢ T)` has wave front set
-contained in that of `T`. When `G` takes invertible values, `T = G⁻¹ (G T)` gives the reverse
-inclusion. -/
+/-- **Smooth changes of frame.** For smooth real functions `gᵢ` and complex-linear maps
+`Aᵢ : F →L[ℂ] F'`, the distribution `∑ᵢ Aᵢ (gᵢ T)` has wave front set contained in that of `T`.
+This sum is the product of `T` with the smooth function `G = ∑ᵢ gᵢ Aᵢ : E → (F →L[ℂ] F')`. -/
 theorem vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_subset {ι : Type*} (s : Finset ι)
     (A : ι → F →L[ℂ] F') {g : ι → E → ℝ} (hg : ∀ i, ContDiff ℝ ∞ (g i)) (T : 𝓓'(Ω, F)) :
     (∑ i ∈ s, mapCLM ((A i).restrictScalars ℝ) (smulLeftCLM (hg i) T)).vectorWaveFrontSet ⊆
