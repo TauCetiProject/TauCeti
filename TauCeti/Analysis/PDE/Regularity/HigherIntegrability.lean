@@ -680,11 +680,11 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
   -- Gehring's lemma.
   have hf : AEMeasurable f (mu.restrict (ball x₀ R)) :=
     ((memLp_indicator_iff_restrict hΩm.nullMeasurableSet).2
-      (Lp.memLp (W1p.gradient u))).aestronglyMeasurable.enorm.mono_measure
+      (Lp.memLp (W1p.gradient u))).aestronglyMeasurable.eNorm.mono_measure
         Measure.restrict_le_self
   have hφ : AEMeasurable φ (mu.restrict (ball x₀ R)) :=
     (((memLp_indicator_iff_restrict hΩm.nullMeasurableSet).2
-      hF).aestronglyMeasurable.enorm.div_const _).mono_measure Measure.restrict_le_self
+      hF).aestronglyMeasurable.eNorm.div_const _).mono_measure Measure.restrict_le_self
   exact hC hf hφ fun y ρ hρ hsub => hb' hRH4 y ρ hρ hsub
 
 omit [Fintype ι] [DecidableEq ι] [mu.IsAddHaarMeasure] in
