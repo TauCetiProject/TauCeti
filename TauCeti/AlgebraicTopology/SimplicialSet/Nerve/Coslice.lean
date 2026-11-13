@@ -13,9 +13,10 @@ public import TauCeti.CategoryTheory.ComposableArrows.Under
 # Coslices of ordinary nerves
 
 The simplicial coslice of the nerve of a category under an object x is the nerve of
-its ordinary under category, through `CategoryTheory.nerve.cosliceIso`. The comparison preserves
-the projection to the original
-nerve. It identifies the join description of a coslice simplex with a string of arrows
+its ordinary under category, through `CategoryTheory.nerve.cosliceIso`. Projection compatibility
+is given simplexwise by `CategoryTheory.nerve.yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe`:
+restricting the comparison along `join.inr` sends a string `s` to `s ⋙ Under.forget x`.
+The comparison identifies the join description of a coslice simplex with a string of arrows
 under x, retaining the structure arrows and all simplicial operators.
 
 This is the ordinary-category model of the coslices used in comma-category criteria
@@ -190,23 +191,24 @@ lemma underEquiv_symm_cosliceIso_inv_app_coe {n : ℕ}
       ((objEquiv_cosliceIso_hom_app_coe x _).symm.trans (congrArg (fun σ ↦ (coslice.objEquiv σ).1)
         (Iso.inv_hom_id_apply ((cosliceIso x).app (op ⦋n⦌)) τ))))))
 
-/-- The projection `SSet.coslice.π` of a coslice simplex is the string obtained by forgetting its
-structure arrows. -/
+/-- Restricting `(cosliceIso x).hom.app n s` to the base simplex along `join.inr` forgets the
+structure arrows of `s`. This is the `SSet.coslice.π_app` normal form of its projection. -/
 @[simp]
-lemma π_app_cosliceIso_hom_app (n : SimplexCategoryᵒᵖ) (s : (nerve (Under x)).obj n) :
+lemma yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe (n : SimplexCategoryᵒᵖ)
+    (s : (nerve (Under x)).obj n) :
     SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫
       (coslice.objEquiv ((cosliceIso x).hom.app n s)).1) = s ⋙ Under.forget x :=
   (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.1)) (objEquiv_toCoslice_app x n s)).trans
     ((congrArg SSet.yonedaEquiv (cone_inr x _ s)).trans (Equiv.apply_symm_apply _ _))
 
-/-- The vertex given by an arrow x → y retains that arrow in the coslice. -/
+/-- The vertex given by an object `a : Under x` retains its structure arrow in the coslice. -/
 @[simp]
-lemma cosliceIso_hom_app_vertex {y : C} (f : x ⟶ y) :
+lemma objEquiv_cosliceIso_hom_app_nerveEquiv_symm_coe (a : Under x) :
     (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋0⦌)
-      (nerveEquiv.symm (Under.mk f)))).1 =
-        (join.coneIso 0).hom ≫ SSet.yonedaEquiv.symm (ComposableArrows.mk₁ f) :=
+      (nerveEquiv.symm a))).1 =
+        (join.coneIso 0).hom ≫ SSet.yonedaEquiv.symm (ComposableArrows.mk₁ a.hom) :=
   (objEquiv_cosliceIso_hom_app_coe x _).trans (congrArg _ (congrArg _
-    -- The structure arrow of the vertex is f, between identities of its endpoints.
-    (ComposableArrows.ext₁ rfl rfl ((Category.id_comp _).trans (Category.comp_id f)).symm)))
+    -- The structure arrow of the vertex is a.hom, between identities of its endpoints.
+    (ComposableArrows.ext₁ rfl rfl ((Category.id_comp _).trans (Category.comp_id a.hom)).symm)))
 
 end CategoryTheory.nerve

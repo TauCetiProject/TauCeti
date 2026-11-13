@@ -46,8 +46,6 @@ projections are right and left fibrations.
   other edges of the spine are those of `Δ[n]`.
 * `SSet.join.map_comp_coneIso_hom`: `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps act
   on `Δ[n + 1]` by fixing the cone point (`SimplexCategory.vertexJoin`).
-* `SSet.join.hom_ext_stdSimplex`: maps from the cone `Δ[0] ⋆ Δ[n]` to a standard simplex are
-  determined by their restrictions to the cone point and to the base.
 * `SSet.join.hom_ext_of_isStrictSegal`: maps from the cone `Δ[0] ⋆ Δ[n]` to a strict Segal
   simplicial set are determined by their restrictions to the base `Δ[n]` and to the edge from the
   cone point to the vertex `0`.
@@ -414,23 +412,6 @@ lemma const_zero_comp_coneIso_inv :
 @[reassoc (attr := simp)]
 lemma δ_zero_comp_coneIso_inv : stdSimplex.δ 0 ≫ (coneIso.{u} n).inv = inr _ _ := by
   rw [Iso.comp_inv_eq, inr_comp_coneIso_hom]
-
-/-- Maps from the cone `Δ[0] ⋆ Δ[n]` to a standard simplex are determined by their restrictions to
-the cone point and to the base: every vertex of `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` lies in one of them. -/
-theorem hom_ext_stdSimplex {k : ℕ} {σ σ' : join Δ[0] Δ[n] ⟶ (Δ[k] : SSet.{u})}
-    (h₀ : inl _ _ ≫ σ = inl _ _ ≫ σ') (h : inr _ _ ≫ σ = inr _ _ ≫ σ') : σ = σ' := by
-  rw [← cancel_epi (coneIso n).inv]
-  apply yonedaEquiv.injective
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  cases i using Fin.cases with
-  | zero =>
-      rw [← const_zero_comp_coneIso_inv_assoc, ← const_zero_comp_coneIso_inv_assoc] at h₀
-      simpa only [stdSimplex.yonedaEquiv_map_comp_apply, SimplexCategory.const_apply] using
-        congr(yonedaEquiv $h₀ 0)
-  | succ i =>
-      rw [← δ_zero_comp_coneIso_inv_assoc, ← δ_zero_comp_coneIso_inv_assoc] at h
-      simpa [CosimplicialObject.δ, SimplexCategory.δ] using
-        congr(yonedaEquiv $h i)
 
 /-- The isomorphism `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
 the cone point `0` (`SimplexCategory.vertexJoin`). -/
