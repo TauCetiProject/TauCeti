@@ -31,7 +31,8 @@ subgroup order.
   subgroup order is invertible in the coefficient field; it is the specialization of
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character.
 * `TauCeti.character_indFDRep_mulEquiv`: induced characters are natural under a group isomorphism
-  carrying one finite-index subgroup onto another.
+  carrying one finite-index subgroup onto another; it is the specialization of
+  `Subgroup.indClassFun_mulEquiv` to a character.
 
 ## References
 
@@ -258,24 +259,11 @@ theorem character_indFDRep_mulEquiv [S.FiniteIndex] {G' : Type*} [Group G'] {S' 
       (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
     (indFDRep (k := k) (G := G') A').character (φ g) =
       (indFDRep (k := k) (G := G) A).character g := by
-  classical
-  have hb := Subgroup.mk_mulEquiv_out_bijective φ hφ
-  have : S'.FiniteIndex :=
-    @Subgroup.finiteIndex_of_finite_quotient _ _ S' (Finite.of_surjective _ hb.surjective)
-  let := Fintype.ofFinite (G ⧸ S)
-  let := Fintype.ofFinite (G' ⧸ S')
-  rw [character_indFDRep_sum_quotient, character_indFDRep_sum_quotient]
-  simp only [← Function.indTerm_apply]
-  -- Reindex the coset sum over `G' ⧸ S'` along the transversal `q ↦ φ q.out`.
-  rw [← hb.sum_comp]
-  refine Finset.sum_congr rfl fun q _ => ?_
-  rw [Function.indTerm_eq_of_mk_eq _ (ClassFunction.mem_iff.mpr A'.char_conj) _ _ _
-    (QuotientGroup.out_eq' _)]
-  have hconj : (φ q.out)⁻¹ * φ g * φ q.out = φ (q.out⁻¹ * g * q.out) := by simp
-  simp only [Function.indTerm_apply, hconj, hφ]
-  split_ifs with h
-  · exact hA ⟨_, h⟩
-  · rfl
+  have : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+    (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
+  rw [← Subgroup.indClassFun_ofFDRep_character, ← Subgroup.indClassFun_ofFDRep_character,
+    Subgroup.indClassFun_mulEquiv S φ hφ A'.char_conj]
+  simp only [hA]
 
 end ClassFun
 
