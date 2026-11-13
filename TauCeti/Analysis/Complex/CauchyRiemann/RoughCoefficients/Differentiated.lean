@@ -179,20 +179,32 @@ theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ
 system is the original operator `∂_s + A ∂_t` applied to each component of `Ξ = (∂_s ξ, ∂_t ξ)`:
 every weak derivative `DΞ` of `Ξ` satisfies `∂_s Ξ + diag(A, A) ∂_t Ξ = (∂_s η, ∂_t η)` almost
 everywhere on `Ω`. -/
-theorem ae_differentiated_cauchyRiemann_const [FiniteDimensional ℝ V] {q : ℝ≥0} (hq : 1 < q)
+theorem ae_differentiated_cauchyRiemann_const {q : ℝ≥0∞}
     (A : V →L[ℝ] V) {ξ η : ℂ → V} {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DΞ : ℂ → ℂ →L[ℝ] V × V}
     (hξ : MemWkpLoc q Ω 2 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
     (hDη : HasWeakFDerivOn volume Ω η Dη)
     (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + A (Dξ z I) = η z)
     (hDΞ : HasWeakFDerivOn volume Ω (fun z => (Dξ z 1, Dξ z I)) DΞ) :
     ∀ᵐ z ∂volume.restrict Ω, DΞ z 1 + A.prodMap A (DΞ z I) = (Dη z 1, Dη z I) := by
-  have hA : HasWeakFDerivOn volume Ω (fun _ => A) 0 := hasWeakFDerivOn_iff.2 fun v => by
-    simpa using hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := v) A
-  have h0 : HasWeakFDerivOn volume Ω (0 : ℂ → V →L[ℝ] V) 0 := hasWeakFDerivOn_zero
-  have h := ae_differentiated_cauchyRiemann (p := max q 3) (lt_max_of_lt_right (by norm_num)) hq
-    (le_max_left _ _) (memWkpLoc_const A) hA memWkpLoc_zero_fun h0 hξ hDξ hDη
-    (heq.mono fun z hz => by simpa using hz) hDΞ
-  filter_upwards [h] with z hz
-  simpa using hz
+  have := hξ.completeSpace
+  obtain ⟨D2, hD2, -⟩ := (hξ.memWkpLoc_of_hasWeakFDerivOn hDξ).exists_weakFDeriv_of_isOpen
+  -- The partial derivatives `z ↦ Dξ z v` have weak derivatives `w ↦ D2 z w v`.
+  have hpart (v : ℂ) : HasWeakFDerivOn volume Ω (fun z => Dξ z v)
+      (fun z => (ContinuousLinearMap.apply ℝ V v).comp (D2 z)) :=
+    hD2.clm_comp (ContinuousLinearMap.apply ℝ V v)
+  -- The mixed second weak derivatives of `ξ` commute.
+  have hsymm : (fun z => D2 z I 1) =ᵐ[volume.restrict Ω] fun z => D2 z 1 I :=
+    ((hDξ.hasWeakLineDerivOn 1).comm ((hpart 1).hasWeakLineDerivOn I)
+      (hDξ.hasWeakLineDerivOn I)).ae_eq ((hpart I).hasWeakLineDerivOn 1)
+  -- Differentiating the equation through the constant operator `A`.
+  have hη := (((hpart 1).add ((hpart I).clm_comp A)).congr_ae heq).ae_eq hDη
+  have hΞ := hDΞ.ae_eq ((hpart 1).prodMk (hpart I))
+  filter_upwards [hη, hΞ, hsymm] with z h1 h2 h3
+  have e1 : D2 z 1 1 + A (D2 z 1 I) = Dη z 1 := by simpa using congr($h1 1)
+  have eI : D2 z I 1 + A (D2 z I I) = Dη z I := by simpa using congr($h1 I)
+  rw [h2]
+  ext
+  · simpa [h3] using e1
+  · simpa [← h3] using eI
 
 end TauCeti
