@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symp
 public import TauCeti.RepresentationTheory.Subrepresentation.Quotient
 -- The entrywise identity `Matrix.sum_sum_J_mul_J` for the loop value.
 import TauCeti.LinearAlgebra.SymplecticGroup
+import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # The trace splitting of the symplectic tensor powers
@@ -79,6 +80,8 @@ the kernel of the cap is the symmetric square of `k²` and the trace line is spa
   of its slots have the same kernel, so the harmonic tensors are the common kernel of the arcs.
 * `TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`: **the trace
   splitting** of `V^{⊗d}` over a star-ordered field.
+* `TauCeti.finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors`: over every
+  field the dimensions of the harmonic tensors and of the trace tensors add up to `(2n)^d`.
 * `TauCeti.isCompl_ker_symplecticCap_range_symplecticCup` and
   `TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceLine`: on two strands the same
   splitting holds over every commutative ring in which the loop value `-2n` is invertible.
@@ -332,6 +335,59 @@ theorem sub_quotientSymplecticTraceTensorsEquivHarmonicTensors_apply_mk_mem
   Subrepresentation.sub_quotientEquivOfIsCompl_apply_mk_mem _ x
 
 end StarOrderedField
+
+/-! ### The dimension count over an arbitrary field -/
+
+section Field
+
+variable (k n d)
+variable [Field k]
+
+/-- **The harmonic tensors and the trace tensors have complementary dimensions** over every
+field, including fields of characteristic two, over which the two subspaces can intersect: the
+dimensions of `TauCeti.symplecticHarmonicTensors k n d` and of
+`TauCeti.symplecticTraceTensors k n d` add up to `(2 * n) ^ d`, the dimension of `V^{⊗d}`. -/
+theorem finrank_symplecticHarmonicTensors_add_finrank_symplecticTraceTensors :
+    Module.finrank k (symplecticHarmonicTensors k n d) +
+      Module.finrank k (symplecticTraceTensors k n d).toSubmodule = (2 * n) ^ d := by
+  -- The harmonic tensors are the orthogonal complement of the trace tensors for the dot product
+  -- of the monomial basis, for which every arc is self-adjoint.
+  let b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
+  let B := Matrix.toBilin b (1 : Matrix (Fin d → Fin n ⊕ Fin n) (Fin d → Fin n ⊕ Fin n) k)
+  have hB : B.Nondegenerate := (Matrix.nondegenerate_of_det_ne_zero (by simp)).toBilin b
+  have hBapply (x y) : B x y = ⇑(b.repr x) ⬝ᵥ ⇑(b.repr y) := by
+    simp [B, Matrix.toBilin_apply, dotProduct, Matrix.one_apply]
+  have hadj (i j : Fin d) (x y) :
+      B (symplecticCupCapAt k n d i j x) y = B (symplecticCupCapAt k n d i j y) x := by
+    let : StarRing k := starRingOfComm
+    have : TrivialStar k := ⟨fun _ => rfl⟩
+    have hT := (isHermitian_toMatrix_symplecticCupCapAt (k := k) (n := n) (d := d) (i := i)
+      (j := j)).isSymm.eq
+    rw [hBapply, hBapply, ← LinearMap.toMatrix_mulVec_repr b b _ x,
+      ← LinearMap.toMatrix_mulVec_repr b b _ y, dotProduct_comm, Matrix.dotProduct_mulVec,
+      ← Matrix.mulVec_transpose, hT]
+  have horth : B.orthogonal (symplecticTraceTensors k n d).toSubmodule =
+      symplecticHarmonicTensors k n d := by
+    rw [symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt]
+    ext x
+    simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_iInf, LinearMap.mem_ker]
+    constructor
+    · intro h i j hij
+      refine hB.1 _ fun y => ?_
+      rw [hadj]
+      exact h _ (range_symplecticCupCapAt_le_symplecticTraceTensors hij ⟨y, rfl⟩)
+    · intro h t ht
+      refine (symplecticTraceTensors_toSubmodule_le_iff (p := LinearMap.ker (B.flip x))).2
+        (fun i j hij => ?_) ht
+      rintro _ ⟨y, rfl⟩
+      simp [hadj, h i j hij]
+  have hdim : Module.finrank k (⨂[k]^d ((Fin n ⊕ Fin n) → k)) = (2 * n) ^ d := by
+    rw [Module.finrank_eq_card_basis b]
+    simp [two_mul]
+  rw [← horth, LinearMap.BilinForm.finrank_orthogonal hB, ← hdim,
+    Nat.sub_add_cancel (Submodule.finrank_le _)]
+
+end Field
 
 /-! ### Two strands -/
 
