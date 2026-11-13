@@ -44,27 +44,30 @@ local notation "σ" => iterateFrobenius K (ValidLieTypeIndex.characteristic (Sub
 local notation "hσ" => @ValidLieTypeIndex.involutive_iterateFrobenius_galoisField
   (Subtype.val d)
 
-/-- Identify the signed-reversal special isometries with the exact Steinberg fixed points
-of `²A₂(q)`, by coefficient extension and the designated-carrier comparison. -/
-def unitaryRankOneEquivFixedPoints : UnitaryRankOne.Group K σ ≃* (d).FixedPoints :=
-  (MulEquiv.subgroupCongr
-    ((d).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2).symm).trans
-      (specialUnitaryEquivFixedPoints 2 q hv)
-
-/-- The finite unitary model is sent to its coefficient extension on the designated carrier. -/
-@[simp]
-theorem coe_unitaryRankOneEquivFixedPoints (g : UnitaryRankOne.Group K σ) :
-    ((d).carrierEquivSpecialLinear
-        (unitaryRankOneEquivFixedPoints q hv g : (d).AmbientGroup) :
-          Matrix (Fin ((d).1.rank + 1)) (Fin ((d).1.rank + 1)) (d).1.Closure) =
-      ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).map
-        ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
-  exact coe_specialUnitaryEquivFixedPoints 2 q hv _
-
 /-- The diagonal torus parametrization in the exact Steinberg fixed points of `²A₂(q)`. -/
 def unitaryTorusHom : Kˣ →* (d).FixedPoints :=
-  (unitaryRankOneEquivFixedPoints q hv).toMonoidHom.comp
+  (specialIsometryEquivFixedPoints 2 q hv).toMonoidHom.comp
     (UnitaryRankOne.torusHom K σ hσ)
+
+/-- The exact-carrier parametrization factors through the special-isometry comparison. -/
+theorem unitaryTorusHom_def :
+    unitaryTorusHom q hv = (specialIsometryEquivFixedPoints 2 q hv).toMonoidHom.comp
+      (UnitaryRankOne.torusHom K σ hσ) := by rfl
+
+/-- The comparison sends each unitary torus parameter to the exact-carrier torus parameter. -/
+@[simp]
+theorem specialIsometryEquivFixedPoints_torusHom (t : Kˣ) :
+    specialIsometryEquivFixedPoints 2 q hv (UnitaryRankOne.torusHom K σ hσ t) =
+      unitaryTorusHom q hv t := by rfl
+
+/-- The comparison identifies the unitary torus with the range on the exact carrier. -/
+@[simp]
+theorem map_specialIsometryEquivFixedPoints_torus :
+    (UnitaryRankOne.torus K σ hσ).map
+        (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints) =
+      (unitaryTorusHom q hv).range := by
+  simp only [UnitaryRankOne.torus_def, unitaryTorusHom_def, MonoidHom.range_comp,
+    MulEquiv.toMonoidHom_eq_coe]
 
 /-- The torus parameter gives the stated diagonal matrix over the algebraic closure. -/
 @[simp]
@@ -75,17 +78,23 @@ theorem coe_unitaryTorusHom (t : Kˣ) :
         ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   simpa only [unitaryTorusHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     UnitaryRankOne.coe_torusHom] using
-    coe_unitaryRankOneEquivFixedPoints q hv (UnitaryRankOne.torusHom K σ hσ t)
+    coe_specialIsometryEquivFixedPoints 2 q hv (UnitaryRankOne.torusHom K σ hσ t)
 
 /-- The torus parametrization remains injective on the exact carrier. -/
 theorem unitaryTorusHom_injective : Function.Injective (unitaryTorusHom q hv) :=
-  (unitaryRankOneEquivFixedPoints q hv).injective.comp
+  (specialIsometryEquivFixedPoints 2 q hv).injective.comp
     (UnitaryRankOne.torusHom_injective K σ hσ)
 
 /-- The signed reversal gives an actual Steinberg-fixed representative of the nontrivial
 relative Weyl element. -/
 def unitaryFixedWeylRepresentative : (d).FixedPoints :=
-  unitaryRankOneEquivFixedPoints q hv (UnitaryRankOne.weyl K σ)
+  specialIsometryEquivFixedPoints 2 q hv (UnitaryRankOne.weyl K σ)
+
+/-- The comparison sends the unitary Weyl element to the fixed Weyl representative. -/
+@[simp]
+theorem specialIsometryEquivFixedPoints_weyl :
+    specialIsometryEquivFixedPoints 2 q hv (UnitaryRankOne.weyl K σ) =
+      unitaryFixedWeylRepresentative q hv := by rfl
 
 /-- The Steinberg-fixed representative is the signed reversal matrix over the closure. -/
 @[simp]
@@ -94,10 +103,11 @@ theorem coe_unitaryFixedWeylRepresentative :
         (unitaryFixedWeylRepresentative q hv : (d).AmbientGroup) :
           Matrix (Fin ((d).1.rank + 1)) (Fin ((d).1.rank + 1)) (d).1.Closure) =
       (typeAGraphConjugator 2 (d).1.Closure : Matrix (Fin 3) (Fin 3) (d).1.Closure) := by
-  rw [unitaryFixedWeylRepresentative, coe_unitaryRankOneEquivFixedPoints,
+  rw [unitaryFixedWeylRepresentative, coe_specialIsometryEquivFixedPoints,
     UnitaryRankOne.coe_weyl]
-  exact congrArg Units.val (map_typeAGraphConjugator
+  have hmap := congrArg Units.val (map_typeAGraphConjugator
     ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) 2)
+  rwa [Units.coe_map, MonoidHom.coe_ofClass, RingHom.mapMatrix_apply] at hmap
 
 /-- The fixed Weyl representative has square one. -/
 @[simp]
@@ -119,22 +129,20 @@ theorem unitaryFixedWeylRepresentative_mul_unitaryTorusHom_mul_unitaryFixedWeylR
       unitaryTorusHom q hv ((Units.map (σ).toMonoidHom t)⁻¹) := by
   simpa only [unitaryFixedWeylRepresentative, unitaryTorusHom,
     MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, map_mul] using
-      congrArg (unitaryRankOneEquivFixedPoints q hv)
+      congrArg (specialIsometryEquivFixedPoints 2 q hv)
         (UnitaryRankOne.weyl_mul_torusHom_mul_weyl K σ hσ t)
 
 /-- The fixed Weyl representative normalizes the parametrized torus on the exact carrier. -/
 theorem unitaryFixedWeylRepresentative_mem_normalizer_range_unitaryTorusHom :
     unitaryFixedWeylRepresentative q hv ∈
       Subgroup.normalizer ((unitaryTorusHom q hv).range : Set (d).FixedPoints) := by
-  have htorus : UnitaryRankOne.torus K σ hσ = (UnitaryRankOne.torusHom K σ hσ).range := by
-    ext g
-    exact UnitaryRankOne.mem_torus_iff K σ hσ g
-  simpa only [unitaryTorusHom, MonoidHom.range_comp, ← htorus,
-    unitaryFixedWeylRepresentative, MulEquiv.coe_toMonoidHom] using
-      Subgroup.le_normalizer_map (H := UnitaryRankOne.torus K σ hσ)
-        (unitaryRankOneEquivFixedPoints q hv).toMonoidHom
-        (Subgroup.mem_map.mpr ⟨UnitaryRankOne.weyl K σ,
-          UnitaryRankOne.weyl_mem_normalizer_torus K σ hσ, rfl⟩)
+  rw [← map_specialIsometryEquivFixedPoints_torus,
+    ← specialIsometryEquivFixedPoints_weyl]
+  simpa only [MonoidHom.coe_ofClass] using
+    Subgroup.le_normalizer_map (H := UnitaryRankOne.torus K σ hσ)
+      (specialIsometryEquivFixedPoints 2 q hv : UnitaryRankOne.Group K σ →* (d).FixedPoints)
+      (Subgroup.mem_map.mpr ⟨UnitaryRankOne.weyl K σ,
+        UnitaryRankOne.weyl_mem_normalizer_torus K σ hσ, rfl⟩)
 
 /-- The fixed Weyl representative lies outside the parametrized torus. -/
 theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
@@ -142,6 +150,8 @@ theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
   rintro ⟨t, ht⟩
   apply UnitaryRankOne.weyl_notMem_torus K σ hσ
   rw [UnitaryRankOne.mem_torus_iff]
-  exact ⟨t, (unitaryRankOneEquivFixedPoints q hv).injective ht⟩
+  rw [← specialIsometryEquivFixedPoints_torusHom,
+    ← specialIsometryEquivFixedPoints_weyl] at ht
+  exact ⟨t, (specialIsometryEquivFixedPoints 2 q hv).injective ht⟩
 
 end TauCeti.TypeALieIndex

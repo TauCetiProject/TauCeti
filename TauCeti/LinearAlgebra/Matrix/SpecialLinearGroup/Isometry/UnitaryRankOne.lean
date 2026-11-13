@@ -46,28 +46,35 @@ private theorem det_torusMatrix (t : Rˣ) : (torusMatrix R σ t).det = 1 := by
   simp [torusMatrix, det_diagonal, Fin.prod_univ_succ, ← map_mul,
     mul_left_comm, mul_comm]
 
+private def torusSL (t : Rˣ) : SpecialLinearGroup (Fin 3) R :=
+  ⟨torusMatrix R σ t, det_torusMatrix R σ t⟩
+
+private theorem coe_torusSL (t : Rˣ) :
+    (torusSL R σ t : Matrix (Fin 3) (Fin 3) R) = torusMatrix R σ t := rfl
+
 /-- The diagonal torus parametrization `t ↦ diag(t, σ(t)/t, 1/σ(t))`. -/
 def torusHom (hσ : Function.Involutive σ) : Rˣ →* Group R σ where
-  toFun t := ⟨⟨torusMatrix R σ t, det_torusMatrix R σ t⟩, by
+  toFun t := ⟨torusSL R σ t, by
     apply mem_specialIsometryGroup_iff.mpr
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
+      simp [coe_torusSL, torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
         typeAGraphConjugator_apply, hσ (t : R), hσ (↑t⁻¹ : R),
         ← map_mul, mul_assoc, mul_comm]⟩
   map_one' := by
     apply Subtype.ext
-    apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [torusMatrix]
+    apply Matrix.SpecialLinearGroup.ext
+    intro i j
+    fin_cases i <;> fin_cases j <;>
+      simp [coe_torusSL, torusMatrix, Matrix.SpecialLinearGroup.coe_one]
   map_mul' s t := by
     apply Subtype.ext
-    simp only [Subgroup.coe_mul]
-    apply Subtype.ext
-    erw [Matrix.SpecialLinearGroup.coe_mul]
-    ext i j
+    rw [Subgroup.coe_mul]
+    apply Matrix.SpecialLinearGroup.ext
+    intro i j
+    rw [Matrix.SpecialLinearGroup.coe_mul]
     fin_cases i <;> fin_cases j <;>
-      simp [torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
+      simp [coe_torusSL, torusMatrix, Matrix.mul_apply, Fin.sum_univ_succ,
         map_mul, mul_assoc, mul_left_comm, mul_comm]
 
 /-- The underlying matrix of a torus element. -/
@@ -76,17 +83,28 @@ theorem coe_torusHom (hσ : Function.Involutive σ) (t : Rˣ) :
     ((torusHom R σ hσ t : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
       diagonal ![(t : R), σ (t : R) * ↑t⁻¹, σ (↑t⁻¹ : R)] := by rfl
 
-/-- The torus parameter is recovered from the first diagonal entry. -/
+/-- The diagonal torus parametrization is injective. -/
 theorem torusHom_injective (hσ : Function.Involutive σ) :
     Function.Injective (torusHom R σ hσ) := by
   intro s t h
   apply Units.ext
-  exact congrArg (fun g : Group R σ =>
+  simpa using congrArg (fun g : Group R σ =>
     ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) 0 0) h
 
 /-- The diagonal torus, as a subgroup of the rank-one unitary group. -/
 def torus (hσ : Function.Involutive σ) : Subgroup (Group R σ) :=
   (torusHom R σ hσ).range
+
+/-- The torus is the range of its unit parametrization. -/
+theorem torus_def (hσ : Function.Involutive σ) :
+    torus R σ hσ = (torusHom R σ hσ).range := by rfl
+
+/-- Every value of the parametrization belongs to the torus. -/
+theorem torusHom_mem_torus (hσ : Function.Involutive σ) (t : Rˣ) :
+    torusHom R σ hσ t ∈ torus R σ hσ := ⟨t, rfl⟩
+
+instance (hσ : Function.Involutive σ) : IsMulCommutative (torus R σ hσ) :=
+  Subgroup.range_isMulCommutative _
 
 /-- Membership in the torus is existence of a unit parameter. -/
 theorem mem_torus_iff (hσ : Function.Involutive σ) (g : Group R σ) :
@@ -122,7 +140,7 @@ theorem weyl_mul_self : weyl R σ * weyl R σ = 1 := by
 theorem weyl_inv : (weyl R σ)⁻¹ = weyl R σ :=
   inv_eq_of_mul_eq_one_right (weyl_mul_self R σ)
 
-/-- Weyl conjugation reverses and inverts the torus parameter. -/
+/-- Weyl conjugation maps the torus parameter `t` to `σ(t)⁻¹`. -/
 theorem weyl_mul_torusHom_mul_weyl (hσ : Function.Involutive σ) (t : Rˣ) :
     weyl R σ * torusHom R σ hσ t * weyl R σ =
       torusHom R σ hσ ((Units.map σ.toMonoidHom t)⁻¹) := by
@@ -142,6 +160,7 @@ theorem mem_torus_iff_isDiag (hσ : Function.Involutive σ) (g : Group R σ) :
       ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).IsDiag := by
   refine ⟨?_, fun hg => ?_⟩
   · rintro ⟨t, rfl⟩
+    rw [coe_torusHom]
     exact isDiag_diagonal _
   · obtain ⟨d, hd⟩ := mem_diagonalTorus_iff_exists_diagGL.mp
       (Matrix.SpecialLinearGroup.mem_diagonalTorus_iff_toGL_mem.mp
