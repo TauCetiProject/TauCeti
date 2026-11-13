@@ -159,16 +159,14 @@ theorem murrayVonNeumannEquiv_self_iff : MurrayVonNeumannEquiv p p ↔ IsStarPro
 
 end Algebraic
 
-section CStar
+section OrderedStar
 
-variable [NonUnitalCStarAlgebra A]
+variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
   {p : CStarMatrix m m A} {q : CStarMatrix n n A} {r : CStarMatrix k k A}
 
 /-- An implementing rectangular matrix is supported on its initial projection. -/
 theorem mul_eq_self_of_conjTranspose_mul_eq (v : CStarMatrix n m A)
     (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) : v * p = v := by
-  let := CStarAlgebra.spectralOrder A
-  let := CStarAlgebra.spectralOrderedRing A
   have hp' : IsIdempotentElem (v.conjTranspose * v) := by
     rw [hv]
     exact hp
@@ -212,11 +210,14 @@ theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A}
         v * star v = q := by
   constructor
   · rintro ⟨hp, _, v, hv, hv'⟩
+    have hvp := mul_eq_self_of_conjTranspose_mul_eq v hp.isIdempotentElem hv
+    simp only [← star_eq_conjTranspose] at hv hv'
     refine ⟨v, ?_, hv, hv'⟩
-    rw [TauCeti.isPartialIsometry_iff, mul_assoc, star_eq_conjTranspose, hv]
-    exact mul_eq_self_of_conjTranspose_mul_eq v hp.isIdempotentElem hv
+    rw [TauCeti.isPartialIsometry_iff, mul_assoc, hv]
+    exact hvp
   · rintro ⟨v, hv, rfl, rfl⟩
-    exact ⟨hv.isStarProjection_star_mul_self, hv.isStarProjection_mul_star_self, v, rfl, rfl⟩
+    exact ⟨hv.isStarProjection_star_mul_self, hv.isStarProjection_mul_star_self, v,
+      by rw [star_eq_conjTranspose], by rw [star_eq_conjTranspose]⟩
 
 /-- Only the zero projection is equivalent to a zero projection, in any matrix size. -/
 @[simp]
@@ -224,8 +225,6 @@ theorem murrayVonNeumannEquiv_zero_iff :
     MurrayVonNeumannEquiv p (0 : CStarMatrix n n A) ↔ p = 0 := by
   refine ⟨?_, fun h => h ▸ .zero⟩
   rintro ⟨_, _, v, hv, hv'⟩
-  let := CStarAlgebra.spectralOrder A
-  let := CStarAlgebra.spectralOrderedRing A
   have h := congrArg ofMatrix.symm hv'
   simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at h
   have hz : ofMatrix.symm v = 0 := Matrix.self_mul_conjTranspose_eq_zero.mp h
@@ -242,7 +241,7 @@ theorem zero_murrayVonNeumannEquiv_iff :
     fun h => h ▸ MurrayVonNeumannEquiv.zero⟩
 
 
-end CStar
+end OrderedStar
 
 /-- Unitary conjugacy implies Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_unitary_conj [Ring B] [StarRing B] [DecidableEq m]

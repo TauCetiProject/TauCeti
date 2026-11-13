@@ -94,6 +94,7 @@ lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSe
   simp only [ofMatrix_symm_mul, Matrix.mul_assoc]
 
 /-- Conjugate transpose reverses rectangular multiplication. -/
+@[simp]
 lemma conjTranspose_mul {m k : Type*} [Fintype n] [NonUnitalNonAssocSemiring A] [StarRing A]
     (M : CStarMatrix m n A) (N : CStarMatrix n k A) :
     (M * N).conjTranspose = N.conjTranspose * M.conjTranspose := by
