@@ -263,7 +263,7 @@ variable {𝒜} {n : ℤ} {U V : (Proj 𝒜).Opens}
 
 /-- A section of `𝒪(n)` is determined by its values in the localizations. -/
 @[ext]
-theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x, s.1 x = t.1 x) : s = t :=
+theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x : U, s.1 x = t.1 x) : s = t :=
   Subtype.ext (funext h)
 
 @[simp]

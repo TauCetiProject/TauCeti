@@ -147,8 +147,8 @@ theorem twistingSheaf_top_eq_zero_of_neg {n : ℤ} (hn : n < 0) (b : Module.Basi
   have hq0 : ι R M (b i) ^ k * q = 0 := by
     rw [← DirectSum.decompose_of_mem_same 𝒜 hq,
       DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 hpow (by omega)]
-  ext y
-  rw [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
+  refine Proj.twistingSheaf.ext fun y ↦ (hs y).trans ?_
+  rw [((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
   exact (Proj.twistingSheaf.zero_apply y).symm
 
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**: for
