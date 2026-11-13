@@ -60,9 +60,7 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
-  particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`), and it is
-  the finite sum of its blocks when only finitely many are nonzero
-  (`sum_littlewoodPaleyBlock_eq_self`).
+  particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
   `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
@@ -332,18 +330,6 @@ theorem exists_littlewoodPaleyBlock_eq_sum_Ico (φ' : ContDiffBump (0 : E)) :
   · exact congr($((hL₁ k j (by omega)).2) u)
   · exact congr($((hL₂ j k (by omega)).1) u)
 
-/-- **A distribution with finitely many blocks is their sum.** If `Δⱼ u = 0` for every `j > N`,
-then `u = ∑_{j ≤ N} Δⱼ u`. -/
-theorem sum_littlewoodPaleyBlock_eq_self {u : 𝓢'(E, F)} {N : ℕ}
-    (hu : ∀ j, N < j → littlewoodPaleyBlock F φ j u = 0) :
-    ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j u = u := by
-  -- The partial sums of `∑ⱼ Δⱼ u = u` are constant from `N + 1` on.
-  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) (tendsto_sum_littlewoodPaleyBlock φ u)
-  filter_upwards [eventually_ge_atTop (N + 1)] with M hM
-  rw [← Finset.sum_range_add_sum_Ico _ hM, Finset.sum_eq_zero (s := Finset.Ico (N + 1) M) ?_,
-    add_zero]
-  exact fun j hj ↦ hu j (Finset.mem_Ico.1 hj).1
-
 /-- **Low-pass truncations against single blocks.** There is `L`, depending only on `φ`, such
 that the low-pass truncation `S_N = ∑_{j ≤ N} Δⱼ` fixes the block `Δₖ u` when `k + L ≤ N`, and the
 block `Δₖ` annihilates `S_N u` when `N + L ≤ k`. -/
@@ -357,8 +343,11 @@ theorem exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock :
           0) := by
   obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ
   refine ⟨L, fun k N ↦ ⟨fun hkN u ↦ ?_, fun hNk u ↦ ?_⟩⟩
-  · exact sum_littlewoodPaleyBlock_eq_self φ fun j hj ↦ by
-      simpa using DFunLike.congr_fun (hL k j (by omega)).2 u
+  · refine sum_littlewoodPaleyBlock_eq_self φ _ fun j hj ↦ ?_
+    have hkj : k + L ≤ j := by
+      have := Finset.mem_range.not.1 hj
+      omega
+    simpa using DFunLike.congr_fun (hL k j hkj).2 u
   · rw [map_sum]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
     have hjk : j + L ≤ k := by

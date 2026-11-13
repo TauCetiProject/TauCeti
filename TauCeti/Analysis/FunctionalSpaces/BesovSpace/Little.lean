@@ -254,7 +254,7 @@ private theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- `S_M` fixes `w`.
   have hSw : ∑ j ∈ Finset.range (M + 1), littlewoodPaleyBlock F φ j (w : 𝓢'(E, F)) = w :=
-    sum_littlewoodPaleyBlock_eq_self φ fun j hj ↦ hM j hj.le
+    sum_littlewoodPaleyBlock_eq_self φ _ fun j hj ↦ hM j (Nat.le_of_lt (by simpa using hj))
   rw [littleBesov, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   set A := 2 ^ (|s| * ((M + L : ℕ) : ℝ)) * C * K
