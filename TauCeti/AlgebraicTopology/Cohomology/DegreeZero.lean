@@ -216,7 +216,7 @@ end Unit
 
 section Invertibility
 
-variable {X : TopCat.{w}} {ι : Type w} [Fintype ι] [DecidableEq ι]
+variable {X : TopCat.{w}} {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **Invertibility of a matrix of degree-zero classes is pointwise**: if `A` is a square matrix of
 classes in `H⁰(X; k)` whose matrix of values `(A i j)(x)` is invertible at every point `x`, then
