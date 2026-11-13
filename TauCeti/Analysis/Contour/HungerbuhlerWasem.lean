@@ -29,15 +29,14 @@ import TauCeti.Analysis.Contour.FlatnessOne
 /-!
 # The Hungerbühler–Wasem generalized residue theorem
 
-The summit of the contour-integration roadmap (HW Thm 3.3): for `f` holomorphic on `U ∖ S`
-and meromorphic at each point of the finite `S` lying in `U`, and a **null-homologous, closed**
-piecewise-`C¹` **immersion** `γ` in `U` rooted off the poles, under the regularity conditions
-(A′) and (B), the set-level Cauchy principal value of `f` along `γ` exists and equals
-`2πi · Σ_{s ∈ S} n_s(γ) · Res_s f` — with the generalized (non-integer) winding numbers as
-weights, valid when singularities lie **on** the curve; a point of `S` outside `U` has winding
-number `0` and contributes nothing. The half-residue case
-(`S = {s}`, `n_s(γ) = ½`) evaluates to `πi · Res_s f` — the on-cycle acceptance gate, and the
-value the valence formula uses at `i` and `ρ`.
+HW Thm 3.3: for `f` holomorphic on `U ∖ S` and meromorphic at each point of the finite `S` lying
+in `U`, and a **null-homologous, closed** piecewise-`C¹` **immersion** `γ` in `U` rooted off the
+poles, under the regularity conditions (A′) and (B), the set-level Cauchy principal value of `f`
+along `γ` exists and equals `2πi · Σ_{s ∈ S} n_s(γ) · Res_s f` — with the generalized
+(non-integer) winding numbers as weights, valid when singularities lie **on** the curve; a point
+of `S` outside `U` has winding number `0` and contributes nothing. The half-residue case
+(`S = {s}`, `n_s(γ) = ½`) evaluates to `πi · Res_s f`, the value the valence formula needs at the
+smooth boundary point `i` of the fundamental domain.
 
 The proof instantiates the canonical polar decomposition, discharges the conditions into the
 per-pole hypotheses, and assembles the residue sum; a reversed parametrization (`b ≤ a`) reduces to
@@ -55,8 +54,8 @@ must add several curves up before any of them bounds.
 * `Contour.hasCauchyPV_half_residue` — the winding-`½` on-cycle case.
 * `Contour.hungerbuhlerWasem_residueTheorem_of_simple_poles`,
   `Contour.hasCauchyPV_half_residue_of_simple_pole` — the simple-pole forms, with conditions
-  (A′) and (B) discharged automatically; the statements the argument principle and the
-  valence formula consume.
+  (A′) and (B) discharged automatically; the forms the argument principle and the valence
+  formula need.
 
 ## Provenance
 
@@ -205,7 +204,7 @@ When every prescribed singularity in `U` is at worst a simple pole, conditions (
 automatically — first-order flatness is every immersion's geometry, and the sector condition
 only constrains poles of order `> 1`. This is HW's own base regime (Thm 3.3's unconditional
 case, "`C` only contains singularities of `f` which are poles of order `1`"), and the form
-the argument principle and the valence formula consume: a logarithmic derivative has only
+the argument principle and the valence formula need: a logarithmic derivative has only
 simple poles. -/
 
 /-- **Condition (A′) is automatic at simple poles.** The only pole order the interior clause can
@@ -261,7 +260,7 @@ when every prescribed singularity in `U` is at worst a simple pole
 (`meromorphicOrderAt f s ≥ -1`), conditions (A′) and (B) hold automatically, and the
 principal value is the winding-weighted residue sum with no regularity hypotheses beyond the
 immersion. A point of `S` outside `U` has winding number `0` by null-homology and contributes
-nothing. The form the argument principle and the valence formula consume. -/
+nothing. The form the argument principle and the valence formula need. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : Set ℂ}
     (hU : IsOpen U) (S : Finset ℂ) (γ : ℝ → ℂ) (a b : ℝ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
@@ -279,7 +278,8 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : 
 
 /-- **The half-residue theorem at a simple pole**: the winding-`½` case with the conditions
 discharged automatically — an on-cycle simple pole crossed by the immersion contributes
-`πi · Res_s f`. This is the form the valence formula uses at `i` and `ρ`. -/
+`πi · Res_s f`. This is the form the valence formula needs at `i`; at the `π/3` corners `ρ` and
+`ρ + 1` of the fundamental domain the winding number is `1/6` instead. -/
 theorem hasCauchyPV_half_residue_of_simple_pole {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (γ : ℝ → ℂ) (a b : ℝ) (s : ℂ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ≠ s)
