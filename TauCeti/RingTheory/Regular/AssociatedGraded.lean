@@ -53,26 +53,6 @@ namespace RingTheory.Sequence.IsWeaklyRegular
 
 open Ideal
 
-/-- If homogeneous forms in `a` of degree `ν` with value in `Jᵛ⁺¹` have coefficients in
-`J = (a)`, and `x` is a nonzerodivisor modulo `J`, then `x` is a nonzerodivisor modulo every
-power of `J`. -/
-private theorem mem_pow_of_mul_mem_pow {σ : Type*} {a : σ → R}
-    (hQ : ∀ {ν : ℕ} {F : MvPolynomial σ R}, F.IsHomogeneous ν →
-      F.eval a ∈ span (Set.range a) ^ (ν + 1) → ∀ e, F.coeff e ∈ span (Set.range a))
-    {x : R} (hx : ∀ y, x * y ∈ span (Set.range a) → y ∈ span (Set.range a)) :
-    ∀ (μ : ℕ) (y : R), x * y ∈ span (Set.range a) ^ μ → y ∈ span (Set.range a) ^ μ := by
-  intro μ
-  induction μ with
-  | zero => simp
-  | succ μ ih =>
-    intro y hy
-    obtain ⟨P, hP, rfl⟩ := (mem_span_pow_iff_exists_isHomogeneous a y).mp
-      (ih y (pow_le_pow_right (Nat.le_succ μ) hy))
-    have hc := hQ (hP.C_mul x) (by simpa using hy)
-    rw [pow_succ']
-    exact (mem_mul_span_pow_iff_exists_isHomogeneous _ a μ _).mpr
-      ⟨P, hP, fun e ↦ hx _ (by simpa using hc e), rfl⟩
-
 /-- The inductive step of quasi-regularity: if the first `n` entries of `a` are quasi-regular and
 the last entry `x` is a nonzerodivisor modulo the ideal `J` they generate, then `a` is
 quasi-regular. -/
@@ -91,7 +71,6 @@ private theorem coeff_mem_of_eval_mem_pow_succ_of_castSucc {n : ℕ} {a : Fin (n
   have hJI : span (Set.range a') ≤ span (Set.range a) :=
     span_mono (Set.range_comp_subset_range Fin.castSucc a)
   have hxI : x ∈ span (Set.range a) := subset_span ⟨_, rfl⟩
-  have hreg := mem_pow_of_mul_mem_pow hQ hx
   induction ν generalizing F e with
   | zero =>
     rw [totalDegree_eq_zero_iff_eq_C.mp (Nat.le_zero.mp hF.totalDegree_le)] at hFa ⊢
@@ -113,9 +92,10 @@ private theorem coeff_mem_of_eval_mem_pow_succ_of_castSucc {n : ℕ} {a : Fin (n
       rw [mul_comm]
       exact this.symm
     -- `x H(a) = -G(a') ∈ Jᵛ⁺¹`, hence `H(a) ∈ Jᵛ⁺¹`.
-    have hHJ : H.eval a ∈ span (Set.range a') ^ (ν + 1) := hreg _ _ <| by
-      rw [eq_neg_of_add_eq_zero_right h0]
-      exact neg_mem ((mem_span_pow_iff_exists_isHomogeneous a' _).mpr ⟨G, hG, rfl⟩)
+    have hHJ : H.eval a ∈ span (Set.range a') ^ (ν + 1) :=
+      mem_span_pow_of_mul_mem_span_pow hQ hx _ <| by
+        rw [eq_neg_of_add_eq_zero_right h0]
+        exact neg_mem ((mem_span_pow_iff_exists_isHomogeneous a' _).mpr ⟨G, hG, rfl⟩)
     have hHI : ∀ e, H.coeff e ∈ span (Set.range a) := ih hH (pow_right_mono hJI _ hHJ)
     -- Writing `H(a) = K(a')`, the form `G + x K` vanishes at `a'`.
     obtain ⟨K, hK, hKa⟩ := (mem_span_pow_iff_exists_isHomogeneous a' _).mp hHJ
