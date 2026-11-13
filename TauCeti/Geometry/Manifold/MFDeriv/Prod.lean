@@ -35,12 +35,13 @@ fields on a product manifold.
   `f ∘ Prod.fst + g ∘ Prod.snd` sends `(u, w)` to `df(u) + dg(w)`.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff` and
   `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the differential of a separated sum vanishes
-  at `(x, y)` exactly when the differentials of `f` at `x` and of `g` at `y` both vanish. For
+  at `p` exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. For
   real-valued `f` and `g`: the critical points of the separated sum are the pairs of critical
   points.
-* `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd`: the same for
-  `mfderiv`, read in the product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`) for
-  the model `𝓘(𝕜, E × E')`.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd` and
+  `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd`: the same, read in the
+  product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`) for the model
+  `𝓘(𝕜, E × E')`.
 * `ContinuousLinearMap.mvfderiv_comp_fst_apply` and `ContinuousLinearMap.mvfderiv_comp_snd_apply`:
   the derivative of a continuous linear map applied to a vector-valued function of one factor.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
@@ -177,27 +178,29 @@ theorem mvfderiv_comp_fst_add_comp_snd_apply {f : M → F} {g : N → F} {p : M 
     mvfderiv_comp_fst_apply, mvfderiv_comp_snd_apply]
 
 /-- **The differential of a separated sum vanishes exactly where both differentials vanish.** When
-`f` is differentiable at `x` and `g` at `y`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
-vanishes at `(x, y)` exactly when the differentials of `f` at `x` and of `g` at `y` both vanish. -/
+`f` is differentiable at `p.1` and `g` at `p.2`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
+vanishes at `p` exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
 @[simp]
-theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {x : M} {y : N}
-    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) (hg : MDifferentiableAt J 𝓘(𝕜, F) g y) :
-    mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) = 0 ↔
-      mvfderiv I f x = 0 ∧ mvfderiv J g y = 0 := by
+theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) :
+    mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mvfderiv I f p.1 = 0 ∧ mvfderiv J g p.2 = 0 := by
   refine ⟨fun h0 ↦ ⟨ContinuousLinearMap.ext fun u ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩,
     fun ⟨h₁, h₂⟩ ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
   -- Below, the zero maps are applied to vectors read in the model spaces `E × E'`, `E` and `E'`,
-  -- the tangent spaces at `(x, y)`, `x` and `y` by definition, where `zero_apply` does not match
+  -- the tangent spaces at `p`, `p.1` and `p.2` by definition, where `zero_apply` does not match
   -- syntactically; such applications are `0` by definition.
-  · calc mvfderiv I f x u = mvfderiv I f x u + mvfderiv J g y 0 := by rw [map_zero, add_zero]
-      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (u, 0) :=
-        (mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg (u, 0)).symm
+  · calc mvfderiv I f p.1 u = mvfderiv I f p.1 u + mvfderiv J g p.2 0 := by
+          rw [map_zero, add_zero]
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p (u, 0) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply hf hg (u, 0)).symm
       _ = 0 := by rw [h0]; rfl
-  · calc mvfderiv J g y w = mvfderiv I f x 0 + mvfderiv J g y w := by rw [map_zero, zero_add]
-      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) (0, w) :=
-        (mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg (0, w)).symm
+  · calc mvfderiv J g p.2 w = mvfderiv I f p.1 0 + mvfderiv J g p.2 w := by
+          rw [map_zero, zero_add]
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p (0, w) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply hf hg (0, w)).symm
       _ = 0 := by rw [h0]; rfl
-  · rw [mvfderiv_comp_fst_add_comp_snd_apply (p := (x, y)) hf hg, h₁, h₂]
+  · rw [mvfderiv_comp_fst_add_comp_snd_apply hf hg, h₁, h₂]
     exact add_zero (0 : F)
 
 /-- **The differential of a separated sum vanishes exactly where both differentials vanish**, for
@@ -494,13 +497,25 @@ the product charts with values in `E × E'`. When `f` is differentiable at `p.1`
 the differential of `f ∘ Prod.fst + g ∘ Prod.snd` for the model `𝓘(𝕜, E × E')` vanishes at `p`
 exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
 @[simp]
+theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd {p : M × N}
+    (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1)
+    (hg : MDifferentiableAt 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2) :
+    mvfderiv 𝓘(𝕜, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mvfderiv 𝓘(𝕜, E) f p.1 = 0 ∧ mvfderiv 𝓘(𝕜, E') g p.2 = 0 := by
+  rw [modelWithCornersSelf_prod]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, in
+the product charts with values in `E × E'`. When `f` is differentiable at `p.1` and `g` at `p.2`,
+the differential of `f ∘ Prod.fst + g ∘ Prod.snd` for the model `𝓘(𝕜, E × E')` vanishes at `p`
+exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
+@[simp]
 theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd {p : M × N}
     (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1)
     (hg : MDifferentiableAt 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2) :
     mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, F) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
       mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1 = 0 ∧ mfderiv 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2 = 0 := by
-  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff,
-    modelWithCornersSelf_prod]
-  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd hf hg
 
 end TauCeti
