@@ -1016,17 +1016,6 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
   Floer.differentiableAt_pairOfPantsPerturbation_domain hH
     (contMDiff_uncurry_of_contDiff hHs) hz x v
 
-/-- The components of the perturbation are differentiable in the target point, at points
-of `S`. -/
-private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
-      x :=
-  mdifferentiableAt_iff_differentiableAt.1
-    (Floer.mdifferentiableAt_pairOfPantsPerturbation_target hH
-      (contMDiff_uncurry_of_contDiff hHs) hz x v)
-
 variable [FiniteDimensional ℝ V]
 
 /-- **The curvature on an end.** The curvature is a two-form, so on the end `q` it is
