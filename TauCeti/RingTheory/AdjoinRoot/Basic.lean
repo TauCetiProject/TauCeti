@@ -18,7 +18,10 @@ Mathlib's `AdjoinRoot.map` sends a ring homomorphism `f : R →+* S`, together w
 a general polynomial, and says nothing about surjectivity. Both are added here, together with the
 description of the `R`-linear endomorphisms of `AdjoinRoot g`, for any `g`, that commute with
 multiplication by the root, and the annihilators of the powers of the root in the truncated
-polynomial ring `R[X]/(X ^ n)`.
+polynomial ring `R[X]/(X ^ n)`. It also adds the algebra maps out of `AdjoinRoot f` into any
+algebra, the `n`th-root classes in `R[X]/(X ^ n - C a)`, the degree-bounded representatives of
+classes modulo a monic relator, rank counts for quotients of `R[X]/(X ^ n)`, and the base change
+of `AdjoinRoot g`.
 
 ## Main results
 
@@ -45,11 +48,8 @@ polynomial ring `R[X]/(X ^ n)`.
   (`AdjoinRoot.mk_leftInverse`), and as the power basis `AdjoinRoot.powerBasis'`; these two lemmas
   are the formulation in terms of degrees.
 * `AdjoinRoot.eq_mulRight_of_root_mul`: an `R`-linear endomorphism of `AdjoinRoot g`
-  that commutes with multiplication by the root is multiplication by its value at `1`. Its
-  consumers are the truncated polynomial algebras of
-  `TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType` and
-  `TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType`, whose endomorphism algebras it
-  pins down. The characterization holds for any relator `g`.
+  that commutes with multiplication by the root is multiplication by its value at `1`. The
+  characterization holds for any relator `g`.
 * `AdjoinRoot.algebraTensorAlgEquiv`: the base change `T ⊗[R] R[X]/(g)` of `AdjoinRoot g` to an
   `R`-algebra `T` is `T[X]/(g)`, with `g` mapped into `T[X]`. Mathlib's `AdjoinRoot.tensorAlgEquiv`
   lands in `AdjoinRoot` over `T ⊗[R] R` instead; this is it followed by `T ⊗[R] R ≃ T`, the form
@@ -65,16 +65,12 @@ polynomial ring `R[X]/(X ^ n)`.
   `AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow`: the same count for the cyclic
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
-
 * `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
   is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
   This connects cyclic module structure theorems with `AdjoinRoot.mkₐ` through
   `LinearMap.quotKerEquivOfSurjective`.
 
 Stated over arbitrary commutative rings.
-
-This is consumed by `TauCeti/AlgebraicGeometry/EllipticCurve/Affine/CoordinateRingMap.lean`, which
-specialises it to the coordinate ring of a Weierstrass curve.
 
 ## Provenance
 
@@ -327,6 +323,7 @@ noncomputable def algebraTensorAlgEquiv :
       ext x
       simp [Algebra.algebraMap_eq_smul_one])))
 
+/-- The base change of the root of `g` is the root of the image of `g` in `T[X]`. -/
 @[simp]
 theorem algebraTensorAlgEquiv_one_tmul_root :
     algebraTensorAlgEquiv T g (1 ⊗ₜ root g) = root (g.map (algebraMap R T)) := by
@@ -341,6 +338,8 @@ theorem algebraTensorAlgEquiv_one_tmul_mk (p : R[X]) :
   exact (algHom_mk (((algebraTensorAlgEquiv T g).toAlgHom.restrictScalars R).comp
     Algebra.TensorProduct.includeRight) p).trans (by simp)
 
+/-- The inverse of the base-change equivalence sends the root of the image of `g` in `T[X]` to the
+base change of the root of `g`. -/
 @[simp]
 theorem algebraTensorAlgEquiv_symm_root :
     (algebraTensorAlgEquiv T g).symm (root (g.map (algebraMap R T))) = 1 ⊗ₜ root g := by
