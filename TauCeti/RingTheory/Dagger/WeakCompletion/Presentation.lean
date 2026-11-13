@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.WeakCompletion.Noetherian
+import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Dagger.WeakCompletion.Jacobson
 import TauCeti.RingTheory.Ideal.KrullIntersection
 
@@ -46,10 +47,9 @@ compatibly with evaluation of overconvergent series and with the canonical map `
   `TauCeti.Dagger.weakCompletion.quotientKerMapAlgEquiv`: when `R†` is noetherian and `f` is
   surjective, `ker (map π f) = (ker f).map (of π R)` and `R† ⧸ (ker f).map (of π R) ≃ₐ[O] S†`.
 * `TauCeti.Dagger.weakCompletion.quotientAlgEquiv`: `(R† ⧸ I.map (of π R)) ≃ₐ[O] (R ⧸ I)†`.
-* `TauCeti.Dagger.weakCompletion.evalIntWashnitzerAlgebra_eq` and
-  `TauCeti.Dagger.weakCompletion.ker_evalIntWashnitzerAlgebra`: comparison of integral
-  overconvergent evaluation with `map π (aeval x)`, and identification of its kernel at a finite
-  generating family `x` as `(ker (aeval x)).map ofMvPolynomial`.
+* `TauCeti.Dagger.weakCompletion.ker_evalIntWashnitzerAlgebra`: identification of the kernel of
+  integral overconvergent evaluation at a finite generating family `x` as
+  `(ker (aeval x)).map ofMvPolynomial`.
 * `TauCeti.Dagger.weakCompletion.presentationAlgEquiv` and
   `TauCeti.Dagger.weakCompletion.mvPolynomialQuotientEquiv`: quotient presentations of `S†` and
   `(O[X_σ] ⧸ I)†` by the integral Monsky–Washnitzer algebra `O⟨X_σ⟩†`.
@@ -153,6 +153,13 @@ theorem quotientKerMapAlgEquiv_mk [IsNoetherianRing (weakCompletion π R)] {f : 
   simp [quotientKerMapAlgEquiv]
 
 @[simp]
+theorem quotientKerMapAlgEquiv_symm_map [IsNoetherianRing (weakCompletion π R)] {f : R →ₐ[O] S}
+    (hf : Function.Surjective f) (z : weakCompletion π R) :
+    (quotientKerMapAlgEquiv π hf).symm (map π f z) = Ideal.Quotient.mk _ z := by
+  apply (quotientKerMapAlgEquiv π hf).injective
+  simp
+
+@[simp]
 theorem quotientKerMapAlgEquiv_symm_of [IsNoetherianRing (weakCompletion π R)] {f : R →ₐ[O] S}
     (hf : Function.Surjective f) (r : R) :
     (quotientKerMapAlgEquiv π hf).symm (of π S (f r)) = Ideal.Quotient.mk _ (of π R r) := by
@@ -184,6 +191,14 @@ theorem quotientAlgEquiv_mk_of [IsNoetherianRing (weakCompletion π R)] (I : Ide
   simp
 
 @[simp]
+theorem quotientAlgEquiv_symm_map [IsNoetherianRing (weakCompletion π R)] (I : Ideal R)
+    (z : weakCompletion π R) :
+    (quotientAlgEquiv π I).symm (map π (Ideal.Quotient.mkₐ O I) z) =
+      Ideal.Quotient.mk _ z := by
+  apply (quotientAlgEquiv π I).injective
+  simp
+
+@[simp]
 theorem quotientAlgEquiv_symm_of_mk [IsNoetherianRing (weakCompletion π R)] (I : Ideal R)
     (r : R) :
     (quotientAlgEquiv π I).symm (of π (R ⧸ I) (Ideal.Quotient.mk I r)) =
@@ -200,18 +215,6 @@ variable {K S σ : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K
   [Algebra.FiniteType (Subring.unitClosedBall K) S] [Finite σ]
 
 local notation "O" => Subring.unitClosedBall K
-
-/-- Integral overconvergent evaluation is the weak-completion evaluation map transported along
-`polynomialEquiv`. -/
-theorem evalIntWashnitzerAlgebra_eq {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) :
-    evalIntWashnitzerAlgebra hπ hπ1 x =
-      (map π (MvPolynomial.aeval x)).comp (polynomialEquiv hπ hπ1).symm.toAlgHom := by
-  have heq :
-      (evalIntWashnitzerAlgebra hπ hπ1 x).comp (polynomialEquiv hπ hπ1).toAlgHom =
-        map π (MvPolynomial.aeval x) :=
-    algHom_ext π fun p ↦ by simp
-  refine AlgHom.ext fun g ↦ ?_
-  simpa using AlgHom.congr_fun heq ((polynomialEquiv hπ hπ1).symm g)
 
 /-- Over a noetherian valuation unit ball `O = K°`, the kernel of integral overconvergent
 evaluation `O⟨X_σ⟩† →ₐ[O] S†` at a finite generating family `x : σ → S` is the ideal generated in
@@ -231,7 +234,7 @@ theorem ker_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O} (hπ : π ≠
     AlgHom.ext fun p ↦ polynomialEquiv_of hπ hπ1 p
   rw [← hcomp, ← Ideal.map_mapₐ]
   ext g
-  rw [RingHom.mem_ker, evalIntWashnitzerAlgebra_eq, AlgHom.comp_apply, ← RingHom.mem_ker, hker]
+  rw [RingHom.mem_ker, evalIntWashnitzerAlgebra_def, AlgHom.comp_apply, ← RingHom.mem_ker, hker]
   exact Ideal.symm_apply_mem_of_equiv_iff (f := e.toRingEquiv)
 
 /-- **Monsky–Washnitzer presentation of a weak completion.** Over a noetherian valuation unit ball
@@ -262,6 +265,15 @@ theorem presentationAlgEquiv_mk_ofMvPolynomial [IsNoetherianRing O] {π : O} (h�
   simp
 
 @[simp]
+theorem presentationAlgEquiv_symm_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O}
+    (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (hx : Algebra.adjoin O (Set.range x) = ⊤)
+    (g : intWashnitzerAlgebra σ K) :
+    (presentationAlgEquiv hπ hπ1 x hx).symm (evalIntWashnitzerAlgebra hπ hπ1 x g) =
+      Ideal.Quotient.mk _ g := by
+  apply (presentationAlgEquiv hπ hπ1 x hx).injective
+  simp
+
+@[simp]
 theorem presentationAlgEquiv_symm_of_aeval [IsNoetherianRing O] {π : O} (hπ : π ≠ 0)
     (hπ1 : ‖(π : K)‖ < 1) (x : σ → S) (hx : Algebra.adjoin O (Set.range x) = ⊤)
     (p : MvPolynomial σ O) :
@@ -286,9 +298,8 @@ noncomputable def mvPolynomialQuotientEquiv [IsNoetherianRing O] {π : O} (hπ :
     (intWashnitzerAlgebra σ K ⧸ I.map (intWashnitzerAlgebra.ofMvPolynomial σ K)) ≃ₐ[O]
       weakCompletion π (MvPolynomial σ O ⧸ I) :=
   let x : σ → MvPolynomial σ O ⧸ I := fun i ↦ Ideal.Quotient.mk I (MvPolynomial.X i)
-  have haeval : MvPolynomial.aeval x = Ideal.Quotient.mkₐ O I := by
-    ext i
-    simp [x]
+  have haeval : MvPolynomial.aeval x = Ideal.Quotient.mkₐ O I :=
+    (MvPolynomial.mkₐ_eq_aeval I).symm
   have hx : Algebra.adjoin O (Set.range x) = ⊤ := by
     rw [Algebra.adjoin_range_eq_range_aeval O x, haeval, AlgHom.range_eq_top]
     exact Ideal.Quotient.mk_surjective
@@ -310,11 +321,17 @@ theorem mvPolynomialQuotientEquiv_mk_ofMvPolynomial [IsNoetherianRing O] {π : O
     mvPolynomialQuotientEquiv hπ hπ1 I
       (Ideal.Quotient.mk _ (intWashnitzerAlgebra.ofMvPolynomial σ K p)) =
       of π (MvPolynomial σ O ⧸ I) (Ideal.Quotient.mk I p) := by
-  have haeval : MvPolynomial.aeval (R := O) (fun i ↦ Ideal.Quotient.mk I (MvPolynomial.X i)) =
-      Ideal.Quotient.mkₐ O I := by
-    ext i
-    simp
-  simp [haeval]
+  simp [(MvPolynomial.mkₐ_eq_aeval I).symm]
+
+@[simp]
+theorem mvPolynomialQuotientEquiv_symm_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O}
+    (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (I : Ideal (MvPolynomial σ O))
+    (g : intWashnitzerAlgebra σ K) :
+    (mvPolynomialQuotientEquiv hπ hπ1 I).symm
+      (evalIntWashnitzerAlgebra hπ hπ1 (fun i ↦ Ideal.Quotient.mk I (MvPolynomial.X i)) g) =
+      Ideal.Quotient.mk _ g := by
+  apply (mvPolynomialQuotientEquiv hπ hπ1 I).injective
+  simp
 
 @[simp]
 theorem mvPolynomialQuotientEquiv_symm_of_mk [IsNoetherianRing O] {π : O} (hπ : π ≠ 0)

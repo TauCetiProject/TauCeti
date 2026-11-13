@@ -20,7 +20,7 @@ into the `π`-adic completion is faithfully flat.
 
 The proof combines three ingredients:
 1. The `π`-adic completion of `S†` is isomorphic to `S^∧` as an `S†`-algebra
-   (`adicCompletionAlgEquiv`), without any noetherian hypothesis.
+   (`adicCompletionEquiv`), without any noetherian hypothesis.
 2. Because `S†` is noetherian, its `π`-adic completion is flat over `S†`.
 3. Because `π` lies in the Jacobson radical of `S†` (`algebraMap_mem_jacobson`), flatness upgrades
    to faithful flatness (`AdicCompletion.faithfullyFlat_of_le_jacobson`).
@@ -36,7 +36,7 @@ and when `O` is noetherian, flatness of `S` over `O` implies flatness of `S†` 
   is flat over `O`.
 * `TauCeti.Dagger.weakCompletion.flat_of_flat`: if `O` and `S†` are noetherian and `S` is flat
   over `O`, then `S†` is flat over `O`.
-* `TauCeti.Dagger.weakCompletion.faithfullyFlat_piAdicCompletion_of_unitClosedBall` and
+* `TauCeti.Dagger.weakCompletion.faithfullyFlat_piAdicCompletion_unitClosedBall` and
   `TauCeti.Dagger.weakCompletion.flat_of_flat_unitClosedBall`: specializations over a noetherian
   valuation unit ball `K°`.
 
@@ -69,7 +69,7 @@ instance faithfullyFlat_piAdicCompletion [IsNoetherianRing (weakCompletion π S)
   have : Module.FaithfullyFlat (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) :=
     AdicCompletion.faithfullyFlat_of_le_jacobson hJ
   exact Module.FaithfullyFlat.of_linearEquiv (weakCompletion π S)
-    (piAdicCompletion π (weakCompletion π S)) (adicCompletionAlgEquiv π S).symm.toLinearEquiv
+    (piAdicCompletion π (weakCompletion π S)) (adicCompletionEquiv π S).symm.toLinearEquiv
 
 /-- When `S†` is noetherian, flatness of `S†` over `O` is equivalent to flatness of the `π`-adic
 completion `S^∧` over `O`. -/
@@ -97,7 +97,7 @@ local notation "O" => Subring.unitClosedBall K
 /-- Over a noetherian valuation unit ball `K°` of a complete ultrametric field, the `π`-adic
 completion `S^∧` of any finitely generated `K°`-algebra `S` is faithfully flat over its weak
 completion `S†`. -/
-theorem faithfullyFlat_piAdicCompletion_of_unitClosedBall [IsNoetherianRing O] {π : O}
+theorem faithfullyFlat_piAdicCompletion_unitClosedBall [IsNoetherianRing O] {π : O}
     (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) :
     Module.FaithfullyFlat (weakCompletion π S) (piAdicCompletion π S) := by
   have := isNoetherianRing (S := S) hπ hπ1

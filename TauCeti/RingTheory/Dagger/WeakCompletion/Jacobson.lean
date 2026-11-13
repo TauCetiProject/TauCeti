@@ -22,26 +22,26 @@ the factor `π` gives `π z = ∑_{k ≥ 1} πᵏ Pₖ₋₁(x)` with homogeneou
 Cauchy recurrence `R₀ = 1`, `Rₙ₊₁ = ∑_{j ≤ n} Pⱼ Rₙ₋ⱼ` produces polynomials of total degree at
 most `c n ≤ c (n + 1)` whose `π`-adic series solves `(1 - π z) u = 1` inside the degree-growth set.
 
-Consequently, reduction modulo any positive power `πⁿ⁺¹` is a local homomorphism, and an element
+Consequently, reduction modulo any positive power `πⁿ` is a local homomorphism, and an element
 of `S†` is a unit if and only if its reduction modulo `π` is a unit of `S ⧸ π S`. In particular,
-while `O → O†` is bijective if and only if `O` is `π`-adically complete, in at least one variable
-`1 ± π Xᵢ` are invertible in `O[X]†`, so `O[X] → O[X]†` is bijective if and only if `π` is
-nilpotent.
+while for module-finite `S` the map `S → S†` is bijective if and only if `S` is `π`-adically
+complete, in at least one variable `1 ± π Xᵢ` are invertible in `S[X]†`, so `S[X] → S[X]†` is
+bijective if and only if the image of `π` in `S` is nilpotent.
 
 Nothing here requires `O` to be noetherian, a valuation ring, or `π`-adically complete.
 
 ## Main results
 
-* `TauCeti.Dagger.exists_mul_eq_one_weakCompletionSet`: `1 - π z` has an inverse in
-  `weakCompletionSet π x` whenever `z ∈ weakCompletionSet π x`.
+* `TauCeti.Dagger.exists_mem_weakCompletionSet_one_sub_algebraMap_mul_mul_eq_one`: `1 - π z` has an
+  inverse in `weakCompletionSet π x` whenever `z ∈ weakCompletionSet π x`.
 * `TauCeti.Dagger.weakCompletion.algebraMap_mem_jacobson` and
   `TauCeti.Dagger.weakCompletion.span_algebraMap_le_jacobson`: `algebraMap O S† π` lies in the
   Jacobson radical of `S†`.
-* `TauCeti.Dagger.weakCompletion.isLocalHom_eval_succ` and
-  `TauCeti.Dagger.weakCompletion.isUnit_iff_eval_one`: reduction modulo `πⁿ⁺¹` is a local
-  homomorphism, so an element of `S†` is a unit iff its image in `S ⧸ π S` is a unit.
+* `TauCeti.Dagger.weakCompletion.isLocalHom_eval`, `TauCeti.Dagger.weakCompletion.isUnit_iff_eval`,
+  and `TauCeti.Dagger.weakCompletion.isUnit_iff_eval_one`: reduction modulo any positive power `πⁿ`
+  is a local homomorphism, so an element of `S†` is a unit iff its image in `S ⧸ π S` is a unit.
 * `TauCeti.Dagger.weakCompletion.of_mvPolynomial_bijective_iff`: for nonempty finite `σ`,
-  `O[X_σ] → O[X_σ]†` is bijective iff `π` is nilpotent.
+  `S[X_σ] → S[X_σ]†` is bijective iff `algebraMap O S π` is nilpotent.
 
 ## References
 
@@ -106,8 +106,8 @@ private theorem geomPoly_eq_ite_add_sum_antidiagonal (P : ℕ → MvPolynomial �
 
 /-- For any `z` in the degree-growth set of `x`, `1 - π z` has a multiplicative inverse in the same
 degree-growth set. -/
-theorem exists_mul_eq_one_weakCompletionSet (π : O) {x : ι → S} {z : piAdicCompletion π S}
-    (hz : z ∈ weakCompletionSet π x) :
+theorem exists_mem_weakCompletionSet_one_sub_algebraMap_mul_mul_eq_one (π : O) {x : ι → S}
+    {z : piAdicCompletion π S} (hz : z ∈ weakCompletionSet π x) :
     ∃ u ∈ weakCompletionSet π x,
       (1 - algebraMap O (piAdicCompletion π S) π * z) * u = 1 := by
   obtain ⟨c, P, hP, hz⟩ := mem_weakCompletionSet_iff.mp hz
@@ -172,7 +172,7 @@ theorem isUnit_one_sub_algebraMap_mul (z : weakCompletion π S) :
   have hz : (z : piAdicCompletion π S) ∈ weakCompletionSet π ((↑) : g → S) := by
     rw [← coe_weakCompletion π _ hx]
     exact z.property
-  obtain ⟨u, hu, hmul⟩ := exists_mul_eq_one_weakCompletionSet π hz
+  obtain ⟨u, hu, hmul⟩ := exists_mem_weakCompletionSet_one_sub_algebraMap_mul_mul_eq_one π hz
   have hu' : u ∈ weakCompletion π S := by
     rw [← SetLike.mem_coe, coe_weakCompletion π _ hx]
     exact hu
@@ -197,24 +197,26 @@ theorem span_algebraMap_le_jacobson :
     Ideal.span {algebraMap O (weakCompletion π S) π} ≤ Ring.jacobson (weakCompletion π S) :=
   (Ring.jacobson (weakCompletion π S)).span_singleton_le_iff_mem.mpr (algebraMap_mem_jacobson π S)
 
-/-- Reduction modulo any positive power `πⁿ⁺¹` is a local ring homomorphism on `S†`. -/
-instance isLocalHom_eval_succ (n : ℕ) : IsLocalHom (eval π (n + 1) (S := S)).toRingHom := by
-  rw [RingHom.isLocalHom_iff_ker_le_jacobson (eval_surjective π (n + 1))]
-  have hker : RingHom.ker (eval π (n + 1) (S := S)).toRingHom =
-      RingHom.ker (eval π (n + 1) (S := S)) := rfl
-  rw [hker, ker_eval]
-  exact (Ideal.pow_le_self (Nat.succ_ne_zero n)).trans (span_algebraMap_le_jacobson π S)
+/-- Reduction modulo any positive power `πⁿ` is a local homomorphism on `S†`. -/
+instance isLocalHom_eval (n : ℕ) [NeZero n] : IsLocalHom (eval π n (S := S)) := by
+  have h : IsLocalHom (eval π n (S := S)).toRingHom := by
+    rw [RingHom.isLocalHom_iff_ker_le_jacobson (eval_surjective π n)]
+    change RingHom.ker (eval π n (S := S)) ≤ _
+    rw [ker_eval]
+    exact (Ideal.pow_le_self (NeZero.ne n)).trans (span_algebraMap_le_jacobson π S)
+  exact ⟨h.map_nonunit⟩
 
-/-- An element of `S†` is a unit if and only if its reduction modulo `πⁿ⁺¹` is a unit. -/
-theorem isUnit_iff_eval_succ (n : ℕ) (z : weakCompletion π S) :
-    IsUnit z ↔ IsUnit (eval π (n + 1) z) :=
-  (isUnit_map_iff (eval π (n + 1) (S := S)).toRingHom z).symm
+/-- An element of `S†` is a unit if and only if its reduction modulo any positive power `πⁿ` is
+a unit. -/
+theorem isUnit_iff_eval (n : ℕ) [NeZero n] (z : weakCompletion π S) :
+    IsUnit z ↔ IsUnit (eval π n z) :=
+  (isUnit_map_iff (eval π n (S := S)) z).symm
 
 /-- An element of `S†` is a unit if and only if its reduction modulo `π` is a unit in
 `S ⧸ π S`. -/
 theorem isUnit_iff_eval_one (z : weakCompletion π S) :
     IsUnit z ↔ IsUnit (eval π 1 z) :=
-  isUnit_iff_eval_succ π 0 z
+  isUnit_iff_eval π 1 z
 
 /-- The image of `s : S` in `S†` is a unit if and only if the residue class of `s` modulo `π` is
 a unit in `S ⧸ π S`. -/
@@ -224,28 +226,29 @@ theorem isUnit_of_iff (s : S) :
   let e := Ideal.quotEquivOfEq (pow_one (Ideal.span {algebraMap O S π}))
   exact ⟨fun h ↦ by simpa [e] using h.map e, fun h ↦ by simpa [e] using h.map e.symm⟩
 
-/-- For a nonempty finite index type `σ`, the canonical map `O[X_σ] → O[X_σ]†` is bijective if
-and only if `π` is nilpotent in `O`. -/
+/-- For a nonempty finite index type `σ`, the canonical map `S[X_σ] → S[X_σ]†` is bijective if
+and only if the image of `π` in `S` is nilpotent. -/
 theorem of_mvPolynomial_bijective_iff {σ : Type*} [Nonempty σ] [Finite σ] :
-    Function.Bijective (of π (MvPolynomial σ O)) ↔ IsNilpotent π := by
-  refine ⟨fun hbij ↦ ?_, of_bijective_of_isNilpotent⟩
-  obtain ⟨i⟩ := ‹Nonempty σ›
-  let e := AlgEquiv.ofBijective (of π (MvPolynomial σ O)) hbij
-  have hu : IsUnit (of π (MvPolynomial σ O) (1 + MvPolynomial.C π * MvPolynomial.X i)) := by
-    rw [map_add, map_one, map_mul, MvPolynomial.C_eq_algebraMap, AlgHom.commutes]
-    exact isUnit_one_add_algebraMap_mul π _
-  have hu' : IsUnit (1 + MvPolynomial.C π * (MvPolynomial.X i : MvPolynomial σ O)) := by
-    rw [← e.symm_apply_apply (1 + MvPolynomial.C π * MvPolynomial.X i),
-      AlgEquiv.ofBijective_apply]
-    exact hu.map e.symm
-  have h10 : Finsupp.single i 1 ≠ (0 : σ →₀ ℕ) := Finsupp.single_ne_zero.mpr one_ne_zero
-  have hnil := (MvPolynomial.isUnit_iff.mp hu').2 (Finsupp.single i 1) h10
-  have hc :
-      (1 + MvPolynomial.C π * (MvPolynomial.X i : MvPolynomial σ O)).coeff (Finsupp.single i 1) =
-        π := by
-    classical
-    simp [MvPolynomial.coeff_one, MvPolynomial.coeff_C_mul, MvPolynomial.coeff_X, h10.symm]
-  rwa [hc] at hnil
+    Function.Bijective (of π (MvPolynomial σ S)) ↔ IsNilpotent (algebraMap O S π) := by
+  refine ⟨fun hbij ↦ ?_, fun hπ ↦ of_bijective_of_isNilpotent ?_⟩
+  · obtain ⟨i⟩ := ‹Nonempty σ›
+    let e := AlgEquiv.ofBijective (of π (MvPolynomial σ S)) hbij
+    let p : MvPolynomial σ S := 1 + MvPolynomial.C (algebraMap O S π) * MvPolynomial.X i
+    have hu : IsUnit (of π (MvPolynomial σ S) p) := by
+      simp only [p, map_add, map_one, map_mul, MvPolynomial.C_eq_algebraMap,
+        ← IsScalarTower.algebraMap_apply O S (MvPolynomial σ S), AlgHom.commutes]
+      exact isUnit_one_add_algebraMap_mul π _
+    have hu' : IsUnit p := by
+      rw [← e.symm_apply_apply p, AlgEquiv.ofBijective_apply]
+      exact hu.map e.symm
+    have h10 : Finsupp.single i 1 ≠ (0 : σ →₀ ℕ) := Finsupp.single_ne_zero.mpr one_ne_zero
+    have hnil := (MvPolynomial.isUnit_iff.mp hu').2 (Finsupp.single i 1) h10
+    have hc : p.coeff (Finsupp.single i 1) = algebraMap O S π := by
+      classical
+      simp [p, MvPolynomial.coeff_one, MvPolynomial.coeff_C_mul, MvPolynomial.coeff_X, h10.symm]
+    rwa [hc] at hnil
+  · rw [IsScalarTower.algebraMap_apply O S (MvPolynomial σ S)]
+    exact hπ.map _
 
 end weakCompletion
 
