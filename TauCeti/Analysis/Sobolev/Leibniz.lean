@@ -21,9 +21,9 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 # The product rule for weak derivatives
 
 A weak derivative is additive and commutes with scalars
-(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but Lane A of the PDE
-roadmap needs one more algebraic rule before it can localize: multiplication by a *variable*
-smooth factor.  This file proves it.  For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
+(`TauCeti.HasWeakLineDerivOn.add`, `TauCeti.HasWeakLineDerivOn.const_smul`), but localization
+needs one more algebraic rule: multiplication by a *variable* smooth factor.  This file proves it.
+For a smooth `ψ : E → ℝ` and a weakly differentiable `u`,
 
 `∂_v (ψ u) = ψ ∂_v u + (∂_v ψ) u`
 
@@ -62,10 +62,10 @@ bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
 
 ## Why this is the localization tool
 
-`ψ` will be a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is reduced
-to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of the
-extension operator (Lane A.2 and A.6 of `TauCetiRoadmap/PDE/README.md`), and it is what turns an
-interior estimate into an estimate on a compactly contained subdomain (Lane E.20).  The second
+Typically `ψ` is a cutoff.  Multiplying by one is how a global statement about `W^{k,p}(Ω)` is
+reduced to a local one: it is the first step of the Meyers–Serrin `H = W` density theorem and of
+the extension operator, and it is what turns an interior estimate into an estimate on a compactly
+contained subdomain.  The second
 summand `(∂_v ψ) u` is exactly the error such an argument has to absorb, so having it with an
 explicit, non-asymptotic formula is the point.
 
@@ -113,7 +113,7 @@ section General
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [OpensMeasurableSpace E]
-  [LocallyCompactSpace E] {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
+  {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
 
 /-- **The Leibniz rule for weak directional derivatives, local form.** If `u'` is a weak derivative
 of `u` in the direction `v` on `Ω` and `ψ` is smooth on `Ω`, then `ψ u` is weakly differentiable in
@@ -126,14 +126,13 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
     (hψ : ContDiffOn ℝ ∞ ψ Ω) :
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) v := by
-  have hΩ : IsLocallyClosed (Ω : Set E) := Ω.isOpen.isLocallyClosed
   have hdψ : ContDiffOn ℝ ∞ (fun x => fderiv ℝ ψ x v) Ω :=
     (hψ.fderiv_of_isOpen Ω.isOpen (by simp)).clm_apply contDiffOn_const
   have hu : LocallyIntegrableOn (fun x => ψ x • u x) Ω μ :=
-    h.locallyIntegrableOn.continuousOn_smul hΩ hψ.continuousOn
+    h.locallyIntegrableOn.continuousOn_smul_of_isOpen Ω.isOpen hψ.continuousOn
   have hu' : LocallyIntegrableOn (fun x => ψ x • u' x + fderiv ℝ ψ x v • u x) Ω μ :=
-    (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuousOn).add
-      (h.locallyIntegrableOn.continuousOn_smul hΩ hdψ.continuousOn)
+    (h.locallyIntegrableOn_deriv.continuousOn_smul_of_isOpen Ω.isOpen hψ.continuousOn).add
+      (h.locallyIntegrableOn.continuousOn_smul_of_isOpen Ω.isOpen hdψ.continuousOn)
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu, hu', fun φ => ?_⟩
   -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`.

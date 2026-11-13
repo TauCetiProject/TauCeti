@@ -97,6 +97,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   `MeasureTheory.Measure.upperQuantile_le_quantile` — the two quantile functions interleave, and
   `MeasureTheory.Measure.upperQuantile_eq_quantile_of_continuousWithinAt` — they agree where the
   lower quantile is right continuous;
+* `MeasureTheory.Measure.mem_Icc_quantile_upperQuantile_iff` — a point lies between the lower and
+  upper quantiles exactly when the corresponding closed rays carry the prescribed masses;
 * `MeasureTheory.Measure.continuousWithinAt_Iio_quantile` and
   `MeasureTheory.Measure.continuousWithinAt_Ioi_upperQuantile` — left continuity of the lower
   and right continuity of the upper quantile;
@@ -265,7 +267,6 @@ theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     exact (le_cdf_quantile ν hu1).trans (hcdf _)
   · intro hquant x
     by_contra hle
-    have hlt : cdf μ x < cdf ν x := lt_of_not_ge hle
     let u := (cdf μ x + cdf ν x) / 2
     have hu0 : 0 < u := by
       dsimp [u]
@@ -573,6 +574,15 @@ theorem quantile_le_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
   csInf_le_csInf (bddBelow_setOf_le_cdf μ h0) (nonempty_setOf_lt_cdf μ h1)
     (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
 
+/-- For a level strictly between `0` and `1`, a point lies between the lower and the upper
+quantile at that level exactly when the closed ray to its left carries mass at least the level and
+the closed ray to its right carries mass at least one minus the level. -/
+theorem mem_Icc_quantile_upperQuantile_iff [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
+    x ∈ Icc (μ.quantile t) (μ.upperQuantile t) ↔
+      t ≤ μ.real (Iic x) ∧ 1 - t ≤ μ.real (Ici x) := by
+  rw [mem_Icc, quantile_le_iff μ h0 h1, le_upperQuantile_iff μ h0 h1, cdf_eq_real, ← compl_Iio,
+    probReal_compl_eq_one_sub measurableSet_Iio, sub_le_sub_iff_left]
+
 /-- The upper quantile at a level does not exceed the lower quantile at any strictly larger
 level, so the two quantile functions interleave. -/
 theorem upperQuantile_le_quantile (μ : Measure ℝ) {s : ℝ} (hs0 : 0 < s) (hst : s < t)
@@ -591,7 +601,7 @@ theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ) (h0 :
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/
 theorem monotoneOn_upperQuantile (μ : Measure ℝ) : MonotoneOn μ.upperQuantile (Ioo 0 1) := by
-  rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
+  rintro s ⟨hs0, _⟩ t ⟨_, ht1⟩ hst
   exact csInf_le_csInf (bddBelow_setOf_lt_cdf μ hs0) (nonempty_setOf_lt_cdf μ ht1)
     fun _ hx ↦ hst.trans_lt hx
 
@@ -836,13 +846,13 @@ theorem continuousWithinAt_Ioi_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1
 /-- The quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_quantile (μ : Measure ℝ) : Measurable μ.quantile :=
-  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_quantile μ) fun _ hs ↦
+  (monotoneOn_quantile μ).measurable_of_eq_const fun _ hs ↦
     hs.elim (fun h ↦ quantile_of_nonpos μ h.le) (quantile_of_one_lt μ)
 
 /-- The upper quantile function is measurable. -/
 @[fun_prop]
 theorem measurable_upperQuantile (μ : Measure ℝ) : Measurable μ.upperQuantile :=
-  TauCeti.measurable_of_monotoneOn_Ioo_of_eq_const (monotoneOn_upperQuantile μ) fun _ hs ↦
+  (monotoneOn_upperQuantile μ).measurable_of_eq_const fun _ hs ↦
     hs.elim (upperQuantile_of_neg μ) fun h ↦ upperQuantile_of_one_le μ h.le
 
 /-! ### Measurability in the law and the level -/

@@ -53,6 +53,8 @@ groupoid.
 * `IsLocalHomeomorph.prodMap`: the product of two local homeomorphisms is a local homeomorphism.
 * `IsLocalHomeomorph.pullback_snd`: the base change of a local homeomorphism along a continuous
   map is a local homeomorphism.
+* `IsLocalHomeomorph.of_isEmbedding_of_range_eq`: a local homeomorphism restricts to one along a
+  pullback square of embeddings, such as the restriction to the full preimage of any subspace.
 -/
 
 public section
@@ -214,6 +216,38 @@ theorem pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
           continuous_subtype_val).subtype_mk _).subtype_mk _ }
   refine ⟨U, (e.open_source.preimage hfst).mem_nhds he, ?_⟩
   exact ((e.open_target.preimage hg).isOpenEmbedding_subtypeVal.comp φ.isOpenEmbedding :)
+
+/-- **Local homeomorphisms restrict along pullback squares of embeddings.** Let `i : X' → X` and
+`j : Y' → Y` be embeddings with `f ∘ i = j ∘ f'`, and suppose the range of `i` is the whole
+preimage under `f` of the range of `j`. If `f` is a local homeomorphism, so is `f'`. Neither range
+needs to be open or closed. This is the local-homeomorphism analogue of
+`IsProperMap.of_isEmbedding_of_range_eq`. -/
+theorem _root_.IsLocalHomeomorph.of_isEmbedding_of_range_eq {X' Y' : Type*}
+    [TopologicalSpace X'] [TopologicalSpace Y'] {f : X → Y} {f' : X' → Y'} {i : X' → X}
+    {j : Y' → Y} (hf : IsLocalHomeomorph f) (hi : IsEmbedding i) (hj : IsEmbedding j)
+    (hcomm : f ∘ i = j ∘ f') (hrange : Set.range i = f ⁻¹' Set.range j) :
+    IsLocalHomeomorph f' := by
+  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun x' ↦ ?_
+  obtain ⟨U, hU, hfU⟩ := isLocalHomeomorph_iff_isOpenEmbedding_restrict.mp hf (i x')
+  refine ⟨i ⁻¹' U, hi.continuous.continuousAt.preimage_mem_nhds hU, ?_⟩
+  -- Over `U`, the restriction of `f'` is the restriction of `f` precomposed with `i`.
+  let k : i ⁻¹' U → U := fun v ↦ ⟨i v, v.2⟩
+  have hk : IsEmbedding k :=
+    IsEmbedding.subtypeVal.of_comp_iff.mp (hi.comp IsEmbedding.subtypeVal)
+  have hcomm' : j ∘ (i ⁻¹' U).domRestrict f' = U.domRestrict f ∘ k :=
+    funext fun v ↦ (congrFun hcomm v.1).symm
+  refine ⟨hj.of_comp_iff.mp (hcomm' ▸ hfU.isEmbedding.comp hk), ?_⟩
+  -- The range is the part of `Y'` that `j` sends into the open range of `U.domRestrict f`.
+  convert hfU.isOpen_range.preimage hj.continuous using 1
+  ext y'
+  constructor
+  · rintro ⟨v, rfl⟩
+    exact ⟨k v, (congrFun hcomm' v).symm⟩
+  · rintro ⟨u, hu⟩
+    obtain ⟨x'', hx''⟩ : (u : X) ∈ Set.range i := hrange ▸ ⟨y', hu.symm⟩
+    refine ⟨⟨x'', by simp [hx'']⟩, hj.injective ?_⟩
+    rw [Set.domRestrict_apply] at hu
+    exact (congrFun hcomm x'').symm.trans (by rw [Function.comp_apply, hx'', hu])
 
 end Pullback
 

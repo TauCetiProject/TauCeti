@@ -32,7 +32,9 @@ Together they show that a position chosen at `r`, times the change of a martinga
 `(r, r']`, is a martingale whenever this product is integrable at every time.
 
 The following results need only a preordered time index. The norm of a Banach-valued
-martingale is a submartingale (`MeasureTheory.Martingale.norm`). For a real submartingale,
+martingale is a submartingale (`MeasureTheory.Martingale.norm`). A square-integrable real
+martingale has conditional square equal to its current square plus the conditional square
+of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
 In particular, positions need not be bounded. Nonnegative submartingale values inherit Lᵖ
@@ -129,6 +131,40 @@ theorem Martingale.norm (hX : Martingale X ℱ μ) :
   filter_upwards [hX.condExp_ae_eq hst, norm_condExp_le (m := ℱ s) (X t)] with ω he hle
   simpa only [he] using hle
 
+/-- The conditional square of a square-integrable real martingale value is
+the current square plus the conditional square of the future increment. -/
+theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
+    (hij : i ≤ j) (hj : MemLp (Y j) 2 μ) :
+    μ[fun ω ↦ Y j ω ^ 2 | ℱ i] =ᵐ[μ]
+      fun ω ↦ Y i ω ^ 2 + μ[fun ω ↦ (Y j ω - Y i ω) ^ 2 | ℱ i] ω := by
+  have hc := hY.condExp_ae_eq hij
+  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
+  · have hi := (hj.condExp (m := ℱ i) one_le_two).ae_eq hc
+    have hmul : Integrable (Y i * Y j) μ := memLp_one_iff_integrable.mp (hi.mul hj)
+    have hexpand : (fun ω ↦ (Y j ω - Y i ω) ^ 2) =
+        (Y j) ^ 2 - (2 : ℝ) • (Y i * Y j) + (Y i) ^ 2 := by
+      ext ω
+      simp only [Pi.sub_apply, Pi.add_apply, Pi.pow_apply, Pi.smul_apply, smul_eq_mul,
+        Pi.mul_apply]
+      ring
+    rw [hexpand]
+    filter_upwards [condExp_add (m := ℱ i) (hj.integrable_sq.sub (hmul.const_mul 2))
+        hi.integrable_sq,
+      condExp_sub (m := ℱ i) hj.integrable_sq (hmul.const_mul 2),
+      condExp_smul (m := ℱ i) (2 : ℝ) (Y i * Y j),
+      condExp_mul_of_stronglyMeasurable_left (hY.stronglyAdapted i) hmul (hY.integrable j),
+      hc] with ω hadd hsub hscale hpull hmart
+    simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
+      Pi.mul_apply, Pi.pow_def, Pi.smul_def, Pi.mul_def] at hadd hsub hscale hpull ⊢
+    rw [hadd, hsub, hscale, hpull, hmart,
+      condExp_of_stronglyMeasurable (f := fun ω ↦ Y i ω ^ 2)
+        (ℱ.le i) ((hY.stronglyAdapted i).pow 2)
+        hi.integrable_sq]
+    ring
+  · simp only [condExp_of_not_sigmaFinite (ℱ.le i) hμ, Pi.zero_apply] at hc ⊢
+    filter_upwards [hc] with ω hω
+    simp [← hω]
+
 /-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
 between `i` and `j`, provided its products with both values are integrable. -/
 theorem Submartingale.integral_mul_le [SigmaFiniteFiltration μ ℱ]
@@ -161,16 +197,23 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearO
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
 
+omit [CompleteSpace E] in
 /-- A martingale frozen at a fixed date `w`, `t ↦ X (min w t)`, is a martingale. -/
 theorem Martingale.const_min [SigmaFiniteFiltration μ ℱ] (hX : Martingale X ℱ μ) (w : ι) :
     Martingale (fun t ↦ X (min w t)) ℱ μ := by
+  -- `X w` is integrable: otherwise its conditional expectation would vanish, forcing `X w = 0`
+  have hint : Integrable (X w) μ := by
+    by_contra h
+    have h0 := hX.condExp_ae_eq (le_refl w)
+    rw [condExp_of_not_integrable h] at h0
+    exact h ((integrable_zero _ _ _).congr h0)
   refine ⟨fun t ↦ hX.stronglyAdapted.stronglyMeasurable_le (min_le_right _ _),
     fun s t hst ↦ ?_⟩
   beta_reduce
   rcases le_or_gt w s with hws | hsw
   · rw [min_eq_left (hws.trans hst), min_eq_left hws,
       condExp_of_stronglyMeasurable (ℱ.le s) ((hX.stronglyAdapted w).mono (ℱ.mono hws))
-        (hX.integrable w)]
+        hint]
   · rw [min_eq_right hsw.le]
     exact hX.condExp_ae_eq (le_min hsw.le hst)
 

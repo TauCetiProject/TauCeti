@@ -376,11 +376,11 @@ private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_doma
     exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
       hupper⟩
   · -- the prevertex `a i` is carried to the vertex `v i`
-    obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
+    obtain ⟨ρ, hρ, b, -, hU⟩ := hcorner i
     rw [← hfv i] at hU
     obtain ⟨r, hr, hupper, hreal⟩ :=
       exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hU
-    exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
+    exact ⟨r, hr, b, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
 
 /-- The turning exponents of a polygonal domain sum to the limit `L` of `z * f''(z) / f'(z)` at
 infinity, for a conformal map `f` onto it. -/

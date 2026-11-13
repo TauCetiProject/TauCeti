@@ -145,7 +145,6 @@ theorem shiftedModuleComplexXEquiv_indexGradedPieceEval_D1X_single (n : ℤ)
       MulOpposite.op (m.m x y) • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
         (shiftedModuleComplexXEquiv hM (b + 1) n α : M) := by
   have hyx : y.1 ≠ x.1 := fun h ↦ by
-    have h₁ := x.2
     have h₂ := y.2
     rw [h] at h₂
     omega

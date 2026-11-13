@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -17,7 +18,7 @@ import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 
 /-!
-# The Sobolev embedding `H^k(ℝⁿ) ⊆ C₀(ℝⁿ)` for `k > n / 2`
+# The Sobolev embeddings `H^k(ℝⁿ) ⊆ C₀(ℝⁿ)` for `k > n / 2` and `H^s(ℝⁿ) ⊆ C^k(ℝⁿ)`
 
 Let `E` be a finite-dimensional real inner product space of dimension `n`. A function in the
 `L²` Sobolev space of order `s > n / 2` on `E` agrees almost everywhere with a continuous function
@@ -46,6 +47,11 @@ functions (`MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`). Quantit
 (`TemperedDistribution.MemSobolev.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace`,
 `TauCeti.memLp_rpow_neg_one_add_norm_sq`).
 
+If moreover `2s > n + 2k`, Cauchy–Schwarz pairs `(1 + |ξ|²)^{s/2} 𝓕u ∈ L²` with
+`(1 + |ξ|²)^{-(s-k)/2} ∈ L²`, so `|ξ|^j v ∈ L¹` for every `j ≤ k`. Differentiation under the
+integral sign (`Real.contDiff_fourier`) then makes `𝓕⁻ v` a `C^k` function, giving the embedding
+`H^s(ℝⁿ) ⊆ C^k(ℝⁿ)` for `s > n / 2 + k`.
+
 On the whole space the weak-derivative space `W^{k,2}` is the Bessel-potential space `H^{k,2}`
 (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), so every `u ∈ W^{k,2}(ℝⁿ)` has a
 representative in `C₀(ℝⁿ)`. Two continuous functions that agree almost everywhere are equal, so
@@ -67,8 +73,14 @@ spaces.
   `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}` for that `v`.
 * `TemperedDistribution.exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace`: the bound
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
+* `TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`: convergence in `H^s`,
+  `2s > n`, implies convergence almost everywhere.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
+* `TemperedDistribution.MemSobolev.exists_contDiff_ae_eq`: an `L²` function in `H^s`,
+  `2s > n + 2k`, agrees almost everywhere with a `C^k` function.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: a continuous real function in
+  `H^s`, `2s > n + 2k`, is `C^k`.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
 * `TauCeti.Wkp.value_ae_eq_toZeroAtInfty`, `TauCeti.Wkp.toZeroAtInfty_eq_iff`: the embedding sends
   a Sobolev function to its unique continuous representative.
@@ -77,8 +89,9 @@ spaces.
 
 ## References
 
-* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embedding `H_s ⊆ C₀` for
-  `s > n / 2`, proved by showing that the Fourier transform is integrable).
+* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embeddings `H_s ⊆ C₀` for
+  `s > n / 2` and `H_s ⊆ C^k` for `s > k + n / 2`, proved by showing that the Fourier transform,
+  weighted by `|ξ|^j` for `j ≤ k`, is integrable).
 * M. Taylor, *Partial Differential Equations I*, Chapter 4, §1.
 -/
 
@@ -143,7 +156,7 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
         fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
         Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
       simp only [Complex.coe_smul]
-  rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
+  rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
 /-- If the Fourier transform of `f ∈ H^s` is an `L¹` function `v`, then
@@ -152,7 +165,7 @@ theorem MemSobolev.memLp_one_add_norm_sq_rpow_smul {s : ℝ} {f : 𝓢'(E, F)}
     (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     MemLp (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 :=
   memLp_iff.2
-    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ enorm_lt_top)
+    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ eNorm_lt_top)
 
 /-- **The `L¹` norm on the Fourier side.** If the Fourier transform of `f ∈ H^s` is an `L¹`
 function `v`, then `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}`, by Cauchy–Schwarz. The first
@@ -182,16 +195,39 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   have hL1 : ∫ ξ, ‖v ξ‖ ≤ K.toReal * ‖hu.toBesselPotentialSpace‖ := by
     have h : eLpNorm v 1 volume ≤ K * ‖hu.toBesselPotentialSpace‖ₑ :=
       hu.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace hv
-    rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+    rw [eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
       ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
       ← ENNReal.ofReal_mul ENNReal.toReal_nonneg] at h
-    rw [integral_norm_eq_lintegral_enorm hi.aestronglyMeasurable]
+    rw [integral_norm_eq_lintegral_eNorm hi.aestronglyMeasurable]
     exact ENNReal.toReal_le_of_le_ofReal (by positivity) h
   filter_upwards [Lp.ae_eq_fourierInv_of_fourier_eq hv] with x hx
   rw [hx, Real.fourierInv_eq_fourier_comp_neg]
   refine (Real.norm_fourier_le_integral_norm _ x).trans ?_
   rw [integral_neg_eq_self (fun ξ => ‖(v : E → F) ξ‖)]
   exact hL1
+
+/-- **Convergence in `H^s` implies convergence almost everywhere, `s > n / 2`.** If `L²`
+functions `u n ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then `u n x → v x` for
+almost every `x`. -/
+theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
+    {u : ℕ → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
+    (hu : ∀ n, MemSobolev s 2 (u n : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))
+    (h : Tendsto (fun n => (hu n).toBesselPotentialSpace) atTop (𝓝 hv.toBesselPotentialSpace)) :
+    ∀ᵐ x ∂volume, Tendsto (fun n => u n x) atTop (𝓝 (v x)) := by
+  obtain ⟨C, -, hC⟩ := exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (F := F) hs
+  have hD (n : ℕ) : MemSobolev s 2 ((u n - v : Lp F 2 (volume : Measure E)) : 𝓢'(E, F)) := by
+    rw [Lp.toTemperedDistribution_sub]
+    exact (hu n).sub hv
+  have hlim : Tendsto (fun n => C * ‖(hD n).toBesselPotentialSpace‖) atTop (𝓝 0) := by
+    have h' := (tendsto_iff_norm_sub_tendsto_zero.1 h).const_mul C
+    rw [mul_zero] at h'
+    refine h'.congr fun n => ?_
+    simp only [Lp.toTemperedDistribution_sub, (hu n).toBesselPotentialSpace_sub hv]
+  filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
+    with x hx hsub
+  refine tendsto_iff_norm_sub_tendsto_zero.2 <|
+    squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
+  simpa only [hsub n, Pi.sub_apply] using hx n
 
 /-- **Continuous Sobolev functions vanish at infinity.** A continuous real function in `H^s`,
 `s > dim E / 2`, tends to zero at infinity: it agrees almost everywhere, hence everywhere, with
@@ -208,6 +244,51 @@ theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank �
   have heq := (hc.ae_eq_iff_eq volume g.continuous).1 hae
   have hg0 : Tendsto (fun x ↦ (f x : ℂ)) (cocompact E) (𝓝 0) := heq ▸ g.zero_at_infty'
   simpa [Function.comp_def] using (Complex.continuous_re.tendsto 0).comp hg0
+
+/-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
+`H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function. -/
+theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
+    {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))) :
+    ∃ g : E → F, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
+  obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [k.cast_nonneg (α := ℝ)])
+  have hL2 := hu.memLp_one_add_norm_sq_rpow_smul hv
+  -- The weight `(1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)` is square integrable since `2 (s - k) > dim E`.
+  have hw : MemLp (fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)) 2 :=
+    TauCeti.memLp_rpow_neg_one_add_norm_sq volume (s := s - k) (by linarith)
+  have hprod := memLp_one_iff_integrable.1 (hw.smul hL2)
+  -- Cauchy–Schwarz: `‖ξ‖ ^ n |v ξ| ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) (1 + ‖ξ‖ ^ 2) ^ (s / 2) |v ξ|`.
+  have hmom (n : ℕ) (hn : n ≤ k) : Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖(v : E → F) ξ‖) := by
+    refine hprod.norm.mono' ((continuous_norm.pow n).aestronglyMeasurable.mul
+      (L1.integrable_coeFn v).1.norm) (Eventually.of_forall fun ξ ↦ ?_)
+    have h1 : 1 ≤ √(1 + ‖ξ‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [norm_nonneg ξ])
+    have hξ : ‖ξ‖ ≤ √(1 + ‖ξ‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+    have hpow : ‖ξ‖ ^ n ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+      rw [← Real.rpow_add (by positivity), show -(s - k) / 2 + s / 2 = 1 / 2 * (k : ℝ) by ring,
+        Real.rpow_mul (by positivity), Real.rpow_natCast, ← Real.sqrt_eq_rpow]
+      exact (pow_le_pow_left₀ (norm_nonneg ξ) hξ n).trans (pow_le_pow_right₀ h1 hn)
+    rw [norm_mul, norm_pow, norm_norm, norm_norm, Pi.smul_apply', norm_smul, norm_smul,
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)),
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2)), ← mul_assoc]
+    gcongr
+  refine ⟨𝓕⁻ (v : E → F), ?_, Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
+  rw [Real.fourierInv_eq_fourier_comp_neg]
+  refine Real.contDiff_fourier (N := k) fun n hn ↦ ?_
+  simpa only [norm_neg] using (hmom n (by exact_mod_cast hn)).comp_neg
+
+/-- **Continuous Sobolev functions are `C^k`.** A continuous real function in `H^s`,
+`s > dim E / 2 + k`, is of class `C^k`: it agrees almost everywhere, hence everywhere, with the
+`C^k` representative given by `MemSobolev.exists_contDiff_ae_eq`. -/
+theorem contDiff_of_mem_realSobolevFunctions {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s 2) (hcont : Continuous f) :
+    ContDiff ℝ k f := by
+  obtain ⟨u, hu, hS⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨g, hg, hug⟩ := hS.exists_contDiff_ae_eq hs
+  have hae : (fun x ↦ (f x : ℂ)) =ᵐ[volume] g := by
+    filter_upwards [Complex.ofRealCLM.coeFn_compLp u, hu, hug] with x h₁ h₂ h₃
+    rw [← h₃, h₁, h₂, Complex.ofRealCLM_apply]
+  have heq := ((Complex.continuous_ofReal.comp hcont).ae_eq_iff_eq volume hg.continuous).1 hae
+  have hf : f = fun x ↦ (g x).re := funext fun x ↦ by simp [← congrFun heq x]
+  exact hf ▸ Complex.reCLM.contDiff.comp hg
 
 end TemperedDistribution
 

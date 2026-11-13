@@ -44,14 +44,14 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM} {N : Type uN}
 noncomputable def unsuspend (GA : InternalGrading R A) (GM : InternalGrading R M)
     (GB : InternalGrading R B) (i j : ℕ)
     (F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin i ↦ A)
-      (MultilinearMap R (fun _ : Fin j ↦ B) N) :=
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin i ↦ A)
+      (MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) N) :=
   let T := F ∘ₗ TensorProduct.map
     (TensorProduct.map
       (PiTensorProduct.map fun k : Fin i ↦ GA.koszulTwist ((i : ℤ) + j - k))
       (GM.koszulTwist j))
     (PiTensorProduct.map fun k : Fin j ↦ GB.koszulTwist ((j : ℤ) - 1 - k))
-  let H : (TensorPower R i A ⊗[R] M) →ₗ[R] MultilinearMap R (fun _ : Fin j ↦ B) N :=
+  let H : (TensorPower R i A ⊗[R] M) →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) N :=
     PiTensorProduct.lift.symm.toLinearMap ∘ₗ TensorProduct.curry T
   PiTensorProduct.lift.symm.toLinearMap ∘ₗ (TensorProduct.curry H).flip
 
@@ -114,7 +114,7 @@ theorem apply_tmul_tprod_of_mem (GA : InternalGrading R A) (GM : InternalGrading
     rw [GB.koszulTwist_apply_of_mem (hb k), negOnePowCast_eq_intCast]
   rw [apply_tmul_tprod_eq_unsuspend, ha', hb', GM.koszulTwist_apply_of_mem hx,
     ← negOnePowCast_eq_intCast, map_smul]
-  simp only [smul_apply, MultilinearMap.map_smul_univ, smul_smul,
+  simp only [smul_apply, MultilinearMap.map_smul_univ, RingHom.id_apply, smul_smul,
     negOnePowCast_sum, negOnePowCast_add]
   congr 1
   ring

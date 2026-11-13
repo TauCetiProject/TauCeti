@@ -24,6 +24,10 @@ of the derivative of a `C¹` map is continuous along a continuous graph
 The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
 whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 
+If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
+its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
+`ContDiffAt.of_comp_fst_add_comp_snd_right`).
+
 A compactly supported `C³` function on `E × ℝ` has compactly supported spatial first and second
 derivative fields and a time derivative field of lower smoothness, computing its slice derivatives
 at every point (`ContDiff.exists_derivative_fields_of_hasCompactSupport`).
@@ -86,6 +90,24 @@ theorem fderiv_snd_apply {n m : WithTop ℕ∞} {f : P × E → X} {r : P × E}
     (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : E) :
     ContDiffAt 𝕜 m (fun r : P × E ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
   (hf.fderiv_slice hmn).clm_apply contDiffAt_const
+
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `φ` is `Cⁿ` at `a`:
+restrict to the slice `y = b` and subtract the constant `ψ b`. -/
+theorem of_comp_fst_add_comp_snd_left {n : WithTop ℕ∞} {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {φ : E → X} {ψ : F → X} {a : E} {b : F}
+    (h : ContDiffAt 𝕜 n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt 𝕜 n φ a := by
+  have hφ : ContDiffAt 𝕜 n (fun x ↦ φ x + ψ b) a := by
+    simpa [Function.comp_def] using h.comp (f := fun x : E ↦ (x, b)) a (by fun_prop)
+  simpa using hφ.sub (contDiffAt_const (c := ψ b))
+
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `ψ` is `Cⁿ` at `b`:
+restrict to the slice `x = a` and subtract the constant `φ a`. -/
+theorem of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞} {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {φ : E → X} {ψ : F → X} {a : E} {b : F}
+    (h : ContDiffAt 𝕜 n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt 𝕜 n ψ b := by
+  have hψ : ContDiffAt 𝕜 n (fun y ↦ φ a + ψ y) b := by
+    simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
+  simpa using hψ.sub (contDiffAt_const (c := φ a))
 
 end ContDiffAt
 

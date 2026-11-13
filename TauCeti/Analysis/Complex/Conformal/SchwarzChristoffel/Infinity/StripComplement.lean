@@ -95,7 +95,7 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_one
     exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_one a e z₀ hfinite hsum
   obtain ⟨R₂, hband⟩ :=
     exists_forall_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one a e z₀
-      hfinite hsum hC (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
+      hfinite hsum (δ := -(Real.pi * (((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2)) / 4)
       (by linarith)
   set U := schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet
   set hi := (schwarzChristoffelQuadraticConstantAtInfinity a e z₀).im

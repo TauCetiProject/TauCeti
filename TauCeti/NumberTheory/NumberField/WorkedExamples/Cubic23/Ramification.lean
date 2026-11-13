@@ -67,18 +67,18 @@ private theorem normalizedFactors_mod_twenty_three :
     (monic_X_sub_C (15 : ZMod 23)).normalize_eq_self]
 
 private theorem monicFactorsMod_twenty_three :
-    RingOfIntegers.monicFactorsMod θ 23 = {X - C 16, X - C 15} := by
+    NumberField.RingOfIntegers.monicFactorsMod θ 23 = {X - C 16, X - C 15} := by
   classical
-  rw [RingOfIntegers.monicFactorsMod, normalizedFactors_mod_twenty_three hmin]
+  rw [NumberField.RingOfIntegers.monicFactorsMod, normalizedFactors_mod_twenty_three hmin]
   simp [Multiset.toFinset_cons]
 
 private theorem factor_sixteen_mem :
-    (X - C (16 : ZMod 23)) ∈ RingOfIntegers.monicFactorsMod θ 23 := by
+    (X - C (16 : ZMod 23)) ∈ NumberField.RingOfIntegers.monicFactorsMod θ 23 := by
   rw [monicFactorsMod_twenty_three hmin]
   simp
 
 private theorem factor_fifteen_mem :
-    (X - C (15 : ZMod 23)) ∈ RingOfIntegers.monicFactorsMod θ 23 := by
+    (X - C (15 : ZMod 23)) ∈ NumberField.RingOfIntegers.monicFactorsMod θ 23 := by
   rw [monicFactorsMod_twenty_three hmin]
   simp
 
@@ -130,14 +130,14 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 include hmin hgen
 
-private theorem not_dvd_exponent : ¬ 23 ∣ RingOfIntegers.exponent θ := by
-  have h : RingOfIntegers.exponent θ = 1 :=
-    RingOfIntegers.exponent_eq_one_iff.mpr (adjoin_eq_top hmin hgen)
+private theorem not_dvd_exponent : ¬ 23 ∣ NumberField.RingOfIntegers.exponent θ := by
+  have h : NumberField.RingOfIntegers.exponent θ = 1 :=
+    NumberField.RingOfIntegers.exponent_eq_one_iff.mpr (adjoin_eq_top hmin hgen)
   rw [h]
   norm_num
 
 private theorem primeRoot_eq_symm (r : ℕ)
-    (hr : (X - C (r : ZMod 23)) ∈ RingOfIntegers.monicFactorsMod θ 23) :
+    (hr : (X - C (r : ZMod 23)) ∈ NumberField.RingOfIntegers.monicFactorsMod θ 23) :
     Ideal.span {(23 : 𝓞 K), θ - r} =
       ((primesOverSpanEquivMonicFactorsMod (not_dvd_exponent hmin hgen)).symm
         ⟨X - C (r : ZMod 23), hr⟩ : Ideal (𝓞 K)) := by
@@ -146,7 +146,7 @@ private theorem primeRoot_eq_symm (r : ℕ)
     simp only [Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C,
       Int.coe_castRingHom, Int.cast_natCast]
   have hf : (X - C (r : ℤ)).map (Int.castRingHom (ZMod 23)) ∈
-      RingOfIntegers.monicFactorsMod θ 23 := by
+      NumberField.RingOfIntegers.monicFactorsMod θ 23 := by
     rw [hmap]
     exact hr
   have h := primesOverSpanEquivMonicFactorsMod_symm_apply_eq_span

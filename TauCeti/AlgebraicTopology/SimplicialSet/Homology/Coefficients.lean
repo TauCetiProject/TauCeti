@@ -22,10 +22,11 @@ complexes whenever coproducts in the coefficient category are exact. The constru
 the n-simplices. Applying the homology long
 exact sequence gives the coefficient connecting homomorphisms, including Bockstein maps.
 
-For rational coefficients, extension of scalars along the flat map `ℤ → ℚ` commutes with homology.
-`SSet.rationalHomologyExtendScalarsIso` compares rational extension of the integral homology
-with rational homology, on the native chain and module carriers. This fixed rational
-specialization needs no manifold, orientation, compactness or finite CW hypothesis.
+Extension of scalars along a ring map `f : R →+* S` with exact extension of scalars, such as a
+flat one, commutes with homology: `SSet.homologyExtendScalarsIso` identifies the extension of
+scalars of the homology with coefficients in `R` with the homology with coefficients in `S`.
+The instance `ModuleCat.preservesFiniteLimits_extendScalars_intCastRat` supplies the exactness
+for the flat map `ℤ → ℚ`, which compares integral and rational homology.
 
 ## References
 
@@ -73,26 +74,30 @@ end ModuleCat
 
 namespace SSet
 
-/-- Rational extension of integral simplicial homology is rational homology. The integral
-coefficient object is the native `ULift ℤ`; the rational coefficient object is `ℚ`. -/
-def rationalHomologyExtendScalarsIso (X : SSet.{0}) (n : ℕ) :
-    (ModuleCat.extendScalars (Int.castRingHom ℚ)).obj
-      (X.homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n) ≅
-        X.homology (ModuleCat.of ℚ ℚ) n := by
-  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
+/-- **Extension of scalars commutes with simplicial homology** along a ring map `f : R →+* S` whose
+extension of scalars is exact, for instance a flat one
+(`ModuleCat.preservesFiniteLimits_extendScalars_of_flat`): extending scalars of the homology with
+coefficients in `R` gives the homology with coefficients in `S`. The `R`-coefficient object is the
+native `ULift R`; the `S`-coefficient object is `S`. -/
+def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (ModuleCat.extendScalars f).obj (X.homology (ModuleCat.of R (ULift.{u} R)) n) ≅
+      X.homology (ModuleCat.of S S) n := by
+  let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
   have : F.Additive := Functor.additive_of_preserves_binary_products F
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  let C := X.chainComplex R
-  let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
-    (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  let eR : F.obj R ≅ ModuleCat.of ℚ ℚ :=
+  let M := ModuleCat.of R (ULift.{u} R)
+  let C := X.chainComplex M
+  let eUnit : F.obj (ModuleCat.of R R) ≅ ModuleCat.of S S :=
+    letI := f.toAlgebra
+    (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso
+  let eM : F.obj M ≅ ModuleCat.of S S :=
     F.mapIso ULift.moduleEquiv.toModuleIso ≪≫ eUnit
-  let eH : F.obj (C.homology n) ≅ X.homology (F.obj R) n :=
+  let eH : F.obj (C.homology n) ≅ X.homology (F.obj M) n :=
     ((C.sc n).mapHomologyIso F).symm ≪≫
-      HomologicalComplex.homologyMapIso ((SSet.chainComplexFunctorObjCompMapIso F R).app X) n
-  let eC : X.homology (F.obj R) n ≅ X.homology (ModuleCat.of ℚ ℚ) n :=
+      HomologicalComplex.homologyMapIso ((SSet.chainComplexFunctorObjCompMapIso F M).app X) n
+  let eC : X.homology (F.obj M) n ≅ X.homology (ModuleCat.of S S) n :=
     HomologicalComplex.homologyMapIso
-      (((SSet.chainComplexFunctor.{0} (ModuleCat.{0} ℚ)).flip.obj X).mapIso eR) n
+      (((SSet.chainComplexFunctor.{u} (ModuleCat.{u} S)).flip.obj X).mapIso eM) n
   exact eH ≪≫ eC
 
 end SSet

@@ -118,7 +118,7 @@ theorem cdf_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
   rw [hsplit, setIntegral_congr_fun measurableSet_Ioc
       (fun t ht => gammaPDFReal_eq_comp_mul hr ht.1),
     ← intervalIntegral.integral_of_le hx.le, intervalIntegral.integral_const_mul, hsubst,
-    ← lowerIncompleteGamma_eq_integral ha (by positivity), regularizedGamma_eq_div]
+    ← lowerIncompleteGamma_eq_integral (by positivity), regularizedGamma_eq_div]
   field_simp
 
 /-- A Gamma law of positive shape and rate has positive survival at every finite point. -/

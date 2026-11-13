@@ -13,18 +13,14 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
 # The mixing measure is identified by the i.i.d. mixture
 
 The map `π ↦ π.bind (P ↦ P^{⊗ℕ})`, sending a measure on `ProbabilityMeasure α` to the law of a
-sequence drawn i.i.d. from a `π`-random probability measure, is injective on finite measures.
+sequence drawn i.i.d. from a `π`-random probability measure, is injective on finite measures. This
+is the uniqueness of the mixing law in de Finetti's representation of exchangeable sequences
+(`TauCeti.Probability.mixedIID_mixingLaw_unique`).
 
 ## Main results
 
 * `Measure.ext_of_bind_infinitePi_eq` — two finite measures on `ProbabilityMeasure α` inducing the
   same mixture are equal.
-
-## Sources
-
-The construction and proof plan follow the human-authored roadmap
-`TauCetiRoadmap/Exchangeability/README.md`, *Layer 6 — directing measures and de Finetti
-representation*, which names mixing-law uniqueness as the target this theorem serves.
 
 ## Implementation
 

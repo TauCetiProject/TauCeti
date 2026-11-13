@@ -27,12 +27,16 @@ public section
 
 namespace TauCeti.Cyclotomic
 
-variable {e n : ℕ} [NeZero e]
+variable {e n : ℕ}
 
 /-- For `n` coprime to `e`, the power `ζ_e ^ n` of the distinguished generator is a root of the
 cyclotomic polynomial `Φ_e`, so `TauCeti.Cyclotomic.evalRingHom` can evaluate at it. -/
 theorem eval₂_cyclotomic_zeta_pow (hn : e.Coprime n) :
     (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (Cyclotomic e)) (zeta e ^ n) = 0 := by
+  rcases eq_or_ne e 0 with rfl | he
+  · -- `Cyclotomic 0` has no coefficients, since `φ 0 = 0`, so it is a single point.
+    exact ext fun j ↦ absurd j.isLt (by simp)
+  have : NeZero e := ⟨he⟩
   apply complexEmbedding_injective
   rw [Polynomial.hom_eval₂, map_pow, complexEmbedding_zeta, map_zero]
   exact (isPrimitiveRoot_complexRoot.pow_of_coprime n hn.symm).eval₂_cyclotomic _
@@ -87,7 +91,8 @@ theorem reduce_powRingHom {p : ℕ} (hn : e.Coprime n)
 /-- A subfield of `ℂ`, presented through an embedding `ι`, that contains a primitive `e`-th root of
 unity receives the exact cyclotomic integers compatibly with `complexEmbedding`. Any endomorphism
 of the field powering the given root intertwines this map with the matching power substitution. -/
-theorem exists_ringHom_comp_eq_complexEmbedding {K : Type*} [Field K] (ι : K →+* ℂ) {ζ : K}
+theorem exists_ringHom_comp_eq_complexEmbedding [NeZero e] {K : Type*} [Field K] (ι : K →+* ℂ)
+    {ζ : K}
     (hζ : IsPrimitiveRoot ζ e) :
     ∃ f : Cyclotomic e →+* K, ι.comp f = complexEmbedding ∧
       ∀ (σ : K →+* K) {n : ℕ} (hn : e.Coprime n), σ ζ = ζ ^ n →

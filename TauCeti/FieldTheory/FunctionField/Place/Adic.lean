@@ -121,8 +121,10 @@ theorem ord_ofPrime_algebraMap_pos_iff_mem {r : R} (hr : r ≠ 0) :
 
 /-- The order of an element of `R` at the place `ofPrime k F p` is the multiplicity of `p` in the
 principal ideal it generates. -/
-theorem ord_ofPrime_algebraMap {r : R} (hr : r ≠ 0) :
+theorem ord_ofPrime_algebraMap {r : R} :
     (ofPrime k F p).ord (algebraMap R F r) = multiplicity p.asIdeal (Ideal.span {r}) := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
   have hr' : algebraMap R F r ≠ 0 := IsFractionRing.to_map_eq_zero_iff.ne.mpr hr
   rw [(ofPrime k F p).ord_eq_iff_valuation_eq_exp_neg hr', valuation_ofPrime_algebraMap,
     p.intValuation_eq_exp_neg_multiplicity hr]

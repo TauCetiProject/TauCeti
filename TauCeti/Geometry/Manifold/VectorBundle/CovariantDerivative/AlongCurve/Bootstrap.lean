@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Recovering regularity from a tangent-bundle covariant derivative

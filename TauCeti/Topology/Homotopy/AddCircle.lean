@@ -41,6 +41,8 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
 
 ## Main declarations
 
+* `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
+  via `AddCircle.ofUnitInterval p`.
 * `ContinuousMap.nullhomotopic_iff_homotopic_refl`: a map from a circle `AddCircle p` with
   `0 < p` is null-homotopic exactly when its based loop `t ↦ f (t * p)` is homotopic to the
   constant loop.
@@ -64,11 +66,18 @@ namespace ContinuousMap
 
 variable {p : ℝ} {X : Type*} [TopologicalSpace X]
 
-/-- A map from the circle read as a based loop at the image of `0`. -/
-private def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
+/-- A continuous map from the circle `AddCircle p` read as a based loop at `f 0` via
+`AddCircle.ofUnitInterval p`. -/
+def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
   toContinuousMap := f.comp (AddCircle.ofUnitInterval p)
   source' := by simp
   target' := by simp [AddCircle.coe_period]
+
+/-- Evaluation of `f.toLoop` at `t ∈ [0, 1]`. -/
+@[simp]
+theorem toLoop_apply (f : C(AddCircle p, X)) (t : I) :
+    f.toLoop t = f (((t : ℝ) * p : ℝ) : AddCircle p) := by
+  simp [toLoop]
 
 /-- **A circle map is null-homotopic exactly when its based loop is.** Let `γ` be the based loop
 `t ↦ f (t * p)` of `f : AddCircle p → X`, `0 < p`. A homotopy of `γ` to the constant loop relative
@@ -125,17 +134,17 @@ theorem Nullhomotopic.exists_addCircle_comp_mul {T a : ℝ} (hT : T ≠ 0) (ha :
     ⟨_, (AddCircle.homeomorphAddCircle (T / |a|) T (div_ne_zero hT (abs_ne_zero.2 ha))
       hT).continuous⟩
   have he (t : ℝ) : e t = ((t * |a| : ℝ) : AddCircle T) := by
-    rw [ContinuousMap.coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
+    rw [coe_mk, AddCircle.homeomorphAddCircle_apply_mk, inv_div,
       div_mul_cancel₀ _ hT]
   rcases ha.lt_or_gt with ha' | ha'
   · -- Backwards: compose further with the reflection of the circle.
     let n : C(AddCircle T, AddCircle T) := ⟨Neg.neg, continuous_neg⟩
     have hn (x : AddCircle T) : n x = -x := rfl
     refine ⟨g.comp (n.comp e), hg.comp_left _, fun t ↦ ?_⟩
-    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, he, hn, ← AddCircle.coe_neg,
+    rw [comp_apply, comp_apply, he, hn, ← AddCircle.coe_neg,
       abs_of_neg ha', mul_neg, neg_neg]
   · refine ⟨g.comp e, hg.comp_left _, fun t ↦ ?_⟩
-    rw [ContinuousMap.comp_apply, he, abs_of_pos ha']
+    rw [comp_apply, he, abs_of_pos ha']
 
 end ContinuousMap
 

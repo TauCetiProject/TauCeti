@@ -403,11 +403,13 @@ theorem lt_closure_singleton {C : ConvexSubgroup Γ} {h : Γ} (hC : h ∉ C) :
   lt_of_not_ge fun hle ↦ hC (hle (subset_closure _ rfl))
 
 /-- An element bounded in absolute value by a member of a convex subgroup is a member. -/
-theorem mem_of_mabs_le_mabs [MulRightMono Γ] {H : ConvexSubgroup Γ} {x h : Γ} (hh : h ∈ H)
+theorem mem_of_mabs_le_mabs {H : ConvexSubgroup Γ} {x h : Γ} (hh : h ∈ H)
     (hx : |x|ₘ ≤ |h|ₘ) : x ∈ H := by
   have habs : |h|ₘ ∈ H := mabs_mem_iff.mpr hh
-  obtain ⟨hx, hxi⟩ := mabs_le'.mp hx
-  exact H.convex (inv_mem habs) habs (by simpa using inv_le_inv_iff.mpr hxi) hx
+  rcases le_total 1 x with h1 | h1
+  · exact H.convex (one_mem H) habs h1 ((le_mabs_self x).trans hx)
+  · simpa using inv_mem (H.convex (one_mem H) habs (Left.one_le_inv_iff.2 h1)
+      ((inv_le_mabs x).trans hx))
 
 end TotalOrder
 

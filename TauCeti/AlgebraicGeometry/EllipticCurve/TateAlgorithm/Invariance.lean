@@ -45,7 +45,7 @@ decides minimality.
   and on `C • W`, for `C` over `R`, with a symbol `s'`, then `s' = s`.
 * `WeierstrassCurve.isTateTerminal_iff_of_associated`: the stopping conditions do not depend on
   the uniformiser.
-* `WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul`: the same statement for two minimal
+* `WeierstrassCurve.IsTateTerminal.eq_of_baseChange_smul`: the same statement for two
   equations of one elliptic curve over the fraction field, with any uniformisers.
 * `WeierstrassCurve.IsTateTerminal.isMinimal_baseChange`: an equation on which the algorithm stops
   is minimal over the fraction field.
@@ -739,7 +739,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
     obtain ⟨r₁, -, -, -, -, -, -, -, -, hr₁, hs, ht, -⟩ := h.exists_stepSix_form hϖ h' hi
     exact ⟨⟨r₁, hr₁⟩, hs, ht⟩
   match i, h, h', ht, h7, h10 with
-  | 7, h, h', ht, _, _ =>
+  | 7, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, ⟨x₃, hx₃⟩, -, -⟩ := h.2.2.1 (by norm_num)
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 le_rfl
@@ -747,7 +747,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
-  | 8, h, h', ht, _, _ =>
+  | 8, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨-, ⟨s₁, hs₁⟩, -⟩ := hst (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ le_rfl
@@ -758,7 +758,7 @@ private theorem tateTest_smul_of_seven_to_nine (hϖ : Irreducible ϖ) {C : Varia
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
-  | 9, h, h', ht, _, _ =>
+  | 9, h, _, ht, _, _ =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨t₃, ht₃⟩ := ht₃ (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
@@ -1022,12 +1022,15 @@ private theorem exists_smul_eq_of_isMinimal_smul (D : VariableChange K)
   rw [integralModel_eq_of_baseChange_eq rfl, integralModel_eq_of_baseChange_eq rfl] at hC
   exact ⟨C, hC⟩
 
+omit [IsMinimal R (W₁.baseChange K)] [IsMinimal R (W₂.baseChange K)] in
 /-- **The output of Tate's algorithm is an invariant of the curve.** If the algorithm stops on two
-minimal equations of one elliptic curve over `K`, with any uniformisers, then it stops with the same
-symbol. -/
-theorem IsTateTerminal.eq_of_isMinimal_smul (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ')
+equations of one elliptic curve over `K`, with any uniformisers, then it stops with the same
+symbol (the equations are minimal, as Tate's algorithm only stops on minimal equations). -/
+theorem IsTateTerminal.eq_of_baseChange_smul (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ')
     (D : VariableChange K) (hD : D • W₁.baseChange K = W₂.baseChange K) {s₁ s₂ : ReductionSymbol}
     (h₁ : W₁.IsTateTerminal ϖ s₁) (h₂ : W₂.IsTateTerminal ϖ' s₂) : s₂ = s₁ := by
+  have := h₁.isMinimal_baseChange (K := K) hϖ
+  have := h₂.isMinimal_baseChange (K := K) hϖ'
   obtain ⟨C, rfl⟩ := exists_smul_eq_of_isMinimal_smul D hD
   exact h₁.eq_of_smul hϖ
     ((isTateTerminal_iff_of_associated (associated_of_irreducible R hϖ hϖ')).2 h₂)

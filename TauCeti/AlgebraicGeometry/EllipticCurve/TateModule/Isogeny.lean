@@ -73,7 +73,10 @@ from a split residue node. Choose `ℓ` larger than the degree of the isogeny an
 component-index bound for the target. Its image is nonzero and has nonsingular reduction. Comparing
 the Frobenius actions `a₁ q` and `a₂ q` on this image forces `a₁ = a₂`. Thus multiplicative
 reduction is preserved, including its splitting behavior, and the local polynomials agree at
-every place.
+every place. Consequently, isogenous minimal equations have equally many nonsingular points
+on their reductions at every reduction type. This common count enters the formal-filtration
+indices used in local isogeny formulas. At bad reduction the count is `q - a_q`, since the
+singular point contributes to the Frobenius trace but is omitted from the point group.
 
 ## Main results
 
@@ -87,9 +90,10 @@ every place.
   isogenous curves.
 * `TauCeti.Isogeny.hasPotentialGoodReduction_iff`: isogenous curves over a local field have
   potential good reduction together.
-* `TauCeti.Isogeny.frobeniusTrace_reduction_eq`: isogenous minimal equations with good reduction
-  have reductions with the same Frobenius trace.
-* `TauCeti.Isogeny.natCard_point_reduction_eq`: their reductions have the same number of points.
+* `TauCeti.Isogeny.frobeniusTrace_reduction_eq`: isogenous minimal equations have reductions
+  with the same Frobenius trace, at every reduction type.
+* `TauCeti.Isogeny.natCard_point_reduction_eq`: their nonsingular reductions have the same number
+  of points, including at bad reduction.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasGoodReduction`: at good reduction, isogenous curves
   have the same local polynomial.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction`: at potential good reduction,
@@ -222,7 +226,8 @@ theorem hasPotentialGoodReduction_iff (φ : Isogeny W₁.toAffine W₂.toAffine)
 `W₁` and `W₂` be elliptic curves over a nonarchimedean local field `K`, given by minimal equations,
 and let `W₁` have good reduction. If there is an isogeny `W₁ → W₂`, the reductions of `W₁` and `W₂`
 have the same Frobenius trace `a_q = q + 1 - #E(k)` over the residue field `k`. -/
-theorem frobeniusTrace_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+private theorem frobeniusTrace_reduction_eq_of_hasGoodReduction
+    [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
     (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasGoodReduction 𝒪[K]) :
     (W₁.reduction 𝒪[K]).frobeniusTrace = (W₂.reduction 𝒪[K]).frobeniusTrace := by
   classical
@@ -257,19 +262,6 @@ theorem frobeniusTrace_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] 
     exact addOrderOf_dvd_iff_zsmul_eq_zero.mpr hNP
   exact hN (Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdvd (by simpa using hNℓ))
 
-/-- **Isogenous curves have reductions with the same number of points** at good reduction. Let
-`W₁` and `W₂` be elliptic curves over a nonarchimedean local field `K`, given by minimal equations,
-and let `W₁` have good reduction. If there is an isogeny `W₁ → W₂`, the reductions of `W₁` and `W₂`
-have the same number `q + 1 - a_q` of points over the residue field. -/
-theorem natCard_point_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
-    (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasGoodReduction 𝒪[K]) :
-    Nat.card (W₁.reduction 𝒪[K]).toAffine.Point = Nat.card (W₂.reduction 𝒪[K]).toAffine.Point := by
-  have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp h
-  have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp (φ.hasGoodReduction_iff.mp h)
-  have h' := φ.frobeniusTrace_reduction_eq h
-  rw [frobeniusTrace_eq_card_point, frobeniusTrace_eq_card_point] at h'
-  omega
-
 /-- **Isogenous curves have the same local factor at good reduction.** If there is an isogeny
 `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K` and the minimal equation of `W₁`
 has good reduction, then the local polynomials (`WeierstrassCurve.localPolynomial`) of `W₁` and
@@ -280,7 +272,7 @@ theorem localPolynomial_eq_of_hasGoodReduction (φ : Isogeny W₁.toAffine W₂.
   obtain ⟨ψ⟩ := φ.nonempty_isogeny_minimal 𝒪[K]
   rw [WeierstrassCurve.localPolynomial_eq_of_hasGoodReduction _ W₁ h,
     WeierstrassCurve.localPolynomial_eq_of_hasGoodReduction _ W₂ (ψ.hasGoodReduction_iff.mp h),
-    ψ.frobeniusTrace_reduction_eq h]
+    ψ.frobeniusTrace_reduction_eq_of_hasGoodReduction h]
 
 /-- **Isogenous curves have the same local factor at potential good reduction.** If there is an
 isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K` and `W₁` has potential
@@ -463,6 +455,48 @@ section LocalPolynomial
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
 
+/-- Isogenous minimal equations over a nonarchimedean local field have reductions with the same
+Frobenius trace. At bad reduction this is the trace counted with the singular point included:
+`1`, `-1`, or `0` at split multiplicative, nonsplit multiplicative, or additive reduction. -/
+theorem frobeniusTrace_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) :
+    (W₁.reduction 𝒪[K]).frobeniusTrace = (W₂.reduction 𝒪[K]).frobeniusTrace := by
+  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction 𝒪[K]
+    (W := W₁) with hg | hm | ha
+  · exact φ.frobeniusTrace_reduction_eq_of_hasGoodReduction hg
+  · exact frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction hm φ
+  · have h₂ : W₂.HasAdditiveReduction 𝒪[K] := by
+      rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction 𝒪[K]
+        (W := W₂) with hg | hm | ha₂
+      · exact absurd (φ.hasGoodReduction_iff.mpr hg) ha.not_hasGoodReduction
+      · exact absurd (φ.hasMultiplicativeReduction_iff.mpr hm)
+          ha.not_hasMultiplicativeReduction
+      · exact ha₂
+    rw [ha.frobeniusTrace_reduction_eq_zero 𝒪[K], h₂.frobeniusTrace_reduction_eq_zero 𝒪[K]]
+
+/-- Isogenous minimal equations over a nonarchimedean local field have equally many nonsingular
+points on their reductions. At good reduction this is `q + 1 - a_q`; at bad reduction it is
+`q - a_q`, since the unique singular point is rational and is omitted from `Affine.Point`.
+This common factor cancels when comparing formal-filtration indices of isogenous curves. -/
+theorem natCard_point_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) :
+    Nat.card (W₁.reduction 𝒪[K]).toAffine.Point = Nat.card (W₂.reduction 𝒪[K]).toAffine.Point := by
+  have ht := φ.frobeniusTrace_reduction_eq
+  by_cases hg : W₁.HasGoodReduction 𝒪[K]
+  · have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp hg
+    have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp (φ.hasGoodReduction_iff.mp hg)
+    rw [frobeniusTrace_eq_card_point, frobeniusTrace_eq_card_point] at ht
+    omega
+  · obtain ⟨x₁, y₁, h₁⟩ := Affine.exists_isSingular_of_Δ_eq_zero
+      (W₁.reduction 𝒪[K]).toAffine ((reduction_Δ_eq_zero_iff 𝒪[K]).mpr hg)
+    obtain ⟨x₂, y₂, h₂⟩ := Affine.exists_isSingular_of_Δ_eq_zero
+      (W₂.reduction 𝒪[K]).toAffine
+        ((reduction_Δ_eq_zero_iff 𝒪[K]).mpr (φ.hasGoodReduction_iff.not.mp hg))
+    rw [frobeniusTrace_def, frobeniusTrace_def,
+      pointCount_eq_card_point_add_one_of_isSingular _ h₁,
+      pointCount_eq_card_point_add_one_of_isSingular _ h₂] at ht
+    omega
+
 /-- Isogenous elliptic curves over a nonarchimedean local field have the same local polynomial,
 at good, split or nonsplit multiplicative, and additive reduction alike. -/
 theorem localPolynomial_eq_of_localField (φ : Isogeny W₁.toAffine W₂.toAffine) :
@@ -471,21 +505,8 @@ theorem localPolynomial_eq_of_localField (φ : Isogeny W₁.toAffine W₂.toAffi
   by_cases hg : (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K]
   · exact φ.localPolynomial_eq_of_hasGoodReduction hg
   rw [localPolynomial_eq_of_not_hasGoodReduction _ _ hg,
-    localPolynomial_eq_of_not_hasGoodReduction _ _ (ψ.hasGoodReduction_iff.not.mp hg)]
-  congr 2
-  apply congrArg Polynomial.C
-  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction 𝒪[K]
-    (W := W₁.minimal 𝒪[K]) with hgood | hmult | hadd
-  · exact absurd hgood hg
-  · exact frobeniusTrace_reduction_eq_of_hasMultiplicativeReduction hmult ψ
-  · have h₂ : (W₂.minimal 𝒪[K]).HasAdditiveReduction 𝒪[K] := by
-      rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction 𝒪[K]
-        (W := W₂.minimal 𝒪[K]) with hgood | hmult | hadd
-      · exact absurd (ψ.hasGoodReduction_iff.mpr hgood) hg
-      · exact absurd (ψ.hasMultiplicativeReduction_iff.mpr hmult)
-          hadd.not_hasMultiplicativeReduction
-      · exact hadd
-    rw [hadd.frobeniusTrace_reduction_eq_zero 𝒪[K], h₂.frobeniusTrace_reduction_eq_zero 𝒪[K]]
+    localPolynomial_eq_of_not_hasGoodReduction _ _ (ψ.hasGoodReduction_iff.not.mp hg),
+    ψ.frobeniusTrace_reduction_eq]
 
 end LocalPolynomial
 

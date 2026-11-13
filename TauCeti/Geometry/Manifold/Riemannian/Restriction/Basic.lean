@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ProdIcc
 
 /-!
 # Restrictions of Riemannian metrics
@@ -301,7 +300,7 @@ theorem enorm_tangentSpace_open
     (x : U) (v : TangentSpace I x) :
     letI := instRiemannianBundleOpen (I := I) U
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
-  simp only [enorm, nnnorm, norm_tangentSpace_open]
+  simp only [eNorm, nnNorm, norm_tangentSpace_open]
 
 end Manifold
 
@@ -326,7 +325,7 @@ theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
     pathELength I γ a b = pathELength I ((Subtype.val : U → M) ∘ γ) a b := by
   rw [pathELength_eq_lintegral_mfderiv_Icc, pathELength_eq_lintegral_mfderiv_Icc,
     ← MeasureTheory.restrict_Ioo_eq_restrict_Icc]
-  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
+  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
   by_cases hd : MDiffAt γ t
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd, mfderiv_zero_of_not_mdifferentiableAt

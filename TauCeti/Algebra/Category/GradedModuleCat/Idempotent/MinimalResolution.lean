@@ -502,9 +502,6 @@ theorem exists_minimal_projective_surjection_of_finite [Module.Finite k A]
   have (j : J) : Module.Finite k (Ideal.span {e j} : Ideal A) :=
     Module.Finite.of_injective ((Ideal.span {e j} : Ideal A).subtype.restrictScalars k)
       Subtype.val_injective
-  have hd (j : J) : b ≤ d j := by
-    by_contra h
-    exact hm0 j (by simpa [hbelow _ (not_le.mp h)] using hm j)
   exact ⟨coverObj he₀ d, coverLift he₀ d m hm, projective_coverObj he₀ d he,
     coverLift_surjective he₀ d m hm hme b hbelow hgen,
     fun x hx => mem_positive_smul_top_of_coverLift_eq_zero hneg he he₀ d m hm hme hind hx,

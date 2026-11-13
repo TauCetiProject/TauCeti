@@ -15,8 +15,8 @@ import Mathlib.Tactic.Group
 
 Lemmas on how homomorphisms act on subgroups: the centre and kernels of surjections, the
 derived subgroup transported along isomorphisms, conjugation and images of subgroups, coset
-spaces and quotient maps, subgroup closure, and
-the action of a subgroup on a `G`-set.
+spaces and quotient maps, subgroup closure, and the action of a subgroup through a scalar
+action of `G`.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
@@ -61,8 +61,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
-* `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree
-  on elements with the same image in `G`.
+* `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` through a scalar
+  action of `G` agree on elements with the same image in `G`.
 * `MonoidHom.closure_preimage_eq_of_injective`, `AddMonoidHom.closure_preimage_eq_of_injective`:
   taking subgroup closure commutes with preimage under an injective homomorphism when the
   generating set lies in its range.
@@ -92,11 +92,12 @@ theorem _root_.Subgroup.subtype_comp_subgroupOfEquivOfLe {A B : Subgroup G} (h :
   MonoidHom.ext <| Subgroup.subgroupOfEquivOfLe_apply_coe h
 
 /-- The actions of a subgroup `V` of `G` and of its copy `V.subgroupOf U` inside a subgroup `U`
-on a `G`-set agree on elements with the same image in `G`: both are restrictions of the action of
-`G`. This is the compatibility of actions under which `TauCeti.DiscreteCoind.transIso` identifies
-`Coind_U^G (Coind_{V ⊓ U}^U M)` with `Coind_V^G M`. -/
+on a type with a scalar action of `G` agree on elements with the same image in `G`: both are
+restrictions of the action of `G`. This is the compatibility of actions under which
+`TauCeti.DiscreteCoind.transIso` identifies `Coind_U^G (Coind_{V ⊓ U}^U M)` with
+`Coind_V^G M`. -/
 theorem _root_.Subgroup.subgroupOf_smul_eq (U V : Subgroup G)
-    (M : Type*) [MulAction G M] (v : V.subgroupOf U) (w : V) (a : M)
+    (M : Type*) [SMul G M] (v : V.subgroupOf U) (w : V) (a : M)
     (h : ((v : U) : G) = (w : G)) : w • a = v • a := by
   -- The two subgroup actions are restrictions of the ambient `G`-action; expose their values.
   change (w : G) • a = ((v : U) : G) • a
@@ -236,8 +237,7 @@ def _root_.MulEquiv.commutatorCongr (e : G ≃* H) : ↥(commutator G) ≃* ↥(
   Subgroup.congrOfMapEq e <| map_commutator_of_surjective e.surjective
 
 /-- The restriction `MulEquiv.commutatorCongr e` to the derived subgroups agrees with `e` on
-underlying
-elements.
+underlying elements.
 
 The equation is stated in the ambient group `H` because its two sides have the different types
 `↥(commutator H)` and `H`. It is the derived-subgroup instance of `Subgroup.coe_congrOfMapEq_apply`,
@@ -256,10 +256,9 @@ The equation is stated in the ambient group `G` because its two sides have the d
 `↥(commutator G)` and `G`. It is the derived-subgroup instance of
 `Subgroup.coe_congrOfMapEq_symm_apply`, which `simp` cannot apply on its own because it cannot see
 through `MulEquiv.commutatorCongr`; `MulEquiv.coe_commutatorCongr_apply` is the companion for the
-forward direction,
-`MulEquiv.commutatorCongr_symm` rewrites the whole inverse rather than a single value, and Mathlib's
-`MulEquiv.subgroupMap_symm_apply` says the same for the literal image `(commutator G).map e` but
-returns the subtype `⟨e.symm ↑y, _⟩` rather than its coercion. -/
+forward direction, `MulEquiv.commutatorCongr_symm` rewrites the whole inverse rather than a single
+value, and Mathlib's `MulEquiv.subgroupMap_symm_apply` says the same for the literal image
+`(commutator G).map e` but returns the subtype `⟨e.symm ↑y, _⟩` rather than its coercion. -/
 @[simp]
 theorem _root_.MulEquiv.coe_commutatorCongr_symm_apply (e : G ≃* H) (y : ↥(commutator H)) :
     ((MulEquiv.commutatorCongr e).symm y : G) = e.symm (y : H) :=
@@ -270,10 +269,9 @@ theorem _root_.MulEquiv.coe_commutatorCongr_symm_apply (e : G ≃* H) (y : ↥(c
 
 The derived-subgroup instance of `Subgroup.congrOfMapEq_refl`, and a `simp` lemma in its own
 right: `MulEquiv.commutatorCongr` does not unfold, so that general lemma never fires on this
-left-hand side.
-`MulEquiv.commutatorCongr_trans` and `MulEquiv.commutatorCongr_symm` are the companion composition
-and inverse
-statements; Mathlib's `abelianizationCongr_refl` is the same coherence for the abelianization. -/
+left-hand side. `MulEquiv.commutatorCongr_trans` and `MulEquiv.commutatorCongr_symm` are the
+companion composition and inverse statements; Mathlib's `Group.abelianizationCongr_refl` is the same
+coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_refl :
     MulEquiv.commutatorCongr (MulEquiv.refl G) = MulEquiv.refl ↥(commutator G) :=
@@ -284,11 +282,10 @@ of the restrictions of `e` and of `f`.
 
 The derived-subgroup instance of `Subgroup.congrOfMapEq_trans`, and a `simp` lemma in its own
 right: `MulEquiv.commutatorCongr` does not unfold, so that general lemma never fires on this
-left-hand side.
-Both map equalities are supplied internally, so a use site names only `e` and `f`.
-`MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_symm` are the companion identity
-and inverse
-statements; Mathlib's `abelianizationCongr_trans` is the same coherence for the abelianization. -/
+left-hand side. Both map equalities are supplied internally, so a use site names only `e` and
+`f`. `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_symm` are the companion
+identity and inverse statements; Mathlib's `Group.abelianizationCongr_trans` is the same
+coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
     (MulEquiv.commutatorCongr e).trans (MulEquiv.commutatorCongr f) =
@@ -300,11 +297,10 @@ theorem _root_.MulEquiv.commutatorCongr_trans (e : G ≃* H) (f : H ≃* K) :
 
 The derived-subgroup instance of `Subgroup.congrOfMapEq_symm`, whose map-equality hypothesis is
 supplied internally, so a use site names only `e`. This is the whole-isomorphism form, for when the
-inverse occurs as a map rather than applied to a point;
-`MulEquiv.coe_commutatorCongr_symm_apply` is the
-pointwise companion, and `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_trans` are
-the identity and
-composition ones. Mathlib's `abelianizationCongr_symm` says the same for the abelianization. -/
+inverse occurs as a map rather than applied to a point; `MulEquiv.coe_commutatorCongr_symm_apply`
+is the pointwise companion, and `MulEquiv.commutatorCongr_refl` and `MulEquiv.commutatorCongr_trans`
+are the identity and composition ones. Mathlib's `Group.abelianizationCongr_symm` says the same
+for the abelianization. -/
 theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
     (MulEquiv.commutatorCongr e).symm = MulEquiv.commutatorCongr e.symm :=
   Subgroup.congrOfMapEq_symm e _
@@ -327,7 +323,8 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
   -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
   obtain ⟨y, b, hb, hyb⟩ := hf g⁻¹
   have hconj : g * f x * g⁻¹ = b⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * b⁻¹⁻¹ := by
-    rw [← inv_inv g, ← hyb, map_mul, map_mul, map_inv, inv_inv]
+    rw [← inv_inv g, ← hyb]
+    simp only [map_mul, map_inv]
     group
   rw [hconj]
   exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
@@ -336,18 +333,12 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
 theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
     (h : Disjoint U (B.map (MulAut.conj n).toMonoidHom)) :
     Function.Injective (fun p : U × B => (p.1 : G) * n * p.2) := by
-  intro p q hpq
-  have heq : (p.1 : G) * (n * p.2 * n⁻¹) = (q.1 : G) * (n * q.2 * n⁻¹) := by
-    simpa only [mul_assoc] using congrArg (fun x : G => x * n⁻¹) hpq
-  have hconj (b : B) : n * b * n⁻¹ ∈ B.map (MulAut.conj n).toMonoidHom := by
-    simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
-      _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom b.property
-  have hpair := _root_.Subgroup.mul_injective_of_disjoint h
-    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, hconj p.2⟩))
-    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, hconj q.2⟩)) heq
-  refine Prod.ext (congrArg (fun r : U × B.map (MulAut.conj n).toMonoidHom => r.1) hpair) ?_
-  apply Subtype.ext
-  exact mul_left_cancel (mul_right_cancel (congrArg (fun x => (x.2 : G)) hpair))
+  -- `u n b = u (n b n⁻¹) n`: conjugate the second factor into `n B n⁻¹`, multiply in
+  -- `U × n B n⁻¹` (injective by disjointness), then multiply on the right by `n`.
+  convert (mul_left_injective n).comp ((_root_.Subgroup.mul_injective_of_disjoint h).comp
+    (Function.injective_id.prodMap ((MulAut.conj n).subgroupMap B).injective)) using 1
+  funext p
+  simp [mul_assoc]
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
@@ -436,18 +427,11 @@ hypothesis supplies surjectivity. When `ψ` is the inclusion of a subgroup `K`, 
 Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surjective, and neither
 subgroup need be normal. -/
 noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
-    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B := by
-  have key : ∀ a b : G, a⁻¹ * b ∈ B.comap ψ ↔ (ψ a)⁻¹ * ψ b ∈ B := fun a b ↦ by
-    rw [Subgroup.mem_comap, map_mul, map_inv]
-  refine Equiv.ofBijective (Quotient.map' ψ fun a b hab ↦
-    QuotientGroup.leftRel_apply.mpr ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))) ⟨?_, ?_⟩
-  · intro x y hxy
-    induction x using QuotientGroup.induction_on with | _ a =>
-    induction y using QuotientGroup.induction_on with | _ b =>
-    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
-  · intro q
-    obtain ⟨g, hg⟩ := hψ q
-    exact ⟨QuotientGroup.mk g, hg⟩
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B :=
+  (Quotient.congrRight fun a b ↦ by
+    simp only [QuotientGroup.leftRel_apply, Setoid.ker_def,
+      QuotientGroup.eq, Subgroup.mem_comap, map_mul, map_inv]).trans
+    (Setoid.quotientKerEquivOfSurjective (fun g : G ↦ (ψ g : H ⧸ B)) hψ)
 
 /-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
 @[simp]

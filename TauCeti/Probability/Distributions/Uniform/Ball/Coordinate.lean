@@ -248,7 +248,6 @@ theorem quantile_map_inner_uniformBallMeasure (c : E) {r : ℝ} (hr : 0 ≤ r) (
   rw [map_inner_uniformBallMeasure_affine c hr v]
   by_cases hrv : r * ‖v‖ = 0
   · simp [hrv, Measure.map_const, Measure.quantile_dirac _ hu.1 hu.2.le]
-  have hpos : 0 < r * ‖v‖ := lt_of_le_of_ne (mul_nonneg hr (norm_nonneg _)) (Ne.symm hrv)
   rw [quantile_map_affine_pos (by positivity) hu.1 hu.2,
     quantile_betaMeasure ha ha hu]
   ring

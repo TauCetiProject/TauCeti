@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Torsion.Finite
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.PowerBasis
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
@@ -46,6 +47,10 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
 ## Main results
 
 * `PowerSeries.IsWeierstrassFactorizationAt.finrank_quotient`: `A⟦X⟧ ⧸ (g)` has rank `deg f`.
+* `PowerSeries.IsWeierstrassFactorizationAt.finite_of_isTorsionBy`: a finite `A⟦X⟧`-module
+  killed by `g` is finite over `A`, by restriction of scalars from `A⟦X⟧ ⧸ (g)`.
+* `PowerSeries.IsWeierstrassFactorizationAt.infinite_quotient`: over an infinite ring,
+  `A⟦X⟧ ⧸ (g)` is infinite when `deg f > 0`.
 * `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
   quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
@@ -119,11 +124,27 @@ theorem free_quotient : Module.Free A (A⟦X⟧ ⧸ Ideal.span {g}) :=
 theorem finite_quotient : Module.Finite A (A⟦X⟧ ⧸ Ideal.span {g}) :=
   H.powerBasis.finite
 
+/-- A finite power-series module killed by a series admitting a Weierstrass factorization is
+finite over the coefficient ring. -/
+theorem finite_of_isTorsionBy {M : Type*} [AddCommGroup M] [Module A⟦X⟧ M]
+    [Module A M] [IsScalarTower A A⟦X⟧ M] [Module.Finite A⟦X⟧ M]
+    (hgM : Module.IsTorsionBy A⟦X⟧ M g) : Module.Finite A M := by
+  have := H.finite_quotient
+  exact hgM.finite_of_finite_quotient (A := A)
+
 /-- For a Weierstrass factorization `g = f * h` over a nontrivial ring, the quotient `A⟦X⟧ ⧸ (g)`
 is free of rank the degree of `f`. -/
 theorem finrank_quotient [Nontrivial A] :
     Module.finrank A (A⟦X⟧ ⧸ Ideal.span {g}) = f.natDegree :=
   H.powerBasis.finrank
+
+/-- For a Weierstrass factorization `g = f * h` over an infinite ring with `deg f > 0`, the
+quotient `A⟦X⟧ ⧸ (g)` is infinite, being free of positive rank over `A`. -/
+theorem infinite_quotient [Infinite A] (hf : 0 < f.natDegree) :
+    Infinite (A⟦X⟧ ⧸ Ideal.span {g}) := by
+  have := H.free_quotient
+  have := Module.nontrivial_of_finrank_pos (R := A) (H.finrank_quotient.symm ▸ hf)
+  exact Module.Free.infinite A _
 
 /-- For a Weierstrass factorization `g = f * h` and any `a : A`, the quotient of `A⟦X⟧ ⧸ (a)` by
 `g` is `A⟦X⟧ ⧸ (a, g) ≃ (A ⧸ (a)) ^ deg f`, so it has `#(A ⧸ (a)) ^ deg f` elements. -/

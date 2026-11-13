@@ -31,11 +31,13 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.homogeneousCyclotomic_eq_sum`: `Φ_n(a, b)` as the sum `∑_{k + l = φ(n)} c_k a^k b^l`.
 * `TauCeti.homogeneousCyclotomic_one_right`, `TauCeti.homogeneousCyclotomic_eq_eval_div_mul_pow`:
   `Φ_n(a, 1) = Φ_n(a)`, and `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)` for `b ≠ 0` in a field.
-* `RingHom.map_homogeneousCyclotomic`: ring homomorphisms commute with `Φ_n(·, ·)`.
+* `RingHom.map_homogeneousCyclotomic`, `Int.cast_homogeneousCyclotomic`: ring homomorphisms,
+  and in particular integer casts, commute with `Φ_n(·, ·)`.
 * `TauCeti.homogeneousCyclotomic_mul_mul`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero`, `_one`, `_two`, `_three`, `_six`, `_prime`,
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
   `Φ_{p ^ (e + 1)}(a, b) = Φ_p(a ^ p ^ e, b ^ p ^ e)` for a prime `p`.
+* `TauCeti.ne_zero_of_dvd_homogeneousCyclotomic`: a nonunit divides `Φ_n(a, b)` only if `n ≠ 0`.
 * `TauCeti.homogeneousCyclotomic_comm`: `Φ_n(b, a) = Φ_n(a, b)` for `n ≠ 1`.
 * `TauCeti.homogeneousCyclotomic_one_anticomm`: `Φ_1(b, a) = -Φ_1(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero_right`, `TauCeti.homogeneousCyclotomic_zero_left`:
@@ -114,10 +116,17 @@ theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b 
   ext i
   fin_cases i <;> simp
 
+/-- The cast of an integer homogeneous cyclotomic value is the homogeneous cyclotomic value of the
+casts. -/
+@[simp, norm_cast]
+theorem _root_.Int.cast_homogeneousCyclotomic (n : ℕ) (a b : ℤ) :
+    ((homogeneousCyclotomic n a b : ℤ) : R) = homogeneousCyclotomic n (a : R) (b : R) :=
+  (Int.castRingHom R).map_homogeneousCyclotomic n a b
+
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
     homogeneousCyclotomic n (c * a) (c * b) = c ^ n.totient * homogeneousCyclotomic n a b := by
-  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, ← smul_eq_mul (c ^ _),
+  rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def,
     ← (isHomogeneous_homogenize _).eval_smul]
   simp [Matrix.smul_cons]
 
@@ -127,6 +136,12 @@ theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
 @[simp]
 theorem homogeneousCyclotomic_zero (a b : R) : homogeneousCyclotomic 0 a b = 1 := by
   simp [homogeneousCyclotomic_def]
+
+/-- A nonunit dividing `Φ_n(a, b)` forces `n ≠ 0`, since `Φ_0(a, b) = 1`. -/
+theorem ne_zero_of_dvd_homogeneousCyclotomic {d a b : R} {n : ℕ} (hd : ¬IsUnit d)
+    (h : d ∣ homogeneousCyclotomic n a b) : n ≠ 0 := by
+  rintro rfl
+  exact hd (isUnit_of_dvd_one (by simpa only [homogeneousCyclotomic_zero] using h))
 
 /-- `Φ_1(a, b) = a - b`. -/
 @[simp]
@@ -208,7 +223,9 @@ empty while `a ^ 0 - b ^ 0 = 0`. -/
 theorem prod_homogeneousCyclotomic_eq_pow_sub_pow {n : ℕ} (hn : 0 < n) (a b : R) :
     ∏ d ∈ n.divisors, homogeneousCyclotomic d a b = a ^ n - b ^ n := by
   simp_rw [homogeneousCyclotomic_def]
-  rw [← map_prod, ← homogenize_finsetProd fun d _ => natDegree_cyclotomic_le, Nat.sum_totient,
+  rw [← map_prod, ← homogenize_finsetProd (s := n.divisors)
+      (p := fun d ↦ cyclotomic d R) (n := Nat.totient) (fun d _ ↦ natDegree_cyclotomic_le),
+    Nat.sum_totient,
     prod_cyclotomic_eq_X_pow_sub_one hn, homogenize_sub, homogenize_X_pow le_rfl, homogenize_one]
   simp
 

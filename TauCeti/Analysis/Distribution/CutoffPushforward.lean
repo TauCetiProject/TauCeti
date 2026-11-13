@@ -116,12 +116,11 @@ theorem comp_cutoffPullbackCLM_comp_extDerivCLM
   exact (extDerivCLM_cutoffPullbackCLM_apply ω hx).symm
 
 /-- **Functoriality of the pushforward**: `(Ψ ∘ Φ)_# T = Ψ_# (Φ_# T)`, when `χ` is equal to one near
-the support of `T`, `χ'` is equal to one near its image under `Φ`, and `Φ` maps the support of `χ`
-into `Ω'`. -/
+the support of `T` and `χ'` is equal to one near its image under `Φ`. -/
 theorem comp_cutoffPullbackCLM_comp_cutoffPullbackCLM (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G)
     {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)} {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'}
     {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1)
-    (hχ' : ∀ᶠ y in 𝓝ˢ (Φ '' dsupport T), χ' y = 1) (hmaps : MapsTo Φ (tsupport χ) Ω') :
+    (hχ' : ∀ᶠ y in 𝓝ˢ (Φ '' dsupport T), χ' y = 1) :
     (T ∘L cutoffPullbackCLM χ Φ hΦ) ∘L
         (cutoffPullbackCLM χ' Ψ hΨ : 𝓓(Ω'', E'' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
       T ∘L cutoffPullbackCLM χ (Ψ ∘ Φ) hΨΦ := by
@@ -135,7 +134,7 @@ theorem comp_cutoffPullbackCLM_comp_cutoffPullbackCLM (T : 𝓓(Ω, E [⋀^Fin k
   ext ω
   simp only [comp_apply]
   refine map_eq_map_of_eventuallyEq T (hχ'Φ.mono fun x hx ↦ ?_)
-  exact (cutoffPullbackCLM_cutoffPullbackCLM (hΨΦ := hΨΦ) hmaps ω x).trans (by rw [hx, one_smul])
+  exact (cutoffPullbackCLM_cutoffPullbackCLM (hΨΦ := hΨΦ) ω x).trans (by rw [hx, one_smul])
 
 section Homotopy
 

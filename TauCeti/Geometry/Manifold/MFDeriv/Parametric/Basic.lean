@@ -54,7 +54,7 @@ boundary points.
 
 public section
 
-open Bundle Function Set
+open Bundle Filter Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -111,25 +111,20 @@ theorem eventuallyEq_extChartAt_family_of_eq_id [I.Boundaryless] {ψ : 𝕜 → 
   simp only [hz', id_eq]
   exact (extChartAt I x).right_inv hz
 
-variable [IsManifold I 1 M]
-
 /-- **Regularity of the parameter derivative.** If a family `F : 𝕜 → M → F'` is jointly `C^n` at
 `(t, x)`, then its parameter derivative `y ↦ ∂ᵣ F (r, y)` at `r = t` is `C^m` at `x` for every
 `m` with `m + 1 ≤ n`. -/
 theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     (hF : ContMDiffAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') n (uncurry F) (t, x)) (hmn : m + 1 ≤ n) :
     ContMDiffAt I 𝓘(𝕜, F') m (fun y ↦ deriv (fun r ↦ F r y) t) x := by
-  have hswap : ContMDiffAt (I.prod 𝓘(𝕜)) 𝓘(𝕜, F') n (uncurry fun y r ↦ F r y) (x, t) :=
-    hF.comp (x, t) (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  have h := (hswap.mfderiv (fun y r ↦ F r y) (fun _ ↦ t) contMDiffAt_const hmn).clm_apply
-    (contMDiffAt_const (c := (1 : 𝕜)))
-  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  dsimp only
-  -- Between model spaces, tangent coordinates are trivial; `erw` sees through the tangent spaces
-  -- of `𝕜` and `F'`, which are the model spaces themselves.
-  erw [inTangentCoordinates_model_space]
-  rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
-  rfl
+  have hrange (y : M) : extChartAt I x y ∈ range I := by
+    rw [extChartAt_coe]
+    exact mem_range_self _
+  have hD' := contDiffWithinAt_deriv_slice_left (m := m)
+    (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) (hrange x) hmn
+  exact contMDiffAt_iff_source.2 (contMDiffWithinAt_iff_contDiffWithinAt.2 hD')
+
+variable [IsManifold I 1 M]
 
 /-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
 `C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the
@@ -141,7 +136,7 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   let ι : 𝕜 × 𝕜 → TangentBundle 𝓘(𝕜, 𝕜 × 𝕜) (𝕜 × 𝕜) := fun z ↦ TotalSpace.mk' (𝕜 × 𝕜) z (0, 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, 𝕜 × 𝕜).tangent m ι := by
     intro z
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_id, ?_⟩
     refine (contMDiffAt_const (c := ((0 : 𝕜), (1 : 𝕜)))).congr_of_eventuallyEq ?_
     filter_upwards with r

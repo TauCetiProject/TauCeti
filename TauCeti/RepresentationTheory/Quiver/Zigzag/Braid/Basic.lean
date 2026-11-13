@@ -196,9 +196,11 @@ noncomputable def zigzagBraidCoevaluation (i : V) :
 
 variable {k G}
 
+end Coevaluation
+
 section Formula
 
-variable [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
+variable {k G} [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
 
 /-- **The Casimir element cut down at a vertex**:
 `C (e_i ⊗ e_i) = e_i ⊗ x_i + x_i ⊗ e_i + ∑_{d.fst = i} a_d ⊗ a_{d.symm}`. -/
@@ -273,8 +275,6 @@ theorem coe_zigzagBraidCoevaluation_of_one (i : V) :
   simpa only [one_mul] using coe_zigzagBraidCoevaluation_of i 1
 
 end Formula
-
-end Coevaluation
 
 /-! ### Internal degrees -/
 

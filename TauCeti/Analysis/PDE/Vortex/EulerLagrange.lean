@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.PDE.Vortex.Variational
 

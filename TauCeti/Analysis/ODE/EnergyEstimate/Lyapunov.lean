@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.EnergyEstimate.Global
 import TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit
+import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
 /-!
 # The trajectory operator with hyperbolic limits
@@ -45,28 +46,30 @@ bounded interval `[-R, R]`, the right side controls `∫ ‖u‖²` up to an err
 
 first on test paths (in `TauCeti.Analysis.ODE.EnergyEstimate.Global`) and then, by density, on
 `W^{1,2}(ℝ, E)`. Restriction to a bounded interval is compact, so Peetre's lemma gives a
-finite-dimensional kernel and a closed range. The cokernel is the
+closed range. The cokernel is the
 orthogonal complement of the range, which lies in the kernel of the formal adjoint
 `-d/ds + A†` (`TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_le_map_ker`). That operator
-is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`. The family
-`-A†` has limits `-A±†`, which again have Lyapunov forms
-(`ContinuousLinearMap.HasLyapunovForm.neg_adjoint`), so that kernel is finite dimensional too.
+is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`. Like the kernel
+of `D_A`, that kernel is finite dimensional because `E` is
+(`TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`); the Lyapunov forms are needed
+only for the closed range.
 
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.exists_norm_sq_le_mul_norm_trajectoryOperator_sq_add_of_hasLyapunovForm`:
   the estimate on `W^{1,2}(ℝ, E)`.
-* `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm` and
-  `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`: the kernel of
-  `D_A` is finite dimensional and its range is closed.
+* `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`: the range of
+  `D_A` is closed.
 * `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm`: the
   cokernel of `D_A` is finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`: `D_A` is Fredholm.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_forall_eq_zero`: the same conclusion
   when the limits `A±` are hyperbolic, with no purely imaginary eigenvalue.
-* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: combined with the degenerate-limit
-  results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, for a continuous family
-  with symmetric limits `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff_forall_eq_zero`: combined with the
+  nonhyperbolic-limit results of `TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit`, `D_A`
+  is Fredholm exactly when the limits `A±` are hyperbolic.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: for a continuous family with
+  symmetric limits, `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm`: its index is
   `dim ker D_A - dim ker D_{-A†}`.
 
@@ -142,21 +145,6 @@ private theorem exists_norm_le_mul_norm_trajectoryOperator_add_of_hasLyapunovFor
   rw [mul_pow, Real.sq_sqrt hC]
   nlinarith [mul_nonneg hC (mul_nonneg ha hb)]
 
-/-- **The kernel of the trajectory operator is finite dimensional for hyperbolic limits.** For a
-continuous family of operators whose limits at `±∞` have Lyapunov forms, the solutions in
-`W^{1,2}(ℝ, E)` of `u' + A u = 0` form a finite-dimensional space. -/
-theorem finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm
-    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
-    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).ker := by
-  obtain ⟨R, -, K, -, hest⟩ := exists_norm_le_mul_norm_trajectoryOperator_add_of_hasLyapunovForm
-    hA hminus hplus hbot htop AL hAL
-  exact (trajectoryOperator (p := 2) AL).finiteDimensional_ker_of_compact_estimate
-    (isCompactOperator_smul_restrictBaseL K R) hest
-
 /-- **The range of the trajectory operator is closed for hyperbolic limits.** For a continuous
 family of operators whose limits at `±∞` have Lyapunov forms, the image of `u ↦ u' + A u` from
 `W^{1,2}(ℝ, E)` is a closed subspace of `L²(ℝ, E)`. -/
@@ -187,15 +175,13 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
   have := (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
     hAL).completeSpace_coe
   obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
-  -- The coefficient `-A†` of `D_{-A†}` has limits `-A±†`, which have Lyapunov forms.
+  -- The coefficient `-A†` of `D_{-A†}` is continuous and represented a.e. by `-BL`.
   have hadj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous
   have hnegBL : ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
     filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
     rw [hs, Pi.neg_apply, hBs]
-  have := finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm (hadj.comp hA).neg
-    hminus.neg_adjoint hplus.neg_adjoint ((hadj.tendsto Aminus).comp hbot).neg
-    ((hadj.tendsto Aplus).comp htop).neg (-BL) hnegBL
+  have := finiteDimensional_ker_trajectoryOperator (hadj.comp hA).neg (-BL) hnegBL
   -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A†}`.
   have : FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).rangeᗮ :=
     Submodule.finiteDimensional_of_le
@@ -215,7 +201,7 @@ theorem isFredholm_trajectoryOperator_of_hasLyapunovForm
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).IsFredholm :=
   .of_finite_ker_coker _
-    (finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL)
+    (finiteDimensional_ker_trajectoryOperator hA AL hAL)
     (finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
       hAL)
 
@@ -237,6 +223,28 @@ theorem isFredholm_trajectoryOperator_of_forall_eq_zero
     (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hminus)
     (hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul.mpr hplus) hbot htop
     AL hAL
+
+/-- **The trajectory operator is Fredholm exactly when its limits are hyperbolic.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space with limits `A±`
+at `±∞`. Then `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if
+neither limit has a purely imaginary eigenvalue: there are no `ω` and `v, w`, not both zero, with
+`A± v = -ω • w` and `A± w = ω • v`. Neither `A` nor its limits need to be symmetric. The
+coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem isFredholm_trajectoryOperator_iff_forall_eq_zero (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hbot : Tendsto A atBot (𝓝 Aminus))
+    (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).IsFredholm ↔
+      (∀ (ω : ℝ) (v w : E), Aminus v = -ω • w → Aminus w = ω • v → v = 0 ∧ w = 0) ∧
+        ∀ (ω : ℝ) (v w : E), Aplus v = -ω • w → Aplus w = ω • v → v = 0 ∧ w = 0 :=
+  ⟨fun hF ↦ ⟨fun _ _ _ hv hw ↦ Classical.byContradiction fun h ↦
+      not_isFredholm_trajectoryOperator_of_apply_eq_neg_smul_of_tendsto_atBot AL hAL hbot hv hw h
+        hF,
+    fun _ _ _ hv hw ↦ Classical.byContradiction fun h ↦
+      not_isFredholm_trajectoryOperator_of_apply_eq_neg_smul_of_tendsto_atTop AL hAL htop hv hw h
+        hF⟩,
+    fun ⟨hm, hp⟩ ↦ isFredholm_trajectoryOperator_of_forall_eq_zero hA hm hp hbot htop AL hAL⟩
 
 /-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
 continuous family of operators on a finite-dimensional real inner product space with symmetric
