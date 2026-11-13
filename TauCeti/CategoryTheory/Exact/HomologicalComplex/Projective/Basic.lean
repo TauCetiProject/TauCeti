@@ -18,9 +18,11 @@ Let `E` be an exact structure. A map `φ : P ⟶ A` from a bounded above complex
 objects to an `E`-acyclic complex is null-homotopic (Bühler, Corollary 12.5). This is the dual of
 `TauCeti.ExactStructure.AcyclicData.homotopyZero`. So bounded above complexes of projectives are
 left orthogonal to the acyclic complexes in the homotopy category, which is how maps out of them
-are computed in the derived and singularity categories. The terms of the mapping cone of a map
-between complexes of projectives are again projective (`isProjective_mappingCone_X`), so these
-complexes are closed under cones.
+are computed in the derived category. The terms of the mapping cone of a map between complexes of
+projectives are again projective (`isProjective_mappingCone_X`), so these complexes are closed
+under cones. For the singularity category, these two facts show that the bounded complexes of
+projectives form a triangulated subcategory of the derived category, the one that is quotiented
+out.
 
 The null-homotopy `hⁿ : Pⁿ⁺¹ ⟶ Aⁿ` is built downwards from the upper bound of `P`. Write the
 differentials of `A` as `Aⁿ ↠ Zⁿ⁺¹ ↣ Aⁿ⁺¹`. If `φⁿ⁺¹ - d ≫ hⁿ⁺¹` vanishes after `Aⁿ⁺¹ ↠ Zⁿ⁺²`, it
