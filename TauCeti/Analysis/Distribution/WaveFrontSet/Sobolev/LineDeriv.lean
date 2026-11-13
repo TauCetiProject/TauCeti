@@ -17,8 +17,9 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 A derivative costs at most one order of Sobolev regularity, microlocally as well: for a complex
 distribution `T` on an open subset `Ω` of a finite-dimensional real inner product space, a direction
 `v` and a real `s`, the `H^(s - 1)` wave front set of `∂_{v} T` lies in the `H^s` wave front set of
-`T`. Iterating, an iterated derivative `∂^{m}` of order `n` maps `WF_s` into `WF_(s - n)`, and a
-differential operator of order at most `k` with smooth coefficients maps `WF_s` into `WF_(s - k)`.
+`T`. Iterating, an iterated derivative `∂^{m}` of order `n` satisfies
+`WF_(s - n)(∂^{m} T) ⊆ WF_s(T)`, and a differential operator `P` of order at most `k` with smooth
+coefficients satisfies `WF_(s - k)(P T) ⊆ WF_s(T)`.
 This is the differential-operator case of the order shift of `H^s` wave front sets under
 pseudodifferential operators (Hörmander, *Lectures on Nonlinear Hyperbolic Differential
 Equations*, §11.1).
