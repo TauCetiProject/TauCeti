@@ -205,7 +205,7 @@ theorem unifIntegrable_of_lintegral_ofReal_le {Φ : ℝ → ℝ}
   obtain ⟨δ, hδ, hδT⟩ := ENNReal.exists_nnreal_pos_mul_lt ENNReal.coe_ne_top
     (ENNReal.half_pos hε.ne').ne'
   refine ⟨δ, by exact_mod_cast hδ, fun i s hs ↦ ?_⟩
-  rw [eLpNorm_one_eq_lintegral_enorm (hfm i).restrict]
+  rw [eLpNorm_one_eq_lintegral_eNorm (hfm i).restrict]
   calc ∫⁻ a in s, ‖f i a‖ₑ ∂μ ≤ T * μ s + ε / 2 := hT i s
     _ ≤ δ * T + ε / 2 := by
         rw [mul_comm (δ : ℝ≥0∞)]

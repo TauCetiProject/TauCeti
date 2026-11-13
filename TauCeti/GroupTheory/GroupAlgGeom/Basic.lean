@@ -175,6 +175,27 @@ theorem symmOfBijective_comp (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
   ext x
   exact φ.symmOfBijective_apply_apply hφ x
 
+/-- A group isomorphism commuting with the coefficient maps, as a `G`-homomorphism. -/
+def ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) : GHom ιH ιK where
+  toMonoidHom := e.toMonoidHom
+  map_coeff' := he
+
+@[simp]
+theorem coe_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) : ⇑(ofMulEquiv e he) = e := (rfl)
+
+theorem ofMulEquiv_bijective (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) :
+    Function.Bijective (ofMulEquiv e he) := by
+  simpa using e.bijective
+
+@[simp]
+theorem symmOfBijective_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g)
+    (h : Function.Bijective (ofMulEquiv e he)) :
+    (ofMulEquiv e he).symmOfBijective h =
+      ofMulEquiv e.symm fun g => e.symm_apply_eq.2 (he g).symm := by
+  ext x
+  apply h.1
+  simp
+
 end GHom
 
 /-! ### `G`-groups -/
@@ -291,6 +312,14 @@ theorem GX.gHom_ext {φ ψ : GHom (inl : G →* GX G X) ι}
     (h : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
   (homEquiv ι).injective (funext h)
 
+/-- Two homomorphisms out of `G[X]` agreeing on the coefficients and on the variables are
+equal. -/
+theorem GX.ext_hom {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
+    [MonoidHomClass F (GX G X) M] {φ ψ : F} (hinl : ∀ g, φ (inl g) = ψ (inl g))
+    (hinr : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
+  DFunLike.ext _ _ <| DFunLike.congr_fun (f := (φ : GX G X →* M)) (g := ψ) <|
+    hom_ext (MonoidHom.ext hinl) (FreeGroup.ext_hom _ _ hinr)
+
 variable {ι v}
 
 /-- A homomorphism out of `G[X]` that restricts to `ι` on the coefficients is evaluation at its
@@ -298,6 +327,19 @@ values on the variables. -/
 theorem eval_eq_of_comp_inl {f : GX G X →* H} (hf : f.comp inl = ι) :
     eval ι (fun x => f (inr (FreeGroup.of x))) = f :=
   hf ▸ (eq_eval f).symm
+
+/-- If no coefficient survives, every word evaluates to `1` at the trivial tuple. -/
+@[simp]
+theorem eval_one_one : eval (1 : G →* H) (1 : X → H) = 1 :=
+  eval_eq_of_comp_inl (f := 1) rfl
+
+/-- In a commutative group a word is a constant times a homomorphism of the tuple of values, so
+evaluation is compatible with the operation `(u, v, w) ↦ u * v⁻¹ * w` on tuples. -/
+theorem eval_mul_inv_mul {A : Type*} [CommGroup A] (ι : G →* A) (u v w : X → A) (s : GX G X) :
+    eval ι (u * v⁻¹ * w) s = eval ι u s * (eval ι v s)⁻¹ * eval ι w s := by
+  have h : eval ι (u * v⁻¹ * w) = eval ι u * (eval ι v)⁻¹ * eval ι w :=
+    hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
+  simp [h]
 
 /-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
 theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
@@ -353,6 +395,13 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
     wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
   funext x
   simp
+
+/-- Changing one of the words of a tuple changes the corresponding coordinate of its word
+map. -/
+theorem wordMap_update {Y : Type*} [DecidableEq Y] (w : Y → GX G X) (y : Y) (c : GX G X)
+    (v : X → H) :
+    wordMap ι (Function.update w y c) v = Function.update (wordMap ι w v) y (eval ι v c) :=
+  Function.comp_update (eval ι v) w y c
 
 /-- Word maps compose in the opposite order to word homomorphisms. -/
 theorem wordMap_comp (σ : GHom (inl : G →* GX G Z) (inl : G →* GX G Y))
