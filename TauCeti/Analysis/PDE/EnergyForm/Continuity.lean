@@ -15,10 +15,9 @@ The finite-dimensional weak-form integrand
 bundles that linearity as continuous linear maps from coefficient spaces to spaces of
 continuous bilinear maps.
 
-This is a pointwise prerequisite for Lane D of the PDE roadmap.  Once the weak energy form is
-defined by integrating `x ↦ energyIntegrand (a x) (b x) (c x)` over a domain, continuous
-coefficient fields and continuous perturbation families should give continuous integrand
-families without unfolding the jet form.
+The weak energy form is defined by integrating `x ↦ energyIntegrand (a x) (b x) (c x)` over a
+domain.  With these maps, continuous coefficient fields and continuous perturbation families give
+continuous integrand families without unfolding the jet form.
 
 ## Main declarations
 
