@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Normed.Group.Real
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -18,8 +19,9 @@ a set. This file records its global form: a jointly continuous integrand which v
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
-`|f|` over a set splits along the sign of `f`, bounds for the integral of the reciprocal of a
-function bounded below by a positive constant, and that a continuous
+`|f|` over a set splits along the sign of `f`, that an almost everywhere positive function has
+positive integral, bounds for the integral of the reciprocal of a function bounded below by a
+positive constant, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets.
 
@@ -30,6 +32,8 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
+* `TauCeti.setIntegral_pos_of_ae_pos`: an integrable function that is almost everywhere positive
+  on a set of positive measure has positive integral over it.
 * `TauCeti.div_le_setIntegral_inv` and `TauCeti.setIntegral_inv_pos`: if `λ ≤ a ≤ M` almost
   everywhere on a set `s` of finite measure, with `λ > 0`, then `∫_s a⁻¹ ≥ μ(s) / M`; the lower
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
@@ -149,25 +153,20 @@ theorem integrableOn_exp_ofReal_mul_I_of_measure_ne_top {ν : Measure ℝ} {s : 
   exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
     simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
 
-
 section Reciprocal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {s : Set α} {a : α → ℝ} {lam M : ℝ}
 
-/-- A function bounded below by `λ > 0` almost everywhere has reciprocal bounded by `λ⁻¹` almost
-everywhere. -/
-theorem ae_norm_inv_le_inv (hlam : 0 < lam) (ha : ∀ᵐ t ∂μ, lam ≤ a t) :
-    ∀ᵐ t ∂μ, ‖(a t)⁻¹‖ ≤ lam⁻¹ :=
-  ha.mono fun t ht => by
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hlam.trans_le ht)]
-    exact inv_anti₀ hlam ht
-
-/-- Bounds `λ ≤ a ≤ M` holding almost everywhere on a set of positive measure force `λ ≤ M`. -/
-theorem le_of_ae_le_and_le (hs : μ s ≠ 0)
-    (haM : ∀ᵐ t ∂μ.restrict s, lam ≤ a t ∧ a t ≤ M) : lam ≤ M := by
-  have : (ae (μ.restrict s)).NeBot := ae_restrict_neBot.2 hs
-  obtain ⟨_, ht⟩ := haM.exists
-  exact ht.1.trans ht.2
+/-- A function which is almost everywhere positive on a set `s` of positive measure, and
+integrable there, has positive integral over `s`. -/
+theorem setIntegral_pos_of_ae_pos {f : α → ℝ} (hs₀ : μ s ≠ 0) (hf : IntegrableOn f s μ)
+    (hpos : ∀ᵐ t ∂μ.restrict s, 0 < f t) : 0 < ∫ t in s, f t ∂μ := by
+  have hnn : 0 ≤ᵐ[μ.restrict s] f := hpos.mono fun _ ht => ht.le
+  refine (integral_nonneg_of_ae hnn).lt_of_ne fun h => hs₀ ?_
+  have hF : ∀ᵐ _ ∂μ.restrict s, False :=
+    (hpos.and ((integral_eq_zero_iff_of_nonneg_ae hnn hf).1 h.symm)).mono fun _ ht =>
+      ht.1.ne' ht.2
+  rwa [Filter.eventually_false_iff_eq_bot, ae_eq_bot, Measure.restrict_eq_zero] at hF
 
 /-- If `λ ≤ a ≤ M` almost everywhere on a set `s` of finite measure, with `λ > 0`, then
 `∫_s a⁻¹ ≥ μ(s) / M`. -/
@@ -178,7 +177,7 @@ theorem div_le_setIntegral_inv (hs : μ s ≠ ∞) (hlam : 0 < lam)
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have h := integral_mono_ae (integrable_const M⁻¹)
     (Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _
-      (ae_norm_inv_le_inv hlam (haM.mono fun _ ht => ht.1)))
+      ((haM.mono fun _ ht => ht.1).norm_inv_le_inv hlam))
     (haM.mono fun t ht => inv_anti₀ (hlam.trans_le ht.1) ht.2)
   rwa [setIntegral_const, smul_eq_mul, ← div_eq_mul_inv] at h
 
@@ -186,16 +185,10 @@ theorem div_le_setIntegral_inv (hs : μ s ≠ ∞) (hlam : 0 < lam)
 `∫_s a⁻¹ > 0`. -/
 theorem setIntegral_inv_pos (hs₀ : μ s ≠ 0) (hs : μ s ≠ ∞) (hlam : 0 < lam)
     (ha : AEStronglyMeasurable a (μ.restrict s)) (hlama : ∀ᵐ t ∂μ.restrict s, lam ≤ a t) :
-    0 < ∫ t in s, (a t)⁻¹ ∂μ := by
+    0 < ∫ t in s, (a t)⁻¹ ∂μ :=
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
-  have hpos : ∀ᵐ t ∂μ.restrict s, 0 < (a t)⁻¹ :=
-    hlama.mono fun t ht => inv_pos.2 (hlam.trans_le ht)
-  have hnn : 0 ≤ᵐ[μ.restrict s] fun t => (a t)⁻¹ := hpos.mono fun _ ht => ht.le
-  refine (integral_nonneg_of_ae hnn).lt_of_ne fun h => hs₀ ?_
-  have h0 := (integral_eq_zero_iff_of_nonneg_ae hnn (Integrable.of_bound
-    ha.aemeasurable.inv.aestronglyMeasurable _ (ae_norm_inv_le_inv hlam hlama))).1 h.symm
-  have hF : ∀ᵐ _ ∂μ.restrict s, False := (hpos.and h0).mono fun _ ht => ht.1.ne' ht.2
-  rwa [Filter.eventually_false_iff_eq_bot, ae_eq_bot, Measure.restrict_eq_zero] at hF
+  setIntegral_pos_of_ae_pos hs₀ (Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _
+    (hlama.norm_inv_le_inv hlam)) (hlama.mono fun _ ht => inv_pos.2 (hlam.trans_le ht))
 
 end Reciprocal
 

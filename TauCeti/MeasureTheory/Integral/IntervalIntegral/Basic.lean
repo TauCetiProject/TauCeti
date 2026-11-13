@@ -32,8 +32,8 @@ not belong to any particular application.
   `+∞` and to `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
-* `TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm` and
-  `TauCeti.intervalIntegral.norm_intervalIntegral_le_abs_intervalIntegral`: for such a function
+* `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
+  `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
   and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -211,7 +211,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} 
 
 /-- For a measure without mass at points, the integral of `f` between two points of `[a, b]` is
 bounded by the `L¹(a, b)` norm of `f`. -/
-theorem norm_intervalIntegral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b) μ)
+theorem norm_integral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b) μ)
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     ‖∫ x in s..t, f x ∂μ‖ ≤ ∫ x in Ioo a b, ‖f x‖ ∂μ := by
   have hf' : IntegrableOn f (Icc a b) μ := (integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf
@@ -225,7 +225,7 @@ theorem norm_intervalIntegral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b)
 /-- For a measure without mass at points, if `‖f‖ ≤ g` almost everywhere on `(a, b)`, with `g`
 integrable there, then the integral of `f` between two points of `[a, b]` is bounded by the
 integral of `g` between them. -/
-theorem norm_intervalIntegral_le_abs_intervalIntegral {g : ℝ → ℝ}
+theorem norm_integral_le_abs_of_ae_norm_le {g : ℝ → ℝ}
     (hg : IntegrableOn g (Ioo a b) μ) (hfg : ∀ᵐ x ∂μ.restrict (Ioo a b), ‖f x‖ ≤ g x)
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     ‖∫ x in s..t, f x ∂μ‖ ≤ |∫ x in s..t, g x ∂μ| := by

@@ -7,14 +7,13 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Convex.SchauderFixedPoint
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.Bochner.Set
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
-import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -121,7 +120,7 @@ private theorem ae_abs_solDeriv_le (hlam : 0 < lam)
     (hK : |fluxConst x₀ x₁ g₀ g₁ f F a| ≤ K) :
     ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       |solDeriv x₀ x₁ g₀ g₁ f F a t| ≤ lam⁻¹ * (K + |fluxData x₀ f F t|) := by
-  filter_upwards [ae_norm_inv_le_inv hlam hlama] with t ht
+  filter_upwards [hlama.norm_inv_le_inv hlam] with t ht
   rw [solDeriv, abs_mul, ← Real.norm_eq_abs (a t)⁻¹]
   exact mul_le_mul ht ((abs_sub _ _).trans (by gcongr)) (abs_nonneg _)
     ((norm_nonneg _).trans ht)
@@ -133,7 +132,7 @@ private theorem integrableOn_solDeriv (hlam : 0 < lam)
     IntegrableOn (solDeriv x₀ x₁ g₀ g₁ f F a) (Ioo x₀ x₁) := by
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   exact ((integrable_const _).sub hG).bdd_mul ha.aemeasurable.inv.aestronglyMeasurable
-    (ae_norm_inv_le_inv hlam hlama)
+    (hlama.norm_inv_le_inv hlam)
 
 /-- The solution takes the boundary value `g₁` at `x₁`: `∫_{x₀}^{x₁} u' = g₁ - g₀`. -/
 private theorem intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam : 0 < lam)
@@ -144,7 +143,7 @@ private theorem intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam : 0 < lam)
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   have hD0 : (∫ t in Ioo x₀ x₁, (a t)⁻¹) ≠ 0 :=
     (setIntegral_inv_pos (by simp [hx]) measure_Ioo_lt_top.ne hlam ha hlama).ne'
-  have hle := ae_norm_inv_le_inv hlam hlama
+  have hle := hlama.norm_inv_le_inv hlam
   have hinv : Integrable (fun t => (a t)⁻¹) (volume.restrict (Ioo x₀ x₁)) :=
     Integrable.of_bound ha.aemeasurable.inv.aestronglyMeasurable _ hle
   have heq : ∀ t, solDeriv x₀ x₁ g₀ g₁ f F a t =
@@ -178,7 +177,7 @@ private theorem continuous_fluxConst (hx : x₀ < x₁) (hlam : 0 < lam)
   have hlama' : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), lam ≤ a v t := fun v =>
     hlama.mono fun t ht => ht v
   have hle : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), ‖(a v t)⁻¹‖ ≤ lam⁻¹ := fun v =>
-    ae_norm_inv_le_inv hlam (hlama' v)
+    (hlama' v).norm_inv_le_inv hlam
   -- Off a null set, `v ↦ (a v t)⁻¹` is continuous, since `a v t ≥ λ > 0`.
   have hinvc : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), Continuous fun v => (a v t)⁻¹ := by
     filter_upwards [hlama, hac] with t ht hct
@@ -228,79 +227,6 @@ private theorem continuous_integral_abs_solDeriv_sub (hx : x₀ < x₁) (hlam : 
 
 end Dependence
 
-/-! ### Families of primitives -/
-
-section Primitive
-
-variable {X : Type*} {d : X → ℝ → ℝ} {T : X → C(Icc x₀ x₁, ℝ)} {c : ℝ} {b : ℝ → ℝ}
-
-/-- A family of primitives `T v = c + ∫_{x₀}^· d v` on `[x₀, x₁]` is continuous in `v` if the
-integrands `d v` depend continuously on `v` in `L¹(x₀, x₁)`. -/
-private theorem continuous_of_forall_eq_add_intervalIntegral [TopologicalSpace X]
-    (hx : x₀ ≤ x₁) (hdi : ∀ v, IntegrableOn (d v) (Ioo x₀ x₁))
-    (hdc : ∀ v₀, Continuous fun v => ∫ t in Ioo x₀ x₁, |d v t - d v₀ t|)
-    (hT : ∀ v (t : Icc x₀ x₁), T v t = c + ∫ s in x₀..t, d v s) : Continuous T := by
-  have hx₀ : x₀ ∈ Icc x₀ x₁ := left_mem_Icc.2 hx
-  refine continuous_iff_continuousAt.2 fun v₀ => tendsto_iff_dist_tendsto_zero.2 ?_
-  refine squeeze_zero (fun _ => dist_nonneg) (fun v => ?_) (by simpa using (hdc v₀).tendsto v₀)
-  refine (ContinuousMap.dist_le (integral_nonneg fun _ => abs_nonneg _)).2 fun t => ?_
-  rw [hT, hT, Real.dist_eq, add_sub_add_left_eq_sub, ← intervalIntegral.integral_sub
-    ((hdi v).intervalIntegrable_of_mem_Icc hx₀ t.2)
-    ((hdi v₀).intervalIntegrable_of_mem_Icc hx₀ t.2)]
-  simpa only [Real.norm_eq_abs, Pi.sub_apply] using
-    TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm ((hdi v).sub (hdi v₀))
-      hx₀ t.2
-
-/-- A primitive `T v = c + ∫_{x₀}^· d v` on `[x₀, x₁]` with `|d v| ≤ b` is bounded by
-`|c| + ∫ b`. -/
-private theorem norm_le_of_forall_eq_add_intervalIntegral (hx : x₀ ≤ x₁)
-    (hdi : ∀ v, IntegrableOn (d v) (Ioo x₀ x₁)) (hbi : IntegrableOn b (Ioo x₀ x₁))
-    (hdb : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), |d v t| ≤ b t)
-    (hT : ∀ v (t : Icc x₀ x₁), T v t = c + ∫ s in x₀..t, d v s) (v : X) :
-    ‖T v‖ ≤ |c| + ∫ t in Ioo x₀ x₁, b t := by
-  have hb := integral_mono_ae (hdi v).abs hbi (hdb v)
-  refine (ContinuousMap.norm_le _ (add_nonneg (abs_nonneg _)
-    ((integral_nonneg fun _ => abs_nonneg _).trans hb))).2 fun t => ?_
-  rw [hT, Real.norm_eq_abs]
-  refine (abs_add_le _ _).trans (add_le_add le_rfl ?_)
-  have h := TauCeti.intervalIntegral.norm_intervalIntegral_le_setIntegral_norm (hdi v)
-    (left_mem_Icc.2 hx) t.2
-  simp only [Real.norm_eq_abs] at h
-  exact h.trans hb
-
-/-- **Arzelà–Ascoli for primitives.** A family of primitives `T v = c + ∫_{x₀}^· d v` on `[x₀, x₁]`
-whose integrands are dominated by a fixed integrable function `b` has relatively compact range. -/
-private theorem isCompact_closure_range_of_forall_eq_add_intervalIntegral (hx : x₀ ≤ x₁)
-    (hdi : ∀ v, IntegrableOn (d v) (Ioo x₀ x₁)) (hbi : IntegrableOn b (Ioo x₀ x₁))
-    (hdb : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), |d v t| ≤ b t)
-    (hT : ∀ v (t : Icc x₀ x₁), T v t = c + ∫ s in x₀..t, d v s) :
-    IsCompact (closure (range T)) := by
-  have hx₀ : x₀ ∈ Icc x₀ x₁ := left_mem_Icc.2 hx
-  -- The increments of `T v` are bounded by those of the primitive of `b`.
-  have hTinc : ∀ v (y z : Icc x₀ x₁), dist (T v y) (T v z) ≤ |∫ s in y..z, b s| :=
-    fun v y z => by
-      rw [hT, hT, Real.dist_eq, add_sub_add_left_eq_sub, abs_sub_comm,
-        intervalIntegral.integral_interval_sub_left
-          ((hdi v).intervalIntegrable_of_mem_Icc hx₀ z.2)
-          ((hdi v).intervalIntegrable_of_mem_Icc hx₀ y.2)]
-      simpa only [Real.norm_eq_abs] using
-        TauCeti.intervalIntegral.norm_intervalIntegral_le_abs_intervalIntegral hbi
-          ((hdb v).mono fun t ht => (Real.norm_eq_abs _).trans_le ht) y.2 z.2
-  set R := |c| + ∫ t in Ioo x₀ x₁, b t
-  refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous (fun y => ?_)
-    fun _ => ⟨closedBall 0 R, isCompact_closedBall 0 R, fun v => ?_⟩
-  · refine Metric.equicontinuousAt_of_continuity_modulus
-      (fun z : Icc x₀ x₁ => |∫ s in y..z, b s|) ?_ _
-      (Eventually.of_forall fun z v => hTinc v y z)
-    have hBc : Continuous fun z : Icc x₀ x₁ => ∫ s in y..z, b s :=
-      (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hbi
-        y.2).comp_continuous continuous_subtype_val Subtype.prop
-    simpa using hBc.abs.tendsto y
-  · exact mem_closedBall_zero_iff.2 (((T v).norm_coe_le_norm _).trans
-      (norm_le_of_forall_eq_add_intervalIntegral hx hdi hbi hdb hT v))
-
-end Primitive
-
 /-! ### The fixed point -/
 
 section FixedPoint
@@ -330,8 +256,10 @@ private theorem exists_eq_add_intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam
     ((integrable_const K).add hG.abs).const_mul _
   have hdi : ∀ v, IntegrableOn (solDeriv x₀ x₁ g₀ g₁ f F (a v)) (Ioo x₀ x₁) := fun v =>
     integrableOn_solDeriv hlam (ha v) (hlama v) hG g₀ g₁
-  have hdb := fun v => ae_abs_solDeriv_le hlam (hlama v)
-    (abs_fluxConst_le hx hlam (ha v) (haM' v) hG g₀ g₁)
+  have hdb : ∀ v, ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
+      ‖solDeriv x₀ x₁ g₀ g₁ f F (a v) t‖ ≤ lam⁻¹ * (K + |fluxData x₀ f F t|) := fun v =>
+    (ae_abs_solDeriv_le hlam (hlama v) (abs_fluxConst_le hx hlam (ha v) (haM' v) hG g₀ g₁)).mono
+      fun _ ht => (Real.norm_eq_abs _).trans_le ht
   -- The solution map `T`.
   let T : C(Icc x₀ x₁, ℝ) → C(Icc x₀ x₁, ℝ) := fun v =>
     ⟨fun t => g₀ + ∫ s in x₀..t, solDeriv x₀ x₁ g₀ g₁ f F (a v) s, continuous_const.add
@@ -339,14 +267,17 @@ private theorem exists_eq_add_intervalIntegral_solDeriv (hx : x₀ < x₁) (hlam
         (left_mem_Icc.2 hx.le)).comp_continuous continuous_subtype_val Subtype.prop)⟩
   have hT : ∀ v (t : Icc x₀ x₁), T v t = g₀ + ∫ s in x₀..t, solDeriv x₀ x₁ g₀ g₁ f F (a v) s :=
     fun _ _ => rfl
-  have hTR := norm_le_of_forall_eq_add_intervalIntegral hx.le hdi hbi hdb hT
+  have hx₀ : x₀ ∈ Icc x₀ x₁ := left_mem_Icc.2 hx.le
+  have hTR := fun v => TauCeti.intervalIntegral.norm_le_of_forall_eq_add_integral hx₀ (hdi v) hbi
+    (hdb v) (hT v)
+  have hTc : Continuous T := TauCeti.intervalIntegral.continuous_of_forall_eq_add_integral hx₀ hdi
+    (fun v₀ => by simpa only [Real.norm_eq_abs] using
+      continuous_integral_abs_solDeriv_sub hx hlam ha haM hac hG g₀ g₁ v₀) hT
   -- Schauder's fixed-point theorem on a closed ball containing the range of `T`.
   obtain ⟨u, -, hu⟩ := schauderFixedPoint_closedConvex_continuousOn isClosed_closedBall
     (convex_closedBall 0 _) (nonempty_closedBall.2 ((norm_nonneg _).trans (hTR 0)))
-    (continuous_of_forall_eq_add_intervalIntegral hx.le hdi
-      (continuous_integral_abs_solDeriv_sub hx hlam ha haM hac hG g₀ g₁) hT).continuousOn
-    (fun v _ => mem_closedBall_zero_iff.2 (hTR v))
-    ((isCompact_closure_range_of_forall_eq_add_intervalIntegral hx.le hdi hbi hdb
+    hTc.continuousOn (fun v _ => mem_closedBall_zero_iff.2 (hTR v))
+    ((TauCeti.intervalIntegral.isCompact_closure_range_of_forall_eq_add_integral hx₀ hdi hbi hdb
       hT).of_isClosed_subset isClosed_closure (closure_mono (image_subset_range _ _)))
   exact ⟨u, fun t => by rw [← hT u t, hu.eq]⟩
 
@@ -380,12 +311,13 @@ private theorem exists_w1p_of_eq_add_intervalIntegral (hx : x₀ < x₁) (hlam :
         (left_mem_Icc.2 hx.le)).memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
         Ioo_subset_Icc_self p).add hF
     exact (memLp_top_of_bound ha.aemeasurable.inv.aestronglyMeasurable lam⁻¹
-      (ae_norm_inv_le_inv hlam hlama)).mul ((memLp_const k).sub hGLp)
+      (hlama.norm_inv_le_inv hlam)).mul ((memLp_const k).sub hGLp)
   obtain ⟨w, hw, hgrad⟩ := W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq hx
     (left_mem_Icc.2 hx.le) g₀ hhLp
   have hwu : W1p.intervalRepresentativeL hx w = u :=
     ContinuousMap.ext fun t => (hw t).trans (hu t).symm
-  refine ⟨w, hwu, ?_, forall_setIntegral_eq_of_ae_add_eq_sub_intervalIntegral hf hFi (k := k) ?_⟩
+  refine ⟨w, hwu, ?_, setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral hf
+    hFi.locallyIntegrableOn (k := k) ?_⟩
   · -- The boundary values.
     have hend := intervalIntegral_solDeriv hx hlam ha hlama (integrableOn_fluxData hx hf hFi) g₀ g₁
     rw [W1p.intervalTraceL_apply, hwu, hu, hu]

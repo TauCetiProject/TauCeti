@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -41,7 +43,7 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
   `a u' + F = k - ∫_{x₀}^t f`, and its converse
-  `TauCeti.PDE.forall_setIntegral_eq_of_ae_add_eq_sub_intervalIntegral`.
+  `TauCeti.PDE.setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral`.
 * `TauCeti.PDE.abs_add_setIntegral_inv_mul_div_le`: for `λ ≤ a ≤ M`, the bound for the constant
   `k = (δ + ∫ a⁻¹ G) / ∫ a⁻¹` of a first integral, independent of `a` beyond `λ` and `M`.
 * `TauCeti.PDE.ae_abs_gradient_le_of_forall_integral_eq`: the explicit pointwise bound for `u'`.
@@ -119,11 +121,11 @@ theorem exists_ae_mul_gradient_add_eq_sub_intervalIntegral
   rw [ht, Pi.neg_def, intervalIntegral.integral_neg, sub_eq_add_neg]
 
 /-- **The weak equation from a first integral.** Conversely to
-`exists_ae_mul_gradient_add_eq_sub_intervalIntegral`, let `f` and `F` be integrable on `(x₀, x₁)`,
-and let the flux `q + F` be almost everywhere equal to `k - ∫_{x₀}^t f` there for a constant `k`.
-Then `-q' = f + F'` in the sense of distributions on `(x₀, x₁)`. -/
-theorem forall_setIntegral_eq_of_ae_add_eq_sub_intervalIntegral (hf : IntegrableOn f (Ioo x₀ x₁))
-    (hF : IntegrableOn F (Ioo x₀ x₁)) {q : ℝ → ℝ} {k : ℝ}
+`exists_ae_mul_gradient_add_eq_sub_intervalIntegral`, let `f` be integrable and `F` locally
+integrable on `(x₀, x₁)`, and let the flux `q + F` be almost everywhere equal to `k - ∫_{x₀}^t f`
+there for a constant `k`. Then `-q' = f + F'` in the sense of distributions on `(x₀, x₁)`. -/
+theorem setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : LocallyIntegrableOn F (Ioo x₀ x₁)) {q : ℝ → ℝ} {k : ℝ}
     (hq : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁), q t + F t = k - ∫ s in x₀..t, f s)
     (φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ)) :
     ∫ t in Ioo x₀ x₁, q t * deriv φ t =
@@ -144,7 +146,7 @@ theorem forall_setIntegral_eq_of_ae_add_eq_sub_intervalIntegral (hf : Integrable
   have h1 := integrable_lineDeriv_smul_of_locallyIntegrableOn
     (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩) (μ := volume) hw.locallyIntegrableOn φ 1
   have h2 := integrable_lineDeriv_smul_of_locallyIntegrableOn
-    (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩) (μ := volume) hF.locallyIntegrableOn φ 1
+    (Ω := ⟨Ioo x₀ x₁, isOpen_Ioo⟩) (μ := volume) hF φ 1
   simp only [lineDeriv_one, smul_eq_mul] at h1 h2
   have hcongr : (fun t => q t * deriv φ t) =ᵐ[volume.restrict (Ioo x₀ x₁)]
       fun t => (k - ∫ s in x₀..t, f s) * deriv φ t - F t * deriv φ t := by
@@ -166,7 +168,8 @@ theorem abs_add_setIntegral_inv_mul_div_le (hx : x₀ < x₁) {lam M : ℝ} (hla
     |(δ + ∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t) / ∫ t in Ioo x₀ x₁, (a t)⁻¹| ≤
       M / (x₁ - x₀) * (|δ| + lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t|) := by
   have hI0 : volume (Ioo x₀ x₁) ≠ 0 := by simp [hx]
-  have hM : 0 < M := hlam.trans_le (le_of_ae_le_and_le hI0 haM)
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 hI0
+  have hM : 0 < M := hlam.trans_le (le_of_eventually_le_and_le haM)
   have hD0 := setIntegral_inv_pos hI0 measure_Ioo_lt_top.ne hlam ha (haM.mono fun _ ht => ht.1)
   have hD := div_le_setIntegral_inv measure_Ioo_lt_top.ne hlam ha haM
   rw [Real.volume_real_Ioo_of_le hx.le] at hD
@@ -174,7 +177,7 @@ theorem abs_add_setIntegral_inv_mul_div_le (hx : x₀ < x₁) {lam M : ℝ} (hla
   have hN : |∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t| ≤ lam⁻¹ * ∫ t in Ioo x₀ x₁, |G t| := by
     rw [← Real.norm_eq_abs, ← integral_const_mul]
     refine norm_integral_le_of_norm_le (hG.abs.const_mul _) ?_
-    filter_upwards [ae_norm_inv_le_inv hlam (haM.mono fun _ ht => ht.1)] with t ht
+    filter_upwards [(haM.mono fun _ ht => ht.1).norm_inv_le_inv hlam] with t ht
     rw [norm_mul, Real.norm_eq_abs (G t)]
     exact mul_le_mul_of_nonneg_right ht (abs_nonneg _)
   rw [abs_div, abs_of_pos hD0, div_le_iff₀ hD0]
@@ -193,7 +196,7 @@ private theorem mul_setIntegral_inv_eq (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 
     k * ∫ t in Ioo x₀ x₁, (a t)⁻¹ = (W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1 +
       ∫ t in Ioo x₀ x₁, (a t)⁻¹ * (Φ t + F t) := by
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
-  have hinv := ae_norm_inv_le_inv hlam hlama
+  have hinv := hlama.norm_inv_le_inv hlam
   have hgrad : ∀ᵐ t ∂volume.restrict (Ioo x₀ x₁),
       W1p.gradient u t = k * (a t)⁻¹ - (a t)⁻¹ * (Φ t + F t) := by
     filter_upwards [hk, hlama] with t ht hat
@@ -222,7 +225,8 @@ private theorem abs_le_of_ae_mul_gradient_add_eq (hx : x₀ < x₁) {lam M : ℝ
       ((x₁ - x₀) * N + ∫ t in Ioo x₀ x₁, |F t|) / lam) := by
   have : IsFiniteMeasure (volume.restrict (Ioo x₀ x₁)) := Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   have hI0 : volume (Ioo x₀ x₁) ≠ 0 := by simp [hx]
-  have hM : 0 < M := hlam.trans_le (le_of_ae_le_and_le hI0 haM)
+  have : (ae (volume.restrict (Ioo x₀ x₁))).NeBot := ae_restrict_neBot.2 hI0
+  have hM : 0 < M := hlam.trans_le (le_of_eventually_le_and_le haM)
   have hkA := mul_setIntegral_inv_eq hx hlam ha (haM.mono fun _ ht => ht.1) hF hΦi hk
   rw [← eq_div_iff (setIntegral_inv_pos hI0 measure_Ioo_lt_top.ne hlam ha
     (haM.mono fun _ ht => ht.1)).ne'] at hkA
