@@ -45,13 +45,15 @@ both its tempered distribution and this `Lᵖ` data.
 ## Main declarations
 
 * `TemperedDistribution.MemBesov φ s p q u`: the unbundled predicate `u ∈ B^s_{p,q}`, and its
-  characterisation `TemperedDistribution.memBesov_iff` by `Lᵖ` blocks with weighted `ℓ^q` norms.
+  characterisation `TemperedDistribution.memBesov_iff` by `Lᵖ` blocks with weighted `ℓ^q` norms;
+  `TemperedDistribution.memBesov_iff_memℓp` is the same test for blocks already known to be `Lᵖ`
+  functions.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
-  `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
-  (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
+  `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
+  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
   distribution by any `ℓ^q` majorant of its weighted block norms.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
@@ -211,6 +213,19 @@ theorem memBesov_iff {u : 𝓢'(E, F)} :
       -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
       rw [hf j]
       exact Lp.toTemperedDistribution_smul _ (f j)
+
+/-- If the Littlewood–Paley blocks `Δⱼ u` are the `Lᵖ` functions `fⱼ`, then `u ∈ B^s_{p,q}` exactly
+when the sequence `2^{js} ‖fⱼ‖_p` lies in `ℓ^q`. -/
+theorem memBesov_iff_memℓp {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Measure E)}
+    (hf : ∀ j, littlewoodPaleyBlock F φ j u = f j) :
+    u.MemBesov φ s p q ↔ Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖f j‖) q := by
+  refine ⟨fun hu ↦ ?_, fun h ↦ memBesov_iff.2 ⟨f, hf, h⟩⟩
+  obtain ⟨g, hg, hmem⟩ := memBesov_iff.1 hu
+  -- An `Lᵖ` function is determined by its tempered distribution, so `g = f`.
+  have hgf : g = f := funext fun j ↦
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg, hf]
+  rwa [hgf] at hmem
 
 theorem MemBesov.zero : (0 : 𝓢'(E, F)).MemBesov φ s p q :=
   ⟨0, fun j ↦ by simp⟩
@@ -539,6 +554,18 @@ theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
   rw [← norm_weightedBlocks,
     lp.norm_eq_tsum_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- For `q < ∞` the `q`-th power of the Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q`. -/
+theorem hasSum_norm (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal) (‖u‖ ^ q.toReal) := by
+  have h := lp.hasSum_norm (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)
+    u.weightedBlocks
+  simpa only [norm_weightedBlocks_apply, norm_weightedBlocks] using h
+
+/-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
+theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ 2) (‖u‖ ^ 2) := by
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using hasSum_norm (by simp) u
 
 /-- For `q = ∞` the Besov norm is `supⱼ 2^{js} ‖Δⱼ u‖_p`. -/
 theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
