@@ -219,23 +219,20 @@ variable (F φ s p q) in
 norm at most `1`. -/
 def heatSemigroup (t : ℝ≥0) : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q :=
   LinearMap.mkContinuous
-    { toFun u := (exists_toDistr_eq_heatSemigroup_and_norm_le_self t u).choose
-      map_add' u v := ext <| by
-        have h (w : BesovSpace F φ s p q) :=
-          (exists_toDistr_eq_heatSemigroup_and_norm_le_self t w).choose_spec.1
-        exact (h (u + v)).trans (by simp only [h, toDistr_add, map_add])
-      map_smul' c u := ext <| by
-        have h (w : BesovSpace F φ s p q) :=
-          (exists_toDistr_eq_heatSemigroup_and_norm_le_self t w).choose_spec.1
-        exact (h (c • u)).trans (by simp only [h, toDistr_smul, map_smul, RingHom.id_apply]) }
-    1 fun u ↦ ((exists_toDistr_eq_heatSemigroup_and_norm_le_self t u).choose_spec.2).trans_eq
-      (one_mul _).symm
+    { toFun u := (u.memBesov_toDistr.heatSemigroup t).toBesovSpace
+      map_add' _ _ := ext (by simp)
+      map_smul' _ _ := ext (by simp) }
+    1 fun u ↦ by
+      obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_heatSemigroup_and_norm_le_self t u
+      rw [one_mul]
+      convert hvn using 2
+      exact ext (by simp [hv])
 
 @[simp]
 theorem toDistr_heatSemigroup (t : ℝ≥0) (u : BesovSpace F φ s p q) :
     (heatSemigroup F φ s p q t u).toDistr =
-      TemperedDistribution.heatSemigroup E F t u.toDistr :=
-  (exists_toDistr_eq_heatSemigroup_and_norm_le_self t u).choose_spec.1
+      TemperedDistribution.heatSemigroup E F t u.toDistr := by
+  simp [heatSemigroup]
 
 /-- The blocks of the heat flow of `u` are the heat flows of the blocks of `u`. -/
 theorem coe_block_heatSemigroup (t : ℝ≥0) (u : BesovSpace F φ s p q) (j : ℕ) :
@@ -246,7 +243,8 @@ theorem coe_block_heatSemigroup (t : ℝ≥0) (u : BesovSpace F φ s p q) (j : �
 /-- The heat semigroup is a contraction of `B^s_{p,q}`. -/
 theorem norm_heatSemigroup_le (t : ℝ≥0) (u : BesovSpace F φ s p q) :
     ‖heatSemigroup F φ s p q t u‖ ≤ ‖u‖ :=
-  (exists_toDistr_eq_heatSemigroup_and_norm_le_self t u).choose_spec.2
+  ((heatSemigroup F φ s p q t).le_of_opNorm_le
+    (LinearMap.mkContinuous_norm_le _ zero_le_one _) u).trans_eq (one_mul _)
 
 variable (F φ s p q) in
 /-- At time `0` the heat semigroup on `B^s_{p,q}` is the identity. -/
