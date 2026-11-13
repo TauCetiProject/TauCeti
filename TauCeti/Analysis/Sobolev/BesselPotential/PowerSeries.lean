@@ -81,7 +81,7 @@ theorem exists_hasSum_mul_pow {s : ℝ} (hs : finrank ℝ E < 2 * s) :
     have := (finrank ℝ E).cast_nonneg (α := ℝ)
     linarith
   obtain ⟨C₁, hC₁, hpow⟩ := exists_norm_toBesselPotentialSpace_pow_le (E := E) hs
-  obtain ⟨C₂, hC₂, hsup⟩ :=
+  obtain ⟨C₂, _, hsup⟩ :=
     exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace (E := E) (F := ℂ) hs
   refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {u} hu {a} ha ↦ ?_⟩
   set C := max C₁ C₂
