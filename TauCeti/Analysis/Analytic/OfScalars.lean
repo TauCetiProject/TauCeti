@@ -17,10 +17,12 @@ algebra need not be commutative: variables retain their original order inside ev
 block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
-zero they recover the coefficients. It also computes the scalar series of `z ↦ f (z ^ m)` on a
-ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`. Over a densely
-normed field, a scalar series whose sum has no zero in a disk about the origin converges on that
-disk, because the sum is `0` wherever the series diverges.
+zero they recover the coefficients. Termwise differentiation of a scalar series represents the
+derivative on the same ball, and gives the Euler operator `y * f' y` as `∑ n * c n * y ^ n`. It
+also computes the scalar series of `z ↦ f (z ^ m)` on a ball of radius at most `1` from that of
+`f`, in any normed algebra with `‖1‖ = 1`. Over a densely normed field, a scalar series whose sum
+has no zero in a disk about the origin converges on that disk, because the sum is `0` wherever the
+series diverges.
 
 In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
@@ -137,6 +139,41 @@ theorem iteratedDeriv_ofScalarsSum_zero {𝕜 : Type*} [NontriviallyNormedField 
   · rcases hk.lt_or_gt with hk | hk
     · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hk]
     · simp [zero_pow (Nat.sub_ne_zero_of_lt hk)]
+
+/-- **Termwise differentiation of a scalar power series.** If `f` is the sum of the scalar power
+series `∑ c n * z ^ n` on the ball of radius `r` about `0`, then `deriv f` is the sum on the same
+ball of the termwise differentiated series `∑ (n + 1) * c (n + 1) * z ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) :
+    HasFPowerSeriesOnBall (deriv f) (ofScalars 𝕂 fun n ↦ (n + 1) * c (n + 1)) 0 r := by
+  have h := (ContinuousLinearMap.apply 𝕂 𝕂 (1 : 𝕂)).comp_hasFPowerSeriesOnBall hf.fderiv
+  convert h using 1
+  · ext x
+    exact fderiv_apply_one_eq_deriv.symm
+  · -- both series are scalar, so it suffices to compare their coefficients
+    ext n : 1
+    ext
+    rw [apply_eq_prod_smul_coeff, coeff_ofScalars, apply_eq_prod_smul_coeff]
+    congr 1
+    have h1 := derivSeries_coeff_one (ofScalars 𝕂 c) n
+    rw [coeff_ofScalars, nsmul_eq_mul, Nat.cast_succ] at h1
+    rw [← h1, coeff, coeff, ContinuousLinearMap.compFormalMultilinearSeries_apply,
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+      ContinuousLinearMap.apply_apply]
+
+/-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
+`∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y * f' y = ∑ n * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ n * c n * y ^ n) (y * deriv f y) := by
+  have h := (hf.deriv_ofScalars.hasSum (mem_eball_zero_iff.mpr hy)).mul_left y
+  rw [zero_add] at h
+  -- the term of index `0` vanishes, and the remaining terms are those of `h` shifted by one
+  refine (hasSum_nat_add_iff' 1).mp ?_
+  simpa [ofScalars_apply_eq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
 
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
