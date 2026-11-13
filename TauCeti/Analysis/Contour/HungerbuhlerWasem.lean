@@ -163,7 +163,7 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions
-    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU
+    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU
     (fun s => PolarPartDecomposition.ofMeromorphic_order s)
     (fun s hs ↦ (Finset.mem_filter.mp hs).2) hγ_imm hclosed (fun h ↦ hγa (hsub h)) hγU
     (hA.mono hsub) hB
@@ -171,7 +171,7 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
       ∑ s ∈ S, windingNumber γ a b s * residue f s :=
     Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
-    (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
+    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
     hnull, zero_add, hsum] at h
 
 /-- **Half-residue: the winding-`½` on-cycle case of HW Thm 3.3** — the `S = {s}`
