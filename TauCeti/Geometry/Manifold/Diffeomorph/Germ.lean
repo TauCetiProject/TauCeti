@@ -209,8 +209,8 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
     · rw [(hu0 x hx).fderiv_eq]
       simp
   have hlip : LipschitzWith 2⁻¹ u :=
-    lipschitzWith_of_nnnorm_fderiv_le (hucd.differentiable hn') fun x ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv, NNReal.coe_ofNat]
+    lipschitzWith_of_nnNorm_fderiv_le (hucd.differentiable hn') fun x ↦ by
+      rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv, NNReal.coe_ofNat]
       exact hud x
   obtain ⟨φ, hφ⟩ := hucd.exists_diffeomorph_apply_eq_add_of_lipschitzWith (by exact_mod_cast hn)
     hlip (by norm_num)

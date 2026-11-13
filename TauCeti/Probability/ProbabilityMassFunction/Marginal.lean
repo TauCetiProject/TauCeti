@@ -22,7 +22,8 @@ product of two PMF measures.
   and column sums.
 * `PMF.map_fst_eq_iff`, `PMF.map_snd_eq_iff`: characterizations of prescribed marginals by those
   sums.
-* `PMF.real_prod_toMeasure_singleton`: the real singleton mass under a product of PMF measures.
+* `PMF.real_prod_toMeasure_singleton`: the real mass of a singleton with measurable factors under a
+  product of PMF measures.
 -/
 
 public section
@@ -38,16 +39,15 @@ namespace PMF
 
 variable {ι : Type u} {κ : Type v} (π : PMF (ι × κ))
 
-/-- The real mass of a singleton under the product of two PMF measures is the product of their
-point masses. -/
+/-- The real mass of a singleton `{(i, j)}` under the product of two PMF measures is the product
+of the point masses at `i` and `j`, provided `{i}` and `{j}` are measurable. -/
 @[simp]
-theorem real_prod_toMeasure_singleton [MeasurableSpace ι] [MeasurableSingletonClass ι]
-    [MeasurableSpace κ] [MeasurableSingletonClass κ]
-    (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) :
+theorem real_prod_toMeasure_singleton [MeasurableSpace ι] [MeasurableSpace κ]
+    (μ : PMF ι) (ν : PMF κ) (i : ι) (j : κ) (hi : MeasurableSet ({i} : Set ι))
+    (hj : MeasurableSet ({j} : Set κ)) :
     (μ.toMeasure.prod ν.toMeasure).real {(i, j)} = (μ i).toReal * (ν j).toReal := by
   rw [← Set.singleton_prod_singleton, measureReal_prod_prod, Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _), Measure.real,
-    PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton _)]
+    PMF.toMeasure_apply_singleton _ _ hi, Measure.real, PMF.toMeasure_apply_singleton _ _ hj]
 
 /-- The first marginal of a product PMF is obtained by summing each row of its matrix of point
 masses. -/
