@@ -91,15 +91,17 @@ theorem restriction_f_extendXIso_inv (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p)
         ((deRhamComplexXIso I k).inv α)) =
       ((deRhamComplex I W).extendXIso ComplexShape.embeddingUpNat hk).inv
         ((deRhamComplexXIso I k).inv
-          (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)) :=
-  deRhamComplex.extendMap_map_f_extendXEquiv_symm _ _ p k hk α
+          (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)) := by
+  rw [← deRhamComplex.extendXEquiv_symm_apply, ← deRhamComplex.extendXEquiv_symm_apply]
+  exact deRhamComplex.extendMap_map_f_extendXEquiv_symm _ _ p k hk α
 
 private lemma restriction_f_extendXEquiv_symm (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p)
     (α : SmoothForm I M ℝ k) :
     (restriction I W).f p ((deRhamComplex.extendXEquiv I M p k hk).symm α) =
       (deRhamComplex.extendXEquiv I W p k hk).symm
-        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α) :=
-  restriction_f_extendXIso_inv W p k hk α
+        (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α) := by
+  rw [deRhamComplex.extendXEquiv_symm_apply, deRhamComplex.extendXEquiv_symm_apply]
+  exact restriction_f_extendXIso_inv W p k hk α
 
 /-- The coordinates of the relative de Rham complex in degree `p = k + 1`: a pair of a
 `(k + 1)`-form on `M` and a `k`-form on `W`. The second coordinate is the negative of the second
@@ -182,7 +184,7 @@ theorem fst_f_XEquiv_symm (p : ℤ) (k : ℕ) (hk : ((k + 1 : ℕ) : ℤ) = p)
     (mappingCocone.fst (restriction I W)).f p ((XEquiv W p k hk).symm (α, β)) =
       ((deRhamComplex I M).extendXIso ComplexShape.embeddingUpNat hk).inv
         ((deRhamComplexXIso I (k + 1)).inv α) := by
-  rw [XEquiv_symm_eq]
+  rw [XEquiv_symm_eq, ← deRhamComplex.extendXEquiv_symm_apply]
   exact (congrArg Prod.fst (mappingCocone.relativeCoordinates_apply _ _ _ _ _)).symm.trans
     (congrArg Prod.fst (LinearEquiv.apply_symm_apply _ _))
 
@@ -193,8 +195,9 @@ theorem fst_f_XEquivZero_symm (α : SmoothForm I M ℝ 0) :
       ((deRhamComplex I M).extendXIso ComplexShape.embeddingUpNat rfl).inv
         ((deRhamComplexXIso I 0).inv α) := by
   rw [XEquivZero_symm_eq]
-  exact (congrArg Prod.fst (mappingCocone.relativeCoordinates_apply _ _ _ _ _)).symm.trans
-    (congrArg Prod.fst (LinearEquiv.apply_symm_apply _ _))
+  exact ((congrArg Prod.fst (mappingCocone.relativeCoordinates_apply _ _ _ _ _)).symm.trans
+    (congrArg Prod.fst (LinearEquiv.apply_symm_apply _ _))).trans
+    (deRhamComplex.extendXEquiv_symm_apply I M 0 0 rfl α)
 
 /-! ### Relative cocycles and coboundaries -/
 

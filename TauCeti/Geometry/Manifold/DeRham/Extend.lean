@@ -39,7 +39,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- The degree-`p` object of the extended de Rham complex is the space of smooth `k`-forms when
 `p = k`. -/
-@[expose] def extendXEquiv (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) :
+def extendXEquiv (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) :
     ((deRhamComplex I M).extend ComplexShape.embeddingUpNat).X p ≃ₗ[ℝ] SmoothForm I M ℝ k :=
   ((deRhamComplex I M).extendXIso ComplexShape.embeddingUpNat hk ≪≫
     deRhamComplexXIso I k).toLinearEquiv
@@ -49,7 +49,7 @@ theorem extendXEquiv_symm_apply (p : ℤ) (k : ℕ) (hk : (k : ℤ) = p) (α : S
     (extendXEquiv I M p k hk).symm α =
       ((deRhamComplex I M).extendXIso ComplexShape.embeddingUpNat hk).inv
         ((deRhamComplexXIso I k).inv α) :=
-  rfl
+  (rfl)
 
 /-- The extended de Rham complex vanishes in negative degrees. -/
 theorem subsingleton_extend_X {p : ℤ} (hp : p < 0) :
