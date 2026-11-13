@@ -9,7 +9,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.NeTwo
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Odd.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Endpoint
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Image
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.Twisted
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.UnitsPlusMinus
 
