@@ -26,9 +26,11 @@ same way, and the form it produces is alternating because a repeated argument we
 Both assignments are injective, and the universal property of each square makes them surjective
 onto the symmetric, respectively alternating, forms.  The assignments carry invariant functionals
 to invariant forms, and every invariant symmetric, respectively alternating, form arises this way.
-So whenever `|G|` is invertible the two `finrank` equalities
+So over a field in which `|G|` is invertible the two `finrank` equalities
 `dim {invariant symmetric forms} = dim (Sym²V)ᴳ` and
-`dim {invariant alternating forms} = dim (Λ²V)ᴳ` hold. For a finite-dimensional representation
+`dim {invariant alternating forms} = dim (Λ²V)ᴳ` hold; when the invariant spaces are
+infinite-dimensional both sides are `0`, by the convention that `finrank` of an infinite-dimensional
+space is `0`. For a finite-dimensional representation
 over a field in which `|G|` is invertible,
 `TauCeti.Representation.frobeniusSchurIndicator_eq_sub_finrank_invariantForms` gives the signed
 count of invariant forms:
@@ -94,8 +96,9 @@ alternating forms lift to functionals via
 `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`. The injectivity lemmas
 `TauCeti.BilinForm.ofSymmetricSquareDual_injective` and
 `TauCeti.BilinForm.ofExteriorSquareDual_injective` then give `G`-invariance of those functionals.
-These identifications hold over any commutative ring, with no finiteness assumption, and the two
-dimension counts follow whenever `|G|` is invertible.
+These identifications hold over any commutative ring, with no finiteness assumption.  The two
+dimension counts need `k` to be a field in which `|G|` is invertible; they equate `finrank`s, so on
+an infinite-dimensional invariant space both sides are `0` by convention.
 
 What connects the submodule of invariant forms to the character machinery is
 `TauCeti.Representation.invariantFormsEquivIntertwiningMapDual`: an equivalence with a space of
@@ -250,7 +253,8 @@ theorem finrank_invariantForms_cast (ρ : Representation k G V) :
     finrank_invariants_tprod_self_cast]
 
 omit [FiniteDimensional k V] [Finite G] in
-/-- **The invariant symmetric forms are as many as the invariants of the symmetric square.** -/
+/-- **The invariant symmetric forms have the dimension of the invariants of the symmetric
+square.**  When those spaces are infinite-dimensional both `finrank`s are `0`, by convention. -/
 theorem finrank_symmetricInvariantForms (ρ : Representation k G V) :
     finrank k (symmetricInvariantForms ρ) = finrank k (ρ.symmetricPower 2).invariants := by
   rw [← map_ofSymmetricSquareDual_eq_symmetricInvariantForms ρ,
@@ -259,7 +263,8 @@ theorem finrank_symmetricInvariantForms (ρ : Representation k G V) :
       ((ρ.symmetricPower 2).dual).invariants).finrank_eq, finrank_invariants_dual]
 
 omit [FiniteDimensional k V] [Finite G] in
-/-- **The invariant alternating forms are as many as the invariants of the exterior square.** -/
+/-- **The invariant alternating forms have the dimension of the invariants of the exterior
+square.**  When those spaces are infinite-dimensional both `finrank`s are `0`, by convention. -/
 theorem finrank_alternatingInvariantForms (ρ : Representation k G V) :
     finrank k (alternatingInvariantForms ρ) = finrank k (ρ.exteriorPower 2).invariants := by
   rw [← map_ofExteriorSquareDual_eq_alternatingInvariantForms ρ,
@@ -310,7 +315,10 @@ variable [Field k] [CharZero k] [IsAlgClosed k] [Group G] [Fintype G] [AddCommGr
 
 omit [CharZero k] [IsAlgClosed k] [ρ.IsIrreducible] in
 /-- **The complex case.** A representation with no nonzero invariant form has Frobenius-Schur
-indicator `0` over any field, with no restriction on its characteristic or the dimension. -/
+indicator `0`.  For a finite-dimensional representation over a field in which `|G|` is invertible
+this is the count `ν₂(ρ) = 0 - 0`; when `(|G| : k) = 0` or `V` is infinite-dimensional,
+`frobeniusSchurIndicator ρ` vanishes by the junk-value conventions `0⁻¹ = 0` and
+`LinearMap.trace = 0`. -/
 theorem frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot (h : invariantForms ρ = ⊥) :
     frobeniusSchurIndicator ρ = 0 := by
   by_cases hcard : (Nat.card G : k) = 0
