@@ -112,6 +112,12 @@ noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :
 theorem pointMapHom_apply (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMapHom P = f.pointMap P :=
   (rfl)
 
+/-- The identity morphism induces the identity point homomorphism. -/
+@[simp]
+theorem id_pointMapHom : (id W₁).pointMapHom = AddMonoidHom.id W₁.Point := by
+  ext P
+  exact id_pointMap P
+
 /-- Composition of morphisms induces composition of point homomorphisms. -/
 @[simp]
 theorem comp_pointMapHom [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) :

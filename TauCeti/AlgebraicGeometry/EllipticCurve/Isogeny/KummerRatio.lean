@@ -42,13 +42,17 @@ theorem kummerRatio_def [d : DecidableEq F] (φ : Isogeny W₁ W₂) :
   cases Subsingleton.elim d (Classical.typeDecidableEq F)
   rfl
 
+/-- The Kummer ratio is positive exactly when the cokernel on rational points is finite. -/
+theorem kummerRatio_pos_iff [DecidableEq F] (φ : Isogeny W₁ W₂) :
+    0 < φ.kummerRatio ↔ (Hom.ofIsogeny φ).pointMapHom.range.FiniteIndex := by
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  rw [kummerRatio_def, div_pos_iff_of_pos_right (Nat.cast_pos.mpr Nat.card_pos),
+    Nat.cast_pos, AddSubgroup.finiteIndex_iff, Nat.pos_iff_ne_zero]
+
 /-- The Kummer ratio is positive when the cokernel on rational points is finite. -/
 theorem kummerRatio_pos [DecidableEq F] (φ : Isogeny W₁ W₂)
     [(Hom.ofIsogeny φ).pointMapHom.range.FiniteIndex] : 0 < φ.kummerRatio := by
-  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
-  rw [kummerRatio_def]
-  exact div_pos (Nat.cast_pos.mpr (Hom.ofIsogeny φ).pointMapHom.range.index_pos)
-    (Nat.cast_pos.mpr Nat.card_pos)
+  exact (kummerRatio_pos_iff φ).mpr inferInstance
 
 /-- Kummer ratios multiply under composition, even when the point images have infinite index. -/
 @[simp]
@@ -66,12 +70,8 @@ theorem kummerRatio_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
 theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
     (Isogeny.id W).kummerRatio = 1 := by
   classical
-  have h : (Hom.ofIsogeny (Isogeny.id W)).pointMapHom = AddMonoidHom.id W.Point := by
-    ext P
-    simpa only [Hom.pointMapHom_apply, ← Hom.id_def, AddMonoidHom.id_apply] using
-      Hom.id_pointMap P
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
-  simp [kummerRatio_def, h, hrange]
+  simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
 
 end TauCeti.Isogeny

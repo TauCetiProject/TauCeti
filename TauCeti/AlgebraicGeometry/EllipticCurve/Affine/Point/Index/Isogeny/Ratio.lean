@@ -60,15 +60,15 @@ theorem finiteKummerRatio_def (φ : Isogeny W₁.toAffine W₂.toAffine)
     (v : HeightOneSpectrum R) [Algebra K (v.adicCompletion K)]
     [IsScalarTower R K (v.adicCompletion K)] :
     φ.finiteKummerRatio v = (φ.map (algebraMap K (v.adicCompletion K))).kummerRatio := by
-  have h : algebraMap K (v.adicCompletion K) =
-      @algebraMap K (v.adicCompletion K) _ _
-        (HeightOneSpectrum.instAlgebraAdicCompletion R K v) := by
-    apply IsFractionRing.ringHom_ext (A := R)
-    intro x
-    rw [← IsScalarTower.algebraMap_apply R K (v.adicCompletion K)]
-    rfl
-  rw [h]
-  rfl
+  unfold finiteKummerRatio
+  apply congrArg (fun σ : K →+* v.adicCompletion K => (φ.map σ).kummerRatio)
+  apply IsFractionRing.ringHom_ext (A := R)
+  intro x
+  trans algebraMap R (v.adicCompletion K) x
+  -- Infer the canonical completion algebra from the goal before synthesizing its tower.
+  · refine (@IsScalarTower.algebraMap_apply R K (v.adicCompletion K) _ _ _ _ ?_ _ ?_ x).symm
+    infer_instance
+  · exact IsScalarTower.algebraMap_apply R K (v.adicCompletion K) x
 
 /-- Each finite local factor is positive when the residue field is finite and the degree
 is nonzero in the base domain. -/
@@ -139,6 +139,17 @@ section Rational
 
 variable {W₁ W₂ W₃ : WeierstrassCurve ℚ} [W₁.IsElliptic] [W₂.IsElliptic] [W₃.IsElliptic]
 
+/-- Finite local Kummer ratios over `ℚ` are positive at every finite prime. -/
+theorem finiteKummerRatio_pos_rat (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (v : HeightOneSpectrum ℤ) : 0 < φ.finiteKummerRatio v := by
+  have : Finite (ℤ ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  exact φ.finiteKummerRatio_pos v (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
+
+/-- Only finitely many finite primes have nontrivial local Kummer factor over `ℚ`. -/
+theorem hasFiniteMulSupport_finiteKummerRatio_rat (φ : Isogeny W₁.toAffine W₂.toAffine) :
+    (φ.finiteKummerRatio (R := ℤ)).HasFiniteMulSupport :=
+  φ.hasFiniteMulSupport_finiteKummerRatio (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
+
 /-- The real local Kummer ratio. -/
 def realKummerRatio (φ : Isogeny W₁.toAffine W₂.toAffine) : ℚ :=
   (φ.map (algebraMap ℚ ℝ)).kummerRatio
@@ -193,11 +204,8 @@ theorem kummerRatioProduct_pos (φ : Isogeny W₁.toAffine W₂.toAffine) :
   classical
   rw [kummerRatioProduct_def]
   refine mul_pos φ.realKummerRatio_pos ?_
-  rw [finprod_eq_prod _ (φ.hasFiniteMulSupport_finiteKummerRatio (R := ℤ)
-    (Nat.cast_ne_zero.mpr φ.degree_pos.ne'))]
-  exact Finset.prod_pos fun v _ => by
-    have : Finite (ℤ ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-    exact φ.finiteKummerRatio_pos v (Nat.cast_ne_zero.mpr φ.degree_pos.ne')
+  rw [finprod_eq_prod _ φ.hasFiniteMulSupport_finiteKummerRatio_rat]
+  exact Finset.prod_pos fun v _ => φ.finiteKummerRatio_pos_rat v
 
 /-- The product of local Kummer ratios is multiplicative under composition. -/
 @[simp]
@@ -206,9 +214,8 @@ theorem kummerRatioProduct_comp (ψ : Isogeny W₂.toAffine W₃.toAffine)
     (ψ.comp φ).kummerRatioProduct = ψ.kummerRatioProduct * φ.kummerRatioProduct := by
   classical
   simp only [kummerRatioProduct_def, realKummerRatio_comp, finiteKummerRatio_comp]
-  rw [finprod_mul_distrib
-    (ψ.hasFiniteMulSupport_finiteKummerRatio (R := ℤ) (Nat.cast_ne_zero.mpr ψ.degree_pos.ne'))
-    (φ.hasFiniteMulSupport_finiteKummerRatio (R := ℤ) (Nat.cast_ne_zero.mpr φ.degree_pos.ne'))]
+  rw [finprod_mul_distrib ψ.hasFiniteMulSupport_finiteKummerRatio_rat
+    φ.hasFiniteMulSupport_finiteKummerRatio_rat]
   ring
 
 /-- The identity isogeny has product of local Kummer ratios one. -/
