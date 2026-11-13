@@ -451,47 +451,6 @@ theorem exists_singularCohomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpe
   · rw [← thomPairOverToBiprod_snd, ConcreteCategory.comp_apply, hι]
     simp [z, ← ConcreteCategory.comp_apply]
 
-/-- **Morphisms out of the homology over `U ∪ V` are determined over `U` and over `V`** when
-`Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`): the Mayer–Vietoris sequence of the Thom
-pairs over the open sets `U` and `V` is then onto `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V})`. -/
-theorem singularHomology_thomPairOver_union_hom_ext (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
-    (hUV : ∀ m, m + 1 = n → IsZero ((thomPairOver F E (U ∩ V)).singularHomology R m)) {T : C}
-    {g g' : (thomPairOver F E (U ∪ V)).singularHomology R n ⟶ T}
-    (hgU : TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n ≫ g =
-      TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n ≫ g')
-    (hgV : TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n ≫ g =
-      TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n ≫ g') :
-    g = g' := by
-  obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
-  let hCA : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U := inter_subset_left
-  let hDB : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V := inter_subset_left
-  -- The second map of the Mayer–Vietoris sequence is onto in degree `n`.
-  have : Epi (TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E))
-      hCA hDB n) := by
-    cases n with
-    | zero => exact TopCat.epi_pairMayerVietorisFromBiprod_zero R hCA hDB hA hB hC hD
-    | succ m =>
-      refine (TopCat.pairMayerVietoris_exact₃ R hCA hDB hA hB hC hD (m + 1) m).epi_f
-        (IsZero.eq_of_tgt ?_ _ _)
-      exact (hUV m rfl).of_iso
-        (asIso (TopPair.singularHomologyMap (thomPairOverInterIso F E U V).inv R m))
-  -- Its two components are the restrictions from `U` and from `V`.
-  have hl : biprod.inl ≫ TopCat.pairMayerVietorisFromBiprod R hCA hDB n ≫
-      TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n =
-        TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n := by
-    rw [TopCat.inl_pairMayerVietorisFromBiprod_assoc, ← TopPair.singularHomologyMap_comp,
-      ofInclusionMap_comp_thomPairOverUnionIso_hom_left]
-  have hr : biprod.inr ≫ TopCat.pairMayerVietorisFromBiprod R hCA hDB n ≫
-      TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n =
-        TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n := by
-    rw [TopCat.inr_pairMayerVietorisFromBiprod_assoc, ← TopPair.singularHomologyMap_comp,
-      ofInclusionMap_comp_thomPairOverUnionIso_hom_right]
-  rw [← cancel_epi (TopCat.pairMayerVietorisFromBiprod R hCA hDB n ≫
-    TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n)]
-  refine biprod.hom_ext' _ _ ?_ ?_
-  · simpa only [Category.assoc, reassoc_of% hl] using hgU
-  · simpa only [Category.assoc, reassoc_of% hr] using hgV
-
 end Gluing
 
 section HomologyGluing
@@ -588,6 +547,25 @@ theorem epi_singularHomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpen V) 
       (IsZero.eq_of_tgt ?_ _ _)
     exact (hUV m rfl).of_iso
       (asIso (TopPair.singularHomologyMap (thomPairOverInterIso F E U V).inv R m))
+
+variable {R} in
+/-- **Morphisms out of the homology over `U ∪ V` are determined over `U` and over `V`** when
+`Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`): the Mayer–Vietoris sequence of the Thom
+pairs over the open sets `U` and `V` is then onto `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V})`. -/
+theorem singularHomology_thomPairOver_union_hom_ext (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+    (hUV : ∀ m, m + 1 = n → IsZero ((thomPairOver F E (U ∩ V)).singularHomology R m)) {T : C}
+    {g g' : (thomPairOver F E (U ∪ V)).singularHomology R n ⟶ T}
+    (hgU : TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n ≫ g =
+      TopPair.singularHomologyMap (thomPairOverMap F E subset_union_left) R n ≫ g')
+    (hgV : TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n ≫ g =
+      TopPair.singularHomologyMap (thomPairOverMap F E subset_union_right) R n ≫ g') :
+    g = g' := by
+  have := epi_singularHomology_thomPairOver_union R hU hV hUV
+  refine (cancel_epi (biprod.desc
+    (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+    (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R
+      n))).1 (biprod.hom_ext' _ _ ?_ ?_) <;>
+    simpa only [biprod.inl_desc_assoc, biprod.inr_desc_assoc]
 
 end HomologyGluing
 
