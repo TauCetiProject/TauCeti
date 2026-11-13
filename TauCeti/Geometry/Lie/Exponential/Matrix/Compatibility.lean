@@ -25,11 +25,6 @@ series, but consumers using another scoped matrix norm must transport across the
 * `lieExp_generalLinearGroup_diagonal`: the abstract exponential of a diagonal matrix is diagonal.
 * `lieExp_generalLinearGroup_transpose`: the abstract exponential commutes with transpose.
 * `lieExp_generalLinearGroup_units_conj`: the abstract exponential respects conjugation by a unit.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The matrix and circle shadows".
 -/
 
 public section
