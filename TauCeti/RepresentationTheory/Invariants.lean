@@ -105,7 +105,7 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   invariant.
 * `Representation.finrank_invariants_tprod_of_comp`: invariant dimensions of tensor products may
   be compared along a surjective homomorphism of groups.
-* `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
+* `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
@@ -491,7 +491,7 @@ variable {k G : Type*} [CommRing k] [Group G]
 /-- **Invariants preserve surjections onto projective representations.** If `f : A ⟶ B` is
 surjective and the `k[G]`-module underlying `B` is projective, then every invariant of `B` lifts
 to an invariant of `A`. -/
-theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
+theorem invariantsFunctor_map_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
     (hf : Function.Surjective f.hom) [Module.Projective k[G] B.ρ.asModule] :
     Function.Surjective ((invariantsFunctor k G).map f).hom := by
   have : Projective B := by
@@ -632,7 +632,7 @@ theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (h
       have : Module.Projective k[G] Y.ρ.asModule :=
         Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule
       exact (ModuleCat.epi_iff_surjective _).2
-        (Rep.invariantsFunctor_map_surjective_of_surjective_of_projective f
+        (Rep.invariantsFunctor_map_surjective_of_projective f
           ((Rep.epi_iff_surjective f).1 hf))⟩
   have : (Rep.invariantsFunctor k G).PreservesHomology :=
     Functor.preservesHomology_of_preservesEpis_and_kernels _
