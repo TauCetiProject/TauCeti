@@ -258,34 +258,60 @@ theorem mem_incidentEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
   classical
   simp [incidentEdges]
 
+/-- Restricting an ambient vertex finset to actual vertices removes vertex subtypes from
+internal-edge membership. Vertices outside `V(G)` do not contribute. -/
+@[simp high]
+theorem mem_internalEdges_subtype [DecidablePred (· ∈ V(G))]
+    {S : Finset α} {e : G.edgeSet} :
+    e ∈ G.internalEdges (S.subtype (· ∈ V(G))) ↔
+      ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.1 x y := by
+  simp only [mem_internalEdges, Finset.mem_subtype]
+  constructor
+  · rintro ⟨x, hx, y, hy, hxy⟩
+    exact ⟨x, hx, y, hy, hxy⟩
+  · rintro ⟨x, hx, y, hy, hxy⟩
+    exact ⟨⟨x, hxy.left_mem⟩, hx, ⟨y, hxy.right_mem⟩, hy, hxy⟩
+
+/-- Restricting an ambient vertex finset to actual vertices removes vertex subtypes from
+incident-edge membership. Vertices outside `V(G)` do not contribute. -/
+@[simp high]
+theorem mem_incidentEdges_subtype [DecidablePred (· ∈ V(G))]
+    {S : Finset α} {e : G.edgeSet} :
+    e ∈ G.incidentEdges (S.subtype (· ∈ V(G))) ↔ ∃ x ∈ S, G.Inc e.1 x := by
+  simp only [mem_incidentEdges, Finset.mem_subtype]
+  constructor
+  · rintro ⟨x, hx, hex⟩
+    exact ⟨x, hx, hex⟩
+  · rintro ⟨x, hx, hex⟩
+    exact ⟨⟨x, hex.vertex_mem⟩, hx, hex⟩
+
 /-- Mapping internal edges into `β` and restricting `S` to actual vertices via
 `S.subtype (· ∈ V(G))` give a membership criterion without edge or vertex subtypes.
 Vertices of `S` outside `V(G)` do not contribute. -/
-theorem mem_map_internalEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset α) (e : β) :
+@[simp high]
+theorem mem_map_internalEdges_subtype [DecidablePred (· ∈ V(G))] {S : Finset α} {e : β} :
     e ∈ (G.internalEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e x y := by
-  simp only [Finset.mem_map, mem_internalEdges, Finset.mem_subtype,
-    Function.Embedding.subtype_apply]
+  simp only [Finset.mem_map, mem_internalEdges_subtype, Function.Embedding.subtype_apply]
   constructor
   · rintro ⟨⟨e, _⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
     exact ⟨x, hx, y, hy, hxy⟩
   · rintro ⟨x, hx, y, hy, hxy⟩
-    exact ⟨⟨e, hxy.edge_mem⟩,
-      ⟨⟨x, hxy.left_mem⟩, hx, ⟨y, hxy.right_mem⟩, hy, hxy⟩, rfl⟩
+    exact ⟨⟨e, hxy.edge_mem⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
 
 /-- Mapping incident edges into `β` and restricting `S` to actual vertices via
 `S.subtype (· ∈ V(G))` give a membership criterion without edge or vertex subtypes.
 Vertices of `S` outside `V(G)` do not contribute. -/
-theorem mem_map_incidentEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset α) (e : β) :
+@[simp high]
+theorem mem_map_incidentEdges_subtype [DecidablePred (· ∈ V(G))] {S : Finset α} {e : β} :
     e ∈ (G.incidentEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, G.Inc e x := by
-  simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_subtype,
-    Function.Embedding.subtype_apply]
+  simp only [Finset.mem_map, mem_incidentEdges_subtype, Function.Embedding.subtype_apply]
   constructor
   · rintro ⟨⟨e, _⟩, ⟨x, hx, hex⟩, rfl⟩
     exact ⟨x, hx, hex⟩
   · rintro ⟨x, hx, hex⟩
-    exact ⟨⟨e, hex.edge_mem⟩, ⟨⟨x, hex.vertex_mem⟩, hx, hex⟩, rfl⟩
+    exact ⟨⟨e, hex.edge_mem⟩, ⟨x, hx, hex⟩, rfl⟩
 
 @[simp]
 theorem internalEdges_empty : G.internalEdges ∅ = ∅ := by

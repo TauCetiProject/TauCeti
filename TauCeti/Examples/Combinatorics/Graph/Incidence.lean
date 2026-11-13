@@ -106,7 +106,6 @@ theorem internal_singleton :
     (graph.internalEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
       (Function.Embedding.subtype _) = {2} := by
   ext e
-  rw [Graph.mem_map_internalEdges_subtype]
   simp [graph_isLink]
 
 open Classical in
@@ -115,7 +114,6 @@ theorem incident_singleton :
     (graph.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).map
       (Function.Embedding.subtype _) = {0, 1, 2} := by
   ext e
-  rw [Graph.mem_map_incidentEdges_subtype]
   simp [Graph.Inc, graph_isLink]
   aesop
 
@@ -125,7 +123,6 @@ theorem internal_pair :
     (graph.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(graph)))).map
       (Function.Embedding.subtype _) = {0, 1, 2} := by
   ext e
-  rw [Graph.mem_map_internalEdges_subtype]
   simp [graph_isLink]
   tauto
 
@@ -133,9 +130,7 @@ open Classical in
 /-- An ambient vertex outside the graph cannot contribute an incident edge. -/
 theorem incident_outside :
     graph.incidentEdges (({42} : Finset ℕ).subtype (· ∈ V(graph))) = ∅ := by
-  apply Finset.map_injective (Function.Embedding.subtype _)
   ext e
-  rw [Graph.mem_map_incidentEdges_subtype]
   simp [Graph.Inc, graph_isLink]
 
 end TauCeti.Examples.IncidenceUnion
