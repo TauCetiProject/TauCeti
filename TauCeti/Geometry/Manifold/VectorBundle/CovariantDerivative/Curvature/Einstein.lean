@@ -39,8 +39,10 @@ trace identity `CovariantDerivative.sum_inner_derivCurvatureTensor_eq_derivRicci
 
 ## Main results
 
-* `CovariantDerivative.mfderiv_eq_zero_of_ricciTensor_eq_smul_inner`: if `Ric = a g` near a
-  point `x` and `n ≠ 2`, then `da` vanishes at `x`.
+* `CovariantDerivative.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner`: if `Ric = a g` near a
+  point `x`, then `a` is smooth at `x`, in every dimension.
+* `CovariantDerivative.hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner`: if `Ric = a g` near a
+  point `x` and `n ≠ 2`, then `a` is differentiable at `x` with `da = 0`.
 * `CovariantDerivative.eq_of_ricciTensor_eq_smul_inner`: **Einstein's constancy theorem**; on a
   preconnected manifold of dimension other than two, `Ric = a g` forces `a` to be constant.
 
@@ -68,16 +70,36 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   [ContMDiffCovariantDerivative cov ∞]
 
+/-- **`Ric = a g` forces `a` to be smooth.** If the Ricci tensor is `a g` near `x`, then `a` is
+smooth at `x`, in every dimension: it is the scalar curvature divided by the dimension `n` when
+`n ≠ 0`, and any function on a zero-dimensional, hence discrete, manifold is smooth. -/
+theorem contMDiffAt_of_eventually_ricciTensor_eq_smul_inner {a : M → ℝ} {x : M}
+    (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
+    ContMDiffAt I 𝓘(ℝ) ∞ a x := by
+  by_cases hpos : Module.finrank ℝ E = 0
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hpos
+    have : Subsingleton H := I.injective.subsingleton
+    have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+    exact contMDiff_of_discreteTopology.contMDiffAt
+  have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hpos
+  refine (cov.contMDiff_scalarCurvature.div_const
+    (Module.finrank ℝ E : ℝ)).contMDiffAt.congr_of_eventuallyEq ?_
+  filter_upwards [ha] with y hy
+  rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) hy, eq_div_iff hn]
+  exact mul_comm _ _
+
 /-- For a metric-compatible connection whose Ricci tensor is `a g` near `x`, the covariant
 derivative of the Ricci tensor at `x` is `(∇_X Ric)(B, C) = da(X) ⟪B, C⟫`. -/
 private theorem IsMetricCompatible.covariantDerivative_ricciTensor_eq
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     {a : M → ℝ} {x : M} (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y))
-    (hax : MDifferentiableAt I 𝓘(ℝ) a x) (X : Π y : M, TangentSpace I y)
+    (X : Π y : M, TangentSpace I y)
     {B C : Π y : M, TangentSpace I y} (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) :
     mvfderiv I (fun y ↦ cov.ricciTensor y (B y) (C y)) x (X x) -
         cov.ricciTensor x (cov B x (X x)) (C x) - cov.ricciTensor x (B x) (cov C x (X x)) =
       mvfderiv I a x (X x) * ⟪B x, C x⟫_ℝ := by
+  have hax : MDifferentiableAt I 𝓘(ℝ) a x :=
+    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
   have hfun : (fun y ↦ cov.ricciTensor y (B y) (C y)) =ᶠ[𝓝 x] a * fun y ↦ ⟪B y, C y⟫_ℝ := by
     filter_upwards [ha] with y hy
     simp [hy]
@@ -98,26 +120,25 @@ derivative of the Ricci tensor at `x` is `(∇_v Ric)(u, w) = da(v) ⟪u, w⟫`.
 private theorem IsMetricCompatible.derivRicciTensor_eq_mvfderiv_mul_inner
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     {a : M → ℝ} {x : M} (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y))
-    (hax : MDifferentiableAt I 𝓘(ℝ) a x) (u w v : TangentSpace I x) :
+    (u w v : TangentSpace I x) :
     cov.derivRicciTensor x u w v = mvfderiv I a x v * ⟪u, w⟫_ℝ := by
   obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
   obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
-  have h := hcov.covariantDerivative_ricciTensor_eq ha hax (FiberBundle.extend E v) hB hC
+  have h := hcov.covariantDerivative_ricciTensor_eq ha (FiberBundle.extend E v) hB hC
   rw [FiberBundle.extend_apply_self] at h
   rw [derivRicciTensor_apply cov (hB.mdifferentiableAt (by simp))
     (hC.mdifferentiableAt (by simp)), h]
 
 /-- The twice contracted second Bianchi identity for a metric-compatible torsion-free connection
-with Ricci tensor `Ric = a g` near `x`: in dimension `n`, `(n - 2) da = 0` at `x` when `a` is
-differentiable there. -/
+with Ricci tensor `Ric = a g` near `x`: in dimension `n`, `(n - 2) da = 0` at `x`. -/
 private theorem IsMetricCompatible.finrank_sub_two_mul_mvfderiv_eq_zero
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (ht : cov.torsion = 0) {a : M → ℝ} {x : M}
     (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y))
-    (hax : MDifferentiableAt I 𝓘(ℝ) a x) (v : TangentSpace I x) :
+    (v : TangentSpace I x) :
     ((Module.finrank ℝ E : ℝ) - 2) * mvfderiv I a x v = 0 := by
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have hD := hcov.derivRicciTensor_eq_mvfderiv_mul_inner ha hax
+  have hD := hcov.derivRicciTensor_eq_mvfderiv_mul_inner ha
   have hv : ∑ i, mvfderiv I a x (b i) * ⟪b i, v⟫_ℝ = mvfderiv I a x v := by
     conv_rhs => rw [← b.sum_repr' v]
     simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
@@ -140,22 +161,23 @@ private theorem IsMetricCompatible.finrank_sub_two_mul_mvfderiv_eq_zero
 
 /-- **Einstein's constancy theorem**, local form. Let a metric-compatible torsion-free connection
 have Ricci tensor `Ric = a g` near a point `x`, for a function `a`, in dimension other than two.
-Then `da` vanishes at `x`. -/
-theorem mfderiv_eq_zero_of_ricciTensor_eq_smul_inner
+Then `a` is differentiable at `x` with derivative `0`. -/
+theorem hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (ht : cov.torsion = 0) (hdim : Module.finrank ℝ E ≠ 2) {a : M → ℝ} {x : M}
     (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
-    mfderiv I 𝓘(ℝ) a x = 0 := by
-  by_cases hax : MDifferentiableAt I 𝓘(ℝ) a x
-  swap
-  · exact mfderiv_zero_of_not_mdifferentiableAt hax
+    HasMFDerivAt I 𝓘(ℝ) a x 0 := by
+  have hax : MDifferentiableAt I 𝓘(ℝ) a x :=
+    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner ha).mdifferentiableAt (by simp)
   have h2 : ((Module.finrank ℝ E : ℝ) - 2) ≠ 0 := by
     rw [sub_ne_zero]
     exact_mod_cast hdim
   have hzero (v : TangentSpace I x) : mvfderiv I a x v = 0 :=
-    (mul_eq_zero.1 (hcov.finrank_sub_two_mul_mvfderiv_eq_zero ht ha hax v)).resolve_left h2
-  ext v
-  simpa [mvfderiv] using hzero v
+    (mul_eq_zero.1 (hcov.finrank_sub_two_mul_mvfderiv_eq_zero ht ha v)).resolve_left h2
+  have hd : mfderiv I 𝓘(ℝ) a x = 0 := by
+    ext v
+    simpa [mvfderiv] using hzero v
+  simpa [hd] using hax.hasMFDerivAt
 
 /-- **Einstein's constancy theorem.** Let a metric-compatible torsion-free connection on a
 preconnected manifold, of dimension other than two, have Ricci tensor `Ric = a g` for a function
@@ -165,18 +187,10 @@ theorem eq_of_ricciTensor_eq_smul_inner [PreconnectedSpace M]
     (ht : cov.torsion = 0) (hdim : Module.finrank ℝ E ≠ 2)
     {a : M → ℝ} (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) (x y : M) :
     a x = a y := by
-  -- In dimension zero every function is differentiable; otherwise `a` is the smooth scalar
-  -- curvature divided by the dimension.
-  have had : MDifferentiable I 𝓘(ℝ) a := by
-    nontriviality E
-    have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'
-    have haeq : a = fun y ↦ cov.scalarCurvature y / Module.finrank ℝ E := by
-      funext y
-      rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) (ha y), eq_div_iff hn]
-      exact mul_comm _ _
-    rw [haeq]
-    exact (cov.contMDiff_scalarCurvature.div_const _).mdifferentiable (by simp)
+  have had : MDifferentiable I 𝓘(ℝ) a := fun z ↦
+    (contMDiffAt_of_eventually_ricciTensor_eq_smul_inner (.of_forall ha)).mdifferentiableAt
+      (by simp)
   exact had.apply_eq_of_mfderiv_eq_zero (fun z ↦
-    mfderiv_eq_zero_of_ricciTensor_eq_smul_inner hcov ht hdim (.of_forall ha)) x y
+    (hasMFDerivAt_zero_of_ricciTensor_eq_smul_inner hcov ht hdim (.of_forall ha)).mfderiv) x y
 
 end CovariantDerivative
