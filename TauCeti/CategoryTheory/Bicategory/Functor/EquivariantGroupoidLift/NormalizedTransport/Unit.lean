@@ -285,38 +285,16 @@ original joint pseudofunctor, coherently along both parameter and action arrows.
   naturality_id X := by
     obtain ⟨p, a⟩ := X
     cases a
-    ext x
-    -- The source object is the prescribed fiber through the reconstructed presentation.
-    change fiber actions p at x
-    -- Cat unitors have identity components; display the remaining actual fiber maps.
-    change (L.normalizationJointIso (𝟙 (p, SingleObj.star H))).hom.app x ≫
-        (L.joint.mapId ⟨(p, SingleObj.star H)⟩).hom.toNatTrans.app
-          ((L.fiberEquivalence p).inverse.obj x) =
-      (L.fiberEquivalence p).inverse.map
-        ((L.normalizedTransport.joint.mapId ⟨(p, SingleObj.star H)⟩).hom.toNatTrans.app x) ≫
-          𝟙 _ ≫ 𝟙 _
-    rw [Category.comp_id, Category.comp_id]
+    refine Cat.comp_whiskerLeft_eq_whiskerRight_comp_leftUnitor_hom_comp_rightUnitor_inv
+      _ _ _ (fun (x : fiber actions p) ↦ ?_)
     erw [NormalizedTransport.joint_mapId_hom_app]
     have h := L.normalizationJointIso_id p x
-    rw [L.joint_mapId_hom_app]
+    erw [L.joint_mapId_hom_app]
     exact h
   naturality_comp f g := by
-    rename_i X Y Z
-    ext x
-    -- Use the prescribed category for the component argument of the reconstructed source.
-    change fiber actions X.as.1 at x
-    -- Associators of Cat have identity components; all substantive cells are the joint ones.
-    change (L.normalizationJointIso (f ≫ g).as).hom.app x ≫
-        (L.joint.mapComp f g).hom.toNatTrans.app
-          ((L.fiberEquivalence _).inverse.obj x) =
-      (L.fiberEquivalence _).inverse.map
-        ((L.normalizedTransport.joint.mapComp f g).hom.toNatTrans.app x) ≫
-          𝟙 _ ≫ (L.normalizationJointIso g.as).hom.app
-            ((L.normalizedTransport.joint.map f).toFunctor.obj x) ≫
-          𝟙 _ ≫ (L.joint.map g).toFunctor.map
-            ((L.normalizationJointIso f.as).hom.app x) ≫ 𝟙 _
-    rw [Category.id_comp, Category.id_comp]
-    erw [Category.comp_id, NormalizedTransport.joint_mapComp_hom_app]
+    refine Cat.comp_whiskerLeft_eq_whiskerRight_comp_associators
+      _ _ _ _ _ (fun (x : fiber actions _) ↦ ?_)
+    erw [NormalizedTransport.joint_mapComp_hom_app]
     have h := L.normalizationJointIso_comp f.as.1 g.as.1 f.as.2 g.as.2 x
     erw [Pseudofunctor.mapComp'_eq_mapComp] at h
     exact h
@@ -371,17 +349,11 @@ noncomputable def normalizationJointInvFiberIso (p : Γ) :
     (Prod.sectR p (SingleObj H)).toPseudofunctor.whiskerLeft L.normalizationJointInv ≫
         L.comparison p ≅ L.normalizedTransport.comparison p :=
   Pseudofunctor.StrongTrans.isoMk
-    (fun _ ↦ Cat.Hom.isoMk (L.fiberEquivalence p).counitIso) (fun f ↦ by
-      ext x
-      -- Both restricted source objects are the prescribed fiber category.
-      change fiber actions p at x
-      -- The outer whiskerings evaluate to the counit and its action image.
-      change (L.fiberEquivalence p).counit.app
-          ((L.normalizedTransport.jointFunctor (𝟙 p ×ₘ f.as)).obj x) ≫
-          ((L.normalizedTransport.comparison p).naturality f).hom.toNatTrans.app x =
-        (((Prod.sectR p (SingleObj H)).toPseudofunctor.whiskerLeft L.normalizationJointInv ≫
-          L.comparison p).naturality f).hom.toNatTrans.app x ≫
-            (act actions p f.as).map ((L.fiberEquivalence p).counit.app x)
+    (fun _ ↦ Cat.Hom.isoMk (L.fiberEquivalence p).counitIso) (fun {a b} f ↦ by
+      obtain ⟨⟨⟩⟩ := a
+      obtain ⟨⟨⟩⟩ := b
+      refine Cat.whiskerLeft_comp_eq_comp_whiskerRight
+        _ _ _ _ (fun (x : fiber actions p) ↦ ?_)
       erw [Pseudofunctor.StrongTrans.comp_naturality_hom_app]
       rw [NormalizedTransport.comparison_naturality_hom_app]
       rw [normalizedTransport_transportId]
