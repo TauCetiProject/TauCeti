@@ -50,9 +50,10 @@ distance less than `r` are joined by short geodesic segments depending smoothly 
 
 These segments are the minimizing ones. The segment from `x` to `y` has length `dist x y`
 (`TauCeti.Manifold.IsNormalDomain.pathELength_riemannianExp_smul_eq_edist_of_mem_ball`), and a
-constant-speed minimizer from `x` to `y` is this segment
-(`TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Uniqueness`). Such smoothly varying
-segments interpolate broken geodesics through finitely many nearby points.
+piecewise `C¹` curve from `x` to `y` of the same length, parametrized proportionally to arc length
+and staying in the normal neighbourhood, is this segment up to an affine change of time
+(`TauCeti.Manifold.IsNormalDomain.eqOn_riemannianExp_smul_of_pathELength_eq_of_piecewise`). Such
+smoothly varying segments interpolate broken geodesics through finitely many nearby points.
 
 ## Main results
 
