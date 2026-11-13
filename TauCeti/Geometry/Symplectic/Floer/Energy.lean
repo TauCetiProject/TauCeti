@@ -309,16 +309,27 @@ theorem hamiltonianOneForm_apply (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ →
       v.1 • ω.hamiltonianVectorField (Ks z) x + v.2 • ω.hamiltonianVectorField (Kt z) x :=
   (rfl)
 
-/-- On an open set of `(ℝ × ℝ) × V`, the Hamiltonian one-form of a jointly `C^(n+1)` perturbation
-is jointly `Cⁿ`. -/
-theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
-    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
-    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
-    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W := by
-  have hX {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ (n + 1) (uncurry K) W) :
-      ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (K p.1) p.2) W :=
-    fun p hp ↦ (ω.contDiffAt_hamiltonianVectorField_uncurry
-      ((hK p hp).contDiffAt (hW.mem_nhds hp))).contDiffWithinAt
+/-- On an open set of `P × ((ℝ × ℝ) × V)`, the Hamiltonian one-form of a family of perturbations
+`K_p`, jointly `C^(n+1)` in the parameter `p`, the domain point and the target point, is jointly
+`Cⁿ`. -/
+theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {Ks Kt : P → ℝ × ℝ → V → ℝ} {W : Set (P × ((ℝ × ℝ) × V))}
+    {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ Ks q.1 q.2.1 q.2.2) W)
+    (hKt : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ Kt q.1 q.2.1 q.2.2) W) :
+    ContDiffOn ℝ n
+      (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianOneForm (Ks q.1) (Kt q.1) q.2.1 q.2.2) W := by
+  have hX {K : P → ℝ × ℝ → V → ℝ}
+      (hK : ContDiffOn ℝ (n + 1) (fun q : P × ((ℝ × ℝ) × V) ↦ K q.1 q.2.1 q.2.2) W) :
+      ContDiffOn ℝ n
+        (fun q : P × ((ℝ × ℝ) × V) ↦ ω.hamiltonianVectorField (K q.1 q.2.1) q.2.2) W := by
+    intro q hq
+    have h := ω.contDiffAt_hamiltonianVectorField_uncurry
+      (K := fun a : P × (ℝ × ℝ) ↦ K a.1 a.2) (p := (q.1, q.2.1)) (x := q.2.2)
+      (((hK q hq).contDiffAt (hW.mem_nhds hq)).comp ((q.1, q.2.1), q.2.2)
+        (contDiffAt_fst.fst.prodMk (contDiffAt_fst.snd.prodMk contDiffAt_snd)))
+    exact (h.comp q ((contDiffAt_fst.prodMk contDiffAt_snd.fst).prodMk contDiffAt_snd.snd)
+      ).contDiffWithinAt
   exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
 
 /-- The perturbed derivative is `du - X_K(u)`. -/
