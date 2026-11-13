@@ -136,6 +136,8 @@ theorem bigCellMul_injective : Function.Injective (D.bigCellMul A) := by
   exact congrArg (fun x => (D.negativeSubgroupMulEquivPoints A x.1, x.2.1,
     D.positiveSubgroupMulEquivPoints A x.2.2)) hcoords
 
+variable {A}
+
 /-- A point is in the big-cell image exactly when it admits three such factors. -/
 theorem mem_range_bigCellMul_iff {g : D.points A} :
     g ∈ Set.range (D.bigCellMul A) ↔
