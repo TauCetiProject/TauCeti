@@ -107,7 +107,7 @@ theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
 
 /-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
 the position and the frequency. -/
-theorem contDiff_differentialSymbol {r : WithTop ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+theorem contDiff_differentialSymbol {r : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
     {b : ι → E → V →L[ℂ] W} (hb : ∀ i ∈ s, ContDiff ℝ r (b i)) :
     ContDiff ℝ r (differentialSymbol s v b) := by
   refine ContDiff.sum fun i hi ↦ ?_
