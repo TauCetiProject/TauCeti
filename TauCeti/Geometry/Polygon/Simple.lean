@@ -32,7 +32,8 @@ the unit circle `Circle`. A framing is not part of this presentation: a framing 
 knot is a chosen push-off, which is separate data on top of the simple polygon, as for
 `TauCeti.SmoothCircleEmbedding`. Nothing here depends on the dimension of the ambient space.
 
-The first simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`. The polygon with
+The basic examples of simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`
+(over `ℝ` they are the smallest nonempty ones, `Polygon.IsSimple.three_le`). The polygon with
 no vertices is vacuously simple and has empty boundary, so the results about the boundary assume
 `NeZero n`.
 
@@ -521,6 +522,7 @@ of vertices. -/
 noncomputable def boundaryParamCircle : AddCircle (n : ℝ) → P :=
   poly.periodic_boundaryParam.lift
 
+/-- The circle parametrization, composed with the quotient map, is the boundary parametrization. -/
 @[simp]
 theorem boundaryParamCircle_coe (t : ℝ) : poly.boundaryParamCircle t = poly.boundaryParam t :=
   poly.periodic_boundaryParam.lift_coe t
@@ -816,6 +818,7 @@ structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrd
     [ZeroLEOneClass R] [AddCommGroup V] [Module R V] [AddTorsor V P] where
   /-- The number of vertices. -/
   numVertices : ℕ
+  /-- A simple polygon has at least one vertex. -/
   [neZero : NeZero numVertices]
   /-- The underlying polygon. -/
   toPolygon : Polygon P numVertices
@@ -837,10 +840,12 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGr
   toPolygon := p.toPolygon.rotate
   isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
 
+/-- Rotating a simple polygon does not change its number of vertices. -/
 @[simp]
 theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
   rfl
 
+/-- The underlying polygon of the rotation is the rotation of the underlying polygon. -/
 @[simp]
 theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
   rfl
@@ -853,12 +858,14 @@ when the result is simple. For `c` a point of edge `i`, this subdivides that edg
   toPolygon := p.toPolygon.insertVertex i c
   isSimple := hq
 
+/-- Inserting a vertex adds one to the number of vertices. -/
 @[simp]
 theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
     (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
   rfl
 
+/-- The underlying polygon after inserting a vertex is the polygon with the vertex inserted. -/
 @[simp]
 theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
@@ -912,11 +919,13 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   toPolygon := t.toPolygon
   isSimple := t.toPolygon_isSimple
 
+/-- The simple polygon of a triangle has three vertices. -/
 @[simp]
 theorem toSimplePolygon_numVertices (t : Affine.Triangle R P) :
     t.toSimplePolygon.numVertices = 3 :=
   rfl
 
+/-- The underlying polygon of the simple polygon of a triangle is its polygon. -/
 @[simp]
 theorem toSimplePolygon_toPolygon (t : Affine.Triangle R P) :
     t.toSimplePolygon.toPolygon = t.toPolygon :=
