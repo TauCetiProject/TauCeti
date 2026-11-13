@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 
@@ -165,7 +166,8 @@ variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 /-- **Composition by stationary elimination.** Near a matched pair of cotangent relations,
 an invertible negative intermediate Hessian of `S(q,a) + T(a,Q)` gives a stationary
 branch `b(q,Q)` and the generating function `R(q,Q) = S(q,b) + T(b,Q)` of their composition.
-For `C^(n+2)` inputs the branch and critical value are `C^(n+1)`, including the smooth case.
+For `C^(n+2)` inputs the branch and critical value are `C^(n+1)` and `C^(n+2)`, respectively,
+including the smooth case.
 The stationary equation characterizes this branch on a joint neighborhood of `((q,Q),a)`.
 
 Only local smoothness is required. In particular, no assertion of a globally defined
@@ -177,7 +179,7 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
     ∃ (b : V × U → W) (R : V × U → ℝ) (D : Set (V × U)),
       IsOpen D ∧ (q, Q) ∈ D ∧ b (q, Q) = a ∧
       (∀ y, R y = S (y.1, b y) + T (b y, y.2)) ∧
-      ContDiffAt ℝ (n + 1) b (q, Q) ∧ ContDiffAt ℝ (n + 1) R (q, Q) ∧
+      ContDiffAt ℝ (n + 1) b (q, Q) ∧ ContDiffAt ℝ (n + 2) R (q, Q) ∧
       (∀ y ∈ D,
         cotangentGeneratingTarget S (y.1, b y) = cotangentGeneratingSource T (b y, y.2) ∧
         cotangentGeneratingSource R y = cotangentGeneratingSource S (y.1, b y) ∧
@@ -216,10 +218,18 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
   let R : V × U → ℝ := fun y ↦ F (y, b y)
   have hFat : ContDiffAt ℝ (n + 2) F ((q, Q), b (q, Q)) := by
     simpa only [hb₀] using hF
-  have hR : ContDiffAt ℝ (n + 1) R (q, Q) := by
-    simpa only [R, Function.comp_def, id_eq] using
-      (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
-        (contDiffAt_id.prodMk hb)
+  -- The branch is stationary, so the critical value gains one order over the chain rule.
+  have hcrit : ∀ᶠ y in 𝓝 (q, Q), fderiv ℝ (fun z ↦ F (y, z)) (b y) = 0 := by
+    have hto : Tendsto (fun y ↦ (y, b y)) (𝓝 (q, Q)) (𝓝 ((q, Q), a)) := by
+      simpa only [hb₀, id_eq] using (continuousAt_id.prodMk hb.continuousAt).tendsto
+    filter_upwards [hto.eventually (hunique.and (hF₂.eventually_differentiableAt (by norm_num)))]
+      with y hy
+    rw [fderiv_slice_right hy.2]
+    ext z
+    have hzy := congrArg (fun p : StrongDual ℝ W ↦ p z) (hy.1.2 rfl)
+    simpa only [G, cotangentGeneratingTarget_snd_apply, _root_.zero_apply,
+      ContinuousLinearMap.comp_apply, inr_apply, neg_eq_zero] using hzy
+  have hR : ContDiffAt ℝ (n + 2) R (q, Q) := hFat.comp_graph_of_fderiv_right_eq_zero hb hcrit
   have hg₁ : ContinuousAt (fun x : (V × U) × W ↦ (x.1.1, x.2)) ((q, Q), a) := by fun_prop
   have hg₂ : ContinuousAt (fun x : (V × U) × W ↦ (x.2, x.1.2)) ((q, Q), a) := by fun_prop
   have hs := (hg₁.eventually (hS₂.eventually_differentiableAt (by norm_num))).and

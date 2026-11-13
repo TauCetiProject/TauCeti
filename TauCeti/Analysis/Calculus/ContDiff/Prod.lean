@@ -22,7 +22,9 @@ along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and
 of the derivative of a `C¹` map is continuous along a continuous graph
 (`ContDiffAt.continuousAt_fderiv_comp_inr`).
 The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
-whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
+whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`). If `f` is `C^(n+2)` and a `C^(n+1)` graph
+`ψ` is critical for `f` in the second variable, the critical value `q ↦ f (q, ψ q)` is
+`C^(n+2)` (`ContDiffAt.comp_graph_of_fderiv_right_eq_zero`).
 
 If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
 its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
@@ -90,6 +92,42 @@ theorem fderiv_snd_apply {n m : WithTop ℕ∞} {f : P × E → X} {r : P × E}
     (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : E) :
     ContDiffAt 𝕜 m (fun r : P × E ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
   (hf.fderiv_slice hmn).clm_apply contDiffAt_const
+
+/-- **Envelope regularity.** If `f` is `C^(n+2)` at `(p, ψ p)`, `ψ` is `C^(n+1)` at `p`, and
+the derivative of `f` in its second variable vanishes along the graph of `ψ` near `p`, then the
+critical value `q ↦ f (q, ψ q)` is `C^(n+2)` at `p`, one order more than the chain rule gives:
+its derivative is the first-variable derivative of `f` along the graph, which is `C^(n+1)`. -/
+theorem comp_graph_of_fderiv_right_eq_zero {n : WithTop ℕ∞} {f : P × E → X} {ψ : P → E}
+    (hf : ContDiffAt 𝕜 (n + 2) f (p, ψ p)) (hψ : ContDiffAt 𝕜 (n + 1) ψ p)
+    (hcrit : ∀ᶠ q in nhds p, fderiv 𝕜 (fun y ↦ f (q, y)) (ψ q) = 0) :
+    ContDiffAt 𝕜 (n + 2) (fun q ↦ f (q, ψ q)) p := by
+  have hgraph : ContDiffAt 𝕜 (n + 1) (fun q ↦ (q, ψ q)) p := contDiffAt_id.prodMk hψ
+  induction n using WithTop.recTopCoe with
+  | top => exact hf.comp p hgraph
+  | coe n =>
+    induction n using ENat.recTopCoe with
+    | top => exact hf.comp p hgraph
+    | coe n =>
+      have h₂ : ((n : ℕ∞) : WithTop ℕ∞) + 2 = ((n + 1 : ℕ) : WithTop ℕ∞) + 1 := by norm_cast
+      rw [h₂] at hf ⊢
+      let d : P → P →L[𝕜] X := fun q ↦
+        fderiv 𝕜 f (q, ψ q) ∘L ContinuousLinearMap.inl 𝕜 P E
+      have hd : ContDiffAt 𝕜 ((n + 1 : ℕ)) d p :=
+        ((hf.fderiv_right (m := (n + 1 : ℕ)) le_rfl).comp p hgraph).clm_comp contDiffAt_const
+      -- Along the graph the vertical derivative vanishes, leaving the horizontal derivative `d`.
+      have hhas : ∀ᶠ q in nhds p, HasFDerivAt (fun q ↦ f (q, ψ q)) (d q) q := by
+        have hf₁ : ContDiffAt 𝕜 1 f (p, ψ p) := hf.of_le le_add_self
+        have hψ₁ : ContDiffAt 𝕜 1 ψ p := hψ.of_le (by simp)
+        filter_upwards [hcrit, hgraph.continuousAt.eventually (hf₁.eventually (by simp)),
+          hψ₁.eventually (by simp)] with q hq hfq hψq
+        have hfq' := hfq.differentiableAt one_ne_zero
+        have hψq' := hψq.differentiableAt one_ne_zero
+        have hcomp : DifferentiableAt 𝕜 (fun q ↦ f (q, ψ q)) q :=
+          hfq'.comp q (differentiableAt_id.prodMk hψq')
+        convert hcomp.hasFDerivAt using 1
+        rw [hfq'.hasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hψq' hq,
+          TauCeti.fderiv_slice_left hfq']
+      exact contDiffAt_succ_iff_hasFDerivAt.2 ⟨d, Filter.eventually_iff_exists_mem.1 hhas, hd⟩
 
 /-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `φ` is `Cⁿ` at `a`:
 restrict to the slice `y = b` and subtract the constant `ψ b`. -/
