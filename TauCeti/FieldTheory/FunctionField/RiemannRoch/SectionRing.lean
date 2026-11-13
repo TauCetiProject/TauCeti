@@ -26,8 +26,8 @@ as `Proj`. If a section ring is finitely generated, then sufficiently divisible 
 are generated in degree one over their degree-zero part `L(0)`, which is `k` exactly when `k` is
 the exact constant field: for some `e > 0`, and every positive multiple `e'` of `e`,
 `L(m e' D) = L(e' D) ^ m` for `m > 0`. This file also computes the rings of the standard affine
-charts `D₊(f Xⁿ)` of `Proj` of the section ring, and which of these charts cover it. If `f Xⁿ` is
-homogeneous of degree `n`
+charts `D₊(f Xⁿ)`, `n > 0`, of `Proj` of the section ring, and which of these charts cover it. If
+`f Xⁿ` is homogeneous of degree `n`
 with `f ∈ L(nD)` nonzero, the degree-zero fractions `g Xⁿʳ / (f Xⁿ)ʳ`, with `g ∈ L(nrD)`, are
 the functions `g / fʳ`, and these are exactly the functions regular at every place `P` at which
 `f` attains the bound `ord_P f ≥ -n D(P)` defining `L(nD)`, that is, every place outside the
@@ -418,8 +418,10 @@ private theorem awayLift_injective : Function.Injective (awayLift hf hf0) := by
 `exp (n D(P))`, that is, `ord_P f = -n D(P)`; the fraction corresponds to `g / fʳ`
 (`TauCeti.Divisor.sectionRingAwayEquiv_mk`).
 
-Geometrically, the standard open `D₊(f Xⁿ)` of `Proj` of the section ring is the spectrum of the
-ring of functions regular outside the support of `div f + nD`. -/
+Geometrically, for `n > 0`, the standard open `D₊(f Xⁿ)` of `Proj` of the section ring is the
+spectrum of the ring of functions regular outside the support of `div f + nD`, by this isomorphism
+and `AlgebraicGeometry.Proj.basicOpenIsoSpec`. For `n = 0` the isomorphism still holds, but the
+geometric statement can fail: `D₊(1)` is all of `Proj`. -/
 noncomputable def sectionRingAwayEquiv :
     Away (sectionRingGrade D) f ≃ₐ[k]
       holomorphyRing {P : Place k F | P.valuation ((f : F[X]).coeff n) =
