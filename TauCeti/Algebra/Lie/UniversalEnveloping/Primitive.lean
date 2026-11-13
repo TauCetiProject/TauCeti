@@ -30,7 +30,7 @@ and is available in `TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra`.
 Formal dependencies: `SymmetricAlgebra.isPrimitiveElem_iff_mem_range_ι` and
 `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrizationCoalgEquiv`.
 
-* F. Petracci, *Universal representations of Lie algebras by coderivations*
+* E. Petracci, *Universal representations of Lie algebras by coderivations*
   (arXiv:math/0303020), §8, for the symmetrization coalgebra equivalence.
 -/
 
@@ -119,15 +119,16 @@ theorem ι_primitiveEquiv_symm (p : Coalgebra.skewPrimitive R (1 : U) 1) :
 theorem primitiveEquiv_symm_ι' (x : L) :
     (primitiveEquiv R L).symm
       ⟨_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x),
-        isPrimitiveElem_ι R L x⟩ = x :=
-  primitiveEquiv_symm_ι R L x (isPrimitiveElem_ι R L x)
+        isPrimitiveElem_ι' R L x⟩ = x := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using
+    primitiveEquiv_symm_ι R L x (isPrimitiveElem_ι R L x)
 
 /-- The recovered Lie element maps back to the primitive element, in simplifier normal form. -/
 @[simp]
 theorem ι_primitiveEquiv_symm' (p : Coalgebra.skewPrimitive R (1 : U) 1) :
     _root_.UniversalEnvelopingAlgebra.mkAlgHom R L
-      (TensorAlgebra.ι R ((primitiveEquiv R L).symm p)) = (p : U) :=
-  ι_primitiveEquiv_symm R L p
+      (TensorAlgebra.ι R ((primitiveEquiv R L).symm p)) = (p : U) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using ι_primitiveEquiv_symm R L p
 
 /-- The primitive equivalence sends Lie brackets to commutators. -/
 theorem coe_primitiveEquiv_lie (x y : L) :
