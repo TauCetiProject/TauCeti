@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three
-public import TauCeti.RingTheory.FormalGroup.Height.Field
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
+public import TauCeti.RingTheory.FormalGroup.Height.Ideal
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three
 
 /-!
-# The height-two bound for elliptic families at 2 and 3
+# The height-two bound for elliptic Weierstrass curves at 2 and 3
 
 For an elliptic Weierstrass curve over any commutative ring, the third height ideal
 of its formal group is the unit ideal at the primes 2 and 3. Equivalently, Landweber's
@@ -26,7 +27,7 @@ It does not assert the separate regularity of `p` and `v₁` for an arbitrary fa
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], IV.7 and V.3.
-* P. S. Landweber, *Homological properties of comodules over MU_*(MU) and BP_*(BP)*,
+* P. S. Landweber, *Homological properties of comodules over `MU_*(MU)` and `BP_*(BP)`*,
   Amer. J. Math. 98 (1976), 591–610.
 -/
 
@@ -37,8 +38,8 @@ namespace WeierstrassCurve
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
     {p n : ℕ}
 
-/-- At 2 and 3, every height ideal from `I₃` onward of an elliptic family is the
-unit ideal. The statement holds over arbitrary commutative coefficient rings. -/
+/-- At 2 and 3, every height ideal from `I₃` onward of the formal group of an elliptic
+Weierstrass curve is the unit ideal. This holds over arbitrary commutative coefficient rings. -/
 theorem heightIdeal_formalGroup_eq_top_of_two_or_three (hp : p = 2 ∨ p = 3)
     (hn : 3 ≤ n) : (formalGroup W).heightIdeal p n = ⊤ := by
   have hprime : p.Prime := by rcases hp with rfl | rfl <;> decide
@@ -52,8 +53,9 @@ theorem heightIdeal_formalGroup_eq_top_of_two_or_three (hp : p = 2 ∨ p = 3)
     · exact (W.map f).height_formalGroup_eq_one_or_eq_two_of_char_three
   rcases hheight with h | h <;> rw [h] <;> exact_mod_cast (by omega : _ < n)
 
-/-- At 2 and 3, Landweber's `v₂` of an elliptic family is a unit modulo `(p, v₁)`.
-This is the height-two unit condition, with no regularity assumption on the family. -/
+/-- At 2 and 3, Landweber's `v₂` of the formal group of an elliptic Weierstrass curve is
+a unit modulo `(p, v₁)`. This is the height-two unit condition, with no regularity assumption
+on the coefficient ring. -/
 theorem isUnit_mk_coeff_nsmulSeries_formalGroup_of_two_or_three (hp : p = 2 ∨ p = 3) :
     IsUnit (Ideal.Quotient.mk ((formalGroup W).heightIdeal p 2)
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) := by
