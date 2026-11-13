@@ -427,6 +427,12 @@ theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
     P.integratedFull μ (of α μ f) = P.integratedStarAlgHom μ f :=
   lift_of _ _ f
 
+/-- The vector formula for the extended integrated form on the twisted convolution algebra:
+`(π ⋊ U)(f) ξ = ∫ π(f(s)) U_s ξ dμ(s)`. -/
+theorem integratedFull_of_apply (f : ConvolutionAlgebra α μ) (ξ : H) :
+    P.integratedFull μ (of α μ f) ξ = ∫ s, P.coefficient (f.ofConv s) (P.group s ξ) ∂μ := by
+  rw [integratedFull_of, integratedStarAlgHom_apply, integratedOperator_apply]
+
 @[simp]
 theorem integratedFull_comp_of :
     (P.integratedFull μ).comp (of α μ) = P.integratedStarAlgHom μ :=
