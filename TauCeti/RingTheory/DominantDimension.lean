@@ -85,6 +85,11 @@ dimension*), and the two differ already for `ℤ` (`TauCeti.dominantDimension_in
 noncomputable def dominantDimension (Γ : Type u) [Ring Γ] : ℕ∞ :=
   CategoryTheory.dominantDimension (ModuleCat.of Γ Γ)
 
+/-- The dominant dimension of a ring is that of its left regular module. -/
+theorem dominantDimension_eq_dominantDimension_of (Γ : Type u) [Ring Γ] :
+    dominantDimension Γ = CategoryTheory.dominantDimension (ModuleCat.of Γ Γ) :=
+  (rfl)
+
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/
 theorem dominantDimension_eq_top_of_injective (Γ : Type u) [Ring Γ] [Module.Injective Γ Γ] :
