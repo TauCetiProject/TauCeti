@@ -103,18 +103,6 @@ theorem MemWkpLoc.comp_chart_transition [Fact (1 ≤ p)] (hp' : p ≠ ⊤)
     rw [hA.fderiv]
     exact A.toLinearEquiv.isUnit_det'.ne_zero) hmaps
 
-/-- The chain rule `MemWkpLoc.contDiffOn_comp_succ` for `2 < p < ∞`, an order `k ≥ 1` and an open
-set `W`, in the form taken by the chart gluing proofs of
-`TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas`. -/
-private theorem MemWkpLoc.contDiffOn_comp_of_two_lt (hp : 2 < p) (hp' : p ≠ ⊤) (hk : 1 ≤ k)
-    {v : ℂ → F} {g : F → F'} {W : Set ℂ} {O : Set F} (hW : IsOpen W) (hv : MemWkpLoc p W k v)
-    (hvc : ContinuousOn v W) (hO : IsOpen O) (hg : ContDiffOn ℝ k g O) (hmaps : MapsTo v W O) :
-    MemWkpLoc p W k (g ∘ v) := by
-  lift p to ℝ≥0 using hp'
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  exact MemWkpLoc.contDiffOn_comp_succ (Ω := ⟨W, hW⟩) (u := v) (g := g) (by exact_mod_cast hp) hv
-    hvc hO (by exact_mod_cast hg) hmaps
-
 /-! ### Chart independence -/
 
 section ChartIndependence
@@ -138,7 +126,7 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas_of_two_lt (hp : 2 < p) (hp' : 
     (fun _ _ _ hφ hφ' _ _ _ hU hW hg hWs hmaps ↦
       hg.comp_chart_transition hp' hφ hφ' hU hW hWs hmaps)
     (fun hk _ _ _ _ hW hv hvc hO hg hmaps ↦
-      hv.contDiffOn_comp_of_two_lt hp hp' hk hW hvc hO hg hmaps)
+      hv.contDiffOn_comp_of_one_le hp hp' hk hW hvc hO hg hmaps)
     hs hA hAs hB hBs
 
 /-- **Chart independence on the whole surface at every order.** For `2 < p < ∞` and every order
@@ -221,7 +209,7 @@ theorem MemWkpLocMapOn.contMDiffOn_comp_of_two_lt {n : ℕ∞ω} {f : M → N} {
     MemWkpLocMapOn I' p k (f ∘ u) s :=
   hu.contMDiffOn_comp_of_planar
     (fun hk _ _ _ _ hW hv hvc hO hg hmaps ↦
-      hv.contDiffOn_comp_of_two_lt hp hp' hk hW hvc hO hg hmaps)
+      hv.contDiffOn_comp_of_one_le hp hp' hk hW hvc hO hg hmaps)
     hf hkn hs ht hst
 
 /-- **Composition with `C^ℓ` maps at every order.** Let `2 < p < ∞`. If `u` is a local Sobolev map
