@@ -5,904 +5,752 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.FoldPotential
+public import TauCeti.Analysis.Calculus.Morse.GradientFlow
+public import TauCeti.Analysis.Calculus.Morse.OneDimensional
 public import TauCeti.Analysis.Calculus.Morse.Prod
-public import TauCeti.Analysis.Calculus.Morse.SplitModel
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.Analysis.SpecialFunctions.Artanh
+public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
-# The multi-dimensional Cerf birth-death (`A₂`) normal form
+# The birth–death model of a one-parameter family of functions
 
-Let `Eₛ` and `Eᵤ` be real inner product spaces. Coupling the one-dimensional cubic fold potential
-`TauCeti.foldPotential` with the transverse split quadratic model `TauCeti.splitQuadratic` via
-`TauCeti.separatedSum` produces the multi-dimensional Cerf birth-death normal form
+In a generic one-parameter family of functions `f_t`, the critical points are nondegenerate except
+at isolated parameters, where a single critical point is degenerate in the mildest possible way: its
+Hessian has a one-dimensional kernel, the third derivative along the kernel is nonzero, and the
+critical point moves with nonzero speed in the parameter. Cerf's normal form says that near such a
+point, after a change of coordinates, the family is
 
-`F_μ(x, zₛ, zᵤ) = x³ / 3 + μ x + (‖zₛ‖² - ‖zᵤ‖²) / 2` (`TauCeti.birthDeathPotential`)
+`x₁³ / 3 - s x₁ - x₂² / 2 - ⋯ - x_i² / 2 + x_{i+1}² / 2 + ⋯`,
 
-on `WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))`. Under the transverse rescaling `(x, z) ↦ (x, √2 • z)`
-(`TauCeti.birthDeathTransverseRescale`), this potential becomes the unhalved normal form
-`x³ / 3 + μ x + (‖zₛ‖² - ‖zᵤ‖²)` (`TauCeti.birthDeathPotential_birthDeathTransverseRescale`). The
-halved normalization is the canonical one for Riemannian gradient dynamics because the transverse
-Hessian is the exact isometric involution `(wₛ, wᵤ) ↦ (wₛ, -wᵤ)` and the transverse negative
-gradient flow is `t ↦ (e^{-t} zₛ, e^t zᵤ)`.
+with `s = ±(t - t₀)`. As `s` passes through `0`, a pair of nondegenerate critical points of adjacent
+indices is created (*birth*) or annihilated (*death*), and while they exist the two are joined by a
+single negative gradient trajectory. This file computes this local model.
 
-At the birth-death point `(μ, z) = (0, 0)` on a Hilbert space (`[CompleteSpace Eₛ]` and
-`[CompleteSpace Eᵤ]`), `F_μ` satisfies all three coordinate-free `A₂` hypotheses:
+**The cubic.** The potential `x ↦ x³ / 3 - s x` (`TauCeti.birthDeathPotential s`) on the line has
+derivative `x² - s`, second derivative `2 x` and third derivative `2`, and the parameter derivative
+of its derivative is `-1`. Varying `s` across `0` gives the complete critical-point and global
+negative-gradient trajectory trichotomy for `x' = s - x²`:
 
-1. **Corank-one Hessian kernel:** the kernel of `hessianOperator (birthDeathPotential 0) 0` is the
-   one-dimensional line `ℝ ∙ birthDeathKernelVector` spanned by `(1, 0)`
-   (`TauCeti.ker_hessianOperator_birthDeathPotential_zero`,
-   `TauCeti.finrank_ker_hessianOperator_birthDeathPotential_zero`).
-2. **Nonvanishing cubic invariant along the kernel:** the third directional derivative of
-   `birthDeathPotential 0` at `0` along `birthDeathKernelVector` equals `2 ≠ 0`
-   (`TauCeti.iteratedDeriv_three_birthDeathPotential_kernelVector`).
-3. **Parameter transversality along the kernel:** differentiating
-   `ν ↦ fderiv ℝ (birthDeathPotential ν) 0 birthDeathKernelVector` at `ν = 0` yields `1 ≠ 0`
-   (`TauCeti.hasDerivAt_fderiv_birthDeathPotential_kernelVector`).
+* **Before the birth (`s < 0`):** `birthDeathPotential s` has no critical point, and every global
+  negative gradient trajectory diverges to `-∞` at `+∞` and to `+∞` at `-∞`, so no global
+  trajectory converges at either end
+  (`TauCeti.tendsto_atTop_atBot_of_isIntegralCurve_birthDeathPotential_of_neg`,
+  `TauCeti.tendsto_atBot_atTop_of_isIntegralCurve_birthDeathPotential_of_neg`).
+* **At the birth–death instant (`s = 0`):** the origin is the unique critical point and is
+  degenerate (`TauCeti.not_isNondegenerateCriticalPoint_birthDeathPotential_zero`), although the
+  third derivative there and the parameter derivative of the derivative are nonzero, and the
+  constant zero curve is the unique global negative gradient trajectory with finite limits at both
+  ends (`TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`).
+* **After the birth (`s > 0`):** there are two critical points, both nondegenerate: a local maximum
+  at `-√s` of Morse index `1`, and a local minimum at `√s` of Morse index `0`, whose critical values
+  differ by `4 s √s / 3`. Thus `birthDeathPotential s` has nondegenerate critical points on `ℝ` if
+  and only if `s ≠ 0` (`TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`).
 
-Varying `μ` across `0` yields the complete multi-dimensional bifurcation trichotomy:
+For `s > 0`, the open interval `(-√s, √s)` is parametrized by the inverse-hyperbolic time coordinate
+`x ↦ (√s)⁻¹ * artanh (x / √s)` (`TauCeti.birthDeathTimeCoordinate s`), inverse to the connecting
+orbit `t ↦ √s tanh (√s t)` (`TauCeti.birthDeathOrbit s`). Every negative gradient trajectory from
+`-√s` to `√s` stays inside `(-√s, √s)` and is a unique time translate
+`t ↦ birthDeathOrbit s (t + τ)` with `τ = birthDeathTimeCoordinate s (γ 0)`
+(`TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`), while no negative gradient trajectory runs
+from `√s` to `-√s` (`TauCeti.not_isIntegralCurve_birthDeathPotential_sqrt_to_neg_sqrt`).
 
-* **For `μ > 0`**, `F_μ` has no critical points and no global negative-gradient trajectory converges
-  at either `+∞` or `-∞`.
-* **At `μ = 0`**, the origin is the unique critical point (degenerate along
-  `birthDeathKernelVector`), and the constant zero trajectory is the unique global
-  negative-gradient trajectory with finite limits at both ends
-  (`TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`).
-* **For `μ = -a² < 0` (`a > 0`)**, `F_{-a²}` has exactly two critical points, both nondegenerate:
-  `birthDeathUpper a = (-a, 0)` and `birthDeathLower a = (a, 0)`. Thus `F_μ` has nondegenerate
-  critical points on the whole space if and only if `μ ≠ 0`
-  (`TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`).
-
-On any pair of real Hilbert spaces, every global negative-gradient trajectory of `F_{-a²}` (`a > 0`)
-from `birthDeathUpper a` to `birthDeathLower a` has vanishing transverse component and is a unique
-time translate of `birthDeathOrbit a s = (a * tanh (a * s), 0)`
-(`TauCeti.existsUnique_birthDeathOrbit_add_of_isIntegralCurve`), no reverse trajectory exists from
-`birthDeathLower a` to `birthDeathUpper a`
-(`TauCeti.not_isIntegralCurve_birthDeathPotential_lower_to_upper`), and the formal-adjoint
-trajectory operator `-d/ds + Hess F_{-a²}(γ)` is injective on `W^{1,2}`
-(`TauCeti.ker_trajectoryOperator_neg_birthDeathPotential_eq_bot`). When `Eₛ` and `Eᵤ` are finite
-dimensional, `birthDeathUpper a` has Morse index `dim Eᵤ + 1`, `birthDeathLower a` has Morse index
-`dim Eᵤ`, and the linearized trajectory operator `D_γ` is Fredholm of index `1`, surjective, with
-one-dimensional kernel spanned by `γ'`, while the endpoint operators are bijective.
+**The model in higher dimensions.** Adding a function `g` with a nondegenerate critical point `y`
+of Morse index `k` in transverse directions gives the separated sum
+`(x, y) ↦ x³ / 3 - s x + g y`. For `s < 0` no trajectory converges at either end; for `s > 0` the
+points `(-√s, y)` and `(√s, y)` are nondegenerate critical points of Morse indices `k + 1` and `k`,
+every negative gradient trajectory from `(-√s, y)` to `(√s, y)` is a unique time translate
+`t ↦ (√s tanh (√s (t + τ)), y)` (`TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`), and no
+trajectory runs from `(√s, y)` to `(-√s, y)`. The explicit multi-dimensional Cerf normal form
+obtained by taking `g = splitQuadratic` lives in
+`TauCeti.Analysis.Calculus.Morse.BirthDeath.NormalForm`, and the `W^{1,2} → L²` Fredholm regularity
+of the linearized trajectory operators lives in
+`TauCeti.Analysis.Calculus.Morse.BirthDeath.Fredholm`.
 
 ## Main declarations
 
-* `TauCeti.birthDeathPotential`, `TauCeti.birthDeathUpper`, `TauCeti.birthDeathLower`,
-  `TauCeti.birthDeathOrbit`, `TauCeti.birthDeathKernelVector`,
-  `TauCeti.birthDeathTransverseRescale`.
-* `TauCeti.ker_hessianOperator_birthDeathPotential_zero`,
-  `TauCeti.finrank_ker_hessianOperator_birthDeathPotential_zero`,
-  `TauCeti.iteratedDeriv_three_birthDeathPotential_kernelVector`,
-  `TauCeti.hasDerivAt_fderiv_birthDeathPotential_kernelVector`,
-  `TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`.
-* `TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`,
-  `TauCeti.existsUnique_birthDeathOrbit_add_of_isIntegralCurve`,
-  `TauCeti.not_isIntegralCurve_birthDeathPotential_lower_to_upper`,
-  `TauCeti.ker_trajectoryOperator_neg_birthDeathPotential_eq_bot`,
-  `TauCeti.index_trajectoryOperator_birthDeathPotential`,
-  `TauCeti.surjective_trajectoryOperator_birthDeathPotential`,
-  `TauCeti.exists_ker_trajectoryOperator_birthDeathPotential_eq_span`.
+* `TauCeti.birthDeathPotential`: the cubic `x³ / 3 - s x`.
+* `TauCeti.fderiv_birthDeathPotential_eq_zero_iff`,
+  `TauCeti.isNondegenerateCriticalPoint_birthDeathPotential_iff`,
+  `TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`: critical-point and Morse
+  characterization across `s`.
+* `TauCeti.morseIndex_birthDeathPotential_neg_sqrt`, `TauCeti.morseIndex_birthDeathPotential_sqrt`:
+  for `s > 0`, the two critical points have Morse indices `1` and `0`.
+* `TauCeti.eq_of_isIntegralCurve_birthDeathPotential`,
+  `TauCeti.tendsto_atTop_atBot_of_isIntegralCurve_birthDeathPotential_of_neg`,
+  `TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`: global ODE uniqueness and the
+  pre-birth (`s < 0`) and birth–death (`s = 0`) trajectory regimes.
+* `TauCeti.birthDeathOrbit`, `TauCeti.birthDeathTimeCoordinate`,
+  `TauCeti.isIntegralCurve_birthDeathOrbit`: the connecting trajectory `t ↦ √s tanh (√s t)` and its
+  inverse `artanh` time coordinate on `(-√s, √s)`.
+* `TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`,
+  `TauCeti.exists_eq_birthDeathOrbit_comp_add`,
+  `TauCeti.not_isIntegralCurve_birthDeathPotential_sqrt_to_neg_sqrt`: unique time-shift
+  classification of forward connecting orbits and nonexistence of reverse orbits.
+* `TauCeti.morseIndex_separatedSum_birthDeathPotential_neg_sqrt`,
+  `TauCeti.morseIndex_separatedSum_birthDeathPotential_sqrt`,
+  `TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`,
+  `TauCeti.exists_eq_birthDeathOrbit_separatedSum`: the corresponding statements in the model with
+  transverse directions.
 
 ## References
 
 * J. Cerf, *La stratification naturelle des espaces de fonctions différentiables réelles et le
-  théorème de la pseudo-isotopie*, Publ. Math. IHÉS **39** (1970), 5–173.
-* M. Schwarz, *Morse Homology*, Progress in Mathematics **111**, Birkhäuser, 1993, Chapter 2.
+  théorème de la pseudo-isotopie*, Publ. Math. IHÉS 39 (1970), 5–173 (generic one-parameter
+  families and the birth–death normal form).
+* J. Milnor, *Lectures on the h-cobordism theorem*, Princeton University Press, 1965, §5
+  (cancellation of two critical points joined by a single trajectory).
 -/
 
 public section
 
-open Filter InnerProductSpace MeasureTheory Set TopologicalSpace
-open scoped ENNReal Gradient Topology
+open Filter Set
+open scoped Gradient Manifold Topology
 
 namespace TauCeti
 
-private theorem withLp_prod_ext {α β : Type*} {x y : WithLp 2 (α × β)}
-    (h₁ : x.fst = y.fst) (h₂ : x.snd = y.snd) : x = y :=
-  WithLp.ofLp_injective 2 (Prod.ext h₁ h₂)
+variable {s : ℝ}
 
-/-! ### Definitions and coordinate normal forms -/
+/-! ### The potential -/
 
-section BirthDeathDefs
+/-- The **birth–death potential** `x ↦ x³ / 3 - s x`. As the parameter `s` increases through `0`,
+a pair of nondegenerate critical points `±√s` of Morse indices `1` and `0` is born. -/
+noncomputable def birthDeathPotential (s x : ℝ) : ℝ :=
+  x ^ 3 / 3 - s * x
 
-variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [NormedAddCommGroup Eᵤ]
-
-/-- **The multi-dimensional Cerf birth-death (`A₂`) normal form.** On the orthogonal `L²` sum
-`WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))` of the fold line `ℝ` with a stable-unstable transverse model
-`WithLp 2 (Eₛ × Eᵤ)`, `birthDeathPotential μ` is the separated sum
-`foldPotential μ x + splitQuadratic (zₛ, zᵤ) = x³ / 3 + μ x + (‖zₛ‖² - ‖zᵤ‖²) / 2`. -/
-noncomputable def birthDeathPotential (μ : ℝ) :
-    WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) → ℝ :=
-  separatedSum (foldPotential μ) (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
-
-theorem birthDeathPotential_apply (μ : ℝ) (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    birthDeathPotential μ z =
-      foldPotential μ z.fst + (‖z.snd.fst‖ ^ 2 - ‖z.snd.snd‖ ^ 2) / 2 := by
-  rw [birthDeathPotential, separatedSum_apply, splitQuadratic_apply]
+theorem birthDeathPotential_apply (s x : ℝ) :
+    birthDeathPotential s x = x ^ 3 / 3 - s * x := (rfl)
 
 @[simp]
-theorem birthDeathPotential_zero_right (μ : ℝ) :
-    birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ 0 = 0 := by
-  simp [birthDeathPotential]
+theorem birthDeathPotential_zero_right (s : ℝ) : birthDeathPotential s 0 = 0 := by
+  simp [birthDeathPotential_apply]
 
-/-- The upper newborn critical point `(-a, 0)` of `birthDeathPotential (-a²)` (`a > 0`), of Morse
-index `dim Eᵤ + 1` when `Eₛ` and `Eᵤ` are finite dimensional. -/
-noncomputable def birthDeathUpper (a : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
-  WithLp.toLp 2 (-a, 0)
-
-/-- The lower newborn critical point `(a, 0)` of `birthDeathPotential (-a²)` (`a > 0`), of Morse
-index `dim Eᵤ` when `Eₛ` and `Eᵤ` are finite dimensional. -/
-noncomputable def birthDeathLower (a : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
-  WithLp.toLp 2 (a, 0)
-
-@[simp] theorem birthDeathUpper_fst (a : ℝ) :
-    (birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) a).fst = -a := by simp [birthDeathUpper]
-
-@[simp] theorem birthDeathUpper_snd (a : ℝ) :
-    (birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) a).snd = 0 := by simp [birthDeathUpper]
-
-@[simp] theorem birthDeathLower_fst (a : ℝ) :
-    (birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) a).fst = a := by simp [birthDeathLower]
-
-@[simp] theorem birthDeathLower_snd (a : ℝ) :
-    (birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) a).snd = 0 := by simp [birthDeathLower]
-
-theorem birthDeathUpper_ne_birthDeathLower {a : ℝ} (ha : a ≠ 0) :
-    birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) a ≠ birthDeathLower a := by
-  intro h
-  have h1 := congrArg WithLp.fst h
-  simp only [birthDeathUpper_fst, birthDeathLower_fst] at h1
-  exact ha (by linarith)
-
-@[simp]
-theorem birthDeathPotential_upper (a : ℝ) :
-    birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2) (birthDeathUpper a) =
-      2 * a ^ 3 / 3 := by
-  rw [birthDeathPotential_apply]
-  simp [foldPotential_neg_sq_self]
-
-@[simp]
-theorem birthDeathPotential_lower (a : ℝ) :
-    birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2) (birthDeathLower a) =
-      -(2 * a ^ 3 / 3) := by
-  rw [birthDeathPotential_apply]
-  simp [foldPotential_neg_sq_self]
-
-/-- The reference connecting trajectory `s ↦ (a * tanh (a * s), 0)` of
-`birthDeathPotential (-a²)`. -/
-noncomputable def birthDeathOrbit (a s : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
-  WithLp.toLp 2 (foldOrbit a s, 0)
-
-@[simp] theorem birthDeathOrbit_fst (a s : ℝ) :
-    (birthDeathOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) a s).fst = foldOrbit a s := by simp [birthDeathOrbit]
-
-@[simp] theorem birthDeathOrbit_snd (a s : ℝ) :
-    (birthDeathOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) a s).snd = 0 := by simp [birthDeathOrbit]
-
-/-- The unit vector `(1, 0)` spanning the one-dimensional kernel of the Hessian of
-`birthDeathPotential 0` at the origin. -/
-noncomputable def birthDeathKernelVector : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
-  WithLp.toLp 2 (1, 0)
-
-@[simp] theorem birthDeathKernelVector_fst :
-    (birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)).fst = 1 := by simp [birthDeathKernelVector]
-
-@[simp] theorem birthDeathKernelVector_snd :
-    (birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)).snd = 0 := by simp [birthDeathKernelVector]
-
-theorem birthDeathKernelVector_ne_zero :
-    birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ) ≠ 0 := by
-  intro h
-  have h1 := congrArg WithLp.fst h
-  simp at h1
-
-@[simp]
-theorem norm_birthDeathKernelVector :
-    ‖birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)‖ = 1 := by
-  rw [WithLp.prod_norm_eq_of_L2]
-  simp
-
-end BirthDeathDefs
-
-section BirthDeathRescale
-
-variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ]
-  [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
-
-/-- For `a > 0`, `birthDeathOrbit a` tends to `birthDeathUpper a` at `-∞`. -/
-theorem tendsto_birthDeathOrbit_atBot {a : ℝ} (ha : 0 < a) :
-    Tendsto (birthDeathOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) a) atBot (𝓝 (birthDeathUpper a)) := by
-  have h := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ
-    (WithLp 2 (Eₛ × Eᵤ))).symm.continuous.tendsto (-a, 0)
-  exact h.comp ((tendsto_foldOrbit_atBot ha).prodMk_nhds tendsto_const_nhds)
-
-/-- For `a > 0`, `birthDeathOrbit a` tends to `birthDeathLower a` at `+∞`. -/
-theorem tendsto_birthDeathOrbit_atTop {a : ℝ} (ha : 0 < a) :
-    Tendsto (birthDeathOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) a) atTop (𝓝 (birthDeathLower a)) := by
-  have h := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ
-    (WithLp 2 (Eₛ × Eᵤ))).symm.continuous.tendsto (a, 0)
-  exact h.comp ((tendsto_foldOrbit_atTop ha).prodMk_nhds tendsto_const_nhds)
-
-/-- **Equivalence with the unhalved quadratic normal form.** Rescaling the transverse factor by `√2`
-gives a continuous linear equivalence `(x, z) ↦ (x, √2 • z)` pulling `birthDeathPotential μ` back to
-`x³ / 3 + μ x + (‖zₛ‖² - ‖zᵤ‖²)`. -/
-noncomputable def birthDeathTransverseRescale :
-    WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ≃L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
-  ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).trans
-    ((ContinuousLinearEquiv.refl ℝ ℝ).prodCongr
-      (ContinuousLinearEquiv.smulLeft
-        (Units.mk0 (√2 : ℝ) (Real.sqrt_pos.2 two_pos).ne')))).trans
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).symm
-
-@[simp] theorem birthDeathTransverseRescale_fst (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    (birthDeathTransverseRescale z).fst = z.fst := by simp [birthDeathTransverseRescale]
-
-@[simp] theorem birthDeathTransverseRescale_snd (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    (birthDeathTransverseRescale z).snd = (√2 : ℝ) • z.snd := by simp [birthDeathTransverseRescale]
-
-@[simp]
-theorem birthDeathTransverseRescale_symm_fst (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    (birthDeathTransverseRescale.symm z).fst = z.fst := by
-  have h := congrArg WithLp.fst (birthDeathTransverseRescale.apply_symm_apply z)
-  rwa [birthDeathTransverseRescale_fst] at h
-
-@[simp]
-theorem birthDeathTransverseRescale_symm_snd (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    (birthDeathTransverseRescale.symm z).snd = (√2 : ℝ)⁻¹ • z.snd := by
-  have h := congrArg WithLp.snd (birthDeathTransverseRescale.apply_symm_apply z)
-  rw [birthDeathTransverseRescale_snd] at h
-  rw [← h, inv_smul_smul₀ (Real.sqrt_pos.2 two_pos).ne']
-
-/-- Pulling `birthDeathPotential μ` back along `birthDeathTransverseRescale` produces the unhalved
-normal form `x³ / 3 + μ x + (‖zₛ‖² - ‖zᵤ‖²)`. -/
-theorem birthDeathPotential_birthDeathTransverseRescale (μ : ℝ)
-    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    birthDeathPotential μ (birthDeathTransverseRescale z) =
-      z.fst ^ 3 / 3 + μ * z.fst + (‖z.snd.fst‖ ^ 2 - ‖z.snd.snd‖ ^ 2) := by
-  rw [birthDeathPotential_apply, birthDeathTransverseRescale_fst, birthDeathTransverseRescale_snd,
-    foldPotential_apply, WithLp.smul_fst, WithLp.smul_snd, norm_smul, norm_smul,
-    Real.norm_of_nonneg (Real.sqrt_nonneg 2), mul_pow, mul_pow, Real.sq_sqrt zero_le_two]
+/-- The birth–death potential is odd in the spatial variable: `f_s(-x) = -f_s(x)`. -/
+theorem birthDeathPotential_neg (s x : ℝ) :
+    birthDeathPotential s (-x) = -birthDeathPotential s x := by
+  simp only [birthDeathPotential_apply]
   ring
 
-end BirthDeathRescale
+/-- The birth–death potential is a polynomial in the variable, hence smooth. -/
+@[fun_prop]
+theorem contDiff_birthDeathPotential (s : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (birthDeathPotential s) := by
+  unfold birthDeathPotential
+  fun_prop
 
-/-! ### Smoothness and `A₂` invariants on inner product spaces -/
-
-section BirthDeathInnerProduct
-
-variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [InnerProductSpace ℝ Eₛ]
-  [NormedAddCommGroup Eᵤ] [InnerProductSpace ℝ Eᵤ]
-
-/-- `birthDeathPotential` is smooth in `(μ, z)`. -/
+/-- The birth–death potential is jointly smooth in the parameter and the variable: it is a smooth
+one-parameter family of functions. -/
 @[fun_prop]
 theorem contDiff_birthDeathPotential_uncurry {n : WithTop ℕ∞} :
-    ContDiff ℝ n (Function.uncurry (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ))) := by
-  have heq : Function.uncurry (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ)) =
-      fun p : ℝ × WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ↦
-        Function.uncurry foldPotential (p.1, p.2.fst) + splitQuadratic p.2.snd := by
-    funext ⟨μ, z⟩
-    simp [birthDeathPotential]
-  rw [heq]
-  have hfst : ContDiff ℝ n
-      (fun p : ℝ × WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ↦ (p.1, p.2.fst)) :=
-    contDiff_fst.prodMk ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).contDiff.comp contDiff_snd)
-  have hsnd : ContDiff ℝ n
-      (fun p : ℝ × WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ↦ p.2.snd) :=
-    (WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).contDiff.comp contDiff_snd
-  exact (contDiff_foldPotential_uncurry.comp hfst).add (contDiff_splitQuadratic.comp hsnd)
-
-/-- For each parameter `μ`, `birthDeathPotential μ` is smooth. -/
-@[fun_prop]
-theorem contDiff_birthDeathPotential (μ : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ) :=
-  (contDiff_foldPotential μ).separatedSum contDiff_splitQuadratic
+    ContDiff ℝ n fun p : ℝ × ℝ ↦ birthDeathPotential p.1 p.2 := by
+  unfold birthDeathPotential
+  fun_prop
 
 @[fun_prop]
-theorem continuous_birthDeathPotential (μ : ℝ) :
-    Continuous (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ) :=
-  (contDiff_birthDeathPotential (n := 0) μ).continuous
+theorem continuous_birthDeathPotential (s : ℝ) : Continuous (birthDeathPotential s) :=
+  (contDiff_birthDeathPotential (n := 0) s).continuous
+
+/-- The derivative of the birth–death potential is `x² - s`. -/
+theorem hasDerivAt_birthDeathPotential (s x : ℝ) :
+    HasDerivAt (birthDeathPotential s) (x ^ 2 - s) x := by
+  refine (((hasDerivAt_pow 3 x).div_const 3).sub ((hasDerivAt_id' x).const_mul s)).congr_deriv ?_
+  norm_num
 
 @[fun_prop]
-theorem differentiable_birthDeathPotential (μ : ℝ) :
-    Differentiable ℝ (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ) :=
-  (contDiff_birthDeathPotential (n := 1) μ).differentiable one_ne_zero
+theorem differentiable_birthDeathPotential (s : ℝ) : Differentiable ℝ (birthDeathPotential s) :=
+  fun x ↦ (hasDerivAt_birthDeathPotential s x).differentiableAt
 
-/-- The Hessian quadratic form of `birthDeathPotential μ` at `z` is
-`2 z.fst v.fst² + ‖v.snd.fst‖² - ‖v.snd.snd‖²`. -/
-theorem hessianQuadraticForm_birthDeathPotential_apply (μ : ℝ)
-    (z v : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    hessianQuadraticForm (birthDeathPotential μ) z v =
-      2 * z.fst * v.fst ^ 2 + (‖v.snd.fst‖ ^ 2 - ‖v.snd.snd‖ ^ 2) := by
-  rw [birthDeathPotential, hessianQuadraticForm_separatedSum_apply
-      (contDiff_foldPotential μ).contDiffAt contDiff_splitQuadratic.contDiffAt,
-    hessianQuadraticForm_foldPotential_apply, hessianQuadraticForm_splitQuadratic_apply]
-
-/-- Along the line generated by `birthDeathKernelVector`, `birthDeathPotential μ` restricts to
-`foldPotential μ`. -/
 @[simp]
-theorem birthDeathPotential_smul_kernelVector (μ t : ℝ) :
-    birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ (t • birthDeathKernelVector) =
-      foldPotential μ t := by
-  rw [birthDeathPotential_apply, WithLp.smul_fst, WithLp.smul_snd, birthDeathKernelVector_fst,
-    birthDeathKernelVector_snd, smul_eq_mul, mul_one, smul_zero]
+theorem deriv_birthDeathPotential (s : ℝ) :
+    deriv (birthDeathPotential s) = fun x ↦ x ^ 2 - s :=
+  funext fun x ↦ (hasDerivAt_birthDeathPotential s x).deriv
+
+/-- The gradient of the birth–death potential is `x² - s`, so its negative gradient field is
+`s - x²`. -/
+@[simp]
+theorem gradient_birthDeathPotential (s x : ℝ) :
+    ∇ (birthDeathPotential s) x = x ^ 2 - s := by
+  rw [gradient_eq_deriv', deriv_birthDeathPotential]
+
+/-- The second derivative of the birth–death potential is `2 x`. -/
+@[simp]
+theorem iteratedDeriv_two_birthDeathPotential (s x : ℝ) :
+    iteratedDeriv 2 (birthDeathPotential s) x = 2 * x := by
+  rw [iteratedDeriv_succ, iteratedDeriv_one, deriv_birthDeathPotential]
+  refine ((hasDerivAt_pow 2 x).sub_const s).deriv.trans ?_
+  norm_num
+
+/-- The third derivative of the birth–death potential is the constant `2`: along the kernel of the
+Hessian at the degenerate critical point, the potential is a nondegenerate cubic. -/
+@[simp]
+theorem iteratedDeriv_three_birthDeathPotential (s x : ℝ) :
+    iteratedDeriv 3 (birthDeathPotential s) x = 2 := by
+  rw [iteratedDeriv_succ, funext (iteratedDeriv_two_birthDeathPotential s)]
+  exact ((hasDerivAt_id' x).const_mul 2).deriv.trans (mul_one 2)
+
+/-- The parameter derivative of the derivative of the birth–death potential is `-1`: the critical
+points move with nonzero speed in the parameter. -/
+theorem hasDerivAt_deriv_birthDeathPotential_param (s x : ℝ) :
+    HasDerivAt (fun s ↦ deriv (birthDeathPotential s) x) (-1) s := by
+  simpa using (hasDerivAt_id' s).const_sub (x ^ 2)
+
+/-- The Hessian operator of `birthDeathPotential s` at `x` is multiplication by `2 x`. -/
+@[simp]
+theorem hessianOperator_birthDeathPotential (s x : ℝ) :
+    hessianOperator (birthDeathPotential s) x = (2 * x) • ContinuousLinearMap.id ℝ ℝ := by
+  rw [hessianOperator_real, iteratedDeriv_two_birthDeathPotential]
+
+/-- The Hessian quadratic form of `birthDeathPotential s` at `x` sends `v` to `2 x v²`. -/
+theorem hessianQuadraticForm_birthDeathPotential_apply (s x v : ℝ) :
+    hessianQuadraticForm (birthDeathPotential s) x v = 2 * x * v ^ 2 := by
+  rw [hessianQuadraticForm_real_apply, iteratedDeriv_two_birthDeathPotential]
+
+/-! ### Critical points -/
+
+/-- **The critical points of the birth–death potential** are the solutions of `x² = s`. -/
+theorem fderiv_birthDeathPotential_eq_zero_iff {x : ℝ} :
+    fderiv ℝ (birthDeathPotential s) x = 0 ↔ x ^ 2 = s := by
+  rw [← toSpanSingleton_deriv, deriv_birthDeathPotential]
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  simpa [sub_eq_zero] using congrArg (· 1) h
+
+/-- Before the birth, for `s < 0`, the birth–death potential has no critical point. -/
+theorem fderiv_birthDeathPotential_ne_zero (hs : s < 0) (x : ℝ) :
+    fderiv ℝ (birthDeathPotential s) x ≠ 0 := fun h ↦ by
+  have := fderiv_birthDeathPotential_eq_zero_iff.1 h
+  nlinarith [sq_nonneg x]
+
+/-- **Nondegenerate critical points of the birth–death potential.** A point is a nondegenerate
+critical point exactly when it is a nonzero solution of `x² = s`. -/
+theorem isNondegenerateCriticalPoint_birthDeathPotential_iff {x : ℝ} :
+    IsNondegenerateCriticalPoint (birthDeathPotential s) x ↔ x ^ 2 = s ∧ x ≠ 0 := by
+  rw [isNondegenerateCriticalPoint_real_iff (contDiff_birthDeathPotential s).contDiffAt,
+    deriv_birthDeathPotential, iteratedDeriv_two_birthDeathPotential, sub_eq_zero]
   simp
 
-/-- **Cubic `A₂` invariant in arbitrary dimension.** Restricting `birthDeathPotential 0` to the
-Hessian-kernel line `t ↦ t • birthDeathKernelVector` has third derivative `2 ≠ 0` at `t = 0`. -/
-theorem iteratedDeriv_three_birthDeathPotential_kernelVector :
-    iteratedDeriv 3
-      (fun t : ℝ ↦ birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0 (t • birthDeathKernelVector))
-      (0 : ℝ) = 2 := by
-  simp only [birthDeathPotential_smul_kernelVector, iteratedDeriv_three_foldPotential]
+/-- **The birth–death point.** At `s = 0` the origin, the only critical point of the birth–death
+potential (`TauCeti.fderiv_birthDeathPotential_eq_zero_iff`), is degenerate. -/
+theorem not_isNondegenerateCriticalPoint_birthDeathPotential_zero :
+    ¬IsNondegenerateCriticalPoint (birthDeathPotential 0) 0 := by
+  simp [isNondegenerateCriticalPoint_birthDeathPotential_iff]
 
-/-- The directional derivative of `birthDeathPotential μ` at `z` along `birthDeathKernelVector` is
-`z.fst ^ 2 + μ`. -/
-theorem fderiv_birthDeathPotential_kernelVector (μ : ℝ)
-    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    fderiv ℝ (birthDeathPotential μ) z birthDeathKernelVector = z.fst ^ 2 + μ := by
-  have hlin : HasDerivAt (fun t : ℝ ↦ z + t • birthDeathKernelVector) birthDeathKernelVector 0 :=
-    (((hasDerivAt_id' (0 : ℝ)).smul_const birthDeathKernelVector).const_add z).congr_deriv
-      (one_smul _ _)
-  have hf : HasFDerivAt (birthDeathPotential μ) (fderiv ℝ (birthDeathPotential μ) z)
-      (z + (0 : ℝ) • birthDeathKernelVector) := by
-    simpa using (differentiable_birthDeathPotential μ z).hasFDerivAt
-  have hd : HasDerivAt (fun t : ℝ ↦ birthDeathPotential μ (z + t • birthDeathKernelVector))
-      (fderiv ℝ (birthDeathPotential μ) z birthDeathKernelVector) 0 :=
-    hf.comp_hasDerivAt 0 hlin
-  have heq : (fun t : ℝ ↦ birthDeathPotential μ (z + t • birthDeathKernelVector)) =
-      fun t ↦ foldPotential μ (z.fst + t) + splitQuadratic z.snd := by
-    funext t
-    simp [birthDeathPotential, separatedSum_apply]
-  rw [heq] at hd
-  have hd' : HasDerivAt (fun t : ℝ ↦ foldPotential μ (z.fst + t) + splitQuadratic z.snd)
-      (z.fst ^ 2 + μ) 0 :=
-    (((hasDerivAt_foldPotential μ (z.fst + 0)).comp (0 : ℝ)
-      ((hasDerivAt_id' (0 : ℝ)).const_add z.fst)).add_const
-        (splitQuadratic z.snd)).congr_deriv (by ring)
-  exact hd.unique hd'
-
-/-- **Parameter transversality of the `A₂` normal form.** Differentiating the directional
-derivative of `birthDeathPotential ν` at `0` along `birthDeathKernelVector` with respect to `ν` at
-`0` gives `1 ≠ 0`. -/
-theorem hasDerivAt_fderiv_birthDeathPotential_kernelVector (μ : ℝ) :
-    HasDerivAt
-      (fun ν ↦ fderiv ℝ (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) ν) 0 birthDeathKernelVector)
-      1 μ := by
-  have heq : (fun ν ↦
-      fderiv ℝ (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) ν) 0 birthDeathKernelVector) =
-      fun ν ↦ ν := by
-    funext ν
-    simp [fderiv_birthDeathPotential_kernelVector]
-  rw [heq]
-  exact hasDerivAt_id' μ
-
-/-- For `μ > 0`, `birthDeathPotential μ` has no critical points on any inner product space: its
-directional derivative along `birthDeathKernelVector` is at least `μ > 0` everywhere. -/
-theorem fderiv_birthDeathPotential_ne_zero_of_pos {μ : ℝ} (hμ : 0 < μ)
-    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    fderiv ℝ (birthDeathPotential μ) z ≠ 0 := by
-  intro h
-  have hval := congrArg (· birthDeathKernelVector) h
-  rw [fderiv_birthDeathPotential_kernelVector, zero_apply] at hval
-  nlinarith [sq_nonneg z.fst]
-
-/-- At `μ = 0`, no point is a nondegenerate critical point of `birthDeathPotential 0`. -/
-theorem not_isNondegenerateCriticalPoint_birthDeathPotential_zero
-    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ¬ IsNondegenerateCriticalPoint (birthDeathPotential 0) z := by
-  rw [birthDeathPotential, isNondegenerateCriticalPoint_separatedSum_iff]
-  exact fun h ↦ not_isNondegenerateCriticalPoint_foldPotential_zero z.fst h.1
-
-end BirthDeathInnerProduct
-
-/-! ### Gradient, Hessian operator, critical points, and global trajectories on Hilbert spaces -/
-
-section BirthDeathHilbert
-
-variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [InnerProductSpace ℝ Eₛ] [CompleteSpace Eₛ]
-  [NormedAddCommGroup Eᵤ] [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eᵤ]
-
-/-- The gradient of `birthDeathPotential μ` at `(x, (zₛ, zᵤ))` is `(x² + μ, (zₛ, -zᵤ))`. -/
+/-- **Morse characterization of the birth–death family.** `birthDeathPotential s` has nondegenerate
+critical points on all of `ℝ` if and only if `s ≠ 0`. -/
 @[simp]
-theorem gradient_birthDeathPotential (μ : ℝ) (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ∇ (birthDeathPotential μ) z =
-      WithLp.toLp 2 (z.fst ^ 2 + μ, WithLp.toLp 2 (z.snd.fst, -z.snd.snd)) := by
-  rw [birthDeathPotential, gradient_separatedSum
-      (differentiable_foldPotential μ z.fst)
-      ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero z.snd),
-    gradient_foldPotential, gradient_splitQuadratic]
-
-/-- The Hessian operator of `birthDeathPotential μ` at `(x, (zₛ, zᵤ))` sends `(v₁, (vₛ, vᵤ))` to
-`(2 x v₁, (vₛ, -vᵤ))`. -/
-@[simp]
-theorem hessianOperator_birthDeathPotential_apply (μ : ℝ)
-    (z v : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    hessianOperator (birthDeathPotential μ) z v =
-      WithLp.toLp 2 (2 * z.fst * v.fst, WithLp.toLp 2 (v.snd.fst, -v.snd.snd)) := by
-  rw [birthDeathPotential, hessianOperator_separatedSum_apply
-      (contDiff_foldPotential μ).contDiffAt contDiff_splitQuadratic.contDiffAt,
-    hessianOperator_foldPotential, hessianOperator_splitQuadratic_apply, smul_apply,
-    ContinuousLinearMap.id_apply, smul_eq_mul]
-
-/-- **Corank-one Hessian kernel at `(μ, z) = (0, 0)`.** The kernel of
-`hessianOperator (birthDeathPotential 0) 0` is the line `ℝ ∙ birthDeathKernelVector`. -/
-theorem ker_hessianOperator_birthDeathPotential_zero :
-    (hessianOperator (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0) 0).ker =
-      ℝ ∙ birthDeathKernelVector := by
-  ext v
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Submodule.mem_span_singleton]
-  constructor
-  · intro hv
-    rw [hessianOperator_birthDeathPotential_apply] at hv
-    have hs : v.snd.fst = 0 := by simpa using congrArg (fun w ↦ w.snd.fst) hv
-    have hu : -v.snd.snd = 0 := by simpa using congrArg (fun w ↦ w.snd.snd) hv
-    exact ⟨v.fst, withLp_prod_ext (by simp)
-      (withLp_prod_ext (by simp [hs]) (by simp [neg_eq_zero.1 hu]))⟩
-  · rintro ⟨c, rfl⟩
-    rw [hessianOperator_birthDeathPotential_apply]
-    exact withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp))
-
-/-- **The Hessian kernel at the birth-death point has dimension `1`**, even on infinite-dimensional
-Hilbert spaces `Eₛ` and `Eᵤ`. -/
-@[simp]
-theorem finrank_ker_hessianOperator_birthDeathPotential_zero :
-    Module.finrank ℝ
-      (hessianOperator (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0) 0).ker = 1 := by
-  rw [ker_hessianOperator_birthDeathPotential_zero,
-    finrank_span_singleton birthDeathKernelVector_ne_zero]
-
-/-- At `μ = 0`, the origin is the unique critical point of `birthDeathPotential 0`. -/
-@[simp]
-theorem fderiv_birthDeathPotential_zero_eq_zero_iff
-    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    fderiv ℝ (birthDeathPotential 0) z = 0 ↔ z = 0 := by
-  rw [← TauCeti.gradient_eq_zero_iff, gradient_birthDeathPotential]
-  constructor
-  · intro h
-    have h1 : z.fst ^ 2 + 0 = 0 := congrArg WithLp.fst h
-    have h2 : z.snd.fst = 0 := congrArg (fun w ↦ w.snd.fst) h
-    have h3 : -z.snd.snd = 0 := congrArg (fun w ↦ w.snd.snd) h
-    exact withLp_prod_ext (sq_eq_zero_iff.1 (by linarith)) (withLp_prod_ext h2 (neg_eq_zero.1 h3))
-  · rintro rfl
-    exact withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp))
-
-/-- For `μ = -a²`, the critical points of `birthDeathPotential (-a²)` are `birthDeathUpper a` and
-`birthDeathLower a`. -/
-theorem fderiv_birthDeathPotential_neg_sq_eq_zero_iff {a : ℝ}
-    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    fderiv ℝ (birthDeathPotential (-a ^ 2)) z = 0 ↔
-      z = birthDeathUpper a ∨ z = birthDeathLower a := by
-  rw [← TauCeti.gradient_eq_zero_iff, gradient_birthDeathPotential]
-  constructor
-  · intro h
-    have h1 : deriv (foldPotential (-a ^ 2)) z.fst = 0 := by
-      rw [deriv_foldPotential]
-      exact congrArg WithLp.fst h
-    have h2 : z.snd.fst = 0 := congrArg (fun w ↦ w.snd.fst) h
-    have h3 : z.snd.snd = 0 := neg_eq_zero.1 (congrArg (fun w ↦ w.snd.snd) h)
-    rcases deriv_foldPotential_neg_sq_eq_zero_iff.1 h1 with hfst | hfst
-    · exact .inl (withLp_prod_ext hfst (withLp_prod_ext h2 h3))
-    · exact .inr (withLp_prod_ext hfst (withLp_prod_ext h2 h3))
-  · rintro (rfl | rfl) <;>
-      exact withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp))
-
-/-- For `a ≠ 0`, `birthDeathUpper a = (-a, 0)` is a nondegenerate critical point of
-`birthDeathPotential (-a²)`. -/
-theorem isNondegenerateCriticalPoint_birthDeathPotential_upper {a : ℝ} (ha : a ≠ 0) :
-    IsNondegenerateCriticalPoint
-      (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2)) (birthDeathUpper a) :=
-  (isNondegenerateCriticalPoint_foldPotential_neg_sq_neg ha).separatedSum
-    isNondegenerateCriticalPoint_splitQuadratic_zero
-
-/-- For `a ≠ 0`, `birthDeathLower a = (a, 0)` is a nondegenerate critical point of
-`birthDeathPotential (-a²)`. -/
-theorem isNondegenerateCriticalPoint_birthDeathPotential_lower {a : ℝ} (ha : a ≠ 0) :
-    IsNondegenerateCriticalPoint
-      (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2)) (birthDeathLower a) :=
-  (isNondegenerateCriticalPoint_foldPotential_neg_sq_self ha).separatedSum
-    isNondegenerateCriticalPoint_splitQuadratic_zero
-
-/-- **Nondegenerate critical points of `birthDeathPotential (-a²)`.** For `a ≠ 0`, the
-nondegenerate critical points are `birthDeathUpper a` and `birthDeathLower a`. -/
-@[simp]
-theorem isNondegenerateCriticalPoint_birthDeathPotential_neg_sq_iff {a : ℝ} (ha : a ≠ 0)
-    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    IsNondegenerateCriticalPoint (birthDeathPotential (-a ^ 2)) z ↔
-      z = birthDeathUpper a ∨ z = birthDeathLower a := by
-  refine ⟨fun hz ↦ fderiv_birthDeathPotential_neg_sq_eq_zero_iff.1 hz.fderiv_eq_zero, ?_⟩
-  rintro (rfl | rfl)
-  · exact isNondegenerateCriticalPoint_birthDeathPotential_upper ha
-  · exact isNondegenerateCriticalPoint_birthDeathPotential_lower ha
-
-/-- **Morse characterization of the multi-dimensional birth-death family.** On any Hilbert space,
-`birthDeathPotential μ` has nondegenerate critical points on `univ` if and only if `μ ≠ 0`. -/
-@[simp]
-theorem hasNondegenerateCriticalPointsOn_birthDeathPotential_iff {μ : ℝ} :
-    HasNondegenerateCriticalPointsOn
-      (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) μ) univ ↔ μ ≠ 0 := by
-  refine ⟨fun h h0 ↦ ?_, fun hμ ↦ hasNondegenerateCriticalPointsOn_iff.2 fun z _ hz ↦ ?_⟩
-  · subst h0
-    exact not_isNondegenerateCriticalPoint_birthDeathPotential_zero 0
+theorem hasNondegenerateCriticalPointsOn_birthDeathPotential_iff :
+    HasNondegenerateCriticalPointsOn (birthDeathPotential s) univ ↔ s ≠ 0 := by
+  refine ⟨fun h hs ↦ ?_, fun hs ↦ hasNondegenerateCriticalPointsOn_iff.2 fun x _ hx ↦ ?_⟩
+  · subst hs
+    exact not_isNondegenerateCriticalPoint_birthDeathPotential_zero
       (hasNondegenerateCriticalPointsOn_iff.1 h (mem_univ 0)
-        (fderiv_birthDeathPotential_zero_eq_zero_iff.2 rfl))
-  · rcases lt_trichotomy μ 0 with hneg | rfl | hpos
-    · have ha : √(-μ) ≠ 0 := (Real.sqrt_pos.2 (neg_pos.2 hneg)).ne'
-      have hμeq : μ = -(√(-μ)) ^ 2 := by rw [Real.sq_sqrt (neg_nonneg.2 hneg.le), neg_neg]
-      rw [hμeq] at hz ⊢
-      exact (isNondegenerateCriticalPoint_birthDeathPotential_neg_sq_iff ha).2
-        (fderiv_birthDeathPotential_neg_sq_eq_zero_iff.1 hz)
-    · exact absurd rfl hμ
-    · exact absurd hz (fderiv_birthDeathPotential_ne_zero_of_pos hpos z)
+        (fderiv_birthDeathPotential_eq_zero_iff.2 (by norm_num)))
+  · have hxsq : x ^ 2 = s := fderiv_birthDeathPotential_eq_zero_iff.1 hx
+    refine isNondegenerateCriticalPoint_birthDeathPotential_iff.2 ⟨hxsq, ?_⟩
+    rintro rfl
+    exact hs (by simpa using hxsq.symm)
 
-/-- A curve `γ` is a negative-gradient trajectory of `birthDeathPotential μ` if and only if its
-fold component solves `x' = -∇ (foldPotential μ) x` and its transverse component solves
-`ζ' = -∇ splitQuadratic ζ`. -/
-theorem isIntegralCurve_birthDeathPotential_iff {μ : ℝ}
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential μ) z) ↔
-      IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ x ↦ -∇ (foldPotential μ) x) ∧
-        IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ w ↦ -∇ splitQuadratic w) :=
-  isIntegralCurve_separatedSum_iff
-    (fun s ↦ differentiable_foldPotential μ (γ s).fst)
-    (fun s ↦ (contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero (γ s).snd)
+/-- After the birth, for `s > 0`, the nondegenerate critical points of the birth–death potential are
+`-√s` and `√s`. -/
+theorem isNondegenerateCriticalPoint_birthDeathPotential_iff_of_pos (hs : 0 < s) {x : ℝ} :
+    IsNondegenerateCriticalPoint (birthDeathPotential s) x ↔ x = -√s ∨ x = √s := by
+  have hsq := Real.sqrt_pos.2 hs
+  rw [isNondegenerateCriticalPoint_birthDeathPotential_iff]
+  constructor
+  · rintro ⟨h, -⟩
+    exact (sq_eq_sq_iff_eq_or_eq_neg.1 (h.trans (Real.sq_sqrt hs.le).symm)).symm
+  · rintro (rfl | rfl) <;> refine ⟨by simp [Real.sq_sqrt hs.le], by linarith⟩
 
-private theorem eq_zero_of_tendsto_exp_mul_atTop {F : Type*} [NormedAddCommGroup F] {v : F} {L : ℝ}
-    (hlim : Tendsto (fun t : ℝ ↦ Real.exp t * ‖v‖) atTop (𝓝 L)) : v = 0 := by
-  by_contra hne
-  have hdiv := Real.tendsto_exp_atTop.atTop_mul_const (norm_pos_iff.2 hne)
-  obtain ⟨s, hs1, hs2⟩ := ((hlim.eventually (Iio_mem_nhds (lt_add_one L))).and
-    (hdiv.eventually (eventually_ge_atTop (L + 2)))).exists
-  linarith
+/-- For `s > 0`, `-√s` is a nondegenerate critical point of the birth–death potential. -/
+theorem isNondegenerateCriticalPoint_birthDeathPotential_neg_sqrt (hs : 0 < s) :
+    IsNondegenerateCriticalPoint (birthDeathPotential s) (-√s) :=
+  (isNondegenerateCriticalPoint_birthDeathPotential_iff_of_pos hs).2 (.inl rfl)
 
-/-- Any global negative-gradient trajectory of `splitQuadratic` with finite limits at `-∞` and `+∞`
-is identically zero, with both limits equal to `0`. -/
-theorem eq_zero_of_isIntegralCurve_splitQuadratic {ζ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
-    (hζ : IsIntegralCurve ζ (fun _ w ↦ -∇ splitQuadratic w))
-    {p q : WithLp 2 (Eₛ × Eᵤ)} (hbot : Tendsto ζ atBot (𝓝 p)) (htop : Tendsto ζ atTop (𝓝 q)) :
-    p = 0 ∧ q = 0 ∧ ζ = 0 := by
-  let z₀ := ζ 0
-  have hflow : ∀ t, ζ t = splitQuadraticFlow t z₀ :=
-    congrFun (eq_splitQuadraticFlow_of_isIntegralCurve hζ)
-  have hzₛ : z₀.fst = 0 := eq_zero_of_tendsto_exp_mul_atTop (L := ‖p.fst‖) <| by
-    have hlim := (((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.tendsto p).comp hbot).norm.comp
-      tendsto_neg_atTop_atBot
-    exact hlim.congr fun t ↦ by
-      simp [hflow (-t), splitQuadraticFlow_apply, z₀, norm_smul,
-        Real.norm_of_nonneg (Real.exp_pos t).le]
-  have hzᵤ : z₀.snd = 0 := eq_zero_of_tendsto_exp_mul_atTop (L := ‖q.snd‖) <| by
-    have hlim := (((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.tendsto q).comp htop).norm
-    exact hlim.congr fun t ↦ by
-      simp [hflow t, splitQuadraticFlow_apply, z₀, norm_smul,
-        Real.norm_of_nonneg (Real.exp_pos t).le]
-  have hζ0 : ζ = 0 := by
-    funext t
-    rw [hflow t, splitQuadraticFlow_apply, hzₛ, hzᵤ, smul_zero, smul_zero]
-    exact withLp_prod_ext rfl rfl
-  subst hζ0
-  exact ⟨tendsto_nhds_unique hbot tendsto_const_nhds,
-    tendsto_nhds_unique htop tendsto_const_nhds, rfl⟩
+/-- For `s > 0`, `√s` is a nondegenerate critical point of the birth–death potential. -/
+theorem isNondegenerateCriticalPoint_birthDeathPotential_sqrt (hs : 0 < s) :
+    IsNondegenerateCriticalPoint (birthDeathPotential s) √s :=
+  (isNondegenerateCriticalPoint_birthDeathPotential_iff_of_pos hs).2 (.inr rfl)
 
-/-- **The curve `birthDeathOrbit a` solves the negative-gradient equation of
-`birthDeathPotential (-a²)`.** -/
-theorem isIntegralCurve_birthDeathOrbit (a : ℝ) :
-    IsIntegralCurve (birthDeathOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) a)
-      (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z) :=
-  isIntegralCurve_birthDeathPotential_iff.2
-    ⟨isIntegralCurve_foldOrbit a,
-      isIntegralCurve_const_neg_gradient_iff.2 (by simp [gradient_splitQuadratic])⟩
-
-/-- **For `μ > 0`, no negative-gradient trajectory of `birthDeathPotential μ` converges at `+∞`.**
--/
-theorem not_tendsto_atTop_nhds_of_isIntegralCurve_birthDeathPotential_of_pos {μ : ℝ} (hμ : 0 < μ)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential μ) z))
-    (q : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ¬ Tendsto γ atTop (𝓝 q) := by
-  intro hq
-  exact not_tendsto_atTop_nhds_of_isIntegralCurve_foldPotential_of_pos hμ
-    (isIntegralCurve_birthDeathPotential_iff.1 hγ).1 q.fst
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp hq)
-
-/-- **For `μ > 0`, no negative-gradient trajectory of `birthDeathPotential μ` converges at `-∞`.**
--/
-theorem not_tendsto_atBot_nhds_of_isIntegralCurve_birthDeathPotential_of_pos {μ : ℝ} (hμ : 0 < μ)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential μ) z))
-    (p : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ¬ Tendsto γ atBot (𝓝 p) := by
-  intro hp
-  exact not_tendsto_atBot_nhds_of_isIntegralCurve_foldPotential_of_pos hμ
-    (isIntegralCurve_birthDeathPotential_iff.1 hγ).1 p.fst
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hp)
-
-/-- **At the birth-death instant `μ = 0`, the constant zero trajectory is the unique global
-connecting trajectory.** -/
-theorem eq_zero_of_isIntegralCurve_birthDeathPotential_zero
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential 0) z))
-    {p q : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) :
-    p = 0 ∧ q = 0 ∧ γ = 0 := by
-  obtain ⟨h₁, h₂⟩ := isIntegralCurve_birthDeathPotential_iff.1 hγ
-  obtain ⟨hp₁, hq₁, hγ₁⟩ := eq_zero_of_isIntegralCurve_foldPotential_zero h₁
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hbot)
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp htop)
-  obtain ⟨hp₂, hq₂, hγ₂⟩ := eq_zero_of_isIntegralCurve_splitQuadratic h₂
-    (((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hbot)
-    (((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp htop)
-  exact ⟨withLp_prod_ext hp₁ hp₂, withLp_prod_ext hq₁ hq₂,
-    funext fun s ↦ withLp_prod_ext (congrFun hγ₁ s) (congrFun hγ₂ s)⟩
-
-/-- **Classification of the newborn connecting trajectory in arbitrary dimension.** For `a > 0`,
-every global negative-gradient trajectory of `birthDeathPotential (-a²)` from `birthDeathUpper a`
-at `-∞` to `birthDeathLower a` at `+∞` is a unique time translate
-`s ↦ birthDeathOrbit a (s + s₀)`. -/
-theorem existsUnique_birthDeathOrbit_add_of_isIntegralCurve {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a))) :
-    ∃! s₀ : ℝ, γ = fun s ↦ birthDeathOrbit a (s + s₀) := by
-  obtain ⟨h₁, h₂⟩ := isIntegralCurve_birthDeathPotential_iff.1 hγ
-  have hbot₁ : Tendsto (fun s ↦ (γ s).fst) atBot (𝓝 (-a)) :=
-    ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathUpper a)).comp hbot
-  have htop₁ : Tendsto (fun s ↦ (γ s).fst) atTop (𝓝 a) :=
-    ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathLower a)).comp htop
-  have hbot₂ : Tendsto (fun s ↦ (γ s).snd) atBot (𝓝 0) :=
-    ((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathUpper a)).comp hbot
-  have htop₂ : Tendsto (fun s ↦ (γ s).snd) atTop (𝓝 0) :=
-    ((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathLower a)).comp htop
-  obtain ⟨-, -, hγ₂⟩ := eq_zero_of_isIntegralCurve_splitQuadratic h₂ hbot₂ htop₂
-  obtain ⟨s₀, hs₀, huniq⟩ := existsUnique_foldOrbit_add_of_isIntegralCurve ha h₁ hbot₁ htop₁
-  refine ⟨s₀, funext fun s ↦ withLp_prod_ext (congrFun hs₀ s) (congrFun hγ₂ s),
-    fun t₀ ht₀ ↦ huniq t₀ ?_⟩
-  funext s
-  exact congrArg WithLp.fst (congrFun ht₀ s)
-
-/-- **No reverse connecting trajectory exists in arbitrary dimension.** For `a > 0`, no
-negative-gradient trajectory of `birthDeathPotential (-a²)` runs from `birthDeathLower a` at `-∞`
-to `birthDeathUpper a` at `+∞`. -/
-theorem not_isIntegralCurve_birthDeathPotential_lower_to_upper {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathLower a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathUpper a))) : False :=
-  not_isIntegralCurve_foldPotential_self_to_neg ha
-    (isIntegralCurve_birthDeathPotential_iff.1 hγ).1
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathLower a)).comp hbot)
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathUpper a)).comp htop)
-
-/-! ### Formal-adjoint injectivity on arbitrary Hilbert spaces -/
-
-/-- On any pair of real Hilbert spaces, the constant transverse adjoint equation
-`w' - Hess splitQuadratic(0) w = 0` has no nonzero square-integrable solution. -/
-theorem squareIntegrableSolutions_neg_hessianOperator_splitQuadratic_eq_bot :
-    squareIntegrableSolutions
-      (fun _ : ℝ ↦ -hessianOperator (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) 0) = ⊥ := by
-  refine squareIntegrableSolutions_eq_bot_of_withLp
-    (A₁ := fun _ : ℝ ↦ -(1 : ℝ) • ContinuousLinearMap.id ℝ Eₛ)
-    (A₂ := fun _ : ℝ ↦ -(-1 : ℝ) • ContinuousLinearMap.id ℝ Eᵤ)
-    (fun _ w ↦ withLp_prod_ext (by simp) (by simp)) ?_ ?_
-  · exact squareIntegrableSolutions_neg_smul_id_eq_bot continuous_const
-      (fun s ↦ (Real.hasDerivAt_exp s).congr_deriv (one_mul _).symm) Real.exp_zero
-      (MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero
-        (tendsto_norm_atTop_atTop.comp Real.tendsto_exp_atTop))
-  · exact squareIntegrableSolutions_neg_smul_id_eq_bot continuous_const
-      (g := fun s ↦ Real.exp (-s))
-      (fun s ↦ ((Real.hasDerivAt_exp (-s)).comp s (hasDerivAt_id' s).neg).congr_deriv (by ring))
-      (by simp)
-      (MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero
-        (tendsto_norm_atTop_atTop.comp (Real.tendsto_exp_atTop.comp tendsto_neg_atBot_atTop)))
-
-/-- On any pair of real Hilbert spaces, along a negative-gradient trajectory of
-`birthDeathPotential (-a²)` (`a > 0`) from `birthDeathUpper a` to `birthDeathLower a`, the adjoint
-ODE `v' - Hess F_{-a²}(γ) v = 0` has no nonzero square-integrable solution. -/
-theorem squareIntegrableSolutions_neg_hessianOperator_birthDeathPotential_eq_bot
-    {a : ℝ} (ha : 0 < a) {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a))) :
-    squareIntegrableSolutions
-      (fun s ↦ -hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) = ⊥ := by
-  have h₁ := (isIntegralCurve_birthDeathPotential_iff.1 hγ).1
-  have hbot₁ : Tendsto (fun s ↦ (γ s).fst) atBot (𝓝 (-a)) :=
-    ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathUpper a)).comp hbot
-  have htop₁ : Tendsto (fun s ↦ (γ s).fst) atTop (𝓝 a) :=
-    ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto (birthDeathLower a)).comp htop
-  exact squareIntegrableSolutions_eq_bot_of_withLp
-    (A₁ := fun s ↦ -hessianOperator (foldPotential (-a ^ 2)) (γ s).fst)
-    (A₂ := fun _ ↦ -hessianOperator (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) 0)
-    (fun _ _ ↦ withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp)))
-    (squareIntegrableSolutions_neg_hessianOperator_foldPotential_eq_bot ha h₁ hbot₁ htop₁)
-    squareIntegrableSolutions_neg_hessianOperator_splitQuadratic_eq_bot
-
-/-- **Hilbert-space injectivity of the formal adjoint along a newborn connecting trajectory.** On
-arbitrary real Hilbert spaces `Eₛ` and `Eᵤ`, for `a > 0` and any negative-gradient trajectory `γ`
-from `birthDeathUpper a` to `birthDeathLower a`, the formal adjoint operator
-`ξ ↦ ξ' - Hess F_{-a²}(γ) ξ` has trivial kernel on `W^{1,2}`. -/
-theorem ker_trajectoryOperator_neg_birthDeathPotential_eq_bot
-    {a : ℝ} (ha : 0 < a) {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    (WeakDerivStep.trajectoryOperator (p := 2) (-AL)).ker = ⊥ := by
-  have hnegAL : (-AL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ -hessianOperator (birthDeathPotential (-a ^ 2)) (γ s) := by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with s hs1 hs2
-    rw [hs1, Pi.neg_apply, hs2]
-  have hcont : Continuous fun s ↦ -hessianOperator (birthDeathPotential (-a ^ 2)) (γ s) :=
-    (((contDiff_birthDeathPotential (n := 2) _).contDiff_hessianOperator (m := 0)
-      (by norm_num)).continuous.comp hγ.continuous).neg
-  exact (WeakDerivStep.ker_trajectoryOperator_eq_bot_iff hcont (-AL) hnegAL).2
-    (squareIntegrableSolutions_neg_hessianOperator_birthDeathPotential_eq_bot ha hγ hbot htop)
-
-end BirthDeathHilbert
-
-/-! ### Morse indices and Fredholm regularity on finite-dimensional spaces -/
-
-section BirthDeathFiniteDimensional
-
-open TauCeti.WeakDerivStep
-
-variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [InnerProductSpace ℝ Eₛ]
-  [FiniteDimensional ℝ Eₛ] [NormedAddCommGroup Eᵤ] [InnerProductSpace ℝ Eᵤ]
-  [FiniteDimensional ℝ Eᵤ]
-
-/-- **Morse index of `birthDeathUpper a`.** For `a > 0`, the upper newborn critical point `(-a, 0)`
-has Morse index `dim Eᵤ + 1`. -/
+/-- For `s > 0` the critical point `-√s` is a local maximum: its Morse index is `1`. -/
 @[simp]
-theorem morseIndex_birthDeathPotential_upper {a : ℝ} (ha : 0 < a) :
-    morseIndex (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2)) (birthDeathUpper a) =
-      Module.finrank ℝ Eᵤ + 1 := by
-  rw [birthDeathPotential, morseIndex_separatedSum
-      (contDiff_foldPotential _).contDiffAt contDiff_splitQuadratic.contDiffAt,
-    birthDeathUpper_fst, morseIndex_foldPotential_neg_sq_neg ha, morseIndex_splitQuadratic,
-    add_comm]
+theorem morseIndex_birthDeathPotential_neg_sqrt (hs : 0 < s) :
+    morseIndex (birthDeathPotential s) (-√s) = 1 :=
+  morseIndex_real_of_neg (by
+    rw [iteratedDeriv_two_birthDeathPotential]
+    linarith [Real.sqrt_pos.2 hs])
 
-/-- **Morse index of `birthDeathLower a`.** For `a > 0`, the lower newborn critical point `(a, 0)`
-has Morse index `dim Eᵤ`. -/
+/-- For `s > 0` the critical point `√s` is a local minimum: its Morse index is `0`. -/
 @[simp]
-theorem morseIndex_birthDeathPotential_lower {a : ℝ} (ha : 0 < a) :
-    morseIndex (birthDeathPotential (Eₛ := Eₛ) (Eᵤ := Eᵤ) (-a ^ 2)) (birthDeathLower a) =
-      Module.finrank ℝ Eᵤ := by
-  rw [birthDeathPotential, morseIndex_separatedSum
-      (contDiff_foldPotential _).contDiffAt contDiff_splitQuadratic.contDiffAt,
-    birthDeathLower_fst, morseIndex_foldPotential_neg_sq_self ha, morseIndex_splitQuadratic,
-    zero_add]
+theorem morseIndex_birthDeathPotential_sqrt (hs : 0 < s) :
+    morseIndex (birthDeathPotential s) √s = 0 :=
+  morseIndex_real_of_pos (by
+    rw [iteratedDeriv_two_birthDeathPotential]
+    linarith [Real.sqrt_pos.2 hs])
 
-/-- Along any negative-gradient trajectory of `birthDeathPotential (-a²)` (`a ≠ 0`) from
-`birthDeathUpper a` to `birthDeathLower a`, the linearized operator `D_γ` on `W^{1,2}` is
-Fredholm. -/
-theorem isFredholm_trajectoryOperator_birthDeathPotential {a : ℝ} (ha : a ≠ 0)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    (trajectoryOperator (p := 2) AL).IsFredholm :=
-  hγ.isFredholm_trajectoryOperator_hessianOperator (contDiff_birthDeathPotential _)
-    (isNondegenerateCriticalPoint_birthDeathPotential_upper ha)
-    (isNondegenerateCriticalPoint_birthDeathPotential_lower ha) hbot htop hAL
+/-- The critical value at the local maximum `-√s` is `2 s √s / 3`. -/
+theorem birthDeathPotential_neg_sqrt (s : ℝ) :
+    birthDeathPotential s (-√s) = 2 * s * √s / 3 := by
+  rcases le_or_gt 0 s with hs | hs
+  · have h := Real.sq_sqrt hs
+    rw [birthDeathPotential_apply]
+    linear_combination (-√s / 3) * h
+  · simp [birthDeathPotential_apply, Real.sqrt_eq_zero'.2 hs.le]
 
-/-- **The linearized operator along the newborn connecting trajectory has Fredholm index `1`.** -/
-theorem index_trajectoryOperator_birthDeathPotential {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    (trajectoryOperator (p := 2) AL).index = 1 := by
-  rw [hγ.index_trajectoryOperator_hessianOperator (contDiff_birthDeathPotential _)
-    (isNondegenerateCriticalPoint_birthDeathPotential_upper ha.ne')
-    (isNondegenerateCriticalPoint_birthDeathPotential_lower ha.ne') hbot htop hAL,
-    morseIndex_birthDeathPotential_upper ha, morseIndex_birthDeathPotential_lower ha]
-  push_cast
+/-- The critical value at the local minimum `√s` is `-(2 s √s / 3)`. -/
+theorem birthDeathPotential_sqrt (s : ℝ) :
+    birthDeathPotential s √s = -(2 * s * √s / 3) := by
+  rcases le_or_gt 0 s with hs | hs
+  · have h := Real.sq_sqrt hs
+    rw [birthDeathPotential_apply]
+    linear_combination (√s / 3) * h
+  · simp [birthDeathPotential_apply, Real.sqrt_eq_zero'.2 hs.le]
+
+/-! ### Global ODE uniqueness and the regimes `s < 0` and `s = 0` -/
+
+/-- **Global uniqueness for negative gradient trajectories of `birthDeathPotential s`.** Two global
+solutions of `x' = s - x²` that agree at one time `t₀` coincide everywhere on `ℝ`. -/
+theorem eq_of_isIntegralCurve_birthDeathPotential {γ₁ γ₂ : ℝ → ℝ}
+    (h₁ : IsIntegralCurve γ₁ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    (h₂ : IsIntegralCurve γ₂ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    {t₀ : ℝ} (heq : γ₁ t₀ = γ₂ t₀) : γ₁ = γ₂ := by
+  let V : (x : ℝ) → TangentSpace 𝓘(ℝ, ℝ) x := fun x ↦ -∇ (birthDeathPotential s) x
+  have hV : ContDiff ℝ 1 V := by
+    simp only [V, gradient_birthDeathPotential]
+    fun_prop
+  have hM : ∀ c : ℝ → ℝ, IsIntegralCurve c (fun _ x ↦ -∇ (birthDeathPotential s) x) →
+      IsMIntegralCurve c V := fun c hc ↦ isMIntegralCurve_iff_isMIntegralCurveOn.2
+    (isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
+  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := t₀)
+    (contMDiff_vectorSpace_iff_contDiff.2 hV) (hM γ₁ h₁) (hM γ₂ h₂) heq
+
+/-- **Time-reversal symmetry of the birth–death ODE.** Since `birthDeathPotential s` is odd,
+`t ↦ -γ (-t)` is a negative gradient trajectory whenever `γ` is. -/
+theorem isIntegralCurve_neg_comp_neg_birthDeathPotential {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x)) :
+    IsIntegralCurve (fun t ↦ -γ (-t)) (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦ by
+  refine (((hγ (-t)).comp t (hasDerivAt_id' t).neg).neg).congr_deriv ?_
+  simp only [gradient_birthDeathPotential]
   ring
 
-/-- **Transversality of the newborn connecting trajectory in arbitrary finite dimension.** For
-`a > 0`, along any negative-gradient trajectory from `birthDeathUpper a` to `birthDeathLower a`,
-the linearized trajectory operator `D_γ` is surjective from `W^{1,2}` onto `L²`. -/
-theorem surjective_trajectoryOperator_birthDeathPotential {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    Function.Surjective (trajectoryOperator (p := 2) AL) := by
-  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL s = ContinuousLinearMap.adjoint (AL s) := by
-    filter_upwards [hAL] with s hs
-    rw [hs]
-    exact (contDiff_birthDeathPotential _).contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-      |>.clm_adjoint_eq.symm
-  exact (surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj
-    (isFredholm_trajectoryOperator_birthDeathPotential ha.ne' hγ hbot htop hAL).isClosed_range).2
-    (ker_trajectoryOperator_neg_birthDeathPotential_eq_bot ha hγ hbot htop hAL)
+private theorem tendsto_const_sub_mul_atTop_atBot (A : ℝ) {c : ℝ} (hc : 0 < c) :
+    Tendsto (fun t ↦ A - c * t) atTop atBot :=
+  tendsto_atBot.2 fun B ↦ eventually_atTop.2
+    ⟨(A - B) / c, fun _ ht ↦ by linarith [(div_le_iff₀ hc).1 ht]⟩
 
-/-- **The kernel of `D_γ` along the newborn connecting trajectory is one-dimensional.** -/
-theorem finrank_ker_trajectoryOperator_birthDeathPotential_eq_one {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker = 1 := by
-  have hidx := index_trajectoryOperator_birthDeathPotential ha hγ hbot htop hAL
-  rw [ContinuousLinearMap.index_of_surjective _
-    (surjective_trajectoryOperator_birthDeathPotential ha hγ hbot htop hAL)] at hidx
-  omega
+/-- **Before the birth (`s < 0`), every global trajectory diverges to `-∞` at `+∞`.** -/
+theorem tendsto_atTop_atBot_of_isIntegralCurve_birthDeathPotential_of_neg (hs : s < 0)
+    {γ : ℝ → ℝ} (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x)) :
+    Tendsto γ atTop atBot := by
+  have hd : ∀ t, HasDerivAt (fun u ↦ γ u - s * u) (-(γ t ^ 2)) t := fun t ↦ by
+    have h₁ : HasDerivAt γ (-∇ (birthDeathPotential s) (γ t)) t := hγ t
+    rw [gradient_birthDeathPotential] at h₁
+    exact (h₁.sub ((hasDerivAt_id' t).const_mul s)).congr_deriv (by ring)
+  have hant : Antitone (fun t ↦ γ t - s * t) :=
+    antitone_of_hasDerivAt_nonpos hd fun _ ↦ neg_nonpos.2 (sq_nonneg _)
+  refine tendsto_atBot_mono' atTop ?_ (tendsto_const_sub_mul_atTop_atBot (γ 0) (neg_pos.2 hs))
+  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+  have h := hant ht
+  dsimp only at h
+  linarith
 
-/-- **The kernel of `D_γ` along the newborn connecting trajectory is spanned by the velocity `γ'`.**
--/
-theorem exists_ker_trajectoryOperator_birthDeathPotential_eq_span {a : ℝ} (ha : 0 < a)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathPotential (-a ^ 2)) z))
-    (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper a)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathLower a)))
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (γ s)) :
-    ∃ u : WeakDerivStep volume ⊤ 2
-        (ContinuousLinearMap.id ℝ
-          (Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
-      ⇑(prev (ContinuousLinearMap.id ℝ
-          (Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) 2
-            (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
-          =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] deriv γ ∧
-        (trajectoryOperator (p := 2) AL).ker = ℝ ∙ u := by
-  obtain ⟨u, hu0, hu, hux⟩ :=
-    hγ.exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero (contDiff_birthDeathPotential _)
-      hbot htop (birthDeathUpper_ne_birthDeathLower ha.ne') hAL
-  refine ⟨-u, ?_, eq_span_singleton_of_mem_of_finrank_eq_one
-    (finrank_ker_trajectoryOperator_birthDeathPotential_eq_one ha hγ hbot htop hAL)
-    (by simpa using hu) (neg_ne_zero.2 hu0)⟩
-  have hprev := map_neg (prevL (ContinuousLinearMap.id ℝ
-    (Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) u
-  simp only [prevL_apply] at hprev
-  filter_upwards [hux, Lp.coeFn_neg (prev _ u)] with s hs hneg
-  rw [hprev, hneg, Pi.neg_apply, hs, (hγ s).deriv]
+/-- **Before the birth (`s < 0`), every global trajectory diverges to `+∞` at `-∞`.** -/
+theorem tendsto_atBot_atTop_of_isIntegralCurve_birthDeathPotential_of_neg (hs : s < 0)
+    {γ : ℝ → ℝ} (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x)) :
+    Tendsto γ atBot atTop := by
+  have h := tendsto_neg_atBot_atTop.comp
+    ((tendsto_atTop_atBot_of_isIntegralCurve_birthDeathPotential_of_neg hs
+      (isIntegralCurve_neg_comp_neg_birthDeathPotential hγ)).comp tendsto_neg_atBot_atTop)
+  simpa [Function.comp_def] using h
 
-/-- At the constant trajectory `birthDeathUpper a` (`a ≠ 0`), the linearized operator is bijective
-from `W^{1,2}` onto `L²`. -/
-theorem bijective_trajectoryOperator_birthDeathPotential_upper {a : ℝ} (ha : a ≠ 0)
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun _ ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (birthDeathUpper a)) :
-    Function.Bijective (trajectoryOperator (p := 2) AL) :=
-  IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator
-    (isNondegenerateCriticalPoint_birthDeathPotential_upper ha) hAL
+/-- For `s < 0`, no global negative gradient trajectory of `birthDeathPotential s` converges at
+`+∞`. -/
+theorem not_tendsto_atTop_nhds_of_isIntegralCurve_birthDeathPotential_of_neg (hs : s < 0)
+    {γ : ℝ → ℝ} (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x)) (q : ℝ) :
+    ¬Tendsto γ atTop (𝓝 q) := by
+  intro hq
+  have hbot := tendsto_atTop_atBot_of_isIntegralCurve_birthDeathPotential_of_neg hs hγ
+  obtain ⟨t, ht1, ht2⟩ := ((hq.eventually (Ioi_mem_nhds (sub_one_lt q))).and
+    (hbot.eventually (eventually_le_atBot (q - 2)))).exists
+  linarith
 
-/-- At the constant trajectory `birthDeathLower a` (`a ≠ 0`), the linearized operator is bijective
-from `W^{1,2}` onto `L²`. -/
-theorem bijective_trajectoryOperator_birthDeathPotential_lower {a : ℝ} (ha : a ≠ 0)
-    {AL : Lp (WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) →L[ℝ] WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) ∞
-      (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun _ ↦ hessianOperator (birthDeathPotential (-a ^ 2)) (birthDeathLower a)) :
-    Function.Bijective (trajectoryOperator (p := 2) AL) :=
-  IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator
-    (isNondegenerateCriticalPoint_birthDeathPotential_lower ha) hAL
+/-- For `s < 0`, no global negative gradient trajectory of `birthDeathPotential s` converges at
+`-∞`. -/
+theorem not_tendsto_atBot_nhds_of_isIntegralCurve_birthDeathPotential_of_neg (hs : s < 0)
+    {γ : ℝ → ℝ} (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x)) (p : ℝ) :
+    ¬Tendsto γ atBot (𝓝 p) := by
+  intro hp
+  refine not_tendsto_atTop_nhds_of_isIntegralCurve_birthDeathPotential_of_neg hs
+    (isIntegralCurve_neg_comp_neg_birthDeathPotential hγ) (-p) ?_
+  simpa [Function.comp_def] using (hp.comp tendsto_neg_atTop_atBot).neg
 
-end BirthDeathFiniteDimensional
+private theorem eq_zero_of_tendsto_atTop_birthDeathPotential_zero {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential 0) x)) {q : ℝ}
+    (htop : Tendsto γ atTop (𝓝 q)) : q = 0 := by
+  by_contra hq
+  have hqpos : 0 < |q| / 2 := half_pos (abs_pos.2 hq)
+  set c := (|q| / 2) ^ 2
+  have hc : 0 < c := sq_pos_of_pos hqpos
+  obtain ⟨S, hS⟩ := eventually_atTop.1
+    (htop.abs.eventually (Ioi_mem_nhds (half_lt_self (abs_pos.2 hq))))
+  have hd : ∀ t ∈ Ici S, HasDerivAt (fun u ↦ γ u + c * u) (-(γ t ^ 2) + c) t := fun t _ ↦ by
+    have h₁ : HasDerivAt γ (-∇ (birthDeathPotential 0) (γ t)) t := hγ t
+    rw [gradient_birthDeathPotential, sub_zero] at h₁
+    exact (h₁.add ((hasDerivAt_id' t).const_mul c)).congr_deriv (by ring)
+  have hant : AntitoneOn (fun u ↦ γ u + c * u) (Ici S) := by
+    refine antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici S)
+      (fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt)
+      (fun t ht ↦ (hd t (interior_subset ht)).hasDerivWithinAt) fun t ht ↦ ?_
+    have hlt : |q| / 2 < |γ t| := hS t (interior_subset ht)
+    have hsq : c ≤ γ t ^ 2 := by
+      rw [← sq_abs (γ t)]
+      exact pow_le_pow_left₀ hqpos.le hlt.le 2
+    linarith
+  have hbot : Tendsto γ atTop atBot := by
+    refine tendsto_atBot_mono' atTop ?_ (tendsto_const_sub_mul_atTop_atBot (γ S + c * S) hc)
+    filter_upwards [eventually_ge_atTop S] with t ht
+    have h := hant self_mem_Ici ht ht
+    dsimp only at h
+    linarith
+  obtain ⟨t, ht1, ht2⟩ := ((htop.eventually (Ioi_mem_nhds (sub_one_lt q))).and
+    (hbot.eventually (eventually_le_atBot (q - 2)))).exists
+  linarith
+
+/-- **At the birth–death instant `s = 0`, the constant zero trajectory is the unique global
+connecting trajectory.** Any global negative gradient trajectory of `birthDeathPotential 0` with
+finite limits `p` and `q` at `-∞` and `+∞` satisfies `p = 0`, `q = 0`, and `γ = 0`. -/
+theorem eq_zero_of_isIntegralCurve_birthDeathPotential_zero {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential 0) x)) {p q : ℝ}
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) :
+    p = 0 ∧ q = 0 ∧ γ = 0 := by
+  have hp : p = 0 := neg_eq_zero.1 <| eq_zero_of_tendsto_atTop_birthDeathPotential_zero
+    (isIntegralCurve_neg_comp_neg_birthDeathPotential hγ)
+    (by simpa [Function.comp_def] using (hbot.comp tendsto_neg_atTop_atBot).neg)
+  have hq : q = 0 := eq_zero_of_tendsto_atTop_birthDeathPotential_zero hγ htop
+  subst hp hq
+  exact ⟨rfl, rfl, hγ.eq_const_of_tendsto (fun _ ↦ differentiable_birthDeathPotential 0 _)
+    (continuous_birthDeathPotential 0).continuousAt hbot htop⟩
+
+/-! ### The connecting trajectory and its inverse time coordinate -/
+
+/-- The negative gradient trajectory `t ↦ √s tanh (√s t)` of the birth–death potential. For
+`s > 0` it runs from the local maximum `-√s` to the local minimum `√s`, and every trajectory
+between them is a unique time translate (`TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`). -/
+noncomputable def birthDeathOrbit (s t : ℝ) : ℝ :=
+  √s * Real.tanh (√s * t)
+
+theorem birthDeathOrbit_apply (s t : ℝ) :
+    birthDeathOrbit s t = √s * Real.tanh (√s * t) := (rfl)
+
+@[simp]
+theorem birthDeathOrbit_zero (s : ℝ) : birthDeathOrbit s 0 = 0 := by
+  simp [birthDeathOrbit_apply]
+
+@[simp]
+theorem birthDeathOrbit_neg (s t : ℝ) : birthDeathOrbit s (-t) = -birthDeathOrbit s t := by
+  simp [birthDeathOrbit_apply, Real.tanh_neg]
+
+@[fun_prop]
+theorem contDiff_birthDeathOrbit (s : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (birthDeathOrbit s) := by
+  unfold birthDeathOrbit
+  exact contDiff_const.mul (Real.contDiff_tanh.comp (contDiff_const.mul contDiff_id))
+
+/-- For `s > 0`, `birthDeathOrbit s` is strictly increasing. -/
+theorem strictMono_birthDeathOrbit (hs : 0 < s) : StrictMono (birthDeathOrbit s) := by
+  have hsq := Real.sqrt_pos.2 hs
+  exact fun _ _ htu ↦
+    mul_lt_mul_of_pos_left (Real.tanh_strictMono (mul_lt_mul_of_pos_left htu hsq)) hsq
+
+/-- For `s ≥ 0`, the trajectory solves `x' = s - x²`. -/
+theorem hasDerivAt_birthDeathOrbit (hs : 0 ≤ s) (t : ℝ) :
+    HasDerivAt (birthDeathOrbit s) (s - birthDeathOrbit s t ^ 2) t := by
+  have h := ((Real.hasDerivAt_tanh (√s * t)).comp t ((hasDerivAt_id' t).const_mul √s)).const_mul √s
+  refine h.congr_deriv ?_
+  have hsq : √s * √s = s := Real.mul_self_sqrt hs
+  rw [birthDeathOrbit_apply]
+  linear_combination (1 / Real.cosh (√s * t) ^ 2 + Real.tanh (√s * t) ^ 2) * hsq -
+    s * Real.one_sub_tanh_sq (√s * t)
+
+/-- For `s ≥ 0`, the trajectory is a negative gradient trajectory of the birth–death potential. -/
+theorem isIntegralCurve_birthDeathOrbit (hs : 0 ≤ s) :
+    IsIntegralCurve (birthDeathOrbit s) (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦
+  (hasDerivAt_birthDeathOrbit hs t).congr_deriv (by simp)
+
+/-- For `s > 0`, the trajectory stays strictly between the two critical points. -/
+theorem birthDeathOrbit_mem_Ioo (hs : 0 < s) (t : ℝ) : birthDeathOrbit s t ∈ Ioo (-√s) √s := by
+  have hsq := Real.sqrt_pos.2 hs
+  rw [birthDeathOrbit_apply]
+  constructor
+  · nlinarith [Real.neg_one_lt_tanh (√s * t)]
+  · nlinarith [Real.tanh_lt_one (√s * t)]
+
+/-- The trajectory tends to `-√s` at `-∞`. -/
+theorem tendsto_birthDeathOrbit_atBot (s : ℝ) :
+    Tendsto (birthDeathOrbit s) atBot (𝓝 (-√s)) := by
+  rcases (Real.sqrt_nonneg s).eq_or_lt with h | h
+  · simp only [funext (birthDeathOrbit_apply s), ← h, zero_mul, neg_zero]
+    exact tendsto_const_nhds
+  · rw [funext (birthDeathOrbit_apply s)]
+    simpa [Function.comp_def] using
+      (Real.tendsto_tanh_atBot.comp (tendsto_id.const_mul_atBot h)).const_mul √s
+
+/-- The trajectory tends to `√s` at `+∞`. -/
+theorem tendsto_birthDeathOrbit_atTop (s : ℝ) :
+    Tendsto (birthDeathOrbit s) atTop (𝓝 √s) := by
+  rcases (Real.sqrt_nonneg s).eq_or_lt with h | h
+  · simp only [funext (birthDeathOrbit_apply s), ← h, zero_mul]
+    exact tendsto_const_nhds
+  · rw [funext (birthDeathOrbit_apply s)]
+    simpa [Function.comp_def] using
+      (Real.tendsto_tanh_atTop.comp (tendsto_id.const_mul_atTop h)).const_mul √s
+
+/-- The inverse-hyperbolic time coordinate `x ↦ (√s)⁻¹ * artanh (x / √s)` on `(-√s, √s)`, inverse
+to `TauCeti.birthDeathOrbit s` for `s > 0`. -/
+noncomputable def birthDeathTimeCoordinate (s x : ℝ) : ℝ :=
+  (√s)⁻¹ * Real.artanh (x / √s)
+
+theorem birthDeathTimeCoordinate_apply (s x : ℝ) :
+    birthDeathTimeCoordinate s x = (√s)⁻¹ * Real.artanh (x / √s) := (rfl)
+
+@[simp]
+theorem birthDeathTimeCoordinate_zero_right (s : ℝ) : birthDeathTimeCoordinate s 0 = 0 := by
+  simp [birthDeathTimeCoordinate_apply]
+
+@[simp]
+theorem birthDeathTimeCoordinate_neg_right (s x : ℝ) :
+    birthDeathTimeCoordinate s (-x) = -birthDeathTimeCoordinate s x := by
+  simp [birthDeathTimeCoordinate_apply, neg_div, Real.artanh_neg_eq_neg_artanh]
+
+@[simp]
+theorem birthDeathTimeCoordinate_birthDeathOrbit (hs : 0 < s) (t : ℝ) :
+    birthDeathTimeCoordinate s (birthDeathOrbit s t) = t := by
+  have ha : √s ≠ 0 := (Real.sqrt_pos.2 hs).ne'
+  rw [birthDeathTimeCoordinate_apply, birthDeathOrbit_apply, mul_div_cancel_left₀ _ ha,
+    Real.artanh_tanh, inv_mul_cancel_left₀ ha]
+
+@[simp]
+theorem birthDeathOrbit_birthDeathTimeCoordinate (hs : 0 < s) {x : ℝ}
+    (hx : x ∈ Ioo (-√s) √s) :
+    birthDeathOrbit s (birthDeathTimeCoordinate s x) = x := by
+  have ha : 0 < √s := Real.sqrt_pos.2 hs
+  have hx' : x / √s ∈ Ioo (-1 : ℝ) 1 :=
+    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
+  rw [birthDeathOrbit_apply, birthDeathTimeCoordinate_apply, mul_inv_cancel_left₀ ha.ne',
+    Real.tanh_artanh hx', mul_div_cancel₀ _ ha.ne']
+
+/-- For `s > 0`, `birthDeathTimeCoordinate s` is an order-preserving bijection from `(-√s, √s)` onto
+`ℝ`. -/
+theorem bijOn_birthDeathTimeCoordinate (hs : 0 < s) :
+    BijOn (birthDeathTimeCoordinate s) (Ioo (-√s) √s) univ := by
+  refine ⟨mapsTo_univ _ _, fun x hx y hy hxy ↦ ?_,
+    fun t _ ↦ ⟨birthDeathOrbit s t, birthDeathOrbit_mem_Ioo hs t,
+      birthDeathTimeCoordinate_birthDeathOrbit hs t⟩⟩
+  rw [← birthDeathOrbit_birthDeathTimeCoordinate hs hx,
+    ← birthDeathOrbit_birthDeathTimeCoordinate hs hy, hxy]
+
+theorem strictMonoOn_birthDeathTimeCoordinate (hs : 0 < s) :
+    StrictMonoOn (birthDeathTimeCoordinate s) (Ioo (-√s) √s) := by
+  have ha : 0 < √s := Real.sqrt_pos.2 hs
+  intro x hx y hy hxy
+  have hx' : x / √s ∈ Ioo (-1 : ℝ) 1 :=
+    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
+  have hy' : y / √s ∈ Ioo (-1 : ℝ) 1 :=
+    ⟨(lt_div_iff₀ ha).2 (by linarith [hy.1]), (div_lt_iff₀ ha).2 (by linarith [hy.2])⟩
+  exact mul_lt_mul_of_pos_left
+    (Real.strictMonoOn_artanh hx' hy' ((div_lt_div_iff_of_pos_right ha).2 hxy)) (inv_pos.2 ha)
+
+/-- On `(-√s, √s)` (`s > 0`), `birthDeathTimeCoordinate s` has derivative `(s - x²)⁻¹`, reciprocal
+to the negative-gradient speed `s - x²`. -/
+theorem hasDerivAt_birthDeathTimeCoordinate (hs : 0 < s) {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
+    HasDerivAt (birthDeathTimeCoordinate s) ((s - x ^ 2)⁻¹) x := by
+  set a := √s
+  have ha : 0 < a := Real.sqrt_pos.2 hs
+  have hasq : a ^ 2 = s := Real.sq_sqrt hs.le
+  have hx' : x / a ∈ Ioo (-1 : ℝ) 1 :=
+    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
+  have hd := (((hasDerivAt_id' x).div_const a).artanh hx').const_mul a⁻¹
+  refine hd.congr_deriv ?_
+  have ha0 : a ≠ 0 := ha.ne'
+  have hsub : a ^ 2 - x ^ 2 ≠ 0 := sub_ne_zero.2 (by nlinarith [hx.1, hx.2])
+  have h1 : 1 - (x / a) ^ 2 = (a ^ 2 - x ^ 2) / a ^ 2 := by field_simp
+  rw [h1, ← hasq]
+  field_simp
+
+/-- **Unique time-shift classification of the connecting trajectory.** For `s > 0`, every negative
+gradient trajectory of `birthDeathPotential s` from `-√s` to `√s` is `t ↦ birthDeathOrbit s (t + τ)`
+for a *unique* time shift `τ = birthDeathTimeCoordinate s (γ 0)`. -/
+theorem existsUnique_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    (hbot : Tendsto γ atBot (𝓝 (-√s))) (htop : Tendsto γ atTop (𝓝 √s)) :
+    ∃! τ, γ = fun t ↦ birthDeathOrbit s (t + τ) := by
+  have hsq := Real.sqrt_pos.2 hs
+  -- The trajectory crosses `0`, by the intermediate value theorem.
+  obtain ⟨a, ha⟩ := (hbot.eventually (gt_mem_nhds (neg_lt_zero.2 hsq))).exists
+  obtain ⟨b, hb⟩ := (htop.eventually (lt_mem_nhds hsq)).exists
+  obtain ⟨t₀, ht₀⟩ := intermediate_value_univ a b
+    (continuous_iff_continuousAt.2 fun t ↦ (hγ t).continuousAt) ⟨ha.le, hb.le⟩
+  have hδ : IsIntegralCurve (fun t ↦ birthDeathOrbit s (t + -t₀))
+      (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦
+    (isIntegralCurve_birthDeathOrbit hs.le (t + -t₀)).comp_add_const t (-t₀)
+  refine ⟨-t₀, eq_of_isIntegralCurve_birthDeathPotential hγ hδ (t₀ := t₀) (by simp [ht₀]),
+    fun τ hτ ↦ ?_⟩
+  have hval := congrArg (birthDeathTimeCoordinate s) (congrFun hτ (-t₀))
+  have hval0 : γ (-t₀) = birthDeathOrbit s (-t₀ + -t₀) :=
+    congrFun (eq_of_isIntegralCurve_birthDeathPotential hγ hδ (t₀ := t₀) (by simp [ht₀])) (-t₀)
+  rw [hval0, birthDeathTimeCoordinate_birthDeathOrbit hs,
+    birthDeathTimeCoordinate_birthDeathOrbit hs] at hval
+  linarith
+
+/-- **Uniqueness of the connecting trajectory.** For `s > 0`, every negative gradient trajectory
+of the birth–death potential from the local maximum `-√s` to the local minimum `√s` is a time
+translate of `TauCeti.birthDeathOrbit s`. So the two critical points born at `s = 0` are joined by
+exactly one unparametrized trajectory. -/
+theorem exists_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    (hbot : Tendsto γ atBot (𝓝 (-√s))) (htop : Tendsto γ atTop (𝓝 √s)) :
+    ∃ τ, γ = fun t ↦ birthDeathOrbit s (t + τ) :=
+  (existsUnique_eq_birthDeathOrbit_comp_add hs hγ hbot htop).exists
+
+/-- For `s > 0`, every negative gradient trajectory of `birthDeathPotential s` from `-√s` to `√s`
+stays strictly inside `(-√s, √s)`. -/
+theorem mem_Ioo_of_isIntegralCurve_birthDeathPotential (hs : 0 < s) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    (hbot : Tendsto γ atBot (𝓝 (-√s))) (htop : Tendsto γ atTop (𝓝 √s)) (t : ℝ) :
+    γ t ∈ Ioo (-√s) √s := by
+  obtain ⟨τ, rfl⟩ := exists_eq_birthDeathOrbit_comp_add hs hγ hbot htop
+  exact birthDeathOrbit_mem_Ioo hs (t + τ)
+
+/-- **No reverse connecting trajectory exists.** For `s > 0`, no negative gradient trajectory of
+`birthDeathPotential s` runs from `√s` at `-∞` to `-√s` at `+∞`. -/
+theorem not_isIntegralCurve_birthDeathPotential_sqrt_to_neg_sqrt (hs : 0 < s) {γ : ℝ → ℝ}
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x))
+    (hbot : Tendsto γ atBot (𝓝 √s)) (htop : Tendsto γ atTop (𝓝 (-√s))) : False := by
+  have hant : Antitone (birthDeathPotential s ∘ γ) :=
+    hγ.antitone_comp_neg_gradient fun t ↦ differentiable_birthDeathPotential s (γ t)
+  have hfbot : Tendsto (birthDeathPotential s ∘ γ) atBot (𝓝 (birthDeathPotential s √s)) :=
+    ((continuous_birthDeathPotential s).tendsto √s).comp hbot
+  have hftop : Tendsto (birthDeathPotential s ∘ γ) atTop (𝓝 (birthDeathPotential s (-√s))) :=
+    ((continuous_birthDeathPotential s).tendsto (-√s)).comp htop
+  have hle0 : birthDeathPotential s (γ 0) ≤ birthDeathPotential s √s :=
+    hant.ge_of_tendsto hfbot 0
+  have hge0 : birthDeathPotential s (-√s) ≤ birthDeathPotential s (γ 0) :=
+    hant.le_of_tendsto hftop 0
+  have hineq : birthDeathPotential s (-√s) ≤ birthDeathPotential s √s := hge0.trans hle0
+  rw [birthDeathPotential_neg_sqrt, birthDeathPotential_sqrt] at hineq
+  have hmul : 0 < s * √s := mul_pos hs (Real.sqrt_pos.2 hs)
+  linarith
+
+/-! ### The model with transverse directions -/
+
+section SeparatedSum
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {g : F → ℝ} {y : F}
+
+/-- In the birth–death model with transverse directions, the critical point `(-√s, y)` above a
+nondegenerate critical point `y` of the transverse function `g` has Morse index one more than
+`y`. -/
+theorem morseIndex_separatedSum_birthDeathPotential_neg_sqrt [FiniteDimensional ℝ F] (hs : 0 < s)
+    (hy : IsNondegenerateCriticalPoint g y) :
+    morseIndex (separatedSum (birthDeathPotential s) g) (WithLp.toLp 2 (-√s, y)) =
+      morseIndex g y + 1 := by
+  rw [morseIndex_separatedSum (contDiff_birthDeathPotential s).contDiffAt hy.contDiffAt,
+    WithLp.toLp_fst, WithLp.toLp_snd, morseIndex_birthDeathPotential_neg_sqrt hs, add_comm]
+
+/-- In the birth–death model with transverse directions, the critical point `(√s, y)` above a
+nondegenerate critical point `y` of the transverse function `g` has the Morse index of `y`. -/
+theorem morseIndex_separatedSum_birthDeathPotential_sqrt [FiniteDimensional ℝ F] (hs : 0 < s)
+    (hy : IsNondegenerateCriticalPoint g y) :
+    morseIndex (separatedSum (birthDeathPotential s) g) (WithLp.toLp 2 (√s, y)) =
+      morseIndex g y := by
+  rw [morseIndex_separatedSum (contDiff_birthDeathPotential s).contDiffAt hy.contDiffAt,
+    WithLp.toLp_fst, WithLp.toLp_snd, morseIndex_birthDeathPotential_sqrt hs, zero_add]
+
+/-- Before the birth (`s < 0`), no global negative gradient trajectory of
+`separatedSum (birthDeathPotential s) g` converges at `+∞`. -/
+theorem not_tendsto_atTop_nhds_of_isIntegralCurve_separatedSum_birthDeathPotential_of_neg
+    [CompleteSpace F] (hs : s < 0) (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
+    (q : WithLp 2 (ℝ × F)) : ¬Tendsto z atTop (𝓝 q) := fun hq ↦
+  not_tendsto_atTop_nhds_of_isIntegralCurve_birthDeathPotential_of_neg hs
+    ((isIntegralCurve_separatedSum_iff
+      (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz).1 q.fst
+    (((WithLp.fstL 2 ℝ ℝ F).continuous.tendsto q).comp hq)
+
+/-- Before the birth (`s < 0`), no global negative gradient trajectory of
+`separatedSum (birthDeathPotential s) g` converges at `-∞`. -/
+theorem not_tendsto_atBot_nhds_of_isIntegralCurve_separatedSum_birthDeathPotential_of_neg
+    [CompleteSpace F] (hs : s < 0) (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
+    (p : WithLp 2 (ℝ × F)) : ¬Tendsto z atBot (𝓝 p) := fun hp ↦
+  not_tendsto_atBot_nhds_of_isIntegralCurve_birthDeathPotential_of_neg hs
+    ((isIntegralCurve_separatedSum_iff
+      (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz).1 p.fst
+    (((WithLp.fstL 2 ℝ ℝ F).continuous.tendsto p).comp hp)
+
+/-- **Unique time-shift classification in the model with transverse directions.** Let `g` be
+differentiable. For `s > 0`, every negative gradient trajectory of
+`(x, y) ↦ x³ / 3 - s x + g y` from `(-√s, y)` to `(√s, y)` is
+`t ↦ (√s tanh (√s (t + τ)), y)` for a *unique* time shift `τ`. -/
+theorem existsUnique_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
+    (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
+    (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (-√s, y))))
+    (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (√s, y)))) :
+    ∃! τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) := by
+  obtain ⟨h₁, h₂⟩ := (isIntegralCurve_separatedSum_iff
+    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz
+  have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
+  have hsnd := (WithLp.sndL 2 ℝ ℝ F).continuous.tendsto
+  have hy := h₂.eq_const_of_tendsto (fun _ ↦ hg _) (hg y).continuousAt
+    (by simpa [Function.comp_def] using (hsnd _).comp hbot)
+    (by simpa [Function.comp_def] using (hsnd _).comp htop)
+  obtain ⟨τ, hτ, huniq⟩ := existsUnique_eq_birthDeathOrbit_comp_add hs h₁
+    (by simpa [Function.comp_def] using (hfst _).comp hbot)
+    (by simpa [Function.comp_def] using (hfst _).comp htop)
+  refine ⟨τ, funext fun t ↦ WithLp.ofLp_injective 2 (Prod.ext ?_ ?_), fun τ' hτ' ↦ huniq τ' ?_⟩
+  · simpa using congrFun hτ t
+  · simpa using congrFun hy t
+  · funext t
+    simpa using congrArg WithLp.fst (congrFun hτ' t)
+
+/-- **The connecting trajectory of the birth–death model.** Let `g` be differentiable. For `s > 0`,
+every negative gradient trajectory of
+`(x, y) ↦ x³ / 3 - s x + g y` from `(-√s, y)` to `(√s, y)` is
+`t ↦ (√s tanh (√s (t + τ)), y)` for some `τ`: its transverse component is constant, and its first
+component is a translate of `TauCeti.birthDeathOrbit s`. -/
+theorem exists_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
+    (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
+    (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (-√s, y))))
+    (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (√s, y)))) :
+    ∃ τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) :=
+  (existsUnique_eq_birthDeathOrbit_separatedSum hs hg hz hbot htop).exists
+
+/-- Conversely, above a critical point `y` of a transverse function `g` differentiable at `y`, the
+curve `t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/
+theorem isIntegralCurve_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 ≤ s)
+    (hg : DifferentiableAt ℝ g y) (hy : ∇ g y = 0) :
+    IsIntegralCurve (fun t ↦ WithLp.toLp 2 (birthDeathOrbit s t, y))
+      (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w) :=
+  (isIntegralCurve_birthDeathOrbit hs).separatedSum (isIntegralCurve_const_neg_gradient_iff.2 hy)
+    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg
+
+/-- For `s > 0` and differentiable `g`, no negative gradient trajectory of
+`separatedSum (birthDeathPotential s) g` runs from `(√s, y)` to `(-√s, y)`. -/
+theorem not_isIntegralCurve_separatedSum_birthDeathPotential_sqrt_to_neg_sqrt [CompleteSpace F]
+    (hs : 0 < s) (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
+    (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (√s, y))))
+    (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (-√s, y)))) : False := by
+  have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
+  exact not_isIntegralCurve_birthDeathPotential_sqrt_to_neg_sqrt hs
+    ((isIntegralCurve_separatedSum_iff
+      (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz).1
+    (by simpa [Function.comp_def] using (hfst _).comp hbot)
+    (by simpa [Function.comp_def] using (hfst _).comp htop)
+
+end SeparatedSum
 
 end TauCeti
 

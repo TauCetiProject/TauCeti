@@ -43,9 +43,9 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.gradient_separatedSum`, `TauCeti.lipschitzWith_gradient_separatedSum`, and
   `TauCeti.hessianOperator_separatedSum_apply`: its gradient is the pair of gradients, is Lipschitz
   when both gradients are, and its Hessian operator acts block-diagonally.
-* `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: negative gradient
-  trajectories of the separated sum are exactly the pairs of negative gradient trajectories of the
-  summands.
+* `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
+  gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
+  the summands.
 * `TauCeti.hessianQuadraticForm_separatedSum_apply`,
   `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff`, and `TauCeti.morseIndex_separatedSum`:
   its Hessian quadratic form is the sum of the Hessians of the summands, and its nondegenerate
@@ -219,27 +219,22 @@ theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ →
   rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
     WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
 
-/-- **A curve is a negative gradient trajectory of a separated sum if and only if its two
-components are negative gradient trajectories of the summands.** Unlike
-`TauCeti.negativeGradientFlow_separatedSum_apply`, this requires no global Lipschitz hypothesis on
-either gradient. -/
-theorem isIntegralCurve_separatedSum_iff {γ : ℝ → WithLp 2 (E × F)}
-    (hf : ∀ s, DifferentiableAt ℝ f (γ s).fst) (hg : ∀ s, DifferentiableAt ℝ g (γ s).snd) :
-    IsIntegralCurve γ (fun _ z ↦ -∇ (separatedSum f g) z) ↔
-      IsIntegralCurve (fun s ↦ (γ s).fst) (fun _ x ↦ -∇ f x) ∧
-        IsIntegralCurve (fun s ↦ (γ s).snd) (fun _ y ↦ -∇ g y) := by
-  constructor
-  · intro h
-    refine ⟨fun s ↦ ?_, fun s ↦ ?_⟩
-    · have h₁ := (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
-      simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using h₁
-    · have h₂ := (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (h s)
-      simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using h₂
-  · rintro ⟨h₁, h₂⟩
-    have hpair := h₁.separatedSum h₂ hf hg
-    refine fun s ↦ (hpair s).congr_of_eventuallyEq (.of_forall fun t ↦ ?_)
-    apply WithLp.ofLp_injective
-    exact Prod.eta _
+/-- **Negative gradient trajectories of a separated sum are pairs of trajectories.** A curve in the
+`L²` product, along which both summands are differentiable, is a negative gradient trajectory of
+`separatedSum f g` exactly when its two components are negative gradient trajectories of `f` and of
+`g`. -/
+theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (z s).fst) (hg : ∀ s, DifferentiableAt ℝ g (z s).snd) :
+    IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum f g) w) ↔
+      IsIntegralCurve (fun s ↦ (z s).fst) (fun _ x ↦ -∇ f x) ∧
+        IsIntegralCurve (fun s ↦ (z s).snd) (fun _ y ↦ -∇ g y) := by
+  -- Conversely, `WithLp.toLp 2 ((z s).fst, (z s).snd)` is `z s` by structure eta for `WithLp` and
+  -- `Prod`, so the pair of trajectories is `z` itself.
+  refine ⟨fun hz ↦ ⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun ⟨h₁, h₂⟩ ↦ h₁.separatedSum h₂ hf hg⟩
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
+      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
+      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
 
 /-- **The Hessian operator of a separated sum acts block-diagonally.** -/
 @[simp]

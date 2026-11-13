@@ -50,10 +50,11 @@ and Hessian determine the corresponding linearized gradient flow and its contrac
 * `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_zero`: the origin is nondegenerate.
 * `TauCeti.splitQuadraticFlow`: its explicit negative-gradient flow.
 * `Flow.isNegativeGradient_splitQuadraticFlow`: the flow solves the negative-gradient equation.
-* `TauCeti.negativeGradientFlow_splitQuadratic` and
-  `TauCeti.eq_splitQuadraticFlow_of_isIntegralCurve`: the general construction of the negative
-  gradient flow returns this explicit flow, and every negative-gradient trajectory is one of its
-  flow lines.
+* `TauCeti.negativeGradientFlow_splitQuadratic`,
+  `TauCeti.eq_splitQuadraticFlow_of_isIntegralCurve`, and
+  `TauCeti.eq_zero_of_isIntegralCurve_splitQuadratic`: the general construction of the negative
+  gradient flow returns this explicit flow, every negative-gradient trajectory is one of its flow
+  lines, and the constant zero curve is the only trajectory with finite limits at both ends.
 * `Flow.stableSet_splitQuadraticFlow_zero`: the stable set is the first coordinate plane.
 * `Flow.unstableSet_splitQuadraticFlow_zero`: the unstable set is the second coordinate plane.
 
@@ -321,6 +322,44 @@ theorem eq_splitQuadraticFlow_of_isIntegralCurve [InnerProductSpace ℝ Eₛ]
   have h := eq_negativeGradientFlow (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
     lipschitzWith_gradient_splitQuadratic hγ t
   rwa [negativeGradientFlow_splitQuadratic] at h
+
+private theorem eq_zero_of_tendsto_exp_mul_atTop {F : Type*} [NormedAddCommGroup F] {v : F} {L : ℝ}
+    (hlim : Tendsto (fun t : ℝ ↦ Real.exp t * ‖v‖) atTop (𝓝 L)) : v = 0 := by
+  by_contra hne
+  have hdiv := Real.tendsto_exp_atTop.atTop_mul_const (norm_pos_iff.2 hne)
+  obtain ⟨s, hs1, hs2⟩ := ((hlim.eventually (Iio_mem_nhds (lt_add_one L))).and
+    (hdiv.eventually (eventually_ge_atTop (L + 2)))).exists
+  linarith
+
+/-- Any global negative-gradient trajectory of `splitQuadratic` with finite limits at `-∞` and `+∞`
+is identically zero, with both limits equal to `0`. -/
+theorem eq_zero_of_isIntegralCurve_splitQuadratic [InnerProductSpace ℝ Eₛ]
+    [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ]
+    {ζ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
+    (hζ : IsIntegralCurve ζ (fun _ w ↦ -∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) w))
+    {p q : WithLp 2 (Eₛ × Eᵤ)} (hbot : Tendsto ζ atBot (𝓝 p)) (htop : Tendsto ζ atTop (𝓝 q)) :
+    p = 0 ∧ q = 0 ∧ ζ = 0 := by
+  let z₀ := ζ 0
+  have hflow : ∀ t, ζ t = splitQuadraticFlow t z₀ :=
+    congrFun (eq_splitQuadraticFlow_of_isIntegralCurve hζ)
+  have hzₛ : z₀.fst = 0 := eq_zero_of_tendsto_exp_mul_atTop (L := ‖p.fst‖) <| by
+    have hlim := (((WithLp.fstL 2 ℝ Eₛ Eᵤ).continuous.tendsto p).comp hbot).norm.comp
+      tendsto_neg_atTop_atBot
+    exact hlim.congr fun t ↦ by
+      simp [hflow (-t), splitQuadraticFlow_apply, z₀, norm_smul,
+        Real.norm_of_nonneg (Real.exp_pos t).le]
+  have hzᵤ : z₀.snd = 0 := eq_zero_of_tendsto_exp_mul_atTop (L := ‖q.snd‖) <| by
+    have hlim := (((WithLp.sndL 2 ℝ Eₛ Eᵤ).continuous.tendsto q).comp htop).norm
+    exact hlim.congr fun t ↦ by
+      simp [hflow t, splitQuadraticFlow_apply, z₀, norm_smul,
+        Real.norm_of_nonneg (Real.exp_pos t).le]
+  have hζ0 : ζ = 0 := by
+    funext t
+    rw [hflow t, splitQuadraticFlow_apply, hzₛ, hzᵤ, smul_zero, smul_zero]
+    exact WithLp.ofLp_injective 2 (Prod.ext rfl rfl)
+  subst hζ0
+  exact ⟨tendsto_nhds_unique hbot tendsto_const_nhds,
+    tendsto_nhds_unique htop tendsto_const_nhds, rfl⟩
 
 end TauCeti
 
