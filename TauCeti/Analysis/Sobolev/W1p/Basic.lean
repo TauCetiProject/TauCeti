@@ -561,8 +561,7 @@ theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
 /-- The squared pointwise norm of a Sobolev gradient is integrable. -/
 theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-  (memLp_two_iff_integrable_sq_norm (Lp.memLp (W1p.gradient u)).aestronglyMeasurable).1
-    (Lp.memLp (W1p.gradient u))
+  (Lp.memLp (W1p.gradient u)).integrable_norm_pow two_ne_zero
 
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
