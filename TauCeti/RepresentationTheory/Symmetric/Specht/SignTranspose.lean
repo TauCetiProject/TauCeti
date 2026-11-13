@@ -58,6 +58,8 @@ is nonzero, and Schur's lemma makes it bijective.
 * `TauCeti.spechtModule_tensor_sign_iso`: **`S^μ ⊗ sgn ≅ S^(μᵗ)`** in
   `FDRep ℚ (Equiv.Perm (Fin n))`.
 * `TauCeti.spechtChar_conjugate`: **`χ^(μᵗ)(σ) = sgn(σ) χ^μ(σ)`**.
+* `TauCeti.spechtChar_eq_zero_of_conjugate_eq`: the character of a self-conjugate shape vanishes on
+  the odd permutations.
 
 ## References
 
@@ -354,6 +356,14 @@ theorem spechtChar_conjugate (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
   rw [FDRep.char_tensor, Pi.mul_apply, FDRep.char_ofLinearCharacter,
     coe_signLinearCharacter_apply] at h
   rw [← Int.cast_inj (α := ℚ), Int.cast_mul, spechtChar_cast, spechtChar_cast, ← h, mul_comm]
+
+/-- **The character of a self-conjugate shape vanishes on the odd permutations**: if `μᵗ = μ` and
+`sgn σ = -1`, then `χ^μ(σ) = 0`. -/
+theorem spechtChar_eq_zero_of_conjugate_eq {μ : n.Partition} (hμ : μ.conjugate = μ)
+    {σ : Equiv.Perm (Fin n)} (hσ : Equiv.Perm.sign σ = -1) : spechtChar μ σ = 0 := by
+  have h := spechtChar_conjugate μ σ
+  rw [hμ, hσ, Units.val_neg, Units.val_one] at h
+  omega
 
 end Partition
 
