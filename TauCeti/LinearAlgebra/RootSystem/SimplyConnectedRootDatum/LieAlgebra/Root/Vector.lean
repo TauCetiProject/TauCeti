@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.System
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # The Chevalley system of the pinned rational Lie algebra
@@ -128,13 +129,6 @@ private theorem height_reflectionPerm_self (γ : Fin t.numRoots) :
   rw [← reflectionPerm_rationalRootSystem]
   exact (t.rationalBase ht).height_reflectionPerm_self γ
 
-private theorem reflectionPerm_reflectionPerm_self (γ : Fin t.numRoots) :
-    (t.simplyConnectedRootDatum ht).reflectionPerm
-        ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)
-        ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) = γ :=
-  letI := (t.simplyConnectedRootDatum ht).indexNeg
-  neg_neg γ
-
 variable (t ht)
 
 /-! ## The named Chevalley system -/
@@ -238,7 +232,8 @@ to minus that of `-γ`. -/
         ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ) := by
       rw [height_reflectionPerm_self]
       omega
-    rw [chevalleySystem_of_height_nonpos hneg, reflectionPerm_reflectionPerm_self, neg_neg]
+    rw [chevalleySystem_of_height_nonpos hneg,
+      RootPairing.reflectionPerm_reflectionPerm_self, neg_neg]
   · have hinv := (t.chevalleyInvolution ht).symm_apply_apply
       (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ))
     rw [chevalleyInvolution_symm] at hinv
@@ -335,7 +330,7 @@ private theorem exists_eq_smul {X y : Fin t.numRoots → t.lieAlgebra ht}
   · have hne := (t.rationalBase ht).height_ne_zero γ
     obtain ⟨s, hs, h₁, h₂⟩ := hpos ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)
       (by rw [height_reflectionPerm_self]; omega)
-    exact ⟨s, hs, reflectionPerm_reflectionPerm_self γ ▸ h₂, h₁⟩
+    exact ⟨s, hs, (t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self γ ▸ h₂, h₁⟩
 
 /-- A pinned Chevalley system, read in the root numbering: its root vectors at the simple roots are
 the generators `eᵢ`. -/

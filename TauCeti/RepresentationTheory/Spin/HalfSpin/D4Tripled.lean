@@ -86,7 +86,7 @@ private noncomputable def d4SpinPlusBasis :
   basisOfLinearIndependentOfCardEqFinrank' (P.d4SpinPlusExteriorBasis b)
     (P.d4SpinPlusBasisVector_linearIndependent b) (by
       rw [Fintype.card_eq_nat_card, TauCeti.card_even_card_finset, Nat.card_fin,
-        TauCeti.finrank_spinPlus P (P.W_ne_bot b), Module.finrank_eq_card_basis b]
+        TauCeti.finrank_spinPlus P, Module.finrank_eq_card_basis b]
       norm_num)
 
 /-- An odd exterior-basis vector, regarded as an element of the odd half-spin module. -/

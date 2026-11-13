@@ -54,7 +54,6 @@ theorem orderTop_single_sub_pow_sub_self
     (single (-(n : ℤ)) a - (w ^ n - w)).orderTop =
       ((if w.order < -1 then (n : ℤ) * w.order else -(n : ℤ)) : ℤ) := by
   have hn0 : n ≠ 0 := by omega
-  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
   have ha0 : a ≠ 0 := by simpa [hn0] using (ha 0).symm
   have hu : (single (-(n : ℤ)) a : k⸨X⸩).orderTop = (-(n : ℤ) : ℤ) :=
     orderTop_single ha0
@@ -88,7 +87,6 @@ theorem orderTop_single_sub_pow_sub_self
       · simpa [hu, hv'] using (min_orderTop_le_orderTop_sub
           (x := (single (-(n : ℤ)) a : k⸨X⸩)) (y := w ^ n - w))
   · -- An integral substitution cannot affect the original negative-order term.
-    have hwpos : 0 ≤ w.order := by omega
     have hmin : (-(n : ℤ) : WithTop ℤ) < min (w ^ n).orderTop w.orderTop := by
       rw [hpow, hwtop, lt_min_iff]
       constructor <;> exact_mod_cast (by nlinarith : -(n : ℤ) < _)
@@ -127,7 +125,6 @@ theorem not_exists_reduced_representative_single_sub_pow_sub_self
   rintro ⟨w, hreg | hpole⟩
   · obtain ⟨hne, hle, -⟩ := single_sub_pow_sub_self_ne_zero_and_order_le_and_dvd hn ha w
     rw [← order_eq_orderTop_of_ne_zero hne, WithTop.coe_nonneg] at hreg
-    have hnZ : (0 : ℤ) < n := by omega
     omega
   · exact hpole.2 (single_sub_pow_sub_self_ne_zero_and_order_le_and_dvd hn ha w).2.2
 

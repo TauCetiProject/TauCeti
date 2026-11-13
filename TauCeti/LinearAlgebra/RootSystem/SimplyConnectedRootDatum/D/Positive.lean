@@ -117,7 +117,7 @@ theorem typeDSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
   · intro h
     induction h with
     | refl => simp
-    | @tail t u h htu ih =>
+    | @tail t u _ htu ih =>
       obtain ⟨i, hi, rfl⟩ := (typeDSpinRaisingStep_iff _ _).mp htu
       have heq : μ (typeDSpinReflection i t) - μ s =
           (μ t - μ s) + (P).root (typeDSimpleIndex n hn i) := by

@@ -44,6 +44,7 @@ ones, so the public `LinearMap.baseChange` API applies.
 
 * `Subalgebra.toSubmodule_baseChange`: the underlying submodule of `C.baseChange T` is
   `(Subalgebra.toSubmodule C).baseChange T`.
+* `Subalgebra.baseChange_bot`: the base change of the bottom subalgebra is the bottom subalgebra.
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
@@ -98,6 +99,23 @@ theorem Subalgebra.toSubmodule_baseChange {R S : Type*} [CommSemiring R] [Semiri
   -- Both ranges use the tensor map induced by the identity on `T` and the inclusion of `C`.
   -- The algebra tensor map and the base change of the linear inclusion have the same function.
   rfl
+
+/-- The base change of the bottom subalgebra is the bottom subalgebra: `t ⊗ r = (r t) ⊗ 1` for
+`r` in the image of `R`. -/
+@[simp]
+theorem Subalgebra.baseChange_bot {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    (T : Type*) [CommSemiring T] [Algebra R T] :
+    (⊥ : Subalgebra R S).baseChange T = ⊥ := by
+  refine eq_bot_iff.2 ?_
+  rintro _ ⟨x, rfl⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul t s =>
+    obtain ⟨r, hr⟩ := Algebra.mem_bot.1 s.2
+    have : t ⊗ₜ[R] (s : S) = algebraMap T (T ⊗[R] S) (r • t) := by
+      rw [← hr, Algebra.algebraMap_eq_smul_one, ← smul_tmul,
+        Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
+    simpa [this] using (⊥ : Subalgebra T (T ⊗[R] S)).algebraMap_mem (r • t)
+  | add x y hx hy => simpa using add_mem hx hy
 
 /-- Base change of the underlying linear map of an algebra map is the base change of the
 algebra map. -/
@@ -187,6 +205,20 @@ theorem liftRingHom_comp_includeRight :
   simp
 
 end LiftRingHom
+
+/-- Applying `liftRingHom` after tensor reassociation separates the first factor from the
+remaining two factors. -/
+theorem liftRingHom_assoc_symm_tmul {R A B C T : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
+    [CommSemiring T] (x : A ⊗[R] B →+* T) (τ : C →+* T)
+    (hτ : x.comp (algebraMap R (A ⊗[R] B)) = τ.comp (algebraMap R C))
+    (hτ' : (x.comp (includeRight : B →ₐ[R] A ⊗[R] B).toRingHom).comp (algebraMap R B) =
+      τ.comp (algebraMap R C)) (a : A) (v : B ⊗[R] C) :
+    liftRingHom x τ hτ ((_root_.TensorProduct.assoc R A B C).symm (a ⊗ₜ v)) =
+      x (a ⊗ₜ 1) * liftRingHom (x.comp (includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) τ hτ' v := by
+  induction v using TensorProduct.inductionOn with
+  | add v v' hv hv' => simp [mul_add, tmul_add, hv, hv']
+  | tmul b c => simp [← mul_assoc, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
 
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Algebra R A]
   [Semiring B] [Algebra R B]

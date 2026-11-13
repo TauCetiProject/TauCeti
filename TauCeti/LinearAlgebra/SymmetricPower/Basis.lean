@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Sym.Card
+public import Mathlib.Data.Sym.NatCard
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Data.Sym.Basic
@@ -37,7 +37,9 @@ orderings of an unordered tuple differ by a permutation.
 * `Module.Basis.map_symmetricPower_of_apply`: an endomorphism diagonal in a basis is
   diagonal in the induced basis of the symmetric power, with eigenvalue the product of the
   eigenvalues listed by the index.
-* `SymmetricPower.finrank_eq`: the rank of `Sym[R]^n M` is `Nat.multichoose (finrank R M) n`.
+* `SymmetricPower.finrank_eq`: for free `M`, the rank of `Sym[R]^n M` is
+  `Nat.multichoose (finrank R M) n`; for finite free `M` this counts the unordered `n`-tuples of
+  basis indices.
 * `Module.Basis.trace_map_symmetricPower_of_apply`: the trace on `Sym[R]^n M` of an endomorphism
   that is diagonal in a basis is the sum, over the unordered `n`-tuples of basis indices, of the
   product of the corresponding eigenvalues. This is the complete homogeneous symmetric polynomial
@@ -113,7 +115,7 @@ private theorem toFinsuppAux_reindex (e : Equiv.Perm (Fin n)) :
 
 /-- The multilinear form of the coordinate map, before descending to the symmetric power. -/
 private noncomputable def toFinsuppMultilinear :
-    MultilinearMap R (fun _ : Fin n ↦ M) (Sym κ n →₀ R) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) (Sym κ n →₀ R) :=
   (toFinsuppAux b).compMultilinearMap (PiTensorProduct.tprod R)
 
 private theorem toFinsuppMultilinear_domDomCongr (e : Equiv.Perm (Fin n)) :
@@ -187,13 +189,13 @@ theorem _root_.Module.Basis.map_symmetricPower_of_apply (f : M →ₗ[R] M) (a :
 instance free [Module.Free R M] : Module.Free R (Sym[R]^n M) :=
   Module.Free.of_basis ((Module.Free.chooseBasis R M).symmetricPower n)
 
-/-- The rank of a symmetric power of a finite free module: the number of unordered `n`-tuples of
-basis indices, `Nat.multichoose (finrank R M) n`. -/
-theorem finrank_eq [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
+/-- The rank of a symmetric power of a free module is `Nat.multichoose (finrank R M) n`. When `M`
+is finite this is the number of unordered `n`-tuples of basis indices. When `M` is not finite,
+`finrank R M = 0` and both sides are `0` for `n > 0` and `1` for `n = 0`. -/
+theorem finrank_eq [StrongRankCondition R] [Module.Free R M] :
     Module.finrank R (Sym[R]^n M) = Nat.multichoose (Module.finrank R M) n := by
-  classical
-  rw [Module.finrank_eq_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
-    Sym.card_sym_eq_multichoose, Module.finrank_eq_card_chooseBasisIndex]
+  rw [Module.finrank_eq_nat_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
+    Sym.natCard_sym_eq_multichoose, Module.finrank_eq_nat_card_basis (Module.Free.chooseBasis R M)]
 
 /-! ### Traces -/
 

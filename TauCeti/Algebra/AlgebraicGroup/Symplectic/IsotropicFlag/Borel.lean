@@ -353,14 +353,15 @@ theorem isBorelOverAlgClosed_iff_exists_eq_conjugate [IsAlgClosed k]
 
 /-- **Any two Borel subgroups of `Sp₂ₘ` over an algebraically closed field are conjugate** by a
 rational point of `Sp₂ₘ`. -/
-theorem exists_conjugate_eq_of_isBorelOverAlgClosed [IsAlgClosed k]
+theorem exists_conjugate_eq_of_isBorelOverAlgClosed
     {I J : HopfIdeal k (Symplectic.coordinateHopfAlgebra k m)}
     (hI : HopfIdeal.IsBorelOverAlgClosed k
       (FiniteTypeCommHopfAlgCat.of k (Symplectic.coordinateHopfAlgebra k m)) I)
     (hJ : HopfIdeal.IsBorelOverAlgClosed k
       (FiniteTypeCommHopfAlgCat.of k (Symplectic.coordinateHopfAlgebra k m)) J) :
-    ∃ g : WithConv (Symplectic.coordinateHopfAlgebra k m →ₐ[k] k), I.conjugate g = J :=
-  HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed _
+    ∃ g : WithConv (Symplectic.coordinateHopfAlgebra k m →ₐ[k] k), I.conjugate g = J := by
+  let : IsAlgClosed k := ((HopfIdeal.isBorelOverAlgClosed_iff _ _ _).mp hI).1
+  exact HopfIdeal.exists_conjugate_eq_of_isBorelOverAlgClosed _
     (isBorelCandidate_definingHopfIdeal k m)
     exists_conjugate_definingHopfIdeal_le_of_isBorelOverAlgClosed hI hJ
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Idempotent
 public import Mathlib.Data.Matrix.Block
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
@@ -51,6 +52,10 @@ on matrices entrywise.
   homomorphisms induce chain maps, a morphism `H` with `∂H = F + G` induces a chain homotopy
   between the maps of `F` and `G`, composition is preserved
   (`TauCeti.continuationMap_matMul`), and the identity morphism acts as the identity on `M ⊗ N`.
+* **Mapping cones.** A homomorphism `F` from `N` to `N'` has a mapping cone
+  (`TauCeti.TypeDStructure.cone`), the type `D` structure on the generators `X ⊕ X'` with
+  coefficient matrix `fromBlocks δ F 0 δ'`; a morphism `fromCols G H` into it has differential
+  `fromCols (∂G) (G * F + ∂H)` (`TauCeti.TypeDStructure.morphismDifferential_cone_fromCols`).
 * **Iterates of `δ¹`.** The coefficient of `z` in `δᵏ x` is the sum over the paths
   `x = r 0, …, r k = z` of `coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k-1)) (r k)` in the `k`-th tensor
   power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
@@ -74,6 +79,7 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.morphisms`, `TauCeti.TypeDStructure.morphismDifferential`,
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
+* `TauCeti.TypeDStructure.cone`: the mapping cone of a homomorphism.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
@@ -312,6 +318,58 @@ theorem morphismDifferential_mem_morphisms (hd : IsUngradedDGAlgebra d) (hι : �
   add_mem (add_mem (map_mem_morphisms hd hι hF) (mul_mem_morphisms hF (coeff_mem_morphisms N')))
     (mul_mem_morphisms (coeff_mem_morphisms N) hF)
 
+/-! ### Mapping cones -/
+
+variable (N N') in
+/-- The **mapping cone** of a homomorphism `F` from `N` to `N'`: the type `D` structure on the
+generators `X ⊕ X'` with the idempotents of `N` and of `N'` and the block upper-triangular
+coefficient matrix `fromBlocks δ F 0 δ'`. It satisfies the structure equation because `F` is a
+cycle (`TauCeti.TypeDStructure.map_fromBlocks_add_fromBlocks_mul_fromBlocks`). -/
+def cone (F : Matrix X X' A) (hF : F ∈ morphisms N N') (hF' : morphismDifferential N N' F = 0) :
+    TypeDStructure d ι (X ⊕ X') where
+  idem := Sum.elim N.idem N'.idem
+  coeff := Matrix.fromBlocks N.coeff F 0 N'.coeff
+  idem_mul_coeff a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · exact N.idem_mul_coeff x y
+    · exact (hF x y).1
+    · simp
+    · exact N'.idem_mul_coeff x y
+  coeff_mul_idem a b := by
+    rcases a with x | x <;> rcases b with y | y
+    · exact N.coeff_mul_idem x y
+    · exact (hF x y).2
+    · simp
+    · exact N'.coeff_mul_idem x y
+  map_coeff_add_coeff_mul_coeff := by
+    rw [map_fromBlocks_add_fromBlocks_mul_fromBlocks, hF', Matrix.fromBlocks_zero]
+
+section Cone
+
+variable {F : Matrix X X' A} {hF : F ∈ morphisms N N'} {hF' : morphismDifferential N N' F = 0}
+
+@[simp]
+theorem cone_idem : (cone N N' F hF hF').idem = Sum.elim N.idem N'.idem :=
+  (rfl)
+
+@[simp]
+theorem cone_coeff : (cone N N' F hF hF').coeff = Matrix.fromBlocks N.coeff F 0 N'.coeff :=
+  (rfl)
+
+/-- The differential of a morphism `fromCols G H` from `N''` to the mapping cone of `F`, with
+components `G` to `N` and `H` to `N'`: its components are `∂G` and `G * F + ∂H`. -/
+theorem morphismDifferential_cone_fromCols (G : Matrix X'' X A) (H : Matrix X'' X' A) :
+    morphismDifferential N'' (cone N N' F hF hF') (Matrix.fromCols G H) =
+      Matrix.fromCols (morphismDifferential N'' N G) (G * F + morphismDifferential N'' N' H) := by
+  simp only [morphismDifferential_apply, cone_coeff, Matrix.fromCols_map,
+    Matrix.fromCols_mul_fromBlocks, Matrix.mul_fromCols, Matrix.mul_zero, add_zero]
+  ext x (y | y)
+  · simp only [Matrix.add_apply, Matrix.fromCols_apply_inl]
+  · simp only [Matrix.add_apply, Matrix.fromCols_apply_inr]
+    abel
+
+end Cone
+
 /-! ### The box tensor product -/
 
 section BoxTensor
@@ -507,7 +565,7 @@ theorem iteratedCoeff_one (x z : X) :
 /-- Evaluating a multilinear map on the iterate `δᵏ` sums it over the paths. -/
 @[simp]
 theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin k => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r 0 = x ∧ r (Fin.last k) = z,
         f fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -516,7 +574,7 @@ theorem lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
 /-- Summing multilinear maps evaluated on the iterates `δᵏ x` over the starting generators `x`
 sums over all the paths ending at `z`. -/
 theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : X → MultilinearMap R (fun _ : Fin k => A) P) (z : X) :
+    (f : X → MultilinearMap (RingHom.id R) (fun _ : Fin k => A) P) (z : X) :
     ∑ x, PiTensorProduct.lift (f x) (N.iteratedCoeff k x z) =
       ∑ r : Fin (k + 1) → X with r (Fin.last k) = z,
         f (r 0) fun t => N.coeff (r t.castSucc) (r t.succ) := by
@@ -530,7 +588,7 @@ theorem sum_lift_iteratedCoeff {P : Type*} [AddCommGroup P] [Module R P] (k : �
 /-- The iterate `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`: evaluating a multilinear map on `δᵏ⁺¹ x` evaluates it on
 a first coefficient `coeff x y`, followed by `δᵏ y`. -/
 theorem lift_iteratedCoeff_succ {P : Type*} [AddCommGroup P] [Module R P] (k : ℕ)
-    (f : MultilinearMap R (fun _ : Fin (k + 1) => A) P) (x z : X) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin (k + 1) => A) P) (x z : X) :
     PiTensorProduct.lift f (N.iteratedCoeff (k + 1) x z) =
       ∑ y, PiTensorProduct.lift (f.curryLeft (N.coeff x y)) (N.iteratedCoeff k y z) := by
   rw [sum_lift_iteratedCoeff, lift_iteratedCoeff, Finset.sum_filter, Finset.sum_filter,

@@ -419,6 +419,21 @@ theorem universalLinearMap_apply_self (i : Fin k) :
   rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem] at h
   simpa [universalLinearMap, Pi.single_apply, apply_ite (algebraMap R _)] using h
 
+/-- `R`-algebra maps out of `ChartAlgebra R x` are determined by their values on the universal
+point. The target need not be commutative. -/
+theorem hom_ext {A : Type*} [Semiring A] [Algebra R A] {g g' : ChartAlgebra R x →ₐ[R] A}
+    (h : ∀ m j, g (universalLinearMap R x m j) = g' (universalLinearMap R x m j)) : g = g' := by
+  -- `SymmetricAlgebra.algHom_ext` needs a commutative target, so induct on the generators.
+  refine Ideal.Quotient.algHom_ext R (AlgHom.ext fun a ↦ ?_)
+  induction a using SymmetricAlgebra.induction with
+  | algebraMap r => simp
+  | ι v =>
+    rw [← Finset.univ_sum_single v]
+    simp only [map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by simpa [universalLinearMap] using h (v j) j
+  | mul a b ha hb => simp_all
+  | add a b ha hb => simp_all
+
 variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- `R`-algebra maps `ChartAlgebra R x → A` are the linear maps `ψ : M → A^k` with `ψ (x i) = eᵢ`,
@@ -462,12 +477,6 @@ theorem homEquiv_symm_apply_universalLinearMap
     (ψ : {ψ : M →ₗ[R] Fin k → A // ∀ i, ψ (x i) = Pi.single i 1}) (m : M) (j : Fin k) :
     (homEquiv R x).symm ψ (universalLinearMap R x m j) = ψ.1 m j := by
   rw [← homEquiv_apply_apply, Equiv.apply_symm_apply]
-
-/-- `R`-algebra maps out of `ChartAlgebra R x` are determined by their values on the universal
-point. -/
-theorem hom_ext {g g' : ChartAlgebra R x →ₐ[R] A}
-    (h : ∀ m j, g (universalLinearMap R x m j) = g' (universalLinearMap R x m j)) : g = g' :=
-  (homEquiv R x).injective <| Subtype.ext <| LinearMap.ext fun m ↦ funext fun j ↦ h m j
 
 end ChartAlgebra
 

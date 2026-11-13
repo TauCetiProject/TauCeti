@@ -21,7 +21,9 @@ Let `K` be a compact subset of an open set `G ⊆ ℂ`. This file constructs a c
 `G \ K` that winds once around every point of `K` and is null-homologous in `G`. Such cycles are
 the contours of the Cauchy integral formula for compact sets and of the holomorphic functional
 calculus, where `K` is the spectrum of an element of a Banach algebra and `G` is the domain of
-the function applied to it.
+the function applied to it. Applying the construction again inside the outer cycle's
+winding-one region gives disjoint nested cycles in `G \ K`, both null-homologous in `G`
+and winding once around `K`.
 
 The construction is the classical one by grid squares. For `δ > 0`, take the closed squares of
 side `δ` of the lattice `δ (ℤ + ℤ i)` that meet `K`, and the four positively oriented edges of
@@ -41,6 +43,8 @@ union. For small `δ` the union lies in `G`.
   point of `K`.
 * `IsCompact.exists_cycle_windingNumber_eq_one`: for a compact subset `K` of an open set `G`,
   there is a cycle in `G \ K`, null-homologous in `G`, winding once around every point of `K`.
+* `IsCompact.exists_nested_cycles_windingNumber_eq_one`: disjoint nested cycles in `G \ K`,
+  each null-homologous in `G` and winding once around every point of `K`.
 
 ## References
 
@@ -454,5 +458,43 @@ theorem IsCompact.exists_cycle_windingNumber_eq_one {K G : Set ℂ} (hK : IsComp
     ((hK.eventually_gridCover_subset hG hKG).and self_mem_nhdsWithin).exists
   obtain ⟨Γ, hin, hnull, hK1⟩ := exists_cycle_trace_subset_gridCover hδ hK.isBounded
   exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans (sdiff_subset_sdiff_left hcover)),
-    Cycle.isNullHomologous_iff.2 fun z hz ↦ Cycle.isNullHomologous_iff.1 hnull z (hz <| hcover ·),
-    hK1⟩
+    hnull.mono hcover, hK1⟩
+
+open TauCeti.Contour in
+/-- Two nested cycles around a compact subset `K` of an open set `G` can be chosen with
+disjoint traces. Both lie in `G \ K`, are null-homologous in `G`, and wind once around every
+point of `K`. The outer cycle `Γ₂` winds once around the trace of the inner cycle `Γ₁`,
+while `Γ₁` has winding zero on the trace of `Γ₂`. -/
+theorem IsCompact.exists_nested_cycles_windingNumber_eq_one {K G : Set ℂ} (hK : IsCompact K)
+    (hG : IsOpen G) (hKG : K ⊆ G) :
+    ∃ Γ₁ Γ₂ : Cycle,
+      Γ₁.IsIn (G \ K) ∧ Γ₂.IsIn (G \ K) ∧
+      Γ₁.IsNullHomologous G ∧ Γ₂.IsNullHomologous G ∧
+      (∀ z ∈ K, Cycle.windingNumber z Γ₁ = 1) ∧
+      (∀ z ∈ K, Cycle.windingNumber z Γ₂ = 1) ∧
+      Disjoint (Cycle.trace Γ₁) (Cycle.trace Γ₂) ∧
+      (∀ z ∈ Cycle.trace Γ₂, Cycle.windingNumber z Γ₁ = 0) ∧
+      (∀ z ∈ Cycle.trace Γ₁, Cycle.windingNumber z Γ₂ = 1) := by
+  obtain ⟨Γ₂, h₂, hn₂, hw₂⟩ := hK.exists_cycle_windingNumber_eq_one hG hKG
+  let V := G ∩ Subtype.val ''
+    {z : {z : ℂ // z ∉ Cycle.trace Γ₂} | Cycle.windingNumber z Γ₂ = 1}
+  have hV : IsOpen V := hG.inter <|
+    (Cycle.isCompact_trace Γ₂).isClosed.isOpen_compl.isOpenMap_subtype_val _
+      ((Cycle.isLocallyConstant_windingNumber Γ₂).isOpen_fiber 1)
+  have hKV : K ⊆ V := fun z hz =>
+    ⟨hKG hz, ⟨⟨z, fun ht => (Cycle.isIn_iff.mp h₂ ht).2 hz⟩, hw₂ z hz, rfl⟩⟩
+  obtain ⟨Γ₁, h₁, hn₁, hw₁⟩ := hK.exists_cycle_windingNumber_eq_one hV hKV
+  have htrace : ∀ z ∈ Cycle.trace Γ₁, z ∈ G ∧ z ∉ Cycle.trace Γ₂ ∧
+      Cycle.windingNumber z Γ₂ = 1 := by
+    intro z hz
+    obtain ⟨⟨hzG, w, hw, rfl⟩, -⟩ := Cycle.isIn_iff.mp h₁ hz
+    exact ⟨hzG, w.property, hw⟩
+  refine ⟨Γ₁, Γ₂, Cycle.isIn_iff.mpr (fun z hz =>
+    ⟨(htrace z hz).1, (Cycle.isIn_iff.mp h₁ hz).2⟩), h₂,
+    hn₁.mono inter_subset_left, hn₂, hw₁, hw₂,
+    Set.disjoint_left.mpr (fun z hz => (htrace z hz).2.1), ?_,
+    fun z hz => (htrace z hz).2.2⟩
+  intro z hz
+  apply Cycle.isNullHomologous_iff.mp hn₁ z
+  rintro ⟨-, w, -, hw⟩
+  exact w.property (hw.symm ▸ hz)
