@@ -50,7 +50,7 @@ theorem eventually_deriv_eq_trivializationAt_symm {n : WithTop ℕ∞} (hn : 1 �
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
   have hG : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, E) 1
       (uncurry fun s y ↦ (e (TotalSpace.mk' E y (W s y))).2) (t, x) :=
-    (contMDiffAt_totalSpace.mp (hW.of_le hn)).2
+    (contMDiffAt_totalSpace_iff.mp (hW.of_le hn)).2
   have hG1 := (contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).mp hG
   have hcurve : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (fun s ↦ (e ⟨y, W s y⟩).2) t :=
     ((continuous_const.prodMk continuous_id).continuousAt.eventually hG1).mono fun y hy ↦
@@ -76,8 +76,8 @@ theorem contMDiffAt_deriv_vectorField_of_contMDiffAt {m n : WithTop ℕ∞}
   set e := trivializationAt E (TangentSpace I) x
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
   have hG' := contMDiffAt_deriv_of_contMDiffAt_uncurry
-    (F := fun s y ↦ (e ⟨y, W s y⟩).2) (contMDiffAt_totalSpace.mp hW).2 hmn
-  refine (contMDiffAt_section x).2 (hG'.congr_of_eventuallyEq ?_)
+    (F := fun s y ↦ (e ⟨y, W s y⟩).2) (contMDiffAt_totalSpace_iff.mp hW).2 hmn
+  refine (contMDiffAt_section_iff x).2 (hG'.congr_of_eventuallyEq ?_)
   filter_upwards [eventually_deriv_eq_trivializationAt_symm (le_trans le_add_self hmn) hW,
     e.open_baseSet.mem_nhds hx] with y hy hyb
   rw [hy, e.apply_mk_symm hyb]

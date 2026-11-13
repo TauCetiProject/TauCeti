@@ -82,7 +82,7 @@ theorem hasDerivAt_apply_of_contMDiffAt
   have hcov : IsCovariantDerivativeOn E cov e.baseSet := cov.isCovariantDerivativeOn
   set G : ℝ → M → E := fun s y ↦ (e (TotalSpace.mk' E y (W s y))).2
   have hG : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ, E) 2 (uncurry G) (t, x) :=
-    (contMDiffAt_totalSpace.mp hW).2
+    (contMDiffAt_totalSpace_iff.mp hW).2
   set G' : M → E := fun y ↦ deriv (fun s ↦ G s y) t
   have hG' : MDifferentiableAt I 𝓘(ℝ, E) G' x :=
     (contMDiffAt_deriv_of_contMDiffAt_uncurry hG (by norm_num)).mdifferentiableAt one_ne_zero
