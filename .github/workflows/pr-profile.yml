@@ -66,9 +66,7 @@ jobs:
     # labels this organisation does not serve is not rejected: it sits queued with an empty
     # runner name until it expires, taking the required builds with it. Before changing these
     # labels, confirm them in the organisation that will run the job.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
-      - namespace-features:container.privileged=true
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     if: >-
       github.event_name == 'pull_request_target' ||
