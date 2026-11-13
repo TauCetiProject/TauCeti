@@ -79,6 +79,19 @@ theorem relCompProjection_surjective (L : Submodule R (M × N))
   obtain ⟨n, hnL, hnK⟩ := mem_relComp.mp h
   exact ⟨⟨((m, n), (n, p)), mem_relCompFiberProduct.mpr ⟨hnL, hnK, rfl⟩⟩, rfl⟩
 
+/-- A matching pair projects to zero exactly when both of its endpoints vanish. -/
+@[simp]
+theorem relCompProjection_eq_zero {L : Submodule R (M × N)} {K : Submodule R (N × P)}
+    {z : L.relCompFiberProduct K} :
+    L.relCompProjection K z = 0 ↔ z.1.1.1 = 0 ∧ z.1.2.2 = 0 := by
+  rw [← coe_eq_zero, relCompProjection_apply, Prod.mk_eq_zero]
+
+/-- The endpoint projection onto the composite is onto. -/
+@[simp]
+theorem range_relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
+    LinearMap.range (L.relCompProjection K) = ⊤ :=
+  LinearMap.range_eq_top_of_surjective _ (L.relCompProjection_surjective K)
+
 /-- The excess consists of middle vectors that occur with zero at both endpoints. -/
 def relCompExcess (L : Submodule R (M × N)) (K : Submodule R (N × P)) : Submodule R N :=
   L.comap (LinearMap.inr R M N) ⊓ K.comap (LinearMap.inl R N P)
@@ -123,6 +136,18 @@ theorem relCompExcessInclusion_injective (L : Submodule R (M × N))
     (K : Submodule R (N × P)) : Function.Injective (L.relCompExcessInclusion K) := by
   intro n n' h
   exact Subtype.ext (congrArg (fun z : L.relCompFiberProduct K ↦ z.1.1.2) h)
+
+/-- An embedded excess vector vanishes exactly when the excess vector does. -/
+@[simp]
+theorem relCompExcessInclusion_eq_zero {L : Submodule R (M × N)} {K : Submodule R (N × P)}
+    {n : L.relCompExcess K} : L.relCompExcessInclusion K n = 0 ↔ n = 0 :=
+  (L.relCompExcessInclusion K).map_eq_zero_iff (L.relCompExcessInclusion_injective K)
+
+/-- The excess inclusion has trivial kernel. -/
+@[simp]
+theorem ker_relCompExcessInclusion (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
+    LinearMap.ker (L.relCompExcessInclusion K) = ⊥ :=
+  LinearMap.ker_eq_bot_of_injective (L.relCompExcessInclusion_injective K)
 
 /-- The kernel of the endpoint projection is exactly the embedded excess. -/
 theorem ker_relCompProjection (L : Submodule R (M × N)) (K : Submodule R (N × P)) :

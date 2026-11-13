@@ -30,8 +30,8 @@ is needed in this linear calculation.
 Transversality instead controls the excess of the composition: the directions `w` with
 `(0, w) ∈ L` and `(w, 0) ∈ K`, which the composite map kills. For isotropic relations, if the
 projections of `L` and `K` to the middle factor span it, there is no nonzero excess direction
-(`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`). For linear
-canonical relations the converse holds too
+(`TauCeti.SymplecticForm.IsIsotropic.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top`).
+For linear canonical relations the converse holds too
 (`TauCeti.SymplecticForm.IsLagrangian.map_snd_sup_map_fst_eq_top_iff`).
 
 The matching-space quotient and its excess are defined for arbitrary linear relations in
@@ -162,42 +162,38 @@ theorem IsCoisotropic.orthogonal_map_snd_sup_map_fst_le_relCompExcess
     simp [twistedProd_apply, this]
 
 /-- **Transverse composition has no excess.** If the projections of isotropic relations `L` and
-`K` to their common factor `W` span it, then no nonzero `w` has `(0, w) ∈ L` and `(w, 0) ∈ K`.
-Such `w` are the excess directions of the composition: matching pairs that the composite map
-sends to zero. -/
-theorem IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top
+`K` to their common factor `W` span it, then the excess `L.relCompExcess K` is trivial: no nonzero
+`w` has `(0, w) ∈ L` and `(w, 0) ∈ K`. Such `w` are the excess directions of the composition:
+matching pairs that the composite map sends to zero. -/
+theorem IsIsotropic.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top
     (hL : (ω₁.twistedProd ω₂).IsIsotropic L) (hK : (ω₂.twistedProd ω₃).IsIsotropic K)
-    (htr : L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤) {w : W}
-    (hwL : (0, w) ∈ L) (hwK : (w, 0) ∈ K) : w = 0 := by
-  have hw := hL.relCompExcess_le_orthogonal_map_snd_sup_map_fst hK
-    (Submodule.mem_relCompExcess.mpr ⟨hwL, hwK⟩)
+    (htr : L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤) :
+    L.relCompExcess K = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun w hw ↦ ?_
+  have hw := hL.relCompExcess_le_orthogonal_map_snd_sup_map_fst hK hw
   rw [htr] at hw
   exact ω₂.separatingRight w fun v ↦ mem_orthogonal_iff.mp hw v Submodule.mem_top
 
 /-- **Relations without excess compose transversally.** If `L` and `K` are coisotropic relations
-and no nonzero `w` has `(0, w) ∈ L` and `(w, 0) ∈ K`, then the projections of `L` and `K` to
-their common finite-dimensional factor `W` span it. -/
+with trivial excess `L.relCompExcess K` (no nonzero `w` has `(0, w) ∈ L` and `(w, 0) ∈ K`), then
+the projections of `L` and `K` to their common finite-dimensional factor `W` span it. -/
 theorem IsCoisotropic.map_snd_sup_map_fst_eq_top [FiniteDimensional ℝ W]
     (hL : (ω₁.twistedProd ω₂).IsCoisotropic L) (hK : (ω₂.twistedProd ω₃).IsCoisotropic K)
-    (h : ∀ w, (0, w) ∈ L → (w, 0) ∈ K → w = 0) :
+    (h : L.relCompExcess K = ⊥) :
     L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ := by
   set S := L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)
   -- The symplectic complement of `S` consists of excess directions, so it vanishes.
   suffices hS : ω₂.orthogonal S = ⊥ by
     rw [← ω₂.orthogonal_orthogonal S, hS, orthogonal_bot]
-  refine (Submodule.eq_bot_iff _).mpr fun w hw ↦ ?_
-  obtain ⟨hwL, hwK⟩ :=
-    Submodule.mem_relCompExcess.mp (hL.orthogonal_map_snd_sup_map_fst_le_relCompExcess hK hw)
-  exact h w hwL hwK
+  exact eq_bot_iff.mpr (h ▸ hL.orthogonal_map_snd_sup_map_fst_le_relCompExcess hK)
 
 /-- For linear canonical relations, transversality of the composition and absence of excess are
 equivalent: the projections of `L` and `K` to `W` span it exactly when the excess
 `L.relCompExcess K`, the set of `w` with `(0, w) ∈ L` and `(w, 0) ∈ K`, is trivial. -/
 theorem IsLagrangian.map_snd_sup_map_fst_eq_top_iff [FiniteDimensional ℝ W]
     (hL : (ω₁.twistedProd ω₂).IsLagrangian L) (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
-    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ ↔ L.relCompExcess K = ⊥ := by
-  simp only [Submodule.eq_bot_iff, Submodule.mem_relCompExcess, and_imp]
-  exact ⟨fun htr _ ↦ hL.isIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top hK.isIsotropic htr,
+    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ ↔ L.relCompExcess K = ⊥ :=
+  ⟨hL.isIsotropic.relCompExcess_eq_bot_of_map_snd_sup_map_fst_eq_top hK.isIsotropic,
     hL.isCoisotropic.map_snd_sup_map_fst_eq_top hK.isCoisotropic⟩
 
 /-- The excess of two linear Lagrangian relations is the symplectic orthogonal of the sum of
