@@ -24,9 +24,12 @@ hexagon--rectangle and pentagon--pentagon decompositions of grid commutation all
   intermediate grid state.
 * `TauCeti.GridTwoStepDecomposition.decompositionsOf`: the finite family of two-step
   decompositions whose constituent domains lie in prescribed finite families.
+* `TauCeti.GridTwoStepDecomposition.map`: apply a map of domains to each of the two steps.
 
 ## Main results
 
+* `TauCeti.GridTwoStepDecomposition.map_injective`: mapping both steps by injective maps is
+  injective.
 * `TauCeti.GridTwoStepDecomposition.mem_decompositionsOf` characterizes membership in
   `decompositionsOf`.
 * `TauCeti.GridTwoStepDecomposition.card_decompositionsOf` counts `decompositionsOf`.
@@ -69,6 +72,27 @@ theorem ext_of_middle_eq [∀ y, Subsingleton (A x y)] [∀ y, Subsingleton (B y
   obtain ⟨m', P', Q'⟩ := E
   obtain rfl : m = m' := hmiddle
   rw [Subsingleton.elim P P', Subsingleton.elim Q Q']
+
+section map
+
+variable {A' B' : GridState n → GridState n → Type*}
+
+/-- Apply a map of domains to each step of a two-step decomposition. -/
+abbrev map (f : ∀ u v : GridState n, A u v → A' u v) (g : ∀ u v : GridState n, B u v → B' u v)
+    (D : GridTwoStepDecomposition A B x z) : GridTwoStepDecomposition A' B' x z :=
+  ⟨D.middle, f _ _ D.first, g _ _ D.second⟩
+
+/-- Mapping both steps by injective maps is injective. -/
+theorem map_injective {f : ∀ u v : GridState n, A u v → A' u v}
+    {g : ∀ u v : GridState n, B u v → B' u v}
+    (hf : ∀ u v, Function.Injective (f u v)) (hg : ∀ u v, Function.Injective (g u v)) :
+    Function.Injective (map (x := x) (z := z) f g) := by
+  rintro ⟨m, P, Q⟩ ⟨m', P', Q'⟩ h
+  obtain rfl : m = m' := congrArg middle h
+  simp only [map, mk.injEq, heq_eq_eq, true_and] at h
+  rw [hf _ _ h.1, hg _ _ h.2]
+
+end map
 
 private def sigmaEquiv :
     GridTwoStepDecomposition A B x z ≃ Σ y : GridState n, Σ _first : A x y, B y z where

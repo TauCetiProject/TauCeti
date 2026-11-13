@@ -298,13 +298,10 @@ abbrev toRectangleDecomposition (D : GridHexagonRectangleDecomposition a s s' x 
 /-- Forgetting the hexagon turns is injective on two-step domains. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (s' := s')
-      (x := x) (z := z)) := by
-  rintro ⟨m, P, r⟩ ⟨m', Q, t⟩ h
-  have hm : m = m' := congrArg GridTwoStepDecomposition.middle h
-  subst m'
-  have hp : P.toGridRectangleBetween = Q.toGridRectangleBetween := by injection h
-  have hr : r = t := by injection h
-  rw [GridCommutationHexagonBetween.toGridRectangleBetween_injective hp, hr]
+      (x := x) (z := z)) :=
+  GridTwoStepDecomposition.map_injective
+    (fun _ _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective)
+    fun _ _ => Function.injective_id
 
 end GridHexagonRectangleDecomposition
 
@@ -333,13 +330,9 @@ abbrev toRectangleDecomposition (D : GridRectangleHexagonDecomposition a s s' x 
 /-- Forgetting the hexagon turns is injective on two-step domains. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (s' := s')
-      (x := x) (z := z)) := by
-  rintro ⟨m, r, P⟩ ⟨m', t, Q⟩ h
-  have hm : m = m' := congrArg GridTwoStepDecomposition.middle h
-  subst m'
-  have hr : r = t := by injection h
-  have hp : P.toGridRectangleBetween = Q.toGridRectangleBetween := by injection h
-  rw [hr, GridCommutationHexagonBetween.toGridRectangleBetween_injective hp]
+      (x := x) (z := z)) :=
+  GridTwoStepDecomposition.map_injective (fun _ _ => Function.injective_id)
+    fun _ _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective
 
 end GridRectangleHexagonDecomposition
 
@@ -435,14 +428,10 @@ abbrev toRectangleDecomposition (D : GridPentagonPairDecomposition a s b t x z) 
 /-- The underlying rectangle decomposition determines the pentagon pair. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (b := b) (t := t)
-      (x := x) (z := z)) := by
-  rintro ⟨m, P, Q⟩ ⟨m', P', Q'⟩ h
-  have hm : m = m' := congrArg GridTwoStepDecomposition.middle h
-  subst m'
-  have hp : P.toGridRectangleBetween = P'.toGridRectangleBetween := by injection h
-  have hq : Q.toGridRectangleBetween = Q'.toGridRectangleBetween := by injection h
-  rw [GridCommutationPentagonBetween.toGridRectangleBetween_injective hp,
-    GridCommutationPentagonBetween.toGridRectangleBetween_injective hq]
+      (x := x) (z := z)) :=
+  GridTwoStepDecomposition.map_injective
+    (fun _ _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective)
+    fun _ _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective
 
 end GridPentagonPairDecomposition
 
