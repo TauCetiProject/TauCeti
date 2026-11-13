@@ -104,15 +104,26 @@ theorem orthogonal_ker_mfderiv (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F
       Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x) := by
   rw [← hσ.orthogonal_span_hamiltonianVectorField hF, SymplecticForm.orthogonal_orthogonal]
 
+omit hσ [FiniteDimensional ℝ E] in
 /-- The Hamiltonian vector `X_{F_j}(x)` lies in `ker dF_x` exactly when `F_j`
-Poisson-commutes at `x` with every `F_i`. -/
-theorem hamiltonianVectorField_mem_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
-    (j : ι) :
+Poisson-commutes at `x` with every `F_i`. Where the flat map is not invertible, both sides hold,
+since all Hamiltonian vectors vanish. -/
+theorem _root_.TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) (j : ι) :
     σ.hamiltonianVectorField (F · j) x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ↔
       ∀ i, σ.poissonBracket (F · i) (F · j) x = 0 := by
-  simp only [← hσ.orthogonal_span_hamiltonianVectorField hF,
-    SymplecticForm.mem_orthogonal_span_iff, Set.forall_mem_range, symplecticFormAt_apply,
-    poissonBracket_def]
+  by_cases hinv : (σ.flat x).IsInvertible
+  · have hev (f : M → ℝ) (v : TangentSpace I x) :
+        SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
+      rw [← flat_apply, hamiltonianVectorField_def, hinv.self_apply_inverse]
+    simp only [poissonBracket_def, hev, mvfderiv_apply hF, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+      mvfderiv_apply_eq_mfderiv_apply]
+    exact funext_iff
+  · have h0 (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
+      rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hinv]
+      rfl
+    simp [poissonBracket_def, h0]
 
 /-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
 `{F_i, F_j}(x) = 0` for all `i` and `j`. -/
@@ -127,20 +138,28 @@ theorem isCoisotropic_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι →
 /-- **Functions of Poisson-commuting functions Poisson-commute.** If the `F_i` Poisson-commute at
 `x`, then any two functions whose differentials at `x` vanish on `ker dF_x`, such as functions
 `h ∘ F` of `F`, Poisson-commute at `x`. -/
-theorem poissonBracket_eq_zero_of_ker_le (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
+theorem poissonBracket_eq_zero_of_ker_le
     (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) {g k : M → ℝ}
     (hg : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I g x).ker)
     (hk : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I k x).ker) :
     σ.poissonBracket g k x = 0 := by
-  -- `X_k` is `σ`-orthogonal to `ker dk`, hence to `ker dF`, so it lies in the coisotropic `ker dF`
-  -- and therefore in `ker dg`.
-  have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
-    SymplecticForm.isCoisotropic_iff_le.1 ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) <|
-      SymplecticForm.mem_orthogonal_iff'.2 fun v hv ↦ by
-        rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
-        exact hk hv
-  rw [hσ.poissonBracket_eq_mvfderiv]
-  exact hg hXk
+  by_cases hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x
+  · -- `X_k` is `σ`-orthogonal to `ker dk`, hence to `ker dF`, so it lies in the coisotropic
+    -- `ker dF` and therefore in `ker dg`.
+    have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
+      SymplecticForm.isCoisotropic_iff_le.1 ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) <|
+        SymplecticForm.mem_orthogonal_iff'.2 fun v hv ↦ by
+          rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
+          exact hk hv
+    rw [hσ.poissonBracket_eq_mvfderiv]
+    exact hg hXk
+  · -- If `F` is not differentiable at `x` then `dF_x = 0`, so `dk_x = 0` and `X_k(x) = 0`.
+    rw [mfderiv_zero_of_not_mdifferentiableAt hF] at hk
+    have hdk : mvfderiv I k x = 0 := by
+      ext v
+      exact hk (by simp : v ∈ ((0 : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)) :
+        TangentSpace I x →ₗ[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)).ker)
+    rw [hσ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
 
 /-! ### Independent functions -/
 

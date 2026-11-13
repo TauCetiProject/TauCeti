@@ -135,8 +135,8 @@ theorem isWeightBounded_iff (φ : A →+* B) (T : Fin k → Set A) (b : Fin k �
 
 /-- **At the one-weight family the hypothesis is boundedness of the monomials.** With every weight
 equal to `{1}` the weighted monomials are just the `bν`, so `IsWeightBounded` says exactly that
-they form a bounded set — the condition a reader expects to see, and the bridge from the roadmap's
-power-bounded-variable hypothesis. -/
+they form a bounded set — the condition a reader expects to see, and the bridge from hypotheses
+phrased as power-boundedness of the variables. -/
 @[simp]
 theorem isWeightBounded_one_weight_iff (φ : A →+* B) (b : Fin k → B) :
     IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set A)) b ↔

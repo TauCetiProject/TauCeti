@@ -92,7 +92,7 @@ theorem simple_mul_comm_of_bruhatCell_subset_sup {H : Subgroup G} [H.Normal]
     (le_sup_left (b := T.subgroupB) ((inferInstance : H.Normal).conj_mem h hh m))
   have hword : [t, s, t].prod = t * s * t := by
     simp only [List.prod_cons, List.prod_nil, mul_one, mul_assoc]
-  exact htH (T.bruhatCell_subset_of_mem_reduced_word le_sup_right (by simp [hs, ht])
+  exact htH (T.bruhatCell_subset_of_mem_reduced_word (by simp [hs, ht])
     (by rw [hword, h3]; rfl) (hword ▸ hcell) t (by simp))
 
 /-- **Tits's theorem on normal subgroups.** For a normal subgroup `H`, the subgroup `H ⊔ B` is a
