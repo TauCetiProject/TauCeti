@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -24,6 +25,9 @@ test functions are dense in `H¹₀(Ω)`, a distributional solution `u ∈ H¹(�
 * `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq`:
   if `u ∈ H¹(Ω)` solves `-Δu = f` in the sense of distributions on `Ω`, with `f ∈ L²(Ω)`, then
   `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
+* `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff_forall_setIntegral_laplacian_mul_eq`:
+  `u ∈ H¹₀(Ω)` is a weak solution of `-Δu = f` exactly when `-Δu = f` in the sense of
+  distributions on `Ω`.
 
 ## References
 
@@ -83,6 +87,24 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_s
     rw [hx, smul_eq_mul, mul_comm]
   · filter_upwards [hF] with x hx
     rw [hx]
+
+/-- **Weak and distributional solutions of Poisson's equation agree on `H¹₀(Ω)`.** For
+`u ∈ H¹₀(Ω)` and `f ∈ L²(Ω)`, `u` is a weak solution of `-Δu = f` with Dirichlet boundary
+condition exactly when `-Δu = f` in the sense of distributions on `Ω`, that is
+`-∫_Ω Δφ u = ∫_Ω f φ` for every test function `φ` on `Ω`. -/
+theorem isWeakSolutionDirichlet_one_zero_zero_iff_forall_setIntegral_laplacian_mul_eq
+    [DecidableEq ι] (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet (fun _ => 1) 0 0 f u ↔
+      ∀ φ : 𝓓(Omega, ℝ), -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x *
+        W1p.value (u : W1p mu Omega 2) x ∂mu = ∫ x in Omega, f x * φ x ∂mu := by
+  rw [isWeakSolutionDirichlet_iff_forall_testFunction (memLp_energyIntegrand_const_zero_zero 1)]
+  refine forall_congr' fun φ => ?_
+  -- The integral of `Δφ • u` over the whole space only sees `Ω`, which carries `Δφ`.
+  rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul
+    Filter.EventuallyEq.rfl φ, ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      rw [image_eq_zero_of_notMem_tsupport fun h' =>
+        hx (φ.tsupport_subset (tsupport_laplacian_subset _ h')), zero_smul]]
+  simp_rw [smul_eq_mul]
 
 end PDE
 
