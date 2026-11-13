@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Presentation
-public import TauCeti.CategoryTheory.Monoidal.Closed.Basic
-public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Pullback
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
@@ -15,11 +14,9 @@ public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 # Global generation of tensor products and tensor powers
 
 The tensor product of two globally generated line bundles is globally generated, and so is every
-tensor power `L^{⊗n}` of a globally generated line bundle `L`. The proof goes through Mathlib's
-`SheafOfModules.GeneratingSections`: if `𝒪_X^{(I)} ⟶ L` and `𝒪_X^{(J)} ⟶ K` are epimorphisms, then
-so is their tensor product (`CategoryTheory.MonoidalClosed.epi_tensorHom`, as `𝒪_X`-modules form
-a braided closed monoidal category), whose source is the free sheaf `𝒪_X^{(I × J)}`
-(`TauCeti.SheafOfModules.freeTensorFreeIso`).
+tensor power `L^{⊗n}` of a globally generated line bundle `L`. These closure properties apply to
+`InvertibleSheaf.tensorProduct` and `InvertibleSheaf.tensorPow` and support the study of global
+generation of ample twists `L^{⊗n} ⊗ K`.
 
 ## Main results
 
@@ -43,36 +40,23 @@ namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 
 variable {X : Scheme.{u}}
 
-/-- The tensor product of two globally generated line bundles is globally generated: products
-of generating sections generate the tensor product. -/
+/-- The tensor product of two globally generated line bundles is globally generated. -/
 theorem IsGloballyGenerated.tensorProduct {L K : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
     (hK : K.IsGloballyGenerated) : (L.tensorProduct K).IsGloballyGenerated := by
   obtain ⟨σ⟩ := isGloballyGenerated_iff_nonempty_generatingSections.mp hL
   obtain ⟨τ⟩ := isGloballyGenerated_iff_nonempty_generatingSections.mp hK
-  -- The free sheaves are read in the monoidal category `X.Modules`, where the tensor product of
-  -- the generating morphisms lives.
-  let e : (SheafOfModules.free σ.I ⊗ SheafOfModules.free τ.I : X.Modules) ≅
-      SheafOfModules.free (σ.I × τ.I) :=
-    TauCeti.SheafOfModules.freeTensorFreeIso σ.I τ.I
-  let p : (SheafOfModules.free (σ.I × τ.I) : X.Modules) ⟶ (L.tensorProduct K).obj :=
-    e.inv ≫ tensorHom (C := X.Modules) σ.π τ.π ≫ (tensorProductObjIso L K).inv
-  -- The generating morphisms are epimorphisms of sheaves of modules; they are restated in
-  -- `X.Modules`, whose braided closed monoidal structure gives the epimorphism `σ.π ⊗ τ.π`.
-  have : Epi (C := X.Modules) σ.π := σ.epi
-  have : Epi (C := X.Modules) τ.π := τ.epi
-  have := MonoidalClosed.epi_tensorHom (C := X.Modules) σ.π τ.π
-  -- The comparison isomorphisms live in the scheme-module category, so their epimorphism
-  -- instances are supplied explicitly.
-  have : Epi p := epi_comp' (@IsIso.epi_of_iso _ _ _ _ _ (Iso.isIso_inv e))
-    (epi_comp' this (@IsIso.epi_of_iso _ _ _ _ _ (Iso.isIso_inv _)))
+  -- Read the comparison in the category of sheaves of modules used by `GeneratingSections`.
+  let e : (L.obj ⊗ K.obj : SheafOfModules X.ringCatSheaf) ≅ (L.tensorProduct K).obj :=
+    (tensorProductObjIso L K).symm
+  have : Epi e.hom := @IsIso.epi_of_iso _ _ _ _ _ (Iso.isIso_hom e)
   exact isGloballyGenerated_iff_nonempty_generatingSections.mpr
-    ⟨(SheafOfModules.free.generatingSections (σ.I × τ.I)).ofEpi p⟩
+    ⟨(σ.tensor (R := X.sheaf) τ).ofEpi e.hom⟩
 
 /-- Every tensor power of a globally generated line bundle is globally generated. -/
 theorem IsGloballyGenerated.tensorPow {L : InvertibleSheaf X} (hL : L.IsGloballyGenerated)
     (n : ℕ) : (L.tensorPow n).IsGloballyGenerated := by
   induction n with
-  | zero => exact L.tensorPow_zero ▸ isGloballyGenerated_trivial X
+  | zero => simp only [L.tensorPow_zero, isGloballyGenerated_trivial]
   | succ n ih => exact L.tensorPow_succ n ▸ ih.tensorProduct hL
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

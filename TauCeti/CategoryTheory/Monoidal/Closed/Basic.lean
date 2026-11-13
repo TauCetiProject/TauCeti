@@ -27,8 +27,6 @@ in `CategoryTheory.Functor.ihomComparison_isIso_of_iso`.  It is Mathlib's isomor
 
 * `MonoidalClosed.pre_isIso`;
 * `MonoidalClosed.mono_pre_app`;
-* `MonoidalClosed.epi_tensorHom`: in a braided closed monoidal category, the tensor product of
-  two epimorphisms is an epimorphism.
 * `MonoidalClosed.pre_eqToHom_app`: precomposition with the transport along an equality of
   objects is the transport along the induced equality of internal Homs.
 * `MonoidalClosed.pre_app_zero`: in a braided closed monoidal category with zero morphisms,
@@ -78,13 +76,6 @@ instance MonoidalClosed.mono_pre_app [BraidedCategory C] [MonoidalClosed C] {A B
     have e := congrArg MonoidalClosed.uncurry hgh
     rw [MonoidalClosed.uncurry_pre_app, MonoidalClosed.uncurry_pre_app] at e
     exact (cancel_epi _).1 e
-
-/-- In a braided closed monoidal category, the tensor product of two epimorphisms is an
-epimorphism: tensoring on either side is a left adjoint. -/
-theorem MonoidalClosed.epi_tensorHom [BraidedCategory C] [MonoidalClosed C] {A B A' B' : C}
-    (f : A ⟶ B) (g : A' ⟶ B') [Epi f] [Epi g] : Epi (f ⊗ₘ g) := by
-  rw [tensorHom_def]
-  exact epi_comp' ((tensorRight A').map_epi f) ((tensorLeft B).map_epi g)
 
 /-- Precomposition with the morphism `eqToHom h` induced by an equality of objects `h : A = B` is,
 at each object `X`, the transport along the induced equality of internal Homs into `X`. -/

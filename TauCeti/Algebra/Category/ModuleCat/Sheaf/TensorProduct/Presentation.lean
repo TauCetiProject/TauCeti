@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.Basic.Finite.Sum
 public import Mathlib.CategoryTheory.Monoidal.Limits.Cokernels
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.CategoryTheory.Monoidal.Epi
 
 /-!
 # Tensor products of presentations of sheaves of modules
@@ -34,6 +35,8 @@ Joël Riou.
 ## Main declarations
 
 * `TauCeti.SheafOfModules.freeTensorFreeIso`: `free I ⊗ free I' ≅ free (I × I')`;
+* `SheafOfModules.GeneratingSections.tensor`: generating sections of a tensor product, indexed
+  by pairs of generating sections;
 * `SheafOfModules.Presentation.tensor`: the presentation of `M ⊗ N` built from presentations of
   `M` and `N`; it is finite when both presentations are finite, and its generating morphism is
   an isomorphism when both generating morphisms are
@@ -83,6 +86,26 @@ theorem ιFree_freeTensorFreeIso_inv {I I' : Type u} (i : I) (i' : I') :
   exact IsColimit.comp_coconePointsIsoOfNatIso_hom _ _ _ (Discrete.mk (i, i'))
 
 variable {M N : SheafOfModules.{u} (ringCatSheaf R)}
+
+/-- Generating sections of two sheaves of modules give generating sections of their tensor
+product, indexed by pairs of generators. -/
+-- Expose the index type so the generating morphism has source `free (G.I × H.I)`.
+@[expose, simps I]
+def _root_.SheafOfModules.GeneratingSections.tensor (G : M.GeneratingSections)
+    (H : N.GeneratingSections) : (M ⊗ N).GeneratingSections where
+  I := G.I × H.I
+  s := (M ⊗ N).freeHomEquiv ((freeTensorFreeIso (R := R) G.I H.I).inv ≫ (G.π ⊗ₘ H.π))
+  epi := by
+    rw [Equiv.symm_apply_apply]
+    infer_instance
+
+/-- The generating morphism of the tensor product is the tensor product of the generating
+morphisms, read through `freeTensorFreeIso`. -/
+@[simp]
+theorem _root_.SheafOfModules.GeneratingSections.tensor_π (G : M.GeneratingSections)
+    (H : N.GeneratingSections) :
+    (G.tensor H).π = (freeTensorFreeIso (R := R) G.I H.I).inv ≫ (G.π ⊗ₘ H.π) :=
+  (M ⊗ N).freeHomEquiv.symm_apply_apply _
 
 /-- The tensor product of presentations of `M` and `N` is a presentation of `M ⊗ N`. Its
 generators are indexed by pairs of generators, and its relations by a relation of `M` paired
