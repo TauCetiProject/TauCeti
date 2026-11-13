@@ -69,9 +69,9 @@ the elements of `Γ'` fixing `z`. Precisely:
   chart is that of such a `ψ'`, the transition functions satisfy the cocycle law on triple
   overlaps (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_eq_mul`);
 * on a precisely invariant disc the transition function from the chart of `ψ` to itself is `1`
-  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_one`), so the
-  transition functions between the charts of `ψ` and `ψ'` in the two directions are inverse to
-  each other (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_mul_eq_one`)
+  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one`),
+  so the transition functions between the charts of `ψ` and `ψ'` in the two directions are inverse
+  to each other (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_mul_eq_one`)
   and vanish nowhere on the overlap, also at the orbit of the centre `z'`, where the frame of
   `ψ'` vanishes for `r' ≠ 0`
   (`Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_automorphyFrame_ne_zero`);
@@ -138,7 +138,7 @@ Diamond–Shurman §3.5.
   `Subgroup.LinearizingCoordinate.automorphyDescent_eq_mul_automorphyDescent` and
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_eq_mul`: the coefficients
   of a section in two charts differ by the transition function, and the cocycle law.
-* `Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_one`,
+* `Subgroup.LinearizingCoordinate.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one`,
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_mul_eq_one` and
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_automorphyFrame_ne_zero`:
   the transition functions between two elliptic charts are units on the whole overlap.
@@ -1115,7 +1115,7 @@ theorem automorphyDescent_automorphyExtension_eq_mul
 disc, the coefficient with respect to the frame of `ψ` of the automorphic extension of that frame
 is `1` on the whole set of local quotient-coordinate values, including the quotient coordinate
 `0` of the centre, where for `r ≠ 0` the frame vanishes. -/
-theorem eqOn_automorphyDescent_automorphyExtension_one
+theorem eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one
     (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ)
     (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
     (hr : r < Nat.card (stabilizer Γ z))
@@ -1160,7 +1160,7 @@ theorem automorphyDescent_automorphyExtension_mul_eq_one
   rw [← ψ.automorphyDescent_automorphyExtension_eq_mul ψ' hΓ hk hr hk' hr' hprec' isOpen_ball
     (ψ.automorphyFrame_compatible hΓ.le hk hprec) (ψ.mdifferentiableOn_automorphyFrame k r) hh hσ
     Γ'.one_mem (by rw [one_smul]; exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2))]
-  exact ψ.eqOn_automorphyDescent_automorphyExtension_one hΓ hk hr hprec
+  exact ψ.eqOn_automorphyDescent_automorphyExtension_automorphyFrame_one hΓ hk hr hprec
     ((ψ.mem_quotientImage_iff _).mpr ⟨τ, rfl⟩)
 
 /-- **The transition function between two elliptic charts vanishes nowhere on their overlap.**
