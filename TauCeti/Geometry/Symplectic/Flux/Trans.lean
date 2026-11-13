@@ -49,6 +49,8 @@ uses the naturality of the homotopy operator along slice inclusions
   composite of diffeotopies, modulo exact forms.
 * `TauCeti.Diffeotopy.flux_trans`: the flux of a pointwise composite is the sum of the fluxes.
 * `TauCeti.Diffeotopy.flux_symm`: the flux of the reversed diffeotopy is the negated flux.
+* `TauCeti.Diffeotopy.flux_symm_trans`: the flux of `φ_t ∘ ψ_t⁻¹` is the difference of the
+  fluxes.
 
 ## References
 
@@ -228,6 +230,18 @@ theorem flux_symm (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeo
     rw [self_trans_symm]
     exact flux_refl σ
   rw [eq_neg_iff_add_eq_zero, ← hzero (Φ.self_trans_symm ▸ hrefl), flux_trans]
+
+/-- **The flux of a quotient of diffeotopies.** For a closed two-form `σ` preserved by `φ₁` and
+`ψ₁`, the diffeotopy `φ_t ∘ ψ_t⁻¹` has the flux of `φ` minus the flux of `ψ`. -/
+theorem flux_symm_trans (σ : closedForms J M 2)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (h : (Ψ.symm.trans Φ).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
+    (Ψ.symm.trans Φ).flux σ h = Φ.flux σ hΦ - Ψ.flux σ hΨ := by
+  have hΨs : Ψ.symm.final ∈ SmoothForm.diffeomorphStabilizer σ.1 := by
+    rw [final_symm, ← Diffeomorph.inv_def]
+    exact (SmoothForm.diffeomorphStabilizer σ.1).inv_mem hΨ
+  rw [flux_trans Ψ.symm Φ σ hΨs hΦ, flux_symm Ψ σ hΨ, sub_eq_add_neg]
 
 end Diffeotopy
 
