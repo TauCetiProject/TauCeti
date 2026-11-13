@@ -8,10 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
-import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.AlternatingForm
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
-import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # The self-dual and anti-self-dual eigenbundles of differential forms
@@ -201,26 +199,10 @@ theorem hasLocalContMDiffSubbundleFrames_selfDualSubspace_of_finrank
   let A : M → F →L[ℝ] F := fun y ↦
     ContinuousLinearMap.inCoordinates F V F V x₀ y x₀ y (selfDualProjCLM o y)
   have hA : ContMDiffOn I 𝓘(ℝ, F →L[ℝ] F) n A e.baseSet := by
-    intro y hy
-    refine TauCeti.contMDiffWithinAt_clm_apply.2 fun u ↦ ?_
-    have hsec : ContMDiffOn I (I.prod 𝓘(ℝ, F)) n
-        (fun z ↦ TotalSpace.mk' F (E := V) z (e.symm z u)) e.baseSet :=
-      e.contMDiffOn_section_symm e.open_baseSet Subset.rfl contMDiffOn_const
-    have hproj : ContMDiffAt I (I.prod 𝓘(ℝ, F)) n
-        (fun z ↦ TotalSpace.mk' F (E := V) z (selfDualProjCLM o z (e.symm z u))) y :=
-      (contMDiff_selfDualProj_totalSpace (n := n) o _).comp y
-        (hsec.contMDiffAt (e.open_baseSet.mem_nhds hy))
-    have he : (⟨y, selfDualProjCLM o y (e.symm y u)⟩ : TotalSpace F V) ∈ e.source :=
-      e.mem_source.mpr hy
-    have hcoord : ContMDiffAt I 𝓘(ℝ, F) n
-        (fun z ↦ (e ⟨z, selfDualProjCLM o z (e.symm z u)⟩).2) y :=
-      (((e.contMDiffOn (IB := I) (n := n)).contMDiffAt (e.open_source.mem_nhds he)).comp y
-        hproj).snd
-    have heq : (fun z ↦ (e ⟨z, selfDualProjCLM o z (e.symm z u)⟩).2) =ᶠ[𝓝 y] fun z ↦ A z u := by
-      filter_upwards [e.open_baseSet.mem_nhds hy] with z hz
-      simp only [A, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-      rw [e.symmL_apply hz, Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hz]
-    exact (hcoord.congr_of_eventuallyEq heq.symm).contMDiffWithinAt
+    have hsec := ((trivializationAt (F →L[ℝ] F) (fun y ↦ V y →L[ℝ] V y) x₀).contMDiffOn_section_iff
+      e.open_baseSet (fun _ hy ↦ by rw [hom_trivializationAt_baseSet]; exact ⟨hy, hy⟩)).mp
+      (contMDiff_selfDualProjCLM (n := n) o).contMDiffOn
+    exact hsec.congr fun y _ ↦ by simp [A, hom_trivializationAt_apply]
   have hrank : ∀ y ∈ e.baseSet, finrank ℝ (A y).range = r := fun y hy ↦ by
     rw [ContinuousLinearMap.finrank_range_inCoordinates hy hy, range_selfDualProjCLM o hk y, hr y]
   obtain ⟨U, hUe, hU, hx₀U, X, hX, hXn⟩ :=

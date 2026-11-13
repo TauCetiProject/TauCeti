@@ -297,7 +297,7 @@ theorem antiSelfDualProjCLM_neg_orientation (o : Manifold.Orientation I M (Fin (
 
 /-- The self-dual and anti-self-dual projections sum to the identity on every fibre. -/
 @[simp]
-theorem add_selfDualProjCLM_antiSelfDualProjCLM
+theorem selfDualProjCLM_add_antiSelfDualProjCLM
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
     selfDualProjCLM o x + antiSelfDualProjCLM o x =
       ContinuousLinearMap.id ℝ (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) := by
@@ -311,11 +311,11 @@ theorem selfDualProjCLM_add_antiSelfDualProjCLM_apply
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M)
     (α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :
     selfDualProjCLM o x α + antiSelfDualProjCLM o x α = α :=
-  congr($(add_selfDualProjCLM_antiSelfDualProjCLM o x) α)
+  congr($(selfDualProjCLM_add_antiSelfDualProjCLM o x) α)
 
 /-- The difference `P⁺_x - P⁻_x` of the two projections is the Hodge star `⋆`. -/
 @[simp]
-theorem sub_selfDualProjCLM_antiSelfDualProjCLM
+theorem selfDualProjCLM_sub_antiSelfDualProjCLM
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
     selfDualProjCLM o x - antiSelfDualProjCLM o x = formHodgeStarCLM o rfl x := by
   let := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
@@ -346,12 +346,14 @@ theorem coe_selfDualProj_apply (o : Manifold.Orientation I M (Fin (k + k))) (hk 
     (x : M) (α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :
     (selfDualProj o hk x α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) = selfDualProjCLM o x α := by
   let := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
+  -- `dsimp`/`unfold` leaves `(selfDualSubspace o x).addCommMonoid` unreduced inside the
+  -- `LinearMap` instance argument, making the goal ill-typed at `implicit` transparency for `rw`.
   change (Module.End.eigenProjOfInvolutive
     (g := (formHodgeStarCLM o rfl x : Module.End ℝ (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)))
     (formHodgeStarCLM_involutive o hk x) (one_mul (1 : ℝ)) α :
     TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) = selfDualProjCLM o x α
-  rw [Module.End.coe_eigenProjOfInvolutive_apply, invOf_eq_inv, one_smul]
-  rfl
+  rw [Module.End.coe_eigenProjOfInvolutive_apply, invOf_eq_inv, one_smul,
+    ContinuousLinearMap.coe_coe, selfDualProjCLM_apply]
 
 /-- Coercing `antiSelfDualProj` back to the ambient exterior-form fibre gives
 `antiSelfDualProjCLM`. -/
@@ -361,13 +363,14 @@ theorem coe_antiSelfDualProj_apply (o : Manifold.Orientation I M (Fin (k + k))) 
     (antiSelfDualProj o hk x α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) =
       antiSelfDualProjCLM o x α := by
   let := invertibleOfNonzero (two_ne_zero : (2 : ℝ) ≠ 0)
+  -- `dsimp`/`unfold` leaves `(antiSelfDualSubspace o x).addCommMonoid` unreduced inside the
+  -- `LinearMap` instance argument, making the goal ill-typed at `implicit` transparency for `rw`.
   change (Module.End.eigenProjOfInvolutive
     (g := (formHodgeStarCLM o rfl x : Module.End ℝ (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)))
     (formHodgeStarCLM_involutive o hk x) (by norm_num : (-1 : ℝ) * -1 = 1) α :
     TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) = antiSelfDualProjCLM o x α
   rw [Module.End.coe_eigenProjOfInvolutive_apply, invOf_eq_inv, neg_one_smul,
-    antiSelfDualProjCLM_apply, sub_eq_add_neg]
-  rfl
+    ContinuousLinearMap.coe_coe, antiSelfDualProjCLM_apply, sub_eq_add_neg]
 
 /-- `selfDualProj` fixes every element of `selfDualSubspace o x`. -/
 @[simp]
@@ -424,6 +427,7 @@ theorem antiSelfDualProjCLM_mem_antiSelfDualSubspace (o : Manifold.Orientation I
   coe_antiSelfDualProj_apply o hk x α ▸ (antiSelfDualProj o hk x α).2
 
 /-- `selfDualProjCLM` fixes every self-dual covector. -/
+@[simp]
 theorem selfDualProjCLM_eq_self_of_mem {o : Manifold.Orientation I M (Fin (k + k))} {x : M}
     {α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ} (hα : α ∈ selfDualSubspace o x) :
     selfDualProjCLM o x α = α := by
@@ -431,6 +435,7 @@ theorem selfDualProjCLM_eq_self_of_mem {o : Manifold.Orientation I M (Fin (k + k
     inv_smul_smul₀ two_ne_zero]
 
 /-- `antiSelfDualProjCLM` fixes every anti-self-dual covector. -/
+@[simp]
 theorem antiSelfDualProjCLM_eq_self_of_mem {o : Manifold.Orientation I M (Fin (k + k))} {x : M}
     {α : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ} (hα : α ∈ antiSelfDualSubspace o x) :
     antiSelfDualProjCLM o x α = α := by
