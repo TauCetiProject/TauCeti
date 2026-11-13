@@ -494,6 +494,11 @@ def typeD4TrialityLabel : Equiv.Perm (Fin 4) where
 theorem typeD4TrialityLabel_apply (i : Fin 4) :
     typeD4TrialityLabel i = ![0, 2, 3, 1] i := (rfl)
 
+/-- The inverse triality permutation reads labels in order `[0,3,1,2]`. -/
+@[simp]
+theorem typeD4TrialityLabel_symm_apply (i : Fin 4) :
+    typeD4TrialityLabel.symm i = ![0, 3, 1, 2] i := (rfl)
+
 /-- The action of root-lattice triality on the `D₄` glue alphabet. -/
 noncomputable def typeD4TrialityGlueAlphabetIsometry : FiniteQuadraticModule.Isometry
     ((D 4).glueAlphabet ht) ((D 4).glueAlphabet ht) :=
@@ -527,7 +532,7 @@ theorem glueAlphabetIsometry_typeD4TrialityGlueAlphabetIsometry
 
 /-- Triality has cube equal to the identity on the glue alphabet. -/
 @[simp]
-theorem typeD4TrialityGlueAlphabetIsometry_cube (x : (D 4).glueAlphabet ht) :
+theorem typeD4TrialityGlueAlphabetIsometry_apply_apply_apply (x : (D 4).glueAlphabet ht) :
     typeD4TrialityGlueAlphabetIsometry ht (typeD4TrialityGlueAlphabetIsometry ht
       (typeD4TrialityGlueAlphabetIsometry ht x)) = x := by
   apply EquivLike.injective ((D 4).glueAlphabetIsometry (by decide) ht)

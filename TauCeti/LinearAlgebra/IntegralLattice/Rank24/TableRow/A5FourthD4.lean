@@ -53,6 +53,7 @@ noncomputable def a5FourthD4GlueModuleIsometry :
   a5FourthD4.glueModuleIsometry simplyLaced rfl (fun i ↦ by fin_cases i <;> rfl)
 
 /-- The explicit glue coordinates preserve the Conway--Sloane digit list. -/
+@[simp]
 theorem encodeGlueWord_a5FourthD4GlueModuleIsometry (w : a5FourthD4.glueModule) :
     encodeGlueWord (![A 5, A 5, A 5, A 5, D 4]) (fun i ↦ by fin_cases i <;> decide)
         (a5FourthD4GlueModuleIsometry w) =
@@ -70,6 +71,11 @@ def a5FourthD4ComponentRotation : Equiv.Perm (Fin 5) where
 @[simp]
 theorem a5FourthD4ComponentRotation_apply (i : Fin 5) :
     a5FourthD4ComponentRotation i = ![0, 3, 1, 2, 4] i := (rfl)
+
+/-- The inverse component rotation reads positions in order `[0,2,3,1,4]`. -/
+@[simp]
+theorem a5FourthD4ComponentRotation_symm_apply (i : Fin 5) :
+    a5FourthD4ComponentRotation.symm i = ![0, 2, 3, 1, 4] i := (rfl)
 
 private noncomputable def componentIsometry (i : Fin 5) :
     FiniteQuadraticModule.Isometry ((types i).glueAlphabet (simplyLaced i))
@@ -146,41 +152,50 @@ private theorem rotation_four (w : words) :
 
 /-- In displayed coordinates the unmarked `A₅` component is fixed. -/
 @[simp]
-theorem a5FourthD4GlueModuleIsometry_rotation_zero (w : a5FourthD4.glueModule) :
+theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_zero (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 0 =
       a5FourthD4GlueModuleIsometry w 0 := by
   rw [coordinates_rotation, rotation_zero]
 
 /-- In displayed coordinates the first marked component reads the third. -/
 @[simp]
-theorem a5FourthD4GlueModuleIsometry_rotation_one (w : a5FourthD4.glueModule) :
+theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_one (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 1 =
       a5FourthD4GlueModuleIsometry w 3 := by
   rw [coordinates_rotation, rotation_one]
 
 /-- In displayed coordinates the second marked component reads the first. -/
 @[simp]
-theorem a5FourthD4GlueModuleIsometry_rotation_two (w : a5FourthD4.glueModule) :
+theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_two (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 2 =
       a5FourthD4GlueModuleIsometry w 1 := by
   rw [coordinates_rotation, rotation_two]
 
 /-- In displayed coordinates the third marked component reads the second. -/
 @[simp]
-theorem a5FourthD4GlueModuleIsometry_rotation_three (w : a5FourthD4.glueModule) :
+theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_three (w : a5FourthD4.glueModule) :
     a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 3 =
       a5FourthD4GlueModuleIsometry w 2 := by
   rw [coordinates_rotation, rotation_three]
 
+/-- In displayed coordinates the `D₄` component undergoes glue-alphabet triality. -/
+@[simp]
+theorem a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four
+    (w : a5FourthD4.glueModule) :
+    a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 4 =
+      typeD4TrialityGlueAlphabetIsometry (isSimplyLaced_D 4)
+        (a5FourthD4GlueModuleIsometry w 4) := by
+  rw [coordinates_rotation, rotation_four]
+
 /-- The last component's discriminant action is induced by root-lattice triality. -/
-theorem glueAlphabetIsometry_a5FourthD4GlueModuleIsometry_rotation_four
+theorem glueAlphabetIsometry_a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four
     (w : a5FourthD4.glueModule) :
     (D 4).glueAlphabetIsometry (by decide) (isSimplyLaced_D 4)
         (a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 4) =
       (typeD4Triality (isSimplyLaced_D 4)).discriminantGroupEquiv
         ((D 4).glueAlphabetIsometry (by decide) (isSimplyLaced_D 4)
           (a5FourthD4GlueModuleIsometry w 4)) := by
-  rw [coordinates_rotation, rotation_four]
+  rw [a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four]
   exact glueAlphabetIsometry_typeD4TrialityGlueAlphabetIsometry _ _
 
 private theorem label_rotation_four (w : words) :
@@ -190,14 +205,14 @@ private theorem label_rotation_four (w : words) :
     (glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _)
 
 /-- The last displayed component's label undergoes the triality permutation. -/
-@[simp]
-theorem glueLabelEquiv_symm_a5FourthD4GlueModuleIsometry_rotation_four
+theorem glueLabelEquiv_symm_a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four
     (w : a5FourthD4.glueModule) :
     ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
         (a5FourthD4GlueModuleIsometry (a5FourthD4GlueRotation w) 4) =
       typeD4TrialityLabel (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
         (a5FourthD4GlueModuleIsometry w 4)) := by
-  rw [coordinates_rotation, label_rotation_four]
+  rw [a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four]
+  exact glueLabelEquiv_symm_typeD4TrialityGlueAlphabetIsometry _ _
 
 private def rotatedDigits (d : ∀ i : Fin 5, Fin (types i).glueLabelCount) : List ℕ :=
   List.ofFn fun i ↦ if i = 4 then (typeD4TrialityLabel (d 4)).val
@@ -233,20 +248,29 @@ theorem encodeGlueWord_a5FourthD4GlueRotation (w : a5FourthD4.glueModule) :
 
 /-- The combined symmetry has cube equal to the identity. -/
 @[simp]
-theorem a5FourthD4GlueRotation_cube (w : a5FourthD4.glueModule) :
+theorem a5FourthD4GlueRotation_apply_apply_apply (w : a5FourthD4.glueModule) :
     a5FourthD4GlueRotation (a5FourthD4GlueRotation (a5FourthD4GlueRotation w)) = w := by
   apply EquivLike.injective a5FourthD4GlueModuleIsometry
-  rw [coordinates_rotation, coordinates_rotation, coordinates_rotation]
   funext i
   fin_cases i
-  · exact (rotation_zero _).trans ((rotation_zero _).trans (rotation_zero _))
-  · exact (rotation_one _).trans ((rotation_three _).trans (rotation_two _))
-  · exact (rotation_two _).trans ((rotation_one _).trans (rotation_three _))
-  · exact (rotation_three _).trans ((rotation_two _).trans (rotation_one _))
-  · exact ((rotation_four _).trans (congrArg (typeD4TrialityGlueAlphabetIsometry _)
-      ((rotation_four _).trans (congrArg (typeD4TrialityGlueAlphabetIsometry _)
-        (rotation_four (a5FourthD4GlueModuleIsometry w)))))).trans
-          (typeD4TrialityGlueAlphabetIsometry_cube _ _)
+  · exact (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_zero _).trans
+      ((a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_zero _).trans
+        (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_zero _))
+  · exact (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_one _).trans
+      ((a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_three _).trans
+        (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_two _))
+  · exact (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_two _).trans
+      ((a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_one _).trans
+        (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_three _))
+  · exact (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_three _).trans
+      ((a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_two _).trans
+        (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_one _))
+  · exact (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four _).trans
+      ((congrArg (typeD4TrialityGlueAlphabetIsometry _)
+        ((a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four _).trans
+          (congrArg (typeD4TrialityGlueAlphabetIsometry _)
+            (a5FourthD4GlueModuleIsometry_a5FourthD4GlueRotation_four w)))).trans
+              (typeD4TrialityGlueAlphabetIsometry_apply_apply_apply _ _))
 
 private def a5FourthD4WordSet : Finset (List ℕ) :=
   {[2, 0, 2, 4, 0], [2, 2, 4, 0, 0], [2, 4, 0, 2, 0],
@@ -289,14 +313,14 @@ theorem map_glueSubgroup_a5FourthD4GlueRotation :
     a5FourthD4.glueSubgroup.map
         (a5FourthD4GlueRotation : a5FourthD4.glueModule →+ a5FourthD4.glueModule) =
       a5FourthD4.glueSubgroup :=
-  a5FourthD4.map_glueSubgroup_of_mem_glueGenerators_iff a5FourthD4GlueRotation.toAddEquiv
+  a5FourthD4.map_glueSubgroup_of_mem_glueGenerators_iff a5FourthD4GlueRotation
     a5FourthD4GlueRotation_mem_glueGenerators_iff
 
 /-- Membership in the glue subgroup is invariant under the corrected rotation. -/
 @[simp]
 theorem a5FourthD4GlueRotation_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
     a5FourthD4GlueRotation w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup :=
-  a5FourthD4.mem_glueSubgroup_iff_of_mem_glueGenerators_iff a5FourthD4GlueRotation.toAddEquiv
+  a5FourthD4.mem_glueSubgroup_iff_of_mem_glueGenerators_iff a5FourthD4GlueRotation
     a5FourthD4GlueRotation_mem_glueGenerators_iff w
 
 end TauCeti.RootfulNiemeierType
