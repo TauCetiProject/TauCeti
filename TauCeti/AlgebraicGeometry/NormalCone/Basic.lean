@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
 
 /-!
@@ -36,7 +38,9 @@ conormal sheaf.
 
 Working in `U` rather than `Y` makes these constructions correct for every immersion: the ideal
 sheaf `ker i ⊆ 𝒪_Y` of the scheme-theoretic image restricts to `I` on `U` when `i` is
-quasi-compact, but need not do so in general.
+quasi-compact, but need not do so in general. For a quasi-compact immersion, in particular a closed
+immersion, the components are therefore the pullbacks `i^* (ker i)ⁿ` along `i` itself
+(`normalConeAlgebraObjXIsoPullbackKerPow`, `conormalObjIsoPullbackKer`).
 
 Defining the normal cone algebra as a pullback of the Rees algebra makes it a graded
 quasi-coherent algebra on `X` directly, with its algebra structure transported from that of
@@ -60,6 +64,9 @@ quasi-coherent algebra on `X` directly, with its algebra structure transported f
 * `AlgebraicGeometry.Scheme.Hom.conormal_obj`: the conormal sheaf is the pullback `j^* I`, and
   `AlgebraicGeometry.Scheme.Hom.conormal_eq_degreeOne`: it is the degree-one component of the
   normal cone algebra.
+* `AlgebraicGeometry.Scheme.Hom.normalConeAlgebraObjXIsoPullbackKerPow` and
+  `AlgebraicGeometry.Scheme.Hom.conormalObjIsoPullbackKer`: for a quasi-compact immersion, for
+  instance a closed immersion, these components are `i^* (ker i)ⁿ` and `i^* (ker i)`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_one_normalConeAlgebra`: the unit `𝒪_X ⟶ j^* I⁰` is an
   isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isAffineHom_normalConeToBase`: the projection of the normal cone
@@ -136,6 +143,31 @@ theorem conormal_obj :
     i.conormal.obj = (Scheme.Modules.pullback i.liftCoborder).obj i.liftCoborder.ker.sheaf := by
   rw [conormal_eq_degreeOne, GradedQuasicoherentAlgebra.degree_obj_obj, normalConeAlgebra_obj_X,
     pow_one]
+
+section QuasiCompact
+
+variable [QuasiCompact i]
+
+/-- For a quasi-compact immersion `i`, for instance a closed immersion, the homogeneous components
+of the normal cone algebra are the pullbacks `i^* (ker i)ⁿ` of the powers of the ideal sheaf of
+`i`: the ideal sheaf `I` of `j = i.liftCoborder` is the restriction of `ker i`
+(`ker_liftCoborder`), and pulling an ideal sheaf back along an open immersion is restricting
+it. -/
+def normalConeAlgebraObjXIsoPullbackKerPow (n : ℕ) :
+    i.normalConeAlgebra.obj.X n ≅ (Scheme.Modules.pullback i).obj (i.ker ^ n).sheaf :=
+  eqToIso (by rw [normalConeAlgebra_obj_X, ker_liftCoborder, ← IdealSheafData.comap_pow]) ≪≫
+    (Scheme.Modules.pullback i.liftCoborder).mapIso
+      (asIso ((i.ker ^ n).pullbackSheafHom i.coborderRange.ι)).symm ≪≫
+    (Scheme.Modules.pullbackComp i.liftCoborder i.coborderRange.ι).app _ ≪≫
+    (Scheme.Modules.pullbackCongr i.liftCoborder_ι).app _
+
+/-- For a quasi-compact immersion `i`, for instance a closed immersion, the conormal sheaf is the
+pullback `i^* (ker i)` of the ideal sheaf of `i`. -/
+def conormalObjIsoPullbackKer : i.conormal.obj ≅ (Scheme.Modules.pullback i).obj i.ker.sheaf :=
+  eqToIso (by rw [conormal_eq_degreeOne, GradedQuasicoherentAlgebra.degree_obj_obj]) ≪≫
+    i.normalConeAlgebraObjXIsoPullbackKerPow 1 ≪≫ eqToIso (by rw [pow_one])
+
+end QuasiCompact
 
 /-- The normal cone `C_X Y = Spec_X (⨁ₙ Iⁿ/Iⁿ⁺¹)` of an immersion `i : X ⟶ Y`, as an affine scheme
 over `X`: the relative spectrum of the normal cone algebra (`normalConeOver_def`). -/

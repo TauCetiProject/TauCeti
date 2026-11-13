@@ -20,17 +20,22 @@ sections `s` of `I`; these lie in `I.comap g` (`app_mem_sections_comap`). So the
 through `I.comap g ⊆ 𝒪_X`, giving the comparison morphism `g^* I ⟶ I.comap g`.
 
 The comparison is not an isomorphism in general: for the inclusion `g` of `V(I)`, the pullback
-`g^* I` is `I / I²` while `I.comap g` is zero. It is one for effective Cartier divisors whose
-inverse image is again effective Cartier (`Scheme.IdealSheafData.isIso_pullbackSheafHom` in
+`g^* I` is `I / I²` while `I.comap g` is zero. It is one along an open immersion `g`, where both
+sides are the restriction of `I` (`isIso_pullbackSheafHom_of_isOpenImmersion`), and for effective
+Cartier divisors whose inverse image is again effective Cartier
+(`Scheme.IdealSheafData.isIso_pullbackSheafHom` in
 `TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback`).
 
 ## Main declarations
 
 * `Scheme.IdealSheafData.app_mem_sections_comap`: `g^♯` carries sections of `I` to sections of
-  `I.comap g`;
+  `I.comap g`, and conversely along an open immersion
+  (`mem_sections_of_app_mem_sections_comap`);
 * `Scheme.IdealSheafData.pullbackSheafHom`: the comparison morphism `g^* I ⟶ I.comap g`,
   characterized by `pullbackSheafHom_sheafι`, and computed on the images of sections of `I`
-  under the unit of the pullback–pushforward adjunction by `pullbackSheafHom_app_unit_app`.
+  under the unit of the pullback–pushforward adjunction by `pullbackSheafHom_app_unit_app`;
+* `Scheme.IdealSheafData.isIso_pullbackSheafHom_of_isOpenImmersion`: along an open immersion the
+  comparison is an isomorphism.
 
 ## References
 
@@ -64,6 +69,40 @@ theorem app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶ Y) {U : Y.Opens
     rw [Scheme.Hom.comp_app, Scheme.Hom.comp_app] at h
     exact ⟨_, h.trans (Category.assoc _ _ _)⟩
   rw [← ConcreteCategory.comp_apply, e, ConcreteCategory.comp_apply, hs, map_zero]
+
+/-- Conversely, along an open immersion `g`, a function on an open `U` inside the image of `g` is a
+section of `I` as soon as its pullback `g^♯ s` is a section of the inverse image of `I`. -/
+theorem mem_sections_of_app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶ Y)
+    [IsOpenImmersion g] {U : Y.Opens} (hU : U ≤ g.opensRange) {s : Γ(Y, U)}
+    (hs : g.app U s ∈ (I.comap g).sections (g ⁻¹ᵁ U)) : s ∈ I.sections U := by
+  rw [mem_sections_iff] at hs ⊢
+  rw [← I.comapIso_hom_fst g] at hs
+  -- Write `P` for the fibre product of `g` and `V(I) ⟶ Y`. The pullback of `g^♯ s` to `P` vanishes.
+  have h1 : (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) = 0 :=
+    (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso ((I.comapIso g).hom.app _)).1).mp hs
+  -- Hence so does the pullback to `P` of the restriction of `s` to `V(I)`.
+  have h2 : (pullback.snd g I.subschemeι).app (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s) = 0 := by
+    have h := congrArg (fun φ ↦ φ s) (Scheme.Hom.congr_app (pullback.condition (f := g)
+      (g := I.subschemeι)) U)
+    change (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) =
+      (pullback g I.subschemeι).presheaf.map _ ((pullback.snd g I.subschemeι).app
+        (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s)) at h
+    rw [h1] at h
+    have key : ∀ {A B : (pullback g I.subschemeι).Opens} (e : A = B)
+        (x : Γ(pullback g I.subschemeι, B)),
+        (pullback g I.subschemeι).presheaf.map (eqToHom e).op x = 0 → x = 0 := by
+      rintro A B rfl x hx
+      simpa using hx
+    exact key _ _ h.symm
+  -- The open immersion `P ⟶ V(I)` is an isomorphism over the preimage of `U ≤ g.opensRange`.
+  have hle : I.subschemeι ⁻¹ᵁ U ≤ (pullback.snd g I.subschemeι).opensRange := by
+    intro x hx
+    change x ∈ Set.range (pullback.snd g I.subschemeι)
+    rw [Scheme.Pullback.range_snd]
+    exact hU hx
+  have := Scheme.Hom.isIso_app (pullback.snd g I.subschemeι) _ hle
+  exact (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+    ((pullback.snd g I.subschemeι).app _)).1).mp h2
 
 variable (I : Y.IdealSheafData) (g : X ⟶ Y)
 
@@ -131,6 +170,46 @@ lemma pullbackSheafHom_app_unit_app (U : Y.Opens) (t : Γ(I.sheaf, U)) :
   exact (congrArg (fun φ ↦ Scheme.Modules.Hom.app φ (g ⁻¹ᵁ U)
     (((Scheme.Modules.pullbackPushforwardAdjunction g).unit.app I.sheaf).app U t))
       (pullbackSheafHom_sheafι I g)).trans (app_unit_app I g U t)
+
+/-- Along an open immersion `g`, the comparison morphism `g^* I ⟶ I.comap g` is an isomorphism:
+both sides are the restriction of `I` to `X`. -/
+instance isIso_pullbackSheafHom_of_isOpenImmersion [IsOpenImmersion g] :
+    IsIso (I.pullbackSheafHom g) := by
+  let χ := (Scheme.Modules.restrictFunctorIsoPullback g).hom.app I.sheaf ≫ I.pullbackSheafHom g
+  suffices IsIso χ from
+    IsIso.of_isIso_comp_left ((Scheme.Modules.restrictFunctorIsoPullback g).hom.app I.sheaf) _
+  -- On the restriction of `I`, the comparison sends the section `t` of `I` to `g^♯ t`.
+  have hχ (U : Y.Opens) (t : Γ(I.sheaf, U)) :
+      χ.app (g ⁻¹ᵁ U) (((Scheme.Modules.restrictAdjunction g).unit.app I.sheaf).app U t) =
+        (I.comap g).sectionMk _ (app_mem_sections_comap I g (I.sheafι_app_mem U t)) := by
+    rw [← pullbackSheafHom_app_unit_app, ← Adjunction.unit_leftAdjointUniq_hom_app
+      (Scheme.Modules.restrictAdjunction g) (Scheme.Modules.pullbackPushforwardAdjunction g)]
+    rfl
+  refine Scheme.Modules.Hom.isIso_iff_isIso_app.mpr fun V ↦ ?_
+  rw [← g.preimage_image_eq V, ConcreteCategory.isIso_iff_bijective]
+  -- Over `g ''ᵁ V`, the unit of the restriction adjunction is a bijection on sections.
+  have hr : Function.Bijective
+      (((Scheme.Modules.restrictAdjunction g).unit.app I.sheaf).app (g ''ᵁ V)) := by
+    rw [Scheme.Modules.restrictAdjunction_unit_app_app,
+      Subsingleton.elim (homOfLE (g.image_preimage_le (g ''ᵁ V)))
+        (eqToIso (by rw [g.preimage_image_eq])).hom]
+    exact ConcreteCategory.bijective_of_isIso (I.sheaf.presheaf.mapIso (eqToIso _).op).hom
+  have hg := ConcreteCategory.bijective_of_isIso (g.app (g ''ᵁ V))
+  refine ⟨fun a b hab ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨a, rfl⟩ := hr.2 a
+    obtain ⟨b, rfl⟩ := hr.2 b
+    rw [hχ, hχ] at hab
+    have := congrArg (Scheme.Modules.Hom.app (I.comap g).sheafι _) hab
+    rw [sheafι_app_sectionMk, sheafι_app_sectionMk] at this
+    rw [I.sheafι_app_injective _ (hg.1 this)]
+  · obtain ⟨s, hs⟩ := hg.2 ((I.comap g).sheafι.app _ y)
+    have hsI : s ∈ I.sections (g ''ᵁ V) :=
+      I.mem_sections_of_app_mem_sections_comap g (g.image_le_opensRange V)
+        (hs ▸ (I.comap g).sheafι_app_mem _ y)
+    refine ⟨((Scheme.Modules.restrictAdjunction g).unit.app I.sheaf).app _ (I.sectionMk s hsI), ?_⟩
+    rw [hχ]
+    apply (I.comap g).sheafι_app_injective
+    rw [sheafι_app_sectionMk, sheafι_app_sectionMk, hs]
 
 end
 
