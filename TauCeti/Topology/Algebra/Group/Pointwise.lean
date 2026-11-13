@@ -33,6 +33,7 @@ the first coordinate ranges over a noncompact set.
   `IsCompact.exists_isOpen_superset_add_subset`: an open set containing `A * K` with `K` compact
   contains `V * K` for an open superset `V` of `A`. Outer regularity arguments use it to thicken
   an arbitrary set to an open one.
+* `IsClosed.div_right_of_isCompact`, with its additive form `IsClosed.sub_right_of_isCompact`.
 -/
 
 public section
@@ -90,5 +91,13 @@ theorem IsCompact.exists_isOpen_superset_mul_subset {G : Type*} [TopologicalSpac
     rintro _ ⟨v, hv, k, hk, rfl⟩
     by_contra hvk
     exact hv ⟨v * k, hvk, k⁻¹, inv_mem_inv.2 hk, mul_inv_cancel_right v k⟩
+
+/-- The quotient `t / s` of a closed set `t` by a compact set `s` is closed. -/
+@[to_additive /-- The difference `t - s` of a closed set `t` and a compact set `s` is closed. -/]
+theorem IsClosed.div_right_of_isCompact {G : Type*} [TopologicalSpace G] [Group G]
+    [IsTopologicalGroup G] {s t : Set G} (ht : IsClosed t) (hs : IsCompact s) :
+    IsClosed (t / s) := by
+  rw [div_eq_mul_inv]
+  exact ht.mul_right_of_isCompact hs.inv
 
 end

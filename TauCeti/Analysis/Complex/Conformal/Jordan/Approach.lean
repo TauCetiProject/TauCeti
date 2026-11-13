@@ -169,11 +169,8 @@ theorem IsJordanDomain.injOn_closedBall_of_conformal
     (hFc : ContinuousOn F (closedBall c r))
     (hFf : EqOn F f (ball c r))
     (hJ : IsJordanDomain (f '' ball c r)) :
-    InjOn F (closedBall c r) := by
-  -- a degenerate disc has at most one closed point
-  rcases le_or_gt r 0 with hr | hr
-  · exact (subsingleton_closedBall c hr).injOn F
-  exact injOn_closedBall_of_isPreconnected_image_approach hr hfd hfi hFc hFf
+    InjOn F (closedBall c r) :=
+  injOn_closedBall_of_isPreconnected_image_approach hfd hfi hFc hFf
     fun _ _ => hJ.isPreconnectedApproachAt
 
 /-- **Boundary injectivity, Jordan case**, in the hypothesis shape of
