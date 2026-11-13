@@ -244,10 +244,12 @@ theorem principal_submatrix (f : I' → I) (g : K' → K)
     (B.submatrix f g h).principal =
       B.principal.submatrix (row' := Function.Embedding.refl K') g g (fun _ ↦ rfl) := by
   ext : 1
-  · ext i j
-    change B.matrix (f (row' i)) (g j) = B.matrix (row (g i)) (g j)
-    rw [h]
-  · rfl
+  · rw [(B.submatrix f g h).principal_matrix, B.submatrix_matrix f g h,
+      B.principal.submatrix_matrix g g (fun _ ↦ rfl), B.principal_matrix]
+    ext i j
+    simp only [Matrix.submatrix_apply, id_eq, h]
+  · rw [(B.submatrix f g h).principal_symmetrizer, B.submatrix_symmetrizer f g h,
+      B.principal.submatrix_symmetrizer g g (fun _ ↦ rfl), B.principal_symmetrizer]
 
 /-- A square exchange matrix is its own principal block. -/
 @[simp]
@@ -263,6 +265,13 @@ def reindex (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)
   invFun B := B.submatrix eI eK h
   left_inv B := by simp
   right_inv B := by simp
+
+/-- Reindexing acts by compatible restriction along the inverse index equivalences. -/
+theorem reindex_apply (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k)) :
+    reindex eI eK h B = B.submatrix eI.symm eK.symm (fun k ↦ by
+      rw [Equiv.symm_apply_eq, h, Equiv.apply_symm_apply]) :=
+  (rfl)
 
 @[simp]
 theorem reindex_matrix (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)) :
@@ -288,12 +297,25 @@ theorem reindex_refl (h : ∀ k, Equiv.refl I (row k) = row (Equiv.refl K k)) :
   ext B : 2 <;> simp
 
 /-- Reindexing twice is reindexing along the composite equivalences. -/
+@[simp]
 theorem reindex_trans (eI : I ≃ I') (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k))
     (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k)) :
     (reindex eI eK h).trans (reindex eI' eK' h') =
       reindex (eI.trans eI') (eK.trans eK') fun k ↦ by
         rw [Equiv.trans_apply, Equiv.trans_apply, h, h'] := by
   ext B : 2 <;> simp [Function.comp_assoc]
+
+/-- Nested reindexing applications collapse to the composite relabelling. -/
+@[simp]
+theorem reindex_reindex (eI : I ≃ I') (eK : K ≃ K')
+    (h : ∀ k, eI (row k) = row' (eK k))
+    (eI' : I' ≃ I'') (eK' : K' ≃ K'') (h' : ∀ k, eI' (row' k) = row'' (eK' k)) :
+    reindex eI' eK' h' (reindex eI eK h B) =
+      reindex (eI.trans eI') (eK.trans eK') (fun k ↦ by
+        rw [Equiv.trans_apply, Equiv.trans_apply, h, h']) B := by
+  simpa only [Equiv.trans_apply] using
+    congrArg (fun e : ExchangeMatrix row ≃ ExchangeMatrix row'' ↦ e B)
+      (reindex_trans eI eK h eI' eK' h')
 
 /-- Taking principal blocks commutes with compatible relabelling. -/
 @[simp]
@@ -302,8 +324,8 @@ theorem principal_reindex (eI : I ≃ I') (eK : K ≃ K')
     (reindex eI eK h B).principal =
       reindex (row := Function.Embedding.refl K) (row' := Function.Embedding.refl K')
         eK eK (fun _ ↦ by simp only [Function.Embedding.refl_apply]) B.principal := by
-  exact B.principal_submatrix eI.symm eK.symm fun k ↦ by
-    rw [Equiv.symm_apply_eq, h, Equiv.apply_symm_apply]
+  rw [reindex_apply, reindex_apply]
+  exact B.principal_submatrix eI.symm eK.symm _
 
 /-- The block diagonal sum of two exchange matrices: its mutable indices, its rows and its
 symmetrizer are the disjoint unions of those of the summands, and no entry joins the two. -/

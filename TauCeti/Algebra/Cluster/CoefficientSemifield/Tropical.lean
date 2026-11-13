@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import TauCeti.Algebra.Cluster.CoefficientSemifield.Hom
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 public import Mathlib.Algebra.Tropical.Basic
 public import Mathlib.Data.Finsupp.Basic
@@ -163,6 +163,22 @@ theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
 @[simp]
 theorem reindex_symm (e : J ≃ J') : (reindex e).symm = reindex e.symm := by
   rfl
+
+@[simp]
+theorem reindex_toCoefficientSemifieldHom_comp_symm (e : J ≃ J') :
+    (reindex e).toCoefficientSemifieldHom.comp
+        (reindex e.symm).toCoefficientSemifieldHom =
+      CoefficientSemifieldHom.id (Trop J') := by
+  rw [← reindex_symm e]
+  exact (reindex e).toCoefficientSemifieldHom_comp_symm_toCoefficientSemifieldHom
+
+@[simp]
+theorem reindex_symm_toCoefficientSemifieldHom_comp (e : J ≃ J') :
+    (reindex e.symm).toCoefficientSemifieldHom.comp
+        (reindex e).toCoefficientSemifieldHom =
+      CoefficientSemifieldHom.id (Trop J) := by
+  rw [← reindex_symm e]
+  exact (reindex e).symm_toCoefficientSemifieldHom_comp_toCoefficientSemifieldHom
 
 /-- Group evaluation is compatible with relabelling the generators. The evaluation is a group
 homomorphism, with no assertion that it preserves auxiliary addition. -/

@@ -249,4 +249,30 @@ theorem toCoefficientSemifieldHom_trans (e : P ≃+* Q) (f : Q ≃+* R) :
   ext
   rfl
 
+@[simp]
+theorem toCoefficientSemifieldHom_comp_symm_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    e.toCoefficientSemifieldHom.comp e.symm.toCoefficientSemifieldHom =
+      TauCeti.CoefficientSemifieldHom.id Q := by
+  ext x
+  simp
+
+@[simp]
+theorem symm_toCoefficientSemifieldHom_comp_toCoefficientSemifieldHom (e : P ≃+* Q) :
+    e.symm.toCoefficientSemifieldHom.comp e.toCoefficientSemifieldHom =
+      TauCeti.CoefficientSemifieldHom.id P := by
+  ext x
+  simp
+
+/-- Passing to coefficient-semifield homomorphisms retains the full isomorphism. -/
+theorem toCoefficientSemifieldHom_injective :
+    Function.Injective (toCoefficientSemifieldHom : (P ≃+* Q) → _) := by
+  intro e f h
+  ext x
+  simpa only [coe_toCoefficientSemifieldHom] using DFunLike.congr_fun h x
+
+@[simp]
+theorem toCoefficientSemifieldHom_inj {e f : P ≃+* Q} :
+    e.toCoefficientSemifieldHom = f.toCoefficientSemifieldHom ↔ e = f :=
+  toCoefficientSemifieldHom_injective.eq_iff
+
 end RingEquiv
