@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
-public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Direct.GroupCohomology
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Direct.EquivariantMap
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.GroupCohomology
 
 /-!
