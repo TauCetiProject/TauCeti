@@ -21,15 +21,16 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 The free loop space `𝓛S¹ = C(S¹, S¹)` is homotopy equivalent to `ℤ × S¹`, a loop going to its
 degree and its value at `1` (`Circle.freeLoopHomotopyEquiv`). So its singular homology is a
 coproduct, indexed by the degree, of copies of the homology of the circle. The summand of
-degree `m` is included by the map `z ↦ (w ↦ z * w ^ m)` from the circle onto the component of the
-loops of degree `m` (`Circle.isColimitCofanSingularHomologyFreeLoop`). This holds for
+degree `m` is included by the map `z ↦ (w ↦ z * w ^ m)` from the circle into the component of
+degree `m` (`Circle.isColimitCofanSingularHomologyFreeLoop`). This holds for
 coefficients in any abelian category in which coproducts indexed by `ℤ` are exact.
 
 Consequently `Hₙ(𝓛S¹; R)` is a coproduct of copies of `R`, one for each integer, in degrees `0`
-and `1`, and vanishes in degrees `n ≥ 2`. For coefficients in a module `M` over a commutative ring
-`k` this is `Hₙ(𝓛S¹; M) ≃ (ℤ →₀ M)` for `n ≤ 1`; for `M = k = ℤ` both groups are the group ring
-`ℤ[ℤ]`. The same holds for the free Moore loop space `MooreFreeLoopSpace S¹`, which is homotopy
-equivalent to `C(S¹, S¹)` (`TauCeti.MooreFreeLoopSpace.homotopyEquivCircleMap`).
+and `1`, and vanishes in degrees `n ≥ 2`. For coefficients in a module `M` over a ring `k` this
+is `Hₙ(𝓛S¹; M) ≃ (ℤ →₀ M)` for `n ≤ 1`; for `M = k = ℤ` both groups are the group ring `ℤ[ℤ]`.
+The coproduct description also holds for the free Moore loop space `MooreFreeLoopSpace S¹`, which
+is homotopy equivalent to `C(S¹, S¹)` (`TauCeti.MooreFreeLoopSpace.homotopyEquivCircleMap`), as
+`Circle.singularHomologyMooreFreeLoopIso`.
 
 ## Main results
 
@@ -68,7 +69,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C]
 /-- **The homology of the free loop space of the circle.** With coefficients in an abelian
 category in which coproducts indexed by `ℤ` are exact, `Hₙ(C(S¹, S¹); R)` is the coproduct over
 `m : ℤ` of copies of `Hₙ(S¹; R)`, the copy of index `m` being included along the map
-`z ↦ (w ↦ z * w ^ m)` onto the loops of degree `m`. -/
+`z ↦ (w ↦ z * w ^ m)` into the component of degree `m`. -/
 def isColimitCofanSingularHomologyFreeLoop (n : ℕ) :
     IsColimit (Cofan.mk (((singularHomologyFunctor C n).obj R).obj (TopCat.of C(Circle, Circle)))
       (fun m : ℤ ↦ ((singularHomologyFunctor C n).obj R).map
@@ -145,7 +146,7 @@ theorem isZero_singularHomology_freeLoop (j : ℕ) :
 
 section ModuleCat
 
-variable {k : Type u} [CommRing k] (M : ModuleCat.{u} k)
+variable {k : Type u} [Ring k] (M : ModuleCat.{u} k)
 
 /-- `H₀(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
 `M = k` this is the group algebra `k[ℤ]`. -/

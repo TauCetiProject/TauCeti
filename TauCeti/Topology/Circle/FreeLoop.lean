@@ -45,7 +45,7 @@ continuous in `f`.
   `(degree γ, x)`.
 * `Circle.sigmaFreeLoopHomotopyEquiv`, `Circle.freeLoopComponentInclusion`: the same equivalence
   from the disjoint union `Σ m : ℤ, S¹`, and its restriction `z ↦ (w ↦ z * w ^ m)` to the copy of
-  index `m`, onto the loops of degree `m`.
+  index `m`, into the loops of degree `m`.
 * `Circle.freeLoopHomotopyEquiv_freeLoopComponentInclusion`: the loop `w ↦ z * w ^ m` goes to
   `(m, z)`.
 
@@ -287,7 +287,7 @@ theorem sigmaFreeLoopHomotopyEquiv_apply (p : Σ _ : ℤ, Circle) (w : Circle) :
     sigmaFreeLoopHomotopyEquiv p w = p.2 * w ^ p.1 := by
   simp [sigmaFreeLoopHomotopyEquiv, ContinuousMap.HomotopyEquiv.trans]
 
-/-- The inclusion `z ↦ (w ↦ z * w ^ m)` of the circle onto the loops of degree `m`. -/
+/-- The inclusion `z ↦ (w ↦ z * w ^ m)` of the circle into the loops of degree `m`. -/
 def freeLoopComponentInclusion (m : ℤ) : C(Circle, C(Circle, Circle)) :=
   ⟨fun z ↦ freeLoopHomotopyEquiv.symm (m, z),
     freeLoopHomotopyEquiv.symm.continuous.comp (Continuous.prodMk_right m)⟩
