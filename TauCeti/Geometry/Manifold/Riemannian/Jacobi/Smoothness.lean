@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Bootstrap
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongMap
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
@@ -61,7 +61,6 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
           (alongCurveWithin (leviCivitaConnection I M) γ J s) s r)) s := by
   let cov := leviCivitaConnection I M
   have hn_le_infty : (n + 1 : ℕ) ≤ (∞ : ℕ∞ω) := by simp
-  have hγ := h.isGeodesicCurveOn.contMDiffOn_infty
   have hvel := h.isGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_infty
   have hvel' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
@@ -71,11 +70,7 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
       (fun r ↦ TotalSpace.mk' E (γ r)
         (cov.curvatureTensor (γ r) (J r) (curveVelocityWithin I γ s r)
           (curveVelocityWithin I γ s r))) s := by
-    intro r hr
-    exact cov.contMDiffWithinAt_curvatureTensor_alongMap (F := E)
-      (V := fun x : M ↦ TangentSpace I x)
-      (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
-      ((hγ.of_le hn_le_infty) r hr) (hJ r hr) (hvel' r hr) (hvel' r hr) hn_le_infty
+    exact cov.contMDiffOn_curvatureTensor_alongMap hJ hvel' hvel' hn_le_infty
   refine (contMDiffOn_const (c := (-1 : ℝ))).smul_totalSpace hcurv |>.congr ?_
   intro r hr
   simp only [neg_one_smul]
