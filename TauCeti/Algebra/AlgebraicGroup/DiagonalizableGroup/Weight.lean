@@ -49,6 +49,9 @@ specialization to the adjoint representation.
   along `q : X →* Y` sums the weight submodules over the fibres of `q`.
 * `TauCeti.DiagonalizableGroup.mem_weightSpace_iff_endOfPoint`: the universal point detects
   membership in a weight space.
+* `TauCeti.DiagonalizableGroup.weightSpace_eq_comap_of_injective`: an injective comodule morphism
+  pulls the weight submodules of its target back to those of its source; for a subcomodule this is
+  `TauCeti.DiagonalizableGroup.weightSpace_subcomodule`.
 * `TauCeti.DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace`: a monoid-algebra point acts on
   the `x`-weight submodule by multiplication by its value on `x`; for a commutative group `X`,
   this is the corresponding action of a point of `D(X)`.
@@ -237,24 +240,46 @@ end Points
 
 section Subcomodule
 
-variable {R : Type*} [CommRing R]
-variable {C : Type*} [AddCommGroup C] [Module R C] [Coalgebra R C] [Module.Flat R C]
+variable {R : Type*} [CommSemiring R]
+variable {C : Type*} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable {X : Type*}
-variable {V : Type*} [AddCommGroup V] [Module R V] [Comodule R C V]
-variable {π : C →ₗc[R] MonoidAlgebra R X}
+variable {V W : Type*} [AddCommMonoid V] [Module R V] [Comodule R C V]
+  [AddCommMonoid W] [Module R W] [Comodule R C W]
 
-/-- A weight vector of `V` lying in a subcomodule is a weight vector of that subcomodule. -/
-theorem mem_weightSpace_of_mem_weightSpace_subcomodule (N : Subcomodule R C V) {x : X}
-    (n : N) (hn : (n : V) ∈ weightSpace V π x) : n ∈ weightSpace N π x := by
-  rw [mem_weightSpace]
-  apply Module.Flat.rTensor_preserves_injective_linearMap (M := MonoidAlgebra R X)
-    (SMulMemClass.subtype N) Subtype.val_injective
-  rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply, ← mem_weightSpace.mp hn,
-    ← Subcomodule.subtype_rTensor_coact _ n]
-  generalize Comodule.coact (R := R) (C := C) n = t
-  induction t using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [map_add, hy, hz]
-  | tmul y c => simp
+/-- **An injective comodule morphism identifies the weight submodules of its source with the
+preimages of those of its target.** Corestricted along `π`, the morphism commutes with the weight
+projections, and an injective one detects when a vector is fixed by them. -/
+theorem weightSpace_eq_comap_of_injective (π : C →ₗc[R] MonoidAlgebra R X)
+    (f : Comodule.Hom R C W V) (hf : Function.Injective f) (x : X) :
+    weightSpace W π x = (weightSpace V π x).comap f.toLinearMap := by
+  let : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
+  let : Comodule R (MonoidAlgebra R X) W := Comodule.Corestrict (M := W) π
+  ext w
+  rw [Submodule.mem_comap, weightSpace_eq_comoduleWeightSpace, weightSpace_eq_comoduleWeightSpace]
+  refine ⟨Comodule.Hom.map_mem_weightSpace (Comodule.corestrictHom π f), fun hw ↦ ?_⟩
+  have h : f (Comodule.weightProj R X W x w) = f w := by
+    rw [← Comodule.corestrictHom_apply π f, Comodule.Hom.map_weightProj,
+      Comodule.corestrictHom_apply]
+    exact Comodule.weightProj_of_mem hw
+  rw [← hf h]
+  exact Comodule.weightProj_mem_weightSpace x w
+
+variable [Module.Flat R C]
+
+/-- The weight submodules of a subcomodule, with its inherited coaction, are the traces on it of
+the weight submodules of the ambient comodule. -/
+@[simp]
+theorem weightSpace_subcomodule (N : Subcomodule R C V) (π : C →ₗc[R] MonoidAlgebra R X)
+    (x : X) : weightSpace N π x = (weightSpace V π x).comap (SMulMemClass.subtype N) := by
+  rw [weightSpace_eq_comap_of_injective π (Subcomodule.subtype N)
+    (fun a b h ↦ Subtype.val_injective (by simpa using h)) x, Subcomodule.subtype_toLinearMap]
+
+/-- A vector of a subcomodule is a weight vector of the subcomodule exactly when it is one of the
+ambient comodule. -/
+theorem mem_weightSpace_subcomodule {N : Subcomodule R C V} {π : C →ₗc[R] MonoidAlgebra R X}
+    {x : X} {n : N} : n ∈ weightSpace N π x ↔ (n : V) ∈ weightSpace V π x := by
+  rw [weightSpace_subcomodule]
+  rfl
 
 end Subcomodule
 
