@@ -56,8 +56,7 @@ variable {G : Type v} [Group G] {N : Subgroup G} {k : Type} [Field k]
 a linear character `ψ` of `N` that is not its own inverse sums to zero on squares. -/
 private theorem sum_filter_mem_character_ρ_indFDRep_sq_eq_zero [Fintype G]
     [DecidablePred (· ∈ N)] (hindex : N.index = 2) {s : G} (hs : s ∉ N)
-    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (hN : IsUnit (Nat.card N : k)) {ψ : N →* kˣ}
-    (hψ : ψ ^ 2 ≠ 1) :
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) {ψ : N →* kˣ} (hψ : ψ ^ 2 ≠ 1) :
     ∑ x ∈ Finset.univ.filter (fun g : G => g ∈ N),
       Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) = 0 := by
   -- The sums over `N` of the nontrivial characters `ψ ^ 2` and `(ψ ^ 2)⁻¹` vanish.
@@ -70,7 +69,7 @@ private theorem sum_filter_mem_character_ρ_indFDRep_sq_eq_zero [Fintype G]
   have hstep (x : N) : Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ
       ((x : G) ^ 2) = (((ψ ^ 2) x : kˣ) : k) + ((((ψ ^ 2)⁻¹) x : kˣ) : k) := by
     rw [FDRep.character_ρ,
-      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv ψ
         (Subgroup.sq_mem_of_index_two hindex _)]
     simp [← SubmonoidClass.mk_pow]
   rw [Finset.sum_subtype (p := (· ∈ N)) _ (fun x => by simp) _,
@@ -81,7 +80,7 @@ private theorem sum_filter_mem_character_ρ_indFDRep_sq_eq_zero [Fintype G]
 a linear character `ψ` of `N` sums on squares to `|N|` copies of `2 ψ (s ^ 2)`. -/
 private theorem sum_filter_notMem_character_ρ_indFDRep_sq [Fintype G] [DecidablePred (· ∈ N)]
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
-    (hN : IsUnit (Nat.card N : k)) (ψ : N →* kˣ) :
+    (ψ : N →* kˣ) :
     ∑ x ∈ Finset.univ.filter (fun g : G => g ∉ N),
       Representation.character (indFDRep (FDRep.ofLinearCharacter ψ)).ρ (x ^ 2) =
         (Nat.card N : k) * (2 * (ψ ⟨s ^ 2, Subgroup.sq_mem_of_index_two hindex s⟩ : k)) := by
@@ -98,7 +97,7 @@ private theorem sum_filter_notMem_character_ρ_indFDRep_sq [Fintype G] [Decidabl
     intro x hx
     rw [sq_eq_sq_of_notMem_of_index_two hindex hs hinv (Finset.mem_filter.mp hx).2]
     rw [FDRep.character_ρ,
-      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv hN ψ
+      character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv hindex hs hinv ψ
         (Subgroup.sq_mem_of_index_two hindex s), ← hzdef, hψz, two_mul]
   rw [Finset.sum_congr rfl houterStep, Finset.sum_const, nsmul_eq_mul,
     card_filter_notMem_eq_card_of_index_two hindex]
@@ -118,12 +117,11 @@ theorem frobeniusSchurIndicator_indFDRep_ofLinearCharacter_eq_apply_sq_of_conj_e
   have hs : s ∉ N := fun hsN => hψ (monoidHom_sq_eq_one_of_mem_of_conj_eq_inv hsN hinv ψ)
   have hcast : (Nat.card G : k) = (Nat.card N : k) * 2 := by
     rw [← Subgroup.card_mul_index N, hindex]; push_cast; ring
-  have hNunit : IsUnit (Nat.card N : k) := isUnit_of_mul_isUnit_left (hcast ▸ hG)
   -- `|G| = 2 |N|` turns the two halves into a single multiple of `|G|`, which the average cancels.
   rw [FDRep.frobeniusSchurIndicator_def, Representation.frobeniusSchurIndicator_def,
     ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun g : G => g ∈ N),
-    sum_filter_mem_character_ρ_indFDRep_sq_eq_zero hindex hs hinv hNunit hψ,
-    sum_filter_notMem_character_ρ_indFDRep_sq hindex hs hinv hNunit ψ, zero_add,
+    sum_filter_mem_character_ρ_indFDRep_sq_eq_zero hindex hs hinv hψ,
+    sum_filter_notMem_character_ρ_indFDRep_sq hindex hs hinv ψ, zero_add,
     inv_mul_eq_iff_eq_mul₀ hG.ne_zero, hcast, mul_assoc]
 
 end TauCeti

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
-public import TauCeti.Algebra.Homology.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.DeformationRetract
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 
 /-!
@@ -18,32 +18,24 @@ homotopy equivalence.  This is the small-chain theorem, the analytic heart of ex
 every singular chain be replaced, without changing its homology class, by one assembled from
 simplices small enough to be seen inside a single member of the cover.
 
-The construction is Hatcher's.  Barycentric subdivision `S` is chain homotopic to the identity
-through the prism operator `P`, so the `m`-fold subdivision `Sᵐ` is chain homotopic to the identity
-through `∑_{k < m} Sᵏ ≫ P`.  A singular simplex `σ` becomes subordinate to `U` after enough
-subdivisions; taking for each `σ` a number `singularSubdivisionDepth` of subdivisions that works
-simultaneously for `σ` and all of its iterated faces produces a chain-homotopy operator `D` whose
-associated map `ρ = 1 - ∂D - D∂` is a chain map landing in the chains subordinate to `U`.  Since
-`D` vanishes on subordinate simplices, `ρ` restricts to the identity there, so the inclusion is a
-deformation retract in the chain-level sense: it has a strict retraction which is a homotopy
-inverse.
+The construction is Hatcher's.  It is carried out in
+`TauCeti.AlgebraicTopology.SimplicialSet.Homology.DeformationRetract` for an arbitrary
+monomorphism of simplicial sets together with a subdivision-like chain endomorphism and a chain
+homotopy from the identity to it (`TauCeti.chainComplexMapHomotopyEquivOfSubdivision`).  Here it
+is applied to the singular chains of `X` and the chains subordinate to `U`, with `s` barycentric
+subdivision and `h` its prism operator.  The same operators restrict to every affinely stable
+subcomplex of the singular simplicial set, such as the smooth singular simplices of a manifold;
+that case is `TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex`.
 
-The number of subdivisions depends on the simplex, so `ρ` and the resulting retraction are not
-natural in the space.  The inclusion itself is natural, hence so is the induced isomorphism
+The number of iterations depends on the simplex, so the resulting retraction is not natural in
+the space.  The inclusion itself is natural, hence so is the induced isomorphism
 `smallSingularHomologyIso` on homology.
 
 ## Main definitions and results
 
-* `TauCeti.smallSingularChains`: the subgroup of singular chains factoring through the chains
-  subordinate to `U`.
-* `TauCeti.singularSubdivisionDepth`: a number of barycentric subdivisions making a singular
-  simplex and all of its iterated faces subordinate to `U`, monotone under passing to a face.
-* `TauCeti.singularSmallApprox`: the chain endomorphism `ρ`, with
-  `TauCeti.singularSmallApproxHomotopy` the chain homotopy to the identity and
-  `TauCeti.mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox` the statement that it
-  lands in the chains subordinate to `U`.
-* `TauCeti.smallSingularRetraction`: the resulting retraction of singular chains onto the chains
-  subordinate to `U`.
+* `TauCeti.comp_singularSubdivisionX_mem_chainRange`,
+  `TauCeti.comp_singularPrismX_mem_chainRange`: barycentric subdivision and its prism operator
+  preserve the chains of every affinely stable subcomplex.
 * `TauCeti.smallSingularChainHomotopyEquiv`: the small-chain inclusion is a chain homotopy
   equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology.
 
@@ -62,309 +54,50 @@ universe w v u
 
 namespace TauCeti
 
+/-! ### Chains subordinate to an open cover -/
+
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
   {X : TopCat.{w}} {ι : Type*} (U : ι → Set X)
 
-/-- The subgroup of the singular `n`-chains of `X` with coefficients in `R` consisting of the
-chains that factor through the chains subordinate to the family `U`. -/
-def smallSingularChains (n : ℕ) :
-    AddSubgroup (R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n) :=
-  (Preadditive.rightComp R
-    ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n)).range
+variable {R} in
+/-- Barycentric subdivision preserves the chains of an affinely stable subcomplex, such as the
+chains subordinate to an open cover. -/
+lemma comp_singularSubdivisionX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] {n : ℕ} {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
+    (hf : f ∈ chainRange R T.ι n) :
+    f ≫ singularSubdivisionX R X n ∈ chainRange R T.ι n := by
+  obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
+  exact (mem_chainRange_iff _).2 ⟨g ≫ subcomplexSubdivisionX R T n, by simp⟩
 
-variable {R U}
-
-lemma mem_smallSingularChains_iff {n : ℕ}
-    (f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n) :
-    f ∈ smallSingularChains R U n ↔
-      ∃ g : R ⟶ ((X.smallSingularSubcomplex U : SSet).chainComplex R).X n,
-        g ≫ (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n = f :=
-  AddMonoidHom.mem_range
-
-/-- The summand of a simplex subordinate to `U` is a chain subordinate to `U`. -/
-lemma ιChainComplex_mem_smallSingularChains {n : ℕ}
-    (σ : (X.smallSingularSubcomplex U : SSet) _⦋n⦌) :
-    (TopCat.toSSet.obj X).ιChainComplex σ.1 ∈ smallSingularChains R U n :=
-  (mem_smallSingularChains_iff _).2
-    ⟨(X.smallSingularSubcomplex U : SSet).ιChainComplex σ, by simp⟩
-
-/-- The prism operator of barycentric subdivision preserves chains subordinate to `U`. -/
-lemma smallSingularChains.comp_singularPrismX {n : ℕ}
-    {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
-    (hf : f ∈ smallSingularChains R U n) :
-    f ≫ singularPrismX R X n ∈ smallSingularChains R U (n + 1) := by
-  obtain ⟨g, rfl⟩ := (mem_smallSingularChains_iff _).1 hf
-  exact (mem_smallSingularChains_iff _).2
-    ⟨g ≫ subcomplexPrismX R (X.smallSingularSubcomplex U) n, by simp⟩
-
-/-- Barycentric subdivision preserves chains subordinate to `U`. -/
-lemma smallSingularChains.comp_singularSubdivisionX {n : ℕ}
-    {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
-    (hf : f ∈ smallSingularChains R U n) :
-    f ≫ singularSubdivisionX R X n ∈ smallSingularChains R U n := by
-  obtain ⟨g, rfl⟩ := (mem_smallSingularChains_iff _).1 hf
-  exact (mem_smallSingularChains_iff _).2
-    ⟨g ≫ subcomplexSubdivisionX R (X.smallSingularSubcomplex U) n, by simp⟩
-
-/-- Once a chain has become subordinate to `U` after `m` subdivisions, it stays subordinate
-after any larger number of subdivisions. -/
-lemma smallSingularChains.comp_singularSubdivisionChainMap_pow_of_le {n m m' : ℕ} (hm : m ≤ m')
-    {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
-    (hf : f ≫ (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈
-      smallSingularChains R U n) :
-    f ≫ (End.of (singularSubdivisionChainMap R X) ^ m').asHom.f n ∈ smallSingularChains R U n := by
-  induction m', hm using Nat.le_induction with
-  | base => exact hf
-  | succ m' _ ih =>
-    rw [HomologicalComplex.pow_f_succ, singularSubdivisionChainMap_f, ← Category.assoc]
-    exact smallSingularChains.comp_singularSubdivisionX ih
-
-variable (R U)
-
-/-- The least number of barycentric subdivisions after which a singular simplex becomes a chain
-subordinate to the family `U`. -/
-def singularSubdivisionOrder {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) : ℕ :=
-  sInf {m | (TopCat.toSSet.obj X).ιChainComplex σ ≫
-    (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n}
-
-/-- The subdivision order is at most any number of subdivisions that makes the simplex
-subordinate to `U`. -/
-lemma singularSubdivisionOrder_le {n m : ℕ} {σ : TopCat.toSSet.obj X _⦋n⦌}
-    (hσ : (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n) :
-    singularSubdivisionOrder R U σ ≤ m :=
-  Nat.sInf_le hσ
-
-/-- After `singularSubdivisionOrder` subdivisions, or any larger number, a singular simplex is a
-chain subordinate to the open cover `U`. -/
-theorem mem_smallSingularChains_ιChainComplex_comp_pow (hU : ∀ i, IsOpen (U i))
-    (hcov : ⋃ i, U i = Set.univ) {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) {m : ℕ}
-    (hm : singularSubdivisionOrder R U σ ≤ m) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n := by
-  obtain ⟨n₀, hn₀⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
-  exact smallSingularChains.comp_singularSubdivisionChainMap_pow_of_le hm
-    (Nat.sInf_mem (s := {m | (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n ∈ smallSingularChains R U n})
-      ⟨n₀, (mem_smallSingularChains_iff _).2 (hn₀ n₀ le_rfl)⟩)
-
-/-- A simplex already subordinate to `U` needs no subdivision. -/
-@[simp]
-lemma singularSubdivisionOrder_eq_zero {n : ℕ} {σ : TopCat.toSSet.obj X _⦋n⦌}
-    (hσ : σ ∈ (X.smallSingularSubcomplex U).obj (Opposite.op ⦋n⦌)) :
-    singularSubdivisionOrder R U σ = 0 :=
-  Nat.le_zero.1 (Nat.sInf_le (by
-    simpa using ιChainComplex_mem_smallSingularChains (R := R) ⟨σ, hσ⟩))
-
-/-- The subdivision depth of a singular simplex: a number of barycentric subdivisions after which
-the simplex and all of its iterated faces are subordinate to the family `U`.  Unlike the order, it
-is monotone under passing to a face, which is what makes the operator
-`TauCeti.singularSmallApproxHom` below land in the chains subordinate to `U`. -/
-def singularSubdivisionDepth (n : ℕ) (σ : TopCat.toSSet.obj X _⦋n⦌) : ℕ :=
-  match n, σ with
-  | 0, σ => singularSubdivisionOrder R U σ
-  | n + 1, σ => max (singularSubdivisionOrder R U σ)
-      (Finset.univ.sup fun j : Fin (n + 2) ↦
-        singularSubdivisionDepth n ((TopCat.toSSet.obj X).δ j σ))
-
-lemma singularSubdivisionOrder_le_singularSubdivisionDepth (n : ℕ)
-    (σ : TopCat.toSSet.obj X _⦋n⦌) :
-    singularSubdivisionOrder R U σ ≤ singularSubdivisionDepth R U n σ := by
-  cases n with
-  | zero => exact le_rfl
-  | succ n => exact le_max_left _ _
-
-lemma singularSubdivisionDepth_δ_le (n : ℕ) (σ : TopCat.toSSet.obj X _⦋n + 1⦌)
-    (j : Fin (n + 2)) :
-    singularSubdivisionDepth R U n ((TopCat.toSSet.obj X).δ j σ) ≤
-      singularSubdivisionDepth R U (n + 1) σ := by
-  rw [singularSubdivisionDepth]
-  exact le_max_of_le_right (Finset.le_sup (f := fun j : Fin (n + 2) ↦
-    singularSubdivisionDepth R U n ((TopCat.toSSet.obj X).δ j σ)) (Finset.mem_univ j))
-
-@[simp]
-lemma singularSubdivisionDepth_eq_zero : ∀ (n : ℕ) (σ : TopCat.toSSet.obj X _⦋n⦌),
-    σ ∈ (X.smallSingularSubcomplex U).obj (Opposite.op ⦋n⦌) →
-      singularSubdivisionDepth R U n σ = 0 := by
-  intro n
-  induction n with
-  | zero => exact fun σ hσ ↦ singularSubdivisionOrder_eq_zero R U hσ
-  | succ n ih =>
-    intro σ hσ
-    rw [singularSubdivisionDepth, singularSubdivisionOrder_eq_zero R U hσ,
-      Nat.max_eq_right (Nat.zero_le _)]
-    exact Nat.le_zero.1 (Finset.sup_le fun j _ ↦
-      (ih _ ((X.smallSingularSubcomplex U).map (SimplexCategory.δ j).op hσ)).le)
-
-/-! ### The small-chain approximation -/
-
-/-- The chain-homotopy operator of the small-chain approximation.  On the summand of a singular
-simplex `σ` it is the iterated prism operator of the chain homotopy from the identity to the
-`singularSubdivisionDepth`-fold barycentric subdivision. -/
-def singularSmallApproxHom (i j : ℕ) :
-    ((TopCat.toSSet.obj X).chainComplex R).X i ⟶ ((TopCat.toSSet.obj X).chainComplex R).X j :=
-  SSet.idPowApproxHom R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U) i j
-
-@[reassoc (attr := simp)]
-lemma ιChainComplex_singularSmallApproxHom {i j : ℕ} (σ : TopCat.toSSet.obj X _⦋i⦌) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫ singularSmallApproxHom R U i j =
-      (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        ((singularSubdivisionHomotopy R X).idPow (singularSubdivisionDepth R U i σ)).hom i j :=
-  SSet.ιChainComplex_idPowApproxHom _ _ _ σ
-
-lemma singularSmallApproxHom_eq_zero (i j : ℕ) (hij : ¬ (ComplexShape.down ℕ).Rel j i) :
-    singularSmallApproxHom R U i j = 0 :=
-  SSet.idPowApproxHom_eq_zero _ _ _ i j hij
-
-/-- The small-chain approximation of the singular chain complex: a chain endomorphism homotopic
-to the identity all of whose values are chains subordinate to `U`.  It is Hatcher's operator
-`ρ = 1 - ∂D - D∂`, where `D` is `TauCeti.singularSmallApproxHom`. -/
-def singularSmallApprox :
-    (TopCat.toSSet.obj X).chainComplex R ⟶ (TopCat.toSSet.obj X).chainComplex R :=
-  SSet.idPowApprox R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U)
-
-lemma singularSmallApprox_f (n : ℕ) :
-    (singularSmallApprox R U).f n = 𝟙 _ -
-      (dNext n (singularSmallApproxHom R U) + prevD n (singularSmallApproxHom R U)) :=
-  SSet.idPowApprox_f _ _ _ n
-
-/-- The small-chain approximation is chain homotopic to the identity. -/
-def singularSmallApproxHomotopy : Homotopy (𝟙 _) (singularSmallApprox R U) :=
-  SSet.idPowApproxHomotopy R (singularSubdivisionHomotopy R X) (singularSubdivisionDepth R U)
-
-/-- The approximation operator kills the chains that are already subordinate to `U`. -/
-lemma ι_comp_singularSmallApproxHom (i j : ℕ) :
-    (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f i ≫
-      singularSmallApproxHom R U i j = 0 := by
-  ext τ
-  rw [← Category.assoc, SSet.ι_chainComplexMap_f]
-  simp
-
-/-- The approximation restricts to the identity on the chains subordinate to `U`. -/
-@[reassoc (attr := simp)]
-lemma ι_comp_singularSmallApprox :
-    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫ singularSmallApprox R U =
-      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
-  SSet.comp_idPowApprox _ _ _ _ (ι_comp_singularSmallApproxHom R U)
+variable {R} in
+/-- The prism operator of barycentric subdivision preserves the chains of an affinely stable
+subcomplex, such as the chains subordinate to an open cover. -/
+lemma comp_singularPrismX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] {n : ℕ} {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
+    (hf : f ∈ chainRange R T.ι n) :
+    f ≫ singularPrismX R X n ∈ chainRange R T.ι (n + 1) := by
+  obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
+  exact (mem_chainRange_iff _).2 ⟨g ≫ subcomplexPrismX R T n, by simp⟩
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
 
 include hU hcov
 
-/-- Enlarging the number of subdivisions in the iterated prism operator changes it by a chain
-subordinate to `U`, provided the simplex is already subordinate after the smaller number. -/
-lemma mem_smallSingularChains_ιChainComplex_comp_idPow_hom_sub {n : ℕ}
-    (σ : TopCat.toSSet.obj X _⦋n⦌) {m m' : ℕ} (hm' : singularSubdivisionOrder R U σ ≤ m')
-    (hmm : m' ≤ m) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        (((singularSubdivisionHomotopy R X).idPow m).hom n (n + 1) -
-          ((singularSubdivisionHomotopy R X).idPow m').hom n (n + 1)) ∈
-      smallSingularChains R U (n + 1) := by
-  have hsum : ((singularSubdivisionHomotopy R X).idPow m).hom n (n + 1) -
-      ((singularSubdivisionHomotopy R X).idPow m').hom n (n + 1) =
-      ∑ k ∈ Finset.Ico m' m,
-        (End.of (singularSubdivisionChainMap R X) ^ k).asHom.f n ≫ singularPrismX R X n := by
-    rw [Finset.sum_Ico_eq_sub _ hmm]
-    simp
-  rw [hsum, Preadditive.comp_sum]
-  refine AddSubgroup.sum_mem _ fun k hk ↦ ?_
-  rw [← Category.assoc]
-  exact smallSingularChains.comp_singularPrismX
-    (mem_smallSingularChains_ιChainComplex_comp_pow R U hU hcov σ
-      (hm'.trans (Finset.mem_Ico.1 hk).1))
-
-/-- **The small-chain approximation lands in the chains subordinate to the cover.** -/
-theorem mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox {n : ℕ}
-    (σ : TopCat.toSSet.obj X _⦋n⦌) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫ (singularSmallApprox R U).f n ∈
-      smallSingularChains R U n := by
-  set m := singularSubdivisionDepth R U n σ
-  -- The two prism operators agree on the summand of `σ` in the `prevD` direction.
-  have hprev : (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (prevD n ((singularSubdivisionHomotopy R X).idPow m).hom -
-        prevD n (singularSmallApproxHom R U)) = 0 := by
-    rw [Preadditive.comp_sub, Homotopy.prevD_chainComplex, Homotopy.prevD_chainComplex,
-      ← Category.assoc, ← Category.assoc, ιChainComplex_singularSmallApproxHom, sub_self]
-  -- In the `dNext` direction they differ by a chain subordinate to `U`, because the depth of a
-  -- face of `σ` is at most the depth of `σ`.
-  have hdnext : (TopCat.toSSet.obj X).ιChainComplex σ ≫
-      (dNext n ((singularSubdivisionHomotopy R X).idPow m).hom -
-        dNext n (singularSmallApproxHom R U)) ∈ smallSingularChains R U n := by
-    cases n with
-    | zero => simp
-    | succ k =>
-      rw [Preadditive.comp_sub, Homotopy.dNext_succ_chainComplex,
-        Homotopy.dNext_succ_chainComplex, ← Category.assoc, ← Category.assoc,
-        SSet.ιChainComplex_d, Preadditive.sum_comp, Preadditive.sum_comp,
-        ← Finset.sum_sub_distrib]
-      refine AddSubgroup.sum_mem _ fun j _ ↦ ?_
-      rw [Preadditive.zsmul_comp, Preadditive.zsmul_comp, ← smul_sub, ← Preadditive.comp_sub,
-        Preadditive.comp_sub, ιChainComplex_singularSmallApproxHom, ← Preadditive.comp_sub]
-      exact AddSubgroup.zsmul_mem _
-        (mem_smallSingularChains_ιChainComplex_comp_idPow_hom_sub R U hU hcov _
-          (singularSubdivisionOrder_le_singularSubdivisionDepth R U k _)
-          (singularSubdivisionDepth_δ_le R U k σ j)) _
-  have hf : (TopCat.toSSet.obj X).ιChainComplex σ ≫ (singularSmallApprox R U).f n =
-      (TopCat.toSSet.obj X).ιChainComplex σ ≫
-          (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n +
-        (TopCat.toSSet.obj X).ιChainComplex σ ≫
-          (dNext n ((singularSubdivisionHomotopy R X).idPow m).hom -
-            dNext n (singularSmallApproxHom R U)) := by
-    have hsplit : (singularSmallApprox R U).f n =
-        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n +
-          (dNext n ((singularSubdivisionHomotopy R X).idPow m).hom -
-            dNext n (singularSmallApproxHom R U)) +
-          (prevD n ((singularSubdivisionHomotopy R X).idPow m).hom -
-            prevD n (singularSmallApproxHom R U)) := by
-      rw [singularSmallApprox_f, ← HomologicalComplex.id_f,
-        ((singularSubdivisionHomotopy R X).idPow m).comm n]
-      abel
-    rw [hsplit, Preadditive.comp_add, Preadditive.comp_add, hprev, add_zero]
-  rw [hf]
-  exact AddSubgroup.add_mem _ (mem_smallSingularChains_ιChainComplex_comp_pow R U hU hcov σ
-    (singularSubdivisionOrder_le_singularSubdivisionDepth R U n σ)) hdnext
-
-/-! ### The retraction onto the chains subordinate to the cover -/
-
-private theorem exists_comp_eq_ιChainComplex_comp_singularSmallApprox {n : ℕ}
-    (σ : TopCat.toSSet.obj X _⦋n⦌) :
-    ∃ g : R ⟶ ((X.smallSingularSubcomplex U : SSet).chainComplex R).X n,
-      g ≫ (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =
-        (TopCat.toSSet.obj X).ιChainComplex σ ≫ (singularSmallApprox R U).f n :=
-  (mem_smallSingularChains_iff _).1
-    (mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox R U hU hcov σ)
-
-/-- **The retraction of singular chains onto the chains subordinate to an open cover.** -/
-def smallSingularRetraction :
-    (TopCat.toSSet.obj X).chainComplex R ⟶
-      (X.smallSingularSubcomplex U : SSet).chainComplex R :=
-  SSet.chainComplexMapRetraction _ R fun _ σ ↦
-    exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ
-
-@[reassoc (attr := simp)]
-lemma smallSingularRetraction_comp_ι :
-    smallSingularRetraction R U hU hcov ≫
-        SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R = singularSmallApprox R U :=
-  SSet.chainComplexMapRetraction_comp _ R _
-
-/-! ### The inclusion is a chain homotopy equivalence -/
-
-@[reassoc (attr := simp)]
-lemma ι_comp_smallSingularRetraction :
-    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫
-      smallSingularRetraction R U hU hcov = 𝟙 _ :=
-  SSet.chainComplexMap_comp_chainComplexMapRetraction _ R _ (ι_comp_singularSmallApprox R U)
-
 /-- **Chains subordinate to an open cover are a deformation retract of all singular chains.**
 The inclusion of the chains subordinate to an open cover `U` into the singular chain complex is a
-chain homotopy equivalence, whose homotopy inverse `TauCeti.smallSingularRetraction` is even a
-strict retraction. -/
+chain homotopy equivalence, whose homotopy inverse is even a strict retraction. -/
 def smallSingularChainHomotopyEquiv :
     HomotopyEquiv ((X.smallSingularSubcomplex U : SSet).chainComplex R)
       ((TopCat.toSSet.obj X).chainComplex R) :=
-  SSet.chainComplexMapHomotopyEquiv _ R
-    (fun _ σ ↦ exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ)
-    (singularSmallApproxHomotopy R U) (ι_comp_singularSmallApprox R U)
+  chainComplexMapHomotopyEquivOfSubdivision (R := R) (i := (X.smallSingularSubcomplex U).ι)
+    (h := singularSubdivisionHomotopy R X)
+    (fun _ _ hf ↦ by
+      simpa only [singularSubdivisionChainMap_f] using comp_singularSubdivisionX_mem_chainRange hf)
+    (fun _ _ hf ↦ by
+      simpa only [singularSubdivisionHomotopy_hom] using comp_singularPrismX_mem_chainRange hf)
+    (fun _ σ ↦ by
+      obtain ⟨m, hm⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
+      exact ⟨m, (mem_chainRange_iff _).2 (hm m le_rfl)⟩)
 
 /-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
 subordinate to the cover. -/
@@ -372,7 +105,7 @@ subordinate to the cover. -/
 lemma smallSingularChainHomotopyEquiv_hom :
     (smallSingularChainHomotopyEquiv R U hU hcov).hom =
       SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
-  SSet.chainComplexMapHomotopyEquiv_hom _ R _ _ _
+  chainComplexMapHomotopyEquivOfSubdivision_hom _ _ _
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
@@ -385,8 +118,9 @@ def smallSingularHomologyIso [CategoryWithHomology C] (n : ℕ) :
 @[simp]
 lemma smallSingularHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
     (smallSingularHomologyIso R U hU hcov n).hom = HomologicalComplex.homologyMap
-      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n :=
-  congrArg (HomologicalComplex.homologyMap · n) (smallSingularChainHomotopyEquiv_hom R U hU hcov)
+      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n := by
+  rw [← smallSingularChainHomotopyEquiv_hom R U hU hcov]
+  rfl
 
 /-- The small-chain homology isomorphism is natural under maps carrying members of one cover
 into members of another. -/

@@ -291,7 +291,7 @@ private theorem ae_rnDeriv_hypoexponentialMeasure [Nonempty ι] (hr : ∀ i, 0 <
       0 ≤ erlangExpansion r x := by
   have := isProbabilityMeasure_hypoexponentialMeasure hr
   set μ := hypoexponentialMeasure r
-  have hfin := isFiniteMeasure_withDensity_erlangMixturePDF hr fun p ↦ -weight r p
+  have _hfin := isFiniteMeasure_withDensity_erlangMixturePDF hr fun p ↦ -weight r p
   have hD := Measure.measurable_rnDeriv μ volume
   have heq : volume.withDensity (μ.rnDeriv volume + erlangMixturePDF r fun p ↦ -weight r p) =
       volume.withDensity (erlangMixturePDF r (weight r)) := by
@@ -427,7 +427,7 @@ theorem hypoexponentialPDFReal_const [Nonempty ι] {ρ : ℝ} (hρ : 0 < ρ) (hx
   rcases hx.lt_or_gt with hx | hx
   · rw [hypoexponentialPDFReal_of_nonpos _ hx.le, gammaPDFReal, ite_eq_right hx.not_ge]
   have hn : 1 ≤ Fintype.card ι := Fintype.card_pos
-  have hcard : #{i : ι | ρ = ρ} = Fintype.card ι := by simp
+  have hcard : #{_i : ι | ρ = ρ} = Fintype.card ι := by simp
   rw [hypoexponentialPDFReal_eq_sum_gammaPDFReal (fun _ ↦ hρ) hx, image_const univ_nonempty,
     sum_singleton, hcard, sum_eq_single_of_mem _ (right_mem_Icc.2 hn)]
   · rw [← hcard, hypoexponentialCoeff_card, hcard]

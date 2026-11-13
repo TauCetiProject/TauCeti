@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
-public import TauCeti.Analysis.Sobolev.Circle.LinearODE
+public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
@@ -412,7 +412,7 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
   obtain ⟨s, t⟩ := z
   have hξt : deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) stdComplexLineImag := by
     rw [stdComplexLineImag_eq]
-    exact (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
+    exact (hasDerivAt_slice_right hξ).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
 
 /-- A map of period one in the second coordinate has a derivative of period one in it. -/
@@ -632,7 +632,7 @@ theorem setIntegral_associatedBilinForm_stationaryCylinderOperator
 
 /-- The slice pairing `s ↦ ∫₀¹ ω(∂t ξ - S_t ξ, ξ) dt` tends to zero as `|s| → ∞` when `ξ` and
 `∂t ξ` do, uniformly in `t`. -/
-private theorem tendsto_integral_slicePairing (hSc : Continuous S)
+theorem tendsto_integral_slicePairing (hSc : Continuous S)
     (hdecay : Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     Tendsto (fun s ↦ ∫ t in (0 : ℝ)..1,

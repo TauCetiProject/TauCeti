@@ -170,7 +170,7 @@ theorem memLp_apply_matrixNormalMeasure (M : Matrix ι κ ℝ) (U : Matrix ι ι
     exact (memLp_map_measure_iff hp.aestronglyMeasurable
       (Matrix.measurable_apply (i := i) (j := j)).aemeasurable).1 hp
   · rw [matrixNormalMeasure_of_not_posSemidef M h]
-    exact memLp_dirac enorm_lt_top
+    exact memLp_dirac eNorm_lt_top
 
 /-- The mean of each entry is the corresponding entry of the mean parameter. This also holds for
 the point-mass fallback. -/

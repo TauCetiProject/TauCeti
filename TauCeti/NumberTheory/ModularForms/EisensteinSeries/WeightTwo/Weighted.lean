@@ -135,6 +135,14 @@ lemma weightedG2_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
       ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a * ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) :=
   (rfl)
 
+/-- The single-residue series is the corresponding Weierstrass division value divided by `N²`.
+-/
+theorem weightedG2_single_apply (a : Fin 2 → ZMod N) (z : ℍ) :
+    weightedG2 (Pi.single a (1 : ℂ)) z =
+      ((N : ℂ) ^ 2)⁻¹ * ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) := by
+  classical
+  simp [weightedG2_def, Pi.single_apply]
+
 /-- The series is linear in the weight: the zero weight. -/
 lemma weightedG2_zero : weightedG2 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   ext z
@@ -214,13 +222,8 @@ private lemma one_div_divisionPoint_sub_sq (b y : Fin 2 → ℤ) (z : ℍ) :
     1 / (divisionPoint N b z - (y 0 * z + y 1)) ^ 2 =
       (N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z := by
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have h : ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
-      N * (divisionPoint N b z - (y 0 * z + y 1)) := by
-    simp only [divisionPoint, Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply,
-      Int.cast_sub, Int.cast_mul, Int.cast_natCast]
-    field_simp
-    ring
-  rw [eisSummand, h, _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
+  rw [divisionPoint, eisSummand, TauCeti.UpperHalfPlane.intCast_sub_nsmul_mul_add_intCast,
+    _root_.zpow_neg, zpow_ofNat, mul_pow, mul_inv, ← mul_assoc,
     mul_inv_cancel₀ (pow_ne_zero 2 hN), one_mul, one_div]
 
 private lemma one_div_sq_eq_eisSummand (y : Fin 2 → ℤ) (z : ℍ) :
@@ -319,6 +322,17 @@ theorem weightedG2_comp_neg (W : (Fin 2 → ZMod N) → ℂ) :
   simp only [hres] at h
   rw [← h]
   simp
+
+/-- Opposite residues give the same single-residue weight-two series. -/
+@[simp]
+theorem weightedG2_single_neg (a : Fin 2 → ZMod N) :
+    weightedG2 (Pi.single (-a) (1 : ℂ)) = weightedG2 (Pi.single a (1 : ℂ)) := by
+  classical
+  have h : (fun b : Fin 2 → ZMod N ↦ (Pi.single a (1 : ℂ) : (Fin 2 → ZMod N) → ℂ) (-b)) =
+      Pi.single (-a) 1 := by
+    ext b
+    simp [Pi.single_apply, neg_eq_iff_eq_neg]
+  rw [← h, weightedG2_comp_neg]
 
 /-! ### Holomorphy -/
 
