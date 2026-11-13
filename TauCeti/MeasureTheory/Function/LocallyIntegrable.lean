@@ -31,6 +31,9 @@ variables, onto any set whose image stays inside the original domain. For such a
 integrability does not depend on the choice of the Haar measure, since any two differ by a finite
 positive factor.
 
+In an order with compact closed intervals, a function locally integrable on `[a, ∞)` is
+integrable on every interval `(a, b]`.
+
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
 
@@ -91,6 +94,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   group, local integrability for one additive Haar measure gives it for every other.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
+* `MeasureTheory.LocallyIntegrableOn.integrableOn_Ioc_of_Ici`: local integrability on `[a, ∞)`
+  gives integrability on every `(a, b]`.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
   relatively compact open subdomains.
 * `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
@@ -372,6 +377,19 @@ theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ
   exact indicator_of_mem (hKV ⟨x, hx, y, hy, rfl⟩) u
 
 end CompactLocalization
+
+section OrderIntervals
+
+variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X] [Preorder X] [CompactIccSpace X]
+  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε] {μ : Measure X} {f : X → ε}
+  {a : X}
+
+/-- A function locally integrable on `[a, ∞)` is integrable on every interval `(a, b]`. -/
+theorem integrableOn_Ioc_of_Ici (hf : LocallyIntegrableOn f (Ici a) μ) (b : X) :
+    IntegrableOn f (Ioc a b) μ :=
+  (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
+
+end OrderIntervals
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 

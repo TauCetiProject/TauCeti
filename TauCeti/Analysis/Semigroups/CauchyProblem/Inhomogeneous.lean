@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.CauchyProblem.Uniqueness
 public import TauCeti.Analysis.Semigroups.GrowthBound
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The inhomogeneous abstract Cauchy problem
@@ -148,12 +149,6 @@ theorem congr (hu : IsForcedMildSolution A F x u) {v : ℝ → X} (huv : EqOn u 
 
 end IsForcedMildSolution
 
-omit [NormedSpace ℝ X] in
-/-- A forcing term locally integrable on `[0, ∞)` is integrable on every `(0, t]`. -/
-private theorem integrableOn_Ioc_of_locallyIntegrableOn {F : ℝ → X}
-    (hF : LocallyIntegrableOn F (Ici 0)) (t : ℝ) : IntegrableOn F (Ioc 0 t) :=
-  (hF.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
-
 namespace StronglyContinuousSemigroup
 
 variable (S : StronglyContinuousSemigroup X) {F G : ℝ → X} {t : ℝ}
@@ -232,7 +227,7 @@ theorem duhamel_add (hF : IntegrableOn F (Ioc 0 t)) (hG : IntegrableOn G (Ioc 0 
 theorem continuous_duhamel (hF : LocallyIntegrableOn F (Ici 0)) : Continuous (S.duhamel F) := by
   refine continuous_iff_continuousAt.2 fun t₀ => ?_
   set R := max t₀ 0 + 1
-  have hFR : IntegrableOn F (Ioc 0 R) := integrableOn_Ioc_of_locallyIntegrableOn hF R
+  have hFR : IntegrableOn F (Ioc 0 R) := hF.integrableOn_Ioc_of_Ici R
   obtain ⟨C, hC0, hC⟩ := S.exists_norm_realOperator_le R
   have hnear : ∀ᶠ t in 𝓝 t₀, t < R := eventually_lt_nhds (by linarith [le_max_left t₀ 0])
   refine ContinuousAt.congr (f := fun t => ∫ s in Ioc 0 R,
@@ -424,7 +419,7 @@ theorem isForcedMildSolution_realOperator_add_duhamel (hF : LocallyIntegrableOn 
     IsForcedMildSolution S.generator F x (fun t => S.realOperator t x + S.duhamel F t) := by
   refine ⟨inferInstance, hF, (S.realOperator_continuousOn_Ici x).add
     (S.continuous_duhamel hF).continuousOn, by simp, fun t _ => ?_⟩
-  have hFt : IntegrableOn F (Ioc 0 t) := integrableOn_Ioc_of_locallyIntegrableOn hF t
+  have hFt : IntegrableOn F (Ioc 0 t) := hF.integrableOn_Ioc_of_Ici t
   have h₁ := S.integral_orbit_mem_domain x t
   have h₂ := S.integral_duhamel_mem_domain hFt
   have hint : ∫ s in Ioc 0 t, (S.realOperator s x + S.duhamel F s) =
