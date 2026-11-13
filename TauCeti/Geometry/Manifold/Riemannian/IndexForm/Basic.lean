@@ -217,6 +217,7 @@ theorem indexForm_comm :
 
 /-- The integrand of the index form is additive in the first field, at a parameter where both
 fields are differentiable within the parameter set. -/
+@[to_fun indexFormIntegrandWithin_fun_add_left]
 theorem indexFormIntegrandWithin_add_left {t : ℝ}
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
@@ -229,6 +230,7 @@ theorem indexFormIntegrandWithin_add_left {t : ℝ}
 
 /-- The integrand of the index form is additive in the second field, at a parameter where both
 fields are differentiable within the parameter set. -/
+@[to_fun indexFormIntegrandWithin_fun_add_right]
 theorem indexFormIntegrandWithin_add_right {t : ℝ}
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
     (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
@@ -238,7 +240,7 @@ theorem indexFormIntegrandWithin_add_right {t : ℝ}
     indexFormIntegrandWithin_comm, indexFormIntegrandWithin_comm (V := W')]
 
 /-- The integrand of the index form is homogeneous in the first field. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_const_smul_left]
 theorem indexFormIntegrandWithin_const_smul_left (c : ℝ) (t : ℝ) :
     indexFormIntegrandWithin I γ (c • V) W s t =
       c * indexFormIntegrandWithin I γ V W s t := by
@@ -247,7 +249,7 @@ theorem indexFormIntegrandWithin_const_smul_left (c : ℝ) (t : ℝ) :
   ring
 
 /-- The integrand of the index form is homogeneous in the second field. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_const_smul_right]
 theorem indexFormIntegrandWithin_const_smul_right (c : ℝ) (t : ℝ) :
     indexFormIntegrandWithin I γ V (c • W) s t =
       c * indexFormIntegrandWithin I γ V W s t := by
@@ -255,7 +257,7 @@ theorem indexFormIntegrandWithin_const_smul_right (c : ℝ) (t : ℝ) :
     indexFormIntegrandWithin_comm]
 
 /-- The index form is homogeneous in the first field. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_const_smul_left]
 theorem indexForm_const_smul_left (c : ℝ) :
     indexForm I γ (c • V) W a b = c * indexForm I γ V W a b := by
   simp only [indexForm_def, ← indexFormIntegrandWithin_univ,
@@ -263,13 +265,13 @@ theorem indexForm_const_smul_left (c : ℝ) :
     intervalIntegral.integral_const_mul]
 
 /-- The index form is homogeneous in the second field. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_const_smul_right]
 theorem indexForm_const_smul_right (c : ℝ) :
     indexForm I γ V (c • W) a b = c * indexForm I γ V W a b := by
   rw [indexForm_comm, indexForm_const_smul_left, indexForm_comm]
 
 /-- The within-set integrand is zero when its left field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_zero_left]
 theorem indexFormIntegrandWithin_zero_left (t : ℝ) :
     indexFormIntegrandWithin I γ (0) W s t = 0 := by
   simpa only [zero_smul, zero_mul] using
@@ -277,7 +279,7 @@ theorem indexFormIntegrandWithin_zero_left (t : ℝ) :
       (V := 0) (W := W) (s := s) 0 t)
 
 /-- Negating the left field negates the within-set integrand. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_neg_left]
 theorem indexFormIntegrandWithin_neg_left (t : ℝ) :
     indexFormIntegrandWithin I γ (-V) W s t = -indexFormIntegrandWithin I γ V W s t := by
   simpa only [neg_one_smul, neg_one_mul] using
@@ -285,7 +287,7 @@ theorem indexFormIntegrandWithin_neg_left (t : ℝ) :
       (s := s) (-1) t)
 
 /-- The integrand is zero when its left field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_zero_left]
 theorem indexFormIntegrand_zero_left (t : ℝ) :
     indexFormIntegrand I γ (0) W t = 0 := by
   simpa only [zero_smul, zero_mul, ← indexFormIntegrandWithin_univ] using
@@ -293,7 +295,7 @@ theorem indexFormIntegrand_zero_left (t : ℝ) :
       (V := 0) (W := W) (s := univ) 0 t)
 
 /-- Negating the left field negates the integrand. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_neg_left]
 theorem indexFormIntegrand_neg_left (t : ℝ) :
     indexFormIntegrand I γ (-V) W t = -indexFormIntegrand I γ V W t := by
   simpa only [neg_one_smul, neg_one_mul, ← indexFormIntegrandWithin_univ] using
@@ -301,24 +303,24 @@ theorem indexFormIntegrand_neg_left (t : ℝ) :
       (s := univ) (-1) t)
 
 /-- The index form vanishes when its left field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_zero_left]
 theorem indexForm_zero_left : indexForm I γ (0) W a b = 0 := by
   simp only [indexForm_def, indexFormIntegrand_zero_left, intervalIntegral.integral_zero]
 
 /-- Negating the left field negates the index form. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_neg_left]
 theorem indexForm_neg_left :
     indexForm I γ (-V) W a b = -indexForm I γ V W a b := by
   simp only [indexForm_def, indexFormIntegrand_neg_left, intervalIntegral.integral_neg]
 
 /-- The unrestricted integrand is homogeneous in its left field. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_const_smul_left]
 theorem indexFormIntegrand_const_smul_left (c : ℝ) (t : ℝ) :
     indexFormIntegrand I γ (c • V) W t = c * indexFormIntegrand I γ V W t := by
   simp only [← indexFormIntegrandWithin_univ, indexFormIntegrandWithin_const_smul_left]
 
 /-- The within-set integrand is zero when its right field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_zero_right]
 theorem indexFormIntegrandWithin_zero_right (t : ℝ) :
     indexFormIntegrandWithin I γ V (0) s t = 0 := by
   simpa only [zero_smul, zero_mul] using
@@ -326,7 +328,7 @@ theorem indexFormIntegrandWithin_zero_right (t : ℝ) :
       (V := V) (W := 0) (s := s) 0 t)
 
 /-- Negating the right field negates the within-set integrand. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrandWithin_fun_neg_right]
 theorem indexFormIntegrandWithin_neg_right (t : ℝ) :
     indexFormIntegrandWithin I γ V (-W) s t = -indexFormIntegrandWithin I γ V W s t := by
   simpa only [neg_one_smul, neg_one_mul] using
@@ -334,7 +336,7 @@ theorem indexFormIntegrandWithin_neg_right (t : ℝ) :
       (s := s) (-1) t)
 
 /-- The integrand is zero when its right field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_zero_right]
 theorem indexFormIntegrand_zero_right (t : ℝ) :
     indexFormIntegrand I γ V (0) t = 0 := by
   simpa only [zero_smul, zero_mul, ← indexFormIntegrandWithin_univ] using
@@ -342,7 +344,7 @@ theorem indexFormIntegrand_zero_right (t : ℝ) :
       (V := V) (W := 0) (s := univ) 0 t)
 
 /-- Negating the right field negates the integrand. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_neg_right]
 theorem indexFormIntegrand_neg_right (t : ℝ) :
     indexFormIntegrand I γ V (-W) t = -indexFormIntegrand I γ V W t := by
   simpa only [neg_one_smul, neg_one_mul, ← indexFormIntegrandWithin_univ] using
@@ -350,18 +352,18 @@ theorem indexFormIntegrand_neg_right (t : ℝ) :
       (s := univ) (-1) t)
 
 /-- The index form vanishes when its right field is zero. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_zero_right]
 theorem indexForm_zero_right : indexForm I γ V (0) a b = 0 := by
   simp only [indexForm_def, indexFormIntegrand_zero_right, intervalIntegral.integral_zero]
 
 /-- Negating the right field negates the index form. -/
-@[simp]
+@[to_fun (attr := simp) indexForm_fun_neg_right]
 theorem indexForm_neg_right :
     indexForm I γ V (-W) a b = -indexForm I γ V W a b := by
   simp only [indexForm_def, indexFormIntegrand_neg_right, intervalIntegral.integral_neg]
 
 /-- The unrestricted integrand is homogeneous in its right field. -/
-@[simp]
+@[to_fun (attr := simp) indexFormIntegrand_fun_const_smul_right]
 theorem indexFormIntegrand_const_smul_right (c : ℝ) (t : ℝ) :
     indexFormIntegrand I γ V (c • W) t = c * indexFormIntegrand I γ V W t := by
   simp only [← indexFormIntegrandWithin_univ, indexFormIntegrandWithin_const_smul_right]
@@ -381,6 +383,7 @@ theorem indexForm_symm : indexForm I γ V W b a = -indexForm I γ V W a b := by
   rw [indexForm_def, indexForm_def, intervalIntegral.integral_symm]
 
 /-- The within-set integrand respects subtraction in its first field. -/
+@[to_fun indexFormIntegrandWithin_fun_sub_left]
 theorem indexFormIntegrandWithin_sub_left {t : ℝ}
     (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
     (hV' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V' (γ t)) s t) :
@@ -392,6 +395,7 @@ theorem indexFormIntegrandWithin_sub_left {t : ℝ}
   ring
 
 /-- The within-set integrand respects subtraction in its second field. -/
+@[to_fun indexFormIntegrandWithin_fun_sub_right]
 theorem indexFormIntegrandWithin_sub_right {t : ℝ}
     (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
     (hW' : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W' (γ t)) s t) :
@@ -401,6 +405,7 @@ theorem indexFormIntegrandWithin_sub_right {t : ℝ}
     indexFormIntegrandWithin_comm, indexFormIntegrandWithin_comm (V := W')]
 
 /-- The within-set integrand commutes with a finite sum in its first field. -/
+@[to_fun indexFormIntegrandWithin_fun_sum_left]
 theorem indexFormIntegrandWithin_sum_left {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
     (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
@@ -410,6 +415,7 @@ theorem indexFormIntegrandWithin_sum_left {ι : Type*} (A : Finset ι)
     LinearMap.sum_apply, sum_inner, Finset.sum_sub_distrib]
 
 /-- The within-set integrand commutes with a finite sum in its second field. -/
+@[to_fun indexFormIntegrandWithin_fun_sum_right]
 theorem indexFormIntegrandWithin_sum_right {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
     (hX : ∀ i ∈ A, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) s t) :
@@ -419,6 +425,7 @@ theorem indexFormIntegrandWithin_sum_right {ι : Type*} (A : Finset ι)
   exact indexFormIntegrandWithin_sum_left A X hX
 
 /-- The integrand respects addition in its left field at differentiable parameters. -/
+@[to_fun indexFormIntegrand_fun_add_left]
 theorem indexFormIntegrand_add_left {t : ℝ}
     (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
     (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
@@ -428,6 +435,7 @@ theorem indexFormIntegrand_add_left {t : ℝ}
     indexFormIntegrandWithin_add_left hV.differentiableWithinAt hV'.differentiableWithinAt
 
 /-- The integrand respects addition in its right field at differentiable parameters. -/
+@[to_fun indexFormIntegrand_fun_add_right]
 theorem indexFormIntegrand_add_right {t : ℝ}
     (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
     (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
@@ -437,6 +445,7 @@ theorem indexFormIntegrand_add_right {t : ℝ}
     indexFormIntegrandWithin_add_right hW.differentiableWithinAt hW'.differentiableWithinAt
 
 /-- The integrand respects subtraction in its left field at differentiable parameters. -/
+@[to_fun indexFormIntegrand_fun_sub_left]
 theorem indexFormIntegrand_sub_left {t : ℝ}
     (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
     (hV' : DifferentiableAt ℝ (sectionCoord (F := E) γ V' (γ t)) t) :
@@ -446,6 +455,7 @@ theorem indexFormIntegrand_sub_left {t : ℝ}
     indexFormIntegrandWithin_sub_left hV.differentiableWithinAt hV'.differentiableWithinAt
 
 /-- The integrand respects subtraction in its right field at differentiable parameters. -/
+@[to_fun indexFormIntegrand_fun_sub_right]
 theorem indexFormIntegrand_sub_right {t : ℝ}
     (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
     (hW' : DifferentiableAt ℝ (sectionCoord (F := E) γ W' (γ t)) t) :
@@ -455,6 +465,7 @@ theorem indexFormIntegrand_sub_right {t : ℝ}
     indexFormIntegrandWithin_sub_right hW.differentiableWithinAt hW'.differentiableWithinAt
 
 /-- The integrand commutes with a finite sum in its left field. -/
+@[to_fun indexFormIntegrand_fun_sum_left]
 theorem indexFormIntegrand_sum_left {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
     (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
@@ -464,6 +475,7 @@ theorem indexFormIntegrand_sum_left {ι : Type*} (A : Finset ι)
     (indexFormIntegrandWithin_sum_left A X fun i hi ↦ (hX i hi).differentiableWithinAt)
 
 /-- The integrand commutes with a finite sum in its right field. -/
+@[to_fun indexFormIntegrand_fun_sum_right]
 theorem indexFormIntegrand_sum_right {ι : Type*} (A : Finset ι)
     (X : ι → ∀ r, TangentSpace I (γ r)) {t : ℝ}
     (hX : ∀ i ∈ A, DifferentiableAt ℝ (sectionCoord (F := E) γ (X i) (γ t)) t) :
@@ -542,6 +554,7 @@ theorem intervalIntegrable_indexFormIntegrandWithin
     (indexFormIntegrandWithin_of_mem_nhds (mem_of_superset (isOpen_Ioo.mem_nhds ht) hs)).symm
 
 /-- The index form is additive in the first field on `C¹` fields. -/
+@[to_fun indexForm_fun_add_left]
 theorem indexForm_add_left
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (uIcc a b))
     (hV' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) (uIcc a b))
@@ -561,6 +574,7 @@ theorem indexForm_add_left
       one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
 
 /-- The index form is additive in the second field on `C¹` fields. -/
+@[to_fun indexForm_fun_add_right]
 theorem indexForm_add_right
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (uIcc a b))
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (uIcc a b))
@@ -571,6 +585,7 @@ theorem indexForm_add_right
     indexForm_comm (V := W')]
 
 /-- The index form respects subtraction in its first field on `C¹` fields. -/
+@[to_fun indexForm_fun_sub_left]
 theorem indexForm_sub_left
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (uIcc a b))
     (hV' : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V' r)) (uIcc a b))
@@ -588,6 +603,7 @@ theorem indexForm_sub_left
       one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
 
 /-- The index form respects subtraction in its second field on `C¹` fields. -/
+@[to_fun indexForm_fun_sub_right]
 theorem indexForm_sub_right
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (uIcc a b))
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (uIcc a b))
@@ -598,6 +614,7 @@ theorem indexForm_sub_right
     indexForm_comm (V := W')]
 
 /-- The index form commutes with finite sums of `C¹` fields in its first slot. -/
+@[to_fun indexForm_fun_sum_left]
 theorem indexForm_sum_left {ι : Type*} (A : Finset ι) (X : ι → ∀ r, TangentSpace I (γ r))
     (hX : ∀ i ∈ A, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (X i r)) (uIcc a b))
@@ -613,6 +630,7 @@ theorem indexForm_sum_left {ι : Type*} (A : Finset ι) (X : ι → ∀ r, Tange
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
 /-- The index form commutes with finite sums of `C¹` fields in its second slot. -/
+@[to_fun indexForm_fun_sum_right]
 theorem indexForm_sum_right {ι : Type*} (A : Finset ι) (X : ι → ∀ r, TangentSpace I (γ r))
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) (uIcc a b))
     (hX : ∀ i ∈ A, ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
