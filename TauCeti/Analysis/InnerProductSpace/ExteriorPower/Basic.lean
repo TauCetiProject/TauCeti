@@ -220,11 +220,8 @@ theorem norm_ιMulti_update_smul (v : Fin n → E) (i : Fin n) (c : ℝ) :
 @[simp]
 theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ v) :
     ‖ιMulti ℝ n v‖ = 1 := by
-  have hgram : Matrix.gram ℝ v = 1 := by
-    ext i j
-    simp [Matrix.gram, Matrix.one_apply, orthonormal_iff_ite.1 hv]
-  rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq, hgram,
-    Matrix.det_one, one_pow]
+  rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
+    Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
 
 end exteriorPower
 
