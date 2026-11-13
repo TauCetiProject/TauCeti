@@ -149,7 +149,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
     obtain ⟨rfl, he⟩ := Prod.mk.inj he
     exact Prod.ext rfl (hinj t hz hz' he)
   have hW : Integrable (fun z : E × E ↦ z.2 - z.1) π :=
-    ⟨by fun_prop, hasFiniteIntegral_iff_enorm.2 hint⟩
+    ⟨by fun_prop, hasFiniteIntegral_iff_eNorm.2 hint⟩
   have hae : ∀ᵐ q ∂(volume.restrict (Ioo 0 1)).prod π,
       v q.1 ((1 - q.1) • q.2.1 + q.1 • q.2.2) = q.2.2 - q.2.1 := by
     filter_upwards [MeasureTheory.condExp_comap_ae_eq_of_injOn hG hA hAπ hGinj
@@ -162,10 +162,10 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
   refine ⟨v, hce, hae', fun p ↦ ?_⟩
   have hvm (t : ℝ) : Measurable (v t) := hce.measurable_velocity.comp measurable_prodMk_left
   calc ∫⁻ t in Ioo 0 1, ∫⁻ w, ‖v t w‖ₑ ^ p ∂π.map (fun z ↦ (1 - t) • z.1 + t • z.2)
-      = ∫⁻ t in Ioo (0 : ℝ) 1, ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
+      = ∫⁻ _ in Ioo (0 : ℝ) 1, ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
         refine setLIntegral_congr_fun_ae measurableSet_Ioo ?_
         filter_upwards [hae'] with t ht hmem
-        rw [lintegral_map ((hvm t).enorm.pow_const p) (by fun_prop)]
+        rw [lintegral_map ((hvm t).eNorm.pow_const p) (by fun_prop)]
         exact lintegral_congr_ae ((ht hmem).mono fun z hz ↦ by simp [hz])
     _ = ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by simp
 
@@ -221,7 +221,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupli
         wassersteinEDist p μ ν ^ p.toReal := by
   have : IsFiniteMeasure π := hopt.toIsCoupling.isFiniteMeasure
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_enorm.1
+  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_eNorm.1
     (memLp_one_iff_integrable.1 ((hopt.memLp_sub hp0 hp_top hfin).mono_exponent hp)).2
   obtain ⟨v, hce, -, hact⟩ := exists_isContinuityEquation_map_smul_fst_add_smul_snd π hint
   have hp₁ : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
@@ -253,7 +253,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_isOptimalCoupli
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hp₁ : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_enorm.1
+  have hint : ∫⁻ z, ‖z.2 - z.1‖ₑ ∂π < ∞ := hasFiniteIntegral_iff_eNorm.1
     (memLp_one_iff_integrable.1 ((hopt.memLp_sub hp0 hp_top hfin).mono_exponent hp.le)).2
   -- the optimal plan is concentrated on its support, which is cyclically monotone
   have hc : Continuous fun z : E × E ↦ edist z.1 z.2 ^ p.toReal :=

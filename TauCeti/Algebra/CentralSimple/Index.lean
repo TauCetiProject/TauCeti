@@ -30,8 +30,8 @@ The two numerical invariants of a presentation satisfy
 `deg K A = n * index K A`.
 
 The index is `1` exactly when `A` is split. Combining the construction with the maximal-subfield
-theorem gives the arithmetic meaning required by the semisimple-algebras roadmap: every central
-simple algebra has a finite splitting field whose degree over `K` is exactly its index.
+theorem gives the index its arithmetic meaning: every central simple algebra has a finite splitting
+field whose degree over `K` is exactly its index.
 
 ## Main results
 
@@ -46,9 +46,6 @@ simple algebra has a finite splitting field whose degree over `K` is exactly its
 
 ## References
 
-This implements the index portion of Layer 6, “Splitting fields, maximal subfields, and the
-index”, of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
 R. S. Pierce, *Associative Algebras*, Chapter 13.
 -/
