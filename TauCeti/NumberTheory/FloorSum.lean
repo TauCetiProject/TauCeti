@@ -15,6 +15,7 @@ import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 
 /-!
@@ -78,7 +79,7 @@ theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [NeZero (
   exact (eq_div_iff two_ne_zero).2 heq
 
 /-- The second-moment identity `Nat.Coprime.mul_sum_range_natCast_div_sq` over `ℚ`, from which
-the versions in `ℕ` and in any division ring of characteristic zero follow. -/
+the version `Nat.Coprime.mul_sum_range_div_sq_mul_six_add` in `ℕ` follows. -/
 private theorem Nat.Coprime.mul_sum_range_natCast_div_sq_rat {h c : ℕ} (hhc : h.Coprime c) :
     (c : ℚ) * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) ^ 2 =
       2 * h * ∑ r ∈ range c, (r : ℚ) * ((h * r / c : ℕ) : ℚ) +
@@ -116,16 +117,28 @@ theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprim
     linear_combination 6 * hq
   exact_mod_cast heq
 
-/-- For coprime `h` and `c` in a division ring of characteristic zero,
+/-- For coprime `h` and `c` in a division ring where `2 ≠ 0` and `3 ≠ 0`,
 `c ∑_{r < c} ⌊h r / c⌋² = 2h ∑_{r < c} r⌊h r / c⌋ + (1 - h²)(c - 1)(2c - 1)/6`. -/
-theorem Nat.Coprime.mul_sum_range_natCast_div_sq {K : Type*} [DivisionRing K] [CharZero K]
-    {h c : ℕ} (hhc : h.Coprime c) :
+theorem Nat.Coprime.mul_sum_range_natCast_div_sq {K : Type*} [DivisionRing K] [NeZero (2 : K)]
+    [NeZero (3 : K)] {h c : ℕ} (hhc : h.Coprime c) :
     (c : K) * ∑ r ∈ range c, ((h * r / c : ℕ) : K) ^ 2 =
       2 * h * ∑ r ∈ range c, (r : K) * ((h * r / c : ℕ) : K) +
         (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
-  have hq := congrArg (Rat.cast : ℚ → K) hhc.mul_sum_range_natCast_div_sq_rat
-  push_cast at hq
-  exact hq
+  rcases h.eq_zero_or_pos with rfl | hh
+  · obtain rfl : c = 1 := by simpa using hhc
+    simp
+  rcases c.eq_zero_or_pos with rfl | hc
+  · obtain rfl : h = 1 := by simpa using hhc
+    simp
+  have h6 : (6 : K) ≠ 0 := by
+    rw [show (6 : K) = 2 * 3 by norm_num]
+    exact mul_ne_zero two_ne_zero three_ne_zero
+  have heq := congrArg (Nat.cast : ℕ → K) hhc.mul_sum_range_div_sq_mul_six_add
+  push_cast [Nat.cast_sub (Nat.one_le_pow _ _ hh), Nat.cast_sub hc,
+    Nat.cast_sub (by omega : 1 ≤ 2 * c)] at heq
+  rw [← mul_div_assoc, ← sub_eq_iff_eq_add', eq_div_iff h6]
+  rw [sub_mul, eq_sub_of_add_eq heq]
+  noncomm_ring
 
 /-- For coprime naturals `h` and `c`,
 `∑_{r < c} r (⌊h r / c⌋ + 1) + ∑_{s < h} ∑_{r ≤ ⌊c s / h⌋} r = h ∑_{r < c} r`.

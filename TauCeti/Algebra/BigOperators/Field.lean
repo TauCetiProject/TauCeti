@@ -25,7 +25,7 @@ values `∏ (1 - q^{-k})` of local densities.
 ## Main results
 
 * `Finset.sum_range_natCast`, `Finset.sum_range_natCast_sq`: sums of naturals and their squares in
-  a division ring (with the relevant denominators nonzero).
+  a division ring where `2 ≠ 0` (and, for the squares, also `3 ≠ 0`).
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
@@ -59,10 +59,13 @@ theorem sum_range_natCast {K : Type*} [DivisionRing K] [NeZero (2 : K)] (n : ℕ
     ∑ r ∈ range n, (r : K) = n * (n - 1) / 2 :=
   (eq_div_iff two_ne_zero).2 (sum_range_natCast_mul_two n)
 
-/-- The sum of the squares of natural numbers below `n`, in a division ring of characteristic
-zero. -/
-theorem sum_range_natCast_sq {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
-    ∑ r ∈ range n, (r : K) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 :=
-  (eq_div_iff (by norm_num)).2 (sum_range_natCast_sq_mul_six n)
+/-- The sum of the squares of natural numbers below `n`, in a division ring where `2 ≠ 0` and
+`3 ≠ 0`. -/
+theorem sum_range_natCast_sq {K : Type*} [DivisionRing K] [NeZero (2 : K)] [NeZero (3 : K)]
+    (n : ℕ) : ∑ r ∈ range n, (r : K) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
+  have h6 : (6 : K) ≠ 0 := by
+    rw [show (6 : K) = 2 * 3 by norm_num]
+    exact mul_ne_zero two_ne_zero three_ne_zero
+  exact (eq_div_iff h6).2 (sum_range_natCast_sq_mul_six n)
 
 end Finset
