@@ -146,17 +146,19 @@ theorem multiplicity_relNorm (p : Ideal A) [p.IsPrime] [Fintype (p.primesOver B)
       ∑ P ∈ (p.primesOver B).toFinset, P.inertiaDeg A * multiplicity P I := by
   rcases eq_or_ne I ⊥ with rfl | hI
   · -- Both sides vanish: the zero ideal has coefficient `0` everywhere.
-    rw [Ideal.relNorm_bot, show multiplicity p (⊥ : Ideal A) = 0 from multiplicity_zero_right _]
+    rw [Ideal.relNorm_bot, ← Ideal.zero_eq_bot (R := A), multiplicity_zero_right]
     exact (Finset.sum_eq_zero fun P _ ↦ by
-      rw [show multiplicity P (⊥ : Ideal B) = 0 from multiplicity_zero_right _, Nat.mul_zero]).symm
+      rw [← Ideal.zero_eq_bot (R := B), multiplicity_zero_right, Nat.mul_zero]).symm
   by_cases hp : p = ⊥
   · subst hp
     -- The zero ideal has coefficient `0` everywhere, and every prime above `⊥` is `⊥`.
-    rw [show multiplicity (⊥ : Ideal A) (relNorm A I) = 0 from multiplicity_zero_left _]
+    have h0 : multiplicity (⊥ : Ideal A) (relNorm A I) = 0 := by
+      rw [← Ideal.zero_eq_bot (R := A), multiplicity_zero_left]
+    rw [h0]
     refine (Finset.sum_eq_zero fun P hP ↦ ?_).symm
     have : P.LiesOver ⊥ := (Set.mem_toFinset.mp hP).2
-    rw [Ideal.eq_bot_of_liesOver_bot A P,
-      show multiplicity (⊥ : Ideal B) I = 0 from multiplicity_zero_left _, Nat.mul_zero]
+    rw [Ideal.eq_bot_of_liesOver_bot A P, ← Ideal.zero_eq_bot (R := B), multiplicity_zero_left,
+      Nat.mul_zero]
   · -- A nonzero prime of a Dedekind domain is maximal.
     have := ‹p.IsPrime›.isMaximal hp
     exact multiplicity_relNorm_of_ne_bot p hp hI
