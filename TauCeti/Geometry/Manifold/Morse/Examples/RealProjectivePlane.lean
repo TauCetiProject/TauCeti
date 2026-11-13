@@ -365,10 +365,6 @@ private theorem realProjPlane_singularHomologyδ_eq
 
 /-! ### The first differential and the second page -/
 
-/-- Multiplication by `2` on `ℤ` is a monomorphism. -/
-private instance mono_two_smul_id_moduleCatInt : Mono ((2 : ℤ) • 𝟙 (ModuleCat.of ℤ ℤ)) :=
-  ModuleCat.mono_smul_id (IsRegular.of_ne_zero two_ne_zero).isSMulRegular
-
 /-- **The first differential of the critical-band spectral sequence of `ℝP²` is `±2`.** The
 differential of the first page from `(-4, 2)` to `(-2, 1)`, the connecting map
 `H₂(ℝP², {f ≤ 3/2}) ⟶ H₁({f ≤ 3/2}, {f ≤ 1/2})` from the cell of the maximum to the cell of the
