@@ -192,10 +192,12 @@ theorem mapV_eq_of_mapE_eq_flower_loop_petal {Δ : SerreGraph}
     (h : g.mapE (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true) =
       g.mapE (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true)) :
     g.mapV (flowerPos [[a], [a, b]] ⟨1, by simp⟩ 1) = g.mapV (flower [[a], [a, b]]).base := by
-  -- By the definition of the flower, the termini of the two darts are the base vertex and the
-  -- interior vertex of the petal; a morphism commutes with termini.
-  exact (((SerreGraph.Hom.map_tgt _ g _).symm.trans (congrArg Δ.tgt h)).trans
-    (SerreGraph.Hom.map_tgt _ g _)).symm
+  -- A morphism commutes with termini. `Hom.map_tgt` is applied as a term because `rw` and
+  -- `simp` do not identify the edge type of the flower with the type of the dart literals.
+  have ht := (g.map_tgt _ _).symm.trans ((congrArg Δ.tgt h).trans (g.map_tgt _ _))
+  simp only [flower_tgt_forward, zero_add] at ht
+  rw [← ht, flower_base]
+  exact congrArg g.mapV ((flowerPos_eq_none_iff _ _ _).mpr (by simp))
 
 /-- The interior vertex of the petal `a b` is not the base vertex of the flower. -/
 theorem flowerPos_flower_loop_petal_ne_base :
