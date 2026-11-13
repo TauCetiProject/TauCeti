@@ -237,7 +237,7 @@ theorem two_smul_mul_mul_mul_add_mul {c : J} (hc : c * c = c) (y : J) :
   convert h using 1; module
 
 omit [SMulCommClass R J J] in
-/-- The polynomial solved for twice the cube, without dividing scalars in subsequent proofs. -/
+/-- The Peirce cubic identity solved for twice the third iterate of left multiplication. -/
 theorem two_smul_mul_mul_mul {c : J} (hc : c * c = c) (y : J) :
     (2 : R) • (c * (c * (c * y))) = (3 : R) • (c * (c * y)) - c * y :=
   eq_sub_of_add_eq (two_smul_mul_mul_mul_add_mul hc y)
@@ -487,14 +487,8 @@ theorem exists_peirce_decomposition {c : J} (hc : c * c = c) (y : J) :
 /-- Multiplication by an element of either extreme Peirce space commutes with `L_c`. -/
 theorem mul_left_comm_of_mem_peirceSpace_one_or_zero {c x : J} (hc : c * c = c)
     (hx : x ∈ peirceSpace R c 1 ∨ x ∈ peirceSpace R c 0) (w : J) : c * (x * w) = x * (c * w) := by
-  have h := mul_mul_mul_sub_add_add_eq_zero (isSMulRegular_two R J) c c x w
-  simp only [mem_peirceSpace, one_smul, zero_smul] at hx
-  rcases hx with hx | hx
-  · simp only [hc, mul_comm x c, hx] at h
-    apply sub_eq_zero.mp
-    convert h using 1; abel
-  · simpa only [hc, mul_comm x c, hx, zero_mul, mul_zero, sub_self, zero_add,
-      sub_eq_zero, eq_comm] using h
+  apply mul_left_comm_of_mul_eq_self_or_zero (isSMulRegular_two R J) hc
+  simpa only [mem_peirceSpace, one_smul, zero_smul] using hx
 
 /-- Multiplication by a `1`- or `0`-Peirce element preserves every `μ`-Peirce space. -/
 theorem mul_mem_peirceSpace_of_mem_one_or_zero {c x y : J} {μ : R} (hc : c * c = c)
@@ -519,14 +513,9 @@ theorem mul_mem_peirceSpace_of_mem_zero {c x y : J} {μ : R} (hc : c * c = c)
 theorem mul_eq_zero_of_mem_peirceSpace_one_of_mem_peirceSpace_zero {c x y : J}
     (hc : c * c = c) (hx : x ∈ peirceSpace R c 1)
     (hy : y ∈ peirceSpace R c 0) : x * y = 0 := by
-  have hx' := (mem_peirceSpace.mp hx).trans (one_smul R x)
-  have hy' := (mem_peirceSpace.mp hy).trans (zero_smul R y)
-  have h₀ : c * (x * y) = 0 := by
-    rw [mul_left_comm_of_mem_peirceSpace_one_or_zero (R := R) hc (Or.inl hx), hy', mul_zero]
-  have h₁ : c * (x * y) = x * y := by
-    rw [mul_comm x y, mul_left_comm_of_mem_peirceSpace_one_or_zero hc (Or.inr hy),
-      hx', mul_comm y x]
-  exact h₁.symm.trans h₀
+  exact mul_eq_zero_of_mul_eq_self_of_mul_eq_zero (isSMulRegular_two R J) hc
+    ((mem_peirceSpace.mp hx).trans (one_smul R x))
+    ((mem_peirceSpace.mp hy).trans (zero_smul R y))
 
 /-- A product of half-space elements has zero half-component. -/
 theorem peirceHalf_mul_eq_zero_of_mem_peirceSpace_invOf_two {c x y : J} (hc : c * c = c)
@@ -553,11 +542,8 @@ theorem mul_mem_peirceSpace_one_sup_zero_of_mem_invOf_two {c x y : J} (hc : c * 
 theorem mul_left_comm_of_mem_peirceSpace_one_of_mem_peirceSpace_zero {c x y : J}
     (hc : c * c = c) (hx : x ∈ peirceSpace R c 1)
     (hy : y ∈ peirceSpace R c 0) (w : J) : x * (y * w) = y * (x * w) := by
-  have h := mul_mul_mul_sub_add_add_eq_zero (isSMulRegular_two R J) x y c w
-  simp only [mul_eq_zero_of_mem_peirceSpace_one_of_mem_peirceSpace_zero hc hx hy,
-    mul_comm y c, (mem_peirceSpace.mp hx).trans (one_smul R x),
-    (mem_peirceSpace.mp hy).trans (zero_smul R y),
-    zero_mul, mul_zero, sub_self, zero_add, add_zero] at h
-  exact (sub_eq_zero.mp h).symm
+  exact mul_left_comm_of_mul_eq_self_of_mul_eq_zero (isSMulRegular_two R J) hc
+    ((mem_peirceSpace.mp hx).trans (one_smul R x))
+    ((mem_peirceSpace.mp hy).trans (zero_smul R y)) w
 
 end TauCeti.Jordan
