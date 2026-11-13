@@ -12,7 +12,7 @@ import TauCeti.Analysis.Normed.Module.Ball.Retraction
 -- Proof-only: the layer-cake formula for powers of an `ℝ≥0∞`-valued function.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
-import TauCeti.MeasureTheory.Function.SchwarzRearrangement
+import TauCeti.MeasureTheory.Integral.LayerCake
 
 /-!
 # The decreasing rearrangement of a function on a measure space
