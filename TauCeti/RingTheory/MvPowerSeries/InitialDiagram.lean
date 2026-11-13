@@ -9,8 +9,9 @@ public import Mathlib.Data.Finsupp.MonomialOrder.DegLex
 public import Mathlib.Order.Antichain
 public import Mathlib.Order.Minimal
 public import Mathlib.Order.UpperLower.Basic
-public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.MvPowerSeries.Order
+public import TauCeti.RingTheory.MvPowerSeries.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Ideal
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Order.UpperLower.Closure
 import Mathlib.RingTheory.MvPowerSeries.Inverse
@@ -27,7 +28,7 @@ monomial `MonomialOrder.degree` of a polynomial, which maximizes `m.toSyn` over 
 `m.syn`, generalizing the pure lexicographic valuation `MvPowerSeries.lexOrder` to an arbitrary
 monomial order. For the graded lexicographic order `MonomialOrder.degLex`, the total degree of
 `degLex.initialExp f` recovers the `ℕ∞`-valued order `MvPowerSeries.order f` of any nonzero series
-(`MonomialOrder.degLex_initialExp_degree_eq_order`).
+(`MonomialOrder.degree_initialExp_degLex_eq_order`).
 
 For an ideal `I` of `MvPowerSeries σ R`, Hironaka's *diagram of initial exponents*
 `m.initialDiagram I : Set (σ →₀ ℕ)` is the set of initial exponents `m.initialExp f` of nonzero
@@ -53,11 +54,13 @@ is the union of the cones `Set.Ici α` of its minimal elements; when `σ` is fin
 
 ## Main results
 
-* `MonomialOrder.isLeast_toSyn_iff`: `IsLeast (m.toSyn '' f.support) (m.toSyn α)` holds if and
-  only if `f ≠ 0` and `m.initialExp f = α`.
-* `MonomialOrder.initialExp_monomial_one_mul`, `MonomialOrder.initialExp_mul`: behaviour of
-  `m.initialExp` under monomial shifts and multiplication.
-* `MonomialOrder.degLex_initialExp_degree_eq_order`: for `f ≠ 0`,
+* `MonomialOrder.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq`:
+  `IsLeast (m.toSyn '' f.support) (m.toSyn α)` holds if and only if `f ≠ 0` and
+  `m.initialExp f = α`.
+* `MonomialOrder.initialExp_monomial_mul`, `MonomialOrder.initialExp_monomial_one_mul`,
+  `MonomialOrder.initialExp_mul`: behaviour of `m.initialExp` (along with `m.initialCoeff` and
+  `m.initialTerm`) under monomial shifts, scalar multiplication, addition, and multiplication.
+* `MonomialOrder.degree_initialExp_degLex_eq_order`: for `f ≠ 0`,
   `((degLex.initialExp f).degree : ℕ∞) = f.order`.
 * `MonomialOrder.add_mem_initialDiagram`, `MonomialOrder.isUpperSet_initialDiagram`: upward
   closure of `m.initialDiagram I`.
@@ -110,10 +113,7 @@ theorem initialTerm_def (f : MvPowerSeries σ R) :
 
 @[simp]
 theorem initialExp_zero : m.initialExp (0 : MvPowerSeries σ R) = 0 := by
-  have h : ¬ (m.toSyn '' (0 : MvPowerSeries σ R).support).Nonempty := by
-    rintro ⟨_, α, hα, _⟩
-    exact hα (MvPowerSeries.coeff_zero α)
-  simp [initialExp, h]
+  simp [initialExp]
 
 @[simp, nontriviality]
 theorem initialExp_of_subsingleton [Subsingleton R] (f : MvPowerSeries σ R) :
@@ -141,7 +141,8 @@ theorem isLeast_toSyn_initialExp {f : MvPowerSeries σ R} (hf : f ≠ 0) :
 
 /-- `m.toSyn α` is the least element of `m.toSyn '' f.support` if and only if `f ≠ 0` and
 `m.initialExp f = α`. -/
-theorem isLeast_toSyn_iff {f : MvPowerSeries σ R} {α : σ →₀ ℕ} :
+theorem isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq {f : MvPowerSeries σ R}
+    {α : σ →₀ ℕ} :
     IsLeast (m.toSyn '' f.support) (m.toSyn α) ↔ f ≠ 0 ∧ m.initialExp f = α := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨_, ⟨β, hβ, _⟩⟩ := h.nonempty
@@ -156,9 +157,8 @@ theorem initialExp_mem_support {f : MvPowerSeries σ R} (hf : f ≠ 0) :
     (m.isLeast_toSyn_initialExp hf).1
 
 theorem coeff_initialExp_ne_zero {f : MvPowerSeries σ R} (hf : f ≠ 0) :
-    MvPowerSeries.coeff (m.initialExp f) f ≠ 0 := by
-  rw [MvPowerSeries.coeff_apply]
-  exact m.initialExp_mem_support hf
+    MvPowerSeries.coeff (m.initialExp f) f ≠ 0 :=
+  MvPowerSeries.mem_support.mp (m.initialExp_mem_support hf)
 
 @[simp]
 theorem initialCoeff_eq_zero_iff {f : MvPowerSeries σ R} :
@@ -171,6 +171,18 @@ theorem initialCoeff_ne_zero_iff {f : MvPowerSeries σ R} :
     m.initialCoeff f ≠ 0 ↔ f ≠ 0 :=
   m.initialCoeff_eq_zero_iff.not
 
+@[simp]
+theorem initialTerm_eq_zero_iff {f : MvPowerSeries σ R} :
+    m.initialTerm f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ m.initialTerm_zero⟩
+  rw [← m.initialCoeff_eq_zero_iff]
+  simpa only [initialTerm_def, MvPowerSeries.coeff_monomial_same, map_zero] using
+    congrArg (MvPowerSeries.coeff (m.initialExp f)) h
+
+theorem initialTerm_ne_zero_iff {f : MvPowerSeries σ R} :
+    m.initialTerm f ≠ 0 ↔ f ≠ 0 :=
+  m.initialTerm_eq_zero_iff.not
+
 theorem initialExp_le_of_mem_support {f : MvPowerSeries σ R} {α : σ →₀ ℕ} (hα : α ∈ f.support) :
     m.initialExp f ≼[m] α := by
   have hf : f ≠ 0 := Function.support_nonempty_iff.mp ⟨α, hα⟩
@@ -178,7 +190,7 @@ theorem initialExp_le_of_mem_support {f : MvPowerSeries σ R} {α : σ →₀ �
 
 theorem initialExp_le_of_coeff_ne_zero {f : MvPowerSeries σ R} {α : σ →₀ ℕ}
     (hα : MvPowerSeries.coeff α f ≠ 0) : m.initialExp f ≼[m] α :=
-  m.initialExp_le_of_mem_support (by rwa [MvPowerSeries.coeff_apply] at hα)
+  m.initialExp_le_of_mem_support (MvPowerSeries.mem_support.mpr hα)
 
 theorem coeff_eq_zero_of_lt_initialExp {f : MvPowerSeries σ R} {α : σ →₀ ℕ}
     (hα : α ≺[m] m.initialExp f) : MvPowerSeries.coeff α f = 0 := by
@@ -191,11 +203,11 @@ theorem initialExp_eq_of_coeff_ne_zero_of_forall_lt {f : MvPowerSeries σ R} {α
     (hα : MvPowerSeries.coeff α f ≠ 0)
     (hlt : ∀ β, β ≺[m] α → MvPowerSeries.coeff β f = 0) :
     m.initialExp f = α := by
-  refine ((m.isLeast_toSyn_iff).mp ⟨?_, ?_⟩).2
-  · exact Set.mem_image_of_mem _ (by rwa [MvPowerSeries.coeff_apply] at hα)
+  refine (m.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq.mp ⟨?_, ?_⟩).2
+  · exact Set.mem_image_of_mem _ (MvPowerSeries.mem_support.mpr hα)
   · rintro _ ⟨β, hβ, rfl⟩
     by_contra! h
-    exact hβ (by simpa only [MvPowerSeries.coeff_apply] using hlt β h)
+    exact MvPowerSeries.mem_support.mp hβ (hlt β h)
 
 theorem initialExp_eq_iff {f : MvPowerSeries σ R} {α : σ →₀ ℕ} (hf : f ≠ 0) :
     m.initialExp f = α ↔
@@ -228,13 +240,54 @@ theorem initialCoeff_monomial (α : σ →₀ ℕ) (c : R) :
   · exact MvPowerSeries.coeff_monomial_same α c
 
 @[simp]
+theorem initialTerm_monomial (α : σ →₀ ℕ) (c : R) :
+    m.initialTerm (MvPowerSeries.monomial α c) = MvPowerSeries.monomial α c := by
+  classical
+  rw [initialTerm_def, m.initialExp_monomial, m.initialCoeff_monomial]
+  split_ifs with hc <;> simp [hc]
+
+@[simp]
+theorem initialExp_initialTerm (f : MvPowerSeries σ R) :
+    m.initialExp (m.initialTerm f) = m.initialExp f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [initialTerm_def, m.initialExp_monomial_of_ne_zero _ (m.initialCoeff_ne_zero_iff.mpr hf)]
+
+@[simp]
+theorem initialCoeff_initialTerm (f : MvPowerSeries σ R) :
+    m.initialCoeff (m.initialTerm f) = m.initialCoeff f := by
+  rw [initialTerm_def, m.initialCoeff_monomial]
+
+@[simp]
+theorem initialTerm_initialTerm (f : MvPowerSeries σ R) :
+    m.initialTerm (m.initialTerm f) = m.initialTerm f := by
+  rw [initialTerm_def, m.initialExp_initialTerm, m.initialCoeff_initialTerm, ← initialTerm_def]
+
+@[simp]
 theorem initialExp_C (c : R) : m.initialExp (MvPowerSeries.C c : MvPowerSeries σ R) = 0 := by
   classical
   rw [← MvPowerSeries.monomial_zero_eq_C_apply, m.initialExp_monomial, ite_self]
 
 @[simp]
+theorem initialCoeff_C (c : R) : m.initialCoeff (MvPowerSeries.C c : MvPowerSeries σ R) = c := by
+  rw [← MvPowerSeries.monomial_zero_eq_C_apply, m.initialCoeff_monomial]
+
+@[simp]
+theorem initialTerm_C (c : R) :
+    m.initialTerm (MvPowerSeries.C c : MvPowerSeries σ R) = MvPowerSeries.C c := by
+  rw [← MvPowerSeries.monomial_zero_eq_C_apply, m.initialTerm_monomial]
+
+@[simp]
 theorem initialExp_one : m.initialExp (1 : MvPowerSeries σ R) = 0 := by
   rw [← map_one MvPowerSeries.C, m.initialExp_C]
+
+@[simp]
+theorem initialCoeff_one : m.initialCoeff (1 : MvPowerSeries σ R) = 1 := by
+  rw [← map_one MvPowerSeries.C, m.initialCoeff_C]
+
+@[simp]
+theorem initialTerm_one : m.initialTerm (1 : MvPowerSeries σ R) = 1 := by
+  rw [← map_one MvPowerSeries.C, m.initialTerm_C]
 
 @[simp]
 theorem initialExp_X [Nontrivial R] (i : σ) :
@@ -242,9 +295,28 @@ theorem initialExp_X [Nontrivial R] (i : σ) :
   rw [MvPowerSeries.X_def, m.initialExp_monomial_of_ne_zero _ one_ne_zero]
 
 @[simp]
+theorem initialCoeff_X (i : σ) : m.initialCoeff (MvPowerSeries.X i : MvPowerSeries σ R) = 1 := by
+  rw [MvPowerSeries.X_def, m.initialCoeff_monomial]
+
+@[simp]
+theorem initialTerm_X (i : σ) :
+    m.initialTerm (MvPowerSeries.X i : MvPowerSeries σ R) = MvPowerSeries.X i := by
+  rw [MvPowerSeries.X_def, m.initialTerm_monomial]
+
+@[simp]
 theorem initialExp_X_pow [Nontrivial R] (i : σ) (k : ℕ) :
     m.initialExp ((MvPowerSeries.X i : MvPowerSeries σ R) ^ k) = Finsupp.single i k := by
   rw [MvPowerSeries.X_pow_eq, m.initialExp_monomial_of_ne_zero _ one_ne_zero]
+
+@[simp]
+theorem initialCoeff_X_pow (i : σ) (k : ℕ) :
+    m.initialCoeff ((MvPowerSeries.X i : MvPowerSeries σ R) ^ k) = 1 := by
+  rw [MvPowerSeries.X_pow_eq, m.initialCoeff_monomial]
+
+@[simp]
+theorem initialTerm_X_pow (i : σ) (k : ℕ) :
+    m.initialTerm ((MvPowerSeries.X i : MvPowerSeries σ R) ^ k) = (MvPowerSeries.X i) ^ k := by
+  rw [MvPowerSeries.X_pow_eq, m.initialTerm_monomial]
 
 @[simp]
 theorem initialExp_neg {S : Type*} [Ring S] (f : MvPowerSeries σ S) :
@@ -255,39 +327,15 @@ theorem initialExp_neg {S : Type*} [Ring S] (f : MvPowerSeries σ S) :
   · simpa using m.coeff_initialExp_ne_zero hf
   · simp [m.coeff_eq_zero_of_lt_initialExp hβ]
 
-/-- Left multiplication by `monomial β 1` shifts the initial exponent of any nonzero power series
-by `β`, without requiring cancellation in `R`. -/
-theorem initialExp_monomial_one_mul (β : σ →₀ ℕ) {f : MvPowerSeries σ R} (hf : f ≠ 0) :
-    m.initialExp (MvPowerSeries.monomial β (1 : R) * f) = β + m.initialExp f := by
-  classical
-  refine m.initialExp_eq_of_coeff_ne_zero_of_forall_lt ?_ fun γ hγ ↦ ?_
-  · rw [MvPowerSeries.coeff_add_monomial_mul, one_mul]
-    exact m.coeff_initialExp_ne_zero hf
-  · rw [MvPowerSeries.coeff_monomial_mul]
-    split_ifs with hle
-    · have hlt : γ - β ≺[m] m.initialExp f := by
-        have h1 : m.toSyn β + m.toSyn (γ - β) < m.toSyn β + m.toSyn (m.initialExp f) := by
-          simpa only [← map_add, add_tsub_cancel_of_le hle] using hγ
-        exact lt_of_add_lt_add_left h1
-      rw [m.coeff_eq_zero_of_lt_initialExp hlt, mul_zero]
-    · rfl
+@[simp]
+theorem initialCoeff_neg {S : Type*} [Ring S] (f : MvPowerSeries σ S) :
+    m.initialCoeff (-f) = -m.initialCoeff f := by
+  rw [initialCoeff_def, m.initialExp_neg, map_neg, initialCoeff_def]
 
-/-- Right multiplication by `monomial β 1` shifts the initial exponent of any nonzero power series
-by `β`. -/
-theorem initialExp_mul_monomial_one {f : MvPowerSeries σ R} (hf : f ≠ 0) (β : σ →₀ ℕ) :
-    m.initialExp (f * MvPowerSeries.monomial β (1 : R)) = m.initialExp f + β := by
-  classical
-  refine m.initialExp_eq_of_coeff_ne_zero_of_forall_lt ?_ fun γ hγ ↦ ?_
-  · rw [MvPowerSeries.coeff_add_mul_monomial, mul_one]
-    exact m.coeff_initialExp_ne_zero hf
-  · rw [MvPowerSeries.coeff_mul_monomial]
-    split_ifs with hle
-    · have hlt : γ - β ≺[m] m.initialExp f := by
-        have h1 : m.toSyn (γ - β) + m.toSyn β < m.toSyn (m.initialExp f) + m.toSyn β := by
-          simpa only [← map_add, tsub_add_cancel_of_le hle] using hγ
-        exact lt_of_add_lt_add_right h1
-      rw [m.coeff_eq_zero_of_lt_initialExp hlt, zero_mul]
-    · rfl
+@[simp]
+theorem initialTerm_neg {S : Type*} [Ring S] (f : MvPowerSeries σ S) :
+    m.initialTerm (-f) = -m.initialTerm f := by
+  rw [initialTerm_def, m.initialExp_neg, m.initialCoeff_neg, map_neg, ← initialTerm_def]
 
 theorem coeff_mul_eq_zero_of_lt_add_initialExp {f g : MvPowerSeries σ R} {γ : σ →₀ ℕ}
     (hγ : γ ≺[m] m.initialExp f + m.initialExp g) :
@@ -337,10 +385,173 @@ theorem initialExp_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
     (by rwa [m.coeff_add_initialExp_mul])
     fun _ ↦ m.coeff_mul_eq_zero_of_lt_add_initialExp
 
+theorem initialCoeff_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
+    (h : m.initialCoeff f * m.initialCoeff g ≠ 0) :
+    m.initialCoeff (f * g) = m.initialCoeff f * m.initialCoeff g := by
+  rw [initialCoeff_def, m.initialExp_mul_of_mul_initialCoeff_ne_zero h, m.coeff_add_initialExp_mul]
+
+theorem initialTerm_mul_of_mul_initialCoeff_ne_zero {f g : MvPowerSeries σ R}
+    (h : m.initialCoeff f * m.initialCoeff g ≠ 0) :
+    m.initialTerm (f * g) = m.initialTerm f * m.initialTerm g := by
+  rw [initialTerm_def, initialTerm_def, initialTerm_def,
+    m.initialExp_mul_of_mul_initialCoeff_ne_zero h,
+    m.initialCoeff_mul_of_mul_initialCoeff_ne_zero h, MvPowerSeries.monomial_mul_monomial]
+
 theorem initialExp_mul [NoZeroDivisors R] {f g : MvPowerSeries σ R} (hf : f ≠ 0) (hg : g ≠ 0) :
     m.initialExp (f * g) = m.initialExp f + m.initialExp g :=
   m.initialExp_mul_of_mul_initialCoeff_ne_zero <|
     mul_ne_zero (m.initialCoeff_ne_zero_iff.mpr hf) (m.initialCoeff_ne_zero_iff.mpr hg)
+
+@[simp]
+theorem initialCoeff_mul [NoZeroDivisors R] (f g : MvPowerSeries σ R) :
+    m.initialCoeff (f * g) = m.initialCoeff f * m.initialCoeff g := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  exact m.initialCoeff_mul_of_mul_initialCoeff_ne_zero <|
+    mul_ne_zero (m.initialCoeff_ne_zero_iff.mpr hf) (m.initialCoeff_ne_zero_iff.mpr hg)
+
+@[simp]
+theorem initialTerm_mul [NoZeroDivisors R] (f g : MvPowerSeries σ R) :
+    m.initialTerm (f * g) = m.initialTerm f * m.initialTerm g := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rcases eq_or_ne g 0 with rfl | hg
+  · simp
+  exact m.initialTerm_mul_of_mul_initialCoeff_ne_zero <|
+    mul_ne_zero (m.initialCoeff_ne_zero_iff.mpr hf) (m.initialCoeff_ne_zero_iff.mpr hg)
+
+/-- Left multiplication by `monomial β c` shifts `m.initialExp f` by `β` whenever
+`c * m.initialCoeff f ≠ 0`. -/
+theorem initialExp_monomial_mul {β : σ →₀ ℕ} {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialExp (MvPowerSeries.monomial β c * f) = β + m.initialExp f := by
+  have hm : m.initialCoeff (MvPowerSeries.monomial β c) * m.initialCoeff f ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialExp_mul_of_mul_initialCoeff_ne_zero hm,
+    m.initialExp_monomial_of_ne_zero β (left_ne_zero_of_mul h)]
+
+theorem initialCoeff_monomial_mul {β : σ →₀ ℕ} {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialCoeff (MvPowerSeries.monomial β c * f) = c * m.initialCoeff f := by
+  have hm : m.initialCoeff (MvPowerSeries.monomial β c) * m.initialCoeff f ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialCoeff_mul_of_mul_initialCoeff_ne_zero hm, m.initialCoeff_monomial]
+
+theorem initialTerm_monomial_mul {β : σ →₀ ℕ} {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialTerm (MvPowerSeries.monomial β c * f) =
+      MvPowerSeries.monomial β c * m.initialTerm f := by
+  have hm : m.initialCoeff (MvPowerSeries.monomial β c) * m.initialCoeff f ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialTerm_mul_of_mul_initialCoeff_ne_zero hm, m.initialTerm_monomial]
+
+/-- Right multiplication by `monomial β c` shifts `m.initialExp f` by `β` whenever
+`m.initialCoeff f * c ≠ 0`. -/
+theorem initialExp_mul_monomial {f : MvPowerSeries σ R} {β : σ →₀ ℕ} {c : R}
+    (h : m.initialCoeff f * c ≠ 0) :
+    m.initialExp (f * MvPowerSeries.monomial β c) = m.initialExp f + β := by
+  have hm : m.initialCoeff f * m.initialCoeff (MvPowerSeries.monomial β c) ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialExp_mul_of_mul_initialCoeff_ne_zero hm,
+    m.initialExp_monomial_of_ne_zero β (right_ne_zero_of_mul h)]
+
+theorem initialCoeff_mul_monomial {f : MvPowerSeries σ R} {β : σ →₀ ℕ} {c : R}
+    (h : m.initialCoeff f * c ≠ 0) :
+    m.initialCoeff (f * MvPowerSeries.monomial β c) = m.initialCoeff f * c := by
+  have hm : m.initialCoeff f * m.initialCoeff (MvPowerSeries.monomial β c) ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialCoeff_mul_of_mul_initialCoeff_ne_zero hm, m.initialCoeff_monomial]
+
+theorem initialTerm_mul_monomial {f : MvPowerSeries σ R} {β : σ →₀ ℕ} {c : R}
+    (h : m.initialCoeff f * c ≠ 0) :
+    m.initialTerm (f * MvPowerSeries.monomial β c) =
+      m.initialTerm f * MvPowerSeries.monomial β c := by
+  have hm : m.initialCoeff f * m.initialCoeff (MvPowerSeries.monomial β c) ≠ 0 := by
+    rwa [m.initialCoeff_monomial]
+  rw [m.initialTerm_mul_of_mul_initialCoeff_ne_zero hm, m.initialTerm_monomial]
+
+/-- Left multiplication by `monomial β 1` shifts the initial exponent of any nonzero power series
+by `β`, without requiring cancellation in `R`. -/
+theorem initialExp_monomial_one_mul (β : σ →₀ ℕ) {f : MvPowerSeries σ R} (hf : f ≠ 0) :
+    m.initialExp (MvPowerSeries.monomial β (1 : R) * f) = β + m.initialExp f :=
+  m.initialExp_monomial_mul (by rw [one_mul]; exact m.initialCoeff_ne_zero_iff.mpr hf)
+
+@[simp]
+theorem initialCoeff_monomial_one_mul (β : σ →₀ ℕ) (f : MvPowerSeries σ R) :
+    m.initialCoeff (MvPowerSeries.monomial β (1 : R) * f) = m.initialCoeff f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [m.initialCoeff_monomial_mul (by rw [one_mul]; exact m.initialCoeff_ne_zero_iff.mpr hf),
+      one_mul]
+
+@[simp]
+theorem initialTerm_monomial_one_mul (β : σ →₀ ℕ) (f : MvPowerSeries σ R) :
+    m.initialTerm (MvPowerSeries.monomial β (1 : R) * f) =
+      MvPowerSeries.monomial β (1 : R) * m.initialTerm f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · exact m.initialTerm_monomial_mul (by rw [one_mul]; exact m.initialCoeff_ne_zero_iff.mpr hf)
+
+/-- Right multiplication by `monomial β 1` shifts the initial exponent of any nonzero power series
+by `β`. -/
+theorem initialExp_mul_monomial_one {f : MvPowerSeries σ R} (hf : f ≠ 0) (β : σ →₀ ℕ) :
+    m.initialExp (f * MvPowerSeries.monomial β (1 : R)) = m.initialExp f + β :=
+  m.initialExp_mul_monomial (by rw [mul_one]; exact m.initialCoeff_ne_zero_iff.mpr hf)
+
+@[simp]
+theorem initialCoeff_mul_monomial_one (f : MvPowerSeries σ R) (β : σ →₀ ℕ) :
+    m.initialCoeff (f * MvPowerSeries.monomial β (1 : R)) = m.initialCoeff f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [m.initialCoeff_mul_monomial (by rw [mul_one]; exact m.initialCoeff_ne_zero_iff.mpr hf),
+      mul_one]
+
+@[simp]
+theorem initialTerm_mul_monomial_one (f : MvPowerSeries σ R) (β : σ →₀ ℕ) :
+    m.initialTerm (f * MvPowerSeries.monomial β (1 : R)) =
+      m.initialTerm f * MvPowerSeries.monomial β (1 : R) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · exact m.initialTerm_mul_monomial (by rw [mul_one]; exact m.initialCoeff_ne_zero_iff.mpr hf)
+
+theorem initialExp_smul_of_mul_initialCoeff_ne_zero {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialExp (c • f) = m.initialExp f := by
+  rw [MvPowerSeries.smul_eq_C_mul, ← MvPowerSeries.monomial_zero_eq_C_apply,
+    m.initialExp_monomial_mul h, zero_add]
+
+theorem initialCoeff_smul_of_mul_initialCoeff_ne_zero {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialCoeff (c • f) = c • m.initialCoeff f := by
+  rw [MvPowerSeries.smul_eq_C_mul, ← MvPowerSeries.monomial_zero_eq_C_apply,
+    m.initialCoeff_monomial_mul h, smul_eq_mul]
+
+theorem initialTerm_smul_of_mul_initialCoeff_ne_zero {c : R} {f : MvPowerSeries σ R}
+    (h : c * m.initialCoeff f ≠ 0) :
+    m.initialTerm (c • f) = c • m.initialTerm f := by
+  rw [MvPowerSeries.smul_eq_C_mul, ← MvPowerSeries.monomial_zero_eq_C_apply,
+    m.initialTerm_monomial_mul h, MvPowerSeries.monomial_zero_eq_C_apply,
+    ← MvPowerSeries.smul_eq_C_mul]
+
+theorem initialExp_smul [NoZeroDivisors R] {c : R} (hc : c ≠ 0) (f : MvPowerSeries σ R) :
+    m.initialExp (c • f) = m.initialExp f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · exact m.initialExp_smul_of_mul_initialCoeff_ne_zero <|
+      mul_ne_zero hc (m.initialCoeff_ne_zero_iff.mpr hf)
+
+@[simp]
+theorem initialCoeff_smul [NoZeroDivisors R] (c : R) (f : MvPowerSeries σ R) :
+    m.initialCoeff (c • f) = c • m.initialCoeff f := by
+  rw [MvPowerSeries.smul_eq_C_mul, m.initialCoeff_mul, m.initialCoeff_C, smul_eq_mul]
+
+@[simp]
+theorem initialTerm_smul [NoZeroDivisors R] (c : R) (f : MvPowerSeries σ R) :
+    m.initialTerm (c • f) = c • m.initialTerm f := by
+  rw [MvPowerSeries.smul_eq_C_mul, m.initialTerm_mul, m.initialTerm_C,
+    ← MvPowerSeries.smul_eq_C_mul]
 
 /-- Adding a series of strictly larger initial exponent leaves `m.initialExp` unchanged. -/
 theorem initialExp_add_of_lt {f g : MvPowerSeries σ R} (hf : f ≠ 0)
@@ -353,6 +564,20 @@ theorem initialExp_add_of_lt {f g : MvPowerSeries σ R} (hf : f ≠ 0)
     exact m.coeff_initialExp_ne_zero hf
   · rw [map_add, m.coeff_eq_zero_of_lt_initialExp hβ,
       m.coeff_eq_zero_of_lt_initialExp (hβ.trans (hg hg0)), add_zero]
+
+theorem initialCoeff_add_of_lt {f g : MvPowerSeries σ R} (hf : f ≠ 0)
+    (hg : g ≠ 0 → m.initialExp f ≺[m] m.initialExp g) :
+    m.initialCoeff (f + g) = m.initialCoeff f := by
+  rcases eq_or_ne g 0 with rfl | hg0
+  · simp
+  rw [initialCoeff_def, m.initialExp_add_of_lt hf hg, map_add,
+    m.coeff_eq_zero_of_lt_initialExp (hg hg0), add_zero, ← initialCoeff_def]
+
+theorem initialTerm_add_of_lt {f g : MvPowerSeries σ R} (hf : f ≠ 0)
+    (hg : g ≠ 0 → m.initialExp f ≺[m] m.initialExp g) :
+    m.initialTerm (f + g) = m.initialTerm f := by
+  rw [initialTerm_def, m.initialExp_add_of_lt hf hg, m.initialCoeff_add_of_lt hf hg,
+    ← initialTerm_def]
 
 /-- Subtracting the initial term strictly increases `m.initialExp` whenever the difference is
 nonzero. -/
@@ -372,17 +597,17 @@ theorem lt_initialExp_sub_initialTerm {S : Type*} [Ring S] {f : MvPowerSeries σ
   have hexp : m.initialExp (f - m.initialTerm f) = m.initialExp f := m.toSyn.injective heq.symm
   rw [hsub, hexp, MvPowerSeries.coeff_monomial_same, initialCoeff_def, sub_self]
 
+end InitialExp
+
 /-- For a nonzero power series `f`, the total degree of its `degLex`-initial exponent equals its
 `ℕ∞`-valued order `f.order`. -/
-theorem degLex_initialExp_degree_eq_order [LinearOrder σ] [WellFoundedGT σ]
-    {f : MvPowerSeries σ R} (hf : f ≠ 0) :
+theorem degree_initialExp_degLex_eq_order {σ R : Type*} [Semiring R] [LinearOrder σ]
+    [WellFoundedGT σ] {f : MvPowerSeries σ R} (hf : f ≠ 0) :
     ((degLex.initialExp f).degree : ℕ∞) = f.order := by
   refine le_antisymm ?_ (MvPowerSeries.order_le (degLex.coeff_initialExp_ne_zero hf))
   refine MvPowerSeries.nat_le_order fun d hd ↦ degLex.coeff_eq_zero_of_lt_initialExp ?_
   rw [degLex_lt_iff, Finsupp.DegLex.lt_iff]
   exact Or.inl hd
-
-end InitialExp
 
 section InitialDiagram
 
@@ -401,7 +626,7 @@ theorem mem_initialDiagram_iff {I : Ideal (MvPowerSeries σ R)} {α : σ →₀ 
 
 theorem mem_initialDiagram_iff_exists_isLeast {I : Ideal (MvPowerSeries σ R)} {α : σ →₀ ℕ} :
     α ∈ m.initialDiagram I ↔ ∃ f ∈ I, IsLeast (m.toSyn '' f.support) (m.toSyn α) := by
-  simp_rw [mem_initialDiagram_iff, m.isLeast_toSyn_iff]
+  simp_rw [mem_initialDiagram_iff, m.isLeast_toSyn_support_iff_ne_zero_and_initialExp_eq]
 
 theorem initialExp_mem_initialDiagram {I : Ideal (MvPowerSeries σ R)} {f : MvPowerSeries σ R}
     (hfI : f ∈ I) (hf : f ≠ 0) :
@@ -409,7 +634,7 @@ theorem initialExp_mem_initialDiagram {I : Ideal (MvPowerSeries σ R)} {f : MvPo
   ⟨f, hfI, hf, rfl⟩
 
 /-- Any element of `I` whose support avoids `m.initialDiagram I` is zero. -/
-theorem eq_zero_of_mem_of_disjoint_support {I : Ideal (MvPowerSeries σ R)}
+theorem eq_zero_of_mem_of_forall_mem_support_notMem_initialDiagram {I : Ideal (MvPowerSeries σ R)}
     {f : MvPowerSeries σ R} (hfI : f ∈ I)
     (hsupp : ∀ α ∈ f.support, α ∉ m.initialDiagram I) :
     f = 0 := by
@@ -421,6 +646,15 @@ theorem eq_zero_of_mem_of_disjoint_support {I : Ideal (MvPowerSeries σ R)}
 theorem initialDiagram_bot : m.initialDiagram (⊥ : Ideal (MvPowerSeries σ R)) = ∅ := by
   ext α
   simp [mem_initialDiagram_iff]
+
+@[simp]
+theorem initialDiagram_eq_empty_iff {I : Ideal (MvPowerSeries σ R)} :
+    m.initialDiagram I = ∅ ↔ I = ⊥ := by
+  refine ⟨fun h ↦ (Submodule.eq_bot_iff _).mpr fun f hfI ↦ ?_, fun h ↦ by simp [h]⟩
+  by_contra hf0
+  have hmem : m.initialExp f ∈ m.initialDiagram I := m.initialExp_mem_initialDiagram hfI hf0
+  rw [h] at hmem
+  exact Set.notMem_empty _ hmem
 
 @[simp, nontriviality]
 theorem initialDiagram_of_subsingleton [Subsingleton R] (I : Ideal (MvPowerSeries σ R)) :
@@ -443,6 +677,7 @@ theorem initialDiagram_mono {I J : Ideal (MvPowerSeries σ R)} (h : I ≤ J) :
   fun _ ⟨f, hfI, hf0, hexp⟩ ↦ ⟨f, h hfI, hf0, hexp⟩
 
 /-- Over a division ring, `0` lies in the initial diagram of `I` if and only if `I = ⊤`. -/
+@[simp]
 theorem zero_mem_initialDiagram_iff_eq_top {K : Type*} [DivisionRing K]
     {I : Ideal (MvPowerSeries σ K)} :
     0 ∈ m.initialDiagram I ↔ I = ⊤ := by
@@ -518,11 +753,8 @@ theorem isAntichain_initialDiagramVertices [Finite σ] (I : Ideal (MvPowerSeries
 theorem mem_initialDiagram_iff_exists_mem_initialDiagramVertices_le [Finite σ]
     {I : Ideal (MvPowerSeries σ R)} {γ : σ →₀ ℕ} :
     γ ∈ m.initialDiagram I ↔ ∃ α ∈ m.initialDiagramVertices I, α ≤ γ := by
-  simp_rw [m.mem_initialDiagramVertices_iff]
-  exact ⟨fun hγ ↦ by
-    obtain ⟨α, hle, hmin⟩ := m.exists_minimal_initialDiagram_le hγ
-    exact ⟨α, hmin, hle⟩,
-    fun ⟨α, hmin, hle⟩ ↦ m.isUpperSet_initialDiagram I hle hmin.prop⟩
+  conv_lhs => rw [m.initialDiagram_eq_biUnion_minimal]
+  simp
 
 theorem initialDiagram_eq_biUnion_initialDiagramVertices [Finite σ]
     (I : Ideal (MvPowerSeries σ R)) :
@@ -538,33 +770,19 @@ theorem initialDiagramVertices_bot [Finite σ] :
   simp [Minimal]
 
 @[simp]
+theorem initialDiagramVertices_eq_empty_iff [Finite σ] {I : Ideal (MvPowerSeries σ R)} :
+    m.initialDiagramVertices I = ∅ ↔ I = ⊥ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  rw [← m.initialDiagram_eq_empty_iff, m.initialDiagram_eq_biUnion_initialDiagramVertices, h]
+  simp
+
+@[simp]
 theorem initialDiagramVertices_top [Finite σ] [Nontrivial R] :
     m.initialDiagramVertices (⊤ : Ideal (MvPowerSeries σ R)) = {0} := by
   ext α
   simp only [m.mem_initialDiagramVertices_iff, m.initialDiagram_top, Minimal, Set.mem_univ,
     true_and, forall_true_left, Finset.mem_singleton]
   exact ⟨fun h ↦ le_zero_iff.mp (h _root_.zero_le), fun h _ _ ↦ h ▸ _root_.zero_le⟩
-
-private theorem coeff_mem_span_monomial {S : Set (σ →₀ ℕ)} {f : MvPowerSeries σ R}
-    (hf : f ∈ Ideal.span ((fun α ↦ MvPowerSeries.monomial α (1 : R)) '' S)) :
-    ∀ γ, MvPowerSeries.coeff γ f ≠ 0 → ∃ α ∈ S, α ≤ γ := by
-  classical
-  refine Submodule.span_induction ?_ ?_ ?_ ?_ hf
-  · rintro _ ⟨α, hαS, rfl⟩ γ hγ
-    exact ⟨α, hαS, (MvPowerSeries.eq_of_coeff_monomial_ne_zero hγ).ge⟩
-  · simp
-  · intro g₁ g₂ _ _ ih₁ ih₂ γ hγ
-    rw [map_add] at hγ
-    by_cases h₁ : MvPowerSeries.coeff γ g₁ = 0
-    · rw [h₁, zero_add] at hγ
-      exact ih₂ γ hγ
-    · exact ih₁ γ h₁
-  · intro r g _ ih γ hγ
-    rw [smul_eq_mul, MvPowerSeries.coeff_mul] at hγ
-    obtain ⟨p, hp, hpne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hγ
-    rw [Finset.mem_antidiagonal] at hp
-    obtain ⟨α, hαS, hle⟩ := ih p.2 (right_ne_zero_of_mul hpne)
-    exact ⟨α, hαS, hle.trans (hp ▸ le_add_left le_rfl)⟩
 
 /-- Over a nontrivial semiring, the initial diagram of an ideal generated by pure monomials
 `monomial α 1` (`α ∈ S`) is the union of the cones `Set.Ici α` for `α ∈ S`. -/
@@ -575,7 +793,8 @@ theorem initialDiagram_span_monomial [Nontrivial R] (S : Set (σ →₀ ℕ)) :
   simp only [Set.mem_iUnion, Set.mem_Ici, exists_prop]
   refine ⟨fun ⟨f, hfI, hf0, hexp⟩ ↦ ?_, fun ⟨α, hαS, hle⟩ ↦ ?_⟩
   · subst hexp
-    exact coeff_mem_span_monomial hfI (m.initialExp f) (m.coeff_initialExp_ne_zero hf0)
+    exact MvPowerSeries.exists_le_of_mem_span_monomial_of_coeff_ne_zero hfI
+      (m.coeff_initialExp_ne_zero hf0)
   · have hmem : MvPowerSeries.monomial γ (1 : R) ∈
         Ideal.span ((fun α ↦ MvPowerSeries.monomial α (1 : R)) '' S) := by
       have hmul : MvPowerSeries.monomial (γ - α) (1 : R) * MvPowerSeries.monomial α (1 : R) =
@@ -615,10 +834,7 @@ total degree `1` precedes total degree `2` regardless of how `i` and `j` compare
 example {σ R : Type*} [LinearOrder σ] [WellFoundedGT σ] [Semiring R] [Nontrivial R] (i j : σ) :
     degLex.initialExp (MvPowerSeries.X i + MvPowerSeries.X j ^ 2 : MvPowerSeries σ R) =
       Finsupp.single i 1 := by
-  have hXi : (MvPowerSeries.X i : MvPowerSeries σ R) ≠ 0 := by
-    intro h
-    simpa using congrArg (MvPowerSeries.coeff (Finsupp.single i 1)) h
-  rw [degLex.initialExp_add_of_lt hXi]
+  rw [degLex.initialExp_add_of_lt (MvPowerSeries.X_ne_zero i)]
   · exact degLex.initialExp_X i
   · intro _
     rw [degLex.initialExp_X, degLex.initialExp_X_pow, degLex_lt_iff, Finsupp.DegLex.lt_iff]

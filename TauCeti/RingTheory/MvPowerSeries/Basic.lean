@@ -18,9 +18,11 @@ products use the polynomial API, for example when substituting polynomials into 
 The coefficient semiring need only be commutative; no norm or topology is required.
 
 `MvPowerSeries.X_ne_zero` records that every coordinate variable `X s` is nonzero over a nontrivial
-semiring, and `MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of
-`(X + Y) ^ n` in `R⟦X, Y⟧`, the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any
-semiring.
+semiring, `MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of
+`(X + Y) ^ n` in `R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any
+semiring), and `MvPowerSeries.mem_support` together with `support_zero`, `support_add`,
+`support_smul_subset`, `support_neg`, and `support_sub` bridges `Function.support` with
+`MvPowerSeries.coeff` and the algebraic operations on `MvPowerSeries`.
 -/
 
 public section
@@ -62,5 +64,48 @@ theorem coeff_X_add_X_pow (d : Fin 2 →₀ ℕ) (n : ℕ) :
     simpa [← MvPolynomial.coeff_coe] using MvPolynomial.coeff_add_pow (R := ℕ) d n
   simpa only [← coeff_map, map_pow, map_add, map_X, Nat.coe_castRingHom, apply_ite,
     Nat.cast_zero] using congrArg (Nat.castRingHom R) hnat
+
+/-- An exponent `α` belongs to `f.support` if and only if `coeff α f ≠ 0`. -/
+theorem mem_support {σ : Type*} {f : MvPowerSeries σ R} {α : σ →₀ ℕ} :
+    α ∈ f.support ↔ coeff α f ≠ 0 := by
+  simp only [coeff_apply]
+  exact Function.mem_support
+
+/-- The zero power series has empty support. -/
+@[simp]
+theorem support_zero {σ : Type*} : (0 : MvPowerSeries σ R).support = ∅ := by
+  ext α
+  simp [mem_support]
+
+/-- The support of a sum of power series is contained in the union of their supports. -/
+theorem support_add {σ : Type*} (f g : MvPowerSeries σ R) :
+    (f + g).support ⊆ f.support ∪ g.support := by
+  intro α hα
+  simpa only [Set.mem_union, Function.mem_support, ← mem_support] using
+    Function.support_add (coeff · f) (coeff · g)
+      (by rwa [Function.mem_support, ← map_add, ← mem_support])
+
+/-- Scalar multiplication shrinks the support of a power series. -/
+theorem support_smul_subset {σ : Type*} (c : R) (f : MvPowerSeries σ R) :
+    (c • f).support ⊆ f.support := by
+  intro α hα
+  rw [mem_support]
+  exact Function.support_const_smul_subset c (coeff · f)
+    (by rwa [Function.mem_support, Pi.smul_apply, ← map_smul, ← mem_support])
+
+/-- Negation preserves the support of a power series. -/
+@[simp]
+theorem support_neg {σ S : Type*} [Ring S] (f : MvPowerSeries σ S) :
+    (-f).support = f.support := by
+  ext α
+  simp [mem_support]
+
+/-- The support of a difference of power series is contained in the union of their supports. -/
+theorem support_sub {σ S : Type*} [Ring S] (f g : MvPowerSeries σ S) :
+    (f - g).support ⊆ f.support ∪ g.support := by
+  intro α hα
+  simpa only [Set.mem_union, Function.mem_support, ← mem_support] using
+    Function.support_sub (coeff · f) (coeff · g)
+      (by rwa [Function.mem_support, ← map_sub, ← mem_support])
 
 end MvPowerSeries
