@@ -166,7 +166,7 @@ theorem twoCochainOfBilinear_mem_continuousTwoCocycle (Φ : LinearMap.BilinForm 
 trivial coefficients. -/
 def residueClass (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     continuousSecondCohomology R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R) :=
-  continuousSecondCohomologyMk _ _ _
+  continuousSecondCohomologyMk R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R)
     ⟨twoCochainOfBilinear R L Φ hΦs, twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs⟩
 
 variable {R L}
@@ -174,8 +174,9 @@ variable {R L}
 /-- The residue class is represented by the residue cocycle. -/
 theorem residueClass_eq_mk (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
     (hΦs : Φ.IsSymm) :
-    residueClass R L Φ hΦ hΦs = continuousSecondCohomologyMk _ _ _
-      ⟨twoCochainOfBilinear R L Φ hΦs,
+    residueClass R L Φ hΦ hΦs =
+      continuousSecondCohomologyMk R (currentAlgebra R L)
+        (TrivialLieModule R (currentAlgebra R L) R) ⟨twoCochainOfBilinear R L Φ hΦs,
         twoCochainOfBilinear_mem_continuousTwoCocycle R L Φ hΦ hΦs⟩ :=
   (rfl)
 
@@ -292,14 +293,16 @@ continuous second cohomology of formal currents. For `Z = R` it sends `t` to `t 
 def residueClassMap (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     Z →ₗ[R] continuousSecondCohomology R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) Z) :=
-  continuousSecondCohomologyMk _ _ _ ∘ₗ (twoCochainOfBilinearSMulRight R L Φ hΦs).codRestrict _
+  continuousSecondCohomologyMk R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) Z) ∘ₗ
+    (twoCochainOfBilinearSMulRight R L Φ hΦs).codRestrict _
     (twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle R L Φ hΦ hΦs)
 
 /-- The residue class with coefficients in `Z` is represented by the residue cocycle. -/
 theorem residueClassMap_apply (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L)
     (hΦs : Φ.IsSymm) (z : Z) :
-    residueClassMap R L Φ hΦ hΦs z = continuousSecondCohomologyMk _ _ _
-      ⟨twoCochainOfBilinearSMulRight R L Φ hΦs z,
+    residueClassMap R L Φ hΦ hΦs z =
+      continuousSecondCohomologyMk R (currentAlgebra R L)
+        (TrivialLieModule R (currentAlgebra R L) Z) ⟨twoCochainOfBilinearSMulRight R L Φ hΦs z,
         twoCochainOfBilinearSMulRight_mem_continuousTwoCocycle R L Φ hΦ hΦs z⟩ :=
   (rfl)
 
