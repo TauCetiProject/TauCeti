@@ -197,6 +197,20 @@ theorem exists_word_realize_sentence_iff_forallExistsAlt
     · rfl
   simp only [FreeGroup.lift_map, Sum.elim_comp_map, Function.comp_id, hcomp]
 
+/-- In the free group on `a`, `b`, the system `x = 1`, `y = 1` is equivalent to Malcev's single
+equation `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2`. -/
+example {x y : FreeGroup (Fin 2)} :
+    malcevWord (FreeGroup.of 0) (FreeGroup.of 1) x y = 1 ↔ x = 1 ∧ y = 1 :=
+  IsFreeGroup.isVaught.malcevWord_eq_one_iff IsFreeGroup.isCSA
+    fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
+
+/-- In the free group on `a`, `b`, the disjunction `x = 1 ∨ y = 1` is equivalent to the single
+equation `malcevOrWord a b x y = 1`. -/
+example {x y : FreeGroup (Fin 2)} :
+    malcevOrWord (FreeGroup.of 0) (FreeGroup.of 1) x y = 1 ↔ x = 1 ∨ y = 1 :=
+  IsFreeGroup.isVaught.malcevOrWord_eq_one_iff IsFreeGroup.isCSA
+    fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
+
 /-- A free group on at least two letters, with the letters as coefficients, is a torsion-free CSA
 group satisfying Vaught's condition in which two distinct letters do not commute: every positive
 sentence is equivalent in it to an alternation of quantifiers in front of a single equation. -/
