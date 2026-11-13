@@ -13,7 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 /-!
 # Hölder continuity of weak solutions (De Giorgi)
 
-Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants
+Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, with constants
 `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. This file proves
 De Giorgi's theorem: `u` has a representative which is locally Hölder continuous in `Ω`, with an
 exponent `α ∈ (0, 1]` depending only on `λ`, `Λ`, the dimension and the normalization of the
@@ -73,7 +73,7 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- **De Giorgi's theorem with a drift: Hölder continuity of weak solutions.** Let `n ≥ 1` be
+/-- **De Giorgi's theorem with a drift: Hölder continuity of weak solutions.** Let `n` be
 the dimension, and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending only
 on `λ`, `Λ`, `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that
 the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
@@ -86,7 +86,7 @@ exponent `α` and constant `C R^(-α - n/2) ‖u‖_{L²(Ω)}`.
 The precise representative agrees with `u` almost everywhere on `Ω`
 (`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the coefficients beyond
 measurability and boundedness is assumed. -/
-theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ) :
+theorem exists_holderOnWith_preciseRepresentative_drift (σ : ℝ) :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
       {beta : ℝ} {u : W1p mu Omega 2} {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
@@ -99,6 +99,10 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
         HolderOnWith (C * R ^ (-(α : ℝ)) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
           √(∫ y in Omega, W1p.value u y ^ 2 ∂mu))).toNNReal α
           (preciseRepresentative mu (W1p.value u)) K := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · refine ⟨1, 1, zero_lt_one, le_rfl, zero_lt_one, ?_⟩
+    intros
+    exact Set.subsingleton_of_subsingleton.holderOnWith _ _ _
   obtain ⟨α, C₀, hα, hα1, hC₀, hosc⟩ :=
     exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift (mu := mu)
       (lam := lam) (Lam := Lam) σ
@@ -152,7 +156,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
     exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
 
-/-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `n ≥ 1` be the
+/-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `n` be the
 dimension. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
@@ -164,7 +168,7 @@ The precise representative agrees with `u` almost everywhere on `Ω`
 (`TauCeti.W1p.ae_eq_preciseRepresentative`). No regularity of the coefficients
 beyond measurability is assumed. This is the case `b = 0` of
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_drift`. -/
-theorem exists_holderOnWith_preciseRepresentative [Nonempty ι] :
+theorem exists_holderOnWith_preciseRepresentative :
     ∃ (α : ℝ≥0) (C : ℝ), 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)} {R : ℝ},
@@ -180,7 +184,7 @@ theorem exists_holderOnWith_preciseRepresentative [Nonempty ι] :
   exact ⟨α, C, hα, hα1, hC, fun h ha hu hR hRK =>
     hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hR hRK (by simp)⟩
 
-/-- **De Giorgi's theorem with a drift on compact sets.** Let `n ≥ 1` be the dimension. There is
+/-- **De Giorgi's theorem with a drift on compact sets.** Let `n` be the dimension. There is
 `α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, let `b` be measurable and bounded on `Ω`, and let `u ∈ H¹(Ω)` be a weak
@@ -190,7 +194,7 @@ continuous with exponent `α` on every compact `K ⊆ Ω`.
 The exponent does not depend on the bound `β` of the drift: the drift is comparable to the
 principal part only on balls with `βR/λ` bounded, and around a compact set the radius `R` can be
 chosen with `βR ≤ λ`. -/
-theorem exists_holderOnWith_preciseRepresentative_of_isCompact_drift [Nonempty ι] :
+theorem exists_holderOnWith_preciseRepresentative_of_isCompact_drift :
     ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
       {beta : ℝ} {u : W1p mu Omega 2} {K : Set (EuclideanSpace ℝ ι)},
@@ -223,10 +227,9 @@ depending only on `λ`, `Λ`, the dimension and the normalization of the additiv
 such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the precise
 representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`.
-For `n ≥ 1` this is the case `b = 0` of
+This is the case `b = 0` of
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`. In dimension zero the
-space is a single point, so every function is Hölder continuous there with exponent `α = 1` and
-constant `0`. -/
+space is a single point, so every function is Hölder continuous there with exponent `α = 1`. -/
 theorem exists_holderOnWith_preciseRepresentative_of_isCompact :
     ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
@@ -236,25 +239,17 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact :
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
       IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative mu (W1p.value u)) K := by
-  cases isEmpty_or_nonempty ι with
-  | inl h =>
-      let : IsEmpty ι := h
-      refine ⟨1, zero_lt_one, le_rfl, ?_⟩
-      intro Omega a u K _ _ _ _ _
-      exact ⟨0, Set.subsingleton_of_subsingleton.holderOnWith 0 1 _⟩
-  | inr h =>
-      let : Nonempty ι := h
-      obtain ⟨α, hα, hα1, hhol⟩ :=
-        exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
-          (Lam := Lam)
-      exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
-        hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
+  obtain ⟨α, hα, hα1, hhol⟩ :=
+    exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
+      (Lam := Lam)
+  exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
+    hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
 
-/-- **Continuity of weak solutions with a drift.** Let `n ≥ 1` be the dimension. Let `a` be
+/-- **Continuity of weak solutions with a drift.** Let `n` be the dimension. Let `a` be
 measurable and uniformly elliptic on `Ω`, let `b` be measurable and bounded on `Ω`, and let
 `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. Then the precise representative of
 `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on `Ω`. -/
-theorem continuousOn_preciseRepresentative_drift [Nonempty ι]
+theorem continuousOn_preciseRepresentative_drift
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {beta : ℝ} {u : W1p mu Omega 2}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -271,11 +266,11 @@ theorem continuousOn_preciseRepresentative_drift [Nonempty ι]
   obtain ⟨C, hC⟩ := hhol h ha hb hb_bound hu (isCompact_closedBall x ε) hsub
   exact ((hC.continuousOn hα).continuousAt (closedBall_mem_nhds x hε)).continuousWithinAt
 
-/-- **Continuity of weak solutions.** Let `n ≥ 1` be the dimension. Let `a` be measurable and
+/-- **Continuity of weak solutions.** Let `n` be the dimension. Let `a` be measurable and
 uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the
 precise representative of `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on
 `Ω`. This is the case `b = 0` of `TauCeti.PDE.continuousOn_preciseRepresentative_drift`. -/
-theorem continuousOn_preciseRepresentative [Nonempty ι] {Omega : Opens (EuclideanSpace ℝ ι)}
+theorem continuousOn_preciseRepresentative {Omega : Opens (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))

@@ -407,12 +407,11 @@ theorem term_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) (j : ℕ) :
 /-- A classical symbol is smoothing exactly when all of its homogeneous terms vanish. -/
 theorem isSmoothing_toSymbol_iff (a : ClassicalSymbol n V W m) :
     a.toSymbol.IsSmoothing ↔ ∀ j, a.term j = 0 := by
-  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff.2 fun m' => ?_⟩
+  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff_forall_nat.2 fun N => ?_⟩
   · exact (term_eq_of_toSymbol_eq (a := a) (b := ofIsSmoothing a.toSymbol ha) rfl j).trans
       (term_ofIsSmoothing _ _ j)
   · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
-    obtain ⟨N, hN⟩ := exists_nat_ge (m - m')
-    exact ⟨Symbol.inclusion (by linarith) (a.remainder default N), funext fun p => by simp [ha]⟩
+    exact ⟨a.remainder default N, funext fun p => by simp [ha]⟩
 
 /-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term `a` of degree `m`: its
 principal symbol is `a` and its other homogeneous terms vanish. -/

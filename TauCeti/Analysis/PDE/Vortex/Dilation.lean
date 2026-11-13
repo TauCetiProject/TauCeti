@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional

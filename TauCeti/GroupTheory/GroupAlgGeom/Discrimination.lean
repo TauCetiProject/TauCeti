@@ -36,7 +36,12 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isCommTransitive`: a group discriminated by a
   commutative transitive group is commutative transitive.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
-  coefficient-preserving homomorphism to `H`.
+  coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
+  (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
+  `G`-group is a `G`-group.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
+  separated by its coefficients `G` over `G`, the image of `G` is closed under roots.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
 
@@ -86,6 +91,21 @@ theorem isSeparatedBy {ιK : G →* K} {ιH : G →* H}
   intro k hk
   obtain ⟨φ, hφ⟩ := h {k} (by simpa using hk)
   exact ⟨φ, hφ k (by simp)⟩
+
+/-- A group discriminated by `H` admits a coefficient-preserving homomorphism to `H`. -/
+theorem nonempty_gHom {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH) :
+    Nonempty (GHom ιK ιH) :=
+  let ⟨φ, _⟩ := h ∅ (by simp)
+  ⟨φ⟩
+
+/-- If `K` is discriminated by `H` over `G` and the coefficient map `ιH` is injective, so is
+`ιK`. -/
+theorem injective_of_injective {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH)
+    (hH : Function.Injective ιH) : Function.Injective ιK := by
+  obtain ⟨φ⟩ := h.nonempty_gHom
+  apply Function.Injective.of_comp (f := φ) (g := ιK)
+  change Function.Injective ((φ : K →* H).comp ιK)
+  rwa [φ.comp_coeff]
 
 /-- The source of an injective coefficient-preserving map into a discriminated group is
 discriminated by the same target. -/
@@ -188,6 +208,16 @@ theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
     (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
+
+/-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
+of `G` in `K` contains every element of `K` having a nonzero power in it. -/
+theorem mem_range_of_pow_mem_range [HasUniqueRoots K] {ιK : G →* K}
+    (h : IsSeparatedBy ιK (.id G)) {k : K} {n : ℕ} (hn : n ≠ 0) (hk : k ^ n ∈ ιK.range) :
+    k ∈ ιK.range := by
+  -- An element outside the image is nontrivial, so some `G`-homomorphism `K → G` exists.
+  by_contra hk'
+  obtain ⟨φ, -⟩ := h k fun h1 => hk' (h1 ▸ one_mem _)
+  exact hk' (φ.mem_range_of_pow_mem_range hn hk)
 
 end IsSeparatedBy
 
