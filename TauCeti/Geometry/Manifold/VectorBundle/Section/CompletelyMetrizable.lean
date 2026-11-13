@@ -38,15 +38,18 @@ for the uniform structure of this topological additive group
 a countably generated uniformity, so it carries a complete compatible metric. A Lindelöf base is
 covered by countably many charts, so it is second-countable. Then every covering frame system
 has a countable subcover, whose domains are open in a locally compact second-countable space and
-hence sigma-compact, and the subcover induces the same topology.
+hence sigma-compact, and the subcover induces the same topology. The metrizability step needs
+neither completeness of the fibre nor a boundaryless base, so it is stated on its own.
 
 ## Main results
 
-* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology_of_countable`: for a countable
-  covering frame system with sigma-compact domains, the sections form a completely metrizable
-  space.
-* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a Lindelöf base, the
-  same for every covering frame system.
+* `ContMDiffSection.metrizableSpace_frameTopology`: on a Lindelöf base, possibly with boundary
+  or corners, the sections form a metrizable space for every covering frame system.
+* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: on a Lindelöf boundaryless base
+  with Banach model fibre, the sections form a completely metrizable space for every covering
+  frame system.
+* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology_of_countable`: the same for a
+  countable covering frame system with Lindelöf domains.
 * `ContMDiffSection.baireSpace_frameTopology`: on a Lindelöf base, the sections form a
   Baire space.
 
@@ -65,44 +68,25 @@ open scoped ContDiff Manifold
 
 namespace ContMDiffSection
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [LocallyCompactSpace E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M] [ENat.LEInfty n]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
   {ι : Type*} (e : ι → Trivialization F (π F V))
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-/-- **Sections are completely metrizable, for a countable frame cover.** For a countable covering
-system of smooth frames with sigma-compact domains, the `C^n` sections of a vector bundle with
-Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
-compact derivative topology. -/
-theorem isCompletelyMetrizableSpace_frameTopology_of_countable [Countable ι]
-    [∀ i, SigmaCompactSpace (U i)] (hcover : ∀ x, ∃ i, x ∈ U i) :
+/-- **Sections are metrizable.** Over a Lindelöf manifold modelled on a locally compact space,
+including manifolds with boundary and corners, the compact derivative topology of any covering
+system of smooth frames on the `C^n` sections of a vector bundle is metrizable. -/
+theorem metrizableSpace_frameTopology [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
-    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
-  let _ := frameUniformSpace (I := I) (n := n) e U hU
-  have := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
-  have := completeSpace_frameTopology (I := I) (n := n) e U hU hcover
-  have : ProperSpace E := .of_locallyCompactSpace 𝕜
-  have := metrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n) e U hU hcover
-  have : (uniformity Cₛ^n⟮I; F, V⟯).IsCountablyGenerated :=
-    IsUniformAddGroup.uniformity_countably_generated
-  infer_instance
-
-/-- **Sections are completely metrizable.** Over a Lindelöf boundaryless manifold
-modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
-Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
-compact derivative topology of any covering system of smooth frames. -/
-theorem isCompletelyMetrizableSpace_frameTopology [LindelofSpace M]
-    (hcover : ∀ x, ∃ i, x ∈ U i) :
-    let _ := frameTopology (I := I) (n := n) e U hU
-    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
+    MetrizableSpace Cₛ^n⟮I; F, V⟯ := by
   -- A Lindelöf manifold with a second-countable model is second-countable.
   have : ProperSpace E := .of_locallyCompactSpace 𝕜
   have : SecondCountableTopology H := I.secondCountableTopology
@@ -126,8 +110,38 @@ theorem isCompletelyMetrizableSpace_frameTopology [LindelofSpace M]
     inferInstance
   rw [frameTopology_eq_of_covers (I := I) (n := n) e U hU hcover (fun j : T ↦ e j)
     (fun j ↦ U j) (fun j ↦ hU j) hcover']
-  exact isCompletelyMetrizableSpace_frameTopology_of_countable (I := I) (n := n)
+  exact metrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n)
     (fun j : T ↦ e j) (fun j ↦ U j) (fun j ↦ hU j) hcover'
+
+variable [IsRCLikeNormedField 𝕜] [I.Boundaryless] [CompleteSpace F] [ENat.LEInfty n]
+
+/-- **Sections are completely metrizable.** Over a Lindelöf boundaryless manifold
+modelled on a locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with
+Banach model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
+compact derivative topology of any covering system of smooth frames. -/
+theorem isCompletelyMetrizableSpace_frameTopology [LindelofSpace M]
+    (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
+  let _ := frameUniformSpace (I := I) (n := n) e U hU
+  have := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
+  have := completeSpace_frameTopology (I := I) (n := n) e U hU hcover
+  have := metrizableSpace_frameTopology (I := I) (n := n) e U hU hcover
+  have : (uniformity Cₛ^n⟮I; F, V⟯).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  infer_instance
+
+/-- **Sections are completely metrizable, for a countable frame cover.** For a countable covering
+system of smooth frames with Lindelöf domains, the `C^n` sections of a vector bundle with Banach
+model fibre, for finite or smooth regularity `n`, form a completely metrizable space in the
+compact derivative topology. -/
+theorem isCompletelyMetrizableSpace_frameTopology_of_countable [Countable ι]
+    [∀ i, LindelofSpace (U i)] (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
+  have : LindelofSpace M := ⟨eq_univ_of_forall (fun x ↦ mem_iUnion.2 (hcover x)) ▸
+    isLindelof_iUnion fun i ↦ IsLindelof.of_coe (s := (U i : Set M))⟩
+  exact isCompletelyMetrizableSpace_frameTopology (I := I) (n := n) e U hU hcover
 
 /-- **Sections form a Baire space.** Over a Lindelöf boundaryless manifold modelled on a
 locally compact space over `ℝ` or `ℂ`, the `C^n` sections of a vector bundle with Banach model
