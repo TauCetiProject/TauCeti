@@ -51,11 +51,13 @@ Taubes's first two coarse bounds, `|α|² + |β|² ≤ 1 + C / r` and `|β|² �
 The proof is a comparison argument by the maximum principle. With `m = 1 + 2 C`, the function
 `G = m |∇_a α|² + r |∇β|²` is a subsolution, `-Δ G / 2 ≤ A r G + B r`, once the second
 derivatives are absorbed by Young's inequality. The function `V = m (1 - |α|²) - r |β|²` is a
-supersolution with source `G`, `(3 / 4) G ≤ -Δ V / 2 + O(r w₊ + 1)`, because the Weitzenböck
-inequality for `|α|²` contains `|∇_a α|²` with a good sign. At a maximum of `G - K r V` with `K`
-large, the two inequalities give `G = O(r w₊ + 1)`, and since `r V ≥ m r w₊ - O(1)` while
-`r² |β|² = O(r w₊ + 1)`, the maximum of `G - K r V` is `O(1)`. Hence `G ≤ K r V + O(1)` everywhere,
-which is the bound. The constant is `C' = 150 (1 + c + C)⁵`
+supersolution with source `G`, `(3 / 4) G ≤ -Δ V / 2 + K₁ r w₊ + O(1)`, because the Weitzenböck
+inequality for `|α|²` contains `|∇_a α|²` with a good sign. At a maximum of `G - K r V` with
+`K ≥ max (4 A) (2 K₁)`, the two inequalities give `G ≤ 2 K₁ r w₊ + O(1)`. Since
+`r (1 - |α|²) ≥ r w₊ - C` and `r² |β|² ≤ C r w₊ + C`, the potential satisfies
+`r V ≥ (m - C) r w₊ - O(1) = (1 + C) r w₊ - O(1)`; the coefficient `K (1 + C)` dominates the
+defect coefficient `2 K₁`, so the maximum of `G - K r V` is `O(1)`. Hence `G ≤ K r V + O(1)`
+everywhere, which is the bound. The constant is `C' = 150 (1 + c + C)⁵`
 (`TauCeti.SeibergWitten.norm_sq_add_mul_norm_sq_le`).
 
 The sections, their covariant derivatives and second covariant derivatives are arbitrary families
