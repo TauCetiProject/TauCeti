@@ -67,10 +67,9 @@ counterexample for each one kept.
 Q4. No declaration picks up a `variable` instance or binder it does not use: use `omit [...] in`,
 or restructure the `variable` blocks.
 
-Q5. Count each proof's code lines, not blanks or comments. Shorten a proof over 50 lines (a Mathlib
-lemma, `grind`, a better induction) or split it at natural stages: a reusable step becomes a
+Q5. Shorten a proof over 50 lines (a Mathlib lemma, `grind`, a better induction) or split it at natural stages: a reusable step becomes a
 public, documented lemma where it belongs, a proof-specific one a `private` lemma. One that cannot
-be split stays, with comments on its structure and the reason in the note. Move proof obligations
+be split stays, with the reason in the note. Move proof obligations
 out of long `def` and `instance` bodies into lemmas, and turn a block repeated across proofs into
 one lemma.
 -->
