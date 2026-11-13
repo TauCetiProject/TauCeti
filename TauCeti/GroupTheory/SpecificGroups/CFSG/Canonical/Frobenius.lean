@@ -13,9 +13,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
 
 For a valid Lie-type index `d` of characteristic `p`, `d.canonicalFrobenius k` is the
 `p ^ k`-power Frobenius on the entire canonical ambient group. In particular,
-`d.canonicalFrobenius d.fieldExponent` is the `q`-power map used as the field factor of
-ordinary and graph-twisted Steinberg maps and in the square laws of half-Frobenius maps.
-The exponent remains an argument so that their iterates use this same Frobenius family.
+`d.canonicalFrobenius 1` is the prime-field map in the half-Frobenius square law
+`τ ^ 2 = Frob_p`. The map `d.canonicalFrobenius d.fieldExponent` is the `q`-power field
+factor of ordinary and graph-twisted Steinberg maps; when `d.fieldExponent = 2 * m + 1`,
+it also occurs in `(τ ^ (2 * m + 1)) ^ 2 = Frob_q`. Keeping the exponent as an argument
+covers both the prime-field square law and Steinberg iterates.
 
 This specializes `DynkinType.ChevalleyDatum.frobenius` at the full-weight datum and the
 index's algebraic closure. It is induced by the field map, not reconstructed from root
@@ -62,12 +64,15 @@ theorem coe_canonicalFrobenius (k : ℕ) (g : d.CanonicalAmbientGroup) :
 /-- Canonical Frobenius raises every root parameter to its `p ^ k`-th power. -/
 @[simp]
 theorem canonicalFrobenius_canonicalRootSubgroup (k : ℕ)
-    (γ : Fin d.dynkinType.numRoots) (u : d.Closure) :
-    d.canonicalFrobenius k (d.canonicalRootSubgroup γ (Multiplicative.ofAdd u)) =
-      d.canonicalRootSubgroup γ (Multiplicative.ofAdd (u ^ d.characteristic ^ k)) := by
+    (γ : Fin d.dynkinType.numRoots) (u : Multiplicative d.Closure) :
+    d.canonicalFrobenius k (d.canonicalRootSubgroup γ u) =
+      d.canonicalRootSubgroup γ
+        (Multiplicative.ofAdd (u.toAdd ^ d.characteristic ^ k)) := by
   rw [canonicalFrobenius_def, canonicalRootSubgroup_def]
-  exact (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius_rootSubgroupPoints
-    d.characteristic k d.Closure γ u
+  have h := (d.dynkinType.scChevalleyDatum d.dynkinType_valid).frobenius_rootSubgroupPoints
+    d.characteristic k d.Closure γ u.toAdd
+  rw [ofAdd_toAdd] at h
+  exact h
 
 /-- On the canonical torus, Frobenius raises every fundamental-weight coordinate to its
 `p ^ k`-th power. -/
