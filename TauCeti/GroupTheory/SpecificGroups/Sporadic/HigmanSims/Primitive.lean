@@ -97,9 +97,10 @@ private theorem orbit_stabilizerChain_one_four_eq :
   · intro hx
     have hx0 : x ≠ 0 := by
       intro h
-      obtain ⟨g, hg⟩ := mem_orbit_symm.mp (h ▸ hx)
+      obtain ⟨g, hg⟩ := mem_orbit_iff.mp (mem_orbit_symm.mp (h ▸ hx))
       have hg0 := (mem_stabilizerChain_one_iff.mp g.property).2
-      exact (by decide : (0 : Fin 100) ≠ 4) (hg0.symm.trans hg)
+      rw [Subgroup.smul_def, Equiv.Perm.smul_def, hg0] at hg
+      exact (by decide : (0 : Fin 100) ≠ 4) hg
     by_contra hn
     have hx1 := (mem_largeOrbit x).mpr ⟨hx0, hn⟩
     have h41 := mem_orbit_trans (mem_orbit_symm.mp hx) hx1
@@ -108,8 +109,9 @@ private theorem orbit_stabilizerChain_one_four_eq :
     obtain ⟨i, rfl⟩ := (mem_smallOrbit x).mp hx
     obtain ⟨h0, h4⟩ := orbitWords_apply i
     apply mem_orbit_iff.mpr
-    refine ⟨⟨((orbitWords i).prod : Equiv.Perm (Fin 100)), ?_⟩, h4⟩
-    exact mem_stabilizerChain_one_iff.mpr ⟨(orbitWords i).prod.property, h0⟩
+    refine ⟨⟨((orbitWords i).prod : Equiv.Perm (Fin 100)), ?_⟩, ?_⟩
+    · exact mem_stabilizerChain_one_iff.mpr ⟨(orbitWords i).prod.property, h0⟩
+    · simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using h4
 
 /-- The other nontrivial orbit of the stabilizer of `0` in the canonical Higman--Sims model. -/
 theorem orbit_stabilizerChain_one_four :
@@ -128,12 +130,15 @@ theorem ncard_orbit_stabilizerChain_one_four :
 -- A block through zero is invariant under its point stabilizer.
 private theorem orbit_subset_block (B : Set (Fin 100)) (h0 : 0 ∈ B) (hB : IsBlock HS B)
     {x : Fin 100} (hx : x ∈ B) : orbit S x ⊆ B := by
-  rintro _ ⟨g, rfl⟩
+  intro y hy
+  obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
   have hg := mem_stabilizerChain_one_iff.mp g.property
   let g' : HS := ⟨g, hg.1⟩
-  have hg' : g' ∈ stabilizer HS (0 : Fin 100) := mem_stabilizer_iff.mpr hg.2
-  have hfix := hB.stabilizer_le h0 hg'
-  exact hfix ▸ (Set.smul_mem_smul_set hx : g' • x ∈ g' • B)
+  have hg' : g' ∈ stabilizer HS (0 : Fin 100) := by
+    simpa only [mem_stabilizer_iff, g', Subgroup.mk_smul, Equiv.Perm.smul_def] using hg.2
+  have hfix := mem_stabilizer_iff.mp (hB.stabilizer_le h0 hg')
+  rw [Subgroup.smul_def, ← Subgroup.mk_smul _ hg.1, ← hfix]
+  exact Set.smul_mem_smul_set hx
 
 -- Membership is constant on each of the two nontrivial stabilizer orbits.
 private theorem mem_block_iff (B : Set (Fin 100)) (h0 : 0 ∈ B) (hB : IsBlock HS B)
