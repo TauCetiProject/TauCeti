@@ -25,7 +25,8 @@ a polygonal complex with the link of the corresponding vertex of an isomorphic c
   `SerreGraph.Iso.symm` and `SerreGraph.Iso.trans`, which satisfy the groupoid laws
   (`SerreGraph.Iso.trans_assoc`, `SerreGraph.Iso.refl_trans`, `SerreGraph.Iso.trans_refl`,
   `SerreGraph.Iso.symm_trans_self`, `SerreGraph.Iso.self_trans_symm`).
-* `TauCeti.SerreGraph.Iso.toHom`: the underlying morphism.
+* `TauCeti.SerreGraph.Iso.toHom`: the underlying morphism, and conversely
+  `TauCeti.SerreGraph.Hom.toIso`: a morphism bijective on vertices and darts as an isomorphism.
 * `TauCeti.SerreGraph.Iso.geomEdgeEquiv`: the induced bijection of geometric edges, compatible
   with identities, inverses and composites.
 
@@ -82,6 +83,11 @@ def toHom (φ : Γ.Iso Δ) : Γ.Hom Δ where
 theorem toHom_mapE_injective (φ : Γ.Iso Δ) : Function.Injective φ.toHom.mapE :=
   φ.equivE.injective
 
+/-- An isomorphism is determined by its underlying morphism. -/
+theorem toHom_injective : Function.Injective (toHom : Γ.Iso Δ → Γ.Hom Δ) := fun φ ψ h =>
+  ext (fun v => by simpa using congrFun (congrArg Hom.mapV h) v)
+    (fun e => by simpa using congrFun (congrArg Hom.mapE h) e)
+
 /-- Targets are preserved. -/
 @[simp] theorem map_tgt (φ : Γ.Iso Δ) (e : Γ.E) : Δ.tgt (φ.equivE e) = φ.equivV (Γ.tgt e) :=
   φ.toHom.map_tgt Γ e
@@ -96,6 +102,9 @@ theorem toHom_mapE_injective (φ : Γ.Iso Δ) : Function.Injective φ.toHom.mapE
 @[simp] theorem refl_equivV (Γ : SerreGraph.{u, v}) : (refl Γ).equivV = Equiv.refl _ := (rfl)
 
 @[simp] theorem refl_equivE (Γ : SerreGraph.{u, v}) : (refl Γ).equivE = Equiv.refl _ := (rfl)
+
+@[simp] theorem refl_toHom (Γ : SerreGraph.{u, v}) : (refl Γ).toHom = Hom.id Γ := by
+  ext <;> simp
 
 /-- The inverse isomorphism. -/
 @[symm] def symm (φ : Γ.Iso Δ) : Δ.Iso Γ where
@@ -135,6 +144,16 @@ theorem toHom_mapE_injective (φ : Γ.Iso Δ) : Function.Injective φ.toHom.mapE
 @[simp] theorem trans_equivE (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
     (φ.trans ψ).equivE = φ.equivE.trans ψ.equivE := (rfl)
 
+@[simp] theorem trans_toHom (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
+    (φ.trans ψ).toHom = ψ.toHom.comp φ.toHom := by
+  ext <;> simp
+
+@[simp] theorem toHom_comp_symm_toHom (φ : Γ.Iso Δ) : φ.toHom.comp φ.symm.toHom = Hom.id Δ := by
+  ext <;> simp
+
+@[simp] theorem symm_toHom_comp_toHom (φ : Γ.Iso Δ) : φ.symm.toHom.comp φ.toHom = Hom.id Γ := by
+  ext <;> simp
+
 @[simp] theorem refl_symm (Γ : SerreGraph.{u, v}) : (refl Γ).symm = refl Γ := (rfl)
 
 @[simp] theorem symm_trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
@@ -160,8 +179,8 @@ def geomEdgeEquiv (φ : Γ.Iso Δ) : Γ.GeomEdge ≃ Δ.GeomEdge :=
   GeomEdge.congr_toGeomEdge ..
 
 @[simp] theorem geomEdgeEquiv_symm_toGeomEdge (φ : Γ.Iso Δ) (e : Δ.E) :
-    φ.geomEdgeEquiv.symm (Δ.toGeomEdge e) = Γ.toGeomEdge (φ.equivE.symm e) := by
-  rw [Equiv.symm_apply_eq, geomEdgeEquiv_toGeomEdge, Equiv.apply_symm_apply]
+    φ.geomEdgeEquiv.symm (Δ.toGeomEdge e) = Γ.toGeomEdge (φ.equivE.symm e) :=
+  GeomEdge.congr_symm_toGeomEdge ..
 
 @[simp] theorem geomEdgeEquiv_refl (Γ : SerreGraph.{u, v}) :
     (refl Γ).geomEdgeEquiv = Equiv.refl Γ.GeomEdge :=
@@ -185,6 +204,25 @@ theorem connected_iff (φ : Γ.Iso Δ) : Δ.Connected ↔ Γ.Connected :=
     φ.toHom.connected_of_surjective φ.equivV.surjective⟩
 
 end Iso
+
+variable {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+
+/-- A morphism of Serre graphs which is bijective on vertices and on darts is an isomorphism. -/
+noncomputable def Hom.toIso (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
+    (hE : Function.Bijective f.mapE) : Γ.Iso Δ where
+  equivV := .ofBijective _ hV
+  equivE := .ofBijective _ hE
+  map_src := f.map_src
+  map_rev := f.map_rev
+
+@[simp] theorem Hom.toIso_equivV_apply (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
+    (hE : Function.Bijective f.mapE) (v : Γ.V) : (f.toIso hV hE).equivV v = f.mapV v := (rfl)
+
+@[simp] theorem Hom.toIso_equivE_apply (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
+    (hE : Function.Bijective f.mapE) (e : Γ.E) : (f.toIso hV hE).equivE e = f.mapE e := (rfl)
+
+@[simp] theorem Hom.toIso_toHom (f : Γ.Hom Δ) (hV : Function.Bijective f.mapV)
+    (hE : Function.Bijective f.mapE) : (f.toIso hV hE).toHom = f := (rfl)
 
 end SerreGraph
 

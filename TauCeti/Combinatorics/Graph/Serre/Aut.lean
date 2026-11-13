@@ -59,6 +59,12 @@ instance : Group Γ.Aut where
   mul_one := Iso.refl_trans
   inv_mul_cancel := Iso.self_trans_symm
 
+theorem one_def : (1 : Γ.Aut) = Iso.refl Γ := (rfl)
+
+theorem mul_def (φ ψ : Γ.Aut) : φ * ψ = ψ.trans φ := (rfl)
+
+theorem inv_def (φ : Γ.Aut) : φ⁻¹ = φ.symm := (rfl)
+
 @[simp] theorem one_equivV : (1 : Γ.Aut).equivV = Equiv.refl Γ.V := Iso.refl_equivV Γ
 
 @[simp] theorem one_equivE : (1 : Γ.Aut).equivE = Equiv.refl Γ.E := Iso.refl_equivE Γ

@@ -57,7 +57,8 @@ surface models preserves the boundary darts.
   the Euler characteristic and orientability are invariant.
 * `TauCeti.PolygonalComplex.Iso.equivE_mem_boundaryDarts_iff`,
   `TauCeti.PolygonalComplex.Iso.image_boundaryGerms`: an isomorphism of surface models preserves
-  boundary darts and boundary germs.
+  boundary darts and boundary germs; in particular `TauCeti.SurfaceModel.boundaryDarts_ofIso` and
+  `TauCeti.SurfaceModel.boundaryGerms_ofIso` describe the boundary of a transported surface model.
 
 ## References
 
@@ -208,6 +209,27 @@ corresponding to those whose orientation the isomorphism reverses. -/
 
 @[simp] theorem symm_symm : φ.symm.symm = φ := ext (by simp) (by simp)
 
+@[simp] theorem sideEquiv_symm_nextCorner (d : D.Corner) : φ.sideEquiv.symm (D.nextCorner d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1)) (C.prevCorner (φ.sideEquiv.symm d))
+      (C.nextCorner (φ.sideEquiv.symm d)) :=
+  φ.symm.sideEquiv_nextCorner d
+
+@[simp] theorem sideEquiv_symm_prevCorner (d : D.Corner) : φ.sideEquiv.symm (D.prevCorner d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1)) (C.nextCorner (φ.sideEquiv.symm d))
+      (C.prevCorner (φ.sideEquiv.symm d)) :=
+  φ.symm.sideEquiv_prevCorner d
+
+@[simp] theorem outgoing_sideEquiv_symm (d : D.Corner) : C.outgoing (φ.sideEquiv.symm d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1)) (C.graph.rev (φ.graph.equivE.symm (D.outgoing d)))
+      (φ.graph.equivE.symm (D.outgoing d)) := by
+  simpa using φ.symm.outgoing_sideEquiv d
+
+@[simp] theorem incoming_sideEquiv_symm (d : D.Corner) : C.incoming (φ.sideEquiv.symm d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1))
+      (C.graph.rev (φ.graph.equivE.symm (D.outgoing (D.nextCorner d))))
+      (φ.graph.equivE.symm (D.incoming d)) := by
+  simpa using φ.symm.incoming_sideEquiv d
+
 /-- The composite of two isomorphisms of polygonal complexes, `φ` followed by `ψ`. It reverses the
 orientation of a face when exactly one of the two isomorphisms does. -/
 @[trans] def trans (ψ : D.Iso K) : C.Iso K where
@@ -301,6 +323,18 @@ face. -/
   rw [← cornerEquiv_symm]
   exact φ.symm.cornerEquiv_fst d
 
+@[simp] theorem cornerEquiv_symm_nextCorner (d : D.Corner) :
+    φ.cornerEquiv.symm (D.nextCorner d) = cond (φ.flip (φ.faceEquiv.symm d.1))
+      (C.prevCorner (φ.cornerEquiv.symm d)) (C.nextCorner (φ.cornerEquiv.symm d)) := by
+  rw [← cornerEquiv_symm]
+  exact φ.symm.cornerEquiv_nextCorner d
+
+@[simp] theorem cornerEquiv_symm_prevCorner (d : D.Corner) :
+    φ.cornerEquiv.symm (D.prevCorner d) = cond (φ.flip (φ.faceEquiv.symm d.1))
+      (C.nextCorner (φ.cornerEquiv.symm d)) (C.prevCorner (φ.cornerEquiv.symm d)) := by
+  rw [← cornerEquiv_symm]
+  exact φ.symm.cornerEquiv_prevCorner d
+
 /-- The outgoing side of the corresponding corner: the image of the outgoing side, or the reverse
 of the image of the incoming side on a reversed face. -/
 @[simp] theorem outgoing_cornerEquiv (c : C.Corner) : D.outgoing (φ.cornerEquiv c) =
@@ -325,6 +359,20 @@ of the image of the outgoing side on a reversed face. -/
     D.cornerVertex (φ.cornerEquiv c) = φ.graph.equivV (C.cornerVertex c) := by
   rw [← src_outgoing, outgoing_cornerEquiv]
   cases hf : φ.flip c.1 <;> simp
+
+@[simp] theorem outgoing_cornerEquiv_symm (d : D.Corner) : C.outgoing (φ.cornerEquiv.symm d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1)) (C.graph.rev (φ.graph.equivE.symm (D.incoming d)))
+      (φ.graph.equivE.symm (D.outgoing d)) := by
+  simpa using φ.symm.outgoing_cornerEquiv d
+
+@[simp] theorem incoming_cornerEquiv_symm (d : D.Corner) : C.incoming (φ.cornerEquiv.symm d) =
+    cond (φ.flip (φ.faceEquiv.symm d.1)) (C.graph.rev (φ.graph.equivE.symm (D.outgoing d)))
+      (φ.graph.equivE.symm (D.incoming d)) := by
+  simpa using φ.symm.incoming_cornerEquiv d
+
+@[simp] theorem cornerVertex_cornerEquiv_symm (d : D.Corner) :
+    C.cornerVertex (φ.cornerEquiv.symm d) = φ.graph.equivV.symm (D.cornerVertex d) := by
+  simpa using φ.symm.cornerVertex_cornerEquiv d
 
 /-! ### Vertex links -/
 
@@ -502,5 +550,24 @@ theorem image_boundaryGerms (v : S.graph.V) :
   simp
 
 end PolygonalComplex.Iso
+
+namespace SurfaceModel
+
+variable {D : PolygonalComplex.{u', v', w'}} (S : SurfaceModel.{u, v, w})
+  (φ : S.toPolygonalComplex.Iso D)
+
+@[simp] theorem boundaryDarts_ofIso :
+    (S.ofIso φ).boundaryDarts = φ.graph.equivE '' S.boundaryDarts :=
+  (φ.image_boundaryDarts (T := S.ofIso φ)).symm
+
+theorem mem_boundaryDarts_ofIso_iff {e : D.graph.E} :
+    e ∈ (S.ofIso φ).boundaryDarts ↔ φ.graph.equivE.symm e ∈ S.boundaryDarts :=
+  (φ.equivE_symm_mem_boundaryDarts_iff (T := S.ofIso φ)).symm
+
+@[simp] theorem boundaryGerms_ofIso (v : D.graph.V) :
+    (S.ofIso φ).boundaryGerms v = φ.graph.equivE '' S.boundaryGerms (φ.graph.equivV.symm v) := by
+  rw [φ.image_boundaryGerms (T := S.ofIso φ), Equiv.apply_symm_apply]
+
+end SurfaceModel
 
 end TauCeti
