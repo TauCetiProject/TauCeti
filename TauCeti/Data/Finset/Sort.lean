@@ -11,6 +11,7 @@ public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -39,7 +40,8 @@ sorted list of the image in reversed order; in particular, sorting the points of
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 
-The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it, and it satisfies a
+predicate closed under passing to smaller elements exactly when more than `i` elements of `s` do.
 
 Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`.
@@ -295,6 +297,17 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
   rw [filter_map, card_map]
   simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
     filter_gt_eq_Iio, Fin.card_Iio]
+
+/-- For a predicate `p` that passes to smaller elements, the `m`-th element of `s` in increasing
+order satisfies `p` exactly when more than `m` elements of `s` satisfy `p`. -/
+theorem lt_card_filter_iff_apply_orderEmbOfFin_of_imp (s : Finset α) {k : ℕ} (h : #s = k)
+    (m : Fin k) (p : α → Prop) [DecidablePred p] (hp : ∀ a b, b ≤ a → p a → p b) :
+    m < #{a ∈ s | p a} ↔ p (s.orderEmbOfFin h m) := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  exact Fin.lt_card_filter_univ_iff_apply_of_imp _ fun i j hji ↦ hp _ _ (a.monotone hji)
 
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
