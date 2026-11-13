@@ -117,19 +117,11 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
       (fun p => TotalSpace.mk' E x (v p) : N → TangentBundle I M) := by
   intro p
   rw [Bundle.contMDiffAt_totalSpace_iff]
-  constructor
-  · exact contMDiffAt_const
-  · have hx : x ∈ (extChartAt I x).source := mem_extChartAt_source _
-    have hfun :
-        (fun q : N =>
-          (trivializationAt E (TangentSpace I) x (TotalSpace.mk' E x (v q))).2) = v := by
-      funext q
-      rw [TangentBundle.trivializationAt_apply]
-      -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
-      change tangentCoordChange I x x x (v q) = v q
-      rw [tangentCoordChange_self hx]
-    rw [hfun]
-    exact hv p
+  refine ⟨contMDiffAt_const, (hv p).congr_of_eventuallyEq ?_⟩
+  filter_upwards with q
+  -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
+  change tangentCoordChange I x x x (v q) = v q
+  exact tangentCoordChange_self (mem_extChartAt_source x)
 
 end TangentBundleInputs
 
@@ -265,13 +257,10 @@ differentiable in the vector space sense. This is the differentiable counterpart
 theorem mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt
     {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} {x : E} :
     MDiffAt[s] (T% V) x ↔ DifferentiableWithinAt 𝕜 V s x := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact MDifferentiableWithinAt.differentiableWithinAt <|
-      ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E) (n := 1)).mdifferentiable one_ne_zero
-        _).comp_mdifferentiableWithinAt _ h
-  · refine (mdifferentiableWithinAt_totalSpace ..).2 ⟨mdifferentiableWithinAt_id, ?_⟩
-    convert! h.mdifferentiableWithinAt with y
-    simp
+  convert! (mdifferentiableWithinAt_section (F := E)
+    (𝓘(𝕜, E)) V (u := s) (b₀ := x)).trans
+      mdifferentiableWithinAt_iff_differentiableWithinAt using 1
+  simp
 
 /-- A vector field on a normed space is differentiable in the manifold sense iff it is
 differentiable in the vector space sense. -/
@@ -440,9 +429,7 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
   have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
   exact hd.congr_of_eventuallyEq
     (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
-    (by
-      rw [extChartAt_to_inv]
-      exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+    (heq.symm.self_of_nhdsWithin (mem_range_self (chartAt H x x)))
 
 /-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
 inverse-chart pullback within the corresponding chart set. Unlike
