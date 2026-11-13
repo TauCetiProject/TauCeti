@@ -5,16 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FormalMultilinearSeries
 public import Mathlib.Analysis.Convex.Basic
 
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Calculus.MeanValue
@@ -38,14 +35,6 @@ differentiability of `u` is needed.
 * `TauCeti.hasDerivWithinAt_spatialDeriv_of_continuousWithinAt`: if `D_y ∂ₜ u` is jointly
   continuous at `(x, t)`, then the spatial derivative `D_y u (x, ·)` has time derivative
   `D_y ∂ₜ u (x, t)` within `s` at `t`.
-
-When `(y, τ) ↦ u(y, τ)` is jointly `C²` at `(x, t)`, the second derivative is symmetric there
-(`ContDiffAt.isSymmSndFDerivAt`), and the two mixed derivatives agree without any further
-continuity hypothesis:
-
-* `TauCeti.hasDerivAt_spatialDeriv_of_contDiffAt`: if `u` is jointly `C²` at `(x, t)` and `u(y, ·)`
-  has time derivative `g y` at `t` for `y` near `x`, then the spatial derivative `D_y u (x, ·)` has
-  time derivative `D g (x)` at `t`.
 
 Iterating these one-step statements shows that all orders of a family of mixed derivatives agree.
 Index the candidate mixed derivatives by a family `Q r y t`, where `Q r y t n` stands for the
@@ -272,51 +261,5 @@ theorem hasDerivWithinAt_mixedDeriv_of_isLowerSet (hI : IsLowerSet I) (hs : Conv
       exact hx (r + 1) n hrn p.2 hp.2 p.1
 
 end Iterated
-
-/-- **Mixed partial derivatives of a jointly `C²` function.** Let `u : E → ℝ → F` be jointly `C²`
-at `(x, t)`, and let `g y` be the time derivative of `u(y, ·)` at `t` for every `y` near `x`. Then
-the spatial derivative `D_y u (x, ·)` has time derivative `D g (x)` at `t`: the time derivative of
-the spatial derivative is the spatial derivative of the time derivative. -/
-theorem hasDerivAt_spatialDeriv_of_contDiffAt {u : E → ℝ → F} {g : E → F} {x : E} {t : ℝ}
-    (hu : ContDiffAt ℝ 2 (fun p : E × ℝ ↦ u p.1 p.2) (x, t))
-    (hg : ∀ᶠ y in 𝓝 x, HasDerivAt (u y) (g y) t) :
-    HasDerivAt (fun τ ↦ fderiv ℝ (u · τ) x) (fderiv ℝ g x) t := by
-  set f : E × ℝ → F := fun p ↦ u p.1 p.2
-  set D2 := fderiv ℝ (fderiv ℝ f) (x, t)
-  have hdiff : ∀ᶠ q in 𝓝 (x, t), DifferentiableAt ℝ f q :=
-    (hu.eventually (by simp)).mono fun q hq ↦ hq.differentiableAt (by norm_num)
-  have hD2 : HasFDerivAt (fderiv ℝ f) D2 (x, t) :=
-    ((hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)).hasFDerivAt
-  have hsymm := hu.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])
-  -- Near `t`, the spatial derivative at `x` is the joint derivative restricted to `E`.
-  have hspace : ∀ᶠ τ in 𝓝 t, fderiv ℝ (u · τ) x =
-      (fderiv ℝ f (x, τ)).comp (ContinuousLinearMap.inl ℝ E ℝ) := by
-    filter_upwards [((continuous_const.prodMk continuous_id).tendsto t).eventually hdiff]
-      with τ hτ
-    have h : HasFDerivAt (f ∘ fun y ↦ (y, τ)) _ x :=
-      hτ.hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x τ)
-    exact h.fderiv
-  -- Near `x`, the time derivative at `t` is the joint derivative in the direction `(0, 1)`.
-  have htime : g =ᶠ[𝓝 x] fun y ↦ fderiv ℝ f (y, t) (0, 1) := by
-    filter_upwards [hg, ((continuous_id.prodMk continuous_const).tendsto x).eventually hdiff]
-      with y hy hdy
-    exact hy.unique (by
-      simpa [f, Function.comp_def] using
-        hdy.hasFDerivAt.comp_hasDerivAt t (HasDerivAt.prodMk (hasDerivAt_const t y)
-          (hasDerivAt_id t)))
-  have hgd : HasFDerivAt g ((D2.flip (0, 1)).comp (ContinuousLinearMap.inl ℝ E ℝ)) x := by
-    refine (((hD2.comp x (hasFDerivAt_prodMk_left x t)).clm_apply
-      (hasFDerivAt_const ((0 : E), (1 : ℝ)) x)).congr_of_eventuallyEq htime).congr_fderiv ?_
-    ext w
-    simp
-  have hτ : HasDerivAt (fun τ ↦ (fderiv ℝ f (x, τ)).comp (ContinuousLinearMap.inl ℝ E ℝ))
-      ((D2 (0, 1)).comp (ContinuousLinearMap.inl ℝ E ℝ)) t := by
-    simpa using (hD2.comp_hasDerivAt t (HasDerivAt.prodMk (hasDerivAt_const t x)
-      (hasDerivAt_id t))).clm_comp (hasDerivAt_const t (ContinuousLinearMap.inl ℝ E ℝ))
-  rw [hgd.fderiv]
-  refine (hτ.congr_of_eventuallyEq hspace).congr_deriv ?_
-  ext w
-  -- The two mixed second derivatives agree by symmetry of the second derivative.
-  simpa using hsymm (0, 1) (w, 0)
 
 end TauCeti

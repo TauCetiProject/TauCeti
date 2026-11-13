@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
@@ -57,6 +58,8 @@ the initial position of the submanifold to the later ones.
   of the flow.
 * `TauCeti.timeDependentFlowOf_trans_of_mem` and `TauCeti.timeDependentFlowOf_trans`: the two-time
   composition law, where it is defined, and everywhere for a complete suspension.
+* `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
+  of a complete autonomous field `v` is a time map of the flow of `v`.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
   from `s` to `t`.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
@@ -351,6 +354,31 @@ theorem isOpen_timeDependentFlowDomain [FiniteDimensional ℝ E] :
   (isOpen_flowDomain (contMDiff_timeDependentSuspensionField hX)).preimage (by fun_prop)
 
 end Flow
+
+/-- **The time-dependent flow of a constant multiple of a complete autonomous field.** For a
+complete `C¹` vector field `v` and `c : ℝ`, flowing the time-independent field `c • v` from time `s`
+to time `t` is the time-`(t - s) * c` map of the flow of `v`. -/
+theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField v) (c s t : ℝ) :
+    timeDependentFlowOf (fun _ ↦ c • v) s t = flowOf v ((t - s) * c) := by
+  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, (c • v) p.2⟩ : TangentBundle I M)) :=
+    (ContMDiff.const_smul_section (a := c) hv).comp contMDiff_snd
+  funext x
+  -- The trajectory of `v` through `x`, run at speed `c` from time `s`, solves the equation of
+  -- `c • v`.
+  have hcurve : IsMIntegralCurve (fun u ↦ flowOf v u x) v := by
+    rw [isMIntegralCurve_iff_isMIntegralCurveOn]
+    simpa [hcomplete.mem_flowDomain] using isMIntegralCurveOn_flowOf hv x
+  have hγ := (hcurve.comp_mul c).comp_add (-s)
+  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (X := fun _ ↦ c • v)
+    (γ := fun u ↦ flowOf v ((u + -s) * c) x) (s := s) (t := t) (a := min s t - 1)
+    (b := max s t + 1) (fun u _ ↦ hγ u)
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  simpa [flowOf_zero, sub_eq_add_neg] using h
 
 /-- In finite dimensions, the time-dependent flow of a `C^n` field, `1 ≤ n`, is jointly `C^n` in
 the initial time, the final time and the initial point on its domain. -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.RestPoint
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
-import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
@@ -59,8 +59,8 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
   critical point is injective exactly when the critical point is nondegenerate.
 * `eventually_isNondegenerateFixedPt_flowOf_hamiltonianVectorField`: a nondegenerate critical point
   is a nondegenerate fixed point of the time-`t` maps of `X_F` for small `t ≠ 0`.
-* `timeDependentFlowOf_hamiltonianVectorField_smul`: on a compact manifold the time-one map of
-  `ε F` is the time-`ε` map of `X_F`.
+* `timeDependentFlowOf_hamiltonianVectorField_smul`: on a compact manifold the flow of `ε F` from
+  time `s` to time `t` is the time-`(t - s) * ε` map of `X_F`.
 * `exists_pos_forall_isNondegenerateFixedPt_timeDependentFlowOf_smul`: for a Morse function `F` on
   a compact manifold, every 1-periodic orbit of `ε F` is nondegenerate for small `ε > 0`.
 
@@ -78,30 +78,6 @@ open Filter Function Set
 open scoped Manifold Topology ContDiff
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
-
-/-- The derivative at `x` of a two-form field evaluated on two vector fields, the first of which
-vanishes at `x`, only differentiates the first field. -/
-private theorem fderiv_apply_matrix_of_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {S : E → E [⋀^Fin 2]→L[ℝ] ℝ} {V₁ V₂ : E → E} {x : E}
-    (hS : DifferentiableAt ℝ S x) (h₁ : DifferentiableAt ℝ V₁ x) (h₂ : DifferentiableAt ℝ V₂ x)
-    (hV₁ : V₁ x = 0) (w : E) :
-    fderiv ℝ (fun z ↦ S z ![V₁ z, V₂ z]) x w = S x ![fderiv ℝ V₁ x w, V₂ x] := by
-  have hV : ∀ i, DifferentiableAt ℝ (![V₁, V₂] i) x := fun i ↦ by fin_cases i <;> simpa
-  have h := fderiv_continuousAlternatingMap_apply_apply hS hV w
-  have hfun : (fun z ↦ S z (![V₁, V₂] · z)) = fun z ↦ S z ![V₁ z, V₂ z] := by
-    funext z; congr 1; funext i; fin_cases i <;> rfl
-  rw [hfun] at h
-  rw [h, Fin.sum_univ_two]
-  have e0 : update (![V₁, V₂] · x) 0 (fderiv ℝ (![V₁, V₂] 0) x w) =
-      ![fderiv ℝ V₁ x w, V₂ x] := by
-    funext i; fin_cases i <;> simp
-  have e1 : update (![V₁, V₂] · x) 1 (fderiv ℝ (![V₁, V₂] 1) x w) =
-      ![0, fderiv ℝ V₂ x w] := by
-    funext i; fin_cases i <;> simp [hV₁]
-  -- The terms evaluating a form on a vector with the coordinate `V₁ x = 0` vanish.
-  rw [e0, e1, (fderiv ℝ S x w).map_coord_zero 0 (by simp [hV₁]),
-    (S x).map_coord_zero (m := ![0, fderiv ℝ V₂ x w]) 0 rfl]
-  simp
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
@@ -148,10 +124,6 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
     hσ.differentiableWithinAt (fun i ↦ (hV i).differentiableWithinAt)
   rw [mvfderivWithin_univ, preimage_univ, univ_inter,
     fderivWithin_of_mem_nhds (by rw [I.range_eq_univ]; exact univ_mem)] at h3
-  have hfun : (fun z ↦ RoughForm.inChartAt σ.1 p z (fun i ↦
-      VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm (W i) (range I) z)) =
-      fun z ↦ RoughForm.inChartAt σ.1 p z ![V 0 z, V 1 z] := by
-    funext z; congr 1; funext i; fin_cases i <;> rfl
   have hV0 : V 0 (extChartAt I p p) = 0 := by
     simp only [V, W, Matrix.cons_val_zero]
     rw [VectorField.mpullbackWithin_extChartAt_symm_self]
@@ -160,10 +132,15 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
     simp only [V, W, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     rw [VectorField.mpullbackWithin_extChartAt_symm_self]
     exact hYp
-  rw [h1, h2, ← h3, hfun]
-  refine (fderiv_apply_matrix_of_eq_zero hσ (hV 0) (hV 1) hV0 w).trans ?_
-  rw [hV1, RoughForm.inChartAt_extChartAt_self]
-  simp only [V, W, Matrix.cons_val_zero]
+  rw [h1, h2, ← h3]
+  refine (fderiv_continuousAlternatingMap_apply_apply_of_eq_zero (g := V) hσ hV hV0 w).trans ?_
+  have hupd : update (V · (extChartAt I p p)) 0 (fderiv ℝ (V 0) (extChartAt I p p) w) =
+      ![fderiv ℝ (V 0) (extChartAt I p p) w, u] := by
+    funext i
+    fin_cases i
+    · simp
+    · simpa using hV1
+  rw [hupd, RoughForm.inChartAt_extChartAt_self]
   exact (SmoothBundleForm.eval₂_apply σ p _ u).symm
 
 /-- **Nondegenerate critical points are the zeros of `X_F` with injective linearization.** For a
@@ -187,16 +164,13 @@ theorem injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff (h : σ.IsNo
       exact (SmoothBundleForm.eval₂_apply σ p 0 u).trans
         ((σ.1 p).map_coord_zero (m := ![0, u]) 0 rfl)
   rw [isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
+  -- `L` acts on `E` and the critical Hessian on `TangentSpace I p`, which is `E` by definition.
   refine ⟨fun hL ↦ ⟨hF p, hcrit, criticalHessian_isInvertible_of_injective
       ((injective_iff_map_eq_zero _).2 fun w hw ↦ hL (((hker w).1 hw).trans (map_zero L).symm))⟩,
     ?_⟩
   rintro ⟨-, -, hinv⟩
-  have hHinj : Injective (criticalHessian I F p) := by
-    obtain ⟨e, he⟩ := hinv
-    rw [← he]
-    exact e.injective
   exact (injective_iff_map_eq_zero L).2 fun w hw ↦
-    (injective_iff_map_eq_zero _).1 hHinj w ((hker w).2 hw)
+    (injective_iff_map_eq_zero _).1 hinv.injective w ((hker w).2 hw)
 
 variable [T2Space M]
 
@@ -214,35 +188,19 @@ theorem eventually_isNondegenerateFixedPt_flowOf_hamiltonianVectorField (h : σ.
     (h.hamiltonianVectorField_eq_zero_iff.2 hcrit)
     ((injective_fderiv_mpullbackWithin_hamiltonianVectorField_iff h hF2 hcrit).2 hp)
 
-/-- **The time-one map of `ε F` is the time-`ε` map of `X_F`.** On a compact manifold with a
-nondegenerate two-form, for a `C²` function `F` and every `ε`, the time-one map of the autonomous
-Hamiltonian `ε F` is the time-`ε` map of the Hamiltonian vector field of `F`. -/
+/-- **The flow of `ε F` is a rescaled flow of `X_F`.** On a compact manifold with a nondegenerate
+two-form, for a `C²` function `F` and all `ε s t`, flowing the autonomous Hamiltonian `ε F` from
+time `s` to time `t` is the time-`(t - s) * ε` map of the Hamiltonian vector field of `F`. -/
 theorem timeDependentFlowOf_hamiltonianVectorField_smul [CompactSpace M] (h : σ.IsNondegenerate)
-    (hF : ContMDiff I 𝓘(ℝ) 2 F) (ε : ℝ) :
-    timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 0 1 =
-      flowOf (σ.hamiltonianVectorField F) ε := by
+    (hF : ContMDiff I 𝓘(ℝ) 2 F) (ε s t : ℝ) :
+    timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) s t =
+      flowOf (σ.hamiltonianVectorField F) ((t - s) * ε) := by
   have hv : CMDiff 1 (fun y ↦ (⟨y, σ.hamiltonianVectorField F y⟩ : TangentBundle I M)) :=
     h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (hF.of_le (by norm_num))
-  have hεF : ContMDiff I 𝓘(ℝ) 2 (ε • F) := (contDiff_const_smul ε).contMDiff.comp hF
-  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1 (fun q : ℝ × M ↦
-      (⟨q.2, σ.hamiltonianVectorField (ε • F) q.2⟩ : TangentBundle I M)) :=
-    h.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-      (show ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) (1 + 1) (uncurry fun (_ : ℝ) ↦ ε • F) from
-        (hεF.of_le (by norm_num)).comp contMDiff_snd)
-  funext x
-  -- The trajectory of `X_F` through `x`, run at speed `ε`, solves the equation of `ε F`.
-  have hcurve : IsMIntegralCurve (fun t ↦ flowOf (σ.hamiltonianVectorField F) t x)
-      (σ.hamiltonianVectorField F) := by
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn]
-    simpa [(isCompleteVectorField_of_compactSpace hv).mem_flowDomain] using
-      isMIntegralCurveOn_flowOf hv x
-  have hγ := hcurve.comp_mul ε
-  have h01 := timeDependentFlowOf_eq_of_hasMFDerivAt hX
-    (X := fun _ ↦ σ.hamiltonianVectorField (ε • F)) (s := 0) (t := 1) (a := -1) (b := 2)
-    (γ := (fun t ↦ flowOf (σ.hamiltonianVectorField F) t x) ∘ (· * ε))
-    (fun u _ ↦ by simpa [hamiltonianVectorField_const_smul] using hγ u)
-    (by norm_num) (by norm_num)
-  simpa [flowOf_zero] using h01
+  have hεF : σ.hamiltonianVectorField (ε • F) = ε • σ.hamiltonianVectorField F :=
+    funext (hamiltonianVectorField_const_smul ε)
+  rw [hεF]
+  exact timeDependentFlowOf_const_smul hv (isCompleteVectorField_of_compactSpace hv) ε s t
 
 /-- **Small multiples of a Morse function have nondegenerate 1-periodic orbits.** Let `σ` be a
 nondegenerate two-form on a compact boundaryless manifold modelled on a finite-dimensional space,
@@ -256,7 +214,7 @@ theorem exists_pos_forall_isNondegenerateFixedPt_timeDependentFlowOf_smul [Compa
       ∀ γ ∈ periodicSolutions (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 1,
         IsNondegenerateFixedPt I
           (timeDependentFlowOf (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 0 1) (γ 0) := by
-  have hFs : ContMDiff I 𝓘(ℝ) ∞ F := contMDiffOn_univ.1 (isMorseOn_univ.2 hF).contMDiffOn
+  have hFs : ContMDiff I 𝓘(ℝ) ∞ F := hF.contMDiff
   have hF2 : ContMDiff I 𝓘(ℝ) 2 F := hFs.of_le (by norm_num)
   obtain ⟨ε₀, hε₀, hper⟩ :=
     h.exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints hF2
@@ -266,14 +224,13 @@ theorem exists_pos_forall_isNondegenerateFixedPt_timeDependentFlowOf_smul [Compa
     refine hF.finite_criticalPoints.eventually_all.2 fun q hq ↦ ?_
     refine nhdsWithin_mono _ (fun t ht ↦ ne_of_gt ht)
       (h.eventually_isNondegenerateFixedPt_flowOf_hamiltonianVectorField
-        (hFs.of_le (by norm_num)) (hF.isManifoldNondegenerateCriticalPoint ?_))
-    rw [← mvfderiv_eq_fderiv_comp_extChartAt_symm]
-    exact mem_criticalPoints.1 hq
+        (hFs.of_le (by norm_num))
+        (hF.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hq))
   obtain ⟨ε₁, hε₁, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hev
   refine ⟨min ε₀ (ε₁ / 2), lt_min hε₀ (half_pos hε₁), fun ε hε hεle γ hγ ↦ ?_⟩
   rw [hper ε hε (hεle.trans (min_le_left _ _))] at hγ
   obtain ⟨q, hq, rfl⟩ := hγ
-  rw [h.timeDependentFlowOf_hamiltonianVectorField_smul hF2 ε]
+  rw [h.timeDependentFlowOf_hamiltonianVectorField_smul hF2 ε 0 1, sub_zero, one_mul]
   exact hsub ⟨hε, by linarith [min_le_right ε₀ (ε₁ / 2)]⟩ q hq
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
