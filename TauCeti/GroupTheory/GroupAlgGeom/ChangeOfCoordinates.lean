@@ -189,13 +189,40 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   apply (equivOfCoordinateChange ι σ hσ S).injective
   simp
 
+/-- The coordinate-group isomorphism sends a coordinate `y` of the generic point of the
+transformed system to the class of the word `σ y`. -/
+@[simp]
+theorem equivOfCoordinateChange_genericPoint (S : Set (GX G X)) (y : Y) :
+    equivOfCoordinateChange ι σ hσ S (genericPoint ι (σ ⁻¹' S) y) =
+      (σ (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The inverse coordinate-group isomorphism sends a coordinate `x` of the generic point of the
+system to the class of the word `σ⁻¹ x`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_genericPoint (S : Set (GX G X)) (x : X) :
+    (equivOfCoordinateChange ι σ hσ S).symm (genericPoint ι S x) =
+      ((σ.symmOfBijective hσ) (inr (FreeGroup.of x)) : CoordGroup ι (σ ⁻¹' S)) := by
+  simp [genericPoint_apply]
+
 /-- The coordinate-group isomorphism sends the generic point of the transformed system to the
 image of the generic point of the system under the word map of `σ`. -/
+@[simp]
 theorem equivOfCoordinateChange_comp_genericPoint (S : Set (GX G X)) :
     ⇑(equivOfCoordinateChange ι σ hσ S) ∘ genericPoint ι (σ ⁻¹' S) =
       wordMap (coeff ι S) (fun y => σ (inr (FreeGroup.of y))) (genericPoint ι S) := by
   funext y
-  simp [genericPoint_apply]
+  simp
+
+/-- The inverse coordinate-group isomorphism sends the generic point of the system to the image
+of the generic point of the transformed system under the word map of `σ⁻¹`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S).symm ∘ genericPoint ι S =
+      wordMap (coeff ι (σ ⁻¹' S)) (fun x => (σ.symmOfBijective hσ) (inr (FreeGroup.of x)))
+        (genericPoint ι (σ ⁻¹' S)) := by
+  funext x
+  simp
 
 end CoordGroup
 
@@ -277,6 +304,17 @@ theorem sumExtend_map_inl (w : GX G X') :
     hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x' => by simp)
   exact DFunLike.congr_fun h w
 
+/-- The extension of `σ` fixes the words in the further variables `Y`. -/
+@[simp]
+theorem sumExtend_map_inr (w : GX G Y) :
+    sumExtend Y σ (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) w) =
+      Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) w := by
+  have h : (sumExtend Y σ : GX G (X' ⊕ Y) →* GX G (X ⊕ Y)).comp
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) =
+      Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr) :=
+    hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun y => by simp)
+  exact DFunLike.congr_fun h w
+
 variable (Y X) in
 /-- The extension of the identity is the identity. -/
 @[simp]
@@ -289,6 +327,13 @@ theorem sumExtend_comp {X'' : Type*} (τ : GHom (inl : G →* GX G X'') (inl : G
     sumExtend Y (σ.comp τ) = (sumExtend Y σ).comp (sumExtend Y τ) :=
   GX.gHom_ext _ fun u => by cases u <;> simp
 
+/-- Applying the extensions of `τ` and of `σ` in turn is applying the extension of `σ ∘ τ`. -/
+@[simp]
+theorem sumExtend_apply_sumExtend {X'' : Type*}
+    (τ : GHom (inl : G →* GX G X'') (inl : G →* GX G X')) (u : GX G (X'' ⊕ Y)) :
+    sumExtend Y σ (sumExtend Y τ u) = sumExtend Y (σ.comp τ) u := by
+  simp [sumExtend_comp]
+
 variable {σ}
 
 /-- The extension of a surjective `G`-homomorphism by the identity on further variables is
@@ -299,19 +344,25 @@ theorem sumExtend_surjective (hσ : Function.Surjective σ) :
   let τ := evalGHom (inl : G →* GX G X') fun x => Function.surjInv hσ (inr (FreeGroup.of x))
   have hτ : σ.comp τ = GHom.id _ := GX.gHom_ext _ fun x => by
     simp [τ, Function.surjInv_eq hσ]
-  exact fun u =>
-    ⟨sumExtend Y τ u, by simpa [hτ] using (DFunLike.congr_fun (sumExtend_comp σ τ) u).symm⟩
+  exact fun u => ⟨sumExtend Y τ u, by simp [hτ]⟩
 
 /-- The extension of a change of coordinates by the identity on further variables is a change of
 coordinates. -/
-theorem sumExtend_bijective (hσ : Function.Bijective σ) : Function.Bijective (sumExtend Y σ) := by
-  refine ⟨Function.LeftInverse.injective (g := sumExtend Y (σ.symmOfBijective hσ)) fun u => ?_,
+theorem sumExtend_bijective (hσ : Function.Bijective σ) : Function.Bijective (sumExtend Y σ) :=
+  ⟨Function.LeftInverse.injective (g := sumExtend Y (σ.symmOfBijective hσ)) fun u => by simp,
     sumExtend_surjective hσ.2⟩
-  simpa using (DFunLike.congr_fun (sumExtend_comp (σ.symmOfBijective hσ) σ) u).symm
+
+/-- The inverse of the extension of a change of coordinates is the extension of its inverse. -/
+@[simp]
+theorem symmOfBijective_sumExtend (hσ : Function.Bijective σ) :
+    (sumExtend Y σ).symmOfBijective (sumExtend_bijective hσ) =
+      sumExtend Y (σ.symmOfBijective hσ) :=
+  GHom.ext fun u => (sumExtend_bijective hσ).1 (by simp)
 
 variable (σ) in
 /-- The extension of `σ` acts on points by the word map of `σ` on the coordinates in `X` and
 leaves the coordinates in `Y` unchanged. -/
+@[simp]
 theorem wordMap_sumExtend (v : X → H) (w : Y → H) :
     wordMap ι (fun u => sumExtend Y σ (inr (FreeGroup.of u))) (Sum.elim v w) =
       Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w := by
@@ -321,6 +372,7 @@ theorem wordMap_sumExtend (v : X → H) (w : Y → H) :
 variable (σ) in
 /-- Evaluating the image of a word under the extension of `σ` at `(v, w)` is evaluating the word
 at the transformed point. -/
+@[simp]
 theorem eval_sumExtend (v : X → H) (w : Y → H) (u : GX G (X' ⊕ Y)) :
     eval ι (Sum.elim v w) (sumExtend Y σ u) =
       eval ι (Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w) u := by

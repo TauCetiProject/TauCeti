@@ -16,7 +16,9 @@ A change of coordinates, a bijective `G`-homomorphism `σ : G[X'] → G[X]`, tra
 (`TauCeti.GroupAlgGeom.sumExtend`), a system `T ⊆ G[X ⊔ Y]` into `sumExtend Y σ ⁻¹' T` in
 `G[X' ⊔ Y]`. Compatibility, lifts and complete lifts are invariant under this transformation, and
 the solutions at the generic points correspond under the induced isomorphism of coordinate groups
-`G_{R(σ⁻¹S)} ≃ G_{R(S)}` (`TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`).
+`G_{R(σ⁻¹S)} ≃ G_{R(S)}` (`TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`). A family of
+solutions of `S` is generic exactly when its image under the word map of `σ` is generic for
+`σ ⁻¹' S`.
 
 ## Main results
 
@@ -28,6 +30,7 @@ the solutions at the generic points correspond under the induced isomorphism of 
   `TauCeti.GroupAlgGeom.Lift.hasLiftNe_preimage_iff`,
   `TauCeti.GroupAlgGeom.Lift.hasCompleteLift_preimage_iff`: invariance of lifts and complete
   lifts.
+* `TauCeti.GroupAlgGeom.Lift.isGenericFamily_preimage_image_iff`: invariance of generic families.
 
 ## References
 
@@ -59,7 +62,7 @@ theorem isCompatibleNe_preimage_iff {W : GX G (X' ⊕ Y)} :
       IsCompatibleNe ι S T (sumExtend Y σ W) := by
   rw [isCompatibleNe_iff, isCompatibleNe_iff,
     (coordinateChangeEquiv ι σ hσ).surjective.forall]
-  simp [wordMap_mem_V_iff ι σ hσ.2, sumElim_wordMap_mem_V_preimage_iff ι hσ.2, eval_sumExtend]
+  simp [wordMap_mem_V_iff ι σ hσ.2, sumElim_wordMap_mem_V_preimage_iff ι hσ.2]
 
 /-- The isomorphism of coordinate groups induced by a change of coordinates carries the value of
 a word at a point over the generic point of the transformed system to the value of its image
@@ -114,5 +117,23 @@ theorem hasCompleteLift_preimage_iff : HasCompleteLift ι (σ ⁻¹' S) (sumExte
   rw [hasCompleteLift_iff, hasCompleteLift_iff, hasLift_preimage_iff hσ,
     (sumExtend_surjective (Y := Y) hσ.2).forall]
   simp [isCompatibleNe_preimage_iff hσ, hasLiftNe_preimage_iff hσ]
+
+/-- Genericity of a family of solutions is invariant under a change of coordinates: the image of
+`Θ` under the word map of `σ` is generic for `σ ⁻¹' S` exactly when `Θ` is generic for `S`. -/
+theorem isGenericFamily_preimage_image_iff {Θ : Set (X → H)} :
+    IsGenericFamily ι (σ ⁻¹' S) (coordinateChangeEquiv ι σ hσ '' Θ) ↔ IsGenericFamily ι S Θ := by
+  rw [isGenericFamily_iff, isGenericFamily_iff, ← image_coordinateChangeEquiv_V ι σ hσ,
+    Set.image_subset_image_iff (coordinateChangeEquiv ι σ hσ).injective]
+  refine and_congr_right fun _ => forall_congr' fun n => ?_
+  rw [(sumExtend_surjective (Y := Fin n) hσ.2).forall]
+  refine forall_congr' fun t => imp_congr (by simp) ?_
+  rw [← hasCompleteLift_preimage_iff hσ, ← Set.image_singleton,
+    (sumExtend_bijective hσ).1.preimage_image]
+
+/-- The family of all solutions of the transformed system `σ ⁻¹' S` is generic exactly when the
+family of all solutions of `S` is. -/
+theorem isGenericFamily_preimage_V_iff :
+    IsGenericFamily ι (σ ⁻¹' S) (V ι (σ ⁻¹' S)) ↔ IsGenericFamily ι S (V ι S) := by
+  rw [← image_coordinateChangeEquiv_V ι σ hσ, isGenericFamily_preimage_image_iff hσ]
 
 end TauCeti.GroupAlgGeom.Lift
