@@ -106,27 +106,19 @@ theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB 
 /-- Graph isomorphisms send blocks to blocks by taking the image of their vertex sets. -/
 theorem IsBlock.image {W : Type*} {H : SimpleGraph W} (hB : G.IsBlock B) (e : G ≃g H) :
     H.IsBlock (e '' B) := by
-  have transport (C : Set V) (hconn : (G.induce C).Connected)
-      (hcut : ∀ v, ¬(G.induce C).IsCutVertex v) :
-      (H.induce (e '' C)).Connected ∧ ∀ w, ¬(H.induce (e '' C)).IsCutVertex w := by
-    let i := e.induce (e.injective.bijOn_image (s := C))
-    refine ⟨i.connected_iff.mp hconn, ?_⟩
-    intro w hw
-    obtain ⟨v, rfl⟩ := i.surjective w
-    exact hcut v (i.isCutVertex_iff.mp hw)
-  have hBC := transport B hB.connected hB.not_isCutVertex
+  have transport {C : Set V} {D : Set W} (i : G.induce C ≃g H.induce D) :
+      ((H.induce D).Connected ∧ ∀ w, ¬(H.induce D).IsCutVertex w) ↔
+        ((G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v) := by
+    rw [← i.connected_iff, i.surjective.forall]
+    simp only [i.isCutVertex_iff]
+  have hBC := (transport (e.induce (e.injective.bijOn_image (s := B)))).mpr
+    ⟨hB.connected, hB.not_isCutVertex⟩
   refine isBlock_iff.mpr ⟨hBC.1, hBC.2, ?_⟩
   intro C hconn hcut hsub
-  let i := e.symm.induce (e.symm.injective.bijOn_image (s := C))
-  have hc : (G.induce (e.symm '' C)).Connected := i.connected_iff.mp hconn
-  have hn : ∀ v, ¬(G.induce (e.symm '' C)).IsCutVertex v := by
-    intro v hv
-    obtain ⟨w, rfl⟩ := i.surjective v
-    exact hcut w (i.isCutVertex_iff.mp hv)
-  have hEq := hB.eq_of_subset hc hn (by
-    intro v hv
-    exact ⟨e v, hsub ⟨v, hv, rfl⟩, e.symm_apply_apply v⟩)
-  simpa [← Set.image_comp] using congrArg (fun S ↦ e '' S) hEq
+  obtain ⟨hc, hn⟩ := (transport
+    (e.symm.induce (e.symm.injective.bijOn_image (s := C))).symm).mp ⟨hconn, hcut⟩
+  have hEq := hB.eq_of_subset hc hn ((e.toEquiv.subset_symm_image B C).mpr hsub)
+  exact hEq ▸ e.toEquiv.image_symm_image C
 
 /-- A vertex set is a block if and only if its image under a graph isomorphism is. -/
 @[simp]
@@ -134,7 +126,7 @@ theorem Iso.isBlock_image_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
     H.IsBlock (e '' B) ↔ G.IsBlock B := by
   constructor
   · intro h
-    simpa [← Set.image_comp] using h.image e.symm
+    exact e.toEquiv.symm_image_image B ▸ h.image e.symm
   · exact fun h ↦ h.image e
 
 /-! ### Existence -/
