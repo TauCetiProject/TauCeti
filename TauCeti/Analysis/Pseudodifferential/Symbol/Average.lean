@@ -119,15 +119,7 @@ private theorem continuous_iteratedFDeriv_conj (a : Symbol n V W m) (k : ℕ) :
       ((a.contDiff_coefficient.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
         continuous_snd))
 
-include hσV hσW in
-/-- On a compact group the conjugation operators are uniformly bounded. -/
-private theorem exists_norm_mul_norm_le [CompactSpace G] :
-    ∃ A : ℝ, 0 ≤ A ∧ ∀ g : G, ‖σW g‖ * ‖σV g⁻¹‖ ≤ A := by
-  obtain ⟨A, hA⟩ := isCompact_univ.exists_bound_of_continuousOn
-    ((hσW.norm.mul (hσV.comp continuous_inv).norm).continuousOn)
-  exact ⟨max A 0, le_max_right _ _, fun g =>
-    (Real.le_norm_self _).trans ((hA g (mem_univ g)).trans (le_max_left _ _))⟩
-
+omit [IsTopologicalGroup G] in
 include hσV hσW in
 /-- The symbol estimates of the conjugates hold uniformly in the group element. -/
 private theorem exists_bound_conj [CompactSpace G] (a : Symbol n V W m)
@@ -135,11 +127,14 @@ private theorem exists_bound_conj [CompactSpace G] (a : Symbol n V W m)
     ∃ C : ℝ, 0 ≤ C ∧ ∀ g : G, ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (conj σV σW a g).coefficient x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  obtain ⟨A, hA0, hA⟩ := exists_norm_mul_norm_le σV σW hσV hσW
+  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
+  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 1)
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 1)
   obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α β
-  refine ⟨A * C, by positivity, fun g x hx ξ => ?_⟩
+  refine ⟨A * B * C, by positivity, fun g x hx ξ => ?_⟩
   rw [mixedDeriv_conj, mul_assoc]
-  exact (norm_conj_le σV σW _ g).trans (by gcongr; exacts [hA g, hC x hx ξ])
+  exact (norm_conj_le σV σW _ g).trans (by gcongr; exacts [hA g, hB g⁻¹, hC x hx ξ])
 
 end Conj
 
@@ -254,19 +249,15 @@ theorem seminorm_average_le (a : Symbol n V W m) {K : Compacts (CoordinateSpace 
 
 /-- Averaging is continuous in the symbol topology. -/
 theorem continuous_average : Continuous (average (n := n) (m := m) μ σV hσV σW hσW) := by
-  obtain ⟨A, hA⟩ := isCompact_univ.exists_bound_of_continuousOn hσW.norm.continuousOn
-  obtain ⟨B, hB⟩ := isCompact_univ.exists_bound_of_continuousOn hσV.norm.continuousOn
+  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
+  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
   let L : Symbol n V W m →ₗ[ℂ] Symbol n V W m :=
     { toFun := average μ σV hσV σW hσW
       map_add' := average_add μ σV hσV σW hσW
       map_smul' := average_smul μ σV hσV σW hσW }
-  exact WithSeminorms.continuous_of_isBounded withSeminorms withSeminorms L fun ⟨K, α, β⟩ =>
-    ⟨{(K, α, β)}, (max A 0 * max B 0).toNNReal, fun a => by
-      have h := seminorm_average_le μ σV hσV σW hσW a (K := K) (α := α) (β := β)
-        (fun g => (Real.le_norm_self _).trans ((hA g (mem_univ g)).trans (le_max_left A 0)))
-        (fun g => (Real.le_norm_self _).trans ((hB g (mem_univ g)).trans (le_max_left B 0)))
-      simpa [L, NNReal.smul_def, Real.coe_toNNReal _ (by positivity : 0 ≤ max A 0 * max B 0)]
-        using h⟩
+  exact WithSeminorms.continuous_of_isBounded withSeminorms withSeminorms L
+    (Seminorm.IsBounded.of_real fun ⟨K, α, β⟩ => ⟨{(K, α, β)}, A * B, fun a => by
+      simpa [L] using seminorm_average_le μ σV hσV σW hσW a hA hB⟩)
 
 /-- The average as a continuous linear map on the symbols of order `m`. -/
 def averageCLM : Symbol n V W m →L[ℂ] Symbol n V W m where
@@ -289,15 +280,14 @@ theorem HasCompactSpatialSupport.average {a : Symbol n V W m}
 /-- Averaging preserves symbol estimates that are uniform in the position. -/
 theorem IsUniform.average {a : Symbol n V W m} (ha : a.IsUniform) :
     (Symbol.average μ σV hσV σW hσW a).IsUniform := by
-  refine isUniform_iff.2 fun α β => ?_
-  obtain ⟨A, hA0, hA⟩ := exists_norm_mul_norm_le σV σW hσV hσW
-  obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
-  refine ⟨A * C, by positivity, fun x ξ => ?_⟩
-  rw [mixedDeriv_average]
-  refine (norm_integral_le_of_norm_le_const (C := A * C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))
-    (Filter.Eventually.of_forall fun g => ?_)).trans_eq (by simp)
-  rw [mul_assoc]
-  exact (norm_conj_le σV σW _ g).trans (by gcongr; exacts [hA g, hC x ξ])
+  obtain ⟨A, hA⟩ := (HasCompactSupport.of_compactSpace ⇑σW).exists_bound_of_continuous hσW
+  obtain ⟨B, hB⟩ := (HasCompactSupport.of_compactSpace ⇑σV).exists_bound_of_continuous hσV
+  have hAB : 0 ≤ A * B := mul_nonneg ((norm_nonneg _).trans (hA 1)) ((norm_nonneg _).trans (hB 1))
+  refine isUniform_iff_bddAbove_seminorm.2 fun α β => ?_
+  obtain ⟨C, hC⟩ := isUniform_iff_bddAbove_seminorm.1 ha α β
+  exact ⟨A * B * C, Set.forall_mem_range.2 fun K =>
+    (seminorm_average_le μ σV hσV σW hσW a hA hB).trans
+      (mul_le_mul_of_nonneg_left (hC ⟨K, rfl⟩) hAB)⟩
 
 /-- Averaging preserves smoothing symbols. -/
 theorem IsSmoothing.average {a : Symbol n V W m} (ha : a.IsSmoothing) :
@@ -327,11 +317,9 @@ representations. -/
 theorem coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W m) (h : G)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (average μ σV hσV σW hσW a).coefficient p ∘L σV h =
-      σW h ∘L (average μ σV hσV σW hσW a).coefficient p := by
-  conv_lhs => rw [← comp_coefficient_average_comp μ σV hσV σW hσW a h p]
-  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearMap.comp_assoc,
-    ← ContinuousLinearMap.mul_def (σV h⁻¹), ← map_mul, inv_mul_cancel, map_one,
-    ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
+      σW h ∘L (average μ σV hσV σW hσW a).coefficient p :=
+  (σV.linHom_apply_eq_self_iff_isIntertwining σW _).1
+    (comp_coefficient_average_comp μ σV hσV σW hσW a · p) h
 
 /-- If `V →L[ℂ] W` is complete, the average fixes the invariant symbols. -/
 theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] (a : Symbol n V W m)
@@ -340,8 +328,7 @@ theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] (a : Symbol n V W m)
   Symbol.ext (funext fun p => by simp [ha])
 
 /-- For a left-invariant probability measure, such as the normalized Haar measure, averaging is
-idempotent: by `TauCeti.Symbol.comp_coefficient_average_comp` and
-`TauCeti.Symbol.average_eq_self` the average is invariant and fixes the invariant symbols. -/
+idempotent. -/
 @[simp]
 theorem average_average [μ.IsMulLeftInvariant] (a : Symbol n V W m) :
     average μ σV hσV σW hσW (average μ σV hσV σW hσW a) = average μ σV hσV σW hσW a := by
