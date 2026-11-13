@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
+import Mathlib.GroupTheory.Commutator.Basic
 
 /-!
 # Regular standard quadratic equations
@@ -37,6 +38,10 @@ would `z₁⁻¹ c₁ z₁ z₂⁻¹ c₂ z₂ z₃⁻¹ c₃ z₃ d = 1` with `
   embed in `H`, the condition on the coefficients is automatic.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.map`: regularity passes along an injective
   `G`-homomorphism, for instance from `G` to a group containing it.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_map_iff`: the image of `S` along
+  `f : G →* H` is regular through `ι` exactly when `S` is regular through `ι ∘ f`; so `S` is
+  regular along `f` exactly when `f` keeps its coefficients nontrivial and the image is regular
+  over `H` (`TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_iff_exists_isRegular_map`).
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_of_isGeneralPosition`: an equation whose
   coefficients stay nontrivial in `H`, with `κ(S) ≥ 4` and a solution in general position in `H`,
   is regular.
@@ -53,6 +58,8 @@ would `z₁⁻¹ c₁ z₁ z₂⁻¹ c₂ z₂ z₃⁻¹ c₃ z₃ d = 1` with `
   `TauCeti.GroupAlgGeom.Quadratic.isRegular_genusThree`: over `F(a, b)`, the equations
   `[x, y] = [a, b]` and `[x₁, y₁][x₂, y₂][x₃, y₃] = 1` are regular, and `[x, y] = a`, which has
   no solution, is not.
+* `TauCeti.GroupAlgGeom.Quadratic.isRegular_commutator_eq_commutator_eval`: over `F(a, b)[t]`, the
+  equation `[x, y] = [a, t]` is regular along the specialisation `t ↦ b`.
 
 ## References
 
@@ -64,6 +71,7 @@ public section
 
 namespace TauCeti.GroupAlgGeom.Quadratic
 
+open Monoid.Coprod
 open scoped commutatorElement
 
 variable {G H K X : Type*} [Group G] [Group H] [Group K]
@@ -189,6 +197,23 @@ theorem IsRegular.three_le_atomicRank_of_genus_eq_zero {ι : G →* H} {S : Stan
     (h : S.IsRegular ι) (hg : S.genus = 0) : 3 ≤ S.atomicRank := by
   obtain ⟨-, -, ⟨hκ, -⟩ | ⟨-, h1, -⟩ | ⟨-, h2, -⟩⟩ := h <;> cases S <;> simp_all
 
+/-! ### Changing the coefficient group -/
+
+/-- The image of `S` along `f : G →* H` is regular through `ι` exactly when `S` is regular through
+`ι ∘ f`. -/
+@[simp]
+theorem isRegular_map_iff (f : G →* H) (S : Standard G X) (h : ∀ g ∈ S.coeffs, f g ≠ 1)
+    (ι : H →* K) : (S.map f h).IsRegular ι ↔ S.IsRegular (ι.comp f) := by
+  have hd : f S.constant = 1 ↔ S.constant = 1 := by
+    cases S <;> simp_all
+  simp [isRegular_def, hd]
+
+/-- A standard quadratic equation over `G` is regular along `f : G →* H` exactly when `f` keeps its
+coefficients nontrivial and its image is regular over `H`. -/
+theorem isRegular_iff_exists_isRegular_map {f : G →* H} {S : Standard G X} :
+    S.IsRegular f ↔ ∃ h : ∀ g ∈ S.coeffs, f g ≠ 1, (S.map f h).IsRegular (.id H) :=
+  ⟨fun hS ↦ ⟨fun _ ↦ hS.map_ne_one, by simpa⟩, fun ⟨_, hS⟩ ↦ by simpa using hS⟩
+
 end Standard
 
 /-! ### Examples over the free group of rank two -/
@@ -202,6 +227,21 @@ theorem isRegular_commutator_eq_commutator :
         Standard (FreeGroup (Fin 2)) (Fin 2)).IsRegular (.id _) := by
   refine (Standard.isRegular_orientableCoeff_one_zero_iff ..).2 ⟨by decide, FreeGroup.of, ?_⟩
   simp [Standard.toWord_def, commutatorElement_def, mul_assoc]
+
+/-- Over `F(a, b)[t]`, the equation `[x, y] = [a, t]` is regular along the specialisation
+`t ↦ b`: its image over `F(a, b)` is the regular equation `[x, y] = [a, b]`. -/
+theorem isRegular_commutator_eq_commutator_eval :
+    (Standard.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0 (by simp)
+      ⁅(inl (FreeGroup.of 0) : GX (FreeGroup (Fin 2)) Unit)⁻¹,
+        (inr (FreeGroup.of ()) : GX (FreeGroup (Fin 2)) Unit)⁻¹⁆⁻¹
+      (by simpa [commutatorElement_eq_one_iff_commute, Commute.symm_iff] using
+        GX.not_commute_inl_inr_of (FreeGroup.of_ne_one (0 : Fin 2)) ()) :
+        Standard (GX (FreeGroup (Fin 2)) Unit) (Fin 2)).IsRegular
+      (eval (.id _) fun _ ↦ FreeGroup.of 1) := by
+  refine Standard.isRegular_iff_exists_isRegular_map.2 ⟨by simp +decide, ?_⟩
+  -- the image is the equation `[x, y] = [a, b]` over `F(a, b)`
+  convert isRegular_commutator_eq_commutator using 1
+  simp [commutatorElement_def, funext_iff]
 
 /-- Over `F(a, b)`, the equation `[x, y] = a` has no solution, so it is not regular, although its
 constant is nontrivial. -/

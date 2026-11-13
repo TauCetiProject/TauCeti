@@ -239,6 +239,23 @@ theorem preimage_wordMap_V {Y : Type*} (w : Y → GX G X) (S : Set (GX G Y)) :
     have := hv _ ⟨t, ht, rfl⟩
     rwa [← MonoidHom.comp_apply, eval_comp_eval] at this
 
+/-- Changing the coefficients of a system along `f : K →* G` and renaming its variables along
+`e : Y → X` pulls its algebraic set back along `e`: a point `v` solves the image system through `ι`
+exactly when `v ∘ e` solves the system through `ι ∘ f`. -/
+@[simp]
+theorem V_image_map {K Y : Type*} [Group K] (f : K →* G) (e : Y → X) (S : Set (GX K Y)) :
+    V ι (Monoid.Coprod.map f (FreeGroup.map e) '' S) = (· ∘ e) ⁻¹' V (ι.comp f) S := by
+  ext v
+  simp
+
+/-- Changing the coefficients of an equation along `f : K →* G` and renaming its variables along
+`e : Y → X` pulls its algebraic set back along `e`. -/
+@[simp]
+theorem V_singleton_map {K Y : Type*} [Group K] (f : K →* G) (e : Y → X) (w : GX K Y) :
+    V ι {Monoid.Coprod.map f (FreeGroup.map e) w} = (· ∘ e) ⁻¹' V (ι.comp f) {w} := by
+  ext v
+  simp
+
 /-- The inverse image of a solution set under the tuple word map is the solution set
 of the image system. -/
 theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
