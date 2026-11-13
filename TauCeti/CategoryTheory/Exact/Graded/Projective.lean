@@ -146,28 +146,12 @@ def inverseShift (P : E.toExactStructure.ProjectivePresentation X) :
     P.shift.P = E.shift.functor.obj P.P := by
   simp [shift]
 
-@[simp] theorem shift_i (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.shift.i (E.shift.functor.map P.i) := by
-  simp [shift]
-
-@[simp] theorem shift_p (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.shift.p (E.shift.functor.map P.p) := by
-  simp [shift]
-
 @[simp] theorem inverseShift_K (P : E.toExactStructure.ProjectivePresentation X) :
     P.inverseShift.K = E.shift.inverse.obj P.K := by
   simp [inverseShift]
 
 @[simp] theorem inverseShift_P (P : E.toExactStructure.ProjectivePresentation X) :
     P.inverseShift.P = E.shift.inverse.obj P.P := by
-  simp [inverseShift]
-
-@[simp] theorem inverseShift_i (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.inverseShift.i (E.shift.inverse.map P.i) := by
-  simp [inverseShift]
-
-@[simp] theorem inverseShift_p (P : E.toExactStructure.ProjectivePresentation X) :
-    HEq P.inverseShift.p (E.shift.inverse.map P.p) := by
   simp [inverseShift]
 
 end ExactStructure.ProjectivePresentation
