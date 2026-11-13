@@ -162,13 +162,17 @@ lemma mem_negRoots (i : ι) : i ∈ negRoots P b ↔ ¬ b.IsPos i := Iff.rfl
 theorem height_neg_of_mem_negRoots {i : ι} (hi : i ∈ negRoots P b) : b.height i < 0 :=
   lt_of_not_ge fun h => (mem_negRoots P b i).mp hi (b.isPos_iff'.mpr h)
 
-/-- The negative roots are the complement of the positive roots. -/
+/-- The complement of the positive roots is the set of negative roots. -/
+@[simp]
 lemma compl_posRoots : (posRoots P b)ᶜ = negRoots P b := by
   ext i
   simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots]
 
-/-- The negative roots are the complement of the positive roots. -/
-lemma negRoots_eq_compl : negRoots P b = (posRoots P b)ᶜ := compl_posRoots P b |>.symm
+/-- The complement of the negative roots is the set of positive roots. -/
+@[simp]
+lemma compl_negRoots : (negRoots P b)ᶜ = posRoots P b := by
+  ext i
+  simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots, not_not]
 
 section Map
 
@@ -186,7 +190,7 @@ theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv
 /-- An equivalence of root pairings carries negative roots to negative roots. -/
 @[simp]
 theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
-  rw [negRoots_eq_compl, negRoots_eq_compl, posRoots_map, Equiv.image_compl]
+  rw [← compl_posRoots, ← compl_posRoots, posRoots_map, Equiv.image_compl]
 
 end Map
 
@@ -197,7 +201,7 @@ lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by
 
 /-- Every root is either positive or negative. -/
 lemma posRoots_union_negRoots : posRoots P b ∪ negRoots P b = Set.univ := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.union_compl_self _
 
 /-- Every root is either positive or negative. -/
@@ -660,14 +664,11 @@ theorem image_reflectionPerm_self_negRoots :
   have hinv := reflectionPerm_self_involutive P
   calc
     (fun i ↦ P.reflectionPerm i i) '' negRoots P b =
-        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [negRoots_eq_compl]
+        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [← compl_posRoots]
     _ = ((fun i ↦ P.reflectionPerm i i) '' posRoots P b)ᶜ :=
       Set.image_compl_eq hinv.bijective
     _ = (negRoots P b)ᶜ := by rw [image_reflectionPerm_self_posRoots]
-    _ = posRoots P b := by
-      ext i
-      simp only [Set.mem_compl_iff, mem_negRoots, mem_posRoots]
-      tauto
+    _ = posRoots P b := compl_negRoots P b
 
 /-! ### The number of positive roots -/
 
@@ -682,7 +683,7 @@ theorem ncard_negRoots_eq_ncard_posRoots :
 /-- The numbers of positive and negative roots add up to the total number of roots. -/
 theorem ncard_posRoots_add_ncard_negRoots [Finite ι] :
     (posRoots P b).ncard + (negRoots P b).ncard = Nat.card ι := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.ncard_add_ncard_compl _
 
 /-- Twice the number of positive roots is the total number of roots. -/
