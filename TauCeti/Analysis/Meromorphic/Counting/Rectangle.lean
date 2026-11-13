@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Height additivity, monotonicity, and right-continuity of rectangle counts
@@ -36,7 +37,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {f : ℂ → E} {U : Set ℂ} {σ₁ σ₂ t₁ t₂ t₃ : ℝ}
 
 /-- Divisor support is finite on any region contained in a closed rectangle in its domain. -/
-theorem reProdIm_inter_divisor_support_finite {R : Set ℂ}
+theorem inter_divisor_support_finite_of_subset_reProdIm_Icc {R : Set ℂ}
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) (hR : R ⊆ Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) :
     (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
   MeromorphicOn.divisor_finite_inter_support_of_isCompact
@@ -44,18 +45,25 @@ theorem reProdIm_inter_divisor_support_finite {R : Set ℂ}
 
 /-- The positive multiplicities defining a zero count have finite support on any region
 contained in a closed rectangle in the divisor domain. -/
-theorem reProdIm_inter_zeroCount_support_finite {R : Set ℂ}
+theorem zeroCount_support_finite_of_subset_reProdIm_Icc {R : Set ℂ}
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) (hR : R ⊆ Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) :
     (R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite :=
-  zeroCount_support_finite (reProdIm_inter_divisor_support_finite hU hR)
+  zeroCount_support_finite (inter_divisor_support_finite_of_subset_reProdIm_Icc hU hR)
 
 /-- A closed rectangle in the divisor domain has a vertically larger rectangle with finite
 support, even when the larger rectangle is not contained in the domain. -/
-theorem exists_lt_gt_reProdIm_inter_divisor_support_finite (ht : t₁ ≤ t₂)
+theorem exists_lt_gt_reProdIm_inter_divisor_support_finite
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) :
     ∃ a < t₁, ∃ b > t₂,
       ((Icc σ₁ σ₂ ×ℂ Icc a b) ∩ Function.support (MeromorphicOn.divisor f U)).Finite := by
   classical
+  by_cases ht : t₁ ≤ t₂
+  swap
+  · obtain ⟨a, ha₂, ha₁⟩ := exists_between (lt_of_not_ge ht)
+    obtain ⟨b, hb₂, hba⟩ := exists_between ha₂
+    refine ⟨a, ha₁, b, hb₂, ?_⟩
+    rw [reProdIm_eq_empty.mpr (Or.inr (Icc_eq_empty_of_lt hba)), empty_inter]
+    exact finite_empty
   choose V hV hfin using fun z hz ↦
     (MeromorphicOn.divisor f U).supportLocallyFiniteWithinDomain z (hU hz)
   obtain ⟨s, hs⟩ := (isCompact_Icc.reProdIm isCompact_Icc).elim_nhds_subcover_nhdsSet'
@@ -69,22 +77,19 @@ theorem exists_lt_gt_reProdIm_inter_divisor_support_finite (ht : t₁ ≤ t₂)
     equivRealProdCLM.symm.continuous.tendsto_nhdsSet (fun z hz ↦ hz) hs
   rw [isCompact_Icc.nhdsSet_prod_eq isCompact_Icc] at hprod
   obtain ⟨A, hA, B, hB, hAB⟩ := Filter.mem_prod_iff.mp hprod
-  have hB₁ := mem_nhdsSet_iff_forall.mp hB t₁ (left_mem_Icc.mpr ht)
-  have hB₂ := mem_nhdsSet_iff_forall.mp hB t₂ (right_mem_Icc.mpr ht)
-  obtain ⟨a, ha, haB⟩ := exists_Ioc_subset_of_mem_nhds hB₁ ⟨t₁ - 1, sub_one_lt _⟩
-  obtain ⟨b, hb, hbB⟩ := exists_Ico_subset_of_mem_nhds hB₂ ⟨t₂ + 1, lt_add_one _⟩
-  obtain ⟨a', haa', ha'⟩ := exists_between ha
-  obtain ⟨b', hb', hb'b⟩ := exists_between hb
-  refine ⟨a', ha', b', hb', hN.subset fun z hz ↦ ⟨?_, hz.2⟩⟩
+  have hBI : uIcc t₁ t₂ ⊆ interior B := by
+    rw [uIcc_of_le ht]
+    exact subset_interior_iff_mem_nhdsSet.mpr hB
+  obtain ⟨c, d, hcd, hcdB⟩ := isOpen_interior.exists_Ioo_subset_of_uIcc_subset hBI
+  rw [uIcc_of_le ht] at hcd
+  obtain ⟨a, b, hab, habcd⟩ := isCompact_Icc.exists_Icc_between
+    ⟨t₁, left_mem_Icc.mpr ht⟩ hcd
+  refine ⟨a, (hab (left_mem_Icc.mpr ht)).1, b, (hab (right_mem_Icc.mpr ht)).2,
+    hN.subset fun z hz ↦ ⟨?_, hz.2⟩⟩
   suffices equivRealProdCLM z ∈ equivRealProdCLM.symm ⁻¹' N by
     simpa only [mem_preimage, ContinuousLinearEquiv.symm_apply_apply] using this
   apply hAB
-  refine ⟨subset_of_mem_nhdsSet hA hz.1.1, ?_⟩
-  by_cases hlow : z.im < t₁
-  · exact haB ⟨haa'.trans_le hz.1.2.1, hlow.le⟩
-  by_cases hhigh : t₂ < z.im
-  · exact hbB ⟨hhigh.le, hz.1.2.2.trans_lt hb'b⟩
-  exact subset_of_mem_nhdsSet hB ⟨le_of_not_gt hlow, le_of_not_gt hhigh⟩
+  exact ⟨subset_of_mem_nhdsSet hA hz.1.1, interior_subset (hcdB (habcd hz.1.2))⟩
 
 private theorem rectangle_partition
     (ht12 : t₁ ≤ t₂) (ht23 : t₂ ≤ t₃)
@@ -99,9 +104,9 @@ private theorem rectangle_partition
       Ioc_union_Ioc_eq_Ioc ht12 ht23]
   · exact disjoint_left.mpr fun z hz hz' ↦
       disjoint_left.mp (Ioc_disjoint_Ioc_of_le le_rfl) hz.2 hz'.2
-  · exact reProdIm_inter_divisor_support_finite hU
+  · exact inter_divisor_support_finite_of_subset_reProdIm_Icc hU
       (fun z hz ↦ ⟨hz.1, hz.2.1.le, hz.2.2.trans ht23⟩)
-  · exact reProdIm_inter_divisor_support_finite hU
+  · exact inter_divisor_support_finite_of_subset_reProdIm_Icc hU
       (fun z hz ↦ ⟨hz.1, ht12.trans hz.2.1.le, hz.2.2⟩)
 
 /-- Splitting a half-open rectangle in imaginary height adds the signed counts exactly.
@@ -139,7 +144,7 @@ theorem zeroCount_reProdIm_Ioc_le (ht : t₂ ≤ t₃)
       zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃) := by
   refine zeroCount_mono (S := Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃)
     (fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2.trans ht⟩) ?_
-  exact reProdIm_inter_zeroCount_support_finite hU
+  exact zeroCount_support_finite_of_subset_reProdIm_Icc hU
     (fun z hz ↦ ⟨hz.1, hz.2.1.le, hz.2.2⟩)
 
 /-- A half-open rectangle's zero count is locally constant as its top edge moves to the
@@ -149,42 +154,17 @@ theorem eventuallyEq_zeroCount_reProdIm_Ioc_nhdsGE (T : ℝ)
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ T ⊆ U) :
     (fun t ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t)) =ᶠ[𝓝[≥] T]
       fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ T) := by
-  classical
-  by_cases hT : T < t₁
-  · filter_upwards [(eventually_lt_nhds hT).filter_mono nhdsWithin_le_nhds] with t ht
-    simp [Ioc_eq_empty_of_le ht.le, Ioc_eq_empty_of_le hT.le]
   obtain ⟨a, ha, b, hb, hfin⟩ :=
-    exists_lt_gt_reProdIm_inter_divisor_support_finite (f := f) (le_of_not_gt hT) hU
-  let K := Icc σ₁ σ₂ ×ℂ Icc a b
-  -- Finitely many divisor points give a common right neighborhood with no new heights.
-  have hheight : ∀ᶠ t in 𝓝[≥] T, ∀ z ∈ K ∩ Function.support (MeromorphicOn.divisor f U),
-      z.im ≤ t ↔ z.im ≤ T := by
-    apply hfin.eventually_all.mpr
-    intro z _
+    exists_lt_gt_reProdIm_inter_divisor_support_finite (f := f) hU
+  apply eventuallyEq_zeroCount_of_eventually_subset (zeroCount_support_finite hfin)
+  · filter_upwards [Ico_mem_nhdsGE hb] with t ht
+    exact ⟨fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2.trans ht.1⟩,
+      fun z hz ↦ ⟨hz.1, ha.le.trans hz.2.1.le, hz.2.2.trans ht.2.le⟩⟩
+  · intro z _
     by_cases hz : z.im ≤ T
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      exact iff_of_true (hz.trans ht) hz
-    · filter_upwards [eventually_lt_nhds (lt_of_not_ge hz) |>.filter_mono nhdsWithin_le_nhds]
-        with t ht
-      exact iff_of_false (not_le.mpr ht) hz
-  filter_upwards [hheight, self_mem_nhdsWithin,
-    (eventually_lt_nhds hb).filter_mono nhdsWithin_le_nhds] with t ht hbottom htop
-  have hK : Icc σ₁ σ₂ ×ℂ Ioc t₁ t ⊆ K :=
-    fun z hz ↦ ⟨hz.1, ha.le.trans hz.2.1.le, hz.2.2.trans htop.le⟩
-  have hsub : Icc σ₁ σ₂ ×ℂ Ioc t₁ T ⊆ Icc σ₁ σ₂ ×ℂ Ioc t₁ t :=
-    fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2.trans hbottom⟩
-  have hfin' : ((Icc σ₁ σ₂ ×ℂ Ioc t₁ t) ∩
-      Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite :=
-    zeroCount_support_finite (hfin.subset fun z hz ↦
-      ⟨hK hz.1, hz.2⟩)
-  refine ((zeroCount_eq_iff_of_subset hsub hfin').2 ?_).symm
-  intro z hz
-  by_contra hne
-  have hd : z ∈ Function.support (MeromorphicOn.divisor f U) := by
-    intro heq
-    exact hne (by simp [heq])
-  have him := ht z ⟨hK hz.1, hd⟩
-  exact hz.2 ⟨hz.1.1, hz.1.2.1, him.mp hz.1.2.2⟩
+    · exact Eventually.of_forall fun _ hzt ↦ ⟨hzt.1, hzt.2.1, hz⟩
+    · filter_upwards [Ico_mem_nhdsGE (lt_of_not_ge hz)] with t ht hzt
+      exact False.elim ((not_le.mpr ht.2) hzt.2.2)
 
 /-- The natural zero count with its top edge included is right-continuous in height. -/
 theorem continuousWithinAt_zeroCount_reProdIm_Ioc_Ici (T : ℝ)
@@ -199,7 +179,40 @@ theorem zeroCount_reProdIm_Icc_le {s₁ s₂ : ℝ} (h₁ : s₁ ≤ t₁) (h₂
     zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) ≤
       zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc s₁ s₂) :=
   zeroCount_mono (fun _ hz ↦ ⟨hz.1, h₁.trans hz.2.1, hz.2.2.trans h₂⟩)
-    (reProdIm_inter_zeroCount_support_finite hU Subset.rfl)
+    (zeroCount_support_finite_of_subset_reProdIm_Icc hU Subset.rfl)
+
+/-- A closed rectangle's zero count stabilizes as both vertical edges move outward.
+Zeros on either original edge remain included, with no ordering assumption on the heights. -/
+theorem eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE
+    (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) :
+    (fun p : ℝ × ℝ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc p.1 p.2))
+      =ᶠ[𝓝[≤] t₁ ×ˢ 𝓝[≥] t₂]
+        fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) := by
+  obtain ⟨a, ha, b, hb, hfin⟩ :=
+    exists_lt_gt_reProdIm_inter_divisor_support_finite (f := f) hU
+  apply eventuallyEq_zeroCount_of_eventually_subset (zeroCount_support_finite hfin)
+  · filter_upwards [Filter.Eventually.prod_mk (Ioc_mem_nhdsLE ha) (Ico_mem_nhdsGE hb)] with p hp
+    exact ⟨fun z hz ↦ ⟨hz.1, hp.1.2.trans hz.2.1, hz.2.2.trans hp.2.1⟩,
+      fun z hz ↦ ⟨hz.1, hp.1.1.le.trans hz.2.1, hz.2.2.trans hp.2.2.le⟩⟩
+  · intro z _
+    by_cases hlow : t₁ ≤ z.im
+    · by_cases hhigh : z.im ≤ t₂
+      · exact Eventually.of_forall fun _ hzp ↦ ⟨hzp.1, hlow, hhigh⟩
+      · filter_upwards [Filter.Eventually.prod_inr (Ico_mem_nhdsGE (lt_of_not_ge hhigh)) (𝓝[≤] t₁)]
+          with p hp hzp
+        exact False.elim ((not_le.mpr hp.2) hzp.2.2)
+    · filter_upwards [Filter.Eventually.prod_inl (Ioc_mem_nhdsLE (lt_of_not_ge hlow)) (𝓝[≥] t₂)]
+        with p hp hzp
+      exact False.elim ((not_le.mpr hp.1) hzp.2.1)
+
+/-- The closed-rectangle count is continuous as its two vertical edges move outward. -/
+theorem continuousWithinAt_zeroCount_reProdIm_Icc_Iic_prod_Ici
+    (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) :
+    ContinuousWithinAt (fun p : ℝ × ℝ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc p.1 p.2))
+      (Iic t₁ ×ˢ Ici t₂) (t₁, t₂) := by
+  apply continuousWithinAt_const.congr_of_eventuallyEq _ rfl
+  rw [nhdsWithin_prod_eq]
+  exact eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE hU
 
 /-- The symmetric closed-rectangle count stabilizes immediately to the right of every
 height. At negative heights the region is empty; at height zero real zeros are retained. -/
@@ -207,48 +220,13 @@ theorem eventuallyEq_zeroCount_reProdIm_Icc_neg_nhdsGE (T : ℝ)
     (hU : Icc σ₁ σ₂ ×ℂ Icc (-T) T ⊆ U) :
     (fun t ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc (-t) t)) =ᶠ[𝓝[≥] T]
       fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc (-T) T) := by
-  classical
-  by_cases hT : T < 0
-  · filter_upwards [(eventually_lt_nhds hT).filter_mono nhdsWithin_le_nhds] with t ht
-    have ht' : t < -t := by linarith
-    have hT' : T < -T := by linarith
-    simp [Icc_eq_empty_of_lt ht', Icc_eq_empty_of_lt hT']
-  have hT' : -T ≤ T := by linarith
-  obtain ⟨a, ha, b, hb, hfin⟩ :=
-    exists_lt_gt_reProdIm_inter_divisor_support_finite (f := f) hT' hU
-  let K := Icc σ₁ σ₂ ×ℂ Icc a b
-  have hheight : ∀ᶠ t in 𝓝[≥] T, ∀ z ∈ K ∩ Function.support (MeromorphicOn.divisor f U),
-      |z.im| ≤ t ↔ |z.im| ≤ T := by
-    apply hfin.eventually_all.mpr
-    intro z _
-    by_cases hz : |z.im| ≤ T
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      exact iff_of_true (hz.trans ht) hz
-    · filter_upwards [eventually_lt_nhds (lt_of_not_ge hz) |>.filter_mono nhdsWithin_le_nhds]
-        with t ht
-      exact iff_of_false (not_le.mpr ht) hz
-  have hTa : T < -a := by linarith
-  -- A common right neighborhood avoids new absolute heights on either moving edge.
-  filter_upwards [hheight, self_mem_nhdsWithin,
-    (eventually_lt_nhds hb).filter_mono nhdsWithin_le_nhds,
-    (eventually_lt_nhds hTa).filter_mono nhdsWithin_le_nhds]
-    with t ht hbottom htop hlow
-  have hat : a ≤ -t := by linarith
-  have hK : Icc σ₁ σ₂ ×ℂ Icc (-t) t ⊆ K :=
-    fun z hz ↦ ⟨hz.1, hat.trans hz.2.1, hz.2.2.trans htop.le⟩
-  have hsub : Icc σ₁ σ₂ ×ℂ Icc (-T) T ⊆ Icc σ₁ σ₂ ×ℂ Icc (-t) t :=
-    fun z hz ↦ ⟨hz.1, (neg_le_neg hbottom).trans hz.2.1, hz.2.2.trans hbottom⟩
-  have hfin' : ((Icc σ₁ σ₂ ×ℂ Icc (-t) t) ∩
-      Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite :=
-    zeroCount_support_finite (hfin.subset fun z hz ↦ ⟨hK hz.1, hz.2⟩)
-  refine ((zeroCount_eq_iff_of_subset hsub hfin').2 ?_).symm
-  intro z hz
-  by_contra hne
-  have hd : z ∈ Function.support (MeromorphicOn.divisor f U) := by
-    intro heq
-    exact hne (by simp [heq])
-  have him := ht z ⟨hK hz.1, hd⟩
-  exact hz.2 ⟨hz.1.1, abs_le.mp (him.mp (abs_le.mpr hz.1.2))⟩
+  have hneg : Tendsto (fun t : ℝ ↦ -t) (𝓝[≥] T) (𝓝[≤] (-T)) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨continuous_neg.continuousAt.tendsto.mono_left
+      nhdsWithin_le_nhds, ?_⟩
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    exact neg_le_neg ht
+  exact (eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE hU).comp_tendsto
+    (hneg.prodMk tendsto_id)
 
 /-- The symmetric closed-rectangle zero count is right-continuous at every height. -/
 theorem continuousWithinAt_zeroCount_reProdIm_Icc_neg_Ici (T : ℝ)

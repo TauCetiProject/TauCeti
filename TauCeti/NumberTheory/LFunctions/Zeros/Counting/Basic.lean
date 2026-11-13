@@ -74,7 +74,7 @@ count, the symmetric count need not vanish at height zero. -/
   rw [reProdIm_eq_empty.mpr (Or.inr (Icc_eq_empty_of_lt (by linarith))), zeroCount_empty]
 
 /-- At height zero the symmetric count counts precisely the zeros on the real segment. -/
-@[simp] theorem symmetricZeroCountingFunction_zero :
+theorem symmetricZeroCountingFunction_zero :
     d.symmetricZeroCountingFunction 0 = zeroCount d.completed univ (Icc 0 1 ×ℂ {0}) := by
   simp [symmetricZeroCountingFunction_def]
 
@@ -124,7 +124,7 @@ theorem zeroCountingFunction_eq_zero_iff (T : ℝ) :
     d.zeroCountingFunction T = 0 ↔
       ∀ z ∈ Icc 0 1 ×ℂ Ioc 0 T, (MeromorphicOn.divisor d.completed univ z).toNat = 0 := by
   rw [zeroCountingFunction_def]
-  exact zeroCount_eq_zero_iff (reProdIm_inter_zeroCount_support_finite (subset_univ _)
+  exact zeroCount_eq_zero_iff (zeroCount_support_finite_of_subset_reProdIm_Icc (subset_univ _)
     (fun z hz ↦ ⟨hz.1, hz.2.1.le, hz.2.2⟩))
 
 /-- The symmetric count vanishes exactly when its closed rectangle has no positive divisor
@@ -134,7 +134,7 @@ theorem symmetricZeroCountingFunction_eq_zero_iff (T : ℝ) :
       ∀ z ∈ Icc 0 1 ×ℂ Icc (-T) T, (MeromorphicOn.divisor d.completed univ z).toNat = 0 := by
   rw [symmetricZeroCountingFunction_def]
   exact zeroCount_eq_zero_iff
-    (reProdIm_inter_zeroCount_support_finite (subset_univ _) Subset.rfl)
+    (zeroCount_support_finite_of_subset_reProdIm_Icc (subset_univ _) Subset.rfl)
 
 /-- The symmetric count stabilizes immediately to the right of every height. -/
 theorem eventuallyEq_symmetricZeroCountingFunction_nhdsGE (T : ℝ) :
