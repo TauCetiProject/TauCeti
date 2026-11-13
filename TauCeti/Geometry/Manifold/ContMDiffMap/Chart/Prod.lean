@@ -21,7 +21,7 @@ the coordinate derivatives of maps near `f₀` converge uniformly to those of `f
 of `f₀` and `g₀` stays in a compact subset of the open set of the test, which gives continuity.
 Together with composition (`ContMDiffMap.continuous_comp_manifoldWeakWhitney`, when the models
 of the source and of all the variables are locally compact, or
-`ContMDiffMap.continuous_comp_left_manifoldWeakWhitney`, when the outer map is fixed and the
+`ContMDiffMap.continuous_postcomp_manifoldWeakWhitney`, when the outer map is fixed and the
 source model is locally compact), this makes the pointwise application of a fixed smooth map of
 several variables continuous.
 -/
@@ -49,6 +49,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 @[simp]
 theorem prodMk_apply (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯) (x : M) :
     f.prodMk g x = (f x, g x) := rfl
+
+/-- A pair of maps is visible in a product chart exactly when each map is visible in the
+corresponding factor chart. -/
+theorem prodMk_mem_extChartAt_prod_source_iff (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯)
+    {y : N × N'} {x : M} :
+    f.prodMk g x ∈ (extChartAt (J.prod J') y).source ↔
+      f x ∈ (extChartAt J y.1).source ∧ g x ∈ (extChartAt J' y.2).source := by
+  simp only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod]
 
 variable [IsManifold I n M] [IsManifold J n N] [IsManifold J' n N']
 
@@ -82,8 +90,7 @@ theorem continuous_prodMk_manifoldWeakWhitney :
   set ψ₂ := extChartAt J' y.2
   have hsrc (w : (extChartAt I x).target) (hw : w ∈ K) :
       f₀ ((extChartAt I x).symm w) ∈ ψ₁.source ∧ g₀ ((extChartAt I x).symm w) ∈ ψ₂.source := by
-    have h := ((mem_chartJetSet.mp h₀) w hw).1
-    simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using h
+    exact (prodMk_mem_extChartAt_prod_source_iff f₀ g₀).mp ((mem_chartJetSet.mp h₀) w hw).1
   set C : Set E := Subtype.val '' K
   have hC : IsCompact C := hK.image continuous_subtype_val
   have hCx : C ⊆ (extChartAt I x).target := image_subset_iff.mpr fun w _ ↦ w.2
@@ -132,8 +139,7 @@ theorem continuous_prodMk_manifoldWeakWhitney :
   have h₂ := ((mem_chartJetSet.mp hg) w hw).1
   have hwC : (w : E) ∈ C := mem_image_of_mem _ hw
   refine ⟨?_, ?_⟩
-  · simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using
-      And.intro h₁ h₂
+  · exact (prodMk_mem_extChartAt_prod_source_iff f g).mpr ⟨h₁, h₂⟩
   · rw [iteratedFDerivWithin_extChartAt_prodMk f g w.2 h₁ h₂ hm]
     have hfg : (D₁ f w, D₂ g w) ∈ Metric.thickening δ ((fun w ↦ (D₁ f₀ w, D₂ g₀ w)) '' C) :=
       Metric.mem_thickening_iff.mpr ⟨_, mem_image_of_mem _ hwC, by

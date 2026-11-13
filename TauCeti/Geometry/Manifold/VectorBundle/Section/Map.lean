@@ -11,6 +11,9 @@ import Mathlib.Algebra.Module.Submodule.Equiv
 /-!
 # Transport of supported smooth bundle sections
 
+A smooth family of fibre maps over the identity acts on smooth sections pointwise
+(`ContMDiffSection.map`); the fibre maps need not be linear.
+
 A smooth fibrewise linear map over the identity induces a linear map on native
 `ContMDiffSection`s. It cannot enlarge closed support and therefore acts on fixed-support
 stages and compactly supported sections. If the fibre maps are injective, closed support is
@@ -37,10 +40,29 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] {n : ℕ∞ω}
   {V W : M → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+
+section Map
+
+variable (ϕ : ∀ x, V x → W x)
+  (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
+    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W)))
+
+/-- Postcomposition of sections with a smooth family of fibre maps over the identity. The fibre
+maps need not be linear. -/
+protected def map (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
+  ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
+
+/-- A fibrewise map evaluates by the given fibre map, without a change of base point. -/
+@[simp]
+theorem map_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    ContMDiffSection.map ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+end Map
+
+variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [VectorBundle 𝕜 G W]
 
 variable (ϕ : ∀ x, V x →ₗ[𝕜] W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
@@ -48,7 +70,7 @@ variable (ϕ : ∀ x, V x →ₗ[𝕜] W x)
 
 /-- Postcomposition of sections with a smooth fibrewise linear map over the identity. -/
 def mapLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; G, W⟯ where
-  toFun s := ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
+  toFun := ContMDiffSection.map (fun x ↦ ϕ x) hϕ
   map_add' s t := by ext x; exact (ϕ x).map_add _ _
   map_smul' c s := by ext x; exact (ϕ x).map_smul c _
 

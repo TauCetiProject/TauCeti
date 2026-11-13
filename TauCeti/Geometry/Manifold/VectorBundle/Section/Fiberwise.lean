@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
@@ -59,16 +60,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (ϕ : ∀ x, V x → W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
     (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.2⟩ : TotalSpace G W)))
-
-/-- Postcomposition of sections with a smooth family of fibre maps over the identity. The fibre
-maps need not be linear. -/
-protected def map (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
-  ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
-
-/-- A fibrewise map evaluates by the given fibre map, without a change of base point. -/
-@[simp]
-theorem map_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
-    ContMDiffSection.map ϕ hϕ s x = ϕ x (s x) := (rfl)
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [VectorBundle 𝕜 G W]
