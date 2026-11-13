@@ -208,7 +208,7 @@ private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
     (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
   (asIso (TopPair.singularHomologyMap
       (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) _ m)).symm ≪≫
-    asIso (TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom _ m)
+    TopPair.singularHomologyMapIso _ (e.chartBallComplFiberPairIso hb hε p) m
 
 variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -286,12 +286,7 @@ lemma singularHomologyComplFiberIso_inv
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
           (ModuleCat.of R R) m := by
-  have hinv : inv (TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
-      (ModuleCat.of R R) m) =
-      TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).inv (ModuleCat.of R R) m :=
-    IsIso.inv_eq_of_hom_inv_id (by
-      rw [← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id])
-  simp [singularHomologyComplFiberIso, excisionIso, hinv]
+  simp [singularHomologyComplFiberIso, excisionIso]
 
 end Chart
 

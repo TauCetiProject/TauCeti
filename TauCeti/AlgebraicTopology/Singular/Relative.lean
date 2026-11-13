@@ -335,6 +335,16 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
 
 variable {P P'} in
+/-- An isomorphism of topological pairs induces an isomorphism on relative singular homology. -/
+@[simps]
+noncomputable def singularHomologyMapIso (e : P ≅ P') (n : ℕ) :
+    P.singularHomology R n ≅ P'.singularHomology R n where
+  hom := P.singularHomologyMap e.hom R n
+  inv := P'.singularHomologyMap e.inv R n
+  hom_inv_id := by rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
+  inv_hom_id := by rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
+
+variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
 subspace `A'` induces the zero map on relative singular homology. -/
 lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f)
