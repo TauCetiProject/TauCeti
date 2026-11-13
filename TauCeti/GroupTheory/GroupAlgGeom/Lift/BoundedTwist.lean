@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicSeq
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Tactic.FinCases
@@ -26,7 +26,7 @@ moved variable on the left by the `p`-th power of the other one. Applying the po
 `γ₁ ^ p₁, γ₂ ^ p₂, γ₃ ^ p₃, γ₁ ^ p₄, γ₂ ^ p₅, γ₃ ^ p₆` of two periods of the basic sequence to the
 solution `(a, b)` therefore produces, for every tuple of exponents `p`, a solution of
 `[x, y] = [a, b]`: these are the solutions `φ_{2K,p} β` of [IFT], Theorem 10, for `K = 3` and
-`β = (a, b)`.
+`β = (a, b)` (`twistPoint_orientableCoeff_one_zero_ofFn`).
 
 This file records the six moves as a finite system of equations. Starting from
 `(A₀, B₀) = (a, b)`, the `i`-th move multiplies one entry of the pair `(Aᵢ₋₁, Bᵢ₋₁)` on the left
@@ -59,6 +59,9 @@ and `t₁, …, t₆` consists of the six equations saying that `tᵢ` commutes 
   bounded-twist system restricts to a solution of `[x, y] = [a, b]`.
 * `TauCeti.GroupAlgGeom.Lift.boundedTwistPoint_mem_V`: the twist family consists of solutions
   of `[x, y] = [a, b]`.
+* `TauCeti.GroupAlgGeom.Lift.twistPoint_orientableCoeff_one_zero_ofFn`,
+  `TauCeti.GroupAlgGeom.Lift.twistPoint_orientable_one_ofFn`: the twist family consists of the
+  points `φ_{6,p} β` of the basic sequence of `[x, y] = [a, b]`.
 * `TauCeti.GroupAlgGeom.Lift.boundedTwist_family_solvable`: the bounded-twist system is solvable
   at every member of the twist family.
 
@@ -245,6 +248,52 @@ theorem commutatorElement_boundedTwistPoint :
   commutatorElement_boundedTwistStages (commute_boundedTwistTuple a b p) 6
 
 end Family
+
+/-! ### The twist family as the points `φ_{6,p} β` -/
+
+section TwistPoint
+
+open Quadratic.Standard
+
+variable (ι : G →* H) (v : Fin 2 → H) (p : Fin 6 → ℕ)
+
+/-- For the basic sequence `(y ↦ x y, x ↦ y x, y ↦ x y)` of a genus-one equation in the variables
+`x = 0`, `y = 1` without coefficient atoms, the point `φ_{6,p} v` is the member of the twist
+family of `(v x, v y)` with exponents `p`. -/
+private theorem wordMap_phi_basicWordSeq_ofFn {z : Fin 0 → Fin 2}
+    (inj : (Sum.elim (Sum.elim ![(0 : Fin 2)] ![1]) z).Injective) (c : Fin 0 → G) :
+    wordMap ι (fun x => phi (basicWordSeq inj c) (List.ofFn p) (inr (.of x))) v =
+      boundedTwistPoint (v 0) (v 1) p := by
+  have hY (k : ℕ) := basicY_pow_inr_of (G := G) inj 0 k
+  have hX (k : ℕ) := basicX_pow_inr_of (G := G) inj 0 k
+  have hY' (k : ℕ) := basicY_pow_inr_of_of_ne (G := G) inj 0 (v := 0) (by simp) k
+  have hX' (k : ℕ) := basicX_pow_inr_of_of_ne (G := G) inj 0 (v := 1) (by simp) k
+  simp only [Matrix.cons_val_fin_one] at hY hX hY' hX'
+  funext i
+  fin_cases i <;>
+    simp [basicWordSeq_def, phi_def, List.ofFn_succ, List.zipIdx, hY, hX, hY', hX',
+      boundedTwistPoint, boundedTwistStages, boundedTwistTuple]
+
+/-- For the equation `[x, y] = 1`, whose basic sequence has `K = 3` terms, the point `φ_{2K,p} v`
+is the member of the twist family of `(v x, v y)` with exponents `p`. -/
+theorem twistPoint_orientable_one_ofFn (inj : (Sum.elim ![(0 : Fin 2)] ![1]).Injective) :
+    twistPoint ι (orientable 1 one_pos ![0] ![1] inj) (isOrientable_orientable one_pos inj) v
+      (List.ofFn p) = boundedTwistPoint (v 0) (v 1) p := by
+  rw [twistPoint_def, basicSeq_orientable, wordMap_phi_basicWordSeq_ofFn]
+
+/-- For the equation `[x, y] d = 1`, whose basic sequence has `K = 3` terms, the point `φ_{2K,p} v`
+is the member of the twist family of `(v x, v y)` with exponents `p`. For `d = [a, b]⁻¹` this is
+the equation `[x, y] = [a, b]`, a standard equation when `a` and `b` do not commute. -/
+theorem twistPoint_orientableCoeff_one_zero_ofFn {z : Fin 0 → Fin 2} {c : Fin 0 → G} {d : G}
+    (inj : (Sum.elim (Sum.elim ![(0 : Fin 2)] ![1]) z).Injective) (hc : ∀ j, c j ≠ 1)
+    (hd : d ≠ 1) :
+    twistPoint ι (orientableCoeff 1 0 one_pos ![0] ![1] z inj c hc d hd)
+        (isOrientable_orientableCoeff one_pos inj hc hd) v (List.ofFn p) =
+      boundedTwistPoint (v 0) (v 1) p := by
+  rw [twistPoint_def, basicSeq_orientableCoeff_of_eq_zero _ _ _ _ rfl,
+    wordMap_phi_basicWordSeq_ofFn]
+
+end TwistPoint
 
 /-! ### The bounded-twist system -/
 
