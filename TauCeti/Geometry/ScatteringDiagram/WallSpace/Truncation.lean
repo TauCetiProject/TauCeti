@@ -15,7 +15,9 @@ and bracket laws. Lowering the cutoff sends each wall space onto its lower-order
 image. Thus the finite-order spaces are compatible with the Lie truncation tower,
 without a freeness or flatness assumption. The quotient maps preserve the original wall spaces.
 
-The construction uses `DirectedWallSpaces.map` on the canonical quotient maps.
+Degree quotients and cutoff transitions also commute with forming `raySubmodule` and
+`wallRayLieSubalgebra`. The construction uses `DirectedWallSpaces.map` on the canonical
+quotient maps.
 
 Adapted from `Mei/Geometry/ScatteringDiagram/WallSpace/Truncation.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit

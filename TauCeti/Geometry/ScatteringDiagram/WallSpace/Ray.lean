@@ -96,7 +96,8 @@ theorem raySubmodule_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
 theorem raySubmodule_zero (w : SupportedRay d) : H.raySubmodule w 0 = ⊥ := by
   simp only [raySubmodule_def, H.zero_normal, iSup_bot]
 
-/-- A nonzero wall element at an actual ray degree has normal tangent to the generator. -/
+/-- A nonzero wall element at an actual ray degree has normal annihilating the geometric
+direction of the generator. -/
 theorem normal_apply_generator_eq_zero {w : SupportedRay d} {n : Γ} {m : Λ →+ ℤ}
     {x : L} (hn : n ∈ w.rayDegrees) (hx : x ∈ H.wall n m) (hx0 : x ≠ 0) :
     m (ρ w.generator) = 0 := by
@@ -107,7 +108,8 @@ theorem normal_apply_generator_eq_zero {w : SupportedRay d} {n : Γ} {m : Λ →
       ((m.comp ρ).map_zsmul a w.generator).symm
   exact (mul_eq_zero.mp hmul).resolve_left (ne_of_gt ha)
 
-/-- A normal not tangent to the generator has zero supported-ray wall sum. -/
+/-- A normal not annihilating the geometric direction of the generator has zero
+supported-ray wall sum. -/
 @[simp]
 theorem raySubmodule_nontangent (w : SupportedRay d) (m : Λ →+ ℤ)
     (hm : m (ρ w.generator) ≠ 0) : H.raySubmodule w m = ⊥ := by
@@ -202,7 +204,8 @@ theorem wallRayLieSubalgebra_zero (w : SupportedRay d) : H.wallRayLieSubalgebra 
   apply LieSubalgebra.toSubmodule_injective
   simp only [wallRayLieSubalgebra_toSubmodule, raySubmodule_zero, LieSubalgebra.bot_toSubmodule]
 
-/-- A normal not tangent to the generator gives the zero wall ray Lie subalgebra. -/
+/-- A normal not annihilating the geometric direction of the generator gives the zero
+wall ray Lie subalgebra. -/
 @[simp]
 theorem wallRayLieSubalgebra_nontangent (w : SupportedRay d) (m : Λ →+ ℤ)
     (hm : m (ρ w.generator) ≠ 0) : H.wallRayLieSubalgebra w m = ⊥ := by

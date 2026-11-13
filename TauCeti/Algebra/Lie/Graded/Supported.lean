@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.Graded.Truncation
+public import TauCeti.Algebra.Lie.Graded.Hom
 public import TauCeti.Algebra.DirectSum.Supported
 public import TauCeti.Algebra.Lie.Basic
 
@@ -152,29 +152,3 @@ theorem disjoint_supportedLieSubalgebra {S T : AddSubsemigroup N} (h : Disjoint 
     supportedLieSubalgebra_bot]
 
 end TauCeti
-
-namespace TauCeti.PositiveDegrees
-
-variable {N : Type} {R L : Type*} [AddCommMonoid N] [CommRing R]
-  [LieRing L] [LieAlgebra R L] [DecidableEq N]
-  (d : PositiveDegrees N) (ℒ : N → Submodule R L)
-  [GradedLieAlgebra ℒ] [IsPositiveGrading d ℒ]
-
-/-- Taking a degree quotient commutes with selecting an additive set of degrees. -/
-@[simp]
-theorem map_mkQ_supportedLieSubalgebra (S : AddSubsemigroup N) (k : ℕ) :
-    (supportedLieSubalgebra ℒ S).map (d.degreeIdeal ℒ k).mkQ =
-      supportedLieSubalgebra (d.truncatedGrading ℒ k) S := by
-  simpa only [LieIdeal.coe_mkQ, ← d.truncatedGrading_eq ℒ k] using
-    map_supportedLieSubalgebra ℒ S (d.degreeIdeal ℒ k).mkQ
-
-/-- Lowering the cutoff maps a supported Lie subalgebra onto its lower-order counterpart. -/
-@[simp]
-theorem map_truncationMap_supportedLieSubalgebra (S : AddSubsemigroup N)
-    {k l : ℕ} (h : k ≤ l) :
-    (supportedLieSubalgebra (d.truncatedGrading ℒ l) S).map (d.truncationMap ℒ h) =
-      supportedLieSubalgebra (d.truncatedGrading ℒ k) S := by
-  simpa only [d.map_truncationMap_truncatedGrading ℒ h] using
-    map_supportedLieSubalgebra (d.truncatedGrading ℒ l) S (d.truncationMap ℒ h)
-
-end TauCeti.PositiveDegrees

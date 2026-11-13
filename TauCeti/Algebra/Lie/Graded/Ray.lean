@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.Graded.Supported
+public import TauCeti.Algebra.Lie.Graded.Truncation
 public import TauCeti.Algebra.PositiveDegrees.Ray.Basic
 
 /-!

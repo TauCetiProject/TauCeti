@@ -627,7 +627,7 @@ theorem lie_mem_of_mem_iSup (A : ι → Submodule R L) (B : κ → Submodule R M
     (fun j y hy => h i j x hx y hy) (by simp)
     (fun y z hy hz => by simpa [lie_add] using K.add_mem hy hz)
 
-/-- Two submodule sums commute if every pair of their summands commutes. -/
+/-- Brackets between two submodule sums vanish if all brackets of summands vanish. -/
 theorem lie_eq_zero_of_mem_iSup (A : ι → Submodule R L) (B : κ → Submodule R M)
     (h : ∀ i j, ∀ x ∈ A i, ∀ y ∈ B j, ⁅x, y⁆ = 0)
     {x : L} {y : M} (hx : x ∈ ⨆ i, A i) (hy : y ∈ ⨆ j, B j) : ⁅x, y⁆ = 0 :=
