@@ -153,7 +153,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
   have hJ : HolderWith J α H := hH.holderWith
   -- Interpolation at scale `r` makes the supremum term absorbable too.
   have hsup (x : E) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
-    simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) (by norm_num) hH2 hr x
+    simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) hH2 hr x
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderWith_frozen_operator ha hL hJ (fun x => (hsup x).trans_eq hBc.symm) hf

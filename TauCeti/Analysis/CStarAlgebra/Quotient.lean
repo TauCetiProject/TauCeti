@@ -53,8 +53,7 @@ namespace TwoSidedIdeal.Quotient
 
 section NonUnital
 
-variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
-  (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
 
 instance instStar : Star (A ⧸ I) where
   star := Quotient.map' star fun _ _ hab => by
@@ -230,6 +229,8 @@ theorem mkStarAlgHom_surjective : Function.Surjective (mkStarAlgHom I) :=
 theorem ker_mkStarAlgHom : TwoSidedIdeal.ker (mkStarAlgHom I) = I :=
   ker_mk I
 
+variable {B : Type*} [NonUnitalNonAssocSemiring B] [Module ℂ B] [Star B]
+
 /-- Two nonunital `⋆`-homomorphisms out of `A ⧸ I` agree when their compositions with
 `mkStarAlgHom I` agree. -/
 @[ext 1100]
@@ -270,8 +271,9 @@ theorem liftStarAlgHom_surjective_of_surjective {I : TwoSidedIdeal A} [IsClosed 
     Function.Surjective (liftStarAlgHom I f hf) :=
   lift_surjective_of_surjective (f := (f : A →ₙ+* B)) hf hsurj
 
-theorem liftStarAlgHom_injective_of_ker_le {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-    {f : A →⋆ₙₐ[ℂ] B} (hf : ∀ a ∈ I, f a = 0) (hker : TwoSidedIdeal.ker f ≤ I) :
+theorem liftStarAlgHom_injective_of_ker_le {B : Type*} [NonUnitalRing B] [Module ℂ B]
+    [Star B] {I : TwoSidedIdeal A} [IsClosed (I : Set A)] {f : A →⋆ₙₐ[ℂ] B}
+    (hf : ∀ a ∈ I, f a = 0) (hker : TwoSidedIdeal.ker f ≤ I) :
     Function.Injective (liftStarAlgHom I f hf) :=
   lift_injective_of_ker_le (f := (f : A →ₙ+* B)) hf hker
 
@@ -325,8 +327,7 @@ end NonUnital
 
 section Unital
 
-variable {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
-  (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
+variable {A : Type*} [CStarAlgebra A] (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
 
 /-- The quotient of a unital C⋆-algebra by a closed two-sided ideal is a unital C⋆-algebra. -/
 noncomputable instance cstarAlgebra : CStarAlgebra (A ⧸ I) where
@@ -368,6 +369,8 @@ theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
 
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
+
+variable {B : Type*} [Semiring B] [Algebra ℂ B] [Star B]
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/

@@ -458,37 +458,35 @@ private theorem stepTime_zero {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(
   have hle : (τ₁ x : ℝ) ≤ τ₂ x := hx
   simp [hle]
 
-private def stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) : C(I × X, I) :=
+private def stepOffset {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) : C(I × X, I) :=
   ⟨fun z ↦ ⟨max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) - (τ₁ z.2 : ℝ),
       ⟨sub_nonneg.2 (le_max_left _ _), by
-        have h1 : max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) ≤ τ₂ z.2 :=
-          max_le (hτ z.2) (min_le_left _ _)
-        linarith [(τ₁ z.2).2.1, (τ₂ z.2).2.2]⟩⟩,
+        have h1 : max (τ₁ z.2 : ℝ) (min (τ₂ z.2 : ℝ) (z.1 : ℝ)) ≤ 1 :=
+          max_le (τ₁ z.2).2.2 ((min_le_left _ _).trans (τ₂ z.2).2.2)
+        linarith [(τ₁ z.2).2.1]⟩⟩,
     by fun_prop⟩
 
 @[simp]
-private theorem coe_stepOffset {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) (t : I) (x : X) :
-    (stepOffset hτ (t, x) : ℝ) = max (τ₁ x : ℝ) (min (τ₂ x : ℝ) (t : ℝ)) - (τ₁ x : ℝ) :=
+private theorem coe_stepOffset {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) (t : I) (x : X) :
+    (stepOffset τ₁ τ₂ (t, x) : ℝ) = max (τ₁ x : ℝ) (min (τ₂ x : ℝ) (t : ℝ)) - (τ₁ x : ℝ) :=
   rfl
 
 private theorem stepOffset_eq_zero_of_le {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : t ≤ τ₁ x) :
-    stepOffset hτ (t, x) = 0 := by
+    {t : I} {x : X} (ht : t ≤ τ₁ x) :
+    stepOffset τ₁ τ₂ (t, x) = 0 := by
   ext
   simp [max_eq_left ((min_le_right (τ₂ x : ℝ) (t : ℝ)).trans ht)]
 
 private theorem stepOffset_eq_zero_of_eq {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
-    (hτ : ∀ x, τ₁ x ≤ τ₂ x) (t : I) {x : X} (heq : τ₁ x = τ₂ x) :
-    stepOffset hτ (t, x) = 0 := by
+    (t : I) {x : X} (heq : τ₁ x = τ₂ x) :
+    stepOffset τ₁ τ₂ (t, x) = 0 := by
   ext
   have hmin : min (τ₂ x : ℝ) (t : ℝ) ≤ τ₁ x := heq ▸ min_le_left _ _
   simp [max_eq_left hmin]
 
 private theorem stepTime_stepOffset_of_ge {X : Type*} [TopologicalSpace X] {τ₁ τ₂ : C(X, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) {t : I} {x : X} (ht : τ₁ x ≤ t) :
-    stepTime τ₁ τ₂ (stepOffset hτ (t, x), x) = min t (τ₂ x) := by
+    stepTime τ₁ τ₂ (stepOffset τ₁ τ₂ (t, x), x) = min t (τ₂ x) := by
   ext
   have hmax : max (τ₁ x : ℝ) (min (τ₂ x : ℝ) (t : ℝ)) = min (τ₂ x : ℝ) (t : ℝ) :=
     max_eq_right (le_min (hτ x) ht)
@@ -513,17 +511,18 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
     (fun x ↦ by simp only [KO, gO, ContinuousMap.coe_mk, stepTime_zero (hτ _), L.proj_eq, min_self])
   let onO : C(I × O, E) :=
     ⟨fun z ↦ if z.1 ≤ τ₁ z.2.1 then L.map (z.1, z.2.1)
-        else GO (stepOffset hτ (z.1, z.2.1), z.2),
+        else GO (stepOffset τ₁ τ₂ (z.1, z.2.1), z.2),
       Continuous.if_le (by fun_prop) (by fun_prop) continuous_fst (by fun_prop) fun z hz ↦ by
-        rw [stepOffset_eq_zero_of_le hτ hz.le, hGO_zero z.2, hz]; rfl⟩
+        rw [stepOffset_eq_zero_of_le hz.le, hGO_zero z.2, hz]; rfl⟩
   have honO_apply (t : I) (x : O) :
-      onO (t, x) = if t ≤ τ₁ x.1 then L.map (t, x.1) else GO (stepOffset hτ (t, x.1), x) := rfl
+      onO (t, x) = if t ≤ τ₁ x.1 then L.map (t, x.1) else GO (stepOffset τ₁ τ₂ (t, x.1), x) :=
+    rfl
   have honO_eq_of_eq : ∀ (t : I) (x : O), τ₁ x.1 = τ₂ x.1 → onO (t, x) = L.map (t, x.1) := by
     intro t x heq
     rw [honO_apply]
     split_ifs with ht
     · rfl
-    · rw [stepOffset_eq_zero_of_eq hτ t heq, hGO_zero x]
+    · rw [stepOffset_eq_zero_of_eq t heq, hGO_zero x]
       exact (L.const_of_ge t x.1 (le_of_not_ge ht)).symm
   let LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O) :=
     { map := onO

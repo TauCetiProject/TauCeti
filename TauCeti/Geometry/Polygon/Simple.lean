@@ -813,7 +813,7 @@ simple over `R`. The number of vertices is part of the data, so that one type co
 polygons with any number of vertices. A simple polygon in `ℝ³` is the polygonal presentation of an
 oriented knot, realized as a topological embedding of the circle by `SimplePolygon.realize`. -/
 structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrder R]
-    [ZeroLEOneClass R] [AddCommGroup V] [Module R V] [AddTorsor V P] where
+    [AddCommGroup V] [Module R V] [AddTorsor V P] where
   /-- The number of vertices. -/
   numVertices : ℕ
   [neZero : NeZero numVertices]
@@ -828,8 +828,7 @@ attribute [instance] neZero
 
 section Operations
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V]
-  [Module R V] [AddTorsor V P]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- The cyclic relabelling of a simple polygon, `Polygon.rotate`. -/
 @[expose] def rotate (p : SimplePolygon R P) : SimplePolygon R P where
@@ -903,8 +902,8 @@ end TauCeti
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
-  [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [Nontrivial R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P]
 
 /-- A triangle, as a simple polygon with three vertices. -/
 @[expose] def toSimplePolygon (t : Affine.Triangle R P) : TauCeti.SimplePolygon R P where

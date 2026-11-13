@@ -605,16 +605,17 @@ private def isColimitSupportedHδZero (hT : T.ShortExact) [TopCat.Presheaf.IsFla
   have := (exact_supportedHδZeroComplex S hT W).2
   (exact_supportedHδZeroComplex S hT W).1.gIsCokernel
 
-/-- If `F₂` and `Γ_S(F₁)` are flasque, the sections over `W` of the cokernel sheaf of
-`Γ_S(F₂) ⟶ Γ_S(F₃)` are the cokernel of `Γ_S(W, F₂) ⟶ Γ_S(W, F₃)`. -/
-private def isColimitCokernelπApp (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj]
-    [TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj] (W : Opens X) :
+/-- If `T` is exact with `T.f` mono and `Γ_S(F₁)` and `Γ_S(F₂)` are flasque, the sections over
+`W` of the cokernel sheaf of `Γ_S(F₂) ⟶ Γ_S(F₃)` are the cokernel of
+`Γ_S(W, F₂) ⟶ Γ_S(W, F₃)`. -/
+private def isColimitCokernelπApp (hT : T.Exact) [Mono T.f]
+    [TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj]
+    [TopCat.Presheaf.IsFlasque (T.X₂.supportedSectionsSheaf S).obj] (W : Opens X) :
     IsColimit (CokernelCofork.ofπ (f := (T.map (supportedSectionsFunctor S)).g.hom.app (op W))
       ((cokernel.π (T.map (supportedSectionsFunctor S)).g).hom.app (op W))
       (by simp [← NatTrans.comp_app, ← ObjectProperty.FullSubcategory.comp_hom])) :=
-  have := hT.mono_f
   have : Mono (T.map (supportedSectionsFunctor S)).f := mono_supportedSectionsFunctor_map S T.f
-  have hT' := exact_map_supportedSectionsFunctor S hT.exact
+  have hT' := exact_map_supportedSectionsFunctor S hT
   have := TopCat.Sheaf.IsFlasque.epi_cokernel_π_app hT' W
   (TopCat.Sheaf.IsFlasque.exact_cokernel_π_app hT' W).gIsCokernel
 
@@ -625,7 +626,7 @@ private def supportedHOneIsoCokernel (hT : T.ShortExact) [TopCat.Presheaf.IsFlas
     (T.X₁.supportedHPresheaf S 1).obj (op W) ≅
       (cokernel (T.map (supportedSectionsFunctor S)).g).obj.obj (op W) :=
   IsColimit.coconePointUniqueUpToIso (isColimitSupportedHδZero S hT W)
-    (isColimitCokernelπApp S hT W)
+    (have := hT.mono_f; isColimitCokernelπApp S hT.exact W)
 
 @[reassoc]
 private lemma supportedHPresheafδZero_supportedHOneIsoCokernel (hT : T.ShortExact)
@@ -634,7 +635,7 @@ private lemma supportedHPresheafδZero_supportedHOneIsoCokernel (hT : T.ShortExa
     (supportedHPresheafδZero S hT).app (op W) ≫ (supportedHOneIsoCokernel S hT W).hom =
       (cokernel.π (T.map (supportedSectionsFunctor S)).g).hom.app (op W) :=
   IsColimit.comp_coconePointUniqueUpToIso_hom (isColimitSupportedHδZero S hT W)
-    (isColimitCokernelπApp S hT W) WalkingParallelPair.one
+    (have := hT.mono_f; isColimitCokernelπApp S hT.exact W) WalkingParallelPair.one
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` and `Γ_S(F₁)` flasque, the presheaf
 `W ↦ H_S¹(W, F₁)` is isomorphic to the cokernel of `Γ_S(F₂) ⟶ Γ_S(F₃)` in sheaves. -/
