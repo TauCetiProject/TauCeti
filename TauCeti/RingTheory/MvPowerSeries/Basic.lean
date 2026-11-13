@@ -17,12 +17,14 @@ through the coercion to multivariate power series. It lets coefficient computati
 products use the polynomial API, for example when substituting polynomials into power series.
 The coefficient semiring need only be commutative; no norm or topology is required.
 
-`MvPowerSeries.X_ne_zero` records that every coordinate variable `X s` is nonzero over a nontrivial
-semiring, `MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of
-`(X + Y) ^ n` in `R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any
-semiring), and `MvPowerSeries.mem_support` together with `support_zero`, `support_add`,
-`support_smul_subset`, `support_neg`, and `support_sub` bridges `Function.support` with
-`MvPowerSeries.coeff` and the algebraic operations on `MvPowerSeries`.
+`MvPowerSeries.isScalarTower_right` records that coefficientwise left scalar multiplication on
+`MvPowerSeries σ A` forms a scalar tower with power-series multiplication, `MvPowerSeries.X_ne_zero`
+records that every coordinate variable `X s` is nonzero over a nontrivial semiring,
+`MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of `(X + Y) ^ n` in
+`R⟦X, Y⟧` (the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring), and
+`MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
+`support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
+algebraic operations on `MvPowerSeries`.
 -/
 
 public section
@@ -44,6 +46,15 @@ end MvPolynomial
 namespace MvPowerSeries
 
 variable {R : Type*} [Semiring R]
+
+/-- Left scalar multiplication by `R` on `MvPowerSeries σ A` forms a scalar tower with
+multiplication in `MvPowerSeries σ A`. -/
+instance isScalarTower_right {σ A : Type*} [Semiring A] [Module R A] [IsScalarTower R A A] :
+    IsScalarTower R (MvPowerSeries σ A) (MvPowerSeries σ A) where
+  smul_assoc r f g := by
+    classical
+    ext n
+    simp [(coeff _).map_smul_of_tower r, coeff_mul, Finset.smul_sum, smul_mul_assoc]
 
 /-- Over a nontrivial semiring, every coordinate indeterminate `X s` is nonzero. -/
 @[simp]

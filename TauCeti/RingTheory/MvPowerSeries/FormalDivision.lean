@@ -533,7 +533,9 @@ theorem complementSubmodule_top {R : Type*} [Semiring R] :
   exact ⟨ord.eq_zero_of_mem_of_forall_mem_support_notMem_initialDiagram trivial,
     fun h ↦ by simp [h]⟩
 
-theorem disjoint_restrictScalars_complementSubmodule {R : Type*} [CommSemiring R]
+/-- Any left ideal `I` of `MvPowerSeries σ R` (restricted to `R`-scalars) is disjoint from
+`ord.complementSubmodule I`. -/
+theorem disjoint_restrictScalars_complementSubmodule {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) :
     Disjoint (I.restrictScalars R) (ord.complementSubmodule I) := by
   rw [Submodule.disjoint_def]
