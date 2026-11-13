@@ -32,7 +32,7 @@ theorem time_lipschitz_of_interior_tendsto
     {f : ι → ℝ → Y} {g : ℝ → Y} {a b L : ℝ} (hab : a < b)
     (hg : ContinuousOn g (Icc a b))
     (hconv : ∀ t ∈ Ioo a b, Tendsto (fun k ↦ f k t) l (𝓝 (g t)))
-    (hL : ∀ᶠ k in l, ∀ s ∈ Icc a b, ∀ t ∈ Icc a b,
+    (hL : ∀ᶠ k in l, ∀ s ∈ Ioo a b, ∀ t ∈ Ioo a b,
       dist (f k s) (f k t) ≤ L * |s - t|) :
     ∀ s ∈ Icc a b, ∀ t ∈ Icc a b, dist (g s) (g t) ≤ L * |s - t| := by
   have hdist : ContinuousOn (fun p : ℝ × ℝ ↦ dist (g p.1) (g p.2))
@@ -53,8 +53,7 @@ theorem time_lipschitz_of_interior_tendsto
     hbound
   intro p hp
   apply le_of_tendsto ((hconv p.1 hp.1).dist (hconv p.2 hp.2))
-  exact hL.mono (fun k hk ↦ hk p.1 ⟨hp.1.1.le, hp.1.2.le⟩
-    p.2 ⟨hp.2.1.le, hp.2.2.le⟩)
+  exact hL.mono (fun k hk ↦ hk p.1 hp.1 p.2 hp.2)
 
 /-- A time-Lipschitz bound controls displacement under a backward clamp near `b`. -/
 theorem dist_apply_min_sub_le {q : ℝ → Y} {a b L δ t : ℝ}

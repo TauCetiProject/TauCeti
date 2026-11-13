@@ -73,7 +73,8 @@ theorem tendstoUniformlyOn_Iic_of_time_lipschitz
     · intro t ht
       exact (hconv {(t, x)} isCompact_singleton
         (singleton_subset_iff.mpr ⟨ht.2, hVU hx⟩)).tendsto_at (mem_singleton _)
-    · exact hLip.mono (fun k hk ↦ hk x hx)
+    · exact hLip.mono (fun k hk s hs t ht ↦
+        hk x hx s (Ioo_subset_Icc_self hs) t (Ioo_subset_Icc_self ht))
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
   let δ : ℝ := min ((b - a) / 2) (ε / (4 * (L + 1)))
