@@ -35,7 +35,7 @@ factorization in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Tor
 The generation theorems themselves, `TauCeti.GLSymplecticFin.eq_top_of_root_subgroups` and
 `TauCeti.GLSymplecticFin.eq_top_of_adjacent_of_long`, are in
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration`, which also shows
-that the long root subgroups contain the diagonal Levi subgroup.
+that any subgroup containing the opposite long-root subgroups contains the diagonal Levi subgroup.
 
 ## References
 
