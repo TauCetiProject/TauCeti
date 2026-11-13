@@ -112,7 +112,7 @@ theorem _root_.MeasureTheory.UnifIntegrable.dist_of_memLp_dist {ι : Type*} {T :
     UnifIntegrable (fun i x ↦ dist (T i x) (S' x)) p μ :=
   (h.add (unifIntegrable_const hp hp' hSS')).ae_mono
     (fun i ↦ (hT i).dist hS') fun i ↦ ae_of_all _ fun x ↦
-      enorm_le_iff_norm_le.2 (norm_dist_le_norm_dist_add_dist (T i x) (S x) (S' x))
+      eNorm_le_iff_norm_le.2 (norm_dist_le_norm_dist_add_dist (T i x) (S x) (S' x))
 
 /-- Uniform integrability in `Lᵖ(μ)` with a uniform `Lᵖ` bound of the distances `dist (T i ·) (S ·)`
 from almost-everywhere strongly measurable maps `T i` to a reference map `S` passes to any
@@ -123,11 +123,11 @@ theorem _root_.MeasureTheory.UniformIntegrable.dist_of_memLp_dist {ι : Type*} {
     (hp' : p ≠ ∞) (hT : ∀ i, AEStronglyMeasurable (T i) μ) (hS' : AEStronglyMeasurable S' μ)
     (hSS' : MemLp (fun x ↦ dist (S x) (S' x)) p μ) :
     UniformIntegrable (fun i x ↦ dist (T i x) (S' x)) p μ := by
-  obtain ⟨hui, C, hC⟩ := h
-  refine ⟨hui.dist_of_memLp_dist hp hp' hT hS' hSS',
-    C + (eLpNorm (fun x ↦ dist (S x) (S' x)) p μ).toNNReal, fun i ↦ ?_⟩
-  rw [ENNReal.coe_add, ENNReal.coe_toNNReal hSS'.eLpNorm_ne_top]
-  exact (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp (hT i) hS').trans (add_le_add_left (hC i) _)
+  refine ⟨h.unifIntegrable.dist_of_memLp_dist hp hp' hT hS' hSS', ?_⟩
+  refine lt_of_le_of_lt (iSup_le fun i ↦
+    (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp (hT i) hS').trans
+      (add_le_add (le_iSup (fun j ↦ eLpNorm (fun x ↦ dist (T j x) (S x)) p μ) i) le_rfl)) ?_
+  exact ENNReal.add_lt_top.2 ⟨h.iSup_eLpNorm_lt, hSS'.eLpNorm_lt_top⟩
 
 end MemLp
 
@@ -219,7 +219,8 @@ theorem tendsto_eLpNorm_dist_iff_tendstoInMeasure_and_uniformIntegrable (hp : 1 
   -- the distances to the reference map `T₀` are uniformly integrable with the bound `C`, and the
   -- reference map transports to the basepoint `y₀`
   have hui' : UniformIntegrable (fun n x ↦ dist (T n x) (T₀ x)) p μ :=
-    ⟨hui.dist_of_memLp_dist hp hp' hT hT₀ (by simpa only [dist_comm] using hT₀p), C, hC⟩
+    ⟨hui.dist_of_memLp_dist hp hp' hT hT₀ (by simpa only [dist_comm] using hT₀p),
+      (iSup_le hC).trans_lt ENNReal.coe_lt_top⟩
   exact ⟨hTm, hui'.dist_of_memLp_dist hp hp' hT aestronglyMeasurable_const hT₀p⟩
 
 end Vitali

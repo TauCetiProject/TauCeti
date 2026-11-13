@@ -179,7 +179,7 @@ theorem localLipschitzConstant_const_smul {𝕜 : Type*} [SeminormedRing 𝕜] [
     localLipschitzConstant (c • f) x = ‖c‖ₑ * localLipschitzConstant f x := by
   simp only [localLipschitzConstant_def, Pi.smul_apply, edist_smul₀, ENNReal.smul_def, smul_eq_mul,
     mul_div_assoc]
-  rw [enorm_eq_nnnorm, ENNReal.limsup_const_mul_of_ne_top ENNReal.coe_ne_top]
+  rw [eNorm_eq_nnNorm, ENNReal.limsup_const_mul_of_ne_top ENNReal.coe_ne_top]
 
 end Normed
 

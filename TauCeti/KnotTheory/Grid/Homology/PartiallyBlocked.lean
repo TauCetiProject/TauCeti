@@ -344,7 +344,7 @@ categorical simply blocked complex. -/
 private noncomputable def kerToSimplyBlockedCycles {G : GridDiagram n} (hG : G.IsKnot) (i : Fin n) :
     LinearMap.ker (G.dHat₂ i) →+ hG.simplyBlockedCycles F i where
   toFun z := ⟨(G.simplyBlockedChainEquiv F i).symm z, by
-    rw [IsKnot.mem_simplyBlockedCycles, LinearEquiv.apply_symm_apply]
+    rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
     exact z.2⟩
   map_zero' := Subtype.ext (map_zero (G.simplyBlockedChainEquiv F i).symm)
   map_add' z z' := Subtype.ext
@@ -389,7 +389,7 @@ private theorem simplyBlockedClass₂_surjective {G : GridDiagram n} (hG : G.IsK
   obtain ⟨c, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective F i y
   refine ⟨⟨G.simplyBlockedChainEquiv F i c, ?_⟩, ?_⟩
   · rw [LinearMap.mem_ker]
-    exact (IsKnot.mem_simplyBlockedCycles F hG i c).mp c.2
+    exact (G.mem_ker_simplyBlockedComplex_d_iff F i c).mp c.2
   · rw [simplyBlockedClass₂_apply]
     congr 1
     ext1
@@ -399,7 +399,8 @@ private theorem boundariesInKer_eq_ker_simplyBlockedClass₂ {G : GridDiagram n}
     (i : Fin n) : (G.dHat₂ i).boundariesInKer = LinearMap.ker (simplyBlockedClass₂ hG i) := by
   ext z
   rw [LinearMap.mem_ker, simplyBlockedClass₂_eq_zero_iff,
-    oneVariableSpecializationHomologyClass_eq_zero_iff, hG.mem_simplyBlockedBoundaries_iff F i,
+    oneVariableSpecializationHomologyClass_eq_zero_iff,
+    G.mem_range_moduleCatToCycles_simplyBlockedComplex_iff F i,
     coe_kerToSimplyBlockedCycles,
     LinearEquiv.apply_symm_apply, LinearMap.mem_boundariesInKer]
   -- The range of a restriction of scalars is the range of the original map.
@@ -438,7 +439,7 @@ theorem IsKnot.partiallyBlockedHomologySingletonEquiv_mk {G : GridDiagram n} (hG
             ⟨Submodule.Quotient.mk c, (Submodule.mk_mem_ker_mapQ_iff c).mpr hc⟩) =
       G.oneVariableSpecializationHomologyClass F i
         ⟨(G.simplyBlockedChainEquiv F i).symm (simplyBlockedSpecialization F i c), by
-          rw [IsKnot.mem_simplyBlockedCycles F hG i, LinearEquiv.apply_symm_apply,
+          rw [G.mem_ker_simplyBlockedComplex_d_iff F i, LinearEquiv.apply_symm_apply,
             ← simplyBlockedSpecialization_unblockedDifferential,
             simplyBlockedSpecialization_eq_zero_iff]
           exact hc⟩ := by

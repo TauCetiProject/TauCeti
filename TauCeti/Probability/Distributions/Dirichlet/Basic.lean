@@ -145,6 +145,11 @@ theorem dirichletMeasure_eq_zero_of_invalid {a : ι → ℝ}
     (ha : ¬(Nonempty ι ∧ ∀ i, 0 < a i)) : dirichletMeasure a = 0 := by
   rw [dirichletMeasure, ite_eq_right ha]
 
+/-- On an empty coordinate type, the Dirichlet measure is zero. -/
+@[simp]
+theorem dirichletMeasure_of_isEmpty [IsEmpty ι] (a : ι → ℝ) : dirichletMeasure a = 0 :=
+  dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.mpr ‹_›) h.1
+
 /-- On a one-element index type the Dirichlet law is the Dirac mass at the only point of the
 standard simplex. -/
 theorem dirichletMeasure_eq_dirac_of_card_eq_one {a : ι → ℝ} (ha : ∀ i, 0 < a i)

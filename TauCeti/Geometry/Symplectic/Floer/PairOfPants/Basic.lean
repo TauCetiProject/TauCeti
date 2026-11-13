@@ -28,8 +28,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
-* `TauCeti.Floer.pairOfPantsPerturbation_add`: the perturbation is additive in the end
-  Hamiltonians.
+* `TauCeti.Floer.pairOfPantsPerturbation_add`, `TauCeti.Floer.pairOfPantsPerturbation_smul`: the
+  perturbation is linear in the end Hamiltonians.
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
   not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
@@ -89,18 +89,18 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
   rw [pairOfPantsPerturbation]
 
 /-- The pair-of-pants perturbation is additive in the end Hamiltonians. -/
-theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (fun q t y ↦ H q t y + G q t y) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
-  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H + G) = pairOfPantsPerturbation H + pairOfPantsPerturbation G := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- **Normalizing the end Hamiltonians.** Adding functions `c_q` of time to the end Hamiltonians
 adds the pair-of-pants perturbation of the target-independent Hamiltonians `c_q`. -/
 theorem pairOfPantsPerturbation_add_const (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ)
     (w : ℂ) (x : M) :
     pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x :=
-  pairOfPantsPerturbation_add H (fun q t _ ↦ c q t) w x
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- The pair-of-pants perturbation of target-independent Hamiltonians does not depend on the
 target point. -/
@@ -108,6 +108,13 @@ theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w :
     pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x =
       pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w y := by
   simp only [pairOfPantsPerturbation_def]
+
+/-- The pair-of-pants perturbation is homogeneous in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (c • H) = c • pairOfPantsPerturbation H := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.smul_apply, smul_eq_mul, Finset.smul_sum, smul_smul,
+    mul_left_comm c]
 
 variable {H : Puncture → ℝ → M → ℝ}
 
@@ -156,7 +163,6 @@ theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
     pairOfPantsPerturbation H q.endCenter x = 0 := by
   refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
   have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
-  have hπ := Real.pi_pos
   cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the

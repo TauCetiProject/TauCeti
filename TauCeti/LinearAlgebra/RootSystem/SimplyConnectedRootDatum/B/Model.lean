@@ -698,7 +698,7 @@ lemma signedWeight_reflMap (h : IsPair p q) (u : Fin (2 * n)) :
 private lemma signedCoweight_reflMap_of_axis_ne (hax : axis p ≠ axis q) (u : Fin (2 * n)) :
     signedCoweight (reflMap p q u) =
       signedCoweight u - (rootOfPair p q ⬝ᵥ signedCoweight u) • corootOfPair p q := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := long_ne hax
+  obtain ⟨h1, h2, h3, h4, h5, _, h7, h8⟩ := long_ne hax
   have hsum := two_smul_corootOfPair p q
   rw [rootOfPair_of_ne h1, add_dotProduct, signedWeight_dotProduct_signedCoweight,
     signedWeight_dotProduct_signedCoweight]
@@ -764,7 +764,7 @@ lemma rootIdx_dotProduct_signedCoweight_eq_two_iff (z : Fin (2 * n) × Fin n) (m
       split_ifs at hc; omega
     · rintro rfl
       rw [ite_eq_left rfl]
-  · obtain ⟨h1, h2, h3, h4, -⟩ := long_ne ((isPair_shift z.1 z.2).resolve_left hne)
+  · obtain ⟨_, h2, h3, h4, -⟩ := long_ne ((isPair_shift z.1 z.2).resolve_left hne)
     rw [rootIdx, rootOfPair_of_ne hne, add_dotProduct, signedWeight_dotProduct_signedCoweight,
       signedWeight_dotProduct_signedCoweight]
     constructor

@@ -50,6 +50,9 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph`: the shift sends the class of
+  a family of loops `γ` to the class of the cube `GenLoop.genLoopLoopHomeomorph x _ γ`, whose last
+  coordinate is the loop parameter.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space. It sends the
   class of a double loop `β` to the class of its square `GenLoop.fromDoubleLoop β`
@@ -421,6 +424,21 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
 
+/-- `pathLoopSpaceMulEquiv` sends the class of a family of loops `γ` to the class of the cube
+`GenLoop.genLoopLoopHomeomorph x (m + 1) γ`, whose last coordinate is the loop parameter. -/
+theorem pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph (m : ℕ)
+    (γ : Ω^ (Fin (m + 1)) (Ω X x) (Path.refl x)) :
+    pathLoopSpaceMulEquiv m (⟦γ⟧ : π_ (m + 1) (Ω X x) (Path.refl x)) =
+      ⟦GenLoop.genLoopLoopHomeomorph x (m + 1) γ⟧ := by
+  rw [pathLoopSpaceMulEquiv_mk]
+  congr 1
+  ext z
+  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
+    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, GenLoop.genLoopLoopHomeomorph_apply]
+  -- `Fin.castSucc` is `Fin.castAdd 1`, and `Fin.natAdd` sends the point of `Fin 1` to `Fin.last`
+  rw [Fin.castSucc, Subsingleton.elim (default : Fin 1) (Fin.last 0), Fin.natAdd_last]
+
 /-- **The fundamental group of the loop space is the second homotopy group**:
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
 `pi1MulEquivFundamentalGroup`. A loop of loops `s ↦ γ_s` at the constant loop is the square
@@ -461,16 +479,13 @@ theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.re
   -- representatives
   have h : pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk β)) =
       ⟦(genLoopEquivOfUnique (Fin 1)).symm β⟧ := rfl
-  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h, pathLoopSpaceMulEquiv_mk]
-  congr 1
-  ext z
-  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply,
-    GenLoop.map_apply, ContinuousMap.coe_mk, GenLoop.homeomorphOfUnique_symm_apply,
-    GenLoop.genLoopEquivOfUnique_symm_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right]
-  rw [GenLoop.fromDoubleLoop_apply]
-  -- `finSumFinEquiv` sends `inl 0` and `inr 0` to `0` and `1`
-  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.reduceCastAdd,
-    Fin.natAdd_eq_addNat, Fin.addNat_one, Fin.succ_zero_eq_one]
+  rw [fundamentalGroupLoopSpaceMulEquiv_apply, h,
+    pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
+  refine congrArg _ (GenLoop.ext _ _ fun z => ?_)
+  rw [GenLoop.fromDoubleLoop_apply, GenLoop.genLoopLoopHomeomorph_apply,
+    GenLoop.genLoopEquivOfUnique_symm_apply]
+  -- the cube coordinates `Fin.castSucc default` and `Fin.last 1` are `0` and `1`
+  simp only [Nat.reduceAdd, Fin.default_eq_zero, Fin.isValue, Fin.castSucc_zero, Fin.reduceLast]
 
 section Natural
 

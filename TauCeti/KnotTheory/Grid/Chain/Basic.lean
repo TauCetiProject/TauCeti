@@ -12,9 +12,9 @@ public import TauCeti.KnotTheory.Grid.BlockedRectangle
 /-!
 # The fully blocked grid chain module
 
-This file packages the first algebraic object in the grid-combinatorial lane: the free
-`ZMod 2`-module on grid states, together with the linear map whose matrix coefficient from
-`x` to `y` is the parity of fully blocked empty rectangles from `x` to `y`.
+This file packages the first algebraic object of grid homology: the free `ZMod 2`-module on grid
+states, together with the linear map whose matrix coefficient from `x` to `y` is the parity of
+fully blocked empty rectangles from `x` to `y`.
 
 The square-zero theorem is deliberately not asserted here. This module only supplies the
 concrete finite free module and differential map to which the later rectangle-pairing proof

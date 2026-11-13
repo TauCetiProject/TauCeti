@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
@@ -52,6 +53,12 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
 `0 ⟶ E(-D) ⟶ E ⟶ E|_D ⟶ 0` and the triviality of `E|_D` on the finite scheme `D` give
 `χ(E(-D)) = χ(E) - r · dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`).
 
+Pullback along a finite flat morphism `f : X ⟶ Y` of constant rank `d` onto a proper integral
+curve multiplies the degree of a vector bundle of rank one by `d`
+(`LineBundleClass.eulerDegree_pullback_of_finrank_eq`), and when `X` is integral and `f` dominant,
+`d` is the degree `[K(X) : f^* K(Y)]` of the extension of function fields (the rank-one case of
+Stacks, Lemma 0AYZ).
+
 ## Main declarations
 
 * `FiniteLocallyFreeSheaf.FixedRank.vectorBundleDegree k E`: the degree
@@ -86,12 +93,17 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
 * `FixedRank.vectorBundleDegree_twist`, `FixedRank.vectorBundleDegree_twist_of_isEffective` and
   `FixedRank.finiteDimensional_cohomology_twist`: on a proper integral curve,
   `deg (E ⊗ L) = deg E + r · deg L` for every line bundle `L`, `deg E(D) = deg E + r · deg D` for
-  an effective Cartier divisor `D`, and twisting preserves finiteness of cohomology.
+  an effective Cartier divisor `D`, and twisting preserves finiteness of cohomology;
+* `FixedRank.vectorBundleDegree_pullback_of_finrank_eq` and
+  `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul`: for a vector bundle `E` of
+  rank one on a proper integral curve `Y` and a finite flat morphism `f : X ⟶ Y` of constant rank
+  `d`, `deg f^* E = d · deg E`, with `d = [K(X) : f^* K(Y)]` when `X` is integral and `f` is
+  dominant.
 
 ## References
 
 * [The Stacks Project, Section 33.44, Degrees on curves](https://stacks.math.columbia.edu/tag/0AYR):
-  Definition 0AYR and Lemmas 0AYS, 0AYX, 0AYY.
+  Definition 0AYR and Lemmas 0AYS, 0AYX, 0AYY, 0AYZ.
 * [The Stacks Project, Lemma 0B59](https://stacks.math.columbia.edu/tag/0B59): invariance of the
   degree under extension of the ground field.
 * M. Maruyama, *Elementary transformations in the theory of algebraic vector bundles*, in
@@ -348,12 +360,12 @@ variable {k} {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec
 /-- **The degree is invariant under extension of the ground field.** For a field extension
 `K / k`, presented as a pullback square `Y = X ×_k K` with projection `g : Y ⟶ X`, the pullback
 `g^* E` of a vector bundle `E` of constant rank `r` has the same degree over `K` as `E` has over
-`k`. The scheme `X` need only be quasi-compact with affine diagonal, for instance proper over `k`;
+`k`. The scheme `X` need only be quasi-compact and quasi-separated, for instance proper over `k`;
 it need not be a curve, irreducible or geometrically connected. -/
 theorem vectorBundleDegree_baseChange
     (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
       (Spec.map (CommRingCat.ofHom (algebraMap k K))))
-    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))] (E : FixedRank X r) :
+    [CompactSpace X] [QuasiSeparatedSpace X] (E : FixedRank X r) :
     vectorBundleDegree K ((pullback g).obj E) = vectorBundleDegree k E := by
   -- The pullback of the structure sheaf `𝒪_X` is the structure sheaf `𝒪_Y`.
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
@@ -365,6 +377,46 @@ theorem vectorBundleDegree_baseChange
     eulerCharBelow_pullback_eq_of_isPullback H, eulerCharBelow_pullback_eq_of_isPullback H]
 
 end BaseChange
+
+section Pullback
+
+variable {Y : Scheme.{u}} [Y.Over (Spec (.of k))] {f : X ⟶ Y} [f.IsOver (Spec (.of k))]
+  [IsFinite f] [Flat f]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+  [IsIntegral Y] [IsProper (Y ↘ Spec (.of k))] [RelativeDimensionLE 1 (Y ↘ Spec (.of k))]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 0)]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1)]
+
+/-- **The degree of a rank-one bundle under finite flat pullback.** Let `f : X ⟶ Y` be a finite
+flat morphism of schemes over `k` of constant rank `d`, where `Y` is an integral scheme proper over
+`k` with fibres of dimension at most one, and the structure sheaves of `X` and `Y` have
+finite-dimensional `H⁰` and `H¹`. Then `deg f^* E = d · deg E` for every vector bundle `E` of rank
+one on `Y`. -/
+theorem vectorBundleDegree_pullback_of_finrank_eq {d : ℕ} (hf : ∀ y, f.finrank y = d)
+    (E : FixedRank Y 1) :
+    vectorBundleDegree k ((pullback f).obj E) = d * vectorBundleDegree k E := by
+  -- Both line bundles have underlying sheaf `f^* E`.
+  have hpull : LineBundleClass.mk ((toInvertible X).obj ((pullback f).obj E)) =
+      LineBundleClass.pullback f (LineBundleClass.mk ((toInvertible Y).obj E)) := by
+    rw [LineBundleClass.pullback_mk]
+    exact LineBundleClass.mk_eq_mk_iff.mpr ⟨eqToIso (by simp only [toInvertible_obj_obj,
+      pullback_obj_obj, FiniteLocallyFreeSheaf.pullback_obj_obj, InvertibleSheaf.pullback_obj_obj])⟩
+  simpa only [vectorBundleDegree_eq_eulerDegree_toInvertible, ← LineBundleClass.eulerDegree_mk,
+    hpull] using LineBundleClass.eulerDegree_pullback_of_finrank_eq k f hf _
+
+/-- **The degree of a rank-one bundle under pullback along a finite flat dominant morphism.** Let
+`f : X ⟶ Y` be a finite flat dominant morphism of integral schemes over `k`, where `Y` is proper
+over `k` with fibres of dimension at most one, and the structure sheaves of `X` and `Y` have
+finite-dimensional `H⁰` and `H¹`. Then `deg f^* E = [K(X) : f^* K(Y)] · deg E` for every vector
+bundle `E` of rank one on `Y`. -/
+theorem vectorBundleDegree_pullback_eq_finrank_functionField_mul [IsIntegral X] [IsDominant f]
+    (E : FixedRank Y 1) :
+    vectorBundleDegree k ((pullback f).obj E) =
+      Module.finrank f.functionFieldMap.hom.fieldRange X.functionField * vectorBundleDegree k E :=
+  vectorBundleDegree_pullback_of_finrank_eq k f.finrank_eq_finrank_fieldRange_functionFieldMap E
+
+end Pullback
 
 section Twist
 

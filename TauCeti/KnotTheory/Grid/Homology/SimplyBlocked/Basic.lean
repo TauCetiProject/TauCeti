@@ -46,6 +46,10 @@ every grid diagram as `GridDiagram.simplyBlockedComplex`.
   class exactly when their difference is in the range of the differential.
 * `TauCeti.GridDiagram.oneVariableSpecializationHomologyClass_eq_zero_iff`: a cycle represents zero
   exactly when it is a boundary.
+* `TauCeti.GridDiagram.mem_ker_simplyBlockedComplex_d_iff` and
+  `TauCeti.GridDiagram.mem_range_moduleCatToCycles_simplyBlockedComplex_iff`: under
+  `simplyBlockedChainEquiv`, the cycles and boundaries of `simplyBlockedComplex` are the kernel and
+  range of `simplyBlockedDifferential`.
 
 ## References
 
@@ -135,6 +139,37 @@ theorem ker_oneVariableSpecializationHomologyClass (i : Fin n) :
   ext c
   rw [LinearMap.mem_ker, G.oneVariableSpecializationHomologyClass_eq_zero_iff]
 
+/-- Under the explicit chain identification, a cycle of the one-variable specialization is a chain
+in the kernel of `simplyBlockedDifferential`. -/
+theorem mem_ker_simplyBlockedComplex_d_iff (i : Fin n)
+    (c : (G.simplyBlockedComplex R i).X ()) :
+    c ∈ LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom ↔
+      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) = 0 := by
+  rw [LinearMap.mem_ker, ← (G.simplyBlockedChainEquiv R i).injective.eq_iff, map_zero,
+    G.simplyBlockedChainEquiv_d]
+
+/-- Under the explicit chain identification, a cycle of the one-variable specialization lies in the
+boundary submodule `range moduleCatToCycles` precisely when its underlying chain lies in the range
+of `simplyBlockedDifferential`. -/
+theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
+    (c : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
+    c ∈ LinearMap.range ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles ↔
+      G.simplyBlockedChainEquiv R i c ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
+  -- The boundary map is `ShortComplex.moduleCatToCycles`, the differential with its codomain
+  -- restricted to the cycles, so its underlying chain is the differential by definition.
+  have hd (w : (G.simplyBlockedComplex R i).X ()) :
+      G.simplyBlockedChainEquiv R i
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).1 =
+        G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
+    G.simplyBlockedChainEquiv_d R i w
+  constructor
+  · rintro ⟨w, rfl⟩
+    exact ⟨G.simplyBlockedChainEquiv R i w, (hd w).symm⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨(G.simplyBlockedChainEquiv R i).symm w, Subtype.ext ?_⟩
+    apply (G.simplyBlockedChainEquiv R i).injective
+    rw [hd, LinearEquiv.apply_symm_apply, hw]
+
 end TauCeti.GridDiagram
 
 namespace TauCeti.GridDiagram.IsKnot
@@ -152,7 +187,9 @@ noncomputable abbrev simplyBlockedHomology (hG : G.IsKnot) (i : Fin n) :
     ModuleCat (MvPolynomial {c : Fin n // c ≠ i} R) :=
   (fun _ : G.IsKnot => (G.simplyBlockedComplex R i).homology ()) hG
 
-/-- The cycles of the simply blocked differential, as an explicit submodule of the chain module. -/
+/-- The cycles of the simply blocked differential, as an explicit submodule of the chain module;
+see `TauCeti.GridDiagram.mem_ker_simplyBlockedComplex_d_iff` for membership in terms of
+`simplyBlockedDifferential`. -/
 noncomputable abbrev simplyBlockedCycles (hG : G.IsKnot) (i : Fin n) :
     Submodule (MvPolynomial {c : Fin n // c ≠ i} R)
       ((G.simplyBlockedComplex R i).X ()) :=
@@ -166,40 +203,13 @@ noncomputable abbrev simplyBlockedBoundaryMap (hG : G.IsKnot) (i : Fin n) :
       hG.simplyBlockedCycles R i :=
   ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles
 
-/-- Membership in the cycle module means that the explicit differential vanishes. -/
-theorem mem_simplyBlockedCycles (hG : G.IsKnot) (i : Fin n)
-    (c : (G.simplyBlockedComplex R i).X ()) :
-    c ∈ hG.simplyBlockedCycles R i ↔
-      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) = 0 := by
-  rw [← G.simplyBlockedChainEquiv_d, ← map_zero (G.simplyBlockedChainEquiv R i),
-    (G.simplyBlockedChainEquiv R i).injective.eq_iff]
-  rfl
-
-/-- The boundaries of the simply blocked complex, regarded as a submodule of its cycles. -/
+/-- The boundaries of the simply blocked complex, regarded as a submodule of its cycles; see
+`TauCeti.GridDiagram.mem_range_moduleCatToCycles_simplyBlockedComplex_iff` for membership in terms
+of `simplyBlockedDifferential`. -/
 noncomputable abbrev simplyBlockedBoundaries (hG : G.IsKnot) (i : Fin n) :
     Submodule (MvPolynomial {c : Fin n // c ≠ i} R)
       (hG.simplyBlockedCycles R i) :=
   LinearMap.range (hG.simplyBlockedBoundaryMap R i)
-
-/-- A simply blocked cycle is a boundary exactly when its explicit chain lies in the range of the
-simply blocked differential. -/
-theorem mem_simplyBlockedBoundaries_iff (hG : G.IsKnot) (i : Fin n)
-    (c : hG.simplyBlockedCycles R i) :
-    c ∈ hG.simplyBlockedBoundaries R i ↔
-      G.simplyBlockedChainEquiv R i c ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
-  -- The boundary map is `ShortComplex.moduleCatToCycles`, the differential with its codomain
-  -- restricted to the cycles, so its underlying chain is the differential by definition.
-  have hd (w : (G.simplyBlockedComplex R i).X ()) :
-      G.simplyBlockedChainEquiv R i (hG.simplyBlockedBoundaryMap R i w) =
-        G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
-    G.simplyBlockedChainEquiv_d R i w
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact ⟨G.simplyBlockedChainEquiv R i w, (hd w).symm⟩
-  · rintro ⟨w, hw⟩
-    refine ⟨(G.simplyBlockedChainEquiv R i).symm w, Subtype.ext ?_⟩
-    apply (G.simplyBlockedChainEquiv R i).injective
-    rw [hd, LinearEquiv.apply_symm_apply, hw]
 
 /-- The concrete cycles-modulo-boundaries model of simply blocked grid homology. -/
 noncomputable abbrev simplyBlockedHomologyQuotient (hG : G.IsKnot) (i : Fin n) : Type _ :=
