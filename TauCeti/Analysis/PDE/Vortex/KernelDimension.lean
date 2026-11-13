@@ -34,7 +34,7 @@ is injective (`TauCeti.Vortex.principalPartMap_injective`) as soon as every kern
 
 The second part of the file studies the whole space `gaugeFixedKernel x` of square-integrable
 `C²` classical solutions of `L_x y = 0`, of real dimension at most `2 m`
-(`finrank_gaugeFixedKernel_le`).
+(`TauCeti.Vortex.finrank_gaugeFixedKernel_le`).
 
 **The lower bound from translations.** At a vortex of positive degree the section has a zero,
 so the covariant translations `y_v = (ι_v F_a, ∇_v α)` form a two-dimensional subspace of the
@@ -49,10 +49,6 @@ degree one the two bounds agree: every kernel element is a covariant translation
 In higher degree the lower bound `2 m` needs kernel elements that move the zeros independently,
 which are not constructed here.
 
-## Main definitions
-
-* `TauCeti.Vortex.gaugeFixedKernel x`: the square-integrable `C²` solutions of `L_x y = 0`.
-
 ## Main results
 
 * `TauCeti.Vortex.finiteDimensional_of_gaugeFixedOperator_eq_zero` and
@@ -61,8 +57,6 @@ which are not constructed here.
 * `TauCeti.Vortex.finiteDimensional_of_tendsto_sectionValue_mul_inv_pow` and
   `TauCeti.Vortex.finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow`: the same for a vortex
   framed in degree `m`, with bound `2m`.
-* `TauCeti.Vortex.finrank_gaugeFixedKernel_le`: `dim_ℝ ker L_x ≤ 2 m` at a framed degree-`m`
-  field satisfying the holomorphicity rows.
 * `TauCeti.Vortex.two_le_finrank_gaugeFixedKernel`: `2 ≤ dim_ℝ ker L_x` at a framed vortex of
   positive degree.
 * `TauCeti.Vortex.gaugeFixedKernel_eq_bot`: the kernel vanishes in degree zero.
@@ -76,6 +70,7 @@ which are not constructed here.
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
 -/
+
 public section
 
 namespace TauCeti.Vortex
@@ -196,49 +191,7 @@ theorem finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow {m : ℕ} (hx : C
         (hx.of_le (by norm_num)) hhol (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
         (hV y hy).1.continuous (hV y hy).2.1 (hV y hy).2.2 hη hyη
 
-/-! ### The kernel as a subspace -/
-
-variable {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- **The `L²` kernel of the gauge-fixed operator.** The real vector space of `C²` variations `y`
-that are square integrable and solve `L_x y = 0` classically at every point. -/
-def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {y | ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0}
-  add_mem' {y v} hy hv := ⟨hy.1.add hv.1, hy.2.1.add hv.2.1, fun z ↦ by
-    rw [gaugeFixedOperator_add x (hy.1.differentiable two_ne_zero z)
-      (hv.1.differentiable two_ne_zero z), hy.2.2 z, hv.2.2 z, add_zero]⟩
-  zero_mem' := ⟨contDiff_const, MemLp.zero, fun z ↦ by rw [gaugeFixedOperator_zero, Pi.zero_apply]⟩
-  smul_mem' c y hy := ⟨hy.1.const_smul c, hy.2.1.const_smul c, fun z ↦ by
-    rw [gaugeFixedOperator_smul, hy.2.2 z, smul_zero]⟩
-
-/-- Membership in `gaugeFixedKernel x`: a square-integrable `C²` solution of `L_x y = 0`. -/
-theorem mem_gaugeFixedKernel :
-    y ∈ gaugeFixedKernel x ↔
-      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
-  Iff.rfl
-
-section UpperBound
-
-variable {m : ℕ} (hx : ContDiff ℝ 2 x) (hhol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
-  (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
-
-include hx hhol hframe
-
-/-- **The kernel of `L_x` is finite dimensional** at a `C²` field satisfying the holomorphicity
-rows of the vortex equation with the degree-`m` end framing. -/
-theorem finiteDimensional_gaugeFixedKernel : FiniteDimensional ℝ (gaugeFixedKernel x) :=
-  finiteDimensional_of_tendsto_sectionValue_mul_inv_pow (μ := volume) hx hhol hframe
-    fun _ hy ↦ hy
-
-/-- **The kernel of `L_x` has real dimension at most `2 m`**, the real dimension of the tangent
-space of `Sym^m ℂ`, at a `C²` field satisfying the holomorphicity rows of the vortex equation with
-the degree-`m` end framing `α (z / |z|)⁻ᵐ → 1`. -/
-theorem finrank_gaugeFixedKernel_le : finrank ℝ (gaugeFixedKernel x) ≤ 2 * m :=
-  finrank_le_two_mul_of_tendsto_sectionValue_mul_inv_pow (μ := volume) hx hhol hframe
-    fun _ hy ↦ hy
-
-end UpperBound
+/-! ### The kernel in degree zero -/
 
 /-- **The kernel of `L_x` vanishes in degree zero.** At a `C²` field satisfying the holomorphicity
 rows of the vortex equation whose section tends to one at infinity, the only square-integrable
@@ -268,7 +221,7 @@ theorem covariantTranslation_mem_gaugeFixedKernel
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (v : ℂ) :
     covariantTranslation x v ∈ gaugeFixedKernel x := by
   have hxi (i : Fin 4) : ContDiff ℝ 3 fun w ↦ x w i := contDiff_euclidean.mp hx i
-  refine ⟨contDiff_covariantTranslation hx v,
+  refine mem_gaugeFixedKernel.2 ⟨contDiff_covariantTranslation hx v,
     memLp_covariantTranslation volume ((hxi 0).differentiable (by norm_num))
       ((hxi 1).differentiable (by norm_num)) ((hxi 2).of_le (by norm_num))
       ((hxi 3).of_le (by norm_num)) hsol hlim v, fun z ↦ ?_⟩
