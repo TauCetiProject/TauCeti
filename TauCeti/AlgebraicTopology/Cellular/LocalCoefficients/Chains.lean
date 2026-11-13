@@ -137,9 +137,8 @@ lemma twistedCellularDifferential_comp_twistedCellularDifferential (n : ℕ) :
     twistedHomologyπ_comp_coefficientMap_comp_twistedHomologyδ C L n, zero_comp, comp_zero]
 
 /-- The cellular chain complex of a relative CW complex with coefficients in a local system `L`
-on `X`. Its body is exposed so that its objects are the groups `TauCeti.twistedCellularChainGroup`
-by definition, as for `ChainComplex.of`. -/
-@[expose] def twistedCellularChainComplex : ChainComplex (ModuleCat.{max w v} R) ℕ :=
+on `X`. -/
+def twistedCellularChainComplex : ChainComplex (ModuleCat.{max w v} R) ℕ :=
   ChainComplex.of (twistedCellularChainGroup C L) (twistedCellularDifferential C L)
     (twistedCellularDifferential_comp_twistedCellularDifferential C L)
 
@@ -150,10 +149,18 @@ lemma twistedCellularChainComplex_X (n : ℕ) :
     (twistedCellularChainComplex C L).X n = twistedCellularChainGroup C L n := (rfl)
 
 /-- The differentials of the cellular chain complex with local coefficients are the cellular
-differentials. -/
+differentials, transported across `TauCeti.twistedCellularChainComplex_X`. -/
 @[simp]
 lemma twistedCellularChainComplex_d (n : ℕ) :
-    (twistedCellularChainComplex C L).d (n + 1) n = twistedCellularDifferential C L n :=
-  ChainComplex.of_d _ _ n
+    (twistedCellularChainComplex C L).d (n + 1) n =
+      eqToHom (twistedCellularChainComplex_X C L (n + 1)) ≫ twistedCellularDifferential C L n ≫
+        eqToHom (twistedCellularChainComplex_X C L n).symm := by
+  -- The object equations hold by definition, so both transports are identities; the body of
+  -- `twistedCellularChainComplex` is not exposed, so reducing its differential needs an `unfold`.
+  have h : ∀ m : ℕ, twistedCellularChainComplex_X C L m = rfl := fun _ ↦ Subsingleton.elim _ _
+  rw [h (n + 1), h n]
+  unfold twistedCellularChainComplex
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  exact ChainComplex.of_d _ _ n
 
 end TauCeti
