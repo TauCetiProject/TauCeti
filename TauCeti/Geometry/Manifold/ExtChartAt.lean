@@ -658,10 +658,14 @@ theorem measurableSet_image_extChartAt_iff [MeasurableSpace E] [BorelSpace E] {s
       |>.measurableSet_image, Subtype.image_preimage_coe, Set.inter_eq_right.mpr hsource]
 
 /-- The image of a measurable subset of an extended chart's source is measurable in the model
-space. -/
-theorem _root_.MeasurableSet.image_extChartAt {s : Set M} (hs : MeasurableSet s) (x : M)
+space, for any measurable space structure on it in which open sets are measurable. -/
+theorem _root_.MeasurableSet.image_extChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
+    {s : Set M} (hs : MeasurableSet s) (x : M)
     (hsource : s ⊆ (extChartAt I x).source) : MeasurableSet ((extChartAt I x) '' s) :=
-  (measurableSet_image_extChartAt_iff x hsource).mpr hs
+  OpensMeasurableSpace.borel_le _ <| by
+    let : MeasurableSpace E := borel E
+    have : BorelSpace E := ⟨rfl⟩
+    exact (measurableSet_image_extChartAt_iff x hsource).mpr hs
 
 section LusinSouslin
 
@@ -744,9 +748,8 @@ theorem _root_.MeasurableSet.isChartMeasurable [MeasurableSpace E] [OpensMeasura
     {s : Set M} (hs : MeasurableSet s) : IsChartMeasurable I s := by
   rw [isChartMeasurable_iff]
   intro x
-  exact OpensMeasurableSpace.borel_le _ <|
-    ((isOpen_extChartAt_source (I := I) x).measurableSet.inter hs).image_extChartAt
-      (I := I) x Set.inter_subset_left
+  exact ((isOpen_extChartAt_source (I := I) x).measurableSet.inter hs).image_extChartAt
+    (I := I) x Set.inter_subset_left
 
 /-- In a zero-dimensional charted manifold every preferred chart source is a singleton. -/
 theorem extChartAt_source_zeroDim {E M : Type*} [NormedAddCommGroup E]
