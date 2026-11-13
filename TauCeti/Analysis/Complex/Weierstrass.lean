@@ -105,8 +105,8 @@ private theorem exists_slice_weierstrassFactor {g : ℂ → ℂ} {R : ℝ} (hR :
   have hP_ord (z : ℂ) : meromorphicOrderAt (fun w ↦ P.eval w) z =
       (((AnalyticOnNhd.zeroMultiset g (ball 0 R)).count z : ℕ) : WithTop ℤ) := by
     rw [(hP_an z).meromorphicOrderAt_eq, Polynomial.analyticOrderAt_eval hp0 z,
-      ← Polynomial.count_roots, hr, ENat.map_natCast]
-    rfl
+      ← Polynomial.count_roots, hr]
+    simp
   have hP_sphere {ζ : ℂ} (hζ : ζ ∈ sphere 0 R) : P.eval ζ ≠ 0 := fun h0 ↦
     (mem_ball.1 (AnalyticOnNhd.mem_of_mem_zeroMultiset (by rwa [← hr, mem_roots hp0]))).ne
       (mem_sphere.1 hζ)

@@ -145,18 +145,25 @@ theorem mem_of_mem_zeroMultiset {s : Set 𝕜} {a : 𝕜} (ha : a ∈ zeroMultis
 
 variable [ProperSpace 𝕜]
 
+/-- For `g` analytic on `closedBall c R`, a finsum over `ball c R` of a function with the same
+support as `analyticOrderNatAt g` is a sum over the finitely many zeros in the open disc. -/
+private theorem finsum_mem_ball_eq_sum {M : Type*} [AddCommMonoid M]
+    (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) {φ : 𝕜 → M}
+    (hφ : Function.support φ = Function.support (analyticOrderNatAt g)) :
+    ∑ᶠ z ∈ ball c R, φ z =
+      ∑ z ∈ hg.meromorphicOn.finite_ball_inter_support_analyticOrderNatAt.toFinset, φ z :=
+  finsum_mem_eq_sum_of_inter_support_eq _ (by
+    rw [Set.Finite.coe_toFinset, hφ, Set.inter_assoc, Set.inter_self])
+
 /-- For `g` analytic on `closedBall c R`, `zeroMultiset g (ball c R)` is a finite sum. -/
 private theorem zeroMultiset_ball_eq_sum (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) :
     zeroMultiset g (ball c R) =
       ∑ z ∈ hg.meromorphicOn.finite_ball_inter_support_analyticOrderNatAt.toFinset,
         Multiset.replicate (analyticOrderNatAt g z) z := by
-  have hsupp : (Function.support fun z ↦ Multiset.replicate (analyticOrderNatAt g z) z) =
-      Function.support (analyticOrderNatAt g) := by
-    ext z
-    rw [Function.mem_support, Function.mem_support, Ne, ← Multiset.card_eq_zero,
-      Multiset.card_replicate]
-  exact finsum_mem_eq_sum_of_inter_support_eq _ (by
-    rw [Set.Finite.coe_toFinset, hsupp, Set.inter_assoc, Set.inter_self])
+  refine finsum_mem_ball_eq_sum hg ?_
+  ext z
+  rw [Function.mem_support, Function.mem_support, Ne, ← Multiset.card_eq_zero,
+    Multiset.card_replicate]
 
 /-- For `g` analytic on `closedBall c R`, the multiplicity of a point of the open disc in
 `zeroMultiset g (ball c R)` is the order of vanishing of `g` there, and no other point occurs. -/
@@ -183,9 +190,7 @@ zero count `∑ᶠ z ∈ ball c R, analyticOrderNatAt g z`. -/
 @[simp]
 theorem card_zeroMultiset (hg : AnalyticOnNhd 𝕜 g (closedBall c R)) :
     Multiset.card (zeroMultiset g (ball c R)) = ∑ᶠ z ∈ ball c R, analyticOrderNatAt g z := by
-  rw [zeroMultiset_ball_eq_sum hg, Multiset.card_sum, finsum_mem_eq_sum_of_inter_support_eq _
-    (t := hg.meromorphicOn.finite_ball_inter_support_analyticOrderNatAt.toFinset)
-    (by rw [Set.Finite.coe_toFinset, Set.inter_assoc, Set.inter_self])]
+  rw [zeroMultiset_ball_eq_sum hg, Multiset.card_sum, finsum_mem_ball_eq_sum hg rfl]
   simp only [Multiset.card_replicate]
 
 /-- If `z₀` is the only zero of `g` in `ball c R` and `g` vanishes there to order `d`, then
@@ -272,7 +277,7 @@ theorem analyticOrderAt_eq_count_zeroMultiset [DecidableEq 𝕜]
   rcases (ball_union_sphere (x := c) (ε := R) ▸ hz) with hzb | hzs
   · have htop : analyticOrderAt g z ≠ ⊤ := fun h ↦
       hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hsphere hz
-        (by rw [(hg z hz).meromorphicOrderAt_eq, h]; rfl)
+        (by rw [(hg z hz).meromorphicOrderAt_eq, h, ENat.map_top])
     rw [Set.indicator_of_mem hzb, Nat.cast_analyticOrderNatAt htop]
   · rw [Set.indicator_of_notMem fun hzb ↦ (mem_ball.1 hzb).ne (mem_sphere.1 hzs),
       (hg z hz).analyticOrderAt_eq_zero.2 (hsphere z hzs), Nat.cast_zero]
