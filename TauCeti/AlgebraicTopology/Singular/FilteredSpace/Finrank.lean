@@ -32,7 +32,7 @@ a module over a division ring `k`. For `a ≤ b`, compare the relative singular 
   `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number
   coefficients, the coefficient of `tⁱ` being the gap in the `i`-th strong inequality for
   `i < n` and zero for `i ≥ n`
-  (`Monotone.exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul`);
+  (`Monotone.exists_sum_range_monomial_sum_finrank_singularHomology_ofInclusion_eq_add_mul`);
 * **the lacunary principle**: if the homology of the steps is finite-dimensional in every degree
   and no two consecutive `cᵢ` are both nonzero, then `bᵢ = cᵢ` for every `i`
   (`Monotone.finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or`).
@@ -209,7 +209,7 @@ in degree `n + 1`. Write `bᵢ = dim Hᵢ(X b, X a)` and `cᵢ = ∑_q dim Hᵢ(
 `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number coefficients
 whose coefficient of `tⁱ` is, for `i < n`, the gap `(cᵢ - cᵢ₋₁ + ⋯ ± c₀) - (bᵢ - bᵢ₋₁ + ⋯ ± b₀)`
 in the `i`-th strong inequality, and is zero for `i ≥ n`. -/
-theorem exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul {a b : ℤ}
+theorem exists_sum_range_monomial_sum_finrank_singularHomology_ofInclusion_eq_add_mul {a b : ℤ}
     (hab : a ≤ b) {n : ℕ} (h : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
       ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k))
     (hn : ∀ q ∈ Finset.Ico a b,
@@ -308,15 +308,24 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ} (n : ℕ)
     -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
     have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
     let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
-    have hinner (i : ℕ) (hi : i ≤ n) :
-        Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) := by
+    -- Pairs of nested subsets agree when the subsets do; the inclusion proofs are irrelevant.
+    have hpair {s t s' t' : Set Y} (h : s ⊆ t) (h' : s' ⊆ t') (hs : s = s') (ht : t = t') :
+        TopPair.ofInclusion h = TopPair.ofInclusion h' := by
+      subst hs ht
+      rfl
+    have hinner (i : ℕ) (hi : i ≤ n) : Module.Finite k
+        ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i : ModuleCat k) := by
       -- On `[0, N + 1]`, the `ℤ`-indexed filtration `q ↦ A q.toNat` has the same pairs as `A`.
-      refine (hA.comp fun _ _ ↦ Int.toNat_le_toNat
+      have key := (hA.comp fun _ _ ↦ Int.toNat_le_toNat
         ).finite_singularHomology_ofInclusion_of_forall_mem_Ico V (Nat.cast_nonneg (N + 1)) i
-        fun q hq ↦ ?_
-      rw [Finset.mem_Ico] at hq
-      lift q to ℕ using hq.1
-      exact hfin' q (by lia) i hi
+        fun q hq ↦ by
+          rw [Finset.mem_Ico] at hq
+          lift q to ℕ using hq.1
+          rw [hpair _ (hA q.le_succ) (congrArg A (Int.toNat_natCast q))
+            (congrArg A Int.toNat_natCast_add_one)]
+          exact hfin' q (by lia) i hi
+      rwa [hpair _ (hA (Nat.zero_le (N + 1))) (congrArg A Int.toNat_zero)
+        (congrArg A (Int.toNat_natCast (N + 1)))] at key
     -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by
     -- `TopTriple.innerPair_obj_ofInclusions` and its siblings, which hold by `rfl`.
     have h : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
