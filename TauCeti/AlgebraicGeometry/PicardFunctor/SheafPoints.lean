@@ -20,18 +20,19 @@ sending a line bundle to its class.
 When `S = Spec k` and `X` is a curve without a rational point, this homomorphism need not be
 surjective: an element of `Pic_{X/k}(k)` is a line-bundle class given only fppf-locally on
 `Spec k`, which need not come from a line bundle on `X`. For the pointless real conic,
-`Pic(X) = 2ℤ` while `Pic_{X/ℝ}(ℝ) = ℤ`. The elements of `Pic_{X/k}(k)` are called the `k`-rational
-divisor classes of `X`.
+`Pic(X) = 2ℤ` while `Pic_{X/ℝ}(ℝ) = ℤ`. When `X` is a smooth proper geometrically integral curve
+over `k`, the elements of `Pic_{X/k}(k)` are the `k`-rational divisor classes of `X`
+(Poonen–Stoll, Section 2); this file proves no such divisor comparison.
 
 The homomorphism is injective for an integral scheme universally closed and quasi-separated over
-a field
-(`TauCeti.AlgebraicGeometry.picardSheafPoints.ofLineBundleClass_injective`), so `Pic(X)` is a
-subgroup of the `k`-rational divisor classes. An element of `Pic(X)` that vanishes in
-`Pic_{X/k}(k)` is trivial on some fppf cover of `Spec k`, hence on `X_K` for a field `K` over a
-point of the cover; and under these hypotheses, a line bundle that becomes trivial after a
-field extension is trivial (`TauCeti.AlgebraicGeometry.LineBundleClass.pullback_injective`).
-The scheme need not be smooth or geometrically integral, and no dimension bound or
-cohomological finiteness assumption is needed.
+a field (`TauCeti.AlgebraicGeometry.picardSheafPoints.ofLineBundleClass_injective`), so `Pic(X)`
+is a subgroup of the `k`-points `Pic_{X/k}(k)` of the relative Picard sheaf. An element of
+`Pic(X)` that vanishes in `Pic_{X/k}(k)` is trivial on some fppf cover of `Spec k`, hence on
+`X_K` for a field `K` over a point of the cover; and under these hypotheses, a line bundle that
+becomes trivial after a field extension is trivial
+(`TauCeti.AlgebraicGeometry.LineBundleClass.pullback_injective`). The scheme need not be smooth
+or geometrically integral, and no dimension bound or cohomological finiteness assumption is
+needed.
 
 ## Main declarations
 
@@ -64,8 +65,9 @@ noncomputable section
 variable {S X : Scheme.{u}} (f : X ⟶ S)
 
 /-- The group `Pic_{X/S}(S)` of sections over `S` of the relative Picard fppf sheaf of
-`f : X ⟶ S`. For `S = Spec k` these are the `k`-rational divisor classes of `X`, which need not
-be classes of line bundles on `X` when `X` has no rational point. -/
+`f : X ⟶ S`. For `S = Spec k` these are the `k`-points `Pic_{X/k}(k)` of the relative Picard
+sheaf, which need not be classes of line bundles on `X` when `X` has no rational point; for a
+smooth proper geometrically integral curve over `k` they are its `k`-rational divisor classes. -/
 -- Exposed so that the sections of the relative Picard sheaf over `S` are its elements.
 @[expose]
 def picardSheafPoints : AddCommGrpCat.{u + 1} :=
@@ -91,7 +93,7 @@ def ofLineBundleClass : Additive (LineBundleClass X) →+ picardSheafPoints f :=
 of its pullback to `S ×_S X` under the canonical map to the sheafification. -/
 lemma ofLineBundleClass_apply (a : Additive (LineBundleClass X)) :
     ofLineBundleClass f a = (relativePicardToFppfSheaf f).app (op (Over.mk (𝟙 S)))
-      (relativePicardAddPresheafMk f _
+      (relativePicardAddPresheafMk f (op (Over.mk (𝟙 S)))
         (LineBundleClass.pullback (pullback.snd (𝟙 S) f) a.toMul)) :=
   (rfl)
 
@@ -99,16 +101,13 @@ lemma ofLineBundleClass_apply (a : Additive (LineBundleClass X)) :
 @[simp]
 lemma ofLineBundleClass_pullback (b : LineBundleClass S) :
     ofLineBundleClass f (Additive.ofMul (LineBundleClass.pullback f b)) = 0 := by
-  rw [ofLineBundleClass_apply, toMul_ofMul]
-  change (relativePicardToFppfSheaf f).app (op (Over.mk (𝟙 S)))
-    (relativePicardAddPresheafMk f (op (Over.mk (𝟙 S)))
-      (LineBundleClass.pullback (pullback.snd (𝟙 S) f) (LineBundleClass.pullback f b))) = 0
-  rw [LineBundleClass.pullback_comp, ← pullback.condition,
+  rw [ofLineBundleClass_apply, toMul_ofMul, LineBundleClass.pullback_comp, ← pullback.condition,
     ← LineBundleClass.pullback_comp, LineBundleClass.pullback_id]
   exact (congrArg ((relativePicardToFppfSheaf f).app (op (Over.mk (𝟙 S))))
     (relativePicardAddPresheafMk_pullback_fst f (op (Over.mk (𝟙 S))) b)).trans (map_zero _)
 
-/-- Restricting the section of a line bundle pulls the line bundle back to the new base. -/
+/-- Restricting the section attached to a line bundle on `X` to `T` gives the class of its
+pullback to `X_T = T ×_S X`. -/
 lemma map_ofLineBundleClass {T : (Over S)ᵒᵖ} (φ : op (Over.mk (𝟙 S)) ⟶ T)
     (a : Additive (LineBundleClass X)) :
     (relativePicardFppfSheaf f).obj.map φ (ofLineBundleClass f a) =
@@ -135,11 +134,7 @@ theorem exists_pullback_eq_one_of_ofLineBundleClass_eq_zero {a : LineBundleClass
   -- The section `c` vanishes on an fppf covering sieve of `S`.
   have hc := Presheaf.equalizerSieve_mem (Scheme.fppfTopology.over S)
     (relativePicardToFppfSheaf f) c 0
-    (by
-      rw [map_zero]
-      rw [ofLineBundleClass_apply, toMul_ofMul] at ha
-      change (relativePicardToFppfSheaf f).app T₀ c = 0 at ha
-      exact ha)
+    (by rw [map_zero]; rwa [ofLineBundleClass_apply, toMul_ofMul] at ha)
   rw [GrothendieckTopology.mem_over_iff] at hc
   -- Some member `g : U ⟶ S` of an fppf covering family inside this sieve has a point `u` over
   -- `s`; pass to the residue field of `u`.
@@ -169,10 +164,10 @@ theorem exists_pullback_eq_one_of_ofLineBundleClass_eq_zero {a : LineBundleClass
     exact congrArg (LineBundleClass.pullback · a) (pullback.lift_snd _ _ _).symm
   rwa [Category.comp_id] at key
 
-/-- **The Picard group embeds in the rational divisor classes.** For an integral scheme `X`
-universally closed and quasi-separated over a field `k` (for instance proper), the homomorphism
-`Pic(X) → Pic_{X/k}(k)` is injective, even without a rational point. No dimension bound or
-cohomological finiteness assumption is needed; the map need not be surjective. -/
+/-- **The Picard group embeds in the `k`-points of the relative Picard sheaf.** For an integral
+scheme `X` universally closed and quasi-separated over a field `k` (for instance proper), the
+homomorphism `Pic(X) → Pic_{X/k}(k)` is injective, even without a rational point. No dimension
+bound or cohomological finiteness assumption is needed; the map need not be surjective. -/
 theorem ofLineBundleClass_injective {k : Type u} [Field k] (f : X ⟶ Spec (.of k))
     [IsIntegral X] [UniversallyClosed f] [QuasiSeparated f] :
     Function.Injective (ofLineBundleClass f) := by

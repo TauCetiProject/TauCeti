@@ -103,7 +103,7 @@ presheaf. -/
 lemma relativePicardAddPresheafMk_one (T : (Over S)ᵒᵖ) :
     relativePicardAddPresheafMk f T 1 = 0 := by
   unfold relativePicardAddPresheafMk relativePicardAddPresheaf
-  rfl
+  exact congrArg Additive.ofMul (map_one (QuotientGroup.mk' _))
 
 /-- The tensor product of line-bundle classes represents the sum of the represented sections of
 the additive relative Picard presheaf. -/
@@ -113,7 +113,7 @@ lemma relativePicardAddPresheafMk_mul (T : (Over S)ᵒᵖ)
     relativePicardAddPresheafMk f T (a * b) =
       relativePicardAddPresheafMk f T a + relativePicardAddPresheafMk f T b := by
   unfold relativePicardAddPresheafMk relativePicardAddPresheaf
-  rfl
+  exact congrArg Additive.ofMul (map_mul (QuotientGroup.mk' _) a b)
 
 /-- Dualizing a line-bundle class negates its represented section. -/
 @[simp]

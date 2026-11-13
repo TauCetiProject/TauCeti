@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
@@ -98,49 +99,32 @@ theorem pullback_injective : Function.Injective (pullback g) := by
     exact mul_inv_eq_one.mp (key _ (by rw [pullback_mul, pullback_inv, hab, mul_inv_cancel]))
   intro a ha
   obtain ⟨L, rfl⟩ := mk_surjective a
-  let _ : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
-  have : L.obj.IsLocallyFree := TauCeti.SheafOfModules.IsInvertible.isLocallyFree L.obj
-  have : _root_.SheafOfModules.IsFiniteType.{u, u, u}
-      (R := X.ringCatSheaf) L.obj := by
-    obtain ⟨q, hq⟩ := L.property.exists_isInvertible
-    refine { exists_localGeneratorsData := ⟨q, ?_⟩ }
-    refine { isFiniteType := fun i ↦ ?_ }
-    have := hq.basisSubsingleton i
-    exact ⟨Finite.of_subsingleton⟩
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
+  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
+  have : L.obj.IsLocallyFree := inferInstanceAs F.IsLocallyFree
+  have : L.obj.IsFiniteType := inferInstanceAs F.IsFiniteType
+  -- Flat base change gives nonzero global sections `s` of `L` and `t` of its dual.
   obtain ⟨s, hs⟩ := exists_nonzero_unitHom_of_pullback_eq_one H L ha
   have hdual : pullback g (mk L.dual) = 1 := by
     rw [← inv_mk, pullback_inv, ha, inv_one]
   obtain ⟨t, ht⟩ := exists_nonzero_unitHom_of_pullback_eq_one H L.dual hdual
+  -- The section `s` is a nonzero functional `β` on the dual, which is mono since `X` is integral.
   let eD : L.dual.obj ≅ (ihom L.obj).obj (𝟙_ X.Modules) :=
     eqToIso (InvertibleSheaf.dual_obj L)
   let β : L.dual.obj ⟶ 𝟙_ X.Modules :=
     eD.hom ≫ (Scheme.Modules.dualHomUnitEquiv L.obj).symm s
   have hβ : β ≠ 0 := by
-    intro hz
-    apply hs
-    have hz' : (Scheme.Modules.dualHomUnitEquiv L.obj).symm s = 0 := by
-      apply (cancel_epi eD.hom).mp
-      simpa only [β, comp_zero] using hz
-    have := congrArg (Scheme.Modules.dualHomUnitEquiv L.obj) hz'
-    simpa only [β, Equiv.apply_symm_apply, Scheme.Modules.dualHomUnitEquiv_zero] using this
+    rwa [Ne, Preadditive.IsIso.comp_left_eq_zero, Equiv.symm_apply_eq,
+      Scheme.Modules.dualHomUnitEquiv_zero]
   have : Mono β := L.dual.mono_of_ne_zero_to_unit β hβ
+  -- The composite `t ≫ β` is a nonzero global function, hence an isomorphism because
+  -- `Γ(X, 𝒪_X)` is a field. So `β` is also epi, and it trivializes the dual of `L`.
   have hcomp : t ≫ β ≠ 0 := by
     intro hz
     apply ht
     exact (cancel_mono β).mp (hz.trans (zero_comp).symm)
-  have hfield := isField_of_universallyClosed k fX
-  let r := (Scheme.Modules.globalSectionsActionRingEquiv (𝟙_ X.Modules)).symm (End.of (t ≫ β))
-  have hr : r ≠ 0 := by
-    intro hz
-    apply hcomp
-    have := congrArg (Scheme.Modules.globalSectionsActionRingEquiv (𝟙_ X.Modules)) hz
-    simpa only [r, RingEquiv.apply_symm_apply, map_zero, End.ext_iff, End.zero_asHom] using this
-  have hu : IsUnit (End.of (t ≫ β)) := by
-    rw [← (Scheme.Modules.globalSectionsActionRingEquiv (𝟙_ X.Modules)).apply_symm_apply
-      (End.of (t ≫ β))]
-    let _ := hfield.toField
-    exact (isUnit_iff_ne_zero.mpr hr).map _
-  have : IsIso (t ≫ β) := (isUnit_iff_isIso _).mp hu
+  have : IsIso (t ≫ β) :=
+    Scheme.Modules.isIso_of_ne_zero_of_isField (isField_of_universallyClosed k fX) hcomp
   have : Epi β := epi_of_epi t β
   have : IsIso β := isIso_of_mono_of_epi β
   have : mk L.dual = 1 := mk_eq_one_iff.mpr ⟨asIso β⟩
