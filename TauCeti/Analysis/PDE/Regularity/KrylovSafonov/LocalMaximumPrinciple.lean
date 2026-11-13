@@ -520,12 +520,14 @@ private theorem le_mul_add_mul_of_two_mul_card_div {κ lam Lam R : ℝ}
     (fun y hy => hmax (ball_subset_closedBall hy)) rfl hM.le
   have hθ : (2 : ℝ) / (m + 2) = 1 - m / (m + 2) := by field_simp; ring
   rw [hθ] at habp
-  have hcoef : 2 * R / (n * ω ^ n⁻¹) / lam * (K * Lam / R ^ 2) ≤ C₀ * K * κ / R := by
-    rw [show 2 * R / (n * ω ^ n⁻¹) / lam * (K * Lam / R ^ 2) = C₀ * K / R * (Lam / lam) by
-      simp only [C₀]; field_simp, show C₀ * K * κ / R = C₀ * K / R * κ by ring]
-    gcongr
-    rw [div_le_iff₀ hlam]
-    exact hLam
+  have hcoef : 2 * R / (n * ω ^ n⁻¹) / lam * (K * Lam / R ^ 2) ≤ C₀ * K * κ / R :=
+    calc 2 * R / (n * ω ^ n⁻¹) / lam * (K * Lam / R ^ 2) = C₀ * K / R * (Lam / lam) := by
+          simp only [C₀]; field_simp
+      _ ≤ C₀ * K / R * κ := by
+          gcongr
+          rw [div_le_iff₀ hlam]
+          exact hLam
+      _ = C₀ * K * κ / R := by ring
   have hstep : M ≤ C₀ * R / lam * F + C₀ * K * κ / R * M ^ ((m : ℝ) / (m + 2)) *
       Nq ^ (1 - (m : ℝ) / (m + 2)) :=
     calc M ≤ _ := habp

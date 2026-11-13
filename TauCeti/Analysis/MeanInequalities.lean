@@ -191,8 +191,9 @@ theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 
     rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
       mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
     push_cast
-    rw [show ((a : ℝ) + b) * (a / (a + b)) = a by field_simp,
-      show (a : ℝ) / (a + b) + b / (a + b) = 1 by field_simp, rpow_one, rpow_natCast]
+    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
+    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
+    rw [hmul, hsum, rpow_one, rpow_natCast]
   rw [hsplit]
   exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
     (by positivity)

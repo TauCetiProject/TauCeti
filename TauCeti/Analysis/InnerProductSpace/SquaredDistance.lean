@@ -253,9 +253,10 @@ private theorem fderiv_one_sub_norm_sq_sub_div_eq (c : E) (R : ℝ) :
     fderiv ℝ (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) =
       fderiv ℝ (-(R ^ 2)⁻¹ • fun y : E ↦ ‖y - c‖ ^ 2) := by
   funext y
-  rw [show (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) =
-    fun y ↦ 1 + (-(R ^ 2)⁻¹ • fun y : E ↦ ‖y - c‖ ^ 2) y by funext z; simp; ring,
-    fderiv_const_add]
+  have hfun : (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) =
+      fun y ↦ 1 + (-(R ^ 2)⁻¹ • fun y : E ↦ ‖y - c‖ ^ 2) y := by
+    funext z; simp; ring
+  rw [hfun, fderiv_const_add]
 
 /-- The derivative of `1 - ‖y - c‖² / R²` is `-(2 / R²) ⟪x - c, ·⟫`. -/
 theorem fderiv_one_sub_norm_sq_sub_div (c x : E) (R : ℝ) :
