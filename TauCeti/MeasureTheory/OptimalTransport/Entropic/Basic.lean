@@ -577,6 +577,33 @@ section GibbsPotentials
 
 variable {φ : X → ℝ} {ψ : Y → ℝ}
 
+/-- The Gibbs weight `exp (-c / ε)` is integrable against the product of finite measures. -/
+private theorem integrable_exp_neg_toReal_div [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (hc : AEMeasurable c (μ.prod ν)) :
+    Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
+  MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
+    ae_of_all _ fun z ↦ by positivity
+
+/-- The partition function `∫ exp (-c / ε) d(μ ⊗ ν)` of the Gibbs weight is at most `1` for
+probability measures. -/
+private theorem integral_exp_neg_toReal_div_le_one [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hc : AEMeasurable c (μ.prod ν)) :
+    ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν ≤ 1 :=
+  calc ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν ≤ ∫ _, (1 : ℝ) ∂μ.prod ν :=
+        integral_mono (integrable_exp_neg_toReal_div hc) (integrable_const 1) fun z ↦ by
+          simp only [Real.exp_le_one_iff, Left.neg_nonpos_iff]
+          positivity
+    _ = 1 := by simp
+
+/-- The dual value of potentials rescaled by `ε` and shifted by a constant. -/
+private theorem kantorovichDualValue_div_add_const [IsProbabilityMeasure μ]
+    (hφi : Integrable φ μ) (L : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x / ε + L) (fun y ↦ ψ y / ε) =
+      kantorovichDualValue μ ν φ ψ / ε + L := by
+  simp only [kantorovichDualValue_def, integral_add (hφi.div_const _) (integrable_const _),
+    integral_div, integral_const, probReal_univ, smul_eq_mul, one_mul]
+  ring
+
 /-- A plan with density `exp ((φ(x) + ψ(y) - c(x, y)) / ε)` against `μ.prod ν` has density
 `exp (φ(x) / ε + log Z + ψ(y) / ε)` against the Gibbs measure
 `R = Z⁻¹ e^{-c/ε} (μ ⊗ ν)`, where `Z = ∫ e^{-c/ε} d(μ ⊗ ν)`. -/
@@ -588,9 +615,7 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
     π = ((μ.prod ν).tilted fun z ↦ -((c z).toReal / ε)).withDensity fun z ↦
       ENNReal.ofReal (Real.exp ((φ z.1 / ε + Real.log (∫ z, Real.exp (-((c z).toReal / ε))
         ∂μ.prod ν)) + ψ z.2 / ε)) := by
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun z ↦ by positivity
+  have hexp := integrable_exp_neg_toReal_div (ε := ε) hc
   have hZ : 0 < ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν := integral_exp_pos hexp
   rw [Measure.tilted, ← withDensity_mul₀ (by fun_prop) (by fun_prop), hπc]
   congr 1
@@ -634,9 +659,7 @@ theorem IsCoupling.lintegral_add_mul_klDiv_eq_entropicTransportCost_of_eq_withDe
     exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
       ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
   obtain ⟨hφ, hψ⟩ := hφψ
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun z ↦ by positivity
+  have hexp := integrable_exp_neg_toReal_div (ε := ε) hc
   have := isProbabilityMeasure_tilted hexp
   refine (lintegral_add_mul_klDiv_eq_entropicTransportCost_iff hπ hc hc_top hε).2 ?_
   exact hπ.klDiv_eq_schroedingerValue_of_eq_withDensity
@@ -666,31 +689,19 @@ theorem entropicTransportCost_eq_ofReal_of_eq_withDensity [IsProbabilityMeasure 
     exact this (hπc.trans (withDensity_exp_congr_ae hφ₀ hψ₀)) ((integrable_congr hφ₀).1 hφi)
       ((integrable_congr hψ₀).1 hψi) ⟨hφi.1.measurable_mk, hψi.1.measurable_mk⟩
   obtain ⟨hφ, hψ⟩ := hφψ
-  have hexp : Integrable (fun z ↦ Real.exp (-((c z).toReal / ε))) (μ.prod ν) :=
-    MeasureTheory.integrable_exp_neg_of_ae_nonneg (hc.ennreal_toReal.div_const _) <|
-      ae_of_all _ fun z ↦ by positivity
+  have hexp := integrable_exp_neg_toReal_div (ε := ε) hc
   have := isProbabilityMeasure_tilted hexp
   have hπR := eq_withDensity_tilted_of_eq_withDensity hc hπc hφ hψ
   obtain ⟨Z, hZ_def⟩ : ∃ Z, ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν = Z := ⟨_, rfl⟩
   have hZ : 0 < Z := hZ_def ▸ integral_exp_pos hexp
-  have hZ1 : Z ≤ 1 := by
-    rw [← hZ_def]
-    calc ∫ z, Real.exp (-((c z).toReal / ε)) ∂μ.prod ν ≤ ∫ _, (1 : ℝ) ∂μ.prod ν :=
-          integral_mono hexp (integrable_const 1) fun z ↦ by
-            simp only [Real.exp_le_one_iff, Left.neg_nonpos_iff]
-            positivity
-      _ = 1 := by simp
+  have hZ1 : Z ≤ 1 := hZ_def ▸ integral_exp_neg_toReal_div_le_one hc
   rw [hZ_def] at hπR
   have hφ' : Integrable (fun x ↦ φ x / ε + Real.log Z) μ :=
     (hφi.div_const _).add (integrable_const _)
   have hnonneg := hπ.kantorovichDualValue_add_sub_nonneg_of_eq_withDensity
     (φ := fun x ↦ φ x / ε + Real.log Z) (ψ := fun y ↦ ψ y / ε) hπR
     ((hφ.div_const _).add_const _) (hψ.div_const _) hφ' (hψi.div_const _)
-  have hdual : kantorovichDualValue μ ν (fun x ↦ φ x / ε + Real.log Z) (fun y ↦ ψ y / ε) =
-      kantorovichDualValue μ ν φ ψ / ε + Real.log Z := by
-    simp only [kantorovichDualValue_def, integral_add (hφi.div_const _) (integrable_const _),
-      integral_div, integral_const, probReal_univ, smul_eq_mul, one_mul]
-    ring
+  have hdual := kantorovichDualValue_div_add_const (ε := ε) (ψ := ψ) (ν := ν) hφi (Real.log Z)
   simp only [probReal_univ, add_sub_cancel_right, hdual] at hnonneg
   rw [entropicTransportCost_eq_mul_schroedingerValue_add hc hc_top hε, hZ_def,
     schroedingerValue_eq_ofReal_of_eq_withDensity (φ := fun x ↦ φ x / ε + Real.log Z)
