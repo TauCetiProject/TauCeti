@@ -18,18 +18,19 @@ divided by the square roots of their interval lengths. It proves measurability w
 grid observations are measurable and, for a strictly increasing grid and a pre-Brownian process,
 the product standard Gaussian law. No path regularity or filtration is required. Empty increment
 vectors and positive initial dates are allowed; the vector does not include the initial observation.
-On a strictly increasing grid starting at zero, real claims measurable up to null sets from the
-increments are exactly those measurable from the observations. This specializes the finite-grid
-information dictionary `TauCeti.exists_measurable_comp_increments_ae`.
+The increment sigma algebra is contained in the observation sigma algebra. On a strictly
+increasing grid starting at zero, claims valued in a completely metrizable space are a.e.
+strongly measurable from the increments exactly when they are so from the observations.
+This specializes `TauCeti.aestronglyMeasurable_comap_fin_succ_iff_increments`.
 
-For Hermite expansions of increment-dependent claims, import
-`TauCeti/Probability/Distributions/Gaussian/Hermite/Pi/Pullback.lean` as well. Apply its
-`ProbabilityTheory.HasLaw.gaussianVectorL2Isometry` and
-`ProbabilityTheory.HasLaw.hasSum_gaussianVectorHermite` to
+For the L² pullback range characterization and Hermite expansions of observation-measurable
+claims on grids starting at zero, import `TauCeti/Probability/BrownianMotion/Hermite.lean`.
+For general increment-measurable claims, import
+`TauCeti/Probability/Distributions/Gaussian/Hermite/Pi/Pullback.lean` and apply
+`ProbabilityTheory.HasLaw.hasSum_gaussianVectorHermite_of_aestronglyMeasurable` to
 `ProbabilityTheory.IsPreBrownianReal.hasLaw_normalizedBrownianIncrements`, supplying
-measurability of the increment vector separately. That general API uses the existing product
-Gaussian Hermite basis `TauCeti.gaussianHermitePiBasis`; the present file supplies only the
-increment vector and its law, not the pullback construction or a martingale representation.
+measurability of the increment vector separately. That API uses the existing product Gaussian
+Hermite basis `TauCeti.gaussianHermitePiBasis`.
 The finite-dimensional Gaussian expansion underlying Brownian martingale representation is
 described in Karatzas and Shreve, *Brownian Motion and Stochastic Calculus*, second edition, §3.4.
 -/
@@ -104,24 +105,19 @@ theorem hasLaw_normalizedBrownianIncrements (hB : IsPreBrownianReal B P) (ht : S
     (Real.sqrt ((t i.succ : ℝ) - t i.castSucc)) using 1
   exact congrArg₂ gaussianReal (zero_div _).symm hvar.symm
 
-/-- On a strictly increasing grid starting at zero, a real claim is measurable up to null
-sets from the standardized increments exactly when it is so from the grid observations. -/
+/-- On a strictly increasing grid starting at zero, a claim valued in a completely metrizable
+space is a.e. strongly measurable from the standardized increments exactly when it is so
+from the grid observations. -/
 theorem aestronglyMeasurable_comap_normalizedBrownianIncrements_iff
-    (hB : IsPreBrownianReal B P) (ht : StrictMono t) (ht₀ : t 0 = 0) {u : Ω → ℝ} :
+    {E : Type*} [TopologicalSpace E] [TopologicalSpace.IsCompletelyMetrizableSpace E]
+    (hB : IsPreBrownianReal B P) (ht : StrictMono t) (ht₀ : t 0 = 0) {u : Ω → E} :
     AEStronglyMeasurable[MeasurableSpace.comap
       (normalizedBrownianIncrements B t) inferInstance] u P ↔
       AEStronglyMeasurable[MeasurableSpace.comap (fun ω i ↦ B (t i) ω) inferInstance] u P := by
-  constructor
-  · exact fun hu ↦ hu.mono comap_normalizedBrownianIncrements_le
-  · intro hu
-    have ha (i : Fin n) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
-      ne_of_gt (Real.sqrt_pos.2 (sub_pos.2 (NNReal.coe_lt_coe.2 (ht Fin.castSucc_lt_succ))))
-    obtain ⟨g, hg, hgu⟩ := exists_measurable_comp_increments_ae
-      (fun ω i ↦ B (t i) ω) (fun i ↦ Real.sqrt ((t i.succ : ℝ) - t i.castSucc)) ha 0
-      (by simpa only [ht₀] using hB.eval_zero_ae_eq_zero) hu.stronglyMeasurable_mk.measurable
-    refine ⟨g ∘ normalizedBrownianIncrements B t, ?_, ?_⟩
-    · exact hg.stronglyMeasurable.comp_measurable (comap_measurable _)
-    · simpa only [Function.comp_def, ← normalizedBrownianIncrements_apply] using
-        hu.ae_eq_mk.trans hgu
+  have ha (i : Fin n) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
+    ne_of_gt (Real.sqrt_pos.2 (sub_pos.2 (NNReal.coe_lt_coe.2 (ht Fin.castSucc_lt_succ))))
+  exact (aestronglyMeasurable_comap_fin_succ_iff_increments
+    (fun ω i ↦ B (t i) ω) (fun i ↦ Real.sqrt ((t i.succ : ℝ) - t i.castSucc)) ha 0
+    (by simpa only [ht₀] using hB.eval_zero_ae_eq_zero)).symm
 
 end ProbabilityTheory.IsPreBrownianReal
