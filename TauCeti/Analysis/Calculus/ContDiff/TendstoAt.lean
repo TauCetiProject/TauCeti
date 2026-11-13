@@ -117,6 +117,14 @@ theorem tendsto (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) :
     LinearIsometryEquiv.apply_symm_apply] using
     ((continuousMultilinearCurryFin0 𝕜 E F).continuous.tendsto _).comp (h 0 (Nat.zero_le n))
 
+/-- Eventually along `l`, the members of the family map one open neighbourhood of `x₀` into a
+given neighbourhood of `f₀ x₀`. -/
+theorem exists_isOpen_eventually_mapsTo (h : TendstoContDiffAt 𝕜 n f f₀ l x₀) {s : Set F}
+    (hs : s ∈ 𝓝 (f₀ x₀)) : ∃ t, IsOpen t ∧ x₀ ∈ t ∧ ∀ᶠ i in l, MapsTo (f i) t s := by
+  obtain ⟨pa, hpa, pb, hpb, hpab⟩ := eventually_prod_iff.1 (h.tendsto hs)
+  obtain ⟨t, htb, ht, hx₀t⟩ := eventually_nhds_iff.1 hpb
+  exact ⟨t, ht, hx₀t, hpa.mono fun i hi x hx ↦ hpab hi (htb x hx)⟩
+
 /-- `C^0` convergence is continuous convergence of the values. -/
 theorem _root_.TauCeti.tendstoContDiffAt_zero_iff :
     TendstoContDiffAt 𝕜 0 f f₀ l x₀ ↔

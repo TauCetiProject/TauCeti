@@ -154,19 +154,19 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
       exact ⟨ψ', fun _ ↦ hψ'⟩
     · exact ⟨ψ₀, fun h' ↦ (hi h').elim⟩
   choose ψ hψ using hex
+  -- Eventually along `l` the charts come from the model extensions.
+  have hψev := hev.mono fun i hi ↦ And.intro hi (hψ i ⟨hi.1, hi.2.1, hi.2.2.2⟩)
   -- The common target `T`: near `(φ x₀, 0)` the extensions eventually land in `χ (O)`.
-  set p₀ : F × F := (φ x₀, 0)
   have hV : IsOpen (χ.target ∩ χ.symm ⁻¹' O) :=
     (continuousOn_extChartAt_symm y).isOpen_inter_preimage hΩ hO
-  have hlimp₀ := (tendstoContDiffAt_adaptedNormalExtension (p := p₀) hU hΩ hγ hγΩ
-    (Eventually.of_forall hJ) hJ₀ hx₀U (hconv' (φ x₀) hx₀U)).tendsto
-  rw [adaptedNormalExtension_zero, hγx₀] at hlimp₀
   have hmem : χ y ∈ χ.target ∩ χ.symm ⁻¹' O :=
     ⟨mem_extChartAt_target y, by
       rw [mem_preimage, χ.left_inv (mem_extChartAt_source y)]
       exact hx₀O⟩
-  obtain ⟨pa, hpa, pb, hpb, hpab⟩ := eventually_prod_iff.1 (hlimp₀ (hV.mem_nhds hmem))
-  obtain ⟨W, hWpb, hW, hp₀W⟩ := eventually_nhds_iff.1 hpb
+  obtain ⟨W, hW, hp₀W, hWV⟩ :=
+    (tendstoContDiffAt_adaptedNormalExtension (p := (φ x₀, 0)) hU hΩ hγ hγΩ
+      (Eventually.of_forall hJ) hJ₀ hx₀U (hconv' (φ x₀) hx₀U)).exists_isOpen_eventually_mapsTo
+      (by rw [adaptedNormalExtension_zero, hγx₀]; exact hV.mem_nhds hmem)
   set T := W ∩ ψ₀.target
   have hT : IsOpen T := hW.inter ψ₀.open_target
   have hTψ₀ : T ⊆ ψ₀.target := inter_subset_right
@@ -175,17 +175,12 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
   set S := T₀ ∩ (χ.target ∩ χ.symm ⁻¹' O)
   have hS : IsOpen S := hT₀.inter hV
   have hSΩ : S ⊆ χ.target := fun z hz ↦ hz.2.1
-  -- The eventual properties of the members of the family.
-  have hgood : ∀ᶠ i in l, (⇑(e i) = adaptedNormalExtension γ ((J i).inChart y) ∧
-      (e i).source = e₀.source ∧ T₀ ⊆ (e i).target ∧ ContDiffOn ℝ ℓ (e i).symm (e i).target) ∧
-      pa i := hev.and hpa
   have hψT : ∀ᶠ i in l, T ⊆ (ψ i).target := by
-    filter_upwards [hgood] with i hi p hp
-    obtain ⟨⟨hei, hsi, -, hci⟩, hpai⟩ := hi
-    obtain ⟨-, -, -, hψtgt, -⟩ := hψ i ⟨hei, hsi, hci⟩
+    filter_upwards [hψev, hWV] with i hi hWi p hp
+    obtain ⟨⟨hei, hsi, -, -⟩, -, -, -, hψtgt, -⟩ := hi
     have hq : e i p ∈ χ.target ∩ χ.symm ⁻¹' O := by
       rw [hei]
-      exact hpab hpai (hWpb p hp.1)
+      exact hWi hp.1
     exact (hψtgt p).2 ⟨hsi ▸ hTe₀ hp, hq.1, hq.2⟩
   have hSψ : ∀ x ∈ χ.symm '' S, ∀ (e' : OpenPartialHomeomorph (F × F) E), T₀ ⊆ e'.target →
       x ∈ χ.source ∧ χ x ∈ e'.target ∧ x ∈ O := by
@@ -196,9 +191,8 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
   refine ⟨ψ₀, ψ, T, S, hx₀ψ₀, fun x hx ↦ ((hψ₀src x).1 hx).1, hψ₀A, ?_, hT,
     ⟨by rw [hψ₀x₀]; exact hp₀W, ψ₀.map_source hx₀ψ₀⟩, hTψ₀, ?_, hS, ⟨hγT₀, hmem⟩, hSΩ,
     fun z hz ↦ (hψ₀src _).2 (hSψ _ (mem_image_of_mem _ hz) e₀ hT₀e₀), ?_⟩
-  · filter_upwards [hgood, hψT] with i hi hTψi
-    obtain ⟨⟨hei, hsi, hTi, hci⟩, -⟩ := hi
-    obtain ⟨-, -, hψsrc, -, hx₀ψ, hψx₀, hψA⟩ := hψ i ⟨hei, hsi, hci⟩
+  · filter_upwards [hψev, hψT] with i hi hTψi
+    obtain ⟨⟨-, -, hTi, -⟩, -, -, hψsrc, -, hx₀ψ, hψx₀, hψA⟩ := hi
     exact ⟨hx₀ψ, fun x hx ↦ ((hψsrc x).1 hx).1, hψA, hψx₀.trans hψ₀x₀.symm, hTψi,
       fun z hz ↦ (hψsrc _).2 (hSψ _ (mem_image_of_mem _ hz) (e i) hTi)⟩
   · -- The inverse charts read in `χ` are the extensions on `T`.
@@ -209,17 +203,16 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart_family [IsManifold I' k N]
       (hev.mono fun i hi ↦ hi.1.symm)
     rw [← he₀] at hlimp
     refine hlimp.congr_of_eqOn (hT.mem_nhds hp) ?_ fun q hq ↦ ?_
-    · filter_upwards [hgood, hψT] with i hi hTψi q hq
-      obtain ⟨⟨hei, hsi, -, hci⟩, -⟩ := hi
-      obtain ⟨-, hψsymm, -, hψtgt, -⟩ := hψ i ⟨hei, hsi, hci⟩
+    · filter_upwards [hψev, hψT] with i hi hTψi q hq
+      obtain ⟨-, -, hψsymm, -, hψtgt, -⟩ := hi
       rw [Function.comp_apply, hψsymm, χ.right_inv ((hψtgt q).1 (hTψi hq)).2.1]
     · rw [Function.comp_apply, hψ₀symm, χ.right_inv ((hψ₀tgt q).1 (hTψ₀ hq)).2.1]
   · -- The charts read in `χ` are the inverse extensions on the chart target.
     intro z hz
     refine (hlim z hz.1).congr_of_eqOn (hΩ.mem_nhds (hSΩ hz)) ?_ fun w hw ↦ ?_
-    · filter_upwards [hgood] with i hi w hw
-      obtain ⟨⟨hei, hsi, -, hci⟩, -⟩ := hi
-      rw [Function.comp_apply, (hψ i ⟨hei, hsi, hci⟩).1, χ.right_inv hw]
+    · filter_upwards [hψev] with i hi w hw
+      obtain ⟨-, hψi, -⟩ := hi
+      rw [Function.comp_apply, hψi, χ.right_inv hw]
     · rw [Function.comp_apply, hψ₀, χ.right_inv hw]
 
 end TauCeti
