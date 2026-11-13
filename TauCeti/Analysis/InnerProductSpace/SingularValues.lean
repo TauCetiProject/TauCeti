@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
+public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
 /-!
@@ -189,7 +190,7 @@ often (`s = 0`), so its `ncard` is `0`. -/
 @[simp]
 theorem ncard_ofPred_singularValues_eq_zero_of_nonpos (T : E →ₗ[𝕜] F) {s : ℝ} (hs : s ≤ 0) :
     {i | T.singularValues i = s}.ncard = 0 :=
-  Finsupp.ncard_ofPred_eq_zero_of_not_pos (singularValues_antitone T) hs.not_gt
+  Finsupp.ncard_ofPred_eq_zero_of_nonneg_of_not_pos T.singularValues_nonneg hs.not_gt
 
 /-- A linear map and its adjoint have the same singular values. -/
 @[simp]
