@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
+public import TauCeti.AlgebraicTopology.Cohomology.Point
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
@@ -37,7 +38,19 @@ and the duality maps commute with the extension `j_! : Hᵖ_c(U; L) ⟶ Hᵖ_c(M
 pushforward `j_* : H_q(U; L) ⟶ H_q(M; L)`: `D_M ∘ j_! = j_* ∘ D_U`
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`).
 This is the naturality along which the duality maps of open subsets are compared in the proof of
-Poincaré duality.
+Poincaré duality. Restricted to a compact `K ⊆ U`, it says that capping along `K` followed by `j_*`
+is the inverse of the excision isomorphism `Hᵖ(M, M ∖ j(K); L) ≅ Hᵖ(U, U ∖ K; L)` followed by
+capping along `j(K)`
+(`TauCeti.HomologicalOrientation.capFundamentalClassOn_comap_comp_singularHomologyMap`), so when
+`j_*` is bijective, capping along `K` is bijective exactly when capping along `j(K)` is
+(`TauCeti.HomologicalOrientation.bijective_capFundamentalClassOn_comap_iff`).
+
+Every class with compact support comes from some `Hᵖ(M, M ∖ K; L)`, on which the duality map is
+capping with `μ_K`. Hence the duality map is bijective as soon as every compact set lies in a
+compact `K` along which capping with `μ_K` is bijective
+(`TauCeti.HomologicalOrientation.bijective_dualityMap_of_cofinal`). It is also bijective for an
+empty manifold, where both groups vanish
+(`TauCeti.HomologicalOrientation.bijective_dualityMap_of_isEmpty`).
 
 ## Main definitions
 
@@ -55,6 +68,8 @@ Poincaré duality.
   map.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`: naturality along open
   embeddings.
+* `TauCeti.HomologicalOrientation.bijective_dualityMap_of_cofinal`: the duality map is bijective
+  if capping is bijective along cofinally many compact sets.
 
 ## Implementation notes
 
@@ -82,7 +97,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory MonoidalCategory Module TopologicalSpace Topology Set
+open CategoryTheory Limits MonoidalCategory Module TopologicalSpace Topology Set
 
 namespace TauCeti
 
@@ -216,6 +231,59 @@ lemma dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv [CompactSpace M] 
   -- `(M, M ∖ ⊤)` is `M` only after unfolding `TopPair.ofSubset`.
   exact (ConcreteCategory.comp_apply _ _ _).symm.trans this.symm
 
+section Criteria
+
+variable {p q : ℕ} (h : p + q = n)
+
+/-- The duality map is surjective if capping with the fundamental class along some compact set is
+surjective. -/
+theorem surjective_dualityMap_of_surjective_capFundamentalClassOn {K : Compacts (TopCat.of M)}
+    (hK : Function.Surjective (o.capFundamentalClassOn hn L K.isCompact p q h)) :
+    Function.Surjective (o.dualityMap hn L p q h) := fun z ↦ by
+  obtain ⟨α, rfl⟩ := hK z
+  refine ⟨TopCat.compactSupportCohomologyι p K α, ?_⟩
+  rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap]
+
+/-- The duality map is injective if every compact set lies in a compact set `K` along which
+capping with the fundamental class is injective. -/
+theorem injective_dualityMap_of_cofinal
+    (H : ∀ K₀ : Compacts (TopCat.of M), ∃ K, K₀ ≤ K ∧
+      Function.Injective (o.capFundamentalClassOn hn L K.isCompact p q h)) :
+    Function.Injective (o.dualityMap hn L p q h) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain ⟨K₀, -, α, rfl⟩ := TopCat.exists_compactSupportCohomologyι_eq x ⊥
+  obtain ⟨K, hK₀K, hK⟩ := H K₀
+  rw [← TopCat.singularCohomologyMap_comp_compactSupportCohomologyι_apply p hK₀K] at hx ⊢
+  rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap] at hx
+  rw [(injective_iff_map_eq_zero _).1 hK _ hx, map_zero]
+
+/-- **Criterion for Poincaré duality**: the duality map of an oriented manifold is bijective if
+every compact set lies in a compact set `K` along which capping with the fundamental class,
+`Hᵖ(M, M ∖ K; L) ⟶ H_q(M; L)`, is bijective. -/
+theorem bijective_dualityMap_of_cofinal
+    (H : ∀ K₀ : Compacts (TopCat.of M), ∃ K, K₀ ≤ K ∧
+      Function.Bijective (o.capFundamentalClassOn hn L K.isCompact p q h)) :
+    Function.Bijective (o.dualityMap hn L p q h) :=
+  ⟨o.injective_dualityMap_of_cofinal hn L h fun K₀ ↦ (H K₀).imp fun _ hK ↦ ⟨hK.1, hK.2.1⟩,
+    o.surjective_dualityMap_of_surjective_capFundamentalClassOn hn L h (H ⊥).choose_spec.2.2⟩
+
+/-- The duality map of an empty manifold is bijective: both groups vanish. -/
+theorem bijective_dualityMap_of_isEmpty [IsEmpty M] :
+    Function.Bijective (o.dualityMap hn L p q h) := by
+  have hc : IsZero ((TopCat.of M).compactSupportCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :=
+    (isZero_singularCohomology_of_isEmpty _ ℤ L (TopCat.of M) p).of_iso
+      (TopCat.compactSupportCohomologyIsoOfCompactSpace p)
+  have hh : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
+      (TopCat.of M)) := by
+    rcases q with _ | q
+    · exact isZero_singularHomologyFunctor_zero_of_isEmpty L _
+    · exact AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ _ L _
+        q.succ_ne_zero
+  have := hc.isIso hh (o.dualityMap hn L p q h)
+  exact ConcreteCategory.bijective_of_isIso _
+
+end Criteria
+
 section OpenEmbedding
 
 variable {U : Type} [TopologicalSpace U] [T2Space U] [ChartedSpace E U]
@@ -247,6 +315,46 @@ theorem compactSupportCohomologyExtend_dualityMap {j : C(U, M)} (hj : IsOpenEmbe
   -- definition (`Compacts.coe_map` is `rfl`). Since the set also occurs in the type of `β`, `rw`
   -- cannot change one into the other, but `exact` identifies them.
   exact (congrArg _ hμ.symm).trans this.symm
+
+variable {j : C(U, M)} (hj : IsOpenEmbedding j) {p q : ℕ} (h : p + q = n)
+
+/-- **Capping along a compact subset of an open subset**: for an open embedding `j : U → M` and a
+compact `K ⊆ U`, capping with the fundamental class of the pulled-back orientation along `K`,
+followed by `j_* : H_q(U; L) ⟶ H_q(M; L)`, is the inverse of the excision isomorphism
+`Hᵖ(M, M ∖ j(K); L) ≅ Hᵖ(U, U ∖ K; L)` followed by capping with the fundamental class along
+`j(K)`. -/
+@[reassoc]
+lemma capFundamentalClassOn_comap_comp_singularHomologyMap (K : Compacts (TopCat.of U)) :
+    (o.comap hj).capFundamentalClassOn hn L K.isCompact p q h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+          (TopCat.ofHom j) =
+      (TopCat.singularCohomologyComplCompactsMapIso (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L
+          (f := TopCat.ofHom j) hj K p).inv ≫
+        o.capFundamentalClassOn hn L
+          (K.map (TopCat.ofHom j) (TopCat.ofHom j).hom.continuous).isCompact p q h := by
+  have := TopCat.compactSupportCohomologyι p K ≫=
+    o.compactSupportCohomologyExtend_dualityMap hn L hj p q h
+  rw [TopCat.compactSupportCohomologyι_comp_extend_assoc, compactSupportCohomologyι_dualityMap,
+    compactSupportCohomologyι_dualityMap_assoc] at this
+  exact this.symm
+
+/-- For an open embedding `j : U → M` inducing a bijection `j_*` on `H_q`, capping with the
+fundamental class of the pulled-back orientation along a compact `K ⊆ U` is bijective exactly
+when capping with the fundamental class along `j(K)` is. -/
+theorem bijective_capFundamentalClassOn_comap_iff
+    (hjq : Function.Bijective
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        (TopCat.ofHom j)))
+    (K : Compacts (TopCat.of U)) :
+    Function.Bijective ((o.comap hj).capFundamentalClassOn hn L K.isCompact p q h) ↔
+      Function.Bijective (o.capFundamentalClassOn hn L
+        (K.map (TopCat.ofHom j) (TopCat.ofHom j).hom.continuous).isCompact p q h) := by
+  rw [← Function.Bijective.of_comp_iff' hjq, ← Function.Bijective.of_comp_iff _
+    (ConcreteCategory.bijective_of_isIso (TopCat.singularCohomologyComplCompactsMapIso
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L (f := TopCat.ofHom j) hj K p).inv)]
+  refine iff_of_eq (congrArg _ (funext fun α ↦ ?_))
+  simpa only [ConcreteCategory.comp_apply, Function.comp_apply] using ConcreteCategory.congr_hom
+    (o.capFundamentalClassOn_comap_comp_singularHomologyMap hn L hj h K) α
 
 end OpenEmbedding
 
