@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Measure
 
 /-!
 # Independence of the Sobolev space of sections from the bundle atlas
@@ -25,8 +26,10 @@ are isomorphic Banach spaces (`TauCeti.SobolevSection.atlasEquiv`), so their nor
 The map is well defined because chart transitions between the two atlases carry null sets to
 null sets: a property of the points of `M` holding almost everywhere in every chart of `A` holds
 almost everywhere in every chart of `A'`
-(`TauCeti.FiniteBundleAtlas.ae_restrict_image_symm_of_ae`). Two sections whose readings agree
-almost everywhere in the charts of `A` therefore agree almost everywhere in the charts of `A'`.
+(`TauCeti.FiniteBundleAtlas.ae_restrict_image_symm_of_ae`), so two sections whose readings agree
+almost everywhere in the charts of `A` agree almost everywhere in the charts of `A'`
+(`TauCeti.FiniteBundleAtlas.coord_ae_eq_of_coord_ae_eq`); both are proved in
+`TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Measure`.
 Continuity follows from the closed graph theorem: both spaces are complete, and if `w m → w` and
 `changeAtlas w m → v`, then along a subsequence the chart data converge almost everywhere, and
 on the overlap of a chart of `A` and a chart of `A'` the readings are related by the coordinate
@@ -49,10 +52,6 @@ gives the corresponding transfer property and hence the atlas independence at th
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.ae_restrict_image_symm_of_ae`: almost everywhere statements on `M` do
-  not depend on the atlas.
-* `TauCeti.FiniteBundleAtlas.coord_ae_eq_of_coord_ae_eq`: sections whose readings agree almost
-  everywhere in one atlas agree almost everywhere in every other atlas.
 * `TauCeti.SobolevSection.chartValueL_changeAtlas_ae`: the chart data of `changeAtlas h w` are the
   readings in `A'` of any section of `w`.
 * `TauCeti.SobolevSection.transfersTo_of_le_one`: the transfer property for surfaces at orders
@@ -77,102 +76,6 @@ open scoped Manifold Topology ENNReal
 universe u
 
 namespace TauCeti
-
-section Atlas
-
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
-  [IsManifold 𝓘(ℝ, E) 1 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
-  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  (A A' : FiniteBundleAtlas E M F V) {μ : Measure E} [μ.IsAddHaarMeasure]
-
-namespace FiniteBundleAtlas
-
-omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- **Change of atlas preserves null sets, chartwise.** If a property `P` of points of `E` holds
-almost everywhere on the image of chart `i` of `A`, then almost everywhere on the image of chart
-`i'` of `A'` it holds at the reading in chart `i` of the corresponding point of `M`, wherever that
-point lies in the domain of chart `i`. The chart transition from `A'` to `A` is a `C¹`
-diffeomorphism between open sets, whose inverse carries null sets to null sets. -/
-theorem ae_restrict_image_chart_symm {i : Fin A.n} (i' : Fin A'.n) {P : E → Prop}
-    (h : ∀ᵐ z ∂μ.restrict (A.image i), P z) :
-    ∀ᵐ y ∂μ.restrict (A'.image i'), (A'.chart i').symm y ∈ A.dom i →
-      P (A.chart i ((A'.chart i').symm y)) := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet] at h
-  have hN : μ ({z | ¬P z} ∩ A.image i) = 0 := by
-    rw [ae_iff] at h
-    exact measure_mono_null (fun z hz ↦ fun h' ↦ hz.1 (h' hz.2)) h
-  -- The chart transition from `A` to `A'` is differentiable on its source.
-  have hd := ((contDiffOn_ext_coord_change (I := 𝓘(ℝ, E)) (A'.center i')
-    (A.center i)).differentiableOn one_ne_zero).mono
-      (inter_subset_right (s := {z | ¬P z} ∩ A.image i))
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ hd
-    (measure_mono_null inter_subset_left hN)
-  rw [ae_iff, Measure.restrict_apply' (A'.image i').isOpen.measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  simp only [not_imp, mem_inter_iff, mem_ofPred_eq] at hy
-  obtain ⟨⟨hdom, hP⟩, hy'⟩ := hy
-  set x := (A'.chart i').symm y
-  have hx : x ∈ (A.chart i).source := A.dom_subset_chart_source i hdom
-  have hx' : x ∈ (A'.chart i').source := A'.dom_subset_chart_source i' (A'.symm_mem_dom hy')
-  refine ⟨A.chart i x, ⟨⟨hP, A.mem_image.2 ⟨x, hdom, rfl⟩⟩, ?_⟩, ?_⟩
-  · simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
-      extChartAt_target, extChartAt_source, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq, range_id, inter_univ,
-      preimage_id_eq]
-    exact ⟨(A.chart i).map_source hx, by rwa [(A.chart i).left_inv hx]⟩
-  · simp only [Function.comp_apply, extChartAt_coe_symm, extChartAt_coe,
-      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq]
-    rw [(A.chart i).left_inv hx,
-      (A'.chart i').right_inv (A'.closure_image_subset_target i' (subset_closure hy'))]
-
-omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- **Almost everywhere statements on `M` do not depend on the atlas.** A property of points of `M`
-that holds almost everywhere in every chart of `A` holds almost everywhere in every chart of
-`A'`. -/
-theorem ae_restrict_image_symm_of_ae {P : M → Prop}
-    (h : ∀ i, ∀ᵐ z ∂μ.restrict (A.image i), P ((A.chart i).symm z)) (i' : Fin A'.n) :
-    ∀ᵐ y ∂μ.restrict (A'.image i'), P ((A'.chart i').symm y) := by
-  have hall := ae_all_iff.2 fun i ↦ A.ae_restrict_image_chart_symm A' i' (h i)
-  filter_upwards [hall] with y hy
-  obtain ⟨i, hi⟩ := A.exists_mem_dom ((A'.chart i').symm y)
-  simpa only [(A.chart i).left_inv (A.dom_subset_chart_source i hi)] using hy i hi
-
-omit [NormedSpace ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- Sections whose readings agree almost everywhere in every chart of one finite bundle atlas agree
-almost everywhere in every chart of any other. -/
-theorem coord_ae_eq_of_coord_ae_eq {s t : ∀ x, V x}
-    (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) (i' : Fin A'.n) :
-    A'.coord i' s =ᵐ[μ.restrict (A'.image i')] A'.coord i' t := by
-  have hst := A.ae_restrict_image_symm_of_ae A' (P := fun x ↦ s x = t x) (fun i ↦ by
-    filter_upwards [h i, ae_restrict_mem (A.image i).isOpen.measurableSet] with z hz hzU
-    have hb := A.dom_subset_baseSet i (A.symm_mem_dom hzU)
-    rw [← (A.triv i).symm_apply_apply_mk hb (s _), ← (A.triv i).symm_apply_apply_mk hb (t _)]
-    rw [A.coord_def, A.coord_def] at hz
-    exact congrArg _ hz) i'
-  filter_upwards [hst] with y hy
-  simp only [coord_def, hy]
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [IsManifold 𝓘(ℝ, E) 1 M] in
-/-- On the overlap of the domains of chart `i` of `A` and chart `i'` of `A'`, the reading of a
-section in chart `i'` of `A'` is the coordinate change of the bundle applied to its reading in
-chart `i` of `A`. -/
-theorem coord_eq_coordChangeL_coord {i : Fin A.n} {i' : Fin A'.n} (s : ∀ x, V x) {y : E}
-    (hy : y ∈ A'.image i') (hi : (A'.chart i').symm y ∈ A.dom i) :
-    A'.coord i' s y = (A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y)
-      (A.coord i s (A.chart i ((A'.chart i').symm y))) := by
-  have hb : (A'.chart i').symm y ∈ (A.triv i).baseSet ∩ (A'.triv i').baseSet :=
-    ⟨A.dom_subset_baseSet i hi, A'.dom_subset_baseSet i' (A'.symm_mem_dom hy)⟩
-  rw [A.coord_chart s hi, Trivialization.coordChangeL_apply _ _ hb,
-    (A.triv i).symm_apply_apply_mk hb.1]
-  exact A'.coord_def i' s y
-
-end FiniteBundleAtlas
-
-end Atlas
 
 section Sobolev
 
@@ -199,14 +102,6 @@ def TransfersTo : Prop :=
           A'.coord i' s
 
 variable {A A' μ p k}
-
-/-- Every element of `W^{k,p}(V)` consists of the chartwise components of a section, read in the
-charts of `A` as `A.coord i s`. -/
-theorem exists_ae_eq_coord (w : SobolevSection A μ p k) :
-    ∃ s : ∀ x, V x, ∀ i,
-      A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
-  obtain ⟨s, hs⟩ := SectionChartData.exists_section _ μ p k w
-  exact ⟨s, fun i ↦ (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)⟩
 
 theorem transfersTo_refl : TransfersTo A A μ p k :=
   fun w _ hs ↦ ⟨w, hs⟩
@@ -371,7 +266,7 @@ theorem changeAtlas_comp {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A'
 /-- **Independence of the atlas.** If sections transfer between `A` and `A'` in both directions,
 the Sobolev spaces of sections for the two atlases are isomorphic Banach spaces, an element
 corresponding to the element with the same section. In particular their norms are equivalent. -/
-@[expose] def atlasEquiv (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
+def atlasEquiv (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     SobolevSection A μ p k ≃L[ℝ] SobolevSection A' μ p k :=
   ContinuousLinearEquiv.equivOfInverse (changeAtlas h) (changeAtlas h')
     (fun w ↦ (changeAtlas_changeAtlas h h' w).trans (changeAtlas_refl w))
@@ -380,12 +275,12 @@ corresponding to the element with the same section. In particular their norms ar
 @[simp]
 theorem atlasEquiv_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k)
     (w : SobolevSection A μ p k) : atlasEquiv h h' w = changeAtlas h w :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem atlasEquiv_symm_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k)
     (w : SobolevSection A' μ p k) : (atlasEquiv h h').symm w = changeAtlas h' w :=
-  rfl
+  (rfl)
 
 theorem atlasEquiv_symm (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     (atlasEquiv h h').symm = atlasEquiv h' h :=

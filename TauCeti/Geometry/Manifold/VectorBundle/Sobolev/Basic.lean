@@ -74,6 +74,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   the section whose readings its chart data are.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
+* `TauCeti.SobolevSection.exists_ae_eq_coord`: every element of `W^{k,p}(V)` consists of the
+  coordinates of a section.
 
 ## References
 
@@ -665,6 +667,15 @@ theorem SobolevSection.eq_of_ae_eq_coord {w w' : SobolevSection A μ p k} {s : �
   SectionChartData.eq_of_ae_eq_coord (s := s)
     (fun i ↦ (hw i).trans (A.sectionChartData_coord_ae_eq μ i s).symm)
     (fun i ↦ (hw' i).trans (A.sectionChartData_coord_ae_eq μ i s).symm)
+
+variable {A μ p k} in
+/-- Every element of `W^{k,p}(V)` consists of the chartwise components of a section, read in the
+charts of `A` as `A.coord i s`. -/
+theorem SobolevSection.exists_ae_eq_coord (w : SobolevSection A μ p k) :
+    ∃ s : ∀ x, V x, ∀ i,
+      A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs⟩ := SectionChartData.exists_section _ μ p k w
+  exact ⟨s, fun i ↦ (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)⟩
 
 end Sobolev
 
