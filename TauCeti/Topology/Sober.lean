@@ -16,10 +16,12 @@ with no proper generization. Every point of a closed subset is a specialization 
 generic point of that subset. These facts let one choose component-generic points without
 Noetherianity or a dimension argument.
 
-For a continuous map between sober spaces, bijections on component-generic points are
-equivalent to bijections on irreducible components by closure of image. Bijections on
-component-generic points can be checked on an open cover of the target and its inverse-image
-cover of the source; this permits component labels obtained on affine charts to be glued.
+In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
+irreducible components. For a continuous map between sober spaces, bijections on
+component-generic points are therefore equivalent to bijections on irreducible components by
+closure of image. Bijections on component-generic points restrict along open embeddings, and
+can be checked on an open cover of the target and its inverse-image cover of the source; this
+permits component labels obtained on affine charts to be glued.
 -/
 
 public section
@@ -49,6 +51,14 @@ theorem mem_genericPoints_iff {x : X} :
       t ⊆ closure t := subset_closure
       _ = closure {ht.genericPoint} := hgen.def.symm
       _ = closure {x} := by rw [heq]
+
+/-- In a sober space, `x ↦ closure {x}` maps the component-generic points bijectively onto the
+irreducible components. -/
+theorem bijOn_closure_singleton_genericPoints :
+    BijOn (fun x : X ↦ closure {x}) (genericPoints X) (irreducibleComponents X) :=
+  Equiv.bijOn_of_coe_eq genericPoints.equiv fun z ↦ by
+    rw [genericPoints.equiv_apply]
+    exact (genericPoints.isGenericPoint z).def.symm
 
 end TauCeti
 
@@ -103,52 +113,69 @@ theorem Continuous.bijOn_genericPoints_iff
     Set.BijOn f (genericPoints X) (genericPoints Y) ↔
       Set.BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
         (irreducibleComponents Y) := by
-  have hcX : BijOn (fun x : X ↦ closure {x}) (genericPoints X)
-      (irreducibleComponents X) := Equiv.bijOn_of_coe_eq genericPoints.equiv fun _ ↦ rfl
-  have hcY : BijOn (fun y : Y ↦ closure {y}) (genericPoints Y)
-      (irreducibleComponents Y) := Equiv.bijOn_of_coe_eq genericPoints.equiv fun _ ↦ rfl
-  rw [← hcX.image_eq, ← bijOn_comp_iff hcX.injOn,
-    show (fun Z ↦ closure (f '' Z)) ∘ (fun x : X ↦ closure {x}) =
-      (fun y : Y ↦ closure {y}) ∘ f from
-      funext fun _ ↦ (isGenericPoint_closure.image hf).def.symm]
+  have hcX := TauCeti.bijOn_closure_singleton_genericPoints (X := X)
+  have hcY := TauCeti.bijOn_closure_singleton_genericPoints (X := Y)
+  have hcomp : (fun Z ↦ closure (f '' Z)) ∘ (fun x : X ↦ closure {x}) =
+      (fun y : Y ↦ closure {y}) ∘ f := funext fun x ↦ by
+    simp only [Function.comp_apply]
+    exact (isGenericPoint_closure.image hf).def.symm
+  rw [← hcX.image_eq, ← bijOn_comp_iff hcX.injOn, hcomp]
   constructor
   · exact hcY.comp
   · intro h
-    have hmaps : MapsTo f (genericPoints X) (genericPoints Y) := by
-      intro x hx
-      change closure {f x} ∈ irreducibleComponents Y
-      exact h.mapsTo hx
+    have hmaps : MapsTo f (genericPoints X) (genericPoints Y) := fun x hx ↦ by
+      simpa only [genericPoints, mem_ofPred_eq, Function.comp_apply] using h.mapsTo hx
     refine ⟨hmaps, h.injOn.of_comp, fun y hy ↦ ?_⟩
     obtain ⟨x, hx, hxy⟩ := h.surjOn (hcY.mapsTo hy)
     exact ⟨x, hx, hcY.injOn (hmaps hx) hy hxy⟩
 
-/-- Bijections on component-generic points glue across an open cover of the target and its
-inverse-image cover of the source. The maps `f` and `g i` need not be continuous, and commute
-with the open embeddings as `f (j i x) = k i (g i x)`. -/
+/-- Bijections on component-generic points restrict along open embeddings: if `f` is bijective
+on component-generic points, `f (j x) = k (g x)` for open embeddings `j` and `k`, and
+`f ⁻¹' range k ⊆ range j`, then `g` is bijective on component-generic points. The maps `f`
+and `g` need not be continuous. -/
 theorem TauCeti.bijOn_genericPoints_of_isOpenEmbedding
+    {U V : Type*} [TopologicalSpace U] [TopologicalSpace V]
+    {f : X → Y} {j : U → X} {k : V → Y} {g : U → V}
+    (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k)
+    (hrange : f ⁻¹' range k ⊆ range j) (hcomm : ∀ x, f (j x) = k (g x))
+    (h : BijOn f (genericPoints X) (genericPoints Y)) :
+    BijOn g (genericPoints U) (genericPoints V) := by
+  refine ⟨fun x hx ↦ ?_, fun x hx y hy hxy ↦ ?_, fun v hv ↦ ?_⟩
+  · rw [← hk.mem_genericPoints_iff, ← hcomm]
+    exact h.mapsTo ((hj.mem_genericPoints_iff x).mpr hx)
+  · refine hj.injective (h.injOn ((hj.mem_genericPoints_iff x).mpr hx)
+      ((hj.mem_genericPoints_iff y).mpr hy) ?_)
+    rw [hcomm, hcomm, hxy]
+  · obtain ⟨x, hx, hxv⟩ := h.surjOn ((hk.mem_genericPoints_iff v).mpr hv)
+    obtain ⟨u, rfl⟩ := hrange ⟨v, hxv.symm⟩
+    refine ⟨u, (hj.mem_genericPoints_iff u).mp hx, hk.injective ?_⟩
+    rw [← hcomm, hxv]
+
+/-- A map is bijective on component-generic points exactly when it is so on every chart of an
+open cover of the target and its inverse-image cover of the source. The maps `f` and `g i` need
+not be continuous, and commute with the open embeddings as `f (j i x) = k i (g i x)`. -/
+theorem TauCeti.bijOn_genericPoints_iff_of_isOpenEmbedding
     {ι : Type*} {U V : ι → Type*}
     [∀ i, TopologicalSpace (U i)] [∀ i, TopologicalSpace (V i)]
     {f : X → Y} {j : ∀ i, U i → X} {k : ∀ i, V i → Y} {g : ∀ i, U i → V i}
     (hj : ∀ i, IsOpenEmbedding (j i)) (hk : ∀ i, IsOpenEmbedding (k i))
     (hcover : ∀ y, ∃ i, y ∈ range (k i))
-    (hrange : ∀ i, range (j i) = f ⁻¹' range (k i))
-    (hcomm : ∀ i x, f (j i x) = k i (g i x))
-    (h : ∀ i, BijOn (g i) (genericPoints (U i)) (genericPoints (V i))) :
-    BijOn f (genericPoints X) (genericPoints Y) := by
-  have hlift (x : X) (i : ι) (hx : f x ∈ range (k i)) : x ∈ range (j i) := by
-    rw [hrange]
-    exact hx
-  refine ⟨?_, ?_, ?_⟩
+    (hrange : ∀ i, f ⁻¹' range (k i) ⊆ range (j i))
+    (hcomm : ∀ i x, f (j i x) = k i (g i x)) :
+    BijOn f (genericPoints X) (genericPoints Y) ↔
+      ∀ i, BijOn (g i) (genericPoints (U i)) (genericPoints (V i)) := by
+  refine ⟨fun h i ↦ TauCeti.bijOn_genericPoints_of_isOpenEmbedding (hj i) (hk i) (hrange i)
+    (hcomm i) h, fun h ↦ ⟨?_, ?_, ?_⟩⟩
   · intro x hx
     obtain ⟨i, hi⟩ := hcover (f x)
-    obtain ⟨z, rfl⟩ := hlift x i hi
+    obtain ⟨z, rfl⟩ := hrange i hi
     rw [hcomm]
     exact (hk i).mem_genericPoints_iff _ |>.mpr
       ((h i).mapsTo ((hj i).mem_genericPoints_iff _ |>.mp hx))
   · intro x hx y hy hxy
     obtain ⟨i, hi⟩ := hcover (f x)
-    obtain ⟨z, rfl⟩ := hlift x i hi
-    obtain ⟨w, rfl⟩ := hlift y i (hxy ▸ hi)
+    obtain ⟨z, rfl⟩ := hrange i hi
+    obtain ⟨w, rfl⟩ := hrange i (show f y ∈ range (k i) from hxy ▸ hi)
     have hzw : g i z = g i w := (hk i).injective (by simpa only [hcomm] using hxy)
     exact congrArg (j i) ((h i).injOn
       ((hj i).mem_genericPoints_iff _ |>.mp hx)
