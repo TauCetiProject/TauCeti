@@ -70,11 +70,14 @@ section Constructors
 
 variable (f : G →* H) {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
 
+/-- An orientable equation without coefficients is its own image. -/
 @[simp]
 theorem map_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective)
     (h : ∀ g ∈ (orientable n hn x y inj).coeffs, f g ≠ 1) :
     (orientable n hn x y inj).map f h = orientable n hn x y inj := (rfl)
 
+/-- The image of an orientable equation with coefficients `cⱼ` and `d` is the same equation with
+coefficients `f cⱼ` and `f d`. -/
 @[simp]
 theorem map_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
     (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
@@ -83,11 +86,14 @@ theorem map_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z)
       orientableCoeff n m hnm x y z inj (fun j ↦ f (c j)) (fun j ↦ h _ (by simp)) (f d)
         (h _ (by simp)) := (rfl)
 
+/-- A non-orientable equation without coefficients is its own image. -/
 @[simp]
 theorem map_nonorientable {x : Fin n → X} (hn : 0 < n) (inj : x.Injective)
     (h : ∀ g ∈ (nonorientable n hn x inj).coeffs, f g ≠ 1) :
     (nonorientable n hn x inj).map f h = nonorientable n hn x inj := (rfl)
 
+/-- The image of a non-orientable equation with coefficients `cⱼ` and `d` is the same equation
+with coefficients `f cⱼ` and `f d`. -/
 @[simp]
 theorem map_nonorientableCoeff {x : Fin n → X} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
     (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1)
@@ -100,71 +106,99 @@ end Constructors
 
 variable (f : G →* H) (S : Standard G X) (h : ∀ g ∈ S.coeffs, f g ≠ 1)
 
+/-- The atoms of the image equation are the images of the atoms of `S`: each coefficient `g` is
+replaced by `f g` and the variables are unchanged. -/
 @[simp]
 theorem atoms_map :
     (S.map f h).atoms = S.atoms.map (Monoid.Coprod.map f (FreeGroup.map id)) := by
   cases S <;> simp [Function.comp_def]
 
+/-- The constant coefficient of the image equation is the image of the constant coefficient. -/
 @[simp]
 theorem constant_map : (S.map f h).constant = f S.constant := by
   cases S <;> simp
 
+/-- The left side of the image equation is the left side of `S` with each coefficient `g`
+replaced by `f g` and the variables unchanged. -/
 @[simp]
 theorem toWord_map :
     (S.map f h).toWord = Monoid.Coprod.map f (FreeGroup.map id) S.toWord := by
   simp [toWord_def, map_list_prod]
 
+/-- The coefficients of the image equation are the images of the coefficients of `S`. -/
 @[simp]
 theorem coeffs_map : (S.map f h).coeffs = S.coeffs.map f := by
   cases S <;> simp [Function.comp_def]
 
+/-- The image equation has the variables of `S`. -/
 @[simp]
 theorem vars_map : (S.map f h).vars = S.vars := by
   cases S <;> simp
 
+/-- The image equation has the invariant `κ` of `S`. -/
 @[simp]
 theorem kappa_map : (S.map f h).kappa = S.kappa := by
   cases S <;> simp
 
+/-- The image equation has the genus of `S`. -/
 @[simp]
 theorem genus_map : (S.map f h).genus = S.genus := by
   cases S <;> simp
 
+/-- The image equation has the atomic rank of `S`. -/
 @[simp]
 theorem atomicRank_map : (S.map f h).atomicRank = S.atomicRank := by
   simp [atomicRank_def]
 
+/-- The image equation has the Euler characteristic of `S`. -/
 @[simp]
 theorem eulerChar_map : (S.map f h).eulerChar = S.eulerChar := by
   cases S <;> simp
 
+/-- The image equation is orientable exactly when `S` is. -/
 @[simp]
 theorem isOrientable_map_iff : (S.map f h).IsOrientable ↔ S.IsOrientable := by
   cases S <;> simp
 
-/-- The solutions of the image equation through `ι` are the solutions of the equation through
-`ι ∘ f`. -/
+/-- Changing the coefficients along the identity does not change the equation. -/
+@[simp]
+theorem map_id (h : ∀ g ∈ S.coeffs, MonoidHom.id G g ≠ 1) : S.map (.id G) h = S := by
+  cases S <;> rfl
+
+/-- Changing the coefficients along `f` and then along `g` is changing them along `g ∘ f`. -/
+@[simp]
+theorem map_map (g : H →* K) (hg : ∀ k ∈ (S.map f h).coeffs, g k ≠ 1) :
+    (S.map f h).map g hg =
+      S.map (g.comp f) fun k hk ↦ hg (f k) (coeffs_map f S h ▸ List.mem_map_of_mem hk) := by
+  cases S <;> rfl
+
+/-- The solutions of the image equation through `ι` are the solutions of `S` through `ι ∘ f`. -/
 theorem V_toWord_map (ι : H →* K) : V ι {(S.map f h).toWord} = V (ι.comp f) {S.toWord} := by
   ext v
   simp
 
+/-- A point is degenerate for the image equation through `ι` exactly when it is degenerate for `S`
+through `ι ∘ f`: the atoms of the image take the values of the atoms of `S`. -/
 @[simp]
 theorem isDegenerate_map_iff (ι : H →* K) (v : X → K) :
     (S.map f h).IsDegenerate ι v ↔ S.IsDegenerate (ι.comp f) v := by
   simp [isDegenerate_iff]
 
+/-- A point is commutative for the image equation through `ι` exactly when it is commutative for
+`S` through `ι ∘ f`. -/
 @[simp]
 theorem isCommutative_map_iff (ι : H →* K) (v : X → K) :
     (S.map f h).IsCommutative ι v ↔ S.IsCommutative (ι.comp f) v := by
   simp [isCommutative_iff, Function.comp_def]
 
+/-- A point is in general position for the image equation through `ι` exactly when it is in
+general position for `S` through `ι ∘ f`. -/
 @[simp]
 theorem isGeneralPosition_map_iff (ι : H →* K) (v : X → K) :
     (S.map f h).IsGeneralPosition ι v ↔ S.IsGeneralPosition (ι.comp f) v := by
   simp [isGeneralPosition_iff, Function.comp_def]
 
-/-- The image equation is regular through `ι` exactly when the equation is regular through
-`ι ∘ f`. -/
+/-- The image equation is regular through `ι` exactly when `S` is regular through `ι ∘ f`. -/
 @[simp]
 theorem isRegular_map_iff (ι : H →* K) : (S.map f h).IsRegular ι ↔ S.IsRegular (ι.comp f) := by
   have hd : f S.constant = 1 ↔ S.constant = 1 := by
