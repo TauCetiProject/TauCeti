@@ -35,6 +35,11 @@ Combined with an endpoint correction in a chart, the exponential variation reali
 field `V` along `γ` on `[a, b]` as the variation field of a `C^n` variation whose left endpoint
 follows a prescribed curve `σ` with `σ 0 = γ a` and velocity `V a`, and whose right endpoint
 follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 0`.
+For two fields `V, W` on adjacent intervals `[a, c]` and `uIcc c b` with `V c = W c`,
+the two variation branches can be chosen with matching moving vertices at `c`, while the
+left endpoint follows `σ` near `0` and the right endpoint is fixed when `W b = 0`.
+The assembled family agrees with each branch on its closed interval. This realizes fields
+with a corner as piecewise curve variations for variational arguments.
 
 ## Main definitions and results
 
@@ -54,6 +59,8 @@ follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 
   geodesics from a zero set of `ρ` enter `{ρ > 0}` on a common initial interval.
 * `TauCeti.Manifold.exists_contMDiffAt_variationField_eq`: every `C^n` field along a curve is the
   variation field of a `C^n` variation with a prescribed moving left endpoint.
+* `TauCeti.Manifold.exists_contMDiffAt_variationField_pair_eq`: two fields agreeing at their
+  join are realized by a piecewise family with regular branches and matching moving vertices.
 
 ## References
 
@@ -243,5 +250,50 @@ theorem exists_contMDiffAt_variationField_eq {n : ℕ∞} (hn : 1 ≤ n) {σ : �
     (by rw [variationField_exponentialVariation]; exact hvel)
   exact ⟨F, hF₀.trans (exponentialVariation_zero γ V), hF, hFa, hFb,
     fun t ht ↦ (hFV t ht).trans (variationField_exponentialVariation γ V t)⟩
+
+/-- Two fields `V, W` whose tangent-bundle lifts are `C^n`, `1 ≤ n`, on `uIcc a c` and
+`uIcc c b`, respectively, with `a < c` and `V c = W c`, are realized by variation branches
+jointly `C^n` along `{0} × uIcc a c` and `{0} × uIcc c b`, with matching moving vertices.
+If `σ` is `C^n` at `0`, starts at `γ a` and has velocity `V a`, the left endpoint follows
+`σ s` for `s` near `0`. The second branch ends at `exp_(γ b) (s • W b)`, so its terminal
+value is fixed when `W b = 0`. The central curves and both variation fields remain exact.
+The assembled family `F` agrees with the branches on `Icc a c` and `Icc c b`, respectively. -/
+theorem exists_contMDiffAt_variationField_pair_eq (W : ∀ t, TangentSpace I (γ t))
+    {n : ℕ∞} (hn : 1 ≤ n) {σ : ℝ → M} {a c b : ℝ} (hac : a < c)
+    (hV : ∀ t ∈ uIcc a c, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t)
+    (hW : ∀ t ∈ uIcc c b, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun t ↦ TotalSpace.mk' E (γ t) (W t)) t)
+    (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : γ a = σ 0)
+    (hvel : curveVelocity I σ 0 = V a) (hjoin : V c = W c) :
+    ∃ F G₁ G₂ : ℝ → ℝ → M, F 0 = γ ∧ G₁ 0 = γ ∧ G₂ 0 = γ ∧
+      (∀ s, EqOn (F s) (G₁ s) (Icc a c)) ∧
+      (∀ s, EqOn (F s) (G₂ s) (Icc c b)) ∧
+      (∀ t ∈ uIcc a c,
+        ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G₁ z.1 z.2) (0, t)) ∧
+      (∀ t ∈ uIcc c b,
+        ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ G₂ z.1 z.2) (0, t)) ∧
+      (∀ᶠ s in 𝓝 0, G₁ s a = σ s) ∧ (∀ s, G₁ s c = G₂ s c) ∧
+      (∀ s, G₂ s b = exponentialVariation I γ W s b) ∧
+      (∀ t ∈ uIcc a c, variationField I G₁ t = V t) ∧
+      (∀ t ∈ uIcc c b, variationField I G₂ t = W t) := by
+  obtain ⟨G₁, hG₁₀, hG₁, hG₁a, hG₁c, hG₁V⟩ :=
+    exists_contMDiffAt_variationField_eq γ V hn hac hV hσ hbase hvel
+  have hmatch (s : ℝ) : G₁ s c = exponentialVariation I γ W s c := by
+    rw [hG₁c]
+    simp only [exponentialVariation_apply, hjoin]
+  let F : ℝ → ℝ → M := fun s t ↦ if t ≤ c then G₁ s t else exponentialVariation I γ W s t
+  refine ⟨F, G₁, exponentialVariation I γ W, ?_, hG₁₀, exponentialVariation_zero γ W,
+    ?_, ?_, hG₁, fun t ht ↦ contMDiffAt_exponentialVariation_zero γ W (hW t ht),
+    hG₁a, hmatch, fun _ ↦ rfl, hG₁V, fun t _ ↦ variationField_exponentialVariation γ W t⟩
+  · funext t
+    simp only [F, hG₁₀, exponentialVariation_zero, ite_self]
+  · intro s t ht
+    simp only [F, ite_eq_left ht.2]
+  · intro s t ht
+    rcases ht.1.eq_or_lt with h | h
+    · subst t
+      simpa only [F, le_refl, ↓reduceIte] using hmatch s
+    · simp only [F, ite_eq_right (not_le.mpr h)]
 
 end TauCeti.Manifold
