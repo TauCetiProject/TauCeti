@@ -30,6 +30,10 @@ preimage decomposition `MeasureTheory.stoppedValue_preimage_eq`. This file prove
 These are the measurability facts needed to state the strong Markov property of a chain with values
 in an arbitrary measurable space.
 
+Even for uncountable time, a countable-range stopping time gives a measurable stopped value
+whenever each coordinate is measurable
+(`MeasureTheory.IsStoppingTime.measurable_stoppedValue_of_countable_range`).
+
 Even for uncountable time, a stopping time with countable range permits strongly measurable
 gluing, without any topology on time and without a separability assumption or any algebraic
 structure on the values. Capping such a time at each deterministic horizon shows that a strongly
@@ -75,6 +79,40 @@ theorem measurable_stoppedValue_of_countable [Countable ι] [MeasurableSpace (Wi
   refine .union (.iUnion fun i => ?_) ?_
   · exact (hτ (measurableSet_singleton _)).inter (hu i ht)
   · exact (hτ (measurableSet_singleton _)).inter (hu _ ht)
+
+/-- A measurable process evaluated at a countable-range stopping time is measurable in the
+ambient sigma-algebra. Neither adaptation nor finiteness of the time is required; at infinity
+the stopped value uses the coordinate at `(⊤ : WithTop ι).untopA`. -/
+theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder ι]
+    {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
+    (hu : ∀ i, Measurable (u i)) : Measurable (stoppedValue u τ) := by
+  classical
+  let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
+  have hR : R.Countable := hc.preimage WithTop.coe_injective
+  have heq (i : ι) : MeasurableSet {ω | τ ω = i} :=
+    ℱ.le _ _ (hτ.measurableSet_eq_of_countable_range hc i)
+  have htop : MeasurableSet {ω | τ ω = ⊤} := by
+    have : {ω | τ ω = ⊤} = (⋃ i ∈ R, {ω | τ ω = i})ᶜ := by
+      ext ω
+      cases h : τ ω with
+      | top => simp [h]
+      | coe i =>
+        simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
+    rw [this]
+    exact (MeasurableSet.biUnion hR fun i _ => heq i).compl
+  intro B hB
+  have hevent : stoppedValue u τ ⁻¹' B =
+      (⋃ i ∈ R, {ω | τ ω = i} ∩ u i ⁻¹' B) ∪
+        ({ω | τ ω = ⊤} ∩ u (⊤ : WithTop ι).untopA ⁻¹' B) := by
+    rw [stoppedValue_preimage_eq]
+    congr 1
+    ext ω
+    simp only [Set.mem_iUnion, Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_preimage]
+    exact ⟨fun ⟨i, hi, hB⟩ => ⟨i, ⟨ω, hi⟩, hi, hB⟩,
+      fun ⟨i, _, hi, hB⟩ => ⟨i, hi, hB⟩⟩
+  rw [hevent]
+  exact .union (MeasurableSet.biUnion hR fun i _ => (heq i).inter (hu i hB))
+    (htop.inter (hu _ hB))
 
 section CountableTime
 
