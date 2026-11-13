@@ -60,7 +60,6 @@ section SigmaCompactSet
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [WeaklyLocallyCompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G]
-  {μ : Measure G} [μ.IsOpenPosMeasure] [μ.InnerRegularCompactLTTop]
 
 /-- **Open sets of finite measure lie in a σ-compact open subgroup.** On a locally compact group
 with a measure `μ` that is positive on nonempty open sets and inner regular for compact sets on sets
@@ -69,8 +68,9 @@ of finite measure, every open set `V` with `μ V < ∞` is contained in a σ-com
 locally compact additive group with a measure `μ` that is positive on nonempty open sets and inner
 regular for compact sets on sets of finite measure, every open set `V` with `μ V < ∞` is contained
 in a σ-compact open additive subgroup. -/]
-theorem _root_.IsOpen.exists_openSubgroup_isSigmaCompact_of_measure_lt_top {V : Set G}
-    (hVo : IsOpen V) (hVμ : μ V < ∞) :
+theorem _root_.IsOpen.exists_openSubgroup_isSigmaCompact_of_measure_lt_top {μ : Measure G}
+    [μ.IsOpenPosMeasure] [μ.InnerRegularCompactLTTop] {V : Set G} (hVo : IsOpen V)
+    (hVμ : μ V < ∞) :
     ∃ H : OpenSubgroup G, V ⊆ H ∧ IsSigmaCompact (H : Set G) := by
   have hK (n : ℕ) : ∃ K, K ⊆ V ∧ IsCompact K ∧ μ V < μ K + (n : ℝ≥0∞)⁻¹ :=
     hVo.measurableSet.exists_isCompact_lt_add hVμ.ne
@@ -97,7 +97,8 @@ is contained in a single σ-compact open subgroup. -/
 locally compact additive group with an outer regular measure `μ` that is positive on nonempty open
 sets and inner regular for compact sets on sets of finite measure, every subset `s` of `G` with
 `[SigmaFinite (μ.restrict s)]` is contained in a single σ-compact open additive subgroup. -/]
-theorem exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict [μ.OuterRegular] (s : Set G)
+theorem exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (μ : Measure G)
+    [μ.IsOpenPosMeasure] [μ.InnerRegularCompactLTTop] [μ.OuterRegular] (s : Set G)
     [SigmaFinite (μ.restrict s)] :
     ∃ H : OpenSubgroup G, s ⊆ H ∧ IsSigmaCompact (H : Set G) := by
   let E : ℕ → Set G := spanningSets (μ.restrict s)

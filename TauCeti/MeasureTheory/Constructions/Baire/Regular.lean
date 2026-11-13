@@ -66,41 +66,21 @@ theorem SimpleFunc.exists_baire_ae_eq {β : Type*} (s : SimpleFunc X β) (μ : M
     [μ.InnerRegularCompactLTTop] :
     ∃ s' : @SimpleFunc X (TauCeti.baire X) β, (s' : X → β) =ᵐ[μ] s := by
   rcases isEmpty_or_nonempty X with _ | ⟨⟨x₀⟩⟩
-  · refine ⟨@SimpleFunc.mk X (TauCeti.baire X) β s (fun y => ?_) s.finite_range,
-      Eventually.of_forall isEmptyElim⟩
-    rw [eq_empty_of_isEmpty (s ⁻¹' {y})]
-    exact @MeasurableSet.empty X (TauCeti.baire X)
-  classical
-  have hfib (y : β) := (s.measurableSet_fiber y).nullMeasurableSet.exists_baire_ae_eq (μ := μ)
-  choose B _ hBb hBae using hfib
-  let build : List β → @SimpleFunc X (TauCeti.baire X) β := fun L =>
-    L.foldr (fun y acc => @SimpleFunc.piecewise X β (TauCeti.baire X) (B y) (hBb y)
-      (@SimpleFunc.const X β (TauCeti.baire X) y) acc)
-      (@SimpleFunc.const X β (TauCeti.baire X) (s x₀))
-  have hbuild_eq : ∀ (L : List β) (x : X),
-      (∀ y ∈ L, x ∈ B y ↔ s x = y) → s x ∈ L → build L x = s x := by
-    let _ : MeasurableSpace X := TauCeti.baire X
-    intro L
-    induction L with
-    | nil => simp
-    | cons y L ih =>
-      intro x hxB hxL
-      dsimp only [build] at ih ⊢
-      rw [List.foldr_cons, SimpleFunc.piecewise_apply]
-      by_cases hxy : s x = y
-      · have hxBy : x ∈ B y := (hxB y List.mem_cons_self).2 hxy
-        simp [hxBy, hxy]
-      · have hxBy : x ∉ B y := fun hm => hxy ((hxB y List.mem_cons_self).1 hm)
-        have hxL' : s x ∈ L := (List.mem_cons.1 hxL).resolve_left hxy
-        simp only [hxBy, ↓reduceIte]
-        exact ih x (fun z hz => hxB z (List.mem_cons_of_mem y hz)) hxL'
-  refine ⟨build s.range.toList, ?_⟩
-  have hae : ∀ᵐ x ∂μ, ∀ y ∈ (s.range : Set β), x ∈ B y ↔ s x = y := by
-    refine (eventually_all_finite s.range.finite_toSet).2 fun y _ => ?_
-    filter_upwards [hBae y] with x hx
-    simpa [eq_comm] using hx
-  filter_upwards [hae] with x hx
-  exact hbuild_eq s.range.toList x (fun y hy => hx y (Finset.mem_coe.2 (Finset.mem_toList.1 hy)))
-    (Finset.mem_toList.2 (s.mem_range_self x))
+  · exact ⟨@SimpleFunc.ofIsEmpty X β (TauCeti.baire X) _, Eventually.of_forall isEmptyElim⟩
+  have : Nonempty β := ⟨s x₀⟩
+  induction s with
+  | const c =>
+    refine ⟨@SimpleFunc.const X β (TauCeti.baire X) c, ?_⟩
+    rw [@SimpleFunc.coe_const X β (TauCeti.baire X), SimpleFunc.coe_const]
+  | @pcw f g t ht hf hg =>
+    classical
+    obtain ⟨f', hf'⟩ := hf
+    obtain ⟨g', hg'⟩ := hg
+    obtain ⟨B, -, hBb, hBt⟩ := ht.nullMeasurableSet.exists_baire_ae_eq (μ := μ)
+    refine ⟨@SimpleFunc.piecewise X β (TauCeti.baire X) B hBb f' g', ?_⟩
+    rw [@SimpleFunc.coe_piecewise X β (TauCeti.baire X) B hBb, SimpleFunc.coe_piecewise]
+    refine (piecewise_ae_eq_of_ae_eq_set hBt).trans ?_
+    filter_upwards [hf', hg'] with x hfx hgx
+    by_cases hxt : x ∈ t <;> simp [Set.piecewise, hxt, hfx, hgx]
 
 end MeasureTheory

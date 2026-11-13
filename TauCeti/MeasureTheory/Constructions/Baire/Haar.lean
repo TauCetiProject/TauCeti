@@ -180,7 +180,7 @@ Baire-measurable set `W` with `W =ᵐ[μ] U`. -/
 theorem _root_.IsOpen.exists_isOpen_baire_superset_ae_eq {U : Set G} (hU : IsOpen U)
     (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] [SigmaFinite (μ.restrict U)] :
     ∃ W : Set G, U ⊆ W ∧ IsOpen W ∧ MeasurableSet[TauCeti.baire G] W ∧ W =ᵐ[μ] U := by
-  obtain ⟨H, hUH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (μ := μ) U
+  obtain ⟨H, hUH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict μ U
   have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
     MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
@@ -232,7 +232,7 @@ theorem NullMeasurableSet.exists_baire_symmDiff_subset_null {s : Set G}
     (hs : NullMeasurableSet s μ) [SigmaFinite (μ.restrict s)] :
     ∃ B N : Set G, IsSigmaCompact B ∧ MeasurableSet[TauCeti.baire G] B ∧
       IsGδ N ∧ MeasurableSet[TauCeti.baire G] N ∧ μ N = 0 ∧ s ∆ B ⊆ N := by
-  obtain ⟨H, hsH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict (μ := μ) s
+  obtain ⟨H, hsH, hH⟩ := exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict μ s
   have _ : SigmaCompactSpace H := isSigmaCompact_iff_sigmaCompactSpace.1 hH
   have hcoe : MeasurableEmbedding ((↑) : H → G) :=
     MeasurableEmbedding.subtype_coe H.isOpen.measurableSet

@@ -359,10 +359,8 @@ theorem Integrable.convolutionL_toL1_ae_eq [NontriviallyNormedField 𝕜] [Norme
     [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
     {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : Integrable f μ) :
     Lp.convolutionL μ 1 ENNReal.one_ne_top (hh.toL1 h) (hf.toL1 f) =ᵐ[μ]
-      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
-  have htoLp : (memLp_one_iff_integrable.2 hf).toLp f = hf.toL1 f :=
-    Lp.ext <| (MemLp.coeFn_toLp _).trans hf.coeFn_toL1.symm
-  exact htoLp ▸ hh.convolutionL_toLp_ae_eq (memLp_one_iff_integrable.2 hf)
+      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ :=
+  hh.convolutionL_toLp_ae_eq (memLp_one_iff_integrable.2 hf)
 
 omit [T2Space G] in
 /-- On a locally compact group with a regular Haar measure `μ`, the pointwise group convolution
@@ -379,10 +377,9 @@ theorem Integrable.continuous_integral_smul_comp_inv_mul [NormedRing 𝕜]
   have hk_int (k : Lp 𝕜 1 μ) : Integrable (fun z => k z • f z⁻¹) μ :=
     (L1.integrable_coeFn k).smul_of_top_left hfinv
   let L : Lp 𝕜 1 μ → E := fun k => ∫ z, k z • f z⁻¹ ∂μ
-  let K : NNReal := ⟨lpNorm f ∞ μ, lpNorm_nonneg⟩
-  have hL_lip : LipschitzWith K L := by
-    refine lipschitzWith_iff_dist_le_mul.2 fun k₁ k₂ => ?_
-    dsimp only [L, K]
+  have hL_lip : LipschitzWith (Real.toNNReal (lpNorm f ∞ μ)) L := by
+    refine LipschitzWith.of_dist_le' fun k₁ k₂ => ?_
+    dsimp only [L]
     rw [dist_eq_norm, dist_eq_norm, ← integral_sub (hk_int k₁) (hk_int k₂)]
     have hnorm : ‖∫ z, (k₁ z • f z⁻¹ - k₂ z • f z⁻¹) ∂μ‖ ≤
         ∫ z, ‖(k₁ - k₂) z‖ * lpNorm f ∞ μ ∂μ := by
@@ -393,7 +390,6 @@ theorem Integrable.continuous_integral_smul_comp_inv_mul [NormedRing 𝕜]
       exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hfz (norm_nonneg _))
     exact hnorm.trans_eq <| by
       rw [integral_mul_const, ← L1.norm_eq_integral_norm, mul_comm]
-      rfl
   have hF_eq : (fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ) = fun x => L (DomMulAct.mk x • hh.toL1 h) := by
     ext x
     dsimp only [L]
@@ -430,9 +426,10 @@ private theorem isSeparable_range_integral_smul_comp_inv_mul [NormedRing 𝕜]
     exact congr_arg₂ (· • ·) hy₁ hy₂
   let φ (y : G) : V := ⟨h₁ y • f₁ (y⁻¹ * x), subset_closure (Submodule.subset_span
     ⟨(h₁ y, f₁ (y⁻¹ * x)), ⟨mem_range_self y, mem_range_self (y⁻¹ * x)⟩, rfl⟩)⟩
-  have hsub : (fun y => h₁ y • f₁ (y⁻¹ * x)) = fun y => V.subtypeₗᵢ (φ y) := rfl
+  have hsub : (fun y => h₁ y • f₁ (y⁻¹ * x)) = fun y => V.subtypeₗᵢ (φ y) := by
+    ext y; simp [φ]
   rw [hcongr, hsub, V.subtypeₗᵢ.integral_comp_comm]
-  exact Subtype.prop _
+  simp
 
 /-- On a locally compact Hausdorff group with a regular Haar measure `μ`, the pointwise group
 convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ` of `h ∈ L¹(G, μ; 𝕜)` and `f ∈ Lᵖ(G, μ; E)` (`1 ≤ p ≤ ∞`)
