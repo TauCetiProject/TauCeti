@@ -155,7 +155,7 @@ be a profinite extension of `G` by an abelian pro-`p` group `N` whose class gene
 `f : Rᵃᵇ(p) → N` is bijective on `H²`, then lifts of the `g i` to `Y` topologically generate its
 total group. -/
 theorem exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoeff2 [Fact p.Prime]
-    [IsTopologicalGroup N] [ContinuousSMul G N] [CompactSpace N] [TotallyDisconnectedSpace N]
+    [IsTopologicalGroup N] [ContinuousSMul G N] [CompactSpace N]
     (Y : ProfiniteGroupExtension G N) (hN : IsProP p N)
     (hy : AddSubgroup.zmultiples Y.contCohomologyClass = ⊤)
     (hcard : ∃ r : ℕ, Nat.card (H2 G (Additive N)) = p ^ r) :

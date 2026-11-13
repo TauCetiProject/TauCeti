@@ -74,7 +74,7 @@ theorem range_intervalOrderEmb {m d : ℕ} (a : ℕ) (h : a + (d + 1) ≤ m) :
 /-- Embed the interval between distinct endpoints, with at least two indices. -/
 def intervalOrderEmbOfLt {m : ℕ} (i j : Fin m) (hij : i < j) :
     Fin ((j.val - i.val - 1) + 2) ↪o Fin m :=
-  intervalOrderEmb i.val (by have hj := j.isLt; have hi := hij; omega)
+  intervalOrderEmb i.val (by have _ := j.isLt; have _ := hij; omega)
 
 /-- The value of a strict-endpoint interval index is shifted by the left endpoint. -/
 @[simp]
@@ -95,7 +95,6 @@ theorem intervalOrderEmbOfLt_apply_last {m : ℕ} (i j : Fin m) (hij : i < j) :
     intervalOrderEmbOfLt i j hij (Fin.last ((j.val - i.val - 1) + 1)) = j := by
   apply Fin.ext
   simp only [intervalOrderEmbOfLt, intervalOrderEmb_apply_val, Fin.val_last]
-  have hi := hij
   omega
 
 /-- The strict-endpoint interval embedding enumerates the closed interval. -/
@@ -105,7 +104,6 @@ theorem range_intervalOrderEmbOfLt {m : ℕ} (i j : Fin m) (hij : i < j) :
       Set.Icc (intervalOrderEmbOfLt i j hij 0)
         (intervalOrderEmbOfLt i j hij (Fin.last ((j.val - i.val - 1) + 1))) :=
     range_intervalOrderEmb i.val (d := (j.val - i.val - 1) + 1) (by
-      have hj := j.isLt
       omega)
   simpa only [intervalOrderEmbOfLt_apply_zero, intervalOrderEmbOfLt_apply_last] using hrange
 

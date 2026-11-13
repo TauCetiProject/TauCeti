@@ -18,9 +18,9 @@ public import TauCeti.Analysis.Contour.RegularityConditions
 The polar-part principal-value theorem (`Contour.PolarPartDecomposition.hasCauchyPVAt_polarPart`)
 takes raw per-crossing hypotheses: interiority of the crossings, flatness at each surviving
 coefficient's order, and the tangent-power sector equation. This file discharges them from the
-roadmap-level data: closedness with the basepoint off the pole gives interiority; condition
-(A′) gives the flatness through the downward restriction; condition (B) gives the sector
-equation through the crossing-angle resonance bridge and the uniqueness of Laurent
+hypotheses of the generalized residue theorem: closedness with the basepoint off the pole gives
+interiority; condition (A′) gives the flatness through the downward restriction; condition (B) gives
+the sector equation through the crossing-angle resonance bridge and the uniqueness of Laurent
 coefficients — the decomposition's coefficients are the canonical ones, so the condition's own
 Laurent witness constrains them.
 

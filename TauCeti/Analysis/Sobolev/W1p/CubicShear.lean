@@ -206,7 +206,7 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
   set G : EuclideanSpace ℝ (Fin 2) → ℝ := fun z => fderiv ℝ f z (EuclideanSpace.single 1 1)
   calc ENNReal.ofReal (3 * (k - R) ^ 2) * eLpNorm G p volume
       = ‖3 * (k - R) ^ 2‖ₑ * eLpNorm (G ∘ T) p volume := by
-        rw [Real.enorm_eq_ofReal (by positivity),
+        rw [Real.eNorm_eq_ofReal (by positivity),
           eLpNorm_comp_measurePreserving hD.aestronglyMeasurable hT]
     _ = eLpNorm ((3 * (k - R) ^ 2) • (G ∘ T)) p volume := (eLpNorm_const_smul _ _ _ _).symm
     _ ≤ eLpNorm (fun w => ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖) p volume :=

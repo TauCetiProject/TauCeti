@@ -28,10 +28,8 @@ already-defined point weights `χ_k` over these vertices.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose opening item asks for Némethi's lattice (co)homology from lattice
-points and weight functions. The cube weight is the standard maximum over vertices used in the
-lattice-homology cubical complex; see Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
+The cube weight is the standard maximum over vertices used in the lattice-homology cubical
+complex; see Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
 public section
