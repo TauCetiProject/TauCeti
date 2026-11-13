@@ -224,9 +224,8 @@ theorem IsSolutionTable.exists_solution (h : IsSolutionTable r W T u) :
     simp only [Fin.getElem_fin] at hx heq ⊢
     rw [h.substituteVars_cond (List.getElem_mem p.1.isLt) hx,
       h.substituteVars_cond (List.getElem_mem p.2.isLt) (heq ▸ hx)]
-  · obtain ⟨k, hk, hek⟩ := List.getElem_of_mem (mem_tableEntries.2 ⟨o, rfl⟩)
-    obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq (tableEntries r T) (x := x) ⟨k, hk⟩
-      (by simpa [hek] using hx)
+  · obtain ⟨k, hk⟩ := exists_getElem_tableEntries T o
+    obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq _ k ((congrArg (·.1.1) hk).trans hx)
     rw [hw, Solution.word_ofLetterWords, substituteVars_itemWord_entry _ u k₀.isLt]
     exact h.substituteVars_cond (List.getElem_mem k₀.isLt) hk₀
 

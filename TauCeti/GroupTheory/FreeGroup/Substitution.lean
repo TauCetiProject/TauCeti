@@ -176,11 +176,11 @@ theorem substituteVars_map_sumMap {Y : Type*} {f : X → Y} {U' : Y → List (A 
     {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
     (h : ∀ x b, (Sum.inl x, b) ∈ w → U' (f x) = U x) :
     substituteVars U' (w.map (Prod.map (Sum.map f id) id)) = substituteVars U w := by
-  rw [substituteVars, substituteVars, List.flatMap_map]
-  refine List.flatMap_congr ?_
+  rw [substituteVars, substituteVars, flatMap_substituteLetter_map]
+  refine flatMap_substituteLetter_congr ?_
   rintro ⟨x | a, b⟩ hy
-  · simp [substituteLetter, h x b hy]
-  · simp [substituteLetter]
+  · exact h x b hy
+  · rfl
 
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
