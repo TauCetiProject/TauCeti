@@ -35,16 +35,18 @@ variable {ι : Type*} [Fintype ι] (M : ι → Type*)
 
 omit [Fintype ι] in
 /-- If a family of abelian groups of pairwise coprime orders has an infinite member, then all the
-other members are trivial, so the inclusion of that member into the product is surjective. -/
-private theorem exists_subsingleton_and_surjective_single_of_not_finite [DecidableEq ι]
+other members are trivial, so the inclusion of that member into the product is a right inverse of
+the projection onto it: every tuple is the inclusion of its coordinate there. -/
+private theorem exists_subsingleton_and_rightInverse_single_of_not_finite [DecidableEq ι]
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j)))
     (hfin : ¬ ∀ j, Finite (M j)) :
-    ∃ i₀, (∀ j, j ≠ i₀ → Subsingleton (M j)) ∧ Function.Surjective (LinearMap.single ℤ M i₀) := by
+    ∃ i₀, (∀ j, j ≠ i₀ → Subsingleton (M j)) ∧
+      Function.RightInverse (fun x : ∀ j, M j ↦ x i₀) (LinearMap.single ℤ M i₀) := by
   obtain ⟨i₀, hi₀⟩ := not_forall.mp hfin
   have := not_finite_iff_infinite.mp hi₀
   have hsub : ∀ j, j ≠ i₀ → Subsingleton (M j) := fun j hj ↦
-    Nat.subsingleton_of_coprime_card_of_infinite (hcop hj.symm)
-  refine ⟨i₀, hsub, fun x ↦ ⟨x i₀, ?_⟩⟩
+    (hcop hj.symm).subsingleton_of_infinite
+  refine ⟨i₀, hsub, fun x ↦ ?_⟩
   ext j
   by_cases hj : j = i₀
   · subst hj
@@ -65,23 +67,13 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
   let S := Submodule.span ℤ (Set.range (fun k i ↦ v i k))
   by_cases hfin : ∀ j, Finite (M j)
   swap
-  · obtain ⟨i₀, hsub, hsurj⟩ :=
-      exists_subsingleton_and_surjective_single_of_not_finite M hcop hfin
-    have hgen (k : κ) : LinearMap.single ℤ M i₀ (v i₀ k) = fun j ↦ v j k := by
-      ext j
-      by_cases hj : j = i₀
-      · subst hj
-        simp
-      · have := hsub _ hj
-        exact Subsingleton.elim _ _
-    have hle : Submodule.span ℤ (Set.range (v i₀)) ≤ S.comap (LinearMap.single ℤ M i₀) := by
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨k, rfl⟩
-      rw [SetLike.mem_coe, Submodule.mem_comap, hgen]
-      exact Submodule.subset_span ⟨k, rfl⟩
-    refine eq_top_iff.mpr fun x _ ↦ ?_
-    obtain ⟨y, rfl⟩ := hsurj x
-    exact hle (hv i₀ ▸ Submodule.mem_top)
+  · obtain ⟨i₀, -, hinv⟩ :=
+      exists_subsingleton_and_rightInverse_single_of_not_finite M hcop hfin
+    have hcomp : (fun k i ↦ v i k) = LinearMap.single ℤ M i₀ ∘ v i₀ :=
+      funext fun k ↦ (hinv fun j ↦ v j k).symm
+    rw [hcomp, Set.range_comp, ← Submodule.map_span, hv i₀, Submodule.map_top,
+      LinearMap.range_eq_top]
+    exact hinv.surjective
   have hsingle (i : ι) (k : κ) : Pi.single i (v i k) ∈ S := by
     let c := Nat.chineseRemainderOfFinset (fun j ↦ if j = i then 1 else 0)
       (fun j ↦ Nat.card (M j)) Finset.univ (fun j _ ↦ Nat.card_pos.ne')
@@ -125,15 +117,14 @@ theorem spanFinrank_pi_eq_sup_of_coprime_card
   classical
   by_cases hfin : ∀ i, Finite (M i)
   swap
-  · obtain ⟨i₀, hsub, hsurj⟩ :=
-      exists_subsingleton_and_surjective_single_of_not_finite M hcop hfin
+  · obtain ⟨i₀, hsub, hinv⟩ :=
+      exists_subsingleton_and_rightInverse_single_of_not_finite M hcop hfin
     have hrange : (⊤ : Submodule ℤ (M i₀)).map (LinearMap.single ℤ M i₀) = ⊤ := by
       rw [Submodule.map_top, LinearMap.range_eq_top]
-      exact hsurj
+      exact hinv.surjective
     have heq : (⊤ : Submodule ℤ (∀ i, M i)).spanFinrank =
         (⊤ : Submodule ℤ (M i₀)).spanFinrank := by
-      rw [← hrange, Submodule.spanFinrank_map_eq_of_injective _
-        (fun a b h ↦ by simpa using congrFun h i₀)]
+      rw [← hrange, Submodule.spanFinrank_map_eq_of_injective _ (Pi.single_injective i₀)]
     rw [heq]
     refine le_antisymm (Finset.le_sup (f := fun i ↦ (⊤ : Submodule ℤ (M i)).spanFinrank)
       (Finset.mem_univ i₀)) (Finset.sup_le fun i _ ↦ ?_)

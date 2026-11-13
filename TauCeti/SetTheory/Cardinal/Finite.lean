@@ -7,7 +7,6 @@ module
 
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
-import Mathlib.Data.Nat.GCD.Basic
 
 /-!
 # Finite and extended cardinalities
@@ -39,8 +38,8 @@ type whose cardinality is coprime to that of an infinite type has exactly one el
   type is `0`.
 * `Nat.card_range_eq_card_range_of_comp_eq`: `Nat.card (Set.range f) = Nat.card (Set.range f')`
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
-* `Nat.subsingleton_of_coprime_card_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and
-  `α` is infinite, then `β` is a subsingleton.
+* `Nat.Coprime.subsingleton_of_infinite`: if `Nat.card α` and `Nat.card β` are coprime and `α` is
+  infinite, then `β` is a subsingleton.
 -/
 
 public section
@@ -100,7 +99,7 @@ theorem card_range_eq_card_range_of_comp_eq {α β γ δ : Type*} {f : α → β
 
 /-- If the cardinalities of `α` and `β` are coprime and `α` is infinite (so that `Nat.card α = 0`),
 then `β` has exactly one element, in particular it is a subsingleton. -/
-theorem subsingleton_of_coprime_card_of_infinite {α β : Type*} [Infinite α]
+theorem Coprime.subsingleton_of_infinite {α β : Type*} [Infinite α]
     (h : (Nat.card α).Coprime (Nat.card β)) : Subsingleton β := by
   rw [Nat.card_eq_zero_of_infinite, Nat.coprime_zero_left] at h
   exact (Nat.card_eq_one_iff_unique.mp h).1
