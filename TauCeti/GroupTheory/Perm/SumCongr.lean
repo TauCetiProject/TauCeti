@@ -38,6 +38,7 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
+* `Equiv.Perm.finSumPermHom_injective`: a block permutation determines its two blocks.
 * `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
 * `Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm`: the cyclic rotation of `Fin (m + n)` is the
   blockwise rotation followed by one transposition between the blocks.
@@ -338,6 +339,14 @@ theorem finSumPerm_apply_natAdd (σ : Perm (Fin m)) (τ : Perm (Fin n))
     finSumPerm σ τ (Fin.natAdd m j) = Fin.natAdd m (τ j) := by
   rw [← finSumFinEquiv_apply_right, finSumPerm_apply, Equiv.symm_apply_apply, Sum.map_inr,
     finSumFinEquiv_apply_right]
+
+/-- The block embedding is injective: a block permutation determines its two blocks. -/
+theorem finSumPermHom_injective (m n : ℕ) : Function.Injective (finSumPermHom m n) := by
+  intro p q hpq
+  simp only [finSumPermHom_apply] at hpq
+  refine Prod.ext (Equiv.ext fun i => ?_) (Equiv.ext fun j => ?_)
+  · simpa using congr($hpq (Fin.castAdd n i))
+  · simpa using congr($hpq (Fin.natAdd m j))
 
 @[simp]
 theorem finSumPerm_one :
