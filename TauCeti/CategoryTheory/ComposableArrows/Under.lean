@@ -60,28 +60,33 @@ def underEquiv (n : ℕ) :
 
 /-- The inverse correspondence prepends the structure arrow of the first object. -/
 @[simp]
-lemma underEquiv_symm_val {n : ℕ} (s : ComposableArrows (Under x) n) :
+lemma underEquiv_symm_apply_coe {n : ℕ} (s : ComposableArrows (Under x) n) :
     ((underEquiv x n).symm s).1 =
       ComposableArrows.precomp (s ⋙ Under.forget x) (s.obj 0).hom := (rfl)
 
 /-- The underlying objects are the old objects after the initial vertex. -/
 @[simp]
-lemma underEquiv_obj_right {n : ℕ}
+lemma underEquiv_apply_obj_right {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) (i : Fin (n + 1)) :
     ((underEquiv x n t).obj i).right = t.1.obj i.succ := (rfl)
 
 /-- The structure arrow to an old vertex is its arrow from the initial vertex. -/
 @[simp]
-lemma underEquiv_obj_hom {n : ℕ}
+lemma underEquiv_apply_obj_hom {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) (i : Fin (n + 1)) :
     ((underEquiv x n t).obj i).hom =
       eqToHom t.2.symm ≫ t.1.map (homOfLE (Fin.zero_le i.succ)) := (rfl)
 
 /-- The underlying morphisms are those between the old vertices. -/
 @[simp]
-lemma underEquiv_map_right {n : ℕ}
+lemma underEquiv_apply_map_right {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x})
     {i j : Fin (n + 1)} (f : i ⟶ j) :
     ((underEquiv x n t).map f).right = t.1.map ((Fin.succFunctor (n + 1)).map f) := (rfl)
+
+/-- Forgetting the structure arrows of a string under x drops its first arrow. -/
+@[simp]
+lemma underEquiv_comp_forget {n : ℕ} (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) :
+    underEquiv x n t ⋙ Under.forget x = t.1.δ₀ := (rfl)
 
 end CategoryTheory.ComposableArrows

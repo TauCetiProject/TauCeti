@@ -29,7 +29,7 @@ projections are right and left fibrations.
 
 * `SSet.join.stdSimplexIso n m`: the isomorphism `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`.
 * `SSet.join.coneIso n`: the cone `Δ[0] ⋆ Δ[n]` as `Δ[n + 1]`, with the cone point as the
-  vertex `0`.
+  vertex `0`; `SSet.join.coneIso_zero` identifies `coneIso 0` with `stdSimplexIso 0 0`.
 * `SSet.join.coneEdgeEquiv x y`: maps `Δ[0] ⋆ Δ[0] ⟶ X` sending the cone point to `y` and the base
   to `x` are the edges from `y` to `x`.
 
@@ -44,8 +44,9 @@ projections are right and left fibrations.
   `SSet.join.mkOfSucc_succ_comp_stdSimplexIso_inv`: under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the cone point
   is the vertex `0`, the first edge of the spine is the cone on the vertex `0` of `Δ[n]`, and the
   other edges of the spine are those of `Δ[n]`.
-* `SSet.join.map_comp_coneIso_hom`: `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps act
-  on `Δ[n + 1]` by fixing the cone point (`SimplexCategory.vertexJoin`).
+* `SSet.join.map_comp_coneIso_hom`, `SSet.join.vertexJoin_map_comp_coneIso_inv`:
+  `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps act on `Δ[n + 1]` by fixing the cone
+  point (`SimplexCategory.vertexJoin`).
 * `SSet.join.hom_ext_of_isStrictSegal`: maps from the cone `Δ[0] ⋆ Δ[n]` to a strict Segal
   simplicial set are determined by their restrictions to the base `Δ[n]` and to the edge from the
   cone point to the vertex `0`.
@@ -429,6 +430,22 @@ lemma map_comp_coneIso_hom {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
     exact ((Functor.map_comp _ _ _).symm.trans
       ((congrArg _ (SimplexCategory.δ_zero_comp_vertexJoin_map f).symm).trans
         (Functor.map_comp _ _ _))).trans (inr_comp_coneIso_hom_assoc _).symm
+
+/-- The inverse of `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]` is natural in `Δ[n]`, where maps of `Δ[n + 1]` fix
+the cone point `0` (`SimplexCategory.vertexJoin`). -/
+@[reassoc]
+lemma vertexJoin_map_comp_coneIso_inv {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
+    stdSimplex.map (SimplexCategory.vertexJoin.map f) ≫ (coneIso.{u} n).inv =
+      (coneIso m).inv ≫ map (𝟙 Δ[0]) (stdSimplex.map f) := by
+  -- As for `map_comp_coneIso_hom`, the composites are computed by `Eq.trans`.
+  exact (Iso.inv_hom_id_assoc (coneIso m) _).symm.trans (congrArg ((coneIso m).inv ≫ ·)
+    ((map_comp_coneIso_hom_assoc f _).symm.trans
+      ((congrArg _ (Iso.hom_inv_id _)).trans (Category.comp_id _))))
+
+/-- For `n = 0`, the cone isomorphism is `stdSimplexIso 0 0 : Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
+lemma coneIso_zero : coneIso.{u} 0 = stdSimplexIso 0 0 :=
+  Iso.ext ((congrArg _ ((congrArg stdSimplex.map (eqToHom_refl _ rfl)).trans
+    (stdSimplex.map_id _))).trans (Category.comp_id _))
 
 /-- Under `Δ[0] ⋆ Δ[0] ≅ Δ[1]`, the cone point is the source of the edge. -/
 lemma δ_one_comp_stdSimplexIso_inv :

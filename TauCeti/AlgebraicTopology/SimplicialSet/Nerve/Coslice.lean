@@ -15,7 +15,11 @@ public import TauCeti.CategoryTheory.ComposableArrows.Under
 The simplicial coslice of the nerve of a category under an object x is the nerve of
 its ordinary under category, through `CategoryTheory.nerve.cosliceIso`. Projection compatibility
 is given simplexwise by `CategoryTheory.nerve.yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe`:
-restricting the comparison along `join.inr` sends a string `s` to `s ⋙ Under.forget x`.
+restricting the comparison along `join.inr` sends a string `s` to `s ⋙ Under.forget x`
+(`CategoryTheory.nerve.cosliceIso_inv_app_comp_forget` is the inverse form). When the objects of
+the category live in a universe containing its morphisms, so that the forgetful functor has a
+nerve, the comparison takes the coslice projection to `nerveMap (Under.forget x)`
+(`CategoryTheory.nerve.cosliceIso_hom_comp_π`).
 The comparison identifies the join description of a coslice simplex with a string of arrows
 under x, retaining the structure arrows and all simplicial operators.
 
@@ -201,8 +205,30 @@ lemma yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe (n : SimplexCategory�
   (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.1)) (objEquiv_toCoslice_app x n s)).trans
     ((congrArg SSet.yonedaEquiv (cone_inr x _ s)).trans (Equiv.apply_symm_apply _ _))
 
-/-- The vertex given by an object `a : Under x` retains its structure arrow in the coslice. -/
+/-- Restricting the comparison along `join.inr` forgets the structure arrows of `s`. This is the
+`SSet.coslice.comp_π` normal form of the projection of `(cosliceIso x).hom`. -/
 @[simp]
+lemma homEquiv_cosliceIso_hom_coe_app_inr_app (n : SimplexCategoryᵒᵖ)
+    (s : (nerve (Under x)).obj n) :
+    (coslice.homEquiv (cosliceIso x).hom).1.app n ((join.inr Δ[0] (nerve (Under x))).app n s) =
+      s ⋙ Under.forget x :=
+  (congrArg (fun φ ↦ φ.app n s) (coslice.comp_π (cosliceIso x).hom)).symm.trans
+    ((coslice.π_app _).trans (yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe x n s))
+
+/-- Forgetting the structure arrows of the inverse image of a coslice simplex `τ` restricts `τ` to
+the base simplex along `join.inr`, the `SSet.coslice.π_app` normal form of the projection of `τ`. -/
+@[simp]
+lemma cosliceIso_inv_app_comp_forget (n : SimplexCategoryᵒᵖ)
+    (τ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj n) :
+    (cosliceIso x).inv.app n τ ⋙ Under.forget x =
+      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv τ).1) := by
+  have e : (cosliceIso x).hom.app n ((cosliceIso x).inv.app n τ) = τ :=
+    by simp
+  exact (yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe x n _).symm.trans
+    (congrArg (fun σ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj n ↦
+      SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫ (coslice.objEquiv σ).1)) e)
+
+/-- The vertex given by an object `a : Under x` retains its structure arrow in the coslice. -/
 lemma objEquiv_cosliceIso_hom_app_nerveEquiv_symm_coe (a : Under x) :
     (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋0⦌)
       (nerveEquiv.symm a))).1 =
@@ -210,5 +236,32 @@ lemma objEquiv_cosliceIso_hom_app_nerveEquiv_symm_coe (a : Under x) :
   (objEquiv_cosliceIso_hom_app_coe x _).trans (congrArg _ (congrArg _
     -- The structure arrow of the vertex is a.hom, between identities of its endpoints.
     (ComposableArrows.ext₁ rfl rfl ((Category.id_comp _).trans (Category.comp_id a.hom)).symm)))
+
+end CategoryTheory.nerve
+
+namespace CategoryTheory.nerve
+
+/-! When the objects of `C` live in a universe containing its morphisms, the nerves of `Under x`
+and of `C` live in the same universe and the projection is a map of simplicial sets. -/
+
+variable {C : Type (max u v)} [Category.{v} C] (x : C)
+
+/-- The comparison commutes with the projections to `nerve C`: the projection of the coslice
+corresponds to the nerve of the forgetful functor `Under x ⥤ C`. -/
+lemma cosliceIso_hom_comp_π :
+    (cosliceIso x).hom ≫ coslice.π (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) =
+      nerveMap (Under.forget x) := by
+  ext n s
+  exact (coslice.π_app _).trans (yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe x n s)
+
+/-- The inverse comparison turns the nerve of the forgetful functor `Under x ⥤ C` into the
+projection of the coslice. -/
+-- Not `@[simp]`: the simpNF linter finds that its left side does not match itself at reducible
+-- transparency, so it would never fire.
+@[reassoc]
+lemma cosliceIso_inv_comp_nerveMap_forget :
+    (cosliceIso x).inv ≫ nerveMap (Under.forget x) =
+      coslice.π (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) := by
+  rw [Iso.inv_comp_eq, cosliceIso_hom_comp_π]
 
 end CategoryTheory.nerve
