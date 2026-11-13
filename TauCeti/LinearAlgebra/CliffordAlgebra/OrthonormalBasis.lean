@@ -42,6 +42,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   `CliffordAlgebra.ι_mul_ι_add_swap_of_orthonormal`: the Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`, and `c(eᵢ) c(eⱼ) + c(eⱼ) c(eᵢ) = -2 δᵢⱼ` on an orthonormal
   basis.
+* `Module.End.sum_sum_apply_apply_eq_of_anticomm`: for endomorphisms with
+  `cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, `∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -127,6 +129,31 @@ theorem ι_mul_ι_add_swap_of_orthonormal {κ : Type*} [Fintype κ] [DecidableEq
     ι Q (b i) * ι Q (b j) + ι Q (b j) * ι Q (b i) = if i = j then -2 else 0 := by
   rw [ι_mul_ι_add_swap, b.polar_apply_apply hQ]
   split_ifs <;> simp [map_ofNat]
+
+omit hQ in
+/-- The algebra of the Weitzenböck formula: if endomorphisms `cⱼ` satisfy the Clifford relations
+`cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, then
+`∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`, a trace plus an antisymmetric part. -/
+theorem _root_.Module.End.sum_sum_apply_apply_eq_of_anticomm {K W : Type*} [Field K] [CharZero K]
+    [AddCommGroup W] [Module K W] {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (c : κ → Module.End K W) (X : κ → κ → W)
+    (hc : ∀ j k, c j * c k + c k * c j = if j = k then -2 else 0) :
+    ∑ j, ∑ k, c j (c k (X j k)) =
+      -∑ k, X k k + (2⁻¹ : K) • ∑ j, ∑ k, c j (c k (X j k - X k j)) := by
+  -- The Clifford relation applied to `Xⱼₖ`.
+  have hrel (j k : κ) : c k (c j (X j k)) =
+      -c j (c k (X j k)) + if j = k then (-2 : K) • X j k else 0 := by
+    have h := congrArg (fun T : Module.End K W ↦ T (X j k)) (hc j k)
+    simp only [LinearMap.add_apply, mul_apply_eq_comp] at h
+    rw [eq_neg_add_iff_add_eq, h]
+    split_ifs <;> simp [two_smul]
+  -- Swap the indices in the second half of the antisymmetrized sum.
+  have hswap : ∑ j, ∑ k, c j (c k (X k j)) = ∑ j, ∑ k, c k (c j (X j k)) := Finset.sum_comm
+  simp only [map_sub, Finset.sum_sub_distrib]
+  rw [hswap]
+  simp only [hrel, Finset.sum_add_distrib, Finset.sum_neg_distrib, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true, ← Finset.smul_sum]
+  module
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies

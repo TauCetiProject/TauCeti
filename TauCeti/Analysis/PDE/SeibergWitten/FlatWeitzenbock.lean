@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
+public import TauCeti.Analysis.PDE.SeibergWitten.CovariantDeriv
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
-import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -40,10 +40,12 @@ vanishes on flat space.
 
 The proof is the classical one. The Clifford relations `c(eⱼ) c(eₖ) + c(eₖ) c(eⱼ) = -2 δⱼₖ` split
 `D_b D_b ψ = ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) ∇²_{eⱼ, eₖ} ψ` into the trace `-∑ₖ ∇²_{eₖ, eₖ} ψ` and the
-antisymmetric part `½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`, and the Ricci
-identity `∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`
-(`TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`) identifies the latter with the
-curvature term.
+antisymmetric part `½ ∑ⱼ ∑ₖ c(eⱼ) c(eₖ) (∇²_{eⱼ, eₖ} - ∇²_{eₖ, eⱼ}) ψ`
+(`Module.End.sum_sum_apply_apply_eq_of_anticomm`). The Ricci identity
+`∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`
+(`TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`) and the expansion
+`∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ c(eⱼ) c(eₖ) = 2 c₂(F)` (`OrthonormalBasis.sum_sum_inner_smul_ι_mul_ι`)
+identify the latter with the curvature term.
 
 ## Large-parameter Seiberg–Witten equations
 
@@ -77,8 +79,6 @@ does not contain.
 * `TauCeti.SeibergWitten.twistedDirac_eq_sum`: `D_b ψ` may be computed in any orthonormal basis.
 * `TauCeti.SeibergWitten.twistedDirac_add`, `TauCeti.SeibergWitten.twistedDirac_const_smul`:
   `D_b` is complex-linear on differentiable spinor fields.
-* `TauCeti.SeibergWitten.sum_sum_apply_apply_eq`: the algebraic splitting of `D_b D_b` into a trace
-  and an antisymmetric part under the Clifford relations.
 * `TauCeti.SeibergWitten.twistedDirac_twistedDirac`: the Weitzenböck formula
   `D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`.
 * `TauCeti.SeibergWitten.cliffordRestriction_apply_of_add_hodgeStar_eq`: the action of the
@@ -113,29 +113,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
   {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ : V → W} {x : V}
   {κ : Type*} [Fintype κ]
-
-/-! ### Clifford relations in an orthonormal basis -/
-
-/-- The algebra of the Weitzenböck formula: if `cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, then
-`∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`. -/
-theorem sum_sum_apply_apply_eq [DecidableEq κ] (c : κ → Module.End ℂ W) (X : κ → κ → W)
-    (hc : ∀ j k, c j * c k + c k * c j = if j = k then -2 else 0) :
-    ∑ j, ∑ k, c j (c k (X j k)) =
-      -∑ k, X k k + (2⁻¹ : ℂ) • ∑ j, ∑ k, c j (c k (X j k - X k j)) := by
-  -- The Clifford relation applied to `Xⱼₖ`.
-  have hrel (j k : κ) : c k (c j (X j k)) =
-      -c j (c k (X j k)) + if j = k then (-2 : ℂ) • X j k else 0 := by
-    have h := congrArg (fun T : Module.End ℂ W ↦ T (X j k)) (hc j k)
-    simp only [LinearMap.add_apply, mul_apply_eq_comp] at h
-    rw [eq_neg_add_iff_add_eq, h]
-    split_ifs <;> simp [two_smul]
-  -- Swap the indices in the second half of the antisymmetrized sum.
-  have hswap : ∑ j, ∑ k, c j (c k (X k j)) = ∑ j, ∑ k, c k (c j (X j k)) := Finset.sum_comm
-  simp only [map_sub, Finset.sum_sub_distrib]
-  rw [hswap]
-  simp only [hrel, Finset.sum_add_distrib, Finset.sum_neg_distrib, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true, ← Finset.smul_sum]
-  module
 
 /-! ### The Dirac operator -/
 
@@ -192,30 +169,6 @@ theorem twistedDirac_eq_zero_of_eventuallyEq_zero (hψ : ψ =ᶠ[𝓝 x] 0) :
 
 /-! ### The Weitzenböck formula -/
 
-/-- The Clifford image of a two-vector `F` in an orthonormal basis:
-`∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ c(eⱼ) c(eₖ) = 2 c₂(F)`. -/
-private theorem sum_sum_inner_smul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (e : OrthonormalBasis κ ℝ V) (F : ⋀[ℝ]^2 V) :
-    ∑ j, ∑ k, ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ • (ι Q (e j) * ι Q (e k)) =
-      (2 : ℝ) • bivectorExterior Q F := by
-  classical
-  -- Expand `F = ½ ∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ eⱼ ∧ eₖ`, so `2 c₂(F) = ∑ⱼ ∑ₖ ⟪F, eⱼ ∧ eₖ⟫ c₂(eⱼ ∧ eₖ)`.
-  have hF := congrArg (fun T : Module.End ℝ (⋀[ℝ]^2 V) ↦ bivectorExterior Q (T F))
-    (e.sum_rankOne_ιMulti_two)
-  simp only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-    map_sum, map_smul, LinearMap.smul_apply, LinearMap.id_apply,
-    bivectorExterior_apply_ιMulti] at hF
-  rw [← hF]
-  -- The symmetric part `½ polar Q eⱼ eₖ = -δⱼₖ` of `c(eⱼ) c(eₖ)` meets only the diagonal
-  -- coefficients `⟪F, eⱼ ∧ eⱼ⟫ = 0`.
-  have hdiag (j k : κ) : ⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫ •
-      ((⅟ (2 : ℝ)) • algebraMap ℝ (CliffordAlgebra Q) (QuadraticMap.polar Q (e j) (e k))) = 0 := by
-    rcases eq_or_ne j k with rfl | hjk
-    · rw [(exteriorPower.ιMulti ℝ 2).map_eq_zero_of_eq ![e j, e j] (i := 0) (j := 1) (by simp)
-        (by decide), inner_zero_right, zero_smul]
-    · simp [e.polar_apply_apply hQ j k, hjk]
-  simp only [ι_mul_ι_eq_bivector_add, smul_add, hdiag, add_zero, real_inner_comm F]
-
 variable [FiniteDimensional ℂ W]
 
 /-- **The Weitzenböck formula for the twisted Dirac operator** on a flat space: for a `C²` spinor
@@ -260,7 +213,7 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
     have hX (j k : κ) :
         X j k - X k j = (-⟪F, exteriorPower.ιMulti ℝ 2 ![e j, e k]⟫) • I • ψ x := by
       rw [hXdef, covariantDeriv_covariantDeriv_sub hψ hb, hF, neg_neg]
-    have h := congrArg (fun T : CliffordAlgebra Q ↦ ρ T (ψ x)) (sum_sum_inner_smul_ι_mul_ι hQ e F)
+    have h := congrArg (fun T : CliffordAlgebra Q ↦ ρ T (ψ x)) (e.sum_sum_inner_smul_ι_mul_ι hQ F)
     simp only [map_sum, map_smul, map_mul, LinearMap.sum_apply, LinearMap.smul_apply,
       mul_apply_eq_comp] at h
     calc ∑ j, ∑ k, ρ (ι Q (e j)) (ρ (ι Q (e k)) (X j k - X k j))
@@ -277,7 +230,7 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
       if j = k then -2 else 0 := by
     rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_of_orthonormal hQ e j k]
     split_ifs <;> simp [map_ofNat]
-  rw [hDD, sum_sum_apply_apply_eq _ X hrel, hcurv, smul_smul]
+  rw [hDD, Module.End.sum_sum_apply_apply_eq_of_anticomm _ X hrel, hcurv, smul_smul]
   rw [sub_eq_add_neg, ← neg_smul]
   congr 2
   ring
