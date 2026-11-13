@@ -251,7 +251,8 @@ noncomputable def curvedCochainComplexMap (f : M →ₗ[R] M') (g : N →ₗ[R] 
     (hfd : dM' ∘ₗ f = f ∘ₗ dM) (hgd : dN' ∘ₗ g = g ∘ₗ dN) :
     curvedCochainComplex hM hN ⟶ curvedCochainComplex hM' hN' :=
   gradedCochainComplexHom (map f g hf hg) (isHomogeneous_map_grading f g hf hg hf₀ hg₀)
-    (curvedDifferential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd)
+    fun _ x ↦
+      LinearMap.congr_fun (curvedDifferential_naturality hM hN hM' hN' f g hf hg hf₀ hfd hgd) x
 
 variable (f : M →ₗ[R] M') (g : N →ₗ[R] N')
   (hf : ∀ (a : A) m, f (op a • m) = op a • f m) (hg : ∀ (a : A) n, g (a • n) = a • g n)
