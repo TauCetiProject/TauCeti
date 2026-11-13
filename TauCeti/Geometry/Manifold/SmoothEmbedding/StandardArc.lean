@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Deriv
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.SmoothIsotopy.Arc
 
 /-!
