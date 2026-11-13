@@ -149,16 +149,17 @@ theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
 
 /-- **There are no homoclinic trajectories.** A point whose trajectory tends to the same point `a`
 in both directions of time is `a` itself. -/
-theorem eq_of_mem_unstableSet_inter_stableSet_self (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem eq_of_mem_unstableSet_inter_stableSet_self
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet a) : y = a := by
+  have hf := hX.mdifferentiable
   -- Along such an orbit `f` is squeezed between its two limits `f a`, so `y` is a rest point.
   have hval : ∀ z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet a, f z = f a := fun z hz ↦
     le_antisymm
       (Flow.le_of_mem_unstableSet_of_antitone hz.1 hf.continuous.continuousAt
-        (hX.antitone_flow hf z))
+        (hX.antitone_flow z))
       (Flow.le_of_mem_stableSet_of_antitone hz.2 hf.continuous.continuousAt
-        (hX.antitone_flow hf z))
-  have hcrit := hX.mfderiv_eq_zero_of_forall_eq (hf y) fun t ↦
+        (hX.antitone_flow z))
+  have hcrit := hX.mfderiv_eq_zero_of_forall_eq fun t ↦
     (hval _ (hX.flow.isInvariant_unstableSet_inter_stableSet a a t hy)).trans (hval y hy).symm
   have hfix := hX.flow_apply_of_mfderiv_eq_zero hcrit
   exact tendsto_nhds_unique tendsto_const_nhds
