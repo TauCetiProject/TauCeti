@@ -250,7 +250,7 @@ private theorem integral_closedBall_norm_sq_testField_le (φ : Fin 4 → 𝓓((�
         setIntegral_mono_set ((hc.continuousOn.integrableOn_compact
             (isCompact_closedBall (0 : ℂ) (R + 1))).mono_set ball_subset_closedBall)
           (ae_of_all _ fun z ↦ sq_nonneg _)
-          (closedBall_subset_ball (by linarith)).eventuallyLE
+          (closedBall_subset_ball (by linarith)).eventuallySubset
     _ = ∑ j, ∫ z in ball (0 : ℂ) (R + 1), φ j z ^ 2 := by
         rw [← integral_finsetSum _ fun j _ ↦ hφ j]
         congr 1

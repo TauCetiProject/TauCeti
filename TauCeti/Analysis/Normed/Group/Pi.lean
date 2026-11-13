@@ -26,7 +26,7 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
   · simp [Subsingleton.elim f 0, hn]
   obtain ⟨i, -, hi⟩ :=
     Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖f i‖₊
-  have hf : ‖f‖ = ‖f i‖ := by rw [← coe_nnnorm, Pi.nnnorm_def, hi, coe_nnnorm]
+  have hf : ‖f‖ = ‖f i‖ := by rw [← coe_nnNorm, Pi.nnNorm_def, hi, coe_nnNorm]
   rw [hf]
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
