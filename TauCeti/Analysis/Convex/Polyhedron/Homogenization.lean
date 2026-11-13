@@ -34,6 +34,17 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
 namespace TauCeti
 
+/-- A homogeneous inequality cone with finitely many rows is a convex polyhedron. -/
+theorem isConvexPolyhedron_homogeneousInequalityCone {ι : Type*} [Finite ι]
+    (g : ι → (V →ᴬ[ℝ] ℝ)) :
+    IsConvexPolyhedron (homogeneousInequalityCone g : Set (V × ℝ)) := by
+  let inequalities : Unit ⊕ ι → (V × ℝ) →ᴬ[ℝ] ℝ :=
+    Sum.elim (fun _ => -(ContinuousLinearMap.snd ℝ V ℝ).toContinuousAffineMap)
+      (fun i => (g i).homogenize.toContinuousAffineMap)
+  convert isConvexPolyhedron_setOf_forall inequalities using 1
+  ext z
+  simp [inequalities, Sum.forall]
+
 /-- **Homogenization of a convex polyhedron.** In a finite-dimensional Hausdorff space, the
 homogenization of a convex polyhedron is a finitely generated cone. -/
 theorem IsConvexPolyhedron.fg_homogenization [ContinuousSMul ℝ V] [T2Space V] [Module.Finite ℝ V]
@@ -44,11 +55,8 @@ theorem IsConvexPolyhedron.fg_homogenization [ContinuousSMul ℝ V] [T2Space V] 
   · rw [h, homogenization_empty]
     exact Submodule.fg_bot
   · rw [homogenization_setOf_forall_eq g hne]
-    -- The cone is cut out by the finitely many functionals `snd` and `-homogenize (g i)`.
-    refine PointedCone.DualFG.fg (p := LinearMap.id)
-      ⟨insert (LinearMap.snd ℝ V ℝ) (Finset.univ.image fun i => -(g i).homogenize.toLinearMap),
-        ?_⟩
-    ext z
-    simp [PointedCone.mem_dual]
+    rw [homogeneousInequalityCone_def]
+    exact (PointedCone.DualFG.dual_of_finite (topDualPairing ℝ (V × ℝ))
+      ((Set.finite_range _).insert _)).fg
 
 end TauCeti
