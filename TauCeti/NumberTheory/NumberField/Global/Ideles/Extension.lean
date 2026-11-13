@@ -31,7 +31,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped TauCeti.InfinitePlace.LiesOver AdicCompletionExtension
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

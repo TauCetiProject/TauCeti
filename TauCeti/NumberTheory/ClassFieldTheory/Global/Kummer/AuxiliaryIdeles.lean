@@ -52,7 +52,8 @@ the idele-class norm subgroup.
 public noncomputable section
 
 open IsDedekindDomain NumberField
-open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.ClassFieldTheory
 

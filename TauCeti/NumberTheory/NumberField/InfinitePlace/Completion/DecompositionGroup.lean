@@ -32,8 +32,8 @@ extension of fields has at most `[L_w : K_v]` automorphisms.
 
 The target place of `completionCongr` is an arbitrary `w'` together with the equation
 `w' = σ • w`, so that no transport along an equality of places is needed. Both completions carry
-the `K_v`-algebra structure induced by `AbsoluteValue.Completion.map`, available in the
-`TauCeti.InfinitePlace.LiesOver` scope.
+Mathlib's `K_v`-algebra structure `AbsoluteValue.Completion.algebraOfLiesOver`, used here as a
+local instance.
 
 These are the archimedean counterparts of `IsDedekindDomain.HeightOneSpectrum.completionCongr`,
 `IsDedekindDomain.HeightOneSpectrum.decompositionHom` and
@@ -79,7 +79,7 @@ public section
 noncomputable section
 
 open Module
-open scoped TauCeti.InfinitePlace.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace
 

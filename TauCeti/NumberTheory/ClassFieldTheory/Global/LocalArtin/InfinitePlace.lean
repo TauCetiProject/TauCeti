@@ -82,7 +82,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open _root_.NumberField _root_.NumberField.InfinitePlace
-open scoped TauCeti.InfinitePlace.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (K : Type) [Field K] (L : Type) [Field L] [Algebra K L]
 

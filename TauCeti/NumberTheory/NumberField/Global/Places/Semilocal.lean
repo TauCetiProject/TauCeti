@@ -41,7 +41,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace Module
-open scoped TensorProduct TauCeti.InfinitePlace.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

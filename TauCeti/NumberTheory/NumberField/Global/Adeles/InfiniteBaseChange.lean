@@ -32,7 +32,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace
-open scoped TensorProduct TauCeti.InfinitePlace.LiesOver InfiniteAdeleExtension
+open scoped TensorProduct InfiniteAdeleExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

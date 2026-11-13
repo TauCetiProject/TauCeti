@@ -281,7 +281,7 @@ end Real
 
 section Norm
 
-open scoped TauCeti.InfinitePlace.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable {L : Type} [Field L] [Algebra K L]
 

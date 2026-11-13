@@ -56,7 +56,7 @@ of the ordinary absolute value, exactly as the norm does.
 public section
 
 open NumberField NumberField.ComplexEmbedding ComplexConjugate
-open scoped TauCeti.InfinitePlace.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace.Completion
 

@@ -62,7 +62,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -198,9 +199,11 @@ of the norm of an infinite adele `x` of `L` at an infinite place `v` of `K` is
 def infiniteAdeleNorm : InfiniteAdeleRing L →* InfiniteAdeleRing K where
   toFun x v := ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)
   map_one' := funext fun v ↦ by
+    -- Unfold the pointwise product of local norms at `v` so that `simp` can see the `finprod`.
     change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion 1 = 1
     simp
   map_mul' x y := funext fun v ↦ by
+    -- As for `map_one'`, unfold the pointwise product of local norms at `v`.
     change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1 * y w.1) =
       (∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)) *
         ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (y w.1)

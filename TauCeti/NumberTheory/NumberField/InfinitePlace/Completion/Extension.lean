@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Field.WithAbs
 public import Mathlib.NumberTheory.NumberField.Completion.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
@@ -18,11 +19,10 @@ real place doubles the normalization exponent. Multiplying over all places above
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
 
-In the `TauCeti.InfinitePlace.LiesOver` scope, `L_w` carries Mathlib's
-`AbsoluteValue.Completion.algebraOfLiesOver` `K_v`-algebra structure whenever `w` lies over `v`,
-together with its scalar tower and continuity instances. Completed
-extensions at infinite places are finite dimensional, with degree one or two. A place indexed by
-the places above `v` carries its proof of lying over `v` as an instance.
+Throughout, `L_w` carries Mathlib's `K_v`-algebra structure
+`AbsoluteValue.Completion.algebraOfLiesOver` as a local instance whenever `w` lies over `v`.
+Completed extensions at infinite places are finite dimensional, with degree one or two. A place
+indexed by the places above `v` carries its proof of lying over `v` as an instance.
 
 The formulas are in `NumberField.InfinitePlace`, alongside
 `completionNormalizedAbsValue`. For the ordinary norm, use
@@ -46,34 +46,7 @@ noncomputable section
 
 open NumberField
 
-namespace TauCeti.InfinitePlace.LiesOver
-
-variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-  (v : NumberField.InfinitePlace K) (w : NumberField.InfinitePlace L) [w.LiesOver v]
-
-/-- If `w` lies over `v`, then `L_w` is a `K_v`-algebra through Mathlib's
-`AbsoluteValue.Completion.algebraOfLiesOver`, whose `algebraMap` is the completion map. -/
-scoped instance instAlgebra : Algebra v.Completion w.Completion :=
-  AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
-
-scoped instance instIsScalarTower : IsScalarTower K v.Completion w.Completion :=
-  inferInstanceAs <| letI := AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
-    IsScalarTower K v.Completion w.Completion
-
-scoped instance instContinuousSMul : ContinuousSMul v.Completion w.Completion :=
-  inferInstanceAs <| letI := AbsoluteValue.Completion.algebraOfLiesOver v.1 w.1
-    ContinuousSMul v.Completion w.Completion
-
-end TauCeti.InfinitePlace.LiesOver
-
-open scoped TauCeti.InfinitePlace.LiesOver
-
-/-- The completion map along an extension of absolute values preserves the norm. -/
-@[simp]
-theorem AbsoluteValue.Completion.norm_map {K L : Type*} [Field K] [Field L] [Algebra K L]
-    {v : AbsoluteValue K ℝ} {w : AbsoluteValue L ℝ} [w.LiesOver v] (x : v.Completion) :
-    ‖AbsoluteValue.Completion.map v w x‖ = ‖x‖ :=
-  (AbsoluteValue.Completion.isometry_map v w).norm_map_of_map_zero (map_zero _) x
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace NumberField.InfinitePlace
 

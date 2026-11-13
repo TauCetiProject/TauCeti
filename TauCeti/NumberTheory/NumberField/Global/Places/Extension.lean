@@ -52,7 +52,8 @@ compatibility of the normalizations of `K` and `L` with one another.
 public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace Module
-open scoped NumberField AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
+open scoped NumberField AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

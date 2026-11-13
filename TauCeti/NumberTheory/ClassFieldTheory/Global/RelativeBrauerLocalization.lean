@@ -163,7 +163,7 @@ end Finite
 section Infinite
 
 open NumberField.InfinitePlace GlobalNumberFields
-open scoped TauCeti.InfinitePlace.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v]
 
