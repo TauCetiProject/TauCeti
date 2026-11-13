@@ -95,10 +95,10 @@ theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
 
 /-- A positive-scale non-Gaussian stable law is the affine image of the standardized law, so its
 support is the affine image of the standardized support. -/
-private theorem support_stableMeasure_eq_image (hs : 0 < s) (m : ℝ) :
+private theorem support_stableMeasure_eq_image (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by
-  rw [← stableMeasure_one_zero_map_affine, support_map_affine (NNReal.coe_pos.2 hs).ne']
+  rw [← stableMeasure_one_zero_map_affine, support_map_affine]
 
 /-- Full support of the standardized non-Gaussian law gives full support at every positive
 scale and location, and the Gaussian shape always has full support. -/
@@ -111,7 +111,7 @@ private theorem support_stableMeasure_eq_univ_of_standard (hα : α ∈ Ioc 0 2)
     apply eq_univ_of_univ_subset
     simpa only [Measure.support_eq_univ] using
       (gaussianReal_absolutelyContinuous' m (by positivity : 2 * s ^ 2 ≠ 0)).support_mono
-  · rw [support_stableMeasure_eq_image hs, h htwo.ne, image_univ]
+  · rw [support_stableMeasure_eq_image, h htwo.ne, image_univ]
     exact range_eq_univ.mpr fun y ↦ ⟨(y - m) / s, by
       field_simp [(NNReal.coe_pos.2 hs).ne']
       ring⟩
@@ -274,7 +274,7 @@ half-line `[d, ∞)` starting at its `S₁` location `d`. -/
 @[simp]
 theorem support_stableMeasure_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) (m : ℝ) :
     (stableMeasure α 1 s m).support = Ici (stableS1Location α 1 s m) := by
-  rw [support_stableMeasure_eq_image hs, support_standardStableMeasure_one_of_lt_one hα,
+  rw [support_stableMeasure_eq_image, support_standardStableMeasure_one_of_lt_one hα,
     ← image_image (m + ·) ((s : ℝ) * ·), image_mul_left_Ici (NNReal.coe_pos.2 hs),
     image_const_add_Ici, stableS1Location_of_ne_one hα.2.ne, stableS1Location_of_ne_one hα.2.ne]
   congr 1
@@ -289,7 +289,7 @@ theorem support_stableMeasure_neg_one_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 <
   have hneg : (stableMeasure α 1 s (-m)).map (fun x ↦ 0 + -1 * x) =
       stableMeasure α (-1) s m := by
     simp
-  rw [← hneg, support_map_affine (by norm_num), support_stableMeasure_one_of_lt_one hα hs]
+  rw [← hneg, support_map_affine, support_stableMeasure_one_of_lt_one hα hs]
   simp only [zero_add, neg_one_mul, image_neg_Ici, stableS1Location_of_ne_one hα.2.ne]
   congr 1
   ring
