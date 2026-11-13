@@ -18,9 +18,6 @@ uniform space is a uniform limit of locally constant functions. This is the dens
 statement used to extend functionals from locally constant test functions to all continuous
 ones, for instance to extend the coefficients of measures on profinite spaces.
 
-For a discrete codomain, locally constant functions are the continuous maps:
-`LocallyConstant.equivContinuousMap`.
-
 `ContinuousMap.intCastLocallyConstant` casts integer-valued continuous functions to locally
 constant functions with values in any type with an integer cast.
 -/
@@ -30,30 +27,6 @@ public section
 namespace LocallyConstant
 
 open Set Topology
-
-/-- For a discrete codomain, locally constant functions are the same as continuous maps. -/
-@[expose, simps apply]
-def equivContinuousMap (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y]
-    [DiscreteTopology Y] : LocallyConstant X Y ≃ C(X, Y) where
-  toFun := toContinuousMap
-  invFun f := ⟨f, (IsLocallyConstant.iff_continuous f).2 f.continuous⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The locally constant function attached to a continuous map to a discrete space has the same
-underlying function. -/
-@[simp]
-theorem coe_equivContinuousMap_symm {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [DiscreteTopology Y] (f : C(X, Y)) : ⇑((equivContinuousMap X Y).symm f) = f :=
-  (rfl)
-
-/-- The locally constant function attached to a continuous map to a discrete space is that map
-again as a continuous map. -/
-@[simp]
-theorem toContinuousMap_equivContinuousMap_symm {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [DiscreteTopology Y] (f : C(X, Y)) :
-    ((equivContinuousMap X Y).symm f).toContinuousMap = f :=
-  (rfl)
 
 variable {X V : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
   [TotallyDisconnectedSpace X] [TopologicalSpace V]
