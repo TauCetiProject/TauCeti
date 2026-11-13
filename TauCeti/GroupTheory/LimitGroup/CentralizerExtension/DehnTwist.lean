@@ -102,17 +102,15 @@ theorem dehnTwist_symm_apply_of (g : G) : (dehnTwist u).symm (of g) = of g := by
 theorem dehnTwist_symm_apply_t (i : Fin 1) : (dehnTwist u).symm (t i) = t i * of u⁻¹ := by
   simpa using dehnTwist_zpow_apply_t u (-1) i
 
-/-- The twist of the extension of the centralizer of `1` is trivial. -/
-@[simp]
-theorem dehnTwist_one : dehnTwist (1 : G) = 1 :=
-  MulEquiv.toMonoidHom_injective <| hom_ext (by ext; simp) fun i => by simp
-
 /-- The twist is trivial exactly when `u = 1`. -/
 @[simp]
 theorem dehnTwist_eq_one_iff : dehnTwist u = 1 ↔ u = 1 := by
-  refine ⟨fun h => ?_, fun h => h ▸ dehnTwist_one⟩
-  have := dehnTwist_t u 0
-  rwa [h, MulAut.one_apply, left_eq_mul, map_eq_one_iff _ of_injective] at this
+  rw [dehnTwist, MulEquiv.map_eq_one_iff, HNNExtension.dehnTwist_eq_one_iff, Subgroup.mk_eq_one]
+
+/-- The twist of the extension of the centralizer of `1` is trivial. -/
+@[simp]
+theorem dehnTwist_one : dehnTwist (1 : G) = 1 :=
+  (dehnTwist_eq_one_iff 1).2 rfl
 
 /-- The twist fixes `G`. -/
 @[simp]

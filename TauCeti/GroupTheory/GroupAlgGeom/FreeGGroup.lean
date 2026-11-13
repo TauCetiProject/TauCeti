@@ -45,10 +45,22 @@ specialisations of the free generators; they label the leaves of Makanin–Razbo
 * `TauCeti.GroupAlgGeom.IsFreeGGroup.isFreeGroup`: a free `G`-group over a free group `G` is a
   free group.
 
+## Implementation notes
+
+The predicate and its API are the relative version over `G` of Mathlib's `IsFreeGroup` and
+`FreeGroupBasis` (`Mathlib.GroupTheory.FreeGroup.IsFreeGroup`), which they follow:
+`IsFreeGGroup.of_mulEquiv`, `IsFreeGGroup.Generators`, `IsFreeGGroup.mulEquiv`,
+`IsFreeGGroup.of`, `IsFreeGGroup.homEquiv`, `IsFreeGGroup.unique_lift` and
+`IsFreeGGroup.of_unique_lift` correspond to `IsFreeGroup.ofMulEquiv`, `IsFreeGroup.Generators`,
+`IsFreeGroup.mulEquiv`, `IsFreeGroup.of`, `IsFreeGroup.lift`, `IsFreeGroup.unique_lift` and
+`IsFreeGroup.ofUniqueLift`.
+
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §2.2.
+  and ideal theory*, J. Algebra 219 (1999), §1.2 (free `G`-groups `G[X] = G ∗ F(X)`).
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §2.2 (`G[X]` as the free object of the category of `G`-groups).
 -/
 
 public section
@@ -118,17 +130,22 @@ theorem of_unique_lift {ι : G →* H} {Y : Type w} (y : Y → H)
   let up₁ : GX G Y ≃* ULift.{u} (GX G Y) := MulEquiv.ulift.symm
   let up₂ : H ≃* ULift.{max v w} H := MulEquiv.ulift.symm
   obtain ⟨φ, hφ, -⟩ := hy (up₁.toMonoidHom.comp inl) fun i => up₁ (inr (FreeGroup.of i))
-  let f : H →* GX G Y := up₁.symm.toMonoidHom.comp φ
-  have hf (g : G) : f (ι g) = inl g := congrArg ULift.down (φ.map_coeff g)
-  have hfy (i : Y) : f (y i) = inr (FreeGroup.of i) := congrArg ULift.down (hφ i)
-  have h₁ : f.comp (eval ι y) = .id _ := GX.ext_hom (by simp [hf]) (by simp [hfy])
+  let f : GHom ι (inl : G →* GX G Y) := (GHom.ofMulEquiv up₁.symm fun g => by simp).comp φ
+  have hfy (i : Y) : f (y i) = inr (FreeGroup.of i) := by
+    rw [GHom.coe_comp, Function.comp_apply, hφ, GHom.coe_ofMulEquiv, MulEquiv.symm_apply_apply]
+  have h₁ : (f : H →* GX G Y).comp (eval ι y) = .id _ := GX.ext_hom (by simp) (by simp [hfy])
   -- Two `G`-homomorphisms `H → ULift H` agreeing on `y` are equal.
+  let ψ : GHom ι (up₂.toMonoidHom.comp ι) := .ofMulEquiv up₂ fun g => by simp
+  have hψ (x : H) : ψ x = up₂ x := congrFun (GHom.coe_ofMulEquiv ..) x
   have h₂ := (hy (up₂.toMonoidHom.comp ι) fun i => up₂ (y i)).unique
-    (y₁ := ⟨up₂.toMonoidHom.comp ((eval ι y).comp f), fun g => by simp [hf]⟩)
-    (y₂ := ⟨up₂.toMonoidHom, fun _ => rfl⟩)
-    (fun i => congrArg up₂ ((congrArg (eval ι y) (hfy i)).trans (eval_inr_of ι y i))) fun _ => rfl
-  refine of_mulEquiv (MonoidHom.toMulEquiv (eval ι y) f h₁ ?_) (eval_inl ι y)
-  exact MonoidHom.ext fun x => congrArg ULift.down (DFunLike.congr_fun h₂ x)
+    (y₁ := ψ.comp ((evalGHom ι y).comp f)) (y₂ := ψ)
+    (fun i => by simp only [GHom.coe_comp, Function.comp_apply, hfy, coe_evalGHom, eval_inr_of, hψ])
+    fun i => hψ (y i)
+  refine of_mulEquiv (MonoidHom.toMulEquiv (eval ι y) f h₁ (MonoidHom.ext fun x => ?_))
+    (eval_inl ι y)
+  apply up₂.injective
+  simpa only [GHom.coe_comp, Function.comp_apply, coe_evalGHom, hψ, MonoidHom.comp_apply,
+    MonoidHom.id_apply, MonoidHom.coe_ofClass] using DFunLike.congr_fun h₂ x
 
 section Generators
 

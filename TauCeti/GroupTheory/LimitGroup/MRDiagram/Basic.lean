@@ -215,7 +215,7 @@ theorem isComplete_iff_of_subsingleton [Subsingleton A] {D : MRDiagram ι} :
     D.IsComplete ιL ↔ ∀ φ : H →* L, ∃ ψ ∈ D.branchHoms ιL, (ψ : H →* L) = φ := by
   refine ⟨fun h φ => ⟨⟨φ, fun a => by simp [Subsingleton.elim a 1]⟩, h _, rfl⟩, fun h φ => ?_⟩
   obtain ⟨ψ, hψ, hψφ⟩ := h φ
-  rwa [show ψ = φ from GHom.ext fun x => DFunLike.congr_fun hψφ x] at hψ
+  rwa [GHom.toMonoidHom_injective hψφ] at hψ
 
 variable (ιL) in
 /-- A diagram is *sound* for the system `S` of equations at the tuple `x` of its root group when
