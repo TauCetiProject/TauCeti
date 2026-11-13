@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModul
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Reduction
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 
 /-!
 # Global sections of coherent formal modules on `spf I`
