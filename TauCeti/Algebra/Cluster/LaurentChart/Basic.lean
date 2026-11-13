@@ -402,6 +402,12 @@ theorem mem_range_map_iff (c : LaurentChart R K F) (f : F →ₐ[R] G) (z : F) :
   · rintro ⟨p, rfl⟩
     exact ⟨p, rfl⟩
 
+/-- Range membership for an inverse is reflected by ambient field transport. -/
+@[simp↓]
+theorem inv_mem_range_map_iff (c : LaurentChart R K F) (f : F →ₐ[R] G) (z : F) :
+    (f z)⁻¹ ∈ (c.map f).toAlgHom.range ↔ z⁻¹ ∈ c.toAlgHom.range := by
+  simpa only [map_inv₀] using c.mem_range_map_iff f z⁻¹
+
 /-! ### Laurent expansion -/
 
 /-- The unique Laurent expansion of an element in the image of a faithful chart. -/
@@ -629,15 +635,24 @@ theorem mapRange_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (z : F)
   apply f.toRingHom.injective
   exact c.map_coe_mapRange_symm_apply f ⟨f z, h⟩
 
+/-- Inverse range transport cancels an embedded inverse in its field normal form. -/
+@[simp↓]
+theorem mapRange_symm_inv (c : LaurentChart R K F) (f : F →ₐ[R] G) (z : F)
+    (h : (f z)⁻¹ ∈ (c.map f).toAlgHom.range) :
+    (c.mapRange f).symm ⟨(f z)⁻¹, h⟩ =
+      ⟨z⁻¹, (c.inv_mem_range_map_iff f z).mp h⟩ := by
+  simpa only [map_inv₀] using c.mapRange_symm_apply f z⁻¹
+    (by simpa only [map_inv₀] using h)
+
 /-- Expansion after an ambient embedding, for any element of the transported range. -/
-@[simp]
+@[simp↓]
 theorem laurentExpansion_map (c : LaurentChart R K F) (f : F →ₐ[R] G)
     (y : (c.map f).toAlgHom.range) :
     (c.map f).laurentExpansion y = c.laurentExpansion ((c.mapRange f).symm y) := by
   simp [mapRange]
 
 /-- Laurent coefficients are unchanged by an ambient field embedding. -/
-@[simp]
+@[simp↓]
 theorem coeff_map (c : LaurentChart R K F) (f : F →ₐ[R] G)
     (y : (c.map f).toAlgHom.range) :
     (c.map f).coeff y = c.coeff ((c.mapRange f).symm y) := by
@@ -665,6 +680,23 @@ theorem coeff_reindex (c : LaurentChart R K F) (e : K ≃ K')
   congr 1
   funext m
   simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_eq_mapDomain]
+
+/-- Expand an inverse coordinate after its reindexing formula has been simplified. -/
+@[simp↓]
+theorem laurentExpansion_reindex_inv_coordinate (c : LaurentChart R K F) (e : K ≃ K')
+    (i : K') (h : (c.coordinate (e.symm i))⁻¹ ∈ (c.reindex e).toAlgHom.range) :
+    (c.reindex e).laurentExpansion ⟨(c.coordinate (e.symm i))⁻¹, h⟩ =
+      AddMonoidAlgebra.single (Finsupp.single i (-1)) 1 := by
+  simpa only [coordinate_reindex] using (c.reindex e).laurentExpansion_inv_coordinate i
+    (by simpa only [coordinate_reindex] using h)
+
+/-- An inverse reindexed coordinate has its negative standard-basis coefficient. -/
+@[simp↓]
+theorem coeff_reindex_inv_coordinate (c : LaurentChart R K F) (e : K ≃ K')
+    (i : K') (h : (c.coordinate (e.symm i))⁻¹ ∈ (c.reindex e).toAlgHom.range) :
+    (c.reindex e).coeff ⟨(c.coordinate (e.symm i))⁻¹, h⟩ =
+      Finsupp.single (Finsupp.single i (-1)) 1 := by
+  rw [coeff_def, laurentExpansion_reindex_inv_coordinate, AddMonoidAlgebra.coeff_single]
 
 end LaurentChart
 
