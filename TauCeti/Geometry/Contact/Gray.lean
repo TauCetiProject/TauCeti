@@ -269,6 +269,11 @@ theorem grayPartialDiffeomorph_apply (s t : ℝ) (x : M) :
     grayPartialDiffeomorph hc s t x = timeDependentFlowOf α.grayVectorField s t x :=
   timeDependentFlowPartialDiffeomorph_apply _ _ s t x
 
+/-- The coercion of Gray's partial isotopy is the time-dependent flow of the Gray vector field. -/
+theorem coe_grayPartialDiffeomorph (s t : ℝ) :
+    ⇑(grayPartialDiffeomorph hc s t) = timeDependentFlowOf α.grayVectorField s t :=
+  funext (grayPartialDiffeomorph_apply hc s t)
+
 /-- The inverse of Gray's partial isotopy from `s` to `t` is the time-dependent flow of the Gray
 vector field from `t` to `s`. -/
 @[simp]
@@ -318,9 +323,7 @@ theorem mpullback_grayPartialDiffeomorph_apply {s t : ℝ} {x : M}
     (α.contMDiff.of_le (by simp))
     (mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField hc)
     ((mem_grayPartialDiffeomorph_source_iff hc).1 hx)
-  have hφ (u : ℝ) : ⇑(grayPartialDiffeomorph hc s u) = timeDependentFlowOf α.grayVectorField s u :=
-    funext (grayPartialDiffeomorph_apply hc s u)
-  simpa only [coe_mpullback, hφ] using h
+  simpa only [coe_mpullback, coe_grayPartialDiffeomorph] using h
 
 /-- A point at which the contact hyperplane `ker α_t` is the same for all times lies in the source
 of Gray's partial isotopy between any two times: the Gray vector field vanishes there, so the
@@ -402,10 +405,7 @@ theorem exists_isOpen_superset_forall_mpullback_eq_smul {K : Set M}
     refine ⟨hx t ht,
       Real.exp (∫ u in s..t, α.grayRate (u, timeDependentFlowOf α.grayVectorField s u x)),
       Real.exp_pos _, ?_⟩
-    have hφ (u : ℝ) : ⇑(grayPartialDiffeomorph hc s u) =
-        timeDependentFlowOf α.grayVectorField s u :=
-      funext (grayPartialDiffeomorph_apply hc s u)
-    simpa only [hφ] using mpullback_grayPartialDiffeomorph_apply hc
+    simpa only [coe_grayPartialDiffeomorph] using mpullback_grayPartialDiffeomorph_apply hc
       ((mem_grayPartialDiffeomorph_source_iff hc).2 (hx t ht))
 
 end Relative
