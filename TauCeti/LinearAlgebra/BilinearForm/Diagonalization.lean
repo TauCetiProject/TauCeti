@@ -352,7 +352,8 @@ theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
   · exact ⟨w, fun y z ↦ (ht ▸ (Units.mul_right_dvd (u := htu.unit)).mpr dvd_rfl).trans (h y z)⟩
   -- Both `s` and `t` lie in the maximal ideal, so `s + t + 2` is a unit.
   have hunit : IsUnit (s + t + 2) := add_comm 2 (s + t) ▸ TauCeti.isUnit_add_of_isUnit_of_not_isUnit
-    h2 (IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hsu) (mem_nonunits_iff.mpr htu))
+    h2 (mem_nonunits_iff.mp
+      (IsLocalRing.nonunits_add (mem_nonunits_iff.mpr hsu) (mem_nonunits_iff.mpr htu)))
   have huw : B (u + w) (u + w) = B u w * (s + t + 2) := by
     simp only [map_add, LinearMap.add_apply, hs, ht, hB.eq w u]
     ring
