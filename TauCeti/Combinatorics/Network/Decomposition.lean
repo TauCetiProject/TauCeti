@@ -260,6 +260,13 @@ theorem assignment_apply_of_mem_arrows {p : WeightedWalk Q K} (hp : p ∈ D.path
   rw [WeightedWalk.assignment_def]
   exact walkAssignment_eq_of_mem (D.isPath_walk p hp).nodup_arrows _ he
 
+/-- A cycle component of a decomposition places its weight on each of its arrows. -/
+theorem assignment_apply_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K}
+    (hc : c ∈ D.cycles) {x y : V} {e : Q x y} (he : ⟨x, y, e⟩ ∈ c.walk.arrows) :
+    c.assignment e = c.weight := by
+  rw [WeightedClosedWalk.assignment_def]
+  exact walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ he
+
 /-- A decomposition of a circulation has no path components. -/
 theorem paths_eq_nil (hf : IsCirculation f) : D.paths = [] :=
   List.eq_nil_iff_forall_not_mem.2 fun p hp ↦
@@ -276,9 +283,8 @@ theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.path
 theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
     0 ≤ c.assignment := fun x y e ↦ by
   by_cases he : ⟨x, y, e⟩ ∈ c.walk.arrows
-  · rw [WeightedClosedWalk.assignment_def,
-      walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ he]
-    exact (D.weight_pos_of_mem_cycles c hc).le
+  · exact (D.assignment_apply_of_mem_arrows_of_mem_cycles hc he).symm ▸
+      (D.weight_pos_of_mem_cycles c hc).le
   · simp [WeightedClosedWalk.assignment_def, walkAssignment_eq_zero_of_notMem c.walk c.weight he]
 
 end Preorder
@@ -324,8 +330,7 @@ theorem assignment_le_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.c
 theorem pos_of_mem_arrows_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles)
     {a : Σ x y, Q x y} (ha : a ∈ c.walk.arrows) : 0 < f a.2.2 := by
   have hle := D.assignment_le_of_mem_cycles hc a.1 a.2.1 a.2.2
-  rw [WeightedClosedWalk.assignment_def,
-    walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ ha] at hle
+  rw [D.assignment_apply_of_mem_arrows_of_mem_cycles hc ha] at hle
   exact (D.weight_pos_of_mem_cycles c hc).trans_le hle
 
 /-- A decomposition has no components exactly when it decomposes the zero assignment. -/
