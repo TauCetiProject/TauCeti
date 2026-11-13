@@ -120,8 +120,7 @@ theorem NormalizedCubicalChain.prism_act (H : f.Homotopy g)
         NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.prism_ofCube,
         map_neg, LinearMap.neg_apply]
       congr 1
-      rw [NormalizedCubicalChain.ofCube_def, NormalizedCubicalChain.cast_mk,
-        CubicalChain.cast_single, ← NormalizedCubicalChain.ofCube_def]
+      rw [NormalizedCubicalChain.cast_ofCube]
       apply congrArg (NormalizedCubicalChain.ofCube Y R)
       ext x
       simp only [SingularCube.cast_apply, SingularCube.prism_apply,
@@ -210,13 +209,21 @@ theorem NormalizedCubicalChain.prismLast_leftAct (H : f.Homotopy g)
         map_zsmul, smul_smul, ← pow_add]
       rw [show (-1 : ℤ) ^ (p + q + 1) = (-1) ^ (p + (q + 1)) by rw [← add_assoc]]
       congr 1
-      rw [NormalizedCubicalChain.ofCube_def, NormalizedCubicalChain.cast_mk,
-        CubicalChain.cast_single, ← NormalizedCubicalChain.ofCube_def]
+      rw [NormalizedCubicalChain.cast_ofCube]
       apply congrArg (NormalizedCubicalChain.ofCube Y R)
       ext x
       simp only [SingularCube.cast_apply, SingularCube.prismLast_apply,
         ContinuousMap.comp_apply, SingularCube.crossProduct_apply, leftActMap_apply, hH]
-      congr 3
+      -- Both sides read the same coordinates of `x`, split before and after the cast.
+      have ha : (fun i ↦ Fin.init (x ∘ Fin.cast (by omega)) (Fin.castAdd q i)) =
+          fun i ↦ x (Fin.castAdd (q + 1) i) :=
+        funext fun i ↦ congrArg x (Fin.ext (by simp))
+      have ht : (x ∘ Fin.cast (by omega)) (Fin.last (p + q)) = x (Fin.natAdd p (Fin.last q)) :=
+        congrArg x (Fin.ext (by simp))
+      have hc : (fun j ↦ Fin.init (x ∘ Fin.cast (by omega)) (Fin.natAdd p j)) =
+          Fin.init fun j ↦ x (Fin.natAdd p j) :=
+        funext fun j ↦ congrArg x (Fin.ext (by simp))
+      rw [ha, ht, hc]
 
 end LeftAction
 

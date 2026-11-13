@@ -231,10 +231,11 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
 /-- **Quasi-isomorphisms through homotopy retracts.** Let `f : M → N` be a morphism of DG right
 modules, and let `f₀ : M₀ → N₀` be a map of complexes over the ground ring whose relative cycles
 are relative boundaries, as for a quasi-isomorphism
-(`DGRightModuleHom.isQuasiIso_iff_forall_exists`). If `M` and `N` retract onto `M₀` and `N₀` up to
-homotopy, through chain maps `r` and `e` with `e ∘ r = 1 + d K + K d`, compatibly with `f` and
-`f₀`, then `f` is a quasi-isomorphism. Only the composite `e ∘ r` needs to be homotopic to the
-identity, and none of the maps `r`, `e`, `K` needs to be linear over the algebra. -/
+(`DGRightModuleHom.isQuasiIso_iff_forall_exists`). If `M` and `N` are homotopy retracts of
+`M₀` and `N₀`, through chain maps `r : M → M₀` and `e : M₀ → M` with
+`e ∘ r = 1 + d K + K d`, compatibly with `f` and `f₀`, then `f` is a quasi-isomorphism. Only
+the composite `e ∘ r` needs to be homotopic to the identity, and none of the maps `r`, `e`, `K`
+needs to be linear over the algebra. -/
 theorem isQuasiIso_of_homotopyRetract {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
     {M₀ N₀ : Type*} [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
     {dM₀ : M₀ →ₗ[R] M₀} {dN₀ : N₀ →ₗ[R] N₀} (f₀ : M₀ →ₗ[R] N₀)

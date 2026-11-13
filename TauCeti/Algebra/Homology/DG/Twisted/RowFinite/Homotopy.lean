@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Continuation
 public import TauCeti.Algebra.Homology.DG.Twisted.Homotopy
-import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Homotopies of row-finite twisted free modules
@@ -167,39 +166,12 @@ variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-/-- The Koszul-signed pairing of a right coefficient with the signed homotopy rows is
-balanced: both factors are graded linear of odd degree, and their two signs agree. -/
-private theorem koszulTwist_tmul_rowFiniteSignedMap_balanced (a : A) (α : M) (g : P →₀ A) :
-    tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 (op a • α))
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) =
-      tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 α)
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h (a • g)) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add a b ha hb => simp only [op_add, add_smul, map_add, add_tmul, tmul_add, ha, hb]
-  | @homogeneous p a =>
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | add α β hα hβ => simp only [smul_add, map_add, add_tmul, hα, hβ]
-    | @homogeneous q α =>
-      rw [koszulTwist_one_eq_negOnePow_smul (R := R) (op_smul_mem_of_mem_graded a.2 α.2),
-        koszulTwist_one_eq_negOnePow_smul (R := R) α.2, rowFiniteSignedMap_smul η.h a.2,
-        Int.negOnePow_add, mul_smul]
-      simp only [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast,
-        smul_tmul, tmul_smul, balance]
-      exact smul_comm _ _ _
-
 variable (ℳ) in
 /-- The homotopy rows tensored with right coefficients. A coefficient passes through with its
 Koszul sign, `α ⊗ g ↦ (-1)^|α| α ⊗ H g`, where `H` is the signed row map. -/
 def tensorHomotopy : BalancedTensorProduct R A M (P →₀ A) →ₗ[R]
     BalancedTensorProduct R A M (Q →₀ A) :=
-  lift (((BalancedTensorProduct.mk R A).comp
-      ((InternalGrading.ofDecomposition ℳ).koszulTwist 1)).compl₂
-      (rowFiniteSignedMap (𝒜 := 𝒜) η.h))
-    (fun a α g ↦ by
-      simpa only [LinearMap.compl₂_apply, LinearMap.comp_apply, mk_apply] using
-        η.koszulTwist_tmul_rowFiniteSignedMap_balanced a α g)
+  koszulMapRight ℳ (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h)
 
 /-- On pure tensors, the coefficient acquires its Koszul twist and the free factor its signed
 homotopy row. -/
@@ -207,15 +179,14 @@ homotopy row. -/
 theorem tensorHomotopy_tmul (α : M) (g : P →₀ A) :
     η.tensorHomotopy ℳ (tmul R A α g) =
       tmul R A ((InternalGrading.ofDecomposition ℳ).koszulTwist 1 α)
-        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) := by
-  simp [tensorHomotopy]
+        (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) :=
+  koszulMapRight_tmul (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h) α g
 
 /-- On a homogeneous coefficient of degree `q`, the Koszul twist is the sign `(-1)^q`. -/
 theorem tensorHomotopy_tmul_of_mem {q : ℤ} {α : M} (hα : α ∈ ℳ q) (g : P →₀ A) :
     η.tensorHomotopy ℳ (tmul R A α g) =
-      ((q.negOnePow : ℤ) : R) • tmul R A α (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) := by
-  rw [tensorHomotopy_tmul, koszulTwist_one_eq_negOnePow_smul (R := R) hα,
-    negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast, smul_tmul]
+      ((q.negOnePow : ℤ) : R) • tmul R A α (rowFiniteSignedMap (𝒜 := 𝒜) η.h g) :=
+  koszulMapRight_tmul_of_mem (rowFiniteSignedMap_smul (𝒜 := 𝒜) η.h) hα g
 
 variable [IsScalarTower R Aᵐᵒᵖ M] {hA : IsDGAlgebra 𝒜 d} {dM : M →ₗ[R] M}
 

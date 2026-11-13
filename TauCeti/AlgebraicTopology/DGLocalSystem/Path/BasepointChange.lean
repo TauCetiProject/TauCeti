@@ -38,16 +38,17 @@ quasi-isomorphisms (`TauCeti.DGRightModuleCat.isQuasiIso_of_homotopyRetract`).
 
 * `TauCeti.pathChainToLoopChain`: appending the reversal of `δ`, on chains.
 * `TauCeti.tensorPathChainRetract`, `TauCeti.tensorPathChainPoint`,
-  `TauCeti.tensorPathChainHomotopy`: the retraction of `M ⊗ C_*(P_{a→b} B)` onto `M`, the map back
-  and the homotopy between their composite and the identity.
+  `TauCeti.tensorPathChainHomotopy`: the map `m ⊗ c ↦ m · ρ(c)` from `M ⊗ C_*(P_{a→b} B)` to `M`,
+  the map `m ↦ m ⊗ [δ]` back and the homotopy between their composite and the identity, which
+  make `M ⊗ C_*(P_{a→b} B)` a homotopy retract of `M`.
 
 ## Main results
 
 * `TauCeti.pathChainToLoopChain_smul`: `ρ` is a map of left modules over `C_*(Ω_a B)`.
 * `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: `ρ(c) · [δ]` is the push-forward of
   appending `δ⁻¹` and then `δ`.
-* `TauCeti.tensorPathChainPoint_tensorPathChainRetract`: the composite of the retraction and the
-  map back is homotopic to the identity.
+* `TauCeti.tensorPathChainPoint_tensorPathChainRetract`: the composite of `m ⊗ c ↦ m · ρ(c)` and
+  the map back is homotopic to the identity.
 * `TauCeti.isQuasiIso_tensorBimoduleMap_pathChainBimodule`: basepoint change along a path
   preserves quasi-isomorphisms.
 
@@ -118,6 +119,12 @@ def pathChainPoint (δ : MoorePathBetween B a b) :
     cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R :=
   cubicalChainModuleLof _ _ R 0 (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ))
 
+/-- The `0`-chain of a path is a cycle. -/
+@[simp]
+theorem differential_pathChainPoint (δ : MoorePathBetween B a b) :
+    cubicalChainModuleDifferential _ _ R (pathChainPoint R δ) = 0 :=
+  cubicalChainModuleDifferential_lof_zero _
+
 /-- Acting on the `0`-chain of `δ` after `pathChainToLoopChain` is the push-forward of appending
 `δ⁻¹` and then `δ`. -/
 theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
@@ -136,9 +143,7 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
       rw [pathChainToLoopChain_lof, pathChainPoint, lof_smul_cubicalChainModuleLof,
         cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_ofCube,
         NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.leftAct_ofCube,
-        ← cubicalChainModuleLof_cast (Nat.add_zero q), NormalizedCubicalChain.ofCube_def,
-        NormalizedCubicalChain.cast_mk, CubicalChain.cast_single,
-        ← NormalizedCubicalChain.ofCube_def]
+        ← cubicalChainModuleLof_cast (Nat.add_zero q), NormalizedCubicalChain.cast_ofCube]
       congr 2
       refine ContinuousMap.ext fun x ↦ ?_
       have hx : (fun i : Fin q ↦ x (Fin.cast (Nat.add_zero q) (Fin.castAdd 0 i))) = x :=
@@ -156,8 +161,9 @@ open BalancedTensorProduct DGRightModuleCat
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
   (δ : MoorePathBetween B a b)
 
-/-- The retraction `M ⊗ C_*(P_{a→b} B) → M`, `m ⊗ c ↦ m · ρ(c)`, where `ρ` appends the reversal
-of `δ`. -/
+/-- The map `M ⊗ C_*(P_{a→b} B) → M`, `m ⊗ c ↦ m · ρ(c)`, where `ρ` appends the reversal of `δ`.
+It is the inclusion of the homotopy retract `M ⊗ C_*(P_{a→b} B)` into `M`, with
+`tensorPathChainPoint` as the retraction back. -/
 def tensorPathChainRetract : tensorBimoduleObj M (pathChainBimodule B a b R) →ₗ[R] M :=
   lift (LinearMap.mk₂ R (fun m c ↦ op (pathChainToLoopChain R δ c) • m)
       (fun _ _ _ ↦ smul_add _ _ _) (fun r m c ↦ smul_comm _ r m)
@@ -166,7 +172,7 @@ def tensorPathChainRetract : tensorBimoduleObj M (pathChainBimodule B a b R) →
     (fun α m c ↦ by
       simp only [LinearMap.mk₂_apply, pathChainToLoopChain_smul, op_mul, mul_smul])
 
-/-- On pure tensors the retraction is `m ⊗ c ↦ m · ρ(c)`. -/
+/-- On pure tensors the map is `m ⊗ c ↦ m · ρ(c)`. -/
 @[simp]
 theorem tensorPathChainRetract_tmul (m : M)
     (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
@@ -194,7 +200,7 @@ theorem tensorPathChainPoint_apply (m : M) :
 
 variable {M}
 
-/-- The retraction commutes with the differentials. -/
+/-- The map `m ⊗ c ↦ m · ρ(c)` commutes with the differentials. -/
 theorem differential_tensorPathChainRetract
     (z : tensorBimoduleObj M (pathChainBimodule B a b R)) :
     M.differential (tensorPathChainRetract M δ z) =
@@ -222,9 +228,8 @@ theorem differential_tensorPathChainPoint (m : M) :
   | @homogeneous q m =>
     rw [tensorPathChainPoint_apply, tensorBimoduleObj_differential_tmul m.2,
       tensorPathChainPoint_apply]
-    have h0 : (pathChainBimodule B a b R).differential (pathChainPoint R δ) = 0 :=
-      cubicalChainModuleDifferential_lof_zero _
-    rw [h0, tmul_zero, smul_zero, add_zero]
+    rw [differential_pathChainPoint, tmul_zero, smul_zero,
+      add_zero]
 
 variable (M) in
 /-- The chain homotopy `m ⊗ c ↦ (-1) ^ |m| m ⊗ K c` on `M ⊗ C_*(P_{a→b} B)`, for the homotopy
@@ -232,6 +237,15 @@ variable (M) in
 def tensorPathChainHomotopy : tensorBimoduleObj M (pathChainBimodule B a b R) →ₗ[R]
     tensorBimoduleObj M (pathChainBimodule B a b R) :=
   koszulMapRight M.grading (fun hα x ↦ pathChainAppendHomotopy_smul δ hα x)
+
+/-- On pure tensors, the first factor acquires its Koszul twist. -/
+@[simp]
+theorem tensorPathChainHomotopy_tmul (m : M)
+    (c : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
+    tensorPathChainHomotopy M δ (tmul R (loopChainAlgebra B a R) m c) =
+      tmul R (loopChainAlgebra B a R) ((InternalGrading.ofDecomposition M.grading).koszulTwist 1 m)
+        (pathChainAppendHomotopy R δ c) :=
+  koszulMapRight_tmul _ m c
 
 /-- On a homogeneous first factor of degree `q`, the homotopy carries the sign `(-1) ^ q`. -/
 theorem tensorPathChainHomotopy_tmul_of_mem {q : ℤ} {m : M} (hm : m ∈ M.grading q)
@@ -241,7 +255,7 @@ theorem tensorPathChainHomotopy_tmul_of_mem {q : ℤ} {m : M} (hm : m ∈ M.grad
         tmul R (loopChainAlgebra B a R) m (pathChainAppendHomotopy R δ c) :=
   koszulMapRight_tmul_of_mem _ hm c
 
-/-- **`M` is a homotopy retract of `M ⊗ C_*(P_{a→b} B)`**: following the retraction by
+/-- **`M ⊗ C_*(P_{a→b} B)` is a homotopy retract of `M`**: following `m ⊗ c ↦ m · ρ(c)` by
 `m ↦ m ⊗ [δ]` is homotopic to the identity, through `tensorPathChainHomotopy M δ`. -/
 theorem tensorPathChainPoint_tensorPathChainRetract
     (z : tensorBimoduleObj M (pathChainBimodule B a b R)) :
@@ -270,9 +284,7 @@ theorem tensorPathChainPoint_tensorPathChainRetract
       (fun hm x ↦ tensorBimoduleObj_differential_tmul hm x) m c
     rw [LinearMap.id_apply, sub_eq_iff_eq_add'] at h
     rw [tensorPathChainRetract_tmul, tensorPathChainPoint_apply, balance,
-      pathChainToLoopChain_smul_pathChainPoint, h, add_assoc]
-    -- `tensorPathChainHomotopy M δ` is `koszulMapRight` by definition.
-    rfl
+      pathChainToLoopChain_smul_pathChainPoint, h, add_assoc, tensorPathChainHomotopy]
 
 variable {δ}
 
