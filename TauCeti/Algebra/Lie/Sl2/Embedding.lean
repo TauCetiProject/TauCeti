@@ -221,10 +221,11 @@ section JacobsonMorozov
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
 
-/-- **The Jacobson–Morozov theorem for embeddings.** In a finite-dimensional Lie algebra with
-nondegenerate Killing form over a field of characteristic zero, `e` is the image of the raising
-element `E₀₁` under an injective Lie algebra homomorphism `sl (Fin 2) K →ₗ⁅K⁆ L` if and only if
-`e ≠ 0` and `ad e` is nilpotent. -/
+omit [FiniteDimensional K L] in
+/-- **The Jacobson–Morozov theorem for embeddings.** In a Lie algebra with nondegenerate Killing
+form over a field of characteristic zero, `e` is the image of the raising element `E₀₁` under an
+injective Lie algebra homomorphism `sl (Fin 2) K →ₗ⁅K⁆ L` if and only if `e ≠ 0` and `ad e` is
+nilpotent. -/
 theorem exists_injective_lieHom_slFinTwo_iff [IsKilling K L] {e : L} :
     (∃ φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L,
       Function.Injective φ ∧ φ (SpecialLinear.single 0 1 zero_ne_one 1) = e) ↔

@@ -73,6 +73,8 @@ The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 * `TauCeti.pauliRotation_eq_one_iff`: the kernel of `U(2) → SO(3)` is the scalar matrices.
 * `TauCeti.SU2.toSO3_eq_one_iff`: the kernel of `SU(2) → SO(3)` is `{1, -1}`.
 * `TauCeti.SU2.ker_toSO3`: the kernel of `SU(2) → SO(3)` is the center of `SU(2)`.
+* `TauCeti.SU2.mem_center_iff`: the center of `SU(2)` is `{1, -1}`.
+* `TauCeti.SU2.center_ne_top`: `SU(2)` is not commutative.
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
@@ -345,6 +347,12 @@ theorem ker_toSO3 : toSO3.ker = Subgroup.center SU2 := by
       exact (smul_right_injective _ I_ne_zero h).symm
     exact ⟨_, eq_smul_one_of_commute_pauli (hcomm 2) (hcomm 0)⟩
 
+/-- **The center of `SU(2)` is `{1, -1}`.** -/
+theorem mem_center_iff {g : SU2} :
+    g ∈ Subgroup.center SU2 ↔
+      (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨ (g : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
+  rw [← ker_toSO3, MonoidHom.mem_ker, toSO3_eq_one_iff]
+
 /-- Conjugation by the torus element `diag (z, z⁻¹)` acts on `ℝ³` by the rotation about the axis
 `(0, 0, 1)` by the angle `-2 arg z`. -/
 private theorem pauliCoord_torusMatrix_mul_pauli_mul_star (z : Circle) (x : Fin 3 → ℝ) :
@@ -372,6 +380,36 @@ theorem coe_toSO3_torusHom (z : Circle) :
   refine ext_iff_mulVec.mpr fun x => ?_
   rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_torusHom,
     pauliCoord_torusMatrix_mul_pauli_mul_star]
+
+/-- The torus element `diag (e^{iθ}, e^{-iθ})` maps to the identity rotation exactly when `θ` is an
+integer multiple of `π`: the rotation angle `-2θ` is a multiple of `2π`. -/
+theorem toSO3_torusExp_eq_one_iff {θ : ℝ} : toSO3 (torusExp θ) = 1 ↔ ∃ n : ℤ, θ = n * Real.pi := by
+  have hz : ((Circle.exp θ : ℂ) ^ 2) = Circle.exp (2 * θ) := by
+    rw [two_mul, Circle.exp_add, Circle.coe_mul, sq]
+  rw [← Subtype.coe_inj, torusExp_def, coe_toSO3_torusHom, OneMemClass.coe_one, one_fin_three, hz]
+  -- The rotation is the identity exactly when its angle `e^{2iθ}` is `1`.
+  have h : !![(Circle.exp (2 * θ) : ℂ).re, (Circle.exp (2 * θ) : ℂ).im, 0;
+      -(Circle.exp (2 * θ) : ℂ).im, (Circle.exp (2 * θ) : ℂ).re, 0; 0, 0, 1] =
+        !![(1 : ℝ), 0, 0; 0, 1, 0; 0, 0, 1] ↔ Circle.exp (2 * θ) = 1 := by
+    refine ⟨fun h ↦ Circle.ext (Complex.ext ?_ ?_), fun h ↦ by simp [h]⟩
+    · simpa using congrFun (congrFun h 0) 0
+    · simpa using congrFun (congrFun h 0) 1
+  rw [h, Circle.exp_eq_one]
+  exact exists_congr fun n ↦ ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
+
+/-- `SU(2)` is not commutative: its centre is not the whole group. The torus element
+`diag (i, -i)` is not central, since its image in `SO(3)`, the rotation by `π`, is not the
+identity. -/
+theorem center_ne_top : Subgroup.center SU2 ≠ ⊤ := by
+  intro h
+  have hmem : torusExp (Real.pi / 2) ∈ toSO3.ker := ker_toSO3 ▸ h ▸ Subgroup.mem_top _
+  obtain ⟨n, hn⟩ := toSO3_torusExp_eq_one_iff.mp (MonoidHom.mem_ker.mp hmem)
+  -- `π / 2 = n π` forces `2 n = 1`, impossible in `ℤ`.
+  have h2 : ((2 * n : ℤ) : ℝ) = 1 := by
+    push_cast
+    nlinarith [Real.pi_pos]
+  have : 2 * n = 1 := by exact_mod_cast h2
+  omega
 
 /-- The fixed rotation of coordinates `x ↦ (x₁, -x₂, -x₀)` carrying the Pauli coordinates to the
 coordinates of `TauCeti.realCliffordThreeZeroPureQuaternionEquiv`. -/

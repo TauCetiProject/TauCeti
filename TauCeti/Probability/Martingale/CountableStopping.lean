@@ -6,6 +6,7 @@ Authors: Rémy Degenne, The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.OptionalSampling
+public import Mathlib.Probability.Process.LocalProperty
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Probability.Process.StoppedValue
 
@@ -19,9 +20,13 @@ times of continuous-time processes, as used in localization.
 
 We first prove bounded optional sampling with conditioning at another countable-range time.
 The stopped-process theorem follows by capping the stopping time at a deterministic horizon.
-The final theorem gives the indicator-stopped form appearing in `MeasureTheory.IsStable` and
-`MeasureTheory.Locally`, so countable-range stopping times can be used for localization: paths
-stopped at the bottom time contribute zero, rather than their possibly nonzero initial value.
+The martingale indicator-stopping theorem gives the form appearing in `ProbabilityTheory.IsStable`
+and `ProbabilityTheory.Locally`, so countable-range stopping times can be used for localization:
+paths stopped at the bottom time contribute zero, rather than their possibly nonzero initial value.
+Countable-range stopping also preserves native local martingales, without assuming path
+regularity. The proof commutes the two stops and their positive-time indicators, as in
+Mathlib's `ProbabilityTheory.IsStable.locally`, using stability only at the given
+countable-range stopping time.
 All stopped values in the bounded sampling statements are at finite times; no terminal value
 at infinity is asserted.
 
@@ -75,8 +80,7 @@ theorem Martingale.condExp_stoppedValue_stopping_time_ae_eq_restrict_le_of_count
     μ[stoppedValue X τ | hσ.measurableSpace] =ᵐ[μ.restrict {ω | τ ω ≤ σ ω}]
       stoppedValue X τ := by
   have hint := hX.integrable_stoppedValue_of_countable_range hτ hc hb
-  have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const
-    hτ hc hb
+  have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range hτ hc
   have hA := hτ.measurableSet_le_stopping_time hσ
   have hB := hτ.measurableSet_stopping_time_le hσ
   rw [ae_eq_restrict_iff_indicator_ae_eq (hτ.measurableSpace_le _ hA)]
@@ -105,8 +109,7 @@ theorem Martingale.stoppedValue_min_ae_eq_condExp_of_countable_range (hX : Marti
   · exact condExp_min_stopping_time_ae_eq_restrict_le hσ hτ
   · have heq : μ[stoppedValue X τ | (hσ.min hτ).measurableSpace]
         =ᵐ[μ.restrict {ω | τ ω ≤ σ ω}] μ[stoppedValue X τ | hσ.measurableSpace] := by
-      have hm :=
-        hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range_of_le_const hτ hcτ hb
+      have hm := hX.stronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range hτ hcτ
       have hcond : μ[stoppedValue X τ | hτ.measurableSpace] = stoppedValue X τ :=
         condExp_of_stronglyMeasurable hτ.measurableSpace_le hm
           (hX.integrable_stoppedValue_of_countable_range hτ hcτ hb)
@@ -146,9 +149,9 @@ theorem Martingale.stoppedProcess_of_countable_range (hX : Martingale X ℱ μ)
       ((isStoppingTime_const ℱ t).min hτ) (isStoppingTime_const ℱ s) hct hcs
       (fun _ ↦ min_le_left _ _)).symm
 
-/-- The indicator-stopped form appearing in `MeasureTheory.IsStable` and `MeasureTheory.Locally`
-for a countable-range stopping time. On paths stopped at the bottom time the whole process is
-zero. -/
+/-- The indicator-stopped form appearing in `ProbabilityTheory.IsStable` and
+`ProbabilityTheory.Locally` for a countable-range stopping time. On paths stopped at the bottom
+time the whole process is zero. -/
 theorem Martingale.stoppedProcess_indicator_of_countable_range [OrderBot ι]
     (hX : Martingale X ℱ μ) (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) :
     Martingale (stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ) ℱ μ := by
@@ -157,3 +160,26 @@ theorem Martingale.stoppedProcess_indicator_of_countable_range [OrderBot ι]
   simpa only [Set.compl_ofPred, not_le, WithTop.coe_bot] using (hτ ⊥).compl
 
 end MeasureTheory
+
+namespace ProbabilityTheory.Locally
+
+open MeasureTheory
+
+variable {Ω ι E : Type*} {m : MeasurableSpace Ω} {P : Measure Ω}
+  [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
+  [SecondCountableTopology ι] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [IsFiniteMeasure P] {ℱ : Filtration ι m} {X : ι → Ω → E}
+
+/-- Countable-range stopping preserves native local martingales on a raw filtration.
+The native positive-time indicator is retained, and no path regularity is required. -/
+theorem martingale_stoppedProcess_indicator_of_countable_range
+    (hX : Locally (fun Y ↦ MeasureTheory.Martingale Y ℱ P) ℱ X P)
+    {τ : Ω → WithTop ι} (hτ : IsStoppingTime ℱ τ) (hc : (range τ).Countable) :
+    Locally (fun Y ↦ MeasureTheory.Martingale Y ℱ P) ℱ
+      (MeasureTheory.stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ) P := by
+  refine ⟨hX.localSeq, hX.isLocalizingSequence_localSeq, fun n ↦ ?_⟩
+  have hm := (hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_countable_range hτ hc
+  simpa only [MeasureTheory.stoppedProcess_indicator_comm', Set.indicator_indicator,
+    MeasureTheory.stoppedProcess_stoppedProcess, Set.inter_comm, inf_comm] using hm
+
+end ProbabilityTheory.Locally

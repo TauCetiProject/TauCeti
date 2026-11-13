@@ -41,9 +41,7 @@ Tate structure `ℤ(m)` an explicit rank-one inhabitant.
 ## References
 
 Deligne, *Théorie de Hodge II*, 1.2.10 and 2.3.5; Peters–Steenbrink, *Mixed Hodge Structures*,
-Ch. 3. The signature of `MixedHodgeStructure` is adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap.
+Ch. 3.
 -/
 
 public section

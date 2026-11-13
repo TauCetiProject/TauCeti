@@ -49,6 +49,8 @@ removable singularity theorem.
   a height `A ≥ 0`, as on a horodisc, has a q-extension which recovers it there and depends only
   on its values there; if it is moreover holomorphic above that height and bounded at `i∞`, the
   q-extension is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`.
+* `TauCeti.UpperHalfPlane.differentiableAt_cuspFunction_qParam_of_lt_im`: the pointwise form
+  away from `q = 0`, at a point above the height at which the function is holomorphic.
 
 ## References
 
@@ -114,13 +116,17 @@ theorem cuspFunction_qParam_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
   ext
   simp [add_comm]
 
-/-- Two functions which agree above a height `A ≥ 0` have q-extensions which agree on the disc of
+/-- Two functions which agree above a height `A` have q-extensions which agree on the disc of
 the corresponding radius `exp (-2 * π * A / w)`, including at `q = 0`. -/
-theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w) (hA : 0 ≤ A)
+theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
     (hfg : ∀ z : ℍ, A < z.im → f z = g z) :
     Set.EqOn (Function.Periodic.cuspFunction w (f ∘ ofComplex))
       (Function.Periodic.cuspFunction w (g ∘ ofComplex))
       (Metric.ball 0 (Real.exp (-2 * Real.pi * A / w))) := by
+  rcases lt_or_ge A 0 with hA | hA
+  · -- every point of `ℍ` lies above height `A`, so `f = g`
+    obtain rfl : f = g := funext fun z ↦ hfg z (hA.trans z.im_pos)
+    exact fun _ _ ↦ rfl
   have hne {q : ℂ} (hq : q ≠ 0) (hqA : ‖q‖ < Real.exp (-2 * Real.pi * A / w)) :
       Function.Periodic.cuspFunction w (f ∘ ofComplex) q =
         Function.Periodic.cuspFunction w (g ∘ ofComplex) q := by
@@ -145,6 +151,29 @@ theorem eqOn_cuspFunction_of_lt_im {f g : ℍ → ℂ} {w A : ℝ} (hw : 0 < w) 
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
   exact congrArg lim (Filter.map_congr heq)
 
+/-- **The q-extension of a function periodic above a height is holomorphic at the q-parameter of
+every point above that height at which the function is holomorphic.** -/
+theorem differentiableAt_cuspFunction_qParam_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw : 0 < w)
+    (hper : ∀ z : ℍ, A < z.im → f (w +ᵥ z) = f z) {z : ℍ} (hz : A < z.im)
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f z) :
+    DifferentiableAt ℂ (Function.Periodic.cuspFunction w (f ∘ ofComplex)) (𝔢 w z) := by
+  -- cut `f` off below height `A`: the result is periodic everywhere and has the same q-extension
+  set g : ℍ → ℂ := fun z ↦ if A < z.im then f z else 0 with hg
+  have hfg (z : ℍ) (hz : A < z.im) : f z = g z := by simp [hg, hz]
+  have hgper : Periodic (g ∘ ofComplex) w := UpperHalfPlane.periodic_comp_ofComplex fun z ↦ by
+    by_cases hz : A < z.im
+    · rw [← hfg _ (by rwa [vadd_im]), ← hfg _ hz, hper _ hz]
+    · simp [hg, vadd_im, hz]
+  have hgz : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z := hf.congr_of_eventuallyEq <| by
+    filter_upwards [(isOpen_lt continuous_const UpperHalfPlane.continuous_im).mem_nhds hz]
+      with z' hz'
+    exact (hfg z' hz').symm
+  have hq : 𝔢 w z ∈ Metric.ball (0 : ℂ) (Real.exp (-2 * Real.pi * A / w)) := by
+    rwa [mem_ball_zero_iff, Function.Periodic.norm_qParam_lt_iff hw]
+  refine (Function.Periodic.differentiableAt_cuspFunction hw.ne' hgper ?_).congr_of_eventuallyEq
+    ((eqOn_cuspFunction_of_lt_im hw hfg).eventuallyEq_of_mem (Metric.isOpen_ball.mem_nhds hq))
+  simpa using _root_.UpperHalfPlane.mdifferentiableAt_iff.mp hgz
+
 /-- **The q-extension of a function periodic and holomorphic above a height.** If `f` is periodic
 of period `w > 0` and holomorphic above a height `A ≥ 0`, and bounded at `i∞`, then its q-extension
 is holomorphic on the disc of radius `exp (-2 * π * A / w)`, including at `q = 0`. -/
@@ -167,7 +196,7 @@ theorem differentiableOn_cuspFunction_of_lt_im {f : ℍ → ℂ} {w A : ℝ} (hw
     exact (hfg z' hz').symm
   have hghol {z : ℍ} (hz : A < z.im) : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) g z :=
     (hhol z hz).congr_of_eventuallyEq (hgeq hz)
-  refine DifferentiableOn.congr (fun q hq ↦ ?_) (eqOn_cuspFunction_of_lt_im hw hA hfg)
+  refine DifferentiableOn.congr (fun q hq ↦ ?_) (eqOn_cuspFunction_of_lt_im hw hfg)
   rw [Metric.mem_ball, dist_zero_right] at hq
   refine DifferentiableAt.differentiableWithinAt ?_
   rcases ne_or_eq q 0 with hq0 | rfl

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -30,7 +31,10 @@ In particular, it supplies the common continuity step for
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+compositions obeys the three-term estimate
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
+(`ContinuousLinearMap.enorm_comp_sub_comp_le`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
@@ -60,7 +64,8 @@ extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on th
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
-(`TauCeti.prodMap_mul_self_eq_neg_one`).
+(`TauCeti.prodMap_mul_self_eq_neg_one`), and `a + J b = y` holds exactly when `b - J a = -J y`
+(`ContinuousLinearMap.add_apply_eq_iff_sub_apply_eq_neg_apply`).
 
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
@@ -124,12 +129,12 @@ theorem opNorm_zero_iff' (f : E →SL[σ] F) : ‖f‖ = 0 ↔ f = 0 := by
 /-- The nonnegative operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opNNNorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖₊ = 0 ↔ f = 0 := by
-  simpa only [← NNReal.coe_eq_zero, coe_nnnorm] using f.opNorm_zero_iff'
+  simpa only [← NNReal.coe_eq_zero, coe_nnNorm] using f.opNorm_zero_iff'
 
 /-- The extended operator norm vanishes exactly at zero, even for a seminormed source. -/
 @[simp]
 theorem opENorm_eq_zero_iff (f : E →SL[σ] F) : ‖f‖ₑ = 0 ↔ f = 0 := by
-  simpa only [enorm_eq_nnnorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
+  simpa only [eNorm_eq_nnNorm, ENNReal.coe_eq_zero] using f.opNNNorm_eq_zero_iff
 
 /-- Continuous semilinear maps from a seminormed space to a normed space form a normed group
 for the operator norm. Use this construction locally when the source is only seminormed. -/
@@ -165,6 +170,22 @@ theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : 
   calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
     _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
     _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
+
+/-- The three-term estimate for the difference of two compositions:
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`, in extended norms. -/
+theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (A' A : Y →L[𝕜] Z) (B' B : X →L[𝕜] Y) :
+    ‖A'.comp B' - A.comp B‖ₑ ≤
+      ‖A' - A‖ₑ * ‖B' - B‖ₑ + ‖A' - A‖ₑ * ‖B‖ₑ + ‖A‖ₑ * ‖B' - B‖ₑ := by
+  have hsplit : A'.comp B' - A.comp B =
+      (A' - A).comp (B' - B) + (A' - A).comp B + A.comp (B' - B) := by
+    ext v
+    simp only [add_apply, sub_apply, coe_comp, Function.comp_apply, map_sub]
+    abel
+  rw [hsplit]
+  calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
+        (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
+    _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
 section Inverse
 
@@ -389,7 +410,7 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
     (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
     q '' Metric.ball 0 r = Metric.ball 0 r := by
   refine subset_antisymm ?_ (h r)
-  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnnorm]
+  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnNorm]
   simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
 
 end MetricQuotient
@@ -532,5 +553,27 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
 end
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- If `A² = -1`, then `a + A b = y` holds exactly when `b - A a = -A y`: apply `A`. For a complex
+structure `J` on the target of a map `u : ℂ → V` with derivative `D`, this rewrites the
+Cauchy–Riemann equation tested on `∂ₛ`, `D 1 + J D i = η`, as the one tested on `∂ₜ`,
+`D i - J D 1 = -J η`. -/
+theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A = -1) {a b y : V} :
+    a + A b = y ↔ b - A a = -A y := by
+  have hAA (x : V) : A (A x) = -x := by simpa using congr($hA x)
+  constructor
+  · rintro rfl
+    simp [hAA, sub_eq_add_neg]
+  · intro h
+    have h' := congrArg A h
+    simp only [map_sub, map_neg, hAA, neg_neg] at h'
+    rw [← h']
+    abel
+
+end ContinuousLinearMap
 
 end

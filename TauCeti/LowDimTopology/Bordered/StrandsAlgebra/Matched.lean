@@ -100,6 +100,10 @@ spanning the matched subalgebra are generators.
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.matchedIdem_ne_zero`,
+  `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff`: over a nontrivial semiring
+  `I(s)` is nonzero when every element of `s` is a value of `M`, so `I(s) I(t) ≠ 0` exactly when
+  `s = t`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -272,13 +276,9 @@ def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R 
     refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
     · -- A diagram in a product starts where a diagram of `x` starts and ends where one of `y`
       -- ends.
-      rw [repr_mul_apply] at hχ
-      obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
-      obtain ⟨ψ, -, hψ⟩ := exists_ne_zero_of_sum_ne_zero hφ
-      rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
-      obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+      obtain ⟨φ, ψ, hc, rfl, hφ, hψ⟩ := exists_of_repr_mul_ne_zero hχ
       rw [source_trans_of_target_eq hc.target_eq, target_trans_of_target_eq hc.target_eq]
-      exact ⟨(hx.1 φ (left_ne_zero_of_mul hψ)).1, (hy.1 ψ (right_ne_zero_of_mul hψ)).2⟩
+      exact ⟨(hx.1 φ hφ).1, (hy.1 ψ hψ).2⟩
     -- Reduce to a diagram `χ` with a horizontal strand at `a` that can move to `b`.
     wlog hχ : χ.CanMoveHorizontal a b generalizing a b
     · by_cases hχ' : χ.CanMoveHorizontal b a
@@ -446,6 +446,31 @@ theorem matchedIdem_mul_matchedIdem (M : α → β) (s t : Finset β) :
 theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
     IsIdempotentElem (matchedIdem R M s) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
+
+/-- The idempotent `I(s)` of a set `s` of values of `M` is nonzero over a nontrivial semiring:
+choosing one point over each element of `s` gives an identity diagram with coefficient `1`. -/
+theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) : matchedIdem R M s ≠ 0 := by
+  choose f hf using fun b : s ↦ hs b.2
+  have hf' : Function.Injective f := fun b c h ↦ Subtype.ext (by simpa [hf] using congrArg M h)
+  have hS : (s.attach.image f).image M = s := by
+    ext b
+    simp [hf]
+  have hcard : #(s.attach.image f) = #s := by
+    rw [card_image_of_injective _ hf', card_attach]
+  intro h
+  have h' := congrArg (fun x ↦ (basis R α).repr x (idOn (s.attach.image f))) h
+  simp [repr_matchedIdem_apply, hS, hcard] at h'
+
+/-- The idempotents `I(s)` of two sets of values of `M` multiply to a nonzero element exactly when
+the sets agree. -/
+theorem matchedIdem_mul_matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s t : Finset β}
+    (hs : (s : Set β) ⊆ Set.range M) :
+    matchedIdem R M s * matchedIdem R M t ≠ 0 ↔ s = t := by
+  rw [matchedIdem_mul_matchedIdem]
+  split_ifs with hst
+  · exact iff_of_true (matchedIdem_ne_zero hs) hst
+  · exact iff_of_false (fun h ↦ h rfl) hst
 
 end Idempotents
 

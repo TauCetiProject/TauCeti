@@ -152,24 +152,6 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
-/-- The cusp function of the `q`-parameter is analytic at `0`. -/
-theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (hh : 0 < h) :
-    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 :=
-  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh periodic_qParam_comp_ofComplex
-    (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
-    ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
-
-/-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
-@[simp]
-theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
-    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
-  ext m
-  rw [← qExpansion_coeff_unique hh (analyticAt_cuspFunction_qParam hh)
-    (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
-  convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
-  rw [PowerSeries.coeff_X]
-  split_ifs with hm <;> simp [hm]
-
 section CuspFunction
 
 open Filter Topology
@@ -245,6 +227,22 @@ theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
     Filter.Tendsto.limUnder_eq tendsto_const_nhds
   rw [cuspFunction, Function.Periodic.cuspFunction, h_lim]
   exact Function.update_eq_self 0 (fun _ ↦ c)
+
+/-- For `h ≤ 0`, the cusp function of `f` is constant near `0`, taking the value of `f` at the junk
+value `Classical.choice inferInstance` of `UpperHalfPlane.ofComplex` outside `ℍ`. -/
+theorem UpperHalfPlane.cuspFunction_eventuallyEq_const_of_nonpos (hh : h ≤ 0) (f : ℍ → ℂ) :
+    cuspFunction h f =ᶠ[𝓝 0] fun _ ↦ f (Classical.choice inferInstance) := by
+  refine cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ continuousAt_const
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
+  have hlog : Real.log ‖q‖ ≤ 0 :=
+    Real.log_nonpos (norm_nonneg _) (mem_ball_zero_iff.mp hqn).le
+  have him : (Function.Periodic.invQParam h q).im ≤ 0 := by
+    rw [Function.Periodic.im_invQParam]
+    exact mul_nonpos_of_nonneg_of_nonpos
+      (div_nonneg (neg_nonneg.2 hh) (by positivity)) hlog
+  rw [cuspFunction_of_ne_zero hq, ofComplex_apply_of_im_nonpos him]
 
 /-- The cusp function of `1` is `1`. -/
 @[simp]
@@ -324,10 +322,30 @@ theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
 
 end CuspFunction
 
+/-- The cusp function of the `q`-parameter is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (h : ℝ) :
+    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 := by
+  rcases le_or_gt h 0 with hh | hh
+  · exact analyticAt_const.congr (cuspFunction_eventuallyEq_const_of_nonpos hh _).symm
+  exact _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh periodic_qParam_comp_ofComplex
+    (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
+    ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
+
+/-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
+@[simp]
+theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
+    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
+  ext m
+  rw [← qExpansion_coeff_unique hh (analyticAt_cuspFunction_qParam h)
+    (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
+  convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
+  rw [PowerSeries.coeff_X]
+  split_ifs with hm <;> simp [hm]
+
 /-- The cusp function of a power of the `q`-parameter is analytic at `0`. -/
-theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (h : ℝ) (m : ℕ) :
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 := by
-  have hq := analyticAt_cuspFunction_qParam hh
+  have hq := analyticAt_cuspFunction_qParam h
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq.continuousAt m]
   exact hq.pow m
 
@@ -336,7 +354,7 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ)
 theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
-    qExpansion_pow (analyticAt_cuspFunction_qParam hh) m, qExpansion_qParam hh]
+    qExpansion_pow (analyticAt_cuspFunction_qParam h) m, qExpansion_qParam hh]
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/
