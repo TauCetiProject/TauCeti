@@ -93,9 +93,6 @@ for a bare matrix:
 this file re-exports.
 -/
 
--- The `NumericalType` structure, the signed genus and the two worked examples follow the
--- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
-
 public section
 
 namespace TauCeti

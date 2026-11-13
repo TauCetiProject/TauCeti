@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 /-!
 # The adic spectrum of a rational localisation lies over the rational subset
 
-Roadmap Layer 3.1 attaches to a rational subset `U = R(T/s)` of `X = Spa(A, A⁺)` the complete
-topological coordinate ring `A_U = A⟨T/s⟩` together with its ring of integral elements `A_U⁺`,
-and asks for a natural homeomorphism
+To a rational subset `U = R(T/s)` of `X = Spa(A, A⁺)` one attaches the complete topological
+coordinate ring `A_U = A⟨T/s⟩` together with its ring of integral elements `A_U⁺`, and Wedhorn's
+Proposition 8.2 (2) gives a natural homeomorphism
 
 ```text
 Spa (A_U, A_U⁺) ≃ U.
@@ -39,11 +39,11 @@ hypothesis, so both are extracted first as a statement about an arbitrary contin
 homomorphism inverting `s`.
 
 The reverse map — extending a point of `R(T/s)` to a continuous valuation on the *completed*
-localisation — is not constructed here; it is the remaining half of the roadmap's homeomorphism.
-Its pre-completion form is
+localisation — is not constructed here. Its pre-completion form is
 `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Surjective`, which extends a point of
-`R(T/s)` to the *uncompleted* localisation `Aₛ` and so identifies the image of
-`Spa (Aₛ, Aₛ⁺)` with `R(T/s)`; passing from `Aₛ` to `A⟨T/s⟩` is still open.
+`R(T/s)` to the *uncompleted* localisation `Aₛ` and so identifies the image of `Spa (Aₛ, Aₛ⁺)`
+with `R(T/s)`. The homeomorphism itself, for `A₀ ≤ A⁺`, is `spaCompletedLocalizationHomeomorph`
+in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph`.
 
 ## Main definitions
 
@@ -68,9 +68,9 @@ Its pre-completion form is
 ## Provenance
 
 The mathematics is Wedhorn's §8.1 description of the coordinate ring of a rational subset; the
-proofs here are direct and follow no existing formalisation. AINTLIB — the roadmap's designated
-prior formalisation of this material — was **not** consulted for this file: no checkout of it was
-available in the authoring environment. Nothing is ported.
+proofs here are direct and follow no existing formalisation. AINTLIB, a prior formalisation of
+this material, was **not** consulted for this file: no checkout of it was available in the
+authoring environment. Nothing is ported.
 
 ## References
 
@@ -182,9 +182,8 @@ theorem spaComapLoc_eq_comp (P : PairOfDefinition A) (Aplus : Subring A) (T : Fi
   rw [← spaComap_comp hloc hcpl Aplus _ _ hlocp hcplp, spaComapLoc]
   congr 1
 
-/-- **Every point of `Spa (A_U, A_U⁺)` lies over the rational subset `R(T/s)`** — the half of
-roadmap Layer 3.1's homeomorphism `Spa (A_U, A_U⁺) ≃ R(T/s)` that the localisation supplies
-directly.
+/-- **Every point of `Spa (A_U, A_U⁺)` lies over the rational subset `R(T/s)`** — the half of the
+homeomorphism `Spa (A_U, A_U⁺) ≃ R(T/s)` that the localisation supplies directly.
 
 The denominator is inverted in `A⟨T/s⟩`, so it is off the support of every point, and each
 `t/s` lies in `A_U⁺`, so every point is sub-unit on it. -/
@@ -231,7 +230,8 @@ theorem range_spaComapLoc_subset (P : PairOfDefinition A) (Aplus : Subring A) (T
   exact spaComapLoc_mem_rationalSubset P Aplus T s S hden v
 
 /-- **The canonical map `Spa (A_U, A_U⁺) → R(T/s)`**: `spaComapLoc` corestricted to the rational
-subset it lands in. This is the map that roadmap Layer 3.1 asks to be a homeomorphism. -/
+subset it lands in. This is the map that Wedhorn's Proposition 8.2 (2) shows to be a
+homeomorphism. -/
 noncomputable def spaLocToRationalSubset (P : PairOfDefinition A) (Aplus : Subring A)
     (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) :

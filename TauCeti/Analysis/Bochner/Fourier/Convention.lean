@@ -15,8 +15,8 @@ public import TauCeti.Analysis.PositiveDefinite.Pullback
 # Fourier-convention characteristic functions
 
 Mathlib's characteristic function of a finite measure is
-`t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while the Fourier side of the Bochner roadmap uses the
-`2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
+`t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while Bochner's theorem in `BochnerTheorem.lean` is stated in
+the `2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
 normalizations, shows continuity of the Fourier-convention transform of a finite measure directly
 by dominated convergence, and transports positive definiteness from the existing
 characteristic-function API.
@@ -25,10 +25,6 @@ The file also bridges Mathlib's Fourier transform `𝓕` to the Fourier atom, an
 measure-uniqueness theorem — the uniqueness half of Bochner's theorem — consumed by
 `BochnerTheorem.lean`. The convention-free continuity of `𝓕` and `𝓕⁻` lives in
 `TauCeti.Analysis.Fourier.Continuous`.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-function API item asking for "a stated Fourier-convention conversion lemma between Mathlib's
-`2π` form and the characteristic-function form" before Bochner's theorem.
 
 ## Main declarations
 

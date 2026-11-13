@@ -148,7 +148,7 @@ theorem D1p0.coe_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
 /-- The norm of a test function in `D^{1,p}_0(Ω)` is the `Lᵖ` norm of its derivative. -/
 theorem D1p0.norm_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     ‖D1p0.ofTestFunctionₗ mu Omega p phi‖ = (eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu).toReal := by
-  rw [← Submodule.norm_coe, D1p0.coe_ofTestFunctionₗ, ← toReal_enorm,
+  rw [← Submodule.norm_coe, D1p0.coe_ofTestFunctionₗ, ← toReal_eNorm,
     enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
 
 /-- The test functions are dense in `D^{1,p}_0(Ω)`. -/
