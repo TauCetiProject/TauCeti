@@ -162,7 +162,8 @@ neighbourhood `S` of `x`, invariant under the finite stabilizer `G_x`, whose orb
 glued from the quotient diffeologies of the finite quotient charts `S / G_x`. -/
 theorem exists_slice_isInduction_orbitRelQuotientMap_of_contMDiff {E M : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace M]
-    [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [DiffeologicalSpace M] [IsContMDiffCompatible E M]
+    [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [DiffeologicalSpace M]
+    [IsContMDiffCompatible 𝓘(ℝ, E) M]
     [MulAction G M] [ContMDiffConstSMul 𝓘(ℝ, E) ∞ G M] [TopologicalSpace G] [DiscreteTopology G]
     [ProperSMul G M] (x : M) {W : Set M} (hW : W ∈ 𝓝 x) :
     ∃ S : SubMulAction (stabilizer G x) M, IsOpen (S : Set M) ∧ x ∈ S ∧ (S : Set M) ⊆ W ∧

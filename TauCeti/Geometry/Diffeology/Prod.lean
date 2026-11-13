@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.Geometry.Diffeology.Quotient
 
 /-!
@@ -21,12 +22,13 @@ diffeologies is the quotient diffeology of the product, which is how products of
 quotient charts `U / G × V / H` are presented.
 
 The D-topology of a product is in general finer than the product of the D-topologies, so the
-compatibility of a topology with its D-topology does not pass to products for free. Instead it is
-proved here for the models used: for finite-dimensional real normed spaces, the product diffeology
-is the diffeology of smooth maps, so its D-topology is the product topology. For orbit spaces, the
-D-topology of `X ⧸ G × Y ⧸ H` is the product of the quotient topologies whenever the D-topology of
-`X × Y` is the product topology and the groups act by homeomorphisms, because the product of the
-open quotient maps `X → X ⧸ G` and `Y → Y ⧸ H` is again a quotient map.
+compatibility of a topology with its D-topology does not pass to products for free. When one
+factor is locally compact in its D-topology, however, the D-topology of `X × Y` coincides with
+the product of the D-topologies (`TauCeti.Diffeology.dTopology_prod_eq_of_locallyCompactSpace_right`
+and `TauCeti.Diffeology.dTopology_prod_eq_of_locallyCompactSpace_left`). Compatibility is also
+proved directly for finite-dimensional real normed spaces, where the product diffeology is the
+diffeology of smooth maps, and for orbit spaces `X ⧸ G × Y ⧸ H` whenever the D-topology of `X × Y`
+is the product topology and the groups act by homeomorphisms.
 
 ## Main declarations
 
@@ -36,6 +38,9 @@ open quotient maps `X → X ⧸ G` and `Y → Y ⧸ H` is again a quotient map.
 * `TauCeti.Diffeology.IsSubduction.prodMap`: a product of subductions is a subduction.
 * `TauCeti.Diffeology.dTopology_prod_le`: the D-topology of a product is finer than the product of
   the D-topologies.
+* `TauCeti.Diffeology.dTopology_prod_eq_of_locallyCompactSpace_right`,
+  `TauCeti.Diffeology.dTopology_prod_eq_of_locallyCompactSpace_left`: the D-topology of a product
+  equals the product of the D-topologies when one factor is locally compact.
 * `TauCeti.Diffeology.instIsDTopologyCompatibleProdOrbitRelQuotient`: the D-topology of a product
   of orbit spaces is the product of the quotient topologies, for actions by homeomorphisms on
   spaces whose product has the product topology as its D-topology.
@@ -45,12 +50,14 @@ open quotient maps `X → X ⧸ G` and `Y → Y ⧸ H` is again a quotient map.
 * P. Iglesias-Zemmour, *Diffeology*, Mathematical Surveys and Monographs **185**, American
   Mathematical Society (2013), Article 1.55 for product diffeologies and Chapter 2 for the
   D-topology.
+* J. D. Christensen, G. Sinnamon and E. Wu, *The D-topology for diffeological spaces*, Pacific J.
+  Math. **272** (2014), 87–110, for the D-topology of products with a locally compact factor.
 -/
 
 public noncomputable section
 
 open Function Set
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti.Diffeology
 
@@ -130,6 +137,11 @@ theorem _root_.Diffeology.DSmooth.prodMap [DiffeologicalSpace Q] [DiffeologicalS
     (hg : _root_.Diffeology.DSmooth g) : _root_.Diffeology.DSmooth (Prod.map f g) :=
   (hf.comp dSmooth_fst).prodMk (hg.comp dSmooth_snd)
 
+/-- Swapping the factors of a product is smooth. -/
+@[fun_prop]
+theorem dSmooth_swap : _root_.Diffeology.DSmooth (Prod.swap : X × Y → Y × X) :=
+  dSmooth_snd.prodMk dSmooth_fst
+
 /-! ### Products of subductions -/
 
 /-- A product of subductions is a subduction. -/
@@ -162,6 +174,99 @@ theorem dTopology_prod_le :
       @instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology :=
   le_inf (continuous_iff_le_induced.mp dSmooth_fst.continuous)
     (continuous_iff_le_induced.mp dSmooth_snd.continuous)
+
+private theorem continuous_prod_dTopology_of_locallyCompactSpace_right {W : Type*}
+    [TopologicalSpace W] (hY : @LocallyCompactSpace Y _root_.Diffeology.dTopology) {f : X × Y → W}
+    (hf : ∀ {n : ℕ} {r : 𝔼ⁿ → X × Y}, _root_.Diffeology.IsPlot r → Continuous (f ∘ r)) :
+    @Continuous (X × Y) W
+      (@instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology)
+      ‹_› f := by
+  let : TopologicalSpace X := _root_.Diffeology.dTopology
+  let : TopologicalSpace Y := _root_.Diffeology.dTopology
+  have : LocallyCompactSpace Y := hY
+  -- First show `(u, y) ↦ f (p u, y)` is continuous for each plot `p : 𝔼ⁿ → X` by currying in `𝔼ⁿ`.
+  have hp_prod {n : ℕ} {p : 𝔼ⁿ → X} (hp : _root_.Diffeology.IsPlot p) :
+      Continuous fun uy : 𝔼ⁿ × Y ↦ f (p uy.1, uy.2) := by
+    let H : Y → C(𝔼ⁿ, W) := fun y ↦
+      ⟨fun u ↦ f (p u, y),
+        hf (r := fun u ↦ (p u, y)) (isPlot_prod_iff.mpr ⟨hp, _root_.Diffeology.isPlot_const⟩)⟩
+    have hH : Continuous H := continuous_def.mpr fun s hs ↦
+      _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun m q hq ↦ by
+        refine hs.preimage (ContinuousMap.continuous_of_continuous_uncurry (H ∘ q) ?_)
+        let e := toEuclidean (E := 𝔼ᵐ × 𝔼ⁿ)
+        have hplot : _root_.Diffeology.IsPlot (fun w ↦ (p (e.symm w).2, q (e.symm w).1)) :=
+          isPlot_prod_iff.mpr
+            ⟨_root_.Diffeology.isPlot_reparam hp (contDiff_snd.comp e.symm.contDiff),
+              _root_.Diffeology.isPlot_reparam hq (contDiff_fst.comp e.symm.contDiff)⟩
+        simpa [H, e, Function.uncurry_def, Function.comp_def] using (hf hplot).comp e.continuous
+    exact (ContinuousMap.continuous_uncurry_of_continuous ⟨H, hH⟩).comp continuous_swap
+  -- Now curry in the locally compact factor `Y` and test continuity on `X` against all plots.
+  let G : X → C(Y, W) := fun x ↦
+    ⟨fun y ↦ f (x, y), continuous_def.mpr fun s hs ↦
+      _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun m q hq ↦
+        hs.preimage (hf (r := fun v ↦ (x, q v))
+          (isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_const, hq⟩))⟩
+  have hG : Continuous G := continuous_def.mpr fun s hs ↦
+    _root_.Diffeology.isOpen_iff_preimages_plots.mpr fun n p hp ↦
+      hs.preimage (ContinuousMap.continuous_of_continuous_uncurry (G ∘ p) (hp_prod hp))
+  exact ContinuousMap.continuous_uncurry_of_continuous ⟨G, hG⟩
+
+/-- When the right factor is locally compact in its D-topology, the D-topology of `X × Y` equals
+the product of the D-topologies. See Christensen–Sinnamon–Wu (2014), Section 4. -/
+theorem dTopology_prod_eq_of_locallyCompactSpace_right
+    (hY : @LocallyCompactSpace Y _root_.Diffeology.dTopology) :
+    (_root_.Diffeology.dTopology : TopologicalSpace (X × Y)) =
+      @instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology := by
+  refine le_antisymm dTopology_prod_le ?_
+  let tXY : TopologicalSpace (X × Y) := _root_.Diffeology.dTopology
+  let tProd : TopologicalSpace (X × Y) :=
+    @instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology
+  exact (@continuous_id_iff_le (X × Y) tProd tXY).mp
+    (@continuous_prod_dTopology_of_locallyCompactSpace_right X Y _ _ (X × Y) tXY hY id
+      fun hr ↦ hr.continuous)
+
+/-- When the left factor is locally compact in its D-topology, the D-topology of `X × Y` equals
+the product of the D-topologies. See Christensen–Sinnamon–Wu (2014), Section 4. -/
+theorem dTopology_prod_eq_of_locallyCompactSpace_left
+    (hX : @LocallyCompactSpace X _root_.Diffeology.dTopology) :
+    (_root_.Diffeology.dTopology : TopologicalSpace (X × Y)) =
+      @instTopologicalSpaceProd X Y _root_.Diffeology.dTopology _root_.Diffeology.dTopology := by
+  refine le_antisymm dTopology_prod_le ?_
+  rw [TopologicalSpace.le_def]
+  intro W hW
+  have hswap : IsOpen[_root_.Diffeology.dTopology] ((Prod.swap : Y × X → X × Y) ⁻¹' W) :=
+    @Continuous.isOpen_preimage (Y × X) (X × Y) _root_.Diffeology.dTopology
+      _root_.Diffeology.dTopology Prod.swap dSmooth_swap.continuous W hW
+  rw [dTopology_prod_eq_of_locallyCompactSpace_right hX] at hswap
+  let : TopologicalSpace X := _root_.Diffeology.dTopology
+  let : TopologicalSpace Y := _root_.Diffeology.dTopology
+  exact hswap.preimage continuous_swap
+
+/-- If `X` and `Y` carry topologies equal to their D-topologies and `Y` is locally compact, then
+the product topology on `X × Y` equals the D-topology of the product diffeology. -/
+instance instIsDTopologyCompatibleProdOfLocallyCompactSpaceRight
+    [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] [LocallyCompactSpace Y] :
+    _root_.Diffeology.IsDTopologyCompatible (X × Y) where
+  dTop_eq := by
+    have hY : @LocallyCompactSpace Y _root_.Diffeology.dTopology := by
+      rwa [_root_.Diffeology.IsDTopologyCompatible.dTop_eq Y]
+    rw [dTopology_prod_eq_of_locallyCompactSpace_right hY,
+      _root_.Diffeology.IsDTopologyCompatible.dTop_eq X,
+      _root_.Diffeology.IsDTopologyCompatible.dTop_eq Y]
+
+/-- If `X` and `Y` carry topologies equal to their D-topologies and `X` is locally compact, then
+the product topology on `X × Y` equals the D-topology of the product diffeology. -/
+instance instIsDTopologyCompatibleProdOfLocallyCompactSpaceLeft
+    [TopologicalSpace X] [_root_.Diffeology.IsDTopologyCompatible X] [LocallyCompactSpace X]
+    [TopologicalSpace Y] [_root_.Diffeology.IsDTopologyCompatible Y] :
+    _root_.Diffeology.IsDTopologyCompatible (X × Y) where
+  dTop_eq := by
+    have hX : @LocallyCompactSpace X _root_.Diffeology.dTopology := by
+      rwa [_root_.Diffeology.IsDTopologyCompatible.dTop_eq X]
+    rw [dTopology_prod_eq_of_locallyCompactSpace_left hX,
+      _root_.Diffeology.IsDTopologyCompatible.dTop_eq X,
+      _root_.Diffeology.IsDTopologyCompatible.dTop_eq Y]
 
 section NormedSpace
 

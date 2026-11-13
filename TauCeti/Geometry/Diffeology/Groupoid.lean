@@ -160,7 +160,7 @@ section Manifold
 variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace E C] [IsManifold 𝓘(ℝ, E) ∞ C]
-  [DiffeologicalSpace C] [IsContMDiffCompatible E C]
+  [DiffeologicalSpace C] [IsContMDiffCompatible 𝓘(ℝ, E) C]
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace E' (Quiver.Total C)]
 
 /-- If the source is a smooth local diffeomorphism and the target is smooth, then following a
