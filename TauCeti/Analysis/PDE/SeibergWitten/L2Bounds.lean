@@ -139,11 +139,11 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le {g : X → ℝ} (hr : 0 < r
   have hDβG : ∫ x, ‖Dβ x‖ ^ 2 ∂μ ≤ ∫ x, G x ∂μ := by
     refine integral_mono_of_nonneg (.of_forall fun x ↦ by positivity) hG ?_
     filter_upwards [hFG] with x hx
-    nlinarith [sq_nonneg ‖β x‖]
+    nlinarith [sq_nonneg ‖β x‖, hr16]
   have hβG : ∫ x, r / 16 * ‖β x‖ ^ 2 ∂μ ≤ ∫ x, G x ∂μ := by
     refine integral_mono_of_nonneg (.of_forall fun x ↦ by positivity) hG ?_
     filter_upwards [hFG] with x hx
-    nlinarith [sq_nonneg ‖Dβ x‖]
+    nlinarith [sq_nonneg ‖Dβ x‖, hr16]
   rw [← hGint, ← integral_const_mul]
   by_cases hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ
   · by_cases hβ : Integrable (fun x ↦ r / 16 * ‖β x‖ ^ 2) μ
@@ -219,7 +219,7 @@ theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x} 
   · rw [integral_undef hDbar]
     have hT' : 0 ≤ ∫ x, ‖Dα' x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
     have hT₂ : 0 ≤ ∫ x, ‖α x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
-    positivity
+    exact mul_nonneg (by positivity) (add_nonneg hT' hT₂)
   set P := ∫ x, ‖Dβ x‖ ^ 2 ∂μ
   set Q := ∫ x, ‖β x‖ ^ 2 ∂μ
   set T₁ := ∫ x, ‖Dα x‖ ^ 2 ∂μ
