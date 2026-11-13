@@ -334,7 +334,7 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ ≤ ‖a‖ :=
   norm_compress_multiplicationOperator_le a
 
-private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL
+private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
     (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
     (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
@@ -369,7 +369,7 @@ private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL
 
 /-- If `M` on `Lp E 2 haarAddCircle` commutes with `fourierLp ∞ N • ·` and high modes eventually
 shift a dense set `s` into `H`, then `‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖`. -/
-theorem norm_le_norm_orthogonalProjectionOnto_comp_subtypeL
+theorem _root_.Submodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
     (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
     (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
@@ -382,8 +382,9 @@ theorem norm_le_norm_orthogonalProjectionOnto_comp_subtypeL
   set T := H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL
   have hbound : ∀ p : Lp E 2 (AddCircle.haarAddCircle (T := 1)) ×
       Lp E 2 (AddCircle.haarAddCircle (T := 1)), ‖⟪p.1, M p.2⟫_ℂ‖ ≤ ‖T‖ * ‖p.1‖ * ‖p.2‖ :=
-    (hs.prod hs).induction (fun p hp ↦ norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL H M
-      (hshift p.1 hp.1) (hshift p.2 hp.2) hcomm) (isClosed_le (by fun_prop) (by fun_prop))
+    (hs.prod hs).induction
+      (fun p hp ↦ norm_inner_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL H M
+        (hshift p.1 hp.1) (hshift p.2 hp.2) hcomm) (isClosed_le (by fun_prop) (by fun_prop))
   refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg T) fun x y hx hy ↦ ?_
   calc RCLike.re ⟪M x, y⟫_ℂ ≤ ‖⟪M x, y⟫_ℂ‖ := RCLike.re_le_norm _
     _ = ‖⟪y, M x⟫_ℂ‖ := norm_inner_symm _ _
@@ -394,7 +395,7 @@ private theorem norm_multiplicationOperator_le_norm_toeplitz
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
   rw [toeplitz_apply]
-  refine norm_le_norm_orthogonalProjectionOnto_comp_subtypeL hardySubmodule
+  refine hardySubmodule.norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
     (Lp.multiplicationOperator a)
     (Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span)
     (fun _ hg ↦ eventually_fourierLp_smul_mem_hardySubmodule hg) fun N g ↦ ?_

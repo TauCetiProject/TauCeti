@@ -9,26 +9,21 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Operator.Norm
 
 /-!
 # Operator-valued `L∞` multiplication operators on `Lᵖ`
 
-An essentially bounded operator-valued function `A : Lp (E →L[𝕜] F) ∞ μ` acts on `Lp E p μ`, for
-`1 ≤ p ≤ ∞`, by pointwise operator application `x ↦ A x (f x)`. This file bundles that action as
+An essentially bounded operator-valued function `A : Lp (E →L[𝕜] F) ∞ μ` acts on `Lp E p μ`
+(`1 ≤ p ≤ ∞`) by `x ↦ A x (f x)`. This file bundles that action as
 `MeasureTheory.Lp.operatorMultiplication p : Lp (E →L[𝕜] F) ∞ μ →L[𝕜] Lp E p μ →L[𝕜] Lp F p μ`
-via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, and proves:
-* compatibility with `1`, `algebraMap`, and ring multiplication `A * B` on `Lp (E →L[𝕜] E) ∞ μ`
-  (`operatorMultiplication_one`, `operatorMultiplication_algebraMap`,
-  `operatorMultiplication_comp_operatorMultiplication`);
-* the Hilbert `L²` adjoint `adjoint_operatorMultiplication` and unital ⋆-algebra homomorphism
-  `operatorMultiplicationStarAlgHom`;
-* exact norm `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` on σ-finite
-  spaces.
+via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving:
+* `1`, `algebraMap`, and `A * B` laws (`operatorMultiplication_one`,
+  `operatorMultiplication_algebraMap`, `operatorMultiplication_comp_operatorMultiplication`);
+* the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
+* `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
-Compare `MeasureTheory.Lp.multiplicationOperator` (scalar `ℂ`-valued `L∞` symbols on `L²`) and
-`BoundedContinuousFunction.mulLp` (bounded continuous operator-valued symbols).
+Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
 -/
 
 public noncomputable section
@@ -47,8 +42,7 @@ variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 variable (p) in
-/-- Pointwise application of an essentially bounded operator-valued symbol in
-`Lp (E →L[𝕜] F) ∞ μ`, bundled as `Lp (E →L[𝕜] F) ∞ μ →L[𝕜] Lp E p μ →L[𝕜] Lp F p μ`. -/
+/-- Pointwise application of `A : Lp (E →L[𝕜] F) ∞ μ` as a continuous bilinear map on `Lp E p μ`. -/
 def operatorMultiplication : Lp (E →L[𝕜] F) ∞ μ →L[𝕜] Lp E p μ →L[𝕜] Lp F p μ :=
   (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p
 
@@ -64,20 +58,19 @@ theorem operatorMultiplication_eq_iff {A : Lp (E →L[𝕜] F) ∞ μ} {f : Lp E
   ⟨fun h ↦ h ▸ (operatorMultiplication_ae A f).symm,
     fun h ↦ Lp.ext ((operatorMultiplication_ae A f).trans h)⟩
 
+/-- The operator norm of `operatorMultiplication p A` is at most the `L∞` norm of `A`. -/
+theorem norm_operatorMultiplication_le (A : Lp (E →L[𝕜] F) ∞ μ) :
+    ‖operatorMultiplication p A‖ ≤ ‖A‖ := by
+  have h : ‖(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p‖ ≤ 1 :=
+    (norm_holderL_le (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F))).trans norm_id_le
+  rw [operatorMultiplication]; simpa only [one_mul] using le_of_opNorm_le _ h A
+
 /-- Applying `operatorMultiplication p A` changes the `Lᵖ` norm by at most `‖A‖`. -/
 theorem norm_operatorMultiplication_apply_le (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
     ‖operatorMultiplication p A f‖ ≤ ‖A‖ * ‖f‖ :=
-  Lp.norm_le_mul_norm_of_ae_le_mul <| by
-    filter_upwards [operatorMultiplication_ae A f, Lp.ae_norm_le_norm_top A] with x hx hAx
-    exact hx ▸ (A x).le_of_opNorm_le hAx (f x)
+  (operatorMultiplication p A).le_of_opNorm_le (norm_operatorMultiplication_le A) f
 
-/-- The operator norm of `operatorMultiplication p A` is at most the `L∞` norm of `A`. -/
-theorem norm_operatorMultiplication_le (A : Lp (E →L[𝕜] F) ∞ μ) :
-    ‖operatorMultiplication p A‖ ≤ ‖A‖ :=
-  opNorm_le_bound _ (norm_nonneg A) (norm_operatorMultiplication_apply_le A)
-
-/-- Pointwise operator application commutes with heterogeneous `Lp` scalar multiplication of the
-input vector. -/
+/-- `operatorMultiplication` commutes with heterogeneous `Lp` scalar multiplication on the right. -/
 theorem operatorMultiplication_lpSMul_right {q r : ℝ≥0∞} [Fact (1 ≤ r)] [HolderTriple q p r]
     (a : Lp 𝕜 q μ) (A : Lp (E →L[𝕜] F) ∞ μ) (f : Lp E p μ) :
     operatorMultiplication r A (a • f : Lp E r μ) =
@@ -142,12 +135,10 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
       operatorMultiplication p (A * B) := by
   rw [operatorMultiplication_comp_eq_operatorMultiplication_compL_holderL, compL_holderL_eq_mul]
 
-/-- On a σ-finite measure space, the operator norm of `operatorMultiplication p A` on `Lp E p μ`
-(`1 ≤ p ≤ ∞`) equals the `L∞` operator norm of `A`. -/
+/-- On a σ-finite space, `‖operatorMultiplication p A‖ = ‖A‖` (`1 ≤ p ≤ ∞`). -/
 @[simp] theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ) :
     ‖operatorMultiplication p A‖ = ‖A‖ := by
-  apply le_antisymm (norm_operatorMultiplication_le A)
-  by_contra! hlt
+  apply le_antisymm (norm_operatorMultiplication_le A); by_contra! hlt
   set c := (‖operatorMultiplication p A‖ + ‖A‖) / 2 with hc_def
   have hc0 : 0 ≤ c := by positivity
   obtain ⟨u, t, ht, hts, hμt_pos, hμt_top⟩ :=
@@ -159,8 +150,7 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
   set f := indicatorConstLp p ht hμt_top.ne u
   set g := indicatorConstLp p ht hμt_top.ne (c * ‖u‖)
   have hf_pos : 0 < ‖f‖ := by
-    rw [norm_indicatorConstLp' hp0 hμt_pos.ne']
-    exact mul_pos (norm_pos_iff.mpr hu_ne)
+    rw [norm_indicatorConstLp' hp0 hμt_pos.ne']; exact mul_pos (norm_pos_iff.mpr hu_ne)
       (Real.rpow_pos_of_pos (ENNReal.toReal_pos hμt_pos.ne' hμt_top.ne) _)
   have hfg : c * ‖f‖ = ‖g‖ := by
     rw [norm_indicatorConstLp' hp0 hμt_pos.ne', norm_indicatorConstLp' hp0 hμt_pos.ne',
@@ -170,8 +160,7 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
       indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt_top.ne) (c := u),
       indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt_top.ne) (c := c * ‖u‖)]
       with x hmul hf_ae hg_ae
-    rw [hmul, hf_ae, hg_ae]
-    by_cases hx : x ∈ t
+    rw [hmul, hf_ae, hg_ae]; by_cases hx : x ∈ t
     · simpa [Set.indicator_of_mem hx, Real.norm_of_nonneg (mul_nonneg hc0 (norm_nonneg u))]
         using (hts x hx).le
     · simp [Set.indicator_of_notMem hx]
@@ -206,14 +195,13 @@ def operatorMultiplicationStarAlgHom :
     Lp (E →L[𝕜] E) ∞ μ →⋆ₐ[𝕜] (Lp E 2 μ →L[𝕜] Lp E 2 μ) where
   toFun A := operatorMultiplication 2 A
   map_one' := by rw [operatorMultiplication_one, ← ContinuousLinearMap.one_def]
-  map_mul' A B := by
+  map_mul' _ _ := by
     rw [← operatorMultiplication_comp_operatorMultiplication, ContinuousLinearMap.mul_def]
   map_zero' := map_zero _
   map_add' := map_add _
-  commutes' c := by
-    rw [operatorMultiplication_algebraMap, Algebra.algebraMap_eq_smul_one,
-      ContinuousLinearMap.one_def]
-  map_star' A := by rw [star_eq_adjoint, adjoint_operatorMultiplication]
+  commutes' _ := by rw [operatorMultiplication_algebraMap, Algebra.algebraMap_eq_smul_one,
+    ContinuousLinearMap.one_def]
+  map_star' _ := by rw [star_eq_adjoint, adjoint_operatorMultiplication]
 
 /-- Evaluation of `operatorMultiplicationStarAlgHom` produces `operatorMultiplication 2`. -/
 @[simp] theorem operatorMultiplicationStarAlgHom_apply (A : Lp (E →L[𝕜] E) ∞ μ) :

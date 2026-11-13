@@ -32,7 +32,8 @@ vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n
 places its coordinates in the slots `j < k`; the vectors so obtained are those whose coordinates
 `j ≥ k` vanish. The finite sum against a zero-extended vector reduces to the sum over its original
 coordinates. Over an index type with at most one element, the `Lᵖ` norm is the norm of the
-coordinate.
+coordinate, and any linear isometry equivalence into `PiLp p F` restricts to coordinatewise
+submodules via `LinearIsometryEquiv.subspacePiLp`.
 
 ## Source
 
@@ -294,3 +295,47 @@ theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ �
       piLpExtendByZero_apply_eq_zero hb]
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Ring 𝕜]
+  [SeminormedAddCommGroup X] [Module 𝕜 X] {F : ι → Type*} [∀ i, SeminormedAddCommGroup (F i)]
+  [∀ i, Module 𝕜 (F i)]
+
+/-- Restrict a linear isometry equivalence `e : X ≃ₗᵢ[𝕜] PiLp p F` to a submodule `M` of `X`
+characterized coordinatewise by `x ∈ M ↔ ∀ i, e x i ∈ N i`. -/
+noncomputable def subspacePiLp (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) :
+    ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
+  toFun x := WithLp.toLp p fun i ↦ ⟨e x.1 i, (hMN x.1).mp x.2 i⟩
+  invFun g := ⟨e.symm (WithLp.toLp p fun i ↦ (g i : F i)),
+    (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply]; exact (g i).2⟩
+  map_add' _ _ := by ext i : 2; simp [map_add]
+  map_smul' _ _ := by ext i : 2; simp
+  left_inv x := Subtype.ext <| e.symm_apply_apply x.1
+  right_inv _ := by ext i : 2; simp
+  norm_map' x := (le_antisymm (PiLp.norm_mono fun _ ↦ le_rfl)
+    (PiLp.norm_mono fun _ ↦ le_rfl)).trans ((e.norm_map x.1).trans (Submodule.norm_coe x))
+
+/-- Coordinatewise evaluation of `e.subspacePiLp M N hMN` in `F i`. -/
+@[simp] theorem coe_subspacePiLp_apply (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (x : ↥M) (i : ι) :
+    (e.subspacePiLp M N hMN x i : F i) = e x.1 i := (rfl)
+
+/-- Coordinatewise evaluation of `(e.subspacePiLp M N hMN).symm` under `e`. -/
+@[simp] theorem apply_coe_subspacePiLp_symm (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
+    (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
+    e ((e.subspacePiLp M N hMN).symm g : X) i = (g i : F i) := by
+  rw [← e.coe_subspacePiLp_apply M N hMN, LinearIsometryEquiv.apply_symm_apply]
+
+/-- On `PiLp.single`, `(e.subspacePiLp M N hMN).symm` embeds via `e.symm`. -/
+theorem coe_subspacePiLp_symm_single [DecidableEq ι] (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+    (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i) (j : ι) (h : ↥(N j)) :
+    ((e.subspacePiLp M N hMN).symm (PiLp.single p j h) : X) =
+      e.symm (PiLp.single p j (h : F j)) :=
+  e.injective <| by
+    rw [e.apply_symm_apply]; ext k : 1; rw [e.apply_coe_subspacePiLp_symm M N hMN]
+    rcases eq_or_ne k j with rfl | hkj <;> simp [*]
+
+end LinearIsometryEquiv

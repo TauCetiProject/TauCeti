@@ -16,9 +16,11 @@ import TauCeti.Analysis.Normed.Operator.Compact.Pi
 For `A : BlockSymbol r`, the block Hankel operator
 `TauCeti.blockHankel r A : BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ` projects
 `Lp.operatorMultiplication 2 A` of a block Hardy function onto `(blockHardySubmodule r)ᗮ`, yielding
-the ambient splitting `TauCeti.coe_blockToeplitz_add_coe_blockHankel` and coordinatewise scalar
-Hankel decomposition `TauCeti.blockHardyOrthogonalEquiv_blockHankel_apply`. From this follow the
-**block Toeplitz semicommutator identity** `TauCeti.blockToeplitz_comp_sub_blockToeplitz`
+the ambient splitting `TauCeti.coe_blockToeplitz_add_coe_blockHankel`, coordinatewise and
+scalar-diagonal Hankel decompositions (`TauCeti.blockHardyOrthogonalEquiv_blockHankel_apply`,
+`TauCeti.blockHardyOrthogonalEquiv_blockHankel_smul_one`), and negative-mode Fourier matrix elements
+(`TauCeti.inner_blockFourierMode_blockHankel_blockHardyBasis`). From this follow the **block
+Toeplitz semicommutator identity** `TauCeti.blockToeplitz_comp_sub_blockToeplitz`
 (`T_A ∘L T_B - T_{A * B} = -(H_{star A}† ∘L H_B)`), the Fourier vanishing criterion
 `TauCeti.blockHankel_eq_zero_iff`, exact analytic/coanalytic products
 (`TauCeti.blockToeplitz_comp_of_analytic`, `TauCeti.blockToeplitz_comp_of_coanalytic`), and
@@ -97,6 +99,39 @@ theorem blockHardyOrthogonalEquiv_blockHankel_apply {r : ℕ} (A : BlockSymbol r
   simp only [map_sum (blockHankel r A), map_sum (blockHardyOrthogonalEquiv r), WithLp.ofLp_sum,
     Finset.sum_apply, blockHardyOrthogonalEquiv_blockHankel_single]
 
+/-- Scalar-diagonal symbol `a • (1 : BlockSymbol r)` acts coordinatewise by `hankel a`. -/
+theorem blockHardyOrthogonalEquiv_blockHankel_smul_one {r : ℕ}
+    (a : Lp ℂ ∞ (haarAddCircle (T := 1))) (f : BlockHardySpace r) (i : Fin r) :
+    blockHardyOrthogonalEquiv r
+      (blockHankel r (a • (1 : BlockSymbol r) : BlockSymbol r) f) i = hankel a (f i) := by
+  rw [blockHardyOrthogonalEquiv_blockHankel_apply,
+    Finset.sum_eq_single_of_mem i (Finset.mem_univ i) fun j _ hji ↦ ?_]
+  · rw [blockSymbolEntry_smul_one, ite_eq_left rfl]
+  · rw [blockSymbolEntry_smul_one, ite_eq_right hji.symm, map_zero, zero_apply]
+
+/-- **Block Hankel Fourier-entry formula (operator form).** -/
+theorem inner_blockFourierMode_blockHankel_blockHardyBasis {r : ℕ} (A : BlockSymbol r)
+    (m n : ℕ) (i j : Fin r) :
+    ⟪(⟨blockFourierMode r (-(m : ℤ) - 1) i,
+        blockFourierMode_mem_blockHardySubmodule_orthogonal r m i⟩ : ↥(blockHardySubmodule r)ᗮ),
+      blockHankel r A (blockHardyBasis r (n, j))⟫_ℂ =
+      ⟪EuclideanSpace.single i (1 : ℂ),
+        fourierCoeff A (-(m : ℤ) - 1 - n) (EuclideanSpace.single j (1 : ℂ))⟫_ℂ := by
+  rw [← (blockHardyOrthogonalEquiv r).inner_map_map, blockHardyOrthogonalEquiv_blockFourierMode,
+    blockHardyBasis_apply, PiLp.inner_apply,
+    Finset.sum_eq_single i (fun k _ hki ↦ by simp [hki]) (by simp), PiLp.single_eq_same,
+    blockHardyOrthogonalEquiv_blockHankel_single, inner_negativeHardyBasis_hankel_hardyBasis,
+    inner_single_fourierCoeff_blockSymbol]
+
+/-- Scalar-entry form of `inner_blockFourierMode_blockHankel_blockHardyBasis`. -/
+theorem inner_blockFourierMode_blockHankel_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry {r : ℕ}
+    (A : BlockSymbol r) (m n : ℕ) (i j : Fin r) :
+    ⟪(⟨blockFourierMode r (-(m : ℤ) - 1) i,
+        blockFourierMode_mem_blockHardySubmodule_orthogonal r m i⟩ : ↥(blockHardySubmodule r)ᗮ),
+      blockHankel r A (blockHardyBasis r (n, j))⟫_ℂ =
+      fourierCoeff (blockSymbolEntry r i j A) (-(m : ℤ) - 1 - n) := by
+  rw [inner_blockFourierMode_blockHankel_blockHardyBasis, inner_single_fourierCoeff_blockSymbol]
+
 /-- Every constant matrix symbol has zero block Hankel operator. -/
 @[simp] theorem blockHankel_const {r : ℕ}
     (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
@@ -144,9 +179,8 @@ theorem blockToeplitz_comp_sub_blockToeplitz {r : ℕ} (A B : BlockSymbol r) :
 /-- `blockHankel r A = 0` iff all negative operator-valued Fourier coefficients of `A` vanish. -/
 theorem blockHankel_eq_zero_iff {r : ℕ} (A : BlockSymbol r) :
     blockHankel r A = 0 ↔ ∀ n : ℤ, n < 0 → fourierCoeff A n = 0 := by
-  refine ⟨fun hA n hn ↦ ?_, fun hA ↦ ?_⟩
-  · refine ext fun v ↦ PiLp.ext fun i ↦ ?_
-    rw [zero_apply, PiLp.zero_apply, ← (EuclideanSpace.basisFun (Fin r) ℂ).sum_repr v]
+  refine ⟨fun hA n hn ↦ ext fun v ↦ PiLp.ext fun i ↦ ?_, fun hA ↦ ?_⟩
+  · rw [zero_apply, PiLp.zero_apply, ← (EuclideanSpace.basisFun (Fin r) ℂ).sum_repr v]
     simp only [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply,
       map_sum (fourierCoeff A n), WithLp.ofLp_sum, Finset.sum_apply]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
@@ -185,8 +219,7 @@ theorem isCompactOperator_blockHankel_toLp {r : ℕ}
     ∑ j : Fin r, hankel (blockSymbolEntry r i j A) ∘L PiLp.proj (𝕜 := ℂ) 2 (fun _ ↦ HardySpace) j
   have hrow (i : Fin r) : IsCompactOperator (row i) :=
     (compactOperator (RingHom.id ℂ) (BlockHardySpace r) ↥hardySubmoduleᗮ).sum_mem fun j _ ↦ by
-      rw [blockSymbolEntry_toLp]
-      exact (isCompactOperator_hankel_toLp _).comp_clm _
+      rw [blockSymbolEntry_toLp]; exact (isCompactOperator_hankel_toLp _).comp_clm _
   let e := (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin r ↦ ↥hardySubmoduleᗮ)).symm
   convert (IsCompactOperator.pi hrow).clm_comp
     ((blockHardyOrthogonalEquiv r).symm.toLinearIsometry.toContinuousLinearMap ∘L

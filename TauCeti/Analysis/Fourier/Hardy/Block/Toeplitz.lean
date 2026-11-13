@@ -13,17 +13,15 @@ public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 /-!
 # Block Toeplitz operators and the block Brown–Halmos theorem
 
-For `A : BlockSymbol r`, the block Toeplitz operator
-`TauCeti.blockToeplitz r A : BlockHardySpace r →L[ℂ] BlockHardySpace r` compresses the `L²`
-operator multiplier `MeasureTheory.Lp.operatorMultiplication 2 A` onto `blockHardySubmodule r` via
-`blockHardyEquiv r`. Its `(i, j)` block entry is the scalar Toeplitz operator of
-`blockSymbolEntry r i j A` (`TauCeti.piLpEntry_blockToeplitz`), its matrix in `blockHardyBasis r`
-has entries `⟪e_i, â(m - n) e_j⟫` (`TauCeti.inner_blockHardyBasis_blockToeplitz_blockHardyBasis`),
+For `A : BlockSymbol r`, `TauCeti.blockToeplitz r A : BlockHardySpace r →L[ℂ] BlockHardySpace r`
+compresses `MeasureTheory.Lp.operatorMultiplication 2 A` onto `blockHardySubmodule r` via
+`blockHardyEquiv r`. Its `(i, j)` block entry is `toeplitz (blockSymbolEntry r i j A)`
+(`TauCeti.piLpEntry_blockToeplitz`), its matrix in `blockHardyBasis r` has entries
+`⟪e_i, â(m - n) e_j⟫` (`TauCeti.inner_blockHardyBasis_blockToeplitz_blockHardyBasis`),
 `(blockToeplitz r A)† = blockToeplitz r (star A)` (`TauCeti.adjoint_blockToeplitz`), scalar symbols
-tensor `1 : BlockSymbol r` act diagonally (`TauCeti.blockToeplitz_smul_one`,
-`TauCeti.blockToeplitz_one`, `TauCeti.blockToeplitz_algebraMap`), and `‖blockToeplitz r A‖ = ‖A‖`
-(`TauCeti.norm_blockToeplitz`, `TauCeti.isometry_blockToeplitz`,
-`TauCeti.norm_blockToeplitz_toLp`).
+act diagonally (`TauCeti.blockToeplitz_smul_one`, `TauCeti.blockToeplitz_one`,
+`TauCeti.blockToeplitz_algebraMap`), and `‖blockToeplitz r A‖ = ‖A‖` (`TauCeti.norm_blockToeplitz`,
+`TauCeti.isometry_blockToeplitz`, `TauCeti.norm_blockToeplitz_toLp`).
 
 Finally, `TauCeti.exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ` and
 `TauCeti.existsUnique_blockToeplitz_eq_iff_adjoint_comp_comp_eq` prove the **block Brown–Halmos
@@ -31,10 +29,9 @@ theorem**, characterizing block Toeplitz operators by mode-shift invariance
 `(m, n) ↦ (m + 1, n + 1)` on every `(i, j)` block and compression invariance
 `S_r† ∘L T ∘L S_r = T` under the block forward shift.
 
-References: A. Brown and P. R. Halmos, *Algebraic properties of Toeplitz operators*, J. Reine
-Angew. Math. 213 (1964), 89–102; A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators*
-(2nd ed., §2.9); J. B. Conway, *A Course in Functional Analysis* (2nd ed.); E. Park, *Toeplitz
-operators*.
+References: A. Brown and P. R. Halmos, *Algebraic properties of Toeplitz operators*, J. Reine Angew.
+Math. 213 (1964), 89–102; A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators* (2nd ed.,
+§2.9); J. B. Conway, *A Course in Functional Analysis* (2nd ed.); E. Park, *Toeplitz operators*.
 -/
 
 public noncomputable section
@@ -44,8 +41,7 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-/-- Bounded complex-linear block Toeplitz symbol map compressing `Lp.operatorMultiplication 2` onto
-`BlockHardySpace r`. -/
+/-- Block Toeplitz map compressing `Lp.operatorMultiplication 2` onto `BlockHardySpace r`. -/
 def blockToeplitz (r : ℕ) : BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] BlockHardySpace r :=
   compL ℂ (BlockHardySpace r) (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
       (BlockHardySpace r) ((blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
@@ -87,8 +83,7 @@ theorem inner_blockToeplitz_apply {r : ℕ} (A : BlockSymbol r) (f g : BlockHard
         Lp.operatorMultiplication 2 A ((blockHardyEquiv r).symm g)⟫_ℂ := by
   rw [← (blockHardyEquiv r).symm.inner_map_map, blockToeplitz_apply]; simp
 
-/-- On a vector concentrated in coordinate `j`, `Lp.operatorMultiplication 2 A` acts in coordinate
-`i` by heterogeneous scalar multiplication by `blockSymbolEntry r i j A`. -/
+/-- On `single 2 j h`, `Lp.operatorMultiplication 2 A` acts in slot `i` by `blockSymbolEntry`. -/
 theorem piLpEquiv_operatorMultiplication_symm_single {r : ℕ} (A : BlockSymbol r) (i j : Fin r)
     (h : Lp ℂ 2 (haarAddCircle (T := 1))) :
     Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (haarAddCircle (T := 1))
@@ -111,8 +106,7 @@ theorem piLpEquiv_operatorMultiplication_symm_single {r : ℕ} (A : BlockSymbol 
 /-- The `(i, j)` block entry of `blockToeplitz r A` is `toeplitz (blockSymbolEntry r i j A)`. -/
 @[simp] theorem piLpEntry_blockToeplitz {r : ℕ} (A : BlockSymbol r) (i j : Fin r) :
     (blockToeplitz r A).piLpEntry i j = toeplitz (blockSymbolEntry r i j A) := by
-  ext h : 1
-  simp [piLpEntry_apply, blockToeplitz_apply, coe_blockHardyEquiv_symm_single,
+  ext h : 1; simp [piLpEntry_apply, blockToeplitz_apply, coe_blockHardyEquiv_symm_single,
     piLpEquiv_operatorMultiplication_symm_single, toeplitz_apply, Lp.multiplicationOperator_apply]
 
 /-- Coordinatewise action of `blockToeplitz r A` through scalar Toeplitz entry operators. -/
@@ -130,8 +124,8 @@ theorem inner_blockHardyBasis_blockToeplitz_blockHardyBasis {r : ℕ} (A : Block
     inner_single_fourierCoeff_blockSymbol]
 
 /-- Scalar-entry form of `inner_blockHardyBasis_blockToeplitz_blockHardyBasis`. -/
-theorem inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_entry {r : ℕ} (A : BlockSymbol r)
-    (m n : ℕ) (i j : Fin r) :
+theorem inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry {r : ℕ}
+    (A : BlockSymbol r) (m n : ℕ) (i j : Fin r) :
     ⟪blockHardyBasis r (m, i), blockToeplitz r A (blockHardyBasis r (n, j))⟫_ℂ =
       fourierCoeff (blockSymbolEntry r i j A) ((m : ℤ) - n) := by
   rw [inner_blockHardyBasis_blockToeplitz_blockHardyBasis, inner_single_fourierCoeff_blockSymbol]
@@ -154,11 +148,7 @@ theorem blockToeplitz_smul_one {r : ℕ} (a : Lp ℂ ∞ (haarAddCircle (T := 1)
 /-- `1 : BlockSymbol r` induces the identity operator on `BlockHardySpace r`. -/
 @[simp] theorem blockToeplitz_one (r : ℕ) :
     blockToeplitz r (1 : BlockSymbol r) = ContinuousLinearMap.id ℂ (BlockHardySpace r) := by
-  ext f i : 2
-  rw [blockToeplitz_apply_apply, Finset.sum_eq_single i (fun j _ hji ↦ ?_) (by simp)]
-  · rw [blockSymbolEntry_one, ite_eq_left rfl, ← map_one (algebraMap ℂ (Lp ℂ ∞ _)),
-      toeplitz_algebraMap, one_smul, id_apply, id_apply]
-  · rw [blockSymbolEntry_one, ite_eq_right hji.symm, map_zero, zero_apply]
+  ext f : 1; simp [blockToeplitz_apply]
 
 /-- `algebraMap ℂ (BlockSymbol r) c` acts on `BlockHardySpace r` by scalar multiplication. -/
 @[simp] theorem blockToeplitz_algebraMap {r : ℕ} (c : ℂ) :
@@ -198,7 +188,7 @@ private theorem norm_operatorMultiplication_le_norm_blockToeplitz {r : ℕ} (A :
       (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap ∘L
         blockToeplitz r A ∘L (blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap := by
     ext f : 1; simp [blockToeplitz_apply]
-  refine (norm_le_norm_orthogonalProjectionOnto_comp_subtypeL (blockHardySubmodule r)
+  refine ((blockHardySubmodule r).norm_le_norm_orthogonalProjectionOnto_comp_comp_subtypeL
     (Lp.operatorMultiplication 2 A) (dense_span_blockFourierMode r)
     (fun _ hg ↦ eventually_fourierLp_smul_mem_blockHardySubmodule hg) fun N g ↦
       Lp.operatorMultiplication_lpSMul_right (fourierLp (T := 1) ∞ N) A g).trans ?_
@@ -234,8 +224,8 @@ theorem exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ {r : ℕ}
           ⟪blockHardyBasis r (m, i), T (blockHardyBasis r (n, j))⟫_ℂ := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨A, rfl⟩ m n i j
-    rw [inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_entry,
-      inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_entry]
+    rw [inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry,
+      inner_blockHardyBasis_blockToeplitz_blockHardyBasis_eq_fourierCoeff_blockSymbolEntry]
     congr 1; push_cast; ring
   · choose a ha using fun i j : Fin r ↦ (exists_toeplitz_eq_iff_inner_hardyBasis_succ _).mpr
       fun m n ↦ by simpa only [inner_blockHardyBasis_apply] using h m n i j
@@ -252,8 +242,8 @@ theorem existsUnique_blockToeplitz_eq_iff_adjoint_comp_comp_eq {r : ℕ}
         T ∘L PiLp.diagStarAlgHom ℂ HardySpace (Fin r) (toeplitz (fourierLp (T := 1) ∞ 1)) = T := by
   set S := PiLp.diagStarAlgHom ℂ HardySpace (Fin r) (toeplitz (fourierLp (T := 1) ∞ 1))
   have hS (n : ℕ) (i : Fin r) : S (blockHardyBasis r (n, i)) = blockHardyBasis r (n + 1, i) := by
-    simp [S, blockHardyBasis_apply, PiLp.diagStarAlgHom_apply_single,
-      toeplitz_fourierLp_one_hardyBasis]
+    simpa only [S, ← blockToeplitz_smul_one] using
+      blockToeplitz_fourierLp_one_smul_one_blockHardyBasis n i
   have hshift (m n : ℕ) (i j : Fin r) :
       ⟪blockHardyBasis r (m, i), (adjoint S ∘L T ∘L S) (blockHardyBasis r (n, j))⟫_ℂ =
         ⟪blockHardyBasis r (m + 1, i), T (blockHardyBasis r (n + 1, j))⟫_ℂ := by
