@@ -80,6 +80,9 @@ It is square integrable, because `h ∈ H²` and the remaining part is supported
   part `c / (z - a)^k`.
 * `TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_eq_logVariation`: a smooth square-integrable
   kernel element of `L_x` whose `δα / α` has principal part `c / (z - a)^k`.
+* `TauCeti.Vortex.exists_contDiff_laplacian_eq_mul_sub`: the smooth `H²(ℂ; ℂ)` solution of
+  `Δh = P h - g` at a smooth field with `|α| → 1` at infinity, also used by
+  `TauCeti.Analysis.PDE.Vortex.KernelExistence` and `TauCeti.Analysis.PDE.Vortex.TangentKernel`.
 
 ## References
 
@@ -344,7 +347,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
 
 /-- The section coordinates of a continuous field whose section has unit modulus at infinity are
 bounded. -/
-private theorem memLp_top_apply (hx : Continuous x)
+theorem memLp_top_apply (hx : Continuous x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
     (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
   obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
@@ -467,7 +470,7 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
 
 /-- For a smooth field whose section has unit modulus at infinity and a smooth `g ∈ L²(ℂ; ℂ)`,
 the equation `Δh = P h - g`, `P = |α|² / 4`, has a smooth solution `h ∈ H²(ℂ; ℂ)`. -/
-private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
+theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → ℂ}
     (hgs : ContDiff ℝ ∞ g) (hg2 : MemLp g 2 volume) :
     ∃ h : ℂ → ℂ, ContDiff ℝ ∞ h ∧ (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2 ∧
@@ -481,7 +484,7 @@ private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
   exact ⟨h, hhs, hh₁, hh₂, fun z ↦ by linear_combination -he z⟩
 
 /-- The potential `P = |α|² / 4` in terms of the section `α`. -/
-private theorem ofReal_potential_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+theorem ofReal_potential_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
       starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
   apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
