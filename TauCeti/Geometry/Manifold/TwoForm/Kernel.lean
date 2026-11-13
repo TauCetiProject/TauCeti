@@ -116,7 +116,7 @@ private theorem contMDiffOn_trivBilin {n : ℕ∞ω} [ENat.LEInfty n] [IsManifol
       ![e.symm z u, e.symm z w] := by
     funext i
     fin_cases i <;> rfl
-  have h := (contMDiffWithinAt_totalSpace.mp (hv y hy)).2
+  have h := (contMDiffWithinAt_totalSpace_iff.mp (hv y hy)).2
   simp only [hfun] at h
   exact (by simpa using h : ContMDiffWithinAt I 𝓘(ℝ, ℝ) n
     (fun z ↦ σ.1 z ![e.symm z u, e.symm z w]) e.baseSet y).congr heq (heq y hy)
@@ -170,7 +170,7 @@ theorem isContMDiffDistribution_ker_bilinFormAt [FiniteDimensional ℝ E] {n : �
   refine ⟨W, hW, hx₀W, fun i y ↦ e.symm y (v i y), ⟨fun i y hy ↦ ?_, fun {y} hy ↦ ?_,
     fun {y} hy ↦ ?_⟩⟩
   · -- In `e`, the coordinates of the frame are the smooth maps `v i`.
-    refine (Trivialization.contMDiffWithinAt_section (e := e) W (hWe hy)).2 ?_
+    refine (Trivialization.contMDiffWithinAt_section_iff (e := e) W (hWe hy)).2 ?_
     exact (hv i y hy).congr (fun z hz ↦ by simp only [e.apply_mk_symm (hWe hz)])
       (by simp only [e.apply_mk_symm (hWe hy)])
   · rw [hsymm hy]

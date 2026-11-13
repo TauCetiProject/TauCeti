@@ -45,6 +45,11 @@ the differential, which resolves one crossing, has degree `λ⁻¹`. The graded 
 the parts of an arbitrary function on strand diagrams (`TauCeti.StrandsAlgebra.gradedPartBy`), whose
 compatibility with the product and the differential also serves refinements of the grading.
 
+The boundary also measures how far the strands climb: the *length* of a diagram
+(`TauCeti.StrandDiagram.length`), the sum over its strands of the number of points each strand
+passes, is additive under concatenation and vanishes exactly on the identity diagrams
+(`TauCeti.StrandDiagram.length_eq_zero_iff`).
+
 ## Conventions
 
 We work, as `TauCeti.StrandsAlgebra` does, with an arbitrary finite linear order `α` in place of
@@ -76,6 +81,7 @@ product.
 * `TauCeti.StrandGradingGroup.lambda`: the central element `λ = (1, 0)`.
 * `TauCeti.StrandGradingGroup.gPrime`: the subgroup `G'(n)`.
 * `TauCeti.StrandDiagram.boundary`: the boundary of the class of the strands of a diagram.
+* `TauCeti.StrandDiagram.length`: the total length of the strands of a diagram.
 * `TauCeti.StrandDiagram.grading`: the grading `gr(φ)` of a strand diagram.
 * `TauCeti.StrandsAlgebra.gradedPartBy`: the elements supported on the diagrams on which a given
   function on strand diagrams takes a given value.
@@ -83,9 +89,15 @@ product.
 
 ## Main results
 
+* `TauCeti.StrandDiagram.length_eq_zero_iff`: a diagram has length zero exactly when it is an
+  identity diagram.
+* `TauCeti.StrandDiagram.trans_eq_idOn_source_iff`: a concatenation is an identity diagram exactly
+  when both factors are.
 * `TauCeti.StrandGradingGroup.linking_add_linking_swap`, `TauCeti.StrandGradingGroup.linking_self`:
   the symmetric part of `L` is minus the product of the total sums of the boundaries, so `L` is
   antisymmetric on boundaries of total sum zero.
+* `TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff`: the elements of `G'(n)` with zero class
+  are the powers of `λ`.
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
@@ -111,9 +123,9 @@ product.
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.1 (the
-  group `G'(n)`, the multiplicity `m`, the grading of `A(n, k)` and its compatibility with the
-  product and the differential) and Proposition 3.40 (the grading is unchanged by adding horizontal
-  strands).
+  group `G'(n)` and Lemma 3.35, the multiplicity `m`, the grading of `A(n, k)` and its
+  compatibility with the product and the differential) and Proposition 3.40 (the grading is
+  unchanged by adding horizontal strands).
 -/
 
 public section
@@ -442,6 +454,26 @@ theorem exists_maslov_eq_of_mem_gPrime {g : StrandGradingGroup α} (hg : g ∈ g
 theorem lambda_mem_gPrime : (lambda : StrandGradingGroup α) ∈ gPrime :=
   mem_gPrime_iff_sum_sq.2 ⟨⟨1, by simp⟩, by simp⟩
 
+/-- Every class with boundary of total sum zero is the class of an element of `G'(n)`, with
+Maslov component `ε(β)`. -/
+theorem mk_mem_gPrime {δ : α → ℤ} (hδ : ∑ x, δ x = 0) :
+    mk ((#{x | Odd (δ x)} : ℚ) / 4) δ ∈ gPrime :=
+  ⟨⟨0, by simp⟩, by simpa using hδ⟩
+
+/-- **The kernel of the class map on `G'(n)`.** The elements of `G'(n)` with zero class are exactly
+the powers of `λ`: the condition `j ≡ ε(0) = 0 (mod 1)` makes their Maslov component an integer. -/
+theorem mem_zpowers_lambda_iff {g : StrandGradingGroup α} :
+    g ∈ Subgroup.zpowers lambda ↔ g ∈ gPrime ∧ g.boundary = 0 := by
+  constructor
+  · rintro ⟨n, rfl⟩
+    exact ⟨zpow_mem lambda_mem_gPrime n, by simp [lambda_zpow]⟩
+  · rintro ⟨⟨⟨k, hk⟩, -⟩, hb⟩
+    refine Subgroup.mem_zpowers_iff.2 ⟨k, ?_⟩
+    rw [lambda_zpow]
+    ext
+    · simp [hk, hb]
+    · simp [hb]
+
 end StrandGradingGroup
 
 end GradingGroup
@@ -473,6 +505,103 @@ theorem boundary_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = 
   simp only [boundary_apply, Pi.add_apply, source_trans_of_target_eq h,
     target_trans_of_target_eq h, h]
   ring
+
+/-- The total length of the strands of a diagram `φ : S → T`: the sum, over its strands, of the
+number of points of `α` that the strand climbs, `∑_{x ∈ S} (r (φ x) - r x)` where `r x` is the
+number of points below `x` (`TauCeti.StrandDiagram.length_eq_sum`). It is written through the
+boundary of the class of `φ`, so that it is visibly additive under concatenation. -/
+def length (φ : StrandDiagram α) : ℤ :=
+  ∑ x, (#{y | y < x} : ℤ) * φ.boundary x
+
+theorem length_def (φ : StrandDiagram α) :
+    φ.length = ∑ x, (#{y | y < x} : ℤ) * φ.boundary x :=
+  (rfl)
+
+/-- A strand starts at or below its end point, so fewer points lie below its start. -/
+private theorem card_filter_lt_le_card_filter_lt_endpoint {φ : StrandDiagram α} {x : α}
+    (hx : x ∈ φ.source) : #{y | y < x} ≤ #{y | y < φ.endpoint x} :=
+  card_le_card fun y hy ↦ by
+    simp only [mem_filter, mem_univ, true_and] at hy ⊢
+    exact hy.trans_le (φ.le_of_mem (endpoint_mem hx))
+
+/-- A strand with as many points below its end point as below its start is horizontal. -/
+private theorem endpoint_eq_of_card_filter_lt_eq {φ : StrandDiagram α} {x : α}
+    (hx : x ∈ φ.source) (h : #{y | y < φ.endpoint x} = #{y | y < x}) : φ.endpoint x = x := by
+  by_contra hne
+  have hlt : x < φ.endpoint x := (φ.le_of_mem (endpoint_mem hx)).lt_of_ne (Ne.symm hne)
+  refine h.not_gt (card_lt_card ⟨fun y hy ↦ ?_, fun hsub ↦ ?_⟩)
+  · simp only [mem_filter, mem_univ, true_and] at hy ⊢
+    exact hy.trans hlt
+  · have hxx := hsub (by simpa using hlt)
+    simp at hxx
+
+/-- The length of a diagram is the sum, over its strands, of the number of points the strand
+climbs. -/
+theorem length_eq_sum (φ : StrandDiagram α) :
+    φ.length = ∑ x ∈ φ.source, ((#{y | y < φ.endpoint x} : ℤ) - #{y | y < x}) := by
+  have himage : ∑ x ∈ φ.target, (#{y | y < x} : ℤ) =
+      ∑ x ∈ φ.source, (#{y | y < φ.endpoint x} : ℤ) := by
+    rw [target_eq_image, sum_image φ.injOn_getD]
+    simp only [endpoint_def]
+  simp only [length_def, boundary_apply, mul_sub, mul_ite, mul_one, mul_zero, sum_sub_distrib,
+    sum_ite_mem, univ_inter, himage]
+
+/-- The length of a diagram is nonnegative: every strand goes upwards. -/
+theorem length_nonneg (φ : StrandDiagram α) : 0 ≤ φ.length := by
+  rw [length_eq_sum]
+  exact sum_nonneg fun x hx ↦ sub_nonneg.2 (by
+    exact_mod_cast card_filter_lt_le_card_filter_lt_endpoint hx)
+
+@[simp]
+theorem length_idOn (s : Finset α) : (idOn s).length = 0 := by
+  simp [length_def]
+
+/-- **A diagram has length zero exactly when it is an identity diagram.** -/
+theorem length_eq_zero_iff {φ : StrandDiagram α} : φ.length = 0 ↔ φ = idOn φ.source := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ length_idOn _⟩
+  rw [length_eq_sum] at h
+  have hterm := (sum_eq_zero_iff_of_nonneg fun x hx ↦ sub_nonneg.2 (by
+    exact_mod_cast card_filter_lt_le_card_filter_lt_endpoint hx)).1 h
+  ext i j
+  by_cases hi : i ∈ φ.source
+  · have hend : φ.endpoint i = i :=
+      endpoint_eq_of_card_filter_lt_eq hi (by exact_mod_cast sub_eq_zero.1 (hterm i hi))
+    have hmem := endpoint_mem hi
+    rw [hend] at hmem
+    rw [idOn_apply, ite_eq_left hi, Option.mem_def.1 hmem]
+  · rw [apply_eq_none_of_notMem_source hi, idOn_apply, ite_eq_right hi]
+
+/-- A diagram that is not an identity diagram has positive length. -/
+theorem length_pos {φ : StrandDiagram α} (h : φ ≠ idOn φ.source) : 0 < φ.length :=
+  φ.length_nonneg.lt_of_ne fun h' ↦ h (length_eq_zero_iff.1 h'.symm)
+
+/-- The length of a diagram is at most the square of the number of points. -/
+theorem length_le (φ : StrandDiagram α) : φ.length ≤ Fintype.card α ^ 2 := by
+  have hterm (x : α) : (#{y | y < x} : ℤ) * φ.boundary x ≤ Fintype.card α := by
+    have hb : φ.boundary x ≤ 1 := by
+      rw [boundary_apply]
+      split_ifs <;> norm_num
+    have hr : (#{y | y < x} : ℤ) ≤ Fintype.card α := by
+      exact_mod_cast card_le_univ _
+    calc (#{y | y < x} : ℤ) * φ.boundary x ≤ #{y | y < x} * 1 :=
+          mul_le_mul_of_nonneg_left hb (by positivity)
+      _ ≤ Fintype.card α := by rwa [mul_one]
+  calc φ.length ≤ ∑ _x : α, (Fintype.card α : ℤ) := sum_le_sum fun x _ ↦ hterm x
+    _ = Fintype.card α ^ 2 := by simp [sq]
+
+/-- **Lengths add under concatenation.** -/
+theorem length_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
+    (φ.trans ψ).length = φ.length + ψ.length := by
+  simp only [length_def, boundary_trans_of_target_eq h, Pi.add_apply, mul_add, sum_add_distrib]
+
+/-- **A concatenation is an identity diagram exactly when both factors are.** -/
+theorem trans_eq_idOn_source_iff {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
+    φ.trans ψ = idOn (φ.trans ψ).source ↔ φ = idOn φ.source ∧ ψ = idOn ψ.source := by
+  rw [← length_eq_zero_iff, ← length_eq_zero_iff, ← length_eq_zero_iff,
+    length_trans_of_target_eq h]
+  have := φ.length_nonneg
+  have := ψ.length_nonneg
+  omega
 
 /-- A diagram has as many end points as starting points, so the boundary of its class has total
 sum zero. -/
