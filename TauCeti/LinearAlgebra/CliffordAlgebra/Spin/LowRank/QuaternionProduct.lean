@@ -74,7 +74,7 @@ theorem exists_evenQuaternionProdEquiv_of_finrank_eq_four
   have hn3 : n = 3 := by omega
   subst n
   let eZ : Subalgebra.center K (CliffordAlgebra P) ≃ₐ[K] K × K :=
-    (TauCeti.centerCongr g).symm.trans eC
+    (Subalgebra.centerCongr g).symm.trans eC
   obtain ⟨l, hl, hlen, hspan, hQl⟩ := hP.exists_list_pairwise_isOrtho
   have hlen3 : l.length = 3 := by
     rw [hlen, Module.finrank_fin_fun]
