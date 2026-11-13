@@ -16,6 +16,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.Analysis.RCLike.Sum
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Endomorphisms of finite order
@@ -154,11 +155,15 @@ section Eigenspace
 
 variable {f : End k V} {n : ℕ}
 
+omit [FiniteDimensional k V] in
 /-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `dim(V_μ) * μ ^ m`, because `f ^ m` acts
 there as the scalar `μ ^ m`. -/
 theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     LinearMap.trace k _ ((f ^ m).restrict (mapsTo_pow_eigenspace f μ m)) =
       (finrank k (f.eigenspace μ) : k) * μ ^ m := by
+  by_cases hfin : Module.Finite k (f.eigenspace μ)
+  swap
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, Module.finrank_of_not_finite hfin]
   have hrestrict : (f ^ m).restrict (mapsTo_pow_eigenspace f μ m) = μ ^ m • LinearMap.id := by
     ext x
     refine (LinearMap.coe_restrict_apply _ x).trans ?_
@@ -206,12 +211,16 @@ section Complex
 
 variable {V : Type w} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
 
+omit [FiniteDimensional ℂ V] in
 /-- **Complex conjugation of the trace inverts the endomorphism.** If `f ^ n = 1` with `n ≠ 0`, then
 the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`: the eigenvalues of `f`
 are `n`-th roots of unity, and conjugation inverts those. -/
 theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
-    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) :=
-  map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
+    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) := by
+  by_cases hfin : Module.Finite ℂ V
+  swap
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
+  exact map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
     rw [← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hμ hn)]
     exact inv_eq_of_mul_eq_one_right
       (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])
