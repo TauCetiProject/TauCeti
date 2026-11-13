@@ -305,6 +305,25 @@ theorem fractionRingEquiv_symm_apply_coordinate (c : LaurentChart R K F) (h : c.
       algebraMap _ (FractionRing (LaurentRing R K)) (LaurentRing.X (R := R) i) := by
   simpa only [apply_X] using c.fractionRingEquiv_symm_apply h (LaurentRing.X i)
 
+/-- Inverse Laurent fraction evaluation preserves inverses using the chart's domain proof. -/
+@[simp]
+theorem fractionRingEquiv_symm_inv (c : LaurentChart R K F)
+    (h : c.Generates) (z : F) :
+    letI : IsDomain R := c.isDomain
+    (c.fractionRingEquiv h).symm z⁻¹ = ((c.fractionRingEquiv h).symm z)⁻¹ := by
+  have : IsDomain R := c.isDomain
+  exact map_inv₀ (c.fractionRingEquiv h).symm z
+
+/-- Inverse Laurent fraction evaluation preserves division using the chart's domain proof. -/
+@[simp]
+theorem fractionRingEquiv_symm_div (c : LaurentChart R K F)
+    (h : c.Generates) (y z : F) :
+    letI : IsDomain R := c.isDomain
+    (c.fractionRingEquiv h).symm (y / z) =
+      (c.fractionRingEquiv h).symm y / (c.fractionRingEquiv h).symm z := by
+  have : IsDomain R := c.isDomain
+  exact map_div₀ (c.fractionRingEquiv h).symm y z
+
 /-- Inverse fraction-field evaluation sends an inverse coordinate to its negative monomial. -/
 @[simp↓]
 theorem fractionRingEquiv_symm_apply_inv_coordinate (c : LaurentChart R K F)
@@ -442,6 +461,34 @@ theorem fractionRingTransition_trans {K' K'' : Type*} (c : LaurentChart R K F)
   ext x
   simp [fractionRingTransition]
 
+/-- Consecutive changes of fraction coordinates compose pointwise. -/
+@[simp]
+theorem fractionRingTransition_apply_apply {K' K'' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (e : LaurentChart R K'' F)
+    (hc : c.Generates) (hd : d.Generates) (he : e.Generates)
+    (x : FractionRing (LaurentRing R K)) :
+    d.fractionRingTransition e hd he (c.fractionRingTransition d hc hd x) =
+      c.fractionRingTransition e hc he x := by
+  simp only [fractionRingTransition_apply, AlgEquiv.apply_symm_apply]
+
+/-- Evaluating a fraction transition agrees with its source chart's evaluation. -/
+@[simp]
+theorem fractionRingEquiv_fractionRingTransition {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (x : FractionRing (LaurentRing R K)) :
+    d.fractionRingEquiv hd (c.fractionRingTransition d hc hd x) =
+      c.fractionRingEquiv hc x := by
+  simp only [fractionRingTransition_apply, AlgEquiv.apply_symm_apply]
+
+/-- Changing fraction coordinates commutes with inverse evaluation from the ambient field. -/
+@[simp]
+theorem fractionRingTransition_fractionRingEquiv_symm {K' : Type*}
+    (c : LaurentChart R K F) (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (z : F) :
+    c.fractionRingTransition d hc hd ((c.fractionRingEquiv hc).symm z) =
+      (d.fractionRingEquiv hd).symm z := by
+  simp only [fractionRingTransition_apply, AlgEquiv.apply_symm_apply]
+
 /-- Ambient algebra equivalences transport the canonical Laurent fraction-field equivalence. -/
 @[simp]
 theorem fractionRingEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
@@ -453,6 +500,17 @@ theorem fractionRingEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
   apply LaurentRing.algHom_ext
   intro i
   simp [Algebra.algHom]
+
+/-- A simultaneous ambient algebra equivalence leaves the fraction transition unchanged. -/
+@[simp]
+theorem fractionRingTransition_map {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (e : F ≃ₐ[R] G)
+    (hc : (c.map e.toAlgHom).Generates) (hd : (d.map e.toAlgHom).Generates) :
+    (c.map e.toAlgHom).fractionRingTransition (d.map e.toAlgHom) hc hd =
+      c.fractionRingTransition d ((c.generates_map_algEquiv_iff e).mp hc)
+        ((d.generates_map_algEquiv_iff e).mp hd) := by
+  ext x
+  simp [fractionRingTransition_apply]
 
 /-- Ambient algebra equivalences transport the canonical polynomial fraction-field model. -/
 @[simp]

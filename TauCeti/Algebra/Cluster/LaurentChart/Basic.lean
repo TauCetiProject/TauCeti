@@ -131,6 +131,13 @@ theorem apply_single (c : LaurentChart R K F) (m : K →₀ ℤ) (r : R) :
   rw [← toAlgHom_apply, ← aeval_coordinateUnit]
   simpa [Finsupp.prod] using LaurentRing.aeval_single c.coordinateUnit m r
 
+/-- Evaluating the negative standard-basis monomial gives the inverse coordinate. -/
+@[simp high]
+theorem apply_single_neg_single_one (c : LaurentChart R K F) (i : K) :
+    c (AddMonoidAlgebra.single (-Finsupp.single i 1) 1) = (c.coordinate i)⁻¹ := by
+  rw [← Finsupp.single_neg, apply_single]
+  simp only [Finsupp.prod_single_index, zpow_zero, one_smul, zpow_neg_one]
+
 /-- The coordinates of a faithful Laurent chart are algebraically independent. -/
 theorem algebraicIndependent (c : LaurentChart R K F) : AlgebraicIndependent R c.coordinate := by
   have hc : Function.Injective (LaurentRing.aeval (R := R) c.coordinateUnit) := by
@@ -202,6 +209,13 @@ theorem val_coordinatesEquiv_apply (c : LaurentChart R K F) :
 theorem coordinatesEquiv_symm_apply
     (x : {x : K → Fˣ // AlgebraicIndependent R fun i ↦ (x i : F)}) :
     coordinatesEquiv.symm x = ofCoordinates x.1 x.2 := (rfl)
+
+/-- Taking the coordinates of a chart constructed from units recovers the unit family. -/
+@[simp]
+theorem coordinatesEquiv_ofCoordinates (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) :
+    coordinatesEquiv (ofCoordinates x hx) = ⟨x, hx⟩ :=
+  Subtype.ext (coordinateUnit_ofCoordinates x hx)
 
 /-! ### Ambient embeddings and coordinate subfamilies -/
 
@@ -619,6 +633,13 @@ theorem coe_mapRange_apply (c : LaurentChart R K F) (f : F →ₐ[R] G) (x : c.t
     ((c.mapRange f x : (c.map f).toAlgHom.range) : G) = f x := by
   simp [mapRange]
 
+/-- Range transport sends a subtype constructor to the embedded element. -/
+@[simp]
+theorem mapRange_mk (c : LaurentChart R K F) (f : F →ₐ[R] G) (z : F)
+    (h : z ∈ c.toAlgHom.range) :
+    c.mapRange f ⟨z, h⟩ = ⟨f z, (c.mem_range_map_iff f z).mpr h⟩ :=
+  Subtype.ext (c.coe_mapRange_apply f ⟨z, h⟩)
+
 /-- The inverse range transport is characterized by the ambient field embedding. -/
 @[simp]
 theorem map_coe_mapRange_symm_apply (c : LaurentChart R K F) (f : F →ₐ[R] G)
@@ -658,6 +679,24 @@ theorem coeff_map (c : LaurentChart R K F) (f : F →ₐ[R] G)
     (c.map f).coeff y = c.coeff ((c.mapRange f).symm y) := by
   rw [coeff_def, laurentExpansion_map, coeff_def]
 
+/-- Inverting an expansion commutes with ambient range transport. -/
+@[simp]
+theorem laurentExpansion_map_symm (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (p : LaurentRing R K) :
+    (c.map f).laurentExpansion.symm p = c.mapRange f (c.laurentExpansion.symm p) := by
+  apply (c.map f).laurentExpansion.injective
+  rw [AlgEquiv.apply_symm_apply, laurentExpansion_map,
+    AlgEquiv.symm_apply_apply, AlgEquiv.apply_symm_apply]
+
+/-- Inverting the coefficient equivalence commutes with ambient range transport. -/
+@[simp]
+theorem coeff_map_symm (c : LaurentChart R K F) (f : F →ₐ[R] G)
+    (g : (K →₀ ℤ) →₀ R) :
+    (c.map f).coeff.symm g = c.mapRange f (c.coeff.symm g) := by
+  apply (c.map f).coeff.injective
+  rw [LinearEquiv.apply_symm_apply, coeff_map,
+    AlgEquiv.symm_apply_apply, LinearEquiv.apply_symm_apply]
+
 /-- Relabelling expands any element in the common chart range by exponent renaming. -/
 @[simp]
 theorem laurentExpansion_reindex (c : LaurentChart R K F) (e : K ≃ K')
@@ -680,6 +719,27 @@ theorem coeff_reindex (c : LaurentChart R K F) (e : K ≃ K')
   congr 1
   funext m
   simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_eq_mapDomain]
+
+/-- Inverse expansion after relabelling evaluates the inversely renamed Laurent polynomial. -/
+@[simp]
+theorem laurentExpansion_reindex_symm (c : LaurentChart R K F) (e : K ≃ K')
+    (p : LaurentRing R K') :
+    (c.reindex e).laurentExpansion.symm p =
+      ⟨(c.laurentExpansion.symm (LaurentRing.rename e.symm p) : F),
+        (c.range_toAlgHom_reindex e).symm ▸
+          (c.laurentExpansion.symm (LaurentRing.rename e.symm p)).property⟩ := by
+  apply Subtype.ext
+  simp only [coe_laurentExpansion_symm_apply, reindex_apply]
+
+/-- Inverse coefficient reconstruction cancels relabelling of the exponent family. -/
+@[simp]
+theorem coeff_reindex_symm_equivMapDomain (c : LaurentChart R K F) (e : K ≃ K')
+    (g : (K →₀ ℤ) →₀ R) :
+    (c.reindex e).coeff.symm (Finsupp.equivMapDomain (Finsupp.equivCongrLeft e) g) =
+      ⟨(c.coeff.symm g : F),
+        (c.range_toAlgHom_reindex e).symm ▸ (c.coeff.symm g).property⟩ := by
+  apply (c.reindex e).coeff.injective
+  rw [LinearEquiv.apply_symm_apply, coeff_reindex, LinearEquiv.apply_symm_apply]
 
 /-- Expand an inverse coordinate after its reindexing formula has been simplified. -/
 @[simp↓]
