@@ -1045,20 +1045,11 @@ zero. -/
     FiniteQuadraticModule :=
   FiniteQuadraticModule.kleinFour (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ))
     ((((n : ℚ) / 8 : ℚ)) : AddCircle (1 : ℚ)) (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ))
-    (by
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      exact ⟨2, by norm_num⟩)
+    (AddCircle.zsmul_coe_eq_zero (c := 2) (by norm_num))
     (by
       obtain ⟨k, hk⟩ := hn
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      refine ⟨k, ?_⟩
-      rw [hk]
-      push_cast
-      ring_nf
-      norm_cast)
-    (by
-      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
-      exact ⟨1, by norm_num⟩)
+      exact AddCircle.zsmul_coe_eq_zero (c := k) (by rw [hk]; push_cast; ring))
+    (AddCircle.zsmul_coe_eq_zero (c := 1) (by norm_num))
 
 /-- The first standard generator has quadratic value `1 / 2`. -/
 @[simp]
