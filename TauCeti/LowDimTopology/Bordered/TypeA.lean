@@ -26,16 +26,8 @@ generators `X` of `N` with coefficient matrix `δ`, `δ^k x` is the sum over the
 twist (`TauCeti.UngradedAInfinityRightModule.twistedDifferential`) of the module of row vectors
 over the matrix algebra (`TauCeti.UngradedAInfinityRightModule.matrix`) by the Maurer–Cartan
 element `δ` (`TauCeti.TypeDStructure.typeABoxDifferential`). This differential is defined on all
-row vectors `X → M`. The box tensor product over the idempotents is the submodule `M ⊗ N` of the
-row vectors with `m₂(φ x, ι (idem x)) = φ x` (`TauCeti.TypeDStructure.typeABoxTensor`), which is
-`TauCeti.TypeDStructure.boxTensor` for a differential module. When the `ι s` are cycles and the
-higher operations `m_{k+1}`, `k ≥ 2`, of `M` vanish whenever their last algebra input is one of
-the `ι s`, as for a module strictly unital over the ring of idempotents, the differential
-preserves `M ⊗ N` (`TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`). In the
-matrix module, `M ⊗ N` is the set of row vectors fixed by `m₂(·, 1_N)` along the identity
-morphism `1_N`, and the `A∞` relations along the cycle `1_N`, which the coefficient matrix absorbs
-(`δ 1_N = δ`), show that the twisted differential preserves it
-(`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential`).
+row vectors `X → M`; it preserves the submodule `M ⊗ N` over the idempotents when `M` is strictly
+unital (see below).
 
 The sum over `k` is infinite in general, and the box tensor product is only defined under a
 boundedness hypothesis. Two are treated here, over a ring of characteristic two; under either one
@@ -88,9 +80,23 @@ sum of `m_{i+j+k+3}(φ, δ…, F, δ'…, G, δ''…)` along the paths that step
 through `G`. This is the chain map identity for the morphism `fromCols F 0` from `N` into the
 mapping cone `TauCeti.TypeDStructure.cone` of `G`, read on its `N''`-components: the
 differential of `fromCols F 0` is `fromCols 0 (F * G)`, the `N'`-components of its induced map are
-`T_F`, and the `N''`-components of the differential of the cone see these through `T_G`. That
-identity morphisms induce identity maps up to homotopy is not established here; it needs a
-strictly unital module.
+`T_F`, and the `N''`-components of the differential of the cone see these through `T_G`.
+
+**Strictly unital modules.** The type `A` modules of bordered Floer theory are strictly unital
+(`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital`): their operations `m_{k+1}`, `k ≥ 2`,
+vanish when an input is an idempotent `ι s`. The box tensor product over the idempotents is then
+the submodule `M ⊗ N` of row vectors with `m₂(φ x, ι (idem x)) = φ x`
+(`TauCeti.TypeDStructure.typeABoxTensor`), the analogue of `TauCeti.TypeDStructure.boxTensor` for
+differential modules. When the idempotents are cycles, the box tensor differential, the maps
+induced by morphisms and the homotopies between composites preserve it, by the corresponding
+property of the twisted differentials of the matrix module
+(`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`).
+The identity morphism induces `φ ↦ (z ↦ m₂(φ z, ι (idem z)))`, since every longer path through
+the identity block puts an idempotent into a higher operation, so it induces the identity of
+`M ⊗ N`. Together with the composite homotopy this gives **homotopy invariance**: if `F` and `G`
+are homomorphisms with `∂H = F * G + id`, then `T_G ∘ T_F + id = ∂ L + L ∂` on `M ⊗ N` with
+`L = K + T_H`, so homotopy equivalent type `D` structures have homotopy equivalent box tensor
+products.
 
 **Morphisms of `A∞` modules.** A morphism `f` of `A∞` modules from `M` to `M'`
 (`TauCeti.UngradedAInfinityRightModuleHom`) induces the map
@@ -106,12 +112,13 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 * `TauCeti.TypeDStructure.typeABoxDifferential`: the box tensor differential of an `A∞` module
   with a type `D` structure, on row vectors.
-* `TauCeti.TypeDStructure.typeABoxTensor`, `TauCeti.TypeDStructure.typeABoxTensorDifferential`:
-  the box tensor product `M ⊗ N` over the idempotents and the differential restricted to it.
 * `TauCeti.TypeDStructure.typeABoxMap`: the map of box tensor products induced by a morphism of
   type `D` structures.
 * `TauCeti.TypeDStructure.typeABoxCompHomotopy`: the homotopy between the composite of two induced
   maps and the map induced by the composite morphism.
+* `TauCeti.TypeDStructure.typeABoxTensor`: the box tensor product `M ⊗ N` over the idempotents.
+* `TauCeti.TypeDStructure.typeABoxTensorDifferential`: the box tensor differential restricted to
+  `M ⊗ N`, for a strictly unital module.
 * `TauCeti.TypeDStructure.typeABoxMapOfHom`: the map of box tensor products induced by a morphism
   of `A∞` modules.
 
@@ -132,13 +139,6 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
   same namespace) assumes the iterates `δ^k` vanish for `k ≥ K`.
 * `TauCeti.TypeDStructure.typeABoxDifferential_toUngradedAInfinityRightModule`: for a differential
   module it is the box tensor differential `TauCeti.TypeDStructure.boxDifferential`.
-* `TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`: the differential preserves
-  `M ⊗ N` over the idempotents, and
-  `TauCeti.TypeDStructure.typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero` and
-  `TauCeti.TypeDStructure.typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded`: its
-  restriction squares to zero when the module, respectively the type `D` structure, is bounded.
-* `TauCeti.TypeDStructure.typeABoxTensor_toUngradedAInfinityRightModule`: for a differential
-  module, `M ⊗ N` is `TauCeti.TypeDStructure.boxTensor`.
 * `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_lt`: `∂' ∘ T_F + T_F ∘ ∂ = T_{∂F}`
   when the module, respectively the type `D` structures, are bounded.
@@ -157,6 +157,19 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
   homomorphisms induce composites of the induced chain maps up to homotopy,
   `T_G ∘ T_F + T_{F G} = ∂'' ∘ K + K ∘ ∂`, when the module, respectively the type `D` structures,
   are bounded.
+* `TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`,
+  `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor` and
+  `TauCeti.TypeDStructure.typeABoxCompHomotopy_mem_typeABoxTensor`: for a strictly unital module,
+  the differential, the induced maps and the composite homotopies preserve `M ⊗ N`.
+* `TauCeti.TypeDStructure.typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero`
+  and `TauCeti.TypeDStructure.typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded`:
+  the differential of `M ⊗ N` squares to zero under either boundedness hypothesis.
+* `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_act_eq_zero` and
+  `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_lt`: the identity morphism induces the
+  identity of `M ⊗ N`.
+* `TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_of_act_eq_zero` and
+  `TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_of_lt`: homotopy invariance of `M ⊗ N` in
+  the type `D` structure.
 * `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMapOfHom_of_isBounded`,
   `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMapOfHom_of_lt` and
   `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMapOfHom_of_act_eq_zero`: morphisms of `A∞`
@@ -173,8 +186,9 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  Chapter 2 (boundedness of `A∞` modules and type `D` structures, and the box tensor product,
-  equation (2.29), with its functoriality in morphisms of type `D` structures).
+  Chapter 2 (strictly unital `A∞` modules, boundedness of `A∞` modules and type `D` structures,
+  and the box tensor product, equation (2.29), with its functoriality in morphisms of type `D`
+  structures and its invariance under homotopy equivalence).
 -/
 
 public section
@@ -352,97 +366,6 @@ theorem typeABoxDifferential_toUngradedAInfinityRightModule [CharP R 2] [Module 
     simp [continuationMap_apply (R := R) (M := M) N.coeff]
   · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
     exact hM.toUngradedAInfinityRightModule_act_add_two n
-
-/-! ### The box tensor product over the idempotents -/
-
-/-- The **box tensor product** `M ⊠ N = M ⊗ N` over the idempotents, for an `A∞` right module `M`:
-the row vectors `φ : X → M` with `m₂(φ x, ι (idem x)) = φ x` for every generator `x`. For a
-differential module it is `TauCeti.TypeDStructure.boxTensor`
-(`TauCeti.TypeDStructure.typeABoxTensor_toUngradedAInfinityRightModule`). -/
-def typeABoxTensor (N : TypeDStructure d ι X) (Mm : UngradedAInfinityRightModule d M) :
-    Submodule R (X → M) where
-  carrier := {φ | ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x}
-  add_mem' {φ ψ} hφ hψ x := by simp [hφ x, hψ x]
-  zero_mem' := by simp
-  smul_mem' r φ hφ x := by simp [hφ x]
-
-omit [DecidableEq X] in
-@[simp]
-theorem mem_typeABoxTensor_iff {N : TypeDStructure d ι X} {Mm : UngradedAInfinityRightModule d M}
-    {φ : X → M} :
-    φ ∈ N.typeABoxTensor Mm ↔ ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x :=
-  Iff.rfl
-
-/-- `M ⊗ N` is the submodule of row vectors fixed by the operation `m₂(·, 1_N)` of the matrix
-module along the identity morphism `1_N` of `N`. -/
-theorem mem_typeABoxTensor_iff_matrixAct_idMorphism {N : TypeDStructure d ι X}
-    {Mm : UngradedAInfinityRightModule d M} {φ : X → M} :
-    φ ∈ N.typeABoxTensor Mm ↔ Mm.matrixAct X 1 (fun _ => N.idMorphism) φ = φ := by
-  simp only [mem_typeABoxTensor_iff, funext_iff, idMorphism_def,
-    UngradedAInfinityRightModule.matrixAct_one_diagonal_apply]
-
-/-- **The box tensor differential preserves `M ⊗ N`.** Over a ring of characteristic two, let the
-`ι s` be cycles, and let the operations `m_{n+1}`, `n ≥ 2`, of `M` vanish whenever their last
-algebra input is one of the `ι s`, as they do for a module strictly unital over the ring of
-idempotents. Then the box tensor differential sends `M ⊗ N` to itself. -/
-theorem typeABoxDifferential_mem_typeABoxTensor [CharP R 2] (N : TypeDStructure d ι X)
-    (Mm : UngradedAInfinityRightModule d M) (hι : ∀ s, d (ι s) = 0)
-    (hMι : ∀ s n (a : Fin (n + 1) → A), Mm.act (n + 2) (Fin.snoc a (ι s)) = 0) {φ : X → M}
-    (hφ : φ ∈ N.typeABoxTensor Mm) : N.typeABoxDifferential Mm φ ∈ N.typeABoxTensor Mm := by
-  rw [mem_typeABoxTensor_iff_matrixAct_idMorphism, ← UngradedAInfinityRightModule.matrix_act]
-    at hφ ⊢
-  rw [typeABoxDifferential_def]
-  -- In the matrix module, `1_N` is a cycle absorbed by the coefficient matrix: `δ * 1_N = δ`.
-  refine (Mm.matrix X).act_one_twistedDifferential (N.map_idMorphism hι) (fun _ F => ?_)
-    (mul_idMorphism N.coeff_mem_morphisms) hφ
-  rw [UngradedAInfinityRightModule.matrix_act, idMorphism_def]
-  exact Mm.matrixAct_snoc_diagonal_eq_zero X (fun x => hMι (N.idem x)) F
-
-/-- The box tensor differential restricted to `M ⊗ N`, under the hypotheses of
-`TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`. -/
-noncomputable def typeABoxTensorDifferential [CharP R 2] (N : TypeDStructure d ι X)
-    (Mm : UngradedAInfinityRightModule d M) (hι : ∀ s, d (ι s) = 0)
-    (hMι : ∀ s n (a : Fin (n + 1) → A), Mm.act (n + 2) (Fin.snoc a (ι s)) = 0) :
-    N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm :=
-  (N.typeABoxDifferential Mm).restrict fun _ hφ =>
-    N.typeABoxDifferential_mem_typeABoxTensor Mm hι hMι hφ
-
-@[simp]
-theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (N : TypeDStructure d ι X)
-    (Mm : UngradedAInfinityRightModule d M) (hι : ∀ s, d (ι s) = 0)
-    (hMι : ∀ s n (a : Fin (n + 1) → A), Mm.act (n + 2) (Fin.snoc a (ι s)) = 0)
-    (φ : N.typeABoxTensor Mm) :
-    (N.typeABoxTensorDifferential Mm hι hMι φ : X → M) = N.typeABoxDifferential Mm φ :=
-  (rfl)
-
-/-- **The differential of `M ⊠ N` over the idempotents squares to zero** when the module is
-bounded: its operations `m_{k+1}` vanish for `k ≥ K`. -/
-theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]
-    (N : TypeDStructure d ι X) (Mm : UngradedAInfinityRightModule d M) (hι : ∀ s, d (ι s) = 0)
-    (hMι : ∀ s n (a : Fin (n + 1) → A), Mm.act (n + 2) (Fin.snoc a (ι s)) = 0) {K : ℕ}
-    (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : N.typeABoxTensor Mm) :
-    N.typeABoxTensorDifferential Mm hι hMι (N.typeABoxTensorDifferential Mm hι hMι φ) = 0 :=
-  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero Mm hK φ)
-
-/-- **The differential of `M ⊠ N` over the idempotents squares to zero** when the type `D`
-structure is bounded. -/
-theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded [CharP R 2]
-    (N : TypeDStructure d ι X) (Mm : UngradedAInfinityRightModule d M) (hι : ∀ s, d (ι s) = 0)
-    (hMι : ∀ s n (a : Fin (n + 1) → A), Mm.act (n + 2) (Fin.snoc a (ι s)) = 0)
-    (hN : N.IsBounded) (φ : N.typeABoxTensor Mm) :
-    N.typeABoxTensorDifferential Mm hι hMι (N.typeABoxTensorDifferential Mm hι hMι φ) = 0 :=
-  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_isBounded Mm hN φ)
-
-omit [DecidableEq X] in
-/-- For a differential module, `M ⊗ N` over the idempotents is
-`TauCeti.TypeDStructure.boxTensor`. -/
-@[simp]
-theorem typeABoxTensor_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒᵖ M]
-    [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] {dM : M →ₗ[R] M}
-    (hM : IsUngradedDGRightModule d dM) (N : TypeDStructure d ι X) :
-    N.typeABoxTensor hM.toUngradedAInfinityRightModule = N.boxTensor M := by
-  ext φ
-  simp [IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
 
 /-! ### Maps induced by morphisms of type `D` structures -/
 
@@ -1057,6 +980,249 @@ theorem typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt [CharP R 2] (N : TypeD
     (hB₃.mono (K' := K) (by omega)) hF φ
 
 end Composition
+
+/-! ### Strictly unital modules -/
+
+section StrictUnit
+
+variable {X' X'' : Type*} [Fintype X'] [DecidableEq X'] [Fintype X''] [DecidableEq X'']
+
+omit [DecidableEq X] in
+variable (N : TypeDStructure d ι X) (Mm : UngradedAInfinityRightModule d M) in
+/-- The **box tensor product** `M ⊠ N = M ⊗ N` over the idempotents of a type `A` module `M` with
+a type `D` structure `N`, as the submodule of row vectors `φ : X → M`, standing for
+`∑ x, φ x ⊗ x`, with `m₂(φ x, ι (idem x)) = φ x`. For a strictly unital module this is preserved
+by the box tensor differential (`TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`)
+and by the maps induced by morphisms
+(`TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`); for a differential module it is
+`TauCeti.TypeDStructure.boxTensor`
+(`TauCeti.TypeDStructure.typeABoxTensor_toUngradedAInfinityRightModule`). -/
+def typeABoxTensor : Submodule R (X → M) where
+  carrier := {φ | ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x}
+  add_mem' {φ ψ} hφ hψ x := by simp [hφ x, hψ x]
+  zero_mem' := by simp
+  smul_mem' r φ hφ x := by simp [hφ x]
+
+omit [DecidableEq X] in
+@[simp]
+theorem mem_typeABoxTensor_iff {N : TypeDStructure d ι X} {Mm : UngradedAInfinityRightModule d M}
+    {φ : X → M} : φ ∈ N.typeABoxTensor Mm ↔ ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x :=
+  Iff.rfl
+
+omit [DecidableEq X] in
+/-- For a differential module, viewed as an `A∞` module, the box tensor product over the
+idempotents is `TauCeti.TypeDStructure.boxTensor`. -/
+theorem typeABoxTensor_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒᵖ M]
+    [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] {dM : M →ₗ[R] M}
+    (hM : IsUngradedDGRightModule d dM) (N : TypeDStructure d ι X) :
+    N.typeABoxTensor hM.toUngradedAInfinityRightModule = N.boxTensor M := by
+  ext φ
+  simp
+
+variable {N : TypeDStructure d ι X} {N' : TypeDStructure d ι X'} {N'' : TypeDStructure d ι X''}
+  {Mm : UngradedAInfinityRightModule d M}
+
+/-- **The box tensor differential preserves `M ⊗ N`** when `M` is strictly unital and the
+idempotents are cycles, over a ring of characteristic two. -/
+theorem typeABoxDifferential_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    N.typeABoxDifferential Mm φ ∈ N.typeABoxTensor Mm := fun z => by
+  rw [typeABoxDifferential_def]
+  exact hMm.act_one_matrix_twistedDifferential_apply X hι N.coeff_mul_idem hφ z
+
+variable (N Mm) in
+/-- The box tensor differential restricted to `M ⊗ N`, for a strictly unital module whose
+idempotents are cycles (`TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`). -/
+noncomputable def typeABoxTensorDifferential [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) : N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm :=
+  (N.typeABoxDifferential Mm).restrict fun _ hφ =>
+    typeABoxDifferential_mem_typeABoxTensor hMm hι hφ
+
+@[simp]
+theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) (φ : N.typeABoxTensor Mm) :
+    (N.typeABoxTensorDifferential Mm hMm hι φ : X → M) = N.typeABoxDifferential Mm φ :=
+  (rfl)
+
+/-- **The differential of `M ⊠ N` over the idempotents squares to zero** when the module is
+bounded: its operations `m_{k+1}` vanish for `k ≥ K`. -/
+theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) {K : ℕ}
+    (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : N.typeABoxTensor Mm) :
+    N.typeABoxTensorDifferential Mm hMm hι (N.typeABoxTensorDifferential Mm hMm hι φ) = 0 :=
+  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero Mm hK φ)
+
+/-- **The differential of `M ⊠ N` over the idempotents squares to zero** when the type `D`
+structure is bounded. -/
+theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) (hN : N.IsBounded)
+    (φ : N.typeABoxTensor Mm) :
+    N.typeABoxTensorDifferential Mm hMm hι (N.typeABoxTensorDifferential Mm hMm hι φ) = 0 :=
+  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_isBounded Mm hN φ)
+
+/-- **A morphism induces a map of box tensor products over the idempotents** when `M` is strictly
+unital and the idempotents are cycles, over a ring of characteristic two: `T_F` sends `M ⊗ N` into
+`M ⊗ N'`. -/
+theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} (hF : F ∈ morphisms N N') {φ : X → M}
+    (hφ : φ ∈ N.typeABoxTensor Mm) : typeABoxMap N N' Mm F φ ∈ N'.typeABoxTensor Mm := fun z => by
+  have hF' (x : X) (y : X') : F x y * ι (N'.idem y) = F x y := (mem_morphisms_iff.mp hF x y).2
+  rw [typeABoxMap_apply]
+  refine hMm.act_one_matrix_twistedDifferential_apply (X ⊕ X') hι (e := Sum.elim N.idem N'.idem)
+    (fun a b => ?_) (fun a => ?_) (Sum.inr z)
+  · rcases a with x | x <;> rcases b with y | y <;>
+      simp [N.coeff_mul_idem, N'.coeff_mul_idem, hF']
+  · rcases a with x | x
+    · exact hφ x
+    · simp
+
+/-- **The homotopy between composites preserves the box tensor products over the idempotents**
+when `M` is strictly unital and the idempotents are cycles, over a ring of characteristic two:
+for morphisms `F` from `N` to `N'` and `G` from `N'` to `N''`,
+`TauCeti.TypeDStructure.typeABoxCompHomotopy` sends `M ⊗ N` into `M ⊗ N''`. -/
+theorem typeABoxCompHomotopy_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} {G : Matrix X' X'' A} (hF : F ∈ morphisms N N')
+    (hG : G ∈ morphisms N' N'') {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxCompHomotopy N N' N'' Mm F G φ ∈ N''.typeABoxTensor Mm := fun z => by
+  have hF' (x : X) (y : X') : F x y * ι (N'.idem y) = F x y := (mem_morphisms_iff.mp hF x y).2
+  have hG' (x : X') (y : X'') : G x y * ι (N''.idem y) = G x y :=
+    (mem_morphisms_iff.mp hG x y).2
+  rw [typeABoxCompHomotopy_apply]
+  refine hMm.act_one_matrix_twistedDifferential_apply (X ⊕ (X' ⊕ X'')) hι
+    (e := Sum.elim N.idem (Sum.elim N'.idem N''.idem)) (fun a b => ?_) (fun a => ?_)
+    (Sum.inr (Sum.inr z))
+  · rcases a with x | x | x <;> rcases b with y | y | y <;>
+      simp [N.coeff_mul_idem, N'.coeff_mul_idem, N''.coeff_mul_idem, hF', hG']
+  · rcases a with x | x | x
+    · exact hφ x
+    · simp
+    · simp
+
+/-- The sum over paths computing the map induced by the identity morphism: for a strictly unital
+module only the paths of length one survive, and give `m₂(φ z, ι (idem z))`. -/
+private theorem sum_typeABoxMap_idMorphism (hMm : Mm.IsStrictlyUnital ι) {K : ℕ} (hK : 2 ≤ K)
+    (φ : X → M) (z : X) :
+    ∑ n ∈ range K, ∑ l : Fin n, ∑ x : Fin (n + 1) → X ⊕ X,
+      (if x (Fin.last n) = Sum.inr z then
+        Mm.act n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N.coeff) l
+          (Matrix.fromBlocks 0 N.idMorphism 0 0) t (x t.castSucc) (x t.succ)) (Sum.elim φ 0 (x 0))
+      else 0) = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  rw [Finset.sum_eq_single 1]
+  · simp only [Fin.sum_univ_one, Function.update_eq_const_of_subsingleton]
+    rw [← (piFinTwoEquiv fun _ => X ⊕ X).symm.sum_comp, Fintype.sum_prod_type,
+      Fintype.sum_sum_type]
+    simp only [Fin.fin_one_eq_zero]
+    suffices ∑ y, Mm.act 1 (fun _ => if y = z then ι (N.idem y) else 0) (φ y) =
+        Mm.act 1 (fun _ => ι (N.idem z)) (φ z) by
+      simpa [Matrix.fromBlocks_apply₁₂, idMorphism_apply] using this
+    -- Only the path through `z` survives.
+    rw [Finset.sum_eq_single z (fun y _ hy => by
+      rw [(Mm.act 1).map_coord_zero 0 (by simp [hy]), LinearMap.zero_apply]) (by simp)]
+    simp
+  · intro n _ hn
+    refine Finset.sum_eq_zero fun l _ => Finset.sum_eq_zero fun x _ => ?_
+    split_ifs
+    · have hn2 : 2 ≤ n := by
+        rcases n with _ | _ | n
+        · exact l.elim0
+        · exact absurd rfl hn
+        · omega
+      -- The entry of the identity block at the slot `l` is `0` or an idempotent.
+      rcases ha : x l.castSucc with a | a <;> rcases hb : x l.succ with b | b
+      · rw [(Mm.act n).map_coord_zero l (by simp [ha, hb]), LinearMap.zero_apply]
+      · by_cases hab : a = b
+        · subst hab
+          rw [hMm.act_eq_zero hn2 (i := l) (s := N.idem a) (by simp [ha, hb]),
+            LinearMap.zero_apply]
+        · rw [(Mm.act n).map_coord_zero l (by simp [ha, hb, hab]), LinearMap.zero_apply]
+      · rw [(Mm.act n).map_coord_zero l (by simp [ha, hb]), LinearMap.zero_apply]
+      · rw [(Mm.act n).map_coord_zero l (by simp [ha, hb]), LinearMap.zero_apply]
+    · rfl
+  · intro h
+    exact absurd (Finset.mem_range.mpr (by omega)) h
+
+/-- **The identity morphism induces the action of the idempotents**, for a strictly unital
+bounded module: `T_{id} φ` has `z`-component `m₂(φ z, ι (idem z))`. -/
+theorem typeABoxMap_idMorphism_apply_of_act_eq_zero (hMm : Mm.IsStrictlyUnital ι) {K : ℕ}
+    (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : X → M) (z : X) :
+    typeABoxMap N N Mm N.idMorphism φ z = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  rw [typeABoxMap_apply_eq_sum_of_act_eq_zero N N Mm _ (K := K + 2) fun n hn => hK n (by omega)]
+  exact sum_typeABoxMap_idMorphism hMm (by omega) φ z
+
+/-- **The identity morphism of a bounded type `D` structure induces the action of the
+idempotents**, for a strictly unital module: `T_{id} φ` has `z`-component
+`m₂(φ z, ι (idem z))`. -/
+theorem typeABoxMap_idMorphism_apply_of_lt (hMm : Mm.IsStrictlyUnital ι) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (φ : X → M) (z : X) :
+    typeABoxMap N N Mm N.idMorphism φ z = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  rw [typeABoxMap_apply_eq_sum_of_lt N N Mm h hh h hh]
+  exact sum_typeABoxMap_idMorphism hMm (by omega) φ z
+
+/-- **The identity morphism induces the identity of `M ⊗ N`**, for a strictly unital bounded
+module. -/
+theorem typeABoxMap_idMorphism_of_act_eq_zero (hMm : Mm.IsStrictlyUnital ι) {K : ℕ}
+    (hK : ∀ n, K ≤ n → Mm.act n = 0) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N N Mm N.idMorphism φ = φ :=
+  funext fun z => (typeABoxMap_idMorphism_apply_of_act_eq_zero hMm hK φ z).trans (hφ z)
+
+/-- **The identity morphism of a bounded type `D` structure induces the identity of `M ⊗ N`**, for
+a strictly unital module. -/
+theorem typeABoxMap_idMorphism_of_lt (hMm : Mm.IsStrictlyUnital ι) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N N Mm N.idMorphism φ = φ :=
+  funext fun z => (typeABoxMap_idMorphism_apply_of_lt hMm h hh φ z).trans (hφ z)
+
+/-- **Homotopy invariance of the box tensor product with a bounded module.** Over a ring of
+characteristic two, let `M` be strictly unital with operations `m_{k+1}` vanishing for `k ≥ K`.
+Let `F` from `N` to `N'` and `G` from `N'` to `N` be homomorphisms of type `D` structures whose
+composite `F * G` is homotopic to the identity, `∂H = F * G + id`. Then on `M ⊗ N`,
+`T_G ∘ T_F + id = ∂ L + L ∂` with `L = K + T_H`, where `K` is
+`TauCeti.TypeDStructure.typeABoxCompHomotopy`. When the idempotents are cycles and `F` and `H` are
+morphisms, `L` preserves `M ⊗ N` (`TauCeti.TypeDStructure.typeABoxCompHomotopy_mem_typeABoxTensor`
+and `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`), so with the symmetric statement for
+`G * F` a homotopy equivalence of type `D` structures induces a homotopy equivalence of box tensor
+products over the idempotents. -/
+theorem typeABoxMap_typeABoxMap_add_of_act_eq_zero [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
+    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) {F : Matrix X X' A} {G : Matrix X' X A}
+    {H : Matrix X X A} (hF : morphismDifferential N N' F = 0) (hG : G ∈ morphisms N' N)
+    (hG' : morphismDifferential N' N G = 0)
+    (hH : morphismDifferential N N H = F * G + N.idMorphism) {φ : X → M}
+    (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ =
+      N.typeABoxDifferential Mm (typeABoxCompHomotopy N N' N Mm F G φ + typeABoxMap N N Mm H φ) +
+        (typeABoxCompHomotopy N N' N Mm F G (N.typeABoxDifferential Mm φ) +
+          typeABoxMap N N Mm H (N.typeABoxDifferential Mm φ)) := by
+  have h₂ := typeABoxMap_add_typeABoxMap_of_act_eq_zero N N Mm hK hH φ
+  rw [typeABoxMap_idMorphism_of_act_eq_zero hMm hK hφ] at h₂
+  -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
+  exact add_eq_map_add_add_of_charTwo R _
+    (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero N N' N Mm hK hF hG hG' φ) h₂
+
+/-- **Homotopy invariance of the box tensor product of bounded type `D` structures.** Over a ring
+of characteristic two, let `M` be strictly unital, and let heights on the generators of `N` and
+`N'` strictly increase along their nonzero coefficients. Let `F` from `N` to `N'` and `G` from `N'`
+to `N` be homomorphisms of type `D` structures with `∂H = F * G + id`. Then on `M ⊗ N`,
+`T_G ∘ T_F + id = ∂ L + L ∂` with `L = K + T_H`, where `K` is
+`TauCeti.TypeDStructure.typeABoxCompHomotopy`; see
+`TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_of_act_eq_zero`. -/
+theorem typeABoxMap_typeABoxMap_add_of_lt [CharP R 2] (hMm : Mm.IsStrictlyUnital ι) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (h' : X' → ℕ)
+    (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) {F : Matrix X X' A} {G : Matrix X' X A}
+    {H : Matrix X X A} (hF : morphismDifferential N N' F = 0) (hG : G ∈ morphisms N' N)
+    (hG' : morphismDifferential N' N G = 0)
+    (hH : morphismDifferential N N H = F * G + N.idMorphism) {φ : X → M}
+    (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N' N Mm G (typeABoxMap N N' Mm F φ) + φ =
+      N.typeABoxDifferential Mm (typeABoxCompHomotopy N N' N Mm F G φ + typeABoxMap N N Mm H φ) +
+        (typeABoxCompHomotopy N N' N Mm F G (N.typeABoxDifferential Mm φ) +
+          typeABoxMap N N Mm H (N.typeABoxDifferential Mm φ)) := by
+  have h₂ := typeABoxMap_add_typeABoxMap_of_lt N N Mm h hh h hh hH φ
+  rw [typeABoxMap_idMorphism_of_lt hMm h hh hφ] at h₂
+  -- Add `T_G ∘ T_F + T_{F G} = ∂ K + K ∂` and `T_{F G} + id = ∂ T_H + T_H ∂`.
+  exact add_eq_map_add_add_of_charTwo R _
+    (typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt N N' N Mm h hh h' hh' h hh hF hG hG' φ) h₂
+
+end StrictUnit
 
 end Morphism
 
