@@ -65,13 +65,19 @@ namespace TopPair
 
 open TauCeti
 
-variable (k : Type u) [CommRing k] (P Q : TopPair.{u})
+variable (k : Type u) [Ring k] (P Q : TopPair.{u})
 
 /-- A point of `X × Y` lies in the images of both `A × Y` and `X × B` exactly when it lies in
 the image of `A × B`. -/
 private theorem range_inter_range :
     Set.range (Hom.fst (prodLeftMap (𝟙 Q) P.map)) ∩ Set.range (Q.prodLeft P.fst).map =
       Set.range (Hom.fst (prodLeftMap (𝟙 Q) P.map) ∘ (Q.prodLeft P.snd).map) := by
+  -- `prodLeft` and `prodLeftMap` are abbreviations for `TopPair.of (X ◁ P.map)` and
+  -- `TopPair.ofHom (g ⊗ₘ Hom.fst f) _ _`, and on points `◁` and `⊗ₘ` in `TopCat` are `Prod.map`
+  -- by definition (`TopCat.whiskerLeft_apply`, `TopCat.tensor_apply`). Mathlib has no evaluation
+  -- lemmas for the maps of `TopPair.of` and `TopPair.ofHom`, which are built with
+  -- `MorphismProperty.Arrow.mk` and `MorphismProperty.Arrow.homMk`, so `simp` cannot reach those
+  -- lemmas, and we unfold the three maps to `Prod.map` directly.
   change Set.range (Prod.map P.map id) ∩ Set.range (Prod.map id Q.map) =
     Set.range (Prod.map P.map Q.map)
   simp only [Set.range_prodMap, Set.range_id, Set.prod_inter_prod, Set.inter_univ, Set.univ_inter]
