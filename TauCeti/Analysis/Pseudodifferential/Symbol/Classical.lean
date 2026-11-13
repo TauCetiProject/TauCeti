@@ -84,6 +84,10 @@ and proves:
   `a(x, ξ)` is invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. This bound is
   what the derivative estimates of the inverse symbol, and the parametrix built from it, start
   from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general.
+  Ellipticity does not see terms of order `m - 1`
+  (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
+  unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
+  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
 
 ## References
 
@@ -1009,6 +1013,34 @@ theorem IsElliptic.comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {
     (ha : a.IsElliptic) : (b.comp a).IsElliptic := by
   rw [isElliptic_def, principal_comp]
   exact (isElliptic_def.1 hb).comp (isElliptic_def.1 ha)
+
+/-- Between Banach spaces, a classical symbol is elliptic exactly when its principal symbol is
+bijective at every position and every nonzero frequency. -/
+theorem isElliptic_iff_bijective [CompleteSpace V] [CompleteSpace W]
+    {a : ClassicalSymbol n V W m} :
+    a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → Function.Bijective (a.principal.coefficient (x, ξ)) :=
+  HomogeneousSymbol.isElliptic_iff_bijective
+
+/-- Adding a classical symbol with vanishing principal symbol, that is, of order `m - 1`
+(`TauCeti.ClassicalSymbol.principal_eq_zero_iff`), does not change ellipticity. -/
+theorem isElliptic_add_iff {a b : ClassicalSymbol n V W m} (hb : b.principal = 0) :
+    (a + b).IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_add, hb, add_zero, isElliptic_def]
+
+/-- **The inverse principal symbol.** The principal symbol `a_m` of an elliptic classical symbol of
+order `m` has a unique two-sided inverse at every nonzero frequency that is a homogeneous symbol of
+degree `-m`, namely `TauCeti.HomogeneousSymbol.inverse`. -/
+theorem existsUnique_inversePrincipalSymbol [CompleteSpace V] {a : ClassicalSymbol n V W m}
+    (ha : a.IsElliptic) :
+    ∃! b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W V (-m),
+      ∀ x ξ, ξ ≠ 0 →
+        b.coefficient (x, ξ) ∘L a.principal.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V ∧
+          a.principal.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = ContinuousLinearMap.id ℂ W :=
+  have hp := isElliptic_def.1 ha
+  ⟨a.principal.inverse hp, fun _ _ hξ => ⟨coefficient_inverse_comp_coefficient _ hp hξ,
+    coefficient_comp_coefficient_inverse _ hp hξ⟩, fun b hb =>
+      eq_inverse_of_comp_eq_id_left _ hp <| ext_of_ne_zero fun x ξ hξ => by
+        simpa [hξ] using (hb x ξ hξ).1⟩
 
 /-- **Perturbation of an inverse bounded by `C₀ ⟨ξ⟩^(-m)`.** If `‖A⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)` and
 `‖B - A‖ ≤ C₁ ⟨ξ⟩^(m - 1)` at a frequency of norm at least `R ≥ 2 C₀ C₁`, `R > 0`, then

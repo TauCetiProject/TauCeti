@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.PUnit
+public import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
 # Graphs of groups
@@ -31,6 +32,8 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
 
 * `TauCeti.GraphOfGroups`: a graph of groups over a Serre graph.
 * `TauCeti.GraphOfGroups.α`: the boundary monomorphism `α_e : A_e →* A_{src e}`.
+* `TauCeti.GraphOfGroups.αArrow`, `TauCeti.GraphOfGroups.ωArrow`: the boundary monomorphisms of
+  a dart `e : a ⟶ b` of the quiver of `Γ`, with values in `A_a` and `A_b`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
 * `TauCeti.GraphOfGroups.trivial`: the graph of groups with trivial vertex and edge groups.
@@ -108,6 +111,107 @@ theorem α_injective (e : Γ.E) : Function.Injective (𝔸.α e) := by
     𝔸.ω (Γ.rev e) c = MulEquiv.cast (M := 𝔸.vertexGroup) (Γ.tgt_rev e).symm
       (𝔸.α e (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e) c)) := by
   simp only [α_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
+
+section Arrow
+
+variable {a b : Γ.V}
+
+/-- The boundary monomorphism `α_e : A_e →* A_a` of a dart `e : a ⟶ b` of the quiver of `Γ`:
+the map `α` of the underlying dart, read in `A_a` through `src e = a`. -/
+def αArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup a :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).toMonoidHom.comp (𝔸.α e.1)
+
+/-- The boundary monomorphism `ω_e : A_e →* A_b` of a dart `e : a ⟶ b` of the quiver of `Γ`:
+the map `ω` of the underlying dart, read in `A_b` through `tgt e = b`. -/
+def ωArrow (e : a ⟶ b) : 𝔸.edgeGroup (Γ.toGeomEdge e.1) →* 𝔸.vertexGroup b :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).toMonoidHom.comp (𝔸.ω e.1)
+
+theorem αArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    𝔸.αArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1 (𝔸.α e.1 c) :=
+  (rfl)
+
+theorem ωArrow_apply (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    𝔸.ωArrow e c = MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2 (𝔸.ω e.1 c) :=
+  (rfl)
+
+@[simp] theorem αArrow_mk (e : Γ.E) : 𝔸.αArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) = 𝔸.α e :=
+  (rfl)
+
+@[simp] theorem ωArrow_mk (e : Γ.E) : 𝔸.ωArrow (⟨e, rfl, rfl⟩ : Γ.src e ⟶ Γ.tgt e) = 𝔸.ω e :=
+  (rfl)
+
+theorem αArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.αArrow e) :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.1).injective.comp (𝔸.α_injective e.1)
+
+theorem ωArrow_injective (e : a ⟶ b) : Function.Injective (𝔸.ωArrow e) :=
+  (MulEquiv.cast (M := 𝔸.vertexGroup) e.2.2).injective.comp (𝔸.ω_injective e.1)
+
+/-- The map `α` of an arrow `e'` whose dart is the reverse of the dart of `e` is `ω_e`. -/
+private theorem αArrow_eq_ωArrow_of_val_eq_rev (e' : b ⟶ a) (e : a ⟶ b) (h : e'.1 = Γ.rev e.1)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e'.1)) :
+    𝔸.αArrow e' c =
+      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by rw [h, Γ.toGeomEdge_rev]) c) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  obtain ⟨f, h₁, h₂⟩ := e'
+  obtain rfl : f = Γ.rev e := h
+  rw [αArrow_apply, ωArrow_mk, α_rev_apply]
+  -- Only the cast along `h₁ : src (rev e) = tgt e` is left. It is the identity because `tgt e`
+  -- is defined as `src (rev e)` (`SerreGraph.tgt` is exposed for this); the statement of
+  -- `α_rev_apply` relies on the same definitional equality.
+  rfl
+
+/-- The map `α` of a reversed dart is `ω` of the dart. -/
+theorem αArrow_reverse_apply (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    𝔸.αArrow (Quiver.reverse e) c =
+      𝔸.ωArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) :=
+  𝔸.αArrow_eq_ωArrow_of_val_eq_rev _ e (Γ.reverse_val e) c
+
+/-- The map `ω` of a reversed dart is `α` of the dart. -/
+theorem ωArrow_reverse_apply (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1)) :
+    𝔸.ωArrow (Quiver.reverse e) c =
+      𝔸.αArrow e (MulEquiv.cast (M := 𝔸.edgeGroup) (by simp) c) := by
+  rw [𝔸.αArrow_eq_ωArrow_of_val_eq_rev e (Quiver.reverse e) (by simp)]
+  simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
+
+/-- An edge group element `c` of a dart `e`, read as an element `c'` of the edge group of
+`rev e`: `α_{rev e}(c') = ω_e(c)` and `ω_{rev e}(c') = α_e(c)`. -/
+theorem exists_αArrow_reverse_eq_and_ωArrow_reverse_eq (e : a ⟶ b)
+    (c : 𝔸.edgeGroup (Γ.toGeomEdge e.1)) :
+    ∃ c' : 𝔸.edgeGroup (Γ.toGeomEdge (Quiver.reverse e).1),
+      𝔸.αArrow (Quiver.reverse e) c' = 𝔸.ωArrow e c ∧
+        𝔸.ωArrow (Quiver.reverse e) c' = 𝔸.αArrow e c :=
+  ⟨(MulEquiv.cast (M := 𝔸.edgeGroup) (by simp)).symm c, by
+    rw [αArrow_reverse_apply, MulEquiv.apply_symm_apply], by
+    rw [ωArrow_reverse_apply, MulEquiv.apply_symm_apply]⟩
+
+@[simp] theorem range_αArrow_reverse (e : a ⟶ b) :
+    (𝔸.αArrow (Quiver.reverse e)).range = (𝔸.ωArrow e).range := by
+  ext g
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (𝔸.αArrow_reverse_apply e c).symm.trans hc⟩, fun ⟨c, hc⟩ ↦ ?_⟩
+  obtain ⟨c', hc', -⟩ := 𝔸.exists_αArrow_reverse_eq_and_ωArrow_reverse_eq e c
+  exact ⟨c', hc'.trans hc⟩
+
+@[simp] theorem range_ωArrow_reverse (e : a ⟶ b) :
+    (𝔸.ωArrow (Quiver.reverse e)).range = (𝔸.αArrow e).range := by
+  rw [← 𝔸.range_αArrow_reverse, Quiver.reverse_reverse]
+
+@[simp] theorem range_αArrow_dart (e : Γ.E) : (𝔸.αArrow (Γ.dart e)).range = (𝔸.α e).range := by
+  rw [Γ.dart_def, αArrow_mk]
+
+@[simp] theorem range_ωArrow_dart (e : Γ.E) : (𝔸.ωArrow (Γ.dart e)).range = (𝔸.ω e).range := by
+  rw [Γ.dart_def, ωArrow_mk]
+
+/-- At a vertex where a dart `e'` is followed by its reverse `e`, the image of `ω_{e'}` is the
+image of `α_e`. -/
+theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (h : e'.1 = Γ.rev e.1) :
+    (𝔸.ωArrow e').range = (𝔸.αArrow e).range := by
+  obtain rfl := Γ.src_eq_tgt_of_val_eq_rev h
+  obtain rfl := Γ.eq_reverse_of_val_eq_rev h
+  exact 𝔸.range_ωArrow_reverse e
+
+end Arrow
 
 /-- The graph of groups of an amalgamated product `A ∗_C B`: the segment with vertex groups `A`
 at `false` and `B` at `true`, edge group `C`, and monomorphisms `f : C →* A` and `g : C →* B`.
