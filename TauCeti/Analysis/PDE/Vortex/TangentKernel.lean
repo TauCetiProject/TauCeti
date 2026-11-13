@@ -16,6 +16,7 @@ import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.ZeroMode
+import Mathlib.Algebra.Polynomial.Basis
 
 /-!
 # Kernel elements of the linearized vortex operator with prescribed principal parts
@@ -337,32 +338,6 @@ theorem exists_gaugeFixedOperator_eq_zero_and_principalPart_eq
 
 /-! ### `2 m` independent kernel elements at a framed vortex -/
 
-/-- The polynomial `∑ (t (j, 0) + t (j, 1) i) X ^ j`, `j < m`, vanishes only for `t = 0`. -/
-private theorem eq_zero_of_sum_C_mul_X_pow_eq_zero {m : ℕ} {t : Fin m × Fin 2 → ℝ}
-    (ht : ∑ i, Polynomial.C ((t i : ℂ) * ![1, I] i.2) * Polynomial.X ^ (i.1 : ℕ) = 0) :
-    t = 0 := by
-  funext i
-  -- The coefficient of `X ^ i.1` is `t (i.1, 0) + t (i.1, 1) i`.
-  have hcoeff : ∑ k : Fin m × Fin 2,
-      (if (i.1 : ℕ) = (k.1 : ℕ) then (t k : ℂ) * ![1, I] k.2 else 0) = 0 := by
-    have := congrArg (fun p : Polynomial ℂ ↦ p.coeff (i.1 : ℕ)) ht
-    simpa only [Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow,
-      Polynomial.coeff_zero] using this
-  rw [Fintype.sum_prod_type, Finset.sum_eq_single i.1
-    (fun k _ hk ↦ Finset.sum_eq_zero fun b _ ↦
-      ite_eq_right_iff.2 fun h ↦ absurd (Fin.ext h.symm) hk)
-    (by simp),
-    Fin.sum_univ_two] at hcoeff
-  simp only [ite_true, Matrix.cons_val_zero, Matrix.cons_val_one, mul_one] at hcoeff
-  have hre := congrArg re hcoeff
-  have him := congrArg im hcoeff
-  simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, I_im, zero_re, add_im, mul_im,
-    zero_im] at hre him
-  obtain ⟨j, b⟩ := i
-  fin_cases b
-  · simpa using hre
-  · simpa using him
-
 /-- **`2 m` independent kernel elements at a framed vortex.** Let `x` be a smooth field satisfying
 the holomorphicity rows of the vortex equation, with the degree-`m` end framing
 `α(z) (z / |z|)⁻ᵐ → 1`. Then there are `2 m` real-linearly independent smooth square-integrable
@@ -421,7 +396,19 @@ theorem exists_linearIndependent_gaugeFixedOperator_eq_zero {m : ℕ} (hx : Cont
         (continuous_finsetSum _ fun k _ ↦ continuous_const.mul (hG k).continuous).continuousAt
         continuousAt_const ((Polynomial.differentiable q).analyticAt a) analyticAt_const
         (Eventually.of_forall fun w ↦ by simpa using hsec w) hj
-  exact congrFun (eq_zero_of_sum_C_mul_X_pow_eq_zero hq0) i
+  -- The polynomials `c X ^ j` are real-linearly independent, as part of the basis
+  -- `{X ^ j, i X ^ j}` of `ℂ[X]` over `ℝ`.
+  have hli : LinearIndependent ℝ fun i : Fin m × Fin 2 ↦
+      c i.2 • (Polynomial.X : Polynomial ℂ) ^ (i.1 : ℕ) := by
+    convert (Complex.basisOneI.smulTower' (Polynomial.basisMonomials ℂ)).linearIndependent.comp
+      (fun i : Fin m × Fin 2 ↦ ((i.1 : ℕ), i.2))
+      (fun i k h ↦ Prod.ext (Fin.ext (Prod.ext_iff.1 h).1) (Prod.ext_iff.1 h).2) using 1
+    funext i
+    simp [Module.Basis.smulTower'_apply, c, Polynomial.monomial_one_right_eq_X_pow]
+  refine Fintype.linearIndependent_iff.1 hli t ?_ i
+  rw [← hq0]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← smul_assoc, Complex.real_smul, Polynomial.smul_eq_C_mul]
 
 end TauCeti.Vortex
 

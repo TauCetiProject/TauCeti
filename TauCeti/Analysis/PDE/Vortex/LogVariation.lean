@@ -35,8 +35,6 @@ equation `Δη = P η`.
 * `logVariation_apply_zero_eq_zero_of_differentiableAt`,
   `logVariation_apply_one_eq_zero_of_differentiableAt`: the connection part vanishes where `η` is
   holomorphic.
-* `sectionVariation`, `sectionValue_sectionVariation`, `contDiff_sectionVariation`: the
-  variation of the section alone, with no connection part.
 * `memLp_logVariation`: it is square integrable when `η` and `Dη` are, along a field with bounded
   section components.
 * `memLp_logVariation_of_mem_realSobolevFunctions`: square integrability for a `C¹` function
@@ -134,49 +132,6 @@ theorem logVariation_apply_three (x : ℂ → EuclideanSpace ℝ (Fin 4)) (η : 
 theorem sectionValue_logVariation (x : ℂ → EuclideanSpace ℝ (Fin 4)) (η : ℂ → ℂ) (z : ℂ) :
     sectionValue (logVariation x η) z = sectionValue x z * η z := by
   apply Complex.ext <;> simp [sectionValue_apply] <;> ring
-
-/-- The **variation of the section alone** by `F`: zero connection variation and section
-variation `δα = F`, in the real coordinates of `TauCeti.Vortex.equation`. -/
-def sectionVariation (F : ℂ → ℂ) (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
-  !₂[0, 0, (F z).re / 2, (F z).im / 2]
-
-/-- The first connection component of the variation of the section alone vanishes. -/
-@[simp]
-theorem sectionVariation_apply_zero (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 0 = 0 :=
-  (rfl)
-
-/-- The second connection component of the variation of the section alone vanishes. -/
-@[simp]
-theorem sectionVariation_apply_one (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 1 = 0 :=
-  (rfl)
-
-/-- The real section component of the variation of the section alone by `F`. -/
-@[simp]
-theorem sectionVariation_apply_two (F : ℂ → ℂ) (z : ℂ) :
-    sectionVariation F z 2 = (F z).re / 2 :=
-  (rfl)
-
-/-- The imaginary section component of the variation of the section alone by `F`. -/
-@[simp]
-theorem sectionVariation_apply_three (F : ℂ → ℂ) (z : ℂ) :
-    sectionVariation F z 3 = (F z).im / 2 :=
-  (rfl)
-
-/-- The section variation of `sectionVariation F` is `F`. -/
-@[simp]
-theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
-    sectionValue (sectionVariation F) z = F z := by
-  apply Complex.ext <;> simp [sectionValue_apply] <;> ring
-
-/-- The variation of the section alone by a `Cⁿ` function is `Cⁿ`. -/
-theorem contDiff_sectionVariation {F : ℂ → ℂ} {n : WithTop ℕ∞} (hF : ContDiff ℝ n F) :
-    ContDiff ℝ n (sectionVariation F) := by
-  refine contDiff_euclidean.2 fun i ↦ ?_
-  fin_cases i
-  · simpa [sectionVariation] using contDiff_const
-  · simpa [sectionVariation] using contDiff_const
-  · simpa [sectionVariation] using (reCLM.contDiff.comp hF).div_const 2
-  · simpa [sectionVariation] using (imCLM.contDiff.comp hF).div_const 2
 
 /-- The connection variation of the logarithmic variation of a differentiable `η` is
 `δb₁ + i δb₂ = 2 i ∂bar η`. -/
