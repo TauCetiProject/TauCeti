@@ -669,13 +669,14 @@ private theorem tendsto_integral_slicePairing (hSc : Continuous S)
 
 /-- **Decaying solutions of the stationary cylinder equation vanish.** Let each `J_t` be
 `ω`-compatible and depend continuously on `t`, and let each `S_t` be infinitesimally
-symplectic. A `C²` solution `ξ` of `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ) = 0` of period one in `t`,
-which tends to zero together with `∂t ξ` as `|s| → ∞`, uniformly in `t`, is identically zero.
-No nondegeneracy of the orbit is needed for this injectivity statement. -/
+symplectic. A `C²` map `ξ` of period one in `t` with `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ) = 0` on
+`ℝ × [0, 1]`, which tends to zero together with `∂t ξ` as `|s| → ∞`, uniformly in `t`, is
+identically zero. No nondegeneracy of the orbit is needed for this injectivity statement. -/
 theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible (J t))
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hξ : ContDiff ℝ 2 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hD : ∀ z, stationaryCylinderOperator J S ξ z = 0)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
+    (hD : EqOn (stationaryCylinderOperator J S ξ) 0 (univ ×ˢ Icc 0 1))
     (hdecay : Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     ξ = 0 := by
@@ -698,7 +699,8 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
   have hid {a b : ℝ} (hab : a ≤ b) : ∫ z in Icc a b ×ˢ Icc 0 1, f z = Φ a - Φ b := by
     have h := setIntegral_associatedBilinForm_stationaryCylinderOperator
       (fun t ↦ (hJ t).invariant) hJc hS hSc hξ hper hab
-    simp only [hD, map_zero, integral_zero] at h
+    rw [setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
+      rw [hD ⟨mem_univ _, hz.2⟩, Pi.zero_apply, map_zero]] at h
     simp only [f, Φ]
     linarith
   have hanti {a b : ℝ} (hab : a ≤ b) : Φ b ≤ Φ a := by
