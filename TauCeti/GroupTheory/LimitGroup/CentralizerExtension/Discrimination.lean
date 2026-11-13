@@ -272,8 +272,8 @@ theorem isDiscriminatedBy (hBP : IsBP G) (hG : IsCSA G) (hu : u ≠ 1) :
     exact hV x hx v hv
   choose! N hN using fun x (hx : x ∈ s) => h x hx w fun v hv =>
     hw v (Finset.mem_biUnion.2 ⟨x, hx, hv⟩)
-  exact ⟨⟨retraction (((s.sup N : ℕ) : ℤ) • w), retraction_of _⟩,
-    fun x hx => hN x hx _ (Finset.le_sup hx)⟩
+  exact ⟨retractionGHom (((s.sup N : ℕ) : ℤ) • w), fun x hx => by
+    simpa using hN x hx _ (Finset.le_sup hx)⟩
 
 end CentralizerExt
 

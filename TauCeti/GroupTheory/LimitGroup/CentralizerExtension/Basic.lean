@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 public import TauCeti.GroupTheory.HNNExtension
 public import TauCeti.GroupTheory.NoncommPiCoprod
 public import Mathlib.GroupTheory.NoncommCoprod
@@ -49,7 +50,8 @@ so its normal form theory (`Monoid.PushoutI.NormalWord`) applies directly.
 * `TauCeti.LimitGroup.CentralizerExt.t`: the new letters `tᵢ`.
 * `TauCeti.LimitGroup.CentralizerExt.lift`, `TauCeti.LimitGroup.CentralizerExt.homEquiv`: the
   universal property.
-* `TauCeti.LimitGroup.CentralizerExt.retraction k`: the retraction `tᵢ ↦ u ^ kᵢ` onto `G`.
+* `TauCeti.LimitGroup.CentralizerExt.retraction k`: the retraction `tᵢ ↦ u ^ kᵢ` onto `G`, and
+  `TauCeti.LimitGroup.CentralizerExt.retractionGHom k`, the same map as a `G`-homomorphism.
 * `TauCeti.LimitGroup.CentralizerExt.congr`: extensions of equal centralizers are isomorphic
   over `G`.
 * `TauCeti.LimitGroup.IsAdmissibleCentralizerStep u n`: `u` is not a proper power and `0 < n`.
@@ -274,6 +276,20 @@ def retraction (k : Fin n → ℤ) : CentralizerExt u n →* G :=
 @[simp] theorem retraction_comp_of (k : Fin n → ℤ) :
     (retraction k).comp (of : G →* CentralizerExt u n) = .id G :=
   lift_comp_of _ _ _ _
+
+/-- The retraction `tᵢ ↦ u ^ kᵢ` of `G(u, ℤⁿ)` onto `G`, as a `G`-homomorphism. -/
+def retractionGHom (k : Fin n → ℤ) :
+    GroupAlgGeom.GHom (of : G →* CentralizerExt u n) (.id G) :=
+  ⟨retraction k, retraction_of k⟩
+
+@[simp]
+theorem coe_retractionGHom (k : Fin n → ℤ) : ⇑(retractionGHom (u := u) k) = retraction k :=
+  (rfl)
+
+@[simp]
+theorem toMonoidHom_retractionGHom (k : Fin n → ℤ) :
+    (retractionGHom (u := u) k : CentralizerExt u n →* G) = retraction k :=
+  (rfl)
 
 /-- The second factor `ℤⁿ` of the amalgam, mapped into `G(u, ℤⁿ)`. -/
 private def ofPi : (Fin n → Multiplicative ℤ) →* CentralizerExt u n :=
