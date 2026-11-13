@@ -135,17 +135,9 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
     filter_upwards [isOpen_ball.mem_nhds hw] with w' hw'
     simp [η₀, ζ, hχ₁ w' hw']
   -- The logarithmic variation of `η₀`, completed at `z` by the smooth field `g₀` with `δα = c q`.
-  set g₀ : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
-    !₂[0, 0, (c * q w / 2).re, (c * q w / 2).im]
-  have hg₀ : ContDiff ℝ ∞ g₀ := by
-    have hcq : ContDiff ℝ ∞ fun w ↦ c * q w / 2 := (contDiff_const.mul hq).div_const 2
-    refine contDiff_euclidean.2 fun i ↦ ?_
-    fin_cases i
-    exacts [contDiff_const, contDiff_const, reCLM.contDiff.comp hcq, imCLM.contDiff.comp hcq]
-  have hsection_g₀ (w : ℂ) : sectionValue g₀ w = c * q w := by
-    rw [sectionValue_apply]
-    simp only [g₀]
-    apply Complex.ext <;> simp <;> ring
+  set g₀ := sectionVariation fun w ↦ c * q w
+  have hg₀ : ContDiff ℝ ∞ g₀ := contDiff_sectionVariation (contDiff_const.mul hq)
+  have hsection_g₀ (w : ℂ) : sectionValue g₀ w = c * q w := sectionValue_sectionVariation _ w
   set y₀ := Function.update (logVariation x η₀) z (g₀ z)
   have hy₀_off (w : ℂ) (hw : w ≠ z) : y₀ =ᶠ[𝓝 w] logVariation x η₀ := by
     filter_upwards [isOpen_ne.mem_nhds hw] with w' hw'
@@ -206,7 +198,7 @@ private theorem gaugeFixedOperator_apply_eq_zero_of_eventuallyEq_logVariation
     (continuous_const (y := (0 : ℝ))) fun w' hw' ↦ hoff w' hw') w
 
 /-- A continuous potential `P = p² + q²` with `4 P → 1` at infinity is bounded. -/
-private theorem exists_forall_le_of_tendsto
+theorem exists_forall_le_of_tendsto
     (hP : Continuous fun w ↦ x w 2 ^ 2 + x w 3 ^ 2)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∃ C, ∀ w, x w 2 ^ 2 + x w 3 ^ 2 ≤ C := by
