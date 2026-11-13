@@ -285,7 +285,7 @@ theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P 
   have hI (p : P) : rayCutTime (Γ p) S (T p) R ∈ Icc 0 R := rayCutTime_mem_Icc hR (h0T p) (h0S p)
   rw [upperSemicontinuous_iff_isClosed_preimage]
   intro t
-  rcases le_or_gt t 0 with ht0 | ht0
+  rcases le_or_gt t 0 with ht0 | _
   · convert isClosed_univ
     exact eq_univ_of_forall fun p ↦ ht0.trans (hI p).1
   rcases le_or_gt t R with htR | htR
