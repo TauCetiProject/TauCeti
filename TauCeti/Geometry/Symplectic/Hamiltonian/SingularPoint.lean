@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Nondegenerate points of positive rank
@@ -304,13 +305,6 @@ theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F 
   exact ⟨fun hx ↦ ⟨hx.contDiffAt, h, key.1 hx.isNondegenerateQuadraticFamily⟩,
     fun hx ↦ ⟨hx.contDiffAt, fun ℓ _ ↦ hpolar ℓ, key.2 hx.isNondegenerateQuadraticFamily⟩⟩
 
-/-- Transfer of the dependent data in `isNondegeneratePoint_iff_of_fderiv_eq`: two existentials
-over equivalent descent conditions agree when their bodies agree for all proofs of the
-conditions. -/
-private theorem exists_congr_of_forall_iff {p p' : Prop} {q : p → Prop} {q' : p' → Prop}
-    (hp : p ↔ p') (hq : ∀ h h', q h ↔ q' h') : Exists q ↔ Exists q' :=
-  ⟨fun ⟨h, hh⟩ ↦ ⟨hp.1 h, (hq h _).1 hh⟩, fun ⟨h', hh'⟩ ↦ ⟨hp.2 h', (hq _ h').2 hh'⟩⟩
-
 /-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
 differential at `F x` is injective preserves and reflects nondegenerate points: the kernel of the
 differential, and hence the transversal space, does not change, and the transversal Hessians of
@@ -339,8 +333,8 @@ theorem isNondegeneratePoint_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norm
   -- Every functional on `G` factors through the injective `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical
   -- functionals of `g ∘ F` onto those of `F`.
   have hfac : ∀ ℓ : G →L[ℝ] ℝ, ∃ ℓ' : G' →L[ℝ] ℝ, ℓ'.comp D = ℓ := fun ℓ ↦ by
-    obtain ⟨ψ, hψ⟩ := LinearMap.dualMap_surjective_of_injective (f := (D : G →ₗ[ℝ] G')) hinj ℓ
-    exact ⟨LinearMap.toContinuousLinearMap ψ, ContinuousLinearMap.coe_injective hψ⟩
+    simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply] using
+      ContinuousLinearMap.surjective_compL_flip_of_injective hinj ℓ
   let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} → {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} :=
     fun ℓ' ↦ ⟨ℓ'.1.comp D, by rw [ContinuousLinearMap.comp_assoc]; exact ℓ'.2⟩
   have hf : Function.Surjective f := fun ℓ ↦ by
@@ -348,8 +342,8 @@ theorem isNondegeneratePoint_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norm
     exact ⟨⟨ℓ', by rw [← ContinuousLinearMap.comp_assoc, hℓ', ℓ.2]⟩, Subtype.ext hℓ'⟩
   rw [isNondegeneratePoint_iff_of_fderiv_eq hgF hker fun _ ↦ Iff.rfl,
     isNondegeneratePoint_iff_of_fderiv_eq rfl rfl fun _ ↦ Iff.rfl]
-  refine and_congr (iff_of_true (hg.comp x hF) hF) (exists_congr_of_forall_iff
-    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩ fun hQ₁ hQ₂ ↦ ?_)
+  refine and_congr (iff_of_true (hg.comp x hF) hF) ((Equiv.ofIff
+    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩).exists_congr fun hQ₁ ↦ ?_)
   · obtain ⟨ℓ', rfl⟩ := hfac ℓ
     rw [← hpolar ℓ' w hw.1 u hu]
     exact hQ₁ ℓ' (by rwa [ContinuousLinearMap.comp_assoc] at hℓ) w hw u hu
@@ -403,9 +397,9 @@ theorem isNondegeneratePoint_comp_iff_of_isSymplectomorphism {E' : Type*}
     simp [hφe]
   rw [isNondegeneratePoint_iff_of_fderiv_eq hFφ hU' fun ℓ ↦ (hcrit ℓ).symm,
     isNondegeneratePoint_iff_of_fderiv_eq hT rfl fun _ ↦ Iff.rfl]
-  refine and_congr (iff_of_true (hF.comp y hφ) hF) (exists_congr_of_forall_iff
-    (forall₂_congr fun ℓ hℓ ↦ by rw [hH ℓ hℓ]; exact forall_polar_comp_eq_zero_iff he hU _)
-    fun hQ₁ hQ₂ ↦ ?_)
+  refine and_congr (iff_of_true (hF.comp y hφ) hF) ((Equiv.ofIff
+    (forall₂_congr fun ℓ hℓ ↦ by rw [hH ℓ hℓ]; exact forall_polar_comp_eq_zero_iff he hU _))
+    |>.exists_congr fun hQ₁ ↦ ?_)
   -- The transversal Hessians of `F ∘ φ` are those of `F` pulled back along `e`.
   rw [← isNondegenerateQuadraticFamily_reduction_comp_iff he hU]
   exact Iff.of_eq (congrArg _ (funext fun ℓ ↦

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -282,13 +283,9 @@ theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [Norm
       (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
       (hg.differentiableAt (by norm_num)), ℓ.fderiv]
   simp only [hℓ]
-  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
-  rintro _ ⟨ℓ, rfl⟩
-  obtain ⟨ψ, hψ⟩ := LinearMap.dualMap_surjective_of_injective
-    (f := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G)) hinj ℓ
-  have hℓ' : (LinearMap.toContinuousLinearMap ψ).comp (fderiv ℝ g (φ x)) = ℓ :=
-    ContinuousLinearMap.coe_injective hψ
-  exact ⟨LinearMap.toContinuousLinearMap ψ, by beta_reduce; rw [hℓ']⟩
+  rw [← (ContinuousLinearMap.surjective_compL_flip_of_injective hinj).range_comp
+    fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x]
+  simp only [Function.comp_def, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply]
 
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the
