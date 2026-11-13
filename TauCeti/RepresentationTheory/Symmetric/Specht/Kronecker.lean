@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.SelfInverseObject
+public import TauCeti.CategoryTheory.Monoidal.InvertibleObject
 public import TauCeti.RepresentationTheory.LinearCharacter.Tensor
 public import TauCeti.RepresentationTheory.Symmetric.Specht.SignTranspose
 
@@ -45,9 +45,11 @@ not occur in `S^((1ⁿ)) ⊗ S^((1ⁿ)) = sgn ⊗ sgn`, which is trivial as well
 
 ## References
 
-* [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Theorem 8.15.
+* [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Theorem 8.15,
+  for the sign twist `S^(μᵗ) ≅ S^μ ⊗ sgn` of a single Specht module that both symmetries are
+  derived from.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 4,
-  Exercise 4.4.
+  Exercise 4.4, for the same sign twist.
 -/
 
 public section
@@ -72,8 +74,18 @@ noncomputable def kroneckerDoubleTranspose (μ₁ μ₂ : n.Partition) :
     spechtModule (R := ℚ) μ₁.conjugate ⊗ spechtModule (R := ℚ) μ₂.conjugate ≅
       spechtModule (R := ℚ) μ₁ ⊗ spechtModule (R := ℚ) μ₂ :=
   ((spechtModuleTensorSignIso μ₁).symm ⊗ᵢ (spechtModuleTensorSignIso μ₂).symm) ≪≫
-    ⟨tensorμ _ _ _ _, tensorδ _ _ _ _, tensorμ_tensorδ _ _ _ _, tensorδ_tensorμ _ _ _ _⟩ ≪≫
-    whiskerLeftIso _ signTensorSignIso ≪≫ ρ_ _
+    Functor.Monoidal.μIso (tensor _) (_, _) (_, _) ≪≫ whiskerLeftIso _ signTensorSignIso ≪≫ ρ_ _
+
+/-- `TauCeti.kroneckerDoubleTranspose` untwists both factors by
+`TauCeti.spechtModuleTensorSignIso`, interchanges the middle factors, and cancels
+`sgn ⊗ sgn ≅ 1`. -/
+theorem kroneckerDoubleTranspose_hom (μ₁ μ₂ : n.Partition) :
+    (kroneckerDoubleTranspose μ₁ μ₂).hom =
+      ((spechtModuleTensorSignIso μ₁).inv ⊗ₘ (spechtModuleTensorSignIso μ₂).inv) ≫
+        tensorμ _ _ _ _ ≫
+          _ ◁ (FDRep.ofLinearCharacterTensorIsoOfMulEqOne signLinearCharacter_mul_self).hom ≫
+            (ρ_ _).hom :=
+  (rfl)
 
 /-- **Transposing one factor of a Kronecker product of Specht modules twists it by the sign**:
 `S^(μ₁ᵗ) ⊗ S^μ₂ ≅ (S^μ₁ ⊗ S^μ₂) ⊗ sgn`, from `TauCeti.spechtModuleTensorSignIso` and the
@@ -85,7 +97,15 @@ noncomputable def kroneckerSingleTranspose (μ₁ μ₂ : n.Partition) :
   whiskerRightIso (spechtModuleTensorSignIso μ₁).symm _ ≪≫ α_ _ _ _ ≪≫
     whiskerLeftIso _ (β_ _ _) ≪≫ (α_ _ _ _).symm
 
-/-- **The Kronecker multiplicity spaces are unchanged by transposing both factors**: the
+/-- `TauCeti.kroneckerSingleTranspose` untwists the first factor by
+`TauCeti.spechtModuleTensorSignIso` and braids the sign past the second factor. -/
+theorem kroneckerSingleTranspose_hom (μ₁ μ₂ : n.Partition) :
+    (kroneckerSingleTranspose μ₁ μ₂).hom =
+      (spechtModuleTensorSignIso μ₁).inv ▷ _ ≫ (α_ _ _ _).hom ≫ _ ◁ (β_ _ _).hom ≫
+        (α_ _ _ _).inv :=
+  (rfl)
+
+/-- **The Kronecker coefficients are unchanged by transposing both factors**: the
 dimension of `S^ν ⟶ S^(μ₁ᵗ) ⊗ S^(μ₂ᵗ)` is that of `S^ν ⟶ S^μ₁ ⊗ S^μ₂`. -/
 theorem finrank_hom_spechtModule_tensor_conjugate_conjugate (ν μ₁ μ₂ : n.Partition) :
     finrank ℚ (spechtModule (R := ℚ) ν ⟶
@@ -102,7 +122,7 @@ noncomputable def kroneckerHomTransposeEquiv (ν μ₁ μ₂ : n.Partition) :
       (spechtModule (R := ℚ) ν.conjugate ⟶
         spechtModule (R := ℚ) μ₁ ⊗ spechtModule (R := ℚ) μ₂) :=
   Linear.homCongr ℚ (Iso.refl _) (kroneckerSingleTranspose μ₁ μ₂) ≪≫ₗ
-    tensorRightHomLinearEquivOfIso ℚ signTensorSignIso _ _ ≪≫ₗ
+    tensorRightHomLinearEquivOfIso ℚ signTensorSignIso signTensorSignIso _ _ ≪≫ₗ
     Linear.homCongr ℚ (spechtModuleTensorSignIso ν) (Iso.refl _)
 
 /-- **The multiplicity-space equivalence is the sign twist**: `kroneckerHomTransposeEquiv` sends
@@ -118,6 +138,21 @@ theorem kroneckerHomTransposeEquiv_apply (ν μ₁ μ₂ : n.Partition)
             (ρ_ _).hom := by
   simp [kroneckerHomTransposeEquiv, Linear.homCongr_apply, tensorRightHomLinearEquivOfIso_apply,
     signTensorSignIso]
+
+/-- The inverse of `TauCeti.kroneckerHomTransposeEquiv` sends `g : S^(νᵗ) ⟶ S^μ₁ ⊗ S^μ₂` to the
+intertwiner `S^ν ⟶ (S^μ₁ ⊗ S^μ₂) ⊗ sgn` corresponding to `S^ν ⊗ sgn ≅ S^(νᵗ) ⟶ S^μ₁ ⊗ S^μ₂` under
+`CategoryTheory.MonoidalCategory.tensorRightHomLinearEquivOfIso`, read back through
+`TauCeti.kroneckerSingleTranspose`. -/
+theorem kroneckerHomTransposeEquiv_symm_apply (ν μ₁ μ₂ : n.Partition)
+    (g : spechtModule (R := ℚ) ν.conjugate ⟶
+      spechtModule (R := ℚ) μ₁ ⊗ spechtModule (R := ℚ) μ₂) :
+    (kroneckerHomTransposeEquiv ν μ₁ μ₂).symm g =
+      (tensorRightHomLinearEquivOfIso ℚ
+          (FDRep.ofLinearCharacterTensorIsoOfMulEqOne signLinearCharacter_mul_self)
+          (FDRep.ofLinearCharacterTensorIsoOfMulEqOne signLinearCharacter_mul_self) _ _).symm
+          ((spechtModuleTensorSignIso ν).hom ≫ g) ≫
+        (kroneckerSingleTranspose μ₁ μ₂).inv := by
+  simp [kroneckerHomTransposeEquiv, Linear.homCongr_symm_apply, signTensorSignIso]
 
 /-- **The Kronecker coefficients are unchanged by transposing one factor and the output**: the
 dimension of `S^ν ⟶ S^(μ₁ᵗ) ⊗ S^μ₂` is that of `S^(νᵗ) ⟶ S^μ₁ ⊗ S^μ₂`. -/
