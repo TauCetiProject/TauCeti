@@ -65,10 +65,10 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
-* `TauCeti.gradedMap_gradedMap_symm`, `TauCeti.gradedMap_injective`: the companion composite and
-  injectivity of the graded map of a topological isomorphism.
-* `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
-  inverts the graded map of the isomorphism.
+* `TauCeti.gradedMap_symm_gradedMap`, `TauCeti.gradedMap_gradedMap_symm`,
+  `TauCeti.gradedMap_injective`: the graded maps of a topological isomorphism and of its inverse
+  are mutually inverse, so the graded map of a topological isomorphism is injective in every
+  degree.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
   isomorphic to `ℤ/pⁿ⁺¹` with `1 < p`, `π^n` of the class of the generator is nonzero.
 
