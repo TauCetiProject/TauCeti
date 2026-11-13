@@ -99,6 +99,7 @@ def IsNoncrossing (P : Finpartition s) : Prop :=
   ∀ B ∈ P.parts, ∀ C ∈ P.parts, ∀ a ∈ B, ∀ b ∈ C, ∀ c ∈ B, ∀ d ∈ C,
     a < b → b < c → c < d → B = C
 
+/-- Unfolds `IsNoncrossing`. -/
 theorem isNoncrossing_iff :
     P.IsNoncrossing ↔ ∀ B ∈ P.parts, ∀ C ∈ P.parts, ∀ a ∈ B, ∀ b ∈ C, ∀ c ∈ B, ∀ d ∈ C,
       a < b → b < c → c < d → B = C :=
@@ -195,7 +196,6 @@ theorem IsNoncrossing.extend_singleton {P : Finpartition t} (hP : P.IsNoncrossin
 position of `s` that lies between two of its elements. -/
 theorem IsNoncrossing.exists_interval_mem_parts (hP : P.IsNoncrossing) (hs : s.Nonempty) :
     ∃ B ∈ P.parts, ∀ x ∈ B, ∀ y ∈ B, ∀ z ∈ s, x < z → z < y → z ∈ B := by
-  classical
   -- A part `B` with the fewest positions of `s` strictly between two of its elements.
   obtain ⟨B, hB, hmin⟩ := P.parts.exists_min_image
     (fun B => #{z ∈ s | ∃ x ∈ B, ∃ y ∈ B, x < z ∧ z < y}) (P.parts_nonempty hs.ne_empty)
@@ -232,7 +232,6 @@ positions with no position of `s` strictly between them. -/
 theorem IsNoncrossing.exists_mem_parts_card_eq_one_or_adjacent (hP : P.IsNoncrossing)
     (hs : s.Nonempty) :
     ∃ B ∈ P.parts, #B = 1 ∨ ∃ x ∈ B, ∃ y ∈ B, x < y ∧ ∀ z ∈ s, z ≤ x ∨ y ≤ z := by
-  classical
   obtain ⟨B, hB, hint⟩ := hP.exists_interval_mem_parts hs
   refine ⟨B, hB, ?_⟩
   obtain ⟨x, rfl⟩ | hnt := (P.nonempty_of_mem_parts hB).exists_eq_singleton_or_nontrivial
@@ -479,15 +478,18 @@ instance : BoundedOrder (NoncrossingPartition s) where
   __ := Subtype.orderBot Finpartition.isNoncrossing_bot
   __ := Subtype.orderTop Finpartition.isNoncrossing_top
 
+/-- The meet of noncrossing partitions is their meet as partitions. -/
 @[simp, norm_cast]
 theorem coe_inf (P Q : NoncrossingPartition s) :
     ((P ⊓ Q : NoncrossingPartition s) : Finpartition s) = (P : Finpartition s) ⊓ Q :=
   rfl
 
+/-- The least noncrossing partition is the least partition. -/
 @[simp, norm_cast]
 theorem coe_bot : ((⊥ : NoncrossingPartition s) : Finpartition s) = ⊥ :=
   rfl
 
+/-- The greatest noncrossing partition is the greatest partition. -/
 @[simp, norm_cast]
 theorem coe_top : ((⊤ : NoncrossingPartition s) : Finpartition s) = ⊤ :=
   rfl
