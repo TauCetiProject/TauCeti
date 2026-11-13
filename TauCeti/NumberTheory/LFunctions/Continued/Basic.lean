@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Meromorphic.Identity
-public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
+public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.Data.Comparison
-public import Mathlib.NumberTheory.LSeries.Deriv
-public import Mathlib.NumberTheory.LSeries.Injectivity
 
 /-!
 # Removing the conductor and gamma factors from a completed L-function
@@ -93,45 +90,10 @@ theorem continuedL_dual (s : ℂ) :
     d.dual.continuedL s = conj (d.continuedL (conj s)) := by
   have hr : d.dual.uncompletedProduct = conj ∘ d.uncompletedProduct ∘ conj :=
     funext d.uncompletedProduct_dual
-  have ho (z : ℂ) : meromorphicOrderAt d.dual.uncompletedProduct z =
-      meromorphicOrderAt d.uncompletedProduct (conj z) := by
-    rw [hr, meromorphicOrderAt_conj_conj]
-  -- Reflection preserves the repair set and its meromorphy hypothesis.
-  have hm : MeromorphicOn d.dual.uncompletedProduct
-      {z | 0 ≤ meromorphicOrderAt d.dual.uncompletedProduct z} ↔
-      MeromorphicOn d.uncompletedProduct
-        {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z} := by
-    constructor <;> intro h z hz
-    · have hz' := h (conj z) (by simpa only [Set.mem_ofPred_eq, ho, conj_conj] using hz)
-      simpa only [hr, meromorphicAt_conj_conj_iff, conj_conj] using hz'
-    · rw [hr, meromorphicAt_conj_conj_iff]
-      exact h _ (by simpa only [Set.mem_ofPred_eq, ho] using hz)
-  simp only [continuedL_def]
-  by_cases hf : MeromorphicOn d.uncompletedProduct
-      {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z}
-  · have hf' := hm.mpr hf
-    by_cases hs : 0 ≤ meromorphicOrderAt d.dual.uncompletedProduct s
-    · -- On the repair set, the analytic representatives agree by their punctured germs.
-      have hs' : 0 ≤ meromorphicOrderAt d.uncompletedProduct (conj s) := by rwa [ho] at hs
-      have ha := (meromorphicNFOn_toMeromorphicNFOn _ _ hs).meromorphicOrderAt_nonneg_iff_analyticAt
-        |>.mp (by rwa [meromorphicOrderAt_toMeromorphicNFOn hf' hs])
-      have hb :=
-        (meromorphicNFOn_toMeromorphicNFOn _ _ hs').meromorphicOrderAt_nonneg_iff_analyticAt
-        |>.mp (by rwa [meromorphicOrderAt_toMeromorphicNFOn hf hs'])
-      have hc : Tendsto conj (𝓝[≠] s) (𝓝[≠] (conj s)) :=
-        continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun z hz ↦
-          (starRingEnd ℂ).injective.ne hz
-      apply (ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
-        (by simpa only [Function.comp_def, conj_conj] using hb.conj_conj.continuousAt)).mp _
-        |>.eq_of_nhds
-      filter_upwards [hf'.toMeromorphicNFOn_eq_self_on_nhdsNE hs,
-        hc.eventually (hf.toMeromorphicNFOn_eq_self_on_nhdsNE hs')] with z hz hz'
-      simpa only [Function.comp_apply, hz, hz'] using d.uncompletedProduct_dual z
-    · rw [toMeromorphicNFOn_eq_self_on_compl hf' hs,
-        toMeromorphicNFOn_eq_self_on_compl hf (by simpa only [Set.mem_compl_iff,
-          Set.mem_ofPred_eq, ← ho] using hs), d.uncompletedProduct_dual]
-  · simp only [toMeromorphicNFOn_of_not_meromorphicOn hf,
-      toMeromorphicNFOn_of_not_meromorphicOn (hm.not.mpr hf), Pi.zero_apply, map_zero]
+  rw [continuedL_def, continuedL_def, hr]
+  simp only [meromorphicOrderAt_conj_conj]
+  exact toMeromorphicNFOn_conj_conj d.uncompletedProduct
+    {z | 0 ≤ meromorphicOrderAt d.uncompletedProduct z} s
 
 private theorem analyticAt_conductorPower (s : ℂ) :
     AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ (-z / 2)) s :=
@@ -271,44 +233,7 @@ factors recovers the Dirichlet series, even at a cancelled gamma pole. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hD : d.HasDirichletAgreement)
     (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s := by
-  have ha : AnalyticAt ℂ (LSeries d.coeff) s := by
-    by_cases hσ : LSeries.abscissaOfAbsConv d.coeff < s.re
-    · exact LSeries_analyticOnNhd d.coeff s hσ
-    by_cases htop : LSeries.abscissaOfAbsConv d.coeff = ⊤
-    · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
-      exact analyticAt_const
-    -- A finite abscissa above this point would force the completion to vanish on a strip,
-    -- hence everywhere as a meromorphic germ, contradicting the first coefficient.
-    obtain ⟨t, ht1, hts⟩ := exists_between hs
-    have hz : d.completed =ᶠ[𝓝[≠] (t : ℂ)] 0 := by
-      filter_upwards [nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
-        (Ioo_mem_nhds ht1 hts))] with z hz
-      rw [Pi.zero_apply, hD.completed_eq z hz.1,
-        LSeries.eq_zero_of_not_LSeriesSummable d.coeff z (fun hsum ↦
-          (not_lt.mp hσ).not_gt (hsum.abscissaOfAbsConv_le.trans_lt
-            (by exact_mod_cast hz.2))), mul_zero]
-    have hz' (z : ℂ) : d.completed =ᶠ[𝓝[≠] z] 0 :=
-      hc.meromorphic.meromorphicOn.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
-        isPreconnected_univ (Set.mem_univ _) (Set.mem_univ _) hz
-    obtain ⟨r, hσr, _⟩ := EReal.exists_between_coe_real (lt_top_iff_ne_top.mpr htop)
-    have hzero : (fun x : ℝ ↦ LSeries d.coeff x) =ᶠ[atTop] 0 := by
-      filter_upwards [eventually_gt_atTop (max 1 r)] with x hx
-      have hx1 : 1 < (x : ℂ).re := lt_of_le_of_lt (le_max_left _ _) hx
-      have hσx : LSeries.abscissaOfAbsConv d.coeff < (x : ℂ).re :=
-        hσr.trans (by exact_mod_cast (lt_of_le_of_lt (le_max_right _ _) hx))
-      have hax := (LSeries_analyticOnNhd d.coeff (x : ℂ) hσx).continuousAt
-      apply ((hax.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE continuousAt_const).mp
-        ?_).eq_of_nhds
-      filter_upwards [hz' x, d.eventually_gammaFactor_ne_zero x,
-        nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
-          (Ioi_mem_nhds hx1))] with z hz hzγ hzre
-      have hmul := (hD.completed_eq z hzre).symm.trans hz
-      exact (mul_eq_zero.mp hmul).resolve_left
-        (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)
-    have hcoeff := tendsto_nhds_unique (LSeries.tendsto_atTop (lt_top_iff_ne_top.mpr htop))
-      (tendsto_const_nhds.congr' hzero.symm)
-    exact False.elim (one_ne_zero (hD.coeff_one.symm.trans hcoeff))
-  apply hc.continuedL_eq_of_eventuallyEq ha.continuousAt
+  apply hc.continuedL_eq_of_eventuallyEq (hD.analyticAt_LSeries hc hs).continuousAt
   filter_upwards [hc.completed_eventuallyEq_mul_continuedL s, d.eventually_gammaFactor_ne_zero s,
     nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
     with z hz hzγ hzre

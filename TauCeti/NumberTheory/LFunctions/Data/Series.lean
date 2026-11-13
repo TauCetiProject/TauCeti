@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Data.Basic
+public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
 public import TauCeti.Analysis.Meromorphic.Continuation
+public import Mathlib.NumberTheory.LSeries.Deriv
+public import Mathlib.NumberTheory.LSeries.Injectivity
 
 /-!
 # Canonical analytic cards from Dirichlet series
+
+`HasDirichletAgreement.analyticAt_LSeries` recovers analyticity on `Re s > 1` from Dirichlet
+agreement and meromorphic continuation, without assuming coefficient growth.
 
 `AnalyticLFunctionData.ofSeries` constructs a card from coefficients, a conductor, gamma shifts
 and a proposed polar divisor. Its completed function is the canonical meromorphic continuation
@@ -33,7 +38,7 @@ through `TauCeti.meromorphicContinuation`.
 
 public section
 
-open Complex ComplexConjugate Set
+open Complex ComplexConjugate Filter Set Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -103,6 +108,51 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
     exact meromorphicContinuation_eqOn h hs
 
 variable {d : AnalyticLFunctionData}
+
+/-- Dirichlet agreement and meromorphic continuation make the Dirichlet series analytic
+on `Re s > 1`, without an additional coefficient-growth hypothesis. -/
+theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
+    (hc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
+    AnalyticAt ℂ (LSeries d.coeff) s := by
+  by_cases hσ : LSeries.abscissaOfAbsConv d.coeff < s.re
+  · exact LSeries_analyticOnNhd d.coeff s hσ
+  by_cases htop : LSeries.abscissaOfAbsConv d.coeff = ⊤
+  · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top htop]
+    exact analyticAt_const
+  -- A finite abscissa above this point would force the completion to vanish on a strip,
+  -- hence everywhere as a meromorphic germ, contradicting the first coefficient.
+  obtain ⟨t, ht1, hts⟩ := exists_between hs
+  have ht : (t : ℂ).re ∈ Ioo 1 s.re := by
+    simpa only [Complex.ofReal_re, mem_Ioo] using And.intro ht1 hts
+  have hz : d.completed =ᶠ[𝓝[≠] (t : ℂ)] 0 := by
+    filter_upwards [nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
+      (Ioo_mem_nhds ht.1 ht.2))] with z hz
+    rw [Pi.zero_apply, hD.completed_eq z hz.1,
+      LSeries.eq_zero_of_not_LSeriesSummable d.coeff z (fun hsum ↦
+        (not_lt.mp hσ).not_gt (hsum.abscissaOfAbsConv_le.trans_lt
+          (by exact_mod_cast hz.2))), mul_zero]
+  have hz' (z : ℂ) : d.completed =ᶠ[𝓝[≠] z] 0 :=
+    hc.meromorphic.meromorphicOn.eventuallyEq_of_isPreconnected (MeromorphicOn.const 0)
+      isPreconnected_univ (Set.mem_univ _) (Set.mem_univ _) hz
+  obtain ⟨r, hσr, _⟩ := EReal.exists_between_coe_real (lt_top_iff_ne_top.mpr htop)
+  have hzero : (fun x : ℝ ↦ LSeries d.coeff x) =ᶠ[atTop] 0 := by
+    filter_upwards [eventually_gt_atTop (max 1 r)] with x hx
+    have hx1 : 1 < (x : ℂ).re := by
+      simpa only [Complex.ofReal_re] using (lt_of_le_of_lt (le_max_left _ _) hx)
+    have hσx : LSeries.abscissaOfAbsConv d.coeff < (x : ℂ).re :=
+      hσr.trans (by exact_mod_cast (lt_of_le_of_lt (le_max_right _ _) hx))
+    have hax := (LSeries_analyticOnNhd d.coeff (x : ℂ) hσx).continuousAt
+    apply ((hax.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE continuousAt_const).mp
+      ?_).eq_of_nhds
+    filter_upwards [hz' x, d.eventually_gammaFactor_ne_zero x,
+      nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds
+        (Ioi_mem_nhds hx1))] with z hz hzγ hzre
+    have hmul := (hD.completed_eq z hzre).symm.trans hz
+    exact (mul_eq_zero.mp hmul).resolve_left
+      (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)
+  have hcoeff := tendsto_nhds_unique (LSeries.tendsto_atTop (lt_top_iff_ne_top.mpr htop))
+    (tendsto_const_nhds.congr' hzero.symm)
+  exact False.elim (one_ne_zero (hD.coeff_one.symm.trans hcoeff))
 
 /-- Dirichlet agreement identifies the completion with the series defining its series card
 on `Re s > 1`. -/
