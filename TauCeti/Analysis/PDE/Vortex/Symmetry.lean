@@ -101,7 +101,7 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
 /-- Translations preserve the smoothness of fields. -/
 theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) := by
-  rw [show translateField a x = fun z ↦ x (z + a) from funext (translateField_apply a x)]
+  rw [funext (translateField_apply a x)]
   exact hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
