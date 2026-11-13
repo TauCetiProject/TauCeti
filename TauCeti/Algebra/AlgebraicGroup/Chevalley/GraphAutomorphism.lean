@@ -67,13 +67,43 @@ theorem coe_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [Com
   t.coe_scToralDiagramAutPoints ht hσ A
     (MulEquiv.subgroupCongr (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A) g)
 
+/-- On matrices the inverse graph action conjugates by the inverse lattice symmetry. -/
+-- Keep the matrix dimensions on the datum interface so simp needs no unfolding of the datum.
+@[simp]
+theorem coe_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
+    (g : (t.scChevalleyDatum ht).points A) :
+    ((t.chevalleyGraphAut ht hσ A).symm g).val =
+      (show Matrix.GeneralLinearGroup (Fin (t.scChevalleyDatum ht).dim) A from
+        kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+          (t.scModuleDiagramEquiv ht hσ)
+          (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A)⁻¹ * g.val *
+      (show Matrix.GeneralLinearGroup (Fin (t.scChevalleyDatum ht).dim) A from
+        kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+          (t.scModuleDiagramEquiv ht hσ)
+          (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A) :=
+  t.coe_scToralDiagramAutPoints_symm ht hσ A
+    (MulEquiv.subgroupCongr (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A) g)
+
+/-- The diagram symmetry group acts on the entire Chevalley point group. -/
+def chevalleyGraphAutHom (A : Type v) [CommRing A] :
+    t.diagramSymmetry →* MulAut ((t.scChevalleyDatum ht).points A) :=
+  (MulAut.congr (MulEquiv.subgroupCongr
+    (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm).toMonoidHom.comp
+      (t.scToralDiagramAutPointsHom ht A)
+
+/-- Evaluation of the bundled diagram action. -/
+@[simp]
+theorem chevalleyGraphAutHom_apply (A : Type v) [CommRing A] (s : t.diagramSymmetry) :
+    t.chevalleyGraphAutHom ht A s = t.chevalleyGraphAut ht s.property A := by
+  exact congrArg (MulAut.congr (MulEquiv.subgroupCongr
+    (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm)
+      (t.scToralDiagramAutPointsHom_apply ht A s)
+
 /-- The identity diagram symmetry acts identically. -/
 @[simp]
 theorem chevalleyGraphAut_one (A : Type v) [CommRing A] :
     t.chevalleyGraphAut ht t.diagramSymmetry.one_mem A = 1 := by
-  let e := MulAut.congr (MulEquiv.subgroupCongr
-    (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm
-  exact (congrArg e (t.scToralDiagramAutPoints_one ht A)).trans e.map_one
+  simpa only [chevalleyGraphAutHom_apply] using map_one (t.chevalleyGraphAutHom ht A)
 
 /-- Multiplication of numbered symmetries agrees with composition of their graph actions. -/
 @[simp]
@@ -81,23 +111,8 @@ theorem chevalleyGraphAut_mul (hσ : σ ∈ t.diagramSymmetry)
     (hτ : τ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
     t.chevalleyGraphAut ht (t.diagramSymmetry.mul_mem hσ hτ) A =
       t.chevalleyGraphAut ht hσ A * t.chevalleyGraphAut ht hτ A := by
-  let e := MulAut.congr (MulEquiv.subgroupCongr
-    (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm
-  exact (congrArg e (t.scToralDiagramAutPoints_mul ht hσ hτ A)).trans
-    (e.map_mul _ _)
-
-/-- The diagram symmetry group acts on the entire Chevalley point group. -/
-def chevalleyGraphAutHom (A : Type v) [CommRing A] :
-    t.diagramSymmetry →* MulAut ((t.scChevalleyDatum ht).points A) where
-  toFun s := t.chevalleyGraphAut ht s.property A
-  map_one' := t.chevalleyGraphAut_one ht A
-  map_mul' s r := t.chevalleyGraphAut_mul ht s.property r.property A
-
-/-- Evaluation of the bundled diagram action. -/
-@[simp]
-theorem chevalleyGraphAutHom_apply (A : Type v) [CommRing A] (s : t.diagramSymmetry) :
-    t.chevalleyGraphAutHom ht A s = t.chevalleyGraphAut ht s.property A :=
-  (rfl)
+  simpa only [chevalleyGraphAutHom_apply] using
+    map_mul (t.chevalleyGraphAutHom ht A) ⟨σ, hσ⟩ ⟨τ, hτ⟩
 
 /-- The inverse diagram symmetry induces the inverse graph automorphism. -/
 @[simp]
@@ -111,31 +126,26 @@ theorem chevalleyGraphAut_inv (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [Com
 theorem chevalleyGraphAut_pow_eq_one (hσ : σ ∈ t.diagramSymmetry)
     (A : Type v) [CommRing A] {n : ℕ} (hn : σ ^ n = 1) :
     t.chevalleyGraphAut ht hσ A ^ n = 1 := by
-  let e := MulAut.congr (MulEquiv.subgroupCongr
-    (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm
-  exact (map_pow e (t.scToralDiagramAutPoints ht hσ A) n).symm.trans
-    ((congrArg e (t.scToralDiagramAutPoints_pow_eq_one ht hσ A hn)).trans e.map_one)
+  have hn' : (⟨σ, hσ⟩ : t.diagramSymmetry) ^ n = 1 := Subtype.ext hn
+  rw [← t.chevalleyGraphAutHom_apply ht A ⟨σ, hσ⟩, ← map_pow, hn', map_one]
 
 /-- The pinned graph action carries every root subgroup to its diagram image with the sign
 of the independently normalized Chevalley root vector. -/
 @[simp]
 theorem chevalleyGraphAut_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry)
-    (α : Fin t.numRoots) (A : Type v) [CommRing A] (u : A) :
+    (α : Fin t.numRoots) (A : Type v) [CommRing A] (u : Multiplicative A) :
     t.chevalleyGraphAut ht hσ A
-        ((t.scChevalleyDatum ht).rootSubgroupPoints α A (Multiplicative.ofAdd u)) =
+        ((t.scChevalleyDatum ht).rootSubgroupPoints α A u) =
       (t.scChevalleyDatum ht).rootSubgroupPoints (t.diagramRootPerm ht hσ α) A
-        (Multiplicative.ofAdd (((t.chevalleyDiagramSign ht hσ α : ℤ) : A) * u)) := by
+        (Multiplicative.ofAdd
+          (((t.chevalleyDiagramSign ht hσ α : ℤ) : A) * Multiplicative.toAdd u)) := by
   apply Subtype.ext
-  have h := t.kostantNumberedSymmetryMatrix_conj_chevalleyRootSubgroup ht
-    (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
-    (t.scLattice ht).toAddSubgroup (t.kostantForm_apply_mem_scLattice ht)
-    (t.isNilpotent_representation_scModule_rootGenerator ht)
-    (t.scWeightBasis ht) hσ (t.scModuleDiagramEquiv ht hσ)
-    (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
-    (fun x v => by simpa only [representation_ι_apply] using
-      t.scModuleDiagramEquiv_lie ht hσ x v) α A u
+  have h := congrArg Subtype.val
+    (t.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints ht hσ α A
+      (Multiplicative.toAdd u))
+  simp only [coe_scToralDiagramAutPoints, coe_chevalleyToralRootSubgroupPoints] at h
   have hg := t.coe_chevalleyGraphAut ht hσ A
-    ((t.scChevalleyDatum ht).rootSubgroupPoints α A (Multiplicative.ofAdd u))
+    ((t.scChevalleyDatum ht).rootSubgroupPoints α A u)
   rw [ChevalleyDatum.coe_rootSubgroupPoints] at hg
   exact hg.trans (h.trans
     ((t.scChevalleyDatum ht).coe_rootSubgroupPoints _ A _).symm)
@@ -144,32 +154,31 @@ theorem chevalleyGraphAut_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry)
 -- Apply the pinning formula before the general-root formula introduces its signed index.
 @[simp↓]
 theorem chevalleyGraphAut_rootSubgroupPoints_simpleIndex (hσ : σ ∈ t.diagramSymmetry)
-    (i : Fin t.rank) (A : Type v) [CommRing A] (u : A) :
+    (i : Fin t.rank) (A : Type v) [CommRing A] (u : Multiplicative A) :
     t.chevalleyGraphAut ht hσ A
-        ((t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) A
-          (Multiplicative.ofAdd u)) =
-      (t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht (σ i)) A
-        (Multiplicative.ofAdd u) := by
+        ((t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) A u) =
+      (t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht (σ i)) A u := by
   simpa only [diagramRootPerm_simpleIndex, chevalleyDiagramSign_simpleIndex, Units.val_one,
-    Int.cast_one, one_mul] using
+    Int.cast_one, one_mul, ofAdd_toAdd] using
     t.chevalleyGraphAut_rootSubgroupPoints ht hσ (t.simpleIndex ht i) A u
 
 /-- Negative simple-root parameters are unchanged by the pinned graph action. -/
 @[simp↓]
 theorem chevalleyGraphAut_rootSubgroupPoints_reflectionPerm_simpleIndex
-    (hσ : σ ∈ t.diagramSymmetry) (i : Fin t.rank) (A : Type v) [CommRing A] (u : A) :
+    (hσ : σ ∈ t.diagramSymmetry) (i : Fin t.rank) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
     t.chevalleyGraphAut ht hσ A
         ((t.scChevalleyDatum ht).rootSubgroupPoints
           ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
-            (t.simpleIndex ht i)) A (Multiplicative.ofAdd u)) =
+            (t.simpleIndex ht i)) A u) =
       (t.scChevalleyDatum ht).rootSubgroupPoints
         ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht (σ i))
-          (t.simpleIndex ht (σ i))) A (Multiplicative.ofAdd u) := by
+          (t.simpleIndex ht (σ i))) A u := by
   have hp := (t.diagramAut ht hσ).toHom.indexEquiv_reflectionPerm
     (t.simpleIndex ht i) (t.simpleIndex ht i)
   simp only [diagramAut_indexEquiv, diagramRootPerm_simpleIndex] at hp
   simpa only [hp, chevalleyDiagramSign_reflectionPerm_self, chevalleyDiagramSign_simpleIndex,
-    Units.val_one, Int.cast_one, one_mul] using
+    Units.val_one, Int.cast_one, one_mul, ofAdd_toAdd] using
     t.chevalleyGraphAut_rootSubgroupPoints ht hσ
       ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i)
         (t.simpleIndex ht i)) A u
