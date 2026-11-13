@@ -239,12 +239,13 @@ theorem eq_of_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 < 
     rcases (memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).mp hconst with h | h
     · exact h
     · exact absurd h (by simp [measure_univ_of_isAddLeftInvariant])
-  refine (W1p.ext_value ?_).symm
-  rw [← sub_eq_zero, ← W1p.valueL_apply, ← W1p.valueL_apply, ← map_sub, W1p.valueL_apply]
-  refine Lp.eq_zero_iff_ae_eq_zero.mpr ?_
+  have hsub := W1p.value_sub_ae v u
+  simp only [Opens.coe_top, Measure.restrict_univ] at hsub
+  refine (W1p.ext_value (Lp.ext ?_)).symm
   simp only [Opens.coe_top, Measure.restrict_univ]
-  filter_upwards [hc] with z hz
-  simpa [hc0] using hz
+  filter_upwards [hsub, hc] with z hs hz
+  rw [hz, hc0, Pi.sub_apply] at hs
+  linarith
 
 /-- **Existence and uniqueness of the minimizer of Taubes's functional.** For a complex polynomial
 `P` of degree at least one, Taubes's functional has exactly one minimizer on `H¹(ℂ)`. -/
