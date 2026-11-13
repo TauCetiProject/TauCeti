@@ -11,14 +11,15 @@ public import Mathlib.Topology.CWComplex.Classical.Basic
 # The union of a tower of CW complexes
 
 Let `W 0, W 1, …` be subsets of a space `X`, each carrying a classical CW structure, such that
-every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map: this is recorded by
-maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with `⇑(map n (ι k n i)) = ⇑(map n i)`. Only
-the characteristic maps as functions are compared, since the inverse of a partial equivalence
-`map n i` is arbitrary off its open cell. If a subset of the union `⋃ k, W k` is closed as soon as
-it meets every stage in a closed set, then the union is a CW complex
-(`TauCeti.cwSubcomplexTowerUnion`). This holds when `X` carries the topology coherent
-with the stages (`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`), for instance when
-`X` is the union of the stages with the final topology.
+every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map as a function: this
+is recorded by maps `ι k n : cell (W k) n → cell (W (k + 1)) n` with
+`⇑(map n (ι k n i)) = ⇑(map n i)`. Only the underlying functions of the characteristic maps are
+compared, not their inverses, which are arbitrary off the open cells. If a subset of the union
+`⋃ k, W k` is closed as soon as it meets every stage in a closed set, then the union is a CW
+complex (`TauCeti.cwSubcomplexTowerUnion`).
+This holds when `X` carries the topology coherent with the stages
+(`Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`), for instance when `X` is the union
+of the stages with the final topology.
 
 A cell of `W k` is *new* (`TauCeti.IsNewTowerCell`) if it is not the image under `ι` of a cell of
 `W (k - 1)`; every cell of `W 0` is new. The `n`-cells of the union are the new `n`-cells of all
@@ -90,7 +91,8 @@ abbrev TowerNewCell (n : ℕ) : Type u :=
 open Classical in
 /-- The new cell from which a cell of the stage `W k` comes: following `ι` backwards as long as
 possible, every cell of `W k` is the image of a new cell of some stage `k' ≤ k`
-(`TauCeti.towerOrigin_fst_le`), with the same characteristic map (`TauCeti.coe_map_towerOrigin`). -/
+(`TauCeti.towerOrigin_fst_le`), with the same characteristic map as a function
+(`TauCeti.coe_map_towerOrigin`). -/
 def towerOrigin : ∀ (k : ℕ) {n : ℕ}, cell (W k) n → TowerNewCell ι n
   | 0, _, i => ⟨0, i, trivial⟩
   | k + 1, n, i => if h : i ∈ range (ι k n) then towerOrigin k h.choose else ⟨k + 1, i, h⟩
@@ -136,7 +138,8 @@ theorem towerOrigin_ι {k n : ℕ} (i : cell (W k) n) : towerOrigin ι (k + 1) (
   have h : ι k n i ∈ range (ι k n) := mem_range_self i
   rw [towerOrigin, dite_eq_left h, injective_ι hι k n h.choose_spec]
 
-/-- The new cell from which a cell of `W k` comes has the same characteristic map. -/
+/-- The new cell from which a cell of `W k` comes has the same characteristic map as a function:
+the underlying functions agree, while the inverses may differ off the open cells. -/
 @[simp]
 theorem coe_map_towerOrigin : ∀ (k : ℕ) {n : ℕ} (i : cell (W k) n),
     ⇑(map n (towerOrigin ι k i).2.1) = ⇑(map n i)
@@ -205,10 +208,10 @@ theorem eq_of_not_disjoint_openCell_towerNewCell {c d : Σ n, TowerNewCell ι n}
 variable (hW : ∀ A ⊆ ⋃ k, W k, (∀ k, IsClosed (A ∩ W k)) → IsClosed A)
 
 /-- **The union of a tower of CW complexes.** Let `W 0, W 1, …` be CW complexes in `X` such that
-every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map, through
-`ι k n : cell (W k) n → cell (W (k + 1)) n`. If a subset of `⋃ k, W k` is closed as soon as it
-meets every stage in a closed set, the union is a CW complex whose `n`-cells are the new `n`-cells
-of the stages (`TauCeti.cwSubcomplexTowerUnionCellEquiv`), with their characteristic maps.
+every cell of `W k` is a cell of `W (k + 1)` with the same characteristic map as a function,
+through `ι k n : cell (W k) n → cell (W (k + 1)) n`. If a subset of `⋃ k, W k` is closed as soon
+as it meets every stage in a closed set, the union is a CW complex whose `n`-cells are the new
+`n`-cells of the stages (`TauCeti.cwSubcomplexTowerUnionCellEquiv`), with their characteristic maps.
 
 The hypothesis `hW` holds when `X` carries the topology coherent with the stages, by
 `Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter`.
@@ -303,8 +306,8 @@ theorem coe_towerStageCellEquiv_apply {k n : ℕ} (i : cell (W k) n) :
   (rfl)
 
 omit hW in
-/-- A cell of the stage `W k` has the characteristic map of the new cell to which it
-corresponds. -/
+/-- A cell of the stage `W k` has, as a function, the characteristic map of the new cell to which
+it corresponds. -/
 @[simp]
 theorem coe_map_towerStageCellEquiv_symm {k n : ℕ} (c : {c : TowerNewCell ι n // c.1 ≤ k}) :
     ⇑(map n ((towerStageCellEquiv hι k n).symm c)) = ⇑(map n c.1.2.1) := by
