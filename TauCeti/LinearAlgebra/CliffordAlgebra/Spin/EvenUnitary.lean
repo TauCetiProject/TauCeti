@@ -166,8 +166,8 @@ theorem self_mul_reverse (x : evenUnitaryGroup Q) :
 @[simp]
 theorem reverse_eq_inv (x : evenUnitaryGroup Q) :
     reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-      (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-  exact Units.eq_inv_of_mul_eq_one_right (reverse_mul_self Q x)
+      (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+  Units.eq_inv_of_mul_eq_one_right (reverse_mul_self Q x)
 
 /-- The Clifford value of an even unitary unit is an even element of the graded decomposition. -/
 theorem coe_mem_evenOdd_zero {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q) :
@@ -217,7 +217,7 @@ end CliffordAlgebra
 
 namespace QuadraticMap.Isometry
 
-universe u u' v' w' z'
+universe u v' w' z'
 
 variable {R : Type u} [CommRing R]
 variable {M₁ : Type v'} {M₂ : Type w'} {M₃ : Type z'}
