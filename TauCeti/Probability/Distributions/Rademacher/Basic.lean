@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Distributions.Bernoulli.Basic
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Distributions.Bernoulli.Cdf
 
 /-!
 # The Rademacher distribution
@@ -120,18 +121,8 @@ theorem support_rademacherMeasure :
 theorem cdf_rademacherMeasure (x : ℝ) :
     cdf rademacherMeasure x =
       if x < -1 then 0 else if x < 1 then 1 / 2 else 1 := by
-  rw [cdf_eq_real, rademacherMeasure,
-    bernoulliMeasure_real_apply _ (measurableSet_Iic : MeasurableSet (Iic x))]
-  by_cases hxneg : x < -1
-  · have hneg : ¬ -1 ≤ x := by linarith
-    have hpos : ¬ 1 ≤ x := by linarith
-    simp [hxneg, hneg, hpos]
-  · have hneg : -1 ≤ x := le_of_not_gt hxneg
-    by_cases hxpos : x < 1
-    · have hpos : ¬ 1 ≤ x := by linarith
-      simp [hxneg, hxpos, hneg, hpos]
-    · have hpos : 1 ≤ x := le_of_not_gt hxpos
-      simp [hxneg, hxpos, hneg, hpos]
+  rw [rademacherMeasure, cdf_bernoulliMeasure]
+  split_ifs <;> norm_num <;> linarith
 
 /-- The interior lower quantile of the Rademacher law is `-1` on the lower half of the unit
 interval and `1` on the upper half. -/
