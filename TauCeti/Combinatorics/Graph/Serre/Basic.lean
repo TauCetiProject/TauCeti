@@ -286,6 +286,27 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
     (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
     (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
 
+/-- The arrow `[a] ⟶ [b]` that a morphism `[·]` of Serre graphs assigns to an arrow `e : a ⟶ b`:
+the image dart `[e]`, as an arrow between the images of the endpoints of `e`. -/
+@[expose] def Hom.mapArrow {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {a b : Γ.V} (e : a ⟶ b) : f.mapV a ⟶ f.mapV b :=
+  f.toPrefunctor.map e
+
+@[simp] theorem Hom.mapArrow_val {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {a b : Γ.V} (e : a ⟶ b) : (f.mapArrow e).1 = f.mapE e.1 :=
+  (rfl)
+
+/-- The arrow map of the prefunctor underlying a morphism is `SerreGraph.Hom.mapArrow`. -/
+theorem Hom.toPrefunctor_map {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {a b : Γ.V} (e : a ⟶ b) : f.toPrefunctor.map e = f.mapArrow e :=
+  (rfl)
+
+/-- A morphism of Serre graphs commutes with the reversal of arrows. -/
+@[simp] theorem Hom.mapArrow_reverse {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {a b : Γ.V} (e : a ⟶ b) :
+    f.mapArrow (Quiver.reverse e) = Quiver.reverse (f.mapArrow e) :=
+  Subtype.ext (by simp)
+
 /-- A vertex-surjective graph morphism carries preconnectedness to its target. -/
 theorem Hom.preconnected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) (hf : Function.Surjective f.mapV)

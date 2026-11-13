@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
-public import TauCeti.GroupTheory.GraphOfGroups.Path
+public import TauCeti.GroupTheory.GraphOfGroups.Functoriality
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.Rank
 
@@ -27,13 +27,14 @@ the label `(f_α, [f], f_ω)`.
 Reading the labels along paths, an `𝔸`-graph approximates a subgroup of the fundamental group of
 `𝔸`. Its graph of groups `𝔹` has the underlying graph of `B`, the vertex groups `B_u` and trivial
 edge groups; this is the graph of groups defined by the `𝔸`-graph when `𝔸` has trivial edge groups,
-in which case every edge group `B_f ≤ A_[f]` of the general construction is trivial. A `𝔹`-path is
-sent to an `𝔸`-path letter by letter: an element `b ∈ B_u` is read as `b ∈ A_[u]`, and a dart `f`
-is read as the three letters `f_α, [f], f_ω`. Merging consecutive vertex group letters gives the
-path `μ(p)` of Kapovich, Weidmann and Myasnikov. The path map preserves homotopy, so it induces a
-homomorphism `ν : π₁(𝔹, u₀) →* π₁(𝔸, v₀)`, whose image is the subgroup `L(B, u₀)` represented by
-the `𝔸`-graph. This subgroup only depends on the paths of `𝔹`, not on its edge groups, so it is
-defined for every graph of groups `𝔸`.
+in which case every edge group `B_f ≤ A_[f]` of the general construction is trivial. The type map,
+the inclusions `B_u ≤ A_[u]` and the twisting elements `δ_f = f_α` form a morphism of graphs of
+groups `𝔹 → 𝔸`, with `δ_{f⁻¹}⁻¹ = f_ω`. Its path map sends a `𝔹`-path to an `𝔸`-path letter by
+letter: an element `b ∈ B_u` is read as `b ∈ A_[u]`, and a dart `f` is read as the three letters
+`f_α, [f], f_ω`. Merging consecutive vertex group letters gives the path `μ(p)` of Kapovich,
+Weidmann and Myasnikov. The morphism induces a homomorphism `ν : π₁(𝔹, u₀) →* π₁(𝔸, v₀)`, whose
+image is the subgroup `L(B, u₀)` represented by the `𝔸`-graph. This subgroup only depends on the
+paths of `𝔹`, not on its edge groups, so it is defined for every graph of groups `𝔸`.
 
 An `𝔸`-graph is folded when no two distinct darts issuing from a vertex have labels equivalent
 under the vertex group and the edge group, and the vertex groups at the two ends of every dart cut
@@ -44,7 +45,8 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
 
 * `TauCeti.GraphOfGroups.AGraph`: an `𝔸`-graph with a base vertex of type `v₀`.
 * `TauCeti.GraphOfGroups.AGraph.toGraphOfGroups`: its graph of groups with trivial edge groups.
-* `TauCeti.GraphOfGroups.AGraph.pathMap`: the path map from `𝔹`-paths to `𝔸`-paths.
+* `TauCeti.GraphOfGroups.AGraph.toHom`: the morphism `𝔹 → 𝔸` of graphs of groups defined by the
+  `𝔸`-graph.
 * `TauCeti.GraphOfGroups.AGraph.π₁Hom`: the homomorphism `ν : π₁(𝔹, u₀) →* π₁(𝔸, v₀)`.
 * `TauCeti.GraphOfGroups.AGraph.subgroup`: the subgroup `L(B, u₀)` of `π₁(𝔸, v₀)` represented by
   the `𝔸`-graph.
@@ -57,7 +59,6 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
 
 ## Main results
 
-* `TauCeti.GraphOfGroups.Path.Homotopic.pathMap`: the path map preserves homotopy.
 * `TauCeti.GraphOfGroups.AGraph.mem_subgroup_iff`: `L(B, u₀)` consists of the elements read along
   the closed `𝔹`-paths at `u₀`.
 * `TauCeti.GraphOfGroups.AGraph.subgroup_eq_sup`: for any choice of `𝔹`-paths `γ_u` from `u₀` to
@@ -129,22 +130,6 @@ theorem labelα_rev (f : B.graph.E) :
       (B.labelα (B.graph.rev f)) = (B.labelω f)⁻¹ :=
   (inv_inv _).symm
 
-/-- Start labels of equal darts agree after transport to a common vertex group. -/
-private theorem cast_labelα_congr {e₁ e₂ : B.graph.E} (h : e₁ = e₂) {a : Γ.V}
-    (h₁ : Γ.src (B.typ.mapE e₁) = a) (h₂ : Γ.src (B.typ.mapE e₂) = a) :
-    MulEquiv.cast (M := 𝔸.vertexGroup) h₁ (B.labelα e₁) =
-      MulEquiv.cast (M := 𝔸.vertexGroup) h₂ (B.labelα e₂) := by
-  subst h
-  rfl
-
-/-- End labels of equal darts agree after transport to a common vertex group. -/
-private theorem cast_labelω_congr {e₁ e₂ : B.graph.E} (h : e₁ = e₂) {a : Γ.V}
-    (h₁ : Γ.tgt (B.typ.mapE e₁) = a) (h₂ : Γ.tgt (B.typ.mapE e₂) = a) :
-    MulEquiv.cast (M := 𝔸.vertexGroup) h₁ (B.labelω e₁) =
-      MulEquiv.cast (M := 𝔸.vertexGroup) h₂ (B.labelω e₂) := by
-  subst h
-  rfl
-
 /-- The label condition `(f⁻¹)_ω = (f_α)⁻¹`, read through `t([f⁻¹]) = o([f])`. -/
 theorem labelω_rev (f : B.graph.E) : MulEquiv.cast (M := 𝔸.vertexGroup)
     ((congrArg Γ.tgt (B.typ.map_rev f)).trans (Γ.tgt_rev _)) (B.labelω (B.graph.rev f)) =
@@ -173,199 +158,53 @@ abbrev toGraphOfGroups : GraphOfGroups.{u', v', w, 0} B.graph where
     (c : B.toGraphOfGroups.edgeGroup (B.graph.toGeomEdge e)) : B.toGraphOfGroups.α e c = 1 := by
   rw [α_apply, toGraphOfGroups_ω, map_one]
 
-/-! ### The path map -/
+/-! ### The morphism defined by an `𝔸`-graph -/
 
-/-- The `𝔸`-path read along a letter of a `𝔹`-path: an element `b ∈ B_u` is read as the letter
-`b ∈ A_[u]`, and a dart `f` as the letters `f_α, [f], f_ω`. -/
-def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.Letter x y →
-    𝔸.Path ⟨B.typ.mapV x.as⟩ ⟨B.typ.mapV y.as⟩
-  | _, _, .vertex g => Path.ofVertex g.1
-  | _, _, .dart f =>
-    ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
-        ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).comp
-      (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f))).comp
-      (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
-        ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1)))
-
-@[simp] theorem letterPath_vertex {a : B.graph.V} (g : B.grp a) :
-    B.letterPath (Letter.vertex (𝔸 := B.toGraphOfGroups) g) =
-      Path.ofVertex (g : 𝔸.vertexGroup _) :=
-  (rfl)
-
-@[simp] theorem letterPath_dart (e : B.graph.E) :
-    B.letterPath (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart e)) =
-      ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src e) (B.labelα e))).comp
-        (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _)
-          (B.typ.toPrefunctor.map (B.graph.dart e)))).comp
-        (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e))) := by
-  rw [letterPath, B.cast_labelα_congr (B.graph.dart_val e) _ (B.typ.map_src e),
-    B.cast_labelω_congr (B.graph.dart_val e) _ (B.typ.map_tgt _ e)]
-
-/-- The path map: the `𝔸`-path read along a `𝔹`-path, letter by letter. -/
-def pathMap {x : B.toGraphOfGroups.LetterVertex} :
-    ∀ {y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.Path x y →
-      𝔸.Path ⟨B.typ.mapV x.as⟩ ⟨B.typ.mapV y.as⟩
-  | _, .nil => .nil
-  | _, .cons p l => (pathMap p).comp (B.letterPath l)
-
-section pathMap
-
-variable {x y z : B.toGraphOfGroups.LetterVertex}
-
-@[simp] theorem pathMap_nil : B.pathMap (Quiver.Path.nil : B.toGraphOfGroups.Path x x) = .nil :=
-  (rfl)
-
-@[simp] theorem pathMap_cons (p : B.toGraphOfGroups.Path x y) (l : B.toGraphOfGroups.Letter y z) :
-    B.pathMap (p.cons l) = (B.pathMap p).comp (B.letterPath l) :=
-  (rfl)
-
-@[simp] theorem pathMap_comp (p : B.toGraphOfGroups.Path x y) (q : B.toGraphOfGroups.Path y z) :
-    B.pathMap (p.comp q) = (B.pathMap p).comp (B.pathMap q) := by
-  induction q with
-  | nil => simp
-  | cons q l ih => simp [ih, Quiver.Path.comp_assoc]
-
-@[simp] theorem pathMap_ofVertex {a : B.graph.V} (g : B.grp a) :
-    B.pathMap (Path.ofVertex (𝔸 := B.toGraphOfGroups) g) =
-      Path.ofVertex (g : 𝔸.vertexGroup _) := by
-  have h := Path.comp_ofVertex (𝔸 := B.toGraphOfGroups) Quiver.Path.nil g
-  rw [Quiver.Path.nil_comp] at h
-  rw [h, pathMap_cons, pathMap_nil, Quiver.Path.nil_comp, letterPath_vertex]
-
-@[simp] theorem pathMap_ofDart (e : B.graph.E) :
-    B.pathMap (Path.ofDart (𝔸 := B.toGraphOfGroups) (B.graph.dart e)) =
-      ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src e) (B.labelα e))).comp
-        (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _)
-          (B.typ.toPrefunctor.map (B.graph.dart e)))).comp
-        (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e))) := by
-  have h := Path.comp_ofDart (𝔸 := B.toGraphOfGroups) Quiver.Path.nil (B.graph.dart e)
-  rw [Quiver.Path.nil_comp] at h
-  rw [h, pathMap_cons, pathMap_nil, Quiver.Path.nil_comp, letterPath_dart]
-
-/-- The start label of a reversed arrow, transported to its source, is the inverse of the end
-label of the arrow. -/
-private theorem cast_labelα_reverse {a b : B.graph.V} (f : a ⟶ b) :
-    MulEquiv.cast (M := 𝔸.vertexGroup)
-        ((B.typ.map_src _).trans (congrArg B.typ.mapV (Quiver.reverse f).2.1))
-        (B.labelα (Quiver.reverse f).1) =
-      (MulEquiv.cast (M := 𝔸.vertexGroup) ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2))
-        (B.labelω f.1))⁻¹ := by
-  rw [← map_inv, ← B.labelα_rev, MulEquiv.cast_apply, MulEquiv.cast_apply, MulEquiv.cast_apply]
-  -- Both sides are transports of `labelα (rev f)`.
-  exact eq_of_heq ((cast_heq _ _).trans ((congr_arg_heq B.labelα
-    (B.graph.reverse_val f)).trans ((cast_heq _ _).trans (cast_heq _ _)).symm))
-
-/-- The end label of a reversed arrow, transported to its target, is the inverse of the start
-label of the arrow. -/
-private theorem cast_labelω_reverse {a b : B.graph.V} (f : a ⟶ b) :
-    MulEquiv.cast (M := 𝔸.vertexGroup)
-        ((B.typ.map_tgt _ _).trans (congrArg B.typ.mapV (Quiver.reverse f).2.2))
-        (B.labelω (Quiver.reverse f).1) =
-      (MulEquiv.cast (M := 𝔸.vertexGroup) ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1))
-        (B.labelα f.1))⁻¹ := by
-  rw [← map_inv, ← B.labelω_rev, MulEquiv.cast_apply, MulEquiv.cast_apply, MulEquiv.cast_apply]
-  -- Both sides are transports of `labelω (rev f)`.
-  exact eq_of_heq ((cast_heq _ _).trans ((congr_arg_heq B.labelω
-    (B.graph.reverse_val f)).trans ((cast_heq _ _).trans (cast_heq _ _)).symm))
-
-/-- Reading the reverse of a letter gives the reverse path. -/
-theorem letterPath_reverse (l : B.toGraphOfGroups.Letter x y) :
-    B.letterPath (Quiver.reverse (V := B.toGraphOfGroups.LetterVertex) l) =
-      (B.letterPath l).reverse := by
-  cases l with
-  | vertex g =>
-    rw [Letter.reverse_vertex, letterPath_vertex, letterPath_vertex, Path.reverse_ofVertex,
-      Subgroup.coe_inv]
-  | dart f =>
-    rw [Letter.reverse_dart, letterPath, letterPath, cast_labelα_reverse, cast_labelω_reverse,
-      Prefunctor.map_reverse]
-    simp only [Quiver.Path.reverse_comp, Path.reverse_ofVertex, Quiver.Path.comp_assoc,
-      Path.reverse_ofDart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f)]
-    -- The endpoints of `Quiver.reverse (B.typ.toPrefunctor.map f)` are `obj b, obj a` on the left
-    -- and `mapV b, mapV a` on the right; they agree only after unfolding `Hom.toPrefunctor`.
-    rfl
-
-/-- The path map commutes with reversal. -/
-@[simp] theorem pathMap_reverse (p : B.toGraphOfGroups.Path x y) :
-    B.pathMap p.reverse = (B.pathMap p).reverse := by
-  induction p with
-  | nil => rfl
-  | cons p l ih =>
-    rw [Quiver.Path.reverse, pathMap_comp, ih, pathMap_cons, Quiver.Path.reverse_comp,
-      Quiver.Hom.toPath, pathMap_cons, pathMap_nil, Quiver.Path.nil_comp, letterPath_reverse]
-
-end pathMap
-
-end AGraph
-
-/-- The path map of an `𝔸`-graph sends homotopic `𝔹`-paths to homotopic `𝔸`-paths. -/
-theorem Path.Homotopic.pathMap {𝔸 : GraphOfGroups.{u, v, w, x} Γ} {v₀ : Γ.V}
-    (B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀) {x y : B.toGraphOfGroups.LetterVertex}
-    {p q : B.toGraphOfGroups.Path x y} (h : p.Homotopic q) :
-    (B.pathMap p).Homotopic (B.pathMap q) := by
-  induction h with
-  | refl => exact .refl _
-  | symm _ ih => exact ih.symm
-  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | cons _ l ih =>
-    rw [AGraph.pathMap_cons, AGraph.pathMap_cons]
-    exact ih.comp_right _
-  | mul p g h =>
-    simp only [AGraph.pathMap_cons, AGraph.letterPath_vertex, Path.comp_ofVertex]
-    exact .mul _ _ _
-  | one p =>
-    simp only [AGraph.pathMap_cons, AGraph.letterPath_vertex, Path.comp_ofVertex]
-    exact .one _
-  | dart_reverse p f =>
-    rw [AGraph.pathMap_cons, AGraph.pathMap_cons, ← Letter.reverse_dart,
-      AGraph.letterPath_reverse, Quiver.Path.comp_assoc]
-    simpa using (Homotopic.comp_reverse (B.letterPath (Letter.dart f))).comp_left (B.pathMap p)
-  | dart_ω e c p =>
-    rw [AGraph.pathMap_cons, AGraph.pathMap_cons, AGraph.pathMap_cons, AGraph.pathMap_cons,
-      AGraph.toGraphOfGroups_ω, AGraph.toGraphOfGroups_α, AGraph.letterPath_vertex,
-      AGraph.letterPath_vertex, Path.comp_ofVertex, Path.comp_ofVertex]
-    exact (Homotopic.one _).trans ((Homotopic.one _).comp_right _).symm
-
-namespace AGraph
-
-variable {𝔸 : GraphOfGroups.{u, v, w, x} Γ} {v₀ : Γ.V} (B : AGraph.{u, v, w, x, u', v'} 𝔸 v₀)
+/-- The morphism from the graph of groups of an `𝔸`-graph to `𝔸`: the type map `[·]`, the
+inclusions `B_u ≤ A_[u]` of the vertex groups and the twisting elements `δ_f = f_α`, so that
+`δ_{f⁻¹}⁻¹ = f_ω`. Its path map reads an element `b ∈ B_u` as the letter `b ∈ A_[u]` and a dart `f`
+as the letters `f_α, [f], f_ω`; merging consecutive vertex group letters gives the path `μ(p)` of
+Kapovich, Weidmann and Myasnikov. -/
+abbrev toHom : Hom B.toGraphOfGroups 𝔸 where
+  graph := B.typ
+  vertexHom z := (B.grp z).subtype
+  edgeHom _ := 1
+  twist f := MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f)
+  edgeHom_rev _ _ := by simp only [MonoidHom.one_apply, map_one]
+  vertexHom_α _ c := by
+    obtain rfl : c = 1 := Subsingleton.elim _ _
+    simp only [map_one, mul_one, mul_inv_cancel]
 
 /-! ### The represented subgroup -/
 
-/-- The homomorphism `ν : π₁(𝔹, u₀) →* π₁(𝔸, v₀)` induced by the path map, read through
-`[u₀] = v₀`. When `𝔸` has trivial edge groups, `𝔹 = B.toGraphOfGroups` is the graph of groups
-defined by the `𝔸`-graph; for other `𝔸` its domain is the fundamental group of the graph of groups
-with trivial edge groups, which has the same closed paths and hence the same image, but `ν` is then
-not the homomorphism of Kapovich, Weidmann and Myasnikov. -/
+/-- The homomorphism `ν : π₁(𝔹, u₀) →* π₁(𝔸, v₀)` induced by the morphism `AGraph.toHom`, read
+through `[u₀] = v₀`. When `𝔸` has trivial edge groups, `𝔹 = B.toGraphOfGroups` is the graph of
+groups defined by the `𝔸`-graph; for other `𝔸` its domain is the fundamental group of the graph of
+groups with trivial edge groups, which has the same closed paths and hence the same image, but `ν`
+is then not the homomorphism of Kapovich, Weidmann and Myasnikov. -/
 def π₁Hom : π₁ B.toGraphOfGroups B.base →* π₁ 𝔸 v₀ :=
-  (MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
-    { toFun := π₁.lift (fun p => π₁.mk (B.pathMap p)) fun _ _ h =>
-        π₁.mk_eq_mk_iff.2 (h.pathMap B)
-      map_one' := by
-        rw [← π₁.mk_nil, π₁.lift_mk, pathMap_nil, π₁.mk_nil]
-      map_mul' x y := π₁.induction_on x fun p => π₁.induction_on y fun q => by
-        rw [← π₁.mk_comp, π₁.lift_mk, π₁.lift_mk, π₁.lift_mk, pathMap_comp, π₁.mk_comp] }
+  (MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp (π₁.map B.toHom B.base)
 
 @[simp] theorem π₁Hom_mk (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩) :
-    B.π₁Hom (π₁.mk p) = MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.pathMap p)) :=
-  congrArg (MulEquiv.cast (M := π₁ 𝔸) B.typ_base) (π₁.lift_mk ..)
+    B.π₁Hom (π₁.mk p) = MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.toHom.mapPath p)) :=
+  congrArg (MulEquiv.cast (M := π₁ 𝔸) B.typ_base) (π₁.map_mk ..)
 
 /-- The homomorphism `ν` sends the conjugate `p b p⁻¹` of `b ∈ B_u` to the conjugate of `b ∈ A_[u]`
 by the path read along `p`. -/
 @[simp] theorem π₁Hom_vertexHom {u : B.graph.V} (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
     (g : B.grp u) : B.π₁Hom (π₁.vertexHom p g) =
-      MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom (B.pathMap p) (g : 𝔸.vertexGroup _)) := by
-  rw [π₁.vertexHom_apply, π₁Hom_mk, pathMap_comp, pathMap_comp, pathMap_reverse, pathMap_ofVertex,
-    π₁.vertexHom_apply]
+      MulEquiv.cast (M := π₁ 𝔸) B.typ_base
+        (π₁.vertexHom (B.toHom.mapPath p) (g : 𝔸.vertexGroup _)) :=
+  congrArg (MulEquiv.cast (M := π₁ 𝔸) B.typ_base) (π₁.map_vertexHom ..)
 
 /-- The image under `ν` of the conjugates `p B_u p⁻¹` of a vertex group by a `𝔹`-path `p`: the
 conjugates of `B_u ≤ A_[u]` by the path read along `p`, read through `[u₀] = v₀`. -/
 theorem range_π₁Hom_comp_vertexHom {u : B.graph.V} (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩) :
     (B.π₁Hom.comp (π₁.vertexHom p)).range =
       (B.grp u).map ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
-        (π₁.vertexHom (B.pathMap p))) := by
+        (π₁.vertexHom (B.toHom.mapPath p))) := by
   rw [show B.π₁Hom.comp (π₁.vertexHom p) = ((MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp
-      (π₁.vertexHom (B.pathMap p))).comp (B.grp u).subtype from
+      (π₁.vertexHom (B.toHom.mapPath p))).comp (B.grp u).subtype from
     MonoidHom.ext fun c => B.π₁Hom_vertexHom p c, MonoidHom.range_comp, Subgroup.range_subtype]
 
 /-- The subgroup `L(B, u₀)` of `π₁(𝔸, v₀)` represented by an `𝔸`-graph: the image of `ν`, which
@@ -381,7 +220,7 @@ along some closed `𝔹`-path at the base vertex `u₀` (Kapovich, Weidmann and 
 Definition 3.6), transported along `[u₀] = v₀`. -/
 theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
     ∃ p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩,
-      MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.pathMap p)) = g := by
+      MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.toHom.mapPath p)) = g := by
   rw [subgroup_def, MonoidHom.mem_range]
   constructor
   · rintro ⟨x, rfl⟩
@@ -636,18 +475,27 @@ private theorem segmentPath_loop (e : (segment f g hf hg P₀ Q₀ a b).graph.E)
     exact Path.Homotopic.comp_reverse _
 
 /-- The dart of the single edge reads its label `(a, e, b)`. -/
-private theorem segment_pathMap_ofDart :
-    (segment f g hf hg P₀ Q₀ a b).pathMap
+private theorem segment_mapPath_ofDart :
+    (segment f g hf hg P₀ Q₀ a b).toHom.mapPath
         (Path.ofDart ((segment f g hf hg P₀ Q₀ a b).graph.dart false)) =
       ((Path.ofVertex a).comp (Path.ofDart (SerreGraph.segment.dart false))).comp
-        (Path.ofVertex b) :=
-  ((segment f g hf hg P₀ Q₀ a b).pathMap_ofDart false).trans <| congrArg₂
-    (fun (x : SerreGraph.segment.src false ⟶ SerreGraph.segment.tgt false) (y : Q) =>
-      ((Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg)
-        (a := SerreGraph.segment.src false) a).comp (Path.ofDart x)).comp
-          (Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg)
-            (a := SerreGraph.segment.tgt false) y))
-    (Subtype.ext rfl) (inv_inv b)
+        (Path.ofVertex b) := by
+  -- By definition `δ_false = f_α = a` and `δ_true⁻¹ = f_ω = (b⁻¹)⁻¹`, and the image of the dart
+  -- `false` is the dart `false`. The vertices and darts are Booleans only after unfolding, so the
+  -- letters are compared by `congrArg₂` and `exact` rather than by rewriting.
+  have h₁ := Hom.twistArrow_dart (segment f g hf hg P₀ Q₀ a b).toHom false
+  have h₂ := (congrArg Inv.inv
+    (Hom.twistArrow_reverse_dart (segment f g hf hg P₀ Q₀ a b).toHom false)).trans (inv_inv b)
+  let x : (GraphOfGroups.segment f g hf hg).LetterVertex := ⟨SerreGraph.segment.src false⟩
+  let y : (GraphOfGroups.segment f g hf hg).LetterVertex := ⟨SerreGraph.segment.tgt false⟩
+  refine (Hom.mapPath_ofDart _ _).trans ((congrArg₂ (fun (t : P) (s : Q) =>
+    ((Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg) (a := x.as) t).cons
+      (Letter.dart (SerreGraph.segment.dart false))).cons
+      (Letter.vertex (𝔸 := GraphOfGroups.segment f g hf hg) (a := y.as) s)) h₁ h₂).trans ?_)
+  exact (Path.comp_ofVertex (𝔸 := GraphOfGroups.segment f g hf hg) (a := y.as) _ b).symm.trans
+    (congrArg (fun p : (GraphOfGroups.segment f g hf hg).Path x y =>
+      p.comp (Path.ofVertex (𝔸 := GraphOfGroups.segment f g hf hg) (a := y.as) b))
+      (Path.comp_ofDart _ _).symm)
 
 /-- The single edge `(a, e, b)` between vertices with groups `P₀ ≤ P` and `Q₀ ≤ Q` represents the
 subgroup `⟨P₀, (a e b) Q₀ (a e b)⁻¹⟩` of `π₁(𝔸, v₀)`, the fundamental group (in the path model) of
@@ -663,14 +511,16 @@ theorem segment_subgroup : (segment f g hf hg P₀ Q₀ a b).subgroup =
   have hP : ((segment f g hf hg P₀ Q₀ a b).π₁Hom.comp
       (π₁.vertexHom (segmentPath f g hf hg P₀ Q₀ a b false))).range =
         P₀.map (π₁.vertexHom Quiver.Path.nil) :=
-    range_π₁Hom_comp_vertexHom _ _
+    (range_π₁Hom_comp_vertexHom _ _).trans (congrArg (fun p : (GraphOfGroups.segment f g hf hg).Path
+      ⟨SerreGraph.segment.src false⟩ ⟨SerreGraph.segment.src false⟩ => P₀.map (π₁.vertexHom p))
+        (Hom.mapPath_nil _))
   have hQ : ((segment f g hf hg P₀ Q₀ a b).π₁Hom.comp
       (π₁.vertexHom (segmentPath f g hf hg P₀ Q₀ a b true))).range =
         Q₀.map (π₁.vertexHom (((Path.ofVertex a).comp
           (Path.ofDart (SerreGraph.segment.dart false))).comp (Path.ofVertex b))) :=
     (range_π₁Hom_comp_vertexHom _ _).trans (congrArg (fun p : (GraphOfGroups.segment f g hf hg).Path
       ⟨SerreGraph.segment.src false⟩ ⟨SerreGraph.segment.tgt false⟩ => Q₀.map (π₁.vertexHom p))
-        (segment_pathMap_ofDart f g hf hg P₀ Q₀ a b))
+        (segment_mapPath_ofDart f g hf hg P₀ Q₀ a b))
   rw [subgroup_eq_sup (segment f g hf hg P₀ Q₀ a b) (segmentPath f g hf hg P₀ Q₀ a b)]
   refine le_antisymm (sup_le (iSup_le fun u => ?_) ((Subgroup.closure_le _).2 ?_))
     (sup_le (le_sup_of_le_left (le_iSup_of_le false hP.ge))
