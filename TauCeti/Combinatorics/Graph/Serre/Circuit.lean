@@ -5,34 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.CyclicallyReduced
-public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
+public import Mathlib.Data.Set.Card
 
 import Mathlib.Dynamics.PeriodicPts.Lemmas
 import Mathlib.GroupTheory.Perm.Cycle.Basic
+import TauCeti.Combinatorics.Enumerative.PerfectMatching
 
 /-!
 # Circuits through the components of 2-regular Serre graphs
 
 A path of a Serre graph traverses each geometric edge at most once when the list of the geometric
-edges of its darts has no duplicates. Such a path never backtracks, and a closed one does not
-backtrack cyclically either: it is cyclically reduced.
+edges of its darts has no duplicates. When at most two darts start at every vertex, a closed path
+of this kind also visits each vertex at most once: entering and leaving a vertex uses both darts
+starting there. A nonempty closed path at `a` traversing every geometric edge with an end reachable
+from `a` visits exactly the vertices reachable from `a`.
 
 In a finite Serre graph in which exactly two darts start at every vertex, the component of every
 vertex `a` is traversed by a circuit: some closed path at `a` traverses every geometric edge of the
 component exactly once. After a dart `e`, the path continues along the dart at the target of `e`
-other than the reverse of `e`; this successor map is a permutation of the darts, and none of its
-cycles contains a dart together with its reverse. This is the graph-theoretic fact behind the
-contours of a polygonal surface: its boundary graph is finite and 2-regular, so each of its
-components is traversed by a circuit.
+other than the reverse of `e`; this successor map is the product of two fixed-point-free
+involutions of the darts, so none of its cycles contains a dart together with its reverse. This is
+the graph-theoretic fact behind the contours of a polygonal surface: its boundary graph is finite
+and 2-regular, so each of its components is a circle, traversed by a circuit.
 
 ## Main results
 
-* `TauCeti.SerreGraph.Path.isCyclicallyReduced_of_nodup_map_toGeomEdge_darts`: a closed path
-  traversing each geometric edge at most once is cyclically reduced.
+* `TauCeti.SerreGraph.Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts`: when at most two
+  darts start at every vertex, a closed path traversing each geometric edge at most once visits
+  each vertex at most once.
+* `TauCeti.SerreGraph.Path.mem_map_src_darts_iff_nonempty_path`: a nonempty closed path at `a`
+  traversing every geometric edge with an end reachable from `a` visits exactly the vertices
+  reachable from `a`.
 * `TauCeti.SerreGraph.exists_path_nodup_map_toGeomEdge_darts_and_mem`: in a finite 2-regular
-  Serre graph, a closed path at any vertex traverses every geometric edge of its component exactly
-  once.
+  Serre graph, some closed path at any vertex traverses every geometric edge of its component
+  exactly once.
 
 ## References
 
@@ -45,32 +52,65 @@ public section
 
 namespace TauCeti.SerreGraph
 
-variable (Γ : SerreGraph)
+variable {Γ : SerreGraph}
 
-/-- A path traversing each geometric edge at most once is reduced: no dart of it is followed by its
-reverse. -/
-theorem Path.isReduced_of_nodup_map_toGeomEdge_darts {a b : Γ.V} {p : Γ.Path a b}
-    (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : Path.IsReduced Γ p := by
-  rw [Path.isReduced_iff_isChain]
-  refine List.isChain_of_isChain_map Γ.toGeomEdge (S := (· ≠ ·)) (fun e f hef hfe => ?_)
-    hp.isChain
-  exact hef (by rw [hfe, toGeomEdge_rev])
+/-! ### Closed paths traversing each geometric edge at most once -/
 
-/-- A closed path traversing each geometric edge at most once is cyclically reduced: it does not
-backtrack, also not from its last dart to its first. -/
-theorem Path.isCyclicallyReduced_of_nodup_map_toGeomEdge_darts {a : Γ.V} {p : Γ.Path a a}
-    (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : Path.IsCyclicallyReduced Γ p := by
-  have hred := Path.isReduced_of_nodup_map_toGeomEdge_darts Γ hp
-  refine (Path.isCyclicallyReduced_iff Γ p).2 <|
-    (Path.isReduced_comp_iff Γ p p).2 ⟨hred, hred, fun e he f hf hfe => ?_⟩
-  obtain ⟨l, hl⟩ := List.head?_eq_some_iff.1 hf
-  rw [hl, List.map_cons, List.nodup_cons] at hp
-  rw [hl] at he
-  rcases List.mem_cons.1 (List.mem_of_mem_getLast? he) with rfl | he'
-  · exact Γ.rev_ne e hfe.symm
-  · exact hp.1 (List.mem_map.2 ⟨e, he', by rw [hfe, toGeomEdge_rev]⟩)
+/-- In a Serre graph in which at most two darts start at every vertex, a closed path traversing each
+geometric edge at most once visits each vertex at most once. -/
+theorem Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts
+    (hΓ : ∀ x, {e : Γ.E | Γ.src e = x}.encard ≤ 2) {a : Γ.V} {p : Γ.Path a a}
+    (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : ((Path.darts Γ p).map Γ.src).Nodup := by
+  classical
+  refine List.nodup_iff_count_le_one.2 fun x => ?_
+  -- The darts of `p` starting at `x` and the reverses of the darts of `p` ending at `x` are
+  -- distinct darts starting at `x`, and there are as many of each kind.
+  set L := (Path.darts Γ p).filter (Γ.src · == x) ++
+    ((Path.darts Γ p).filter (Γ.tgt · == x)).map Γ.rev
+  have hL : L.Nodup := by
+    refine List.nodup_append.2 ⟨hp.of_map.filter _, (hp.of_map.filter _).map Γ.rev_injective, ?_⟩
+    simp only [List.mem_filter, List.mem_map]
+    rintro d ⟨hd, -⟩ _ ⟨d', ⟨hd', -⟩, rfl⟩ rfl
+    exact Γ.rev_ne d' (List.inj_on_of_nodup_map hp hd hd' (toGeomEdge_rev Γ d'))
+  have hsub : (L.toFinset : Set Γ.E) ⊆ {e | Γ.src e = x} := by
+    intro e he
+    simp only [L, List.coe_toFinset, Set.mem_ofPred_eq, List.mem_append, List.mem_filter,
+      List.mem_map, beq_iff_eq] at he
+    rcases he with ⟨-, rfl⟩ | ⟨d, ⟨-, rfl⟩, rfl⟩
+    · rfl
+    · exact src_rev Γ d
+  have hlen : (L.length : ℕ∞) ≤ 2 := by
+    rw [← List.toFinset_card_of_nodup hL, ← Set.encard_coe_eq_coe_finsetCard]
+    exact (Set.encard_le_encard hsub).trans (hΓ x)
+  have hcount : L.length = 2 * ((Path.darts Γ p).map Γ.src).count x := by
+    rw [two_mul]
+    nth_rw 2 [← (Path.map_tgt_darts_perm Γ p).count_eq x]
+    simp [L, List.count_eq_length_filter, List.filter_map, Function.comp_def]
+  have : 2 * ((Path.darts Γ p).map Γ.src).count x ≤ 2 := by exact_mod_cast hcount ▸ hlen
+  omega
 
-variable {Γ}
+/-- A nonempty closed path at `a` traversing every geometric edge with an end reachable from `a`
+visits exactly the vertices reachable from `a`. -/
+theorem Path.mem_map_src_darts_iff_nonempty_path {a : Γ.V} {p : Γ.Path a a}
+    (hp₀ : Path.darts Γ p ≠ [])
+    (hp : ∀ e, Nonempty (Γ.Path a (Γ.src e)) → Γ.toGeomEdge e ∈ (Path.darts Γ p).map Γ.toGeomEdge)
+    {x : Γ.V} : x ∈ (Path.darts Γ p).map Γ.src ↔ Nonempty (Γ.Path a x) := by
+  refine ⟨fun h => ?_, fun ⟨q⟩ => ?_⟩
+  · obtain ⟨d, hd, rfl⟩ := List.mem_map.1 h
+    obtain ⟨q, -, -⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p hd
+    exact ⟨q⟩
+  cases q with
+  | nil =>
+    obtain ⟨d, l, hdl⟩ := List.exists_cons_of_ne_nil hp₀
+    have hd : d ∈ (Path.darts Γ p).head? := by simp [hdl]
+    exact List.mem_map.2 ⟨d, List.mem_of_mem_head? hd, Path.src_eq_of_mem_head?_darts Γ p hd⟩
+  | cons q e =>
+    obtain ⟨e, rfl, rfl⟩ := e
+    obtain ⟨d, hd, hde⟩ := List.mem_map.1 <| hp (Γ.rev e) ⟨by rw [src_rev]; exact q.cons (Γ.dart e)⟩
+    rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hde with h | h
+    · exact List.mem_map.2 ⟨d, hd, by rw [← h, src_rev]⟩
+    · rw [Γ.rev_injective h]
+      exact (Path.map_tgt_darts_perm Γ p).subset (List.mem_map_of_mem hd)
 
 /-! ### Circuits in 2-regular graphs
 
@@ -103,44 +143,26 @@ private theorem eq_other_of_ne {e f : Γ.E} (hf : Γ.src f = Γ.src e) (hne : f 
 private theorem other_other (e : Γ.E) : other hΓ (other hΓ e) = e :=
   (eq_other_of_ne hΓ (src_other hΓ e).symm (other_ne hΓ e).symm).symm
 
-private noncomputable def next : Equiv.Perm Γ.E where
-  toFun e := other hΓ (Γ.rev e)
-  invFun e := Γ.rev (other hΓ e)
-  left_inv e := by simp only [other_other, rev_rev]
-  right_inv e := by simp only [other_other, rev_rev]
+-- `other` and `rev` are fixed-point-free involutions of the darts, and `next` is their product.
+private noncomputable def otherMatching : PerfectMatching Γ.E :=
+  PerfectMatching.ofInvolutive (show Function.Involutive (other hΓ) from other_other hΓ)
+    (other_ne hΓ)
 
-private theorem next_apply (e : Γ.E) : next hΓ e = other hΓ (Γ.rev e) := rfl
+private noncomputable def next : Equiv.Perm Γ.E :=
+  (otherMatching hΓ).val *
+    (PerfectMatching.ofInvolutive (show Function.Involutive Γ.rev from Γ.rev_rev) Γ.rev_ne).val
+
+private theorem next_apply (e : Γ.E) : next hΓ e = other hΓ (Γ.rev e) := by
+  simp [next, otherMatching]
 
 private theorem src_next (e : Γ.E) : Γ.src (next hΓ e) = Γ.tgt e := by
   rw [next_apply, src_other, src_rev]
 
-private theorem next_rev_next (e : Γ.E) : next hΓ (Γ.rev (next hΓ e)) = Γ.rev e := by
-  rw [next_apply, next_apply, rev_rev, other_other]
-
-private theorem pow_rev_pow (m : ℕ) (e : Γ.E) :
-    (next hΓ ^ m) (Γ.rev ((next hΓ ^ m) e)) = Γ.rev e := by
-  induction m generalizing e with
-  | zero => simp
-  | succ m ih =>
-    have h₁ (y : Γ.E) : (next hΓ ^ (m + 1)) y = (next hΓ ^ m) (next hΓ y) := by
-      rw [pow_succ, Equiv.Perm.mul_apply]
-    have h₂ : (next hΓ ^ (m + 1)) e = next hΓ ((next hΓ ^ m) e) := by
-      rw [pow_succ', Equiv.Perm.mul_apply]
-    rw [h₂, h₁, next_rev_next, ih]
-
--- A dart and its reverse never lie on the same cycle of `next`: compare `next ^ k e = rev e` with
--- `next ^ m (rev (next ^ m e)) = rev e` for `k = 2 * m` or `k = 2 * m + 1`.
-private theorem not_sameCycle_rev [Finite Γ.E] (e : Γ.E) : ¬(next hΓ).SameCycle e (Γ.rev e) := by
-  intro h
-  obtain ⟨k, hk⟩ := h.exists_nat_pow_eq
-  obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' k
-  · apply Γ.rev_ne ((next hΓ ^ m) e)
-    apply (next hΓ ^ m).injective
-    rw [pow_rev_pow, ← hk, two_mul, pow_add, Equiv.Perm.mul_apply]
-  · apply other_ne hΓ (Γ.rev ((next hΓ ^ m) e))
-    apply (next hΓ ^ m).injective
-    rw [← next_apply, pow_rev_pow, ← hk, show 2 * m + 1 = m + 1 + m by omega, pow_add, pow_succ,
-      Equiv.Perm.mul_apply, Equiv.Perm.mul_apply]
+-- A dart and its reverse never lie on the same cycle of `next`: no cycle of a product of two
+-- perfect matchings is its own reverse.
+private theorem not_sameCycle_rev (e : Γ.E) : ¬(next hΓ).SameCycle e (Γ.rev e) := by
+  simpa [next] using (otherMatching hΓ).prop.not_sameCycle_self_apply
+    (PerfectMatching.ofInvolutive (show Function.Involutive Γ.rev from Γ.rev_rev) Γ.rev_ne).prop e
 
 private theorem sameCycle_other {e d : Γ.E}
     (hd : (next hΓ).SameCycle e d ∨ (next hΓ).SameCycle e (Γ.rev d)) :
@@ -194,10 +216,11 @@ private theorem exists_path_darts_eq_orbit (e : Γ.E) :
   refine exists_path_darts_eq Γ _ ?_
   have h₁ : Γ.src e :: (orbit hΓ e).map Γ.tgt = (List.range
       (Function.minimalPeriod (next hΓ) e + 1)).map fun k => Γ.src ((next hΓ)^[k] e) := by
-    simp [orbit, List.range_succ_eq_map, Function.iterate_succ_apply', src_next]
+    simp [orbit, List.range_succ_eq_map, Function.iterate_succ_apply', src_next,
+      -List.range_map_iterate]
   have h₂ : (orbit hΓ e).map Γ.src ++ [Γ.src e] = (List.range
       (Function.minimalPeriod (next hΓ) e + 1)).map fun k => Γ.src ((next hΓ)^[k] e) := by
-    simp [orbit, List.range_succ, Function.iterate_minimalPeriod]
+    simp [orbit, List.range_succ, Function.iterate_minimalPeriod, -List.range_map_iterate]
   rw [h₁, h₂]
 
 end TwoRegular

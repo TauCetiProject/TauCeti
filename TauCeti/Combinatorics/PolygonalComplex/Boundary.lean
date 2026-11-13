@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Circuit
+public import TauCeti.Combinatorics.Graph.Serre.CyclicallyReduced
 public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
 public import TauCeti.Combinatorics.Quiver.StronglyConnectedComponent
 
@@ -32,10 +33,11 @@ sends a boundary dart to the component containing it. A dart, its reverse and th
 it lie in the same component, and every component contains a dart. A model has no boundary
 component exactly when it has no boundary dart.
 
-Every boundary component is traversed by a circuit. A *boundary circuit* of a component `b`
-(`SurfaceModel.BoundaryCircuit`) is a closed path of boundary darts traversing every geometric edge
-of `b` exactly once, in one of its two directions; it is nonempty and cyclically reduced, and its
-length is the number of edges of `b`. Every boundary component has one
+Every boundary component is a circle, traversed by a circuit. A *boundary circuit* of a component
+`b` (`SurfaceModel.BoundaryCircuit`) is a closed path of boundary darts traversing every geometric
+edge of `b` exactly once, in one of its two directions. It is nonempty and cyclically reduced, it
+visits every boundary vertex of `b` exactly once, and its length is the number of edges of `b`, as
+well as the number of vertices of `b`. Every boundary component has one
 (`SurfaceModel.boundaryCircuit_exists`), since the boundary graph is finite and 2-regular.
 
 ## Main definitions
@@ -63,6 +65,11 @@ length is the number of edges of `b`. Every boundary component has one
   boundary circuit.
 * `TauCeti.SurfaceModel.BoundaryCircuit.two_mul_length`: a boundary circuit traverses one dart for
   each edge of its component.
+* `TauCeti.SurfaceModel.BoundaryCircuit.nodup_map_src_darts`,
+  `TauCeti.SurfaceModel.BoundaryCircuit.mem_map_src_darts_iff`: a boundary circuit visits every
+  boundary vertex of its component exactly once, and no other vertex: the component is a circle.
+* `TauCeti.SurfaceModel.BoundaryCircuit.length_eq_card`: a boundary circuit traverses one dart for
+  each vertex of its component.
 
 ## References
 
@@ -223,8 +230,10 @@ theorem isEmpty_boundaryComponent_iff : IsEmpty S.BoundaryComponent ↔ S.bounda
 /-- A boundary circuit of the boundary component `b`: a closed path of boundary darts which
 traverses every geometric edge of `b` exactly once, in one of its two directions. It is a based,
 oriented traversal of the contour `b`: the base vertex and the direction are part of the data. Its
-base vertex lies in `b` (`BoundaryCircuit.mk_base`), and the circuit is nonempty and cyclically
-reduced (`BoundaryCircuit.length_pos`, `BoundaryCircuit.isCyclicallyReduced`). -/
+base vertex lies in `b` (`BoundaryCircuit.mk_base`), the circuit is nonempty and cyclically
+reduced (`BoundaryCircuit.length_pos`, `BoundaryCircuit.isCyclicallyReduced`), and it visits every
+boundary vertex of `b` exactly once (`BoundaryCircuit.nodup_map_src_darts`,
+`BoundaryCircuit.mem_map_src_darts_iff`). -/
 structure BoundaryCircuit (b : S.BoundaryComponent) where
   /-- The vertex at which the circuit starts and ends. -/
   base : S.boundary.V
@@ -260,7 +269,7 @@ theorem mem_darts_or_rev_mem_darts {e : S.boundary.E} (he : S.boundaryClass e = 
   · exact .inr (by rwa [SerreGraph.rev_rev])
 
 /-- A boundary circuit of `b` starts in `b`. -/
-theorem mk_base : StronglyConnectedComponent.mk c.base = b := by
+@[simp] theorem mk_base : StronglyConnectedComponent.mk c.base = b := by
   obtain ⟨e, he⟩ := S.boundaryClass_surjective b
   rcases c.mem_darts_or_rev_mem_darts he with h | h
   · exact (c.boundaryClass_eq_mk_base h).symm.trans he
@@ -270,6 +279,25 @@ theorem mk_base : StronglyConnectedComponent.mk c.base = b := by
 theorem boundaryClass_eq_of_mem_darts {e : S.boundary.E}
     (he : e ∈ SerreGraph.Path.darts _ c.path) : S.boundaryClass e = b :=
   (c.boundaryClass_eq_mk_base he).trans c.mk_base
+
+/-- A boundary circuit of `b` traverses, in one of its two directions, exactly the edges of `b`. -/
+theorem mem_darts_or_rev_mem_darts_iff {e : S.boundary.E} :
+    e ∈ SerreGraph.Path.darts _ c.path ∨ S.boundary.rev e ∈ SerreGraph.Path.darts _ c.path ↔
+      S.boundaryClass e = b := by
+  refine ⟨?_, c.mem_darts_or_rev_mem_darts⟩
+  rintro (h | h)
+  · exact c.boundaryClass_eq_of_mem_darts h
+  · rw [← boundaryClass_rev, c.boundaryClass_eq_of_mem_darts h]
+
+/-- The geometric edges traversed by a boundary circuit of `b` are the edges of `b`. -/
+theorem toGeomEdge_mem_map_darts_iff {e : S.boundary.E} :
+    S.boundary.toGeomEdge e ∈ (SerreGraph.Path.darts _ c.path).map S.boundary.toGeomEdge ↔
+      S.boundaryClass e = b := by
+  refine ⟨fun h => ?_, c.toGeomEdge_mem_map_darts e⟩
+  obtain ⟨d, hd, hde⟩ := List.mem_map.1 h
+  rcases S.boundary.toGeomEdge_eq_toGeomEdge_iff.1 hde with rfl | rfl
+  · exact c.boundaryClass_eq_of_mem_darts hd
+  · rw [boundaryClass_rev, c.boundaryClass_eq_of_mem_darts hd]
 
 /-- A boundary circuit never traverses both directions of an edge. -/
 theorem rev_notMem_darts {e : S.boundary.E} (he : e ∈ SerreGraph.Path.darts _ c.path) :
@@ -294,8 +322,33 @@ theorem count_add_count_rev_eq_one [DecidableEq S.boundary.E] {e : S.boundary.E}
   · rw [List.count_eq_zero_of_not_mem hm,
       List.count_eq_one_of_mem c.nodup_darts ((c.rev_mem_darts_iff he).2 hm)]
 
+/-- A boundary circuit traverses each edge at most once, in at most one of its two directions. -/
+theorem count_add_count_rev_le_one [DecidableEq S.boundary.E] (e : S.boundary.E) :
+    (SerreGraph.Path.darts _ c.path).count e +
+      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) ≤ 1 := by
+  by_cases hm : e ∈ SerreGraph.Path.darts _ c.path
+  · rw [List.count_eq_one_of_mem c.nodup_darts hm,
+      List.count_eq_zero_of_not_mem (c.rev_notMem_darts hm)]
+  · rw [List.count_eq_zero_of_not_mem hm, zero_add]
+    exact List.nodup_iff_count_le_one.1 c.nodup_darts _
+
+/-- A boundary circuit of `b` traverses an edge exactly once, in one of its two directions,
+exactly when the edge lies in `b`. -/
+theorem count_add_count_rev_eq_one_iff [DecidableEq S.boundary.E] {e : S.boundary.E} :
+    (SerreGraph.Path.darts _ c.path).count e +
+      (SerreGraph.Path.darts _ c.path).count (S.boundary.rev e) = 1 ↔ S.boundaryClass e = b := by
+  refine ⟨fun h => c.mem_darts_or_rev_mem_darts_iff.1 ?_, c.count_add_count_rev_eq_one⟩
+  by_contra hn
+  rw [not_or] at hn
+  rw [List.count_eq_zero_of_not_mem hn.1, List.count_eq_zero_of_not_mem hn.2] at h
+  exact zero_ne_one h
+
+/-- A boundary circuit is reduced. -/
+@[simp] theorem isReduced : SerreGraph.Path.IsReduced _ c.path :=
+  SerreGraph.Path.isReduced_of_nodup_map_toGeomEdge_darts _ c.nodup_map_toGeomEdge_darts
+
 /-- A boundary circuit is cyclically reduced. -/
-theorem isCyclicallyReduced : SerreGraph.Path.IsCyclicallyReduced _ c.path :=
+@[simp] theorem isCyclicallyReduced : SerreGraph.Path.IsCyclicallyReduced _ c.path :=
   SerreGraph.Path.isCyclicallyReduced_of_nodup_map_toGeomEdge_darts _ c.nodup_map_toGeomEdge_darts
 
 /-- A boundary circuit of `b` traverses one dart for each edge of `b`: its length is half the
@@ -326,6 +379,70 @@ theorem length_pos : 0 < c.path.length := by
   have := c.toGeomEdge_mem_map_darts e (by rw [boundaryClass_def, he, c.mk_base])
   rw [← SerreGraph.Path.length_darts, ← List.length_map (f := S.boundary.toGeomEdge)]
   exact List.length_pos_of_mem this
+
+/-- A boundary circuit traverses a dart. -/
+@[simp] theorem darts_ne_nil : SerreGraph.Path.darts _ c.path ≠ [] :=
+  SerreGraph.Path.darts_ne_nil _ c.length_pos
+
+/-- A boundary circuit visits each boundary vertex at most once. -/
+theorem nodup_map_src_darts : ((SerreGraph.Path.darts _ c.path).map S.boundary.src).Nodup := by
+  refine SerreGraph.Path.nodup_map_src_darts_of_nodup_map_toGeomEdge_darts (fun x => ?_)
+    c.nodup_map_toGeomEdge_darts
+  rw [← (Set.toFinite _).cast_ncard_eq, ← Nat.card_coe_set_eq]
+  exact_mod_cast (S.card_boundary_src_fiber x).le
+
+/-- A boundary circuit of `b` visits exactly the boundary vertices of `b`. -/
+theorem mem_map_src_darts_iff {x : S.boundary.V} :
+    x ∈ (SerreGraph.Path.darts _ c.path).map S.boundary.src ↔
+      StronglyConnectedComponent.mk x = b := by
+  rw [SerreGraph.Path.mem_map_src_darts_iff_nonempty_path c.darts_ne_nil fun e he =>
+      c.toGeomEdge_mem_map_darts e <| (boundaryClass_def e).trans <|
+        (StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path.2 he).symm.trans c.mk_base,
+    ← StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path, c.mk_base, eq_comm]
+
+/-- A boundary circuit of `b` has one dart for each boundary vertex of `b`. -/
+theorem length_eq_card :
+    c.path.length = Nat.card {x : S.boundary.V // StronglyConnectedComponent.mk x = b} := by
+  classical
+  rw [← Nat.card_congr (Equiv.subtypeEquivRight fun x => c.mem_map_src_darts_iff),
+    ← Nat.card_congr c.nodup_map_src_darts.getEquiv, Nat.card_fin, List.length_map,
+    SerreGraph.Path.length_darts]
+
+/-- Two boundary circuits of `b` with the same darts are equal. -/
+@[ext] theorem ext {c₁ c₂ : S.BoundaryCircuit b}
+    (h : SerreGraph.Path.darts _ c₁.path = SerreGraph.Path.darts _ c₂.path) : c₁ = c₂ := by
+  have hbase : c₁.base = c₂.base := by
+    obtain ⟨d, l, hd⟩ := List.exists_cons_of_ne_nil c₁.darts_ne_nil
+    rw [← SerreGraph.Path.src_eq_of_mem_head?_darts _ c₁.path (e := d) (by simp [hd]),
+      SerreGraph.Path.src_eq_of_mem_head?_darts _ c₂.path (e := d) (by simp [← h, hd])]
+  cases c₁
+  cases c₂
+  dsimp only at h hbase
+  subst hbase
+  obtain rfl := SerreGraph.Path.darts_injective _ h
+  rfl
+
+/-- The boundary circuit traversing the same edges in the opposite direction. -/
+def reverse : S.BoundaryCircuit b where
+  base := c.base
+  path := c.path.reverse
+  nodup_map_toGeomEdge_darts := by
+    simpa [List.map_reverse, Function.comp_def] using c.nodup_map_toGeomEdge_darts
+  toGeomEdge_mem_map_darts e he := by
+    simpa [Function.comp_def] using c.toGeomEdge_mem_map_darts e he
+
+/-- The reversed boundary circuit starts where the circuit starts. -/
+@[simp] theorem base_reverse : c.reverse.base = c.base := (rfl)
+
+/-- The reversed boundary circuit traverses the reverses of the darts, in the opposite order. -/
+@[simp] theorem darts_path_reverse :
+    SerreGraph.Path.darts _ c.reverse.path =
+      (SerreGraph.Path.darts _ c.path).reverse.map S.boundary.rev :=
+  SerreGraph.Path.darts_reverse _ c.path
+
+/-- Reversing a boundary circuit twice gives the circuit back. -/
+@[simp] theorem reverse_reverse : c.reverse.reverse = c :=
+  ext (by simp [List.map_reverse, Function.comp_def])
 
 end BoundaryCircuit
 

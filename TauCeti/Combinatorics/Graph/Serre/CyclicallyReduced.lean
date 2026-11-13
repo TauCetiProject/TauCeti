@@ -82,6 +82,20 @@ theorem Path.IsCyclicallyReduced.isReduced {a : Γ.V} {p : Γ.Path a a}
   rw [Path.isCyclicallyReduced_iff, Path.isCyclicallyReduced_iff, ← Quiver.Path.reverse_comp,
     Path.isReduced_reverse]
 
+/-- A closed path traversing each geometric edge at most once is cyclically reduced: it does not
+backtrack, also not from its last dart to its first. -/
+theorem Path.isCyclicallyReduced_of_nodup_map_toGeomEdge_darts {a : Γ.V} {p : Γ.Path a a}
+    (hp : ((Path.darts Γ p).map Γ.toGeomEdge).Nodup) : Path.IsCyclicallyReduced Γ p := by
+  have hred := Path.isReduced_of_nodup_map_toGeomEdge_darts Γ hp
+  refine (Path.isCyclicallyReduced_iff Γ p).2 <|
+    (Path.isReduced_comp_iff Γ p p).2 ⟨hred, hred, fun e he f hf hfe => ?_⟩
+  obtain ⟨l, hl⟩ := List.head?_eq_some_iff.1 hf
+  rw [hl, List.map_cons, List.nodup_cons] at hp
+  rw [hl] at he
+  rcases List.mem_cons.1 (List.mem_of_mem_getLast? he) with rfl | he'
+  · exact Γ.rev_ne e hfe.symm
+  · exact hp.1 (List.mem_map.2 ⟨e, he', by rw [hfe, toGeomEdge_rev]⟩)
+
 /-- A morphism injective on darts preserves and reflects cyclically reduced closed paths. -/
 theorem Hom.isCyclicallyReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
     (hf : Function.Injective f.mapE) {a : Γ.V} (p : Γ.Path a a) :

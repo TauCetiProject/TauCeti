@@ -18,8 +18,8 @@ This file builds the standard surface models from the single-face complexes of
 projective plane `a a`, each a one-vertex polygon `PolygonalComplex.polygon w`. The sphere is the
 digon `a a⁻¹` on the segment, with two vertices. For each model the file checks the surface links
 and the Euler characteristic. It also separates the disc from the closed models by their boundary
-darts, and the torus from the projective plane by orientability. The boundary circuits of the disc
-are its loop and the reverse of its loop.
+darts, and the torus from the projective plane by orientability. Every boundary circuit of the
+disc traverses a single dart.
 
 It also records how the surface-link condition fails at a pinched vertex. On the one-petal rose,
 any family of faces `a a⁻¹` (`PolygonalComplex.digons`) has a disconnected vertex link: every
@@ -49,8 +49,8 @@ For infinitely many faces the link is moreover infinite, and every germ then has
   `TauCeti.SurfaceModel.isEmpty_boundaryComponent_projectivePlane`,
   `TauCeti.SurfaceModel.isEmpty_boundaryComponent_sphere`: the disc has one boundary component
   and the closed models have none.
-* `TauCeti.SurfaceModel.length_path_boundaryCircuit_disc`: a boundary circuit of the disc traverses
-  a single dart.
+* `TauCeti.SurfaceModel.length_path_boundaryCircuit_disc`: every boundary circuit of the disc
+  traverses a single dart.
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -180,19 +180,11 @@ instance : Subsingleton disc.boundary.V :=
 theorem card_boundaryComponent_disc : Nat.card disc.BoundaryComponent = 1 :=
   Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
-/-- A boundary circuit of the disc traverses a single dart, the loop `a` along which the face of the
-disc is attached or its reverse: the two darts of the disc lie in its only boundary component. -/
+/-- Every boundary circuit of the disc traverses a single dart. -/
 theorem length_path_boundaryCircuit_disc {b : disc.BoundaryComponent} (c : disc.BoundaryCircuit b) :
     c.path.length = 1 := by
-  have h : Nat.card {e : disc.boundary.E // disc.boundaryClass e = b} = 2 := by
-    rw [Nat.card_congr (Equiv.subtypeUnivEquiv fun e => Subsingleton.elim _ b),
-      Nat.card_congr (α := disc.boundary.E) (β := disc.graph.E)
-        (Equiv.subtypeUnivEquiv fun e => boundaryDarts_disc ▸ Set.mem_univ e),
-      -- The darts of the disc are those of the one-petal rose; `disc` is a plain definition.
-      Nat.card_congr (α := disc.graph.E) (β := Unit × Bool) (Equiv.refl _)]
-    simp
-  have := c.two_mul_length
-  omega
+  rw [c.length_eq_card, Nat.card_congr (Equiv.subtypeUnivEquiv fun x => Subsingleton.elim _ b)]
+  exact Nat.card_eq_one_iff_unique.2 ⟨inferInstance, inferInstance⟩
 
 /-! ### The torus -/
 
