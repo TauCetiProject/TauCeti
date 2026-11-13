@@ -127,8 +127,8 @@ theorem fdBoundary_sub_rho_mem_slitPlane_of_lt_three (H : ℝ) (ht3 : t < 3) :
   rw [hrho]
   linarith
 
-/-- Above the corner the left vertical is purely imaginary of nonzero height, and the ceiling
-has nonzero height `H - √3/2`: slit plane. -/
+/-- After the corner the shifted contour has nonzero imaginary part, `(t - 3) * (H - √3/2)` on the
+left vertical and `H - √3/2` on the ceiling, so it lies in the slit plane. -/
 theorem fdBoundary_sub_rho_mem_slitPlane_of_three_lt (hH : H ≠ Real.sqrt 3 / 2)
     (ht3 : 3 < t) :
     fdBoundary H t - (UpperHalfPlane.ρ : ℂ) ∈ Complex.slitPlane := by
