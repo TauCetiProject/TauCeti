@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.RealClosure.AlgebraicClosed
-public import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.Algebra.Polynomial.SpecificDegree
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.FieldTheory.IsRealClosed.Basic
 import Mathlib.Algebra.QuadraticAlgebra.Discriminant
+import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
+import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.FieldTheory.IsAlgClosed.OddDegreeRoot
+import TauCeti.FieldTheory.RealClosure.AlgebraicClosed
 
 /-! # Real closed fields and their algebraically closed quadratic extensions
 
@@ -71,17 +73,13 @@ variable {R K : Type*} [Field R] [Field K] [Algebra R K]
 /-- Every quadratic extension of a real closed field is algebraically closed. -/
 theorem isAlgClosed_of_isQuadraticExtension [IsRealClosed R]
     [Algebra.IsQuadraticExtension R K] : IsAlgClosed K := by
-  have : FiniteDimensional R K :=
-    finite_of_finrank_eq_succ (Algebra.IsQuadraticExtension.finrank_eq_two R K)
   -- Embed `K` into the algebraically closed `R(√-1)`; equal dimensions make this onto.
   let f : K →ₐ[R] QuadraticAlgebra R (-1) 0 := IsAlgClosed.lift
   have hf : Function.Surjective f :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := f.toLinearMap)
       (by simp [Algebra.IsQuadraticExtension.finrank_eq_two])).mp f.injective
-  refine isAlgClosed_of_forall_isSquare (R := R) fun x => ?_
-  obtain ⟨w, hw⟩ := QuadraticAlgebra.isSquare (f x)
-  obtain ⟨y, rfl⟩ := hf w
-  exact ⟨y, f.injective (by simp [hw])⟩
+  exact ⟨fun p => (IsAlgClosed.splits (p.map f.toRingHom)).of_splits_map f.toRingHom
+    (fun z _ => hf z)⟩
 
 /-- In characteristic two, a field `QuadraticAlgebra R a b` cannot have every element a square and
 a solution of the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` when `b ≠ 0`. -/
@@ -168,8 +166,6 @@ private theorem exists_coords_sqrt (hR : ¬IsSquare (-1 : R)) [Algebra.IsQuadrat
     (a b : R) :
     ∃ c d : R, c * c - d * d = a ∧ 2 * (c * d) = b := by
   have : Fact (¬IsSquare (-1 : R)) := ⟨hR⟩
-  have : FiniteDimensional R K :=
-    finite_of_finrank_eq_succ (Algebra.IsQuadraticExtension.finrank_eq_two R K)
   -- Identify `R(√-1)` with `K` by sending `√-1` to a square root of `-1` in `K`.
   obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
   let f := QuadraticAlgebra.lift (R := R) (a := -1) (b := 0) ⟨i, by simp [← sq, hi]⟩
@@ -190,7 +186,8 @@ theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadratic
   have hR : ¬IsSquare (-1 : R) :=
     not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension (K := K)
   have h2 : (2 : R) ≠ 0 := fun h => hR ⟨1, by linear_combination -h⟩
-  -- A sum of two squares `a² + b²` is the norm `(c² + d²)²` of a square root of `a + b √-1`.
+  -- A sum of two squares `a² + b²` is the square of the norm `c² + d²` of a square root
+  -- `c + d √-1` of `a + b √-1`.
   have hsumsq {s : R} (hs : IsSumSq s) : IsSquare s := by
     induction hs using IsSumSq.rec' with
     | zero => exact ⟨0, by simp⟩
@@ -227,8 +224,8 @@ theorem isRealClosed_of_isAlgClosed_adjoin (hR : ¬IsSquare (-1 : R)) {i : K} (h
   have hroot : aeval i (X ^ 2 + 1 : R[X]) = 0 := by simp [hi]
   have hdeg : (X ^ 2 + 1 : R[X]).natDegree = 2 := by rw [← C_1, natDegree_X_pow_add_C]
   have hirr : Irreducible (X ^ 2 + 1 : R[X]) := by
-    refine irreducible_of_degree_le_three_of_not_isRoot (by rw [hdeg]; decide) fun x hx => ?_
-    exact hR ⟨x, by linear_combination -(by simpa [sq] using hx : x * x + 1 = 0)⟩
+    simpa using (irreducible_X_pow_sub_C_iff_of_prime (K := R) Nat.prime_two (a := -1)).mpr
+      fun b hb => hR ⟨b, by rw [← hb, sq]⟩
   have hint : IsIntegral R i := ⟨_, monic_X_pow_add_C 1 two_ne_zero, hroot⟩
   have hmin : minpoly R i = X ^ 2 + 1 :=
     (minpoly.eq_of_irreducible_of_monic hirr hroot (monic_X_pow_add_C 1 two_ne_zero)).symm
