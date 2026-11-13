@@ -334,14 +334,8 @@ theorem isAdmissibleCentralizerLevel_singleton_iff {u : H} {n : ℕ} :
   refine ⟨fun h ↦ ⟨h.isAdmissibleCentralizerStep, ?_⟩, fun ⟨h, hc⟩ ↦ ?_⟩
   · rw [← h.closure_eq_centralizer, Finset.coe_singleton, ← zpowers_eq_closure]
     infer_instance
-  -- A generator `t` of the centralizer gives `u = t ^ i`, with `i = ± 1` since `u` is not a power.
-  obtain ⟨t, ht⟩ := (Subgroup.isCyclic_iff_exists_zpowers_eq _).1 hc
-  obtain ⟨i, hi⟩ := mem_zpowers_iff.1 (ht ▸ mem_centralizer_singleton_iff.2 rfl : u ∈ zpowers t)
-  have hp : ¬Group.IsProperPower (t ^ i) := hi ▸ (isAdmissibleCentralizerStep_iff.1 h).1
-  have hu : zpowers u = centralizer {u} := by
-    rw [← ht, ← hi]
-    obtain rfl | rfl := Int.natAbs_eq_iff.1 (Group.natAbs_eq_one_of_not_isProperPower_zpow hp) <;>
-      simp
+  have hu : zpowers u = centralizer {u} := zpowers_eq_of_not_isProperPower
+    (mem_centralizer_singleton_iff.2 rfl) (isAdmissibleCentralizerStep_iff.1 h).1
   refine ⟨h, hu ▸ inferInstance, ?_⟩
   rw [Finset.coe_singleton, ← zpowers_eq_closure, hu]
 

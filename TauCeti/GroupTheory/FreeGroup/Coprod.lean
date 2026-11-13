@@ -25,8 +25,8 @@ Mathlib's `FreeGroupBasis.coprodI` for the indexed free product `Monoid.CoprodI`
 
 * `FreeGroupBasis.coprod_apply_inl`, `FreeGroupBasis.coprod_apply_inr`: its elements.
 * The instance `IsFreeGroup (G ∗ H)` for free groups `G` and `H`.
-* `Monoid.Coprod.isPrimitive_inr`: a primitive element of a free group `H` stays primitive in
-  `G ∗ H` for every free group `G`.
+* `Monoid.Coprod.isPrimitive_inl`, `Monoid.Coprod.isPrimitive_inr`: a primitive element of a free
+  group stays primitive in its free product with any free group.
 -/
 
 public section
@@ -68,6 +68,13 @@ variable {G H : Type*} [Group G] [Group H]
 /-- The free product of two free groups is free. -/
 instance [IsFreeGroup G] [IsFreeGroup H] : IsFreeGroup (G ∗ H) :=
   ((IsFreeGroup.basis G).coprod (IsFreeGroup.basis H)).isFreeGroup
+
+/-- A primitive element of `G`, an element of some free basis of `G`, is primitive in `G ∗ H` for
+every free group `H`. -/
+theorem isPrimitive_inl [IsFreeGroup H] {x : G} (hx : Group.IsPrimitive x) :
+    Group.IsPrimitive (inl x : G ∗ H) := by
+  obtain ⟨ι, b, i, rfl⟩ := Group.isPrimitive_iff.1 hx
+  simpa using (b.coprod (IsFreeGroup.basis H)).isPrimitive (.inl i)
 
 /-- A primitive element of `H`, an element of some free basis of `H`, is primitive in `G ∗ H` for
 every free group `G`. -/
