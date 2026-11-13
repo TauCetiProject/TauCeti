@@ -597,9 +597,9 @@ lemma cohomologyOnBaseChangeLinearEquiv_apply [Module.Flat R R'] [M.IsQuasicoher
 end Opens
 
 include H in
-/-- Transfer the open-set base-change equivalence at `⊤` to global cohomology. Only existence
-is used here, so no comparison with the canonical global pullback map is required. -/
-private theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparated
+/-- Global cohomology of a quasi-coherent sheaf on a quasi-compact quasi-separated scheme
+commutes with flat base change, as an existence statement for a linear equivalence. -/
+theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparated
     [Module.Flat R R'] [CompactSpace X] [QuasiSeparatedSpace X]
     (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Nonempty (R' ⊗[R] Cohomology M n ≃ₗ[R']
@@ -615,6 +615,8 @@ private theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparate
       map_smul' r x := by
         rw [base_smul_cohomologyOn, base_smul_cohomology]
         exact (cohomologyOnTopLinearEquiv N n).map_smul _ _ }
+  -- The top open coerces to the universal set; the explicit types fix the open argument
+  -- of the base-change equivalence while using the global compactness instances.
   let e := cohomologyOnBaseChangeLinearEquiv H M
     (show IsCompact ((⊤ : X.Opens) : Set X) from isCompact_univ)
     (show IsQuasiSeparated ((⊤ : X.Opens) : Set X) from isQuasiSeparated_univ) n
