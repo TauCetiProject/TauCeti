@@ -354,7 +354,7 @@ theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
   have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
     push_cast [← Finset.sum_sub_distrib]
-    simp_rw [Nat.cast_sub_sub]
+    simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 

@@ -38,15 +38,15 @@ structure IceQuiver {I K : Type*} (row : K ↪ I) where
   /-- The number of arrows between each ordered pair of vertices. -/
   arrows : I → I → ℕ
   /-- There are no loops. -/
-  noLoops : ∀ i, arrows i i = 0
+  arrows_self : ∀ i, arrows i i = 0
   /-- There is at most one direction of arrows between two vertices. -/
-  noTwoCycles : ∀ i j, arrows i j * arrows j i = 0
+  arrows_mul_arrows_eq_zero : ∀ i j, arrows i j * arrows j i = 0
   /-- There are no arrows between two frozen vertices. -/
-  frozen : ∀ i j, i ∉ Set.range row → j ∉ Set.range row → arrows i j = 0
+  arrows_eq_zero_of_notMem_range : ∀ i j, i ∉ Set.range row → j ∉ Set.range row → arrows i j = 0
 
 namespace IceQuiver
 
-attribute [simp] noLoops
+attribute [simp] arrows_self
 
 variable {I K : Type*} {row : K ↪ I}
 
@@ -94,7 +94,7 @@ theorem toExchangeMatrix_symmetrizer (q : IceQuiver row) :
 @[simp]
 theorem posPart_matrix (q : IceQuiver row) (i : I) (k : K) :
     (q.matrix i k)⁺ = (q.arrows i (row k) : ℤ) := by
-  rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h
+  rcases Nat.mul_eq_zero.mp (q.arrows_mul_arrows_eq_zero i (row k)) with h | h
   · simp [matrix_apply, h]
   · simp [matrix_apply, h]
 
@@ -102,7 +102,7 @@ theorem posPart_matrix (q : IceQuiver row) (i : I) (k : K) :
 @[simp]
 theorem negPart_matrix (q : IceQuiver row) (i : I) (k : K) :
     (q.matrix i k)⁻ = (q.arrows (row k) i : ℤ) := by
-  rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h
+  rcases Nat.mul_eq_zero.mp (q.arrows_mul_arrows_eq_zero i (row k)) with h | h
   · simp [matrix_apply, h]
   · simp [matrix_apply, h]
 
@@ -111,14 +111,14 @@ vertex. -/
 @[simp]
 theorem toNat_matrix (q : IceQuiver row) (i : I) (k : K) :
     (q.matrix i k).toNat = q.arrows i (row k) := by
-  rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h <;>
+  rcases Nat.mul_eq_zero.mp (q.arrows_mul_arrows_eq_zero i (row k)) with h | h <;>
     simp [matrix_apply, h]
 
 /-- Taking the nonnegative part of the negated matrix entry recovers the reverse arrows. -/
 @[simp]
 theorem toNat_neg_matrix (q : IceQuiver row) (i : I) (k : K) :
     (-q.matrix i k).toNat = q.arrows (row k) i := by
-  rcases Nat.mul_eq_zero.mp (q.noTwoCycles i (row k)) with h | h <;>
+  rcases Nat.mul_eq_zero.mp (q.arrows_mul_arrows_eq_zero i (row k)) with h | h <;>
     simp [matrix_apply, h]
 
 /-- A quiver is determined by its rectangular matrix: all omitted frozen--frozen entries are
@@ -132,7 +132,7 @@ theorem matrix_injective : Function.Injective (matrix (row := row)) := by
   · by_cases hi : i ∈ Set.range row
     · obtain ⟨k, rfl⟩ := hi
       rw [← q.toNat_neg_matrix j k, ← q'.toNat_neg_matrix j k, h]
-    · rw [q.frozen i j hi hj, q'.frozen i j hi hj]
+    · rw [q.arrows_eq_zero_of_notMem_range i j hi hj, q'.arrows_eq_zero_of_notMem_range i j hi hj]
 
 @[simp]
 theorem matrix_inj {q q' : IceQuiver row} : q.matrix = q'.matrix ↔ q = q' :=
@@ -184,29 +184,29 @@ is precisely what makes the prescriptions in two mutable directions agree. -/
 noncomputable def ofMatrix (B : Matrix I K ℤ)
     (hB : ∀ i j, B (row i) j = -B (row j) i) : IceQuiver row where
   arrows i j := (completion row B i j).toNat
-  noLoops i := by
+  arrows_self i := by
     have h := completion_skew B hB i i
     have hz : completion row B i i = 0 := by omega
     simp [hz]
-  noTwoCycles i j := by
+  arrows_mul_arrows_eq_zero i j := by
     have hs := completion_skew B hB i j
     rcases le_total (completion row B i j) 0 with h | h
     · have hz : (completion row B i j).toNat = 0 := by omega
       simp [hz]
     · have hz : (completion row B j i).toNat = 0 := by omega
       simp [hz]
-  frozen i j hi hj := by simp [completion_frozen B i j hi hj]
+  arrows_eq_zero_of_notMem_range i j hi hj := by simp [completion_frozen B i j hi hj]
 
-/-- The forward arrows of the recovered quiver are the positive entries of `B`. -/
+/-- The forward arrow counts of the recovered quiver are the nonnegative parts
+`(B i k).toNat` of the corresponding matrix entries. -/
 @[simp]
 theorem ofMatrix_arrows_col (B : Matrix I K ℤ)
     (hB : ∀ i j, B (row i) j = -B (row j) i) (i : I) (k : K) :
     (ofMatrix B hB).arrows i (row k) = (B i k).toNat := by
   exact congrArg Int.toNat (completion_col B i k)
 
-/-- Without frozen vertices every arrow count is a nonnegative matrix entry.
-The skew hypothesis retains the form used by `ofMatrix`, rather than an unrestricted entry
-rewrite rule during contextual simplification. -/
+/-- Without frozen vertices, every arrow count is the nonnegative part of the corresponding
+matrix entry. -/
 @[simp]
 theorem ofMatrix_refl_arrows (B : Matrix K K ℤ)
     (hB : ∀ i j, B ((Function.Embedding.refl K) i) j =
@@ -214,7 +214,8 @@ theorem ofMatrix_refl_arrows (B : Matrix K K ℤ)
     (ofMatrix (row := Function.Embedding.refl K) B hB).arrows i j = (B i j).toNat :=
   ofMatrix_arrows_col B hB i j
 
-/-- The backward arrows of the recovered quiver are the negative entries of `B`. -/
+/-- The backward arrow counts of the recovered quiver are the nonnegative parts
+`(-B i k).toNat` of the negated matrix entries. -/
 @[simp]
 theorem ofMatrix_arrows_row (B : Matrix I K ℤ)
     (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) (i : I) :
@@ -247,7 +248,14 @@ noncomputable def matrixEquiv : IceQuiver row ≃
     exact matrix_ofMatrix B.val B.property
 
 @[simp]
-theorem matrixEquiv_apply (q : IceQuiver row) : (matrixEquiv q).val = q.matrix := (rfl)
+theorem val_matrixEquiv_apply (q : IceQuiver row) : (matrixEquiv q).val = q.matrix := (rfl)
+
+/-- The matrix equivalence sends a reconstructed quiver to the original matrix subtype. -/
+@[simp]
+theorem matrixEquiv_ofMatrix (B : Matrix I K ℤ)
+    (hB : ∀ i j, B (row i) j = -B (row j) i) :
+    matrixEquiv (ofMatrix B hB) = ⟨B, hB⟩ :=
+  Subtype.ext (matrix_ofMatrix B hB)
 
 @[simp]
 theorem matrixEquiv_symm_apply
@@ -259,10 +267,10 @@ theorem matrixEquiv_symm_apply
 private def reindexFun {I' K' : Type*} {row' : K' ↪ I'} (eI : I ≃ I') (eK : K ≃ K')
     (h : ∀ k, eI (row k) = row' (eK k)) (q : IceQuiver row) : IceQuiver row' where
   arrows i j := q.arrows (eI.symm i) (eI.symm j)
-  noLoops i := q.noLoops _
-  noTwoCycles i j := q.noTwoCycles _ _
-  frozen i j hi hj := by
-    apply q.frozen
+  arrows_self i := q.arrows_self _
+  arrows_mul_arrows_eq_zero i j := q.arrows_mul_arrows_eq_zero _ _
+  arrows_eq_zero_of_notMem_range i j hi hj := by
+    apply q.arrows_eq_zero_of_notMem_range
     · rintro ⟨k, hk⟩
       apply hi
       exact ⟨eK k, by simpa [h] using congrArg eI hk⟩

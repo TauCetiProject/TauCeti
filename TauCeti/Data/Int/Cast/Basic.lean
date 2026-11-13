@@ -20,7 +20,8 @@ namespace Nat
 
 /-- Opposite truncated differences recover the difference after casting to an additive group
 with one. -/
-theorem cast_sub_sub {R : Type*} [AddGroupWithOne R] (a b : ℕ) :
+@[simp]
+theorem cast_sub_sub_cast_sub {R : Type*} [AddGroupWithOne R] (a b : ℕ) :
     ((a - b : ℕ) : R) - ((b - a : ℕ) : R) = (a : R) - b := by
   rcases le_total a b with h | h
   · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero, Nat.cast_sub h, zero_sub, neg_sub]
