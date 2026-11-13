@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.McLaughlin.Orbits
-public import Mathlib.GroupTheory.GroupAction.Primitive
+public import TauCeti.GroupTheory.GroupAction.Primitive
 import Mathlib.Data.Nat.Bits
 import Mathlib.NumberTheory.Divisors
 
@@ -101,8 +101,10 @@ theorem orbit_stabilizer_zero_three :
   constructor
   · intro hx
     constructor
-    · obtain ⟨g, rfl⟩ := hx
-      have h0 : (g : Equiv.Perm (Fin 275)) 0 = 0 := g.property.2
+    · obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hx
+      have h0 : (g : Equiv.Perm (Fin 275)) 0 = 0 := by
+        simpa only [Equiv.Perm.smul_def] using
+          mem_stabilizer_iff.mp (Subgroup.mem_inf.mp g.property).2
       simpa only [subgroup_smul_def, Equiv.Perm.smul_def, h0] using
         (g : Equiv.Perm (Fin 275)).injective.ne (by decide : (3 : Fin 275) ≠ 0)
     · intro hx1
@@ -110,8 +112,13 @@ theorem orbit_stabilizer_zero_three :
       exact ((mem_farPoints 3).mp (by decide)).2 h31
   · intro hx
     obtain ⟨h0, h3⟩ := farWords_apply x ((mem_farPoints x).mpr hx)
-    exact ⟨⟨(farWordValue (farWords x) : Equiv.Perm (Fin 275)),
-      (farWordValue (farWords x)).property, h0⟩, h3⟩
+    have hg : (farWordValue (farWords x) : Equiv.Perm (Fin 275)) ∈
+        McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275) := by
+      refine Subgroup.mem_inf.mpr ⟨(farWordValue (farWords x)).property, ?_⟩
+      exact mem_stabilizer_iff.mpr (by simpa only [Subgroup.smul_def] using h0)
+    apply mem_orbit_iff.mpr
+    refine ⟨⟨(farWordValue (farWords x) : Equiv.Perm (Fin 275)), hg⟩, ?_⟩
+    simpa only [Subgroup.smul_def] using h3
 
 /-- The complementary orbit of the point stabilizer has length 162. -/
 @[simp] theorem ncard_orbit_stabilizer_zero_three :
@@ -124,16 +131,6 @@ theorem orbit_stabilizer_zero_three :
     simp
   rw [hset, Set.ncard_coe_finset]
   decide +kernel
-
-private theorem orbit_subset_block {B : Set (Fin 275)} (hB : IsBlock McL B)
-    (h0 : (0 : Fin 275) ∈ B) {x : Fin 275} (hx : x ∈ B) :
-    orbit ↥(McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) x ⊆ B := by
-  rintro _ ⟨g, rfl⟩
-  let g' : McL := ⟨g.val, g.property.1⟩
-  have hg' : g' ∈ stabilizer McL (0 : Fin 275) := g.property.2
-  have hfix := hB.stabilizer_le h0 hg'
-  rw [← hfix]
-  exact Set.smul_mem_smul_set hx
 
 /-- The canonical degree-275 ATLAS McLaughlin action is primitive. -/
 instance : IsPreprimitive McL (Fin 275) := by
@@ -149,15 +146,15 @@ instance : IsPreprimitive McL (Fin 275) := by
       by_cases hx1 : x ∈ orbit
           ↥(McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) (1 : Fin 275)
       · have h1 := (mem_orbit_symm.mp hx1)
-        have hinc := orbit_subset_block hB h0 hx
+        have hinc := hB.orbit_inf_stabilizer_subset h0 hx
         have hB1 := hinc h1
-        simpa using Set.ncard_le_ncard (orbit_subset_block hB h0 hB1)
+        simpa using Set.ncard_le_ncard (hB.orbit_inf_stabilizer_subset h0 hB1)
       · have hx3 : x ∈ orbit
             ↥(McL ⊓ stabilizer (Equiv.Perm (Fin 275)) (0 : Fin 275)) (3 : Fin 275) := by
           rw [orbit_stabilizer_zero_three]
           simpa using And.intro hx0 hx1
-        have hB3 := orbit_subset_block hB h0 hx (mem_orbit_symm.mp hx3)
-        have hcard := Set.ncard_le_ncard (orbit_subset_block hB h0 hB3)
+        have hB3 := hB.orbit_inf_stabilizer_subset h0 hx (mem_orbit_symm.mp hx3)
+        have hcard := Set.ncard_le_ncard (hB.orbit_inf_stabilizer_subset h0 hB3)
         rw [ncard_orbit_stabilizer_zero_three] at hcard
         omega
     -- Every proper divisor of 275 is at most 55, contradicting the orbit bound.
