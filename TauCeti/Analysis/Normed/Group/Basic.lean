@@ -16,7 +16,8 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
-`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
+`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. In the same way, `c ‖a‖² ≤ e` and `‖b‖ ≤ B` give
+`‖a + b‖² ≤ 2 / c · e + 2 B²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
 distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
@@ -40,6 +41,8 @@ contains `0`.
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
+* `TauCeti.norm_add_sq_le_of_mul_norm_sq_le` -- `‖a + b‖² ≤ 2 / c · e + 2 B²` from
+  `c ‖a‖² ≤ e` and `‖b‖ ≤ B`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
   most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
@@ -71,6 +74,18 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
   (pow_le_pow_left₀ (norm_nonneg _)
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
+
+/-- If `c ‖a‖² ≤ e` for some `c > 0` and `‖b‖ ≤ B`, then `‖a + b‖² ≤ 2 / c · e + 2 B²`. -/
+theorem norm_add_sq_le_of_mul_norm_sq_le {E : Type*} [SeminormedAddCommGroup E] {a b : E}
+    {c e B : ℝ} (hc : 0 < c) (ha : c * ‖a‖ ^ 2 ≤ e) (hb : ‖b‖ ≤ B) :
+    ‖a + b‖ ^ 2 ≤ 2 / c * e + 2 * B ^ 2 := by
+  have hsq : ‖a + b‖ ^ 2 ≤ 2 * (‖a‖ ^ 2 + ‖b‖ ^ 2) :=
+    (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le a b) 2).trans add_sq_le
+  have hb' : ‖b‖ ^ 2 ≤ B ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hb 2
+  have ha' : 2 * ‖a‖ ^ 2 ≤ 2 / c * e := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  linarith
 
 /-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
 theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :

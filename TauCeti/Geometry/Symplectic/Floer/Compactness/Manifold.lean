@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-import Mathlib.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
@@ -69,6 +70,24 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M]
   {Ks Kt : ℝ × ℝ → M → ℝ} {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
 
+/-- The derivative of `ψ⁻¹` inverts the derivative of the extended chart `ψ` at a point of the
+chart. -/
+private theorem mfderivWithin_extChartAt_symm_mvfderiv {x₀ x : M}
+    (hx : x ∈ (extChartAt I x₀).source) (a : TangentSpace I x) :
+    mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x)
+      (mvfderiv I (extChartAt I x₀) x a) = a := by
+  rw [mvfderiv_apply_eq_mfderiv_apply]
+  exact congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hx) a)
+
+/-- The derivative of the extended chart `ψ` inverts the derivative of `ψ⁻¹` at a point of the
+chart. -/
+private theorem mvfderiv_extChartAt_mfderivWithin_symm {x₀ x : M}
+    (hx : x ∈ (extChartAt I x₀).source) (ξ : E) :
+    mvfderiv I (extChartAt I x₀) x
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x) ξ) = ξ :=
+  (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans
+    congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm' hx) ξ)
+
 /-- **The Floer equation in a chart.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` at
 `z` for the structure `J(z, u z)`, with `u` differentiable at `z` and `u z` in the source of the
 extended chart `ψ = extChartAt I x₀`. With `T = dψ_(u z)` and `S` the derivative of `ψ⁻¹` at
@@ -92,15 +111,10 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M) (
       mvfderiv I (extChartAt I x₀) (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v) :=
     (mvfderiv_eq_fderiv_apply _ z v).symm.trans (mvfderiv_comp_apply z
       (mdifferentiableAt_extChartAt (by rwa [extChartAt_source] at hz)) hu v)
-  have hST (a : TangentSpace I (u z)) :
-      mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ (u z))
-        (mvfderiv I (extChartAt I x₀) (u z) a) = a := by
-    rw [mvfderiv_apply_eq_mfderiv_apply]
-    exact congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hz) a)
   have hP := h.apply_stdComplexLineImag
   simp only [ContinuousLinearMap.coe_coe, perturbedMFDeriv_apply_stdComplexLineReal,
     perturbedMFDeriv_apply_stdComplexLineImag] at hP
-  rw [hd, hd, ← map_sub, ← map_sub, hST, ← hP]
+  rw [hd, hd, ← map_sub, ← map_sub, mfderivWithin_extChartAt_symm_mvfderiv hz, ← hP]
 
 /-- Tameness at the chart points `y ∈ K`, read at the points `x` of the chart with `ψ x ∈ K`. -/
 private theorem tames_of_mem_extChartAt_source {ω : SmoothTwoForm I M} {x₀ x : M} {z : ℝ × ℝ}
@@ -114,6 +128,80 @@ private theorem tames_of_mem_extChartAt_source {ω : SmoothTwoForm I M} {x₀ x 
   exact h v hv
 
 variable [FiniteDimensional ℝ E]
+
+/-- The chart structure `T J S` at `ψ x` carries `T c` to `T (J c)`. -/
+private theorem chartStructure_apply_mvfderiv {x₀ x : M} (z : ℝ × ℝ)
+    (hx : x ∈ (extChartAt I x₀).source) (c : TangentSpace I x) :
+    (mvfderiv I (extChartAt I x₀) ((extChartAt I x₀).symm (extChartAt I x₀ x)) ∘L
+        (J z ((extChartAt I x₀).symm (extChartAt I x₀ x))).toLinearMap.toContinuousLinearMap ∘L
+        mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x) :
+          E →L[ℝ] E) (mvfderiv I (extChartAt I x₀) x c) =
+      mvfderiv I (extChartAt I x₀) x (J z x c) := by
+  change mvfderiv I (extChartAt I x₀) ((extChartAt I x₀).symm (extChartAt I x₀ x))
+    (J z ((extChartAt I x₀).symm (extChartAt I x₀ x))
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) (extChartAt I x₀ x)
+        (mvfderiv I (extChartAt I x₀) x c))) = _
+  rw [mfderivWithin_extChartAt_symm_mvfderiv hx, (extChartAt I x₀).left_inv hx]
+
+/-- **A uniform taming constant in a chart.** On a compact window `D × K` of domain points and
+chart points of `ψ = extChartAt I x₀`, with `K` in the chart target, where the chart structure
+`T J(z, ψ⁻¹ y) S` is continuous and `J(z, ψ⁻¹ y)` is tamed by `ω`, there is `c > 0` with
+`c ‖T a‖² ≤ ω_x(a, J(z, x) a)` for all `z ∈ D`, all points `x` of the chart with `ψ x ∈ K`, and
+all `a ∈ T_x M`. -/
+private theorem exists_pos_forall_mul_norm_mvfderiv_sq_le (ω : SmoothTwoForm I M) (x₀ : M)
+    {D : Set (ℝ × ℝ)} {K : Set E} (hD : IsCompact D) (hK : IsCompact K)
+    (hKt : K ⊆ (extChartAt I x₀).target)
+    (hJ : ContinuousOn (fun q : (ℝ × ℝ) × E ↦
+      (mvfderiv I (extChartAt I x₀) ((extChartAt I x₀).symm q.2) ∘L
+        (J q.1 ((extChartAt I x₀).symm q.2)).toLinearMap.toContinuousLinearMap ∘L
+        mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) q.2 : E →L[ℝ] E)) (D ×ˢ K))
+    (htame : ∀ z ∈ D, ∀ y ∈ K, ∀ v : TangentSpace I ((extChartAt I x₀).symm y), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ ω _ v (J z _ v)) :
+    ∃ c > 0, ∀ z ∈ D, ∀ x ∈ (extChartAt I x₀).source, extChartAt I x₀ x ∈ K →
+      ∀ a : TangentSpace I x,
+        c * ‖mvfderiv I (extChartAt I x₀) x a‖ ^ 2 ≤ SmoothBundleForm.eval₂ ω x a (J z x a) := by
+  set ψ := extChartAt I x₀ with hψ
+  -- The bilinear forms `b (z, y) (ξ, η) = ω_y(ξ, T J S η)`, with `ω_y` the chart coefficients
+  -- `ω.inChartAt x₀ y` of `ω`.
+  set Jc : (ℝ × ℝ) × E → E →L[ℝ] E := fun q ↦
+    (mvfderiv I ψ (ψ.symm q.2) ∘L (J q.1 (ψ.symm q.2)).toLinearMap.toContinuousLinearMap ∘L
+      mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) q.2 : E →L[ℝ] E)
+  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
+    ((ContinuousLinearMap.compL ℝ E E ℝ).flip (Jc q)).comp
+      (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt ω.1 x₀ q.2))
+  -- At a point `x` of the chart, `b (z, ψ x)` evaluated on `T a` and `T c` is `ω_x(a, J c)`.
+  have hbT (z : ℝ × ℝ) {x : M} (hx : x ∈ ψ.source) (a c : TangentSpace I x) :
+      b (z, ψ x) (mvfderiv I ψ x a) (mvfderiv I ψ x c) =
+        SmoothBundleForm.eval₂ ω x a (J z x c) := by
+    have hJT : Jc (z, ψ x) (mvfderiv I ψ x c) = mvfderiv I ψ x (J z x c) :=
+      chartStructure_apply_mvfderiv z hx c
+    simp only [b, ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+      ContinuousLinearMap.compL_apply, ContinuousAlternatingMap.flatL_apply_apply]
+    rw [hJT, SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv ω.1 hx, ← hψ]
+    congr 1
+    ext i
+    fin_cases i
+    · simp only [Fin.zero_eta, Matrix.cons_val_zero]
+    · simp only [Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  have hcont : ContinuousOn b (D ×ˢ K) :=
+    ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
+      ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
+        ((ω.isSmoothForm.continuousOn_inChartAt x₀).comp continuousOn_snd
+          fun q hq ↦ hKt hq.2))
+  obtain ⟨c, hc, hbc⟩ := (hD.prod hK).exists_pos_forall_mul_norm_sq_le hcont fun q hq ξ hξ ↦ by
+    obtain ⟨z, y⟩ := q
+    obtain ⟨hz, hy⟩ := hq
+    obtain ⟨x, hx, rfl⟩ : ∃ x ∈ ψ.source, ψ x = y :=
+      ⟨ψ.symm y, ψ.map_target (hKt hy), ψ.right_inv (hKt hy)⟩
+    have hTS : mvfderiv I ψ x (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ) = ξ :=
+      mvfderiv_extChartAt_mfderivWithin_symm hx ξ
+    have hb := hbT z hx (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ)
+      (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ)
+    rw [hTS] at hb
+    rw [hb]
+    exact tames_of_mem_extChartAt_source (htame z hz) hx hy _ fun h0 ↦
+      hξ (hTS.symm.trans ((congrArg (mvfderiv I ψ x) h0).trans (map_zero _)))
+  exact ⟨c, hc, fun z hz x hx hxK a ↦ (hbc _ ⟨hz, hxK⟩ _).trans_eq (hbT z hx a a)⟩
 
 /-- **The Floer energy bounds the derivative in a chart.** Let `D ⊆ ℝ × ℝ` and `K ⊆ E` be compact,
 with `K` in the target of the extended chart `ψ = extChartAt I x₀`. Suppose that the chart
@@ -141,64 +229,7 @@ theorem exists_forall_norm_fderiv_extChartAt_comp_stdComplexLineReal_sq_le (ω :
       ‖fderiv ℝ (extChartAt I x₀ ∘ u) z stdComplexLineReal‖ ^ 2 ≤
         A * ω.floerEnergyDensity Ks Kt u z + B := by
   set ψ := extChartAt I x₀
-  set Jc : (ℝ × ℝ) × E → E →L[ℝ] E := fun q ↦
-    (mvfderiv I ψ (ψ.symm q.2) ∘L (J q.1 (ψ.symm q.2)).toLinearMap.toContinuousLinearMap ∘L
-      mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) q.2 : E →L[ℝ] E)
-  -- The chart coefficients `ω.inChartAt x₀ y` of `ω`, read as bilinear forms `(ξ, η) ↦ ω_y(ξ, η)`.
-  set L : (E [⋀^Fin 2]→L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ :=
-    ContinuousLinearMap.compL ℝ E (E [⋀^Fin 1]→L[ℝ] ℝ) (E →L[ℝ] ℝ)
-        (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
-          (0 : Fin 1)).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-      (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := ℝ)
-        (n := 1)).toContinuousLinearMap with hL
-  have hLapply (f : E [⋀^Fin 2]→L[ℝ] ℝ) (ξ η : E) : L f ξ η = f ![ξ, η] := by
-    have hη : (fun _ : Fin 1 ↦ η) = ![η] := by
-      ext i
-      fin_cases i
-      rfl
-    simp [hL, hη]
-  set b : (ℝ × ℝ) × E → E →L[ℝ] E →L[ℝ] ℝ := fun q ↦
-    ((ContinuousLinearMap.compL ℝ E E ℝ).flip (Jc q)).comp (L (RoughForm.inChartAt ω.1 x₀ q.2))
-    with hb
-  have hbapply (q : (ℝ × ℝ) × E) (ξ η : E) :
-      b q ξ η = RoughForm.inChartAt ω.1 x₀ q.2 ![ξ, Jc q η] := by
-    simp [hb, hLapply]
-  -- At a point `x` of the chart, `b (z, ψ x)` evaluated on `T a` and `T c` is `ω_x(a, J c)`.
-  have hbT (z : ℝ × ℝ) {x : M} (hx : x ∈ ψ.source) (a c : TangentSpace I x) :
-      b (z, ψ x) (mvfderiv I ψ x a) (mvfderiv I ψ x c) =
-        SmoothBundleForm.eval₂ ω x a (J z x c) := by
-    have hST : mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) (mvfderiv I ψ x c) = c := by
-      rw [mvfderiv_apply_eq_mfderiv_apply]
-      exact congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) hx) c)
-    -- The chart structure carries `T c` to `T (J c)`.
-    have hJT : Jc (z, ψ x) (mvfderiv I ψ x c) = mvfderiv I ψ x (J z x c) := by
-      have h1 : Jc (z, ψ x) (mvfderiv I ψ x c) = mvfderiv I ψ (ψ.symm (ψ x))
-          (J z (ψ.symm (ψ x)) (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x)
-            (mvfderiv I ψ x c))) := rfl
-      rw [h1, hST, ψ.left_inv hx]
-    rw [hbapply, hJT, SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv ω.1 hx]
-    congr 1
-    ext i
-    fin_cases i <;> rfl
-  have hcont : ContinuousOn b (D ×ˢ K) :=
-    ((ContinuousLinearMap.compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
-      (L.continuous.comp_continuousOn ((ω.isSmoothForm.continuousOn_inChartAt x₀).comp
-        continuousOn_snd fun q hq ↦ hKt hq.2))
-  -- A uniform taming constant in the chart, and a bound for the chart vector field.
-  obtain ⟨c, hc, hbc⟩ := (hD.prod hK).exists_pos_forall_mul_norm_sq_le hcont fun q hq ξ hξ ↦ by
-    obtain ⟨z, y⟩ := q
-    obtain ⟨hz, hy⟩ := hq
-    obtain ⟨x, hx, rfl⟩ : ∃ x ∈ ψ.source, ψ x = y :=
-      ⟨ψ.symm y, ψ.map_target (hKt hy), ψ.right_inv (hKt hy)⟩
-    have hTS : mvfderiv I ψ x (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ) = ξ :=
-      (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans
-        congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm' (I := I) hx) ξ)
-    have hb := hbT z hx (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ)
-      (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) ξ)
-    rw [hTS] at hb
-    rw [hb]
-    exact tames_of_mem_extChartAt_source (htame z hz) hx hy _ fun h0 ↦
-      hξ (hTS.symm.trans ((congrArg (mvfderiv I ψ x) h0).trans (map_zero _)))
+  obtain ⟨c, hc, hbc⟩ := exists_pos_forall_mul_norm_mvfderiv_sq_le ω x₀ hD hK hKt hJ htame
   obtain ⟨B₀, hB₀⟩ := (hD.prod hK).exists_bound_of_continuousOn hX
   refine ⟨2 / c, by positivity, 2 * B₀ ^ 2, by positivity, fun u z hz hsrc hK' hu h ↦ ?_⟩
   set a := ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal
@@ -219,19 +250,10 @@ theorem exists_forall_norm_fderiv_extChartAt_comp_stdComplexLineReal_sq_le (ω :
   have hE : c * ‖T a‖ ^ 2 ≤ ω.floerEnergyDensity Ks Kt u z := by
     have hP := h.apply_stdComplexLineImag
     simp only [ContinuousLinearMap.coe_coe] at hP
-    rw [floerEnergyDensity_def, hP, ← hbT z hsrc]
-    exact hbc _ ⟨hz, hK'⟩ _
+    rw [floerEnergyDensity_def, hP]
+    exact hbc z hz _ hsrc hK' a
   rw [hd]
-  calc ‖T a + T (ω.hamiltonianVectorField (Ks z) (u z))‖ ^ 2
-      ≤ (‖T a‖ + B₀) ^ 2 := by
-        gcongr
-        exact (norm_add_le _ _).trans (by linarith)
-    _ ≤ 2 * ‖T a‖ ^ 2 + 2 * B₀ ^ 2 := by nlinarith [sq_nonneg (‖T a‖ - B₀)]
-    _ ≤ 2 / c * ω.floerEnergyDensity Ks Kt u z + 2 * B₀ ^ 2 := by
-        have : 2 * ‖T a‖ ^ 2 ≤ 2 / c * ω.floerEnergyDensity Ks Kt u z := by
-          rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-          linarith
-        linarith
+  exact norm_add_sq_le_of_mul_norm_sq_le hc hE hXB
 
 end Chart
 
@@ -307,17 +329,18 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_comp_subseq_off_f
   -- The chart structure squares to `-1`, since `S` and `T` are inverse to each other.
   have hJsq : ∀ z ∈ D, ∀ y ∈ K, ∀ w, Jc (z, y) (Jc (z, y) w) = -w := by
     intro z _ y hy w
-    have hST (a : TangentSpace I (ψ.symm y)) :
-        mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) y (mvfderiv I ψ (ψ.symm y) a) = a := by
-      rw [mvfderiv_apply_eq_mfderiv_apply]
-      exact congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt (I := I) (hKt hy)) a)
-    have hTS : mvfderiv I ψ (ψ.symm y) (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) y w) = w :=
-      (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans
-        congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm (I := I) (hKt hy)) w)
-    have h1 : Jc (z, y) (Jc (z, y) w) = mvfderiv I ψ (ψ.symm y) (J z (ψ.symm y)
-        (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) y (mvfderiv I ψ (ψ.symm y) (J z (ψ.symm y)
-          (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) y w))))) := rfl
-    rw [h1, hST, AlmostComplexStructure.apply_apply, map_neg, hTS]
+    obtain ⟨x, hx, rfl⟩ : ∃ x ∈ ψ.source, ψ x = y :=
+      ⟨ψ.symm y, ψ.map_target (hKt hy), ψ.right_inv (hKt hy)⟩
+    have hJT (c : TangentSpace I x) : Jc (z, ψ x) (mvfderiv I ψ x c) =
+        mvfderiv I ψ x (J z x c) :=
+      chartStructure_apply_mvfderiv z hx c
+    have hTS : mvfderiv I ψ x (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) w) = w :=
+      mvfderiv_extChartAt_mfderivWithin_symm hx w
+    have hw := hJT (mfderivWithin 𝓘(ℝ, E) I ψ.symm (range I) (ψ x) w)
+    rw [hTS] at hw
+    rw [hw, hJT]
+    exact (congrArg (mvfderiv I ψ x) ((J z x).apply_apply _)).trans
+      ((map_neg _ _).trans (congrArg Neg.neg hTS))
   obtain ⟨A, hA0, B, hB0, hpt⟩ :=
     ω.exists_forall_norm_fderiv_extChartAt_comp_stdComplexLineReal_sq_le x₀ hD hK hKt
       (hJ.continuousOn.mono hDKW) (hXs.continuousOn.mono hDKW) htame
@@ -346,16 +369,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_comp_subseq_off_f
     simp only [Xs, Xt, Function.comp_apply]
     rw [ψ.left_inv (hsrc k hz)]
     exact h
-  have hf0 (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) : 0 ≤ ω.floerEnergyDensity Ks Kt (u k) z := by
-    have hP := (hfl k z hz).apply_stdComplexLineImag
-    simp only [ContinuousLinearMap.coe_coe] at hP
-    rw [floerEnergyDensity_def, hP]
-    rcases eq_or_ne (ω.perturbedMFDeriv Ks Kt (u k) z stdComplexLineReal) 0 with h0 | h0
-    · have h00 : SmoothBundleForm.eval₂ ω (u k z) 0 0 = 0 := by
-        rw [SmoothBundleForm.eval₂_apply]
-        exact ContinuousAlternatingMap.map_coord_zero _ 0 rfl
-      simp only [h0, map_zero, h00, le_refl]
-    · exact (tames_of_mem_extChartAt_source (htame z (hΩD hz)) (hsrc k hz) (huK k hz).2 _ h0).le
+  have hf0 (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) : 0 ≤ ω.floerEnergyDensity Ks Kt (u k) z :=
+    floerEnergyDensity_nonneg_of_forall_pos
+      (tames_of_mem_extChartAt_source (htame z (hΩD hz)) (hsrc k hz) (huK k hz).2) (hfl k z hz)
   obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
     hconv hΩ hΩD hv (fun k z hz ↦ hcoord k z hz) (fun k z hz ↦ (huK k hz).2) hf0
       (fun k z hz ↦ hpt (hΩD hz) (hsrc k hz) (huK k hz).2 (hmd k hz) (hfl k z hz)) hint hE
