@@ -229,13 +229,6 @@ theorem exists_mk {b : B} (v : AssociatedBundle G P F b) :
   obtain ⟨w, hw⟩ := (mk_bijective (F := F) p).2 v
   exact ⟨p, w, hw⟩
 
-/-- Two vectors of a fibre of the associated bundle are classes in a common principal frame. -/
-theorem exists_mk_mk {b : B} (v w : AssociatedBundle G P F b) :
-    ∃ (p : P b) (v' w' : F), mk G p v' = v ∧ mk G p w' = w := by
-  obtain ⟨p, v', rfl⟩ := exists_mk v
-  obtain ⟨w', rfl⟩ := (mk_bijective p).2 w
-  exact ⟨p, v', w', rfl, rfl⟩
-
 /-! ### The quotient topology -/
 
 /-- The class of `(p • g, g⁻¹ • v)` is the class of `(p, v)`. -/

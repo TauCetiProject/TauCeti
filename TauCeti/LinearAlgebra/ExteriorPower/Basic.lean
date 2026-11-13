@@ -76,6 +76,9 @@ factors by vectors of that subspace does not change the product.
 * `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
   the span of a linearly independent family exactly when its product with the exterior product of
   the family vanishes.
+* `TauCeti.exteriorPower.alternatingMapLinearEquiv_bijective`: over a field, a nonzero alternating
+  `n`-form on an `n`-dimensional space with values in a line induces an isomorphism of the top
+  exterior power onto the line.
 
 ## References
 
@@ -511,6 +514,21 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
     _root_.exteriorPower.ιMulti_apply_coe, _root_.ExteriorAlgebra.ιMulti_succ_apply,
     _root_.exteriorPower.ιMulti_apply_coe]
   simp [Matrix.vecTail, Function.comp_def]
+
+/-- **The top exterior power of a space.** Over a field, a nonzero alternating `n`-form `η` on an
+`n`-dimensional space `V` with values in a line `W` induces a bijection from `⋀ⁿ V` onto `W`. -/
+theorem alternatingMapLinearEquiv_bijective {n : ℕ} (hV : Module.finrank K V = n)
+    (hW : Module.finrank K W = 1) {η : V [⋀^Fin n]→ₗ[K] W} (hη : η ≠ 0) :
+    Function.Bijective (_root_.exteriorPower.alternatingMapLinearEquiv η) := by
+  have hdom : Module.finrank K (⋀[K]^n V) = 1 := by
+    rw [_root_.exteriorPower.finrank_eq, hV, Nat.choose_self]
+  have : FiniteDimensional K (⋀[K]^n V) := Module.finite_of_finrank_eq_succ hdom
+  have : FiniteDimensional K W := Module.finite_of_finrank_eq_succ hW
+  have hsurj : Function.Surjective (_root_.exteriorPower.alternatingMapLinearEquiv η) :=
+    surjective_of_ne_zero_of_finrank_eq_one hW
+      (_root_.exteriorPower.alternatingMapLinearEquiv.map_ne_zero_iff.2 hη)
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (hdom.trans hW.symm)).2 hsurj, hsurj⟩
 
 end exteriorPower
 
