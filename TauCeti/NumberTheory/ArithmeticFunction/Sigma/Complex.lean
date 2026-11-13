@@ -29,7 +29,7 @@ the level-one nonholomorphic Eisenstein series. They use the native finite sum d
 
 public section
 
-namespace Complex
+namespace Nat
 
 /-- The complex divisor sum is entire as a function of its exponent, including at index zero. -/
 @[fun_prop]
@@ -47,10 +47,10 @@ theorem sum_divisors_cpow_neg (n : ℕ) (w : ℂ) :
   rw [← Nat.sum_div_divisors (f := fun d : ℕ ↦ (d : ℂ) ^ (-w)), Finset.mul_sum]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   have hd0 : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr ((Nat.pos_of_mem_divisors hd).ne')
-  have hp : (d : ℂ) ^ w ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hd0)
-  have H := natCast_mul_natCast_cpow d (n / d) (-w)
+  have hp : (d : ℂ) ^ w ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hd0)
+  have H := Complex.natCast_mul_natCast_cpow d (n / d) (-w)
   rw [← Nat.cast_mul, Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hd)] at H
-  rw [H, cpow_neg (d : ℂ) w]
+  rw [H, Complex.cpow_neg (d : ℂ) w]
   field_simp
 
-end Complex
+end Nat
