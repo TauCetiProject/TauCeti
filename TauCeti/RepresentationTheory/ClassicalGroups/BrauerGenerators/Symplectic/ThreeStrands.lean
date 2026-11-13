@@ -23,7 +23,7 @@ tensor cube into its harmonic and trace parts requires knowing how many of these
 In symplectic rank one, where `V = R²`, the placements satisfy `D₀₁ - D₀₂ + D₁₂ = 0`, and this
 is their entire relation: the kernel of `TauCeti.symplecticThreeStrandCupSum R 1` consists
 exactly of the vectors `(v, -v, v)`. Hence only two copies of `V` survive, parametrized by the
-first two placements (`TauCeti.symplecticThreeStrandCupSumRangeEquivRankOne`), and over a ring
+first two placements (`TauCeti.prodEquivRangeSymplecticThreeStrandCupSumRankOne`), and over a ring
 with the strong rank condition the trace tensors have rank four rather than six. Over every field
 the harmonic tensors of the rank-one tensor cube then have dimension `8 - 4 = 4`, by the general
 dimension count
@@ -396,46 +396,46 @@ variable (R) in
 `(x, y) ↦ symplecticThreeStrandCup R 1 0 x + symplecticThreeStrandCup R 1 1 y`, as an equivalence
 from two copies of the rank-one coordinate module onto the image of
 `symplecticThreeStrandCupSum R 1`. -/
-noncomputable def symplecticThreeStrandCupSumRangeEquivRankOne :
+noncomputable def prodEquivRangeSymplecticThreeStrandCupSumRankOne :
     (((Fin 1 ⊕ Fin 1) → R) × ((Fin 1 ⊕ Fin 1) → R)) ≃ₗ[R]
       LinearMap.range (symplecticThreeStrandCupSum R 1) :=
   LinearEquiv.ofBijective _ (bijective_codRestrict_coprod R)
 
 @[simp]
-theorem symplecticThreeStrandCupSumRangeEquivRankOne_apply
+theorem prodEquivRangeSymplecticThreeStrandCupSumRankOne_apply
     (v : ((Fin 1 ⊕ Fin 1) → R) × ((Fin 1 ⊕ Fin 1) → R)) :
-    (symplecticThreeStrandCupSumRangeEquivRankOne R v : ⨂[R]^3 ((Fin 1 ⊕ Fin 1) → R)) =
+    (prodEquivRangeSymplecticThreeStrandCupSumRankOne R v : ⨂[R]^3 ((Fin 1 ⊕ Fin 1) → R)) =
       symplecticThreeStrandCup R 1 0 v.1 + symplecticThreeStrandCup R 1 1 v.2 := by
-  rw [symplecticThreeStrandCupSumRangeEquivRankOne, LinearEquiv.ofBijective_apply,
+  rw [prodEquivRangeSymplecticThreeStrandCupSumRankOne, LinearEquiv.ofBijective_apply,
     LinearMap.codRestrict_apply, LinearMap.coprod_apply]
 
-/-- The inverse of `symplecticThreeStrandCupSumRangeEquivRankOne R` sends the image of `v` under
+/-- The inverse of `prodEquivRangeSymplecticThreeStrandCupSumRankOne R` sends the image of `v` under
 `symplecticThreeStrandCupSum R 1` to `(v 0 - v 2, v 1 + v 2)`. -/
 @[simp]
-theorem symplecticThreeStrandCupSumRangeEquivRankOne_symm_mk
+theorem prodEquivRangeSymplecticThreeStrandCupSumRankOne_symm_mk_symplecticThreeStrandCupSum
     (v : Fin 3 → ((Fin 1 ⊕ Fin 1) → R))
     (hv : symplecticThreeStrandCupSum R 1 v ∈ LinearMap.range (symplecticThreeStrandCupSum R 1)) :
-    (symplecticThreeStrandCupSumRangeEquivRankOne R).symm
+    (prodEquivRangeSymplecticThreeStrandCupSumRankOne R).symm
         ⟨symplecticThreeStrandCupSum R 1 v, hv⟩ = (v 0 - v 2, v 1 + v 2) := by
   rw [LinearEquiv.symm_apply_eq]
   exact Subtype.ext (by simp [cupSum_rankOne_eq])
 
-/-- `symplecticThreeStrandCupSumRangeEquivRankOne_symm_mk` stated with
-`LinearMap.rangeRestrict`. -/
+/-- `prodEquivRangeSymplecticThreeStrandCupSumRankOne_symm_mk_symplecticThreeStrandCupSum`
+stated with `LinearMap.rangeRestrict`. -/
 @[simp]
-theorem symplecticThreeStrandCupSumRangeEquivRankOne_symm_rangeRestrict
+theorem prodEquivRangeSymplecticThreeStrandCupSumRankOne_symm_rangeRestrict
     (v : Fin 3 → ((Fin 1 ⊕ Fin 1) → R)) :
-    (symplecticThreeStrandCupSumRangeEquivRankOne R).symm
+    (prodEquivRangeSymplecticThreeStrandCupSumRankOne R).symm
         ((symplecticThreeStrandCupSum R 1).rangeRestrict v) = (v 0 - v 2, v 1 + v 2) :=
-  symplecticThreeStrandCupSumRangeEquivRankOne_symm_mk v _
+  prodEquivRangeSymplecticThreeStrandCupSumRankOne_symm_mk_symplecticThreeStrandCupSum v _
 
-/-- The inverse of `symplecticThreeStrandCupSumRangeEquivRankOne R` on a single cup placement:
+/-- The inverse of `prodEquivRangeSymplecticThreeStrandCupSumRankOne R` on a single cup placement:
 the placements `0`, `1`, `2` of `v` have coordinates `(v, 0)`, `(0, v)`, `(-v, v)`. -/
 @[simp]
-theorem symplecticThreeStrandCupSumRangeEquivRankOne_symm_mk_symplecticThreeStrandCup
+theorem prodEquivRangeSymplecticThreeStrandCupSumRankOne_symm_mk_symplecticThreeStrandCup
     (p : Fin 3) (v : (Fin 1 ⊕ Fin 1) → R)
     (hv : symplecticThreeStrandCup R 1 p v ∈ LinearMap.range (symplecticThreeStrandCupSum R 1)) :
-    (symplecticThreeStrandCupSumRangeEquivRankOne R).symm
+    (prodEquivRangeSymplecticThreeStrandCupSumRankOne R).symm
         ⟨symplecticThreeStrandCup R 1 p v, hv⟩ = ![(v, 0), (0, v), (-v, v)] p := by
   rw [LinearEquiv.symm_apply_eq]
   refine Subtype.ext ?_
@@ -446,14 +446,14 @@ theorem symplecticThreeStrandCupSumRangeEquivRankOne_symm_mk_symplecticThreeStra
   · simp
   · simp
   · simp only [Fin.reduceFinMk, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
-      symplecticThreeStrandCupSumRangeEquivRankOne_apply, map_neg]
+      prodEquivRangeSymplecticThreeStrandCupSumRankOne_apply, map_neg]
     linear_combination h
 
 /-- Over a ring with the strong rank condition, the sum of the three rank-one cup images has
 rank four. -/
 theorem finrank_range_symplecticThreeStrandCupSum_rankOne [StrongRankCondition R] :
     Module.finrank R (LinearMap.range (symplecticThreeStrandCupSum R 1)) = 4 := by
-  rw [← (symplecticThreeStrandCupSumRangeEquivRankOne R).finrank_eq]
+  rw [← (prodEquivRangeSymplecticThreeStrandCupSumRankOne R).finrank_eq]
   simp
 
 /-- Over a ring with the strong rank condition, the trace tensors in the rank-one tensor cube
