@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.LinearAlgebra.FixedSubmodule
+import Mathlib.Topology.Instances.AddCircle.Defs
 
 /-!
 # Cyclic groups of rotations of `ℂ^ι` and their fixed loci
@@ -96,13 +97,16 @@ rotation by `θ` are pairwise distinct exactly when some `θ_i / 2π` is irratio
 theorem weightRotation_zsmul_injective_iff (θ : ι → ℝ) :
     Function.Injective (fun n : ℤ ↦ weightRotation (n • θ)) ↔
       ∃ i, Irrational (θ i / (2 * π)) := by
-  have hπ : (2 * π) ≠ 0 := by positivity
-  -- `R^n = R^m` exactly when `R^(n - m)` is the identity.
-  have hpow (n m : ℤ) : weightRotation (n • θ) = weightRotation (m • θ) ↔
-      ∀ j, ∃ k : ℤ, k * (2 * π) = (n - m) * θ j := by
-    have hid : weightRotation ((n - m) • θ) = ContinuousLinearMap.id ℝ _ ↔
-        ∀ j, ∃ k : ℤ, k * (2 * π) = (n - m) * θ j := by
-      rw [weightRotation_eq_id_iff]
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  -- The rotation by `θ` corresponds to the point `u` of the torus `ι → ℝ / 2πℤ`.
+  let u : ι → AddCircle (2 * π) := fun j ↦ (θ j : AddCircle (2 * π))
+  -- `R^n = R^m` exactly when `R^(n - m)` is the identity, exactly when `n • u = m • u`.
+  have hpow (n m : ℤ) : weightRotation (n • θ) = weightRotation (m • θ) ↔ n • u = m • u := by
+    have hid : weightRotation ((n - m) • θ) = ContinuousLinearMap.id ℝ _ ↔ n • u = m • u := by
+      rw [weightRotation_eq_id_iff, ← sub_eq_zero, ← sub_smul, funext_iff]
+      refine forall_congr' fun j ↦ ?_
+      simp only [Pi.smul_apply, Pi.zero_apply, u]
+      rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
       simp [zsmul_eq_mul]
     rw [← hid]
     constructor
@@ -111,35 +115,16 @@ theorem weightRotation_zsmul_injective_iff (θ : ι → ℝ) :
         weightRotation_zero]
     · intro h
       rw [← sub_add_cancel n m, add_smul, weightRotation_add, h, ContinuousLinearMap.id_comp]
-  constructor
-  · intro hinj
-    by_contra! hrat
-    -- Every `θ_j / 2π` is rational; a common denominator `N` gives `R^N = R^0`.
-    have hq : ∀ j, ∃ q : ℚ, (q : ℝ) = θ j / (2 * π) := fun j ↦ by
-      simpa [Irrational] using hrat j
-    choose q hq using hq
-    set N : ℕ := ∏ j, (q j).den
-    have hN : (N : ℤ) ≠ 0 := by
-      exact_mod_cast Finset.prod_ne_zero_iff.2 fun j _ ↦ (q j).den_nz
-    refine hN (hinj ((hpow N 0).2 fun j ↦ ?_))
-    obtain ⟨c, hc⟩ : ((q j).den : ℤ) ∣ N := by
-      exact_mod_cast Finset.dvd_prod_of_mem (fun j ↦ (q j).den) (Finset.mem_univ j)
-    refine ⟨(q j).num * c, ?_⟩
-    have hθ : θ j = q j * (2 * π) := by rw [hq j]; field_simp
-    have hqd : ((q j).num : ℝ) = q j * (q j).den := by
-      exact_mod_cast (Rat.mul_den_eq_num (q j)).symm
-    have hNc : ((N : ℤ) : ℝ) = (q j).den * c := by exact_mod_cast hc
-    rw [hθ, Int.cast_zero, sub_zero, hNc]
-    push_cast
-    linear_combination (c * (2 * π)) * hqd
-  · rintro ⟨i, hi⟩ n m hnm
-    obtain ⟨k, hk⟩ := (hpow n m).1 hnm i
-    by_contra hne
-    have hsub : ((n - m : ℤ) : ℝ) ≠ 0 := by exact_mod_cast sub_ne_zero.2 hne
-    refine hi ⟨k / (n - m : ℤ), ?_⟩
-    push_cast at hsub ⊢
-    rw [eq_div_iff hπ, div_mul_eq_mul_div, div_eq_iff hsub, hk]
-    ring
+  have hinj : Function.Injective (fun n : ℤ ↦ weightRotation (n • θ)) ↔
+      Function.Injective (fun n : ℤ ↦ n • u) :=
+    forall₂_congr fun n m ↦ imp_congr_left (hpow n m)
+  rw [hinj, injective_zsmul_iff_not_isOfFinAddOrder]
+  refine ⟨fun h ↦ ?_, fun ⟨i, hi⟩ h ↦ ?_⟩
+  · by_contra! hrat
+    refine h (IsOfFinAddOrder.pi fun j ↦ AddCircle.isOfFinAddOrder_iff_exists_rat_eq_div.2 ?_)
+    simpa [Irrational] using hrat j
+  · obtain ⟨q, hq⟩ := AddCircle.isOfFinAddOrder_iff_exists_rat_eq_div.1 (h.apply i)
+    exact hi ⟨q, hq⟩
 
 /-! ### An irrational rotation of the first factor of `ℂ²` -/
 
