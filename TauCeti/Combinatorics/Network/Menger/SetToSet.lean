@@ -115,22 +115,23 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
     exists_paths_vertexSeparator_sum_eq (Q := AuxTerminalHom Q A B) (Sum.elim c 0)
       (s := inr false) (t := inr true) (by simp) inferInstance
   -- Project every member to a walk from `A` to `B`, and trim it to an `A`–`B` path.
-  have h (i : Fin k) : ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
-      q.vertices.map inl ⊆ (P' i).vertices ∧
-      ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
-    obtain ⟨r, hr, hrq⟩ := q.exists_isPath_vertices_subset
-    exact ⟨r.trimToSetsSource hr ha hb, r.trimToSetsSource_mem hr ha hb,
-      r.trimToSetsTarget hr ha hb, r.trimToSetsTarget_mem hr ha hb, r.trimToSets hr ha hb,
-      r.trimToSets_isPath hr ha hb,
-      List.Subset.trans
-        (List.map_subset _ (List.Subset.trans (r.trimToSets_vertices_subset hr ha hb) hrq)) hq,
-      fun v hv hva hvb ↦ r.trimToSets_interior_notMem hr ha hb hv hva hvb⟩
-  choose a ha b hb P hP hsub hint using h
+  choose a₀ ha₀ b₀ hb₀ q hq using
+    fun i ↦ AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
+  choose r hr hrq using fun i ↦ (q i).exists_isPath_vertices_subset
+  let P i := (r i).trimToSets (A := (A : Set V)) (B := (B : Set V)) (ha₀ i) (hb₀ i)
+  have hsub (i : Fin k) : (P i).vertices.map inl ⊆ (P' i).vertices :=
+    List.Subset.trans (List.map_subset _
+      (List.Subset.trans ((r i).vertices_trimToSets_subset _ _) (hrq i))) (hq i)
   have hpre : inl ⁻¹' (X' : Set (V ⊕ Bool)) = (X'.toLeft : Set V) := by
     ext
     simp
-  refine ⟨k, a, b, P, X'.toLeft, ha, hb, hP, hint, fun v ↦ ?_, fun a ha b hb h ↦ hX' ?_, ?_⟩
+  refine ⟨k, fun i ↦ (r i).trimToSetsSource (ha₀ i) (hb₀ i),
+    fun i ↦ (r i).trimToSetsTarget (ha₀ i) (hb₀ i), P, X'.toLeft,
+    fun i ↦ (r i).trimToSetsSource_mem (ha₀ i) (hb₀ i),
+    fun i ↦ (r i).trimToSetsTarget_mem (ha₀ i) (hb₀ i),
+    fun i ↦ ArrowWalk.isPath_trimToSets (hr i) _ _,
+    fun i _ hv ↦ (r i).notMem_and_notMem_of_mem_vertices_trimToSets _ _ hv, fun v ↦ ?_,
+    fun a ha b hb h ↦ hX' ?_, ?_⟩
   · -- A member through `v` comes from a member of the packing through `inl v`.
     refine (card_le_card fun i hi ↦ ?_).trans (hP' (inl v) inl_ne_inr inl_ne_inr)
     simp only [mem_filter, mem_univ, true_and] at hi ⊢

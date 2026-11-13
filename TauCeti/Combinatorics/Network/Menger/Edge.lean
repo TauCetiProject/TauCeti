@@ -219,23 +219,19 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     · exact f.excessAt_nonpos _ hA
     · exact (f.conserve _ hA hB).le
   let P (i : Fin D.paths.length) := D.paths[(i : ℕ)].walk
-  have htrim (i : Fin D.paths.length) :
-      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
-        ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    let hp : (P i).IsPath := D.isPath_walk _ (List.getElem_mem i.isLt)
-    let ha : D.paths[(i : ℕ)].source ∈ A :=
-      (hsource D.paths[(i : ℕ)] (List.getElem_mem i.isLt)).1
-    let hb : D.paths[(i : ℕ)].target ∈ B :=
-      htarget D.paths[(i : ℕ)] (List.getElem_mem i.isLt)
-    exact ⟨(P i).trimToSetsSource hp ha hb, (P i).trimToSetsSource_mem hp ha hb,
-      (P i).trimToSetsTarget hp ha hb, (P i).trimToSetsTarget_mem hp ha hb,
-      (P i).trimToSets hp ha hb, (P i).trimToSets_isPath hp ha hb,
-      (P i).trimToSets_arrows_subset hp ha hb,
-      fun v hv hva hvb ↦ (P i).trimToSets_interior_notMem hp ha hb hv hva hvb⟩
-  choose a ha b hb P' hP' hsub hint using htrim
-  refine ⟨D.paths.length, a, b, P', ?_, ha, hb, hP', hint,
-    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) (hsub i he),
-    fun i j hij e hei hej ↦ D.pairwise_disjoint_arrows hf hij (hsub i hei) (hsub j hej)⟩
+  have hA (i : Fin D.paths.length) : D.paths[(i : ℕ)].source ∈ (A : Set V) :=
+    (hsource _ (List.getElem_mem i.isLt)).1
+  have hB (i : Fin D.paths.length) : D.paths[(i : ℕ)].target ∈ (B : Set V) :=
+    htarget _ (List.getElem_mem i.isLt)
+  refine ⟨D.paths.length, fun i ↦ (P i).trimToSetsSource (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget (hA i) (hB i), fun i ↦ (P i).trimToSets (hA i) (hB i), ?_,
+    fun i ↦ (P i).trimToSetsSource_mem (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget_mem (hA i) (hB i),
+    fun i ↦ ArrowWalk.isPath_trimToSets (D.isPath_walk _ (List.getElem_mem i.isLt)) _ _,
+    fun i _ hv ↦ (P i).notMem_and_notMem_of_mem_vertices_trimToSets (hA i) (hB i) hv,
+    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _)
+      ((P i).arrows_trimToSets_subset (hA i) (hB i) he),
+    ArrowWalk.pairwise_disjoint_arrows_trimToSets (D.pairwise_disjoint_arrows hf) hA hB⟩
   -- The value is the total weight of the paths ending in `B`, each of weight one.
   have hval := WeightedWalk.sum_excessAt_sum_map_assignment D.paths B
   rw [← D.pathAssignment_def, List.filter_eq_self.2 fun p hp ↦ decide_eq_true (htarget p hp),

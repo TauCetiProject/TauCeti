@@ -69,6 +69,9 @@ capacity; for residual capacities these are augmenting walks.
 * `TauCeti.ArrowWalk.exists_isPath_interior_notMem`: every walk from a vertex of `A` to a vertex
   of `B` contains a path from a vertex of `A` to a vertex of `B` with no other vertex in `A` or
   `B`, traversing only arrows of the walk.
+* `TauCeti.ArrowWalk.exists_eq_comp_comp_interior_notMem`: every walk from a vertex of `A` to a
+  vertex of `B` has a contiguous segment from its last vertex in `A` to the first vertex in `B` at
+  or after it.
 * `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
   a cycle.
 * `TauCeti.ArrowWalk.exists_eq_comp_cons_comp_of_mem_arrows`: a walk that traverses a specified
@@ -468,8 +471,66 @@ theorem vertices_subset_of_arrows_subset {s t t' : V} {p : ArrowWalk Q s t}
   rw [vertices_eq_cons_map_target_arrows p', vertices_eq_cons_map_target_arrows p]
   exact List.cons_subset_cons _ (List.map_subset _ h)
 
-/-- The vertices of a contiguous factor of a walk are vertices of the whole walk. -/
-theorem vertices_subset_of_factorization {s a b t : V} {p : ArrowWalk Q s t}
+/-- The source of a walk is one of its vertices. -/
+@[simp]
+theorem start_mem_vertices {s t : V} (p : ArrowWalk Q s t) : s ∈ p.vertices :=
+  @Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p
+
+/-- The target of a walk is one of its vertices. -/
+theorem end_mem_vertices {s t : V} (p : ArrowWalk Q s t) : t ∈ p.vertices :=
+  @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p
+
+/-- A vertex of a walk other than its source is a vertex after the first. -/
+theorem mem_tail_vertices_of_ne {s t v : V} {p : ArrowWalk Q s t} (hv : v ∈ p.vertices)
+    (hvs : v ≠ s) : v ∈ p.vertices.tail := by
+  have h : p.vertices = s :: p.vertices.tail :=
+    List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
+  rw [h, List.mem_cons] at hv
+  exact hv.resolve_left hvs
+
+/-- A vertex of a walk other than its target is a vertex before the last. -/
+theorem mem_dropLast_vertices_of_ne {s t v : V} {p : ArrowWalk Q s t} (hv : v ∈ p.vertices)
+    (hvt : v ≠ t) : v ∈ p.vertices.dropLast := by
+  have h : p.vertices.dropLast ++ [t] = p.vertices :=
+    @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p
+  rw [← h, List.mem_append, List.mem_singleton] at hv
+  exact hv.resolve_right hvt
+
+/-- The target of a walk of positive length is a vertex after the first. -/
+theorem end_mem_tail_vertices {s t : V} {p : ArrowWalk Q s t} (hp : p.length ≠ 0) :
+    t ∈ p.vertices.tail := by
+  cases p with
+  | nil => exact absurd rfl hp
+  | cons p e =>
+    rw [vertices_cons, List.concat_eq_append,
+      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p)]
+    exact List.mem_append_right _ (List.mem_singleton_self _)
+
+/-- The source of a walk of positive length is a vertex before the last. -/
+theorem start_mem_dropLast_vertices {s t : V} {p : ArrowWalk Q s t} (hp : p.length ≠ 0) :
+    s ∈ p.vertices.dropLast := by
+  have htail : p.vertices.tail ≠ [] := List.ne_nil_of_mem (end_mem_tail_vertices hp)
+  have h : p.vertices = s :: p.vertices.tail :=
+    List.eq_cons_of_mem_head? (@Quiver.Path.vertices_head? V ⟨Q⟩ s t p)
+  rw [h, List.dropLast_cons_of_ne_nil htail]
+  exact List.mem_cons_self
+
+/-- The vertices of a walk after its first remain vertices after the first when the walk is
+extended. -/
+theorem tail_vertices_subset_tail_vertices_comp {s t x : V} (p : ArrowWalk Q s t)
+    (p' : ArrowWalk Q t x) : p.vertices.tail ⊆ (p.comp p').vertices.tail := by
+  rw [← map_target_arrows, ← map_target_arrows, arrows_comp, List.map_append]
+  exact List.subset_append_left _ _
+
+/-- The vertices of a walk before its last remain vertices before the last when the walk is
+prefixed by another walk. -/
+theorem dropLast_vertices_subset_dropLast_vertices_comp {s t x : V} (p : ArrowWalk Q s t)
+    (p' : ArrowWalk Q t x) : p'.vertices.dropLast ⊆ (p.comp p').vertices.dropLast := by
+  rw [vertices_comp, List.dropLast_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p')]
+  exact List.subset_append_right _ _
+
+/-- The vertices of a contiguous segment of a walk are vertices of the whole walk. -/
+theorem vertices_subset_of_eq_comp_comp {s a b t : V} {p : ArrowWalk Q s t}
     {before : ArrowWalk Q s a} {q : ArrowWalk Q a b} {after : ArrowWalk Q b t}
     (h : p = before.comp (q.comp after)) : q.vertices ⊆ p.vertices := by
   rw [h, vertices_comp]
@@ -479,12 +540,26 @@ theorem vertices_subset_of_factorization {s a b t : V} {p : ArrowWalk Q s t}
   exact List.Subset.trans (vertices_subset_of_arrows_subset harrows)
     (List.subset_append_right _ _)
 
-/-- The arrows of a contiguous factor of a walk are arrows of the whole walk. -/
-theorem arrows_subset_of_factorization {s a b t : V} {p : ArrowWalk Q s t}
+/-- The arrows of a contiguous segment of a walk are arrows of the whole walk. -/
+theorem arrows_subset_of_eq_comp_comp {s a b t : V} {p : ArrowWalk Q s t}
     {before : ArrowWalk Q s a} {q : ArrowWalk Q a b} {after : ArrowWalk Q b t}
     (h : p = before.comp (q.comp after)) : q.arrows ⊆ p.arrows := by
   rw [h, arrows_comp, arrows_comp]
   exact List.Subset.trans (List.subset_append_left _ _) (List.subset_append_right _ _)
+
+/-- A contiguous segment of a walk between empty initial and final segments is the walk itself. -/
+theorem heq_of_eq_comp_comp {s a b t : V} {p : ArrowWalk Q s t}
+    {before : ArrowWalk Q s a} {q : ArrowWalk Q a b} {after : ArrowWalk Q b t}
+    (h : p = before.comp (q.comp after)) (hbefore : before.length = 0)
+    (hafter : after.length = 0) : HEq q p := by
+  cases before with
+  | nil =>
+    cases after with
+    | nil =>
+      subst h
+      simp
+    | cons => simp at hafter
+  | cons => simp at hbefore
 
 /-- Every walk contains a path with the same endpoints that visits only vertices of the walk. -/
 theorem exists_isPath_vertices_subset {s t : V} (p : ArrowWalk Q s t) :
@@ -492,89 +567,64 @@ theorem exists_isPath_vertices_subset {s t : V} (p : ArrowWalk Q s t) :
   let ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
   ⟨p', hp', vertices_subset_of_arrows_subset hsub⟩
 
-/-- A path from a vertex of `A` to a vertex of `B` contains the path from its last vertex in `A` to
-the first subsequent vertex in `B`, visiting only vertices and traversing only arrows of the
-original path. -/
-private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
-    ∀ (n : ℕ) {s t : V} (p : ArrowWalk Q s t), p.length = n → p.IsPath → s ∈ A → t ∈ B →
-      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
-        (∃ (before : ArrowWalk Q s a) (after : ArrowWalk Q b t),
-          p = before.comp (q.comp after) ∧
-            ∀ v ∈ (q.comp after).vertices, v ≠ a → v ∉ A) ∧
-        q.vertices ⊆ p.vertices ∧ q.arrows ⊆ p.arrows ∧
-          (∀ v ∈ q.vertices, v ≠ a → v ∉ A) ∧
-            ∀ v ∈ q.vertices, v ≠ b → v ∉ B := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro s t p hn hp hs ht
-  by_cases hA : ∀ v ∈ p.vertices, v ≠ s → v ∉ A
-  · by_cases hsB : s ∈ B
-    · exact ⟨s, hs, s, hsB, .nil s, isPath_nil s,
-        ⟨.nil s, p, by simp, by simpa using hA⟩,
-        by simpa using (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p), by simp, by simp⟩
-    by_cases hB : ∀ v ∈ p.vertices, v ≠ t → v ∉ B
-    · exact ⟨s, hs, t, ht, p, hp, ⟨.nil s, .nil t, by simp, by simpa using hA⟩,
-        List.Subset.refl _, List.Subset.refl _, hA, hB⟩
-    push Not at hB
-    obtain ⟨v, hv, hvt, hvB⟩ := hB
-    -- No later `A`-vertex exists, so recurse on the prefix ending at this earlier `B`-vertex.
-    obtain ⟨p₁, p₂, rfl⟩ : ∃ (p₁ : ArrowWalk Q s v) (p₂ : ArrowWalk Q v t), p = p₁.comp p₂ :=
-      @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p _ hv
-    have hlen : p₁.length + p₂.length = n := by
-      rw [← hn]
-      exact (@Quiver.Path.length_comp V ⟨Q⟩ _ _ p₁ _ p₂).symm
-    have h₂ : p₂.length ≠ 0 := fun h ↦
-      hvt (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₂ h)
-    obtain ⟨a, ha, b, hb, q, hq, ⟨before, after, hfactor, -⟩,
-        -, -, hqA, hqB⟩ :=
-      ih p₁.length (by omega) p₁ rfl hp.of_comp_left hs hvB
-    have hfull : p₁.comp p₂ = before.comp (q.comp (after.comp p₂)) := by
-      rw [hfactor]
-      simp
-    have has : a = s := by
-      by_contra hne
-      exact hA a (by
-        rw [hfull, vertices_comp]
-        exact List.mem_append_right _
-          (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ (q.comp (after.comp p₂)))) hne ha
-    refine ⟨a, ha, b, hb, q, hq, ⟨before, after.comp p₂, hfull, ?_⟩,
-      vertices_subset_of_factorization hfull, arrows_subset_of_factorization hfull, hqA, hqB⟩
-    · intro x hx hxa
-      apply hA x ?_ (has ▸ hxa)
-      rw [hfull, vertices_comp]
-      exact List.mem_append_right _ hx
-  · push Not at hA
-    obtain ⟨v, hv, hvs, hvA⟩ := hA
-    -- A later `A`-vertex exists, so discard the prefix through it and recurse on the suffix.
-    obtain ⟨p₁, p₂, rfl⟩ : ∃ (p₁ : ArrowWalk Q s v) (p₂ : ArrowWalk Q v t), p = p₁.comp p₂ :=
-      @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p _ hv
-    have hlen : p₁.length + p₂.length = n := by
-      rw [← hn]
-      exact (@Quiver.Path.length_comp V ⟨Q⟩ _ _ p₁ _ p₂).symm
-    have h₁ : p₁.length ≠ 0 := fun h ↦
-      hvs (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₁ h).symm
-    obtain ⟨a, ha, b, hb, q, hq, ⟨before, after, hfactor, hafterA⟩,
-        -, -, hqA, hqB⟩ :=
-      ih p₂.length (by omega) p₂ rfl hp.of_comp_right hvA ht
-    have hfull : p₁.comp p₂ = (p₁.comp before).comp (q.comp after) := by
-      rw [hfactor]
-      simp
-    exact ⟨a, ha, b, hb, q, hq, ⟨p₁.comp before, after, hfull, hafterA⟩,
-      vertices_subset_of_factorization hfull, arrows_subset_of_factorization hfull, hqA, hqB⟩
+/-- A walk from a vertex of `A` splits at its last vertex in `A`: the rest of the walk visits no
+vertex of `A` after its first. -/
+theorem exists_eq_comp_forall_tail_vertices_notMem {A : Set V} {s t : V} (p : ArrowWalk Q s t)
+    (hs : s ∈ A) :
+    ∃ a ∈ A, ∃ (before : ArrowWalk Q s a) (rest : ArrowWalk Q a t),
+      p = before.comp rest ∧ ∀ v ∈ rest.vertices.tail, v ∉ A := by
+  induction p with
+  | nil => exact ⟨s, hs, nil s, nil s, rfl, by simp⟩
+  | @cons x y p e ih =>
+    -- The path recursor exposes the current arrow through its local quiver instance.
+    change Q x y at e
+    by_cases hy : y ∈ A
+    · exact ⟨y, hy, cons p e, nil y, rfl, by simp⟩
+    obtain ⟨a, ha, before, rest, rfl, hrest⟩ := ih
+    refine ⟨a, ha, before, cons rest e, rfl, fun v hv ↦ ?_⟩
+    rw [vertices_cons, List.concat_eq_append,
+      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ rest), List.mem_append,
+      List.mem_singleton] at hv
+    rcases hv with hv | rfl
+    · exact hrest v hv
+    · exact hy
 
-/-- A path from a vertex of `A` to a vertex of `B` has a contiguous subpath from its last vertex in
-`A` to the first subsequent vertex in `B`. -/
-theorem IsPath.exists_infix_interior_notMem {A B : Set V} {s t : V} {p : ArrowWalk Q s t}
-    (hp : p.IsPath) (hs : s ∈ A) (ht : t ∈ B) :
-    ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
-      (∃ (before : ArrowWalk Q s a) (after : ArrowWalk Q b t),
-        p = before.comp (q.comp after) ∧
-          ∀ v ∈ (q.comp after).vertices, v ≠ a → v ∉ A) ∧
-      q.vertices ⊆ p.vertices ∧ q.arrows ⊆ p.arrows ∧
-        (∀ v ∈ q.vertices, v ≠ a → v ∉ A) ∧
-          ∀ v ∈ q.vertices, v ≠ b → v ∉ B :=
-  IsPath.exists_isPath_interior_notMem p.length p rfl hp hs ht
+/-- A walk that visits a vertex of `B` splits at its first vertex in `B`: the initial walk visits
+no vertex of `B` before its last. -/
+theorem exists_eq_comp_forall_dropLast_vertices_notMem {B : Set V} {s t : V}
+    (p : ArrowWalk Q s t) (h : ∃ v ∈ p.vertices, v ∈ B) :
+    ∃ b ∈ B, ∃ (q : ArrowWalk Q s b) (after : ArrowWalk Q b t),
+      p = q.comp after ∧ ∀ v ∈ q.vertices.dropLast, v ∉ B := by
+  induction p with
+  | nil =>
+    obtain ⟨v, hv, hvB⟩ := h
+    rw [vertices_nil, List.mem_singleton] at hv
+    exact ⟨s, hv ▸ hvB, nil s, nil s, rfl, by simp⟩
+  | @cons x y p e ih =>
+    -- The path recursor exposes the current arrow through its local quiver instance.
+    change Q x y at e
+    by_cases hp : ∃ v ∈ vertices (Q := Q) p, v ∈ B
+    · obtain ⟨b, hb, q, after, rfl, hq⟩ := ih hp
+      exact ⟨b, hb, q, cons after e, rfl, hq⟩
+    push Not at hp
+    obtain ⟨v, hv, hvB⟩ := h
+    rw [vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton] at hv
+    obtain rfl := hv.resolve_left fun hv ↦ hp v hv hvB
+    refine ⟨v, hvB, cons p e, nil v, rfl, ?_⟩
+    rw [vertices_cons, List.concat_eq_append, List.dropLast_concat]
+    exact hp
+
+/-- A walk from a vertex of `A` to a vertex of `B` has a contiguous segment from its last vertex
+in `A` to the first vertex in `B` at or after it. -/
+theorem exists_eq_comp_comp_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s t)
+    (hs : s ∈ A) (ht : t ∈ B) :
+    ∃ a ∈ A, ∃ b ∈ B, ∃ (q : ArrowWalk Q a b) (before : ArrowWalk Q s a)
+      (after : ArrowWalk Q b t), p = before.comp (q.comp after) ∧
+        (∀ v ∈ (q.comp after).vertices.tail, v ∉ A) ∧ ∀ v ∈ q.vertices.dropLast, v ∉ B := by
+  obtain ⟨a, ha, before, rest, rfl, hrest⟩ := p.exists_eq_comp_forall_tail_vertices_notMem hs
+  obtain ⟨b, hb, q, after, rfl, hq⟩ :=
+    rest.exists_eq_comp_forall_dropLast_vertices_notMem ⟨t, end_mem_vertices rest, ht⟩
+  exact ⟨a, ha, b, hb, q, before, after, rfl, hrest, hq⟩
 
 /-- **Trimming a walk between two vertex sets.** A walk from a vertex of `A` to a vertex of `B`
 contains a path from a vertex `a ∈ A` to a vertex `b ∈ B` whose vertices other than `a` and `b`
@@ -585,10 +635,13 @@ theorem exists_isPath_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s
     ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.vertices ⊆ p.vertices ∧
       q.arrows ⊆ p.arrows ∧ ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
   obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
-  obtain ⟨a, ha, b, hb, q, hq, -, hqsub, hqasub, hqA, hqB⟩ :=
-    IsPath.exists_isPath_interior_notMem _ p' rfl hp' hs ht
-  exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub (vertices_subset_of_arrows_subset hsub),
-    List.Subset.trans hqasub hsub, fun v hv hva hvb ↦ ⟨hqA v hv hva, hqB v hv hvb⟩⟩
+  obtain ⟨a, ha, b, hb, q, before, after, rfl, hA, hB⟩ :=
+    p'.exists_eq_comp_comp_interior_notMem hs ht
+  exact ⟨a, ha, b, hb, q, hp'.of_comp_right.of_comp_left,
+    List.Subset.trans (vertices_subset_of_eq_comp_comp rfl) (vertices_subset_of_arrows_subset hsub),
+    List.Subset.trans (arrows_subset_of_eq_comp_comp rfl) hsub, fun v hv hva hvb ↦
+      ⟨hA v (tail_vertices_subset_tail_vertices_comp q after (mem_tail_vertices_of_ne hv hva)),
+        hB v (mem_dropLast_vertices_of_ne hv hvb)⟩⟩
 
 /-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
 that traverses only arrows of the walk. -/
