@@ -28,8 +28,9 @@ derivatives of `Df` are those of `f` shifted by one order. So does each directio
 `x ↦ Df(x) v`. These are the coefficients that appear when the Leibniz rule is applied to the
 product of a Schwartz function or a tempered distribution with `f`.
 
-On a finite-dimensional space the determinant is a polynomial in the matrix entries, so it has
-temperate growth, and so does the Jacobian determinant `x ↦ det Df(x)`. The absolute value of a
+The determinant has temperate growth: on a finite-dimensional space it is a polynomial in the
+matrix entries, and otherwise it is the constant `1`. So does the Jacobian determinant
+`x ↦ det Df(x)`. The absolute value of a
 real function of temperate growth without zeros has temperate growth: on the connected space `E`
 the function has constant sign. These give the Jacobian factor `|det Dφ⁻¹|` of a change of
 variables `φ` of Schwartz functions. If `g ∘ f = id` and `g` has temperate growth, then `‖x‖` is
@@ -109,8 +110,9 @@ theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
+@[fun_prop]
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
-    (s : Finset ι) (hf : ∀ i ∈ s, (f i).HasTemperateGrowth) :
+    {s : Finset ι} (hf : ∀ i ∈ s, (f i).HasTemperateGrowth) :
     (fun x ↦ ∏ i ∈ s, f i x).HasTemperateGrowth := by
   classical
   induction s using Finset.induction_on with
@@ -146,11 +148,13 @@ theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) 
 
 end Function.HasTemperateGrowth
 
-/-- On a finite-dimensional space the determinant has temperate growth, being a polynomial in the
-matrix entries. -/
+/-- The determinant has temperate growth: on a finite-dimensional space it is a polynomial in the
+matrix entries, and otherwise it is the constant `1`. -/
 theorem ContinuousLinearMap.hasTemperateGrowth_det {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
-    (fun A : E →L[ℝ] E ↦ A.det).HasTemperateGrowth := by
+    [NormedSpace ℝ E] : (fun A : E →L[ℝ] E ↦ A.det).HasTemperateGrowth := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [ContinuousLinearMap.det, LinearMap.det_eq_one_of_not_module_finite hE]
   let b := Module.finBasis ℝ E
   have h : (fun A : E →L[ℝ] E ↦ A.det) = fun A ↦ ∑ σ : Equiv.Perm (Fin (Module.finrank ℝ E)),
       (Equiv.Perm.sign σ : ℝ) * ∏ i, b.coord (σ i) (A (b i)) := by
@@ -159,24 +163,24 @@ theorem ContinuousLinearMap.hasTemperateGrowth_det {E : Type*} [NormedAddCommGro
     simp [LinearMap.toMatrix_apply, Units.smul_def]
   have hprod (σ : Equiv.Perm (Fin (Module.finrank ℝ E))) :
       (fun A : E →L[ℝ] E ↦ ∏ i, b.coord (σ i) (A (b i))).HasTemperateGrowth :=
-    Function.HasTemperateGrowth.prod _ fun i _ ↦ ((b.coord (σ i)).toContinuousLinearMap.comp
+    Function.HasTemperateGrowth.prod fun i _ ↦ ((b.coord (σ i)).toContinuousLinearMap.comp
       (ContinuousLinearMap.apply ℝ E (b i) : (E →L[ℝ] E) →L[ℝ] E)).hasTemperateGrowth
   rw [h]
   exact Function.HasTemperateGrowth.sum fun σ _ ↦
     (Function.HasTemperateGrowth.const _).fun_mul (hprod σ)
 
-/-- The Jacobian determinant `x ↦ det Df(x)` of a function of temperate growth on a
-finite-dimensional space has temperate growth. -/
+/-- The Jacobian determinant `x ↦ det Df(x)` of a function of temperate growth has temperate
+growth. -/
 theorem Function.HasTemperateGrowth.det_fderiv {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {f : E → E} (hf : f.HasTemperateGrowth) :
+    [NormedSpace ℝ E] {f : E → E} (hf : f.HasTemperateGrowth) :
     (fun x ↦ (_root_.fderiv ℝ f x).det).HasTemperateGrowth :=
   ContinuousLinearMap.hasTemperateGrowth_det.comp hf.fderiv
 
-/-- For a bijection `φ` of a finite-dimensional space such that `φ` and `φ⁻¹` have temperate
-growth, the Jacobian factor `y ↦ |det Dφ⁻¹(y)|` of the change of variables has temperate growth:
-`det Dφ⁻¹(y)` has no zeros, being the reciprocal of `det Dφ(φ⁻¹ y)`. -/
+/-- For a bijection `φ` such that `φ` and `φ⁻¹` have temperate growth, the Jacobian factor
+`y ↦ |det Dφ⁻¹(y)|` of the change of variables has temperate growth: `det Dφ⁻¹(y)` has no zeros,
+being the reciprocal of `det Dφ(φ⁻¹ y)`. -/
 theorem Function.HasTemperateGrowth.abs_det_fderiv_symm {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {φ : E ≃ E} (hφ : (φ : E → E).HasTemperateGrowth)
+    [NormedSpace ℝ E] {φ : E ≃ E} (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) :
     (fun y ↦ |(_root_.fderiv ℝ φ.symm y).det|).HasTemperateGrowth :=
   hψ.det_fderiv.abs fun y h ↦ by

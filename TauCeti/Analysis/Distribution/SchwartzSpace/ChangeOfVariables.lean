@@ -31,13 +31,18 @@ change of variables formula it is the transpose of composition with `φ`:
 `∫ (φ_* f)(y) • u(y) dμ(y) = ∫ f(x) • u(φ x) dμ(x)`
 
 for every function `u` and every additive Haar measure `μ`
-(`SchwartzMap.integral_pushforwardCLM_smul`). This is how tempered distributions are pulled back
-along `φ`, by transposition.
+(`SchwartzMap.integral_pushforwardCLM_smul`, and `SchwartzMap.integral_bilin_pushforwardCLM` for
+a bilinear pairing). In particular the pushforward preserves the integral
+(`SchwartzMap.integral_pushforwardCLM`). This is how tempered distributions are pulled back along
+`φ`, by transposition.
 
 The pushforward is functorial: `(χ ∘ φ)_* = χ_* ∘ φ_*` by the chain rule for the Jacobian
 determinant (`SchwartzMap.pushforwardCLM_trans`), and the identity pushes forward to the identity
-(`SchwartzMap.pushforwardCLM_refl`). Multiplication by `g ∘ φ` before the pushforward is
-multiplication by `g` after it (`SchwartzMap.pushforwardCLM_smulLeftCLM`).
+(`SchwartzMap.pushforwardCLM_refl`), so pushing forward along `φ⁻¹` inverts it
+(`SchwartzMap.pushforwardCLM_symm_pushforwardCLM`,
+`SchwartzMap.pushforwardCLM_pushforwardCLM_symm`).
+Multiplication by `g` before the pushforward is multiplication by `g ∘ φ⁻¹` after it
+(`SchwartzMap.pushforwardCLM_smulLeftCLM`, `SchwartzMap.smulLeftCLM_pushforwardCLM`).
 
 ## References
 
@@ -51,7 +56,7 @@ open MeasureTheory
 namespace SchwartzMap
 
 variable (𝕜 : Type*) {E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   {φ : E ≃ E}
 
 /-- The **pushforward of Schwartz densities** along a bijection `φ` such that `φ` and `φ⁻¹` have
@@ -75,9 +80,9 @@ theorem pushforwardCLM_apply (hφ : (φ : E → E).HasTemperateGrowth)
 /-- **The pushforward is the transpose of composition.** For every function `u` and every
 additive Haar measure `μ`, `∫ (φ_* f)(y) • u(y) dμ(y) = ∫ f(x) • u(φ x) dμ(x)`. No integrability
 is needed: both sides are the two sides of the change of variables formula. -/
-theorem integral_pushforwardCLM_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
-    [μ.IsAddHaarMeasure] (hφ : (φ : E → E).HasTemperateGrowth)
+theorem integral_pushforwardCLM_smul [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [Module 𝕜 G] [IsScalarTower ℝ 𝕜 G] [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, 𝕜)) (u : E → G) :
     ∫ y, pushforwardCLM 𝕜 φ hφ hψ f y • u y ∂μ = ∫ x, f x • u (φ x) ∂μ := by
   have hcv := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
@@ -88,6 +93,34 @@ theorem integral_pushforwardCLM_smul {G : Type*} [NormedAddCommGroup G] [NormedS
   rw [hcv]
   congr 1 with y
   rw [pushforwardCLM_apply, smul_assoc, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+
+/-- **The pushforward is the transpose of composition**, for a continuous bilinear pairing `M`:
+`∫ M ((φ_* f)(y)) (u y) dμ(y) = ∫ M (f x) (u (φ x)) dμ(x)` for every function `u` and every
+additive Haar measure `μ`. -/
+theorem integral_bilin_pushforwardCLM [FiniteDimensional ℝ E] {G H : Type*}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    [NormedSpace 𝕜 H] [IsScalarTower ℝ 𝕜 H] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (M : F →L[𝕜] G →L[𝕜] H) (f : 𝓢(E, F))
+    (u : E → G) :
+    ∫ y, M (pushforwardCLM 𝕜 φ hφ hψ f y) (u y) ∂μ = ∫ x, M (f x) (u (φ x)) ∂μ := by
+  have hcv := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
+    (fun y _ ↦ (hψ.1.differentiable (by simp) y).hasFDerivAt.hasFDerivWithinAt)
+    φ.symm.injective.injOn fun x ↦ M (f x) (u (φ x))
+  rw [Set.image_univ_of_surjective φ.symm.surjective] at hcv
+  simp only [Measure.restrict_univ, Equiv.apply_symm_apply] at hcv
+  rw [hcv]
+  congr 1 with y
+  rw [pushforwardCLM_apply, map_smul, smul_apply,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+
+/-- The pushforward of Schwartz densities preserves the integral, for every additive Haar
+measure. -/
+theorem integral_pushforwardCLM [FiniteDimensional ℝ E] [IsScalarTower ℝ 𝕜 F] [MeasurableSpace E]
+    [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, F)) :
+    ∫ y, pushforwardCLM 𝕜 φ hφ hψ f y ∂μ = ∫ x, f x ∂μ := by
+  simpa using integral_bilin_pushforwardCLM 𝕜 μ hφ hψ (ContinuousLinearMap.lsmul 𝕜 𝕜).flip f 1
 
 /-- **Functoriality of the pushforward**: `(χ ∘ φ)_* = χ_* ∘ φ_*`, by the chain rule for the
 Jacobian determinant. -/
@@ -112,13 +145,44 @@ theorem pushforwardCLM_refl (h₁ : (Equiv.refl E : E → E).HasTemperateGrowth)
   ext f y
   simp
 
-/-- Multiplying by `g ∘ φ` and then pushing forward along `φ` is pushing forward and then
-multiplying by `g`. -/
+/-- Pushing forward along `φ` and then along `φ⁻¹` is the identity. -/
+@[simp]
+theorem pushforwardCLM_symm_pushforwardCLM (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, F)) :
+    pushforwardCLM 𝕜 φ.symm hψ hφ (pushforwardCLM 𝕜 φ hφ hψ f) = f := by
+  rw [← ContinuousLinearMap.comp_apply, ← pushforwardCLM_trans 𝕜 hφ hψ hψ hφ
+    (by simpa using Function.HasTemperateGrowth.id (E := E))
+    (by simpa using Function.HasTemperateGrowth.id (E := E))]
+  simp only [Equiv.self_trans_symm, pushforwardCLM_refl, ContinuousLinearMap.id_apply]
+
+/-- Pushing forward along `φ⁻¹` and then along `φ` is the identity. -/
+@[simp]
+theorem pushforwardCLM_pushforwardCLM_symm (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (f : 𝓢(E, F)) :
+    pushforwardCLM 𝕜 φ hφ hψ (pushforwardCLM 𝕜 φ.symm hψ hφ f) = f := by
+  rw [← ContinuousLinearMap.comp_apply, ← pushforwardCLM_trans 𝕜 hψ hφ hφ hψ
+    (by simpa using Function.HasTemperateGrowth.id (E := E))
+    (by simpa using Function.HasTemperateGrowth.id (E := E))]
+  simp only [Equiv.symm_trans_self, pushforwardCLM_refl, ContinuousLinearMap.id_apply]
+
+/-- Multiplying by `g` and then pushing forward along `φ` is pushing forward and then
+multiplying by `g ∘ φ⁻¹`. -/
 theorem pushforwardCLM_smulLeftCLM (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) {g : E → 𝕜} (hg : g.HasTemperateGrowth)
     (f : 𝓢(E, F)) :
-    pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM F (g ∘ φ) f) =
-      smulLeftCLM F g (pushforwardCLM 𝕜 φ hφ hψ f) := by
+    pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM F g f) =
+      smulLeftCLM F (g ∘ φ.symm) (pushforwardCLM 𝕜 φ hφ hψ f) := by
+  ext y
+  rw [pushforwardCLM_apply, smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply (hg.comp hψ),
+    pushforwardCLM_apply, Function.comp_apply, smul_comm]
+
+/-- Pushing forward along `φ` and then multiplying by `g` is multiplying by `g ∘ φ` and then
+pushing forward. -/
+theorem smulLeftCLM_pushforwardCLM (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) {g : E → 𝕜} (hg : g.HasTemperateGrowth)
+    (f : 𝓢(E, F)) :
+    smulLeftCLM F g (pushforwardCLM 𝕜 φ hφ hψ f) =
+      pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM F (g ∘ φ) f) := by
   ext y
   rw [pushforwardCLM_apply, smulLeftCLM_apply_apply (hg.comp hφ), smulLeftCLM_apply_apply hg,
     pushforwardCLM_apply, Function.comp_apply, Equiv.apply_symm_apply, smul_comm]

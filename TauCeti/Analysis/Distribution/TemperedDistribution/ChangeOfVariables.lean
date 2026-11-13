@@ -24,8 +24,9 @@ where `(φ_* f)(y) = |det Dφ⁻¹(y)| f(φ⁻¹ y)` is the pushforward of Schwa
 `𝓢'(E, F) →L[ℂ] 𝓢'(E, F)`. The Jacobian factor makes it extend composition with `φ`: for a Schwartz
 function, or a function of temperate growth, `u`, the pullback of the distribution of `u` is the
 distribution of `u ∘ φ`, for every additive Haar measure (`compCLM_toTemperedDistributionCLM`,
-`compCLM_toTemperedDistribution`). The point mass at `φ x` pulls back to `|det Dφ(x)|⁻¹` times the
-point mass at `x` (`compCLM_delta`).
+`compCLM_toTemperedDistribution`). The point mass at `y` pulls back to `|det Dφ⁻¹(y)|` times the
+point mass at `φ⁻¹ y` (`compCLM_delta`), so the point mass at `φ x` pulls back to `|det Dφ(x)|⁻¹`
+times the point mass at `x` (`compCLM_delta_apply`).
 
 The pullback is contravariantly functorial, `(χ ∘ φ)^* = φ^* ∘ χ^*` (`compCLM_trans`), so pulling
 back along `φ⁻¹` inverts it (`compCLM_symm_compCLM`, `compCLM_compCLM_symm`). It turns
@@ -48,8 +49,7 @@ open scoped SchwartzMap
 
 namespace TemperedDistribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {φ : E ≃ E}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {φ : E ≃ E}
 
 section TVS
 
@@ -65,7 +65,6 @@ def compCLM (φ : E ≃ E) (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
   PointwiseConvergenceCLM.precomp _ (SchwartzMap.pushforwardCLM ℂ φ hφ hψ)
 
-omit [FiniteDimensional ℝ E] in
 @[simp]
 theorem compCLM_apply_apply (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (T : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
@@ -92,22 +91,18 @@ theorem compCLM_refl (h₁ : (Equiv.refl E : E → E).HasTemperateGrowth)
 /-- Pulling back along `φ` and then along `φ⁻¹` gives back the distribution. -/
 @[simp]
 theorem compCLM_symm_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth) (hφ' : (φ.symm.symm : E → E).HasTemperateGrowth)
-    (T : 𝓢'(E, F)) : compCLM F φ.symm hψ hφ' (compCLM F φ hφ hψ T) = T := by
-  rw [← ContinuousLinearMap.comp_apply, ← compCLM_trans hψ hφ' hφ hψ
-    (by simpa using Function.HasTemperateGrowth.id (E := E))
-    (by simpa using Function.HasTemperateGrowth.id (E := E))]
-  simp only [Equiv.symm_trans_self, compCLM_refl, ContinuousLinearMap.id_apply]
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (T : 𝓢'(E, F)) :
+    compCLM F φ.symm hψ hφ (compCLM F φ hφ hψ T) = T := by
+  ext f
+  simp
 
 /-- Pulling back along `φ⁻¹` and then along `φ` gives back the distribution. -/
 @[simp]
 theorem compCLM_compCLM_symm (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth) (hφ' : (φ.symm.symm : E → E).HasTemperateGrowth)
-    (T : 𝓢'(E, F)) : compCLM F φ hφ hψ (compCLM F φ.symm hψ hφ' T) = T := by
-  rw [← ContinuousLinearMap.comp_apply, ← compCLM_trans hφ hψ hψ hφ'
-    (by simpa using Function.HasTemperateGrowth.id (E := E))
-    (by simpa using Function.HasTemperateGrowth.id (E := E))]
-  simp only [Equiv.self_trans_symm, compCLM_refl, ContinuousLinearMap.id_apply]
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (T : 𝓢'(E, F)) :
+    compCLM F φ hφ hψ (compCLM F φ.symm hψ hφ T) = T := by
+  ext f
+  simp
 
 /-- The pullback of `g T` is `(g ∘ φ) φ^* T`. -/
 theorem compCLM_smulLeftCLM (hφ : (φ : E → E).HasTemperateGrowth)
@@ -115,14 +110,14 @@ theorem compCLM_smulLeftCLM (hφ : (φ : E → E).HasTemperateGrowth)
     (T : 𝓢'(E, F)) :
     compCLM F φ hφ hψ (smulLeftCLM F g T) = smulLeftCLM F (g ∘ φ) (compCLM F φ hφ hψ T) := by
   ext f
-  simp [SchwartzMap.pushforwardCLM_smulLeftCLM ℂ hφ hψ hg]
+  simp [SchwartzMap.smulLeftCLM_pushforwardCLM ℂ hφ hψ hg]
 
 end TVS
 
 section Normed
 
-variable [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E] [BorelSpace E]
-  (μ : Measure E) [μ.IsAddHaarMeasure]
+variable [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace E]
+  [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- The pullback of the distribution of a Schwartz function `u` is the distribution of `u ∘ φ`,
 for every additive Haar measure. -/
@@ -148,14 +143,21 @@ theorem compCLM_toTemperedDistribution (hφ : (φ : E → E).HasTemperateGrowth)
 
 end Normed
 
-/-- The point mass at `φ x` pulls back to `|det Dφ(x)|⁻¹` times the point mass at `x`. -/
+/-- The point mass at `y` pulls back to `|det Dφ⁻¹(y)|` times the point mass at `φ⁻¹ y`. -/
+@[simp]
 theorem compCLM_delta (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (y : E) :
+    compCLM ℂ φ hφ hψ (delta y) = ((|(fderiv ℝ φ.symm y).det| : ℝ) : ℂ) • delta (φ.symm y) := by
+  ext f
+  simp
+
+/-- The point mass at `φ x` pulls back to `|det Dφ(x)|⁻¹` times the point mass at `x`. -/
+theorem compCLM_delta_apply (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth) (x : E) :
     compCLM ℂ φ hφ hψ (delta (φ x)) = ((|(fderiv ℝ φ x).det|⁻¹ : ℝ) : ℂ) • delta x := by
   have h := φ.det_fderiv_symm_mul_det_fderiv (y := φ x) (hφ.1.differentiable (by simp) _)
     (hψ.1.differentiable (by simp) _)
   rw [Equiv.symm_apply_apply] at h
-  ext f
-  simp [eq_inv_of_mul_eq_one_left h, abs_inv]
+  rw [compCLM_delta, Equiv.symm_apply_apply, eq_inv_of_mul_eq_one_left h, abs_inv]
 
 end TemperedDistribution
