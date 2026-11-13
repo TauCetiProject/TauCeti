@@ -70,20 +70,52 @@ theorem tendsto_of_lipschitz_approx_of_integral_sq_tendsto_zero {E ι : Type*}
 /-- Vanishing mean squared distance from a point implies weak convergence to its Dirac mass. -/
 theorem tendsto_dirac_of_integral_dist_sq_tendsto_zero {E ι : Type*}
     [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    {L : Filter ι} [L.IsCountablyGenerated] {μ : ι → ProbabilityMeasure E} {x : E}
+    {L : Filter ι} {μ : ι → ProbabilityMeasure E} {x : E}
     (hmem : ∀ i, MemLp (fun y ↦ dist y x) 2 (μ i : Measure E))
     (hlim : Tendsto (fun i ↦ ∫ y, dist y x ^ 2 ∂(μ i : Measure E)) L (𝓝 0)) :
     Tendsto μ L (𝓝 (⟨Measure.dirac x, inferInstance⟩ : ProbabilityMeasure E)) := by
-  refine tendsto_of_lipschitz_approx_of_integral_sq_tendsto_zero hmem hlim
-    fun f K _ hK i ↦ ⟨fun _ ↦ f x, integrable_const _, ?_, ae_of_all _ fun y ↦ ?_⟩
-  · simp [integral_dirac' _ _ hK.continuous.stronglyMeasurable]
-  · simpa [Real.dist_eq] using hK.dist_le_mul y x
+  refine tendsto_iff_forall_integral_tendsto.2 fun g ↦ ?_
+  simp only [ProbabilityMeasure.coe_mk, integral_dirac' _ _ g.continuous.stronglyMeasurable]
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  obtain ⟨δ, hδ, hg⟩ := Metric.continuous_iff.1 g.continuous x (ε / 2) (half_pos hε)
+  set C : ℝ := 2 * ‖g‖ / δ
+  have hC : 0 ≤ C := by positivity
+  have hpt (y : E) : |g y - g x| ≤ ε / 2 + C * dist y x := by
+    rcases lt_or_ge (dist y x) δ with h | h
+    · have := hg y h
+      rw [Real.dist_eq] at this
+      nlinarith [mul_nonneg hC (dist_nonneg (x := y) (y := x))]
+    · have h2 : |g y - g x| ≤ 2 * ‖g‖ := by
+        simpa [Real.dist_eq] using g.dist_le_two_norm y x
+      have h3 : 2 * ‖g‖ ≤ C * dist y x := by
+        rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
+        exact mul_le_mul_of_nonneg_left h (by positivity)
+      linarith
+  have hzero : Tendsto (fun i ↦ C * √(∫ y, dist y x ^ 2 ∂(μ i : Measure E))) L (𝓝 0) := by
+    simpa using hlim.sqrt.const_mul C
+  filter_upwards [(tendsto_order.1 hzero).2 (ε / 2) (half_pos hε)] with i hi
+  have hint : Integrable (fun y ↦ dist y x) (μ i : Measure E) :=
+    (hmem i).integrable (by norm_num)
+  calc dist (∫ y, g y ∂(μ i : Measure E)) (g x)
+      = ‖∫ y, (g y - g x) ∂(μ i : Measure E)‖ := by
+        rw [integral_sub (g.integrable _) (integrable_const _), integral_const]
+        simp [Real.dist_eq]
+    _ ≤ ∫ y, (ε / 2 + C * dist y x) ∂(μ i : Measure E) :=
+        norm_integral_le_of_norm_le ((integrable_const _).add (hint.const_mul C))
+          (ae_of_all _ fun y ↦ by simpa [Real.norm_eq_abs] using hpt y)
+    _ = ε / 2 + C * ∫ y, dist y x ∂(μ i : Measure E) := by
+        rw [integral_add (integrable_const _) (hint.const_mul C), integral_const,
+          integral_const_mul]
+        simp
+    _ ≤ ε / 2 + C * √(∫ y, dist y x ^ 2 ∂(μ i : Measure E)) := by
+        linarith [mul_le_mul_of_nonneg_left (integral_le_sqrt_integral_sq (hmem i)) hC]
+    _ < ε := by linarith
 
 /-- Mean squared distance from a point tending to zero along a filter implies weak convergence to
 its Dirac mass, if only the eventual terms have square-integrable distance. -/
 theorem tendsto_dirac_of_eventually_integral_dist_sq_tendsto_zero {E ι : Type*}
     [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    {L : Filter ι} [L.IsCountablyGenerated] {μ : ι → ProbabilityMeasure E} {x : E}
+    {L : Filter ι} {μ : ι → ProbabilityMeasure E} {x : E}
     (hmem : ∀ᶠ i in L, MemLp (fun y ↦ dist y x) 2 (μ i : Measure E))
     (hlim : Tendsto (fun i ↦ ∫ y, dist y x ^ 2 ∂(μ i : Measure E)) L (𝓝 0)) :
     Tendsto μ L (𝓝 (⟨Measure.dirac x, inferInstance⟩ : ProbabilityMeasure E)) := by

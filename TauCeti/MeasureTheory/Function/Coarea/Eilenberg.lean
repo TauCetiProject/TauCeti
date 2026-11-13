@@ -240,10 +240,15 @@ theorem lintegral_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A
   obtain ⟨G, -, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ
   exact (lintegral_mono hle).trans hint
 
+omit [FiniteDimensional ℝ Y] in
 /-- If `f` is Lipschitz on `A` with values in an `m`-dimensional real normed space and
 `μH[m + t] A = 0`, then for almost every `y` the fiber `A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
 theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A)
     (hA : μH[finrank ℝ Y + t] A = 0) : ∀ᵐ y ∂μ, μH[t] (A ∩ f ⁻¹' {y}) = 0 := by
+  by_cases hY : FiniteDimensional ℝ Y
+  swap
+  · rw [Module.finrank_of_not_finite hY, Nat.cast_zero, zero_add] at hA
+    exact Filter.Eventually.of_forall fun y ↦ measure_mono_null inter_subset_left hA
   obtain ⟨G, hGm, hle, hint⟩ := hf.exists_measurable_hausdorffMeasure_inter_preimage_le μ
   rw [hA, mul_zero, nonpos_iff_eq_zero, lintegral_eq_zero_iff hGm] at hint
   filter_upwards [hint] with y hy
@@ -260,6 +265,7 @@ theorem ae_hausdorffMeasure_inter_preimage_lt_top (hf : LipschitzOnWith K f A)
     with y hy
   exact (hle y).trans_lt hy
 
+omit [FiniteDimensional ℝ Y] in
 /-- If `f` is Lipschitz on `A` with values in an `m`-dimensional real normed space and
 `μHE[m + k] A = 0`, then for almost every `y` the fiber `A ∩ f ⁻¹' {y}` is `μHE[k]`-null. -/
 theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LipschitzOnWith K f A)
@@ -284,6 +290,7 @@ namespace LocallyLipschitzOn
 
 variable [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
 
+omit [FiniteDimensional ℝ Y] in
 /-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
 `m`-dimensional real normed space and `μH[m + t] A = 0`, then for almost every `y` the fiber
 `A ∩ f ⁻¹' {y}` is `μH[t]`-null. -/
@@ -297,6 +304,7 @@ theorem ae_hausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschitzOn A f)
   rw [← inter_eq_left.2 hcov, inter_iUnion, iUnion_inter]
   exact measure_iUnion_null hy
 
+omit [FiniteDimensional ℝ Y] in
 /-- If `f` is locally Lipschitz on `A` in a second-countable domain with values in an
 `m`-dimensional real normed space and `μHE[m + k] A = 0`, then for almost every `y` the fiber
 `A ∩ f ⁻¹' {y}` is `μHE[k]`-null. -/
@@ -306,6 +314,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero (hf : LocallyLipschi
   filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_eq_zero μ hA] with y hy
   exact euclideanHausdorffMeasure_eq_zero_iff.2 hy
 
+omit [FiniteDimensional ℝ Y] in
 /-- For a map `f` locally Lipschitz on a Lebesgue measurable subset `A` of an `n`-dimensional real
 inner product space with values in an `m`-dimensional real normed space carrying an additive Haar
 measure `μ`, if `n ≤ m + k`, then `μ`-almost every fiber `A ∩ f ⁻¹' {y}` is `μHE[k]`-null if and
