@@ -150,10 +150,10 @@ theorem geometricRepresentationFun_apply (w : W) :
 
 /-- The transported representation in coordinates: `ρ(w)` applied to the finitely supported
 function with coordinates `v`. -/
-@[simp]
+@[simp low]
 theorem geometricRepresentationFun_apply_apply (w : W) (v : B → ℝ) :
     cs.geometricRepresentationFun w v =
-      ⇑(cs.geometricRepresentation w (Finsupp.equivFunOnFinite.symm v)) :=
+      ⇑(cs.geometricRepresentation w ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm v)) :=
   (rfl)
 
 /-- **The coordinate equivalence is an equivalence of representations** from the geometric
@@ -186,7 +186,7 @@ theorem geometricRepresentationEquivFun_apply (v : B →₀ ℝ) :
 
 @[simp]
 theorem geometricRepresentationEquivFun_symm_apply (v : B → ℝ) :
-    cs.geometricRepresentationEquivFun.symm v = Finsupp.equivFunOnFinite.symm v :=
+    cs.geometricRepresentationEquivFun.symm v = (Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm v :=
   (rfl)
 
 /-- **The transported geometric representation is faithful**, by Tits' theorem
@@ -204,9 +204,11 @@ theorem geometricRepresentationFun_simple_apply [Fintype B] [DecidableEq B] (i :
     (v : B → ℝ) :
     cs.geometricRepresentationFun (cs.simple i) v =
       v - (2 * ∑ j, -Real.cos (Real.pi / M i j) * v j) • Pi.single i 1 := by
-  have hform : M.geometricForm (Finsupp.single i 1) (Finsupp.equivFunOnFinite.symm v) =
-      ∑ j, -Real.cos (Real.pi / M i j) * v j := by
-    simp [Finsupp.equivFunOnFinite_symm_eq_sum, mul_comm]
+  have hform :
+      M.geometricForm (Finsupp.single i 1) ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm v) =
+        ∑ j, -Real.cos (Real.pi / M i j) * v j := by
+    rw [← Finsupp.univ_sum_single ((Finsupp.linearEquivFunOnFinite ℝ ℝ B).symm v)]
+    simp [mul_comm]
   ext k
   simp [hform, Pi.single_apply, Finsupp.single_apply, eq_comm]
 

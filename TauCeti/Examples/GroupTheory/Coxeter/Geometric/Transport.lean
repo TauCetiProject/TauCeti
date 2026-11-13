@@ -193,7 +193,10 @@ example :
         (((⊥ : SimpleGraph (Fin 3)).coxeterMatrix.reindex (finRotate 3)).simple 0) =
       (⊥ : SimpleGraph (Fin 3)).coxeterMatrix.simple 2 :=
   ⟨by simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple],
-    by rw [CoxeterMatrix.reindexGroupEquiv_apply_simple, show (finRotate 3).symm 0 = 2 by decide]⟩
+    by
+      rw [CoxeterMatrix.reindexGroupEquiv_apply_simple, ← finRotate_last (n := 2),
+        Equiv.symm_apply_apply]
+      simp⟩
 
 /-! ### Extension by zero from a parabolic subset -/
 
