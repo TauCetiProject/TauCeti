@@ -25,6 +25,8 @@ integration-by-parts arguments:
   integral of the product.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
+  multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 -/
 
 public section
@@ -89,6 +91,31 @@ theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
   simp [lpPairing_eq_integral]
 
 end ContinuousLinearMap
+
+namespace MeasureTheory.Lp
+
+variable {α ι 𝕜 E : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p q r : ℝ≥0∞}
+  [p.HolderTriple q r] [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+scalar factor. -/
+protected theorem sum_smul (s : Finset ι) (f : ι → Lp 𝕜 p μ) (g : Lp E q μ) :
+    (∑ i ∈ s, f i) • g = ∑ i ∈ s, (f i • g : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.smul_add, ih]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+vector factor. -/
+protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q μ) :
+    f • (∑ i ∈ s, g i) = ∑ i ∈ s, (f • g i : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
