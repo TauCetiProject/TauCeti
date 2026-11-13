@@ -124,7 +124,7 @@ end Localization
 
 section LivesOver
 
-variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ)
   {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
 /-- A class `α ∈ Hₖ(E)` **lives over the fundamental class** of `M` at `b`, for a map
