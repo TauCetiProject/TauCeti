@@ -20,6 +20,8 @@ In a Hausdorff space the empty carrier gives the zero cone. Positive-height
 slices recover a closed convex base after rescaling. Closure is essential for
 the height-zero directions of an unbounded base. Conversely, a closed cone in
 nonnegative heights meeting height one is the homogenization of that slice.
+Intersecting a closed convex base with the height-one slice of a closed cone
+commutes with homogenization whenever the intersection is nonempty.
 Pulling back its lineality to height zero recovers the lineality of the
 recession cone.
 
@@ -273,3 +275,19 @@ theorem homogenization_slice_one (C : PointedCone ℝ (V × ℝ))
     · exact hpos ht hz
 
 end PointedCone
+
+/-- If the height-one slice of a closed cone meets a closed convex set, homogenizing
+their intersection recovers the intersection of the two cones at every height. -/
+theorem Convex.homogenization_setOf_mem_eq_inf {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V] {P : Set V}
+    (hconv : Convex ℝ P) (hclosed : IsClosed P) {C : PointedCone ℝ (V × ℝ)}
+    (hC : IsClosed (C : Set (V × ℝ))) (hne : {x ∈ P | (x, (1 : ℝ)) ∈ C}.Nonempty) :
+    Set.homogenization {x ∈ P | (x, (1 : ℝ)) ∈ C} = Set.homogenization P ⊓ C := by
+  have hslice : {x : V | (x, (1 : ℝ)) ∈ Set.homogenization P ⊓ C} =
+      {x ∈ P | (x, (1 : ℝ)) ∈ C} := by
+    ext
+    simp only [Set.mem_ofPred_eq, Submodule.mem_inf, hconv.mem_homogenization_one_iff hclosed]
+  rw [← hslice] at hne ⊢
+  exact (Set.homogenization P ⊓ C).homogenization_slice_one
+    ((Set.isClosed_homogenization P).inter hC)
+    (fun _ hz => Set.homogenization_height_nonneg hz.1) hne
