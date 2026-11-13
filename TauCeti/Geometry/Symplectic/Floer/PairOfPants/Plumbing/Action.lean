@@ -80,24 +80,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### Change of variables along the plumbing chart -/
 
-omit [FiniteDimensional ℝ V] in
-/-- The plumbing chart maps the part `Re z > 2 - L` of the inserted thrice-punctured sphere into
-the four-punctured sphere, where the plumbed datum is `C¹`. -/
-private theorem differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap
-    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ}
-    (hw : (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
-      2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re) (y : V) (v : ℂ) :
-    DifferentiableAt ℝ
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      (realChart (q.plumbingMap L) w, y) :=
-  (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
-    (by
-      rw [equivRealProdCLM_symm_realChart]
-      exact mapsTo_plumbingMap hq (by linarith) ⟨hw.1, by linarith [hw.2]⟩) y v).differentiableAt
-    one_ne_zero
-
 /-- **The energy along the plumbing chart.** On a measurable set `B` in the part `Re z > 2 - L` of
 the inserted thrice-punctured sphere, measured in the end coordinate at `∞`, the pullback of the
 plumbed perturbation along the plumbing chart `ψ` is the perturbation of the inserted pair of

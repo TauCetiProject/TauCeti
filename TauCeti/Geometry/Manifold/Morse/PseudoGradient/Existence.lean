@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -49,6 +50,10 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
   compact set whose critical points are nondegenerate, and its Morse-function specialization
   `TauCeti.IsMorse.exists_contMDiff_pseudoGradientOn_nhds`.
 * `TauCeti.IsMorse.exists_isAdaptedPseudoGradient`: existence of adapted pseudo-gradients.
+* `TauCeti.IsAdaptedPseudoGradient.mdifferentiable`: differentiability of `f` follows from the
+  Morse-chart condition of an adapted pseudo-gradient.
+* `TauCeti.IsAdaptedPseudoGradient.antitone_comp`: `f` is antitone along every integral curve of an
+  adapted pseudo-gradient.
 
 The chart calculus used here is general and lives in
 `TauCeti/Geometry/Manifold/MFDeriv/ModelChart.lean` and
@@ -75,15 +80,6 @@ namespace MorseChart
 section Basic
 
 variable (φ : MorseChart E f x)
-
-/-- The quadratic normal form of a Morse chart, as a function on the model space. -/
-noncomputable def quadratic (z : E) : ℝ :=
-  f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2
-
-/-- On the source of a Morse chart, `f` is the quadratic normal form read in the chart. -/
-theorem eqOn_quadratic : EqOn f (φ.quadratic ∘ φ.toChart) φ.toChart.source := fun y hy ↦ by
-  simp only [comp_apply, quadratic]
-  exact φ.eq_quadratic y hy
 
 /-- The negative gradient `z ↦ L⁻¹ (-(wᵢ (L z)ᵢ)ᵢ)` of the quadratic normal form, read in the
 coordinates of the Morse chart. -/
@@ -174,7 +170,7 @@ theorem hasFDerivAt_quadratic (z : E) :
     φ.coordL.hasFDerivAt
   convert h using 1
   · ext v
-    simp [quadratic, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
+    simp [quadratic_apply, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
   · simp
 
 omit [FiniteDimensional ℝ E] in
@@ -232,14 +228,6 @@ theorem hessianQuadraticForm_quadratic (z u : E) :
   have := φ.finiteDimensional
   obtain ⟨B, hB, hBu⟩ := φ.exists_fderiv_quadratic_eq
   rw [hessianQuadraticForm_apply, hB, B.fderiv, hBu]
-
-omit [FiniteDimensional ℝ E] in
-/-- The quadratic normal form is smooth. -/
-theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
-  have := φ.finiteDimensional
-  obtain ⟨B, hB, -⟩ := φ.exists_fderiv_quadratic_eq
-  rw [contDiff_infty_iff_fderiv, hB]
-  exact ⟨fun z ↦ φ.differentiableAt_quadratic z, B.contDiff⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- The derivative of the quadratic normal form along the linear field is `-Σᵢ (L z)ᵢ²`. -/
@@ -352,6 +340,27 @@ theorem contMDiffOn_field :
 end IsManifold
 
 end MorseChart
+
+namespace IsAdaptedPseudoGradient
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M] {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+/-- If `X` is an adapted pseudo-gradient for `f`, then `f` is differentiable; this hypothesis need
+not be assumed separately. -/
+theorem mdifferentiable (hX : IsAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
+  fun p ↦ by
+  -- Where `mfderiv` is nonzero, `f` is differentiable by definition of `mfderiv`; a zero of the
+  -- derivative has a Morse chart, in which `f` is the (smooth) quadratic normal form.
+  by_contra hd
+  obtain ⟨φ, -⟩ := hX.exists_morseChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
+  exact hd ((φ.contMDiffAt φ.mem_source).mdifferentiableAt (by simp))
+
+/-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
+theorem antitone_comp {γ : ℝ → M} (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
+    Antitone (f ∘ γ) :=
+  hγ.antitone_comp (fun t ↦ hX.mdifferentiable (γ t)) fun t ↦ hX.mvfderiv_apply_nonpos (γ t)
+
+end IsAdaptedPseudoGradient
 
 section Existence
 

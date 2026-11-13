@@ -15,10 +15,9 @@ The support of a valid hypergeometric law is the integer interval from `n - (N -
 `min K n`. The lower endpoint counts marked objects forced into the sample; the upper endpoint
 is the largest possible marked count. Invalid parameters give empty support.
 
-The same finite set, transported by natural-number casting, is the support of a cast law.
-In particular, the real-cast support is a finite set of integers, not the real interval between
-its endpoints. The cast statement permits collisions, so it also applies in positive
-characteristic. Both formulas include zero populations and deterministic samples.
+Applying arbitrary labels transports this finite support exactly, even when distinct counts have
+the same label. In particular, the real-cast support is a finite set of integers, not the real
+interval between its endpoints. Both formulas include zero populations and deterministic samples.
 
 ## References
 
@@ -46,6 +45,18 @@ theorem support_hypergeometricMeasure (N K n : ℕ) :
     omega
   · simp [hypergeometricMeasure_eq_zero_of_invalid h]
 
+/-- Applying labels to a hypergeometric law sends its finite native support to the image of the
+feasible count interval. The formula does not require the labels to be injective. -/
+theorem support_map_hypergeometricMeasure {E : Type*} [TopologicalSpace E] [T1Space E]
+    [MeasurableSpace E] [BorelSpace E] (N K n : ℕ) (f : ℕ → E) :
+    ((hypergeometricMeasure N K n).map f).support =
+      if K ≤ N ∧ n ≤ N then f '' Icc (n - (N - K)) (min K n) else ∅ := by
+  rw [Measure.support_map_eq_closure_image _ Measure.support_mem_ae
+    continuous_of_discreteTopology, support_hypergeometricMeasure]
+  split_ifs
+  · exact ((finite_Icc _ _).image f).isClosed.closure_eq
+  · simp
+
 /-- The support after natural-number casting is the image of the finite interval of possible
 counts. No injectivity of the cast is required. In particular, real casting retains precisely
 the supported integer counts. -/
@@ -54,12 +65,7 @@ theorem support_map_cast_hypergeometricMeasure {R : Type*} [AddMonoidWithOne R]
     [TopologicalSpace R] [T1Space R] [MeasurableSpace R] [BorelSpace R] (N K n : ℕ) :
     ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → R)).support =
       if K ≤ N ∧ n ≤ N then
-        (Nat.cast : ℕ → R) '' Icc (n - (N - K)) (min K n) else ∅ := by
-  rw [Measure.support_map_eq_closure_image _ Measure.support_mem_ae
-    (continuous_of_discreteTopology : Continuous (Nat.cast : ℕ → R)),
-    support_hypergeometricMeasure]
-  split_ifs
-  · exact ((finite_Icc _ _).image _).isClosed.closure_eq
-  · simp
+        (Nat.cast : ℕ → R) '' Icc (n - (N - K)) (min K n) else ∅ :=
+  support_map_hypergeometricMeasure N K n Nat.cast
 
 end TauCeti.Probability
