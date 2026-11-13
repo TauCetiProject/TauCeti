@@ -316,11 +316,7 @@ theorem existsUnique_flagEchelon (i : Fin n) :
     ∃! x, x ∈ W ⊓ b.flag i.succ ∧ ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j := by
   have := Module.Finite.of_basis b
   refine existsUnique_of_exists_of_unique ?_ fun x y hx hy ↦ ?_
-  · by_cases hi : i ∈ b.flagPivots W
-    swap
-    · exact ⟨0, zero_mem _, fun j hj ↦ by
-        simp [hj.ne_of_notMem hi]⟩
-    -- The coordinates at the pivots up to `i` form an isomorphism on `W ⊓ b.flag i.succ`.
+  · -- The coordinates at the pivots up to `i` form an isomorphism on `W ⊓ b.flag i.succ`.
     set T : Finset (Fin n) := {j ∈ b.flagPivots W | j.castSucc < i.succ}
     let φ : ↥(W ⊓ b.flag i.succ) →ₗ[K] (T → K) :=
       LinearMap.pi fun j ↦ (b.coord j).comp (Submodule.subtype _)
@@ -336,15 +332,12 @@ theorem existsUnique_flagEchelon (i : Fin n) :
       · exact hlt x.2.2 hji
     have hrank : finrank K ↥(W ⊓ b.flag i.succ) = finrank K (T → K) := by
       rw [finrank_inf_flag, finrank_fintype_fun_eq_card, Fintype.card_coe]
-    have hiT : i ∈ T := mem_filter.mpr ⟨hi, Fin.castSucc_lt_succ⟩
     obtain ⟨x, hx⟩ :=
       ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hφ)
-        (Pi.single ⟨i, hiT⟩ 1)
+        fun j : T ↦ Finsupp.single i 1 (j : Fin n)
     refine ⟨x, x.2, fun j hj ↦ ?_⟩
     by_cases hji : j.castSucc < i.succ
-    · have := congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
-      simp only [LinearMap.pi_apply, LinearMap.comp_apply, coe_subtype, coord_apply, φ] at this
-      simp [this, Finsupp.single_apply, Pi.single_apply, eq_comm]
+    · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
     · rw [hlt x.2.2 hji, Finsupp.single_eq_of_ne]
       rintro rfl
       exact hji Fin.castSucc_lt_succ
