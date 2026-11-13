@@ -211,6 +211,24 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
   · intro h
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
 
+/-- Transport of the empty edge set is empty. -/
+@[simp]
+theorem mapEdgeSet_empty (f : Iso G H) : f.mapEdgeSet ∅ = ∅ := by
+  ext e
+  simp [mapEdgeSet]
+
+/-- Edge-set transport preserves intersections. -/
+@[simp]
+theorem mapEdgeSet_inter (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F ∩ F') = f.mapEdgeSet F ∩ f.mapEdgeSet F' := by
+  ext e
+  simp only [mapEdgeSet, mem_ofPred, mem_inter_iff]
+  constructor
+  · rintro ⟨he, hF, hF'⟩
+    exact ⟨⟨he, hF⟩, ⟨he, hF'⟩⟩
+  · rintro ⟨⟨he, hF⟩, ⟨_, hF'⟩⟩
+    exact ⟨he, hF, hF'⟩
+
 /-- Transport preserves the extended cardinality of a set of actual edges. -/
 @[simp]
 theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
