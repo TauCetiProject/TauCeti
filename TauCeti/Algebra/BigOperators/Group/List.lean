@@ -26,7 +26,7 @@ entries whose relative order differs has commuting images. The product of the im
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
-* `List.prod_take_succ_map_get`: the product of the images over the first `k + 1` entries is that
+* `List.prod_map_take_succ`: the product of the images over the first `k + 1` entries is that
   over the first `k` entries times the image of entry `k`.
 -/
 
@@ -85,7 +85,7 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
 entries times the image of entry `k`. -/
 @[to_additive /-- The sum of the images over the first `k + 1` entries is the sum over the first
 `k` entries plus the image of entry `k`. -/]
-theorem prod_take_succ_map_get (g : ι → M) (D : List ι) {k : ℕ} (hk : k < D.length) :
+theorem prod_map_take_succ (g : ι → M) (D : List ι) {k : ℕ} (hk : k < D.length) :
     ((D.take (k + 1)).map g).prod = ((D.take k).map g).prod * g D[k] := by
   rw [List.map_take, List.map_take, List.prod_take_succ _ _ (by simpa using hk),
     List.getElem_map]

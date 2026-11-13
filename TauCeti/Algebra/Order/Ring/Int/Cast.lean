@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Order.Ring.Cast
 # Integrality arguments in ordered rings
 
 An element of an ordered ring strictly between two consecutive integers, congruent modulo integers
-to `c`, shows that `c` is not an integer (`TauCeti.not_exists_intCast_of_lt_of_lt_add_one`).
+to `c`, shows that `c` is not an integer (`TauCeti.not_exists_eq_intCast_of_lt_of_lt_add_one`).
 -/
 
 public section
@@ -21,7 +21,7 @@ namespace TauCeti
 
 /-- An element of an ordered ring strictly between two consecutive integers, congruent modulo
 integers to `c`, shows that `c` is not an integer. -/
-theorem not_exists_intCast_of_lt_of_lt_add_one {R : Type*} [Ring R] [LinearOrder R]
+theorem not_exists_eq_intCast_of_lt_of_lt_add_one {R : Type*} [Ring R] [PartialOrder R]
     [IsStrictOrderedRing R] {x c : R} {z : ℤ}
     (hx : ∃ m : ℤ, x - c = m) (h₁ : (z : R) < x) (h₂ : x < z + 1) : ¬∃ m : ℤ, c = m := by
   rintro ⟨m, rfl⟩

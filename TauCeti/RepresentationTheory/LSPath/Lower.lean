@@ -9,9 +9,9 @@ public import TauCeti.RepresentationTheory.LSPath.Integrality
 public import TauCeti.RepresentationTheory.LSPath.Linked
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
-import TauCeti.Data.List.Subdivide
-import TauCeti.Data.List.WindowHeights
-import TauCeti.Data.Rat.CastArith
+import TauCeti.Algebra.BigOperators.Group.List
+import TauCeti.Algebra.CharZero.RatCast
+import TauCeti.Algebra.Order.Ring.Int.Cast
 
 /-!
 # Littelmann's lowering operator preserves Lakshmibai–Seshadri paths
@@ -165,7 +165,7 @@ private theorem lowerList_eq_mapIdx (i : b.support) {l : List (P.weylGroup × �
     rw [hDp]
     conv_lhs => rw [← List.take_append_drop k₀ (l.take j₁), List.take_take, min_eq_left hk₀j₁]
     simp only [List.append_assoc, List.cons_append, List.nil_append]
-  have hA : (l.take k₀).length = k₀ := by simp; omega
+  have hA : (l.take k₀).length = k₀ := List.length_take_of_le (hk₀j₁.trans hj₁.le)
   have hB : ((l.take j₁).drop k₀ ++ [(τ, θ * d)]).length = j₁ - k₀ + 1 := by simp; omega
   rw [hDp']
   refine List.ext_getElem (by simp [lowerList]) fun k hk₁ hk₂ ↦ ?_
@@ -196,14 +196,13 @@ private theorem linked_mapIdx_subdivide (hlam : lam ∈ dominantChamber P b)
       ∀ p ∈ Dp.mapIdx (fun k p ↦
           if k₀ ≤ k ∧ k ≤ j₁ then ((weylCoxeterSystem P b).simple i * p.1, p.2) else p),
         (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) p.1 := by
-  have hDp_len : Dp.length = l.length + 1 := by
-    rw [hDp]; exact List.length_take_append_cons_cons hj₁
+  have hDp_len : Dp.length = l.length + 1 := by simp [hDp]; omega
   have hDp_lt (k : ℕ) (hk : k < Dp.length) (hkj : k < j₁) : Dp[k] = l[k]'(by omega) := by
-    subst hDp; exact List.getElem_take_append_of_lt hj₁.le hkj hk
+    simp [hDp, List.getElem_append_left, List.length_take_of_le hj₁.le, hkj]
   have hDp_j₁ (h : j₁ < Dp.length) : Dp[j₁] = (τ, θ * d) := by
-    subst hDp; exact List.getElem_take_append_cons_self hj₁.le h
+    simp [hDp, List.length_take_of_le hj₁.le]
   have hDp_j₁1 (h : j₁ + 1 < Dp.length) : Dp[j₁ + 1] = (τ, (1 - θ) * d) := by
-    subst hDp; exact List.getElem_take_append_cons_cons_succ hj₁.le h
+    simp [hDp, List.length_take_of_le hj₁.le]
   have hDp_fst (k : ℕ) (hk : k < Dp.length) (hkj : k ≤ j₁) :
       Dp[k].1 = (l[k]'(by omega)).1 := by
     rcases hkj.lt_or_eq with hkj | rfl
@@ -211,10 +210,11 @@ private theorem linked_mapIdx_subdivide (hlam : lam ∈ dominantChamber P b)
     · rw [hDp_j₁ hk, hτd]
   have hcum_le (k : ℕ) (hk : k ≤ j₁) :
       ((Dp.take k).map Prod.snd).sum = ((l.take k).map Prod.snd).sum := by
-    subst hDp; exact List.sum_take_map_take_append_of_le _ hj₁.le hk
+    rw [hDp, List.take_append_of_le_length (hk.trans_eq (List.length_take_of_le hj₁.le).symm),
+      List.take_take, min_eq_left hk]
   have hcum_j₁1 : ((Dp.take (j₁ + 1)).map Prod.snd).sum =
       ((l.take j₁).map Prod.snd).sum + θ * d := by
-    subst hDp; exact List.sum_take_succ_map_take_append_cons Prod.snd hj₁.le
+    rw [List.sum_map_take_succ _ _ (by omega), hcum_le j₁ le_rfl, hDp_j₁ (by omega)]
   obtain ⟨hDp_linked, hDpmin⟩ := Linked.subdivide hl hlmin hj₁ hτd θ
   rw [← hDp] at hDp_linked hDpmin
   -- Reflect the window `[k₀, j₁]` of the subdivided list in `sᵢ`.
@@ -266,6 +266,109 @@ private theorem linked_lowerList (hlam : lam ∈ dominantChamber P b)
   rw [hlow]
   exact linked_mapIdx_subdivide hlam hl hlmin i hj₁ hk₀j₁ rfl θ hpos hint hleft hcut rfl
 
+/-! ### Heights along a rising window
+
+For a list `D` and weights `f`, `g` of its entries, write `hₖ = ∑_{j<k} f(Dⱼ) g(Dⱼ)` for the
+heights and `aₖ = ∑_{j<k} f(Dⱼ)` for the breaks. For the list of directions and durations of an LS
+path, `f` is the duration and `g` the height `⟨τ λ, αᵢ^∨⟩` of the direction. -/
+
+/-- Where the heights rise strictly at an entry `k` with `0 ≤ f(Dₖ)`, the weight `g(Dₖ)` is
+positive. -/
+private theorem pos_of_sum_map_mul_take_lt_sum_map_mul_take_succ {α R : Type*} [Semiring R]
+    [LinearOrder R] [IsStrictOrderedRing R] (f g : α → R) (D : List α) {k : ℕ}
+    (hk : k < D.length) (hd : 0 ≤ f D[k])
+    (h : ((D.take k).map fun a ↦ f a * g a).sum < ((D.take (k + 1)).map fun a ↦ f a * g a).sum) :
+    0 < g D[k] := by
+  rw [List.sum_map_take_succ (fun a ↦ f a * g a) D hk, lt_add_iff_pos_right] at h
+  exact pos_of_mul_pos_right h hd
+
+/-- Where the heights do not rise at an entry `k` with `0 < f(Dₖ)`, the weight `g(Dₖ)` is
+nonpositive. -/
+private theorem nonpos_of_sum_map_mul_take_succ_le_sum_map_mul_take {α R : Type*} [Semiring R]
+    [LinearOrder R] [IsStrictOrderedRing R] (f g : α → R) (D : List α) {k : ℕ}
+    (hk : k < D.length) (hd : 0 < f D[k])
+    (h : ((D.take (k + 1)).map fun a ↦ f a * g a).sum ≤ ((D.take k).map fun a ↦ f a * g a).sum) :
+    g D[k] ≤ 0 := by
+  rw [List.sum_map_take_succ (fun a ↦ f a * g a) D hk, add_le_iff_nonpos_right] at h
+  exact nonpos_of_mul_nonpos_right h hd
+
+/-- **Non-integrality inside a rising window.** If the heights rise strictly on the window
+`[k₀, j₁]`, are at least the integer `z` at `k₀` and below `z + 1` at `j₁`, and `hₖ` is congruent
+to `aₖ g(Dₖ)` modulo integers, then `aₖ g(Dₖ)` is not an integer for `k₀ < k ≤ j₁`. -/
+private theorem not_exists_sum_map_take_mul_eq_intCast {α K : Type*} [Ring K] [PartialOrder K]
+    [IsStrictOrderedRing K] (f g : α → K) (D : List α) {k₀ j₁ k : ℕ} (hk : k < D.length)
+    {z : ℤ} (hk₀ : (z : K) ≤ ((D.take k₀).map fun a ↦ f a * g a).sum)
+    (hrise : ∀ m, k₀ ≤ m → m < j₁ →
+      ((D.take m).map fun a ↦ f a * g a).sum < ((D.take (m + 1)).map fun a ↦ f a * g a).sum)
+    (hj₁ : ((D.take j₁).map fun a ↦ f a * g a).sum < z + 1)
+    (hcong : ∃ m : ℤ,
+      ((D.take k).map fun a ↦ f a * g a).sum - ((D.take k).map f).sum * g D[k] = m)
+    (hk₀k : k₀ < k) (hkj : k ≤ j₁) :
+    ¬∃ m : ℤ, ((D.take k).map f).sum * g D[k] = m := by
+  have hsm : StrictMonoOn (fun m ↦ ((D.take m).map fun a ↦ f a * g a).sum) (Set.Icc k₀ j₁) :=
+    strictMonoOn_of_lt_add_one Set.ordConnected_Icc fun m _ hm hm' ↦
+      hrise m hm.1 (by simp only [Set.mem_Icc] at hm'; omega)
+  exact TauCeti.not_exists_eq_intCast_of_lt_of_lt_add_one hcong
+    (hk₀.trans_lt (hsm ⟨le_rfl, by omega⟩ ⟨hk₀k.le, hkj⟩ hk₀k))
+    ((hsm.monotoneOn ⟨hk₀k.le, hkj⟩ ⟨by omega, le_rfl⟩ hkj).trans_lt hj₁)
+
+/-- **Integrality at the cut.** If `h - a w` is an integer and `θ (d w) = z - h` for an integer `z`,
+then `(a + θ d) w` is an integer. -/
+private theorem exists_add_mul_eq_intCast {R : Type*} [Ring R] {h a d w θ : R} {z : ℤ}
+    (hcong : ∃ m : ℤ, h - a * w = m) (hθd : θ * (d * w) = z - h) :
+    ∃ m : ℤ, (a + θ * d) * w = m := by
+  obtain ⟨m, hm⟩ := hcong
+  refine ⟨z - m, ?_⟩
+  push_cast
+  rw [← hm, add_mul, mul_assoc, hθd]
+  abel
+
+omit [P.flip.IsReduced] in
+/-- **The window of a lowering step, from its heights.** Let `D` be a linked list of directions and
+positive durations starting at time `0`, whose heights `hₖ = ∑_{j<k} dⱼ ⟨τⱼ λ, αᵢ^∨⟩` are at least
+the integer `z = h_{k₀}`, rise strictly on the window `[k₀, j₁]`, and reach `z + 1` at the fraction
+`θ > 0` of the entry `j₁`. Then the window satisfies the hypotheses of
+`TauCeti.LSPath.linked_lowerList`: the heights `⟨τ λ, αᵢ^∨⟩` of its directions are positive,
+`a ⟨τ λ, αᵢ^∨⟩` is not an integer at its internal breaks `a`, the direction entering it has
+nonpositive height, and the cut is at a time `a` with `a ⟨τ λ, αᵢ^∨⟩` an integer. -/
+private theorem lowerList_window_of_heights (hlam : lam ∈ dominantChamber P b)
+    {D : List (P.weylGroup × ℚ)} (hD : Linked P b lam 0 D) (hdpos : ∀ p ∈ D, 0 < p.2)
+    (i : b.support) {k₀ j₁ : ℕ} (hj₁ : j₁ < D.length) (hk₀j₁ : k₀ ≤ j₁) {z : ℤ} {θ : ℚ}
+    (hθ : 0 < θ)
+    (hmin : ∀ k, (z : ℚ) ≤ ((D.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum)
+    (hk₀ : ((D.take k₀).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum = z)
+    (hrise : ∀ k, k₀ ≤ k → k ≤ j₁ →
+      ((D.take k).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum <
+        ((D.take (k + 1)).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum)
+    (hθd : θ * (D[j₁].2 * P.coroot' i (D[j₁].1 • lam)) =
+      z + 1 - ((D.take j₁).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum) :
+    (∀ k (hk : k < D.length), k₀ ≤ k → k ≤ j₁ → 0 < P.coroot' i (D[k].1 • lam)) ∧
+      (∀ k (hk : k < D.length), k₀ < k → k ≤ j₁ →
+        ¬∃ m : ℤ, ((D.take k).map Prod.snd).sum * P.coroot' i (D[k].1 • lam) = m) ∧
+      (∀ k (hk : k < D.length), k + 1 = k₀ → P.coroot' i (D[k].1 • lam) ≤ 0) ∧
+      ∃ m : ℤ,
+        (((D.take j₁).map Prod.snd).sum + θ * D[j₁].2) * P.coroot' i (D[j₁].1 • lam) = m := by
+  have hpos (k : ℕ) (hk : k < D.length) (hk₀k : k₀ ≤ k) (hkj : k ≤ j₁) :
+      (0 : ℚ) < P.coroot' i (D[k].1 • lam) :=
+    pos_of_sum_map_mul_take_lt_sum_map_mul_take_succ Prod.snd
+      (fun p ↦ (P.coroot' i (p.1 • lam) : ℚ)) D hk (hdpos _ (List.getElem_mem hk)).le
+      (hrise k hk₀k hkj)
+  have hcong (k : ℕ) (hk : k < D.length) :=
+    hD.exists_sum_take_sub_mul_eq_intCast hlam (P.coroot' i) hk
+  have hj₁z : ((D.take j₁).map fun p ↦ p.2 * (P.coroot' i (p.1 • lam) : ℚ)).sum < z + 1 := by
+    have : 0 < θ * (D[j₁].2 * P.coroot' i (D[j₁].1 • lam)) :=
+      mul_pos hθ (mul_pos (hdpos _ (List.getElem_mem hj₁)) (hpos j₁ hj₁ hk₀j₁ le_rfl))
+    linarith
+  refine ⟨fun k hk hk₀k hkj ↦ by exact_mod_cast hpos k hk hk₀k hkj,
+    fun k hk hk₀k hkj ↦ not_exists_sum_map_take_mul_eq_intCast Prod.snd
+      (fun p ↦ (P.coroot' i (p.1 • lam) : ℚ)) D hk hk₀.ge (fun m hm hmj ↦ hrise m hm hmj.le) hj₁z
+      (hcong k hk) hk₀k hkj,
+    fun k hk hkk ↦ ?_,
+    exists_add_mul_eq_intCast (z := z + 1) (hcong j₁ hj₁) (by push_cast; exact hθd)⟩
+  have := nonpos_of_sum_map_mul_take_succ_le_sum_map_mul_take Prod.snd
+    (fun p ↦ (P.coroot' i (p.1 • lam) : ℚ)) D hk (hdpos _ (List.getElem_mem hk))
+    (by rw [hkk, hk₀]; exact hmin k)
+  exact_mod_cast this
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V]
@@ -349,8 +452,6 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
   set τ := (π.dir j₁').1 with hτ
   set d := π.duration j₁' with hd
   have hDj₁ : D[j₁] = (τ, d) := by rw [getElem_dirDurations]
-  have hdpos : ∀ k (hk : k < D.length), 0 < D[k].2 := fun k hk ↦ by
-    rw [getElem_dirDurations]; exact π.duration_pos _
   -- Heights of the realization at the vertices are the rational heights of the encoding.
   have hHF : ∀ k, F ((D.map seg).take k).sum = (hgt k : 𝕜) := fun k ↦
     apply_sum_take_map_segments f i F hF D k
@@ -360,16 +461,11 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
   have hrise' : ∀ k, k₀ ≤ k → k ≤ j₁ → hgt k < hgt (k + 1) := fun k hk₀ hkj ↦ by
     have := hrise k hk₀ hkj
     rwa [hHF, hHF, Rat.cast_lt] at this
-  have hpos : ∀ k (hk : k < D.length), k₀ ≤ k → k ≤ j₁ → 0 < P.coroot' i (D[k].1 • lam) :=
-    fun k hk hk₀ hkj ↦ by
-      have := List.pos_of_sum_take_map_mul_lt_sum_take_succ_map_mul Prod.snd
-        (fun p : P.weylGroup × ℚ ↦ (P.coroot' i (p.1 • lam) : ℚ)) D hk (hdpos k hk).le
-        (hrise' k hk₀ hkj)
-      exact_mod_cast this
+  -- The height rises along the entry `j₁`, so its segment has positive height.
   have hdH : 0 < d * (P.coroot' i (τ • lam) : ℚ) := by
-    have := hpos j₁ hj₁lt hk₀j₁ le_rfl
-    rw [hDj₁] at this
-    exact mul_pos (by rw [hd]; exact π.duration_pos _) (by exact_mod_cast this)
+    have := hrise' j₁ hk₀j₁ le_rfl
+    simp only [hhgt, List.sum_map_take_succ _ D hj₁lt, lt_add_iff_pos_right, hDj₁] at this
+    exact this
   set θ : ℚ := (z + 1 - hgt j₁) / (d * P.coroot' i (τ • lam)) with hθ
   have hθ' : θ' = θ := by
     have hc := hcross
@@ -378,26 +474,15 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
     exact eq_ratCast_div_of_add_mul_eq (r := (z : ℚ) + 1) hdH.ne' (by exact_mod_cast hc)
   rw [hθ'] at hθpos' hθle' hlow
   have hθpos : 0 < θ := by exact_mod_cast hθpos'
-  -- At the vertex `k₀` the height is minimal, so the segment before it does not rise.
-  have hleftH : ∀ k, k + 1 = k₀ → (z : ℚ) ≤ hgt k := fun k _ ↦ by
+  -- The height is at least its minimum `z` at every vertex.
+  have hzle : ∀ k, (z : ℚ) ≤ hgt k := fun k ↦ by
     have hle := PLPath.listMinHeight_le_apply_sum_take (f := F) (D.map seg) k
     rw [← hminH, hz, hHF] at hle
     exact_mod_cast hle
   have hθd : θ * (D[j₁].2 * (P.coroot' i (D[j₁].1 • lam) : ℚ)) = z + 1 - hgt j₁ := by
     rw [hDj₁]; exact div_mul_cancel₀ _ hdH.ne'
-  have hlinked := fun k (hk : k < D.length) ↦
-    π.linked_dirDurations.exists_sum_take_sub_mul_eq_intCast hlam (P.coroot' i) hk
-  have hj₁z : hgt j₁ < z + 1 := by
-    have : 0 < θ * (D[j₁].2 * (P.coroot' i (D[j₁].1 • lam) : ℚ)) := by
-      rw [hDj₁]; exact mul_pos hθpos hdH
-    linarith
-  have hint := List.not_exists_intCast_sum_take_map_snd_mul (fun w ↦ P.coroot' i (w • lam)) D
-    hgtk₀ (fun k hk₀k hkj ↦ hrise' k hk₀k hkj.le) hlinked hj₁z
-  have hleft : ∀ k (hk : k < D.length), k + 1 = k₀ → P.coroot' i (D[k].1 • lam) ≤ 0 :=
-    fun k hk hkk ↦ List.nonpos_of_sum_take_map_mul_eq (fun w ↦ P.coroot' i (w • lam)) D hk
-      (hdpos k hk) (hleftH k hkk) (hkk ▸ hgtk₀)
-  have hcut := List.exists_intCast_sum_take_map_snd_add_mul (fun w ↦ P.coroot' i (w • lam)) D
-    hj₁lt (hlinked j₁ hj₁lt) hθd
+  obtain ⟨hpos, hint, hleft, hcut⟩ := lowerList_window_of_heights hlam π.linked_dirDurations
+    (fun _ hp ↦ π.pos_of_mem_dirDurations hp) i hj₁lt hk₀j₁ hθpos hzle hgtk₀ hrise' hθd
   refine ⟨k₀, j₁, hj₁lt, θ, hk₀j₁, hθpos.le, by exact_mod_cast hθle', hpos, hint, hleft, hcut, ?_⟩
   rw [hlow, hDj₁, map_segments_lowerList f i F hF D k₀ j₁ τ d θ]
 
