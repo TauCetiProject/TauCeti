@@ -57,10 +57,7 @@ second-order chain rule reads `(f ∘ γ)'' = D²f(γ', γ') + Df(γ'')`, so a l
 affine is isotropic for its second derivative. For scalar-valued `f` and `φ`, post-composition
 with `φ` preserves vanishing of the differential when `φ′ ≠ 0`; at a point where `Df = 0`, it
 multiplies the second derivative by `φ′`. These derivative identities are independent of the
-Morse-theoretic definitions that use them. Conversely, over `ℝ` bounds on the mixed second
-differences `f (w + h + k) - f (w + h) - f (w + k) + f w` bound the second derivative, and a map
-which is `C²` near a sphere in a proper space has mixed second differences on the sphere bounded by
-a multiple of `‖h‖ ‖k‖`.
+Morse-theoretic definitions that use them.
 
 ## Main results
 
@@ -118,10 +115,6 @@ a multiple of `‖h‖ ‖k‖`.
 * `TauCeti.iteratedDeriv_two_comp`: the second derivative of a map along a curve.
 * `TauCeti.fderiv_fderiv_apply_self_eq_zero_of_eventually_eq_add_smul`: a line along which a map
   is affine is isotropic for its second derivative.
-* `TauCeti.norm_fderiv_fderiv_le_of_norm_mixedDifference_le`: a bound `C ‖h‖ ‖k‖` on the mixed
-  second differences at a point bounds the second derivative there by `C`.
-* `TauCeti.exists_norm_mixedDifference_le_of_norm_eq`: the mixed second differences of a map that
-  is `C²` near a sphere are bounded on the sphere by a multiple of `‖h‖ ‖k‖`.
 * `ContDiffAt.fderiv_fderiv_restrictScalars_apply`: the second derivative of a map which is `C²`
   over a larger field does not depend on the field.
 * `TauCeti.fderiv_fderiv_re_apply`: the real second derivative of the real part of a holomorphic
@@ -609,109 +602,6 @@ theorem _root_.ContDiffAt.fderiv_fderiv_restrictScalars_apply {g : E' → F'} {x
   simpa [iteratedFDeriv_two_apply] using h.symm
 
 end RestrictScalars
-
-section MixedDifference
-
-/-! ### Second derivatives and mixed second differences -/
-
-open Metric
-
-variable {X Y : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y]
-  [NormedSpace ℝ Y]
-
-/-- Bounds `‖f (w + h + k) - f (w + h) - f (w + k) + f w‖ ≤ C ‖h‖ ‖k‖` for `‖k‖ ≤ ‖h‖ ≤ 1` bound the
-second derivative at `w` by `C`: letting `k → 0` bounds `‖Df (w + h) - Df w‖ ≤ C ‖h‖`, and letting
-`h → 0` bounds `‖D² f (w)‖`. -/
-theorem norm_fderiv_fderiv_le_of_norm_mixedDifference_le {f : X → Y} {w : X} {C : ℝ}
-    (hC : 0 ≤ C) (hd : ∀ v : X, ‖v‖ ≤ 1 → DifferentiableAt ℝ f (w + v))
-    (hd2 : DifferentiableAt ℝ (fderiv ℝ f) w)
-    (hmixed : ∀ h k : X, ‖h‖ ≤ 1 → ‖k‖ ≤ ‖h‖ →
-      ‖f (w + (h + k)) - f (w + h) - f (w + k) + f w‖ ≤ C * ‖h‖ * ‖k‖) :
-    ‖fderiv ℝ (fderiv ℝ f) w‖ ≤ C := by
-  -- The gradient differences: `y ↦ f (y + h) - f y` is `C ‖h‖`-Lipschitz on the ball of radius
-  -- `‖h‖` about `w`.
-  have hlip : ∀ h : X, ‖h‖ ≤ 1 → ‖fderiv ℝ f (w + h) - fderiv ℝ f w‖ ≤ C * ‖h‖ := by
-    intro h hh
-    rcases eq_or_ne h 0 with rfl | hh₀
-    · simp
-    have hg : HasFDerivAt (fun y ↦ f (y + h) - f y) (fderiv ℝ f (w + h) - fderiv ℝ f w) w :=
-      ((hasFDerivAt_comp_add_right h).mpr (hd h hh).hasFDerivAt).sub
-        (by simpa using (hd 0 (by simp)).hasFDerivAt)
-    refine hg.le_of_lip' (by positivity) ?_
-    filter_upwards [ball_mem_nhds w (norm_pos_iff.mpr hh₀)] with y hy
-    rw [mem_ball, dist_eq_norm] at hy
-    have h' := hmixed h (y - w) hh hy.le
-    rw [show w + (h + (y - w)) = y + h by abel, show w + (y - w) = y by abel] at h'
-    calc ‖f (y + h) - f y - (f (w + h) - f w)‖ = ‖f (y + h) - f (w + h) - f y + f w‖ := by
-          congr 1; abel
-      _ ≤ C * ‖h‖ * ‖y - w‖ := h'
-  -- The gradient is `C`-Lipschitz near `w`.
-  refine hd2.hasFDerivAt.le_of_lip' hC ?_
-  filter_upwards [closedBall_mem_nhds w one_pos] with y hy
-  rw [mem_closedBall, dist_eq_norm] at hy
-  simpa using hlip (y - w) hy
-
-/-- **Mixed second differences on a sphere.** If `f` is `C²` outside the ball of radius `R - 2`,
-its mixed second differences at points of the sphere `‖z‖ = R` are bounded by `L ‖h‖ ‖k‖` for
-`‖h‖, ‖k‖ ≤ 1`, where `L` bounds the second derivative on the shell `R - 2 ≤ ‖w‖ ≤ R + 2`. -/
-theorem exists_norm_mixedDifference_le_of_norm_eq [ProperSpace X] {f : X → Y} {R : ℝ}
-    (hcd : ∀ w : X, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 2 f w) :
-    ∃ L, 0 ≤ L ∧ ∀ z h k : X, ‖z‖ = R → ‖h‖ ≤ 1 → ‖k‖ ≤ 1 →
-      ‖f (z + (h + k)) - f (z + h) - f (z + k) + f z‖ ≤ L * ‖h‖ * ‖k‖ := by
-  set A : Set X := closedBall 0 (R + 2) ∩ {w | R - 2 ≤ ‖w‖}
-  have hAc : IsCompact A := (isCompact_closedBall 0 (R + 2)).inter_right
-    (isClosed_le continuous_const continuous_norm)
-  have hd2 : ∀ w : X, R - 2 ≤ ‖w‖ → ContDiffAt ℝ 1 (fderiv ℝ f) w := fun w hw ↦
-    (hcd w hw).fderiv_right (m := 1) (by norm_num)
-  obtain ⟨L₀, hL₀⟩ := hAc.exists_bound_of_continuousOn (f := fun w ↦ fderiv ℝ (fderiv ℝ f) w)
-    fun w hw ↦ ((hd2 w hw.2).fderiv_right (m := 0) (by norm_num)).continuousAt.continuousWithinAt
-  set L := max L₀ 0
-  refine ⟨L, le_max_right _ _, fun z h k hz hh hk ↦ ?_⟩
-  -- Points within distance `2` of the sphere lie in the shell.
-  have hA : ∀ p, ‖p - z‖ ≤ 2 → p ∈ A := fun p hp ↦ by
-    have := abs_norm_sub_norm_le p z
-    rw [abs_le] at this
-    exact ⟨mem_closedBall_zero_iff.mpr (by linarith), show R - 2 ≤ ‖p‖ by linarith⟩
-  -- The gradient differences `Df (y + h) - Df y` are bounded by `L ‖h‖` for `‖y - z‖ ≤ 1`.
-  have hg : ∀ y ∈ closedBall z 1, ‖fderiv ℝ f (y + h) - fderiv ℝ f y‖ ≤ L * ‖h‖ := by
-    intro y hy
-    rw [mem_closedBall, dist_eq_norm] at hy
-    have hsub : closedBall y 1 ⊆ A := fun p hp ↦ by
-      rw [mem_closedBall, dist_eq_norm] at hp
-      refine hA p ?_
-      calc ‖p - z‖ = ‖(p - y) + (y - z)‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith)
-    have hmv := (convex_closedBall y 1).norm_image_sub_le_of_norm_fderiv_le (f := fderiv ℝ f)
-      (C := L) (fun p hp ↦ (hd2 p (hsub hp).2).differentiableAt (by norm_num))
-      (fun p hp ↦ (hL₀ p (hsub hp)).trans (le_max_left L₀ 0))
-      (mem_closedBall_self zero_le_one)
-      (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : y + h ∈ closedBall y 1)
-    rwa [add_sub_cancel_left] at hmv
-  have hgd : ∀ y ∈ closedBall z 1, HasFDerivAt (fun y ↦ f (y + h) - f y)
-      (fderiv ℝ f (y + h) - fderiv ℝ f y) y := by
-    intro y hy
-    rw [mem_closedBall, dist_eq_norm] at hy
-    have hy₁ : R - 2 ≤ ‖y‖ := (hA y (by linarith)).2
-    have hy₂ : R - 2 ≤ ‖y + h‖ := (hA (y + h) (by
-      calc ‖y + h - z‖ = ‖(y - z) + h‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith))).2
-    exact ((hasFDerivAt_comp_add_right h).mpr
-      ((hcd _ hy₂).differentiableAt (by norm_num)).hasFDerivAt).sub
-      ((hcd y hy₁).differentiableAt (by norm_num)).hasFDerivAt
-  -- The mean value inequality for `y ↦ f (y + h) - f y` along `[z, z + k]`.
-  have hmv := (convex_closedBall z 1).norm_image_sub_le_of_norm_fderiv_le
-    (f := fun y ↦ f (y + h) - f y)
-    (fun y hy ↦ (hgd y hy).differentiableAt)
-    (fun y hy ↦ (hgd y hy).fderiv ▸ hg y hy)
-    (mem_closedBall_self zero_le_one)
-    (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : z + k ∈ closedBall z 1)
-  rw [add_sub_cancel_left] at hmv
-  rw [show z + (h + k) = z + k + h by abel]
-  calc ‖f (z + k + h) - f (z + h) - f (z + k) + f z‖ =
-        ‖f (z + k + h) - f (z + k) - (f (z + h) - f z)‖ := by congr 1; abel
-    _ ≤ L * ‖h‖ * ‖k‖ := hmv
-
-end MixedDifference
 
 section Complex
 

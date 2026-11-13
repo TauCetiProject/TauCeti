@@ -61,13 +61,6 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
-## Exterior increments from exponentially decaying derivatives
-
-If `‖Df (w)‖ ≤ K₀ exp (-c₁ ‖w‖)` outside the ball of radius `R - 2`, then for `‖y‖ ≥ R` and
-`‖u‖, ‖v‖ ≤ 1` the increments satisfy
-`‖f (y + u + v) - f (y + u)‖ ≤ K₀ exp (2 c₁) ‖v‖ exp (-c₁ ‖y‖)`
-(`TauCeti.norm_sub_le_mul_exp_of_norm_fderiv_le`).
-
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -253,40 +246,6 @@ theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ}
     (mem_closedBall_self ((dist_nonneg).trans (mem_closedBall.1 hx))) hx
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
-
-open Metric in
-/-- **Increments from an exponentially decaying derivative.** If `f` is differentiable outside the
-ball of radius `R - 2` with `‖Df (w)‖ ≤ K₀ exp (-c₁ ‖w‖)` there, then near `‖y‖ ≥ R` its increments
-satisfy `‖f (y + u + v) - f (y + u)‖ ≤ K₀ exp (2 c₁) ‖v‖ exp (-c₁ ‖y‖)` for `‖u‖, ‖v‖ ≤ 1`. -/
-theorem norm_sub_le_mul_exp_of_norm_fderiv_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {f : E → F} {R c₁ K₀ : ℝ} (hc₁ : 0 ≤ c₁) (hK₀ : 0 ≤ K₀)
-    (hd : ∀ w : E, R - 2 ≤ ‖w‖ → DifferentiableAt ℝ f w)
-    (hgrad : ∀ w : E, R - 2 ≤ ‖w‖ → ‖fderiv ℝ f w‖ ≤ K₀ * Real.exp (-(c₁ * ‖w‖)))
-    {y u v : E} (hy : R ≤ ‖y‖) (hu : ‖u‖ ≤ 1) (hv : ‖v‖ ≤ 1) :
-    ‖f (y + u + v) - f (y + u)‖ ≤ K₀ * Real.exp (2 * c₁) * ‖v‖ * Real.exp (-(c₁ * ‖y‖)) := by
-  -- Points of the unit ball about `y + u` lie within distance `2` of `y`.
-  have hnear : ∀ p ∈ closedBall (y + u) 1, ‖y‖ - 2 ≤ ‖p‖ := fun p hp ↦ by
-    rw [mem_closedBall, dist_eq_norm] at hp
-    have h₁ : ‖p - y‖ ≤ 2 := by
-      calc ‖p - y‖ = ‖(p - (y + u)) + u‖ := by congr 1; abel
-        _ ≤ 2 := (norm_add_le _ _).trans (by linarith)
-    have h₂ := norm_sub_norm_le y p
-    rw [norm_sub_rev] at h₂
-    linarith
-  have hbound : ∀ p ∈ closedBall (y + u) 1,
-      ‖fderiv ℝ f p‖ ≤ K₀ * Real.exp (2 * c₁) * Real.exp (-(c₁ * ‖y‖)) := fun p hp ↦ by
-    have hpy := hnear p hp
-    calc ‖fderiv ℝ f p‖ ≤ K₀ * Real.exp (-(c₁ * ‖p‖)) := hgrad p (by linarith)
-      _ ≤ K₀ * Real.exp (-(c₁ * (‖y‖ - 2))) := by gcongr
-      _ = K₀ * Real.exp (2 * c₁) * Real.exp (-(c₁ * ‖y‖)) := by
-          rw [mul_assoc, ← Real.exp_add]
-          ring_nf
-  have h := (convex_closedBall (y + u) 1).norm_image_sub_le_of_norm_fderiv_le (f := f)
-    (fun p hp ↦ hd p (by linarith [hnear p hp])) hbound
-    (mem_closedBall_self zero_le_one)
-    (by rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left] : y + u + v ∈ closedBall (y + u) 1)
-  rw [add_sub_cancel_left] at h
-  linarith
 
 open Real in
 /-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at

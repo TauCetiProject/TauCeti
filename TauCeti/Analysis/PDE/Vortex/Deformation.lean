@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -244,6 +245,42 @@ theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
   simp only [Fin.isValue, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
     ofRealCLM_apply, smul_eq_mul]
   ring
+
+/-- The derivative of a field is controlled by those of its connection coefficients and of its
+section: `‖D x‖ ≤ ‖D b₁‖ + ‖D b₂‖ + ‖D α‖ / 2`. -/
+theorem norm_fderiv_le_add_norm_fderiv_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) :
+    ‖fderiv ℝ x z‖ ≤ ‖fderiv ℝ (fun w ↦ x w 0) z‖ + ‖fderiv ℝ (fun w ↦ x w 1) z‖ +
+      ‖fderiv ℝ (sectionValue x) z‖ / 2 := by
+  have hi := differentiableAt_euclidean.mp hx
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  have h0 := (fderiv ℝ (fun w ↦ x w 0) z).le_opNorm v
+  have h1 := (fderiv ℝ (fun w ↦ x w 1) z).le_opNorm v
+  have hσ := (fderiv ℝ (sectionValue x) z).le_opNorm v
+  rw [fderiv_sectionValue_apply (hi 2) (hi 3)] at hσ
+  simp only [hx.fderiv_piLp_apply, Real.norm_eq_abs] at h0 h1 hσ
+  have hσsq : ‖(2 : ℂ) * ((fderiv ℝ x z v 2 : ℂ) + (fderiv ℝ x z v 3 : ℂ) * I)‖ ^ 2 =
+      4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp
+    ring
+  set A := ‖fderiv ℝ (fun w ↦ x w 0) z‖ * ‖v‖
+  set B := ‖fderiv ℝ (fun w ↦ x w 1) z‖ * ‖v‖
+  set S := ‖fderiv ℝ (sectionValue x) z‖ * ‖v‖
+  have hA : 0 ≤ A := by positivity
+  have hB : 0 ≤ B := by positivity
+  have hS : 0 ≤ S := by positivity
+  have hS' : 4 * (fderiv ℝ x z v 2 ^ 2 + fderiv ℝ x z v 3 ^ 2) ≤ S ^ 2 := by
+    rw [← hσsq]
+    exact pow_le_pow_left₀ (norm_nonneg _) hσ 2
+  have hsq : ‖fderiv ℝ x z v‖ ^ 2 ≤ (A + B + S / 2) ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+    nlinarith [sq_abs (fderiv ℝ x z v 0), sq_abs (fderiv ℝ x z v 1),
+      abs_nonneg (fderiv ℝ x z v 0), abs_nonneg (fderiv ℝ x z v 1), mul_nonneg hA hB,
+      mul_nonneg hA hS, mul_nonneg hB hS]
+  calc ‖fderiv ℝ x z v‖ ≤ A + B + S / 2 :=
+        (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+    _ = _ := by ring
 
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
