@@ -381,9 +381,9 @@ theorem _root_.HasCompactSupport.lipschitzWith_convolution_left [IsFiniteMeasure
     (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ) {u : G → E'} (hu : LocallyIntegrable u μ)
     (huM : ∀ y, ‖u y‖ ≤ M) :
     LipschitzWith (M * ∫ y, ‖fderiv ℝ ρ y‖ ∂μ).toNNReal (ρ ⋆[lsmul ℝ ℝ, μ] u) := by
-  refine lipschitzWith_of_nnnorm_fderiv_le
+  refine lipschitzWith_of_nnNorm_fderiv_le
     ((hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ hu).differentiable one_ne_zero) fun x ↦ ?_
-  rw [← NNReal.coe_le_coe, coe_nnnorm]
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
   exact (hρc.norm_fderiv_convolution_left_le hρ hu huM x).trans (Real.le_coe_toNNReal _)
 
 end Mollifier

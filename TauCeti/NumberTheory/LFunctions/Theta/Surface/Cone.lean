@@ -72,7 +72,7 @@ theorem archHaar_restrict_unitCone {D : Set (realSpace K)} (hD : MeasurableSet D
       (Filter.Eventually.of_forall fun _ ↦ ae_pos_multHaar)
   filter_upwards [hpos] with p hp
   simpa only [mem_preimage, mem_prod, mem_univ, and_true] using
-    propext (surfaceScale_mem_unitCone_iff D p.1 hp)
+    surfaceScale_mem_unitCone_iff D p.1 hp
 
 section Integral
 
