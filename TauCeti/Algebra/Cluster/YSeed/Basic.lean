@@ -210,6 +210,7 @@ theorem reindex_refl : reindex (P := P) (Equiv.refl K) = Equiv.refl (YSeed K P) 
   · simp only [reindex_exchangeMatrix, ExchangeMatrix.reindex_refl, Equiv.refl_apply]
 
 /-- Relabelling twice is relabelling by the composite bijection. -/
+@[simp]
 theorem reindex_trans (e : K ≃ K') (e' : K' ≃ K'') :
     (reindex (P := P) e).trans (reindex e') = reindex (e.trans e') := by
   ext s : 2
@@ -221,6 +222,13 @@ theorem reindex_trans (e : K ≃ K') (e' : K' ≃ K'') :
       (row'' := Function.Embedding.refl K'') e e
       (fun _ ↦ by simp only [Function.Embedding.refl_apply]) e' e'
       (fun _ ↦ by simp only [Function.Embedding.refl_apply]))
+
+/-- Nested mutable relabellings collapse to the composite index equivalence. -/
+@[simp]
+theorem reindex_reindex (e : K ≃ K') (e' : K' ≃ K'') (s : YSeed K P) :
+    reindex e' (reindex e s) = reindex (e.trans e') s := by
+  simpa only [Equiv.trans_apply] using
+    congrArg (fun f : YSeed K P ≃ YSeed K'' P ↦ f s) (reindex_trans e e')
 
 @[simp]
 theorem reindex_symm (e : K ≃ K') :

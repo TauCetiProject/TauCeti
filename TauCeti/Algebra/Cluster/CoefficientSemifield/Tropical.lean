@@ -156,7 +156,7 @@ theorem reindex_refl : reindex (Equiv.refl J) = RingEquiv.refl (Trop J) := by
 /-- Relabellings compose in the same order as equivalences of the index sets. -/
 @[simp]
 theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
-    reindex (e.trans e') = (reindex e).trans (reindex e') := by
+    (reindex e).trans (reindex e') = reindex (e.trans e') := by
   ext a j
   simp
 
@@ -164,21 +164,19 @@ theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
 theorem reindex_symm (e : J ≃ J') : (reindex e).symm = reindex e.symm := by
   rfl
 
+/-- Nested tropical relabellings collapse to the composite index equivalence. -/
 @[simp]
-theorem reindex_toCoefficientSemifieldHom_comp_symm (e : J ≃ J') :
-    (reindex e).toCoefficientSemifieldHom.comp
-        (reindex e.symm).toCoefficientSemifieldHom =
-      CoefficientSemifieldHom.id (Trop J') := by
-  rw [← reindex_symm e]
-  exact (reindex e).toCoefficientSemifieldHom_comp_symm_toCoefficientSemifieldHom
+theorem reindex_reindex (e : J ≃ J') (e' : J' ≃ J'') (a : Trop J) :
+    reindex e' (reindex e a) = reindex (e.trans e') a := by
+  simpa only [RingEquiv.trans_apply] using
+    congrArg (fun f : Trop J ≃+* Trop J'' ↦ f a) (reindex_trans e e')
 
+/-- Tropical relabelling homomorphisms compose by composing their index equivalences. -/
 @[simp]
-theorem reindex_symm_toCoefficientSemifieldHom_comp (e : J ≃ J') :
-    (reindex e.symm).toCoefficientSemifieldHom.comp
-        (reindex e).toCoefficientSemifieldHom =
-      CoefficientSemifieldHom.id (Trop J) := by
-  rw [← reindex_symm e]
-  exact (reindex e).symm_toCoefficientSemifieldHom_comp_toCoefficientSemifieldHom
+theorem reindex_toCoefficientSemifieldHom_comp (e : J ≃ J') (e' : J' ≃ J'') :
+    (reindex e').toCoefficientSemifieldHom.comp (reindex e).toCoefficientSemifieldHom =
+      (reindex (e.trans e')).toCoefficientSemifieldHom := by
+  rw [← RingEquiv.toCoefficientSemifieldHom_trans, reindex_trans]
 
 /-- Group evaluation is compatible with relabelling the generators. The evaluation is a group
 homomorphism, with no assertion that it preserves auxiliary addition. -/
