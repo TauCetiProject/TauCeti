@@ -219,22 +219,8 @@ private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
     rw [hρ] at hc
     simp only [↓reduceIte]
     rw [hS, reidemeisterThree_edgePair]
-    have heq : (D.reidemeisterThreePerm c).symm.permCongr
-        (D.smoothingTurn u * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
-        (D.reidemeisterThreePerm c)⁻¹ * localLift D c (localSmoothing (u ∘ c)) *
-          D.reidemeisterThreePerm c * exteriorSlots D c (fun i ↦ slotSmoothing (u i)) *
-            D.edgePair.val := by
-      rw [Equiv.permCongr_eq_mul, Equiv.permCongr_eq_mul, smoothingTurn_split D c u, ← Perm.inv_def]
-      have hcomm := (localLift_commute_exteriorSlots D c reidemeisterThreeSlots
-        (fun i ↦ slotSmoothing (u i))).eq
-      rw [hρ] at hcomm
-      calc
-        _ = (D.reidemeisterThreePerm c)⁻¹ * localLift D c (localSmoothing (u ∘ c)) *
-            (exteriorSlots D c (fun i ↦ slotSmoothing (u i)) * D.reidemeisterThreePerm c) *
-              D.edgePair.val := by group
-        _ = _ := by rw [← hcomm]; group
-    rw [← Equiv.orbitCount_permCongr (D.reidemeisterThreePerm c).symm,
-      heq]
+    rw [← Equiv.orbitCount_permCongr (D.reidemeisterThreePerm c).symm, smoothingTurn_split D c u,
+      reidemeisterThreePerm_symm_permCongr_mul D c]
     exact hc
 
 private noncomputable def localStatesEquiv {n : ℕ} (c : Fin 3 ↪ Fin n) :
