@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
-import TauCeti.RingTheory.Subsemiring.SpanSingleton
-import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -18,9 +16,7 @@ the irreducible elements of the ring of integers, the convention used by the loc
 infrastructure.
 
 An element of `𝒪[K]` with the valuation of an irreducible element is itself irreducible
-(`TauCeti.irreducible_of_valuation_eq`). For an irreducible `ϖ`, the image in `K` of `𝓂[K] ^ k` is
-the scaled copy `ϖ ^ k • 𝒪[K]` (`TauCeti.image_maximalIdeal_pow_eq_smul`), since `ϖ` generates the
-maximal ideal of the valuation ring `𝒪[K]`. Neither result needs `K` to be a local field.
+(`TauCeti.irreducible_of_valuation_eq`); this does not need `K` to be a local field.
 
 The last result only needs `𝒪[K]` to be a discrete valuation ring. It recognises uniformizers
 without choosing one: an element of `𝒪[K]` has valuation at least that of every element of
@@ -45,16 +41,6 @@ theorem irreducible_of_valuation_eq {ϖ c : 𝒪[K]} (hϖ : Irreducible ϖ)
     (h : valuation K (c : K) = valuation K (ϖ : K)) : Irreducible c :=
   have hv := Valuation.integer.integers (valuation K)
   (associated_of_dvd_dvd (hv.dvd_iff_le.2 h.le) (hv.dvd_iff_le.2 h.ge)).irreducible hϖ
-
-/-- For an irreducible element `ϖ` of `𝒪[K]`, the image in `K` of the power `𝓂[K] ^ k` of the
-maximal ideal is the scaled copy `ϖ ^ k • 𝒪[K]`. -/
-theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
-    ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
-  rw [hϖ.maximalIdeal_eq_of_valuationRing,
-    SubsemiringClass.coe_span_singleton_pow _ ϖ.2, image_preimage_eq_inter_range,
-    Subtype.range_coe, inter_eq_left]
-  rintro _ ⟨y, hy, rfl⟩
-  exact mul_mem (pow_mem ϖ.2 k) hy
 
 section LocalField
 

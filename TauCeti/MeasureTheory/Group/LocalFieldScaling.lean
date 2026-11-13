@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # Scaling of Haar measure on `ι → K` under integral matrices
