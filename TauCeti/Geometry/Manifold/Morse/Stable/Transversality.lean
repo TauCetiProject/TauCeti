@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone
 import TauCeti.Dynamics.Flow.ConnectingOrbit
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -49,6 +50,9 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   the dimensions of the tangent spaces of the unstable and stable manifolds.
 * `TauCeti.IsAdaptedPseudoGradient.mem_mtangentConeAt_of_isInvariant`: the velocity of a trajectory
   is tangent to every invariant set containing it, such as `W^u(a) ∩ W^s(b)`.
+* `TauCeti.IsAdaptedPseudoGradient.map_mfderiv_flow_span_mtangentConeAt` and
+  `TauCeti.IsAdaptedPseudoGradient.tangentFlowEquiv`: the derivative of each time-`t` map of the
+  flow is an isomorphism between the tangent spaces of an invariant set.
 * `TauCeti.IsAdaptedPseudoGradient.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet`: a trajectory
   joining distinct critical points meets no critical point.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_chart`: a transverse
@@ -174,32 +178,43 @@ theorem map_mfderiv_flow_span_mtangentConeAt {S : Set M} (hS : IsInvariant hX.fl
     (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S y)).map
         (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y).toLinearMap =
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow t y)) := by
-  -- Each time-`s` map sends `S` into itself, so its derivative maps tangent cones of `S`.
-  have hle : ∀ (s : ℝ) (z : M), (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S z)).map
-      (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow s) z).toLinearMap ≤
-        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow s z)) := fun s z ↦
-    Submodule.map_le_iff_le_comap.2 <| Submodule.span_le.2 fun u hu ↦
-      Submodule.subset_span (R := ℝ) (M := E)
-        (((hX.contMDiff_flow_apply s).mdifferentiableAt (by simp)).hasMFDerivAt
-          |>.hasMFDerivWithinAt.mem_mtangentConeAt
-            (eventually_mem_nhdsWithin.mono fun _ hw ↦ hS s hw) hu)
-  refine le_antisymm (hle t y) ?_
-  -- Conversely, write `y` as the image of `z` under the time-`(-t)` map, which the time-`t` map
-  -- inverts, as do the derivatives.
-  obtain ⟨z, rfl⟩ : ∃ z, y = hX.flow (-t) z :=
-    ⟨hX.flow t y, by rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]⟩
-  have hz : hX.flow t (hX.flow (-t) z) = z := by
-    rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-  have hid : hX.flow t ∘ hX.flow (-t) = id :=
-    funext fun w ↦ (by rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply] :
-      hX.flow t (hX.flow (-t) w) = w)
-  intro w hw
-  rw [hz] at hw
-  have h := mfderiv_comp_apply (I' := 𝓘(ℝ, E)) z
-    ((hX.contMDiff_flow_apply t).mdifferentiableAt (by simp))
-    ((hX.contMDiff_flow_apply (-t)).mdifferentiableAt (by simp)) w
-  rw [hid, mfderiv_id] at h
-  exact Submodule.mem_map.2 ⟨_, hle (-t) z (Submodule.mem_map_of_mem hw), h.symm⟩
+  -- The time-`t` map is a diffeomorphism sending `S` onto itself.
+  have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
+  have h := (hX.flowDiffeomorph t).map_mfderiv_span_mtangentConeAt (by simp) S y
+  rwa [hcoe, (hX.flow.isInvariant_iff_image_eq S).1 hS t] at h
+
+/-- The derivative of the time-`t` map of the flow, as an isomorphism from the tangent space of a
+flow-invariant set `S` at `y` to its tangent space at the image point
+(`TauCeti.IsAdaptedPseudoGradient.map_mfderiv_flow_span_mtangentConeAt`). -/
+noncomputable def tangentFlowEquiv {S : Set M} (hS : IsInvariant hX.flow S) (t : ℝ) (y : M) :
+    Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S y) ≃ₗ[ℝ]
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow t y)) :=
+  (Submodule.equivMapOfInjective _ (hX.mfderiv_flow_injective t y) _).trans
+    (LinearEquiv.ofEq _ _ (hX.map_mfderiv_flow_span_mtangentConeAt hS t y))
+
+/-- The isomorphism `tangentFlowEquiv` is the derivative of the time-`t` map of the flow. -/
+@[simp]
+theorem coe_tangentFlowEquiv_apply {S : Set M} (hS : IsInvariant hX.flow S) (t : ℝ) (y : M)
+    (w : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S y)) :
+    (hX.tangentFlowEquiv hS t y w : E) = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (w : E) :=
+  (rfl)
+
+/-- The inverse of the isomorphism `tangentFlowEquiv` is the derivative of the time-`(-t)` map of
+the flow. -/
+@[simp]
+theorem coe_tangentFlowEquiv_symm_apply {S : Set M} (hS : IsInvariant hX.flow S) (t : ℝ) (y : M)
+    (w : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) S (hX.flow t y))) :
+    ((hX.tangentFlowEquiv hS t y).symm w : E) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow (-t)) (hX.flow t y) (w : E) := by
+  -- The time-`(-t)` map is the inverse diffeomorphism, whose derivative undoes that of the
+  -- time-`t` map.
+  have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
+  have hsymm : ⇑(hX.flowDiffeomorph t).symm = hX.flow (-t) :=
+    funext (hX.flowDiffeomorph_symm_apply t)
+  have h := (hX.flowDiffeomorph t).mfderiv_symm_apply_mfderiv_apply (by simp) y
+    ((hX.tangentFlowEquiv hS t y).symm w : E)
+  rw [hsymm, hcoe] at h
+  rw [← h, ← hX.coe_tangentFlowEquiv_apply hS, LinearEquiv.apply_symm_apply]
 
 /-- The velocity `X y` of the trajectory through a point `y` of `W^u(a) ∩ W^s(b)` is tangent to
 `W^u(a) ∩ W^s(b)`. -/

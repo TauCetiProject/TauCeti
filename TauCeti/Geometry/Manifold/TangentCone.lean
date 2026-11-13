@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -57,7 +58,10 @@ at `y`.
   cone of every set the curve stays in.
 * `HasMFDerivWithinAt.mem_mtangentConeAt`: a derivative within `t` of a map sending `t` into `s`
   maps the tangent cone of `t` into that of `s`; `TauCeti.mfderiv_apply_mem_mtangentConeAt` is the
-  form for a map from a vector space into `s`.
+  form for a map from a boundaryless manifold into `s`.
+* `Diffeomorph.image_mfderiv_mtangentConeAt` and its span form
+  `Diffeomorph.map_mfderiv_span_mtangentConeAt`: the differential of a diffeomorphism carries the
+  tangent cone of a set onto the tangent cone of its image.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
@@ -183,6 +187,39 @@ theorem HasMFDerivWithinAt.mem_mtangentConeAt {𝕜 E E' H H' M N : Type*}
   -- The casts between tangent spaces and model spaces in `hg` are identities.
   exact tangentConeAt_mono (image_subset_iff.2 inter_subset_right) hd
 
+namespace Diffeomorph
+
+variable {𝕜 E E' H H' M N : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H]
+  [TopologicalSpace H'] {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω}
+
+/-- **Diffeomorphisms transport tangent cones.** The differential of a diffeomorphism `h` at `x`
+carries the tangent cone of a set `s` at `x` onto the tangent cone of `h '' s` at `h x`. -/
+theorem image_mfderiv_mtangentConeAt (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (s : Set M) (x : M) :
+    mfderiv I J h x '' TauCeti.mtangentConeAt (E := E) I s x =
+      TauCeti.mtangentConeAt J (h '' s) (h x) := by
+  -- A diffeomorphism and its inverse each map tangent cones into tangent cones, and their
+  -- differentials undo each other.
+  refine subset_antisymm (image_subset_iff.2 fun u hu ↦
+    (h.mdifferentiable hn x).hasMFDerivAt.hasMFDerivWithinAt.mem_mtangentConeAt
+      (eventually_mem_nhdsWithin.mono fun _ hw ↦ mem_image_of_mem h hw) hu) fun w hw ↦ ?_
+  have hu := (h.symm.mdifferentiable hn (h x)).hasMFDerivAt.hasMFDerivWithinAt.mem_mtangentConeAt
+    (eventually_mem_nhdsWithin.mono fun _ hw ↦ mem_image_of_mem h.symm hw) hw
+  rw [h.symm_image_image, h.symm_apply_apply] at hu
+  exact ⟨_, hu, h.mfderiv_apply_mfderiv_symm_apply hn x w⟩
+
+/-- **Diffeomorphisms transport tangent spaces of sets.** The differential of a diffeomorphism `h`
+at `x` maps the span of the tangent cone of `s` at `x` onto the span of the tangent cone of `h '' s`
+at `h x`. -/
+theorem map_mfderiv_span_mtangentConeAt (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (s : Set M) (x : M) :
+    (Submodule.span 𝕜 (TauCeti.mtangentConeAt I s x)).map (mfderiv I J h x).toLinearMap =
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt J (h '' s) (h x)) := by
+  rw [← h.image_mfderiv_mtangentConeAt hn]
+  exact Submodule.map_span _ _
+
+end Diffeomorph
+
 namespace TauCeti
 
 section Tangent
@@ -192,14 +229,17 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   {s : Set M}
 
 /-- **Derivatives of maps into a set are tangent to it.** If `g` maps a neighbourhood of `a` in a
-vector space `F` into `s` and is differentiable at `a`, then its derivative at `a` takes values in
-the tangent cone of `s` at `g a`. -/
-theorem mfderiv_apply_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {g : F → M} {a : F} (hg : MDifferentiableAt 𝓘(𝕜, F) I g a)
-    (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : F) :
-    mfderiv 𝓘(𝕜, F) I g a u ∈ mtangentConeAt I s (g a) :=
-  hg.hasMFDerivAt.hasMFDerivWithinAt.mem_mtangentConeAt (t := univ)
-    (by rwa [nhdsWithin_univ]) (by simp [tangentConeAt_univ])
+boundaryless manifold `N` into `s` and is differentiable at `a`, then its derivative at `a` takes
+values in the tangent cone of `s` at `g a`. -/
+theorem mfderiv_apply_mem_mtangentConeAt {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [J.Boundaryless]
+    [TopologicalSpace N] [ChartedSpace H' N] {g : N → M} {a : N} (hg : MDifferentiableAt J I g a)
+    (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : TangentSpace J a) :
+    mfderiv J I g a u ∈ mtangentConeAt I s (g a) :=
+  hg.hasMFDerivAt.hasMFDerivWithinAt.mem_mtangentConeAt (t := univ) (by rwa [nhdsWithin_univ]) (by
+    -- Without boundary, the tangent cone of the whole manifold is the whole model space.
+    rw [mtangentConeAt_def, J.range_eq_univ, inter_univ, preimage_univ, tangentConeAt_univ]
+    exact mem_univ _)
 
 end Tangent
 

@@ -24,7 +24,8 @@ compatibility under linear equivalences.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
 * `Orientation.map_units_smul`, `Orientation.reindex_units_smul`: transport and reindexing commute
   with scaling by units.
-* `Orientation.map_smulOfUnit_of_pos`: scaling by a positive unit preserves every orientation.
+* `Orientation.map_smulOfUnit`, `Orientation.map_smulOfUnit_of_pos`: scaling by a unit `u` scales
+  every orientation by a power of `u⁻¹`, so scaling by a positive unit preserves it.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
 * `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
@@ -95,6 +96,28 @@ theorem Orientation.reindex_units_smul {ι' : Type*} (e : ι ≃ ι') (u : Rˣ)
     Orientation.reindex R M e (u • x) = u • Orientation.reindex R M e x :=
   Module.Ray.map_units_smul _ u x
 
+/-- Transporting an orientation along the scaling by a unit `u` scales it by `u⁻¹ ^ card ι`: the
+scaling multiplies an alternating map with `card ι` arguments by that power. -/
+theorem Orientation.map_smulOfUnit [Fintype ι] (u : Rˣ) (x : Orientation R M ι) :
+    Orientation.map ι (LinearEquiv.smulOfUnit u) x = (u⁻¹ ^ Fintype.card ι) • x := by
+  induction x using Module.Ray.ind with | h v hv =>
+    rw [Orientation.map_apply, smul_rayOfNeZero]
+    congr 1
+    ext m
+    have h := v.map_smul_univ (fun _ ↦ (↑u⁻¹ : R)) m
+    simp only [Finset.prod_const, Finset.card_univ] at h
+    simpa [LinearEquiv.smulOfUnit, Units.smul_def] using h
+
+/-- Transporting an orientation along the scaling by a positive unit leaves it unchanged. -/
+@[simp]
+theorem Orientation.map_smulOfUnit_of_pos [Finite ι] (u : Rˣ) (hu : 0 < (u : R))
+    (x : Orientation R M ι) :
+    Orientation.map ι (LinearEquiv.smulOfUnit u) x = x := by
+  have := Fintype.ofFinite ι
+  -- Scaling by `u ^ card ι > 0` fixes `x`, hence so does scaling by its inverse.
+  have h := Module.Ray.units_smul_of_pos (u ^ Fintype.card ι) (by simpa using pow_pos hu _) x
+  rw [Orientation.map_smulOfUnit, inv_pow, inv_smul_eq_iff, h]
+
 end CommSemiring
 
 section CommRing
@@ -128,30 +151,6 @@ theorem Orientation.reindex_perm [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm 
       Int.cast_smul_eq_zsmul]
 
 end CommRing
-
-section LinearOrderedCommRing
-
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-  {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*} [Finite ι]
-
-/-- Transporting an orientation along the scaling by a positive unit leaves it unchanged: the
-scaling multiplies an alternating map with finitely many arguments by a positive power. -/
-@[simp]
-theorem Orientation.map_smulOfUnit_of_pos (u : Rˣ) (hu : 0 < (u : R)) (x : Orientation R M ι) :
-    Orientation.map ι (LinearEquiv.smulOfUnit u) x = x := by
-  have := Fintype.ofFinite ι
-  induction x using Module.Ray.ind with | h v hv =>
-    rw [Orientation.map_apply]
-    have hv' : v.compLinearMap (LinearEquiv.smulOfUnit u).symm.toLinearMap =
-        ((↑u⁻¹ : R) ^ Fintype.card ι) • v := by
-      ext m
-      have h := v.map_smul_univ (fun _ ↦ (↑u⁻¹ : R)) m
-      simp only [Finset.prod_const, Finset.card_univ] at h
-      simpa [LinearEquiv.smulOfUnit, Units.smul_def] using h
-    simp only [hv']
-    exact ray_pos_smul hv (pow_pos (Units.inv_pos.2 hu) _) _
-
-end LinearOrderedCommRing
 
 section Field
 

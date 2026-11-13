@@ -29,7 +29,7 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.contMDiff_flow_uncurry` and
   `TauCeti.IsAdaptedPseudoGradient.flowDiffeomorph`: the flow is smooth in time and space, and its
   time-`t` map is a diffeomorphism.
-* `TauCeti.IsAdaptedPseudoGradient.injective_mfderiv_flow`: the derivative of each time-`t` map is
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_flow_injective`: the derivative of each time-`t` map is
   injective.
 * `TauCeti.IsAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed flow, so the unstable
   sets of `X` are the stable sets of `-X`.
@@ -130,7 +130,7 @@ theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
 
 /-- The derivative of the time-`t` map of the flow is injective, since that map is a
 diffeomorphism. -/
-theorem injective_mfderiv_flow (t : ℝ) (y : M) :
+theorem mfderiv_flow_injective (t : ℝ) (y : M) :
     Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y) := by
   have hcoe : ⇑(hX.flowDiffeomorph t) = hX.flow t := funext (hX.flowDiffeomorph_apply t)
   exact hcoe ▸ ((hX.flowDiffeomorph t).isInvertible_mfderiv (x := y) (by simp)).injective
