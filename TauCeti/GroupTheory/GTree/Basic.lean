@@ -180,11 +180,6 @@ theorem stabilizer_dart_le_stabilizer_tgt (e : T.E) :
 theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
   ⟨T.src e, T.stabilizer_dart_le_stabilizer_src e⟩
 
-/-- Every subgroup is elliptic in a `G`-tree with at most one vertex. -/
-theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
-    T.IsEllipticSubgroup H :=
-  ⟨Classical.arbitrary T.V, fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)⟩
-
 variable {T}
 
 theorem isElliptic_iff {g : G} : T.IsElliptic g ↔ ∃ v : T.V, g • v = v := Iff.rfl
@@ -258,11 +253,6 @@ theorem isEllipticSubgroup_iff_eq_bot (h : ∀ v : T.V, stabilizer G v = ⊥) {H
     T.IsEllipticSubgroup H ↔ H = ⊥ := by
   simp only [isEllipticSubgroup_iff, h, le_bot_iff, exists_const]
 
-/-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
-@[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
-    stabilizer G v = ⊤ :=
-  eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
-
 /-- Conjugates of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup H) (g : G) :
     T.IsEllipticSubgroup (H.map (MulAut.conj g : G →* G)) := by
@@ -277,6 +267,18 @@ theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup 
   refine ⟨fun h => (h.map_conj g⁻¹).mono fun x hx => ?_, fun h => h.map_conj g⟩
   refine Subgroup.mem_map.mpr ⟨MulAut.conj g x, Subgroup.mem_map_of_mem _ hx, ?_⟩
   simp [mul_assoc]
+
+/-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
+@[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
+    stabilizer G v = ⊤ :=
+  eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
+
+variable (T)
+
+/-- Every subgroup is elliptic in a `G`-tree with at most one vertex. -/
+theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
+    T.IsEllipticSubgroup H :=
+  ⟨Classical.arbitrary T.V, le_top.trans_eq (stabilizer_eq_top_of_subsingleton _).symm⟩
 
 end Elliptic
 
@@ -315,10 +317,6 @@ variable (T : GTree.{u, v} G)
 noncomputable def translationLength (g : G) : ℕ :=
   ⨅ v : T.V, T.dist v (g • v)
 
-@[simp] theorem translationLength_one : T.translationLength 1 = 0 := by
-  unfold translationLength
-  simp
-
 variable {T}
 
 theorem translationLength_le (g : G) (v : T.V) : T.translationLength g ≤ T.dist v (g • v) :=
@@ -354,6 +352,11 @@ theorem translationLength_pos_iff {g : G} : 0 < T.translationLength g ↔ T.IsHy
   unfold translationLength
   exact ((MulAction.surjective h).iInf_congr (h • ·) fun v => by
     simp only [mul_smul, inv_smul_smul, dist_smul]).symm
+
+variable (T)
+
+@[simp] theorem translationLength_one : T.translationLength 1 = 0 :=
+  translationLength_eq_zero_iff.mpr (isElliptic_one T)
 
 end TranslationLength
 
@@ -455,13 +458,7 @@ def Dominates (T' : GTree.{u', v'} G) : Prop :=
 theorem Dominates.refl : T.Dominates T :=
   ⟨MulActionHom.id G⟩
 
-variable {T' : GTree.{u', v'} G} {T'' : GTree.{u'', v''} G}
-
-/-- Every `G`-tree dominates a `G`-tree with at most one vertex. -/
-theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
-  MulAction.nonempty_mulActionHom_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
-
-variable {T}
+variable {T} {T' : GTree.{u', v'} G} {T'' : GTree.{u'', v''} G}
 
 theorem dominates_iff_nonempty : T.Dominates T' ↔ Nonempty (T.V →[G] T'.V) := Iff.rfl
 
@@ -498,6 +495,12 @@ theorem dominates_iff_of_subsingleton [Subsingleton T.V] :
   rw [dominates_iff]
   exact ⟨fun h => stabilizer_eq_top_of_subsingleton (Classical.arbitrary T.V) ▸ h _,
     fun h _ => h.mono le_top⟩
+
+variable (T)
+
+/-- Every `G`-tree dominates a `G`-tree with at most one vertex. -/
+theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
+  dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
 
 end Dominates
 
