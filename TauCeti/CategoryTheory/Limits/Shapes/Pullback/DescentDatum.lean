@@ -146,6 +146,7 @@ def Hom.id : Hom D D where
   hom := 𝟙 X
   map_act := by simp
 
+/-- The underlying morphism of the identity of a descent datum is the identity. -/
 @[simp]
 theorem Hom.id_hom : (Hom.id D).hom = 𝟙 X :=
   (rfl)
@@ -164,21 +165,25 @@ def Hom.comp (g : Hom E F) (f : Hom D E) : Hom D F where
     rw [this, Category.assoc, g.map_act, f.map_act_assoc, Over.comp_left]
 
 variable {D} in
+/-- The underlying morphism of a composite of morphisms of descent data is the composite. -/
 @[simp]
 theorem Hom.comp_hom (g : Hom E F) (f : Hom D E) : (g.comp f).hom = f.hom ≫ g.hom :=
   (rfl)
 
 variable {D} in
+/-- The identity is a left unit for composition of morphisms of descent data. -/
 @[simp]
 theorem Hom.id_comp (f : Hom D E) : (Hom.id E).comp f = f :=
   Hom.ext (Category.comp_id _)
 
 variable {D} in
+/-- The identity is a right unit for composition of morphisms of descent data. -/
 @[simp]
 theorem Hom.comp_id (f : Hom D E) : f.comp (Hom.id D) = f :=
   Hom.ext (Category.id_comp _)
 
 variable {D} in
+/-- Composition of morphisms of descent data is associative. -/
 @[simp]
 theorem Hom.comp_assoc {W : Over S'} {G : DescentDatum p W} (h : Hom F G) (g : Hom E F)
     (f : Hom D E) : (h.comp g).comp f = h.comp (g.comp f) :=
@@ -198,18 +203,22 @@ noncomputable def Hom.inv : Hom E D where
     convert Category.id_comp E.act using 2
     ext <;> simp [← Over.comp_left]
 
+/-- The underlying morphism of `Hom.inv f` is the inverse of the underlying morphism of `f`. -/
 @[simp]
 theorem Hom.inv_hom : f.inv.hom = CategoryTheory.inv f.hom :=
   (rfl)
 
+/-- The underlying morphism of the inverse of a morphism of descent data is an isomorphism. -/
 instance Hom.isIso_inv_hom : IsIso f.inv.hom := by
   rw [Hom.inv_hom]
   infer_instance
 
+/-- The inverse of a morphism of descent data is a left inverse. -/
 @[simp]
 theorem Hom.inv_comp_self : f.inv.comp f = Hom.id D :=
   Hom.ext (IsIso.hom_inv_id _)
 
+/-- The inverse of a morphism of descent data is a right inverse. -/
 @[simp]
 theorem Hom.comp_inv_self : f.comp f.inv = Hom.id E :=
   Hom.ext (IsIso.inv_hom_id _)
@@ -243,6 +252,7 @@ noncomputable def transportHom (e : X ≅ Y) (E : DescentDatum p Y) : Hom (trans
   hom := e.hom
   map_act := by simp [transport, ← Over.comp_left]
 
+/-- The underlying morphism of `transportHom e E` is `e.hom`. -/
 @[simp]
 theorem transportHom_hom (e : X ≅ Y) (E : DescentDatum p Y) : (transportHom e E).hom = e.hom :=
   (rfl)
@@ -557,17 +567,20 @@ noncomputable def baseChangeHom {X Y : Over S} (f : X ⟶ Y) :
   map_act := by refine pullback.hom_ext ?_ ?_ <;> simp
 
 variable (p) in
+/-- The underlying morphism of `baseChangeHom p f` is the base change of `f`. -/
 @[simp]
 theorem baseChangeHom_hom {X Y : Over S} (f : X ⟶ Y) :
     (baseChangeHom p f).hom = (Over.pullback p).map f :=
   (rfl)
 
 variable (p) in
+/-- `baseChangeHom` preserves identities. -/
 @[simp]
 theorem baseChangeHom_id (X : Over S) : baseChangeHom p (𝟙 X) = Hom.id (baseChange p X) :=
   Hom.ext ((Over.pullback p).map_id X)
 
 variable (p) in
+/-- `baseChangeHom` preserves composition of morphisms. -/
 @[simp]
 theorem baseChangeHom_comp {X Y Z : Over S} (f : X ⟶ Y) (g : Y ⟶ Z) :
     baseChangeHom p (f ≫ g) = (baseChangeHom p g).comp (baseChangeHom p f) :=
@@ -643,6 +656,7 @@ noncomputable def Hom.ofPullbackAlong
       pullbackAlong_act_fst, ← key₂]
     simp only [Category.assoc]
 
+/-- The left component of the underlying morphism of `Hom.ofPullbackAlong f`. -/
 @[simp]
 theorem Hom.ofPullbackAlong_hom_left
     (f : Hom (baseChange (pullback.fst q p) Y₀) (D.pullbackAlong q)) :
@@ -726,6 +740,8 @@ noncomputable def Hom.transportArrow {D : DescentDatum p X} {E : DescentDatum p 
     congr 1
     ext <;> simp
 
+/-- The underlying morphism of the transport of a morphism of descent data along an isomorphism of
+arrows. -/
 @[simp]
 theorem Hom.transportArrow_hom {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E) :
     (f.transportArrow e).hom = (Over.map e.hom.left).map f.hom :=
@@ -764,6 +780,7 @@ noncomputable def transportArrowSymmHom (D : DescentDatum p X) :
     congr 1
     ext <;> simp [transportArrowActionComparison]
 
+/-- The left component of `transportArrowSymmHom` is the identity. -/
 @[simp]
 theorem transportArrowSymmHom_hom_left (D : DescentDatum p X) :
     (transportArrowSymmHom e D).hom.left = 𝟙 X.left :=
@@ -786,6 +803,7 @@ noncomputable def baseChangeTransportArrowHom (Y₀ : Over S) :
     rw [transportArrow_act]
     refine pullback.hom_ext ?_ ?_ <;> simp [baseChange, transportArrowActionComparison]
 
+/-- The left component of `baseChangeTransportArrowHom` is the induced map of pullbacks. -/
 @[simp]
 theorem baseChangeTransportArrowHom_hom_left (Y₀ : Over S) :
     (baseChangeTransportArrowHom e Y₀).hom.left =
