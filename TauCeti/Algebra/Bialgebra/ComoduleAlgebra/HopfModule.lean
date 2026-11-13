@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
@@ -187,24 +186,14 @@ theorem coactLinearMap_apply (n : N) :
     coactLinearMap B N hB n = Comodule.coact (R := R) (C := H) n :=
   (rfl)
 
-variable (R H B N) in
-/-- `n ↦ n ⊗ 1`, as a `B`-linear map. -/
-private noncomputable def tmulOne : N →ₗ[B] N ⊗[R] H where
-  toFun n := n ⊗ₜ 1
-  map_add' n n' := TensorProduct.add_tmul n n' 1
-  map_smul' b n := (TensorProduct.smul_tmul' b n (1 : H)).symm
-
-omit [Comodule R H N] in
-private theorem tmulOne_apply (n : N) : tmulOne R H B N n = n ⊗ₜ 1 :=
-  (rfl)
-
 variable (B N) in
 /-- The **coinvariants** `N^{co H} = {n | coact n = n ⊗ 1}` of a relative Hopf module, the
 equalizer of the coaction and `n ↦ n ⊗ 1`, as a submodule over an algebra `B` acting on `A` by
 coinvariants. Its underlying set is the fixed subcomodule `TauCeti.Comodule.fixedSubcomodule`
 (`TauCeti.IsRelativeHopfModule.coe_coinvariants`). -/
 noncomputable def coinvariants : Submodule B N :=
-  LinearMap.eqLocus (coactLinearMap B N hB) (tmulOne R H B N)
+  LinearMap.eqLocus (coactLinearMap B N hB)
+    ((TensorProduct.AlgebraTensorModule.mk R B N H).flip 1)
 
 @[simp]
 theorem mem_coinvariants {n : N} :
@@ -408,9 +397,10 @@ variable {R H A B N : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
 omit [IsScalarTower R B A] in
 /-- The coinvariants are the equalizer of the coaction and `n ↦ n ⊗ 1`. -/
 private theorem exact_coinvariants :
-    Function.Exact (coinvariants B N hB).subtype (coactLinearMap B N hB - tmulOne R H B N) := by
+    Function.Exact (coinvariants B N hB).subtype
+      (coactLinearMap B N hB - (TensorProduct.AlgebraTensorModule.mk R B N H).flip 1) := by
   intro n
-  simp [tmulOne_apply, sub_eq_zero]
+  simp [sub_eq_zero]
 
 /-- `A ⊗[B] (N ⊗[R] H) → (N ⊗[R] H) ⊗[R] H`, the Galois map on the first two factors. -/
 private noncomputable def galoisMapRTensor : A ⊗[B] (N ⊗[R] H) →ₗ[R] (N ⊗[R] H) ⊗[R] H :=
@@ -459,10 +449,12 @@ private theorem galoisMapRTensor_lTensor_coact (x : A ⊗[B] N) :
       ((Comodule.coact (R := R) (C := H)).rTensor H (Comodule.coact n)), Comodule.coassoc_apply, h₂]
 
 private theorem galoisMapRTensor_lTensor_tmulOne (x : A ⊗[B] N) :
-    galoisMapRTensor (hB := hB) ((tmulOne R H B N).lTensor A x) = galoisMap B N hB x ⊗ₜ 1 := by
+    galoisMapRTensor (hB := hB)
+        (((TensorProduct.AlgebraTensorModule.mk R B N H).flip 1).lTensor A x) =
+      galoisMap B N hB x ⊗ₜ 1 := by
   induction x with
   | add x x' hx hx' => simp only [map_add, hx, hx', TensorProduct.add_tmul]
-  | tmul a n => rw [LinearMap.lTensor_tmul, tmulOne_apply, galoisMapRTensor_tmul]
+  | tmul a n => exact galoisMapRTensor_tmul a n 1
 
 omit [IsScalarTower R B A] in
 /-- The action map `A ⊗[B] N → N` is the Galois map followed by the counit. -/
@@ -486,7 +478,8 @@ private theorem liftBaseChange_id_eq (x : A ⊗[B] N) :
 private theorem lTensor_coact_eq_of_galoisMap_eq
     (hβ : Function.Bijective (ComoduleAlgebra.galoisMap B hB))
     {x : A ⊗[B] N} {n : N} (hx : galoisMap B N hB x = n ⊗ₜ 1) :
-    (coactLinearMap B N hB).lTensor A x = (tmulOne R H B N).lTensor A x := by
+    (coactLinearMap B N hB).lTensor A x =
+      ((TensorProduct.AlgebraTensorModule.mk R B N H).flip 1).lTensor A x := by
   apply galoisMapRTensor_injective hβ
   rw [galoisMapRTensor_lTensor_coact, galoisMapRTensor_lTensor_tmulOne, hx, LinearMap.lTensor_tmul,
     Bialgebra.comul_one, Algebra.TensorProduct.one_def, TensorProduct.assoc_symm_tmul]
@@ -494,7 +487,8 @@ private theorem lTensor_coact_eq_of_galoisMap_eq
 /-- Conversely, the Galois map of an element of `A ⊗[B] N` equalized by the coaction and
 `n ↦ n ⊗ 1` is `n ⊗ 1`, for its image `n` under the action map. -/
 private theorem galoisMap_eq_of_lTensor_coact_eq {x : A ⊗[B] N}
-    (hx : (coactLinearMap B N hB).lTensor A x = (tmulOne R H B N).lTensor A x) :
+    (hx : (coactLinearMap B N hB).lTensor A x =
+      ((TensorProduct.AlgebraTensorModule.mk R B N H).flip 1).lTensor A x) :
     galoisMap B N hB x = (LinearMap.id : N →ₗ[B] N).liftBaseChange A x ⊗ₜ 1 := by
   have h := congr(galoisMapRTensor (hB := hB) $hx)
   rw [galoisMapRTensor_lTensor_coact, galoisMapRTensor_lTensor_tmulOne] at h
