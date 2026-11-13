@@ -9,10 +9,11 @@ public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.Algebra.Polynomial.Sequence
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.Binomial
-import Mathlib.Algebra.Polynomial.Taylor
+public import TauCeti.Analysis.Polynomial.L1Norm
 import Mathlib.Data.Nat.Choose.Bounds
-import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -50,6 +51,7 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 ## Main results
 
 * `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
+* `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
@@ -63,6 +65,8 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
   `Δ(q x; k) ∈ ℤ`.
 * `TauCeti.bakerDeltaSequence`: for `q ≠ 0`, the polynomials `Δ(q X; k)` over a field of
   characteristic zero form a polynomial sequence.
+* `TauCeti.l1Norm_taylor_multichoose_X_add_one_le`: the coefficient length of `Δ(X + x; k)` is
+  at most `(n + k + 1 choose k)` when `|x| ≤ n`.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
 
 ## References
@@ -101,6 +105,10 @@ theorem degree_multichoose_X_add_one (k : ℕ) :
     rw [multichoose_X_add_one_succ, degree_mul, ih, ← C_1,
       degree_linear (inv_ne_zero (by positivity))]
     norm_cast
+
+/-- Baker's binomial polynomials are nonzero. -/
+theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[X]) k ≠ 0 :=
+  fun h ↦ by simpa [h] using degree_multichoose_X_add_one k
 
 /-- Baker's binomial polynomial `Δ(X; k)` has natural degree `k`. -/
 @[simp]
@@ -180,15 +188,9 @@ is an integer. -/
 theorem pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast {k : ℕ} {L : ℤ}
     (hL : ∀ j ∈ Finset.Icc 1 k, (j : ℤ) ∣ L) (l m : ℕ) (x : ℤ) :
     (L : ℚ) ^ m * (hasseDeriv m (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).eval (x : ℚ) ∈
-      Set.range (Int.cast : ℤ → ℚ) := by
-  have h := pow_mem (multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL x) l
-  have e : (Ring.multichoose (X + 1 : ℚ[X]) k).comp (C (x : ℚ) + C (L : ℚ) * X) ^ l =
-      (taylor (x : ℚ) (Ring.multichoose (X + 1 : ℚ[X]) k ^ l)).comp (C (L : ℚ) * X) := by
-    simp [taylor_apply, comp_assoc, add_comm]
-  rw [e, lifts_iff_coeff_lifts] at h
-  obtain ⟨z, hz⟩ := h m
-  rw [comp_C_mul_X_coeff, taylor_coeff, eq_intCast] at hz
-  exact ⟨z, hz.trans (mul_comm _ _)⟩
+      Set.range (Int.cast : ℤ → ℚ) :=
+  pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts
+    (by rw [pow_comp]; exact pow_mem (multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts hL x) l) m
 
 /-- **Baker's denominator bound**, classical form: for every integer `x` and all `l, m`,
 `lcm(1, …, k) ^ m Δ(x; k, l, m)` is an integer. -/
@@ -281,7 +283,7 @@ theorem isUnit_leadingCoeff_bakerDeltaSequence (K : Type*) [Field K] [CharZero K
 
 /-- The coefficient length of the translate `Δ(X + x; k)` is at most `(n + k + 1 choose k)`
 whenever `|x| ≤ n`. -/
-private theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
+theorem l1Norm_taylor_multichoose_X_add_one_le {x : ℚ} {n : ℕ} (hx : |x| ≤ n)
     (k : ℕ) :
     (taylor x (Ring.multichoose (X + 1 : ℚ[X]) k)).l1Norm ≤ ((n + k + 1).choose k : ℝ) := by
   induction k with

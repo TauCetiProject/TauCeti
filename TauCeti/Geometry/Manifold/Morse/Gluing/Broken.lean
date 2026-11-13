@@ -89,18 +89,16 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
       (φ.splitCoord (φ.coord (φ.toChart y₂))).fst = 0 ∧
       ‖(φ.splitCoord (φ.coord (φ.toChart y₂))).snd‖ = ε := by
   have hq := hX.mfderiv_eq_zero_of_mem_stableSet ha₁.2
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hq
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart q hq
   have hφ' := φ.coord_mfderiv_neg hφ hnd
-  have hfd' : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) (-f) := hf.neg.contMDiff.mdifferentiable (by simp)
   -- The local descriptions of the stable and unstable sets, and of the flow on them.
-  obtain ⟨ρs, hρs, hs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hfd
-  obtain ⟨ρu, hρu, hu⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd) hφ' hfd'
+  obtain ⟨ρs, hρs, hs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
+  obtain ⟨ρu, hρu, hu⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd) hφ'
   simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
     Left.neg_neg_iff, ← hX.unstableSet_eq_stableSet_neg hf] at hu
-  obtain ⟨ρc, hρc, hc⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ hfd
-  obtain ⟨ρc', hρc', hc'⟩ := (hX.neg hf).exists_forall_coord_flow_eq_exp_smul (φ.neg hnd) hφ' hfd'
+  obtain ⟨ρc, hρc, hc⟩ := hX.exists_forall_coord_flow_eq_exp_smul φ hφ
+  obtain ⟨ρc', hρc', hc'⟩ := (hX.neg hf).exists_forall_coord_flow_eq_exp_smul (φ.neg hnd) hφ'
   simp only [MorseChart.neg_toChart, MorseChart.neg_coord, hX.neg_flow hf, Flow.stableSet_reverse,
     Flow.reverse_apply] at hc'
   obtain ⟨rT, hrT, hT⟩ := φ.exists_pos_forall_norm_lt_mem_target
@@ -130,16 +128,16 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
   have hz₁ : 0 < ‖φ.coord (φ.toChart b₁)‖ := by
     refine norm_pos_iff.2 fun h ↦ ?_
     have hb := (φ.toChart_eq_zero_iff hb₁).1 (by simpa using h)
-    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq hb₁m
+    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hb₁m
     rw [hb] at this
     exact this.1.ne rfl
   have hz₂ : 0 < ‖φ.coord (φ.toChart b₂)‖ := by
     refine norm_pos_iff.2 fun h ↦ ?_
     have hb := (φ.toChart_eq_zero_iff hb₂).1 (by simpa using h)
-    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr hb₂m
+    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr hb₂m
     rw [hb] at this
     exact this.2.ne rfl
-  set ε := min ‖φ.coord (φ.toChart b₁)‖ ‖φ.coord (φ.toChart b₂)‖ with hεdef
+  set ε := min ‖φ.coord (φ.toChart b₁)‖ ‖φ.coord (φ.toChart b₂)‖
   have hε : 0 < ε := lt_min hz₁ hz₂
   have hεδ : ε < δ := (min_le_left _ _).trans_lt hb₁δ
   -- Flow the two points to the faces of the box of radius `ε`.
@@ -200,7 +198,6 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   -- (`exists_morseBox_of_broken`), apply the model gluing theorem there, and take as `B` the points
   -- with the coordinates of the gluing pairs of small parameter. Uniqueness of the passage gives
   -- the injectivity clause, and `splitPassage_splitEntryTime_eq_splitExitTime` the last clause.
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hpq' : p ≠ q := by rintro rfl; omega
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
@@ -292,9 +289,9 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
       ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
         (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
   -- Restrict to gluing parameters small enough for the passage to be unique.
-  set n : ℝ := (Module.finrank ℝ E : ℝ) with hndef
+  set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hn : 0 ≤ n := Nat.cast_nonneg _
-  set r₁ := min r₀ (1 / (n + 1)) with hr₁def
+  set r₁ := min r₀ (1 / (n + 1))
   have hr₁ : 0 < r₁ := lt_min hr₀ (by positivity)
   have hr₁r₀ : r₁ ≤ r₀ := min_le_left _ _
   have hr₁1 : r₁ ≤ 1 := (min_le_right _ _).trans
@@ -440,7 +437,6 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
   -- Plan: follow the arc `B` of `exists_gluingArc` to the two levels. The resulting map `F` is
   -- continuous and injective on a closed interval, hence an embedding, and every unbroken pair
   -- near `(a₁, a₂)` is a value of `F` at a parameter below the end of the interval.
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hpq' : p ≠ q := by rintro rfl; omega
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
@@ -448,8 +444,8 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     h.exists_gluingArc hf hpq hqr ha₁ ha₂
   set S := {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
     f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} with hSdef
-  have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' ha₁
-  have hfa₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr' ha₂
+  have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' ha₁
+  have hfa₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr' ha₂
   have hy₁ : hX.flow T₁ a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
     hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁
   have hy₂ : hX.flow T₂ a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r :=
@@ -475,14 +471,14 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     refine continuous_iff_continuousAt.2 fun s ↦ ?_
     obtain ⟨⟨b, hpb, hb, hfb⟩, ⟨a, har, ha, hfa⟩⟩ := hB s
     obtain ⟨σ₁, hσ₁, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpb hb hfb hfa₁.2
+      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpb hb hfb hfa₁.2
     obtain ⟨σ₂, hσ₂, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd har ha hfa₂.1 hfa
-    have h₁ := hX.tendsto_flow_levelCrossingTime hfd hpb hb hσ₁
+      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet har ha hfa₂.1 hfa
+    have h₁ := hX.tendsto_flow_levelCrossingTime hpb hb hσ₁
       ((continuous_fst.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨⟨b', hpb', hb', -⟩, -⟩ := hB s'
         exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb' hb')
-    have h₂ := hX.tendsto_flow_levelCrossingTime hfd har ha hσ₂
+    have h₂ := hX.tendsto_flow_levelCrossingTime har ha hσ₂
       ((continuous_snd.comp hBc).tendsto s) (.of_forall fun s' ↦ by
         obtain ⟨-, ⟨a', ha'r, ha', -⟩⟩ := hB s'
         exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet ha'r ha')
@@ -509,9 +505,9 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     obtain ⟨hs₁, t, ht⟩ := hBS s hs
     have hs₂ : (B s).2 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r :=
       ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hs₁
-    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hs₁
+    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hs₁
       (by linarith [hfa₁.1, hfa₂.1, hfa₂.2]) hfa₁.2
-    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hs₂
+    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hs₂
       hfa₂.1 (by linarith [hfa₁.1, hfa₁.2, hfa₂.2])
     have e₁ := Flow.flow_levelCrossingTime_flow
       (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hs₁) hσ₁ 0
@@ -550,23 +546,23 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
       obtain ⟨t, ht⟩ := hw.2.2.2
       exact ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hw.1
     -- The points of the trajectories on the levels of the arc's start tend to its start.
-    have hm₁ := hX.tendsto_flow_levelCrossingTime hfd hpq' ha₁ (σ₀ := T₁) rfl
+    have hm₁ := hX.tendsto_flow_levelCrossingTime hpq' ha₁ (σ₀ := T₁) rfl
       ((continuous_fst.tendsto _).mono_left nhdsWithin_le_nhds)
       (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw.1)
-    have hm₂ := hX.tendsto_flow_levelCrossingTime hfd hqr' ha₂ (σ₀ := T₂) rfl
+    have hm₂ := hX.tendsto_flow_levelCrossingTime hqr' ha₂ (σ₀ := T₂) rfl
       ((continuous_snd.tendsto _).mono_left nhdsWithin_le_nhds)
       (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr'
         (hw₂m w hw))
-    have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' hy₁
-    have hfy₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hqr' hy₂
+    have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' hy₁
+    have hfy₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr' hy₂
     filter_upwards [hSmem, (hm₁.prodMk_nhds hm₂).eventually hBfwd] with w hw hfw
     have hw2 := hw₂m w hw
     obtain ⟨hw1, hw1f, hw2f, t, ht⟩ := hw
     have hanti₁ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw1
     have hanti₂ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw2
-    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hw1
+    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hw1
       (by linarith [hfy₁.1, hfa₂.1, hfa₂.2]) hfy₁.2
-    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr' hw2
+    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hw2
       hfy₂.1 (by linarith [hfy₂.2, hfa₁.1, hfa₁.2])
     set τ₁ := Flow.levelCrossingTime hX.flow f (f (hX.flow T₁ a₁)) w.1
     set τ₂ := Flow.levelCrossingTime hX.flow f (f (hX.flow T₂ a₂)) w.2
@@ -613,7 +609,7 @@ theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hpq hqr ha₁ ha₂
   -- The points of the half-open interval `δ / (n + 2)` tend to `0`, and their images are unbroken.
   set u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / (n + 2), by positivity,
-    (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩ with hudef
+    (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩
   have hu : Tendsto u atTop (𝓝 ⟨0, left_mem_Ico.2 hδ⟩) := by
     refine tendsto_subtype_rng.2 ?_
     simpa using tendsto_const_nhds.div_atTop
