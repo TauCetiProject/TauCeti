@@ -47,12 +47,14 @@ domain `R` and every nonzero non-unit `π`, in particular at the dyadic prime. T
 index at least `j`. By Nakayama's lemma the sum of these constituents therefore has the same rank
 for any two splittings, and the rank of the `j`-th constituent is a difference of two such ranks.
 
-On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values on the projections
-to the constituent `N j` (`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`): the
-form `π ^ (-j) B` modulo `π` factors through the residue form of the unimodular rescaling of `N j`.
-Comparing two splittings through these projections shows that their unimodular rescalings at each
-index have the same residue forms, which reduces the isometry of their constituents to that of
-these rescalings (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`).
+On these vectors `x`, the form `B` agrees modulo `π ^ (j + 1)` with its values on the images under
+a linear retraction of `M` onto the constituent `N j`
+(`LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`; the proof takes the projection
+along the other constituents): the form `π ^ (-j) B` modulo `π` factors through the residue form of
+the unimodular rescaling of `N j`. Comparing two splittings through these retractions shows that
+their unimodular rescalings at each index have the same residue forms, which reduces the isometry
+of their constituents to that of these rescalings
+(`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`).
 For symmetric forms on finite free modules over a Henselian local domain with finite residue field
 and two invertible, this decides their isometry class
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent` in
@@ -61,9 +63,9 @@ and two invertible, this decides their isometry class
 isometric.
 
 When the neighbouring constituents `N (j - 1)` and `N (j + 1)` are even at their own scales, the
-self-pairings `B x x` of these vectors also agree with those of their projections modulo
-`π ^ (j + 2)`. At `π = 2` this is the extra precision that decides the isometry class of a dyadic
-constituent of type II between constituents of type II
+self-pairings `B x x` of these vectors also agree with those of their images under the retraction
+modulo `π ^ (j + 2)`. At `π = 2` this is the extra precision that decides the isometry class of a
+dyadic constituent of type II between constituents of type II
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_equivalent_of_even` in
 `TauCeti.LinearAlgebra.BilinearForm.Even.Henselian`).
 
@@ -88,9 +90,9 @@ constituent of type II between constituents of type II
 * `LinearMap.BilinForm.IsJordanSplitting.finrank_biSup_Iic`: the rank of the sum of the
   constituents of index at most `j` is the sum of their ranks.
 * `LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`: on the vectors pairing into
-  `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along the projection to
-  the `j`-th constituent, and between neighbours even at their own scales its self-pairings are
-  congruent modulo `π ^ (j + 2)`.
+  `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along a linear retraction
+  of the module onto the `j`-th constituent, and between neighbours even at their own scales its
+  self-pairings are congruent modulo `π ^ (j + 2)`.
 * `LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`: through these
   congruences, the isometry of two constituents of isometric forms reduces to that of their
   unimodular rescalings.
@@ -687,14 +689,15 @@ private theorem IsJordanSplitting.apply_sub_apply_projectionOnto (h : B.IsJordan
 
 /-- **The residue form of a Jordan constituent.** Let `N` be a Jordan splitting of `B` with respect
 to a non-zero-divisor `π`. On the vectors `x` with `π ^ j ∣ B x z` for all `z`, the form `B` agrees
-modulo `π ^ (j + 1)` with its value on the projections to the constituent `N j` along the other
-constituents. Thus the form `π ^ (-j) B` modulo `π` on these vectors is pulled back from the
-residue form of the unimodular rescaling of `N j`.
+modulo `π ^ (j + 1)` with its value on the images under a linear retraction `f` of `M` onto the
+constituent `N j` (the proof takes the projection along the other constituents). Thus the form
+`π ^ (-j) B` modulo `π` on these vectors is pulled back from the residue form of the unimodular
+rescaling of `N j`.
 
 If moreover the neighbouring constituents `N (j - 1)` and `N (j + 1)` are even at their own scales
 (the first condition is vacuous for `j = 0`), then the self-pairings `B x x` of these vectors agree
-with those of their projections modulo `π ^ (j + 2)`. At `π = 2` this says that for a constituent
-of type II between two constituents of type II, the quadratic residue form
+with those of their images under `f` modulo `π ^ (j + 2)`. At `π = 2` this says that for a
+constituent of type II between two constituents of type II, the quadratic residue form
 `x ↦ 2 ^ (-j - 1) B x x` modulo `2` is also pulled back from that constituent. In general the
 self-pairings need not be divisible by `π ^ (j + 1)`; only their differences are controlled. -/
 theorem IsJordanSplitting.exists_pow_succ_dvd_sub (h : B.IsJordanSplitting π N)

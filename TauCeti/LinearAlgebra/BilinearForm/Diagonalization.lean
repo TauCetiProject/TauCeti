@@ -338,8 +338,8 @@ theorem equivalent_toBilin'_diagonal_fin_two {a c a' c' x y z t : R}
   linear_combination (u 0 * v 1 + u 1 * v 0) * horth
 
 /-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
-divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
-`B (u + w) (u + w)`. -/
+divides every value of the form, then so does some self-pairing `B x x`. The proof takes `x` to be
+one of `u`, `w` and `u + w`. -/
 theorem IsSymm.exists_forall_apply_self_dvd_of_forall_dvd [IsLocalRing R]
     (hB : B.IsSymm) (h2 : IsUnit (2 : R)) {u w : M} (h : ∀ y z, B u w ∣ B y z) :
     ∃ x, ∀ y z, B x x ∣ B y z := by
