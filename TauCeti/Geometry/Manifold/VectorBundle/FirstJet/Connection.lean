@@ -43,12 +43,15 @@ constant section `v` these are `(v, 0)` and `(v, A v)`.
 * `CovariantDerivative.firstJetSplitting`: the connection map `J¹Vₓ → Hom(TₓM, Vₓ)`, with
   `CovariantDerivative.firstJetSplitting_jet` (`K (j¹σ(x)) = ∇σ(x)`) and
   `CovariantDerivative.firstJetSplitting_ofDeriv` (`K ∘ ofDeriv = id`).
+* `CovariantDerivative.eq_firstJetSplitting_iff`: the connection map is the unique continuous
+  linear map sending the first jet of every section differentiable at `x` to `∇σ(x)`.
 * `CovariantDerivative.congr_of_jet_eq`: the covariant derivative at `x` of a section
   differentiable at `x` depends only on its first jet at `x`.
 * `CovariantDerivative.firstJetSplitting_addOneForm` and
   `CovariantDerivative.firstJetSplitting_sub_firstJetSplitting`: the change of splitting under a
   change of connection.
-* `CovariantDerivative.firstJetLift`: the horizontal lift `Vₓ → J¹Vₓ`, with
+* `CovariantDerivative.firstJetLift`: the horizontal lift `Vₓ → J¹Vₓ`, with its coordinates
+  `CovariantDerivative.firstJetLift_fst` and `CovariantDerivative.firstJetLift_snd`,
   `CovariantDerivative.value_firstJetLift`, `CovariantDerivative.firstJetSplitting_firstJetLift`,
   `CovariantDerivative.eq_firstJetLift_iff`, `CovariantDerivative.ker_firstJetSplitting` and
   `CovariantDerivative.jet_eq_firstJetLift_iff`, and its change under a change of connection
@@ -169,6 +172,21 @@ theorem congr_of_jet_eq (cov : CovariantDerivative I F V) {σ σ' : Π x, V x} {
     cov σ x = cov σ' x := by
   rw [← cov.firstJetSplitting_jet hσ, h, cov.firstJetSplitting_jet hσ']
 
+/-- **Characterization of the connection map.** A continuous linear map `J¹Vₓ → Hom(TₓM, Vₓ)` is
+the connection map exactly when it sends the first jet of every section `σ` differentiable at `x`
+to `∇σ(x)`. -/
+theorem eq_firstJetSplitting_iff (cov : CovariantDerivative I F V) {x : M}
+    {K : FirstJetBundle I F V x →L[𝕜] TangentSpace I x →L[𝕜] V x} :
+    K = cov.firstJetSplitting x ↔ ∀ σ : Π y, V y,
+      MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun y ↦ TotalSpace.mk' F y (σ y)) x →
+        K (jet I F σ x) = cov σ x := by
+  refine ⟨by rintro rfl σ hσ; exact cov.firstJetSplitting_jet hσ, fun h ↦ ?_⟩
+  refine ContinuousLinearMap.ext fun j ↦ ?_
+  -- Every first jet is the first jet of a section differentiable at `x`.
+  obtain ⟨σ, hσ, rfl⟩ := exists_contMDiffAt_jet_eq I F (n := 1) x j
+  rw [h σ (hσ.mdifferentiableAt one_ne_zero),
+    cov.firstJetSplitting_jet (hσ.mdifferentiableAt one_ne_zero)]
+
 /-- **Change of splitting.** Adding an endomorphism-valued one-form `A` to a connection adds
 `A` applied to the value of a first jet to its image under the connection map. -/
 @[simp]
@@ -284,6 +302,23 @@ theorem firstJetLift_apply (cov : CovariantDerivative I F V) (x : M) (v : V x) :
     simp only [add_apply, ContinuousLinearMap.comp_apply, neg_apply, map_neg, zero_apply]
     rw [(trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hx, neg_add_cancel]
 
+/-- The value coordinate of the horizontal lift of `v` in the trivialization at `x` is `e v`. -/
+@[simp]
+theorem firstJetLift_fst (cov : CovariantDerivative I F V) (x : M) (v : V x) :
+    (cov.firstJetLift x v).1 = (trivializationAt F V x).continuousLinearMapAt 𝕜 x v :=
+  congrArg Prod.fst (cov.firstJetLift_apply x v)
+
+/-- The derivative coordinate of the horizontal lift of `v` in the trivialization `e` at `x` is
+minus the covariant derivative at `x`, read in `e`, of the section with constant coordinates
+`e v`. -/
+@[simp]
+theorem firstJetLift_snd (cov : CovariantDerivative I F V) (x : M) (v : V x) :
+    (cov.firstJetLift x v).2 =
+      -((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp
+        (cov (fun y ↦ (trivializationAt F V x).symm y
+          ((trivializationAt F V x).continuousLinearMapAt 𝕜 x v)) x) :=
+  congrArg Prod.snd (cov.firstJetLift_apply x v)
+
 /-- **Change of horizontal lift.** Adding an endomorphism-valued one-form `A` to a connection
 subtracts the inclusion of `A v` from the horizontal lift of `v`. -/
 @[simp]
@@ -384,7 +419,6 @@ theorem firstJetSplitting_trivial (x : M) (j : FirstJetBundle I F (Bundle.Trivia
 
 /-- On a trivial bundle, the horizontal lift of the canonical flat connection sends `v` to the
 first jet with value `v` and derivative zero. -/
-@[simp]
 theorem firstJetLift_trivial (x : M) (v : Bundle.Trivial M F x) :
     (trivial F).firstJetLift (I := I) x v =
       ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) := by
@@ -407,8 +441,7 @@ as its value and its derivative. -/
 theorem firstJetEquiv_trivial_jet (σ : M → F) (x : M) :
     (trivial F).firstJetEquiv x (jet I F (σ : Π y, Bundle.Trivial M F y) x) =
       (σ x, mvfderiv I σ x) := by
-  rw [firstJetEquiv_trivial_apply, jet_snd_eq_mfderiv, jet_fst]
-  rfl
+  rw [firstJetEquiv_apply, value_jet, firstJetSplitting_trivial, jet_trivial_snd_eq_mvfderiv]
 
 /-- On a trivial bundle, the connection `d + A` decomposes the first jet of a section `σ` as its
 value and `dσ + A σ`. -/

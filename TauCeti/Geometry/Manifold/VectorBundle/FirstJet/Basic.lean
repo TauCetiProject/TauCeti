@@ -52,8 +52,12 @@ change of charts.
   (`TauCeti.FirstJetBundle.range_ofDeriv`), hence exact. The
   inclusion is intrinsic: in every chart it reads `L` in that chart and trivialization
   (`TauCeti.FirstJetBundle.coordChange_ofDeriv`).
-* `TauCeti.FirstJetBundle.jet_snd_eq_mfderiv`: the derivative coordinate of `j¹s(x)` is the
-  manifold derivative of `s` read in the trivialization at `x`.
+* `TauCeti.FirstJetBundle.jet_snd_eq_mfderiv` and `TauCeti.FirstJetBundle.jet_snd_eq_mvfderiv`:
+  the derivative coordinate of `j¹s(x)` is the manifold derivative of `s` read in the
+  trivialization at `x`. For a section `σ` of a trivial bundle it is `mvfderiv I σ x`
+  (`TauCeti.FirstJetBundle.jet_trivial_snd_eq_mvfderiv`).
+* `TauCeti.FirstJetBundle.exists_contMDiffAt_jet_eq`: every first jet is the first jet of a
+  section that is `C^n` at the base point.
 
 The construction follows Mathlib's `tangentBundleCore`: the bundle is indexed by the points of `M`,
 and derivatives in charts are taken within `range I`, so manifolds with boundary are allowed.
@@ -567,6 +571,26 @@ theorem jet_snd_eq_mfderiv (s : ∀ x, V x) (x : M) :
     rwa [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
       mdifferentiableWithinAt_iff_differentiableWithinAt, hw] at hg
 
+/-- The derivative coordinate of `j¹s(x)` is the vector-valued manifold derivative `mvfderiv` at
+`x` of `s` read in the preferred trivialization at `x`. Both sides vanish when `s` is not
+differentiable at `x`. -/
+theorem jet_snd_eq_mvfderiv (s : ∀ x, V x) (x : M) :
+    (jet I F s x).2 = mvfderiv I (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x := by
+  -- Read through the inverse chart at `x`, the trivialized section is the local representative.
+  have hw : (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) ∘ (extChartAt I x).symm =
+      localRep I F s x :=
+    funext fun z ↦ by simp [localRep_apply]
+  rw [jet_snd]
+  by_cases hg : MDifferentiableAt I 𝓘(𝕜, F) (fun y ↦ (trivializationAt F V x ⟨y, s y⟩).2) x
+  · rw [hg.mvfderiv]
+    refine congrArg (fderivWithin 𝕜 · (range I) (extChartAt I x x)) (funext fun z ↦ ?_)
+    simp [writtenInExtChartAt, localRep_apply]
+  · rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg, ContinuousLinearMap.comp_zero,
+      fderivWithin_zero_of_not_differentiableWithinAt]
+    · rfl
+    rwa [mdifferentiableAt_iff_source_of_mem_source (mem_chart_source H x),
+      mdifferentiableWithinAt_iff_differentiableWithinAt, hw] at hg
+
 /-- The value of a first jet, the fibre of the projection `J¹V → V`. -/
 def value (x : M) : FirstJetBundle I F V x →L[𝕜] V x :=
   (trivializationAt F V x).symmL 𝕜 x ∘L ContinuousLinearMap.fst 𝕜 F (E →L[𝕜] F)
@@ -587,6 +611,42 @@ theorem value_jet (s : ∀ x, V x) (x : M) : value I F x (jet I F s x) = s x := 
 theorem value_surjective (x : M) : Function.Surjective (value I F (V := V) x) := fun v ↦
   ⟨((trivializationAt F V x ⟨x, v⟩).2, 0), (value_apply I F x _).trans
     (Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F V x) v)⟩
+
+/-- **Every first jet is the first jet of a `C^n` section.** In the chart and trivialization at
+`x`, the first jet `(w, A)` is realized by the section with coordinates
+`y ↦ w + A (φ y - φ x)`, where `φ` is the extended chart at `x`. -/
+theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : FirstJetBundle I F V x) :
+    ∃ s : ∀ y, V y, ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (s y)) x ∧
+      jet I F s x = j := by
+  obtain ⟨w, A⟩ := j
+  set e := trivializationAt F V x
+  -- The affine map `z ↦ w + A (z - φ x)` on the model space, and its pullback by the chart.
+  set a : E → F := fun z ↦ w + A (z - extChartAt I x x)
+  have hx := mem_baseSet_self (H := H) F V x
+  -- In the trivialization at `x`, the section `y ↦ e.symm y (a (φ y))` reads as `a ∘ φ`.
+  have hsg : ∀ y ∈ e.baseSet, (e ⟨y, e.symm y (a (extChartAt I x y))⟩).2 = a (extChartAt I x y) :=
+    fun y hy ↦ by rw [e.apply_mk_symm hy]
+  refine ⟨fun y ↦ e.symm y (a (extChartAt I x y)), ?_, Prod.ext ?_ ?_⟩
+  · rw [contMDiffAt_section_iff]
+    have hacd : ContDiff 𝕜 n a :=
+      contDiff_const.add (A.contDiff.comp (contDiff_id.sub contDiff_const))
+    exact (hacd.contMDiff.contMDiffAt.comp x contMDiffAt_extChartAt).congr_of_eventuallyEq
+      (eventually_of_mem (e.open_baseSet.mem_nhds hx.1) hsg)
+  · rw [jet_fst, hsg x hx.1]
+    simp [a]
+  · -- Near `φ x` within `range I`, the local representative is the affine map `a`.
+    have hd : HasFDerivWithinAt a A (range I) (extChartAt I x x) := by
+      have h := (A.hasFDerivAt.comp (extChartAt I x x)
+        (hasFDerivAt_sub_const (extChartAt I x x))).const_add w
+      rw [ContinuousLinearMap.comp_id] at h
+      exact h.hasFDerivWithinAt
+    rw [jet_snd]
+    refine (hd.congr_of_eventuallyEq ?_ ?_).fderivWithin
+      (I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+    · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hx hx,
+        extChartAt_target_mem_nhdsWithin x] with z hz hzt
+      rw [localRep_apply, hsg _ hz.1, (extChartAt I x).right_inv hzt]
+    · rw [localRep_extChartAt I F _ hx.2, hsg x hx.1]
 
 omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
 /-- **The first jet of a `C^(n+1)` section is a `C^n` section of `J¹V`.** -/
@@ -759,16 +819,21 @@ theorem jet_trivial_snd (s : ∀ x : E, Bundle.Trivial E F x) (x : E) :
     (jet 𝓘(𝕜, E) F s x).2 = fderiv 𝕜 s x := by
   simp [fderivWithin_univ]
 
+/-- For a trivial bundle, the derivative coordinate of the first jet of a section is its
+vector-valued manifold derivative. -/
+theorem jet_trivial_snd_eq_mvfderiv (σ : M → F) (x : M) :
+    (jet I F (σ : ∀ y, Bundle.Trivial M F y) x).2 = mvfderiv I σ x := by
+  rw [jet_snd_eq_mvfderiv]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_apply]
+  -- What remains is `mvfderiv I (fun y ↦ σ y) x = mvfderiv I σ x`, an eta-expansion.
+  rfl
+
 /-- The first jet of a constant section of a trivial bundle has value coordinate the constant
 and derivative coordinate zero. -/
-@[simp]
 theorem jet_trivial_const (v : F) (x : M) :
     jet I F (fun _ ↦ v : ∀ y, Bundle.Trivial M F y) x =
-      ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) := by
-  refine Prod.ext (by simp) ?_
-  -- In the trivialization of the trivial bundle, the constant section reads as a constant.
-  rw [jet_snd_eq_mfderiv]
-  exact mfderiv_const
+      ((v, 0) : FirstJetBundle I F (Bundle.Trivial M F) x) :=
+  Prod.ext (by simp) ((jet_trivial_snd_eq_mvfderiv I F _ x).trans (mvfderiv_const v))
 
 end Trivial
 
