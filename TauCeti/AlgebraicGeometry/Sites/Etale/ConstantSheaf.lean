@@ -180,26 +180,14 @@ theorem constantSheafToEtaleLocallyConstantSheaf_naturality {M M' : Type u} (φ 
     toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom_assoc]
   exact (constToEtaleLocallyConstantPresheaf S).naturality φ
 
-instance (M : Type u) : IsIso (constantSheafToEtaleLocallyConstantSheaf S M) := by
-  -- On presheaves the map is the sheafification of the locally bijective
-  -- `constToEtaleLocallyConstantPresheaf`, followed by the inverse of the identification of a
-  -- sheaf with its sheafification.
-  have e : (constantSheafToEtaleLocallyConstantSheaf S M).hom =
-      sheafifyMap _ ((constToEtaleLocallyConstantPresheaf S).app M) ≫
-        (isoSheafify _ (isSheaf_etaleLocallyConstantPresheaf S M)).inv := by
-    rw [isoSheafify_inv, sheafifyMap_sheafifyLift, Category.comp_id]
-    exact sheafifyLift_unique _ _ _ _
-      (toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom S M)
-  have : IsIso ((presheafToSheaf (smallEtaleTopology S) (Type u)).map
-      ((constToEtaleLocallyConstantPresheaf S).app M)) :=
-    ((smallEtaleTopology S).W_iff _).1 ((smallEtaleTopology S).W_of_isLocallyBijective _)
-  have : IsIso ((sheafToPresheaf _ _).map (constantSheafToEtaleLocallyConstantSheaf S M)) := by
-    rw [ObjectProperty.ι_map, e]
-    -- The two factors are given explicitly: instance search does not identify `sheafifyMap`
-    -- with the image of a sheaf morphism here.
-    exact IsIso.comp_isIso' (inferInstanceAs (IsIso ((sheafToPresheaf _ _).map
-      ((presheafToSheaf _ _).map _)))) (Iso.isIso_inv _)
-  exact isIso_of_reflects_iso _ (sheafToPresheaf _ _)
+instance (M : Type u) : IsIso (constantSheafToEtaleLocallyConstantSheaf S M) :=
+  -- On presheaves, the map precomposed with `toSheafify` is the locally bijective
+  -- `constToEtaleLocallyConstantPresheaf`, so it is a weak equivalence by two-out-of-three.
+  ((smallEtaleTopology S).W_sheafToPresheaf_map_iff_isIso _).1 <|
+    (smallEtaleTopology S).W.of_precomp _ _ ((smallEtaleTopology S).W_toSheafify _) <| by
+      rw [ObjectProperty.ι_map, toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom]
+      exact (smallEtaleTopology S).W_of_isLocallyBijective
+        ((constToEtaleLocallyConstantPresheaf S).app M)
 
 /-- The constant function `m` is sent back to the class of `m` in the constant sheaf. -/
 @[simp, reassoc]
