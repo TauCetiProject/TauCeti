@@ -74,7 +74,7 @@ theorem dunceHatTriangles_def : dunceHatTriangles =
 /-- The **dunce hat**, triangulated with eight vertices: its faces are the nonempty subsets of the
 triangles in `dunceHatTriangles`. -/
 def dunceHat : AbstractSimplicialComplex (Fin 8) :=
-  AbstractSimplicialComplex.ofFacets ↑dunceHatTriangles (by decide)
+  AbstractSimplicialComplex.ofGenerators ↑dunceHatTriangles (by decide)
 
 /-- The faces of the dunce hat are the nonempty subsets of its triangles. -/
 @[simp]
@@ -91,7 +91,7 @@ theorem card_of_mem_dunceHatTriangles {t : Finset (Fin 8)} (ht : t ∈ dunceHatT
 /-- Each triangle of the dunce hat is a face. -/
 theorem mem_dunceHat_of_mem_dunceHatTriangles {t : Finset (Fin 8)} (ht : t ∈ dunceHatTriangles) :
     t ∈ dunceHat :=
-  AbstractSimplicialComplex.mem_ofFacets_of_mem ht
+  AbstractSimplicialComplex.mem_ofGenerators_of_mem ht
     (Finset.card_pos.mp (by rw [card_of_mem_dunceHatTriangles ht]; decide))
 
 /-- The dunce hat has finitely many faces. -/
@@ -100,7 +100,7 @@ theorem finite_faces_dunceHat : dunceHat.faces.Finite :=
 
 /-- The dunce hat is two-dimensional. -/
 theorem dimension_dunceHat : dimension dunceHat = 2 :=
-  AbstractSimplicialComplex.dimension_ofFacets
+  AbstractSimplicialComplex.dimension_ofGenerators
     (fun _ ht => card_of_mem_dunceHatTriangles ht) ⟨{0, 1, 3}, by decide⟩
 
 /-- **The dunce hat has no free face.** Every edge of a triangle lies in a second triangle. -/
@@ -109,6 +109,7 @@ theorem not_isFreePair_dunceHat (σ τ : Finset (Fin 8)) :
   have hT : ∀ t ∈ dunceHatTriangles, ∀ a ∈ t,
       ∃ t' ∈ dunceHatTriangles, t' ≠ t ∧ t.erase a ⊂ t' := by
     decide +kernel
+  rw [dunceHat, AbstractSimplicialComplex.toPreAbstractSimplicialComplex_ofGenerators]
   exact not_isFreePair_of_forall_erase_ssubset (T := ↑dunceHatTriangles)
     hT σ τ
 

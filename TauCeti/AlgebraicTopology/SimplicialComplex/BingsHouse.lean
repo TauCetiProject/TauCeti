@@ -103,7 +103,7 @@ theorem bingsHouseTriangles_def : bingsHouseTriangles =
 /-- **Bing's house** with two rooms, triangulated with eleven vertices: its faces are the nonempty
 subsets of the triangles in `bingsHouseTriangles`. -/
 def bingsHouse : AbstractSimplicialComplex (Fin 11) :=
-  AbstractSimplicialComplex.ofFacets {t | t ∈ bingsHouseTriangles} (by decide)
+  AbstractSimplicialComplex.ofGenerators {t | t ∈ bingsHouseTriangles} (by decide)
 
 /-- The faces of Bing's house are the nonempty subsets of its triangles. -/
 @[simp]
@@ -120,7 +120,7 @@ theorem card_of_mem_bingsHouseTriangles {t : Finset (Fin 11)} (ht : t ∈ bingsH
 /-- Each triangle of Bing's house is a face. -/
 theorem mem_bingsHouse_of_mem_bingsHouseTriangles {t : Finset (Fin 11)}
     (ht : t ∈ bingsHouseTriangles) : t ∈ bingsHouse :=
-  AbstractSimplicialComplex.mem_ofFacets_of_mem ht
+  AbstractSimplicialComplex.mem_ofGenerators_of_mem ht
     (Finset.card_pos.mp (by rw [card_of_mem_bingsHouseTriangles ht]; decide))
 
 /-- Bing's house has finitely many faces. -/
@@ -129,7 +129,7 @@ theorem finite_faces_bingsHouse : bingsHouse.faces.Finite :=
 
 /-- Bing's house is two-dimensional. -/
 theorem dimension_bingsHouse : dimension bingsHouse = 2 :=
-  AbstractSimplicialComplex.dimension_ofFacets
+  AbstractSimplicialComplex.dimension_ofGenerators
     (fun _ ht => card_of_mem_bingsHouseTriangles ht) ⟨{0, 1, 3}, by decide⟩
 
 /-- **Bing's house has no free face.** Every edge of a triangle lies in a second triangle. -/
@@ -143,6 +143,7 @@ theorem not_isFreePair_bingsHouse (σ τ : Finset (Fin 11)) :
       ∃ t' ∈ bingsHouseTriangles, t' ≠ t ∧ t.erase a ⊂ t' := by
     simpa only [List.all_eq_true, List.any_eq_true, decide_eq_true_eq, Bool.and_eq_true,
       bne_iff_ne] using h
+  rw [bingsHouse, AbstractSimplicialComplex.toPreAbstractSimplicialComplex_ofGenerators]
   exact not_isFreePair_of_forall_erase_ssubset (T := {t | t ∈ bingsHouseTriangles})
     hT σ τ
 
