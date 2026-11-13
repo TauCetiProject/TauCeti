@@ -13,125 +13,82 @@ import TauCeti.Analysis.Normed.Operator.Compact.Pi
 /-!
 # Block Hankel operators, Toeplitz products, and continuous-symbol compactness
 
-For an operator-valued symbol `A : BlockSymbol r` on `UnitAddCircle`, the block Hankel operator
-`TauCeti.blockHankel r A : BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ` applies the `L²`
-operator multiplier `Lp.operatorMultiplication 2 A` to a block Hardy function and projects onto the
-actual orthogonal complement `↥(blockHardySubmodule r)ᗮ` of `blockHardySubmodule r` inside
-`Lp (EuclideanSpace ℂ (Fin r)) 2 haarAddCircle`.
+For `A : BlockSymbol r`, the block Hankel operator
+`TauCeti.blockHankel r A : BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ` projects
+`Lp.operatorMultiplication 2 A` of a block Hardy function onto `(blockHardySubmodule r)ᗮ`, yielding
+the ambient splitting `TauCeti.coe_blockToeplitz_add_coe_blockHankel` and coordinatewise scalar
+Hankel decomposition `TauCeti.blockHardyOrthogonalEquiv_blockHankel_apply`. From this follow the
+**block Toeplitz semicommutator identity** `TauCeti.blockToeplitz_comp_sub_blockToeplitz`
+(`T_A ∘L T_B - T_{A * B} = -(H_{star A}† ∘L H_B)`), the Fourier vanishing criterion
+`TauCeti.blockHankel_eq_zero_iff`, exact analytic/coanalytic products
+(`TauCeti.blockToeplitz_comp_of_analytic`, `TauCeti.blockToeplitz_comp_of_coanalytic`), and
+compactness of continuous-symbol block Hankel operators and semicommutators
+(`TauCeti.isCompactOperator_blockHankel_toLp`,
+`TauCeti.isCompactOperator_blockToeplitz_comp_sub_blockToeplitz_toLp`).
 
-## Main definitions
-
-* `TauCeti.blockHankel`: the bounded complex-linear block Hankel symbol map
-  `BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ`.
-
-## Main results
-
-* `TauCeti.coe_blockToeplitz_add_coe_blockHankel`: orthogonal splitting of `M_A` on block Hardy
-  functions into its block Toeplitz and block Hankel parts.
-* `TauCeti.blockHardyOrthogonalEquiv_blockHankel_apply`: under `blockHardyOrthogonalEquiv r`,
-  `blockHankel r A` acts coordinatewise through the scalar Hankel operators of `blockSymbolEntry`.
-* `TauCeti.blockToeplitz_comp_sub_blockToeplitz`: **block Toeplitz semicommutator identity**
-  `T_A ∘L T_B - T_{A * B} = -(H_{star A}† ∘L H_B)`.
-* `TauCeti.blockHankel_eq_zero_iff`: `blockHankel r A = 0` iff all negative operator-valued Fourier
-  coefficients of `A` vanish.
-* `TauCeti.blockToeplitz_comp_of_analytic`, `TauCeti.blockToeplitz_comp_of_coanalytic`:
-  `T_A ∘L T_B = T_{A * B}` when `B` is analytic or `A` is coanalytic.
-* `TauCeti.isCompactOperator_blockHankel_toLp`,
-  `TauCeti.isCompactOperator_blockToeplitz_comp_sub_blockToeplitz_toLp`: compactness of block
-  Hankel operators and block Toeplitz semicommutators for continuous matrix symbols.
-
-## References
-
-* A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators*, second edition, §2.9.
-* J. B. Conway, *A Course in Functional Analysis*, second edition.
-* E. Park, *Toeplitz operators*.
+References: A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators* (2nd ed., §2.9);
+J. B. Conway, *A Course in Functional Analysis* (2nd ed.); E. Park, *Toeplitz operators*.
 -/
 
-public section
+public noncomputable section
 
-noncomputable section
-
-open MeasureTheory Submodule
+open AddCircle ContinuousLinearMap MeasureTheory Submodule
 open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-/-- The block Hankel symbol map `H_A = (1 - P) M_A |H²`, mapping `BlockHardySpace r` into the
-actual orthogonal complement `↥(blockHardySubmodule r)ᗮ` of `blockHardySubmodule r`. -/
-def blockHankel (r : ℕ) :
-    BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ :=
-  ContinuousLinearMap.compL ℂ (BlockHardySpace r)
-      (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))
+/-- Bounded complex-linear block Hankel symbol map `H_A = (1 - P) M_A |H²` into
+`↥(blockHardySubmodule r)ᗮ`. -/
+def blockHankel (r : ℕ) : BlockSymbol r →L[ℂ] BlockHardySpace r →L[ℂ] ↥(blockHardySubmodule r)ᗮ :=
+  compL ℂ (BlockHardySpace r) (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
       ↥(blockHardySubmodule r)ᗮ (blockHardySubmodule r)ᗮ.orthogonalProjectionOnto ∘L
-    (ContinuousLinearMap.compL ℂ (BlockHardySpace r)
-        (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))
-        (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))).flip
+    (compL ℂ (BlockHardySpace r) (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
+        (Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))).flip
       ((blockHardySubmodule r).subtypeL ∘L
         (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap) ∘L
     Lp.operatorMultiplication 2
 
-/-- Definition of `blockHankel r A` as projection onto `(blockHardySubmodule r)ᗮ` after
-`Lp.operatorMultiplication 2 A`. -/
+/-- Definition of `blockHankel r A` via projection onto `(blockHardySubmodule r)ᗮ`. -/
 theorem blockHankel_apply (r : ℕ) (A : BlockSymbol r) :
     blockHankel r A =
-      (blockHardySubmodule r)ᗮ.orthogonalProjectionOnto ∘L
-        Lp.operatorMultiplication 2 A ∘L
+      (blockHardySubmodule r)ᗮ.orthogonalProjectionOnto ∘L Lp.operatorMultiplication 2 A ∘L
         (blockHardySubmodule r).subtypeL ∘L
         (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap := by
-  simp only [blockHankel, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
-    ContinuousLinearMap.flip_apply]
+  simp only [blockHankel, comp_apply, compL_apply, flip_apply]
 
-/-- The ambient `L²` value of `blockHankel r A f` is the complementary block Hardy projection of
-`Lp.operatorMultiplication 2 A ((blockHardyEquiv r).symm f)`. -/
+/-- Ambient `L²` value of `blockHankel r A f` via complementary `starProjection`. -/
 theorem coe_blockHankel_apply {r : ℕ} (A : BlockSymbol r) (f : BlockHardySpace r) :
-    (blockHankel r A f :
-      Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) =
+    (blockHankel r A f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) =
       Lp.operatorMultiplication 2 A ((blockHardyEquiv r).symm f) -
         (blockHardySubmodule r).starProjection
           (Lp.operatorMultiplication 2 A ((blockHardyEquiv r).symm f)) := by
-  rw [blockHankel_apply]
-  simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, Submodule.subtypeL_apply,
-    ← Submodule.starProjection_apply, Submodule.starProjection_orthogonal_val]
+  simp [blockHankel_apply, starProjection_orthogonal_val]
 
-/-- Operator multiplication on a block Hardy function decomposes into its block Toeplitz and block
-Hankel parts in ambient vector-valued `L²`. -/
+/-- Ambient `L²` splitting of `M_A` on block Hardy functions into Toeplitz and Hankel parts. -/
 theorem coe_blockToeplitz_add_coe_blockHankel {r : ℕ} (A : BlockSymbol r) (f : BlockHardySpace r) :
     ((blockHardyEquiv r).symm (blockToeplitz r A f) :
-      Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) +
-      (blockHankel r A f :
-        Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) =
+      Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) +
+      (blockHankel r A f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1))) =
       Lp.operatorMultiplication 2 A ((blockHardyEquiv r).symm f) := by
-  rw [coe_blockHardyEquiv_symm_blockToeplitz_apply, coe_blockHankel_apply]
-  exact add_sub_cancel _ _
+  rw [coe_blockHardyEquiv_symm_blockToeplitz_apply, coe_blockHankel_apply, add_sub_cancel]
 
 /-- Block Hankel compression does not increase the operator norm of its symbol. -/
-theorem norm_blockHankel_le {r : ℕ} (A : BlockSymbol r) :
-    ‖blockHankel r A‖ ≤ ‖A‖ := by
+theorem norm_blockHankel_le {r : ℕ} (A : BlockSymbol r) : ‖blockHankel r A‖ ≤ ‖A‖ := by
   rw [blockHankel_apply]
-  grw [ContinuousLinearMap.opNorm_comp_le, ContinuousLinearMap.opNorm_comp_le,
-    ContinuousLinearMap.opNorm_comp_le, Submodule.orthogonalProjectionOnto_norm_le,
-    Lp.norm_operatorMultiplication_le, Submodule.norm_subtypeL_le,
+  grw [opNorm_comp_le, opNorm_comp_le, opNorm_comp_le, orthogonalProjectionOnto_norm_le,
+    Lp.norm_operatorMultiplication_le, norm_subtypeL_le,
     LinearIsometry.norm_toContinuousLinearMap_le]
   simp
 
-/-- Under `blockHardyOrthogonalEquiv r`, `blockHankel r A` acts on a vector concentrated in
-coordinate `j` via the scalar Hankel operators of the `j`-th column of `A`. -/
-@[simp]
-theorem blockHardyOrthogonalEquiv_blockHankel_single {r : ℕ} (A : BlockSymbol r)
+/-- Action of `blockHankel r A` on `PiLp.single 2 j h` under `blockHardyOrthogonalEquiv r`. -/
+@[simp] theorem blockHardyOrthogonalEquiv_blockHankel_single {r : ℕ} (A : BlockSymbol r)
     (i j : Fin r) (h : HardySpace) :
     blockHardyOrthogonalEquiv r (blockHankel r A (PiLp.single 2 j h)) i =
       hankel (blockSymbolEntry r i j A) h := by
-  rw [blockHankel_apply]
-  simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, Submodule.subtypeL_apply,
-    blockHardyOrthogonalEquiv_orthogonalProjectionOnto]
-  rw [coe_blockHardyEquiv_symm_single, piLpEquiv_operatorMultiplication_symm_single,
-    hankel_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    Submodule.subtypeL_apply, Lp.multiplicationOperator_apply]
+  simp [blockHankel_apply, coe_blockHardyEquiv_symm_single,
+    piLpEquiv_operatorMultiplication_symm_single, hankel_apply, Lp.multiplicationOperator_apply]
 
-/-- Under `blockHardyOrthogonalEquiv r`, `blockHankel r A` acts coordinatewise through the scalar
-Hankel operators of `blockSymbolEntry r i j A`. -/
+/-- Coordinatewise action of `blockHankel r A` through scalar Hankel entry operators. -/
 theorem blockHardyOrthogonalEquiv_blockHankel_apply {r : ℕ} (A : BlockSymbol r)
     (f : BlockHardySpace r) (i : Fin r) :
     blockHardyOrthogonalEquiv r (blockHankel r A f) i =
@@ -141,69 +98,54 @@ theorem blockHardyOrthogonalEquiv_blockHankel_apply {r : ℕ} (A : BlockSymbol r
     Finset.sum_apply, blockHardyOrthogonalEquiv_blockHankel_single]
 
 /-- Every constant matrix symbol has zero block Hankel operator. -/
-@[simp]
-theorem blockHankel_const {r : ℕ}
+@[simp] theorem blockHankel_const {r : ℕ}
     (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
-    blockHankel r (Lp.const ∞ (AddCircle.haarAddCircle (T := 1)) M) = 0 := by
-  ext f : 1
-  refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
+    blockHankel r (Lp.const ∞ (haarAddCircle (T := 1)) M) = 0 := by
+  ext f : 1; refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
   rw [zero_apply, blockHardyOrthogonalEquiv_blockHankel_apply, map_zero, PiLp.zero_apply]
   exact Finset.sum_eq_zero fun j _ ↦ by rw [blockSymbolEntry_const, hankel_const, zero_apply]
 
 /-- Every scalar algebra symbol `algebraMap ℂ (BlockSymbol r) c` has zero block Hankel operator. -/
-@[simp]
-theorem blockHankel_algebraMap {r : ℕ} (c : ℂ) :
+@[simp] theorem blockHankel_algebraMap {r : ℕ} (c : ℂ) :
     blockHankel r ((algebraMap ℂ (BlockSymbol r) : ℂ →+* BlockSymbol r) c) = 0 := by
   rw [Lp.algebraMap_eq_const, blockHankel_const]
 
 /-- The identity symbol `1 : BlockSymbol r` has zero block Hankel operator. -/
-@[simp]
-theorem blockHankel_one (r : ℕ) : blockHankel r (1 : BlockSymbol r) = 0 := by
+@[simp] theorem blockHankel_one (r : ℕ) : blockHankel r (1 : BlockSymbol r) = 0 := by
   simpa using blockHankel_algebraMap (r := r) 1
 
-/-- The adjoint of `blockHankel r A` multiplies negative-mode vector functions by `star A` and
-projects back onto `BlockHardySpace r`. -/
+/-- Adjoint of `blockHankel r A` as multiplication by `star A` compressed onto `BlockHardySpace`. -/
 theorem adjoint_blockHankel {r : ℕ} (A : BlockSymbol r) :
-    ContinuousLinearMap.adjoint (blockHankel r A) =
+    adjoint (blockHankel r A) =
       (blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap ∘L
         (blockHardySubmodule r).orthogonalProjectionOnto ∘L
-        Lp.operatorMultiplication 2 (star A) ∘L
-        (blockHardySubmodule r)ᗮ.subtypeL := by
-  simp only [blockHankel_apply, ContinuousLinearMap.adjoint_comp,
-    LinearIsometryEquiv.toContinuousLinearMap_toLinearIsometry,
-    LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm,
-    Submodule.adjoint_subtypeL, Submodule.adjoint_orthogonalProjectionOnto,
-    Lp.adjoint_operatorMultiplication, ContinuousLinearMap.comp_assoc]
+        Lp.operatorMultiplication 2 (star A) ∘L (blockHardySubmodule r)ᗮ.subtypeL := by
+  simp only [blockHankel_apply, adjoint_comp,
+    LinearIsometryEquiv.toContinuousLinearMap_toLinearIsometry, LinearIsometryEquiv.adjoint_eq_symm,
+    LinearIsometryEquiv.symm_symm, adjoint_subtypeL, adjoint_orthogonalProjectionOnto,
+    Lp.adjoint_operatorMultiplication, comp_assoc]
 
-/-- **Block Toeplitz semicommutator identity.** The multiplicative defect of block Toeplitz
-compression is minus the composition of `(blockHankel r (star A))†` with `blockHankel r B`. -/
+/-- **Block Toeplitz semicommutator identity.** -/
 theorem blockToeplitz_comp_sub_blockToeplitz {r : ℕ} (A B : BlockSymbol r) :
-    blockToeplitz r A ∘L blockToeplitz r B -
-      blockToeplitz r (A * B) =
-      -(ContinuousLinearMap.adjoint (blockHankel r (star A)) ∘L blockHankel r B) := by
-  ext f : 1
-  apply (blockHardyEquiv r).symm.injective
-  apply Subtype.ext
+    blockToeplitz r A ∘L blockToeplitz r B - blockToeplitz r (A * B) =
+      -(adjoint (blockHankel r (star A)) ∘L blockHankel r B) := by
+  ext f : 1; apply (blockHardyEquiv r).symm.injective; apply Subtype.ext
   have hmul := DFunLike.congr_fun
     (Lp.operatorMultiplication_comp_operatorMultiplication (p := 2) A B)
-    ((blockHardyEquiv r).symm f :
-      Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)))
-  rw [ContinuousLinearMap.comp_apply] at hmul
-  simp only [ContinuousLinearMap.comp_apply, sub_apply, neg_apply, map_sub, map_neg,
-    Submodule.coe_sub, Submodule.coe_neg, coe_blockHardyEquiv_symm_blockToeplitz_apply,
-    adjoint_blockHankel, star_star, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.symm_apply_apply,
-    Submodule.subtypeL_apply, Submodule.coe_orthogonalProjectionOnto_apply, coe_blockHankel_apply]
-  rw [← hmul]
-  abel
+    ((blockHardyEquiv r).symm f : Lp (EuclideanSpace ℂ (Fin r)) 2 (haarAddCircle (T := 1)))
+  rw [comp_apply] at hmul
+  simp only [comp_apply, sub_apply, neg_apply, map_sub, map_neg, Submodule.coe_sub,
+    Submodule.coe_neg, coe_blockHardyEquiv_symm_blockToeplitz_apply, adjoint_blockHankel, star_star,
+    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+    LinearIsometryEquiv.symm_apply_apply, subtypeL_apply, coe_orthogonalProjectionOnto_apply,
+    coe_blockHankel_apply]
+  rw [← hmul]; abel
 
-/-- A block Hankel operator vanishes if and only if all negative operator-valued Fourier
-coefficients of its symbol vanish. -/
+/-- `blockHankel r A = 0` iff all negative operator-valued Fourier coefficients of `A` vanish. -/
 theorem blockHankel_eq_zero_iff {r : ℕ} (A : BlockSymbol r) :
     blockHankel r A = 0 ↔ ∀ n : ℤ, n < 0 → fourierCoeff A n = 0 := by
-  constructor
-  · intro hA n hn
-    refine ContinuousLinearMap.ext fun v ↦ PiLp.ext fun i ↦ ?_
+  refine ⟨fun hA n hn ↦ ?_, fun hA ↦ ?_⟩
+  · refine ext fun v ↦ PiLp.ext fun i ↦ ?_
     rw [zero_apply, PiLp.zero_apply, ← (EuclideanSpace.basisFun (Fin r) ℂ).sum_repr v]
     simp only [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply,
       map_sum (fourierCoeff A n), WithLp.ofLp_sum, Finset.sum_apply]
@@ -213,69 +155,52 @@ theorem blockHankel_eq_zero_iff {r : ℕ} (A : BlockSymbol r) :
       simpa using congrArg (fun H ↦ blockHardyOrthogonalEquiv r (H (PiLp.single 2 j h)) i) hA
     rw [map_smul, PiLp.smul_apply, ← fourierCoeff_blockSymbolEntry,
       (hankel_eq_zero_iff _).mp hij n hn, smul_zero]
-  · intro hA
-    ext f : 1
-    refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
+  · ext f : 1; refine (blockHardyOrthogonalEquiv r).injective (PiLp.ext fun i ↦ ?_)
     rw [blockHardyOrthogonalEquiv_blockHankel_apply, zero_apply, map_zero, PiLp.zero_apply]
     refine Finset.sum_eq_zero fun j _ ↦ ?_
-    have hij : hankel (blockSymbolEntry r i j A) = 0 :=
-      (hankel_eq_zero_iff _).mpr fun n hn ↦ by
-        rw [fourierCoeff_blockSymbolEntry, hA n hn, zero_apply, PiLp.zero_apply]
+    have hij : hankel (blockSymbolEntry r i j A) = 0 := (hankel_eq_zero_iff _).mpr fun n hn ↦ by
+      rw [fourierCoeff_blockSymbolEntry, hA n hn, zero_apply, PiLp.zero_apply]
     rw [hij, zero_apply]
 
-/-- Block Toeplitz multiplication `T_A ∘L T_B = T_{A * B}` is exact when the right symbol `B` is
-analytic (its negative Fourier coefficients vanish). -/
+/-- `T_A ∘L T_B = T_{A * B}` when `B` is analytic (`fourierCoeff B n = 0` for `n < 0`). -/
 theorem blockToeplitz_comp_of_analytic {r : ℕ} (A B : BlockSymbol r)
     (hB : ∀ n : ℤ, n < 0 → fourierCoeff B n = 0) :
     blockToeplitz r A ∘L blockToeplitz r B = blockToeplitz r (A * B) := by
   rw [← sub_eq_zero, blockToeplitz_comp_sub_blockToeplitz, (blockHankel_eq_zero_iff B).mpr hB,
-    ContinuousLinearMap.comp_zero, neg_zero]
+    comp_zero, neg_zero]
 
-/-- Block Toeplitz multiplication `T_A ∘L T_B = T_{A * B}` is exact when the left symbol `A` is
-coanalytic (the negative Fourier coefficients of `star A` vanish). -/
+/-- `T_A ∘L T_B = T_{A * B}` when `A` is coanalytic (`fourierCoeff (star A) n = 0` for `n < 0`). -/
 theorem blockToeplitz_comp_of_coanalytic {r : ℕ} (A B : BlockSymbol r)
     (hA : ∀ n : ℤ, n < 0 → fourierCoeff (star A : BlockSymbol r) n = 0) :
     blockToeplitz r A ∘L blockToeplitz r B = blockToeplitz r (A * B) := by
   rw [← sub_eq_zero, blockToeplitz_comp_sub_blockToeplitz,
-    (blockHankel_eq_zero_iff (star A)).mpr hA, ContinuousLinearMap.adjoint.map_zero,
-    ContinuousLinearMap.zero_comp, neg_zero]
+    (blockHankel_eq_zero_iff (star A)).mpr hA, adjoint.map_zero, zero_comp, neg_zero]
 
-/-- **Compactness of continuous-symbol block Hankel operators.** For a continuous matrix symbol `F`
-on the unit circle, `blockHankel r (ContinuousMap.toLp ∞ haarAddCircle ℂ F)` is compact. -/
+/-- **Compactness of continuous-symbol block Hankel operators.** -/
 theorem isCompactOperator_blockHankel_toLp {r : ℕ}
     (F : C(UnitAddCircle, EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))) :
-    IsCompactOperator
-      (blockHankel r (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F)) := by
-  set A : BlockSymbol r := ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F
+    IsCompactOperator (blockHankel r (ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ F)) := by
+  set A : BlockSymbol r := ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ F
   let row (i : Fin r) : BlockHardySpace r →L[ℂ] ↥hardySubmoduleᗮ :=
-    ∑ j : Fin r, hankel (blockSymbolEntry r i j A) ∘L
-      PiLp.proj (𝕜 := ℂ) 2 (fun _ : Fin r ↦ HardySpace) j
+    ∑ j : Fin r, hankel (blockSymbolEntry r i j A) ∘L PiLp.proj (𝕜 := ℂ) 2 (fun _ ↦ HardySpace) j
   have hrow (i : Fin r) : IsCompactOperator (row i) :=
     (compactOperator (RingHom.id ℂ) (BlockHardySpace r) ↥hardySubmoduleᗮ).sum_mem fun j _ ↦ by
       rw [blockSymbolEntry_toLp]
-      exact (isCompactOperator_hankel_toLp _).comp_clm
-        (PiLp.proj (𝕜 := ℂ) 2 (fun _ : Fin r ↦ HardySpace) j)
-  have hcomp := (IsCompactOperator.pi hrow).clm_comp
+      exact (isCompactOperator_hankel_toLp _).comp_clm _
+  let e := (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin r ↦ ↥hardySubmoduleᗮ)).symm
+  convert (IsCompactOperator.pi hrow).clm_comp
     ((blockHardyOrthogonalEquiv r).symm.toLinearIsometry.toContinuousLinearMap ∘L
-      (PiLp.continuousLinearEquiv 2 ℂ
-        (fun _ : Fin r ↦ ↥hardySubmoduleᗮ)).symm.toContinuousLinearMap)
-  convert hcomp using 1
-  ext f : 1
-  apply (blockHardyOrthogonalEquiv r).injective
-  ext i : 1
-  simp [row, blockHardyOrthogonalEquiv_blockHankel_apply]
+      e.toContinuousLinearMap) using 1
+  ext f : 1; apply (blockHardyOrthogonalEquiv r).injective; ext i : 1
+  simp [row, e, blockHardyOrthogonalEquiv_blockHankel_apply]
 
-/-- **Compactness of block Toeplitz semicommutators.** For any essentially bounded block symbol `A`
-and any continuous matrix symbol `F` on the unit circle, the semicommutator
-`T_A ∘L T_F - T_{A * F}` is compact. -/
-theorem isCompactOperator_blockToeplitz_comp_sub_blockToeplitz_toLp {r : ℕ}
-    (A : BlockSymbol r)
+/-- **Compactness of block Toeplitz semicommutators** when the right symbol is continuous. -/
+theorem isCompactOperator_blockToeplitz_comp_sub_blockToeplitz_toLp {r : ℕ} (A : BlockSymbol r)
     (F : C(UnitAddCircle, EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r))) :
     IsCompactOperator (blockToeplitz r A ∘L
-        blockToeplitz r (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F) -
-      blockToeplitz r
-        (A * ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ F)) := by
-  rw [blockToeplitz_comp_sub_blockToeplitz, FunLike.coe_neg, ContinuousLinearMap.coe_comp]
+        blockToeplitz r (ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ F) -
+      blockToeplitz r (A * ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ F)) := by
+  rw [blockToeplitz_comp_sub_blockToeplitz, FunLike.coe_neg, coe_comp]
   exact ((isCompactOperator_blockHankel_toLp F).clm_comp _).neg
 
 end TauCeti

@@ -13,13 +13,12 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 # Norm localization for operator-valued `L∞` functions
 
 For an essentially bounded operator-valued function `A : Lp (E →L[𝕜] F) ∞ μ` on a σ-finite measure
-space, any nonnegative threshold `c < ‖A‖` strictly below its essential-supremum operator norm is
-witnessed simultaneously at a single input vector `u : E` on a measurable set `t` with
-`0 < μ t < ∞` (`MeasureTheory.Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top`).
-Testing on the constant indicator `indicatorConstLp p ht _ u` then proves exact operator-norm
-equality `‖operatorMultiplication p A‖ = ‖A‖` on `Lp E p μ` without any separability assumption on
-the domain Banach space `E`, because strong measurability of `A` already makes its essential range
-separable in operator norm.
+space, any nonnegative threshold `c < ‖A‖` below its essential-supremum operator norm is witnessed
+at a single input vector `u : E` on a measurable set `t` with `0 < μ t < ∞`
+(`MeasureTheory.Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top`). Testing on
+`indicatorConstLp p ht _ u` then proves exact operator-norm equality
+`‖operatorMultiplication p A‖ = ‖A‖` on `Lp E p μ` without any separability assumption on `E`,
+since strong measurability of `A` makes its range separable in operator norm.
 -/
 
 public section
@@ -28,14 +27,11 @@ open scoped ENNReal
 
 namespace MeasureTheory.Lp
 
-variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α}
-  [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- On a σ-finite measure space, every nonnegative level `c < ‖A‖` strictly below the `L∞` operator
-norm of `A : Lp (E →L[𝕜] F) ∞ μ` is witnessed by a single vector `u : E` and a measurable set `t`
-with `0 < μ t < ∞` on which `c * ‖u‖ < ‖A x u‖`. -/
+/-- On a σ-finite measure space, every nonnegative `c < ‖A‖` is witnessed by a single vector
+`u : E` and a measurable set `t` with `0 < μ t < ∞` on which `c * ‖u‖ < ‖A x u‖`. -/
 theorem exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFinite μ]
     (A : Lp (E →L[𝕜] F) ∞ μ) {c : ℝ} (hc_nonneg : 0 ≤ c) (hc_lt : c < ‖A‖) :
     ∃ (u : E) (t : Set α), MeasurableSet t ∧ (∀ x ∈ t, c * ‖u‖ < ‖A x u‖) ∧
@@ -44,27 +40,23 @@ theorem exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFinite 
   set δ := (‖A‖ - c) / 3 with hδ_def
   have hδ : 0 < δ := by linarith [hδ_def]
   set S : Set (E →L[𝕜] F) := {B ∈ C | c + δ < ‖B‖}
-  have hS_count : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
-  have hex (B : S) : ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ := by
+  have : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
+  choose u hu using fun B : S ↦ show ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ by
     by_contra! h; exact (not_le_of_gt B.2.2) ((B : E →L[𝕜] F).opNorm_le_bound (by linarith) h)
-  choose u hu using hex
   have hcover : {x | c + 2 * δ < ‖A x‖} ⊆ ⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖} := fun x hx ↦ by
     obtain ⟨B, hBC, hdist⟩ := Metric.mem_closure_iff.mp (hC_sub ⟨x, rfl⟩) δ hδ
     rw [dist_comm, _root_.dist_eq_norm] at hdist
     have hBS : B ∈ S := ⟨hBC, by
-      have htri : ‖A x‖ ≤ ‖B‖ + ‖B - A x‖ := by
-        simpa only [sub_sub_cancel] using norm_sub_le B (B - A x)
-      linarith [Set.mem_ofPred.mp hx]⟩
+      have := norm_sub_le B (B - A x); rw [sub_sub_cancel] at this; linarith [Set.mem_ofPred.mp hx]⟩
     have htri : ‖B (u ⟨B, hBS⟩)‖ ≤ ‖(B - A x) (u ⟨B, hBS⟩)‖ + ‖A x (u ⟨B, hBS⟩)‖ := by
       simpa only [sub_apply, sub_add_cancel] using
         norm_add_le ((B - A x) (u ⟨B, hBS⟩)) (A x (u ⟨B, hBS⟩))
-    have hle : ‖(B - A x) (u ⟨B, hBS⟩)‖ ≤ δ * ‖u ⟨B, hBS⟩‖ :=
-      ((B - A x).le_opNorm (u ⟨B, hBS⟩)).trans (mul_le_mul_of_nonneg_right hdist.le (norm_nonneg _))
+    have hle := ((B - A x).le_opNorm (u ⟨B, hBS⟩)).trans
+      (mul_le_mul_of_nonneg_right hdist.le (norm_nonneg _))
     have huB : (c + δ) * ‖u ⟨B, hBS⟩‖ < ‖B (u ⟨B, hBS⟩)‖ := hu ⟨B, hBS⟩
     exact Set.mem_iUnion.mpr ⟨⟨B, hBS⟩, Set.mem_ofPred.mpr (by nlinarith)⟩
   have hμ_union : μ (⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖}) ≠ 0 :=
-    mt (measure_mono_null hcover)
-      (Lp.measure_lt_norm_ne_zero (by linarith) (by linarith [hδ_def]))
+    mt (measure_mono_null hcover) (Lp.measure_lt_norm_ne_zero (by linarith) (by linarith [hδ_def]))
   obtain ⟨B, hμs⟩ : ∃ B : S, μ {x | c * ‖u B‖ < ‖A x (u B)‖} ≠ 0 := by
     by_contra! hzero; exact hμ_union (measure_iUnion_null hzero)
   have hs : MeasurableSet {x | c * ‖u B‖ < ‖A x (u B)‖} := measurableSet_lt measurable_const

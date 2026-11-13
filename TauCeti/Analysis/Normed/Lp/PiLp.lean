@@ -95,27 +95,20 @@ variable (p E) [Fact (1 ≤ p)] [DecidableEq ι] {𝕜 : Type*} [Semiring 𝕜] 
 
 /-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a linear isometry. -/
 noncomputable def singleLI (i : ι) : E i →ₗᵢ[𝕜] PiLp p E where
-  toLinearMap :=
-    (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
+  toLinearMap := (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
   norm_map' := norm_single p E i
 
 /-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a continuous linear map,
 right-inverse to `PiLp.proj p E i`. -/
-noncomputable def singleCLM (i : ι) : E i →L[𝕜] PiLp p E :=
-  (singleLI p E i).toContinuousLinearMap
+noncomputable def singleCLM (i : ι) : E i →L[𝕜] PiLp p E := (singleLI p E i).toContinuousLinearMap
 
 variable {p E}
 
 /-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
-@[simp]
-theorem singleLI_apply (i : ι) (v : E i) :
-    singleLI (𝕜 := 𝕜) p E i v = single p i v :=
-  (rfl)
+@[simp] theorem singleLI_apply (i : ι) (v : E i) : singleLI (𝕜 := 𝕜) p E i v = single p i v := (rfl)
 
 /-- `PiLp.singleCLM` evaluates as `PiLp.single`. -/
-@[simp]
-theorem singleCLM_apply (i : ι) (v : E i) :
-    singleCLM (𝕜 := 𝕜) p E i v = single p i v :=
+@[simp] theorem singleCLM_apply (i : ι) (v : E i) : singleCLM (𝕜 := 𝕜) p E i v = single p i v :=
   (rfl)
 
 end SingleLI

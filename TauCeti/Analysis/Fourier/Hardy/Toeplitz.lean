@@ -337,8 +337,7 @@ theorem norm_toeplitz_le (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
 private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
     (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
-    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ]
-      Lp E 2 (AddCircle.haarAddCircle (T := 1)))
+    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
     {f g : Lp E 2 (AddCircle.haarAddCircle (T := 1))}
     (hf : ∀ᶠ N : ℤ in Filter.atTop,
       (fourierLp (T := 1) ∞ N • f : Lp E 2 (AddCircle.haarAddCircle (T := 1))) ∈ H)
@@ -363,22 +362,17 @@ private theorem norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL
       (Lp.multiplicationOperator (E := E) (fourierLp (T := 1) ∞ N))).1
         (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f (M g)).symm
   calc ‖⟪f, M g⟫_ℂ‖ ≤ ‖(⟨_, hfN⟩ : ↥H)‖ * (‖T‖ * ‖(⟨_, hgN⟩ : ↥H)‖) := by
-        rw [hinner]
-        exact (norm_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
+        rw [hinner]; exact (norm_inner_le_norm _ _).trans (by gcongr; exact T.le_opNorm _)
     _ = ‖T‖ * ‖f‖ * ‖g‖ := by
         rw [← Submodule.norm_coe, ← Submodule.norm_coe, Submodule.coe_mk, Submodule.coe_mk,
-          hnorm, hnorm]
-        ring
+          hnorm, hnorm]; ring
 
-/-- If a bounded operator `M` on `Lp E 2 (AddCircle.haarAddCircle (T := 1))` commutes with
-multiplication by scalar Fourier modes `fourierLp ∞ N` and a dense set `s` is eventually shifted
-into a subspace `H` carrying an orthogonal projection by high Fourier modes, then `‖M‖` is bounded
-by the norm of its compression `H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL` to `H`. -/
+/-- If `M` on `Lp E 2 haarAddCircle` commutes with `fourierLp ∞ N • ·` and high modes eventually
+shift a dense set `s` into `H`, then `‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖`. -/
 theorem norm_le_norm_orthogonalProjectionOnto_comp_subtypeL
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
     (H : Submodule ℂ (Lp E 2 (AddCircle.haarAddCircle (T := 1)))) [H.HasOrthogonalProjection]
-    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ]
-      Lp E 2 (AddCircle.haarAddCircle (T := 1)))
+    (M : Lp E 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp E 2 (AddCircle.haarAddCircle (T := 1)))
     {s : Set (Lp E 2 (AddCircle.haarAddCircle (T := 1)))} (hs : Dense s)
     (hshift : ∀ g ∈ s, ∀ᶠ N : ℤ in Filter.atTop,
       (fourierLp (T := 1) ∞ N • g : Lp E 2 (AddCircle.haarAddCircle (T := 1))) ∈ H)
@@ -386,14 +380,10 @@ theorem norm_le_norm_orthogonalProjectionOnto_comp_subtypeL
       M (fourierLp (T := 1) ∞ N • g) = fourierLp (T := 1) ∞ N • M g) :
     ‖M‖ ≤ ‖H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL‖ := by
   set T := H.orthogonalProjectionOnto ∘L M ∘L H.subtypeL
-  -- Matrix-coefficient bounds are closed conditions, so they extend from `s ×ˢ s` to `L² × L²`.
   have hbound : ∀ p : Lp E 2 (AddCircle.haarAddCircle (T := 1)) ×
-      Lp E 2 (AddCircle.haarAddCircle (T := 1)),
-      ‖⟪p.1, M p.2⟫_ℂ‖ ≤ ‖T‖ * ‖p.1‖ * ‖p.2‖ :=
-    (hs.prod hs).induction
-      (fun p hp ↦ norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL H M
-        (hshift p.1 hp.1) (hshift p.2 hp.2) hcomm)
-      (isClosed_le (by fun_prop) (by fun_prop))
+      Lp E 2 (AddCircle.haarAddCircle (T := 1)), ‖⟪p.1, M p.2⟫_ℂ‖ ≤ ‖T‖ * ‖p.1‖ * ‖p.2‖ :=
+    (hs.prod hs).induction (fun p hp ↦ norm_inner_le_norm_orthogonalProjectionOnto_comp_subtypeL H M
+      (hshift p.1 hp.1) (hshift p.2 hp.2) hcomm) (isClosed_le (by fun_prop) (by fun_prop))
   refine ContinuousLinearMap.opNorm_le_of_re_inner_le (norm_nonneg T) fun x y hx hy ↦ ?_
   calc RCLike.re ⟪M x, y⟫_ℂ ≤ ‖⟪M x, y⟫_ℂ‖ := RCLike.re_le_norm _
     _ = ‖⟪y, M x⟫_ℂ‖ := norm_inner_symm _ _
