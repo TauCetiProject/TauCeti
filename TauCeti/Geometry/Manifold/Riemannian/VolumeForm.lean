@@ -28,7 +28,9 @@ For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
 is `±√(det g)`, the chart volume density `TauCeti.chartVolumeDensity`, with a sign that is
 locally constant because the orientation is. On the coordinate frame of a chart this is
-`TauCeti.exists_eventually_riemannianVolumeForm_chartLocalFrame_eq`.
+`TauCeti.exists_eventually_riemannianVolumeForm_chartLocalFrame_eq`; at every point of the chart
+source the sign is the chart sign of an orientation lift
+(`TauCeti.signBasis_mul_signAt_mul_riemannianVolumeForm_chartLocalFrame`).
 
 ## References
 
@@ -96,16 +98,6 @@ theorem abs_riemannianVolumeForm_apply_orthonormal
   rw [riemannianVolumeForm_def]
   rw [Orientation.volumeFormL_apply]
   exact (Manifold.Orientation.orientationAt o x).abs_volumeForm_apply_of_orthonormal b
-
-/-- The Riemannian volume form is positive on every positively oriented tangent basis, orthonormal
-or not. -/
-theorem riemannianVolumeForm_apply_pos (o : Manifold.Orientation I M (Fin m)) (x : M)
-    (b : Module.Basis (Fin m) ℝ (TangentSpace I x))
-    (hb : b.orientation = Manifold.Orientation.orientationAt o x) :
-    0 < riemannianVolumeForm o x b := by
-  let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_apply]
-  exact Orientation.volumeForm_apply_pos_iff.2 hb
 
 /-- The Riemannian volume form is negative on an oppositely oriented orthonormal basis. -/
 theorem riemannianVolumeForm_apply_orthonormal_of_opposite
@@ -207,6 +199,41 @@ theorem abs_riemannianVolumeForm_chartLocalFrame (o : Manifold.Orientation I M (
   split_ifs
   · exact abs_of_nonneg (chartVolumeDensity_nonneg x y)
   · rw [abs_neg, abs_of_nonneg (chartVolumeDensity_nonneg x y)]
+
+/-- **The signed volume of a coordinate frame.** At every point `y` of the chart source at `x`,
+the volume form of the orientation of a lift `l`, evaluated on the coordinate frame of the chart at
+`x` reindexed along `σ`, times the sign of the reindexed standard model basis against the model
+orientation and the chart sign of `l` at `y`, is `√(det g)`, the chart volume density. This holds
+in every dimension, including dimension `0`. -/
+theorem signBasis_mul_signAt_mul_riemannianVolumeForm_chartLocalFrame
+    (l : Manifold.OrientationLift I M (Fin m)) (σ : Fin (finrank ℝ E) ≃ Fin m) {x y : M}
+    (hy : y ∈ (chartAt H x).source) :
+    (Orientation.signBasis l.modelOrientation ((Module.finBasis ℝ E).reindex σ) : ℝ) *
+        (l.signAt x y : ℝ) *
+        riemannianVolumeForm (Manifold.Orientation.mk l) y
+          (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) =
+      chartVolumeDensity (I := I) x y := by
+  classical
+  set b := (Module.finBasis ℝ E).reindex σ
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  have hframe : (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) x (σ.symm i) y) =
+      (trivializationAt E (TangentSpace I) x).basisAt b hy' :=
+    (Riemannian.Tensor.coe_basisAt_reindex_eq_chartLocalFrame σ x hy').symm
+  rw [hframe, riemannianVolumeForm_basisAt _ σ hy', Manifold.Orientation.orientationAt_mk,
+    l.mapOrientation_orientationAt hy, l.chartOrientation_eq_ite, l.signAt_of_mem hy]
+  -- Against either orientation `o` of the model, the sign of `b` matches the sign of the volume.
+  have key (o : Orientation ℝ E (Fin m)) :
+      (Orientation.signBasis o b : ℝ) *
+        (if b.orientation = o then chartVolumeDensity (I := I) x y
+          else -chartVolumeDensity (I := I) x y) = chartVolumeDensity (I := I) x y := by
+    rcases b.orientation_eq_or_eq_neg o with rfl | rfl
+    · simp [Orientation.signBasis_orientation]
+    · have hne : b.orientation ≠ -b.orientation := Module.Ray.ne_neg_self _
+      simp [hne, Orientation.signBasis_neg, Orientation.signBasis_orientation]
+  rcases Int.units_eq_one_or (l.sign x ⟨y, hy⟩) with hs | hs
+  · simpa [hs] using key l.modelOrientation
+  · simpa [hs, Orientation.signBasis_neg] using key (-l.modelOrientation)
 
 variable {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]

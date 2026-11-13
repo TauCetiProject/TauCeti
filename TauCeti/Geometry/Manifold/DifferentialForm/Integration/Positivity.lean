@@ -27,8 +27,6 @@ then vacuous at that point, where the form contributes its value with a negative
 * `TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`: a nonnegative function
   continuous and integrable on a chart target has positive integral if it is positive at one
   target point, for any measure positive on nonempty open sets.
-* `TauCeti.signBasis_mul_signedInChartAt_nonneg`: the chart integrands of a nonnegative top form
-  are nonnegative.
 * `TauCeti.integralTopForm_nonneg`: the integral of a nonnegative top form is nonnegative.
 * `TauCeti.integralTopForm_pos`: the integral of a continuous, compactly supported, nonnegative
   top form that is positive somewhere is positive.
@@ -124,13 +122,8 @@ private theorem exists_pos_signBasis_mul_signedInChartAt_eq
     -((Orientation.signBasis l.modelOrientation b : ℝ) * l.signAt α x * D.toLinearMap.det *
       φ x b) * hsq
 
-/-- **The chart integrands of a nonnegative top form are nonnegative.** On an oriented manifold of
-positive dimension, if a top form `φ` is nonnegative on every positively oriented tangent basis,
-then its signed coefficient in any preferred chart and model basis `b`, multiplied by the sign of
-`b` against the model orientation, is nonnegative. These are the integrands of the chart
-integrals computing `TauCeti.integralTopForm`
-(`TauCeti.integralTopForm_eq_sum_disjointed_chart_integrals`). -/
-theorem signBasis_mul_signedInChartAt_nonneg [NeZero k]
+/-- Every chart integrand computing the integral of a nonnegative top form is nonnegative. -/
+private theorem signBasis_mul_signedInChartAt_nonneg [NeZero k]
     (l : Manifold.OrientationLift I M (Fin k)) {φ : RoughForm I M ℝ k}
     (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
       c.orientation = l.orientationAt x → 0 ≤ φ x c)

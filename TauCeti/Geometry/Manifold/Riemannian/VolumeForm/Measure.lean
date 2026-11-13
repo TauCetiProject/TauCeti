@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 
 /-!
 # Integrating against the Riemannian volume form
@@ -31,8 +32,10 @@ In the chart at `α`, with model basis `b` the standard basis `Module.finBasis` 
 coefficient `dV(∂₁, …, ∂ₙ)` of the volume form is `±√(det g)`, the chart volume density
 `TauCeti.chartVolumeDensity` up to sign (`TauCeti.abs_inChartAt_riemannianVolumeForm`). The
 integral of `f dV` is a sum of chart integrals of these coefficients times `f`, each multiplied by
-the chart sign of the orientation; since `dV` is positive on positively oriented bases, each such
-signed integrand is `f √(det g)`, which is the integrand of the Riemannian measure in that chart.
+the chart sign of the orientation; the signs cancel against the sign of the coefficient
+(`TauCeti.signBasis_mul_signAt_mul_riemannianVolumeForm_chartLocalFrame`), so each such signed
+integrand is `f √(det g)`, which is the integrand of the Riemannian measure in that chart. This
+holds in every dimension, including dimension `0`.
 
 ## Main results
 
@@ -42,6 +45,8 @@ signed integrand is `f √(det g)`, which is the integrand of the Riemannian mea
   volume measure.
 * `TauCeti.integralTopForm_smul_riemannianVolumeForm`: `∫_M f dV = ∫ f d(vol_g)` for continuous
   compactly supported `f`.
+* `TauCeti.integralTopForm_riemannianVolumeForm`: on a compact manifold, `∫_M dV` is the total
+  Riemannian volume.
 
 ## References
 
@@ -65,13 +70,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {m : ℕ}
 
-/-- **The volume form in a chart.** In the chart at `α` and the reindexed standard model basis,
-the coefficient of the Riemannian volume form is `±√(det g)`: its absolute value is the chart
-volume density. -/
-theorem abs_inChartAt_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+/-- In the chart at `α`, the coefficient of the Riemannian volume form on the reindexed standard
+model basis is the volume form on the coordinate frame. -/
+private theorem inChartAt_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
     (σ : Fin (finrank ℝ E) ≃ Fin m) (α : M) {y : E} (hy : y ∈ (extChartAt I α).target) :
-    |(riemannianVolumeForm o).inChartAt α y ((finBasis ℝ E).reindex σ)| =
-      chartVolumeDensity (I := I) α ((extChartAt I α).symm y) := by
+    (riemannianVolumeForm o).inChartAt α y ((finBasis ℝ E).reindex σ) =
+      riemannianVolumeForm o ((extChartAt I α).symm y)
+        (fun i ↦ Riemannian.Tensor.chartLocalFrame (I := I) α (σ.symm i)
+          ((extChartAt I α).symm y)) := by
   have hx : (extChartAt I α).symm y ∈ (chartAt H α).source := by
     simpa only [extChartAt_source] using (extChartAt I α).map_target hy
   -- The derivative of the inverse chart sends the model basis to the coordinate frame.
@@ -85,11 +91,21 @@ theorem abs_inChartAt_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)
     -- The two sides differ only in the base point named in the type of the tangent space.
     rfl
   rw [RoughForm.inChartAt_apply, hframe]
-  exact abs_riemannianVolumeForm_chartLocalFrame o σ hx
+
+/-- **The volume form in a chart.** In the chart at `α` and the reindexed standard model basis,
+the coefficient of the Riemannian volume form is `±√(det g)`: its absolute value is the chart
+volume density. -/
+theorem abs_inChartAt_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (σ : Fin (finrank ℝ E) ≃ Fin m) (α : M) {y : E} (hy : y ∈ (extChartAt I α).target) :
+    |(riemannianVolumeForm o).inChartAt α y ((finBasis ℝ E).reindex σ)| =
+      chartVolumeDensity (I := I) α ((extChartAt I α).symm y) := by
+  rw [inChartAt_riemannianVolumeForm o σ α hy]
+  exact abs_riemannianVolumeForm_chartLocalFrame o σ
+    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
 
 /-- The chart integrand of `f dV`: in the chart at `α`, the signed coefficient of `f dV`, with the
 sign of the model basis, is `√(det g) f`, the integrand of the Riemannian measure in that chart. -/
-private theorem signBasis_mul_signedInChartAt_smul_riemannianVolumeForm [NeZero m]
+private theorem signBasis_mul_signedInChartAt_smul_riemannianVolumeForm
     (l : Manifold.OrientationLift I M (Fin m)) (σ : Fin (finrank ℝ E) ≃ Fin m) (f : M → ℝ)
     (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) :
     (Orientation.signBasis l.modelOrientation ((finBasis ℝ E).reindex σ) : ℝ) *
@@ -97,26 +113,12 @@ private theorem signBasis_mul_signedInChartAt_smul_riemannianVolumeForm [NeZero 
           (fun z ↦ f z • riemannianVolumeForm (Manifold.Orientation.mk l) z)
           ((finBasis ℝ E).reindex σ) α (fun z ↦ l.signAt α z) (extChartAt I α x) =
       chartVolumeDensity (I := I) α x * f x := by
-  set b := (finBasis ℝ E).reindex σ
-  set vol := riemannianVolumeForm (Manifold.Orientation.mk l)
-  set s : ℝ := (Orientation.signBasis l.modelOrientation b : ℝ)
-  -- Since `dV` is positive on positively oriented bases, its signed chart integrand is
-  -- nonnegative, and it is `√(det g)` in absolute value.
-  have hnn (z : M) (c : Basis (Fin m) ℝ (TangentSpace I z))
-      (hc : c.orientation = l.orientationAt z) : 0 ≤ vol z c :=
-    (riemannianVolumeForm_apply_pos _ z c (by rwa [Manifold.Orientation.orientationAt_mk])).le
-  have hvol : s * vol.signedInChartAt b α (fun z ↦ l.signAt α z) (extChartAt I α x) =
-      chartVolumeDensity (I := I) α x := by
-    rw [← abs_of_nonneg (signBasis_mul_signedInChartAt_nonneg l hnn b α _),
-      RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx, abs_mul, abs_mul,
-      abs_inChartAt_riemannianVolumeForm _ σ α ((extChartAt I α).map_source hx),
-      (extChartAt I α).left_inv hx]
-    have habs (u : ℤˣ) : |((u : ℤ) : ℝ)| = 1 := by
-      rcases Int.units_eq_one_or u with rfl | rfl <;> simp
-    rw [habs, habs, one_mul, one_mul]
-  rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx, RoughForm.inChartAt_fun_smul,
-    (extChartAt I α).left_inv hx, ← hvol, RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx]
-  simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  rw [RoughForm.signedInChartAt_fun_smul, (extChartAt I α).left_inv hx,
+    RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx,
+    inChartAt_riemannianVolumeForm _ σ α ((extChartAt I α).map_source hx),
+    (extChartAt I α).left_inv hx,
+    ← signBasis_mul_signAt_mul_riemannianVolumeForm_chartLocalFrame l σ
+      (by simpa only [extChartAt_source] using hx)]
   ring
 
 section Integral
@@ -128,6 +130,7 @@ attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
 /-- **The Riemannian measure is the measure of the volume form.** The measure `|dV|` of the
 Riemannian volume form of any orientation is the Riemannian volume measure. -/
+@[simp]
 theorem measure_riemannianVolumeForm [Fact (finrank ℝ E = m)]
     (o : Manifold.Orientation I M (Fin m)) :
     (riemannianVolumeForm o).measure = riemannianVolume I M := by
@@ -141,11 +144,11 @@ theorem measure_riemannianVolumeForm [Fact (finrank ℝ E = m)]
   rw [abs_inChartAt_riemannianVolumeForm o _ α ((extChartAt I α).map_source (hsub hx))]
 
 /-- **Integration against the Riemannian volume form is integration against the Riemannian
-measure.** On an oriented manifold of positive dimension with a continuous Riemannian metric, the
+measure.** On an oriented manifold of any dimension with a continuous Riemannian metric, the
 integral of the top form `f dV`, for the Riemannian volume form `dV` of the orientation and a
 continuous compactly supported function `f`, is the integral of `f` against the Riemannian volume
 measure: `∫_M f dV = ∫ f d(vol_g)`. -/
-theorem integralTopForm_smul_riemannianVolumeForm [NeZero m]
+theorem integralTopForm_smul_riemannianVolumeForm
     (o : Manifold.Orientation I M (Fin m)) {f : M → ℝ} (hf : Continuous f)
     (hc : HasCompactSupport f) :
     integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) =
@@ -189,6 +192,18 @@ theorem integralTopForm_smul_riemannianVolumeForm [NeZero m]
   dsimp only
   rw [(extChartAt I (α i)).left_inv (hpiece i hx), smul_eq_mul]
   exact signBasis_mul_signedInChartAt_smul_riemannianVolumeForm l σ f (α i) (hpiece i hx)
+
+omit [LindelofSpace M] in
+/-- **The integral of the volume form is the total volume.** On a compact oriented manifold with a
+continuous Riemannian metric, the integral of the Riemannian volume form is the total Riemannian
+volume: `∫_M dV = vol_g(M)`. -/
+theorem integralTopForm_riemannianVolumeForm [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin m)) :
+    integralTopForm o (riemannianVolumeForm o) = riemannianTotalVolume I M := by
+  have h := integralTopForm_smul_riemannianVolumeForm o (f := fun _ ↦ (1 : ℝ)) continuous_const
+    (HasCompactSupport.of_compactSpace _)
+  simp only [one_smul, integral_const, smul_eq_mul, mul_one] at h
+  rw [h, riemannianTotalVolume_def]
 
 end Integral
 
