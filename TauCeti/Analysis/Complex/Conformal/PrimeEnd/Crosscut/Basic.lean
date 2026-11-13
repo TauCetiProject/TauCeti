@@ -130,6 +130,16 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
     · exact ⟨⟨0, by simp⟩, hγ.source_mem_frontier⟩
     · exact ⟨⟨1, by simp⟩, hγ.target_mem_frontier⟩
 
+/-- A crosscut and a path in the frontier with the same endpoints meet exactly there. -/
+theorem IsCrosscut.range_inter_range_eq_pair (hγ : IsCrosscut γ U) (hU : IsOpen U)
+    {α : Path x y} (hα : range α ⊆ frontier U) : range γ ∩ range α = {x, y} := by
+  refine Subset.antisymm (fun z hz ↦ ?_) ?_
+  · rw [← hγ.range_inter_frontier hU]
+    exact ⟨hz.1, hα hz.2⟩
+  · rintro z (rfl | rfl)
+    · exact ⟨γ.source_mem_range, α.source_mem_range⟩
+    · exact ⟨γ.target_mem_range, α.target_mem_range⟩
+
 /-- For an open set, the part of a crosscut inside the set is its open arc, the image of the
 open parameter interval. -/
 theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen U) :

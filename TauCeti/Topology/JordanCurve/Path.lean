@@ -25,6 +25,10 @@ The condition is stated directly rather than bundled as a new notion of simple c
 is the only operation needed here, and keeping it as a theorem hypothesis avoids introducing a
 second simplicity vocabulary alongside Mathlib's path API.
 
+Conversely, two distinct points on a Jordan curve split it into two injective paths whose
+ranges cover the curve and meet exactly at those endpoints. This uses the circle
+parametrization and Mathlib's complementary circle paths.
+
 ## Gluing two arcs
 
 The criterion has one immediate use that is worth naming on its own: two *arcs* — ranges of
@@ -42,6 +46,8 @@ equal endpoints repeats the value at the two distinct parameters `0` and `1`.
   possible repetition is its pair of endpoints is a Jordan curve.
 * `TauCeti.isJordanCurve_range_union_range_of_inter_eq_pair` — two arcs with the same two
   endpoints, meeting exactly there, glue to a Jordan curve.
+* `TauCeti.IsJordanCurve.exists_injective_path_range_union_eq_and_inter_eq_pair` — split a
+  Jordan curve into two injective paths between given distinct points.
 
 ## Use in the Carathéodory boundary correspondence
 
@@ -154,5 +160,45 @@ theorem isJordanCurve_range_union_range_of_inter_eq_pair {y : X} {γ δ : Path x
     simp only [Path.symm_apply, Function.comp_apply] at hst
     have h : 1 - (2 * (s : ℝ) - 1) = 1 - (2 * (t : ℝ) - 1) := congrArg Subtype.val (hδ hst)
     exact Or.inl (Subtype.ext (show (s : ℝ) = (t : ℝ) by linarith))
+
+omit [T2Space X] in
+/-- Two distinct points of a Jordan curve split it into two injective paths meeting exactly
+at those points. The second path traverses the complementary circle arc in reverse. -/
+theorem IsJordanCurve.exists_injective_path_range_union_eq_and_inter_eq_pair {C : Set X}
+    (hC : IsJordanCurve C) {y : X} (hx : x ∈ C) (hy : y ∈ C) (hxy : x ≠ y) :
+    ∃ α β : Path x y, Function.Injective α ∧ Function.Injective β ∧
+      range α ∪ range β = C ∧ range α ∩ range β = {x, y} := by
+  obtain ⟨e⟩ := isJordanCurve_iff.mp hC
+  let u := e ⟨x, hx⟩
+  let v := e ⟨y, hy⟩
+  have huv : u ≠ v := fun h ↦ hxy (congrArg Subtype.val (e.injective h))
+  let c := jordanParam e
+  have hc : Continuous c := continuous_jordanParam e
+  have hci : Function.Injective c := jordanParam_injective e
+  let arc (p q : Circle) : Path (c p) (c q) := (Circle.path p q).map hc
+  have harc (p q : Circle) : range (arc p q) = c '' range (Circle.path p q) := by
+    dsimp only [arc]
+    rw [Path.map_coe, range_comp]
+  have hi (p q : Circle) (hpq : p ≠ q) : Function.Injective (arc p q) := by
+    dsimp only [arc]
+    rw [Path.map_coe]
+    exact hci.comp (Circle.path_injective_of_ne hpq)
+  have hi' : Function.Injective (arc v u).symm := by
+    intro s t h
+    rw [Path.symm_apply, Path.symm_apply] at h
+    exact unitInterval.symm_involutive.injective (hi v u huv.symm h)
+  have hcu : c u = x := jordanParam_apply_apply e hx
+  have hcv : c v = y := jordanParam_apply_apply e hy
+  suffices ∃ α β : Path (c u) (c v), Function.Injective α ∧ Function.Injective β ∧
+      range α ∪ range β = C ∧ range α ∩ range β = {c u, c v} by
+    obtain ⟨α, β, hα, hβ, hu, hi⟩ := this
+    refine ⟨α.cast hcu.symm hcv.symm, β.cast hcu.symm hcv.symm, ?_⟩
+    have hpair : ({c u, c v} : Set X) = {x, y} := by rw [hcu, hcv]
+    simpa only [Path.cast_coe] using And.intro hα ⟨hβ, hu, hi.trans hpair⟩
+  refine ⟨arc u v, (arc v u).symm, hi u v huv, hi', ?_, ?_⟩
+  · rw [Path.symm_range, harc, harc, ← image_union,
+      Circle.range_path_union_range_path huv, image_univ, range_jordanParam]
+  · rw [Path.symm_range, harc, harc, ← image_inter hci,
+      Circle.range_path_inter_range_path huv, image_pair]
 
 end TauCeti
