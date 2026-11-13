@@ -16,8 +16,9 @@ import TauCeti.Analysis.Convolution.Young
 /-!
 # Commutators of convolution operators with Lipschitz functions
 
-Let `κ` be a scalar kernel on a normed additive group `G` and let `f` be a Lipschitz function with
-constant `K`. The commutator of the convolution operator `g ↦ κ ⋆ g` with multiplication by `f` is
+Let `κ` be a scalar kernel on a seminormed additive group `G` and let `f` be a Lipschitz function
+with constant `K`. The commutator of the convolution operator `g ↦ κ ⋆ g` with multiplication by
+`f` is
 
 `[κ ⋆ ·, f] g x = (κ ⋆ (f • g)) x - f x • (κ ⋆ g) x = ∫ (f (x - t) - f x) • κ t • g (x - t) dt`
 
@@ -59,14 +60,14 @@ open scoped ENNReal NNReal Convolution
 
 namespace MeasureTheory
 
-variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup G] [MeasurableSpace G]
+variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] [MeasurableSpace G]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   {μ : Measure G} {κ f : G → 𝕜} {g : G → F} {K : ℝ≥0}
 
 /-- **The commutator of a convolution with a multiplication is a single integral.** At a point
 where both convolutions exist,
 `(κ ⋆ (f • g)) x - f x • (κ ⋆ g) x = ∫ (f (x - t) - f x) • κ t • g (x - t) dt`. -/
-theorem convolution_smul_sub_smul_convolution [SMulCommClass ℝ 𝕜 F] {x : G}
+theorem convolution_smul_sub_smul_convolution [Sub G] [SMulCommClass ℝ 𝕜 F] {x : G}
     (hfg : ConvolutionExistsAt κ (fun y ↦ f y • g y) x (lsmul 𝕜 𝕜) μ)
     (hg : ConvolutionExistsAt κ g x (lsmul 𝕜 𝕜) μ) :
     (κ ⋆[lsmul 𝕜 𝕜, μ] fun y ↦ f y • g y) x - f x • (κ ⋆[lsmul 𝕜 𝕜, μ] g) x =
@@ -75,6 +76,8 @@ theorem convolution_smul_sub_smul_convolution [SMulCommClass ℝ 𝕜 F] {x : G}
   rw [convolution_def, convolution_def, ← integral_smul, ← integral_sub hfg.integrable hg']
   refine integral_congr_ae (Filter.Eventually.of_forall fun t ↦ ?_)
   simp only [lsmul_apply, sub_smul, smul_comm (κ t) (f _)]
+
+variable [SeminormedAddCommGroup G]
 
 /-- **Pointwise bound for the commutator with a Lipschitz function.** If `f` is `K`-Lipschitz,
 then `‖∫ (f (x - t) - f x) • κ t • g (x - t) dt‖` is at most `K` times the convolution of `‖g‖`
