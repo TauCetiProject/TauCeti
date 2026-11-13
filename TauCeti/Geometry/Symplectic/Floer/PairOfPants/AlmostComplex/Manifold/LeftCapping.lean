@@ -149,7 +149,7 @@ unit disc, since `ψ(1)` lies within distance `exp (-2π(L - 1)) / 2` of `0`. -/
 private theorem norm_le_one_of_not {w : ℂ} (hL : 1 ≤ L)
     (hw : ¬((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1)) : ‖w‖ ≤ 1 := by
   have hψ : ‖zero.plumbingMap L 1‖ ≤ 1 := by
-    have h := norm_plumbingMap_one_sub_endCenter_lt (q := zero) (by decide) L
+    have h := norm_plumbingMap_one_sub_endCenter_lt zero L
     rw [endCenter_zero, sub_zero] at h
     have : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
       Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
@@ -232,7 +232,7 @@ theorem cappedExchangeAlmostComplex_cylindricalEndLift (hJp : Periodic (J one) 1
     (by rw [endSign_eq_one (by decide), one_mul]; linarith)
   have hw : ((one.cylindricalEndLift z ≠ 0 ∧ one.cylindricalEndLift z ≠ 1) ∧
       one.cylindricalEndLift z ≠ zero.plumbingMap L 1) := by
-    refine mem_plumbedSphere_of_le_norm_sub_endCenter (by decide) (Or.inr hS) ?_
+    refine mem_plumbedSphere_of_le_norm_sub_endCenter (Or.inr hS) ?_
     have h := norm_cylindricalEndLift_sub_endCenter one z
     rw [norm_endScale (by decide), endCenter_one] at h
     have h₁ : Real.exp (-(2 * π * z.re)) ≤ 1 :=
@@ -286,7 +286,7 @@ private theorem cappingAlmostComplex_update_inf_base_eq (hL : 2 ≤ L) {w : ℂ}
   have hρ : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
     Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   have hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1 :=
-    mem_plumbedSphere_of_le_norm_sub_endCenter (by decide)
+    mem_plumbedSphere_of_le_norm_sub_endCenter
       (Or.inr ⟨fun h => by norm_num [h] at hw₀, fun h => by norm_num [h] at hw₁⟩)
       (by rw [endCenter_zero, sub_zero]; linarith)
   refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
