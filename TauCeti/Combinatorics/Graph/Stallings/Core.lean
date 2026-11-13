@@ -82,6 +82,17 @@ theorem IsFolded.core (hS : S.IsFolded) : S.core.IsFolded := by
   refine ⟨q, ?_⟩
   exact (S.coreInclusion.read_mapPath q).symm.trans (congrArg S.read hq)
 
+/-- A folded based core has no darts exactly when it accepts the trivial subgroup. -/
+theorem IsFolded.isEmpty_dart_iff_subgroup_eq_bot {S : StallingsGraph α} (hS : S.IsFolded)
+    (hc : S.graph.IsCore S.base) : IsEmpty S.graph.E ↔ S.subgroup S.base = ⊥ := by
+  refine ⟨fun _ => S.subgroup_eq_bot_of_isEmpty _, fun h => ⟨fun e => ?_⟩⟩
+  obtain ⟨p, hp, he⟩ := ((S.graph.isCore_iff S.base).mp hc).2 e
+  have hread : S.read p = S.read (.nil : S.graph.Path S.base S.base) := by
+    rw [S.read_nil, ← Subgroup.mem_bot, ← h]
+    exact S.read_mem_subgroup p
+  rw [hS.path_eq_of_read_eq S p .nil hp (SerreGraph.Path.isReduced_nil S.graph _) hread] at he
+  simp at he
+
 variable {S} {T : StallingsGraph α}
 
 /-- A morphism out of a folded graph sends core darts to core darts. -/

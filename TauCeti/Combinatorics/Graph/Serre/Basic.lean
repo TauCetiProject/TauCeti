@@ -253,6 +253,12 @@ theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : 
   | nil => rfl
   | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
 
+/-- A preconnected Serre graph without darts has at most one vertex. -/
+theorem Preconnected.subsingleton_of_isEmpty {Γ : SerreGraph.{u, v}} [IsEmpty Γ.E]
+    (hΓ : Γ.Preconnected) : Subsingleton Γ.V :=
+  ⟨fun a b => (Γ.preconnected_iff.mp hΓ a b).elim
+    (Γ.eq_of_path_of_forall_src_eq_tgt fun e => isEmptyElim e)⟩
+
 /-- A Serre graph is connected when it is nonempty and path-connected. -/
 def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
 
