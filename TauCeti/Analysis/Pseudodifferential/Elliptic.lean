@@ -76,13 +76,6 @@ theorem isElliptic_iff_bijective [CompleteSpace V] [CompleteSpace W]
     a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → Function.Bijective (a.coefficient (x, ξ)) := by
   simp only [isElliptic_iff, ContinuousLinearMap.isInvertible_iff_bijective]
 
-/-- The values of an elliptic symbol at nonzero frequencies are injective. -/
-theorem IsElliptic.injective {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) :
-    ∀ x ξ, ξ ≠ 0 → Function.Injective (a.coefficient (x, ξ)) := fun x ξ hξ ↦ by
-  obtain ⟨e, he⟩ := ha x ξ hξ
-  rw [← he]
-  exact e.injective
-
 /-- On a trivial frequency space there is no nonzero frequency, so every homogeneous symbol is
 elliptic. -/
 theorem isElliptic_of_subsingleton [Subsingleton E] (a : HomogeneousSymbol X E V W m) :
@@ -228,7 +221,7 @@ theorem spatialDeriv_inverse (v : X) :
     (a.inverse ha).spatialDeriv v =
       -((a.inverse ha).comp ((a.spatialDeriv v).comp (a.inverse ha))).castDegree (by ring) :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 /-- The frequency derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂_ξa ∘ a⁻¹)`; its

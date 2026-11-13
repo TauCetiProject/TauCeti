@@ -55,6 +55,8 @@ theorem contDiffOn_modulus {n : ℕ∞ω} :
   have hgram : ContDiff ℝ n fun T : V →L[𝕜] W ↦ T† ∘L T := by
     simpa using (((compL 𝕜 V W V).bilinearRestrictScalars ℝ).contDiff.comp
       adjointRealCLM.contDiff).clm_apply contDiff_id
+  -- The real algebra structure underlying `restrict_scalars`, with its operator norm.
+  let : NormedAlgebra ℝ (V →L[𝕜] V) := { algebra with norm_smul_le := norm_smul_le }
   refine (((contDiffOn_sqrt (𝕜 := 𝕜) (E := V)).restrict_scalars ℝ).comp hgram.contDiffOn
     fun T hT ↦ ?_).congr fun T _ ↦ modulus_eq_sqrt T
   exact IsStrictlyPositive.iff_of_unital.2 ⟨nonneg_iff_isPositive.2 T.isPositive_adjoint_comp_self,

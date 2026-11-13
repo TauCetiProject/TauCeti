@@ -12,12 +12,11 @@ public import TauCeti.Analysis.Matrix.Exponential.Log
 # Smooth functional calculus for positive operators in finite dimension
 
 Real powers and the positive square root depend smoothly on a strictly positive operator
-on a finite-dimensional real or complex inner product space. These statements use the native
+on a finite-dimensional inner product space over `ℝ` or `ℂ`. These statements use the native
 continuous functional calculus on operators, rather than a choice of eigenvectors, and allow
 dimension zero. They permit smooth changes of fibre metrics without choosing smoothly varying
-eigenbases. Over `𝕜 = ℂ` the powers are smooth over `ℂ`, hence over `ℝ` by restriction of scalars.
-The real algebra structure on `E →L[𝕜] E` defining the calculus may be any one compatible with the
-`𝕜`-action; at `𝕜 = ℝ` and `𝕜 = ℂ` it is Mathlib's own.
+eigenbases. Over `ℂ` the smoothness is complex, and `ContDiffOn.restrict_scalars` gives the real
+statement.
 
 The proof transports `Matrix.contDiffOn_rpow` through an orthonormal basis. See B. C. Hall,
 *Lie Groups, Lie Algebras, and Representations*, second edition, §§2.3 and 2.5, for the
@@ -31,14 +30,14 @@ noncomputable section
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] [CompleteSpace E] [Algebra ℝ (E →L[𝕜] E)]
+  [FiniteDimensional 𝕜 E] [CompleteSpace E] [NormedAlgebra ℝ (E →L[𝕜] E)]
   [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
 
-open scoped ContDiff NNReal MatrixOrder Matrix.Norms.L2Operator ComplexOrder
+open scoped ContDiff NNReal MatrixOrder ComplexOrder Matrix.Norms.L2Operator
 
 /-- Every real power is smooth on the strictly positive operators in finite dimension,
-including analyticity. Smoothness is within the positive cone, not on an open subset
-of all operators. -/
+including analyticity over `𝕜` (real over `ℝ`, complex over `ℂ`). Smoothness is within the
+positive cone, not on an open subset of all operators. -/
 theorem contDiffOn_rpow (s : ℝ) {n : ℕ∞ω} :
     ContDiffOn 𝕜 n (fun A : E →L[𝕜] E ↦ A ^ s) {A | IsStrictlyPositive A} := by
   let b := stdOrthonormalBasis 𝕜 E
@@ -70,10 +69,10 @@ theorem contDiffOn_rpow (s : ℝ) {n : ℕ∞ω} :
       exact spectrum.zero_notMem ℝ≥0 (hA.isUnit.map e.symm) (hx0 ▸ hx)))).continuousWithinAt)
 
 /-- The native positive square root is smooth on the strictly positive operators in
-finite dimension, including analyticity. -/
+finite dimension, including analyticity over `𝕜` (real over `ℝ`, complex over `ℂ`). -/
 theorem contDiffOn_sqrt {n : ℕ∞ω} :
     ContDiffOn 𝕜 n (CFC.sqrt : (E →L[𝕜] E) → (E →L[𝕜] E))
       {A | IsStrictlyPositive A} := by
-  exact (contDiffOn_rpow (E := E) (n := n) (1 / 2)).congr fun A _ ↦ CFC.sqrt_eq_rpow
+  exact (contDiffOn_rpow (𝕜 := 𝕜) (E := E) (n := n) (1 / 2)).congr fun A _ ↦ CFC.sqrt_eq_rpow
 
 end ContinuousLinearMap
