@@ -28,10 +28,8 @@ The proof combines three ingredients:
 As an immediate consequence, flatness of `S†` over `O` is equivalent to flatness of `S^∧` over `O`,
 and when `O` is noetherian, flatness of `S` over `O` implies flatness of `S†` over `O`.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.Dagger.weakCompletion.adicCompletionAlgEquiv`: `S^∧` is the `π`-adic completion of `S†`
-  as an `S†`-algebra.
 * `TauCeti.Dagger.weakCompletion.faithfullyFlat_piAdicCompletion`: `S^∧` is faithfully flat over
   `S†` whenever `S†` is noetherian.
 * `TauCeti.Dagger.weakCompletion.flat_iff_flat_piAdicCompletion`: `S†` is flat over `O` iff `S^∧`
@@ -59,24 +57,6 @@ section General
 
 variable {O : Type*} [CommRing O] (π : O) (S : Type*) [CommRing S] [Algebra O S]
   [Algebra.FiniteType O S]
-
-/-- The `π`-adic completion of `S†` is canonically isomorphic to `S^∧` as an `S†`-algebra. -/
-noncomputable def adicCompletionAlgEquiv :
-    piAdicCompletion π (weakCompletion π S) ≃ₐ[weakCompletion π S] piAdicCompletion π S :=
-  { adicCompletionEquiv π S with
-    commutes' := adicCompletionEquiv_algebraMap π }
-
-variable {S} in
-@[simp]
-theorem adicCompletionAlgEquiv_apply (z : piAdicCompletion π (weakCompletion π S)) :
-    adicCompletionAlgEquiv π S z = adicCompletionEquiv π S z :=
-  (rfl)
-
-variable {S} in
-@[simp]
-theorem adicCompletionAlgEquiv_symm_apply (z : piAdicCompletion π S) :
-    (adicCompletionAlgEquiv π S).symm z = (adicCompletionEquiv π S).symm z :=
-  (rfl)
 
 /-- When the weak completion `S†` is noetherian, the ambient `π`-adic completion `S^∧` is
 faithfully flat over `S†`. -/

@@ -69,14 +69,9 @@ theorem iInf_sup_pow_smul_eq_of_le_jacobson (I : Ideal R) (hI : I ≤ Ring.jacob
   rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mem_bot (R := R),
     ← I.iInf_pow_smul_eq_bot_of_le_jacobson (M := M ⧸ N) hI, Submodule.mem_iInf]
   intro n
-  have hmap : (I ^ n • ⊤ : Submodule R M).map N.mkQ ≤ I ^ n • ⊤ := by
-    rw [Submodule.map_le_iff_le_comap]
-    exact Submodule.smul_le.mpr fun r hr m _ ↦ by
-      rw [Submodule.mem_comap, map_smul]
-      exact Submodule.smul_mem_smul hr Submodule.mem_top
   obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp ((Submodule.mem_iInf _).mp hx n)
   rw [Submodule.Quotient.mk_add, (Submodule.Quotient.mk_eq_zero N).mpr hu, zero_add, ← N.mkQ_apply]
-  exact hmap (Submodule.mem_map_of_mem hv)
+  exact Submodule.smul_top_le_comap_smul_top (I ^ n) N.mkQ hv
 
 /-- Every ideal `J` of a noetherian ring `R` is closed in the `I`-adic topology for any ideal
 `I ≤ Ring.jacobson R`: `⨅ n, J ⊔ I ^ n = J`. -/

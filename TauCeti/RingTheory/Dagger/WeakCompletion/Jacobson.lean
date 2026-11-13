@@ -40,8 +40,6 @@ Nothing here requires `O` to be noetherian, a valuation ring, or `π`-adically c
 * `TauCeti.Dagger.weakCompletion.isLocalHom_eval_succ` and
   `TauCeti.Dagger.weakCompletion.isUnit_iff_eval_one`: reduction modulo `πⁿ⁺¹` is a local
   homomorphism, so an element of `S†` is a unit iff its image in `S ⧸ π S` is a unit.
-* `TauCeti.Dagger.weakCompletion.of_self_bijective_iff`: `O → O†` is bijective iff `O` is
-  `π`-adically complete.
 * `TauCeti.Dagger.weakCompletion.of_mvPolynomial_bijective_iff`: for nonempty finite `σ`,
   `O[X_σ] → O[X_σ]†` is bijective iff `π` is nilpotent.
 
@@ -225,83 +223,6 @@ theorem isUnit_of_iff (s : S) :
   rw [isUnit_iff_eval_one, eval_of]
   let e := Ideal.quotEquivOfEq (pow_one (Ideal.span {algebraMap O S π}))
   exact ⟨fun h ↦ by simpa [e] using h.map e, fun h ↦ by simpa [e] using h.map e.symm⟩
-
-/-- For the base ring itself, the weak completion `O†` is the entire `π`-adic completion `Ô`. -/
-theorem weakCompletion_self_eq_top : weakCompletion π O = ⊤ := by
-  rw [eq_top_iff]
-  intro z _
-  have hgen : Algebra.adjoin O (Set.range (Empty.elim : Empty → O)) = ⊤ := by
-    rw [eq_top_iff]
-    intro a _
-    exact algebraMap_mem _ a
-  rw [mem_weakCompletion_iff π hgen]
-  let I : Ideal O := Ideal.span {algebraMap O O π}
-  obtain ⟨f, rfl⟩ := AdicCompletion.mk_surjective I O z
-  -- Set `b 0 = 0` and `b (k + 1) = f.val (k + 1)`, then telescope consecutive differences.
-  let b : ℕ → O := fun k ↦ if k = 0 then 0 else f.val k
-  have hstep (j : ℕ) : ∃ a : O, b (j + 1) - b j = π ^ j * a := by
-    rcases j with _ | j
-    · exact ⟨f.val 1, by simp [b]⟩
-    · have htr := SModEq.sub_mem.mp (f.property (Nat.le_succ (j + 1))).symm
-      rw [smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
-        Algebra.algebraMap_self, RingHom.id_apply, Ideal.mem_span_singleton] at htr
-      obtain ⟨a, ha⟩ := htr
-      exact ⟨a, by simpa [b] using ha⟩
-  choose a ha using hstep
-  refine ⟨0, fun j ↦ MvPolynomial.C (a j), fun j ↦ by simp, fun k ↦ ?_⟩
-  rw [AdicCompletion.evalₐ_mk]
-  rcases k with _ | k
-  · have : Subsingleton (O ⧸ I ^ 0) := Ideal.Quotient.subsingleton_iff.mpr (by simp)
-    exact Subsingleton.elim _ _
-  · have hsum : ∀ m, ∑ j ∈ range m, (algebraMap O O π) ^ j * aeval Empty.elim (C (a j)) = b m := by
-      intro m
-      induction m with
-      | zero => simp [b]
-      | succ m ih =>
-        rw [sum_range_succ, ih]
-        simp only [Algebra.algebraMap_self, RingHom.id_apply, aeval_C]
-        linear_combination -(ha m)
-    rw [hsum (k + 1)]
-    simp [b]
-
-/-- If `S` is `π`-adically complete, the canonical map `S → S†` is bijective. -/
-theorem of_bijective_of_isAdicComplete [IsAdicComplete (Ideal.span {algebraMap O S π}) S] :
-    Function.Bijective (of π S) := by
-  have hbij := AdicCompletion.of_bijective (Ideal.span {algebraMap O S π}) S
-  refine ⟨(of_injective_iff π).mpr inferInstance, fun z ↦ ?_⟩
-  obtain ⟨s, hs⟩ := hbij.2 (z : piAdicCompletion π S)
-  exact ⟨s, Subtype.ext ((coe_of π s).trans hs)⟩
-
-/-- For the base ring `O` itself, `O → O†` is bijective if and only if `O` is `π`-adically
-complete. -/
-theorem of_self_bijective_iff :
-    Function.Bijective (of π O) ↔ IsAdicComplete (Ideal.span {π}) O := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ by
-    have : IsAdicComplete (Ideal.span {algebraMap O O π}) O := by simpa
-    exact of_bijective_of_isAdicComplete π⟩
-  have hI : Ideal.span {algebraMap O O π} = Ideal.span {π} := by simp
-  rw [← hI, ← AdicCompletion.of_bijective_iff]
-  have htop := weakCompletion_self_eq_top π
-  refine ⟨fun a b hab ↦ h.1 (Subtype.ext ((coe_of π a).trans (hab.trans (coe_of π b).symm))),
-    fun z ↦ ?_⟩
-  obtain ⟨a, ha⟩ := h.2 ⟨z, htop.symm ▸ Algebra.mem_top⟩
-  exact ⟨a, (coe_of π a).symm.trans (congrArg Subtype.val ha)⟩
-
-/-- If `π` is nilpotent in `O`, then `S → S†` is bijective for every finitely generated
-`O`-algebra `S`. -/
-theorem of_bijective_of_isNilpotent {π : O} (hπ : IsNilpotent π) :
-    Function.Bijective (of π S) := by
-  obtain ⟨n, hn⟩ := hπ
-  have hpow : Ideal.span {algebraMap O S π} ^ n = ⊥ := by
-    rw [Ideal.span_singleton_pow, ← map_pow, hn, map_zero, Ideal.span_singleton_eq_bot]
-  have hpow' : Ideal.span {algebraMap O (weakCompletion π S) π} ^ n = ⊥ := by
-    rw [Ideal.span_singleton_pow, ← map_pow, hn, map_zero, Ideal.span_singleton_eq_bot]
-  refine ⟨(of_injective_iff π).mpr ⟨fun s hs ↦ ?_⟩, fun z ↦ ?_⟩
-  · have hsn := hs n
-    simpa [hpow, SModEq.zero] using hsn
-  · obtain ⟨s, hs⟩ := exists_sub_mem_span_pow π z n
-    rw [hpow', Ideal.mem_bot, sub_eq_zero] at hs
-    exact ⟨s, hs.symm⟩
 
 /-- For a nonempty finite index type `σ`, the canonical map `O[X_σ] → O[X_σ]†` is bijective if
 and only if `π` is nilpotent in `O`. -/

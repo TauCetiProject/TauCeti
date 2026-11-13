@@ -13,7 +13,8 @@ import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 The parameter-adic completion of the Monsky–Washnitzer weak completion `S†`
 is canonically the parameter-adic completion of `S`. The comparison fixes
-every element of `S†` in the ambient completion, and on each quotient is the
+every element of `S†` in the ambient completion, so it upgrades to an
+`S†`-algebra equivalence (`adicCompletionAlgEquiv`), and on each quotient is the
 parameter-power quotient comparison.
 
 This is an algebraic comparison of completions. No noetherianity,
@@ -95,5 +96,22 @@ theorem adicCompletionEquiv_symm_coe (z : weakCompletion π S) :
     (adicCompletionEquiv π S).symm (z : piAdicCompletion π S) =
       algebraMap (weakCompletion π S) (piAdicCompletion π (weakCompletion π S)) z := by
   rw [AlgEquiv.symm_apply_eq, adicCompletionEquiv_algebraMap]
+
+variable (S) in
+/-- The `π`-adic completion of `S†` is canonically isomorphic to `S^∧` as an `S†`-algebra. -/
+noncomputable def adicCompletionAlgEquiv :
+    piAdicCompletion π (weakCompletion π S) ≃ₐ[weakCompletion π S] piAdicCompletion π S :=
+  { adicCompletionEquiv π S with
+    commutes' := adicCompletionEquiv_algebraMap π }
+
+@[simp]
+theorem adicCompletionAlgEquiv_apply (z : piAdicCompletion π (weakCompletion π S)) :
+    adicCompletionAlgEquiv π S z = adicCompletionEquiv π S z :=
+  (rfl)
+
+@[simp]
+theorem adicCompletionAlgEquiv_symm_apply (z : piAdicCompletion π S) :
+    (adicCompletionAlgEquiv π S).symm z = (adicCompletionEquiv π S).symm z :=
+  (rfl)
 
 end TauCeti.Dagger.weakCompletion

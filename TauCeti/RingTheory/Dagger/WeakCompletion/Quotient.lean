@@ -14,7 +14,10 @@ The map from a finitely generated algebra to its Monsky–Washnitzer weak comple
 induces an isomorphism modulo every power of the parameter. The key point is that
 removing a finite head of a degree-growth expansion leaves another degree-growth
 expansion. Thus the remainder is divisible by the parameter power in the weak
-completion itself, not only in the ambient adic completion.
+completion itself, not only in the ambient adic completion. Consequently, algebra
+homomorphisms from `S†` into any `π`-adically separated `O`-algebra are determined by
+their restriction along `S → S†` (`algHom_ext`), and `S → S†` is bijective whenever `π`
+is nilpotent (`of_bijective_of_isNilpotent`).
 
 No noetherianity, completeness or regularity of the parameter is needed.
 
@@ -187,6 +190,47 @@ instance isHausdorff :
     apply RingHom.mem_ker.mp
     rw [ker_eval]
     simpa only [SModEq.zero, smul_eq_mul, Ideal.mul_top] using hz n
+
+/-- Two `O`-algebra homomorphisms from `S†` into a `π`-adically separated `O`-algebra agree as soon
+as they agree on the image of `S`. -/
+theorem algHom_ext {B : Type*} [CommRing B] [Algebra O B]
+    [IsHausdorff (Ideal.span {algebraMap O B π}) B]
+    {φ ψ : weakCompletion π S →ₐ[O] B} (h : ∀ s, φ (of π S s) = ψ (of π S s)) :
+    φ = ψ := by
+  ext z
+  apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {algebraMap O B π})).mpr
+  intro n
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
+  obtain ⟨s, hs⟩ := exists_sub_mem_span_pow π z n
+  have hφ : φ (z - of π S s) ∈ Ideal.span {algebraMap O B π} ^ n := by
+    have hm : (Ideal.span {algebraMap O (weakCompletion π S) π} ^ n).map φ ≤
+        Ideal.span {algebraMap O B π} ^ n := by
+      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
+    exact hm (Ideal.mem_map_of_mem _ hs)
+  have hψ : ψ (z - of π S s) ∈ Ideal.span {algebraMap O B π} ^ n := by
+    have hm : (Ideal.span {algebraMap O (weakCompletion π S) π} ^ n).map ψ ≤
+        Ideal.span {algebraMap O B π} ^ n := by
+      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
+    exact hm (Ideal.mem_map_of_mem _ hs)
+  convert Ideal.sub_mem _ hφ hψ using 1
+  rw [map_sub, map_sub, h s]
+  ring
+
+/-- If `π` is nilpotent in `O`, then `S → S†` is bijective for every finitely generated
+`O`-algebra `S`. -/
+theorem of_bijective_of_isNilpotent {π : O} (hπ : IsNilpotent π) :
+    Function.Bijective (of π S) := by
+  obtain ⟨n, hn⟩ := hπ
+  have hpow : Ideal.span {algebraMap O S π} ^ n = ⊥ := by
+    rw [Ideal.span_singleton_pow, ← map_pow, hn, map_zero, Ideal.span_singleton_eq_bot]
+  have hpow' : Ideal.span {algebraMap O (weakCompletion π S) π} ^ n = ⊥ := by
+    rw [Ideal.span_singleton_pow, ← map_pow, hn, map_zero, Ideal.span_singleton_eq_bot]
+  refine ⟨(of_injective_iff π).mpr ⟨fun s hs ↦ ?_⟩, fun z ↦ ?_⟩
+  · have hsn := hs n
+    simpa [hpow, SModEq.zero] using hsn
+  · obtain ⟨s, hs⟩ := exists_sub_mem_span_pow π z n
+    rw [hpow', Ideal.mem_bot, sub_eq_zero] at hs
+    exact ⟨s, hs.symm⟩
 
 end weakCompletion
 

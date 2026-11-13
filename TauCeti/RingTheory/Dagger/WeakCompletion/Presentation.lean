@@ -38,8 +38,6 @@ compatibly with evaluation of overconvergent series and with the canonical map `
 
 ## Main definitions and results
 
-* `TauCeti.Dagger.weakCompletion.algHom_ext`: algebra homomorphisms from `R†` into a `π`-adically
-  separated `O`-algebra are determined by their restriction along `R → R†`.
 * `TauCeti.Dagger.weakCompletion.ker_map_eq_iInf_of_surjective`: for surjective `f : R →ₐ[O] S`,
   `ker (map π f) = ⨅ n, (ker f).map (of π R) ⊔ (π)ⁿ` without noetherianity.
 * `TauCeti.Dagger.weakCompletion.iInf_sup_span_pow_eq`: when `R†` is noetherian, every ideal `J` of
@@ -75,31 +73,6 @@ section General
 variable {O R S : Type*} [CommRing O] [CommRing R] [CommRing S]
   [Algebra O R] [Algebra O S] (π : O)
   [Algebra.FiniteType O R] [Algebra.FiniteType O S]
-
-/-- Two `O`-algebra homomorphisms from `R†` into a `π`-adically separated `O`-algebra agree as soon
-as they agree on the image of `R`. -/
-theorem algHom_ext {B : Type*} [CommRing B] [Algebra O B]
-    [IsHausdorff (Ideal.span {algebraMap O B π}) B]
-    {φ ψ : weakCompletion π R →ₐ[O] B} (h : ∀ r, φ (of π R r) = ψ (of π R r)) :
-    φ = ψ := by
-  ext z
-  apply (IsHausdorff.eq_iff_smodEq (I := Ideal.span {algebraMap O B π})).mpr
-  intro n
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top]
-  obtain ⟨r, hr⟩ := exists_sub_mem_span_pow π z n
-  have hφ : φ (z - of π R r) ∈ Ideal.span {algebraMap O B π} ^ n := by
-    have hm : (Ideal.span {algebraMap O (weakCompletion π R) π} ^ n).map φ ≤
-        Ideal.span {algebraMap O B π} ^ n := by
-      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
-    exact hm (Ideal.mem_map_of_mem _ hr)
-  have hψ : ψ (z - of π R r) ∈ Ideal.span {algebraMap O B π} ^ n := by
-    have hm : (Ideal.span {algebraMap O (weakCompletion π R) π} ^ n).map ψ ≤
-        Ideal.span {algebraMap O B π} ^ n := by
-      rw [Ideal.map_pow, Ideal.map_span, Set.image_singleton, AlgHom.commutes]
-    exact hm (Ideal.mem_map_of_mem _ hr)
-  convert Ideal.sub_mem _ hφ hψ using 1
-  rw [map_sub, map_sub, h r]
-  ring
 
 /-- For a surjective algebra homomorphism `f : R →ₐ[O] S`, the kernel of `map π f : R† →ₐ[O] S†`
 is the `π`-adic closure `⨅ n, (ker f).map (of π R) ⊔ (π)ⁿ` of the extended kernel. No
@@ -259,12 +232,7 @@ theorem ker_evalIntWashnitzerAlgebra [IsNoetherianRing O] {π : O} (hπ : π ≠
   rw [← hcomp, ← Ideal.map_mapₐ]
   ext g
   rw [RingHom.mem_ker, evalIntWashnitzerAlgebra_eq, AlgHom.comp_apply, ← RingHom.mem_ker, hker]
-  have he : e.toAlgHom (e.symm.toAlgHom g) = g := e.apply_symm_apply g
-  refine ⟨fun hg ↦ he ▸ Ideal.mem_map_of_mem e.toAlgHom hg, fun hg ↦ ?_⟩
-  have hg' := Ideal.mem_map_of_mem e.symm.toAlgHom hg
-  have hid : e.symm.toAlgHom.comp e.toAlgHom = AlgHom.id O _ :=
-    AlgHom.ext e.symm_apply_apply
-  rwa [Ideal.map_mapₐ, hid, Ideal.map_idₐ] at hg'
+  exact Ideal.symm_apply_mem_of_equiv_iff (f := e.toRingEquiv)
 
 /-- **Monsky–Washnitzer presentation of a weak completion.** Over a noetherian valuation unit ball
 `O = K°`, every finite generating family `x : σ → S` presents `S†` as the quotient of the integral
