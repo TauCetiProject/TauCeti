@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Riccati
-public import
-  TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 
 /-!
 # Differentiating Hessians in parallel fields
@@ -37,74 +34,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {γ : ℝ → M} {P Q : ∀ s, TangentSpace I (γ s)} {t : ℝ}
-
-/-- Differentiating a Hessian pairing in parallel fields gives the gradient's second derivative. -/
-theorem hasDerivAt_hessian_parallel (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hγ : MDiffAt γ t)
-    (hP : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (P s)) t)
-    (hQ : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (Q s)) t)
-    (hP₀ : alongCurve (leviCivitaConnection I M) γ P t = 0)
-    (hQ₀ : alongCurve (leviCivitaConnection I M) γ Q t = 0) :
-    HasDerivAt (fun s ↦ hessian I f (γ s) (P s) (Q s))
-      ⟪(leviCivitaConnection I M).secondCovariantDerivative (leviCivitaConnection I M)
-        (mgradient I f) (γ t) (curveVelocity I γ t) (P t), Q t⟫_ℝ t := by
-  let cov := leviCivitaConnection I M
-  let G := mgradient I f
-  let A := fun x ↦ cov G x
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : CMDiff ∞ (T% G) := contMDiff_mgradient (by simpa using hf)
-  have hA : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) x (A x)) :=
-    contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff
-      (by simpa using hG.contMDiffOn))
-  have hAP := ((hA.mdifferentiable (by simp) (γ t)).comp t hγ).clm_bundle_apply hP
-  have hcoordAP := differentiableAt_sectionCoord γ (fun s ↦ A (γ s) (P s)) hAP
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  have hcoordQ := differentiableAt_sectionCoord γ Q hQ
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  have hd := (isMetricCompatible_leviCivitaConnection I).hasDerivAt_inner_alongCurve
-    hγ hcoordAP hcoordQ
-  rw [alongCurve_clm_apply cov γ P A (hA.mdifferentiable (by simp) (γ t)) hP,
-    hP₀, map_zero, add_zero, hQ₀, inner_zero_right, add_zero,
-    ← secondCovariantDerivative_eq_hom_apply cov cov hG] at hd
-  simpa only [hessian_def] using hd
-
-/-- The entries of the eikonal Hessian satisfy the Riccati equation in actual parallel fields. -/
-theorem hasDerivAt_hessian_riccati_parallel (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
-    (hc : ∀ x, ‖mgradient I f x‖ ^ 2 = c) (hγ : MDiffAt γ t)
-    (hγ' : curveVelocity I γ t = mgradient I f (γ t))
-    (hP : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (P s)) t)
-    (hQ : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (Q s)) t)
-    (hP₀ : alongCurve (leviCivitaConnection I M) γ P t = 0)
-    (hQ₀ : alongCurve (leviCivitaConnection I M) γ Q t = 0) :
-    HasDerivAt (fun s ↦ hessian I f (γ s) (P s) (Q s))
-      (-(⟪leviCivitaConnection I M (mgradient I f) (γ t) (P t),
-          leviCivitaConnection I M (mgradient I f) (γ t) (Q t)⟫_ℝ +
-        ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (P t)
-          (mgradient I f (γ t)) (mgradient I f (γ t)), Q t⟫_ℝ)) t := by
-  let cov := leviCivitaConnection I M
-  let G := mgradient I f
-  have hric := secondCovariantDerivative_mgradient_riccati hf hc (γ t) (P t)
-  have hpair := congrArg (fun w : TangentSpace I (γ t) ↦ ⟪w, Q t⟫_ℝ) hric
-  simp only [inner_add_left, inner_zero_left] at hpair
-  have hsym : ⟪cov G (γ t) (cov G (γ t) (P t)), Q t⟫_ℝ =
-      ⟪cov G (γ t) (P t), cov G (γ t) (Q t)⟫_ℝ := by
-    simpa only [hessian_def, real_inner_comm] using
-      hessian_symm (γ t) ((hf.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt)
-        (cov G (γ t) (P t)) (Q t)
-  have hval : ⟪cov.secondCovariantDerivative cov G (γ t) (G (γ t)) (P t), Q t⟫_ℝ =
-      -(⟪cov G (γ t) (P t), cov G (γ t) (Q t)⟫_ℝ +
-        ⟪cov.curvatureTensor (γ t) (P t) (G (γ t)) (G (γ t)), Q t⟫_ℝ) := by
-    change ⟪cov.secondCovariantDerivative cov G (γ t) (G (γ t)) (P t), Q t⟫_ℝ +
-      ⟪cov G (γ t) (cov G (γ t) (P t)), Q t⟫_ℝ +
-      ⟪cov.curvatureTensor (γ t) (P t) (G (γ t)) (G (γ t)), Q t⟫_ℝ = 0 at hpair
-    rw [hsym] at hpair
-    linarith
-  have hd := hasDerivAt_hessian_parallel hf hγ hP hQ hP₀ hQ₀
-  rw [hγ'] at hd
-  dsimp only [cov, G] at hval
-  rwa [hval] at hd
 
 omit [T2Space M] in
 /-- On an open smoothness domain, a Hessian pairing in parallel fields differentiates by
@@ -169,14 +98,43 @@ theorem hasDerivAt_hessian_riccati_parallel_on {U : Set M} (hU : IsOpen U)
   have hval : ⟪cov.hom cov (fun x ↦ cov G x) (γ t) (G (γ t)) (P t), Q t⟫_ℝ =
       -(⟪cov G (γ t) (P t), cov G (γ t) (Q t)⟫_ℝ +
         ⟪cov.curvatureTensor (γ t) (P t) (G (γ t)) (G (γ t)), Q t⟫_ℝ) := by
-    change ⟪cov.hom cov (fun x ↦ cov G x) (γ t) (G (γ t)) (P t), Q t⟫_ℝ +
-      ⟪cov G (γ t) (cov G (γ t) (P t)), Q t⟫_ℝ +
-      ⟪cov.curvatureTensor (γ t) (P t) (G (γ t)) (G (γ t)), Q t⟫_ℝ = 0 at hpair
+    dsimp only [cov, G] at hsym ⊢
     rw [hsym] at hpair
     linarith
   have hd := hasDerivAt_hessian_parallel_on hU hf hx hγ hP hQ hP₀ hQ₀
   rw [hγ'] at hd
   dsimp only [cov, G] at hval
   rwa [hval] at hd
+
+/-- Differentiating a Hessian pairing in parallel fields gives the gradient's second derivative. -/
+theorem hasDerivAt_hessian_parallel (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hγ : MDiffAt γ t)
+    (hP : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (P s)) t)
+    (hQ : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (Q s)) t)
+    (hP₀ : alongCurve (leviCivitaConnection I M) γ P t = 0)
+    (hQ₀ : alongCurve (leviCivitaConnection I M) γ Q t = 0) :
+    HasDerivAt (fun s ↦ hessian I f (γ s) (P s) (Q s))
+      ⟪(leviCivitaConnection I M).secondCovariantDerivative (leviCivitaConnection I M)
+        (mgradient I f) (γ t) (curveVelocity I γ t) (P t), Q t⟫_ℝ t := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  rw [secondCovariantDerivative_eq_hom_apply _ _
+    (contMDiff_mgradient (I := I) (n := ∞) (by simpa using hf))]
+  exact hasDerivAt_hessian_parallel_on isOpen_univ hf.contMDiffOn (mem_univ _) hγ hP hQ hP₀ hQ₀
+
+/-- The entries of the eikonal Hessian satisfy the Riccati equation in actual parallel fields. -/
+theorem hasDerivAt_hessian_riccati_parallel (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
+    (hc : ∀ x, ‖mgradient I f x‖ ^ 2 = c) (hγ : MDiffAt γ t)
+    (hγ' : curveVelocity I γ t = mgradient I f (γ t))
+    (hP : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (P s)) t)
+    (hQ : MDifferentiableAt 𝓘(ℝ) I.tangent (fun s ↦ TotalSpace.mk' E (γ s) (Q s)) t)
+    (hP₀ : alongCurve (leviCivitaConnection I M) γ P t = 0)
+    (hQ₀ : alongCurve (leviCivitaConnection I M) γ Q t = 0) :
+    HasDerivAt (fun s ↦ hessian I f (γ s) (P s) (Q s))
+      (-(⟪leviCivitaConnection I M (mgradient I f) (γ t) (P t),
+          leviCivitaConnection I M (mgradient I f) (γ t) (Q t)⟫_ℝ +
+        ⟪(leviCivitaConnection I M).curvatureTensor (γ t) (P t)
+          (mgradient I f (γ t)) (mgradient I f (γ t)), Q t⟫_ℝ)) t := by
+  exact hasDerivAt_hessian_riccati_parallel_on isOpen_univ hf.contMDiffOn (mem_univ _)
+    (fun x _ ↦ hc x) hγ hγ' hP hQ hP₀ hQ₀
 
 end TauCeti.Manifold
