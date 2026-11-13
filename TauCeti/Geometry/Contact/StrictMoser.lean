@@ -54,10 +54,12 @@ The contact flat map `v ↦ ι_v dα + α(v) α` (`TauCeti.SmoothForm.contactFla
   (`TauCeti.SmoothForm.contMDiffAt_sectionAlong_strictContactMoserVectorField`).
 
 Compared with Gray's horizontal contact-Moser equation (`TauCeti.Geometry.Contact.Moser`), whose
-solution only satisfies `L_Y α + β = β(R_α) α` and so preserves the contact structure up to a
-conformal factor, the strict equation preserves the form `α` itself. The price is the
-Reeb-direction equation, an ordinary differential equation along the Reeb flow, which this file
-takes as a hypothesis.
+solution `Y` only satisfies `L_Y α + β = β(R_α) α`, the strict equation prescribes `L_X α`
+exactly. For a family of contact forms `α_t`, Gray's equation with `β = ∂_t α_t` integrates to a
+flow that pulls `α_t` back to a positive multiple of `α_s`, whereas the strict equation with
+`β = -∂_t α_t` integrates to a flow that pulls `α_t` back to `α_s` itself (see below). The price is
+the Reeb-direction equation, an ordinary differential equation along the Reeb flow, which this
+file takes as a hypothesis.
 
 For a smooth family of contact forms `α_t`, represented by a one-form on `ℝ × M`, and a smooth
 time-dependent function `h_t`, the **strict Moser vector field**
