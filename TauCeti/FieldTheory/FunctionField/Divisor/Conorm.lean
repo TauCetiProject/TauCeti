@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The conorm of a divisor along an extension of function fields
@@ -327,12 +328,6 @@ theorem finrank_mul_degree_conorm (hF : IsFunctionField k F) (D : Divisor k F) :
     k F hF P fun _ ↦ Set.Finite.mem_toFinset _
 
 omit [Algebra.IsIntegral k k'] in
-private theorem isIntegral_of_finrank_pos (h : 0 < Module.finrank k k') :
-    Algebra.IsIntegral k k' :=
-  haveI := Module.finite_of_finrank_pos h
-  inferInstance
-
-omit [Algebra.IsIntegral k k'] in
 private theorem degree_conorm_of_cross_mul
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k')
     (D : Divisor k F)
@@ -368,7 +363,7 @@ finiteness assumption on `k' / k` is needed. -/
 theorem degree_conorm (hF : IsFunctionField k F)
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
     degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
-  haveI := isIntegral_of_finrank_pos k' (h ▸ Module.finrank_pos)
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Module.finrank_pos)
   degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm k' F' hF D)
 
 omit [Algebra.IsIntegral k k'] in
@@ -387,7 +382,7 @@ instead assumes that `F' / F` is separable. -/
 theorem degree_conorm_of_isSeparable [Algebra.IsSeparable F F']
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
     degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
-  haveI := isIntegral_of_finrank_pos k' (h ▸ Module.finrank_pos)
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Module.finrank_pos)
   degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
 omit [Algebra.IsIntegral k k'] in
@@ -409,7 +404,7 @@ where `k' = k` is that base field. -/
 theorem degree_conorm_of_finrank_eq_one (hF : IsFunctionField k F)
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
     degree (conorm k' F' D) = Module.finrank F F' * degree D :=
-  haveI := isIntegral_of_finrank_pos k' (h ▸ Nat.one_pos)
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Nat.one_pos)
   degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm k' F' hF D)
 
@@ -420,7 +415,7 @@ constants**, without requiring a function-field hypothesis on `F / k`. -/
 theorem degree_conorm_of_isSeparable_of_finrank_eq_one [Algebra.IsSeparable F F']
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
     degree (conorm k' F' D) = Module.finrank F F' * degree D :=
-  haveI := isIntegral_of_finrank_pos k' (h ▸ Nat.one_pos)
+  haveI := Algebra.IsIntegral.of_finrank_pos (h ▸ Nat.one_pos)
   degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
