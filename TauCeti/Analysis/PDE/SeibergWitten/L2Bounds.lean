@@ -51,8 +51,9 @@ statements work over an arbitrary measure space and take the function `g` standi
 an integrable function of integral zero, so they apply on any domain where that integral vanishes.
 On a closed Riemannian manifold this is the divergence theorem, and
 `TauCeti.SeibergWitten.integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami` states the
-`β` bound with the Laplace–Beltrami operator itself, for sections whose squared pointwise norms are
-continuous. The norm forms take the integrated `β` bound as a hypothesis, so they apply to both.
+`β` bound with the Laplace–Beltrami operator itself, for sections with `|β|²` of class `C²` and
+`|α|²` and `|∇_a α|²` continuous. The norm forms take the integrated `β` bound as a hypothesis,
+so they apply to both.
 
 ## References
 
@@ -114,24 +115,44 @@ everywhere, with `0 < r` and `8 c ≤ r`. Then
 functions `Dα` and `Dβ` satisfying these hypotheses. -/
 theorem integral_norm_sq_add_mul_integral_norm_sq_le {g : X → ℝ} (hr : 0 < r)
     (hcr : 8 * c ≤ r) (hg : Integrable g μ) (hg0 : ∫ x, g x ∂μ = 0)
-    (hα : Integrable (fun x ↦ ‖α x‖ ^ 2) μ) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
-    (hDα : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
+    (hα : Integrable (fun x ↦ ‖α x‖ ^ 2) μ) (hDα : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ)
     (hW : ∀ᵐ x ∂μ, -g x / 2 + ‖Dβ x‖ ^ 2 + r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
     ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
-  have hg' : Integrable (fun x ↦ -g x / 2) μ := hg.neg.div_const 2
-  have hgDβ : Integrable (fun x ↦ -g x / 2 + ‖Dβ x‖ ^ 2) μ := hg'.add hDβ
-  have hL : Integrable (fun x ↦ -g x / 2 + ‖Dβ x‖ ^ 2 + r / 16 * ‖β x‖ ^ 2) μ :=
-    hgDβ.add (hβ.const_mul _)
+  -- Both terms on the left are bounded by an integrable majorant `G`, which integrates to the
+  -- right-hand side because `g` has integral zero.
+  have hg' : Integrable (fun x ↦ g x / 2) μ := hg.div_const 2
   have hR : Integrable (fun x ↦ 8 * c ^ 2 / r * (‖Dα x‖ ^ 2 + ‖α x‖ ^ 2)) μ :=
     (hDα.add hα).const_mul _
-  have hint := integral_mono_ae hL hR <| by
+  set G := fun x ↦ g x / 2 + 8 * c ^ 2 / r * (‖Dα x‖ ^ 2 + ‖α x‖ ^ 2) with hGdef
+  have hG : Integrable G μ := hg'.add hR
+  have hGint : ∫ x, G x ∂μ = 8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
+    simp only [hGdef, integral_add hg' hR, integral_add hDα hα, integral_const_mul, integral_div,
+      hg0, zero_div, zero_add]
+  have hFG : ∀ᵐ x ∂μ, ‖Dβ x‖ ^ 2 + r / 16 * ‖β x‖ ^ 2 ≤ G x := by
     filter_upwards [hW] with x hx
-    exact neg_div_two_add_sq_add_mul_sq_le hr hcr hx
-  simp only [integral_add hgDβ (hβ.const_mul _), integral_add hg' hDβ,
-    integral_add hDα hα, integral_const_mul, integral_div, integral_neg, hg0] at hint
-  linarith
+    have := neg_div_two_add_sq_add_mul_sq_le hr hcr hx
+    rw [hGdef]
+    linarith
+  have hr16 : 0 ≤ r / 16 := by positivity
+  have hDβG : ∫ x, ‖Dβ x‖ ^ 2 ∂μ ≤ ∫ x, G x ∂μ := by
+    refine integral_mono_of_nonneg (.of_forall fun x ↦ by positivity) hG ?_
+    filter_upwards [hFG] with x hx
+    nlinarith [sq_nonneg ‖β x‖]
+  have hβG : ∫ x, r / 16 * ‖β x‖ ^ 2 ∂μ ≤ ∫ x, G x ∂μ := by
+    refine integral_mono_of_nonneg (.of_forall fun x ↦ by positivity) hG ?_
+    filter_upwards [hFG] with x hx
+    nlinarith [sq_nonneg ‖Dβ x‖]
+  rw [← hGint, ← integral_const_mul]
+  by_cases hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ
+  · by_cases hβ : Integrable (fun x ↦ r / 16 * ‖β x‖ ^ 2) μ
+    · rw [← integral_add hDβ hβ]
+      exact integral_mono_of_nonneg (.of_forall fun x ↦ by positivity) hG hFG
+    · rw [integral_undef hβ, add_zero]
+      exact hDβG
+  · rw [integral_undef hDβ, zero_add]
+    exact hβG
 
 /-- Taking square roots in an `L²` bound: if `Z ≤ (K² / r) (T + T')`, then
 `√Z ≤ K r^(-1/2) (√T + √T')`. -/
@@ -187,13 +208,18 @@ are any functions `Dα`, `Dβ`, `Dα'` and `Dbar` satisfying these hypotheses. -
 theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x} {Dbar : (x : X) → F₄ x}
     (hr16 : 16 ≤ r) (hcr : 64 * c ^ 4 ≤ r) (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ)
     (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ) (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ)
-    (hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ)
     (hbound : ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ))
     (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ≤ ‖Dα' x‖ + ‖Dbar x‖)
     (hdirac : ∀ᵐ x ∂μ, ‖Dbar x‖ ≤ c * (‖Dβ x‖ + ‖β x‖)) :
     ∫ x, ‖Dbar x‖ ^ 2 ∂μ ≤ 64 * c ^ 4 / r * (∫ x, ‖Dα' x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ) := by
   have hr : 0 < r := by linarith
+  -- If `|∂bar_a α|²` is not integrable, its integral vanishes.
+  by_cases hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ; swap
+  · rw [integral_undef hDbar]
+    have hT' : 0 ≤ ∫ x, ‖Dα' x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
+    have hT₂ : 0 ≤ ∫ x, ‖α x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
+    positivity
   set P := ∫ x, ‖Dβ x‖ ^ 2 ∂μ
   set Q := ∫ x, ‖β x‖ ^ 2 ∂μ
   set T₁ := ∫ x, ‖Dα x‖ ^ 2 ∂μ
@@ -244,15 +270,15 @@ theorem integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x} 
 theorem sqrt_integral_norm_sq_le_of_norm_le_mul_add_norm {Dα' : (x : X) → F₃ x}
     {Dbar : (x : X) → F₄ x} (hr16 : 16 ≤ r) (hcr : 64 * c ^ 4 ≤ r)
     (hβ : Integrable (fun x ↦ ‖β x‖ ^ 2) μ) (hDβ : Integrable (fun x ↦ ‖Dβ x‖ ^ 2) μ)
-    (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ) (hDbar : Integrable (fun x ↦ ‖Dbar x‖ ^ 2) μ)
+    (hDα' : Integrable (fun x ↦ ‖Dα' x‖ ^ 2) μ)
     (hbound : ∫ x, ‖Dβ x‖ ^ 2 ∂μ + r / 16 * ∫ x, ‖β x‖ ^ 2 ∂μ ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂μ + ∫ x, ‖α x‖ ^ 2 ∂μ))
     (hsplit : ∀ᵐ x ∂μ, ‖Dα x‖ ≤ ‖Dα' x‖ + ‖Dbar x‖)
     (hdirac : ∀ᵐ x ∂μ, ‖Dbar x‖ ≤ c * (‖Dβ x‖ + ‖β x‖)) :
     √(∫ x, ‖Dbar x‖ ^ 2 ∂μ) ≤
       8 * c ^ 2 / √r * (√(∫ x, ‖Dα' x‖ ^ 2 ∂μ) + √(∫ x, ‖α x‖ ^ 2 ∂μ)) := by
-  have hZ := integral_norm_sq_le_of_norm_le_mul_add_norm hr16 hcr hβ hDβ hDα' hDbar
-    hbound hsplit hdirac
+  have hZ := integral_norm_sq_le_of_norm_le_mul_add_norm hr16 hcr hβ hDβ hDα' hbound hsplit
+    hdirac
   have hr : 0 < r := by linarith
   have hT' : 0 ≤ ∫ x, ‖Dα' x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
   have hT₂ : 0 ≤ ∫ x, ‖α x‖ ^ 2 ∂μ := integral_nonneg fun x ↦ by positivity
@@ -280,8 +306,8 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
 
 /-- **Taubes's `L²` bound on `β` on a closed manifold.** On a compact Riemannian manifold without
 boundary, with a `C¹` Riemannian metric, let `α`, `β`, `Dα`, `Dβ` be sections of families of
-seminormed groups, standing for `α`, `β`, `∇_a α`, `∇β`, such that `|α|²`, `|∇_a α|²` and `|∇β|²`
-are continuous and `|β|²` is of class `C²`, satisfying the projected Weitzenböck inequality
+seminormed groups, standing for `α`, `β`, `∇_a α`, `∇β`, such that `|α|²` and `|∇_a α|²` are
+continuous and `|β|²` is of class `C²`, satisfying the projected Weitzenböck inequality
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)` with the
 Laplace–Beltrami operator `Δ = div ∘ grad`. If `0 < r` and `8 c ≤ r`, then
 `∫ |∇β|² + (r / 16) ∫ |β|² ≤ (8 c² / r) (∫ |∇_a α|² + ∫ |α|²)` for the Riemannian volume. -/
@@ -289,7 +315,6 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami
     {α : (x : M) → A x} {β : (x : M) → B x} {Dα : (x : M) → F₁ x} {Dβ : (x : M) → F₂ x}
     (hr : 0 < r) (hcr : 8 * c ≤ r) (hα : Continuous fun x ↦ ‖α x‖ ^ 2)
     (hβ : ContMDiff I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2)) (hDα : Continuous fun x ↦ ‖Dα x‖ ^ 2)
-    (hDβ : Continuous fun x ↦ ‖Dβ x‖ ^ 2)
     (hW : ∀ x, -laplaceBeltrami I (fun y ↦ ‖β y‖ ^ 2) x / 2 + ‖Dβ x‖ ^ 2 +
         r / 4 * (‖α x‖ ^ 2 + ‖β x‖ ^ 2 + 1) * ‖β x‖ ^ 2 ≤
       c * ‖β x‖ * (‖Dα x‖ + ‖α x‖ + ‖β x‖)) :
@@ -302,7 +327,7 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami
   exact integral_norm_sq_add_mul_integral_norm_sq_le hr hcr
     (hcpt _ (continuous_laplaceBeltrami hβ))
     (integral_laplaceBeltrami_eq_zero hβ (HasCompactSupport.of_compactSpace _))
-    (hcpt _ hα) (hcpt _ hβ.continuous) (hcpt _ hDα) (hcpt _ hDβ)
+    (hcpt _ hα) (hcpt _ hDα)
     (Filter.Eventually.of_forall hW)
 
 end Manifold
