@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
@@ -64,7 +65,8 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_map_algebraMap`: evaluation is compatible with extension of scalars.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
-* `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
+  the Gauss-norm bound in an ultrametric algebra, in particular for restricted series.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
   bounded by `C` gives an evaluation bound by `C`, even without norm-one identity in the target;
   `PowerSeries.norm_evalAt_le_gaussNorm_of_norm_algebraMap_le` is the contractive case.
@@ -73,11 +75,11 @@ coefficient rings here may have nilpotents.
   `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
   addition, finite sums and multiplication on series whose terms at the point are absolutely
   summable.
-* `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
-  `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
-  `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
-  `PowerSeries.IsRestricted.evalAt_smul` and `PowerSeries.IsRestricted.evalAt_sum` record the
-  compatibility with scalars and finite sums.
+* `PowerSeries.IsRestricted.summable_smul_pow`, `PowerSeries.IsRestricted.hasSum_evalAt`,
+  `PowerSeries.IsRestricted.evalAt_add` and `PowerSeries.IsRestricted.evalAt_mul`: a series
+  restricted at `c` converges at every `b` with `‖b‖ ≤ c` in a complete ultrametric algebra,
+  additively and multiplicatively in the series; `PowerSeries.IsRestricted.evalAt_smul` and
+  `PowerSeries.IsRestricted.evalAt_sum` record the compatibility with scalars and finite sums.
 * `PowerSeries.IsRestricted.evalAtHom`: evaluation at such `b` as a ring homomorphism on the
   restricted series.
 * `PowerSeries.evalAt_eq_zero_iff_of_isUnit_X_pow_mul_finprod_eq`: zeros in the closed disc of a
@@ -470,12 +472,11 @@ section Restricted
 open Filter
 open scoped Topology
 
-variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
-  {c : ℝ} {f g : R⟦X⟧} {b : A}
-
 /-- At a point `b` with `‖b‖ ≤ c`, the terms `aₙ • bⁿ` of a series restricted at the radius `c`
 tend to zero. -/
-theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+theorem IsRestricted.tendsto_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [SMulZeroClass R A] [IsBoundedSMul R A] {c : ℝ} {f : R⟦X⟧} {b : A}
+    (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
     Tendsto (fun n ↦ coeff n f • b ^ n) cofinite (𝓝 0) := by
   refine squeeze_zero_norm' ?_ ((isRestricted_iff c f).mp hf)
   -- `‖bⁿ‖ ≤ ‖b‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is set aside
@@ -483,6 +484,24 @@ theorem IsRestricted.tendsto_smul_pow (hf : f.IsRestricted c) (hb : ‖b‖ ≤ 
   exact (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_left
     ((norm_pow_le' b (Nat.pos_of_ne_zero (Set.mem_compl_singleton_iff.mp hn))).trans
       (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)
+
+/-- In a complete ultrametric seminormed ring with bounded scalar action, a series restricted at `c`
+is summable at every point `b` with `‖b‖ ≤ c`. -/
+theorem IsRestricted.summable_smul_pow {R A : Type*} [NormedRing R] [SeminormedRing A]
+    [SMulZeroClass R A] [IsBoundedSMul R A] [IsUltrametricDist A] [CompleteSpace A]
+    {c : ℝ} {f : R⟦X⟧} (hf : f.IsRestricted c) {b : A} (hb : ‖b‖ ≤ c) :
+    Summable fun n ↦ coeff n f • b ^ n :=
+  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (hf.tendsto_smul_pow hb)
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {c : ℝ} {f g : R⟦X⟧} {b : A}
+
+/-- In an ultrametric normed algebra with `‖1‖ = 1`, a series restricted at `c` satisfies the
+Gauss-norm bound `‖f(b)‖ ≤ gaussNorm norm c f` on the closed disc `‖b‖ ≤ c`. -/
+theorem IsRestricted.norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A]
+    (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
+    ‖f.evalAt b‖ ≤ gaussNorm norm c f :=
+  PowerSeries.norm_evalAt_le_gaussNorm (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf) hb
 
 variable [IsUltrametricDist A] [CompleteSpace A]
 
@@ -492,8 +511,7 @@ variable [IsUltrametricDist A] [CompleteSpace A]
 theorem IsRestricted.hasSum_evalAt (hf : f.IsRestricted c) (hb : ‖b‖ ≤ c) :
     HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
   rw [evalAt_def]
-  exact (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (hf.tendsto_smul_pow hb)).hasSum
+  exact (hf.summable_smul_pow hb).hasSum
 
 /-- Evaluation at a point of norm at most `c` is additive on series restricted at `c`. -/
 theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) (hb : ‖b‖ ≤ c) :

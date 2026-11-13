@@ -72,7 +72,7 @@ theorem padicRealValuation_coeff_halfSlopeSeries (n : ℕ) :
     padicRealValuation p (PowerSeries.coeff n (halfSlopeSeries p)) =
       ((⌈(n : ℚ) / 2⌉₊ : ℝ) : WithTop ℝ) := by
   rw [coeff_halfSlopeSeries, (padicRealValuation p).map_pow, padicRealValuation_p, nsmul_one]
-  rfl
+  exact (WithTop.coe_natCast _).symm
 
 /-- The lower linear growth `liminf_{n → ∞} v(aₙ) / n` of `halfSlopeSeries p` equals `1 / 2`. -/
 theorem linearGrowthInf_halfSlopeSeries :
@@ -100,11 +100,9 @@ theorem radius_halfSlopeSeries :
     (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) linearGrowthInf_halfSlopeSeries,
     Real.sqrt_eq_rpow]
 
-/-- Over `ℚ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is `1`, strictly
-smaller than its intrinsic radius `√p`. -/
+/-- Over `ℚ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is `1`. -/
 theorem convergenceRadius_padic_halfSlopeSeries :
-    (halfSlopeSeries p).convergenceRadius ℚ_[p] = 1 ∧
-      (halfSlopeSeries p).convergenceRadius ℚ_[p] < (halfSlopeSeries p).radius := by
+    (halfSlopeSeries p).convergenceRadius ℚ_[p] = 1 := by
   have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
   have hdisc : ∀ y : ℚ_[p], ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = (p : ℝ) ^ m := fun y hy ↦
     ⟨-y.valuation, Padic.norm_eq_zpow_neg_valuation (norm_ne_zero_iff.mp hy)⟩
@@ -113,11 +111,19 @@ theorem convergenceRadius_padic_halfSlopeSeries :
     rw [hfl0]
     norm_num
   have hatt : ∃ x : ℚ_[p], ‖x‖ = (p : ℝ) ^ ⌊(1 / 2 : ℝ)⌋ := ⟨1, by rw [hfl0, zpow_zero, norm_one]⟩
-  obtain ⟨heq, hlt⟩ := (halfSlopeSeries p).convergenceRadius_lt_radius_of_linearGrowthInf
+  have heq := (halfSlopeSeries p).convergenceRadius_eq_ofReal_zpow_floor
     (padicRealValuation p) hp1 (fun _ hx ↦ norm_eq_rpow_neg_padicRealValuation hx) ℚ_[p]
     hdisc linearGrowthInf_halfSlopeSeries hfloor hatt
-  rw [hfl0, zpow_zero, ENNReal.ofReal_one] at heq
-  exact ⟨heq, hlt⟩
+  rwa [hfl0, zpow_zero, ENNReal.ofReal_one] at heq
+
+/-- Over `ℚ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is strictly
+smaller than its intrinsic radius `√p`. -/
+theorem convergenceRadius_padic_lt_radius_halfSlopeSeries :
+    (halfSlopeSeries p).convergenceRadius ℚ_[p] < (halfSlopeSeries p).radius := by
+  have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
+  have hsqrt : (1 : ℝ) < Real.sqrt p := by rwa [Real.lt_sqrt zero_le_one, one_pow]
+  rw [convergenceRadius_padic_halfSlopeSeries, radius_halfSlopeSeries, ← ENNReal.ofReal_one]
+  exact ENNReal.ofReal_lt_ofReal_iff (zero_lt_one.trans hsqrt) |>.mpr hsqrt
 
 /-- Over `ℚ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ ≤ 1`. -/
 theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
@@ -125,7 +131,7 @@ theorem summable_halfSlopeSeries_padic_iff {x : ℚ_[p]} :
   constructor
   · intro hs
     have hle : ‖x‖ₑ ≤ 1 :=
-      (le_convergenceRadius_of_summable hs).trans_eq convergenceRadius_padic_halfSlopeSeries.1
+      (le_convergenceRadius_of_summable hs).trans_eq convergenceRadius_padic_halfSlopeSeries
     simpa [← ofReal_norm] using hle
   · intro hx
     have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
@@ -198,37 +204,47 @@ section PolynomialFiniteRootNorm
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Every root of `1 - p X ^ 2 ∈ ℚ_[p][X]` in `ℂ_[p]` has finite positive norm `√p`, and such a
-root exists in `ℂ_[p]`; nevertheless, the associated power series has infinite intrinsic radius and
-infinite pointwise convergence radii over both `ℚ_[p]` and `ℂ_[p]`. -/
-theorem exists_root_norm_eq_sqrt_and_radius_coe_eq_top :
-    let P : Polynomial ℚ_[p] := 1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2
-    (∃ α : ℂ_[p], Polynomial.aeval α P = 0 ∧ ‖α‖ = Real.sqrt p) ∧
-      (∀ α : ℂ_[p], Polynomial.aeval α P = 0 → ‖α‖ = Real.sqrt p) ∧
-      (P : ℚ_[p]⟦X⟧).radius = ⊤ ∧
-      (P : ℚ_[p]⟦X⟧).convergenceRadius ℚ_[p] = ⊤ ∧
-      (P : ℚ_[p]⟦X⟧).convergenceRadius ℂ_[p] = ⊤ := by
-  dsimp only
-  let P : Polynomial ℚ_[p] := 1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2
+/-- Every root of `1 - p X ^ 2 ∈ ℚ_[p][X]` in `ℂ_[p]` has finite positive norm `√p`. -/
+theorem norm_eq_sqrt_of_aeval_one_sub_C_mul_X_sq_eq_zero {α : ℂ_[p]}
+    (hα : Polynomial.aeval α (1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2) = 0) :
+    ‖α‖ = Real.sqrt p := by
   have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr (Fact.out : p.Prime).pos
+  have h1 : 1 - (p : ℂ_[p]) * α ^ 2 = 0 := by simpa using hα
+  have hmul : ‖(p : ℂ_[p]) * α ^ 2‖ = 1 := by rw [← sub_eq_zero.mp h1, norm_one]
+  rw [norm_mul, PadicComplex.norm_p, norm_pow] at hmul
+  have hsq : ‖α‖ ^ 2 = (p : ℝ) := by
+    calc ‖α‖ ^ 2 = (p : ℝ) * ((p : ℝ)⁻¹ * ‖α‖ ^ 2) := by
+          rw [← mul_assoc, mul_inv_cancel₀ hp0.ne', one_mul]
+      _ = (p : ℝ) := by rw [hmul, mul_one]
+  rw [← hsq, Real.sqrt_sq (norm_nonneg α)]
+
+/-- The quadratic polynomial `1 - p X ^ 2 ∈ ℚ_[p][X]` has a root in `ℂ_[p]` of norm `√p`. -/
+theorem exists_aeval_one_sub_C_mul_X_sq_eq_zero :
+    ∃ α : ℂ_[p],
+      Polynomial.aeval α (1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2) = 0 ∧
+        ‖α‖ = Real.sqrt p := by
   have hp_ne : (p : ℂ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  have haeval (α : ℂ_[p]) : Polynomial.aeval α P = 1 - (p : ℂ_[p]) * α ^ 2 := by
-    simp [P]
-  have hnorm_of_root (α : ℂ_[p]) (hα : Polynomial.aeval α P = 0) : ‖α‖ = Real.sqrt p := by
-    rw [haeval, sub_eq_zero] at hα
-    have hmul : ‖(p : ℂ_[p]) * α ^ 2‖ = 1 := by rw [← hα, norm_one]
-    rw [norm_mul, PadicComplex.norm_p, norm_pow] at hmul
-    have hsq : ‖α‖ ^ 2 = (p : ℝ) := by
-      calc ‖α‖ ^ 2 = (p : ℝ) * ((p : ℝ)⁻¹ * ‖α‖ ^ 2) := by
-            rw [← mul_assoc, mul_inv_cancel₀ hp0.ne', one_mul]
-        _ = (p : ℝ) := by rw [hmul, mul_one]
-    rw [← hsq, Real.sqrt_sq (norm_nonneg α)]
   obtain ⟨α, hα⟩ := IsAlgClosed.exists_pow_nat_eq (p : ℂ_[p])⁻¹ two_pos
-  have hα_root : Polynomial.aeval α P = 0 := by
-    rw [haeval, hα, mul_inv_cancel₀ hp_ne, sub_self]
-  exact ⟨⟨α, hα_root, hnorm_of_root α hα_root⟩, hnorm_of_root,
-    PowerSeries.radius_coe P, PowerSeries.convergenceRadius_coe P ℚ_[p],
-    PowerSeries.convergenceRadius_coe P ℂ_[p]⟩
+  have hα_root : Polynomial.aeval α (1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2) = 0 := by
+    simp [hα, mul_inv_cancel₀ hp_ne]
+  exact ⟨α, hα_root, norm_eq_sqrt_of_aeval_one_sub_C_mul_X_sq_eq_zero hα_root⟩
+
+-- Despite having roots of finite norm `√p`, `1 - p X ^ 2` has infinite intrinsic and pointwise
+-- convergence radii over both `ℚ_[p]` and `ℂ_[p]`.
+example :
+    (((1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2 : Polynomial ℚ_[p]) : ℚ_[p]⟦X⟧)).radius =
+      ⊤ :=
+  PowerSeries.radius_coe _
+
+example :
+    (((1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2 : Polynomial ℚ_[p]) :
+      ℚ_[p]⟦X⟧)).convergenceRadius ℚ_[p] = ⊤ :=
+  PowerSeries.convergenceRadius_coe _ _
+
+example :
+    (((1 - Polynomial.C (p : ℚ_[p]) * Polynomial.X ^ 2 : Polynomial ℚ_[p]) :
+      ℚ_[p]⟦X⟧)).convergenceRadius ℂ_[p] = ⊤ :=
+  PowerSeries.convergenceRadius_coe _ _
 
 end PolynomialFiniteRootNorm
 
