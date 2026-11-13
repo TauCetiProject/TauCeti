@@ -386,14 +386,16 @@ theorem smoothSingularSubcomplexMap_ι (hφ : ContMDiff I J ∞ φ) :
 
 /-- A smooth map acts on the underlying singular simplex of a smooth simplex as on singular
 simplices. -/
+@[simp]
 theorem coe_smoothSingularSubcomplexMap_app (hφ : ContMDiff I J ∞ φ) {k : SimplexCategoryᵒᵖ}
     (σ : (smoothSingularSubcomplex I M : SSet).obj k) :
-    ((smoothSingularSubcomplexMap φ hφ).app k σ).1 =
+    (dsimp% only [Subfunctor.toFunctor_obj] ((smoothSingularSubcomplexMap φ hφ).app k σ).1) =
       (TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)).app k σ.1 :=
   (rfl)
 
 /-- For open sets `U ≤ V` of `M`, a singular simplex of `U` is smooth exactly when its image in
 `V` is. -/
+@[simp]
 theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Opens M} (h : U ≤ V) :
     (smoothSingularSubcomplex I V).preimage
         (TopCat.toSSet.map (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion h,
