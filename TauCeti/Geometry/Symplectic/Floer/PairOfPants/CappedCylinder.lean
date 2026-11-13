@@ -573,7 +573,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_univ
     (contMDiff_cappedCylinderComponent hHb hHbs hL Complex.I)
     (fun s ↦ funext fun x ↦ by simpa using congrFun (periodic_cappedCylinderComponent Hb L 1 s 0) x)
     (fun z hz ↦ funext fun x ↦ ?_) (fun z hz ↦ funext fun x ↦ ?_)
-    (hBb inf) (hBb zero) hu hper ha hb hx_inf hx₀ hE hA hR
+    (fun t _ ↦ hBb inf t) (fun t _ ↦ hBb zero t) hu hper ha hb hx_inf hx₀ hE hA hR
   · simp [cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ hz]
   · simp [cappedCylinderComponent_of_two_le (hHb zero) hL₂ (by linarith : 2 ≤ z.1)]
 

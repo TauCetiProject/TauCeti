@@ -120,8 +120,9 @@ compactness and counting of continuation cylinders are not treated here.
 **The whole cylinder.** All of the above concern a rectangle `[a, b] × [0, 1]`. Letting
 `a → -∞` and `b → ∞` gives the identity for a solution asymptotic to loops `x₀` at `s = -∞` and
 `x₁` at `s = ∞`. For a perturbation `K = K_s ds + K_t dt` with `K_s(s, 1) = K_s(s, 0)`, equal to
-bounded `H₀(t) dt` for `s ≤ -c` and `H₁(t) dt` for `s ≥ c`, and a `C¹` map `u`, `1`-periodic in
-`t`, whose energy, area and curvature densities are integrable over the strip `ℝ × [0, 1]`,
+`H₀(t) dt` for `s ≤ -c` and `H₁(t) dt` for `s ≥ c`, bounded for `t ∈ [0, 1]`, and a `C¹` map `u`,
+`1`-periodic in `t`, whose energy, area and curvature densities are integrable over the strip
+`ℝ × [0, 1]`,
 
 `∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
 
@@ -760,10 +761,10 @@ variable {ι : Type*} {Ks Kt : ℝ × ℝ → M → ℝ}
 /-- **The energy identity over the whole cylinder.** Let `ω` be a nondegenerate two-form on a
 finite-dimensional manifold, such as a closed symplectic manifold, and let `K = K_s ds + K_t dt` be
 a `C¹` perturbation with `K_s(s, 1) = K_s(s, 0)` which is cylindrical on the two ends: `K_t = H₀`
-for `s ≤ -c` and `K_t = H₁` for `s ≥ c`, with `H₀` and `H₁` bounded. Let `u` be a `C¹` map with
-`u(s, 1) = u(s, 0)`, whose energy density, symplectic area density and curvature are integrable
-over the strip `ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and `b i → ∞`, and
-the loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x₀` and `x₁`, then
+for `s ≤ -c` and `K_t = H₁` for `s ≥ c`, with `H₀` and `H₁` bounded for `t ∈ [0, 1]`. Let `u` be
+a `C¹` map with `u(s, 1) = u(s, 0)`, whose energy density, symplectic area density and curvature
+are integrable over the strip `ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and
+`b i → ∞`, and the loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x₀` and `x₁`, then
 
 `∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
 
@@ -776,7 +777,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondeg
     (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hKs₁ : ∀ s, Ks (s, 1) = Ks (s, 0)) {H₀ H₁ : ℝ → M → ℝ} {c : ℝ}
     (hK₀ : ∀ z : ℝ × ℝ, z.1 ≤ -c → Kt z = H₀ z.2) (hK₁ : ∀ z : ℝ × ℝ, c ≤ z.1 → Kt z = H₁ z.2)
-    {B₀ B₁ : ℝ} (hB₀ : ∀ t x, |H₀ t x| ≤ B₀) (hB₁ : ∀ t x, |H₁ t x| ≤ B₁)
+    {B₀ B₁ : ℝ} (hB₀ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₀ t x| ≤ B₀)
+    (hB₁ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₁ t x| ≤ B₁)
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hper : ∀ s, u (s, 1) = u (s, 0))
     {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {a b : ι → ℝ} (ha : Tendsto a l atBot)
     (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
@@ -801,14 +803,15 @@ theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondeg
     (hKt.continuous.comp (by fun_prop : Continuous fun p : ℝ × M ↦ ((c, p.1), p.2))).congr
       fun p ↦ by simp [hK₁ (c, p.1) le_rfl, uncurry_def]
   -- Along converging loops, the Hamiltonian terms converge by dominated convergence.
-  have hloop {H : ℝ → M → ℝ} (hHc : Continuous (uncurry H)) {B : ℝ} (hB : ∀ t x, |H t x| ≤ B)
+  have hloop {H : ℝ → M → ℝ} (hHc : Continuous (uncurry H)) {B : ℝ}
+      (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B)
       {d : ι → ℝ} {x : ℝ → M} (hx : ∀ t, Tendsto (fun i ↦ u (d i, t)) l (𝓝 (x t))) :
       Tendsto (fun i ↦ ∫ t in 0..1, H t (u (d i, t))) l (𝓝 (∫ t in 0..1, H t (x t))) :=
     intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ B)
       (Eventually.of_forall fun i ↦ (hHc.comp (continuous_id.prodMk
         (hu.continuous.comp (continuous_const.prodMk continuous_id)))).aestronglyMeasurable)
-      (Eventually.of_forall fun i ↦ ae_of_all _ fun t _ ↦
-        (Real.norm_eq_abs _).trans_le (hB _ _))
+      (Eventually.of_forall fun i ↦ ae_of_all _ fun t ht ↦ (Real.norm_eq_abs _).trans_le
+        (hB t (Ioc_subset_Icc_self (uIoc_of_le (zero_le_one (α := ℝ)) ▸ ht)) _))
       intervalIntegrable_const
       (ae_of_all _ fun t _ ↦ (hHc.tendsto (t, x t)).comp (tendsto_const_nhds.prodMk_nhds (hx t)))
   -- Far out on the ends, the identity holds on the rectangle `[a i, b i] × [0, 1]`.
@@ -848,7 +851,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondeg
   exact hi.symm
 
 /-- **The energy identity of a Floer cylinder over the whole cylinder.** For the cylindrical
-perturbation `K = H_t dt` of a bounded `C¹` Hamiltonian, under the hypotheses of
+perturbation `K = H_t dt` of a `C¹` Hamiltonian bounded for `t ∈ [0, 1]`, under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`, the curvature vanishes and
 the energy of `u` over the strip `ℝ × [0, 1]` is its symplectic area plus the Hamiltonian terms of
 the asymptotic loops:
@@ -856,7 +859,7 @@ the asymptotic loops:
 `∫ E = ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt - ∫₀¹ H(t, x₀(t)) dt`. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
-    (hB : ∀ t x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
     {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
     (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
@@ -888,7 +891,7 @@ output is at most that of the input capped by `D` glued to `u`: the action incre
 cylinders, from the negative end to the positive end. -/
 theorem IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
-    (hB : ∀ t x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
     {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
     (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
