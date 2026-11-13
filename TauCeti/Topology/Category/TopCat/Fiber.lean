@@ -71,24 +71,6 @@ lemma coe_preimageMap_apply {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f :
     (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (preimageMap hf S x : E') = f x :=
   (rfl)
 
-/-- The restriction of a map `f` over `B` to the parts over `S` commutes with the inclusions of
-these parts into `E` and `E'`. -/
-@[reassoc]
-lemma preimageMap_comp_ofHom_val {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
-    (hf : f ≫ p' = p) (S : Set B) :
-    preimageMap hf S ≫ TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ =
-      TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f :=
-  (rfl)
-
-/-- For `S ⊆ T`, the restrictions of a map `f` over `B` to the parts over `S` and over `T` commute
-with the inclusions `p⁻¹(S) ⊆ p⁻¹(T)` and `p'⁻¹(S) ⊆ p'⁻¹(T)`. -/
-@[reassoc]
-lemma preimageMap_comp_ofHom_inclusion {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B}
-    {f : E ⟶ E'} (hf : f ≫ p' = p) {S T : Set B} (hST : S ⊆ T) :
-    preimageMap hf S ≫ TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono hST)) =
-      TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono hST)) ≫ preimageMap hf T :=
-  (rfl)
-
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :

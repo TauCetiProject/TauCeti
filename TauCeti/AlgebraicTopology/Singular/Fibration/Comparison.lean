@@ -91,8 +91,11 @@ variable (hf : f ≫ p' = p)
 private def preimagePairMap {S T : Set B} (hST : S ⊆ T) :
     TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST) ⟶
       TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST) :=
-  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S)
-    (TopCat.Hom.preimageMap_comp_ofHom_inclusion hf hST)
+  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S) (by
+    ext x
+    -- Both sides send a point `x` of `p⁻¹(S)` to `f x`.
+    exact Subtype.ext ((TopCat.Hom.coe_preimageMap_apply hf S x).trans
+      (TopCat.Hom.coe_preimageMap_apply hf T (Set.inclusion (preimage_mono hST) x)).symm))
 
 private lemma preimagePairMap_fst {S T : Set B} (hST : S ⊆ T) :
     TopPair.Hom.fst (preimagePairMap hf hST) = TopCat.Hom.preimageMap hf T :=
@@ -317,17 +320,12 @@ private theorem isIso_singularHomologyMap_of_commSq_of_cwComplex (sq : CommSq f 
   have h := isIso_singularHomologyMap_preimage_of_commSq (C := univ) hp hp' R sq
     (fun b _ ↦ hfib b) k
   -- The parts of the total spaces over the whole base are the total spaces.
-  have hι (X : _root_.TopCat.{u}) (q : X ⟶ B) :
-      IsIso (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-        _root_.TopCat.of (q ⁻¹' univ) ⟶ X) :=
-    (_root_.TopCat.isIso_iff_isHomeomorph _).2
-      ⟨continuous_subtype_val, (isOpen_univ.preimage q.hom.continuous).isOpenMap_subtype_val,
-        Subtype.val_injective, fun x ↦ ⟨⟨x, trivial⟩, rfl⟩⟩
-  have := hι E p
-  have := hι E' p'
-  rw [← isIso_comp_left_iff (H.map (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
-      _root_.TopCat.of (p ⁻¹' univ) ⟶ E)), ← H.map_comp,
-    ← TopCat.Hom.preimageMap_comp_ofHom_val hf univ, H.map_comp]
+  let ι (X : _root_.TopCat.{u}) (q : X ⟶ B) : _root_.TopCat.of (q ⁻¹' univ) ≅ X :=
+    _root_.TopCat.isoOfHomeo (Homeomorph.Set.univ X)
+  have hcomm : TopCat.Hom.preimageMap hf univ ≫ (ι E' p').hom = (ι E p).hom ≫ f := by
+    ext x
+    exact TopCat.Hom.coe_preimageMap_apply hf univ x
+  rw [← isIso_comp_left_iff (H.map (ι E p).hom), ← H.map_comp, ← hcomm, H.map_comp]
   exact IsIso.comp_isIso' h inferInstance
 
 end Base
@@ -343,11 +341,7 @@ include hp hp'
 isomorphism.** Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations and `f : E ⟶ E'` a map over
 `B`. If for every `b : B` the map of fibres `p⁻¹(b) ⟶ p'⁻¹(b)` induces isomorphisms on `Hq(-; R)`
 in every degree, then `f` induces isomorphisms `Hₖ(E; R) ≅ Hₖ(E'; R)`. This is the homological
-counterpart of `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`.
-
-Over a CW complex this is proved by induction over the skeleta; in general, both fibrations are
-pulled back along a CW approximation of `B`, which changes neither the fibres nor, up to weak
-homotopy equivalence, the total spaces. -/
+counterpart of `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`. -/
 theorem isIso_singularHomologyMap_of_commSq (sq : CommSq f p p' (𝟙 B))
     (hfib : ∀ b q, IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).map (sq.fiberMap b))) (k : ℕ) :
