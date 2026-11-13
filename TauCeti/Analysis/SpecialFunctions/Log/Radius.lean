@@ -7,8 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
+import Mathlib.MeasureTheory.Integral.IntervalAverage
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # A weighted good radius for the logarithmic singularity
@@ -36,68 +37,28 @@ namespace CartanRadius
 
 noncomputable section
 
-private abbrev kernel (t : ℝ) : ℝ := Real.posLog (1 / |1 - t|)
+private def kernel (t : ℝ) : ℝ := Real.posLog (1 / |1 - t|)
 
 private abbrev majorantIntegral : ℝ :=
   ∫ t : ℝ in (1 / 4 : ℝ)..(4 : ℝ), Real.sqrt (2 / |1 - t|)
 
 private abbrev averageBound : ℝ := Real.log 2 + 4 * majorantIntegral + 1
 
-private lemma kernel_intervalIntegrable (A B : ℝ) : IntervalIntegrable kernel volume A B := by
-  have hm : MeromorphicOn (fun t : ℝ ↦ 1 / (1 - t)) (Set.uIcc A B) := by
+private lemma kernel_div_intervalIntegrable (a A B : ℝ) :
+    IntervalIntegrable (fun r ↦ kernel (r / a)) volume A B := by
+  have hm : MeromorphicOn (fun r : ℝ ↦ 1 / (1 - r / a)) (Set.uIcc A B) := by
     intro t _
     fun_prop
-  have heq : kernel = fun t : ℝ ↦ Real.posLog ‖1 / (1 - t)‖ := by
-    funext t
-    simp only [kernel, Real.norm_eq_abs, one_div, abs_inv]
-  rw [heq]
-  exact hm.intervalIntegrable_posLog_norm
+  simpa only [kernel, Real.norm_eq_abs, abs_div, abs_one, one_div, abs_inv] using
+    hm.intervalIntegrable_posLog_norm
 
-private lemma neg_log_le_sqrt_two_div {x : ℝ} (hx : 0 < x) (hxle : x ≤ 1) :
-    -Real.log x ≤ Real.sqrt (2 / x) := by
-  have hx0 : 0 ≤ x := le_of_lt hx
-  have ht : 0 ≤ -Real.log x := by
-    have : Real.log x ≤ 0 := Real.log_nonpos hx0 hxle
-    linarith
-  have hmain : (-Real.log x) ^ 2 / 2 ≤ Real.exp (-Real.log x) := by
-    simpa using Real.pow_div_factorial_le_exp (-Real.log x) ht 2
-  have hexp : Real.exp (-Real.log x) = x⁻¹ := by simp [Real.exp_neg, Real.exp_log hx]
-  have hsq2 : (-Real.log x) ^ 2 ≤ 2 * Real.exp (-Real.log x) := by nlinarith [hmain]
-  have hsq' : (-Real.log x) ^ 2 ≤ 2 / x := by simpa [hexp, div_eq_mul_inv, mul_assoc] using hsq2
-  have hy : 0 ≤ 2 / x := div_nonneg (by norm_num) (le_of_lt hx)
-  exact (Real.le_sqrt ht hy).2 hsq'
 
-private lemma kernel_le_sqrt_aux {t : ℝ} :
-    Real.posLog (1 / |1 - t|) ≤ Real.sqrt (2 / |1 - t|) := by
-  by_cases ht : |1 - t| ≤ 1
-  · by_cases h0 : |1 - t| = 0
-    · have : t = 1 := by
-        have : 1 - t = 0 := by simpa [abs_eq_zero] using h0
-        linarith
-      subst this
-      simp
-    · have hpos : 0 < |1 - t| := lt_of_le_of_ne (abs_nonneg _) (Ne.symm h0)
-      have hle : -Real.log |1 - t| ≤ Real.sqrt (2 / |1 - t|) :=
-        neg_log_le_sqrt_two_div (x := |1 - t|) hpos ht
-      have hlog : Real.log (1 / |1 - t|) = -Real.log |1 - t| := by simp [Real.log_inv]
-      have hnonneg : 0 ≤ Real.log (1 / |1 - t|) := by
-        exact Real.log_nonneg ((one_le_div hpos).2 ht)
-      have hmax : Real.posLog (1 / |1 - t|) = Real.log (1 / |1 - t|) :=
-        max_eq_right hnonneg
-      calc
-        Real.posLog (1 / |1 - t|) = Real.log (1 / |1 - t|) := hmax
-        _ = -Real.log |1 - t| := hlog
-        _ ≤ Real.sqrt (2 / |1 - t|) := hle
-  · have hlt : 1 < |1 - t| := lt_of_not_ge ht
-    have hle0 : Real.log (1 / |1 - t|) ≤ 0 := by
-      have hpos : 0 < |1 - t| := lt_trans (by norm_num) hlt
-      have : (1 / |1 - t| : ℝ) ≤ 1 := (div_le_one hpos).2 (le_of_lt hlt)
-      exact le_trans (Real.log_le_log (by positivity) this) (by simp)
-    have hmax : Real.posLog (1 / |1 - t|) = 0 := max_eq_left hle0
-    have hrhs : 0 ≤ Real.sqrt (2 / |1 - t|) := by
-      exact Real.sqrt_nonneg _
-    rw [hmax]
-    exact hrhs
+private lemma kernel_intervalIntegrable (A B : ℝ) : IntervalIntegrable kernel volume A B := by
+  simpa only [div_one] using kernel_div_intervalIntegrable 1 A B
+
+private lemma kernel_le_sqrt_aux {t : ℝ} : kernel t ≤ Real.sqrt (2 / |1 - t|) := by
+  rw [kernel, Real.posLog_apply, one_div, Real.log_inv]
+  exact max_le (Real.sqrt_nonneg _) (Real.neg_log_le_sqrt_two_div (abs_nonneg _))
 
 private lemma intervalIntegrable_majorant :
     IntervalIntegrable (fun t : ℝ ↦ Real.sqrt (2 / |1 - t|)) volume (1 / 4 : ℝ) 4 := by
@@ -137,24 +98,26 @@ private lemma kernel_le_log_two_of_le_half {t : ℝ} (ht : t ≤ (1 / 2 : ℝ)) 
     linarith
   have hfrac : (1 / |1 - t| : ℝ) ≤ 2 := by
     simpa using one_div_le_one_div_of_le (by norm_num : (0 : ℝ) < 1 / 2) hden
+  simp only [kernel]
   exact (Real.posLog_le_posLog (neg_one_lt_zero.le.trans (by positivity)) hfrac).trans_eq
     (Real.posLog_eq_log (by norm_num : (1 : ℝ) ≤ |2|))
 
-private lemma kernel_eq_zero_of_two_le {t : ℝ} (ht : (2 : ℝ) ≤ t) : kernel t = 0 := by
+private lemma kernel_eq_zero_of_one_le_abs {t : ℝ} (h : 1 ≤ |1 - t|) :
+    kernel t = 0 := by
+  rw [kernel]
   apply (Real.posLog_eq_zero_iff _).mpr
-  have hden : (1 : ℝ) ≤ |1 - t| := by
-    rw [abs_of_nonpos (by linarith : 1 - t ≤ 0)]
-    linarith
   rw [abs_of_nonneg (by positivity : 0 ≤ (1 / |1 - t| : ℝ))]
-  exact (div_le_one (lt_of_lt_of_le zero_lt_one hden)).mpr hden
+  exact (div_le_one (lt_of_lt_of_le zero_lt_one h)).mpr h
+
+private lemma kernel_eq_zero_of_two_le {t : ℝ} (ht : (2 : ℝ) ≤ t) : kernel t = 0 := by
+  apply kernel_eq_zero_of_one_le_abs
+  rw [abs_of_nonpos (by linarith : 1 - t ≤ 0)]
+  linarith
 
 private lemma kernel_eq_zero_of_nonpos {t : ℝ} (ht : t ≤ 0) : kernel t = 0 := by
-  apply (Real.posLog_eq_zero_iff _).mpr
-  have hden : (1 : ℝ) ≤ |1 - t| := by
-    rw [abs_of_nonneg (by linarith : 0 ≤ 1 - t)]
-    linarith
-  rw [abs_of_nonneg (by positivity : 0 ≤ (1 / |1 - t| : ℝ))]
-  exact (div_le_one (lt_of_lt_of_le zero_lt_one hden)).mpr hden
+  apply kernel_eq_zero_of_one_le_abs
+  rw [abs_of_nonneg (by linarith : 0 ≤ 1 - t)]
+  linarith
 
 -- The logarithmic singularity has a uniform mean on all nonnegative dyadic intervals.
 private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
@@ -202,20 +165,13 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
       dsimp [averageBound]
       linarith [Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 2)]
 
-private lemma kernel_div_intervalIntegrable (a A B : ℝ) :
-    IntervalIntegrable (fun r ↦ kernel (r / a)) volume A B := by
-  have hm : MeromorphicOn (fun r : ℝ ↦ 1 / (1 - r / a)) (Set.uIcc A B) := by
-    intro t _
-    fun_prop
-  simpa only [kernel, Real.norm_eq_abs, abs_div, abs_one, one_div, abs_inv] using
-    hm.intervalIntegrable_posLog_norm
 
 private lemma integral_kernel_div_le (a : ℝ) {R : ℝ} (hR : 0 ≤ R) :
     (∫ r in R..(2 * R), kernel (r / a)) ≤ averageBound * R := by
   by_cases ha : 0 < a
   · have hscale : (∫ r in R..(2 * R), kernel (r / a)) =
         a * ∫ t in (R / a)..(2 * (R / a)), kernel t := by
-      simp [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm, div_eq_mul_inv, ha.ne']
+      rw [intervalIntegral.integral_comp_div kernel ha.ne', smul_eq_mul, mul_div_assoc]
     rw [hscale]
     have h := mul_le_mul_of_nonneg_left
       (integral_kernel_dyadic_le (div_nonneg hR ha.le)) ha.le
@@ -258,7 +214,7 @@ namespace Finset
 /-- A weighted logarithmic singularity has a good radius in `(R, 2 * R]`, avoiding any finite
 set, with an explicit universal bound independent of all real scales. Zero and negative scales
 contribute zero. Repeated scales, zero weights and the empty finite set are allowed. -/
-theorem exists_radius_sum_mul_posLog_inv_abs_one_sub_div_le {ι : Type*}
+theorem exists_radius_sum_mul_posLog_one_div_abs_one_sub_div_le {ι : Type*}
     (s : Finset ι) (w a : ι → ℝ)
     (hw : ∀ i ∈ s, 0 ≤ w i)
     (bad : Finset ℝ) {R : ℝ} (hR : 0 < R) :
@@ -281,16 +237,16 @@ theorem exists_radius_sum_mul_posLog_inv_abs_one_sub_div_le {ι : Type*}
   obtain ⟨r, hr, hle⟩ := exists_le_setAverage hvolume
     (ne_top_of_le_ne_top (by simp : volume (Set.Ioc R (2 * R)) ≠ ∞)
       (measure_mono Set.sdiff_subset)) (hg.mono_set Set.sdiff_subset)
-  have hlength : 2 * R - R = R := by ring
   have havg : (⨍ x in S, g x) ≤ CartanRadius.averageBound * ∑ i ∈ s, w i := by
-    rw [setAverage_congr hS, setAverage_eq, measureReal_def, Real.volume_Ioc,
-      ENNReal.toReal_ofReal (by linarith : 0 ≤ 2 * R - R),
-      hlength, smul_eq_mul, mul_comm, ← div_eq_mul_inv,
-      ← intervalIntegral.integral_of_le (by linarith : R ≤ 2 * R)]
-    apply (div_le_iff₀ hR).mpr
-    simpa only [g, Finset.sum_apply] using
-      CartanRadius.integral_sum_mul_kernel_le s w a hw hR.le
+    rw [setAverage_congr hS, ← Set.uIoc_of_le (by linarith : R ≤ 2 * R),
+      interval_average_eq_div]
+    apply (div_le_iff₀ (by linarith : 0 < 2 * R - R)).mpr
+    calc
+      _ ≤ CartanRadius.averageBound * (∑ i ∈ s, w i) * R := by
+        simpa only [g, Finset.sum_apply] using
+          CartanRadius.integral_sum_mul_kernel_le s w a hw hR.le
+      _ = _ := by ring
   refine ⟨r, hr.1, hr.2, ?_⟩
-  simpa only [g, Finset.sum_apply] using hle.trans havg
+  simpa only [g, Finset.sum_apply, CartanRadius.kernel] using hle.trans havg
 
 end Finset
