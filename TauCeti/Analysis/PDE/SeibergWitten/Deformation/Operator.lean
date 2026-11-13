@@ -99,9 +99,7 @@ namespace TauCeti.SeibergWitten
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2 = finrank ℝ V)
 
-/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V :=
-  .of_fact_finrank_eq_succ 3
+attribute [local instance] finiteDimensional_of_finrank_eq_four
 
 /-! ### The operator `δ₀` -/
 
