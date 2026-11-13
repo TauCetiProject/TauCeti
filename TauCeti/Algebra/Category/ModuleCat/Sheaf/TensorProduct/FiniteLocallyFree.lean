@@ -38,9 +38,6 @@ noncomputable section
 variable {C : Type u} [SmallCategory C] [HasPullbacks C] [HasBinaryProducts C]
   {J : GrothendieckTopology C}
   [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [HasWeakSheafify J AddCommGrpCat.{u}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  [HasSheafify J AddCommGrpCat.{u}]
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {R : Sheaf J CommRingCat.{u}}
@@ -56,7 +53,6 @@ theorem isFiniteLocallyFree_ihom_free (I : Type u) [Finite I]
     (isFiniteLocallyFree (ringCatSheaf R)).prop_tensor hfree hN
   exact (isFiniteLocallyFree (ringCatSheaf R)).prop_of_iso (ihomFreeIso I N).symm htensor
 
-omit [HasSheafify J AddCommGrpCat.{u}] in
 /-- Internal Hom from a sheaf isomorphic to a finite free sheaf preserves finite local
 freeness. -/
 theorem isFiniteLocallyFree_ihom_of_iso_free (I : Type u) [Finite I]
@@ -69,8 +65,7 @@ theorem isFiniteLocallyFree_ihom_of_iso_free (I : Type u) [Finite I]
   exact (isFiniteLocallyFree (ringCatSheaf R)).prop_of_iso
     (asIso ((MonoidalClosed.pre e.hom).app N)).symm hfree
 
-omit [HasBinaryProducts C] [HasWeakSheafify J AddCommGrpCat.{u}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{u}] [HasSheafify J AddCommGrpCat.{u}] in
+omit [HasBinaryProducts C] in
 /-- On a finite free chart of `M`, internal Hom from the restriction of `M` preserves finite
 local freeness. This is the chartwise input for descending internal Homs from a finite locally
 free source. -/
