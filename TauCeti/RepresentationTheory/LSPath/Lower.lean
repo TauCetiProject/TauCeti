@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.LSPath.Integrality
 public import TauCeti.RepresentationTheory.LSPath.Linked
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
-import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Algebra.CharZero.RatCast
 import TauCeti.Algebra.Order.Ring.Int.Cast
 
@@ -214,7 +213,8 @@ private theorem linked_mapIdx_subdivide (hlam : lam ∈ dominantChamber P b)
       List.take_take, min_eq_left hk]
   have hcum_j₁1 : ((Dp.take (j₁ + 1)).map Prod.snd).sum =
       ((l.take j₁).map Prod.snd).sum + θ * d := by
-    rw [List.sum_map_take_succ _ _ (by omega), hcum_le j₁ le_rfl, hDp_j₁ (by omega)]
+    simpa [show j₁ < Dp.length by omega, hDp_j₁ (by omega)] using
+      congrArg (· + θ * d) (hcum_le j₁ le_rfl)
   obtain ⟨hDp_linked, hDpmin⟩ := Linked.subdivide hl hlmin hj₁ hτd θ
   rw [← hDp] at hDp_linked hDpmin
   -- Reflect the window `[k₀, j₁]` of the subdivided list in `sᵢ`.
@@ -279,8 +279,7 @@ private theorem pos_of_sum_map_mul_take_lt_sum_map_mul_take_succ {α R : Type*} 
     (hk : k < D.length) (hd : 0 ≤ f D[k])
     (h : ((D.take k).map fun a ↦ f a * g a).sum < ((D.take (k + 1)).map fun a ↦ f a * g a).sum) :
     0 < g D[k] := by
-  rw [List.sum_map_take_succ (fun a ↦ f a * g a) D hk, lt_add_iff_pos_right] at h
-  exact pos_of_mul_pos_right h hd
+  exact pos_of_mul_pos_right (by simpa [hk] using h) hd
 
 /-- Where the heights do not rise at an entry `k` with `0 < f(Dₖ)`, the weight `g(Dₖ)` is
 nonpositive. -/
@@ -289,8 +288,7 @@ private theorem nonpos_of_sum_map_mul_take_succ_le_sum_map_mul_take {α R : Type
     (hk : k < D.length) (hd : 0 < f D[k])
     (h : ((D.take (k + 1)).map fun a ↦ f a * g a).sum ≤ ((D.take k).map fun a ↦ f a * g a).sum) :
     g D[k] ≤ 0 := by
-  rw [List.sum_map_take_succ (fun a ↦ f a * g a) D hk, add_le_iff_nonpos_right] at h
-  exact nonpos_of_mul_nonpos_right h hd
+  exact nonpos_of_mul_nonpos_right (by simpa [hk] using h) hd
 
 /-- **Non-integrality inside a rising window.** If the heights rise strictly on the window
 `[k₀, j₁]`, are at least the integer `z` at `k₀` and below `z + 1` at `j₁`, and `hₖ` is congruent
@@ -464,8 +462,7 @@ private theorem exists_lower_toPLPath_eq_ofSegments_lowerList (π : LSPath P b l
   -- The height rises along the entry `j₁`, so its segment has positive height.
   have hdH : 0 < d * (P.coroot' i (τ • lam) : ℚ) := by
     have := hrise' j₁ hk₀j₁ le_rfl
-    simp only [hhgt, List.sum_map_take_succ _ D hj₁lt, lt_add_iff_pos_right, hDj₁] at this
-    exact this
+    simpa [hhgt, hj₁lt, hDj₁] using this
   set θ : ℚ := (z + 1 - hgt j₁) / (d * P.coroot' i (τ • lam)) with hθ
   have hθ' : θ' = θ := by
     have hc := hcross
