@@ -17,6 +17,11 @@ quotients by compatible subspaces, provided the relevant quotients are finite-di
 the dimension-counting step of the Golod–Shafarevich inequality, used by
 `TauCeti.card_sq_lt_four_mul_card_of_relations_le_span`.
 
+The proof replaces `T` by the space `T'` of `U`-combinations of the `x` (so `T ≤ T' ≤ S`) and
+considers the induced linear maps `(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T'`: the kernel of the right-hand
+map lies in the range of the left-hand map, and the image of the right-hand map is killed by
+`A ⧸ T' → A ⧸ S`.
+
 ## Main results
 
 * `TauCeti.card_mul_finrank_quotient_add_le`: a bound on quotient dimensions from generators
@@ -39,11 +44,8 @@ variable {A : Type*} [Ring A] {ι κ : Type*} [Fintype ι] [Fintype κ]
 /-- The dimension count behind the Golod–Shafarevich inequality. Let `W`, `U`, `T`, and `S` be
 subspaces of `A` such that right multiplication by the entries of the vectors `y`
 maps `W` into `U`, every `∑ aᵢ xᵢ` lies in `S`, and every element of `T` is a `U`-combination of
-the `x`. If every relation among the `x` is an `A`-combination of the `y`, then the induced
-linear maps `(A ⧸ W)^κ → (A ⧸ U)^ι → A ⧸ T'`, where `T'` is the space of `U`-combinations of the
-`x` (so `T ≤ T' ≤ S`), have the kernel of the right-hand map contained in the range of the
-left-hand map, and the image of the right-hand map is killed by `A ⧸ T' → A ⧸ S`.
-So if `A ⧸ W` and `A ⧸ T` are finite-dimensional, then
+the `x`. If every relation among the `x` is an `A`-combination of the `y`, and `A ⧸ W` and
+`A ⧸ T` are finite-dimensional, then
 `#ι · dim (A ⧸ U) + dim (A ⧸ S) ≤ dim (A ⧸ T) + #κ · dim (A ⧸ W)`. -/
 theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
     (x : ι → A) (y : κ → ι → A)
@@ -59,21 +61,15 @@ theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
   let f : (ι → A) →ₗ[k] A := LinearMap.lsum k (fun _ : ι ↦ A) k fun i ↦ LinearMap.mulRight k (x i)
   have hf (a : ι → A) : f a = ∑ i, a i * x i := by simp [f]
   let T' : Submodule k A := (Submodule.pi Set.univ fun _ ↦ U).map f
-  have hmem : ∀ a : ι → A, (∀ i, a i ∈ U) → ∑ i, a i * x i ∈ T' := fun a ha ↦
-    mem_map.2 ⟨a, mem_pi.2 fun i _ ↦ ha i, hf a⟩
   have hT' : ∀ t ∈ T', ∃ a : ι → A, (∀ i, a i ∈ U) ∧ ∑ i, a i * x i = t := fun t ht ↦ by
     obtain ⟨a, ha, rfl⟩ := mem_map.1 ht
     exact ⟨a, fun i ↦ mem_pi.1 ha i trivial, (hf a).symm⟩
   have hTT' : T ≤ T' := fun t ht ↦ by
     obtain ⟨a, ha, rfl⟩ := hT t ht
-    exact hmem a ha
-  have hUT' : ∀ u ∈ U, ∀ i, u * x i ∈ T' := fun u hu i ↦ by
-    have hs : ∑ j, (Pi.single i u : ι → A) j * x j = u * x i := by
-      simp [Pi.single_apply, ite_mul]
-    refine hs ▸ hmem _ fun j ↦ ?_
-    by_cases h : j = i
-    · subst h; simpa using hu
-    · simp [h]
+    exact mem_map.2 ⟨a, mem_pi.2 fun i _ ↦ ha i, hf a⟩
+  have hUT' : ∀ u ∈ U, ∀ i, u * x i ∈ T' := fun u hu i ↦
+    mem_map.2 ⟨Pi.single i u, le_comap_single_pi (fun _ : ι ↦ U) (I := Set.univ) (i := i) hu,
+      LinearMap.lsum_piSingle k (fun _ ↦ A) k _ i u⟩
   have : FiniteDimensional k (A ⧸ T') := .of_surjective (factor hTT') (factor_surjective hTT')
   suffices Fintype.card ι * finrank k (A ⧸ U) + finrank k (A ⧸ S) ≤
       finrank k (A ⧸ T') + Fintype.card κ * finrank k (A ⧸ W) by
