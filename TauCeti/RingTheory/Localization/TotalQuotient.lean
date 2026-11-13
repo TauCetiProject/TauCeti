@@ -17,7 +17,7 @@ For commutative rings these are the non-zero-divisors; for a general semiring
 the two conditions need not coincide.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -32,7 +32,7 @@ def regularElements : Submonoid R where
   mul_mem' ha hb := ha.mul hb
 
 @[simp]
-theorem mem_regularElements {r : R} : r ∈ regularElements R ↔ IsRegular r := Iff.rfl
+theorem mem_regularElements {r : R} : r ∈ regularElements R ↔ IsRegular r := (Iff.rfl)
 
 /-- In a semiring domain the denominators are exactly the nonzero elements. -/
 theorem mem_regularElements_iff_ne_zero [IsDomain R] {r : R} :
@@ -70,7 +70,7 @@ theorem map_mk'_eq_div {S : Type*} [Semifield S] (f : TotalQuotient R →+* S)
   exact (eq_div_iff hs.ne_zero).mpr (by
     simpa only [map_mul] using congrArg f (IsLocalization.mk'_spec (TotalQuotient R) r s))
 
-/-- Every nonzero fraction is invertible when every nonzero numerator is regular. -/
+/-- Every nonzero fraction in the total quotient of a semiring domain is invertible. -/
 theorem isField [IsDomain R] : IsField (TotalQuotient R) where
   exists_pair_ne := ⟨algebraMap R _ 0, algebraMap R _ 1,
     fun h => zero_ne_one (algebraMap_injective R h)⟩
@@ -84,8 +84,9 @@ theorem isField [IsDomain R] : IsField (TotalQuotient R) where
 instance [IsDomain R] : Semifield (TotalQuotient R) := isField.toSemifield
 
 /-- Regular localization preserves zero-sum-freeness. -/
-instance [ZeroSumFree R] : ZeroSumFree (TotalQuotient R) :=
-  ZeroSumFree.of_add_eq_zero fun a b h => by
+instance [Subsingleton (AddUnits R)] : Subsingleton (AddUnits (TotalQuotient R)) :=
+  Subsingleton.addUnits_of_isAddUnit fun a ha => by
+    obtain ⟨b, h⟩ := ha.exists_neg
     obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective (regularElements R) a
     obtain ⟨⟨u, v⟩, rfl⟩ := IsLocalization.mk'_surjective (regularElements R) b
     rw [← IsLocalization.mk'_add, mk'_eq_zero_iff] at h

@@ -23,8 +23,9 @@ open TauCeti
 
 variable {K R S : Type*} [CommSemiring R] [CommSemiring S]
 
-instance [ZeroSumFree R] : ZeroSumFree (MvPolynomial K R) :=
-  ZeroSumFree.of_add_eq_zero fun p q h => by
+instance [Subsingleton (AddUnits R)] : Subsingleton (AddUnits (MvPolynomial K R)) :=
+  Subsingleton.addUnits_of_isAddUnit fun p hp => by
+    obtain ⟨q, h⟩ := hp.exists_neg
     ext d
     have hd : p.coeff d + q.coeff d = 0 := by
       simpa using congrArg (fun f : MvPolynomial K R => f.coeff d) h
@@ -32,7 +33,7 @@ instance [ZeroSumFree R] : ZeroSumFree (MvPolynomial K R) :=
 
 /-- Evaluating at units in a zero-sum-free semiring reflects zero when the coefficient map
 reflects zero. The values of the variables need not be distinct. -/
-theorem eval₂Hom_units_eq_zero_iff [ZeroSumFree S] (f : R →+* S)
+theorem eval₂Hom_units_eq_zero_iff [Subsingleton (AddUnits S)] (f : R →+* S)
     (hf : ∀ a, f a = 0 → a = 0) (y : K → Sˣ) (p : MvPolynomial K R) :
     eval₂Hom f (fun i => (y i : S)) p = 0 ↔ p = 0 := by
   refine ⟨?_, fun h => by simp [h]⟩

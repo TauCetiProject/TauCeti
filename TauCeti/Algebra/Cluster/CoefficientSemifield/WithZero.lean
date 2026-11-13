@@ -17,7 +17,7 @@ Conversely, the units of a zero-sum-free semifield inherit auxiliary addition fr
 semifield. These operations are compatible with semiring maps and with extension by zero.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti.CoefficientSemifield
 
@@ -28,8 +28,9 @@ instance : Semifield (WithZero P) where
   nnqsmul := _
   nnqsmul_def := fun _ _ => rfl
 
-instance : ZeroSumFree (WithZero P) :=
-  ZeroSumFree.of_add_eq_zero fun a b h => by
+instance : Subsingleton (AddUnits (WithZero P)) :=
+  Subsingleton.addUnits_of_isAddUnit fun a ha => by
+    obtain ⟨b, h⟩ := ha.exists_neg
     induction a using WithZero.recZeroCoe <;> induction b using WithZero.recZeroCoe
     all_goals simp_all [← WithZero.coe_add]
 
@@ -49,26 +50,51 @@ def withZeroMap (f : CoefficientSemifieldHom P Q) : WithZero P →+* WithZero Q 
 
 @[simp]
 theorem withZeroMap_coe (f : CoefficientSemifieldHom P Q) (p : P) :
-    f.withZeroMap (p : WithZero P) = (f p : WithZero Q) := rfl
+    f.withZeroMap (p : WithZero P) = (f p : WithZero Q) := (rfl)
+
+/-- Extension by zero preserves the identity ring homomorphism. -/
+@[simp]
+theorem withZeroMap_id : withZeroMap (CoefficientSemifieldHom.id P) = RingHom.id (WithZero P) := by
+  apply RingHom.ext
+  intro p
+  induction p using WithZero.recZeroCoe <;> simp
+
+/-- Extension by zero preserves composition of ring homomorphisms. -/
+@[simp]
+theorem withZeroMap_comp {R : Type*} [CoefficientSemifield R]
+    (f : CoefficientSemifieldHom P Q) (g : CoefficientSemifieldHom Q R) :
+    (g.comp f).withZeroMap = g.withZeroMap.comp f.withZeroMap := by
+  apply RingHom.ext
+  intro p
+  induction p using WithZero.recZeroCoe <;> simp
 
 /-- A semiring map restricts to a homomorphism on the units of zero-sum-free semifields. -/
-def mapUnits {S T : Type*} [Semifield S] [Semifield T] [ZeroSumFree S] [ZeroSumFree T]
-    (f : S →+* T) : CoefficientSemifieldHom Sˣ Tˣ where
+def mapUnits {S T : Type*} [Semifield S] [Semifield T] [Subsingleton (AddUnits S)]
+    [Subsingleton (AddUnits T)] (f : S →+* T) : CoefficientSemifieldHom Sˣ Tˣ where
   __ := Units.map f.toMonoidHom
   map_add' a b := Units.ext (map_add f (a : S) (b : S))
 
 @[simp]
-theorem val_mapUnits {S T : Type*} [Semifield S] [Semifield T] [ZeroSumFree S] [ZeroSumFree T]
-    (f : S →+* T) (a : Sˣ) : (mapUnits f a : T) = f a := rfl
+theorem val_mapUnits {S T : Type*} [Semifield S] [Semifield T] [Subsingleton (AddUnits S)]
+    [Subsingleton (AddUnits T)] (f : S →+* T) (a : Sˣ) : (mapUnits f a : T) = f a := (rfl)
+
+/-- Restriction to units preserves the identity ring homomorphism. -/
+@[simp]
+theorem mapUnits_id {S : Type*} [Semifield S] [Subsingleton (AddUnits S)] :
+    mapUnits (RingHom.id S) = CoefficientSemifieldHom.id Sˣ :=
+  CoefficientSemifieldHom.ext fun _ => Units.ext (by simp)
+
+/-- Restriction to units preserves composition of ring homomorphisms. -/
+@[simp]
+theorem mapUnits_comp {S T U : Type*} [Semifield S] [Semifield T] [Semifield U]
+    [Subsingleton (AddUnits S)] [Subsingleton (AddUnits T)] [Subsingleton (AddUnits U)]
+    (f : S →+* T) (g : T →+* U) : mapUnits (g.comp f) = (mapUnits g).comp (mapUnits f) :=
+  CoefficientSemifieldHom.ext fun _ => Units.ext (by simp)
 
 /-- The multiplicative identification of `(WithZero P)ˣ` with `P` preserves addition. -/
 def unitsWithZero : CoefficientSemifieldHom (WithZero P)ˣ P where
   __ := WithZero.unitsWithZeroEquiv.toMonoidHom
-  map_add' a b := WithZero.coe_injective <| by
-    change WithZero.coe (WithZero.unitsWithZeroEquiv (a + b)) =
-      WithZero.coe (WithZero.unitsWithZeroEquiv a + WithZero.unitsWithZeroEquiv b)
-    simp only [WithZero.coe_add, WithZero.coe_unitsWithZeroEquiv_eq_units_val,
-      Units.val_add_of_subsingleton_addUnits]
+  map_add' a b := WithZero.coe_injective (by simp)
 
 @[simp]
 theorem coe_unitsWithZero (a : (WithZero P)ˣ) :
@@ -81,7 +107,7 @@ namespace TauCeti.CoefficientSemifield
 
 /-- The canonical identification of a zero-sum-free semifield with the result of adjoining zero
 to its units also preserves addition. -/
-noncomputable def withZeroUnitsRingEquiv (S : Type*) [Semifield S] [ZeroSumFree S] :
+noncomputable def withZeroUnitsRingEquiv (S : Type*) [Semifield S] [Subsingleton (AddUnits S)] :
     WithZero Sˣ ≃+* S := by
   classical
   exact { WithZero.withZeroUnitsEquiv with
@@ -91,7 +117,13 @@ noncomputable def withZeroUnitsRingEquiv (S : Type*) [Semifield S] [ZeroSumFree 
       all_goals simp [← WithZero.coe_add] }
 
 @[simp]
-theorem withZeroUnitsRingEquiv_coe {S : Type*} [Semifield S] [ZeroSumFree S] (a : Sˣ) :
-    withZeroUnitsRingEquiv S (a : WithZero Sˣ) = (a : S) := rfl
+theorem withZeroUnitsRingEquiv_coe {S : Type*} [Semifield S] [Subsingleton (AddUnits S)] (a : Sˣ) :
+    withZeroUnitsRingEquiv S (a : WithZero Sˣ) = (a : S) := (rfl)
+
+/-- The inverse comparison sends a unit to its canonical nonzero embedding. -/
+@[simp]
+theorem withZeroUnitsRingEquiv_symm_coe {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
+    (a : Sˣ) : (withZeroUnitsRingEquiv S).symm (a : S) = (a : WithZero Sˣ) :=
+  (withZeroUnitsRingEquiv S).symm_apply_eq.mpr (withZeroUnitsRingEquiv_coe a).symm
 
 end TauCeti.CoefficientSemifield
