@@ -52,15 +52,15 @@ function `ρ` supported in `e.baseSet`, as a `C^n(M)`-linear map to `C^n` functi
 def cutoffLocalFrameCoeff (i : ι) : Cₛ^n⟮I; F, V⟯ →ₗ[C^n⟮I, M; 𝕜⟯] C^n⟮I, M; 𝕜⟯ where
   toFun s := ⟨fun y ↦ ρ y * e.localFrameCoeff I b i y (s y),
     e.contMDiff_mul_localFrameCoeff b ρ.contMDiff.contMDiffOn hρ s.contMDiff.contMDiffOn i⟩
-  -- Sums and products of smooth functions are evaluated pointwise by definition.
   map_add' s t := by
     ext y
-    change ρ y * _ = ρ y * _ + ρ y * _
-    rw [ContMDiffSection.coe_add, Pi.add_apply, map_add, mul_add]
+    exact congrArg (ρ y * ·) (map_add (e.localFrameCoeff I b i y) (s y) (t y)) |>.trans
+      (mul_add _ _ _)
   map_smul' f s := by
     ext y
-    change ρ y * _ = f y * (ρ y * _)
-    rw [ContMDiffSection.smul_apply, map_smul, smul_eq_mul, mul_left_comm]
+    have h := congrArg (e.localFrameCoeff I b i y) (ContMDiffSection.smul_apply f s y)
+    rw [map_smul, smul_eq_mul] at h
+    exact (congrArg (ρ y * ·) h).trans (mul_left_comm _ _ _)
 
 /-- The cut-off frame coefficient of `s` at `y` is `ρ y` times the frame coefficient of `s y`. -/
 @[simp]

@@ -37,12 +37,15 @@ over `C^∞(M)` sends `I_y ^ (r + 1) Γ(V)` into `I_y ^ (r + 1)`, so the scalar 
 `Pᵢ`, read in a trivialization of `W`, gives a common order near `x₀`. A finite cover of `K` gives
 the uniform order.
 
-On a compact manifold the order is therefore bounded. For a finite-rank smooth bundle `W` the
-sections vanishing at `x` are exactly `I_x Γ(W)`, and the algebraic criterion
-`TauCeti.mem_differentialOperators_iff_forall_apply_mem_smul_top` turns the vanishing on
-`I_x ^ (r + 1) Γ(V)` at every point into the vanishing of all `(r + 1)`-fold commutators with
-multiplication operators. So for compact `M`, a linear map `Γ(V) → Γ(W)` is local if and only if
-it is a differential operator of finite order in Grothendieck's sense
+Conversely, a differential operator of order `r` in Grothendieck's sense is local
+(`TauCeti.differentialOperators_section_apply_eq_zero_of_eventuallyEq`). For a finite-rank smooth
+bundle `W` the sections vanishing at `x` are exactly `I_x Γ(W)`, and the algebraic criterion
+`TauCeti.mem_differentialOperators_iff_forall_apply_mem_smul_top` shows that a linear map
+`Γ(V) → Γ(W)` has order `r` exactly when `(P s) x = 0` for every `x` and every
+`s ∈ I_x ^ (r + 1) Γ(V)` (`TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`).
+These two facts need neither compactness nor any assumption on `V` or the boundary of `M`. On a
+compact manifold the order given by Peetre's theorem is bounded, so for compact `M`, a linear map
+`Γ(V) → Γ(W)` is local if and only if it is a differential operator of finite order
 (`LinearMap.exists_mem_differentialOperators_section_iff_apply_eq_zero_of_eventuallyEq`).
 
 ## Main results
@@ -50,6 +53,10 @@ it is a differential operator of finite order in Grothendieck's sense
 * `LinearMap.exists_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top`: **Peetre's theorem**
   for local operators between sections of vector bundles.
 * `LinearMap.exists_apply_eq_apply_of_sub_mem_smoothVanishingIdeal_pow_smul_top`: its jet form.
+* `TauCeti.differentialOperators_section_apply_eq_zero_of_eventuallyEq`: differential operators
+  between sections are local.
+* `TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`: a linear map between
+  sections has order `r` exactly when it kills `I_x ^ (r + 1) Γ(V)` at every point `x`.
 * `LinearMap.exists_mem_differentialOperators_section_iff_apply_eq_zero_of_eventuallyEq`: on a
   compact manifold the local operators `Γ(V) → Γ(W)` are exactly the differential operators.
 
@@ -69,6 +76,46 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle F' W] [VectorBundle ℝ F' W]
+
+/-- **Differential operators between sections are local.** If `P : Γ(V) → Γ(W)` is a differential
+operator of order `r` in Grothendieck's sense and `s` vanishes near `x`, then `(P s) x = 0`. -/
+theorem differentialOperators_section_apply_eq_zero_of_eventuallyEq
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r)
+    {s : Cₛ^∞⟮I; F, V⟯} {x : M} (hs : ∀ᶠ y in 𝓝 x, s y = 0) : P s x = 0 :=
+  apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top (apply_mem_smul_top_of_mem_pow_smul_top hP _
+    (mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero hs (r + 1)))
+
+/-- **Differential operators between sections, pointwise.** For a smooth real vector bundle `W` of
+finite rank, a linear map `P : Γ(V) → Γ(W)` is a differential operator of order `r` in
+Grothendieck's sense if and only if `(P s) x = 0` for every point `x` and every
+`s ∈ I_x ^ (r + 1) Γ(V)`. -/
+theorem mem_differentialOperators_section_iff_forall_apply_eq_zero
+    [FiniteDimensional ℝ F'] [ContMDiffVectorBundle ∞ F' W I]
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {r : ℕ} :
+    P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r ↔
+      ∀ x, ∀ s ∈ smoothVanishingIdeal I x ^ (r + 1) •
+        (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯), P s x = 0 := by
+  rw [mem_differentialOperators_iff_forall_apply_mem_smul_top
+    (fun x : M ↦ (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ))
+    ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top]
+  simp only [ker_evalAlgHom_eq_smoothVanishingIdeal, mem_smoothVanishingIdeal_smul_top_iff]
+
+end TauCeti
+
 namespace LinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -83,7 +130,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W]
 
-variable [I.Boundaryless]
+variable [BoundarylessManifold I M]
 
 /-- **Peetre's theorem** for sections, local form: near each point `x₀` of `U` there is a common
 order `r` such that `(P s) y = 0` for every `y` near `x₀` and every `s ∈ I_y ^ (r + 1) Γ(V)`. -/
@@ -210,24 +257,13 @@ theorem exists_mem_differentialOperators_section_iff_apply_eq_zero_of_eventually
       ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 := by
   constructor
   · rintro ⟨r, hP⟩ s x hs
-    exact TauCeti.apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
-      (TauCeti.apply_mem_smul_top_of_mem_pow_smul_top hP _
-        (TauCeti.mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero hs (r + 1)))
+    exact TauCeti.differentialOperators_section_apply_eq_zero_of_eventuallyEq hP hs
   · intro hloc
     obtain ⟨r, hr⟩ := exists_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top
       (LinearMap.pi (ContMDiffSection.evalLinearMap I F' ∞ W) ∘ₗ P) isOpen_univ
       (fun s x _ hs ↦ by simpa using hloc s x hs)
       (fun s ↦ by simpa using (P s).contMDiff.continuous) isCompact_univ subset_rfl
-    have hsep (t : Cₛ^∞⟮I; F', W⟯) (ht : ∀ x, t ∈ RingHom.ker
-        (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) • (⊤ : Submodule _ _)) : t = 0 :=
-      ContMDiffSection.ext fun x ↦ by
-        have htx := ht x
-        rw [TauCeti.ker_evalAlgHom_eq_smoothVanishingIdeal] at htx
-        simpa using TauCeti.apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top htx
-    refine ⟨r, (TauCeti.mem_differentialOperators_iff_forall_apply_mem_smul_top
-      (fun x : M ↦ (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)) hsep).2
-      fun x s hs ↦ ?_⟩
-    rw [TauCeti.ker_evalAlgHom_eq_smoothVanishingIdeal] at hs ⊢
-    exact TauCeti.mem_smoothVanishingIdeal_smul_top_iff.2 (by simpa using hr x (mem_univ x) s hs)
+    exact ⟨r, TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero.2
+      fun x s hs ↦ by simpa using hr x (mem_univ x) s hs⟩
 
 end LinearMap

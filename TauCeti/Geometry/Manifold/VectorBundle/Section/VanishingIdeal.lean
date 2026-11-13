@@ -91,7 +91,7 @@ theorem mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero {x : M} {s : 
     ext y
     by_cases hy : ρ y = 0
     · simp [hχ, hy]
-    · simp [show s y = 0 from hρ hy]
+    · simp [(hρ (Function.mem_support.mpr hy)).out]
   rw [hfac]
   exact Submodule.smul_mem_smul (Ideal.pow_mem_pow (by simp [hχ]) m) Submodule.mem_top
 
