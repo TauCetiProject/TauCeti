@@ -298,6 +298,17 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).1 x v = φ.1 (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Evaluation of the smooth pullback of a one-form on a tangent vector `v`: it is the form
+evaluated on the image of `v` under the differential. -/
+theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
+    (mpullback f hf φ).1 x ![v] = φ.1 (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  ext i
+  fin_cases i
+  rfl
+
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hf : ContMDiff I I' ∞ f)
@@ -428,6 +439,19 @@ theorem mpullback_mpullback (f : M → M') (g : M' → M'') (hf : ContMDiff I I'
     (hg : ContMDiff I' I'' ∞ g) (β : SmoothForm I'' M'' F k) :
     mpullback f hf (mpullback g hg β) = mpullback (g ∘ f) (hg.comp hf) β :=
   (LinearMap.congr_fun (mpullback_comp f g hf hg) β).symm
+
+variable {E''' H''' M''' : Type*} [NormedAddCommGroup E'''] [NormedSpace ℝ E''']
+  [TopologicalSpace H'''] [TopologicalSpace M'''] [ChartedSpace H''' M''']
+  {I''' : ModelWithCorners ℝ E''' H'''} [IsManifold I''' 1 M''']
+
+/-- Pulling a form back along the two sides of a commuting square of smooth maps gives the same
+form. -/
+theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M → M'''}
+    {g' : M''' → M''} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I'' ∞ g)
+    (hf' : ContMDiff I I''' ∞ f') (hg' : ContMDiff I''' I'' ∞ g') (hcomp : g ∘ f = g' ∘ f')
+    (β : SmoothForm I'' M'' F k) :
+    mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
+  simp only [mpullback_mpullback, hcomp]
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

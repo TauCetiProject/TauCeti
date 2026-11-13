@@ -83,7 +83,7 @@ theorem exists_int_abs_sum_mul_sub_le [Nonempty κ] (A : Matrix ι κ ℝ) {P δ
     exact (pow_eq_one_iff_of_nonneg (abs_nonneg _) two_ne_zero).1 (by rw [sq_abs, sq, h2])
   -- Minkowski's theorem for the integer lattice and the preimage of a box under the shear.
   set r : κ ⊕ ι → ℝ := Sum.elim (fun _ ↦ P) (fun _ ↦ δ)
-  have hr : 0 ≤ r := fun k ↦ by cases k <;> simp [r, hP, hδ₀]
+  have _ : 0 ≤ r := fun k ↦ by cases k <;> simp [r, hP, hδ₀]
   set S := T ⁻¹' Set.Icc (-r) r
   have hsymm : ∀ v ∈ S, -v ∈ S := fun v hv ↦ by
     simp only [S, Set.mem_preimage, map_neg, Set.mem_Icc] at hv ⊢

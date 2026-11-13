@@ -109,9 +109,8 @@ jobs:
     # next matching runner, including replacements on another enrolled host.
     # Picker outputs remain attempt-scoped. Staging retains exact guest labels
     # and waits for tauchonki2 when selection fails or is stale.
-    # Maintenance repairs must not wait behind the ordinary PR backlog. These
-    # use the same vetted Namespace sandbox shape as ordinary overflow, with
-    # the existing staging priority. This changes scheduling, never merge gates.
+    # Explicit maintenance builds use GitHub-hosted capacity and its bulk cap.
+    # Sandbox and merge checks are the same for every runner pool.
     #
     # Staging is restricted to tauchonki2. Prefer the picker's exact idle
     # staging guest; if occupied or selection failed, queue for the next staging
@@ -123,10 +122,10 @@ jobs:
     # roadmap merge builds. Waiting here consumes no runner. Other pools retain
     # their existing concurrency; failed pickers share conservative slot zero.
     concurrency:
-      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-runner.outputs.runner, 'namespace-features:') && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
       queue: max
       cancel-in-progress: false
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && !contains(needs.pick-runner.outputs.runner, 'nscloud-') && !contains(needs.pick-runner.outputs.runner, 'namespace-features:') && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -180,10 +179,10 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 6feb17048dff7a2453f21809d853fe6f355f5a4a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
@@ -800,46 +799,10 @@ jobs:
           # is load-bearing, and scripts/test_bwrap_pin.py checks it is still present and still
           # runs before anything that touches a candidate `.lake`.
           deb="bubblewrap_${BWRAP_VER}_amd64.deb"
-          if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
-             && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-            echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
-            printf '%s\n' \
-              '' \
-              "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \
-              'which Ubuntu does not rewrite for the life of the release. Reaching this is' \
-              'unexpected: an archive outage, a runner image no longer on 24.04, or 24.04 gone' \
-              'end of life.' \
-              '' \
-              'HOW TO FIX IT. Take the version from a RELEASE pocket, never from -updates,' \
-              '-security or a development suite: those are superseded and deleted, so a pin' \
-              'to one expires and brings every required build down with it.' \
-              '' \
-              '  suite=noble        # or the release pocket of whatever image CI runs on' \
-              '  curl -s "https://archive.ubuntu.com/ubuntu/dists/$suite/main/binary-amd64/Packages.gz" \' \
-              "    | gunzip | awk '/^Package: bubblewrap\$/{f=1} f&&/^Version:/{print \$2; exit}'" \
-              '' \
-              'Download it and take both hashes:' \
-              '' \
-              '  curl -sSLO "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum "bubblewrap_${ver}_amd64.deb"   # BWRAP_DEB_SHA256' \
-              '  sudo dpkg -i "bubblewrap_${ver}_amd64.deb"' \
-              '  sha256sum /usr/bin/bwrap                  # BWRAP_SHA256' \
-              '' \
-              'Set BWRAP_VER, BWRAP_DEB_SHA256 and BWRAP_SHA256 in all five of' \
-              '.github/workflows/{pr-build,pr-profile,nightly-verify,shadow-audits,warm-dependencies}.yml. They must agree;' \
-              'scripts/test_bwrap_pin.py fails if they do not.' \
-              '' \
-              'ON VERSIONS: 0.12.0 or newer is safe on its own. Below that, the' \
-              '"Normalise ... .lake" step is what keeps it safe, because earlier bubblewrap' \
-              'follows a symlink in a candidate checkout while creating the sandbox mount point' \
-              '(GHSA-pxhw-h44j-8pfx). If you pin below 0.12.0, check that step still runs before' \
-              'anything else touches .lake. Keep the step either way: the trusted-phase callers' \
-              'follow the symlink themselves and no bubblewrap version fixes that.' \
-              '' >&2
-            exit 1
-          fi
+          # The pinned tools bundle this exact Ubuntu package; no archive DNS is needed.
+          cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/$deb" bwrap.deb
           if ! echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -; then
-            echo "::error::bubblewrap ${BWRAP_VER} downloaded but does not match BWRAP_DEB_SHA256. Ubuntu does not rewrite published packages, so either the pin is wrong or the download was tampered with. Re-derive the hashes rather than relaxing this check."
+            echo "::error::Bundled bubblewrap ${BWRAP_VER} does not match BWRAP_DEB_SHA256; refusing to install it. Update the bundled package and both pins together."
             exit 1
           fi
           sudo dpkg -i bwrap.deb >/dev/null
@@ -1511,9 +1474,9 @@ jobs:
               echo 'publication-required=false'
             fi
           } >> "$GITHUB_OUTPUT"
-          # PR heads are reported immediately. A merge-group head is reported by the finalizer
-          # job below, after its exact revision map has reached the public cache endpoint.
-          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+          # Failed batches and PR heads are reported immediately. Only a successful
+          # batch waits for the finalizer to confirm exact-revision cache publication.
+          if [ "${{ env.IS_BATCH }}" != "true" ] || [ "$state" = failure ]; then
             post_status build "$state" "$desc"
           fi
 
@@ -1683,7 +1646,7 @@ jobs:
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
     needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 30
     permissions:
       contents: read  # sparse immutable finalization tools only
@@ -1714,10 +1677,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 6feb17048dff7a2453f21809d853fe6f355f5a4a
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Select CI API credentials
         id: ci-api

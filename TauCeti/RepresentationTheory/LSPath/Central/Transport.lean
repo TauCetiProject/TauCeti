@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Central transport of Lakshmibai–Seshadri paths
@@ -226,12 +227,13 @@ theorem minHeight_toPLPath_centralTransport {g : Module.Dual 𝕜 V} (hg : g (f 
 realization `f` injective on `W λ` and a realized orbit with no two distinct points on a common ray,
 the path of the central transport of `π` is obtained from the path of `π` by adding `t ↦ t χ` to
 its distinguished presentation for the realized orbit `W λ`. -/
-theorem toPLPath_centralTransport [P.flip.IsReduced] (hlam : lam ∈ dominantChamber P b)
+theorem toPLPath_centralTransport (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) :
     (centralTransport χ hχ π).toPLPath 𝕜 f =
       PLPath.shiftDistinguished (Set.range fun w : P.weylGroup ↦ f (w • lam)) (f χ)
         (π.toPLPath 𝕜 f) := by
+  have := P.flip_isReduced
   rw [toPLPath_centralTransport_eq_ofSegments, toPLPath_def,
     PLPath.shiftDistinguished_ofSegments (π.isDistinguished_timed 𝕜 f hlam hf) hS]
 

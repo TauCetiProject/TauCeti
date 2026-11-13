@@ -340,7 +340,7 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
     Function.Injective (chartSectionsHom b m S) := by
   refine (injective_iff_map_eq_zero _).2 fun f hf ↦ ?_
   have hcard : 0 < S.card := Finset.card_pos.2 hS
-  set j := (∑ e ∈ f.1.support, exponentBound e) + m.natAbs with hjdef
+  set j := (∑ e ∈ f.1.support, exponentBound e) + m.natAbs
   have hj : ∀ e ∈ f.1.support, ∀ i ∈ S, 0 ≤ e i + j := fun e he i _ ↦ by
     have h1 := le_exponentBound e i
     have h2 : exponentBound e ≤ ∑ e ∈ f.1.support, exponentBound e :=
