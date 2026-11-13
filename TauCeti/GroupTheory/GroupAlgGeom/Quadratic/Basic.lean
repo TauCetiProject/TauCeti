@@ -18,7 +18,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Order.Lattice.Nat
+import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Quadratic words and standard quadratic equations
@@ -41,12 +41,12 @@ their atoms, variables, coefficients, atomic rank, genus, Euler characteristic a
 `κ(S)` of [IFT], Definition 6, and degenerate, commutative and general-position solutions. It also
 records the standard equation `[x, y] = [a, b]` of genus one and its solutions.
 
-The number of occurrences `occurrences x w` of `x` in `w` is defined as the least number of
-letters `x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By
-the normal form theorem for free products it is the number of letters `x^{±1}` in the reduced
-word of `w` (`occurrences_eq_countVar_reducedWord`). It is also characterized as the largest
-subadditive function bounded by `1` on `x^{±1}` and vanishing on coefficients and on the other
-variables (`le_occurrences`).
+The number of occurrences `occurrences x w` of `x` in `w` is the number of letters `x^{±1}` in
+the reduced word of `w` given by the normal form theorem for free products. Reduction cancels
+variable letters in pairs (`exists_occurrences_add_occurrences_eq_add_two_mul`), so this is the
+least number of letters `x^{±1}` in an expression of `w` as a product of coefficients and letters
+`y^{±1}`. It is also characterized as the largest subadditive function bounded by `1` on `x^{±1}`
+and vanishing on coefficients and on the other variables (`le_occurrences`).
 
 Following [IFT], the standard quadratic equations over `G` are, with `[x, y] = x⁻¹ y⁻¹ x y`
 (Mathlib's `⁅x⁻¹, y⁻¹⁆`) and `z⁻¹ c z` the conjugate of a coefficient,
@@ -79,8 +79,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 
 * `TauCeti.GroupAlgGeom.Quadratic.le_occurrences`: the extremal characterization of
   `occurrences`.
-* `TauCeti.GroupAlgGeom.Quadratic.occurrences_eq_countVar_reducedWord`: occurrences are counted in
-  the reduced word.
+* `TauCeti.GroupAlgGeom.Quadratic.exists_occurrences_add_occurrences_eq_add_two_mul`: occurrences
+  of a variable cancel in pairs in products.
 * `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_le`,
   `TauCeti.GroupAlgGeom.Quadratic.occurrences_map_eq_zero`: bounds on the occurrence counts in the
   images under a homomorphism `G[X] → H[Y]`, from those in the images of the generators.
@@ -126,21 +126,21 @@ section Occurrences
 
 open GX
 
-/-- The number of occurrences of the variable `x` in `w ∈ G[X]`: the least number of letters
-`x^{±1}` in an expression of `w` as a product of coefficients and letters `y^{±1}`. By the normal
-form theorem for free products this is the number of letters `x^{±1}` in the reduced word of `w`
-(`occurrences_eq_countVar_reducedWord`). -/
+/-- The number of occurrences of the variable `x` in `w ∈ G[X]`: the number of letters `x^{±1}` in
+the reduced word of `w`. By `GX.countVar_reducedWord_le` it is the least number of letters `x^{±1}`
+in an expression of `w` as a product of coefficients and letters `y^{±1}`. -/
 noncomputable def occurrences (x : X) (w : GX G X) : ℕ :=
-  sInf {n | ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧ countVar x l = n}
+  countVar x (reducedWord w)
 
-private theorem occurrences_le_countVar (x : X) {w : GX G X} {l : List (G ⊕ X × Bool)}
-    (h : (l.map letter).prod = w) : occurrences x w ≤ countVar x l :=
-  Nat.sInf_le ⟨l, h, rfl⟩
+theorem occurrences_eq_countVar_reducedWord (x : X) (w : GX G X) :
+    occurrences x w = countVar x (reducedWord w) :=
+  (rfl)
 
-private theorem exists_countVar_eq_occurrences (x : X) (w : GX G X) :
-    ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧ countVar x l = occurrences x w :=
-  Nat.sInf_mem (s := {n | ∃ l : List (G ⊕ X × Bool), (l.map letter).prod = w ∧
-    countVar x l = n}) ⟨_, reducedWord w, prod_reducedWord w, rfl⟩
+/-- The number of occurrences of `x` in the product of a reduced word is its number of letters
+`x^{±1}`. -/
+theorem _root_.TauCeti.GroupAlgGeom.GX.IsReduced.occurrences_prod {l : List (G ⊕ X × Bool)}
+    (hl : IsReduced l) (x : X) : occurrences x (l.map letter).prod = countVar x l := by
+  rw [occurrences_eq_countVar_reducedWord, hl.reducedWord_prod]
 
 /-- `occurrences x` is the largest subadditive function on `G[X]` vanishing on coefficients and
 on the letters `y^{±1}` with `y ≠ x`, and bounded by `1` on the letters `x^{±1}`. -/
@@ -150,9 +150,9 @@ theorem le_occurrences (x : X) (f : GX G X → ℕ) (hmul : ∀ u v, f (u * v) �
     (hy : ∀ y, y ≠ x → f (inr (FreeGroup.of y)) = 0 ∧ f (inr (FreeGroup.of y))⁻¹ = 0)
     (w : GX G X) :
     f w ≤ occurrences x w := by
-  obtain ⟨l, rfl, hl⟩ := exists_countVar_eq_occurrences x w
-  rw [← hl]
-  clear hl
+  rw [occurrences_eq_countVar_reducedWord]
+  nth_rw 1 [← prod_reducedWord w]
+  generalize reducedWord w = l
   induction l with
   | nil => simpa using (hcoeff 1).le
   | cons a l ih =>
@@ -168,46 +168,29 @@ theorem le_occurrences (x : X) (f : GX G X → ℕ) (hmul : ∀ u v, f (u * v) �
       · rw [countVar_cons_inr_of_ne h]
         cases b <;> simpa [hy y h] using ih
 
+/-- Variables cancel in pairs: `x` occurs in `u` and `v` together as often as in `u * v` plus an
+even number. -/
+theorem exists_occurrences_add_occurrences_eq_add_two_mul (x : X) (u v : GX G X) :
+    ∃ k, occurrences x u + occurrences x v = occurrences x (u * v) + 2 * k := by
+  simpa [occurrences_eq_countVar_reducedWord] using
+    exists_countVar_eq_add_two_mul x (reducedWord u ++ reducedWord v)
+
 theorem occurrences_mul_le (x : X) (u v : GX G X) :
     occurrences x (u * v) ≤ occurrences x u + occurrences x v := by
-  obtain ⟨l₁, hl₁, h₁⟩ := exists_countVar_eq_occurrences x u
-  obtain ⟨l₂, hl₂, h₂⟩ := exists_countVar_eq_occurrences x v
-  calc occurrences x (u * v) ≤ countVar x (l₁ ++ l₂) :=
-        occurrences_le_countVar x (by simp [hl₁, hl₂])
-    _ = _ := by rw [countVar_append, h₁, h₂]
+  obtain ⟨k, hk⟩ := exists_occurrences_add_occurrences_eq_add_two_mul x u v
+  omega
 
 @[simp]
-theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 :=
-  Nat.eq_zero_of_le_zero <| (occurrences_le_countVar x (l := [.inl g]) (by simp)).trans
-    (by simp)
+theorem occurrences_inl (x : X) (g : G) : occurrences x (inl g : GX G X) = 0 := by
+  by_cases hg : g = 1 <;> simp [occurrences_eq_countVar_reducedWord, hg]
 
 @[simp]
 theorem occurrences_one (x : X) : occurrences x (1 : GX G X) = 0 := by
   simpa using occurrences_inl (G := G) x 1
 
-private theorem occurrences_letter_self_le (x : X) (b : Bool) :
-    occurrences x (letter (G := G) (.inr (x, b))) ≤ 1 :=
-  (occurrences_le_countVar x (l := [.inr (x, b)]) (by simp)).trans
-    (by simp)
-
-private theorem occurrences_letter_of_ne {x y : X} (h : y ≠ x) (b : Bool) :
-    occurrences x (letter (G := G) (.inr (y, b))) = 0 :=
-  Nat.eq_zero_of_le_zero <| (occurrences_le_countVar x (l := [.inr (y, b)]) (by simp)).trans
-    (by simp [h])
-
-theorem occurrences_inv_le (x : X) (w : GX G X) : occurrences x w⁻¹ ≤ occurrences x w := by
-  refine le_occurrences x (fun u => occurrences x u⁻¹) (fun u v => ?_) (fun g => ?_) ?_ ?_
-    (fun y hy => ⟨?_, ?_⟩) w
-  · simpa using occurrences_mul_le x v⁻¹ u⁻¹ |>.trans_eq (add_comm _ _)
-  · simp [← map_inv]
-  · simpa using occurrences_letter_self_le (G := G) x false
-  · simpa using occurrences_letter_self_le (G := G) x true
-  · simpa using occurrences_letter_of_ne (G := G) hy false
-  · simpa using occurrences_letter_of_ne (G := G) hy true
-
 @[simp]
-theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w :=
-  (occurrences_inv_le x w).antisymm (by simpa using occurrences_inv_le x w⁻¹)
+theorem occurrences_inv (x : X) (w : GX G X) : occurrences x w⁻¹ = occurrences x w := by
+  simp [occurrences_eq_countVar_reducedWord]
 
 theorem occurrences_pow_le (x : X) (w : GX G X) (n : ℕ) :
     occurrences x (w ^ n) ≤ n * occurrences x w := by
@@ -255,15 +238,12 @@ theorem countP_toWord_snd_le_occurrences [DecidableEq X] (x : X) (w : GX G X) :
 
 @[simp]
 theorem occurrences_inr_of_self (x : X) : occurrences x (inr (FreeGroup.of x) : GX G X) = 1 := by
-  classical
-  refine le_antisymm (by simpa using occurrences_letter_self_le (G := G) x true) ?_
-  simpa [FreeGroup.toWord_of] using
-    countP_toWord_snd_le_occurrences (G := G) x (inr (FreeGroup.of x))
+  simp [occurrences_eq_countVar_reducedWord]
 
 @[simp]
 theorem occurrences_inr_of_of_ne {x y : X} (h : y ≠ x) :
     occurrences x (inr (FreeGroup.of y) : GX G X) = 0 := by
-  simpa using occurrences_letter_of_ne (G := G) h true
+  simp [occurrences_eq_countVar_reducedWord, h]
 
 theorem occurrences_inr_of [DecidableEq X] (x y : X) :
     occurrences x (inr (FreeGroup.of y) : GX G X) = if y = x then 1 else 0 := by
@@ -271,25 +251,11 @@ theorem occurrences_inr_of [DecidableEq X] (x y : X) :
   · subst h; exact occurrences_inr_of_self y
   · exact occurrences_inr_of_of_ne h
 
-/-- The number of occurrences of `x` in `w` is the number of letters `x^{±1}` in the reduced word
-of `w`. -/
-theorem occurrences_eq_countVar_reducedWord (x : X) (w : GX G X) :
-    occurrences x w = countVar x (reducedWord w) := by
-  obtain ⟨l, rfl, hl⟩ := exists_countVar_eq_occurrences x w
-  exact le_antisymm (occurrences_le_countVar x (prod_reducedWord _))
-    ((countVar_reducedWord_le x l).trans_eq hl)
-
 /-- The number of occurrences of `x` in an element `f` of `F(X)` is the number of letters `x^{±1}`
 in the reduced word of `f`. -/
 theorem occurrences_inr [DecidableEq X] (x : X) (f : FreeGroup X) :
     occurrences x (inr f : GX G X) = f.toWord.countP fun p => p.1 = x := by
   rw [occurrences_eq_countVar_reducedWord, reducedWord_inr, countVar_map_inr]
-
-/-- The number of occurrences of `x` in the product of a reduced word is its number of letters
-`x^{±1}`. -/
-theorem _root_.TauCeti.GroupAlgGeom.GX.IsReduced.occurrences_prod {l : List (G ⊕ X × Bool)}
-    (hl : IsReduced l) (x : X) : occurrences x (l.map letter).prod = countVar x l := by
-  rw [occurrences_eq_countVar_reducedWord, hl.reducedWord_prod]
 
 /-- A homomorphism `φ : G[X] → H[Y]` does not increase occurrence counts from `x` to `y` when
 `y` does not occur in the images of the coefficients and of the variables other than `x`, and

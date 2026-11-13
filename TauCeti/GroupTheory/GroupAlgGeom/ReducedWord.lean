@@ -64,8 +64,12 @@ directly for words in letters.
   product `w`.
 * `TauCeti.GroupAlgGeom.GX.reducedWord_inv`, `TauCeti.GroupAlgGeom.GX.reducedWord_inr`: the
   reduced words of `w⁻¹` and of the elements of `F(X)`.
-* `TauCeti.GroupAlgGeom.GX.countVar_reducedWord_le`: reduction does not increase the number of
-  letters `x^{±1}`.
+* `TauCeti.GroupAlgGeom.GX.exists_countVar_eq_add_two_mul`,
+  `TauCeti.GroupAlgGeom.GX.countVar_reducedWord_le`: reduction removes letters `x^{±1}` in pairs,
+  so it does not increase their number.
+* `TauCeti.GroupAlgGeom.GX.isCyclicallyReduced_append_comm`,
+  `TauCeti.GroupAlgGeom.GX.isCyclicallyReduced_invRev`: cyclically reduced words are closed under
+  cyclic permutation and formal inversion.
 * `TauCeti.GroupAlgGeom.GX.IsReduced.exists_isCyclicallyReduced`: cyclic reduction relative to
   `G` of reduced words.
 
@@ -294,18 +298,51 @@ and `x^{-ε}` in reverse order. On words in variable letters it is `FreeGroup.in
 def invRev [Inv G] (l : List (G ⊕ X × Bool)) : List (G ⊕ X × Bool) :=
   (l.map (Sum.map (·⁻¹) fun p => (p.1, !p.2))).reverse
 
+theorem invRev_def [Inv G] (l : List (G ⊕ X × Bool)) :
+    invRev l = (l.map (Sum.map (·⁻¹) fun p => (p.1, !p.2))).reverse :=
+  (rfl)
+
 @[simp]
 theorem invRev_nil [Inv G] : invRev ([] : List (G ⊕ X × Bool)) = [] := (rfl)
+
+@[simp]
+theorem invRev_singleton_inl [Inv G] (g : G) :
+    invRev ([.inl g] : List (G ⊕ X × Bool)) = [.inl g⁻¹] := (rfl)
+
+@[simp]
+theorem invRev_singleton_inr [Inv G] (p : X × Bool) :
+    invRev ([.inr p] : List (G ⊕ X × Bool)) = [.inr (p.1, !p.2)] := (rfl)
 
 @[simp]
 theorem invRev_append [Inv G] (l₁ l₂ : List (G ⊕ X × Bool)) :
     invRev (l₁ ++ l₂) = invRev l₂ ++ invRev l₁ := by
   simp [invRev]
 
+theorem invRev_cons [Inv G] (a : G ⊕ X × Bool) (l : List (G ⊕ X × Bool)) :
+    invRev (a :: l) = invRev l ++ invRev [a] := by
+  rw [← List.singleton_append, invRev_append]
+
+@[simp]
+theorem length_invRev [Inv G] (l : List (G ⊕ X × Bool)) : (invRev l).length = l.length := by
+  simp [invRev]
+
+@[simp]
+theorem invRev_eq_nil_iff [Inv G] {l : List (G ⊕ X × Bool)} : invRev l = [] ↔ l = [] := by
+  simp [invRev]
+
 @[simp]
 theorem invRev_invRev [InvolutiveInv G] (l : List (G ⊕ X × Bool)) : invRev (invRev l) = l := by
   simp only [invRev, List.map_reverse, List.reverse_reverse, List.map_map]
   exact List.map_id'' (fun a => by rcases a with _ | _ <;> simp) l
+
+theorem invRev_injective [InvolutiveInv G] :
+    Function.Injective (invRev : List (G ⊕ X × Bool) → List (G ⊕ X × Bool)) :=
+  Function.LeftInverse.injective invRev_invRev
+
+@[simp]
+theorem invRev_inj [InvolutiveInv G] {l₁ l₂ : List (G ⊕ X × Bool)} :
+    invRev l₁ = invRev l₂ ↔ l₁ = l₂ :=
+  invRev_injective.eq_iff
 
 @[simp]
 theorem invRev_map_inr [Inv G] (L : List (X × Bool)) :
@@ -333,13 +370,14 @@ theorem isReduced_invRev [DivisionMonoid G] {l : List (G ⊕ X × Bool)} :
     fun h => h.imp fun a b h' hab => h' (combines_map_inv.1 hab).symm⟩
   simp [Sum.exists]
 
+@[simp]
 theorem prod_map_letter_invRev [Group G] (l : List (G ⊕ X × Bool)) :
     ((invRev l).map letter).prod = ((l.map letter).prod)⁻¹ := by
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [← List.singleton_append, invRev_append, List.map_append, List.prod_append, ih]
-    rcases a with g | ⟨y, _ | _⟩ <;> simp [invRev]
+    rw [invRev_cons, List.map_append, List.prod_append, ih]
+    rcases a with g | ⟨y, _ | _⟩ <;> simp
 
 end InvRev
 
@@ -469,8 +507,10 @@ private theorem prod_letterMul (a : G ⊕ X × Bool) (l : List (G ⊕ X × Bool)
       cases b <;> cases c <;> simp_all
     · simp
 
-private theorem countVar_letterMul_le (x : X) (a : G ⊕ X × Bool) (l : List (G ⊕ X × Bool)) :
-    countVar x (letterMul a l) ≤ countVar x [a] + countVar x l := by
+/- Multiplying by a letter removes no letter `x^{±1}` or cancels a pair `x^{±1}`, `x^{∓1}`. -/
+private theorem countVar_letterMul (x : X) (a : G ⊕ X × Bool) (l : List (G ⊕ X × Bool)) :
+    countVar x [a] + countVar x l = countVar x (letterMul a l) ∨
+      countVar x [a] + countVar x l = countVar x (letterMul a l) + 2 := by
   rcases a with g | ⟨y, b⟩ <;> rcases l with _ | ⟨h | ⟨z, c⟩, l⟩ <;> simp only [letterMul] <;>
     (try split_ifs) <;> (try by_cases hz : z = x) <;> (try by_cases hy : y = x) <;> simp_all <;>
     omega
@@ -542,7 +582,6 @@ theorem reducedWord_inl_of_ne_one {g : G} (hg : g ≠ 1) : reducedWord (inl g : 
 
 /-- The reduced word of a variable word `inr f` consists of the letters of the reduced word of `f`
 in the free group `F(X)`. -/
-@[simp]
 theorem reducedWord_inr [DecidableEq X] (f : FreeGroup X) :
     reducedWord (inr f : GX G X) = f.toWord.map Sum.inr :=
   (reducedWord_eq_iff (isReduced_map_inr.2 FreeGroup.isReduced_toWord)).2 <| by
@@ -559,16 +598,25 @@ theorem reducedWord_inv (w : GX G X) : reducedWord w⁻¹ = invRev (reducedWord 
   (reducedWord_eq_iff (isReduced_invRev.2 (isReduced_reducedWord w))).2 <| by
     rw [prod_map_letter_invRev, prod_reducedWord]
 
+/-- Reduction removes letters `x^{±1}` in pairs: a word `l` has as many letters `x^{±1}` as the
+reduced word of its product plus an even number. -/
+theorem exists_countVar_eq_add_two_mul (x : X) (l : List (G ⊕ X × Bool)) :
+    ∃ k, countVar x l = countVar x (reducedWord (l.map letter).prod) + 2 * k := by
+  rw [reducedWord_prod_eq_foldr]
+  induction l with
+  | nil => exact ⟨0, by simp⟩
+  | cons a l ih =>
+    obtain ⟨k, hk⟩ := ih
+    rw [List.foldr_cons, ← List.singleton_append, countVar_append]
+    rcases countVar_letterMul x a (l.foldr letterMul []) with h | h
+    exacts [⟨k, by omega⟩, ⟨k + 1, by omega⟩]
+
 /-- Reduction does not increase the number of letters `x^{±1}`: the reduced word of the product of
 a word `l` has at most as many letters `x^{±1}` as `l`. -/
 theorem countVar_reducedWord_le (x : X) (l : List (G ⊕ X × Bool)) :
     countVar x (reducedWord (l.map letter).prod) ≤ countVar x l := by
-  rw [reducedWord_prod_eq_foldr]
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.foldr_cons, ← List.singleton_append, countVar_append]
-    exact (countVar_letterMul_le x a _).trans (by omega)
+  obtain ⟨k, hk⟩ := exists_countVar_eq_add_two_mul x l
+  omega
 
 end NormalForm
 
@@ -624,7 +672,43 @@ theorem not_isCyclicallyReduced_inv_inl_self {a : G} {z : X} :
     ¬IsCyclicallyReduced ([.inr (z, false), .inl a, .inr (z, true)] : List (G ⊕ X × Bool)) := by
   simp
 
+/- Moving the first letter of a cyclically reduced word to its end keeps it cyclically reduced. -/
+private theorem IsCyclicallyReduced.append_singleton {a : G ⊕ X × Bool}
+    {l : List (G ⊕ X × Bool)} (h : IsCyclicallyReduced (a :: l)) :
+    IsCyclicallyReduced (l ++ [a]) := by
+  rcases l with _ | ⟨b, l⟩
+  · simpa using h
+  obtain ⟨hr, hba⟩ := isCyclicallyReduced_cons_cons.1 h
+  obtain ⟨ha, hab, hl⟩ := isReduced_cons_cons.1 hr
+  rw [List.cons_append, isCyclicallyReduced_cons_append, ← List.cons_append, isReduced_append]
+  exact ⟨⟨hl, ha, by simpa [List.getLast?_eq_some_getLast (List.cons_ne_nil b l)] using hba⟩, hab⟩
+
+/-- Being cyclically reduced is invariant under cyclic permutations. -/
+theorem isCyclicallyReduced_append_comm {l₁ l₂ : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced (l₁ ++ l₂) ↔ IsCyclicallyReduced (l₂ ++ l₁) := by
+  suffices ∀ l₁ l₂ : List (G ⊕ X × Bool), IsCyclicallyReduced (l₁ ++ l₂) →
+      IsCyclicallyReduced (l₂ ++ l₁) from ⟨this _ _, this _ _⟩
+  intro l₁
+  induction l₁ with
+  | nil => simp
+  | cons a l₁ ih =>
+    intro l₂ h
+    simpa using ih (l₂ ++ [a]) (by simpa using h.append_singleton)
+
 end Cyclic
+
+@[simp]
+theorem isCyclicallyReduced_invRev [DivisionMonoid G] {l : List (G ⊕ X × Bool)} :
+    IsCyclicallyReduced (invRev l) ↔ IsCyclicallyReduced l := by
+  induction l using List.bidirectionalRec with
+  | nil => simp
+  | singleton a => rcases a with _ | _ <;> simp
+  | cons_append a m b =>
+    have he : invRev (a :: (m ++ [b])) = Sum.map (·⁻¹) (fun p => (p.1, !p.2)) b ::
+        (invRev m ++ [Sum.map (·⁻¹) (fun p => (p.1, !p.2)) a]) := by
+      simp [invRev_def]
+    rw [he, isCyclicallyReduced_cons_append, ← he, isReduced_invRev,
+      isCyclicallyReduced_cons_append, combines_map_inv, combines_comm]
 
 /-! ### Cyclic reduction -/
 
