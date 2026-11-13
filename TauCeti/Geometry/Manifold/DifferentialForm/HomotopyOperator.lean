@@ -59,8 +59,7 @@ the unit tangent vector at every time.
   forms.
 * `TauCeti.homotopyOperator_mpullback_apply_eq_zero`: `h (f^* σ)` vanishes over every point at
   which `f` is stationary in time.
-* `TauCeti.homotopyOperator_mpullback_fst`: `h` vanishes on forms pulled back from `M` along the
-  projection `M × [0, 1] → M`.
+* `TauCeti.homotopyOperator_mpullback_fst`: `h` kills forms pulled back from `M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
   a map `g` with invertible derivatives.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
@@ -162,13 +161,6 @@ theorem homotopyOperator_mpullback_apply_eq_zero {E' H' N : Type*} [NormedAddCom
   exact (σ (f (x, t))).map_coord_zero 0
     (mfderiv_inr_eq_zero_of_forall_apply_eq (fun s ↦ (hx s).trans (hx t).symm) _)
 
-/-- The homotopy operator vanishes on every form pulled back from `M` along the projection
-`M × [0, 1] → M`: the derivative of the projection kills the unit time vector `∂ₜ`. -/
-@[simp]
-theorem homotopyOperator_mpullback_fst (α : RoughForm I M F (k + 1)) :
-    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (Prod.fst : M × Icc (0 : ℝ) 1 → M) α) = 0 :=
-  funext fun _ ↦ homotopyOperator_mpullback_apply_eq_zero (fun _ ↦ rfl) α
-
 /-- The homotopy operator of the zero form is zero. -/
 @[simp]
 theorem homotopyOperator_zero :
@@ -185,6 +177,17 @@ theorem homotopyOperator_smul (c : ℝ)
   funext x
   -- The integrand of `c • φ` is `c` times the integrand of `φ`.
   exact intervalIntegral.integral_smul (μ := volume) (a := 0) (b := 1) c (homotopyIntegrand φ x)
+
+/-- The homotopy operator kills every form pulled back from `M` along the projection
+`M × [0, 1] → M`: such a form vanishes on the unit time vector `∂ₜ`. -/
+@[simp]
+theorem homotopyOperator_mpullback_fst (φ : RoughForm I M F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I Prod.fst φ) = 0 := by
+  funext x
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply, mfderiv_fst]
+  -- The projection sends the first vector `∂ₜ = (0, 1)` to `0`.
+  exact (φ x).map_coord_zero 0 rfl
 
 /-- The integrand of the homotopy operator of a pullback along `g × id` is the integrand at the
 image point, evaluated on the images of the vectors under the derivative of `g`. -/

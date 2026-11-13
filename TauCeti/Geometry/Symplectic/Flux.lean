@@ -258,8 +258,8 @@ theorem flux_def (σ : closedForms J M 2)
 @[simp]
 theorem fluxForm_refl (σ : SmoothForm J M ℝ 2) : (refl J ∞ M).fluxForm σ = 0 := by
   have hcyl : (refl J ∞ M).cylinderMap = Prod.fst := funext fun p ↦ by simp
-  apply Subtype.ext
   -- The motion of the constant diffeotopy is the projection to `M`, which kills the time vector.
+  apply Subtype.ext
   rw [coe_fluxForm, SmoothForm.coe_mpullback, hcyl, homotopyOperator_mpullback_fst,
     Submodule.coe_zero]
 
