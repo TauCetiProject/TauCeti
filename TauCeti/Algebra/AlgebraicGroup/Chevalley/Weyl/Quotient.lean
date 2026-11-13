@@ -104,7 +104,7 @@ private theorem simpleClass_pow_three (i j : Fin t.rank)
     _ = 1 := by rw [D.simpleClass_mul_self, mul_one, D.simpleClass_mul_self]
 
 private theorem simpleClass_pow_four (i j : Fin t.rank)
-    (hij : t.cartanMatrix i j = -1) (hji : t.cartanMatrix j i = -2) :
+    (hji : t.cartanMatrix j i = -2) :
     (D.simpleClass A i * D.simpleClass A j) ^ 4 = 1 := by
   have hb : (D.simpleClass A i * D.simpleClass A j) ^ 2 =
       (D.simpleClass A j * D.simpleClass A i) ^ 2 := by
@@ -112,7 +112,7 @@ private theorem simpleClass_pow_four (i j : Fin t.rank)
         D.simpleLift A j * D.simpleLift A i * D.simpleLift A j * D.simpleLift A i := by
       apply Subtype.ext
       simpa only [Subgroup.coe_mul, simpleLift] using
-        D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hij hji A
+        D.weylElement_braid_of_cartanMatrix_eq_neg_two i j hji A
     simpa only [simpleClass, map_mul, QuotientGroup.mk'_apply, pow_two, mul_assoc] using
       congrArg (QuotientGroup.mk' H) h
   have hinv (k : Fin t.rank) : (D.simpleClass A k)⁻¹ = D.simpleClass A k :=
@@ -151,14 +151,14 @@ private theorem simpleClass_liftable (hs : t ≠ .G2) :
   · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_one] using
       D.simpleClass_pow_three A i j hij hji
   · simpa only [hij, hji, neg_mul_neg, one_mul, coxeterOrder_two] using
-      D.simpleClass_pow_four A i j hij hji
+      D.simpleClass_pow_four A i j hji
   · simp only [hij, hji, neg_mul_neg, mul_one, coxeterOrder_two]
     calc
       _ = D.simpleClass A i * (D.simpleClass A j * D.simpleClass A i) ^ 4 *
           (D.simpleClass A i)⁻¹ := by
         simp only [pow_succ, pow_zero]
         group
-      _ = 1 := by rw [D.simpleClass_pow_four A j i hji hij]; group
+      _ = 1 := by rw [D.simpleClass_pow_four A j i hij]; group
 
 private def quotientSection (hs : t ≠ .G2) :
     (t.simplyConnectedRootDatum ht).weylGroup →* Q :=
