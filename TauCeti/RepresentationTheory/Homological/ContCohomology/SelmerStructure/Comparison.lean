@@ -13,15 +13,21 @@ import Mathlib.GroupTheory.Index
 /-!
 # Changing the local conditions of a Selmer group
 
-Fix two Selmer structures with the same localisation maps and local conditions
-`A i ≤ B i`. If their conditions agree outside a set `S`, localisation gives an exact sequence
+For two Selmer structures `𝓕` and `𝓖`, the comparison map localises `𝓖.selmerGroup` at
+indices in a set `S` and reduces modulo `𝓕.localCondition`. Its target is the product of
+`𝓖.localCondition i` modulo its intersection with `𝓕.localCondition i`.
 
-`0 → Sel_A → Sel_B → ∏ i ∈ S, B i / A i`.
+If the localisation maps agree and `𝓖.localCondition i ≤ 𝓕.localCondition i` outside `S`,
+the kernel is the intersection of the two Selmer groups, viewed inside `𝓖.selmerGroup`.
+Consequently, the relative index of `𝓕.selmerGroup` in `𝓖.selmerGroup` equals the `Nat.card`
+of the comparison image. If also `𝓕.localCondition i ≤ 𝓖.localCondition i` everywhere,
+the inclusion of `𝓕.selmerGroup` followed by comparison is exact at `𝓖.selmerGroup`.
 
-The last arrow need not be surjective: its image records which local classes arise globally.
-The quotient `Sel_B / Sel_A` is identified with this image. For finite `S`, its order therefore
-divides the product of the local indices `[B i : A i]`. In particular, finiteness of `Sel_A`
-and of these local quotients implies finiteness of `Sel_B`.
+The comparison map need not be surjective: its image records which local classes arise globally.
+For finite `S`, under the same localisation-agreement and outside-`S` containment hypotheses,
+the relative Selmer index divides the product of the local relative indices. Finiteness of
+`𝓕.selmerGroup` and of the local quotients then implies finiteness of `𝓖.selmerGroup`,
+without a global nesting hypothesis.
 
 This is the elementary exact-sequence part of a comparison of Selmer orders. Identifying the
 cokernel with a dual Selmer obstruction requires arithmetic duality, not just localisation.
@@ -30,8 +36,8 @@ cokernel with a dual Selmer obstruction requires arithmetic duality, not just lo
 
 * `TauCeti.ContCohomology.SelmerStructure.withLocalConditions`: replace the local conditions
   without changing the localisation data.
-* `TauCeti.ContCohomology.SelmerStructure.localConditionComparison`: localisation of `Sel_B`
-  modulo the smaller local conditions, at a specified set of indices.
+* `TauCeti.ContCohomology.SelmerStructure.localConditionComparison`: localisation of
+  `𝓖.selmerGroup` modulo `𝓕.localCondition`, at a specified set of indices.
 
 ## Main results
 
@@ -125,9 +131,10 @@ theorem selmerGroup_le (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
   rw [← hloc i]
   exact hle i (hc i)
 
-/-- Localise a class satisfying `B` at indices in `S`, and reduce modulo `A ∩ B` there.
-For nested conditions this is the map to the product of the quotients `B i / A i`.
-Neither nesting nor agreement outside `S` is required to define the map. -/
+/-- Localise a class in `𝓖.selmerGroup` at indices in `S`, and reduce each coordinate in
+`𝓖.localCondition i` modulo its intersection with `𝓕.localCondition i`.
+Neither nesting, agreement outside `S`, nor agreement of the localisation maps is required
+to define the map. -/
 def localConditionComparison (S : Set ι) :
     𝓖.selmerGroup →+
       ∀ i : S, 𝓖.localCondition i.1 ⧸
@@ -138,8 +145,8 @@ def localConditionComparison (S : Set ι) :
       (((𝓖.localization i.1).comp 𝓖.selmerGroup.subtype).codRestrict
         (𝓖.localCondition i.1) fun c ↦ 𝓖.localization_mem c i.1)
 
-/-- The coordinate of the comparison map is the localised class modulo the smaller local
-condition. -/
+/-- The coordinate of the comparison map is the `𝓖`-localised class in `𝓖.localCondition i`
+modulo its intersection with `𝓕.localCondition i`. -/
 @[simp]
 theorem localConditionComparison_apply (S : Set ι) (c : 𝓖.selmerGroup) (i : S) :
     𝓕.localConditionComparison 𝓖 S c i =
@@ -147,7 +154,8 @@ theorem localConditionComparison_apply (S : Set ι) (c : 𝓖.selmerGroup) (i : 
         (⟨𝓖.localization i.1 c, 𝓖.localization_mem c i.1⟩ : 𝓖.localCondition i.1) :=
   (rfl)
 
-/-- A comparison class vanishes precisely when its localisations at `S` satisfy `A`. -/
+/-- A comparison class vanishes precisely when its `𝓖`-localisations at `S` satisfy
+`𝓕.localCondition`. -/
 @[simp]
 theorem localConditionComparison_eq_zero_iff (S : Set ι) (c : 𝓖.selmerGroup) :
     𝓕.localConditionComparison 𝓖 S c = 0 ↔
@@ -157,7 +165,8 @@ theorem localConditionComparison_eq_zero_iff (S : Set ι) (c : 𝓖.selmerGroup)
 
 variable (S : Set ι)
 
-/-- If `B ≤ A` outside `S`, the kernel of comparison is `Sel_A ∩ Sel_B`, viewed in `Sel_B`. -/
+/-- If the localisation maps agree and `𝓖.localCondition i ≤ 𝓕.localCondition i` outside
+`S`, the kernel of comparison is `𝓕.selmerGroup ∩ 𝓖.selmerGroup`, viewed in `𝓖.selmerGroup`. -/
 theorem ker_localConditionComparison (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
     (𝓕.localConditionComparison 𝓖 S).ker =
@@ -170,8 +179,9 @@ theorem ker_localConditionComparison (hloc : ∀ i, 𝓕.localization i = 𝓖.l
   · exact hc i hi
   · exact hout i hi (𝓖.localization_mem c i)
 
-/-- The change-of-local-conditions sequence is exact at `Sel_B`. In particular this holds
-when `A ≤ B` everywhere and the conditions agree outside `S`. -/
+/-- The inclusion of `𝓕.selmerGroup` followed by comparison is exact at `𝓖.selmerGroup`
+when the localisation maps agree, `𝓕.localCondition i ≤ 𝓖.localCondition i` everywhere,
+and `𝓖.localCondition i ≤ 𝓕.localCondition i` outside `S`. -/
 theorem exact_inclusion_localConditionComparison
     (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i)
@@ -182,9 +192,10 @@ theorem exact_inclusion_localConditionComparison
     (𝓕.localCondition i.1).addSubgroupOf (𝓖.localCondition i.1)),
     𝓕.ker_localConditionComparison 𝓖 S hloc hout, AddSubgroup.inclusion_range]
 
-/-- Finiteness of one Selmer group and of the local quotients implies finiteness of the
-other, when localisation agrees and its conditions are contained in the first outside a
-finite set. No global nesting of the conditions is required. -/
+/-- Finiteness of `𝓕.selmerGroup` and of the local quotients over finite `S` implies
+finiteness of `𝓖.selmerGroup` when the localisation maps agree and
+`𝓖.localCondition i ≤ 𝓕.localCondition i` outside `S`.
+No global nesting of the conditions is required. -/
 theorem finite_selmerGroup_of_finite_quotient
     (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i)
@@ -204,8 +215,9 @@ theorem finite_selmerGroup_of_finite_quotient
     (fun _ _ h ↦ Subtype.ext (Subtype.ext
       (congrArg (fun c : 𝓕.selmerGroup ↦ (c : H1 G M)) h)))
 
-/-- The relative Selmer index is the order of the image in the local-condition quotients.
-This `Nat.card` identity does not assume finiteness. -/
+/-- If the localisation maps agree and `𝓖.localCondition i ≤ 𝓕.localCondition i` outside
+`S`, the relative index of `𝓕.selmerGroup` in `𝓖.selmerGroup` is the order of the comparison
+image. This `Nat.card` identity does not assume finiteness or global nesting. -/
 theorem relIndex_selmerGroup_eq_card_range
     (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hout : ∀ i ∉ S, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
@@ -221,8 +233,10 @@ theorem relIndex_selmerGroup_eq_card_range
   rw [𝓕.ker_localConditionComparison 𝓖 S hloc hout] at h
   simpa only [AddSubgroup.relIndex] using h
 
-/-- For finitely many changed local conditions, the relative Selmer index divides the product
-of the local indices. This also holds with the `Nat.card` convention for infinite groups. -/
+/-- If the localisation maps agree and `𝓖.localCondition i ≤ 𝓕.localCondition i` outside
+`T`, the relative index of `𝓕.selmerGroup` in `𝓖.selmerGroup` divides the product over `T`
+of the local relative indices. This also holds with the `Nat.card` convention for infinite
+groups and does not require global nesting. -/
 theorem relIndex_selmerGroup_dvd_prod (T : Finset ι)
     (hloc : ∀ i, 𝓕.localization i = 𝓖.localization i)
     (hT : ∀ i ∉ T, 𝓖.localCondition i ≤ 𝓕.localCondition i) :
