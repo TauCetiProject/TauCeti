@@ -86,23 +86,14 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
   {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n) (L : ModuleCat.{0} ℤ)
   {p q : ℕ} (h : p + q = n)
 
-/-- The duality map on the image of a class of `Hᵖ(M, M ∖ K; L)` is capping it with `μ_K`. -/
-lemma dualityMap_compactSupportCohomologyι_eq_capFundamentalClassOn (K : Compacts (TopCat.of M))
-    (α : (TopPair.ofSubset ((K : Set (TopCat.of M))ᶜ)).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
-    o.dualityMap hn L p q h (TopCat.compactSupportCohomologyι p K α) =
-      o.capFundamentalClassOn hn L K.isCompact p q h α :=
-  (ConcreteCategory.comp_apply _ _ _).symm.trans
-    (ConcreteCategory.congr_hom (o.compactSupportCohomologyι_dualityMap hn L p q h K) α)
-
 /-- The duality map is surjective if capping with the fundamental class along some compact set is
 surjective. -/
 theorem surjective_dualityMap_of_surjective_capFundamentalClassOn {K : Compacts (TopCat.of M)}
     (hK : Function.Surjective (o.capFundamentalClassOn hn L K.isCompact p q h)) :
     Function.Surjective (o.dualityMap hn L p q h) := fun z ↦ by
   obtain ⟨α, rfl⟩ := hK z
-  exact ⟨TopCat.compactSupportCohomologyι p K α,
-    o.dualityMap_compactSupportCohomologyι_eq_capFundamentalClassOn hn L h K α⟩
+  refine ⟨TopCat.compactSupportCohomologyι p K α, ?_⟩
+  rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap]
 
 /-- The duality map is injective if every compact set lies in a compact set `K` along which
 capping with the fundamental class is injective. -/
@@ -114,7 +105,7 @@ theorem injective_dualityMap_of_cofinal
   obtain ⟨K₀, -, α, rfl⟩ := TopCat.exists_compactSupportCohomologyι_eq x ⊥
   obtain ⟨K, hK₀K, hK⟩ := H K₀
   rw [← TopCat.singularCohomologyMap_comp_compactSupportCohomologyι_apply p hK₀K] at hx ⊢
-  rw [dualityMap_compactSupportCohomologyι_eq_capFundamentalClassOn] at hx
+  rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap] at hx
   rw [(injective_iff_map_eq_zero _).1 hK _ hx, map_zero]
 
 /-- **Criterion for Poincaré duality**: the duality map of an oriented manifold is bijective if
@@ -180,24 +171,16 @@ variable {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensiona
   (o : HomologicalOrientation F F d) (hd : finrank ℝ F = d) (L : ModuleCat.{0} ℤ)
   {p q : ℕ} (h : p + q = d)
 
-/-- Capping with the fundamental class along a compact set `K ⊆ F`, star-convex about a point of
-`K`, is bijective `Hᵖ(F, F ∖ K; L) ⟶ H_q(F; L)`. -/
-theorem bijective_capFundamentalClassOn_of_starConvex {K : Set F} (hK : IsCompact K) {y : F}
-    (hKy : StarConvex ℝ y K) (hy : y ∈ K) :
-    Function.Bijective (o.capFundamentalClassOn hd L hK p q h) := by
-  rw [show ⇑(ConcreteCategory.hom (o.capFundamentalClassOn hd L hK p q h)) = _ from
-    funext (o.capFundamentalClassOn_apply hd L hK p q h)]
-  exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L hK hKy hy p q h
-
 /-- **Poincaré duality for a finite-dimensional real normed space**: the duality map
 `Hᵖ_c(F; L) ⟶ H_q(F; L)`, `p + q = d`, of a homological orientation of `F` is bijective. -/
 theorem bijective_dualityMap_of_finiteDimensional :
     Function.Bijective (o.dualityMap hd L p q h) :=
   o.bijective_dualityMap_of_cofinal hd L h fun K₀ ↦
     ⟨Compacts.starHull (E := F) ℝ 0 K₀, Compacts.le_starHull (E := F) ℝ 0 K₀,
-      o.bijective_capFundamentalClassOn_of_starConvex hd L h _
-        (Compacts.starConvex_starHull (E := F) ℝ 0 K₀)
-        (Compacts.mem_starHull_self (E := F) ℝ 0 K₀)⟩
+      (congrArg Function.Bijective (funext (o.capFundamentalClassOn_apply hd L _ p q h))).mpr <|
+        o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _
+          (Compacts.starConvex_starHull (E := F) ℝ 0 K₀)
+          (Compacts.mem_starHull_self (E := F) ℝ 0 K₀) p q h⟩
 
 /-- **Poincaré duality for a finite-dimensional real normed space**, as an isomorphism. -/
 instance isIso_dualityMap_of_finiteDimensional : IsIso (o.dualityMap hd L p q h) :=
@@ -246,11 +229,10 @@ theorem bijective_dualityMap_comap_of_starConvex (hj : IsOpenEmbedding j) {y : F
   refine ⟨K, fun u hu ↦ Compacts.le_starHull (E := F) ℝ y _ ⟨u, hu, rfl⟩, ?_⟩
   rw [o.bijective_capFundamentalClassOn_comap_iff hd L h hj
     (bijective_singularHomologyMap_of_starConvex L hj hy hU q) K]
-  refine o.bijective_capFundamentalClassOn_of_starConvex hd L h _ (y := y) ?_ ?_
-  · rw [hKS]
-    exact Compacts.starConvex_starHull (E := F) ℝ y _
-  · rw [hKS]
-    exact Compacts.mem_starHull_self (E := F) ℝ y _
+  refine (congrArg Function.Bijective (funext (o.capFundamentalClassOn_apply hd L _ p q h))).mpr ?_
+  exact o.bijective_singularCap_fundamentalClassOn_of_starConvex hd L _ (y := y)
+    (hKS ▸ Compacts.starConvex_starHull (E := F) ℝ y _)
+    (hKS ▸ Compacts.mem_starHull_self (E := F) ℝ y _) p q h
 
 /-- **Poincaré duality for a convex open subset**: for a nonempty convex open subset `V` of `F`,
 the duality map `Hᵖ_c(V; L) ⟶ H_q(V; L)` of the restricted orientation is bijective. -/
