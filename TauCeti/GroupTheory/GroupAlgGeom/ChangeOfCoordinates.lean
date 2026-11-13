@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 
 /-!
 # Changes of coordinates in equations over groups
@@ -14,13 +15,40 @@ A coefficient-preserving word homomorphism acts on tuples by evaluation. When it
 this action transports solution sets and radicals, and induces an isomorphism of coordinate
 groups. The results apply to inconsistent systems and arbitrary coefficient homomorphisms.
 
-In particular a `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between
-the solutions of a system `S` and those of its image `φ S`; it carries the radical of `S` to that
-of `φ S` (`Rad_image_mulEquiv`) and induces the isomorphism of coordinate groups
-`CoordGroup.imageMulEquiv`.
+A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between the solutions of a
+system `S` and those of its image `φ S`; it carries the radical of `S` to that of `φ S` and
+induces an isomorphism of coordinate groups. The change of coordinates `x ↦ x g` of one variable,
+a transvection, fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the
+centralizer of `ι g`, onto themselves.
 
-The construction is the invertible case of the word-map correspondence of Baumslag, Myasnikov
-and Remeslennikov, *Algebraic geometry over groups I*, §3.5.
+## Main definitions
+
+* `TauCeti.GroupAlgGeom.coordinateChangeEquiv`, `TauCeti.GroupAlgGeom.coordinateChangeEquivV`:
+  a bijective coefficient-preserving word map gives an equivalence of tuples, restricting to an
+  equivalence of solution sets.
+* `TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`: the induced isomorphism of
+  coordinate groups.
+* `TauCeti.GroupAlgGeom.imageEquivV`: the bijection of solution sets induced by a
+  `G`-isomorphism.
+* `TauCeti.GroupAlgGeom.CoordGroup.imageMulEquiv`: the isomorphism of coordinate groups induced
+  by a `G`-isomorphism.
+
+## Main results
+
+* `TauCeti.GroupAlgGeom.image_coordinateChangeEquiv_V`: a change of coordinates `σ` carries
+  `V_H(S)` onto `V_H(σ⁻¹(S))`.
+* `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
+  system under a `G`-isomorphism.
+* `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`: a `G`-isomorphism carries the radical of a system
+  to the radical of its image.
+* `TauCeti.GroupAlgGeom.image_transvection_V_singleton_commutatorElement`: the transvection
+  `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
+
+## References
+
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §3.3, Corollary 6, and §3.5: the construction is the
+  invertible case of the word-map correspondence.
 -/
 
 public section
@@ -77,6 +105,14 @@ noncomputable def coordinateChangeEquivV (S : Set (GX G X)) :
   -- The subtype equivalence applies the tuple equivalence to the underlying value.
   change coordinateChangeEquiv ι σ hσ (v : X → H) = _
   simp
+
+/-- A change of coordinates carries the solutions of `S` onto the solutions of the transformed
+system `σ⁻¹(S)`. -/
+theorem image_coordinateChangeEquiv_V (S : Set (GX G X)) :
+    coordinateChangeEquiv ι σ hσ '' V ι S = V ι (σ ⁻¹' S) := by
+  ext v
+  rw [Equiv.image_eq_preimage_symm, Set.mem_preimage, ← wordMap_mem_V_iff ι σ hσ.2,
+    ← coordinateChangeEquiv_apply ι σ hσ, Equiv.apply_symm_apply]
 
 /-- On tuples, the inverse solution equivalence applies the inverse word map. -/
 @[simp] theorem coordinateChangeEquivV_symm_apply_coe
@@ -231,6 +267,29 @@ theorem imageMulEquiv_symm_coeff (S : Set (GX G X)) (g : G) :
 end CoordGroup
 
 end MulEquiv
+
+/-! ### The commutator equation -/
+
+section Commutator
+
+open FreeGroup
+open scoped commutatorElement
+
+/-- The change of coordinates `x ↦ x g` of `G[x]`, the transvection `GX.transvection () 1 (inl g)`,
+carries the solutions of `[x, g] = 1`, the centralizer of `ι g`, onto themselves. -/
+theorem image_transvection_V_singleton_commutatorElement (g : G) :
+    coordinateChangeEquiv ι
+        (GHom.ofMulEquiv (GX.transvection () 1 (inl g) (one_mem _) (GX.inl_mem_avoiding () g))
+          (GX.transvection_inl _ _))
+        (GHom.ofMulEquiv_bijective _ _) ''
+        V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} =
+      V ι {⁅(inr (of ()) : GX G Unit), (inl g : GX G Unit)⁆} := by
+  refine (image_coordinateChangeEquiv_V ι _ _ _).trans (congrArg (V ι) ?_)
+  -- The transvection fixes the commutator, so it fixes the system.
+  ext w
+  simp [← MulEquiv.eq_symm_apply, commutatorElement_def, mul_assoc]
+
+end Commutator
 
 end GroupAlgGeom
 end TauCeti
