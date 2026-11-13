@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Smooth approximate identities in `Lᵖ`
@@ -40,6 +41,12 @@ The averaging operator is represented almost everywhere by the classical convolu
 the normalized bump. This formula applies to every `MemLp` representative, with no global
 integrability or compact support assumption on the function.
 
+At the infinite exponent, mollifications converge against integrable test fields through
+continuous bilinear maps. This weak-star endpoint is obtained by transferring convolution
+to the test field and using its strong `L¹` convergence, not by claiming `L^∞` norm convergence.
+Local finite-`Lᵖ` convergence only requires `Lᵖ` integrability on a positive thickening of
+the set where convergence is measured.
+
 ## Main declarations
 
 * `TauCeti.normedBumpLp`: averaging an `Lᵖ` function against a normalized smooth bump, as a
@@ -57,6 +64,10 @@ integrability or compact support assumption on the function.
   to the identity on `Lᵖ`.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
   convolution of a function in `Lᵖ` with these bumps.
+* `ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top`: weak-star convergence
+  for bounded fields tested against integrable fields through a continuous bilinear map.
+* `TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`: finite-`Lᵖ` convergence on a set
+  from `Lᵖ` integrability on a positive thickening.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
@@ -183,15 +194,83 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
       (Measure.continuous_translateLp hp) f
 
+/-- Pairing mollifications of a bounded function with any integrable field through a
+continuous bilinear map converges in norm. This is the `L¹`–`L^∞` weak-star endpoint. -/
+theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [CompleteSpace F]
+    (B : G →L[ℝ] F →L[ℝ] H) {I : Type*} {l : Filter I}
+    {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0))
+    {a : E → G} (ha : Integrable a mu) {f : E → F} (hf : MemLp f ∞ mu) :
+    Tendsto (fun i ↦ ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu)
+      l (nhds (∫ x, B (a x) (f x) ∂mu)) := by
+  -- Reflect the test field to express the pairing as convolution evaluated at zero.
+  let b : E → G := fun x ↦ a (-x)
+  have hb : Integrable b mu := ha.comp_neg
+  have hbmem : MemLp b 1 mu := memLp_one_iff_integrable.mpr hb
+  have hfn : MemLp (fun x ↦ f (-x)) ∞ mu :=
+    hf.comp_measurePreserving (Measure.measurePreserving_neg mu)
+  let L : Lp G 1 mu →L[ℝ] H := B.flip.lpPairing mu ∞ 1 (hfn.toLp (fun x ↦ f (-x)))
+  have hL (v : Lp G 1 mu) (g : E → G) (hv : v =ᵐ[mu] g) :
+      L v = ∫ x, B (g x) (f (-x)) ∂mu := by
+    dsimp only [L]
+    rw [lpPairing_eq_integral]
+    apply integral_congr_ae
+    filter_upwards [hfn.coeFn_toLp, hv] with x hx hx'
+    simp only [flip_apply, hx, hx']
+  -- Strong L¹ convergence of the test field gives convergence through the L¹–L∞ pairing.
+  have hlim := L.continuous.tendsto (hbmem.toLp b) |>.comp
+    (tendsto_normedBumpLp ENNReal.one_ne_top hphi (hbmem.toLp b))
+  have htarget : L (hbmem.toLp b) = ∫ x, B (a x) (f x) ∂mu := by
+    rw [hL _ _ hbmem.coeFn_toLp]
+    exact integral_neg_eq_self (fun x ↦ B (a x) (f x)) mu
+  have hsource (i : I) : L (normedBumpLp ENNReal.one_ne_top (phi i) mu (hbmem.toLp b)) =
+      ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu := by
+    rw [hL _ _ (normedBumpLp_ae_eq_convolution ENNReal.one_ne_top (phi i) hbmem)]
+    -- The L¹–L∞ bound supplies the norm-integrability hypothesis for associativity.
+    have hbound (x : E) : ‖((fun y ↦ ‖(phi i).normed mu y‖) ⋆[mul ℝ ℝ, mu]
+        (fun y ↦ ‖f y‖)) x‖ ≤ (∫ y, ‖(phi i).normed mu y‖ ∂mu) * lpNorm f ∞ mu := by
+      have h := norm_convolution_lsmul_le_integral_norm_mul_norm
+        (phi i).integrable_normed.norm (hf.norm.toLp _) x
+      rw [convolution_congr (lsmul ℝ ℝ) (EventuallyEq.refl _ _) hf.norm.coeFn_toLp] at h
+      simpa only [convolution_def, lsmul_apply, smul_eq_mul, mul_apply', norm_norm,
+        Lp.norm_toLp, eLpNorm_norm f hf.aestronglyMeasurable, toReal_eLpNorm] using h
+    have hassoc := convolution_assoc (lsmul ℝ ℝ).flip B B (lsmul ℝ ℝ)
+      (fun g r v ↦ by simp only [flip_apply, lsmul_apply, map_smul, smul_apply])
+      hb.aestronglyMeasurable (phi i).integrable_normed.aestronglyMeasurable
+      hf.aestronglyMeasurable (hb.ae_convolution_exists _ (phi i).integrable_normed)
+      (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _
+        (phi i).integrable_normed.norm hf.aestronglyMeasurable.norm
+        ((ae_le_lpNorm_exponent_top hf).mono fun _ hx ↦ by
+          simpa only [norm_norm] using hx)))
+      (convolutionExists_of_integrable_of_ae_norm_le _ hb.norm
+        ((phi i).integrable_normed.aestronglyMeasurable.norm.convolution _
+          hf.aestronglyMeasurable.norm) (ae_of_all _ hbound) 0)
+    rw [convolution_flip] at hassoc
+    have hpair : (b ⋆[B, mu] ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f)) 0 =
+        ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu := by
+      rw [convolution_def]
+      simpa only [zero_sub, b] using integral_neg_eq_self (fun x ↦
+        B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x)) mu
+    simpa only [convolution_def, zero_sub] using hassoc.trans hpair
+  simpa only [Function.comp_def, hsource, htarget] using hlim
+
 /-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges
 in the Banach codomain. The bump family and convergence filter are arbitrary. -/
 theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0∞}
     [Fact (1 ≤ q)] [p.HolderConjugate q] {I : Type*} {l : Filter I}
-    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → ℝ} (ha : MemLp a q mu)
     {f : E → F} (hf : MemLp f p mu) :
     Tendsto (fun i ↦ ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu)
       l (nhds (∫ x, a x • f x ∂mu)) := by
+  by_cases hp : p = ∞
+  · subst p
+    have hq : q = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q).mp rfl
+    subst q
+    exact (lsmul ℝ ℝ).tendsto_integral_bilin_normed_convolution_top hphi
+      (memLp_one_iff_integrable.mp ha) hf
   let L : Lp F p mu →L[ℝ] F := (lsmul ℝ ℝ).lpPairing mu q p (ha.toLp a)
   have hpair (g : Lp F p mu) (G : E → F) (hg : g =ᵐ[mu] G) :
       L g = ∫ x, a x • G x ∂mu := by
@@ -236,33 +315,43 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
   simp_rw [eLpNorm_one_eq_lintegral_eNorm (hi _).aestronglyMeasurable] at h
   exact h
 
-/-- **Mollification converges in `Lᵖ_loc`.** If `f` belongs to `Lᵖ` on every compact set,
-`1 ≤ p < ∞`, normalized smooth mollifications converge in `Lᵖ` on every compact set. -/
+/-- Mollifications converge in `Lᵖ(s)`, for `1 ≤ p < ∞`, if the function belongs to `Lᵖ`
+on a fixed positive thickening of `s`. Neither compactness of `s` nor global local
+integrability is required. -/
 theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : Type*}
     {l : Filter I} (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F}
-    (hf : ∀ K, IsCompact K → MemLp f p (mu.restrict K)) {K : Set E} (hK : IsCompact K) :
+    {s : Set E} {δ : ℝ} (hδ : 0 < δ)
+    (hf : MemLp f p (mu.restrict (thickening δ s))) :
     Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p
-      (mu.restrict K)) l (nhds 0) := by
-  -- Small bumps only see `f` on a fixed compact thickening of `K`.
-  set s := cthickening 1 K
-  have hs : IsCompact s := hK.cthickening
-  have hfs : MemLp (s.indicator f) p mu :=
-    (memLp_indicator_iff_restrict hs.measurableSet.nullMeasurableSet).2 (hf s hs)
+      (mu.restrict s)) l (nhds 0) := by
+  -- Small bumps only see the function on this fixed neighborhood.
+  set t := thickening δ s
+  have ht : MeasurableSet t := isOpen_thickening.measurableSet
+  have hfs : MemLp (t.indicator f) p mu :=
+    (memLp_indicator_iff_restrict ht.nullMeasurableSet).2 hf
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (tendsto_eLpNorm_normed_convolution_sub hp hphi hfs)
     (.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [hphi.eventually (gt_mem_nhds one_pos)] with i hi
-  have heq : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) =ᵐ[mu.restrict K]
-      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f - s.indicator f) := by
-    filter_upwards [ae_restrict_mem hK.measurableSet] with x hx
+  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi
+  have heq : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) =ᵐ[mu.restrict s]
+      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] t.indicator f - t.indicator f) := by
+    filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
+      (ae_mono (Measure.restrict_mono_set mu (subset_closure (s := s))))] with x hx
+    have hxt : x ∈ t := by
+      dsimp only [t]
+      rw [← thickening_closure]
+      exact self_subset_thickening hδ (closure s) hx
     simp only [Pi.sub_apply]
-    rw [indicator_of_mem (self_subset_cthickening K hx)]
-    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
-    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
-    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
+    rw [indicator_of_mem hxt]
+    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun y hy ↦ ?_).symm
+    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at hy
+    dsimp only [t]
+    rw [← thickening_closure]
+    apply mem_thickening_iff.mpr
+    refine ⟨x, hx, ?_⟩
     rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    exact ht.le.trans hi.le
+    exact hy.trans hi
   exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
@@ -275,8 +364,9 @@ theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I :
     Tendsto (fun i ↦ ∫⁻ x in K, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ₑ ∂mu) l
       (nhds 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_normed_convolution_sub_restrict ENNReal.one_ne_top hphi
-      (fun S hS ↦ memLp_one_iff_integrable.mpr (hf.integrableOn_isCompact hS)) hK)
+    (tendsto_eLpNorm_normed_convolution_sub_restrict ENNReal.one_ne_top hphi one_pos
+      ((memLp_one_iff_integrable.mpr (hf.integrableOn_isCompact hK.cthickening)).mono_measure
+        (Measure.restrict_mono_set mu (thickening_subset_cthickening 1 K))))
     (.of_forall fun _ ↦ zero_le) (.of_forall fun _ ↦ lintegral_eNorm_le_eLpNorm_one)
 
 section Bilinear

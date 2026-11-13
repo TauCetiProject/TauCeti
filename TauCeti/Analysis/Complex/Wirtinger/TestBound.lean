@@ -182,8 +182,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     have hψ := ψ.continuous.memLp_of_hasCompactSupport ψ.hasCompactSupport
       (p := q) (μ := (volume : Measure ℂ))
     simpa only [ψ, TestFunction.coe_lineDerivCLM] using hψ
-  have hlim := tendsto_integral_smul_normed_convolution hp_top
-    hρ hψ hu₀
+  have hlim := tendsto_integral_smul_normed_convolution hρ hψ hu₀
   have hnormlim := (continuous_eNorm.tendsto _).comp hlim
   have hfinal := le_of_tendsto hnormlim (Filter.Eventually.of_forall htest)
   have heq : (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u₀ z) =
