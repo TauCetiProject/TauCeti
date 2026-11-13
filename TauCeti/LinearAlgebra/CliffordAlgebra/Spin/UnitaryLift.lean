@@ -135,7 +135,7 @@ private theorem toSpecialOrthogonal_spinCOfPair_coordVec (p : unitary ℍ[ℝ] �
   refine EquivLike.injective realCliffordFourZeroQuaternionEquiv ?_
   rw [realSpinFourEquivQuaternionUnitaryProd_action, MulEquiv.apply_symm_apply, coordVec,
     coordVec, QuadraticMap.IsometryEquiv.apply_symm_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply, Quaternion.star_circleToUnitary, inv_inv,
+    QuadraticMap.IsometryEquiv.apply_symm_apply, Unitary.star_eq_inv, ← map_inv, inv_inv,
     Quaternion.coe_circleToUnitary,
     Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec,
     Quaternion.ofFirstColumn_smul, Quaternion.ofFirstColumn_toComplexMatrix_mulVec]

@@ -356,13 +356,6 @@ theorem coe_circleToUnitary (w : Circle) :
     (circleToUnitary w : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) :=
   (rfl)
 
-/-- The conjugate of the unit quaternion `circleToUnitary w` is `circleToUnitary w⁻¹`. -/
-@[simp]
-theorem star_circleToUnitary (w : Circle) : star (circleToUnitary w) = circleToUnitary w⁻¹ := by
-  refine Subtype.ext ?_
-  rw [Unitary.coe_star, coe_circleToUnitary, coe_circleToUnitary]
-  ext <;> simp
-
 /-! ### `U(2)` as a quotient of `Sp(1) × U(1)` -/
 
 /-- **`U(2)` from unit quaternions and the circle.** The homomorphism `Sp(1) × U(1) → U(2)`,
