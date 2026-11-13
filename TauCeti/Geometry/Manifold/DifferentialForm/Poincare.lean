@@ -92,6 +92,24 @@ private theorem exists_primitive_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
   obtain ⟨α, hα, -, hdα⟩ := hconv.exists_contDiffOn_forall_extDerivWithin_eq hsu hxs hr hω hcl
   exact ⟨ε, hε, α, hα, hdα⟩
 
+omit [CompleteSpace F] in
+/-- A smooth bump function equal to `1` near `x` and supported in the chart preimage of a ball cuts
+the pullback of a `C^r` flat form on that ball off to a `C^r` form on the whole manifold. -/
+private theorem exists_isSmoothForm_smul_mpullback_extChartAt [FiniteDimensional ℝ E] [T2Space M]
+    [IsManifold I ∞ M] {r : ℕ∞} {x : M} {ε : ℝ} (hε : 0 < ε) {α : E → E [⋀^Fin k]→L[ℝ] F}
+    (hα : ContDiffOn ℝ r α (ball (extChartAt I x x) ε ∩ range I)) :
+    ∃ χ : SmoothBumpFunction I x,
+      tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' ball (extChartAt I x x) ε ∧
+      IsSmoothForm I r (fun y ↦ χ y •
+        mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k) y) := by
+  have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
+    IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
+  obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
+    ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
+      ⟨mem_chart_source H x, mem_ball_self hε⟩)
+  exact ⟨χ, hχu, isSmoothForm_smul_mpullback_extChartAt isOpen_ball hα
+    (χ.contMDiff.of_le (by exact_mod_cast le_top)) hχu⟩
+
 /-- **The Poincaré lemma on manifolds.** A `C^r` form of positive degree, `r ≥ 1`, that is closed
 near a point `x` is, on a neighbourhood of `x`, the exterior derivative of a `C^r` form defined on
 the whole manifold. The manifold may have boundary or corners.
@@ -109,11 +127,7 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
   -- `p` is the pullback of the flat primitive along the chart; its chart expression is `α`.
   let p : RoughForm I M F k :=
     mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k)
-  obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
-    ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
-      ⟨mem_chart_source H x, mem_ball_self hε⟩)
-  have hψ : IsSmoothForm I r (fun y ↦ χ y • p y) := isSmoothForm_smul_mpullback_extChartAt
-    isOpen_ball hα (χ.contMDiff.of_le (by exact_mod_cast le_top)) hχu
+  obtain ⟨χ, hχu, hψ⟩ := exists_isSmoothForm_smul_mpullback_extChartAt (I := I) hε hα
   have hψ₁ : IsSmoothForm I 1 (fun y ↦ χ y • p y) :=
     hψ.of_le (by exact_mod_cast hr)
   refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _, hψ, fun y hy ↦ ?_⟩

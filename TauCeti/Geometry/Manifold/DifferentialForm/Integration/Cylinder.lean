@@ -436,21 +436,25 @@ private theorem contMDiff_glue {n : ℕ∞} (h : ∀ t, u (0, t) = v (0, t))
     filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hz'] with w hw
     exact glue_eq_right h hw
 
+/-- The integral over a map reparametrized in its first coordinate by `s ↦ smoothTransition
+(c * s + d)` is the integral over the original map between the transformed corners. -/
+private theorem rectangleIntegral_comp_smoothTransition [IsManifold I 1 M]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {w : ℝ × ℝ → M}
+    (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) {c d : ℝ} {a b : ℝ × ℝ} :
+    rectangleIntegral φ (w ∘ Prod.map (fun s ↦ smoothTransition (c * s + d)) id) a b =
+      rectangleIntegral φ w (smoothTransition (c * a.1 + d), a.2)
+        (smoothTransition (c * b.1 + d), b.2) :=
+  rectangleIntegral_comp_prodMap hφ hw
+    (fun s _ ↦ ((contDiff_smoothTransition_affine (n := 1) c d).differentiable
+      one_ne_zero s).hasDerivAt)
+    ((contDiff_smoothTransition_affine (n := 1) c d).continuous_deriv le_rfl).continuousOn
+
 /-- The integral over the glued map is the integral over `v` minus the integral over `u`. -/
 private theorem rectangleIntegral_glue [IsManifold I 1 M]
     {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) (h : ∀ t, u (0, t) = v (0, t))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) :
     rectangleIntegral φ (glue u v) (0, 0) (1, 1) =
       rectangleIntegral φ v (0, 0) (1, 1) - rectangleIntegral φ u (0, 0) (1, 1) := by
-  -- A reparametrization `s ↦ smoothTransition (c * s + d)` of the first coordinate.
-  have hreparam {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (c d : ℝ) (a b : ℝ × ℝ) :
-      rectangleIntegral φ (w ∘ Prod.map (fun s ↦ smoothTransition (c * s + d)) id) a b =
-        rectangleIntegral φ w (smoothTransition (c * a.1 + d), a.2)
-          (smoothTransition (c * b.1 + d), b.2) :=
-    rectangleIntegral_comp_prodMap hφ hw
-      (fun s _ ↦ ((contDiff_smoothTransition_affine (n := 1) c d).differentiable
-        one_ne_zero s).hasDerivAt)
-      ((contDiff_smoothTransition_affine (n := 1) c d).continuous_deriv le_rfl).continuousOn
   rw [← rectangleIntegral_add_adjacent hφ (contMDiff_glue h hu hv) (0, 0) (1 / 2) (1, 1)]
   -- On `[0, 1/2]` the glued map runs backwards through `u`, on `[1/2, 1]` forwards through `v`.
   have hl : rectangleIntegral φ (glue u v) (0, 0) (1 / 2, 1) =
@@ -460,7 +464,8 @@ private theorem rectangleIntegral_glue [IsManifold I 1 M]
       intro z hz
       rw [uIcc_of_le (by norm_num)] at hz
       exact glue_of_le hz.1.2
-    rw [rectangleIntegral_congr heq, hreparam hu, ← rectangleIntegral_symm_fst]
+    rw [rectangleIntegral_congr heq, rectangleIntegral_comp_smoothTransition hφ hu,
+      ← rectangleIntegral_symm_fst]
     norm_num
     rw [smoothTransition.zero_of_nonpos (by norm_num)]
   have hr : rectangleIntegral φ (glue u v) (1 / 2, 0) (1, 1) =
@@ -470,7 +475,7 @@ private theorem rectangleIntegral_glue [IsManifold I 1 M]
       intro z hz
       rw [uIcc_of_le (by norm_num), uIcc_of_le (by norm_num)] at hz
       exact glue_eq_right h (by linarith [hz.1.1])
-    rw [rectangleIntegral_congr heq, hreparam hv]
+    rw [rectangleIntegral_congr heq, rectangleIntegral_comp_smoothTransition hφ hv]
     norm_num
     rw [smoothTransition.zero_of_nonpos (by norm_num)]
   rw [hl, hr]
