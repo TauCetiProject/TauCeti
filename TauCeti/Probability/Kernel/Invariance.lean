@@ -9,7 +9,10 @@ public import TauCeti.Probability.Kernel.PMF
 public import Mathlib.Probability.Kernel.Invariance
 
 /-!
-# Stationarity and detailed balance on countable state spaces
+# Invariant measures and detailed balance for kernels
+
+Every measure is invariant under `Kernel.id`, the zero measure is invariant under every kernel,
+and the `κ`-invariant measures are closed under scalar multiplication and binary addition.
 
 On a countable space with measurable singletons, Mathlib's set-level notions
 `Kernel.Invariant` and `Kernel.IsReversible` reduce to identities between singleton masses.
@@ -28,6 +31,10 @@ row-vector and symmetric-matrix forms are in `TauCeti.Probability.Kernel.Matrix.
 
 ## Main statements
 
+* `ProbabilityTheory.Kernel.Invariant.id`, `ProbabilityTheory.Kernel.Invariant.zero`,
+  `ProbabilityTheory.Kernel.Invariant.smul`, `ProbabilityTheory.Kernel.Invariant.add`:
+  invariance under `Kernel.id` and closure of `κ`-invariant measures under `0`, scalar
+  multiples, and binary sums.
 * `ProbabilityTheory.Kernel.invariant_iff_singleton`: invariance as a balance equation at
   each state.
 * `ProbabilityTheory.Kernel.isReversible_iff_singleton`: detailed balance as equality of the
@@ -47,6 +54,33 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace ProbabilityTheory.Kernel
+
+section Basic
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- Every measure is invariant under the identity kernel. -/
+@[simp]
+theorem Invariant.id (μ : Measure α) : Kernel.id.Invariant μ :=
+  Measure.id_comp
+
+/-- The zero measure is invariant under every kernel. -/
+@[simp]
+theorem Invariant.zero (κ : Kernel α α) : κ.Invariant 0 :=
+  Measure.bind_zero_left κ
+
+/-- Scalar multiples of a `κ`-invariant measure remain `κ`-invariant. -/
+theorem Invariant.smul {κ : Kernel α α} {μ : Measure α} (h : κ.Invariant μ) (c : ℝ≥0∞) :
+    κ.Invariant (c • μ) := by
+  rw [Invariant, Measure.comp_smul, h.def]
+
+/-- The sum of two `κ`-invariant measures is `κ`-invariant. -/
+theorem Invariant.add {κ : Kernel α α} {μ ν : Measure α}
+    (hμ : κ.Invariant μ) (hν : κ.Invariant ν) :
+    κ.Invariant (μ + ν) := by
+  rw [Invariant, Measure.comp_add, hμ.def, hν.def]
+
+end Basic
 
 variable {α : Type*} [MeasurableSpace α] [Countable α] [MeasurableSingletonClass α]
 
