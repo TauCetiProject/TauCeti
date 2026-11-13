@@ -403,7 +403,7 @@ private theorem norm_integral_mul_le_norm {q : ℝ≥0∞} [Fact (1 ≤ q)] (u :
     (hw : eLpNorm w q.conjExponent μ ≤ 1) : ‖∫ x, u x * w x ∂μ‖ ≤ ‖u‖ := by
   have h := TauCeti.enorm_integral_mul_le (μ := μ) (p := q) (q := q.conjExponent) (u := ⇑u)
     (v := w)
-  rw [Lp.norm_def, ← toReal_enorm]
+  rw [Lp.norm_def, ← toReal_eNorm]
   exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top u) (h.trans (mul_le_of_le_one_right' hw))
 
 end Pairing
