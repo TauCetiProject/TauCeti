@@ -681,6 +681,7 @@ theorem isUnit_iff_coeff_zero {x : uniformTilt p B} :
 
 /-- **In the tilt of a reduced ring, `x♯ = 0` only for `x = 0`**: every coordinate `x⁽ⁿ⁾` is a
 `p ^ n`-th root of `x♯`. -/
+@[simp]
 theorem coeff_zero_eq_zero_iff [IsReduced B] {x : uniformTilt p B} :
     coeff p B 0 x = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ext fun n ↦ ?_, fun h ↦ h ▸ coeff_zero 0⟩
