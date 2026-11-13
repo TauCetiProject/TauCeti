@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.ImDilation
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
+import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -54,7 +55,11 @@ statement.
   extends to a map in `W^{k,p}_loc(Ω)` when the node dilations map the lower part of `Ω` into `Ω`;
   the cases of discs centred on the real axis and of the whole plane are
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
-  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`. Near each point of
+  `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
+  (`TauCeti.MemWkpLoc.exists_ball_extension`).
+* `TauCeti.MemWkpLoc.exists_opens_memWkpLoc_planarReflection`: without any symmetry of `Ω`, the
+  reflection is in `W^{k,p}_loc(V)` for an open `V` with `Ω ∩ {0 ≤ im} ⊆ V ⊆ Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
   derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
@@ -72,7 +77,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter Complex
-open scoped ContDiff Topology Distributions ENNReal Polynomial
+open scoped ContDiff Topology Distributions ENNReal Polynomial ComplexConjugate
 
 namespace TauCeti
 
@@ -737,6 +742,83 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_univ {p : ℝ≥0∞} (
     MemWkpLoc p univ k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⊤) hp (fun _ _ _ _ => trivial)
     (by simpa using hu)
+
+/-- **Reflection near a relatively open subset of the closed upper half-plane.** The order-`k`
+higher reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is in `MemWkpLoc p V k` on an open set
+`V` between `Ω ∩ {0 ≤ im}` and `Ω`: the union of the open upper part of `Ω` and of discs in `Ω`
+centred on the real axis. No symmetry of `Ω` is assumed. -/
+theorem MemWkpLoc.exists_opens_memWkpLoc_planarReflection [CompleteSpace F] {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
+    ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
+      MemWkpLoc p V k (TauCeti.planarReflection (higherReflectionCoeff k) u) := by
+  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.2
+  let H : Opens ℂ := ⟨{z | 0 < z.im}, isOpen_lt continuous_const continuous_im⟩
+  let O : Option {x : ℝ // (x : ℂ) ∈ Ω} → Opens ℂ := fun i =>
+    i.elim (Ω ⊓ H) fun x => ⟨Metric.ball (x : ℂ) (r x), Metric.isOpen_ball⟩
+  refine ⟨⨆ i, O i, fun z hz => ?_, ?_, (memWkpLoc_iSup_iff O).2 ?_⟩
+  · simp only [mem_inter_iff, mem_ofPred_eq] at hz
+    rw [Opens.coe_iSup, mem_iUnion]
+    rcases hz.2.lt_or_eq with h | h
+    · exact ⟨none, hz.1, h⟩
+    · have hz' : ((z.re : ℝ) : ℂ) = z := Complex.ext rfl (by simpa using h)
+      refine ⟨some ⟨z.re, by rw [hz']; exact hz.1⟩, ?_⟩
+      exact Metric.mem_ball.2 ((dist_eq_zero.2 hz'.symm).trans_lt (hr0 _))
+  · rw [Opens.coe_iSup]
+    refine iUnion_subset fun i => ?_
+    cases i with
+    | none => exact inter_subset_left
+    | some x => exact hrΩ x
+  · rintro (_ | x)
+    · simp only [O, H, Option.elim_none, Opens.coe_inf, Opens.coe_mk]
+      refine (hu.mono (inter_subset_inter_right _ (ofPred_subset_ofPred.2 fun _ h => h.le)))
+        |>.congr_ae ?_
+      exact ae_restrict_of_forall_mem ((Ω ⊓ H).isOpen.measurableSet) fun z hz =>
+        (planarReflection_of_nonneg _ _ hz.2.le).symm
+    · exact (hu.mono (inter_subset_inter_left _ (hrΩ x)))
+        |>.planarReflection_higherReflectionCoeff_ball hp x (r x)
+
+/-- At order one the reflection node is `-1`, so the node dilation is complex conjugation. -/
+theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :
+    imDilation (higherReflectionNode j) z = conj z := by
+  rw [Fin.fin_one_eq_zero j, imDilation_apply, higherReflectionNode_eq]
+  apply Complex.ext <;> simp
+
+/-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: it
+agrees with the one supplied by the definition off the axis, which is a null set. -/
+theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0∞} {Ω : Opens ℂ}
+    {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D := by
+  obtain ⟨-, D', hD', hD'p⟩ := memWkpLoc_succ_iff.1 hu
+  have hset : ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
+      (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
+    rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
+    exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
+  exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
+    (by rw [Measure.restrict_congr_set hset]; exact hD'.ae_eq hD)
+
+/-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
+class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a
+disc about `w`: the higher-order reflection when `w` is real, and the map itself otherwise. -/
+theorem MemWkpLoc.exists_ball_extension {p : ℝ≥0∞} (hp : 1 ≤ p) {V : Set ℂ} (hV : IsOpen V)
+    {u : ℂ → F} (hu : MemWkpLoc p (V ∩ {z | 0 ≤ z.im}) k u) {w : ℂ} (hw : w ∈ V)
+    (hw0 : 0 ≤ w.im) : ∃ r > 0, ∃ v : ℂ → F, MemWkpLoc p (Metric.ball w r) k v ∧
+      ∀ y ∈ Metric.ball w r, 0 ≤ y.im → v y = u y := by
+  obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.1 hV w hw
+  rcases hw0.lt_or_eq with hw0 | hw0
+  · refine ⟨min r w.im, lt_min hr hw0, u, hu.mono fun y hy => ⟨hrV (Metric.ball_subset_ball
+      (min_le_left _ _) hy), ?_⟩, fun _ _ _ => rfl⟩
+    have := (Complex.abs_im_le_norm (y - w)).trans_lt ((mem_ball_iff_norm.1 hy).trans_le
+      (min_le_right _ _))
+    rw [Complex.sub_im, abs_lt] at this
+    rw [mem_ofPred_eq]
+    linarith [this.1]
+  · have hwx : ((w.re : ℝ) : ℂ) = w := Complex.ext (by simp) (by simp [hw0])
+    refine ⟨r, hr, TauCeti.planarReflection (higherReflectionCoeff k) u, ?_, fun y _ hy =>
+      planarReflection_of_nonneg _ u hy⟩
+    rw [← hwx]
+    exact MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp w.re r
+      (hu.mono (inter_subset_inter_left _ (by rw [hwx]; exact hrV)))
 
 /-! ### The `Lᵖ` bound -/
 

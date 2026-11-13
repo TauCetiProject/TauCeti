@@ -152,7 +152,6 @@ theorem length_quotient_differentIdeal_ringYZ :
     Module.length A (RingYZ t s u ⧸ differentIdeal A (RingYZ t s u)) = 8 := by
   have hmem := (mem_maximalIdeal t).mpr ht.not_isUnit
   have := isDiscreteValuationRing_ringYZ hmem hs hu
-  have := isLocalHom_algebraMap_ringYZ hmem hs hu
   have hm := multiplicity_differentIdeal_ringYZ ht hs hu
   have hd : differentIdeal A (RingYZ t s u) ≠ ⊥ := by
     intro hd
