@@ -33,16 +33,9 @@ with the homogeneous projections, while `DirectSum.isInternal_comap` and
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
 
-A third group is about maps compatible with a decomposition. Two linear maps agreeing on every
-member of a spanning family of submodules are equal, `LinearMap.ext_of_iSup_eq_top`; for an
-internal direct sum the spanning hypothesis is `DirectSum.IsInternal.submodule_iSup_eq_top`. If a
-linear map carries each summand of a spanning family into the corresponding member of an
-independent family, then its kernel is spanned by its homogeneous parts,
-`LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a
-linear map preserves independence when the part of its kernel in the span is spanned by its
-intersections with the summands. Two linear maps out of a finite product `P → M` agree as soon as
-they agree on the homogeneous single-coordinate functions `Pi.single x α`,
-`LinearMap.pi_ext_of_decomposition`.
+A third group is about maps compatible with a decomposition. Two linear maps out of a finite
+product `P → M` agree as soon as they agree on the homogeneous single-coordinate functions
+`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
@@ -333,41 +326,6 @@ end TauCeti
 
 namespace LinearMap
 
-/-- Two semilinear maps that agree on every member of a family of submodules spanning the source
-are equal. -/
-theorem ext_of_iSup_eq_top {R R₂ ι M M₂ : Type*} [Semiring R] [Semiring R₂]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ : R →+* R₂}
-    {A : ι → Submodule R M} (hA : ⨆ i, A i = ⊤) {f g : M →ₛₗ[σ] M₂}
-    (h : ∀ i, ∀ x ∈ A i, f x = g x) : f = g :=
-  ext_on (s := ⋃ i, (A i : Set M)) (by rw [← Submodule.iSup_eq_span, hA])
-    fun x hx ↦ by
-      obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hx
-      exact h i x hi
-
-/-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
-If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries
-`A i` into `A' i`, then the kernel of `g` is the supremum of its intersections with the `A i`.
-
-The hypothesis on the source is only that its family spans; independence there is not used, and
-an internal direct sum supplies it through `DirectSum.IsInternal.submodule_iSup_eq_top`. -/
-theorem ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] (g : M →ₗ[R] N) {A : ι → Submodule R M}
-    {A' : ι → Submodule R N} (hA : ⨆ i, A i = ⊤) (hA' : iSupIndep A')
-    (hg : ∀ i, (A i).map g ≤ A' i) :
-    ker g = ⨆ i, ker g ⊓ A i := by
-  classical
-  refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun _ ↦ inf_le_left)
-  obtain ⟨c, hc, rfl⟩ :=
-    (Submodule.mem_iSup_iff_exists_finsupp A x).1 (hA ▸ Submodule.mem_top)
-  have hsum : ∑ i ∈ c.support, g (c i) = 0 := by
-    rw [← map_sum]
-    simpa [Finsupp.sum] using hx
-  have hzero := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero A').1 hA' c.support
-    (fun i ↦ g (c i)) (fun i _ ↦ hg i ⟨c i, hc i, rfl⟩) hsum
-  simp only [Finsupp.sum]
-  exact Submodule.sum_mem _ fun i hi ↦
-    Submodule.mem_iSup_of_mem i ⟨mem_ker.2 (hzero i hi), hc i⟩
-
 /-- Two linear maps out of `P → M` agree if they agree on the homogeneous single-coordinate
 functions `Pi.single x α`, with `α` in a piece `ℳ q` of a decomposition of `M`. -/
 theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid M]
@@ -381,50 +339,6 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
   simpa using h x α.2
 
 end LinearMap
-
-/-- A linear map preserves independence of a family of submodules if the part of its kernel
-in their span is spanned by its intersections with the family. In particular, a quotient by a
-homogeneous submodule preserves independence.
-
-The ring hypothesis is essential: for semimodules, even a map with zero kernel can identify
-independent summands. -/
-theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [AddCommGroup N] [Module R N] {A : ι → Submodule R M}
-    (hA : iSupIndep A) (f : M →ₗ[R] N)
-    (hker : LinearMap.ker f ⊓ (⨆ i, A i) ≤ ⨆ i, LinearMap.ker f ⊓ A i) :
-    iSupIndep fun i ↦ (A i).map f := by
-  rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
-  classical
-  intro s v hv hv0 j hj
-  have hall : ∀ i : ι, ∃ y, y ∈ A i ∧ (i ∈ s → f y = v i) ∧ (i ∉ s → y = 0) := by
-    intro i
-    by_cases hi : i ∈ s
-    · obtain ⟨y, hy, hf⟩ := Submodule.mem_map.1 (hv i hi)
-      exact ⟨y, hy, fun _ ↦ hf, fun h ↦ absurd hi h⟩
-    · exact ⟨0, Submodule.zero_mem _, fun h ↦ absurd h hi, fun _ ↦ rfl⟩
-  choose a haA haf ha0 using hall
-  have hasum : ∑ i ∈ s, a i ∈ LinearMap.ker f := by
-    rw [LinearMap.mem_ker, map_sum]
-    exact (Finset.sum_congr rfl fun i hi ↦ haf i hi).trans hv0
-  have hasumA : ∑ i ∈ s, a i ∈ ⨆ i, A i :=
-    Submodule.sum_mem _ fun i _ ↦ Submodule.mem_iSup_of_mem i (haA i)
-  obtain ⟨c, hc, hca⟩ :=
-    (Submodule.mem_iSup_iff_exists_finsupp _ _).1 (hker ⟨hasum, hasumA⟩)
-  have haj : a j = c j := by
-    refine (iSupIndep_iff_finsetSum_eq_imp_eq A).1 hA (s ∪ c.support) a c
-      (fun i _ ↦ ⟨haA i, (hc i).2⟩) ?_ j (Finset.mem_union_left _ hj)
-    calc
-        ∑ i ∈ s ∪ c.support, a i = ∑ i ∈ s, a i := by
-          symm
-          apply Finset.sum_subset (Finset.subset_union_left)
-          intro i _ hi
-          exact ha0 i hi
-        _ = ∑ i ∈ c.support, c i := hca.symm
-        _ = ∑ i ∈ s ∪ c.support, c i := by
-          apply Finset.sum_subset (Finset.subset_union_right)
-          simp
-  rw [← haf j hj, haj]
-  exact LinearMap.mem_ker.mp (hc j).1
 
 namespace DirectSum.IsInternal
 
