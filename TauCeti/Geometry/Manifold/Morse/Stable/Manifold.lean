@@ -227,7 +227,7 @@ theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
   refine ⟨φ.stableSubspace, φ.finrank_stableSubspace_add_manifoldMorseIndex, ?_⟩
   refine exists_isManifold_of_linearSubspaceCharts
     (Submodule.IsCompl.isTopCompl_of_isClosed hN
-      φ.stableSubspace.closed_of_finiteDimensional N.closed_of_finiteDimensional)
+      φ.stableSubspace.isClosed_of_finiteDimensional N.isClosed_of_finiteDimensional)
     fun y ↦ ?_
   obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.2
   exact ⟨q, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,

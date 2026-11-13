@@ -41,6 +41,8 @@ valuations on `A_inf = W(𝒪_F)`.
 * `WittVector.teichmuller_dvd_iff` : `[c]` divides `x` iff `c` divides every `xₙ`; hence `[c]`
   divides `x pᵐ` only if it divides `x` (`WittVector.teichmuller_dvd_mul_natCast_pow_iff`).
 * `WittVector.teichmuller_mem_nonZeroDivisors_iff` : `[c]` is a nonzerodivisor iff `c` is.
+* `WittVector.ringHom_ext_teichmuller` : a ring homomorphism from `𝕎 R` to a `p`-adically
+  separated ring is determined by its values on Teichmüller representatives.
 
 ## References
 
@@ -204,5 +206,20 @@ theorem teichmuller_mem_nonZeroDivisors_iff {c : R} :
   · simpa using congrArg (coeff · 0) (h (teichmuller p a) (by rw [← map_mul, ha, teichmuller_zero]))
   · rw [zero_teichmullerCoeff]
     exact h _ (by rw [← teichmullerCoeff_teichmuller_mul, hx, zero_teichmullerCoeff])
+
+/-- **Ring homomorphisms out of `𝕎 R` are determined on Teichmüller representatives**: two ring
+homomorphisms from the Witt vectors of a perfect ring of characteristic `p` to a `p`-adically
+separated ring agree once they agree on every `[a]`, since the Teichmüller expansion
+`x = ∑ₙ [xₙ] pⁿ` converges `p`-adically. -/
+theorem ringHom_ext_teichmuller {S : Type*} [CommRing S] [IsHausdorff (Ideal.span {(p : S)}) S]
+    {f g : 𝕎 R →+* S} (h : ∀ a, f (teichmuller p a) = g (teichmuller p a)) : f = g := by
+  ext x
+  refine IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : S)}).mpr fun n ↦ ?_
+  -- `x = ∑_{i < n} [xᵢ] pⁱ + pⁿ b`, and `f`, `g` agree on the finite sum
+  obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul x n
+  rw [hb]
+  simp only [map_add, map_sum, map_mul, map_pow, map_natCast, h, SModEq.sub_mem,
+    add_sub_add_left_eq_sub, ← mul_sub, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow]
+  exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
 
 end WittVector
