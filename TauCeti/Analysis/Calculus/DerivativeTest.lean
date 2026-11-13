@@ -1,14 +1,20 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Taylor.Integral
+import TauCeti.Analysis.Calculus.SecondDerivative
+
+public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Necessary and strict derivative tests
@@ -16,7 +22,9 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 This file records necessary versions of Mathlib's sufficient second-derivative tests. At a local
 maximum of a continuous real-valued function, the value `deriv (deriv g) t₀` is nonpositive; at a
 local minimum it is nonnegative. On a real normed space the same holds for every diagonal entry
-`fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a `C²` function at a local extremum.
+`fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a function differentiable near a local extremum.
+At either kind of extremum,
+a direction with zero diagonal Hessian value lies in the kernel of the Hessian.
 
 It also strengthens the conclusion of Mathlib's sufficient second-derivative test: at a critical
 point `x₀` with `deriv (deriv f) x₀ > 0` the function has a *strict* local minimum,
@@ -48,8 +56,19 @@ step of Hopf's boundary-point lemma.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
   `TauCeti.fderiv_fderiv_self_nonneg_of_isLocalMin`: the Hessian is negative (resp. positive)
   semidefinite on the diagonal at a local maximum (resp. minimum).
+* `IsLocalMin.isPosSemidef_fderiv_fderiv`: the Hessian is positive semidefinite.
+* `IsLocalExtr.fderiv_fderiv_apply_self_eq_zero_iff`: zero diagonal directions are precisely
+  the kernel directions at either kind of local extremum.
+* `TauCeti.hasDerivAt_zero_of_isLocalExtr_of_fderiv_eq`: a vanishing derivative from
+  coupled partial-derivative identities at a local extremum.
 * `TauCeti.le_fderiv_of_le_sub`: a lower bound `g t ≤ f x - f (x - t • e)` for small `t > 0`
   bounds the directional derivative `fderiv ℝ f x e` below by the right derivative of `g` at `0`.
+
+## References
+
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Proposition 6.30.
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -176,29 +195,73 @@ section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
 
-/-- At a local maximum of a `C²` function `f : E → ℝ`, every diagonal Hessian entry is
-nonpositive. -/
-theorem fderiv_fderiv_self_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x)
-    (w : E) : fderiv ℝ (fderiv ℝ f) x w w ≤ 0 := by
-  have hf' : ContDiffAt ℝ 2 f (x + (0 : ℝ) • w) := by simpa using hf
-  have hline : ContinuousAt (fun t : ℝ => x + t • w) 0 := by fun_prop
-  have h := deriv_deriv_nonpos_of_isLocalMax
-    (hf'.continuousAt.comp (f := fun t : ℝ => x + t • w) hline)
-    ((by simpa using hmax : IsLocalMax f (x + (0 : ℝ) • w)).comp_continuous
-      (g := fun t : ℝ => x + t • w) hline)
-  rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
-
-/-- At a local minimum of a `C²` function `f : E → ℝ`, every diagonal Hessian entry is
-nonnegative. -/
-theorem fderiv_fderiv_self_nonneg_of_isLocalMin (hf : ContDiffAt ℝ 2 f x) (hmin : IsLocalMin f x)
+/-- At a local minimum of a function differentiable near `x`, every diagonal Hessian entry
+is nonnegative. If the first derivative is not differentiable at `x`, the Hessian is zero by
+Mathlib's convention for the totalized derivative. -/
+theorem fderiv_fderiv_self_nonneg_of_isLocalMin
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y) (hmin : IsLocalMin f x)
     (w : E) : 0 ≤ fderiv ℝ (fderiv ℝ f) x w w := by
-  have hf' : ContDiffAt ℝ 2 f (x + (0 : ℝ) • w) := by simpa using hf
-  have hline : ContinuousAt (fun t : ℝ => x + t • w) 0 := by fun_prop
-  have h := deriv_deriv_nonneg_of_isLocalMin
-    (hf'.continuousAt.comp (f := fun t : ℝ => x + t • w) hline)
-    ((by simpa using hmin : IsLocalMin f (x + (0 : ℝ) • w)).comp_continuous
-      (g := fun t : ℝ => x + t • w) hline)
-  rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
+  by_cases hD : DifferentiableAt ℝ (fderiv ℝ f) x
+  · let a : ℝ → E := fun t ↦ x + t • w
+    have ha (t : ℝ) : HasDerivAt a w t := by
+      simpa only [a, id_eq, one_smul] using ((hasDerivAt_id t).smul_const w).const_add x
+    have ha0 : a 0 = x := by simp only [a, zero_smul, add_zero]
+    have hsecond : deriv (deriv (f ∘ a)) 0 = fderiv ℝ (fderiv ℝ f) x w w := by
+      simpa only [a, Function.comp_def, zero_smul, add_zero] using
+        (DifferentiableAt.hasDerivAt_deriv_comp_add_smul
+          (x := x) (t := (0 : ℝ)) (y := w) (by simpa using hD)
+          (by simpa using hf)).deriv
+    have hminA : IsLocalMin f (a 0) := ha0.symm ▸ hmin
+    have hc : ContinuousAt f (a 0) := ha0.symm ▸ hf.self_of_nhds.continuousAt
+    have h := deriv_deriv_nonneg_of_isLocalMin (hc.comp (ha 0).continuousAt)
+      (hminA.comp_continuous (ha 0).continuousAt)
+    rwa [hsecond] at h
+  · simp [fderiv_zero_of_not_differentiableAt hD]
+
+/-- At a local maximum of a function differentiable near `x`, every diagonal Hessian entry
+is nonpositive. -/
+theorem fderiv_fderiv_self_nonpos_of_isLocalMax
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y) (hmax : IsLocalMax f x)
+    (w : E) : fderiv ℝ (fderiv ℝ f) x w w ≤ 0 := by
+  have h := fderiv_fderiv_self_nonneg_of_isLocalMin (hf.mono fun _ hy ↦ hy.neg) hmax.neg w
+  rw [fderiv_fderiv_neg] at h
+  simpa only [neg_apply, neg_nonneg] using h
+
+/-- The Hessian at a local minimum is a positive semidefinite bilinear form, assuming
+only differentiability of the function near the minimum. -/
+theorem _root_.IsLocalMin.isPosSemidef_fderiv_fderiv (hmin : IsLocalMin f x)
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y) :
+    (fderiv ℝ (fderiv ℝ f) x).toBilinForm.IsPosSemidef := by
+  refine ⟨⟨fun v w ↦ ?_⟩, ⟨fderiv_fderiv_self_nonneg_of_isLocalMin hf hmin⟩⟩
+  by_cases hD : DifferentiableAt ℝ (fderiv ℝ f) x
+  · exact second_derivative_symmetric_of_eventually_of_real
+      (hf.mono fun _ hy ↦ hy.hasFDerivAt) hD.hasFDerivAt v w
+  · simp [fderiv_zero_of_not_differentiableAt hD]
+
+/-- At a local extremum of a function differentiable nearby, a Hessian direction has zero
+diagonal value exactly when it lies in the kernel of the Hessian. This eliminates mixed
+second-variation terms without assuming continuity of the second derivative. -/
+theorem _root_.IsLocalExtr.fderiv_fderiv_apply_self_eq_zero_iff (hextr : IsLocalExtr f x)
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y) {v : E} :
+    fderiv ℝ (fderiv ℝ f) x v v = 0 ↔ fderiv ℝ (fderiv ℝ f) x v = 0 := by
+  have hmin {g : E → ℝ} (hg : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y)
+      (h : IsLocalMin g x) :
+      fderiv ℝ (fderiv ℝ g) x v v = 0 ↔ fderiv ℝ (fderiv ℝ g) x v = 0 := by
+    have hB := h.isPosSemidef_fderiv_fderiv hg
+    have heq := (fderiv ℝ (fderiv ℝ g) x).toBilinForm.apply_apply_same_eq_zero_iff
+      hB.isNonneg.nonneg (LinearMap.BilinForm.isSymm_iff.mp hB.isSymm) (x := v)
+    constructor
+    · intro hv
+      have hker := heq.mp hv
+      ext w
+      exact congrArg (fun L : E →ₗ[ℝ] ℝ ↦ L w) hker
+    · intro hv
+      simp [hv]
+  rcases hextr with h | h
+  · exact hmin hf h
+  · have heq := hmin (hf.mono fun _ hy ↦ hy.neg) h.neg
+    rw [fderiv_fderiv_neg] at heq
+    simpa only [neg_apply, neg_eq_zero] using heq
 
 /-- **Difference quotients bound the directional derivative.** Let `f` be differentiable at `x`,
 and let `g` vanish at `0` and have right derivative `κ` there. If `g t ≤ f x - f (x - t • e)` for
@@ -223,5 +286,59 @@ theorem le_fderiv_of_le_sub {g : ℝ → ℝ} {e : E} {κ δ : ℝ} (hδ : 0 < �
   linarith
 
 end NormedSpace
+
+section Variation
+
+open Filter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- At a local extremum `(r, x)` of `C`, suppose its horizontal partial is `R t (u t)`
+and its vertical partial is `R t` near `r`. If `u t → 0`, differentiability of the first
+derivative of `C` implies that `R` has derivative zero at `r`. -/
+theorem hasDerivAt_zero_of_isLocalExtr_of_fderiv_eq
+    {C : ℝ × E → ℝ} {u : ℝ → E} {R : ℝ → E →L[ℝ] ℝ} {r : ℝ} {x : E}
+    (hC : ∀ᶠ p in 𝓝 (r, x), DifferentiableAt ℝ C p)
+    (hDC : DifferentiableAt ℝ (fderiv ℝ C) (r, x)) (hextr : IsLocalExtr C (r, x))
+    (hu : Tendsto u (𝓝[≠] r) (𝓝 0))
+    (hfirst : ∀ᶠ t in 𝓝 r, fderiv ℝ C (t, x) (1, 0) = R t (u t))
+    (hsecond : ∀ᶠ t in 𝓝 r, ∀ v, fderiv ℝ C (t, x) (0, v) = R t v) :
+    HasDerivAt R 0 r := by
+  have hR0 : R r = 0 := by
+    ext v
+    have h := hsecond.self_of_nhds v
+    rw [hextr.fderiv_eq_zero] at h
+    exact h.symm
+  let B := (fderiv ℝ (fderiv ℝ C) (r, x) (1, 0)).comp
+    (ContinuousLinearMap.inr ℝ ℝ E)
+  have hR : HasDerivAt R B r := by
+    have h := (hasDerivAt_slice_left hDC).clm_comp
+      (hasDerivAt_const r (ContinuousLinearMap.inr ℝ ℝ E))
+    simp only [ContinuousLinearMap.comp_zero, add_zero] at h
+    refine h.congr_of_eventuallyEq ?_
+    filter_upwards [hsecond] with t ht
+    ext v
+    exact (ht v).symm
+  have hproduct : HasDerivAt (fun t ↦ R t (u t)) 0 r := by
+    rw [hasDerivAt_iff_tendsto_slope]
+    have hcont := (isBoundedBilinearMap_apply (𝕜 := ℝ) (E := E) (F := ℝ)).continuous
+    have hlim := (hcont.tendsto (B, 0)).comp
+        (hR.tendsto_slope.prodMk_nhds hu)
+    -- Evaluation of the bounded bilinear map is pointwise application.
+    change Tendsto (fun t ↦ slope R r t (u t)) (𝓝[≠] r) (𝓝 (B 0)) at hlim
+    rw [map_zero] at hlim
+    -- Expand the slope as a function so the public scalar-action law applies pointwise.
+    change Tendsto (fun t ↦ (t - r)⁻¹ • (R t (u t) - R r (u r))) (𝓝[≠] r) (𝓝 0)
+    apply hlim.congr'
+    exact Eventually.of_forall fun t ↦ by
+      simp only [slope_def_module, hR0, sub_zero, zero_apply, smul_apply]
+  have hdiag : fderiv ℝ (fderiv ℝ C) (r, x) (1, 0) (1, 0) = 0 :=
+    (hasDerivAt_fderiv_apply_fst hDC (1, 0)).unique
+      (hproduct.congr_of_eventuallyEq hfirst)
+  have hkernel := (hextr.fderiv_fderiv_apply_self_eq_zero_iff hC).mp hdiag
+  have hB : B = 0 := by simp only [B, hkernel, ContinuousLinearMap.zero_comp]
+  exact hB ▸ hR
+
+end Variation
 
 end TauCeti

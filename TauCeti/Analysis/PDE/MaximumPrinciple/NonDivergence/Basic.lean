@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Frontier
@@ -189,7 +190,8 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
     {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1) ≤ 0 :=
-  sum_mul_fderiv_fderiv_nonpos hA hf (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax)
+  sum_mul_fderiv_fderiv_nonpos hA hf (fderiv_fderiv_self_nonpos_of_isLocalMax
+    (hf.eventually_differentiableAt (by norm_num)) hmax)
 
 /-- **Strict interior obstruction.** If `A` has nonnegative quadratic form, `f` is `C²` at `x`
 and `0 < ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) + ∂_v f(x)`, then `f` has no local maximum at `x`. The direction `v` is
