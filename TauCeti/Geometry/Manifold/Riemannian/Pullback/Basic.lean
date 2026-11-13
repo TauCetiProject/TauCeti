@@ -149,7 +149,7 @@ theorem contMDiffAt_trivializationAt_bilinearForm_pullback
       (fun p ↦ (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
         (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (g p₀)
         ⟨g p, (ContinuousLinearMap.precomp ℝ (L p)).comp ((b p).comp (L p))⟩).2) p₀ := by
-  obtain ⟨hfn, hb'⟩ := contMDiffAt_totalSpace.1 hb
+  obtain ⟨hfn, hb'⟩ := contMDiffAt_totalSpace_iff.1 hb
   -- In the coordinates centred at `g p₀` and `f p₀`, the pulled-back form is the coordinate
   -- expression of `b p` pulled back along `L p` read in those coordinates.
   apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp p₀
@@ -195,7 +195,7 @@ theorem contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates {f : M → N}
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
         ((ContinuousLinearMap.precomp ℝ (L x)).comp ((b x).comp (L x)))) x₀ :=
-  (contMDiffAt_section x₀).2 <|
+  (contMDiffAt_section_iff x₀).2 <|
     contMDiffAt_trivializationAt_bilinearForm_pullback (g := id) continuousAt_id hb hL
 
 /-- The pullback of a family `b` of bilinear forms on the tangent spaces of `N` that is a `C^n`
