@@ -188,16 +188,7 @@ theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact 
   refine mem_realSobolevFunctions.2
     ⟨u, huf, (memSobolev_add_one_iff hp hp_top).2 ⟨hu, fun v ↦ ?_⟩⟩
   obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
-  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hline : HasWeakLineDerivOn volume ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
-    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
-      (hcont.locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
-  have hline' : HasWeakLineDerivOn volume ⊤ u u' v :=
-    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
-      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
-  rw [(hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u u' v).1 hline']
+  rw [lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf huf hu'f]
   exact hu'
 
 end TemperedDistribution

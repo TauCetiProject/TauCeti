@@ -109,9 +109,7 @@ theorem renewalCountNat_sub_div_le_iff {Ω : Type*} {T : ℕ → Ω → ℝ≥0}
       -((arrival T m ω : ℝ) - (m : ℝ) * μ) / (σ * √(m : ℝ)) <
         ((m : ℝ) * μ - (t : ℝ)) / (σ * √(m : ℝ)) := by
   intro m
-  have htR : (0 : ℝ) < t := ht
   have hden_t : 0 < σ * √((t : ℝ) / μ ^ 3) := by positivity
-  have hm_pos : (0 : ℝ) < m := by positivity
   have hden_m : 0 < σ * √(m : ℝ) := by positivity
   calc
     ((renewalCountNat T t ω : ℝ) - (t : ℝ) / μ) / (σ * √((t : ℝ) / μ ^ 3)) ≤ x
@@ -228,7 +226,6 @@ theorem tendsto_natFloor_add_one_mul_sub_div_sqrt_atTop {μ σ : ℝ} (hμ : 0 <
         dsimp only [m]
         push_cast
         exact Nat.lt_floor_add_one (u s)
-      have hsub : 0 ≤ (m s : ℝ) - u s := sub_nonneg.2 hlt.le
       positivity
     · filter_upwards [(tendsto_target_atTop (σ := σ) hμ x).eventually_ge_atTop 0] with s hu0
       have h1 : (m s : ℝ) - u s ≤ 1 := by
@@ -278,7 +275,6 @@ private theorem tendstoInDistribution_neg_arrival_sub_div
       (fun (n : ℕ) ω ↦ -((arrival T n ω : ℝ) - (n : ℝ) * μ) / (σ * √(n : ℝ)))
       atTop (id : ℝ → ℝ) (fun _ ↦ P) (gaussianReal 0 1) := by
   intro μ σ
-  have hσ : σ ≠ 0 := Real.sqrt_ne_zero'.2 ((variance_nonneg _ _).lt_of_ne' hvar)
   have mT0 : AEMeasurable (fun ω ↦ (T 0 ω : ℝ)) P :=
     measurable_coe_nnreal_real.comp_aemeasurable (hid 0).aemeasurable_fst
   have intT0 : Integrable (fun ω ↦ (T 0 ω : ℝ)) P :=

@@ -144,13 +144,14 @@ theorem prod_map_demazureOperator_apply_eq_of_inv_mul_mem_parabolic {J : Set b.s
 
 /-! ### The wall case: Demazure characters of a dominant weight -/
 
-variable {P b} [P.flip.IsReduced] {lam : M}
+variable {P b} {lam : M}
 
 /-- A basis element `c e^λ` at a dominant weight `λ` is invariant under the parabolic subgroup of
 the walls through `λ`, which is its stabilizer. -/
 private lemma coeff_single_smul_of_mem_parabolic (hlam : lam ∈ dominantChamber P b) (c : ℤ)
     {v : P.weylGroup} (hv : v ∈ (weylCoxeterSystem P b).parabolic (P.wallIndices b lam)) (x : M) :
     (single lam c).coeff (v • x) = (single lam c).coeff x := by
+  have := P.flip_isReduced
   rw [P.parabolic_wallIndices_eq_stabilizer b hlam, MulAction.mem_stabilizer_iff] at hv
   conv_lhs => rw [← hv]
   simp only [coeff_single]
@@ -164,8 +165,9 @@ theorem prod_map_demazureOperator_single_eq_of_smul_eq (hlam : lam ∈ dominantC
     (hω' : (weylCoxeterSystem P b).IsReduced ω')
     (h : (weylCoxeterSystem P b).wordProd ω • lam = (weylCoxeterSystem P b).wordProd ω' • lam) :
     (ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) =
-      (ω'.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) :=
-  P.prod_map_demazureOperator_apply_eq_of_inv_mul_mem_parabolic b
+      (ω'.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) := by
+  have := P.flip_isReduced
+  exact P.prod_map_demazureOperator_apply_eq_of_inv_mul_mem_parabolic b
     (fun _ hv ↦ coeff_single_smul_of_mem_parabolic hlam c hv) hω hω'
     ((inv_mul_mem_parabolic_wallIndices_iff hlam).mpr h.symm)
 
@@ -180,6 +182,7 @@ theorem demazureOperator_prod_map_demazureOperator_single_of_coroot'_nonneg
       P.reflection i ((weylCoxeterSystem P b).wordProd ω • lam)) :
     P.demazureOperator i ((ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c)) =
       (ω'.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) := by
+  have := P.flip_isReduced
   set cs := weylCoxeterSystem P b
   by_cases hdesc : cs.IsLeftDescent (cs.wordProd ω) i
   · -- Then `⟨w λ, αᵢ^∨⟩ = 0`, so `sᵢ` fixes `w λ` and `Dᵢ` is absorbed into `D_w`.
@@ -206,6 +209,7 @@ theorem demazureOperator_prod_map_demazureOperator_single_of_coroot'_nonpos
     (hi : P.coroot' i ((weylCoxeterSystem P b).wordProd ω • lam) ≤ 0) :
     P.demazureOperator i ((ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c)) =
       (ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) := by
+  have := P.flip_isReduced
   by_cases hdesc : (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i
   · rw [← mul_apply_eq_comp,
       P.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent b hω hdesc]

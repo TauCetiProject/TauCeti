@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RadicalQuotient
 /-!
 # Basic examples of integral lattices
 
-This file supplies the three acceptance examples from Layer 1 of the integral-lattices roadmap.
 The hyperbolic plane is even, unimodular, and indefinite of signature `(1, 0, 1)`; the negative
 rank-one root lattice has signature `(0, 0, 1)`; and the affine `A₁` lattice is even,
 positive-semidefinite, and degenerate of signature `(1, 1, 0)`.  The last example is not merely
@@ -40,7 +39,6 @@ the affine form.
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1 acceptance criteria.
 -/
 
 public section

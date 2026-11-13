@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -21,6 +22,8 @@ analytic at `c` (`AnalyticAt.intervalIntegral_comp`).
 
 The scalar field `𝕜` may be any nontrivially normed field. The target space has normed-space
 structures over `𝕜` and `ℝ` with commuting scalar actions; `𝕜` need not be an algebra over `ℝ`.
+For `AnalyticAt.intervalIntegral_comp` neither completeness nor the commutation is assumed: the
+actions commute automatically, and in a non-complete space the integral is zero.
 
 The typical use is the integral form of Hadamard's lemma: if `G (x, y)` vanishes on `y = y₀`, then
 `G (x, y) = (y - y₀) • ∫ t in 0..1, ∂G/∂y (x, y₀ + t (y - y₀))`, and this lemma, applied with
@@ -74,7 +77,7 @@ theorem HasFPowerSeriesOnBall.intervalIntegral_comp {f : E → F}
   refine ⟨hf.r_le.trans hradius, hf.r_pos, fun {y} hy ↦ ?_⟩
   simp only [add_sub_cancel_left]
   have hy' : (‖y‖₊ : ℝ≥0∞) < p.radius := by
-    simpa [edist_zero_right, enorm_eq_nnnorm] using lt_of_lt_of_le hy hf.r_le
+    simpa [edist_zero_right, eNorm_eq_nnNorm] using lt_of_lt_of_le hy hf.r_le
   have happly (n : ℕ) : (∫ t in a..b, (p n).compContinuousLinearMap fun _ ↦ L t)
       (fun _ ↦ y) = ∫ t in a..b, p n fun _ ↦ L t y := by
     -- Evaluation is real-linear even when `𝕜` has no real algebra structure.
@@ -98,8 +101,9 @@ theorem HasFPowerSeriesOnBall.intervalIntegral_comp {f : E → F}
       ((pi_norm_le_iff_of_nonneg (norm_nonneg y)).2 fun _ ↦ ht hmem)
   · refine hf.hasSum ?_
     simp only [Metric.mem_eball, edist_zero_right] at hy ⊢
-    exact lt_of_le_of_lt (by simpa [enorm_eq_nnnorm, ← NNReal.coe_le_coe] using ht hmem) hy
+    exact lt_of_le_of_lt (by simpa [eNorm_eq_nnNorm, ← NNReal.coe_le_coe] using ht hmem) hy
 
+omit [SMulCommClass 𝕜 ℝ F] [CompleteSpace F] in
 /-- If `f` is analytic at `c`, and `L t` is an a.e.-strongly measurable family of continuous
 linear maps of norm at most one for almost every `t` between `a` and `b`, then
 `z ↦ ∫ t in a..b, f (c + L t (z - c))` is analytic at `c`. -/
@@ -107,5 +111,10 @@ theorem AnalyticAt.intervalIntegral_comp {f : E → F} {c : E} (hf : AnalyticAt 
     {L : ℝ → E →L[𝕜] E} {a b : ℝ} (hL : AEStronglyMeasurable L (volume.restrict (Ι a b)))
     (hL1 : ∀ᵐ t, t ∈ Ι a b → ‖L t‖ ≤ 1) :
     AnalyticAt 𝕜 (fun z ↦ ∫ t in a..b, f (c + L t (z - c))) c := by
-  obtain ⟨p, r, hp⟩ := hf
-  exact (hp.intervalIntegral_comp hL hL1).analyticAt
+  by_cases hF : CompleteSpace F
+  · -- `s • _` is continuous and additive, hence real-linear, so the two scalar actions commute
+    have : SMulCommClass 𝕜 ℝ F :=
+      ⟨fun s r x ↦ map_real_smul (DistribSMul.toAddMonoidHom F s) (continuous_const_smul s) r x⟩
+    obtain ⟨p, r, hp⟩ := hf
+    exact (hp.intervalIntegral_comp hL hL1).analyticAt
+  · simpa [intervalIntegral, integral_of_not_completeSpace hF] using analyticAt_const

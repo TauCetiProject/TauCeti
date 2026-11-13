@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Rademacher
 public import Mathlib.Analysis.Convex.Continuous
 public import TauCeti.Analysis.Convex.Measure
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Rademacher's theorem for locally Lipschitz and convex functions
@@ -60,22 +61,12 @@ finite-dimensional real normed spaces which is locally Lipschitz on a set is dif
 within that set at almost every point of it. -/
 theorem ae_differentiableWithinAt_of_mem (hf : LocallyLipschitzOn s f) :
     ∀ᵐ x ∂μ, x ∈ s → DifferentiableWithinAt ℝ f s x := by
-  -- Every point of `s` has an open neighbourhood `U` with `f` Lipschitz on `s ∩ U`.
-  have hloc : ∀ y ∈ s, ∃ U, IsOpen U ∧ y ∈ U ∧ ∃ K, LipschitzOnWith K f (s ∩ U) := by
-    intro y hy
-    obtain ⟨K, t, ht, hK⟩ := hf hy
-    obtain ⟨U, hU, hyU, hUt⟩ := mem_nhdsWithin.1 ht
-    exact ⟨U, hU, hyU, K, hK.mono ((inter_comm s U).subset.trans hUt)⟩
-  choose! U hU hyU K hK using hloc
-  -- Second countability gives a countable cover of `s` by the relatively open pieces `s ∩ U y`.
-  obtain ⟨c, hcs, hc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := fun y => s ∩ U y) fun y hy => inter_mem_nhdsWithin s ((hU y hy).mem_nhds (hyU y hy))
-  have h := (ae_ball_iff hc).2 fun y hy =>
-    (hK y (hcs hy)).ae_differentiableWithinAt_of_mem (μ := μ)
-  filter_upwards [h] with x hx hxs
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 (hcov hxs)
-  exact (hx y hy hxy).mono_of_mem_nhdsWithin
-    (inter_mem_nhdsWithin s ((hU y (hcs hy)).mem_nhds hxy.2))
+  obtain ⟨U, K, hU, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  filter_upwards [ae_all_iff.2 fun n =>
+    (hK n).ae_differentiableWithinAt_of_mem (μ := μ)] with x hx hxs
+  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcov hxs)
+  exact (hx n ⟨hxs, hn⟩).mono_of_mem_nhdsWithin
+    (inter_mem_nhdsWithin s ((hU n).mem_nhds hn))
 
 /-- **Rademacher's theorem** for locally Lipschitz functions on an open set: a function between
 finite-dimensional real normed spaces which is locally Lipschitz on an open set is differentiable

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
@@ -95,6 +96,13 @@ theorem IsBlock.eq_of_subset (hB : G.IsBlock B) (hconn : (G.induce C).Connected)
     (hcut : ∀ v, ¬(G.induce C).IsCutVertex v) (hBC : B ⊆ C) : B = C :=
   Maximal.eq_of_subset hB ⟨hconn, hcut⟩ hBC
 
+/-- A block containing two distinct vertices contains a neighbour of the first vertex. -/
+theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB : v ∈ B)
+    (huv : u ≠ v) : ∃ w ∈ B, G.Adj u w := by
+  obtain ⟨p⟩ := hB.connected.preconnected ⟨u, huB⟩ ⟨v, hvB⟩
+  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
+  exact ⟨p.snd, p.snd.property, induce_adj.mp (p.adj_snd hp)⟩
+
 /-! ### Existence -/
 
 /-- In a finite graph, every connected induced subgraph without cut vertices is contained in a
@@ -149,10 +157,67 @@ theorem isBlock_singleton_iff_isIsolated (G : SimpleGraph V) (v : V) :
         exact (not_reachable_of_neighborSet_right_eq_empty hxv hv.neighborSet_eq_empty) hreach
       exact hxv ▸ Set.mem_singleton v
 
+/-- A block containing a non-isolated vertex has at least two vertices. -/
+theorem IsBlock.nontrivial_of_not_isIsolated (hB : G.IsBlock B) (hvB : v ∈ B)
+    (hv : ¬G.IsIsolated v) : B.Nontrivial := by
+  by_contra hB'
+  have hBv : B = {v} := Set.not_nontrivial_iff.mp hB' |>.eq_singleton_of_mem hvB
+  exact hv ((G.isBlock_singleton_iff_isIsolated v).mp (hBv ▸ hB))
+
 /-- Every edge of a finite simple graph has both endpoints in some block. -/
 theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
+
+/-- The endpoints of a bridge edge form a block. -/
+theorem IsBridge.isBlock_pair (hb : G.IsBridge s(u, v)) (h : G.Adj u v) :
+    G.IsBlock ({u, v} : Set V) := by
+  rw [isBlock_iff]
+  refine ⟨G.induce_pair_connected_of_adj h, G.not_isCutVertex_induce_pair u v, ?_⟩
+  intro C hconn hcut huvC
+  apply Set.Subset.antisymm huvC
+  intro x hxC
+  by_contra hxuv
+  have hxu : x ≠ u := fun hxu ↦ hxuv (by simp [hxu])
+  have hxv : x ≠ v := fun hxv ↦ hxuv (by simp [hxv])
+  have hthree : ({u, v, x} : Set V) ⊆ C := by
+    intro y hy
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
+    rcases hy with rfl | rfl | rfl
+    · exact huvC (by simp)
+    · exact huvC (by simp)
+    · exact hxC
+  have hcard : 3 ≤ C.encard := by
+    have := Set.encard_le_encard hthree
+    have hencard : ({u, v, x} : Set V).encard = 3 := by
+      exact Set.encard_eq_three.mpr ⟨u, v, x, h.ne, hxu.symm, hxv.symm, rfl⟩
+    rwa [hencard] at this
+  have hvertex : (G.induce C).IsVertexConnected 2 := by
+    rw [isVertexConnected_two_iff, ENat.card_coe_set_eq]
+    exact ⟨hcard, hconn, hcut⟩
+  let uC : C := ⟨u, huvC (by simp)⟩
+  let vC : C := ⟨v, huvC (by simp)⟩
+  have hbridge : (G.induce C).IsBridge s(uC, vC) := hb.induce uC.property vC.property
+  exact (isEdgeConnected_two_iff_forall_not_isBridge.mp hvertex.isEdgeConnected s(uC, vC)) hbridge
+
+/-- In an acyclic simple graph, the endpoints of every edge form a block. -/
+theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
+    G.IsBlock ({u, v} : Set V) :=
+  (isAcyclic_iff_forall_adj_isBridge.mp hG h).isBlock_pair h
+
+/-- Every nonsingleton block in an acyclic graph is the endpoint set of one of its edges. -/
+theorem IsAcyclic.exists_adj_pair_of_isBlock (hG : G.IsAcyclic) (hB : G.IsBlock B)
+    (hB' : B.Nontrivial) : ∃ u v, G.Adj u v ∧ B = {u, v} := by
+  obtain ⟨u, huB, v, hvB, huv⟩ := hB'
+  obtain ⟨x, hxB, hadj⟩ := hB.exists_adj_of_mem_of_ne huB hvB huv
+  have hpair : G.IsBlock ({u, x} : Set V) := hG.isBlock_pair hadj
+  have hpairB : ({u, x} : Set V) ⊆ B := by
+    intro y hy
+    rcases Set.mem_insert_iff.mp hy with rfl | hy
+    · exact huB
+    · exact Set.mem_singleton_iff.mp hy ▸ hxB
+  exact ⟨u, x, hadj,
+    (hpair.eq_of_subset hB.connected hB.not_isCutVertex hpairB).symm⟩
 
 /-! ### Intersections and edge uniqueness -/
 
@@ -236,15 +301,9 @@ theorem Adj.existsUnique_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
 /-- A vertex lying in two distinct blocks has a neighbour in the first of them. -/
 theorem IsBlock.exists_adj_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B ≠ C)
     (hvB : v ∈ B) (hvC : v ∈ C) : ∃ u ∈ B, G.Adj v u := by
-  -- A vertex of a block other than `v` yields a neighbour of `v` inside that block.
-  have hadj {D : Set V} (hD : G.IsBlock D) (hvD : v ∈ D) {d : V} (hdD : d ∈ D) (hdv : d ≠ v) :
-      ∃ u ∈ D, G.Adj v u := by
-    obtain ⟨p⟩ := hD.connected.preconnected ⟨v, hvD⟩ ⟨d, hdD⟩
-    have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
-    exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
   by_cases h : ∃ d ∈ B, d ≠ v
   · obtain ⟨d, hdB, hdv⟩ := h
-    exact hadj hB hvB hdB hdv
+    exact hB.exists_adj_of_mem_of_ne hvB hdB hdv.symm
   · -- Otherwise `B = {v}`, so `v` is isolated and `C = {v}` as well.
     simp only [not_exists, not_and, not_not] at h
     have hBv : B = {v} := Set.eq_singleton_iff_unique_mem.2 ⟨hvB, h⟩
@@ -252,7 +311,7 @@ theorem IsBlock.exists_adj_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B 
     refine (hBC ?_).elim
     rw [hBv, eq_comm, Set.eq_singleton_iff_unique_mem]
     refine ⟨hvC, fun c hcC ↦ by_contra fun hcv ↦ ?_⟩
-    obtain ⟨u, -, hvu⟩ := hadj hC hvC hcC hcv
+    obtain ⟨u, -, hvu⟩ := hC.exists_adj_of_mem_of_ne hvC hcC (Ne.symm hcv)
     exact hiso u hvu
 
 /-- **Blocks are separated by their common vertex.** If `v` lies in two distinct blocks `B` and

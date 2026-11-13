@@ -22,9 +22,10 @@ For smooth `B₀`, `B₁` and a smooth one-form `α`, construct the jointly smoo
 
 `((1 - t) • B₀ x + t • B₁ x) (X(t, x)) = -α x`.
 
-This is the local algebraic step in Moser's argument. For Darboux's theorem `B₀` is the constant
-family `L`; for the relative Darboux theorem both families vary. Alternation and closedness of
-`B₀`, `B₁` are not needed for this step and are not imposed here.
+This is the local algebraic step in Moser's argument. By uniqueness, the solution is equivariant
+under every surjective linear symmetry of the data (`TauCeti.moserField_map_eq`). For Darboux's
+theorem `B₀` is the constant family `L`; for the relative Darboux theorem both families vary.
+Alternation and closedness of `B₀`, `B₁` are not needed for this step and are not imposed here.
 
 The analytic step is Moser's identity: for closed forms `ω₀`, `ω₁` with
 `ω₁ - ω₀ = dα`, a family of maps `ψₜ` moving along a field `Xₜ` with
@@ -137,6 +138,23 @@ theorem exists_contDiffOn_moserField (hL : L.IsInvertible) {n : WithTop ℕ∞}
   simp only [A, X, ← neg_apply]
   rw [← ContinuousLinearMap.ext_iff]
   exact eq_comm.trans ((hA p hp).inverse_apply_eq.symm.trans eq_comm)
+
+omit [CompleteSpace V] in
+/-- The solution of a Moser contraction equation whose data are invariant under a surjective
+continuous linear map `e` is `e`-equivariant: if `X p` is characterized, at every point
+`p ∈ T ×ˢ U`, as the unique `v` with `A p v w = -a p.2 w` for all `w`, and `A` and `a` are
+invariant under `e` at `y`, then `X (t, e y) = e (X (t, y))`. -/
+theorem moserField_map_eq {A : ℝ × V → V →L[ℝ] V →L[ℝ] ℝ} {a : V → V →L[ℝ] ℝ}
+    {X : ℝ × V → V} {T : Set ℝ} {U : Set V}
+    (hXeq : ∀ p ∈ T ×ˢ U, ∀ v : V, (∀ w : V, A p v w = -a p.2 w) ↔ v = X p) {t : ℝ} (ht : t ∈ T)
+    {e : V →L[ℝ] V} (he : Function.Surjective e) {y : V} (hy : y ∈ U) (hey : e y ∈ U)
+    (hA : ∀ v w, A (t, e y) (e v) (e w) = A (t, y) v w)
+    (ha : ∀ w, a (e y) (e w) = a y w) :
+    X (t, e y) = e (X (t, y)) := by
+  refine ((hXeq (t, e y) ⟨ht, hey⟩ _).1 fun w ↦ ?_).symm
+  obtain ⟨u, rfl⟩ := he w
+  rw [hA, ha]
+  exact (hXeq (t, y) ⟨ht, hy⟩ _).2 rfl u
 
 /-! ### Moser's identity -/
 

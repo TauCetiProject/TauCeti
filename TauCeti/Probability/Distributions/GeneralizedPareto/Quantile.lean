@@ -94,7 +94,7 @@ theorem tendsto_quantile_generalizedParetoMeasure_nhdsGT_zero (hs : 0 < s) (ξ :
       (𝓝[>] 0) (𝓝 0) := by
   apply EReal.tendsto_coe.2
   have hcont := (continuous_generalizedParetoMap_right s ξ).continuousAt (x := 0)
-  have hsource := EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero one_pos)
+  have hsource := EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero (r := 1))
   have hlim := hcont.tendsto.comp hsource
   rw [generalizedParetoMap_apply_zero] at hlim
   apply hlim.congr'

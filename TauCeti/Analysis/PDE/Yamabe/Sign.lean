@@ -143,13 +143,13 @@ theorem yamabeQuotient_nonneg_of_conformalLaplacian_eq_mul (hn : 2 < finrank ℝ
   have hf_pos (x : M) := Real.rpow_pos_of_pos (hu_pos x) (4 / ((finrank ℝ E : ℝ) - 2))
   -- The scalar curvature of `ĝ` is `λ u ^ (-4 / (n - 2)) ≥ 0`.
   have hS (x : M) := ((g.rescale _ hf hf_pos).scalarCurvature_def x).symm.trans
-    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn2 hu_pos (h x))
+    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hu_pos (h x))
   rw [g.yamabeQuotient_eq_rescale_inv_mul hn2 hu hu_pos hw hwc]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
   let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-  exact yamabeQuotient_nonneg_of_scalarCurvature_nonneg hn _ fun x ↦ by
+  exact yamabeQuotient_nonneg_of_scalarCurvature_nonneg _ fun x ↦ by
     rw [hS x]
     exact mul_nonneg hc (Real.rpow_nonneg (hu_pos x).le _)
 
@@ -173,7 +173,7 @@ theorem exists_pos_le_yamabeQuotient_of_conformalLaplacian_eq_mul (hn : 2 < finr
   have hf_pos (x : M) := Real.rpow_pos_of_pos (hu_pos x) (4 / ((finrank ℝ E : ℝ) - 2))
   -- The scalar curvature of `ĝ` is `λ u ^ (-4 / (n - 2)) > 0`.
   have hS (x : M) := ((g.rescale _ hf hf_pos).scalarCurvature_def x).symm.trans
-    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn2 hu_pos (h x))
+    (g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hu_pos (h x))
   obtain ⟨C, hC, hCQ⟩ :=
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
       ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩

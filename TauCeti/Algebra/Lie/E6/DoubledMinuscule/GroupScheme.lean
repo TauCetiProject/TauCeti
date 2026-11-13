@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 
 /-!
@@ -71,16 +70,6 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 * The carrier API follows the formal template of
   `TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme`, specialized here to the doubled minuscule
   representation, lattice, and weights.
-
-## Roadmap
-
-This is a type-`E₆` instance of "The Chevalley--Demazure construction" and "Root subgroup maps" in
-Layer 9, "pinned Chevalley--Demazure group schemes over `ℤ`", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: an explicitly constructed group scheme over `ℤ` with
-its numbered root subgroup maps and the equations pinning them against a split torus. It does not
-close that layer on this diagram, which still owes the reductivity, the maximality of the torus,
-the identification of the carrier's root datum with
-`TauCeti.DynkinType.simplyConnectedRootDatum` at `E₆`, and the pinning datum itself.
 -/
 
 public section
@@ -288,17 +277,6 @@ carrier. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.left :=
   TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantWeightTorusToToral
     _ _ _ _ _ _ _ _ span_range_matrixWeight_eq_top
-
-/-- Two morphisms out of the doubled type-`E₆` carrier agree when they agree on its numbered root
-subgroups and represented split torus. -/
-@[ext]
-theorem groupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
-    (f g : groupScheme ⟶
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
-    (hroot : ∀ k, rootSubgroup k ≫ f = rootSubgroup k ≫ g)
-    (htorus : weightTorus ≫ f = weightTorus ≫ g) : f = g :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
-    _ _ _ _ _ _ _ _ f g hroot htorus
 
 /-! ## Matrix-valued points -/
 
