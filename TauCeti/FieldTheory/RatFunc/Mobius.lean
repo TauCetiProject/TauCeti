@@ -381,9 +381,9 @@ theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
   have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hnumle
   have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hdenle
   set a := f.num.coeff 1 with ha
-  set b := f.num.coeff 0 with hb
+  set b := f.num.coeff 0
   set c := f.denom.coeff 1 with hc
-  set d := f.denom.coeff 0 with hd
+  set d := f.denom.coeff 0
   have hdet : a * d - b * c ≠ 0 := by
     -- `a * d = b * c` gives `C c * num = C a * denom`, and coprimality then forces whichever of
     -- `num`, `denom` has degree one to divide a nonzero constant

@@ -90,7 +90,7 @@ theorem lipschitzWith_heatCauchyPotentialBCF {t : ℝ} (ht : 0 < t) (g : E →�
       mul_nonneg (integral_nonneg fun _ => norm_nonneg _) (norm_nonneg _)⟩
       (heatCauchyPotentialBCF t g) := by
   rw [coe_heatCauchyPotentialBCF_of_pos ht]
-  apply lipschitzWith_of_nnnorm_fderiv_le
+  apply lipschitzWith_of_nnNorm_fderiv_le
     ((contDiff_heatKernel_convolution ht g.continuous.aestronglyMeasurable
       (ae_of_all _ g.norm_coe_le_norm)).differentiable (by simp))
   intro x

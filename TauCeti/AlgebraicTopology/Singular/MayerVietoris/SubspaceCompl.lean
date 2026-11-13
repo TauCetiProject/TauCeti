@@ -120,7 +120,7 @@ private abbrev half (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) : Set X :=
 
 private lemma isOpen_half [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
     IsOpen (half q W φ) :=
-  ((W.closed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
+  ((W.isClosed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
     continuous_const)).isOpen_compl).preimage q.continuous
 
 variable {W : Submodule ℝ F}

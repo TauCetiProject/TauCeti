@@ -8,17 +8,25 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 
 /-!
-# Basic facts about C⋆-rings
+# Basic facts about normed star groups and C⋆-rings
 
 This file complements `Mathlib.Analysis.CStarAlgebra.Basic`.
 
-## Main declarations
+## Main results
 
+* `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `CStarRing.norm_one_le`: `‖1‖ ≤ 1` in any unital C⋆-ring, including the trivial one, where
   Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
 -/
 
 public section
+
+/-- Any additive subgroup closed under the involution of a `NormedStarGroup` inherits the
+`NormedStarGroup` structure. -/
+instance StarMemClass.instNormedStarGroup {S E : Type*} [SeminormedAddCommGroup E]
+    [StarAddMonoid E] [NormedStarGroup E] [SetLike S E] [AddSubgroupClass S E] [StarMemClass S E]
+    (s : S) : NormedStarGroup s where
+  norm_star_le x := NormedStarGroup.norm_star_le (x : E)
 
 namespace CStarRing
 

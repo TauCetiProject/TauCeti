@@ -93,7 +93,7 @@ theorem lintegral_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) (f : 
 theorem noncentralChiSquaredMeasure_zero_noncentrality (k : ℝ) :
     noncentralChiSquaredMeasure k 0 = chiSquaredMeasure k := by
   by_cases hk : 0 ≤ k
-  · ext s hs
+  · ext s _
     rw [noncentralChiSquaredMeasure_apply hk, tsum_eq_single 0]
     · simp [poissonMeasure_singleton]
     · intro n hn

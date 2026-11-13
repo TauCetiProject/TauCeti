@@ -130,14 +130,14 @@ private theorem integral_norm_fourierInv_lowPass_add_sub_le (N : ℕ) (h : E) :
     (mu := (volume : Measure E)) le_rfl (c • h)
   have hmeas : AEStronglyMeasurable (fun z ↦ K (z + c • h) - K z) volume :=
     ((K.continuous.comp (continuous_id.add continuous_const)).sub K.continuous).aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas] at htrans
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas] at htrans
   rw [hscale]
   calc ∫ z, ‖K (z + c • h) - K z‖
-      = (∫⁻ z, ‖K (z + c • h) - K z‖ₑ).toReal := integral_norm_eq_lintegral_enorm hmeas
+      = (∫⁻ z, ‖K (z + c • h) - K z‖ₑ).toReal := integral_norm_eq_lintegral_eNorm hmeas
     _ ≤ (‖c • h‖ₑ * eLpNorm (fderiv ℝ ⇑K) 1 volume).toReal :=
-        ENNReal.toReal_mono (ENNReal.mul_ne_top enorm_ne_top hfin) htrans
+        ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top hfin) htrans
     _ = _ := by
-        rw [ENNReal.toReal_mul, toReal_enorm, norm_smul, Real.norm_of_nonneg hc.le]
+        rw [ENNReal.toReal_mul, toReal_eNorm, norm_smul, Real.norm_of_nonneg hc.le]
         ring
 
 omit [MeasurableSpace E] [BorelSpace E] in
@@ -254,10 +254,10 @@ theorem exists_toLpTop_eq_and_norm_le_and_holderWith (hα0 : 0 < α) (hα1 : α 
   set D : ℝ := (eLpNorm (fderiv ℝ (𝓕⁻ (lowPass φ 0) : 𝓢(E, ℂ))) 1 volume).toReal
   set q : ℝ := ((2 : ℝ) ^ (α : ℝ))⁻¹ with hq_def
   have hA : 0 ≤ A := integral_nonneg fun _ ↦ norm_nonneg _
-  have hD : 0 ≤ D := ENNReal.toReal_nonneg
+  have _ : 0 ≤ D := ENNReal.toReal_nonneg
   have hq0 : 0 ≤ q := by positivity
   have hq1 : q < 1 := inv_lt_one_of_one_lt₀ (Real.one_lt_rpow one_lt_two hα0)
-  have hq1' : 0 < 1 - q := sub_pos.2 hq1
+  have _ : 0 < 1 - q := sub_pos.2 hq1
   set C : ℝ≥0 := C₀ * (A.toNNReal + (D * 2 ^ n₀).toNNReal) + (A * (1 - q)⁻¹).toNNReal
   refine ⟨C, fun u ↦ ?_⟩
   -- The smoothed blocks `Gⱼ` represent the blocks `Δⱼ u`, which have `‖Δⱼ u‖_∞ ≤ ‖u‖ q^j`.
@@ -270,7 +270,7 @@ theorem exists_toLpTop_eq_and_norm_le_and_holderWith (hα0 : 0 < α) (hα1 : α 
     exact (norm_smoothBlock_le φ n₀ j _ x).trans (by rw [mul_assoc]; gcongr; linarith)
   have ha : ∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖G j x‖ ≤ ((A.toNNReal * ‖u‖₊ : ℝ≥0) : ℝ) := by
     intro j x
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ hA, coe_nnnorm]
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ hA, coe_nnNorm]
     calc 2 ^ ((α : ℝ) * j) * ‖G j x‖ ≤ 2 ^ ((α : ℝ) * j) * (A * ‖u.block j‖) := by
           gcongr
           exact norm_smoothBlock_le φ n₀ j _ x
@@ -279,7 +279,7 @@ theorem exists_toLpTop_eq_and_norm_le_and_holderWith (hα0 : 0 < α) (hα1 : α 
   have hb : ∀ (j : ℕ) x y, 2 ^ ((α : ℝ) * j) * dist (G j x) (G j y) ≤
       (((D * 2 ^ n₀).toNNReal * ‖u‖₊ : ℝ≥0) : ℝ) * 2 ^ j * dist x y := by
     intro j x y
-    rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity), coe_nnnorm]
+    rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity), coe_nnNorm]
     calc 2 ^ ((α : ℝ) * j) * dist (G j x) (G j y)
         ≤ 2 ^ ((α : ℝ) * j) * (D * 2 ^ n₀ * 2 ^ j * dist x y * ‖u.block j‖) := by
           gcongr
