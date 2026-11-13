@@ -51,6 +51,8 @@ exchanges the endpoints of a dart.
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
 * `TauCeti.GTree.IsMinimal`, `TauCeti.GTree.IsRelative`: minimal and relative trees.
+* `TauCeti.GTree.incidentSubgroups`: the stabilizers of the darts at a vertex and the
+  intersections of its stabilizer with the conjugates of the members of a family `ℋ`.
 * `TauCeti.GTree.Dominates`, `TauCeti.GTree.SameDeformationSpace`: domination and deformation
   spaces, with `TauCeti.GTree.dominates_iff`.
 * `TauCeti.GTree.point`: the one-vertex tree.
@@ -59,7 +61,7 @@ exchanges the endpoints of a dart.
 
 * J.-P. Serre, *Trees*, Chapter I, §3.1 and §6.
 * V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1,
-  Definition 2.1 and §2.2.
+  Definition 2.1, §2.2 and Definitions 4.3–4.5.
 -/
 
 public section
@@ -408,6 +410,34 @@ theorem isRelative_of_forall_stabilizer_eq_bot {𝒜 ℋ : Set (Subgroup G)} (h�
     (hℋ : ℋ ⊆ {⊥}) (h : ∀ v : T.V, stabilizer G v = ⊥) : T.IsRelative 𝒜 ℋ :=
   ⟨fun e => (isEllipticSubgroup_iff_eq_bot h).mp (T.isEllipticSubgroup_stabilizer_dart e) ▸ h𝒜,
     fun _ hH => (isEllipticSubgroup_iff_eq_bot h).mpr (hℋ hH)⟩
+
+/-! ### Incident subgroups -/
+
+variable (T) in
+/-- The incident subgroups at a vertex `v`, relative to a family `ℋ` of subgroups: the
+stabilizers of the darts starting at `v` and the intersections of the stabilizer `Q` of `v` with
+the conjugates of the members of `ℋ`, as subgroups of `Q`. Guirardel and Levitt's family
+`Inc^ℋ_v` uses, instead of these intersections, the conjugates of members of `ℋ` that fix `v`
+and no other vertex. -/
+def incidentSubgroups (ℋ : Set (Subgroup G)) (v : T.V) : Set (Subgroup (stabilizer G v)) :=
+  {K | ∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)} ∪
+    {K | ∃ H ∈ ℋ, ∃ g : G,
+      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v)}
+
+theorem mem_incidentSubgroups_iff {ℋ : Set (Subgroup G)} {v : T.V}
+    {K : Subgroup (stabilizer G v)} :
+    K ∈ T.incidentSubgroups ℋ v ↔
+      (∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)) ∨
+        ∃ H ∈ ℋ, ∃ g : G,
+          K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v) := Iff.rfl
+
+variable (T) in
+/-- A `G`-tree with at most one vertex has no darts, so its incident subgroups are the
+intersections of the vertex stabilizer with the conjugates of the members of `ℋ`. -/
+theorem incidentSubgroups_of_subsingleton [Subsingleton T.V] (ℋ : Set (Subgroup G)) (x : T.V) :
+    T.incidentSubgroups ℋ x = {K | ∃ H ∈ ℋ, ∃ g : G,
+      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G x)} :=
+  Set.union_eq_right.mpr fun _ ⟨e, _⟩ => (T.isEmpty_dart_of_subsingleton.false e).elim
 
 /-! ### Domination and deformation spaces -/
 

@@ -20,10 +20,11 @@ conjugate of a boundary subgroup `⟨pⱼ⟩`. This is the case of trivial fiber
 rather than a 2-orbifold, of the definition of Guirardel and Levitt; the surface and the
 isomorphism are part of the structure.
 
+The incident subgroups at `v` (`TauCeti.GTree.incidentSubgroups`) are the incident edge
+stabilizers and the intersections `Q ∩ g H g⁻¹`, as subgroups of `Q`.
+
 ## Main definitions
 
-* `TauCeti.GTree.incidentSubgroups`: the incident edge stabilizers and the intersections
-  `Q ∩ g H g⁻¹`, as subgroups of the vertex stabilizer `Q`.
 * `TauCeti.GTree.QH T ℋ v`: a QH structure at `v`, with `QH.boundarySubgroup` and `QH.IsUsed`.
 * `TauCeti.GTree.IsQH T ℋ v`: the vertex `v` carries a QH structure.
 * `TauCeti.GTree.QH.point`: the QH structure at the vertex of the one-vertex tree of a surface
@@ -59,30 +60,6 @@ namespace GTree
 open SurfaceGroup
 
 variable {G : Type w} [Group G] (T : GTree.{u, v} G)
-
-/-- The incident subgroups at a vertex `v`, relative to a family `ℋ` of subgroups: the
-stabilizers of the darts starting at `v` and the intersections of the stabilizer `Q` of `v` with
-the conjugates of the members of `ℋ`, as subgroups of `Q`. -/
-def incidentSubgroups (ℋ : Set (Subgroup G)) (v : T.V) : Set (Subgroup (stabilizer G v)) :=
-  {K | ∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)} ∪
-    {K | ∃ H ∈ ℋ, ∃ g : G,
-      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v)}
-
-theorem mem_incidentSubgroups_iff {ℋ : Set (Subgroup G)} {v : T.V}
-    {K : Subgroup (stabilizer G v)} :
-    K ∈ T.incidentSubgroups ℋ v ↔
-      (∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)) ∨
-        ∃ H ∈ ℋ, ∃ g : G,
-          K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v) := Iff.rfl
-
-/-- A `G`-tree with a single vertex has no darts, since a dart would be a loop; so its incident
-subgroups are the intersections of the vertex stabilizer with the conjugates of the members
-of `ℋ`. -/
-theorem incidentSubgroups_of_subsingleton [Subsingleton T.V] (ℋ : Set (Subgroup G)) (x : T.V) :
-    T.incidentSubgroups ℋ x = {K | ∃ H ∈ ℋ, ∃ g : G,
-      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G x)} :=
-  Set.union_eq_right.mpr fun _ ⟨e, _⟩ => absurd (Subsingleton.elim _ _)
-    (SerreGraph.IsAcyclic.src_ne_tgt (SerreGraph.IsTree.isAcyclic _ T.isTree) e)
 
 /-- A quadratically hanging structure at a vertex `v` of a `G`-tree, relative to a family `ℋ` of
 subgroups: an isomorphism of the stabilizer of `v` with the fundamental group `S±(g, m)` of a
@@ -167,8 +144,8 @@ theorem eq_of_stabilizer_le {w : T.V} (h : stabilizer G v ≤ stabilizer G w) : 
   have hQ : stabilizer G v ≤ stabilizer G e := fun g hg =>
     SerreGraph.Aut.smul_eq_of_mem_darts T.isTree.isAcyclic (T.action g) hg (h hg) hp
       (List.mem_of_mem_head? he)
-  exact q.ne_top_of_mem_incidentSubgroups
-    (.inl ⟨e, SerreGraph.Path.src_eq_of_mem_head?_darts _ p he, rfl⟩) (subgroupOf_eq_top.mpr hQ)
+  exact q.ne_top_of_mem_incidentSubgroups (mem_incidentSubgroups_iff.mpr
+    (.inl ⟨e, SerreGraph.Path.src_eq_of_mem_head?_darts _ p he, rfl⟩)) (subgroupOf_eq_top.mpr hQ)
 
 end QH
 
@@ -182,7 +159,8 @@ theorem not_isQH_of_isMulCommutative {ℋ : Set (Subgroup G)} {v : T.V}
 hanging. -/
 theorem not_isQH_of_stabilizer_le {ℋ : Set (Subgroup G)} {v : T.V} {H : Subgroup G} (hH : H ∈ ℋ)
     (g : G) (h : stabilizer G v ≤ H.map (MulAut.conj g).toMonoidHom) : ¬T.IsQH ℋ v := fun ⟨q⟩ =>
-  q.ne_top_of_mem_incidentSubgroups (.inr ⟨H, hH, g, rfl⟩) (subgroupOf_eq_top.mpr h)
+  q.ne_top_of_mem_incidentSubgroups (mem_incidentSubgroups_iff.mpr (.inr ⟨H, hH, g, rfl⟩))
+    (subgroupOf_eq_top.mpr h)
 
 /-! ### The one-vertex tree of a surface group -/
 
@@ -201,14 +179,13 @@ abbrev point (h : Signed.eulerChar o g m < 0) (hℋ : ∀ H ∈ ℋ, Signed.IsPe
   genus := g
   boundary := m
   eulerChar_neg := h
-  surfaceEquiv := (MulEquiv.subgroupCongr (eq_top_iff.mpr fun _ _ =>
-    mem_stabilizer_iff.mpr (Subsingleton.elim _ _))).trans Subgroup.topEquiv
+  surfaceEquiv :=
+    (MulEquiv.subgroupCongr (stabilizer_eq_top_of_subsingleton x)).trans Subgroup.topEquiv
   isPeripheral_map := by
     rw [incidentSubgroups_of_subsingleton]
     rintro K ⟨H, hH, s, rfl⟩
-    convert (hℋ H hH).map_conj s
-    ext y
-    simp [mem_subgroupOf]
+    convert (hℋ H hH).map_conj s using 1
+    exact map_subgroupOf_eq_of_le (le_top.trans_eq (stabilizer_eq_top_of_subsingleton x).symm)
 
 variable (h : Signed.eulerChar o g m < 0) (hℋ : ∀ H ∈ ℋ, Signed.IsPeripheral H)
   (x : (GTree.point.{u, v} (Signed o g m)).V)
@@ -224,11 +201,8 @@ theorem boundarySubgroup_point (j : Fin m) :
 /-- On the one-vertex tree, the surface isomorphism carries `L ∩ Q` back to `L`. -/
 private theorem map_subgroupOf_point (L : Subgroup (Signed o g m)) :
     (L.subgroupOf (stabilizer (Signed o g m) x)).map (QH.point h hℋ x).surfaceEquiv.toMonoidHom =
-      L := by
-  ext y
-  rw [mem_map]
-  refine ⟨fun ⟨z, hz, hzy⟩ => hzy ▸ mem_subgroupOf.mp hz, fun hy => ?_⟩
-  exact ⟨⟨y, mem_stabilizer_iff.mpr (Subsingleton.elim _ _)⟩, mem_subgroupOf.mpr hy, rfl⟩
+      L :=
+  map_subgroupOf_eq_of_le (le_top.trans_eq (stabilizer_eq_top_of_subsingleton x).symm)
 
 /-- At the vertex of the one-vertex tree of a surface group, a boundary component is used
 exactly when the family `ℋ` contains a nontrivial subgroup of a conjugate of its boundary
