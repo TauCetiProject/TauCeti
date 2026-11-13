@@ -267,49 +267,19 @@ theorem Tames.contMDiffAt_of_eventually_cayley_eq (h₀ : ω.Tames J₀)
     (hfC : ∀ᶠ y in 𝓝 p, J₀.cayley (f y) = (C y).toLinearMap) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
       (fun y => LinearMap.toContinuousLinearMap (f y).toLinearMap) p := by
-  -- For a tame `J` with Cayley coordinate `C`, `1 - C = 2 (1 - J₀ J)⁻¹` is invertible and `J` is
-  -- the inverse Cayley formula `J₀ (1 + C)(1 - C)⁻¹`.
+  -- Pass to the algebra equivalence `Module.End.toContinuousLinearMap`, which is
+  -- `LinearMap.toContinuousLinearMap` as a function, to move the inverse Cayley formula across.
+  set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
   have key {J : AlmostComplexStructure V} (hJ : ω.Tames J) {C : V →L[ℝ] V}
       (hC : J₀.cayley J = C.toLinearMap) :
-      IsUnit (1 - C) ∧ LinearMap.toContinuousLinearMap J.toLinearMap =
-        LinearMap.toContinuousLinearMap J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
-    set j := LinearMap.toContinuousLinearMap J₀.toLinearMap
-    set F := LinearMap.toContinuousLinearMap J.toLinearMap
-    obtain ⟨u, hu⟩ : IsUnit (1 - j * F) := by
-      rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
-      simpa [j, F] using h₀.isUnit_one_sub_mul hJ
-    -- The defining relation `C (1 - J₀ J) = -(1 + J₀ J)` of the Cayley transform.
-    have hCP : C * ↑u = -(1 + j * F) := by
-      rw [hu]
-      apply ContinuousLinearMap.coe_injective
-      have h := h₀.cayley_mul_one_sub_mul hJ
-      rw [hC] at h
-      simpa [j, F] using h
-    have hjj : j * j = -1 := by
-      ext v
-      simp [j]
-    have hC' : C = 1 - (2 : ℝ) • ↑u⁻¹ := by
-      have h2 : 1 + j * F = 2 - ↑u := by rw [hu, ← one_add_one_eq_two]; abel
-      calc C = C * ↑u * ↑u⁻¹ := by simp [mul_assoc]
-        _ = (↑u - 2) * ↑u⁻¹ := by rw [hCP, h2, neg_sub]
-        _ = 1 - (2 : ℝ) • ↑u⁻¹ := by rw [sub_mul, Units.mul_inv, two_mul, two_smul]
-    let U : (V →L[ℝ] V)ˣ := ⟨(2 : ℝ) • ↑u⁻¹, (2⁻¹ : ℝ) • ↑u, by
-      rw [smul_mul_smul_comm, Units.inv_mul]; norm_num, by
-      rw [smul_mul_smul_comm, Units.mul_inv]; norm_num⟩
-    have h1C : 1 - C = U := by rw [hC']; simp [U]
-    refine ⟨h1C ▸ U.isUnit, ?_⟩
-    have h : (1 + C) * ↑U⁻¹ = ↑u - 1 := by
-      change (1 + C) * ((2⁻¹ : ℝ) • ↑u) = ↑u - 1
-      rw [hC', mul_smul_comm, add_mul, sub_mul, one_mul, smul_mul_assoc, Units.inv_mul]
-      module
-    rw [h1C, Ring.inverse_unit, mul_assoc, h, hu, sub_sub_cancel_left, mul_neg, ← mul_assoc, hjj,
-      neg_one_mul, neg_neg]
-  have hF : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => LinearMap.toContinuousLinearMap
-      J₀.toLinearMap * (1 + C y) * Ring.inverse (1 - C y)) p :=
-    ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
-      ((contDiffAt_const.sub contDiffAt_id).inverse
-        (key hf.self_of_nhds hfC.self_of_nhds).1)).comp_contMDiffAt hCs
-  refine hF.congr_of_eventuallyEq ?_
+      IsUnit (1 - C) ∧ e J.toLinearMap = e J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
+    have hCe : e (J₀.cayley J) = C := by rw [hC]; rfl
+    refine ⟨?_, ?_⟩
+    · simpa only [map_sub, map_one, hCe] using (h₀.isUnit_one_sub_cayley hJ).map e
+    · rw [← h₀.mul_one_add_cayley_mul_ringInverse hJ, map_mul, map_mul, map_ringInverse, map_add,
+        map_sub, map_one, hCe]
+  refine (contMDiffAt_mul_one_add_ringInverse (contMDiffAt_const (c := e J₀.toLinearMap)) hCs
+    (key hf.self_of_nhds hfC.self_of_nhds).1).congr_of_eventuallyEq ?_
   filter_upwards [hf, hfC] with y hy hyC
   exact (key hy hyC).2
 

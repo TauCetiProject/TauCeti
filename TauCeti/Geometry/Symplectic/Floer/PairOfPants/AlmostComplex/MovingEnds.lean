@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
+import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Almost complex structures on spheres with moving input ends
@@ -132,24 +132,6 @@ theorem puncturedSphereCayley_of_forall_ne {i : ι} {w : ℂ}
   rw [puncturedSphereCayley_def, Finset.sum_eq_single i (fun j _ hji => by
       rw [smoothTransition_endCoord_zero_eq_zero_of_le_norm_sub (hne j hji), zero_smul]) (by simp),
     smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le hw, zero_smul, add_zero]
-
-omit [Fintype ι] in
-/-- A point of a disc `‖w - c i‖ < r i` disjoint from discs `‖w - c j‖ < r j` containing the
-discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` lies outside the latter discs. -/
-private theorem le_norm_sub_of_norm_sub_lt {r : ι → ℝ} {i : ι}
-    (hr : ∀ j, j ≠ i → ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ r j)
-    (hsep : ∀ j, j ≠ i → r i + r j ≤ ‖c i - c j‖) {w : ℂ} (hw : ‖w - c i‖ < r i) (j : ι)
-    (hji : j ≠ i) : ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c j‖ := by
-  have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-    simpa using norm_sub_le (w - c i) (w - c j)
-  linarith [hsep j hji, hr j hji, norm_sub_rev (c i) (c j)]
-
-/-- A point of a disc `‖w - c‖ < r` with `‖c‖ + r ≤ 2 exp (2π)` lies in the disc
-`‖w‖ ≤ 2 exp (2π)`. -/
-private theorem norm_le_two_mul_exp_of_norm_sub_lt {c w : ℂ} {r : ℝ}
-    (hout : ‖c‖ + r ≤ 2 * Real.exp (2 * π)) (hw : ‖w - c‖ < r) : ‖w‖ ≤ 2 * Real.exp (2 * π) := by
-  have h₂ : ‖w‖ ≤ ‖c‖ + ‖w - c‖ := by simpa using norm_add_le c (w - c)
-  linarith
 
 /-- **At most one end contributes.** If the disc `‖w - c i‖ < r i` is disjoint from discs
 `‖w - c j‖ < r j` containing the discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` of the other inputs, and
@@ -324,7 +306,7 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_forall_ne
     have hp : J i (z.im + k) = J i z.im := by simpa using hJp.int_mul k z.im
     rw [puncturedSphereCayley_of_forall_ne hne hz, hφ, re_endCoord_cylindricalEndLift, him, hp]
   rw [cayley_puncturedSphereAlmostComplex_of_mem h₀ (hC ▸ h₀.smul_cayley_mem_cayleyBall (hJ _ x)
-    (abs_le.2 ⟨by linarith [smoothTransition.nonneg (z.re - 1)], smoothTransition.le_one _⟩)), hC]
+    (smoothTransition.abs_le_one (z.re - 1))), hC]
 
 /-- **The structure on an input end, for discs of any radii.** If the disc `‖w - c i‖ < r i` is
 disjoint from discs `‖w - c j‖ < r j` containing the discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` of
@@ -355,9 +337,7 @@ theorem cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_pos
     J₀.cayley (puncturedSphereAlmostComplex h₀ c a J Jout (c i + a i * zero.cylindricalEndLift z)
       x) = smoothTransition (z.re - 1) • J₀.cayley (J i z.im x) :=
   cayley_puncturedSphereAlmostComplex_cylindricalEndLift_of_norm_lt h₀ (r := fun j => ‖a j‖ / 2)
-    (fun j _ => by
-      have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-      nlinarith [norm_nonneg (a j)])
+    (fun j _ => by nlinarith [norm_nonneg (a j), exp_neg_two_pi_lt_one])
     (fun _ hji => hsep hji.symm) (hout i) hJ hJp ha
     (by simpa using norm_mul_cylindricalEndLift_zero_lt ha hz) x
 

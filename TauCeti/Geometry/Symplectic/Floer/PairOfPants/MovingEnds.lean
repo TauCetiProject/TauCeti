@@ -73,11 +73,6 @@ namespace TauCeti.Floer
 
 variable {M : Type*}
 
-/-- The factor `exp (-2π)` relating the radius of the support of an input end datum to the radius
-of its end disc is less than `1`. -/
-private theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
-  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
-
 section InputEnd
 
 variable {H : ℝ → M → ℝ} {c a : ℂ}
@@ -243,15 +238,10 @@ private theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_
     (hsep : Pairwise fun i j => r i + r j ≤ ‖c i - c j‖)
     (hout : ∀ i, ‖c i‖ + r i ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ} (hw : ‖w - c i‖ < r i)
     (x : M) :
-    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x := by
-  refine puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne (fun j hj => ?_) ?_ x
-  · have h₁ := hsep hj
-    have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-      simpa using norm_sub_le (w - c i) (w - c j)
-    linarith [hr j]
-  · calc ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by
-          simpa using norm_add_le (c i) (w - c i)
-      _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
+    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x :=
+  puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne
+    (le_norm_sub_of_norm_sub_lt (fun j _ => hr j) (fun _ hji => hsep hji.symm) hw)
+    (norm_le_two_mul_exp_of_norm_sub_lt (hout i) hw) x
 
 /-- **Near an input end the datum is that end's datum.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are
 pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the
@@ -328,26 +318,6 @@ section Smooth
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
-modelled is `C^n` jointly in the center, the scale and the domain point `w`, at every point with
-`a ≠ 0`. -/
-theorem contDiffAt_sub_div {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) :
-    ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-  have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-      (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-  exact h.restrict_scalars ℝ
-
-/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
-modelled, paired with the target point, is `C^n` jointly in the center, the scale, the domain point
-`w` and the target point, at every point with `a ≠ 0`. -/
-theorem contMDiffAt_sub_div_prodMk {n : WithTop ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) (𝓘(ℝ, ℂ).prod I) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => ((p.2.1 - p.1.1) / p.1.2, p.2.2)) ((c, a), (w, x)) :=
-  ((contDiffAt_sub_div ha w).contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
-    ((c, a), (w, x)) (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))).prodMk
-    (contMDiffAt_snd.comp _ contMDiffAt_snd)
-
 /-- **The input end datum is smooth in its center and scale.** For a period-one Hamiltonian of
 class `C^n` on `ℝ × M`, the input end datum is `C^n` jointly in the center `c`, the scale `a`, the
 domain point `w` and the target point, at every point with `a ≠ 0` and `w ≠ c`. -/
@@ -369,38 +339,6 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     (contMDiffAt_sub_div_prodMk ha w x)).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
-
-/-- Evaluating the centers and the scales of a configuration at the input `i` is smooth. -/
-theorem contMDiff_apply_prodMk {n : WithTop ℕ∞} (i : ι) :
-    ContMDiff (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
-      (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) :=
-  have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
-  (hL.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
-
-omit [Fintype ι] in
-/-- **Strict separation of the input discs is an open condition.** If the discs
-`‖w - c i‖ < ‖a i‖ exp (-2π) / 2` have strictly separated closures inside the open disc
-`‖w‖ < 2 exp (2π)`, the same holds at every configuration near `(c, a)`. -/
-theorem eventually_pairwise_add_lt_norm_sub_and_norm_add_lt [Finite ι] {c a : ι → ℂ}
-    (hsep : Pairwise fun i j =>
-      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 < ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π)) :
-    ∀ᶠ ca : (ι → ℂ) × (ι → ℂ) in 𝓝 (c, a),
-      (Pairwise fun i j => ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 +
-        ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 < ‖ca.1 i - ca.1 j‖) ∧
-      ∀ i, ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 < 2 * Real.exp (2 * π) := by
-  refine (Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j => ?_).and
-    (Filter.eventually_all.2 fun i => ?_)
-  · by_cases hij : i = j
-    · exact Filter.Eventually.of_forall fun _ h => (h hij).elim
-    · have hc : Continuous fun ca : (ι → ℂ) × (ι → ℂ) => ‖ca.1 i - ca.1 j‖ := by fun_prop
-      have ha : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
-          ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 + ‖ca.2 j‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
-      exact (ha.continuousAt.eventually_lt hc.continuousAt (hsep hij)).mono fun _ h _ => h
-  · have h : Continuous fun ca : (ι → ℂ) × (ι → ℂ) =>
-        ‖ca.1 i‖ + ‖ca.2 i‖ * Real.exp (-(2 * π)) / 2 := by fun_prop
-    exact h.continuousAt.eventually_lt continuousAt_const (hout i)
 
 /-- **The datum is smooth in the configuration.** For period-one Hamiltonians of class `C^n` on
 `ℝ × M`, the perturbation datum is `C^n` jointly in the centers, the scales, the domain point and
