@@ -47,7 +47,7 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   centreless group.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
-  of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
+  of the normal core of `B` when every element is `f x * b` with `b` in the normalizer of `B`.
 * `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
   meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
@@ -314,10 +314,9 @@ theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
   exact Set.image_inter_preimage f H K
 
 /-- The normal core of `f⁻¹(B)` is the preimage of the normal core of `B` as soon as every element
-of the target is `f x * b` with `b ∈ B`: conjugating by `f x * b` is conjugating by `f x` and
-then by `b`, and `b` normalizes `B`. -/
+of the target is `f x * b` with `b` in the normalizer of `B`. -/
 theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) {B : Subgroup H}
-    (hf : ∀ g, ∃ x, ∃ b ∈ B, f x * b = g) :
+    (hf : ∀ g, ∃ x, ∃ b ∈ Subgroup.normalizer (B : Set H), f x * b = g) :
     (B.comap f).normalCore = B.normalCore.comap f := by
   refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
   -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
@@ -327,7 +326,7 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     simp only [map_mul, map_inv]
     group
   rw [hconj]
-  exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+  exact (Subgroup.mem_normalizer_iff.mp (inv_mem hb) _).mp (hx y⁻¹)
 
 /-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
 theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
