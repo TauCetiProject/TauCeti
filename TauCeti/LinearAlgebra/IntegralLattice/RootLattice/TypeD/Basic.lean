@@ -413,9 +413,8 @@ theorem checkerboardSpinor_mem_dualCarrier :
   obtain ⟨-, m, hm⟩ := (mem_checkerboardLattice_carrier_iff x).mp hx
   refine Submodule.mem_one.mpr ⟨m, ?_⟩
   rw [(checkerboardLattice n).isSymm.eq, checkerboardLattice_form_apply]
-  simp only [checkerboardSpinor_apply, ← Finset.sum_mul, hm]
-  ring_nf
-  rfl
+  simp only [checkerboardSpinor_apply, ← Finset.sum_mul, hm, algebraMap_int_eq, eq_intCast]
+  ring
 
 /-- The cospinor representative lies in the dual lattice. -/
 theorem checkerboardCospinor_mem_dualCarrier [NeZero n] :
