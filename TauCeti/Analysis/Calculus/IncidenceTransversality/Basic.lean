@@ -11,8 +11,8 @@ import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # Incidence equations and parametric transversality to a map
@@ -232,10 +232,9 @@ theorem fderiv_incidenceEquation_apply {F : E × P → V} {j : W → V} {x : E} 
   rfl
 
 omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
-/-- Fixed-parameter partial derivative of `TauCeti.incidenceEquation`: restricting the derivative
-of `incidenceEquation F j` at `((x, y), p)` to `E × W` depends only on the slice `x' ↦ F (x', p)`
-and `j`, and equals `DFx.coprod (-Dj)`. Notably, neither a norm on `P` nor joint differentiability
-of `F` in `p` is needed. -/
+/-- Fréchet derivative of the fixed-parameter map `xy ↦ incidenceEquation F j (xy, p)` at `(x, y)`:
+given derivatives `DFx` of the slice `x' ↦ F (x', p)` at `x` and `Dj` of `j` at `y`, it equals
+`DFx.coprod (-Dj)`. Neither a norm on `P` nor joint differentiability of `F` is needed. -/
 theorem hasFDerivAt_incidenceEquation_slice {F : E × P → V} {j : W → V}
     {DFx : E →L[ℝ] V} {Dj : W →L[ℝ] V} {x : E} {y : W} {p : P}
     (hFx : HasFDerivAt (fun x' ↦ F (x', p)) DFx x) (hj : HasFDerivAt j Dj y) :
@@ -250,9 +249,10 @@ theorem hasFDerivAt_incidenceEquation_slice {F : E × P → V} {j : W → V}
   refine (h1.sub h2).congr_fderiv (ContinuousLinearMap.ext fun ⟨u, v⟩ ↦ ?_)
   simp [sub_eq_add_neg]
 
-/-- When `F` is jointly differentiable at `(x, p)` and `j` is differentiable at `y`, the
-fixed-parameter linearization `(fderiv ℝ (incidenceEquation F j) ((x, y), p)).comp inl` equals the
-coproduct `(fderiv ℝ (fun x' ↦ F (x', p)) x).coprod (-fderiv ℝ j y)`. -/
+/-- When `F` is jointly differentiable at `(x, p)` and `j` is differentiable at `y`, restricting
+the total derivative `fderiv ℝ (incidenceEquation F j) ((x, y), p)` to `E × W` along
+`ContinuousLinearMap.inl ℝ (E × W) P` equals the coproduct
+`(fderiv ℝ (fun x' ↦ F (x', p)) x).coprod (-fderiv ℝ j y)`. -/
 theorem fderiv_incidenceEquation_comp_inl {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
     (hF : DifferentiableAt ℝ F (x, p)) (hj : DifferentiableAt ℝ j y) :
     (fderiv ℝ (incidenceEquation F j) ((x, y), p)).comp
@@ -283,15 +283,6 @@ theorem contDiff_incidenceEquation {F : E × P → V} {j : W → V} {n : ℕ∞�
     ContDiff ℝ n (incidenceEquation F j) :=
   contDiff_iff_contDiffAt.2 fun z ↦
     contDiffAt_incidenceEquation (hF.contDiffAt (x := (z.1.1, z.2))) (hj.contDiffAt (x := z.1.2))
-
-/-- For continuous linear maps `A : E →L[ℝ] V` and `B : W →L[ℝ] V`, surjectivity of `A.coprod (-B)`
-is equivalent to `A.range ⊔ B.range = ⊤`, the classical subspace-sum transversality condition. -/
-private theorem surjective_coprod_neg_iff_range_sup_eq_top (A : E →L[ℝ] V) (B : W →L[ℝ] V) :
-    Surjective (A.coprod (-B)) ↔ A.range ⊔ B.range = ⊤ := by
-  have htop : Surjective (A.coprod (-B)) ↔ (A.coprod (-B)).range = ⊤ :=
-    (LinearMap.range_eq_top (f := (A.coprod (-B) : E × W →ₗ[ℝ] V))).symm
-  have hneg : (-B).range = B.range := LinearMap.range_neg B.toLinearMap
-  rw [htop, ContinuousLinearMap.range_coprod, hneg]
 
 /-- **Universal transversality criterion.** When `F` is differentiable at `(x, p)` and `j` is
 differentiable at `y`, the total derivative of `TauCeti.incidenceEquation F j` at `((x, y), p)` is
@@ -355,7 +346,7 @@ theorem isRegularIncidenceParameterOn_iff_range_sup_eq_top {F : E × P → V} {j
         (fderiv ℝ (fun x' ↦ F (x', p)) x).range ⊔ (fderiv ℝ j y).range = ⊤ := by
   rw [isRegularIncidenceParameterOn_iff_coprod hF hj]
   refine forall₂_congr fun x y ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ ?_
-  exact surjective_coprod_neg_iff_range_sup_eq_top _ _
+  exact ContinuousLinearMap.surjective_coprod_neg_iff _ _
 
 /-- **Global slice-transversality criterion (coproduct form).** -/
 theorem isRegularIncidenceParameter_iff_coprod {F : E × P → V} {j : W → V} {p : P}

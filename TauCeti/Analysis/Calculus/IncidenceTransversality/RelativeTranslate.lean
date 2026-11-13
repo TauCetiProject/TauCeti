@@ -26,17 +26,20 @@ leaves `f` unchanged on `C`, varies linearly with `p` in every higher `C^k` norm
 and connects `f` to `relativeTranslate f β p` via the straight-line homotopy
 `t ↦ relativeTranslate f β (t • p)` fixing `C`.
 
-When `β` is nonnegative and differentiable, every zero `x` of `β` is a local minimum of `β`, so
+Suppose now that `β` is nonnegative with zero set `{x | β x = 0} = C`, and that `f`, `β`, and
+`j : W → V` are differentiable. Every zero `x` of `β` is a local minimum of `β`, so
 `fderiv ℝ β x = 0` by Fermat's theorem. Consequently:
 1. Where `β x ≠ 0`, differentiating `relativeTranslate f β p x` in the parameter `p` gives the
    surjective scaling `q ↦ β x • q` onto `V`.
-2. Where `β x = 0`, `x ∈ C`, `relativeTranslate f β p x = f x`, and the parameter derivative
-   vanishes while the spatial derivative agrees with `fderiv ℝ f x`.
+2. Where `β x = 0`, we have `x ∈ C`, `relativeTranslate f β p x = f x`, and the parameter
+   derivative vanishes while the spatial derivative agrees with `fderiv ℝ f x`.
 
-Therefore, if `f` is already transverse to `j : W → V` along `C`, the incidence equation of
-`(x, p) ↦ relativeTranslate f β p x` against `j` has surjective total derivative everywhere!
+Therefore, if `f` is already transverse to `j` along `C`, the incidence equation of
+`(x, p) ↦ relativeTranslate f β p x` against `j` has surjective total derivative at every
+incidence point `((x, y), p)` with `relativeTranslate f β p x = j y`.
 Applying the finite-dimensional parametric transversality theorem from
-`TauCeti.Analysis.Calculus.IncidenceTransversality.Basic` then yields that almost every parameter
+`TauCeti.Analysis.Calculus.IncidenceTransversality.Basic` (under `C^n` smoothness above the
+Morse--Sard threshold) then yields that almost every parameter
 `p : V` (for additive Haar measure), and in particular arbitrarily small parameters `‖p‖ < r`,
 makes `relativeTranslate f β p` transverse to `j` while agreeing with `f` on `C`. Combining this
 with `IsOpen.exists_contDiff_support_eq` on `Cᶜ` eliminates the external cutoff altogether for any
@@ -50,8 +53,10 @@ closed set `C` in a finite-dimensional real normed space.
   nonnegative cutoff `β`, `fderiv ℝ (relativeTranslate f β p) x = fderiv ℝ f x`.
 * `TauCeti.exists_norm_iteratedFDeriv_relativeTranslate_sub_le`: uniform linear `O(‖p‖)` control of
   all derivatives up to order `k` of `relativeTranslate f β p - f` on compact sets.
-* `TauCeti.surjective_fderiv_incidenceEquation_relativeTranslate`: universal transversality of
-  `relativeTranslate f β` against `j` whenever `f` is already transverse to `j` on `C`.
+* `TauCeti.surjective_fderiv_incidenceEquation_relativeTranslate`: surjectivity of the total
+  derivative of the incidence equation of `relativeTranslate f β` against `j` at an incidence point
+  `((x, y), p)`, assuming differentiability at `x` and `y`, local nonnegativity of `β` near `x`
+  with `β x = 0 → x ∈ C`, and transversality of `f` to `j` along `C`.
 * `TauCeti.addHaar_setOf_not_isRegularIncidenceParameter_relativeTranslate_eq_zero`,
   `TauCeti.exists_isRegularIncidenceParameter_relativeTranslate`, and
   `TauCeti.exists_forall_isRegularIncidenceParameter_relativeTranslate`: generic and arbitrarily
