@@ -82,7 +82,7 @@ apply to all three ends.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
-  preserving, injective on the band `ℝ × (0, 1)` and `1`-periodic in `t`.
+  preserving, injective on every band `ℝ × (t₀, t₀ + 1)` and `1`-periodic in `t`.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -553,20 +553,21 @@ theorem positiveEndChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ �
   refine endChart_mem_thricePuncturedSphereReal ?_
   simpa [← mul_assoc] using hz
 
-/-- The positive end chart is injective on the open band `ℝ × (0, 1)`. -/
-theorem injOn_positiveEndChart (q : Puncture) :
-    InjOn (positiveEndChart q) (univ ×ˢ Ioo 0 1) := by
+/-- The positive end chart is injective on every open band `ℝ × (t₀, t₀ + 1)` of angular width
+one. -/
+theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
+    InjOn (positiveEndChart q) (univ ×ˢ Ioo t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  -- The reflection `v ↦ ±v` moves the band `ℝ × (0, 1)` into a band of width one.
-  obtain ⟨t₀, ht₀⟩ : ∃ t₀ : ℝ, ∀ c : ℝ × ℝ, c ∈ univ ×ˢ Ioo (0 : ℝ) 1 →
-      q.endSign • c ∈ univ ×ˢ Ico t₀ (t₀ + 1) := by
+  -- The reflection `v ↦ ±v` moves the band `ℝ × (t₀, t₀ + 1)` into a band of width one.
+  obtain ⟨t₁, ht₁⟩ : ∃ t₁ : ℝ, ∀ c : ℝ × ℝ, c ∈ univ ×ˢ Ioo t₀ (t₀ + 1) →
+      q.endSign • c ∈ univ ×ˢ Ico t₁ (t₁ + 1) := by
     rcases q.endSign_eq_one_or_eq_neg_one with h | h
-    · refine ⟨0, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
+    · refine ⟨t₀, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
         simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
-    · refine ⟨-1, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
+    · refine ⟨-t₀ - 1, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
         simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
   exact smul_right_injective _ q.endSign_ne_zero
-    (injOn_endChart_univ_prod_Ico q t₀ (ht₀ a ha) (ht₀ b hb) hab)
+    (injOn_endChart_univ_prod_Ico q t₁ (ht₁ a ha) (ht₁ b hb) hab)
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/

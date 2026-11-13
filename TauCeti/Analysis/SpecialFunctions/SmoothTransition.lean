@@ -79,6 +79,7 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
   integrable on `closedBall a c⁻¹` is integrable.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
+* `Real.smoothTransition.sub_min_of_le`: `ψ(x - min a b) = ψ(x - a)` for `x ≤ b`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
 * `DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub`: for `c ≥ 0`,
   `‖d(ψ(c (t - u)))‖ = c ψ'(c (t - u)) ‖du‖`.
@@ -421,6 +422,14 @@ theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition
   rcases hx.eq_or_lt with h | h
   · simp [← h]
   · exact (h.trans_le (le_add_one_sub x)).ne'
+
+/-- For `x ≤ b`, replacing the shift `a` of `smoothTransition (x - a)` by `min a b` does not
+change the value: both vanish when `a ≥ b`. -/
+theorem sub_min_of_le {x b : ℝ} (hx : x ≤ b) (a : ℝ) :
+    smoothTransition (x - min a b) = smoothTransition (x - a) := by
+  rcases le_total a b with h | h
+  · rw [min_eq_left h]
+  · rw [min_eq_right h, zero_of_nonpos (by linarith), zero_of_nonpos (by linarith)]
 
 end Real.smoothTransition
 
