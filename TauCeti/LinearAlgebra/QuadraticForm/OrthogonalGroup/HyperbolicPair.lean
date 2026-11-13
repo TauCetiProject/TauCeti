@@ -19,8 +19,8 @@ scales `u` by `t`, scales `v` by `t⁻¹`, and fixes every vector orthogonal to 
 isometry of `Q`, and `t ↦` (this map) is an injective homomorphism from `Rˣ` into the orthogonal
 group: the diagonal torus `diag(t, t⁻¹)` of the hyperbolic plane spanned by `u` and `v`, extended
 by the identity on its orthogonal complement, but written without choosing that complement. It is
-the product of the reflections in `u + v` and in `u + t • v`, so on a finite free module it has
-determinant one.
+the product of the reflections in `u + v` and in `u + t • v`, so it has determinant one (on a
+module without a finite basis the determinant is `1` by convention).
 
 Over a normed field the vectors `t • u` are unbounded, so this torus is the standard witness that
 the orthogonal group of an isotropic nondegenerate form is not compact.
@@ -39,8 +39,8 @@ the orthogonal group of an isotropic nondegenerate form is not compact.
 * `TauCeti.QuadraticMap.hyperbolicPairTorus_injective`: the torus is injective.
 * `TauCeti.QuadraticMap.hyperbolicPairTorus_eq_reflection_mul_reflection`: the torus element `t`
   is the product of the reflections in `u + v` and in `u + t • v`.
-* `TauCeti.QuadraticMap.hyperbolicPairTorus_mem_specialOrthogonalGroup`: on a finite free
-  module, the torus lies in the special orthogonal group.
+* `TauCeti.QuadraticMap.hyperbolicPairTorus_mem_specialOrthogonalGroup`: the torus lies in the
+  special orthogonal group.
 -/
 
 public section
@@ -190,19 +190,27 @@ theorem hyperbolicPairTorus_eq_reflection_mul_reflection (hu : Q u = 0) (hv : Q 
   · linear_combination (-(polar Q x u + t * polar Q x v)) * ht
   · linear_combination (-polar Q x v) * ht
 
-/-- On a finite free module, the torus of a hyperbolic pair lies in the special orthogonal
-group. -/
-theorem hyperbolicPairTorus_mem_specialOrthogonalGroup [Module.Free R M] [Module.Finite R M]
+/-- The torus of a hyperbolic pair lies in the special orthogonal group. On a module without a
+finite basis the determinant is `1` by convention, and otherwise the torus element is a product of
+two reflections. -/
+theorem hyperbolicPairTorus_mem_specialOrthogonalGroup
     (hu : Q u = 0) (hv : Q v = 0) (huv : polar Q u v = 1) (t : Rˣ) :
     (hyperbolicPairTorus Q hu hv huv t : M ≃ₗ[R] M) ∈ specialOrthogonalGroup Q := by
   refine mem_specialOrthogonalGroup_iff.mpr ⟨(hyperbolicPairTorus Q hu hv huv t).2, ?_⟩
-  let _ : Invertible (Q (u + v)) :=
-    invertibleOne.copy _ (by simp [QuadraticMap.map_add Q, hu, hv, huv])
-  let _ : Invertible (Q (u + (t : R) • v)) := t.invertible.copy _ (by
-    simp [QuadraticMap.map_add Q, QuadraticMap.map_smul, hu, hv, polar_smul_right, huv])
-  rw [hyperbolicPairTorus_eq_reflection_mul_reflection hu hv huv t, map_mul, det_reflection,
-    det_reflection]
-  norm_num
+  by_cases hb : ∃ s : Finset M, Nonempty (Module.Basis s R M)
+  · obtain ⟨s, ⟨b⟩⟩ := hb
+    have := Module.Free.of_basis b
+    have := Module.Finite.of_basis b
+    let _ : Invertible (Q (u + v)) :=
+      invertibleOne.copy _ (by simp [QuadraticMap.map_add Q, hu, hv, huv])
+    let _ : Invertible (Q (u + (t : R) • v)) := t.invertible.copy _ (by
+      simp [QuadraticMap.map_add Q, QuadraticMap.map_smul, hu, hv, polar_smul_right, huv])
+    rw [hyperbolicPairTorus_eq_reflection_mul_reflection hu hv huv t, map_mul, det_reflection,
+      det_reflection]
+    norm_num
+  · refine Units.ext ?_
+    rw [LinearEquiv.coe_det, LinearMap.det_def, dite_eq_right hb]
+    rfl
 
 end QuadraticMap
 

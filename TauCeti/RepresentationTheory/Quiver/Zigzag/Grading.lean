@@ -47,8 +47,7 @@ structure, and it computes the concrete pieces.
 * `TauCeti.mem_zigzagGrade_iff`: a graded piece consists of the classes of the homogeneous
   elements of its degree.
 * `TauCeti.isInternal_zigzagGrade`: **the quotient is the internal direct sum of its graded
-  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient asked for
-  by the roadmap.
+  pieces**, the comparison of the direct-sum graded algebra with the ungraded quotient.
 * `TauCeti.zigzagGrade_zero_eq_span_range_vertexIdempotent`,
   `TauCeti.zigzagGrade_one_eq_span_range_ofArrow` and
   `TauCeti.zigzagGrade_two_eq_span_range_zigzagVolume`: the concrete pieces, spanned by the
@@ -63,11 +62,7 @@ structure, and it computes the concrete pieces.
 
 ## References
 
-This is the grading clause of Layer 0 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which
-asks for the relation ideal to be homogeneous for the path-length grading and for the induced
-nonnegative grading on the quotient to be compared with the ungraded quotient rather than
-postulated as an unrelated graded copy. See Huerfano--Khovanov, *A category for the adjoint
-representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section
@@ -175,9 +170,8 @@ theorem nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff
     exact zigzagMk_mem_zigzagGrade k H ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 /-- **The quotient is the internal direct sum of its graded pieces**: this is the comparison of
-the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the
-internal sense in which the pieces are submodules of the quotient itself rather than a separate
-graded copy. -/
+the direct-sum graded algebra with the ungraded quotient, in the internal sense in which the pieces
+are submodules of the quotient itself rather than a separate graded copy. -/
 theorem isInternal_zigzagGrade :
     DirectSum.IsInternal (zigzagGrade k G) :=
   TauCeti.GradedAlgebra.isInternal_quotientPiece (grade k (DoubledQuiver G))

@@ -75,7 +75,6 @@ private lemma start_rpow_le_of_pos {M α β P : ℝ} (hM : 0 < M) (hα : 0 < α)
     (hP : 0 < P) :
     (2 * M / (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)))) ^ α * P ^ (β - 1) ≤
       2 ^ (-(α / (β - 1))) := by
-  have hβ1 : 0 < β - 1 := sub_pos.2 hβ
   have hd : 0 < M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)) := by positivity
   have hdα : (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1))) ^ α =
       M ^ α * P ^ (β - 1) * 2 ^ (α * β / (β - 1)) := by

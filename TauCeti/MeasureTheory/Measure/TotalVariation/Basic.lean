@@ -60,12 +60,12 @@ variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure
 /-- Total variation bounds the difference of the masses of each measurable event. -/
 theorem abs_measureReal_sub_le_tvDist {s : Set α} (hs : MeasurableSet s) :
     |μ.real s - ν.real s| ≤ tvDist μ ν := by
-  have h := (VectorMeasure.enorm_measure_le_variation
+  have h := (VectorMeasure.eNorm_measure_le_variation
     (μ.toSignedMeasure - ν.toSignedMeasure) s).trans (measure_mono (subset_univ s))
   rw [← VectorMeasure.etvDist, ← etvDist_eq_etvDist_toSignedMeasure] at h
   have hr := ENNReal.toReal_mono (etvDist_ne_top μ ν) h
   simpa only [_root_.sub_apply, Measure.toSignedMeasure_apply_measurable hs,
-    toReal_enorm, Real.norm_eq_abs, tvDist] using hr
+    toReal_eNorm, Real.norm_eq_abs, tvDist] using hr
 
 /-- The total variation distance between finite measures is the total mass of the positive part
 of the Jordan decomposition of `μ - ν` plus the total mass of its negative part. -/

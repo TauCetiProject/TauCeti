@@ -254,7 +254,6 @@ theorem isGradedCoderivation_transferBarDifferential :
     IsGradedCoderivation (GH.shift 1) 1 (𝒜.transferBarDifferential c hh hincl hproj) :=
   c.isGradedCoderivation_reducedTensorWords_perturbedDifferential _ _ _ _
     (𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self)
-    (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
     𝒜.isGradedCoderivation_higherBarDifferential 𝒜.isHomogeneous_higherBarDifferential
     𝒜.higherBarDifferential_filtration
 

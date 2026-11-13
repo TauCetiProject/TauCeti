@@ -174,7 +174,7 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
   have hbranch_pos : 0 < T.intersection (c 3) branch :=
     (T.offDiagonal_nonneg _ _ (hbranch_ne 3 (by omega)).symm).lt_of_ne
       (Ne.symm hbranch_nonzero)
-  obtain ⟨w, hwb, hweight, hentry, hbranch_entry⟩ :=
+  obtain ⟨w, hwb, _, hentry, hbranch_entry⟩ :=
     T.exists_weight_intersection_branch_eight_eq hc hbranch_ne hbranch_self hbranch_pos
   -- The affine `E₇` marks `1, 2, 3, 4, 3, 2, 1` on the chain and `2` on the branch give a
   -- positive vector whose rows all vanish, contradicting negative definiteness.

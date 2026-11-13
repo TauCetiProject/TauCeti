@@ -27,9 +27,6 @@ module instead of rebuilding the same restricted-scalars basis in each construct
   coordinate vectors and basis over `ℤ`.
 * `TauCeti.apply_coordinateLatticeBasis_eq_sum_of_forall_apply_eq_mulVec`: an endomorphism
   represented by an integer matrix has that matrix in the coordinate-lattice basis.
-
-This is a reusable prerequisite for the Chevalley--Demazure carriers in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

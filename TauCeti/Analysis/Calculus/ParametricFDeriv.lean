@@ -20,9 +20,6 @@ derivative of a parametric-family pullback with a Lie bracket. Over `ℝ` or `�
 smoothness is `C²`;
 over a general nontrivially normed field, it is analyticity.
 
-This supplies a prerequisite for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main definitions
 
 * `spatialFDeriv`: the spatial Jacobian of a parametric map.
@@ -66,8 +63,6 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 * Sébastien Gouëzel, `Mathlib/Analysis/Calculus/FDeriv/Symmetric.lean`, theorem
   `ContDiffAt.isSymmSndFDerivAt`.
 -/

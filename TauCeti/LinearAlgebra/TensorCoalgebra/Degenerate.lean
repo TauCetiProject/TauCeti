@@ -75,9 +75,13 @@ theorem of_tprod_mem_degenerateWords {e : M} (n : {n : ℕ // 0 < n})
 
 /-- A block containing `e` is degenerate. -/
 theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : ℕ}
-    (hab : a + b ≤ n) (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
+    (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
     subword R x a b ∈ degenerateWords R M e := by
   obtain ⟨i, hai, hib, hi⟩ := hx
+  by_cases hab : a + b ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R x (by omega)]
+    exact zero_mem _
   have hb : 0 < b := by omega
   rw [subword_eq_of_tprod R x hb hab]
   apply of_tprod_mem_degenerateWords
@@ -92,7 +96,7 @@ theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : �
 theorem ofLetter_mem_degenerateWords (e : M) :
     ofLetter R M e ∈ degenerateWords R M e := by
   rw [← subword_one R M (fun _ : Fin 1 ↦ e) Nat.one_pos]
-  exact subword_mem_degenerateWords _ (by omega) ⟨0, by omega, by omega, rfl⟩
+  exact subword_mem_degenerateWords _ ⟨0, by omega, by omega, rfl⟩
 
 /-- Prepending an arbitrary letter preserves degeneracy. -/
 theorem prepend_mem_degenerateWords {e : M} (a : M) {z : ReducedTensorWords R M}
@@ -170,9 +174,9 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     have hb : 0 < b := by omega
     have hvanish : ∀ c, 1 < c → a + c ≤ n → i.1 < a + c →
         f (subword R x a c) = 0 := by
-      intro c hc hac hic
+      intro c hc _ hic
       rw [apply_eq_comp_letter_of_mem_degenerateWords f hf
-        (subword_mem_degenerateWords x hac ⟨i, hai, hic, hi⟩),
+        (subword_mem_degenerateWords x ⟨i, hai, hic, hi⟩),
         letter_subword_of_ne_one R M x a (by omega), map_zero, map_zero]
     -- The recursion separates the single-letter output from the proper cuts.
     rw [coalgHom_subword]
@@ -296,7 +300,6 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
     hle hz
   rw [degenerateWords_le_iff]
   rintro ⟨n, hn⟩ x ⟨i, hi⟩
-  have hin : i.1 < n := i.isLt
   rw [Submodule.mem_comap, gradedCoderiv_of_tprod]
   refine Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦ ?_
   by_cases hfit : 0 < d ∧ p + d ≤ n
@@ -305,10 +308,10 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
     exact Submodule.zero_mem _
   by_cases hblock : p ≤ i.1 ∧ i.1 < p + d
   · -- The collapsed block contains `e`, so `F` kills it.
-    rw [hF (subword_mem_degenerateWords x hfit.2 ⟨i, hblock.1, hblock.2, hi⟩), splice_zero]
+    rw [hF (subword_mem_degenerateWords x ⟨i, hblock.1, hblock.2, hi⟩), splice_zero]
     exact Submodule.zero_mem _
   -- Otherwise the letter `e` survives, twisted by a sign when it precedes the collapsed block.
-  obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R _ hfit.1 hfit.2
+  obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R _ hfit.2
     (F (subword R x p d)) hblock
   rw [hy]
   refine of_tprod_mem_degenerateWords_of_eq_smul _ _ (i := k)

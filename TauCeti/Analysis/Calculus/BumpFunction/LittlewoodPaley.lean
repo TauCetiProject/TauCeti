@@ -30,8 +30,10 @@ Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j 
 **inhomogeneous** partition `ψ₀ = φ, ψ₁, ψ₂, …`, which sums to `1` on all of `E`. Its partial sums
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
 indices differ by at least a fixed `L` have disjoint supports, so that `∑ⱼ ψⱼ ξ ²` is bounded
-independently of `ξ`. This is the partition used to decompose a tempered distribution into
-frequency blocks for Besov and Bessel-potential spaces.
+independently of `ξ`. The same holds for the pieces of the partitions of two different
+bump functions, so the two partitions differ only between pieces of nearby index. This is the
+partition used to decompose a tempered distribution into frequency blocks for Besov and
+Bessel-potential spaces.
 The sum `Ψⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
 the support of `ψⱼ` and supported in a slightly larger ball or annulus, with the same rescaled
 derivative bounds; it localizes operators to the frequencies of a single block.
@@ -44,7 +46,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
-* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
+* `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
+  also between the partitions of two bump functions.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
   in `ξ` and in the set of indices.
 * `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
@@ -363,30 +366,31 @@ theorem hasSum_inhomogeneousLittlewoodPaley (ξ : E) :
     div_le_iff₀ (pow_pos two_pos _), mul_comm]
   exact hN'
 
-/-- **Finite overlap.** There is `L` such that the pieces `ψⱼ` and `ψₖ` have disjoint supports
-whenever `j + L ≤ k`. -/
-theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero :
+/-- **Finite overlap.** For two bump functions `φ` and `φ'`, there is `L` such that the piece `ψⱼ`
+of the partition of `φ` and the piece `ψ'ₖ` of the partition of `φ'` have disjoint supports
+whenever `j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single partition. -/
+theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-  have hn' : φ.rOut ≤ 2 ^ n * φ.rIn := ((div_lt_iff₀ φ.rIn_pos).1 hn).le
+      φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
   refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
   obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := Nat.exists_eq_add_one.2 (by omega)
-  rcases le_or_gt ‖ξ‖ (2 ^ k * φ.rIn) with hξ | hξ
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
+  rcases le_or_gt ‖ξ‖ (2 ^ k * φ'.rIn) with hξ | hξ
+  · rw [φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
   · refine mul_eq_zero_of_left (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_) _
     refine le_trans ?_ hξ.le
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ.rIn) :=
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
           mul_le_mul_of_nonneg_left hn' (pow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ.rIn := by rw [pow_add, mul_assoc]
-      _ ≤ 2 ^ k * φ.rIn :=
-          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
+      _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
+      _ ≤ 2 ^ k * φ'.rIn :=
+          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
 ball of radius `2^{j+L} φ.rOut`, and for `j ≥ L` outside the ball of radius `2^{j-L} φ.rIn`. When
 the pieces whose indices differ by at least `L` have disjoint supports, as for the `L` of
-`exists_inhomogeneousLittlewoodPaley_mul_eq_zero`, it equals `1` on the support of `ψⱼ`
+`exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ`, it equals `1` on the support of `ψⱼ`
 (`enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`), so that the Fourier multiplier
 `Δ'ⱼ` by `Ψⱼ` satisfies `Δ'ⱼ Δⱼ = Δⱼ`. -/
 noncomputable def enlargedLittlewoodPaley (L j : ℕ) (ξ : E) : ℝ :=
@@ -524,7 +528,7 @@ theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
 each lies in `[-1, 1]`. -/
 theorem exists_sum_sq_inhomogeneousLittlewoodPaley_le :
     ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E), ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ L := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨L, fun s ξ ↦ ?_⟩
   set t := s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0
   have hst : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 =
@@ -630,7 +634,6 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le (k : ℕ)
   by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
   · have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
       mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
-    have h2 : (0 : ℝ) < (2 ^ j) ^ k := by positivity
     calc ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k
         ≤ B / (2 ^ j) ^ k * (2 ^ j * (1 + φ.rOut)) ^ k := by
           refine mul_le_mul (hB j ξ) ?_ (by positivity) (by positivity)

@@ -52,18 +52,18 @@ namespace Real
 /-- Multiplying by `(√a)⁻¹` and squaring divides the square by `a`. -/
 @[simp]
 theorem inv_sqrt_mul_sq {a : ℝ} (ha : 0 ≤ a) (x : ℝ) : ((√a)⁻¹ * x) ^ 2 = x ^ 2 / a := by
-  rw [mul_pow, inv_pow, Real.sq_sqrt ha, inv_mul_eq_div]
+  rw [mul_pow, inv_pow, sq_sqrt ha, inv_mul_eq_div]
 
 /-- A square factor comes out of a square root as its absolute value. -/
 theorem sqrt_sq_mul (x y : ℝ) : √(x ^ 2 * y) = |x| * √y := by
-  rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs]
+  rw [sqrt_mul (sq_nonneg _), sqrt_sq_eq_abs]
 
 /-- Doubling the argument does not decrease the square root. There is no sign hypothesis: both
 sides vanish when `x ≤ 0`. -/
 theorem sqrt_le_sqrt_two_mul (x : ℝ) : √x ≤ √(2 * x) := by
   rcases le_total 0 x with h | h
-  · exact Real.sqrt_le_sqrt (by linarith)
-  · rw [Real.sqrt_eq_zero_of_nonpos h]
+  · exact sqrt_le_sqrt (by linarith)
+  · rw [sqrt_eq_zero_of_nonpos h]
     positivity
 
 /-- Powers of `(√a)⁻¹` absorb powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for
@@ -71,9 +71,9 @@ theorem sqrt_le_sqrt_two_mul (x : ℝ) : √x ≤ √(2 * x) := by
 theorem inv_sqrt_pow_mul_pow {a : ℝ} (ha : 0 < a) {n p : ℕ} (h : 2 * p ≤ n) :
     (√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2 * p) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
-  have ha' : a ^ p = √a ^ (2 * p) := by rw [pow_mul, Real.sq_sqrt ha.le]
+  have ha' : a ^ p = √a ^ (2 * p) := by rw [pow_mul, sq_sqrt ha.le]
   rw [Nat.add_sub_cancel_left, ha', pow_add, mul_right_comm, ← mul_pow,
-    inv_mul_cancel₀ (Real.sqrt_pos.2 ha).ne', one_pow, one_mul]
+    inv_mul_cancel₀ (sqrt_pos.2 ha).ne', one_pow, one_mul]
 
 /-- The complementary square of `2√k / (1 + k)` is `((1 - k) / (1 + k))²`. -/
 theorem one_sub_sq_two_mul_sqrt_div_one_add {k : ℝ} (hk : 0 ≤ k) :

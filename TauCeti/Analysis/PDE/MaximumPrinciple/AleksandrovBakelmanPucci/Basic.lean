@@ -186,7 +186,7 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   filter_upwards [ha] with y hy
   have hdet := hy.det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)
-  rw [Real.enorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
+  rw [Real.eNorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [g, div_pow, Real.rpow_inv_natCast_pow hdet.le hn]
@@ -263,7 +263,6 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
   set N := (eLpNorm g n (volume.restrict Γ)).toReal
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
   have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne'
     measure_ball_lt_top.ne
   have hN : 0 ≤ N := ENNReal.toReal_nonneg
@@ -291,7 +290,6 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le [Nonempty ι]
     rw [mul_pow, Real.rpow_inv_natCast_pow hω.le hn]
     calc r ^ n * ω ≤ ((n : ℝ) ^ n)⁻¹ * N ^ n := hreal
       _ = (N / n) ^ n := by rw [div_pow]; ring
-  have hωn : 0 < ω ^ (n : ℝ)⁻¹ := Real.rpow_pos_of_pos hω _
   rw [← sub_le_iff_le_add', hux', div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
   calc r * diam Ω * (n * ω ^ (n : ℝ)⁻¹) = diam Ω * n * (r * ω ^ (n : ℝ)⁻¹) := by ring
     _ ≤ diam Ω * n * (N / n) := by gcongr

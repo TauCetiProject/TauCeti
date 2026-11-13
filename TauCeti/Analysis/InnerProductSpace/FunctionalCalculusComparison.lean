@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 public import TauCeti.Analysis.InnerProductSpace.Modulus
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
@@ -78,7 +78,8 @@ theorem cfc_apply_of_apply_eq_smul (f : ℝ → ℝ) {T : E →L[𝕜] E} {x : E
     rw [ContinuousLinearMap.smul_def, IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E),
       algebraMap_apply, RCLike.algebraMap_eq_ofReal]
   rw [← ContinuousLinearMap.smul_def, ← halg] at hx ⊢
-  exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f (T.finite_spectrum ℝ) hx hT
+  exact TauCeti.cfc_smul_of_smul_eq_algebraMap_smul f hx ((T.finite_spectrum ℝ).continuousOn _)
+    hT
 
 end ContinuousLinearMap
 

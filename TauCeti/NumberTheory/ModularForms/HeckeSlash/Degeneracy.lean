@@ -120,7 +120,6 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
   have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
   have : NeZero M := NeZero.of_dvd (dvd_of_mul_left_dvd hdvd)
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hdpos : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
   have hMdvd : M ∣ N := dvd_of_mul_left_dvd hdvd
   have hpM : Nat.Coprime p M := hpN.coprime_dvd_right hMdvd
   have hpd : Nat.Coprime p d := hpN.coprime_dvd_right ((dvd_mul_right d M).trans hdvd)
@@ -137,7 +136,7 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
     CuspForm.diamondOpCusp_levelRaise hdvd k (ZMod.unitOfCoprime p hpN) f, hunits,
     SlashAction.add_slash, smul_add, heckeSlashUpperTri_smul, hscale]
   refine congrArg₂ (· + ·) ?_ ?_
-  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hdpos hpd.symm (slash_mapGL_T k hf)]
+  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hpd.symm (slash_mapGL_T k hf)]
   · rw [ModularForm.rat_smul_slash_of_det_pos k (det_scaleRep_pos p), ← SlashAction.slash_mul,
       ← SlashAction.slash_mul, scaleRep_def, scaleRep_def, natDiagGL_comm]
 

@@ -70,7 +70,7 @@ theorem ofReal_entropicTransportObjective_eq (A : TransportMatrix μ ν) (C : Ma
   have hR (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
         (μ i).toReal * (ν j).toReal :=
-    μ.real_prod_toMeasure_singleton ν i j
+    μ.real_prod_toMeasure_singleton ν i j (.singleton i) (.singleton j)
   have hkl :
       klDiv A.toPMF.toMeasure (μ.toMeasure.prod ν.toMeasure) =
         ENNReal.ofReal (Matrix.relEntropy
@@ -187,7 +187,7 @@ theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ
   have hprod (i : ι) (j : κ) :
       (μ.toMeasure.prod ν.toMeasure).real {(i, j)} =
         (μ i).toReal * (ν j).toReal :=
-    μ.real_prod_toMeasure_singleton ν i j
+    μ.real_prod_toMeasure_singleton ν i j (.singleton i) (.singleton j)
   have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
   have hmass : ∑ i, ∑ j, (μ i).toReal * (ν j).toReal = 1 := by
     simp_rw [← Finset.mul_sum]
@@ -207,21 +207,21 @@ theorem entropicDualValue_eq_mul_relEntropyDual (C : Matrix ι κ ℝ) (ε : ℝ
         rw [hmass]
         congr 1
         apply Finset.sum_congr rfl
-        intro i hi
+        intro i _
         apply Finset.sum_congr rfl
-        intro j hj
+        intro j _
         ring
   have hφ :
       (ε : ℝ) * ∑ i, (μ i).toReal * (φ i / ε) = ∑ i, (μ i).toReal * φ i := by
     rw [Finset.mul_sum]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     field_simp
   have hψ :
       (ε : ℝ) * ∑ j, (ν j).toReal * (ψ j / ε) = ∑ j, (ν j).toReal * ψ j := by
     rw [Finset.mul_sum]
     apply Finset.sum_congr rfl
-    intro j hj
+    intro j _
     field_simp
   rw [TauCeti.entropicDualValue_def, ← TauCeti.finiteDualValue_eq_kantorovichDualValue,
     MeasureTheory.integral_fintype Integrable.of_finite, Matrix.relEntropyDual_def,

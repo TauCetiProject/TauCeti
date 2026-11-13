@@ -41,6 +41,11 @@ That is what keeps the argument free of finiteness hypotheses: no dimension coun
 conjugates enters.  Finite-dimensionality is used only to *produce* an atom, in
 `TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`.
 
+The file stops at semisimplicity: nothing below mentions a decomposition, an isotypic component, a
+multiplicity or a `G`-orbit of constituents.  The translation machinery the semisimplicity statement
+is proved from is also what **Clifford's theorem** runs on; its single-orbit form is
+`TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean`.
+
 ## Main definitions
 
 * `TauCeti.Representation.conjSubrep`: the translate `ρ g '' U` of an `N`-subrepresentation `U`.
@@ -75,16 +80,6 @@ it is not.  The parenthesized form checks the proof here, where the bodies are v
 only the statement.
 
 ## References
-
-This file supplies item (iii) of the **prerequisite** of Layer 5 (Clifford theory over a normal
-subgroup) of `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` — "restriction
-along a subgroup preserves semisimplicity" — in the normal-subgroup case Clifford theory uses,
-as `TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`.  It stops there: nothing below
-mentions a decomposition, an isotypic component, a multiplicity or a `G`-orbit of constituents.
-What the file does leave in place is the translation machinery the **Clifford's theorem** milestone
-runs on, since it is the same machinery the semisimplicity statement is proved from; the
-single-orbit half of that milestone is
-`TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean`.
 
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.

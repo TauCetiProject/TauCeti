@@ -363,7 +363,6 @@ lemma weierstrassP_div_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : �
       ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2)) := by
   rcases eq_or_ne z l₀ with rfl | hz
   · simp [L.weierstrassP_coe ⟨z, hl₀⟩]
-  have h2 : (z - l₀) ^ 2 ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr hz)
   rw [div_eq_mul_inv, L.inv_derivWeierstrassP_eq hl₀, L.weierstrassPExcept_def ⟨l₀, hl₀⟩]
   field_simp
   ring

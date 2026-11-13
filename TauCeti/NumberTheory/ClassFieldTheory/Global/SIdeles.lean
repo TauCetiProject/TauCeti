@@ -106,6 +106,7 @@ private theorem snd_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
     ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 = 1 := by
   rw [coe_infiniteIdelesToSIdelesHom]
 
+omit [NumberField K] in
 private theorem infiniteIdelesToSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : (InfiniteAdeleRing L)ˣ) :
     infiniteIdelesToSIdelesHom L S (σ • x) = σ • infiniteIdelesToSIdelesHom L S x := by
   refine Subtype.ext <| Units.ext <| Prod.ext ?_ ?_
@@ -171,6 +172,7 @@ def infiniteIdelesToSIdeles : infiniteIdelesRep K L ⟶ sIdelesRep (K := K) L S 
     (infiniteIdelesToSIdelesHom L S).toAdditive.toIntLinearMap fun σ x ↦
       congrArg Additive.ofMul (infiniteIdelesToSIdelesHom_smul L S σ x.toMul)
 
+omit [NumberField K] in
 /-- `infiniteIdelesToSIdeles` sends an infinite idele `x` to the idele `(x, 1)`. -/
 @[simp]
 theorem infiniteIdelesToSIdeles_hom_apply (x : Additive (InfiniteAdeleRing L)ˣ) :
@@ -323,6 +325,7 @@ theorem finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles :
   exact congrArg Additive.ofMul
     (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofFiniteIdele (𝓞 L) L _)))
 
+omit [NumberField K] in
 /-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
 @[reassoc (attr := simp)]
 theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles :

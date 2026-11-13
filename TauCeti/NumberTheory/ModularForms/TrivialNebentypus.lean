@@ -15,10 +15,10 @@ public import TauCeti.NumberTheory.ModularForms.Degeneracy
 There are two ways to say "modular form of level `N` with trivial nebentypus": as a modular
 form for the bare congruence subgroup `Γ₀(N)`, and as an element of the character space
 `M_k(Γ₁(N), χ)` of `TauCeti.NumberTheory.ModularForms.DiamondOperators` for the trivial
-character `χ = 1`. The ModularForms roadmap flags the clash and pins its resolution: prove the
-two isomorphic, then use `M_k(Γ₀(N))` as the default spelling and convert to it. This file is
-that milestone, for modular forms (`TauCeti.modFormCharSpaceOneEquiv`) and for cusp forms
-(`TauCeti.cuspFormCharSpaceOneEquiv`), both stated for `N ≠ 0`.
+character `χ = 1`. This file proves the two isomorphic, so that `M_k(Γ₀(N))` can serve as the
+default spelling and the character space can be converted to it, for modular forms
+(`TauCeti.modFormCharSpaceOneEquiv`) and for cusp forms (`TauCeti.cuspFormCharSpaceOneEquiv`), both
+stated for `N ≠ 0`.
 
 Both directions are instances of generic subgroup-change constructions. Restricting a
 `Γ₀(N)`-form to `Γ₁(N)` is Mathlib's `ModularForm.restrict` (resp. `CuspForm.restrict`) and is

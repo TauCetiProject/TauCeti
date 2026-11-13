@@ -13,8 +13,9 @@ import Mathlib.Algebra.Order.Floor.BigOperators
 /-!
 # Ceiling division lemmas
 
-This file provides arithmetic lemmas relating ceiling division on natural numbers to inequalities
-in the extended natural numbers.
+This file provides arithmetic lemmas about ceiling division `⌈/⌉` on natural numbers: an affine
+inequality in the extended natural numbers rewritten as a ceiling-division bound, the value of a
+ceiling division after subtracting a residue smaller than the divisor, and Hermite's identity.
 
 ## Main results
 
@@ -37,8 +38,9 @@ theorem natCast_le_nsmul_add_iff_ceilDiv_le {e : ℕ} (he : 0 < e) (r i : ℕ) (
   cases a with
   | top => simp [he.ne']
   | coe v =>
-      rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.cast_add, ENat.natCast_le_natCast,
-        ENat.natCast_le_natCast, ceilDiv_le_iff_le_mul he]
+      rw [nsmul_eq_mul]
+      norm_cast
+      rw [ceilDiv_le_iff_le_mul he]
       omega
 
 end ENat

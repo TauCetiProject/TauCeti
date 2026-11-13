@@ -17,7 +17,10 @@ Witten's analytic proof of the Morse inequalities rests on two lower bounds for 
 (`TauCeti.euclideanWittenLaplacian`), evaluated on compactly supported forms `φ` on `ℝ^ι`. Away
 from the critical points of `f` the form is large, of order `t²`; near a nondegenerate critical
 point it is modelled by a sum of harmonic oscillators, which is bounded below by a positive multiple
-of `t` in every degree other than the Morse index. This file proves both bounds.
+of `t` in every degree other than the Morse index. The first bound is
+`TauCeti.mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul`, in
+`TauCeti.Analysis.Calculus.WittenLaplacian.Localization`. This file proves the energy identity
+and the second bound.
 
 **The energy identity.** Integrating Witten's frame formula
 `TauCeti.euclideanWittenLaplacian_apply` by parts, the quadratic form of a compactly supported `C²`
@@ -29,11 +32,6 @@ form `φ` is
 are exterior multiplication by `dx^i` and contraction with `∂ⱼ`. The first term is nonnegative, and
 each commutator satisfies `|⟨⁅εᵢ, ιⱼ⁆ v, v⟩| ≤ |v|²` on the fibre
 (`Module.Basis.abs_sum_lie_exteriorCreation_exteriorContraction_apply_mul_le`).
-
-**Localization away from the critical points.** If `|df|² ≥ c` and `∑ᵢⱼ |Hess f(∂ᵢ, ∂ⱼ)| ≤ C` on the
-support of `φ`, then `⟨Δ_t φ, φ⟩ ≥ (t² c - |t| C) ‖φ‖²`
-(`TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`). For `c > 0` this grows like
-`t²`, so forms supported away from the critical points carry no low-lying energy as `t → ∞`.
 
 **The harmonic-oscillator model.** For the diagonal quadratic function `f = ∑ᵢ aᵢ xᵢ² / 2`
 (`TauCeti.diagonalQuadratic`) the coefficient of `dx^s` is acted on by `∑ᵢ (-∂ᵢ² + t² aᵢ² xᵢ²)`
@@ -60,8 +58,6 @@ since the integrands are continuous with compact support.
 ## Main results
 
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul`: the energy identity.
-* `TauCeti.mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: the localization estimate
-  away from the critical points.
 * `TauCeti.sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul`: the
   harmonic-oscillator lower bound for the quadratic model.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul_nonneg`,
@@ -181,55 +177,6 @@ theorem integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff ℝ 2 f) (hφ :
   exact Finset.sum_congr rfl fun s _ ↦ by
     simpa using integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq (μ := μ)
       (ContinuousLinearMap.proj s) hφ hφc (Pi.single i 1)
-
-/-- **Localization away from the critical points.** If, on the support of a compactly supported
-`C²` form `φ`, the gradient of a `C²` function `f` satisfies `c ≤ |df|²` and its Hessian satisfies
-`∑ᵢⱼ |Hess f(∂ᵢ, ∂ⱼ)| ≤ C`, then the quadratic form of the Witten Laplacian is bounded below by
-`(t² c - |t| C) ‖φ‖²`. For `c > 0` the bound grows like `t²`. -/
-theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff ℝ 2 f)
-    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) (t : ℝ) {c C : ℝ}
-    (hc : ∀ x ∈ tsupport φ, c ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
-    (hC : ∀ x ∈ tsupport φ,
-      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ C) :
-    (t ^ 2 * c - |t| * C) * ∫ x, ∑ s, φ x s ^ 2 ∂μ ≤
-      ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s ∂μ := by
-  rw [integral_sum_euclideanWittenLaplacian_mul hf hφ hφc t]
-  have hN : Integrable (fun x ↦ ∑ s, φ x s ^ 2) μ := integrable_finsetSum _ fun s _ ↦
-    integrable_sq_of_hasCompactSupport (ContinuousLinearMap.proj s) hφ.continuous hφc
-  have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
-  have h₁ : 0 ≤ ∫ x, ∑ i, ∑ s, fderiv ℝ φ x (Pi.single i 1) s ^ 2 ∂μ :=
-    integral_nonneg fun x ↦ by positivity
-  -- the potential `t² |df|²` is at least `t² c` on the support
-  have h₂ : c * ∫ x, ∑ s, φ x s ^ 2 ∂μ ≤
-      ∫ x, (∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 ∂μ := by
-    rw [← integral_const_mul]
-    refine integral_mono (hN.const_mul c) (integrable_sum_fderiv_sq_mul_sum_sq hf hφ hφc)
-      fun x ↦ ?_
-    by_cases hx : x ∈ tsupport φ
-    · exact mul_le_mul_of_nonneg_right (hc x hx) (by positivity)
-    · simp [hφ0 x hx]
-  -- the Hessian term is at least `-|t| C` on the support
-  have h₃ : -(|t| * C) * ∫ x, ∑ s, φ x s ^ 2 ∂μ ≤
-      t * ∫ x, ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
-        ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
-          (φ x)) s * φ x s ∂μ := by
-    rw [← integral_const_mul, ← integral_const_mul]
-    refine integral_mono (hN.const_mul _)
-      ((integrable_sum_hessian_lie_apply_mul hf hφ hφc).const_mul t) fun x ↦ ?_
-    by_cases hx : x ∈ tsupport φ
-    · have hK :=
-        (Module.Basis.abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
-          (Pi.basisFun ℝ ι) (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1))
-          (φ x)).trans
-          (mul_le_mul_of_nonneg_right (hC x hx) (by positivity : (0 : ℝ) ≤ ∑ s, φ x s ^ 2))
-      have := mul_le_mul_of_nonneg_left hK (abs_nonneg t)
-      rw [← abs_mul] at this
-      linarith [neg_abs_le (t * ∑ s, (∑ i, ∑ j,
-        fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
-          ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
-            (φ x)) s * φ x s)]
-    · simp [hφ0 x hx]
-  nlinarith [mul_le_mul_of_nonneg_left h₂ (sq_nonneg t)]
 
 end General
 
