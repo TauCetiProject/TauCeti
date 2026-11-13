@@ -401,6 +401,30 @@ theorem IsInjectiveEnvelope.bijective_mapOp [Module Aᵐᵒᵖ N] [IsScalarTower
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
     simp
 
+/-- **Matlis duality detects zero modules of finite length**: for an `R`-module `N` of finite
+length, `D_R N` is zero exactly when `N` is. -/
+theorem IsInjectiveEnvelope.subsingleton_matlisDual_iff (hf : IsInjectiveEnvelope f)
+    (hN : IsFiniteLength R N) : Subsingleton (MatlisDual R E N) ↔ Subsingleton N := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ (equivLinearMap R E N).toEquiv.subsingleton⟩
+  have : Subsingleton (MatlisDual R E (MatlisDual R E N)) :=
+    (equivLinearMap R E (MatlisDual R E N)).toEquiv.subsingleton
+  exact (Equiv.ofBijective _ (hf.bijective_evalₗ hN)).subsingleton
+
+/-- **A retract of a Matlis dual dualizes to a retract**: if a left `A`-module `I` is a retract of
+`D_R N`, for a right `A`-module `N` of finite length over `R`, then `D_R I` is a retract of `N`,
+through the duals of the two maps and biduality. -/
+theorem IsInjectiveEnvelope.exists_retract_matlisDual_of_retract [Module Aᵐᵒᵖ N]
+    [IsScalarTower R Aᵐᵒᵖ N] (hf : IsInjectiveEnvelope f) (hN : IsFiniteLength R N)
+    {I : Type*} [AddCommGroup I] [Module R I] [Module A I] [IsScalarTower R A I]
+    (r : MatlisDual R E N →ₗ[A] I) (s : I →ₗ[A] MatlisDual R E N)
+    (hrs : r ∘ₗ s = LinearMap.id) :
+    ∃ (r' : N →ₗ[Aᵐᵒᵖ] MatlisDual R E I) (s' : MatlisDual R E I →ₗ[Aᵐᵒᵖ] N),
+      r' ∘ₗ s' = LinearMap.id := by
+  refine ⟨map s ∘ₗ (hf.matlisDualEvalEquivOp hN).toLinearMap,
+    (hf.matlisDualEvalEquivOp hN).symm.toLinearMap ∘ₗ map r, LinearMap.ext fun φ ↦ ?_⟩
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  rw [← LinearMap.comp_apply (map s), ← map_comp, hrs, map_id, LinearMap.id_apply]
+
 end Biduality
 
 end TauCeti
