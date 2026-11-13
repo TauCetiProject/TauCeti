@@ -110,6 +110,10 @@ theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A) (
         (restrictScalars f).obj (of P P) ⊗ X) → _)
         ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
       TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x := by
+  -- Exclude `OplaxMonoidal.left_unitality` so `(λ_ ((extendScalars f).obj X)).inv` is not
+  -- expanded into oplax monoidal coherence maps before `leftUnitor_inv_apply` evaluates it, and
+  -- instantiate `restrictScalars.map_apply` and `leftUnitor_inv_apply` since their
+  -- `ConcreteCategory.hom` heads do not match `Hom.hom` at `simp`'s `reducible` transparency.
   simp [extendScalarsCompRestrictScalarsIso, Function.comp_def,
     -Functor.OplaxMonoidal.left_unitality,
     restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv (s ⊗ₜ[A, f] x),

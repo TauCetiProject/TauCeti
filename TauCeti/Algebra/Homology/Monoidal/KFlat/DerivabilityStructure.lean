@@ -265,11 +265,12 @@ lemma ι_functor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
 `kFlatResolution.functor E p ⟶ 𝟭 (CochainComplex C ℤ)`. -/
 def πNatTrans : functor E p ⟶ 𝟭 (CochainComplex C ℤ) where
   app K := π E.obj p.app K
-  naturality {_ _} g := colimit.hom_ext fun k ↦ by
-    simp only [sequenceFunctor, NatTrans.ofSequence, Functor.id_obj, functor, Functor.comp_obj,
-      colim_obj, Functor.comp_map, colim_map, ι_colimMap_assoc, ι_π, toComplex, Functor.id_map,
-      ι_π_assoc]
-    exact stageMap_comp_snd E p g k
+  -- Use `erw` (`default` transparency) and `rfl` rather than `simp`: `kFlatResolution.sequence`
+  -- and `kFlatResolution.toComplex` are `semireducible`, so `(sequence _ _ _).obj k =
+  -- (stage _ _ _ k).1` and `(toComplex _ _ _).app k = (stage _ _ _ k).2` unify at `default`
+  -- rather than `reducible`/`implicit` transparency.
+  naturality {K _} g := colimit.hom_ext (F := sequence E.obj p.app K) fun k ↦ by
+    erw [ι_functor_map_assoc, Category.assoc, ι_π, stageMap_comp_snd, ι_π_assoc]; rfl
 
 /-- Each component of `πNatTrans E p` is `kFlatResolution.π E.obj p.app`. -/
 @[simp]

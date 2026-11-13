@@ -40,7 +40,7 @@ Combining this invariance with the K-flat left derivability structure on
 * `TauCeti.isLeftDerivedFunctor_comp_of_isLeftDerivedFunctor_extendScalars`: any left derived
   functor of scalar extension is absolute, remaining left derived after postcomposition with any
   functor;
-* `TauCeti.derivedExtendRestrictScalarsAdj` and `TauCeti.nonempty_derivedExtendRestrictScalarsAdj`:
+* `TauCeti.derivedExtendRestrictScalarsAdj`:
   every left derived functor of `(ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)` is left
   adjoint to derived restriction of scalars `(ModuleCat.restrictScalars f).mapDerivedCategory`,
   obtained by deriving the degreewise lift of `ModuleCat.extendRestrictScalarsAdj f`;
@@ -281,21 +281,6 @@ lemma map_comp_derivedExtendRestrictScalarsAdj_counit_app
     (ModuleCat.restrictScalars.{u} f).mapDerivedCategoryFactors.inv M
 
 end Adjunction
-
-/-- **Derived extension of scalars is left adjoint to restriction.** Let `f : R →+* S` be a
-homomorphism of commutative rings and `G : D(R) ⥤ D(S)` any left derived functor of termwise scalar
-extension with comparison `α`. Then `G` is left adjoint to derived restriction of scalars
-`(ModuleCat.restrictScalars f).mapDerivedCategory`. -/
-theorem nonempty_derivedExtendRestrictScalarsAdj {R S : Type u} [CommRing R] [CommRing S]
-    (f : R →+* S) [HasDerivedCategory.{w} (ModuleCat.{u} R)]
-    [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
-    (G : DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S))
-    (α : DerivedCategory.Q ⋙ G ⟶
-      (ModuleCat.extendScalars.{u, u, u} f).mapHomologicalComplex (.up ℤ) ⋙ DerivedCategory.Q)
-    (hG : G.IsLeftDerivedFunctor α
-      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ))) :
-    Nonempty (G ⊣ (ModuleCat.restrictScalars.{u} f).mapDerivedCategory) :=
-  ⟨@derivedExtendRestrictScalarsAdj _ _ _ _ f _ _ G α hG⟩
 
 section Canonical
 
