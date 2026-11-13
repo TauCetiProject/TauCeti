@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
-public import TauCeti.Geometry.Manifold.Flow.CovariantVariation
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.TimeDependentFlow
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
@@ -304,7 +304,7 @@ theorem floerLinearization_mfderiv_timeDependentFlowOf (ω : SmoothTwoForm I M)
   dsimp only
   rw [curveVelocity_timeDependentFlowOf (hX.of_le (by norm_num)) h,
     alongCurve_mfderiv_timeDependentFlowOf (X := fun t ↦ ω.hamiltonianVectorField (G t)) cov
-      htor hX v h, hamiltonianVectorField_const]
+      htor hX h v, hamiltonianVectorField_const]
   simp only [CovariantDerivative.zero, sub_self, map_zero, zero_apply, sub_zero, add_zero,
     Pi.zero_apply]
   -- Along the constant curve in `s`, the field is constant, so its covariant derivative vanishes.
