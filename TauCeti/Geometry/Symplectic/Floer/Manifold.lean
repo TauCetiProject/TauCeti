@@ -82,6 +82,8 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
+* `SmoothTwoForm.floerEnergyDensity_congr_perturbation`: the energy density at a point only
+  depends on the values of the perturbation there.
 * `SmoothTwoForm.hamiltonianCurvature_add_const`, `SmoothTwoForm.perturbedMFDeriv_add_const`,
   `SmoothTwoForm.floerEnergyDensity_add_const`: adding a target-independent one-form to the
   perturbation adds its exterior derivative to the curvature, and changes neither the Floer
@@ -269,6 +271,15 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- The Floer energy density at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem floerEnergyDensity_congr_perturbation (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks' Kt' u z := by
+  simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, hs, ht]
 
 /-- Translating a map and its perturbation data by `v` translates the Floer energy density by
 `v`. -/

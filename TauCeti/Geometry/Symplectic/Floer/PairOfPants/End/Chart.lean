@@ -48,6 +48,12 @@ apply to all three ends.
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
   truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
   end.
+* `TauCeti.Floer.continuousOn_endSign_mul_re_endCoord`,
+  `TauCeti.Floer.isCompact_preimage_truncation_inter`,
+  `TauCeti.Floer.isOpen_setOf_endSign_mul_re_endCoord_lt`,
+  `TauCeti.Floer.preimage_truncation_inter_subset_setOf_lt`: the signed longitudinal coordinate of
+  an end is continuous on `S`, so cutting `S_R` along a circle of an end leaves a compact set, and
+  the part of `S` inside such a circle is open and contains every smaller cut truncation.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
@@ -142,6 +148,44 @@ theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
     Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
   fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
     (mem_truncation.1 hz).2.1⟩
+
+/-- The signed longitudinal coordinate `±s` of the end `q` is continuous on `S`. -/
+theorem continuousOn_endSign_mul_re_endCoord (q : Puncture) :
+    ContinuousOn
+      (fun z : ℝ × ℝ ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
+      thricePuncturedSphereReal := fun _ hz ↦
+  (continuousAt_const.mul ((q.contDiffAt_re_endCoord (n := 0)
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).continuousAt.comp
+      Complex.equivRealProdCLM.symm.continuous.continuousAt)).continuousWithinAt
+
+/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` is compact in real coordinates. -/
+theorem isCompact_preimage_truncation_inter (q : Puncture) (R c : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+      {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c}) :=
+  (isCompact_preimage_truncation R).of_isClosed_subset
+    (((continuousOn_endSign_mul_re_endCoord q).mono
+      (preimage_truncation_subset_thricePuncturedSphereReal R)).preimage_isClosed_of_isClosed
+        (isCompact_preimage_truncation R).isClosed isClosed_Iic) inter_subset_left
+
+/-- The part `±s < c` of the end `q` of `S` is open in real coordinates. -/
+theorem isOpen_setOf_endSign_mul_re_endCoord_lt (q : Puncture) (c : ℝ) :
+    IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1 ∧
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < c} := by
+  convert (continuousOn_endSign_mul_re_endCoord q).isOpen_inter_preimage
+    isOpen_thricePuncturedSphereReal (isOpen_Iio (a := c)) using 1
+  ext z
+  simp [and_assoc]
+
+/-- The part `±s ≤ c` of the end `q` of the truncation `S_R` lies in the part `±s < c'` of `S`,
+for `c < c'`. -/
+theorem preimage_truncation_inter_subset_setOf_lt (q : Puncture) (R : ℝ) {c c' : ℝ}
+    (hc : c < c') :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} ⊆
+      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 ∧
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < c'} := fun _ hz ↦
+  ⟨(truncation_subset _ hz.1).1, (truncation_subset _ hz.1).2, lt_of_le_of_lt hz.2 hc⟩
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
 theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
