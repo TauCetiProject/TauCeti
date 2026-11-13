@@ -46,6 +46,8 @@ generators.
 * `TauCeti.SerreGraph.SpanningTree.graphPresentation_reducedLoop_bijective`: every element of
   the presentation relative to a spanning tree is the dart word of exactly one reduced closed
   path.
+* `TauCeti.SerreGraph.SpanningTree.pathGroupEquivGraphPresentation_basedPath`: a path based
+  through the tree is the product of the generators of its darts.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
 * `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: relative to any spanning tree,
@@ -210,6 +212,14 @@ theorem pathGroupEquivGraphPresentation_apply (g : PathGroup Γ v) :
 @[simp] theorem pathGroupEquivGraphPresentation_symm_of (e : Γ.E) :
     (T.pathGroupEquivGraphPresentation v).symm (PresentedGroup.of e) = T.loop v e := by
   simp [pathGroupEquivGraphPresentation]
+
+/-- Based at `v` through the tree, a path is the product of the generators of its darts: the
+tree darts of the two connecting paths are trivial in the presentation. -/
+@[simp] theorem pathGroupEquivGraphPresentation_basedPath {a b : Γ.V} (p : Γ.Path a b) :
+    T.pathGroupEquivGraphPresentation v (T.basedPath v p) =
+      ((Path.darts Γ p).map PresentedGroup.of).prod := by
+  rw [T.basedPath_eq_prod_loop, map_list_prod, List.map_map]
+  simp [Function.comp_def]
 
 /-- Relative to a spanning tree, every element of the presentation of the fundamental group is
 the class of the dart word of exactly one reduced closed path at `v`. -/
