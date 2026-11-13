@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzMap
+import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -41,7 +42,9 @@ tempered distribution whose restriction to `Ω` is `T`
 vanishing near the support of `T` (`Distribution.toTemperedDistribution_apply_eq_zero`), and it
 is the only tempered distribution with these two properties
 (`Distribution.eq_toTemperedDistribution`). On the whole space it is the unique tempered
-distribution restricting to `T` (`Distribution.toTemperedDistribution_eq_iff`).
+distribution restricting to `T` (`Distribution.toTemperedDistribution_eq_iff`). The extension is
+additive and homogeneous on distributions with compact support in `Ω`, and commutes with
+derivatives.
 
 ## Main declarations
 
@@ -56,6 +59,9 @@ distribution restricting to `T` (`Distribution.toTemperedDistribution_eq_iff`).
   `Distribution.toTemperedDistribution_apply_eq_zero`,
   `Distribution.toDistribution_toTemperedDistribution`, `Distribution.eq_toTemperedDistribution`
   and `Distribution.toTemperedDistribution_eq_iff`.
+* `Distribution.toTemperedDistribution_zero`, `Distribution.toTemperedDistribution_add`,
+  `Distribution.toTemperedDistribution_smul`, `Distribution.toTemperedDistribution_lineDerivOp`:
+  linearity of the tempered extension and compatibility with derivatives.
 
 ## References
 
@@ -99,6 +105,7 @@ def toDistribution : 𝓢'(E, F) →ₗ[ℂ] 𝓓'(Ω, F) where
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+@[simp]
 theorem toDistribution_apply (u : 𝓢'(E, F)) (φ : 𝓓(Ω, ℝ)) :
     toDistribution Ω u φ =
       u (TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM φ)) :=
@@ -190,13 +197,21 @@ theorem toTemperedDistribution_apply_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) {χ : 
     (hg : ∀ x, g x = χ x * f x) : T.toTemperedDistribution f = T.complexPairing g := by
   have h : ∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 := ⟨χ, hχ⟩
   have hT : T.toTemperedDistribution f = T.complexPairing (cutoff h.choose f) := by
-    simp only [toTemperedDistribution, dite_eq_left h]
-    -- `toPointwiseConvergenceCLM` is the identity on the underlying continuous linear map.
-    rfl
+    rw [toTemperedDistribution, dite_eq_left h]
+    -- `toPointwiseConvergenceCLM` is the identity on the underlying continuous linear map, but
+    -- rewriting with its `_apply` lemma leaves a term that is not type-correct, so we apply
+    -- `comp_apply` up to this identification.
+    exact ContinuousLinearMap.comp_apply _ _ _
   rw [hT]
   refine complexPairing_eq_of_eventuallyEq T ?_
   filter_upwards [h.choose_spec, hχ] with x h₁ h₂
   rw [cutoff_apply, hg, h₁, h₂, ofReal_one, one_mul, one_smul]
+
+/-- The tempered extension of `T` is `f ↦ T (χ f)` for the cutoff by `χ`. -/
+private theorem toTemperedDistribution_apply_cutoff (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℝ)}
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (f : 𝓢(E, ℂ)) :
+    T.toTemperedDistribution f = T.complexPairing (cutoff χ f) :=
+  toTemperedDistribution_apply_of_eventuallyEq T hχ fun x ↦ by rw [cutoff_apply, real_smul]
 
 /-- The tempered extension of `T` depends only on the germ of the Schwartz function along the
 support of `T`. -/
@@ -204,10 +219,7 @@ theorem toTemperedDistribution_eq_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) (hT : IsC
     (hTΩ : dsupport T ⊆ Ω) {f g : 𝓢(E, ℂ)} (h : (f : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] g) :
     T.toTemperedDistribution f = T.toTemperedDistribution g := by
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
-  rw [toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ f)
-      fun x ↦ by rw [cutoff_apply, real_smul],
-    toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ g)
-      fun x ↦ by rw [cutoff_apply, real_smul]]
+  rw [toTemperedDistribution_apply_cutoff T hχ, toTemperedDistribution_apply_cutoff T hχ]
   refine complexPairing_eq_of_eventuallyEq T ?_
   filter_upwards [h] with x hx
   rw [cutoff_apply, cutoff_apply, hx]
@@ -219,6 +231,70 @@ theorem toTemperedDistribution_apply_eq_zero (T : 𝓓'(Ω, ℂ)) (hT : IsCompac
     T.toTemperedDistribution f = 0 := by
   rw [toTemperedDistribution_eq_of_eventuallyEq T hT hTΩ (g := 0) hf, map_zero]
 
+/-- The tempered extension of the zero distribution is zero. -/
+@[simp]
+theorem toTemperedDistribution_zero : (0 : 𝓓'(Ω, ℂ)).toTemperedDistribution = 0 := by
+  have h0 : dsupport (0 : 𝓓'(Ω, ℂ)) = ∅ := (dsupport_eq_empty_iff _).2 rfl
+  ext f
+  rw [toTemperedDistribution_apply_cutoff 0 (χ := 0) (by rw [h0]; simp)]
+  simp [complexPairing_apply]
+
+/-- The tempered extension is additive on distributions with compact support in `Ω`. -/
+theorem toTemperedDistribution_add (S T : 𝓓'(Ω, ℂ)) (hS : IsCompact (dsupport S))
+    (hSΩ : dsupport S ⊆ Ω) (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) :
+    (S + T).toTemperedDistribution = S.toTemperedDistribution + T.toTemperedDistribution := by
+  obtain ⟨χ, hχ, -⟩ :=
+    TestFunction.exists_eventually_eq_one (n := ⊤) (hS.union hT) (union_subset hSΩ hTΩ)
+  have hST : dsupport (S + T) ⊆ dsupport S ∪ dsupport T := dsupport_add_subset ⇑S ⇑T
+  ext f
+  rw [add_apply,
+    toTemperedDistribution_apply_cutoff _ (hχ.filter_mono (nhdsSet_mono hST)),
+    toTemperedDistribution_apply_cutoff S (hχ.filter_mono (nhdsSet_mono subset_union_left)),
+    toTemperedDistribution_apply_cutoff T (hχ.filter_mono (nhdsSet_mono subset_union_right)),
+    complexPairing_add]
+
+/-- The tempered extension is homogeneous. -/
+theorem toTemperedDistribution_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) :
+    (c • T).toTemperedDistribution = c • T.toTemperedDistribution := by
+  have hcT : ∀ (c : ℂ) (T : 𝓓'(Ω, ℂ)), dsupport (c • T) ⊆ dsupport T := fun c T ↦
+    dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]
+  ext f
+  rw [smul_apply, smul_eq_mul]
+  by_cases h : ∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1
+  · obtain ⟨χ, hχ⟩ := h
+    rw [toTemperedDistribution_apply_cutoff _ (hχ.filter_mono (nhdsSet_mono (hcT c T))),
+      toTemperedDistribution_apply_cutoff T hχ, complexPairing_smul]
+  rcases eq_or_ne c 0 with rfl | hc
+  · have h0 : (0 : ℂ) • T = 0 := by
+      ext φ
+      simp
+    rw [h0, toTemperedDistribution_zero, zero_mul, zero_apply]
+  -- For `c ≠ 0` neither `T` nor `c • T` admits a cutoff, so both sides are zero.
+  have h' : ¬∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport (c • T)), χ x = 1 := by
+    refine fun ⟨χ, hχ⟩ ↦ h ⟨χ, hχ.filter_mono (nhdsSet_mono ?_)⟩
+    simpa [smul_smul, inv_mul_cancel₀ hc] using hcT c⁻¹ (c • T)
+  rw [toTemperedDistribution, dite_eq_right h', toTemperedDistribution, dite_eq_right h,
+    zero_apply, mul_zero]
+
+/-- The tempered extension of a distribution with compact support in `Ω` commutes with directional
+derivatives. -/
+theorem toTemperedDistribution_lineDerivOp (T : 𝓓'(Ω, ℂ)) (hT : IsCompact (dsupport T))
+    (hTΩ : dsupport T ⊆ Ω) (v : E) :
+    (∂_{v} T).toTemperedDistribution = ∂_{v} T.toTemperedDistribution := by
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
+  ext f
+  rw [toTemperedDistribution_apply_cutoff _
+      (hχ.filter_mono (nhdsSet_mono (dsupport_lineDerivOp_subset v))),
+    complexPairing_lineDerivOp, TemperedDistribution.lineDerivOp_apply_apply,
+    toTemperedDistribution_apply_cutoff T hχ, map_neg, map_neg, neg_inj]
+  refine complexPairing_eq_of_eventuallyEq T ?_
+  -- Near the support of `T`, the cutoff `χ f` agrees with `f` on a neighbourhood.
+  filter_upwards [hχ.eventually_nhdsSet] with x hx
+  have h : (cutoff χ f : E → ℂ) =ᶠ[𝓝 x] f :=
+    hx.mono fun y hy ↦ by rw [cutoff_apply, hy, one_smul]
+  rw [TestFunction.lineDerivOp_apply_eq_fderiv, h.fderiv_eq, cutoff_apply, hx.self_of_nhds,
+    one_smul, SchwartzMap.lineDerivOp_apply_eq_fderiv]
+
 /-- **The tempered extension restricts to `T`.** -/
 @[simp]
 theorem toDistribution_toTemperedDistribution (T : 𝓓'(Ω, ℂ)) (hT : IsCompact (dsupport T))
@@ -228,12 +304,10 @@ theorem toDistribution_toTemperedDistribution (T : 𝓓'(Ω, ℂ)) (hT : IsCompa
   ext φ
   set f := TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM φ)
   rw [TemperedDistribution.toDistribution_apply,
-    toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ f)
-      fun x ↦ by rw [cutoff_apply, real_smul],
-    ← complexPairing_postcompCLM_ofRealCLM]
+    toTemperedDistribution_apply_cutoff T hχ, ← complexPairing_postcompCLM_ofRealCLM]
   refine complexPairing_eq_of_eventuallyEq T ?_
   filter_upwards [hχ] with x hx
-  simp [f, cutoff_apply, hx]
+  simp [cutoff_apply, hx]
 
 /-- **Uniqueness of the tempered extension.** A tempered distribution whose restriction to `Ω` is
 `T` and which vanishes on every Schwartz function vanishing near the support of `T` is the
@@ -247,8 +321,7 @@ theorem eq_toTemperedDistribution (T : 𝓓'(Ω, ℂ)) (hT : IsCompact (dsupport
   -- Split `f` into the Schwartz function `χ f` and a remainder vanishing near the support of `T`.
   set g := TestFunction.toSchwartzMapCLM ℂ (cutoff χ f)
   have hsplit : u f = u g + u (f - g) := by rw [← map_add, add_sub_cancel]
-  rw [toTemperedDistribution_apply_of_eventuallyEq T hχ (g := cutoff χ f)
-      fun x ↦ by rw [cutoff_apply, real_smul], ← hu,
+  rw [toTemperedDistribution_apply_cutoff T hχ, ← hu,
     TemperedDistribution.complexPairing_toDistribution, hsplit, hu₀ (f - g) ?_, add_zero]
   filter_upwards [hχ] with x hx
   simp [g, cutoff_apply, hx]
