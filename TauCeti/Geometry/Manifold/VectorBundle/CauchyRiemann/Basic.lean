@@ -427,7 +427,9 @@ theorem isZeroOneForm_iff_inCoordinates {x₀ x y₀ : M}
         map_smul]
     rw [← toEndomorphism_symmL_of_inTangentCoordinates_eq hj hx, hTI, hT.eq_iff]
   · have := subsingleton_of_inTangentCoordinates_eq hj hx
-    have h0 (w : TangentSpace I x) : w = 0 := Subsingleton.elim (α := E) w 0
+    have : Subsingleton (TangentSpace I x) :=
+      (VectorBundle.continuousLinearEquivAt ℝ E (TangentSpace I) x).injective.subsingleton
+    have h0 (w : TangentSpace I x) : w = 0 := Subsingleton.elim w 0
     refine iff_of_true (fun v ↦ ?_) fun v ↦ ?_
     · rw [h0 (j x v), h0 v, map_zero, smul_zero, neg_zero]
     · rw [Subsingleton.elim v 0, smul_zero, map_zero, smul_zero, neg_zero]
