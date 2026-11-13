@@ -310,7 +310,8 @@ theorem IsNormalDomain.dist_eq_norm_riemannianLog (h : IsNormalDomain I M p U)
     (hU : closedBall 0 r ⊆ U) (hq : q ∈ closedBall p r) :
     dist p q = ‖riemannianLog I M p U q‖ := by
   rw [← h.image_riemannianExp_closedBall_eq_closedBall hU] at hq
-  rw [dist_edist, h.edist_eq_enorm_riemannianLog hU hq, toReal_enorm]
+  rw [dist_edist, h.edist_eq_enorm_riemannianLog hU hq]
+  simp
 
 /-- On an open normal ball, the distance from the centre is the norm of the logarithm. -/
 theorem IsNormalDomain.dist_eq_norm_riemannianLog_of_mem_ball (h : IsNormalDomain I M p U)
