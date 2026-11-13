@@ -23,8 +23,9 @@ orthogonal projections. O'Neill's tensors `A` and `T` (`IsRiemannianSubmersion.o
 * `A` is alternating on horizontal vectors: `A_X Y = -A_Y X`.
 * The vertical part of the bracket of two horizontal fields is `v [X, Y] = 2 A_X Y`. So `A`
   measures the failure of the horizontal distribution to be closed under brackets. For basic
-  horizontal fields, the horizontal lifts of fields on the base, the horizontal part of the
-  bracket is the lift of the bracket on the base.
+  horizontal fields, the horizontal lifts of fields on the base, the horizontal parts of the
+  bracket and of the Levi-Civita derivative are the lifts of the bracket and of the Levi-Civita
+  derivative on the base.
 * `T` is symmetric on vertical vectors: `T_U V = T_V U`. This expresses the integrability of the
   vertical distribution, whose leaves are the fibres; on vertical vectors, `T` is the second
   fundamental form of the fibres.
@@ -55,6 +56,8 @@ norm is constant along the fibres.
   horizontal fields `X` and `Y`.
 * `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`: the bracket of basic horizontal
   fields.
+* `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`: the Levi-Civita
+  derivative of basic horizontal fields, `∇_X' Y' = (∇_X Y)^~ + A_X' Y'`.
 * `TauCeti.IsRiemannianSubmersion.oneillT_comm`: `T` is symmetric on vertical vectors.
 
 ## References
@@ -377,8 +380,9 @@ theorem starProjection_ker_mlieBracket {X Y : Π x : M, TangentSpace I x}
   rw [← hT, map_sub, ← hXY, ← hYX,
     h.oneillA_antisymm hYh.self_of_nhds hXh.self_of_nhds, sub_neg_eq_add, two_smul]
 
-/-- **The bracket of basic horizontal fields.** The bracket of the horizontal lifts of fields `X`
-and `Y` on the base is the horizontal lift of `[X, Y]` plus the vertical part `2 A_X Y`. -/
+/-- **The bracket of basic horizontal fields.** The bracket of the horizontal lifts `X'` and `Y'`
+of fields `X` and `Y` on the base is the horizontal lift of `[X, Y]` plus the vertical part:
+`[X', Y'] = [X, Y]^~ + 2 A_X' Y'`. -/
 theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
     (hX : CMDiffAt 1 (T% X) (f x)) (hY : CMDiffAt 1 (T% Y) (f x)) :
     mlieBracket I (fun y ↦ h.horizontalLift y (X (f y))) (fun y ↦ h.horizontalLift y (Y (f y)))
@@ -396,6 +400,28 @@ theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
   beta_reduce at hv
   rw [← h.mfderiv_mlieBracket_horizontalLift hX hY, h.horizontalLift_mfderiv, ← hv, add_comm,
     Submodule.starProjection_add_starProjection_orthogonal]
+
+/-- **The Levi-Civita derivative of basic horizontal fields.** For the horizontal lift `Y'` of a
+field `Y` on the base and the lift `v'` of a base vector `v`, `∇_v' Y' = (∇_v Y)^~ + A_v' Y'`: the
+horizontal part is the lift of the base derivative and the vertical part is O'Neill's tensor. -/
+theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
+    (hY : CMDiffAt 1 (T% Y) (f x)) (v : TangentSpace J (f x)) :
+    CovariantDerivative.leviCivitaConnection I M (fun y ↦ h.horizontalLift y (Y (f y))) x
+        (h.horizontalLift x v) =
+      h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
+        h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
+  have : IsManifold I (1 + 1) M := by
+    rw [one_add_one_eq_two]
+    infer_instance
+  have hYd : MDiffAt (T% (fun y ↦ h.horizontalLift y (Y (f y)))) x :=
+    (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  rw [h.oneillA_apply_of_eventually_mem_orthogonal_ker hYd
+      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _),
+    Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x v),
+    ← h.starProjection_covariantDerivative_horizontalLift
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection J) hY v,
+    add_comm, Submodule.starProjection_add_starProjection_orthogonal]
 
 /-- **O'Neill's tensor `T` is symmetric on vertical vectors.** This expresses the integrability
 of the vertical distribution. -/
