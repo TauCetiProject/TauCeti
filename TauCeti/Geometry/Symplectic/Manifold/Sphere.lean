@@ -30,6 +30,8 @@ For the unit sphere `S² ⊂ ℝ³` with the standard orientation of `ℝ³`, th
 ## Main results
 
 * `Orientation.isSymplectic_sphereVolumeForm`: the volume form of a two-sphere is symplectic.
+* `TauCeti.sphereAreaForm_eq_sphereVolumeForm`: the area form of `S²` is the volume form of the
+  unit sphere for the standard orientation of `ℝ³`.
 * `TauCeti.eval₂_sphereAreaForm`: the area form of `S²` is the triple product.
 * `TauCeti.isSymplectic_sphereAreaForm`: the area form of `S²` is symplectic.
 
@@ -77,7 +79,7 @@ def sphereAreaForm : SmoothTwoForm (𝓡 2) S² :=
 
 /-- The area form of `S²` is the volume form of the unit sphere for the standard orientation of
 `ℝ³`. -/
-theorem sphereAreaForm_def :
+theorem sphereAreaForm_eq_sphereVolumeForm :
     sphereAreaForm = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm :=
   (rfl)
 

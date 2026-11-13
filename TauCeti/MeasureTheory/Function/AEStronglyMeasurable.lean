@@ -205,7 +205,7 @@ theorem AEStronglyMeasurable.comp_prod_sub
   have hm : Measurable (fun p : α × G ↦ p.2 - hc.mk c p.1) :=
     measurable_snd.sub (hc.measurable_mk.comp measurable_fst)
   have hq : QuasiMeasurePreserving (fun p : α × G ↦ p.2 - hc.mk c p.1) (μ.prod ν) ν := by
-    refine ⟨hm, Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
+    refine ⟨hm.aemeasurable, Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
     rw [Measure.map_apply hm hs]
     apply Measure.measure_prod_null_of_ae_null (hm hs)
     exact Eventually.of_forall fun t ↦

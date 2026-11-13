@@ -87,7 +87,7 @@ sphere of `ℝ³` has total Liouville measure `4π`. -/
 theorem liouvilleMeasure_sphereAreaForm_univ :
     sphereAreaForm.liouvilleMeasure 1 (univ : Set (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) =
       ENNReal.ofReal (4 * Real.pi) := by
-  rw [sphereAreaForm_def]
+  rw [sphereAreaForm_eq_sphereVolumeForm]
   exact Orientation.liouvilleMeasure_sphereVolumeForm_univ (E := EuclideanSpace ℝ (Fin 3)) _
 
 /-- **The KKS area of the coadjoint spheres of `SO(3)`.** The area form `σ` of the unit sphere of
@@ -100,7 +100,7 @@ theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
     (r • sphereAreaForm).liouvilleMeasure 1
         (univ : Set (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) =
       ENNReal.ofReal (4 * Real.pi * |r|) := by
-  rw [sphereAreaForm_def]
+  rw [sphereAreaForm_eq_sphereVolumeForm]
   exact Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ (E := EuclideanSpace ℝ (Fin 3)) _ r
 
 end TauCeti

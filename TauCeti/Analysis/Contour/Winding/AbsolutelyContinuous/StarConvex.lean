@@ -64,8 +64,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex
 private noncomputable def lineMapPath (hγ : AbsolutelyContinuousOnInterval γ a b) :
     Path (γ a) (γ b) where
   toFun t := γ (AffineMap.lineMap a b (t : ℝ))
-  continuous_toFun := hγ.comp_lineMap.continuousOn.comp_continuous continuous_subtype_val
-    fun t ↦ (uIcc_of_le (zero_le_one' ℝ)).symm ▸ t.2
+  continuous_toFun :=
+    (absolutelyContinuousOnInterval_comp_lineMap_iff.2 hγ).continuousOn.comp_continuous
+      continuous_subtype_val fun t ↦ (uIcc_of_le (zero_le_one' ℝ)).symm ▸ t.2
   source' := by simp
   target' := by simp
 
@@ -83,9 +84,11 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_starConvex_of_
   let p₀ : Path (γ₀ a) (γ₀ b) := lineMapPath h₀
   let p₁ : Path (γ₀ a) (γ₀ b) := (lineMapPath h₁).cast ha hb
   have hp₀ : AbsolutelyContinuousOnInterval p₀.extend 0 1 :=
-    h₀.comp_lineMap.congr fun t ht ↦ (p₀.extend_apply (uIcc_of_le h01 ▸ ht)).symm
+    (absolutelyContinuousOnInterval_comp_lineMap_iff.2 h₀).congr fun t ht ↦
+      (p₀.extend_apply (uIcc_of_le h01 ▸ ht)).symm
   have hp₁ : AbsolutelyContinuousOnInterval p₁.extend 0 1 :=
-    h₁.comp_lineMap.congr fun t ht ↦ (p₁.extend_apply (uIcc_of_le h01 ▸ ht)).symm
+    (absolutelyContinuousOnInterval_comp_lineMap_iff.2 h₁).congr fun t ht ↦
+      (p₁.extend_apply (uIcc_of_le h01 ▸ ht)).symm
   have hp₀Ω : ∀ t : Icc (0 : ℝ) 1, p₀ t ∈ Ω := fun t ↦ h₀Ω _ (hmap t.2)
   have hp₁Ω : ∀ t : Icc (0 : ℝ) 1, p₁ t ∈ Ω := fun t ↦ h₁Ω _ (hmap t.2)
   have hp₁symm : ∀ t : Icc (0 : ℝ) 1, p₁.symm t ≠ w := fun t ht ↦ by

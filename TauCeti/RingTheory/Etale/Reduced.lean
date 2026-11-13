@@ -20,19 +20,16 @@ public section
 namespace TauCeti
 
 /- Mathlib's Artinian decomposition `IsArtinianRing.equivPi` gives finite field-extension
-factors, which are separable over the perfect base field. -/
+factors, which are separable over the perfect base field; `Algebra.Etale.iff_exists_algEquiv_prod`
+recognizes such a product as étale. -/
 /-- A finite reduced commutative algebra over a perfect field is étale. -/
 theorem algebraEtale_of_finite_of_isReduced (k A : Type*) [Field k] [PerfectField k]
     [CommRing A] [Algebra k A] [Module.Finite k A] [IsReduced A] : Algebra.Etale k A := by
-  let _ : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have : IsArtinianRing A := .of_finite k A
   let _ (m : MaximalSpectrum A) : Field (A ⧸ m.asIdeal) := Ideal.Quotient.field _
-  let _ (m : MaximalSpectrum A) : Module.Finite k (A ⧸ m.asIdeal) :=
-    Module.Finite.of_surjective (Ideal.Quotient.mkₐ k m.asIdeal).toLinearMap
-      (Ideal.Quotient.mkₐ_surjective k m.asIdeal)
-  let _ (m : MaximalSpectrum A) : Algebra.FormallyEtale k (A ⧸ m.asIdeal) :=
-    Algebra.FormallyEtale.of_isSeparable k _
-  let _ : Algebra.FormallyEtale k A :=
-    Algebra.FormallyEtale.of_equiv ((IsArtinianRing.equivPi A).restrictScalars k).symm
-  exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+  -- Each factor `A ⧸ m` is finite over `k` as a quotient of `A`, and separable as `k` is perfect.
+  exact (Algebra.Etale.iff_exists_algEquiv_prod k A).mpr
+    ⟨_, inferInstance, _, _, _, (IsArtinianRing.equivPi A).restrictScalars k,
+      fun _ ↦ ⟨inferInstance, inferInstance⟩⟩
 
 end TauCeti
