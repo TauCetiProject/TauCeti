@@ -104,25 +104,31 @@ private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
 /-- The barycentric stellar map sends a point into the open star of the starred face exactly
 when its coordinate at the new vertex is positive. Normalization of the coordinates is not
 needed. -/
-theorem subset_support_stellarSubdivisionLinearMap_iff {x : ι →₀ ℝ} (hvσ : v ∉ σ)
+theorem subset_support_stellarSubdivisionLinearMap_iff {x : ι →₀ ℝ}
     (hxpos : ∀ i, 0 ≤ x i) (hxface : x.support ∈ stellarSubdivision K σ v) :
     σ ⊆ (stellarSubdivisionLinearMap σ v x).support ↔ 0 < x v := by
-  obtain ⟨a, ha, hxa⟩ := exists_zero_coordinate hvσ hxface
-  have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by
-    exact_mod_cast Finset.card_pos.mpr ⟨a, ha⟩)
-  have hcoord (i : ι) (hi : i ∈ σ) :
-      stellarSubdivisionLinearMap σ v x i = x i + x v * (σ.card : ℝ)⁻¹ := by
-    have hiv : i ≠ v := fun h => hvσ (h ▸ hi)
-    simp [stellarSubdivisionLinearMap_apply, hi, hiv]
   constructor
   · intro h
-    have hne := Finsupp.mem_support_iff.mp (h ha)
-    rw [hcoord a ha, hxa, zero_add] at hne
-    exact lt_of_le_of_ne (hxpos v) (fun hzero => hne (by simp [← hzero]))
+    refine lt_of_le_of_ne (hxpos v) fun hzero => ?_
+    have hfix : stellarSubdivisionLinearMap σ v x = x := by
+      ext i
+      simp [stellarSubdivisionLinearMap_apply, ← hzero]
+    rcases mem_stellarSubdivision_iff.mp hxface with ⟨-, -, hσ⟩ | ⟨hv, -, -⟩
+    · exact hσ (hfix ▸ h)
+    · exact Finsupp.mem_support_iff.mp hv hzero.symm
   · intro h i hi
+    have hc : 0 < (σ.card : ℝ)⁻¹ := inv_pos.mpr (by
+      exact_mod_cast Finset.card_pos.mpr ⟨i, hi⟩)
     apply Finsupp.mem_support_iff.mpr
-    rw [hcoord i hi]
-    exact (add_pos_of_nonneg_of_pos (hxpos i) (mul_pos h hc)).ne'
+    by_cases hiv : i = v
+    · subst hiv
+      have hcoord : stellarSubdivisionLinearMap σ i x i = x i * (σ.card : ℝ)⁻¹ := by
+        simp only [stellarSubdivisionLinearMap_apply, hi, ↓reduceIte]
+        ring
+      rw [hcoord]
+      exact (mul_pos h hc).ne'
+    · simp only [stellarSubdivisionLinearMap_apply, hi, hiv, ↓reduceIte, sub_zero]
+      exact (add_pos_of_nonneg_of_pos (hxpos i) (mul_pos h hc)).ne'
 
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
 theorem mapsTo_stellarSubdivisionLinearMap :
@@ -288,3 +294,20 @@ theorem bijOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset �
     surjOn_stellarSubdivisionLinearMap hσ hv⟩
 
 end PreAbstractSimplicialComplex
+
+namespace AbstractSimplicialComplex
+
+open TauCeti.SetLike
+
+variable {ι : Type*}
+
+/-- On a face of a simplicial complex, the barycentric stellar map sends the new vertex to the
+face barycentre. -/
+theorem stellarSubdivisionLinearMap_single_eq_faceBarycenter (K : AbstractSimplicialComplex ι)
+    (τ : Face K) (v : ι) :
+    Finset.stellarSubdivisionLinearMap τ.1 v (Finsupp.single v 1) = faceBarycenter K τ := by
+  classical
+  ext i
+  simp [Finset.sum_apply', Finsupp.single_apply]
+
+end AbstractSimplicialComplex
