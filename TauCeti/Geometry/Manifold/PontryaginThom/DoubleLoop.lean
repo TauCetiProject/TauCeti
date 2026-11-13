@@ -23,8 +23,8 @@ in every degree and with coefficients in any ring
 No condition is put on the base point: it may be the meeting point `x` itself, as in the source,
 where the base point of the sphere is its intersection with the submanifold. The composite
 `c ∘ σ` has degree `±1`
-(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp`). Following it
-by a rotation `g` of the sphere which moves `c (σ N)` to `N` gives a pointed map
+(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere`).
+Following it by a rotation `g` of the sphere which moves `c (σ N)` to `N` gives a pointed map
 `g ∘ c : Q → Sⁿ⁺²` such that `g ∘ c ∘ σ` still has degree `±1`, so `σ` is a pointed homotopy
 retract of the sphere and `Ω²σ` has a left inverse on homology
 (`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap`).
@@ -87,20 +87,9 @@ theorem injective_singularHomologyMap_map_map (h : IsFramedTube f τ)
     (LinearIsometryEquiv.unitSphereIsometryEquiv_apply_eq_smul A _).trans hA
   refine MooreLoopSpace.injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap hq
     hg ?_ k m
-  -- `c ∘ σ` has degree `±1`. Its homology map with coefficients in `ULift ℤ`, in which the degree
-  -- is stated, is conjugate to the one with coefficients in `ℤ` by the coefficient isomorphism.
-  have hcσ := h.bijective_singularHomologyMap_pontryaginThomSphereMap_comp s₀ (by omega) σ hx hσ
-  let α := (singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).mapIso
-    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  have hsurj : Function.Surjective (ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp σ)) := by
-    intro y
-    obtain ⟨z, hz⟩ := hcσ.2 ((α.inv.app _).hom y)
-    refine ⟨(α.hom.app _).hom z, ?_⟩
-    have := congr_arg (fun φ ↦ φ.hom z) (α.hom.naturality (TopCat.ofHom (c.comp σ)))
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at this
-    refine this.symm.trans ?_
-    rw [hz]
-    exact Iso.inv_hom_id_app_apply α _ y
+  -- `c ∘ σ` has degree `±1`, hence is surjective on `Hₙ₊₂(Sⁿ⁺²; ℤ)`.
+  have hsurj : Function.Surjective (ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp σ)) :=
+    (h.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere s₀ (by omega) σ hx hσ).2
   -- `g` is invertible, hence surjective on homology.
   have hgg' : g.comp g' = ContinuousMap.id _ := ContinuousMap.ext fun _ ↦
     (LinearIsometryEquiv.unitSphereIsometryEquiv A).toHomeomorph.apply_symm_apply _
