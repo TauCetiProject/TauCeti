@@ -312,43 +312,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsHaarMeasure] [μ.Regular]
 
-/-- Replace a Borel simple function on `G` almost everywhere by a simple function measurable for
-`TauCeti.baire G`. -/
-private theorem exists_simpleFunc_baire_ae_eq {β : Type*} (s : SimpleFunc G β) (b₀ : β) :
-    ∃ s' : @SimpleFunc G (TauCeti.baire G) β, (s' : G → β) =ᵐ[μ] s := by
-  classical
-  have hfib (y : β) := (s.measurableSet_fiber y).nullMeasurableSet.exists_baire_ae_eq (μ := μ)
-  choose B _ hBb hBae using hfib
-  let build : List β → @SimpleFunc G (TauCeti.baire G) β := fun L =>
-    L.foldr (fun y acc => @SimpleFunc.piecewise G β (TauCeti.baire G) (B y) (hBb y)
-      (@SimpleFunc.const G β (TauCeti.baire G) y) acc)
-      (@SimpleFunc.const G β (TauCeti.baire G) b₀)
-  have hbuild_eq : ∀ (L : List β) (x : G),
-      (∀ y ∈ L, x ∈ B y ↔ s x = y) → s x ∈ L → build L x = s x := by
-    let _ : MeasurableSpace G := TauCeti.baire G
-    intro L
-    induction L with
-    | nil => simp
-    | cons y L ih =>
-      intro x hxB hxL
-      dsimp only [build] at ih ⊢
-      rw [List.foldr_cons, SimpleFunc.piecewise_apply]
-      by_cases hxy : s x = y
-      · have hxBy : x ∈ B y := (hxB y List.mem_cons_self).2 hxy
-        simp [hxBy, hxy]
-      · have hxBy : x ∉ B y := fun hm => hxy ((hxB y List.mem_cons_self).1 hm)
-        have hxL' : s x ∈ L := (List.mem_cons.1 hxL).resolve_left hxy
-        simp only [hxBy, ↓reduceIte]
-        exact ih x (fun z hz => hxB z (List.mem_cons_of_mem y hz)) hxL'
-  refine ⟨build s.range.toList, ?_⟩
-  have hae : ∀ᵐ x ∂μ, ∀ y ∈ (s.range : Set β), x ∈ B y ↔ s x = y := by
-    refine (eventually_all_finite s.range.finite_toSet).2 fun y _ => ?_
-    filter_upwards [hBae y] with x hx
-    simpa [eq_comm] using hx
-  filter_upwards [hae] with x hx
-  exact hbuild_eq s.range.toList x (fun y hy => hx y (Finset.mem_coe.2 (Finset.mem_toList.1 hy)))
-    (Finset.mem_toList.2 (s.mem_range_self x))
-
 /-- **Baire representatives of almost everywhere strongly measurable functions.** On a σ-compact
 locally compact Hausdorff group with a regular Haar measure `μ`, every `μ`-almost everywhere
 strongly measurable function `f : G → β` agrees outside a `Gδ` Baire `μ`-null set `N` with a
@@ -360,7 +323,7 @@ theorem AEStronglyMeasurable.exists_stronglyMeasurable_baire {β : Type*} [Topol
   classical
   let b₀ : β := f 1
   obtain ⟨fs, hfs⟩ := hf.stronglyMeasurable_mk
-  choose hs hhs using fun n => exists_simpleFunc_baire_ae_eq (μ := μ) (fs n) b₀
+  choose hs hhs using fun n => (fs n).exists_baire_ae_eq μ
   let S : Set G := {x | f x ≠ hf.mk f x} ∪ ⋃ n, {x | hs n x ≠ fs n x}
   have hS_null : μ S = 0 :=
     measure_union_null hf.ae_eq_mk (measure_iUnion_null hhs)

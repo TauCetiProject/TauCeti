@@ -27,8 +27,8 @@ When `G` is σ-compact and `μ` is a regular Haar measure, Haar completion regul
 for the product σ-algebra (`Continuous.measurable_baire_prod_of_sigmaCompact`), and `Φ ⁻¹' N` is
 measurable in `X × Y` of product measure zero whenever almost every horizontal slice of `Φ` is
 quasi-measure-preserving into `μ`. In particular, `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`,
-and `(x, y) ↦ f (x * y)` are almost everywhere strongly measurable for product measures without
-`MeasurableMul₂ G`.
+`(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)` are almost everywhere strongly measurable for
+product measures without `MeasurableMul₂ G`.
 
 ## Main results
 
@@ -36,9 +36,10 @@ and `(x, y) ↦ f (x * y)` are almost everywhere strongly measurable for product
   `AEStronglyMeasurable` for `f ∘ Φ` along continuous slicewise quasi-measure-preserving maps into a
   σ-compact locally compact Hausdorff group.
 * `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod`,
-  `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_swap_prod`, and
-  `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`: product strong measurability of
-  `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`, and `(x, y) ↦ f (x * y)`.
+  `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_swap_prod`,
+  `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`, and
+  `MeasureTheory.AEStronglyMeasurable.comp_mul_swap_prod`: product strong measurability of
+  `(x, y) ↦ f (x⁻¹ * y)`, `(x, y) ↦ f (y⁻¹ * x)`, `(x, y) ↦ f (x * y)`, and `(x, y) ↦ f (y * x)`.
 
 ## References
 
@@ -107,5 +108,14 @@ theorem AEStronglyMeasurable.comp_mul_prod {ν : Measure G} {f : G → β}
     AEStronglyMeasurable (fun q : G × G => f (q.1 * q.2)) (ν.prod μ) :=
   hf.comp_continuous_prod_of_sigmaCompact continuous_mul
     (.of_forall fun x => (measurePreserving_mul_left μ x).quasiMeasurePreserving)
+
+/-- On a σ-compact locally compact Hausdorff group `G` with a regular Haar measure `μ`,
+`(x, y) ↦ f (y * x)` is `(ν.prod μ)`-almost everywhere strongly measurable for any measure `ν` on
+`G` and any `μ`-almost everywhere strongly measurable `f`. -/
+theorem AEStronglyMeasurable.comp_mul_swap_prod {ν : Measure G} {f : G → β}
+    (hf : AEStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun q : G × G => f (q.2 * q.1)) (ν.prod μ) :=
+  hf.comp_continuous_prod_of_sigmaCompact (continuous_snd.mul continuous_fst)
+    (.of_forall fun x => Measure.quasiMeasurePreserving_mul_right_of_regular μ x)
 
 end MeasureTheory

@@ -60,7 +60,7 @@ arbitrary locally compact Hausdorff group `G`:
   `MeasureTheory.Lp.ae_integrable_smul_comp_inv_mul`: on any locally compact Hausdorff group with a
   regular Haar measure `μ` and `1 ≤ p ≤ ∞`, `y ↦ h y • f (y⁻¹ * x)` is `μ`-integrable for
   `μ`-almost every `x : G`.
-* `MeasureTheory.Lp.convolutionL_ae_eq`, `MeasureTheory.Lp.convolutionL_toLp_ae_eq`, and
+* `MeasureTheory.Lp.convolutionL_ae_eq`, `MeasureTheory.Integrable.convolutionL_toLp_ae_eq`, and
   `MeasureTheory.Integrable.convolutionL_toL1_ae_eq`:
   `convolutionL μ p hp h f =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ` for a regular Haar measure `μ`
   on any locally compact Hausdorff group (`1 ≤ p < ∞`).
@@ -331,23 +331,24 @@ theorem convolutionL_ae_eq {hp : p ≠ ∞} (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
       ae_restrict_mem hH_meas.compl] with x hx₁ hxH
     rw [hx₁, Pi.zero_apply, H.integral_smul_inv_mul_eq_zero_of_notMem hh_off hf_off hxH]
 
-/-- On a locally compact Hausdorff group `G` with a regular Haar measure `μ`, `Lp.convolutionL`
-applied to `(hh.toL1 h)` and `(hf.toLp f)` for an integrable function `h` and an `Lᵖ` function `f`
-(`1 ≤ p < ∞`) is represented `μ`-almost everywhere by `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ`. -/
-theorem convolutionL_toLp_ae_eq {hp : p ≠ ∞} {h : G → 𝕜} (hh : Integrable h μ) {f : G → E}
-    (hf : MemLp f p μ) :
-    convolutionL μ p hp (hh.toL1 h) (hf.toLp f) =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
-  filter_upwards [convolutionL_ae_eq (hp := hp) (hh.toL1 h) (hf.toLp f)] with x hx
-  refine hx.trans (integral_congr_ae ?_)
-  filter_upwards [hh.coeFn_toL1,
-    (Measure.quasiMeasurePreserving_inv_mul_of_regular μ x).ae hf.coeFn_toLp] with y hy_h hy_f
-  rw [hy_h, hy_f]
-
 end PointwiseConvolutionL
 
 end Lp
 
 section FunctionConsequences
+
+/-- On a locally compact Hausdorff group `G` with a regular Haar measure `μ`, `Lp.convolutionL`
+applied to `(hh.toL1 h)` and `(hf.toLp f)` for an integrable function `h` and an `Lᵖ` function `f`
+(`1 ≤ p < ∞`) is represented `μ`-almost everywhere by `x ↦ ∫ y, h y • f (y⁻¹ * x) ∂μ`. -/
+theorem Integrable.convolutionL_toLp_ae_eq [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {hp : p ≠ ∞} {h : G → 𝕜} (hh : Integrable h μ) {f : G → E} (hf : MemLp f p μ) :
+    Lp.convolutionL μ p hp (hh.toL1 h) (hf.toLp f) =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
+  filter_upwards [Lp.convolutionL_ae_eq (hp := hp) (hh.toL1 h) (hf.toLp f)] with x hx
+  refine hx.trans (integral_congr_ae ?_)
+  filter_upwards [hh.coeFn_toL1,
+    (Measure.quasiMeasurePreserving_inv_mul_of_regular μ x).ae hf.coeFn_toLp] with y hy_h hy_f
+  rw [hy_h, hy_f]
 
 /-- On a locally compact Hausdorff group `G` with a regular Haar measure `μ`, `Lp.convolutionL`
 applied to `(hh.toL1 h)` and `(hf.toL1 f)` agrees `μ`-almost everywhere with
@@ -361,7 +362,7 @@ theorem Integrable.convolutionL_toL1_ae_eq [NontriviallyNormedField 𝕜] [Norme
       fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
   have htoLp : (memLp_one_iff_integrable.2 hf).toLp f = hf.toL1 f :=
     Lp.ext <| (MemLp.coeFn_toLp _).trans hf.coeFn_toL1.symm
-  exact htoLp ▸ Lp.convolutionL_toLp_ae_eq hh (memLp_one_iff_integrable.2 hf)
+  exact htoLp ▸ hh.convolutionL_toLp_ae_eq (memLp_one_iff_integrable.2 hf)
 
 omit [T2Space G] in
 /-- On a locally compact group with a regular Haar measure `μ`, the pointwise group convolution
@@ -474,7 +475,7 @@ theorem Integrable.memLp_integral_smul_comp_inv_mul [NormedRing 𝕜] [NormedAdd
       (H.ae_restrict_compl_integral_smul_inv_mul_eq_zero hh_off hf_off)).2 hmeas_H
   have hreal : MemLp (fun x => ∫ y, ‖h y‖ * ‖f (y⁻¹ * x)‖ ∂μ) p μ :=
     (Lp.memLp (Lp.convolutionL μ p hp (hh.norm.toL1 _) (hf.norm.toLp _))).ae_eq
-      (Lp.convolutionL_toLp_ae_eq (𝕜 := ℝ) (E := ℝ) hh.norm hf.norm)
+      (hh.norm.convolutionL_toLp_ae_eq hf.norm)
   refine hreal.mono' hmeas ?_
   filter_upwards [hh.norm.ae_integrable_smul_comp_inv_mul hf.norm] with x hxint
   exact norm_integral_le_of_norm_le hxint (.of_forall fun _ => norm_smul_le _ _)

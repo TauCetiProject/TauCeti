@@ -32,7 +32,7 @@ chosen inside it as well.
 
 ## Main results
 
-* `MeasureTheory.exists_openSubgroup_isSigmaCompact_of_isOpen_lt_top`: on a locally compact group
+* `IsOpen.exists_openSubgroup_isSigmaCompact_of_measure_lt_top`: on a locally compact group
   with `[μ.IsOpenPosMeasure]` and `[μ.InnerRegularCompactLTTop]`, every open set of finite measure
   is contained in a σ-compact open subgroup (no `T2Space G` assumption is required).
 * `MeasureTheory.exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict`: if `μ` is also outer
@@ -69,8 +69,9 @@ of finite measure, every open set `V` with `μ V < ∞` is contained in a σ-com
 locally compact additive group with a measure `μ` that is positive on nonempty open sets and inner
 regular for compact sets on sets of finite measure, every open set `V` with `μ V < ∞` is contained
 in a σ-compact open additive subgroup. -/]
-theorem exists_openSubgroup_isSigmaCompact_of_isOpen_lt_top {V : Set G} (hVo : IsOpen V)
-    (hVμ : μ V < ∞) : ∃ H : OpenSubgroup G, V ⊆ H ∧ IsSigmaCompact (H : Set G) := by
+theorem _root_.IsOpen.exists_openSubgroup_isSigmaCompact_of_measure_lt_top {V : Set G}
+    (hVo : IsOpen V) (hVμ : μ V < ∞) :
+    ∃ H : OpenSubgroup G, V ⊆ H ∧ IsSigmaCompact (H : Set G) := by
   have hK (n : ℕ) : ∃ K, K ⊆ V ∧ IsCompact K ∧ μ V < μ K + (n : ℝ≥0∞)⁻¹ :=
     hVo.measurableSet.exists_isCompact_lt_add hVμ.ne
       (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top n))
@@ -106,7 +107,7 @@ theorem exists_openSubgroup_isSigmaCompact_of_sigmaFinite_restrict [μ.OuterRegu
   have hopen (n : ℕ) : ∃ V ⊇ E n ∩ s, IsOpen V ∧ μ V < μ (E n ∩ s) + 1 :=
     (E n ∩ s).exists_isOpen_lt_of_lt _ (ENNReal.lt_add_right (hEs_lt n).ne one_ne_zero)
   choose V hEV hVo hVμ using hopen
-  choose H hVH hHsc using fun n => exists_openSubgroup_isSigmaCompact_of_isOpen_lt_top (hVo n)
+  choose H hVH hHsc using fun n => (hVo n).exists_openSubgroup_isSigmaCompact_of_measure_lt_top
     ((hVμ n).trans (ENNReal.add_lt_top.2 ⟨hEs_lt n, ENNReal.one_lt_top⟩))
   obtain ⟨U, hHU, hUsc⟩ := OpenSubgroup.exists_isSigmaCompact_le hHsc
   refine ⟨U, fun x hx => ?_, hUsc⟩
