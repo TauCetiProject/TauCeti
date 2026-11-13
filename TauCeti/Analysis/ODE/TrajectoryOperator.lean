@@ -148,13 +148,8 @@ theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) �
   let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
   let w := weakFDeriv base u
   -- On `ℝ →L[ℝ] F`, evaluation at `1` is an isometry, so it preserves the `Lᵖ` norm.
-  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ := by
-    rw [Lp.norm_def, Lp.norm_def]
-    congr 1
-    refine (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_).symm
-    filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp w] with s hs
-    rw [hs, ContinuousLinearMap.apply_apply]
-    exact (ContinuousLinearMap.toSpanSingletonLIE ℝ F).symm.norm_map (w s)
+  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ :=
+    (Lp.norm_apply_one_compLp w).symm
   have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ ≤
       ‖A‖ * ‖prev base u‖ :=
     (ContinuousLinearMap.norm_holder_apply_apply_le _ _ _).trans

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -67,6 +68,9 @@ bounds.
   sum of their norms.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `LinearIsometry.norm_compLp`: composition with a linear isometry preserves `Lᵖ` norms.
+* `MeasureTheory.Lp.norm_apply_one_compLp`: so does evaluation at `1` of a field of linear maps
+  `𝕜 →L[𝕜] F`, such as a weak derivative on the line.
 -/
 
 public section
@@ -391,5 +395,34 @@ theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGr
     RCLike.norm_ofReal, abs_of_nonneg hI]
 
 end IntegralRpow
+
+section Isometry
+
+variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F]
+
+/-- Composition with a linear isometry preserves `Lᵖ` norms. -/
+@[simp]
+theorem _root_.LinearIsometry.norm_compLp (L : E →ₗᵢ[𝕜] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with s hs
+  rw [hs]
+  exact L.norm_map (f s)
+
+/-- Evaluation at `1` of an `Lᵖ` field of linear maps `𝕜 →L[𝕜] F` preserves the `Lᵖ` norm. -/
+@[simp]
+theorem Lp.norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] F) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ContinuousLinearMap.apply 𝕜 F (1 : 𝕜) =
+      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 F).symm.toLinearIsometry.toContinuousLinearMap := by
+    ext
+    simp
+  rw [h, LinearIsometry.norm_compLp]
+
+end Isometry
 
 end MeasureTheory

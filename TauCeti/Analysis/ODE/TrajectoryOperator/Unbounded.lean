@@ -8,54 +8,65 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.InnerProductSpace.GelfandTriple
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Function.Holder
 
 /-!
 # The trajectory operator of a symmetric invertible operator with a domain
 
-Let `ι : W →L[ℝ] H` be a continuous linear map from a Banach space `W` into a real Hilbert space
+Let `ι : W →L[ℝ] H` be a continuous linear map from a normed space `W` into a real Banach space
 `H`, and `A : W →L[ℝ] H`. Read `A` as an operator on `H` with domain `W`, such as the asymptotic
 operator `A ζ = J₀ (ζ' - S ζ)` of a Hamiltonian orbit, which maps loops in `W = H¹(S¹)` to loops
 in `H = L²(S¹)`. Its trajectory operator
 
 `D_A ξ = (ι ξ)' + A ξ`
 
-(`ContinuousLinearMap.domainTrajectoryOperator`) acts on the paths `ξ ∈ L²(ℝ, W)` whose image
-`ι ξ` has a weak derivative in `L²(ℝ, H)` (`TauCeti.TrajectoryDomain`), with the graph norm
+(`TauCeti.domainTrajectoryOperator`) acts on the paths `ξ ∈ L²(ℝ, W)` whose image `ι ξ` has a
+weak derivative in `L²(ℝ, H)` (`TauCeti.TrajectoryDomain`), with the graph norm
 `(‖ξ‖² + ‖(ι ξ)'‖²)^(1/2)`, and takes values in `L²(ℝ, H)`. For the asymptotic operator this is
 the linearized Floer operator `∂s + J₀ (∂t - S)` at the stationary cylinder over the orbit, acting
 on `L²(ℝ, H¹(S¹)) ∩ W^{1,2}(ℝ, L²(S¹))`, the anisotropic description of the Sobolev space
 `W^{1,2}` of the cylinder. Unlike `TauCeti.WeakDerivStep.trajectoryOperator`, the coefficient need
 not be a bounded operator on `H`.
 
-Suppose `A` is **symmetric** relative to `ι`, `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x, y ∈ W`.
+For any Banach space `H`, solving `D_A ξ = f` is the weak equation `(ι ξ)' = f - A ξ`
+(`TauCeti.domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn`), `‖D_A‖ ≤ 1 + ‖A‖`, and `D_A`
+depends `1`-Lipschitz continuously on `A` (`TauCeti.lipschitzWith_domainTrajectoryOperator`), so
+for complete `W` its invertibility is an open condition on `A`
+(`TauCeti.eventually_isInvertible_domainTrajectoryOperator`).
+
+Now let `W` be complete, let `H` be a real Hilbert space, and suppose `A` is **symmetric**
+relative to `ι`, `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x, y ∈ W`.
 
 * **The energy identity.** For every `ξ` in the domain,
 
   `‖D_A ξ‖² = ‖(ι ξ)'‖² + ‖A ξ‖²`
 
-  (`ContinuousLinearMap.norm_domainTrajectoryOperator_sq`): the cross term `2 ∫ ⟪(ι ξ)', A ξ⟫`
-  vanishes because it is the integral of the weak derivative of the integrable function
-  `s ↦ ⟪ι ξ(s), A ξ(s)⟫` (`ContinuousLinearMap.integral_inner_weakFDeriv_apply_prev_eq_zero`).
-  This uses the weak product rule `TauCeti.HasWeakLineDerivOn.bilin_self` for the symmetric form
+  (`TauCeti.norm_domainTrajectoryOperator_sq`): the cross term `2 ∫ ⟪(ι ξ)', A ξ⟫` vanishes
+  because it is the integral of the weak derivative of the integrable function
+  `s ↦ ⟪ι ξ(s), A ξ(s)⟫` (`TauCeti.integral_inner_weakFDeriv_apply_prev_eq_zero`). This uses the
+  weak product rule `TauCeti.HasWeakLineDerivOn.bilin_self` for the symmetric form
   `(x, y) ↦ ⟪ι x, A y⟫`; no derivative of `A ξ` is needed.
-* **The coercive estimate.** If `‖w‖ ≤ C ‖A w‖` on `W`, then `‖ξ‖ ≤ max C 1 ‖D_A ξ‖`
-  (`ContinuousLinearMap.norm_le_mul_norm_domainTrajectoryOperator`), so `D_A` is injective with
+* **Injectivity and the coercive estimate.** If `ι` and `A` have no common kernel, then `D_A` is
+  injective (`TauCeti.injective_domainTrajectoryOperator`). If `‖w‖ ≤ C ‖A w‖` on `W`, then
+  `‖ξ‖ ≤ max C 1 ‖D_A ξ‖` (`TauCeti.norm_le_mul_norm_domainTrajectoryOperator`), so `D_A` has
   closed range.
 * **Invertibility.** If moreover `A` is invertible, then `D_A` is invertible
-  (`ContinuousLinearMap.isInvertible_domainTrajectoryOperator`). An element `g` orthogonal to the
-  range is `A ζ` for `ζ = A⁻¹ g ∈ L²(ℝ, W)`. Testing the orthogonality against the paths
-  `s ↦ φ(s) w`, for test functions `φ` and `w ∈ W`, and using the symmetry and surjectivity of
-  `A`, shows `(ι ζ)' = A ζ`, that is, `D_{-A} ζ = 0`. The energy identity for the symmetric
-  operator `-A` then gives `A ζ = 0`, so `g = 0`.
-* **Small weights.** Since `A - δ ι` is again symmetric, and invertible for `δ` close to `0`, the
-  operators `D_{A - δ ι} = d/ds + A - δ`, into which the exponential weight `e^{δ s}` turns `D_A`,
-  are invertible for small `δ`
-  (`ContinuousLinearMap.eventually_isInvertible_domainTrajectoryOperator_sub_smul`).
+  (`TauCeti.isInvertible_domainTrajectoryOperator`), with `‖D_A⁻¹‖ ≤ max ‖A⁻¹‖ 1`. An element `g`
+  orthogonal to the range is `A ζ` for `ζ = A⁻¹ g ∈ L²(ℝ, W)`. Testing the orthogonality against
+  the paths `s ↦ φ(s) w`, for test functions `φ` and `w ∈ W`, and using the symmetry and
+  surjectivity of `A`, shows `(ι ζ)' = A ζ`, that is, `D_{-A} ζ = 0`. The energy identity for the
+  symmetric operator `-A` then gives `A ζ = 0`, so `g = 0`.
+* **Small weights.** By openness, the operators `D_{A - δ C}` are invertible for small `δ`, for
+  every `C : W →L[ℝ] H` (`TauCeti.eventually_isInvertible_domainTrajectoryOperator_sub_smul`).
+  For `C = ι` these are the operators `d/ds + A - δ` into which the exponential weight `e^{δ s}`
+  turns `D_A`.
 
 No spectral decomposition of `A`, no density of `ι`, no compactness and no injectivity of `ι` is
 used. Applied to the asymptotic operator of a nondegenerate orbit, which is invertible from
@@ -66,12 +77,16 @@ versions on the cylindrical ends.
 ## Main declarations
 
 * `TauCeti.TrajectoryDomain ι`: the domain `{ξ ∈ L²(ℝ, W) | (ι ξ)' ∈ L²(ℝ, H)}`.
-* `ContinuousLinearMap.domainTrajectoryOperator ι A`: the operator `ξ ↦ (ι ξ)' + A ξ`.
-* `ContinuousLinearMap.norm_domainTrajectoryOperator_sq`: the energy identity.
-* `ContinuousLinearMap.norm_le_mul_norm_domainTrajectoryOperator`: the coercive estimate.
-* `ContinuousLinearMap.isInvertible_domainTrajectoryOperator`: invertibility.
-* `ContinuousLinearMap.eventually_isInvertible_domainTrajectoryOperator_sub_smul`: invertibility
-  for small weights.
+* `TauCeti.domainTrajectoryOperator ι A`: the operator `ξ ↦ (ι ξ)' + A ξ`.
+* `TauCeti.domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn`: the weak equation.
+* `TauCeti.norm_domainTrajectoryOperator_le`, `TauCeti.norm_domainTrajectoryOperator_sub_le`:
+  the operator-norm bound and the dependence on the coefficient.
+* `TauCeti.norm_domainTrajectoryOperator_sq`: the energy identity.
+* `TauCeti.norm_le_mul_norm_domainTrajectoryOperator`: the coercive estimate.
+* `TauCeti.isInvertible_domainTrajectoryOperator`,
+  `TauCeti.norm_inverse_domainTrajectoryOperator_le`: invertibility and the inverse bound.
+* `TauCeti.eventually_isInvertible_domainTrajectoryOperator_sub_smul`: invertibility for small
+  weights.
 
 ## References
 
@@ -91,8 +106,12 @@ open scoped InnerProductSpace ENNReal Distributions Topology
 
 namespace TauCeti
 
+open WeakDerivStep
+
+section Banach
+
 variable {W H : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
 
 /-- The domain of the trajectory operator `d/ds + A` of an operator `A` on `H` with domain `W`,
 embedded by `ι`: the paths `ξ ∈ L²(ℝ, W)` whose image `ι ξ` has a weak derivative in
@@ -102,14 +121,12 @@ space `W^{1,2}` of the cylinder `ℝ × S¹`. -/
 abbrev TrajectoryDomain (ι : W →L[ℝ] H) : Type _ :=
   WeakDerivStep volume ⊤ 2 (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
 
-end TauCeti
+variable {ι A : W →L[ℝ] H}
 
-namespace ContinuousLinearMap
-
-open TauCeti TauCeti.WeakDerivStep
-
-variable {W H : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] {ι A : W →L[ℝ] H}
+/-- The weak derivative of `ι ξ` on the line, in the direction `1`. -/
+theorem TrajectoryDomain.hasWeakLineDerivOn_prev (ξ : TrajectoryDomain ι) :
+    HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (prev _ ξ s)) (fun s ↦ weakFDeriv _ ξ s 1) 1 :=
+  ((hasWeakFDerivOn_base_prev _ ξ).hasWeakLineDerivOn 1).congr_ae (ι.coeFn_compLp _)
 
 /-- The trajectory operator `ξ ↦ (ι ξ)' + A ξ` of `A : W →L[ℝ] H`, read as an operator on `H` with
 domain `W` embedded by `ι`, from `TauCeti.TrajectoryDomain ι` to `L²(ℝ, H)`. -/
@@ -123,8 +140,8 @@ def domainTrajectoryOperator (ι A : W →L[ℝ] H) :
 theorem domainTrajectoryOperator_apply (ξ : TrajectoryDomain ι) :
     domainTrajectoryOperator ι A ξ =
       (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp (weakFDeriv _ ξ) + A.compLp (prev _ ξ) := by
-  simp only [domainTrajectoryOperator, add_apply, coe_comp, Function.comp_apply,
-    weakFDerivL_apply, prevL_apply]
+  simp only [domainTrajectoryOperator, add_apply,
+    ContinuousLinearMap.coe_comp, Function.comp_apply, weakFDerivL_apply, prevL_apply]
   -- Mathlib's `compLpL` has no application equality lemma, only an a.e. formula.
   rfl
 
@@ -139,10 +156,91 @@ theorem domainTrajectoryOperator_apply_ae (ξ : TrajectoryDomain ι) :
     A.coeFn_compLp (prev _ ξ)] with s hs hd hA
   rw [hs, Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply]
 
-/-- The weak derivative of `ι ξ` on the line, in the direction `1`. -/
-private theorem hasWeakLineDerivOn_prev (ξ : TrajectoryDomain ι) :
-    HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (prev _ ξ s)) (fun s ↦ weakFDeriv _ ξ s 1) 1 :=
-  ((hasWeakFDerivOn_base_prev _ ξ).hasWeakLineDerivOn 1).congr_ae (ι.coeFn_compLp _)
+/-- Solving `(ι ξ)' + A ξ = f` is the weak ordinary differential equation `(ι ξ)' = f - A ξ`. -/
+theorem domainTrajectoryOperator_eq_iff_hasWeakLineDerivOn (ξ : TrajectoryDomain ι)
+    (f : Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
+    domainTrajectoryOperator ι A ξ = f ↔
+      HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (prev _ ξ s)) (fun s ↦ f s - A (prev _ ξ s)) 1 := by
+  constructor
+  · intro h
+    refine ξ.hasWeakLineDerivOn_prev.congr_ae_deriv ?_
+    filter_upwards [h ▸ domainTrajectoryOperator_apply_ae (A := A) ξ] with s hs
+    exact eq_sub_of_add_eq hs.symm
+  · intro h
+    refine Lp.ext ?_
+    filter_upwards [domainTrajectoryOperator_apply_ae (A := A) ξ,
+      ξ.hasWeakLineDerivOn_prev.ae_eq h] with s hs hd
+    rw [hs, hd, sub_add_cancel]
+
+/-- The trajectory operator of the element `mkLine _ ζ g h` with value `ζ` and weak derivative
+`(ι ζ)' = g` is `g + A ζ`. -/
+theorem domainTrajectoryOperator_mkLine (ζ : Lp W 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (g : Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (h : HasWeakLineDerivOn volume ⊤ (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) ζ) g
+      1) :
+    domainTrajectoryOperator ι A (mkLine _ ζ g h) = g + A.compLp ζ := by
+  rw [domainTrajectoryOperator_apply, apply_one_compLp_weakFDeriv_mkLine, prev_mkLine]
+
+/-- The operator norm of the trajectory operator is at most `1 + ‖A‖`. -/
+theorem norm_domainTrajectoryOperator_le : ‖domainTrajectoryOperator ι A‖ ≤ 1 + ‖A‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun ξ ↦ ?_
+  rw [domainTrajectoryOperator_apply, add_mul, one_mul]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [Lp.norm_apply_one_compLp]
+    exact norm_weakFDeriv_le _ ξ
+  · exact (A.norm_compLp_le _).trans (by gcongr; exact norm_prev_le _ ξ)
+
+/-- Changing the coefficient changes the trajectory operator by the multiplication by the
+difference of the coefficients. -/
+theorem domainTrajectoryOperator_sub (ι A B : W →L[ℝ] H) :
+    domainTrajectoryOperator ι A - domainTrajectoryOperator ι B =
+      ((A - B).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))).comp (prevL _) := by
+  ext1 ξ
+  rw [sub_apply, domainTrajectoryOperator_apply,
+    domainTrajectoryOperator_apply, add_sub_add_left_eq_sub, ContinuousLinearMap.coe_comp,
+    Function.comp_apply, prevL_apply]
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_sub (A.compLp (prev _ ξ)) (B.compLp (prev _ ξ)),
+    A.coeFn_compLp (prev _ ξ), B.coeFn_compLp (prev _ ξ),
+    (A - B).coeFn_compLpL (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) (p := 2) (prev _ ξ)]
+    with s h₁ h₂ h₃ h₄
+  rw [h₁, Pi.sub_apply, h₂, h₃, h₄, sub_apply]
+
+/-- Changing the coefficient changes the trajectory operator by at most the same amount in
+operator norm. -/
+theorem norm_domainTrajectoryOperator_sub_le (ι A B : W →L[ℝ] H) :
+    ‖domainTrajectoryOperator ι A - domainTrajectoryOperator ι B‖ ≤ ‖A - B‖ := by
+  rw [domainTrajectoryOperator_sub]
+  have hprev : ‖prevL (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun ξ ↦ by
+      simpa using norm_prev_le _ ξ
+  calc _ ≤ ‖(A - B).compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))‖ *
+        ‖prevL (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖A - B‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_compLpL_le _
+    _ = ‖A - B‖ := mul_one _
+
+/-- The trajectory operator depends `1`-Lipschitz continuously on its coefficient, for the
+operator norm. -/
+theorem lipschitzWith_domainTrajectoryOperator (ι : W →L[ℝ] H) :
+    LipschitzWith 1 (domainTrajectoryOperator ι) :=
+  LipschitzWith.of_dist_le_mul fun A B ↦ by
+    simpa only [dist_eq_norm, NNReal.coe_one, one_mul] using
+      norm_domainTrajectoryOperator_sub_le ι A B
+
+/-- **Invertibility is open in the coefficient.** If the trajectory operator of `A` is
+invertible, so is that of every coefficient `B` close to `A` in operator norm. -/
+theorem eventually_isInvertible_domainTrajectoryOperator [CompleteSpace W]
+    (hd : (domainTrajectoryOperator ι A).IsInvertible) :
+    ∀ᶠ B in 𝓝 A, (domainTrajectoryOperator ι B).IsInvertible :=
+  ((lipschitzWith_domainTrajectoryOperator ι).continuous.tendsto A).eventually hd.eventually_nhds
+
+end Banach
+
+section Hilbert
+
+variable {W H : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] {ι A : W →L[ℝ] H}
 
 /-- The derivative field `s ↦ (ι ξ)'(s)` is square integrable. -/
 private theorem memLp_weakFDeriv_apply_one (ξ : TrajectoryDomain ι) :
@@ -154,24 +252,10 @@ private theorem integral_restrict_top (f : ℝ → ℝ) :
     ∫ s, f s ∂(volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) = ∫ s, f s := by
   rw [Opens.coe_top, Measure.restrict_univ]
 
-/-- The functional `h ↦ (w ↦ ⟪h, A w⟫)` from `H` to the dual of `W`. -/
-private def innerComp (A : W →L[ℝ] H) : H →L[ℝ] StrongDual ℝ W :=
-  ((ContinuousLinearMap.compL ℝ W H ℝ).flip A).comp (innerSL ℝ)
-
-omit [CompleteSpace H] in
-private theorem innerComp_apply (A : W →L[ℝ] H) (h : H) (w : W) :
-    innerComp A h w = ⟪h, A w⟫_ℝ := by
-  simp [innerComp]
-
-/-- The evaluation of the weak Fréchet derivative at `1` has the same `L²` norm. -/
-private theorem norm_compLp_apply_one (ξ : TrajectoryDomain ι) :
-    ‖(ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLp (weakFDeriv _ ξ)‖ = ‖weakFDeriv _ ξ‖ := by
-  rw [Lp.norm_def, Lp.norm_def]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
-  filter_upwards [(ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLp (weakFDeriv _ ξ)] with s hs
-  rw [hs, ContinuousLinearMap.apply_apply]
-  exact (ContinuousLinearMap.toSpanSingletonLIE ℝ H).symm.norm_map (weakFDeriv _ ξ s)
+/-- The restriction of `volume` to the whole line is `volume`. -/
+private theorem volume_le_restrict_top :
+    (volume : Measure ℝ) ≤ volume.restrict ((⊤ : Opens ℝ) : Set ℝ) := by
+  rw [Opens.coe_top, Measure.restrict_univ]
 
 variable [CompleteSpace W]
 
@@ -181,22 +265,24 @@ theorem integral_inner_weakFDeriv_apply_prev_eq_zero
     (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (ξ : TrajectoryDomain ι) :
     ∫ s, ⟪weakFDeriv _ ξ s 1, A (prev _ ξ s)⟫_ℝ = 0 := by
   -- The symmetric form `B x y = ⟪ι x, A y⟫`.
-  set B : W →L[ℝ] W →L[ℝ] ℝ := (innerComp A).comp ι
+  set B : W →L[ℝ] W →L[ℝ] ℝ := A.gelfandDual.comp ι
   have hB : B.flip = B := by
     ext x y
-    simp only [flip_apply, B, coe_comp, Function.comp_apply, innerComp_apply]
+    simp only [ContinuousLinearMap.flip_apply, B, ContinuousLinearMap.coe_comp,
+      Function.comp_apply, ContinuousLinearMap.gelfandDual_apply]
     rw [real_inner_comm, hA]
   have hval := Lp.memLp (prev (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) ξ)
-  have hder := (memLp_weakFDeriv_apply_one ξ).continuousLinearMap_comp (innerComp A)
+  have hder := (memLp_weakFDeriv_apply_one ξ).continuousLinearMap_comp A.gelfandDual
   have hweak := HasWeakLineDerivOn.bilin_self hB
-    ((hasWeakLineDerivOn_prev ξ).clm_comp (innerComp A)) hval hder
+    (ξ.hasWeakLineDerivOn_prev.clm_comp A.gelfandDual) hval hder
   -- The quadratic form and its weak derivative are integrable, so the derivative integrates to `0`.
   have hint {f : ℝ → ℝ} (hf : MemLp f 1 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
       Integrable f := by
     simpa [Measure.restrict_univ] using memLp_one_iff_integrable.1 hf
   have h0 := hweak.integral_eq_zero (hint (B.memLp_of_bilin 1 hval hval))
     ((hint ((ContinuousLinearMap.id ℝ (StrongDual ℝ W)).memLp_of_bilin 1 hder hval)).const_mul 2)
-  simp only [innerComp_apply, integral_const_mul, mul_eq_zero, two_ne_zero, false_or] at h0
+  simp only [ContinuousLinearMap.gelfandDual_apply, integral_const_mul, mul_eq_zero,
+    two_ne_zero, false_or] at h0
   exact h0
 
 /-- **The energy identity.** For `A` symmetric relative to `ι`,
@@ -211,7 +297,7 @@ theorem norm_domainTrajectoryOperator_sq (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = �
     filter_upwards [(ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLp (weakFDeriv _ ξ),
       A.coeFn_compLp (prev _ ξ)] with s hd hA
     rw [hd, hA, ContinuousLinearMap.apply_apply]
-  rw [domainTrajectoryOperator_apply, norm_add_sq_real, hinner, norm_compLp_apply_one]
+  rw [domainTrajectoryOperator_apply, norm_add_sq_real, hinner, Lp.norm_apply_one_compLp]
   ring
 
 /-- **The coercive estimate.** If `A` is symmetric relative to `ι` and `‖w‖ ≤ C ‖A w‖` on `W`,
@@ -234,12 +320,42 @@ theorem norm_le_mul_norm_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫
     le_mul_of_one_le_left (by positivity) (one_le_pow₀ hC1)
   linarith
 
-/-- A trajectory operator with a symmetric coefficient bounded below is injective. -/
+/-- A trajectory operator with a symmetric coefficient is injective as soon as `ι` and `A` have
+no common kernel: a path in the kernel has `(ι ξ)' = 0` and `A ξ = 0` by the energy identity,
+so `ι ξ` is a constant in `L²(ℝ, H)`, hence `0`. -/
 theorem injective_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
-    {C : ℝ} (hC : ∀ w, ‖w‖ ≤ C * ‖A w‖) :
+    (hker : ∀ w, ι w = 0 → A w = 0 → w = 0) :
     Function.Injective (domainTrajectoryOperator ι A) := by
-  refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ norm_eq_zero.1 (le_antisymm ?_ (norm_nonneg _))
-  simpa [hξ] using norm_le_mul_norm_domainTrajectoryOperator hA hC ξ
+  refine (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ ?_
+  have hE := norm_domainTrajectoryOperator_sq hA ξ
+  rw [hξ, norm_zero] at hE
+  have hd : weakFDeriv _ ξ = 0 := norm_eq_zero.1 <| (pow_eq_zero_iff two_ne_zero).1 <| by
+    nlinarith [sq_nonneg ‖weakFDeriv _ ξ‖, sq_nonneg ‖A.compLp (prev _ ξ)‖]
+  have hAξ : A.compLp (prev _ ξ) = 0 := norm_eq_zero.1 <| (pow_eq_zero_iff two_ne_zero).1 <| by
+    nlinarith [sq_nonneg ‖weakFDeriv _ ξ‖, sq_nonneg ‖A.compLp (prev _ ξ)‖]
+  -- `ι ξ` has weak derivative `0`, so it is almost everywhere a constant `c`.
+  have hw : HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (prev _ ξ s)) 0 1 := by
+    refine ξ.hasWeakLineDerivOn_prev.congr_ae_deriv ?_
+    filter_upwards [hd ▸ Lp.coeFn_zero (ℝ →L[ℝ] H) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))]
+      with s hs
+    rw [hs]
+    rfl
+  obtain ⟨c, hc⟩ := hw.exists_ae_eq_add_intervalIntegral_top 0
+  simp only [Pi.zero_apply, intervalIntegral.integral_zero, add_zero] at hc
+  -- A constant in `L²(ℝ, H)` vanishes.
+  have hmem : MemLp (fun _ : ℝ ↦ c) 2 volume :=
+    (((Lp.memLp (prev _ ξ)).continuousLinearMap_comp ι).mono_measure volume_le_restrict_top).ae_eq
+      hc
+  have hc0 : c = 0 := ((memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).1 hmem).resolve_right
+    (by simp)
+  have hprev : prev _ ξ = 0 := by
+    refine Lp.ext ?_
+    filter_upwards [ae_restrict_of_ae hc, A.coeFn_compLp (prev _ ξ),
+      hAξ ▸ Lp.coeFn_zero H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)),
+      Lp.coeFn_zero W 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))] with s h₁ h₂ h₃ h₄
+    rw [h₄]
+    exact hker _ (h₁.trans hc0) (h₂.symm.trans h₃)
+  exact ext_prev_weakFDeriv (by rw [hprev, prev_zero]) (by rw [hd, ← weakFDerivL_apply, map_zero])
 
 /-- A trajectory operator with a symmetric coefficient bounded below has closed range. -/
 theorem isClosed_range_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
@@ -253,44 +369,6 @@ theorem isClosed_range_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_�
 
 /-! ### Surjectivity -/
 
-/-- An `L²` field `g` of vectors, as the field `s ↦ (t ↦ t • g s)` of derivatives. -/
-private def liftDeriv (g : Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
-    Lp (ℝ →L[ℝ] H) 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  (ContinuousLinearMap.toSpanSingletonLIE ℝ H).toLinearIsometry.toContinuousLinearMap.compLp g
-
-omit [CompleteSpace W] in
-/-- The element of the domain with value `ζ` and weak derivative `(ι ζ)' = g`. -/
-private def ofDeriv (ζ : Lp W 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (g : Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (h : HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (ζ s)) g 1) : TrajectoryDomain ι :=
-  WeakDerivStep.mk _ ζ (liftDeriv g) <| by
-    rw [hasWeakFDerivOn_iff]
-    intro v
-    have hv := (h.smul_direction v).congr_ae (ι.coeFn_compLpL ζ).symm
-    simp only [smul_eq_mul, mul_one] at hv
-    refine hv.congr_ae_deriv ?_
-    filter_upwards [(ContinuousLinearMap.toSpanSingletonLIE ℝ H).toLinearIsometry
-      |>.toContinuousLinearMap.coeFn_compLp g] with t ht
-    simp only [liftDeriv, ht, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometryEquiv.coe_toLinearIsometry, ContinuousLinearMap.toSpanSingletonLIE_apply,
-      ContinuousLinearMap.toSpanSingleton_apply, Pi.smul_apply]
-
-omit [CompleteSpace W] in
-/-- The trajectory operator of `ofDeriv ζ g h` is `g + A ζ`. -/
-private theorem domainTrajectoryOperator_ofDeriv
-    (ζ : Lp W 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (g : Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (h : HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (ζ s)) g 1) :
-    domainTrajectoryOperator ι A (ofDeriv ζ g h) = g + A.compLp ζ := by
-  rw [domainTrajectoryOperator_apply, ofDeriv, weakFDeriv_mk, prev_mk]
-  congr 1
-  refine Lp.ext ?_
-  filter_upwards [(ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLp (liftDeriv g),
-    (ContinuousLinearMap.toSpanSingletonLIE ℝ H).toLinearIsometry
-      |>.toContinuousLinearMap.coeFn_compLp g] with t h₁ h₂
-  rw [h₁, liftDeriv, h₂]
-  simp
-
 /-- A test function `φ` times a vector `v`, as an `L²` field. -/
 private def testField {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     (φ : 𝓓((⊤ : Opens ℝ), ℝ)) (v : E) : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
@@ -303,26 +381,22 @@ private theorem testField_ae {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
     (testFunctionLp (mu := volume) 2 φ), testFunctionLp_apply_ae (mu := volume) 2 φ] with s h₁ h₂
   rw [testField, h₁, ContinuousLinearMap.toSpanSingleton_apply, h₂]
 
-/-- The derivative `s ↦ φ'(s)` of a test function on the line, as a test function. -/
-private theorem coe_lineDerivCLM (φ : 𝓓((⊤ : Opens ℝ), ℝ)) :
-    ((TestFunction.lineDerivCLM ℝ (1 : ℝ) φ : 𝓓((⊤ : Opens ℝ), ℝ)) : ℝ → ℝ) =
-      fun s ↦ lineDeriv ℝ (φ : ℝ → ℝ) s 1 :=
-  funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
-
 omit [CompleteSpace W] in
 /-- The weak derivative of `s ↦ ι (φ s • w)` is `s ↦ φ'(s) • ι w`. -/
 private theorem hasWeakLineDerivOn_testField (φ : 𝓓((⊤ : Opens ℝ), ℝ)) (w : W) :
-    HasWeakLineDerivOn volume ⊤ (fun s ↦ ι (testField φ w s))
+    HasWeakLineDerivOn volume ⊤
+      (ι.compLpL 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) (testField φ w))
       (testField (TestFunction.lineDerivCLM ℝ (1 : ℝ) φ) (ι w)) 1 := by
   have hφ : HasWeakLineDerivOn volume ⊤ (φ : ℝ → ℝ) (fun s ↦ lineDeriv ℝ (φ : ℝ → ℝ) s 1) 1 := by
     refine hasWeakLineDerivOn_of_hasLineDerivAt
       (φ.continuous.locallyIntegrable.locallyIntegrableOn _) ?_ fun s _ ↦
         ((φ.contDiff.differentiable (by simp)) s).lineDifferentiableAt.hasLineDerivAt
-    rw [← coe_lineDerivCLM]
+    rw [← TestFunction.coe_lineDerivCLM]
     exact (TestFunction.lineDerivCLM ℝ (1 : ℝ) φ).continuous.locallyIntegrable.locallyIntegrableOn _
   refine ((hφ.clm_comp (ContinuousLinearMap.toSpanSingleton ℝ (ι w))).congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [testField_ae φ w] with s hs
-    simp [hs]
+  · filter_upwards [testField_ae φ w, ι.coeFn_compLpL (testField φ w)] with s hs hι
+    rw [hι, hs]
+    simp
   · filter_upwards [testField_ae (TestFunction.lineDerivCLM ℝ (1 : ℝ) φ) (ι w)] with s hs
     simp [hs]
 
@@ -336,21 +410,22 @@ private theorem integral_inner_eq_zero_of_mem_orthogonal
     ∫ s, (lineDeriv ℝ (φ : ℝ → ℝ) s 1 * ⟪ι w, g s⟫_ℝ + φ s * ⟪A w, g s⟫_ℝ) = 0 := by
   have h := (Submodule.mem_orthogonal _ g).1 hg _
     (LinearMap.mem_range_self (domainTrajectoryOperator ι A).toLinearMap
-      (ofDeriv _ _ (hasWeakLineDerivOn_testField (ι := ι) φ w)))
-  rw [ContinuousLinearMap.coe_coe, domainTrajectoryOperator_ofDeriv, L2.inner_def] at h
+      (mkLine _ _ _ (hasWeakLineDerivOn_testField (ι := ι) φ w)))
+  rw [ContinuousLinearMap.coe_coe, domainTrajectoryOperator_mkLine, L2.inner_def] at h
   rw [← integral_restrict_top, ← h]
   refine integral_congr_ae ?_
   filter_upwards [Lp.coeFn_add (testField (TestFunction.lineDerivCLM ℝ (1 : ℝ) φ) (ι w))
       (A.compLp (testField φ w)),
     testField_ae (TestFunction.lineDerivCLM ℝ (1 : ℝ) φ) (ι w), A.coeFn_compLp (testField φ w),
     testField_ae φ w] with s h₁ h₂ h₃ h₄
-  rw [h₁, Pi.add_apply, h₂, h₃, h₄, coe_lineDerivCLM]
+  rw [h₁, Pi.add_apply, h₂, h₃, h₄, TestFunction.coe_lineDerivCLM]
   simp [inner_add_left, real_inner_smul_left]
 
-/-- The restriction of `volume` to the whole line is `volume`. -/
-private theorem volume_le_restrict_top :
-    (volume : Measure ℝ) ≤ volume.restrict ((⊤ : Opens ℝ) : Set ℝ) := by
-  rw [Opens.coe_top, Measure.restrict_univ]
+omit [CompleteSpace W] [CompleteSpace H] in
+/-- For invertible `A`, `‖w‖ ≤ ‖A⁻¹‖ ‖A w‖`. -/
+private theorem norm_le_norm_inverse_mul (hinv : A.IsInvertible) (w : W) :
+    ‖w‖ ≤ ‖A.inverse‖ * ‖A w‖ := by
+  simpa [hinv.inverse_apply_self] using A.inverse.le_opNorm (A w)
 
 /-- For a symmetric invertible `A`, an `L²` field orthogonal to the range of the trajectory
 operator vanishes. -/
@@ -384,31 +459,26 @@ private theorem eq_zero_of_mem_orthogonal (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = �
       conv_lhs => rw [← hinv.self_apply_inverse c]
       rw [hA, hs', hinv.self_apply_inverse]
     simp only [inner_add_right, real_inner_smul_right, hc, hinv.self_apply_inverse]
+  have hweak' := hweak.congr_ae (ι.coeFn_compLpL ζ).symm
   -- Then `D_{-A} ζ = 0`, and the energy identity for `-A` gives `A ζ = 0`.
   have hA' : ∀ x y, ⟪(-A) x, ι y⟫_ℝ = ⟪ι x, (-A) y⟫_ℝ := fun x y ↦ by simp [hA]
   have hneg : (-A).compLp ζ = -g := by
-    rw [← hAζ]
-    refine Lp.ext ?_
-    filter_upwards [(-A).coeFn_compLp ζ, Lp.coeFn_neg (A.compLp ζ), A.coeFn_compLp ζ]
-      with s h₁ h₂ h₃
-    rw [h₁, h₂, Pi.neg_apply, h₃, neg_apply]
-  have hD : domainTrajectoryOperator ι (-A) (ofDeriv ζ g hweak) = 0 := by
-    rw [domainTrajectoryOperator_ofDeriv, hneg, add_neg_cancel]
-  have hE := norm_domainTrajectoryOperator_sq hA' (ofDeriv ζ g hweak)
-  rw [hD, ofDeriv, prev_mk, hneg, norm_zero, norm_neg] at hE
-  have hg0 : ‖g‖ ^ 2 = 0 := by nlinarith [sq_nonneg ‖weakFDeriv _ (ofDeriv ζ g hweak)‖]
+    simpa only [neg_one_smul, hAζ] using ContinuousLinearMap.smul_compLp (-1 : ℝ) A ζ
+  have hD : domainTrajectoryOperator ι (-A) (mkLine _ ζ g hweak') = 0 := by
+    rw [domainTrajectoryOperator_mkLine, hneg, add_neg_cancel]
+  have hE := norm_domainTrajectoryOperator_sq hA' (mkLine _ ζ g hweak')
+  rw [hD, prev_mkLine, hneg, norm_zero, norm_neg, norm_weakFDeriv_mkLine] at hE
+  have hg0 : ‖g‖ ^ 2 = 0 := by nlinarith
   exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hg0)
 
 /-- **Surjectivity.** For `A` symmetric relative to `ι` and invertible, every `f ∈ L²(ℝ, H)` is
 `(ι ξ)' + A ξ` for some `ξ` in the domain. -/
 theorem surjective_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
     (hinv : A.IsInvertible) : Function.Surjective (domainTrajectoryOperator ι A) := by
-  have hC (w : W) : ‖w‖ ≤ ‖A.inverse‖ * ‖A w‖ := by
-    simpa [hinv.inverse_apply_self] using A.inverse.le_opNorm (A w)
   set K := LinearMap.range (domainTrajectoryOperator ι A).toLinearMap
   have hK : IsClosed (K : Set (Lp H 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) := by
     rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe]
-    exact isClosed_range_domainTrajectoryOperator hA hC
+    exact isClosed_range_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv)
   have hperp : Kᗮ = ⊥ := (Submodule.eq_bot_iff _).2 fun g hg ↦ eq_zero_of_mem_orthogonal hA hinv hg
   have htop : K = ⊤ := by
     rw [← hK.submodule_topologicalClosure_eq]
@@ -419,27 +489,33 @@ theorem surjective_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ =
 `ι` and invertible, `ξ ↦ (ι ξ)' + A ξ` is an isomorphism from the domain
 `TauCeti.TrajectoryDomain ι` onto `L²(ℝ, H)`. -/
 theorem isInvertible_domainTrajectoryOperator (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
-    (hinv : A.IsInvertible) : (domainTrajectoryOperator ι A).IsInvertible := by
-  have hC (w : W) : ‖w‖ ≤ ‖A.inverse‖ * ‖A w‖ := by
-    simpa [hinv.inverse_apply_self] using A.inverse.le_opNorm (A w)
-  exact ⟨ContinuousLinearEquiv.ofBijective (domainTrajectoryOperator ι A)
-    (LinearMap.ker_eq_bot.2 (injective_domainTrajectoryOperator hA hC))
-    (LinearMap.range_eq_top.2 (surjective_domainTrajectoryOperator hA hinv)), rfl⟩
+    (hinv : A.IsInvertible) : (domainTrajectoryOperator ι A).IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
+    (surjective_domainTrajectoryOperator hA hinv)
+    (norm_le_mul_norm_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv))
 
-/-- **The weighted trajectory operator.** For `A` symmetric relative to `ι` and invertible, the
-trajectory operator `ξ ↦ (ι ξ)' + A ξ - δ ι ξ` of `A - δ ι` is invertible for every `δ` close to
-`0`. This is the operator `d/ds + A - δ` into which the exponential weight `e^{δ s}` turns
-`d/ds + A`. -/
+/-- **The inverse bound.** For `A` symmetric relative to `ι` and invertible, the inverse of the
+trajectory operator has operator norm at most `max ‖A⁻¹‖ 1`. -/
+theorem norm_inverse_domainTrajectoryOperator_le (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ)
+    (hinv : A.IsInvertible) :
+    ‖(domainTrajectoryOperator ι A).inverse‖ ≤ max ‖A.inverse‖ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+    (ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le
+      (surjective_domainTrajectoryOperator hA hinv)
+      (norm_le_mul_norm_domainTrajectoryOperator hA (norm_le_norm_inverse_mul hinv)))
+
+/-- **The weighted trajectory operator.** For `A` symmetric relative to `ι` and invertible, and
+any `C : W →L[ℝ] H`, the trajectory operator of `A - δ C` is invertible for every `δ` close to
+`0`. For `C = ι` this is the operator `d/ds + A - δ` into which the exponential weight `e^{δ s}`
+turns `d/ds + A`. -/
 theorem eventually_isInvertible_domainTrajectoryOperator_sub_smul
-    (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hinv : A.IsInvertible) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ), (domainTrajectoryOperator ι (A - δ • ι)).IsInvertible := by
-  have hcont : Continuous fun δ : ℝ ↦ A - δ • ι :=
+    (hA : ∀ x y, ⟪A x, ι y⟫_ℝ = ⟪ι x, A y⟫_ℝ) (hinv : A.IsInvertible) (C : W →L[ℝ] H) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), (domainTrajectoryOperator ι (A - δ • C)).IsInvertible := by
+  have hcont : Continuous fun δ : ℝ ↦ A - δ • C :=
     continuous_const.sub (continuous_id.smul continuous_const)
-  have hev : ∀ᶠ δ in 𝓝 (0 : ℝ), (A - δ • ι).IsInvertible :=
-    hcont.continuousAt.eventually (by simpa using hinv.eventually_nhds)
-  filter_upwards [hev] with δ hδ
-  refine isInvertible_domainTrajectoryOperator (fun x y ↦ ?_) hδ
-  simp only [sub_apply, smul_apply, inner_sub_left, inner_sub_right, real_inner_smul_left,
-    real_inner_smul_right, hA]
+  exact (hcont.tendsto' 0 A (by simp)).eventually <|
+    eventually_isInvertible_domainTrajectoryOperator (isInvertible_domainTrajectoryOperator hA hinv)
 
-end ContinuousLinearMap
+end Hilbert
+
+end TauCeti
