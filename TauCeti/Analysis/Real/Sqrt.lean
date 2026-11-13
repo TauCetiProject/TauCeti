@@ -143,4 +143,31 @@ theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
   rw [sq_sqrt hcx.le]
   field_simp
 
+
+/-- A relative error at most `1 - r⁻²` bounds square roots within the factor `r ≥ 1`.
+The reference value need not be assumed nonnegative. -/
+theorem sqrt_bounds_of_abs_sub_le {x y r : ℝ} (hr : 1 ≤ r)
+    (herror : |x - y| ≤ (1 - r⁻¹ ^ 2) * y) :
+    sqrt y / r ≤ sqrt x ∧ sqrt x ≤ r * sqrt y := by
+  rcases hr.eq_or_lt with h | hr
+  · subst r
+    have hxy : x = y := sub_eq_zero.mp (abs_nonpos_iff.mp (by simpa using herror))
+    simp [hxy]
+  have hrpos : 0 < r := zero_lt_one.trans hr
+  have hri : 0 < r⁻¹ := inv_pos.mpr hrpos
+  have hri1 : r⁻¹ < 1 := (inv_lt_one₀ hrpos).mpr hr
+  have hd : 0 < 1 - r⁻¹ ^ 2 := by
+    nlinarith [(sq_lt_sq₀ hri.le zero_le_one).mpr hri1]
+  have hy : 0 ≤ y := nonneg_of_mul_nonneg_right ((abs_nonneg _).trans herror) hd
+  have hrinv : r * r⁻¹ = 1 := mul_inv_cancel₀ hrpos.ne'
+  have hmargin : 1 - r⁻¹ ^ 2 ≤ r ^ 2 - 1 := by nlinarith [sq_nonneg (r - r⁻¹)]
+  have hupper : x ≤ (r * sqrt y) ^ 2 := by
+    rw [mul_pow, sq_sqrt hy]
+    nlinarith [(abs_le.mp herror).2, mul_le_mul_of_nonneg_right hmargin hy]
+  have hlower : (sqrt y / r) ^ 2 ≤ x := by
+    rw [div_pow, sq_sqrt hy, div_eq_mul_inv, ← inv_pow]
+    nlinarith [(abs_le.mp herror).1]
+  exact ⟨le_sqrt_of_sq_le hlower,
+    sqrt_le_iff.mpr ⟨mul_nonneg hrpos.le (sqrt_nonneg _), hupper⟩⟩
+
 end Real

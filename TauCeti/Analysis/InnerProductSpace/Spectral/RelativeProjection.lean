@@ -12,7 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 import TauCeti.LinearAlgebra.QuadraticForm.Signature
-import TauCeti.Analysis.Normed.Operator.Bilinear.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!

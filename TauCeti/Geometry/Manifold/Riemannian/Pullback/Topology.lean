@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Normed.Operator.Bilinear.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 

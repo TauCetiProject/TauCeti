@@ -14,7 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
-import TauCeti.Analysis.Normed.Operator.Bilinear.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Synthesis
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
