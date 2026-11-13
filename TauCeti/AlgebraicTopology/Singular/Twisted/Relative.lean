@@ -439,6 +439,15 @@ lemma twistedHomologyCoefficientMap_comp
       (P.twistedChainComplexCoefficientMap_comp f g)).trans
     (HomologicalComplex.homologyMap_comp _ _ _)
 
+/-- An isomorphism of local coefficient systems induces isomorphisms on relative twisted
+homology. -/
+instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (f : L ⟶ K) [IsIso f] (k : ℕ) : IsIso (P.twistedHomologyCoefficientMap f k) :=
+  ⟨P.twistedHomologyCoefficientMap (inv f) k, by
+    rw [← twistedHomologyCoefficientMap_comp, IsIso.hom_inv_id, twistedHomologyCoefficientMap_id],
+    by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
+      twistedHomologyCoefficientMap_id]⟩
+
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :
     LocalCoefficientSystem.twistedHomologyMap P.map L k ≫ P.twistedHomologyπ L k = 0 := by

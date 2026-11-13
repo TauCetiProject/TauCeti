@@ -111,7 +111,7 @@ theorem isInvolutiveComplexDistribution_eigenspace_I_iff :
     have hY : MDiff[U] (T% Y) := hYt.mono (hUst.trans inter_subset_right)
     have hJ {V : Π x : M, TangentSpace I x} (hV : MDiff[U] (T% V)) :
         MDiff[U] (T% fun y ↦ (-J) y (V y)) := fun y hy ↦
-      ((-J).mdifferentiableAt_apply mdifferentiableAt_id
+      ((-J).mdifferentiableAt_apply
         ((hV y hy).mdifferentiableAt (hU.mem_nhds hy))).mdifferentiableWithinAt
     have hmem (V : Π x : M, TangentSpace I x) (y : M) :
         (1 : ℂ) ⊗ₜ[ℝ] V y + Complex.I ⊗ₜ[ℝ] (-J) y (V y) ∈

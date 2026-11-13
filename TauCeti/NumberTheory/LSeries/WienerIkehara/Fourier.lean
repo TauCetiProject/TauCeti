@@ -38,7 +38,7 @@ The proofs are adapted from `PrimeNumberTheoremAnd/Wiener.lean` in the Apache-2.
 `second_fourier`, and `limiting_fourier_aux`. The statements here use Mathlib's
 `LSeriesSummable` directly, remove the source project's local `nterm` wrapper, and rely on
 Mathlib's APIs together with the local vertical-line continuity theorem
-`LSeriesSummable.continuous_LSeries_vertical`.
+`TauCeti.LSeries.continuous_vertical`.
 
 ## References
 
@@ -130,13 +130,13 @@ theorem tsum_term_mul_fourier_eq_integral (hpsi : Integrable psi) (hx : 0 < x)
         · exact (by fun_prop : Measurable fun u : ℝ ↦
             fourierChar (-(u * (1 / (2 * π) * Real.log (_ / x))))).aemeasurable.smul
               hpsi.aemeasurable
-      · simp only [enorm_mul]
+      · simp only [eNorm_mul]
         simp_rw [lintegral_const_mul'' _ (fourierIntegrand_aemeasurable hpsi.aestronglyMeasurable
           x _)]
         calc
           _ = (∑' n : ℕ, ‖_root_.LSeries.term a sigma n‖ₑ) *
               ∫⁻ u : ℝ, ‖psi u‖ₑ := by
-            simp [ENNReal.tsum_mul_right, enorm_eq_nnnorm]
+            simp [ENNReal.tsum_mul_right, eNorm_eq_nnNorm]
           _ ≠ ⊤ := ENNReal.mul_ne_top (summable_enorm_term_ne_top hsigma)
             (ne_top_of_lt hpsi.2)
     _ = _ := by
@@ -169,7 +169,7 @@ private lemma poleFubiniIntegrable (hpsi : Integrable psi) (hsigma : 1 < sigma) 
     let f₂ : ℝ → ENNReal := fun v ↦ ‖psi v‖ₑ
     suffices ∫⁻ p : ℝ × ℝ, f₁ p.1 * f₂ p.2
         ∂((volume.restrict (Ici (-Real.log x))).prod volume) < ⊤ by
-      simpa [hasFiniteIntegral_iff_enorm, enorm_eq_nnnorm, Function.uncurry,
+      simpa [hasFiniteIntegral_iff_eNorm, eNorm_eq_nnNorm, Function.uncurry,
         Complex.norm_exp]
     refine (lintegral_prod_mul ?_ ?_).trans_lt ?_ <;> try fun_prop
     exact ENNReal.mul_lt_top (exp_mul_integrableOn_Ici hsigma x).2 hpsi.2
@@ -252,7 +252,8 @@ private lemma integrable_LSeries_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < 
         simp only [_root_.LSeries.norm_term_eq]
         simp
   exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
-    (hsigmaSum.continuous_LSeries_vertical.mul (continuous_cpow_mul_I hx)).aestronglyMeasurable
+    ((TauCeti.LSeries.continuous_vertical a (sigma : ℂ)).mul
+      (continuous_cpow_mul_I hx)).aestronglyMeasurable
     (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
 
 /-- Subtracting the simple-pole Fourier identity from the Dirichlet-series identity leaves exactly

@@ -17,7 +17,9 @@ records that reindexing as a measurable equivalence, together with the restricti
 subblock.
 
 It also records that extending a family along an arbitrary map of index types, with a fixed
-default outside the range, is measurable in the family (`TauCeti.MeasureTheory.measurable_extend`).
+default outside the range, is measurable in the family
+(`TauCeti.MeasureTheory.measurable_extend`), and that reading a family along an arbitrary map of
+index types is measurable in the family (`TauCeti.MeasureTheory.measurable_comp_apply`).
 
 It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
 point `w` of a dependent product is the finset update of `w` by `z`
@@ -100,6 +102,12 @@ theorem _root_.Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateF
   ext i
   simp only [MeasurableEquiv.piEquivPiSubtypeProd_symm_apply,
     MeasurableEquiv.piEquivPiSubtypeProd_apply, Function.updateFinset_def]
+
+/-- Reading a family `u : κ → α` along a map `e : ι → κ`, that is, precomposing with `e`, is
+measurable in `u`. -/
+theorem measurable_comp_apply {ι κ : Type*} (e : ι → κ) :
+    Measurable fun (u : κ → α) (a : ι) ↦ u (e a) :=
+  Measurable.of_eval fun a ↦ measurable_pi_apply (e a)
 
 end MeasureTheory
 

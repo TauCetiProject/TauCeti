@@ -117,8 +117,7 @@ theorem explicitMap2_eq_self_of_inner [LocallyCompactSpace G] (g : G) (φ : G �
       ((hf m).trans (ofDiscreteModule_ρ_apply_apply g m).symm)
   apply (explicitH2AddEquivContinuousCohomology G M).injective
   rw [← explicitH2AddEquivContinuousCohomology_map G M G M φ f hequiv x,
-    TauCeti.ContinuousCohomology.map_eq_id_of_inner g φ hφ _ hF
-      (ofDiscreteModule_isSmoothDiscrete ℤ G M) 2]
+    TauCeti.ContinuousCohomology.map_eq_id_of_inner g φ hφ _ hF 2]
   rfl
 
 end TauCeti.ContCohomology

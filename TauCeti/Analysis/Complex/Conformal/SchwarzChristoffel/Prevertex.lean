@@ -137,7 +137,7 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
     (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
-    (hβ : β ∈ Ioo (0 : ℝ) 2) (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hβ : β ∈ Ioo (0 : ℝ) 2) (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
@@ -146,6 +146,24 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
     (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ f x →
       |((f z - f x) / b).arg| = β * Real.pi / 2) :
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 ((β : ℂ) - 1)) := by
+  -- `b = 0` is impossible: it would force `f` to be constant on the real points near `x`.
+  have hb : b ≠ 0 := by
+    rintro rfl
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩopen _ hx
+    have hz : ((x + ε / 2 : ℝ) : ℂ) ∈ Ω := hball (by
+      rw [Metric.mem_ball, Complex.dist_eq]
+      simp [abs_of_pos hε]
+      linarith)
+    have hfz : f ((x + ε / 2 : ℝ) : ℂ) = f x := by
+      by_contra hne
+      have h0 := hrays _ hz (by simp) hne
+      simp at h0
+      have := hβ.1
+      have := Real.pi_pos
+      nlinarith
+    have h := congrArg Complex.re (hinj ⟨hz, by simp⟩ ⟨hx, by simp⟩ hfz)
+    simp at h
+    linarith
   let g : ℂ → ℂ := fun z => (f z - f x) / b
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz w hw hzw
@@ -190,7 +208,7 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_div {φ f g : ℂ → ℂ} {x r β : ℝ}
     (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
-    (hβ : β ∈ Ioo (0 : ℝ) 2) (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hβ : β ∈ Ioo (0 : ℝ) 2) (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
     (hgf : EqOn g (fun z => b / (f z - c)) (Ω ∩ {z : ℂ | 0 < z.im}))
@@ -199,6 +217,19 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_div {φ f g : ℂ → ℂ} {x r β : ℝ}
     (hsector : ∀ z ∈ Ω, 0 < z.im → |(g z).arg| < β * Real.pi / 2)
     (hrays : ∀ z ∈ Ω, z.im = 0 → g z ≠ 0 → |(g z).arg| = β * Real.pi / 2) :
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-(β : ℂ) - 1)) := by
+  -- `b = 0` is impossible: it would make `g` vanish above the axis, against injectivity.
+  have hb : b ≠ 0 := by
+    rintro rfl
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩopen _ hx
+    have hz : (x : ℂ) + ((ε / 2 : ℝ) : ℂ) * Complex.I ∈ Ω := hball (by
+      rw [Metric.mem_ball, Complex.dist_eq]
+      simp [abs_of_pos hε]
+      linarith)
+    have him : 0 < ((x : ℂ) + ((ε / 2 : ℝ) : ℂ) * Complex.I).im := by simpa using hε
+    have h := congrArg Complex.im (hinj ⟨hz, him.le⟩ ⟨hx, by simp⟩
+      ((hgf ⟨hz, him⟩).trans (by simp [hgx])))
+    simp at h
+    linarith
   -- Above the axis `g` omits its value `0` at `x`, so `f` omits `c` there.
   have hden : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im}, f z - c ≠ 0 := fun z hz h0 => by
     have him : 0 < z.im := hz.2
@@ -250,7 +281,7 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_exp {φ f g : ℂ → ℂ} {x r : ℝ} {�
     (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
-    (hb : b ≠ 0) (hΩopen : IsOpen Ω) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
+    (hΩopen : IsOpen Ω) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
     (hgf : EqOn g (fun z => exp ((f z - c) / b)) (Ω ∩ {z : ℂ | 0 < z.im}))
     (hgx : g x = 0) (hcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
@@ -258,6 +289,20 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_exp {φ f g : ℂ → ℂ} {x r : ℝ} {�
     (hupper : MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im})
     (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im})) :
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-1)) := by
+  -- `b = 0` is impossible: it would make `g` equal to `1` above the axis, against `hupper`.
+  have hb : b ≠ 0 := by
+    rintro rfl
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩopen _ hx
+    have hz : (x : ℂ) + ((ε / 2 : ℝ) : ℂ) * Complex.I ∈ Ω := hball (by
+      rw [Metric.mem_ball, Complex.dist_eq]
+      simp [abs_of_pos hε]
+      linarith)
+    have him : 0 < ((x : ℂ) + ((ε / 2 : ℝ) : ℂ) * Complex.I).im := by simpa using hε
+    generalize (x : ℂ) + ((ε / 2 : ℝ) : ℂ) * Complex.I = z at hz him
+    have h : 0 < (g z).im := hupper ⟨hz, him⟩
+    have h0 := hgf ⟨hz, him⟩
+    simp only [div_zero, Complex.exp_zero] at h0
+    simp [h0] at h
   have hF : DifferentiableOn ℂ (fun z => (f z - c) / b) (Ω ∩ {z : ℂ | 0 < z.im}) :=
     (hholo.sub_const c).div_const b
   have hgd : DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) := hF.cexp.congr fun z hz => hgf hz
@@ -303,7 +348,7 @@ theorem tendsto_sub_mul_nhdsNE_of_halfStripExterior {φ f : ℂ → ℂ} {x r δ
     (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Metric.ball (x : ℂ) δ))
-    (hδ : 0 < δ) (hb : b ≠ 0)
+    (hb : b ≠ 0)
     (hf : DifferentiableOn ℂ f (Metric.ball (x : ℂ) δ ∩ upperHalfPlaneSet))
     (hfc : ContinuousOn f ((Metric.closedBall (x : ℂ) δ ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}))
     (hfi : InjOn f ((Metric.closedBall (x : ℂ) δ ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}))
@@ -311,6 +356,21 @@ theorem tendsto_sub_mul_nhdsNE_of_halfStripExterior {φ f : ℂ → ℂ} {x r δ
     (hU : ∀ w : ℂ, ρ < ‖w - c‖ → (w ∈ f '' (Metric.ball (x : ℂ) δ ∩ upperHalfPlaneSet) ↔
       ((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)) :
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-3)) := by
+  -- `δ ≤ 0` is impossible: the image of the empty ball would omit points far from `c`.
+  have hδ : 0 < δ := by
+    by_contra hδ
+    have hball : Metric.ball (x : ℂ) δ = ∅ := Metric.ball_eq_empty.mpr (not_lt.mp hδ)
+    have hnb : 0 < ‖b‖ := norm_pos_iff.mpr hb
+    set w : ℂ := c - (((|ρ| + 1) / ‖b‖ : ℝ) : ℂ) * b with hw
+    have hwc : w - c = -((((|ρ| + 1) / ‖b‖ : ℝ) : ℂ)) * b := by rw [hw]; ring
+    have hdiv : (w - c) / b = -(((|ρ| + 1) / ‖b‖ : ℝ) : ℂ) := by
+      rw [hwc, mul_div_assoc, div_self hb, mul_one]
+    have hnorm : ‖w - c‖ = |ρ| + 1 := by
+      rw [hwc, norm_mul, norm_neg, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_pos (by positivity), div_mul_cancel₀ _ hnb.ne']
+    have hmem := (hU w (by rw [hnorm]; linarith [le_abs_self ρ])).mpr
+      (Or.inl (by rw [hdiv]; simpa using by positivity))
+    simp [hball] at hmem
   refine tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj
     ((tendsto_sub_mul_logDeriv_deriv_nhdsWithin_of_halfStripExterior hδ hb hf hfc hfi hp
       hU).congr' ?_)

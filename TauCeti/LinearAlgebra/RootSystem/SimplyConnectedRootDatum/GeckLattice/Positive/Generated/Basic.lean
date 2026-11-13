@@ -354,7 +354,7 @@ theorem isReduced_geckPositiveGeneratedCoordinateHopfAlgebra :
 private theorem geometricallyConnected_geckPositiveGeneratorCoordinateAlgebra :
     ∀ j, geometricallyConnectedCommHopfAlgProperty k
       (t.geckPositiveGeneratorCoordinateAlgebra k j) := by
-  rintro (i | u)
+  rintro (_ | _)
   · exact AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k
   · exact DiagonalizableGroup.geometricallyConnected_coordinateRing k
       (SplitTorus.characterGroup (Fin t.rank))

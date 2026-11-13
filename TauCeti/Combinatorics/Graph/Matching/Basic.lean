@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 
 /-!
 # Matchings in multigraphs

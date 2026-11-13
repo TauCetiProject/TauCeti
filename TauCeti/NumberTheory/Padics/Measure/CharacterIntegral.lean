@@ -65,19 +65,22 @@ eigenvalue `ν κ`. -/
 @[simp]
 theorem convolveFunRight_continuousMonoidHom (ν : D(G, R)) (κ : G →ₜ* R) :
     convolveFunRight ν (κ : C(G, R)) = ν κ • (κ : C(G, R)) := by
-  ext x
-  rw [convolveFunRight_apply, ContinuousMap.smul_apply, smul_eq_mul, mul_comm, ← smul_eq_mul,
-    ← map_smul ν ((κ : C(G, R)) x) (κ : C(G, R))]
-  congr 1
-  ext y
-  simp
+  simpa using convolveFunRight_eq_sum (s := {()}) ν (f := κ) (g := fun _ ↦ κ) (h := fun _ ↦ κ)
+    (by simp)
 
 variable [LocallyCompactSpace G]
 
-/-- The scalar measure `r ∈ R` is `r` times the Dirac measure at `1`. -/
+/-- The scalar measure `r ∈ R` is `r` times the Dirac measure at `1`: it integrates `f` to
+`r * f 1`. -/
 @[simp]
 theorem algebraMap_apply (r : R) (f : C(G, R)) : algebraMap R D(G, R) r f = r * f 1 := by
   simp [Algebra.algebraMap_eq_smul_one]
+
+/-- The total mass of a convolution is the product of the total masses. -/
+@[simp]
+theorem mul_apply_one (μ ν : D(G, R)) : (μ * ν) 1 = μ 1 * ν 1 := by
+  simpa using mul_apply_eq_sum (s := {()}) μ ν (f := 1) (g := fun _ ↦ 1) (h := fun _ ↦ 1)
+    (by simp)
 
 end AbstractMeasure
 
@@ -92,12 +95,10 @@ homomorphism from the convolution algebra `D(G, R)` to `R`. -/
 def characterIntegralAlgHom (κ : G →ₜ* R) : D(G, R) →ₐ[R] R where
   toFun μ := μ κ
   map_one' := by simp
-  map_mul' μ ν := by
-    rw [AbstractMeasure.mul_apply, AbstractMeasure.convolveFunRight_continuousMonoidHom,
-      map_smul, smul_eq_mul, mul_comm]
+  map_mul' μ ν := by simp [AbstractMeasure.mul_apply, mul_comm]
   map_zero' := rfl
   map_add' _ _ := rfl
-  commutes' r := by simp [AbstractMeasure.algebraMap_apply]
+  commutes' r := by simp
 
 /-- The character integral `characterIntegralAlgHom κ` evaluates a measure `μ` at `κ`. -/
 @[simp]
@@ -113,12 +114,9 @@ theorem characterIntegralAlgHom_dirac (κ : G →ₜ* R) (g : G) :
 /-- The integral of the trivial character is the total mass `μ 1`. It has high priority so that
 `simp` reaches `μ 1` rather than unfolding by `characterIntegralAlgHom_apply` to `μ ↑1`. -/
 @[simp high]
-theorem characterIntegralAlgHom_one_character (μ : D(G, R)) :
-    characterIntegralAlgHom 1 μ = μ 1 := by
-  have h : ((1 : G →ₜ* R) : C(G, R)) = 1 := by
-    ext
-    simp
-  rw [characterIntegralAlgHom_apply, h]
+theorem characterIntegralAlgHom_one_apply (μ : D(G, R)) :
+    characterIntegralAlgHom 1 μ = μ 1 :=
+  congrArg μ (ContinuousMap.ext fun _ ↦ by simp)
 
 /-- On Dirac measures, the character integral recovers the character. -/
 @[simp]
@@ -142,18 +140,16 @@ def mapAlgHom (φ : G →ₜ* H) : D(G, R) →ₐ[R] D(H, R) where
   map_mul' μ ν := by
     ext f
     simp only [AbstractMeasure.map_apply, AbstractMeasure.mul_apply]
-    congr 1
-    ext x
+    congr 1 with x
     simp only [ContinuousMap.comp_apply, AbstractMeasure.convolveFunRight_apply,
       AbstractMeasure.map_apply]
-    congr 1
-    ext y
+    congr 1 with y
     simp
   map_zero' := map_zero _
   map_add' := map_add _
   commutes' r := by
     ext f
-    simp [AbstractMeasure.algebraMap_apply]
+    simp
 
 /-- The algebra homomorphism `mapAlgHom φ` sends `μ` to its pushforward `map φ μ`. -/
 @[simp]
@@ -192,22 +188,6 @@ theorem characterIntegralAlgHom_comp_mapAlgHom (φ : G →ₜ* H) (κ : H →ₜ
   exact congrArg μ (ContinuousMap.ext fun _ ↦ by simp)
 
 end MapAlgHom
-
-end ContinuousMonoidHom
-
-namespace AbstractMeasure
-
-variable [Monoid G] [ContinuousMul G] [LocallyCompactSpace G]
-
-open ContinuousMonoidHom in
-/-- The total mass of a convolution is the product of the total masses. -/
-@[simp]
-theorem mul_apply_one (μ ν : D(G, R)) : (μ * ν) 1 = μ 1 * ν 1 := by
-  simpa only [characterIntegralAlgHom_one_character] using map_mul (characterIntegralAlgHom 1) μ ν
-
-end AbstractMeasure
-
-namespace ContinuousMonoidHom
 
 /-! The character integrals on the sign group `ℤˣ = {±1}` over `ℤ`. -/
 
