@@ -30,7 +30,7 @@ The tails decay like `1 / |x|`, so `M f` is not integrable although `f` is
 (`TauCeti.lintegral_maximalFunction_indicator_Icc_eq_top`): **the maximal function is not
 bounded on `L¹`**, and the weak type `(1, 1)` bound `TauCeti.mul_measure_lt_maximalFunction_le`
 is the correct `L¹` statement. The superlevel sets are explicit: for `0 < t ≤ 1 / 2`,
-`{M f > t}` is the interval of half-length `(b - a) / (2 t)` about the midpoint of `[a, b]`
+`{M f > t}` is the interval of half-length `(1 - t) (b - a) / (2 t)` about the midpoint of `[a, b]`
 (`TauCeti.setOf_lt_maximalFunction_indicator_Icc`), so
 
 `t · |{M f > t}| = (1 - t) (b - a) = (1 - t) ‖f‖₁`
@@ -186,7 +186,8 @@ theorem lintegral_maximalFunction_indicator_Icc_eq_top (hab : a < b) :
     simpa [IntegrableOn, inv_mul_cancel_left₀ hk.ne'] using hint.const_mul k⁻¹)
 
 /-- For `0 < t ≤ 1 / 2`, the set where the maximal function of the indicator of `[a, b]` exceeds
-`t` is the open interval of half-length `(b - a) / (2 t)` about the midpoint of `[a, b]`. -/
+`t` is the open interval of half-length `(1 - t) (b - a) / (2 t)` about the midpoint of
+`[a, b]`. -/
 theorem setOf_lt_maximalFunction_indicator_Icc (hab : a < b) {t : ℝ} (ht : 0 < t)
     (ht' : t ≤ 1 / 2) :
     {x | ENNReal.ofReal t < maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x} =
