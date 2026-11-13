@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Degree
-import Mathlib.SetTheory.Cardinal.Finite
-import TauCeti.GroupTheory.Solvable
 
 /-!
 # Polynomials with full symmetric Galois group
@@ -19,10 +17,8 @@ The predicate is also available as `f.HasFullSymmetricGaloisGroup` by dot notati
 
 The property can be checked in any field where `f` splits, or by checking that the Galois
 group has order `f.natDegree!`. A numbering of the roots gives an explicit group isomorphism
-with the permutations of `Fin f.natDegree`, showing in particular that `f.Gal` is solvable if and
-only if `f.natDegree ≤ 4` (`HasFullSymmetricGaloisGroup.isSolvable_iff`). These interfaces connect
-reduction criteria for Galois groups with realizations of symmetric groups over the rational
-numbers.
+with the permutations of `Fin f.natDegree`. These interfaces connect reduction criteria
+for Galois groups with realizations of symmetric groups over the rational numbers.
 -/
 
 public section
@@ -93,25 +89,6 @@ theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGalo
   obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hf.separable (SplittingField.splits f)
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
     ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
-
-/-- A polynomial of degree at least five with full symmetric Galois group has a non-solvable
-Galois group. -/
-theorem HasFullSymmetricGaloisGroup.not_isSolvable (hf : f.HasFullSymmetricGaloisGroup)
-    (hdeg : 5 ≤ f.natDegree) :
-    ¬ Group.IsSolvable f.Gal := by
-  obtain ⟨e⟩ := hf.nonempty_mulEquiv
-  intro hsolv
-  have := e.isSolvable_congr.mp hsolv
-  refine Equiv.Perm.not_isSolvable (Fin f.natDegree) ?_ inferInstance
-  rw [Cardinal.mk_fin]
-  exact_mod_cast hdeg
-
-/-- For a polynomial with full symmetric Galois group, `f.Gal` is solvable if and only if
-`f.natDegree ≤ 4`. -/
-theorem HasFullSymmetricGaloisGroup.isSolvable_iff (hf : f.HasFullSymmetricGaloisGroup) :
-    Group.IsSolvable f.Gal ↔ f.natDegree ≤ 4 :=
-  ⟨fun hsolv ↦ not_lt.mp fun hlt ↦ hf.not_isSolvable hlt hsolv,
-    isSolvable_gal_of_natDegree_le_four⟩
 
 /-- A power of a nonunit polynomial with exponent at least two cannot have full symmetric
 Galois group. -/

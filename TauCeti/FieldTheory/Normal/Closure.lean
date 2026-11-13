@@ -123,8 +123,9 @@ theorem isSplittingField_normalClosure_adjoin_simple {x : E} (hx : IsIntegral F 
   rw [normalClosure_adjoin_simple_eq_adjoin_rootSet hx hsplit]
   exact adjoin_rootSet_isSplittingField hsplit
 
-/-- When every minimal polynomial of an algebraic extension `K / F` splits in `E`,
-`normalClosure F K E` is normal over `F`. -/
+/-- When every minimal polynomial of an algebraic extension `K / F` splits in `E` (generalizing
+`IntermediateField.normalClosure.normal` by dropping `[Normal F E]`), `normalClosure F K E` is
+normal over `F`. -/
 theorem normal_normalClosure_of_splits {K : Type*} [Field K] [Algebra F K]
     [Algebra.IsAlgebraic F K] (splits : ∀ x : K, ((minpoly F x).map (algebraMap F E)).Splits) :
     Normal F (normalClosure F K E) :=
@@ -140,9 +141,10 @@ theorem isGalois_normalClosure_of_splits {K : Type*} [Field K] [Algebra F K]
   have : Normal F (normalClosure F K E) := normal_normalClosure_of_splits splits
   exact ⟨⟩
 
-/-- **Monotonicity of `normalClosure` under splitting.** If `K₁ ≤ K₂` are intermediate fields of
-`E / F` with `K₂ / F` algebraic and every minimal polynomial of `K₂ / F` splitting in `E`, then
-`normalClosure F K₁ E ≤ normalClosure F K₂ E`. -/
+/-- **Monotonicity of `normalClosure` under splitting.** Generalizing
+`IntermediateField.normalClosure_mono` by dropping `[Normal F E]`, if `K₁ ≤ K₂` are intermediate
+fields of `E / F` with `K₂ / F` algebraic and every minimal polynomial of `K₂ / F` splitting in `E`,
+then `normalClosure F K₁ E ≤ normalClosure F K₂ E`. -/
 theorem normalClosure_mono_of_splits {K₁ K₂ : IntermediateField F E}
     [Algebra.IsAlgebraic F K₂]
     (splits : ∀ x : K₂, ((minpoly F x).map (algebraMap F E)).Splits) (h : K₁ ≤ K₂) :
@@ -210,21 +212,15 @@ theorem exists_isGalois_superset {S : Set E} (hS : S.Finite)
   exact ⟨normalClosure F (adjoin F S) E, inferInstance, isGalois_normalClosure_adjoin h,
     (subset_adjoin F S).trans (le_normalClosure (adjoin F S))⟩
 
-section AlgClosed
-
-variable [IsAlgClosed E]
-
 /-- **A finite set of algebraic elements lies in a finite Galois subextension** of an
 algebraically closed field over a perfect field; for instance, finitely many algebraic numbers lie
 in a finite Galois subfield of `ℂ / ℚ`. -/
-theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] {S : Set E}
+theorem exists_isGalois_superset_of_isAlgClosed [PerfectField F] [IsAlgClosed E] {S : Set E}
     (hS : S.Finite) (h : ∀ s ∈ S, IsAlgebraic F s) :
     ∃ L : IntermediateField F E, FiniteDimensional F L ∧ IsGalois F L ∧ S ⊆ L :=
   exists_isGalois_superset hS fun s hs ↦
     ⟨PerfectField.separable_of_irreducible (minpoly.irreducible (h s hs).isIntegral),
       IsAlgClosed.splits _⟩
-
-end AlgClosed
 
 end TauCeti
 

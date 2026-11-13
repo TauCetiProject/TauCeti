@@ -6,23 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
-public import Mathlib.FieldTheory.Minpoly.Basic
-public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.FieldTheory.IntermediateField.Algebraic
+import Mathlib.FieldTheory.Minpoly.Field
 
 /-!
-# Membership and generation in intermediate fields obtained by adjoining elements
+# Membership in intermediate fields obtained by adjoining elements
 
 Linear expressions `a + b * x` with coefficients in an intermediate field `F` belong to
 `F ⊔ K⟮x⟯`, without any algebraic relation on `x`. The image of `K(S)` under a tower map `L → M`
 is `K(S')` for the image `S'` of `S`; in particular, the image of `K⟮x⟯` is `K⟮x⟯` for the image
 of `x`. A root of an irreducible polynomial generates the bottom intermediate field exactly when
-the polynomial is linear, and an element of a finite-dimensional intermediate field `F / K` whose
-minimal polynomial has degree at least `[F : K]` generates `F`. Adjoining the elements of a family
-indexed by `Option α` splits as adjoining those indexed by `some i` and then the one indexed by
-`none`.
+the polynomial is linear. Adjoining the elements of a family indexed by `Option α` splits as
+adjoining those indexed by `some i` and then the one indexed by `none`.
 -/
 
 public section
@@ -75,17 +69,6 @@ theorem adjoin_simple_eq_bot_iff_natDegree_eq_one {p : K[X]} {x : L} (hp : Irred
       natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))]
   rw [adjoin_simple_eq_bot_iff, mem_bot, ← RingHom.coe_range, SetLike.mem_coe,
     ← minpoly.natDegree_eq_one_iff, hdeg]
-
-/-- An element `x` of a finite-dimensional intermediate field `F / K` whose minimal polynomial has
-degree at least `[F : K]` generates `F` over `K`. -/
-theorem adjoin_simple_eq_of_finrank_le_natDegree_minpoly {F : IntermediateField K L}
-    [FiniteDimensional K F] {x : L} (hx : x ∈ F)
-    (hdeg : Module.finrank K F ≤ (minpoly K x).natDegree) :
-    K⟮x⟯ = F := by
-  have hx_int : IsIntegral K x :=
-    isIntegral_iff.mp (Algebra.IsIntegral.isIntegral (⟨x, hx⟩ : F))
-  refine eq_of_le_of_finrank_le (adjoin_simple_le_iff.mpr hx) ?_
-  rwa [adjoin.finrank hx_int]
 
 end TauCeti.IntermediateField
 
