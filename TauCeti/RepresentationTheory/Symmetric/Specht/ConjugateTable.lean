@@ -102,15 +102,16 @@ irreducible character by the sign (`TauCeti.irreducibleCharacter_conjugateIrredu
 noncomputable def conjugateIrreducibleIndex (n : ℕ) :
     Equiv.Perm (Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))) :=
   (partitionEquivIrreducibleIndex n).permCongr
-    ⟨Nat.Partition.conjugate, Nat.Partition.conjugate, Nat.Partition.conjugate_conjugate,
-      Nat.Partition.conjugate_conjugate⟩
+    (Function.Involutive.toPerm Nat.Partition.conjugate Nat.Partition.conjugate_conjugate)
 
 /-- The row involution sends the row of `χ^μ` to the row of `χ^(μᵗ)`. -/
 @[simp]
 theorem conjugateIrreducibleIndex_partitionEquivIrreducibleIndex (μ : n.Partition) :
     conjugateIrreducibleIndex n (partitionEquivIrreducibleIndex n μ) =
       partitionEquivIrreducibleIndex n μ.conjugate := by
-  simp [conjugateIrreducibleIndex, Equiv.permCongr_apply]
+  rw [conjugateIrreducibleIndex, Equiv.permCongr_apply, Equiv.symm_apply_apply]
+  -- `Function.Involutive.toPerm f` applies `f` by definition (`Function.Involutive.coe_toPerm`).
+  rfl
 
 /-- The row involution read through the labelling of the rows by partitions. -/
 theorem conjugateIrreducibleIndex_apply (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin n))))) :
@@ -133,12 +134,33 @@ theorem conjugateIrreducibleIndex_conjugateIrreducibleIndex
     conjugateIrreducibleIndex n (conjugateIrreducibleIndex n i) = i := by
   simp [conjugateIrreducibleIndex_apply]
 
+/-- The row involution is an involution, as a function. -/
+theorem conjugateIrreducibleIndex_involutive : Function.Involutive (conjugateIrreducibleIndex n) :=
+  conjugateIrreducibleIndex_conjugateIrreducibleIndex
+
 /-- The row involution is its own inverse. -/
 @[simp]
 theorem conjugateIrreducibleIndex_symm :
     (conjugateIrreducibleIndex n).symm = conjugateIrreducibleIndex n :=
-  Equiv.ext fun i ↦ by
-    rw [Equiv.symm_apply_eq, conjugateIrreducibleIndex_conjugateIrreducibleIndex]
+  Function.Involutive.symm_eq_self_of_involutive _ conjugateIrreducibleIndex_involutive
+
+/-- The row involution composed with itself is the identity. -/
+@[simp]
+theorem conjugateIrreducibleIndex_trans_self :
+    (conjugateIrreducibleIndex n).trans (conjugateIrreducibleIndex n) = Equiv.refl _ :=
+  Equiv.ext conjugateIrreducibleIndex_conjugateIrreducibleIndex
+
+/-- The row involution squares to the identity permutation. -/
+@[simp]
+theorem conjugateIrreducibleIndex_mul_self :
+    conjugateIrreducibleIndex n * conjugateIrreducibleIndex n = 1 :=
+  Equiv.ext conjugateIrreducibleIndex_conjugateIrreducibleIndex
+
+/-- The row involution is its own inverse in the permutation group. -/
+@[simp]
+theorem conjugateIrreducibleIndex_inv :
+    (conjugateIrreducibleIndex n)⁻¹ = conjugateIrreducibleIndex n :=
+  conjugateIrreducibleIndex_symm
 
 /-- **Conjugating the shape multiplies an irreducible character of `Sₙ` by the sign**: the
 character enumerated at the row `conjugateIrreducibleIndex n i` is `σ ↦ sgn(σ) χᵢ(σ)`. -/
