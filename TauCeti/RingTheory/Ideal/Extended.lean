@@ -128,11 +128,7 @@ theorem map_algebraMap_eq_top_iff [Module.Free R A] [Nontrivial A] {I : Ideal R}
   obtain ⟨i⟩ := B.index_nonempty
   have hmem : B i ∈ I • (⊤ : Submodule R A) :=
     (mem_map_algebraMap_iff I).mp (h ▸ Submodule.mem_top)
-  have h1 : B.coord i (B i) ∈ (I • (⊤ : Submodule R A)).map (B.coord i) :=
-    Submodule.mem_map_of_mem hmem
-  rw [Submodule.map_smul''] at h1
-  simpa [Ideal.eq_top_iff_one] using
-    Submodule.smul_mono le_rfl le_top h1
+  simpa [Ideal.eq_top_iff_one] using (B.coord i).apply_mem_of_mem_smul_top hmem
 
 /-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. -/
 instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided :=
