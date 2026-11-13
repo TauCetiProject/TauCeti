@@ -279,7 +279,7 @@ instance isClosedImmersion_weightParabolicInclusion (w : Fin N → α) :
   infer_instance
 
 /-- The weight-parabolic coordinate Hopf algebra with its finite-type property. -/
-noncomputable def weightParabolicFiniteTypeCoordinateHopfAlgebra (w : Fin N → α) :
+noncomputable abbrev weightParabolicFiniteTypeCoordinateHopfAlgebra (w : Fin N → α) :
     FiniteTypeCommHopfAlgCat R :=
   ⟨weightParabolicCoordinateHopfAlgebra R w,
     inferInstanceAs (Algebra.FiniteType R (weightParabolicCoordinateHopfAlgebra R w))⟩
