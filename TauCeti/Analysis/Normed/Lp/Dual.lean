@@ -164,7 +164,8 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (f : StrongDual 𝕜 (lp (fu
         rw [← Real.rpow_mul hv₀.le, h.symm.sub_one_mul_conj, hv]
     _ ≤ ‖f‖ ^ p.toReal := Real.rpow_le_rpow (by positivity) hle hp₀.le
 
-/-- The coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family. -/
+/-- For Hölder conjugate exponents `p` and `q`, the coordinate values `f eᵢ` of a continuous linear
+functional `f` on `ℓ^q` form an `ℓᵖ` family. -/
 theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     Memℓp (fun i ↦ f (lp.single q i 1)) p := by
   rcases eq_or_ne p ∞ with rfl | hp
@@ -173,8 +174,8 @@ theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
     exact f.norm_apply_lp_single_le i
   · exact memℓp_gen' (f.sum_norm_lp_single_rpow_le hp)
 
-/-- An `ℓᵖ` family of coordinate values of a functional on `ℓ^q` has norm at most the norm of the
-functional. -/
+/-- For Hölder conjugate exponents `p` and `q`, an `ℓᵖ` family `a` whose entries are the coordinate
+values `f eᵢ` of a continuous linear functional `f` on `ℓ^q` has norm at most `‖f‖`. -/
 theorem norm_le_opNorm_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (a : lp (fun _ : ι ↦ 𝕜) p) (ha : ∀ i, a i = f (lp.single q i 1)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
