@@ -207,6 +207,7 @@ theorem irreducibleMorphismValuation_snd_eq_one_iff :
     rw [residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff]
     simpa using neg_mem ha
 
+variable {X Y} in
 /-- **The valuation is `(1, 1)` when one irreducible morphism spans over the base**: if every
 radical morphism `X ⟶ Y` is, modulo the square of the radical, a scalar multiple of one
 irreducible `f : X ⟶ Y`, then both entries of the valuation are one. -/
