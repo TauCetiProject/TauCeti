@@ -145,7 +145,7 @@ theorem contMDiffOn_euclideanForm [IsManifold 𝓘(ℝ, E) ∞ M] :
       (fun z : E ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun z : E ↦ TangentSpace 𝓘(ℝ, E) z →L[ℝ] TangentSpace 𝓘(ℝ, E) z →L[ℝ] ℝ) z
         (Q z)) (φ.toChart y) := by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     convert contMDiffAt_const (c := φ.coordDot) using 1
     ext z v w
     rw [trivializationAt_bilinearForm_apply (by simp)]
