@@ -101,6 +101,13 @@ theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
 
+/-- The squared absolute value of a diagonal entry is the corresponding diagonal
+coordinate's square divided by the matrix size. -/
+theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :
+    ‖wignerMatrix ξ η n ω i i‖ ^ 2 = (n : ℝ)⁻¹ * η i.val ω ^ 2 := by
+  simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv, Complex.norm_real,
+    Real.norm_eq_abs, inv_pow, sq_abs, Real.sq_sqrt (Nat.cast_nonneg n)]
+
 /-- The squared absolute value of an off-diagonal entry is the corresponding upper
 coordinate's squared absolute value divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
@@ -416,13 +423,9 @@ private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) (hη : ∀ i, ∫ ω, η i ω ^ 2 ∂P = σ2) {n : ℕ}
     (i j : Fin n) :
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P = (n : ℝ)⁻¹ * if i = j then σ2 else s := by
-  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-      inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
   by_cases hij : i = j
   · subst j
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hn, integral_const_mul,
-      Complex.norm_real, Real.norm_eq_abs, sq_abs, hη, ↓reduceIte]
+    simp only [norm_wignerMatrix_apply_self_sq, integral_const_mul, hη, ↓reduceIte]
   · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul,
       hξ, hij, ↓reduceIte]
 
@@ -431,8 +434,7 @@ private theorem integrable_norm_wignerMatrix_apply_sq
     {n : ℕ} (i j : Fin n) : Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω i j‖ ^ 2) P := by
   by_cases hij : i = j
   · subst j
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
-      sq_abs]
+    simp only [norm_wignerMatrix_apply_self_sq]
     exact (hη _).const_mul _
   · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij]
     exact (hξ _).const_mul _

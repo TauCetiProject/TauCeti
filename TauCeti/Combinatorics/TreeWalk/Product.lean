@@ -107,4 +107,16 @@ theorem prod_path_eq_prod_up_mul_reverse (v : Fin (2 * m + 1) → α)
     exact congrArg₂ (fun x y ↦ a x y * a y x) (hfc i.castSucc) hi'
   · rfl
 
+/-- A product along a leading cyclic word factors into forward-backward pairs, indexed by
+the discovery steps of its path extension. -/
+theorem prod_cyclic_eq_prod_up_mul_reverse [NeZero m] (w : Fin (2 * m) → α)
+    (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) (a : α → α → M) :
+    ∏ i : Fin (2 * m), a (w i) (w (finRotate (2 * m) i)) =
+      ∏ i : Fin (2 * m) with canonicalWalk (cyclicPath w) i.succ = i.succ,
+        a (w i) (w (finRotate (2 * m) i)) * a (w (finRotate (2 * m) i)) (w i) := by
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using
+    prod_path_eq_prod_up_mul_reverse (cyclicPath w) (by simp) (by simpa using hv)
+      (card_edge_fiber_cyclicPath w h hv) a
+
 end TauCeti.TreeWalk

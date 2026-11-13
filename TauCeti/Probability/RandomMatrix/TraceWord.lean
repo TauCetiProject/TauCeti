@@ -42,8 +42,10 @@ The path formulation includes the zero-step case and proves integrability first.
 * `TauCeti.integrable_prod_wignerMatrix_apply_path` and
   `TauCeti.integral_prod_wignerMatrix_apply_path`: integrability and a second-moment product
   formula for double-traversal tree paths.
-* `TauCeti.integral_prod_wignerMatrix_apply_leading`: every leading cyclic Wigner word
-  contributes `n⁻ᵐ` under independence and unit off-diagonal second moments.
+* `TauCeti.integral_prod_wignerMatrix_apply_leading`: a second-moment product formula for
+  leading cyclic Wigner words.
+* `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`: every leading
+  cyclic Wigner word contributes `n⁻ᵐ` under independence and unit off-diagonal second moments.
 
 ## References
 
@@ -242,7 +244,7 @@ theorem integrable_prod_wignerMatrix_apply_path
 absolute moments at its discovery steps. No centering or identical-distribution assumption
 is needed. -/
 theorem integral_prod_wignerMatrix_apply_path
-    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
+    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
@@ -253,7 +255,11 @@ theorem integral_prod_wignerMatrix_apply_path
   rw [integral_congr_ae (.of_forall (prod_path_eq_prod_discoveryFactor v hclosed hv he)),
     integral_complex_ofReal]
   rw [(indep_discoveryFactor (η := η) v hindep).integral_fun_prod_eq_prod_integral
-    (fun i ↦ (integrable_discoveryFactor v hξ i).aestronglyMeasurable)]
+    (fun i ↦ by
+      unfold discoveryFactor
+      have hne := ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2
+      simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne]
+      exact (hξ _).const_mul _)]
   unfold discoveryFactor DiscoverySteps
   rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
     ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)]
@@ -269,8 +275,8 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
       #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
     ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
       (n : ℂ)⁻¹ ^ m := by
-  have hξ (ij : StrictUpper) : Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
-    integrable_of_integral_eq_one (hsecond ij)
+  have hξ (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
+    (integrable_of_integral_eq_one (hsecond ij)).aestronglyMeasurable
   rw [integral_prod_wignerMatrix_apply_path hξ hindep v hclosed hv he]
   have hterm (i : Fin (2 * m)) (hi : i ∈
       ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
@@ -301,11 +307,27 @@ theorem integrable_prod_wignerMatrix_apply_leading
     (card_edge_fiber_cyclicPath w h hv)
   simpa only [cyclicPath_castSucc, cyclicPath_succ] using hp
 
+/-- The expected product along a leading cyclic Wigner word is the product of the second
+absolute moments at its discovery steps. Only measurability of the squared upper entries
+and independence are required; the diagonal entries may be arbitrary. -/
+theorem integral_prod_wignerMatrix_apply_leading [NeZero m]
+    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
+    (w : Fin (2 * m) → Fin n)
+    (h : ∀ i, ∃ j ≠ i,
+      s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) :
+    ∫ ω, ∏ i, wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i)) ∂P =
+      ((∏ i : Fin (2 * m) with canonicalWalk (cyclicPath w) i.succ = i.succ,
+        ∫ ω, ‖wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i))‖ ^ 2 ∂P : ℝ) : ℂ) := by
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using
+    integral_prod_wignerMatrix_apply_path (η := η) hξ hindep (cyclicPath w)
+      (by simp) (by simpa using hv) (card_edge_fiber_cyclicPath w h hv)
+
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
 Only independence and unit second absolute moments of the upper entries are required;
 centering, higher moments, and all conditions on the diagonal are unnecessary here. -/
-theorem integral_prod_wignerMatrix_apply_leading
+theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one
     (hindep : iIndepFun ξ P)
     (hsecond : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1) (w : Fin (2 * m) → Fin n)
     (h : ∀ i, ∃ j ≠ i,
