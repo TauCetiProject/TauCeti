@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
+public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 
 /-!
 # The GNS class map and cyclic vector
@@ -18,6 +19,8 @@ functionals on C⋆-algebras are bounded, `PositiveLinearMap.exists_norm_apply_l
 This lets norm-continuous families in `A`, such as orbits of point-norm continuous actions, be
 transported to the GNS space. Composed with the embedding into the completion, it is the
 continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
+Its norm is at most the square root of the norm of `f`, so for a norm-one functional
+`‖[a]‖ ≤ ‖a‖`. If `A` is separable, this dense continuous image makes `f.GNS` separable.
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
@@ -37,17 +40,24 @@ namespace PositiveLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-- The GNS pre-Hilbert class map is bounded by the square root of the norm of the functional. -/
+theorem norm_toPreGNS_le (f : A →ₚ[ℂ] ℂ) (a : A) :
+    ‖f.toPreGNS a‖ ≤
+      Real.sqrt ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+  calc
+    ‖f.toPreGNS a‖ = Real.sqrt ‖f (star a * a)‖ := by simp [preGNS_norm_def']
+    _ ≤ Real.sqrt (‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ ^ 2) := by
+      gcongr
+      simpa [CStarRing.norm_star_mul_self, sq] using
+        (PositiveContinuousLinearMap.ofClass f).toContinuousLinearMap.le_opNorm (star a * a)
+    _ = Real.sqrt ‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+      rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+
 /-- The class map of a positive linear functional on a C⋆-algebra into its GNS pre-Hilbert space
 is continuous. -/
 @[fun_prop]
-theorem continuous_toPreGNS (f : A →ₚ[ℂ] ℂ) : Continuous (f.toPreGNS : A → f.PreGNS) := by
-  obtain ⟨C, hC⟩ := f.exists_norm_apply_le
-  refine AddMonoidHomClass.continuous_of_bound f.toPreGNS (√C) fun a => ?_
-  calc ‖f.toPreGNS a‖ = √‖f (star a * a)‖ := by simp [preGNS_norm_def']
-    _ ≤ √(C * ‖a‖ ^ 2) := by
-      gcongr
-      simpa [CStarRing.norm_star_mul_self, sq] using hC (star a * a)
-    _ = √C * ‖a‖ := by rw [Real.sqrt_mul C.coe_nonneg, Real.sqrt_sq (norm_nonneg a)]
+theorem continuous_toPreGNS (f : A →ₚ[ℂ] ℂ) : Continuous (f.toPreGNS : A → f.PreGNS) :=
+  AddMonoidHomClass.continuous_of_bound f.toPreGNS _ (f.norm_toPreGNS_le)
 
 /-- The class map `a ↦ [a]` of a positive linear functional on a C⋆-algebra into its GNS Hilbert
 space, as a continuous linear map. -/
@@ -62,6 +72,30 @@ theorem toGNS_apply (f : A →ₚ[ℂ] ℂ) (a : A) : f.toGNS a = (f.toPreGNS a 
 theorem denseRange_toGNS (f : A →ₚ[ℂ] ℂ) : DenseRange f.toGNS :=
   UniformSpace.Completion.denseRange_coe.comp f.toPreGNS.surjective.denseRange
     (UniformSpace.Completion.continuous_coe _)
+
+/-- A separable C⋆-algebra has separable GNS Hilbert spaces for all its positive functionals. -/
+instance (f : A →ₚ[ℂ] ℂ) [TopologicalSpace.SeparableSpace A] :
+    TopologicalSpace.SeparableSpace f.GNS :=
+  f.denseRange_toGNS.separableSpace f.toGNS.continuous
+
+/-- The squared norm of a GNS class is the value of the functional on `a⋆a`. -/
+theorem norm_toGNS_sq (f : A →ₚ[ℂ] ℂ) (a : A) :
+    (‖f.toGNS a‖ ^ 2 : ℂ) = f (star a * a) := by
+  simp [preGNS_norm_sq]
+
+/-- The GNS class map is bounded by the square root of the norm of the functional. In
+particular, it is contractive for a norm-one positive functional. -/
+theorem norm_toGNS_le (f : A →ₚ[ℂ] ℂ) (a : A) :
+    ‖f.toGNS a‖ ≤
+      Real.sqrt ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+  simpa only [toGNS_apply, UniformSpace.Completion.norm_coe] using f.norm_toPreGNS_le a
+
+/-- A GNS class vanishes exactly when its positive square has zero mass. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem toGNS_eq_zero_iff (f : A →ₚ[ℂ] ℂ) (a : A) :
+    f.toGNS a = 0 ↔ f (star a * a) = 0 := by
+  rw [← f.norm_toGNS_sq, ← Complex.ofReal_pow, Complex.ofReal_eq_zero, sq_eq_zero_iff,
+    norm_eq_zero]
 
 section Unital
 

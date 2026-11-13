@@ -79,7 +79,7 @@ theorem curvatureOperator_localFrame_eq_sum {x : M}
     cov.curvatureOperator (X i) (X j) (X k) x =
       ∑ l, (mvfderiv I (Γ j k l) x (X i x) - mvfderiv I (Γ i k l) x (X j x) +
         ∑ m, (Γ j k m x * Γ i m l x - Γ i k m x * Γ j m l x)) • X l x := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have : IsManifold I 3 M :=
     IsManifold.of_le (n := minSmoothness 𝕜 3) (le_minSmoothness (𝕜 := 𝕜))
   have : IsManifold I (2 + 1) M :=
