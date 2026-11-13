@@ -78,7 +78,7 @@ theorem coeFn_sum_leftRiemannError (hB : IsPreBrownianReal B P)
         ((t (i + 1) : ℝ) - t i) * B (t i) ω) 2 P :=
       memLp_finsetSum _ fun i _ ↦
         ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)).const_mul _
-    rw [← hB.toLp_sum_smul_eval (Finset.range n) t
+    rw [← hB.toLp_sum_mul_eval (Finset.range n) t
       (fun i ↦ (t (i + 1) : ℝ) - t i) hrect]
     exact hrect.coeFn_toLp
   exact (Lp.coeFn_sub _ _).trans

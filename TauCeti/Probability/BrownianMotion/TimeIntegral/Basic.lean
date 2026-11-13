@@ -52,7 +52,7 @@ theorem coeFn_toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
 
 /-- The `L²` class of a finite weighted sum of Brownian evaluations is the corresponding
 sum of evaluation classes, for any square-integrability witness on the sum. -/
-theorem toLp_sum_smul_eval (hB : IsPreBrownianReal B P) {ι : Type*}
+theorem toLp_sum_mul_eval (hB : IsPreBrownianReal B P) {ι : Type*}
     (s : Finset ι) (t : ι → ℝ≥0) (w : ι → ℝ)
     (hsum : MemLp (fun ω ↦ ∑ i ∈ s, w i * B (t i) ω) 2 P) :
     hsum.toLp _ = ∑ i ∈ s, w i • hB.toL2 (t i) := by

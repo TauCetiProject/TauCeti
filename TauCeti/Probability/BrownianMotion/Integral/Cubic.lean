@@ -80,7 +80,7 @@ private theorem toLp_sum_eval_sq_mul_sub_eq (hB : IsPreBrownianReal B P)
       ((t (i + 1) : ℝ) - t i) * B (t i) ω) 2 P :=
     memLp_finsetSum _ fun i _ ↦
       ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)).const_mul _
-  have hrect_eq := hB.toLp_sum_smul_eval (range n) t
+  have hrect_eq := hB.toLp_sum_mul_eval (range n) t
     (fun i ↦ (t (i + 1) : ℝ) - t i) hrect
   rw [← hrect_eq, ← MemLp.toLp_const_smul, ← MemLp.toLp_const_smul,
     ← MemLp.toLp_sub, ← MemLp.toLp_sub, ← MemLp.toLp_sub]
