@@ -593,7 +593,7 @@ theorem eq_zero_of_forall_integral_associatedBilinForm_stationaryCylinderOperato
       hJc hS hSc hU hη₁.contDiffOn fun ξ₀ hξ₀ hξ₀c hξ₀U ↦ by
         obtain ⟨ξ, hξ, hξp, hξd, hξξ₀⟩ := exists_periodic_eventuallyEq hξ₀ hξ₀c hξ₀U
         have hUc : U =ᵐ[volume] univ ×ˢ Icc (0 : ℝ) 1 :=
-          Measure.set_prod_ae_eq (EventuallyEq.refl _ _) Ioo_ae_eq_Icc
+          Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
         calc ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ₀ z) (η z)
             = ∫ z in U,
                 ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ₀ z) (η z) :=

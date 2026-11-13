@@ -702,7 +702,7 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
     have hD0 : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
         (stationaryCylinderOperator J S ξ z) (stationaryCylinderOperator J S ξ z) = 0 := by
       have hs : Icc a b ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] Icc a b ×ˢ Icc 0 1 :=
-        Measure.set_prod_ae_eq (EventuallyEq.refl _ _) Ioo_ae_eq_Icc
+        Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc
       rw [← setIntegral_congr_set hs]
       exact setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
         rw [hD ⟨mem_univ _, hz.2⟩, Pi.zero_apply, map_zero]
