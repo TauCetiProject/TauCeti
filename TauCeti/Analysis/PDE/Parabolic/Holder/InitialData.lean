@@ -62,6 +62,17 @@ variable (hα : α ≤ 1)
   {B B' : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] F) →L[ℝ] F)}
   {C C' : HolderSpace α (slab (E := E) t₀ t₁) (F →L[ℝ] F)}
 
+/-- The data operator pairs the parabolic operator with the initial trace operator. -/
+theorem initialDataL_def :
+    initialDataL (ht := ht) hα A B C =
+      (parabolicOperatorL hα A B C).prod (spatialTraceL ⟨t₀, left_mem_Icc.2 ht.le⟩) := (rfl)
+
+/-- The data of a function consist of its forcing and its initial spatial trace. -/
+theorem initialDataL_apply (u : ParabolicC2HolderSpace α E F ht) :
+    initialDataL hα A B C u =
+      (parabolicOperatorL hα A B C u, u.spatialTrace ⟨t₀, left_mem_Icc.2 ht.le⟩) := by
+  simp [initialDataL_def, spatialTraceL_apply]
+
 /-- The first data component is the parabolic operator. -/
 @[simp]
 theorem initialDataL_fst (u : ParabolicC2HolderSpace α E F ht) :
@@ -73,15 +84,26 @@ theorem initialDataL_snd (u : ParabolicC2HolderSpace α E F ht) :
     (initialDataL hα A B C u).2 = u.spatialTrace ⟨t₀, left_mem_Icc.2 ht.le⟩ := by
   simp [initialDataL, spatialTraceL_apply]
 
+/-- The data operator has the same coefficient bound as its parabolic component. -/
+theorem norm_initialDataL_le :
+    ‖initialDataL (ht := ht) hα A B C‖ ≤ 1 + ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
+  rw [initialDataL_def, ContinuousLinearMap.opNorm_prod, Prod.norm_def]
+  exact max_le (norm_parabolicOperatorL_le hα)
+    ((norm_spatialTraceL_le_one _).trans (by
+      linarith [norm_nonneg A, norm_nonneg B, norm_nonneg C]))
+
+/-- Initial traces cancel in the difference of two data operators. -/
+theorem initialDataL_sub_initialDataL :
+    initialDataL (ht := ht) hα A B C - initialDataL hα A' B' C' =
+      (parabolicOperatorL (ht := ht) hα A B C - parabolicOperatorL hα A' B' C').prod 0 := by
+  ext u <;> simp [initialDataL_apply]
+
 /-- Initial traces cancel in a difference of data operators, so their inclusion does not
 increase the perturbation norm. -/
 theorem norm_initialDataL_sub :
     ‖initialDataL (ht := ht) hα A B C - initialDataL hα A' B' C'‖ =
       ‖parabolicOperatorL (ht := ht) hα A B C - parabolicOperatorL hα A' B' C'‖ := by
-  have heq : initialDataL (ht := ht) hα A B C - initialDataL hα A' B' C' =
-      (parabolicOperatorL (ht := ht) hα A B C - parabolicOperatorL hα A' B' C').prod 0 := by
-    ext u <;> simp [initialDataL]
-  rw [heq, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero,
+  rw [initialDataL_sub_initialDataL, ContinuousLinearMap.opNorm_prod, Prod.norm_def, norm_zero,
     max_eq_left (norm_nonneg _)]
 
 /-- A coefficient perturbation has the same explicit bound for the full initial-data operator
