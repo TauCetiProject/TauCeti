@@ -45,6 +45,8 @@ against exactly this metric.
 * `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
   `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
   product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
+* `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
+  orthogonal almost complex structure `J` on a real inner product space.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
@@ -259,5 +261,34 @@ theorem inner_apply_left_eq_neg_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w
 end InnerProductSpace
 
 end SymplecticForm
+
+namespace AlmostComplexStructure
+
+open scoped RealInnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The **symplectic form** `ω(v, w) = ⟪J v, w⟫` associated to an orthogonal almost complex
+structure `J` on a real inner product space. -/
+noncomputable def symplecticForm {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : SymplecticForm V :=
+  have halt : ((innerₗ V).comp J.toLinearMap).IsAlt := fun v ↦ by
+    rw [LinearMap.comp_apply, innerₗ_apply_apply, real_inner_comm]
+    exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+  { toBilinForm := (innerₗ V).comp J.toLinearMap
+    isAlt := halt
+    nondegenerate := by
+      refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2 fun v hv ↦ ?_
+      have h0 : ⟪J v, J v⟫ = 0 := by simpa [LinearMap.comp_apply] using hv (J v)
+      rw [hJ, inner_self_eq_zero] at h0
+      exact h0 }
+
+@[simp]
+theorem symplecticForm_apply {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
+    J.symplecticForm hJ v w = ⟪J v, w⟫ :=
+  (rfl)
+
+end AlmostComplexStructure
 
 end TauCeti
