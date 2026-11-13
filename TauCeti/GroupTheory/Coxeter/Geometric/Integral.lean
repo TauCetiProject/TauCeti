@@ -238,7 +238,7 @@ theorem mrange_reflectionRepresentation :
     MonoidHom.mrange (cs.reflectionRepresentation hR hA) =
       Submonoid.closure (Set.range fun i ↦
         Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination R (A i))) := by
-  rw [MonoidHom.mrange_eq_map, ← cs.submonoid_closure_range_simple, MonoidHom.map_mclosure,
+  rw [MonoidHom.mrange_eq_map, ← cs.submonoidClosure_range_simple, MonoidHom.map_mclosure,
     ← Set.range_comp]
   simp only [Function.comp_def, reflectionRepresentation_simple]
 
@@ -252,7 +252,7 @@ theorem range_generalLinearEquiv_comp_asGroupHom_reflectionRepresentation :
       Subgroup.closure (Set.range fun i ↦
         Module.reflection
           (linearCombination_single_eq_two_of_algebraMap_eq_two_mul_geometricForm hR hA i)) := by
-  rw [MonoidHom.range_eq_map, ← cs.subgroup_closure_range_simple, MonoidHom.map_closure,
+  rw [MonoidHom.range_eq_map, ← cs.subgroupClosure_range_simple, MonoidHom.map_closure,
     ← Set.range_comp]
   congr 2
   funext i
