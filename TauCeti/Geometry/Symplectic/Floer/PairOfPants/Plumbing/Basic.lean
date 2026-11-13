@@ -446,7 +446,9 @@ private theorem abs_det_mul_floerEnergyDensity_plumbedPerturbation_realChart
     (hab : Hb q = Ha inf) (hL : 4 < L) {u : ℝ × ℝ → M} {w : ℝ × ℝ}
     (hw : (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
       2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w)) :
+    (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
     |(fderiv ℝ (realChart (q.plumbingMap L)) w).det| * ω.floerEnergyDensity
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x
@@ -458,7 +460,8 @@ private theorem abs_det_mul_floerEnergyDensity_plumbedPerturbation_realChart
   have hψ := mapsTo_realChart_plumbingMap (L := L) hq (by linarith) ⟨hw.1, by linarith [hw.2]⟩
   rw [abs_of_nonneg (det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _)),
     ← ω.floerEnergyDensity_perturbationPullback
-      ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu
+      ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
+      (hu.mdifferentiableAt ((isOpen_plumbedSphere q L).mem_nhds hψ))
       (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hψ _ 1)
       (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hψ _ _),
     ω.floerEnergyDensity_perturbationPullback_plumbedPerturbation hq hab _ hw.1.1 hw.2.le]
@@ -493,8 +496,7 @@ theorem integral_floerEnergyDensity_image_plumbingMap (ω : SmoothTwoForm I M) (
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
     fun w hw ↦ ?_
   rw [smul_eq_mul, abs_det_mul_floerEnergyDensity_plumbedPerturbation_realChart ω hq hHa hHb hHas
-    hHbs hab hL (hB hw) (hu.mdifferentiableAt ((isOpen_plumbedSphere q L).mem_nhds
-      (mapsTo_realChart_plumbingMap hq (by linarith) ⟨(hB hw).1, by linarith [(hB hw).2]⟩)))]
+    hHbs hab hL (hB hw) hu]
 
 /-- The energy density of the plumbed perturbation is integrable over the image `ψ(B)` of a
 measurable set `B` in the part `Re z > 2 - L` of the inserted thrice-punctured sphere under the
@@ -525,8 +527,7 @@ theorem integrableOn_floerEnergyDensity_image_plumbingMap_iff (ω : SmoothTwoFor
       w).hasFDerivAt.hasFDerivWithinAt) (realChart_injective (q.plumbingMap_injective L)).injOn]
   refine integrableOn_congr_fun (fun w hw ↦ ?_) hBm
   rw [smul_eq_mul, abs_det_mul_floerEnergyDensity_plumbedPerturbation_realChart ω hq hHa hHb hHas
-    hHbs hab hL (hB hw) (hu.mdifferentiableAt ((isOpen_plumbedSphere q L).mem_nhds
-      (mapsTo_realChart_plumbingMap hq (by linarith) ⟨(hB hw).1, by linarith [(hB hw).2]⟩)))]
+    hHbs hab hL (hB hw) hu]
 
 /-- On the part `Re z > 2 - L` of the inserted thrice-punctured sphere, measured in the end
 coordinate at `∞`, the curvature of the plumbed perturbation at the image of a point `w` under

@@ -250,8 +250,8 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
       (realChart_injective (q.plumbingMap_injective L)).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
       (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
-      (fun w hw ↦ hud.mdifferentiableAt (hS₄o.mem_nhds (mapsTo_realChart_plumbingMap hq
-        (by linarith) ⟨(hBS hw).1, by linarith [(hBS hw).2]⟩)))
+      (fun w hw ↦ hud.mdifferentiableAt (hS₄o.mem_nhds
+        (mapsTo_realChart_plumbingMap_setOf_endSign_mul_re_endCoord_lt hq hL (hBV hw))))
   -- The loop along the cut is the loop along the circle `Re z = L/2` of the end `q`, and the
   -- loops along the input ends are the images under the plumbing map.
   have hneck : (fun t : ℝ ↦ (u ∘ realChart (q.plumbingMap L)) (Complex.equivRealProdCLM
