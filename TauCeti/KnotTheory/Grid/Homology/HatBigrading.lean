@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.Algebra.Module.GradedModule.Homology
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # The bigrading of simply blocked grid homology
@@ -38,60 +38,6 @@ public section
 noncomputable section
 
 open CategoryTheory
-
-namespace TauCeti.GridDiagram
-
-variable {n m : ℕ} {G : GridDiagram n} {H : GridDiagram m}
-  (R : Type*) [CommRing R] [CharP R 2] (i : Fin n) (j : Fin m)
-
-/-- A semilinear specialization-homology equivalence fixing constant polynomials is linear over
-its coefficient ring, with the actions selected by `ModuleCat.restrictScalars`. -/
-noncomputable def oneVariableSpecializationHomologyCoefficientEquiv
-    (σ : MvPolynomial {c : Fin n // c ≠ i} R →+*
-      MvPolynomial {c : Fin m // c ≠ j} R)
-    {σ' : MvPolynomial {c : Fin m // c ≠ j} R →+*
-      MvPolynomial {c : Fin n // c ≠ i} R}
-    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    (e : (G.simplyBlockedComplex R i).homology () ≃ₛₗ[σ]
-      (H.simplyBlockedComplex R j).homology ())
-    (hσ : ∀ r, σ (MvPolynomial.C r) = MvPolynomial.C r) :
-    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
-        ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
-      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* _)).obj
-        ((H.simplyBlockedComplex R j).homology ()) :=
-  { e.toAddEquiv with
-    map_smul' := fun r x => by
-      rw [ModuleCat.restrictScalars.smul_def, RingHom.id_apply,
-        ModuleCat.restrictScalars.smul_def']
-      exact (e.map_smulₛₗ (MvPolynomial.C r) x).trans (by rw [hσ]; rfl) }
-
--- Keep these application equations as named rewrites: simplifying a forward application before
--- its enclosing inverse changes the bundled equivalence and prevents generic inverse laws matching.
-/-- Restricting coefficient scalars preserves the chosen map. -/
-theorem oneVariableSpecializationHomologyCoefficientEquiv_apply
-    (σ : MvPolynomial {c : Fin n // c ≠ i} R →+*
-      MvPolynomial {c : Fin m // c ≠ j} R)
-    {σ' : MvPolynomial {c : Fin m // c ≠ j} R →+*
-      MvPolynomial {c : Fin n // c ≠ i} R}
-    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    (e : (G.simplyBlockedComplex R i).homology () ≃ₛₗ[σ]
-      (H.simplyBlockedComplex R j).homology ())
-    (hσ : ∀ r, σ (MvPolynomial.C r) = MvPolynomial.C r) (x) :
-    oneVariableSpecializationHomologyCoefficientEquiv R i j σ e hσ x = e x := (rfl)
-
-/-- Restricting coefficient scalars preserves the chosen inverse. -/
-theorem oneVariableSpecializationHomologyCoefficientEquiv_symm_apply
-    (σ : MvPolynomial {c : Fin n // c ≠ i} R →+*
-      MvPolynomial {c : Fin m // c ≠ j} R)
-    {σ' : MvPolynomial {c : Fin m // c ≠ j} R →+*
-      MvPolynomial {c : Fin n // c ≠ i} R}
-    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    (e : (G.simplyBlockedComplex R i).homology () ≃ₛₗ[σ]
-      (H.simplyBlockedComplex R j).homology ())
-    (hσ : ∀ r, σ (MvPolynomial.C r) = MvPolynomial.C r) (x) :
-    (oneVariableSpecializationHomologyCoefficientEquiv R i j σ e hσ).symm x = e.symm x := (rfl)
-
-end TauCeti.GridDiagram
 
 namespace TauCeti.OddComponentGridDiagram
 
@@ -243,55 +189,6 @@ theorem isHomogeneous_oneVariableSpecializationHomologyMap
   rw [hclass]
   exact H.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece R j
     (hdegree g z hz)
-
-/-- A degree-zero homology equivalence preserves and reflects membership in each piece. -/
-theorem homologyEquiv_mem_bigradedHatHomologyPiece_iff
-    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
-    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
-      (H.bigradedHatHomologyGrading R j).piece 0)
-    (g : ℤ × ℤ) (y : (Base).obj ((C).homology ())) :
-    e y ∈ H.bigradedHatHomologyPiece R j g ↔ y ∈ G.bigradedHatHomologyPiece R i g := by
-  constructor
-  · intro hy
-    rw [← bigradedHatHomologyGrading_piece] at hy
-    simpa only [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
-      LinearEquiv.symm_apply_apply] using he.linearEquiv_symm.map_mem hy
-  · intro hy
-    rw [← bigradedHatHomologyGrading_piece] at hy
-    simpa only [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe] using
-      he.map_mem hy
-
-/-- Restrict a degree-zero specialization-homology equivalence to a specified bidegree. -/
-noncomputable def oneVariableSpecializationHomologyPieceEquivOfHomogeneous
-    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
-    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
-      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ) :
-    G.bigradedHatHomologyPiece R i g ≃ₗ[R] H.bigradedHatHomologyPiece R j g :=
-  e.ofSubmodules _ _ (by
-    ext y
-    rw [Submodule.mem_map_equiv,
-      ← G.homologyEquiv_mem_bigradedHatHomologyPiece_iff R i H j e he g,
-      LinearEquiv.apply_symm_apply])
-
-/-- The restricted piece equivalence is the chosen total equivalence on underlying classes. -/
-@[simp]
-theorem coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_apply
-    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
-    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
-      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
-    (y : G.bigradedHatHomologyPiece R i g) :
-    (G.oneVariableSpecializationHomologyPieceEquivOfHomogeneous R i H j e he g y :
-      (BaseH).obj ((D).homology ())) = e y.1 := (rfl)
-
-/-- The inverse restricted piece equivalence is the chosen total inverse on underlying classes. -/
-@[simp]
-theorem coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_symm_apply
-    (e : (Base).obj ((C).homology ()) ≃ₗ[R] (BaseH).obj ((D).homology ()))
-    (he : LinearMap.IsHomogeneous e.toLinearMap (G.bigradedHatHomologyGrading R i).piece
-      (H.bigradedHatHomologyGrading R j).piece 0) (g : ℤ × ℤ)
-    (y : H.bigradedHatHomologyPiece R j g) :
-    ((G.oneVariableSpecializationHomologyPieceEquivOfHomogeneous R i H j e he g).symm y :
-      (Base).obj ((C).homology ())) = e.symm y.1 := (rfl)
 
 end Comparison
 

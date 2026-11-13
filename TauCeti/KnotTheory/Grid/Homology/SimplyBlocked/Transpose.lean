@@ -22,8 +22,6 @@ compare simply blocked homologies across row commutations.
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.6.
-The descent uses Mathlib's `LinearEquiv.ofSubmodules` and `Submodule.Quotient.equiv`, as in
-the unblocked reflection `GridDiagram.unblockedHomologyTransposeEquiv`.
 -/
 
 public section

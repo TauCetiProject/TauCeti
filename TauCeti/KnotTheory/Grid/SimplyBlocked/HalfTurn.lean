@@ -11,12 +11,15 @@ public import TauCeti.KnotTheory.Grid.Grading.Unblocked.HalfTurn
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 
 /-!
-# The half-turn of the simply blocked grid complex
+# The half-turn of the one-variable-specialization chains
 
-The half-turn identifies chains with the `O`-marking in column `i` blocked with chains for
-`G.rotate` blocked at `i.rev`. It moves states by `GridState.halfTurn` and renames the
-surviving variables along `Fin.revPerm`. Specialization from the unblocked complex commutes
-with this equivalence, which intertwines the two differentials over any commutative semiring.
+Blocking the `O`-marking in column `i` gives the one-variable specialization, which agrees
+with simply blocked chains for knot grids. Links require one blocked `O`-marking per component
+for simply blocked homology. The half-turn identifies these chains with those for `G.rotate`
+blocked at `i.rev`, moving states by `GridState.halfTurn` and renaming surviving variables along
+`Fin.revPerm`. Specialization commutes with this equivalence. Over any commutative semiring,
+it intertwines the unsigned specializations of `unblockedDifferential`; these are differentials
+with square zero when the coefficient ring has characteristic two.
 On odd-component diagrams it preserves the `(O-Maslov, Alexander)` chain bigrading. Its
 homology comparison exchanges the south-west and north-east stabilization corners while
 tracking the blocked marking.
@@ -36,7 +39,7 @@ columns and transporting the blocked column to the target index `{c // c ≠ i.r
 noncomputable def simplyBlockedHalfTurnRenameEquiv {n : ℕ} (R : Type*) [CommSemiring R]
     (i : Fin n) :
     MvPolynomial {c : Fin n // c ≠ i} R ≃ₐ[R] MvPolynomial {c : Fin n // c ≠ i.rev} R := by
-  exact simplyBlockedRenameEquiv R (Fin.rev_involutive.toPerm Fin.rev) i
+  exact simplyBlockedRenameEquiv R Fin.revPerm i
 
 /-- A surviving variable is sent to its reversed column. -/
 @[simp]
@@ -44,7 +47,7 @@ theorem simplyBlockedHalfTurnRenameEquiv_X {n : ℕ} (R : Type*) [CommSemiring R
     (i : Fin n) (c : {c : Fin n // c ≠ i}) :
     simplyBlockedHalfTurnRenameEquiv R i (MvPolynomial.X c) =
       MvPolynomial.X ⟨c.1.rev, fun h => c.2 (Fin.rev_injective h)⟩ :=
-  simplyBlockedRenameEquiv_X R (Fin.rev_involutive.toPerm Fin.rev) i c
+  simplyBlockedRenameEquiv_X R Fin.revPerm i c
 
 /-- Constants are fixed by the half-turn coefficient renaming. -/
 @[simp]
@@ -75,7 +78,7 @@ theorem simplyBlockedRingHom_rename_rev {n : ℕ} (R : Type*) [CommSemiring R]
     (i : Fin n) (p : MvPolynomial (Fin n) R) :
     simplyBlockedRingHom R i.rev (MvPolynomial.rename Fin.rev p) =
       simplyBlockedHalfTurnRenameEquiv R i (simplyBlockedRingHom R i p) := by
-  exact simplyBlockedRingHom_rename R (Fin.rev_involutive.toPerm Fin.rev) i p
+  exact simplyBlockedRingHom_rename R Fin.revPerm i p
 
 /-- The half-turn coefficient renaming and its inverse form an inverse pair. -/
 noncomputable instance simplyBlockedHalfTurnRenameRingHomInvPair {n : ℕ} (R : Type*)
@@ -136,9 +139,9 @@ theorem simplyBlockedHalfTurnEquiv_single (x : GridState n)
     (p : MvPolynomial {c : Fin n // c ≠ i} R) :
     simplyBlockedHalfTurnEquiv R i (Finsupp.single x p) =
       Finsupp.single x.halfTurn (simplyBlockedHalfTurnRenameEquiv R i p) := by
-  have hinv : Function.Involutive (GridState.halfTurn (n := n)) := GridState.halfTurn_halfTurn
   ext y : 1
-  simp only [simplyBlockedHalfTurnEquiv_apply, Finsupp.single_apply, ← hinv.eq_iff]
+  simp only [simplyBlockedHalfTurnEquiv_apply, Finsupp.single_apply,
+    ← GridState.halfTurn_involutive.eq_iff]
   split_ifs <;> simp
 
 /-- The inverse half-turn takes a single generator back with inverse-renamed coefficient. -/
@@ -162,7 +165,7 @@ theorem simplyBlockedSpecialization_halfTurnRenameEquiv (c : GridChainMinus R n)
   exact simplyBlockedRingHom_rename_rev R i (c y.halfTurn)
 
 /-- Inverse half-turn commutes with specialization of the unblocked half-turn. -/
-theorem simplyBlockedHalfTurnEquiv_symm_specialization (c : GridChainMinus R n) :
+theorem simplyBlockedHalfTurnEquiv_symm_simplyBlockedSpecialization (c : GridChainMinus R n) :
     (simplyBlockedHalfTurnEquiv R i).symm (simplyBlockedSpecialization R i.rev c) =
       simplyBlockedSpecialization R i (GridChain.halfTurnRenameEquiv R c) := by
   apply (simplyBlockedHalfTurnEquiv R i).injective
@@ -177,8 +180,8 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommSemiring R] (i : Fin n)
 
 open GridChain
 
-/-- The half-turn intertwines the simply blocked differentials with the blocked marking transported
-along `Fin.rev`. -/
+/-- The half-turn intertwines the unsigned specializations of `unblockedDifferential`,
+transporting the blocked marking along `Fin.rev`. -/
 @[simp]
 theorem simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv
     (c : GridChainHat R n i) :
@@ -212,7 +215,7 @@ theorem simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff
     obtain ⟨b, hb, he⟩ := G.rotate.mem_bigradedChainHatPiece_iff_exists.mp hc
     have hinv := congrArg (GridChain.simplyBlockedHalfTurnEquiv R i).symm he
     rw [LinearEquiv.symm_apply_apply,
-      GridChain.simplyBlockedHalfTurnEquiv_symm_specialization] at hinv
+      GridChain.simplyBlockedHalfTurnEquiv_symm_simplyBlockedSpecialization] at hinv
     rw [← hinv]
     apply G.simplyBlockedSpecialization_mem_bigradedChainHatPiece
     simpa only [rotate_rotate] using

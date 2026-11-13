@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.HalfTurn
+public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
+import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Grading
-public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Bigraded
+public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
+import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # North-east stabilization of one-variable-specialization homology
@@ -18,12 +20,17 @@ after its `X`-marking. The old `O`-marking of column `i` then lies in column
 same absolute `(O-Maslov, Alexander)` bidegrees as the original diagram whenever its component
 count is odd. For knots this specialization is simply blocked homology.
 
-This file specifies a coefficient-linear equivalence on total homology and every homogeneous
-piece, with cycle-class and subtype-projection equations. A half-turn
-identifies the north-east stabilized source with the south-west stabilization of the rotated
-grid, including the transported blocked marking. Thus the equivalence retains the grading
-normalization and the choice of blocked marking. For knots over a field of characteristic two,
-the bigraded Poincaré series and Alexander-graded Euler characteristic are unchanged.
+This file specializes the existing unblocked north-east comparison to a semilinear map over
+the surviving polynomial variables. It descends to a bijective semilinear homology map and,
+after restricting scalars, a coefficient-linear equivalence on total homology and every
+homogeneous piece. The cycle-class and chain-evaluation equations hide all carrier transport.
+The underlying unblocked comparison conjugates the south-west comparison by half-turns,
+retaining the grading normalization and blocked marking. For knots over a field of
+characteristic two, the bigraded Poincaré series and Alexander-graded Euler characteristic
+are unchanged.
+
+The specialization construction and exact-sequence argument adapt the south-west comparison
+in `Stabilization/SimplyBlocked/Basic.lean` and `Stabilization/SimplyBlocked/Homology.lean`.
 
 ## References
 
@@ -34,141 +41,408 @@ public section
 
 open CategoryTheory
 
+open MvPolynomial
+
+namespace TauCeti.GridDiagram
+
+variable {n : ℕ} (s i : Fin n) (R : Type*)
+
+section Semiring
+
+variable [CommSemiring R]
+
+local notation "j" => s.succ.succAbove i
+local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
+local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
+
+/-- The coefficient homomorphism of stabilization after blocking the transported old marking.
+Merge the stabilization columns using `s.predAbove`, then kill the variable of column `i`. -/
+noncomputable def simplyBlockedStabilizeXSuccRingHom : S →+* A :=
+  (simplyBlockedRingHom R i).comp
+    ((rename (R := R) s.predAbove).toRingHom.comp (rename Subtype.val).toRingHom)
+
+/-- A surviving source variable is merged and then specialized in the old grid. In particular,
+when `i = s`, the other variable of the stabilization block also maps to zero. -/
+@[simp]
+theorem simplyBlockedStabilizeXSuccRingHom_X (c : {c : Fin (n + 1) // c ≠ j}) :
+    simplyBlockedStabilizeXSuccRingHom s i R (MvPolynomial.X c) =
+      simplyBlockedRingHom R i (MvPolynomial.X (s.predAbove c)) := by
+  simp [simplyBlockedStabilizeXSuccRingHom]
+
+/-- Stabilization leaves ground-ring coefficients unchanged after blocking. -/
+@[simp]
+theorem simplyBlockedStabilizeXSuccRingHom_C (r : R) :
+    simplyBlockedStabilizeXSuccRingHom s i R (MvPolynomial.C r) = MvPolynomial.C r := by
+  simp [simplyBlockedStabilizeXSuccRingHom]
+
+/-- Merging columns commutes with blocking the transported old marking. -/
+theorem simplyBlockedStabilizeXSuccRingHom_specialization (p : MvPolynomial (Fin (n + 1)) R) :
+    simplyBlockedStabilizeXSuccRingHom s i R (simplyBlockedRingHom R j p) =
+      simplyBlockedRingHom R i (rename s.predAbove p) := by
+  have h : ((killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+      Subtype.val_injective).comp ((rename s.predAbove).comp (rename Subtype.val))).comp
+        (killCompl (f := (Subtype.val : {c : Fin (n + 1) // c ≠ j} → Fin (n + 1)))
+          Subtype.val_injective) =
+      (killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        Subtype.val_injective).comp (rename s.predAbove) := by
+    ext c
+    by_cases hc : c = j
+    · subst c
+      simp [Fin.predAbove_succ_succAbove]
+    · have hX : MvPolynomial.X c = rename Subtype.val
+          (MvPolynomial.X (R := R) (⟨c, hc⟩ : {c : Fin (n + 1) // c ≠ j})) := by simp
+      simp only [AlgHom.comp_apply]
+      rw [hX, killCompl_rename_app]
+  exact DFunLike.congr_fun h p
+
+end Semiring
+
+variable (G : GridDiagram n) [CommRing R]
+
+local notation "j" => s.succ.succAbove i
+local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
+local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
+
+/-- The stabilization comparison with the transported old `O`-marking blocked. Its image on a
+generator is the specialization of the unblocked stabilization comparison. -/
+noncomputable def simplyBlockedStabilizeXSuccMap :
+    GridChainHat R (n + 1) j →ₛₗ[simplyBlockedStabilizeXSuccRingHom s i R]
+      GridChainHat R n i :=
+  (Finsupp.linearCombination A fun x : GridState (n + 1) =>
+    simplyBlockedSpecialization R i (G.stabilizeXSuccChainMap s R (Finsupp.single x 1))).comp
+      (Finsupp.mapRange.linearMap (simplyBlockedStabilizeXSuccRingHom s i R).toSemilinearMap)
+
+/-- The specialized stabilization map on a single supported coefficient. -/
+theorem simplyBlockedStabilizeXSuccMap_single (x : GridState (n + 1)) (p : S) :
+    G.simplyBlockedStabilizeXSuccMap s i R (Finsupp.single x p) =
+      simplyBlockedStabilizeXSuccRingHom s i R p •
+        simplyBlockedSpecialization R i (G.stabilizeXSuccChainMap s R (Finsupp.single x 1)) := by
+  simp [simplyBlockedStabilizeXSuccMap]
+
+/-- The matrix formula for the specialized stabilization comparison. -/
+@[simp]
+theorem simplyBlockedStabilizeXSuccMap_apply_apply (c : GridChainHat R (n + 1) j)
+    (y : GridState n) :
+    G.simplyBlockedStabilizeXSuccMap s i R c y = c.sum fun x p =>
+      simplyBlockedStabilizeXSuccRingHom s i R p *
+        simplyBlockedRingHom R i (G.stabilizeXSuccChainMap s R (Finsupp.single x 1) y) := by
+  induction c using Finsupp.induction_linear with
+  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
+  | add c d hc hd =>
+    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
+  | single x p =>
+    rw [simplyBlockedStabilizeXSuccMap_single, Finsupp.smul_apply, smul_eq_mul,
+      simplyBlockedSpecialization_apply, ← simplyBlockedRingHom_apply,
+      Finsupp.sum_single_index (by simp)]
+
+/-- The simply blocked comparison is the descent of the unblocked stabilization map through
+coefficient specialization. -/
+@[simp↓]
+theorem simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization (c : GridChainMinus R (n + 1)) :
+    G.simplyBlockedStabilizeXSuccMap s i R (simplyBlockedSpecialization R j c) =
+      simplyBlockedSpecialization R i (G.stabilizeXSuccChainMap s R c) := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp only [map_zero]
+  | add c d hc hd => simp only [map_add, hc, hd]
+  | single x p =>
+    rw [simplyBlockedSpecialization_single, simplyBlockedStabilizeXSuccMap_single,
+      ← simplyBlockedRingHom_apply, simplyBlockedStabilizeXSuccRingHom_specialization,
+      ← Finsupp.smul_single_one x p, map_smulₛₗ, map_smulₛₗ]
+    rfl
+
+variable [CharP R 2]
+
+/-- Stabilization commutes with the simply blocked differentials. -/
+theorem simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential (c : GridChainHat R (n + 1) j) :
+    G.simplyBlockedStabilizeXSuccMap s i R
+        ((G.stabilizeX s.succ (G.X s).succ s).simplyBlockedDifferential R j c) =
+      G.simplyBlockedDifferential R i (G.simplyBlockedStabilizeXSuccMap s i R c) := by
+  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R j c
+  rw [← simplyBlockedSpecialization_unblockedDifferential,
+    simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization,
+    simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization,
+    ← simplyBlockedSpecialization_unblockedDifferential,
+    stabilizeXSuccChainMap_unblockedDifferential]
+
+/-! ### Quasi-isomorphism after blocking -/
+
+local notation "G'" => GridDiagram.stabilizeX G (Fin.succ s)
+  (Fin.succ (GridDiagram.X G s)) s
+
+omit [CharP R 2] in
+/-- Stabilization carries multiplication by the variable of the transported marking to
+multiplication by `V_i`. -/
+private theorem stabilizeXSuccChainMap_X_smul (c : GridChainMinus R (n + 1)) :
+    G.stabilizeXSuccChainMap s R ((MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R) • c) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.stabilizeXSuccChainMap s R c := by
+  rw [map_smulₛₗ]
+  simp [Fin.predAbove_succ_succAbove]
+
+private theorem exists_sub_stabilizeXSuccChainMap_mem_range {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ m ∈ LinearMap.ker ((G').unblockedDifferential R),
+      c - G.stabilizeXSuccChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R) := by
+  obtain ⟨y, hy⟩ := (G.stabilizeXSuccHomologyMap_bijective s R).2
+    (G.unblockedHomologyClass R ⟨c, hc⟩)
+  obtain ⟨z, rfl⟩ := (G').unblockedHomologyClass_surjective R y
+  refine ⟨z, z.2, ?_⟩
+  rw [stabilizeXSuccHomologyMap_unblockedHomologyClass] at hy
+  have he : G.unblockedHomologyClass R
+      (⟨c, hc⟩ - ⟨G.stabilizeXSuccChainMap s R z,
+        G.stabilizeXSuccChainMap_mem_ker s R z.2⟩) = 0 := by
+    calc
+      _ = G.unblockedHomologyClass R ⟨c, hc⟩ -
+          G.unblockedHomologyClass R ⟨G.stabilizeXSuccChainMap s R z,
+            G.stabilizeXSuccChainMap_mem_ker s R z.2⟩ := map_sub _ _ _
+      _ = 0 := sub_eq_zero.mpr hy.symm
+  exact (G.unblockedHomologyClass_eq_zero_iff R _).1 he
+
+private theorem mem_range_of_stabilizeXSuccChainMap_mem_range {m : GridChainMinus R (n + 1)}
+    (hm : m ∈ LinearMap.ker ((G').unblockedDifferential R))
+    (h : G.stabilizeXSuccChainMap s R m ∈ LinearMap.range (G.unblockedDifferential R)) :
+    m ∈ LinearMap.range ((G').unblockedDifferential R) := by
+  apply ((G').unblockedHomologyClass_eq_zero_iff R ⟨m, hm⟩).1
+  apply (G.stabilizeXSuccHomologyMap_bijective s R).1
+  rw [map_zero, stabilizeXSuccHomologyMap_unblockedHomologyClass,
+    unblockedHomologyClass_eq_zero_iff]
+  exact h
+
+/-- `exists_sub_stabilizeXSuccChainMap_mem_range` for the underlying additive maps. -/
+private theorem exists_sub_stabilizeXSuccChainMap_mem_addRange (c : GridChainMinus R n)
+    (hc : c ∈ (G.unblockedDifferential R).toAddMonoidHom.ker) :
+    ∃ m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker,
+      c - (G.stabilizeXSuccChainMap s R).toAddMonoidHom m ∈
+        (G.unblockedDifferential R).toAddMonoidHom.range := by
+  simpa using G.exists_sub_stabilizeXSuccChainMap_mem_range s R (by simpa using hc)
+
+/-- `mem_range_of_stabilizeXSuccChainMap_mem_range` for the underlying additive maps. -/
+private theorem mem_addRange_of_stabilizeXSuccChainMap_mem_addRange (m : GridChainMinus R (n + 1))
+    (hm : m ∈ ((G').unblockedDifferential R).toAddMonoidHom.ker)
+    (h : (G.stabilizeXSuccChainMap s R).toAddMonoidHom m ∈
+      (G.unblockedDifferential R).toAddMonoidHom.range) :
+    m ∈ ((G').unblockedDifferential R).toAddMonoidHom.range := by
+  simpa using G.mem_range_of_stabilizeXSuccChainMap_mem_range s R (by simpa using hm)
+    (by simpa using h)
+
+/-- Every simply blocked cycle of `G` differs from the image of a simply blocked cycle of the
+stabilized diagram by a boundary. -/
+private theorem exists_sub_simplyBlockedStabilizeXSuccMap_mem_range {y : GridChainHat R n i}
+    (hy : y ∈ LinearMap.ker (G.simplyBlockedDifferential R i)) :
+    ∃ x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j),
+      y - G.simplyBlockedStabilizeXSuccMap s i R x ∈
+        LinearMap.range (G.simplyBlockedDifferential R i) := by
+  -- Specialization at the blocked variable is a morphism from the short exact sequence
+  -- `0 → GC⁻ --V_j--> GC⁻ → GC^ → 0` of the stabilized diagram to that of `G`.
+  -- The unblocked stabilization map is a quasi-isomorphism.
+  simpa using AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
+    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom
+    (f₁ := (G.stabilizeXSuccChainMap s R).toAddMonoidHom)
+    (f := (G.stabilizeXSuccChainMap s R).toAddMonoidHom)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+    (G.exists_sub_stabilizeXSuccChainMap_mem_addRange s R)
+    (G.exists_sub_stabilizeXSuccChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXSuccChainMap_mem_addRange s R) (by simpa using hy)
+
+/-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
+boundary. -/
+private theorem mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range {x : GridChainHat R (n + 1) j}
+    (hx : x ∈ LinearMap.ker ((G').simplyBlockedDifferential R j))
+    (h : G.simplyBlockedStabilizeXSuccMap s i R x ∈
+      LinearMap.range (G.simplyBlockedDifferential R i)) :
+    x ∈ LinearMap.range ((G').simplyBlockedDifferential R j) := by
+  -- The same morphism of short exact sequences as in
+  -- `exists_sub_simplyBlockedStabilizeXSuccMap_mem_range`.
+  simpa using AddMonoidHom.mem_range_of_map_mem_range_of_exact
+    (G.simplyBlockedStabilizeXSuccMap s i R).toAddMonoidHom
+    (f₁ := (G.stabilizeXSuccChainMap s R).toAddMonoidHom)
+    (f := (G.stabilizeXSuccChainMap s R).toAddMonoidHom)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
+    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap_unblockedDifferential s R)
+    (G.stabilizeXSuccChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization s i R)
+    (G.exists_sub_stabilizeXSuccChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXSuccChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXSuccChainMap_mem_addRange s R)
+    (by simpa using hx) (by simpa using h)
+
+end TauCeti.GridDiagram
+
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (s i : Fin n)
   (R : Type*) [CommRing R] [CharP R 2]
 
-local notation "G'" => G.stabilizeX (Fin.succ s) (Fin.succ (G.X s)) s
-local notation "H" => G.rotate.stabilizeX (Fin.castSucc s.rev)
-  (Fin.castSucc (G.rotate.X s.rev)) s.rev
 local notation "j" => Fin.succAbove (Fin.succ s) i
+local notation "G'" => GridDiagram.stabilizeX G (Fin.succ s)
+  (Fin.succ (GridDiagram.X G s)) s
 local notation "A" => MvPolynomial {c : Fin n // c ≠ i} R
 local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
-local notation "BaseA" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)
-local notation "BaseS" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)
 
-private theorem rotate_stabilizeX_succ_index :
-    ((G').rotate, (j).rev) =
-      (H, s.rev.castSucc.succAbove i.rev) := by
-  apply Prod.ext
-  · exact G.rotate_stabilizeX_succ s
-  · simp only [Fin.rev_succAbove, Fin.rev_succ]
+/-- The specialized stabilization map between the categorical chain carriers. -/
+private noncomputable def oneVariableSpecializationStabilizeXSuccChainMap :
+    ((G').simplyBlockedComplex R j).X () →ₛₗ[simplyBlockedStabilizeXSuccRingHom s i R]
+      (G.simplyBlockedComplex R i).X () :=
+  (G.simplyBlockedChainEquiv R i).symm.toLinearMap.comp
+    ((G.simplyBlockedStabilizeXSuccMap s i R).comp
+      ((G').simplyBlockedChainEquiv R j).toLinearMap)
 
-private noncomputable def stabilizeXSuccSourceEquiv :
-    (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-      MvPolynomial {c : Fin (n + 1) // c ≠ (j).rev} R)).obj
-        (((G').rotate.simplyBlockedComplex R (j).rev).homology ()) ≃ₗ[R]
-      (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-        MvPolynomial {c : Fin (n + 1) // c ≠ s.rev.castSucc.succAbove i.rev} R)).obj
-        (((H).simplyBlockedComplex R
-          (s.rev.castSucc.succAbove i.rev)).homology ()) :=
-  LinearEquiv.cast (R := R) (M := fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-    (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-      MvPolynomial {c : Fin (n + 1) // c ≠ p.2} R)).obj
-        ((p.1.simplyBlockedComplex R p.2).homology ()))
-    (i := ((G').rotate, (j).rev))
-    («j» := (H, s.rev.castSucc.succAbove i.rev))
-    (G.rotate_stabilizeX_succ_index s i)
+private theorem oneVariableSpecializationStabilizeXSuccChainMap_d
+    (z : ((G').simplyBlockedComplex R j).X ()) :
+    oneVariableSpecializationStabilizeXSuccChainMap G s i R
+        (((G').simplyBlockedComplex R j).d () () z) =
+      (G.simplyBlockedComplex R i).d () ()
+        (oneVariableSpecializationStabilizeXSuccChainMap G s i R z) := by
+  apply (G.simplyBlockedChainEquiv R i).injective
+  simp only [oneVariableSpecializationStabilizeXSuccChainMap, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, simplyBlockedChainEquiv_d]
+  exact G.simplyBlockedStabilizeXSuccMap_simplyBlockedDifferential s i R _
 
-/-- The north-east comparison on cycles of the one-variable specialization. The middle
-identification records the rotated diagram and the transported blocked marking. -/
-noncomputable def oneVariableSpecializationStabilizeXSuccCyclesMap
+/-- Stabilization on cycles of the one-variable specialization, with the chosen old `O`-marking
+blocked in each diagram. -/
+noncomputable def oneVariableSpecializationStabilizeXSuccCyclesMap :
+    LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom
+      →ₛₗ[simplyBlockedStabilizeXSuccRingHom s i R]
+      LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom :=
+  (oneVariableSpecializationStabilizeXSuccChainMap G s i R).restrict fun z hz => by
+    rw [LinearMap.mem_ker] at hz ⊢
+    rw [← oneVariableSpecializationStabilizeXSuccChainMap_d, hz, map_zero]
+
+/-- Under the explicit chain identifications, the map on cycles of the one-variable specialization
+is `simplyBlockedStabilizeXSuccMap`. -/
+@[simp]
+theorem simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap
     (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
-    LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom :=
-  (G.oneVariableSpecializationRotateCyclesEquiv R i).symm
-    (G.rotate.oneVariableSpecializationStabilizeXCyclesMap s.rev i.rev R
-      (Eq.mp (congrArg (fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-        ↥(LinearMap.ker ((p.1.simplyBlockedComplex R p.2).d () ()).hom))
-          (G.rotate_stabilizeX_succ_index s i))
-        ((G').oneVariableSpecializationRotateCyclesEquiv R j z)))
+    G.simplyBlockedChainEquiv R i (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z) =
+      G.simplyBlockedStabilizeXSuccMap s i R ((G').simplyBlockedChainEquiv R j z) := by
+  simp only [oneVariableSpecializationStabilizeXSuccCyclesMap, LinearMap.coe_restrict_apply,
+    oneVariableSpecializationStabilizeXSuccChainMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply]
 
-/-- The cycle comparison is the conjugate of the south-west cycle map by half-turns.
-The middle transport identifies the rotated stabilized diagram and its blocked marking. -/
-theorem oneVariableSpecializationStabilizeXSuccCyclesMap_def
+private theorem oneVariableSpecializationStabilizeXSuccCyclesMap_mem_boundariesInKer
+    {z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom}
+    (hz : z ∈ (((G').simplyBlockedComplex R j).d () ()).hom.boundariesInKer) :
+    G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z ∈
+      ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer := by
+  obtain ⟨w, hw⟩ := hz
+  refine ⟨oneVariableSpecializationStabilizeXSuccChainMap G s i R w, ?_⟩
+  simp only [Submodule.subtype_apply, oneVariableSpecializationStabilizeXSuccCyclesMap,
+    LinearMap.coe_restrict_apply] at hw ⊢
+  rw [← hw, oneVariableSpecializationStabilizeXSuccChainMap_d]
+
+/-- The specified semilinear stabilization comparison on the homology of the one-variable
+specialization, from the stabilized grid to the original grid. -/
+noncomputable def oneVariableSpecializationStabilizeXSuccHomologyMap :
+    ((G').simplyBlockedComplex R j).homology () →ₛₗ[simplyBlockedStabilizeXSuccRingHom s i R]
+      (G.simplyBlockedComplex R i).homology () :=
+  (G.simplyBlockedComplex R i).moduleCatHomologyIso.toLinearEquiv.symm.toLinearMap.comp
+    ((Submodule.mapQ
+      (((G').simplyBlockedComplex R j).d () ()).hom.boundariesInKer
+      ((G.simplyBlockedComplex R i).d () ()).hom.boundariesInKer
+      (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R)
+      (fun _ hz =>
+        G.oneVariableSpecializationStabilizeXSuccCyclesMap_mem_boundariesInKer s i R hz)).comp
+          ((G').simplyBlockedComplex R j).moduleCatHomologyIso.toLinearEquiv.toLinearMap)
+
+/-- The stabilization comparison on the one-variable specialization sends a cycle class to the class
+of its stabilization image. -/
+@[simp]
+theorem oneVariableSpecializationStabilizeXSuccHomologyMap_oneVariableSpecializationHomologyClass
     (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
-    G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z =
-      (G.oneVariableSpecializationRotateCyclesEquiv R i).symm
-        (G.rotate.oneVariableSpecializationStabilizeXCyclesMap s.rev i.rev R
-          (Eq.mp (congrArg (fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-            ↥(LinearMap.ker ((p.1.simplyBlockedComplex R p.2).d () ()).hom))
-              (show ((G').rotate, (j).rev) =
-                  (H, s.rev.castSucc.succAbove i.rev) from by
-                apply Prod.ext
-                · exact G.rotate_stabilizeX_succ s
-                · simp only [Fin.rev_succAbove, Fin.rev_succ]))
-            ((G').oneVariableSpecializationRotateCyclesEquiv R j z))) := by
-  unfold oneVariableSpecializationStabilizeXSuccCyclesMap
-  rfl
+    G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R
+        ((G').oneVariableSpecializationHomologyClass R j z) =
+      G.oneVariableSpecializationHomologyClass R i
+        (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z) := by
+  simp only [oneVariableSpecializationStabilizeXSuccHomologyMap, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.symm_apply_eq]
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
+    HomologicalComplex.moduleCatHomologyIso_hom_moduleCatKerHomologyClass,
+    LinearMap.homologyπ_apply, LinearMap.homologyπ_apply, Submodule.mapQ_apply]
 
-private theorem stabilizeXSuccSourceEquiv_homologyClass
-    (z : LinearMap.ker
-      (((G').rotate.simplyBlockedComplex R (j).rev).d () ()).hom) :
-    G.stabilizeXSuccSourceEquiv s i R
-        ((G').rotate.oneVariableSpecializationHomologyClass R (j).rev z) =
-      (H).oneVariableSpecializationHomologyClass R
-        (s.rev.castSucc.succAbove i.rev)
-        (Eq.mp (congrArg (fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-          ↥(LinearMap.ker ((p.1.simplyBlockedComplex R p.2).d () ()).hom))
-            (G.rotate_stabilizeX_succ_index s i)) z) := by
-  have aux (p q : GridDiagram (n + 1) × Fin (n + 1)) (h : p = q)
-      (z : LinearMap.ker ((p.1.simplyBlockedComplex R p.2).d () ()).hom) :
-      LinearEquiv.cast (R := R) (M := fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-        (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-          MvPolynomial {c : Fin (n + 1) // c ≠ p.2} R)).obj
-            ((p.1.simplyBlockedComplex R p.2).homology ())) (i := p) («j» := q) h
-          (p.1.oneVariableSpecializationHomologyClass R p.2 z) =
-        q.1.oneVariableSpecializationHomologyClass R q.2
-          (Eq.mp (congrArg (fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-            ↥(LinearMap.ker ((p.1.simplyBlockedComplex R p.2).d () ()).hom)) h) z) := by
-    subst q
-    rfl
-  exact aux _ _ (G.rotate_stabilizeX_succ_index s i) z
+/-- **Stabilization invariance for the one-variable specialization.** For any grid diagram `G`, the
+stabilization map from the homology of the specialization `V_{s.succ.succAbove i} = 0` of `G'`
+to the homology of the specialization `V_i = 0` of `G` is bijective. -/
+theorem oneVariableSpecializationStabilizeXSuccHomologyMap_bijective :
+    Function.Bijective (G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R) := by
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
+  · -- A cycle whose stabilization image is a boundary is a boundary.
+    obtain ⟨z, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R j y
+    rw [oneVariableSpecializationStabilizeXSuccHomologyMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_zero_iff,
+      mem_range_moduleCatToCycles_simplyBlockedComplex_iff,
+      simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap] at hy
+    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
+      mem_range_moduleCatToCycles_simplyBlockedComplex_iff]
+    exact G.mem_range_of_simplyBlockedStabilizeXSuccMap_mem_range s i R
+      (((G').mem_ker_simplyBlockedComplex_d_iff R j z.1).mp z.2) hy
+  · -- Every cycle differs from the stabilization image of a cycle by a boundary.
+    obtain ⟨y, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
+    obtain ⟨x, hx, hxy⟩ := G.exists_sub_simplyBlockedStabilizeXSuccMap_mem_range s i R
+      ((G.mem_ker_simplyBlockedComplex_d_iff R i y.1).mp y.2)
+    let z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom :=
+      ⟨((G').simplyBlockedChainEquiv R j).symm x, by
+        rw [mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+        exact hx⟩
+    refine ⟨(G').oneVariableSpecializationHomologyClass R j z, ?_⟩
+    rw [oneVariableSpecializationStabilizeXSuccHomologyMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_iff,
+      mem_range_moduleCatToCycles_simplyBlockedComplex_iff, Submodule.coe_sub, map_sub,
+      simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap,
+      LinearEquiv.apply_symm_apply, ← neg_sub]
+    exact neg_mem hxy
 
-/-- The north-east stabilization comparison on total one-variable-specialization homology,
-linear over the ground ring. It conjugates the south-west comparison by half-turns. -/
+/-- The stabilization comparison on the homology of the one-variable specialization, packaged as an
+`R`-linear equivalence by restricting scalars along `MvPolynomial.C`. -/
 noncomputable def oneVariableSpecializationStabilizeXSuccHomologyEquiv :
-    (BaseS).obj (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
-      (BaseA).obj ((G.simplyBlockedComplex R i).homology ()) :=
-  (((G').oneVariableSpecializationRotateHomologyLinearEquiv R j).trans
-    (G.stabilizeXSuccSourceEquiv s i R)).trans
-      ((G.rotate.oneVariableSpecializationStabilizeXHomologyEquiv s.rev i.rev R).trans
-        (G.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm)
+    (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
+        (((G').simplyBlockedComplex R j).homology ()) ≃ₗ[R]
+      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
+        ((G.simplyBlockedComplex R i).homology ()) :=
+  LinearEquiv.ofBijective
+    ({ toFun := G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R
+       map_add' := map_add _
+       map_smul' := fun r y => by
+         have h := (G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R).map_smulₛₗ
+           (MvPolynomial.C r) y
+         rwa [simplyBlockedStabilizeXSuccRingHom_C] at h } :
+      (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
+          (((G').simplyBlockedComplex R j).homology ()) →ₗ[R]
+        (ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)).obj
+          ((G.simplyBlockedComplex R i).homology ()))
+    (G.oneVariableSpecializationStabilizeXSuccHomologyMap_bijective s i R)
+
+/-- On elements, the coefficient-linear equivalence is the semilinear stabilization map. -/
+theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_apply
+    (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)).obj
+      (((G').simplyBlockedComplex R j).homology ())) :
+    G.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y =
+      G.oneVariableSpecializationStabilizeXSuccHomologyMap s i R y :=
+  (rfl)
 
 /-- The total north-east comparison sends a cycle class to the class of its cycle image. -/
 theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_oneVariableSpecializationHomologyClass
     (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
     (G.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R
-        ((G').oneVariableSpecializationHomologyClass R j z :
-          (BaseS).obj (((G').simplyBlockedComplex R j).homology ())) :
-            (G.simplyBlockedComplex R i).homology ()) =
+        ((G').oneVariableSpecializationHomologyClass R j z) :
+          (G.simplyBlockedComplex R i).homology ()) =
       G.oneVariableSpecializationHomologyClass R i
-        (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z) := by
-  rw [oneVariableSpecializationStabilizeXSuccHomologyEquiv]
-  -- Expand the composition on its restricted-scalar carriers before using the public equations.
-  change (G.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm
-    (G.rotate.oneVariableSpecializationStabilizeXHomologyEquiv s.rev i.rev R
-      (G.stabilizeXSuccSourceEquiv s i R
-        ((G').oneVariableSpecializationRotateHomologyLinearEquiv R j
-          ((G').oneVariableSpecializationHomologyClass R j z)))) = _
-  -- The class and its coefficient-linear presentation share their carrier via restrictScalars.
-  erw [oneVariableSpecializationRotateHomologyLinearEquiv_symm_apply,
-    oneVariableSpecializationStabilizeXHomologyEquiv_apply,
-    oneVariableSpecializationRotateHomologyLinearEquiv_apply,
-    oneVariableSpecializationRotateHomologyEquiv_oneVariableSpecializationHomologyClass,
-    stabilizeXSuccSourceEquiv_homologyClass,
-    oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass,
-    oneVariableSpecializationRotateHomologyEquiv_symm_oneVariableSpecializationHomologyClass,
-    oneVariableSpecializationStabilizeXSuccCyclesMap_def]
+        (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z) :=
+  G.oneVariableSpecializationStabilizeXSuccHomologyMap_oneVariableSpecializationHomologyClass
+    s i R z
 
-/-- The inverse total comparison recovers the class of a cycle from its north-east image. -/
+/-- The inverse total comparison recovers a cycle class from the class of its north-east image. -/
 theorem
-    oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_oneVariableSpecializationHomologyClass
+    oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_homologyClass_cyclesMap
     (z : LinearMap.ker (((G').simplyBlockedComplex R j).d () ()).hom) :
     ((G.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm
         (G.oneVariableSpecializationHomologyClass R i
-          (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z) :
-            (BaseA).obj ((G.simplyBlockedComplex R i).homology ())) :
+          (G.oneVariableSpecializationStabilizeXSuccCyclesMap s i R z)) :
               ((G').simplyBlockedComplex R j).homology ()) =
       (G').oneVariableSpecializationHomologyClass R j z := by
   rw [←
@@ -191,34 +465,33 @@ local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 local notation "BaseA" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)
 local notation "BaseS" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)
 
-private theorem stabilizeXSuccSourceEquiv_mem_iff (g : ℤ × ℤ)
-    (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-      MvPolynomial {c : Fin (n + 1) // c ≠ (j).rev} R)).obj
-        (((G.stabilizeXSucc s).rotate.1.simplyBlockedComplex R (j).rev).homology ())) :
-    G.1.stabilizeXSuccSourceEquiv s i R y ∈
-        (G.rotate.stabilizeX s.rev).bigradedHatHomologyPiece R
-          (s.rev.castSucc.succAbove i.rev) g ↔
-      y ∈ (G.stabilizeXSucc s).rotate.bigradedHatHomologyPiece R (j).rev g := by
-  have aux (p q : OddComponentGridDiagram (n + 1) × Fin (n + 1)) (h : p = q)
-      (y : (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-        MvPolynomial {c : Fin (n + 1) // c ≠ p.2} R)).obj
-          ((p.1.1.simplyBlockedComplex R p.2).homology ())) :
-      LinearEquiv.cast (R := R) (M := fun p : GridDiagram (n + 1) × Fin (n + 1) =>
-        (ModuleCat.restrictScalars (MvPolynomial.C : R →+*
-          MvPolynomial {c : Fin (n + 1) // c ≠ p.2} R)).obj
-            ((p.1.simplyBlockedComplex R p.2).homology ()))
-        (congrArg (fun p : OddComponentGridDiagram (n + 1) × Fin (n + 1) => (p.1.1, p.2)) h) y ∈
-          q.1.bigradedHatHomologyPiece R q.2 g ↔
-        y ∈ p.1.bigradedHatHomologyPiece R p.2 g := by
-    subst q
-    rfl
-  dsimp only [stabilizeXSucc, stabilizeX] at y ⊢
-  exact aux
-    ((G.stabilizeXSucc s).rotate, (j).rev)
-    (G.rotate.stabilizeX s.rev, s.rev.castSucc.succAbove i.rev) (by
-      apply Prod.ext
-      · exact G.rotate_stabilizeXSucc s
-      · simp only [Fin.rev_succAbove, Fin.rev_succ]) y
+omit [CharP R 2] in
+/-- The specialized north-east chain comparison preserves absolute bidegrees. -/
+theorem simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece {g : ℤ × ℤ}
+    {c : GridChainHat R (n + 1) j}
+    (hc : c ∈ (G.stabilizeXSucc s).bigradedChainHatPiece R j g) :
+    G.1.simplyBlockedStabilizeXSuccMap s i R c ∈ G.bigradedChainHatPiece R i g := by
+  obtain ⟨b, hb, rfl⟩ := (G.stabilizeXSucc s).mem_bigradedChainHatPiece_iff_exists.mp hc
+  rw [GridDiagram.simplyBlockedStabilizeXSuccMap_simplyBlockedSpecialization]
+  exact G.simplyBlockedSpecialization_mem_bigradedChainHatPiece i
+    (G.stabilizeXSuccChainMap_mem_bigradedChainMinusPiece s R hb)
+
+/-- The north-east total homology comparison is homogeneous of bidegree zero. -/
+theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
+    LinearMap.IsHomogeneous
+      (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
+      ((G.stabilizeXSucc s).bigradedHatHomologyGrading R j).piece
+      (G.bigradedHatHomologyGrading R i).piece 0 := by
+  refine (G.stabilizeXSucc s).isHomogeneous_oneVariableSpecializationHomologyMap R j G i
+    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
+    (G.1.oneVariableSpecializationStabilizeXSuccCyclesMap s i R) ?_ ?_
+  · intro z
+    exact
+      oneVariableSpecializationStabilizeXSuccHomologyEquiv_oneVariableSpecializationHomologyClass
+        G.1 s i R z
+  · intro g z hz
+    rw [GridDiagram.simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXSuccCyclesMap]
+    exact G.simplyBlockedStabilizeXSuccMap_mem_bigradedChainHatPiece s i R hz
 
 /-- The north-east comparison preserves and reflects the absolute homology bidegree. -/
 @[simp]
@@ -228,22 +501,9 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomo
     G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g := by
-  rw [GridDiagram.oneVariableSpecializationStabilizeXSuccHomologyEquiv]
-  -- Keep the selected restricted-scalar carriers while expanding the composite equivalence.
-  change (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm
-    (G.rotate.1.oneVariableSpecializationStabilizeXHomologyEquiv s.rev i.rev R
-      (G.1.stabilizeXSuccSourceEquiv s i R
-        ((G.stabilizeXSucc s).1.oneVariableSpecializationRotateHomologyLinearEquiv R j y))) ∈
-      G.bigradedHatHomologyPiece R i g ↔ _
-  -- Membership uses the same carrier before and after restricting coefficient scalars.
-  erw [GridDiagram.oneVariableSpecializationRotateHomologyLinearEquiv_symm_apply,
-    G.oneVariableSpecializationRotateHomologyEquiv_symm_mem_bigradedHatHomologyPiece_iff]
-  erw [GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv_apply,
-    G.rotate.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff,
-    G.stabilizeXSuccSourceEquiv_mem_iff,
-    GridDiagram.oneVariableSpecializationRotateHomologyLinearEquiv_apply]
-  exact oneVariableSpecializationRotateHomologyEquiv_mem_bigradedHatHomologyPiece_iff
-    (G.stabilizeXSucc s) R j g y
+  simpa only [bigradedHatHomologyGrading_piece] using
+    LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+      (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
 
 /-- The inverse north-east comparison preserves and reflects the absolute homology bidegree. -/
 @[simp]
@@ -256,55 +516,42 @@ theorem oneVariableSpecializationStabilizeXSuccHomologyEquiv_symm_mem_bigradedHa
     (G.oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomologyPiece_iff s i R g
       ((G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y)).symm
 
-/-- The north-east total homology comparison is homogeneous of bidegree zero. -/
-theorem isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv :
-    LinearMap.IsHomogeneous
-      (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).toLinearMap
-      ((G.stabilizeXSucc s).bigradedHatHomologyGrading R j).piece
-      (G.bigradedHatHomologyGrading R i).piece 0 :=
-  LinearMap.isHomogeneous_def.2 fun g y hy => by
-    rw [bigradedHatHomologyGrading_piece] at hy
-    rw [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe]
-    exact (G.oneVariableSpecializationStabilizeXSuccHomologyEquiv_mem_bigradedHatHomologyPiece_iff
-      s i R g y).2 hy
-
 /-- North-east `X`-stabilization identifies each homogeneous piece, blocking the transported old
 `O`-marking and preserving absolute `O`-Maslov and Alexander bidegrees. -/
-noncomputable def simplyBlockedHomologyStabilizeXSuccPieceEquiv (g : ℤ × ℤ) :
+noncomputable def oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv (g : ℤ × ℤ) :
     (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g ≃ₗ[R]
       G.bigradedHatHomologyPiece R i g :=
-  (G.stabilizeXSucc s).oneVariableSpecializationHomologyPieceEquivOfHomogeneous R j G i
-    (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
-    (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g
+  ((LinearEquiv.ofEq _ _ ((G.stabilizeXSucc s).bigradedHatHomologyGrading_piece R j g).symm).trans
+    (LinearMap.IsHomogeneous.pieceEquiv
+      (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g)).trans
+      (LinearEquiv.ofEq _ _ (G.bigradedHatHomologyGrading_piece R i g))
 
 /-- The piece comparison is the restriction of the total homology comparison. -/
 @[simp↓]
-theorem coe_simplyBlockedHomologyStabilizeXSuccPieceEquiv_apply (g : ℤ × ℤ)
+theorem coe_oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeXSucc s).bigradedHatHomologyPiece R j g) :
-    (G.simplyBlockedHomologyStabilizeXSuccPieceEquiv s i R g y :
+    (G.oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv s i R g y :
         (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) =
       G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R y := by
-  exact (G.stabilizeXSucc s).coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_apply
-    R j G i (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
-    (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
+  simp only [oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
 
 /-- The inverse piece comparison is the restriction of the inverse total comparison. -/
 @[simp↓]
-theorem coe_simplyBlockedHomologyStabilizeXSuccPieceEquiv_symm_apply (g : ℤ × ℤ)
+theorem coe_oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv_symm_apply (g : ℤ × ℤ)
     (y : G.bigradedHatHomologyPiece R i g) :
-    ((G.simplyBlockedHomologyStabilizeXSuccPieceEquiv s i R g).symm y :
+    ((G.oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv s i R g).symm y :
         (BaseS).obj (((G.stabilizeXSucc s).1.simplyBlockedComplex R j).homology ())) =
       (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R).symm y := by
-  exact
-    (G.stabilizeXSucc s).coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_symm_apply
-      R j G i (G.1.oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R)
-      (G.isHomogeneous_oneVariableSpecializationStabilizeXSuccHomologyEquiv s i R) g y
+  simp only [oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
 
 /-- North-east `X`-stabilization preserves the coefficient-ring rank in every bidegree. -/
 theorem finrank_bigradedHatHomologyPiece_stabilizeXSucc (g : ℤ × ℤ) :
     Module.finrank R ((G.stabilizeXSucc s).bigradedHatHomologyPiece R j g) =
       Module.finrank R (G.bigradedHatHomologyPiece R i g) :=
-  (G.simplyBlockedHomologyStabilizeXSuccPieceEquiv s i R g).finrank_eq
+  (G.oneVariableSpecializationStabilizeXSuccHomologyPieceEquiv s i R g).finrank_eq
 
 end TauCeti.OddComponentGridDiagram
 

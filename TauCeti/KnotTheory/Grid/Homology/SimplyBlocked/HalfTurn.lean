@@ -10,7 +10,10 @@ public import TauCeti.KnotTheory.Grid.SimplyBlocked.HalfTurn
 public import TauCeti.KnotTheory.Grid.Homology.HatBigrading
 
 /-!
-# The half-turn on simply blocked grid homology
+# The half-turn on one-variable-specialization grid homology
+
+Blocking a single `O`-marking agrees with simply blocked homology `G-hat` for knot grids.
+For links, simply blocked homology instead blocks one `O`-marking per component.
 
 The half-turn exchanges south-west and north-east corner stabilizations while transporting
 the blocked `O`-marking from `i` to `i.rev`. This feeds the north-east stabilization comparison
@@ -24,8 +27,6 @@ to each homogeneous piece. The equivalence and its inverse are characterized on 
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Sections 4.6 and 5.2.
-The quotient descent follows the existing simply blocked reflection, using Mathlib's
-`LinearEquiv.ofSubmodules` and `Submodule.Quotient.equiv`.
 -/
 
 public section
@@ -70,9 +71,9 @@ theorem simplyBlockedChainEquiv_oneVariableSpecializationRotateCyclesEquiv_symm
     G.simplyBlockedChainEquiv R i ((G.oneVariableSpecializationRotateCyclesEquiv R i).symm z) =
       (GridChain.simplyBlockedHalfTurnEquiv R i).symm
         (G.rotate.simplyBlockedChainEquiv R i.rev z) := by
-  apply (GridChain.simplyBlockedHalfTurnEquiv R i).injective
-  rw [← simplyBlockedChainEquiv_oneVariableSpecializationRotateCyclesEquiv,
-    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+  exact simplyBlockedChainEquiv_oneVariableSpecializationCyclesEquivOfIntertwining_symm
+    R i i.rev σ (GridChain.simplyBlockedHalfTurnEquiv R i)
+      (G.simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv R i) z
 
 /-- The half-turn on one-variable specialization homology of an arbitrary grid diagram,
 semilinear along the renaming of surviving variables. -/
@@ -103,33 +104,37 @@ theorem oneVariableSpecializationRotateHomologyEquiv_symm_oneVariableSpecializat
         (G.rotate.oneVariableSpecializationHomologyClass R i.rev z) =
       G.oneVariableSpecializationHomologyClass R i
         ((G.oneVariableSpecializationRotateCyclesEquiv R i).symm z) := by
-  rw [LinearEquiv.symm_apply_eq,
-    oneVariableSpecializationRotateHomologyEquiv_oneVariableSpecializationHomologyClass,
-    LinearEquiv.apply_symm_apply]
+  exact
+    oneVariableSpecializationHomologyEquivOfIntertwining_symm_oneVariableSpecializationHomologyClass
+      R i i.rev σ (GridChain.simplyBlockedHalfTurnEquiv R i)
+        (G.simplyBlockedDifferential_rotate_simplyBlockedHalfTurnEquiv R i) z
 
 /-- The half-turn is linear over coefficient scalars on the specified restricted-scalar carriers. -/
-noncomputable def oneVariableSpecializationRotateHomologyLinearEquiv :
+noncomputable def oneVariableSpecializationRotateHomologyCoefficientEquiv :
     (BaseA).obj ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
       (BaseB).obj ((G.rotate.simplyBlockedComplex R i.rev).homology ()) :=
-  oneVariableSpecializationHomologyCoefficientEquiv R i i.rev σ
+  ModuleCat.restrictScalarsLinearEquiv
+    (MvPolynomial.C : R →+* _) (MvPolynomial.C : R →+* _)
     (G.oneVariableSpecializationRotateHomologyEquiv R i)
     (simplyBlockedHalfTurnRenameEquiv_C R i)
 
 /-- Restricting coefficient scalars preserves the half-turn. -/
-theorem oneVariableSpecializationRotateHomologyLinearEquiv_apply
+theorem oneVariableSpecializationRotateHomologyCoefficientEquiv_apply
     (y : (BaseA).obj ((G.simplyBlockedComplex R i).homology ())) :
-    G.oneVariableSpecializationRotateHomologyLinearEquiv R i y =
+    G.oneVariableSpecializationRotateHomologyCoefficientEquiv R i y =
       G.oneVariableSpecializationRotateHomologyEquiv R i y := by
-  exact oneVariableSpecializationHomologyCoefficientEquiv_apply R i i.rev σ
+  exact ModuleCat.restrictScalarsLinearEquiv_apply
+    (MvPolynomial.C : R →+* _) (MvPolynomial.C : R →+* _)
     (G.oneVariableSpecializationRotateHomologyEquiv R i)
     (simplyBlockedHalfTurnRenameEquiv_C R i) y
 
 /-- Restricting coefficient scalars preserves the inverse half-turn. -/
-theorem oneVariableSpecializationRotateHomologyLinearEquiv_symm_apply
+theorem oneVariableSpecializationRotateHomologyCoefficientEquiv_symm_apply
     (y : (BaseB).obj ((G.rotate.simplyBlockedComplex R i.rev).homology ())) :
-    (G.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm y =
+    (G.oneVariableSpecializationRotateHomologyCoefficientEquiv R i).symm y =
       (G.oneVariableSpecializationRotateHomologyEquiv R i).symm y := by
-  exact oneVariableSpecializationHomologyCoefficientEquiv_symm_apply R i i.rev σ
+  exact ModuleCat.restrictScalarsLinearEquiv_symm_apply
+    (MvPolynomial.C : R →+* _) (MvPolynomial.C : R →+* _)
     (G.oneVariableSpecializationRotateHomologyEquiv R i)
     (simplyBlockedHalfTurnRenameEquiv_C R i) y
 
@@ -146,20 +151,45 @@ local notation "BaseB" => ModuleCat.restrictScalars
   (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i.rev} R)
 
 /-- The half-turn preserves both homology degrees on every odd-component grid diagram. -/
-theorem isHomogeneous_oneVariableSpecializationRotateHomologyLinearEquiv :
-    LinearMap.IsHomogeneous (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i).toLinearMap
+theorem isHomogeneous_oneVariableSpecializationRotateHomologyCoefficientEquiv :
+    LinearMap.IsHomogeneous
+      (G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i).toLinearMap
       (G.bigradedHatHomologyGrading R i).piece
       (G.rotate.bigradedHatHomologyGrading R i.rev).piece 0 := by
   apply G.isHomogeneous_oneVariableSpecializationHomologyMap R i G.rotate i.rev
-    (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i).toLinearMap
+    (G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i).toLinearMap
     (G.1.oneVariableSpecializationRotateCyclesEquiv R i)
   · intro z
-    exact (G.1.oneVariableSpecializationRotateHomologyLinearEquiv_apply R i _).trans
+    exact (G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv_apply R i _).trans
       (G.1.oneVariableSpecializationRotateHomologyEquiv_oneVariableSpecializationHomologyClass
         R i z)
   · intro g z hz
     rw [GridDiagram.simplyBlockedChainEquiv_oneVariableSpecializationRotateCyclesEquiv]
     exact (G.simplyBlockedHalfTurnEquiv_mem_bigradedChainHatPiece_iff R i).2 hz
+
+/-- The coefficient-linear half-turn preserves and reflects homogeneous-piece membership. -/
+@[simp↓]
+theorem oneVariableSpecializationRotateHomologyCoefficientEquiv_mem_bigradedHatHomologyPiece_iff
+    (g : ℤ × ℤ) (y : (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) :
+    G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i y ∈
+        G.rotate.bigradedHatHomologyPiece R i.rev g ↔
+      y ∈ G.bigradedHatHomologyPiece R i g := by
+  simpa only [bigradedHatHomologyGrading_piece] using
+    LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+      (G.isHomogeneous_oneVariableSpecializationRotateHomologyCoefficientEquiv R i) g y
+
+/-- The coefficient-linear inverse half-turn preserves and reflects piece membership. -/
+@[simp↓]
+theorem
+    oneVariableSpecializationRotateHomologyCoefficientEquiv_symm_mem_bigradedHatHomologyPiece_iff
+    (g : ℤ × ℤ) (y : (BaseB).obj ((G.1.rotate.simplyBlockedComplex R i.rev).homology ())) :
+    (G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i).symm y ∈
+        G.bigradedHatHomologyPiece R i g ↔
+      y ∈ G.rotate.bigradedHatHomologyPiece R i.rev g := by
+  simpa only [bigradedHatHomologyGrading_piece] using
+    LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
+      (G.isHomogeneous_oneVariableSpecializationRotateHomologyCoefficientEquiv R i).linearEquiv_symm
+      g y
 
 /-- The half-turn preserves and reflects homogeneous-piece membership. -/
 @[simp↓]
@@ -169,10 +199,9 @@ theorem oneVariableSpecializationRotateHomologyEquiv_mem_bigradedHatHomologyPiec
         (BaseB).obj ((G.1.rotate.simplyBlockedComplex R i.rev).homology ())) ∈
         G.rotate.bigradedHatHomologyPiece R i.rev g ↔
       y ∈ G.bigradedHatHomologyPiece R i g := by
-  rw [← GridDiagram.oneVariableSpecializationRotateHomologyLinearEquiv_apply]
-  exact G.homologyEquiv_mem_bigradedHatHomologyPiece_iff R i G.rotate i.rev
-    (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i)
-    (G.isHomogeneous_oneVariableSpecializationRotateHomologyLinearEquiv R i) g y
+  rw [← GridDiagram.oneVariableSpecializationRotateHomologyCoefficientEquiv_apply]
+  exact G.oneVariableSpecializationRotateHomologyCoefficientEquiv_mem_bigradedHatHomologyPiece_iff
+    R i g y
 
 /-- The inverse half-turn preserves and reflects homogeneous-piece membership. -/
 @[simp↓]
@@ -182,18 +211,18 @@ theorem oneVariableSpecializationRotateHomologyEquiv_symm_mem_bigradedHatHomolog
         (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ G.rotate.bigradedHatHomologyPiece R i.rev g := by
-  have h := G.rotate.homologyEquiv_mem_bigradedHatHomologyPiece_iff R i.rev G i
-    (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm
-    (G.isHomogeneous_oneVariableSpecializationRotateHomologyLinearEquiv R i).linearEquiv_symm g y
-  rw [GridDiagram.oneVariableSpecializationRotateHomologyLinearEquiv_symm_apply] at h
-  exact h
+  rw [← GridDiagram.oneVariableSpecializationRotateHomologyCoefficientEquiv_symm_apply]
+  exact
+    G.oneVariableSpecializationRotateHomologyCoefficientEquiv_symm_mem_bigradedHatHomologyPiece_iff
+      R i g y
 
 /-- The half-turn identifies the pieces of the same bidegree on odd-component diagrams. -/
 noncomputable def oneVariableSpecializationRotateHomologyPieceEquiv (g : ℤ × ℤ) :
     G.bigradedHatHomologyPiece R i g ≃ₗ[R] G.rotate.bigradedHatHomologyPiece R i.rev g :=
-  G.oneVariableSpecializationHomologyPieceEquivOfHomogeneous R i G.rotate i.rev
-    (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i)
-    (G.isHomogeneous_oneVariableSpecializationRotateHomologyLinearEquiv R i) g
+  let he := G.isHomogeneous_oneVariableSpecializationRotateHomologyCoefficientEquiv R i
+  (LinearEquiv.ofEq _ _ (G.bigradedHatHomologyGrading_piece R i g).symm).trans
+    ((he.pieceEquiv g).trans
+      (LinearEquiv.ofEq _ _ (G.rotate.bigradedHatHomologyGrading_piece R i.rev g)))
 
 /-- The piece equivalence is the restriction of the total half-turn. -/
 @[simp↓]
@@ -201,9 +230,9 @@ theorem coe_oneVariableSpecializationRotateHomologyPieceEquiv_apply (g : ℤ × 
     (y : G.bigradedHatHomologyPiece R i g) :
     (G.oneVariableSpecializationRotateHomologyPieceEquiv R i g y :
         (BaseB).obj ((G.1.rotate.simplyBlockedComplex R i.rev).homology ())) =
-      G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i y.1 := by
-  rw [oneVariableSpecializationRotateHomologyPieceEquiv,
-    coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_apply]
+      G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i y.1 := by
+  simp only [oneVariableSpecializationRotateHomologyPieceEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
 
 /-- The inverse piece equivalence is the restriction of the total inverse half-turn. -/
 @[simp↓]
@@ -211,8 +240,9 @@ theorem coe_oneVariableSpecializationRotateHomologyPieceEquiv_symm_apply (g : �
     (y : G.rotate.bigradedHatHomologyPiece R i.rev g) :
     ((G.oneVariableSpecializationRotateHomologyPieceEquiv R i g).symm y :
         (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) =
-      (G.1.oneVariableSpecializationRotateHomologyLinearEquiv R i).symm y.1 := by
-  rw [oneVariableSpecializationRotateHomologyPieceEquiv,
-    coe_oneVariableSpecializationHomologyPieceEquivOfHomogeneous_symm_apply]
+      (G.1.oneVariableSpecializationRotateHomologyCoefficientEquiv R i).symm y.1 := by
+  simp only [oneVariableSpecializationRotateHomologyPieceEquiv, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
 
 end TauCeti.OddComponentGridDiagram

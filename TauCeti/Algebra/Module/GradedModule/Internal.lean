@@ -64,6 +64,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
+* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: a degree-zero homogeneous
+  equivalence preserves and reflects membership in each piece.
+* `TauCeti.LinearMap.IsHomogeneous.pieceEquiv`: restriction of a degree-zero homogeneous
+  equivalence to one piece.
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
@@ -368,6 +372,43 @@ theorem linearEquiv_symm {ι : Type} [DecidableEq ι] [AddMonoid ι]
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+/-- A degree-zero equivalence of internally graded modules preserves and reflects each piece.
+The equivalence may be linear over a different semiring from the grading. -/
+theorem linearEquiv_mem_piece_iff {ι : Type} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) (x : M) :
+    e x ∈ H.piece p ↔ x ∈ G.piece p := by
+  constructor
+  · intro hx
+    simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
+      he.linearEquiv_symm.map_mem hx
+  · intro hx
+    simpa only [add_zero, LinearEquiv.coe_coe] using he.map_mem hx
+
+/-- Restrict a degree-zero homogeneous equivalence to one piece of its internal gradings. -/
+noncomputable def pieceEquiv {ι : Type} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) :
+    G.piece p ≃ₗ[R] H.piece p :=
+  e.ofSubmodules _ _ (by
+    ext y
+    rw [Submodule.mem_map_equiv, ← he.linearEquiv_mem_piece_iff p,
+      LinearEquiv.apply_symm_apply])
+
+/-- The piece equivalence applies the original equivalence to the underlying element. -/
+@[simp]
+theorem coe_pieceEquiv_apply {ι : Type} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) (x : G.piece p) :
+    (he.pieceEquiv p x : N) = e x.1 := (rfl)
+
+/-- The inverse piece equivalence applies the original inverse to the underlying element. -/
+@[simp]
+theorem coe_pieceEquiv_symm_apply {ι : Type} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) (x : H.piece p) :
+    ((he.pieceEquiv p).symm x : M) = e.symm x.1 := (rfl)
 
 section Decompose
 
