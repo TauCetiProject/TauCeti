@@ -90,6 +90,10 @@ section Prod
 variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet}
 
 @[simp]
+theorem chart_prod (i : Fin A.n) : (A.prod h).chart i = A.chart i :=
+  rfl
+
+@[simp]
 theorem image_prod (i : Fin A.n) : (A.prod h).image i = A.image i :=
   image_ofBaseSet i
 
@@ -139,6 +143,10 @@ def hom (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center 
 section HomImage
 
 variable {A} {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₂ V₂ (A.center i)).baseSet}
+
+@[simp]
+theorem chart_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).chart i = A.chart i :=
+  rfl
 
 @[simp]
 theorem image_hom (i : Fin A.n) : (A.hom (𝕜 := 𝕜) h).image i = A.image i :=
