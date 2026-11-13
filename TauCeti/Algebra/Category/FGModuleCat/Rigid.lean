@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Dual
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Left duals of finite-dimensional vector spaces
@@ -118,3 +119,29 @@ theorem leftAdjointMate_hom {V W : FGModuleCat.{u} K} (f : V ⟶ W) :
   exact h
 
 end FGModuleCat
+
+namespace ModuleCat
+
+universe u
+
+variable {K : Type u} [Field K]
+
+/-- A finite-dimensional vector space is exactly paired with its dual space in `ModuleCat K`:
+the image of the pairing `FGModuleCat.exactPairing` under the inclusion of `FGModuleCat K`. -/
+@[instance_reducible]
+def exactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
+    ExactPairing V (ModuleCat.of K (Module.Dual K V)) :=
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  (ModuleCat.isFG K).ι.mapExactPairing V' (FGModuleCat.FGModuleCatDual K V')
+
+/-- The dual space of a finite-dimensional vector space is exactly paired with the space in
+`ModuleCat K`: the image of `FGModuleCat.leftExactPairing` under the inclusion of
+`FGModuleCat K`. -/
+@[instance_reducible]
+def leftExactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
+    ExactPairing (ModuleCat.of K (Module.Dual K V)) V :=
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  letI := FGModuleCat.leftExactPairing K V'
+  (ModuleCat.isFG K).ι.mapExactPairing (FGModuleCat.dual K V') V'
+
+end ModuleCat

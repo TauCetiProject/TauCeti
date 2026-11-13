@@ -64,6 +64,16 @@ theorem rightAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y))
 
 end Mate
 
+/-- An object exactly paired with a zero object is zero: the zigzag identity factors its identity
+through the coevaluation, whose target is then a zero object. -/
+theorem _root_.CategoryTheory.Limits.IsZero.of_exactPairing {X : C} (hX : IsZero X) (Y : C)
+    [ExactPairing X Y] : IsZero Y := by
+  have h := ExactPairing.coevaluation_evaluation X Y
+  rw [((tensorRight Y).map_isZero hX).eq_of_tgt (η_ X Y) 0, MonoidalPreadditive.whiskerLeft_zero,
+    zero_comp] at h
+  rw [IsZero.iff_id_eq_zero]
+  simpa using (ρ_ Y).inv ≫= h.symm =≫ (λ_ Y).hom
+
 section Linear
 
 variable (k : Type w) [Semiring k] [Linear k C] [MonoidalLinear k C]
