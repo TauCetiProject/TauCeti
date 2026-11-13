@@ -440,16 +440,18 @@ theorem mpullback_mpullback (f : M → M') (g : M' → M'') (hf : ContMDiff I I'
     mpullback f hf (mpullback g hg β) = mpullback (g ∘ f) (hg.comp hf) β :=
   (LinearMap.congr_fun (mpullback_comp f g hf hg) β).symm
 
-/-- Pulling a form back along the two sides of a commutative square of smooth maps gives the same
+variable {E''' H''' M''' : Type*} [NormedAddCommGroup E'''] [NormedSpace ℝ E''']
+  [TopologicalSpace H'''] [TopologicalSpace M'''] [ChartedSpace H''' M''']
+  {I''' : ModelWithCorners ℝ E''' H'''} [IsManifold I''' 1 M''']
+
+/-- Pulling a form back along the two sides of a commuting square of smooth maps gives the same
 form. -/
-theorem mpullback_mpullback_of_comp_eq {E₃ H₃ N : Type*} [NormedAddCommGroup E₃]
-    [NormedSpace ℝ E₃] [TopologicalSpace H₃] [TopologicalSpace N] [ChartedSpace H₃ N]
-    {J : ModelWithCorners ℝ E₃ H₃} [IsManifold J 1 N] {f : M → M'} {g : M' → M''} {f' : M → N}
-    {g' : N → M''} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I'' ∞ g)
-    (hf' : ContMDiff I J ∞ f') (hg' : ContMDiff J I'' ∞ g') (h : g ∘ f = g' ∘ f')
+theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M → M'''}
+    {g' : M''' → M''} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I'' ∞ g)
+    (hf' : ContMDiff I I''' ∞ f') (hg' : ContMDiff I''' I'' ∞ g') (hcomp : g ∘ f = g' ∘ f')
     (β : SmoothForm I'' M'' F k) :
     mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
-  simp only [mpullback_mpullback, h]
+  simp only [mpullback_mpullback, hcomp]
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
