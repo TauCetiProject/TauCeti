@@ -43,8 +43,9 @@ theorem pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (x : X) :
 end TauCeti
 
 open scoped unitInterval in
-/-- **Generalized loops indexed by an infinite set are constant** in a `T1` space: such a loop is
-the base point on the dense boundary of the cube, and the fiber over the base point is closed. -/
+/-- **There is at most one generalized loop indexed by an infinite set** in a `T1` space. -/
+-- Such a loop is the base point on the dense boundary of the cube, and the fiber over the base
+-- point is closed, so the loop is constant.
 instance GenLoop.subsingleton_of_infinite {N X : Type*} [Infinite N] [TopologicalSpace X]
     [T1Space X] {x : X} : Subsingleton (Ω^ N X x) :=
   have hconst (f : Ω^ N X x) (y : I^N) : f y = x :=
@@ -54,13 +55,14 @@ instance GenLoop.subsingleton_of_infinite {N X : Type*} [Infinite N] [Topologica
   ⟨fun f g ↦ GenLoop.ext f g fun y ↦ (hconst f y).trans (hconst g y).symm⟩
 
 open scoped unitInterval in
-/-- **Generalized loops indexed by an infinite set are null-homotopic** in every space. Such a
-loop `f` is the base point `x` on the dense boundary of the cube, so each value `f y` lies in the
-closure of `{x}`, that is, `x` specializes to `f y`. Hence the constant loop specializes to `f` in
-the compact-open topology, so the two are joined by a path in `Ω^ N X x`, which is a homotopy
-relative to the boundary (`GenLoop.homotopic_iff_joined`). -/
+/-- **Generalized loops indexed by an infinite set are null-homotopic** in every space: each is
+homotopic relative to the cube boundary to `GenLoop.const`. -/
 theorem GenLoop.homotopic_const_of_infinite {N X : Type*} [Infinite N] [TopologicalSpace X]
     {x : X} (f : Ω^ N X x) : GenLoop.Homotopic f GenLoop.const := by
+  -- `f` is the base point `x` on the dense boundary of the cube, so each value `f y` lies in the
+  -- closure of `{x}`, that is, `x` specializes to `f y`. Hence the constant loop specializes to
+  -- `f` in the compact-open topology, so the two are joined by a path in `Ω^ N X x`, which is a
+  -- homotopy relative to the boundary (`GenLoop.homotopic_iff_joined`).
   have hx (y : I^N) : x ⤳ f y := specializes_iff_mem_closure.2 <|
     map_mem_closure (map_continuous f) (Cube.dense_boundary N y) fun z hz ↦ GenLoop.boundary f z hz
   have h : (GenLoop.const : Ω^ N X x) ⤳ f :=

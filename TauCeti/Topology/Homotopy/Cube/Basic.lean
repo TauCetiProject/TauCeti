@@ -173,9 +173,10 @@ theorem Cube.preimage_appendHomeomorph_boundary (m n : ℕ) :
   exact Cube.append_mem_boundary_iff
 
 open scoped Topology unitInterval in
-/-- **The boundary of a cube indexed by an infinite set is dense**: a basic open set constrains
-only finitely many coordinates, so it meets the boundary through a free coordinate set to `0`. -/
+/-- **The boundary of a cube indexed by an infinite set is dense.** -/
 theorem Cube.dense_boundary (N : Type*) [Infinite N] : Dense (Cube.boundary N) := fun y ↦ by
+  -- A basic open set constrains only finitely many coordinates, so it meets the boundary through
+  -- a free coordinate set to `0`.
   rw [mem_closure_iff]
   intro U hU hyU
   obtain ⟨s, u, hu, hsU⟩ := isOpen_pi_iff.1 hU y hyU
