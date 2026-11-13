@@ -99,12 +99,9 @@ theorem IsAdicComplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLo
     [IsNoetherianRing R] [IsAdicComplete (IsLocalRing.maximalIdeal R) R]
     [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
     IsAdicComplete (IsLocalRing.maximalIdeal S) S := by
-  have : IsAdicComplete (IsLocalRing.maximalIdeal R) S := .of_finite _ _
-  have : IsAdicComplete ((IsLocalRing.maximalIdeal R).map (algebraMap R S)) S :=
-    (IsAdicComplete.map_algebraMap_iff _ _).mpr inferInstance
-  obtain ⟨n, hn⟩ := TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
+  have : IsNoetherianRing S := .of_finite R S
   exact {
-    toIsHausdorff := IsHausdorff.of_pow_le hn
+    toIsHausdorff := inferInstance
     toIsPrecomplete := IsPrecomplete.of_finite_of_isLocalRing R S }
 
 variable {M} in
