@@ -183,9 +183,8 @@ namespace Homeomorph
 @[simp]
 theorem image_connectedComponent {Y : Type*} [TopologicalSpace Y]
     (e : X ≃ₜ Y) (x : X) :
-    e '' connectedComponent x = connectedComponent (e x) := by
-  simpa only [connectedComponentIn_univ, _root_.Set.image_univ_of_surjective e.surjective] using
-    e.image_connectedComponentIn (s := _root_.Set.univ) (x := x) (_root_.Set.mem_univ x)
+    e '' connectedComponent x = connectedComponent (e x) :=
+  e.isQuotientMap.image_connectedComponent (fun y => by simpa using isConnected_singleton) x
 
 end Homeomorph
 
