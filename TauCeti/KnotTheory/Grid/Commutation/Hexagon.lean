@@ -755,10 +755,9 @@ coefficients are the sums of those of the two hexagon maps. -/
 theorem commutationHomotopy_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
     G.commutationHomotopy R C c y =
-      c.sum fun x p =>
-        p * (G.hexagonCoefficient R C x y + G.initialHexagonCoefficient R C x y) := by
+      c.sum fun x p => p * G.commutationHexagonCoefficient R C x y := by
   simp only [commutationHomotopy_apply, Finsupp.add_apply, hexagonMap_apply_apply,
-    initialHexagonMap_apply_apply, mul_add, Finsupp.sum_add]
+    initialHexagonMap_apply_apply, commutationHexagonCoefficient_def, mul_add, Finsupp.sum_add]
 
 end GridDiagram
 
