@@ -125,13 +125,17 @@ theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
           (weightedX _ isWeightFamily_one_weight 0)) = a := by
   rw [laurentCoverOverlapIdeal_def, Ideal.mem_span_singleton']
 
-/-- The coordinate ring of the Laurent piece `{|f| ≤ 1}`. -/
+/-- The algebraic quotient presentation `A⟨X⟩/(f-X)` of the Laurent piece `{|f| ≤ 1}`. It is the
+coordinate ring of the piece when `A` is a strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverLe (f : A) := R₁ ⧸ laurentCoverLeIdeal A f
 
-/-- The coordinate ring of the Laurent piece `{|f| ≥ 1}`. -/
+/-- The algebraic quotient presentation `A⟨Y⟩/(1-fY)` of the Laurent piece `{|f| ≥ 1}`. It is the
+coordinate ring of the piece when `A` is a strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverGe (f : A) := R₁ ⧸ laurentCoverGeIdeal A f
 
-/-- The coordinate ring of the overlap `{|f| = 1}` of the two Laurent pieces. -/
+/-- The algebraic quotient presentation `A⟨X,Y⟩/(1-XY, f-X)` of the overlap `{|f| = 1}` of the two
+Laurent pieces. It is the coordinate ring of the overlap when `A` is a strongly noetherian Tate
+ring. -/
 noncomputable abbrev laurentCoverOverlap (f : A) :=
   R± ⧸ laurentCoverOverlapIdeal A f
 
@@ -275,7 +279,8 @@ local notation "R₂" =>
 
 local notation "R±" => R₂ ⧸ laurentIdeal A
 
-/-- The Čech differential of the two-piece Laurent cover is surjective. -/
+/-- The difference of the two restriction maps from the quotient presentations `laurentCoverLe`
+and `laurentCoverGe` to `laurentCoverOverlap` is surjective. -/
 theorem laurentCoverDiff_surjective (f : A) : Function.Surjective (laurentCoverDiff A f) := by
   intro z
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective z
@@ -370,9 +375,10 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
     rw [laurentCoverGeIdeal]
     exact Ideal.mul_mem_right d _ (Ideal.mem_span_singleton_self _)
 
-/-- **Wedhorn's Lemma 8.33, exactness in the middle.** For the two Laurent pieces
-`{|f| ≤ 1}` and `{|f| ≥ 1}`, a pair of sections has equal restrictions to the overlap exactly
-when it is a pair of equal constants. -/
+/-- **Wedhorn's Lemma 8.33, exactness in the middle, for the algebraic presentations.** For the
+quotients `laurentCoverLe` and `laurentCoverGe`, a pair of elements has equal restrictions to
+`laurentCoverOverlap` exactly when it is a pair of equal constants. The presheaf statement is
+`ValuationSpectrum.laurentCover_exact`. -/
 theorem exact_algebraMap_laurentCoverDiff (f : A) :
     Function.Exact
       (algebraMap A (laurentCoverLe A f × laurentCoverGe A f))
