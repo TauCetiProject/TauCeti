@@ -112,6 +112,13 @@ noncomputable def pointMapHom (f : Hom W₁ W₂) : W₁.Point →+ W₂.Point :
 theorem pointMapHom_apply (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMapHom P = f.pointMap P :=
   (rfl)
 
+/-- Composition of morphisms induces composition of point homomorphisms. -/
+@[simp]
+theorem comp_pointMapHom [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) :
+    (g.comp f).pointMapHom = g.pointMapHom.comp f.pointMapHom := by
+  ext P
+  exact comp_pointMap g f P
+
 /-- A point belongs to the kernel exactly when its image under the morphism is zero. -/
 theorem mem_ker_pointMapHom_iff (f : Hom W₁ W₂) (P : W₁.Point) :
     P ∈ f.pointMapHom.ker ↔ f.pointMap P = 0 := by
