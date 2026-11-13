@@ -55,9 +55,10 @@ theorem inv_two_pi_I_mul_trace_endToMatrix_curvature (he : IsIdempotentElem e)
         trace θ (he.endToMatrix (D₁.curvature D₂ commute_derivation₁_derivation₂)).trace =
       matrixCochainExtension ι 2
         ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
-          MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) ![e, e, e] := by
+          MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ)
+        ![e, e, e] := by
   have hφ : ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
-      MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) =
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) =
         (2 * π * I)⁻¹ • traceDerivationPairCochain (trace θ) (derivation₁ θ) (derivation₂ θ) := by
     ext a
     simp
