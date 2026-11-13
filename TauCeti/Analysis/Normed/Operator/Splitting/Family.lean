@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.ContinuousLinearMap
 public import TauCeti.Analysis.Normed.Operator.Splitting.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -72,15 +73,6 @@ theorem _root_.ContDiffAt.kerSection {X : Type*} [NormedAddCommGroup X] [NormedS
     (hq : ContDiffAt 𝕜 n q x) (h : ((A x).prod (q x)).IsInvertible) :
     ContDiffAt 𝕜 n (fun y ↦ (A y).kerSection (q y)) x :=
   (contDiffAt_kerSection h).comp (f := fun y ↦ (A y, q y)) x (hA.prodMk hq)
-
-omit [CompleteSpace E] in
-/-- The coproduct of two families of operators has their common regularity. -/
-theorem _root_.ContDiffAt.continuousLinearMapCoprod {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace 𝕜 X] {f : X → E →L[𝕜] G} {g : X → F →L[𝕜] G} {x : X} {n : ℕ∞ω}
-    (hf : ContDiffAt 𝕜 n f x) (hg : ContDiffAt 𝕜 n g x) :
-    ContDiffAt 𝕜 n (fun y ↦ (f y).coprod (g y)) x := by
-  simp_rw [← comp_fst_add_comp_snd]
-  exact (hf.clm_comp contDiffAt_const).add (hg.clm_comp contDiffAt_const)
 
 section Stabilizer
 

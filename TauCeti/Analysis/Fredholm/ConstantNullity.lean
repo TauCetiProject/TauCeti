@@ -34,12 +34,13 @@ of `T x`, and that there the kernels and the cokernels of `T x` move continuousl
   operators `κ x : ker (T x₀) →L[𝕜] E` which, where the nullity is that of `T x₀`, is injective with
   range `ker (T x)`. For a `C^n` family it is `C^n`
   (`ContinuousLinearMap.IsFredholm.exists_contDiffOn_ker_parametrization`).
-* `ContinuousLinearMap.IsFredholm.exists_continuousOn_rightInverse`: continuous families of
+* `ContinuousLinearMap.IsFredholm.exists_continuousOn_splitting`: continuous families of
   operators `R x : F →L[𝕜] E` and `P x : F →L[𝕜] S` with `T x ∘ R x + P x = id`, where `P x` is the
   projection onto `S` along the range of `T x` wherever the nullity is that of `T x₀`. So `R x` is a
-  right inverse of `T x` on its range, bounded uniformly on compact sets of parameters, and
-  `P x` identifies the cokernel of `T x` with `S`. For a `C^n` family both are `C^n`
-  (`ContinuousLinearMap.IsFredholm.exists_contDiffOn_rightInverse`).
+  right inverse of `T x` on its range, bounded uniformly on compact subsets of the neighbourhood
+  of `x₀` given by the theorem, and `P x` identifies the cokernel of `T x` with `S`. For a `C^n`
+  family both are `C^n`
+  (`ContinuousLinearMap.IsFredholm.exists_contDiffOn_splitting`).
 * `TauCeti.hasLocalSubbundleFrames_ker_of_isFredholm`: on a set of parameters where the operators
   are Fredholm of a fixed nullity, the kernels have continuous local frames, so over `ℝ` or `ℂ`
   they form a vector bundle, a subbundle of the trivial bundle with fibre `E`.
@@ -286,9 +287,9 @@ of the target, inside any prescribed dense subspace `D`, and families of operato
 Wherever the kernel of `T x` has the dimension of that of `T x₀`, `S` is a topological complement
 of the range of `T x` and `P x` is the projection onto `S` along that range, so that `P x`
 identifies the cokernel of `T x` with `S` and `R x` is a right inverse of `T x` on its range. Being
-continuous, the right inverses are bounded uniformly on compact sets of parameters
+continuous, the right inverses are bounded uniformly on compact subsets of `U`
 (`IsCompact.exists_bound_of_continuousOn`). -/
-theorem IsFredholm.exists_continuousOn_rightInverse {s : Set X} (hT₀ : IsFredholm (T x₀))
+theorem IsFredholm.exists_continuousOn_splitting {s : Set X} (hT₀ : IsFredholm (T x₀))
     (hT : ContinuousOn T s) (hs : IsOpen s) (hx₀ : x₀ ∈ s) {D : Submodule 𝕜 F}
     (hD : Dense (D : Set F)) :
     ∃ S : Submodule 𝕜 F, S ≤ D ∧ FiniteDimensional 𝕜 S ∧ ∃ U ⊆ s, IsOpen U ∧ x₀ ∈ U ∧
@@ -307,9 +308,9 @@ theorem IsFredholm.exists_continuousOn_rightInverse {s : Set X} (hT₀ : IsFredh
     fun x hx ↦ (hU' x hx.1).2⟩
 
 /-- **Splittings of a `C^n` Fredholm family of constant nullity are `C^n`.** The right inverses and
-cokernel projections of `ContinuousLinearMap.IsFredholm.exists_continuousOn_rightInverse` have the
+cokernel projections of `ContinuousLinearMap.IsFredholm.exists_continuousOn_splitting` have the
 regularity of the family. -/
-theorem IsFredholm.exists_contDiffOn_rightInverse {X : Type*} [NormedAddCommGroup X]
+theorem IsFredholm.exists_contDiffOn_splitting {X : Type*} [NormedAddCommGroup X]
     [NormedSpace 𝕜 X] {T : X → E →L[𝕜] F} {x₀ : X} {s : Set X} {n : ℕ∞ω}
     (hT₀ : IsFredholm (T x₀)) (hT : ContDiffOn 𝕜 n T s) (hs : IsOpen s) (hx₀ : x₀ ∈ s)
     {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
