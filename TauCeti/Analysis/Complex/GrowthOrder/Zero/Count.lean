@@ -63,21 +63,17 @@ private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
   have hM : 1 ≤ M := by
     exact one_le_mul_of_one_le_of_one_le (le_max_right _ _)
       (Real.one_le_exp (Real.rpow_nonneg (by positivity) _))
-  have ha : AnalyticOnNhd ℂ f (closedBall 0 |2 * R|) := fun z _ ↦ hf.analyticAt z
-  have hfM : ∀ z ∈ sphere (0 : ℂ) |2 * R|, ‖f z‖ ≤ M := by
+  have ha : AnalyticOnNhd ℂ f (closedBall 0 (2 * R)) := fun z _ ↦ hf.analyticAt z
+  have hfM : ∀ z ∈ sphere (0 : ℂ) (2 * R), ‖f z‖ ≤ M := by
     intro z hz
     have hzR : ‖z‖ = 2 * R := by
-      simpa [mem_sphere_iff_norm, abs_of_pos (by positivity : 0 < 2 * R)] using hz
+      simpa only [mem_sphere_iff_norm, sub_zero] using hz
     have hzL : L ≤ ‖z‖ := by rw [hzR]; linarith
     have hbz : ‖f z‖ ≤ c * Real.exp ((2 * R) ^ B) := by
       simpa only [Set.mem_ofPred_eq, Real.norm_eq_abs, Real.abs_exp, hzR] using hL hzL
     exact hbz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
   -- Jensen bounds the zero count on the inner disk.
-  have ha' : AnalyticOnNhd ℂ f (closedBall 0 (2 * R)) := by
-    simpa only [abs_of_pos (by positivity : 0 < 2 * R)] using ha
-  have hfM' : ∀ z ∈ sphere (0 : ℂ) (2 * R), ‖f z‖ ≤ M := by
-    simpa only [abs_of_pos (by positivity : 0 < 2 * R)] using hfM
-  have hj := ha'.sum_divisor_le_analyticOrderNatAt_add hR0 (by linarith) hM hfc hfM'
+  have hj := ha.sum_divisor_le_analyticOrderNatAt_add hR0 (by linarith) hM hfc hfM
   rw [mul_div_cancel_right₀ (2 : ℝ) (ne_of_gt hR0)] at hj
   have hanorm : ‖a‖ ≠ 0 := norm_ne_zero_iff.mpr <|
     (hf.analyticAt 0).meromorphicAt.meromorphicTrailingCoeffAt_ne_zero
@@ -101,7 +97,7 @@ private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
       apply div_le_div_of_nonneg_right _ hlog.le
       rw [hlogM, Real.mul_rpow (by norm_num : (0 : ℝ) ≤ 2) hR0.le]
       have habs := le_abs_self (Real.log c' - Real.log ‖a‖)
-      have hm := mul_le_mul_of_nonneg_left hpow (abs_nonneg (Real.log c' - Real.log ‖a‖))
+      have habsPow := mul_le_mul_of_nonneg_left hpow (abs_nonneg (Real.log c' - Real.log ‖a‖))
       nlinarith
     _ = C * R ^ B := by dsimp [C]; ring
 
