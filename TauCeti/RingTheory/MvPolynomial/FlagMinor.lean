@@ -87,6 +87,20 @@ theorem flagMinor_def (I : Finset (Fin n)) :
       Matrix.mvPolynomialMinor R (I.orderEmbOfFin rfl) (Fin.castLE (card_finset_fin_le I)) :=
   (rfl)
 
+/-- The flag minor of the empty set of rows is the empty minor `1`. -/
+@[simp]
+theorem flagMinor_empty : flagMinor R (∅ : Finset (Fin n)) = 1 :=
+  have : IsEmpty (Fin #(∅ : Finset (Fin n))) := card_empty (α := Fin n) ▸ inferInstance
+  Matrix.mvPolynomialMinor_zero _ _
+
+/-- The flag minor of a single row `r` is the matrix variable `z_(r,0)`. -/
+@[simp]
+theorem flagMinor_singleton (r : Fin n) : flagMinor R {r} = X (r, ⟨0, r.pos⟩) := by
+  have : Unique (Fin #{r}) := card_singleton r ▸ inferInstance
+  rw [flagMinor_def, Matrix.mvPolynomialMinor_one, mem_singleton.1 (orderEmbOfFin_mem _ _ _)]
+  congr
+  exact Fin.ext (Nat.lt_one_iff.1 ((default : Fin #{r}).2.trans_eq (card_singleton r)))
+
 /-- The exponent of the main diagonal `∏_(c < d) z_(i_c, c)` of the flag minor of
 `I = {i_0 < ⋯ < i_(d-1)}`, in the variables indexed by the lexicographically ordered pairs. -/
 noncomputable def flagDiagonalExponent (I : Finset (Fin n)) : Fin n ×ₗ Fin n →₀ ℕ :=
