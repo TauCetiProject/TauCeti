@@ -10,17 +10,17 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.MeasurableSpace.Metric
 
 /-!
-# Uniform Riemann sums over a compact set
+# Uniform Riemann sums over a totally bounded set
 
-Let `S` be a compact subset of a metric space carrying a measure `μ`, and let `a` be a scalar
-weight integrable on `S`. Cutting `S` into finitely many measurable cells, each within distance
-`δ` of a tag in `S`, replaces the weighted integral `∫ x in S, a x • φ x ∂μ` by the Riemann sum
-`∑ i, c i • φ (ζ i)`, where `c i` is the integral of `a` over the `i`-th cell, so that
-`∑ i, ‖c i‖ ≤ ∫ x in S, ‖a x‖ ∂μ`. The tags and the weights depend only on `S`, `a`, `μ` and `δ`,
-not on `φ` or on its target. For every `φ` with values in a Banach space `E` such that
+Let `S` be a measurable totally bounded subset of a pseudometric space carrying a measure `μ`, and
+let `a` be a scalar weight integrable on `S`. Cutting `S` into finitely many measurable cells, each
+within distance `δ` of a tag in `S`, replaces the weighted integral `∫ x in S, a x • φ x ∂μ` by
+the Riemann sum `∑ i, c i • φ (ζ i)`, where `c i` is the integral of `a` over the `i`-th cell, so
+that `∑ i, ‖c i‖ ≤ ∫ x in S, ‖a x‖ ∂μ`. The tags and the weights depend only on `S`, `a`, `μ` and
+`δ`, not on `φ` or on its target. For every `φ` with values in a Banach space `E` such that
 `x ↦ a x • φ x` is integrable on `S` and `φ` oscillates by at most `η` between points of `S` at
 distance less than `δ`, the error is at most `η * ∫ x in S, ‖a x‖ ∂μ`
-(`IsCompact.exists_norm_setIntegral_smul_sub_sum_le`).
+(`TotallyBounded.exists_norm_setIntegral_smul_sub_sum_le`).
 
 Because the quadrature rule is fixed before `φ` is chosen, one rule serves a whole equicontinuous
 family at once. This is how an integral representation over a compact set, such as the
@@ -33,18 +33,19 @@ public section
 
 open MeasureTheory Metric Set
 
-variable {X 𝕜 : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+variable {X 𝕜 : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [RCLike 𝕜]
 
-/-- **Uniform Riemann sums over a compact set.** For a compact set `S`, a scalar weight `a`
-integrable on `S` and a mesh `δ > 0`, there are finitely many tags `ζ i ∈ S` and weights `c i`
-with `∑ i, ‖c i‖ ≤ ∫ x in S, ‖a x‖ ∂μ` such that the following holds for every `φ` with values in
-a Banach space `E` for which `x ↦ a x • φ x` is integrable on `S`. If the values of `φ` at points
-of `S` within distance `δ` of each other differ by at most `η`, then the Riemann sum
-`∑ i, c i • φ (ζ i)` is within `η * ∫ x in S, ‖a x‖ ∂μ` of the weighted integral
+/-- **Uniform Riemann sums over a totally bounded set.** For a measurable totally bounded set `S`,
+a scalar weight `a` integrable on `S` and a mesh `δ > 0`, there are finitely many tags `ζ i ∈ S`
+and weights `c i` with `∑ i, ‖c i‖ ≤ ∫ x in S, ‖a x‖ ∂μ` such that the following holds for every
+`φ` with values in a Banach space `E` for which `x ↦ a x • φ x` is integrable on `S`. If the values
+of `φ` at points of `S` within distance `δ` of each other differ by at most `η`, then the Riemann
+sum `∑ i, c i • φ (ζ i)` is within `η * ∫ x in S, ‖a x‖ ∂μ` of the weighted integral
 `∫ x in S, a x • φ x ∂μ`. -/
-theorem IsCompact.exists_norm_setIntegral_smul_sub_sum_le {S : Set X} (hS : IsCompact S)
-    {a : X → 𝕜} (ha : IntegrableOn a S μ) {δ : ℝ} (hδ : 0 < δ) :
+theorem TotallyBounded.exists_norm_setIntegral_smul_sub_sum_le {S : Set X}
+    (hS : TotallyBounded S) (hSm : MeasurableSet S) {a : X → 𝕜} (ha : IntegrableOn a S μ) {δ : ℝ}
+    (hδ : 0 < δ) :
     ∃ (N : ℕ) (ζ : Fin N → X) (c : Fin N → 𝕜), (∀ i, ζ i ∈ S) ∧
       ∑ i, ‖c i‖ ≤ ∫ x in S, ‖a x‖ ∂μ ∧
       ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [CompleteSpace E]
@@ -52,8 +53,7 @@ theorem IsCompact.exists_norm_setIntegral_smul_sub_sum_le {S : Set X} (hS : IsCo
         (∀ x ∈ S, ∀ y ∈ S, dist x y < δ → ‖φ x - φ y‖ ≤ η) →
           ‖∫ x in S, a x • φ x ∂μ - ∑ i, c i • φ (ζ i)‖ ≤ η * ∫ x in S, ‖a x‖ ∂μ := by
   -- The cells: a measurable partition of `S` into pieces of `δ`-balls around the tags.
-  obtain ⟨N, ζ, P, hζS, hPm, hPsub, hPd, hPU⟩ :=
-    hS.totallyBounded.exists_measurable_partition_ball hS.measurableSet hδ
+  obtain ⟨N, ζ, P, hζS, hPm, hPsub, hPd, hPU⟩ := hS.exists_measurable_partition_ball hSm hδ
   have haP (i : Fin N) : IntegrableOn a (P i) μ :=
     ha.mono_set ((hPsub i).trans inter_subset_left)
   refine ⟨N, ζ, fun i ↦ ∫ x in P i, a x ∂μ, hζS, ?_, fun {E} _ _ _ _ φ η hφ hosc ↦ ?_⟩

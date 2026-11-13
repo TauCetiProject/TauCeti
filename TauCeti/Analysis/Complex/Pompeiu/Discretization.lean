@@ -41,7 +41,7 @@ The proof has two steps.
   by `M` on `V`, are uniformly Lipschitz with constant proportional to `M`: the kernel because `S`
   is at positive distance from `K`, and `f` by Cauchy's estimate. A single Riemann sum for the
   weight `\bar∂χ` on `S` therefore approximates all of them at once
-  (`IsCompact.exists_norm_setIntegral_smul_sub_sum_le`).
+  (`TotallyBounded.exists_norm_setIntegral_smul_sub_sum_le`).
 
 ## References
 
@@ -100,39 +100,6 @@ private theorem exists_continuous_setIntegral_representation {K V : Set ℂ} (hK
   congr 1
   exact integral_congr_ae (Eventually.of_forall fun z ↦ smul_comm _ _ _)
 
-/-- The integrand `z ↦ (w - z)⁻¹ • f z` of the cutoff representation is Lipschitz near `y`: if `f`
-is holomorphic and bounded by `M` on `V ⊇ closedBall y (2 * r)` and `w` is at distance at least
-`d > 0` from `x` and `y`, its values at `x` and `y` differ by at most a multiple of `M * dist x y`.
--/
-private theorem norm_inv_smul_sub_inv_smul_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] {f : ℂ → F} {V : Set ℂ} {M d r : ℝ} {w x y : ℂ}
-    (hV : IsOpen V) (hf : DifferentiableOn ℂ f V) (hM : ∀ z ∈ V, ‖f z‖ ≤ M) (hd : 0 < d)
-    (hr : 0 < r) (hball : closedBall y (2 * r) ⊆ V) (hxy : dist x y < r) (hwx : d ≤ ‖w - x‖)
-    (hwy : d ≤ ‖w - y‖) :
-    ‖(w - x)⁻¹ • f x - (w - y)⁻¹ • f y‖ ≤ M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by
-  have hx0 : w - x ≠ 0 := norm_pos_iff.1 (hd.trans_le hwx)
-  have hy0 : w - y ≠ 0 := norm_pos_iff.1 (hd.trans_le hwy)
-  have hfy : ‖f y‖ ≤ M := hM y (hball (mem_closedBall_self (by positivity)))
-  -- Cauchy's estimate makes `f` `M / r`-Lipschitz on `ball y r`.
-  have hlip : dist (f x) (f y) ≤ M / r * dist x y :=
-    dist_le_of_forall_mem_closedBall_two_mul_norm_le hV hf hr hball
-      (fun z hz ↦ hM z (hball hz)) (mem_ball.2 hxy) (mem_ball_self hr)
-  have hsplit : (w - x)⁻¹ • f x - (w - y)⁻¹ • f y =
-      (w - x)⁻¹ • (f x - f y) + ((x - y) * ((w - x)⁻¹ * (w - y)⁻¹)) • f y := by
-    have hinv : (w - x)⁻¹ - (w - y)⁻¹ = (x - y) * ((w - x)⁻¹ * (w - y)⁻¹) := by
-      field_simp
-      ring
-    rw [← hinv, smul_sub, sub_smul]
-    abel
-  have hxi : ‖(w - x)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwx
-  have hyi : ‖(w - y)⁻¹‖ ≤ d⁻¹ := by rw [norm_inv]; exact inv_anti₀ hd hwy
-  rw [hsplit]
-  refine (norm_add_le _ _).trans ?_
-  simp only [norm_smul, norm_mul, ← dist_eq_norm]
-  calc _ ≤ d⁻¹ * (M / r * dist x y) + dist x y * (d⁻¹ * d⁻¹) * M := by
-        gcongr
-    _ = M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by ring
-
 /-- **Discretized Cauchy–Pompeiu formula.** Let `K` be a compact subset of an open set `V ⊆ ℂ`.
 For every `ε > 0` there are finitely many poles `ζ i ∈ V \ K` and coefficients `c i` such that every
 `f : ℂ → F` into a complex normed space, holomorphic on `V` and bounded by `M` there, satisfies
@@ -159,8 +126,9 @@ theorem _root_.IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le {K V : Set ℂ}
     exact (not_le.1 h).le
   set r := ρ / 2 with hr_def
   have hr : 0 < r := by positivity
+  have hradius : 2 * r = ρ := by rw [hr_def]; ring
   have hball {y : ℂ} (hy : y ∈ S) : closedBall y (2 * r) ⊆ V :=
-    (closedBall_subset_cthickening hy _).trans (by rwa [show 2 * r = ρ by rw [hr_def]; ring])
+    (closedBall_subset_cthickening hy _).trans (by rwa [hradius])
   -- Choose the mesh `δ` of the Riemann sums against the Lipschitz constant `M * C`.
   set A := ∫ z in S, ‖a z‖
   have hA : 0 ≤ A := setIntegral_nonneg_of_ae (Eventually.of_forall fun _ ↦ norm_nonneg _)
@@ -168,7 +136,7 @@ theorem _root_.IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le {K V : Set ℂ}
   have hC : 0 ≤ C := by positivity
   obtain ⟨δ₀, hδ₀, hδ₀ε⟩ := exists_pos_mul_lt (mul_pos hε Real.pi_pos) (C * A)
   obtain ⟨N, ζ, c, hζS, -, hsum⟩ :=
-    hS.exists_norm_setIntegral_smul_sub_sum_le (μ := volume)
+    hS.totallyBounded.exists_norm_setIntegral_smul_sub_sum_le (μ := volume) hS.measurableSet
       (ha.continuousOn.integrableOn_compact hS) (lt_min hr hδ₀)
   refine ⟨N, ζ, fun i ↦ (π : ℂ)⁻¹ * c i, fun i ↦ ⟨hSV (hζS i), fun h ↦ hKS h (hζS i)⟩,
     fun {F} _ _ f M hf hM w hw ↦ ?_⟩
@@ -190,8 +158,8 @@ theorem _root_.IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le {K V : Set ℂ}
     rwa [sub_eq_zero.1 h]
   have hR := hsum (fun z ↦ (w - z)⁻¹ • g z) (M * C * min r δ₀)
     ((ha.continuousOn.smul hφc).integrableOn_compact hS) fun x hx y hy hxy ↦
-      (norm_inv_smul_sub_inv_smul_le hV hg hgM hd hr (hball hy) (hxy.trans_le (min_le_left _ _))
-        (hdist hw hx) (hdist hw hy)).trans
+      (norm_inv_smul_sub_inv_smul_le hV hg hr (hball hy) (fun z hz ↦ hgM z (hball hy hz)) hd
+        (hxy.trans_le (min_le_left _ _)) (hdist hw hx) (hdist hw hy)).trans
         (mul_le_mul_of_nonneg_left hxy.le (mul_nonneg hM0 hC))
   have hsum_eq : ∑ i, ((π : ℂ)⁻¹ * c i * (w - ζ i)⁻¹) • g (ζ i) =
       (π : ℂ)⁻¹ • ∑ i, c i • (w - ζ i)⁻¹ • g (ζ i) := by
