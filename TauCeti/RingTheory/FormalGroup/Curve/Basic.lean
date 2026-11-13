@@ -452,6 +452,17 @@ noncomputable def mapCurve (f : FormalGroupHom F G) : F.Curve →+ G.Curve where
 theorem toPowerSeries_mapCurve (f : FormalGroupHom F G) (γ : F.Curve) :
     (f.mapCurve γ).toPowerSeries = PowerSeries.subst γ.toPowerSeries f.toPowerSeries := (rfl)
 
+/-- The degree-`k` coefficient of a pushforward depends only on coefficients up to degree `k`. -/
+theorem coeff_mapCurve_congr (f : FormalGroupHom F G) {γ δ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ.toPowerSeries = PowerSeries.coeff i δ.toPowerSeries) :
+    PowerSeries.coeff k (f.mapCurve γ).toPowerSeries =
+      PowerSeries.coeff k (f.mapCurve δ).toPowerSeries := by
+  have hdvd : PowerSeries.X ^ (k + 1) ∣ γ.toPowerSeries - δ.toPowerSeries :=
+    PowerSeries.X_pow_dvd_iff.mpr fun i hi ↦ by rw [map_sub, h i (by omega), sub_self]
+  rw [← sub_eq_zero, ← map_sub]
+  exact PowerSeries.X_pow_dvd_iff.mp (PowerSeries.X_pow_dvd_subst_sub_subst
+    γ.constantCoeff_toPowerSeries hdvd f.toPowerSeries) k (by omega)
+
 @[simp]
 theorem mapCurve_tautologicalCurve (f : FormalGroupHom F G) :
     f.mapCurve F.tautologicalCurve = ⟨f.toPowerSeries, f.zero_constantCoeff⟩ :=
