@@ -90,7 +90,7 @@ structure Iso (C : PolygonalComplex.{u, v, w}) (D : PolygonalComplex.{u', v', w'
   /-- The bijection of side occurrences. -/
   sideEquiv : C.Corner ≃ D.Corner
   /-- A side of a face is sent to a side of the corresponding face. -/
-  sideEquiv_fst : ∀ c, (sideEquiv c).1 = faceEquiv c.1
+  sideEquiv_apply_fst : ∀ c, (sideEquiv c).1 = faceEquiv c.1
   /-- Consecutive sides are sent to consecutive sides, in the reverse order on a reversed face. -/
   sideEquiv_nextCorner : ∀ c, sideEquiv (C.nextCorner c) =
     cond (flip c.1) (D.prevCorner (sideEquiv c)) (D.nextCorner (sideEquiv c))
@@ -100,14 +100,14 @@ structure Iso (C : PolygonalComplex.{u, v, w}) (D : PolygonalComplex.{u', v', w'
 
 namespace Iso
 
-attribute [simp] sideEquiv_fst sideEquiv_nextCorner outgoing_sideEquiv
+attribute [simp] sideEquiv_apply_fst sideEquiv_nextCorner outgoing_sideEquiv
 
 variable {C : PolygonalComplex.{u, v, w}} {D : PolygonalComplex.{u', v', w'}}
   {K : PolygonalComplex.{u'', v'', w''}} (φ : C.Iso D)
 
-@[simp] theorem sideEquiv_symm_fst (d : D.Corner) :
+@[simp] theorem sideEquiv_symm_apply_fst (d : D.Corner) :
     (φ.sideEquiv.symm d).1 = φ.faceEquiv.symm d.1 := by
-  rw [Equiv.eq_symm_apply, ← φ.sideEquiv_fst, Equiv.apply_symm_apply]
+  rw [Equiv.eq_symm_apply, ← φ.sideEquiv_apply_fst, Equiv.apply_symm_apply]
 
 @[simp] theorem sideEquiv_prevCorner (c : C.Corner) : φ.sideEquiv (C.prevCorner c) =
     cond (φ.flip c.1) (D.nextCorner (φ.sideEquiv c)) (D.prevCorner (φ.sideEquiv c)) := by
@@ -137,7 +137,8 @@ theorem toGeomEdge_outgoing_sideEquiv (c : C.Corner) :
 /-- Corresponding faces have the same number of sides. -/
 @[simp] theorem sides_faceEquiv (f : C.Face) : D.sides (φ.faceEquiv f) = C.sides f :=
   (Fin.equiv_iff_eq.1 ⟨((Equiv.sigmaSubtype f).symm.trans (φ.sideEquiv.subtypeEquiv fun c => by
-    rw [sideEquiv_fst, Equiv.apply_eq_iff_eq])).trans (Equiv.sigmaSubtype (φ.faceEquiv f))⟩).symm
+    rw [sideEquiv_apply_fst, Equiv.apply_eq_iff_eq])).trans
+      (Equiv.sigmaSubtype (φ.faceEquiv f))⟩).symm
 
 @[simp] theorem sides_faceEquiv_symm (g : D.Face) : C.sides (φ.faceEquiv.symm g) = D.sides g := by
   rw [← φ.sides_faceEquiv, Equiv.apply_symm_apply]
@@ -147,7 +148,7 @@ the side occurrences. -/
 @[ext] theorem ext {φ ψ : C.Iso D} (hgraph : φ.graph = ψ.graph)
     (hside : φ.sideEquiv = ψ.sideEquiv) : φ = ψ := by
   have hface : φ.faceEquiv = ψ.faceEquiv := Equiv.ext fun f => by
-    rw [← φ.sideEquiv_fst ⟨f, ⟨0, C.sides_pos f⟩⟩, hside, ψ.sideEquiv_fst]
+    rw [← φ.sideEquiv_apply_fst ⟨f, ⟨0, C.sides_pos f⟩⟩, hside, ψ.sideEquiv_apply_fst]
   have hflip : φ.flip = ψ.flip := funext fun f => by
     have h := φ.outgoing_sideEquiv ⟨f, ⟨0, C.sides_pos f⟩⟩
     rw [hgraph, hside, ψ.outgoing_sideEquiv] at h
@@ -167,7 +168,7 @@ the side occurrences. -/
   faceEquiv := .refl _
   flip _ := false
   sideEquiv := .refl _
-  sideEquiv_fst _ := rfl
+  sideEquiv_apply_fst _ := rfl
   sideEquiv_nextCorner _ := rfl
   outgoing_sideEquiv _ := by simp
 
@@ -190,7 +191,7 @@ corresponding to those whose orientation the isomorphism reverses. -/
   faceEquiv := φ.faceEquiv.symm
   flip g := φ.flip (φ.faceEquiv.symm g)
   sideEquiv := φ.sideEquiv.symm
-  sideEquiv_fst := φ.sideEquiv_symm_fst
+  sideEquiv_apply_fst := φ.sideEquiv_symm_apply_fst
   sideEquiv_nextCorner d := by
     obtain ⟨c, rfl⟩ := φ.sideEquiv.surjective d
     rw [Equiv.symm_apply_eq]
@@ -237,7 +238,7 @@ orientation of a face when exactly one of the two isomorphisms does. -/
   faceEquiv := φ.faceEquiv.trans ψ.faceEquiv
   flip f := φ.flip f ^^ ψ.flip (φ.faceEquiv f)
   sideEquiv := φ.sideEquiv.trans ψ.sideEquiv
-  sideEquiv_fst c := by simp
+  sideEquiv_apply_fst c := by simp
   sideEquiv_nextCorner c := by
     cases hφ : φ.flip c.1 <;> cases hψ : ψ.flip (φ.faceEquiv c.1) <;> simp [hφ, hψ]
   outgoing_sideEquiv c := by
@@ -289,7 +290,7 @@ theorem cornerEquiv_apply (c : C.Corner) :
 theorem cornerEquiv_symm_apply (d : D.Corner) : φ.cornerEquiv.symm d =
     φ.sideEquiv.symm (cond (φ.flip (φ.faceEquiv.symm d.1)) (D.prevCorner d) d) := (rfl)
 
-@[simp] theorem cornerEquiv_fst (c : C.Corner) : (φ.cornerEquiv c).1 = φ.faceEquiv c.1 := by
+@[simp] theorem cornerEquiv_apply_fst (c : C.Corner) : (φ.cornerEquiv c).1 = φ.faceEquiv c.1 := by
   cases hf : φ.flip c.1 <;> simp [cornerEquiv_apply, hf]
 
 /-- Consecutive corners correspond to consecutive corners, in the reverse order on a reversed
@@ -318,10 +319,10 @@ face. -/
     cases hφ : φ.flip c.1 <;> cases hψ : ψ.flip (φ.faceEquiv c.1) <;>
       simp [cornerEquiv_apply, hφ, hψ]
 
-@[simp] theorem cornerEquiv_symm_fst (d : D.Corner) :
+@[simp] theorem cornerEquiv_symm_apply_fst (d : D.Corner) :
     (φ.cornerEquiv.symm d).1 = φ.faceEquiv.symm d.1 := by
   rw [← cornerEquiv_symm]
-  exact φ.symm.cornerEquiv_fst d
+  exact φ.symm.cornerEquiv_apply_fst d
 
 @[simp] theorem cornerEquiv_symm_nextCorner (d : D.Corner) :
     φ.cornerEquiv.symm (D.nextCorner d) = cond (φ.flip (φ.faceEquiv.symm d.1))
@@ -382,10 +383,11 @@ def cornerAtEquiv (v : C.graph.V) :
       {d : D.Corner // D.cornerVertex d = φ.graph.equivV v} :=
   φ.cornerEquiv.subtypeEquiv fun c => by rw [cornerVertex_cornerEquiv, Equiv.apply_eq_iff_eq]
 
-@[simp] theorem cornerAtEquiv_coe {v : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = v}) :
+@[simp] theorem cornerAtEquiv_apply_val {v : C.graph.V}
+    (c : {c : C.Corner // C.cornerVertex c = v}) :
     (φ.cornerAtEquiv v c).1 = φ.cornerEquiv c.1 := (rfl)
 
-@[simp] theorem cornerAtEquiv_symm_coe {v : C.graph.V}
+@[simp] theorem cornerAtEquiv_symm_apply_val {v : C.graph.V}
     (d : {d : D.Corner // D.cornerVertex d = φ.graph.equivV v}) :
     ((φ.cornerAtEquiv v).symm d).1 = φ.cornerEquiv.symm d.1 := (rfl)
 
@@ -394,7 +396,7 @@ private def germEquiv (v : C.graph.V) :
     (C.vertexLink v).V ≃ (D.vertexLink (φ.graph.equivV v)).V :=
   φ.graph.equivE.subtypeEquiv fun e => by rw [φ.graph.map_src, Equiv.apply_eq_iff_eq]
 
-private theorem germEquiv_coe {v : C.graph.V} (e : (C.vertexLink v).V) :
+private theorem germEquiv_apply_val {v : C.graph.V} (e : (C.vertexLink v).V) :
     (φ.germEquiv v e).1 = φ.graph.equivE e.1 := rfl
 
 /-- The darts of the link of a vertex correspond to the darts of the link of the corresponding
@@ -417,17 +419,17 @@ def vertexLinkIso (v : C.graph.V) : (C.vertexLink v).Iso (D.vertexLink (φ.graph
   map_src d := by
     obtain ⟨c, b⟩ := d
     apply Subtype.ext
-    rw [linkDartEquiv_apply, germEquiv_coe]
+    rw [linkDartEquiv_apply, germEquiv_apply_val]
     cases b <;> cases hf : φ.flip c.1.1 <;> simp [hf]
   map_rev d := Prod.ext rfl (Bool.not_xor _ _)
 
-@[simp] theorem vertexLinkIso_equivV_coe {v : C.graph.V} (e : (C.vertexLink v).V) :
+@[simp] theorem vertexLinkIso_equivV_apply_val {v : C.graph.V} (e : (C.vertexLink v).V) :
     ((φ.vertexLinkIso v).equivV e).1 = φ.graph.equivE e.1 := (rfl)
 
 @[simp] theorem vertexLinkIso_equivE_apply {v : C.graph.V} (d : (C.vertexLink v).E) :
     (φ.vertexLinkIso v).equivE d = (φ.cornerAtEquiv v d.1, d.2 ^^ φ.flip d.1.1.1) := (rfl)
 
-@[simp] theorem vertexLinkIso_equivV_symm_coe {v : C.graph.V}
+@[simp] theorem vertexLinkIso_equivV_symm_apply_val {v : C.graph.V}
     (e : (D.vertexLink (φ.graph.equivV v)).V) :
     ((φ.vertexLinkIso v).equivV.symm e).1 = φ.graph.equivE.symm e.1 := (rfl)
 
@@ -441,7 +443,7 @@ def vertexLinkIso (v : C.graph.V) : (C.vertexLink v).Iso (D.vertexLink (φ.graph
     D.linkDegree (φ.graph.equivE e) = C.linkDegree e := by
   rw [D.linkDegree_eq_card_of_src_eq (φ.graph.map_src e), C.linkDegree_eq_card_of_src_eq rfl]
   refine (Nat.card_congr ((φ.vertexLinkIso _).equivE.subtypeEquiv fun d => ?_)).symm
-  rw [(φ.vertexLinkIso _).map_src, vertexLinkIso_equivV_coe, Equiv.apply_eq_iff_eq]
+  rw [(φ.vertexLinkIso _).map_src, vertexLinkIso_equivV_apply_val, Equiv.apply_eq_iff_eq]
 
 @[simp] theorem linkDegree_equivE_symm (e : D.graph.E) :
     C.linkDegree (φ.graph.equivE.symm e) = D.linkDegree e := by

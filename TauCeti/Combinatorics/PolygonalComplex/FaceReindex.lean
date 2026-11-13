@@ -105,7 +105,7 @@ def rotateFacesIso (k : C.Face → ℕ) : C.Iso (C.rotateFaces k) where
   flip _ := false
   sideEquiv := Equiv.sigmaCongrRight fun f =>
     ((finRotate (C.sides f) ^ k f)⁻¹ : Equiv.Perm (Fin (C.sides f)))
-  sideEquiv_fst _ := rfl
+  sideEquiv_apply_fst _ := rfl
   sideEquiv_nextCorner c := by
     obtain ⟨f, i⟩ := c
     simp only [Bool.cond_false, nextCorner_def, Equiv.sigmaCongrRight_apply]
@@ -228,7 +228,7 @@ def reverseFacesIso (s : C.Face → Bool) : C.Iso (C.reverseFaces s) where
   faceEquiv := .refl _
   flip := s
   sideEquiv := Equiv.sigmaCongrRight fun f => cond (s f) Fin.revPerm (Equiv.refl _)
-  sideEquiv_fst _ := rfl
+  sideEquiv_apply_fst _ := rfl
   sideEquiv_nextCorner c := by
     obtain ⟨f, i⟩ := c
     cases hs : s f
