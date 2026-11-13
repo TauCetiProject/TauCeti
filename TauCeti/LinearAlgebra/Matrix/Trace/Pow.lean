@@ -77,7 +77,7 @@ theorem trace_pow_eq_sum_prod (A : Matrix ι ι R) {k : ℕ} (hk : k ≠ 0) :
 alternating between row indices `u : Fin k → ι` and column indices `v : Fin k → κ`, of the
 products of the entries `X (u t) (v t)` and `star (X (u (t + 1)) (v t))` read along the walk,
 the row indices being read cyclically. -/
-theorem trace_mul_conjTranspose_pow_eq_sum_prod [StarRing R] {κ : Type*} [Fintype κ]
+theorem trace_mul_conjTranspose_pow_eq_sum_prod [Star R] {κ : Type*} [Fintype κ]
     (X : Matrix ι κ R) {k : ℕ} (hk : k ≠ 0) :
     ((X * Xᴴ) ^ k).trace = ∑ u : Fin k → ι, ∑ v : Fin k → κ,
       ∏ t, X (u t) (v t) * star (X (u (finRotate k t)) (v t)) := by

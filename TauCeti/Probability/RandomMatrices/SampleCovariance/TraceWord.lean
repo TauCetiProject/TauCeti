@@ -116,12 +116,12 @@ theorem integrable_prod_apply_mul_star_apply {k : ℕ} (hk : k ≠ 0)
     cases s
     · exact hXk _ _
     · exact (hXk _ _).star
-  have h := MemLp.fun_prod (s := Finset.univ) fun s _ ↦ hfactor s
-  have h2k : (2 * k : ℝ≥0∞) ≠ 0 := by simpa using hk
-  have h2k' : (2 * k : ℝ≥0∞) ≠ ⊤ := ENNReal.mul_ne_top (by simp) (by simp)
-  rwa [Finset.sum_const, Finset.card_univ, Fintype.card_sum, Fintype.card_fin, nsmul_eq_mul,
-    ← two_mul, Nat.cast_mul, Nat.cast_ofNat, ENNReal.mul_inv_cancel h2k h2k', inv_one,
-    memLp_one_iff_integrable] at h
+  have hexponent : (∑ _ : Fin k ⊕ Fin k, (2 * k : ℝ≥0∞)⁻¹) = 1 := by
+    have h2k : (2 * k : ℝ≥0∞) ≠ 0 := by simpa using hk
+    simpa [nsmul_eq_mul, ← two_mul] using
+      ENNReal.mul_inv_cancel h2k (ENNReal.mul_ne_top (by simp) (by simp))
+  simpa [hexponent, memLp_one_iff_integrable] using
+    (MemLp.fun_prod (s := Finset.univ) fun s _ ↦ hfactor s)
 
 /-- **Trace-word expansion of sample covariance moments.** Let the entries of a random
 rectangular matrix `X` be independent, centred and in `L²ᵏ`, `k ≠ 0`. Then the expected trace of
