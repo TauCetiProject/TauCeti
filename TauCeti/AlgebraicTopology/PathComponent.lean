@@ -24,11 +24,6 @@ groups at every point of the component.
   induces an isomorphism of fundamental groups at any point of the component.
 * `FundamentalGroup.pathComponentMulEquiv_symm_fromPath`: the inverse corestricts a loop
   to its path component.
-
-## References
-
-This supplies algebraic-topology prerequisites for the "or one builds the cover of
-`pathComponent x₀`" clause in `TauCetiRoadmap/UniversalCovers/README.md`.
 -/
 
 public section

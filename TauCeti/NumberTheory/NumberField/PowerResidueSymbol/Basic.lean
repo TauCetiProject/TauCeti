@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
+import TauCeti.FieldTheory.Finite.RootsOfUnity
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -151,13 +152,14 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
   have hN : absNorm P - 1 ≠ 0 := by
     rw [absNorm_eq_natCard, ← Nat.card_units]
     exact Nat.card_pos.ne'
-  -- The symbol takes a primitive `n`-th root of unity as value at a generator of `(𝓞 K ⧸ P)ˣ`.
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (𝓞 K ⧸ P)ˣ)
-  have hg' : IsPrimitiveRoot g (absNorm P - 1) := by
-    rw [absNorm_eq_natCard, ← Nat.card_units, ← orderOf_eq_card_of_forall_mem_zpowers hg]
-    exact IsPrimitiveRoot.orderOf g
+  -- The symbol takes a primitive `n`-th root of unity as value at a primitive `(N P - 1)`-st root
+  -- of unity `g` of the residue field.
+  obtain ⟨g, hg⟩ := TauCeti.exists_isPrimitiveRoot_of_dvd_natCard_sub_one (F := 𝓞 K ⧸ P)
+    (d := absNorm P - 1) (by rw [absNorm_eq_natCard])
+  lift g to (𝓞 K ⧸ P)ˣ using hg.isUnit hN
+  rw [IsPrimitiveRoot.coe_units_iff] at hg
   have hξ : IsPrimitiveRoot (powerResidueSymbol P n g) n := by
-    have h := hg'.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
+    have h := hg.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hdvd |>.mpr ⟨hN, NeZero.ne n⟩)
       (Nat.div_dvd_of_dvd hdvd)
     rw [Nat.div_div_self hdvd hN] at h
     rw [powerResidueSymbol_coe_unit hP, IsPrimitiveRoot.coe_units_iff,

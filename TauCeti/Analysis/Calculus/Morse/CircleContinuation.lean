@@ -291,8 +291,6 @@ theorem abs_sub_le_gronwallBound_of_hasDerivWithinAt_circleContinuationSlope
     ∀ t ∈ Icc a b, |Θ₁ t - Θ₂ t| ≤
       gronwallBound |Θ₁ a - Θ₂ a| (4 * |δ₂| / m₀) (2 * |δ₁ - δ₂| / m₀) (t - a) := by
   have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦ ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
-  have hinv : ∀ t ∈ Icc a b, (t * (1 - t ^ 2))⁻¹ ≤ m₀⁻¹ := fun t ht ↦
-    inv_anti₀ hm₀ (hm t ht)
   set K : ℝ≥0 := ⟨4 * |δ₂| / m₀, by positivity⟩
   have hK : ∀ t ∈ Ico a b, LipschitzOnWith K (circleContinuationSlope δ₂ r t) univ := by
     intro t ht
@@ -456,7 +454,6 @@ private theorem exists_hasDerivWithinAt_circleContinuationSlope_eq_pi {ρ : ℝ 
     have hm0 : 0 < t * (1 - t ^ 2) := baseSpeed_pos (by linarith [ht.1]) (by linarith [ht.2])
     have hm1 : t * (1 - t ^ 2) ≤ 1 := by nlinarith [ht.1, ht.2]
     have hd : deriv ρ t ≤ |C| := (le_abs_self _).trans ((hC t ht).trans (le_abs_self C))
-    have hd0 : 0 ≤ deriv ρ t := hmono.deriv_nonneg
     calc π * deriv ρ t * (t * (1 - t ^ 2)) ≤ π * |C| * 1 := by gcongr
       _ < 2 * Δ := by rw [hΔdef]; nlinarith [pi_pos]
   have hFΔ : π + π / 4 ≤ Θ Δ (5 / 6) := by

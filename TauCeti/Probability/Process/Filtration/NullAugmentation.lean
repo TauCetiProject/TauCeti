@@ -99,9 +99,9 @@ theorem nullAugment_apply_eq_of_absolutelyContinuous (ℱ : Filtration ι m)
     ℱ.nullAugment P i = ℱ.nullAugment Q i := by
   apply le_antisymm
   · rintro s ⟨t, ht, hst⟩
-    exact ⟨t, ht, hQP.ae_eq hst⟩
+    exact ⟨t, ht, hQP.ae_le hst⟩
   · rintro s ⟨t, ht, hst⟩
-    exact ⟨t, ht, hPQ.ae_eq hst⟩
+    exact ⟨t, ht, hPQ.ae_le hst⟩
 
 end Preorder
 

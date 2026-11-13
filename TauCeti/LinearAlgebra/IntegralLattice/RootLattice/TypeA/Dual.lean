@@ -92,7 +92,7 @@ theorem mem_dualCarrier_typeARootLattice_iff (x : Fin n → ℚ) :
     exact ⟨a - b, by rw [ha, hb]; push_cast; ring⟩
   · intro h
     -- With `yⱼ - y₀ = mⱼ` and `s = ∑ mⱼ = -(n + 1) y₀`, the vector `x - s ω₁` is integral.
-    set y := (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) with hy
+    set y := (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ)
     choose m hm using fun j ↦ h j 0
     have hsum : ∑ j, y j = 0 :=
       (mem_singleParityCheckCode _ _).mp (typeAIsometryZeroSumLattice n x).2

@@ -709,7 +709,6 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
     obtain ⟨q, hq, hqj | ⟨n, hn⟩⟩ :=
       exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i hjs.le
     · have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
-      have hqj' : q = H j := hqj
       linarith
     · obtain ⟨k, ⟨hjk, hks⟩, hkq⟩ := hq.1
       have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
@@ -748,7 +747,6 @@ theorem add_one_le_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
   obtain ⟨q, hq, hqk | ⟨n, hn⟩⟩ :=
     exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i (hk₁j.trans hjs)
   · have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
-    have hqk' : q = H k₁ := hqk
     linarith
   · obtain ⟨k, ⟨hk₁k, hks⟩, hkq⟩ := hq.1
     have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩

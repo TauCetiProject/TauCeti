@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Independenc
 /-!
 # Galois groups from prime-discriminant radicands
 
-The genus-field layer of the multiquadratic roadmap uses prime discriminants `D` but adjoins
+Genus theory uses prime discriminants `D` but adjoins
 square roots of the associated squarefree radicands `primeDiscriminantRadicand D`: `-1`, `2`,
 `-2`, or an odd prime discriminant itself. The field-generic Galois-group theorem
 `TauCeti.Multiquadratic.galoisGroupEquiv` already identifies the Galois group of a

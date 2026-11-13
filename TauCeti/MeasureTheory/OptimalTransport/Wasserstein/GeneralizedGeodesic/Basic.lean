@@ -227,7 +227,7 @@ theorem wassersteinEDist_generalizedGeodesic_sq_add_le (hγ : γ.fst = μ) (ht :
         ENNReal.ofReal (t * (1 - t)) * ∫⁻ w, edist w.2.1 w.2.2 ^ 2 ∂γ ≤
       ENNReal.ofReal (1 - t) * ∫⁻ w, edist w.1 w.2.1 ^ 2 ∂γ +
         ENNReal.ofReal t * ∫⁻ w, edist w.1 w.2.2 ^ 2 ∂γ := by
-  have hf : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
+  have _ : Measurable fun w : E × E × E ↦ (1 - t) • w.2.1 + t • w.2.2 := by fun_prop
   -- The plan couples its base marginal `μ` with the generalized geodesic at time `t`.
   have hπ : IsCoupling (γ.map fun w ↦ (w.1, (1 - t) • w.2.1 + t • w.2.2)) μ
       (generalizedGeodesic γ t) := by
@@ -318,7 +318,7 @@ theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFini
     ((memLp_of_hasFiniteMoment_map
       (measurable_snd.comp measurable_snd).aemeasurable h₁).const_smul t)
   rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
-  exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
+  exact (memLp_congr_eNorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
 
 /-- A measure on `E × E × E` whose last two coordinates are coupled as two laws of `P₂(E)`, for
 instance a generalized-geodesic plan between them, has its generalized geodesic in `P₂(E)`: at every

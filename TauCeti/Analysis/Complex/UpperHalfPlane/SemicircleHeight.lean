@@ -58,13 +58,6 @@ theorem min_le_im_of_sq_sub_eq {m ρ x K : ℝ} {z : ℍ}
   rw [lt_div_iff₀ (by positivity)] at hyK
   set u := z.re - x
   set y := z.im
-  -- with `t = m - x`, so that `t² = ρ²`: `u² ≤ u t ≤ y²`
-  have h₁ : u ^ 2 ≤ u * (m - x) := by nlinarith
-  have h₂ : u * (m - x) ≤ y ^ 2 := by nlinarith
-  -- `ρ² u² = (u t)² ≤ y⁴ ≤ ρ² y²`, so `u² ≤ y²`
-  have h₃ : u ^ 2 ≤ y ^ 2 := by
-    nlinarith [pow_le_pow_left₀ ((sq_nonneg u).trans h₁) h₂ 2, pow_le_pow_left₀ hy.le hyρ.le 2]
-  -- outside the horodisc, `y ≤ K (u² + y²) ≤ 2 K y²`, so `1 / (2K) ≤ y`
   nlinarith
 
 end TauCeti.UpperHalfPlane

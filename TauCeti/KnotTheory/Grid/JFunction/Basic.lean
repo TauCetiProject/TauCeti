@@ -53,11 +53,8 @@ marking point sets, which the Maslov and Alexander gradings are then assembled f
 
 ## References
 
-This supplies a prerequisite for `CombinatorialHeegaardFloer/README.md` in TauCetiRoadmap, Lane G.2,
-"Gradings. The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`; grading-change
-formulas across a rectangle." The definition follows Ozsváth--Stipsicz--Szabó, *Grid Homology
-for Knots and Links*, Chapter 4.3, where `J` is the symmetrization of the northeast/southwest
-point-pair count.
+The definition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.3,
+where `J` is the symmetrization of the northeast/southwest point-pair count.
 -/
 
 public section

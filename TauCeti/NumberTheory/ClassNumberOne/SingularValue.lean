@@ -86,7 +86,7 @@ private theorem false_of_norm_le {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α α
   have hQ := div_le_div₀ (hA.trans hq') hq' (by linarith) (by linarith : 1 - 2 * α' ≤ 1 - 2 * A)
   have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
   have hx : ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * A * U :=
-    (norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)).trans (by gcongr)
+    (norm_siegelFunction_zero_half_pow_twelve_le (by linarith)).trans (by gcongr)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ht : t ≤ 4096 * α * U := hx.trans (by gcongr)
   -- `16 - t ≤ |x + 16|`.
@@ -120,8 +120,8 @@ private theorem false_of_le_norm {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α β
   have hQ := div_le_div₀ hα₀ hq (by linarith) (by linarith : 1 - 2 * α ≤ 1 - 2 * A)
   have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
   have hP' : L ≤ (1 - A / (1 - 2 * A)) ^ 24 := hL.trans (by gcongr)
-  have hlo := le_norm_siegelFunction_zero_half_pow_twelve τ.im_pos (by linarith)
-  have hhi := norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)
+  have hlo := le_norm_siegelFunction_zero_half_pow_twelve (by linarith)
+  have hhi := norm_siegelFunction_zero_half_pow_twelve_le (by linarith)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ha : 4096 * β * L ≤ t := le_trans (by gcongr) hlo
   have hb : t ≤ 4096 * α * U := hhi.trans (by gcongr)

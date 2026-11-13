@@ -85,8 +85,7 @@ theorem Convex.mul_volume_preimage_prodMk_rpow_add_mul_volume_preimage_prodMk_rp
   rcases eq_or_ne (Module.finrank ℝ F) 0 with hn | hn
   · -- In dimension zero every dimension root is `1`, so the claim is `a + b ≤ 1`.
     simp [hn, ← ENNReal.ofReal_add ha hb, hab]
-  · exact (TauCeti.mul_volume_rpow_add_mul_volume_rpow_le hn hp
-      (Convex.nullMeasurableSet volume (hs.preimage_prodMk p)) hq
+  · exact (TauCeti.mul_volume_rpow_add_mul_volume_rpow_le hn hp hq
       (Convex.nullMeasurableSet volume (hs.preimage_prodMk q)) ha hb).trans
       (ENNReal.rpow_le_rpow (measure_mono hsub) (by positivity))
 
@@ -315,18 +314,17 @@ theorem _root_.Convex.hasDerivAt_volume_real_sep_inner_le {s : Set E} (hs : Conv
 
 /-- **Multiplicative Brunn–Minkowski for hyperplane sections.** The weighted geometric mean of the
 volumes of a section of `K` and a section of `L` is at most the volume of the section of
-`(1 - θ) • K + θ • L` at the weighted height. -/
+`(1 - θ) • K + θ • L` at the weighted height. Only `L` needs to be measurable: the sections of `K`
+and of the sum have their outer volumes. -/
 theorem volume_hyperplaneSection_rpow_mul_volume_hyperplaneSection_rpow_le (e : E) {K L : Set E}
-    (hK : MeasurableSet K) (hL : MeasurableSet L) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
-    (s t : ℝ) :
+    (hL : MeasurableSet L) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1) (s t : ℝ) :
     volume {y : (ℝ ∙ e)ᗮ | (y : E) + s • e ∈ K} ^ (1 - θ) *
         volume {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ L} ^ θ ≤
       volume {y : (ℝ ∙ e)ᗮ | (y : E) + ((1 - θ) * s + θ * t) • e ∈ (1 - θ) • K + θ • L} := by
-  have hsec {u : ℝ} {S : Set E} (hS : MeasurableSet S) :
-      MeasurableSet {y : (ℝ ∙ e)ᗮ | (y : E) + u • e ∈ S} :=
-    hS.preimage (continuous_subtype_val.add continuous_const).measurable
-  exact (volume_rpow_mul_volume_rpow_le (hsec hK).nullMeasurableSet (hsec hL).nullMeasurableSet
-    hθ₀ hθ₁).trans (measure_mono
-      (smul_hyperplaneSection_add_smul_hyperplaneSection_subset e K L (1 - θ) θ s t))
+  -- The section of `L` at height `t` is the preimage of `L` under a continuous map.
+  have hsec : MeasurableSet {y : (ℝ ∙ e)ᗮ | (y : E) + t • e ∈ L} :=
+    hL.preimage (continuous_subtype_val.add continuous_const).measurable
+  exact (volume_rpow_mul_volume_rpow_le hsec.nullMeasurableSet hθ₀ hθ₁).trans (measure_mono
+    (smul_hyperplaneSection_add_smul_hyperplaneSection_subset e K L (1 - θ) θ s t))
 
 end TauCeti

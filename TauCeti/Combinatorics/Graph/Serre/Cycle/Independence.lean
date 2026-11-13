@@ -91,6 +91,12 @@ theorem IsSpanningForest.eq_zero_of_incidenceBoundary_eq_zero
     (incidenceBoundary_injective_of_isAcyclic hF.src_ne_tgt hF.endpoints_injOn hF.isAcyclic)
     c hc hs
 
+/-- A family of darts that is its own spanning forest carries no nonzero cycle. -/
+theorem IsSpanningForest.ker_incidenceBoundary_eq_bot (hF : Γ.IsSpanningForest O O) :
+    (Γ.incidenceBoundary O R).ker = ⊥ :=
+  LinearMap.ker_eq_bot.mpr
+    (incidenceBoundary_injective_of_isAcyclic hF.src_ne_tgt hF.endpoints_injOn hF.isAcyclic)
+
 /-- Two chains with equal boundaries and equal chord coordinates are equal. Thus on every
 fibre of the boundary map, the non-forest coordinates determine a chain uniquely. -/
 theorem IsSpanningForest.eq_of_incidenceBoundary_eq_of_forall_notMem

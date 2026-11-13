@@ -56,7 +56,6 @@ theorem IsAnalyticSubmanifold.image_of_leftInvOn (hS : IsAnalyticSubmanifold k S
     let φ := fun u ↦ c.symm (firstCoords 𝕜 k n u)
     let p := f ∘ φ
     have hφ₀ : φ u₀ = x := hc.symm_firstCoords_firstCoords_apply hxc hx
-    have hφ : AnalyticAt 𝕜 φ u₀ := hc.analyticAt_symm_firstCoords hxc hx
     have hφS : ∀ᶠ u in 𝓝 u₀, φ u ∈ c.source ∩ S :=
       hc.eventually_symm_firstCoords_mem hxc hx
     have hp : AnalyticAt 𝕜 p u₀ := hf.analyticAt_chart hx hc hxc
