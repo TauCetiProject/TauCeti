@@ -18,7 +18,8 @@ For a nonlattice interarrival law on the nonnegative half-line, the renewal mass
 an interval of fixed length tends to its length times the reciprocal extended mean.
 Equivalently, the corresponding increment of the renewal function has this limit.
 The inverse is taken before conversion to a real number, so infinite mean gives
-limit zero. Interarrival laws with an atom at zero are allowed, provided `F {0} < 1`.
+limit zero. Interarrival laws with an atom at zero are allowed; nonlattice probability
+laws automatically satisfy `F {0} < 1`.
 Intervals are left-open and right-closed, retaining arrivals at the upper endpoint.
 
 The compactness of translated renewal measures, harmonicity of their vague limits,
@@ -44,10 +45,11 @@ variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
 /-- **Nonlattice Blackwell theorem, backward windows.** The mass of `(t - u, t]`
 tends to the window length times the reciprocal extended mean. The subtraction
 is truncated on `ℝ≥0`, which is immaterial as `t → ∞`. Infinite mean gives zero. -/
-theorem tendsto_renewalMeasure_Ioc_sub (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
+theorem tendsto_renewalMeasure_Ioc_sub (hNL : ¬ F.IsLattice)
     (u : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 => F.renewalMeasure (Ioc (t - u) t)) atTop
       (𝓝 ((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹ * u)) := by
+  have hF := measure_singleton_zero_lt_one_of_not_isLattice hNL
   apply tendsto_of_subseq_tendsto
   intro t ht
   obtain ⟨η, φ, hη, hφ, hbound, hlim⟩ :=
@@ -73,16 +75,17 @@ theorem tendsto_renewalMeasure_Ioc_sub (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
 
 /-- **Nonlattice Blackwell theorem, forward windows.** The real renewal mass of
 `(t, t + u]` tends to `u` times the reciprocal extended mean, including infinite mean. -/
-theorem tendsto_renewalMeasure_real_Ioc (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
+theorem tendsto_renewalMeasure_real_Ioc (hNL : ¬ F.IsLattice)
     (u : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 => F.renewalMeasure.real (Ioc t (t + u))) atTop
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * (u : ℝ))) := by
+  have hF := measure_singleton_zero_lt_one_of_not_isLattice hNL
   have ht : Tendsto (fun t : ℝ≥0 => t + u) atTop atTop :=
     tendsto_atTop_mono (fun t => le_self_add) tendsto_id
   have hlim : Tendsto (fun t : ℝ≥0 => F.renewalMeasure (Ioc t (t + u))) atTop
       (𝓝 ((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹ * u)) := by
     simpa only [Function.comp_def, add_tsub_cancel_right] using
-      (F.tendsto_renewalMeasure_Ioc_sub hF hNL u).comp ht
+      (F.tendsto_renewalMeasure_Ioc_sub hNL u).comp ht
   -- The local bound keeps the limit finite, permitting conversion to real masses.
   have hfinite : (∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹ * (u : ℝ≥0∞) ≠ ∞ :=
     ne_top_of_le_ne_top (F.renewalMeasure_Iic_lt_top hF u).ne
@@ -95,12 +98,15 @@ theorem tendsto_renewalMeasure_real_Ioc (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
 from `t` to `t + u` tends to `u` times the real value of the reciprocal extended mean.
 The artificial arrival at zero is excluded, while genuine zero-time arrivals cancel
 in the difference. No finite-mean assumption is required. -/
-theorem tendsto_renewalFunction_add_sub (hF : F {0} < 1) (hNL : ¬ F.IsLattice)
+theorem tendsto_renewalFunction_add_sub (hNL : ¬ F.IsLattice)
     (u : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 => (F.renewalFunction (t + u)).toReal -
       (F.renewalFunction t).toReal) atTop
       (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal * (u : ℝ))) := by
-  simpa only [F.toReal_renewalFunction_add_sub hF] using
-    F.tendsto_renewalMeasure_real_Ioc hF hNL u
+  let : IsLocallyFiniteMeasure F.renewalMeasure :=
+    F.isLocallyFiniteMeasure_renewalMeasure
+      (measure_singleton_zero_lt_one_of_not_isLattice hNL)
+  simpa only [F.toReal_renewalFunction_add_sub] using
+    F.tendsto_renewalMeasure_real_Ioc hNL u
 
 end MeasureTheory.Measure

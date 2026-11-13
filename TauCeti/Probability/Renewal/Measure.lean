@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
 import TauCeti.Probability.Independence.InfinitePi
@@ -174,6 +175,35 @@ theorem renewalMeasure_Iic [SFinite μ] (t : ℝ≥0) :
 theorem monotone_renewalFunction : Monotone μ.renewalFunction :=
   fun _ _ h ↦ measure_mono (Iic_subset_Iic.2 h)
 
+/-- The real increment of the renewal function between ordered times is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (μ.renewalFunction t).toReal - (μ.renewalFunction s).toReal =
+      μ.renewalMeasure.real (Ioc s t) := by
+  have hmass (v : ℝ≥0) : μ.renewalMeasure.real (Iic v) =
+      1 + (μ.renewalFunction v).toReal := by
+    have hfinite : μ.renewalFunction v < ∞ := by
+      have h := measure_Iic_lt_top (μ := μ.renewalMeasure) (a := v)
+      rw [renewalMeasure_Iic] at h
+      exact (ENNReal.add_lt_top.1 h).2
+    simp [measureReal_def, renewalMeasure_Iic, ENNReal.toReal_add, hfinite.ne]
+  have hset : Iic t \ Iic s = Ioc s t := by
+    ext x
+    simp [and_comm]
+  have he := measureReal_sdiff (μ := μ.renewalMeasure)
+    (Iic_subset_Iic.2 hst) measurableSet_Iic measure_Iic_lt_top.ne
+  rw [hset, hmass, hmass] at he
+  linarith
+
+/-- The real increment of the renewal function over a window is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_add_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    (t u : ℝ≥0) :
+    (μ.renewalFunction (t + u)).toReal - (μ.renewalFunction t).toReal =
+      μ.renewalMeasure.real (Ioc t (t + u)) :=
+  μ.toReal_renewalFunction_sub le_self_add
+
 end RenewalFunction
 
 end MeasureTheory.Measure
@@ -250,24 +280,6 @@ locally finite. -/
 theorem isLocallyFiniteMeasure_renewalMeasure (hμ : μ {0} < 1) :
     IsLocallyFiniteMeasure μ.renewalMeasure :=
   ⟨fun t ↦ ⟨Iic (t + 1), Iic_mem_nhds (lt_add_one t), renewalMeasure_Iic_lt_top μ hμ _⟩⟩
-
-/-- The real increment of the renewal function over a window is its renewal mass.
-The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
-theorem toReal_renewalFunction_add_sub (hμ : μ {0} < 1) (t u : ℝ≥0) :
-    (μ.renewalFunction (t + u)).toReal - (μ.renewalFunction t).toReal =
-      μ.renewalMeasure.real (Ioc t (t + u)) := by
-  have hmass (v : ℝ≥0) : μ.renewalMeasure.real (Iic v) =
-      1 + (μ.renewalFunction v).toReal := by
-    simp [measureReal_def, renewalMeasure_Iic, ENNReal.toReal_add,
-      (μ.renewalFunction_lt_top hμ v).ne]
-  have hset : Iic (t + u) \ Iic t = Ioc t (t + u) := by
-    ext x
-    simp [and_comm]
-  have he := measureReal_sdiff (μ := μ.renewalMeasure)
-    (Iic_subset_Iic.2 (le_self_add : t ≤ t + u)) measurableSet_Iic
-    (μ.renewalMeasure_Iic_lt_top hμ (t + u)).ne
-  rw [hset, hmass, hmass] at he
-  linarith
 
 /-- **Right continuity of the renewal function** of a probability measure on `ℝ≥0`. For the point
 mass at zero the renewal function is constantly infinite. -/
