@@ -33,9 +33,17 @@ Probability preservation is therefore stated with an embedding into the populati
 sampling without replacement, and with a nonempty selection space `ι → κ` for sampling with
 replacement, including when both index types are empty.
 
+Measurable observations of population values commute with both sampling laws. For deterministic
+populations, this expresses sampling a population that factors through another as a pushforward
+of the latter's sampling law, without separation assumptions on the value space.
+
 ## Main declarations
 
 * `sampleWithoutReplacement`, `sampleWithReplacement`: the two finite sampling laws;
+* `sampleWithoutReplacement_map`, `sampleWithReplacement_map`: measurable observations commute
+  with sampling;
+* `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
+  deterministic-population composition forms;
 * `pi_empiricalMeasureOfFintype_eq_map_uniformOn`: independent empirical draws as uniform
   selections;
 * `sampleWithReplacement_eq_bind_pi_empiricalMeasureOfFintype`: the empirical-product mixture;
@@ -62,7 +70,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*} [MeasurableSpace α]
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- The law obtained by sampling a random finite population without replacement.
 
@@ -91,6 +99,23 @@ theorem sampleWithoutReplacement_dirac {ι κ : Type*} [Finite κ] [MeasurableSp
     sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
       (uniformOn {k : ι → κ | Function.Injective k}).map (fun k i => x (k i)) := by
   rw [sampleWithoutReplacement_def, samplePopulation_dirac]
+
+/-- Observing population values commutes with sampling without replacement. -/
+theorem sampleWithoutReplacement_map {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (ρ : Measure (κ → α)) [SFinite ρ]
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithoutReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population without replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithoutReplacement_dirac_comp {ι κ : Type*} [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithoutReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithoutReplacement_def, samplePopulation_dirac_comp _ _ hg]
 
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
@@ -174,6 +199,21 @@ theorem sampleWithReplacement_dirac [Fintype ι] [Finite κ] (x : κ → α) :
       (uniformOn (Set.univ : Set (ι → κ))).map (fun k i => x (k i)) := by
   rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac]
 
+/-- Observing population values commutes with sampling with replacement. -/
+theorem sampleWithReplacement_map [Fintype ι] [Countable κ]
+    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (ρ.map (fun x i => g (x i))) =
+      (sampleWithReplacement (ι := ι) ρ).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_map _ _ hg]
+
+/-- Sampling an observed deterministic population with replacement is the observation's
+pushforward of the original sampling law. -/
+theorem sampleWithReplacement_dirac_comp [Fintype ι] [Countable κ] (x : κ → α)
+    {g : α → β} (hg : Measurable g) :
+    sampleWithReplacement (ι := ι) (Measure.dirac (g ∘ x)) =
+      (sampleWithReplacement (ι := ι) (Measure.dirac x)).map (fun y i => g (y i)) := by
+  simp only [sampleWithReplacement_def, samplePopulation_dirac_comp _ _ hg]
+
 /-- Sampling with replacement from a random population preserves probability mass whenever a
 selection exists. -/
 theorem isProbabilityMeasure_sampleWithReplacement [Fintype ι] [Finite κ] [Nonempty (ι → κ)]
@@ -197,67 +237,91 @@ section Bounds
 variable [Fintype ι] [Fintype κ]
 
 omit [Fintype κ] in
-/-- Sampling without replacement from a random finite population increases the mass of a
-measurable event by at most the uniform-measure mass of colliding index selections.
+/-- Sampling without replacement from a random finite population increases the mass of an
+event by at most the uniform-measure mass of colliding index selections.
 This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite κ]
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
-    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
-  let f : (κ → α) → ℝ≥0∞ := fun x =>
-    uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' A)
-  have hf : Measurable f := by
-    exact measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  -- First for measurable events, then for any event through a measurable hull.
+  have key : ∀ B : Set (ι → α), MeasurableSet B →
+      sampleWithoutReplacement ρ B ≤ sampleWithReplacement ρ B +
+        uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
+    intro B hB
+    rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
+      samplePopulation_apply_population hB, samplePopulation_apply_population hB]
+    let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
+    let f : (κ → α) → ℝ≥0∞ := fun x =>
+      uniformOn (Set.univ : Set (ι → κ)) ((fun k i => x (k i)) ⁻¹' B)
+    have hf : Measurable f := by
+      exact measurable_measure_prodMk_right (measurable_reindexPopulation hB)
+    calc
+      (∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
+          ((fun k i => x (k i)) ⁻¹' B) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
+        lintegral_mono fun x => uniformOn_injective_le_add _
+      _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
+      _ = (∫⁻ x, f x ∂ρ) + c := by simp
   calc
-    (∫⁻ x, uniformOn {k : ι → κ | Function.Injective k}
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_injective_le_add _
-    _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
-    _ = (∫⁻ x, f x ∂ρ) + c := by simp
+    sampleWithoutReplacement ρ A
+        ≤ sampleWithoutReplacement ρ (toMeasurable (sampleWithReplacement ρ) A) :=
+      measure_mono (subset_toMeasurable _ _)
+    _ ≤ sampleWithReplacement ρ (toMeasurable (sampleWithReplacement ρ) A) + _ :=
+      key _ (measurableSet_toMeasurable _ _)
+    _ = sampleWithReplacement ρ A + _ := by rw [measure_toMeasurable]
 
 omit [Fintype κ] in
-/-- Sampling with replacement from a random finite population increases the mass of a
-measurable event by at most the uniform-measure mass of colliding index selections.
+/-- Sampling with replacement from a random finite population increases the mass of an
+event by at most the uniform-measure mass of colliding index selections.
 This mass is a collision probability when the selection space is nonempty. -/
 theorem sampleWithReplacement_le_sampleWithoutReplacement_add_collision [Finite κ]
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
-    samplePopulation_apply_population hA, samplePopulation_apply_population hA]
-  let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
-  let f : (κ → α) → ℝ≥0∞ := fun x =>
-    uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' A)
-  have hf : Measurable f := by
-    exact measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  -- First for measurable events, then for any event through a measurable hull.
+  have key : ∀ B : Set (ι → α), MeasurableSet B →
+      sampleWithReplacement ρ B ≤ sampleWithoutReplacement ρ B +
+        uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k} := by
+    intro B hB
+    rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
+      samplePopulation_apply_population hB, samplePopulation_apply_population hB]
+    let c := uniformOn (Set.univ : Set (ι → κ)) {k | ¬ Function.Injective k}
+    let f : (κ → α) → ℝ≥0∞ := fun x =>
+      uniformOn {k : ι → κ | Function.Injective k} ((fun k i => x (k i)) ⁻¹' B)
+    have hf : Measurable f := by
+      exact measurable_measure_prodMk_right (measurable_reindexPopulation hB)
+    calc
+      (∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
+          ((fun k i => x (k i)) ⁻¹' B) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
+        lintegral_mono fun x => uniformOn_univ_le_injective_add _
+      _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
+      _ = (∫⁻ x, f x ∂ρ) + c := by simp
   calc
-    (∫⁻ x, uniformOn (Set.univ : Set (ι → κ))
-        ((fun k i => x (k i)) ⁻¹' A) ∂ρ) ≤ ∫⁻ x, f x + c ∂ρ :=
-      lintegral_mono fun x => uniformOn_univ_le_injective_add _
-    _ = (∫⁻ x, f x ∂ρ) + ∫⁻ _x, c ∂ρ := lintegral_add_left hf _
-    _ = (∫⁻ x, f x ∂ρ) + c := by simp
+    sampleWithReplacement ρ A
+        ≤ sampleWithReplacement ρ (toMeasurable (sampleWithoutReplacement ρ) A) :=
+      measure_mono (subset_toMeasurable _ _)
+    _ ≤ sampleWithoutReplacement ρ (toMeasurable (sampleWithoutReplacement ρ) A) + _ :=
+      key _ (measurableSet_toMeasurable _ _)
+    _ = sampleWithoutReplacement ρ A + _ := by rw [measure_toMeasurable]
 
-/-- **Finite sampling bound, without replacement to with replacement.** For every measurable
-event, sampling without replacement from a random finite population has mass at most its
+/-- **Finite sampling bound, without replacement to with replacement.** For every event,
+sampling without replacement from a random finite population has mass at most its
 with-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
 theorem sampleWithoutReplacement_le_sampleWithReplacement_add
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithoutReplacement ρ A ≤ sampleWithReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ :=
-  (sampleWithoutReplacement_le_sampleWithReplacement_add_collision hA).trans
+  (sampleWithoutReplacement_le_sampleWithReplacement_add_collision A).trans
     (add_le_add le_rfl uniformOn_not_injective_le)
 
-/-- **Finite sampling bound, with replacement to without replacement.** For every measurable
-event, sampling with replacement from a random finite population has mass at most its
+/-- **Finite sampling bound, with replacement to without replacement.** For every event,
+sampling with replacement from a random finite population has mass at most its
 without-replacement mass plus the collision bound `choose |ι| 2 / |κ|`. -/
 theorem sampleWithReplacement_le_sampleWithoutReplacement_add
-    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] {A : Set (ι → α)} (hA : MeasurableSet A) :
+    {ρ : Measure (κ → α)} [IsProbabilityMeasure ρ] (A : Set (ι → α)) :
     sampleWithReplacement ρ A ≤ sampleWithoutReplacement ρ A +
       (Fintype.card ι).choose 2 / Fintype.card κ :=
-  (sampleWithReplacement_le_sampleWithoutReplacement_add_collision hA).trans
+  (sampleWithReplacement_le_sampleWithoutReplacement_add_collision A).trans
     (add_le_add le_rfl uniformOn_not_injective_le)
 
 end Bounds

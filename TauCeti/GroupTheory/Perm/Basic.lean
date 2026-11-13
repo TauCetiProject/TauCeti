@@ -75,14 +75,14 @@ theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
     Function.Semiconj g ⇑(σ ^ k) ⇑(τ ^ k) := by
   intro z
   have hinv : Function.Semiconj g (σ⁻¹ : Equiv.Perm α) (τ⁻¹ : Equiv.Perm γ) :=
-    Function.Semiconj.inverses_right hg σ.right_inv τ.left_inv
+    inverses_right hg σ.right_inv τ.left_inv
   cases k with
   | ofNat m =>
       simpa only [Int.ofNat_eq_natCast, zpow_natCast, Equiv.Perm.coe_pow] using
-        (Function.Semiconj.iterate_right hg m z)
+        (iterate_right hg m z)
   | negSucc m =>
       simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
-        (Function.Semiconj.iterate_right hinv (m + 1) z)
+        (iterate_right hinv (m + 1) z)
 
 end Function.Semiconj
 
@@ -300,10 +300,10 @@ theorem IsCycle.exists_mul_zpow_inv_apply_eq_of_commute [Fintype α] [DecidableE
   refine ⟨j, ?_, ?_⟩
   · intro z hz
     have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← _root_.zpow_neg, zpow_apply_mem_support]
-    rw [Equiv.Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Equiv.Perm.mul_apply,
-      mul_inv_cancel, Equiv.Perm.one_apply]
+    rw [mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← mul_apply,
+      mul_inv_cancel, one_apply]
   · intro z hz
-    rw [Equiv.Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
+    rw [mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
       (notMem_support.1 hz) j).symm]
 
 /-- Transporting a permutation along an equivalence transports its cycles. -/
@@ -385,7 +385,7 @@ open Equiv.Perm
 
 /-- An equivalence conjugating two permutations transports their cycle quotients. -/
 def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
-    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    {σ : Perm α} {τ : Perm β} (h : τ = e.permCongr σ) :
     Quotient (SameCycle.setoid σ) ≃ Quotient (SameCycle.setoid τ) :=
   Quotient.congr e fun _ _ => by
     rw [h]
@@ -393,11 +393,11 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
 
 /-- Cycle-quotient transport sends a class to the class of its transported representative. -/
 @[simp] theorem sameCycleQuotientCongr_mk {α β : Type*} (e : α ≃ β)
-    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) (x : α) :
+    {σ : Perm α} {τ : Perm β} (h : τ = e.permCongr σ) (x : α) :
     sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
 
 /-- Identity conjugacy induces identity transport of cycle quotients. -/
-@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Perm α) :
     sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
       Equiv.refl _ := by
   ext q
@@ -406,7 +406,7 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
 
 /-- Inverting cycle-quotient transport reverses the conjugating equivalence. -/
 @[simp] theorem sameCycleQuotientCongr_symm {α β : Type*} (e : α ≃ β)
-    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    {σ : Perm α} {τ : Perm β} (h : τ = e.permCongr σ) :
     (sameCycleQuotientCongr e h).symm =
       sameCycleQuotientCongr e.symm (by ext x; simp [h]) := by
   ext q
@@ -415,7 +415,7 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
 
 /-- Transport of cycle quotients respects composition of conjugating equivalences. -/
 theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β ≃ γ)
-    {σ : Equiv.Perm α} {τ : Equiv.Perm β} {υ : Equiv.Perm γ}
+    {σ : Perm α} {τ : Perm β} {υ : Perm γ}
     (he : τ = e.permCongr σ) (hf : υ = f.permCongr τ) :
     (sameCycleQuotientCongr e he).trans (sameCycleQuotientCongr f hf) =
       sameCycleQuotientCongr (e.trans f) (by ext x; simp [hf, he]) := by

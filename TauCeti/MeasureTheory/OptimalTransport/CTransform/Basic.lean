@@ -20,11 +20,11 @@ against a cost `c : X × Y → ℝ` is the pointwise inequality `φ x + ψ y ≤
 fixed, the largest `ψ` satisfying it is the *infimal `c`-transform*
 `cTransform c φ y = ⨅ x, (c (x, y) - φ x)`, and symmetrically with `ψ` fixed. This file builds
 that transform, the two closure operations it generates, the `c`-concave potentials they fix,
-and the contact set on which the dual constraint is an equality. It is the finite-real slice of
-the roadmap's broader transform interface; the analytic-sublevel interface lives in
-`TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`, and the compact attainment and
-lower-semicontinuity interface in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`.
-The extended-cost interface is a follow-up slice. The elementary
+and the contact set on which the dual constraint is an equality, for a finite real cost. The
+analytic-sublevel interface lives in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`,
+the compact attainment and lower-semicontinuity interface in
+`TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`, and the transform for an extended
+cost in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended`. The elementary
 upper-semicontinuity result for infimal transforms, the Borel measurability it gives with no
 hypothesis on the opposite factor, and a metric continuity result for real-valued transforms are
 included here.
@@ -39,7 +39,8 @@ no side condition, which gives the adjunction `ψ ≤ cTransform c φ ↔ φ ≤
 recorded as `TauCeti.cTransform_galoisConnection`. For an extended-valued cost the same formula
 is *not* the right one: with `c ≡ ⊤` and `φ ≡ 0`, `EReal` subtraction gives `⊤ - ⊤ = ⊥`, so the
 double transform of `φ` is `⊥` on nonempty factors and the inequality `φ ≤ φᶜᶜ` fails. The
-extended-cost interface needs its own conventions and is not built here.
+extended-cost transform needs its own conventions; `TauCeti.cTransformExtended` replaces the
+subtraction by additive residuation.
 
 Apart from the upper-semicontinuity and Borel measurability results, and the metric continuity
 result on pseudometric spaces, the two factors are bare types and the results are
@@ -92,8 +93,6 @@ marginal integrals of a dual pair meaningful.
 * `TauCeti.exists_boundedContinuousFunction_of_eq_iInf_sub` — for a bounded uniformly continuous
   cost, two real potentials each the infimal transform of the other are bounded continuous
   functions.
-
-This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
 
 ## References
 
@@ -817,7 +816,7 @@ theorem IsCConcave.exists_real_conjugate (hφ : IsCConcave c φ)
   obtain ⟨x₀, a, ha⟩ := hfin
   set ψ := cTransform c φ
   have hφψ : cTransformSymm c ψ = φ := hφ.cTransformSymm_cTransform
-  obtain ⟨y₀, b, hb, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
+  obtain ⟨y₀, b, _, hψ_le, hφ_le⟩ := hφ.exists_transform_eq_coe_and_le hM' ha
   have : Nonempty X := ⟨x₀⟩
   have : Nonempty Y := ⟨y₀⟩
   -- Each transform is an infimum of the cost minus a potential bounded above, hence bounded

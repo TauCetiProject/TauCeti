@@ -26,9 +26,9 @@ beyond the finiteness of `S`.
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), where the same
-specialisation is drawn from the general finiteness statement.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), where the same specialisation is drawn from
+the general finiteness statement.
 -/
 
 public section
