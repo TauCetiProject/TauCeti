@@ -241,23 +241,31 @@ theorem eqOn_logDeriv_deriv_lineSchwarzReflection (hb : b ≠ 0) :
 
 /-- **The pre-Schwarzian derivative of the reflected extension is conjugation-symmetric.** For
 boundary values on the line through `q` with direction `b ≠ 0`, the pre-Schwarzian derivative of
-the extension intertwines conjugation with conjugation on the symmetric domain. (For `b = 0` the
-extension is the constant `q` and the statement is trivial.) -/
+the extension intertwines conjugation with conjugation at every point of the open set `Ω`; no
+symmetry of `Ω` is needed. (For `b = 0` the hypothesis `hline` is vacuous, the extension is the
+constant `q`, and both sides vanish.) -/
 theorem logDeriv_deriv_lineSchwarzReflection_conj (hΩopen : IsOpen Ω)
-    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hline : ∀ z ∈ Ω, z.im = 0 → ((f z - q) / b).im = 0) {z : ℂ} (hz : z ∈ Ω) :
     logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) ((starRingEnd ℂ) z) =
-      (starRingEnd ℂ) (logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) z) :=
-  logDeriv_deriv_conj_eq_conj_logDeriv_deriv hΩopen hΩ
-    (fun _ hw => lineSchwarzReflection_conj_eq hline hw) hz
+      (starRingEnd ℂ) (logDeriv (deriv (lineSchwarzReflection 0 1 q b f)) z) := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · have hF0 : lineSchwarzReflection 0 1 q 0 f = fun _ => q :=
+      funext fun z => by simp [lineSchwarzReflection_def]
+    simp [hF0]
+  · have hu : b / (starRingEnd ℂ) b ≠ 0 := div_ne_zero hb (by simpa using hb)
+    have hrefl : ∀ w ∈ Ω, lineSchwarzReflection 0 1 q b f ((starRingEnd ℂ) w) = _ :=
+      fun _ hw => lineSchwarzReflection_conj_eq hline hw
+    rw [logDeriv_apply, logDeriv_apply, deriv_deriv_conj_eq_mul_conj_deriv_deriv hΩopen hrefl hz,
+      deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz, mul_div_mul_left _ _ hu]
+    exact (map_div₀ _ _ _).symm
 
 /-- **The pre-Schwarzian derivative of a reflected conformal map is holomorphic across the
 axis.** Let `f` be continuous and injective on the closed upper part of a conjugation-symmetric
 open set `Ω` and holomorphic on its open upper part, with boundary values on the line through `q`
-with direction `b ≠ 0` and with the open upper part mapped strictly to the left of that line. (For
-`b = 0` the extension is the constant `q`, whose pre-Schwarzian derivative vanishes.) Then the
-reflected extension is injective with nonvanishing derivative on `Ω`, so its pre-Schwarzian
-derivative is holomorphic on all of `Ω`, the real points included. -/
+with direction `b` and with the open upper part mapped strictly to the left of that line. Then the
+pre-Schwarzian derivative of the reflected extension is holomorphic on all of `Ω`, the real points
+included. For `b = 0` the hypotheses `hΩopen`, `hΩ` and `hside` force `Ω = ∅`, so that case
+holds vacuously. -/
 theorem differentiableOn_logDeriv_deriv_lineSchwarzReflection (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
@@ -321,7 +329,7 @@ private theorem differentiableAt_schwarzReflection_logDeriv_deriv {x : ℝ}
     hcont ((hholo.mono inter_subset_right)) hline hside hinj
   have hGψ : EqOn G ψ {z : ℂ | 0 < z.im} := eqOn_logDeriv_deriv_lineSchwarzReflection hb
   have hGconj : ∀ z ∈ Metric.ball (x : ℂ) r, G ((starRingEnd ℂ) z) = (starRingEnd ℂ) (G z) :=
-    fun _ hz => logDeriv_deriv_lineSchwarzReflection_conj Metric.isOpen_ball hball hline hz
+    fun _ hz => logDeriv_deriv_lineSchwarzReflection_conj Metric.isOpen_ball hline hz
   have hφG : φ =ᶠ[𝓝 (x : ℂ)] G := by
     filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)] with z hz
     rcases lt_trichotomy z.im 0 with h | h | h
