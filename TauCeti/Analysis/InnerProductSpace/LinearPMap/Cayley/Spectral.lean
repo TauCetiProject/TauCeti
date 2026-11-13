@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.PointMass
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Cayley
 
 /-!
 # The spectral measure of the Cayley transform at its singular point
@@ -25,7 +25,7 @@ reindexing the spectral measure of `U` along it.
 
 * `LinearPMap.spectralPVM_cayley_proj_preimage_one`: the spectral projection of `U` at `1` is
   zero.
-* `LinearPMap.spectralPVM_cayley_diag_preimage_one`: every diagonal measure of the spectral
+* `LinearPMap.diagMeasure_cayley_preimage_one`: every diagonal measure of the spectral
   measure of `U` assigns mass zero to `{1}`.
 
 ## References
@@ -45,6 +45,7 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 /-- **The Cayley spectral projection at `1` vanishes.** If `-i` is a resolvent point of `A` and
 its Cayley transform is normal, as for self-adjoint `A` (`IsSelfAdjoint.isStarNormal_cayley`),
 the spectral projection of the Cayley transform at the point `1` is zero. -/
+@[simp]
 theorem spectralPVM_cayley_proj_preimage_one (h : -I ∈ A.resolventSet) :
     A.cayley.spectralPVM.proj (Subtype.val ⁻¹' {1})
       (measurable_subtype_coe (measurableSet_singleton 1)) = 0 :=
@@ -54,9 +55,10 @@ theorem spectralPVM_cayley_proj_preimage_one (h : -I ∈ A.resolventSet) :
 /-- **Zero mass at the Cayley singular point.** If `-i` is a resolvent point of `A` and its
 Cayley transform is normal, as for self-adjoint `A` (`IsSelfAdjoint.isStarNormal_cayley`), every
 diagonal measure of the spectral measure of the Cayley transform assigns mass zero to `{1}`. -/
-theorem spectralPVM_cayley_diag_preimage_one (h : -I ∈ A.resolventSet) (ξ : H) :
-    A.cayley.spectralPVM.diag ξ (Subtype.val ⁻¹' {1}) = 0 :=
-  A.cayley.spectralPVM_diag_preimage_singleton_eq_zero
+@[simp]
+theorem diagMeasure_cayley_preimage_one (h : -I ∈ A.resolventSet) (ξ : H) :
+    A.cayley.diagMeasure ξ (Subtype.val ⁻¹' {1}) = 0 :=
+  A.cayley.diagMeasure_preimage_singleton_eq_zero
     (fun x hx => (cayley_apply_eq_self_iff h).mp (by rwa [one_smul] at hx)) ξ
 
 end LinearPMap

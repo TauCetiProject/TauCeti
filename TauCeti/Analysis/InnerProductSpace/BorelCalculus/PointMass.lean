@@ -17,10 +17,12 @@ Consequently, if `μ` is not an eigenvalue of `a`, then `P({μ}) = 0`, and every
 
 ## Main results
 
-* `ContinuousLinearMap.comp_spectralPVM_proj_preimage_singleton`: `a P({μ}) = μ P({μ})`.
+* `ContinuousLinearMap.comp_spectralPVM_proj_preimage_singleton`,
+  `ContinuousLinearMap.mul_spectralPVM_proj_preimage_singleton`,
+  `ContinuousLinearMap.apply_spectralPVM_proj_preimage_singleton`: `a P({μ}) = μ P({μ})`.
 * `ContinuousLinearMap.spectralPVM_proj_preimage_singleton_eq_zero`: the spectral projection of a
   non-eigenvalue vanishes.
-* `ContinuousLinearMap.spectralPVM_diag_preimage_singleton_eq_zero`: the diagonal measures do not
+* `ContinuousLinearMap.diagMeasure_preimage_singleton_eq_zero`: the diagonal measures do not
   charge a non-eigenvalue.
 
 ## References
@@ -41,6 +43,7 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 /-- On the spectral projection of a point `μ`, a normal operator acts as multiplication by `μ`:
 `a P({μ}) = μ P({μ})`. -/
+@[simp]
 theorem comp_spectralPVM_proj_preimage_singleton (μ : ℂ) :
     a ∘L a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
       (measurableSet_singleton μ)) =
@@ -59,6 +62,24 @@ theorem comp_spectralPVM_proj_preimage_singleton (μ : ℂ) :
   have h := congrArg a.borelCalculus hmul
   rwa [map_mul, map_smul, borelCalculus_restrict_id, borelCalculus_indicator] at h
 
+/-- `a P({μ}) = μ P({μ})`, stated with the multiplication of `H →L[ℂ] H`. -/
+@[simp]
+theorem mul_spectralPVM_proj_preimage_singleton (μ : ℂ) :
+    a * a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
+      (measurableSet_singleton μ)) =
+      μ • a.spectralPVM.proj (Subtype.val ⁻¹' {μ})
+        (measurable_subtype_coe (measurableSet_singleton μ)) :=
+  a.comp_spectralPVM_proj_preimage_singleton μ
+
+/-- A normal operator `a` maps each vector `P({μ}) x` to `μ P({μ}) x`. -/
+@[simp]
+theorem apply_spectralPVM_proj_preimage_singleton (μ : ℂ) (x : H) :
+    a (a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
+      (measurableSet_singleton μ)) x) =
+      μ • a.spectralPVM.proj (Subtype.val ⁻¹' {μ})
+        (measurable_subtype_coe (measurableSet_singleton μ)) x :=
+  congrArg (fun T : H →L[ℂ] H => T x) (a.comp_spectralPVM_proj_preimage_singleton μ)
+
 /-- **Spectral projections of non-eigenvalues vanish.** If `μ` is not an eigenvalue of a normal
 operator `a`, its spectral projection `P({μ})` is zero. -/
 theorem spectralPVM_proj_preimage_singleton_eq_zero {μ : ℂ}
@@ -66,15 +87,14 @@ theorem spectralPVM_proj_preimage_singleton_eq_zero {μ : ℂ}
     a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
       (measurableSet_singleton μ)) = 0 := by
   ext x
-  refine hμ _ ?_
-  simpa using congrArg (fun T : H →L[ℂ] H => T x) (a.comp_spectralPVM_proj_preimage_singleton μ)
+  exact hμ _ (a.apply_spectralPVM_proj_preimage_singleton μ x)
 
 /-- If `μ` is not an eigenvalue of a normal operator `a`, every diagonal measure of its spectral
 measure assigns mass zero to `{μ}`. -/
-theorem spectralPVM_diag_preimage_singleton_eq_zero {μ : ℂ}
+theorem diagMeasure_preimage_singleton_eq_zero {μ : ℂ}
     (hμ : ∀ x : H, a x = μ • x → x = 0) (ξ : H) :
-    a.spectralPVM.diag ξ (Subtype.val ⁻¹' {μ}) = 0 :=
-  (a.spectralPVM.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _).1
+    a.diagMeasure ξ (Subtype.val ⁻¹' {μ}) = 0 :=
+  a.spectralPVM_diag ξ ▸ (a.spectralPVM.proj_eq_zero_iff_forall_diag_apply_eq_zero _ _).1
     (a.spectralPVM_proj_preimage_singleton_eq_zero hμ) ξ
 
 end ContinuousLinearMap
