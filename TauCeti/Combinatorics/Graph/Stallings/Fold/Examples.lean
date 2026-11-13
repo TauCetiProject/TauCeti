@@ -47,7 +47,6 @@ theorem card_foldAt_V_flower_fork :
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl
     fun h => by
       simpa using (flowerPos_eq_flowerPos_iff [[a, b], [a, c]] ⟨0, by simp⟩ ⟨1, by simp⟩ 1 1).mp h
-  rw [card_flower_V] at h
   simpa using h
 
 /-- Folding the initial darts of the petals `a b` and `a c` leaves three pairs of mutually
@@ -58,7 +57,6 @@ theorem card_foldAt_E_flower_fork :
   have h := card_foldAt_E_add_two (flower [[a, b], [a, c]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
     rfl rfl
-  rw [card_flower_E] at h
   simpa using h
 
 /-- In the fold of the petals `a b` and `a c` along their initial darts, the image of the
@@ -124,7 +122,6 @@ theorem card_foldAt_V_flower_loop_loop :
       (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.V = 1 := by
   have h := card_foldAt_V_of_tgt_eq (flower [[a], [a]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl rfl
-  rw [card_flower_V] at h
   simpa using h
 
 /-- Folding two loops with the same label leaves a single loop, that is, one pair of mutually
@@ -135,7 +132,6 @@ theorem card_foldAt_E_flower_loop_loop :
   have h := card_foldAt_E_add_two (flower [[a], [a]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
     rfl rfl
-  rw [card_flower_E] at h
   simpa using h
 
 /-- The single loop obtained by folding two loops with the same label is a folded graph. -/
@@ -169,7 +165,6 @@ theorem card_foldAt_V_flower_loop_petal :
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl
     fun h => by
       simpa using (flowerPos_eq_flowerPos_iff [[a], [a, b]] ⟨0, by simp⟩ ⟨1, by simp⟩ 1 1).mp h
-  rw [card_flower_V] at h
   simpa using h
 
 /-- Folding the loop `a` with the first dart of the petal `a b` leaves two pairs of mutually
@@ -180,13 +175,13 @@ theorem card_foldAt_E_flower_loop_petal :
   have h := card_foldAt_E_add_two (flower [[a], [a, b]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
     (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
     rfl rfl
-  rw [card_flower_E] at h
   simpa using h
 
 /-- Identifying the loop `a` with the first dart of the petal `a b` forces the identification
 of their termini: every morphism of graphs that identifies the two darts sends the interior
 vertex of the petal to the image of the base vertex, although the two vertices are distinct.
-So no quotient identifying only the darts receives a morphism from the flower. -/
+So no morphism from the flower identifies the two darts while keeping these two vertices
+distinct. -/
 theorem mapV_eq_of_mapE_eq_flower_loop_petal {Δ : SerreGraph}
     (g : (flower [[a], [a, b]]).graph.Hom Δ)
     (h : g.mapE (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true) =

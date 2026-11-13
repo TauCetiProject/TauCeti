@@ -37,20 +37,17 @@ variable {α : Type*}
 @[expose] def FlowerDart (ws : List (List (α × Bool))) :=
   (Σ i : Fin ws.length, Fin ws[i].length) × Bool
 
-/-- The vertex at position `k` on petal `i`; positions outside the interior map to the base. -/
-@[expose] def flowerPos (ws : List (List (α × Bool))) (i : Fin ws.length)
-    (k : ℕ) : FlowerVertex ws :=
-  if h : 0 < k ∧ k < ws[i].length then
-    some ⟨i, ⟨k - 1, by omega⟩⟩ else none
-
-/-- The based labelled flower with one polygonal petal per word. Empty words contribute no
-edges, and a one-letter word contributes a loop at the base vertex. -/
+/-- The based labelled flower with one polygonal petal per word. The `j`th forward dart of a
+petal runs from position `j` to position `j + 1` on it (see `flowerPos`), and the first and last
+positions of a petal are the base vertex. Empty words contribute no edges, and a one-letter word
+contributes a loop at the base vertex. -/
 @[expose] def flower (ws : List (List (α × Bool))) : StallingsGraph α where
   graph := {
     V := FlowerVertex ws
     E := FlowerDart ws
-    src := fun e => if e.2 then flowerPos ws e.1.1 e.1.2.val
-      else flowerPos ws e.1.1 (e.1.2.val + 1)
+    src := fun e =>
+      let k := if e.2 then e.1.2.val else e.1.2.val + 1
+      if h : 0 < k ∧ k < ws[e.1.1].length then some ⟨e.1.1, ⟨k - 1, by omega⟩⟩ else none
     rev := fun e => (e.1, !e.2)
     rev_rev := by intro ⟨e, b⟩; cases b <;> rfl
     rev_ne := by
@@ -67,6 +64,14 @@ edges, and a one-letter word contributes a loop at the base vertex. -/
 
 @[simp] theorem flower_base (ws : List (List (α × Bool))) :
     (flower ws).base = none := rfl
+
+/-- The vertex at position `k` on petal `i`; positions outside the interior map to the base. -/
+-- Defined after `flower` so that it takes values in the vertex type of the flower, the type of
+-- the origins and termini of its darts, in which equations between positions then arise.
+@[expose] def flowerPos (ws : List (List (α × Bool))) (i : Fin ws.length)
+    (k : ℕ) : (flower ws).graph.V :=
+  if h : 0 < k ∧ k < ws[i].length then
+    some ⟨i, ⟨k - 1, by omega⟩⟩ else none
 
 @[simp] theorem flower_rev (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
@@ -129,10 +134,8 @@ theorem flowerPos_of_pos_of_lt (ws : List (List (α × Bool))) (i : Fin ws.lengt
   exact dite_eq_left ⟨h0, hk⟩
 
 /-- A position on a petal is the base vertex exactly when it is not interior. -/
--- The equality is stated in the vertex type of the flower, the type in which equations between
--- origins and termini of darts arise, so that the lemma rewrites them.
 @[simp] theorem flowerPos_eq_none_iff (ws : List (List (α × Bool))) (i : Fin ws.length) (k : ℕ) :
-    @Eq (flower ws).graph.V (flowerPos ws i k) none ↔ k = 0 ∨ ws[i].length ≤ k := by
+    flowerPos ws i k = none ↔ k = 0 ∨ ws[i].length ≤ k := by
   by_cases h : 0 < k ∧ k < ws[i].length
   · simp only [flowerPos_of_pos_of_lt ws i k h.1 h.2, reduceCtorEq, false_iff]
     omega
@@ -141,11 +144,9 @@ theorem flowerPos_of_pos_of_lt (ws : List (List (α × Bool))) (i : Fin ws.lengt
 /-- Two positions on petals give the same vertex exactly when both are interior positions of
 the same petal that agree, or neither is interior: distinct petals meet only at the base
 vertex. -/
--- The equality is stated in the vertex type of the flower, the type in which equations between
--- origins and termini of darts arise, so that the lemma rewrites them.
 theorem flowerPos_eq_flowerPos_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
     (k k' : ℕ) :
-    @Eq (flower ws).graph.V (flowerPos ws i k) (flowerPos ws i' k') ↔
+    flowerPos ws i k = flowerPos ws i' k' ↔
       (0 < k ∧ k < ws[i].length ∧ i = i' ∧ k = k') ∨
         ((k = 0 ∨ ws[i].length ≤ k) ∧ (k' = 0 ∨ ws[i'].length ≤ k')) := by
   by_cases h : 0 < k ∧ k < ws[i].length
@@ -354,13 +355,13 @@ instance flower_finite_dart (ws : List (List (α × Bool))) :
   exact inferInstanceAs (Finite ((Σ i : Fin ws.length, Fin ws[i].length) × Bool))
 
 /-- A flower has two darts for every letter of its words. -/
-theorem card_flower_E (ws : List (List (α × Bool))) :
+@[simp] theorem card_flower_E (ws : List (List (α × Bool))) :
     Nat.card (flower ws).graph.E = 2 * (ws.map List.length).sum := by
   rw [← Fin.sum_univ_fun_getElem ws List.length]
   simp [flower, FlowerDart, Nat.card_eq_fintype_card, mul_comm]
 
 /-- A flower has its base vertex and one vertex for every letter but the last of each word. -/
-theorem card_flower_V (ws : List (List (α × Bool))) :
+@[simp] theorem card_flower_V (ws : List (List (α × Bool))) :
     Nat.card (flower ws).graph.V = (ws.map fun w => w.length - 1).sum + 1 := by
   rw [← Fin.sum_univ_fun_getElem ws fun w => w.length - 1]
   simp [flower, FlowerVertex, Nat.card_eq_fintype_card]
