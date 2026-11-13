@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
 
@@ -348,22 +349,6 @@ section Connected
 
 variable [Finite V]
 
-omit [Finite V] in
-/-- A preconnected graph with at least two vertices has no isolated vertex. -/
-private theorem exists_adj_of_preconnected [Nontrivial V] (hconn : G.Preconnected) (i : V) :
-    ∃ j, G.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
-
-omit [CommRing k] [Finite V] in
-/-- A family of scalars constant along the edges is constant along reachability: induct along a
-walk. -/
-private theorem eq_of_reachable {f : V → k} (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) {i j : V}
-    (h : G.Reachable i j) : f i = f j := by
-  obtain ⟨p⟩ := h
-  induction p with
-  | nil => rfl
-  | cons hadj _ ih => exact (hf hadj).trans ih
-
 /-- The family consisting of the unit and one volume class per vertex, indexed by `Option V`. For
 a connected graph it is a basis of the centre: the unit takes the place of the sum of the vertex
 idempotents, which is, up to a scalar, the only edge-constant combination of them. -/
@@ -402,7 +387,7 @@ theorem span_range_zigzagCenterFun_eq_center (hconn : G.Preconnected) :
     have hidem : ∑ i, f i • zigzagMk k G (vertexIdempotent k (vertex G i))
         = f i₀ • (1 : nonisolatedZigzagQuotient k G) := by
       rw [one_eq_sum_zigzagMk_vertexIdempotent k G, Finset.smul_sum]
-      exact Finset.sum_congr rfl fun i _ => by rw [eq_of_reachable k G hf (hconn i i₀)]
+      exact Finset.sum_congr rfl fun i _ => by rw [(hconn i i₀).apply_eq_apply hf]
     rw [hidem]
     exact Submodule.add_mem _
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨none, rfl⟩))
@@ -466,7 +451,8 @@ zigzag relation quotient. -/
 noncomputable def zigzagCenterBasis [Nontrivial V] (hconn : G.Preconnected) :
     Module.Basis (Option V) k (Subalgebra.center k (nonisolatedZigzagQuotient k G)) :=
   (Module.Basis.span
-    (linearIndependent_zigzagCenterFun k G (exists_adj_of_preconnected G hconn))).map
+    (linearIndependent_zigzagCenterFun k G fun i =>
+      SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i))).map
       ((LinearEquiv.ofEq _ _ (span_range_zigzagCenterFun_eq_center k G hconn)).trans
         (Subalgebra.toSubmoduleEquiv _))
 

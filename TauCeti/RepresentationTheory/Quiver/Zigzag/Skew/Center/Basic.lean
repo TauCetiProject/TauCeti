@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Multiplication
 
 /-!
@@ -317,22 +318,6 @@ theorem mem_center_skewZigzagQuotient_iff [Fintype V] (t : ∀ i : V, {j : V // 
 
 /-! ### The centre of a connected zigzag algebra -/
 
-omit [Finite V] in
-/-- A preconnected graph with at least two vertices has no isolated vertex. -/
-private theorem exists_adj_of_preconnected [Nontrivial V] (hconn : G.Preconnected) (i : V) :
-    ∃ j, G.Adj i j :=
-  SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
-
-omit [CommRing k] [Finite V] in
-/-- A family of scalars constant along the edges is constant along reachability: induct along a
-walk. -/
-private theorem eq_of_reachable {f : V → k} (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) {i j : V}
-    (h : G.Reachable i j) : f i = f j := by
-  obtain ⟨p⟩ := h
-  induction p with
-  | nil => rfl
-  | cons hadj _ ih => exact (hf hadj).trans ih
-
 /-- The family consisting of the unit and one volume class per vertex, indexed by `Option V`. For
 a connected graph it is a basis of the centre: the unit takes the place of the sum of the vertex
 idempotents, which is, up to a scalar, the only edge-constant combination of them. -/
@@ -371,7 +356,7 @@ theorem span_range_skewZigzagCenterFun_eq_center [Nontrivial V] (hconn : G.Preco
     have hidem : ∑ i, f i • skewZigzagMk k G c (vertexIdempotent k (vertex G i))
         = f i₀ • (1 : skewZigzagQuotient k G c) := by
       rw [one_eq_sum_skewZigzagMk_vertexIdempotent k G c, Finset.smul_sum]
-      exact Finset.sum_congr rfl fun i _ => by rw [eq_of_reachable k G hf (hconn i i₀)]
+      exact Finset.sum_congr rfl fun i _ => by rw [(hconn i i₀).apply_eq_apply hf]
     rw [hidem]
     exact Submodule.add_mem _
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨none, rfl⟩))
@@ -454,8 +439,8 @@ theorem finrank_center_skewZigzagQuotient [Nontrivial k] [Fintype V] [Nontrivial
     Module.finrank k (Subalgebra.center k (skewZigzagQuotient k G c))
       = Fintype.card V + 1 := by
   let t : ∀ i : V, {j : V // G.Adj i j} := fun i =>
-    ⟨(exists_adj_of_preconnected G hconn i).choose,
-      (exists_adj_of_preconnected G hconn i).choose_spec⟩
+    have h := SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
+    ⟨h.choose, h.choose_spec⟩
   rw [Module.finrank_eq_card_basis (skewZigzagCenterBasis k G c t hconn),
     Fintype.card_option]
 
