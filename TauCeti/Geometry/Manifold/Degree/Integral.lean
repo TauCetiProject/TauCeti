@@ -33,8 +33,10 @@ changing variables on each of them gives
 $$\int_M f^*\varphi = \deg_y(f) \int_N \varphi$$
 (`TauCeti.exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul`). A partition of
 unity subordinate to finitely many such neighbourhoods globalizes the formula: if every point of
-the support of `φ` is a regular value at which the degree is `c`, then `f^*φ` is integrable and
-`∫_M f^*φ = c ∫_N φ` (`TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`). When
+the support of `φ` is a regular value, then `f^*φ` is integrable
+(`TauCeti.integrableTopForm_mpullback_of_forall_mem_tsupport`), and if moreover the degree is `c`
+at each of them, then `∫_M f^*φ = c ∫_N φ`
+(`TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`). When
 every value is regular and `N` is preconnected this holds for every integrable top form, with `c`
 the degree at any point
 (`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`). This
@@ -54,8 +56,9 @@ The two manifolds may be modelled on different spaces of the same dimension.
   regular, with the same degree.
 * `TauCeti.degreeAtRegularValue_eq_of_forall_isRegularValue`: if every value is regular and `N`
   is preconnected, the degree is constant.
-* `TauCeti.integrableTopForm_mpullback_of_forall_mem_tsupport`,
-  `TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`: the integral formula for top
+* `TauCeti.integrableTopForm_mpullback_of_forall_mem_tsupport`: the pullback of an integrable top
+  form supported in regular values is integrable.
+* `TauCeti.integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport`: the integral formula for top
   forms supported in regular values of a fixed degree.
 * `TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`: the
   integral formula when every value is regular and `N` is preconnected.
@@ -308,23 +311,23 @@ theorem degreeAtRegularValue_eq_of_forall_isRegularValue [CompactSpace M] [T2Spa
     (eventually_isRegularValue_and_degreeAtRegularValue_eq o o' hf (hreg y)).mono
       fun _ h ↦ h.2).apply_eq_of_preconnectedSpace y y'
 
-/-- The global integral formula, together with the integrability of the pullback, for a top form
-supported in regular values at which the degree is `c`. -/
+/-- The integrability of the pullback of a top form supported in regular values, together with
+the global integral formula when the degree is `c` on its support. -/
 private theorem integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_tsupport
     [CompactSpace M] [T2Space M] [T2Space N] [BoundarylessManifold I M]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
-    (hf : ContMDiff I J 1 f) {φ : RoughForm J N ℝ k} (hφ : IntegrableTopForm φ) {c : ℤ}
-    (hc : ∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ,
-      IsRegularValue I J f y ∧ degreeAtRegularValue o o' f y = c) :
-    IntegrableTopForm (mpullback I J f φ) ∧
-      integralTopForm o (mpullback I J f φ) = c * integralTopForm o' φ := by
+    (hf : ContMDiff I J 1 f) {φ : RoughForm J N ℝ k} (hφ : IntegrableTopForm φ)
+    (hreg : ∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ, IsRegularValue I J f y) :
+    IntegrableTopForm (mpullback I J f φ) ∧ ∀ c : ℤ,
+      (∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ, degreeAtRegularValue o o' f y = c) →
+        integralTopForm o (mpullback I J f φ) = c * integralTopForm o' φ := by
   classical
   have : LocallyCompactSpace H' := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace H' N
   set K := _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ
   -- Each point of the support has a neighbourhood on which the local integral formula holds.
   choose V hV hVφ using fun y : K ↦
-    exists_mem_nhds_integrableTopForm_and_integralTopForm o o' hf (hc y y.2).1
+    exists_mem_nhds_integrableTopForm_and_integralTopForm o o' hf (hreg y y.2)
   obtain ⟨t, ht⟩ := hφ.isCompact.elim_finite_subcover (fun y : K ↦ interior (V y))
     (fun _ ↦ isOpen_interior) fun y hy ↦
       mem_iUnion.mpr ⟨⟨y, hy⟩, mem_interior_iff_mem_nhds.mpr (hV ⟨y, hy⟩)⟩
@@ -348,25 +351,23 @@ private theorem integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_ts
     exact map_sum (AddMonoidHom.mk' (mpullback I J f) (mpullback_add f)) _ _
   have hloc (i : t) := hVφ i (φ' i) (hφ' i) (hφ'V i)
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using o.card_eq.symm)
-  refine ⟨hpull ▸ IntegrableTopForm.sum b _ Finset.univ fun i _ ↦ (hloc i).1, ?_⟩
+  refine ⟨hpull ▸ IntegrableTopForm.sum b _ Finset.univ fun i _ ↦ (hloc i).1, fun c hc ↦ ?_⟩
   rw [hpull, integralTopForm_sum o _ Finset.univ fun i _ ↦ (hloc i).1, hsum,
     integralTopForm_sum o' _ Finset.univ fun i _ ↦ hφ' i, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [(hloc i).2, (hc i (i : K).2).2]
+  rw [(hloc i).2, hc i (i : K).2]
 
 /-- **Integrability of pullbacks of top forms supported in regular values.** Let `f : M → N` be a
 `C¹` map from a compact Hausdorff boundaryless manifold to a Hausdorff manifold of the same
 dimension, with orientations `o` and `o'`, and let `φ` be an integrable top form on `N` every point
-of whose support is a regular value of `f` at which the degree is `c`. Then `f^*φ` is
-integrable. -/
+of whose support is a regular value of `f`. Then `f^*φ` is integrable. -/
 theorem integrableTopForm_mpullback_of_forall_mem_tsupport [CompactSpace M] [T2Space M]
     [T2Space N] [BoundarylessManifold I M] (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : M → N} (hf : ContMDiff I J 1 f)
-    {φ : RoughForm J N ℝ k} (hφ : IntegrableTopForm φ) {c : ℤ}
-    (hc : ∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ,
-      IsRegularValue I J f y ∧ degreeAtRegularValue o o' f y = c) :
+    {φ : RoughForm J N ℝ k} (hφ : IntegrableTopForm φ)
+    (hreg : ∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ, IsRegularValue I J f y) :
     IntegrableTopForm (mpullback I J f φ) :=
-  (integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_tsupport o o' hf hφ hc).1
+  (integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_tsupport o o' hf hφ hreg).1
 
 /-- **The integral formula for the degree.** Let `f : M → N` be a `C¹` map from a compact
 Hausdorff boundaryless manifold to a Hausdorff manifold of the same dimension, with orientations
@@ -379,7 +380,8 @@ theorem integralTopForm_mpullback_eq_mul_of_forall_mem_tsupport [CompactSpace M]
     (hc : ∀ y ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ,
       IsRegularValue I J f y ∧ degreeAtRegularValue o o' f y = c) :
     integralTopForm o (mpullback I J f φ) = c * integralTopForm o' φ :=
-  (integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_tsupport o o' hf hφ hc).2
+  (integrableTopForm_and_integralTopForm_mpullback_of_forall_mem_tsupport o o' hf hφ
+    fun y hy ↦ (hc y hy).1).2 c fun y hy ↦ (hc y hy).2
 
 /-- **The integral formula for a map without critical values.** If every value of a `C¹` map `f`
 from a compact Hausdorff boundaryless manifold to a preconnected Hausdorff manifold of the same
@@ -408,7 +410,7 @@ theorem _root_.IsLocalDiffeomorph.integralTopForm_mpullback_eq_ncard_mul [Compac
     integralTopForm o (mpullback I J f φ) = (f ⁻¹' {p}).ncard * integralTopForm o' φ := by
   rw [integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue o o'
     (hf.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)) (hf.isRegularValue hn) p hφ,
-    degreeAtRegularValue_eq_ncard (hf.finite_preimage hn p) fun x _ ↦ hor x,
+    degreeAtRegularValue_eq_ncard fun x _ ↦ hor x,
     Int.cast_natCast]
 
 end TauCeti
