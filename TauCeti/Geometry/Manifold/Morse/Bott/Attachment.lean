@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Deformation
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.Morse.MilnorFunction
+import TauCeti.Geometry.Manifold.ContMDiff.LowerOn
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.Homotopy.DeformationRetract
 
@@ -345,7 +344,7 @@ private theorem contMDiff_tubeMilnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W) (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hμs : ContDiff ℝ ∞ μ) :
     ContMDiff I 𝓘(ℝ) ∞ (tubeMilnorFunction f s t W μ) :=
   contMDiff_lowerOn (K := fun _ ↦ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
-    (fun _ y hy ↦ hμ₀ _ (not_le.1 fun h ↦ hy.2 ⟨hy.1, h⟩).le) (fun _ ↦ hK) (fun _ ↦ hW)
+    (fun _ y hy ↦ hμ₀ _ (not_le.1 fun h ↦ hy.2 ⟨hy.1, h⟩).le) (fun _ ↦ hK.isClosed) (fun _ ↦ hW)
     (fun _ _ hx ↦ hx.1) hfs fun _ ↦
     -- `μ (a + 2 b)` is a smooth function of `(a, b) = (s y, t y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμs.comp (by fun_prop)

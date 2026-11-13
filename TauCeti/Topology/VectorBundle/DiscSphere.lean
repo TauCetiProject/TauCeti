@@ -18,7 +18,7 @@ model fibre, the closed discs are compact. Consequently a partial homeomorphism 
 these closed discs takes the sphere bundle precisely onto the frontier of the open disc image.
 The fibre spheres are compact as well, which makes, for instance, the unit tangent bundle of a
 compact Riemannian manifold compact, and so are the closed tubes `‖u‖² + ‖v‖² ≤ r` of a Whitney
-sum over a compact Hausdorff base.
+sum over a compact base.
 This gives the topological boundary calculation for closed tubular neighbourhoods.
 
 ## References
@@ -77,9 +77,10 @@ theorem isCompact_setOf_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F
     (isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V)))
     fun _ hp => le_of_eq hp
 
-/-- The closed tube `‖u‖² + ‖v‖² ≤ r` of a Whitney sum `V₁ ×ᵇ V₂` of continuous Riemannian bundles
-with finite-dimensional model fibres over a compact Hausdorff base is compact. -/
-theorem isCompact_setOf_norm_sq_add_norm_sq_le_prod [CompactSpace B] [T2Space B]
+/-- The closed tube `‖u‖² + ‖v‖² ≤ r` of continuous radius of a Whitney sum `V₁ ×ᵇ V₂` of
+continuous Riemannian bundles with finite-dimensional model fibres over a compact base is
+compact. -/
+theorem isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle [CompactSpace B]
     {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
     {V₁ V₂ : B → Type*} [∀ b, NormedAddCommGroup (V₁ b)] [∀ b, InnerProductSpace ℝ (V₁ b)]
@@ -87,23 +88,45 @@ theorem isCompact_setOf_norm_sq_add_norm_sq_le_prod [CompactSpace B] [T2Space B]
     [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
     [IsContinuousRiemannianBundle F₁ V₁]
     [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
-    [IsContinuousRiemannianBundle F₂ V₂] (r : ℝ) :
-    IsCompact {z : TotalSpace (F₁ × F₂) (V₁ ×ᵇ V₂) | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r} := by
-  -- The tube lies in the product of the closed disc bundles of radius `√r` of the summands.
-  have hdiag := FiberBundle.Prod.isClosedEmbedding_diag (E₁ := V₁) (E₂ := V₂)
-    (FiberBundle.continuous_proj F₁ V₁) (FiberBundle.continuous_proj F₂ V₂)
+    [IsContinuousRiemannianBundle F₂ V₂] {r : B → ℝ} (hr : Continuous r) :
+    IsCompact {z : TotalSpace (F₁ × F₂) (V₁ ×ᵇ V₂) | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r z.proj} := by
+  obtain ⟨R, hR⟩ := (isCompact_range hr).bddAbove
   have hu := (continuous_norm_bundle F₁ V₁).comp
     (FiberBundle.Prod.continuous_totalSpaceFst (F₂ := F₂) (E₂ := V₂))
   have hv := (continuous_norm_bundle F₂ V₂).comp
     (FiberBundle.Prod.continuous_totalSpaceSnd (F₁ := F₁) (E₁ := V₁))
-  refine (hdiag.isCompact_preimage
-    ((isCompact_setOf_norm_le_bundle (F := F₁) (V := V₁) (continuous_const (y := √r))).prod
-      (isCompact_setOf_norm_le_bundle (F := F₂) (V := V₂)
-        (continuous_const (y := √r))))).of_isClosed_subset
-    (isClosed_le ((hu.pow 2).add (hv.pow 2)) continuous_const) fun z hz ↦ ?_
-  rw [mem_ofPred_eq] at hz
-  exact ⟨Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.2‖]),
-    Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.1‖])⟩
+  -- The tube lies in the vectors of the Whitney sum of sup norm at most `√R`.
+  refine (isCompact_univ.norm_le_bundle_of_continuous (F := F₁ × F₂) (E := V₁ ×ᵇ V₂)
+    (hu.max hv) (fun x ↦ ?_) √R).of_isClosed_subset
+    (isClosed_le ((hu.pow 2).add (hv.pow 2))
+      (hr.comp (FiberBundle.continuous_proj (F₁ × F₂) (V₁ ×ᵇ V₂)))) fun z hz ↦
+    have hz : ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r z.proj := hz
+    ⟨mem_univ _, max_le
+      (Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.2‖, hR (mem_range_self z.proj)]))
+      (Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.1‖, hR (mem_range_self z.proj)]))⟩
+  -- Near `x`, the trivializations of the summands at `x` are bounded, hence so is their product,
+  -- which is the trivialization of the Whitney sum at `x`.
+  obtain ⟨C₁, hC₁, hy₁⟩ := eventually_norm_trivializationAt_lt F₁ V₁ x
+  obtain ⟨C₂, -, hy₂⟩ := eventually_norm_trivializationAt_lt F₂ V₂ x
+  refine ⟨max C₁ C₂, ?_⟩
+  filter_upwards [hy₁, hy₂, (trivializationAt F₁ V₁ x).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' x),
+    (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' x)] with y hy₁ hy₂ hb₁ hb₂ w
+  have hw : (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) x).continuousLinearMapAt ℝ y w =
+      ((trivializationAt F₁ V₁ x).continuousLinearMapAt ℝ y w.1,
+        (trivializationAt F₂ V₂ x).continuousLinearMapAt ℝ y w.2) := by
+    rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ)
+        (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) x) (b := y) ⟨hb₁, hb₂⟩,
+      Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb₁,
+      Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb₂]
+    rfl
+  rw [hw, Prod.norm_def, Prod.norm_def]
+  exact max_le
+    ((ContinuousLinearMap.le_of_opNorm_le _ hy₁.le _).trans (mul_le_mul (le_max_left _ _)
+      (le_max_left _ _) (norm_nonneg _) (hC₁.le.trans (le_max_left _ _))))
+    ((ContinuousLinearMap.le_of_opNorm_le _ hy₂.le _).trans (mul_le_mul (le_max_right _ _)
+      (le_max_right _ _) (norm_nonneg _) (hC₁.le.trans (le_max_left _ _))))
 
 end TauCeti
 

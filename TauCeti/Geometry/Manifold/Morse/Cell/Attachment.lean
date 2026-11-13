@@ -186,14 +186,18 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   set γ : ℝ → M := fun t ↦ (ψ i).symm (L t)
   have hL1 : L 1 = ψ i x := by simp [L]
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
+  -- The inverse of the partial diffeomorphism `ψ i` is the inverse of `φ`: both are the inverse
+  -- function of `ψ i`.
+  have hγ1 : γ 1 = x := by
+    simp only [γ, hL1]
+    exact φ.left_inv hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
-  rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
+  rw [← hγ1] at hF h0
   have hd : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    -- The inverse of `φ` is the inverse function `(ψ i).invFun` of the partial diffeomorphism.
-    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((ψ i).contMDiffOn_invFun.contMDiffAt
-      ((ψ i).open_target.mem_nhds hLt)).mdifferentiableAt (by simp)).comp 1
-      (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
-        ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
+    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
+      ((ψ i).symm.mdifferentiableAt (by simp) (by simpa using hLt)).comp 1
+        (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
+          ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
     have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
     rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
@@ -390,8 +394,9 @@ private theorem image_closedBall_subset_source (i : ι) :
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) :
     ContMDiff I 𝓘(ℝ) ∞ (milnorFunction ψ f c μ) :=
-  contMDiff_lowerOn (eqOn_zero_of_notMem_image hψ hf hμ₀) (isCompact_image_closedBall hball)
-    (fun i ↦ (ψ i).open_source) (image_closedBall_subset_source hball) hfs fun i ↦
+  contMDiff_lowerOn (eqOn_zero_of_notMem_image hψ hf hμ₀)
+    (fun i ↦ (isCompact_image_closedBall hball i).isClosed) (fun i ↦ (ψ i).open_source)
+    (image_closedBall_subset_source hball) hfs fun i ↦
     -- `μ ((3 s + (t - c)) / 2)` is a smooth function of `(s, t) = (‖ψ i y‖², f y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ ((3 * p.1 + (p.2 - c)) / 2) :=
       hμ.comp (by fun_prop)
@@ -441,7 +446,8 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
     exact mfderiv_milnorFunction_ne_zero hψ hf hε hμ hμa hμ_nonneg hμ_eq
       ((contMDiff_milnorFunction hψ hf hμ₀ hball hfs hμ).mdifferentiableAt (by simp)) hi h₁
   · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hψ hf hμ₀)
-      (isCompact_image_closedBall hball) (image_closedBall_subset_source hball) hcrit
+      (fun i ↦ (isCompact_image_closedBall hball i).isClosed) (image_closedBall_subset_source hball)
+      hcrit
       (not_exists.1 hxs) ⟨h₁, h₂⟩
 
 end MilnorFunction

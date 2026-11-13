@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Analysis.Calculus.Morse.HandleRetraction.Bundle
+import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.Morse.Deformation
 import TauCeti.Geometry.Manifold.Morse.MilnorFunction
@@ -250,6 +251,9 @@ private theorem mem_sublevel_union_negativeDiscBundles_iff
       ∀ i, x ∈ (Ψ i).toOpenPartialHomeomorph.source →
         (Ψ i).toOpenPartialHomeomorph x ∈
           bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε := by
+  -- Read the open partial homeomorphisms underlying the `Ψ i` as the partial diffeomorphisms.
+  simp only [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
+    PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv]
   refine ⟨fun hxS i hi ↦ (mem_bundleQuadraticSublevelUnionCell_iff (hf i) hi).2 ?_, fun h ↦ ?_⟩
   · rcases hxS with h | h
     · exact .inl h
@@ -302,6 +306,10 @@ private theorem bundleQuadraticHandleDeformation_mem_tube_and_mem
         (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
         (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε
         (t, (Ψ i).toOpenPartialHomeomorph x)) ∈ {x | milnorBottFunction Ψ f μ x ≤ c - ε} := by
+  -- Read the open partial homeomorphism underlying `Ψ i` as the partial diffeomorphism, keeping
+  -- its inverse.
+  simp only [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
+    PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv] at hx hxQ ⊢
   obtain ⟨hxX, hx⟩ := hx
   rw [mem_ofPred_eq] at hxX
   -- Outside the tube, Milnor's function is `f`, so the point lies in the lower sublevel and in
@@ -314,8 +322,7 @@ private theorem bundleQuadraticHandleDeformation_mem_tube_and_mem
       sub_zero] at hxX
   obtain ⟨s, hs, hst⟩ := exists_quadraticHandleDeformation_apply_eq_smul ε t (Ψ i x).2
   have hG : bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
-      (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε (t, (Ψ i).toOpenPartialHomeomorph x) =
-        fibreScale s (Ψ i x) := by
+      (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε (t, Ψ i x) = fibreScale s (Ψ i x) := by
     rw [bundleQuadraticHandleDeformation_apply]
     exact congrArg (TotalSpace.mk (Ψ i x).proj) hst
   rw [hG, mem_ofPred_eq]
@@ -335,17 +342,24 @@ private theorem snd_eq_zero_of_mfderiv_milnorBottFunction_eq_zero (hμ : ContDif
   set φ := (Ψ i).toOpenPartialHomeomorph
   set z := Ψ i x
   -- The curve `γ` scales the second component of `Ψ i x` by `t`.
-  set γ : ℝ → M := fun t ↦ (Ψ i).symm (fibreScale t z)
+  set γ : ℝ → M := fun t ↦ φ.symm (fibreScale t z)
   have h1 : fibreScale 1 z = z := by simp [fibreScale]
   have hz : fibreScale 1 z ∈ (Ψ i).target := by
     rw [h1]
     exact φ.map_source hx
+  have hγ1 : γ 1 = x := by
+    simp only [γ, h1]
+    exact φ.left_inv hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
-  rw [← show γ 1 = x from (congrArg φ.symm h1).trans (φ.left_inv hx)] at hF h0
+  rw [← hγ1] at hF h0
   have hd : HasFDerivAt (milnorBottFunction Ψ f μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((Ψ i).contMDiffOn_invFun.contMDiffAt
-      ((Ψ i).open_target.mem_nhds hz)).mdifferentiableAt (by simp)).comp 1
-      ((contMDiff_fibreScale z 1).mdifferentiableAt (by simp))
+    -- The inverse of `φ` is the inverse `(Ψ i).symm` of the partial diffeomorphism: both are the
+    -- inverse function of `Ψ i`.
+    have hφ : ⇑φ.symm = ⇑(Ψ i).symm := rfl
+    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := by
+      simp only [γ, hφ]
+      exact ((Ψ i).symm.mdifferentiableAt (by simp) (by simpa using hz)).comp 1
+        ((contMDiff_fibreScale z 1).mdifferentiableAt (by simp))
     have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
     rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
   -- Explicitly, `F (γ t) = c - ‖u‖² + t² ‖v‖² - μ (‖u‖² + 2 t² ‖v‖²)` near `t = 1`.
@@ -354,9 +368,8 @@ private theorem snd_eq_zero_of_mfderiv_milnorBottFunction_eq_zero (hμ : ContDif
         μ (‖z.2.1‖ ^ 2 + 2 * (t ^ 2 * ‖z.2.2‖ ^ 2)) := by
     filter_upwards [(contMDiff_fibreScale (IB := IB i) z).continuous.continuousAt.preimage_mem_nhds
       ((Ψ i).open_target.mem_nhds hz)] with t ht
-    have h := (milnorBottFunction_symm_apply hΨ hf (μ := μ) ht).2
-    rw [norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs] at h
-    exact h
+    simpa only [γ, comp_apply, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow,
+      sq_abs] using (milnorBottFunction_symm_apply hΨ hf (μ := μ) ht).2
   simpa using eq_zero_of_hasDerivAt_add_sq_mul_sub_comp (hμ.differentiable (by simp)) hμa heq
     (by simpa using hd.hasDerivAt)
 
@@ -385,7 +398,7 @@ variable [∀ i b, InnerProductSpace ℝ (Eᵤ i b)] [∀ i b, InnerProductSpace
   [∀ i, VectorBundle ℝ (Fᵤ i) (Eᵤ i)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)]
   [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fᵤ i) (Eᵤ i)]
   [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fₛ i) (Eₛ i)]
-  [∀ i, CompactSpace (B i)] [∀ i, T2Space (B i)]
+  [∀ i, CompactSpace (B i)]
   [∀ i, FiniteDimensional ℝ (Fᵤ i)] [∀ i, FiniteDimensional ℝ (Fₛ i)]
   (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target)
 include hdisc
@@ -398,7 +411,8 @@ private theorem isCompact_image_tube (i : ι) :
     (n := ∞) (F := Fᵤ i) (V := Eᵤ i)
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (HB := HB i) (IB := IB i)
     (n := ∞) (F := Fₛ i) (V := Eₛ i)
-  (isCompact_setOf_norm_sq_add_norm_sq_le_prod (2 * ε)).image_of_continuousOn
+  (isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle (r := fun _ ↦ 2 * ε)
+    continuous_const).image_of_continuousOn
     ((Ψ i).toOpenPartialHomeomorph.continuousOn_symm.mono (hdisc i))
 
 variable [T2Space M]
@@ -407,8 +421,9 @@ omit hΨ hf in
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorBottFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hμ : ContDiff ℝ ∞ μ) : ContMDiff I 𝓘(ℝ) ∞ (milnorBottFunction Ψ f μ) :=
-  contMDiff_lowerOn (eqOn_zero_of_notMem_image hμ₀) (isCompact_image_tube hdisc)
-    (fun i ↦ (Ψ i).open_source) (image_tube_subset_source hdisc) hfs fun i ↦
+  contMDiff_lowerOn (eqOn_zero_of_notMem_image hμ₀)
+    (fun i ↦ (isCompact_image_tube hdisc i).isClosed) (fun i ↦ (Ψ i).open_source)
+    (image_tube_subset_source hdisc) hfs fun i ↦
     -- `μ (s + 2 t)` is a smooth function of `(s, t) = (‖u‖², ‖v‖²)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμ.comp (by fun_prop)
     hg.contMDiff.comp_contMDiffOn
@@ -430,7 +445,8 @@ private theorem mfderiv_milnorBottFunction_ne_zero_of_mem_Icc
     exact mfderiv_milnorBottFunction_ne_zero hΨ hf hε hμ hμa hμ_nonneg hμ_eq
       ((contMDiff_milnorBottFunction hμ₀ hdisc hfs hμ).mdifferentiableAt (by simp)) hi hx.1
   · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hμ₀)
-      (isCompact_image_tube hdisc) (image_tube_subset_source hdisc) hcrit (not_exists.1 hxs) hx
+      (fun i ↦ (isCompact_image_tube hdisc i).isClosed) (image_tube_subset_source hdisc) hcrit
+      (not_exists.1 hxs) hx
 
 end MilnorFunction
 
@@ -441,14 +457,14 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Spac
   [∀ i, VectorBundle ℝ (Fᵤ i) (Eᵤ i)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)]
   [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fᵤ i) (Eᵤ i)]
   [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fₛ i) (Eₛ i)]
-  [∀ i, CompactSpace (B i)] [∀ i, T2Space (B i)]
+  [∀ i, CompactSpace (B i)]
   [∀ i, FiniteDimensional ℝ (Fᵤ i)] [∀ i, FiniteDimensional ℝ (Fₛ i)]
 
 /-- **Attaching negative disc bundles across a Morse–Bott critical level** (Bott; Milnor's
 Theorem 3.2 run fibrewise). Let `f` be smooth, and let `Ψ i` be partial diffeomorphisms from
 open subsets of `M`, with pairwise disjoint sources, onto open subsets of the total spaces of
 Whitney sums `Eᵤ i ×ᵇ Eₛ i` of smooth vector bundles with smooth fibre metrics and
-finite-dimensional fibres over compact Hausdorff bases, in which
+finite-dimensional fibres over compact bases, in which
 `f = c - ‖u‖² + ‖v‖²` for `Ψ i x = (u, v)`. Suppose each target contains the closed tube
 `‖u‖² + ‖v‖² ≤ 2ε`, the band `f⁻¹[c - ε, c + ε]` is compact, and its critical points lie in the
 sources of the `Ψ i`. The negative disc bundle of `Ψ i` is the set of points with
@@ -462,7 +478,7 @@ theorem exists_sublevel_union_negativeDiscBundles_deformation [Finite ι]
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (Ψ : ∀ i, PartialDiffeomorph I ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) M
       (TotalSpace (Fᵤ i × Fₛ i) (Eᵤ i ×ᵇ Eₛ i)) ∞)
-    (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source)) (hε : 0 < ε)
+    (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source))
     (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target)
     (hf : ∀ i, ∀ y ∈ (Ψ i).source, f y = c - ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2)
     (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
@@ -473,6 +489,15 @@ theorem exists_sublevel_union_negativeDiscBundles_deformation [Finite ι]
       Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
         (ContinuousMap.id _) {x | (x : M) ∈ {x | f x ≤ c - ε} ∪
           ⋃ i, (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0}}) := by
+  rcases le_or_gt ε 0 with hε | hε
+  · -- For `ε ≤ 0` the sublevel `{f ≤ c + ε}` lies in `{f ≤ c - ε}`, so the retraction is trivial.
+    have hsub : ∀ x : {x | f x ≤ c + ε}, (x : M) ∈ {x | f x ≤ c - ε} ∪
+        ⋃ i, (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0} :=
+      -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
+      -- membership in a set-builder set.
+      fun x ↦ Or.inl (le_trans (b := c + ε) x.2 (by linarith))
+    exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
+      ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι
   have (i : ι) := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (HB := HB i)
     (IB := IB i) (n := ∞) (F := Fᵤ i) (V := Eᵤ i)
@@ -506,7 +531,8 @@ theorem exists_sublevel_union_negativeDiscBundles_deformation [Finite ι]
     (G := fun i ↦ bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
       (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε)
     hΨ hdisc (bundleQuadraticHandleDeformation_mem_tube_and_mem hΨ hf hμ₀ hμa hdisc)
-    (fun i ↦ isCompact_setOf_norm_sq_add_norm_sq_le_prod (2 * ε))
+    (fun i ↦ isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle (r := fun _ ↦ 2 * ε)
+      continuous_const)
     (fun i ↦ bundleQuadraticHandleRetraction_mem _ _)
     fun x hx ↦ mem_sublevel_union_negativeDiscBundles_iff hΨ hf hx
   -- The goal is stated for `{f ≤ c + ε}`, which is the same set as `{F ≤ c + ε}`.
