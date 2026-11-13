@@ -44,7 +44,9 @@ nor its integral needs to be finite or measurable.
   infimum;
 * `TauCeti.DualFeasible.add_const_sub_const` and
   `TauCeti.kantorovichDualValue_add_const_sub_const` — feasibility and value are unchanged by
-  the usual opposite additive shifts when the marginals have equal finite mass.
+  the usual opposite additive shifts when the marginals have equal finite mass;
+* `TauCeti.kantorovichDualValue_div_add_const` — dividing both potentials by `a` and shifting the
+  first by `L` divides the value by `a` and shifts it by `L`, for a probability first marginal.
 
 ## References
 
@@ -185,6 +187,16 @@ theorem kantorovichDualValue_add_const_sub_const [IsFiniteMeasure μ]
     integral_sub hψ (integrable_const a), integral_const, integral_const]
   have hmassReal : μ.real Set.univ = ν.real Set.univ := congrArg ENNReal.toReal hmass
   rw [hmassReal]
+  ring
+
+/-- Dividing both potentials by `a` and then shifting the first by a constant `L` divides the dual
+value by `a` and shifts it by `L`, when the first marginal is a probability measure. -/
+theorem kantorovichDualValue_div_add_const [IsProbabilityMeasure μ] (hφ : Integrable φ μ)
+    (a L : ℝ) :
+    kantorovichDualValue μ ν (fun x ↦ φ x / a + L) (fun y ↦ ψ y / a) =
+      kantorovichDualValue μ ν φ ψ / a + L := by
+  simp only [kantorovichDualValue_def, integral_add (hφ.div_const _) (integrable_const _),
+    integral_div, integral_const, probReal_univ, smul_eq_mul, one_mul]
   ring
 
 /-- Against any coupling of the two marginals, the dual value is the integral of the split sum

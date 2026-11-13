@@ -207,9 +207,8 @@ end IsContinuityEquation
 
 /-- `W_p (μ₀, μ₁) ^ p` is a lower bound for the `p`-actions of the narrowly continuous curves of
 finite measures from `μ₀` to `μ₁` solving the continuity equation on `(0, 1)`. -/
-theorem wassersteinEDist_rpow_mem_lowerBounds_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E}
-    [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁] {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hp_top : p ≠ ∞) :
+private theorem wassersteinEDist_rpow_mem_lowerBounds_lintegral_isContinuityEquation
+    {μ₀ μ₁ : Measure E} [IsProbabilityMeasure μ₀] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
     wassersteinEDist p μ₀ μ₁ ^ p.toReal ∈ lowerBounds
       {A | ∃ (ν : ℝ → FiniteMeasure E) (v : ℝ → E → E),
         IsContinuityEquation (fun t ↦ (ν t : Measure E)) v 0 1 ∧ ContinuousOn ν (Icc 0 1) ∧

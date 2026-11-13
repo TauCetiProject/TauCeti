@@ -175,16 +175,6 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
-/-- If the plan of `(U, t)` is the graph plan of a measurable map `S` over the law of `U`, then
-`t = S ∘ U` almost everywhere. -/
-theorem ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan {t : α → E} {S : E → E} (hS : Measurable S)
-    (ht : AEMeasurable t m) (hU : AEMeasurable U m)
-    (heq : (m.map fun ω => (t ω, U ω)).map Prod.swap = graphPlan S (m.map U)) :
-    t =ᵐ[m] S ∘ U := by
-  have hae := ae_snd_eq_graphPlan (μ := m.map U) hS.aemeasurable
-  rw [← heq] at hae
-  exact ae_of_ae_map (ht.prodMk hU) (ae_of_ae_map measurable_swap.aemeasurable hae)
-
 /-- **The measure-preserving factor is the unique cost minimiser.** Let `T : E → E` be an optimal
 transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U : α → E`, at finite optimal cost,
 the law of `U` being absolutely continuous with respect to an additive Haar measure. Let `s` have
@@ -231,7 +221,8 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
     exact hsymm ▸ hopt.swap
   -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
   obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
-  have hS := measurable_gradient fun y => (v y).toReal
+  have hS : AEMeasurable (∇ fun y => (v y).toReal) (m.map U) :=
+    (measurable_gradient fun y => (v y).toReal).aemeasurable
   filter_upwards [ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs'.aemeasurable hU
       (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans hgraph),
     ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs.aemeasurable hU hgraph] with ω h₁ h₂
