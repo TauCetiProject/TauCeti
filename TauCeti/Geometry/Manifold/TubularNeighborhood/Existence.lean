@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
+import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.VectorBundle.ZeroSection
 
 /-!
 # Tubular neighbourhoods without a prescribed metric
@@ -24,7 +27,11 @@ complementary-coordinate atlas, both independent of that metric.
 
 Projecting the tubular neighbourhood to the base gives a smooth retraction of an open
 neighbourhood of the image onto the embedded manifold
-(`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`).
+(`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`). Transporting the fibrewise
+straight-line homotopy `(t, v) ↦ t • v` of the normal bundle (`TauCeti.zeroSectionDeformation`)
+along the tubular neighbourhood shows that this neighbourhood strong deformation retracts onto the
+image (`TauCeti.SmoothEmbedding.exists_deformation_range`), so the embedding, read as a map into
+it, is a homotopy equivalence (`TauCeti.SmoothEmbedding.exists_homotopyEquiv`).
 
 ## References
 
@@ -35,7 +42,7 @@ neighbourhood of the image onto the embedded manifold
 public noncomputable section
 
 open Bundle Manifold Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold ContinuousMap
 
 namespace TauCeti.SmoothEmbedding
 
@@ -102,5 +109,69 @@ theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ 
   · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
       Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
     rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
+
+/-- **Tubular neighbourhoods deformation retract onto the submanifold.** For a smooth embedding
+`f : M → N` of a boundaryless manifold into a second countable Hausdorff boundaryless manifold,
+every open neighbourhood `O` of the image contains an open neighbourhood `W` of the image which
+strong deformation retracts onto it: there is a retraction `r : W → range f` and a homotopy from
+`r`, followed by the inclusion, to the identity of `W` that fixes the image of `f` throughout. -/
+theorem exists_deformation_range (f : SmoothEmbedding I J ∞ M N) {O : Set N} (hO : IsOpen O)
+    (hfO : range f ⊆ O) :
+    ∃ W : Set N, IsOpen W ∧ W ⊆ O ∧ ∃ hfW : range f ⊆ W,
+      ∃ r : C(W, range f), (∀ y, r (ContinuousMap.inclusion hfW y) = y) ∧
+        Nonempty (((ContinuousMap.inclusion hfW).comp r).HomotopyRel (.id W)
+          {y | (y : N) ∈ range f}) := by
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
+  have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E :=
+    finrank_euclideanSpace_fin
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
+  -- The tubular neighbourhood as a homeomorphism `ψ` from the normal bundle onto `W`, and the
+  -- straight-line deformation `D` of the normal bundle onto its zero section.
+  let ψ := Φ.toHomeomorph
+  let D := zeroSectionDeformation ℝ P fun x ↦ f.NormalSpace x hn
+  have hfW (x : M) : f x ∈ W := by
+    rw [← hΦ x]
+    exact (Φ _).2
+  have hψ (x : M) (hx : f x ∈ W) :
+      ψ.symm ⟨f x, hx⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
+    ψ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
+  let r : C(W, range f) := ⟨fun w ↦ ⟨f (ψ.symm w).proj, mem_range_self _⟩,
+    (f.isEmbedding.continuous.comp
+      ((FiberBundle.continuous_proj P _).comp ψ.symm.continuous)).subtype_mk _⟩
+  refine ⟨W, W.isOpen, hWO, range_subset_iff.2 hfW, r, ?_, ⟨?_⟩⟩
+  · rintro ⟨_, x, rfl⟩
+    exact Subtype.ext (by simp [r, ContinuousMap.inclusion, hψ])
+  -- Conjugating `D` by `ψ` gives the deformation of `W`.
+  exact
+    { toFun := fun p ↦ ψ (D (p.1, ψ.symm p.2))
+      continuous_toFun := by fun_prop
+      map_zero_left := fun w ↦ Subtype.ext <| by
+        simp only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, D, r,
+          ContinuousMap.HomotopyWith.apply_zero, ContinuousMap.inclusion]
+        exact hΦ (ψ.symm w).proj
+      map_one_left := fun w ↦ by simp [D]
+      prop' := by
+        rintro t ⟨_, hw⟩ ⟨x, rfl⟩
+        -- The point lies on the zero section, which `D` fixes.
+        refine Subtype.ext ?_
+        simp only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, r, ContinuousMap.inclusion,
+          hψ x hw, D.eq_fst t (mem_range_self x)]
+        exact hΦ x }
+
+/-- **An embedded submanifold is homotopy equivalent to a tubular neighbourhood.** For a smooth
+embedding `f : M → N` of a boundaryless manifold into a second countable Hausdorff boundaryless
+manifold, every open neighbourhood `O` of the image contains an open neighbourhood `W` of the
+image such that `f`, read as a map into `W`, is a homotopy equivalence. -/
+theorem exists_homotopyEquiv (f : SmoothEmbedding I J ∞ M N) {O : Set N} (hO : IsOpen O)
+    (hfO : range f ⊆ O) :
+    ∃ W : Set N, IsOpen W ∧ W ⊆ O ∧ ∃ e : M ≃ₕ W, ∀ x, (e x : N) = f x := by
+  obtain ⟨W, hW, hWO, hfW, r, hr, ⟨G⟩⟩ := f.exists_deformation_range hO hfO
+  refine ⟨W, hW, hWO,
+    f.isEmbedding.toHomeomorph.toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.ofRetraction hfW r hr G.toHomotopy), fun x ↦ ?_⟩
+  simp [ContinuousMap.HomotopyEquiv.trans]
 
 end TauCeti.SmoothEmbedding
