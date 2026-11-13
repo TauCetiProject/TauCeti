@@ -41,7 +41,7 @@ range: `s_κ ≤ s_μ` on `[0, π / √κ]` when `μ ≤ κ`.
 * `TauCeti.mul_curvatureSine_le_of_pos`: the comparison for `a > 0` when the differential
   inequality is assumed only where `f > 0`.
 * `TauCeti.mul_curvatureSine_le_of_nonneg`: the same for a nonnegative `f` and any `a`.
-* `TauCeti.curvatureSine_le_curvatureSine_of_le`: the model sine is antitone in `κ`.
+* `TauCeti.curvatureSine_le_curvatureSine_of_ge`: the model sine is antitone in `κ`.
 
 ## References
 
@@ -63,7 +63,7 @@ variable {κ a b t : ℝ} {f f' f'' : ℝ → ℝ}
 theorem tendsto_div_curvatureSine_nhdsGT_zero (hf0 : f 0 = 0)
     (hfa : HasDerivWithinAt f a (Ici 0) 0) :
     Tendsto (fun t ↦ f t / curvatureSine κ t) (𝓝[>] 0) (𝓝 a) := by
-  have h := (hfa.tendsto_div_self_nhdsGT_zero hf0).div
+  have h := (hfa.tendsto_div_nhdsGT_zero hf0).div
     ((tendsto_curvatureSine_div_zero κ).mono_left (nhdsWithin_mono 0 fun t ht ↦ ne_of_gt ht))
     one_ne_zero
   rw [div_one] at h
@@ -242,7 +242,7 @@ theorem mul_curvatureSine_le_of_nonneg (hb : 0 < κ → b ≤ π / √κ)
 
 /-- The model sine is antitone in the curvature parameter on the positivity range of the larger
 parameter: if `μ ≤ κ`, `0 ≤ t`, and `t ≤ π / √κ` when `κ > 0`, then `s_κ(t) ≤ s_μ(t)`. -/
-theorem curvatureSine_le_curvatureSine_of_le {μ : ℝ} (hμκ : μ ≤ κ) (ht : 0 ≤ t)
+theorem curvatureSine_le_curvatureSine_of_ge {μ : ℝ} (hμκ : μ ≤ κ) (ht : 0 ≤ t)
     (hbound : 0 < κ → t ≤ π / √κ) : curvatureSine κ t ≤ curvatureSine μ t := by
   simpa using mul_curvatureSine_le_of_pos (f := curvatureSine μ) (f' := curvatureCosine μ)
     (f'' := fun r ↦ -μ * curvatureSine μ r) one_pos hbound

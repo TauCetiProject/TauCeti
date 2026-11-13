@@ -50,7 +50,7 @@ A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 * `TauCeti.hasDerivWithinAt_zero_iff_tendsto_div`: for `f 0 = 0`, the derivative at `0` within
   `s` is the limit of `f(t) / t` within `s \ {0}`.
-* `HasDerivWithinAt.tendsto_div_self_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
+* `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
   `a` is the right derivative at `0`.
 -/
 
@@ -132,7 +132,7 @@ theorem hasDerivWithinAt_zero_iff_tendsto_div {𝕜 : Type*} [NontriviallyNormed
 end TauCeti
 
 /-- A function vanishing at `0` with right derivative `a` there has `f(t) / t → a` as `t → 0⁺`. -/
-theorem HasDerivWithinAt.tendsto_div_self_nhdsGT_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+theorem HasDerivWithinAt.tendsto_div_nhdsGT_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     [PartialOrder 𝕜] {f : 𝕜 → 𝕜} {a : 𝕜} (hfa : HasDerivWithinAt f a (Ici 0) 0)
     (hf0 : f 0 = 0) : Tendsto (fun t ↦ f t / t) (𝓝[>] 0) (𝓝 a) := by
   simpa [Ici_sdiff_left] using (TauCeti.hasDerivWithinAt_zero_iff_tendsto_div hf0).1 hfa
