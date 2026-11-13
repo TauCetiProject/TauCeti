@@ -78,10 +78,9 @@ unital.
 
 ## References
 
-This implements the "admissible ideal" part of Layer 3A of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, the finite-dimensional
-algebra infrastructure that its `kQ/I` presentation theorem rests on. See Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras I*, Ch. II.2.
+Admissible ideals are the finite-dimensional algebra infrastructure that the `kQ/I` presentation
+theorem rests on. See Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras I*, Ch. II.2.
 -/
 
 public section

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
@@ -55,7 +56,9 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 
 ## Main results
 
-* `UpperHalfPlane.hasSum_weierstrassP_periodPair`: the series over integer pairs.
+* `UpperHalfPlane.hasSum_weierstrassP_periodPair`,
+  `UpperHalfPlane.hasSum_derivWeierstrassP_periodPair`: the series of `℘` and `℘'` over integer
+  pairs.
 * `UpperHalfPlane.intCast_mul_smul_add_intCast`: the lattice points of `γ z` in terms of those
   of `z`.
 * `UpperHalfPlane.weierstrassP_periodPair_smul`: the modular transformation law.
@@ -216,7 +219,7 @@ lemma div_denom_mem_lattice_periodPair_smul_iff (γ : SL(2, ℤ)) (z : ℍ) (x :
     have h' := intCast_mul_smul_add_intCast γ z ![m, n]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
       mul_one] at h' hmn
-    rw [hmn, div_left_inj' hD] at h'
+    rw [hmn, div_left_inj₀ hD] at h'
     rw [h']
     exact intCast_mul_add_intCast_mem_lattice_periodPair z _ _
   · intro h
@@ -240,6 +243,14 @@ theorem hasSum_weierstrassZeta_periodPair (z : ℍ) (x : ℂ) :
     HasSum (fun y : Fin 2 → ℤ ↦ 1 / (x - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
       x / ((y 0 : ℂ) * z + y 1) ^ 2) (z.periodPair.weierstrassZeta x) := by
   have h := z.periodPair.hasSum_weierstrassZeta x
+  rw [← (latticeEquiv z).hasSum_iff] at h
+  simpa only [Function.comp_def, coe_latticeEquiv] using h
+
+/-- **The Weierstrass derivative of `ℤ z + ℤ` as a series over integer pairs**:
+`℘'(x; ℤ z + ℤ) = ∑_y -2 / (x - (y₀ z + y₁))³`, the series converging absolutely. -/
+theorem hasSum_derivWeierstrassP_periodPair (z : ℍ) (x : ℂ) :
+    HasSum (fun y : Fin 2 → ℤ ↦ -2 / (x - (y 0 * z + y 1)) ^ 3) (℘'[z.periodPair] x) := by
+  have h := z.periodPair.hasSum_derivWeierstrassP x
   rw [← (latticeEquiv z).hasSum_iff] at h
   simpa only [Function.comp_def, coe_latticeEquiv] using h
 
@@ -471,6 +482,17 @@ namespace TauCeti.UpperHalfPlane
 open EisensteinSeries Filter
 open scoped Topology Manifold
 
+/-- Subtracting the lattice point `y₀ z + y₁` from the division point `(b₀ z + b₁) / N` and
+scaling by `N` gives the point of the integer pair `b - N y`. -/
+lemma intCast_sub_nsmul_mul_add_intCast {N : ℕ} [NeZero N] (b y : Fin 2 → ℤ) (z : ℂ) :
+    ((b - N • y) 0 : ℂ) * z + (b - N • y) 1 =
+      N * (((b 0 : ℂ) * z + b 1) / N - (y 0 * z + y 1)) := by
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
+    Int.cast_mul, Int.cast_natCast]
+  field_simp
+  ring
+
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
 theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
@@ -546,14 +568,9 @@ private lemma mdifferentiable_weierstrassZeta_periodPair_div_term (M : ℕ) [NeZ
       fun z ↦ M * eisSummand 1 (b - M • y) z + eisSummand 1 y z +
         ((b 0 : ℂ) * z + b 1) / M * eisSummand 2 y z := by
     ext z
-    have he : ((b - M • y) 0 : ℂ) * z + (b - M • y) 1 =
-        M * (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) := by
-      simp only [Pi.sub_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, Int.cast_sub,
-        Int.cast_mul, Int.cast_natCast]
-      field_simp
-      ring
-    rw [eisSummand, eisSummand, eisSummand, he, _root_.zpow_neg_one, _root_.zpow_neg_one,
-      _root_.zpow_neg, zpow_ofNat, mul_inv, mul_inv_cancel_left₀ hM]
+    rw [eisSummand, eisSummand, eisSummand, intCast_sub_nsmul_mul_add_intCast,
+      _root_.zpow_neg_one, _root_.zpow_neg_one, _root_.zpow_neg, zpow_ofNat, mul_inv,
+      mul_inv_cancel_left₀ hM]
     simp only [div_eq_mul_inv, one_mul]
   rw [h]
   exact ((mdifferentiable_const.mul (hS 1 _)).add (hS 1 y)).add (hx.mul (hS 2 y))
@@ -853,3 +870,19 @@ lemma lattice_ρ_smul_periodPair_ρ :
   · exact ⟨⟨0, 1, by simp⟩, ⟨-1, -1, by push_cast; linear_combination -ρ_sq⟩⟩
 
 end UpperHalfPlane
+
+namespace TauCeti
+
+open scoped Manifold
+
+variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℂ EY] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℂ EY H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
+  {n : WithTop ℕ∞}
+
+/-- The periods `m τ(y) + k` of the lattices `ℤ τ(y) + ℤ` of a `C^n` map `τ : Y → ℍ` are `C^n`. -/
+theorem contMDiff_periodPair_periodMap_apply {τ : Y → ℍ}
+    (hτ : ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y : ℂ)) (l : ℤ × ℤ) :
+    ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y).periodPair.periodMap l :=
+  contMDiff_periodMap_apply (by simpa using hτ) (by simpa using contMDiff_const) l
+
+end TauCeti

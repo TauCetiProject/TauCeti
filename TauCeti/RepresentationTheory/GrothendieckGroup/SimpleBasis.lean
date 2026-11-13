@@ -35,6 +35,8 @@ the projective/simple coordinates used to express the Cartan map as a matrix.
 
 * `TauCeti.jordanHolderCoordinate_of`: the coordinate of an object class is its
   Jordan--Hölder multiplicity.
+* `TauCeti.jordanHolderCoordinate_eq_zero_of_not_isSimpleModule`: the coordinate of a module
+  that is not simple vanishes.
 * `TauCeti.linearIndependent_exactK0OfFamily`: pairwise nonisomorphic simple classes are
   linearly independent.
 * `TauCeti.span_range_exactK0OfFamily_eq_top`: an exhaustive family of simple classes spans.
@@ -99,6 +101,14 @@ theorem jordanHolderCoordinate_congr
   refine ExactK0.hom_ext fun M ↦ ?_
   simp only [jordanHolderCoordinate_of]
   exact congrArg Int.ofNat (jordanHolderMultiplicity_congr e)
+
+/-- The Jordan--Hölder coordinate of a module that is not simple is zero. -/
+@[simp]
+theorem jordanHolderCoordinate_eq_zero_of_not_isSimpleModule (hS : ¬ IsSimpleModule R S) :
+    jordanHolderCoordinate R S = 0 := by
+  refine ExactK0.hom_ext fun M ↦ ?_
+  rw [jordanHolderCoordinate_of, jordanHolderMultiplicity_eq_zero_of_not_isSimpleModule _ hS,
+    Nat.cast_zero, AddMonoidHom.zero_apply]
 
 end Coordinate
 
