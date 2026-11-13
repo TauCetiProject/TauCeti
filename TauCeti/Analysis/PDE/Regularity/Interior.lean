@@ -136,25 +136,19 @@ theorem exists_lipschitzWith_matrixBilinearForm_gradient
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (η : EuclideanSpace ℝ ι) :
     ∃ L : ℝ≥0, LipschitzWith L fun y => matrixBilinearForm (a y) η (∇ ψ y) := by
-  obtain ⟨Lg, hLg⟩ := (hψ.gradient_right (m := ∞) (by simp)).lipschitzWith_of_hasCompactSupport
-    hψc.gradient (by simp)
-  obtain ⟨N, -, -, hN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  obtain ⟨B, hB0, hB⟩ := exists_norm_matrixBilinearForm_le_of_gradient_ne_zero hK.continuous hψc
-  -- The conormal component is the functional `⟨η, a ·⟩` evaluated at `∇ ψ`, which vanishes
-  -- off `{x | ∇ ψ x ≠ 0}`, where the field is bounded.
+  obtain ⟨Lg, hLg, hN⟩ :=
+    (hψ.gradient_right (m := 1) (by simp)).exists_holderWith_and_norm_le_of_hasCompactSupport
+      hψc.gradient le_rfl
+  -- The conormal component is the Lipschitz functional `⟨η, a ·⟩` evaluated at `∇ ψ`; the
+  -- functional is bounded on the compact support of `∇ ψ`, off which `∇ ψ` vanishes.
   have hf := (ContinuousLinearMap.lipschitzWith_apply η).comp hK
+  obtain ⟨B, hB⟩ := hψc.gradient.isCompact.exists_bound_of_continuousOn hf.continuous.continuousOn
   let ev : (EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ :=
     (ContinuousLinearMap.apply ℝ ℝ).flip
-  have hmain := ev.holderWith_comp₂_of_eq_zero
-    (s := {x | ∇ ψ x ≠ 0}) (Mf := B.toNNReal * ‖η‖₊) (Mg := N.toNNReal)
-    ((holderWith_one.2 hf).holderOnWith _) (holderWith_one.2 hLg)
-    (fun x hx => by
-      calc _ ≤ ‖matrixBilinearForm (a x)‖ * ‖η‖ := ContinuousLinearMap.le_opNorm _ _
-        _ ≤ _ := by
-          simpa [Real.coe_toNNReal _ hB0] using
-            mul_le_mul_of_nonneg_right (hB x hx) (norm_nonneg η))
-    (fun x _ => (hN x).trans (Real.le_coe_toNNReal N))
-    (fun x hx => not_not.1 hx)
+  have hmain := ev.holderWith_comp₂_of_eq_zero (s := tsupport (∇ ψ)) (Mf := B.toNNReal)
+    (Mg := Lg) ((holderWith_one.2 hf).holderOnWith _) hLg
+    (fun x hx => (hB x hx).trans (Real.le_coe_toNNReal B)) (fun x _ => hN x)
+    (fun _ hx => image_eq_zero_of_notMem_tsupport hx)
   exact ⟨_, holderWith_one.1 hmain⟩
 
 section ClassicalOperator
@@ -398,16 +392,16 @@ theorem memLp_localizedForcing
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (f : Lp ℝ 2 (mu.restrict Omega))
     (u : W1p mu Omega 2) :
     MemLp (localizedForcing a ψ f u) 2 (mu.restrict Omega) := by
-  obtain ⟨N, _, hψN, hgradN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
+  obtain ⟨N, _, hψN, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hK hψ hψc
   have hgψ := ContDiff.continuous_gradient hψ (by simp)
-  -- The field is bounded where `∇ ψ` does not vanish, by compactness of the support of `ψ`.
-  obtain ⟨B, hB0, hB⟩ := exists_norm_matrixBilinearForm_le_of_gradient_ne_zero hK.continuous hψc
-  have hM' (x : EuclideanSpace ℝ ι) : ‖matrixBilinearForm (a x)‖ * ‖∇ ψ x‖ ≤ B * N := by
-    by_cases hx : ∇ ψ x = 0
-    · rw [hx, norm_zero, mul_zero]
-      exact mul_nonneg hB0 ((norm_nonneg _).trans (hgradN 0))
-    · exact mul_le_mul (hB x hx) (hgradN x) (norm_nonneg _) hB0
+  -- The field times `∇ ψ` is continuous with compact support, hence bounded.
+  have ha : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
+    hK.continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
+  obtain ⟨D, hD⟩ :=
+    (ha.mul hgψ.norm).bounded_above_of_compact_support hψc.gradient.norm.mul_left
+  have hM' (x : EuclideanSpace ℝ ι) : ‖matrixBilinearForm (a x)‖ * ‖∇ ψ x‖ ≤ D :=
+    (Real.le_norm_self _).trans (by simpa only [Pi.mul_apply] using hD x)
   have h1 : MemLp (fun x => ψ x * f x) 2 (mu.restrict Omega) :=
     (Lp.memLp f).of_le_mul (c := N)
       (hψ.continuous.aestronglyMeasurable.mul (Lp.aestronglyMeasurable f))
@@ -416,7 +410,7 @@ theorem memLp_localizedForcing
         exact mul_le_mul_of_nonneg_right (hψN x) (norm_nonneg _))
   have h2 : MemLp (fun x => matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x)) 2
       (mu.restrict Omega) :=
-    (Lp.memLp (W1p.gradient u)).of_le_mul (c := B * N)
+    (Lp.memLp (W1p.gradient u)).of_le_mul (c := D)
       (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous.aestronglyMeasurable
         (Lp.aestronglyMeasurable _) hgψ.aestronglyMeasurable)
       (Filter.Eventually.of_forall fun x =>
@@ -425,7 +419,7 @@ theorem memLp_localizedForcing
             _ ≤ _ := mul_le_mul_of_nonneg_right (hM' x) (norm_nonneg _))
   have h3 : MemLp (fun x => matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x)) 2
       (mu.restrict Omega) :=
-    (Lp.memLp (W1p.gradient u)).of_le_mul (c := B * N)
+    (Lp.memLp (W1p.gradient u)).of_le_mul (c := D)
       (aestronglyMeasurable_matrixBilinearForm_apply hK.continuous.aestronglyMeasurable
         hgψ.aestronglyMeasurable (Lp.aestronglyMeasurable _))
       (Filter.Eventually.of_forall fun x =>

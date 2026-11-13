@@ -142,28 +142,14 @@ theorem setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 
     ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖u x‖ ^ 2 ∂μ := by
-  -- Pass to the completion `F̂`, where the mean-value property is available.
+  -- `u ∘ e` is harmonic for a linear change of variables `e`, and so is its image `L ∘ u ∘ e` in
+  -- the completion `F̂`, where the mean-value property is available; `L` preserves norms.
   set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
   have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
-  have hu' : ContDiffOn ℝ 2 (L ∘ u) (ball x₀ R) := L.contDiff.comp_contDiffOn hu
-  have hLu' : ∀ x ∈ ball x₀ R, ∑ i, ∑ j, A i j •
-      fderiv ℝ (fderiv ℝ (L ∘ u)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
-        0 := by
-    intro x hx
-    have hderiv (v w : EuclideanSpace ℝ ι) :
-        fderiv ℝ (fderiv ℝ (L ∘ u)) x v w = L (fderiv ℝ (fderiv ℝ u) x v w) := by
-      have h := congrArg (fun m => m ![v, w])
-        (L.iteratedFDeriv_comp_left (hu.contDiffAt (isOpen_ball.mem_nhds hx)) (i := 2)
-          (mod_cast le_rfl))
-      simpa [iteratedFDeriv_two_apply] using h
-    have h := congrArg L (hLu x hx)
-    simpa only [map_sum, map_smul, map_zero, hderiv] using h
-  have hint' : IntegrableOn (fun x ↦ ‖(L ∘ u) x‖ ^ 2) (ball x₀ R) μ := by
-    simpa only [Function.comp_apply, hL] using hint
-  obtain ⟨e, hae, hbe, he⟩ :=
-    exists_continuousLinearEquiv_laplacian_comp_eq (F := UniformSpace.Completion F) hlam hA hA'
-  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
-    (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu' hLu') hint' hρ hρR
+  obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
+  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (u := L ∘ u) e hae hbe
+    ((harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu).comp_CLM L)
+    (by simpa only [Function.comp_apply, hL] using hint) hρ hρR
   simp only [Function.comp_apply, hL] at h
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
 
