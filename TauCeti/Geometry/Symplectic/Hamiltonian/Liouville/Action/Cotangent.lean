@@ -288,7 +288,7 @@ theorem exists_actionAngle (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
   set S : Set ((ι → ℝ) × (ι → ℝ)) := univ ×ˢ V
   have hSo : IsOpen S := isOpen_univ.prod hV
   set Ψ := hσ.angleMap hF hcomm hc s l with hΨ
-  set χ := actionAngleChart p A with hχ
+  set χ := actionAngleChart p A
   have hΨloc (q) (hq : q ∈ S) : IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ q :=
     hσ.isLocalDiffeomorphAt_angleMap hF hcomm hc hdim hV hq.2 hs hFs (hP _ hq.2).2.2.1 hl
       (fun i ↦ hps i _ hq.2) (hP _ hq.2).2.2.2.2.1 q.1
