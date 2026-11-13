@@ -225,12 +225,9 @@ theorem base_mem_typeVertices_iff (hS : S.graph.IsCore S.base) :
     S.base ∈ S.typeVertices ↔ S.graph.degree S.base ≠ 1 := by
   rw [mem_typeVertices_iff, ← hS.two_le_degree_iff_mem_cyclicVertices,
     ← hS.degree_eq_zero_iff_isAcyclic, and_iff_left rfl]
-  refine ⟨?_, fun h => ?_⟩
-  · rintro (h | h) h1 <;> rw [h1] at h <;> revert h <;> decide
-  · by_contra h'
-    obtain ⟨h₂, h₀⟩ := not_or.mp h'
-    exact h₀ (Order.lt_one_iff.mp (lt_of_le_of_ne
-      (Order.le_of_lt_add_one (lt_of_not_ge h₂ : S.graph.degree S.base < 1 + 1)) h))
+  cases S.graph.degree S.base using ENat.recTopCoe with
+  | top => simp
+  | coe n => simp; omega
 
 /-- A based core whose base vertex does not have degree one is its own type graph: either every
 vertex has degree at least two, or the core is the base vertex alone. -/
@@ -244,19 +241,16 @@ at most one, and let `q` be a path from it to the first vertex of degree at leas
 vertex that `q` leaves, other than the base vertex, has degree at most two. The vertices outside
 the type graph are exactly the vertices of `q` other than its end. The darts outside the type
 graph are the darts of `q` and their reverses
-(`SerreGraph.IsCore.notMem_cyclicDarts_iff_of_three_le_degree`). -/
+(`SerreGraph.IsCore.notMem_cyclicDarts_iff_of_three_le_degree`); this is
+`SerreGraph.IsCore.notMem_cyclicVertices_iff_of_three_le_degree` for the underlying graph. -/
 theorem notMem_typeVertices_iff_of_three_le_degree (hS : S.graph.IsCore S.base)
     (hv : S.graph.degree S.base ≤ 1) {w : S.graph.V} {q : S.graph.Path S.base w}
     (hq : ∀ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e ≠ S.base →
       S.graph.degree (S.graph.src e) ≤ 2) (hw : 3 ≤ S.graph.degree w) (a : S.graph.V) :
     a ∉ S.typeVertices ↔ ∃ e ∈ SerreGraph.Path.darts S.graph q, S.graph.src e = a := by
-  have hvC : S.base ∉ S.graph.cyclicVertices := fun h =>
-    absurd ((hS.two_le_degree_iff_mem_cyclicVertices.mpr h).trans hv) (by decide)
-  have hwC := hS.mem_cyclicVertices_of_three_le_degree hw
-  rw [S.typeVertices_eq_cyclicVertices fun h =>
-    (S.graph.cyclicVertices_eq_empty_iff.mpr h ▸ hwC : w ∈ (∅ : Set S.graph.V))]
-  exact hS.notMem_cyclicVertices_iff hwC
-    (fun _ he => SerreGraph.src_notMem_cyclicVertices_of_degree_le_two hvC hq he) a
+  rw [S.typeVertices_eq_cyclicVertices fun h => Set.Nonempty.ne_empty
+    ⟨w, hS.mem_cyclicVertices_of_three_le_degree hw⟩ (S.graph.cyclicVertices_eq_empty_iff.mpr h)]
+  exact hS.notMem_cyclicVertices_iff_of_three_le_degree hv hq hw a
 
 /-! ### Invariance under isomorphisms -/
 
@@ -283,6 +277,17 @@ paths. -/
     f.vertexEquiv a ∈ T.graph.cyclicVertices ↔ a ∈ S.graph.cyclicVertices :=
   ⟨fun h => by simpa using f.symm.vertexEquiv_mem_cyclicVertices h,
     f.vertexEquiv_mem_cyclicVertices⟩
+
+/-- An isomorphism of labelled graphs preserves degrees. -/
+@[simp] theorem UnbasedIso.degree_vertexEquiv (f : UnbasedIso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
+  simpa using f.toGraphHom.degree_mapV f.toGraphHom_mapV_injective
+    ⟨f.toGraphHom_mapE_injective, fun e => ⟨f.dartEquiv.symm e, by simp⟩⟩ a
+
+/-- A based isomorphism of labelled graphs preserves degrees. -/
+@[simp] theorem Iso.degree_vertexEquiv (f : Iso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
+  simpa using f.toUnbasedIso.degree_vertexEquiv a
 
 /-- Isomorphic labelled graphs are acyclic together. -/
 theorem UnbasedIso.isAcyclic_iff (f : UnbasedIso S T) :

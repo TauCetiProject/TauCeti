@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.Data.Set.Card
 
 /-!
@@ -19,7 +19,9 @@ degree one.
 
 The degree is characterized by the number of darts issuing from the vertex: it vanishes exactly
 when there is none, is one exactly when there is a unique one, and is at least two (or three)
-exactly when there are two (or three) distinct ones.
+exactly when there are two (or three) distinct ones. A morphism injective on darts does not
+decrease degrees, and one bijective on darts and injective on vertices preserves them, as does
+an isomorphism. In a restriction or a subgraph, the degree counts the retained darts.
 
 ## References
 
@@ -74,6 +76,50 @@ theorem three_le_degree_iff :
   · rintro ⟨e, f, g, he, hf, hg, hef, heg, hfg⟩
     exact (Set.encard_eq_three.mpr ⟨e, f, g, hef, heg, hfg, rfl⟩).symm.le.trans
       (Set.encard_le_encard (by simp [Set.insert_subset_iff, he, hf, hg]))
+
+/-- In a graph without darts every vertex has degree zero. -/
+@[simp] theorem degree_of_isEmpty [IsEmpty Γ.E] (a : Γ.V) : Γ.degree a = 0 :=
+  degree_eq_zero_iff.mpr fun e => isEmptyElim e
+
+/-- A morphism injective on darts does not decrease degrees. -/
+theorem Hom.degree_le_degree_mapV {Δ : SerreGraph} (f : Γ.Hom Δ) (hf : Function.Injective f.mapE)
+    (a : Γ.V) : Γ.degree a ≤ Δ.degree (f.mapV a) :=
+  Set.encard_le_encard_of_injOn (fun e (he : Γ.src e = a) => (f.map_src e).trans (by rw [he]))
+    hf.injOn
+
+/-- A morphism bijective on darts and injective on vertices preserves degrees. -/
+theorem Hom.degree_mapV {Δ : SerreGraph} (f : Γ.Hom Δ) (hV : Function.Injective f.mapV)
+    (hE : Function.Bijective f.mapE) (a : Γ.V) : Δ.degree (f.mapV a) = Γ.degree a := by
+  have h : {e | Γ.src e = a} = f.mapE ⁻¹' {e | Δ.src e = f.mapV a} := by
+    ext e
+    simp [hV.eq_iff]
+  rw [degree, degree, h, Set.encard_preimage_of_bijective hE]
+
+/-- An isomorphism preserves degrees. -/
+@[simp] theorem Iso.degree_equivV {Δ : SerreGraph} (φ : Γ.Iso Δ) (a : Γ.V) :
+    Δ.degree (φ.equivV a) = Γ.degree a :=
+  φ.toHom.degree_mapV φ.equivV.injective φ.equivE.bijective a
+
+/-- An isomorphism preserves degrees, read through its inverse. -/
+@[simp] theorem Iso.degree_equivV_symm {Δ : SerreGraph} (φ : Γ.Iso Δ) (b : Δ.V) :
+    Γ.degree (φ.equivV.symm b) = Δ.degree b := by
+  rw [← φ.degree_equivV, Equiv.apply_symm_apply]
+
+/-- The degree of a vertex in the restriction to a reversal-closed set `S` of darts counts the
+darts of `S` issuing from it. -/
+theorem degree_restrict (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S) (a : Γ.V) :
+    (Γ.restrict S hS).degree a = {e ∈ S | Γ.src e = a}.encard :=
+  (Subtype.val_injective.encard_image _).symm.trans
+    (congrArg Set.encard (Subtype.image_preimage_coe S {e | Γ.src e = a}))
+
+/-- The degree of a vertex in the subgraph on a set `A` of vertices and a reversal-closed set `D`
+of darts counts the darts of `D` issuing from it. -/
+theorem degree_subgraph (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.src e ∈ A)
+    (hrev : ∀ e ∈ D, Γ.rev e ∈ D) {a : Γ.V} (ha : a ∈ A) :
+    (Γ.subgraph A D hsrc hrev).degree ⟨a, ha⟩ = {e ∈ D | Γ.src e = a}.encard :=
+  (congrArg Set.encard (Set.ext fun _ => Subtype.ext_iff)).trans
+    ((Subtype.val_injective.encard_image _).symm.trans
+      (congrArg Set.encard (Subtype.image_preimage_coe D {e | Γ.src e = a})))
 
 /-- The vertex of the rose has degree twice the number of petals: each petal is a loop. -/
 @[simp] theorem degree_rose (α : Type*) (a : (rose α).V) : (rose α).degree a = 2 * ENat.card α := by
