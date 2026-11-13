@@ -22,11 +22,15 @@ period `T` in `t`.
 
 ## Main declarations
 
-* `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ dξ(s, t) v` is continuous.
 * `TauCeti.integral_fderiv_apply_zero_one_eq_zero`: the `t`-derivative of a `C¹` map of period
   `T` in `t` integrates to zero over a period.
 * `TauCeti.hasDerivAt_intervalIntegral_inner`: the derivative of `s ↦ ∫ₐᵇ ⟪ξ(s, t), η(s, t)⟫ dt`
   for `C¹` maps `ξ` and `η`, computed under the integral sign.
+* `TauCeti.hasDerivAt_intervalIntegral_norm_sq`: the derivative `∫ₐᵇ 2 ⟪ξ, ∂s ξ⟫ dt` of the slice
+  energy `s ↦ ∫ₐᵇ ‖ξ(s, t)‖² dt` of a `C¹` map.
+* `TauCeti.hasDerivAt_intervalIntegral_two_mul_inner_fderiv`: for a `C²` map, the derivative
+  `∫ₐᵇ 2 (⟪ξ, ∂s² ξ⟫ + ‖∂s ξ‖²) dt` of `s ↦ ∫ₐᵇ 2 ⟪ξ, ∂s ξ⟫ dt`, the second derivative of the
+  slice energy.
 -/
 
 public section
@@ -35,14 +39,6 @@ open MeasureTheory Set
 open scoped RealInnerProductSpace
 
 namespace TauCeti
-
-/-- For a `C¹` map `f` on a product, `t ↦ df(a, t) v` is continuous. -/
-theorem continuous_fderiv_apply_slice_right {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} (hf : ContDiff 𝕜 1 f) (a : E)
-    (v : E × F) : Continuous fun t ↦ fderiv 𝕜 f (a, t) v :=
-  ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).comp
-    (Continuous.prodMk_right a)
 
 /-- The `t`-derivative of a `C¹` map of period `T` in `t` integrates to zero over a period:
 `∫₀ᵀ ∂t f(s, t) dt = 0`. -/
@@ -69,5 +65,33 @@ theorem hasDerivAt_intervalIntegral_inner {V : Type*} [NormedAddCommGroup V]
   refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
   rw [fderiv_inner_apply ℝ (hξ.differentiable one_ne_zero (s, t))
     (hη.differentiable one_ne_zero (s, t)), add_comm]
+
+/-- **The derivative of the slice energy.** For a `C¹` map `ξ`, the slice energy
+`s ↦ ∫ₐᵇ ‖ξ(s, t)‖² dt` has derivative `∫ₐᵇ 2 ⟪ξ(s, t), ∂s ξ(s, t)⟫ dt`. -/
+theorem hasDerivAt_intervalIntegral_norm_sq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (a b s : ℝ) :
+    HasDerivAt (fun s ↦ ∫ t in a..b, ‖ξ (s, t)‖ ^ 2)
+      (∫ t in a..b, 2 * ⟪ξ (s, t), fderiv ℝ ξ (s, t) (1, 0)⟫) s := by
+  have h := hasDerivAt_intervalIntegral_inner hξ hξ a b s
+  simp only [real_inner_self_eq_norm_sq] at h
+  refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
+  simp only [real_inner_comm (ξ (s, t))]
+  ring
+
+/-- **The second derivative of the slice energy.** For a `C²` map `ξ`, the function
+`s ↦ ∫ₐᵇ 2 ⟪ξ(s, t), ∂s ξ(s, t)⟫ dt` has derivative
+`∫ₐᵇ 2 (⟪ξ(s, t), ∂s² ξ(s, t)⟫ + ‖∂s ξ(s, t)‖²) dt`. -/
+theorem hasDerivAt_intervalIntegral_two_mul_inner_fderiv {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (a b s : ℝ) :
+    HasDerivAt (fun s ↦ ∫ t in a..b, 2 * ⟪ξ (s, t), fderiv ℝ ξ (s, t) (1, 0)⟫)
+      (∫ t in a..b, 2 * (⟪ξ (s, t), fderiv ℝ (fun y ↦ fderiv ℝ ξ y (1, 0)) (s, t) (1, 0)⟫ +
+        ‖fderiv ℝ ξ (s, t) (1, 0)‖ ^ 2)) s := by
+  have h := (hasDerivAt_intervalIntegral_inner (η := fun y ↦ fderiv ℝ ξ y (1, 0))
+    (hξ.of_le (by norm_num)) ((hξ.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const)
+    a b s).const_mul 2
+  simp only [← intervalIntegral.integral_const_mul] at h
+  refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
+  simp only [real_inner_self_eq_norm_sq]
+  ring
 
 end TauCeti

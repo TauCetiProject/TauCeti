@@ -13,8 +13,8 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Convex.BddAbove
 import TauCeti.Analysis.Fourier.Wirtinger
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.Geometry.Symplectic.CompatibleMetric
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Floer cylinders of small autonomous Hamiltonians are time-independent
@@ -156,56 +156,6 @@ section Slice
 
 variable {ξ : ℝ × ℝ → V}
 
-/-- **Wirtinger's inequality on a slice.** If `ξ` is `C¹`, of period one in `t`, and every slice
-`t ↦ ξ(s, t)` has mean zero, then `∫₀¹ ‖ξ(s, t)‖² dt ≤ (2π)⁻² ∫₀¹ ‖∂t ξ(s, t)‖² dt`. -/
-private theorem integral_norm_sq_slice_le (hξ : ContDiff ℝ 1 ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0)
-    (s : ℝ) :
-    ∫ t in (0 : ℝ)..1, ‖ξ (s, t)‖ ^ 2 ≤
-      (1 / (2 * π)) ^ 2 * ∫ t in (0 : ℝ)..1, ‖fderiv ℝ ξ (s, t) (0, 1)‖ ^ 2 := by
-  have hac : AbsolutelyContinuousOnInterval (fun t ↦ ξ (s, t)) 0 1 :=
-    (hξ.comp (contDiff_const.prodMk contDiff_id)).contDiffOn.absolutelyContinuousOnInterval
-  have hL2 : MemLp (fun t ↦ fderiv ℝ ξ (s, t) (0, 1)) 2 (volume.restrict (Ioc 0 1)) :=
-    (continuous_fderiv_apply_slice_right hξ s (0, 1)).continuousOn
-      |>.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc Ioc_subset_Icc_self 2
-  have hW := integral_norm_sub_average_sq_le zero_lt_one hac
-    (Eventually.of_forall fun t _ ↦ hasDerivAt_slice_right (hξ.differentiable one_ne_zero _))
-    (by simpa using (hper s 0).symm) hL2
-  rw [interval_average_eq, hmean s, smul_zero] at hW
-  simpa using hW
-
-omit [FiniteDimensional ℝ V] in
-/-- A pointwise form of the reverse triangle inequality in `L²`: if `‖q‖ ≤ a r` with
-`0 ≤ a ≤ 2π`, then `(1 - a / 2π) ‖p‖² - (2π - a) a r² ≤ ‖p - q‖²`. -/
-private theorem sub_mul_norm_sq_le_norm_sub_sq {a r : ℝ} (ha0 : 0 ≤ a) (ha : a ≤ 2 * π)
-    {p q : V} (hq : ‖q‖ ≤ a * r) :
-    (1 - a / (2 * π)) * ‖p‖ ^ 2 - (2 * π - a) * a * r ^ 2 ≤ ‖p - q‖ ^ 2 := by
-  have hπ : 0 < 2 * π := by positivity
-  have hpq : ⟪p, q⟫ ≤ ‖p‖ * ‖q‖ := real_inner_le_norm p q
-  have hq0 : 0 ≤ ‖q‖ := norm_nonneg q
-  rw [norm_sub_sq_real]
-  rcases ha0.eq_or_lt with rfl | ha0'
-  · have : ‖q‖ = 0 := le_antisymm (by simpa using hq) hq0
-    rw [this] at hpq ⊢
-    norm_num at hpq ⊢
-    linarith
-  -- After multiplying by `2π a`, the difference is at least `(a ‖p‖ - 2π ‖q‖)²`.
-  have hq2 : ‖q‖ ^ 2 ≤ (a * r) ^ 2 := pow_le_pow_left₀ hq0 hq 2
-  have hX : 0 ≤ 2 * π * a *
-      (a / (2 * π) * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (2 * π - a) * a * r ^ 2) := by
-    have he : 2 * π * a *
-        (a / (2 * π) * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (2 * π - a) * a * r ^ 2) =
-        (a * ‖p‖ - 2 * π * ‖q‖) ^ 2 + 2 * π * (2 * π - a) * ((a * r) ^ 2 - ‖q‖ ^ 2) := by
-      field_simp
-      ring
-    rw [he]
-    have : 0 ≤ 2 * π * (2 * π - a) := mul_nonneg hπ.le (by linarith)
-    nlinarith [sq_nonneg (a * ‖p‖ - 2 * π * ‖q‖)]
-  have hX' := (mul_nonneg_iff_of_pos_left (by positivity : 0 < 2 * π * a)).1 hX
-  have hsplit : (1 - a / (2 * π)) * ‖p‖ ^ 2 = ‖p‖ ^ 2 - a / (2 * π) * ‖p‖ ^ 2 := by ring
-  rw [hsplit]
-  nlinarith
-
 /-- **The lower bound for `∂s ξ`.** If `ξ` solves `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, with `ξ` of
 period one in `t` and mean zero on every slice, and `‖dX_H‖ ≤ a ≤ 2π`, then
 `(2π - a)² ∫₀¹ ‖ξ(s, t)‖² dt ≤ ∫₀¹ ‖∂s ξ(s, t)‖² dt`. -/
@@ -226,7 +176,7 @@ private theorem mul_integral_norm_sq_slice_le (hg : ∀ v w, ω v (J w) = ⟪v, 
       rw [hξeq, map_sub]
       abel
     rw [he, norm_neg, ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner fun v ↦ hg v v]
-    exact sub_mul_norm_sq_le_norm_sub_sq ha0 ha2π
+    exact one_sub_div_mul_norm_sq_sub_le_norm_sub_sq ha0 ha2π
       (((fderiv ℝ (ω.hamiltonianVectorField H) (u (s, t))).le_opNorm _).trans
         (mul_le_mul_of_nonneg_right (ha _) (norm_nonneg _)))
   have hc₁ := ((continuous_fderiv_apply_slice_right hξ s (0, 1)).norm.pow 2).intervalIntegrable
@@ -244,7 +194,10 @@ private theorem mul_integral_norm_sq_slice_le (hg : ∀ v w, ω v (J w) = ⟪v, 
   have hπ : 0 < 2 * π := by positivity
   have hW : (2 * π) ^ 2 * ∫ t in (0 : ℝ)..1, ‖ξ (s, t)‖ ^ 2 ≤
       ∫ t in (0 : ℝ)..1, ‖fderiv ℝ ξ (s, t) (0, 1)‖ ^ 2 := by
-    have h := integral_norm_sq_slice_le hξ hper hmean s
+    have h := integral_norm_sq_le_of_integral_eq_zero zero_lt_one
+      (fun t ↦ hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t)))
+      (continuous_fderiv_apply_slice_right hξ s (0, 1)) (by simpa using (hper s 0).symm) (hmean s)
+    rw [sub_zero] at h
     rw [div_pow, one_pow, div_mul_eq_mul_div, one_mul, le_div_iff₀ (by positivity)] at h
     linarith
   have hcoef : 0 ≤ 1 - a / (2 * π) := by
@@ -369,32 +322,6 @@ private theorem integral_inner_fderiv_slice_eq (hg : ∀ v w, ω v (J w) = ⟪v,
     intervalIntegral.integral_add ((hA₁.intervalIntegrable 0 1).const_mul 2)
       (hA₂.intervalIntegrable 0 1), intervalIntegral.integral_const_mul]
 
-omit [FiniteDimensional ℝ V] in
-/-- The slice energy `s ↦ ∫₀¹ ‖ξ(s, t)‖² dt` has derivative `∫₀¹ 2 ⟪ξ, ∂s ξ⟫ dt`. -/
-private theorem hasDerivAt_integral_norm_sq_slice (hξ : ContDiff ℝ 1 ξ) (s : ℝ) :
-    HasDerivAt (fun s ↦ ∫ t in (0 : ℝ)..1, ‖ξ (s, t)‖ ^ 2)
-      (∫ t in (0 : ℝ)..1, 2 * ⟪ξ (s, t), fderiv ℝ ξ (s, t) (1, 0)⟫) s := by
-  have h := hasDerivAt_intervalIntegral_inner hξ hξ 0 1 s
-  simp only [real_inner_self_eq_norm_sq] at h
-  refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
-  simp only [real_inner_comm (ξ (s, t))]
-  ring
-
-omit [FiniteDimensional ℝ V] in
-/-- The derivative `s ↦ ∫₀¹ 2 ⟪ξ, ∂s ξ⟫ dt` of the slice energy has derivative
-`∫₀¹ 2 (⟪ξ, ∂s² ξ⟫ + ‖∂s ξ‖²) dt`. -/
-private theorem hasDerivAt_integral_inner_slice (hξ : ContDiff ℝ 2 ξ) (s : ℝ) :
-    HasDerivAt (fun s ↦ ∫ t in (0 : ℝ)..1, 2 * ⟪ξ (s, t), fderiv ℝ ξ (s, t) (1, 0)⟫)
-      (∫ t in (0 : ℝ)..1, 2 * (⟪ξ (s, t), fderiv ℝ (fun y ↦ fderiv ℝ ξ y (1, 0)) (s, t) (1, 0)⟫ +
-        ‖fderiv ℝ ξ (s, t) (1, 0)‖ ^ 2)) s := by
-  have h := (hasDerivAt_intervalIntegral_inner (η := fun y ↦ fderiv ℝ ξ y (1, 0))
-    (hξ.of_le (by norm_num)) ((hξ.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const)
-    0 1 s).const_mul 2
-  simp only [← intervalIntegral.integral_const_mul] at h
-  refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
-  simp only [real_inner_self_eq_norm_sq]
-  ring
-
 /-- **Bounded solutions of the linearized equation with mean-zero slices vanish.** Let `ξ` be a
 bounded `C²` solution of `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, of period one in `t`, whose slices
 `t ↦ ξ(s, t)` have mean zero. If `‖dX_H‖ ≤ a < 2π`, `‖d²X_H‖ ≤ c`, `‖du‖ ≤ M` and
@@ -432,7 +359,8 @@ private theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v
       fun t _ ↦ pow_le_pow_left₀ (norm_nonneg _) (hB (s, t)) 2
     simpa using h⟩
   have hfz := eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove (by nlinarith)
-    (hasDerivAt_integral_norm_sq_slice hξ1) (hasDerivAt_integral_inner_slice hξ) hle hf0 hfb
+    (hasDerivAt_intervalIntegral_norm_sq hξ1 0 1)
+    (hasDerivAt_intervalIntegral_two_mul_inner_fderiv hξ 0 1) hle hf0 hfb
   -- A continuous slice with vanishing `L²` norm vanishes on `(0, 1]`, hence everywhere.
   obtain ⟨s, t⟩ := z
   have hae := (intervalIntegral.integral_eq_zero_iff_of_le_of_nonneg_ae zero_le_one

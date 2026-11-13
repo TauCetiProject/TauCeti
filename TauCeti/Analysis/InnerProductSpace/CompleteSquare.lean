@@ -42,6 +42,8 @@ Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the qu
 * `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
 * `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
   is bounded by `η / 2 + 1 / η - 1 / η * ⟪ν, a⟫` for every `η > 0`.
+* `TauCeti.one_sub_div_mul_norm_sq_sub_le_norm_sub_sq`: if `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+  `(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -132,6 +134,35 @@ theorem norm_sub_le_add_div_sub_inner {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (
     linarith
   rw [heq, le_div_iff₀ (by positivity)]
   nlinarith [sq_nonneg (‖a - ν‖ - η)]
+
+/-- **A lower bound for `‖p - q‖²` when `q` is small.** If `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+`(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`. After multiplying by `L a`, the difference of
+the two sides is at least the square `(a ‖p‖ - L ‖q‖)²`. -/
+theorem one_sub_div_mul_norm_sq_sub_le_norm_sub_sq {a L r : ℝ} (ha0 : 0 ≤ a) (haL : a ≤ L)
+    {p q : F} (hq : ‖q‖ ≤ a * r) :
+    (1 - a / L) * ‖p‖ ^ 2 - (L - a) * a * r ^ 2 ≤ ‖p - q‖ ^ 2 := by
+  have hpq : ⟪p, q⟫ ≤ ‖p‖ * ‖q‖ := real_inner_le_norm p q
+  have hq0 : 0 ≤ ‖q‖ := norm_nonneg q
+  rw [norm_sub_sq_real]
+  rcases ha0.eq_or_lt with rfl | ha0'
+  · have : ‖q‖ = 0 := le_antisymm (by simpa using hq) hq0
+    rw [this] at hpq ⊢
+    norm_num at hpq ⊢
+    linarith
+  have hL : 0 < L := ha0'.trans_le haL
+  have hq2 : ‖q‖ ^ 2 ≤ (a * r) ^ 2 := pow_le_pow_left₀ hq0 hq 2
+  have hX : 0 ≤ L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) := by
+    have he : L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) =
+        (a * ‖p‖ - L * ‖q‖) ^ 2 + L * (L - a) * ((a * r) ^ 2 - ‖q‖ ^ 2) := by
+      field_simp
+      ring
+    rw [he]
+    have : 0 ≤ L * (L - a) := mul_nonneg hL.le (by linarith)
+    nlinarith [sq_nonneg (a * ‖p‖ - L * ‖q‖)]
+  have hX' := (mul_nonneg_iff_of_pos_left (by positivity : 0 < L * a)).1 hX
+  have hsplit : (1 - a / L) * ‖p‖ ^ 2 = ‖p‖ ^ 2 - a / L * ‖p‖ ^ 2 := by ring
+  rw [hsplit]
+  nlinarith
 
 end TauCeti
 
