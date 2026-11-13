@@ -114,7 +114,7 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
 
 /-- If `lim¹ A` vanishes in a levelwise exact sequence `A → B → C`, every compatible
 family in `C` that lifts to a family in `B` also lifts to a compatible family in `B`. -/
-theorem limMap_mem_range_of_subsingleton_limOne
+theorem mem_range_limMap_of_subsingleton_limOne
     (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
     [Subsingleton F.limOne] (z : H.lim) (y : G.Product) (hy : productMap g y = z) :
     z ∈ LinearMap.range (limMap g) := by
@@ -138,7 +138,7 @@ theorem limMap_surjective_of_subsingleton_limOne
     Function.Surjective (limMap g) := by
   intro z
   obtain ⟨y, hy⟩ := productMap_surjective hg (z : H.Product)
-  exact limMap_mem_range_of_subsingleton_limOne hfg z y hy
+  exact mem_range_limMap_of_subsingleton_limOne hfg z y hy
 
 end Lim
 
