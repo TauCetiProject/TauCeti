@@ -91,7 +91,6 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `MeasureTheory.convolutionExistsAt_indicator_iff_of_forall_sub_mem`: replacing `f` by its
   indicator on a set containing every `t` with `x - t ∈ support g` changes neither `(f ⋆ g) x` nor
   its existence.
-* `MeasureTheory.convolution_lsmul_comm`: convolution of scalar functions is commutative.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
   `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`: the same
@@ -414,21 +413,6 @@ end Indicator
 
 end Support
 
-section Commutative
-
-variable {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedSpace ℝ 𝕜] [AddCommGroup G]
-  [MeasurableSpace G] [MeasurableAdd G] [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant]
-  [μ.IsNegInvariant]
-
-/-- **Convolution of scalar functions is commutative.** -/
-theorem convolution_lsmul_comm (f g : G → 𝕜) :
-    f ⋆[lsmul 𝕜 𝕜, μ] g = g ⋆[lsmul 𝕜 𝕜, μ] f := by
-  ext x
-  rw [convolution_lsmul, convolution_lsmul_swap]
-  simp only [smul_eq_mul, mul_comm]
-
-end Commutative
-
 section Fubini
 
 variable {G : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
@@ -489,7 +473,7 @@ theorem integral_mul_convolution_eq_integral_mul_integral_left_comp_sub [SFinite
     (hψ : Continuous ψ) (hψc : HasCompactSupport ψ) (hK : LocallyIntegrable K μ)
     (hg : Integrable g μ) (hgc : HasCompactSupport g) :
     ∫ x, ψ x * (K ⋆[lsmul ℝ ℝ, μ] g) x ∂μ = ∫ t, g t * ∫ x, ψ x * K (x - t) ∂μ ∂μ := by
-  rw [convolution_lsmul_comm]
+  rw [convolution_symm (lsmul ℝ ℝ) (by ext; simp)]
   exact integral_mul_convolution_eq_integral_mul_integral_comp_sub hψ hψc hg hgc
     (hK.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _
 
