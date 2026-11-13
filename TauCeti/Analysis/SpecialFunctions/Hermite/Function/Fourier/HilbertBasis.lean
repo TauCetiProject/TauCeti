@@ -404,32 +404,12 @@ theorem fourier_fourier_fourier_fourier (f : Lp ℂ 2 (volume : Measure ℝ)) :
     have hfour : (4 : ℕ) = 2 * 2 := by norm_num
     rw [hfour, pow_mul, h2]
     norm_num
-  have hstep : ∀ (a : ℂ) (n : ℕ), 𝓕 (a • twoPiHermiteFunctionLp ℂ n)
-      = (a * (-Complex.I) ^ n) • twoPiHermiteFunctionLp ℂ n := by
-    intro a n
-    rw [fourier_smul, fourier_twoPiHermiteFunctionLp, smul_smul]
-  have hbasis : ∀ n : ℕ, 𝓕 (𝓕 (𝓕 (𝓕 (twoPiHermiteFunctionLp ℂ n))))
-      = twoPiHermiteFunctionLp ℂ n := by
-    intro n
-    have hpow : (-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n = 1 := by
-      have hadd : n + n + n + n = 4 * n := by omega
-      rw [← pow_add, ← pow_add, ← pow_add, hadd, pow_mul, hI, one_pow]
-    calc 𝓕 (𝓕 (𝓕 (𝓕 (twoPiHermiteFunctionLp ℂ n))))
-        = 𝓕 (𝓕 (𝓕 ((-Complex.I) ^ n • twoPiHermiteFunctionLp ℂ n))) := by
-          rw [fourier_twoPiHermiteFunctionLp]
-      _ = 𝓕 (𝓕 (((-Complex.I) ^ n * (-Complex.I) ^ n) • twoPiHermiteFunctionLp ℂ n)) := by
-          rw [hstep]
-      _ = 𝓕 (((-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n) •
-            twoPiHermiteFunctionLp ℂ n) := by rw [hstep]
-      _ = ((-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n) •
-            twoPiHermiteFunctionLp ℂ n := by rw [hstep]
-      _ = twoPiHermiteFunctionLp ℂ n := by rw [hpow, one_smul]
-  have hsum := ContinuousLinearMap.hasSum (fourierCLM ℂ (Lp ℂ 2 (volume : Measure ℝ)))
-    (ContinuousLinearMap.hasSum (fourierCLM ℂ (Lp ℂ 2 (volume : Measure ℝ)))
-      (ContinuousLinearMap.hasSum (fourierCLM ℂ (Lp ℂ 2 (volume : Measure ℝ)))
-        (ContinuousLinearMap.hasSum (fourierCLM ℂ (Lp ℂ 2 (volume : Measure ℝ)))
-          ((twoPiHermiteHilbertBasis ℂ).hasSum_repr f))))
-  simp only [fourierCLM_apply, fourier_smul, coe_twoPiHermiteHilbertBasis, hbasis] at hsum
-  exact hsum.unique (by simpa using (twoPiHermiteHilbertBasis ℂ).hasSum_repr f)
+  -- Compare the coefficients in the Hermite basis: each is multiplied by `((-i)ⁿ)⁴ = 1`.
+  refine (twoPiHermiteHilbertBasis ℂ).repr.injective ?_
+  ext n
+  have hpow : (-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n * (-Complex.I) ^ n = 1 := by
+    rw [← pow_add, ← pow_add, ← pow_add, show n + n + n + n = 4 * n by omega, pow_mul, hI,
+      one_pow]
+  simp only [repr_fourier_twoPiHermiteHilbertBasis, ← mul_assoc, hpow, one_mul]
 
 end TauCeti
