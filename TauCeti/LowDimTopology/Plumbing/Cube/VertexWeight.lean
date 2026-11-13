@@ -13,16 +13,14 @@ public import TauCeti.LowDimTopology.Plumbing.Weight.Polarization
 
 Némethi's lattice-homology cube weight `characteristicCubeWeight k x S` is the maximum of the
 point weights `χ_k` over the `2 ^ |S|` vertices `cubeVertex x T`, `T ⊆ S`, of the cube with base
-point `x` and directions `S` (`CubeWeight.lean`). Computing such a cube weight on a concrete
-plumbing needs the value of `χ_k` at each vertex, and the cube-weight files so far record only the
-inequality bounds between a vertex weight and the ambient cube weight, never a closed form for the
-vertex weight itself.
+point `x` and directions `S` (`Cube/Weight/Basic`). Computing such a cube weight on a concrete
+plumbing needs the value of `χ_k` at each vertex.
 
-This file supplies that closed form. Writing the vertex `cubeVertex x S = x + ∑ v ∈ S, E_v` as a
-lattice step off the base point and feeding it through the polarization identity
-`characteristicWeight_add` (`WeightPolarization.lean`) expresses the vertex weight through the base
-weight, the weight of the pure sphere sum `∑ v ∈ S, E_v`, and the linear pairings of the base point
-against the moving spheres:
+This file gives a closed form for that vertex weight. Writing the vertex
+`cubeVertex x S = x + ∑ v ∈ S, E_v` as a lattice step off the base point and feeding it through
+the polarization identity `characteristicWeight_add` (`Weight/Polarization`) expresses the vertex
+weight through the base weight, the weight of the pure sphere sum `∑ v ∈ S, E_v`, and the linear
+pairings of the base point against the moving spheres:
 
 `χ_k(cubeVertex x S) = χ_k(x) + χ_k(∑ v ∈ S, E_v) - ∑ v ∈ S, ⟨x, E_v⟩`.
 
@@ -45,10 +43,7 @@ which is exactly what a `decide`/`norm_num` computation of a concrete cube weigh
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose cube weights are the maxima of the point weights `χ_k` over the cube
-vertices and whose acceptance criterion asks for `ℍ` of concrete negative-definite plumbings. The
-coordinate weight formula is the standard evaluation of Némethi's weight function; see Némethi,
+The coordinate weight formula is the standard evaluation of Némethi's weight function; see Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

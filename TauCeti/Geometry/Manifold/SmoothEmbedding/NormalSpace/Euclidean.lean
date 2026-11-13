@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Immersion.SecondFundamentalForm
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Topology
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 
@@ -23,7 +24,10 @@ is linear on fibres, and sends the zero section to the zero section. Thus the or
 normal-bundle charts can be used for intrinsic normal classes with their quotient topology.
 
 The fibre equivalence reuses Mathlib's `Submodule.quotientEquivOfIsTopCompl`. Continuity of
-orthogonal representatives uses `TauCeti.contMDiff_normalSubspace_starProjection`.
+orthogonal representatives uses `TauCeti.contMDiff_normalSubspace_starProjection`. On a
+finite-dimensional boundaryless manifold, `SmoothEmbedding.coe_normalSpaceOrthogonalEquiv_sndFDeriv`
+identifies the orthogonal representative of the intrinsic normal class of the coordinate second
+derivative with `TauCeti.manifoldSecondFundamentalForm`.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.
@@ -192,5 +196,20 @@ theorem isEmbedding_normalBundle_mk (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
   funext v
   simp only [Function.comp_apply, normalBundleHomeomorphOrthogonal_apply]
   rfl
+
+omit [IsManifold I 1 M] in
+/-- For a smooth embedding `f : M → V` into a real Hilbert space, `manifoldSecondFundamentalForm`
+is the orthogonal representative (`TauCeti.SmoothEmbedding.normalSpaceOrthogonalEquiv`) of the
+intrinsic normal class of the coordinate second derivative. -/
+theorem coe_normalSpaceOrthogonalEquiv_sndFDeriv
+    (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (x : M) (hn : n ≠ 0) (v w : TangentSpace I x) :
+    (f.normalSpaceOrthogonalEquiv x hn
+      (f.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm
+        (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
+          (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w)))) : V) =
+      manifoldSecondFundamentalForm I f x v w := by
+  rw [f.normalSpaceOrthogonalEquiv_normalClass, ← Submodule.starProjection_apply,
+    manifoldSecondFundamentalForm_apply]
+  simp only [orthogonal_range_mvfderiv_eq_normalSubspace]
 
 end TauCeti.SmoothEmbedding

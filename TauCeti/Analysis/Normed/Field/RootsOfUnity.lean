@@ -38,7 +38,7 @@ theorem norm_sub_one_eq (hζ : IsPrimitiveRoot ζ n) (hξ : IsPrimitiveRoot ξ n
     obtain ⟨i, _, rfl⟩ := ha.eq_pow_of_pow_eq_one hb.pow_eq_one
     have hnorm := (ha.isOfFinOrder (NeZero.ne n)).norm_eq_one
     simpa using TauCeti.norm_prod_sub_prod_le (s := Finset.range i)
-      (f := fun _ => a) (g := fun _ => (1 : K)) (by norm_num : (0 : ℝ) ≤ 1)
+      (f := fun _ => a) (g := fun _ => (1 : K)) (M := 1)
       (norm_nonneg (a - 1)) (by simp [hnorm]) (by simp) (by simp)
   exact le_antisymm (hle hξ hζ) (hle hζ hξ)
 

@@ -294,18 +294,13 @@ theorem map_lowerTriangleGram_pi_bartlettCoordinateMeasure
     ENNReal.ofReal ((A : Matrix (Fin p) (Fin p) ℝ).det ^ ((n - p - 1) / 2) *
       exp (-(A : Matrix (Fin p) (Fin p) ℝ).trace / 2) /
         (2 ^ (n * p / 2) * multivariateGamma p (n / 2))) with hw_def
-  have hcoe : Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (A : Matrix (Fin p) (Fin p) ℝ) := continuous_subtype_val
-  have hw : Measurable w :=
-    ENNReal.measurable_ofReal.comp <| (((hcoe.matrix_det.measurable.pow_const _).mul
-      (hcoe.matrix_trace.neg.div_const _).rexp.measurable)).div_const _
   have hpi := pi_bartlettCoordinateMeasure_eq_withDensity (p := p) n
   have hgram := measurable_lowerTriangleGram p
   -- Both sides are integrals over the coordinate space: the left by definition of the
   -- pushforward, the right by the Cholesky change of variables. Compare the integrands.
   ext s hs
   rw [Measure.map_apply hgram hs, hpi, withDensity_apply _ (hgram hs), withDensity_apply _ hs,
-    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (hw.indicator hs),
+    ← lintegral_indicator hs, setLIntegral_posDef_symmetricLebesgue p (s.indicator w),
     ← lintegral_indicator (hgram hs), ← lintegral_indicator (measurableSet_posDiagLowerRegion p)]
   refine lintegral_congr fun x ↦ ?_
   by_cases hx : x ∈ posDiagLowerRegion p
