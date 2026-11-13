@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import Mathlib.Analysis.Complex.Basic
 import TauCeti.Topology.Order.Interval
+import Mathlib.Topology.Algebra.Group.Order
 
 /-!
 # Height additivity, monotonicity, and right-continuity of rectangle counts
@@ -74,7 +75,8 @@ theorem exists_lt_gt_reProdIm_inter_divisor_support_finite
     exact s.finite_toSet.biUnion fun z _ ↦ hfin z.1 z.2
   have hprod : equivRealProdCLM.symm ⁻¹' N ∈
       𝓝ˢ (Icc σ₁ σ₂ ×ˢ Icc t₁ t₂) :=
-    equivRealProdCLM.symm.continuous.tendsto_nhdsSet (fun z hz ↦ hz) hs
+    equivRealProdCLM.symm.continuous.tendsto_nhdsSet
+      (by rintro _ ⟨h₁, h₂⟩; simp [mem_reProdIm, h₁, h₂]) hs
   rw [isCompact_Icc.nhdsSet_prod_eq isCompact_Icc] at hprod
   obtain ⟨A, hA, B, hB, hAB⟩ := Filter.mem_prod_iff.mp hprod
   have hBI : uIcc t₁ t₂ ⊆ interior B := by
@@ -89,6 +91,7 @@ theorem exists_lt_gt_reProdIm_inter_divisor_support_finite
   suffices equivRealProdCLM z ∈ equivRealProdCLM.symm ⁻¹' N by
     simpa only [mem_preimage, ContinuousLinearEquiv.symm_apply_apply] using this
   apply hAB
+  rw [equivRealProdCLM_apply]
   exact ⟨subset_of_mem_nhdsSet hA hz.1.1, interior_subset (hcdB (habcd hz.1.2))⟩
 
 private theorem rectangle_partition
@@ -173,7 +176,7 @@ theorem continuousWithinAt_zeroCount_reProdIm_Ioc_Ici (T : ℝ)
   continuousWithinAt_const.congr_of_eventuallyEq
     (eventuallyEq_zeroCount_reProdIm_Ioc_nhdsGE T hU) rfl
 
-/-- Expanding both vertical edges of a closed rectangle cannot decrease its zero count. -/
+/-- Moving both height bounds of a closed rectangle outward cannot decrease its zero count. -/
 theorem zeroCount_reProdIm_Icc_le {s₁ s₂ : ℝ} (h₁ : s₁ ≤ t₁) (h₂ : t₂ ≤ s₂)
     (hU : Icc σ₁ σ₂ ×ℂ Icc s₁ s₂ ⊆ U) :
     zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂) ≤
@@ -181,8 +184,9 @@ theorem zeroCount_reProdIm_Icc_le {s₁ s₂ : ℝ} (h₁ : s₁ ≤ t₁) (h₂
   zeroCount_mono (fun _ hz ↦ ⟨hz.1, h₁.trans hz.2.1, hz.2.2.trans h₂⟩)
     (zeroCount_support_finite_of_subset_reProdIm_Icc hU Subset.rfl)
 
-/-- A closed rectangle's zero count stabilizes as both vertical edges move outward.
-Zeros on either original edge remain included, with no ordering assumption on the heights. -/
+/-- A closed rectangle's zero count stabilizes as its lower and upper height bounds move
+outward, with no ordering assumption on the heights. When `t₁ ≤ t₂`, zeros on the original
+bottom and top edges remain included. -/
 theorem eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) :
     (fun p : ℝ × ℝ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc p.1 p.2))
@@ -205,7 +209,7 @@ theorem eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE
         with p hp hzp
       exact False.elim ((not_le.mpr hp.1) hzp.2.1)
 
-/-- The closed-rectangle count is continuous as its two vertical edges move outward. -/
+/-- The closed-rectangle count is continuous as its bottom and top edges move outward. -/
 theorem continuousWithinAt_zeroCount_reProdIm_Icc_Iic_prod_Ici
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ ⊆ U) :
     ContinuousWithinAt (fun p : ℝ × ℝ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc p.1 p.2))
@@ -219,14 +223,9 @@ height. At negative heights the region is empty; at height zero real zeros are r
 theorem eventuallyEq_zeroCount_reProdIm_Icc_neg_nhdsGE (T : ℝ)
     (hU : Icc σ₁ σ₂ ×ℂ Icc (-T) T ⊆ U) :
     (fun t ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc (-t) t)) =ᶠ[𝓝[≥] T]
-      fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc (-T) T) := by
-  have hneg : Tendsto (fun t : ℝ ↦ -t) (𝓝[≥] T) (𝓝[≤] (-T)) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨continuous_neg.continuousAt.tendsto.mono_left
-      nhdsWithin_le_nhds, ?_⟩
-    filter_upwards [self_mem_nhdsWithin] with t ht
-    exact neg_le_neg ht
-  exact (eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE hU).comp_tendsto
-    (hneg.prodMk tendsto_id)
+      fun _ ↦ zeroCount f U (Icc σ₁ σ₂ ×ℂ Icc (-T) T) :=
+  (eventuallyEq_zeroCount_reProdIm_Icc_nhdsLE_nhdsGE hU).comp_tendsto
+    (tendsto_neg_nhdsGE.prodMk tendsto_id)
 
 /-- The symmetric closed-rectangle zero count is right-continuous at every height. -/
 theorem continuousWithinAt_zeroCount_reProdIm_Icc_neg_Ici (T : ℝ)
