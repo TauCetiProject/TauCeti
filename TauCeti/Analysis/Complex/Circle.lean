@@ -40,7 +40,8 @@ glued at their endpoints `±1`.
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
-  of `sphere (0 : ℂ) 1`.
+  of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
+  `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -96,6 +97,15 @@ theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sp
   have hz1 : ‖z‖ = 1 := by simpa using hz
   have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
   rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
+
+/-- On the unit sphere of `ℂ`, `z ^ k * conj a - a` is fixed by `b ↦ -(z ^ k * conj b)`: at
+`z = e^{iθ}` it lies on the line `i e^{ikθ/2} ℝ`. -/
+theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
+    (hz : z ∈ sphere (0 : ℂ) 1) (k : ℤ) (a : ℂ) :
+    z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a)) := by
+  rw [map_sub, map_mul, Complex.conj_conj, mul_sub, ← mul_assoc,
+    Complex.zpow_mul_conj_zpow_of_mem_sphere hz, sub_self, zpow_zero]
+  ring
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by

@@ -13,8 +13,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Complex.Wirtinger.Green
-import TauCeti.Analysis.Fourier.AddCircle
-import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
 # The cokernel of the Cauchy–Riemann operator on the disc with a rotating-line boundary condition
@@ -101,54 +100,29 @@ public section
 
 namespace TauCeti
 
-open AddCircle Complex MeasureTheory Metric Module Set
+open Complex MeasureTheory Metric Module Set
 open scoped ComplexConjugate Real
 
 variable {k : ℤ} {f : ℂ → ℂ}
 
-/-- The positivity of the period `2π`, as an instance for the Fourier theory of
-`AddCircle (2 * π)`. -/
-private theorem fact_two_pi_pos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
-
-attribute [local instance] fact_two_pi_pos
-
-/-- A function `C^n` at every point of the closed unit disc agrees there with a compactly
-supported `C^n` function on `ℂ`. -/
-private theorem exists_contDiff_eqOn_closedBall {n : ℕ}
-    (hf : ∀ z ∈ closedBall (0 : ℂ) 1, ContDiffAt ℝ n f z) :
-    ∃ g : ℂ → ℂ, HasCompactSupport g ∧ ContDiff ℝ n g ∧ EqOn g f (closedBall 0 1) := by
-  have hU : IsOpen {z | ContDiffAt ℝ n f z} :=
-    isOpen_iff_mem_nhds.2 fun z hz ↦ hz.eventually (by simp)
-  obtain ⟨g, hg, hgc, -, -, hgf⟩ := ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact (n := n)
-    (fun z hz ↦ (hz : ContDiffAt ℝ n f z).contDiffWithinAt) (isCompact_closedBall 0 1) hU hf
-  exact ⟨g, hgc, hg, fun z hz ↦ (hgf z hz).eq_of_nhds⟩
-
 /-! ### Green's formula against the Cauchy transform -/
-
-/-- The product of two functions continuous on the closed unit disc is integrable on the open
-disc. -/
-private theorem integrableOn_ball_mul {g : ℂ → ℂ} (hg : ContinuousOn g (closedBall 0 1))
-    (hf : ContinuousOn f (closedBall 0 1)) : IntegrableOn (fun z ↦ g z * f z) (ball (0 : ℂ) 1) :=
-  ((hg.mul hf).integrableOn_compact (isCompact_closedBall 0 1)).mono_set ball_subset_closedBall
-
-/-- The integral of the real part is the real part of the integral. -/
-private theorem integral_ball_re_mul {g : ℂ → ℂ} (hg : ContinuousOn g (closedBall 0 1))
-    (hf : ContinuousOn f (closedBall 0 1)) :
-    ∫ z in ball (0 : ℂ) 1, (g z * f z).re = (∫ z in ball (0 : ℂ) 1, g z * f z).re := by
-  have h := integral_re (integrableOn_ball_mul hg hf)
-  simpa only [RCLike.re_to_complex] using h
 
 /-- **Green's formula against the Cauchy transform.** For `g` holomorphic on the open unit disc
 and continuous on its closure, and `f` compactly supported `C¹`,
-`∫_{|z| < 1} g f dA = (2 i)⁻¹ ∮_{|z| = 1} g (T f) dz`. -/
-private theorem integral_ball_mul_eq_circleIntegral_cauchyTransform {g : ℂ → ℂ}
+`∫_{|z| < 1} g f dA = (2 i)⁻¹ ∮_{|z| = 1} g (T f) dz`, stated for real parts. -/
+private theorem integral_ball_re_mul_eq_re_circleIntegral_cauchyTransform {g : ℂ → ℂ}
     (hg : DiffContOnCl ℂ g (ball 0 1)) (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) :
-    ∫ z in ball (0 : ℂ) 1, g z * f z =
-      (2 * I)⁻¹ * ∮ z in C(0, 1), g z * cauchyTransform f z := by
+    ∫ z in ball (0 : ℂ) 1, (g z * f z).re =
+      ((2 * I)⁻¹ * ∮ z in C(0, 1), g z * cauchyTransform f z).re := by
   have hT : ContDiff ℝ 1 (cauchyTransform f) := hc.contDiff_cauchyTransform hf
   have h := integral_ball_smul_conjWirtingerDeriv_eq_circleIntegral_of_diffContOnCl one_pos hg
     (ξ := cauchyTransform f) fun z _ ↦ hT.contDiffAt
-  simpa only [smul_eq_mul, hc.conjWirtingerDeriv_cauchyTransform hf] using h
+  simp only [smul_eq_mul, hc.conjWirtingerDeriv_cauchyTransform hf] at h
+  have hint : IntegrableOn (fun z ↦ g z * f z) (ball (0 : ℂ) 1) :=
+    ((hg.continuousOn_ball.mul hf.continuous.continuousOn).integrableOn_compact
+      (isCompact_closedBall 0 1)).mono_set ball_subset_closedBall
+  rw [← h]
+  exact reCLM.integral_comp_comm hint
 
 /-! ### Necessity -/
 
@@ -168,9 +142,9 @@ private theorem re_inv_two_I_mul_circleIntegral_eq_zero {u v : ℂ → ℂ}
     have hx' : x = (x.im : ℂ) * I := by
       conv_lhs => rw [← re_add_im x, hre]
       simp
-    rw [deriv_circleMap, smul_eq_mul,
-      show circleMap 0 1 θ * I * (v (circleMap 0 1 θ) * u (circleMap 0 1 θ)) = I * x by
-        rw [hx]; ring]
+    have hIx : circleMap 0 1 θ * I * (v (circleMap 0 1 θ) * u (circleMap 0 1 θ)) = I * x := by
+      rw [hx]; ring
+    rw [deriv_circleMap, smul_eq_mul, hIx]
     nth_rw 1 [hx']
     push_cast
     linear_combination (x.im : ℂ) * I_sq
@@ -190,7 +164,8 @@ private theorem integral_ball_re_mul_eq_zero_of_hasCompactSupport {u v : ℂ →
   have hT : ContDiff ℝ 1 (cauchyTransform f) := hc.contDiff_cauchyTransform hf
   -- `h = u - T f` is holomorphic on the disc.
   have hh : DiffContOnCl ℂ (u - cauchyTransform f) (ball 0 1) :=
-    diffContOnCl_sub_of_conjWirtingerDeriv_eq huc hT.continuous.continuousOn hud
+    diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
+      (by rwa [closure_ball 0 one_ne_zero]) hT.continuous.continuousOn hud
       (hT.differentiable one_ne_zero).differentiableOn fun z hz ↦ by
         rw [hu z hz, hc.conjWirtingerDeriv_cauchyTransform hf]
   have hsph : sphere (0 : ℂ) 1 ⊆ closedBall 0 1 := sphere_subset_closedBall
@@ -210,8 +185,7 @@ private theorem integral_ball_re_mul_eq_zero_of_hasCompactSupport {u v : ℂ →
   have heq : ∀ z ∈ ball (0 : ℂ) 1, v z = v' z := fun z hz ↦
     (congrFun hres ⟨z, ball_subset_closedBall hz⟩).symm
   rw [setIntegral_congr_fun measurableSet_ball fun z hz ↦ by rw [heq z hz],
-    integral_ball_re_mul hv'.continuousOn_ball hf.continuous.continuousOn,
-    integral_ball_mul_eq_circleIntegral_cauchyTransform hv' hc hf, hsplit, hcauchy, sub_zero]
+    integral_ball_re_mul_eq_re_circleIntegral_cauchyTransform hv' hc hf, hsplit, hcauchy, sub_zero]
   exact re_inv_two_I_mul_circleIntegral_eq_zero hbv' hub
 
 /-- **Adjoint solutions annihilate the image.** Let `f` be `C¹` at every point of the closed unit
@@ -229,9 +203,10 @@ theorem integral_ball_re_mul_eq_zero_of_conjWirtingerDeriv_eq {u v : ℂ → ℂ
     (hub : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w))
     (hv : (closedBall (0 : ℂ) 1).domRestrict v ∈ unitDiscAdjointKernel k) :
     ∫ z in ball (0 : ℂ) 1, (v z * f z).re = 0 := by
-  obtain ⟨g, hc, hg, hgf⟩ := exists_contDiff_eqOn_closedBall hf
+  obtain ⟨g, hg, hc, hgf⟩ :=
+    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq_of_contDiffAt hf
   have hfg (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : f z = g z :=
-    (hgf (ball_subset_closedBall hz)).symm
+    (hgf z (ball_subset_closedBall hz)).eq_of_nhds.symm
   rw [setIntegral_congr_fun measurableSet_ball fun z hz ↦ by rw [hfg z hz]]
   exact integral_ball_re_mul_eq_zero_of_hasCompactSupport hc hg huc hud
     (fun z hz ↦ (hu z hz).trans (hfg z hz)) hub hv
@@ -250,7 +225,8 @@ private theorem domRestrict_mem_unitDiscAdjointKernel_neg_sub_two {m i : ℕ} (h
   · have hw1 : ‖w‖ = 1 := by simpa using hw
     have hw0 : w ≠ 0 := by rintro rfl; simp at hw1
     have hconj : conj w = w⁻¹ := (inv_eq_conj hw1).symm
-    rw [show -(-(m : ℤ) - 2) - 2 = (m : ℤ) by ring, zpow_natCast]
+    have hexp : -(-(m : ℤ) - 2) - 2 = m := by ring
+    rw [hexp, zpow_natCast]
     simp only [map_add, map_mul, map_pow, conj_conj, hconj]
     have hm : w ^ m = w ^ i * w ^ (m - i) := by rw [← pow_add, Nat.add_sub_cancel' hi]
     have e₁ : w ^ i * w⁻¹ ^ i = 1 := by rw [← mul_pow, mul_inv_cancel₀ hw0, one_pow]
@@ -260,28 +236,6 @@ private theorem domRestrict_mem_unitDiscAdjointKernel_neg_sub_two {m i : ℕ} (h
   · funext z
     simp only [Set.domRestrict_apply, Pi.smul_apply, smul_eq_mul]
     rw [← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
-
-/-- The Fourier coefficients of the boundary defect `θ ↦ e^{ikθ} conj (T(e^{iθ})) - T(e^{iθ})` of a
-continuous function `T` are `conj (a (k - n)) - a n`, where `a` are the Fourier coefficients of
-`θ ↦ T(e^{iθ})`. -/
-private theorem fourierCoeffOn_circleMap_zpow_mul_conj_sub {T : ℂ → ℂ} (hT : Continuous T)
-    (n : ℤ) :
-    fourierCoeffOn Real.two_pi_pos
-      (fun θ ↦ circleMap 0 1 θ ^ k * conj (T (circleMap 0 1 θ)) - T (circleMap 0 1 θ)) n =
-      conj (fourierCoeffOn Real.two_pi_pos (fun θ ↦ T (circleMap 0 1 θ)) (k - n)) -
-        fourierCoeffOn Real.two_pi_pos (fun θ ↦ T (circleMap 0 1 θ)) n := by
-  have hTc : Continuous fun x : AddCircle (2 * π) ↦ T (toCircle x) :=
-    continuous_comp_toCircle (hT.comp (continuous_circleMap 0 1))
-  have hTc' : Continuous fun x : AddCircle (2 * π) ↦ fourier k x * conj (T (toCircle x)) :=
-    (map_continuous (fourier k)).mul (continuous_conj.comp hTc)
-  have hi {g : AddCircle (2 * π) → ℂ} (hg : Continuous g) : Integrable g haarAddCircle :=
-    hg.integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hfun : (fun x : AddCircle (2 * π) ↦ (toCircle x : ℂ) ^ k * conj (T (toCircle x)) -
-      T (toCircle x)) = fun x ↦ fourier k x * conj (T (toCircle x)) - T (toCircle x) :=
-    funext fun x ↦ by rw [fourier_apply_eq_coe_toCircle_zpow]
-  rw [← fourierCoeff_comp_toCircle (fun w ↦ w ^ k * conj (T w) - T w), hfun,
-    fourierCoeff_sub (hi hTc') (hi hTc), fourierCoeff_fourier_mul_conj, fourierCoeff_comp_toCircle,
-    fourierCoeff_comp_toCircle]
 
 /-- The boundary integral of the test adjoint solution `-I (b z ^ i + conj b z ^ (m - i))` against
 a continuous function `T`, in terms of the Fourier coefficients `a` of `θ ↦ T(e^{iθ})`. -/
@@ -297,12 +251,14 @@ private theorem circleIntegral_neg_I_mul_mul {T : ℂ → ℂ} (hT : Continuous 
       fun z ↦ -I * (b * (z ^ i * T z) + conj b * (z ^ (m - i) * T z)) := by
     funext z
     ring
+  have hi₁ : -((i : ℤ) + 1) = -1 - i := by ring
+  have hi₂ : -(((m - i : ℕ) : ℤ) + 1) = -(m : ℤ) - 2 - (-1 - i) := by
+    rw [Nat.cast_sub hi]
+    ring
   rw [hlin, circleIntegral.integral_const_mul,
     circleIntegral.integral_add (hci i b) (hci (m - i) (conj b)),
     circleIntegral.integral_const_mul, circleIntegral.integral_const_mul,
-    circleIntegral_pow_mul, circleIntegral_pow_mul,
-    show -((i : ℤ) + 1) = -1 - i by ring,
-    show -(((m - i : ℕ) : ℤ) + 1) = -(m : ℤ) - 2 - (-1 - i) by push_cast [Nat.cast_sub hi]; ring]
+    circleIntegral_pow_mul, circleIntegral_pow_mul, hi₁, hi₂]
   ring_nf
   rw [I_sq]
   ring
@@ -346,8 +302,7 @@ private theorem fourierCoeffOn_eq_zero_of_forall_integral_ball_re_mul_eq_zero
   have hg : DiffContOnCl ℂ (fun z ↦ -I * (b * z ^ i + conj b * z ^ (m - i))) (ball 0 1) :=
     ((differentiable_const _).mul (((differentiable_const _).mul (differentiable_id.pow i)).add
       ((differentiable_const _).mul (differentiable_id.pow (m - i))))).diffContOnCl
-  rw [integral_ball_re_mul hg.continuousOn_ball hf.continuous.continuousOn,
-    integral_ball_mul_eq_circleIntegral_cauchyTransform hg hc hf,
+  rw [integral_ball_re_mul_eq_re_circleIntegral_cauchyTransform hg hc hf,
     circleIntegral_neg_I_mul_mul hT him, re_inv_two_I_mul_pairing, neg_eq_zero, mul_eq_zero,
     normSq_eq_zero] at hH
   exact hH.resolve_left Real.pi_ne_zero
@@ -369,10 +324,11 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_iff
       ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) ↔
     ∀ v : ℂ → ℂ, (closedBall (0 : ℂ) 1).domRestrict v ∈ unitDiscAdjointKernel k →
       ∫ z in ball (0 : ℂ) 1, (v z * f z).re = 0 := by
-  obtain ⟨g, hc, hg, hgf⟩ := exists_contDiff_eqOn_closedBall hf
+  obtain ⟨g, hg, hc, hgf⟩ :=
+    (isCompact_closedBall 0 1).exists_contDiff_eventuallyEq_of_contDiffAt hf
   have hg1 : ContDiff ℝ 1 g := hg.of_le (by norm_num)
   have hfg (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : f z = g z :=
-    (hgf (ball_subset_closedBall hz)).symm
+    (hgf z (ball_subset_closedBall hz)).eq_of_nhds.symm
   have hint (v : ℂ → ℂ) : ∫ z in ball (0 : ℂ) 1, (v z * f z).re =
       ∫ z in ball (0 : ℂ) 1, (v z * g z).re :=
     setIntegral_congr_fun measurableSet_ball fun z hz ↦ by rw [hfg z hz]
@@ -463,9 +419,10 @@ private theorem integrableOn_discExtend_mul (g : unitDiscAdjointKernel k)
     IntegrableOn (fun z ↦ (discExtend g z * discExtend f z).re) (ball (0 : ℂ) 1) := by
   obtain ⟨v, hv, -, hgv⟩ := mem_unitDiscAdjointKernel_iff.1 g.2
   obtain ⟨F, hF, hfF⟩ := f.2
-  refine (integrableOn_ball_mul hv.continuousOn_ball
-    fun z hz ↦ (hF z hz).continuousAt.continuousWithinAt).re.congr_fun (fun z hz ↦ ?_)
-    measurableSet_ball
+  have hint : IntegrableOn (fun z ↦ v z * F z) (ball (0 : ℂ) 1) :=
+    ((hv.continuousOn_ball.mul fun z hz ↦ (hF z hz).continuousAt.continuousWithinAt)
+      |>.integrableOn_compact (isCompact_closedBall 0 1)).mono_set ball_subset_closedBall
+  refine hint.re.congr_fun (fun z hz ↦ ?_) measurableSet_ball
   rw [discExtend_apply hgv (ball_subset_closedBall hz), discExtend_apply hfF
     (ball_subset_closedBall hz)]
   rfl
@@ -640,17 +597,9 @@ private theorem eq_zero_of_forall_unitDiscAdjointPairing_eq_zero (g : unitDiscAd
 the pairing with some data. -/
 theorem unitDiscAdjointPairing_surjective :
     Function.Surjective (unitDiscAdjointPairing k) := by
-  rw [← LinearMap.range_eq_top]
-  have hbot : (LinearMap.range (unitDiscAdjointPairing k)).dualCoannihilator = ⊥ := by
-    rw [eq_bot_iff]
-    intro g hg
-    rw [Submodule.mem_dualCoannihilator] at hg
-    exact eq_zero_of_forall_unitDiscAdjointPairing_eq_zero g fun f ↦
-      hg _ (LinearMap.mem_range_self _ f)
-  have h := Subspace.dualCoannihilator_dualAnnihilator_eq
-    (W := LinearMap.range (unitDiscAdjointPairing k))
-  rw [hbot, Submodule.dualAnnihilator_bot] at h
-  exact h.symm
+  refine LinearMap.flip_injective_iff₂.mp ((injective_iff_map_eq_zero _).2 fun g hg ↦ ?_)
+  exact eq_zero_of_forall_unitDiscAdjointPairing_eq_zero g fun f ↦ by
+    simpa using LinearMap.congr_fun hg f
 
 /-- **The cokernel as the dual of the adjoint kernel.** The data modulo the image of the
 Cauchy–Riemann operator are identified with the dual of the adjoint kernel by the pairing. -/

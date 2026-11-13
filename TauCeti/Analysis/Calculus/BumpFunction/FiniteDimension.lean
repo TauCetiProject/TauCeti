@@ -19,9 +19,11 @@ global integral identities, and lets cut-off vector fields keep the rest points 
 
 A function which is smooth, of finite or infinite order, on a neighbourhood of a point of a
 finite-dimensional real normed space agrees near that point with a globally smooth function of
-the same order. A smooth bump function performs the extension while preserving the original
-function near the base point. Since the bump is compactly supported, so is the representative,
-and a representative of order at least one is moreover globally Lipschitz.
+the same order; a function `C^n` at every point of a compact set agrees near that set with a
+globally `C^n` function (`IsCompact.exists_contDiff_eventuallyEq_of_contDiffAt`). A smooth bump
+function performs the extension while preserving the original function near the base point.
+Since the bump is compactly supported, so is the representative, and a representative of order
+at least one is moreover globally Lipschitz.
 
 A function which is `C^n` at every point of a sphere can be filled in across the open ball it
 bounds: it agrees near every point outside the ball with a function which is `C^n` at every point
@@ -80,6 +82,18 @@ theorem ContDiffAt.exists_contDiff_eventuallyEq_of_finiteDimensional
     ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ g =ᶠ[nhds x] f :=
   let ⟨s, hs, hfs⟩ := hf.contDiffOn le_rfl (by simp)
   hfs.exists_contDiff_eventuallyEq_of_finiteDimensional hs
+
+/-- A function which is `C^n` at every point of a compact subset of a finite-dimensional real
+normed space agrees near every point of that subset with a compactly supported globally `C^n`
+function. -/
+theorem IsCompact.exists_contDiff_eventuallyEq_of_contDiffAt [FiniteDimensional ℝ E] {n : ℕ}
+    {f : E → F} {K : Set E} (hK : IsCompact K) (hf : ∀ x ∈ K, ContDiffAt ℝ n f x) :
+    ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ ∀ x ∈ K, g =ᶠ[nhds x] f := by
+  have hU : IsOpen {x | ContDiffAt ℝ n f x} :=
+    isOpen_iff_mem_nhds.2 fun x hx ↦ hx.eventually (by simp)
+  obtain ⟨g, hg, hgc, -, -, hgf⟩ := ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact
+    (fun x hx ↦ (hx : ContDiffAt ℝ n f x).contDiffWithinAt) hK hU hf
+  exact ⟨g, hg, hgc, hgf⟩
 
 /-- A function which is smooth of order at least one on a neighbourhood of a point of a
 finite-dimensional real normed space agrees near that point with a globally smooth **and globally

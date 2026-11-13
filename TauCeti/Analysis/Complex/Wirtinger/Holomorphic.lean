@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 
 /-!
@@ -17,7 +18,11 @@ points. In one variable the real differential has coefficients `wirtingerDeriv f
 `conjWirtingerDeriv f x 1` in the basis `dz`, `dbar z`; testing the latter coefficient alone
 detects its vanishing.
 
-These statements connect the real differential and its type decomposition with holomorphy.
+These statements connect the real differential and its type decomposition with holomorphy. In
+particular, two functions of one complex variable, continuous on the closure of an open set and real
+differentiable on it, with the same conjugate Wirtinger derivative there, differ by a function
+holomorphic on the set and continuous on its closure
+(`TauCeti.diffContOnCl_sub_of_conjWirtingerDeriv_eq`).
 
 ## References
 
@@ -55,5 +60,20 @@ theorem differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero {f : ℂ → W
     DifferentiableAt ℂ f x ↔ conjWirtingerDeriv f x 1 = 0 := by
   rw [differentiableAt_iff_conjWirtingerDeriv_eq_zero hf,
     conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero]
+
+/-- Two functions, continuous on the closure of an open set `U ⊆ ℂ` and real differentiable on
+`U`, with the same `∂/∂(conj z)` on `U`, differ by a function holomorphic on `U` and continuous on
+its closure. -/
+theorem diffContOnCl_sub_of_conjWirtingerDeriv_eq {U : Set ℂ} {u₁ u₂ : ℂ → W} (hU : IsOpen U)
+    (hc₁ : ContinuousOn u₁ (closure U)) (hc₂ : ContinuousOn u₂ (closure U))
+    (hd₁ : DifferentiableOn ℝ u₁ U) (hd₂ : DifferentiableOn ℝ u₂ U)
+    (heq : ∀ z ∈ U, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
+    DiffContOnCl ℂ (u₁ - u₂) U := by
+  refine ⟨fun z hz ↦ ?_, hc₁.sub hc₂⟩
+  have h₁ := (hd₁ z hz).differentiableAt (hU.mem_nhds hz)
+  have h₂ := (hd₂ z hz).differentiableAt (hU.mem_nhds hz)
+  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
+    ?_).differentiableWithinAt
+  rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
 
 end TauCeti

@@ -82,8 +82,6 @@ cokernel on this class of data, and the index `k + 1` predicted by the Riemann�
   `k < n < 0`.
 * `TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj`: for `k ≥ -1`, `∂/∂(conj z)` with
   boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is onto on compactly supported `C²` data.
-* `TauCeti.diffContOnCl_sub_of_conjWirtingerDeriv_eq`: two functions with the same
-  `∂/∂(conj z)` differ by a holomorphic function.
 * `TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`: two solutions differ by an element of
   the kernel `TauCeti.unitDiscCauchyRiemannKernel k`.
 
@@ -282,14 +280,6 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq (hk : -1 ≤ k)
 
 /-! ### Solving `∂u/∂(conj z) = f` with boundary values on a rotating line -/
 
-/-- The boundary defect `w ^ k * conj (v w) - v w` of any function `v` lies, at `w = e^{iθ}`, on
-the line `i e^{ikθ/2} ℝ`, the data side of the Riemann–Hilbert problem. -/
-private theorem zpow_mul_conj_sub_eq_neg (v : ℂ → ℂ) {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
-    w ^ k * conj (v w) - v w = -(w ^ k * conj (w ^ k * conj (v w) - v w)) := by
-  rw [map_sub, map_mul, conj_conj, mul_sub, ← mul_assoc, zpow_mul_conj_zpow_of_mem_sphere hw,
-    sub_self, zpow_zero]
-  ring
-
 /-- **Correcting boundary values.** For a `C²` function `v` whose boundary defect
 `θ ↦ e^{ikθ} conj (v(e^{iθ})) - v(e^{iθ})` has vanishing Fourier coefficients in the range
 `k < n < 0`, there is `h`, holomorphic on the open disc and continuous on the closed disc, such
@@ -308,7 +298,7 @@ private theorem exists_diffContOnCl_add_eq_zpow_mul_conj {v : ℂ → ℂ} (hv :
   replace hφ : ContDiff ℝ 2 fun θ ↦ φ (circleMap 0 1 θ) := hφ
   obtain ⟨h, hh, hhb⟩ := (exists_diffContOnCl_sub_zpow_mul_conj_eq_iff hφ.continuous
     (summable_fourierCoeffOn_circleMap_of_contDiff hφ)
-    fun w hw ↦ zpow_mul_conj_sub_eq_neg v hw).mpr hvan
+    fun w hw ↦ zpow_mul_conj_sub_eq_neg_of_mem_sphere hw k (v w)).mpr hvan
   refine ⟨h, hh, fun w hw ↦ ?_⟩
   have := hhb w hw
   rw [map_add, mul_add]
@@ -358,23 +348,6 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj (hk : -1 ≤ k) {f : �
   exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_fourierCoeffOn_eq_zero hc hf
     fun _ _ _ ↦ by omega
 
-/-- Two functions, continuous on the closed unit disc and real differentiable on the open disc,
-with the same `∂/∂(conj z)` on the open disc, differ by a function holomorphic on the open disc and
-continuous on the closed disc. -/
-theorem diffContOnCl_sub_of_conjWirtingerDeriv_eq {u₁ u₂ : ℂ → ℂ}
-    (hc₁ : ContinuousOn u₁ (closedBall 0 1)) (hc₂ : ContinuousOn u₂ (closedBall 0 1))
-    (hd₁ : DifferentiableOn ℝ u₁ (ball 0 1)) (hd₂ : DifferentiableOn ℝ u₂ (ball 0 1))
-    (heq : ∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1) :
-    DiffContOnCl ℂ (u₁ - u₂) (ball 0 1) := by
-  refine ⟨fun z hz ↦ ?_, ?_⟩
-  · have h₁ := (hd₁ z hz).differentiableAt (isOpen_ball.mem_nhds hz)
-    have h₂ := (hd₂ z hz).differentiableAt (isOpen_ball.mem_nhds hz)
-    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
-      ?_).differentiableWithinAt
-    rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
-  · rw [closure_ball 0 one_ne_zero]
-    exact hc₁.sub hc₂
-
 /-- **Uniqueness modulo the kernel.** Two functions, continuous on the closed unit disc and real
 differentiable on the open disc, with the same `∂/∂(conj z)` on the open disc and boundary values
 at `w = e^{iθ}` on the line `e^{ikθ/2} ℝ`, differ on the closed disc by an element of the kernel
@@ -387,7 +360,8 @@ theorem domRestrict_sub_mem_unitDiscCauchyRiemannKernel {u₁ u₂ : ℂ → ℂ
     (hb₂ : ∀ w ∈ sphere (0 : ℂ) 1, u₂ w = w ^ k * conj (u₂ w)) :
     (closedBall 0 1).domRestrict (u₁ - u₂) ∈ unitDiscCauchyRiemannKernel k :=
   mem_unitDiscCauchyRiemannKernel_iff.mpr
-    ⟨u₁ - u₂, diffContOnCl_sub_of_conjWirtingerDeriv_eq hc₁ hc₂ hd₁ hd₂ heq,
+    ⟨u₁ - u₂, diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
+      (by rwa [closure_ball 0 one_ne_zero]) (by rwa [closure_ball 0 one_ne_zero]) hd₁ hd₂ heq,
       fun w hw ↦ by simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw], rfl⟩
 
 end TauCeti
