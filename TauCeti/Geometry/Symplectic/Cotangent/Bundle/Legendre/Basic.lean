@@ -142,6 +142,13 @@ theorem legendreMap_snd (L : TangentBundle I M → 𝕜) (v : TangentBundle I M)
     (legendreMap L v).2 = fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2 :=
   (rfl)
 
+/-- The Legendre transform of `v` is the covector at the base point of `v` given by the derivative
+of `L` restricted to the fibre through `v`. -/
+theorem legendreMap_def (L : TangentBundle I M → 𝕜) (v : TangentBundle I M) :
+    legendreMap L v = TotalSpace.mk' (E →L[𝕜] 𝕜) v.proj
+      (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2) :=
+  (rfl)
+
 /-- **The Legendre map in a trivialization.** Read in a trivialization `e` of the tangent bundle,
 the covector `FL(v)` is the derivative of `u ↦ L(e⁻¹(x, u))` at the fibre coordinate of `v`. -/
 private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle I M → 𝕜)
