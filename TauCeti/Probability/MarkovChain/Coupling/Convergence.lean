@@ -41,7 +41,7 @@ variable {α : Type*} [MeasurableSpace α]
 /-- An almost-surely finite meeting in a Markovian coupling makes the marginal laws
 asymptotically equal in total variation. Finite initial measures suffice. -/
 theorem tendsto_tvDist_pow_comp_of_ae_meeting [MeasurableEq α]
-    (κ : Kernel α α) [IsMarkovKernel κ]
+    (κ : Kernel α α)
     {η : Kernel (α × α) (α × α)} [IsMarkovKernel η]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ p.2))
     {ρ : Measure (α × α)} [IsFiniteMeasure ρ] {ν ν' : Measure α}
@@ -49,6 +49,9 @@ theorem tendsto_tvDist_pow_comp_of_ae_meeting [MeasurableEq α]
     (hmeet : ∀ᵐ ω ∂markovChainLaw ρ η, ∃ k, (ω k).1 = (ω k).2) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ n : Kernel α α) ∘ₘ ν')) atTop (𝓝 0) := by
+  -- the coupling hypothesis forces `κ x` to be a probability measure for every `x`
+  have : IsMarkovKernel κ :=
+    ⟨fun x => ⟨by rw [(hη (x, x)).measure_univ_left, measure_univ]⟩⟩
   let P := markovChainLaw ρ η
   let A (n : ℕ) := {ω : ℕ → α × α | ∀ k ≤ n, (ω k).1 ≠ (ω k).2}
   have hA (n : ℕ) : MeasurableSet (A n) := by
@@ -87,31 +90,42 @@ theorem ae_meeting_of_isRecurrent [MeasurableSingletonClass α]
   have hn' : ω n = (z.1, z.1) := Set.mem_singleton_iff.mp hn
   exact h ⟨n, by simp [hn']⟩
 
-/-- If the independent square chain is irreducible and recurrent, any two initial
-probability laws become asymptotically indistinguishable in total variation. -/
+/-- If the independent square chain is irreducible and recurrent, any two initial measures of the
+same total mass become asymptotically indistinguishable in total variation. For finite initial
+measures this is genuine convergence in total variation; if the common mass is infinite, `tvDist`
+is identically zero by convention, so the conclusion holds only by that convention. -/
 theorem tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent [MeasurableEq α]
     (κ : Kernel α α) [IsMarkovKernel κ]
     [IsIrreducible Measure.count (κ ∥ₖ κ)]
     {z : α × α} (hz : (κ ∥ₖ κ).IsRecurrent z)
-    (ν ν' : Measure α) [IsProbabilityMeasure ν] [IsProbabilityMeasure ν'] :
+    (ν ν' : Measure α) (hmass : ν Set.univ = ν' Set.univ) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ n : Kernel α α) ∘ₘ ν')) atTop (𝓝 0) := by
-  apply κ.tendsto_tvDist_pow_comp_of_ae_meeting
-    (η := κ ∥ₖ κ) (ρ := ν.prod ν')
-    (fun p => by rw [parallelComp_apply]; exact isCoupling_prod _ _) (isCoupling_prod ν ν')
-  exact (κ ∥ₖ κ).ae_meeting_of_isRecurrent hz _
+  by_cases hfin : IsFiniteMeasure ν
+  swap
+  · -- an infinite measure stays infinite under a Markov kernel, and `tvDist` then vanishes
+    have hn (m : ℕ) : ¬ IsFiniteMeasure ((κ ^ m : Kernel α α) ∘ₘ ν) := fun h =>
+      hfin ⟨by rw [← Measure.comp_apply_univ (κ := (κ ^ m : Kernel α α))]; exact measure_lt_top _ _⟩
+    simp [tvDist, etvDist_of_not_isFiniteMeasure_left (hn _)]
+  have hρ : IsCoupling ((ν Set.univ)⁻¹ • ν.prod ν') ν ν' := isCoupling_inv_smul_prod hmass
+  have := hρ.isFiniteMeasure
+  exact κ.tendsto_tvDist_pow_comp_of_ae_meeting (η := κ ∥ₖ κ)
+    (fun p => by rw [parallelComp_apply]; exact isCoupling_prod _ _) hρ
+    ((κ ∥ₖ κ).ae_meeting_of_isRecurrent hz _)
 
 /-- Under recurrence and irreducibility of the square chain, a fixed time shift does
-not change the asymptotic marginal law, in total variation. -/
+not change the asymptotic marginal law, in total variation. For finite initial measures this is
+genuine total-variation convergence; for a non-finite initial measure `tvDist` is identically zero
+by convention, so the conclusion holds only by that convention. -/
 theorem tendsto_tvDist_pow_comp_pow_add_comp_of_parallelComp_isRecurrent [MeasurableEq α]
     (κ : Kernel α α) [IsMarkovKernel κ]
     [IsIrreducible Measure.count (κ ∥ₖ κ)]
     {z : α × α} (hz : (κ ∥ₖ κ).IsRecurrent z)
-    (ν : Measure α) [IsProbabilityMeasure ν] (i : ℕ) :
+    (ν : Measure α) (i : ℕ) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ (n + i) : Kernel α α) ∘ₘ ν))
       atTop (𝓝 0) := by
   simpa only [Kernel.pow_add, Measure.comp_assoc] using
-    κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hz ν ((κ ^ i : Kernel α α) ∘ₘ ν)
+    κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hz ν _ Measure.comp_apply_univ.symm
 
 end ProbabilityTheory.Kernel

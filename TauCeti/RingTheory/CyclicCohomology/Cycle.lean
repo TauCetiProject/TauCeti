@@ -105,7 +105,7 @@ section Form
 variable (d : Ω →ₗ[R] Ω) (ρ : A →ₙₐ[R] Ω)
 
 /-- The `Ω`-valued `n`-cochain `(a₀, …, aₙ) ↦ ρ(a₀) dρ(a₁) ⋯ dρ(aₙ)` of a cycle. -/
-def cycleForm (n : ℕ) : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) Ω :=
+def cycleForm (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) Ω :=
   (MultilinearMap.mkPiAlgebraFin R (n + 1) Ω).compLinearMap
     (Fin.cons (ρ : A →ₗ[R] Ω) fun _ ↦ d ∘ₗ (ρ : A →ₗ[R] Ω))
 
@@ -190,7 +190,7 @@ section Character
 variable (d : Ω →ₗ[R] Ω) (τ : Ω →ₗ[R] M) (ρ : A →ₙₐ[R] Ω)
 
 /-- The **character** of a cycle: the `n`-cochain `(a₀, …, aₙ) ↦ τ (ρ(a₀) dρ(a₁) ⋯ dρ(aₙ))`. -/
-def cycleCharacter (n : ℕ) : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+def cycleCharacter (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   τ.compMultilinearMap (cycleForm d ρ n)
 
 variable {d τ ρ} {n : ℕ}
@@ -286,7 +286,7 @@ def cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
 theorem coe_cycleCocycle (hd : IsDGAlgebra 𝒜 d) (hρ : ∀ a, ρ a ∈ 𝒜 0)
     (hτ : IsClosedGradedTrace 𝒜 d n τ) :
     ((cycleCocycle hd hρ hτ : cyclicCochains R A M n) :
-      MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) = cycleCharacter d τ ρ n :=
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) = cycleCharacter d τ ρ n :=
   (rfl)
 
 /-- The cyclic cocycle of the cycle pulled back along a homomorphism `f` is the pullback of the

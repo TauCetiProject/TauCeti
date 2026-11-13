@@ -17,8 +17,14 @@ algebra need not be commutative: variables retain their original order inside ev
 block. It also evaluates the change-of-origin series of a scalar series on constant vectors, and
 uses this to express the iterated derivatives of a scalar power series over a complete nontrivially
 normed field, at any point of its ball of convergence, as the termwise differentiated series; at
-zero they recover the coefficients. Finally, it computes the scalar series of `z ↦ f (z ^ m)` on a
+zero they recover the coefficients. It also computes the scalar series of `z ↦ f (z ^ m)` on a
 ball of radius at most `1` from that of `f`, in any normed algebra with `‖1‖ = 1`.
+
+In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily commutative), the
+higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
+(`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
+ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
 -/
 
 public section
@@ -159,7 +165,7 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by
       rw [mem_eball_zero_iff]
-      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [enorm_eq_nnnorm] using mod_cast nnnorm_pow_le y m
+      calc ‖y ^ m‖ₑ ≤ ‖y‖ₑ ^ m := by simpa [eNorm_eq_nnNorm] using mod_cast nnNorm_pow_le y m
         _ ≤ ‖y‖ₑ := pow_le_of_le_one zero_le hy1 hm.ne'
         _ < r := mem_eball_zero_iff.mp hy
     have hs := hf.hasSum hym
@@ -171,3 +177,41 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
     · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
 end FormalMultilinearSeries
+
+namespace TauCeti
+
+open scoped NNReal Ring
+
+/-- The scalar multilinear series `∑ₙ C(n + k, k) xⁿ` in any normed `𝕜`-algebra `A` has radius of
+convergence at least `1`. -/
+theorem one_le_ofScalars_choose_radius (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
+    [NormedRing A] [NormedAlgebra 𝕜 A] (k : ℕ) :
+    1 ≤ (FormalMultilinearSeries.ofScalars A fun n : ℕ ↦ ((n + k).choose k : 𝕜)).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  rw [ENNReal.coe_lt_one_iff] at hr
+  apply FormalMultilinearSeries.le_radius_of_summable
+  rw [← summable_nat_add_iff 1]
+  have hmaj : Summable fun n : ℕ ↦ (((n + 1 + k).choose k : ℕ) : ℝ) * (r : ℝ) ^ (n + 1) :=
+    (summable_nat_add_iff (f := fun m : ℕ ↦ (((m + k).choose k : ℕ) : ℝ) * (r : ℝ) ^ m) 1).2
+      (summable_choose_mul_geometric_of_norm_lt_one k (by simpa using hr))
+  refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun n ↦ ?_) hmaj
+  gcongr
+  refine (FormalMultilinearSeries.ofScalars_norm_le A _ (n + 1) (Nat.succ_pos n)).trans ?_
+  simpa using Nat.norm_cast_le (α := 𝕜) ((n + 1 + k).choose k)
+
+/-- In a normed `𝕜`-algebra `A` with summable geometric series, `(1 - x)⁻¹ʳ ^ (k + 1)` is
+represented on the open unit ball by the scalar series `∑ₙ C(n + k, k) xⁿ`. -/
+theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
+    [NormedRing A] [NormedAlgebra 𝕜 A] [HasSummableGeomSeries A] (k : ℕ) :
+    HasFPowerSeriesOnBall (fun x : A ↦ (1 - x)⁻¹ʳ ^ (k + 1))
+      (FormalMultilinearSeries.ofScalars A fun n : ℕ ↦ ((n + k).choose k : 𝕜)) 0 1 where
+  r_le := one_le_ofScalars_choose_radius 𝕜 A k
+  r_pos := zero_lt_one
+  hasSum {y} hy := by
+    simp only [Metric.mem_eball, edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] at hy
+    rw [zero_add]
+    convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
+    ext n
+    rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
+
+end TauCeti

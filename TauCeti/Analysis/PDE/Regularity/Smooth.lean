@@ -12,17 +12,19 @@ import TauCeti.MeasureTheory.Function.LocalRepresentative
 /-!
 # Smoothness of weak solutions for smooth coefficients
 
-Let `a` be a uniformly elliptic coefficient field on `Ω` whose entries are smooth on `Ω`, and let
-`u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
+Let `a` be a uniformly elliptic coefficient field on `Ω` whose entries are smooth on `Ω`, let the
+drift `b` and the mass `c` be smooth on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of the
+divergence-form equation
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`,
 
-meaning `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`.
+meaning `∫_Ω (⟨∇v, a ∇u⟩ + ⟪b, ∇u⟫ v + c u v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no
+boundary condition on `u`.
 If, near every point of `Ω`, `f` lies in `W^{k,2}` for every `k` (as it does when `f` is smooth
 on `Ω`), then `u` agrees almost everywhere on `Ω` with a function that is smooth on `Ω`. So a weak
 solution with smooth coefficients and data is, after modification on a null set, a classical
-solution in the interior. No regularity of `∂Ω`, no global bound on the derivatives of `a`, and no
-global integrability of the derivatives of `f` is assumed.
+solution in the interior. No regularity of `∂Ω`, no sign of `c`, no global bound on the derivatives
+of the coefficients, and no global integrability of the derivatives of `f` is assumed.
 
 The proof is local. Near a point of `Ω`, the restriction of `u` to a small ball `W` solves the
 equation on `W` (`TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`), with data in every
@@ -44,7 +46,10 @@ The statements are for Lebesgue measure `volume`, the measure of the Sobolev emb
 * `TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`: for smooth
   coefficients, a weak solution whose data lies locally in every `W^{k,2}` has a representative
   smooth on `Ω`.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq`: its constant-coefficient case.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_energyFormH1_eq_mul_inner`: for
+  smooth coefficients, eigenfunctions, such as those of the Dirichlet spectrum, are smooth inside
+  `Ω`.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq`: the constant-coefficient case.
 
 ## References
 
@@ -66,24 +71,27 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 
 /-- **Interior smoothness for smooth coefficients.** Let `a` be uniformly elliptic on `Ω`, with
-entries smooth on `Ω`, let `f` lie in `W^{k,2}` of a neighbourhood of each point of `Ω` for every
-`k`, and let `u ∈ H¹(Ω)` be a weak solution of
+entries smooth on `Ω`, let the drift `b` and the mass `c` be smooth on `Ω`, let `f` lie in
+`W^{k,2}` of a neighbourhood of each point of `Ω` for every `k`, and let `u ∈ H¹(Ω)` be a weak
+solution of
 
-`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`,
 
-in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
-on `u`. Then `u` agrees almost everywhere on `Ω` with a function smooth on `Ω`.
+in the sense that `∫_Ω (⟨∇v, a ∇u⟩ + ⟪b, ∇u⟫ v + c u v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
+with no boundary condition on `u`. Then `u` agrees almost everywhere on `Ω` with a function
+smooth on `Ω`.
 
-No regularity of `∂Ω` is assumed. -/
+No regularity of `∂Ω` and no sign of `c` is assumed. -/
 theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq ι]
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega)
-    {f : EuclideanSpace ℝ ι → ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hb : ContDiffOn ℝ ∞ b Omega) (hc : ContDiffOn ℝ ∞ c Omega) {f : EuclideanSpace ℝ ι → ℝ}
     (hf : ∀ x ∈ Omega, ∃ V : Opens (EuclideanSpace ℝ ι), x ∈ V ∧ ∀ k, ∃ F : Wkp volume V 2 k,
       (Wkp.value k F : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (V : Set _)] f)
     {u : W1p volume Omega 2}
-    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a b c u (v : W1p volume Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) :
     ∃ g : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ g Omega ∧
       (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] g := by
@@ -109,7 +117,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
       (Wkp.value_restrictL_ae hWV m F).trans (ae_restrict_of_ae_restrict_of_subset hWV hF)
     -- The restriction of `u` to `W` solves the equation there.
     have huW : ∀ v : W1p0 volume W 2,
-        energyFormH1 a 0 0 (W1p.restrictL hWΩ u) (v : W1p volume W 2) =
+        energyFormH1 a b c (W1p.restrictL hWΩ u) (v : W1p volume W 2) =
           ∫ y in W, Wkp.value m (Wkp.restrictL hWV m F) y * W1p.value (v : W1p volume W 2) y := by
       intro v
       rw [energyFormH1_restrictL_eq_setIntegral hWΩ hu v]
@@ -118,7 +126,7 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
       rw [hy]
     have hWΩ' : (W : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hWΩ
     obtain ⟨U, hU⟩ := (ha.mono_set hWΩ').exists_value_eq_value_restrictL_of_contDiffOn
-      (fun i j => (hsmooth i j).mono hWΩ') m huW
+      (fun i j => (hsmooth i j).mono hWΩ') (hb.mono hWΩ') (hc.mono hWΩ') m huW
       ((isCompact_closedBall x (R / 2)).of_isClosed_subset isClosed_closure hBc) hBW
     refine ⟨Wkp.lowerOrder m (Wkp.lowerOrder (m + 1) U), ?_⟩
     rw [← Wkp.value_succ, ← Wkp.value_succ, hU]
@@ -127,28 +135,63 @@ theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn [DecidableEq �
   obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_forall_wkp hm
   exact ⟨B, isOpen_ball.mem_nhds (mem_ball_self (half_pos hR)), g, hg, hug⟩
 
+open scoped InnerProductSpace in
+/-- **Eigenfunctions are smooth in the interior.** Let `a` be uniformly elliptic on `Ω`, with
+entries smooth on `Ω`, let the drift `b` and the mass `c` be smooth on `Ω`, with the energy density
+of `(a, b, c)` essentially bounded on `Ω`, and let `u ∈ H¹(Ω)` satisfy
+`a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`, that is,
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = κ u` weakly in `Ω`.
+
+Then `u` agrees almost everywhere on `Ω` with a function smooth on `Ω`. No boundary condition is
+used, so in particular every eigenfunction of a Dirichlet eigenvalue
+(`TauCeti.PDE.IsDirichletEigenvalue`) is smooth inside `Ω`. -/
+theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_energyFormH1_eq_mul_inner [DecidableEq ι]
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega)
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hb : ContDiffOn ℝ ∞ b Omega) (hc : ContDiffOn ℝ ∞ c Omega)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤
+      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))
+    {kappa : ℝ} {u : W1p volume Omega 2}
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 a b c u (v : W1p volume Omega 2) =
+      kappa * ⟪W1p.value u, W1p.value (v : W1p volume Omega 2)⟫_ℝ) :
+    ∃ g : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ g Omega ∧
+      (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] g := by
+  -- With the mass shifted by `κ`, `u` solves the homogeneous equation.
+  refine ha.exists_contDiffOn_ae_eq_of_contDiffOn hsmooth hb
+    (hc.sub (contDiffOn_const (c := kappa))) (f := 0)
+    (fun x hx => ⟨Omega, hx, fun k => ⟨0, ?_⟩⟩) fun v => ?_
+  · rw [← Wkp.valueL_apply, map_zero]
+    exact Lp.coeFn_zero _ _ _
+  · rw [energyFormH1_mass_sub_const hcoeff, hu, sub_self]
+    simp
+
 /-- **Interior smoothness for a constant principal coefficient.** Let `A` be a constant, uniformly
-elliptic matrix, let `f` lie in `W^{k,2}` of a neighbourhood of each point of `Ω` for every `k`,
-and let `u ∈ H¹(Ω)` be a weak solution of
+elliptic matrix, let the drift `b` and the mass `c` be smooth on `Ω`, let `f` lie in `W^{k,2}`
+of a neighbourhood of each point of `Ω` for every `k`, and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ᵢ(Aⁱʲ ∂ⱼu) = f` in `Ω`,
+`-∂ᵢ(Aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`,
 
-in the sense that `∫_Ω ⟨∇v, A ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
-on `u`. Then `u` agrees almost everywhere on `Ω` with a function smooth on `Ω`. This is the
-constant case of `TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`. -/
+in the sense that `∫_Ω (⟨∇v, A ∇u⟩ + ⟪b, ∇u⟫ v + c u v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
+with no boundary condition on `u`. Then `u` agrees almost everywhere on `Ω` with a function
+smooth on `Ω`. This is the constant case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_contDiffOn_ae_eq_of_contDiffOn`. -/
 theorem UniformlyEllipticOn.exists_contDiffOn_ae_eq {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
-    {f : EuclideanSpace ℝ ι → ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hb : ContDiffOn ℝ ∞ b Omega) (hc : ContDiffOn ℝ ∞ c Omega) {f : EuclideanSpace ℝ ι → ℝ}
     (hf : ∀ x ∈ Omega, ∃ V : Opens (EuclideanSpace ℝ ι), x ∈ V ∧ ∀ k, ∃ F : Wkp volume V 2 k,
       (Wkp.value k F : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (V : Set _)] f)
     {u : W1p volume Omega 2}
-    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 (fun _ => A) 0 0 u (v : W1p volume Omega 2) =
+    (hu : ∀ v : W1p0 volume Omega 2, energyFormH1 (fun _ => A) b c u (v : W1p volume Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x) :
     ∃ g : EuclideanSpace ℝ ι → ℝ, ContDiffOn ℝ ∞ g Omega ∧
       (W1p.value u : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict (Omega : Set _)] g := by
   classical
   exact (uniformlyEllipticOn_const _ hlam hA).exists_contDiffOn_ae_eq_of_contDiffOn
-    (fun _ _ => contDiffOn_const) hf hu
+    (fun _ _ => contDiffOn_const) hb hc hf hu
 
 end PDE
 
