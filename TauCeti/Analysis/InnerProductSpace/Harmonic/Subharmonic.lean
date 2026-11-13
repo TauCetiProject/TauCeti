@@ -16,6 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Integral.SubMeanValue
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Continuous subharmonic functions
@@ -59,6 +60,7 @@ family with upper barriers.
 * `TauCeti.eqOn_closure_of_laplacian_eq_of_eqOn_frontier`: uniqueness for Poisson's equation on a
   bounded open set.
 * `TauCeti.SubharmonicOn.le_of_le_sphere`: the comparison principle on a ball.
+* `TauCeti.SubharmonicOn.le_of_le_sphere_union_sphere`: the comparison principle on an annulus.
 * `TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`: the comparison principle
   between a subharmonic and a superharmonic function on a bounded open set.
 
@@ -273,6 +275,24 @@ theorem SubharmonicOn.le_of_le_sphere {c : E} {r : ℝ} (hu : SubharmonicOn u (b
   rw [← closure_ball c hr.ne'] at huc hhc ⊢
   exact hu.le_of_le_frontier isOpen_ball isBounded_ball huc hh hhc
     (by rwa [frontier_ball c hr.ne'])
+
+/-- **The comparison principle on an annulus.** Let `u` be subharmonic and `h` harmonic on the
+open annulus `ball c r \ closedBall c δ`, both continuous on the closed annulus
+`closedBall c r \ ball c δ`. If `u ≤ h` on the two boundary spheres `sphere c r` and
+`sphere c δ`, then `u ≤ h` on the open annulus. -/
+theorem SubharmonicOn.le_of_le_sphere_union_sphere {c : E} {r δ : ℝ}
+    (hu : SubharmonicOn u (ball c r \ closedBall c δ))
+    (huc : ContinuousOn u (closedBall c r \ ball c δ))
+    (hh : HarmonicOnNhd h (ball c r \ closedBall c δ))
+    (hhc : ContinuousOn h (closedBall c r \ ball c δ))
+    (hle : ∀ x ∈ sphere c r ∪ sphere c δ, u x ≤ h x) :
+    ∀ x ∈ ball c r \ closedBall c δ, u x ≤ h x := by
+  have hcl : closure (ball c r \ closedBall c δ) ⊆ closedBall c r \ ball c δ :=
+    closure_minimal (sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall)
+      (isClosed_closedBall.sdiff isOpen_ball)
+  exact fun x hx ↦ hu.le_of_le_frontier (isOpen_ball.sdiff isClosed_closedBall)
+    (isBounded_ball.subset sdiff_subset) (huc.mono hcl) hh (hhc.mono hcl)
+    (fun y hy ↦ hle y (frontier_ball_sdiff_closedBall_subset c δ r hy)) x (subset_closure hx)
 
 /-- If `u` is subharmonic and `-w` is subharmonic on `ball c r`, both continuous on
 `closedBall c r`, and `u - w` on `sphere c r` is at most its value at the centre, then `u - w` is

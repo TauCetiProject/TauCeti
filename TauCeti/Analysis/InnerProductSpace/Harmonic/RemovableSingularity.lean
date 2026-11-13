@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Subharmonic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
@@ -22,10 +21,13 @@ not there. If it lies below a harmonic function `h` on the outer sphere, it lies
 the whole punctured ball (`TauCeti.SubharmonicOn.le_of_le_sphere_of_isBoundedUnder`). As a
 consequence, a harmonic function on a punctured neighbourhood of `c` that is bounded near `c` has
 a limit at `c`, and extends to a function harmonic at `c`
-(`TauCeti.harmonicOnNhd_update_limUnder_of_bddAbove`,
-`TauCeti.tendsto_limUnder_of_harmonicOnNhd_of_bddAbove`): **bounded isolated singularities of
-harmonic functions are removable**. These are the harmonic counterparts of Mathlib's
-`Complex.differentiableOn_update_limUnder_of_bddAbove` for holomorphic functions.
+(`TauCeti.harmonicOnNhd_update_limUnder_of_isBoundedUnder`,
+`TauCeti.tendsto_limUnder_of_harmonicAt_of_isBoundedUnder`): **bounded isolated singularities of
+harmonic functions are removable**. In particular a function harmonic on a punctured
+neighbourhood of `c` is harmonic at `c` exactly when it is continuous there
+(`TauCeti.harmonicOnNhd_sdiff_singleton_and_continuousAt_iff`). These are the harmonic
+counterparts of Mathlib's `Complex.differentiableOn_update_limUnder_of_bddAbove` and
+`Complex.differentiableOn_compl_singleton_and_continuousAt_iff` for holomorphic functions.
 
 The dimension hypothesis is necessary. On the real line, `x ↦ |x|` is harmonic on `ℝ ∖ {0}` and
 bounded near `0`, but no function harmonic near `0` agrees with it there, since harmonic functions
@@ -39,7 +41,7 @@ Let `G` be the fundamental solution with pole at `c`, normalized to vanish on th
 if `n ≥ 3`. It is harmonic away from `c` and tends to `+∞` at `c`. For `ε > 0` the harmonic
 function `h + ε G` dominates `u` on the outer sphere, and also on every small sphere about `c`,
 because `u - h` is bounded above near `c` while `ε G` is large there. The comparison principle on
-the annulus between the two spheres (`TauCeti.SubharmonicOn.le_of_le_frontier`) gives
+the annulus between the two spheres (`TauCeti.SubharmonicOn.le_of_le_sphere_union_sphere`) gives
 `u ≤ h + ε G` on it. Letting the inner radius and then `ε` tend to `0` gives `u ≤ h`.
 
 For the removable singularity, compare a bounded harmonic `u` with the Poisson integral `h` of its
@@ -52,9 +54,12 @@ tends to `h c` at `c` and setting `u c = h c` makes `u` harmonic at `c`.
 
 * `TauCeti.SubharmonicOn.le_of_le_sphere_of_isBoundedUnder`: the comparison principle on a
   punctured ball, for subharmonic functions bounded above near the centre.
-* `TauCeti.harmonicOnNhd_update_limUnder_of_bddAbove`: the removable singularity theorem.
-* `TauCeti.tendsto_limUnder_of_harmonicOnNhd_of_bddAbove`: a bounded harmonic function on a
+* `TauCeti.harmonicOnNhd_update_limUnder_of_isBoundedUnder`,
+  `TauCeti.harmonicOnNhd_update_limUnder_of_bddAbove`: the removable singularity theorem.
+* `TauCeti.tendsto_limUnder_of_harmonicAt_of_isBoundedUnder`: a bounded harmonic function on a
   punctured neighbourhood of `c` has a limit at `c`.
+* `TauCeti.harmonicOnNhd_sdiff_singleton_and_continuousAt_iff`: a function harmonic on a
+  punctured neighbourhood of `c` is harmonic at `c` exactly when it is continuous at `c`.
 
 ## References
 
@@ -96,14 +101,9 @@ private lemma exists_harmonicOnNhd_eqOn_sphere_tendsto_atTop (hE : 2 ≤ Module.
     refine ⟨fun x ↦ ‖x - c‖ ^ (2 - Module.finrank ℝ E : ℝ) - r ^ (2 - Module.finrank ℝ E : ℝ),
       fun x hx ↦ ?_, fun x hx ↦ by simp only [mem_sphere_iff_norm.1 hx, sub_self],
       tendsto_atTop_add_const_right _ _ ((tendsto_rpow_neg_nhdsGT_zero hp).comp hnorm)⟩
-    refine HarmonicAt.sub ?_ (harmonicAt_const _)
-    have h := harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ))
-      (x := x) (a := -c)
-    simp only [← sub_eq_add_neg] at h
-    exact h.2 (harmonicAt_norm_rpow_two_sub_finrank (sub_ne_zero.2 hx))
+    exact (harmonicAt_norm_sub_rpow_two_sub_finrank hx).sub (harmonicAt_const _)
 
-variable [MeasurableSpace E] [BorelSpace E]
-
+variable [MeasurableSpace E] [BorelSpace E] in
 /-- **The comparison principle on a punctured ball.** In dimension at least two, let `u` be
 subharmonic on the punctured ball `ball c r \ {c}`, continuous on `closedBall c r \ {c}` and bounded
 above near `c`, and let `h` be harmonic on `ball c r` and continuous on `closedBall c r`. If
@@ -148,50 +148,34 @@ theorem SubharmonicOn.le_of_le_sphere_of_isBoundedUnder (hE : 2 ≤ Module.finra
   set δ := min (δ₀ / 2) (dist x c / 2)
   have hδ : 0 < δ := lt_min (half_pos hδ₀) (half_pos (dist_pos.2 hxc))
   have hδx : δ < dist x c := (min_le_right _ _).trans_lt (half_lt_self (dist_pos.2 hxc))
-  set U := ball c r \ closedBall c δ
-  have hU : IsOpen U := isOpen_ball.sdiff isClosed_closedBall
-  have hUcl : closure U ⊆ closedBall c r \ ball c δ := closure_minimal
-    (sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall)
-    (isClosed_closedBall.sdiff isOpen_ball)
-  have hUc : closure U ⊆ closedBall c r \ {c} := fun y hy ↦
-    ⟨(hUcl hy).1, fun hyc ↦ (hUcl hy).2 (hyc ▸ mem_ball_self hδ)⟩
-  have hUc' : closure U ⊆ {c}ᶜ := fun y hy ↦ (hUc hy).2
-  have hHc : ContinuousOn (fun y ↦ h y + ε * G y) (closure U) :=
-    (hhc.mono (hUc.trans sdiff_subset)).add
-      (continuousOn_const.mul (hG.continuousOn.mono hUc'))
-  have hH : HarmonicOnNhd (fun y ↦ h y + ε * G y) U :=
-    (hh.mono sdiff_subset).add ((hG.mono (subset_closure.trans hUc')).const_smul (c := ε))
+  have hcl : closedBall c r \ ball c δ ⊆ closedBall c r \ {c} :=
+    sdiff_subset_sdiff_right (singleton_subset_iff.2 (mem_ball_self hδ))
+  have hUc : ball c r \ closedBall c δ ⊆ {c}ᶜ := fun y hy hyc ↦
+    hy.2 (mem_singleton_iff.1 hyc ▸ mem_closedBall_self hδ.le)
   refine hu.mono (sdiff_subset_sdiff_right (singleton_subset_iff.2 (mem_closedBall_self hδ.le)))
-    |>.le_of_le_frontier hU (isBounded_ball.subset sdiff_subset) (huc.mono hUc) hH hHc
-    (fun y hy ↦ ?_) x (subset_closure ⟨mem_ball.2 hxr, by simpa using hδx⟩) |>.trans
-    (add_le_add_right hεG _)
-  -- On the frontier of the annulus, `y` lies on the outer or on the inner sphere.
-  rw [hU.frontier_eq] at hy
-  obtain ⟨hy₁, hy₂⟩ := hUcl hy.1
-  have hyU := hy.2
-  rw [mem_closedBall] at hy₁
-  rw [mem_ball, not_lt] at hy₂
-  by_cases hyr : dist y c = r
-  · rw [hGr y (mem_sphere.2 hyr), mul_zero, add_zero]
-    exact hle y (mem_sphere.2 hyr)
-  · have hyδ : dist y c = δ := by
-      by_contra hyδ
-      exact hyU ⟨mem_ball.2 (hy₁.lt_of_ne hyr), by
-        simpa using (Ne.lt_of_le (Ne.symm hyδ) hy₂)⟩
-    exact hδ₀near ⟨mem_ball.2 (hyδ.trans_lt ((min_le_left _ _).trans_lt (half_lt_self hδ₀))),
-      fun hyc ↦ hδ.ne (by rwa [mem_singleton_iff.1 hyc, dist_self] at hyδ)⟩
+    |>.le_of_le_sphere_union_sphere (huc.mono hcl)
+      ((hh.mono sdiff_subset).add ((hG.mono hUc).const_smul (c := ε)))
+      ((hhc.mono (hcl.trans sdiff_subset)).add
+        (continuousOn_const.mul (hG.continuousOn.mono fun y hy ↦ (hcl hy).2)))
+      (fun y hy ↦ ?_) x ⟨mem_ball.2 hxr, by simpa using hδx⟩ |>.trans (add_le_add_right hεG _)
+  -- On the boundary of the annulus, `y` lies on the outer or on the inner sphere.
+  change u y ≤ h y + ε * G y
+  rcases hy with hy | hy
+  · rw [hGr y hy, mul_zero, add_zero]
+    exact hle y hy
+  · exact hδ₀near ⟨sphere_subset_ball ((min_le_left _ _).trans_lt (half_lt_self hδ₀)) hy,
+      ne_of_mem_sphere hy hδ.ne'⟩
 
 /-- **Removable singularity theorem for harmonic functions.** In dimension at least two, if `s`
-is a neighbourhood of `c` and `u` is harmonic and bounded on `s \ {c}`, then `u` redefined to be
-`limUnder (𝓝[≠] c) u` at `c` is harmonic on `s`. -/
-theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Module.finrank ℝ E)
-    (hs : s ∈ 𝓝 c) (hu : HarmonicOnNhd u (s \ {c})) (hb : BddAbove ((fun x ↦ |u x|) '' (s \ {c}))) :
+is a neighbourhood of `c` and `u` is harmonic on `s \ {c}` and bounded near `c`, then `u`
+redefined to be `limUnder (𝓝[≠] c) u` at `c` is harmonic on `s`. -/
+theorem harmonicOnNhd_update_limUnder_of_isBoundedUnder [DecidableEq E]
+    (hE : 2 ≤ Module.finrank ℝ E) (hs : s ∈ 𝓝 c) (hu : HarmonicOnNhd u (s \ {c}))
+    (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] c) fun x ↦ |u x|) :
     HarmonicOnNhd (update u c (limUnder (𝓝[≠] c) u)) s := by
+  borelize E
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (two_pos.trans_le hE)
-  obtain ⟨ρ, hρ, hρs⟩ := Metric.mem_nhds_iff.1 hs
-  set r := ρ / 2
-  have hr : 0 < r := half_pos hρ
-  have hrs : closedBall c r ⊆ s := (closedBall_subset_ball (half_lt_self hρ)).trans hρs
+  obtain ⟨r, hr, hrs⟩ := nhds_basis_closedBall.mem_iff.1 hs
   have hpunct : closedBall c r \ {c} ⊆ s \ {c} := sdiff_subset_sdiff_left hrs
   -- Let `H` be the harmonic function on `ball c r` with the boundary values of `u`.
   have huc : ContinuousOn u (closedBall c r \ {c}) := (hu.mono hpunct).continuousOn
@@ -199,9 +183,7 @@ theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Mo
     (huc.mono fun x hx ↦ ⟨sphere_subset_closedBall hx, ne_of_mem_sphere hx hr.ne'⟩)
   -- Both `u` and `-u` are bounded above near `c`.
   obtain ⟨M, hM⟩ := hb
-  have hbdd : ∀ᶠ x in 𝓝[≠] c, |u x| ≤ M :=
-    mem_nhdsWithin_iff_exists_mem_nhds_inter.2 ⟨s, hs, fun x hx ↦
-      hM ⟨x, ⟨hx.1, hx.2⟩, rfl⟩⟩
+  have hbdd : ∀ᶠ x in 𝓝[≠] c, |u x| ≤ M := eventually_map.1 hM
   have hball := hu.mono (sdiff_subset_sdiff_left (ball_subset_closedBall.trans hrs))
   have hle := hball.subharmonicOn.le_of_le_sphere_of_isBoundedUnder hE huc
     ⟨M, eventually_map.2 (hbdd.mono fun _ hx ↦ (le_abs_self _).trans hx)⟩ hH hHc
@@ -232,14 +214,37 @@ theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Mo
     filter_upwards [isOpen_compl_singleton.mem_nhds hxc] with y hy
     exact update_of_ne hy _ _
 
-/-- In dimension at least two, a function harmonic and bounded on a punctured neighbourhood of `c`
-has a limit at `c`. -/
-theorem tendsto_limUnder_of_harmonicOnNhd_of_bddAbove (hE : 2 ≤ Module.finrank ℝ E)
-    (hs : s ∈ 𝓝 c) (hu : HarmonicOnNhd u (s \ {c}))
-    (hb : BddAbove ((fun x ↦ |u x|) '' (s \ {c}))) :
+/-- **Removable singularity theorem for harmonic functions.** In dimension at least two, if `s`
+is a neighbourhood of `c` and `u` is harmonic and bounded on `s \ {c}`, then `u` redefined to be
+`limUnder (𝓝[≠] c) u` at `c` is harmonic on `s`. -/
+theorem harmonicOnNhd_update_limUnder_of_bddAbove [DecidableEq E] (hE : 2 ≤ Module.finrank ℝ E)
+    (hs : s ∈ 𝓝 c) (hu : HarmonicOnNhd u (s \ {c})) (hb : BddAbove ((fun x ↦ |u x|) '' (s \ {c}))) :
+    HarmonicOnNhd (update u c (limUnder (𝓝[≠] c) u)) s := by
+  obtain ⟨M, hM⟩ := hb
+  exact harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu ⟨M, eventually_map.2 <|
+    mem_nhdsWithin_iff_exists_mem_nhds_inter.2 ⟨s, hs, fun x hx ↦ hM ⟨x, hx, rfl⟩⟩⟩
+
+/-- In dimension at least two, a function harmonic on a punctured neighbourhood of `c` and bounded
+near `c` has a limit at `c`. -/
+theorem tendsto_limUnder_of_harmonicAt_of_isBoundedUnder (hE : 2 ≤ Module.finrank ℝ E)
+    (hu : ∀ᶠ x in 𝓝[≠] c, HarmonicAt u x) (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] c) fun x ↦ |u x|) :
     Tendsto u (𝓝[≠] c) (𝓝 (limUnder (𝓝[≠] c) u)) := by
   classical
+  obtain ⟨s, hs, hsu⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hu
   exact continuousAt_update_same.1
-    ((harmonicOnNhd_update_limUnder_of_bddAbove hE hs hu hb) c (mem_of_mem_nhds hs)).1.continuousAt
+    ((harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs (fun _ hx ↦ hsu hx) hb) c
+      (mem_of_mem_nhds hs)).1.continuousAt
+
+/-- In dimension at least two, a function harmonic on a punctured neighbourhood `s \ {c}` of `c`
+is harmonic on `s` exactly when it is continuous at `c`. -/
+theorem harmonicOnNhd_sdiff_singleton_and_continuousAt_iff (hE : 2 ≤ Module.finrank ℝ E)
+    (hs : s ∈ 𝓝 c) : HarmonicOnNhd u (s \ {c}) ∧ ContinuousAt u c ↔ HarmonicOnNhd u s := by
+  classical
+  refine ⟨fun ⟨hu, hc⟩ ↦ ?_, fun hu ↦
+    ⟨hu.mono sdiff_subset, (hu c (mem_of_mem_nhds hs)).1.continuousAt⟩⟩
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (two_pos.trans_le hE)
+  have htend : Tendsto u (𝓝[≠] c) (𝓝 (u c)) := hc.tendsto.mono_left nhdsWithin_le_nhds
+  simpa [htend.limUnder_eq] using
+    harmonicOnNhd_update_limUnder_of_isBoundedUnder hE hs hu htend.abs.isBoundedUnder_le
 
 end TauCeti

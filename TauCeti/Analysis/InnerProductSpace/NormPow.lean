@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 
 /-!
 # Real powers of the norm
@@ -61,6 +62,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
   `Δ (⟪a, x⟫ ‖x‖^p) = p (p + dim E) ⟪a, x⟫ ‖x‖^(p-2)` away from zero.
 * `harmonicAt_norm_rpow_two_sub_finrank`, `harmonicAt_inner_mul_norm_rpow_neg_finrank`: the
   harmonic radial and dipole powers.
+* `harmonicAt_norm_sub_rpow_two_sub_finrank`, `harmonicOnNhd_norm_sub_rpow_two_sub_finrank`:
+  the radial power centred at `a`, harmonic away from `a`.
 * `hasFDerivAt_log_norm_of_ne`, `laplacian_log_norm_of_ne`: the derivative and the Laplacian of
   `x ↦ log ‖x‖` away from zero.
 * `norm_gradient_comp_log_norm_sub_log_norm`, `laplacian_comp_log_norm_sub_log_norm`: the norm of
@@ -547,6 +550,19 @@ theorem harmonicAt_norm_rpow_two_sub_finrank {x : E} (hx : x ≠ 0) :
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_norm_rpow_of_ne _ hy, Pi.zero_apply]
   ring
+
+/-- Away from `a`, `x ↦ ‖x - a‖ ^ (2 - dim E)` is harmonic. -/
+theorem harmonicAt_norm_sub_rpow_two_sub_finrank {x a : E} (hx : x ≠ a) :
+    HarmonicAt (fun y : E ↦ ‖y - a‖ ^ (2 - Module.finrank ℝ E : ℝ)) x := by
+  have h := harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ))
+    (x := x) (a := -a)
+  simp only [← sub_eq_add_neg] at h
+  exact h.2 (harmonicAt_norm_rpow_two_sub_finrank (sub_ne_zero.2 hx))
+
+/-- The function `x ↦ ‖x - a‖ ^ (2 - dim E)` is harmonic on the complement of `a`. -/
+theorem harmonicOnNhd_norm_sub_rpow_two_sub_finrank (a : E) :
+    HarmonicOnNhd (fun y : E ↦ ‖y - a‖ ^ (2 - Module.finrank ℝ E : ℝ)) ({a}ᶜ : Set E) :=
+  fun _ hx ↦ harmonicAt_norm_sub_rpow_two_sub_finrank hx
 
 /-- Away from the origin, the dipole `x ↦ ⟪a, x⟫ ‖x‖ ^ (-dim E)` is harmonic. -/
 theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0) :
