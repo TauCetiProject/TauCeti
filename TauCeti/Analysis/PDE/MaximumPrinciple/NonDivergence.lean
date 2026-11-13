@@ -80,6 +80,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
+* `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq`: conjugation of
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -312,6 +314,83 @@ theorem sum_coefficientSymmetricPart_mul_fderiv_fderiv {A : Matrix ι ι ℝ}
   simp only [coefficientSymmetricPart_apply, add_div, add_mul, Finset.sum_add_distrib,
     div_mul_eq_mul_div, ← Finset.sum_div]
   rw [hswap, add_halves]
+
+omit [DecidableEq ι] in
+/-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `c` for the
+coefficients, `L = ∂ℓ`, `M = ∂²ℓ`, `D`, `H`, `V` for the gradient, Hessian and value of `v`, and
+`Db`, `Lb` for the derivatives of `v` and `ℓ` along the drift, the operator
+`∑ᵢⱼ Aⁱʲ ∂ᵢ∂ⱼ + ∂_b + c` applied to `W v` is `W` times the operator with drift
+`b + ∑ᵢ (∑ⱼ (Aⁱʲ + Aʲⁱ) Lⱼ) eᵢ` and zeroth-order coefficient `c + ∑ Aⁱʲ (Mᵢⱼ + Lᵢ Lⱼ) + Lb`
+applied to `v`. -/
+private theorem weighted_expression_eq (W V c Db Lb : ℝ) (A H M : ι → ι → ℝ) (L D : ι → ℝ) :
+    W * (∑ i, ∑ j, A i j * H i j + (Db + ∑ i, (∑ j, (A i j + A j i) * L j) * D i) +
+      (c + ∑ i, ∑ j, A i j * (M i j + L i * L j) + Lb) * V) =
+    ∑ i, ∑ j, A i j * (W * H i j + V * (W * (M i j + L i * L j)) + W * L i * D j +
+      D i * (W * L j)) + (W * Db + V * (W * Lb)) + c * (W * V) := by
+  have hswap : ∑ i, ∑ j, A i j * (L i * D j) = ∑ i, ∑ j, A j i * (L j * D i) := Finset.sum_comm
+  have hsplit : ∑ i, ∑ j, A i j * (W * H i j + V * (W * (M i j + L i * L j)) + W * L i * D j +
+      D i * (W * L j)) = W * (∑ i, ∑ j, A i j * H i j + ∑ i, ∑ j, A i j * (L i * D j) +
+        ∑ i, ∑ j, A i j * (L j * D i) + (∑ i, ∑ j, A i j * (M i j + L i * L j)) * V) := by
+    simp only [Finset.mul_sum, Finset.sum_mul, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  have hdrift : ∑ i, (∑ j, (A i j + A j i) * L j) * D i =
+      ∑ i, ∑ j, A j i * (L j * D i) + ∑ i, ∑ j, A i j * (L j * D i) := by
+    simp only [Finset.sum_mul, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsplit, hdrift, ← hswap]
+  ring
+
+/-- **Conjugation of a non-divergence-form operator by a weight.** Let `ℓ` and `v` be `C²` at
+`x`. For the operator `∑ᵢⱼ Aⁱʲ ∂ᵢ∂ⱼ + ∂_b + c`, with a constant matrix `A`, a vector `b` and a
+scalar `c`, the operator applied to the weighted function `exp ℓ * v` at `x` is `exp (ℓ x)` times
+the operator with the same principal part, the drift `b + ∑ᵢ (∑ⱼ (Aⁱʲ + Aʲⁱ) ∂ⱼℓ) eᵢ` and the
+zeroth-order coefficient `c + ∑ᵢⱼ Aⁱʲ (∂ᵢ∂ⱼℓ + ∂ᵢℓ ∂ⱼℓ) + ∂_b ℓ`, applied to `v`. No symmetry of
+`A` is assumed. -/
+theorem exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq (A : Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι) (c : ℝ) {ℓ v : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι}
+    (hℓ : ContDiffAt ℝ 2 ℓ x) (hv : ContDiffAt ℝ 2 v x) :
+    Real.exp (ℓ x) * (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ v) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) +
+      fderiv ℝ v x (b + ∑ i, (∑ j, (A i j + A j i) * fderiv ℝ ℓ x (EuclideanSpace.single j 1)) •
+        EuclideanSpace.single i 1) +
+      (c + ∑ i, ∑ j, A i j * (fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) +
+        fderiv ℝ ℓ x (EuclideanSpace.single i 1) * fderiv ℝ ℓ x (EuclideanSpace.single j 1)) +
+        fderiv ℝ ℓ x b) * v x) =
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ Real.exp (ℓ y) * v y) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun y ↦ Real.exp (ℓ y) * v y) x b + c * (Real.exp (ℓ x) * v x) := by
+  set W : EuclideanSpace ℝ ι → ℝ := fun y ↦ Real.exp (ℓ y)
+  have hW : ContDiffAt ℝ 2 W x := hℓ.exp
+  -- The first two derivatives of the weight.
+  have hDW (h : EuclideanSpace ℝ ι) : fderiv ℝ W x h = W x * fderiv ℝ ℓ x h := by
+    rw [((hℓ.differentiableAt two_ne_zero).hasFDerivAt.exp).fderiv]
+    simp [W]
+  have hD2W (h k : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ W) x h k =
+      W x * (fderiv ℝ (fderiv ℝ ℓ) x h k + fderiv ℝ ℓ x h * fderiv ℝ ℓ x k) := by
+    have hcomp : W = Real.exp ∘ ℓ := rfl
+    rw [hcomp, fderiv_fderiv_scalar_comp_apply Real.contDiff_exp.contDiffAt hℓ h k]
+    simp only [iteratedDeriv_succ, iteratedDeriv_zero, Real.deriv_exp, smul_eq_mul,
+      Function.comp_apply]
+    ring
+  -- The first two derivatives of the weighted function, by the product rule.
+  have hprod : (fun y ↦ Real.exp (ℓ y) * v y) = W * v := rfl
+  have hD1 (h : EuclideanSpace ℝ ι) : fderiv ℝ (W * v) x h =
+      W x * fderiv ℝ v x h + v x * (W x * fderiv ℝ ℓ x h) := by
+    rw [fderiv_mul (hW.differentiableAt two_ne_zero) (hv.differentiableAt two_ne_zero)]
+    simp [hDW]
+  have hD2 (h k : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ (W * v)) x h k =
+      W x * fderiv ℝ (fderiv ℝ v) x h k +
+        v x * (W x * (fderiv ℝ (fderiv ℝ ℓ) x h k + fderiv ℝ ℓ x h * fderiv ℝ ℓ x k)) +
+        W x * fderiv ℝ ℓ x h * fderiv ℝ v x k + fderiv ℝ v x h * (W x * fderiv ℝ ℓ x k) := by
+    rw [fderiv_fderiv_mul_apply hW hv, hD2W, hDW, hDW]
+  rw [hprod, hD1]
+  simp only [hD2, map_add, map_sum, map_smul, smul_eq_mul]
+  exact weighted_expression_eq (W x) (v x) c (fderiv ℝ v x b) (fderiv ℝ ℓ x b) A
+    (fun i j ↦ fderiv ℝ (fderiv ℝ v) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
+    (fun i j ↦ fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
+    (fun i ↦ fderiv ℝ ℓ x (EuclideanSpace.single i 1))
+    (fun i ↦ fderiv ℝ v x (EuclideanSpace.single i 1))
 
 variable [Nonempty ι]
 
