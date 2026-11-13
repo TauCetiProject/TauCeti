@@ -42,11 +42,15 @@ and is a curve over `k` in the sense used to compare it with the function field:
 than the generic point are exactly its points of codimension one. When `x` is algebraic, both
 charts are the spectrum of the constant field, so the scheme has dimension zero.
 
-The valuation-ring property of the local rings is the hypothesis under which
-`TauCeti.AlgebraicGeometry.Scheme.toPlace` attaches a place of the function field to a point, and,
-with the dimension bound, it is the hypothesis on the local rings in the comparison of the points
-of a curve with the places of its function field
-(`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
+That the local ring at a codimension-one point is a discrete valuation ring
+(`TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`) is the hypothesis under
+which `AlgebraicGeometry.Scheme.toPlace` attaches a place of the function field to a point, and,
+with the dimension bound `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one`, it is the
+hypothesis on the local rings in the comparison of the points of a curve with the places of its
+function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`). That every local ring
+is a valuation ring (`TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`) is the
+hypothesis under which rational maps from the scheme to proper schemes extend
+(`AlgebraicGeometry.Scheme.homOfFunctionField`).
 
 ## Main results
 
@@ -65,7 +69,7 @@ For every nonzero `x`:
 * `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
   codimension-one point is a discrete valuation ring.
 * `TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`: every local ring is a valuation
-  ring, the hypothesis under which rational maps from the scheme to proper schemes extend.
+  ring.
 
 For `x` transcendental over `k`:
 
@@ -112,12 +116,10 @@ instance locallyOfFiniteType :
 
 /-- **The two-chart model is a Noetherian scheme**: it is of finite type over the field `k` and
 covered by two affine charts. -/
-instance isNoetherian : IsNoetherian (twoChartModel hF hx) := by
-  have := LocallyOfFiniteType.isLocallyNoetherian (twoChartModel hF hx ↘ Spec (.of k))
-  refine { toCompactSpace := ⟨?_⟩ }
-  rw [← range_ιFinite_union_range_ιInfinity hF hx]
-  exact (isCompact_range (ιFinite hF hx).continuous).union
-    (isCompact_range (ιInfinity hF hx).continuous)
+instance isNoetherian : IsNoetherian (twoChartModel hF hx) where
+  toIsLocallyNoetherian :=
+    LocallyOfFiniteType.isLocallyNoetherian (twoChartModel hF hx ↘ Spec (.of k))
+  toCompactSpace := inferInstance
 
 /-- **The two-chart model has dimension one**, for `x` transcendental over `k`: its dimension is
 the transcendence degree of its function field `F` over `k`. -/
@@ -140,10 +142,13 @@ theorem isIntegrallyClosedIn_functionField (hxt : Transcendental k x)
     IsIntegrallyClosedIn k (twoChartModel hF hx).functionField :=
   (functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk
 
-/-- **The two-chart model has dimension at most one**: its finite chart is a nonempty open
-subscheme of the irreducible scheme, so it has the same dimension, and it is the spectrum of the
-Dedekind domain `𝒪_x`, of dimension at most one. -/
+/-- **The two-chart model has dimension at most one**, for every nonzero `x`: its dimension is
+one when `x` is transcendental over `k`
+(`TauCeti.AlgebraicGeometry.twoChartModel.topologicalKrullDim_eq_one`) and zero when `x` is
+algebraic over `k`, both charts then being the spectrum of the constant field. -/
 theorem topologicalKrullDim_le_one : topologicalKrullDim (twoChartModel hF hx) ≤ 1 := by
+  -- The finite chart is a nonempty open subscheme of the irreducible scheme, so it has the same
+  -- dimension, and it is the spectrum of the Dedekind domain `𝒪_x`.
   have := isDedekindDomain_holomorphyRing_setOf_mem hF x
   rw [← topologicalKrullDim_eq_of_isOpenEmbedding_of_locallyOfFiniteType
     (twoChartModel hF hx ↘ Spec (.of k)) (ιFinite hF hx).isOpenEmbedding]

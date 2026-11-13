@@ -14,17 +14,19 @@ public import TauCeti.FieldTheory.FunctionField.Place.Map
 /-!
 # The two-chart model of a function field is proper, and its points are the places
 
-Let `F / k` be an algebraic function field and `x ∈ F` transcendental over `k`. The scheme
+Let `F / k` be an algebraic function field and `x ∈ F` nonzero. The scheme
 `X = TauCeti.AlgebraicGeometry.twoChartModel hF hx` is glued from `Spec 𝒪_x` and `Spec 𝒪_{x⁻¹}`,
 where `𝒪_x` and `𝒪_{x⁻¹}` are the rings of functions regular wherever `x`, respectively `x⁻¹`, is
-regular. It is separated, universally closed and locally of finite type over `k`, so it is
-**proper over `k`**: a regular proper curve over `k` with function field `F`.
+regular. For every nonzero `x` it is separated, universally closed and locally of finite type over
+`k`, so it is **proper over `k`**; this is an instance.
 
-On such a curve every point other than the generic point is the centre of exactly one place of
-its function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`). Composing with
-the identification `k(X) ≃ₐ[k] F` gives the equivalence `twoChartModel.equivPlace` between the
-codimension-one points of `X` and the places of `F / k`. The valuation ring of the place attached
-to a point is the local ring there, and its degree is the residue degree of the point.
+When `x` is moreover transcendental over `k`, `X` is a regular proper curve over `k` with function
+field `F`. On such a curve every point other than the generic point is the centre of exactly one
+place of its function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
+Composing with the identification `k(X) ≃ₐ[k] F` gives the equivalence `twoChartModel.equivPlace`
+between the codimension-one points of `X` and the places of `F / k`. The valuation ring of the
+place attached to a point is the local ring there, and its degree is the residue degree of the
+point.
 
 The equivalence is compatible with the two charts: a point lies on the finite chart `Spec 𝒪_x`
 exactly when `x` is regular at its place. So the points of the finite chart are the places at
@@ -33,8 +35,11 @@ points, on the chart at infinity, are the poles of `x`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.twoChartModel.isProper`: the structure morphism to `Spec k` is
-  proper.
+* `TauCeti.AlgebraicGeometry.twoChartModel.isProper`: for every nonzero `x`, the structure
+  morphism to `Spec k` is proper; this is an instance.
+
+For `x` transcendental over `k`:
+
 * `TauCeti.AlgebraicGeometry.twoChartModel.equivPlace`: the codimension-one points of the
   two-chart model are equivalent to the places of `F / k`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.equivPlace_apply`: the place of a point is the place
