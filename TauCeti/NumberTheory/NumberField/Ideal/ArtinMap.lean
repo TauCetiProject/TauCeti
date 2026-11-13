@@ -254,7 +254,7 @@ theorem artinHomAway_mono (S' : Finset (HeightOneSpectrum (𝓞 K))) (h : S ⊆ 
     artinHomAway (L := L) hab S' hur' =
       (artinHomAway (L := L) hab S hur).comp (idealsAwayInclusion K h) := by
   refine (artinHomAway_eq_of_apply_prime hab S' hur' _ ?_).symm
-  intro I v hv hI Q hQp hQl σ hσ
+  intro I v _ hI Q _ hQl σ hσ
   exact artinHomAway_apply_prime hab S hur (idealsAwayInclusion K h I) v
     (by rw [coe_idealsAwayInclusion]; exact hI) Q σ hσ
 
@@ -279,7 +279,7 @@ theorem artinHomAway_restrict (M : Type*) [Field M] [NumberField M] [Algebra K M
         (isUnramifiedAway_of_intermediateField M S hur) := by
   refine artinHomAway_eq_of_apply_prime (commute_of_tower (K := K) (L := L) (M := M) hab)
     S _ _ ?_
-  intro I v hv hI P hPp hPl τ hτ
+  intro I v hv hI P _ hPl τ hτ
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   have : IsMulCommutative (M ≃ₐ[K] M) :=

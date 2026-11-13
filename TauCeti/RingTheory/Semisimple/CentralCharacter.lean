@@ -39,11 +39,9 @@ size and normalized by the degree: `ωᵪ(K_C) = |C| · χ(g) / χ(1)`, when `χ
 
 ## References
 
-This implements the "central characters" item of Layer 4 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-in the generality of a simple module over an arbitrary algebra. See I. M. Isaacs, *Character
-Theory of Finite Groups*, Chapter 3, or C. W. Curtis and I. Reiner, *Representation Theory of
-Finite Groups and Associative Algebras*, §33.
+Central characters are treated here in the generality of a simple module over an arbitrary algebra.
+See I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 3, or C. W. Curtis and I. Reiner,
+*Representation Theory of Finite Groups and Associative Algebras*, §33.
 -/
 
 public section
