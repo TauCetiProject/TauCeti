@@ -32,7 +32,7 @@ Chambert-Loir and María Inés de Frutos-Fernández.
 ## Main declarations
 
 * `DividedPowerAlgebra.homogeneousLawMap`: the linear comparison to homogeneous laws.
-* `DividedPowerAlgebra.lid_rTensor_lcoeff_homogeneousLawMap`: recovery by mixed coefficients.
+* `DividedPowerAlgebra.coeff_homogeneousLawMap`: recovery by mixed coefficients.
 * `DividedPowerAlgebra.homogeneousLawMap_injective`: uniqueness of a representing linear map.
 * `DividedPowerAlgebra.bilinMap_ext_gamma`: bilinear maps on `Γ^d_R(M)` are determined by their
   scalar extensions on generic values of `γ_d`.
@@ -120,13 +120,12 @@ theorem ground_toPolynomialLaw_comp_gamma_apply (d : ℕ)
 open MvPolynomial in
 /-- Mixed coefficients of the associated law recover `f` on products of divided powers.
 The hypothesis fixes the total degree of the monomial, with no factorial factors. -/
-theorem lid_rTensor_lcoeff_homogeneousLawMap (d : ℕ)
+theorem coeff_homogeneousLawMap (d : ℕ)
     (f : homogeneousSubmodule (R := R) (M := M) d →ₗ[R] N)
     {ι : Type*} [Fintype ι] (m : ι → M) (k : ι →₀ ℕ) (hk : ∑ j, k j = d) :
-    TensorProduct.lid R N ((lcoeff R k).rTensor N
-      ((homogeneousLawMap R M N d f : M →ₚₗ[R] N).toFun (MvPolynomial ι R)
-        (∑ j, X j ⊗ₜ[R] m j))) =
+    PolynomialLaw.coeff R N m (homogeneousLawMap R M N d f : M →ₚₗ[R] N) k =
       f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
+  rw [PolynomialLaw.coeff_apply]
   have hgamma : TensorProduct.lid R _ ((lcoeff R k).rTensor _
       ((gamma R M d).toFun (MvPolynomial ι R) (∑ j, X j ⊗ₜ[R] m j))) =
       ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
@@ -146,8 +145,8 @@ theorem homogeneousLawMap_injective (d : ℕ) :
     Function.Injective (homogeneousLawMap R M N d) := by
   intro f g hfg
   refine homogeneousSubmodule_ext_prod_dp fun n m k hk ↦ ?_
-  have hf := lid_rTensor_lcoeff_homogeneousLawMap d f m (Finsupp.equivFunOnFinite.symm k) hk
-  have hg := lid_rTensor_lcoeff_homogeneousLawMap d g m (Finsupp.equivFunOnFinite.symm k) hk
+  have hf := coeff_homogeneousLawMap d f m (Finsupp.equivFunOnFinite.symm k) hk
+  have hg := coeff_homogeneousLawMap d g m (Finsupp.equivFunOnFinite.symm k) hk
   rw [hfg] at hf
   simpa only [Finsupp.coe_equivFunOnFinite_symm] using hf.symm.trans hg
 
@@ -428,7 +427,7 @@ theorem homogeneousLawMap_surjective (d : ℕ) :
   refine ⟨coeffLift f ∘ₗ (homogeneousSubmodule (R := R) (M := M) d).subtype,
     Subtype.ext (ext_coeff fun n m ↦ Finsupp.ext fun k ↦ ?_)⟩
   by_cases hk : ∑ j, k j = d
-  · rw [coeff_apply, lid_rTensor_lcoeff_homogeneousLawMap d _ m k hk, LinearMap.comp_apply,
+  · rw [coeff_homogeneousLawMap d _ m k hk, LinearMap.comp_apply,
       Submodule.subtype_apply, coeffLift_prod_dp f fun j ↦ (k j, m j), famCoeff]
     simp
   · rw [(mem_homogeneousSubmodule.mp (homogeneousLawMap R M N d _).2).coeff_eq_zero m hk,
@@ -457,7 +456,7 @@ theorem homogeneousLawEquiv_symm_apply_prod_dp (d : ℕ)
     (homogeneousLawEquiv R M N d).symm f
         ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
       PolynomialLaw.coeff R N m (f : M →ₚₗ[R] N) k := by
-  rw [PolynomialLaw.coeff_apply, ← lid_rTensor_lcoeff_homogeneousLawMap d _ m k hk,
+  rw [← coeff_homogeneousLawMap d _ m k hk,
     ← homogeneousLawEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The linear map representing a homogeneous law `f` of degree `d` sends `dp R d m` to the
