@@ -190,7 +190,7 @@ theorem quantile_neg_of_continuousWithinAt [IsProbabilityMeasure μ] (h0 : 0 < t
     (h : ContinuousWithinAt μ.quantile (Ioi (1 - t)) (1 - t)) :
     μ.neg.quantile t = -μ.quantile (1 - t) := by
   rw [quantile_neg h0 h1,
-    upperQuantile_eq_quantile_of_continuousWithinAt μ (by linarith) (by linarith) h]
+    upperQuantile_eq_quantile_of_continuousWithinAt μ h]
 
 /-- **Lower endpoint of the reflected law.** If the quantiles of `μ` tend to `a` as the level
 increases to one, then the quantiles of the reflected law tend to `-a` as the level decreases to
