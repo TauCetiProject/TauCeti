@@ -272,16 +272,21 @@ theorem assignment_nonneg_of_mem_paths {p : WeightedWalk Q K} (hp : p ∈ D.path
   · exact (D.assignment_apply_of_mem_arrows hp he).symm ▸ (D.weight_pos_of_mem_paths p hp).le
   · simp [WeightedWalk.assignment_def, walkAssignment_eq_zero_of_notMem p.walk p.weight he]
 
+/-- A cycle component of a decomposition is nonnegative. -/
+theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
+    0 ≤ c.assignment := fun x y e ↦ by
+  by_cases he : ⟨x, y, e⟩ ∈ c.walk.arrows
+  · rw [WeightedClosedWalk.assignment_def,
+      walkAssignment_eq_of_mem (D.isCycle_walk c hc).nodup_arrows _ he]
+    exact (D.weight_pos_of_mem_cycles c hc).le
+  · simp [WeightedClosedWalk.assignment_def, walkAssignment_eq_zero_of_notMem c.walk c.weight he]
+
 end Preorder
 
 section PartialOrder
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {f : Assignment Q K}
   (D : PathCycleDecomposition f)
-
-theorem assignment_nonneg_of_mem_cycles {c : WeightedClosedWalk Q K} (hc : c ∈ D.cycles) :
-    0 ≤ c.assignment :=
-  walkAssignment_nonneg _ (D.weight_pos_of_mem_cycles c hc).le
 
 theorem pathAssignment_nonneg : 0 ≤ D.pathAssignment :=
   List.sum_nonneg <| by simpa using fun p hp ↦ D.assignment_nonneg_of_mem_paths hp
@@ -354,18 +359,18 @@ theorem source_eq_of_mem_paths [Preorder K] {f : Flow cap s t} (D : PathCycleDec
   · exact (f.conserve _ h ht).ge
 
 /-- Every path of a decomposition of an ordinary `s`–`t` flow ends at `t`. -/
-theorem target_eq_of_mem_paths [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem target_eq_of_mem_paths [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) {p : WeightedWalk Q K} (hp : p ∈ D.paths) :
     p.target = t := by
-  by_contra h
-  refine D.target_ne_of_mem_paths hp ?_ rfl
-  by_cases hs : p.target = s
-  · rw [hs, f.excessAt_source]
-    exact neg_nonpos.2 f.val_nonneg
-  · exact (f.conserve _ hs h).le
+  by_contra ht
+  have hs : p.target ≠ s := by
+    intro hs
+    have h : p.target = p.source := hs.trans (D.source_eq_of_mem_paths hp).symm
+    exact lt_asymm (D.excessAt_source_neg p hp) (h ▸ D.excessAt_target_pos p hp)
+  exact (D.excessAt_target_pos p hp).ne' (f.conserve _ hs ht)
 
 /-- The path weights of a decomposition of an ordinary `s`–`t` flow add up to its value. -/
-theorem sum_weight_paths_eq_val [PartialOrder K] [IsOrderedAddMonoid K] {f : Flow cap s t}
+theorem sum_weight_paths_eq_val [Preorder K] {f : Flow cap s t}
     (D : PathCycleDecomposition f.toFun) : (D.paths.map WeightedWalk.weight).sum = f.val := by
   classical
   have hs : (D.paths.filter fun p ↦ p.source = t) = [] :=
