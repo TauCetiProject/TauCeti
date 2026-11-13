@@ -17,9 +17,9 @@ import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 /-!
 # Smooth sections are dense in `W^{k,p}(V)`
 
-Let `M` be a compact smooth manifold without boundary modelled on `ℂ`, let `V → M` be a smooth
-real vector bundle with finite-dimensional model fibre `F`, and let `A` be a finite bundle atlas.
-This file shows that for `1 ≤ p < ∞` and `k ≤ 1` the smooth sections of `V` are dense in the
+Let `M` be a compact Hausdorff smooth manifold without boundary modelled on `ℂ`, let `V → M` be a
+smooth real vector bundle with finite-dimensional model fibre `F`, and let `A` be a finite bundle
+atlas. This file shows that for `1 ≤ p < ∞` and `k ≤ 1` the smooth sections of `V` are dense in the
 Sobolev space `W^{k,p}(V)` of `TauCeti.SobolevSection A volume p k`
 (`TauCeti.SobolevSection.denseRange_ofContMDiffSection`).
 
@@ -28,14 +28,14 @@ every `w` is the finite sum of the products `χ i • w` (`TauCeti.SobolevSectio
 and `χ i • w` is supported in the closed set `tsupport (χ i) ⊆ A.dom i`
 (`TauCeti.SobolevSection.contMDiffSMulL_mem_supportedIn`). An element supported in a closed
 subset `L` of the domain of chart `i` is determined by its chart-`i` components, and every tuple of
-chart-`i` Sobolev functions vanishing almost everywhere off `L` arises in this way. By the open
-mapping theorem the inverse correspondence is a continuous linear map
+chart-`i` Sobolev functions vanishing almost everywhere off `L` arises in this way. By the closed
+graph theorem the inverse correspondence is a continuous linear map
 `TauCeti.SobolevSection.extendLocalL` from the closed subspace
-`TauCeti.SobolevSection.chartSupportedIn A p k i L` of such tuples into `W^{k,p}(V)`: it extends a
-function on the chart by zero to a section. Existence of the extension is the only place where the
-order `k ≤ 1` enters, through the invariance of the local Sobolev classes under changes of chart
-(`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`). The
-localization step and the density are stated with this gluing property
+`TauCeti.SobolevSection.chartSupportedIn A volume p k i L` of such tuples into `W^{k,p}(V)`: it
+extends a function on the chart by zero to a section. Existence of the extension is the only place
+where the order `k ≤ 1` enters, through the invariance of the local Sobolev classes under changes
+of chart (`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`).
+The localization step and the density are stated with this gluing property
 `TauCeti.SobolevSection.HasChartGluing A p k` as a hypothesis, and it holds for `k ≤ 1`
 (`TauCeti.SobolevSection.hasChartGluing_of_le_one`).
 
