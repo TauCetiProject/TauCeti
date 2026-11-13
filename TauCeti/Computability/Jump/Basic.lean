@@ -41,6 +41,7 @@ of the set oracles.
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
 * `Set.not_jump_turingReducible`: the jump of `Z` is not computable relative to `Z`.
+* `Set.not_computablePred_mem_jump`: in particular, no jump is computable.
 * `Set.oneOneReducible_jump_jump`, `Set.turingReducible_jump_jump`: if `A` is Turing reducible to
   `B`, then `A'` reduces one-one, and hence Turing, to `B'`.
 * `Set.oneOneEquiv_jump_jump`, `Set.turingEquivalent_jump_jump`: Turing equivalent sets have
@@ -188,6 +189,10 @@ theorem not_jump_turingReducible : ¬TuringReducible Z.jump.oracle Z.oracle := b
   have := mem_jump (Z := Z) (e := encode c)
   rw [ofNat_encode, hc] at this
   by_cases he : encode c ∈ Z.jump <;> simp [he, Part.bind_eq_bind] at this
+
+/-- **No jump is computable:** membership in `Z'` is not a computable predicate. -/
+theorem not_computablePred_mem_jump : ¬ComputablePred (· ∈ Z.jump) := fun h =>
+  Z.not_jump_turingReducible <| ((turingReducible_empty_iff _).2 h).trans (empty_turingReducible _)
 
 /-- Diagonal evaluation of the oracle-program numbering is recursive in the oracle of `Z`. -/
 theorem recursiveIn_eval_diag :
