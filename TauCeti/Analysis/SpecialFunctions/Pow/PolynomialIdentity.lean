@@ -79,13 +79,13 @@ theorem eval_rpow_eq_zero_of_forall_pow {ι A : Type*} [CommSemiring A] [Algebra
         ∑ d ∈ p.support, b d ^ s • p.coeff d := by
     rw [MvPolynomial.eval_eq]
     apply Finset.sum_congr rfl
-    intro d hd
+    intro d _
     rw [Algebra.smul_def, mul_comm]
     congr 1
     dsimp only [b]
     rw [← Real.finsetProd_rpow _ _ (fun i _ ↦ pow_nonneg (hμ i) _) s, map_prod]
     apply Finset.prod_congr rfl
-    intro i hi
+    intro i _
     rw [← map_pow, ← Real.rpow_natCast_mul (hμ i),
       ← Real.rpow_mul_natCast (hμ i), mul_comm]
   rw [heval]

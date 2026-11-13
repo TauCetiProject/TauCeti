@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Process.HittingTime
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Closed-set hitting times of continuous adapted processes
@@ -66,6 +67,22 @@ theorem hittingAfter_le_iff (hs : IsClosed s) (hX : Continuous (X · ω)) :
     exact (hittingAfter_le_of_mem hu.1 hus).trans (WithTop.coe_le_coe.mpr hu.2)
 
 end IsClosed
+
+/-- A continuous ordered-valued path starting below a level stays at most at that level up to and
+including its first closed-level hit. This is a pathwise statement, with no stopping-time
+or measurability hypothesis. -/
+theorem Continuous.le_of_le_hittingAfter_Ici [DenselyOrdered ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β]
+    {X : ι → Ω → β} {a t : ι} {ω : Ω} {C : β} (hX : Continuous (X · ω))
+    (hat : a ≤ t) (hstart : X a ω ≤ C)
+    (ht : (t : WithTop ι) ≤ MeasureTheory.hittingAfter X (Set.Ici C) a ω) :
+    X t ω ≤ C := by
+  by_contra h
+  have hCt : C < X t ω := lt_of_not_ge h
+  obtain ⟨u, hu, hue⟩ := intermediate_value_Icc hat hX.continuousOn ⟨hstart, hCt.le⟩
+  have hut : u < t := lt_of_le_of_ne hu.2 (fun hut ↦ hCt.ne (hut ▸ hue).symm)
+  have hhit := MeasureTheory.hittingAfter_le_of_mem (u := X) (s := Set.Ici C) hu.1 hue.ge
+  exact (WithTop.coe_lt_coe.mpr hut).not_ge (ht.trans hhit)
 
 namespace MeasureTheory
 

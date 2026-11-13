@@ -21,14 +21,14 @@ value at `t` of the second-kind Dickson polynomial of degree `k - 2` and paramet
 coefficient of `x^(k-2)` in `(1 - t x + n x²)⁻¹`.
 
 This is Popa and Zagier's proof. Their explicit element `popaZagierElement` of the group ring of
-the integral matrices of determinant `n` acts on the period polynomials `W_w`, `w = k - 2`, and its
-trace there is the class-number expression
+the integral matrices of determinant `n` acts on the degree-`w` binary forms `V_w`, `w = k - 2`,
+and its trace there is the class-number expression
 `σ_{k-1}(n) - ∑ min(d, d')^(k-1) - ∑ P_k(t, n) H(4n - t²)`
-(the main theorem of `TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Formula`).
-By Popa and Zagier's trace reduction, this is also its trace on all binary forms `V_w`
-(`TauCeti.TraceFormulaMatrixModule.ExchangeRelations.trace_periodActionRestrict_eq_trace`). By the
-Eichler–Shimura theorem, `W_w` is isomorphic to `M_k × S_k`, and `popaZagierElement` acts there as
-`Tₙ × Tₙ`, so the same trace is `2 tr(Tₙ | S_k) + σ_{k-1}(n)`
+(see `trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber` in
+`TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.Formula`). By Popa and Zagier's trace
+reduction from `V_w` to the period polynomials `W_w` and the Eichler–Shimura isomorphism
+`W_w ≃ₗ M_k × S_k`, where `popaZagierElement` acts as `Tₙ × Tₙ`, the same ambient trace is
+`2 tr(Tₙ | S_k) + σ_{k-1}(n)`
 (`TauCeti.TraceFormulaMatrixModule.trace_heckeTCuspLevelOne_eq_trace_popaZagierElement`).
 Comparing the two gives the formula.
 
@@ -69,13 +69,9 @@ theorem trace_heckeTCuspLevelOne_eq_neg_hurwitzClassNumber_sub_min (hk : k = w +
             (dickson 2 (n : ℂ) w).eval (t : ℂ)) / 2 -
         (∑ p ∈ n.divisorsAntidiagonal, ((min p.1 p.2 : ℕ) : ℂ) ^ (w + 1)) / 2 := by
   have hn : 0 < n := Nat.pos_of_ne_zero (NeZero.ne n)
-  -- the trace of Popa–Zagier's element on `V_w`, through the class-number computation
-  have hCN := trace_periodActionRestrict_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
-    (K := ℂ) n hn w hw hw₀
-  rw [(exchangeRelations_popaZagierElement ℂ (n : ℤ)).trace_periodActionRestrict_eq_trace hw hw₀]
-    at hCN
-  -- and through the Eichler–Shimura comparison
-  rw [trace_heckeTCuspLevelOne_eq_trace_popaZagierElement hk hw hw₀ n, hCN]
+  rw [trace_heckeTCuspLevelOne_eq_trace_popaZagierElement hk hw hw₀ n,
+    trace_periodAction_popaZagierElement_eq_sigma_sub_min_sub_hurwitzClassNumber
+      (K := ℂ) n hn w hw]
   ring
 
 end TauCeti

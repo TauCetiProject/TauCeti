@@ -29,7 +29,7 @@ namespace TauCeti.HopfAlgebra
 
 universe u v
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- Contraction along the antipode fixes the prime defined by the counit. -/

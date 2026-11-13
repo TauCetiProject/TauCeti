@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
+public import Mathlib.Data.Finset.NatAntidiagonal
+import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
@@ -48,6 +50,10 @@ groupings agree.
 * `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
   `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable families in a complete normed ring
   sums to `(∑ f) (∑ g)`.
+* `DiscreteConvolution.tsum_mul_sub_eq_sum_antidiagonal`,
+  `DiscreteConvolution.tsum_mul_sub_eq_zero_of_neg`: the convolution `∑' i, f i * g (m - i)` of
+  two families on `ℤ` supported in nonnegative degrees is the finite antidiagonal sum at a
+  natural number `m`, and vanishes at negative `m`.
 -/
 
 public section
@@ -223,5 +229,36 @@ theorem hasSum_tsum_mul_sub [NormedRing R] [CompleteSpace R] {f g : M → R}
   exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
 
 end AddGroup
+
+section Int
+
+variable {R : Type*} [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
+
+/-- The convolution `∑' i, f i * g (n - i)` of two families on `ℤ` supported in nonnegative
+degrees is, at a natural number `n`, the finite sum over the antidiagonal of `n`. -/
+theorem tsum_mul_sub_eq_sum_antidiagonal {f g : ℤ → R} (hf : ∀ i < 0, f i = 0)
+    (hg : ∀ i < 0, g i = 0) (n : ℕ) :
+    ∑' i, f i * g (n - i) = ∑ ij ∈ Finset.antidiagonal n, f ij.1 * g ij.2 := by
+  rw [tsum_eq_sum (s := (Finset.range (n + 1)).map Nat.castEmbedding) fun i hi ↦ ?_,
+    Finset.sum_map, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  · refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [Nat.castEmbedding_apply, Nat.cast_sub (Finset.mem_range_succ_iff.1 hk)]
+  · simp only [Finset.mem_map, Finset.mem_range, Nat.castEmbedding_apply, not_exists,
+      not_and] at hi
+    rcases lt_or_ge i 0 with h | h
+    · rw [hf i h, zero_mul]
+    · lift i to ℕ using h
+      rw [hg _ (by have := hi i; omega), mul_zero]
+
+/-- The convolution `∑' i, f i * g (m - i)` of two families on `ℤ` supported in nonnegative
+degrees vanishes in negative degrees. -/
+theorem tsum_mul_sub_eq_zero_of_neg {f g : ℤ → R} (hf : ∀ i < 0, f i = 0)
+    (hg : ∀ i < 0, g i = 0) {m : ℤ} (hm : m < 0) : ∑' i, f i * g (m - i) = 0 := by
+  refine (tsum_congr fun i ↦ ?_).trans tsum_zero
+  rcases lt_or_ge i 0 with h | h
+  · rw [hf i h, zero_mul]
+  · rw [hg _ (by omega), mul_zero]
+
+end Int
 
 end DiscreteConvolution
