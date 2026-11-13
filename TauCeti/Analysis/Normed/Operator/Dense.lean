@@ -169,10 +169,8 @@ theorem exists_tendsto_apply_of_dense_span {Y' : Type*} [NormedAddCommGroup Y']
   | mem y hy => exact htendsto y hy
   | zero => exact ⟨0, by simp⟩
   | add _ _ _ _ hu hv =>
-    rcases hu, hv with ⟨⟨u', hu'⟩, ⟨v', hv'⟩⟩
-    exact ⟨u' + v', (hu'.add hv').congr fun _ => (map_add _ _ _).symm⟩
+    exact ⟨_, (hu.choose_spec.add hv.choose_spec).congr fun _ => (map_add _ _ _).symm⟩
   | smul c _ _ hu =>
-    rcases hu with ⟨u', hu'⟩
-    exact ⟨σ₁₂ c • u', (hu'.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm⟩
+    exact ⟨_, (hu.choose_spec.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm⟩
 
 end ContinuousLinearMap

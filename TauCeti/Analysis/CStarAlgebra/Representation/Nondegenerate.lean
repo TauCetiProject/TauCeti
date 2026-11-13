@@ -227,30 +227,20 @@ theorem isNondegenerate_iff_forall_apply_eq_zero :
     exact (Submodule.mem_orthogonal _ _).1 hξ _ <|
       Submodule.subset_span <| Set.mem_iUnion.2 ⟨star a, v, rfl⟩
 
-section DenseRange
-
-variable {ι A : Type*} [NonUnitalCStarAlgebra A]
-
 /-- Restricting a Hilbert-space representation of `A` to a dense subset `Set.range g` generates the
 same closed essential subspace of `H`. -/
-theorem topologicalClosure_span_range_comp_eq {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {g : ι → A} (hg : DenseRange g)
+theorem topologicalClosure_span_range_comp_eq {ι : Type*} {g : ι → A} (hg : DenseRange g)
     (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     (Submodule.span ℂ (⋃ i, Set.range (π (g i)))).topologicalClosure =
       (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure :=
   hg.topologicalClosure_span_iUnion_range_comp_eq (R := ℂ) (L := fun a => ⇑(π a)) fun _ =>
     by fun_prop
 
-/-- For any `g : ι → A` with dense range, a Hilbert-space representation
-`π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only if the vectors `π (g i) ξ` span a dense
-subspace of `H`. -/
-theorem isNondegenerate_iff_dense_span_comp {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {g : ι → A} (hg : DenseRange g)
-    {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
+/-- For any `g : ι → A` with dense range, `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only
+if the vectors `π (g i) ξ` span a dense subspace of `H`. -/
+theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : DenseRange g) :
     π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
-  rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
-    Submodule.dense_iff_topologicalClosure_eq_top, topologicalClosure_span_range_comp_eq hg]
-
-end DenseRange
+  simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
+    topologicalClosure_span_range_comp_eq hg]
 
 end NonUnitalStarAlgHom

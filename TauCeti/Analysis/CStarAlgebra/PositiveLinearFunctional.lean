@@ -45,22 +45,17 @@ nonnegative elements, since these span the algebra.
 
 ## Spectral and norm-attaining states and positive functionals
 
-On a unital C⋆-algebra, every spectral value `z ∈ spectrum ℂ a` of a normal element `a` admits a
-state evaluating `star a ^ m * a ^ n` to `star z ^ m * z ^ n`; see
-`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`.
-This is constructed by extending a character on the generated commutative C⋆-subalgebra via
-Hahn–Banach.
-Specializing to `0 ≤ a` on a nontrivial unital C⋆-algebra gives a state taking `‖a‖ ^ n` on each
-`a ^ n` (`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along the
-isometric inclusion into `𝓜(ℂ, A)` yields a norm-one positive continuous linear functional on any
-nontrivial (possibly nonunital) C⋆-algebra `A` satisfying `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
-(`TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
+On a unital C⋆-algebra, extending Gelfand characters via Hahn–Banach gives for every spectral value
+`z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ m * a ^ n` to `star z ^ m * z ^ n`
+(`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
+any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
+`exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along `A → 𝓜(ℂ, A)` yields a
+norm-one positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and
+`ω (a * a) = ‖a‖ ^ 2` (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
 
 ## References
 
-* G. J. Murphy, *C⋆-Algebras and Operator Theory*, Section 3.4 (states attaining the norm and the
-  Gelfand–Naimark theorem).
+* G. J. Murphy, *C⋆-Algebras and Operator Theory*, Section 3.4.
 -/
 
 public section
@@ -141,21 +136,17 @@ theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spec
     nontrivial_of_ne (1 : M) 0 fun h10 => hz ⟨⟨_, 0, by simp [h10], by simp [h10]⟩, rfl⟩
   set S := StarAlgebra.elemental ℂ a
   have : IsClosed (S : Set M) := StarAlgebra.elemental.isClosed ℂ a
-  have haS : a ∈ S := StarAlgebra.elemental.self_mem ℂ a
-  let x : S := ⟨a, haS⟩
-  have hzS : z ∈ spectrum ℂ x := by
-    rw [StarSubalgebra.spectrum_eq]
-    exact spectrum.algebraMap_mem ℂ hz
-  obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1 hzS
+  let x : S := ⟨a, StarAlgebra.elemental.self_mem ℂ a⟩
+  obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1
+    (StarSubalgebra.spectrum_eq (S := S) (a := x) ▸ spectrum.algebraMap_mem ℂ hz)
   obtain ⟨g, hg_ext, hg_norm⟩ := exists_extension_norm_eq S.toSubmodule
     ((WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap : StrongDual ℂ S.toSubmodule)
   replace hg_norm : ‖g‖ = 1 := hg_norm.trans (AlgHom.toContinuousLinearMap_norm _)
   have hg_one : g 1 = 1 := (hg_ext ⟨1, S.one_mem⟩).trans (map_one χ)
-  refine ⟨{ __ := g
-            monotone' := ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2
-              (by simp [hg_norm, hg_one]) }, hg_one, hg_norm, fun m n => ?_⟩
-  have hx : (⟨star a ^ m * a ^ n, (star x ^ m * x ^ n).prop⟩ : S) = star x ^ m * x ^ n := by
-    ext; simp [x]
+  refine ⟨⟨⟨g.toLinearMap, ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2
+    (by simp [hg_norm, hg_one])⟩, g.cont⟩, hg_one, hg_norm, fun m n => ?_⟩
+  have hx : (⟨star a ^ m * a ^ n, (star x ^ m * x ^ n).prop⟩ : S) = star x ^ m * x ^ n :=
+    Subtype.ext (by simp [x])
   exact (hg_ext ⟨star a ^ m * a ^ n, (star x ^ m * x ^ n).prop⟩).trans <|
     (congrArg χ hx).trans (by simp [map_star, hχa])
 
@@ -166,7 +157,7 @@ variable [Nontrivial M]
 theorem exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow {a : M} (ha : 0 ≤ a) :
     ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧
       ∀ n : ℕ, ω (a ^ n) = (‖a‖ : ℂ) ^ n := by
-  have : IsStarNormal a := ha.isSelfAdjoint.isStarNormal
+  have := ha.isSelfAdjoint.isStarNormal
   obtain ⟨ω, h1, hn, hp⟩ :=
     exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum
       (_root_.CStarAlgebra.norm_mem_spectrum_of_nonneg a ha)
@@ -192,9 +183,8 @@ private theorem exists_positiveContinuousLinearMap_of_ne_zero
   have hx_pos : 0 < ‖x‖ := norm_pos_iff.2 hx0
   have : Nontrivial 𝓜(ℂ, A) := ⟨(x : 𝓜(ℂ, A)), 0, fun h0 => hx_pos.ne' <| by
     rw [← DoubleCentralizer.norm_coe (𝕜 := ℂ), h0, norm_zero]⟩
-  have hxM : 0 ≤ (x : 𝓜(ℂ, A)) := by
-    simpa using map_nonneg (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)) hx
-  obtain ⟨ω₀, -, hω₀_norm, hω₀⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow hxM
+  obtain ⟨ω₀, -, hω₀_norm, hω₀⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow
+    (map_nonneg (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)) hx)
   let ω : A →P[ℂ] ℂ :=
     ω₀.comp (.ofClass (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)))
   have h1 : ω x = ‖x‖ := by simpa [ω, DoubleCentralizer.norm_coe] using hω₀ 1
