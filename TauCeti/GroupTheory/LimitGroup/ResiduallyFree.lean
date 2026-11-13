@@ -33,7 +33,9 @@ torsion-free; in particular a nontrivial finite group is not residually free. Ev
 element of a residually free group is a positive power of an element that is not a proper power,
 because its root exponents are bounded by those of a nonidentity image in a free group. With unique
 roots, that root has the same centralizer as the element (`Subgroup.centralizer_pow_eq`), so an
-extension of the centralizer of a nonidentity element is also one of a non-proper-power.
+extension of the centralizer of a nonidentity element is also one of a non-proper-power. In
+particular a nonabelian residually free group has an element that is not a proper power and does
+not lie in the center.
 Fully residually free groups are CSA, hence commutative transitive with abelian centralizers of
 nonidentity elements: one homomorphism to a free group can keep any two nonidentity elements
 nontrivial, and the CSA property is witnessed by pairs of elements. Consequently a nonabelian
@@ -70,6 +72,9 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * `TauCeti.LimitGroup.IsResiduallyFree.centralizerExt_root_reduction`: in a residually free group
   every nonidentity element `u` is `r ^ d` with `d ≠ 0`, `r` not a proper power, and
   `C_G(u) = C_G(r)`.
+* `TauCeti.LimitGroup.IsResiduallyFree.exists_not_isProperPower_notMem_centralizer`: a nonabelian
+  residually free group has an element `u` that is not a proper power and an element outside
+  `C_G(u)`.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCSA`: fully residually free groups are CSA.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
@@ -281,6 +286,18 @@ theorem IsResiduallyFree.centralizerExt_root_reduction (h : IsResiduallyFree G) 
   obtain ⟨r, d, hd, rfl, hr, -⟩ := h.exists_maximalRoot hu
   have := h.hasUniqueRoots
   exact ⟨r, d, hd, rfl, hr, Subgroup.centralizer_pow_eq r hd⟩
+
+/-- A nonabelian residually free group has an element `u` that is not a proper power and an
+element `g` outside `C_G(u)`. -/
+theorem IsResiduallyFree.exists_not_isProperPower_notMem_centralizer (h : IsResiduallyFree G)
+    (hG : ¬IsMulCommutative G) : ∃ u g : G, ¬IsProperPower u ∧ g ∉ Subgroup.centralizer {u} := by
+  obtain ⟨a, b, hab⟩ : ∃ a b : G, b * a ≠ a * b := by
+    by_contra! hcomm
+    exact hG ⟨⟨fun a b => hcomm b a⟩⟩
+  -- Root reduction replaces `a` by a root `r` that is not a proper power, with `C_G(a) = C_G(r)`.
+  obtain ⟨r, -, -, -, hr, hC⟩ := h.centralizerExt_root_reduction (u := a)
+    (by rintro rfl; simp at hab)
+  exact ⟨r, b, hr, by rwa [← hC, Subgroup.mem_centralizer_singleton_iff]⟩
 
 /-- A nontrivial finite group, such as `ℤ/2`, is not residually free. -/
 theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduallyFree G := by
