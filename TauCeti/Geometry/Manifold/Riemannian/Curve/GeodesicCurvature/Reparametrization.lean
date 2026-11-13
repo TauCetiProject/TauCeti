@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.GeodesicCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Curve.OrientedNormal
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # Reparametrization of signed geodesic curvature
@@ -18,14 +19,17 @@ reparametrization. The chain rule for the covariant acceleration gives
 and the factor `(φ')²` in the second term cancels the same factor in the squared speed.
 This statement holds in any dimension and also at points where the velocity of `γ` vanishes.
 
-On an oriented surface, reversing a curve reverses its oriented unit normal, so its signed
-geodesic curvature changes sign. This is the pointwise cancellation law for a common boundary
-arc traversed in opposite directions.
+On an oriented surface, an orientation-preserving regular reparametrization preserves signed
+geodesic curvature relative to the oriented unit normal, while an orientation-reversing one
+negates it. In particular, the affine parameter reflection `r ↦ γ (d - r)` negates this curvature
+at each `C²` point of the original curve.
 
 ## Main results
 
 * `TauCeti.Manifold.geodesicCurvature_comp`: invariance relative to a transported normal field.
-* `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp_const_sub`: reversing a curve
+* `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp`: the sign law for a general
+  reparametrization, including at zero derivative.
+* `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp_const_sub`: reflecting a curve
   changes the sign of its curvature relative to the oriented unit normal.
 
 ## References
@@ -55,55 +59,67 @@ field. Only orthogonality at the point is needed; the normal need not have unit 
 the velocity of the original curve may vanish. -/
 theorem geodesicCurvature_comp (n : ∀ r, TangentSpace I (γ r))
     (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t)) (hφ : ContDiffAt ℝ 2 φ t)
-    (hφ₀ : deriv φ t ≠ 0) (hn : ⟪curveVelocity I γ (φ t), n (φ t)⟫_ℝ = 0) :
+    (hφ₀ : deriv φ t ≠ 0) (hn : ⟪n (φ t), curveVelocity I γ (φ t)⟫_ℝ = 0) :
     geodesicCurvature (γ ∘ φ) (fun r ↦ n (φ r)) t = geodesicCurvature γ n (φ t) := by
-  obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγ
-  have hcoord := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := γ)
-    (hγu.mono interior_subset) isOpen_interior (mem_interior_iff_mem_nhds.mpr hu)
-  have hγnear : ∀ᶠ r in 𝓝 (φ t), MDifferentiableAt 𝓘(ℝ) I γ r := by
-    filter_upwards [interior_mem_nhds.mpr hu] with r hr
-    exact ((hγu.mono interior_subset).contMDiffAt (isOpen_interior.mem_nhds hr))
-      |>.mdifferentiableAt two_ne_zero
-  have hvel : (fun r ↦ curveVelocity I (γ ∘ φ) r) =ᶠ[𝓝 t]
-      fun r ↦ deriv φ r • curveVelocity I γ (φ r) := by
-    filter_upwards [hφ.continuousAt.eventually hγnear, hφ.eventually (by simp)] with r hγr hφr
-    exact curveVelocity_comp (hφr.differentiableAt two_ne_zero).hasDerivAt hγr
-  have hφd := hφ.differentiableAt two_ne_zero
-  have hφ' : DifferentiableAt ℝ (deriv φ) t :=
-    (hφ.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hcoordcomp : DifferentiableAt ℝ (sectionCoord (F := E) (γ ∘ φ)
-      (fun r ↦ curveVelocity I γ (φ r)) (γ (φ t))) t := by
-    rw [sectionCoord_comp]
-    exact hcoord.comp t hφd
-  have hacc : acceleration (leviCivitaConnection I M) (γ ∘ φ) t =
-      deriv (deriv φ) t • curveVelocity I γ (φ t) +
-        deriv φ t ^ 2 • acceleration (leviCivitaConnection I M) γ (φ t) := by
-    rw [acceleration_def, alongCurve_congr _ (γ ∘ φ) _ hvel,
-      alongCurve_smul _ (γ ∘ φ) _ (deriv φ) hφ' hcoordcomp,
-      alongCurve_comp _ γ _ φ hφd
-        (hasDerivAt_extChartAt_comp_curve
-          (hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt two_ne_zero))).differentiableAt hcoord,
-      ← acceleration_def, smul_smul, ← sq]
-  have hv : curveVelocity I (γ ∘ φ) t = deriv φ t • curveVelocity I γ (φ t) := hvel.self_of_nhds
+  have hacc := acceleration_comp (leviCivitaConnection I M) γ
+    (hφ.eventually_differentiableAt one_le_two) hφ.differentiableAt_deriv_two
+    (hγ.eventually_mdifferentiableAt two_ne_zero) hγ.differentiableAt_sectionCoord_curveVelocity
+  have hv := curveVelocity_comp (hφ.differentiableAt two_ne_zero).hasDerivAt
+    (hγ.mdifferentiableAt two_ne_zero)
+  have hn' : ⟪curveVelocity I γ (φ t), n (φ t)⟫_ℝ = 0 := (real_inner_comm _ _).trans hn
   rw [geodesicCurvature_def, geodesicCurvature_def, hacc, hv,
-    inner_add_left, real_inner_smul_left, real_inner_smul_left, hn, mul_zero, zero_add,
+    inner_add_left, real_inner_smul_left, real_inner_smul_left, hn', mul_zero, zero_add,
     norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   exact mul_div_mul_left _ _ (pow_ne_zero 2 hφ₀)
 
-/-- Reversing a curve reverses its signed geodesic curvature relative to the oriented unit
-normal. In particular, the curvatures on a common boundary arc cancel when its two
-parametrizations traverse it in opposite directions. -/
+/-- Reparametrization multiplies signed geodesic curvature relative to the oriented unit
+normal by the sign of the derivative. At zero derivative both sides vanish. -/
+theorem geodesicCurvature_orientedUnitNormal_comp (o : Orientation I M (Fin 2))
+    (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t)) (hφ : ContDiffAt ℝ 2 φ t) :
+    geodesicCurvature (γ ∘ φ) (orientedUnitNormal o (γ ∘ φ)) t =
+      (SignType.sign (deriv φ t) : ℝ) *
+        geodesicCurvature γ (orientedUnitNormal o γ) (φ t) := by
+  by_cases hφ₀ : deriv φ t = 0
+  · rw [geodesicCurvature_def,
+      curveVelocity_comp (hφ.differentiableAt two_ne_zero).hasDerivAt
+        (hγ.mdifferentiableAt two_ne_zero)]
+    simp [hφ₀]
+  · have hcomp := geodesicCurvature_comp (orientedUnitNormal o γ) hγ hφ hφ₀
+      (inner_orientedUnitNormal_curveVelocity o γ (φ t))
+    rw [geodesicCurvature_def,
+      orientedUnitNormal_comp o (hγ.mdifferentiableAt two_ne_zero)
+        (hφ.differentiableAt two_ne_zero), real_inner_smul_right, mul_div_assoc]
+    rw [geodesicCurvature_def] at hcomp
+    rw [hcomp]
+
+/-- An orientation-preserving regular reparametrization preserves signed geodesic curvature
+relative to the oriented unit normal. -/
+theorem geodesicCurvature_orientedUnitNormal_comp_of_deriv_pos (o : Orientation I M (Fin 2))
+    (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t)) (hφ : ContDiffAt ℝ 2 φ t)
+    (hφ₀ : 0 < deriv φ t) :
+    geodesicCurvature (γ ∘ φ) (orientedUnitNormal o (γ ∘ φ)) t =
+      geodesicCurvature γ (orientedUnitNormal o γ) (φ t) := by
+  rw [geodesicCurvature_orientedUnitNormal_comp o hγ hφ]
+  simp [hφ₀]
+
+/-- An orientation-reversing regular reparametrization negates signed geodesic curvature
+relative to the oriented unit normal. -/
+theorem geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg (o : Orientation I M (Fin 2))
+    (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (φ t)) (hφ : ContDiffAt ℝ 2 φ t)
+    (hφ₀ : deriv φ t < 0) :
+    geodesicCurvature (γ ∘ φ) (orientedUnitNormal o (γ ∘ φ)) t =
+      -geodesicCurvature γ (orientedUnitNormal o γ) (φ t) := by
+  rw [geodesicCurvature_orientedUnitNormal_comp o hγ hφ]
+  simp [hφ₀]
+
+/-- Reflecting the parameter via `r ↦ γ (d - r)` negates signed geodesic curvature relative to
+the oriented unit normal at each `C²` point `d - t` of the original curve. -/
 theorem geodesicCurvature_orientedUnitNormal_comp_const_sub
     (o : Orientation I M (Fin 2)) (d t : ℝ)
     (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ (d - t)) :
     geodesicCurvature (fun r ↦ γ (d - r))
       (orientedUnitNormal o (fun r ↦ γ (d - r))) t =
         -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
-  have hcomp := geodesicCurvature_comp (φ := fun r ↦ d - r) (t := t)
-    (orientedUnitNormal o γ) hγ (by fun_prop) (by simp)
-    (by rw [real_inner_comm]; exact inner_orientedUnitNormal_curveVelocity o γ (d - t))
-  rw [geodesicCurvature_def, orientedUnitNormal_comp_const_sub, inner_neg_right, neg_div]
-  rw [geodesicCurvature_def] at hcomp
-  exact congrArg Neg.neg hcomp
+  exact geodesicCurvature_orientedUnitNormal_comp_of_deriv_neg o hγ (by fun_prop) (by simp)
 
 end TauCeti.Manifold
