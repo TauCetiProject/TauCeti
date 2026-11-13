@@ -77,6 +77,14 @@ The oriented quiver of a graph has `Finite` vertex and arrow types; as in
 `TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`, the `Fintype` structures its
 preprojective algebra needs are supplied by `Fintype.ofFinite`.
 
+The signless statements for a graph keep the binder `[∀ i, Fintype (G.neighborSet i)]` even where
+the file-local `Fintype.ofFinite` could supply one. It is not an unused hypothesis: through
+`DoubledQuiver.instFintypeStar` it determines the `Fintype (Quiver.Star x)` structures inside the
+carrier `signlessPreprojectiveAlgebra k (DoubledQuiver G)` of the conclusion. Dropping it would
+restrict the statement to a single choice of these structures, which callers with their own
+instance could not match. The proofs reduce a given binder to the canonical one with
+`Subsingleton.elim`.
+
 ## References
 
 * W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
