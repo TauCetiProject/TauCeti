@@ -44,10 +44,14 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
   projection.
 * `cliffordProjection_apply_eq_self_iff`,
   `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the fixed vectors of `P_α` are
-  the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`.
+  the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`. Conversely
+  `cliffordProjection_apply_eq_self_of_bivectorExterior_apply` and
+  `cliffordProjection_apply_eq_zero_of_bivectorExterior_apply`: `P_α` fixes the
+  `-2i`-eigenvectors of `c₂(ω)` and kills its `2i`-eigenvectors.
 * `finrank_range_cliffordProjection`: in complex dimension two, the range of `P_α` is a line.
 * `exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul`: a nonzero spanning vector of
-  that line.
+  that line, and `exists_ne_zero_cliffordProjection_apply_eq_zero_forall_eq_smul`: likewise for
+  the kernel of `P_α`.
 * `rankOne_eq_smul_cliffordProjection`: `ψψ* = ‖ψ‖² P_α` for `ψ` in that line.
 * `coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self`,
   `coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero`: `q(ψ) = (‖ψ‖² / 4) ω` on the range
@@ -171,6 +175,17 @@ theorem bivectorExterior_apply_of_cliffordProjection_apply_eq_self {ψ : positiv
     _ = (-2 * Complex.I) • (ψ : W) := by rw [h, smul_smul]; ring_nf
 
 variable {ω} in
+/-- Conversely, a positive half-spinor on which `c₂(ω)` acts by `-2i` is fixed by `P_α`. -/
+theorem cliffordProjection_apply_eq_self_of_bivectorExterior_apply {ψ : positiveHalfSpinors o ρ}
+    (hψ : ρ (bivectorExterior Q ω) ψ = (-2 * Complex.I) • (ψ : W)) :
+    cliffordProjection o ρ ω ψ = ψ := by
+  refine (cliffordProjection_apply_eq_self_iff o ρ).2 (Subtype.ext ?_)
+  rw [coe_cliffordRestriction_apply, Submodule.coe_smul, hψ, smul_smul]
+  congr 1
+  ring_nf
+  simp
+
+variable {ω} in
 /-- The kernel of `P_α` is the `-2`-eigenspace of `C(iω)`: `P_α ψ = 0` exactly when
 `C(iω) ψ = -2 ψ`. -/
 theorem cliffordProjection_apply_eq_zero_iff {ψ : positiveHalfSpinors o ρ} :
@@ -180,6 +195,17 @@ theorem cliffordProjection_apply_eq_zero_iff {ψ : positiveHalfSpinors o ρ} :
   constructor <;> intro h
   · linear_combination (norm := module) (4 : ℂ) • h
   · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+
+variable {ω} in
+/-- A positive half-spinor on which `c₂(ω)` acts by `2i` is killed by `P_α`. -/
+theorem cliffordProjection_apply_eq_zero_of_bivectorExterior_apply {ψ : positiveHalfSpinors o ρ}
+    (hψ : ρ (bivectorExterior Q ω) ψ = (2 * Complex.I) • (ψ : W)) :
+    cliffordProjection o ρ ω ψ = 0 := by
+  refine (cliffordProjection_apply_eq_zero_iff o ρ).2 (Subtype.ext ?_)
+  rw [coe_cliffordRestriction_apply, Submodule.coe_smul, hψ, smul_smul]
+  congr 1
+  ring_nf
+  simp
 
 variable {ρ} in
 /-- If the generators act skew-adjointly, `P_α` is self-adjoint. -/
@@ -287,16 +313,26 @@ theorem exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul :
     ∃ u : positiveHalfSpinors o ρ, u ≠ 0 ∧ cliffordProjection o ρ ω u = u ∧
       ∀ ψ, cliffordProjection o ρ ω ψ = ψ → ∃ c : ℂ, ψ = c • u := by
   set P := cliffordProjection o ρ ω
-  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂
-  have h1 := finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ h₂
-  have : Nontrivial (LinearMap.range (P : Module.End ℂ (positiveHalfSpinors o ρ))) :=
-    Module.nontrivial_of_finrank_eq_succ h1
-  obtain ⟨⟨_, ψ', rfl⟩, hr⟩ := exists_ne (0 : LinearMap.range
-    (P : Module.End ℂ (positiveHalfSpinors o ρ)))
-  have hPP : P (P ψ') = P ψ' := by rw [← mul_apply_eq_comp, hP.eq]
+  obtain ⟨⟨_, ψ', rfl⟩, hr, hspan⟩ :=
+    finrank_eq_one_iff'.1 (finrank_range_cliffordProjection o ρ hQ hkl hω hω₂ h₂)
+  have hPP : P (P ψ') = P ψ' := by
+    rw [← mul_apply_eq_comp, (isIdempotentElem_cliffordProjection o ρ hQ hkl hω hω₂).eq]
   refine ⟨P ψ', fun h ↦ hr (Subtype.ext h), hPP, fun ψ hψ ↦ ?_⟩
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hr).1 h1 ⟨ψ, ψ, hψ⟩
+  obtain ⟨c, hc⟩ := hspan ⟨ψ, ψ, hψ⟩
   exact ⟨c, (congrArg Subtype.val hc).symm⟩
+
+/-- **The vectors killed by `P_α` form a line** when `W⁺` has complex dimension two: there is a
+nonzero `u` with `P_α u = 0`, and every vector killed by `P_α` is a multiple of it. -/
+theorem exists_ne_zero_cliffordProjection_apply_eq_zero_forall_eq_smul :
+    ∃ u : positiveHalfSpinors o ρ, u ≠ 0 ∧ cliffordProjection o ρ ω u = 0 ∧
+      ∀ ψ, cliffordProjection o ρ ω ψ = 0 → ∃ c : ℂ, ψ = c • u := by
+  -- The vectors killed by `P_α` are the vectors fixed by `P_β = P(-ω)`.
+  have hP {ψ : positiveHalfSpinors o ρ} :
+      cliffordProjection o ρ (-ω) ψ = ψ ↔ cliffordProjection o ρ ω ψ = 0 := by
+    rw [cliffordProjection_neg_apply, sub_eq_self]
+  obtain ⟨u, hu₀, hu, hspan⟩ := exists_ne_zero_cliffordProjection_apply_eq_self_forall_eq_smul o ρ
+    (ω := -ω) hQ hkl (by rw [map_neg, hω]) (by rwa [norm_neg]) h₂
+  exact ⟨u, hu₀, hP.1 hu, fun ψ hψ ↦ hspan ψ (hP.2 hψ)⟩
 
 variable {ρ} (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 include hρ
