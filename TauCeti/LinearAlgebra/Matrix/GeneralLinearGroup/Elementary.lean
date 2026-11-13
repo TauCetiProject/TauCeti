@@ -50,11 +50,22 @@ pairing with cyclic cohomology, descend to `K₁`.
 * `TauCeti.fromBlocksGL_conj_mem_elementarySubgroup`: the stabilization of a conjugate of an
   elementary matrix is elementary.
 
+## Scalar change and lifting
+
+`RingHom.elementarySubgroupMap` is entrywise scalar change via `Units.map` of
+`RingHom.mapMatrix`, over arbitrary rings. It respects identity and composition and is
+surjective for surjective ring maps, without changing the matrix size. In particular,
+Whitehead's elementary matrix `u ⊕ u⁻¹` has an elementary invertible lift through any
+surjective ring map, even when `u` itself has no invertible lift. These facts supply elementary
+lifts for patching invertible matrices over a quotient ring.
+
 ## References
 
 * J. Milnor, *Introduction to Algebraic K-Theory*, Annals of Mathematics Studies 72 (1971),
   §3, Lemma 3.1 (Whitehead) and Proposition 3.2.
 * J. Rosenberg, *Algebraic K-Theory and Its Applications*, GTM 147 (1994), §2.1.
+* C. A. Weibel, *The K-book*, Chapter III, §1, especially Remark 1.2.3 and
+  Whitehead's Lemma 1.3.3.
 -/
 
 public section
@@ -325,3 +336,93 @@ theorem map_reindexGL_elementarySubgroup (e : n ≃ m) :
     simp_rw [Equiv.apply_symm_apply]
 
 end Equiv
+
+namespace RingHom
+
+open TauCeti
+
+variable {A B C n : Type*} [Ring A] [Ring B] [Ring C] [Fintype n] [DecidableEq n]
+
+/-! ## Scalar change and lifting -/
+
+/-- Scalar change carries elementary matrices into elementary matrices, in the same size. -/
+theorem map_elementarySubgroup_le (f : A →+* B) :
+    (elementarySubgroup n A).map (Units.map (f.mapMatrix (m := n)).toMonoidHom) ≤
+      elementarySubgroup n B := by
+  refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
+  simpa only [Subgroup.mem_comap, RingHom.toMonoidHom_eq_coe,
+    unitsMap_mapMatrix_transvectionUnit] using
+    transvectionUnit_mem_elementarySubgroup hij (f a)
+
+/-- A surjective ring map carries the elementary subgroup onto the elementary subgroup in the
+same matrix size. Scalar change need not be surjective on the full general linear group,
+even after stabilization. -/
+theorem map_elementarySubgroup_eq_of_surjective (f : A →+* B)
+    (hf : Function.Surjective f) :
+    (elementarySubgroup n A).map (Units.map (f.mapMatrix (m := n)).toMonoidHom) =
+      elementarySubgroup n B := by
+  refine le_antisymm f.map_elementarySubgroup_le (elementarySubgroup_le_iff.2 ?_)
+  intro i j hij b
+  obtain ⟨a, rfl⟩ := hf b
+  exact ⟨transvectionUnit hij a, transvectionUnit_mem_elementarySubgroup hij a,
+    f.unitsMap_mapMatrix_transvectionUnit hij a⟩
+
+/-- An elementary invertible matrix lifts to an elementary invertible matrix of the same size
+through any surjective ring map. -/
+theorem exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq
+    (f : A →+* B) (hf : Function.Surjective f) {u : GL n B} (hu : u ∈ elementarySubgroup n B) :
+    ∃ v ∈ elementarySubgroup n A,
+      Units.map (f.mapMatrix (m := n)).toMonoidHom v = u := by
+  rw [← f.map_elementarySubgroup_eq_of_surjective hf] at hu
+  exact hu
+
+/-- The homomorphism on elementary subgroups induced by a unital ring map. -/
+def elementarySubgroupMap (f : A →+* B) :
+    elementarySubgroup n A →* elementarySubgroup n B :=
+  ((Units.map (f.mapMatrix (m := n)).toMonoidHom).comp
+    (elementarySubgroup n A).subtype).codRestrict (elementarySubgroup n B)
+      (fun u ↦ f.map_elementarySubgroup_le ⟨u, u.property, rfl⟩)
+
+/-- The induced map on elementary subgroups is entrywise scalar change. -/
+@[simp]
+theorem coe_elementarySubgroupMap (f : A →+* B) (u : elementarySubgroup n A) :
+    (f.elementarySubgroupMap u : GL n B) =
+      Units.map (f.mapMatrix (m := n)).toMonoidHom (u : GL n A) :=
+  (rfl)
+
+/-- Extension along the identity ring map is the identity on the elementary subgroup. -/
+@[simp]
+theorem elementarySubgroupMap_id :
+    (RingHom.id A).elementarySubgroupMap (n := n) = MonoidHom.id _ := by
+  ext u : 1
+  apply Subtype.ext
+  simp [coe_elementarySubgroupMap]
+
+/-- Extension on elementary subgroups respects composition of ring maps. -/
+@[simp]
+theorem elementarySubgroupMap_comp (f : A →+* B) (g : B →+* C) :
+    (g.comp f).elementarySubgroupMap (n := n) =
+      g.elementarySubgroupMap.comp f.elementarySubgroupMap := by
+  ext u : 1
+  apply Subtype.ext
+  simp only [MonoidHom.comp_apply, coe_elementarySubgroupMap]
+  rfl
+
+/-- The induced homomorphism on elementary subgroups is surjective whenever the ring map is. -/
+theorem elementarySubgroupMap_surjective (f : A →+* B) (hf : Function.Surjective f) :
+    Function.Surjective (f.elementarySubgroupMap (n := n)) := by
+  intro u
+  obtain ⟨v, hv, h⟩ := f.exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq hf u.property
+  exact ⟨⟨v, hv⟩, Subtype.ext h⟩
+
+/-- Whitehead's matrix `u ⊕ u⁻¹` lifts to an elementary invertible matrix through every
+surjective ring map, even when `u` itself has no invertible lift. This lifts `u ⊕ u⁻¹`
+in size `n ⊕ n`, not the stabilization `u ⊕ 1`. -/
+theorem exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq_fromBlocksGL_inv
+    (f : A →+* B) (hf : Function.Surjective f) (u : GL n B) :
+    ∃ v ∈ elementarySubgroup (n ⊕ n) A,
+      Units.map (f.mapMatrix (m := n ⊕ n)).toMonoidHom v = fromBlocksGL (u, u⁻¹) :=
+  f.exists_mem_elementarySubgroup_unitsMap_mapMatrix_eq hf
+    (fromBlocksGL_inv_mem_elementarySubgroup u)
+
+end RingHom
