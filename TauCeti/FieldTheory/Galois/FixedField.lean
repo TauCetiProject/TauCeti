@@ -287,7 +287,7 @@ subgroup is even open, and `InfiniteGalois.fixingSubgroup_isClosed` is the case 
 `M / K`. Algebraicity of `E / K` alone suffices — nothing is asked of `M / K`, so `E` may be an
 algebraic subfield of a transcendental extension, and over an algebraic `M / K` the hypothesis is
 supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hypothesis, as
-`MulAction.stabilizer_isOpen_of_isIntegral` does. -/
+`stabilizer_isOpen_of_isIntegral` does. -/
 theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
   have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
