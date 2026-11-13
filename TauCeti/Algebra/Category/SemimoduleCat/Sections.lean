@@ -59,6 +59,12 @@ def sectionsPrecomp {K : Type*} [Category* K] (p : K ⥤ J) (F : J ⥤ Semimodul
   map_add' _ _ := by ext j; rfl
   map_smul' _ _ := by ext j; rfl
 
+/-- Restriction along an initial index functor is bijective on matching sections. -/
+theorem bijective_sectionsPrecomp {K : Type*} [Category* K]
+    (p : K ⥤ J) (F : J ⥤ SemimoduleCat R) [p.Initial] :
+    Function.Bijective (sectionsPrecomp p F) :=
+  p.bijective_sectionsPrecomp (F ⋙ forget (SemimoduleCat R))
+
 /-- Restricting a matching section reads its component at the image index. -/
 @[simp]
 theorem sectionsPrecomp_apply {K : Type*} [Category* K] (p : K ⥤ J)

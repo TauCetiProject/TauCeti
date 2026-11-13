@@ -61,6 +61,14 @@ theorem mapNatTrans_comp {I'' : MultispanIndex J C}
     D.mapNatTrans (η ≫ θ) = D.mapNatTrans η ≫ D.mapNatTrans θ := by
   simp only [mapNatTrans, Functor.whiskerLeft_comp, Category.assoc, Iso.inv_hom_id_assoc]
 
+/-- Subdivision transports the inverse of a coefficient isomorphism to the inverse. -/
+@[simp]
+theorem inv_mapNatTrans (η : I.multispan ⟶ I'.multispan) [IsIso η] :
+    inv (D.mapNatTrans η) = D.mapNatTrans (inv η) := by
+  symm
+  apply IsIso.eq_inv_of_hom_inv_id
+  rw [← mapNatTrans_comp, IsIso.hom_inv_id, mapNatTrans_id]
+
 /-- A copied original face carries its original coefficient transformation. -/
 @[simp]
 theorem mapNatTrans_app_left_inl (η : I.multispan ⟶ I'.multispan)
