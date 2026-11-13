@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.FilteredSpace
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
 
 /-!
@@ -17,13 +18,13 @@ simplicial singular chains of `E` by those of the preimages of the skeleta. Filt
 normalized cubical singular chains of `E` in the same way gives the cubical Serre spectral object
 (`TauCeti.TopCat.cubicalSerreSpectralObject`), and the comparison of simplicial and cubical
 singular chains, as a morphism of filtered complexes, identifies the two spectral objects
-(`TauCeti.TopCat.serreSpectralObjectIsoCubical`, from
-`TauCeti.singularToCubicalFiltrationSpectralObjectIso`). So the Serre spectral sequence, its pages,
+(`TauCeti.TopCat.serreSpectralObjectIsoCubical`, an instance of
+`TauCeti.chainFiltrationSpectralObjectIso`). So the Serre spectral sequence, its pages,
 its abutment and the filtration of its abutment are all computed by cubical chains.
 
 Over an arbitrary base, the Serre spectral sequence is that of the pullback to the CW
-approximation (`TopCat.Hom.arbitraryBaseSerreSpectralSequence`), and the same holds
-(`TauCeti.TopCat.arbitraryBaseSerreSpectralObjectIsoCubical`). For a Serre fibration, its abutment
+approximation (`TopCat.Hom.arbitraryBaseSerreSpectralSequence`), so the same holds. For a Serre
+fibration, its abutment
 and its first page are then read in normalized cubical singular homology of the total space and
 of the fibres.
 
@@ -31,12 +32,11 @@ of the fibres.
 
 * `TauCeti.TopCat.cubicalSerreSpectralObject`: the spectral object of the filtration of the
   normalized cubical chains of `E` by those of the preimages of the skeleta of `C`.
-* `TauCeti.TopCat.serreSpectralObjectIsoCubical`,
-  `TauCeti.TopCat.arbitraryBaseSerreSpectralObjectIsoCubical`: the Serre spectral object is
-  isomorphic to its cubical version.
-* `TauCeti.TopCat.cubicalArbitraryBaseSerreAbutmentIso`: for a Serre fibration, the abutment in
+* `TauCeti.TopCat.serreSpectralObjectIsoCubical`: the Serre spectral object is isomorphic to its
+  cubical version.
+* `TauCeti.TopCat.arbitraryBaseSerreAbutmentIsoCubical`: for a Serre fibration, the abutment in
   degree `-n` is the normalized cubical singular homology `H^□ₙ(E; R)` of the total space.
-* `TauCeti.TopCat.cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma`: the object of the
+* `TauCeti.TopCat.arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical`: the object of the
   first page at the position of `E¹_{k,q}` is the sum, over the `k`-cells of the CW approximation of
   `B`, of the normalized cubical singular homology `H^□_q` of the fibre over the image of the centre
   of the cell.
@@ -71,7 +71,8 @@ chains of `E` by those of the preimages `p⁻¹(C^(i))` of the skeleta. -/
 abbrev cubicalSerreSpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :=
   CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    (monotone_cubicalChainFiltration R (monotone_preimageSkeleton (C := C) p)))
+    (monotone_chainFiltration (normalizedCubicalChainComplex R)
+      (monotone_preimageSkeleton (C := C) p)))
 
 /-- **The Serre spectral sequence is computed by cubical chains.** The Serre spectral object of
 `p : E ⟶ B` over a relative CW complex `C ⊆ B`, built from simplicial singular chains, is
@@ -80,20 +81,22 @@ singular chains. -/
 def serreSpectralObjectIsoCubical (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :
     serreSpectralObject C p R ≅ cubicalSerreSpectralObject C p R :=
-  singularToCubicalFiltrationSpectralObjectIso R (monotone_preimageSkeleton (C := C) p)
+  chainFiltrationSpectralObjectIso (singularToCubical R) (monotone_preimageSkeleton (C := C) p)
+
+/-- The isomorphism `TauCeti.TopCat.serreSpectralObjectIsoCubical` is the morphism of spectral
+objects induced by the comparison `TauCeti.singularToCubical`, as a morphism of filtered
+complexes. -/
+@[simp]
+lemma serreSpectralObjectIsoCubical_hom (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
+    (R : Type u) [Ring R] :
+    (serreSpectralObjectIsoCubical C p R).hom =
+      CochainComplex.spectralObjectMap (chainFiltrationMap (singularToCubical R)
+        (monotone_preimageSkeleton (C := C) p)) :=
+  chainFiltrationSpectralObjectIso_hom _ _
 
 end SpectralObject
 
 variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p) (R : Type u) [Ring R]
-
-/-- **The Serre spectral sequence over an arbitrary base is computed by cubical chains.** The
-Serre spectral object of `p : E ⟶ B` over an arbitrary base is isomorphic to the cubical Serre
-spectral object of the pullback of `p` to the CW approximation of `B`. -/
-def arbitraryBaseSerreSpectralObjectIsoCubical :
-    p.arbitraryBaseSerreSpectralObject R ≅
-      cubicalSerreSpectralObject (univ : Set (sigmaCWApproximation B))
-        (_root_.TopCat.pullbackFst (sigmaCWApproximationMap B) p) R :=
-  serreSpectralObjectIsoCubical _ _ R
 
 include hp
 
@@ -102,16 +105,16 @@ fibration `p : E ⟶ B`, the abutment in degree `-n` of the Serre spectral seque
 base is the normalized cubical singular homology `H^□ₙ(E; R)` of the total space: the isomorphism
 `TauCeti.TopCat.arbitraryBaseSerreAbutmentIso` with simplicial singular homology, followed by the
 comparison `TauCeti.singularCubicalHomologyIso`. -/
-def cubicalArbitraryBaseSerreAbutmentIso (n : ℕ) :
+def arbitraryBaseSerreAbutmentIsoCubical (n : ℕ) :
     (p.arbitraryBaseSerreSpectralObject R).abutment (-n) ≅
       ((normalizedCubicalChainComplex R).obj E).homology n :=
   arbitraryBaseSerreAbutmentIso hp R n ≪≫ singularCubicalHomologyIso R E n
 
-/-- The isomorphism `TauCeti.TopCat.cubicalArbitraryBaseSerreAbutmentIso` is the abutment
+/-- The isomorphism `TauCeti.TopCat.arbitraryBaseSerreAbutmentIsoCubical` is the abutment
 isomorphism with simplicial singular homology, followed by the map induced on homology by the
 comparison `TauCeti.singularToCubical`. -/
-lemma cubicalArbitraryBaseSerreAbutmentIso_hom (n : ℕ) :
-    (cubicalArbitraryBaseSerreAbutmentIso hp R n).hom =
+lemma arbitraryBaseSerreAbutmentIsoCubical_hom (n : ℕ) :
+    (arbitraryBaseSerreAbutmentIsoCubical hp R n).hom =
       (arbitraryBaseSerreAbutmentIso hp R n).hom ≫
         HomologicalComplex.homologyMap ((singularToCubical R).app E) n :=
   congrArg ((arbitraryBaseSerreAbutmentIso hp R n).hom ≫ ·)
@@ -122,7 +125,7 @@ fibration `p : E ⟶ B`, the object of the first page (numbered `2`) at `pq = (a
 `b = k - 1` and `a + b = -(q + k)`, is the direct sum `⨁ⱼ H^□_q(p⁻¹(f(χⱼ(0))); R)` of the normalized
 cubical singular homology of the fibres over the images of the centres of the `k`-cells `j` of the
 CW approximation `f : ΓB ⟶ B`. In the classical indexing this is `E¹_{k,q}`. -/
-def cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq : ℤ × ℤ)
+def arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical (k q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
     ((p.arbitraryBaseSerreSpectralSequence R).page 2).X pq ≅
       ∐ fun j : cell (univ : Set (sigmaCWApproximation B)) k ↦
@@ -131,12 +134,12 @@ def cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma (k q : ℕ) (pq 
   arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha ≪≫
     Sigma.mapIso fun _ ↦ singularCubicalHomologyIso R _ q
 
-/-- The isomorphism `TauCeti.TopCat.cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma` is
+/-- The isomorphism `TauCeti.TopCat.arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical` is
 the first-page isomorphism with simplicial singular homology of the fibres, followed on each summand
 by the map induced on homology by the comparison `TauCeti.singularToCubical`. -/
-lemma cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma_hom (k q : ℕ) (pq : ℤ × ℤ)
+lemma arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_hom (k q : ℕ) (pq : ℤ × ℤ)
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
-    (cubicalArbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom =
+    (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical hp R k q pq hb ha).hom =
       (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
   congrArg ((arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫ ·) <|

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.SpectralObject.Map
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -25,10 +26,10 @@ into the piece `G n` of an increasing filtration of `L` induces a morphism of th
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
 their spectral sequences.
 
-A natural transformation whose components are quasi-isomorphisms, between functors whose
-transition maps are monomorphisms, induces an isomorphism of spectral objects
-(`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in cohomology of a
-morphism of cokernels, which is a quasi-isomorphism by the five lemma.
+A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
+spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
+cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the five lemma
+(`CochainComplex.quasiIso_mappingCone_map`).
 
 ## Main definitions
 
@@ -37,10 +38,10 @@ morphism of cokernels, which is a quasi-isomorphism by the five lemma.
 
 ## Main results
 
-* `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
-  is an isomorphism as soon as it is one on every `H^n(f)`.
-* `CochainComplex.isIso_spectralObjectMap`: a natural transformation by quasi-isomorphisms, between
-  functors with monomorphic transition maps, induces an isomorphism of spectral objects.
+* `CochainComplex.quasiIso_mappingCone_map`: a commutative square of quasi-isomorphisms induces a
+  quasi-isomorphism of mapping cones.
+* `CochainComplex.isIso_spectralObjectMap`: a natural transformation by quasi-isomorphisms induces
+  an isomorphism of spectral objects.
 * `CochainComplex.spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom`: on graded pieces,
   the morphism of spectral objects is the map in cohomology of the morphism of cokernels.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
@@ -50,25 +51,6 @@ morphism of cokernels, which is a quasi-isomorphism by the five lemma.
 public section
 
 open CategoryTheory Limits ComposableArrows
-
-namespace CategoryTheory.Abelian.SpectralObject
-
-variable {C ι : Type*} [Category* C] [Abelian C] [Category* ι] {X Y : SpectralObject C ι}
-
-/-- A morphism of spectral objects is an isomorphism as soon as it is one on every `H^n(f)`. -/
-lemma isIso_of_isIso_hom_app (φ : X ⟶ Y)
-    (h : ∀ (n : ℤ) {i j : ι} (f : i ⟶ j), IsIso ((φ.hom n).app (mk₁ f))) : IsIso φ := by
-  have hφ (n : ℤ) : IsIso (φ.hom n) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro D
-    obtain ⟨_, _, f, rfl⟩ := mk₁_surjective D
-    exact h n f
-  refine ⟨⟨fun n ↦ inv (φ.hom n), fun n₀ n₁ hn₁ i j k f g ↦ ?_⟩, ?_, ?_⟩
-  · rw [← cancel_epi ((φ.hom n₀).app (mk₁ g)), ← φ.comm_assoc]
-    simp
-  all_goals exact Hom.ext (funext fun n ↦ by simp)
-
-end CategoryTheory.Abelian.SpectralObject
 
 namespace CochainComplex
 
@@ -100,28 +82,36 @@ lemma spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom (α : F ⟶ G) {i
     (Category.assoc _ _ _).trans <|
     (congrArg ((spectralObjectHIso F f n).hom ≫ ·) key).trans (Category.assoc _ _ _).symm
 
+/-- The map of mapping cones induced by a commutative square of quasi-isomorphisms is a
+quasi-isomorphism. -/
+lemma quasiIso_mappingCone_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
+    (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a] [QuasiIso b] :
+    QuasiIso (mappingCone.map φ₁ φ₂ a b comm) := by
+  have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
+  have h : mappingCone.map φ₁ φ₂ a b comm =
+      HomologicalComplex.homotopyCofiber.mapArrowHom φ₁ φ₂ hc (Arrow.homMk a b comm.symm) := by
+    ext n
+    refine mappingCone.ext_from _ (n + 1) n rfl ?_ ?_
+    · simp only [Int.reduceNeg, mappingCone.map, mappingCone.inl_v_desc_f,
+        HomComplex.Cochain.zero_cochain_comp_v, HomComplex.Cochain.ofHom_v]
+      exact (HomologicalComplex.homotopyCofiber.inlX_mapArrowHom_f
+        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) (n + 1) n rfl).symm
+    · simp only [mappingCone.map, mappingCone.inr_f_desc_f]
+      exact (HomologicalComplex.homotopyCofiber.inrX_mapArrowHom_f
+        φ₁ φ₂ hc (Arrow.homMk a b comm.symm) n).symm
+  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).left := ‹QuasiIso a›
+  have : QuasiIso (Arrow.homMk a b comm.symm : Arrow.mk φ₁ ⟶ Arrow.mk φ₂).right := ‹QuasiIso b›
+  exact h ▸ HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom φ₁ φ₂ hc _
+
 /-- **A quasi-isomorphism of functors to cochain complexes induces an isomorphism of spectral
-objects.** If the transition maps of `F` and `G` are monomorphisms, for instance for filtrations,
-and every component of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α` is an
-isomorphism: on `H^n(f)` it is the map in cohomology of the induced morphism of cokernels, a
-quasi-isomorphism by the five lemma. -/
-lemma isIso_spectralObjectMap (α : F ⟶ G) [∀ {i j : ι} (f : i ⟶ j), Mono (F.map f)]
-    [∀ {i j : ι} (f : i ⟶ j), Mono (G.map f)] [∀ i, QuasiIso (α.app i)] :
+objects.** If every component of `α : F ⟶ G` is a quasi-isomorphism, then `spectralObjectMap α`
+is an isomorphism: on `H^n(f)` it is the map in cohomology of the induced morphism of mapping
+cones, a quasi-isomorphism by the five lemma. -/
+lemma isIso_spectralObjectMap (α : F ⟶ G) [∀ i, QuasiIso (α.app i)] :
     IsIso (spectralObjectMap α) := by
   refine Abelian.SpectralObject.isIso_of_isIso_hom_app _ fun n i j f ↦ ?_
-  have : QuasiIso (cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)) :=
-    HomologicalComplex.HomologySequence.quasiIso_τ₃
-      (S₁ := ShortComplex.cokernelSequence (F.map f))
-      (S₂ := ShortComplex.cokernelSequence (G.map f))
-      { τ₁ := α.app i
-        τ₂ := α.app j
-        τ₃ := cokernel.map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
-        comm₁₂ := (α.naturality f).symm
-        comm₂₃ := (cokernel.π_desc _ _ _).symm }
-      (.mk' (ShortComplex.cokernelSequence_exact _) inferInstance inferInstance)
-      (.mk' (ShortComplex.cokernelSequence_exact _) inferInstance inferInstance)
-      (inferInstanceAs (QuasiIso (α.app i))) (inferInstanceAs (QuasiIso (α.app j)))
-  have h := spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α f n
+  have := quasiIso_mappingCone_map (F.map f) (G.map f) (α.app i) (α.app j) (α.naturality f)
+  have h := spectralObjectMap_hom_app_hIso α f n
   rw [← Iso.eq_comp_inv] at h
   rw [h]
   infer_instance

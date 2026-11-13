@@ -33,6 +33,8 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
+  is an isomorphism as soon as it is one on every `H^n(f)`.
 
 ## References
 
@@ -299,5 +301,22 @@ lemma d_EMap :
     toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section IsIso
+
+/-- A morphism of spectral objects is an isomorphism as soon as it is one on every `H^n(f)`. -/
+lemma isIso_of_isIso_hom_app
+    (h : ∀ (n : ℤ) {i j : ι} (f : i ⟶ j), IsIso ((φ.hom n).app (mk₁ f))) : IsIso φ := by
+  have hφ (n : ℤ) : IsIso (φ.hom n) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro D
+    obtain ⟨_, _, f, rfl⟩ := mk₁_surjective D
+    exact h n f
+  refine ⟨⟨fun n ↦ inv (φ.hom n), fun n₀ n₁ hn₁ i j k f g ↦ ?_⟩, ?_, ?_⟩
+  · rw [← cancel_epi ((φ.hom n₀).app (mk₁ g)), ← φ.comm_assoc]
+    simp
+  all_goals exact Hom.ext (funext fun n ↦ by simp)
+
+end IsIso
 
 end CategoryTheory.Abelian.SpectralObject
