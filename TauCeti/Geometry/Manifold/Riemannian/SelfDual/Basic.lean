@@ -26,14 +26,14 @@ and their codomain-restricted linear counterparts `TauCeti.selfDualProj`,
 `TauCeti.antiSelfDualProj`). When `0 < k`, both fibre subspaces have dimension
 `(k + k).choose k / 2`: three for two-forms on a four-manifold.
 
-Globally, the Hodge star `⋆` of middle-degree forms (`TauCeti.RoughForm.hodgeStar`) is an
-involution, `⋆⋆ = 1`. Its `+1` and `-1` eigenspaces are the **self-dual** forms `Ω⁺`
-(`TauCeti.RoughForm.selfDualForms`) and the **anti-self-dual** forms `Ω⁻`
+Globally, in even middle degree, the Hodge star `⋆` of middle-degree forms
+(`TauCeti.RoughForm.hodgeStar`) is an involution, `⋆⋆ = 1`. Its `+1` and `-1` eigenspaces are the
+**self-dual** forms `Ω⁺` (`TauCeti.RoughForm.selfDualForms`) and the **anti-self-dual** forms `Ω⁻`
 (`TauCeti.RoughForm.antiSelfDualForms`), the rough sections of the eigenbundles `Λ⁺` and `Λ⁻` of
-`Λᵏ T*M`. Every middle-degree form splits as `α = α⁺ + α⁻` into its self-dual part
-`α⁺ = (α + ⋆α) / 2` (`TauCeti.RoughForm.selfDualPart`) and its anti-self-dual part
-`α⁻ = (α - ⋆α) / 2` (`TauCeti.RoughForm.antiSelfDualPart`). These are the projections
-`(1 ± ⋆) / 2` onto `Ω±`, and `Ω⁺ ⊕ Ω⁻` is all of the middle-degree forms.
+`Λᵏ T*M`. In every middle degree, a form decomposes algebraically as `α = α⁺ + α⁻` into its
+self-dual part `α⁺ = (α + ⋆α) / 2` (`TauCeti.RoughForm.selfDualPart`) and its anti-self-dual part
+`α⁻ = (α - ⋆α) / 2` (`TauCeti.RoughForm.antiSelfDualPart`); when `k` is even, these are the
+projections `(1 ± ⋆) / 2` onto `Ω±`, and `Ω⁺ ⊕ Ω⁻` is all of the middle-degree forms.
 
 Since `⋆` is a pointwise isometry, self-dual and anti-self-dual covectors are orthogonal in every
 middle degree, and `⟨α, β⟩ = ⟨P⁺ α, P⁺ β⟩ + ⟨P⁻ α, P⁻ β⟩` (`|α|² = |α⁺|² + |α⁻|²`). In even
@@ -42,15 +42,17 @@ connection on a four-manifold this compares the integral of `F ∧ F`, a charact
 the energies of `F⁺` and `F⁻`; the curvature equation of the Seiberg–Witten equations prescribes
 the self-dual part `F⁺`.
 
-For a `C^n` metric on a `C^(n+1)` manifold both projections preserve `C^n` forms; on smooth forms
-they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`, the
-projections onto the smooth self-dual and anti-self-dual forms `TauCeti.SmoothForm.selfDualForms`
-and `TauCeti.SmoothForm.antiSelfDualForms`. Reversing the orientation negates `⋆` and so exchanges
-the two parts (`TauCeti.RoughForm.selfDualPart_neg_orientation`,
+For a `C^n` metric on a `C^(n+1)` manifold both `(1 ± ⋆) / 2` maps preserve `C^n` forms; on smooth
+forms they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`, which
+for even `k` project onto the smooth self-dual and anti-self-dual forms
+`TauCeti.SmoothForm.selfDualForms` and `TauCeti.SmoothForm.antiSelfDualForms`. Reversing the
+orientation negates `⋆` and so exchanges the two parts
+(`TauCeti.RoughForm.selfDualPart_neg_orientation`,
 `TauCeti.RoughForm.antiSelfDualPart_neg_orientation`).
 
-Integrating, a compactly supported form has `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol` and
-`∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol`. On a boundaryless manifold, Stokes' theorem makes
+Integrating, a compactly supported form has `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol` in
+every middle degree, and `∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol` when `k` is even. On a
+boundaryless manifold, Stokes' theorem makes
 `∫_M ψ ∧ ψ` depend only on the de Rham class of a compactly supported closed form `ψ`
 (`TauCeti.integralTopForm_wedge_self_eq_of_sub_mem_exactForms`). So if `ψ - φ` is exact, then
 `∫_M |ψ⁺|² vol - ∫_M |ψ⁻|² vol = ∫_M |φ⁺|² vol - ∫_M |φ⁻|² vol` and
@@ -68,14 +70,14 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.selfDualSubspace`, `TauCeti.antiSelfDualSubspace`: the fibrewise `+1` and `-1`
   eigenspaces `Λ⁺_x, Λ⁻_x ⊆ Λᵏ T*_x M` of the Hodge star.
 * `TauCeti.selfDualProjCLM`, `TauCeti.antiSelfDualProjCLM`, `TauCeti.selfDualProj`,
-  `TauCeti.antiSelfDualProj`: the fibrewise projections `(1 ± ⋆) / 2` on `Λᵏ T*_x M` and onto
-  `Λ±_x`.
+  `TauCeti.antiSelfDualProj`: the fibrewise operators `(1 ± ⋆) / 2` on `Λᵏ T*_x M`, and for even
+  `k` their codomain-restricted projections onto `Λ±_x`.
 * `TauCeti.RoughForm.selfDualForms`, `TauCeti.RoughForm.antiSelfDualForms`: the `+1` and `-1`
   eigenspaces of the Hodge star of middle-degree forms.
-* `TauCeti.RoughForm.selfDualPart`, `TauCeti.RoughForm.antiSelfDualPart`: the projections
-  `α ↦ (α ± ⋆α) / 2`.
-* `TauCeti.SmoothForm.selfDualPart`, `TauCeti.SmoothForm.antiSelfDualPart`: the same projections
-  of smooth forms.
+* `TauCeti.RoughForm.selfDualPart`, `TauCeti.RoughForm.antiSelfDualPart`: the maps
+  `α ↦ (α ± ⋆α) / 2` (projections onto `Ω±` when `k` is even).
+* `TauCeti.SmoothForm.selfDualPart`, `TauCeti.SmoothForm.antiSelfDualPart`: the corresponding
+  `(1 ± ⋆) / 2` maps on smooth forms.
 * `TauCeti.SmoothForm.selfDualForms`, `TauCeti.SmoothForm.antiSelfDualForms`: the smooth
   self-dual and anti-self-dual forms, the `+1` and `-1` eigenspaces of the Hodge star of smooth
   middle-degree forms.
@@ -84,31 +86,32 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 
 * `TauCeti.isCompl_selfDualSubspace_antiSelfDualSubspace`,
   `TauCeti.alternatingFormInner_eq_zero_of_mem_selfDualSubspace_of_mem_antiSelfDualSubspace`,
-  `TauCeti.alternatingFormInner_eq_add_selfDualProjCLM_antiSelfDualProjCLM`: each fibre splits
-  orthogonally as `Λ⁺_x ⊕ Λ⁻_x`, and the Gram pairing decomposes into self-dual and anti-self-dual
-  components.
+  `TauCeti.alternatingFormInner_eq_add_selfDualProjCLM_antiSelfDualProjCLM`: for even `k` each
+  fibre splits orthogonally as `Λ⁺_x ⊕ Λ⁻_x`, and in every middle degree the Gram pairing
+  satisfies `⟨α, β⟩ = ⟨P⁺_x α, P⁺_x β⟩ + ⟨P⁻_x α, P⁻_x β⟩`.
 * `TauCeti.finrank_selfDualSubspace`, `TauCeti.finrank_antiSelfDualSubspace`,
   `TauCeti.finrank_selfDualSubspace_two`, `TauCeti.finrank_antiSelfDualSubspace_two`: the fibre
   dimensions `(k + k).choose k / 2` for even `0 < k`, and `3` for `k = 2`.
-* `TauCeti.RoughForm.isProj_selfDualPart`, `TauCeti.RoughForm.isProj_antiSelfDualPart`: the
-  projections onto `Ω⁺` and `Ω⁻`, with kernels `Ω⁻` and `Ω⁺`.
-* `TauCeti.RoughForm.isCompl_selfDualForms_antiSelfDualForms`: `Ω⁺ ⊕ Ω⁻` is all of the
-  middle-degree forms.
+* `TauCeti.RoughForm.isProj_selfDualPart`, `TauCeti.RoughForm.isProj_antiSelfDualPart`: for even
+  `k`, the projections onto `Ω⁺` and `Ω⁻`, with kernels `Ω⁻` and `Ω⁺`.
+* `TauCeti.RoughForm.isCompl_selfDualForms_antiSelfDualForms`: for even `k`, `Ω⁺ ⊕ Ω⁻` is all of
+  the middle-degree forms.
 * `TauCeti.RoughForm.alternatingFormInner_eq_zero_of_mem_selfDualForms`: self-dual and
   anti-self-dual forms are pointwise orthogonal.
 * `TauCeti.RoughForm.alternatingFormInner_selfDualPart_of_mem_selfDualForms`,
   `TauCeti.RoughForm.alternatingFormInner_antiSelfDualPart_of_mem_antiSelfDualForms`: pairing with
   a self-dual, or anti-self-dual, form sees only the self-dual, or anti-self-dual, part.
-* `TauCeti.RoughForm.alternatingFormInner_self_eq_add`: `|α|² = |α⁺|² + |α⁻|²` pointwise.
-* `TauCeti.RoughForm.wedge_self_apply`: `α ∧ α = (|α⁺|² - |α⁻|²) vol`.
+* `TauCeti.RoughForm.alternatingFormInner_self_eq_add`: `|α|² = |α⁺|² + |α⁻|²` pointwise in every
+  middle degree.
+* `TauCeti.RoughForm.wedge_self_apply`: `α ∧ α = (|α⁺|² - |α⁻|²) vol` for even `k`.
 * `TauCeti.RoughForm.map_proj_selfDualForms`, `TauCeti.RoughForm.map_proj_antiSelfDualForms`: the
   values at `x` of rough (anti-)self-dual forms are `selfDualSubspace o x` and
   `antiSelfDualSubspace o x`.
-* `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the projections
-  preserve `C^n` forms.
-* `TauCeti.SmoothForm.isProj_selfDualPart`, `TauCeti.SmoothForm.isProj_antiSelfDualPart`: on
-  smooth forms they are the projections onto the smooth `Ω⁺` and `Ω⁻`, which are the smooth forms
-  lying in the rough `Ω⁺` and `Ω⁻` (`TauCeti.SmoothForm.coe_mem_selfDualForms_iff`).
+* `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the `(1 ± ⋆) / 2`
+  maps preserve `C^n` forms.
+* `TauCeti.SmoothForm.isProj_selfDualPart`, `TauCeti.SmoothForm.isProj_antiSelfDualPart`: for even
+  `k`, on smooth forms they are the projections onto the smooth `Ω⁺` and `Ω⁻`, which are the smooth
+  forms lying in the rough `Ω⁺` and `Ω⁻` (`TauCeti.SmoothForm.coe_mem_selfDualForms_iff`).
 * `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add`,
   `TauCeti.SmoothForm.integralTopForm_wedge_self`: `∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol`
   and `∫_M α ∧ α = ∫_M |α⁺|² vol - ∫_M |α⁻|² vol` for a compactly supported form.
@@ -231,14 +234,16 @@ theorem formHodgeStarCLM_involutive (o : Manifold.Orientation I M (Fin (k + k)))
     Function.Involutive (formHodgeStarCLM o rfl x) :=
   fun α ↦ congr($(formHodgeStarCLM_comp_self_of_even o hk x) α)
 
-/-! ### Fibrewise self-dual and anti-self-dual projections -/
+/-! ### Fibrewise `(1 ± ⋆) / 2` operators and eigenprojections -/
 
-/-- The fibrewise self-dual projection `P⁺_x = (1 + ⋆) / 2` on real `k`-forms at `x`. -/
+/-- The fibrewise continuous linear operator `P⁺_x = (1 + ⋆) / 2` on real `k`-forms at `x`. When
+`k` is even, `P⁺_x` is the orthogonal projection onto `selfDualSubspace o x`. -/
 def selfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
     (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ :=
   (2⁻¹ : ℝ) • (ContinuousLinearMap.id ℝ _ + formHodgeStarCLM o rfl x)
 
-/-- The fibrewise anti-self-dual projection `P⁻_x = (1 - ⋆) / 2` on real `k`-forms at `x`. -/
+/-- The fibrewise continuous linear operator `P⁻_x = (1 - ⋆) / 2` on real `k`-forms at `x`. When
+`k` is even, `P⁻_x` is the orthogonal projection onto `antiSelfDualSubspace o x`. -/
 def antiSelfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
     (TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ :=
   (2⁻¹ : ℝ) • (ContinuousLinearMap.id ℝ _ - formHodgeStarCLM o rfl x)
@@ -295,7 +300,8 @@ theorem antiSelfDualProjCLM_neg_orientation (o : Manifold.Orientation I M (Fin (
     antiSelfDualProjCLM (-o) x = selfDualProjCLM o x := by
   rw [← selfDualProjCLM_neg_orientation, neg_neg]
 
-/-- The self-dual and anti-self-dual projections sum to the identity on every fibre. -/
+/-- The fibrewise operators `P⁺_x = (1 + ⋆) / 2` and `P⁻_x = (1 - ⋆) / 2` sum to the identity on
+every fibre (forming complementary eigenspace projections when `k` is even). -/
 @[simp]
 theorem selfDualProjCLM_add_antiSelfDualProjCLM
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
@@ -305,7 +311,8 @@ theorem selfDualProjCLM_add_antiSelfDualProjCLM
   rw [selfDualProjCLM_eq_halfOneAdd, antiSelfDualProjCLM_eq_halfOneAdd]
   exact halfOneAdd_add_halfOneAdd_neg ℝ (formHodgeStarCLM o rfl x)
 
-/-- Every middle-degree covector is the sum of its self-dual and anti-self-dual projections. -/
+/-- Every middle-degree covector `α` is the sum `P⁺_x α + P⁻_x α` of its `(1 + ⋆) / 2` and
+`(1 - ⋆) / 2` parts (its self-dual and anti-self-dual projections when `k` is even). -/
 @[simp]
 theorem selfDualProjCLM_add_antiSelfDualProjCLM_apply
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M)
@@ -313,7 +320,8 @@ theorem selfDualProjCLM_add_antiSelfDualProjCLM_apply
     selfDualProjCLM o x α + antiSelfDualProjCLM o x α = α :=
   congr($(selfDualProjCLM_add_antiSelfDualProjCLM o x) α)
 
-/-- The difference `P⁺_x - P⁻_x` of the two projections is the Hodge star `⋆`. -/
+/-- The difference `P⁺_x - P⁻_x` of `(1 + ⋆) / 2` and `(1 - ⋆) / 2` is the fibrewise Hodge star
+`⋆`. -/
 @[simp]
 theorem selfDualProjCLM_sub_antiSelfDualProjCLM
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M) :
@@ -546,8 +554,9 @@ theorem alternatingFormInner_antiSelfDualProjCLM_left (o : Manifold.Orientation 
   rw [← selfDualProjCLM_neg_orientation]
   exact alternatingFormInner_selfDualProjCLM_left (-o) hk x α β
 
-/-- **Orthogonal decomposition of the Gram pairing**: `⟨α, β⟩ = ⟨P⁺ α, P⁺ β⟩ + ⟨P⁻ α, P⁻ β⟩` at
-every point and in every middle degree `k`. -/
+/-- **Gram pairing identity under `(1 ± ⋆) / 2`**: `⟨α, β⟩ = ⟨P⁺_x α, P⁺_x β⟩ + ⟨P⁻_x α, P⁻_x β⟩`
+at every point and in every middle degree `k`. When `k` is even, this expresses the orthogonal
+decomposition of the Gram pairing along `Λ⁺_x ⊕ Λ⁻_x`. -/
 theorem alternatingFormInner_eq_add_selfDualProjCLM_antiSelfDualProjCLM
     (o : Manifold.Orientation I M (Fin (k + k))) (x : M)
     (α β : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :
@@ -847,7 +856,8 @@ theorem alternatingFormInner_antiSelfDualPart_of_mem_antiSelfDualForms (hk : Eve
   conv_rhs => rw [← selfDualPart_add_antiSelfDualPart o α]
   rw [Pi.add_apply, map_add, LinearMap.add_apply, h, zero_add]
 
-/-- **Pythagoras for the splitting `Ω⁺ ⊕ Ω⁻`**: `|α|² = |α⁺|² + |α⁻|²` at every point. -/
+/-- **Pointwise energy identity under `(1 ± ⋆) / 2`**: `|α|² = |α⁺|² + |α⁻|²` at every point and in
+every middle degree `k` (Pythagoras for the orthogonal splitting `Ω⁺ ⊕ Ω⁻` when `k` is even). -/
 theorem alternatingFormInner_self_eq_add (α : RoughForm I M ℝ k) (x : M) :
     alternatingFormInner (TangentSpace I x) k (α x) (α x) =
       alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (selfDualPart o α x) +
@@ -1123,7 +1133,7 @@ theorem ker_antiSelfDualPart :
   rw [LinearMap.mem_ker, ← coe_mem_selfDualForms_iff, ← RoughForm.ker_antiSelfDualPart,
     LinearMap.mem_ker, ← coe_antiSelfDualPart, ZeroMemClass.coe_eq_zero]
 
-/-- The self-dual projection commutes with right multiplication by a smooth zero-form. -/
+/-- `SmoothForm.selfDualPart` commutes with right multiplication by a smooth zero-form. -/
 theorem selfDualPart_wedge_zero_right (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
     selfDualPart o (wedge φ f) = wedge (selfDualPart o φ) f := by
   apply Subtype.ext
@@ -1184,9 +1194,10 @@ theorem antiSelfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}
 
 /-! ### Integrated energies -/
 
-/-- **Pythagoras for the `L²` energy**: on an oriented Riemannian manifold of dimension `k + k`,
-a compactly supported smooth `k`-form `α` has
-`∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol`. -/
+/-- **`L²` energy identity under `(1 ± ⋆) / 2`**: on an oriented Riemannian manifold of dimension
+`k + k`, a compactly supported smooth `k`-form `α` has
+`∫_M |α|² vol = ∫_M |α⁺|² vol + ∫_M |α⁻|² vol` (the orthogonal `L²` splitting across `Ω⁺ ⊕ Ω⁻`
+when `k` is even). -/
 theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_add
     {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •

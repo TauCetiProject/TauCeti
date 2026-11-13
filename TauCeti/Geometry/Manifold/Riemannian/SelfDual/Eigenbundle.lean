@@ -24,15 +24,19 @@ covectors (`TauCeti.selfDualSubspace`) and its `-1`-eigenspace `Λ⁻_x` of anti
 `(k + k).choose k / 2` when `0 < k` (`3` when `k = 2`); see
 `TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic` for this fibrewise theory.
 
-For a `C^n` Riemannian metric on a `C^(n+1)` manifold (with corners), the projections `P⁺` and
-`P⁻` are `C^n` sections of the endomorphism bundle of `Λᵏ T*M` (`TauCeti.contMDiff_selfDualProjCLM`
-and `TauCeti.contMDiff_antiSelfDualProjCLM`). Because they have constant rank across each
-trivialization of `Λᵏ T*M`, the operator-range frame criterion
+For a `C^n` Riemannian metric on a `C^(n+1)` manifold (with corners), the fibrewise operators
+`P⁺ = (1 + ⋆) / 2` and `P⁻ = (1 - ⋆) / 2` are `C^n` sections of the endomorphism bundle of
+`Λᵏ T*M` in every middle degree (`TauCeti.contMDiff_selfDualProjCLM` and
+`TauCeti.contMDiff_antiSelfDualProjCLM`). When `k` is even, they are projections of constant rank
+across each trivialization of `Λᵏ T*M`, so the operator-range frame criterion
 `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ` produces `C^n` local subbundle frames
 for `Λ⁺` and `Λ⁻` near every point (`TauCeti.hasLocalContMDiffSubbundleFrames_selfDualSubspace` and
 `TauCeti.hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace`, together with the rank-three
 four-manifold specializations `TauCeti.hasLocalContMDiffSubbundleFrames_selfDualSubspace_two` and
-`TauCeti.hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_two`). Consequently:
+`TauCeti.hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_two`). Upgrading `Λ⁺` and `Λ⁻` from
+submodules of differential forms to smooth Riemannian vector bundles provides the bundle total
+spaces, inner products, and section spaces needed in four-manifold gauge theory (such as target
+bundles for self-dual curvature equations and Clifford actions on spinor bundles). Consequently:
 
 * `Λ⁺` and `Λ⁻` are `C^n` real vector subbundles of `Λᵏ T*M`, with canonical inclusions that are
   `C^n` smooth embeddings of total spaces;
@@ -47,10 +51,19 @@ four-manifold specializations `TauCeti.hasLocalContMDiffSubbundleFrames_selfDual
   self-dual and anti-self-dual differential forms (`TauCeti.selfDualContMDiffSectionEquiv` and
   `TauCeti.antiSelfDualContMDiffSectionEquiv`).
 
+## Usage note
+
+The induced subspace topologies on the total spaces of `Λ⁺` and `Λ⁻` are registered globally as
+`TauCeti.instTopologicalSpaceTotalSpaceSelfDualSubspace` and
+`TauCeti.instTopologicalSpaceTotalSpaceAntiSelfDualSubspace`. Because the orientation `o` and rank
+`r` are explicit parameters rather than typeclasses, callers install the bundle structures locally
+from a frame witness `hsd : HasLocalContMDiffSubbundleFrames ...` via `letI := hsd.fiberBundle`,
+`letI := hsd.vectorBundle`, and `letI := hsd.contMDiffVectorBundle`.
+
 ## Main definitions
 
 * `TauCeti.selfDualBundleProj`, `TauCeti.antiSelfDualBundleProj`: the bundle projections
-  `Λᵏ T*M → Λ⁺` and `Λᵏ T*M → Λ⁻` on total spaces.
+  `Λᵏ T*M → Λ⁺` and `Λᵏ T*M → Λ⁻` on total spaces for even `k`.
 * `TauCeti.selfDualProdAntiSelfDualDiffeomorph` and
   `TauCeti.selfDualProdAntiSelfDualDiffeomorphTwo`: the `C^n` direct-sum bundle diffeomorphism
   `Λ⁺ ⊕ Λ⁻ ≃ₘ^n Λᵏ T*M` and its rank-three four-manifold specialization.
@@ -64,8 +77,9 @@ four-manifold specializations `TauCeti.hasLocalContMDiffSubbundleFrames_selfDual
 ## Main results
 
 * `TauCeti.contMDiff_selfDualProjCLM`, `TauCeti.contMDiff_antiSelfDualProjCLM`: `C^n` regularity
-  of the projections as `Hom`-bundle sections.
+  of the fibrewise `(1 ± ⋆) / 2` operators as `Hom`-bundle sections.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_selfDualSubspace_of_finrank`,
+  `TauCeti.hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_of_finrank`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_selfDualSubspace`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_selfDualSubspace_two`,
@@ -124,7 +138,7 @@ instance instTopologicalSpaceTotalSpaceAntiSelfDualSubspace
 
 end SubbundleTopology
 
-/-! ### Smoothness of the projections and local subbundle frames -/
+/-! ### Smoothness of `(1 ± ⋆) / 2` and local subbundle frames -/
 
 section SubbundleFrames
 
@@ -132,8 +146,9 @@ variable {n : WithTop ℕ∞} [IsManifold I 1 M] [IsManifold I (n + 1) M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {k : ℕ}
 
-/-- **The self-dual projection `P⁺ = (1 + ⋆) / 2` is a `C^n` section of the endomorphism bundle**
-of `Λᵏ T*M`, for a `C^n` metric on a `C^(n+1)` manifold. -/
+/-- **The fibrewise operator `P⁺ = (1 + ⋆) / 2` is a `C^n` section of the endomorphism bundle** of
+`Λᵏ T*M`, for a `C^n` metric on a `C^(n+1)` manifold (the self-dual projection when `k` is
+even). -/
 theorem contMDiff_selfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k))) :
     ContMDiff I (I.prod 𝓘(ℝ, (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' ((E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin k]→L[ℝ] ℝ)
@@ -151,8 +166,9 @@ theorem contMDiff_selfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k))) :
   exact (contMDiff_const (c := (2⁻¹ : ℝ))).smul_section
     (hid.add_section (contMDiff_formHodgeStarCLM o rfl))
 
-/-- **The anti-self-dual projection `P⁻ = (1 - ⋆) / 2` is a `C^n` section of the endomorphism
-bundle** of `Λᵏ T*M`, for a `C^n` metric on a `C^(n+1)` manifold. -/
+/-- **The fibrewise operator `P⁻ = (1 - ⋆) / 2` is a `C^n` section of the endomorphism bundle** of
+`Λᵏ T*M`, for a `C^n` metric on a `C^(n+1)` manifold (the anti-self-dual projection when `k` is
+even). -/
 theorem contMDiff_antiSelfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k))) :
     ContMDiff I (I.prod 𝓘(ℝ, (E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' ((E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] E [⋀^Fin k]→L[ℝ] ℝ)
@@ -161,7 +177,8 @@ theorem contMDiff_antiSelfDualProjCLM (o : Manifold.Orientation I M (Fin (k + k)
         x (antiSelfDualProjCLM o x)) := by
   simpa only [selfDualProjCLM_neg_orientation] using contMDiff_selfDualProjCLM (n := n) (-o)
 
-/-- The fibrewise self-dual projection induces a `C^n` map on the total space of real `k`-forms. -/
+/-- The fibrewise operator `P⁺ = (1 + ⋆) / 2` (`selfDualProjCLM`) induces a `C^n` map on the total
+space of real `k`-forms. -/
 theorem contMDiff_selfDualProj_totalSpace (o : Manifold.Orientation I M (Fin (k + k))) :
     ContMDiff (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) ↦
@@ -174,8 +191,8 @@ theorem contMDiff_selfDualProj_totalSpace (o : Manifold.Orientation I M (Fin (k 
     (E₂ := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) (selfDualProjCLM o)).1
     (contMDiff_selfDualProjCLM o)
 
-/-- The fibrewise anti-self-dual projection induces a `C^n` map on the total space of real
-`k`-forms. -/
+/-- The fibrewise operator `P⁻ = (1 - ⋆) / 2` (`antiSelfDualProjCLM`) induces a `C^n` map on the
+total space of real `k`-forms. -/
 theorem contMDiff_antiSelfDualProj_totalSpace (o : Manifold.Orientation I M (Fin (k + k))) :
     ContMDiff (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ)) n
       (fun p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) ↦
@@ -232,8 +249,9 @@ theorem hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace_of_finrank
   exact hasLocalContMDiffSubbundleFrames_selfDualSubspace_of_finrank (-o) hk fun x ↦ by
     rw [selfDualSubspace_neg_orientation, hr x]
 
-/-- **The self-dual eigenbundle `Λ⁺` is a `C^n` vector subbundle** of `Λᵏ T*M` of rank
-`(k + k).choose k / 2`, in every even positive middle degree `k`. -/
+/-- **In every even positive middle degree `k`, `selfDualSubspace o` (`Λ⁺`) admits `C^n` local
+subbundle frames** of rank `(k + k).choose k / 2` near every point (providing its `C^n` vector
+subbundle structure via `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
 theorem hasLocalContMDiffSubbundleFrames_selfDualSubspace
     (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (hk₀ : 0 < k) :
     HasLocalContMDiffSubbundleFrames I n (E [⋀^Fin k]→L[ℝ] ℝ)
@@ -241,8 +259,9 @@ theorem hasLocalContMDiffSubbundleFrames_selfDualSubspace
   hasLocalContMDiffSubbundleFrames_selfDualSubspace_of_finrank o hk
     (finrank_selfDualSubspace o hk hk₀)
 
-/-- **The anti-self-dual eigenbundle `Λ⁻` is a `C^n` vector subbundle** of `Λᵏ T*M` of rank
-`(k + k).choose k / 2`, in every even positive middle degree `k`. -/
+/-- **In every even positive middle degree `k`, `antiSelfDualSubspace o` (`Λ⁻`) admits `C^n` local
+subbundle frames** of rank `(k + k).choose k / 2` near every point (providing its `C^n` vector
+subbundle structure via `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
 theorem hasLocalContMDiffSubbundleFrames_antiSelfDualSubspace
     (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (hk₀ : 0 < k) :
     HasLocalContMDiffSubbundleFrames I n (E [⋀^Fin k]→L[ℝ] ℝ)
@@ -274,13 +293,17 @@ section BundleSplitting
 
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {k : ℕ}
 
-/-- The codomain-restricted bundle projection `Λᵏ T*M → Λ⁺` sending `(x, α)` to `(x, P⁺_x α)`. -/
+/-- The codomain-restricted bundle projection `Λᵏ T*M → Λ⁺` sending `(x, α)` to `(x, P⁺_x α)`.
+The parameter `r` specifies the model fibre `Fin r → ℝ` of the target subbundle total space
+(matching the subbundle rank in `HasLocalContMDiffSubbundleFrames`). -/
 def selfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
     TotalSpace (Fin r → ℝ) (fun x ↦ selfDualSubspace o x) :=
   ⟨p.proj, selfDualProj o hk p.proj p.2⟩
 
-/-- The codomain-restricted bundle projection `Λᵏ T*M → Λ⁻` sending `(x, α)` to `(x, P⁻_x α)`. -/
+/-- The codomain-restricted bundle projection `Λᵏ T*M → Λ⁻` sending `(x, α)` to `(x, P⁻_x α)`.
+The parameter `r` specifies the model fibre `Fin r → ℝ` of the target subbundle total space
+(matching the subbundle rank in `HasLocalContMDiffSubbundleFrames`). -/
 def antiSelfDualBundleProj (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) (r : ℕ)
     (p : TotalSpace (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ)) :
     TotalSpace (Fin r → ℝ) (fun x ↦ antiSelfDualSubspace o x) :=
