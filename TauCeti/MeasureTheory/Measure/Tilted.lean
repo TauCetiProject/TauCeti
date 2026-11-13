@@ -24,9 +24,9 @@ members of concrete families of distributions.
   normalized weight, so a tilted law with a density again has an explicit density.
 * `TauCeti.tilted_singleton`: the mass of a singleton under a tilted measure, which identifies
   tilted laws on countable spaces; `TauCeti.tilted_dirac` records that point masses are fixed.
-* `TauCeti.measurable_tilted` and `TauCeti.measurable_tilted_mul`: a jointly measurable family of
-  potentials tilts an s-finite kernel into a measurable family of measures. For any measure `μ`
-  (s-finite or not), `t ↦ μ.tilted (t * X ·)` is measurable for the Giry measurable structure.
+* `TauCeti.measurable_tilted` and `MeasureTheory.Measure.measurable_tilted`: a jointly measurable
+  family of potentials tilts an s-finite kernel, or any fixed measure (s-finite or not), into a
+  measurable family of measures for the Giry measurable structure.
 -/
 
 public section
@@ -76,26 +76,6 @@ theorem measurable_tilted (κ : Kernel β α) [IsSFiniteKernel κ] {f : β → �
   rw [h]
   exact (Kernel.withDensity κ _).measurable
 
-/-- The exponential tilts `μ.tilted (t * X ·)` of a measure along a measurable statistic form a
-measurable family in the tilting parameter `t`. If `μ` is not s-finite, then no `exp (t * X ·)` is
-integrable (a positive integrable density would make `μ` s-finite), so every tilt vanishes. -/
-theorem measurable_tilted_mul (μ : Measure α) {X : α → ℝ} (hX : Measurable X) :
-    Measurable fun t : ℝ ↦ μ.tilted (t * X ·) := by
-  by_cases hμ : SFinite μ
-  · exact measurable_tilted (Kernel.const ℝ μ) (f := fun t x ↦ t * X x) (by fun_prop)
-  · have h0 (t : ℝ) : μ.tilted (t * X ·) = 0 := by
-      refine tilted_of_not_integrable fun hint ↦ hμ ?_
-      have hm : Measurable fun x ↦ ENNReal.ofReal (exp (t * X x)) := by fun_prop
-      have : IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (exp (t * X x))) :=
-        isFiniteMeasure_withDensity_ofReal hint.hasFiniteIntegral
-      have e := withDensity_inv_same (μ := μ) hm (.of_forall fun x ↦ by simp [exp_pos])
-        (.of_forall fun x ↦ by simp)
-      have : SFinite ((μ.withDensity fun x ↦ ENNReal.ofReal (exp (t * X x))).withDensity
-          fun x ↦ (ENNReal.ofReal (exp (t * X x)))⁻¹) := inferInstance
-      rwa [e] at this
-    simp only [h0]
-    exact measurable_const
-
 end TauCeti
 
 namespace MeasureTheory.Measure
@@ -107,5 +87,17 @@ theorem map_tilted {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   rw [Measure.tilted, Measure.tilted, integral_map hf.aemeasurable
     (hg.exp.stronglyMeasurable.aestronglyMeasurable)]
   exact map_withDensity_comp hf ((hg.exp.div_const _).ennreal_ofReal)
+
+/-- **Parameter measurability of tilting a fixed measure.** Tilting a measure by a jointly
+measurable family of potentials gives a measurable family of measures. No s-finiteness is needed:
+when `μ` is not s-finite, no `exp (f b ·)` is `μ`-integrable and every tilt is zero. -/
+theorem measurable_tilted {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) {f : β → α → ℝ} (hf : Measurable (Function.uncurry f)) :
+    Measurable fun b ↦ μ.tilted (f b) := by
+  by_cases hμ : SFinite μ
+  · exact TauCeti.measurable_tilted (ProbabilityTheory.Kernel.const β μ) hf
+  · have h0 (b : β) : μ.tilted (f b) = 0 := tilted_of_not_integrable fun hint ↦
+      hμ (sfinite_of_absolutelyContinuous (absolutelyContinuous_tilted hint))
+    simpa only [h0] using measurable_const
 
 end MeasureTheory.Measure

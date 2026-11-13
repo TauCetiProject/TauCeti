@@ -284,7 +284,7 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
     ((hxx'.mono (preimage_mono hseg)).symm.trans hi).trans
       (hp.joinedIn_preimage_monodromy α hα (ν.symm i))
   have := isSimplyConnected_unitSegment.simplyConnectedSpace
-  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hyS.1 hjoin
+  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hjoin
   subst hx'
   rw [ConnectedComponents.coe_eq_coe']
   exact pathComponent_subset_component _

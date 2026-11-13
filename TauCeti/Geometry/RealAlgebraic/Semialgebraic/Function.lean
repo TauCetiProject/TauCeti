@@ -282,7 +282,7 @@ theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ
     using 1
   ext z
   simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
-    mem_preimage (f := fun (x : σ' ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    mem_preimage (f := fun (x : σ' ⊕ τ → R) (_ : σ ⊕ τ) => eval x _), Function.comp_def,
     Sum.elim_inl, Sum.elim_inr, eval_rename, eval_X]
   simp only [mem_preimage]
 
@@ -300,7 +300,7 @@ theorem IsSemialgebraicOn.neg {f : (σ → R) → (τ → R)} {s : Set (σ → R
     using 1
   ext z
   simp only [mem_preimage_sumArrowEquivProdArrow_graphOn,
-    mem_preimage (f := fun (x : σ ⊕ τ → R) (i : σ ⊕ τ) => eval x _), Function.comp_def,
+    mem_preimage (f := fun (x : σ ⊕ τ → R) (_ : σ ⊕ τ) => eval x _), Function.comp_def,
     Sum.elim_inl, Sum.elim_inr, eval_X, map_neg]
   rw [Pi.neg_apply, neg_eq_iff_eq_neg]
   rfl

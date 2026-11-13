@@ -5,33 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+public import Mathlib.Topology.UniformSpace.Equicontinuity
 
 /-!
 # Functions with a prescribed limit form a closed subspace
 
-For any filter on the domain, the functions tending to a fixed value form a closed subset of
-the space of functions with the uniform convergence topology. In particular, families tending
-to zero along the cofinite filter form a complete space when the coefficient space is complete.
+For any filter `l` on the domain `α` and any continuous assignment `g` of a prospective limit
+to each function, the functions `f` tending to `g f` along `l` form a closed subset of the space
+`α →ᵤ β` of functions with the topology of uniform convergence. Taking `g` constant, the
+functions tending to a fixed value form a closed subset.
 
-The limit interchange is Mathlib's `TendstoUniformly.tendsto_of_eventually_tendsto`.
+This is Mathlib's `Equicontinuous.isClosed_setOfPred_tendsto` applied to the evaluation maps
+`f ↦ f a`, which form an equicontinuous family on `α →ᵤ β`.
 -/
 
 public section
 
-open Filter Topology
+open Filter Topology UniformConvergence
 
 namespace UniformFun
 
-variable {α β : Type*} [UniformSpace β] {l : Filter α} {b : β}
+variable {α β : Type*} [UniformSpace β] {l : Filter α} {g : (α →ᵤ β) → β}
 
-/-- Functions with a prescribed limit along a filter form a closed subset for uniform
-convergence. No separation or completeness assumption on the codomain is needed. -/
-theorem isClosed_setOfPred_tendsto :
-    IsClosed {f : UniformFun α β | Tendsto (toFun f) l (𝓝 b)} := by
-  refine isClosed_iff_forall_filter.mpr fun f u _ hu huf ↦ ?_
-  rw [← tendsto_id', UniformFun.tendsto_iff_tendstoUniformly] at huf
-  exact huf.tendsto_of_eventually_tendsto (Filter.le_principal_iff.mp hu)
-    (tendsto_const_nhds (x := b))
+/-- For a continuous `g : (α →ᵤ β) → β`, the functions `f` tending to `g f` along a filter form
+a closed subset for uniform convergence. In particular (`g` constant) so do the functions with a
+prescribed limit. No separation or completeness assumption on the codomain is needed. -/
+theorem isClosed_setOfPred_tendsto (hg : Continuous g) :
+    IsClosed {f : α →ᵤ β | Tendsto (toFun f) l (𝓝 (g f))} := by
+  -- The evaluation maps are equicontinuous: by `equicontinuous_iff_continuous` this says that
+  -- `ofFun ∘ Function.swap (fun a f ↦ toFun f a)`, which unfolds to the identity of `α →ᵤ β`,
+  -- is continuous.
+  have h : Equicontinuous fun (a : α) (f : α →ᵤ β) ↦ toFun f a :=
+    equicontinuous_iff_continuous.mpr continuous_id
+  exact h.isClosed_setOfPred_tendsto hg
 
 end UniformFun

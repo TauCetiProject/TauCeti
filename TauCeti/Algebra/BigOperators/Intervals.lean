@@ -24,9 +24,9 @@ A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n 
 `f k = γ k + β k` for `m < k < n` regroups as the sum over `m ≤ k < n` of the adjacent pairs
 `β k + γ (k + 1)`. The codomain is any additive commutative monoid. In a not necessarily
 associative ring, a constant summed over the `n - 2` indices `1 ≤ k < n - 1` is `(n - 2)` times it.
-For a symmetric integer interval `[-N, N]`, adding the middle term `F 0` to
-`∑ i ∈ Icc (-(N : ℤ)) N, F i` splits the sum into the nonnegative half `∑ j ∈ range (N + 1), F j`
-and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, the partial sums
+For an integer interval `[-a, b]` with `a, b : ℕ`, adding the term `F 0` to
+`∑ i ∈ Icc (-(a : ℤ)) b, F i` splits the sum into the nonnegative part `∑ j ∈ range (b + 1), F j`
+and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, the partial sums
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum.
@@ -38,8 +38,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
-* `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(N : ℤ)) N, F i) + F 0` equals the sum of `F j`
-  and `F (-(j : ℤ))` over `j ∈ range (N + 1)`.
+* `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0` equals the sum of `F j`
+  over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
@@ -76,15 +76,15 @@ theorem sum_Ico_one_sub_one_const {R : Type*} [NonAssocRing R] {n : ℕ} (hn : 2
     ∑ _k ∈ Ico 1 (n - 1), c = ((n : R) - 2) * c := by
   rw [sum_const, Nat.card_Ico, nsmul_eq_mul, Nat.sub_sub, Nat.cast_sub hn, Nat.cast_ofNat]
 
-/-- Splitting a symmetric integer interval `[-N, N]` into its two halves `0 ≤ j ≤ N` and
-`-N ≤ -j ≤ 0`, which overlap in `0`. -/
-theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (N : ℕ) :
-    (∑ i ∈ Icc (-(N : ℤ)) N, F i) + F 0 =
-      (∑ j ∈ range (N + 1), F j) + ∑ j ∈ range (N + 1), F (-(j : ℤ)) := by
+/-- Splitting an integer interval `[-a, b]` into its parts `0 ≤ j ≤ b` and `-a ≤ -j ≤ 0`, which
+overlap in `0`. -/
+theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (a b : ℕ) :
+    (∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0 =
+      (∑ j ∈ range (b + 1), F j) + ∑ j ∈ range (a + 1), F (-(j : ℤ)) := by
   classical
-  set s : Finset ℤ := (range (N + 1)).image (fun j : ℕ ↦ (j : ℤ)) with hs
-  set t : Finset ℤ := (range (N + 1)).image (fun j : ℕ ↦ -(j : ℤ)) with ht
-  have hunion : s ∪ t = Icc (-(N : ℤ)) N := by
+  set s : Finset ℤ := (range (b + 1)).image (fun j : ℕ ↦ (j : ℤ)) with hs
+  set t : Finset ℤ := (range (a + 1)).image (fun j : ℕ ↦ -(j : ℤ)) with ht
+  have hunion : s ∪ t = Icc (-(a : ℤ)) b := by
     ext i
     simp only [hs, ht, mem_union, mem_image, mem_range, mem_Icc]
     constructor

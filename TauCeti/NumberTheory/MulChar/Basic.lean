@@ -25,10 +25,19 @@ symbols.
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
 (`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
 
+A character of order dividing two is `1` at the square of every unit
+(`MulChar.apply_sq_eq_one_of_sq_eq_one`). An integer-valued character pushed into a ring along
+`Int.castRingHom` takes the casts of its integer values
+(`MulChar.ringHomComp_intCast_apply_of_apply_eq`).
+
+The trivial character is quadratic (`MulChar.isQuadratic_one`).
+
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
-Quadratic characters are closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a
+A quadratic character takes the value `1` or `-1` at every unit
+(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`). Quadratic characters are closed under
+multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
@@ -64,6 +73,17 @@ theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
     [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
   rw [← map_mul, neg_one_mul, neg_neg, map_one]
 
+/-- A character of order dividing two is `1` at the square of a unit. -/
+theorem apply_sq_eq_one_of_sq_eq_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
+    {χ : MulChar R R'} (hχ : χ ^ 2 = 1) {a : R} (ha : IsUnit a) : χ (a ^ 2) = 1 := by
+  rw [map_pow, ← pow_apply' χ two_ne_zero, hχ, one_apply ha]
+
+/-- An integer-valued character pushed into a ring takes the cast of its integer value. -/
+theorem ringHomComp_intCast_apply_of_apply_eq {R R' : Type*} [CommMonoid R] [CommRing R']
+    (χ : MulChar R ℤ) {a : R} {b : ℤ} (h : χ a = b) :
+    χ.ringHomComp (Int.castRingHom R') a = b := by
+  rw [ringHomComp_apply, h, eq_intCast]
+
 /-- Pushing a multiplicative character along an injective ring homomorphism of the coefficients
 preserves its order. -/
 @[simp]
@@ -72,6 +92,14 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
     orderOf (χ.ringHomComp f) = orderOf χ := by
   rw [← ringHomCompHom_apply, orderOf_injective _ (injective_ringHomComp hf)]
 
+/-- A quadratic character takes the value `1` or `-1` at a unit. -/
+theorem IsQuadratic.apply_eq_one_or_eq_neg_one {M R : Type*} [CommMonoid M] [CommRing R]
+    {χ : MulChar M R} (hχ : χ.IsQuadratic) {a : M} (ha : IsUnit a) : χ a = 1 ∨ χ a = -1 := by
+  rcases hχ a with h | h | h
+  · exact Or.inl (h.trans (isUnit_zero_iff.mp (h ▸ ha.map χ)))
+  · exact Or.inl h
+  · exact Or.inr h
+
 /-- The product of two quadratic characters is quadratic. -/
 theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}
     (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) : (χ * ψ).IsQuadratic := by
@@ -79,14 +107,20 @@ theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulCh
   rw [mul_apply]
   rcases hχ a with h | h | h <;> rcases hψ a with h' | h' | h' <;> simp [h, h']
 
-/-- A finite product of quadratic characters is quadratic. -/
-theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
-    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
-    (∏ i ∈ s, χ i).IsQuadratic := by
-  refine Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) (fun a ↦ ?_) hχ
+/-- The trivial character is quadratic. -/
+@[simp]
+theorem isQuadratic_one {M R : Type*} [CommMonoid M] [CommRing R] :
+    (1 : MulChar M R).IsQuadratic := by
+  intro a
   by_cases ha : IsUnit a
   · exact Or.inr (Or.inl (one_apply ha))
   · exact Or.inl (map_nonunit 1 ha)
+
+/-- A finite product of quadratic characters is quadratic. -/
+theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
+    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
+    (∏ i ∈ s, χ i).IsQuadratic :=
+  Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
 
 section Transport
 
