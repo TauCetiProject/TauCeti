@@ -115,7 +115,8 @@ theorem matrixMutationRight_submatrix [DecidableEq K'] {row' : K' ↪ I'} {f : I
   ext i j
   simp only [matrixMutationRight_apply, submatrix_apply, Matrix.one_apply, hg.eq_iff, h]
 
-/-- The left factor at a mutated matrix uses the opposite sign at the original matrix. -/
+/-- The left factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
 @[simp]
 theorem matrixMutationLeft_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
     (k : K) (ε : ℤ) :
@@ -123,7 +124,8 @@ theorem matrixMutationLeft_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
   ext i j
   simp [matrixMutationLeft_apply, matrixMutation_apply_col]
 
-/-- The right factor at a mutated matrix uses the opposite sign at the original matrix. -/
+/-- The right factor after mutation in the same direction uses the opposite sign at the
+original matrix. -/
 @[simp]
 theorem matrixMutationRight_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ)
     (k : K) (ε : ℤ) :

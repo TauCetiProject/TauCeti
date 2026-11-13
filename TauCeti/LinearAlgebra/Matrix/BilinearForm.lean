@@ -39,8 +39,15 @@ its span. An isometry `Matrix.toBilin' G ≅ Matrix.toBilin' G'` turns a family 
 into one with Gram matrix `G'` and the same span, and the Gram determinant of the span of two
 orthogonal such families is determined up to squares by their Gram matrices.
 
+Pullback along a rectangular matrix preserves alternation over a commutative semiring. Over a
+commutative ring, alternation is equivalent to skew-symmetry together with a zero diagonal;
+the diagonal condition remains necessary in characteristic two.
+
 ## Main results
 
+* `Matrix.isAlt_toBilin'_transpose_mul_mul`: rectangular pullback preserves alternation.
+* `Matrix.isAlt_toBilin'_iff`: alternation is skew-symmetry and a zero diagonal over any
+  commutative ring.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
