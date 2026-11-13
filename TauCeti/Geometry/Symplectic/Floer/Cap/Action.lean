@@ -30,22 +30,26 @@ back to the centre of `D'`, so by
 
 `A_H(γ, D') - A_H(γ, D) = -∫_{D'.rawCap -ᵥ D.rawCap} ω`
 
-(`TauCeti.IsSmoothDisc.cappedLoopAction_sub_cappedLoopAction_eq_neg`). In particular smooth discs
-with the same raw cap have the same action. The sign is that of the orientation conventions: a raw
-cap runs from the loop to its centre, the reverse of the disc of the capped action, which runs from
-its centre to the loop. So gluing a sphere `a` at the centre of the raw cap glues the sphere `a` run
-backwards in front of the disc, and changes the action by `-∫_a ω`.
+(`TauCeti.IsSmoothDisc.cappedLoopAction_sub_cappedLoopAction_eq_neg_sphereIntegral`). In
+particular smooth discs with the same raw cap have the same action. The sign is that of the
+orientation conventions: a raw cap runs from the loop to its centre, the reverse of the disc of the
+capped action, which runs from its centre to the loop. So gluing a sphere `a` at the centre of the
+raw cap glues the sphere `a` run backwards in front of the disc, and changes the action by
+`-∫_a ω`.
 
-Consequently, once `γ` bounds one smooth disc `D₀`, the capped action descends to a function on
-all raw caps of `γ`, `TauCeti.IsSmoothDisc.rawCapAction`: it is `A_H(γ, D)` on the raw cap of
-every smooth disc `D` (`TauCeti.IsSmoothDisc.rawCapAction_rawCap`), it obeys the recapping law
-`A(a +ᵥ P) = A(P) - ∫_a ω` (`TauCeti.IsSmoothDisc.rawCapAction_vadd`), and it does not depend on
-the reference disc `D₀` (`TauCeti.IsSmoothDisc.rawCapAction_eq_rawCapAction`). That every raw cap
-of a smooth loop is the raw cap of a smooth disc is not treated here.
+Consequently, once `γ` bounds one smooth disc `D₀`, the capped action for a closed `C¹` form `ω`
+descends to a function on all raw caps of `γ`, `TauCeti.IsSmoothDisc.rawCapAction`: it is
+`A_H(γ, D)` on the raw cap of every smooth disc `D` (`TauCeti.IsSmoothDisc.rawCapAction_rawCap`),
+it obeys the recapping law `A(a +ᵥ P) = A(P) - ∫_a ω` (`TauCeti.IsSmoothDisc.rawCapAction_vadd`),
+and it does not depend on the reference disc `D₀`
+(`TauCeti.IsSmoothDisc.rawCapAction_eq_rawCapAction`). That every raw cap of a smooth loop is the
+raw cap of a smooth disc is not treated here.
 
 ## Main definitions
 
 * `TauCeti.IsSmoothDisc.isLoopCylinder`: a smooth disc is a disc of the capped action.
+* `TauCeti.IsSmoothDisc.cappedLoopAction_apply_one`: the capped action of a disc may use the
+  boundary loop `t ↦ D (1, t)` of a smooth disc `D` of `γ` in place of `γ`.
 * `TauCeti.IsSmoothDisc.rawCap`: the raw cap of a smooth disc.
 * `TauCeti.IsSmoothDisc.rawCapAction`: the capped action as a function on raw caps.
 
@@ -53,8 +57,8 @@ of a smooth loop is the raw cap of a smooth disc is not treated here.
 
 * `TauCeti.IsSmoothDisc.sphereIntegral_rawCap_vsub_rawCap`: the integral of a closed form over
   the sphere by which the raw caps of two smooth discs differ.
-* `TauCeti.IsSmoothDisc.cappedLoopAction_sub_cappedLoopAction_eq_neg`: the change of the capped
-  action between two smooth discs is minus the area of that sphere.
+* `TauCeti.IsSmoothDisc.cappedLoopAction_sub_cappedLoopAction_eq_neg_sphereIntegral`: the change
+  of the capped action between two smooth discs is minus the area of that sphere.
 * `TauCeti.IsSmoothDisc.cappedLoopAction_eq_of_rawCap_eq`: the capped action only depends on the
   raw cap.
 * `TauCeti.IsSmoothDisc.rawCapAction_rawCap`, `TauCeti.IsSmoothDisc.rawCapAction_vadd`,
@@ -92,17 +96,37 @@ theorem isLoopCylinder (hD : IsSmoothDisc I γ D) :
   apply_zero := hD.apply_zero_eq
   apply_one _ := rfl
 
+/-- The capped action of a disc `D'` computed with the boundary loop `t ↦ D (1, t)` of a smooth
+disc `D` of `γ`, as in `TauCeti.IsSmoothDisc.isLoopCylinder`, is the one computed with `γ`. -/
+theorem cappedLoopAction_apply_one (hD : IsSmoothDisc I γ D) (ω : RoughForm I M ℝ 2)
+    (H : ℝ → M → ℝ) (D' : ℝ × ℝ → M) :
+    cappedLoopAction ω H (fun t ↦ D (1, t)) D' = cappedLoopAction ω H γ.extend D' :=
+  cappedLoopAction_congr_loop ω H (fun t ht ↦ by
+    simpa [Path.extend_apply _ ht] using hD.apply_one ⟨t, ht⟩) D'
+
 /-- The **raw cap of a smooth disc**: the homotopy class of the disc, read as a path in the loop
 space from the loop `γ` it bounds to the constant loop at its centre (`IsSmoothDisc.loopPath`). -/
 def rawCap (hD : IsSmoothDisc I γ D) : Floer.RawCap γ :=
   Path.Homotopic.Quotient.mk hD.loopPath
 
-/-- The sphere by which the raw caps of two smooth discs differ is the class of the double loop
-that runs from the centre of the first disc to `γ` and back to the centre of the second. -/
+theorem rawCap_def (hD : IsSmoothDisc I γ D) :
+    hD.rawCap = Path.Homotopic.Quotient.mk hD.loopPath :=
+  (rfl)
+
+/-- For smooth discs `D` and `D'` of `γ`, the sphere `D'.rawCap -ᵥ D.rawCap` by which their raw
+caps differ is the class of the double loop `D⁻¹ ⬝ D'`, which runs from the centre of `D` to `γ`
+and back to the centre of `D'`. -/
 theorem rawCap_vsub_rawCap (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I γ D') :
     hD'.rawCap -ᵥ hD.rawCap = Additive.ofMul (fundamentalGroupLoopSpaceMulEquiv
-      (FundamentalGroup.fromPath (.mk (hD.loopPath.symm.trans hD'.loopPath)))) :=
-  (rfl)
+      (FundamentalGroup.fromPath (.mk (hD.loopPath.symm.trans hD'.loopPath)))) := by
+  rw [Floer.RawCap.vsub_def]
+  refine congrArg (fun g ↦ Additive.ofMul (fundamentalGroupLoopSpaceMulEquiv g)) (End.ext ?_)
+  rw [End.sdiv_asHom, IsIso.inv_comp_eq, rawCap_def, rawCap_def, FundamentalGroupoid.comp_eq]
+  -- `FundamentalGroup.fromPath p` is the endomorphism `End.of p`, with underlying morphism `p`.
+  dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+  rw [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
+    ← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
+    Path.Homotopic.Quotient.refl_trans]
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I (⊤ : ℕ∞) M] [CompactSpace M]
   [T2Space M]
@@ -119,11 +143,11 @@ theorem sphereIntegral_rawCap_vsub_rawCap {F : Type*} [NormedAddCommGroup F] [No
 
 variable {ω : RoughForm I M ℝ 2}
 
-/-- **Two smooth discs give capped actions differing by the area of a sphere.** For smooth discs
-`D` and `D'` bounding the same loop, `A_H(γ, D') - A_H(γ, D)` is minus the integral of the closed
-form `ω` over the sphere `D'.rawCap -ᵥ D.rawCap` by which their raw caps differ. The loop `ℓ` in
-the Hamiltonian term is arbitrary, since that term is the same for both discs. -/
-theorem cappedLoopAction_sub_cappedLoopAction_eq_neg (hω : IsSmoothForm I 1 ω)
+/-- **Two smooth discs give capped actions differing by the area of a sphere.** For a closed `C¹`
+two-form `ω` and smooth discs `D` and `D'` bounding the same loop, `A_H(γ, D') - A_H(γ, D)` is
+minus the integral of `ω` over the sphere `D'.rawCap -ᵥ D.rawCap` by which their raw caps differ.
+The loop `ℓ` in the Hamiltonian term is arbitrary, since that term is the same for both discs. -/
+theorem cappedLoopAction_sub_cappedLoopAction_eq_neg_sphereIntegral (hω : IsSmoothForm I 1 ω)
     (hdω : mextDeriv ω = 0) (H : ℝ → M → ℝ) (ℓ : ℝ → M) (hD : IsSmoothDisc I γ D)
     (hD' : IsSmoothDisc I γ D') :
     cappedLoopAction ω H ℓ D' - cappedLoopAction ω H ℓ D =
@@ -132,37 +156,45 @@ theorem cappedLoopAction_sub_cappedLoopAction_eq_neg (hω : IsSmoothForm I 1 ω)
     cappedLoopAction_def]
   ring
 
-/-- **The capped action only depends on the raw cap.** Two smooth discs bounding the same loop
-with the same raw cap have the same capped action. -/
+/-- **The capped action only depends on the raw cap.** For a closed `C¹` two-form `ω`, two smooth
+discs bounding the same loop with the same raw cap have the same capped action. -/
 theorem cappedLoopAction_eq_of_rawCap_eq (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0)
     (H : ℝ → M → ℝ) (ℓ : ℝ → M) (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I γ D')
     (h : hD.rawCap = hD'.rawCap) : cappedLoopAction ω H ℓ D = cappedLoopAction ω H ℓ D' := by
   have : Nonempty (Floer.RawCap γ) := ⟨hD.rawCap⟩
-  have := cappedLoopAction_sub_cappedLoopAction_eq_neg hω hdω H ℓ hD hD'
+  have := cappedLoopAction_sub_cappedLoopAction_eq_neg_sphereIntegral hω hdω H ℓ hD hD'
   rw [h, vsub_self, toMul_zero, sphereIntegral_one hω hdω, neg_zero, sub_eq_zero] at this
   exact this.symm
 
 variable {D₀ D₁ : ℝ × ℝ → M}
 
 /-- The **capped action on raw caps** of a loop `γ` that bounds a smooth disc `D₀`:
-`A(P) = A_H(γ, D₀) - ∫_{P -ᵥ D₀.rawCap} ω` for a raw cap `P` of `γ`. On the raw cap of a smooth
-disc `D` it is `A_H(γ, D)` (`TauCeti.IsSmoothDisc.rawCapAction_rawCap`), and it does not depend
-on `D₀` (`TauCeti.IsSmoothDisc.rawCapAction_eq_rawCapAction`). -/
+`A(P) = A_H(γ, D₀) - ∫_{P -ᵥ D₀.rawCap} ω` for a raw cap `P` of `γ`. When `ω` is a closed `C¹`
+two-form, it is `A_H(γ, D)` on the raw cap of every smooth disc `D`
+(`TauCeti.IsSmoothDisc.rawCapAction_rawCap`), and it does not depend on `D₀`
+(`TauCeti.IsSmoothDisc.rawCapAction_eq_rawCapAction`). -/
 def rawCapAction (hD₀ : IsSmoothDisc I γ D₀) (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ)
     (P : Floer.RawCap γ) : ℝ :=
   cappedLoopAction ω H γ.extend D₀ - sphereIntegral ω x (P -ᵥ hD₀.rawCap).toMul
 
-/-- On the raw cap of a smooth disc `D`, the capped action on raw caps is `A_H(γ, D)`. -/
+theorem rawCapAction_def (hD₀ : IsSmoothDisc I γ D₀) (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ)
+    (P : Floer.RawCap γ) :
+    hD₀.rawCapAction ω H P =
+      cappedLoopAction ω H γ.extend D₀ - sphereIntegral ω x (P -ᵥ hD₀.rawCap).toMul :=
+  (rfl)
+
+/-- For a closed `C¹` two-form `ω`, the capped action on the raw cap of a smooth disc `D` is
+`A_H(γ, D)`. -/
 @[simp]
 theorem rawCapAction_rawCap (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0)
     (hD₀ : IsSmoothDisc I γ D₀) (H : ℝ → M → ℝ) (hD : IsSmoothDisc I γ D) :
     hD₀.rawCapAction ω H hD.rawCap = cappedLoopAction ω H γ.extend D := by
-  have := cappedLoopAction_sub_cappedLoopAction_eq_neg hω hdω H γ.extend hD₀ hD
-  rw [rawCapAction]
+  have := cappedLoopAction_sub_cappedLoopAction_eq_neg_sphereIntegral hω hdω H γ.extend hD₀ hD
+  rw [rawCapAction_def]
   linarith
 
-/-- **The recapping law.** Gluing a sphere `a ∈ π₂(M, x)` at the centre of a raw cap changes the
-capped action by minus the integral of `ω` over `a`. -/
+/-- **The recapping law.** For a closed `C¹` two-form `ω`, gluing a sphere `a ∈ π₂(M, x)` at the
+centre of a raw cap changes the capped action by minus the integral of `ω` over `a`. -/
 theorem rawCapAction_vadd (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0)
     (hD₀ : IsSmoothDisc I γ D₀) (H : ℝ → M → ℝ) (a : Additive (π_ 2 M x))
     (P : Floer.RawCap γ) :
@@ -170,10 +202,11 @@ theorem rawCapAction_vadd (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0)
   have : Nonempty (Floer.RawCap γ) := ⟨P⟩
   have h := (sphereIntegralHom x hω hdω).map_add a (P -ᵥ hD₀.rawCap)
   simp only [sphereIntegralHom_apply] at h
-  rw [rawCapAction, rawCapAction, vadd_vsub_assoc, h]
+  rw [rawCapAction_def, rawCapAction_def, vadd_vsub_assoc, h]
   ring
 
-/-- The capped action on raw caps does not depend on the reference disc. -/
+/-- For a closed `C¹` two-form `ω`, the capped action on raw caps does not depend on the
+reference disc. -/
 theorem rawCapAction_eq_rawCapAction (hω : IsSmoothForm I 1 ω) (hdω : mextDeriv ω = 0)
     (hD₀ : IsSmoothDisc I γ D₀) (hD₁ : IsSmoothDisc I γ D₁) (H : ℝ → M → ℝ) :
     hD₀.rawCapAction ω H = hD₁.rawCapAction ω H := by

@@ -53,27 +53,23 @@ theorem homotopic_of_continuousMap {p q : Ω^ N X x} (H : C(I × I^N, X))
 
 /-- **Reparametrizing the cube coordinates does not change the class of a generalized loop.** If
 `q` is `p` precomposed with self-maps `f i` of the unit interval in the coordinates `i`, each
-fixing `0` and `1`, then `p` and `q` are homotopic relative to the cube boundary. The homotopy moves
-each coordinate along the segment from `zᵢ` to `f i zᵢ`; a coordinate equal to `0` or `1` stays
-there, so the cube boundary stays in the boundary. -/
+fixing `0` and `1`, then `p` and `q` are homotopic relative to the cube boundary. -/
 theorem homotopic_of_forall_apply_eq_comp {p q : Ω^ N X x} (f : N → C(I, I))
     (h₀ : ∀ i, f i 0 = 0) (h₁ : ∀ i, f i 1 = 1) (hq : ∀ z, q z = p fun i ↦ f i (z i)) :
     _root_.GenLoop.Homotopic p q := by
-  -- The coordinate `i` at time `c` of the homotopy, a convex combination of `zᵢ` and `f i zᵢ`.
-  let g (c : I) (i : N) (z : I^N) : I :=
-    ⟨(1 - c) * z i + c * f i (z i), by
-      have hc := c.2; have hz := (z i).2; have hf := (f i (z i)).2
-      constructor <;> nlinarith [hc.1, hc.2, hz.1, hz.2, hf.1, hf.2]⟩
-  have hg : Continuous fun q : I × I^N ↦ fun i ↦ g q.1 i q.2 := by
-    refine continuous_pi fun i ↦ Continuous.subtype_mk ?_ _
-    fun_prop
-  refine homotopic_of_continuousMap ⟨fun q ↦ p fun i ↦ g q.1 i q.2, p.1.continuous.comp hg⟩
-    (fun z ↦ congrArg p (funext fun i ↦ Subtype.ext (by simp [g])))
-    (fun z ↦ (congrArg p (funext fun i ↦ Subtype.ext (by simp [g]))).trans (hq z).symm)
+  -- The homotopy moves each coordinate `zᵢ` along the segment to `f i zᵢ`; a coordinate equal to
+  -- `0` or `1` stays there, so the cube boundary stays in the boundary.
+  have hg : Continuous fun q : I × I^N ↦ fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1 :=
+    continuous_pi fun i ↦ Set.Icc.continuous_convexComb_prod.comp
+      (f := fun q : I × I^N ↦ (q.2 i, f i (q.2 i), q.1)) (by fun_prop)
+  refine homotopic_of_continuousMap
+    ⟨fun q ↦ p fun i ↦ Set.Icc.convexComb (q.2 i) (f i (q.2 i)) q.1, p.1.continuous.comp hg⟩
+    (fun z ↦ by simp [Set.Icc.convexComb_zero])
+    (fun z ↦ by simp [Set.Icc.convexComb_one, hq])
     fun c z ⟨i, hi⟩ ↦ _root_.GenLoop.boundary p _ ⟨i, ?_⟩
   rcases hi with hi | hi
-  · exact Or.inl (Subtype.ext (by simp [g, hi, h₀]))
-  · exact Or.inr (Subtype.ext (by simp [g, hi, h₁]))
+  · exact Or.inl (by simp [hi, h₀, Set.Icc.convexComb_eq])
+  · exact Or.inr (by simp [hi, h₁, Set.Icc.convexComb_eq])
 
 /-- **Two generalized loops are homotopic relative to the cube boundary exactly when they are
 joined by a path in the space of generalized loops.** The compact-open topology on `Ω^ N X x`

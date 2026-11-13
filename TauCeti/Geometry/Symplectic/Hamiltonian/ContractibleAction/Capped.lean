@@ -102,6 +102,13 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     cappedLoopAction ω H γ D = rectangleIntegral ω D (0, 0) (1, 1) + ∫ t in 0..1, H t (γ t) :=
   (rfl)
 
+/-- The capped action only depends on the loop through its values on the unit interval. -/
+theorem cappedLoopAction_congr_loop (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) {γ γ' : ℝ → M}
+    (h : EqOn γ γ' (Icc 0 1)) (D : ℝ × ℝ → M) :
+    cappedLoopAction ω H γ D = cappedLoopAction ω H γ' D := by
+  rw [cappedLoopAction_def, cappedLoopAction_def,
+    intervalIntegral.integral_congr fun t ht ↦ congrArg (H t) (h (by simpa using ht))]
+
 /-- The constant loop at `x`, capped by the constant disc, has action the time average
 `∫₀¹ H(t, x) dt` of the Hamiltonian at `x`. -/
 @[simp]

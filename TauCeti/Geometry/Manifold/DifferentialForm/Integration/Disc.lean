@@ -112,8 +112,7 @@ theorem apply_fract (hD : IsSmoothDisc I γ D) (s t : ℝ) : D (s, Int.fract t) 
 theorem apply_zero_eq (hD : IsSmoothDisc I γ D) (t : ℝ) : D (0, t) = x := by
   rw [← hD.apply_fract, hD.apply_zero ⟨_, unitInterval.fract_mem t⟩]
 
-/-- Two discs bounding the same loop agree along the whole line `s = 1`: both are `γ` on the unit
-interval and `1`-periodic. -/
+/-- Two discs bounding the same loop agree along the whole line `s = 1`. -/
 theorem apply_one_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I γ D') (t : ℝ) :
     D (1, t) = D' (1, t) := by
   rw [← hD.apply_fract, ← hD'.apply_fract, hD.apply_one ⟨_, unitInterval.fract_mem t⟩,
@@ -165,11 +164,6 @@ private theorem flat_one : flat 1 = 1 :=
 
 private theorem flat_mem (r : ℝ) : flat r ∈ Icc (0 : ℝ) 1 :=
   ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-
-/-- A convex combination of two points of the unit interval lies in the unit interval. -/
-private theorem sub_mul_add_mul_mem {a b c : ℝ} (ha : a ∈ Icc (0 : ℝ) 1) (hb : b ∈ Icc (0 : ℝ) 1)
-    (hc : c ∈ Icc (0 : ℝ) 1) : (1 - c) * a + c * b ∈ Icc (0 : ℝ) 1 :=
-  ⟨by nlinarith [ha.1, hb.1, hc.1, hc.2], by nlinarith [ha.2, hb.2, hc.1, hc.2]⟩
 
 /-- The reversal `(s, t) ↦ (1 - s, t)` of the first coordinate. -/
 private def rev : ℝ × ℝ → ℝ × ℝ :=
@@ -249,7 +243,7 @@ private theorem rectangleIntegral_discSphere [IsManifold I 2 M]
       fun_prop))).of_le (by norm_cast)
   have hmem {r c : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hc : c ∈ Icc (0 : ℝ) 1) :
       (1 - c) * r + c * flat r ∈ Icc (0 : ℝ) 1 :=
-    sub_mul_add_mul_mem hr (flat_mem r) hc
+    (Icc.convexComb ⟨r, hr⟩ ⟨flat r, flat_mem r⟩ ⟨c, hc⟩).2
   have h0 (c : ℝ) : (1 - c) * 0 + c * flat 0 = 0 := by simp [flat_of_le]
   have h1 (c : ℝ) : (1 - c) * 1 + c * flat 1 = 1 := by rw [flat_of_ge (by norm_num)]; ring
   have key := rectangleIntegral_eq_of_homotopy hφ hdφ hΦ (a := (0, 0)) (b := (1, 1))
@@ -325,14 +319,15 @@ private theorem discSphere_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I �
       GenLoop.fromDoubleLoop (hD.loopPath.symm.trans hD'.loopPath)
         (fun i ↦ (![sphereParam₁, sphereParam₂] : Fin 2 → C(unitInterval, unitInterval)) i
           (z i)) := by
+  simp only [discSphere, GenLoop.fromDoubleLoop_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, sphereParam₁, sphereParam₂, ContinuousMap.coe_mk]
   set w := flat (z 0)
   set t : unitInterval := ⟨flat (z 1), flat_mem _⟩
+  -- `set` cannot abstract `w` inside the membership proof of the first parameter: restate it.
+  change discGlue D D' (w, t) =
+    (hD.loopPath.symm.trans hD'.loopPath) ⟨glueParam w, glueParam_mem _⟩ t
   have hβ₀ := Real.smoothTransition.nonneg (3 * w - 2)
   have hβ₁ := Real.smoothTransition.le_one (3 * w)
-  simp only [GenLoop.fromDoubleLoop_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  change discGlue D D' (w, (t : ℝ)) =
-    (hD.loopPath.symm.trans hD'.loopPath) ⟨glueParam w, glueParam_mem _⟩ t
   rw [Path.trans_apply]
   rcases le_or_gt w (1 / 2) with hw | hw
   · -- `w ≤ 1/2`: both sides run through `D` at the parameter `β(3 w)`.
@@ -356,7 +351,8 @@ private theorem discSphere_eq (hD : IsSmoothDisc I γ D) (hD' : IsSmoothDisc I �
       have h2 : Real.smoothTransition (3 * w - 2) = 0 := by
         simp only [glueParam, h1] at hp
         linarith
-      simp only [Path.symm_apply, h2, sub_zero]
+      simp only [Path.symm_apply, Function.comp_apply, loopPath_apply_apply,
+        unitInterval.symm_symm, h2, sub_zero]
       rw [← hD.apply_one_eq hD']
       congr 2
       simp [glueParam, h1, h2]
