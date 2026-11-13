@@ -40,7 +40,7 @@ concurrency:
 jobs:
   stuck-alerts:
     if: github.repository == 'TauCetiProject/TauCeti'
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

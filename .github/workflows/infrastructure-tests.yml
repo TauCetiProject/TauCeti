@@ -18,9 +18,7 @@ concurrency:
 
 jobs:
   python-tests:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -91,9 +89,7 @@ jobs:
           python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -168,9 +164,7 @@ jobs:
           python3 staging-cache-tools/tauceti_tools/assets/scripts/test_bulk_unpack_cache.py --integration
 
   header-fixtures:
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
