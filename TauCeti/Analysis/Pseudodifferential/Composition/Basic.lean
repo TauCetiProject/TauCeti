@@ -687,6 +687,18 @@ theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSp
       (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
   (rfl)
 
+/-- At a position `x`, the composition symbol `a # b` only involves the left factor `a` at `x`: if
+`a'(x, ·) = t a(x, ·)` for a scalar `t`, then `(a' # b)(x, ·) = t (a # b)(x, ·)`. Taking `t = φ(x)`
+for a function `φ` of the position, multiplying the left factor by `φ` multiplies `a # b` by `φ`. -/
+theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
+    (hb : b.HasCompactSpatialSupport) {x : CoordinateSpace n} {t : ℂ}
+    (h : ∀ ξ, a'.coefficient (x, ξ) = t • a.coefficient (x, ξ)) (ξ : CoordinateSpace n) :
+    (a'.sharp b hb).coefficient (x, ξ) = t • (a.sharp b hb).coefficient (x, ξ) := by
+  rw [coefficient_sharp, coefficient_sharp, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun η ↦ ?_)
+  simp only [h, ContinuousLinearMap.smul_comp]
+  exact smul_comm _ _ _
+
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
     Symbol.spatialDeriv j (a.sharp b hb) =
