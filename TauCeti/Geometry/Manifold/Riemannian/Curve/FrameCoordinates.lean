@@ -175,12 +175,11 @@ end Continuous
 
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)]
 
-/-- For `C¹` tangent fields on an open set and a `C¹` metric, the frame coordinates of the
+/-- For `C¹` tangent fields on a set and a `C¹` metric, the frame coordinates of the
 velocity of a `C²` curve in that set are `C¹`. -/
 theorem contDiff_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
     {u : Set M} (hs : ∀ i, ContMDiffOn I I.tangent 1 (fun x ↦ TotalSpace.mk' E x (s i x)) u)
-    (hu : IsOpen u) {γ : ℝ → M}
-    (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (hγu : ∀ t, γ t ∈ u) :
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (hγu : ∀ t, γ t ∈ u) :
     ContDiff ℝ 1 (frameVelocityCoordinates s γ) := by
   have hw := ContMDiffOn.contMDiffOn_curveVelocityLiftWithin hγ.contMDiffOn
     (m := 1) (by norm_num) uniqueMDiffOn_univ
@@ -189,8 +188,8 @@ theorem contDiff_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace 
       (fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t)) :=
     (contMDiffOn_univ.mp hw).congr fun t ↦ (curveVelocityLift_apply γ t).symm
   have hframe (i : Fin 2) : ContMDiff 𝓘(ℝ) I.tangent 1
-      (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) := fun t ↦
-    ((hs i).contMDiffAt (hu.mem_nhds (hγu t))).comp t ((hγ.of_le one_le_two) t)
+      (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) :=
+    (hs i).comp_contMDiff (hγ.of_le one_le_two) hγu
   have hi (i : Fin 2) : ContDiff ℝ 1 (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) := by
     have hh := @ContMDiff.inner_bundle E _ _ H _ I 1 M _ _ E _ _
       (fun x : M ↦ TangentSpace I x) _
