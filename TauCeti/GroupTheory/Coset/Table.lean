@@ -270,6 +270,16 @@ theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}
     fun r hr ↦ by simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr
   simpa [MulAction.Quotient.smul_mk] using smul_mem_range_point hg hT hrels hstab' x
 
+/-- Every element lies in the left coset of some representative word of a certified table. -/
+theorem exists_inv_word_mul_mem {H : Subgroup G} {rels stab : List (List (Fin m))}
+    {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
+    (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
+    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) (x : G) :
+    ∃ i, ((T.word i).map g).prod⁻¹ * x ∈ H := by
+  obtain ⟨i, hi⟩ := T.surjective_point hg hT hrels hstab (x : G ⧸ H)
+  refine ⟨i, QuotientGroup.eq.mp ?_⟩
+  simpa [point_def, MulAction.Quotient.smul_mk] using hi
+
 /-- **Coset enumeration bounds the index.** If the generators `g` generate `G`, the relators
 `rels` hold for them and the words `stab` lie in the subgroup `H`, a coset table on `k` points
 whose certificate checks shows that `H` has index at most `k`. -/

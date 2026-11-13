@@ -37,6 +37,8 @@ differences of the remaining columns.
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
   the determinant of its consecutive row differences on the remaining columns.
+* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
+  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 -/
 
 public section
@@ -123,5 +125,21 @@ theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι
           Equiv.swap_apply_of_ne_of_ne hrj hrk]
   rw [← he, Matrix.det_permute]
   simp [M, Equiv.Perm.sign_swap h]
+
+/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
+columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
+is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
+theorem det_submatrix_ne_zero_of_map {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
+    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix] at h
+  exact ne_of_apply_ne f (by rwa [map_zero])
+
+/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
+minor of `A` on the same rows and columns is nonzero. -/
+theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
+    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
 
 end Matrix

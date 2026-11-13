@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Harmonic
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.TensorPower
-public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.Subrepresentation.Quotient
 -- The entrywise identity `Matrix.sum_sum_J_mul_J` for the loop value.
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -23,7 +23,9 @@ generators `TauCeti.symplecticCupCapAt k n d i j`: the tensors obtained by inser
 invariant bivector of `-J` into some pair of slots of a tensor of degree `d - 2`. This file proves
 that over a star-ordered field, such as `ℚ`, `ℝ` or `ℂ`, the two are complementary
 subrepresentations of `V^{⊗d}`
-(`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`). This is the first
+(`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`), so that the quotient
+of `V^{⊗d}` by the trace tensors is a copy of the harmonic tensors
+(`TauCeti.quotientSymplecticTraceTensorsEquivHarmonicTensors`). This is the first
 step of the trace filtration of the symplectic tensor powers, the symplectic counterpart of
 `TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors`.
 
@@ -64,6 +66,9 @@ the kernel of the cap is the symmetric square of `k²` and the trace line is spa
   subrepresentation of `V^{⊗d}`.
 * `TauCeti.symplecticTraceLine`: the image of the cup in `V ⊗ V`, a subrepresentation on which
   the symplectic group acts trivially.
+* `TauCeti.quotientSymplecticTraceTensorsEquivHarmonicTensors`: over a star-ordered field the
+  quotient of `V^{⊗d}` by the trace tensors is equivalent to the harmonic tensors, as a
+  representation of the symplectic group.
 
 ## Main results
 
@@ -112,7 +117,7 @@ theorem symplecticCupCapAt_eq_comp_contractTensorPair {i j : Fin d} (hij : i ≠
   refine PiTensorProduct.ext <| MultilinearMap.ext fun v => ?_
   -- inserting into the two slots of the restricted input overwrites those slots of the input
   have hfun (x y : Fin n ⊕ Fin n) :
-      (fun a => if h : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
+      (fun a => if _ : a ≠ i ∧ a ≠ j then v a else if a = i then Pi.single x (1 : k) else
         Pi.single y (1 : k)) =
         Function.update (Function.update v i (Pi.single x 1)) j (Pi.single y 1) := by
     funext a
@@ -272,7 +277,7 @@ theorem isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt :
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => symplecticCupCapAt k n d p.1.1 p.1.2)
-    fun p => isHermitian_toMatrix_symplecticCupCapAt p.2
+    fun _ => isHermitian_toMatrix_symplecticCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod,
     ← symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt] using h
 
@@ -284,6 +289,47 @@ theorem isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors :
   Subrepresentation.isCompl_toSubmodule.mp <| by
     rw [symplecticHarmonicTensorsSubrep_toSubmodule, symplecticTraceTensors_toSubmodule]
     exact isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt k n d
+
+/-- **The quotient by the trace tensors is the space of harmonic tensors.** Over a star-ordered
+field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`), the quotient of `V^{⊗d}` by the trace
+tensors is equivalent, as a representation of the symplectic group, to the harmonic tensors, which
+complement them (`TauCeti.isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors`). The
+equivalence sends the class of a tensor to its harmonic component
+(`Subrepresentation.quotientEquivOfIsCompl`). -/
+noncomputable def quotientSymplecticTraceTensorsEquivHarmonicTensors :
+    (symplecticTraceTensors k n d).quotient.Equiv
+      (symplecticHarmonicTensorsSubrep k n d).toRepresentation :=
+  Subrepresentation.quotientEquivOfIsCompl
+    (isCompl_symplecticHarmonicTensorsSubrep_symplecticTraceTensors k n d).symm
+
+variable {k n d}
+
+/-- The inverse of the equivalence sends a harmonic tensor to its class modulo the trace
+tensors. -/
+@[simp]
+theorem quotientSymplecticTraceTensorsEquivHarmonicTensors_symm_apply
+    (v : (symplecticHarmonicTensorsSubrep k n d).toSubmodule) :
+    (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d).symm v =
+      Submodule.Quotient.mk (v : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) :=
+  Subrepresentation.quotientEquivOfIsCompl_symm_apply _ v
+
+/-- The class of a harmonic tensor goes back to that tensor. -/
+theorem quotientSymplecticTraceTensorsEquivHarmonicTensors_apply_mk_of_mem
+    {x : ⨂[k]^d ((Fin n ⊕ Fin n) → k)} (hx : x ∈ symplecticHarmonicTensors k n d) :
+    (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) = x := by
+  have h := (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d).apply_symm_apply
+    ⟨x, by rwa [symplecticHarmonicTensorsSubrep_toSubmodule]⟩
+  rw [quotientSymplecticTraceTensorsEquivHarmonicTensors_symm_apply] at h
+  exact congrArg Subtype.val h
+
+/-- A tensor differs from the harmonic tensor its class corresponds to by a trace tensor. -/
+theorem sub_quotientSymplecticTraceTensorsEquivHarmonicTensors_apply_mk_mem
+    (x : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) :
+    x - (quotientSymplecticTraceTensorsEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d ((Fin n ⊕ Fin n) → k)) ∈
+        symplecticTraceTensors k n d :=
+  Subrepresentation.sub_quotientEquivOfIsCompl_apply_mk_mem _ x
 
 end StarOrderedField
 

@@ -313,7 +313,7 @@ private theorem exists_isUnit_eval_smul_sub_eval (fS : Polynomial P.integers) (z
     ∃ u : P.integers, IsUnit u ∧
       ((fS.eval (g • z) : P.integers) : F') - ((fS.eval z : P.integers) : F') =
         ((g • z - z : P.integers) : F') * (u : F') := by
-  set d : P.integers := g • z - z with hd
+  set d : P.integers := g • z - z
   obtain ⟨K, hK⟩ := binomExpansion fS z d
   rw [add_sub_cancel] at hK
   set u : P.integers := (derivative fS).eval z + K * d with hu

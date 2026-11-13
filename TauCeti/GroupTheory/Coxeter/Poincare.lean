@@ -63,14 +63,9 @@ its left-hand side and the `simpNF` linter then reports the constant-term lemma 
 simp-normal form.
 
 Nothing here needs the group to be finitely generated, crystallographic, or attached to a root
-system: the statements are about an arbitrary Coxeter system, which is where the roadmap places
-them.
+system: the statements are about an arbitrary Coxeter system.
 
 ## References
-
-This is the "length generating function ... the Poincaré polynomial" item among the consequences
-of Layer 3 ("the missing Coxeter combinatorics") in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
 
 * A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
   Sections 1.4 and 7.1.

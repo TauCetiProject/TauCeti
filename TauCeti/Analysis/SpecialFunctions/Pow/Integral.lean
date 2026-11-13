@@ -578,7 +578,7 @@ theorem lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul (ν : Measure β) {u : β
     refine congrArg _ (setLIntegral_congr_fun measurableSet_Ioi fun t ht => congrArg₂ _ ?_ rfl)
     refine measure_congr ?_
     filter_upwards [hfin] with y hy
-    exact propext (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
+    exact (ENNReal.ofReal_lt_iff_lt_toReal (le_of_lt ht) hy).symm
   · -- `u = ∞` on a set of positive measure: both sides are `∞`.
     have hL : ∫⁻ y, u y ^ p ∂ν = ∞ := by
       have hlevel : {y | u y ^ p = ∞} = {y | u y = ∞} :=
