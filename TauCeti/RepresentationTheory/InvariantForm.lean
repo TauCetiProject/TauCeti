@@ -35,17 +35,21 @@ Away from characteristic two the second alternative is exactly alternation, whic
 orthogonal/symplectic dichotomy: an irreducible representation carries at most a line of invariant
 forms, and any nonzero one on it is either symmetric or alternating (in characteristic two it is
 symmetric).  For an irreducible representation of a finite group over an algebraically closed
-field of characteristic zero, the values `+1` and `-1` of the Frobenius-Schur indicator
+field in which `|G|` is invertible, the values `+1` and `-1` of the Frobenius-Schur indicator
 `TauCeti.Representation.frobeniusSchurIndicator` are characterized by these invariant symmetric
-and alternating forms; this file supplies the forms, not their character-theoretic count.
+and alternating forms (for `-1`, also when `2 ≠ 0`); this file supplies the forms, not their
+character-theoretic count.
 
 Apart from averaging over `G` and the counts that rest on it, which need `|G|` to be invertible,
-nothing here needs a finite group, and almost nothing needs finite dimensions: invariance, and the
+nothing here needs a finite group, and few results need finite dimensions: invariance, and the
 symmetric and alternating invariant forms with it, are defined for a representation of a monoid on
-a module over a commutative semiring, and only the results that invoke Schur's lemma ask for an
-algebraically closed field and a finite-dimensional space.  The `g⁻¹` in
+a module over a commutative semiring.  Finite dimensions are asked for by the results that invoke
+Schur's lemma (which also want an algebraically closed field), by
+`TauCeti.Representation.IsInvariantForm.equivDual`, and by the two
+`finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms` counts.  The `g⁻¹` in
 `TauCeti.Representation.IsInvariantForm.apply_left`, and with it the comparison with the dual
-representation, is what makes `G` a group.
+representation, makes `G` a group, as does averaging over `G`
+(`Representation.exists_mem_invariantForms_sub_flip_eq`), which reindexes the sum by `g ↦ g * h`.
 
 ## Main definitions
 
@@ -638,9 +642,9 @@ theorem exists_mem_invariantForms_sub_flip_eq {k G V : Type*} [CommRing k] [Grou
 
 /-- **The invariant symmetric and alternating forms together are as many as the invariant forms**,
 for a finite-dimensional `V` over a field in which `|G|` is invertible, in every characteristic.
-In characteristic two the two kinds of form overlap and do not span the invariant forms, but the
-map `B ↦ B - B.flip` still carries the invariant forms onto the invariant alternating forms, by
-averaging, with the invariant symmetric forms as kernel. -/
+In characteristic two the two kinds of form overlap and need not span the invariant forms, but
+the map `B ↦ B - B.flip` still carries the invariant forms onto the invariant alternating forms,
+by averaging, with the invariant symmetric forms as kernel. -/
 theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible
     {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
     [Invertible (Nat.card G : k)] (ρ : Representation k G V) :
