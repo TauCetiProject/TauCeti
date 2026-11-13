@@ -57,6 +57,7 @@ theorem exists_auslanderReitenTranslate (M : ModuleCat.{max u v w} A)
   let : IsArtinianRing Aᵐᵒᵖ := IsArtinianRing.of_finite k Aᵐᵒᵖ
   let N := matlisDualObj k k M
   have : Module.Finite Aᵐᵒᵖ N := Module.Finite.of_restrictScalars_finite k Aᵐᵒᵖ N
+  have : Module.FinitePresentation Aᵐᵒᵖ N := Module.finitePresentation_of_finite Aᵐᵒᵖ N
   obtain ⟨Q, hQ⟩ := FiniteProjectivePresentation.exists_isMinimal (M := N)
   let e := scalarDualEvalEquiv k M
   have he := scalarDualEvalEquiv_smul k M
@@ -74,6 +75,7 @@ theorem exists_auslanderReitenTranslate (M : ModuleCat.{max u v w} A)
   let : IsScalarTower k A Q.rightTranspose :=
     isScalarTower_of_algebra_moduleCat (k := k) Q.rightTranspose
   have hL : Module.Finite k Q.rightTranspose := Module.Finite.trans A _
+  have : Module.FinitePresentation A Q.rightTranspose := Module.finitePresentation_of_finite A _
   obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := Q.rightTranspose)
   have : Module.Finite k (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
   have hN : IsFiniteLength Aᵐᵒᵖ N :=

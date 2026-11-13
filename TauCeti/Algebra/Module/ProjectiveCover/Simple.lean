@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
+public import TauCeti.Algebra.Module.Projective.Local
 public import TauCeti.RingTheory.Jacobson.Semiprimary
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
@@ -18,7 +19,9 @@ endomorphism ring and coatomic submodule lattice has simple head `P / J P`. In p
 holds for indecomposable projective modules of finite length. Every nonzero map from a module
 with simple head into a semisimple module has kernel `J P`. A surjection from such a projective
 module with coatomic submodule lattice onto any nonzero module is a projective cover.
-Its nonzero semisimple quotients are necessarily simple and unique up to isomorphism. Without any
+Its nonzero semisimple quotients are necessarily simple and unique up to isomorphism. Over any
+semiring, a surjection from a projective module with local endomorphism ring onto a nonzero module
+is a projective cover (`Module.Projective.isProjectiveCover_of_isLocalRing_end`). Without any
 hypothesis on the ring, every proper submodule of a projective module with local endomorphism ring
 lies in its radical.
 
@@ -33,6 +36,19 @@ surjective, so the endomorphism ring of the head is local as well.
 -/
 
 public section
+
+/-- **A surjection from a projective module with local endomorphism ring onto a nonzero module is
+a projective cover.** Its kernel is proper, and in such a module the sum of two proper submodules
+is proper (`Module.Projective.sup_ne_top_of_isLocalRing_end`), so the kernel is superfluous. -/
+theorem Module.Projective.isProjectiveCover_of_isLocalRing_end {R P S : Type*} [Semiring R]
+    [AddCommMonoid P] [Module R P] [Module.Projective R P] [IsLocalRing (Module.End R P)]
+    [AddCommMonoid S] [Module R S] [Nontrivial S] {f : P →ₗ[R] S} (hf : Function.Surjective f) :
+    TauCeti.IsProjectiveCover f := by
+  have hker : LinearMap.ker f ≠ ⊤ :=
+    LinearMap.ker_eq_top.not.mpr (LinearMap.ne_zero_of_surjective hf)
+  refine ⟨‹_›, hf, TauCeti.isSuperfluous_iff.mpr fun K hK ↦ ?_⟩
+  by_contra hne
+  exact Module.Projective.sup_ne_top_of_isLocalRing_end hker hne hK
 
 namespace TauCeti
 

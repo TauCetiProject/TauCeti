@@ -30,6 +30,8 @@ contained in the radical `Module.jacobson`.
   downstream.
 * `TauCeti.isSuperfluous_bot`, `TauCeti.IsSuperfluous.mono`, `TauCeti.isSuperfluous_sup_iff`: the
   superfluous submodules of `M` are closed downwards and under binary suprema, and contain `⊥`.
+* `TauCeti.isSuperfluous_iSup_iff` and `TauCeti.isSuperfluous_pi_univ_iff`: finite suprema and
+  finite products of submodules are superfluous exactly when each member is.
 * `TauCeti.isSuperfluous_top_iff`: `⊤` is superfluous exactly for the zero module.
 * `TauCeti.IsSuperfluous.map`: the image of a superfluous submodule under any linear map is
   superfluous; `TauCeti.isSuperfluous_map_equiv_iff` records that along an equivalence this is an
@@ -116,6 +118,19 @@ theorem IsSuperfluous.sup {N N' : Submodule R M} (hN : IsSuperfluous N) (hN' : I
 theorem isSuperfluous_sup_iff {N N' : Submodule R M} :
     IsSuperfluous (N ⊔ N') ↔ IsSuperfluous N ∧ IsSuperfluous N' :=
   ⟨fun h => ⟨h.mono le_sup_left, h.mono le_sup_right⟩, fun h => h.1.sup h.2⟩
+
+/-- A finite supremum of superfluous submodules is superfluous. -/
+theorem isSuperfluous_iSup {ι : Sort*} [Finite ι] {N : ι → Submodule R M}
+    (hN : ∀ i, IsSuperfluous (N i)) : IsSuperfluous (⨆ i, N i) := by
+  have := Fintype.ofFinite (PLift ι)
+  rw [← iSup_plift_down, ← Finset.sup_univ_eq_iSup]
+  exact Finset.sup_induction isSuperfluous_bot (fun _ ha _ hb ↦ ha.sup hb) fun i _ ↦ hN i.down
+
+/-- A finite supremum of submodules is superfluous exactly when each of them is. -/
+@[simp]
+theorem isSuperfluous_iSup_iff {ι : Sort*} [Finite ι] {N : ι → Submodule R M} :
+    IsSuperfluous (⨆ i, N i) ↔ ∀ i, IsSuperfluous (N i) :=
+  ⟨fun h i ↦ h.mono (le_iSup N i), isSuperfluous_iSup⟩
 
 /-- The whole module is superfluous in itself exactly when it is zero: superfluity of `⊤` says
 precisely that `⊥ = ⊤`. -/
@@ -263,6 +278,28 @@ theorem isSuperfluous_ker_iff_forall_surjective {f : M →ₗ[R] M₂} (hf : Fun
       rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.range_subtype, hmapK]
     have hsub : Function.Surjective (K.subtype) := H (M₃ := K) K.subtype hs
     exact (Submodule.range_subtype K).symm.trans (LinearMap.range_eq_top.mpr hsub)
+
+/-- A finite product of superfluous submodules is superfluous. -/
+theorem isSuperfluous_pi_univ {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] {K : ∀ i, Submodule R (M i)} (hK : ∀ i, IsSuperfluous (K i)) :
+    IsSuperfluous (Submodule.pi Set.univ K) := by
+  classical
+  rw [← Submodule.iSup_map_single]
+  exact isSuperfluous_iSup fun i ↦ (hK i).map _
+
+/-- A finite product of submodules is superfluous exactly when each factor is. -/
+@[simp]
+theorem isSuperfluous_pi_univ_iff {ι : Type*} [Finite ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {K : ∀ i, Submodule R (M i)} :
+    IsSuperfluous (Submodule.pi Set.univ K) ↔ ∀ i, IsSuperfluous (K i) := by
+  classical
+  refine ⟨fun h i ↦ (h.map (LinearMap.proj i)).mono fun x hx ↦ ⟨Pi.single i x, ?_, by simp⟩,
+    isSuperfluous_pi_univ⟩
+  intro j _
+  by_cases hj : j = i
+  · subst hj
+    simpa using hx
+  · simp [Pi.single_eq_of_ne hj]
 
 end AddCommGroup
 
