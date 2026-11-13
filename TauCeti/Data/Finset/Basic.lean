@@ -516,8 +516,9 @@ theorem sum_powerset_neg_one_pow_card_of_ring {α R : Type*} [DecidableEq α] [R
   push_cast at this
   exact this
 
-/-- **A telescoping signed sum over the subsets of `P` vanishes.** If, for each `i ∈ P`, the
-summand `g i` changes by `h i` when `i` is adjoined to a set not containing it, then
+/-- **A telescoping signed sum over the subsets of `P` vanishes.** If, for each `i ∈ P` and each
+`t ⊆ P` not containing `i`, `g i t = g i (insert i t) + h i (insert i t)` (so adjoining `i`
+lowers the summand `g i` by `h i`), then
 `∑_{T ⊆ P} (-1)^{|T|} (∑_{i ∈ P} g i T + ∑_{i ∈ T} h i T) = 0`: for fixed `i`, the sets `T ∌ i`
 and `T ∪ {i}` cancel in pairs. -/
 theorem sum_powerset_neg_one_pow_mul_eq_zero {ι R : Type*} [DecidableEq ι] [Ring R]
