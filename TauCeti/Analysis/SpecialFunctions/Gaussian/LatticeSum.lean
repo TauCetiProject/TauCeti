@@ -115,7 +115,7 @@ private theorem exp_neg_sub_sq_le (n : ℤ) {c s x R : ℝ} (hs : s ≠ 0)
     -((n : ℝ) - x) ^ 2 / (2 * s ^ 2) =
         (-2 * ((n : ℝ) - x) ^ 2) / (4 * s ^ 2) := by ring
     _ ≤ (2 * R ^ 2 - ((n : ℝ) - c) ^ 2) / (4 * s ^ 2) :=
-      div_le_div_of_nonneg_right (by linarith) (by positivity)
+      div_le_div_of_nonneg_right (by linarith) (mul_pos four_pos hs2).le
     _ = _ := by ring
 
 /-- The direct Gaussian lattice series converges uniformly in the centre on every bounded set,
