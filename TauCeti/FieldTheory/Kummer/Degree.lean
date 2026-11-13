@@ -292,11 +292,15 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
     algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
 
+omit [NeZero n] in
 /-- **The Galois group of a Kummer extension has exponent dividing the radical exponent.**
 Every `K`-automorphism of `K(Δ^{1/n})`, raised to the `n`-th power, fixes each radical generator.
 -/
 theorem exponent_algEquiv_kummerField_dvd :
     Monoid.exponent (kummerField E n Δ ≃ₐ[K] kummerField E n Δ) ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero _
+  have : NeZero n := ⟨hn⟩
   rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
   intro σ
   apply AlgEquiv.coe_toAlgHom_injective
@@ -326,7 +330,7 @@ private theorem algEquiv_ext_of_apply_div_self_eq {r : Δ → kummerField E n Δ
   have hpow := hy.trans (hr ⟨a, ha⟩).symm
   have hσ := σ.apply_div_self_eq_of_pow_eq hpow
   have hτ := τ.apply_div_self_eq_of_pow_eq hpow
-  rw [h, ← hτ, div_left_inj' (ne_zero_of_pow_eq_algebraMap hy)] at hσ
+  rw [h, ← hτ, div_left_inj₀ (ne_zero_of_pow_eq_algebraMap hy)] at hσ
   exact hσ
 
 /-- **The Galois group of `K(Δ^{1/n})/K` embeds in the characters of `Δ` modulo `n`-th powers**,

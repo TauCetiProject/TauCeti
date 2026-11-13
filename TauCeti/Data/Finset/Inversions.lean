@@ -281,10 +281,6 @@ theorem card_univ_inversions_eq_comp_succAbove (b : Fin (n + 1) → β) (k : Fin
   have hcard {m : ℕ} (f : Fin m → β) :
       #(univ.inversions f) = ∑ i, ∑ j, if i < j ∧ f j < f i then 1 else 0 := by
     rw [inversions_univ, card_filter, ← univ_product_univ, sum_product]
-  have h₁ : (∑ i, if i < k ∧ b k < b i then 1 else 0) =
-      ∑ i, if k.succAbove i < k ∧ b k < b (k.succAbove i) then 1 else 0 := by
-    rw [Fin.sum_univ_succAbove _ k]
-    simp
   rw [card_filter, card_filter]
   simp only [hcard, Fin.sum_univ_succAbove _ k, lt_self_iff_false, false_and,
     ite_false, zero_add, Finset.sum_add_distrib, comp_apply, Fin.succAbove_lt_succAbove_iff]

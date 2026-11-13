@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Monotonicity and subadditivity of `eLpNorm` in the measure
@@ -63,7 +64,7 @@ theorem eLpNorm_add_measure_rpow_le {α ε : Type*} [MeasurableSpace α] [Topolo
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
       eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
       inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
   by_cases hm : AEStronglyMeasurable f μ ∧ AEStronglyMeasurable f ν
   · rw [hpow (hm.1.add_measure hm.2), lintegral_add_measure, hpow hm.1, hpow hm.2]
@@ -94,13 +95,11 @@ theorem eLpNorm_add_measure_le (f : α → ε) (hp : 1 ≤ p) :
         eLpNormEssSup_add_measure]
       exact max_le_add_of_nonneg (by simp) (by simp)
     · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-      have hp1 : 1 ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp_top hp
-      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hadd,
-        eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfμ,
-        eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfν, lintegral_add_measure]
+      rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hadd,
+        eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hfμ,
+        eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hfν, lintegral_add_measure]
       exact ENNReal.rpow_add_le_add_rpow _ _ (by positivity)
-        (div_le_one_of_le₀ hp1 (by positivity))
+        (sub_nonneg.1 (ENNReal.one_sub_one_div_toReal_nonneg hp))
   · by_cases hfμ : AEStronglyMeasurable f μ
     · have hfν : ¬ AEStronglyMeasurable f ν := fun hfν => hadd (hfμ.add_measure hfν)
       simp [eLpNorm_of_not_aestronglyMeasurable, hadd, hfν]
@@ -148,7 +147,7 @@ theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε}
   rcases eq_or_ne p 0 with rfl | hp0
   · exact memLp_zero_iff_aestronglyMeasurable.2 hm
   have hint := fun {ν : Measure α} (hν : AEStronglyMeasurable f ν) =>
-    eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp.ne_top hν
+    eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp.ne_top hν
   refine (hint hm).2 ((lintegral_iUnion_le t _).trans_lt ?_)
   rw [tsum_fintype]
   exact ENNReal.sum_lt_top.2 fun i _ =>

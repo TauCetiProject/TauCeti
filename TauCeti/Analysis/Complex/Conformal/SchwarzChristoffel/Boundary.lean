@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ExtendFrom
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Vertex
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Boundary values of the Schwarz--Christoffel map
@@ -67,10 +68,7 @@ exponents at that point vanishes. -/
 theorem sum_filter_eq_zero_of_mem_Ioo (a e : ι → ℝ) {p q x : ℝ}
     (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
     ∑ i with a i = x, e i = 0 := by
-  apply Finset.sum_eq_zero
-  intro i hi
-  by_contra he
-  exact ha i he (by simpa only [(Finset.mem_filter.mp hi).2] using hx)
+  exact Finset.sum_filter_eq_zero_of_ne fun i _ he hax ↦ ha i he (hax ▸ hx)
 
 /-- The **boundary value of the Schwarz--Christoffel map** at a real point: the value at that
 point of Mathlib's `extendFrom` extension of the normalized primitive from the upper half-plane.

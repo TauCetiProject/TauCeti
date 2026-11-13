@@ -80,7 +80,6 @@ private theorem throughTop_strictMono (D : TLDiagram n m) :
     StrictMono D.throughTop := by
   intro i j hij
   have hi := (D.bottomHalf_apply_eq_self_iff i).mp i.property
-  have hj := (D.bottomHalf_apply_eq_self_iff j).mp j.property
   have hne : D.matching.1.val (i.val.castAdd m) ≠
       D.matching.1.val (j.val.castAdd m) := by
     intro h

@@ -24,21 +24,21 @@ ring squares to `1`.
 
 public section
 
-namespace TauCeti
+namespace Int
 
 /-- Two signs are equal exactly when their product is `1`. -/
-theorem _root_.Int.units_eq_iff_mul_eq_one (u v : ℤˣ) : u = v ↔ u * v = 1 := by
+theorem units_eq_iff_mul_eq_one (u v : ℤˣ) : u = v ↔ u * v = 1 := by
   rw [mul_eq_one_iff_eq_inv, Int.units_inv_eq_self]
 
 /-- Two pairs of signs with the same product agree in the same cases: if `u * v = u' * v'` then
 `u = v` exactly when `u' = v'`. -/
-theorem _root_.Int.units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v = u' * v') :
+theorem units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v = u' * v') :
     u = v ↔ u' = v' := by
   rw [Int.units_eq_iff_mul_eq_one u v, Int.units_eq_iff_mul_eq_one u' v', h]
 
 /-- The square of a sign `u : ℤˣ`, cast to any ring, is `1`. -/
 @[simp]
-theorem _root_.Int.cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
+theorem cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
   rcases Int.units_eq_one_or u with rfl | rfl <;> simp
 
-end TauCeti
+end Int

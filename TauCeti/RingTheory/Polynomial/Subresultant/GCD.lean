@@ -50,9 +50,7 @@ solution, by the Bézout identity for the gcd.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 section Domain
 
@@ -61,7 +59,7 @@ variable {R : Type*} [CommRing R] [IsDomain R]
 /-- A nontrivial relation `A * q + B * p = 0`, with `A` and `B` of degrees below `m - j` and
 `n - j`, is a kernel vector of the principal subresultant matrix at index `j`, so the principal
 subresultant coefficient vanishes there. -/
-theorem _root_.Polynomial.psc_eq_zero_of_mul_add_mul_eq_zero {p q A B : R[X]} {m n j : ℕ}
+theorem psc_eq_zero_of_mul_add_mul_eq_zero {p q A B : R[X]} {m n j : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hA : A.degree < (m - j : ℕ)) (hB : B.degree < (n - j : ℕ))
     (hAB : A * q + B * p = 0) (hne : A ≠ 0 ∨ B ≠ 0) :
@@ -69,9 +67,9 @@ theorem _root_.Polynomial.psc_eq_zero_of_mul_add_mul_eq_zero {p q A B : R[X]} {m
   classical
   rw [psc_def, ← Matrix.exists_mulVec_eq_zero_iff]
   refine ⟨Fin.append (toFn (m - j) A) (toFn (n - j) B), fun h0 => ?_, ?_⟩
-  · have hA0 : toFn (m - j) A = 0 := funext fun k => by
+  · have hA0 : toFn (m - j) A = 0 := _root_.funext fun k => by
       simpa using congrFun h0 (Fin.castAdd (n - j) k)
-    have hB0 : toFn (n - j) B = 0 := funext fun k => by
+    have hB0 : toFn (n - j) B = 0 := _root_.funext fun k => by
       simpa using congrFun h0 (Fin.natAdd (m - j) k)
     rcases hne with hne | hne
     · exact hne (by rw [← ofFn_comp_toFn_eq_id_of_degree_lt hA, hA0, map_zero])
@@ -89,7 +87,7 @@ variable {K : Type*} [Field K] [DecidableEq K]
 
 /-- Below the degree of the gcd, the principal subresultant coefficients vanish, at any formal
 degree bounds dominating the actual degrees. -/
-theorem _root_.Polynomial.psc_eq_zero_of_lt_natDegree_gcd {p q : K[X]}
+theorem psc_eq_zero_of_lt_natDegree_gcd {p q : K[X]}
     {m n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hj : j < (EuclideanDomain.gcd p q).natDegree) : psc p q m n j = 0 := by
   set g := EuclideanDomain.gcd p q
@@ -133,14 +131,14 @@ theorem _root_.Polynomial.psc_eq_zero_of_lt_natDegree_gcd {p q : K[X]}
 /-- At the degree of the gcd, the principal subresultant coefficient is nonzero, provided the left
 bound is the actual degree of the nonzero left polynomial and the right bound dominates the degree
 of the right polynomial. -/
-theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
+theorem psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
     (hp : p ≠ 0) (hm : p.natDegree = m) (hn : q.natDegree ≤ n) :
     psc p q m n (EuclideanDomain.gcd p q).natDegree ≠ 0 := by
   set g := EuclideanDomain.gcd p q with hg
   clear_value g
   have hgp : g ∣ p := hg ▸ EuclideanDomain.gcd_dvd_left p q
   have hgq : g ∣ q := hg ▸ EuclideanDomain.gcd_dvd_right p q
-  set d := g.natDegree with hd
+  set d := g.natDegree
   rw [psc_def, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
   rintro ⟨v, hv, hMv⟩
   -- The kernel vector encodes a relation `A * q + B * p` with no coefficients in degrees
@@ -174,7 +172,7 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
 /-- The subresultant gcd criterion: at the actual degrees, the degree of the gcd of `p` and `q`
 is the least index with nonzero principal subresultant coefficient.  When `p = 0`, the gcd is `q`
 and the criterion reads off the empty terminal determinant at `q.natDegree`. -/
-theorem _root_.Polynomial.natDegree_gcd_eq_iff_psc (p q : K[X]) (j : ℕ) :
+theorem natDegree_gcd_eq_iff_psc (p q : K[X]) (j : ℕ) :
     (EuclideanDomain.gcd p q).natDegree = j ↔
       psc p q p.natDegree q.natDegree j ≠ 0 ∧
         ∀ i < j, psc p q p.natDegree q.natDegree i = 0 := by
@@ -196,7 +194,7 @@ theorem _root_.Polynomial.natDegree_gcd_eq_iff_psc (p q : K[X]) (j : ℕ) :
 the actual degrees and at indices up to the smaller degree. If the coefficients of a pair `p', q'`
 of nonzero polynomials vanish exactly where those of `p, q` do, the two gcds have the same degree;
 the two pairs may live over different fields. -/
-theorem _root_.Polynomial.natDegree_gcd_eq_of_psc_eq_zero_iff {L : Type*} [Field L]
+theorem natDegree_gcd_eq_of_psc_eq_zero_iff {L : Type*} [Field L]
     [DecidableEq L] {p q : K[X]} {p' q' : L[X]} (hp' : p' ≠ 0) (hq' : q' ≠ 0)
     (h : ∀ j ≤ min p'.natDegree q'.natDegree,
       psc p q p.natDegree q.natDegree j = 0 ↔ psc p' q' p'.natDegree q'.natDegree j = 0) :
@@ -211,4 +209,4 @@ theorem _root_.Polynomial.natDegree_gcd_eq_of_psc_eq_zero_iff {L : Type*} [Field
 
 end Field
 
-end TauCeti
+end Polynomial

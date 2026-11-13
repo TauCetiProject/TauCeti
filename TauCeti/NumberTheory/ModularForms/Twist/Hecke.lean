@@ -41,19 +41,19 @@ twist can annihilate a nonzero form).
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GL2 ZMod
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GL2 ZMod TauCeti
 
 open scoped MatrixGroups
 
-namespace TauCeti
-
 variable {M N L p : ℕ} {k : ℤ}
+
+namespace ModularForm
 
 /-- **Twisting intertwines the Hecke operators at a prime not dividing the level.** For a
 Dirichlet character `ψ` modulo `M`, `f ∈ M_k(Γ₁(N), χ)` and a prime `p ∤ L`,
 `T_p (f ⊗ ψ) = ψ(p) • (T_p f) ⊗ ψ`, with `T_p` taken at level `L` on the left and at level `N`
 on the right. -/
-theorem _root_.ModularForm.heckeTNat_twist [NeZero M] [NeZero N] [NeZero L]
+theorem heckeTNat_twist [NeZero M] [NeZero N] [NeZero L]
     (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ)
     (hp : p.Prime) (hpL : p.Coprime L) :
@@ -82,9 +82,13 @@ theorem _root_.ModularForm.heckeTNat_twist [NeZero M] [NeZero N] [NeZero L]
     rw [map_mul]
     ring
 
+end ModularForm
+
+namespace CuspForm
+
 /-- **Twisting intertwines the Hecke operators on cusp forms.** For a Dirichlet character `ψ`
 modulo `M`, `f ∈ S_k(Γ₁(N), χ)` and a prime `p ∤ L`, `T_p (f ⊗ ψ) = ψ(p) • (T_p f) ⊗ ψ`. -/
-theorem _root_.CuspForm.heckeTCuspNat_twist [NeZero M] [NeZero N] [NeZero L]
+theorem heckeTCuspNat_twist [NeZero M] [NeZero N] [NeZero L]
     (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
     (hp : p.Prime) (hpL : p.Coprime L) :
@@ -102,7 +106,7 @@ theorem _root_.CuspForm.heckeTCuspNat_twist [NeZero M] [NeZero N] [NeZero L]
 `T_p f = c • f` at a prime `p ∤ L`, then `T_p (f ⊗ ψ) = (ψ(p) c) • (f ⊗ ψ)`. So `f ⊗ ψ` is a
 `T_p`-eigenvector with eigenvalue `ψ(p) c` whenever it is nonzero; the twist of a nonzero form
 can vanish. -/
-theorem _root_.CuspForm.heckeTCuspNat_twist_eq_smul [NeZero M] [NeZero N] [NeZero L]
+theorem heckeTCuspNat_twist_eq_smul [NeZero M] [NeZero N] [NeZero L]
     (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L) (hML : M * M ∣ L) {χ : (ZMod N)ˣ →* ℂˣ}
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ)
     (hp : p.Prime) (hpL : p.Coprime L) {c : ℂ}
@@ -112,4 +116,4 @@ theorem _root_.CuspForm.heckeTCuspNat_twist_eq_smul [NeZero M] [NeZero N] [NeZer
   rw [CuspForm.heckeTCuspNat_twist ψ hNL hML hf hp hpL, hc, ← CuspForm.twistₗ_apply,
     _root_.map_smul, CuspForm.twistₗ_apply, smul_smul]
 
-end TauCeti
+end CuspForm

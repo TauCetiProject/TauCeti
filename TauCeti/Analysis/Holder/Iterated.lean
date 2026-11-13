@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.JetBounds
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -44,6 +45,13 @@ conditions are closed under uniform convergence, which gives completeness.
   regularity of an element; `TauCeti.CkHolderSpace.ofContDiff` is the converse constructor.
 * `TauCeti.CkHolderSpace.norm_eq`: the norm is the sum of the supremum norms of the derivatives
   through order `k` and the `α`-Hölder seminorm of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.norm_le_of_norm_iteratedFDeriv_le_of_holderWith`: the norm is controlled
+  by uniform bounds on the derivatives and a Hölder constant of the `k`-th derivative.
+* `TauCeti.CkHolderSpace.toBoundedContinuousFunction` and `TauCeti.CkHolderSpace.fderivBCF`: the
+  underlying function and its curried derivative as bounded continuous fields, with the supremum
+  norms of the derivative fields of orders zero and one; and
+  `TauCeti.CkHolderSpace.toBoundedContinuousFunctionCLM`, the first as a continuous linear map of
+  operator norm at most one.
 * `TauCeti.CkHolderSpace.norm_fderiv_le_iteratedFDeriv_one`,
   `TauCeti.CkHolderSpace.norm_fderiv_fderiv_le_iteratedFDeriv_two` and
   `TauCeti.CkHolderSpace.holderWith_fderiv_fderiv`: bounds on the curried derivatives `Df` and
@@ -373,6 +381,36 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpace k α E F) :
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
 
+/-- Every derivative field through order `k` is globally `α`-Hölder when `α ≤ 1`. Lower
+fields are controlled by their supremum norm and the bound on their next derivative. -/
+theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α ≤ 1)
+    {j : ℕ} (hj : j ≤ k) :
+    HolderWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j f) := by
+  rcases hj.eq_or_lt with rfl | hj
+  · exact f.memHolder_iteratedFDeriv.holderWith.mono (by
+      exact_mod_cast (f.nnHolderNorm_iteratedFDeriv_le.trans
+        (by nlinarith [norm_nonneg f] : ‖f‖ ≤ 3 * ‖f‖)))
+  · have h := holderOnWith_univ.mp
+      (f.contDiff.contDiffOn.holderOnWith_iteratedFDeriv_of_lt isOpen_univ (convex_univ)
+        (M := ‖f‖₊) (L := ‖f‖₊) hj hα (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj.le x)
+        (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
+    convert h using 1; ring
+
+/-- The `C^{k,α}` norm is at most `(k + 1) M + K` when every derivative through order `k` is
+bounded by `M` and the `k`-th derivative is `α`-Hölder with constant `K`. -/
+theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α E F} {M : ℝ}
+    {K : ℝ≥0} (hM : ∀ i ≤ k, ∀ x, ‖_root_.iteratedFDeriv ℝ i f x‖ ≤ M)
+    (hK : HolderWith K α (_root_.iteratedFDeriv ℝ k f)) : ‖f‖ ≤ (k + 1) * M + K := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 k.zero_le 0)
+  rw [norm_eq]
+  gcongr
+  · calc ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ∑ _i : Fin (k + 1), M :=
+          Finset.sum_le_sum fun i _ ↦ (BoundedContinuousFunction.norm_le hM0).2 fun x ↦ by
+            rw [← iteratedFDeriv_eq]
+            exact hM i (Nat.lt_succ_iff.1 i.2) x
+      _ = (k + 1) * M := by simp
+  · exact_mod_cast hK.nnholderNorm_le
+
 /-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
 field. -/
 theorem norm_apply_le_iteratedFDeriv_zero (f : CkHolderSpace k α E F) (x : E) :
@@ -411,6 +449,59 @@ theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
   simpa [Function.comp_def, he] using
     (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
       f.memHolder_iteratedFDeriv.holderWith
+
+/-- The underlying function of a bounded `C^{k,α}` map, as a bounded continuous function. -/
+def toBoundedContinuousFunction (f : CkHolderSpace k α E F) : E →ᵇ F :=
+  BoundedContinuousFunction.ofNormedAddCommGroup f f.contDiff.continuous ‖f‖ f.norm_apply_le
+
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
+    ⇑f.toBoundedContinuousFunction = f :=
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup ..
+
+/-- The underlying bounded continuous function has norm at most the `C^{k,α}` norm. -/
+theorem norm_toBoundedContinuousFunction_le (f : CkHolderSpace k α E F) :
+    ‖f.toBoundedContinuousFunction‖ ≤ ‖f‖ :=
+  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (norm_nonneg f) _
+
+/-- A `C^{k,α}` map is determined by its underlying bounded continuous function. -/
+theorem toBoundedContinuousFunction_injective :
+    Function.Injective (toBoundedContinuousFunction : CkHolderSpace k α E F → E →ᵇ F) :=
+  fun _ _ h ↦ ext fun x ↦ by simpa using DFunLike.congr_fun h x
+
+/-- The supremum norm of the underlying function is that of the order-zero derivative field. -/
+theorem norm_toBoundedContinuousFunction (f : CkHolderSpace k α E F) :
+    ‖f.toBoundedContinuousFunction‖ = ‖f.iteratedFDeriv 0‖ := by
+  rw [BoundedContinuousFunction.norm_eq_iSup_norm,
+    BoundedContinuousFunction.norm_eq_iSup_norm (f.iteratedFDeriv 0),
+    coe_toBoundedContinuousFunction]
+  congr 1 with x
+  rw [← iteratedFDeriv_eq, Fin.val_zero, norm_iteratedFDeriv_zero]
+
+/-- The derivative of a bounded `C^{k+1,α}` map, in curried form, as a bounded continuous
+field. -/
+def fderivBCF (f : CkHolderSpace (k + 1) α E F) : E →ᵇ (E →L[ℝ] F) :=
+  BoundedContinuousFunction.ofNormedAddCommGroup (fderiv ℝ f)
+    (f.contDiff.continuous_fderiv (by simp)) ‖f‖ fun x ↦ by
+      simpa using f.norm_iteratedFDeriv_apply_le (i := 1) (by omega) x
+
+@[simp]
+theorem coe_fderivBCF (f : CkHolderSpace (k + 1) α E F) : ⇑f.fderivBCF = fderiv ℝ f :=
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup ..
+
+/-- The supremum norm of the curried derivative is that of the first derivative field. -/
+theorem norm_fderivBCF (f : CkHolderSpace (k + 1) α E F) :
+    ‖f.fderivBCF‖ = ‖f.iteratedFDeriv 1‖ := by
+  rw [BoundedContinuousFunction.norm_eq_iSup_norm,
+    BoundedContinuousFunction.norm_eq_iSup_norm (f.iteratedFDeriv 1), coe_fderivBCF]
+  congr 1 with x
+  rw [← iteratedFDeriv_eq, Fin.val_one, norm_iteratedFDeriv_one]
+
+/-- The derivative field `fderivBCF` is the Fréchet derivative of a bounded `C^{k+1,α}` map. -/
+theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
+    HasFDerivAt f (f.fderivBCF x) x := by
+  rw [coe_fderivBCF]
+  exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
@@ -499,6 +590,39 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply,
     _root_.smul_apply]
   simp
+
+/-- The underlying bounded continuous function of a sum. -/
+@[simp]
+theorem toBoundedContinuousFunction_add (f g : CkHolderSpace k α E F) :
+    (f + g).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction + g.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a scalar multiple. -/
+@[simp]
+theorem toBoundedContinuousFunction_smul (c : ℝ) (f : CkHolderSpace k α E F) :
+    (c • f).toBoundedContinuousFunction = c • f.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- Forgetting the derivatives is a continuous linear map to bounded continuous functions. -/
+def toBoundedContinuousFunctionCLM : CkHolderSpace k α E F →L[ℝ] (E →ᵇ F) :=
+  LinearMap.mkContinuous
+    { toFun := toBoundedContinuousFunction
+      map_add' := toBoundedContinuousFunction_add
+      map_smul' := toBoundedContinuousFunction_smul } 1 fun f ↦ by
+        rw [one_mul]
+        exact norm_toBoundedContinuousFunction_le f
+
+@[simp]
+theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpace k α E F) :
+    toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
+
+/-- Forgetting the derivatives has operator norm at most one. -/
+theorem norm_toBoundedContinuousFunctionCLM_le_one :
+    ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (E := E) (F := F)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-- A bounded continuous field built from a continuous function with a uniform bound. -/
 private def bcfOf {G : Type*} [NormedAddCommGroup G] (g : E → G) (hg : Continuous g)

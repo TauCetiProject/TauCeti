@@ -142,12 +142,12 @@ private theorem exists_le_one :
         (hfK i K hK).smul_const (b i))
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-      fun U hU φ hφU hφ => ?_
-    rw [Measure.setLIntegral_rnDeriv hlam, ← enorm_neg, ← hrep]
-    exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin hU φ hφU hφ
+      fun U _ φ hφU hφ => ?_
+    rw [Measure.setLIntegral_rnDeriv hlam, ← eNorm_neg, ← hrep]
+    exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin φ hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   congr 1
   refine integral_congr_ae ?_
@@ -174,8 +174,8 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
     have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φΩ x := by simp [φΩ]
     simp_rw [hdiv, hσ φΩ]
     refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
-    rw [← Real.enorm_eq_ofReal_abs, ← lintegral_indicator (hUV ▸ hV.measurableSet)]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    rw [← Real.eNorm_eq_ofReal_abs, ← lintegral_indicator (hUV ▸ hV.measurableSet)]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     by_cases hx : x ∈ ((↑) : Ω → E) ⁻¹' (U : Set E)
     · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
@@ -251,14 +251,21 @@ theorem ae_norm_polarDensity_eq_one :
     ∀ᵐ x ∂variationMeasure μ Ω u, ‖polarDensity μ Ω u x‖ = 1 :=
   (polarDensity_spec hu hfin).1
 
-/-- The polar density of a function of locally finite variation is locally integrable with
-respect to `|Du|`. -/
+omit hu hfin in
+/-- The polar density is locally integrable with respect to `|Du|`. (If `u` is not locally
+integrable with locally finite variation, `|Du| = 0`.) -/
 theorem locallyIntegrable_polarDensity :
     LocallyIntegrable (polarDensity μ Ω u) (variationMeasure μ Ω u) := by
   have := Ω.isOpen.locallyCompactSpace
-  exact locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded hK.measure_lt_top.ne
-    measurable_polarDensity.aestronglyMeasurable (M := 1)
-    (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => hx.le))
+  by_cases h : LocallyIntegrableOn u Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
+  · exact locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded hK.measure_lt_top.ne
+      measurable_polarDensity.aestronglyMeasurable (M := 1)
+      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one h.1 h.2).mono fun x hx => hx.le))
+  · rw [variationMeasure_eq_zero_of_not h]
+    exact locallyIntegrable_iff.2 fun K _ => by
+      rw [IntegrableOn, Measure.restrict_zero]
+      exact integrable_zero_measure
 
 /-- **Uniqueness of the polar density.** A locally integrable vector field `σ` on `Ω` with
 `∫ u div φ dμ = -∫ ⟪φ, σ⟫ d|Du|` for every test vector field `φ` agrees with `σ_u` at
@@ -268,7 +275,7 @@ theorem ae_eq_polarDensity {σ : Ω → E} (hσ : LocallyIntegrable σ (variatio
       -∫ x, ⟪φ x, σ x⟫ ∂variationMeasure μ Ω u) :
     σ =ᵐ[variationMeasure μ Ω u] polarDensity μ Ω u := by
   have := Ω.isOpen.locallyCompactSpace
-  have hσ' := locallyIntegrable_polarDensity hu hfin
+  have hσ' := locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := u)
   have hint {τ : Ω → E} (hτ : LocallyIntegrable τ (variationMeasure μ Ω u)) (φ : 𝓓(Ω, E)) :
       Integrable (fun x : Ω => ⟪φ x, τ x⟫) (variationMeasure μ Ω u) := by
     exact (φ.integrable_bilin_subtype (innerSL ℝ) hτ).congr
@@ -286,8 +293,8 @@ theorem ae_eq_polarDensity {σ : Ω → E} (hσ : LocallyIntegrable σ (variatio
 /-- The pairing of `u` with a test vector field `φ` on `Ω` is bounded by `∫ ‖φ‖ d|Du|`. -/
 theorem enorm_integral_divergenceCLM_mul_le_lintegral_enorm (φ : 𝓓(Ω, E)) :
     ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂variationMeasure μ Ω u := by
-  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, enorm_neg]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono_ae ?_)
+  rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, eNorm_neg]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
   filter_upwards [ae_norm_polarDensity_eq_one hu hfin] with x hx
   rw [← ofReal_norm, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans_eq (by rw [hx, mul_one]))
@@ -302,7 +309,7 @@ theorem polarDensity_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
   · by_cases hv : LocallyIntegrableOn v Ω μ ∧
         ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U v ≠ ∞
-    · have hσ := locallyIntegrable_polarDensity hv.1 hv.2
+    · have hσ := locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := v)
       rw [← variationMeasure_congr_ae h] at hσ
       refine (ae_eq_polarDensity hu.1 hu.2 hσ fun φ => ?_).symm
       rw [integral_divergenceCLM_mul_congr_ae h,
@@ -325,7 +332,7 @@ theorem polarDensity_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
     have hv : LocallyIntegrableOn (fun x => c - u x) Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
         ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (fun x => c - u x) ≠ ∞ :=
       ⟨hc.sub hu.1, fun K hK hKΩ => by simpa only [totalVariationOn_const_sub] using hu.2 K hK hKΩ⟩
-    have hσ := (locallyIntegrable_polarDensity hu.1 hu.2).neg
+    have hσ := (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := u)).neg
     rw [← variationMeasure_const_sub (u := u) c] at hσ ⊢
     refine (ae_eq_polarDensity hv.1 hv.2 hσ fun φ => ?_).symm
     have hiu : Integrable (fun x => divergenceCLM φ x * u x) μ := by
@@ -343,11 +350,14 @@ theorem polarDensity_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
 /-- A continuous field compactly supported in the domain pairs integrably with the derivative
 of a locally BV function, represented by its polar density against its variation measure. -/
 theorem integrable_inner_polarDensity
-    (hu : LocallyIntegrableOn u Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     {f : E → E} (hf : Continuous f) (hc : HasCompactSupport f) (hs : tsupport f ⊆ Ω) :
     Integrable (fun x : Ω => ⟪f x, polarDensity μ Ω u x⟫) (variationMeasure μ Ω u) := by
+  by_cases h : LocallyIntegrableOn u Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
+  swap
+  · rw [variationMeasure_eq_zero_of_not h]
+    exact integrable_zero_measure
+  obtain ⟨hu, hfin⟩ := h
   let K := ((↑) : Ω → E) ⁻¹' tsupport f
   have hK : IsCompact K :=
     Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hc (by simpa using hs)
@@ -366,9 +376,6 @@ theorem integrable_inner_polarDensity
 /-- Uniformly close continuous fields supported in a fixed compact set have close derivative
 pairings, with constant the variation measure of that compact set. -/
 theorem dist_integral_inner_polarDensity_le
-    (hu : LocallyIntegrableOn u Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     {f g : E → E} (hf : Continuous f) (hg : Continuous g)
     {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
     (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
@@ -376,11 +383,16 @@ theorem dist_integral_inner_polarDensity_le
     dist (∫ x : Ω, ⟪f x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)
       (∫ x : Ω, ⟪g x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u) ≤
       ε * (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K) := by
+  by_cases h : LocallyIntegrableOn u Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
+  swap
+  · simp [variationMeasure_eq_zero_of_not h]
+  obtain ⟨hu, hfin⟩ := h
   have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport _) hfK
   have hgc : HasCompactSupport g := hK.of_isClosed_subset (isClosed_tsupport _) hgK
   rw [dist_eq_norm, ← integral_sub
-    (integrable_inner_polarDensity hu hfin hf hfc (hfK.trans hKΩ))
-    (integrable_inner_polarDensity hu hfin hg hgc (hgK.trans hKΩ))]
+    (integrable_inner_polarDensity hf hfc (hfK.trans hKΩ))
+    (integrable_inner_polarDensity hg hgc (hgK.trans hKΩ))]
   simp_rw [← inner_sub_left]
   have hK' : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
     Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
@@ -412,7 +424,6 @@ theorem integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity
   have huK : IntegrableOn u K μ := hu.integrableOn_compact_subset hδΩ hK
   set C := ‖traceCLM ℝ E‖ * ∫ x in K, ‖u x‖ ∂μ +
     (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K)
-  have hC : 0 ≤ C := by positivity
   -- Compare both sides with those of a test field `ψ` that is `C¹`-close to `φ`.
   refine dist_le_zero.1 (le_of_forall_pos_le_add fun ε hε => ?_)
   set η := ε / (C + 1)
@@ -420,11 +431,11 @@ theorem integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity
   obtain ⟨ψ, hψK, hψ⟩ :=
     hφ.exists_testFunction_dist_le_and_dist_fderiv_le hc.isCompact subset_rfl hδ hδΩ hη
   have hψ1 : ContDiff ℝ 1 (ψ : E → E) := ψ.contDiff.of_le (by simp)
-  have hL := dist_integral_trace_fderiv_mul_le hK huK hφ hψ1 hφK hψK fun x => by
+  have hL := dist_integral_trace_fderiv_mul_le huK hφ hψ1 hφK hψK fun x => by
     rw [dist_comm]
     exact (hψ x).2
-  have hR := dist_integral_inner_polarDensity_le hu hfin hψ1.continuous hφ.continuous hK hδΩ
-    hψK hφK fun x => (hψ x).1
+  have hR := dist_integral_inner_polarDensity_le (μ := μ) (u := u) hψ1.continuous hφ.continuous hK
+    hδΩ hψK hφK fun x => (hψ x).1
   have hEq := integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin ψ
   simp only [divergenceCLM_apply] at hEq
   calc _ ≤ dist (∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * u x ∂μ)

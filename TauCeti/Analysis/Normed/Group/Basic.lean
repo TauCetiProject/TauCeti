@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -28,7 +29,12 @@ A continuous function on `ℝ` with limits at `±∞` is bounded.
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
+A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
+contains `0`.
 
 ## Main declarations
 
@@ -45,7 +51,10 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
   indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
+* `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
+  is nonnegative.
 -/
 
 public section
@@ -91,6 +100,11 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
+/-- Eventually near `0`, the norm of `x` times a fixed real `R` is less than any `ρ > 0`. -/
+theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
+  (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
+
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
@@ -120,8 +134,15 @@ theorem exists_enorm_sub_le_mul_of_reflTransGen {κ F ι : Type*} [SeminormedAdd
     obtain ⟨D₂, hD₂⟩ := hadj j l hjl
     refine ⟨D₂ + D₁, fun k ↦ ?_⟩
     calc ‖a k l - a k i₀‖ₑ = ‖(a k l - a k j) + (a k j - a k i₀)‖ₑ := by rw [sub_add_sub_cancel]
-      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := enorm_add_le _ _
+      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := eNorm_add_le _ _
       _ ≤ D₂ * G k + D₁ * G k := add_le_add (hD₂ k) (hD₁ k)
       _ = ↑(D₂ + D₁) * G k := by push_cast; ring
+
+/-- A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
+contains `0`. -/
+theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [SeminormedAddGroup F]
+    [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
+    0 ≤ B :=
+  (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
 
 end TauCeti

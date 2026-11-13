@@ -98,9 +98,7 @@ theorem conductor_kroneckerChar_signedDiscr_realModel_typeARootLattice_two
       (((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)).signedDiscr_modEq_zero_or_one
         (by simp [finrank_carrier]))
       ((isIntegral_realModel _ _).signedDiscr_ne_zero)).conductor = 3 := by
-  refine (TauCeti.conductor_kroneckerChar_eq_natAbs_of_neg_of_prime _ _ ?_ ?_).trans ?_
-  · rw [signedDiscr_realModel_typeARootLattice_two]
-    norm_num
+  refine (TauCeti.conductor_kroneckerChar_eq_natAbs_of_prime _ _ ?_).trans ?_
   · rw [signedDiscr_realModel_typeARootLattice_two]
     exact Nat.prime_three
   · rw [signedDiscr_realModel_typeARootLattice_two]
@@ -193,7 +191,7 @@ theorem kroneckerChar_signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice
       (ZLattice.signedDiscr (√(2 : ℝ) • typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice))
       (((isEven_realModel_iff _ _).mpr
         isEven_typeE₈RootLattice).signedDiscr_sqrt_smul_modEq_zero_or_one
-        ⟨4, by simp [finrank_carrier]⟩ two_ne_zero)
+        ⟨4, by simp [finrank_carrier]⟩)
       ((isIntegral_realModel _ _).signedDiscr_sqrt_smul_ne_zero two_ne_zero) = 1 := by
   refine TauCeti.kroneckerChar_eq_one_of_isSquare _ _ ⟨16, ?_⟩
   have h := signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice
@@ -206,7 +204,7 @@ theorem conductor_kroneckerChar_signedDiscr_sqrt_two_smul_realModel_typeE₈Root
       (ZLattice.signedDiscr (√(2 : ℝ) • typeE₈RootLattice.realModel isPosDef_typeE₈RootLattice))
       (((isEven_realModel_iff _ _).mpr
         isEven_typeE₈RootLattice).signedDiscr_sqrt_smul_modEq_zero_or_one
-        ⟨4, by simp [finrank_carrier]⟩ two_ne_zero)
+        ⟨4, by simp [finrank_carrier]⟩)
       ((isIntegral_realModel _ _).signedDiscr_sqrt_smul_ne_zero two_ne_zero)).conductor = 1 := by
   refine TauCeti.conductor_kroneckerChar_eq_one_of_isSquare _ _ ⟨16, ?_⟩
   have h := signedDiscr_sqrt_two_smul_realModel_typeE₈RootLattice

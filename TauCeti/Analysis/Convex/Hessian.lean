@@ -101,7 +101,7 @@ theorem _root_.ConvexOn.isPositive_of_hasFDerivAt_gradient {s : Set E} {F : E �
   have hF' : (fun x' => (if x' ∈ U then (F x' : EReal) else ⊤).toReal) =ᶠ[𝓝 x] F :=
     eventually_of_mem (isOpen_interior.mem_nhds hxU) fun x' (hx' : x' ∈ U) => by
       simp only [hx', ite_true, EReal.toReal_coe]
-  refine TauCeti.isPositive_of_hasFDerivAt_gradient (convex_epigraph_ite hU)
+  refine TauCeti.isPositive_of_hasFDerivAt_gradient (convexOn_iff_convex_epigraph_ite.1 hU)
     ite_ne_bot ?_ ?_ (hH.congr_of_eventuallyEq hF'.gradient)
   · rwa [setOf_ite_ne_top, isOpen_interior.interior_eq]
   · filter_upwards [hd, hF'.eventuallyEq_nhds] with y hy hFy

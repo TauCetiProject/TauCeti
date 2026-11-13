@@ -256,6 +256,15 @@ noncomputable def traceDerivation : Derivation k B (PrecompLinearMap R B M) :=
 lemma traceDerivation_apply (a c : B) : traceDerivation (B := B) D a c = traceDeriv D a c := by
   simp [traceDerivation, Derivation.mk', PrecompLinearMap.ofLinearMap_apply]
 
+/-- On base-ring elements the trace derivation sends `c` to `trace c • D r`. -/
+lemma traceDerivation_algebraMap (r : R) :
+    traceDerivation (B := B) D (algebraMap R B r) =
+      PrecompLinearMap.ofLinearMap ((Algebra.trace R B).smulRight (D r)) := by
+  apply PrecompLinearMap.ext
+  intro c
+  simp only [traceDerivation_apply, traceDeriv_algebraMap,
+    PrecompLinearMap.ofLinearMap_apply, LinearMap.smulRight_apply]
+
 end Derivation
 
 namespace Derivation

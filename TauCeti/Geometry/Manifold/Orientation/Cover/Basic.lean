@@ -64,21 +64,23 @@ abbrev OrientationCover : Type _ :=
 
 namespace OrientationCover
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
+variable [IsManifold I 1 M]
 
 /-- The projection of the orientation double cover of a manifold is a covering map. -/
 theorem isCoveringMap_proj :
     IsCoveringMap (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   VectorBundleOrientationCover.isCoveringMap_proj (Fintype.card_fin _)
 
+/-- The orientation double cover of a Hausdorff manifold is Hausdorff. -/
+instance instT2Space [T2Space M] : T2Space (OrientationCover I M) :=
+  (isCoveringMap_proj I M).t2Space
+
+variable [FiniteDimensional ℝ E]
+
 /-- The projection of the orientation double cover of a manifold is proper. -/
 theorem isProperMap_proj :
     IsProperMap (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   VectorBundleOrientationCover.isProperMap_proj (Fintype.card_fin _)
-
-/-- The orientation double cover of a Hausdorff manifold is Hausdorff. -/
-instance instT2Space [T2Space M] : T2Space (OrientationCover I M) :=
-  (isCoveringMap_proj I M).t2Space
 
 /-- The orientation double cover of a σ-compact manifold is σ-compact. -/
 instance instSigmaCompactSpace [SigmaCompactSpace M] :

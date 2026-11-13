@@ -77,8 +77,7 @@ theorem range_brLocalization : (brLocalization K).range = (sumLocalInv K).ker :=
   -- The family is the localization of an idele class `z` over `G_K`, which is the class over
   -- `G_K` of a class `z'` of a layer `V ◁ G_K`.
   obtain ⟨z, rfl⟩ := ideleLocalization_surjective K y
-  let L : NormalLayer (AbsoluteGaloisGroup K) := NormalLayer.ofOpenNormal
-    { toOpenSubgroup := ⊤, isNormal' := inferInstanceAs (⊤ : Subgroup _).Normal }
+  let L : NormalLayer (AbsoluteGaloisGroup K) := NormalLayer.ofOpenNormal ⊤
   obtain ⟨L', -, z', hz'⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L z
   rw [NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top, Subgroup.index_top,
     one_nsmul] at hz'

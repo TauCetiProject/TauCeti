@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
+public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Classical symbols
@@ -24,7 +26,9 @@ The homogeneous terms enter the expansion through their cut-off terms
 `TauCeti.HomogeneousSymbol.cutoffSymbol χ a`, the symbols `χ(ξ) a(x, ξ)` of
 `TauCeti/Analysis/Pseudodifferential/Symbol/Homogeneous.lean`. This file defines the carrier
 `TauCeti.ClassicalSymbol n V W m` of classical symbols, with an actual remainder symbol
-`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms, and proves:
+`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms
+(`TauCeti.ClassicalSymbol.inclusion_remainder` states it as an identity of symbols of order `m`),
+and proves:
 
 * `TauCeti.ClassicalSymbol.exists_remainder`: the expansion holds for every frequency cutoff, not
   only for the one used to define the symbol;
@@ -48,6 +52,10 @@ The homogeneous terms enter the expansion through their cut-off terms
   smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
+* `TauCeti.ClassicalSymbol.ofEqHomogeneous`: a symbol that agrees with a homogeneous symbol `h` at
+  all large frequencies is classical, with principal symbol `h` and no further terms; in
+  particular so is a coefficient that is smooth everywhere and homogeneous away from `ξ = 0`, such
+  as a homogeneous polynomial in `ξ` (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`);
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
@@ -62,14 +70,31 @@ The homogeneous terms enter the expansion through their cut-off terms
   classical symbols of orders `m'` and `m` is classical of order `m' + m`, with the terms
   `cₖ = ∑_{i + j = k} bᵢ ∘ aⱼ` (`TauCeti.ClassicalSymbol.compTerms`), so the principal symbol is
   multiplicative (`TauCeti.ClassicalSymbol.principal_comp`). This is not the composition of the
-  operators, whose lower order terms also involve derivatives of the symbols.
+  operators, whose lower order terms also involve derivatives of the symbols;
+* `TauCeti.ClassicalSymbol.spatialDeriv` and `TauCeti.ClassicalSymbol.frequencyDeriv`: the
+  derivatives `∂_{x_j} a` and `∂_{ξ_j} a` of a classical symbol of order `m` are classical, of
+  orders `m` and `m - 1`, and their homogeneous terms are the derivatives of those of `a`. These
+  are the factors `∂_ξ^α a` and `∂_x^α b` of the terms of the composition expansion
+  `∑_α (1 / α!) ∂_ξ^α a D_x^α b`;
+* `TauCeti.ClassicalSymbol.IsElliptic`: ellipticity, the invertibility of the principal symbol at
+  every nonzero frequency; its pointwise inverse is the homogeneous symbol
+  `TauCeti.HomogeneousSymbol.inverse` of degree `-m`. By
+  `TauCeti.ClassicalSymbol.isElliptic_iff_forall_isCompact`, a classical symbol with a complete
+  source space is elliptic exactly when, on every compact set of positions, its full symbol
+  `a(x, ξ)` is invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. This bound is
+  what the derivative estimates of the inverse symbol, and the parametrix built from it, start
+  from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general.
+  Ellipticity does not see terms of order `m - 1`
+  (`TauCeti.ClassicalSymbol.isElliptic_add_iff`), and the inverse of the principal symbol is the
+  unique homogeneous symbol of degree `-m` inverting it at every nonzero frequency
+  (`TauCeti.ClassicalSymbol.existsUnique_inversePrincipalSymbol`).
 
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Definition 18.1.5
   and Proposition 18.1.3.
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
-  Lecture I, (1.17).
+  Lecture I, (1.17) and (4.1)–(4.6).
 * R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2, §2.9, Lemma 2.5.
 -/
 
@@ -137,6 +162,13 @@ theorem coefficient_remainder (N : ℕ) (p : CoordinateSpace n × CoordinateSpac
     (a.remainder χ N).coefficient p =
       a.toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p :=
   (a.exists_remainder χ N).choose_spec p
+
+/-- The remainder after `N` terms, included in the symbols of order `m`, is the full symbol minus
+the first `N` cut-off terms. -/
+theorem inclusion_remainder (N : ℕ) :
+    Symbol.inclusion (by simp) (a.remainder χ N) =
+      a.toSymbol - ∑ k ∈ Finset.range N, Symbol.inclusion (by simp) (cutoffSymbol χ (a.term k)) :=
+  Symbol.ext <| funext fun p => by simp
 
 end Remainder
 
@@ -274,6 +306,17 @@ instance : Module ℂ (ClassicalSymbol n V W m) :=
   toSymbol_injective.module ℂ ⟨⟨toSymbol, toSymbol_zero⟩, toSymbol_add⟩
     fun c a => toSymbol_smul a c
 
+@[simp]
+theorem toSymbol_sum {ι : Type*} (s : Finset ι) (a : ι → ClassicalSymbol n V W m) :
+    (∑ i ∈ s, a i).toSymbol = ∑ i ∈ s, (a i).toSymbol :=
+  map_sum (AddMonoidHom.mk' toSymbol toSymbol_add) a s
+
+@[simp]
+theorem term_sum {ι : Type*} (s : Finset ι) (a : ι → ClassicalSymbol n V W m) (j : ℕ) :
+    (∑ i ∈ s, a i).term j = ∑ i ∈ s, (a i).term j :=
+  map_sum (AddMonoidHom.mk' (fun a : ClassicalSymbol n V W m => a.term j) fun a b => term_add a b j)
+    a s
+
 end Module
 
 /-! ### The principal symbol -/
@@ -287,6 +330,9 @@ of degree `m`. -/
 def principal : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m :=
   (a.term 0).castDegree (by simp)
 
+theorem principal_def : a.principal = (a.term 0).castDegree (by simp) :=
+  (rfl)
+
 @[simp]
 theorem coefficient_principal : a.principal.coefficient = (a.term 0).coefficient :=
   coefficient_castDegree _ _
@@ -296,6 +342,20 @@ theorem exists_sub_cutoffSymbol_principal (χ : FrequencyCutoff (CoordinateSpace
     ∃ r : Symbol n V W (m - 1),
       r.coefficient = (a.toSymbol - cutoffSymbol χ a.principal).coefficient :=
   ⟨Symbol.inclusion (by simp) (a.remainder χ 1), funext fun p => by simp⟩
+
+/-- The full symbol of a classical symbol of order `m` and its principal symbol differ by
+`C ⟨ξ⟩^(m - 1)` at the frequencies of norm at least `2`, uniformly for positions in a compact
+set. -/
+theorem exists_norm_toSymbol_sub_principal_le {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, 2 ≤ ‖ξ‖ →
+      ‖a.toSymbol.coefficient (x, ξ) - a.principal.coefficient (x, ξ)‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) := by
+  obtain ⟨r, hr⟩ := a.exists_sub_cutoffSymbol_principal default
+  obtain ⟨C, hC⟩ := r.exists_norm_coefficient_le K hK
+  refine ⟨C, fun x hx ξ hξ ↦ ?_⟩
+  have h := congrFun hr (x, ξ)
+  rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ] at h
+  exact h ▸ hC x hx ξ
 
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
@@ -343,12 +403,11 @@ theorem term_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) (j : ℕ) :
 /-- A classical symbol is smoothing exactly when all of its homogeneous terms vanish. -/
 theorem isSmoothing_toSymbol_iff (a : ClassicalSymbol n V W m) :
     a.toSymbol.IsSmoothing ↔ ∀ j, a.term j = 0 := by
-  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff.2 fun m' => ?_⟩
+  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff_forall_nat.2 fun N => ?_⟩
   · exact (term_eq_of_toSymbol_eq (a := a) (b := ofIsSmoothing a.toSymbol ha) rfl j).trans
       (term_ofIsSmoothing _ _ j)
   · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
-    obtain ⟨N, hN⟩ := exists_nat_ge (m - m')
-    exact ⟨Symbol.inclusion (by linarith) (a.remainder default N), funext fun p => by simp [ha]⟩
+    exact ⟨a.remainder default N, funext fun p => by simp [ha]⟩
 
 /-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term `a` of degree `m`: its
 principal symbol is `a` and its other homogeneous terms vanish. -/
@@ -378,7 +437,75 @@ theorem principal_ofHomogeneous : (ofHomogeneous χ a).principal = a :=
 theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 0 :=
   (rfl)
 
+@[simp]
+theorem ofHomogeneous_zero : ofHomogeneous χ (0 : HomogeneousSymbol _ _ V W m) = 0 :=
+  ext (map_zero (cutoffSymbol χ))
+
 end Examples
+
+section EqHomogeneous
+
+/-- A symbol `a` of order `m` that agrees with a homogeneous symbol `h` of degree `m` at all
+frequencies of norm at least some `R` is a classical symbol, with principal symbol `h`
+(`TauCeti.ClassicalSymbol.principal_ofEqHomogeneous`) and no further homogeneous terms. It is
+the cut-off term `χ(ξ) h(x, ξ)` plus a smoothing symbol. -/
+def ofEqHomogeneous (a : Symbol n V W m)
+    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    (hah : ∃ R : ℝ, ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = h.coefficient (x, ξ)) :
+    ClassicalSymbol n V W m :=
+  ofHomogeneous default h + ofIsSmoothing (a - cutoffSymbol default h) (by
+    obtain ⟨R, hR⟩ := hah
+    refine Symbol.isSmoothing_of_coefficient_eq_zero (max R 2) fun x ξ hξ ↦ ?_
+    rw [Symbol.coefficient_sub, Pi.sub_apply, hR x ξ (le_of_max_le_left hξ),
+      coefficient_cutoffSymbol_of_two_le_norm _ _ (le_of_max_le_right hξ), sub_self])
+
+variable (a : Symbol n V W m) (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+  (hah : ∃ R : ℝ, ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = h.coefficient (x, ξ))
+
+@[simp]
+theorem toSymbol_ofEqHomogeneous : (ofEqHomogeneous a h hah).toSymbol = a := by
+  simp [ofEqHomogeneous]
+
+@[simp]
+theorem principal_ofEqHomogeneous : (ofEqHomogeneous a h hah).principal = h := by
+  rw [ofEqHomogeneous, principal_add, principal_ofHomogeneous, principal_def, term_ofIsSmoothing,
+    castDegree_zero, add_zero]
+
+@[simp]
+theorem term_ofEqHomogeneous_succ (j : ℕ) : (ofEqHomogeneous a h hah).term (j + 1) = 0 := by
+  simp [ofEqHomogeneous, term_ofIsSmoothing]
+
+/-- A coefficient `f` that is smooth on all of `ℝⁿ × ℝⁿ` and positively homogeneous of degree `m`
+in the frequency away from `ξ = 0` is a classical symbol of order `m`, whose principal symbol is
+`f` itself away from `ξ = 0` and whose other homogeneous terms vanish. -/
+def ofContDiffHomogeneous (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
+    ClassicalSymbol n V W m :=
+  ofEqHomogeneous (Symbol.ofContDiffHomogeneous f hf hhom) (mk' f hf.contDiffOn hhom)
+    ⟨1, fun _ _ hξ ↦ by
+      rw [Symbol.coefficient_ofContDiffHomogeneous,
+        coefficient_mk'_of_ne_zero _ _ _ (norm_pos_iff.1 (lt_of_lt_of_le one_pos hξ))]⟩
+
+variable (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+  (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ))
+
+@[simp]
+theorem toSymbol_ofContDiffHomogeneous :
+    (ofContDiffHomogeneous f hf hhom).toSymbol = Symbol.ofContDiffHomogeneous f hf hhom := by
+  rw [ofContDiffHomogeneous, toSymbol_ofEqHomogeneous]
+
+@[simp]
+theorem principal_ofContDiffHomogeneous :
+    (ofContDiffHomogeneous f hf hhom).principal = mk' f hf.contDiffOn hhom := by
+  rw [ofContDiffHomogeneous, principal_ofEqHomogeneous]
+
+@[simp]
+theorem term_ofContDiffHomogeneous_succ (j : ℕ) :
+    (ofContDiffHomogeneous f hf hhom).term (j + 1) = 0 := by
+  rw [ofContDiffHomogeneous, term_ofEqHomogeneous_succ]
+
+end EqHomogeneous
 
 section PrincipalKernel
 
@@ -467,6 +594,22 @@ theorem term_inclusion_add (j : ℕ) :
   simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
   rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
 
+/-- Including a classical symbol into an equal order (a change of the order's expression) keeps
+its homogeneous terms. -/
+@[simp]
+theorem term_inclusion_zero (hk : m' = m - (0 : ℕ)) (j : ℕ) :
+    (inclusion 0 hk b).term j = (b.term j).castDegree (by rw [hk]; simp) := by
+  ext1
+  simp only [term_inclusion, Nat.zero_le, ↓reduceDIte, coefficient_castDegree]
+  rw [coefficient_congr_index b.term (Nat.sub_zero j)]
+
+/-- Including a classical symbol into a strictly larger order kills its principal symbol. -/
+@[simp]
+theorem principal_inclusion_succ (k : ℕ) (hk : m' = m - (k + 1 : ℕ)) :
+    (inclusion (k + 1) hk b).principal = 0 := by
+  ext1
+  simp
+
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
@@ -503,6 +646,12 @@ theorem term_tail (j : ℕ) :
     (a.tail χ).term j = (a.term (j + 1)).castDegree (by push_cast; ring) :=
   (rfl)
 
+/-- A classical symbol is its cut-off principal term plus its tail, included back into order
+`m`. -/
+theorem inclusion_tail_add_ofHomogeneous :
+    inclusion 1 (by simp) (a.tail χ) + ofHomogeneous χ a.principal = a :=
+  ext <| Symbol.ext <| funext fun p => by simp
+
 end Tail
 
 /-! ### The principal symbol sequence
@@ -530,16 +679,11 @@ theorem principalLinearMap_apply (a : ClassicalSymbol n V W m) :
 zero exactly when it is a classical symbol of order `m - 1`. -/
 theorem principal_eq_zero_iff_exists_inclusion (a : ClassicalSymbol n V W m) :
     a.principal = 0 ↔ ∃ b : ClassicalSymbol n V W (m - 1), inclusion 1 (by simp) b = a := by
-  refine ⟨fun h => ⟨a.tail default, ext ?_⟩, ?_⟩
-  · -- With a vanishing leading term, the remainder after it is `a` itself.
-    have h0 : (a.term 0).coefficient = 0 := by
-      simpa using congrArg HomogeneousSymbol.coefficient h
-    ext1
-    funext p
-    simp [h0]
+  refine ⟨fun h => ⟨a.tail default, ?_⟩, ?_⟩
+  · -- With a vanishing leading term, `a` is the inclusion of its tail.
+    simpa [h] using inclusion_tail_add_ofHomogeneous default a
   · rintro ⟨b, rfl⟩
-    ext1
-    simp
+    exact principal_inclusion_succ b 0 (by simp)
 
 variable (n V W m) in
 /-- **The kernel of the principal symbol** is the image of the classical symbols of order
@@ -734,6 +878,269 @@ theorem ofHomogeneous_comp_ofHomogeneous (χ χ' : FrequencyCutoff (CoordinateSp
   simp [smul_smul, mul_comm]
 
 end Comp
+
+/-! ### Derivatives -/
+
+section Deriv
+
+/-- The spatial derivative `∂_{x_j} a` of a classical symbol of order `m`: a classical symbol of
+order `m`, whose homogeneous terms are the spatial derivatives `∂_{x_j} a_{m-k}` of those of
+`a`. -/
+def spatialDeriv (j : Fin n) : ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W m where
+  toFun a :=
+    { toSymbol := Symbol.spatialDeriv j a.toSymbol
+      term k := (a.term k).spatialDeriv (EuclideanSpace.single j 1)
+      exists_remainder' := ⟨default, fun N => ⟨Symbol.spatialDeriv j (a.remainder default N),
+        fun p => by
+          -- Differentiate the identity `a = r_N + ∑_{k<N} χ(ξ) a_{m-k}` in the position.
+          simpa using
+            congrArg (fun s => (Symbol.spatialDeriv j s).coefficient p)
+              (a.inclusion_remainder default N)⟩⟩ }
+  map_add' a b := ext <| by simp
+  map_smul' c a := ext <| by simp
+
+@[simp]
+theorem toSymbol_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (spatialDeriv j a).toSymbol = Symbol.spatialDeriv j a.toSymbol :=
+  (rfl)
+
+@[simp]
+theorem term_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
+    (spatialDeriv j a).term k = (a.term k).spatialDeriv (EuclideanSpace.single j 1) :=
+  (rfl)
+
+/-- The principal symbol of `∂_{x_j} a` is the spatial derivative of the principal symbol of
+`a`. -/
+@[simp]
+theorem principal_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (spatialDeriv j a).principal = a.principal.spatialDeriv (EuclideanSpace.single j 1) :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ _ => by simp
+
+/-- The remainder of the frequency derivative of a classical symbol after `N` terms has order
+`m - 1 - N`. -/
+private theorem exists_remainder_frequencyDeriv (a : ClassicalSymbol n V W m) (j : Fin n)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    ∃ r : Symbol n V W (m - 1 - N), ∀ p, r.coefficient p =
+      (Symbol.frequencyDeriv j a.toSymbol).coefficient p - ∑ k ∈ Finset.range N,
+        χ p.2 • ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).coefficient p := by
+  -- Differentiating `a = r_N + ∑_{k<N} χ(ξ) a_{m-k}` in the frequency gives `∂_{ξ_j} r_N`, of
+  -- order `m - N - 1`, plus the terms `∂_{ξ_j} (χ(ξ) a_{m-k})`, each of which differs from
+  -- `χ(ξ) ∂_{ξ_j} a_{m-k}` by a smoothing symbol.
+  choose s hs using fun k => Symbol.isSmoothing_iff.1
+    (isSmoothing_frequencyDeriv_cutoffSymbol_sub_cutoffSymbol_frequencyDeriv χ j (a.term k))
+    (m - 1 - N)
+  refine ⟨Symbol.inclusion (le_of_eq (by ring)) (Symbol.frequencyDeriv j (a.remainder χ N)) +
+    ∑ k ∈ Finset.range N, s k, fun p => ?_⟩
+  have h := congrArg (fun s => (Symbol.frequencyDeriv j s).coefficient p)
+    (a.inclusion_remainder χ N)
+  simp only [Symbol.frequencyDeriv_inclusion, Symbol.coefficient_inclusion, map_sub, map_sum,
+    Symbol.coefficient_sub, Symbol.coefficient_sum, Pi.sub_apply, Finset.sum_apply] at h
+  simp only [Symbol.coefficient_add, Symbol.coefficient_inclusion, Symbol.coefficient_sum,
+    Pi.add_apply, Finset.sum_apply, hs, h, Symbol.coefficient_sub, Pi.sub_apply,
+    Finset.sum_sub_distrib, coefficient_cutoffSymbol]
+  abel
+
+/-- The frequency derivative `∂_{ξ_j} a` of a classical symbol of order `m`: a classical symbol of
+order `m - 1`, whose homogeneous terms are the frequency derivatives `∂_{ξ_j} a_{m-k}` of those of
+`a`. -/
+def frequencyDeriv (j : Fin n) : ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W (m - 1) where
+  toFun a :=
+    { toSymbol := Symbol.frequencyDeriv j a.toSymbol
+      term k := ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).castDegree (by ring)
+      exists_remainder' := ⟨default, fun N => by
+        simpa using a.exists_remainder_frequencyDeriv j default N⟩ }
+  map_add' a b := ext <| by simp
+  map_smul' c a := ext <| by simp
+
+@[simp]
+theorem toSymbol_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (frequencyDeriv j a).toSymbol = Symbol.frequencyDeriv j a.toSymbol :=
+  (rfl)
+
+@[simp]
+theorem term_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
+    (frequencyDeriv j a).term k =
+      ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).castDegree (by ring) :=
+  (rfl)
+
+/-- The principal symbol of `∂_{ξ_j} a` is the frequency derivative of the principal symbol of
+`a`. -/
+@[simp]
+theorem principal_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (frequencyDeriv j a).principal = a.principal.frequencyDeriv (EuclideanSpace.single j 1) :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
+
+end Deriv
+
+/-! ### Elliptic classical symbols -/
+
+section Elliptic
+
+/-- A classical symbol is *elliptic* if its principal symbol is: its value at every position and
+every nonzero frequency is an invertible continuous linear map. -/
+def IsElliptic (a : ClassicalSymbol n V W m) : Prop :=
+  a.principal.IsElliptic
+
+/-- Ellipticity of a classical symbol is ellipticity of its principal symbol, whose pointwise
+inverse is then `HomogeneousSymbol.inverse`. -/
+theorem isElliptic_def {a : ClassicalSymbol n V W m} : a.IsElliptic ↔ a.principal.IsElliptic :=
+  Iff.rfl
+
+/-- A classical symbol is elliptic when its principal symbol is invertible at every position and
+every nonzero frequency. -/
+theorem isElliptic_iff {a : ClassicalSymbol n V W m} :
+    a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → (a.principal.coefficient (x, ξ)).IsInvertible :=
+  HomogeneousSymbol.isElliptic_iff
+
+/-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term is elliptic exactly when the
+term is. -/
+@[simp]
+theorem isElliptic_ofHomogeneous_iff (χ : FrequencyCutoff (CoordinateSpace n))
+    {a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} :
+    (ofHomogeneous χ a).IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_ofHomogeneous]
+
+/-- Multiplying by a nonzero complex number does not change ellipticity. -/
+@[simp]
+theorem isElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) {a : ClassicalSymbol n V W m} :
+    (c • a).IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_smul, HomogeneousSymbol.isElliptic_smul_iff hc, isElliptic_def]
+
+/-- The pointwise composition of elliptic classical symbols is elliptic. -/
+theorem IsElliptic.comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
+    {b : ClassicalSymbol n W U m'} {a : ClassicalSymbol n V W m} (hb : b.IsElliptic)
+    (ha : a.IsElliptic) : (b.comp a).IsElliptic := by
+  rw [isElliptic_def, principal_comp]
+  exact (isElliptic_def.1 hb).comp (isElliptic_def.1 ha)
+
+/-- Between Banach spaces, a classical symbol is elliptic exactly when its principal symbol is
+bijective at every position and every nonzero frequency. -/
+theorem isElliptic_iff_bijective [CompleteSpace V] [CompleteSpace W]
+    {a : ClassicalSymbol n V W m} :
+    a.IsElliptic ↔ ∀ x ξ, ξ ≠ 0 → Function.Bijective (a.principal.coefficient (x, ξ)) :=
+  HomogeneousSymbol.isElliptic_iff_bijective
+
+/-- Adding a classical symbol with vanishing principal symbol, that is, of order `m - 1`
+(`TauCeti.ClassicalSymbol.principal_eq_zero_iff`), does not change ellipticity. -/
+theorem isElliptic_add_iff {a b : ClassicalSymbol n V W m} (hb : b.principal = 0) :
+    (a + b).IsElliptic ↔ a.IsElliptic := by
+  rw [isElliptic_def, principal_add, hb, add_zero, isElliptic_def]
+
+/-- **The inverse principal symbol.** The principal symbol `a_m` of an elliptic classical symbol of
+order `m` has a unique two-sided inverse at every nonzero frequency that is a homogeneous symbol of
+degree `-m`, namely `TauCeti.HomogeneousSymbol.inverse`. -/
+theorem existsUnique_inversePrincipalSymbol [CompleteSpace V] {a : ClassicalSymbol n V W m}
+    (ha : a.IsElliptic) :
+    ∃! b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W V (-m),
+      ∀ x ξ, ξ ≠ 0 →
+        b.coefficient (x, ξ) ∘L a.principal.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V ∧
+          a.principal.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = ContinuousLinearMap.id ℂ W :=
+  have hp := isElliptic_def.1 ha
+  ⟨a.principal.inverse hp, fun _ _ hξ => ⟨coefficient_inverse_comp_coefficient _ hp hξ,
+    coefficient_comp_coefficient_inverse _ hp hξ⟩, fun b hb =>
+      eq_inverse_of_comp_eq_id_left _ hp <| ext_of_ne_zero fun x ξ hξ => by
+        simpa [hξ] using (hb x ξ hξ).1⟩
+
+/-- **Perturbation of an inverse bounded by `C₀ ⟨ξ⟩^(-m)`.** If `‖A⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)` and
+`‖B - A‖ ≤ C₁ ⟨ξ⟩^(m - 1)` at a frequency of norm at least `R ≥ 2 C₀ C₁`, `R > 0`, then
+`C₀ ⟨ξ⟩^(-m) ‖B - A‖ ≤ 1 / 2`, so `B` is invertible with `‖B⁻¹‖ ≤ 2 C₀ ⟨ξ⟩^(-m)`. -/
+private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V]
+    {A B : V →L[ℂ] W} (hA : A.IsInvertible) {C₀ C₁ R : ℝ} {ξ : CoordinateSpace n}
+    (hR : 0 < R) (hCR : 2 * C₀ * C₁ ≤ R) (hξ : R ≤ ‖ξ‖)
+    (hM : ‖A.inverse‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+    (hBA : ‖B - A‖ ≤ C₁ * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2)) :
+    B.IsInvertible ∧ ‖B.inverse‖ ≤ 2 * C₀ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
+  set M := C₀ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)
+  have hw₀ := rpow_weight_pos ξ (-m)
+  have hw₁ := rpow_weight_pos ξ (m - 1)
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans hM
+  have hC₀ : 0 ≤ C₀ := nonneg_of_mul_nonneg_left hM0 hw₀
+  have hC₁ : 0 ≤ C₁ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hBA) hw₁
+  -- `⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) = ⟨ξ⟩^(-1) ≤ R⁻¹`.
+  have hw : (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ R⁻¹ := by
+    have h := rpow_weight_le_rpow_mul_rpow_weight (s := -1) (s' := 0) hR hξ (by norm_num)
+    rw [← Real.rpow_add (by positivity)]
+    convert h using 2
+    · ring
+    · simp [Real.rpow_neg_one]
+  -- `M ‖B - A‖ ≤ C₀ C₁ ⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) ≤ C₀ C₁ R⁻¹ ≤ 1 / 2`.
+  have hsmall : M * ‖B - A‖ ≤ 1 / 2 := by
+    calc M * ‖B - A‖ ≤ M * (C₁ * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2)) := by gcongr
+      _ = C₀ * C₁ * ((1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2)) := by ring
+      _ ≤ C₀ * C₁ * R⁻¹ := by gcongr
+      _ ≤ 1 / 2 := by
+        rw [← div_eq_mul_inv, div_le_iff₀ hR]
+        linarith
+  have hlt : M * ‖B - A‖ < 1 := hsmall.trans_lt (by norm_num)
+  refine ⟨hA.of_mul_norm_sub_lt hM hlt,
+    (hA.norm_inverse_le_of_mul_norm_sub_lt hM hlt).trans ?_⟩
+  rw [div_le_iff₀ (sub_pos.2 hlt), mul_assoc]
+  nlinarith
+
+variable [CompleteSpace V]
+
+/-- **Invertibility of an elliptic symbol at large frequencies.** On every compact set `K` of
+positions, the full symbol `a(x, ξ)` of an elliptic classical symbol of order `m` is invertible at
+all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
+theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol n V W m}
+    (ha : a.IsElliptic) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
+      ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
+  -- The inverse of the principal symbol is bounded by `C₀ ⟨ξ⟩^(-m)` at frequencies of norm at
+  -- least `2`, where it agrees with its cut-off symbol of order `-m`.
+  have ha' := isElliptic_def.1 ha
+  obtain ⟨C₀, hC₀⟩ :=
+    (cutoffSymbol default (a.principal.inverse ha')).exists_norm_coefficient_le K hK
+  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le hK
+  refine ⟨max 2 (2 * C₀ * C₁), 2 * C₀, fun x hx ξ hξ ↦ ?_⟩
+  have h2 : 2 ≤ ‖ξ‖ := (le_max_left _ _).trans hξ
+  have hM := hC₀ x hx ξ
+  rw [coefficient_cutoffSymbol_of_two_le_norm _ _ h2, HomogeneousSymbol.coefficient_inverse] at hM
+  exact isInvertible_and_norm_inverse_le_of_norm_sub_le
+    (isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith))) (by positivity) (le_max_right _ _) hξ
+    hM (hC₁ x hx ξ h2)
+
+/-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
+symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with
+`‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`, then the classical symbol is elliptic. -/
+theorem isElliptic_of_forall_exists_norm_inverse_le {a : ClassicalSymbol n V W m}
+    (h : ∀ x, ∃ R C : ℝ, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
+      ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
+    a.IsElliptic := by
+  -- At `ξ ≠ 0` and large `t`, the principal symbol `a_m(x, t ξ) = t^m a_m(x, ξ)` differs from the
+  -- full symbol `a(x, t ξ)` by `O(t^(m - 1))`, small against the bound `O(t^m)` on its inverse.
+  refine isElliptic_iff.2 fun x ξ hξ ↦ ?_
+  obtain ⟨R, C, hRC⟩ := h x
+  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le (isCompact_singleton (x := x))
+  -- Rescale `ξ` to the frequency `t • ξ` of norm `T`, beyond `R`, `2` and `2 C C₁`.
+  set T := max (max R 2) (2 * C * C₁)
+  have hT2 : 2 ≤ T := (le_max_right _ _).trans (le_max_left _ _)
+  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have ht : 0 < T / ‖ξ‖ := div_pos (by linarith) hn
+  have htξ : ‖(T / ‖ξ‖) • ξ‖ = T := by
+    rw [norm_smul, Real.norm_of_nonneg ht.le, div_mul_cancel₀ _ hn.ne']
+  obtain ⟨hB, hM⟩ := hRC ((T / ‖ξ‖) • ξ) (htξ.symm ▸ (le_max_left _ _).trans (le_max_left _ _))
+  have hd := hC₁ x rfl ((T / ‖ξ‖) • ξ) (htξ.symm ▸ hT2)
+  rw [← norm_neg, neg_sub] at hd
+  -- The principal symbol at `t • ξ` is close to the invertible full symbol, hence invertible.
+  have hA := (isInvertible_and_norm_inverse_le_of_norm_sub_le hB (by linarith) (le_max_right _ _)
+    htξ.ge hM hd).1
+  rw [a.principal.homogeneous x ξ _ ht, ← Complex.coe_smul,
+    ContinuousLinearMap.isInvertible_smul_iff (by simp [(Real.rpow_pos_of_pos ht m).ne'])] at hA
+  exact hA
+
+/-- **Ellipticity as invertibility at large frequencies.** A classical symbol of order `m` is
+elliptic exactly when, on every compact set of positions, its full symbol `a(x, ξ)` is invertible
+at all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
+theorem isElliptic_iff_forall_isCompact {a : ClassicalSymbol n V W m} :
+    a.IsElliptic ↔ ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ,
+      R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
+        ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) :=
+  ⟨fun ha _ hK ↦ ha.exists_isInvertible_and_norm_inverse_le hK, fun h ↦
+    isElliptic_of_forall_exists_norm_inverse_le fun x ↦
+      (h {x} isCompact_singleton).imp fun _ ↦ .imp fun _ hC ξ ↦ hC x rfl ξ⟩
+
+end Elliptic
 
 /-! ### The homogeneous terms as a linear map -/
 

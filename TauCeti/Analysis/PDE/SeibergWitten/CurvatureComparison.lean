@@ -71,6 +71,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace E] [BorelSpace E] {n : ℕ}
   {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {ζ : E → E [⋀^Fin n]→L[ℝ] ℝ}
 
+omit [FiniteDimensional ℝ E] in
 /-- **The cutoff current against a test form.** For a compactly supported C1 test form `ζ` of
 degree `n` on a space of dimension `2 + n`, the pairing of `Θ - i F_a = Θ + db` with `ζ` is the
 pairing of the cutoff phase form `χ(|α|²) τ` with `dζ`. Top-degree coefficients are taken on a
@@ -110,7 +111,7 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
           A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) := by
   let e₁ := e.reindex (finCongr (by omega : 2 + n = 1 + (n + 1)))
   obtain ⟨C₁, hC₁, hIA⟩ := J.exists_abs_integral_twistedDifferential_wedge_le e₁
-  obtain ⟨C₂, hC₂, hIB⟩ := e₁.exists_abs_integral_wedge_le
+  obtain ⟨C₂, _, hIB⟩ := e₁.exists_abs_integral_wedge_le
   refine ⟨max C₁ (2 * C₂), by positivity, ?_⟩
   intro χ b α ζ K c A₁ A₂ hc hχc hχ₁ hχ hα hb hζ hK hζK hA₁ hA₂
   have hχ₀ : χ =ᶠ[𝓝 0] 0 := (eventually_lt_nhds hc).mono hχc
@@ -147,7 +148,7 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
   have hcw (φ : E → E [⋀^Fin 1]→L[ℝ] ℝ) : HasCompactSupport fun x ↦ wedge (φ x) (η x) e₁ :=
     hcη.wedge_left.comp_left (g := fun ω : E [⋀^Fin (1 + (n + 1))]→L[ℝ] ℝ ↦ ω e₁) rfl
   have hA : Integrable A e₁.addHaar :=
-    (((J.contDiff_twistedDifferential (n := 0) (by simpa using hg)).wedge
+    (((J.contDiff_twistedDifferential (n := 0) hg (by simp)).wedge
       (hη.of_le zero_le_one)).continuous.eval_const _).integrable_of_hasCompactSupport
       (hcw _)
   have hT : Integrable (fun x ↦ wedge (cutoffPhaseForm χ b α x) (η x) e₁) e₁.addHaar :=
@@ -186,11 +187,6 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
       _ = _ := by
           rw [integral_const_mul]
           ring
-  have hX : 0 ≤ A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar :=
-    mul_nonneg (div_nonneg hA₂0 hc.le) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ abs_nonneg _)
-  have hY : 0 ≤ A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e₁.addHaar :=
-    mul_nonneg (div_nonneg hA₁0 (Real.sqrt_nonneg _))
-      (setIntegral_nonneg hK.measurableSet fun _ _ ↦ norm_nonneg _)
   calc |∫ x, A x ∂e₁.addHaar + ∫ x, B x ∂e₁.addHaar|
       ≤ |∫ x, A x ∂e₁.addHaar| + |∫ x, B x ∂e₁.addHaar| := abs_add_le _ _
     _ ≤ C₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) +

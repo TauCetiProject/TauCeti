@@ -192,11 +192,11 @@ theorem isGeodesicCurveOn_iff_chart (hs : UniqueDiffOn ℝ s) :
   constructor
   · intro h
     exact ⟨h.contMDiffOn, fun r hr ↦ (accelerationWithin_eq_zero_iff
-      (leviCivitaConnection I M) γ h.uniqueDiffOn h.mdifferentiableOn hr).mp
+      (leviCivitaConnection I M) γ h.mdifferentiableOn hr).mp
       (h.accelerationWithin_eq_zero r hr)⟩
   · rintro ⟨hc, hchart⟩
     exact ⟨hs, hc, fun r hr ↦ (accelerationWithin_eq_zero_iff
-      (leviCivitaConnection I M) γ hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
+      (leviCivitaConnection I M) γ (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
 
 /-- Being a geodesic on a parameter set depends only on the values of the curve on that set. -/
 theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s) (hγ : EqOn γ' γ s) :

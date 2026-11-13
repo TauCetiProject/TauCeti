@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Geometry.Manifold.ContMDiff.RPow
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -198,16 +199,16 @@ theorem rescale_rpow_inj [∀ b, Nontrivial (E b)] {p : ℝ} (hp : p ≠ 0) {u u
   refine (g.rescale_inj).trans ⟨fun h ↦ funext fun b ↦ ?_, fun h ↦ by rw [h]⟩
   rw [← Real.rpow_rpow_inv (hu₀ b) hp, ← Real.rpow_rpow_inv (hu'₀ b) hp, congrFun h b]
 
-/-- **Constant-factor redundancy.** Multiplying a positive function `u` by a constant `c > 0`
+/-- **Constant-factor redundancy.** Multiplying a function `u` by a constant `c > 0`
 multiplies the rescaled metric `u ^ p g` by the constant `c ^ p`. -/
-theorem rescale_const_mul_rpow {p c : ℝ} (hc : 0 < c) {u : B → ℝ} (hu₀ : ∀ b, 0 ≤ u b)
+theorem rescale_const_mul_rpow {p c : ℝ} (hc : 0 < c) {u : B → ℝ}
     {hcu : ContMDiff IB 𝓘(ℝ) n fun b ↦ (c * u b) ^ p} {hcu_pos : ∀ b, 0 < (c * u b) ^ p}
     {hu : ContMDiff IB 𝓘(ℝ) n fun b ↦ u b ^ p} {hu_pos : ∀ b, 0 < u b ^ p} :
     g.rescale (fun b ↦ (c * u b) ^ p) hcu hcu_pos =
       (g.rescale (fun b ↦ u b ^ p) hu hu_pos).rescale (fun _ ↦ c ^ p) contMDiff_const
         (fun _ ↦ Real.rpow_pos_of_pos hc p) := by
   ext b v w
-  simp [Real.mul_rpow hc.le (hu₀ b), mul_assoc]
+  simp [Real.mul_rpow_of_nonneg_left hc.le, mul_assoc]
 
 /-! ### The conformal class -/
 

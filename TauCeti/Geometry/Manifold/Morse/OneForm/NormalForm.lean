@@ -68,6 +68,7 @@ theorem mpullback_eq_mextDeriv_quadratic (φ : MorseChart E f x)
     _ = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, E) φ.quadratic) z := by
       rw [mextDeriv_ofFunction, mextDeriv_ofFunction, heq.mvfderiv_eq]
 
+omit [FiniteDimensional ℝ E] in
 /-- With the Morse chart's linear coordinate change `L = φ.coord`, the coordinate one-form
 at `z` evaluates on `v` as `∑ i, φ.weight i * (L z i) * (L v i)`. The tangent vector is
 identified with `v` by `NormedSpace.fromTangentSpace z`. In particular the quadratic

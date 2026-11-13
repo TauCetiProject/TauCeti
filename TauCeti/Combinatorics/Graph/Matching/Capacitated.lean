@@ -321,15 +321,13 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
       G.IsVertexCover (C : Set V(G)) ∧ ∑ e, x e = ∑ v ∈ C, b v := by
   classical
   have := hLR.finite
-  -- One arrow for every actual edge, from its end in `L` to its end in `R`.
-  let Q (y z : V(G)) : Type v := {e : E(G) // G.IsLink e y z ∧ y ∈ L}
   obtain ⟨k, s, t, P, X, hs, ht, -, -, hP, hX, hk⟩ :=
-    exists_paths_setSeparator_sum_eq (Q := Q) b L R
+    exists_paths_setSeparator_sum_eq (Q := G.BipartiteHom L) b L R
   -- Every member of the packing joins `L` to `R`, so it traverses an arrow. Choose one, from
   -- `src i` to `tgt i`, along the edge `edge i`.
   have hst (i : Fin k) : s i ≠ t i := fun h ↦ disjoint_left.1 hLR.disjoint (hs i) (h ▸ ht i)
   have harrow (i : Fin k) : ∃ (y z : V(G)) (e : E(G)) (he : G.IsLink e y z ∧ y ∈ L),
-      (⟨y, z, e, he⟩ : Σ y z, Q y z) ∈ (P i).arrows := by
+      (⟨y, z, e, he⟩ : Σ y z, G.BipartiteHom L y z) ∈ (P i).arrows := by
     obtain ⟨⟨y, z, e, he⟩, h⟩ := List.exists_mem_of_ne_nil _ ((P i).arrows_ne_nil (hst i))
     exact ⟨y, z, e, he, h⟩
   choose src tgt edge hedge hf using harrow
@@ -348,10 +346,15 @@ theorem IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq {L R : F
     wlog hy : y ∈ L generalizing y z
     · exact (this z y he.symm (hLR.notMem_left_iff.1 hy |> hLR.mem_left_of_isLink he)).symm
     by_contra! h
+    let a : G.BipartiteHom L y z := ⟨⟨e, he.edge_mem⟩, he, hy⟩
+    let p : ArrowWalk (G.BipartiteHom L) y z :=
+      @ArrowWalk.cons _ _ y y z (ArrowWalk.nil y) a
     refine hX y hy z (hLR.mem_right_of_isLink he hy) <| reachableAvoiding_def.2
-      ⟨(ArrowWalk.nil y).cons ⟨⟨e, he.edge_mem⟩, he, hy⟩, fun w hw ↦ ?_⟩
-    simp only [ArrowWalk.vertices_cons, ArrowWalk.vertices_nil, List.concat_eq_append,
-      List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+      ⟨p, fun w hw ↦ ?_⟩
+    have hp : p.vertices = [y, z] :=
+      (@ArrowWalk.vertices_cons _ (G.BipartiteHom L) y y z (ArrowWalk.nil y) a).trans rfl
+    rw [hp] at hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
     exacts [h.1, h.2]
   · rw [hk, ← card_eq_sum_card_fiberwise (by simp), card_univ, Fintype.card_fin]

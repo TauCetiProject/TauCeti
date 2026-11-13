@@ -29,7 +29,7 @@ Section IV.1. The inverse identities are those of `LinearPMap.IsResolventAt`.
 
 public section
 
-namespace TauCeti
+namespace LinearPMap
 
 variable {𝕜 E F : Type*} [Ring 𝕜]
   [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
@@ -38,7 +38,7 @@ variable {𝕜 E F : Type*} [Ring 𝕜]
   {R : E →L[𝕜] E} {S : F →L[𝕜] F}
 
 /-- Intertwining partial operators passes through continuous inverses of their shifts. -/
-theorem _root_.LinearPMap.Intertwines.comp_eq_of_isResolventAt
+theorem Intertwines.comp_eq_of_isResolventAt
     (h : A.Intertwines B X) (hR : A.IsResolventAt z R) (hS : B.IsResolventAt z S) :
     X ∘L R = S ∘L X := by
   ext y
@@ -49,7 +49,7 @@ theorem _root_.LinearPMap.Intertwines.comp_eq_of_isResolventAt
 
 /-- Intertwining two continuous inverses at the same parameter recovers the full
 domain-aware intertwining relation of the partial operators. -/
-theorem _root_.LinearPMap.intertwines_of_comp_eq_of_isResolventAt
+theorem intertwines_of_comp_eq_of_isResolventAt
     (hR : A.IsResolventAt z R) (hS : B.IsResolventAt z S) (h : X ∘L R = S ∘L X) :
     A.Intertwines B X := by
   have hpoint (y : E) : X (R y) = S (X y) := by
@@ -67,7 +67,7 @@ theorem _root_.LinearPMap.intertwines_of_comp_eq_of_isResolventAt
 
 /-- At a common resolvent point, intertwining the operators is equivalent to
 intertwining their bounded resolvents. A single such point suffices. -/
-theorem _root_.LinearPMap.intertwines_iff_comp_resolvent_eq
+theorem intertwines_iff_comp_resolvent_eq
     (hA : z ∈ A.resolventSet) (hB : z ∈ B.resolventSet) :
     A.Intertwines B X ↔ X ∘L A.resolvent z = B.resolvent z ∘L X :=
   ⟨fun h => h.comp_eq_of_isResolventAt (LinearPMap.isResolventAt_resolvent hA)
@@ -75,4 +75,4 @@ theorem _root_.LinearPMap.intertwines_iff_comp_resolvent_eq
     LinearPMap.intertwines_of_comp_eq_of_isResolventAt
       (LinearPMap.isResolventAt_resolvent hA) (LinearPMap.isResolventAt_resolvent hB)⟩
 
-end TauCeti
+end LinearPMap

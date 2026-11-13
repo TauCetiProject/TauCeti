@@ -71,7 +71,9 @@ and Humphreys, *Introduction to Lie Algebras and Representation Theory*, §9.
 
 public section
 
-namespace TauCeti
+namespace RootPairing.weylGroup
+
+open TauCeti
 
 open Set Polynomial.Chebyshev
 
@@ -87,7 +89,7 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 /-- The action of an iterate of the product of the two reflections is the action of the
 corresponding iterate of the product of the two linear reflections. -/
-private lemma _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq (n : ℕ) (x : M) :
+private lemma pow_ofIdx_mul_ofIdx_smul_eq (n : ℕ) (x : M) :
     ((_root_.RootPairing.weylGroup.ofIdx P i *
         _root_.RootPairing.weylGroup.ofIdx P j) ^ n) • x =
       ((P.reflection i * P.reflection j) ^ n) x := by
@@ -101,7 +103,7 @@ private lemma _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_eq (n : ℕ)
 `Module.reflection_mul_reflection_pow_apply` for the reflections in two roots `αᵢ`, `αⱼ` of a root
 pairing, read in the Weyl group; its Chebyshev polynomials are evaluated at the Cartan product
 shifted by `2`, that is at `t = ⟨αᵢ, αⱼ^∨⟩⟨αⱼ, αᵢ^∨⟩ - 2`. -/
-theorem _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul (n : ℕ) (x : M)
+theorem pow_ofIdx_mul_ofIdx_smul (n : ℕ) (x : M)
     (t : R := P.pairing i j * P.pairing j i - 2)
     (ht : t = P.pairing i j * P.pairing j i - 2 := by rfl) :
     ((_root_.RootPairing.weylGroup.ofIdx P i *
@@ -121,7 +123,7 @@ theorem _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul (n : ℕ) (x : M)
 Mathlib's `Module.reflection_mul_reflection_pow_apply_self` read in the Weyl group; it is the case
 `x = αᵢ` of `RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul`, in a form where the two
 coefficients are single Chebyshev values. -/
-theorem _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_root (n : ℕ)
+theorem pow_ofIdx_mul_ofIdx_smul_root (n : ℕ)
     (t : R := P.pairing i j * P.pairing j i - 2)
     (ht : t = P.pairing i j * P.pairing j i - 2 := by rfl) :
     ((_root_.RootPairing.weylGroup.ofIdx P i *
@@ -139,7 +141,7 @@ theorem _root_.RootPairing.weylGroup.pow_ofIdx_mul_ofIdx_smul_root (n : ℕ)
 /-- **The braid relation at Cartan product `1`**: the product of the two reflections has order
 dividing `3`, the `A₂` configuration. -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one
+theorem pow_three_ofIdx_mul_ofIdx_eq_one
     (h : P.pairing i j * P.pairing j i = 1) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 3 = 1 := by
@@ -152,7 +154,7 @@ theorem _root_.RootPairing.weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one
 /-- **The braid relation at Cartan product `2`**: the product of the two reflections has order
 dividing `4`, the `B₂` configuration. -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one
+theorem pow_four_ofIdx_mul_ofIdx_eq_one
     (h : P.pairing i j * P.pairing j i = 2) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 4 = 1 := by
@@ -164,7 +166,7 @@ theorem _root_.RootPairing.weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one
 /-- **The braid relation at Cartan product `3`**: the product of the two reflections has order
 dividing `6`, the `G₂` configuration. -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one
+theorem pow_six_ofIdx_mul_ofIdx_eq_one
     (h : P.pairing i j * P.pairing j i = 3) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ 6 = 1 := by
@@ -180,7 +182,7 @@ expression in the Cartan product `c`, and comparing it with `⟨αᵢ, αᵢ^∨
 
 section LowerBound
 
-private lemma _root_.RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne (n : ℕ)
+private lemma pow_ne_one_of_coroot'_left_ne (n : ℕ)
     (h : P.coroot' i (((_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) ^ n) • P.root i) ≠ 2) :
     (_root_.RootPairing.weylGroup.ofIdx P i *
@@ -190,7 +192,7 @@ private lemma _root_.RootPairing.weylGroup.pow_ne_one_of_coroot'_left_ne (n : �
     _root_.RootPairing.pairing_same] at h
   exact h rfl
 
-private lemma _root_.RootPairing.weylGroup.coroot'_left_pow_smul_root (n : ℕ) (t : R)
+private lemma coroot'_left_pow_smul_root (n : ℕ) (t : R)
     (ht : t = P.pairing i j * P.pairing j i - 2) :
     P.coroot' i (((_root_.RootPairing.weylGroup.ofIdx P i *
         _root_.RootPairing.weylGroup.ofIdx P j) ^ n) • P.root i) =
@@ -205,7 +207,7 @@ variable [CharZero R]
 
 /-- **At Cartan product `1` the product of the two reflections has order exactly `3`.** -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three
+theorem orderOf_ofIdx_mul_ofIdx_eq_three
     (h : P.pairing i j * P.pairing j i = 1) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 3 := by
@@ -222,7 +224,7 @@ theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_three
 
 /-- **At Cartan product `2` the product of the two reflections has order exactly `4`.** -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four
+theorem orderOf_ofIdx_mul_ofIdx_eq_four
     (h : P.pairing i j * P.pairing j i = 2) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 4 := by
@@ -241,7 +243,7 @@ theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_four
 
 /-- **At Cartan product `3` the product of the two reflections has order exactly `6`.** -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_six
+theorem orderOf_ofIdx_mul_ofIdx_eq_six
     (h : P.pairing i j * P.pairing j i = 3) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P i *
       _root_.RootPairing.weylGroup.ofIdx P j) = 6 := by
@@ -278,7 +280,7 @@ section Base
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] (b : P.Base)
 
 omit [Finite ι] [CharZero R] [IsDomain R] in
-private lemma _root_.RootPairing.weylGroup.pairing_mul_pairing_eq_cast (k l : b.support) :
+private lemma pairing_mul_pairing_eq_cast (k l : b.support) :
     P.pairing k l * P.pairing l k =
       ((b.cartanMatrix k l * b.cartanMatrix l k : ℤ) : R) := by
   have hk : ∀ m n : b.support, ((b.cartanMatrix m n : ℤ) : R) = P.pairing m n := fun m n ↦ by
@@ -291,7 +293,7 @@ corresponding simple reflections.** On the diagonal both sides are `1`, a simple
 an involution; off the diagonal the four Cartan products `0`, `1`, `2`, `3` give the four dihedral
 orders `2`, `3`, `4`, `6`. -/
 @[simp, grind =]
-theorem _root_.RootPairing.weylGroup.orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase
+theorem orderOf_ofIdx_mul_ofIdx_eq_coxeterMatrixOfBase
     (k l : b.support) :
     orderOf (_root_.RootPairing.weylGroup.ofIdx P (k : ι) *
       _root_.RootPairing.weylGroup.ofIdx P (l : ι)) = coxeterMatrixOfBase P b k l := by
@@ -318,7 +320,7 @@ relation half of the Coxeter presentation of the Weyl group. It is not a `simp` 
 left-hand side is not in simp normal form, because the exponent `coxeterMatrixOfBase P b k l` is
 itself rewritten by `TauCeti.coxeterMatrixOfBase_apply`. -/
 @[grind =]
-theorem _root_.RootPairing.weylGroup.pow_coxeterMatrixOfBase_ofIdx_mul_ofIdx_eq_one
+theorem pow_coxeterMatrixOfBase_ofIdx_mul_ofIdx_eq_one
     (k l : b.support) :
     (_root_.RootPairing.weylGroup.ofIdx P (k : ι) *
       _root_.RootPairing.weylGroup.ofIdx P (l : ι)) ^ coxeterMatrixOfBase P b k l = 1 := by
@@ -329,4 +331,4 @@ end Base
 
 end
 
-end TauCeti
+end RootPairing.weylGroup

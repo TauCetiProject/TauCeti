@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
 
 /-!
 # The Möbius transformations preserving the Fubini–Study form
@@ -24,6 +26,10 @@ elements of the projective special unitary group `PSU(2)`, the range of
 `Matrix.specialUnitaryGroup.toPSL`
 (`OnePoint.mpullback_smul_fubiniStudyForm_eq_self_iff_mem_range_toPSL`). Classically `PSU(2)` is
 the rotation group of the round sphere; the comparison with the round metric is not made here.
+More generally, the transformation of `M ∈ GL(2, ℂ)` preserves `ω_FS` exactly when `Mᴴ M` is a
+real scalar matrix, that is, when `M` is a nonzero multiple of a unitary matrix
+(`OnePoint.mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scalar`), since `M`
+is a matrix of `SL(2, ℂ)` times a scalar matrix, which acts trivially.
 
 In the affine coordinate the transformation of `A = !![a, b; c, d]` has derivative
 `det A / (c * z + d) ^ 2` (`OnePoint.mfderiv_smul_coe_apply`). Writing `ρ(z) = 1 / (π (1 + |z|²)²)`
@@ -42,6 +48,9 @@ are equal (`TauCeti.SmoothBundleForm.eq_of_forall_mem_dense`).
   `SL(2, ℂ)` preserves the Fubini–Study form exactly when it is unitary.
 * `OnePoint.mpullback_smul_fubiniStudyForm_eq_self_iff_mem_range_toPSL`: an element of
   `PSL(2, ℂ)` preserves the Fubini–Study form exactly when it lies in `PSU(2)`.
+* `OnePoint.mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scalar`: an
+  element `M` of `GL(2, ℂ)` preserves the Fubini–Study form exactly when `Mᴴ M` is a real scalar
+  matrix.
 
 ## References
 
@@ -152,5 +161,45 @@ theorem mpullback_smul_fubiniStudyForm_eq_self_iff_mem_range_toPSL (g : PSL(2, �
     rw [Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff,
       ← mpullback_smul_fubiniStudyForm_eq_self_iff_mem_unitaryGroup]
     simp only [pslMk_smul]
+
+/-- **The Möbius transformations of `GL(2, ℂ)` preserving the Fubini–Study form.** The Möbius
+transformation of `M ∈ GL(2, ℂ)` pulls the Fubini–Study form of the Riemann sphere back to itself
+exactly when `Mᴴ M` is a real scalar matrix, that is, when `M` is a nonzero multiple of a unitary
+matrix. -/
+theorem mpullback_smul_fubiniStudyForm_eq_self_iff_exists_star_mul_self_eq_scalar
+    (M : GL (Fin 2) ℂ) :
+    SmoothForm.mpullback (M • · : OnePoint ℂ → OnePoint ℂ) (contMDiff_const_smul M)
+        fubiniStudyForm = fubiniStudyForm ↔
+      ∃ r : ℝ, star (M : Matrix (Fin 2) (Fin 2) ℂ) * M = Matrix.scalar (Fin 2) (r : ℂ) := by
+  -- Write `M = A s` with `A ∈ SL(2, ℂ)` and `s` scalar; the scalar `s` acts trivially.
+  obtain ⟨A, s, rfl⟩ := M.exists_toGL_mul_scalar_eq
+  have hM : ((Matrix.SpecialLinearGroup.toGL A * Matrix.GeneralLinearGroup.scalar (Fin 2) s :
+      GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) = (s : ℂ) • (A : Matrix (Fin 2) (Fin 2) ℂ) := by
+    rw [Units.val_mul, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply,
+      ← Matrix.smul_one_eq_diagonal, mul_smul_comm, mul_one,
+      Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
+  have hact : ((Matrix.SpecialLinearGroup.toGL A * Matrix.GeneralLinearGroup.scalar (Fin 2) s) • · :
+      OnePoint ℂ → OnePoint ℂ) = ((A : GL (Fin 2) ℂ) • ·) := by
+    funext x
+    rw [mul_smul, scalar_smul_onePoint_eq_self]
+  have hdet : (A : Matrix (Fin 2) (Fin 2) ℂ).det = 1 := A.2
+  simp only [hact]
+  rw [mpullback_smul_fubiniStudyForm_eq_self_iff_mem_unitaryGroup, hM]
+  -- `(s A)ᴴ (s A) = |s|² Aᴴ A`, and `A` is unitary exactly when `Aᴴ A` is scalar.
+  have hstar : star ((s : ℂ) • (A : Matrix (Fin 2) (Fin 2) ℂ)) * ((s : ℂ) • A) =
+      ((‖(s : ℂ)‖ ^ 2 : ℝ) : ℂ) • (star (A : Matrix (Fin 2) (Fin 2) ℂ) * A) := by
+    rw [star_smul, smul_mul_smul_comm, Complex.ofReal_pow, ← Complex.conj_mul', Complex.star_def]
+  have hs2 : ((‖(s : ℂ)‖ ^ 2 : ℝ) : ℂ) ≠ 0 := by
+    exact_mod_cast pow_ne_zero 2 (norm_ne_zero_iff.2 s.ne_zero)
+  rw [hstar]
+  refine ⟨fun h ↦ ⟨‖(s : ℂ)‖ ^ 2, ?_⟩, fun ⟨r, hr⟩ ↦ ?_⟩
+  · rw [Matrix.mem_unitaryGroup_iff'.1 h, Matrix.scalar_apply, ← Matrix.smul_one_eq_diagonal]
+  · have hA : star (A : Matrix (Fin 2) (Fin 2) ℂ) * A =
+        ((‖(s : ℂ)‖ ^ 2 : ℝ) : ℂ)⁻¹ • Matrix.scalar (Fin 2) (r : ℂ) := by
+      rw [← hr, smul_smul, inv_mul_cancel₀ hs2, one_smul]
+    refine Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar (u := ((‖(s : ℂ)‖ ^ 2 : ℝ) : ℂ)⁻¹ * r)
+      (by rw [hdet, norm_one]) (hA.trans ?_)
+    rw [Matrix.scalar_apply, Matrix.scalar_apply, ← Matrix.diagonal_smul]
+    simp only [Pi.smul_def, smul_eq_mul]
 
 end OnePoint

@@ -29,7 +29,6 @@ used in arc-length reparametrization.
 public section
 
 open Filter MeasureTheory Set
-open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -82,14 +81,11 @@ theorem exists_contDiff_inverse_intervalIntegral {v : ℝ → ℝ} {a b : ℝ} (
   have hφeq : ∀ t ∈ Icc a b, (∫ r in a..t, w r) = ∫ r in a..t, v r := fun t ht ↦
     intervalIntegral.integral_congr fun r hr ↦
       congrArg v (hcid r (uIcc_subset_Icc (left_mem_Icc.2 hab) ht hr))
-  have hψa : e 0 = a := by
-    simpa using hψφ a
   refine ⟨e, e.strictMono, hψC1, fun t ht ↦ by rw [← hφeq t ht, hψφ], fun s hs ↦ ?_⟩
   have hψs : e s ∈ Icc a b := by
-    constructor
-    · exact hψa ▸ e.monotone hs.1
-    · rw [← hψφ b, hφeq b (right_mem_Icc.2 hab)]
-      exact e.monotone hs.2
+    have h := e.monotone.mapsTo_Icc hs
+    rwa [← intervalIntegral.integral_same (f := w) (a := a), ← hφeq b (right_mem_Icc.2 hab),
+      hψφ, hψφ] at h
   refine ⟨hψs, by rw [← hφeq _ hψs, hφψ], ?_⟩
   simpa only [w, hcid _ hψs] using hψd s
 

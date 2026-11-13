@@ -34,6 +34,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   `‖P'‖² / (1 + ‖P‖²)²` is integrable.
 * `Polynomial.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq`: it is also square
   integrable.
+* `Polynomial.tendsto_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_cocompact`: it tends to
+  zero at infinity.
 * `Polynomial.memLp_inv_one_add_norm_eval_sq`: `(1 + ‖P‖²)⁻¹` is square integrable when `P` is
   nonconstant.
 -/
@@ -141,6 +143,23 @@ theorem integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Poly
   exact integrable_of_eventually_mul_one_add_norm_pow_four_le
     (continuous_norm_derivative_eval_sq_div P) (fun z ↦ by positivity) hb
 
+/-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` tends to zero at
+infinity. -/
+theorem tendsto_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_cocompact (P : Polynomial ℂ) :
+    Tendsto (fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2) (cocompact ℂ)
+      (𝓝 0) := by
+  rcases Nat.eq_zero_or_pos P.natDegree with h0 | hm
+  · simp [derivative_of_natDegree_zero h0]
+  obtain ⟨K, -, hb⟩ := exists_eventually_norm_derivative_sq_div_le hm
+  -- `0 ≤ ‖P'‖² / (1 + ‖P‖²)² ≤ K / (1 + ‖z‖) ^ 4 → 0`.
+  have hlim : Tendsto (fun z : ℂ ↦ K / (1 + ‖z‖) ^ 4) (cocompact ℂ) (𝓝 0) :=
+    tendsto_const_nhds.div_atTop <| (tendsto_pow_atTop (by norm_num)).comp <|
+      tendsto_atTop_add_const_left _ 1 tendsto_norm_cocompact_atTop
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun z ↦ by positivity) ?_
+  filter_upwards [hb] with z hz
+  rwa [le_div_iff₀ (by positivity)]
+
 /-- For every complex polynomial `P`, the function `‖P'‖² / (1 + ‖P‖²)²` is square integrable on
 the plane. -/
 theorem memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq (P : Polynomial ℂ) :
@@ -170,7 +189,7 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     (continuous_const.add (P.continuous.norm.pow 2)).inv₀ fun z ↦
       (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
+  obtain ⟨c, _, hb⟩ := exists_eventually_norm_bounds hm
   refine integrable_of_eventually_mul_one_add_norm_pow_four_le (K := 16 * c ^ 4) (hcont.pow 2)
     (fun z ↦ by positivity) ?_
   filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩

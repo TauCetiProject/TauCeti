@@ -55,10 +55,10 @@ The hypothesis of positive volume is equivalent to nonempty interior
 
 public section
 
-open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set
+open MeasureTheory MeasureTheory.Measure ProbabilityTheory Set TauCeti
 open scoped ENNReal Pointwise RealInnerProductSpace
 
-namespace TauCeti
+namespace Convex
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -69,7 +69,7 @@ variable {K L : Set E}
 of positive volume and `0 < θ < 1`. If the volume of `(1 - θ) • K + θ • L` is at most
 `volume K ^ (1 - θ) * volume L ^ θ`, that is, if the multiplicative Brunn–Minkowski inequality is
 an equality, then the interior of `L` is a translate of the interior of `K`. -/
-theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex ℝ K)
+theorem exists_interior_eq_vadd_interior_of_volume_le (hK : Convex ℝ K)
     (hKb : Bornology.IsBounded K) (hK0 : volume K ≠ 0) (hL : Convex ℝ L)
     (hLb : Bornology.IsBounded L) (hL0 : volume L ≠ 0) {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
     (hvol : volume ((1 - θ) • K + θ • L) ≤ volume K ^ (1 - θ) * volume L ^ θ) :
@@ -119,7 +119,7 @@ theorem _root_.Convex.exists_interior_eq_vadd_interior_of_volume_le (hK : Convex
 convex sets of positive volume and `0 < θ < 1`. If the multiplicative Brunn–Minkowski inequality
 `volume K ^ (1 - θ) * volume L ^ θ ≤ volume ((1 - θ) • K + θ • L)` is an equality, then `L` is a
 translate of `K`. -/
-theorem _root_.Convex.exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsCompact K)
+theorem exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsCompact K)
     (hK0 : volume K ≠ 0) (hL : Convex ℝ L) (hLc : IsCompact L) (hL0 : volume L ≠ 0) {θ : ℝ}
     (hθ₀ : 0 < θ) (hθ₁ : θ < 1)
     (hvol : volume ((1 - θ) • K + θ • L) ≤ volume K ^ (1 - θ) * volume L ^ θ) :
@@ -137,7 +137,7 @@ theorem _root_.Convex.exists_eq_vadd_of_volume_le (hK : Convex ℝ K) (hKc : IsC
 compact convex sets of positive volume and `0 < θ < 1`. Then
 `volume ((1 - θ) • K + θ • L) = volume K ^ (1 - θ) * volume L ^ θ` exactly when `L` is a translate
 of `K`. -/
-theorem _root_.Convex.volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsCompact K)
+theorem volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsCompact K)
     (hK0 : volume K ≠ 0) (hL : Convex ℝ L) (hLc : IsCompact L) (hL0 : volume L ≠ 0) {θ : ℝ}
     (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
     volume ((1 - θ) • K + θ • L) = volume K ^ (1 - θ) * volume L ^ θ ↔ ∃ v : E, L = v +ᵥ K := by
@@ -155,7 +155,7 @@ sets of positive volume in a space of dimension `n`, and let `c, d > 0`. If the 
 then `B` is homothetic to `A`: `B = v +ᵥ r • A` for some vector `v` and some `r > 0`.
 In positive dimension, the bound gives equality in the Brunn–Minkowski inequality;
 in dimension zero, homothety follows from nonempty `A` and `B` alone. -/
-theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex ℝ A)
+theorem exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex ℝ A)
     (hAc : IsCompact A) (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B)
     (hB0 : volume B ≠ 0) {c d : ℝ} (hc : 0 < c) (hd : 0 < d)
     (h : volume.real (c • A + d • B) ^ ((Module.finrank ℝ E : ℝ)⁻¹) ≤
@@ -220,7 +220,7 @@ theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (
 of positive volume in a space of positive dimension `n`, and let `c, d > 0`. Then
 `volume (c • A + d • B) ^ (1 / n) = c * volume A ^ (1 / n) + d * volume B ^ (1 / n)` exactly when
 `B` is homothetic to `A`, that is, `B = v +ᵥ r • A` for some vector `v` and some `r > 0`. -/
-theorem _root_.Convex.volume_real_smul_add_smul_rpow_eq_iff
+theorem volume_real_smul_add_smul_rpow_eq_iff
     (hn : Module.finrank ℝ E ≠ 0) {A B : Set E} (hA : Convex ℝ A) (hAc : IsCompact A)
     (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B) (hB0 : volume B ≠ 0) {c d : ℝ}
     (hc : 0 < c) (hd : 0 < d) :
@@ -244,4 +244,4 @@ theorem _root_.Convex.volume_real_smul_add_smul_rpow_eq_iff
   rw [hset, hvadd, hvadd, hscale (by positivity), hscale hr.le]
   ring
 
-end TauCeti
+end Convex

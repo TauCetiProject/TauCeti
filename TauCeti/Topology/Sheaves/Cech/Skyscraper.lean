@@ -171,6 +171,30 @@ def cechCohomologyZeroSkyscraperPresheafIso :
           (V.mem_opens p₀)) 0).symm ≪≫
     eqToIso (ite_eq_left (show p₀ ∈ (⊤ : Opens X) from trivial))
 
+/-- The skyscraper cohomology identification agrees with the general identification of
+sheaf cohomology in degree zero with global sections. -/
+theorem cechCohomologyZeroSkyscraperPresheafIso_eq {B : Type u'} [Category.{u} B]
+    [Preadditive B] [HasZeroObject B] [HasProducts.{u} B] [CategoryWithHomology B]
+    [HasColimitsOfShape (PointOpenCover X) B] (N : B) :
+    cechCohomologyZeroSkyscraperPresheafIso p₀ N =
+      (cechCohomologyZeroIso (skyscraperSheaf p₀ N)).symm ≪≫
+        skyscraperSheafGlobalSectionsIso p₀ N := by
+  apply Iso.ext
+  simp only [cechCohomologyZeroSkyscraperPresheafIso,
+    Iso.trans_hom, Iso.symm_hom, skyscraperSheafGlobalSectionsIso_hom]
+  congr 1
+  have h : (TauCeti.CategoryTheory.cechCohomologyZeroIso
+      PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) isTerminalTop
+      (skyscraperPresheaf p₀ N) fun V ↦
+        (quasiIso_iff _).1 (quasiIso_cechAugmentation_skyscraperPresheaf p₀ N
+          V.opens (V.mem_opens p₀)) 0) = cechCohomologyZeroIso (skyscraperSheaf p₀ N) := by
+    apply Iso.ext
+    obtain ⟨V⟩ : Nonempty (PointOpenCover X) := inferInstance
+    rw [TauCeti.CategoryTheory.cechCohomologyZeroIso_hom _ _ _ _ _ V,
+      cechCohomologyZeroIso_hom _ V]
+    rfl
+  exact congrArg Iso.inv h
+
 /-- The identification of the degree `0` Čech cohomology of a skyscraper presheaf with `M`
 restricts, along the structure map of each point-neighborhood cover `V`, to the identification
 for `V`. -/

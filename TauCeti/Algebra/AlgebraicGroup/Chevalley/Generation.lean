@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
 
 /-!
@@ -98,13 +98,13 @@ theorem torusPoints_mem_closure_rootSubgroup [RootableBy Aˣ ℕ] (s : Fin t.ran
 /-- With divisible units, adjoining all roots and the actual torus gives the same subgroup
 as the positive and negative simple root subgroups. This is equality of generated subgroups,
 not a point-generation theorem for the ambient group scheme. -/
-theorem closure_rootSubgroup_union_range_torusPoints [RootableBy Aˣ ℕ] :
-    Subgroup.closure ((⋃ γ : Fin t.numRoots, Set.range (D.rootSubgroupPoints γ A)) ∪
-        Set.range (D.torusPoints A)) =
+theorem rootTorusSubgroup_eq_closure_rootSubgroup [RootableBy Aˣ ℕ] :
+    D.rootTorusSubgroup A =
       Subgroup.closure (⋃ i : Fin t.rank,
         Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
           Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
             (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) := by
+  rw [rootTorusSubgroup_def]
   apply le_antisymm
   · refine (Subgroup.closure_le _).2 ?_
     rintro g (hg | ⟨s, rfl⟩)

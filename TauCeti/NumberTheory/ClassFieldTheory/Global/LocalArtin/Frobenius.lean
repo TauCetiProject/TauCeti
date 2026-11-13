@@ -118,7 +118,7 @@ normalized valuation of `x`. -/
 theorem globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt {σ : Gal(L/K)}
     (hσ : IsArithFrobAt (𝓞 K) σ Q) (x : (v.adicCompletion K)ˣ) :
     globalArtinMap K L ι (.ofMul (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v x)) =
-      .ofMul (Abelianization.of σ ^ (normalizedValuation (v.adicCompletion K) x).toAdd) := by
+      .ofMul (Group.Abelianization.of σ ^ (normalizedValuation (v.adicCompletion K) x).toAdd) := by
   -- The prime `Q` is a finite place of `L` above `v`.
   let w : HeightOneSpectrum (𝓞 L) :=
     ⟨Q, inferInstance, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q⟩
@@ -132,7 +132,7 @@ theorem globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt {σ : Gal(L/K)}
 symbol of the prime idele class at `v` is the class of `σ` in `Gal(L/K)^ab`. -/
 theorem globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt {σ : Gal(L/K)}
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
-    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of σ) := by
+    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of σ) := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   rw [h, globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt L ι v Q hσ, (isUniformizer_def π).1 hπ,
     toAdd_ofAdd, zpow_one]
@@ -144,21 +144,22 @@ uniformizer `π` of `K_v` at `v` and `1` at every other place is an arithmetic F
 theorem isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq [IsMulCommutative Gal(L/K)]
     {π : (v.adicCompletion K)ˣ} (hπ : IsUniformizer (v.adicCompletion K) π) {σ : Gal(L/K)}
     (hσ : globalArtinMap K L ι (.ofMul (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π)) =
-      .ofMul (Abelianization.of σ)) :
+      .ofMul (Group.Abelianization.of σ)) :
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨τ, hτ⟩ := NumberField.exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   rw [globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt L ι v Q hτ, (isUniformizer_def π).1 hπ,
     toAdd_ofAdd, zpow_one] at hσ
-  -- `Gal(L/K)` is commutative, so `Abelianization.of` is injective on it.
-  rwa [← Abelianization.of_injective (Additive.ofMul.injective hσ)]
+  -- `Gal(L/K)` is commutative, so `Group.Abelianization.of` is injective on it.
+  rwa [← Group.Abelianization.of_injective (Additive.ofMul.injective hσ)]
 
 /-- **Arithmetic Frobenius normalization at the prime idele class.** For a finite abelian
 extension `L/K` of number fields and a finite place `v` of `K` unramified at a prime `Q` of `L`
 above it, an automorphism `σ ∈ Gal(L/K)` whose class is the global Artin symbol of the prime idele
 class at `v` is an arithmetic Frobenius at `Q`. -/
 theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
-    (hσ : globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of σ)) :
+    (hσ : globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   exact isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq L ι v Q hπ (h ▸ hσ)
@@ -172,7 +173,7 @@ theorem addOrderOf_globalArtinMap_primeIdeleClass [IsMulCommutative Gal(L/K)] :
   have hQ := Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ, addOrderOf_ofMul_eq_orderOf,
-    orderOf_injective _ Abelianization.of_injective,
+    orderOf_injective _ Group.Abelianization.of_injective,
     Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
 
 /-- **Splitting criterion through the Artin symbol.** For a finite abelian extension `L/K` of
@@ -190,7 +191,7 @@ fields with nontrivial automorphism `τ`, and let `v` be a finite place of `K` u
 exactly when `Q` has residue degree `2`, that is, when `v` is inert in `L`. Otherwise it is trivial
 (`globalArtinMap_primeIdeleClass_eq_zero_iff_inertiaDeg_eq_one`). -/
 theorem globalArtinMap_quadratic_prime (hL : Module.finrank K L = 2) {τ : Gal(L/K)} (hτ : τ ≠ 1) :
-    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of τ) ↔
+    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of τ) ↔
       Q.inertiaDeg (𝓞 K) = 2 := by
   have hcard : Nat.card Gal(L/K) = 2 := by rw [IsGalois.card_aut_eq_finrank, hL]
   have : Fact (Nat.card Gal(L/K)).Prime := ⟨hcard ▸ Nat.prime_two⟩
@@ -198,7 +199,7 @@ theorem globalArtinMap_quadratic_prime (hL : Module.finrank K L = 2) {τ : Gal(L
   have hQ := Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
-    Additive.ofMul.injective.eq_iff, Abelianization.of_injective.eq_iff,
+    Additive.ofMul.injective.eq_iff, Group.Abelianization.of_injective.eq_iff,
     ← Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
   -- In a group of order two, the nontrivial element is the unique element of order two.
   obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : Gal(L/K))).mp hcard
@@ -225,7 +226,7 @@ theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K))
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) =
-      .ofMul (Abelianization.of
+      .ofMul (Group.Abelianization.of
         (NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur I)) := by
   -- `I` is prime to `S` and has multiplicity one at `v`, so `v ∉ S`.
   have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.2 hI
@@ -234,7 +235,7 @@ theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K))
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
-    NumberFieldArithmetic.artinHomAway_apply_prime _ S hur I v hv hI Q σ hσ]
+    NumberFieldArithmetic.artinHomAway_apply_prime _ S hur I v hI Q σ hσ]
 
 /-- **The global Artin symbols of the prime idele classes determine the ideal-theoretic Artin
 map.** For a finite abelian extension `L/K` of number fields, unramified outside a finite set `S`
@@ -246,7 +247,8 @@ theorem eq_artinHomAway_of_globalArtinMap
     (hφ : ∀ (I : NumberFieldArithmetic.idealsAway K S) (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
       ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
         (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K) →
-      globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of (φ I))) :
+      globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of (φ
+          I))) :
     φ = NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur := by
   refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S hur φ ?_
   intro I v hv hI Q _ _ σ hσ

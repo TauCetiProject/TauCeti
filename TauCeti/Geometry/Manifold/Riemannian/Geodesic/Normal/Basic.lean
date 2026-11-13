@@ -35,6 +35,9 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.riemannianLog`: the Riemannian logarithm relative to a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.toPartialDiffeomorph`: the exponential map and logarithm as a
   partial diffeomorphism between a normal domain and its normal neighbourhood.
+* `TauCeti.Manifold.IsNormalDomain.exists_partialDiffeomorph_riemannianExp_comp`: the
+  exponential map precomposed with a linear isomorphism carrying an open set into a normal domain
+  is a partial diffeomorphism with that open set as source.
 * `TauCeti.Manifold.exists_isNormalDomain_ball`: balls of small enough radius are normal domains.
 * `TauCeti.Manifold.IsNormalDomain.ball`: a tangent ball contained in a normal domain is
   itself a normal domain.
@@ -332,6 +335,24 @@ def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
 @[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
     h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := by
   simp [toPartialDiffeomorph, riemannianLog_def]
+
+/-- The exponential map precomposed with a linear isomorphism that maps an open set into a normal
+domain is a partial diffeomorphism with that open set as source. -/
+theorem exists_partialDiffeomorph_riemannianExp_comp {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (h : IsNormalDomain I M p U) (A : F ≃L[ℝ] TangentSpace I p)
+    {s : Set F} (hs : IsOpen s) (hmap : MapsTo A s U) :
+    ∃ Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M ∞,
+      Φ.source = s ∧ ⇑Φ = riemannianExp I M p ∘ A := by
+  have hlocal : IsLocalDiffeomorphOn 𝓘(ℝ, F) I ∞ (riemannianExp I M p ∘ A) s := by
+    intro x
+    have hA := A.toDiffeomorph.isLocalDiffeomorph x.val
+    rw [ContinuousLinearEquiv.coe_toDiffeomorph] at hA
+    exact IsLocalDiffeomorphAt.comp I M hA (h.isLocalDiffeomorphOn ⟨A x, hmap x.property⟩)
+  have hinj : InjOn (riemannianExp I M p ∘ A) s := fun x hx y hy hxy ↦
+    A.injective (h.injOn (hmap hx) (hmap hy) hxy)
+  exact ⟨hlocal.partialDiffeomorphOfInjOn hs hinj,
+    hlocal.partialDiffeomorphOfInjOn_source hs hinj,
+    hlocal.coe_partialDiffeomorphOfInjOn hs hinj⟩
 
 variable [I.Boundaryless] [T2Space M]
 
