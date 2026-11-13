@@ -35,8 +35,8 @@ variable {ι : Type*} [Fintype ι] (M : ι → Type*)
 
 omit [Fintype ι] in
 /-- If a family of abelian groups of pairwise coprime orders has an infinite member, then all the
-other members are trivial, so the inclusion of that member into the product is a right inverse of
-the projection onto it: every tuple is the inclusion of its coordinate there. -/
+other members are trivial, so the projection onto that member is a right inverse of its inclusion
+into the product: every tuple is the inclusion of its coordinate there. -/
 private theorem exists_subsingleton_and_rightInverse_single_of_not_finite [DecidableEq ι]
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j)))
     (hfin : ¬ ∀ j, Finite (M j)) :
