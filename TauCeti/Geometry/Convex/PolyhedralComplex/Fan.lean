@@ -13,20 +13,20 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Subdivision
 /-!
 # Conical polyhedral complexes and toric fans
 
-Finite polyhedral complexes whose cells are salient cones are precisely toric
-fans. The conversions retain the actual cell carriers, are inverse, preserve
-supports, and identify the subdivision relations.
+A toric fan can be studied within the geometry of polyhedral complexes, which also allows
+affine cells and lineality. `TauCeti.Toric.Fan.toFinitePolyhedralComplex` takes the cone carriers
+as cells and preserves support. For a finite polyhedral complex whose cone cells are salient,
+`TauCeti.FinitePolyhedralComplex.toFan` extracts precisely those cone cells. When the complex is
+conical, this recovers every cell, preserves the support and inverts the fan-to-complex
+construction. Subdivision of conical complexes with salient cone cells then agrees with fan
+subdivision.
 
-The construction uses `TauCeti.Toric.Fan` and `PointedCone.IsFaceOf` rather than
-introducing a second fan carrier. Rational cone duality identifies rational-normal
-polyhedral cones with lattice-rational cones, and exposed faces identify the
-affine and conical face conventions.
+Rational cone duality characterizes the lattice-rational cones among rational-normal polyhedra.
+Exposed faces of a polyhedral cone identify its polyhedral faces with its cone faces.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Fan.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
 commit `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
-The `IsConical` predicate in the complex owner is adapted from
-`Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` at the same commit.
 -/
 
 public section
@@ -39,7 +39,8 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 namespace TauCeti.Toric.Fan
 
 /-- Regard the cones of a toric fan as the cells of a finite polyhedral complex. -/
-noncomputable def toPolyhedralComplex (Φ : Fan i) : TauCeti.FinitePolyhedralComplex Φ.lattice := by
+noncomputable def toFinitePolyhedralComplex (Φ : Fan i) :
+    TauCeti.FinitePolyhedralComplex Φ.lattice := by
   classical
   exact {
     cells := Φ.finite_cones.toFinset.image (fun σ : PointedCone ℝ V => (σ : Set V))
@@ -64,33 +65,35 @@ noncomputable def toPolyhedralComplex (Φ : Fan i) : TauCeti.FinitePolyhedralCom
 
 /-- The cells of a fan's complex are exactly its cone carriers. -/
 @[simp]
-theorem mem_toPolyhedralComplex_cells (Φ : Fan i) (P : Set V) :
-    P ∈ Φ.toPolyhedralComplex.cells ↔ ∃ σ ∈ Φ.cones, (σ : Set V) = P := by
+theorem mem_cells_toFinitePolyhedralComplex (Φ : Fan i) (P : Set V) :
+    P ∈ Φ.toFinitePolyhedralComplex.cells ↔ ∃ σ ∈ Φ.cones, (σ : Set V) = P := by
   classical
-  simp [toPolyhedralComplex]
+  simp [toFinitePolyhedralComplex]
 
 /-- Passing from a fan to its complex retains its support. -/
 @[simp]
-theorem support_toPolyhedralComplex (Φ : Fan i) :
-    Φ.toPolyhedralComplex.support = Φ.support := by
+theorem support_toFinitePolyhedralComplex (Φ : Fan i) :
+    Φ.toFinitePolyhedralComplex.support = Φ.support := by
   ext x
-  simp only [TauCeti.FinitePolyhedralComplex.mem_support, mem_toPolyhedralComplex_cells,
+  simp only [TauCeti.FinitePolyhedralComplex.mem_support, mem_cells_toFinitePolyhedralComplex,
     mem_support]
   aesop
 
 open TauCeti.FinitePolyhedralComplex
 
 /-- The complex associated to a fan is conical. -/
-theorem isConical_toPolyhedralComplex (Φ : Fan i) : Φ.toPolyhedralComplex.IsConical := by
-  apply (isConical_iff _).mpr
+@[simp]
+theorem isConical_toFinitePolyhedralComplex (Φ : Fan i) :
+    Φ.toFinitePolyhedralComplex.IsConical := by
+  apply isConical_iff.mpr
   intro P hP
-  obtain ⟨σ, _, hσ⟩ := (Φ.mem_toPolyhedralComplex_cells P).mp hP
+  obtain ⟨σ, _, hσ⟩ := (Φ.mem_cells_toFinitePolyhedralComplex P).mp hP
   exact ⟨σ, hσ⟩
 
 /-- Every cone cell in the complex of a toric fan is salient. -/
-theorem salient_toPolyhedralComplex (Φ : Fan i) (σ : PointedCone ℝ V)
-    (hσ : (σ : Set V) ∈ Φ.toPolyhedralComplex.cells) : (σ : ConvexCone ℝ V).Salient := by
-  obtain ⟨τ, hτ, heq⟩ := (Φ.mem_toPolyhedralComplex_cells _).mp hσ
+theorem salient_of_mem_cells_toFinitePolyhedralComplex (Φ : Fan i) (σ : PointedCone ℝ V)
+    (hσ : (σ : Set V) ∈ Φ.toFinitePolyhedralComplex.cells) : (σ : ConvexCone ℝ V).Salient := by
+  obtain ⟨τ, hτ, heq⟩ := (Φ.mem_cells_toFinitePolyhedralComplex _).mp hσ
   have : τ = σ := SetLike.coe_injective heq
   exact this ▸ (Φ.isToricCone hτ).salient
 
@@ -135,21 +138,21 @@ theorem support_toFan (C : FinitePolyhedralComplex h) (hc : C.IsConical) (hsal) 
   · rintro ⟨σ, hσ, hx⟩
     exact ⟨σ, hσ, hx⟩
   · rintro ⟨P, hP, hx⟩
-    obtain ⟨σ, rfl⟩ := (isConical_iff C).mp hc P hP
+    obtain ⟨σ, rfl⟩ := isConical_iff.mp hc P hP
     exact ⟨σ, hP, hx⟩
 
 /-- Converting a conical complex to a fan and back recovers the complex. -/
 @[simp]
-theorem toPolyhedralComplex_toFan (C : FinitePolyhedralComplex h) (hc : C.IsConical)
-    (hsal) : (C.toFan hsal).toPolyhedralComplex = C := by
+theorem toFinitePolyhedralComplex_toFan (C : FinitePolyhedralComplex h) (hc : C.IsConical)
+    (hsal) : (C.toFan hsal).toFinitePolyhedralComplex = C := by
   apply FinitePolyhedralComplex.ext
   ext P
-  simp only [Fan.mem_toPolyhedralComplex_cells, mem_toFan_cones]
+  simp only [Fan.mem_cells_toFinitePolyhedralComplex, mem_toFan_cones]
   constructor
   · rintro ⟨σ, hσ, rfl⟩
     exact hσ
   · intro hP
-    obtain ⟨σ, hσ⟩ := (isConical_iff C).mp hc P hP
+    obtain ⟨σ, hσ⟩ := isConical_iff.mp hc P hP
     exact ⟨σ, hσ ▸ hP, hσ⟩
 
 end TauCeti.FinitePolyhedralComplex
@@ -160,37 +163,72 @@ open TauCeti.FinitePolyhedralComplex
 
 /-- Converting a fan to its complex and back recovers the fan. -/
 @[simp]
-theorem toFan_toPolyhedralComplex (Φ : Fan i) :
-    Φ.toPolyhedralComplex.toFan (salient_toPolyhedralComplex Φ) = Φ := by
+theorem toFan_toFinitePolyhedralComplex (Φ : Fan i) :
+    Φ.toFinitePolyhedralComplex.toFan (salient_of_mem_cells_toFinitePolyhedralComplex Φ) = Φ := by
   apply Fan.ext
   ext σ
-  simp only [mem_toFan_cones, mem_toPolyhedralComplex_cells]
+  simp only [mem_toFan_cones, mem_cells_toFinitePolyhedralComplex]
   constructor
   · rintro ⟨τ, hτ, heq⟩
     exact SetLike.coe_injective heq ▸ hτ
   · intro hσ
     exact ⟨σ, hσ, rfl⟩
 
-/-- Fan subdivision agrees exactly with subdivision of the associated polyhedral complexes. -/
-theorem isSubdivision_iff_toPolyhedralComplex (Φ Ψ : Fan i) :
-    Φ.IsSubdivision Ψ ↔ Φ.toPolyhedralComplex.IsSubdivision Ψ.toPolyhedralComplex := by
+/-- A fan is determined by its associated complex. -/
+@[simp]
+theorem toFinitePolyhedralComplex_inj {Φ Ψ : Fan i} :
+    Φ.toFinitePolyhedralComplex = Ψ.toFinitePolyhedralComplex ↔ Φ = Ψ := by
   constructor
-  · intro hsub
-    apply TauCeti.FinitePolyhedralComplex.isSubdivision_iff.mpr
-    refine ⟨?_, by simpa using hsub.support_eq⟩
-    apply TauCeti.FinitePolyhedralComplex.isWeakRefinement_iff.mpr
-    intro P hP
-    obtain ⟨σ, hσ, rfl⟩ := (Φ.mem_toPolyhedralComplex_cells P).mp hP
-    obtain ⟨τ, hτ, hστ⟩ := hsub.exists_cone_le hσ
-    exact ⟨τ, (Ψ.mem_toPolyhedralComplex_cells _).mpr ⟨τ, hτ, rfl⟩, hστ⟩
+  · intro heq
+    apply Fan.ext
+    ext σ
+    have h (Θ : Fan i) : (σ : Set V) ∈ Θ.toFinitePolyhedralComplex.cells ↔ σ ∈ Θ.cones := by
+      simp
+    rw [← h Φ, ← h Ψ, heq]
+  · rintro rfl
+    rfl
+
+/-- Subdivision of the complexes of two fans agrees with subdivision of the fans. -/
+@[simp]
+theorem isSubdivision_toFinitePolyhedralComplex_iff {Φ Ψ : Fan i} :
+    Φ.toFinitePolyhedralComplex.IsSubdivision Ψ.toFinitePolyhedralComplex ↔ Φ.IsSubdivision Ψ := by
+  constructor
   · intro hsub
     have hsub := TauCeti.FinitePolyhedralComplex.isSubdivision_iff.mp hsub
     refine ⟨?_, by simpa using hsub.2⟩
     intro σ hσ
     obtain ⟨Q, hQ, hσQ⟩ :=
       (TauCeti.FinitePolyhedralComplex.isWeakRefinement_iff.mp hsub.1) (σ : Set V)
-      ((Φ.mem_toPolyhedralComplex_cells _).mpr ⟨σ, hσ, rfl⟩)
-    obtain ⟨τ, hτ, rfl⟩ := (Ψ.mem_toPolyhedralComplex_cells Q).mp hQ
+      ((Φ.mem_cells_toFinitePolyhedralComplex _).mpr ⟨σ, hσ, rfl⟩)
+    obtain ⟨τ, hτ, rfl⟩ := (Ψ.mem_cells_toFinitePolyhedralComplex Q).mp hQ
     exact ⟨τ, hτ, hσQ⟩
+  · intro hsub
+    apply TauCeti.FinitePolyhedralComplex.isSubdivision_iff.mpr
+    refine ⟨?_, by simpa using hsub.support_eq⟩
+    apply TauCeti.FinitePolyhedralComplex.isWeakRefinement_iff.mpr
+    intro P hP
+    obtain ⟨σ, hσ, rfl⟩ := (Φ.mem_cells_toFinitePolyhedralComplex P).mp hP
+    obtain ⟨τ, hτ, hστ⟩ := hsub.exists_cone_le hσ
+    exact ⟨τ, (Ψ.mem_cells_toFinitePolyhedralComplex _).mpr ⟨τ, hτ, rfl⟩, hστ⟩
 
 end TauCeti.Toric.Fan
+
+namespace TauCeti.FinitePolyhedralComplex
+
+variable {h : IsIntegralLattice i} {C D : FinitePolyhedralComplex h}
+
+/-- Subdivision of the fans of two conical complexes agrees with subdivision of the complexes. -/
+@[simp]
+theorem isSubdivision_toFan_iff (hc : C.IsConical) (hd : D.IsConical) (hsalC) (hsalD) :
+    (C.toFan hsalC).IsSubdivision (D.toFan hsalD) ↔ C.IsSubdivision D := by
+  rw [← Fan.isSubdivision_toFinitePolyhedralComplex_iff, toFinitePolyhedralComplex_toFan C hc,
+    toFinitePolyhedralComplex_toFan D hd]
+
+/-- The fan extracted from a conical complex determines the complex. -/
+@[simp]
+theorem toFan_inj (hc : C.IsConical) (hd : D.IsConical) (hsalC) (hsalD) :
+    C.toFan hsalC = D.toFan hsalD ↔ C = D := by
+  rw [← Fan.toFinitePolyhedralComplex_inj, toFinitePolyhedralComplex_toFan C hc,
+    toFinitePolyhedralComplex_toFan D hd]
+
+end TauCeti.FinitePolyhedralComplex
