@@ -152,6 +152,17 @@ instance : BoundedOrder SectionKind where
 
 @[simp] theorem le_constant (a : SectionKind) : a ≤ constant := le_top
 
+@[simp] theorem le_active_iff {a : SectionKind} : a ≤ active ↔ a = active := le_bot_iff
+
+@[simp] theorem constant_le_iff {a : SectionKind} : constant ≤ a ↔ a = constant := top_le_iff
+
+@[simp] theorem not_lt_active {a : SectionKind} : ¬ a < active := not_lt_bot
+
+@[simp] theorem not_constant_lt {a : SectionKind} : ¬ constant < a := not_top_lt
+
+/-- There are four kinds of sections. -/
+@[simp] theorem card : Fintype.card SectionKind = 4 := (rfl)
+
 /-- A sequence `f₀, …, f_{n-1}` of kinds increases exactly when there are `ρ_A ≤ ρ_NA ≤ ρ_P ≤ n`
 such that `fₖ` is active for `k < ρ_A`, non-active for `ρ_A ≤ k < ρ_NA`, parametric for
 `ρ_NA ≤ k < ρ_P` and constant for `ρ_P ≤ k`. -/
@@ -266,13 +277,17 @@ theorem itemKind_eq_baseKind {μ : Fin Ω.numBases} {k : Fin Ω.numItems} (hk : 
   P.itemKind_eq_of_closedSectionOfItem_eq ((Ω.closedSectionOfItem_eq_closedSectionOfBase hk).trans
     (Ω.closedSectionOfItem_eq_closedSectionOfBase (Ω.left_mem_baseItems μ)).symm)
 
+/-- A variable base contained in a closed section has the kind of that section. -/
+theorem baseKind_eq_sectionKind {μ : Fin Ω.numBases} {s : Ω.closedSections}
+    (hμ : Ω.baseItems μ ⊆ Ω.sectionItems s.1.1 s.1.2) : P.baseKind μ = P.sectionKind s :=
+  P.itemKind_eq_sectionKind (hμ (Ω.left_mem_baseItems μ))
+
 /-- The kind of a variable base is the kind of its closed section. -/
 @[simp]
 theorem sectionKind_closedSectionOfBase (μ : Fin Ω.numBases) :
     P.sectionKind ⟨Ω.closedSectionOfBase μ, Ω.closedSectionOfBase_mem_closedSections μ⟩ =
       P.baseKind μ :=
-  (P.itemKind_eq_sectionKind (Ω.baseItems_subset_closedSectionOfBase μ
-    (Ω.left_mem_baseItems μ))).symm
+  (P.baseKind_eq_sectionKind (Ω.baseItems_subset_closedSectionOfBase μ)).symm
 
 end SectionPartition
 
@@ -328,9 +343,8 @@ instance : Fintype Ω.SectionPartition :=
 
 /-- A generalised equation with `n` closed sections has `4 ^ n` section partitions. -/
 theorem card_sectionPartition : Fintype.card Ω.SectionPartition = 4 ^ #Ω.closedSections := by
-  rw [Fintype.card_congr Ω.sectionPartitionEquiv, Fintype.card_fun, Fintype.card_coe]
-  -- There are four kinds.
-  rfl
+  rw [Fintype.card_congr Ω.sectionPartitionEquiv, Fintype.card_fun, Fintype.card_coe,
+    SectionKind.card]
 
 /-! ### Standard form -/
 

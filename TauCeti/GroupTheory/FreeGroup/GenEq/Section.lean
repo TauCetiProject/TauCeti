@@ -214,6 +214,7 @@ theorem touches_iff {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} :
 instance (i : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) : Decidable (Ω.Touches i μ) :=
   decidable_of_iff _ Ω.touches_iff.symm
 
+variable {Ω} in
 /-- A boundary crossing a base is not one of its end-points. -/
 theorem Crosses.not_touches {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} (h : Ω.Crosses i μ) :
     ¬ Ω.Touches i μ := by
@@ -256,6 +257,7 @@ instance (i : Fin (Ω.numItems + 1)) : Decidable (Ω.IsOpenBoundary i) :=
 instance (i : Fin (Ω.numItems + 1)) : Decidable (Ω.IsClosedBoundary i) :=
   decidable_of_iff _ Ω.isClosedBoundary_iff.symm
 
+variable {Ω} in
 /-- A boundary crossing a base is open. -/
 theorem Crosses.isOpenBoundary {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} (h : Ω.Crosses i μ) :
     Ω.IsOpenBoundary i :=
@@ -303,6 +305,7 @@ theorem isClosedSection_iff {i j : Fin (Ω.numItems + 1)} :
 instance (i j : Fin (Ω.numItems + 1)) : Decidable (Ω.IsClosedSection i j) :=
   decidable_of_iff _ Ω.isClosedSection_iff.symm
 
+variable {Ω} in
 /-- The left end-point of a closed section is the left end-point of an item. -/
 theorem IsClosedSection.left_lt_numItems {i j : Fin (Ω.numItems + 1)} (h : Ω.IsClosedSection i j) :
     (i : ℕ) < Ω.numItems :=
@@ -336,6 +339,7 @@ private theorem closedSectionOfItem_snd_mem (k : Fin Ω.numItems) :
     ⟨Fin.last _, by simp [Fin.le_last]⟩)).2
 
 /-- The closed section of `hₖ` starts at a closed boundary. -/
+@[simp]
 theorem isClosedBoundary_closedSectionOfItem_fst (k : Fin Ω.numItems) :
     Ω.IsClosedBoundary (Ω.closedSectionOfItem k).1 :=
   (Ω.closedSectionOfItem_fst_mem k).1
@@ -351,6 +355,7 @@ theorem le_closedSectionOfItem_fst {k : Fin Ω.numItems} {i : Fin (Ω.numItems +
   le_max' _ _ (by simp [hi, hik])
 
 /-- The closed section of `hₖ` ends at a closed boundary. -/
+@[simp]
 theorem isClosedBoundary_closedSectionOfItem_snd (k : Fin Ω.numItems) :
     Ω.IsClosedBoundary (Ω.closedSectionOfItem k).2 :=
   (Ω.closedSectionOfItem_snd_mem k).1
@@ -453,7 +458,7 @@ theorem closedSectionOfItem_eq_closedSectionOfBase {μ : Fin Ω.numBases} {k : F
     (hk : k ∈ Ω.baseItems μ) : Ω.closedSectionOfItem k = Ω.closedSectionOfBase μ := by
   rw [mem_baseItems] at hk
   exact ((Ω.closedSectionOfItem_eq_closedSectionOfItem_iff (Fin.le_def.2 hk.1)).2
-    fun l hl₁ hl₂ ↦ Crosses.isOpenBoundary Ω (μ := μ) ⟨by grind, by grind⟩).symm
+    fun l hl₁ hl₂ ↦ Crosses.isOpenBoundary (μ := μ) ⟨by grind, by grind⟩).symm
 
 /-- The closed section of a base is a closed section. -/
 @[simp]
@@ -483,6 +488,30 @@ theorem right_le_closedSectionOfBase_snd (μ : Fin Ω.numBases) :
     Ω.right μ ≤ (Ω.closedSectionOfBase μ).2 := by
   have := Ω.baseItems_subset_closedSectionOfBase μ
   grind [baseItems_def, sectionItems_subset_sectionItems_iff, left_lt_right]
+
+/-- The closed section of a variable base starts at a closed boundary. -/
+@[simp]
+theorem isClosedBoundary_closedSectionOfBase_fst (μ : Fin Ω.numBases) :
+    Ω.IsClosedBoundary (Ω.closedSectionOfBase μ).1 :=
+  Ω.isClosedBoundary_closedSectionOfItem_fst _
+
+/-- The closed section of a variable base ends at a closed boundary. -/
+@[simp]
+theorem isClosedBoundary_closedSectionOfBase_snd (μ : Fin Ω.numBases) :
+    Ω.IsClosedBoundary (Ω.closedSectionOfBase μ).2 :=
+  Ω.isClosedBoundary_closedSectionOfItem_snd _
+
+/-- The closed section of a variable base `μ` starts at the last closed boundary at or before
+`α(μ)`. -/
+theorem le_closedSectionOfBase_fst {μ : Fin Ω.numBases} {i : Fin (Ω.numItems + 1)}
+    (hi : Ω.IsClosedBoundary i) (hiμ : i ≤ Ω.left μ) : i ≤ (Ω.closedSectionOfBase μ).1 :=
+  Ω.le_closedSectionOfItem_fst hi hiμ
+
+/-- The closed section of a variable base `μ` ends at the first closed boundary at or after
+`β(μ)`. -/
+theorem closedSectionOfBase_snd_le {μ : Fin Ω.numBases} {j : Fin (Ω.numItems + 1)}
+    (hj : Ω.IsClosedBoundary j) (hμj : Ω.right μ ≤ j) : (Ω.closedSectionOfBase μ).2 ≤ j :=
+  Ω.closedSectionOfItem_snd_le hj ((Fin.castSucc_lt_iff_succ_le.1 (Ω.left_lt_right μ)).trans hμj)
 
 /-- The closed section of a variable base is the unique closed section containing it. -/
 theorem closedSectionOfBase_eq_iff {μ : Fin Ω.numBases}
