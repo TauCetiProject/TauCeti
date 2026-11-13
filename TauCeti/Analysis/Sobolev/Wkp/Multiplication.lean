@@ -99,7 +99,7 @@ private theorem derivative_mul_le (k i : ℕ) (hi : i ≤ k)
         simp [b, smul_eq_mul]
       rw [hbj, lpNorm_const_smul,
         lpNorm_norm (hmem (i - j) ((Nat.sub_le _ _).trans hi)).aestronglyMeasurable,
-        Real.nnnorm_of_nonneg (mul_nonneg (Nat.cast_nonneg _) hM)]
+        Real.nnNorm_of_nonneg (mul_nonneg (Nat.cast_nonneg _) hM)]
       rfl
     _ ≤ ∑ j ∈ Finset.range (i + 1), a j * ‖u‖ := by
       gcongr with j _
