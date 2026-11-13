@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import TauCeti.LinearAlgebra.Matrix.Dual
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.InvariantSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.Reduced
 
@@ -68,11 +68,6 @@ open Function Set Module Submodule
 
 namespace Matrix
 
-private theorem piAlgebraMap_dotProduct {I k : Type*} [Fintype I] [CommRing k]
-    (a b : I → ℤ) :
-    Pi.algebraMap I ℤ k a ⬝ᵥ Pi.algebraMap I ℤ k b = ((a ⬝ᵥ b : ℤ) : k) :=
-  (RingHom.map_dotProduct (Int.castRingHom k) a b).symm
-
 namespace PosDef
 
 variable {I : Type*} [Fintype I] {B : Matrix I I ℤ}
@@ -109,19 +104,19 @@ def normTwoShellRootPairing : RootPairing B.normTwoShell k (I → k) (I → k) :
   RootPairing.mk' (dotProductBilin k k) (shellRoot k) (shellCoroot hB k)
     (fun a ↦ by
       rw [dotProductBilin_apply_apply, shellRoot_apply, shellCoroot_apply,
-        piAlgebraMap_dotProduct, mem_normTwoShell.mp a.2, Int.cast_ofNat])
+        TauCeti.piAlgebraMap_dotProduct, mem_normTwoShell.mp a.2, map_ofNat])
     (by
       rintro a - ⟨b, rfl⟩
       refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
       simp only [preReflection_apply, LinearMap.flip_apply, dotProductBilin_apply_apply,
-        shellRoot_apply, shellCoroot_apply, piAlgebraMap_dotProduct, map_sub, map_zsmul,
-        Int.cast_smul_eq_zsmul])
+        shellRoot_apply, shellCoroot_apply, TauCeti.piAlgebraMap_dotProduct, algebraMap_int_eq,
+        eq_intCast, map_sub, map_zsmul, Int.cast_smul_eq_zsmul])
     (by
       rintro a - ⟨b, rfl⟩
       refine ⟨⟨_, hB.isHermitian.isSymm.sub_smul_mem_normTwoShell a.2 b.2⟩, ?_⟩
       simp only [preReflection_apply, dotProductBilin_apply_apply,
-        shellRoot_apply, shellCoroot_apply, piAlgebraMap_dotProduct, mulVec_sub, mulVec_smul,
-        map_sub, map_zsmul, Int.cast_smul_eq_zsmul,
+        shellRoot_apply, shellCoroot_apply, TauCeti.piAlgebraMap_dotProduct, algebraMap_int_eq,
+        eq_intCast, mulVec_sub, mulVec_smul, map_sub, map_zsmul, Int.cast_smul_eq_zsmul,
         hB.isHermitian.isSymm.dotProduct_mulVec_comm (x := b.1) (y := a.1)])
 
 @[simp]
@@ -156,7 +151,7 @@ theorem pairing_normTwoShellRootPairing (a b : B.normTwoShell) :
     (hB.normTwoShellRootPairing k).pairing a b = ((a.1 ⬝ᵥ B *ᵥ b.1 : ℤ) : k) := by
   rw [RootPairing.pairing, toLinearMap_normTwoShellRootPairing,
     root_normTwoShellRootPairing, coroot_normTwoShellRootPairing]
-  exact piAlgebraMap_dotProduct _ _
+  exact TauCeti.piAlgebraMap_dotProduct k a.1 (B *ᵥ b.1)
 
 /-- Reflection in a shell root acts by the integral lattice reflection. -/
 @[simp]
@@ -305,16 +300,14 @@ theorem height_normTwoShellBase (a : B.normTwoShell) :
 @[simp]
 theorem isPos_normTwoShellBase_iff (a : B.normTwoShell) :
     (hB.normTwoShellBase k hdiag hoff).IsPos a ↔ 0 ≤ a.1 := by
-  rw [RootPairing.Base.isPos_iff', height_normTwoShellBase]
   constructor
   · intro hsum
-    rcases hB.nonneg_or_nonpos_of_mem_normTwoShell (fun i ↦ hdiag i ▸ even_two) hoff a.2 with
-      hpos | hneg
-    · exact hpos
-    · have hzero : ∑ i, a.1 i = 0 := le_antisymm (Finset.sum_nonpos fun i _ ↦ hneg i) hsum
-      exact fun i ↦ ((Finset.sum_eq_zero_iff_of_nonpos (fun j _ ↦ hneg j)).mp hzero i
-        (Finset.mem_univ i)).ge
-  · exact fun hpos ↦ Finset.sum_nonneg fun i _ ↦ hpos i
+    rw [RootPairing.Base.isPos_iff, height_normTwoShellBase] at hsum
+    refine (hB.nonneg_or_nonpos_of_mem_normTwoShell (fun i ↦ hdiag i ▸ even_two) hoff
+      a.2).resolve_right fun hneg ↦ hsum.not_ge (Finset.sum_nonpos fun i _ ↦ hneg i)
+  · intro hpos
+    rw [RootPairing.Base.isPos_iff', height_normTwoShellBase]
+    exact Finset.sum_nonneg fun i _ ↦ hpos i
 
 /-- **The Cartan matrix of the base of coordinate vectors is `B`.** -/
 @[simp]
@@ -337,57 +330,27 @@ theorem isRootSystem_normTwoShellRootPairing : (hB.normTwoShellRootPairing k).Is
 
 include hdiag in
 /-- **The root system of the norm-two shell is irreducible when the diagram of `B` is connected.**
-No sign condition on the off-diagonal entries is needed. -/
+No sign condition on the off-diagonal entries is needed: the coordinate roots and coroots span, and
+their Cartan integers are the entries of `B`, so
+`RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn` applies without a base. -/
 theorem isIrreducible_normTwoShellRootPairing (hconn : (TauCeti.diagramGraph B).Connected) :
     (hB.normTwoShellRootPairing k).IsIrreducible := by
   classical
   have := isRootSystem_normTwoShellRootPairing hB k hdiag
   let P := hB.normTwoShellRootPairing k
-  let _ : Nontrivial (I → k) :=
-    ⟨⟨P.root (normTwoShellSimple hdiag hconn.nonempty.some), 0, P.ne_zero _⟩⟩
-  apply RootPairing.IsIrreducible.mk' P
-  intro q hinv hq
-  -- A subspace missing all coordinate roots lies in their coroot kernels, hence in every
-  -- coroot kernel, since every coroot is an integral combination of coordinate coroots.
-  have hsimple : ∃ i, P.root (normTwoShellSimple hdiag i) ∈ q := by
-    by_contra! h
-    apply hq
-    apply eq_bot_iff.mpr
-    intro x hx
-    apply P.eq_zero_iff_forall_coroot'_eq_zero.mpr
-    have hz (i : I) : P.coroot' (normTwoShellSimple hdiag i) x = 0 :=
-      LinearMap.mem_ker.mp (RootPairing.invtRootSubmodule.le_ker_coroot'
-        ⟨q, P.mem_invtRootSubmodule_iff.mpr hinv⟩ (h i) hx)
-    intro a
-    rw [RootPairing.coroot', LinearMap.flip_apply,
-      coroot_normTwoShellRootPairing_eq_sum hB k hdiag a]
-    simp only [map_sum, map_zsmul]
-    exact Finset.sum_eq_zero fun i _ ↦ by
-      have hi := hz i
-      rw [RootPairing.coroot', LinearMap.flip_apply] at hi
-      rw [hi, smul_zero]
-  obtain ⟨i, hi⟩ := hsimple
-  -- Nonzero Gram entries propagate membership along diagram walks; the coordinate roots span.
-  have propagate {u v : I} (hadj : (TauCeti.diagramGraph B).Adj u v)
-      (hu : P.root (normTwoShellSimple hdiag u) ∈ q) :
-      P.root (normTwoShellSimple hdiag v) ∈ q := by
-    apply RootPairing.root_mem_of_isUnit_pairing (hinv _) _ hu
-    apply Ne.isUnit
-    simpa [P] using (Int.cast_ne_zero.mpr (TauCeti.diagramGraph_adj.mp hadj).2.1 : (B u v : k) ≠ 0)
-  have hall (j : I) : P.root (normTwoShellSimple hdiag j) ∈ q := by
-    obtain ⟨w⟩ := hconn.preconnected i j
-    let rec along {u v : I} (w : (TauCeti.diagramGraph B).Walk u v)
-        (hu : P.root (normTwoShellSimple hdiag u) ∈ q) :
-        P.root (normTwoShellSimple hdiag v) ∈ q :=
-      match w with
-      | .nil => hu
-      | .cons hadj w => along w (propagate hadj hu)
-    exact along w hi
-  rw [eq_top_iff, ← (Pi.basisFun k I).span_eq]
-  refine span_le.mpr ?_
-  rintro _ ⟨j, rfl⟩
-  rw [Pi.basisFun_apply, ← root_normTwoShellRootPairing_normTwoShellSimple hB k hdiag]
-  exact hall j
+  have hroot : (P.root ∘ normTwoShellSimple hdiag) = Pi.basisFun k I := funext fun i ↦ by
+    rw [Function.comp_apply, Pi.basisFun_apply, root_normTwoShellRootPairing_normTwoShellSimple]
+  have hcoroot : span k (range (P.coroot ∘ normTwoShellSimple hdiag)) = ⊤ := by
+    rw [eq_top_iff, ← RootPairing.IsRootSystem.span_coroot_eq_top (P := P), span_le]
+    rintro _ ⟨a, rfl⟩
+    rw [coroot_normTwoShellRootPairing_eq_sum hB k hdiag a]
+    exact sum_mem fun i _ ↦ zsmul_mem (subset_span (mem_range_self i)) _
+  have hB' : (Matrix.of fun u v ↦
+      P.pairingIn ℤ (normTwoShellSimple hdiag u) (normTwoShellSimple hdiag v)) = B := by
+    ext u v
+    simp [P]
+  exact RootPairing.isIrreducible_of_connected_diagramGraph_pairingIn _
+    (hroot ▸ (Pi.basisFun k I).span_eq) hcoroot (by rwa [hB'])
 
 end PosDef
 

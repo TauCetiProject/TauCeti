@@ -301,6 +301,12 @@ public theorem toMatrix_titsPolarForm_apply (i j : Q) :
   rw [LinearMap.BilinForm.toMatrix_apply, Pi.basisFun_apply, Pi.basisFun_apply,
     titsPolarForm_single_single, mul_ite, mul_one, mul_zero]
 
+/-- The off-diagonal entries of the Gram matrix of the polarized Tits form are nonpositive. -/
+public theorem toMatrix_titsPolarForm_apply_nonpos_of_ne (i j : Q) (hij : i ≠ j) :
+    (titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) i j ≤ 0 := by
+  rw [toMatrix_titsPolarForm_apply, ite_eq_right hij]
+  omega
+
 /-- A loopless vertex has `⟨αᵢ, αᵢ⟩ = 2` for the polarized Tits form: the normalization that
 makes the simple reflection at `i` an involution. -/
 public theorem titsPolarForm_single_self_of_isEmpty {i : Q} (h : IsEmpty (i ⟶ i)) :

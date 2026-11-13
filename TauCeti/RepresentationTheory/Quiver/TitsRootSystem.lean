@@ -77,11 +77,6 @@ theorem mem_normTwoShell_toMatrix_titsPolarForm (d : Q → ℤ) :
   rw [mem_normTwoShell, dotProduct_toMatrix_titsPolarForm_mulVec_self]
   omega
 
-private theorem titsGram_off (i j : Q) (hij : i ≠ j) :
-    (titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q) i j ≤ 0 := by
-  rw [toMatrix_titsPolarForm_apply, ite_eq_right hij]
-  omega
-
 variable (Q) (hpd : (titsForm Q).PosDef)
 
 /-- The rational root pairing whose roots are the integral vectors of Tits value one.
@@ -89,6 +84,12 @@ Its coroot at `d` is the Tits Gram matrix applied to `d`. -/
 def titsRootPairing :
     RootPairing ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell ℚ (Q → ℚ) (Q → ℚ) :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ
+
+/-- The Tits root pairing is the root pairing of the norm-two shell of the Tits Gram matrix. -/
+theorem titsRootPairing_def :
+    titsRootPairing Q hpd =
+      ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellRootPairing ℚ :=
+  (rfl)
 
 @[simp]
 theorem root_titsRootPairing
@@ -128,6 +129,14 @@ theorem pairingIn_titsRootPairing
   exact (((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).pairingIn_normTwoShellRootPairing
     ℚ a b).trans (dotProduct_toMatrix_titsPolarForm_mulVec Q a.1 b.1)
 
+/-- The pairing of two Tits roots is the polarized Tits form. -/
+@[simp]
+theorem pairing_titsRootPairing
+    (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
+    (titsRootPairing Q hpd).pairing a b = (titsPolarForm Q a.1 b.1 : ℚ) := by
+  rw [titsRootPairing_def, Matrix.PosDef.pairing_normTwoShellRootPairing,
+    dotProduct_toMatrix_titsPolarForm_mulVec]
+
 /-- Reflection in a Tits root is its integral lattice reflection. -/
 @[simp]
 theorem coe_reflectionPerm_titsRootPairing
@@ -146,7 +155,8 @@ theorem exists_root_titsRootPairing_eq_iff (d : Q → ℤ) :
 /-- The coordinate base of the Tits root pairing, marked by the vertices of the quiver. -/
 def titsRootBase : (titsRootPairing Q hpd).Base :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellBase ℚ
-    (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) titsGram_off
+    (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)
+    (toMatrix_titsPolarForm_apply_nonpos_of_ne Q)
 
 /-- The support of the Tits base consists of the coordinate roots. -/
 @[simp]
@@ -159,7 +169,8 @@ theorem support_titsRootBase :
 /-- The vertices index the simple roots of the Tits base by their coordinate vectors. -/
 def titsRootBaseEquiv : Q ≃ (titsRootBase Q hpd).support :=
   ((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).normTwoShellBaseEquiv ℚ
-    (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) titsGram_off
+    (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd)
+    (toMatrix_titsPolarForm_apply_nonpos_of_ne Q)
 
 @[simp]
 theorem coe_titsRootBaseEquiv_apply (i : Q) :
@@ -173,9 +184,8 @@ theorem titsRootBaseEquiv_symm_mk (i : Q)
     (hi : normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i ∈
       (titsRootBase Q hpd).support) :
     (titsRootBaseEquiv Q hpd).symm
-      ⟨normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i, hi⟩ = i := by
-  apply (titsRootBaseEquiv Q hpd).symm_apply_eq.mpr
-  exact Subtype.ext (coe_titsRootBaseEquiv_apply Q hpd i).symm
+      ⟨normTwoShellSimple (toMatrix_titsPolarForm_apply_self_of_posDef Q hpd) i, hi⟩ = i :=
+  Matrix.PosDef.normTwoShellBaseEquiv_symm_mk _ ℚ _ _ i hi
 
 /-- The root at a marked vertex is its coordinate vector. -/
 theorem root_titsRootBaseEquiv (i : Q) :
@@ -190,6 +200,13 @@ theorem cartanMatrix_titsRootBase (i j : Q) :
       (if i = j then (2 : ℤ) else 0) - (Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i)) := by
   rw [← toMatrix_titsPolarForm_apply]
   exact Matrix.PosDef.cartanMatrix_normTwoShellBase _ ℚ _ _ i j
+
+/-- The height relative to the Tits base is the sum of the integer coordinates. -/
+@[simp]
+theorem height_titsRootBase
+    (a : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
+    (titsRootBase Q hpd).height a = ∑ i, a.1 i :=
+  Matrix.PosDef.height_normTwoShellBase _ ℚ _ _ a
 
 /-- Positivity for the Tits base is coordinatewise nonnegativity. -/
 @[simp]
