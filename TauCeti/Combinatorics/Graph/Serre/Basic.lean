@@ -187,6 +187,27 @@ def dart (e : Γ.E) : Quiver.Hom (Γ.src e) (Γ.tgt e) :=
 @[simp] theorem dart_val (e : Γ.E) : (Γ.dart e).1 = e := by
   simp only [dart]
 
+theorem dart_def (e : Γ.E) : Γ.dart e = ⟨e, rfl, rfl⟩ :=
+  (rfl)
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` starts where
+`f` ends. -/
+theorem src_eq_tgt_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : a = d := by
+  rw [← e.2.1, h, src_rev, f.2.2]
+
+/-- If the dart of `e : a ⟶ b` is the reverse of the dart of `f : c ⟶ d`, then `e` ends where
+`f` starts. -/
+theorem tgt_eq_src_of_val_eq_rev {a b c d : Γ.V} {e : Quiver.Hom a b} {f : Quiver.Hom c d}
+    (h : e.1 = Γ.rev f.1) : b = c := by
+  rw [← e.2.2, h, tgt_rev, f.2.1]
+
+/-- An arrow `e : b ⟶ a` whose dart is the reverse of the dart of `f : a ⟶ b` is the reverse
+of `f`. -/
+theorem eq_reverse_of_val_eq_rev {a b : Γ.V} {e : Quiver.Hom b a} {f : Quiver.Hom a b}
+    (h : e.1 = Γ.rev f.1) : e = Quiver.reverse f :=
+  Subtype.ext (h.trans (Γ.reverse_val f).symm)
+
 /-- An indexed path in a Serre graph is a path of its associated quiver. -/
 abbrev Path (a b : Γ.V) : Type (max u v) := Quiver.Path a b
 
