@@ -11,24 +11,20 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Analysis.Complex.Order
 
 /-!
-# A finite measure's characteristic function is positive definite
+# A measure's characteristic function is positive definite
 
 This file proves the "easy" (necessary) direction of Bochner's theorem: the characteristic
-function `charFun μ` of a finite measure `μ` on a real inner product space `E` is a
+function `charFun μ` of a measure `μ` on a real inner product space `E` is a
 *positive-definite function*. Concretely, for every finite family `(cᵢ, tᵢ)` the Hermitian
 form
 
 `∑ᵢ ∑ⱼ cᵢ · conj cⱼ · charFun μ (tᵢ - tⱼ)`
 
 is a nonnegative real number (`charFun_sum_mul_conj_nonneg`), equivalently the kernel
-`(x, y) ↦ charFun μ (x - y)` on `E` is positive semidefinite (`posSemidef_charFun`). The proof
-is the classical computation: the Hermitian form equals the honest integral
-
-`∫ y, ‖∑ᵢ cᵢ · exp (⟪y, tᵢ⟫ * I)‖ ^ 2 ∂μ`
-
-of a nonnegative integrand (`charFun_sum_mul_conj_eq_integral`), because
-`exp (⟪y, tᵢ⟫ * I) · conj (exp (⟪y, tⱼ⟫ * I)) = exp (⟪y, tᵢ - tⱼ⟫ * I)` makes the double sum
-factor through a squared modulus.
+`(x, y) ↦ charFun μ (x - y)` on `E` is positive semidefinite (`posSemidef_charFun`). Both hold for
+every measure `μ`, since `charFun μ` vanishes when `μ` is not finite. For a finite measure `μ`, the
+Hermitian form is the integral `∫ y, ‖∑ᵢ cᵢ · exp (⟪y, tᵢ⟫ * I)‖ ^ 2 ∂μ`
+(`charFun_sum_mul_conj_eq_integral`).
 
 The results are stated directly on Mathlib's `MeasureTheory.charFun`, so they need no
 positive-definiteness *predicate*; this is the half of Bochner's theorem that is provable without
@@ -65,8 +61,9 @@ private theorem sq_norm_sum_mul_exp_inner {ι : Type*} (s : Finset ι) (c : ι �
   rw [map_mul, ← exp_mul_conj_exp_inner]
   ring
 
-/-- The Hermitian form of `charFun μ` over a finite family `(cᵢ, tᵢ)` equals the integral of the
-squared modulus `‖∑ᵢ cᵢ · exp (⟪y, tᵢ⟫ * I)‖ ^ 2`, a manifestly nonnegative function. -/
+/-- For a finite measure `μ`, the Hermitian form of `charFun μ` over a finite family `(cᵢ, tᵢ)`
+equals the integral of the squared modulus `‖∑ᵢ cᵢ · exp (⟪y, tᵢ⟫ * I)‖ ^ 2`, a manifestly
+nonnegative function. -/
 theorem charFun_sum_mul_conj_eq_integral {ι : Type*} (s : Finset ι) (c : ι → ℂ) (t : ι → E) :
     ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * charFun μ (t i - t j) =
       ((∫ y, ‖∑ i ∈ s, c i * exp (⟪y, t i⟫ * I)‖ ^ 2 ∂μ : ℝ) : ℂ) := by
