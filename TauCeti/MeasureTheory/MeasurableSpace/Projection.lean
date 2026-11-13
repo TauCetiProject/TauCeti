@@ -14,17 +14,19 @@ public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 
 The projection of a product-measurable set along a standard Borel factor is null-measurable
 for every s-finite measure on the other factor. The other factor need not have a topology,
-be countably generated, or separate points. For a complete measure the projection is measurable.
+be countably generated, or separate points. For a complete s-finite measure the projection
+is measurable.
 
 The proof uses `Measurable.exists_eq_measurable_comp_prodMap` to encode the measurable set
-by countably many Boolean coordinates. Only the sample-space coordinate is replaced:
+by countably many Boolean coordinates. Only the target coordinate is replaced:
 the standard Borel factor remains available for the analytic projection theorem.
 Universal measurability on the Boolean coding space then pulls back along its measurable code.
 This is the measurable-projection input for debut arguments, not a measurable selection theorem.
 
 ## References
 
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, Chapter 1, §2.
+* D. L. Cohn, *Measure Theory*, second edition, Birkhäuser, 2013,
+  Proposition 8.4.4 (measurable projection).
 -/
 
 public section
@@ -36,8 +38,8 @@ namespace MeasurableSet
 variable {X Ω : Type*} [MeasurableSpace X] [StandardBorelSpace X]
   [MeasurableSpace Ω] {s : Set (X × Ω)} {μ : Measure Ω} [SFinite μ]
 
-/-- Projection along a standard Borel factor is measurable modulo null sets, even when
-its target is an arbitrary measurable space. -/
+/-- Projection along a standard Borel factor is null-measurable for every s-finite
+measure `μ` on the target, even when the target is an arbitrary measurable space. -/
 theorem nullMeasurableSet_image_snd (hs : MeasurableSet s) :
     NullMeasurableSet (Prod.snd '' s) μ := by
   classical
@@ -59,9 +61,10 @@ theorem nullMeasurableSet_image_snd (hs : MeasurableSet s) :
   rw [heq]
   exact (hproj.nullMeasurableSet (μ.map r)).preimage (hr.quasiMeasurePreserving μ)
 
-/-- On a complete measure space the projection of a product-measurable set along a
+/-- On a complete s-finite measure space the projection of a product-measurable set along a
 standard Borel factor is measurable. No topological assumption on the target is needed. -/
-theorem measurableSet_image_snd_of_complete (hs : MeasurableSet s) [μ.IsComplete] :
+theorem image_snd_of_complete (hs : MeasurableSet s) (μ : Measure Ω)
+    [SFinite μ] [μ.IsComplete] :
     MeasurableSet (Prod.snd '' s) :=
   (hs.nullMeasurableSet_image_snd (μ := μ)).measurable_of_complete
 

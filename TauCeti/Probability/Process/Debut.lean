@@ -16,16 +16,17 @@ The debut of a set in nonnegative time × sample space is the infimum of its tim
 with infinity for an empty fiber. It need not belong to that fiber. Its strict sublevel
 events are projections of the set restricted to a bounded time interval.
 
-For a progressive set these projections are null-measurable in the current sigma algebra.
-On a complete finite measure space whose filtration contains the ambient null sets at time
-zero, they are measurable there. Right continuity of the filtration then makes the debut a
-stopping time. This proof uses measurable projection alone and does not select a point of the
-set or use an optional/predictable section theorem.
+For an s-finite measure `P`, a progressive set's strict debut sublevels at time `t` are
+null-measurable with respect to `P.trim (ℱ.le t)`. When these trimmed measures are complete
+(in particular, when `ℱ.IsComplete P`), the sublevels are measurable in the current sigma
+algebra. Right continuity of the filtration then makes the debut a stopping time. This proof
+uses measurable projection alone and does not select a point of the set or use an
+optional/predictable section theorem.
 
 ## References
 
-* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
-  Chapter 1, §2 (the debut theorem).
+* C. Dellacherie and P.-A. Meyer, *Probabilities and Potential*, Chapters I–IV,
+  North-Holland, 1978, Chapter IV, Theorem 50 (the debut theorem).
 -/
 
 public section
@@ -57,6 +58,26 @@ theorem debut_le_of_mem {s : Set (ℝ≥0 × Ω)} {ω : Ω} {t : ℝ≥0}
     (ht : (t, ω) ∈ s) : debut s ω ≤ t :=
   iInf_le_of_le t (iInf_le _ ht)
 
+/-- A lower bound for the debut is exactly a lower bound for every time in its fiber. -/
+theorem le_debut_iff {s : Set (ℝ≥0 × Ω)} {ω : Ω} {a : WithTop ℝ≥0} :
+    a ≤ debut s ω ↔ ∀ t : ℝ≥0, (t, ω) ∈ s → a ≤ t := by
+  simp only [debut, le_iInf_iff]
+
+/-- The debut of a union is the minimum of the two debuts. -/
+@[simp]
+theorem debut_union (s r : Set (ℝ≥0 × Ω)) : debut (s ∪ r) = debut s ⊓ debut r := by
+  funext ω
+  simp only [debut, mem_union, iInf_or]
+  exact iInf_inf_eq
+
+/-- The debut of a union is the infimum of the debuts. -/
+@[simp]
+theorem debut_iUnion {ι : Sort*} (s : ι → Set (ℝ≥0 × Ω)) :
+    debut (⋃ i, s i) = ⨅ i, debut (s i) := by
+  funext ω
+  simp only [iInf_apply, debut, mem_iUnion, iInf_exists]
+  rw [iInf_comm]
+
 /-- A fiber has infinite debut exactly when it is empty. -/
 @[simp]
 theorem debut_eq_top_iff {s : Set (ℝ≥0 × Ω)} {ω : Ω} :
@@ -68,10 +89,14 @@ theorem debut_eq_top_iff {s : Set (ℝ≥0 × Ω)} {ω : Ω} :
   · intro h
     exact top_unique (le_iInf fun t ↦ le_iInf fun ht ↦ (h t ht).elim)
 
+/-- Enlarging a time fiber can only bring its debut earlier. -/
+theorem debut_le_debut {s r : Set (ℝ≥0 × Ω)} {ω : Ω}
+    (h : ∀ t, (t, ω) ∈ s → (t, ω) ∈ r) : debut r ω ≤ debut s ω :=
+  le_debut_iff.mpr fun _ ht ↦ debut_le_of_mem (h _ ht)
+
 /-- Enlarging a set can only bring its debut earlier. -/
-theorem debut_anti {s r : Set (ℝ≥0 × Ω)} (hsr : s ⊆ r) (ω : Ω) :
-    debut r ω ≤ debut s ω :=
-  le_iInf fun _ ↦ le_iInf fun ht ↦ debut_le_of_mem (hsr ht)
+theorem debut_anti : Antitone (debut (Ω := Ω)) :=
+  fun _ _ hsr _ ↦ debut_le_debut fun _ ht ↦ hsr ht
 
 /-- The debut of the empty set is infinity. -/
 @[simp]
@@ -81,7 +106,7 @@ theorem debut_empty : debut (∅ : Set (ℝ≥0 × Ω)) = fun _ ↦ ⊤ := by
 
 /-- The debut of a deterministic closed ray is its endpoint. -/
 @[simp]
-theorem debut_Ici_prod (a : ℝ≥0) :
+theorem debut_Ici_prod_univ (a : ℝ≥0) :
     debut (Ici a ×ˢ (univ : Set Ω)) = fun _ ↦ (a : WithTop ℝ≥0) := by
   funext ω
   apply le_antisymm
@@ -91,7 +116,7 @@ theorem debut_Ici_prod (a : ℝ≥0) :
 /-- The debut of the whole space is zero. -/
 @[simp]
 theorem debut_univ : debut (univ : Set (ℝ≥0 × Ω)) = fun _ ↦ 0 := by
-  simpa using (debut_Ici_prod (Ω := Ω) 0)
+  simpa using (debut_Ici_prod_univ (Ω := Ω) 0)
 
 end TauCeti
 
@@ -100,13 +125,16 @@ namespace MeasurableSet
 open TauCeti
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} [IsFiniteMeasure P] {s : Set (ℝ≥0 × Ω)}
+  {P : Measure Ω} [SFinite P] {s : Set (ℝ≥0 × Ω)}
 
-/-- A progressive set's strict debut sublevel is null-measurable for the measure trimmed
-to the current sigma algebra. No usual conditions are needed for this assertion. -/
+/-- A progressive set's strict debut sublevel is null-measurable for the s-finite measure
+`P` trimmed to the current sigma algebra. No usual conditions are needed. -/
 theorem nullMeasurableSet_debut_lt (hs : MeasurableSet[ℱ.progressive] s) (t : ℝ≥0) :
     @NullMeasurableSet Ω (ℱ t) {ω | debut s ω < t} (P.trim (ℱ.le t)) := by
   have hs' := (ℱ.measurableSet_progressive_iff.mp hs) t
+  have : @SFinite Ω (ℱ t) (P.trim (ℱ.le t)) := by
+    rw [trim_eq_map]
+    infer_instance
   let : MeasurableSpace Ω := ℱ t
   let : StandardBorelSpace (Iic t) := measurableSet_Iic.standardBorel
   let A : Set (Iic t × Ω) := {p | (p.1 : ℝ≥0) < t ∧ ((p.1 : ℝ≥0), p.2) ∈ s}
@@ -123,24 +151,19 @@ theorem nullMeasurableSet_debut_lt (hs : MeasurableSet[ℱ.progressive] s) (t : 
   rw [he]
   exact hA.nullMeasurableSet_image_snd
 
-/-- On a complete finite measure space with all ambient null sets visible at time zero,
-the strict debut sublevels of a progressive set are measurable at the current time. -/
-theorem measurableSet_debut_lt (hs : MeasurableSet[ℱ.progressive] s) [P.IsComplete]
-    (hcomplete : ∀ A, MeasurableSet A → P A = 0 → MeasurableSet[ℱ 0] A) (t : ℝ≥0) :
-    MeasurableSet[ℱ t] {ω | debut s ω < t} := by
-  let : (P.trim (ℱ.le t)).IsComplete := ⟨fun A hA ↦ by
-    have hPA : P A = 0 := measure_eq_zero_of_trim_eq_zero (ℱ.le t) hA
-    exact ℱ.mono bot_le _ (hcomplete A (measurableSet_of_null hPA) hPA)⟩
-  exact (hs.nullMeasurableSet_debut_lt (P := P) t).measurable_of_complete
+/-- A progressive set's strict debut sublevel is measurable at time `t` if the s-finite
+measure `P` trimmed to `ℱ t` is complete, in particular under `ℱ.IsComplete P`. -/
+theorem measurableSet_debut_lt (hs : MeasurableSet[ℱ.progressive] s) (P : Measure Ω)
+    [SFinite P] (t : ℝ≥0) [(P.trim (ℱ.le t)).IsComplete] :
+    MeasurableSet[ℱ t] {ω | debut s ω < t} :=
+  (hs.nullMeasurableSet_debut_lt (P := P) t).measurable_of_complete
 
-/-- **The debut theorem.** On a complete finite measure space, a right-continuous filtration
-containing all ambient null sets at time zero makes every progressive set's debut a stopping
-time. No graph point or section is asserted. -/
-theorem isStoppingTime_debut (hs : MeasurableSet[ℱ.progressive] s) [P.IsComplete]
-    [ℱ.IsRightContinuous]
-    (hcomplete : ∀ A, MeasurableSet A → P A = 0 → MeasurableSet[ℱ 0] A) :
+/-- **The debut theorem.** A right-continuous filtration with complete trims of an s-finite
+measure `P` makes every progressive set's debut a stopping time. In particular,
+`ℱ.IsComplete P` supplies the required trim completeness. No graph point or section is asserted. -/
+theorem isStoppingTime_debut (hs : MeasurableSet[ℱ.progressive] s) (P : Measure Ω)
+    [SFinite P] [ℱ.IsRightContinuous] [∀ t, (P.trim (ℱ.le t)).IsComplete] :
     IsStoppingTime ℱ (debut s) :=
-  isStoppingTime_of_measurableSet_lt_of_isRightContinuous
-    (hs.measurableSet_debut_lt hcomplete)
+  isStoppingTime_of_measurableSet_lt_of_isRightContinuous fun t ↦ hs.measurableSet_debut_lt P t
 
 end MeasurableSet
