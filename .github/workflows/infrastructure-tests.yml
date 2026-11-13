@@ -43,6 +43,7 @@ jobs:
             scripts/test_dependency_warm.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_pick_runner.py \
+            scripts/test_nightly_verify.py \
             scripts/test_finalize_batch.py \
             scripts/test_bors_staging_identity.py \
             scripts/test_workflow_pins.py \

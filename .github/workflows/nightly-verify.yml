@@ -67,7 +67,11 @@ jobs:
     # through the ordinary picker: its GitHub fallback cannot finish this workload.
     # Workflow concurrency above bounds this exception to one source verification at a time;
     # the reference job still selects ordinary shared build capacity below.
-    runs-on: ubuntu-24.04
+    # Full clean builds retain their twelve-hour budget on the existing CI pool.
+    # The PR class excludes staging-only and queue-control reservations.
+    runs-on:
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
     # Namespace runners support longer jobs; allow headroom for source growth and audits.
     timeout-minutes: 720
     outputs:

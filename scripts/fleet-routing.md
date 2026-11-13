@@ -2,7 +2,9 @@
 
 Namespace is retired from CI dispatch. PR builds prefer GitHub-hosted runners, then
 eligible Fleet PR runners; when neither has observed spare capacity, they wait on
-GitHub-hosted capacity. Maintenance builds use GitHub-hosted capacity. The shared
+GitHub-hosted capacity. Maintenance builds use GitHub-hosted capacity. The full clean nightly build uses
+the Fleet PR pool and retains its twelve-hour budget; staging-only and queue-control
+reservations cannot be taken by that class. The shared
 picker ignores retired Namespace entries in older configuration, and consumers reject
 Namespace targets even when an old picker output matches the current attempt.
 
