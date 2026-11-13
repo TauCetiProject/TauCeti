@@ -105,6 +105,15 @@ theorem isDunfordPettis_iff_tendsto_zero {T : E →L[𝕜] F} :
   · have := h (x := fun n ↦ x n - a) (by simpa using hx.sub_const (toWeakSpace 𝕜 E a))
     simpa [tendsto_sub_nhds_zero_iff] using this
 
+/-- An operator is Dunford–Pettis iff it is sequentially continuous from the weak topology to the
+norm topology. -/
+theorem isDunfordPettis_iff_seqContinuous {T : E →L[𝕜] F} :
+    T.IsDunfordPettis ↔ SeqContinuous fun w : WeakSpace 𝕜 E ↦ T ((toWeakSpace 𝕜 E).symm w) := by
+  refine ⟨fun hT x a hx ↦ ?_, fun hT x a hx ↦ ?_⟩
+  · simpa [comp_def] using hT (x := fun n ↦ (toWeakSpace 𝕜 E).symm (x n))
+      (a := (toWeakSpace 𝕜 E).symm a) (by simpa using hx)
+  · simpa [comp_def] using hT hx
+
 /-- The zero operator is Dunford–Pettis. -/
 theorem isDunfordPettis_zero : (0 : E →L[𝕜] F).IsDunfordPettis := fun _ _ _ ↦ by
   simpa using tendsto_const_nhds
@@ -174,9 +183,9 @@ theorem isDunfordPettis_iff_forall_isCompact_image {T : E →L[𝕜] F} :
   constructor
   · -- By Šmulian's theorem a weakly compact set is weakly sequentially compact.
     intro hT K hK
-    have hseq : SeqContinuous (fun w : WeakSpace 𝕜 E ↦ T ((toWeakSpace 𝕜 E).symm w)) := hT
     simpa only [image_image, LinearEquiv.symm_apply_apply] using
-      ((TauCeti.isSeqCompact_toWeakSpace_of_isCompact hK).image hseq).isCompact
+      ((TauCeti.isSeqCompact_toWeakSpace_of_isCompact hK).image
+        (isDunfordPettis_iff_seqContinuous.1 hT)).isCompact
   · -- A weakly convergent sequence together with its limit is weakly compact.
     intro h x a hx
     have hK := h (insert a (range x)) <| by
