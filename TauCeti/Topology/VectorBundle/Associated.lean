@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.Alternating.Basic
 
 /-!
 # Vector structures on associated bundles
@@ -16,6 +17,12 @@ A continuous linear action on a finite-dimensional normed space makes the existi
 bundle into a native `VectorBundle`, with its original topology and atlas. A point of the
 principal fibre identifies the model vector space linearly with the associated fibre; changing
 that point acts by the given representation, with the convention `[p g, v] = [p, g v]`.
+
+Structure on the model that is compatible with the representation therefore descends to the
+fibers: an equivariant alternating map `η` induces `TauCeti.AssociatedBundle.alternatingMap`, which
+reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`), and
+an invariant sesquilinear form `f` induces `TauCeti.AssociatedBundle.sesqForm`, which reads
+`[p, v], [p, w] ↦ f v w` in every frame (`TauCeti.AssociatedBundle.sesqForm_mk`).
 
 ## References
 
@@ -159,5 +166,94 @@ theorem coordChangeL_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
       associatedBundleCore_indexAt]
     exact ⟨⟨hb.1, mem_baseSet_trivializationAt G P b⟩, hb.2⟩
   · simpa only [baseSet_trivializationAt] using hb
+
+/-! ### Descent of structure on the model -/
+
+variable (G P) in
+/-- The point of the principal fiber over `b` with coordinate `1` in the chart at `b`, used to
+read structure on the model in the fibers. -/
+private def refPoint (b : B) : P b := (FiberBundle.homeomorphAt G P b).symm 1
+
+variable (𝕜 G P F) in
+/-- The associated fibers have the dimension of the model. -/
+theorem finrank_eq (b : B) : Module.finrank 𝕜 (AssociatedBundle G P F b) = Module.finrank 𝕜 F :=
+  (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finrank_eq.symm
+
+/-- The associated fibers of a finite-dimensional model are finite-dimensional. -/
+instance instFiniteDimensional [FiniteDimensional 𝕜 F] (b : B) :
+    FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
+  (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).toLinearEquiv.finiteDimensional
+
+section AlternatingMap
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [DistribMulAction G F'] [SMulCommClass G 𝕜 F'] [ContinuousSMul G F'] {ι : Type*}
+
+variable (G P) in
+/-- The alternating map on the fibers over `b` induced by an alternating map `η` on the model,
+read through a fixed reference point of the principal fiber over `b`. When `η` is equivariant it
+reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`), so it
+does not depend on that choice. -/
+def alternatingMap (η : F [⋀^ι]→ₗ[𝕜] F') (b : B) :
+    AssociatedBundle G P F b [⋀^ι]→ₗ[𝕜] AssociatedBundle G P F' b :=
+  ((mkContinuousLinearEquiv 𝕜 G (F := F') (refPoint G P b)).toLinearEquiv :
+      F' →ₗ[𝕜] AssociatedBundle G P F' b).compAlternatingMap
+    (η.compLinearMap ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
+      AssociatedBundle G P F b →ₗ[𝕜] F))
+
+/-- **An equivariant alternating map in a frame.** If `η (g • v) = g • η v`, then in every
+frame `p` the induced alternating map sends the classes `[p, v i]` to `[p, η v]`. -/
+@[simp]
+theorem alternatingMap_mk {η : F [⋀^ι]→ₗ[𝕜] F'}
+    (hη : ∀ (g : G) (v : ι → F), η (fun i ↦ g • v i) = g • η v) {b : B} (p : P b)
+    (v : ι → F) :
+    alternatingMap G P η b (fun i ↦ mk G p (v i)) = mk G p (η v) := by
+  simp only [alternatingMap, LinearMap.compAlternatingMap_apply,
+    AlternatingMap.compLinearMap_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv,
+    mkContinuousLinearEquiv_symm_apply_mk, hη, mkContinuousLinearEquiv_apply]
+  rw [← mk_smul, PrincipalBundle.smul_division]
+
+/-- The induced alternating map vanishes only when the model alternating map does. -/
+@[simp]
+theorem alternatingMap_eq_zero_iff {η : F [⋀^ι]→ₗ[𝕜] F'} (b : B) :
+    alternatingMap G P η b = 0 ↔ η = 0 := by
+  refine ⟨fun h ↦ AlternatingMap.ext fun v ↦ ?_, fun h ↦ by simp [h, alternatingMap]⟩
+  have hv := congrArg (fun η' ↦ η' fun i ↦ mk G (refPoint G P b) (v i)) h
+  simp only [alternatingMap, LinearMap.compAlternatingMap_apply,
+    AlternatingMap.compLinearMap_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv,
+    mkContinuousLinearEquiv_symm_apply_mk, PrincipalBundle.division_self, one_smul,
+    zero_apply, map_eq_zero_iff _ (ContinuousLinearEquiv.injective _)] at hv
+  exact hv
+
+end AlternatingMap
+
+section SesqForm
+
+variable {σ : 𝕜 →+* 𝕜}
+
+variable (G P) in
+/-- The sesquilinear form on the fiber over `b` induced by a sesquilinear form `f` on the model,
+read through a fixed reference point of the principal fiber over `b`. When `f` is invariant it
+reads `[p, v], [p, w] ↦ f v w` in every frame `p` (`TauCeti.AssociatedBundle.sesqForm_mk`), so it
+does not depend on that choice. -/
+def sesqForm (f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜) (b : B) :
+    AssociatedBundle G P F b →ₛₗ[σ] AssociatedBundle G P F b →ₗ[𝕜] 𝕜 :=
+  (f.comp ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
+      AssociatedBundle G P F b →ₗ[𝕜] F)).compl₂
+    ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
+      AssociatedBundle G P F b →ₗ[𝕜] F)
+
+/-- **An invariant sesquilinear form in a frame.** If `f (g • v) (g • w) = f v w`, then in every
+frame `p` the induced form of the classes `[p, v]` and `[p, w]` is `f v w`. -/
+@[simp]
+theorem sesqForm_mk {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜} (hf : ∀ (g : G) (v w : F), f (g • v) (g • w) = f v w)
+    {b : B} (p : P b) (v w : F) :
+    sesqForm G P f b (mk G p v) (mk G p w) = f v w := by
+  simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv, mkContinuousLinearEquiv_symm_apply_mk, hf]
+
+end SesqForm
 
 end TauCeti.AssociatedBundle
