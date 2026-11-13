@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
 import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.CategoryTheory.Action.Restriction
 import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
@@ -39,8 +40,8 @@ every field in which `|G|` is invertible, with the multiplicities read in that f
 group elements by character value writes the numerator as
 `N_X(z) = |G|⁻¹ ∑_a b_a ∏_{b ≠ a} (1 - b z)` with `b_a = ∑_{χ_V(g) = a} χ_X(g⁻¹)`
 (`FDRep.tensorMultiplicityNumerator_eq_sum_characterValues`); its coefficients are the
-convolutions of those of `Q` with the multiplicities, and the series is unchanged by isomorphisms
-of representations and of groups.
+convolutions of those of `Q` with the multiplicities. Over any field and for any monoid, the series
+is unchanged by isomorphisms of representations and by restriction along surjective homomorphisms.
 
 For a faithful representation of positive dimension `d`, interpolating the identity fibre after
 multiplying by `Tᴮ` shows that every window `[B, B + r)` of `r` consecutive exponents, `r` the
@@ -253,6 +254,27 @@ theorem tensorMultiplicitySeries_congr {V V' X X' : FDRep k G} (e : V ≅ V') (f
       LinearMap.congr_fun (h g)
   rw [(Linear.homCongr k f eₙ).finrank_eq]
 
+/-- **Invariance under restriction.** Restricting `V` and `X` along a surjective monoid
+homomorphism `φ : H →* G`, for instance an isomorphism of groups, does not change the
+tensor-multiplicity series. -/
+theorem tensorMultiplicitySeries_actionRes_of_surjective {H : Type w} [Monoid H] (φ : H →* G)
+    (hφ : Function.Surjective φ) (V X : FDRep k G) :
+    tensorMultiplicitySeries ((Action.res (FGModuleCat k) φ).obj V)
+        ((Action.res (FGModuleCat k) φ).obj X) = V.tensorMultiplicitySeries X := by
+  ext n
+  rw [coeff_tensorMultiplicitySeries, coeff_tensorMultiplicitySeries, tensorPower_def,
+    tensorPower_def]
+  -- The tensor power of the restriction is the restriction of the tensor power.
+  let eₙ : FDRep.of
+        (Representation.tensorPower (FDRep.ρ ((Action.res (FGModuleCat k) φ).obj V)) n) ≅
+      (Action.res (FGModuleCat k) φ).obj (FDRep.of (Representation.tensorPower V.ρ n)) :=
+    LinearEquiv.toFDRepIso (LinearEquiv.refl k _) fun h x ↦
+      LinearMap.congr_fun ((Representation.tensorPower_apply
+          (FDRep.ρ ((Action.res (FGModuleCat k) φ).obj V)) n h).trans
+        (Representation.tensorPower_apply V.ρ n (φ h)).symm) x
+  rw [(Linear.homCongr k (Iso.refl _) eₙ).finrank_eq,
+    MonoidHom.finrank_hom_actionRes_of_surjective φ hφ]
+
 end MultiplicitySeries
 
 section CharacterFractions
@@ -424,25 +446,6 @@ theorem sum_coeff_nodal_mul_finrank_hom_tensorPower_add_eq_zero (V X : FDRep k G
   rw [h, Finset.sum_eq_zero fun g _ ↦ ?_, mul_zero]
   rw [Lagrange.eval_nodal, Finset.prod_eq_zero ((mem_characterValues _ _).mpr ⟨g, rfl⟩)
     (by simp), mul_zero, zero_mul]
-
-/-- **Invariance under isomorphisms of groups.** Over a field in which `|G|` is invertible,
-restricting `V` and `X` along an isomorphism `e : H ≃* G` does not change the tensor-multiplicity
-series. -/
-theorem tensorMultiplicitySeries_actionRes {H : Type w} [Group H] [Finite H] (e : H ≃* G)
-    (V X : FDRep k G) :
-    tensorMultiplicitySeries ((Action.res (FGModuleCat k) e.toMonoidHom).obj V)
-        ((Action.res (FGModuleCat k) e.toMonoidHom).obj X) = V.tensorMultiplicitySeries X := by
-  let := Fintype.ofFinite G
-  let := Fintype.ofFinite H
-  have hcard : Nat.card H = Nat.card G := Nat.card_congr e.toEquiv
-  have : Invertible (Nat.card H : k) := by
-    rw [hcard]
-    infer_instance
-  ext n
-  simp only [coeff_tensorMultiplicitySeries, ← scalar_product_char_eq_finrank_equivariant,
-    char_tensorPower, character_actionRes, hcard, map_inv]
-  congr 1
-  exact e.toEquiv.sum_comp fun g ↦ V.character g ^ n * X.character g⁻¹
 
 end FiniteFractions
 
