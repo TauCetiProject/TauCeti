@@ -187,8 +187,9 @@ theorem nijenhuis_apply {X Y : Π x : M, TangentSpace I x}
 /-- Tangent vectors at `x` are values at `x` of vector fields differentiable there, so statements
 about the Nijenhuis tensor at `x` reduce to statements about the Nijenhuis expression. -/
 private lemma nijenhuis_apply_extend (v w : TangentSpace I x) :
-    J.nijenhuis x v w = J.nijenhuisAux (extend E v) (extend E w) x :=
-  rfl
+    J.nijenhuis x v w = J.nijenhuisAux (extend E v) (extend E w) x := by
+  unfold nijenhuis
+  apply TensorialAt.mkHom₂_apply_eq_extend
 
 /-- The Nijenhuis tensor vanishes everywhere exactly when
 `[JX, JY] = [X, Y] + J[JX, Y] + J[X, JY]` for all vector fields differentiable at the point. -/
