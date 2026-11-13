@@ -38,8 +38,10 @@ are point evaluations.
   (`isCompactOperator_restrictCocycles₁`).
 * For three nested families `W'' ≤ W' ≤ W` with the same charts, `compatibleTriples` is the space of
   `(ξ, ξ', η)`, with `ξ` and `ξ'` square-integrable cocycles on `W` and `W'` and `η` a
-  square-integrable zero-cochain on `W''`, such that `ξ' = ξ + δη` on `W''`, with the Čech
-  convention `(δη)ᵢⱼ = ηⱼ - ηᵢ`. It is closed, hence complete (`isClosed_compatibleTriples`).
+  square-integrable zero-cochain on `W''`, such that `ξ' = ξ + δη` on `W''`. The Čech coboundary
+  converts `ηⱼ` into the frame of `i`: in chart coordinates `(δη)ᵢⱼ` is
+  `g i j x * ηⱼ (e j x) - ηᵢ (e i x)`, which is `ηⱼ - ηᵢ` for `g = 1`. It is closed, hence
+  complete (`isClosed_compatibleTriples`).
 
 For the structure sheaf, these spaces are realized with its native holomorphic sections.
 
@@ -266,9 +268,10 @@ private def tripleEval (i j : ι) {x : X} (hx : x ∈ W'' i ⊓ W'' j) :
       ((ContinuousLinearMap.proj i).comp
         ((ContinuousLinearMap.snd ℂ _ _).comp (ContinuousLinearMap.snd ℂ _ _)))
 
-/-- The compatible triples `(ξ, ξ', η)`: square-integrable cocycles `ξ` on `W` and `ξ'` on `W'`, and
-a square-integrable zero-cochain `η` on `W''`, with `ξ' = ξ + δη` on `W''`, where
-`(δη)ᵢⱼ = ηⱼ - ηᵢ`. -/
+/-- The compatible triples `(ξ, ξ', η)` for overlap scalars `g`: square-integrable cocycles `ξ` on
+`W` and `ξ'` on `W'`, and a square-integrable zero-cochain `η` on `W''`, with `ξ' = ξ + δη` on
+`W''`. Here `ηⱼ` is converted into the frame of `i` by `g i j`, so `(δη)ᵢⱼ` is
+`g i j * ηⱼ - ηᵢ` in chart coordinates. -/
 def compatibleTriples :
     Submodule ℂ (((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) ×
       ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W' i ⊓ W' j))) ×
@@ -278,7 +281,8 @@ def compatibleTriples :
       LinearMap.ker (tripleEval g hW h' h'' i j hx : _ →ₗ[ℂ] ℂ)
 
 /-- A triple is compatible when `ξ` and `ξ'` are cocycles and the chart-read representatives
-satisfy `ξ'ᵢⱼ = ξᵢⱼ + ηⱼ - ηᵢ`, in the frame of `i`, at every point of every overlap of `W''`. -/
+satisfy `ξ'ᵢⱼ (eᵢ x) = ξᵢⱼ (eᵢ x) + gᵢⱼ x * ηⱼ (eⱼ x) - ηᵢ (eᵢ x)`, in the frame of `i`, at every
+point `x` of every overlap of `W''`. -/
 theorem mem_compatibleTriples_iff
     {t : ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) ×
       ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W' i ⊓ W' j))) ×

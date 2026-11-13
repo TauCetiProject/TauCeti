@@ -20,8 +20,9 @@ inverse of the chart at `s` precomposed with an affine rescaling, and sends dist
 the disjoint open sets given by `Set.Finite.t2_separation`.
 
 A compact space charted on a pseudometric space is covered by finitely many coordinate balls
-`(e i).preimageBall (c i) (r i)` of atlas charts, refining any given open cover, with
-`closedBall (c i) (K * r i)` in the chart target for a prescribed factor `K`. When `X` is
+`(e i).preimageBall (c i) (r i)` of atlas charts, with `closedBall (c i) (K * r i)` in the chart
+target for a prescribed factor `K` and its image under `(e i).symm` inside a member of any given
+open cover; for `1 ≤ K` the coordinate balls therefore refine that cover. When `X` is
 Hausdorff and the model space is proper, `OpenPartialHomeomorph.isCompact_closure_preimageBall`
 and `OpenPartialHomeomorph.closure_preimageBall_subset` show that for radii `ρ < σ ≤ K * r i` the
 coordinate ball of radius `ρ` has compact closure inside that of radius `σ`. For `K = 3`, the radii
