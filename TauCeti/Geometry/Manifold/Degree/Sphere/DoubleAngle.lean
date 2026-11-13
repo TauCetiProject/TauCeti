@@ -12,10 +12,10 @@ import TauCeti.Geometry.Sphere.Connected
 /-!
 # The angle-doubling map of a sphere and its degree
 
-Let `E` be a real inner product space of dimension `n + 2`, with unit sphere `Sⁿ⁺¹`, and fix
-`p ∈ Sⁿ⁺¹`. The **angle-doubling map** at `p` (`TauCeti.sphereDoubleAngle`) is
+Let `E` be a real inner product space of dimension `n + 1`, with unit sphere `Sⁿ`, and fix
+`p ∈ Sⁿ`. The **angle-doubling map** at `p` (`TauCeti.sphereDoubleAngle`) is
 
-`g : Sⁿ⁺¹ → Sⁿ⁺¹`, `g x = 2⟪p, x⟫ • x - p`.
+`g : Sⁿ → Sⁿ`, `g x = 2⟪p, x⟫ • x - p`.
 
 Writing `x = cos t • p + sin t • v` with `v` a unit vector orthogonal to `p`, it sends `x` to
 `cos 2t • p + sin 2t • v`: it doubles the angle from `p` along every great circle through `p`.
@@ -25,31 +25,31 @@ the sphere parametrized by the sphere itself.
 
 The map is invariant under the antipodal map, `g (-x) = g x`, and the only preimages of `p` are
 `±p`. At `p` its derivative is multiplication by `2`
-(`TauCeti.mfderiv_sphereDoubleAngle_self_apply`), so it preserves every orientation there. Since
-`g ∘ (-·) = g`, the orientation sign of `g` at `-p` is that of the antipodal map, `(-1)ⁿ`. Hence
-`p` is a regular value at which the degree of `g` is `1 + (-1)ⁿ`
+(`TauCeti.mfderiv_sphereDoubleAngle_self_apply`), so it preserves every orientation there, and `p`
+is a regular value. Since `g ∘ (-·) = g`, for `n ≥ 1` the orientation sign of `g` at `-p` is that
+of the antipodal map, `(-1)ⁿ⁺¹`. Hence the degree of `g` at `p` is `1 + (-1)ⁿ⁺¹`
 (`TauCeti.Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self`): `2` on the
-odd-dimensional spheres, for even `n`, and `0` on the even-dimensional ones. Through the
-comparison of the smooth and the homological degree, `g_*[Sⁿ⁺¹] = (1 + (-1)ⁿ) • [Sⁿ⁺¹]` for every
-orientation of the sphere (`TauCeti.HomologicalOrientation.mapFundamentalClass_sphereDoubleAngle`).
+odd-dimensional spheres and `0` on the even-dimensional ones. Through the comparison of the smooth
+and the homological degree, `g_*[Sⁿ] = (1 + (-1)ⁿ⁺¹) • [Sⁿ]` for every orientation of the sphere
+(`TauCeti.HomologicalOrientation.mapFundamentalClass_sphereDoubleAngle`).
 
 This is the degree computation behind the direct proof that odd-dimensional spheres are
 `2`-covered by diffeomorphisms (Barraud–Damian–Humilière–Oancea, Proposition 6.34). There, the
-same rotations are parametrized by the rotation family `Sⁿ × S¹ → Sⁿ⁺¹`
-(`TauCeti.sphereRotationFamily`), whose degree is also `1 + (-1)ⁿ`.
+same rotations are parametrized by the rotation family `Sⁿ⁻¹ × S¹ → Sⁿ`
+(`TauCeti.sphereRotationFamily`), whose degree is also `1 + (-1)ⁿ⁺¹`.
 
 ## Main declarations
 
 * `TauCeti.sphereDoubleAngle`: the angle-doubling map `x ↦ 2⟪p, x⟫ • x - p`.
 * `TauCeti.contMDiff_sphereDoubleAngle`: it is smooth.
-* `TauCeti.sphereDoubleAngle_neg`: it is invariant under the antipodal map.
-* `TauCeti.sphereDoubleAngle_eq_self_iff`: the preimages of `p` are `±p`.
+* `TauCeti.sphereDoubleAngle_neg_right`: it is invariant under the antipodal map.
+* `TauCeti.sphereDoubleAngle_eq_left_iff`: the preimages of `p` are `±p`.
 * `TauCeti.mfderiv_sphereDoubleAngle_self_apply`: its derivative at `p` is multiplication by `2`.
 * `TauCeti.isRegularValue_sphereDoubleAngle_self`: `p` is a regular value.
 * `TauCeti.Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self`: its degree is
-  `1 + (-1)ⁿ`.
+  `1 + (-1)ⁿ⁺¹`.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_sphereDoubleAngle`: it sends the fundamental
-  class to `1 + (-1)ⁿ` times itself.
+  class to `1 + (-1)ⁿ⁺¹` times itself.
 
 ## References
 
@@ -68,8 +68,10 @@ open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
+section Smooth
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (finrank ℝ E = n + 1 + 1)]
+  [Fact (finrank ℝ E = n + 1)]
 
 /-! ### The angle-doubling map -/
 
@@ -91,10 +93,10 @@ theorem coe_sphereDoubleAngle (p x : sphere (0 : E) 1) :
 
 /-- The angle-doubling map is smooth. -/
 theorem contMDiff_sphereDoubleAngle (p : sphere (0 : E) 1) {m : ℕ∞ω} :
-    ContMDiff (𝓡 (n + 1)) (𝓡 (n + 1)) m (sphereDoubleAngle p) := by
+    ContMDiff (𝓡 n) (𝓡 n) m (sphereDoubleAngle p) := by
   have h : ContDiff ℝ m fun y : E ↦ (2 * ⟪(p : E), y⟫) • y - p :=
     ((contDiff_const.mul (contDiff_const.inner ℝ contDiff_id)).smul contDiff_id).sub contDiff_const
-  exact (h.contMDiff.comp (contMDiff_coe_sphere (n := n + 1))).codRestrict_sphere
+  exact (h.contMDiff.comp (contMDiff_coe_sphere (n := n))).codRestrict_sphere
     fun x ↦ (sphereDoubleAngle p x).2
 
 theorem continuous_sphereDoubleAngle (p : sphere (0 : E) 1) : Continuous (sphereDoubleAngle p) :=
@@ -102,10 +104,18 @@ theorem continuous_sphereDoubleAngle (p : sphere (0 : E) 1) : Continuous (sphere
 
 /-- The angle-doubling map is invariant under the antipodal map. -/
 @[simp]
-theorem sphereDoubleAngle_neg (p x : sphere (0 : E) 1) :
+theorem sphereDoubleAngle_neg_right (p x : sphere (0 : E) 1) :
     sphereDoubleAngle p (-x) = sphereDoubleAngle p x := by
   ext
   simp [inner_neg_right, neg_smul, smul_neg]
+
+/-- The angle-doubling map at `-p` is the antipode of the angle-doubling map at `p`. -/
+@[simp]
+theorem sphereDoubleAngle_neg_left (p x : sphere (0 : E) 1) :
+    sphereDoubleAngle (-p) x = -sphereDoubleAngle p x := by
+  ext
+  simp only [coe_sphereDoubleAngle, coe_neg_sphere, inner_neg_left]
+  module
 
 @[simp]
 theorem sphereDoubleAngle_self (p : sphere (0 : E) 1) : sphereDoubleAngle p p = p := by
@@ -115,7 +125,7 @@ theorem sphereDoubleAngle_self (p : sphere (0 : E) 1) : sphereDoubleAngle p p = 
   abel
 
 /-- **The fibre over `p`.** The angle-doubling map at `p` sends exactly `p` and `-p` to `p`. -/
-theorem sphereDoubleAngle_eq_self_iff (p x : sphere (0 : E) 1) :
+theorem sphereDoubleAngle_eq_left_iff (p x : sphere (0 : E) 1) :
     sphereDoubleAngle p x = p ↔ x = p ∨ x = -p := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · -- From `2⟪p, x⟫ • x = 2 • p`, pairing with `p` gives `⟪p, x⟫ ^ 2 = 1`.
@@ -136,23 +146,23 @@ theorem sphereDoubleAngle_eq_self_iff (p x : sphere (0 : E) 1) :
       rw [coe_neg_sphere, ← h', hc, neg_one_smul, neg_neg]
   · rintro (rfl | rfl)
     · exact sphereDoubleAngle_self x
-    · rw [sphereDoubleAngle_neg, sphereDoubleAngle_self]
+    · rw [sphereDoubleAngle_neg_right, sphereDoubleAngle_self]
 
 /-! ### The derivative and the orientation signs -/
 
 /-- **The derivative at `p`** of the angle-doubling map at `p` is multiplication by `2`. -/
 theorem mfderiv_sphereDoubleAngle_self_apply (p : sphere (0 : E) 1)
-    (w : TangentSpace (𝓡 (n + 1)) p) :
-    mfderiv (𝓡 (n + 1)) (𝓡 (n + 1)) (sphereDoubleAngle p) p w = (2 : ℝ) • w := by
-  apply injective_mvfderiv_subtypeVal_sphere (n := n + 1) p
+    (w : TangentSpace (𝓡 n) p) :
+    mfderiv (𝓡 n) (𝓡 n) (sphereDoubleAngle p) p w = (2 : ℝ) • w := by
+  apply injective_mvfderiv_subtypeVal_sphere (n := n) p
   -- Read in `E`, the derivative at `p` is `u ↦ 2⟪p, u⟫ • p + 2⟪p, p⟫ • u`, and the tangent
   -- vectors `u` at `p` are orthogonal to `p`.
-  have hu : ⟪(p : E), mvfderiv (𝓡 (n + 1)) ((↑) : sphere (0 : E) 1 → E) p w⟫ = 0 := by
-    have hmem : mvfderiv (𝓡 (n + 1)) ((↑) : sphere (0 : E) 1 → E) p w ∈ (ℝ ∙ (p : E))ᗮ := by
-      rw [← range_mvfderiv_subtypeVal (n := n + 1) p]
+  have hu : ⟪(p : E), mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p w⟫ = 0 := by
+    have hmem : mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p w ∈ (ℝ ∙ (p : E))ᗮ := by
+      rw [← range_mvfderiv_subtypeVal (n := n) p]
       exact LinearMap.mem_range_self _ w
     exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 hmem
-  have hcoe := (contMDiff_coe_sphere (E := E) (n := n + 1) (m := 1) p).mdifferentiableAt
+  have hcoe := (contMDiff_coe_sphere (E := E) (n := n) (m := 1) p).mdifferentiableAt
     one_ne_zero
   have hG : HasFDerivAt (fun y : E ↦ (2 * ⟪(p : E), y⟫) • y - p)
       ((2 * ⟪(p : E), (p : E)⟫) • ContinuousLinearMap.id ℝ E +
@@ -161,24 +171,28 @@ theorem mfderiv_sphereDoubleAngle_self_apply (p : sphere (0 : E) 1)
         (p : E) := by
       simpa using (innerSL ℝ (p : E)).hasFDerivAt.const_mul (2 : ℝ)
     exact (hc.smul (hasFDerivAt_id (p : E))).sub_const (p : E)
+  have hcomp : ((↑) : sphere (0 : E) 1 → E) ∘ sphereDoubleAngle p =
+      (fun y : E ↦ (2 * ⟪(p : E), y⟫) • y - p) ∘ ((↑) : sphere (0 : E) 1 → E) :=
+    funext (coe_sphereDoubleAngle p)
   rw [← mvfderiv_comp_apply_of_eq p hcoe
       ((contMDiff_sphereDoubleAngle (m := 1) p p).mdifferentiableAt one_ne_zero)
-      (sphereDoubleAngle_self p),
-    show ((↑) : sphere (0 : E) 1 → E) ∘ sphereDoubleAngle p =
-      (fun y : E ↦ (2 * ⟪(p : E), y⟫) • y - p) ∘ ((↑) : sphere (0 : E) 1 → E) from rfl,
+      (sphereDoubleAngle_self p), hcomp,
     mvfderiv_comp_apply_of_differentiableAt hG.differentiableAt hcoe, hG.fderiv, map_smul]
-  generalize mvfderiv (𝓡 (n + 1)) ((↑) : sphere (0 : E) 1 → E) p w = u at hu ⊢
+  generalize mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p w = u at hu ⊢
   simp [hu, norm_eq_of_mem_sphere p]
 
 namespace Manifold.Orientation
 
 /-- The angle-doubling map at `p` preserves every orientation of the sphere at `p`. -/
+@[simp]
 theorem orientationSign_sphereDoubleAngle_self
-    (o : Manifold.Orientation (𝓡 (n + 1)) (sphere (0 : E) 1) (Fin (n + 1))) (p : sphere (0 : E) 1) :
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (p : sphere (0 : E) 1) :
     orientationSign o o (sphereDoubleAngle p) p = 1 := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (n + 1)
-  let e := (LinearEquiv.smulOfNeZero ℝ (TangentSpace (𝓡 (n + 1)) p) 2
+  let e := (LinearEquiv.smulOfNeZero ℝ (TangentSpace (𝓡 n) p) 2
     two_ne_zero).toContinuousLinearEquiv
+  -- `e` is coerced into the maps to the tangent space at `sphereDoubleAngle p p`, which is the
+  -- tangent space at `p` only up to unfolding `TangentSpace`; the `simp` lemmas for `e` do not see
+  -- through this cast, but `e w` is `2 • w` by definition.
   refine orientationSign_of_isOrientationPreservingAt ((isOrientationPreservingAt_iff_of_coe_eq
     o o _ p e (ContinuousLinearMap.ext fun w ↦ (mfderiv_sphereDoubleAngle_self_apply p w).symm)).2
     ?_)
@@ -186,30 +200,39 @@ theorem orientationSign_sphereDoubleAngle_self
     rw [sphereDoubleAngle_self]
   rw [ho]
   refine (_root_.Orientation.map_eq_iff_det_pos _ _ (by simp)).2 ?_
-  -- The determinant of multiplication by `2` is `2 ^ (n + 1)`.
-  have he : (e.toLinearEquiv : TangentSpace (𝓡 (n + 1)) p →ₗ[ℝ] TangentSpace (𝓡 (n + 1)) p) =
+  -- The determinant of multiplication by `2` is `2 ^ n`.
+  have he : (e.toLinearEquiv : TangentSpace (𝓡 n) p →ₗ[ℝ] TangentSpace (𝓡 n) p) =
       (2 : ℝ) • LinearMap.id :=
-    -- `LinearEquiv.smulOfNeZero` acts by the scalar multiplication it is built from.
-    LinearMap.ext fun _ ↦ rfl
+    LinearMap.ext fun _ ↦ by simp [e]
   rw [he, LinearMap.det_smul, LinearMap.det_id, mul_one]
   positivity
 
-/-- At `-p` the angle-doubling map at `p` has the orientation sign `(-1)ⁿ` of the antipodal map,
-since it is invariant under the antipodal map and preserves orientations at `p`. -/
-theorem orientationSign_sphereDoubleAngle_neg_self
-    (o : Manifold.Orientation (𝓡 (n + 1)) (sphere (0 : E) 1) (Fin (n + 1))) (p : sphere (0 : E) 1) :
-    orientationSign o o (sphereDoubleAngle p) (-p) = (-1) ^ n := by
+/-- Since the angle-doubling map at `p` is invariant under the antipodal map and preserves
+orientations at `p`, its orientation sign at `-p` times that of the antipodal map at `p` is `1`. -/
+theorem orientationSign_sphereDoubleAngle_neg_self_mul
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (p : sphere (0 : E) 1) :
+    orientationSign o o (sphereDoubleAngle p) (-p) * orientationSign o o (fun y ↦ -y) p = 1 := by
   have hcomp : sphereDoubleAngle p ∘ (fun y : sphere (0 : E) 1 ↦ -y) = sphereDoubleAngle p :=
-    funext fun y ↦ sphereDoubleAngle_neg p y
+    funext fun y ↦ sphereDoubleAngle_neg_right p y
   have h := orientationSign_comp (o := o) (o' := o) (o'' := o) (x := p)
     ((contMDiff_sphereDoubleAngle (m := 1) p _).mdifferentiableAt one_ne_zero)
-    ((contMDiff_neg_sphere (n := n + 1) (m := 1) p).mdifferentiableAt one_ne_zero)
-  rw [hcomp, orientationSign_sphereDoubleAngle_self o, orientationSign_neg_sphere] at h
-  -- `1 = s * (-1) ^ (n + 2)`, and `(-1) ^ (n + 2) = (-1) ^ n` is its own inverse.
+    ((contMDiff_neg_sphere (n := n) (m := 1) p).mdifferentiableAt one_ne_zero)
+  rw [hcomp, orientationSign_sphereDoubleAngle_self o] at h
+  exact h.symm
+
+/-- For `n ≥ 1`, at `-p` the angle-doubling map at `p` has the orientation sign `(-1)ⁿ⁺¹` of the
+antipodal map, since it is invariant under the antipodal map and preserves orientations at `p`. -/
+@[simp]
+theorem orientationSign_sphereDoubleAngle_neg_self [NeZero n]
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (p : sphere (0 : E) 1) :
+    orientationSign o o (sphereDoubleAngle p) (-p) = (-1) ^ (n + 1) := by
+  have h := orientationSign_sphereDoubleAngle_neg_self_mul o p
+  rw [orientationSign_neg_sphere] at h
+  -- `s * (-1) ^ (n + 1) = 1`, and `(-1) ^ (n + 1)` is its own inverse.
   calc orientationSign o o (sphereDoubleAngle p) (-p)
-      = orientationSign o o (sphereDoubleAngle p) (-p) * (-1) ^ (n + 1 + 1) *
-          (-1) ^ (n + 1 + 1) := by rw [mul_assoc, ← mul_pow]; norm_num
-    _ = (-1) ^ n := by rw [← h]; ring
+      = orientationSign o o (sphereDoubleAngle p) (-p) * (-1) ^ (n + 1) *
+          (-1) ^ (n + 1) := by rw [mul_assoc, ← mul_pow]; norm_num
+    _ = (-1) ^ (n + 1) := by rw [h, one_mul]
 
 end Manifold.Orientation
 
@@ -217,66 +240,70 @@ end Manifold.Orientation
 
 /-- The point `p` is a regular value of the angle-doubling map at `p`. -/
 theorem isRegularValue_sphereDoubleAngle_self (p : sphere (0 : E) 1) :
-    IsRegularValue (𝓡 (n + 1)) (𝓡 (n + 1)) (sphereDoubleAngle p) p := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (n + 1)
+    IsRegularValue (𝓡 n) (𝓡 n) (sphereDoubleAngle p) p := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   let o₀ := ((finBasisOfFinrankEq ℝ E
-    (Fact.out : finrank ℝ E = n + 1 + 1)).orientation).sphereOrientation
+    (Fact.out : finrank ℝ E = n + 1)).orientation).sphereOrientation
   rw [isRegularValue_iff]
   intro x hx
   rw [isRegularPoint_iff_isInvertible_mfderiv (by simp)]
   have hs : orientationSign o₀ o₀ (sphereDoubleAngle p) x ≠ 0 := by
-    rcases (sphereDoubleAngle_eq_self_iff p x).1 hx with rfl | rfl
+    rcases (sphereDoubleAngle_eq_left_iff p x).1 hx with rfl | rfl
     · rw [orientationSign_sphereDoubleAngle_self o₀]
       exact one_ne_zero
-    · rw [orientationSign_sphereDoubleAngle_neg_self o₀]
-      exact pow_ne_zero _ (by norm_num)
+    · exact left_ne_zero_of_mul_eq_one (orientationSign_sphereDoubleAngle_neg_self_mul o₀ p)
   by_contra h
   exact hs (orientationSign_of_not_isInvertible h)
 
-/-- **The degree of the angle-doubling map.** For every orientation of `Sⁿ⁺¹`, the angle-doubling
-map at `p` has degree `1 + (-1)ⁿ` at the regular value `p`: its preimages `p` and `-p` contribute
-`1` and `(-1)ⁿ`. -/
-theorem Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self
-    (o : Manifold.Orientation (𝓡 (n + 1)) (sphere (0 : E) 1) (Fin (n + 1))) (p : sphere (0 : E) 1) :
-    degreeAtRegularValue o o (sphereDoubleAngle p) p = 1 + (-1) ^ n := by
+/-- **The degree of the angle-doubling map.** For `n ≥ 1` and every orientation of `Sⁿ`, the
+angle-doubling map at `p` has degree `1 + (-1)ⁿ⁺¹` at the regular value `p`: its preimages `p` and
+`-p` contribute `1` and `(-1)ⁿ⁺¹`. -/
+@[simp]
+theorem Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self [NeZero n]
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (p : sphere (0 : E) 1) :
+    degreeAtRegularValue o o (sphereDoubleAngle p) p = 1 + (-1) ^ (n + 1) := by
   classical
   have hne : p ≠ -p := ne_neg_of_mem_unit_sphere ℝ p
   rw [degreeAtRegularValue_eq_sum (s := {p, -p}) fun x ↦ by
-      rw [Finset.mem_insert, Finset.mem_singleton, sphereDoubleAngle_eq_self_iff],
+      rw [Finset.mem_insert, Finset.mem_singleton, sphereDoubleAngle_eq_left_iff],
     Finset.sum_pair hne, orientationSign_sphereDoubleAngle_self,
     orientationSign_sphereDoubleAngle_neg_self]
 
-/-- For even `n`, the angle-doubling map of the odd-dimensional sphere `Sⁿ⁺¹` has degree `2`. -/
-theorem Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self_of_even
-    (o : Manifold.Orientation (𝓡 (n + 1)) (sphere (0 : E) 1) (Fin (n + 1))) (p : sphere (0 : E) 1)
-    (hn : Even n) :
+/-- For odd `n`, the angle-doubling map of the odd-dimensional sphere `Sⁿ` has degree `2`. -/
+theorem Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self_of_odd
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (p : sphere (0 : E) 1)
+    (hn : Odd n) :
     degreeAtRegularValue o o (sphereDoubleAngle p) p = 2 := by
-  rw [degreeAtRegularValue_sphereDoubleAngle_self, hn.neg_one_pow]
+  have : NeZero n := ⟨hn.pos.ne'⟩
+  rw [degreeAtRegularValue_sphereDoubleAngle_self, hn.add_one.neg_one_pow]
   norm_num
+
+end Smooth
 
 /-! ### The image of the fundamental class -/
 
 namespace HomologicalOrientation
 
-/-- **The angle-doubling map on the fundamental class.** For every homological orientation of
-the sphere `Sⁿ⁺¹ ⊆ ℝⁿ⁺²`, the angle-doubling map at `p` sends the fundamental class to
-`(1 + (-1)ⁿ) • [Sⁿ⁺¹]`. -/
+variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {n : ℕ} [Fact (finrank ℝ E = n + 1)] [NeZero n]
+
+/-- **The angle-doubling map on the fundamental class.** For `n ≥ 1` and every homological
+orientation of the sphere `Sⁿ` of a real inner product space of dimension `n + 1`, the
+angle-doubling map at `p` sends the fundamental class to `(1 + (-1)ⁿ⁺¹) • [Sⁿ]`. -/
+@[simp]
 theorem mapFundamentalClass_sphereDoubleAngle
-    (o : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1)
-      (EuclideanSpace ℝ (Fin (n + 1))) (n + 1))
-    (p : sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) :
+    (o : HomologicalOrientation (sphere (0 : E) 1) (EuclideanSpace ℝ (Fin n)) n)
+    (p : sphere (0 : E) 1) :
     o.mapFundamentalClass finrank_euclideanSpace_fin
         ⟨sphereDoubleAngle p, continuous_sphereDoubleAngle p⟩ =
-      (1 + (-1) ^ n) • o.fundamentalClass finrank_euclideanSpace_fin := by
-  have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 2))) = n + 1 + 1) :=
-    ⟨finrank_euclideanSpace_fin⟩
-  let oₛ := ((finBasisOfFinrankEq ℝ (EuclideanSpace ℝ (Fin (n + 2)))
-    (finrank_euclideanSpace_fin : _ = n + 1 + 1)).orientation).sphereOrientation
+      (1 + (-1) ^ (n + 1)) • o.fundamentalClass finrank_euclideanSpace_fin := by
+  have := connectedSpace_sphere (E := E) n
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne n)
+  let oₛ := ((finBasisOfFinrankEq ℝ E (Fact.out : finrank ℝ E = k + 1 + 1)).orientation
+    ).sphereOrientation
   have key := Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul
     finrank_euclideanSpace_fin oₛ oₛ (f := ⟨sphereDoubleAngle p, continuous_sphereDoubleAngle p⟩)
-    (isRegularValue_sphereDoubleAngle_self (n := n) p)
+    (isRegularValue_sphereDoubleAngle_self p)
   rw [ContinuousMap.coe_mk, Manifold.Orientation.degreeAtRegularValue_sphereDoubleAngle_self] at key
   rcases (oₛ.toHomologicalOrientation finrank_euclideanSpace_fin).eq_or_eq_neg
     finrank_euclideanSpace_fin o with rfl | rfl
