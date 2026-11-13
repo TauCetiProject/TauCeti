@@ -46,10 +46,12 @@ The key chain-level input is `SSet.chainComplexPairing_leftUnitor_hom_f`, from
 `TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing`: the action of the tensor unit on
 singular chains is the left unitor.
 
-Capping into degree zero is the Kronecker pairing up to the augmentation: for a topological pair
-`(X, A)`, a relative class `α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)`, the cap
-product `x ⌢ α ∈ H₀(X; M)` taken along the right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has
-augmentation `ε (x ⌢ α) = ⟨α, x⟩` (`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
+Capping into degree zero is the Kronecker pairing up to the augmentation: for a class
+`α ∈ Hⁿ(X; R, M)` and a class `x ∈ Hₙ(X; R)`, the cap product `x ⌢ α ∈ H₀(X; M)` taken along the
+right unitors `R ⟶ R ⊗ 𝟙` and `M ⊗ 𝟙 ⟶ M` has augmentation `ε (x ⌢ α) = ⟨α, x⟩`
+(`TopCat.singularCap_comp_singularHomology₀ε`), and likewise for a relative class
+`α ∈ Hⁿ(X, A; R, M)` and a relative class `x ∈ Hₙ(X, A; R)` of a topological pair `(X, A)`
+(`TopPair.singularCap_comp_singularHomology₀ε`).  On chains,
 the back `0`-face of each singular `n`-simplex is a vertex, whose augmentation is the identity.
 
 For a class `α ∈ Hᵖ(X; R, M)` with values in an arbitrary object `M`, the cap product along a
@@ -275,6 +277,27 @@ lemma capChain_comp_homology₀ε (X : TopCat.{w}) (k : Type*) [Ring k] [Linear 
       (ρ_ M).hom n 0 n h φ σ), SSet.ιChainComplex_cycles₀Iso_inv_homologyπ_assoc,
     SSet.ιHomology₀_homology₀ε]
   simp [TauCeti.SimplexCategory.subinterval_zero_eq_id]
+
+/-- **The augmentation of a cap product into degree zero**, `ε (x ⌢ α) = ⟨α, x⟩`: capping a class
+`x ∈ Hₙ(X; R)` with a class `α ∈ Hⁿ(X; R, M)`, along the right unitors `R ⟶ R ⊗ 𝟙` and
+`M ⊗ 𝟙 ⟶ M`, and then applying the augmentation `H₀(X; M) ⟶ M` is the Kronecker pairing of `α`
+with `x`. -/
+@[reassoc (attr := simp)]
+theorem singularCap_comp_singularHomology₀ε (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    [MonoidalLinear k C] (n : ℕ) (h : n + 0 = n) (α : X.singularCohomology R k M n) :
+    X.singularCap k (ρ_ R).inv (ρ_ M).hom n 0 n h α ≫ X.singularHomology₀ε M =
+      X.singularKronecker k n α := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n α
+  refine (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ n)).1 ?_
+  -- Zeroth singular homology is the homology of the singular chain complex only after unfolding
+  -- `singularHomologyFunctor`, so `Category.assoc` is applied as a term rather than rewritten.
+  refine (Category.assoc _ _ _).symm.trans ?_
+  rw [singularCap_homologyπ, singularKronecker_homologyπ,
+    ← capChain_comp_homology₀ε X k n h ((X.singularCochainComplex R k M).iCycles n φ),
+    ← TauCeti.ChainComplex.capCycles_i_assoc]
+  -- In degree zero every chain is a cycle.
+  simp only [HomologicalComplex.iCyclesIso_hom_inv_id_assoc]
+  exact Category.assoc _ _ _
 
 end TopCat
 
