@@ -214,10 +214,14 @@ theorem stalkIdeal_comap {Y : Scheme.{u}} (I : Y.IdealSheafData) (g : X ⟶ Y) (
     (I.comap g).stalkIdeal x = (I.stalkIdeal (g x)).map (g.stalkMap x).hom := by
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (X := Y) (Opens.mem_top (g x))
   obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset (X := X) (U := g ⁻¹ᵁ U) hxU
+  have hnat : g.appLE U V hVU ≫ X.presheaf.germ V x hxV =
+      Y.presheaf.germ U (g x) hxU ≫ g.stalkMap x := by
+    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
+      ← X.presheaf.germ_res (homOfLE hVU) x hxV, Scheme.Hom.appLE_map_assoc]
   rw [stalkIdeal_eq_map _ ⟨V, hV⟩ x hxV, ideal_comap_of_le I g ⟨U, hU⟩ ⟨V, hV⟩ hVU,
-    stalkIdeal_eq_map I ⟨U, hU⟩ _ hxU, Ideal.map_map, Ideal.map_map, ← CommRingCat.hom_comp,
-    ← CommRingCat.hom_comp, Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
-    ← X.presheaf.germ_res (homOfLE hVU) x hxV, Scheme.Hom.appLE_map_assoc]
+    stalkIdeal_eq_map I ⟨U, hU⟩ _ hxU]
+  simpa only [Ideal.map_map, ← CommRingCat.hom_comp] using
+    congrArg (fun f ↦ (I.ideal ⟨U, hU⟩).map f.hom) hnat
 
 /-- The local ring of the inverse image of `I` under a closed immersion `f` has the
 length of the ambient local ring modulo the sum of the stalk ideals of `I` and `f.ker`. -/
