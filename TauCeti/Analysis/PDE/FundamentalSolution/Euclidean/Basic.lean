@@ -88,6 +88,12 @@ kernel `TauCeti.newtonianKernel 2` is the zero function. -/
 theorem newtonianKernel_two : newtonianKernel 2 = 0 :=
   funext fun y ↦ by simp [newtonianKernel_def]
 
+/-- In dimension zero the Euclidean space is a single point, the pole, so the totalized kernel
+`TauCeti.newtonianKernel 0` is the zero function. -/
+@[simp]
+theorem newtonianKernel_dim_zero : newtonianKernel 0 = 0 :=
+  funext fun x ↦ by rw [Subsingleton.elim x 0, newtonianKernel_zero, Pi.zero_apply]
+
 /-- The Newtonian kernel is radial, hence invariant under orthogonal transformations. -/
 @[simp]
 theorem newtonianKernel_map_linearIsometryEquiv (n : ℕ)

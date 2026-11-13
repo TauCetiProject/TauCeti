@@ -72,9 +72,9 @@ identically in dimensions zero and two, where its normalizing constant is `0⁻�
 private lemma exists_newtonianKernel_eq_mul_norm (hn : n ≤ 2) :
     ∃ c : ℝ, newtonianKernel n = fun x ↦ c * ‖x‖ := by
   interval_cases n
-  · exact ⟨0, funext fun x ↦ by simp [newtonianKernel_def]⟩
+  · exact ⟨0, by rw [newtonianKernel_dim_zero]; funext; simp⟩
   · exact ⟨-1 / 2, funext fun x ↦ by rw [newtonianKernel_one]; ring⟩
-  · exact ⟨0, funext fun x ↦ by simp [newtonianKernel_def]⟩
+  · exact ⟨0, by rw [newtonianKernel_two]; funext; simp⟩
 
 /-- Integration by parts against the Newtonian kernel in dimensions at most two, where the kernel
 is Lipschitz. -/

@@ -101,11 +101,11 @@ theorem harmonicOnNhd_newtonianKernel_convolution
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) :
     HarmonicOnNhd (newtonianKernel n ⋆ f) (tsupport f)ᶜ := fun x hx => by
   by_cases h : n = 0 ∨ n = 2
-  · have hzero : newtonianKernel n = 0 := by
-      funext y
-      rcases h with rfl | rfl <;> simp [newtonianKernel_def]
-    rw [hzero, zero_convolution]
-    exact harmonicAt_const 0
+  · rcases h with rfl | rfl
+    · rw [newtonianKernel_dim_zero, zero_convolution]
+      exact harmonicAt_const 0
+    · rw [newtonianKernel_two, zero_convolution]
+      exact harmonicAt_const 0
   obtain ⟨hn0, hn⟩ := not_or.mp h
   refine ⟨(contDiff_newtonianKernel_convolution hf hc).contDiffAt, ?_⟩
   by_cases hF : CompleteSpace F
