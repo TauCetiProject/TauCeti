@@ -53,9 +53,9 @@ Then:
   `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`;
 * for a map `γ : Sᵈ⁺¹ ⟶ X` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`, the two components of `(γ × 𝟙)^* φ` are the
   restriction of `φ` to the slice `{γ x₀} × Y`, since the slant product by a point is restriction
-  (`TopCat.singularSlant_singularHomology₀Section`), and the slant product `φ / γ_* γ` by
-  naturality, so
-  `(γ × 𝟙)^* φ = pr₂^* (φ restricted to {γ x₀} × Y) + pr₁^* θ ⌣ pr₂^* (φ / γ_* γ)`
+  (`TopCat.singularSlant_singularHomology₀Section`), and, by naturality, the slant product
+  `φ / γ_* [Sᵈ⁺¹]` by the image of the standard generator `[Sᵈ⁺¹]` (written `γ` above), so
+  `(γ × 𝟙)^* φ = pr₂^* (φ restricted to {γ x₀} × Y) + pr₁^* θ ⌣ pr₂^* (φ / γ_* [Sᵈ⁺¹])`
   (`TopCat.singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singularCup`). For a
   loop `γ : S¹ ⟶ X` this expresses the pullback of a class on `X × Y` to `S¹ × Y` through its
   point and loop slant products.
