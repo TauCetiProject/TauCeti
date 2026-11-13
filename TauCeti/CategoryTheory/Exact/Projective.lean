@@ -319,16 +319,6 @@ def map (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
     (P.map hF hPP').P = F.obj P.P := by
   simp [map]
 
-@[simp] theorem map_i (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
-    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
-    HEq (P.map hF hPP').i (F.map P.i) := by
-  simp [map]
-
-@[simp] theorem map_p (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
-    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
-    HEq (P.map hF hPP').p (F.map P.p) := by
-  simp [map]
-
 end Functor
 
 /-- The tautological projective presentation in the split exact structure. -/
@@ -344,10 +334,6 @@ noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentatio
 @[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
 
 @[simp] theorem split_P (X : C) : (split X).P = X := (rfl)
-
-@[simp] theorem split_i (X : C) : HEq (split X).i (0 : (0 : C) ⟶ X) := (HEq.rfl)
-
-@[simp] theorem split_p (X : C) : HEq (split X).p (𝟙 X) := (HEq.rfl)
 
 /-- Mathlib's projective presentation gives a relative projective presentation for the canonical
 exact structure of an abelian category. -/
@@ -369,14 +355,6 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
 @[simp] theorem abelian_P {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
     (abelian X).P = Projective.over X := (rfl)
-
-@[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughProjectives A] (X : A) :
-    HEq (abelian X).i (kernel.ι (Projective.π X)) := (HEq.rfl)
-
-@[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughProjectives A] (X : A) :
-    HEq (abelian X).p (Projective.π X) := (HEq.rfl)
 
 section Comparison
 
