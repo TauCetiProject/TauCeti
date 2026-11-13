@@ -52,8 +52,8 @@ x² + ny²*, §6.A, and F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenst
 
 In the namespace `TauCeti.Multiquadratic`:
 
-* `exists_mem_candidateGenusField_sq_eq_intCast`: when `d` is not a rational square, a quadratic
-  subfield `ℚ(√a)` of such an `M` has its square root inside the candidate genus field.
+* `exists_mem_candidateGenusField_sq_eq_intCast`: a square root `√a` in such an `M` of a
+  squarefree integer `a` has a counterpart inside the candidate genus field.
 * `nonempty_algHom_candidateGenusField`: `M` embeds over `ℚ` into the candidate genus field.
 * `finrank_le_finrank_candidateGenusField`: hence `[M : ℚ] ≤ [K_gen : ℚ]`, and
   `finrank_le_two_pow_card_genusPrimeDiscriminants` reads that bound off as `2 ^ t`.
@@ -115,19 +115,33 @@ section IsGalois
 variable [IsGalois ℚ M]
 
 /-- **A quadratic subfield of an unramified Galois extension lies in the candidate genus field.**
-Let `M / ℚ` be Galois, let `y ∈ M` be a square root of a squarefree non-square `d` generating a
-quadratic subfield, and assume `M` is unramified over that subfield at every finite prime. Then for
-every squarefree `a` with a square root in `M`, the candidate genus field
+Let `M / ℚ` be Galois, let `y ∈ M` be a square root of a squarefree integer `d`, and assume `M` is
+unramified over the subfield `ℚ(y)` it generates (which is `ℚ` when `d = 1`) at every finite
+prime. Then for every squarefree `a` with a square root in `M`, the candidate genus field
 `candidateGenusField hd` contains an element squaring to `a`.
 
-This is the arithmetic core of maximality: the discriminant of `ℚ(√a)` is a *subproduct* of the
-prime-discriminant factorization of the discriminant of `ℚ(√d)`. -/
+This is the arithmetic core of maximality: for non-square `d`, the discriminant of `ℚ(√a)` is a
+*subproduct* of the prime-discriminant factorization of the discriminant of `ℚ(√d)`. For `d = 1`
+the field `M` is `ℚ` itself, by `NumberField.finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn`,
+so the square root of `a` is rational. -/
 theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) (hsfa : Squarefree a)
+    (hsfa : Squarefree a)
     {x y : M} (hx : x ^ 2 = algebraMap ℤ M a) (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a : ℤ) : ℂ) := by
+  by_cases hsqd : IsSquare ((d : ℤ) : ℚ)
+  · -- `ℚ(y) = ℚ`, so `M` is unramified over `ℚ` and is `ℚ` itself: `x` is rational.
+    have hF : Module.finrank ℚ (adjoin ℚ {y} : IntermediateField ℚ M) = 1 :=
+      finrank_adjoin_simple_eq_one_iff.mpr <| adjoin_simple_eq_bot_iff.mp <|
+        (IntermediateField.adjoin_simple_eq_bot_iff_isSquare
+          (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num)).mpr hsqd
+    obtain ⟨q, rfl⟩ := (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp
+      (finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn hF hunr)).2 x
+    have hq : q ^ 2 = ((a : ℤ) : ℚ) := (algebraMap ℚ M).injective <| by
+      rw [map_pow, hx, IsScalarTower.algebraMap_apply ℤ ℚ M]
+      norm_num
+    exact ⟨algebraMap ℚ ℂ q, IntermediateField.algebraMap_mem _ _, by rw [← map_pow, hq]; simp⟩
   have hdQ : ((d : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hd.ne_zero
   by_cases hsq : IsSquare (((a * d : ℤ)) : ℚ)
   · -- `a` and `d` are in the same square class: rescale the square root of `d`.
@@ -152,7 +166,7 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
         (fun p hp hpa =>
           dvd_fundamentalDiscriminant_base_of_dvd_subfield hsfa hd hx hy hunr hp hpa)
         fun h2 => ?_)
-    have hdeg := finrank_adjoin_sq_eq_intCast hnsqd hy
+    have hdeg := finrank_adjoin_sq_eq_intCast hsqd hy
     have h := not_dvd_fundamentalDiscriminant_mul_of_dvd_subfield hsfa hsfc hx hy hdeg hunr he hce
       (p := 2) Nat.prime_two (by exact_mod_cast h2)
     exact_mod_cast h
@@ -180,8 +194,8 @@ theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
   · -- A rational square generates only `ℚ`, so `M` is unramified over `ℚ` and is `ℚ` itself.
     have hF : Module.finrank ℚ (adjoin ℚ {y} : IntermediateField ℚ M) = 1 :=
       finrank_adjoin_simple_eq_one_iff.mpr <| adjoin_simple_eq_bot_iff.mp <|
-        IntermediateField.adjoin_simple_eq_bot_of_isSquare
-          (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num) hsq
+        (IntermediateField.adjoin_simple_eq_bot_iff_isSquare
+          (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num)).mpr hsq
     have h1 := finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn hF hunr
     exact ⟨(Algebra.ofId ℚ (candidateGenusField hd)).comp
       (AlgEquiv.ofBijective (Algebra.ofId ℚ M)
@@ -194,7 +208,7 @@ theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
     have hxi : root i ^ 2 = algebraMap ℤ M (a i) := by
       rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ M]
       norm_num
-    exact exists_mem_candidateGenusField_sq_eq_intCast hd hsq (hsf i) hxi hy hunr
+    exact exists_mem_candidateGenusField_sq_eq_intCast hd (hsf i) hxi hy hunr
   choose z hzmem hzsq using key
   set φ : M →ₐ[ℚ] ℂ := IsAlgClosed.lift
   have hle : adjoin ℚ (Set.range root) ≤ (candidateGenusField hd).comap φ := by
