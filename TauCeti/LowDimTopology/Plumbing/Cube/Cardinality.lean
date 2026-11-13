@@ -31,9 +31,7 @@ lattice cube indexed by a base point and a finite set of basis directions.
 
 ## References
 
-This supplies a small prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane L ("lattice homology"), whose cubical complex is built from plumbing-lattice cubes and their
-finite vertex sets. The convention is the standard cubical one used in Némethi,
+The convention is the standard cubical one used in Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 

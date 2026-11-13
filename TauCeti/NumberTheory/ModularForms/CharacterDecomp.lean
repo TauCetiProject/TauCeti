@@ -34,8 +34,7 @@ finite-dimensionality hypotheses anywhere.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GL2/CharacterDecomp.lean`, Chris Birkbeck,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), realizing
-Layer 0 of the ModularForms roadmap.
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>).
 
 ## Main results
 

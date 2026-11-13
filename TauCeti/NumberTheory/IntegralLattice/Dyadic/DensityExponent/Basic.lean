@@ -223,7 +223,7 @@ private theorem upperCrossExponent_eq_distance_add_lower (P : DyadicJordanProfil
               i * P.ranks i * P.ranks j) := by
       unfold upperCrossExponent
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       calc
         (∑ j ∈ P.ranks.support.filter fun j ↦ i < j,
             j * P.ranks i * P.ranks j) =

@@ -178,7 +178,7 @@ theorem eVariationOn.add_le :
     _ ≤ ∑ i ∈ Finset.range n,
         (edist (f (u (i + 1))) (f (u i)) + edist (g (u (i + 1))) (g (u i))) := by
       apply Finset.sum_le_sum
-      intro i hi
+      intro i _
       exact edist_add_add_le (f (u (i + 1))) (g (u (i + 1))) (f (u i)) (g (u i))
     _ ≤ _ := by
       rw [Finset.sum_add_distrib]
