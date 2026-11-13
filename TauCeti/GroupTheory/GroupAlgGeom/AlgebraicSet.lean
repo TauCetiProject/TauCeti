@@ -730,12 +730,10 @@ homomorphism is not injective. -/
 theorem not_injective_coeff_of_V_eq_empty (hS : V ι S = ∅) :
     ¬Function.Injective (coeff ι S) := by
   intro h
-  -- The radical is everything, so all coefficients become trivial and `G` must be trivial.
-  have hG : ∀ g : G, g = 1 := fun g => h <| by simp [hS]
-  -- Over trivial coefficients the constant point `1` solves every equation.
-  have h1 : eval ι (1 : X → H) = 1 :=
-    hom_ext (MonoidHom.ext fun g => by simp [hG g]) (FreeGroup.ext_hom _ _ fun x => by simp)
-  exact hS.subset ((mem_V (v := 1)).2 fun s _ => by simp [h1])
+  -- The coordinate group is trivial, hence so is `G`, and then the trivial tuple solves `S`.
+  have := subsingleton_of_V_eq_empty hS
+  have := h.subsingleton
+  exact hS.subset (one_mem_V (fun g => by simp [Subsingleton.elim g 1]) S)
 
 /-- The coordinate group of `S` is a `G`-group, that is, its coefficient homomorphism is
 injective, exactly when `ι` is injective and `S` has a solution in `H`. In particular, over a
