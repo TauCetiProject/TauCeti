@@ -163,6 +163,10 @@ long exact sequences.
   `MonoidHom.classifyingSpaceCohomologyIsoGroupCohomology_hom_pullback`,
   `MonoidHom.classifyingSpaceCohomologyIsoGroupCohomology_inv_pullback`: naturality of the direct
   cohomology isomorphism in the group and compatible coefficients.
+* `MonoidHom.classifyingSpaceLocalSystemPullbackIso_def`,
+  `MonoidHom.classifyingSpaceCohomologyMap_eq_associatedCohomologyMap`: specialization of
+  `IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso` and
+  `IsQuotientCoveringMap.associatedCohomologyMap` to `isQuotientCoveringMap_classifyingSpaceProj`.
 * `MonoidHom.classifyingSpaceCohomologyMap_naturality`,
   `MonoidHom.cohomologyδ_comp_classifyingSpaceCohomologyMap`,
   `MonoidHom.classifyingSpaceCohomologyMap_id`,
@@ -549,6 +553,22 @@ def classifyingSpaceLocalSystemPullbackIso (D : Rep.{u} k H) :
     (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
     (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) D
 
+/-- `classifyingSpaceLocalSystemPullbackIso` specializes
+`IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso` to
+`isQuotientCoveringMap_classifyingSpaceProj`. -/
+theorem classifyingSpaceLocalSystemPullbackIso_def (D : Rep.{u} k H) :
+    φ.classifyingSpaceLocalSystemPullbackIso k D =
+      IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso
+        (E := TopCat.of (universalGSpace G))
+        (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj G) k
+        (F := TopCat.of (universalGSpace H))
+        (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+        (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+        (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) D :=
+  (rfl)
+
 /-- The forward morphism of `classifyingSpaceLocalSystemPullbackIso` is
 `classifyingSpaceLocalSystemMapOver` for the identity of `Rep.res φ D`. -/
 @[simp]
@@ -752,6 +772,23 @@ theorem classifyingSpaceCohomologyMap_def (ξ : Rep.res φ D ⟶ A) (n : ℕ) :
             classifyingSpaceLocalSystemMap ξ) n :=
   (rfl)
 
+/-- `classifyingSpaceCohomologyMap` specializes `IsQuotientCoveringMap.associatedCohomologyMap` to
+`isQuotientCoveringMap_classifyingSpaceProj`. -/
+theorem classifyingSpaceCohomologyMap_eq_associatedCohomologyMap
+    (ξ : Rep.res φ D ⟶ A) (n : ℕ) :
+    φ.classifyingSpaceCohomologyMap k ξ n =
+      IsQuotientCoveringMap.associatedCohomologyMap
+        (E := TopCat.of (universalGSpace G))
+        (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj G) k
+        (F := TopCat.of (universalGSpace H))
+        (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+        (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+        (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+        (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n := by
+  rw [classifyingSpaceCohomologyMap_def, IsQuotientCoveringMap.associatedCohomologyMap_def,
+    classifyingSpaceLocalSystemPullbackIso_def]
+
 /-- **The direct local-coefficient cohomology comparison is natural in the group.** The geometric
 map induced by `φ : G →* H` and `ξ : Rep.res φ D ⟶ A` corresponds to Mathlib's change-of-group map
 `groupCohomology.map φ ξ`. -/
@@ -762,7 +799,8 @@ theorem classifyingSpaceCohomologyIsoGroupCohomology_hom_naturality
         (classifyingSpaceCohomologyIsoGroupCohomology k A n).hom =
       (classifyingSpaceCohomologyIsoGroupCohomology k D n).hom ≫
         groupCohomology.map φ ξ n := by
-  have h := IsQuotientCoveringMap.cohomologyIsoGroupCohomology_hom_naturality_over
+  rw [classifyingSpaceCohomologyMap_eq_associatedCohomologyMap]
+  exact IsQuotientCoveringMap.cohomologyIsoGroupCohomology_hom_naturality_over
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k
@@ -771,9 +809,6 @@ theorem classifyingSpaceCohomologyIsoGroupCohomology_hom_naturality
     (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
     (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
     (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n
-  rw [IsQuotientCoveringMap.associatedCohomologyMap_def] at h
-  rw [classifyingSpaceCohomologyMap_def]
-  exact h
 
 /-- The inverse direct local-coefficient cohomology comparison is also natural in the group. -/
 @[reassoc]
@@ -837,7 +872,9 @@ theorem classifyingSpaceCohomologyMap_naturality
         φ.classifyingSpaceCohomologyMap k ξ₂ n =
       φ.classifyingSpaceCohomologyMap k ξ₁ n ≫
         cohomologyCoefficientMap (classifyingSpaceLocalSystemMap α) n := by
-  have hnat := IsQuotientCoveringMap.associatedCohomologyMap_naturality
+  rw [classifyingSpaceCohomologyMap_eq_associatedCohomologyMap,
+    classifyingSpaceCohomologyMap_eq_associatedCohomologyMap]
+  exact IsQuotientCoveringMap.associatedCohomologyMap_naturality
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k
@@ -846,10 +883,6 @@ theorem classifyingSpaceCohomologyMap_naturality
     (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
     (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
     (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) β α ξ₁ ξ₂ hcomm n
-  rw [IsQuotientCoveringMap.associatedCohomologyMap_def,
-    IsQuotientCoveringMap.associatedCohomologyMap_def] at hnat
-  rw [classifyingSpaceCohomologyMap_def, classifyingSpaceCohomologyMap_def]
-  exact hnat
 
 /-- **The geometric connecting map of direct local-coefficient cohomology on classifying spaces
 commutes with change of groups.** -/
@@ -862,7 +895,9 @@ theorem cohomologyδ_comp_classifyingSpaceCohomologyMap
         φ.classifyingSpaceCohomologyMap k Φ.τ₁ m =
       φ.classifyingSpaceCohomologyMap k Φ.τ₃ n ≫
         (shortExact_map_classifyingSpaceLocalSystemFunctor hX).cohomologyδ n m h := by
-  have hδ := IsQuotientCoveringMap.cohomologyδ_comp_associatedCohomologyMap
+  rw [classifyingSpaceCohomologyMap_eq_associatedCohomologyMap,
+    classifyingSpaceCohomologyMap_eq_associatedCohomologyMap]
+  exact IsQuotientCoveringMap.cohomologyδ_comp_associatedCohomologyMap
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k
@@ -871,10 +906,6 @@ theorem cohomologyδ_comp_classifyingSpaceCohomologyMap
     (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
     (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
     (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) hY hX Φ n m h
-  rw [IsQuotientCoveringMap.associatedCohomologyMap_def,
-    IsQuotientCoveringMap.associatedCohomologyMap_def] at hδ
-  rw [classifyingSpaceCohomologyMap_def, classifyingSpaceCohomologyMap_def]
-  exact hδ
 
 variable {k}
 

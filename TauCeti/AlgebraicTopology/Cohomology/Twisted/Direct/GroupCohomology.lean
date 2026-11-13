@@ -82,6 +82,13 @@ group homomorphisms `φ : G →* H` and compatible morphisms `ξ : Rep.res φ D 
   `IsQuotientCoveringMap.linearYonedaObjMap_comp_cochainComplexIsoLinearYonedaObj_inv`,
   `IsQuotientCoveringMap.cohomologyIsoGroupCohomology_hom_naturality_over`: naturality with respect
   to equivariant maps of quotient covers along arbitrary group homomorphisms.
+* `IsQuotientCoveringMap.associatedCochainComplexMap_id_hom`,
+  `IsQuotientCoveringMap.associatedCochainComplexMap_id`,
+  `IsQuotientCoveringMap.associatedCochainComplexMap_comp`,
+  `IsQuotientCoveringMap.associatedCohomologyMap_id_hom`,
+  `IsQuotientCoveringMap.associatedCohomologyMap_id`,
+  `IsQuotientCoveringMap.associatedCohomologyMap_comp`: identity and contravariant composition laws
+  for `associatedCochainComplexMap` and `associatedCohomologyMap` on quotient covers.
 * `IsQuotientCoveringMap.associatedCohomologyMap_naturality`,
   `IsQuotientCoveringMap.cohomologyδ_comp_associatedCohomologyMap`: coefficient naturality and
   connecting-map compatibility for change of groups on quotient covers.
@@ -713,9 +720,9 @@ theorem associatedLocalSystemFiberIso_hom_eval_associatedCochainComplexMap_f
     cochainComplexEval (hH.associatedLocalSystem k D) n
       ((_root_.TopCat.toSSet.map b).app _ σ) c
   have hcoord := ConcreteCategory.congr_hom
-    (hG.associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom k hH f hf b hb ξ
+    (hG.associatedLocalSystemBaseChangeIso_inv_app_comp_map_app_comp_fiberIso_hom k hH f hf b hb ξ
       e e'' he) v
-  rw [NatTrans.comp_app, ModuleCat.comp_apply, ModuleCat.comp_apply] at hcoord
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hcoord
   rw [cochainComplexEval_associatedCochainComplexMap_f]
   exact hcoord.trans
     ((ModuleCat.comp_apply (hH.associatedLocalSystemFiberIso k D e').hom
@@ -782,6 +789,99 @@ theorem associatedCochainComplexMap_naturality
   congr 1
   rw [hG.associatedLocalSystemBaseChangeIso_inv_naturality_assoc k hH f hf b hb β,
     ← associatedLocalSystemMap_comp, ← hcomm, associatedLocalSystemMap_comp, Category.assoc]
+
+/-- Along the identity map of a quotient cover, `associatedCochainComplexMap` reduces to
+`cochainComplexCoefficientMap`. -/
+@[simp]
+theorem associatedCochainComplexMap_id_hom {A A' : Rep.{u} k G} (ξ : A ⟶ A') :
+    hG.associatedCochainComplexMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+        (𝟙 B) (by simp) ξ =
+      cochainComplexCoefficientMap (hG.associatedLocalSystemMap k ξ) := by
+  -- `Rep.res (MonoidHom.id G) A` is `A` by definition, so `associatedLocalSystemBaseChangeIso` has
+  -- source `hG.associatedLocalSystem k A`.
+  have hbc_hom :
+      (hG.associatedLocalSystemBaseChangeIso k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+          (𝟙 B) (by simp) A).hom ≫
+        (LocalCoefficientSystem.pullbackIdIso.{u, u, u} B).hom.app
+          (hG.associatedLocalSystem k A) =
+      𝟙 (hG.associatedLocalSystem k A) :=
+    (congrArg (· ≫ _)
+      (hG.associatedLocalSystemBaseChangeIso_hom k hG (𝟙 E) (fun _ _ ↦ by simp) (𝟙 B) (by simp)
+        A)).trans
+      ((hG.associatedLocalSystemMapOver_id k (𝟙 A)).trans (hG.associatedLocalSystemMap_id k))
+  have hp :
+      (LocalCoefficientSystem.pullbackIdIso.{u, u, u} B).inv.app (hG.associatedLocalSystem k A) =
+        (hG.associatedLocalSystemBaseChangeIso k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+          (𝟙 B) (by simp) A).hom :=
+    (cancel_mono ((LocalCoefficientSystem.pullbackIdIso.{u, u, u} B).hom.app
+      (hG.associatedLocalSystem k A))).1
+      ((Iso.inv_hom_id_app _ _).trans hbc_hom.symm)
+  have hbc :
+      (LocalCoefficientSystem.pullbackIdIso.{u, u, u} B).inv.app (hG.associatedLocalSystem k A) ≫
+        (hG.associatedLocalSystemBaseChangeIso k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+          (𝟙 B) (by simp) A).inv =
+      𝟙 (hG.associatedLocalSystem k A) :=
+    (congrArg (· ≫ _) hp).trans (Iso.hom_inv_id _)
+  rw [associatedCochainComplexMap_def, cochainComplexPullback_id,
+    ← cochainComplexCoefficientMap_comp]
+  exact congrArg cochainComplexCoefficientMap
+    ((Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ hG.associatedLocalSystemMap k ξ) hbc).trans (Category.id_comp _)))
+
+/-- Along the identity map of a quotient cover with the identity representation morphism,
+`associatedCochainComplexMap` is the identity cochain map. -/
+-- Match before the general identity-homomorphism rule reduces to coefficient change.
+@[simp↓]
+theorem associatedCochainComplexMap_id (A : Rep.{u} k G) :
+    hG.associatedCochainComplexMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+        (𝟙 B) (by simp) (𝟙 A) =
+      𝟙 _ := by
+  rw [associatedCochainComplexMap_id_hom, associatedLocalSystemMap_id,
+    cochainComplexCoefficientMap_id]
+
+/-- Along a composite of equivariant maps of quotient covers, `associatedCochainComplexMap`
+contravariantly composes the two induced cochain maps. -/
+@[reassoc]
+theorem associatedCochainComplexMap_comp
+    {S W : _root_.TopCat.{u}} {r : S ⟶ W} {K : Type u} [Group K] [MulAction K S]
+    (hK : IsQuotientCoveringMap r K) {φ' : H →* K}
+    (f' : F ⟶ S) (hf' : ∀ h y, f' (h • y) = φ' h • f' y)
+    (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
+    {V : Rep.{u} k K} {D : Rep.{u} k H} {A : Rep.{u} k G}
+    (ξ : Rep.res φ D ⟶ A) (ζ : Rep.res φ' V ⟶ D) :
+    hG.associatedCochainComplexMap k hK (f ≫ f') (φ := φ'.comp φ)
+        (fun g e ↦ by simp [hf, hf']) (b ≫ b')
+        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc])
+        ((Rep.resFunctor φ).map ζ ≫ ξ) =
+      hH.associatedCochainComplexMap k hK f' hf' b' hb' ζ ≫
+        hG.associatedCochainComplexMap k hH f hf b hb ξ := by
+  have hbc :
+      (hG.associatedLocalSystemBaseChangeIso k hK (f ≫ f') (φ := φ'.comp φ)
+          (fun g e ↦ by simp [hf, hf']) (b ≫ b')
+          (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) V).inv =
+        (LocalCoefficientSystem.pullbackCompIso.{u, u, u, u} b.hom b'.hom).hom.app
+            (hK.associatedLocalSystem k V) ≫
+          (LocalCoefficientSystem.pullback b.hom).map
+            (hH.associatedLocalSystemBaseChangeIso k hK f' hf' b' hb' V).inv ≫
+          (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb (Rep.res φ' V)).inv := by
+    apply (cancel_epi (hG.associatedLocalSystemBaseChangeIso k hK (f ≫ f') (φ := φ'.comp φ)
+      (fun g e ↦ by simp [hf, hf']) (b ≫ b')
+      (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc]) V).hom).1
+    rw [Iso.hom_inv_id, hG.associatedLocalSystemBaseChangeIso_hom_comp k hH hK
+      f hf b hb f' hf' b' hb' V]
+    simp only [Category.assoc, Iso.inv_hom_id_app_assoc]
+    rw [← Category.assoc ((LocalCoefficientSystem.pullback b.hom).map _),
+      ← (LocalCoefficientSystem.pullback b.hom).map_comp, Iso.hom_inv_id,
+      CategoryTheory.Functor.map_id, Category.id_comp, Iso.hom_inv_id]
+  rw [associatedCochainComplexMap_def, associatedCochainComplexMap_def,
+    associatedCochainComplexMap_def, Category.assoc,
+    cochainComplexPullback_coefficient_naturality_assoc, ← cochainComplexPullback_comp_assoc]
+  congr 1
+  rw [← cochainComplexCoefficientMap_comp, ← cochainComplexCoefficientMap_comp,
+    CategoryTheory.Functor.map_comp, Category.assoc,
+    hG.associatedLocalSystemBaseChangeIso_inv_naturality_assoc k hH f hf b hb ζ,
+    hbc, associatedLocalSystemMap_comp]
+  congr 1
 
 /-- **The direct cochain comparison is natural for equivariant maps of quotient covers.**
 Pulling direct cochains back along `b : B ⟶ C` and changing local coefficients by
@@ -931,6 +1031,47 @@ theorem cohomologyδ_comp_associatedCohomologyMap
   exact HomologicalComplex.HomologySequence.δ_naturality ψ
     ((hH.shortExact_associatedLocalSystem k hY).map_cochainComplexFunctor)
     ((hG.shortExact_associatedLocalSystem k hX).map_cochainComplexFunctor) n m h
+
+/-- Along the identity map of a quotient cover, `associatedCohomologyMap` reduces to
+`cohomologyCoefficientMap`. -/
+@[simp]
+theorem associatedCohomologyMap_id_hom {A A' : Rep.{u} k G} (ξ : A ⟶ A') (n : ℕ) :
+    hG.associatedCohomologyMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+        (𝟙 B) (by simp) ξ n =
+      cohomologyCoefficientMap (hG.associatedLocalSystemMap k ξ) n := by
+  rw [associatedCohomologyMap_eq_homologyMap, associatedCochainComplexMap_id_hom,
+    cohomologyCoefficientMap_eq]
+
+/-- Along the identity map of a quotient cover with the identity representation morphism,
+`associatedCohomologyMap` is the identity on cohomology. -/
+-- Match before the general identity-homomorphism rule reduces to coefficient change.
+@[simp↓]
+theorem associatedCohomologyMap_id (A : Rep.{u} k G) (n : ℕ) :
+    hG.associatedCohomologyMap k hG (𝟙 E) (φ := MonoidHom.id G) (fun _ _ ↦ by simp)
+        (𝟙 B) (by simp) (𝟙 A) n =
+      𝟙 _ := by
+  rw [associatedCohomologyMap_id_hom, associatedLocalSystemMap_id,
+    cohomologyCoefficientMap_id]
+
+/-- Along a composite of equivariant maps of quotient covers, `associatedCohomologyMap`
+contravariantly composes the two induced cohomology maps. -/
+@[reassoc]
+theorem associatedCohomologyMap_comp
+    {S W : _root_.TopCat.{u}} {r : S ⟶ W} {K : Type u} [Group K] [MulAction K S]
+    (hK : IsQuotientCoveringMap r K) {φ' : H →* K}
+    (f' : F ⟶ S) (hf' : ∀ h y, f' (h • y) = φ' h • f' y)
+    (b' : C ⟶ W) (hb' : q ≫ b' = f' ≫ r)
+    {V : Rep.{u} k K} {D : Rep.{u} k H} {A : Rep.{u} k G}
+    (ξ : Rep.res φ D ⟶ A) (ζ : Rep.res φ' V ⟶ D) (n : ℕ) :
+    hG.associatedCohomologyMap k hK (f ≫ f') (φ := φ'.comp φ)
+        (fun g e ↦ by simp [hf, hf']) (b ≫ b')
+        (by rw [← Category.assoc, hb, Category.assoc, hb', Category.assoc])
+        ((Rep.resFunctor φ).map ζ ≫ ξ) n =
+      hH.associatedCohomologyMap k hK f' hf' b' hb' ζ n ≫
+        hG.associatedCohomologyMap k hH f hf b hb ξ n := by
+  rw [associatedCohomologyMap_eq_homologyMap, associatedCohomologyMap_eq_homologyMap,
+    associatedCohomologyMap_eq_homologyMap, ← HomologicalComplex.homologyMap_comp,
+    hG.associatedCochainComplexMap_comp k hH f hf b hb hK f' hf' b' hb' ξ ζ]
 
 /-- **The local-coefficient cohomology of the base of a contractible free cover is naturally group
 cohomology, in the covering and the group**: for quotient covering maps `p : E ⟶ B` and `q : F ⟶ C`

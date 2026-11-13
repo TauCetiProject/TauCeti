@@ -43,7 +43,7 @@ For general `ξ : A ⟶ Rep.res φ D`, the morphism `associatedLocalSystemMapOve
 
 * `IsQuotientCoveringMap.associatedLocalSystemMapOver_app_comp_fiberIso_hom`,
   `IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso_inv_app_comp_fiberIso_hom`,
-  `IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom`:
+  `IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso_inv_app_comp_map_app_comp_fiberIso_hom`:
   compatibility of `associatedLocalSystemMapOver` and `associatedLocalSystemBaseChangeIso.inv` with
   sheet coordinates.
 * `IsQuotientCoveringMap.isIso_associatedLocalSystemMapOver_id`: for `𝟙 (Rep.res φ D)`,
@@ -305,10 +305,10 @@ theorem associatedLocalSystemBaseChangeIso_inv_app_comp_fiberIso_hom
     ((congrArg (· ≫ _) h1).trans ((Category.id_comp _).trans h2.symm))
 
 /-- Under the sheet identifications at `e` over `x` and its image `e'` over `b.hom x.as`,
-`(associatedLocalSystemBaseChangeIso D).inv ≫ associatedLocalSystemMap ξ` is the underlying linear
-map of `ξ : Rep.res φ D ⟶ A`. -/
+the composite of `(associatedLocalSystemBaseChangeIso D).inv.app x` and
+`(associatedLocalSystemMap ξ).app x` is the underlying linear map of `ξ : Rep.res φ D ⟶ A`. -/
 @[reassoc]
-theorem associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom
+theorem associatedLocalSystemBaseChangeIso_inv_app_comp_map_app_comp_fiberIso_hom
     {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
     (hH : IsQuotientCoveringMap q H) {φ : G →* H}
     (f : E ⟶ F) (hf : ∀ g e, f (g • e) = φ g • f e)
@@ -316,14 +316,14 @@ theorem associatedLocalSystemBaseChangeIso_inv_comp_map_app_comp_fiberIso_hom
     {D : Rep.{u} k H} {A : Rep.{u} k G} (ξ : Rep.res φ D ⟶ A)
     {x : FundamentalGroupoid B} (e : p ⁻¹' {x.as})
     (e' : q ⁻¹' {((FundamentalGroupoid.map b.hom).obj x).as}) (he : f e = e') :
-    ((hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv ≫
-        hG.associatedLocalSystemMap k ξ).app x ≫
+    (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv.app x ≫
+        (hG.associatedLocalSystemMap k ξ).app x ≫
         (hG.associatedLocalSystemFiberIso k A e).hom =
       (hH.associatedLocalSystemFiberIso k D e').hom ≫
         ModuleCat.ofHom ξ.hom.toLinearMap := by
   -- `(Rep.res φ D).V` is `D.V` by definition, so the forgotten `k`-module of `Rep.res φ D` agrees
   -- with `ModuleCat.of k D` when rewriting by the inverse sheet-coordinate identity.
-  rw [NatTrans.comp_app, Category.assoc, hG.associatedLocalSystemFiberIso_hom_naturality k ξ e,
+  rw [hG.associatedLocalSystemFiberIso_hom_naturality k ξ e,
     hG.associatedLocalSystemBaseChangeIso_inv_app_comp_fiberIso_hom_assoc k hH f hf b hb D
       e e' he,
     Rep.forget₂_moduleCat_map]
