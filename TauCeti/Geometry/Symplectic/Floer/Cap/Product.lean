@@ -54,7 +54,12 @@ on the completed capped modules. This file proves:
   `μ(γ # D) = 2 c₁(γ) + μ(D)`, then the kernel has raw degree `-n` on all capped generators
   (`TauCeti.Floer.grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero`), and the product
   preserves the cochain degree `n - μ` and its residues
-  (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`).
+  (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`). More
+  generally, under the index condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n - ε` the product
+  shifts the cochain degree and its residues by `ε`
+  (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy_add`); the
+  rigid counts of a one-parameter family of pairs of pants, whose index at a fixed parameter is
+  `-1`, have `ε = -1`.
 * **Change of reference caps.** Moving the reference caps by lifts `g₁, g₂, g₀ ∈ G` multiplies
   the generating series by `q^(g₀ - g₁ - g₂)` and leaves the kernel, hence the product, unchanged
   (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`).
@@ -148,12 +153,6 @@ variable {ι : Type*} {P : ι → Type*} [∀ i, AddTorsor (PeriodGroup ω c) (P
   {μ : (Σ i, P i) → ℤ} (hμ : ∀ i γ (D : P i), μ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ ⟨i, D⟩) (n : ℤ)
 
 include hμ
-
-/-- Recapping by `γ` changes the cochain degree `n - μ` by the even number `-2 c₁(γ)`. -/
-private theorem even_cochain_vadd_sub (i : ι) (γ : PeriodGroup ω c) (D : P i) :
-    Even (n - μ ⟨i, γ +ᵥ D⟩ - (n - μ ⟨i, D⟩)) := by
-  rw [hμ, show n - (degree ω c γ + μ ⟨i, D⟩) - (n - μ ⟨i, D⟩) = -degree ω c γ by ring]
-  exact (even_degree ω c γ).neg
 
 /-- Recapping by `γ` adds `f (-2 c₁(γ))` to any additive image `f` of the cochain degree. -/
 private theorem map_cochain_vadd {D : Type*} [AddCommMonoid D] (f : ℤ →+ D) (i : ι)
@@ -270,10 +269,56 @@ variable [CommSemiring R] {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ 
   (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)
   (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
   {n : ℤ} (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG)
-  (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
+
+include hμ₁ hμ₂ hμ₀
+
+section Shift
+
+variable {ε : ℤ} (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
+    μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n - ε)
+
+include hQ
+
+/-- **The product of counts of index shifted by `ε` shifts cochain degree by `ε`.** If every class
+counted by `Q` satisfies the index condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n - ε`, then
+the product of class-indexed counts sends combinations of degrees `i'` and `j'` in an additive
+image `f` of the cochain degree `n - μ` to one of degree `i' + j' + f ε`. Rigid pairs of pants
+have `ε = 0`; the rigid members of a one-parameter family of pairs of pants, whose Fredholm index
+at a fixed parameter is `-1`, have `ε = -1`. -/
+theorem novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy_add {D : Type*}
+    [AddMonoid D] (f : ℤ →+ D) {i' j' : D} {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (ha : a ∈ gradeBy R F₁ (fun p => f (n - μ₁ p)) i')
+    (hb : b ∈ gradeBy R F₂ (fun p => f (n - μ₂ p)) j') :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+        (fun i j k => coefficientComparison q hq (Q i j k)) a b ∈
+      gradeBy R F₀ (fun p => f (n - μ₀ p)) (i' + j' + f ε) := by
+  obtain ⟨C, hn⟩ := exists_potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀
+    (fun i j k => coefficientComparison q hq (Q i j k))
+  rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hn]
+  refine kernelProduct_mem_gradeBy hn _ (fun p₁ p₂ p₀ h => ?_) ha hb
+  rw [grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r₁ r₂ r₀ q hq hμ₁ hμ₂ hμ₀
+    (n := n + ε) (fun i j k A hA => by rw [hQ i j k A hA]; ring) p₁ p₂ p₀ h, ← map_add,
+    ← map_add]
+  congr 1
+  ring
+
+/-- The product of class-indexed counts of index shifted by `ε` shifts the cochain degree `n - μ`
+by `ε`. -/
+theorem novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_add {i' j' : ℤ}
+    {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) i') (hb : b ∈ gradeBy R F₂ (fun p => n - μ₂ p) j') :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+        (fun i j k => coefficientComparison q hq (Q i j k)) a b ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) (i' + j' + ε) :=
+  novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy_add r₁ r₂ r₀ q hq hF₁ hF₂
+    hF₀ hμ₁ hμ₂ hμ₀ Q hQ (AddMonoidHom.id ℤ) ha hb
+
+end Shift
+
+variable (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
     μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + μ₂ ⟨j, r₂ j⟩ - n)
 
-include hμ₁ hμ₂ hμ₀ hQ
+include hQ
 
 /-- **The product of rigid counts preserves cochain degree.** Under the rigidity condition of
 `TauCeti.Floer.grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero`, the product of
@@ -286,12 +331,10 @@ theorem novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy {D 
     novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
         (fun i j k => coefficientComparison q hq (Q i j k)) a b ∈
       gradeBy R F₀ (fun p => f (n - μ₀ p)) (i' + j') := by
-  obtain ⟨C, hn⟩ := exists_potential_le_of_kernelOfMatrix_ne_zero hF₁ hF₂ hF₀ r₁ r₂ r₀
-    (fun i j k => coefficientComparison q hq (Q i j k))
-  rw [novikovProductOfMatrix_eq_kernelProduct hF₁ hF₂ hF₀ r₁ r₂ r₀ _ hn]
-  exact kernelProduct_mem_map_cochain_gradeBy hn _
-    (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r₁ r₂ r₀ q hq hμ₁ hμ₂ hμ₀ hQ) f
-    ha hb
+  simpa only [map_zero, add_zero] using
+    novikovProductOfMatrix_coefficientComparison_mem_map_cochain_gradeBy_add r₁ r₂ r₀ q hq hF₁ hF₂
+      hF₀ hμ₁ hμ₂ hμ₀ Q (ε := 0) (fun i j k A hA => (hQ i j k A hA).trans (sub_zero _).symm) f
+      ha hb
 
 /-- The product of rigid class-indexed counts has degree zero on capped generators regraded by
 the cochain degree `n - μ`. -/
@@ -348,10 +391,8 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
             b) := by
   refine novikovMapOfMatrix_novikovProductOfMatrix_eq_add hF₁ hF₂ hF₀ r₁ r₂ r₀ _ _ _ _
     (even_cochain_vadd_sub hμ₁ n) (fun i j l => ?_) ha b
-  have h := congrArg (coefficientComparison q hq) (hL i j l)
-  simp only [map_sum, map_add, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, _root_.map_mul, map_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hL i j l)
 
 end Leibniz
 
@@ -409,15 +450,10 @@ theorem
             b) := by
   -- Recapping changes the cochain degree by the even number `-2 c₁(γ)`.
   refine novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix hF₁ hF₂ hF₀
-    r₁ r₂ r₀ _ _ _ _ _ _ (fun i γ D => ?_) (fun j γ D => ?_) (fun i j l => ?_) ha hb
-  · rw [hμ₁, show n - (degree ω c γ + μ₁ ⟨i, D⟩) - (n - μ₁ ⟨i, D⟩) = -degree ω c γ by ring]
-    exact (even_degree ω c γ).neg
-  · rw [hμ₂, show n - (degree ω c γ + μ₂ ⟨j, D⟩) - (n - μ₂ ⟨j, D⟩) = -degree ω c γ by ring]
-    exact (even_degree ω c γ).neg
-  · have h := congrArg (coefficientComparison q hq) (hC i j l)
-    simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-      Units.smul_def, map_zsmul] at h ⊢
-    exact h
+    r₁ r₂ r₀ _ _ _ _ _ _ (even_cochain_vadd_sub hμ₁ n) (even_cochain_vadd_sub hμ₂ n)
+    (fun i j l => ?_) ha hb
+  simpa only [map_sum, map_add, map_sub, _root_.map_mul, map_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hC i j l)
 
 include hμ₁ hμ₂ in
 /-- **Graded commutativity of class-indexed counts on cohomology.** Under the identity of
@@ -467,17 +503,11 @@ theorem novikovProductOfMatrix_sub_negOnePowCast_smul_novikovProductOfMatrix_mem
       0 := by
     rw [novikovMapOfMatrix_eq_kernelMap hF₂ hF₂ r₂ r₂ _ hδ₂]
     exact hb.1
-  -- `K` is the product of rigid counts for the gradings `μ₀ - 1`, so `K(a, b)` has cochain
-  -- degree `e + f - 1`.
-  have hKab := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₂ r₀ q hq hF₁
-    hF₂ hF₀ hμ₁ hμ₂ (μ₀ := fun p => μ₀ p - 1) (fun k γ D => by rw [hμ₀]; ring) K
-    (fun i j k A hA => by linarith [hK i j k A hA]) ha.2 hb.2
-  have hdeg : ((fun x : ℤ => x - 1) ∘ fun p => n - (μ₀ p - 1)) = fun p => n - μ₀ p := by
-    funext p
-    simp only [Function.comp_apply]
-    ring
-  have hKab' := gradeBy_le_gradeBy_comp (R := R) (fun x : ℤ => x - 1) (e + f) hKab
-  rw [hdeg] at hKab'
+  -- `K(a, b)` has cochain degree `e + f - 1`.
+  have hKab' := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_add r₁ r₂ r₀
+    q hq hF₁ hF₂ hF₀ hμ₁ hμ₂ hμ₀ K (ε := -1) (fun i j k A hA => by rw [hK i j k A hA]; ring)
+    ha.2 hb.2
+  rw [← sub_eq_add_neg] at hKab'
   refine LinearMap.mem_coboundaries_iff.2 ⟨_, hKab', ?_⟩
   -- The Novikov module structures, for the vanishing of the products with `d₁ a = 0`, `d₂ b = 0`.
   let := module (R := R) hF₁
@@ -620,10 +650,9 @@ theorem novikovProductOfMatrix_coefficientComparison_assoc_sub_eq_add
   refine novikovProductOfMatrix_assoc_sub_eq_add hF₁ hF₂ hF₃ hF₀ hF₁₂ hF₂₃ r₁ r₂ r₃ r₀ r₁₂ r₂₃
     _ _ _ _ _ _ _ _ _ (even_cochain_vadd_sub hμ₁ n) (even_cochain_vadd_sub hμ₂ n)
     (fun i j k l => ?_) ha hb x₃
-  have h := congrArg (coefficientComparison q hq) (hA i j k l)
-  simp only [map_sum, map_add, map_sub, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
-    Units.smul_def, map_zsmul] at h ⊢
-  exact h
+  simpa only [map_sum, map_add, map_sub, _root_.map_mul,
+    map_negOnePowCast_smul] using
+    congrArg (coefficientComparison q hq) (hA i j k l)
 
 section Cohomology
 
