@@ -190,15 +190,15 @@ theorem isGenusOneAffineDShape (hr : T.IsSelfIntersectionMinusTwoFork t c right)
   -- the two branch points they make the multiplicities affine along `c 1, …, c (t - 2)`.
   have hfib := hr.sum_add_add_eq_zero hleft_ne hleftRight hcard
   obtain ⟨hdiff, hprog⟩ := multiplicity_eq_add_of_add_eq_two_mul ht fun i hi hit ↦ by
-    simpa using hr.interior_relation_of_weight_eq (by omega) (by omega) (by omega)
+    simpa using hr.interior_relation_of_weight_eq (by omega) (by omega)
       (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) (by omega))
       (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := 0) (by
         simpa [hl0 i (by omega) (by omega), hr0 i (by omega) (by omega)] using hfib (c i))
-  have h₁ := hr.interior_relation_of_weight_eq (by omega) (i := 1) (by omega) (by omega)
+  have h₁ := hr.interior_relation_of_weight_eq (i := 1) (by omega) (by omega)
     (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
     (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity left)
     (by simpa [hledge, hr0 1 (by omega) (by omega)] using hfib (c 1))
-  have h₂ := hr.interior_relation_of_weight_eq (by omega) (i := t - 2) (by omega) (by omega)
+  have h₂ := hr.interior_relation_of_weight_eq (i := t - 2) (by omega) (by omega)
     (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
     (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity right)
     (by simpa [hredge, hl0 (t - 2) (by omega) (by omega)] using hfib (c (t - 2)))

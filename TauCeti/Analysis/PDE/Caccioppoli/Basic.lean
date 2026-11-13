@@ -185,7 +185,7 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
       refine mul_le_mul_of_nonneg_left (setIntegral_mono_set ?_ ?_ ?_) (sq_nonneg _)
       · exact hg.mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
       · exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0
-      · exact (inter_subset_inter_right _ hts).eventuallyLE
+      · exact (inter_subset_inter_right _ hts).eventuallySubset
 
 /-- Bound the zeroth-order term of a Caccioppoli inequality by an integral over a set containing
 the support of a cutoff with `ψ² ≤ 1`. The comparison function may dominate the Sobolev value only
@@ -215,7 +215,7 @@ theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanS
       refine setIntegral_mono_set ?_ ?_ ?_
       · exact hg.mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
       · exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0
-      · exact (inter_subset_inter_right _ hts).eventuallyLE
+      · exact (inter_subset_inter_right _ hts).eventuallySubset
 
 open Filter Metric in
 /-- **Localizing a cutoff Caccioppoli inequality with a datum to concentric balls.** There is a
