@@ -47,7 +47,8 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   coefficients `TopCat.singularCohomologyChainCoefficientMap`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology, with
-  `TopCat.singularCup_assoc_unit` the case of coefficients in a commutative ring.
+  `TopCat.singularCup_assoc_unit` the commutative-ring case and
+  `TopCat.singularCup_assoc_tensorUnit` the form along the left unitor.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
   `TopCat.singularCup_constSingularCocycle_left` and
   `TopCat.singularCup_constSingularCocycle_right`: the unit laws.
@@ -291,7 +292,7 @@ lemma singularCup_assoc (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
   simp only [TauCeti.ChainComplex.iCycles_cupCycles]
-  exact TopCat.cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
+  exact cupCochain_alexanderWhitneyDiagonal_assoc X hu hμ h₁₂ h h₂₃ h' _ _ _
 
 /-- **Associativity of the cup product with coefficients in a commutative ring** `k`: the case of
 `TopCat.singularCup_assoc` for the cohomology `H^*(X; k)` with coefficients the monoidal unit `k`
@@ -307,6 +308,19 @@ lemma singularCup_assoc_unit (X : TopCat.{w}) (k : Type w) [CommRing k] {p q r m
         (X.singularCup k (λ_ _).inv (λ_ _).hom q r m' h₂₃ b c) :=
   X.singularCup_assoc k (by monoidal) (by monoidal) h₁₂ h h₂₃ h' a b c
 
+/-- **Associativity of the cup product with unit coefficient object**: for coefficients in an
+object `M` with an associative pairing `μ : M ⊗ M ⟶ M`, the cup product along the left unitor of
+the unit object satisfies `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`. This is `TopCat.singularCup_assoc` with
+the coassociativity of the left unitor discharged. -/
+lemma singularCup_assoc_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {μ : M ⊗ M ⟶ M} (hμ : μ ▷ M ≫ μ = (α_ M M M).hom ≫ M ◁ μ ≫ μ)
+    {p q r m m' n : ℕ} (h₁₂ : p + q = m) (h : m + r = n) (h₂₃ : q + r = m') (h' : p + m' = n)
+    (a : X.singularCohomology (𝟙_ C) k M p) (b : X.singularCohomology (𝟙_ C) k M q)
+    (c : X.singularCohomology (𝟙_ C) k M r) :
+    X.singularCup k (λ_ _).inv μ m r n h (X.singularCup k (λ_ _).inv μ p q m h₁₂ a b) c =
+      X.singularCup k (λ_ _).inv μ p m' n h' a (X.singularCup k (λ_ _).inv μ q r m' h₂₃ b c) :=
+  singularCup_assoc X k (by monoidal) hμ h₁₂ h h₂₃ h' a b c
+
 /-- **The left unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a left unit, under the hypotheses of
 `TopCat.cupCochain_constCochain_left`. -/
@@ -321,8 +335,8 @@ lemma singularCup_constSingularCocycle_left (X : TopCat.{w}) (k : Type*)
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, TopCat.iCycles_constSingularCocycle]
-  exact TopCat.cupCochain_constCochain_left X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
+  exact cupCochain_constCochain_left X hu hμ h _
 
 /-- **The right unit law for the cup product on singular cohomology**: the class of the constant
 `0`-cocycle with value `e` is a right unit, under the hypotheses of
@@ -338,8 +352,8 @@ lemma singularCup_constSingularCocycle_right (X : TopCat.{w}) (k : Type*)
   rw [singularCup_homologyπ]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [TauCeti.ChainComplex.iCycles_cupCycles, TopCat.iCycles_constSingularCocycle]
-  exact TopCat.cupCochain_constCochain_right X hu hμ h _
+  rw [TauCeti.ChainComplex.iCycles_cupCycles, iCycles_constSingularCocycle]
+  exact cupCochain_constCochain_right X hu hμ h _
 
 end Laws
 
