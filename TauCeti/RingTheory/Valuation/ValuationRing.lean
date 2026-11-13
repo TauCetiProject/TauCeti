@@ -41,7 +41,7 @@ discrete valuation ring on its own elements, and the points with zero support of
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
-* `Irreducible.maximalIdeal_eq_of_valuationRing`: an irreducible element
+* `Irreducible.maximalIdeal_eq_of_preValuationRing`: an irreducible element
   of a valuation ring generates its maximal ideal.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
@@ -118,8 +118,8 @@ end Domination
 
 /-- In a valuation ring, an irreducible element generates the maximal ideal. No discrete valuation
 ring hypothesis is needed (compare `Irreducible.maximalIdeal_eq`). -/
-theorem _root_.Irreducible.maximalIdeal_eq_of_valuationRing {R : Type*} [CommRing R] [Nontrivial R]
-    [PreValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) :
+theorem _root_.Irreducible.maximalIdeal_eq_of_preValuationRing {R : Type*} [CommRing R]
+    [Nontrivial R] [PreValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) :
     IsLocalRing.maximalIdeal R = Ideal.span {ϖ} := by
   ext y
   rw [Ideal.mem_span_singleton, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
