@@ -84,63 +84,59 @@ def pinnedLieEquiv :
     (DynkinType.C (n + 1)).lieAlgebra ht ≃ₗ⁅ℚ⁆ sp (Fin (n + 1)) ℚ :=
   LieEquiv.ofBijective (pinnedLieHom n ht) (pinnedLieHom_bijective n ht)
 
+-- `LieEquiv.ofBijective` retains the underlying homomorphism; `LieHom.comp` evaluates
+-- as function composition, so this is the defining composite of `pinnedLieHom`.
+private theorem pinnedLieEquiv_apply (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
+    pinnedLieEquiv n ht x = serreLift (isSerreSystem_pinned n)
+      ((DynkinType.serreLiftEquiv _ ht).symm x) := rfl
+
 /-- The comparison sends each pinned Cartan generator to the standard simple coroot. -/
 @[simp]
-theorem pinnedLieEquiv_h (i : Fin (n + 1)) :
+theorem pinnedLieEquiv_lieBasis_h (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).h i) =
       cartanGenerator n i := by
-  -- Evaluate the defining composite before applying the two presentation interfaces.
-  calc
-    _ = serreLift (isSerreSystem_pinned n)
-        ((DynkinType.serreLiftEquiv _ ht).symm
-          (((DynkinType.C (n + 1)).lieBasis ht).h i)) := rfl
-    _ = _ := (congrArg (serreLift (isSerreSystem_pinned n))
-      (DynkinType.serreLiftEquiv_symm_lieBasis_h _ ht i)).trans (serreLift_serreH _ i)
+  rw [pinnedLieEquiv_apply]
+  exact (congrArg (serreLift (isSerreSystem_pinned n))
+    (DynkinType.serreLiftEquiv_symm_lieBasis_h _ ht i)).trans (serreLift_serreH _ i)
 
 /-- The comparison sends each pinned raising generator to the standard positive simple root. -/
 @[simp]
-theorem pinnedLieEquiv_e (i : Fin (n + 1)) :
+theorem pinnedLieEquiv_lieBasis_e (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).e i) =
       rootGenerator n (.inl i) := by
-  calc
-    _ = serreLift (isSerreSystem_pinned n)
-        ((DynkinType.serreLiftEquiv _ ht).symm
-          (((DynkinType.C (n + 1)).lieBasis ht).e i)) := rfl
-    _ = _ := (congrArg (serreLift (isSerreSystem_pinned n))
-      (DynkinType.serreLiftEquiv_symm_lieBasis_e _ ht i)).trans (serreLift_serreE _ i)
+  rw [pinnedLieEquiv_apply]
+  exact (congrArg (serreLift (isSerreSystem_pinned n))
+    (DynkinType.serreLiftEquiv_symm_lieBasis_e _ ht i)).trans (serreLift_serreE _ i)
 
 /-- The comparison sends each pinned lowering generator to the standard negative simple root. -/
 @[simp]
-theorem pinnedLieEquiv_f (i : Fin (n + 1)) :
+theorem pinnedLieEquiv_lieBasis_f (i : Fin (n + 1)) :
     pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).f i) =
       rootGenerator n (.inr i) := by
-  calc
-    _ = serreLift (isSerreSystem_pinned n)
-        ((DynkinType.serreLiftEquiv _ ht).symm
-          (((DynkinType.C (n + 1)).lieBasis ht).f i)) := rfl
-    _ = _ := (congrArg (serreLift (isSerreSystem_pinned n))
-      (DynkinType.serreLiftEquiv_symm_lieBasis_f _ ht i)).trans (serreLift_serreF _ i)
+  rw [pinnedLieEquiv_apply]
+  exact (congrArg (serreLift (isSerreSystem_pinned n))
+    (DynkinType.serreLiftEquiv_symm_lieBasis_f _ ht i)).trans (serreLift_serreF _ i)
 
 /-- The inverse comparison recovers each numbered pinned Cartan generator. -/
 @[simp]
 theorem pinnedLieEquiv_symm_cartanGenerator (i : Fin (n + 1)) :
     (pinnedLieEquiv n ht).symm (cartanGenerator n i) =
       ((DynkinType.C (n + 1)).lieBasis ht).h i := by
-  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_h]
+  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_lieBasis_h]
 
 /-- The inverse comparison recovers each numbered pinned raising generator. -/
 @[simp]
 theorem pinnedLieEquiv_symm_rootGenerator_inl (i : Fin (n + 1)) :
     (pinnedLieEquiv n ht).symm (rootGenerator n (.inl i)) =
       ((DynkinType.C (n + 1)).lieBasis ht).e i := by
-  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_e]
+  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_lieBasis_e]
 
 /-- The inverse comparison recovers each numbered pinned lowering generator. -/
 @[simp]
 theorem pinnedLieEquiv_symm_rootGenerator_inr (i : Fin (n + 1)) :
     (pinnedLieEquiv n ht).symm (rootGenerator n (.inr i)) =
       ((DynkinType.C (n + 1)).lieBasis ht).f i := by
-  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_f]
+  rw [LieEquiv.symm_apply_eq, pinnedLieEquiv_lieBasis_f]
 
 end
 
