@@ -65,7 +65,8 @@ The subring, `weightedNhd`, topology and maps into them take this hypothesis; `w
   the variables and constants.
 * `TauCeti.Huber.weightedPolynomials` consists of finite-support series, characterized by
   `mem_weightedPolynomials_iff`.
-  `dense_weightedPolynomials` is Wedhorn 5.49(1), via `exists_mvPolynomial_forall_coeff_sub_mem`.
+  `dense_weightedPolynomials` is the density half of Wedhorn 5.49(1), via
+  `exists_mvPolynomial_forall_coeff_sub_mem`.
 * `TauCeti.Huber.weightedPolynomialEquivOfDiscrete`, `discreteTopology_weightedRestrictedSubring`
   and `weightedPolynomials_eq_top` identify weighted series over a discrete ring with polynomials.
 * `TauCeti.Huber.weightedRestrictedSubring_fin_zero`, `weightedRestrictedSubringFinZeroEquiv`
@@ -155,7 +156,8 @@ set `1 = {1}`. -/
 theorem weightPow_zero (T : Fin k → Set A) : weightPow T 0 = 1 := by
   simp [weightPow]
 
-/-- Weights are multiplicative in the multi-index: `T^(α+β) = T^α · T^β`. -/
+/-- Weights are multiplicative in the multi-index: `T^(α+β) = T^α * T^β` (pointwise
+product of sets). -/
 theorem weightPow_add (T : Fin k → Set A) (α β : Fin k →₀ ℕ) :
     weightPow T (α + β) = weightPow T α * weightPow T β := by
   simp only [weightPow, Finsupp.add_apply, pow_add]
@@ -339,7 +341,7 @@ variable [TopologicalSpace A]
 variable `i`, every `m`, and every neighbourhood `U` of zero, the subgroup `Tᵢ^m · U` is again a
 neighbourhood of zero.
 
-Without it `A⟨X⟩_T` is not multiplicatively closed. Take `A = ℚ_p⟨Y, Z⟩`, `T = {Y}`, `f = Z X`
+Without it `A⟨X⟩_T` need not be multiplicatively closed. Take `A = ℚ_p⟨Y, Z⟩`, `T = {Y}`, `f = Z X`
 and `g = ∑ₙ Yⁿ pⁿ Xⁿ`: both are `T`-restricted, but the `Xᵏ` coefficient of `f * g` is
 `Z Yᵏ⁻¹ pᵏ⁻¹`, which never lies in `Tᵏ · A = Yᵏ A`. Note that there `A` is complete, Tate and
 Huber and `T` is finite, bounded and power-bounded — so none of those conditions substitute for
@@ -668,8 +670,8 @@ theorem IsWeightedRestricted.neg {T : Fin k → Set A} {f : MvPowerSeries (Fin k
 /-- **Wedhorn's `A⟨X⟩_T`**: the weighted restricted power series form a subring of `A[[X]]`.
 
 The weight family must satisfy Wedhorn's standing hypothesis
-(`TauCeti.Huber.IsWeightFamily`); without it the carrier is not closed under multiplication, and
-the docstring of that definition records the counterexample. -/
+(`TauCeti.Huber.IsWeightFamily`); without it the carrier need not be closed under multiplication,
+and the docstring of that definition records the counterexample. -/
 def weightedRestrictedSubring [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T) :
     Subring (MvPowerSeries (Fin k) A) where
   carrier := {f | IsWeightedRestricted T f}
@@ -690,6 +692,7 @@ noncomputable def weightedC [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
     A →+* weightedRestrictedSubring T hT :=
   (MvPowerSeries.C : A →+* MvPowerSeries (Fin k) A).codRestrict _ (isWeightedRestricted_C T)
 
+/-- The constant series `weightedC a` is the constant series `C a` of `A[[X]]`. -/
 @[simp]
 theorem coe_weightedC [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} (a : A) :
     (weightedC T hT a : MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
@@ -713,6 +716,7 @@ noncomputable def weightedX [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
     weightedRestrictedSubring T hT :=
   ⟨MvPowerSeries.X i, isWeightedRestricted_X T i⟩
 
+/-- The variable `weightedX i` is the variable `X i` of `A[[X]]`. -/
 @[simp]
 theorem coe_weightedX [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
     (i : Fin k) :
@@ -946,9 +950,10 @@ the standing hypothesis are implicit because they are read off the carrier's own
 
 **On diamonds.** Mathlib does register a topology on `MvPowerSeries σ R`, but as a *scoped*
 instance in `MvPowerSeries.WithPiTopology` (`Mathlib/RingTheory/MvPowerSeries/PiTopology.lean`).
-It is therefore invisible here, and no file in this repository opens that scope; a downstream file
-that did would get the induced subtype topology on the carrier alongside this instance, and would
-have to say which it means. -/
+It is therefore invisible here, and no file that uses `weightedRestrictedSubring` opens that scope
+(other files of this repository do, for formal groups). A downstream file that opened the scope
+would not be asked which topology is meant: instance search silently returns `weightedTopology`
+(not defeq to the induced subtype topology on the carrier). -/
 noncomputable instance weightedTopology [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} : TopologicalSpace (weightedRestrictedSubring T hT) :=
   (weightedNhd_subgroups_basis hT).topology
@@ -1034,6 +1039,7 @@ noncomputable def weightedPolynomialHom [NonarchimedeanRing A] (T : Fin k → Se
   MvPolynomial.coeToMvPowerSeries.ringHom.codRestrict _
     (isWeightedRestricted_toMvPowerSeries T)
 
+/-- A polynomial and its image under `weightedPolynomialHom` are the same series in `A[[X]]`. -/
 @[simp]
 theorem coe_weightedPolynomialHom [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
@@ -1098,6 +1104,7 @@ noncomputable def weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k →
     ⟨fun _ _ h ↦ weightedPolynomialHom_injective hT (congrArg Subtype.val h),
       (weightedPolynomialHom T hT).rangeRestrict_surjective⟩
 
+/-- The equivalence `weightedPolynomialsEquiv` agrees with `weightedPolynomialHom`. -/
 @[simp]
 theorem coe_weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
@@ -1136,7 +1143,7 @@ theorem weightedX_mem_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → 
     {hT : IsWeightFamily T} (i : Fin k) : weightedX T hT i ∈ weightedPolynomials T hT :=
   ⟨MvPolynomial.X i, weightedPolynomialHom_X i⟩
 
-/-- **Wedhorn 5.49(1)**: the polynomials are dense in `A⟨X⟩_T`. -/
+/-- **Wedhorn 5.49(1), the density half**: the polynomials are dense in `A⟨X⟩_T`. -/
 theorem dense_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → Set A}
     (hT : IsWeightFamily T) :
     Dense (weightedPolynomials T hT : Set (weightedRestrictedSubring T hT)) := by
