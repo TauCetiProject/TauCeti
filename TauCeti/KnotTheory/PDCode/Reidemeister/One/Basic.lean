@@ -123,11 +123,9 @@ private theorem sumCongr_slotSmoothing_true_mul_kinkPerm (he : e (e h) = h) (hne
     · subst hx'
       simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne]
     simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne]
+  · fin_cases t <;>
+      simp [kinkPerm_inr_zero he hne, kinkPerm_inr_one, kinkPerm_inr_two, kinkPerm_inr_three,
+        swap_apply_of_ne_of_ne, hne, he]
 
 /-- The other smoothing `slotSmoothing false` at the new crossing, after the arcs of the kink, is
 the old traversal `T * e` with all four slots spliced in along it. -/
@@ -145,11 +143,9 @@ private theorem sumCongr_slotSmoothing_false_mul_kinkPerm (he : e (e h) = h) (hn
     · subst hx'
       simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne]
     simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne]
+  · fin_cases t <;>
+      simp [kinkPerm_inr_zero he hne, kinkPerm_inr_one, kinkPerm_inr_two, kinkPerm_inr_three,
+        swap_apply_of_ne_of_ne, hne, he]
 
 /-- Following the strands through the new crossing, after the arcs of the kink, is the old
 component traversal `T * e` with all four slots spliced in along it. -/
@@ -167,11 +163,9 @@ private theorem sumCongr_oppositeCrossingSlot_mul_kinkPerm (he : e (e h) = h) (h
     · subst hx'
       simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne, Fin.ext_iff]
     simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne, Fin.ext_iff]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne, Fin.ext_iff]
+  · fin_cases t <;>
+      simp [kinkPerm_inr_zero he hne, kinkPerm_inr_one, kinkPerm_inr_two, kinkPerm_inr_three,
+        swap_apply_of_ne_of_ne, hne, he, Fin.ext_iff]
 
 omit [DecidableEq α] in
 private theorem orbitCount_sumCongr_one [Finite α] (σ : Perm α) :
