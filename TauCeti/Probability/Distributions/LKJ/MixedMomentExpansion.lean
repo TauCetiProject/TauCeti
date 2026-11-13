@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
+public import TauCeti.Probability.Distributions.LKJ.MixedMoments
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Polynomial
 public import TauCeti.Probability.Distributions.Beta.Polynomial
 
@@ -17,7 +18,8 @@ treating coordinates and residual square roots as separate polynomial variables.
 monomial in the resulting polynomial has an expectation given by a product of Beta quotients.
 Thus the polynomial's finite support gives an exact, finite formula for every natural mixed
 entry moment. Ordered-pair exponents are allowed, so symmetry need not be resolved beforehand.
-The empty matrix and the zeroth monomial are included.
+The empty matrix and the zeroth monomial are included. Absolute integrability is supplied by
+`integrable_prod_pow_coe_apply_lkjMeasure` in `LKJ.MixedMoments`.
 
 This uses the independent centered-Beta construction `map_coe_lkjMeasure`, not individual
 Cholesky-entry moments: entries in a Cholesky row are not generally independent.
@@ -36,24 +38,6 @@ open MeasureTheory ProbabilityTheory
 open scoped BigOperators
 
 namespace TauCeti.Probability
-
-/-- Every natural mixed entry monomial is absolutely integrable under an LKJ measure,
-including the zero measure at nonpositive shape. -/
-theorem integrable_prod_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ}
-    (n : Fin p → Fin p → ℕ) :
-    Integrable (fun R ↦ ∏ i, ∏ j, (R.val i j) ^ n i j) (lkjMeasure p η) := by
-  by_cases hη : 0 < η
-  · have hcont : Continuous (fun R : Matrix (Fin p) (Fin p) ℝ ↦
-        ∏ i, ∏ j, R i j ^ n i j) := by fun_prop
-    apply (integrable_map_measure (μ := lkjMeasure p η) (f := Subtype.val)
-      (g := fun R : Matrix (Fin p) (Fin p) ℝ ↦ ∏ i, ∏ j, R i j ^ n i j)
-      hcont.aestronglyMeasurable (by fun_prop)).mp
-    rw [map_coe_lkjMeasure hη,
-      integrable_map_measure hcont.aestronglyMeasurable (by fun_prop)]
-    simpa only [Function.comp_def, ← eval_partialCorrelationGramMonomialPolynomial] using
-      integrable_eval_sumElim_sqrt_one_sub_sq_pi_centered_betaMeasure _
-        (lkjPartialCorrelationShape_pos hη) (partialCorrelationGramMonomialPolynomial p n)
-  · simp [lkjMeasure_of_nonpos (not_lt.mp hη)]
 
 /-- Every natural mixed entry moment of a valid LKJ law equals a finite sum of Beta products.
 The exponents in each term are the coefficients' monomial indices in the explicit Gram
