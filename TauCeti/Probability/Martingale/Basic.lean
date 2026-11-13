@@ -274,4 +274,32 @@ theorem Martingale.mul_left_of_eq_zero [SigmaFiniteFiltration μ ℱ] {a : Ω �
     _ =ᵐ[μ] μ[a * Y r | ℱ s] := condExp_congr_ae (hlate r t le_rfl hrt.le)
     _ = 0 := by rw [hY₀ r le_rfl, mul_zero, condExp_zero]
 
+/-- Conditioning an increment restricted to an event known at its starting date truncates
+the increment to the conditioning date, with zero increment before its start. -/
+theorem Martingale.condExp_indicator_sub [SigmaFiniteFiltration μ ℱ]
+    (hX : Martingale X ℱ μ) {s t : ι} (hst : s ≤ t) {A : Set Ω}
+    (hA : MeasurableSet[ℱ s] A) (S : ι) :
+    μ[A.indicator (X t - X s) | ℱ S] =ᵐ[μ]
+      A.indicator (X (max s (min t S)) - X s) := by
+  have hM := (hX.const_min t).sub (hX.const_min s)
+  have hcond (u : ι) : μ[X t - X s | ℱ u] =ᵐ[μ]
+      X (min t u) - X (min s u) := by
+    simpa only [Pi.sub_apply, min_eq_left (le_max_left t u),
+      min_eq_left (hst.trans (le_max_left t u))] using
+      hM.condExp_ae_eq (le_max_right t u)
+  have hint := (hX.integrable t).sub (hX.integrable s)
+  by_cases hSs : S ≤ s
+  · have hzero : μ[A.indicator (X t - X s) | ℱ s] =ᵐ[μ] 0 := by
+      simpa only [min_eq_right hst, min_self, sub_self, Set.indicator_zero'] using
+        (condExp_indicator hint hA).trans (hcond s).indicator
+    calc
+      _ =ᵐ[μ] μ[μ[A.indicator (X t - X s) | ℱ s] | ℱ S] :=
+        (condExp_condExp_of_le (ℱ.mono hSs) (ℱ.le s)).symm
+      _ =ᵐ[μ] μ[0 | ℱ S] := condExp_congr_ae hzero
+      _ = _ := by rw [condExp_zero, min_eq_right (hSs.trans hst),
+        max_eq_left hSs, sub_self, Set.indicator_zero']
+  · have hsS := le_of_not_ge hSs
+    simpa only [min_eq_left hsS, max_eq_right (le_min hst hsS)] using
+      (condExp_indicator hint (ℱ.mono hsS _ hA)).trans (hcond S).indicator
+
 end MeasureTheory

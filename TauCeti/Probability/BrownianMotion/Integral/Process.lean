@@ -43,29 +43,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
-private theorem condExp_rectangle (hW : IsFilteredPreBrownianReal ℱ W P)
-    {s t : ℝ≥0} (hst : s ≤ t) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) (S : ℝ≥0) :
-    P[A.indicator (W t - W s) | ℱ S] =ᵐ[P]
-      A.indicator (W (max s (min t S)) - W s) := by
-  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
-  have hM := (hW.martingale.const_min t).sub (hW.martingale.const_min s)
-  have hmul := hM.mul_left_of_eq_zero (r := s) (a := A.indicator 1)
-    (fun u hus ↦ by simp only [Pi.sub_apply, min_eq_right (hus.trans hst),
-      min_eq_right hus, sub_self])
-    (stronglyMeasurable_const.indicator hA)
-    (fun u ↦ by
-      simpa only [Pi.mul_def, ← indicator_mul_left, Pi.one_apply, one_mul] using
-        (hM.integrable u).indicator (ℱ.le s _ hA))
-  have hcond := hmul.condExp_ae_eq (le_max_right t S)
-  dsimp only [Pi.sub_apply] at hcond
-  simp only [min_eq_left (le_max_left t S), min_eq_left (hst.trans (le_max_left t S)),
-    Pi.mul_def, ← indicator_mul_left, Pi.one_apply, one_mul] at hcond
-  by_cases hSs : S ≤ s
-  · simpa only [min_eq_right (hSs.trans hst), min_eq_right hSs, max_eq_left hSs,
-      sub_self] using hcond
-  · simpa only [min_eq_left (le_of_not_ge hSs),
-      max_eq_right (le_min hst (le_of_not_ge hSs))] using hcond
-
 /-- Conditioning a terminal integral on an earlier date gives the integral of its restriction.
 The restricted input may be any L² class agreeing with the original input on the shorter
 horizon; no choice of representatives or usual conditions on the filtration is needed. -/
@@ -109,13 +86,20 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     have hshort := hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod S s t hA 1
     simp only [Set.indicator, ite_mul, one_mul, zero_mul] at hterminal hshort
     exact (condExp_congr_ae hterminal).trans
-      ((condExp_rectangle hW hst.le hA S).trans hshort.symm)
+      ((hW.martingale.condExp_indicator_sub hst.le hA S).trans hshort.symm)
   have hg : R f = g := Lp.ext ((hR f).trans hfg.symm)
   exact (hC (hW.l2Integral T f)).symm.trans
     (by simpa only [ContinuousLinearMap.comp_apply,
       LinearIsometry.coe_toContinuousLinearMap, hg] using
         Lp.ext_iff.mp (congrArg (fun J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ]
           Lp ℝ 2 P ↦ J f) hmaps))
+
+/-- A terminal L² Brownian integral is a.e. strongly measurable at its terminal date. -/
+theorem aestronglyMeasurable_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    AEStronglyMeasurable[ℱ T] (hW.l2Integral T f) P :=
+  ⟨P[hW.l2Integral T f | ℱ T], stronglyMeasurable_condExp,
+    (hW.condExp_l2Integral le_rfl f f .rfl).symm⟩
 
 /-- Predictable L² inputs on every finite horizon determine a square-integrable martingale
 on the raw filtration. The chosen values agree with the terminal integral classes at each
