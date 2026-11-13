@@ -39,8 +39,9 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.scaleGLRat d`: the same diagonal element over `ℚ`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
-* `TauCeti.gamma1Conj q N`: the conjugate `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a finite-index
-  subgroup of `SL(2, ℤ)`.
+* `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
+  `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, a subgroup of `SL(2, ℤ)` of finite index for `N ≠ 0`; it is the
+  whole conjugate when `q ∣ N`.
 * `TauCeti.ModularForm.levelRaise`, `TauCeti.CuspForm.levelRaise`: the operator `V_d`, taking a
   form for `𝒢` to a form for any group `𝒢'` conjugated into `𝒢` by `diag(d, 1)`, together with
   their `ℂ`-linear packagings `levelRaiseₗ`.
@@ -51,11 +52,11 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.ModularForm.levelRaise_apply`: `(V_d f) τ = f (d τ)`, the defining formula from which
   the algebraic properties (`levelRaise_one_apply`, `ModularForm.levelRaise_one`,
   `levelRaise_levelRaise`, `levelRaise_injective`) all follow by `ext`.
-* `TauCeti.slash_mapGL_eq_smul_of_unitsMap_eq`: a function whose level-raise carries a nebentypus
-  trivial on the kernel of `(ZMod N)ˣ → (ZMod (N/l))ˣ` transforms under each `γ' ∈ Γ₀(N / l)` by
-  the character value at any unit lying over the label of `γ'`.
+* `TauCeti.slash_mapGL_eq_smul_of_unitsMap_eq`: a `T`-periodic function whose level-raise carries a
+  nebentypus trivial on the kernel of `(ZMod N)ˣ → (ZMod (N/l))ˣ` transforms under each
+  `γ' ∈ Γ₀(N / l)` by the character value at any unit lying over the label of `γ'`.
 * `TauCeti.slash_mapGL_eq_self_of_mem_Gamma1_div`: the trivial-label case of the previous result —
-  such a function is invariant under all of `Γ₁(N / l)`.
+  such a `T`-periodic function is invariant under all of `Γ₁(N / l)`.
 * `TauCeti.Gamma1_map_le_conjAct_scaleGL`, `TauCeti.Gamma0_map_le_conjAct_scaleGL`: the level
   transport, `Γ₁(dM) ≤ diag(d,1)⁻¹ Γ₁(M) diag(d,1)` and likewise for `Γ₀`, which is what makes
   `V_d` a map `M_k(Γ₁(M)) → M_k(Γ₁(dM))`.
@@ -69,7 +70,8 @@ the lower level. The `q`-expansion results go up only.
   can be raised back from `N / l` to `N` at the cost of two translations — together with the
   bookkeeping `γ 1 1 = γ' 1 1 - γ' 1 0 * j` that pins the lower-right entry of `γ`, which is what
   a nebentypus of level `N` reads off it.
-* `TauCeti.ModularForm.slash_levelRaise_eq_smul`, `TauCeti.CuspForm.slash_levelRaise_eq_smul`:
+* `ModularForm.coe_levelRaise_slash_eq_smul`,
+  `CuspForm.coe_levelRaise_slash_eq_smul`:
   the eigenvalue transport. Slashing `V_d f` by `γ` produces the same scalar that slashing `f`
   by the conjugate matrix `conjScale d γ` does.
 * `TauCeti.CuspForm.diamondOpCusp_levelRaise`: `V_d` intertwines diamond operators between a
@@ -130,7 +132,7 @@ The old subspace is spanned by the images of the `V_d`.
   the level-lowering block of `conductor_theorem_dichotomy_cuspForm_strong`. Half of that block
   is deliberately not ported: `ModularGroup_T_mem_Gamma1`, `conductor_slash_levelRaise_eq` and
   `smul_levelRaiseFun` already exist here in more general form (`T_zpow_mem_Gamma1`,
-  `ModularForm.slash_levelRaise_eq_smul` with `mem_modFormCharSpace_iff_nebentypus`, and the
+  `ModularForm.coe_levelRaise_slash_eq_smul` with `mem_modFormCharSpace_iff_nebentypus`, and the
   `ℂ`-linearity of `levelRaiseₗ`), and AINTLIB's two `fun_eq_..._inv_smul` lemmas are not
   needed, mathlib's `mdifferentiable_smul` reaching the holomorphy descent directly.
 * `ModularForm.isSupportedOnDvd_qExpansion_levelRaise` and its cusp-form counterpart are adapted
@@ -590,9 +592,10 @@ section Gamma1Conj
 
 variable {q N M : ℕ}
 
-/-- `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a subgroup of `SL(2, ℤ)` (Mathlib's `conjGL` at
-`diag(q, 1)⁻¹`): for `q ∣ N` it consists of the matrices `(a, q b; c, d)` with
-`(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). -/
+/-- The intersection of `SL(2, ℤ)` with `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹` (Mathlib's `conjGL` at
+`diag(q, 1)⁻¹`), which is the whole conjugate when `q ∣ N` (`map_gamma1Conj`). It consists of the
+matrices `(a, q b; c, d)` with `(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). It has finite index
+in `SL(2, ℤ)` when `N ≠ 0`. -/
 def gamma1Conj (q N : ℕ) [NeZero q] : Subgroup SL(2, ℤ) :=
   conjGL (Gamma1 N) (scaleGL q)⁻¹
 
@@ -860,26 +863,28 @@ lemma CuspForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
 eigenvalue `z`, then `V_d f` is an eigenvector of the slash by `γ` with the same eigenvalue.
 Applied to `γ ∈ Γ₀(dM)` this is what transports the nebentypus, in
 `levelRaise_mem_modFormCharSpace`. -/
-lemma ModularForm.slash_levelRaise_eq_smul [𝒢'.HasDetOne] [NeZero d]
+lemma _root_.ModularForm.coe_levelRaise_slash_eq_smul [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) {z : ℂ}
     (hf : ⇑f ∣[k] mapGL ℝ (conjScale d γ c hc) = z • ⇑f) :
-    ⇑(levelRaise d hle f) ∣[k] mapGL ℝ γ = z • ⇑(levelRaise d hle f) := by
-  rw [coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash, coe_levelRaise,
-    smul_comm]
+    ⇑(ModularForm.levelRaise d hle f) ∣[k] mapGL ℝ γ =
+      z • ⇑(ModularForm.levelRaise d hle f) := by
+  rw [ModularForm.coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash,
+    ModularForm.coe_levelRaise, smul_comm]
   congr 1
   rw [σ_eq_refl_of_det_pos val_det_scaleGL_pos, ContinuousAlgEquiv.refl_apply]
 
 /-- **Eigenvalue transport (cusp forms).** If `f` is an eigenvector of the slash by
 `conjScale d γ` with eigenvalue `z`, then `V_d f` is an eigenvector of the slash by `γ` with
 the same eigenvalue. -/
-lemma CuspForm.slash_levelRaise_eq_smul [𝒢'.HasDetOne] [NeZero d]
+lemma _root_.CuspForm.coe_levelRaise_slash_eq_smul [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) {z : ℂ}
     (hf : ⇑f ∣[k] mapGL ℝ (conjScale d γ c hc) = z • ⇑f) :
-    ⇑(levelRaise d hle f) ∣[k] mapGL ℝ γ = z • ⇑(levelRaise d hle f) := by
-  rw [coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash, coe_levelRaise,
-    smul_comm]
+    ⇑(CuspForm.levelRaise d hle f) ∣[k] mapGL ℝ γ =
+      z • ⇑(CuspForm.levelRaise d hle f) := by
+  rw [CuspForm.coe_levelRaise_slash hle f γ hc, hf, _root_.ModularForm.smul_slash,
+    CuspForm.coe_levelRaise, smul_comm]
   congr 1
   rw [σ_eq_refl_of_det_pos val_det_scaleGL_pos, ContinuousAlgEquiv.refl_apply]
 
@@ -895,7 +900,7 @@ private lemma slash_left_cancel (k : ℤ) (A : GL (Fin 2) ℝ) {f g : ℍ → �
     (h : f ∣[k] A = g ∣[k] A) : f = g := by
   simpa [← SlashAction.slash_mul] using congrArg (· ∣[k] A⁻¹) h
 
-/-- **Eigenvalue descent**, the converse of `ModularForm.slash_levelRaise_eq_smul`. If the
+/-- **Eigenvalue descent**, the converse of `ModularForm.coe_levelRaise_slash_eq_smul`. If the
 level-raise of `f` is an eigenvector of the slash by `γ` with eigenvalue `z`, then `f` itself is
 an eigenvector of the slash by the conjugate matrix `conjScale d γ`, with the same eigenvalue.
 
@@ -960,7 +965,7 @@ theorem ModularForm.levelRaise_mem_modFormCharSpace_of_dvd {M d N : ℕ} [NeZero
   intro γ
   obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
   rw [MonoidHom.comp_apply, ← heq]
-  exact slash_levelRaise_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  exact ModularForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
 
 /-- **The nebentypus of a level-raise at the exact level.** The `N = d * M` case of
 `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace_of_dvd`. -/
@@ -987,7 +992,7 @@ theorem CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd {M d N : ℕ} [NeZero d
   intro γ
   obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
   rw [MonoidHom.comp_apply, ← heq]
-  exact slash_levelRaise_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  exact CuspForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
 
 /-- **The nebentypus of a level-raise at the exact level (cusp forms).** The `N = d * M` case of
 `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`. -/
@@ -1066,9 +1071,9 @@ character value `χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is triv
 the reduction `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
 
 This is the step that converts a nebentypus into honest invariance, and it is where the conductor
-drops: a form whose character already factors through `N / l` is invariant under all of
-`Γ₁(N / l)`, the larger congruence subgroup at the lower level, which is what the conductor
-argument turns into a statement about newforms.
+drops: a `T`-periodic function whose level-raise carries a character that already factors through
+`N / l` is invariant under all of `Γ₁(N / l)`, the larger congruence subgroup at the lower level,
+which is what the conductor argument turns into a statement about newforms.
 
 Adapted from `conductor_slash_eq_self_of_mem_Gamma1_div` in AINTLIB
 (`Eigenforms/ConductorTheorem.lean`:217, Chris Birkbeck, Apache-2.0, commit
