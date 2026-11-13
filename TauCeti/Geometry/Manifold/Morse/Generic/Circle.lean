@@ -67,7 +67,7 @@ open scoped Manifold Topology ContDiff TauCeti.ManifoldWeakWhitney
 namespace TauCeti
 
 /-- The period of the circle `ℝ ⧸ 2πℤ` is positive. -/
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance morseCircleTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 /-! ### The family `cos³ θ + ε cos θ` -/
 
