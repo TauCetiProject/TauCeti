@@ -20,15 +20,18 @@ conjugate to multiplication by `i` through a real-linear automorphism: it sends 
 one `(w₁, A w₁, …, wₙ, A wₙ)` of `A`. This is the pointwise normal form behind the reduction of a
 variable complex structure to the standard one in the vector similarity principle.
 
-On a finite-dimensional real normed space the same normal form holds with a complex coordinate
-space as the model: every real-linear `A` with `A² = -1` is multiplication by `i` in some
-real-linear frame `ℂⁿ → V`. Such frames turn an equation involving a variable complex structure
-near one point into an equation on a complex inner product space whose structure is close to `i`.
+On a finite-dimensional real normed space `E` the same normal form holds with a complex
+coordinate space as the model: every real-linear `A` with `A² = -1` is multiplication by `i` in
+some real-linear frame `ℂⁿ → E`. Such frames turn an equation involving a variable complex
+structure near one point into an equation on a complex inner product space whose structure is
+close to `i`.
 
 ## Main declarations
 
 * `ContinuousLinearMap.exists_continuousLinearEquiv_comp_eq_comp_I_smul`: `A Φ₁ = Φ₁ i` for some
   real-linear automorphism `Φ₁`.
+* `ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul`:
+  `A Φ = Φ i` for some real-linear isomorphism `Φ : ℂⁿ → E`, on a real normed space `E`.
 
 ## References
 
@@ -73,8 +76,8 @@ theorem exists_continuousLinearEquiv_comp_eq_comp_I_smul (A : V →L[ℝ] V)
   fin_cases k <;> simp [he, hbI₀, hbI₁, hbA', hA']
 
 /-- **Complex frames of a complex structure.** A real-linear `A` with `A² = -1` on a
-finite-dimensional real normed space `V` is multiplication by `i` in a complex coordinate frame:
-some real-linear isomorphism `Φ : ℂⁿ → V` satisfies `A Φ = Φ i`. -/
+finite-dimensional real normed space `E` is multiplication by `i` in a complex coordinate frame:
+some real-linear isomorphism `Φ : ℂⁿ → E` satisfies `A Φ = Φ i`. -/
 theorem exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] (A : E →L[ℝ] E)
     (hA : A ∘L A = -ContinuousLinearMap.id ℝ E) :

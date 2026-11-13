@@ -14,16 +14,26 @@ Equicontinuity at a point is insensitive to finitely many members of a family, p
 them is continuous there (`equicontinuousAt_finite`). For a sequence `F : ℕ → X → α` this means
 that equicontinuity at `x₀` of a tail `n ↦ F (n + N)` and continuity at `x₀` of the first `N`
 members give equicontinuity at `x₀` of the whole sequence
-(`equicontinuousAt_of_equicontinuousAt_add`). Local arguments often control a sequence only from
-some index on, with the index depending on the point; this lemma assembles such local control
-into equicontinuity of the original sequence.
+(`TauCeti.equicontinuousAt_of_equicontinuousAt_add`). Local arguments often control a sequence
+only from some index on, with the index depending on the point; this lemma assembles such local
+control into equicontinuity of the original sequence.
+
+Equicontinuity within a neighbourhood of `x₀` is equicontinuity at `x₀`
+(`EquicontinuousWithinAt.equicontinuousAt`), as for continuity.
 -/
 
 public section
 
-open Filter
+open Filter Topology
 
-variable {X α : Type*} [TopologicalSpace X] [UniformSpace α]
+variable {ι X α : Type*} [TopologicalSpace X] [UniformSpace α]
+
+/-- A family equicontinuous at `x₀` within a neighbourhood of `x₀` is equicontinuous at `x₀`. -/
+theorem EquicontinuousWithinAt.equicontinuousAt {F : ι → X → α} {S : Set X} {x₀ : X}
+    (hF : EquicontinuousWithinAt F S x₀) (hS : S ∈ 𝓝 x₀) : EquicontinuousAt F x₀ := by
+  rwa [EquicontinuousWithinAt, nhdsWithin_eq_nhds.2 hS] at hF
+
+namespace TauCeti
 
 /-- A sequence of functions is equicontinuous at `x₀` if one of its tails `n ↦ F (n + N)` is,
 and its first `N` members are continuous at `x₀`. -/
@@ -38,3 +48,5 @@ theorem equicontinuousAt_of_equicontinuousAt_add {F : ℕ → X → α} {x₀ : 
   · exact hhead ⟨n, hn⟩
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
     exact htail k
+
+end TauCeti
