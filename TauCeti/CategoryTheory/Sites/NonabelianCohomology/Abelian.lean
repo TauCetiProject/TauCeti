@@ -143,7 +143,7 @@ def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
       left_inv ψ := NatTrans.ext (funext fun U ↦
         (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm_apply_eq.2 (by
           rw [MulEquiv.symm_apply_apply, toAdd_ofAdd,
-            AddCommGrpCat.uliftZMultiplesAddEquiv_apply_one]))
+            AddCommGrpCat.uliftZMultiplesAddEquiv_apply_eq]))
       right_inv s := Subtype.ext (funext fun U ↦
         (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd a))
           ((AddCommGrpCat.uliftZMultiplesAddEquiv _).apply_symm_apply _)).trans (by simp)) }

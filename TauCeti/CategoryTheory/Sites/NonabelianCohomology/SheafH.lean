@@ -82,7 +82,6 @@ lemma zeroMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
 
 /-- The degree-zero class corresponding to a global section is the class of the sheaf morphism
 adjoint to the morphism from the constant integer presheaf determined by that section. -/
-@[simp]
 lemma zeroMulEquivSections_symm_apply_toAdd (F : Sheaf J AddCommGrpCat.{w})
     (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) :
     ((zeroMulEquivSections F).symm s).toAdd =

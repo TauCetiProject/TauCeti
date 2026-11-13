@@ -25,7 +25,7 @@ namespace AddCommGrpCat
 
 /-- `AddCommGrpCat.uliftZMultiplesAddEquiv` evaluates a morphism out of `ℤ` at `1`; this holds by
 definition. -/
-lemma uliftZMultiplesAddEquiv_apply_one {G : AddCommGrpCat.{w}}
+lemma uliftZMultiplesAddEquiv_apply_eq {G : AddCommGrpCat.{w}}
     (f : AddCommGrpCat.of (ULift ℤ) ⟶ G) : G.uliftZMultiplesAddEquiv f = f ⟨1⟩ :=
   (rfl)
 
@@ -34,18 +34,18 @@ lemma uliftZMultiplesAddEquiv_apply_one {G : AddCommGrpCat.{w}}
 lemma uliftZMultiplesAddEquiv_comp {G G' : AddCommGrpCat.{w}}
     (f : AddCommGrpCat.of (ULift ℤ) ⟶ G) (g : G ⟶ G') :
     G'.uliftZMultiplesAddEquiv (f ≫ g) = g (G.uliftZMultiplesAddEquiv f) := by
-  rw [uliftZMultiplesAddEquiv_apply_one, uliftZMultiplesAddEquiv_apply_one,
+  rw [uliftZMultiplesAddEquiv_apply_eq, uliftZMultiplesAddEquiv_apply_eq,
     ConcreteCategory.comp_apply]
 
 /-- The identity of `ℤ` corresponds to `1` under `AddCommGrpCat.uliftZMultiplesAddEquiv`. -/
 lemma uliftZMultiplesAddEquiv_id :
     (AddCommGrpCat.of (ULift.{w} ℤ)).uliftZMultiplesAddEquiv (𝟙 _) = ⟨1⟩ :=
-  uliftZMultiplesAddEquiv_apply_one _
+  uliftZMultiplesAddEquiv_apply_eq _
 
 /-- The morphism out of `ℤ` corresponding to an element `g` under
 `AddCommGrpCat.uliftZMultiplesAddEquiv` sends `1` to `g`. -/
 lemma uliftZMultiplesAddEquiv_symm_apply_one {G : AddCommGrpCat.{w}} (g : G) :
     G.uliftZMultiplesAddEquiv.symm g ⟨1⟩ = g :=
-  (uliftZMultiplesAddEquiv_apply_one _).symm.trans (AddEquiv.apply_symm_apply _ _)
+  (uliftZMultiplesAddEquiv_apply_eq _).symm.trans (AddEquiv.apply_symm_apply _ _)
 
 end AddCommGrpCat
