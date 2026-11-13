@@ -43,7 +43,8 @@ form into the one of `S⁻¹`.
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
-  finite-dimensional real inner product space;
+  finite-dimensional real inner product space, and
+  `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` for a nonzero scalar multiple;
 * `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
@@ -194,6 +195,52 @@ theorem stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
   congr 1
   funext x
   simp
+
+/-- Rescaling `ProbabilityTheory.stdGaussian` on a finite-dimensional real inner product space `E`
+by a nonzero scalar `c` yields Lebesgue measure weighted by
+`(2π * c ^ 2) ^ (-d / 2) * exp (-‖x‖ ^ 2 / (2 * c ^ 2))`, where `d = Module.finrank ℝ E`. -/
+theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {c : ℝ} (hc : c ≠ 0) :
+    (stdGaussian E).map (c • ·) =
+      volume.withDensity fun x =>
+        ENNReal.ofReal
+          ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
+            exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
+  let A : E ≃L[ℝ] E :=
+    { toLinearEquiv :=
+        { toFun x := c • x
+          map_add' x y := smul_add c x y
+          map_smul' r x := smul_comm c r x
+          invFun x := c⁻¹ • x
+          left_inv x := inv_smul_smul₀ hc x
+          right_inv x := smul_inv_smul₀ hc x }
+      continuous_toFun := continuous_const.smul continuous_id
+      continuous_invFun := continuous_const.smul continuous_id }
+  have hAfun : (c • · : E → E) = fun x => 0 + A x := funext fun x => (zero_add _).symm
+  have hAsymm (x : E) : A.symm x = c⁻¹ • x := rfl
+  have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := by
+    ext x
+    rfl
+  have hc_abs : 0 < |c| := abs_pos.2 hc
+  rw [stdGaussian_eq_withDensity_norm E, hAfun, Measure.map_affine_withDensity volume A 0]
+  refine withDensity_congr_ae (.of_forall fun y => ?_)
+  have hdet : |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| =
+      (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+    rw [hAlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_inv, abs_pow,
+      ← Real.rpow_natCast |c|, ← Real.rpow_neg hc_abs.le, ← sq_abs c,
+      ← Real.rpow_natCast |c| 2, ← Real.rpow_mul hc_abs.le]
+    congr 1
+    ring
+  have hnorm : -‖A.symm (y - 0)‖ ^ 2 / 2 = -‖y‖ ^ 2 / (2 * c ^ 2) := by
+    rw [sub_zero, hAsymm, norm_smul, Real.norm_eq_abs, abs_inv, mul_pow, inv_pow, sq_abs]
+    have : c ^ 2 ≠ 0 := pow_ne_zero 2 hc
+    field_simp
+  dsimp only
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm]
+  refine congrArg ENNReal.ofReal ?_
+  rw [← mul_assoc, mul_comm ((c ^ 2) ^ _),
+    ← Real.mul_rpow (by positivity) (sq_nonneg c)]
 
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
 support. -/

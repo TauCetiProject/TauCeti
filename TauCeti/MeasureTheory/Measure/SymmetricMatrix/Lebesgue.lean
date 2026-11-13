@@ -30,6 +30,8 @@ have Frobenius norm `√2`, so Frobenius volume is `2 ^ (p * (p - 1) / 4)` times
   measure preserving.
 * `TauCeti.symmetricLebesgueIsAddHaarMeasure` — `symmetricLebesgue p` is an additive Haar
   measure, as required by Mathlib's Jacobian API.
+* `TauCeti.symmetricOrthonormalBasis` — the Frobenius orthonormal basis obtained by rescaling the
+  off-diagonal coordinate basis vectors by `(√2)⁻¹`.
 * `TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue` — comparison with the Frobenius
   volume.
 * `TauCeti.symmetricLebesgue_zero` — in dimension zero, `symmetricLebesgue` is the Dirac
@@ -137,6 +139,20 @@ private theorem orthonormal_symScaled (p : ℕ) :
     · simp only [symScale_coe, hd, ite_false, ite_true, mul_one]
       rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
   · simp [h]
+
+/-- The orthonormal basis of the symmetric subspace obtained by rescaling the off-diagonal vectors
+of `TauCeti.symmetricBasis` by `(√2)⁻¹`: `Eᵢᵢ` on the diagonal and `(Eᵢⱼ + Eⱼᵢ) / √2` above it. -/
+def symmetricOrthonormalBasis (p : ℕ) :
+    OrthonormalBasis (upperTriangle p) ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
+  ((symmetricBasis p).unitsSMul (symScale p)).toOrthonormalBasis (orthonormal_symScaled p)
+
+/-- Each vector of `TauCeti.symmetricOrthonormalBasis` is the coordinate basis vector
+`TauCeti.symmetricBasis` scaled by `1` on the diagonal and `(√2)⁻¹` above it. -/
+theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
+    symmetricOrthonormalBasis p ij =
+      (if ij.1.1 = ij.1.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • symmetricBasis p ij := by
+  rw [symmetricOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
+    Units.smul_def, symScale_coe]
 
 private theorem addHaar_symScaled (p : ℕ) :
     ((symmetricBasis p).unitsSMul (symScale p)).addHaar =
