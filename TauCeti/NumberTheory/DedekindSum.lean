@@ -157,11 +157,6 @@ theorem dedekindSum_sub_self_mul (d c k : ℤ) :
     dedekindSum (d - c * k) c = dedekindSum d c := by
   rw [mul_comm, dedekindSum_sub_mul_self]
 
-/-- Congruent first arguments give equal Dedekind sums. -/
-theorem dedekindSum_congr {d₁ d₂ c : ℤ} (h : d₁ ≡ d₂ [ZMOD c]) :
-    dedekindSum d₁ c = dedekindSum d₂ c := by
-  rw [← dedekindSum_emod d₁, ← dedekindSum_emod d₂, h.eq]
-
 /-- The Dedekind sum `s(0, c)` vanishes. -/
 @[simp]
 theorem dedekindSum_zero_left (c : ℤ) : dedekindSum 0 c = 0 := by
@@ -188,6 +183,11 @@ theorem dedekindSum_self_mul (c k : ℤ) : dedekindSum (c * k) c = 0 :=
   dedekindSum_eq_zero_of_dvd (dvd_mul_right c k)
 
 end TauCeti
+
+/-- Congruent first arguments give equal Dedekind sums. -/
+theorem Int.ModEq.dedekindSum_eq {d₁ d₂ c : ℤ} (h : d₁ ≡ d₂ [ZMOD c]) :
+    TauCeti.dedekindSum d₁ c = TauCeti.dedekindSum d₂ c := by
+  rw [← TauCeti.dedekindSum_emod d₁, ← TauCeti.dedekindSum_emod d₂, h.eq]
 
 /-- For coprime arguments, the Dedekind sum uses `Int.fract - 1/2` at every summand. -/
 theorem IsCoprime.dedekindSum_eq {d c : ℤ} (hdc : IsCoprime d c) :
@@ -251,7 +251,7 @@ theorem dedekindSum_eq_zero_of_le_two (d : ℤ) {c : ℤ} (hc : c ≤ 2) :
   have hcongr : d ≡ 2 - d [ZMOD 2] := by
     rw [Int.modEq_iff_dvd]
     exact ⟨1 - d, by ring⟩
-  have h := dedekindSum_congr hcongr
+  have h := hcongr.dedekindSum_eq
   rw [dedekindSum_self_sub] at h
   linarith
 
