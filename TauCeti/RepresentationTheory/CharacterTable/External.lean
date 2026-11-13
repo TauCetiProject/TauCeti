@@ -231,6 +231,7 @@ open scoped Kronecker
 variable (k : Type*) {G H : Type*} [Field k] [Group G] [Group H] [Finite G] [Finite H]
   [IsAlgClosed k] [Invertible (Nat.card G : k)] [Invertible (Nat.card H : k)]
 
+omit [Finite G] [Finite H] in
 /-- The product of the `i`-th irreducible character of `G` and the `j`-th one of `H` is an
 irreducible character of `G × H`, that of the external tensor product. -/
 private theorem mul_irreducibleCharacter_mem (i : Fin (Nat.card (ConjClasses G)))
