@@ -6,8 +6,10 @@ Authors: Jon Crall, Claude Fable 5
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.Moments.Chebyshev
 
-/-! # Convergence in measure: high-probability rates and continuous transformations
+/-! # Convergence in measure: bounds and continuous transformations
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -19,6 +21,9 @@ No measurability is required of the exceptional sets, since the squeeze only
 uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
+Convergence in mean square also implies convergence in measure, with integrability of the
+squared deviations required only eventually along the filter.
+
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
 On finite measure spaces, continuous transformations preserve convergence along countably
 generated filters whenever the transformed functions are eventually almost everywhere strongly
@@ -26,6 +31,8 @@ measurable.
 
 ## Main results
 
+* `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
+  implies convergence in measure for any measure and filter.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
   form, for an `ℝ≥0∞`-valued rate and a target with an extended distance.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_dist`: the `dist`
@@ -35,7 +42,6 @@ measurable.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
-
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -181,3 +187,26 @@ theorem continuous_comp₂ {α ι E₁ E₂ E₃ : Type*} [MeasurableSpace α] {
   (h₁.prodMk h₂).continuous_comp hφ hf
 
 end MeasureTheory.TendstoInMeasure
+
+namespace MeasureTheory
+
+open Filter Topology
+
+/-- Convergence in mean square implies convergence in measure, for any measure and filter.
+Integrability of the squared deviations is needed only eventually. -/
+theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [SeminormedAddCommGroup E]
+    {l : Filter ι} {f : ι → Ω → E} {g : Ω → E}
+    (hint : ∀ᶠ k in l, Integrable (fun ω ↦ ‖f k ω - g ω‖ ^ 2) μ)
+    (hlim : Tendsto (fun k ↦ ∫ ω, ‖f k ω - g ω‖ ^ 2 ∂μ) l (𝓝 0)) :
+    TendstoInMeasure μ f l g := by
+  refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
+  have hbound := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
+    (hlim.div_const (ε ^ 2))
+  simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hbound
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hint] with k hk
+  exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+
+end MeasureTheory

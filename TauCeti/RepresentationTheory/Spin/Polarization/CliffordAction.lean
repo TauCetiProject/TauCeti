@@ -82,8 +82,6 @@ restriction to `pinGroup Q` and `spinGroup Q`, are in
 
 ## References
 
-* [Spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 4, "The Clifford module `S = ⋀·W`".
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
 -/
 
