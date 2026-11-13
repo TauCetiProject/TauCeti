@@ -46,6 +46,12 @@ theorem homogenization_setOf_eq_zero_eq_inf_ker {P : Set V}
     (hne : {x ∈ P | f (x, 1) = 0}.Nonempty) :
     homogenization {x ∈ P | f (x, 1) = 0} = homogenization P ⊓
       PointedCone.ofSubmodule (LinearMap.ker f.toLinearMap) := by
+  have hslice : {x ∈ P | (x, (1 : ℝ)) ∈ PointedCone.ofSubmodule (LinearMap.ker f.toLinearMap)} =
+      {x ∈ P | f (x, 1) = 0} := by
+    ext x
+    simp only [Set.mem_sep_iff, PointedCone.mem_ofSubmodule_iff, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe]
+  rw [← hslice] at hne ⊢
   exact hconv.homogenization_setOf_mem_eq_inf hclosed
     (C := PointedCone.ofSubmodule (LinearMap.ker f.toLinearMap)) f.isClosed_ker hne
 
@@ -87,16 +93,15 @@ private theorem mem_homogenization_of_pos {P F : Set V} (hF : IsExtreme ℝ P F)
     x ∈ homogenization F := by
   obtain ⟨u, t⟩ := x
   obtain ⟨v, s⟩ := y
-  change 0 < t at ht
-  change 0 < s at hs
+  simp only at ht hs
+  rw [Prod.mk_add_mk] at h
   have hw := add_pos ht hs
   apply (hFconv.mem_homogenization_pos_iff hFclosed ht).2
   apply hF.left_mem_of_mem_openSegment ((hPconv.mem_homogenization_pos_iff hPclosed ht).1 hx)
     ((hPconv.mem_homogenization_pos_iff hPclosed hs).1 hy)
     ((hFconv.mem_homogenization_pos_iff hFclosed hw).1 h)
-  refine ⟨t / (t + s), s / (t + s), div_pos ht hw, div_pos hs hw,
-    by rw [← add_div, div_self hw.ne'], ?_⟩
-  change _ = (t + s)⁻¹ • (u + v)
+  rw [mem_openSegment_iff_div]
+  refine ⟨t, s, ht, hs, ?_⟩
   simp only [smul_add, smul_smul]
   congr 1 <;> congr 1 <;> field_simp
 
