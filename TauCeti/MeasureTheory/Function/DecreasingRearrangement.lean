@@ -64,13 +64,15 @@ from it.
   of the representative.
 * `MeasureTheory.Measure.decreasingRearrangement_indicator`,
   `MeasureTheory.Measure.decreasingRearrangement_const_mul`,
-  `MeasureTheory.Measure.decreasingRearrangement_sub_const`: indicators, and multiplication by and
-  subtraction of constants; `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`:
-  the formula `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
+  `MeasureTheory.Measure.decreasingRearrangement_sub_const`,
+  `MeasureTheory.Measure.decreasingRearrangement_rpow`: indicators, multiplication by and
+  subtraction of constants, and positive real powers;
+  `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`: the formula
+  `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
 * `MeasureTheory.Measure.volume_restrict_setOf_lt_decreasingRearrangement`: equimeasurability,
-  with the consequences `lintegral_rpow_decreasingRearrangement`,
-  `eLpNorm_decreasingRearrangement`, `memLp_decreasingRearrangement_iff` and
-  `essSup_decreasingRearrangement`.
+  with the consequences `decreasingRearrangement_decreasingRearrangement`,
+  `lintegral_rpow_decreasingRearrangement`, `eLpNorm_decreasingRearrangement`,
+  `memLp_decreasingRearrangement_iff` and `essSup_decreasingRearrangement`.
 * `MeasureTheory.Measure.decreasingRearrangement_add_le`,
   `MeasureTheory.Measure.decreasingRearrangement_mul_le`: the shifted subadditivity and
   submultiplicativity, and `decreasingRearrangement_le_add_essSup`, the bound
@@ -251,6 +253,26 @@ theorem decreasingRearrangement_sub_const (f : α → ℝ≥0∞) (c : ℝ≥0�
   refine eq_of_forall_lt_iff fun b ↦ ?_
   simp only [lt_decreasingRearrangement_iff, lt_tsub_iff_right]
 
+@[simp]
+theorem decreasingRearrangement_zero_left (s : ℝ) :
+    μ.decreasingRearrangement 0 s = 0 :=
+  le_antisymm (μ.decreasingRearrangement_le_iff.2 (by simp)) bot_le
+
+@[simp]
+theorem decreasingRearrangement_measure_zero (f : α → ℝ≥0∞) (s : ℝ) :
+    (0 : Measure α).decreasingRearrangement f s = 0 :=
+  le_antisymm ((Measure.decreasingRearrangement_le_iff 0).2 (by simp)) bot_le
+
+/-- Raising to a positive real power commutes with rearrangement. -/
+theorem decreasingRearrangement_rpow (f : α → ℝ≥0∞) {r : ℝ} (hr : 0 < r) (s : ℝ) :
+    μ.decreasingRearrangement (fun y ↦ f y ^ r) s = μ.decreasingRearrangement f s ^ r := by
+  have key : ∀ a b : ℝ≥0∞, a < b ^ r ↔ a ^ r⁻¹ < b := fun a b ↦ by
+    conv_rhs =>
+      rw [← ENNReal.rpow_lt_rpow_iff hr, ← ENNReal.rpow_mul, inv_mul_cancel₀ hr.ne',
+        ENNReal.rpow_one]
+  refine eq_of_forall_lt_iff fun a ↦ ?_
+  simp only [key, lt_decreasingRearrangement_iff]
+
 /-- **Shifted subadditivity** `(f + g)* (s + t) ≤ f* s + g* t`. -/
 theorem decreasingRearrangement_add_le (f g : α → ℝ≥0∞) (hs : 0 ≤ s) (ht : 0 ≤ t) :
     μ.decreasingRearrangement (f + g) (s + t) ≤
@@ -315,6 +337,44 @@ theorem volume_restrict_setOf_lt_decreasingRearrangement (f : α → ℝ≥0∞)
 theorem essSup_decreasingRearrangement (f : α → ℝ≥0∞) :
     essSup (μ.decreasingRearrangement f) (volume.restrict (Ioi 0)) = essSup f μ := by
   simp only [essSup_eq_sInf, volume_restrict_setOf_lt_decreasingRearrangement]
+
+/-- An antitone right-continuous function on `(0, ∞)` is its own decreasing rearrangement with
+respect to Lebesgue measure on `(0, ∞)`. -/
+theorem decreasingRearrangement_eq_of_antitoneOn {φ : ℝ → ℝ≥0∞} (hanti : AntitoneOn φ (Ioi 0))
+    (hcont : ∀ t > 0, ContinuousWithinAt φ (Ici t) t) (hs : 0 < s) :
+    (volume.restrict (Ioi 0)).decreasingRearrangement φ s = φ s := by
+  refine eq_of_forall_lt_iff fun c ↦ ?_
+  rw [lt_decreasingRearrangement_iff, restrict_apply' measurableSet_Ioi]
+  constructor
+  · intro h
+    by_contra! hle
+    have hsub : {t | c < φ t} ∩ Ioi 0 ⊆ Ioc 0 s := fun t ⟨hct, ht0⟩ ↦
+      ⟨ht0, le_of_not_gt fun hst ↦ hct.not_ge ((hanti hs ht0 hst.le).trans hle)⟩
+    exact ((measure_mono hsub).trans_eq (by rw [Real.volume_Ioc, sub_zero])).not_gt h
+  · intro hc
+    obtain ⟨u, hsu, hu⟩ := mem_nhdsGE_iff_exists_Ico_subset.1
+      ((hcont s hs).eventually (IsOpen.mem_nhds isOpen_Ioi hc))
+    have hsub : Ioo 0 u ⊆ {t | c < φ t} ∩ Ioi 0 := fun t ⟨ht0, htu⟩ ↦ by
+      refine ⟨?_, ht0⟩
+      rcases lt_or_ge t s with hts | hst
+      · exact hc.trans_le (hanti ht0 hs hts.le)
+      · exact hu ⟨hst, htu⟩
+    calc ENNReal.ofReal s < ENNReal.ofReal u := ENNReal.ofReal_lt_ofReal_iff (hs.trans hsu) |>.2 hsu
+      _ = volume (Ioo 0 u) := by rw [Real.volume_Ioo, sub_zero]
+      _ ≤ volume ({t | c < φ t} ∩ Ioi 0) := measure_mono hsub
+
+/-- Taking the decreasing rearrangement on `(0, ∞)` is idempotent: `(f*)* = f*`. -/
+@[simp]
+theorem decreasingRearrangement_decreasingRearrangement (f : α → ℝ≥0∞) :
+    (volume.restrict (Ioi 0)).decreasingRearrangement (μ.decreasingRearrangement f) =
+      μ.decreasingRearrangement f := by
+  ext s
+  rcases le_or_gt s 0 with hs | hs
+  · rw [decreasingRearrangement_of_nonpos _ _ hs, essSup_decreasingRearrangement,
+      μ.decreasingRearrangement_of_nonpos f hs]
+  · exact decreasingRearrangement_eq_of_antitoneOn
+      ((μ.antitone_decreasingRearrangement f).antitoneOn (Ioi 0))
+      (fun t _ ↦ μ.continuousWithinAt_decreasingRearrangement f t) hs
 
 /-- **Layer cake for the decreasing rearrangement.** For `0 < p`, the decreasing rearrangement
 has the same integral of `p`-th powers on `(0, ∞)` as `f`. -/

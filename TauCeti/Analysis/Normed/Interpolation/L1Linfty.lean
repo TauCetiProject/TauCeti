@@ -45,8 +45,12 @@ costs `‖c‖ μ A`, and no decomposition does better.
 
 The radial retraction attaining the infimum in
 `MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm` scales vectors by
-real numbers, so for the formula `E` is assumed to be a real normed space in addition to a normed
-space over the scalar field `𝕜` of the couple.
+real numbers, so for the exact formula `E` is assumed to be a real normed space in addition to a
+normed space over the scalar field `𝕜` of the couple. Without `NormedSpace ℝ E`, truncating `f` by
+the indicator of `{‖f‖ > ‖f‖* t}` still gives the two-sided comparison
+`∫₀ᵗ ‖f‖* ≤ K(t, u) ≤ 2 ∫₀ᵗ ‖f‖*`
+(`TauCeti.CompatibleCouple.lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty`,
+`TauCeti.CompatibleCouple.ofReal_kFunctional_l1Linfty_le_two_mul`).
 
 ## References
 
@@ -95,8 +99,8 @@ theorem kFunctional_l1Linfty_sumSpaceEmbed (ht : 0 ≤ t) (v : (lebesgue 𝕜 E 
   · rw [lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum, hgh]
 
 /-- Every decomposition `u = g + h` bounds `∫₀ᵗ ‖f‖*` by `‖g‖₁ + t ‖h‖_∞`, so `∫₀ᵗ ‖f‖*` is at most
-`K(t, u)`. -/
-private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
+`K(t, u)`. No real normed space structure on `E` is needed. -/
+theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
     {u : L1AddLinfty 𝕜 E μ} {f : α → E} (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 ≤ t) :
     ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s ≤
       ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) := by
@@ -122,6 +126,111 @@ private theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty
     _ = ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) + ε := by
         rw [ENNReal.ofReal_add (kFunctional_nonneg ht) ε.coe_nonneg,
           ENNReal.ofReal_coe_nnreal]
+
+/-- Lower bound `∫₀ᵗ ‖f‖* ≤ K(t, v)` for the Lebesgue couple `(L¹, L^∞)`, without requiring a real
+normed space structure on `E`. -/
+theorem lintegral_decreasingRearrangement_le_ofReal_kFunctional_lebesgue_one_top
+    {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace} {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 ≤ t) :
+    ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s ≤
+      ENNReal.ofReal ((lebesgue 𝕜 E μ 1 ∞).kFunctional t v) := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht]
+  exact lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hv ht
+
+/-- Indicator truncation at height `‖f‖* t` bounds `K(t, u)` by `2 ∫₀ᵗ ‖f‖*` for `t > 0`, without
+requiring a real normed space structure on `E`. -/
+private theorem ofReal_kFunctional_l1Linfty_le_two_mul_of_pos {u : L1AddLinfty 𝕜 E μ} {f : α → E}
+    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 < t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  have hf : AEStronglyMeasurable f μ := (AEEqFun.aestronglyMeasurable _).congr hu
+  have hfin : ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s < ∞ :=
+    (lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu ht.le).trans_lt
+      ENNReal.ofReal_lt_top
+  have hsub := μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t
+  set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
+  obtain ⟨_, hfin₁⟩ := ENNReal.add_lt_top.1 (hsub ▸ hfin)
+  have hc : c ≠ ∞ := fun hc => by
+    rw [hc, ENNReal.mul_top (by simpa using ht)] at hfin₁
+    exact lt_irrefl _ hfin₁
+  set S := {y | c < ‖f y‖ₑ}
+  have hS : NullMeasurableSet S μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
+  have hμS : μ S ≤ ENNReal.ofReal t := μ.measure_setOf_decreasingRearrangement_lt_le _ t
+  have hest₀ :
+      eLpNorm (S.indicator f) 1 μ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+    rw [eLpNorm_one_eq_lintegral_eNorm (hf.indicator₀ hS), hsub]
+    calc ∫⁻ y, ‖S.indicator f y‖ₑ ∂μ
+        ≤ ∫⁻ y, (‖f y‖ₑ - c) + S.indicator (fun _ => c) y ∂μ := lintegral_mono fun y => by
+          by_cases hy : y ∈ S
+          · simpa [hy] using le_tsub_add
+          · simp [hy]
+      _ ≤ ∫⁻ y, (‖f y‖ₑ - c) ∂μ + ENNReal.ofReal t * c := by
+          rw [lintegral_add_left' (hf.eNorm.sub_const c)]
+          gcongr
+          exact (lintegral_indicator_const_le S c).trans (by rw [mul_comm]; gcongr)
+  have hest₁ : eLpNorm (Sᶜ.indicator f) ∞ μ ≤ c := by
+    rw [eLpNorm_exponent_top (hf.indicator₀ hS.compl)]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun y => ?_)
+    by_cases hy : y ∈ S
+    · simp [hy]
+    · rw [Set.indicator_of_mem ((Set.mem_compl_iff S y).2 hy)]
+      exact not_lt.1 hy
+  have h₀ : MemLp (S.indicator f) 1 μ := memLp_iff.2 (hest₀.trans_lt hfin)
+  have h₁ : MemLp (Sᶜ.indicator f) ∞ μ := memLp_iff.2 (hest₁.trans_lt hc.lt_top)
+  have hdec : (l1Linfty 𝕜 E μ).fstToSum (h₀.toLp _) + (l1Linfty 𝕜 E μ).sndToSum (h₁.toLp _) =
+      u := by
+    refine L1AddLinfty.fstToSum_add_sndToSum_eq_iff.2 ?_
+    filter_upwards [h₀.coeFn_toLp, h₁.coeFn_toLp, hu] with y hy₀ hy₁ hy
+    rw [Pi.add_apply, hy₀, hy₁, hy, Set.indicator_self_add_compl_apply]
+  calc ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u)
+      ≤ ENNReal.ofReal (‖h₀.toLp _‖ + t * ‖h₁.toLp _‖) :=
+        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
+    _ = eLpNorm (S.indicator f) 1 μ + ENNReal.ofReal t * eLpNorm (Sᶜ.indicator f) ∞ μ := by
+        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+          eLpNorm_congr_ae h₁.coeFn_toLp]
+    _ ≤ (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) +
+          (∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s) := by
+        gcongr
+        exact (mul_le_mul_right hest₁ _).trans (hsub ▸ le_add_self)
+    _ = 2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := (two_mul _).symm
+
+/-- Indicator truncation bounds `K(t, u)` by `2 ∫₀ᵗ ‖f‖*` for `t ≥ 0`, over any normed field `𝕜`
+without requiring `NormedSpace ℝ E`. -/
+theorem ofReal_kFunctional_l1Linfty_le_two_mul {u : L1AddLinfty 𝕜 E μ} {f : α → E}
+    (hu : ⇑(L1AddLinfty.toAEEqFun 𝕜 u) =ᵐ[μ] f) (ht : 0 ≤ t) :
+    ENNReal.ofReal ((l1Linfty 𝕜 E μ).kFunctional t u) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  obtain rfl | ht := ht.eq_or_lt
+  · rw [Ioc_self, Measure.restrict_empty, lintegral_zero_measure, mul_zero]
+    have hfin : ∫⁻ s, μ.decreasingRearrangement (‖f ·‖ₑ) s ∂volume.restrict (Ioc 0 1) ≠ ∞ :=
+      ((lintegral_decreasingRearrangement_le_ofReal_kFunctional_l1Linfty hu zero_le_one).trans_lt
+        ENNReal.ofReal_lt_top).ne
+    have hvol : Tendsto (volume.restrict (Ioc (0 : ℝ) 1) ∘ Ioc 0) (𝓝[>] 0) (𝓝 0) := by
+      refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => bot_le)
+        fun s => Measure.restrict_apply_le _ _
+      simpa [Real.volume_Ioc] using
+        (ENNReal.tendsto_ofReal (tendsto_id (x := 𝓝 (0 : ℝ)))).mono_left nhdsWithin_le_nhds
+    have hlim : Tendsto (fun s => 2 * ∫⁻ r in Ioc 0 s, μ.decreasingRearrangement (‖f ·‖ₑ) r
+        ∂volume.restrict (Ioc 0 1)) (𝓝[>] 0) (𝓝 0) := by
+      simpa using ENNReal.Tendsto.const_mul (tendsto_setLIntegral_zero hfin hvol) (Or.inr (by simp))
+    refine ge_of_tendsto hlim ?_
+    filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with s ⟨hs, hs₁⟩
+    rw [Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc, max_self, min_eq_left hs₁]
+    exact (ENNReal.ofReal_le_ofReal (kFunctional_mono le_rfl hs.le u)).trans
+      (ofReal_kFunctional_l1Linfty_le_two_mul_of_pos hu hs)
+  · exact ofReal_kFunctional_l1Linfty_le_two_mul_of_pos hu ht
+
+/-- Upper bound `K(t, v) ≤ 2 ∫₀ᵗ ‖f‖*` for the Lebesgue couple `(L¹, L^∞)`, without requiring a
+real normed space structure on `E`. -/
+theorem ofReal_kFunctional_lebesgue_one_top_le_two_mul {v : (lebesgue 𝕜 E μ 1 ∞).SumSpace}
+    {f : α → E}
+    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f)
+    (ht : 0 ≤ t) :
+    ENNReal.ofReal ((lebesgue 𝕜 E μ 1 ∞).kFunctional t v) ≤
+      2 * ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s := by
+  rw [← kFunctional_l1Linfty_sumSpaceEmbed ht]
+  exact ofReal_kFunctional_l1Linfty_le_two_mul hv ht
 
 variable [NormedSpace ℝ E]
 
