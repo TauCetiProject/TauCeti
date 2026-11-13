@@ -205,7 +205,7 @@ private theorem binaryTetrahedralCoordsFun_bijective :
   refine ⟨fun v w hvw => ?_, fun g => ?_⟩
   · have h := toComplexMatrix_injective (congrArg (fun g : binaryTetrahedralSubgroup =>
       ((g : SU2) : Matrix (Fin 2) (Fin 2) ℂ)) hvw)
-    simp only [QuaternionAlgebra.mk.injEq, div_left_inj' (two_ne_zero' ℝ), Int.cast_inj] at h
+    simp only [QuaternionAlgebra.mk.injEq, div_left_inj₀ (two_ne_zero' ℝ), Int.cast_inj] at h
     obtain ⟨h0, h1, h2, h3⟩ := h
     ext i
     fin_cases i
