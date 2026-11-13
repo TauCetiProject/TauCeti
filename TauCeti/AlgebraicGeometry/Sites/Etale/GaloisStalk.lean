@@ -195,6 +195,7 @@ noncomputable def galoisStalkMap (σ : Gal(Ω/K)) :
       (SpecMap_algEquiv_comp K Ω σ))
 
 /-- The identity of `Gal(Ω/K)` acts trivially on stalks. -/
+@[simp]
 theorem galoisStalkMap_one : galoisStalkMap K Ω A 1 = 𝟙 _ := by
   have h1 : ((1 : Gal(Ω/K)) : Ω →+* Ω) = RingHom.id Ω := by
     ext x
@@ -208,6 +209,7 @@ theorem galoisStalkMap_one : galoisStalkMap K Ω A 1 = 𝟙 _ := by
   exact pointSmallEtaleHom_congr this _ _
 
 /-- The Galois action on stalks is a left action: `σ * τ` acts by `τ` followed by `σ`. -/
+@[reassoc, simp]
 theorem galoisStalkMap_mul (σ τ : Gal(Ω/K)) :
     galoisStalkMap K Ω A (σ * τ) = galoisStalkMap K Ω A τ ≫ galoisStalkMap K Ω A σ := by
   have h1 : ((σ * τ : Gal(Ω/K)) : Ω →+* Ω) = (σ : Ω →+* Ω).comp τ := by
@@ -247,10 +249,10 @@ noncomputable def galoisStalk :
         { toFun σ := .of ((galoisStalkMap K Ω A σ).app F)
           map_one' := by
             ext1
-            simp [galoisStalkMap_one]
+            simp
           map_mul' σ τ := by
             ext1
-            simp [galoisStalkMap_mul] } }
+            simp } }
   map f :=
     { hom := (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.map f
       comm σ := ((galoisStalkMap K Ω A σ).naturality f).symm }
