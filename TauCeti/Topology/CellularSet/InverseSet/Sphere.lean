@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Topology.CellularSet.Basic
+import Mathlib.Geometry.Manifold.Instances.Sphere
 import Mathlib.Topology.Separation.Connected
-import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
-import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Topology.CellularSet.InverseSet.Normed
 import TauCeti.Topology.Separation.InvFunOn
 import TauCeti.Topology.Sphere.Shrink
 import TauCeti.Topology.Sphere.Stereographic
@@ -18,51 +19,40 @@ import TauCeti.Topology.Sphere.Stereographic
 /-!
 # Inverse sets of maps into spheres are cellular
 
-Let `Q` be the closed unit ball of a real normed space `E` of dimension `n ≥ 2`, and let `f` map
-`Q` continuously into the unit sphere `Sⁿ` of a real inner product space of dimension `n + 1`.
-Suppose that the fibre `X = Q ∩ f⁻¹(y)` over some point `y` is nonempty and lies in the open
-ball, and that `f` is injective on `Q \ X`: in M. Brown's terminology, `X` is the only *inverse
-set* of `f`. Then `X` is cellular in `E` (`TauCeti.isCellularSet_closedBall_inter_preimage`).
-This is Theorem 3 of Brown's proof of the generalized Schoenflies theorem. Brown deduces from it
-that both inverse sets of a map of `Sⁿ` onto itself with exactly two inverse sets are cellular (his
-Theorem 4, `TauCeti.isCellularSet_preimage_singleton_of_injOn`); with the collapse of cellular sets
+Let `Q` be the closed unit ball of a finite-dimensional real normed space `E` of dimension `n`,
+and let `f` map `Q` continuously into the unit sphere `Sⁿ` of a real normed space of dimension
+`n + 1`. Suppose that the fibre `X = Q ∩ f⁻¹(y)` over some point `y` is nonempty and lies in the
+open ball, and that `f` is injective on `Q \ X`: in M. Brown's terminology, `X` is the only
+*inverse set* of `f`. Then `X` is cellular in `E`
+(`TauCeti.isCellularSet_closedBall_inter_preimage`). This is Theorem 3 of Brown's proof of the
+generalized Schoenflies theorem. Brown deduces from it that both inverse sets of a map of `Sⁿ` onto
+itself with exactly two inverse sets are cellular (his Theorem 4,
+`TauCeti.isCellularSet_preimage_singleton_of_injOn`); with the collapse of cellular sets
 (`TauCeti.IsCellularSet.exists_collapse`) this identifies the closures of the complementary domains
 of a bicollared sphere with cells (his Theorem 5,
-`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`). The hypothesis
-`n ≥ 2` is used only through the connectedness of punctured balls.
+`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`).
 
-The proof has three steps.
-
-* The sphere `f(∂Q)` separates `Sⁿ` by the Jordan–Brouwer theorem
-  (`TauCeti.not_isPreconnected_compl_range_sphere`), while the open ball is mapped onto a connected
-  set disjoint from it, so `f(Q) ≠ Sⁿ`.
-* `f(Q)` is a neighbourhood of `y`. By invariance of domain `f(int Q \ X)` is open, since `f` is
-  injective on the open set `int Q \ X`; on a neighbourhood `V` of `y` missing the closed set
-  `f(∂Q)` it agrees with `f(Q) \ {y}`, so `f(Q) \ {y}` is both open and closed in `V \ {y}`. This
-  punctured neighbourhood is connected when `n ≥ 2`, and it meets `f(Q)` because `X` has frontier
-  points in `int Q`; so it lies in `f(Q)`.
-* Given an open `U ⊇ X`, choose `p ∉ f(Q)` and read `Sⁿ \ {p}` in the stereographic chart. A
-  radial squeeze about `y` which is the identity near `y`
-  (`TauCeti.exists_continuousOn_injOn_mapsTo_sphere`) gives a map `k`, continuous and injective on
-  `Sⁿ \ {p}`, carrying `f(Q)` into the neighbourhood `f(Q ∩ U)` of `y`. Then `g = f⁻¹ ∘ k ∘ f`
-  on `Q \ X`, extended by the identity on `X`, is a continuous injection of `Q` into `U`: near
-  `X` it is the identity, and elsewhere the inverse of `f` is continuous because `Q` is compact
-  (`ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`). Its image is a cell
-  containing `X` in its interior, so `X` has arbitrarily small cell neighbourhoods and is
-  cellular (`TauCeti.isCellularSet_of_forall_isOpen`).
+Theorem 3 reduces to its version for maps between normed spaces of the same dimension,
+`TauCeti.isCellularSet_closedBall_inter_preimage_of_finrank_eq`. The sphere `f(∂Q)` separates `Sⁿ`
+by the Jordan–Brouwer theorem (`TauCeti.not_isPreconnected_compl_range_sphere`), while the open ball
+is mapped onto a connected set disjoint from it, so `f(Q)` misses some point `p`. Reading
+`Sⁿ \ {p}` in a stereographic chart turns `f` into a map of `Q` into `ℝⁿ` with the same only
+inverse set.
 
 For Theorem 4, let `g` map `Sⁿ` onto itself, injective off the fibres `A = g⁻¹(p)` and
 `B = g⁻¹(q)`, `p ≠ q`. Choose `w` with `g w ∉ {p, q}`; a large closed ball `Q` in the stereographic
-chart from `w` is a cell containing `B` in its interior. The point `g w` is not in `g(Q)`, so the
-same squeeze, now about `p` and off `g w`, gives a map `k` which is the identity near `p` and pushes
-`g(Q)` off `q`. On `Q`, the map `g⁻¹ ∘ k ∘ g`, extended by the identity near `A`, collapses `B` to
-the point `g⁻¹(k q)` and is injective elsewhere. So `B` is the only inverse set of a map of the cell
-`Q` into `Sⁿ`, and Theorem 3 applies. The fibre `A` is cellular by exchanging `p` and `q`.
+chart from `w` is a cell containing `B` in its interior. The point `g w` is not in `g(Q)`, so a
+radial squeeze about `p` in the stereographic chart from `g w`
+(`TauCeti.exists_continuousOn_injOn_mapsTo_sphere`) gives a map `k`, continuous and injective off
+`g w`, which is the identity near `p` and pushes `g(Q)` off `q`. On `Q`, the map `g⁻¹ ∘ k ∘ g`,
+extended by the identity near `A`, collapses `B` to the point `g⁻¹(k q)` and is injective
+elsewhere. So `B` is the only inverse set of a map of the cell `Q` into `Sⁿ`, and Theorem 3
+applies. The fibre `A` is cellular by exchanging `p` and `q`.
 
 ## Main results
 
 * `TauCeti.isCellularSet_closedBall_inter_preimage`: **Brown's theorem on inverse sets**: the only
-  inverse set of a map of an `n`-cell into `Sⁿ`, `n ≥ 2`, is cellular.
+  inverse set of a map of an `n`-cell into `Sⁿ` is cellular.
 * `TauCeti.isCellularSet_preimage_singleton_of_injOn`: **Brown's theorem on two inverse sets**:
   if a map of `Sⁿ`, `n ≥ 2`, onto itself is injective off its fibres over `p ≠ q`, its fibre over
   `q` is cellular (and, exchanging `p` and `q`, so is its fibre over `p`).
@@ -79,11 +69,14 @@ open Function Metric Module Set Filter Topology
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable {F : Type*} [NormedAddCommGroup F]
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {f : E → sphere (0 : F) 1} {y : sphere (0 : F) 1}
 
-omit [InnerProductSpace ℝ F] [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+section OneInverseSet
+
+variable [NormedSpace ℝ F] {f : E → sphere (0 : F) 1} {y : sphere (0 : F) 1}
+
+omit [NormedSpace ℝ F] [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- Two points of the closed ball with the same image under `f`, not in the fibre over `y`, are
 equal, when `f` is injective off that fibre. -/
 private theorem eq_of_apply_eq (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) {x x' : E}
@@ -117,137 +110,54 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
   exact not_isPreconnected_compl_range_sphere hEF hc hi
     (hrange ▸ isPreconnected_ball.image f (hf.mono ball_subset_closedBall))
 
-omit [InnerProductSpace ℝ F] [FiniteDimensional ℝ E] in
-/-- Under the hypotheses of `TauCeti.isCellularSet_closedBall_inter_preimage`, the fibre over `y`
-has a frontier point, and every neighbourhood of `y` contains the image of a point of the open ball
-outside the fibre. -/
-private theorem exists_mem_ball_apply_mem (hn : 2 ≤ finrank ℝ E)
-    (hf : ContinuousOn f (closedBall 0 1)) (hy : y ∉ f '' sphere 0 1)
-    (hy' : y ∈ f '' closedBall 0 1) {V : Set (sphere (0 : F) 1)} (hV : V ∈ 𝓝 y) :
-    ∃ x ∈ ball (0 : E) 1, f x ≠ y ∧ f x ∈ V := by
-  set X := closedBall (0 : E) 1 ∩ f ⁻¹' {y}
-  have hX : IsClosed X := hf.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  obtain ⟨v, hv⟩ := exists_norm_eq E zero_le_two
-  have hXu : X ≠ univ := fun h ↦ by
-    have := (h.symm ▸ mem_univ v : v ∈ X).1
-    rw [mem_closedBall_zero_iff, hv] at this
-    norm_num at this
-  obtain ⟨m, hm⟩ := nonempty_frontier_iff.2 ⟨by obtain ⟨x, hx, rfl⟩ := hy'; exact ⟨x, hx, rfl⟩, hXu⟩
-  have hmX : m ∈ X := hX.frontier_subset hm
-  have hmb : m ∈ ball (0 : E) 1 := by
-    rw [← closedBall_sdiff_sphere]
-    exact ⟨hmX.1, fun h ↦ hy ⟨m, h, hmX.2⟩⟩
-  -- The open set of points of the open ball mapped into the interior of `V` contains `m`, so it
-  -- meets the complement of `X`.
-  have hW : IsOpen (ball (0 : E) 1 ∩ f ⁻¹' interior V) :=
-    (hf.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_interior
-  have hmW : m ∈ ball (0 : E) 1 ∩ f ⁻¹' interior V :=
-    ⟨hmb, by rw [mem_preimage, hmX.2]; exact mem_interior_iff_mem_nhds.2 hV⟩
-  obtain ⟨x, ⟨hxb, hxV⟩, hxX⟩ :=
-    mem_closure_iff.1 (frontier_eq_closure_inter_closure.subset hm).2 _ hW hmW
-  exact ⟨x, hxb, fun h ↦ hxX ⟨ball_subset_closedBall hxb, h⟩, interior_subset hxV⟩
-
-/-- **The image of the closed ball is a neighbourhood of `y`.** Off `y` the image of the open ball
-minus the fibre is open by invariance of domain, so a connected punctured neighbourhood of `y`
-missing `f(∂Q)` lies in `f(Q)` as soon as it meets it. -/
-private theorem image_closedBall_mem_nhds (hn : 2 ≤ finrank ℝ E)
-    (hEF : finrank ℝ F = finrank ℝ E + 1) (hf : ContinuousOn f (closedBall 0 1))
-    (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) (hy : y ∉ f '' sphere 0 1)
-    (hy' : y ∈ f '' closedBall 0 1) : f '' closedBall 0 1 ∈ 𝓝 y := by
-  have : Fact (finrank ℝ F = finrank ℝ E + 1) := ⟨hEF⟩
-  set n := finrank ℝ E
-  have hS : IsClosed (f '' sphere 0 1) :=
-    ((isCompact_sphere 0 1).image_of_continuousOn (hf.mono sphere_subset_closedBall)).isClosed
-  have hQ : IsClosed (f '' closedBall 0 1) :=
-    ((isCompact_closedBall 0 1).image_of_continuousOn hf).isClosed
-  -- A neighbourhood `V` of `y` missing `f(∂Q)`, with `V \ {y}` connected.
-  obtain ⟨V, hV, hVS, hVc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
-    (E := EuclideanSpace ℝ (Fin n))
-    (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast hn)
-    (chartAt (EuclideanSpace ℝ (Fin n)) y) (mem_chart_source _ y) (hS.isOpen_compl.mem_nhds hy)
-  -- The image of the open ball minus the fibre is open.
-  set O := ball (0 : E) 1 ∩ f ⁻¹' {y}ᶜ
-  have hOQ : O ⊆ closedBall 0 1 \ f ⁻¹' {y} := fun x hx ↦ ⟨ball_subset_closedBall hx.1, hx.2⟩
-  have hO : IsOpen O :=
-    (hf.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_compl_singleton
-  have hfO : IsOpen (f '' O) :=
-    hO.image_of_continuousOn_of_injOn (F := EuclideanSpace ℝ (Fin n))
-      (hf.mono fun x hx ↦ (hOQ hx).1) (hinj.mono hOQ) finrank_euclideanSpace_fin.symm
-  -- Every point of `V \ {y}` in `f(Q)` is the image of a point of `O`.
-  have hcover : V \ {y} ⊆ f '' O ∪ (f '' closedBall 0 1)ᶜ := by
-    rintro z ⟨hzV, hzy⟩
-    by_cases hz : z ∈ f '' closedBall 0 1
-    · obtain ⟨x, hx, rfl⟩ := hz
-      refine .inl ⟨x, ⟨?_, hzy⟩, rfl⟩
-      rw [← closedBall_sdiff_sphere]
-      exact ⟨hx, fun h ↦ hVS hzV ⟨x, h, rfl⟩⟩
-    · exact .inr hz
-  obtain ⟨x, hxb, hxy, hxV⟩ := exists_mem_ball_apply_mem hn hf hy hy' hV
-  have hsub : V \ {y} ⊆ f '' O := hVc.isPreconnected.subset_left_of_subset_union hfO
-    hQ.isOpen_compl (disjoint_compl_right_iff_subset.2 (image_mono fun x hx ↦ (hOQ hx).1))
-    hcover ⟨f x, ⟨hxV, hxy⟩, x, ⟨hxb, hxy⟩, rfl⟩
-  refine mem_of_superset hV fun z hz ↦ ?_
-  rcases eq_or_ne z y with rfl | hzy
-  · exact hy'
-  · exact image_mono (fun x hx ↦ (hOQ hx).1) (hsub ⟨hz, hzy⟩)
-
-/-- **One shrinking step.** For every open `U` containing the fibre `X` over `y`, there is a map
-of `E`, continuous and injective on the closed ball, which fixes `X` pointwise and maps the closed
-ball into `U`. -/
-private theorem exists_mapsTo_of_isOpen (hn : 2 ≤ finrank ℝ E)
-    (hEF : finrank ℝ F = finrank ℝ E + 1) (hf : ContinuousOn f (closedBall 0 1))
-    (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) (hy : y ∉ f '' sphere 0 1)
-    (hy' : y ∈ f '' closedBall 0 1) {U : Set E} (hU : IsOpen U)
-    (hXU : closedBall 0 1 ∩ f ⁻¹' {y} ⊆ U) :
-    ∃ g : E → E, ContinuousOn g (closedBall 0 1) ∧ InjOn g (closedBall 0 1) ∧
-      MapsTo g (closedBall 0 1) U ∧ ∀ x ∈ closedBall 0 1 ∩ f ⁻¹' {y}, g x = x := by
-  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  obtain ⟨p, hp⟩ := exists_notMem_image_closedBall hEF hf hinj hy
-  have hyp : y ≠ p := fun h ↦ hp (h ▸ hy')
-  -- `f(Q ∩ U)` is a neighbourhood of `y`, since `f(Q \ U)` is compact and misses `y`.
-  have hN : f '' (closedBall 0 1 ∩ U) ∈ 𝓝 y := by
-    have hC : IsClosed (f '' (closedBall 0 1 \ U)) :=
-      (((isCompact_closedBall 0 1).diff hU).image_of_continuousOn (hf.mono sdiff_subset)).isClosed
-    refine mem_of_superset (inter_mem (image_closedBall_mem_nhds hn hEF hf hinj hy hy')
-      (hC.isOpen_compl.mem_nhds fun ⟨x, hx, hxy⟩ ↦ hx.2 (hXU ⟨hx.1, hxy⟩))) ?_
-    rintro _ ⟨⟨x, hx, rfl⟩, hxU⟩
-    exact ⟨x, ⟨hx, not_not.1 fun h ↦ hxU ⟨x, ⟨hx, h⟩, rfl⟩⟩, rfl⟩
-  obtain ⟨k, hkc, hki, hkid, hkN⟩ := exists_continuousOn_injOn_mapsTo_sphere hyp
-    ((isCompact_closedBall 0 1).image_of_continuousOn hf) hp hN
-  obtain ⟨g, hgc, hgi, hgU, hgfix⟩ := hf.exists_continuousOn_injOn_mapsTo_of_mapsTo_image
-    (isCompact_closedBall 0 1) hinj hXU isOpen_compl_singleton (fun x hx h ↦ hp ⟨x, hx, h⟩) hkc
-    hki hkid hkN
-  exact ⟨g, hgc, hgi, hgU, fun x hx ↦ hgfix x hx.1 (by
-    rw [mem_singleton_iff.1 hx.2]; exact hkid.eq_of_nhds)⟩
-
-/-- **Brown's theorem on inverse sets.** Let `E` be a real normed space of dimension `n ≥ 2`, and
-let `f` map the closed unit ball `Q` of `E` continuously into the unit sphere `Sⁿ` of a real inner
-product space of dimension `n + 1`. Suppose that the fibre `Q ∩ f⁻¹(y)` of a point `y` of `f(Q)`
-lies in the open ball and that `f` is injective off it, so that it is the only inverse set of `f`.
-Then this fibre is cellular. -/
-theorem isCellularSet_closedBall_inter_preimage (hn : 2 ≤ finrank ℝ E)
-    (hEF : finrank ℝ F = finrank ℝ E + 1) (hf : ContinuousOn f (closedBall 0 1))
-    (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) (hy : y ∉ f '' sphere 0 1)
-    (hy' : y ∈ f '' closedBall 0 1) :
+/-- **Brown's theorem on inverse sets.** Let `E` be a finite-dimensional real normed space of
+dimension `n`, and let `f` map the closed unit ball `Q` of `E` continuously into the unit sphere
+`Sⁿ` of a real normed space of dimension `n + 1`. Suppose that the fibre `Q ∩ f⁻¹(y)` of a point
+`y` of `f(Q)` lies in the open ball and that `f` is injective off it, so that it is the only
+inverse set of `f`. Then this fibre is cellular. -/
+theorem isCellularSet_closedBall_inter_preimage (hEF : finrank ℝ F = finrank ℝ E + 1)
+    (hf : ContinuousOn f (closedBall 0 1)) (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y}))
+    (hy : y ∉ f '' sphere 0 1) (hy' : y ∈ f '' closedBall 0 1) :
     IsCellularSet E (closedBall (0 : E) 1 ∩ f ⁻¹' {y}) := by
-  set X := closedBall (0 : E) 1 ∩ f ⁻¹' {y}
-  have hXb : X ⊆ ball 0 1 := fun x hx ↦ by
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  set n := finrank ℝ E
+  obtain ⟨p, hp⟩ := exists_notMem_image_closedBall hEF hf hinj hy
+  have hQp {x : E} (hx : x ∈ closedBall 0 1) : f x ≠ p := fun h ↦ hp ⟨x, hx, h⟩
+  have hyp : y ≠ p := by
+    obtain ⟨x, hx, rfl⟩ := hy'
+    exact hQp hx
+  -- Read `Sⁿ \ {p}` in a stereographic chart `φ` of the Euclidean sphere.
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1) := ⟨by simp⟩
+  set e := sphereHomeomorphOfFinrankEq (E := F) (F := EuclideanSpace ℝ (Fin (n + 1)))
+    (by simp [hEF, n])
+  set φ := stereographic' n (e p)
+  have hsrc {z : sphere (0 : F) 1} (hz : z ≠ p) : e z ∈ φ.source := by
+    rw [stereographic'_source]
+    exact e.injective.ne hz
+  set f' : E → EuclideanSpace ℝ (Fin n) := fun x ↦ φ (e (f x))
+  have hf'y {x : E} (hx : x ∈ closedBall 0 1) : f' x = φ (e y) ↔ f x = y :=
+    ⟨fun h ↦ e.injective (φ.injOn (hsrc (hQp hx)) (hsrc hyp) h), fun h ↦ by simp only [f', h]⟩
+  have hfib : closedBall 0 1 ∩ f' ⁻¹' {φ (e y)} = closedBall 0 1 ∩ f ⁻¹' {y} := by
+    ext x
+    exact and_congr_right fun hx ↦ hf'y hx
+  rw [← hfib]
+  refine isCellularSet_closedBall_inter_preimage_of_finrank_eq (by simp [n])
+    (φ.continuousOn.comp (e.continuous.comp_continuousOn hf) fun x hx ↦ hsrc (hQp hx))
+    (fun x hx x' hx' h ↦ hinj ⟨hx.1, fun h' ↦ hx.2 ((hf'y hx.1).2 h')⟩
+      ⟨hx'.1, fun h' ↦ hx'.2 ((hf'y hx'.1).2 h')⟩
+      (e.injective (φ.injOn (hsrc (hQp hx.1)) (hsrc (hQp hx'.1)) h))) ?_ ?_
+  · rw [hfib]
+    intro x hx
     rw [← closedBall_sdiff_sphere]
     exact ⟨hx.1, fun h ↦ hy ⟨x, h, hx.2⟩⟩
-  refine isCellularSet_of_forall_isOpen
-    (hf.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton) fun U hU hXU ↦ ?_
-  obtain ⟨g, hgc, hgi, hgU, hgfix⟩ := exists_mapsTo_of_isOpen hn hEF hf hinj hy hy' hU hXU
-  -- The open cell `g '' ball 0 1` is open by invariance of domain, and contains `X` since `g`
-  -- fixes it.
-  refine ⟨g, hgc, hgi, fun x hx ↦ ?_, hgU.image_subset⟩
-  rw [(isOpen_ball.image_of_continuousOn_of_injOn (E := E) (F := E)
-    (hgc.mono ball_subset_closedBall) (hgi.mono ball_subset_closedBall) rfl).interior_eq]
-  exact ⟨x, hXb hx, hgfix x hx⟩
+  · obtain ⟨x, hx, rfl⟩ := hy'
+    exact ⟨x, hx, rfl⟩
+
+end OneInverseSet
 
 section TwoInverseSets
 
-variable {g : sphere (0 : F) 1 → sphere (0 : F) 1} {p q : sphere (0 : F) 1}
+variable [InnerProductSpace ℝ F] {g : sphere (0 : F) 1 → sphere (0 : F) 1} {p q : sphere (0 : F) 1}
 
 /-- **Trading one inverse set for a point.** Let `g` be a continuous surjection of the unit sphere
 onto itself, injective off the fibres `A = g⁻¹(p)` and `B = g⁻¹(q)` over two points `p ≠ q`. Let
@@ -379,7 +289,7 @@ theorem isCellularSet_preimage_singleton_of_injOn (hn : 2 ≤ finrank ℝ E)
     fun ⟨v, _, hv⟩ ↦ hψw v hv
   have hfib {v : E} (hv : v ∈ closedBall 0 1) : φ (ψ v) = w' ↔ ψ v ∈ B := hφw _ (hψQ hv)
   -- `φ ∘ ψ` maps the closed ball into the sphere with the only inverse set `ψ⁻¹(B)`.
-  have hX := isCellularSet_closedBall_inter_preimage (f := fun v ↦ φ (ψ v)) (y := w') hn hEF
+  have hX := isCellularSet_closedBall_inter_preimage (f := fun v ↦ φ (ψ v)) (y := w') hEF
     (hφc.comp hψc.continuousOn hψQ)
     (fun v hv v' hv' h ↦ hψi (hφi ⟨hψQ hv.1, fun h' ↦ hv.2 ((hfib hv.1).2 h')⟩
       ⟨hψQ hv'.1, fun h' ↦ hv'.2 ((hfib hv'.1).2 h')⟩ h))

@@ -8,9 +8,8 @@ module
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import TauCeti.Topology.CellularSet.Basic
 import Mathlib.Topology.Compactification.OnePoint.Sphere
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Topology.CellularSet.InverseSet
+import TauCeti.Topology.CellularSet.InverseSet.Sphere
 import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.Compactification.OnePoint.Collapse
 
@@ -30,13 +29,10 @@ continuous, and `OnePoint U ≃ₜ OnePoint E` is the sphere `Sᵐ`. Since `C` i
 see that `C` is cellular in these coordinates, for then collapsing it does not change `X`
 (`TauCeti.IsCellularSet.nonempty_homeomorph_onePoint`).
 
-* For `m ≥ 2`, the collapse restricted to the closed unit ball of `E`, read through `κ`, maps the
-  ball into `Sᵐ` and is injective off `C`; so `C` is the only inverse set of a map of an `m`-cell
-  into `Sᵐ`, and it is cellular by M. Brown's theorem on inverse sets
-  (`TauCeti.isCellularSet_closedBall_inter_preimage`).
-* For `m = 1`, `C` is a compact subset of the line, and it is an interval: a bounded gap
-  `(s, u)` of `C` would be open and closed in the connected set `U`, hence all of `U`, and then
-  `X` would be covered by the coordinate line. A closed interval is cellular.
+The collapse restricted to the closed unit ball of `E`, read through `κ`, maps the ball into `Sᵐ`
+and is injective off `C`; so `C` is the only inverse set of a map of an `m`-cell into `Sᵐ`, and it
+is cellular by M. Brown's theorem on inverse sets
+(`TauCeti.isCellularSet_closedBall_inter_preimage`).
 
 ## Main results
 
@@ -85,11 +81,11 @@ theorem IsCellularSet.nonempty_homeomorph_onePoint [FiniteDimensional ℝ E] [Co
     exact ⟨x, onePointCollapse_of_notMem_range (by rwa [Subtype.range_coe])⟩
   | coe u => exact ⟨u, onePointCollapse_apply Subtype.val_injective id u⟩
 
-/-- In dimension at least `2`, the complement of `U` read in coordinates `κ` which carry the open
-unit ball over it is cellular. It is the only inverse set of the collapse of `X \ U` to `∞`,
-restricted to the closed unit ball, so this is M. Brown's theorem on inverse sets. -/
-private theorem exists_isCellularSet_image_eq_compl_of_two_le [FiniteDimensional ℝ E] [T2Space X]
-    (hE : 2 ≤ finrank ℝ E) {U : Set X} (hU : IsOpen U) (eU : U ≃ₜ E) {κ : E → X}
+/-- The complement of `U` read in coordinates `κ` which carry the open unit ball over it is
+cellular. It is the only inverse set of the collapse of `X \ U` to `∞`, restricted to the closed
+unit ball, so this is M. Brown's theorem on inverse sets. -/
+private theorem exists_isCellularSet_image_eq_compl [FiniteDimensional ℝ E] [T2Space X]
+    {U : Set X} (hU : IsOpen U) (eU : U ≃ₜ E) {κ : E → X}
     (hκ : IsOpenEmbedding κ) (hUκ : Uᶜ ⊆ κ '' ball 0 1) (hne : Uᶜ.Nonempty) :
     ∃ A : Set E, IsCellularSet E A ∧ κ '' A = Uᶜ := by
   set j : OnePoint U ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 :=
@@ -103,7 +99,7 @@ private theorem exists_isCellularSet_image_eq_compl_of_two_le [FiniteDimensional
   have hball {v : E} (hv : κ v ∉ U) : v ∈ ball 0 1 := by
     obtain ⟨w, hw, hwv⟩ := hUκ hv
     rwa [← hκ.injective hwv]
-  refine ⟨closedBall 0 1 ∩ f ⁻¹' {j ∞}, isCellularSet_closedBall_inter_preimage hE (by simp)
+  refine ⟨closedBall 0 1 ∩ f ⁻¹' {j ∞}, isCellularSet_closedBall_inter_preimage (by simp)
     hf.continuousOn (fun v hv w hw hvw ↦ ?_) ?_ ?_, ?_⟩
   · -- `f` is injective off the fibre over `∞`.
     have := (onePointCollapse_eq_onePointCollapse_iff Subtype.val_injective injective_id).1
@@ -119,58 +115,6 @@ private theorem exists_isCellularSet_image_eq_compl_of_two_le [FiniteDimensional
     refine ⟨fun ⟨v, ⟨_, hv⟩, hvx⟩ ↦ hvx ▸ (hfy v).1 hv, fun hx ↦ ?_⟩
     obtain ⟨v, hv, rfl⟩ := hUκ hx
     exact ⟨v, ⟨ball_subset_closedBall hv, (hfy v).2 hx⟩, rfl⟩
-
-/-- In dimension `1`, the complement of a connected open set `U` of a compact Hausdorff space,
-read in line coordinates `κ` which carry a compact set over it, is a closed interval, hence
-cellular. A bounded gap `(s, u)` of it would be open and closed in `U`, so `U` and then `X` would
-be covered by the line. -/
-private theorem isCellularSet_preimage_compl_of_real [CompactSpace X] [T2Space X] {U : Set X}
-    (hU : IsOpen U) (hUc : IsPreconnected U) {κ : ℝ → X} (hκ : IsOpenEmbedding κ) {K : Set ℝ}
-    (hK : IsCompact K) (hUK : Uᶜ ⊆ κ '' K) (hne : Uᶜ.Nonempty) :
-    IsCellularSet ℝ (κ ⁻¹' Uᶜ) := by
-  set A := κ ⁻¹' Uᶜ
-  have hAK : A ⊆ K := fun v hv ↦ by
-    obtain ⟨w, hw, hwv⟩ := hUK hv
-    rwa [← hκ.injective hwv]
-  have hAc : IsCompact A :=
-    hK.of_isClosed_subset (hU.isClosed_compl.preimage hκ.continuous) hAK
-  have hAne : A.Nonempty := by
-    obtain ⟨x, hx⟩ := hne
-    obtain ⟨v, -, rfl⟩ := hUK hx
-    exact ⟨v, hx⟩
-  -- `A` has no gaps.
-  have hAo : A.OrdConnected := by
-    refine ⟨fun s hs u hu t ht ↦ by_contra fun htA ↦ ?_⟩
-    -- The points of `U` over `[s, u]` are those over `(s, u) \ A`, an open and closed part of `U`.
-    have hS : IsOpen (κ '' (Ioo s u ∩ Aᶜ)) := hκ.isOpenMap _
-      (isOpen_Ioo.inter (hU.isClosed_compl.preimage hκ.continuous).isOpen_compl)
-    have hI : IsClosed (κ '' Icc s u) := (isCompact_Icc.image hκ.continuous).isClosed
-    have hSI : κ '' (Ioo s u ∩ Aᶜ) ⊆ κ '' Icc s u := image_mono fun v hv ↦ Ioo_subset_Icc_self hv.1
-    have hcover : U ⊆ κ '' (Ioo s u ∩ Aᶜ) ∪ (κ '' Icc s u)ᶜ := fun x hx ↦ by
-      by_cases hxI : x ∈ κ '' Icc s u
-      · obtain ⟨v, hv, rfl⟩ := hxI
-        have hvA : v ∉ A := fun h ↦ h hx
-        refine .inl ⟨v, ⟨⟨hv.1.lt_of_ne ?_, hv.2.lt_of_ne ?_⟩, hvA⟩, rfl⟩
-        · rintro rfl; exact hvA hs
-        · rintro rfl; exact hvA hu
-      · exact .inr hxI
-    have hUS := hUc.subset_left_of_subset_union hS hI.isOpen_compl
-      (disjoint_compl_right_iff_subset.2 hSI) hcover
-      ⟨κ t, not_not.1 htA, t, ⟨⟨(ht.1.lt_of_ne ?_), ht.2.lt_of_ne ?_⟩, htA⟩, rfl⟩
-    · -- Then the line covers `X`, which is impossible since `X` is compact.
-      have hrange : range κ = univ := eq_univ_of_forall fun x ↦ by
-        by_cases hx : x ∈ U
-        · exact image_subset_range _ _ (hUS hx)
-        · exact image_subset_range _ _ (hUK hx)
-      exact noncompact_univ ℝ (hκ.isEmbedding.isCompact_iff.2 (by
-        rw [image_univ, hrange]; exact isCompact_univ))
-    · rintro rfl; exact htA hs
-    · rintro rfl; exact htA hu
-  -- A nonempty compact interval is a closed ball.
-  have hA : A = Icc (sInf A) (sSup A) := eq_Icc_of_connected_compact ⟨hAne, hAo.isPreconnected⟩ hAc
-  have hle : sInf A ≤ sSup A := csInf_le_csSup hAne hAc.bddBelow hAc.bddAbove
-  rw [hA, Real.Icc_eq_closedBall]
-  exact isCellularSet_closedBall _ (by linarith)
 
 /-- **A compact space covered by two Euclidean open sets is a sphere.** Let `X` be a compact
 Hausdorff space covered by two open sets `U` and `V`, each homeomorphic to a real normed space `E`
@@ -208,21 +152,7 @@ theorem nonempty_homeomorph_sphere_of_two_euclidean_opens [CompactSpace X] [T2Sp
     rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (by positivity),
       inv_mul_lt_one₀ (by positivity)]
     linarith [hS ⟨x, hxV⟩ hx]
-  rcases (by omega : 2 ≤ finrank ℝ E ∨ finrank ℝ E = 1) with h2 | h1
-  · obtain ⟨A, hA, hAU⟩ :=
-      exists_isCellularSet_image_eq_compl_of_two_le h2 hU eU hκ hUκ hne
-    exact hA.nonempty_homeomorph_onePoint hU hκ hAU
-  · -- In dimension `1`, use line coordinates.
-    set L : E ≃L[ℝ] ℝ := ContinuousLinearEquiv.ofFinrankEq (by simp [← h1])
-    have hκL : IsOpenEmbedding (κ ∘ L.symm) := hκ.comp L.symm.toHomeomorph.isOpenEmbedding
-    have hUK : Uᶜ ⊆ (κ ∘ L.symm) '' (L '' closedBall 0 1) := by
-      rw [image_comp, L.symm_image_image]
-      exact hUκ.trans (image_mono ball_subset_closedBall)
-    have hUc : IsPreconnected U := by
-      rw [isPreconnected_iff_preconnectedSpace]
-      exact eU.symm.surjective.denseRange.preconnectedSpace eU.symm.continuous
-    refine (isCellularSet_preimage_compl_of_real hU hUc hκL
-      ((isCompact_closedBall 0 1).image L.continuous) hUK hne).nonempty_homeomorph_onePoint hU hκL
-      (image_preimage_eq_of_subset (hUK.trans (image_subset_range _ _)))
+  obtain ⟨A, hA, hAU⟩ := exists_isCellularSet_image_eq_compl hU eU hκ hUκ hne
+  exact hA.nonempty_homeomorph_onePoint hU hκ hAU
 
 end TauCeti
