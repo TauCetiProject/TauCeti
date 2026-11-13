@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Diffeomorph
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
