@@ -1131,12 +1131,6 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
   change d.earAt _ = d.earAt _
   congr 1
 
-/-- Prefixing retains the initial graph. -/
-@[simp]
-theorem graphAfter_prefix_zero (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
-    (d.prefix i).graphAfter 0 = d.graphAfter 0 :=
-  congrArg d.graphAfter (Fin.castLE_zero _)
-
 /-- Prefixing retains the walks of the original ears before the chosen index. -/
 theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : Fin i.val) :
     (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
