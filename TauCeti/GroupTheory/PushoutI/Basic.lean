@@ -7,9 +7,10 @@ module
 
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import Mathlib.Algebra.Group.ULift
 
 /-!
-# Amalgamated products along non-injective maps, and centralizers of the amalgamated subgroup
+# Amalgamated products: non-injective maps, centralizers, and the amalgamation of groups
 
 Mathlib's `Monoid.PushoutI φ` is defined for an arbitrary family of homomorphisms
 `φ i : H →* G i`, and `Monoid.PushoutI.of_injective` shows that the factors `G i` embed in it when
@@ -26,6 +27,11 @@ For a pushout of groups along `φ i : C →* G i`, an element of a factor `G i` 
 image of `C` in `G i` commutes in the pushout with every element of the image `base φ c` of `C`,
 since that image is also the image of `φ i c` under the inclusion of `G i`.
 
+Conversely, two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups are completed to
+a commutative square of injective homomorphisms into a group: the amalgamated product
+`A ∗_C B`, in which both factors embed by the normal form theorem. This is the amalgamation
+property of the class of groups.
+
 ## Main results
 
 * `Monoid.PushoutI.apply_eq_apply_of_injective_of`: if `G i` embeds in the pushout, then `φ i`
@@ -34,10 +40,12 @@ since that image is also the image of `φ i c` under the inclusion of `G i`.
   embed in the pushout.
 * `Monoid.PushoutI.commute_of_base_of_mem_centralizer`: an element of a factor centralizing the
   image of `C` commutes with the image of `C` in the pushout.
+* `Monoid.PushoutI.exists_injective_comp_eq_comp`: two injective homomorphisms out of a group `C`
+  are completed to a commutative square of injective homomorphisms.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §1.1.
+* J.-P. Serre, *Trees*, Chapter I, §1.1 and §1.2, Theorem 1 (the factors embed in the amalgam).
 -/
 
 public section
@@ -78,5 +86,43 @@ theorem commute_of_base_of_mem_centralizer {i : ι} {z : G i}
   exact (Commute.map (Subgroup.mem_centralizer_iff.mp hz (φ i c) ⟨c, rfl⟩) (of i)).symm
 
 end Group
+
+section Amalgamation
+
+universe u v w
+
+/-- The two factors `A` and `B` of an amalgamated product as a `Bool`-indexed family of a common
+universe: `A` at `false` and `B` at `true`. -/
+private abbrev PairFactor (A : Type u) (B : Type v) (i : Bool) : Type (max u v) :=
+  cond i (ULift.{u} B) (ULift.{v} A)
+
+private instance (A : Type u) (B : Type v) [Group A] [Group B] (i : Bool) :
+    Group (PairFactor A B i) :=
+  Bool.rec (motive := fun i => Group (PairFactor A B i))
+    (inferInstanceAs (Group (ULift.{v} A))) (inferInstanceAs (Group (ULift.{u} B))) i
+
+/-- **Amalgamation of groups.** Two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups
+are completed to a commutative square by two injective homomorphisms `α : A →* P` and
+`β : B →* P` into a group `P`, the amalgamated product `A ∗_C B`. -/
+theorem exists_injective_comp_eq_comp {A : Type u} {B : Type v} {C : Type w} [Group A] [Group B]
+    [Group C] {φ : C →* A} {ψ : C →* B} (hφ : Function.Injective φ) (hψ : Function.Injective ψ) :
+    ∃ (P : Type (max u v w)) (_ : Group P) (α : A →* P) (β : B →* P),
+      Function.Injective α ∧ Function.Injective β ∧ α.comp φ = β.comp ψ := by
+  let χ (i : Bool) : C →* PairFactor A B i := Bool.rec (motive := fun i => C →* PairFactor A B i)
+    ((MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom.comp φ)
+    ((MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom.comp ψ) i
+  have hχ (i : Bool) : Function.Injective (χ i) := by
+    cases i
+    · exact MulEquiv.ulift.symm.injective.comp hφ
+    · exact MulEquiv.ulift.symm.injective.comp hψ
+  refine ⟨PushoutI χ, inferInstance,
+    (of (φ := χ) false).comp (MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom,
+    (of (φ := χ) true).comp (MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom,
+    (of_injective hχ false).comp MulEquiv.ulift.symm.injective,
+    (of_injective hχ true).comp MulEquiv.ulift.symm.injective, ?_⟩
+  ext c
+  exact (of_apply_eq_base χ false c).trans (of_apply_eq_base χ true c).symm
+
+end Amalgamation
 
 end Monoid.PushoutI
