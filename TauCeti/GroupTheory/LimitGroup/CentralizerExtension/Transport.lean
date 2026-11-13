@@ -23,9 +23,12 @@ a proper power with the same centralizer, and `E'(g u, ℤⁿ)` is the admissibl
 `E'(r, ℤⁿ)` (`TauCeti.LimitGroup.CentralizerExt.congr`).
 
 Transport composes embeddings in ICE groups: if `K` embeds over `F` in the top `E` of a chain over
-`F`, a chain over `K` is transported along `K ↪ E` and appended to the chain over `F`. This is the
-identification `G(U₀, T₀)(U₂, T₂) = G(U₀ ∪ U₂, T₀ ∪ T₂)` at the end of the proof of
-Theorem 4 of Kharlampovich–Myasnikov's *Irreducible affine varieties over a free group. I*.
+`F`, a chain over `K` is transported along `K ↪ E` and appended to the chain over `F`, so an
+embedding of `L` in the top of a chain over `K` gives one in the top of a chain over `F`. The top
+of the chain over `K` is not itself the top of the new chain; it only embeds in it. When `K` is
+the top `E` of the chain over `F`, no transport is needed and the composition is the
+concatenation `G(U₀, T₀)(U₂, T₂) = G(U₀ ∪ U₂, T₀ ∪ T₂)` at the end of the proof of Theorem 4 of
+Kharlampovich–Myasnikov's *Irreducible affine varieties over a free group. I*.
 
 ## Main results
 
@@ -38,8 +41,8 @@ Theorem 4 of Kharlampovich–Myasnikov's *Irreducible affine varieties over a fr
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
-  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §0, and §6,
-  proof of Theorem 4.
+  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §0,
+  Definition 5, and §6, proof of Theorem 4.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.5.
 -/
