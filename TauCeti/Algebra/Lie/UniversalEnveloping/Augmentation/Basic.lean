@@ -33,7 +33,7 @@ central `p`-polynomials of positive characteristic, both live inside `U⁺(L)`.
 
 ## Main definitions
 
-* `TauCeti.UniversalEnvelopingAlgebra.quotientEnvelopingMap`: the Lie homomorphism
+* `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι`: the Lie homomorphism
   `L ⧸ lowerCentralSeries c → U(L) ⧸ U⁺(L) ^ (c + 1)` induced by the canonical map.
 
 ## Main results
@@ -54,7 +54,10 @@ central `p`-polynomials of positive characteristic, both live inside `U⁺(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_mem_augmentation_toIdeal_pow_of_mem_lowerCentralSeries`:
   the `n`-th term of the lower central series maps into the `(n + 1)`-st power of the
   augmentation ideal.
-* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_quotientEnvelopingMap`: the image of the
+* `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι_injective_iff`: this map is injective
+  exactly when the preimage of `U⁺(L) ^ (c + 1)` under the canonical map is contained in the
+  `c`-th term of the lower central series.
+* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι`: the image of the
   nilpotent quotient in the truncated enveloping algebra consists of nilpotent elements.
 
 ## References
@@ -68,11 +71,11 @@ algebra.
 
 ## Attribution
 
-`TauCeti.UniversalEnvelopingAlgebra.quotientEnvelopingMap` and its basic lemmas are adapted from
+`TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` and its basic lemmas are adapted from
 `Mei/Algebra/Lie/Free/Enveloping.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0), where they are stated for free Lie
-algebras. Original copyright and author credit are retained.
+algebras. Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -203,18 +206,6 @@ theorem augmentation_toIdeal_pow_eq_span_range_ι_pow (n : ℕ) :
     rw [Ideal.IsTwoSided.pow_succ, ih, augmentation_toIdeal_eq_span_range_ι, Ideal.span_mul_span,
       ← pow_succ']
 
-/-- A product of `n` canonical Lie generators lies in the `n`-th power of the augmentation
-ideal. -/
-theorem prod_map_ι_mem_augmentation_toIdeal_pow (l : List L) :
-    (l.map (_root_.UniversalEnvelopingAlgebra.ι R)).prod ∈
-      (HopfIdeal.augmentation R U).toIdeal ^ l.length := by
-  induction l with
-  | nil => simp only [List.map_nil, List.prod_nil, List.length_nil, Submodule.pow_zero,
-      Ideal.one_eq_top, Submodule.mem_top]
-  | cons x l ih =>
-    rw [List.map_cons, List.prod_cons, List.length_cons, Ideal.IsTwoSided.pow_succ]
-    exact Ideal.mul_mem_mul (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L x)) ih
-
 end Generators
 
 section LowerCentralSeries
@@ -257,7 +248,7 @@ theorem ι_lie_mem_augmentation_toIdeal_sq (x y : L) :
 /-- The Lie homomorphism `L ⧸ lowerCentralSeries c → U(L) ⧸ U⁺(L) ^ (c + 1)` induced by the
 canonical map into the enveloping algebra, from the nilpotent quotient of class at most `c` to the
 truncated enveloping algebra. -/
-noncomputable def quotientEnvelopingMap (c : ℕ) :
+noncomputable def lowerCentralQuotientι (c : ℕ) :
     (L ⧸ LieModule.lowerCentralSeries R L L c) →ₗ⁅R⁆
       U ⧸ (HopfIdeal.augmentation R U).toIdeal ^ (c + 1) :=
   LieIdeal.liftQ _
@@ -268,29 +259,40 @@ noncomputable def quotientEnvelopingMap (c : ℕ) :
 
 /-- The class of `x` maps to the class of its image under the canonical map. -/
 @[simp]
-theorem quotientEnvelopingMap_mk (c : ℕ) (x : L) :
-    quotientEnvelopingMap R L c (LieSubmodule.Quotient.mk x) =
+theorem lowerCentralQuotientι_mk (c : ℕ) (x : L) :
+    lowerCentralQuotientι R L c (LieSubmodule.Quotient.mk x) =
       Ideal.Quotient.mk ((HopfIdeal.augmentation R U).toIdeal ^ (c + 1))
         (_root_.UniversalEnvelopingAlgebra.ι R x) := by
-  simp [quotientEnvelopingMap]
+  simp [lowerCentralQuotientι]
 
-/-- Every element in the image of `quotientEnvelopingMap` is nilpotent. -/
-theorem isNilpotent_quotientEnvelopingMap (c : ℕ)
+/-- The map `lowerCentralQuotientι` is injective exactly when every Lie element sent into
+`U⁺(L) ^ (c + 1)` by the canonical map lies in the `c`-th term of the lower central series. -/
+theorem lowerCentralQuotientι_injective_iff (c : ℕ) :
+    Function.Injective (lowerCentralQuotientι R L c) ↔
+      (((HopfIdeal.augmentation R U).toIdeal ^ (c + 1)).restrictScalars R).comap
+          (_root_.UniversalEnvelopingAlgebra.ι R : L →ₗ⁅R⁆ U).toLinearMap ≤
+        (LieModule.lowerCentralSeries R L L c).toSubmodule := by
+  rw [lowerCentralQuotientι, LieIdeal.liftQ_injective_iff]
+  refine ⟨fun h x hx => h ?_, fun h x hx => h ?_⟩ <;>
+    simpa [Ideal.Quotient.eq_zero_iff_mem] using hx
+
+/-- Every element in the image of `lowerCentralQuotientι` is nilpotent. -/
+theorem isNilpotent_lowerCentralQuotientι (c : ℕ)
     (z : L ⧸ LieModule.lowerCentralSeries R L L c) :
-    IsNilpotent (quotientEnvelopingMap R L c z) := by
+    IsNilpotent (lowerCentralQuotientι R L c z) := by
   obtain ⟨z, rfl⟩ := LieIdeal.surjective_mkQ _ z
   refine ⟨c + 1, ?_⟩
-  rw [LieIdeal.mkQ_apply, quotientEnvelopingMap_mk, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
+  rw [LieIdeal.mkQ_apply, lowerCentralQuotientι_mk, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
   exact Ideal.pow_mem_pow (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation R L z)) _
 
-/-- The maps `quotientEnvelopingMap` commute with the transitions to smaller nilpotency
+/-- The maps `lowerCentralQuotientι` commute with the transitions to smaller nilpotency
 classes. -/
-theorem quotientEnvelopingMap_factor {c d : ℕ} (h : c ≤ d)
+theorem lowerCentralQuotientι_factor {c d : ℕ} (h : c ≤ d)
     (z : L ⧸ LieModule.lowerCentralSeries R L L d) :
-    quotientEnvelopingMap R L c
+    lowerCentralQuotientι R L c
         (LieIdeal.factor (LieModule.antitone_lowerCentralSeries R L L h) z) =
       Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.add_le_add_right h 1))
-        (quotientEnvelopingMap R L d z) := by
+        (lowerCentralQuotientι R L d z) := by
   obtain ⟨z, rfl⟩ := LieIdeal.surjective_mkQ _ z
   simp [LieIdeal.mkQ_apply, LieIdeal.factor_apply]
 
