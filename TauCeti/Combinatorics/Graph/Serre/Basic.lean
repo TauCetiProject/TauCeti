@@ -451,6 +451,9 @@ vertex `b` to the vertex `!b`. -/
 
 @[simp] theorem segment_src (b : Bool) : segment.src b = b := rfl
 
+/-- Every vertex of the segment is the source of a dart: the dart with the same Boolean label. -/
+theorem segment_src_surjective : Function.Surjective segment.src := fun b => ⟨b, segment_src b⟩
+
 @[simp] theorem segment_rev (b : Bool) : segment.rev b = !b := rfl
 
 @[simp] theorem segment_tgt (b : Bool) : segment.tgt b = !b := rfl

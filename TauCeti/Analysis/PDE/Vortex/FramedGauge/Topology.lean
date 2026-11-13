@@ -10,59 +10,76 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
-# Multiplication and inversion in the Sobolev framed gauge group are continuous
+# The Sobolev topology on the framed gauge group of plane vortices
 
-For a real order `s > 1`, the Sobolev framed gauge group `G_s` (`TauCeti.Vortex.sobolevGaugeGroup`)
-consists of the continuous circle-valued maps `u` on the plane with `u - 1 ∈ H^s(ℂ; ℂ)`. It is the
-gauge group of the affine space `A_m^k` of framed plane vortex fields, for `s = k + 1`. This file
-measures distances in `G_s` by the `H^s` norm of `u - v = (u - 1) - (v - 1)`, and shows that the
-group operations are continuous for it.
+For a real order `s > 1`, the Sobolev framed gauge group `G_s = {1 + h : h ∈ H^s, |1 + h| = 1}`
+(`TauCeti.Vortex.sobolevGaugeGroup`) is a subgroup of `ℂ → Circle`, and as such it carries the
+topology of pointwise convergence. The gauge group of the vortex field space `A_m^k` is instead
+modelled on the Hilbert space `H^s(ℂ)`: two gauges are close when `u - v` is small in `H^s`. This
+file constructs that topology and shows that `G_s` is a Hausdorff topological group for it.
 
-The `H^s` coordinate `TauCeti.Vortex.sobolevGaugeCoord u ∈ H^s(ℂ)` of `u ∈ G_s` is `u - 1`, as an
-element of Mathlib's bundled Bessel-potential space: its `L²` function is `u - 1` almost everywhere
-(`TauCeti.Vortex.sobolevGaugeCoord_eq_iff`). It is injective, because the elements of `G_s` are
-continuous (`TauCeti.Vortex.sobolevGaugeCoord_injective`). Since `s > 1 = dim ℂ / 2`, `H^s(ℂ)` is an
-algebra under pointwise multiplication (`BesselPotentialSpace.mulCLM`), and the group law of `G_s`
-reads, in coordinates,
+Since `G_s` already has the pointwise topology, the Sobolev topology lives on a type synonym,
+`TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`, identified with the subgroup by
+`TauCeti.Vortex.SobolevTopologicalGaugeGroup.toSubgroup`. An element `u` determines the element
+`subOne u` of `H^s(ℂ)` whose `L²` function is `u - 1`
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`), and `u` is
+determined by it (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_injective`), since `u` is
+continuous.
 
-`(1 + h) (1 + g) = 1 + (h + g + h g)`
+The group laws in these coordinates are
 
-(`TauCeti.Vortex.sobolevGaugeCoord_mul`). The coordinate `w` of `u⁻¹` is the quasi-inverse of the
-coordinate `h` of `u`: `h + w + h w = 0` (`TauCeti.Vortex.sobolevGaugeCoord_inv`).
+`(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)`,    `u⁻¹ - 1 = conj (u - 1)`.
 
-* **Multiplication is continuous** (`Filter.Tendsto.sobolevGaugeCoord_mul`), since the product of
-  `H^s(ℂ)` is a continuous bilinear map.
-* **Inversion is continuous** (`Filter.Tendsto.sobolevGaugeCoord_inv`). It is in fact locally
-  Lipschitz: with `M` the norm of the multiplication of `H^s(ℂ)` and `K = 1 + M ‖v⁻¹ - 1‖`,
-  `‖u⁻¹ - v⁻¹‖ ≤ 2 K² ‖u - v‖` as soon as `2 K M ‖u - v‖ ≤ 1`, all norms in `H^s`
-  (`TauCeti.Vortex.norm_sobolevGaugeCoord_inv_sub_le`). Only the algebra structure of `H^s(ℂ)`
-  enters: if `c`, `w₀` and `w` are the coordinates of `v`, `v⁻¹` and `u⁻¹`, and `δ`, `ε` are the
-  differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inverse relations give
-  `ε + c ε = X` with `X = -δ - δ w`, and multiplying by the quasi-inverse `1 + w₀` of `1 + c` gives
-  `ε = X + w₀ X`.
+The first is polynomial, and continuous for the `H^s` norm because pointwise multiplication is a
+continuous bilinear map on `H^s(ℂ)`, `s > 1` (`BesselPotentialSpace.mulCLM`). To make inversion
+continuous without discussing complex conjugation on `H^s`, the topology is induced by the pair
+`u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`: inversion exchanges the two coordinates, and
+multiplication acts on each by the polynomial above, using `(u v)⁻¹ = v⁻¹ u⁻¹`. Thus a net
+converges exactly when both `u - 1` and `conj (u - 1)` converge in `H^s`.
 
-So `G_s`, with the distance `‖u - v‖_{H^s}`, is a topological group. The type
-`↥(sobolevGaugeGroup hs)` already carries the subspace topology of pointwise convergence from
-`ℂ → Circle`, so no topology instance is added; continuity is stated through `sobolevGaugeCoord`.
-Charts of `G_s`, given by the exponential of `TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential`,
-are not treated here.
+The coordinate `u⁻¹ - 1` is nevertheless a locally Lipschitz function of `u - 1` alone, so the
+Sobolev topology is that of the distance `‖u - v‖_{H^s}`
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`). Only the algebra structure
+of `H^s(ℂ)` enters. The element `w = u⁻¹ - 1` is the quasi-inverse of `h = u - 1`,
+`h + w + h w = 0`. If `c`, `w₀` are the coordinates of `v`, `v⁻¹`, and `δ`, `ε` are the
+differences of the coordinates of `u, v` and of `u⁻¹, v⁻¹`, the quasi-inverse relations give
+`ε + c ε = X` with `X = -δ - δ w`, and multiplying by the quasi-inverse `1 + w₀` of `1 + c` gives
+`ε = X + w₀ X`.
+
+## Main definitions
+
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`: the group `G_s`, `s > 1`, with its Sobolev
+  topology.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne`: the element `u - 1` of `H^s(ℂ)`.
 
 ## Main results
 
-* `TauCeti.Vortex.sobolevGaugeCoord`: the `H^s` coordinate `u - 1` of `u ∈ G_s`.
-* `TauCeti.Vortex.sobolevGaugeCoord_injective`: it determines `u`.
-* `TauCeti.Vortex.sobolevGaugeCoord_mul`, `TauCeti.Vortex.sobolevGaugeCoord_inv`: the group law in
-  coordinates.
-* `Filter.Tendsto.sobolevGaugeCoord_mul`, `Filter.Tendsto.sobolevGaugeCoord_inv`: multiplication and
-  inversion are continuous for the `H^s` distance.
-* `TauCeti.Vortex.norm_sobolevGaugeCoord_inv_sub_le`: inversion is locally Lipschitz.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_mul`: the product law
+  `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)` in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne_inv`: the `L²`
+  function of `u⁻¹ - 1` is `conj u - 1`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne_inv`: `u⁻¹ - 1` is the quasi-inverse of
+  `u - 1` in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.norm_subOne_inv_sub_le`: `u⁻¹ - 1` is a locally
+  Lipschitz function of `u - 1` for the `H^s` norm.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne_prod`: the topology of `G_s` is
+  induced by the injective map `u ↦ (u - 1, u⁻¹ - 1)` into `H^s(ℂ) × H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.continuous_iff`: a map into `G_s` is continuous
+  exactly when `u - 1` and `u⁻¹ - 1` depend continuously on the parameter in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsTopologicalGroup`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.instT2Space`: `G_s` is a Hausdorff topological group.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.isEmbedding_subOne`: the topology of `G_s` is
+  already induced by `u ↦ u - 1` alone, that is, by the distance `‖u - v‖_{H^s}`.
+
+The Banach charts of `G_s`, its completeness and the continuity of its action on the field space
+`A_m^k` are not treated here.
 
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Progress in Physics 2, Birkhäuser, 1980,
   Chapter III.
 * M. E. Taylor, *Partial Differential Equations III: Nonlinear Equations*, 2nd ed., Applied
-  Mathematical Sciences 117, Springer, 2011, Chapter 13, Section 3.
+  Mathematical Sciences 117, Springer, 2011, Chapter 13, §3.
 -/
 
 public section
@@ -71,112 +88,128 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open BesselPotentialSpace Filter MeasureTheory Module TemperedDistribution
-open scoped Topology BesselPotentialSpace
+open Filter MeasureTheory Module TemperedDistribution BesselPotentialSpace Topology
+open scoped SchwartzMap BesselPotentialSpace
 
-variable {s : ℝ} {hs : 1 < s}
+variable {s : ℝ}
 
-/-- **The `H^s` coordinate of a Sobolev gauge.** For `u ∈ G_s`, the element `u - 1` of `H^s(ℂ)`:
-its `L²` function is `u - 1` almost everywhere (`TauCeti.Vortex.sobolevGaugeCoord_eq_iff`). -/
-def sobolevGaugeCoord (u : sobolevGaugeGroup hs) : H^{s}(ℂ) :=
-  (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup u.2).choose_spec.2.toBesselPotentialSpace
+/-- **The Sobolev framed gauge group `G_s` with its Sobolev topology**, `s > 1`. As a group it is
+the subgroup `sobolevGaugeGroup hs` of `ℂ → Circle` (`SobolevTopologicalGaugeGroup.toSubgroup`);
+its topology is that of `u - 1` and `u⁻¹ - 1` in `H^s(ℂ)`
+(`SobolevTopologicalGaugeGroup.continuous_iff`), rather than the pointwise topology of the
+subgroup. -/
+def SobolevTopologicalGaugeGroup (hs : 1 < s) : Type := sobolevGaugeGroup hs
 
-/-- The `L²` function of the `H^s` coordinate of `u ∈ G_s` is `u - 1` almost everywhere. -/
-theorem toL2_sobolevGaugeCoord (h0 : 0 ≤ s) (u : sobolevGaugeGroup hs) :
-    toL2 h0 (sobolevGaugeCoord u) =ᵐ[volume] fun z ↦ ((u : ℂ → Circle) z : ℂ) - 1 := by
-  rw [sobolevGaugeCoord, toL2_toBesselPotentialSpace]
-  exact (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup u.2).choose_spec.1
+namespace SobolevTopologicalGaugeGroup
 
-/-- The `H^s` coordinate of `u ∈ G_s` is the element of `H^s(ℂ)` whose `L²` function is `u - 1`
-almost everywhere. -/
-theorem sobolevGaugeCoord_eq_iff (h0 : 0 ≤ s) {u : sobolevGaugeGroup hs} {h : H^{s}(ℂ)} :
-    sobolevGaugeCoord u = h ↔ toL2 h0 h =ᵐ[volume] fun z ↦ ((u : ℂ → Circle) z : ℂ) - 1 := by
-  refine ⟨fun e ↦ e ▸ toL2_sobolevGaugeCoord h0 u, fun e ↦ ext_ae h0 ?_⟩
-  exact (toL2_sobolevGaugeCoord h0 u).trans e.symm
+variable {hs : 1 < s}
 
-/-- A Sobolev gauge is determined by its `H^s` coordinate. -/
-theorem sobolevGaugeCoord_injective :
-    Function.Injective (sobolevGaugeCoord (hs := hs)) := by
-  intro u v e
-  have h0 : 0 ≤ s := by linarith
-  have hae : (fun z ↦ ((u : ℂ → Circle) z : ℂ)) =ᵐ[volume] fun z ↦ ((v : ℂ → Circle) z : ℂ) := by
-    filter_upwards [toL2_sobolevGaugeCoord h0 u, toL2_sobolevGaugeCoord h0 v] with z hu hv
-    rw [e] at hu
-    simpa using hu.symm.trans hv
-  have hc : ∀ w : sobolevGaugeGroup hs, Continuous fun z ↦ ((w : ℂ → Circle) z : ℂ) :=
-    fun w ↦ continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 w.2).1
-  have := (Continuous.ae_eq_iff_eq volume (hc u) (hc v)).1 hae
-  exact Subtype.ext (funext fun z ↦ Circle.ext (congrFun this z))
+private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
 
-/-- The `H^s` coordinate of the identity gauge is `0`. -/
+instance : Group (SobolevTopologicalGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
+
+variable (hs) in
+/-- The identification of `SobolevTopologicalGaugeGroup hs` with the subgroup
+`sobolevGaugeGroup hs` of `ℂ → Circle`. -/
+def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := MulEquiv.refl _
+
+/-- **The element `u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`: its `L²` function is `u - 1`
+(`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
+def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
+  (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup
+    (toSubgroup hs u).2).choose_spec.2.toBesselPotentialSpace
+
+/-- The `L²` function of `subOne u` is `u - 1`. -/
+theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusion h (subOne u)).toLp =ᵐ[volume]
+      fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
+  obtain ⟨hae, -⟩ :=
+    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).2).choose_spec
+  rw [subOne, toLp_inclusion_toBesselPotentialSpace h _ rfl]
+  exact hae
+
+/-- The `L²` function of `subOne u⁻¹` is `conj u - 1`. -/
+theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusion h (subOne u⁻¹)).toLp =ᵐ[volume]
+      fun z ↦ (starRingEnd ℂ) ((toSubgroup hs u : ℂ → Circle) z) - 1 := by
+  filter_upwards [coeFn_toLp_inclusion_subOne h u⁻¹] with z hz
+  rw [hz, map_inv]
+  simp only [InvMemClass.coe_inv, Pi.inv_apply, Circle.coe_inv_eq_conj]
+
+/-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
+theorem subOne_injective :
+    Function.Injective (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  intro u v huv
+  have h := nonneg hs
+  have hae := (coeFn_toLp_inclusion_subOne h u).symm.trans
+    ((congrArg (fun a ↦ ⇑(inclusion h a).toLp) huv).eventuallyEq.trans
+      (coeFn_toLp_inclusion_subOne h v))
+  -- Both gauges are continuous, so almost everywhere equality is equality.
+  have hcont (w : SobolevTopologicalGaugeGroup hs) :
+      Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) - 1 :=
+    (continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs w).2).1).sub
+      continuous_const
+  have heq := (hcont u).ae_eq_iff_eq volume (hcont v) |>.1 hae
+  apply (toSubgroup hs).injective
+  refine Subtype.ext (funext fun z ↦ Subtype.ext ?_)
+  simpa using congrFun heq z
+
+/-- The identity gauge has `u - 1 = 0`. -/
 @[simp]
-theorem sobolevGaugeCoord_one : sobolevGaugeCoord (1 : sobolevGaugeGroup hs) = 0 := by
-  rw [sobolevGaugeCoord_eq_iff (by linarith : (0 : ℝ) ≤ s), map_zero]
-  filter_upwards with z
+theorem subOne_one : subOne (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
+  have h := nonneg hs
+  refine toLp_inclusion_injective h (Lp.ext ?_)
+  filter_upwards [coeFn_toLp_inclusion_subOne h (1 : SobolevTopologicalGaugeGroup hs),
+    Lp.coeFn_zero ℂ 2 (volume : Measure ℂ)] with z h₁ h₂
+  rw [h₁, map_zero, toLp_zero, h₂, map_one]
   simp
 
-/-- The `H^s` coordinate of `u ∈ G_s` vanishes exactly when `u` is the identity. -/
-@[simp]
-theorem sobolevGaugeCoord_eq_zero_iff {u : sobolevGaugeGroup hs} :
-    sobolevGaugeCoord u = 0 ↔ u = 1 :=
-  sobolevGaugeCoord_one (hs := hs) ▸ sobolevGaugeCoord_injective.eq_iff
-
-/-- **The group law of `G_s` in `H^s` coordinates**: `(1 + h) (1 + g) = 1 + (h + g + h g)`. -/
-theorem sobolevGaugeCoord_mul (u v : sobolevGaugeGroup hs) :
-    sobolevGaugeCoord (u * v) = sobolevGaugeCoord u + sobolevGaugeCoord v +
-      mulCLM (finrank_real_complex_lt_two_mul hs) (sobolevGaugeCoord u) (sobolevGaugeCoord v) := by
-  have h0 : 0 ≤ s := by linarith
-  rw [sobolevGaugeCoord_eq_iff h0, map_add, map_add]
-  filter_upwards [Lp.coeFn_add (toL2 h0 (sobolevGaugeCoord u) + toL2 h0 (sobolevGaugeCoord v))
-      (toL2 h0 (mulCLM (finrank_real_complex_lt_two_mul hs) (sobolevGaugeCoord u)
-        (sobolevGaugeCoord v))),
-    Lp.coeFn_add (toL2 h0 (sobolevGaugeCoord u)) (toL2 h0 (sobolevGaugeCoord v)),
-    toL2_mulCLM (finrank_real_complex_lt_two_mul hs) h0 (sobolevGaugeCoord u)
-      (sobolevGaugeCoord v),
-    toL2_sobolevGaugeCoord h0 u, toL2_sobolevGaugeCoord h0 v] with z h₁ h₂ h₃ hu hv
-  simp only [h₁, h₂, h₃, hu, hv, Pi.add_apply, Subgroup.coe_mul, Pi.mul_apply, Circle.coe_mul]
+/-- **The product law in `H^s(ℂ)`:** `(u v) - 1 = (u - 1) + (v - 1) + (u - 1) (v - 1)`. -/
+theorem subOne_mul (u v : SobolevTopologicalGaugeGroup hs) :
+    subOne (u * v) = subOne u + subOne v +
+      mulCLM (finrank_real_complex_lt_two_mul hs) (subOne u) (subOne v) := by
+  have h := nonneg hs
+  refine toLp_inclusion_injective h (Lp.ext ?_)
+  have hs' := finrank_real_complex_lt_two_mul hs
+  filter_upwards [coeFn_toLp_inclusion_subOne h (u * v),
+    coeFn_toLp_inclusion_add h (subOne u + subOne v) (mulCLM hs' (subOne u) (subOne v)),
+    coeFn_toLp_inclusion_add h (subOne u) (subOne v),
+    coeFn_toLp_inclusion_mulCLM hs' h (subOne u) (subOne v),
+    coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne h v]
+    with z h₁ h₂ h₃ h₄ h₅ h₆
+  rw [h₁, h₂, Pi.add_apply, h₃, Pi.add_apply, h₄, h₅, h₆, map_mul]
+  simp only [Subgroup.coe_mul, Pi.mul_apply, Circle.coe_mul]
   ring
 
-/-- **Inversion in `G_s` in `H^s` coordinates.** The coordinate `w` of `u⁻¹` is the quasi-inverse
-of the coordinate `h` of `u`, `h + w + h w = 0`, that is `w = -h - h w`. -/
-theorem sobolevGaugeCoord_inv (u : sobolevGaugeGroup hs) :
-    sobolevGaugeCoord u⁻¹ = -sobolevGaugeCoord u - mulCLM (finrank_real_complex_lt_two_mul hs)
-      (sobolevGaugeCoord u) (sobolevGaugeCoord u⁻¹) := by
-  have h := sobolevGaugeCoord_mul u u⁻¹
-  rw [mul_inv_cancel, sobolevGaugeCoord_one] at h
+/-- **Inversion in `H^s(ℂ)`:** `w = u⁻¹ - 1` is the quasi-inverse of `h = u - 1`,
+`h + w + h w = 0`, that is `w = -h - h w`. -/
+theorem subOne_inv (u : SobolevTopologicalGaugeGroup hs) :
+    subOne u⁻¹ = -subOne u -
+      mulCLM (finrank_real_complex_lt_two_mul hs) (subOne u) (subOne u⁻¹) := by
+  have h := subOne_mul u u⁻¹
+  rw [mul_inv_cancel, subOne_one] at h
   linear_combination (norm := module) -h
-
-/-- **Multiplication in `G_s` is continuous for the `H^s` distance.** -/
-theorem _root_.Filter.Tendsto.sobolevGaugeCoord_mul {α : Type*} {l : Filter α}
-    {f g : α → sobolevGaugeGroup hs} {u v : sobolevGaugeGroup hs}
-    (hf : Tendsto (fun a ↦ sobolevGaugeCoord (f a)) l (𝓝 (sobolevGaugeCoord u)))
-    (hg : Tendsto (fun a ↦ sobolevGaugeCoord (g a)) l (𝓝 (sobolevGaugeCoord v))) :
-    Tendsto (fun a ↦ sobolevGaugeCoord (f a * g a)) l (𝓝 (sobolevGaugeCoord (u * v))) := by
-  rw [funext fun a ↦ TauCeti.Vortex.sobolevGaugeCoord_mul (f a) (g a),
-    TauCeti.Vortex.sobolevGaugeCoord_mul]
-  exact (hf.add hg).add (((mulCLM _).continuous₂.tendsto _).comp (hf.prodMk_nhds hg))
 
 /-- **Inversion in `G_s` is locally Lipschitz for the `H^s` distance.** Let `M` be the norm of the
 multiplication of `H^s(ℂ)` and `K = 1 + M ‖v⁻¹ - 1‖_{H^s}`. If `2 K M ‖u - v‖_{H^s} ≤ 1`, then
 `‖u⁻¹ - v⁻¹‖_{H^s} ≤ 2 K² ‖u - v‖_{H^s}`. -/
-theorem norm_sobolevGaugeCoord_inv_sub_le {u v : sobolevGaugeGroup hs}
-    (h : 2 * (1 + ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖sobolevGaugeCoord v⁻¹‖) *
-      ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ *
-        ‖sobolevGaugeCoord u - sobolevGaugeCoord v‖ ≤ 1) :
-    ‖sobolevGaugeCoord u⁻¹ - sobolevGaugeCoord v⁻¹‖ ≤
-      2 * (1 + ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖sobolevGaugeCoord v⁻¹‖) ^ 2 *
-        ‖sobolevGaugeCoord u - sobolevGaugeCoord v‖ := by
-  have hw := sobolevGaugeCoord_inv u
-  have hw₀ := sobolevGaugeCoord_inv v
-  have h₀ := sobolevGaugeCoord_mul v v⁻¹
-  rw [mul_inv_cancel, sobolevGaugeCoord_one] at h₀
+theorem norm_subOne_inv_sub_le {u v : SobolevTopologicalGaugeGroup hs}
+    (h : 2 * (1 + ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖subOne v⁻¹‖) *
+      ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖subOne u - subOne v‖ ≤ 1) :
+    ‖subOne u⁻¹ - subOne v⁻¹‖ ≤
+      2 * (1 + ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖ * ‖subOne v⁻¹‖) ^ 2 *
+        ‖subOne u - subOne v‖ := by
+  have hw := subOne_inv u
+  have hw₀ := subOne_inv v
+  have h₀ := subOne_mul v v⁻¹
+  rw [mul_inv_cancel, subOne_one] at h₀
   set B := mulCLM (finrank_real_complex_lt_two_mul hs)
   set M := ‖B‖
-  set c := sobolevGaugeCoord v
-  set w₀ := sobolevGaugeCoord v⁻¹
-  set w := sobolevGaugeCoord u⁻¹
+  set c := subOne v
+  set w₀ := subOne v⁻¹
+  set w := subOne u⁻¹
   set K := 1 + M * ‖w₀‖
-  set δ := sobolevGaugeCoord u - c
+  set δ := subOne u - c
   set ε := w - w₀
   set X := -δ - B δ w
   -- `ε` solves `ε + c ε = X`; multiplying by `1 + w₀`, the quasi-inverse of `1 + c`, gives
@@ -209,15 +242,16 @@ theorem norm_sobolevGaugeCoord_inv_sub_le {u v : sobolevGaugeGroup hs}
   have h₂ := mul_le_mul_of_nonneg_right h (norm_nonneg ε)
   nlinarith [norm_nonneg δ, norm_nonneg ε]
 
-/-- **Inversion in `G_s` is continuous for the `H^s` distance.** -/
-theorem _root_.Filter.Tendsto.sobolevGaugeCoord_inv {α : Type*} {l : Filter α}
-    {f : α → sobolevGaugeGroup hs} {u : sobolevGaugeGroup hs}
-    (hf : Tendsto (fun a ↦ sobolevGaugeCoord (f a)) l (𝓝 (sobolevGaugeCoord u))) :
-    Tendsto (fun a ↦ sobolevGaugeCoord (f a)⁻¹) l (𝓝 (sobolevGaugeCoord u⁻¹)) := by
+/-- **Inversion is continuous in the coordinate `u - 1` alone:** if `u - 1` converges in
+`H^s(ℂ)`, then so does `u⁻¹ - 1`. -/
+theorem tendsto_subOne_inv {α : Type*} {l : Filter α} {f : α → SobolevTopologicalGaugeGroup hs}
+    {u : SobolevTopologicalGaugeGroup hs}
+    (hf : Tendsto (fun a ↦ subOne (f a)) l (𝓝 (subOne u))) :
+    Tendsto (fun a ↦ subOne (f a)⁻¹) l (𝓝 (subOne u⁻¹)) := by
   set M := ‖mulCLM (finrank_real_complex_lt_two_mul hs)‖
-  set K := 1 + M * ‖sobolevGaugeCoord u⁻¹‖
+  set K := 1 + M * ‖subOne u⁻¹‖
   have hd := tendsto_iff_norm_sub_tendsto_zero.1 hf
-  have hsmall : ∀ᶠ a in l, 2 * K * M * ‖sobolevGaugeCoord (f a) - sobolevGaugeCoord u‖ ≤ 1 := by
+  have hsmall : ∀ᶠ a in l, 2 * K * M * ‖subOne (f a) - subOne u‖ ≤ 1 := by
     have := hd.const_mul (2 * K * M)
     rw [mul_zero] at this
     exact this.eventually (Iic_mem_nhds zero_lt_one)
@@ -225,6 +259,66 @@ theorem _root_.Filter.Tendsto.sobolevGaugeCoord_inv {α : Type*} {l : Filter α}
   refine squeeze_zero' (.of_forall fun a ↦ norm_nonneg _) ?_
     (by simpa using hd.const_mul (2 * K ^ 2))
   filter_upwards [hsmall] with a ha
-  exact norm_sobolevGaugeCoord_inv_sub_le ha
+  exact norm_subOne_inv_sub_le ha
+
+/-- **The Sobolev topology of `G_s`**, induced by `u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`. -/
+instance : TopologicalSpace (SobolevTopologicalGaugeGroup hs) :=
+  .induced (fun u ↦ (subOne u, subOne u⁻¹)) inferInstance
+
+/-- **The defining embedding of `G_s`**: its Sobolev topology is that of
+`u ↦ (u - 1, u⁻¹ - 1) ∈ H^s(ℂ) × H^s(ℂ)`, which is injective since `u ↦ u - 1` is. -/
+theorem isEmbedding_subOne_prod :
+    IsEmbedding fun u : SobolevTopologicalGaugeGroup hs ↦ (subOne u, subOne u⁻¹) :=
+  ⟨⟨rfl⟩, fun _ _ h ↦ subOne_injective (congrArg Prod.fst h)⟩
+
+/-- **Continuity into `G_s`.** A map into `G_s` is continuous exactly when `u - 1` and `u⁻¹ - 1`
+depend continuously on the parameter in `H^s(ℂ)`. -/
+theorem continuous_iff {X : Type*} [TopologicalSpace X]
+    {f : X → SobolevTopologicalGaugeGroup hs} :
+    Continuous f ↔
+      Continuous (fun x ↦ subOne (f x)) ∧ Continuous (fun x ↦ subOne (f x)⁻¹) :=
+  isEmbedding_subOne_prod.continuous_iff.trans continuous_prodMk
+
+/-- `u ↦ u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_subOne : Continuous (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) :=
+  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).1
+
+/-- `u ↦ u⁻¹ - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_subOne_inv :
+    Continuous (fun u : SobolevTopologicalGaugeGroup hs ↦ subOne u⁻¹) :=
+  ((continuous_iff (f := (id : SobolevTopologicalGaugeGroup hs → _))).1 continuous_id).2
+
+/-- **`G_s` is a topological group** for its Sobolev topology: by `subOne_mul`, multiplication
+acts on `u - 1` and, through `(u v)⁻¹ = v⁻¹ u⁻¹`, on `u⁻¹ - 1` by continuous polynomial maps of
+`H^s(ℂ)`, while inversion exchanges `u - 1` and `u⁻¹ - 1`. -/
+instance instIsTopologicalGroup : IsTopologicalGroup (SobolevTopologicalGaugeGroup hs) where
+  continuous_mul := by
+    have hu : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
+        SobolevTopologicalGaugeGroup hs ↦ subOne p.1⁻¹ :=
+      continuous_subOne_inv.comp continuous_fst
+    have hv : Continuous fun p : SobolevTopologicalGaugeGroup hs ×
+        SobolevTopologicalGaugeGroup hs ↦ subOne p.2⁻¹ :=
+      continuous_subOne_inv.comp continuous_snd
+    exact continuous_iff.2 ⟨by simp only [subOne_mul]; fun_prop,
+      by simp only [mul_inv_rev, subOne_mul]; fun_prop⟩
+  continuous_inv := continuous_iff.2 ⟨continuous_subOne_inv, by
+    simpa only [inv_inv] using continuous_subOne⟩
+
+/-- **The Sobolev topology of `G_s` is that of the distance `‖u - v‖_{H^s}`**: it is induced by
+`u ↦ u - 1` alone, since `u⁻¹ - 1` depends continuously on `u - 1` (`tendsto_subOne_inv`). -/
+theorem isEmbedding_subOne :
+    IsEmbedding (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  refine ⟨isInducing_iff_nhds.2 fun u ↦ le_antisymm (continuous_subOne.tendsto u).le_comap ?_,
+    subOne_injective⟩
+  rw [isEmbedding_subOne_prod.isInducing.nhds_eq_comap u, ← tendsto_iff_comap]
+  exact tendsto_comap.prodMk_nhds (tendsto_subOne_inv tendsto_comap)
+
+/-- `G_s` is Hausdorff for its Sobolev topology, since `u ↦ u - 1` is injective. -/
+instance instT2Space : T2Space (SobolevTopologicalGaugeGroup hs) :=
+  isEmbedding_subOne_prod.t2Space
+
+end SobolevTopologicalGaugeGroup
 
 end TauCeti.Vortex
