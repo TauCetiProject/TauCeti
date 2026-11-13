@@ -44,6 +44,12 @@ def relCompFiberProduct (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
     ((LinearMap.snd R M N).comp (LinearMap.fst R (M × N) (N × P)))
     ((LinearMap.fst R N P).comp (LinearMap.snd R (M × N) (N × P)))
 
+/-- The matching space is the product relation cut out by equality of middle coordinates. -/
+theorem relCompFiberProduct_def (L : Submodule R (M × N)) (K : Submodule R (N × P)) :
+    L.relCompFiberProduct K = (L.prod K) ⊓ LinearMap.eqLocus
+      ((LinearMap.snd R M N).comp (LinearMap.fst R (M × N) (N × P)))
+      ((LinearMap.fst R N P).comp (LinearMap.snd R (M × N) (N × P))) := (rfl)
+
 /-- Membership in the matching space records both relations and equality in the middle. -/
 @[simp]
 theorem mem_relCompFiberProduct {L : Submodule R (M × N)} {K : Submodule R (N × P)}
@@ -136,7 +142,7 @@ noncomputable def relCompExcessEquivKer (L : Submodule R (M × N))
     (L.relCompExcessInclusion_injective K)).trans
       (LinearEquiv.ofEq _ _ (L.ker_relCompProjection K).symm)
 
-/-- Under the kernel identification, an excess vector has zero outer coordinates. -/
+/-- The kernel identification agrees with the excess inclusion into the matching space. -/
 @[simp]
 theorem relCompExcessEquivKer_apply (L : Submodule R (M × N)) (K : Submodule R (N × P))
     (n : L.relCompExcess K) :
@@ -156,21 +162,8 @@ variable {R M N P : Type*} [Ring R]
 theorem relCompProjection_injective_iff (L : Submodule R (M × N))
     (K : Submodule R (N × P)) :
     Function.Injective (L.relCompProjection K) ↔ L.relCompExcess K = ⊥ := by
-  rw [← LinearMap.ker_eq_bot,
-    ker_relCompProjection, LinearMap.range_eq_bot]
-  constructor
-  · intro h
-    apply eq_bot_iff.mpr
-    intro n hn
-    have hz : L.relCompExcessInclusion K ⟨n, hn⟩ = L.relCompExcessInclusion K 0 := by
-      rw [h, map_zero, LinearMap.zero_apply]
-    exact (Submodule.mem_bot R).mpr
-      (congrArg Subtype.val (L.relCompExcessInclusion_injective K hz))
-  · intro h
-    apply LinearMap.ext
-    intro n
-    have hn : (n : N) = 0 := (Submodule.mem_bot R).mp (h ▸ n.2)
-    ext <;> simp [hn]
+  rw [← LinearMap.ker_eq_bot, ← subsingleton_iff_eq_bot, ← subsingleton_iff_eq_bot]
+  exact (L.relCompExcessEquivKer K).toEquiv.subsingleton_congr.symm
 
 /-- Eliminating the middle coordinate identifies the matching space modulo its embedded
 excess with the composite relation. -/
