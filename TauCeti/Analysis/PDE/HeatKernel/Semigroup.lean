@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 public import TauCeti.Analysis.Semigroups.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The heat semigroup on `Lᵖ`
@@ -25,6 +26,10 @@ This file proves that it is a **strongly continuous contraction semigroup**:
   associativity of convolution on `Lᵖ`;
 * `e^{tΔ} f → f` in `Lᵖ` as `t → 0⁺`: the heat kernel is an approximate identity, applied to the
   continuous bounded `Lᵖ`-valued orbit `y ↦ f(· + y)` of translations.
+
+It also proves that the semigroup is **positivity preserving** on real `Lᵖ`, since `K_t > 0`, and
+**mass preserving** on `L¹`, `∫ e^{tΔ} f = ∫ f`, since `K_t` has mass one; so on nonnegative
+functions it preserves the `L¹` norm.
 
 For `t > 0` the class `e^{tΔ} f` is represented almost everywhere by the classical convolution
 `K_t ⋆ f`; for essentially bounded `f`, `TauCeti.hasDerivAt_heatKernel_convolution` shows that
@@ -44,6 +49,10 @@ semigroup is not strongly continuous at `0`.
 * `TauCeti.heatSemigroup_zero`: the operator at time `0` is the identity.
 * `TauCeti.heatSemigroup_ae_eq_convolution`: for `t ≠ 0`, `e^{tΔ} f` is represented almost
   everywhere by the classical convolution `K_t ⋆ f`.
+* `TauCeti.heatSemigroup_nonneg`, `TauCeti.heatSemigroup_mono`: the semigroup preserves
+  positivity and order.
+* `TauCeti.integral_heatSemigroup`: the semigroup preserves the integral on `L¹`.
+* `TauCeti.norm_heatSemigroup_of_nonneg`: it preserves the `L¹` norm of nonnegative functions.
 
 ## References
 
@@ -164,5 +173,37 @@ theorem heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) {t : ℝ≥0} (ht
     (f : Lp F p (volume : Measure E)) :
     heatSemigroup hp t f =ᵐ[volume] heatKernel t ⋆ (f : E → F) := by
   simpa only [Lp.toLp_coeFn] using heatSemigroup_ae_eq_convolution hp ht (Lp.memLp f)
+
+/-- **The heat semigroup preserves positivity.** If `f ∈ Lᵖ` is nonnegative almost everywhere,
+so is `e^{tΔ} f`. -/
+theorem heatSemigroup_nonneg (hp : p ≠ ∞) (t : ℝ≥0) {f : Lp ℝ p (volume : Measure E)}
+    (hf : 0 ≤ f) : 0 ≤ heatSemigroup hp t f := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simpa using hf
+  rw [heatSemigroup_apply hp ht]
+  exact convolutionLp_nonneg hp (ae_of_all _ fun x ↦ (heatKernel_pos (by positivity) x).le) hf
+
+/-- **The heat semigroup is monotone**: `f ≤ g` almost everywhere implies
+`e^{tΔ} f ≤ e^{tΔ} g` almost everywhere. -/
+theorem heatSemigroup_mono (hp : p ≠ ∞) (t : ℝ≥0) :
+    Monotone (heatSemigroup (E := E) (F := ℝ) hp t) := fun f g hfg ↦ by
+  simpa using heatSemigroup_nonneg hp t (sub_nonneg.2 hfg)
+
+/-- **The heat semigroup preserves mass on `L¹`**: `∫ e^{tΔ} f = ∫ f` for `f ∈ L¹`. -/
+@[simp]
+theorem integral_heatSemigroup (t : ℝ≥0) (f : Lp F 1 (volume : Measure E)) :
+    ∫ x, heatSemigroup ENNReal.one_ne_top t f x = ∫ x, f x := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
+  have ht' : 0 < (t : ℝ) := by positivity
+  rw [heatSemigroup_apply ENNReal.one_ne_top ht, integral_convolutionLp,
+    integral_heatKernel ht', one_smul]
+
+/-- On nonnegative functions the heat semigroup preserves the `L¹` norm: for `0 ≤ f ∈ L¹`,
+`‖e^{tΔ} f‖₁ = ‖f‖₁`. -/
+theorem norm_heatSemigroup_of_nonneg (t : ℝ≥0) {f : Lp ℝ 1 (volume : Measure E)} (hf : 0 ≤ f) :
+    ‖heatSemigroup ENNReal.one_ne_top t f‖ = ‖f‖ := by
+  rw [L1.norm_eq_integral_of_nonneg (heatSemigroup_nonneg ENNReal.one_ne_top t hf),
+    L1.norm_eq_integral_of_nonneg hf, integral_heatSemigroup]
 
 end TauCeti

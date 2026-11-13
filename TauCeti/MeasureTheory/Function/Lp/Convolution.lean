@@ -48,6 +48,8 @@ convolution semigroup rests:
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
   classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`;
   `TauCeti.convolutionLp_ae_eq_convolution_coeFn` is the same for an element of `Lᵖ`.
+* `TauCeti.convolutionLp_nonneg`: convolution with a nonnegative kernel preserves positivity.
+* `TauCeti.integral_convolutionLp`: on `L¹`, `∫ k ⋆ f = (∫ k) • ∫ f`.
 * `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
   convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an `L¹` kernel and an `Lᵖ` function is
   integrable, which justifies local Fubini arguments.
@@ -281,5 +283,30 @@ theorem convolutionLp_ae_eq_convolution_coeFn [CompleteSpace F] (hp : p ≠ ∞)
     (hk : Integrable k μ) (f : Lp F p μ) :
     convolutionLp hp k μ f =ᵐ[μ] k ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by
   simpa only [Lp.toLp_coeFn] using convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
+
+/-- **Convolution with a nonnegative kernel preserves positivity**: if `k ≥ 0` almost everywhere
+and `f ∈ Lᵖ` is nonnegative, then so is `k ⋆ f`. -/
+theorem convolutionLp_nonneg (hp : p ≠ ∞) {k : E → ℝ} (hk : 0 ≤ᵐ[μ] k) {f : Lp ℝ p μ}
+    (hf : 0 ≤ f) : 0 ≤ convolutionLp hp k μ f := by
+  by_cases hki : Integrable k μ
+  · have h := convolutionLp_ae_eq_convolution_coeFn hp hki f
+    rw [← Lp.coeFn_nonneg] at hf ⊢
+    filter_upwards [h] with x hx
+    rw [hx, convolution_lsmul]
+    refine integral_nonneg_of_ae ?_
+    filter_upwards [hk, (quasiMeasurePreserving_sub_left μ x).ae hf] with y hky hfy
+    exact smul_nonneg hky hfy
+  · rw [convolutionLp_of_not_integrable hp hki, _root_.zero_apply]
+
+/-- **Convolution multiplies integrals**: for `f ∈ L¹`, `∫ k ⋆ f = (∫ k) • ∫ f`. Both sides
+vanish when `k` is not integrable. -/
+theorem integral_convolutionLp [CompleteSpace F] (k : E → ℝ) (f : Lp F 1 μ) :
+    ∫ x, convolutionLp ENNReal.one_ne_top k μ f x ∂μ = (∫ x, k x ∂μ) • ∫ x, f x ∂μ := by
+  by_cases hk : Integrable k μ
+  · rw [integral_congr_ae (convolutionLp_ae_eq_convolution_coeFn ENNReal.one_ne_top hk f),
+      integral_convolution _ hk (L1.integrable_coeFn f), lsmul_apply]
+  · rw [convolutionLp_of_not_integrable ENNReal.one_ne_top hk, integral_undef hk, zero_smul,
+      _root_.zero_apply, integral_congr_ae (Lp.coeFn_zero F 1 μ)]
+    exact integral_zero E F
 
 end TauCeti
