@@ -41,6 +41,16 @@ orientations this costs the sign `(-1) ^ (dim X · dim Y + dim T · (dim X + dim
 the two conventions contribute `dim T · (dim X + dim Y)`, and the quotient map
 `(ξ, η) ↦ α ξ - β η` changes sign, which reverses `T` and contributes `dim T`.
 
+Iterated fibre products are associative with no sign (`Orientation.map_fiberProduct_assoc`): for
+further maps `γ : Y → S` and `δ : Z → S`, the reassociation
+`(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` (`LinearMap.fiberProductAssoc`) carries the orientation
+built from `X ×_T Y` and `Z` to the one built from `X` and `Y ×_S Z`, as the formal products
+`([X][T]^∨[Y])[S]^∨[Z]` and `[X][T]^∨([Y][S]^∨[Z])` suggest. Both fibre products sit in
+`X × Y × Z` as the kernel of `(ξ, η, ζ) ↦ (α ξ - β η, γ η - δ ζ)`, cut out by the two
+conditions in opposite orders; exchanging them costs `(-1) ^ (dim S · dim T)`, which cancels
+against the signs of the two conventions. This is the linear input for orienting iterated broken
+strata `𝓜(C, E) ×_E 𝓜(E, F) ×_F 𝓜(F, D)` in Morse–Bott homology independently of bracketing.
+
 The boundary of a fibre product is oriented by the formula
 
 `∂(X ×_T Y) = (∂X) ×_T Y + (-1) ^ (dim X + dim T) X ×_T ∂Y`
@@ -68,6 +78,7 @@ fibre products over critical submanifolds.
 * `Orientation.fiberProduct_eq_iff`: the fibre product orientation is the unique orientation
   satisfying that identity.
 * `Orientation.map_fiberProduct_comm`: the sign of exchanging the factors of a fibre product.
+* `Orientation.map_fiberProduct_assoc`: iterated fibre product orientations are associative.
 * `Orientation.transverse_fiberProduct_left`, `Orientation.transverse_fiberProduct_right`: the
   boundary formula for fibre product orientations.
 
@@ -217,6 +228,103 @@ theorem map_fiberProduct_comm :
   rw [show x * y + t * (x + y) + t + x * t = t + (y * t + x * y) + 2 * (x * t) by ring,
     pow_add _ _ (2 * (x * t)), (even_two_mul _).neg_one_pow, mul_one]
 
+/-! ### Associativity -/
+
+section Assoc
+
+variable {Z S : Type*} [AddCommGroup Z] [Module K Z] [AddCommGroup S] [Module K S]
+  [FiniteDimensional K Z] [FiniteDimensional K S] {γ : Y →ₗ[K] S} {δ : Z →ₗ[K] S}
+  {z s q₁ q₂ r : ℕ}
+
+open LinearMap in
+/-- **Associativity of fibre product orientations.** For `α : X → T`, `β : Y → T`, `γ : Y → S`
+and `δ : Z → S`, the reassociation `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)`
+(`LinearMap.fiberProductAssoc`) carries the fibre product orientation of `X ×_T Y` and `Z` to
+that of `X` and `Y ×_S Z`, with no sign: in the formal notation `[X][T]^∨[Y]`, both are
+`[X][T]^∨[Y][S]^∨[Z]`. Only transversality of the left bracketing is assumed; that of the right
+bracketing follows (`LinearMap.surjective_coprod_of_comp_left`,
+`LinearMap.surjective_coprod_neg_assoc_outer`). -/
+theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₁₂ : Function.Surjective
+      ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
+    (ox : Orientation K X (Fin x)) (oy : Orientation K Y (Fin y)) (oz : Orientation K Z (Fin z))
+    (ot : Orientation K T (Fin t)) (os : Orientation K S (Fin s)) (hx : finrank K X = x)
+    (hy : finrank K Y = y) (hz : finrank K Z = z) (ht : finrank K T = t) (hs : finrank K S = s)
+    (hq₁ : q₁ + t = x + y) (hr₁ : r + s = q₁ + z) (hq₂ : q₂ + s = y + z)
+    (hr₂ : r + t = x + q₂) :
+    map (Fin r) (fiberProductAssoc α β γ δ)
+        (fiberProduct h₁₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os
+          (by have := finrank_ker_coprod_neg_add h₁; omega) hz hs hr₁) =
+      fiberProduct (β := β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)
+        (surjective_coprod_neg_assoc_outer h₁ h₁₂) ox
+        (fiberProduct (surjective_coprod_of_comp_left h₁₂) oy oz os hy hz hs hq₂) ot hx
+        (by have := finrank_ker_coprod_neg_add (surjective_coprod_of_comp_left h₁₂); omega) ht
+        hr₂ := by
+  have h₂ := surjective_coprod_of_comp_left h₁₂
+  have h₂₂ := surjective_coprod_neg_assoc_outer h₁ h₁₂
+  have hQ₁ := finrank_ker_coprod_neg h₁ hx hy ht hq₁
+  have hQ₂ := finrank_ker_coprod_neg h₂ hy hz hs hq₂
+  have hR₁ := finrank_ker_coprod_neg h₁₂ hQ₁ hz hs hr₁
+  have hR₂ := finrank_ker_coprod_neg h₂₂ hx hQ₂ ht hr₂
+  set oQ₁ := fiberProduct h₁ ox oy ot hx hy ht hq₁
+  set oQ₂ := fiberProduct h₂ oy oz os hy hz hs hq₂
+  set oR₁ := fiberProduct h₁₂ oQ₁ oz os hQ₁ hz hs hr₁
+  set oR₂ := fiberProduct h₂₂ ox oQ₂ ot hx hQ₂ ht hr₂
+  -- `(X ×_T Y) ×_S Z` is cut out of `(X × Y) × Z` first by `(ξ, η) ↦ α ξ - β η` and then by
+  -- `η ↦ γ η - δ ζ`; `X ×_T (Y ×_S Z)` is cut out of `X × (Y × Z)` in the opposite order.
+  have e₁ : (γ ∘ₗ snd K X Y).coprod (-δ) ∘ₗ
+      (ker (α.coprod (-β))).subtype.prodMap (LinearMap.id : Z →ₗ[K] Z) =
+        (γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ) := by
+    ext <;> simp
+  have e₂ : α.coprod (-(β ∘ₗ fst K Y Z)) ∘ₗ
+      (LinearMap.id : X →ₗ[K] X).prodMap (ker (γ.coprod (-δ))).subtype =
+        α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)) := by
+    ext <;> simp
+  have hU₂ : finrank K (X × ker (γ.coprod (-δ))) = r + t := by
+    rw [finrank_prod, hQ₂, hx]
+    omega
+  have E := map_shortExact_shortExact (Submodule.injective_subtype _) (exact_subtype_ker_map _)
+    h₁₂ (injective_prodMap (Submodule.injective_subtype _) Function.injective_id)
+    (exact_subtype_ker_map _).prodMap_id_comp_fst (surjective_comp h₁ fst_surjective) e₁
+    (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₂₂
+    (injective_prodMap Function.injective_id (Submodule.injective_subtype _))
+    (exact_subtype_ker_map _).id_prodMap_comp_snd (surjective_comp h₂ snd_surjective) e₂
+    (fiberProductAssoc α β γ δ) (LinearEquiv.prodAssoc K X Y Z)
+    prodMap_subtype_fiberProductAssoc_apply (fun _ ↦ by simp) (fun _ ↦ by simp) oR₁ ot os hR₁
+    ht hs (by rw [finrank_prod, hQ₁, hz]; omega) hU₂
+  -- By `E`, it suffices to compare the orientations of `X × (Y × Z)` induced through the second
+  -- tower; both are products of `ox`, `oy` and `oz` up to explicit signs.
+  rw [← shortExact_inj_left (Submodule.injective_subtype _) (exact_subtype_ker_map _) h₂₂ hR₂ ht
+      ot, ← shortExact_inj_left
+      (injective_prodMap Function.injective_id (Submodule.injective_subtype _))
+      (exact_subtype_ker_map _).id_prodMap_comp_snd (surjective_comp h₂ snd_surjective) hU₂ hs os]
+  apply (MulAction.injective ((-1 : Kˣ) ^ (t * s))).comp
+    (reindex K (X × Y × Z) (finCongr (add_right_comm r t s))).injective
+  simp only [Function.comp_apply]
+  -- The first tower is `([X][Y])[Z]` up to sign: unfold `oR₁` and then `oQ₁`.
+  rw [shortExact_fiberProduct,
+    shortExact_reindex_finCongr_left,
+    shortExact_units_smul_left, shortExact_prodMap_id (Submodule.injective_subtype _)
+      (exact_subtype_ker_map _) h₁ oQ₁ oz ot hQ₁ hz ht, shortExact_fiberProduct,
+    prod_reindex_finCongr_left, prod_units_smul_left] at E
+  -- The second tower is `[X]([Y][Z])` up to sign: unfold `oR₂` and then `oQ₂`.
+  rw [shortExact_fiberProduct,
+    shortExact_reindex_finCongr_left,
+    shortExact_units_smul_left, shortExact_id_prodMap (Submodule.injective_subtype _)
+      (exact_subtype_ker_map _) h₂ ox oQ₂ os hx hQ₂ hs, shortExact_fiberProduct,
+    prod_reindex_finCongr_right, prod_units_smul_right, ← E]
+  -- Normalize the reindexings and collect the signs.
+  simp only [map_reindex, map_units_smul, reindex_units_smul, smul_smul, ← pow_add,
+    reindex_finCongr_reindex_finCongr, map_prodAssoc_prod]
+  -- The two signs agree since `(q₂ + s) t = (y + z) t`.
+  have hexp : t * s + (q₂ * t + z * s) = z * s + (z * t + y * t) := by
+    have h := congrArg (· * t) hq₂
+    simp only [add_mul] at h
+    linarith [mul_comm s t]
+  rw [hexp]
+
+end Assoc
+
 end Orientation
 
 /-! ### Boundaries -/
@@ -243,7 +351,7 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
     (hy : finrank K Y = y) (ht : finrank K T = t) (hq : q + t = x + y)
     (hQ : finrank K (ker (α.coprod (-β))) = q + 1)
     (hW : finrank K (range (fiberProductInclusionLeft α β p)) = q) :
-    (fiberProduct (surjective_coprod_neg_of_comp_subtype_left h) ox oy ot hX hy ht
+    (fiberProduct (surjective_coprod_of_comp_left h) ox oy ot hX hy ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionLeft.1 hv₁) =
       map (Fin q) (LinearEquiv.ofInjective _ (fiberProductInclusionLeft_injective p))
         (fiberProduct h (ox.transverse hX hp hv₁) oy ot hp hy ht hq) := by
@@ -253,7 +361,7 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
   set eι := LinearEquiv.ofInjective ι (fiberProductInclusionLeft_injective p)
   set J := p.subtype.prodMap (LinearMap.id : Y →ₗ[K] Y)
   have hJ : Function.Injective J := p.injective_subtype.prodMap Function.injective_id
-  have h' := surjective_coprod_neg_of_comp_subtype_left h
+  have h' := surjective_coprod_of_comp_left h
   set fp := fiberProduct h' ox oy ot hX hy ht (by omega : q + 1 + t = x + 1 + y)
   -- Write the boundary orientation as the image of an orientation `o` of `p ×_T Y`.
   set o := (map (Fin q) eι).symm (fp.transverse hQ hW hv)
@@ -298,7 +406,7 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
     (hp : finrank K p = y) (ht : finrank K T = t) (hq : q + t = x + y)
     (hQ : finrank K (ker (α.coprod (-β))) = q + 1)
     (hW : finrank K (range (fiberProductInclusionRight α β p)) = q) :
-    (fiberProduct (surjective_coprod_neg_of_comp_subtype_right h) ox oy ot hx hY ht
+    (fiberProduct (surjective_coprod_neg_of_comp_right h) ox oy ot hx hY ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionRight.1 hv₂) =
       (-1 : Kˣ) ^ (x + t) • map (Fin q) (LinearEquiv.ofInjective _
         (fiberProductInclusionRight_injective p))
@@ -309,7 +417,7 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
   set eι := LinearEquiv.ofInjective ι (fiberProductInclusionRight_injective p)
   set J := (LinearMap.id : X →ₗ[K] X).prodMap p.subtype
   have hJ : Function.Injective J := Function.injective_id.prodMap p.injective_subtype
-  have h' := surjective_coprod_neg_of_comp_subtype_right h
+  have h' := surjective_coprod_neg_of_comp_right h
   set fp := fiberProduct h' ox oy ot hx hY ht (by omega : q + 1 + t = x + (y + 1))
   -- Write the boundary orientation as the image of an orientation `o` of `X ×_T p`.
   set o := (map (Fin q) eι).symm (fp.transverse hQ hW hv)

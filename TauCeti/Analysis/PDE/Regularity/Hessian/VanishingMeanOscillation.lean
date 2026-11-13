@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
+import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 
 /-!
 # The `W^{2,p}` estimate for coefficients of vanishing mean oscillation
@@ -57,7 +58,8 @@ The proof is Krylov's sharp function method.
   `κ⁻² M(‖D²u‖²) + κ^(n + 1) M(f²) + κ^(n + 1) γ^(1/t') M(‖D²u‖^(2t))^(1/t)`.
 * **Absorption.** The Fefferman–Stein inequality
   (`TauCeti.exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow`) and the strong
-  maximal inequality with exponents `p / 2` and `p / (2t)` turn this into
+  maximal inequality with exponents `p / 2` and `p / (2t)`
+  (`TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`) turn this into
   `∫ ‖D²u‖^p ≤ (c₁ κ^(-p) + c₃ γ^(p/(2t'))) ∫ ‖D²u‖^p + c₂ ∫ |f|^p`. Choosing `κ` large and then
   `γ` small, the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
 
@@ -340,7 +342,7 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
   set W : ℝ := 2 * (n + 1) ^ 2 * Lam
   have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
   have hρr : ρ ≤ r := le_mul_of_one_le_left hρ.le hκ
-  have hxc : dist x c ≤ r := (mem_ball.1 hx).le.trans hρr
+  have hxc : x ∈ ball c r := mem_ball.2 ((mem_ball.1 hx).trans_le hρr)
   have hLam : 0 ≤ Lam := hell.upper_nonneg
   have ht0 : 0 < t := htt.pos
   have ht'0 : 0 < t' := htt.symm.pos
@@ -372,7 +374,8 @@ private theorem sq_setLAverage_enorm_iteratedGradient_sub_le
   have hmax : ∀ g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0∞,
       ⨍⁻ y in ball c r, g y ≤ 2 ^ (n + 1) * maximalFunction volume g x := fun g => by
     simpa only [finrank_euclideanSpace, Fintype.card_fin, eNorm_eq_self] using
-      setLAverage_ball_le_two_pow_mul_maximalFunction volume g hxc
+      (setLAverage_le_uncenteredMaximalFunction volume g hxc).trans
+        (uncenteredMaximalFunction_le_two_pow_mul_maximalFunction volume g x)
   -- The coefficient error on `B_r`.
   have hW : ∀ y, ∑ i, ∑ j, |A i j - a y i j| ≤ W := fun y => by
     have hij : ∀ i j, |A i j - a y i j| ≤ 2 * Lam := fun i j =>
@@ -570,73 +573,6 @@ private theorem sq_sharpMaximalFunction_iteratedGradient_le
   exact sq_setLAverage_enorm_iteratedGradient_sub_le hA ha hell u heq hS hρ hκ (by positivity) hx
     hsuppS hw htt
 
-/-- Integrating a pointwise bound of `g²` by three maximal functions: if
-`g² ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/t)` and `2t < q`, then the strong-type maximal inequality
-with exponents `r = q / 2` and `r / t` bounds `∫ g^q` by the integrals of `h₁^r`, `h₂^r` and
-`h₃^(r/t)`. -/
-private theorem lintegral_rpow_le_of_sq_le_maximalFunction {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
-    (μ : Measure E) [μ.IsAddHaarMeasure] {g h₁ h₂ h₃ : E → ℝ≥0∞} (h₁m : AEMeasurable h₁ μ)
-    (h₂m : AEMeasurable h₂ μ) (h₃m : AEMeasurable h₃ μ) {α₁ α₂ α₃ : ℝ≥0∞} {t q : ℝ}
-    (ht : 1 < t) (htq : 2 * t < q)
-    (hg : ∀ x, g x ^ 2 ≤ α₁ * maximalFunction μ h₁ x + α₂ * maximalFunction μ h₂ x +
-      α₃ * maximalFunction μ h₃ x ^ (1 / t)) :
-    ∫⁻ x, g x ^ q ∂μ ≤ 2 ^ (q / 2 - 1) * (2 ^ (q / 2 - 1) *
-        (α₁ ^ (q / 2) * (ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) *
-            4 ^ Module.finrank ℝ E * ∫⁻ x, h₁ x ^ (q / 2) ∂μ) +
-          α₂ ^ (q / 2) * (ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) *
-            4 ^ Module.finrank ℝ E * ∫⁻ x, h₂ x ^ (q / 2) ∂μ)) +
-        α₃ ^ (q / 2) * (ENNReal.ofReal (2 * (q / 2 / t) * 2 ^ (q / 2 / t - 1) / (q / 2 / t - 1)) *
-            4 ^ Module.finrank ℝ E * ∫⁻ x, h₃ x ^ (q / 2 / t) ∂μ)) := by
-  set r := q / 2
-  have hr : 1 < r := by simp only [r]; linarith
-  have hrt : 1 < r / t := by rw [one_lt_div (by linarith)]; simp only [r]; linarith
-  have hr0 : 0 ≤ r := by linarith
-  set M₁ := maximalFunction μ h₁
-  set M₂ := maximalFunction μ h₂
-  set M₃ := maximalFunction μ h₃
-  have hM₁ : Measurable M₁ := measurable_maximalFunction μ h₁
-  have hM₂ : Measurable M₂ := measurable_maximalFunction μ h₂
-  have hM₃ : Measurable M₃ := measurable_maximalFunction μ h₃
-  -- The maximal inequality for the three functions; the `‖·‖ₑ` of `ℝ≥0∞` is the identity.
-  have hmax : ∀ {h : E → ℝ≥0∞}, AEMeasurable h μ → ∀ {e : ℝ}, 1 < e →
-      ∫⁻ x, maximalFunction μ h x ^ e ∂μ ≤
-        ENNReal.ofReal (2 * e * 2 ^ (e - 1) / (e - 1)) * 4 ^ Module.finrank ℝ E *
-          ∫⁻ x, h x ^ e ∂μ := fun {h} hh {e} he => by
-    simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ (f := h) hh he
-  -- Pointwise: `g^q = (g²)^r ≤ 2^(r-1) (2^(r-1) ((α₁ M₁)^r + (α₂ M₂)^r) + (α₃ M₃^(1/t))^r)`.
-  have hpt : ∀ x, g x ^ q ≤ 2 ^ (r - 1) * (2 ^ (r - 1) *
-      (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / t)) := fun x => by
-    have hgq : g x ^ q = (g x ^ 2) ^ r := by
-      rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]; congr 1; simp only [r]; push_cast; ring
-    rw [hgq]
-    refine (ENNReal.rpow_le_rpow (hg x) hr0).trans ?_
-    refine (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hr.le).trans ?_
-    gcongr
-    · refine (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hr.le).trans_eq ?_
-      rw [ENNReal.mul_rpow_of_nonneg _ _ hr0, ENNReal.mul_rpow_of_nonneg _ _ hr0]
-    · rw [ENNReal.mul_rpow_of_nonneg _ _ hr0, ← ENNReal.rpow_mul, one_div_mul_eq_div]
-  have m₁ : Measurable fun x => α₁ ^ r * M₁ x ^ r := (hM₁.pow_const r).const_mul _
-  have m₂ : Measurable fun x => α₂ ^ r * M₂ x ^ r := (hM₂.pow_const r).const_mul _
-  have m₃ : Measurable fun x => α₃ ^ r * M₃ x ^ (r / t) := (hM₃.pow_const _).const_mul _
-  have m₁₂ : Measurable fun x => α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r := m₁.add m₂
-  have m : Measurable fun x => 2 ^ (r - 1) * (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) +
-      α₃ ^ r * M₃ x ^ (r / t) := (m₁₂.const_mul _).add m₃
-  calc ∫⁻ x, g x ^ q ∂μ
-      ≤ ∫⁻ x, 2 ^ (r - 1) * (2 ^ (r - 1) *
-          (α₁ ^ r * M₁ x ^ r + α₂ ^ r * M₂ x ^ r) + α₃ ^ r * M₃ x ^ (r / t)) ∂μ :=
-        lintegral_mono hpt
-    _ = 2 ^ (r - 1) * (2 ^ (r - 1) * (α₁ ^ r * ∫⁻ x, M₁ x ^ r ∂μ +
-          α₂ ^ r * ∫⁻ x, M₂ x ^ r ∂μ) + α₃ ^ r * ∫⁻ x, M₃ x ^ (r / t) ∂μ) := by
-        rw [lintegral_const_mul _ m, lintegral_add_right _ m₃, lintegral_const_mul _ m₁₂,
-          lintegral_add_right _ m₂, lintegral_const_mul _ (hM₁.pow_const r),
-          lintegral_const_mul _ (hM₂.pow_const r), lintegral_const_mul _ (hM₃.pow_const _)]
-    _ ≤ _ := by
-        gcongr
-        · exact hmax h₁m hr
-        · exact hmax h₂m hr
-        · exact hmax h₃m hrt
-
 /-- If `g → 0` along `l`, then eventually `K ofReal(g)^e < ε` for finite `K`, `e > 0` and
 `ε > 0`; this is how the absorbed terms are made small. -/
 private theorem eventually_mul_ofReal_rpow_lt {α : Type*} {l : Filter α} {g : α → ℝ}
@@ -706,13 +642,14 @@ private theorem lintegral_enorm_iteratedGradient_rpow_le
   have h3 : ∀ y : ℝ≥0∞, (y ^ (2 * t)) ^ (q / 2 / t) = y ^ q := fun y => by
     rw [div_div]; exact hsq y (2 * t) (by field_simp)
   refine hFS.trans (mul_le_mul_right ?_ _)
+  have hsharp := sq_sharpMaximalFunction_iteratedGradient_le ha hell hR hγ hvmo z u hsupp heq hκ
+    (Real.HolderConjugate.conjExponent ht)
+  simp only [one_div] at hsharp
   have hbound := lintegral_rpow_le_of_sq_le_maximalFunction (g := fun x =>
       sharpMaximalFunction volume H x) volume
     (h₁ := fun y => ‖H y‖ₑ ^ 2) (h₂ := fun y => ‖f y‖ₑ ^ 2) (h₃ := fun y => ‖H y‖ₑ ^ (2 * t))
-    (hHm.eNorm.pow_const 2) (hfm.eNorm.pow_const 2) (hHm.eNorm.pow_const _) ht htq
-    (sq_sharpMaximalFunction_iteratedGradient_le ha hell hR hγ hvmo z u hsupp heq hκ
-      (Real.HolderConjugate.conjExponent ht))
-  simp only [h2, h3] at hbound
+    (hHm.eNorm.pow_const 2) (hfm.eNorm.pow_const 2) (hHm.eNorm.pow_const _) ht htq hsharp
+  simp only [h2, h3, maximalFunctionConst_def, one_div] at hbound ⊢
   exact hbound
 
 /-- **The `W^{2,p}` estimate for coefficients of small mean oscillation.** Let `2 < p < ∞` and
@@ -750,8 +687,7 @@ theorem exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_vmoModulus_le 
   have htq : 2 * t < q := by simp only [t]; linarith
   set t' := t.conjExponent
   obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
-    (ι := Fin (n + 1)) (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
-    (show 1 < q by linarith)
+    (ι := Fin (n + 1)) (show 1 < q by linarith)
   set d := Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 1)))
   set cM : ℝ≥0∞ := ENNReal.ofReal (2 * (q / 2) * 2 ^ (q / 2 - 1) / (q / 2 - 1)) * 4 ^ d
   set cM' : ℝ≥0∞ := ENNReal.ofReal (2 * (q / 2 / t) * 2 ^ (q / 2 / t - 1) / (q / 2 / t - 1)) * 4 ^ d

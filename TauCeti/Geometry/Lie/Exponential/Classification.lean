@@ -22,11 +22,6 @@ zero, eventually scale exactly under time halving, and therefore determine one g
 * `oneParameterSubgroupEquiv`: the classification equivalence between left-invariant derivations and
   continuous one-parameter subgroups.
 * `existsUnique_eq_oneParameterSubgroup`: the derivation-based existence-and-uniqueness statement.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "One-parameter subgroups".
 -/
 
 public section
