@@ -598,8 +598,13 @@ theorem disjointSumEquiv_apply (f : ExcessFlow lo hi b) :
 
 @[simp]
 theorem disjointSumEquiv_symm_apply (p : ExcessFlow lo₁ hi₁ b₁ × ExcessFlow lo₂ hi₂ b₂) :
-    (disjointSumEquiv (lo := lo₁.disjointSum lo₂) (hi := hi₁.disjointSum hi₂)
-      (b := Sum.elim b₁ b₂)).symm p = p.1.disjointSum p.2 :=
+    (@Equiv.symm
+      (ExcessFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂) (Sum.elim b₁ b₂))
+      (ExcessFlow (lo₁.disjointSum lo₂).restrictLeft
+          (hi₁.disjointSum hi₂).restrictLeft b₁ ×
+        ExcessFlow (lo₁.disjointSum lo₂).restrictRight
+          (hi₁.disjointSum hi₂).restrictRight b₂)
+      disjointSumEquiv) p = p.1.disjointSum p.2 :=
   (rfl)
 
 end ExcessFlow
@@ -702,8 +707,14 @@ theorem disjointSumEquiv_apply (f : ExcessIntervalFlow lo hi a b) :
 @[simp]
 theorem disjointSumEquiv_symm_apply
     (p : ExcessIntervalFlow lo₁ hi₁ a₁ b₁ × ExcessIntervalFlow lo₂ hi₂ a₂ b₂) :
-    (disjointSumEquiv (lo := lo₁.disjointSum lo₂) (hi := hi₁.disjointSum hi₂)
-      (a := Sum.elim a₁ a₂) (b := Sum.elim b₁ b₂)).symm p = p.1.disjointSum p.2 :=
+    (@Equiv.symm
+      (ExcessIntervalFlow (lo₁.disjointSum lo₂) (hi₁.disjointSum hi₂)
+        (Sum.elim a₁ a₂) (Sum.elim b₁ b₂))
+      (ExcessIntervalFlow (lo₁.disjointSum lo₂).restrictLeft
+          (hi₁.disjointSum hi₂).restrictLeft a₁ b₁ ×
+        ExcessIntervalFlow (lo₁.disjointSum lo₂).restrictRight
+          (hi₁.disjointSum hi₂).restrictRight a₂ b₂)
+      disjointSumEquiv) p = p.1.disjointSum p.2 :=
   (rfl)
 
 end ExcessIntervalFlow
