@@ -54,7 +54,9 @@ without requiring the normal component of `D_t V(a) + u` to vanish.
 * `TauCeti.Manifold.indexForm_add_adjacent_intervals` and
   `TauCeti.Manifold.sum_indexForm_adjacent_intervals`: additivity over pieces with separately
   integrable integrands, allowing corners at the joining parameters.
-* `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_integral`: integration by parts.
+* `TauCeti.Manifold.indexForm_eq_inner_sub_inner_sub_integral` and
+  `TauCeti.Manifold.indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral`: integration by
+  parts with unrestricted and within-set derivatives.
 * `TauCeti.Manifold.IsJacobiFieldOn.indexForm_eq_inner_sub_inner`: Jacobi integration by parts.
 * `TauCeti.Manifold.IsJacobiFieldOn.indexForm_sub_inner_eq_inner`: the corrected index form is
   the terminal pairing when `D_t V(a) + u` is orthogonal to the initial test value. It vanishes
@@ -710,7 +712,7 @@ theorem hasDerivAt_inner_alongCurve {t : ℝ}
 /-- **Integration by parts.** For a `C²` field `V` on a set containing `[a, b]` and a `C¹`
 field `W` on the closed segment,
 `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫ - ∫_a^b ⟪D_t² V + R(V, γ') γ', W⟫ dt`. -/
-theorem indexForm_eq_inner_sub_inner_sub_integral
+theorem indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (uIcc a b))
@@ -787,6 +789,45 @@ theorem indexForm_eq_inner_sub_inner_sub_integral
         rw [intervalIntegral.integral_sub hdA hJ,
           intervalIntegral.integral_derivWithin_uIcc_of_contDiffOn_uIcc hA]
 
+/-- **Integration by parts with unrestricted derivatives.** For a field `V` with a `C²` lift
+at every point of `[a, b]` and a field `W` with a `C¹` lift on that closed segment,
+`I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫ - ∫_a^b ⟪D_t² V + R(V, γ') γ', W⟫ dt`. -/
+theorem indexForm_eq_inner_sub_inner_sub_integral
+    (hV : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t)
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (uIcc a b)) :
+    indexForm I γ V W a b =
+      inner ℝ (alongCurve (leviCivitaConnection I M) γ V b) (W b) -
+        inner ℝ (alongCurve (leviCivitaConnection I M) γ V a) (W a) -
+        ∫ t in a..b, inner ℝ (alongCurve (leviCivitaConnection I M) γ
+            (alongCurve (leviCivitaConnection I M) γ V) t +
+          (leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+            (curveVelocity I γ t) (curveVelocity I γ t)) (W t) := by
+  -- The finite-order regularity locus is a neighbourhood of each of its points.
+  -- Apply within-set integration by parts there and identify both derivatives by their germs.
+  let u : Set ℝ := {t | ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
+    (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t}
+  have hu (t : ℝ) (ht : t ∈ u) : u ∈ 𝓝 t :=
+    (contMDiffAt_iff_contMDiffAt_nhds (by norm_num)).mp ht
+  have hD (t : ℝ) (ht : t ∈ u) :
+      alongCurveWithin (leviCivitaConnection I M) γ V u t =
+        alongCurve (leviCivitaConnection I M) γ V t :=
+    alongCurveWithin_of_mem_nhds _ γ V (hu t ht)
+  have hDD (t : ℝ) (ht : t ∈ u) :
+      alongCurveWithin (leviCivitaConnection I M) γ
+          (alongCurveWithin (leviCivitaConnection I M) γ V u) u t =
+        alongCurve (leviCivitaConnection I M) γ
+          (alongCurve (leviCivitaConnection I M) γ V) t := by
+    rw [alongCurveWithin_of_mem_nhds _ γ _ (hu t ht)]
+    exact alongCurve_congr _ γ _ (by filter_upwards [hu t ht] with r hr using hD r hr)
+  rw [indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
+    (s := u) (fun t ht ↦ ht.contMDiffWithinAt) hW hV,
+    hD b (hV b right_mem_uIcc), hD a (hV a left_mem_uIcc)]
+  congr 1
+  exact intervalIntegral.integral_congr fun t ht ↦ by
+    rw [hDD t (hV t ht), curveVelocityWithin_of_mem_nhds (hu t (hV t ht))]
+
 /-- **Jacobi integration by parts.** For a Jacobi field `V` on a set containing `[a, b]`
 and a `C¹` field `W` on that closed segment, `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫`. -/
 theorem IsJacobiFieldOn.indexForm_eq_inner_sub_inner (h : IsJacobiFieldOn I γ V s)
@@ -796,7 +837,7 @@ theorem IsJacobiFieldOn.indexForm_eq_inner_sub_inner (h : IsJacobiFieldOn I γ V
     indexForm I γ V W a b =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b) (W b) -
         inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a) (W a) := by
-  rw [indexForm_eq_inner_sub_inner_sub_integral h.contMDiffOn hW hsub,
+  rw [indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral h.contMDiffOn hW hsub,
     intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
       simp only [h.equation t (hsub ht), inner_zero_left],
     intervalIntegral.integral_zero, sub_zero]
