@@ -51,7 +51,6 @@ antiderivative `-exp (-(x / lam) ^ k)` of the density.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, **Weibull**.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley (1994), chapter on Weibull distributions.
 -/
