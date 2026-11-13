@@ -140,7 +140,8 @@ theorem normalize_eq_self (a : HomogeneousSymbol X E V W 1)
     · rw [hmod]
       ext v
       simp [-Complex.coe_smul, smul_smul, hξ']
-    · rw [smul_apply, show A v = 0 from LinearMap.mem_ker.1 hv, smul_zero]
+    · have hv0 : A v = 0 := LinearMap.mem_ker.1 hv
+      rw [smul_apply, hv0, smul_zero]
   rw [coefficient_normalize, hU, ← Complex.coe_smul, smul_smul, mul_inv_cancel₀ hξ', one_smul]
 
 /-- Normalization commutes with pointwise adjoints: `(a♯)† = (a†)♯`. -/
