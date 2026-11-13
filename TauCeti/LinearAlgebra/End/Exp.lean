@@ -1,214 +1,146 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.Module.LinearMap.Rat
-public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.RingTheory.Nilpotent.Exp
-public import TauCeti.LinearAlgebra.End.LocallyNilpotent
-import Mathlib.Algebra.Module.BigOperators
+public import Mathlib.Algebra.Algebra.Equiv
 
 /-!
-# The exponential of a locally nilpotent endomorphism
+# Exponentials of nilpotent linear endomorphisms
 
-Let `f` be an endomorphism of a module `M` over a semiring `R`, where `M` is also a `ℚ`-vector
-space. Call `f` *locally nilpotent* when every vector is killed by some power of `f`, the power
-depending on the vector. Then the exponential series
+A nilpotent linear endomorphism satisfying the associative Leibniz rule exponentiates to an
+algebra automorphism, with inverse the exponential of its negative. The algebra may be
+noncommutative. Exponentiation also commutes with restriction of scalars. This packages
+Mathlib's `Module.End.exp_mul_of_derivation` and
+`IsNilpotent.isUnit_exp`; scalar restriction uses `IsNilpotent.map_exp`, and the
+fixed-vector formula uses `IsNilpotent.exp_smul_eq_sum`.
 
-`exp f x = ∑ i, (fⁱ x) / i!`
+A bilinear pairing satisfying the Leibniz rule for three endomorphisms also
+intertwines their nilpotent exponentials. This extends the tensor-product
+argument of `Module.End.exp_mul_of_derivation` to three different modules,
+using exponential intertwining and commuting nilpotent endomorphisms.
 
-is a finite sum at every vector, and `Module.End.locallyNilpotentExp f hf` is the resulting
-`R`-linear automorphism of `M`. Its inverse is the exponential of `-f`.
-
-Mathlib's `IsNilpotent.exp` exponentiates an element of a `ℚ`-algebra that is nilpotent, so for an
-endomorphism it needs a power of `f` killing every vector at once. For nilpotent `f` the two
-exponentials agree (`Module.End.locallyNilpotentExp_eq_exp`). Local nilpotence without a uniform
-bound is the situation of the adjoint action of a Chevalley generator on a Lie algebra presented by
-generators and relations, such as Mathlib's Serre construction `Matrix.ToLieAlgebra`, which is not
-known to be finite-dimensional in advance.
-
-## Main definitions
-
-* `Module.End.locallyNilpotentExp`: the exponential of a locally nilpotent endomorphism, as a
-  linear automorphism.
-
-## Main results
-
-* `Module.End.locallyNilpotentExp_apply_eq_sum`: at a vector killed by `f ^ k`, the exponential is
-  the exponential series truncated at length `k`.
-* `Module.End.locallyNilpotentExp_apply_eq_exp_restrict`: on an `f`-stable subspace where `f` is
-  nilpotent, the exponential is Mathlib's `IsNilpotent.exp` of the restriction.
-* `Module.End.locallyNilpotentExp_symm_apply_eq_sum`: the inverse is the exponential series of
-  `-f`.
-* `Module.End.locallyNilpotentExp_symm`: the inverse is the exponential of `-f`.
-* `Module.End.map_locallyNilpotentExp`: an additive map intertwining two locally nilpotent
-  endomorphisms intertwines their exponentials.
-* `Module.End.locallyNilpotentExp_eq_exp`: for nilpotent `f` the exponential is
-  `IsNilpotent.exp f`.
+Adapted from `Mei/LinearAlgebra/End/Exp.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
 
 public section
 
-open Finset
-
 namespace Module.End
 
-variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M] [Module ℚ M]
-  (f : Module.End R M)
+section RestrictScalars
 
-variable (hf : ∀ x, ∃ n, (f ^ n) x = 0)
+variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommGroup M]
+  [Module R M] [Module S M] [Module ℚ M] [SMul R S] [IsScalarTower R S M]
 
-/-- The exponential series of `f` at `x`, truncated at some power of `f` that kills `x`. -/
-private noncomputable def expFun (x : M) : M :=
-  ∑ i ∈ range (hf x).choose, (i.factorial : ℚ)⁻¹ • (f ^ i) x
-
-private theorem expFun_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
-    expFun f hf x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • (f ^ i) x := by
-  rw [expFun, ← sum_range_smul_pow_apply_eq_of_le f _ (hf x).choose_spec (le_max_left _ k),
-    sum_range_smul_pow_apply_eq_of_le f _ hk (le_max_right _ k)]
-
-/-- The truncated exponential series is `R`-linear. -/
-private noncomputable def expLinearMap : M →ₗ[R] M where
-  toFun := expFun f hf
-  map_add' x y := by
-    obtain ⟨k, hx⟩ := hf x
-    obtain ⟨l, hy⟩ := hf y
-    have hx' := pow_map_zero_of_le (le_max_left k l) hx
-    have hy' := pow_map_zero_of_le (le_max_right k l) hy
-    have hxy : (f ^ max k l) (x + y) = 0 := by rw [map_add, hx', hy', add_zero]
-    rw [expFun_eq_sum f hf hx', expFun_eq_sum f hf hy', expFun_eq_sum f hf hxy,
-      ← sum_add_distrib]
-    simp only [map_add, smul_add]
-  map_smul' c x := by
-    obtain ⟨k, hx⟩ := hf x
-    have hcx : (f ^ k) (c • x) = 0 := by rw [map_smul, hx, smul_zero]
-    rw [expFun_eq_sum f hf hx, expFun_eq_sum f hf hcx, RingHom.id_apply, smul_sum]
-    exact sum_congr rfl fun i _ ↦ by rw [map_smul, smul_comm]
-
-/-- Viewing `f` as a `ℚ`-linear map does not change its values. -/
-private theorem toRatLinearMap_apply (v : M) : f.toAddMonoidHom.toRatLinearMap v = f v := by
-  rw [AddMonoidHom.coe_toRatLinearMap, LinearMap.toAddMonoidHom_coe]
-
-/-- Viewing `f` as a `ℚ`-linear map does not change its powers. -/
-private theorem toRatLinearMap_pow_apply (n : ℕ) (v : M) :
-    (f.toAddMonoidHom.toRatLinearMap ^ n) v = (f ^ n) v := by
-  rw [_root_.pow_apply_eq_iterate, _root_.pow_apply_eq_iterate, AddMonoidHom.coe_toRatLinearMap,
-    LinearMap.toAddMonoidHom_coe]
-
-/-- On an `f`-stable `ℚ`-subspace `V` on which `f` is nilpotent, the exponential series of `f` at
-a vector of `V` is Mathlib's `IsNilpotent.exp` of the restriction of `f` to `V`. -/
-private theorem coe_exp_restrict_apply {V : Submodule ℚ M}
-    (hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V) {n : ℕ}
-    (hn : f.toAddMonoidHom.toRatLinearMap.restrict hV ^ n = 0) (v : V) :
-    (IsNilpotent.exp (f.toAddMonoidHom.toRatLinearMap.restrict hV) v : M) = expFun f hf v := by
-  have hpow (i : ℕ) :
-      ((f.toAddMonoidHom.toRatLinearMap.restrict hV ^ i) v : M) = (f ^ i) v := by
-    rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, toRatLinearMap_pow_apply]
-  have hv : (f ^ n) v = 0 := by rw [← hpow, hn, LinearMap.zero_apply, Submodule.coe_zero]
-  rw [IsNilpotent.exp_eq_sum hn, expFun_eq_sum f hf hv, LinearMap.sum_apply, Submodule.coe_sum]
-  exact sum_congr rfl fun i _ ↦ by rw [LinearMap.smul_apply, Submodule.coe_smul, hpow]
-
-/-- The exponential series of `-f` inverts that of `f`. At a vector killed by `f ^ n`, this is
-Mathlib's `IsNilpotent.exp_neg_mul_exp_self` for the restriction of `f` to the `f`-stable
-`ℚ`-subspace `ker (f ^ n)`, where `f` is nilpotent. The endomorphism `-f` is passed as any `g`
-equal to it, so that both composites of the two series are instances. -/
-private theorem expFun_expFun_of_eq_neg {g : Module.End R M} (hfg : g = -f)
-    (hg : ∀ x, ∃ n, (g ^ n) x = 0) (x : M) : expFun g hg (expFun f hf x) = x := by
-  subst hfg
-  obtain ⟨n, hn⟩ := hf x
-  set V := LinearMap.ker (f.toAddMonoidHom.toRatLinearMap ^ n)
-  have hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ by
-    rw [LinearMap.mem_ker, ← _root_.mul_apply_eq_comp, ← pow_succ, pow_succ',
-      _root_.mul_apply_eq_comp,
-      LinearMap.mem_ker.1 hv, map_zero]
-  have hV' : ∀ v ∈ V, (-f).toAddMonoidHom.toRatLinearMap v ∈ V := fun v hv ↦ V.neg_mem (hV v hv)
-  have hneg : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' =
-      -f.toAddMonoidHom.toRatLinearMap.restrict hV := by
-    ext v
-    simp only [LinearMap.coe_restrict_apply, LinearMap.neg_apply, Submodule.coe_neg,
-      toRatLinearMap_apply]
-  have hnil : f.toAddMonoidHom.toRatLinearMap.restrict hV ^ n = 0 := by
-    ext v
-    rw [Module.End.pow_restrict, LinearMap.coe_restrict_apply, LinearMap.zero_apply,
-      Submodule.coe_zero]
-    exact v.2
-  have hnil' : (-f).toAddMonoidHom.toRatLinearMap.restrict hV' ^ n = 0 := by
-    rw [hneg, neg_pow (R := Module.End ℚ V), hnil, mul_zero]
-  have hx : x ∈ V := by rwa [LinearMap.mem_ker, toRatLinearMap_pow_apply]
-  rw [← coe_exp_restrict_apply f hf hV hnil ⟨x, hx⟩, ← coe_exp_restrict_apply (-f) hg hV' hnil',
-    hneg, ← _root_.mul_apply_eq_comp, IsNilpotent.exp_neg_mul_exp_self ⟨n, hnil⟩,
-    _root_.one_apply_eq_self]
-
-/-- **The exponential of a locally nilpotent endomorphism.** If every vector of `M` is killed by
-some power of `f`, the exponential series `∑ (fⁱ x) / i!` is a finite sum at every vector `x`, and
-it defines an `R`-linear automorphism of `M` whose inverse is the exponential series of `-f`. -/
-noncomputable def locallyNilpotentExp : M ≃ₗ[R] M :=
-  LinearEquiv.ofLinearMap (expLinearMap f hf)
-    (expLinearMap (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf))
-    (LinearMap.ext fun x ↦
-      expFun_expFun_of_eq_neg (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf)
-        (neg_neg f).symm hf x)
-    (LinearMap.ext fun x ↦
-      expFun_expFun_of_eq_neg f hf rfl (by simpa only [neg_pow_apply_eq_zero_iff] using hf) x)
-
-/-- **The exponential as a truncated series.** At a vector killed by `f ^ k`, the exponential of
-`f` is its exponential series truncated at length `k`. -/
-theorem locallyNilpotentExp_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
-    locallyNilpotentExp f hf x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • (f ^ i) x :=
-  expFun_eq_sum f hf hk
-
-/-- **The exponential on a nilpotent piece.** On an `f`-stable `ℚ`-subspace `V` on which `f` is
-nilpotent, the exponential of `f` at a vector of `V` is Mathlib's `IsNilpotent.exp` of the
-restriction of `f` to `V`. -/
-theorem locallyNilpotentExp_apply_eq_exp_restrict {V : Submodule ℚ M}
-    (hV : ∀ v ∈ V, f.toAddMonoidHom.toRatLinearMap v ∈ V) {n : ℕ}
-    (hn : f.toAddMonoidHom.toRatLinearMap.restrict hV ^ n = 0) (v : V) :
-    locallyNilpotentExp f hf v =
-      (IsNilpotent.exp (f.toAddMonoidHom.toRatLinearMap.restrict hV) v : M) :=
-  (coe_exp_restrict_apply f hf hV hn v).symm
-
-/-- **The inverse of the exponential.** At a vector killed by `f ^ k`, the inverse of the
-exponential of `f` is the exponential series of `-f` truncated at length `k`. -/
-theorem locallyNilpotentExp_symm_apply_eq_sum {x : M} {k : ℕ} (hk : (f ^ k) x = 0) :
-    (locallyNilpotentExp f hf).symm x = ∑ i ∈ range k, (i.factorial : ℚ)⁻¹ • ((-f) ^ i) x :=
-  expFun_eq_sum (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf)
-    ((neg_pow_apply_eq_zero_iff f k x).2 hk)
-
-/-- **The inverse of the exponential is the exponential of `-f`.** -/
+/-- Restricting the scalars of a nilpotent endomorphism commutes with its exponential. -/
 @[simp]
-theorem locallyNilpotentExp_symm :
-    (locallyNilpotentExp f hf).symm =
-      locallyNilpotentExp (-f) (by simpa only [neg_pow_apply_eq_zero_iff] using hf) := by
-  ext x
-  obtain ⟨k, hk⟩ := hf x
-  rw [locallyNilpotentExp_symm_apply_eq_sum f hf hk,
-    locallyNilpotentExp_apply_eq_sum (-f) _ ((neg_pow_apply_eq_zero_iff f k x).2 hk)]
+theorem exp_restrictScalars (D : Module.End S M) (hD : IsNilpotent D) :
+    (IsNilpotent.exp D).restrictScalars R = IsNilpotent.exp (D.restrictScalars R) := by
+  let f : Module.End S M →+* Module.End R M :=
+    { toFun := LinearMap.restrictScalars R
+      map_zero' := rfl
+      map_one' := rfl
+      map_add' := fun _ _ => rfl
+      map_mul' := fun _ _ => rfl }
+  exact hD.map_exp f
 
-/-- **Naturality of the exponential.** An additive map `g` with `g ∘ f = f' ∘ g` carries the
-exponential of `f` to that of `f'`. The two endomorphisms may be linear over different semirings. -/
-theorem map_locallyNilpotentExp {S N F : Type*} [Semiring S] [AddCommGroup N] [Module S N]
-    [Module ℚ N] [FunLike F M N] [AddMonoidHomClass F M N] {f' : Module.End S N}
-    (hf' : ∀ y, ∃ n, (f' ^ n) y = 0) (g : F) (hg : Function.Semiconj g f f') (x : M) :
-    g (locallyNilpotentExp f hf x) = locallyNilpotentExp f' hf' (g x) := by
-  have hpow (i : ℕ) : (f' ^ i) (g x) = g ((f ^ i) x) := by
-    rw [_root_.pow_apply_eq_iterate, _root_.pow_apply_eq_iterate]
-    exact (hg.iterate_right i x).symm
-  obtain ⟨k, hk⟩ := hf x
-  rw [locallyNilpotentExp_apply_eq_sum f hf hk,
-    locallyNilpotentExp_apply_eq_sum f' hf' (k := k) (by rw [hpow, hk, map_zero]), map_sum]
-  exact sum_congr rfl fun i _ ↦ by rw [hpow, map_rat_smul]
+end RestrictScalars
 
-/-- For a nilpotent endomorphism, the exponential is Mathlib's `IsNilpotent.exp`. -/
-theorem locallyNilpotentExp_eq_exp (hnil : IsNilpotent f) :
-    (locallyNilpotentExp f hnil.exists_pow_apply_eq_zero : Module.End R M) = IsNilpotent.exp f := by
-  obtain ⟨k, hk⟩ := hnil
-  ext x
-  rw [LinearEquiv.coe_coe,
-    locallyNilpotentExp_apply_eq_sum f _ (by rw [hk, LinearMap.zero_apply]),
-    IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
-  simp only [LinearMap.smul_apply]
+/-! ### Invariant submodules
+
+The finite exponential of a nilpotent endomorphism preserves every submodule
+stable under that endomorphism.
+-/
+
+/-- The finite exponential preserves every submodule stable under its endomorphism. -/
+theorem exp_apply_mem_of_forall_mem {R M : Type*} [Semiring R] [AddCommGroup M]
+    [Module R M] [Module ℚ M] [Algebra ℚ R] [IsScalarTower ℚ R M]
+    (D : Module.End R M) (hD : IsNilpotent D) (S : Submodule R M)
+    (hS : ∀ x ∈ S, D x ∈ S) {x : M} (hx : x ∈ S) :
+    IsNilpotent.exp D x ∈ S := by
+  obtain ⟨k, hk⟩ := hD
+  rw [IsNilpotent.exp_eq_sum hk, LinearMap.sum_apply]
+  exact S.sum_mem fun n _ => S.smul_of_tower_mem _
+    (Module.End.pow_apply_mem_of_forall_mem (f' := D) n hS x hx)
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module ℚ M]
+
+/-- Exponentiating a nilpotent endomorphism fixes every vector in its kernel. -/
+theorem exp_apply_eq_self (D : Module.End R M) (hD : IsNilpotent D) {m : M}
+    (hm : D m = 0) : IsNilpotent.exp D m = m := by
+  have h : (D ^ 1) • m = 0 := by simpa using hm
+  simpa using IsNilpotent.exp_smul_eq_sum h hD
+
+variable {A : Type*} [Ring A] [Algebra R A] [Module ℚ A]
+
+/-- The exponential of a nilpotent associative derivation is an algebra automorphism. -/
+noncomputable def expAlgEquiv (D : Module.End R A)
+    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) :
+    A ≃ₐ[R] A :=
+  AlgEquiv.ofBijective
+    (AlgHom.ofLinearMap (IsNilpotent.exp D)
+      (exp_apply_eq_self D hD (by simpa using hder 1 1))
+      (exp_mul_of_derivation R A D hder hD))
+    ((Module.End.isUnit_iff _).mp hD.isUnit_exp)
+
+/-- The automorphism acts by Mathlib's finite exponential. -/
+@[simp]
+theorem expAlgEquiv_apply (D : Module.End R A)
+    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) (a : A) :
+    D.expAlgEquiv hder hD a = IsNilpotent.exp D a := (rfl)
+
+/-- The inverse acts by the finite exponential of the negative endomorphism. -/
+@[simp]
+theorem expAlgEquiv_symm_apply (D : Module.End R A)
+    (hder : ∀ a b, D (a * b) = a * D b + D a * b) (hD : IsNilpotent D) (a : A) :
+    (D.expAlgEquiv hder hD).symm a = IsNilpotent.exp (-D) a := by
+  apply (D.expAlgEquiv hder hD).injective
+  simp only [AlgEquiv.apply_symm_apply, expAlgEquiv_apply]
+  exact (LinearMap.congr_fun hD.exp_mul_exp_neg_self a).symm
 
 end Module.End
+
+section BilinearPairings
+
+namespace LinearMap
+
+open IsNilpotent TensorProduct
+
+variable {R M N P : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [Module ℚ M]
+  [AddCommGroup N] [Module R N] [Module ℚ N]
+  [AddCommGroup P] [Module R P] [Module ℚ P]
+
+/-- A Leibniz-compatible bilinear pairing intertwines nilpotent exponentials. -/
+theorem exp_bilinear_of_leibniz
+    (f : M →ₗ[R] N →ₗ[R] P)
+    (D₁ : Module.End R M) (D₂ : Module.End R N) (D₃ : Module.End R P)
+    (h : ∀ x y, D₃ (f x y) = f x (D₂ y) + f (D₁ x) y)
+    (h₁ : IsNilpotent D₁) (h₂ : IsNilpotent D₂) (h₃ : IsNilpotent D₃)
+    (x : M) (y : N) :
+    exp D₃ (f x y) = f (exp D₁ x) (exp D₂ y) := by
+  let DL : Module.End R (M ⊗[R] N) := D₂.lTensor M
+  let DR : Module.End R (M ⊗[R] N) := D₁.rTensor N
+  have h_nilL : IsNilpotent DL := h₂.map <| Module.End.lTensorAlgHom R N M
+  have h_nilR : IsNilpotent DR := h₁.map <| Module.End.rTensorAlgHom R M N
+  have h_comm : Commute DL DR := by ext; simp [DL, DR]
+  let m : M ⊗[R] N →ₗ[R] P := TensorProduct.lift f
+  have hc : exp D₃ ∘ₗ m = m ∘ₗ exp (DL + DR) := by
+    apply Module.End.commute_exp_left_of_commute (h_comm.isNilpotent_add h_nilL h_nilR) h₃
+    ext
+    simp [DL, DR, m, h]
+  have hl : exp DL = (exp D₂).lTensor M :=
+    (h₂.map_exp (Module.End.lTensorAlgHom R N M)).symm
+  have hr : exp DR = (exp D₁).rTensor N :=
+    (h₁.map_exp (Module.End.rTensorAlgHom R M N)).symm
+  have he := LinearMap.congr_fun hc (x ⊗ₜ[R] y)
+  simpa [exp_add_of_commute h_comm h_nilL h_nilR, hl, hr, m] using he
+
+end LinearMap
+
+end BilinearPairings
