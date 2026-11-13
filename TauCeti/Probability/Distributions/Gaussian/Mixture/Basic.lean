@@ -80,6 +80,21 @@ theorem gaussianMixtureMeasure_congr {m' : ι → ℝ} {v' : ι → ℝ≥0}
   obtain ⟨hm, hv⟩ := h i hi
   rw [hm, hv]
 
+/-- If every positive-weight component has zero variance, the Gaussian mixture is the
+categorical law of its means. Zero-weight components may have arbitrary variances. -/
+theorem gaussianMixtureMeasure_eq_map_categoricalMeasure [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] (hv : ∀ i, 0 < p.weights i → v i = 0) :
+    gaussianMixtureMeasure p m v = (categoricalMeasure p).map m := by
+  have hm : Measurable m := measurable_of_finite m
+  calc
+    gaussianMixtureMeasure p m v = gaussianMixtureMeasure p m (fun _ ↦ 0) :=
+      gaussianMixtureMeasure_congr fun i hi ↦ ⟨rfl, hv i hi⟩
+    _ = (categoricalMeasure p).map m := by
+      rw [gaussianMixtureMeasure_def, categoricalMeasure_def,
+        Measure.map_finset_sum' hm.aemeasurable]
+      simp only [gaussianReal_zero_var, Measure.map_smul _ hm.aemeasurable,
+        Measure.map_dirac' hm]
+
 /-- Gaussian mixtures are measurable in their weights, means, and variances. -/
 @[fun_prop]
 theorem measurable_gaussianMixtureMeasure :

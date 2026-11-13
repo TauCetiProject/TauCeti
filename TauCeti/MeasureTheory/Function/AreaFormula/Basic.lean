@@ -187,7 +187,7 @@ private theorem euclideanHausdorffMeasure_image_le_and_lintegral_le {Q : Set U}
       _ = ENNReal.ofReal (τ * σ) * ∫⁻ x in Q, j x := by
           rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
             ENNReal.ofReal_mul hτ]
-  · calc ∫⁻ x in Q, j x ≤ ∫⁻ x in Q, ENNReal.ofReal σ * ENNReal.ofReal A.normDet :=
+  · calc ∫⁻ x in Q, j x ≤ ∫⁻ _ in Q, ENNReal.ofReal σ * ENNReal.ofReal A.normDet :=
           setLIntegral_mono' hQ fun x hx => (hj x hx).2
       _ = ENNReal.ofReal σ * (ENNReal.ofReal A.normDet * volume Q) := by
           rw [setLIntegral_const, mul_assoc]
@@ -316,7 +316,6 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
       ((MeasurableSet.disjointed hSm k).inter (ht_meas k n)) (sq_nonneg τ) (ht_approx k n) hAanti
       (hδ k).2.1 (hδ k).2.2.1 (hδ k).2.2.2 fun x hx => ?_
     obtain ⟨-, hx₁', hx₂'⟩ := hK k (fderiv ℝ f x) (hDS k hx.1).2
-    have hJB := (B k).normDet_nonneg
     rw [← ENNReal.ofReal_mul (sq_nonneg τ), ← ENNReal.ofReal_mul (sq_nonneg τ)]
     constructor <;> apply ENNReal.ofReal_le_ofReal
     · calc (A k n).normDet ≤ τ * (B k).normDet := hA₁
