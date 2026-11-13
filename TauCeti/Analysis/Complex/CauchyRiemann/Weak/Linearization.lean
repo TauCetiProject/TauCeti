@@ -31,8 +31,12 @@ This file proves the part of the bootstrap that does not use that regularity the
 * `TauCeti.isWeakCRSolution_linearization_id`: the check `J = i`, `η = 0`, `u = id`.
 
 The weak formulation `TauCeti.IsWeakCRSolution` pairs with the inner product, so the second
-statement is for finite-dimensional real inner product spaces `V`; the roadmap's planar
-statement for normed `V` reduces to it after choosing an inner product.
+statement is for finite-dimensional real inner product spaces `V`. Any finite-dimensional real
+normed space carries an inner product whose norm is equivalent to the given one, and equivalent
+norms define the same Sobolev spaces `W^{k,p}_loc` and smoothness classes.
+
+The second statement only needs `η` to be continuous on `W`: the frozen forcing `ηᵤ` enters the
+linear equation only through its local integrability.
 
 ## References
 
@@ -76,8 +80,8 @@ variable [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ
   {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V} {u : ℂ → V}
 
 /-- **The linearized equation.** Let `p > 2`, let `u` be a weak solution of
-`∂ₛu + J(z, u) ∂ₜu = η(z, u)` on `Ω`, and let `J` and `η` be `Cⁿ`, `n ≥ 1`, on an open
-`W ⊆ ℂ × V` containing the graph of `u` over `Ω`, with `J(z, x)² = -1` on `W`. Then the frozen
+`∂ₛu + J(z, u) ∂ₜu = η(z, u)` on `Ω`, and let `J` be `Cⁿ`, `n ≥ 1`, and `η` continuous on an
+open `W ⊆ ℂ × V` containing the graph of `u` over `Ω`, with `J(z, x)² = -1` on `W`. Then the frozen
 structure `Jᵤ z = J z (u z)` has a weak derivative `DJᵤ` for which `(Jᵤ, DJᵤ, 0)` are Sobolev
 Cauchy–Riemann coefficients of class `W^{1,p}`, `Jᵤ² = -1` on `Ω`, and `u` is a weak solution of
 the linear equation `∂ₛu + Jᵤ ∂ₜu = ηᵤ` with `ηᵤ z = η z (u z)`.
@@ -86,15 +90,16 @@ The weak formulation `TauCeti.IsWeakCRSolution` uses the inner product, so `V` i
 finite-dimensional real inner product space here. -/
 theorem exists_isWeakCRSolution_linearization (h : IsWeakCauchyRiemannOn p Ω J η u) (hp : 2 < p)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ n (fun x : ℂ × V => J x.1 x.2) W)
-    (hη : ContDiffOn ℝ n (fun x : ℂ × V => η x.1 x.2) W) (hn : 1 ≤ n)
+    (hη : ContinuousOn (fun x : ℂ × V => η x.1 x.2) W) (hn : 1 ≤ n)
     (hJ2 : ∀ x ∈ W, J x.1 x.2 * J x.1 x.2 = -1) (huW : ∀ z ∈ Ω, (z, u z) ∈ W) :
     ∃ DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V,
       IsSobolevCRCoefficients p Ω (fun z => J z (u z)) DJ 0 ∧
         (∀ z ∈ (Ω : Set ℂ), J z (u z) * J z (u z) = -1) ∧
         IsWeakCRSolution p Ω (fun z => J z (u z)) DJ 0 u (fun z => η z (u z)) := by
   have hp' : (2 : ℝ≥0∞) < p := by exact_mod_cast hp
-  obtain ⟨hJu, hηu⟩ := h.memWkpLoc_coeff_comp hp hW hJ hη huW (k := 0) (by simpa using hn)
-    h.memWkpLoc_one
+  have hJu : MemWkpLoc p Ω (0 + 1) (fun z => J z (u z)) :=
+    h.memWkpLoc_one.contDiffOn_comp_graph_succ hp h.continuousOn hW
+      (hJ.of_le (by simpa using hn)) huW
   obtain ⟨DJ, hDJ, hDJp⟩ := hJu.exists_weakFDeriv_of_isOpen
   have hc : IsSobolevCRCoefficients p Ω (fun z => J z (u z)) DJ 0 :=
     { hasWeakFDerivOn := hDJ
@@ -107,8 +112,8 @@ theorem exists_isWeakCRSolution_linearization (h : IsWeakCauchyRiemannOn p Ω J 
   obtain ⟨-, hup, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
   refine ⟨DJ, hc, fun z hz => hJ2 _ (huW z hz), ?_⟩
   refine (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hup hDp
-    (hηu.memLpLoc.locallyIntegrableOn (by exact_mod_cast (one_lt_two.trans hp).le)
-      Ω.isOpen.isLocallyClosed)).2 ?_
+    ((hη.comp (continuousOn_id.prodMk h.continuousOn) huW).locallyIntegrableOn
+      Ω.isOpen.measurableSet)).2 ?_
   filter_upwards [hae] with z hz
   simpa using hz
 
@@ -123,7 +128,7 @@ theorem isWeakCRSolution_linearization_id (hp : 2 < p) :
     IsWeakCRSolution p Ω (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 id 0 := by
   have hid := isWeakCauchyRiemannOn_id (p := (p : ℝ≥0∞)) (Ω := Ω)
   obtain ⟨DJ, hc, -, hsol⟩ := hid.exists_isWeakCRSolution_linearization (n := ⊤)
-    (W := Set.univ) hp isOpen_univ contDiffOn_const contDiffOn_const le_top
+    (W := Set.univ) hp isOpen_univ contDiffOn_const continuousOn_const le_top
     (fun x _ => by ext w; simp [← mul_assoc]) fun _ _ => Set.mem_univ _
   have hconst : HasWeakFDerivOn volume Ω (fun _ : ℂ => I • ContinuousLinearMap.id ℝ ℂ) 0 :=
     hasWeakFDerivOn_iff.2 fun v => by
