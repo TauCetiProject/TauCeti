@@ -9,10 +9,14 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Integral
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.TameMetric
+import TauCeti.Geometry.Symplectic.Area.Basic
+import TauCeti.Geometry.Symplectic.Area.Plane
+import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Zero-energy rigidity for maps into tame symplectic spaces
@@ -31,8 +35,18 @@ For a varying tame target structure, vanishing symplectic area likewise forces a
 map from a connected open subset of `ℂ` to be constant. No regularity of the structure is
 needed. Continuity of the area density is explicit for arbitrary normed targets.
 
+On the whole plane, a finite-energy `C²` map into a finite-dimensional symplectic vector space
+has zero symplectic area (`TauCeti.SymplecticForm.integral_fderiv_apply_eq_zero`). So a
+finite-energy pseudoholomorphic plane in a symplectic vector space is constant, both for maps
+`ℂ → V` holomorphic for a target structure `J(u)`
+(`TauCeti.SymplecticForm.exists_eq_const_of_isJHolomorphicAt_of_integrable_norm_fderiv_sq`) and
+for maps `ℝ × ℝ → V` solving `∂ₜu = J(z) ∂ₛu` for a domain-dependent structure `J(z)`
+(`TauCeti.SymplecticForm.exists_eq_const_of_isComplexLinearMap_of_integrable_norm_fderiv_sq`).
+In particular a symplectic vector space contains no nonconstant pseudoholomorphic spheres.
+
 The mathematical argument is standard; see McDuff--Salamon, *J-holomorphic Curves and Symplectic
-Topology*, Section 4.1.
+Topology*, 2nd ed., Section 4.1 (energy and area) and Section 4.5 (the end of a finite-energy
+plane).
 -/
 
 public section
@@ -144,6 +158,60 @@ theorem exists_eqOn_const_of_integral_eq_zero_of_continuousOn
     simp only [map_add, map_smul, hone, hI, smul_zero, add_zero]
   exact hU.exists_is_const_of_fderiv_eq_zero hconn
     (fun z hz ↦ (hhol z hz).differentiableAt.differentiableWithinAt) hderiv
+
+
+/-- **Finite-energy holomorphic planes in a symplectic vector space are constant.** Let
+`u : ℂ → V` be a `C²` map, holomorphic for a target structure `J(u)` tamed by `ω` at every image
+point. If `‖du‖²` is integrable over the plane, then `u` is constant. -/
+theorem exists_eq_const_of_isJHolomorphicAt_of_integrable_norm_fderiv_sq [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {u : ℂ → V} {J : V → AlmostComplexStructure V} (hu : ContDiff ℝ 2 u)
+    (hhol : ∀ z, IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z)
+    (htame : ∀ z, ω.Tames (J (u z))) (henergy : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) :
+    ∃ c, u = fun _ ↦ c := by
+  have hd := hu.continuous_fderiv two_ne_zero
+  have hcont : Continuous fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) :=
+    ω.continuous_apply_comp (hd.clm_apply continuous_const) (hd.clm_apply continuous_const)
+  obtain ⟨c, hc⟩ := exists_eqOn_const_of_integral_eq_zero_of_continuousOn (ν := volume)
+    isOpen_univ isPreconnected_univ (fun z _ ↦ hhol z) (fun z _ ↦ htame z) hcont.continuousOn
+    (ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq henergy.integrableOn)
+    (by rw [setIntegral_univ]; exact ω.integral_fderiv_apply_eq_zero hu henergy)
+  exact ⟨c, funext fun z ↦ hc (mem_univ z)⟩
+
+/-- **Finite-energy pseudoholomorphic planes in a symplectic vector space are constant, in real
+coordinates.** Let `u : ℝ × ℝ → V` be a `C²` solution of the Cauchy–Riemann equation
+`∂ₜu = J(z) ∂ₛu`, where each `J(z)` is tamed by `ω`. If `‖du‖²` is integrable over the plane, then
+`u` is constant. The structure may depend on the domain point, and through `u` on the target
+point. -/
+theorem exists_eq_const_of_isComplexLinearMap_of_integrable_norm_fderiv_sq
+    [FiniteDimensional ℝ V] (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hu : ContDiff ℝ 2 u) (hJ : ∀ z, ω.Tames (J z))
+    (hCR : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (fderiv ℝ u z : ℝ × ℝ →ₗ[ℝ] V))
+    (henergy : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) :
+    ∃ c, u = fun _ ↦ c := by
+  set a : ℝ × ℝ → ℝ := fun z ↦ ω (fderiv ℝ u z stdComplexLineReal)
+    (fderiv ℝ u z stdComplexLineImag)
+  have hnonneg (z : ℝ × ℝ) : 0 ≤ a z :=
+    (hCR z).symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg (hJ z)
+  have hcont : Continuous a := by
+    have hd := hu.continuous_fderiv two_ne_zero
+    exact ω.continuous_apply_comp (hd.clm_apply continuous_const) (hd.clm_apply continuous_const)
+  have hint : Integrable a := integrableOn_univ.1
+    (ω.integrableOn_fderiv_stdComplexLine_of_integrableOn_norm_fderiv_sq henergy.integrableOn)
+  -- The area density is a nonnegative continuous function with zero integral, so it vanishes.
+  have hzero : a = 0 := by
+    have hae := (integral_eq_zero_iff_of_nonneg hnonneg hint).1
+      (ω.integral_fderiv_stdComplexLine_eq_zero hu henergy)
+    exact (hcont.ae_eq_iff_eq volume continuous_const).1 hae
+  -- A vanishing area density forces a vanishing derivative.
+  have hderiv (z : ℝ × ℝ) : fderiv ℝ u z = 0 := by
+    have hreal : fderiv ℝ u z stdComplexLineReal = 0 := by
+      by_contra h
+      exact (((hCR z).symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_pos (hJ z)
+        h).ne' (congrFun hzero z))
+    have h0 := ((hCR z).eq_zero_iff_apply_stdComplexLineReal).2 hreal
+    exact ContinuousLinearMap.coe_injective h0
+  exact ⟨u 0, funext fun z ↦ is_const_of_fderiv_eq_zero (hu.differentiable two_ne_zero) hderiv z 0⟩
 
 end SymplecticForm
 

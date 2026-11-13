@@ -39,7 +39,8 @@ area of a closed loop is the symplectic area of the cone `r x(t)` bounding it
 period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its area over `[-π, π]`
 (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
 
-A square-integrable differential also gives an integrable symplectic area density, on any domain.
+A square-integrable differential also gives an integrable symplectic area density, on any domain,
+for maps of `ℂ` and of `ℝ × ℝ`.
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
 integrals of the symplectic form that tend to zero
 (`TauCeti.SymplecticForm.tendsto_integral_apply_of_tendsto_integral_norm`).
@@ -86,6 +87,32 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
       rw [pow_two, ← mul_assoc]
       gcongr
+
+/-- A square-integrable differential of a map of `ℝ × ℝ` has integrable symplectic area density
+`ω(∂ₛu, ∂ₜu)`. -/
+theorem integrableOn_fderiv_stdComplexLine_of_integrableOn_norm_fderiv_sq
+    [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} {D : Set (ℝ × ℝ)}
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
+    IntegrableOn
+      (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) D := by
+  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  let : MeasurableSpace V := borel V
+  let : BorelSpace V := ⟨rfl⟩
+  let B := ω.toBilinForm.toContinuousBilinearMap
+  set a : ℝ × ℝ := stdComplexLineReal
+  set b : ℝ × ℝ := stdComplexLineImag
+  have hmeas : AEStronglyMeasurable
+      (fun z ↦ ω (fderiv ℝ u z a) (fderiv ℝ u z b)) (volume.restrict D) := by
+    have hc : Continuous (fun p : V × V ↦ B p.1 p.2) := by fun_prop
+    exact (hc.measurable.comp ((measurable_fderiv_apply_const ℝ u a).prodMk
+      (measurable_fderiv_apply_const ℝ u b))).aestronglyMeasurable
+  refine (henergy.const_mul (‖B‖ * ‖a‖ * ‖b‖)).mono' hmeas (ae_of_all _ fun z ↦ ?_)
+  calc ‖ω (fderiv ℝ u z a) (fderiv ℝ u z b)‖
+      ≤ ‖B‖ * ‖fderiv ℝ u z a‖ * ‖fderiv ℝ u z b‖ := B.le_opNorm₂ _ _
+    _ ≤ ‖B‖ * (‖fderiv ℝ u z‖ * ‖a‖) * (‖fderiv ℝ u z‖ * ‖b‖) := by
+      gcongr <;> exact (fderiv ℝ u z).le_opNorm _
+    _ = ‖B‖ * ‖a‖ * ‖b‖ * ‖fderiv ℝ u z‖ ^ 2 := by ring
 
 /-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
 integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals

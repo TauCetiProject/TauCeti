@@ -118,7 +118,6 @@ map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹
 integrable energy density outside the disc of radius `R`. The Jacobian `‖w‖⁻⁴` of the inversion
 cancels the square of its conformal factor `‖w‖⁻²`. -/
 private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
-    (hu : DifferentiableOn ℝ u (closedBall 0 R)ᶜ)
     (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
@@ -128,8 +127,6 @@ private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
   set D : Set ℂ := ball 0 R⁻¹ \ {0}
   have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
   have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
-  have hdu (w : ℂ) (hw : w ∈ D) : DifferentiableAt ℝ u w⁻¹ :=
-    hu.differentiableAt (isClosed_closedBall.isOpen_compl.mem_nhds (hDE hw))
   -- The change of variables `z = w⁻¹`, whose real Jacobian is `‖w‖⁻⁴ = ‖-(w ^ 2)⁻¹‖ ^ 2`.
   set f' : ℂ → ℂ →L[ℝ] ℂ := fun w ↦
     (ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (-(w ^ 2)⁻¹)).restrictScalars ℝ
@@ -148,7 +145,7 @@ private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
       (1 + M) ^ 2 * (|(f' w).det| * ‖fderiv ℝ u w⁻¹ 1‖ ^ 2) := by
     have hle := ContinuousLinearMap.norm_apply_le_of_apply_I_eq (hCR _ (hDE hw)) (hM _ (hDE hw))
       (-(w ^ 2)⁻¹)
-    rw [fderiv_comp_inv_apply hw.2 (hdu w hw), mul_one, hdet]
+    rw [fderiv_comp_inv_apply hw.2, mul_one, hdet]
     calc _ ≤ ((1 + M) * ‖fderiv ℝ u w⁻¹ 1‖ * ‖-(w ^ 2)⁻¹‖) ^ 2 :=
           pow_le_pow_left₀ (norm_nonneg _) hle 2
       _ = _ := by ring
@@ -181,20 +178,17 @@ theorem exists_tendsto_cocompact_of_finite_energy
     exact this (hu.mono hS) (fun z hz ↦ hCR z (hS hz)) (huK.mono_left hS)
       (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
   have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
-  have hdu : DifferentiableOn ℝ u (closedBall 0 R)ᶜ := hu.differentiableOn (by norm_num)
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   -- The inverted map `w ↦ u w⁻¹` is a finite-energy solution on the punctured disc of radius `R⁻¹`.
   have hCRv (w : ℂ) (hw : w ∈ ball 0 R⁻¹ \ {0}) : fderiv ℝ (fun w ↦ u w⁻¹) w I =
       J (u w⁻¹) (fderiv ℝ (fun w ↦ u w⁻¹) w 1) := by
-    have hdw : DifferentiableAt ℝ u w⁻¹ :=
-      hdu.differentiableAt (isClosed_closedBall.isOpen_compl.mem_nhds (hDE hw))
-    rw [fderiv_comp_inv_apply hw.2 hdw, fderiv_comp_inv_apply hw.2 hdw, mul_one]
+    rw [fderiv_comp_inv_apply hw.2, fderiv_comp_inv_apply hw.2, mul_one]
     exact (fderiv ℝ u w⁻¹ : ℂ →ₗ[ℝ] V).apply_mul_I_eq_of_apply_I_eq (A := J (u w⁻¹))
       (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))) _
   obtain ⟨q, hqK, hlim, -, -⟩ := ω.exists_continuousOn_update_of_finite_energy hg hc
     (inv_pos.2 hR) hW hJ hK hKW hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
     hCRv (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
-    (integrableOn_norm_fderiv_comp_inv_sq hdu hCR (fun z hz ↦ hM _ (huK hz)) henergy)
+    (integrableOn_norm_fderiv_comp_inv_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
   refine ⟨q, hqK, ?_⟩
   rw [← Metric.cobounded_eq_cocompact]
   simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'

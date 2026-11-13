@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
-import TauCeti.Geometry.Symplectic.Area.Plane
 
 /-!
 # The energy identity on the capped three-pole sphere
@@ -64,19 +63,6 @@ These statements retain explicit integrability hypotheses on the energy and curv
 the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
 family is to be proved.
 
-On a symplectic vector space target the area term vanishes. A `C²` map of the plane whose
-differential is square-integrable has zero symplectic area
-(`TauCeti.SymplecticForm.integral_fderiv_stdComplexLine_eq_zero`), although it need not extend
-across the pole `∞`: the class term `ω(A)` of the energy identity is zero. For such a map the
-energy along the comparison family is minus the integrated curvature,
-`E(u) = -∫ R_{K_R}(u)`
-(`SymplecticForm.integral_floerEnergyDensity_cappedComparisonPerturbation_eq_neg`), so it is at
-most `2 (B₀ + B₁ + B_∞)` with no hypothesis on the area
-(`SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_le`). At the zero
-face `R = 0` the datum vanishes, and every such solution for tame structures is constant
-(`SymplecticForm.exists_eq_const_of_cappedComparisonPerturbation_zero`): a symplectic vector
-space carries no nonconstant spheres, hence no quantum corrections.
-
 ## Main results
 
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cappedPerturbation`: the energy
@@ -94,12 +80,6 @@ space carries no nonconstant spheres, hence no quantum corrections.
   the energy bound uniform over the comparison family on manifold targets.
 * `SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`:
   the corresponding lower area bound for Floer solutions.
-* `SymplecticForm.integral_floerEnergyDensity_cappedComparisonPerturbation_eq_neg`,
-  `SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_le`: on a vector
-  space target the energy of a map with square-integrable differential is minus its integrated
-  curvature, and it is bounded uniformly over the family.
-* `SymplecticForm.exists_eq_const_of_cappedComparisonPerturbation_zero`: on a vector space target
-  the finite-energy solutions at the zero face are constant.
 
 ## References
 
@@ -472,68 +452,5 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
   rw [ω.integral_floerEnergyDensity_cappedComparisonPerturbation hH hHs R hu hE,
     sub_sub_cancel_left, abs_neg]
   exact hbound
-
-
-/-- **On a vector space target the energy is minus the integrated curvature.** For a member `K_R`
-of the comparison family, built from period-one `C¹` Hamiltonians on a symplectic vector space,
-and a `C²` map `u` of the plane whose differential is square-integrable, the symplectic area of
-`u` vanishes (`SymplecticForm.integral_fderiv_stdComplexLine_eq_zero`), so the energy identity
-reads `E(u) = -∫ R_{K_R}(u)`. -/
-theorem integral_floerEnergyDensity_cappedComparisonPerturbation_eq_neg (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (R : ℝ)
-    (hu : ContDiff ℝ 2 u) (hdu : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
-    (hE : Integrable (ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
-        Complex.I) u)) :
-    ∫ z, ω.floerEnergyDensity
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u z =
-      -∫ z, ω.hamiltonianCurvature
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
-          Complex.I) z (u z) := by
-  rw [ω.integral_floerEnergyDensity_cappedComparisonPerturbation hH hHs R (hu.of_le one_le_two)
-    hE, ω.integral_fderiv_stdComplexLine_eq_zero hu hdu, zero_sub]
-
-/-- **On a vector space target the energy is bounded uniformly over the comparison family.** For
-period-one `C¹` Hamiltonians with `|H_q| ≤ B_q`, `R ≥ 0` and a `C²` map `u` of the plane whose
-differential is square-integrable, the energy of `u` for the datum `K_R` is at most
-`2 (B₀ + B₁ + B_∞)` in absolute value. No bound on the area of `u` is assumed. -/
-theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
-    (hu : ContDiff ℝ 2 u) (hdu : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
-    (hE : Integrable (ω.floerEnergyDensity
-      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
-      u)) :
-    |∫ z, ω.floerEnergyDensity
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z| ≤ 2 * ∑ q, B q := by
-  simpa only [ω.integral_fderiv_stdComplexLine_eq_zero hu hdu, sub_zero] using
-    ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR₀
-      (hu.of_le one_le_two) hE
-
-/-- **On a vector space target the zero face carries only constant solutions.** At `R = 0` the
-datum of the comparison family vanishes, so its Floer equation is the Cauchy–Riemann equation
-`∂ₜu = J(z) ∂ₛu`. A `C²` solution for `ω`-tame structures `J(z)` whose differential is
-square-integrable is constant. The structures may depend on the domain point, as the structures of
-the comparison family do away from the zero face. -/
-theorem exists_eq_const_of_cappedComparisonPerturbation_zero (ω : SymplecticForm V)
-    {J : ℝ × ℝ → AlmostComplexStructure V} (hu : ContDiff ℝ 2 u) (hJ : ∀ z, ω.Tames (J z))
-    (hfloer : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv
-        (fun z x ↦ cappedComparisonPerturbation H 0 (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ cappedComparisonPerturbation H 0 (Complex.equivRealProdCLM.symm z) x
-          Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hdu : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) :
-    ∃ c, u = fun _ ↦ c := by
-  refine ω.exists_eq_const_of_integrable_norm_fderiv_sq hu hJ (fun z ↦ ?_) hdu
-  have h := hfloer z
-  simpa only [cappedComparisonPerturbation_zero, Pi.zero_apply, zero_apply,
-    perturbedFDeriv_zero] using h
 
 end TauCeti.SymplecticForm

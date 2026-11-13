@@ -405,19 +405,14 @@ theorem floerEnergyDensity_def (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V
         (ω.perturbedFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
 
-/-- For the zero perturbation the perturbed derivative is the derivative. -/
-@[simp]
-theorem perturbedFDeriv_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z = fderiv ℝ u z :=
-  ContinuousLinearMap.ext fun v ↦ by simp [perturbedFDeriv_apply]
-
 /-- For the zero perturbation the Floer energy density is the symplectic area density
 `ω(∂_s u, ∂_t u)`. -/
 @[simp]
 theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-  simp [floerEnergyDensity_def]
+  simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag]
 
 /-- The Floer energy density commutes with translations of the domain. -/
 theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Determinant
 
 /-!
@@ -84,6 +86,9 @@ because that is what Mathlib's versions of them ask for.
   `TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul` and
   `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul` — the change of variables formula for a
   holomorphic injection, in Lebesgue, integrability and Bochner form.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — under the inversion `w = z⁻¹`, the
+  squared norm of the derivative of a map is integrable near infinity exactly when that of the
+  inverted map is integrable near zero.
 
 ## References
 
@@ -270,5 +275,29 @@ theorem integral_image_eq_integral_norm_deriv_sq_smul (hf : ∀ z ∈ s, Differe
   rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
     (hasFDerivWithinAt_smulRight_deriv hf) hinj g]
   exact setIntegral_congr_fun hs fun z _ => by rw [abs_det_restrictScalars_smulRight_one]
+
+
+/-! ### Inversion -/
+
+/-- **The energy of a map near infinity is the energy near zero of the inverted map.** On a
+measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable exactly when
+that of `u` is integrable on the image of `s` under inversion: the area distortion `‖w‖⁻⁴` of the
+inversion is the square of the factor `‖w‖⁻²` by which it scales derivatives. -/
+theorem integrableOn_norm_fderiv_comp_inv_sq_iff {u : ℂ → E} (hs : MeasurableSet s) :
+    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) s ↔
+      IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) ((·⁻¹) '' s) := by
+  -- Removing the origin, a null set fixed by the inversion, changes neither side.
+  have hs0 : MeasurableSet (s \ {0}) := hs.diff (measurableSet_singleton 0)
+  have himage : (·⁻¹) '' (s \ {0}) = (·⁻¹) '' s \ {(0 : ℂ)} := by
+    rw [image_sdiff inv_injective, image_singleton, inv_zero]
+  rw [← integrableOn_congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)),
+    ← integrableOn_congr_set_ae (s := (·⁻¹) '' s \ {(0 : ℂ)})
+      (sdiff_null_ae_eq_self (measure_singleton 0)), ← himage,
+    integrableOn_image_iff_integrableOn_norm_deriv_sq_smul
+      (fun w (hw : w ∈ s \ {0}) ↦ differentiableAt_inv_iff.2 hw.2) hs0 inv_injective.injOn]
+  refine integrableOn_congr_fun (fun w hw ↦ ?_) hs0
+  have hw : (w : ℂ) ≠ 0 := hw.2
+  rw [norm_fderiv_comp_inv hw, deriv_inv, smul_eq_mul, norm_neg, norm_inv, norm_pow]
+  field_simp
 
 end TauCeti
