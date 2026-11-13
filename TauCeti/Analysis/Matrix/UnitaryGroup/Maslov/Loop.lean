@@ -107,7 +107,8 @@ theorem souriau_eq_souriau_iff_realImage_eq {U V : unitaryGroup n ℂ} :
     obtain ⟨O, -, hOW⟩ := (GLOrthogonal.inf_unitarySubgroup_eq_map_real n ℂ).le hWO
     have hV : (V : Matrix n n ℂ) = U * (O : Matrix n n ℝ).map ((↑) : ℝ → ℂ) := by
       have hOW' : (O : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = W := by
-        simpa [Matrix.GeneralLinearGroup.map, Unitary.toUnits] using congrArg Units.val hOW
+        simpa [Matrix.GeneralLinearGroup.val_map_apply, Unitary.val_toUnits_apply] using
+          congrArg Units.val hOW
       rw [hOW', hWdef, ← mul_assoc, mem_unitaryGroup_iff.1 U.2, one_mul]
     rw [hV, realImage_mul_map_ofReal _ O.isUnit]
   · intro h

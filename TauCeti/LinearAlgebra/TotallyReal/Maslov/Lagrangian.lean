@@ -120,8 +120,10 @@ theorem TotallyRealLoop.exists_unitary_maslovIndex_eq
     exists_realImage_homotopy_unitaryGroup hMc (by rw [hMΛ, hMΛ]; exact Λ.toFun_zero_eq_toFun_one)
   have hF1c : Continuous fun t : I ↦ F (1, t) := hFc.comp (Continuous.prodMk_right 1)
   refine ⟨fun t ↦ ⟨F (1, t), hF1 t⟩, (Units.continuous_val.comp hF1c).subtype_mk _,
-    TotallyRealLoop.ofRealImage _ hF1c (hFclosed 1), fun t ↦ rfl,
-    (Λ.maslovIndex_eq_of_realImage_homotopy _ F hFc (fun t ↦ ?_) (fun _ ↦ rfl) hFclosed).symm⟩
+    TotallyRealLoop.ofRealImage _ hF1c (hFclosed 1),
+    TotallyRealLoop.ofRealImage_apply _ hF1c (hFclosed 1),
+    (Λ.maslovIndex_eq_of_realImage_homotopy _ F hFc (fun t ↦ ?_)
+      (TotallyRealLoop.ofRealImage_apply _ hF1c (hFclosed 1)) hFclosed).symm⟩
   rw [← hMΛ]
   exact (hF0 t).symm
 
