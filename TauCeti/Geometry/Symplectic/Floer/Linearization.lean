@@ -130,6 +130,17 @@ theorem floerLinearization_add (ω : SymplecticForm V)
     map_sub]
   abel
 
+/-- The linearization is subtractive on directions differentiable at the domain point. -/
+@[simp]
+theorem floerLinearization_sub (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ η : ℝ × ℝ → V) (z : ℝ × ℝ) (hξ : DifferentiableAt ℝ ξ z)
+    (hη : DifferentiableAt ℝ η z) :
+    ω.floerLinearization J Ks Kt u (ξ - η) z =
+      ω.floerLinearization J Ks Kt u ξ z - ω.floerLinearization J Ks Kt u η z := by
+  simp only [floerLinearization_def, fderiv_sub hξ hη, sub_apply, Pi.sub_apply, map_sub]
+  abel
+
 /-- The linearization respects real scaling. -/
 @[simp]
 theorem floerLinearization_smul (ω : SymplecticForm V)

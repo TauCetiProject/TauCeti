@@ -14,9 +14,9 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator
 
-Let `(V, ω)` be a symplectic vector space, `H_t` a one-periodic Hamiltonian, `J_t(y)` a family of
-almost complex structures and `u` a map of the cylinder whose loops converge, as `s → ±∞`, to
-nondegenerate one-periodic orbits `x_±` of `H`, while the slice defect `∂t u - X_{H_t}(u)` tends
+Let `(V, ω)` be a symplectic vector space, `H_t` a time-dependent Hamiltonian, `J_t(y)` a family
+of almost complex structures and `u` a map of the cylinder whose loops converge, as `s → ±∞`, to
+nondegenerate orbits `x_±` of `H`, while the slice defect `∂t u - X_{H_t}(u)` tends
 uniformly to zero, as for a Floer cylinder from `x₋` to `x₊`; suppose that `J_t` is
 `ω`-compatible along `x_±` and along `u`. The linearized Floer operator along `u` is
 
@@ -515,10 +515,10 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_add_setIntegral_of_ends
 end Patching
 
 /-- **The semi-Fredholm estimate of the linearized Floer operator along a Floer cylinder.**
-Let `H` be a one-periodic, jointly `C²` Hamiltonian whose suspended vector field is globally
-Lipschitz, with nondegenerate one-periodic orbits `x₋` and `x₊`, and let `J_t(y)` be a `C¹` family
-of almost complex structures, compatible with `ω` along `x₋`, `x₊` and the map `u`, which is `C¹`
-at the points of `ℝ × [0, 1]`. Suppose that the loops of `u` converge uniformly to `x₋` as
+Let `H` be a jointly `C²` Hamiltonian whose suspended vector field is globally Lipschitz, with
+orbits `x₋` and `x₊` whose initial points are nondegenerate fixed points of the time-one map, and
+let `J_t(y)` be a `C¹` family of almost complex structures, compatible with `ω` along `x₋`, `x₊`
+and the map `u`, which is `C¹` at the points of `ℝ × [0, 1]`. Suppose that the loops of `u` converge uniformly to `x₋` as
 `s → -∞` and to `x₊` as `s → ∞`, while the slice defect `∂t u - X_{H_t}(u)` tends uniformly to
 zero, as for a Floer cylinder from `x₋` to `x₊`. Then there are constants `C ≥ 0` and `T` such
 that every `C²` map `ξ` of period one in `t` that vanishes for `s ∉ (a, b)` satisfies
@@ -530,12 +530,10 @@ datum `K = H_t dt`. The constants do not depend on `a`, `b` or `ξ`. -/
 theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_setIntegral
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {xm xp : ℝ → V}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
     (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (H t) (xm t)) t)
-    (hxmp : Function.Periodic xm 1)
     (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xm 0))
     (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (H t) (xp t)) t)
-    (hxpp : Function.Periodic xp 1)
     (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (xp 0))
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -559,11 +557,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_setI
             ∫ z in Icc (-T) T ×ˢ Icc 0 1, ‖ξ z‖ ^ 2) := by
   -- The estimates on the two ends, in the norm of `V`.
   obtain ⟨Cp, hCp, Up, hUp, hp⟩ :=
-    exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization ω hX hH hHp hxp
-      hxpp hndp hJ hJxp (Eventually.of_forall hu) huxp hδp
+    exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization ω hX hH hxp hndp
+      hJ hJxp (Eventually.of_forall hu) huxp hδp
   obtain ⟨Cm, hCm, Um, hUm, hm⟩ :=
-    exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization ω hX hH hHp hxm
-      hxmp hndm hJ hJxm (Eventually.of_forall hu) huxm hδm
+    exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization ω hX hH hxm hndm
+      hJ hJxm (Eventually.of_forall hu) huxm hδm
   -- `D_u = ∂s + J_t(u) ∂t + S` for the zeroth-order coefficient `S` of the linearization.
   simp only [floerLinearization_eq_add, LinearMap.coe_toContinuousLinearMap'] at hp hm ⊢
   exact exists_forall_setIntegral_le_mul_setIntegral_add_setIntegral_of_ends
