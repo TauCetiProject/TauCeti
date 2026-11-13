@@ -43,7 +43,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 /-- A graded coderivation whose Taylor map vanishes on the words of length at most `j` lowers
 tensor length by at least `j`: each of its summands collapses a block of more than `j` letters to
 a single letter. The twist parameter affects coefficients but not word length. -/
-theorem gradedCoderiv_filtration_add_le (G : InternalGrading R M)
+theorem gradedCoderiv_filtration_add_le (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {j : ℕ}
     (hF : ∀ z ∈ filtration R M j, F z = 0) (n : ℕ) :
     Submodule.map (gradedCoderiv G F q) (filtration R M (n + j)) ≤ filtration R M n := by
@@ -62,14 +62,14 @@ theorem gradedCoderiv_filtration_add_le (G : InternalGrading R M)
 
 /-- A graded coderivation with no unary Taylor component lowers tensor length by at least one.
 The twist parameter affects coefficients but not word length. -/
-theorem gradedCoderiv_filtration_lowering (G : InternalGrading R M)
+theorem gradedCoderiv_filtration_lowering (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ)
     (hF : F ∘ₗ ofLetter R M = 0) (n : ℕ) :
     Submodule.map (gradedCoderiv G F q) (filtration R M (n + 1)) ≤ filtration R M n :=
   gradedCoderiv_filtration_add_le G F q (apply_eq_zero_of_mem_filtration_one R M hF) n
 
 /-- A graded coderivation does not increase tensor length. -/
-theorem gradedCoderiv_mem_filtration (G : InternalGrading R M)
+theorem gradedCoderiv_mem_filtration (G : InternalGrading R M ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M n) : gradedCoderiv G F q z ∈ filtration R M n :=
   gradedCoderiv_filtration_add_le G F q (apply_eq_zero_of_mem_filtration_zero R M F) n
@@ -79,7 +79,8 @@ theorem gradedCoderiv_mem_filtration (G : InternalGrading R M)
 words: each summand of the graded Taylor expansion of such a word applies the Taylor map to a
 block of it. -/
 theorem gradedCoderiv_apply_eq_of_mem_filtration {R : Type uR} {M : Type uM} [CommRing R]
-    [AddCommGroup M] [Module R M] (G : InternalGrading R M) {F F' : ReducedTensorWords R M →ₗ[R] M}
+    [AddCommGroup M] [Module R M] (G : InternalGrading R M ℤ)
+    {F F' : ReducedTensorWords R M →ₗ[R] M}
     (q : ℤ) {n : ℕ} (h : ∀ z ∈ filtration R M n, F z = F' z) {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M n) : gradedCoderiv G F q z = gradedCoderiv G F' q z := by
   have hz' := gradedCoderiv_filtration_add_le G (F - F') q
@@ -91,7 +92,7 @@ theorem gradedCoderiv_apply_eq_of_mem_filtration {R : Type uR} {M : Type uM} [Co
 of length at most `k` and `g` on those of length at most `j`: the coderivation of `g` shortens
 such a word to length at most `k`. -/
 theorem brace_apply_eq_zero_of_mem_filtration {R : Type uR} {M : Type uM} [CommRing R]
-    [AddCommGroup M] [Module R M] (G : InternalGrading R M) {F g : ReducedTensorWords R M →ₗ[R] M}
+    [AddCommGroup M] [Module R M] (G : InternalGrading R M ℤ) {F g : ReducedTensorWords R M →ₗ[R] M}
     (q : ℤ) {k j : ℕ} (hF : ∀ z ∈ filtration R M k, F z = 0)
     (hg : ∀ z ∈ filtration R M j, g z = 0) {z : ReducedTensorWords R M}
     (hz : z ∈ filtration R M (k + j)) : brace G F g q z = 0 := by
@@ -99,7 +100,7 @@ theorem brace_apply_eq_zero_of_mem_filtration {R : Type uR} {M : Type uM} [CommR
   exact hF _ (gradedCoderiv_filtration_add_le G g q hg k ⟨z, hz, rfl⟩)
 
 /-- Projecting onto a fixed tensor length preserves total degree. -/
-theorem isHomogeneous_lengthProj (G : InternalGrading R M) (n : {n : ℕ // 0 < n}) :
+theorem isHomogeneous_lengthProj (G : InternalGrading R M ℤ) (n : {n : ℕ // 0 < n}) :
     LinearMap.IsHomogeneous (lengthProj R M n) (gradedPiece G) (gradedPiece G) 0 := by
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
@@ -118,7 +119,7 @@ theorem isHomogeneous_lengthProj (G : InternalGrading R M) (n : {n : ℕ // 0 < 
 /-- The graded Taylor expansion of a map `F` concentrated on the words of length `a` collapses a
 block of exactly `a` letters to a single letter.  So its words of length `j` come from the words
 of length `m = j + a - 1` alone. -/
-theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M)
+theorem lengthProj_comp_gradedCoderiv (G : InternalGrading R M ℤ)
     {F : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {a : {a : ℕ // 0 < a}}
     (hF : F ∘ₗ lengthProj R M a = F) {j m : {j : ℕ // 0 < j}} (hm : m.1 + 1 = j.1 + a.1) :
     lengthProj R M j ∘ₗ gradedCoderiv G F q = gradedCoderiv G F q ∘ₗ lengthProj R M m := by
