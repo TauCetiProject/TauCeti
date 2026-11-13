@@ -199,7 +199,7 @@ theorem enorm_addConvolution_le (L : E →L[𝕜] E' →L[𝕜] F) {M : Type*} [
     (g : M → E') (x : M) :
     ‖(f ⋆₊[L.toLinearMap₁₂] g) x‖ₑ ≤ ‖L‖ₑ * ((‖f ·‖ₑ) ⋆ᵣ₊ (‖g ·‖ₑ)) x := by
   simp only [addRingConvolution_apply, addConvolution, ← ENNReal.tsum_mul_left]
-  refine enorm_tsum_le_tsum_enorm.trans (_root_.tsum_le_tsum fun ab ↦ ?_)
+  refine eNorm_tsum_le_tsum_eNorm.trans (_root_.tsum_le_tsum fun ab ↦ ?_)
   rw [← mul_assoc]
   exact L.le_opENorm₂ _ _
 
@@ -301,8 +301,8 @@ private theorem addConvolutionExists_of_summable_sq_one_add_abs_rpow_mul_norm [C
     exact ENNReal.ofReal_ne_top
   intro x
   unfold AddConvolutionExistsAt
-  refine Summable.of_norm <| tsum_enorm_ne_top_iff_summable_norm.1 <| ne_top_of_le_ne_top
-    (ENNReal.mul_ne_top (enorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
+  refine Summable.of_norm <| tsum_eNorm_ne_top_iff_summable_norm.1 <| ne_top_of_le_ne_top
+    (ENNReal.mul_ne_top (eNorm_ne_top (x := L)) (ENNReal.mul_ne_top ha' hb')) ?_
   calc ∑' ab : addFiber x, ‖L.toLinearMap₁₂ (a ab.1.1) (b ab.1.2)‖ₑ
       ≤ ∑' p : ℤ × ℤ, ‖L.toLinearMap₁₂ (a p.1) (b p.2)‖ₑ :=
         _root_.tsum_comp_le_tsum_of_injective Subtype.val_injective

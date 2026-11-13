@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 import TauCeti.NumberTheory.Cyclotomic.ModularCharacter
+import TauCeti.NumberTheory.Cyclotomic.Surjectivity
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Units
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
@@ -21,6 +22,10 @@ taking the `ℓ`-adic component recovers `localCyclotomicCharacter ℓ K`.
 The normalization is the power equation `σ ζ = ζ ^ χ_n(σ)`, with no inverse on the exponent.
 The construction uses the existing ring of profinite integers and its `zHat.unitsLift`
 universal property, not a new inverse-limit carrier.
+
+When every cyclotomic polynomial is irreducible over `K`, as over `ℚ`, the character is onto
+`(Additive zHat)ˣ`: each finite level is onto by irreducibility, and compactness of the absolute
+Galois group assembles the finite-level preimages.
 
 ## References
 
@@ -105,5 +110,18 @@ theorem profiniteCyclotomicCharacter_unique
           (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n) σ.toRingEquiv) :
     χ = (profiniteCyclotomicCharacter K).toMonoidHom :=
   zHat.unitsLift_unique _ _ χ hχ
+
+variable {K} in
+/-- **Surjectivity of the profinite cyclotomic character.** If every cyclotomic polynomial is
+irreducible over `K`, the cyclotomic character of the absolute Galois group of `K` is onto the
+profinite units `(Additive zHat)ˣ`. -/
+theorem profiniteCyclotomicCharacter_surjective_of_irreducible
+    (hirr : ∀ n : ℕ+, Irreducible (Polynomial.cyclotomic (n : ℕ) K)) :
+    Function.Surjective (profiniteCyclotomicCharacter K) :=
+  zHat.surjective_of_forall_surjective_unitsMap_toZMod
+    (profiniteCyclotomicCharacter K).continuous fun n ↦ by
+      simp only [map_toZMod_profiniteCyclotomicCharacter]
+      -- `Field.absoluteGaloisGroup K` is by definition `Gal(AlgebraicClosure K/K)`.
+      exact modularCyclotomicCharacter_surjective_of_irreducible (K := K) _ (hirr n)
 
 end TauCeti

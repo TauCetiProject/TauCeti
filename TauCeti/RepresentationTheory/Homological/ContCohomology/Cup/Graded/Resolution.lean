@@ -150,7 +150,7 @@ theorem gradedResolutionCupPairing_augmentation_lof (x : X.V) (n : ℕ)
         (P.pointwise (n + 1) (n + 1) rfl (x, F)) := by
   classical
   -- the cup lands in degree `0 + n`, which is `n` only propositionally
-  have key : ∀ (i : ℕ) (hi : i = n) (hk : i + 1 = n + 1),
+  have key : ∀ (i : ℕ) (_ : i = n) (hk : i + 1 = n + 1),
       DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) i
           (P.pointwise (n + 1) (i + 1) hk (x, F)) =
         DirectSum.lof R ℕ (fun k ↦ (TopRep.resolutionX Z (k + 1)).V) n

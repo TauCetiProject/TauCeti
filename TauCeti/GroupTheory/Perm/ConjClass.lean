@@ -57,7 +57,7 @@ theorem mem_classesOfFullCycleType {G : Subgroup (Equiv.Perm α)}
     {mu : Multiset ℕ} {C : ConjClasses G} :
     C ∈ G.classesOfFullCycleType mu ↔
       ∃ g : G, ConjClasses.mk g = C ∧ (g : Equiv.Perm α).fullCycleType = mu := by
-  simp [Subgroup.classesOfFullCycleType]
+  simp [classesOfFullCycleType]
 
 /-- The elements of `G` of full cycle type `mu`: the union of the conjugacy classes recorded by
 `Subgroup.classesOfFullCycleType`. This is the set whose membership
@@ -82,7 +82,7 @@ theorem mem_iUnion_classesOfFullCycleType (G : Subgroup (Equiv.Perm α))
     obtain ⟨C, hgC⟩ := hg'
     have hgC' : ∃ (_h : C ∈ G.classesOfFullCycleType mu), g ∈ C.carrier := Set.mem_iUnion.1 hgC
     obtain ⟨hCs, hgCs⟩ := hgC'
-    obtain ⟨c, hmk, hc⟩ := Subgroup.mem_classesOfFullCycleType.1 hCs
+    obtain ⟨c, hmk, hc⟩ := mem_classesOfFullCycleType.1 hCs
     have hgmk : ConjClasses.mk g = C := ConjClasses.mem_carrier_iff_mk_eq.1 hgCs
     have hconj : IsConj (g : Equiv.Perm α) (c : Equiv.Perm α) := by
       exact G.subtype.map_isConj (ConjClasses.mk_eq_mk_iff_isConj.1 (hgmk.trans hmk.symm))
@@ -91,7 +91,7 @@ theorem mem_iUnion_classesOfFullCycleType (G : Subgroup (Equiv.Perm α))
       _ = mu := hc
   · intro hg
     refine Set.mem_iUnion.2 ⟨ConjClasses.mk g, ?_⟩
-    refine Set.mem_iUnion.2 ⟨Subgroup.mem_classesOfFullCycleType.2 ⟨g, rfl, hg⟩, ?_⟩
+    refine Set.mem_iUnion.2 ⟨mem_classesOfFullCycleType.2 ⟨g, rfl, hg⟩, ?_⟩
     exact ConjClasses.mem_carrier_iff_mk_eq.2 rfl
 
 /-- The same characterization as `Subgroup.mem_iUnion_classesOfFullCycleType`, read on the
@@ -101,7 +101,7 @@ form and so normalizes membership to the cycle-type condition. -/
 theorem mem_iUnionClassesOfFullCycleType {G : Subgroup (Equiv.Perm α)}
     {mu : Multiset ℕ} {g : G} :
     g ∈ G.iUnionClassesOfFullCycleType mu ↔ (g : Equiv.Perm α).fullCycleType = mu :=
-  Subgroup.mem_iUnion_classesOfFullCycleType G mu g
+  mem_iUnion_classesOfFullCycleType G mu g
 
 /-- A conjugacy class of a permutation subgroup has a specified full cycle type if and only if
 one (hence every) representative has that type. -/
@@ -115,6 +115,6 @@ theorem mem_classesOfFullCycleType_mk
     exact Set.mem_iUnion.mpr ⟨ConjClasses.mk g,
       Set.mem_iUnion.mpr ⟨h, ConjClasses.mem_carrier_iff_mk_eq.mpr rfl⟩⟩
   · intro h
-    exact Subgroup.mem_classesOfFullCycleType.mpr ⟨g, rfl, h⟩
+    exact mem_classesOfFullCycleType.mpr ⟨g, rfl, h⟩
 
 end Subgroup
