@@ -31,6 +31,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `tsupport g ×ˢ tsupport f`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
+  function vanishes is compactly supported, with multiplicative version
+  `HasCompactMulSupport.mono_of_eq_one`.
 -/
 
 public section
@@ -120,3 +123,12 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- A function equal to `1` wherever a function with compact multiplicative support is equal to
+`1` has compact multiplicative support. -/
+@[to_additive /-- A function vanishing wherever a compactly supported function vanishes is
+compactly supported. -/]
+theorem HasCompactMulSupport.mono_of_eq_one {X β γ : Type*} [TopologicalSpace X] [One β] [One γ]
+    {f : X → β} {g : X → γ} (hf : HasCompactMulSupport f) (hg : ∀ x, f x = 1 → g x = 1) :
+    HasCompactMulSupport g :=
+  hf.mono <| Function.mulSupport_subset_iff'.2 fun x hx ↦ hg x (Function.notMem_mulSupport.1 hx)
