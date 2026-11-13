@@ -243,7 +243,7 @@ def mongeAmpereMeasure (μ : Measure E) (f : E → EReal) : Measure E :=
     Measure.ofMeasurable
       (fun s _ => μ (subgradientImage (innerₗ E) f (s ∩ interior {x | f x ≠ ⊤})))
       (by simp) fun g hg hd => by
-        obtain ⟨hf, hbot, ν, _, hμ⟩ := h
+        obtain ⟨hf, _, ν, _, hμ⟩ := h
         simp only [iUnion_inter, subgradientImage_iUnion]
         exact measure_iUnion₀
           (fun i j hij => hμ (aedisjoint_subgradientImage ν f

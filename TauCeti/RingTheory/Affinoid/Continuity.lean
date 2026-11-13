@@ -60,7 +60,7 @@ theorem continuous_algHom (hA : IsAffinoidAlgebra K A)
     exact sub_eq_zero.mp this
   rw [← Ideal.iInf_isMaximal_pow_eq_bot]
   simp only [Ideal.mem_iInf]
-  intro m hm n hn
+  intro m hm n _
   let := hm
   let I := m ^ n
   have : IsClosed (I : Set A) := hA.isClosed_ideal I

@@ -72,7 +72,7 @@ theorem singularValue_le_of_pairwise_inner_eq_zero
     (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) {n : ℕ} {s : Finset ι}
     (hs : s.card ≤ n) {c : ℝ≥0} (hc : ∀ i ∉ s, ‖T (e i)‖ ≤ c) : T.singularValue n ≤ c := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis e.toBasis
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   exact e.toHilbertBasis.singularValue_le_of_pairwise_inner_eq_zero (by simpa using hT) hs
     (by simpa using hc)
 
@@ -83,7 +83,7 @@ theorem le_singularValue_of_pairwise_inner_eq_zero
     (hT : Pairwise fun i j ↦ ⟪T (e i), T (e j)⟫_𝕜 = 0) {n : ℕ} {s : Finset ι}
     (hs : n < s.card) {c : ℝ} (hc : ∀ i ∈ s, c ≤ ‖T (e i)‖) : c ≤ T.singularValue n := by
   have : FiniteDimensional 𝕜 E := Module.Finite.of_basis e.toBasis
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   exact e.toHilbertBasis.le_singularValue_of_pairwise_inner_eq_zero (by simpa using hT) hs
     (by simpa using hc)
 

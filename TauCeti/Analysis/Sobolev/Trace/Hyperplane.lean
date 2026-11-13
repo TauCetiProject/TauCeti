@@ -125,7 +125,7 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
     (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
         (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
-  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r with hF
+  set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
   have hFc : Continuous F := continuous_rpow_energy hu hr
   have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
   have hint : Integrable F volume := hFc.integrable_of_hasCompactSupport hs
