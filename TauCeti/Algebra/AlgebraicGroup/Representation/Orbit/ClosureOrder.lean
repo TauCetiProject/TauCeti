@@ -11,14 +11,15 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrde
 /-!
 # The closure order on orbits of vectors
 
-Let `G = Spec H` be an affine group over a field `k` acting on a representation `M`. Two vectors
-of `M` are *rationally conjugate* when a rational point of `G` carries one to the other. The
-quotient `TauCeti.Comodule.VectorOrbit k H M` is the set of rational orbits of `G` in `M`.
+Let `G = Spec H` be an affine group over a field `k` acting on a finite-dimensional
+representation `M`, and let `TauCeti.Comodule.VectorOrbit k H M` be the set of rational orbits of
+`G` in `M`. The orbit of `v` has a geometric image `Oᵥ` (`TauCeti.Comodule.VectorOrbit.image`):
+the full topological image of the projective orbit morphism of the line through `(v, 1)` in the
+projective completion `P(M × k)` of `M`. Both are defined in
+`TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic`.
 
-When `k` is algebraically closed, `G` is of finite type and `M` is finite-dimensional, the orbit
-of `v` has a geometric image `Oᵥ`: the full topological image of the projective orbit morphism of
-the line through `(v, 1)` in the projective completion `P(M × k)` of `M`. Distinct orbits have
-distinct images, and even distinct closures. The *closure order* on orbits,
+When `k` is algebraically closed and `G` is of finite type, distinct orbits have distinct images,
+and even distinct closures. The *closure order* on orbits,
 
   `O ≤ O'` if and only if `O ⊆ closure O'`,
 
@@ -30,9 +31,9 @@ adjoint orbits, in particular on nilpotent orbits.
 
 ## Main declarations
 
-* `TauCeti.Comodule.rationalConjugacy`: conjugacy under the rational points of `G`.
-* `TauCeti.Comodule.VectorOrbit`: the rational orbits of `G` in `M`.
-* `TauCeti.Comodule.VectorOrbit.image`: the geometric image of an orbit in `P(M × k)`.
+* `TauCeti.Comodule.VectorOrbit.image_injective`,
+  `TauCeti.Comodule.VectorOrbit.closure_image_injective`: orbits are determined by their images,
+  and even by the closures of their images.
 * `TauCeti.Comodule.VectorOrbit.instPartialOrder`: the closure order.
 * `TauCeti.Comodule.VectorOrbit.mk_le_mk_iff`, `TauCeti.Comodule.VectorOrbit.mk_lt_mk_iff`:
   the orbit of `w` lies below the orbit of `v` when `w` lies in the closure of the orbit of
@@ -53,113 +54,11 @@ open AlgebraicGeometry
 
 namespace TauCeti.Comodule
 
-universe u v w
+universe u
 
 attribute [local instance] prodTrivial
 
-section Conjugacy
-
-variable (k : Type u) (H : Type v) (M : Type w) [Field k] [CommRing H] [HopfAlgebra k H]
-  [AddCommGroup M] [Module k M] [Comodule k H M]
-
-/-- Conjugacy under the rational points of `G = Spec H`: the vectors `v` and `w` are conjugate
-when some rational point of `G` carries `v` to `w`. -/
-def rationalConjugacy : Setoid M where
-  r v w := ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w
-  iseqv :=
-    { refl v := ⟨1, by simp⟩
-      symm := by
-        rintro v _ ⟨g, rfl⟩
-        exact ⟨g⁻¹, Representation.inv_self_apply _ g v⟩
-      trans := by
-        rintro v _ _ ⟨g, rfl⟩ ⟨g', rfl⟩
-        exact ⟨g' * g, by simp⟩ }
-
-variable {k H M} in
-/-- Unfolding lemma for `TauCeti.Comodule.rationalConjugacy`. -/
-theorem rationalConjugacy_iff {v w : M} :
-    rationalConjugacy k H M v w ↔ ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w :=
-  Iff.rfl
-
-/-- The rational orbits of `G = Spec H` in `M`: the vectors of `M` up to conjugacy by rational
-points of `G`. -/
-def VectorOrbit : Type w :=
-  Quotient (rationalConjugacy k H M)
-
 namespace VectorOrbit
-
-variable {k H M}
-
-/-- The rational orbit of a vector. -/
-def mk (v : M) : VectorOrbit k H M :=
-  Quotient.mk _ v
-
-/-- Every rational orbit is the orbit of a vector. -/
-theorem mk_surjective : Function.Surjective (mk : M → VectorOrbit k H M) :=
-  Quotient.mk_surjective
-
-/-- Induction on rational orbits: it suffices to treat the orbit of each vector. -/
-@[elab_as_elim]
-theorem ind {p : VectorOrbit k H M → Prop} (h : ∀ v, p (mk v)) (O : VectorOrbit k H M) : p O :=
-  Quotient.ind h O
-
-/-- Two vectors have the same rational orbit exactly when a rational point carries one to the
-other. -/
-theorem mk_eq_mk_iff {v w : M} :
-    (mk v : VectorOrbit k H M) = mk w ↔
-      ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w :=
-  Quotient.eq
-
-/-- A vector and its translate by a rational point have the same orbit. -/
-@[simp]
-theorem mk_basePointsRepresentation (g : WithConv (H →ₐ[k] k)) (v : M) :
-    (mk (basePointsRepresentation M g v) : VectorOrbit k H M) = mk v :=
-  (mk_eq_mk_iff.mpr ⟨g, rfl⟩).symm
-
-/-- Descend a function on vectors that is invariant under the rational points of `G` to a
-function on rational orbits. -/
-def lift {α : Sort*} (f : M → α)
-    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v) :
-    VectorOrbit k H M → α :=
-  Quotient.lift f (by
-    rintro v _ ⟨g, rfl⟩
-    exact (hf g v).symm)
-
-/-- The value of a lifted function on the orbit of `v` is its value on `v`. -/
-@[simp]
-theorem lift_mk {α : Sort*} (f : M → α)
-    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v)
-    (v : M) : lift f hf (mk v : VectorOrbit k H M) = f v :=
-  (rfl)
-
-end VectorOrbit
-
-end Conjugacy
-
-namespace VectorOrbit
-
-section Image
-
-variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
-  [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-/-- The geometric image of a rational orbit in the projective completion `P(M × k)` of `M`: the
-full topological image, including nonclosed points, of the projective orbit morphism of the line
-through `(v, 1)`, for any vector `v` of the orbit. -/
-noncomputable def image (O : VectorOrbit k H M) :
-    Set (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))) :=
-  lift (fun v ↦ Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
-      (Module.isUnimodular_mk_one v)))
-    range_projectiveOrbitMap_mk_one_basePointsRepresentation O
-
-/-- The image of the orbit of `v` is the image of the projective orbit morphism of `(v, 1)`. -/
-@[simp]
-theorem image_mk (v : M) :
-    (mk v : VectorOrbit k H M).image =
-      Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v)) :=
-  (rfl)
-
-end Image
 
 variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
