@@ -187,18 +187,13 @@ theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
         Multiset.toFinsupp ((l.flatMap fun i ↦ List.replicate (n i) i) : Multiset ι) =
           (l.map fun i ↦ Finsupp.single i (n i)).sum := by
       induction l with
-      | nil => simp [Multiset.toFinsupp_zero]
+      | nil => simp
       | cons i l ih =>
-          simp only [List.flatMap_cons, ← Multiset.coe_add, Multiset.toFinsupp_add,
-            List.map_cons, List.sum_cons, ih]
-          congr 1
-          ext j
-          by_cases hij : i = j
-          · subst j
-            simp
-          · simp [Multiset.toFinsupp_apply, List.count_replicate, hij]
-    rw [haux]
-    rw [← Multiset.sum_coe, ← Multiset.map_coe, Finset.sort_eq]
+          rw [List.flatMap_cons, ← Multiset.coe_add, Multiset.toFinsupp_add, ih,
+            Multiset.coe_replicate, ← Multiset.nsmul_singleton, map_nsmul,
+            Multiset.toFinsupp_singleton]
+          simp
+    rw [haux, ← Multiset.sum_coe, ← Multiset.map_coe, Finset.sort_eq]
     exact Finsupp.sum_single n
   have hprod : pbwMonomial R L b word = ((indices.map
       (fun i ↦ _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ n i))).prod := by
