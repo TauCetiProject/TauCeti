@@ -47,8 +47,8 @@ for the connection `d + A`.
   `CovariantDerivative.firstJetSplitting_sub_firstJetSplitting`: the change of splitting under a
   change of connection.
 * `CovariantDerivative.firstJetLift`: the horizontal lift `Vₓ → J¹Vₓ`, with
-  `CovariantDerivative.value_firstJetLift` and
-  `CovariantDerivative.firstJetSplitting_firstJetLift`.
+  `CovariantDerivative.value_firstJetLift`, `CovariantDerivative.firstJetSplitting_firstJetLift`
+  and `CovariantDerivative.ker_firstJetSplitting`.
 * `CovariantDerivative.firstJetEquiv`: the decomposition `J¹Vₓ ≃L Vₓ × Hom(TₓM, Vₓ)`, with
   `CovariantDerivative.firstJetEquiv_jet`.
 
@@ -134,6 +134,7 @@ theorem firstJetSplitting_apply (cov : CovariantDerivative I F V) (x : M)
     (Module.finBasis 𝕜 F) _ (mem_baseSet_trivializationAt F V x)]
 
 /-- The connection map is a left inverse of the inclusion `Hom(TₓM, Vₓ) → J¹Vₓ`. -/
+@[simp]
 theorem firstJetSplitting_ofDeriv (cov : CovariantDerivative I F V) (x : M)
     (L : TangentSpace I x →L[𝕜] V x) :
     cov.firstJetSplitting x (ofDeriv I F x L) = L := by
@@ -232,6 +233,18 @@ theorem firstJetLift_value_add_ofDeriv_firstJetSplitting (cov : CovariantDerivat
   have hd0 : d = 0 := by rw [← hL, hL0, map_zero]
   rw [hdef, sub_sub, sub_eq_zero] at hd0
   exact hd0.symm
+
+/-- The kernel of the connection map is the image of the horizontal lift. -/
+theorem ker_firstJetSplitting (cov : CovariantDerivative I F V) (x : M) :
+    LinearMap.ker (cov.firstJetSplitting x).toLinearMap =
+      LinearMap.range (cov.firstJetLift x).toLinearMap := by
+  ext j
+  simp only [LinearMap.mem_ker, LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+  refine ⟨fun hj ↦ ⟨value I F x j, ?_⟩, ?_⟩
+  · rw [← cov.firstJetLift_value_add_ofDeriv_firstJetSplitting x j, hj, map_zero, add_zero,
+      value_firstJetLift]
+  · rintro ⟨v, rfl⟩
+    exact cov.firstJetSplitting_firstJetLift x v
 
 /-- The **decomposition of first jets** by a connection: `J¹Vₓ ≃L Vₓ × Hom(TₓM, Vₓ)`, sending
 a first jet to its value and its image under the connection map. Its inverse is the sum of the
