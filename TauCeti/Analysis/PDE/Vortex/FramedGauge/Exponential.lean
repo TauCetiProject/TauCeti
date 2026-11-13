@@ -9,6 +9,7 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
+import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Lp
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -57,8 +58,6 @@ constructed here.
 
 * `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: `exp (i f) ∈ G_s` for continuous real `f ∈ H^s`.
 * `TauCeti.Vortex.injOn_exp`: the exponential is injective on continuous real `H^s` phases.
-* `TauCeti.Vortex.neg_I_smul_ae_eq_arg`: if `L` represents `log (1 + (u - 1))` for a
-  circle-valued `u`, then `-i L` represents the phase `arg u`.
 * `TauCeti.Vortex.exists_continuous_mem_realSobolevFunctions_eq_exp`: the elements of `G_s` close
   to `1` in `H^s` are exponentials of continuous real `H^s` phases.
 * `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`: the exponential is
@@ -120,17 +119,6 @@ theorem injOn_exp {s : ℝ} (hs : 1 < s) :
   funext z
   exact sub_eq_zero.1 (tendsto_nhds_unique (tendsto_const_nhds.congr fun w ↦ hconst z w) hlim)
 
-/-- **The phase of a circle-valued map is `-i log (1 + (u - 1))`.** For a circle-valued map `u`,
-if `h` represents `u - 1` and `L` represents `log (1 + h)`, then `-i L` represents the phase
-`arg u`, because `log u = i arg u` when `|u| = 1`. -/
-theorem neg_I_smul_ae_eq_arg {α : Type*} [MeasurableSpace α] {μ : Measure α} {p : ENNReal}
-    {u : α → Circle} {h L : Lp ℂ p μ} (hh : h =ᵐ[μ] (fun z ↦ (u z : ℂ) - 1))
-    (hL : L =ᵐ[μ] (fun z ↦ log (1 + h z))) :
-    ((-I) • L : Lp ℂ p μ) =ᵐ[μ] (fun z ↦ (arg (u z : ℂ) : ℂ)) := by
-  filter_upwards [Lp.coeFn_smul (-I) L, hL, hh] with z hz hLz hhz
-  rw [hz, Pi.smul_apply, smul_eq_mul, hLz, hhz, add_sub_cancel]
-  apply Complex.ext <;> simp [log_re, log_im]
-
 /-- **Elements of `G_s` near the identity are exponentials.** For `s > 1` there is `δ > 0` such
 that every `u ∈ G_s` with `‖u - 1‖_{H^s} < δ` is `exp (i f)` for a continuous real function
 `f ∈ H^s(ℂ)`. Here `u - 1` is represented by an `L²` function `h` in `H^s(ℂ; ℂ)`, as in
@@ -171,7 +159,7 @@ theorem exists_continuous_mem_realSobolevFunctions_eq_exp {s : ℝ} (hs : 1 < s)
       (continuousAt_arg (hslit z)).comp_of_eq hu_cont.continuousAt rfl
   · -- `arg u = -i log u`, and `log u = log (1 + (u - 1))` lies in `H^s`.
     exact mem_realSobolevFunctions_of_ae_eq_ofReal (v := (-I) • v)
-      (hvs.toTemperedDistribution_smul _) (neg_I_smul_ae_eq_arg hhu hv)
+      (hvs.toTemperedDistribution_smul _) (Circle.neg_I_smul_ae_eq_arg hhu hv)
   · funext z
     exact (Circle.exp_arg (u z)).symm
 
@@ -247,7 +235,7 @@ theorem exists_memSobolev_ae_eq_arg_and_norm_sub_le {s : ℝ}
         ((-I) • L : Lp ℂ 2 (volume : Measure ℂ)) =ᵐ[volume] (fun z ↦ (arg (v z : ℂ) : ℂ)) := by
     obtain ⟨L, hL, hLs⟩ := hlog hXs ((mul_le_mul_of_nonneg_left hXR hC₂).trans_lt
       (hC₂R.trans_lt hCR))
-    exact ⟨L, hL, hLs, neg_I_smul_ae_eq_arg hX hL⟩
+    exact ⟨L, hL, hLs, Circle.neg_I_smul_ae_eq_arg hX hL⟩
   obtain ⟨L, hL, hLs, hLu⟩ := harg hhu hh hhR
   obtain ⟨L', hL', hLs', hLu'⟩ := harg hhu' hh' hhR'
   have h := hlip hh hh' hhR hhR' (hC₁R.trans_lt hCR) hLs hLs' hL hL'
