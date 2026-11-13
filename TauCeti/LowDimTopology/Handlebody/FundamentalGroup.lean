@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.GroupTheory.Rank
 public import TauCeti.LowDimTopology.Handlebody.Basic
 
-import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.FrontierProduct
@@ -301,24 +300,18 @@ instance : PathConnectedSpace (planarSurface g) :=
 point. -/
 theorem nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (z : planarSurface g) :
     Nonempty (FundamentalGroup (planarSurface g) z ≃* FreeGroup (Fin g)) := by
-  obtain ⟨e⟩ := planarSurfaceHomotopyEquiv.nonempty_fundamentalGroupMulEquiv z
-    (planarSurfaceHomotopyEquiv z)
   obtain ⟨f⟩ := nonempty_fundamentalGroup_compl_mulEquiv_freeGroup (finite_range _)
     (planarSurfaceHomotopyEquiv z)
-  exact ⟨e.trans <| f.trans <|
+  exact ⟨(planarSurfaceHomotopyEquiv.fundamentalGroupMulEquiv z).trans <| f.trans <|
     FreeGroup.freeGroupCongr (Equiv.ofInjective _ injective_holeCenter).symm⟩
 
 /-- The standard handlebody of genus `g` is homotopy equivalent to the closed disc with `g` holes,
 by projection. -/
 private theorem nonempty_handlebody_homotopyEquiv :
     Nonempty (handlebody g ≃ₕ planarSurface g) := by
-  have : ContractibleSpace (Icc (-1 : ℝ) 1) :=
-    (convex_Icc (-1 : ℝ) 1).contractibleSpace (nonempty_Icc.2 (by norm_num))
-  obtain ⟨e⟩ := ContractibleSpace.hequiv_unit (Icc (-1 : ℝ) 1)
   exact ⟨((Homeomorph.setCongr (Set.ext fun _ ↦ mem_handlebody.trans mem_prod.symm)).trans
-    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans <|
-    ((ContinuousMap.HomotopyEquiv.refl _).prodCongr e).trans
-      (Homeomorph.prodUnique _ _).toHomotopyEquiv⟩
+    (Homeomorph.Set.prod _ _)).toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.prodIcc (⟨1, by norm_num, le_rfl⟩ : Icc (-1 : ℝ) 1)).symm⟩
 
 instance : PathConnectedSpace (handlebody g) :=
   nonempty_handlebody_homotopyEquiv.some.symm.pathConnectedSpace
@@ -328,9 +321,8 @@ every base point. -/
 theorem nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup (x : handlebody g) :
     Nonempty (FundamentalGroup (handlebody g) x ≃* FreeGroup (Fin g)) := by
   obtain ⟨e⟩ := nonempty_handlebody_homotopyEquiv (g := g)
-  obtain ⟨φ⟩ := e.nonempty_fundamentalGroupMulEquiv x (e x)
   obtain ⟨ψ⟩ := nonempty_fundamentalGroup_planarSurface_mulEquiv_freeGroup (e x)
-  exact ⟨φ.trans ψ⟩
+  exact ⟨(e.fundamentalGroupMulEquiv x).trans ψ⟩
 
 instance (x : handlebody g) : Group.FG (FundamentalGroup (handlebody g) x) :=
   have e := (nonempty_fundamentalGroup_handlebody_mulEquiv_freeGroup x).some
