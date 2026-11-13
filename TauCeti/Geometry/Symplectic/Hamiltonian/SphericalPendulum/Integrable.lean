@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Critical
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
-public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
 import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
