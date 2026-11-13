@@ -157,6 +157,32 @@ theorem singularityCategoryQ_map_singleFunctor_map_quotientCokernel_eq_zero_iff
   exact mem_nullHomotopic_of_cokernelFunctor_map_baseChangeFunctor_map_eq_comp hw g i.hom p.hom
     (congrArg (fun f ↦ f.hom) hip)
 
+/-- For a non-zero-divisor potential, every singularity-category morphism between reduced
+cokernels placed in degree zero is induced by a matrix-factorization morphism. -/
+theorem exists_singularityCategoryQ_map_singleFunctor_map_quotientCokernel_eq
+    (hw : w ∈ nonZeroDivisors S) {X Y : MatrixFactorization S w}
+    (φ : (SingularityCategory.Q (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).obj
+        ((DerivedCategory.Bounded.singleFunctor _ 0).obj
+          (cokernelFunctor.obj
+            ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X))) ⟶
+      (SingularityCategory.Q (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).obj
+        ((DerivedCategory.Bounded.singleFunctor _ 0).obj
+          (cokernelFunctor.obj
+            ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)))) :
+    ∃ g : X ⟶ Y,
+      (SingularityCategory.Q (FGModuleCat.{u} (S ⧸ Ideal.span {w}))).map
+        ((DerivedCategory.Bounded.singleFunctor _ 0).map
+          (cokernelFunctor.map
+            ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g))) = φ := by
+  have hG := (FGModuleCat.isGorensteinProjective_iff _).2
+    (isGorensteinProjective_cokernelFunctor_obj_baseChangeFunctor_obj hw X)
+  obtain ⟨f, hf⟩ := SingularityCategory.map_surjective_of_isGorensteinProjective hG
+    (cokernelFunctor.obj
+      ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)) φ
+  obtain ⟨g, hg⟩ := exists_cokernelFunctor_map_baseChangeFunctor_map_eq hw f
+  exact ⟨g, (congrArg (fun f ↦ (SingularityCategory.Q _).map
+    ((DerivedCategory.Bounded.singleFunctor _ 0).map f)) hg).trans hf⟩
+
 namespace HomotopyCategory
 
 /-- The **singularity-category cokernel functor** sends a finite-projective matrix
@@ -168,6 +194,13 @@ def quotientSingularityCokernel :
       SingularityCategory (FGModuleCat.{u} (S ⧸ Ideal.span {w})) :=
   singularityCokernel (Ideal.Quotient.mk (Ideal.span {w}))
     (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self w))
+
+/-- The reduced-cokernel functor is the singularity-category cokernel functor along the
+canonical quotient map killing the potential. -/
+theorem quotientSingularityCokernel_def :
+    quotientSingularityCokernel (S := S) (w := w) =
+      singularityCokernel (Ideal.Quotient.mk (Ideal.span {w}))
+        (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self w)) := (rfl)
 
 instance : (quotientSingularityCokernel (S := S) (w := w)).Additive := by
   unfold quotientSingularityCokernel
@@ -213,15 +246,7 @@ theorem quotientSingularityCokernel_full (hw : w ∈ nonZeroDivisors S) :
       cokernelFunctor ⋙ DerivedCategory.Bounded.singleFunctor _ 0 ⋙
         SingularityCategory.Q _).Full := by
     refine ⟨fun {X Y} φ ↦ ?_⟩
-    have hG := (FGModuleCat.isGorensteinProjective_iff _).2
-      (isGorensteinProjective_cokernelFunctor_obj_baseChangeFunctor_obj hw X)
-    obtain ⟨f, hf⟩ := SingularityCategory.map_surjective_of_isGorensteinProjective hG
-      (cokernelFunctor.obj
-        ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)) φ
-    obtain ⟨g, hg⟩ := exists_cokernelFunctor_map_baseChangeFunctor_map_eq hw f
-    exact ⟨g, by simpa only [Functor.comp_map] using
-      (congrArg (fun f ↦ (SingularityCategory.Q _).map
-        ((DerivedCategory.Bounded.singleFunctor _ 0).map f)) hg).trans hf⟩
+    exact exists_singularityCategoryQ_map_singleFunctor_map_quotientCokernel_eq hw φ
   unfold quotientSingularityCokernel singularityCokernel
   infer_instance
 
