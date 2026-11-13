@@ -16,7 +16,7 @@ modules with no nonzero projective retracts. Indecomposability is not required: 
 sums of non-projective indecomposables. This lets stable inverse comparisons recover actual modules
 after projective summands have been excluded.
 
-This is the case of `CategoryTheory.Functor.isIso_map_iff_of_reflects_isZero_retract` for the
+This is the case of `ModuleCat.isIso_map_iff_of_reflects_isZero_retract` for the
 projective stable functor, which sends exactly the projective modules to zero.
 
 ## References
@@ -54,7 +54,7 @@ theorem isIso_projectiveStableFunctor_map_iff_of_isZero_projective_retract
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
     IsIso ((S).map f) ↔ IsIso f :=
-  (S).isIso_map_iff_of_reflects_isZero_retract f ((S).map_surjective) hM hN
+  ModuleCat.isIso_map_iff_of_reflects_isZero_retract (S) f ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
 
@@ -66,7 +66,7 @@ theorem nonempty_iso_projectiveStableFunctor_obj_iff_of_isZero_projective_retrac
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
     Nonempty ((S).obj M ≅ (S).obj N) ↔ Nonempty (M ≅ N) :=
-  (S).nonempty_iso_obj_iff_of_reflects_isZero_retract M N ((S).map_surjective)
+  ModuleCat.nonempty_iso_obj_iff_of_reflects_isZero_retract (S) M N ((S).map_surjective)
     ((S).map_surjective) hM hN
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
     (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
