@@ -449,12 +449,12 @@ theorem prodEquiv_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
   have hσ' : ∀ i, (A.prod h).sectionChartData.chartValueL μ p k i
       (ofContMDiffSection (A.prod h) μ p k σ) =ᵐ[μ.restrict (A.image i)] (A.prod h).coord i σ :=
     fun i ↦ (ae_restrict_image_prod_iff (A := A) (h := h) (i := i)).1
-      (chartValueL_ofContMDiffSection_ae_coord (A.prod h) μ p k σ i)
+      (chartValueL_ofContMDiffSection_ae (A.prod h) μ p k σ i)
   have hs : (fun x ↦ (σ x).1) = s := funext fun x ↦ by rw [hσ]
   have ht : (fun x ↦ (σ x).2) = t := funext fun x ↦ by rw [hσ]
   refine Prod.ext (SobolevSection.eq_of_ae_eq_coord (s := s) (fun i ↦ ?_)
-    (chartValueL_ofContMDiffSection_ae_coord A μ p k s)) (SobolevSection.eq_of_ae_eq_coord (s := t)
-      (fun i ↦ ?_) (chartValueL_ofContMDiffSection_ae_coord (A.ofBaseSet h) μ p k t))
+    (chartValueL_ofContMDiffSection_ae A μ p k s)) (SobolevSection.eq_of_ae_eq_coord (s := t)
+      (fun i ↦ ?_) (chartValueL_ofContMDiffSection_ae (A.ofBaseSet h) μ p k t))
   · rw [← hs]
     exact chartValueL_prodEquiv_fst_ae_coord (hσ' i)
   · rw [← ht]

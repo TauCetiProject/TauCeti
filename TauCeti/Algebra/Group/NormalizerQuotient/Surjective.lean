@@ -69,7 +69,7 @@ noncomputable def normalizerQuotientEquivOfComapEq (H : Subgroup G) (L : Subgrou
   let ψ := H.normalizerQuotientLift φ fun g hg ↦ (hker g).mpr hg
   exact MulEquiv.ofBijective ψ
     ⟨(H.normalizerQuotientLift_injective_iff _ _).mpr hker,
-      H.normalizerQuotientLift_surjective_of_surjective _ _
+      (H.normalizerQuotientLift_surjective_iff _ _).mpr
         (L.normalizerQuotientMk_surjective.comp
           (H.normalizerHomOfComapEq_surjective L f hf hH))⟩
 

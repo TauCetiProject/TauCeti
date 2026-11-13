@@ -51,7 +51,7 @@ coefficient identification `k ⊗ k ≅ k` is the left unitor, so it multiplies 
 def singularHomologyCrossBilinear (p q n : ℕ) (h : p + q = n) :
     ((singularChains k).obj X).homology p →ₗ[k]
       ((singularChains k).obj Y).homology q →ₗ[k]
-        ((singularChains k).obj (TopCat.of (X × Y))).homology n :=
+        ((singularChains k).obj (of (X × Y))).homology n :=
   TensorProduct.curry (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) p q n h ≫
     ((singularHomologyFunctor (ModuleCat.{w} k) n).map (λ_ (𝟙_ _)).hom).app (X ⊗ Y)).hom
 
@@ -96,14 +96,14 @@ theorem singularHomologyCrossBilinear_naturality (f : X ⟶ X') (g : Y ⟶ Y')
 /-- Naturality of the bilinear cross product in the second space, with the first space fixed. -/
 theorem singularHomologyCrossBilinear_naturality_right {A B B' : Type w} [TopologicalSpace A]
     [TopologicalSpace B] [TopologicalSpace B'] (g : C(B, B')) (p q n : ℕ) (h : p + q = n)
-    (a : ((singularChains k).obj (TopCat.of A)).homology p)
-    (b : ((singularChains k).obj (TopCat.of B)).homology q) :
+    (a : ((singularChains k).obj (of A)).homology p)
+    (b : ((singularChains k).obj (of B)).homology q) :
     ContinuousMap.singularHomologyMap k n ((ContinuousMap.id A).prodMap g)
-        (singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B) p q n h a b) =
-      singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B') p q n h a
+        (singularHomologyCrossBilinear k (of A) (of B) p q n h a b) =
+      singularHomologyCrossBilinear k (of A) (of B') p q n h a
         (ContinuousMap.singularHomologyMap k q g b) := by
-  simpa only [TopCat.hom_id, TopCat.hom_ofHom, ContinuousMap.singularHomologyMap_id] using
-    singularHomologyCrossBilinear_naturality k (𝟙 (TopCat.of A)) (TopCat.ofHom g) p q n h a b
+  simpa only [hom_id, hom_ofHom, ContinuousMap.singularHomologyMap_id] using
+    singularHomologyCrossBilinear_naturality k (𝟙 (of A)) (ofHom g) p q n h a b
 
 /-- **The second projection kills cross products with positive-degree classes.** For
 `a ∈ Hₚ(A; k)` with `p ≠ 0` and any `b ∈ H_q(B; k)`, the image of `a × b` under the projection
@@ -111,10 +111,10 @@ theorem singularHomologyCrossBilinear_naturality_right {A B B' : Type w} [Topolo
 @[simp]
 theorem singularHomologyMap_snd_singularHomologyCrossBilinear_eq_zero {A B : Type w}
     [TopologicalSpace A] [TopologicalSpace B] {p q n : ℕ} (h : p + q = n) (hp : p ≠ 0)
-    (a : ((singularChains k).obj (TopCat.of A)).homology p)
-    (b : ((singularChains k).obj (TopCat.of B)).homology q) :
+    (a : ((singularChains k).obj (of A)).homology p)
+    (b : ((singularChains k).obj (of B)).homology q) :
     ContinuousMap.singularHomologyMap k n (ContinuousMap.snd : C(A × B, B))
-        (singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B) p q n h a b) = 0 := by
+        (singularHomologyCrossBilinear k (of A) (of B) p q n h a b) = 0 := by
   obtain ⟨p, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hp
   let c : C(A, PUnit.{w + 1}) := ContinuousMap.const A PUnit.unit
   have hsnd : (ContinuousMap.snd : C(A × B, B)) =
@@ -125,10 +125,10 @@ theorem singularHomologyMap_snd_singularHomologyCrossBilinear_eq_zero {A B : Typ
   -- for the contractible point.
   have hc : ContinuousMap.singularHomologyMap k (p + 1) c a = 0 :=
     (ModuleCat.subsingleton_singularHomology_of_contractibleSpace (𝟙_ (ModuleCat.{w} k))
-      (TopCat.of PUnit.{w + 1}) p).elim _ _
-  have hnat := singularHomologyCrossBilinear_naturality k (TopCat.ofHom c)
-    (𝟙 (TopCat.of B)) (p + 1) q n h a b
-  simp only [TopCat.hom_ofHom, TopCat.hom_id, ContinuousMap.singularHomologyMap_id, hc,
+      (of PUnit.{w + 1}) p).elim _ _
+  have hnat := singularHomologyCrossBilinear_naturality k (ofHom c)
+    (𝟙 (of B)) (p + 1) q n h a b
+  simp only [hom_ofHom, hom_id, ContinuousMap.singularHomologyMap_id, hc,
     LinearMap.map_zero₂] at hnat
   rw [hsnd, ContinuousMap.singularHomologyMap_comp, hnat, map_zero]
 
@@ -138,10 +138,10 @@ theorem singularHomologyMap_snd_singularHomologyCrossBilinear_eq_zero {A B : Typ
 @[simp]
 theorem singularHomologyMap_fst_singularHomologyCrossBilinear_eq_zero {A B : Type w}
     [TopologicalSpace A] [TopologicalSpace B] {p q n : ℕ} (h : p + q = n) (hq : q ≠ 0)
-    (a : ((singularChains k).obj (TopCat.of A)).homology p)
-    (b : ((singularChains k).obj (TopCat.of B)).homology q) :
+    (a : ((singularChains k).obj (of A)).homology p)
+    (b : ((singularChains k).obj (of B)).homology q) :
     ContinuousMap.singularHomologyMap k n (ContinuousMap.fst : C(A × B, A))
-        (singularHomologyCrossBilinear k (TopCat.of A) (TopCat.of B) p q n h a b) = 0 := by
+        (singularHomologyCrossBilinear k (of A) (of B) p q n h a b) = 0 := by
   obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
   let c : C(B, PUnit.{w + 1}) := ContinuousMap.const B PUnit.unit
   have hfst : (ContinuousMap.fst : C(A × B, A)) =
@@ -150,7 +150,7 @@ theorem singularHomologyMap_fst_singularHomologyCrossBilinear_eq_zero {A B : Typ
   -- As above, `H_{q+1}` of the point with coefficients in `k` vanishes.
   have hc : ContinuousMap.singularHomologyMap k (q + 1) c b = 0 :=
     (ModuleCat.subsingleton_singularHomology_of_contractibleSpace (𝟙_ (ModuleCat.{w} k))
-      (TopCat.of PUnit.{w + 1}) q).elim _ _
+      (of PUnit.{w + 1}) q).elim _ _
   rw [hfst, ContinuousMap.singularHomologyMap_comp, singularHomologyCrossBilinear_naturality_right,
     hc, map_zero, map_zero]
 

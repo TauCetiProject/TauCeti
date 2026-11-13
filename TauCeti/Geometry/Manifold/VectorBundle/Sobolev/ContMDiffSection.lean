@@ -36,8 +36,8 @@ the components of `s` (`TauCeti.SectionChartData.ofComponents`).
 
 ## Main results
 
-* `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae_coord`: the chart data of the Sobolev
-  section of a `Cᵏ` section are its chart coordinates.
+* `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`: the chart data are the chart
+  coordinates of the section.
 * `TauCeti.SobolevSection.norm_ofContMDiffSection_le`: the Sobolev norm is bounded by the `Lᵖ`
   norms of the classical derivatives of the chart components.
 * `TauCeti.SobolevSection.ofContMDiffSection_injective`: distinct `Cᵏ` sections give distinct
@@ -97,9 +97,9 @@ def ofContMDiffSection : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] SobolevSecti
       map_smul' := ContMDiffSection.coe_smul }
     (exists_value_ae_eq_coord A μ p k)
 
-/-- The chart data of the Sobolev section of a `Cᵏ` section `s` are the chart coordinates of `s`.
--/
-theorem chartValueL_ofContMDiffSection_ae_coord (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.coord i s`, almost everywhere on the image of the chart. -/
+theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
     A.sectionChartData.chartValueL μ p k i (ofContMDiffSection A μ p k s)
       =ᵐ[μ.restrict (A.image i)] A.coord i s :=
   (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).trans

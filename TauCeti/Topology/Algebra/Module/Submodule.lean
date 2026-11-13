@@ -34,6 +34,9 @@ right generality, is not keyed on `Submodule`.
   ambient module rather than a topological group structure.
 * `AddSubgroup.discreteTopology_toIntSubmodule`: the `ℤ`-submodule of a discrete additive
   subgroup is discrete, so that a discrete subgroup can be fed to the `ℤ`-lattice API.
+* `Submodule.discreteTopology_toAddSubgroup`: conversely, the additive subgroup of a discrete
+  submodule is discrete, so that the quotient group by a lattice carries the manifold structure
+  of a quotient by a discrete subgroup.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
 -/
 
@@ -57,6 +60,13 @@ instance AddSubgroup.discreteTopology_toIntSubmodule {M : Type*} [AddCommGroup M
     [TopologicalSpace M] (H : AddSubgroup M) [DiscreteTopology H] :
     DiscreteTopology H.toIntSubmodule :=
   inferInstanceAs (DiscreteTopology H)
+
+/-- **The additive subgroup of a discrete submodule is discrete**: the two carry the same
+subspace topology. -/
+instance Submodule.discreteTopology_toAddSubgroup {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (p : Submodule R M) [DiscreteTopology p] :
+    DiscreteTopology p.toAddSubgroup :=
+  inferInstanceAs (DiscreteTopology p)
 
 /-- The product of two discrete submodules is a discrete submodule of the product module. -/
 instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [AddCommMonoid M]
