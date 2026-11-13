@@ -41,7 +41,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The integral of a product of affine Gaussian observables is a sum of even centered moments,
 weighted by the means of the remaining factors. No independence or nondegeneracy is assumed. -/
-theorem integral_prod_add_dual_eq_sum_even (μ : Measure E) [IsGaussian μ]
+theorem integral_prod_add_dual_eq_sum_even_of_isGaussian (μ : Measure E) [IsGaussian μ]
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (L : ι → StrongDual ℝ E) (c : ι → ℝ) :
     (∫ x, ∏ i ∈ s, (L i x + c i) ∂μ) =
       ∑ t ∈ s.powerset with Even t.card,
@@ -72,7 +72,7 @@ theorem integral_prod_add_dual_eq_sum_even (μ : Measure E) [IsGaussian μ]
 
 /-- The integral of a monomial in affine Gaussian observables is a sum of even centered
 moments weighted by binomial coefficients and powers of the shifted means `μ[L i] + c i`. -/
-theorem integral_prod_pow_add_dual_eq_sum_even (μ : Measure E) [IsGaussian μ]
+theorem integral_prod_pow_add_dual_eq_sum_even_of_isGaussian (μ : Measure E) [IsGaussian μ]
     {ι : Type*} [Fintype ι] [DecidableEq ι]
     (L : ι → StrongDual ℝ E) (c : ι → ℝ) (n : ι → ℕ) :
     (∫ x, ∏ i, (L i x + c i) ^ n i ∂μ) =
@@ -140,7 +140,7 @@ theorem integral_prod_sub_multivariateGaussian_eq_sum_even
       ∑ t ∈ s.powerset with Even t.card,
         (∏ k ∈ s \ t, (m (j k) - c (j k))) *
           ∫ x, ∏ k ∈ t, (x (j k) - m (j k)) ∂multivariateGaussian m S := by
-  have h := Measure.integral_prod_add_dual_eq_sum_even
+  have h := Measure.integral_prod_add_dual_eq_sum_even_of_isGaussian
     (multivariateGaussian m S) s (fun k ↦ EuclideanSpace.proj (j k)) (fun k ↦ -c (j k))
   simp_rw [IsGaussian.integral_dual, integral_id_multivariateGaussian] at h
   simpa only [EuclideanSpace.coe_proj, sub_eq_add_neg] using h
@@ -154,7 +154,7 @@ theorem integral_prod_pow_sub_multivariateGaussian_eq_sum_even
       ∑ k ∈ Fintype.piFinset (fun i ↦ Finset.range (n i + 1)) with Even (∑ i, k i),
         (∏ i, ((n i).choose (k i) : ℝ) * (m i - c i) ^ (n i - k i)) *
           ∫ x, ∏ i, (x i - m i) ^ k i ∂multivariateGaussian m S := by
-  have h := Measure.integral_prod_pow_add_dual_eq_sum_even
+  have h := Measure.integral_prod_pow_add_dual_eq_sum_even_of_isGaussian
     (multivariateGaussian m S) EuclideanSpace.proj (fun i ↦ -c i) n
   simp_rw [IsGaussian.integral_dual, integral_id_multivariateGaussian] at h
   simpa only [EuclideanSpace.coe_proj, sub_eq_add_neg] using h
