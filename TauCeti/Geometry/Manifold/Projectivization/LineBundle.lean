@@ -330,7 +330,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
   have hi := (mem_affineOpen_iff _ _).1
     ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
   have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
-    rw [← ha, Units.smul_def, hP.eval_smul, smul_eq_mul]
+    rw [← ha, Units.smul_def, hP.eval_smul]
   simp [homogeneousSection, hrep, hi]
 
 /-- **Distinct homogeneous polynomials give distinct sections.** A homogeneous polynomial of
@@ -344,7 +344,7 @@ theorem homogeneousSection_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1))
     by_cases hv : v = 0
     · have hw : (Pi.single 0 1 : Fin (n + 1) → 𝕜) ≠ 0 := by simp
       rw [hv, ← zero_smul 𝕜 (Pi.single 0 1 : Fin (n + 1) → 𝕜),
-        hP.eval_smul, hz _ hw, smul_zero]
+        hP.eval_smul, hz _ hw, mul_zero]
     · exact hz v hv
   · funext x
     simp [homogeneousSection, h]

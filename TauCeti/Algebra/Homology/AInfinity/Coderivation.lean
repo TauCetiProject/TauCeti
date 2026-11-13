@@ -72,7 +72,7 @@ The relation is required only on homogeneous inputs.  Requiring it on arbitrary 
 arbitrarily supplied degree family would be inconsistent, since the suspension sign depends on
 those degrees. -/
 def IsSuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) : Prop :=
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) : Prop :=
   ∀ (n : ℕ) (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A),
     (∀ i < n, x i ∈ G.piece (d i)) →
       F (ReducedTensorWords.of R A ⟨n, hn⟩
@@ -83,7 +83,7 @@ def IsSuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R]
 a reusable `Iff`: this exposes the body of the predicate to consumers in other modules, for which
 the definition's body is not exposed. -/
 theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) :
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) :
     IsSuspension G F m ↔
       ∀ (n : ℕ) (hn : 0 < n) (d : ℕ → ℤ) (x : ℕ → A),
         (∀ i < n, x i ∈ G.piece (d i)) →
@@ -96,14 +96,15 @@ theorem isSuspension_def (G : InternalGrading R A) (F : ReducedTensorWords R A �
 after twisting the `i`-th letter by the Koszul twist of parameter `n - 1 - i`; on homogeneous
 letters these twists multiply to the suspension sign `(-1) ^ suspExp n d`. -/
 noncomputable def suspensionTaylor (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) : ReducedTensorWords R A →ₗ[R] A :=
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A)
+        A) : ReducedTensorWords R A →ₗ[R] A :=
   DirectSum.toModule R {n : ℕ // 0 < n} A fun n ↦
     PiTensorProduct.lift ((m n.1).compLinearMap fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i))
 
 /-- The suspension Taylor map on a pure tensor word. -/
 @[simp]
 theorem suspensionTaylor_of_tprod (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) (n : {n : ℕ // 0 < n})
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) (n : {n : ℕ // 0 < n})
     (x : Fin n.1 → A) :
     suspensionTaylor G m (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
       m n.1 fun i ↦ G.koszulTwist ((n.1 : ℤ) - 1 - i) (x i) := by
@@ -112,7 +113,7 @@ theorem suspensionTaylor_of_tprod (G : InternalGrading R A)
 
 /-- `suspensionTaylor G m` is a Taylor map suspending `m`, so every family of operations has one. -/
 theorem isSuspension_suspensionTaylor (G : InternalGrading R A)
-    (m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A) :
+    (m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A) :
     IsSuspension G (suspensionTaylor G m) m := by
   intro n hn d x hx
   rw [suspensionTaylor_of_tprod]
@@ -122,12 +123,13 @@ theorem isSuspension_suspensionTaylor (G : InternalGrading R A)
     rw [G.koszulTwist_apply_of_mem (hx i i.isLt), negOnePowCast_eq_intCast]
   rw [htwist, MultilinearMap.map_smul_univ, evalNat_suspend, evalNat_def, suspExp_def,
     negOnePowCast_sum, ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R _) n]
+  simp only [RingHom.id_apply]
 
 /-- Two Taylor maps which suspend the same operations are equal.  Thus retaining both the
 suspended Taylor map and the unsuspended operations does not add unconstrained data. -/
 theorem IsSuspension.taylor_eq {G : InternalGrading R A}
     {F F' : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hF : IsSuspension G F m) (hF' : IsSuspension G F' m) : F = F' := by
   apply ReducedTensorWords.linearMap_ext
   intro n z
@@ -151,7 +153,7 @@ words in the suspended grading to suspended letters.  This is the homogeneity in
 square of its bar coderivation an ordinary coderivation. -/
 theorem IsSuspension.isHomogeneous {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
     LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
@@ -197,7 +199,7 @@ zero.  Suspending a desuspended Taylor map recovers that Taylor map
 (`suspensionTaylor_desuspension`); conversely, operations with zero arity-zero term are recovered
 by desuspending any Taylor map that suspends them (`IsSuspension.eq_desuspension`). -/
 noncomputable def desuspension (G : InternalGrading R A) (F : ReducedTensorWords R A →ₗ[R] A)
-    (n : ℕ) : MultilinearMap R (fun _ : Fin n ↦ A) A :=
+    (n : ℕ) : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A :=
   if hn : 0 < n then
     (PiTensorProduct.lift.symm (F ∘ₗ ReducedTensorWords.of R A ⟨n, hn⟩)).compLinearMap
       fun i ↦ G.koszulTwist ((n : ℤ) - 1 - i)
@@ -240,7 +242,8 @@ theorem isSuspension_desuspension (G : InternalGrading R A) (F : ReducedTensorWo
 together with `isSuspension_desuspension`, the uncurved operations and their Taylor maps determine
 each other. -/
 theorem IsSuspension.eq_desuspension {G : InternalGrading R A}
-    {F : ReducedTensorWords R A →ₗ[R] A} {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {F : ReducedTensorWords R A →ₗ[R] A} {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n
+        ↦ A) A}
     (hFm : IsSuspension G F m) (hm0 : m 0 = 0) : m = desuspension G F := by
   funext n
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -253,14 +256,17 @@ theorem IsSuspension.eq_desuspension {G : InternalGrading R A}
     rw [← LinearMap.comp_apply (G.koszulTwist _), InternalGrading.koszulTwist_comp_self,
       LinearMap.id_apply]
 
-/-- The desuspension of a Taylor map of degree one for the suspended grading has, in each positive
+/-- The desuspension of a Taylor map of degree one for the suspended grading has, in each
 arity `n`, the degree `2 - n` of an `A∞` operation.  This is the converse of
 `IsSuspension.isHomogeneous`. -/
 theorem isHomogeneous_desuspension {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
     (hF : LinearMap.IsHomogeneous F (ReducedTensorWords.gradedPiece (G.shift 1))
-      (G.shift 1).piece 1) {n : ℕ} (hn : 0 < n) :
+      (G.shift 1).piece 1) {n : ℕ} :
     MultilinearMap.IsHomogeneous (desuspension G F n) (fun _ ↦ G.piece) G.piece (2 - n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [desuspension_zero]
+    exact MultilinearMap.isHomogeneous_zero _ _ _
   rw [MultilinearMap.isHomogeneous_def]
   intro d x hx
   rw [desuspension_apply G F hn]
@@ -281,7 +287,7 @@ suspended Stasheff sum.  The input elements are recorded with their unsuspended 
 therefore have degrees `d i - 1` for the shifted grading used by the coderivation. -/
 theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     {n : ℕ}
     (hm : ∀ s, 0 < s → s ≤ n →
@@ -350,7 +356,7 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
 by the single suspension sign of the whole input tuple. -/
 theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheffSum {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     {n : ℕ}
     (hm : ∀ s, 0 < s → s ≤ n →
@@ -368,7 +374,7 @@ theorem IsSuspension.taylorComponent_comp_self_eq_smul_stasheffSum {G : Internal
 when the corresponding unsuspended Stasheff sum vanishes. -/
 theorem IsSuspension.taylorComponent_comp_self_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     {n : ℕ}
     (hm : ∀ s, 0 < s → s ≤ n →
@@ -387,7 +393,7 @@ theorem IsSuspension.taylorComponent_comp_self_eq_zero_iff {G : InternalGrading 
 /-- The arity-one component of `b ∘ b` vanishes exactly when `m₁ m₁ = 0`. -/
 theorem IsSuspension.taylorComponent_comp_self_one_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ s, 0 < s → s ≤ 1 →
       MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
@@ -407,7 +413,7 @@ theorem IsSuspension.taylorComponent_comp_self_one_eq_zero_iff {G : InternalGrad
 rule for `m₂`, with sign `(-1)^(d 0)` on the second differentiated input. -/
 theorem IsSuspension.taylorComponent_comp_self_two_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ s, 0 < s → s ≤ 2 →
       MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
@@ -424,7 +430,7 @@ theorem IsSuspension.taylorComponent_comp_self_two_eq_zero_iff {G : InternalGrad
 Stasheff expression vanishes, including the two degree-dependent Koszul factors. -/
 theorem IsSuspension.taylorComponent_comp_self_three_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ s, 0 < s → s ≤ 3 →
       MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
@@ -444,7 +450,7 @@ theorem IsSuspension.taylorComponent_comp_self_three_eq_zero_iff {G : InternalGr
 Stasheff expression vanishes, with all four unary-insertion signs explicit. -/
 theorem IsSuspension.taylorComponent_comp_self_four_eq_zero_iff {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ s, 0 < s → s ≤ 4 →
       MultilinearMap.IsHomogeneous (m s) (fun _ ↦ G.piece) G.piece (2 - s))
@@ -470,7 +476,7 @@ element into a finite sum of homogeneous elements, testing those inputs detects 
 map `b ∘ b`, not merely its restriction to homogeneous words. -/
 theorem IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero {G : InternalGrading R A}
     {F : ReducedTensorWords R A →ₗ[R] A}
-    {m : ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A}
+    {m : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A}
     (hFm : IsSuspension G F m)
     (hm : ∀ n, 0 < n → MultilinearMap.IsHomogeneous (m n) (fun _ ↦ G.piece) G.piece (2 - n)) :
     ReducedTensorWords.gradedCoderiv (G.shift 1) F 1 ∘ₗ
