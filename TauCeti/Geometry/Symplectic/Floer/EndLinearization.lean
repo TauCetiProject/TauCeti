@@ -61,7 +61,7 @@ over `[a, b] × [0, 1]`, in the norms `g_t = ω(·, J_t(x(t)) ·)`, uniformly in
 follows from the estimate of the stationary cylinder operator
 (`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`),
 which survives perturbations that are small relative to `‖∂t ξ‖ + ‖ξ‖`. Since `g_t` is uniformly
-equivalent to the norm of `V` and `S` is bounded, for `u` of class `C¹` this gives
+equivalent to the norm of `V` and `S` is bounded, this gives
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D_u ξ‖²`
 (`SymplecticForm.exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearization`).
 Together with an interior estimate on the compact part of the domain, this is the estimate on the
@@ -349,27 +349,10 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
     (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
 
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The pointwise comparison behind the norm form of the end estimate: if `m ‖w‖² ≤ g(w)` for every
-`w` and `‖w‖ ≤ |B| ‖v‖`, then `m (‖x‖² + ‖y‖² + ‖v‖²) ≤ (2 + 2 B²) (g(x) + g(y - w) + g(v))`. -/
-private theorem mul_norm_sq_add_le_mul_add {m B : ℝ} (hm : 0 ≤ m) {g : V → ℝ}
-    (hg : ∀ w, m * ‖w‖ ^ 2 ≤ g w) {x y v w : V} (hw : ‖w‖ ≤ |B| * ‖v‖) :
-    m * (‖x‖ ^ 2 + ‖y‖ ^ 2 + ‖v‖ ^ 2) ≤ (2 + 2 * B ^ 2) * (g x + g (y - w) + g v) := by
-  have h₀ (z : V) : 0 ≤ g z := (mul_nonneg hm (sq_nonneg _)).trans (hg z)
-  have hy : ‖y‖ ≤ ‖y - w‖ + |B| * ‖v‖ := by
-    have := norm_le_norm_add_norm_sub' y w
-    linarith [norm_sub_rev y w]
-  have hy2 : ‖y‖ ^ 2 ≤ 2 * (‖y - w‖ ^ 2 + B ^ 2 * ‖v‖ ^ 2) := by
-    refine (pow_le_pow_left₀ (norm_nonneg _) hy 2).trans (add_sq_le.trans_eq ?_)
-    rw [mul_pow, sq_abs]
-  linarith [hg x, hg (y - w), hg v, mul_le_mul_of_nonneg_left hy2 hm,
-    mul_le_mul_of_nonneg_left (hg v) (sq_nonneg B), mul_nonneg (sq_nonneg B) (h₀ x),
-    mul_nonneg (sq_nonneg B) (h₀ (y - w)), h₀ x, h₀ (y - w), h₀ v]
-
 /-- **The `L²` estimate of the linearized operator on an end, in the norm of `V`.** Under the
-hypotheses of `exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`, with `u` of
-class `C¹`, there are a constant `C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ`
-of period one in `t`, vanishing on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
+hypotheses of `exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`, there are a
+constant `C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`,
+vanishing on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
 
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D_u ξ‖²`
 
@@ -385,7 +368,8 @@ theorem exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearizat
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ} {u : ℝ × ℝ → V}
-    (hu : ContDiff ℝ 1 u) (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
     (hδ : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
     ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
@@ -398,70 +382,23 @@ theorem exists_mem_forall_setIntegral_norm_sq_le_mul_setIntegral_floerLinearizat
               (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z‖ ^ 2 := by
   obtain ⟨C₀, hC₀, U, hU, hest⟩ :=
     ω.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization hX hH hHp hx hxp hnd hJ
-      hJx (Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt) hux hδ
+      hJx hu hux hδ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
     (hJ.continuous.comp (continuous_fst.prodMk (hxc.comp continuous_fst))).clm_apply
       continuous_snd
-  have he : Continuous fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap :=
-    hJ.continuous.comp (continuous_id.prodMk hxc)
-  -- On `t ∈ [0, 1]`, `m ‖v‖² ≤ g_t(v, v) ≤ M ‖v‖²` and `‖S_t‖ ≤ |B|`.
-  obtain ⟨m, hm, M, hM, hmM⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) he.continuousOn fun t _ ↦ (hJx t).tames
-  have hSc := ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc
-  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
-    hSc.continuousOn
-  refine ⟨(2 + 2 * B ^ 2) * C₀ * M / m, by positivity, U, hU,
-    fun ξ hξ hper a b hab hab' ha hb ↦ ?_⟩
-  set R := Icc a b ×ˢ Icc (0 : ℝ) 1
-  have hR : IsCompact R := isCompact_Icc.prod isCompact_Icc
-  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  set D := ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-    (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ
-  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv (by norm_num)
-  have hs : Continuous fun z ↦ fderiv ℝ ξ z stdComplexLineReal := hdξ.clm_apply continuous_const
-  have ht : Continuous fun z ↦ fderiv ℝ ξ z stdComplexLineImag := hdξ.clm_apply continuous_const
-  have hDc : Continuous D := ω.continuous_floerLinearization
-    (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)) contDiff_const
-    (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)) hu (hξ.of_le one_le_two)
-  set Jx : ℝ → AlmostComplexStructure V := fun t ↦ J t (x t)
-  have hG := (Floer.continuous_associatedBilinForm_add_apply_self (ω := ω) (J := Jx) hJxc hSc
-    (hξ.of_le one_le_two)).add
-    (Floer.continuous_associatedBilinForm_apply_self (ω := ω) (J := Jx) hJxc hξ.continuous)
-  have hgD := Floer.continuous_associatedBilinForm_apply_self (ω := ω) (J := Jx) hJxc hDc
-  have h₁ := hest hξ hper hab hab' ha hb
-  -- The metrics dominate the squared norms, with `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 B² ‖ξ‖²`.
-  have h₂ : m * ∫ z in R, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-      (2 + 2 * B ^ 2) * ∫ z in R,
-        ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
-            (fderiv ℝ ξ z stdComplexLineReal) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
-            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
-          ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) := by
-    rw [← integral_const_mul, ← integral_const_mul]
-    exact setIntegral_mono_on ((continuous_const.mul (((hs.norm.pow 2).add (ht.norm.pow 2)).add
-      (hξ.continuous.norm.pow 2))).continuousOn.integrableOn_compact hR)
-      ((continuous_const.mul hG).continuousOn.integrableOn_compact hR) hR.measurableSet
-      fun z ⟨_, hz⟩ ↦ mul_norm_sq_add_le_mul_add hm.le
-        (g := fun w ↦ ω.associatedBilinForm (J z.2 (x z.2)) w w) (fun w ↦ (hmM z.2 hz w).1)
-        ((le_opNorm _ _).trans (by gcongr; exact (hB z.2 hz).trans (le_abs_self B)))
-  -- The metric along `x` is bounded by `M` times the squared norm.
-  have h₃ : ∫ z in R, ω.associatedBilinForm (J z.2 (x z.2)) (D z) (D z) ≤
-      M * ∫ z in R, ‖D z‖ ^ 2 := by
-    rw [← integral_const_mul]
-    exact setIntegral_mono_on (hgD.continuousOn.integrableOn_compact hR)
-      ((continuous_const.mul (hDc.norm.pow 2)).continuousOn.integrableOn_compact hR)
-      hR.measurableSet fun z ⟨_, hz⟩ ↦ (hmM z.2 hz (D z)).2
-  have h₄ : m * ∫ z in R, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
-      (2 + 2 * B ^ 2) * C₀ * M * ∫ z in R, ‖D z‖ ^ 2 := by
-    calc _ ≤ _ := h₂
-      _ ≤ (2 + 2 * B ^ 2) * (C₀ * (M * ∫ z in R, ‖D z‖ ^ 2)) := by
-        gcongr
-        exact h₁.trans (by gcongr)
-      _ = _ := by ring
-  rw [div_mul_eq_mul_div, le_div_iff₀ hm]
-  linarith
+  -- The estimate in the metrics `g_t` passes to the norm of `V`.
+  obtain ⟨C, hC, hnorm⟩ :=
+    Floer.exists_forall_setIntegral_norm_sq_le_mul_setIntegral_of_setIntegral_le
+      (fun t ↦ (hJx t).tames) hJxc (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) hC₀
+  refine ⟨C, hC, U ∩ {s | ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t)}, inter_mem hU hu,
+    fun ξ hξ hper a b hab hU' ha hb ↦ hnorm (hξ.of_le one_le_two) ?_
+      (hest hξ hper hab (hU'.trans inter_subset_left) ha hb)⟩
+  -- `D_u ξ` is continuous where `u` is `C¹`.
+  exact ω.continuousOn_floerLinearization
+    (fun _ _ ↦ (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
+    (fun _ _ ↦ contDiffAt_const)
+    (fun _ _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
+    (fun z hz ↦ (hU' hz.1).2 z.2 hz.2) fun _ _ ↦ (hξ.of_le one_le_two).contDiffAt
 
 end TauCeti.SymplecticForm
