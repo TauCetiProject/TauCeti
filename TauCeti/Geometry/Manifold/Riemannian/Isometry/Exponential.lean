@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Geodesic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 
 /-!
 # Maximal geodesics and the exponential map under Riemannian isometries
@@ -50,6 +51,9 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
   intertwines the maximal geodesics and the exponential maps.
 * `RiemannianIsometry.image_riemannianExp_image_ball`: an isometry carries `exp_p '' ball 0 r` onto
   `exp_{Φ p} '' ball 0 r`.
+* `RiemannianIsometry.riemannianLog_apply`: if `dΦ_p` maps a normal domain `U` at `p` into a normal
+  domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` on the normal neighbourhood
+  `exp_p '' U`.
 * `TauCeti.riemannianExp_mfderiv_smul`, `TauCeti.smul_riemannianExp_image_ball`: for an element `a`
   of a group acting by smooth maps, whose differential preserves the metric,
   `exp_{a • x} (d(a •)_x v) = a • exp_x v`, and `a` carries `exp_x '' ball 0 r` onto
@@ -239,6 +243,19 @@ theorem image_riemannianExp_image_ball [I.Boundaryless] [J.Boundaryless]
   rw [map_zero] at h
   rw [← h, image_image, image_image]
   exact image_congr fun v _ ↦ (Φ.riemannianExp_mfderiv p v).symm
+
+/-- A smooth Riemannian isometry intertwines Riemannian logarithms: if `dΦ_p` maps a normal domain
+`U` at `p` into a normal domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` for every
+`q` in the normal neighbourhood `exp_p '' U`. -/
+theorem riemannianLog_apply [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    (Φ : RiemannianIsometry I J M N) {p : M} {U : Set (TangentSpace I p)}
+    {V : Set (TangentSpace J (Φ p))} (hU : IsNormalDomain I M p U)
+    (hV : IsNormalDomain J N (Φ p) V) (hUV : MapsTo (mfderiv I J Φ p) U V) {q : M}
+    (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog J N (Φ p) V (Φ q) = mfderiv I J Φ p (riemannianLog I M p U q) := by
+  obtain ⟨v, hv, rfl⟩ := hq
+  rw [← Φ.riemannianExp_mfderiv, hU.riemannianLog_riemannianExp hv,
+    hV.riemannianLog_riemannianExp (hUV hv)]
 
 end RiemannianIsometry
 

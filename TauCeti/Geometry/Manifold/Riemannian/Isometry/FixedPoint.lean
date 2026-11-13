@@ -23,7 +23,9 @@ lemmas, and their versions without a fixed point, live in the `Isometry.Tangent`
 
 This file adds the inverse chart. On a normal domain `U` at `x` mapped into itself by `d(a •)_x`,
 the Riemannian logarithm intertwines `a` with its differential on the normal neighbourhood
-`exp_x '' U`: `log_x (a • y) = d(a •)_x (log_x y)` (`TauCeti.riemannianLog_smul_of_smul_eq`).
+`exp_x '' U`: `log_x (a • y) = d(a •)_x (log_x y)` (`TauCeti.riemannianLog_smul_of_smul_eq`), the
+fixed-point case of the naturality of the logarithm under Riemannian isometries
+(`TauCeti.RiemannianIsometry.riemannianLog_apply`).
 Consequently, if every element of `G` acts isometrically and fixes `x`, there is a normal ball
 `B = ball 0 r` at `x` that is invariant under every `d(a •)_x`, whose normal neighbourhood
 `exp_x '' B` is a `G`-invariant open neighbourhood of `x`, and on which `exp_x` and `log_x`
@@ -72,9 +74,12 @@ theorem riemannianLog_smul_of_smul_eq {a : G}
     {x : M} (hx : a • x = x) {U : Set (TangentSpace I x)} (hU : IsNormalDomain I M x U)
     (hUa : MapsTo (mfderiv I I (a • ·) x) U U) {y : M} (hy : y ∈ riemannianExp I M x '' U) :
     riemannianLog I M x U (a • y) = mfderiv I I (a • ·) x (riemannianLog I M x U y) := by
-  obtain ⟨v, hv, rfl⟩ := hy
-  rw [← riemannianExp_mfderiv_smul_of_smul_eq ha hx v, hU.riemannianLog_riemannianExp hv,
-    hU.riemannianLog_riemannianExp (hUa hv)]
+  have hΦ : RiemannianIsometry.constSMul a ha x = x := by
+    rw [RiemannianIsometry.coe_constSMul]
+    exact hx
+  have h := (RiemannianIsometry.constSMul a ha).riemannianLog_apply (V := U) hU (by rwa [hΦ])
+    (by rwa [RiemannianIsometry.coe_constSMul]) hy
+  rwa [hΦ, RiemannianIsometry.coe_constSMul] at h
 
 /-- **Equivariant exponential charts at a fixed point.** Let `G` act on `M` by smooth maps whose
 differentials preserve the metric, and let `x` be fixed by `G`. There is `r > 0` such that the
