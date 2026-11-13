@@ -42,9 +42,8 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
-* `Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq`: the real Gaussian
-  `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on
-  tempered distributions.
+* `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
+  `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
 
 public section
@@ -139,13 +138,17 @@ theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [Borel
 
 end SchwartzMap
 
-/-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, as a complex function, has temperate growth:
-for `c > 0` it is the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.
-This is the symbol of the heat semigroup as a Fourier multiplier. -/
-theorem Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq {V : Type*}
+/-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth: for `c > 0` it is the
+real part of the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.
+Composed with `Complex.ofReal`, this is the symbol of the heat semigroup as a Fourier
+multiplier. -/
+theorem Function.hasTemperateGrowth_exp_neg_mul_norm_sq {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] {c : ℝ} (hc : 0 ≤ c) :
-    (fun x : V ↦ ((Real.exp (-(c * ‖x‖ ^ 2)) : ℝ) : ℂ)).HasTemperateGrowth := by
+    (fun x : V ↦ Real.exp (-(c * ‖x‖ ^ 2))).HasTemperateGrowth := by
   rcases hc.eq_or_lt with rfl | hc
   · simp
   · have hb : 0 < (c : ℂ).re := by simpa using hc
-    exact SchwartzMap.coe_gaussian_ofReal (V := V) hb ▸ (SchwartzMap.gaussian hb).hasTemperateGrowth
+    have h := Complex.hasTemperateGrowth_re.comp
+      (SchwartzMap.gaussian (V := V) hb).hasTemperateGrowth
+    rw [SchwartzMap.coe_gaussian_ofReal] at h
+    exact h

@@ -100,8 +100,10 @@ theorem heatSemigroup_heatSemigroup_apply (s t : ℝ≥0) (u : 𝓢'(E, F)) :
     heatSemigroup E F t (heatSemigroup E F s u) = heatSemigroup E F (s + t) u := by
   rw [heatSemigroup, heatSemigroup, heatSemigroup,
     fourierMultiplierCLM_fourierMultiplierCLM_apply
-      (Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq (by positivity))
-      (Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq (by positivity))]
+      (by exact Complex.hasTemperateGrowth_ofReal.comp
+            (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity)))
+      (by exact Complex.hasTemperateGrowth_ofReal.comp
+            (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity)))]
   congr 2
   funext ξ
   rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.exp_add, NNReal.coe_add]

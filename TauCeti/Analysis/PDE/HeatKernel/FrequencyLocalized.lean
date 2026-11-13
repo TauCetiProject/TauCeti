@@ -471,7 +471,8 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
     rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
       TemperedDistribution.littlewoodPaleyBlock_apply,
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
-        (Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq (by positivity)),
+        (by exact Complex.hasTemperateGrowth_ofReal.comp
+              (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))),
       TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
         σ.hasTemperateGrowth, hσψ]
   obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
@@ -508,7 +509,8 @@ theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : �
       heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
   rw [heatSemigroup_eq_fourierMultiplierCLM]
   exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
-    (Function.hasTemperateGrowth_ofReal_exp_neg_mul_norm_sq (by positivity)) j u
+    (by exact Complex.hasTemperateGrowth_ofReal.comp
+          (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))) j u
 
 variable [CompleteSpace F]
 

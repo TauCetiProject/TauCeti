@@ -53,8 +53,8 @@ both its tempered distribution and this `Lᵖ` data.
   (`q = ∞`) expressing the norm through the blocks, and the single-block bound
   `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
-  blocks are `Lᵖ` functions with weighted norms `2^{js'} ‖Δⱼ w‖_p ≤ B 2^{js} ‖Δⱼ u‖_p` for some
-  `u ∈ B^s_{p,q}` lies in `B^{s'}_{p,q}`, with norm at most `B ‖u‖`.
+  blocks are `L^{p'}` functions with weighted norms `2^{js'} ‖Δⱼ w‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p` for
+  some `u ∈ B^s_{p,q}` lies in `B^{s'}_{p',q}`, with norm at most `B ‖u‖`.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -490,15 +490,17 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
   simp_rw [norm_weightedBlocks_apply]
 
 /-- **A blockwise criterion for Besov membership.** Let `u ∈ B^s_{p,q}` and `B ≥ 0`. If every
-block `Δⱼ w` of a tempered distribution `w` is an `Lᵖ` function `gⱼ` with
-`2^{js'} ‖gⱼ‖_p ≤ B 2^{js} ‖Δⱼ u‖_p`, then `w ∈ B^{s'}_{p,q}` with
-`‖w‖_{B^{s'}_{p,q}} ≤ B ‖u‖_{B^s_{p,q}}`. -/
-theorem exists_toDistr_eq_and_norm_le_of_block {s' B : ℝ} (hB : 0 ≤ B)
-    (u : BesovSpace F φ s p q) {w : 𝓢'(E, F)} (g : ℕ → Lp F p (volume : Measure E))
-    (hg : ∀ j, littlewoodPaleyBlock F φ j w = g j)
+block `Δ'ⱼ w`, for a bump function `φ'`, of a tempered distribution `w` with values in `F'` is an
+`L^{p'}` function `gⱼ` with `2^{js'} ‖gⱼ‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p`, then `w ∈ B^{s'}_{p',q}`
+(for `φ'`) with `‖w‖_{B^{s'}_{p',q}} ≤ B ‖u‖_{B^s_{p,q}}`. -/
+theorem exists_toDistr_eq_and_norm_le_of_block {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℂ F'] [CompleteSpace F'] {φ' : ContDiffBump (0 : E)} {p' : ℝ≥0∞}
+    [Fact (1 ≤ p')] {s' B : ℝ} (hB : 0 ≤ B)
+    (u : BesovSpace F φ s p q) {w : 𝓢'(E, F')} (g : ℕ → Lp F' p' (volume : Measure E))
+    (hg : ∀ j, littlewoodPaleyBlock F' φ' j w = g j)
     (hgn : ∀ j : ℕ, 2 ^ (s' * j) * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖)) :
-    ∃ v : BesovSpace F φ s' p q, v.toDistr = w ∧ ‖v‖ ≤ B * ‖u‖ := by
-  have hmem : w.MemBesov φ s' p q := by
+    ∃ v : BesovSpace F' φ' s' p' q, v.toDistr = w ∧ ‖v‖ ≤ B * ‖u‖ := by
+  have hmem : w.MemBesov φ' s' p' q := by
     obtain ⟨f, hf, hfm⟩ := memBesov_iff.1 u.memBesov_toDistr
     have hfu : ∀ j, f j = u.block j := fun j ↦ LinearMap.ker_eq_bot.1
       Lp.ker_toTemperedDistributionCLM_eq_bot (by simp [← hf j])
