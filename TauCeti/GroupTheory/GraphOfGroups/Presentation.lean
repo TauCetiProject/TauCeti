@@ -124,6 +124,12 @@ variable (T) in
 def edge (e : Γ.E) : π₁Tree 𝔸 T :=
   mk (Monoid.Coprod.inr (FreeGroup.of e))
 
+/-- The homomorphisms `A_v →* π₁(𝔸, T)` do not see transport along an equality of vertices. -/
+theorem of_cast {v v' : Γ.V} (h : v = v') (a : 𝔸.vertexGroup v) :
+    of T v' (MulEquiv.cast (M := 𝔸.vertexGroup) h a) = of T v a := by
+  subst h
+  rfl
+
 /-- Reversing a dart inverts its element: `rev e = e⁻¹`. -/
 @[simp] theorem edge_rev (e : Γ.E) : (edge T (Γ.rev e) : π₁Tree 𝔸 T) = (edge T e)⁻¹ :=
   eq_inv_of_mul_eq_one_left <| by
