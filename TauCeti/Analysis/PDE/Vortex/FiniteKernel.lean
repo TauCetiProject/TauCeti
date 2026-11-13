@@ -19,7 +19,10 @@ Let `x` be a plane vortex, in the coordinates of `TauCeti.Vortex.equation`, with
 (`TauCeti.Vortex.gaugeFixedOperator`) is the linearization whose kernel is the tangent space of the
 vortex moduli space. This file proves that the space of `C²` square-integrable solutions of
 `L_x y = 0` (`TauCeti.Vortex.gaugeFixedKernel`) is finite-dimensional
-(`TauCeti.Vortex.finiteDimensional_gaugeFixedKernel`). This is the kernel half of the Fredholm
+(`TauCeti.Vortex.finiteDimensional_gaugeFixedKernel_of_tendsto`). Unlike
+`TauCeti.Vortex.finiteDimensional_gaugeFixedKernel`, which counts principal parts at the zeros of a
+`C²` field with a degree-`m` end framing, this needs only a `C¹` vortex and the asymptotics of
+`|α|` and `∇₁ α`, with no end framing. This is the kernel half of the Fredholm
 property of `L_x`; the cokernel and the identification of the kernel with the tangent space of the
 symmetric product `Sym^m ℂ` of divisors are separate.
 
@@ -44,16 +47,12 @@ The proof is the classical one, combining an estimate at infinity with compactne
   infinity turns closeness of `b y` and `b y'` into closeness of `y` and `y'`. So bounded sets of
   the kernel are totally bounded in `L²`, which by Riesz's lemma forces finite dimension.
 
-## Main definitions
-
-* `TauCeti.Vortex.gaugeFixedKernel x`: the `C²` square-integrable variations `y` with
-  `L_x y = 0`, as a real subspace.
-
 ## Main results
 
 * `TauCeti.Vortex.exists_integral_norm_sq_le_mul_setIntegral_closedBall`: kernel elements are
   controlled by their mass on a fixed disc.
-* `TauCeti.Vortex.finiteDimensional_gaugeFixedKernel`: the kernel is finite-dimensional.
+* `TauCeti.Vortex.finiteDimensional_gaugeFixedKernel_of_tendsto`: the kernel is
+  finite-dimensional.
 
 ## References
 
@@ -72,32 +71,15 @@ namespace TauCeti.Vortex
 open Complex Filter Metric MeasureTheory Set
 open scoped ENNReal Topology
 
-/-! ### The kernel -/
-
-/-- The smooth `L²` kernel of the gauge-fixed operator `L_x`: the `C²` square-integrable
-variations `y` with `L_x y = 0`, as a real subspace of the variations. -/
-def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {y | ContDiff ℝ 2 y ∧ MemLp y 2 ∧ gaugeFixedOperator x y = 0}
-  add_mem' := by
-    rintro y v ⟨hy, hy₂, hLy⟩ ⟨hv, hv₂, hLv⟩
-    refine ⟨hy.add hv, hy₂.add hv₂, funext fun z ↦ ?_⟩
-    rw [gaugeFixedOperator_add x (hy.differentiable two_ne_zero z)
-      (hv.differentiable two_ne_zero z), congrFun hLy z, congrFun hLv z, Pi.zero_apply,
-      add_zero]
-  zero_mem' := ⟨contDiff_const, MemLp.zero, gaugeFixedOperator_zero x⟩
-  smul_mem' := by
-    rintro t y ⟨hy, hy₂, hLy⟩
-    refine ⟨hy.const_smul t, hy₂.const_smul t, funext fun z ↦ ?_⟩
-    rw [gaugeFixedOperator_smul, congrFun hLy z, Pi.zero_apply, smul_zero]
-
-/-- Membership in the smooth `L²` kernel of `L_x`. -/
-@[simp]
-theorem mem_gaugeFixedKernel {x y : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    y ∈ gaugeFixedKernel x ↔ ContDiff ℝ 2 y ∧ MemLp y 2 ∧ gaugeFixedOperator x y = 0 :=
-  Iff.rfl
-
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+private theorem memLp_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ gaugeFixedKernel x) : MemLp y 2 :=
+  (mem_gaugeFixedKernel.1 hy).2.1
+
+private theorem continuous_of_mem_gaugeFixedKernel {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ gaugeFixedKernel x) : Continuous y :=
+  (mem_gaugeFixedKernel.1 hy).1.continuous
 
 /-! ### The estimate at infinity -/
 
@@ -113,7 +95,7 @@ private theorem mul_integral_norm_sq_smul_le (hx : Continuous x) {c R : ℝ}
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x)
     (hB : Integrable fun z ↦ ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) :
     c ^ 2 * ∫ z, ‖χ z • y z‖ ^ 2 ≤ 2 * ∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2 := by
-  obtain ⟨hy, hy₂, hLy⟩ := hy
+  obtain ⟨hy, hy₂, hLy⟩ := mem_gaugeFixedKernel.1 hy
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `ψ n` is one on the disc of radius `n + 1`, with derivative at most `A / (n + 1)`.
   choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
@@ -136,7 +118,7 @@ private theorem mul_integral_norm_sq_smul_le (hx : Continuous x) {c R : ℝ}
     have hpt (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ w n z • y z) z‖ ^ 2 ≤
         2 * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ‖y z‖ ^ 2 := by
       rw [gaugeFixedOperator_fun_smul x (hwd n z).differentiableAt
-        (hy.differentiable two_ne_zero z), congrFun hLy z, Pi.zero_apply, smul_zero, zero_add,
+        (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
         (hwd n z).fderiv, norm_sq_gaugeFixedOperatorSymbol]
       have hW : ‖ψ n z • χ' z + χ z • ψ' n z‖ ≤ ‖χ' z‖ + A * ((n : ℝ) + 1)⁻¹ := by
         refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
@@ -200,7 +182,7 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
   -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
   obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 R hR0
   refine ⟨2 * R, 1 + 32 * (A * R⁻¹) ^ 2, fun y hyK ↦ ?_⟩
-  have hy₂ : MemLp y 2 := hyK.2.1
+  have hy₂ : MemLp y 2 := memLp_of_mem_gaugeFixedKernel hyK
   have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
     (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
   have hb'c : Continuous b' := by
@@ -235,7 +217,8 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
   -- Off that disc the cutoff is one.
   have hχ : Integrable fun z ↦ ‖(1 - b z) • y z‖ ^ 2 :=
     Integrable.mono' hn ((((continuous_const.sub (hb 0).continuous).smul
-      hyK.1.continuous).norm.pow 2).aestronglyMeasurable) (.of_forall fun z ↦ by
+      (continuous_of_mem_gaugeFixedKernel hyK)).norm.pow 2).aestronglyMeasurable)
+      (.of_forall fun z ↦ by
         rw [Real.norm_of_nonneg (sq_nonneg _), norm_smul, mul_pow]
         refine mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) ?_)
         rw [Real.norm_eq_abs, abs_le]
@@ -269,7 +252,7 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
       (hyR : ∫ z, ‖y z‖ ^ 2 ≤ R₀ ^ 2) :
       ContDiff ℝ 2 (fun z ↦ b z • y z) ∧ MemLp (fun z ↦ b z • y z) 2 ∧
         eLpNorm (fderiv ℝ fun z ↦ b z • y z) 2 ≤ ENNReal.ofReal B := by
-    obtain ⟨hy, hy₂, hLy⟩ := hy
+    obtain ⟨hy, hy₂, hLy⟩ := mem_gaugeFixedKernel.1 hy
     have hu : ContDiff ℝ 2 fun z ↦ b z • y z := hb.smul hy
     have hnorm (z : ℂ) : ‖b z • y z‖ ≤ ‖y z‖ := by
       rw [norm_smul, Real.norm_of_nonneg (hb01 z).1]
@@ -282,7 +265,7 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
       (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
     have hL (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ b z • y z) z‖ ^ 2 ≤ A ^ 2 * ‖y z‖ ^ 2 := by
       rw [gaugeFixedOperator_fun_smul x (hbd z).differentiableAt
-        (hy.differentiable two_ne_zero z), congrFun hLy z, Pi.zero_apply, smul_zero, zero_add,
+        (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
         (hbd z).fderiv, norm_sq_gaugeFixedOperatorSymbol]
       exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hbb z) 2)
         (sq_nonneg _)
@@ -331,7 +314,8 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
     rw [sq_abs]
     refine le_trans (integral_mono ?_ ?_ fun z ↦ ?_) hyR
     · exact (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
-    · exact (memLp_two_iff_integrable_sq_norm hy.2.1.aestronglyMeasurable).mp hy.2.1
+    · have hy₂ := memLp_of_mem_gaugeFixedKernel hy
+      exact (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
     · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
       rw [norm_smul, Real.norm_of_nonneg (hb01 z).1]
       exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2
@@ -381,16 +365,18 @@ private theorem integral_norm_sq_le_abs_mul_integral_norm_sq_smul {ρ C : ℝ}
 /-- The `L²` class of a kernel element, as a linear map. -/
 private def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
-  toFun y := y.2.2.1.toLp y
-  map_add' y v := MemLp.toLp_add y.2.2.1 v.2.2.1
-  map_smul' t y := MemLp.toLp_const_smul t y.2.2.1
+  toFun y := (memLp_of_mem_gaugeFixedKernel y.2).toLp y
+  map_add' y v :=
+    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.2) (memLp_of_mem_gaugeFixedKernel v.2)
+  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.2)
 
 private theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
-    gaugeFixedKernelToLp x y = y.2.2.1.toLp y := (rfl)
+    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.2).toLp y := (rfl)
 
 private theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
-  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp, y.2.2.1.eLpNorm_two_eq_ofReal_sqrt_integral,
+  rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
+    (memLp_of_mem_gaugeFixedKernel y.2).eLpNorm_two_eq_ofReal_sqrt_integral,
     ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
 /-- Kernel elements are continuous, so they are determined by their `L²` classes. -/
@@ -398,13 +384,15 @@ private theorem injective_gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (
     Function.Injective (gaugeFixedKernelToLp x) := by
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
   rw [gaugeFixedKernelToLp_apply] at hy
-  have h := y.2.2.1.coeFn_toLp.symm.trans ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
-  exact (y.2.1.continuous.ae_eq_iff_eq volume continuous_const).1 h
+  have h := (memLp_of_mem_gaugeFixedKernel y.2).coeFn_toLp.symm.trans
+    ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
+  exact ((continuous_of_mem_gaugeFixedKernel y.2).ae_eq_iff_eq volume continuous_const).1 h
 
 /-- **The smooth `L²` kernel of the gauge-fixed vortex operator is finite-dimensional.** For a
 `C¹` plane vortex with `|α| → 1` and `∇₁ α → 0` at infinity, the `C²` square-integrable solutions
 of `L_x y = 0` form a finite-dimensional real vector space. -/
-theorem finiteDimensional_gaugeFixedKernel (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
+theorem finiteDimensional_gaugeFixedKernel_of_tendsto (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0)) :
     FiniteDimensional ℝ (gaugeFixedKernel x) := by
@@ -422,7 +410,8 @@ theorem finiteDimensional_gaugeFixedKernel (hx : ContDiff ℝ 1 x) (hsol : ∀ z
       rw [← Submodule.norm_coe, ← hy n, norm_gaugeFixedKernelToLp] at h
       exact (Real.sqrt_le_iff.mp h).2
     have hmem (n : ℕ) : MemLp (fun z ↦ b z • (y n : ℂ → EuclideanSpace ℝ (Fin 4)) z) 2 :=
-      (y n).2.2.1.of_le ((hb 0).continuous.smul (y n).2.1.continuous).aestronglyMeasurable
+      (memLp_of_mem_gaugeFixedKernel (y n).2).of_le
+        ((hb 0).continuous.smul (continuous_of_mem_gaugeFixedKernel (y n).2)).aestronglyMeasurable
         (.of_forall fun z ↦ by
           rw [norm_smul, Real.norm_of_nonneg (hb01 z).1]
           exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2)
