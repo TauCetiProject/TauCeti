@@ -110,9 +110,7 @@ open scoped Real in
 theorem E_apply_eq_divisorSumAt {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (z : ℍ) :
     E hk z = 1 - 2 * k / bernoulli k *
       TauCeti.divisorSumAt (k - 1) (Complex.exp (2 * π * Complex.I * z)) := by
-  rw [q_expansion_bernoulli hk hk2 z, TauCeti.divisorSumAt_def,
-    ← tsum_pnat_eq_tsum_of_eq_zero (by simp)]
-  simp
+  simp only [q_expansion_bernoulli hk hk2 z, TauCeti.divisorSumAt_eq_tsum_pnat, zpow_natCast]
 
 open scoped Real in
 /-- The value `E₄(z) = 1 + 240 s₃(q)` of the `q`-expansion at `q = e^(2π i z)`. -/

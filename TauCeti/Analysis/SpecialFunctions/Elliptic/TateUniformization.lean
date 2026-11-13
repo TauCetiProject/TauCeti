@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Coordinates
+import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Uniformization
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
@@ -37,7 +38,9 @@ to `2 ζ(2) - 8 π² s₁(q)` (Mathlib's `EisensteinSeries.hasSum_e2Summand_symm
 With `g₂ = (2π i)⁴ E₄ / 12`, `g₃ = -(2π i)⁶ E₆ / 216`, `E₄ = 1 + 240 s₃(q)` and
 `E₆ = 1 - 504 s₅(q)`, the Weierstrass equation `℘'² = 4 ℘³ - g₂ ℘ - g₃` becomes the Tate equation
 `Y² + X Y = X³ - 5 s₃(q) X - (5 s₃(q) + 7 s₅(q)) / 12`. Every unit `q` of `ℂ` with `‖q‖ < 1` is
-`e^(2π i z)` for some `z ∈ ℍ`, and every unit `t ∉ q^ℤ` is `e^(2π i x)` for some `x ∉ ℤ z + ℤ`,
+`e^(2π i z)` for some `z ∈ ℍ` (`TauCeti.UpperHalfPlane.exists_cexp_two_pi_I_mul_eq`), and every
+unit `t ∉ q^ℤ` is `e^(2π i x)` for some `x ∉ ℤ z + ℤ`
+(`UpperHalfPlane.mem_zpowers_iff_mem_lattice_periodPair`),
 so the Tate coordinates satisfy the Tate equation over `ℂ` at every `t ∉ q^ℤ`: the archimedean
 counterpart of the non-archimedean equation
 `TauCeti.equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers`.
@@ -48,6 +51,8 @@ counterpart of the non-archimedean equation
   `X(t) = (2π i)⁻² ℘(x; ℤ z + ℤ) - 1 / 12`.
 * `UpperHalfPlane.two_mul_tateUniformizationY_add_tateUniformizationX_eq_derivWeierstrassP`:
   `2 Y(t) + X(t) = (2π i)⁻³ ℘'(x; ℤ z + ℤ)`.
+* `UpperHalfPlane.tateUniformizationY_eq_derivWeierstrassP_sub_weierstrassP`: the same identity
+  solved for `Y(t)`.
 * `TauCeti.tateUniformizationY_sq_add_mul_eq_of_notMem_zpowers`: over `ℂ`, the Tate coordinates
   satisfy the Tate equation at every `t ∉ q^ℤ`.
 
@@ -68,13 +73,10 @@ namespace UpperHalfPlane
 
 open TauCeti TauCeti.UpperHalfPlane
 
-/-- A point `x ∉ ℤ z + ℤ` stays off the integers after subtracting a multiple of `z`. -/
-private lemma sub_intCast_mul_mem_integerComplement (z : ℍ) {x : ℂ}
-    (hx : x ∉ z.periodPair.lattice) (m : ℤ) : x - m * z ∈ integerComplement := by
-  rintro ⟨n, hn⟩
-  refine hx ?_
-  rw [show x = m * z + n by rw [hn]; ring]
-  exact intCast_mul_add_intCast_mem_lattice_periodPair z m n
+/-- `(2π i)² = -4π²`. -/
+private lemma two_pi_I_sq : (2 * π * Complex.I) ^ 2 = -(4 * π ^ 2) := by
+  rw [mul_pow, Complex.I_sq]
+  ring
 
 /-- With `q = e^(2π i z)` and `t = e^(2π i x)`, the parameter of `x - m z` is `q⁻ᵐ t`. -/
 private lemma cexp_sub_intCast_mul (z : ℍ) {x : ℂ} {q t : ℂˣ}
@@ -109,20 +111,12 @@ theorem tateUniformizationX_eq_weierstrassP (z : ℍ) {x : ℂ}
       (sub_sub_cancel _ _).symm).mono_left SummationFilter.le_atTop
   have h℘ := hG.unique ((EisensteinSeries.hasSum_e2Summand_symmetricIcc z).congr_fun fun m ↦ by
     simp [rowSum_def, EisensteinSeries.e2Summand, EisensteinSeries.eisSummand])
-  have hs₁ : ∑' n : ℕ+, (σ 1 n : ℂ) * cexp (2 * π * Complex.I * z) ^ (n : ℕ) =
-      divisorSumAt 1 (q : ℂ) := by
-    rw [divisorSumAt_def, ← hq,
-      tsum_pnat_eq_tsum_of_eq_zero (f := fun n : ℕ ↦ (σ 1 n : ℂ) * (q : ℂ) ^ n) (by simp)]
-    simp
-  rw [hs₁] at h℘
+  rw [← hq, ← divisorSumAt_eq_tsum_pnat] at h℘
   -- `2 ζ(2) = π² / 3 = -(2π i)² / 12`
-  have hc : (2 * π * Complex.I) ^ 2 = -(4 * π ^ 2) := by
-    rw [mul_pow, Complex.I_sq]
-    ring
-  rw [riemannZeta_two, hc] at h℘
+  rw [riemannZeta_two, two_pi_I_sq] at h℘
   have hπ : (4 * π ^ 2 : ℂ) ≠ 0 :=
     mul_ne_zero (by norm_num) (pow_ne_zero 2 (by exact_mod_cast Real.pi_ne_zero))
-  rw [tateUniformizationX_def, hc, show ℘[z.periodPair] x =
+  rw [tateUniformizationX_def, two_pi_I_sq, show ℘[z.periodPair] x =
     -(4 * π ^ 2) * (S - 2 * divisorSumAt 1 (q : ℂ) + 1 / 12) by linear_combination -h℘,
     mul_div_cancel_left₀ _ (neg_ne_zero.mpr hπ)]
   ring
@@ -162,37 +156,23 @@ theorem two_mul_tateUniformizationY_add_tateUniformizationX_eq_derivWeierstrassP
     mul_div_cancel_left₀ _ (pow_ne_zero 3 two_pi_I_ne_zero)]
   ring
 
+/-- **The complex Tate uniformisation, second coordinate solved for `Y`.** For `z ∈ ℍ`,
+`q = e^(2π i z)`, a point `x ∉ ℤ z + ℤ` and its multiplicative parameter `t = e^(2π i x)`,
+`Y(t) = ((2π i)⁻³ ℘'(x; ℤ z + ℤ) - (2π i)⁻² ℘(x; ℤ z + ℤ) + 1 / 12) / 2`. -/
+theorem tateUniformizationY_eq_derivWeierstrassP_sub_weierstrassP (z : ℍ) {x : ℂ}
+    (hx : x ∉ z.periodPair.lattice) {q t : ℂˣ}
+    (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) (ht : (t : ℂ) = cexp (2 * π * Complex.I * x)) :
+    tateUniformizationY q t = (℘'[z.periodPair] x / (2 * π * Complex.I) ^ 3 -
+      ℘[z.periodPair] x / (2 * π * Complex.I) ^ 2 + 1 / 12) / 2 := by
+  rw [← two_mul_tateUniformizationY_add_tateUniformizationX_eq_derivWeierstrassP z hx hq ht,
+    tateUniformizationX_eq_weierstrassP z hx hq ht]
+  ring
+
 end UpperHalfPlane
 
 namespace TauCeti
 
 open _root_.UpperHalfPlane
-
-/-- A unit `q` of `ℂ` with `‖q‖ < 1` is `e^(2π i z)` for some `z ∈ ℍ`, and then a unit `t ∉ q^ℤ` is
-`e^(2π i x)` for some `x ∉ ℤ z + ℤ`. -/
-private lemma exists_cexp_eq_of_notMem_zpowers {q t : ℂˣ} (hq : ‖(q : ℂ)‖ < 1)
-    (ht : t ∉ Subgroup.zpowers q) :
-    ∃ (z : ℍ) (x : ℂ), x ∉ z.periodPair.lattice ∧ (q : ℂ) = cexp (2 * π * Complex.I * z) ∧
-      (t : ℂ) = cexp (2 * π * Complex.I * x) := by
-  have h2πI : 2 * π * Complex.I ≠ 0 := two_pi_I_ne_zero
-  have him : 0 < (Complex.log q / (2 * π * Complex.I)).im := by
-    have hlog : Real.log ‖(q : ℂ)‖ < 0 := Real.log_neg (norm_pos_iff.mpr q.ne_zero) hq
-    simp only [Complex.div_im, Complex.log_re, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.I_re, Complex.I_im]
-    norm_num
-    exact div_neg_of_neg_of_pos (mul_neg_of_neg_of_pos hlog (by positivity)) (by positivity)
-  set z : ℍ := ⟨Complex.log q / (2 * π * Complex.I), him⟩
-  have hqz : (q : ℂ) = cexp (2 * π * Complex.I * z) := by
-    rw [coe_mk, mul_div_cancel₀ _ h2πI, Complex.exp_log q.ne_zero]
-  refine ⟨z, Complex.log t / (2 * π * Complex.I), fun hx ↦ ?_, hqz, by
-    rw [mul_div_cancel₀ _ h2πI, Complex.exp_log t.ne_zero]⟩
-  obtain ⟨m, n, hmn⟩ := PeriodPair.mem_lattice.mp hx
-  refine ht ⟨m, Units.val_injective ?_⟩
-  rw [Units.val_zpow_eq_zpow_val, ← Complex.exp_log t.ne_zero,
-    ← mul_div_cancel₀ (Complex.log t) h2πI, ← hmn, hqz, periodPair_ω₁, periodPair_ω₂,
-    ← Complex.exp_int_mul, show 2 * π * Complex.I * (m * (z : ℂ) + n * 1) =
-      m * (2 * π * Complex.I * z) + n * (2 * π * Complex.I) by ring, Complex.exp_add,
-    Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 /-- **The Tate equation over `ℂ`.** For units `q` and `t` of `ℂ` with `‖q‖ < 1` and `t ∉ q^ℤ`,
 the Tate coordinates satisfy `Y² + X Y = X³ - 5 s₃(q) X - (5 s₃(q) + 7 s₅(q)) / 12`. Its
@@ -203,7 +183,14 @@ theorem tateUniformizationY_sq_add_mul_eq_of_notMem_zpowers (q t : ℂˣ) (hq : 
     tateUniformizationY q t ^ 2 + tateUniformizationX q t * tateUniformizationY q t =
       tateUniformizationX q t ^ 3 - 5 * divisorSumAt 3 (q : ℂ) * tateUniformizationX q t -
         (5 * divisorSumAt 3 (q : ℂ) + 7 * divisorSumAt 5 (q : ℂ)) / 12 := by
-  obtain ⟨z, x, hx, hqz, htx⟩ := exists_cexp_eq_of_notMem_zpowers hq ht
+  obtain ⟨z, hqz⟩ := TauCeti.UpperHalfPlane.exists_cexp_two_pi_I_mul_eq q.ne_zero hq
+  rw [eq_comm] at hqz
+  set x := Function.Periodic.invQParam 1 t
+  have htx : (t : ℂ) = cexp (2 * π * Complex.I * x) := by
+    simpa [Function.Periodic.qParam] using
+      (Function.Periodic.qParam_right_inv one_ne_zero t.ne_zero).symm
+  have hx : x ∉ z.periodPair.lattice :=
+    (mem_zpowers_iff_mem_lattice_periodPair z hqz htx).not.mp ht
   have hX := tateUniformizationX_eq_weierstrassP z hx hqz htx
   have hY := two_mul_tateUniformizationY_add_tateUniformizationX_eq_derivWeierstrassP z hx hqz htx
   have hE₄ := ModularForm.E₄_apply_eq_divisorSumAt z
@@ -214,17 +201,14 @@ theorem tateUniformizationY_sq_add_mul_eq_of_notMem_zpowers (q t : ℂˣ) (hq : 
   set X := tateUniformizationX q t
   set Y := tateUniformizationY q t
   -- substitute `℘ = (2π i)² (X + 1 / 12)` and `℘' = (2π i)³ (2Y + X)`, with `(2π i)² = -4π²`
-  have hc : (2 * π * Complex.I) ^ 2 = -(4 * π ^ 2) := by
-    rw [mul_pow, Complex.I_sq]
-    ring
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
   have h℘ : ℘[z.periodPair] x = -(4 * π ^ 2) * (X + 1 / 12) := by
-    rw [hX, ← hc]
+    rw [hX, ← two_pi_I_sq]
     field_simp
     ring
   have h℘' : ℘'[z.periodPair] x ^ 2 = -(64 * π ^ 6) * (2 * Y + X) ^ 2 := by
     have h6 : (2 * π * Complex.I) ^ (3 * 2) = -(64 * π ^ 6) := by
-      rw [mul_comm 3 2, pow_mul, hc]
+      rw [mul_comm 3 2, pow_mul, two_pi_I_sq]
       ring
     rw [hY, div_pow, ← pow_mul, h6]
     field_simp

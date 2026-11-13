@@ -103,6 +103,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   rescaled period pair.
 * `UpperHalfPlane.intCast_mul_add_intCast_eq_zero_iff`: `z` and `1` are linearly independent
   over `ℤ`.
+* `UpperHalfPlane.mem_zpowers_iff_mem_lattice_periodPair`: for `q = e^(2π i z)`, the map
+  `x ↦ e^(2π i x)` carries exactly the lattice `ℤ z + ℤ` into `q^ℤ`.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 * `PeriodPair.lattice_smul_eq_self_of_pow_eq_one`: if a primitive `n`-th root of unity preserves a
   lattice, so does every `n`-th root of unity.
@@ -143,6 +145,36 @@ lemma periodPair_ω₂ (z : ℍ) : z.periodPair.ω₂ = 1 := (rfl)
 lemma intCast_mul_add_intCast_mem_lattice_periodPair (z : ℍ) (m n : ℤ) :
     (m : ℂ) * z + n ∈ z.periodPair.lattice :=
   mem_lattice.mpr ⟨m, n, by simp⟩
+
+/-- A point `x ∉ ℤ z + ℤ` stays off the integers after subtracting an integer multiple of `z`. -/
+lemma sub_intCast_mul_mem_integerComplement (z : ℍ) {x : ℂ}
+    (hx : x ∉ z.periodPair.lattice) (m : ℤ) : x - m * z ∈ integerComplement := by
+  rintro ⟨n, hn⟩
+  refine hx ?_
+  rw [show x = m * z + n by rw [hn]; ring]
+  exact intCast_mul_add_intCast_mem_lattice_periodPair z m n
+
+/-- **The lattice `ℤ z + ℤ` and the powers of `q`**: with `q = e^(2π i z)` and `t = e^(2π i x)`,
+the unit `t` is an integer power of `q` exactly when `x ∈ ℤ z + ℤ`. -/
+theorem mem_zpowers_iff_mem_lattice_periodPair (z : ℍ) {x : ℂ} {q t : ℂˣ}
+    (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) (ht : (t : ℂ) = cexp (2 * π * Complex.I * x)) :
+    t ∈ Subgroup.zpowers q ↔ x ∈ z.periodPair.lattice := by
+  rw [Subgroup.mem_zpowers_iff, mem_lattice, periodPair_ω₁, periodPair_ω₂]
+  constructor
+  · rintro ⟨m, hm⟩
+    have h := congrArg Units.val hm
+    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← Complex.exp_int_mul,
+      Complex.exp_eq_exp_iff_exists_int] at h
+    obtain ⟨n, hn⟩ := h
+    refine ⟨m, -n, mul_left_cancel₀ two_pi_I_ne_zero ?_⟩
+    push_cast
+    linear_combination hn
+  · rintro ⟨m, n, hmn⟩
+    refine ⟨m, Units.val_injective ?_⟩
+    rw [Units.val_zpow_eq_zpow_val, hq, ht, ← hmn, ← Complex.exp_int_mul,
+      show 2 * π * Complex.I * (m * (z : ℂ) + n * 1) =
+        m * (2 * π * Complex.I * z) + n * (2 * π * Complex.I) by ring, Complex.exp_add,
+      Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 /-- A division point `(b₀ z + b₁) / N` lies in the lattice `ℤ z + ℤ` only if `b ≡ 0 mod N`. -/
 lemma intCast_comp_eq_zero_of_div_mem_lattice_periodPair {N : ℕ} [NeZero N] {b : Fin 2 → ℤ}
@@ -589,9 +621,8 @@ theorem hasSum_weierstrassZeta_periodPair_rows (z : ℍ) {x : ℂ} (hx : x ∉ z
   refine h.prod_fiberwise fun m ↦ ?_
   have h₁ : HasSum (fun n : ℤ ↦ 1 / (x - m * z - n) + 1 / (n : ℂ))
       (π * cot (π * (x - m * z))) := by
-    refine TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast fun ⟨n, hn⟩ ↦ hx ?_
-    rw [show x = m * z + n by rw [hn]; ring]
-    exact intCast_mul_add_intCast_mem_lattice_periodPair z m n
+    exact TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast
+      (sub_intCast_mul_mem_integerComplement z hx m)
   have h₂ : HasSum (fun n : ℤ ↦ 1 / (-((m : ℂ) * z) - n) + 1 / (n : ℂ))
       (π * cot (π * -((m : ℂ) * z))) := by
     rcases eq_or_ne m 0 with rfl | hm
