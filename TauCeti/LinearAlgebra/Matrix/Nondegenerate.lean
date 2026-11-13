@@ -32,8 +32,9 @@ pairing nontrivially with both `M *ᵥ x` and `M *ᵥ y`.
   `u` but not to `x` (or to neither `x` nor `y`), when `x` (and `y`) do not lie on `K ∙ u`.
 * `Matrix.SeparatingRight.exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero`: a vector `z` with
   `z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`, for nonzero `x` and `y`.
-* `Matrix.notMem_span_of_dotProduct_mulVec`: if `v ⬝ᵥ M *ᵥ a = 0` and `v ⬝ᵥ M *ᵥ z ≠ 0`, then
-  `z ∉ R ∙ a`.
+* `Matrix.notMem_span_of_dotProduct_mulVec` and
+  `Matrix.notMem_span_of_dotProduct_mulVec_of_ne_zero`: separating a vector from `R ∙ a` when
+  `v ⬝ᵥ M *ᵥ ·` vanishes on one of `a`, `z` and not the other.
 -/
 
 public section
@@ -108,5 +109,14 @@ theorem notMem_span_of_dotProduct_mulVec {m n R : Type*} [Fintype m] [Fintype n]
     (ha : v ⬝ᵥ M *ᵥ a = 0) (hz : v ⬝ᵥ M *ᵥ z ≠ 0) : z ∉ R ∙ a := fun hza ↦ by
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hza
   simp [mulVec_smul, ha] at hz
+
+/-- Over a commutative semiring without zero divisors, if `v ⬝ᵥ M *ᵥ z = 0`, `v ⬝ᵥ M *ᵥ a ≠ 0`,
+and `z ≠ 0`, then `z` is not a scalar multiple of `a`. -/
+theorem notMem_span_of_dotProduct_mulVec_of_ne_zero {m n R : Type*} [Fintype m] [Fintype n]
+    [CommSemiring R] [NoZeroDivisors R] {M : Matrix m n R} {v : m → R} {a z : n → R}
+    (hz : v ⬝ᵥ M *ᵥ z = 0) (ha : v ⬝ᵥ M *ᵥ a ≠ 0) (hz₀ : z ≠ 0) : z ∉ R ∙ a := fun hza ↦ by
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hza
+  obtain rfl : c = 0 := by simpa [mulVec_smul, ha] using hz
+  exact hz₀ (zero_smul R a)
 
 end Matrix

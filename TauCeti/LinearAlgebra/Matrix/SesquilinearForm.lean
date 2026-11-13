@@ -41,14 +41,15 @@ an exterior algebra.
 
 More generally, for a ring endomorphism `σ` and a Gram matrix `Q`, write
 `B(x, y) = σ(x)ᵀ Q y` for the coordinate form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. A matrix `g` with
-`σ(g)ᵀ Q g = Q` preserves it (`Matrix.comp_mulVec_dotProduct_mulVec_mulVec`), and if `σ` is an
-involution and `σ(Q)ᵀ = ε Q`, it is `ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)`
-(`Matrix.apply_comp_dotProduct_mulVec`), with symmetric orthogonality
-(`Matrix.comp_dotProduct_mulVec_eq_zero_comm`, `Matrix.comp_dotProduct_mulVec_ne_zero_comm`) and
-transposed conjugate rank-one update `σ(x (σ(y)ᵀ Q))ᵀ = ε (Q y) σ(x)ᵀ`
-(`Matrix.transpose_map_vecMulVec_vecMul`). With `ε * ε = 1`, this gives `B(y, x) = ε σ(B(x, y))`
-(`Matrix.comp_dotProduct_mulVec_swap`) and a formula for `B(u + c x, u + c x)` when `x` is
-isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
+`σ(g)ᵀ Q g = Q` intertwines the row covectors `σ(x)ᵀ Q` (`Matrix.comp_mulVec_vecMul_vecMul`) and
+hence preserves `B` (`Matrix.comp_mulVec_dotProduct_mulVec_mulVec`). If `σ` is an involution and
+`σ(Q)ᵀ = ε Q`, then `(σ(ε) ε) • Q = Q` (`Matrix.map_mul_self_smul_eq_self`) and `B` is
+`ε`-Hermitian, `σ(B(x, y)) = ε B(y, x)` (`Matrix.apply_comp_dotProduct_mulVec`), with symmetric
+orthogonality (`Matrix.comp_dotProduct_mulVec_eq_zero_comm`,
+`Matrix.comp_dotProduct_mulVec_ne_zero_comm`) and transposed conjugate rank-one update
+`σ(x (σ(y)ᵀ Q))ᵀ = ε (Q y) σ(x)ᵀ` (`Matrix.transpose_map_vecMulVec_vecMul`). With `ε * ε = 1`,
+this gives `B(y, x) = ε σ(B(x, y))` (`Matrix.comp_dotProduct_mulVec_swap`) and a formula for
+`B(u + c x, u + c x)` when `x` is isotropic (`Matrix.comp_add_smul_dotProduct_mulVec_add_smul`).
 
 Over a field, if the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` (which
 forces `ε * ε = 1` when `Q ≠ 0` or `Q` is invertible over a nonempty index type,
@@ -147,13 +148,29 @@ section GramMatrix
 
 variable {R n : Type*} [CommSemiring R] [Fintype n] {Q : Matrix n n R} {σ : R →+* R}
 
+/-- **A matrix preserving the form intertwines its row covectors.** If `σ(g)ᵀ Q g = Q`, then
+`(σ(g x)ᵀ Q) g = σ(x)ᵀ Q`. -/
+theorem comp_mulVec_vecMul_vecMul {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = Q)
+    (x : n → R) :
+    (σ ∘ (g *ᵥ x)) ᵥ* Q ᵥ* g = (σ ∘ x) ᵥ* Q := by
+  rw [(funext (σ.map_mulVec g x) : σ ∘ (g *ᵥ x) = _), ← vecMul_transpose, vecMul_vecMul,
+    vecMul_vecMul, ← Matrix.mul_assoc, hg]
+
 /-- **A matrix preserving the form preserves its values.** For the `σ`-sesquilinear form
 `B(x, y) = σ(x)ᵀ Q y` of Gram matrix `Q`, if `σ(g)ᵀ Q g = Q`, then `B(g x, g y) = B(x, y)`. -/
 theorem comp_mulVec_dotProduct_mulVec_mulVec {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = Q)
     (x y : n → R) :
     (σ ∘ (g *ᵥ x)) ⬝ᵥ (Q *ᵥ (g *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
-  rw [(funext (σ.map_mulVec g x) : σ ∘ (g *ᵥ x) = _), ← vecMul_transpose, mulVec_mulVec,
-    dotProduct_mulVec, vecMul_vecMul, ← Matrix.mul_assoc, hg, ← dotProduct_mulVec]
+  rw [dotProduct_mulVec, dotProduct_mulVec, comp_mulVec_vecMul_vecMul hg, ← dotProduct_mulVec]
+
+/-- Applying `σ(Q)ᵀ = ε Q` twice for an involutive `σ` gives `(σ(ε) * ε) • Q = Q`. -/
+theorem map_mul_self_smul_eq_self {R n : Type*} [Semiring R] {Q : Matrix n n R} {σ : R →+* R}
+    (hσ : Function.Involutive σ) {ε : R} (hQ : (Q.map σ)ᵀ = ε • Q) :
+    (σ ε * ε) • Q = Q :=
+  Matrix.ext fun i j ↦ by
+    have h₁ : σ (Q i j) = ε * Q j i := congrFun (congrFun hQ j) i
+    have h₂ : σ (Q j i) = ε * Q i j := congrFun (congrFun hQ i) j
+    rw [Matrix.smul_apply, smul_eq_mul, mul_assoc, ← h₂, ← map_mul, ← h₁, hσ]
 
 /-- **An `ε`-Hermitian form.** For the `σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y` of Gram matrix
 `Q`, if `σ` is an involution and `σ(Q)ᵀ = ε Q`, then `σ(B(x, y)) = ε B(y, x)`. -/
@@ -168,17 +185,6 @@ theorem apply_comp_dotProduct_mulVec (hσ : Function.Involutive σ) {ε : R}
 theorem comp_add_dotProduct_mulVec (u v w : n → R) :
     (σ ∘ (u + v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) + (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
   rw [map_comp_add, add_dotProduct]
-
-/-- The form is `σ`-semilinear in its first argument. -/
-theorem comp_smul_dotProduct_mulVec (c : R) (u w : n → R) :
-    (σ ∘ (c • u)) ⬝ᵥ (Q *ᵥ w) = σ c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ w)) := by
-  rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
-
-/-- The form preserves subtraction in its first argument. -/
-theorem comp_sub_dotProduct_mulVec {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R}
-    (u v w : n → R) :
-    (σ ∘ (u - v)) ⬝ᵥ (Q *ᵥ w) = (σ ∘ u) ⬝ᵥ (Q *ᵥ w) - (σ ∘ v) ⬝ᵥ (Q *ᵥ w) := by
-  rw [map_comp_sub, sub_dotProduct]
 
 /-- For an involutive `σ` and `σ(Q)ᵀ = ε Q`, the transposed conjugate of `x (σ(y)ᵀ Q)` is
 `ε (Q y) σ(x)ᵀ`. -/
@@ -237,17 +243,13 @@ omit [DecidableEq n] [Fintype n] in
 is onto the elements `s` with `σ(s) = ε s`, then `ε * ε = 1`. -/
 theorem mul_self_eq_one_of_trace (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hQ0 : Q ≠ 0) : ε * ε = 1 := by
-  -- `σ ε * ε = 1`, by applying the Hermitian symmetry twice to a nonzero entry of `Q`.
-  have hsymm (i j : n) : σ (Q i j) = ε * Q j i := congrFun (congrFun hQ j) i
+  -- `σ ε * ε = 1`, by applying `(σ ε * ε) • Q = Q` to a nonzero entry of `Q`.
   obtain ⟨i, j, hij⟩ : ∃ i j, Q i j ≠ 0 := by
     by_contra h
     exact hQ0 (Matrix.ext fun i j ↦ not_not.mp fun h' ↦ h ⟨i, j, h'⟩)
-  have hε' : σ ε * ε = 1 := by
-    have h : σ ε * ε * Q i j = Q i j := by
-      calc σ ε * ε * Q i j = σ ε * σ (Q j i) := by rw [hsymm j i]; ring
-        _ = σ (σ (Q i j)) := by rw [hsymm i j, map_mul]
-        _ = Q i j := hσ _
-    exact mul_right_cancel₀ hij (h.trans (one_mul _).symm)
+  have hε' : σ ε * ε = 1 :=
+    mul_right_cancel₀ hij <|
+      (congrFun (congrFun (map_mul_self_smul_eq_self hσ hQ) i) j).trans (one_mul _).symm
   -- `s = 1 + σ ε` satisfies `σ s = ε s`, so `s = t + ε σ t`, whence `ε σ s = s`.
   obtain ⟨t, ht⟩ := htr (1 + σ ε) <| by
     rw [map_add, map_one, hσ]
@@ -304,8 +306,8 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair (hσ : Function.S
   obtain ⟨w, hwu, hwx, hwy⟩ := (nondegenerate_of_det_ne_zero hdet).separatingRight
     |>.separatingLeft_transpose.exists_ortho_and_not_ortho_pair_of_notMem_span hx hy
   rw [dotProduct_transpose_mulVec] at hwu hwx hwy
-  have hv : (σ ∘ fun i ↦ (hσ (w i)).choose) = w := funext fun i ↦ (hσ (w i)).choose_spec
-  exact ⟨fun i ↦ (hσ (w i)).choose, hv.symm ▸ hwu, hv.symm ▸ hwx, hv.symm ▸ hwy⟩
+  obtain ⟨v, rfl⟩ := hσ.comp_left w
+  exact ⟨v, hwu, hwx, hwy⟩
 
 /-- **Separating a vector from a line by a sesquilinear form.** If `σ` is surjective, `Q` is
 invertible, and `x` does not lie on the line `K ∙ u`, then some vector `v` satisfies

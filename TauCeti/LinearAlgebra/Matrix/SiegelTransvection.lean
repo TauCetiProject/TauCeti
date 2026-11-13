@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
@@ -138,7 +139,7 @@ theorem siegelTransvection_add_smul (w : n → R) (a c : R) :
       Q.siegelTransvection σ ε u w (c + a - ε * σ a) := by
   refine mulVec_injective (funext fun v ↦ ?_)
   rw [siegelTransvection_mulVec, siegelTransvection_mulVec, comp_add_dotProduct_mulVec,
-    comp_smul_dotProduct_mulVec]
+    TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
   module
 
 /-- **Two-factor product for an isotropic `u`.** When `B(u, u) = 0`, the two rank-one perturbations
@@ -198,11 +199,8 @@ theorem mul_siegelTransvection {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = 
     (c : R) :
     g * Q.siegelTransvection σ ε u w c =
       Q.siegelTransvection σ ε (g *ᵥ u) (g *ᵥ w) c * g := by
-  have hrow (v : n → R) : (σ ∘ (g *ᵥ v)) ᵥ* Q ᵥ* g = (σ ∘ v) ᵥ* Q := by
-    rw [(funext (σ.map_mulVec g v) : σ ∘ (g *ᵥ v) = _), ← vecMul_transpose, vecMul_vecMul,
-      vecMul_vecMul, ← Matrix.mul_assoc, hg]
   simp [siegelTransvection_def, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_add, Matrix.add_mul,
-    mul_vecMulVec, vecMulVec_mul, mulVec_add, mulVec_smul, hrow]
+    mul_vecMulVec, vecMulVec_mul, mulVec_add, mulVec_smul, comp_mulVec_vecMul_vecMul hg]
 
 /-- For an involutive `σ` and `σ(Q)ᵀ = ε Q`, left-multiplying `Q` by the transposed conjugate of
 `S(u, w, c)` gives `Q + ε (Q u) (σ(w + c u)ᵀ Q) - (Q w) (σ(u)ᵀ Q)`. -/
@@ -211,11 +209,6 @@ theorem transpose_map_siegelTransvection_mul (hσ : Function.Involutive σ)
     ((Q.siegelTransvection σ ε u w c).map σ)ᵀ * Q =
       Q + ε • vecMulVec (Q *ᵥ u) ((σ ∘ (w + c • u)) ᵥ* Q) -
         vecMulVec (Q *ᵥ w) ((σ ∘ u) ᵥ* Q) := by
-  -- Applying `σ(Q)ᵀ = ε Q` twice gives `(σ(ε) * ε) • Q = Q`.
-  have hεQ : (σ ε * ε) • Q = Q := Matrix.ext fun i j ↦ by
-    have h₁ : σ (Q i j) = ε * Q j i := congrFun (congrFun hQ j) i
-    have h₂ : σ (Q j i) = ε * Q i j := congrFun (congrFun hQ i) j
-    rw [Matrix.smul_apply, smul_eq_mul, mul_assoc, ← h₂, ← map_mul, ← h₁, hσ]
   have hS : (Q.siegelTransvection σ ε u w c).map σ =
       1 + (vecMulVec (w + c • u) ((σ ∘ u) ᵥ* Q)).map σ -
         σ ε • (vecMulVec u ((σ ∘ w) ᵥ* Q)).map σ := by
@@ -224,7 +217,8 @@ theorem transpose_map_siegelTransvection_mul (hσ : Function.Involutive σ)
   rw [hS]
   simp only [transpose_sub, transpose_add, transpose_one, transpose_smul,
     transpose_map_vecMulVec_vecMul hσ hQ, Matrix.sub_mul, Matrix.add_mul, Matrix.one_mul,
-    smul_mul_assoc, vecMulVec_mul, smul_smul, ← smul_vecMulVec (σ ε * ε), ← smul_mulVec, hεQ]
+    smul_mul_assoc, vecMulVec_mul, smul_smul, ← smul_vecMulVec (σ ε * ε), ← smul_mulVec,
+    map_mul_self_smul_eq_self hσ hQ]
 
 /-- **The isometry defect of a Siegel transformation.** Let `σ` be an involution, let the Gram
 matrix satisfy `σ(Q)ᵀ = ε Q`, and let `B(u, u) = B(u, w) = 0`. Then
@@ -246,9 +240,9 @@ theorem transpose_map_siegelTransvection_mul_mul (hσ : Function.Involutive σ)
   have hzSv : (σ ∘ (w + c • u)) ⬝ᵥ (Q *ᵥ Sv) =
       (σ ∘ w) ⬝ᵥ (Q *ᵥ v) + σ c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ v)) +
         ((σ ∘ u) ⬝ᵥ (Q *ᵥ v)) * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) := by
-    simp only [hSv_def, comp_add_dotProduct_mulVec, comp_smul_dotProduct_mulVec, mulVec_sub,
-      mulVec_add, mulVec_smul, dotProduct_sub, dotProduct_add, dotProduct_smul, smul_eq_mul,
-      huw, hwu, hu, mul_zero, add_zero, sub_zero]
+    simp only [hSv_def, comp_add_dotProduct_mulVec, TauCeti.map_comp_smul, smul_dotProduct,
+      mulVec_sub, mulVec_add, mulVec_smul, dotProduct_sub, dotProduct_add, dotProduct_smul,
+      smul_eq_mul, huw, hwu, hu, mul_zero, add_zero, sub_zero]
   rw [← mulVec_mulVec, ← hSv, transpose_map_siegelTransvection_mul hσ hQ]
   simp only [sub_mulVec, add_mulVec, smul_mulVec, vecMulVec_mulVec, op_smul_eq_smul,
     ← dotProduct_mulVec, huSv, hzSv]

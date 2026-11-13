@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
 # Unitary transvections
@@ -126,12 +127,9 @@ theorem unitaryTransvection_smul (c a : R) :
 transvection `τ_{v,a}` to `τ_{g v,a}`: `g τ_{v,a} = τ_{g v,a} g`. -/
 theorem mul_unitaryTransvection {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = Q) (a : R) :
     g * Q.unitaryTransvection σ v a = Q.unitaryTransvection σ (g *ᵥ v) a * g := by
-  have hw : (σ ∘ (g *ᵥ v)) ᵥ* Q ᵥ* g = (σ ∘ v) ᵥ* Q := by
-    rw [(funext (σ.map_mulVec g v) : σ ∘ (g *ᵥ v) = _), ← vecMul_transpose, vecMul_vecMul,
-      vecMul_vecMul, ← Matrix.mul_assoc, hg]
   rw [unitaryTransvection_def, unitaryTransvection_def, Matrix.mul_add, Matrix.add_mul,
     Matrix.mul_one, Matrix.one_mul, mul_smul_comm, smul_mul_assoc, mul_vecMulVec, vecMulVec_mul,
-    hw]
+    comp_mulVec_vecMul_vecMul hg]
 
 /-- **The isometry defect of a unitary transvection.** Let `σ` be an involution, let the Gram
 matrix satisfy `σ(Q)ᵀ = ε Q`, so that `σ(B(x, y)) = ε B(y, x)`, and let `v` be isotropic. Then
@@ -141,15 +139,6 @@ theorem transpose_map_unitaryTransvection_mul_mul (hσ : Function.Involutive σ)
     ((Q.unitaryTransvection σ v a).map σ)ᵀ * Q * Q.unitaryTransvection σ v a =
       Q + (a + ε * σ a) • vecMulVec (Q *ᵥ v) ((σ ∘ v) ᵥ* Q) := by
   set w := (σ ∘ v) ᵥ* Q with hw
-  -- The transposed conjugate of the rank-one part `v wᵀ` is `ε (Q v) σ(v)ᵀ`.
-  have hmap : ((vecMulVec v w).map σ)ᵀ = ε • vecMulVec (Q *ᵥ v) (σ ∘ v) := by
-    have hσw : σ ∘ w = v ᵥ* Q.map σ := funext fun i ↦ by
-      rw [Function.comp_apply, hw, RingHom.map_vecMul, ← Function.comp_assoc, hσ.comp_self,
-        Function.id_comp]
-    have hmap' : (vecMulVec v w).map σ = vecMulVec (σ ∘ v) (σ ∘ w) := by
-      ext i j
-      simp [vecMulVec_apply]
-    rw [hmap', transpose_vecMulVec, hσw, ← mulVec_transpose, hQ, smul_mulVec, smul_vecMulVec]
   have hτ : (Q.unitaryTransvection σ v a).map σ = 1 + σ a • (vecMulVec v w).map σ := by
     ext i j
     by_cases hij : i = j <;> simp [unitaryTransvection_def, hw, hij]
@@ -157,7 +146,8 @@ theorem transpose_map_unitaryTransvection_mul_mul (hσ : Function.Involutive σ)
   have h₂ : Q * vecMulVec v w = vecMulVec (Q *ᵥ v) w := mul_vecMulVec _ _ _
   have h₃ : vecMulVec (Q *ᵥ v) w * vecMulVec v w = 0 := by
     rw [vecMulVec_mul_vecMulVec, hw, ← dotProduct_mulVec, hv, zero_smul, vecMulVec_zero]
-  rw [hτ, transpose_add, transpose_one, transpose_smul, hmap, unitaryTransvection_def, ← hw]
+  rw [hτ, transpose_add, transpose_one, transpose_smul, transpose_map_vecMulVec_vecMul hσ hQ v v,
+    unitaryTransvection_def, ← hw]
   simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, smul_mul_assoc,
     mul_smul_comm, h₁, h₂, h₃, smul_zero, add_zero, smul_smul]
   rw [add_assoc, ← add_smul, mul_comm (σ a), add_comm (ε * σ a)]

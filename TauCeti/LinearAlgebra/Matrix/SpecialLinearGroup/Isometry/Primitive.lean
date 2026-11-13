@@ -8,11 +8,13 @@ module
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.IsotropicPoints
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Group.Submonoid.Defs
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
+import TauCeti.LinearAlgebra.Projectivization.Action
 import TauCeti.LinearAlgebra.Projectivization.Basic
 
 /-!
@@ -46,7 +48,9 @@ special isometries:
 * **Orthogonal orbit (`B(u, x) = 0` and `B(u, y) = 0`, off `K ∙ u`).** When `B(y, x) ≠ 0`, a
   unitary transvection along `c • y - x` fixes `u` (since `c • y - x ∈ u^⊥`) and sends `x` to
   `c • y`; when `B(y, x) = 0`, two such steps pass through an isotropic vector `v + a • x ∈ u^⊥`
-  paired nontrivially with both `x` and `y`.
+  paired nontrivially with both `x` and `y`
+  (`Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero` in
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/IsotropicPoints.lean`).
 
 Together these give `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul`: the
 stabilizer of `u` connects `[x]` to `[y]` whenever both lie off `K ∙ u` and `B(u, x) = 0` holds
@@ -107,7 +111,7 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
   set c := ε * ((σ ∘ x) ⬝ᵥ (Q *ᵥ y))
   set w := y - x - c • u'
   have hu'pair (v : n → K) : (σ ∘ u') ⬝ᵥ (Q *ᵥ v) = b⁻¹ * ((σ ∘ u) ⬝ᵥ (Q *ᵥ v)) := by
-    rw [comp_smul_dotProduct_mulVec, map_inv₀, hσ]
+    rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, map_inv₀, hσ]
   have hu' : (σ ∘ u') ⬝ᵥ (Q *ᵥ u') = 0 := by rw [comp_smul_dotProduct_mulVec_smul, hu, mul_zero]
   have hu'x : (σ ∘ u') ⬝ᵥ (Q *ᵥ x) = 1 := by rw [hu'pair, inv_mul_cancel₀ hux]
   have hu'y : (σ ∘ u') ⬝ᵥ (Q *ᵥ y) = 1 := by rw [hu'pair, ← hxy, inv_mul_cancel₀ hux]
@@ -141,48 +145,6 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
   · simp only [w, hS, siegelTransvection_mulVec, hu'x, hwx, one_smul, mul_zero, zero_smul,
       sub_zero]
     abel
-
-/-- **Two orthogonal transvection steps.** The stabilizer of `u` connects any two isotropic vectors
-orthogonal to `u` off `K ∙ u`. -/
-private theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
-    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
-    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
-    {u x y : n → K} (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
-    (hx_span : x ∉ K ∙ u) (hy_span : y ∉ K ∙ u)
-    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (huy : (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0) :
-    ∃ g ∈ Q.specialIsometryGroup σ, ∃ c ≠ (0 : K),
-      (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = c • y := by
-  have : Nonempty n := let ⟨i, _⟩ := Function.ne_iff.mp (TauCeti.ne_zero_of_notMem hx_span); ⟨i⟩
-  have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
-  by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
-  swap
-  · exact exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-      hσ hQ hε hadm hx hy hux huy hyx
-  -- Choose `v` orthogonal to `u` and paired nontrivially with both `x` and `y`, then correct
-  -- `v` to an isotropic vector `z = v + a • x`.
-  obtain ⟨v, hvu, hvx, hvy⟩ :=
-    exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair hσ.surjective hdet hx_span hy_span
-  obtain ⟨a, hz⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hx hvx
-  set z := v + a • x
-  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hux
-  have hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0 := (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hyx
-  have huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 := by
-    rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ]
-    simp [z, comp_smul_dotProduct_mulVec, hvu, hxu]
-  have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by
-    simpa [z, comp_smul_dotProduct_mulVec, hx] using hvx
-  have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0 := by
-    rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
-    simpa [z, comp_smul_dotProduct_mulVec, hxy] using hvy
-  obtain ⟨g₁, hg₁, c₁, hc₁, hg₁u, hg₁x⟩ :=
-    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-      hσ hQ hε hadm hx hz hux huz hzx
-  obtain ⟨g₂, hg₂, c₂, hc₂, hg₂u, hg₂z⟩ :=
-    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
-      hσ hQ hε hadm hz hy huz huy hyz
-  refine ⟨g₂ * g₁, mul_mem hg₂ hg₁, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
-  · rw [SpecialLinearGroup.coe_mul, ← mulVec_mulVec, hg₁u, hg₂u]
-  · rw [SpecialLinearGroup.coe_mul, ← mulVec_mulVec, hg₁x, mulVec_smul, hg₂z, smul_smul]
 
 /-- **The stabilizer of an isotropic vector `u` is projectively transitive on both orthogonality
 classes off `K ∙ u`.** Let `u`, `x`, `y` be isotropic vectors with `x ∉ K ∙ u`, `y ∉ K ∙ u`, and
@@ -234,16 +196,18 @@ private theorem isotropicPointMk_mem_of_isBlock (hσ : Function.Involutive σ)
     (hxB : isotropicPointMk (TauCeti.ne_zero_of_notMem hx_span) hx ∈ B)
     (h : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0 ↔ (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0) :
     isotropicPointMk (TauCeti.ne_zero_of_notMem hy_span) hy ∈ B := by
-  obtain ⟨g, hg, c, hc, hgu, hgx⟩ :=
+  obtain ⟨g, hg, c, -, hgu, hgx⟩ :=
     exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
       hσ hQ hdet htr hadm hu hx hy hx_span hy_span h
   let g' : Q.specialIsometryGroup σ := ⟨g, hg⟩
   have hgu_pt : g' • isotropicPointMk hu₀ hu = isotropicPointMk hu₀ hu :=
-    Subtype.ext <| smul_mk_eq_mk_of_mulVec_eq_smul hu₀ hu₀ one_ne_zero (by simpa using hgu)
+    Subtype.ext <| TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hu₀ hu₀ (c := 1)
+      (by simpa [Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec] using hgu)
   have hgy_pt :
       isotropicPointMk (TauCeti.ne_zero_of_notMem hy_span) hy =
         g' • isotropicPointMk (TauCeti.ne_zero_of_notMem hx_span) hx :=
-    Subtype.ext <| (smul_mk_eq_mk_of_mulVec_eq_smul _ _ hc hgx).symm
+    Subtype.ext <| (TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul _ _
+      (by rwa [Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec])).symm
   have hgB : g' • B = B := hB.smul_eq_of_mem huB (by rwa [hgu_pt])
   rw [hgy_pt, ← hgB]
   exact Set.smul_mem_smul_set hxB
@@ -267,15 +231,12 @@ private theorem isotropicPointMk_mem_of_isBlock_of_ne_zero (hσ : Function.Invol
       huB hxB (iff_of_false hux huy)
   have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) ≠ 0 :=
     (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mp hux
-  have hnot_x : ∀ z, (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 → z ∉ K ∙ u → z ∉ K ∙ x := fun z hz hzu hzx ↦ by
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hzx
-    obtain rfl : c = 0 := by simpa [mulVec_smul, hux] using hz
-    simp at hzu
   have hx₀ := TauCeti.ne_zero_of_notMem hx_span
   by_cases hxy : (σ ∘ x) ⬝ᵥ (Q *ᵥ y) = 0
   swap
   · exact isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hx₀ hx hu hy hu_span
-      (hnot_x y huy hy_span) hxB huB (iff_of_false hxu hxy)
+      (notMem_span_of_dotProduct_mulVec_of_ne_zero huy hux (TauCeti.ne_zero_of_notMem hy_span))
+      hxB huB (iff_of_false hxu hxy)
   -- Both `u` and `x` are orthogonal to `y`, so `[y + u]` is isotropic, orthogonal to `u`, and
   -- paired nontrivially with `x`.
   have hyu : (σ ∘ y) ⬝ᵥ (Q *ᵥ u) = 0 :=
@@ -284,12 +245,13 @@ private theorem isotropicPointMk_mem_of_isBlock_of_ne_zero (hσ : Function.Invol
     simpa [hy, hyu] using comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hu y 1
   have hsu : (σ ∘ u) ⬝ᵥ (Q *ᵥ (y + u)) = 0 := by
     simp [mulVec_add, huy, hu]
-  have hs_span : y + u ∉ K ∙ u := fun hs_mem ↦
-    hy_span (by simpa using Submodule.sub_mem _ hs_mem (Submodule.mem_span_singleton_self u))
+  have hs_span : y + u ∉ K ∙ u :=
+    mt ((K ∙ u).add_mem_iff_left (Submodule.mem_span_singleton_self u)).mp hy_span
   have hxs : (σ ∘ x) ⬝ᵥ (Q *ᵥ (y + u)) ≠ 0 := by
     simpa [mulVec_add, hxy] using hxu
   have hsB := isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hx₀ hx hu hs hu_span
-    (hnot_x _ hsu hs_span) hxB huB (iff_of_false hxu hxs)
+    (notMem_span_of_dotProduct_mulVec_of_ne_zero hsu hux (TauCeti.ne_zero_of_notMem hs_span))
+    hxB huB (iff_of_false hxu hxs)
   exact isotropicPointMk_mem_of_isBlock hσ hQ hdet htr hadm hB hu₀ hu hs hy hs_span hy_span
     huB hsB (iff_of_true hsu huy)
 

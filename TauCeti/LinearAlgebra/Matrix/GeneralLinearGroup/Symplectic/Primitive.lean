@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.GroupAction.Primitive
 public import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Projectivization.Basic
 import TauCeti.Algebra.Group.Submonoid.Defs
+import TauCeti.LinearAlgebra.Projectivization.Action
 
 /-!
 # The symplectic group acts primitively on projective space
@@ -111,13 +112,12 @@ private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
       rw [mulVec_smul, dotProduct_smul, smul_eq_mul, div_mul_cancel₀ _ hy₀]
   have hay' : a • y ∉ K ∙ u := (Submodule.smul_mem_iff _ ha).not.mpr hy
   obtain ⟨g, hgu, hgx⟩ := exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq hx hay' hay
-  rw [Subgroup.smul_def] at hgu hgx
-  have hgB : g • B = B := hB.smul_eq_of_mem huB (by
-    simpa only [Subgroup.smul_def, Projectivization.smul_mk, hgu] using huB)
+  have hgu' : g • Projectivization.mk K u hu = Projectivization.mk K u hu :=
+    TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hu hu (hgu.trans (one_smul K u).symm)
+  have hgB : g • B = B := hB.smul_eq_of_mem huB (by rwa [hgu'])
   have hmk : Projectivization.mk K y (ne_zero_of_notMem hy) =
-      g • Projectivization.mk K x (ne_zero_of_notMem hx) := by
-    rw [Subgroup.smul_def, Projectivization.smul_mk, Projectivization.mk_eq_mk_iff']
-    exact ⟨a⁻¹, by rw [hgx, smul_smul, inv_mul_cancel₀ ha, one_smul]⟩
+      g • Projectivization.mk K x (ne_zero_of_notMem hx) :=
+    (TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul _ _ hgx).symm
   rw [hmk, ← hgB]
   exact Set.smul_mem_smul_set hxB
 
@@ -156,20 +156,19 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
       have hxu : x ⬝ᵥ (JFin m K *ᵥ u) ≠ 0 := by
         rwa [dotProduct_JFin_mulVec_eq_neg, neg_ne_zero]
       -- If `⟨y⟩` is not orthogonal to `⟨x⟩`, it lies in the block of `⟨x⟩`, which is `B`.
-      have hyx : ∀ z, u ⬝ᵥ (JFin m K *ᵥ z) = 0 → z ∉ K ∙ u → z ∉ K ∙ x := fun z hz hzu hzx ↦ by
-        obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hzx
-        obtain rfl : c = 0 := by simpa [mulVec_smul, hux] using hz
-        simp at hzu
       by_cases hxy : x ⬝ᵥ (JFin m K *ᵥ y) = 0
       swap
-      · exact mk_mem_of_isBlock hB hx₀ hu' (hyx y huy hyu) hq hp (iff_of_false hxu hxy)
+      · exact mk_mem_of_isBlock hB hx₀ hu'
+          (notMem_span_of_dotProduct_mulVec_of_ne_zero huy hux (ne_zero_of_notMem hyu))
+          hq hp (iff_of_false hxu hxy)
       -- Otherwise `⟨y + u⟩` is orthogonal to `⟨u⟩` but not to `⟨x⟩`: it lies in `B`, and `⟨y⟩` is
       -- in the same orbit of the stabilizer of `⟨u⟩`.
       have hsu : u ⬝ᵥ (JFin m K *ᵥ (y + u)) = 0 := by simp [mulVec_add, huy]
-      have hs : y + u ∉ K ∙ u := fun hs ↦
-        hyu (by simpa using Submodule.sub_mem _ hs (Submodule.mem_span_singleton_self u))
-      have hsB := mk_mem_of_isBlock hB hx₀ hu' (hyx _ hsu hs) hq hp (iff_of_false hxu (by
-        simpa [mulVec_add, hxy] using hxu))
+      have hs : y + u ∉ K ∙ u :=
+        mt ((K ∙ u).add_mem_iff_left (Submodule.mem_span_singleton_self u)).mp hyu
+      have hsB := mk_mem_of_isBlock hB hx₀ hu'
+        (notMem_span_of_dotProduct_mulVec_of_ne_zero hsu hux (ne_zero_of_notMem hs))
+        hq hp (iff_of_false hxu (by simpa [mulVec_add, hxy] using hxu))
       exact mk_mem_of_isBlock hB hu hs hyu hp hsB (iff_of_true hsu huy)
 
 end TauCeti.GLSymplecticFin
