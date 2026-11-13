@@ -74,21 +74,8 @@ theorem coe_kerCoeffWeilPairing_baseChange
       hQ, coe_torsionCoeffToDualKerCoeff]
   rw [← hQ', kerCoeffWeilPairing_torsionCoeffToDualKerCoeff,
     kerCoeffWeilPairing_torsionCoeffToDualKerCoeff]
-  -- Naturality of the torsion pairing also applies when the two levels are propositionally equal.
-  have ht (m n : ℕ) (hm : IsUnit (m : K)) (hn' : IsUnit (n : L)) (hmn : n = m)
-      (A B : W₁.TorsionCoeff m) (A' B' : (W₁⁄L).TorsionCoeff n)
-      (hA : (A' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ A)
-      (hB : (B' : (W₁⁄L).PointCoeff) = W₁.pointCoeffBaseChange τ B) :
-      ((W₁⁄L).torsionCoeffWeilPairing n hn' A' B').toMul.val.val =
-        τ ((W₁.torsionCoeffWeilPairing m hm A B).toMul.val.val) := by
-    subst n
-    have hA' : A' = W₁.torsionCoeffBaseChange τ m A :=
-      Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hA)
-    have hB' : B' = W₁.torsionCoeffBaseChange τ m B :=
-      Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hB)
-    rw [hA', hB', W₁.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ A B]
-    exact congrArg Units.val (toMul_kummerCoeffBaseChange m τ _)
-  exact ht _ _ hn hnL hd (φ.kerCoeffToTorsionCoeff P) R
+  exact W₁.coe_torsionCoeffWeilPairing_baseChange hn τ _ hnL hd
+    (φ.kerCoeffToTorsionCoeff P) R
     ((φ.baseChange L).kerCoeffToTorsionCoeff P') R'
     (by simpa only [coe_kerCoeffToTorsionCoeff] using hP) hR'
 
