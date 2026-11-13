@@ -252,6 +252,21 @@ private theorem rpow_tsum_maximalFunction_rpow_le_three_pow_mul {G : (ι → ℝ
   gcongr
   exact maximalFunction_le_three_pow_mul_maximalFunction_cubeAverage hx
 
+/-- Chebyshev's inequality and the diagonal vector-valued maximal inequality for a measurable
+family `g`: the sum `∑' i, (M gᵢ) ^ r` reaches `s` on a set of measure at most
+`cᵣ 4ⁿ ∫⁻ ∑' i, gᵢ ^ r / s`. -/
+private theorem mul_volume_le_tsum_maximalFunction_rpow (hg : ∀ i, Measurable (g i)) (hr : 1 < r)
+    (s : ℝ≥0∞) :
+    s * volume {x | s ≤ ∑' i, maximalFunction volume (g i) x ^ r} ≤
+      ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ Fintype.card ι *
+        ∫⁻ x, ∑' i, g i x ^ r := by
+  have hM : Measurable fun x => ∑' i, maximalFunction volume (g i) x ^ r :=
+    Measurable.tsum fun i => (measurable_maximalFunction volume (g i)).pow_const r
+  have hdiag := lintegral_tsum_maximalFunction_rpow_le volume (f := g)
+    (fun i => (hg i).eNorm.aemeasurable) hr
+  simp only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card] at hdiag
+  exact (mul_meas_ge_le_lintegral₀ hM.aemeasurable s).trans hdiag
+
 variable [Nonempty ι]
 
 /-- The `ℓʳ` norm of the family averaged over the Calderón–Zygmund cubes of the `ℓʳ` norm `G` of
@@ -311,12 +326,6 @@ private theorem mul_volume_le_tsum_maximalFunction_cubeAverage_rpow (hg : ∀ i,
   set h : κ → (ι → ℝ) → ℝ≥0∞ := fun i => cubeAverage G t (g i)
   set cr := ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ n
   set S := {x | t ^ r ≤ ∑' i, maximalFunction volume (h i) x ^ r}
-  have hM : Measurable fun x => ∑' i, maximalFunction volume (h i) x ^ r :=
-    Measurable.tsum fun i => (measurable_maximalFunction volume (h i)).pow_const r
-  have hcheb := mul_meas_ge_le_lintegral₀ (μ := volume) hM.aemeasurable (t ^ r)
-  have hdiag := lintegral_tsum_maximalFunction_rpow_le volume (f := h)
-    (fun i => (measurable_cubeAverage (hg i)).eNorm.aemeasurable) hr
-  simp only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card] at hdiag
   have htr : t ^ (r - 1) ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 ht) ht').ne'
   have htr' : t ^ (r - 1) ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by linarith) ht'
   refine (ENNReal.mul_le_mul_iff_right htr htr').1 ?_
@@ -324,8 +333,8 @@ private theorem mul_volume_le_tsum_maximalFunction_cubeAverage_rpow (hg : ∀ i,
         conv_rhs => rw [← sub_add_cancel r 1]
         rw [ENNReal.rpow_add_of_nonneg _ _ (by linarith) zero_le_one, ENNReal.rpow_one,
           mul_assoc]
-    _ ≤ ∫⁻ x, ∑' i, maximalFunction volume (h i) x ^ r := hcheb
-    _ ≤ cr * ∫⁻ x, ∑' i, h i x ^ r := hdiag
+    _ ≤ cr * ∫⁻ x, ∑' i, h i x ^ r :=
+        mul_volume_le_tsum_maximalFunction_rpow (fun i => measurable_cubeAverage (hg i)) hr _
     _ ≤ cr * ((2 ^ n * t) ^ (r - 1) * ∫⁻ x, G x) := by
         gcongr
         exact lintegral_tsum_cubeAverage_rpow_le hg hr.le hfin ht
@@ -404,20 +413,13 @@ private theorem volume_half_rpow_le_setLIntegral {g : κ → (ι → ℝ) → �
   have hr0 : 0 < r := by linarith
   have hT2 : T / 2 ≠ 0 := (ENNReal.div_pos (ENNReal.ofReal_pos.2 ht).ne' (by norm_num)).ne'
   have hT2' : T / 2 ≠ ∞ := ENNReal.div_ne_top ENNReal.ofReal_ne_top (by norm_num)
-  have hM : Measurable fun x => ∑' i, maximalFunction volume (V.indicator (g i)) x ^ r :=
-    Measurable.tsum fun i => (measurable_maximalFunction volume _).pow_const r
-  have hcheb := mul_meas_ge_le_lintegral₀ (μ := volume) hM.aemeasurable ((T / 2) ^ r)
-  have hdiag := lintegral_tsum_maximalFunction_rpow_le volume (f := fun i => V.indicator (g i))
-    (fun i => ((hg i).indicator hV).eNorm.aemeasurable) hr
-  simp only [eNorm_eq_self, Module.finrank_fintype_fun_eq_card] at hdiag
   have hpow (x : ι → ℝ) : ∑' i, V.indicator (g i) x ^ r = V.indicator (fun y => G y ^ r) x := by
     calc ∑' i, V.indicator (g i) x ^ r = ((∑' i, V.indicator (g i) x ^ r) ^ (1 / r)) ^ r := by
           rw [one_div, ENNReal.rpow_inv_rpow hr0.ne']
       _ = V.indicator G x ^ r := by rw [rpow_tsum_indicator_rpow V g hr0]
-      _ = V.indicator (fun y => G y ^ r) x := by
-          by_cases hx : x ∈ V
-          · simp only [indicator_of_mem hx]
-          · simp [indicator_of_notMem hx, ENNReal.zero_rpow_of_pos hr0]
+      _ = V.indicator (fun y => G y ^ r) x :=
+          congrFun (indicator_comp_of_zero (g := fun a : ℝ≥0∞ => a ^ r)
+            (ENNReal.zero_rpow_of_pos hr0)).symm x
   have hTr : (T / 2) ^ r ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 hT2) hT2').ne'
   have hTr' : (T / 2) ^ r ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hr0.le hT2'
   have hTrinv : ((T / 2) ^ r)⁻¹ = 2 ^ r * ENNReal.ofReal (t ^ (-r)) := by
@@ -428,7 +430,8 @@ private theorem volume_half_rpow_le_setLIntegral {g : κ → (ι → ℝ) → �
   calc volume S = ((T / 2) ^ r)⁻¹ * ((T / 2) ^ r * volume S) := by
         rw [← mul_assoc, ENNReal.inv_mul_cancel hTr hTr', one_mul]
     _ ≤ ((T / 2) ^ r)⁻¹ * (cr * ∫⁻ x, ∑' i, V.indicator (g i) x ^ r) :=
-        mul_le_mul_right (hcheb.trans hdiag) _
+        mul_le_mul_right
+          (mul_volume_le_tsum_maximalFunction_rpow (fun i => (hg i).indicator hV) hr _) _
     _ = 2 ^ r * cr * ENNReal.ofReal (t ^ (-r)) * ∫⁻ x in V, G x ^ r := by
         rw [lintegral_congr hpow, lintegral_indicator hV, hTrinv]
         ring
