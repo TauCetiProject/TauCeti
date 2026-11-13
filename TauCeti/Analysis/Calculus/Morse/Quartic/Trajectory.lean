@@ -114,15 +114,15 @@ theorem intervalBaseTimeCoordinate_abs_quarticTrajectoryPoint {p q : ι → ℝ}
 /-- Trajectory points lie in the cube `[-1, 1]^ι` when their endpoint `q` does. -/
 theorem quarticTrajectoryPoint_mem_Icc (p : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1)
     (u : ι → ℝ) : quarticTrajectoryPoint p q u ∈ Icc (-1) 1 := by
-  have key : ∀ i, |quarticTrajectoryPoint p q u i| ≤ 1 := fun i ↦ by
-    have hqi : |q i| ≤ 1 := abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
-    rw [quarticTrajectoryPoint_apply]
-    split_ifs with h
-    · rwa [h]
-    · rw [abs_mul, abs_of_pos ho.1]
-      nlinarith [abs_nonneg (q i), ho.1, ho.2]
-  exact ⟨fun i ↦ (abs_le.1 (key i)).1, fun i ↦ (abs_le.1 (key i)).2⟩
+  rw [← pi_univ_Icc]
+  refine fun i _ ↦ abs_le.1 ?_
+  have hqi : |q i| ≤ 1 := abs_le.2 ⟨hq.1 i, hq.2 i⟩
+  have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
+  rw [quarticTrajectoryPoint_apply]
+  split_ifs with h
+  · rwa [h]
+  · rw [abs_mul]
+    exact (mul_le_of_le_one_left (abs_nonneg _) hqi).trans ((abs_of_pos ho.1).trans_le ho.2.le)
 
 /-- **Time coordinates of a trajectory point.** A point `y` of the cube on a trajectory from `p`
 to `q` is the trajectory point with time coordinates `intervalBaseTimeCoordinate |y i|`. -/

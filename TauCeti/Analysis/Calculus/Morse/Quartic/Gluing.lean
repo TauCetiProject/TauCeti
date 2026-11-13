@@ -154,37 +154,34 @@ theorem quarticGluingLate_same_left (p q : ι → ℝ) (ρ : ℝ) (u : ι → �
 /-- The early point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingEarly_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingEarly p r q ρ u ∈ Icc (-1) 1 := by
-  have key : ∀ i, |quarticGluingEarly p r q ρ u i| ≤ 1 := fun i ↦ by
-    have hqi : |q i| ≤ 1 := abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    rw [quarticGluingEarly_apply]
-    split_ifs with h
-    · rwa [h]
-    · have hx := Real.abs_div_sqrt_one_add_sq_le_one (Real.exp (u i) * ρ)
-      rw [abs_mul, ← div_eq_mul_inv]
-      nlinarith [abs_nonneg (q i), abs_nonneg (Real.exp (u i) * ρ /
-        √(1 + (Real.exp (u i) * ρ) ^ 2))]
-    · have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
-      rw [abs_mul, abs_of_pos ho.1]
-      nlinarith [abs_nonneg (q i), ho.1, ho.2]
-  exact ⟨fun i ↦ (abs_le.1 (key i)).1, fun i ↦ (abs_le.1 (key i)).2⟩
+  have ht := quarticTrajectoryPoint_mem_Icc p hq u
+  rw [← pi_univ_Icc]
+  refine fun i _ ↦ abs_le.1 ?_
+  have hti : |quarticTrajectoryPoint p q u i| ≤ 1 := abs_le.2 ⟨ht.1 i, ht.2 i⟩
+  rw [quarticTrajectoryPoint_apply] at hti
+  rw [quarticGluingEarly_apply]
+  split_ifs at hti ⊢
+  · exact hti
+  · rw [abs_mul, ← div_eq_mul_inv]
+    exact (mul_le_of_le_one_left (abs_nonneg _) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans
+      (Real.abs_div_sqrt_one_add_sq_le_one _)
+  · exact hti
 
 /-- The late point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingLate_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingLate p r q ρ u ∈ Icc (-1) 1 := by
-  have key : ∀ i, |quarticGluingLate p r q ρ u i| ≤ 1 := fun i ↦ by
-    have hqi : |q i| ≤ 1 := abs_le.2 ⟨hq.1 i, hq.2 i⟩
-    rw [quarticGluingLate_apply]
-    split_ifs with h
-    · rwa [h]
-    · have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
-      rw [abs_mul, abs_of_pos ho.1]
-      nlinarith [abs_nonneg (q i), ho.1, ho.2]
-    · have hs := Real.one_le_sqrt_one_add_sq (Real.exp (-u i) * ρ)
-      have hy : (√(1 + (Real.exp (-u i) * ρ) ^ 2))⁻¹ ∈ Ioc 0 1 :=
-        ⟨inv_pos.2 (by linarith), inv_le_one_of_one_le₀ hs⟩
-      rw [abs_mul, abs_of_pos hy.1]
-      nlinarith [abs_nonneg (q i), hy.1, hy.2]
-  exact ⟨fun i ↦ (abs_le.1 (key i)).1, fun i ↦ (abs_le.1 (key i)).2⟩
+  have ht := quarticTrajectoryPoint_mem_Icc p hq u
+  rw [← pi_univ_Icc]
+  refine fun i _ ↦ abs_le.1 ?_
+  have hti : |quarticTrajectoryPoint p q u i| ≤ 1 := abs_le.2 ⟨ht.1 i, ht.2 i⟩
+  rw [quarticTrajectoryPoint_apply] at hti
+  rw [quarticGluingLate_apply]
+  split_ifs at hti ⊢
+  · exact hti
+  · exact hti
+  · rw [abs_mul, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
+    exact (mul_le_of_le_one_left (by positivity) (abs_le.2 ⟨hq.1 i, hq.2 i⟩)).trans
+      (inv_le_one_of_one_le₀ (Real.one_le_sqrt_one_add_sq _))
 
 /-- For `ρ > 0` the early point is the trajectory point with the second block delayed by
 `-log ρ`. -/
@@ -290,13 +287,12 @@ theorem quarticGluingEarly_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i �
   funext i
   simp only [quarticGluingEarly_apply, quarticTrajectoryPoint_apply]
   by_cases hpr' : p i = r i
-  · by_cases hpq : p i = q i
-    · rw [ite_eq_left hpq, ite_eq_left hpr']
-    · rw [ite_eq_right hpq, ite_eq_left hpr', ite_eq_left hpr', mul_zero, zero_mul, mul_zero]
-      exact (hpr'.trans (hrq i fun h ↦ hpq (hpr'.trans h))).symm
+  · have := hrq i
+    split_ifs <;> simp_all
   · have h0 := hpr i hpr'
     have hrq' : r i = q i := by_contra fun h ↦ hpr' (h0.trans (hrq i h).symm)
-    rw [ite_eq_right fun h ↦ hpr' (h.trans hrq'.symm), ite_eq_right hpr', ite_eq_right hpr', hrq']
+    rw [hrq'] at hpr' ⊢
+    simp [hpr']
 
 /-- **The broken end, late side.** At `ρ = 0` the late point is the point with time coordinates
 `u` on the second piece, from `r` to `q`. -/
@@ -306,13 +302,11 @@ theorem quarticGluingLate_zero {p r q : ι → ℝ} (hpr : ∀ i, p i ≠ r i �
   funext i
   simp only [quarticGluingLate_apply, quarticTrajectoryPoint_apply]
   by_cases hpr' : p i = r i
-  · by_cases hpq : p i = q i
-    · rw [ite_eq_left hpq, ite_eq_left (hpr'.symm.trans hpq), hpr']
-    · rw [ite_eq_right hpq, ite_eq_left hpr', ite_eq_right fun h ↦ hpq (hpr'.trans h)]
+  · split_ifs <;> simp_all
   · have h0 := hpr i hpr'
     have hrq' : r i = q i := by_contra fun h ↦ hpr' (h0.trans (hrq i h).symm)
-    rw [ite_eq_right fun h ↦ hpr' (h.trans hrq'.symm), ite_eq_right hpr', ite_eq_left hrq', hrq']
-    simp
+    rw [hrq'] at hpr' ⊢
+    simp [hpr']
 
 /-- The late point depends on the gluing parameter only through `ρ²`: the arriving coordinates
 approach `±1` at rate `2`. -/
@@ -346,10 +340,10 @@ theorem exp_neg_mul_mul_quarticGluingEarly_div_sqrt_one_sub_sq {p r q : ι → �
     (hpq : p i ≠ q i) (hpr : p i = r i) (hq : q i = -1 ∨ q i = 1) (ρ : ℝ) (u : ι → ℝ) :
     Real.exp (-u i) * (q i * quarticGluingEarly p r q ρ u i /
       √(1 - quarticGluingEarly p r q ρ u i ^ 2)) = ρ := by
-  have hq2 : q i * q i = 1 := by rcases hq with h | h <;> simp [h]
-  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr, ← mul_assoc, hq2, one_mul,
-    mul_pow (q i), sq (q i), hq2, one_mul, Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq,
-    ← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
+  rw [quarticGluingEarly_apply, ite_eq_right hpq, ite_eq_left hpr]
+  rcases hq with h | h <;> simp only [h, neg_mul, one_mul, neg_neg, neg_sq,
+    Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq] <;>
+    simp [← mul_assoc, ← Real.exp_add]
 
 /-- **The glued pair determines its parameters.** For gluing parameters `ρ₁, ρ₂ ≥ 0`, the glued
 pairs agree exactly when the time coordinates agree on every coordinate that moves, and the
