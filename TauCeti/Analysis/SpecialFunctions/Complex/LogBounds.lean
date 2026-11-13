@@ -52,6 +52,8 @@ term takes.
   `1 - w / p` is nonzero.
 * `Complex.hasSum_taylorSeries_log'`: `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for
   `‖z‖ < 1`.
+* `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
+  `(n + 1)⁻¹`.
 -/
 
 public section
@@ -124,6 +126,13 @@ theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
   ext n
   push_cast
   ring
+
+/-- The coefficients of the Taylor series of `log (1 + z)` have norm
+`‖(-1) ^ n / (n + 1)‖ = (n + 1)⁻¹`. -/
+theorem norm_neg_one_pow_div_add_one (n : ℕ) :
+    ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
+  rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
+    Complex.norm_natCast, Nat.cast_add_one]
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within

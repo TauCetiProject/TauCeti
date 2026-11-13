@@ -190,10 +190,8 @@ theorem exists_memSobolev_ae_eq_log_one_add {s : ℝ} (hs : finrank ℝ E < 2 * 
     refine (summable_geometric_of_lt_one (by positivity) hC₁R).of_nonneg_of_le
       (fun n ↦ by positivity) fun n ↦ ?_
     refine mul_le_of_le_one_left (by positivity) ?_
-    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow]
-    refine div_le_one_of_le₀ ?_ (norm_nonneg _)
-    rw [← Nat.cast_add_one, Complex.norm_natCast]
-    exact_mod_cast Nat.le_add_left 1 n
+    rw [Complex.norm_neg_one_pow_div_add_one]
+    exact inv_le_one_of_one_le₀ (le_add_of_nonneg_left n.cast_nonneg)
   obtain ⟨v, hv, hvs, -⟩ := hser hU hsum
   refine ⟨v, ?_, hvs⟩
   filter_upwards [hv, hsup hU] with x hx hUx
@@ -342,9 +340,7 @@ theorem exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add {s : ℝ}
   -- The logarithm series `∑ₙ (-1)ⁿ z ^ (n + 1) / (n + 1)`, whose majorant is geometric.
   set a : ℕ → ℂ := fun n ↦ (-1) ^ n / (n + 1)
   have ha (n : ℕ) : ‖a n‖ * (n + 1) * (C₁ * R) ^ n = (C₁ * R) ^ n := by
-    rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, ← Nat.cast_add_one,
-      Complex.norm_natCast]
-    push_cast
+    rw [Complex.norm_neg_one_pow_div_add_one]
     field_simp
   have hsmall {X : Lp ℂ 2 (volume : Measure E)} (hX : MemSobolev s 2 (X : 𝓢'(E, ℂ)))
       (hXR : ‖hX.toBesselPotentialSpace‖ ≤ R) : ∀ᵐ x ∂volume, ‖X x‖ < 1 := by
