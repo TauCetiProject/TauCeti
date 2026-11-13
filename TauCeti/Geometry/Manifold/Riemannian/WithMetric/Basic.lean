@@ -51,7 +51,7 @@ copies of `M` are related by the identity diffeomorphism
 public section
 
 open Bundle Set
-open scoped Manifold ContDiff Topology
+open scoped Manifold ContDiff NNReal Topology
 
 noncomputable section
 
@@ -135,6 +135,34 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 @[simp]
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
+
+/-- The copy of a nonempty manifold is nonempty. -/
+instance [Nonempty M] : Nonempty (WithMetric g) :=
+  (equiv g).nonempty
+
+/-- The copy of a regular manifold is regular. -/
+instance [RegularSpace M] : RegularSpace (WithMetric g) :=
+  (homeomorph g).isInducing.regularSpace
+
+/-- The copy of a preconnected manifold is preconnected. -/
+instance [PreconnectedSpace M] : PreconnectedSpace (WithMetric g) :=
+  (homeomorph g).symm.surjective.denseRange.preconnectedSpace (homeomorph g).symm.continuous
+
+/-- The copy of a connected manifold is connected. -/
+instance [ConnectedSpace M] : ConnectedSpace (WithMetric g) :=
+  (homeomorph g).symm.surjective.connectedSpace (homeomorph g).symm.continuous
+
+/-- The copy of a second-countable manifold is second-countable. -/
+instance [SecondCountableTopology M] : SecondCountableTopology (WithMetric g) :=
+  (homeomorph g).secondCountableTopology
+
+/-- The copy of a Hausdorff manifold is Hausdorff. -/
+instance [T2Space M] : T2Space (WithMetric g) :=
+  (homeomorph g).isEmbedding.t2Space
+
+/-- The copy of a regular Hausdorff manifold is regular Hausdorff. -/
+instance [T3Space M] : T3Space (WithMetric g) :=
+  (homeomorph g).isEmbedding.t3Space
 
 /-- The copy of a compact manifold is compact. -/
 instance [CompactSpace M] : CompactSpace (WithMetric g) :=
@@ -415,6 +443,18 @@ theorem inner_def (x : WithMetric g) (v w : TangentSpace I x) :
     inner ℝ v w =
       g.inner x.ofWithMetric (mfderiv I I ofWithMetric x v) (mfderiv I I ofWithMetric x w) :=
   ContMDiffRiemannianMetric.pullback_inner _ _ _ _ x v w
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] in
+/-- A pointwise comparison with `g` bounds the differential of `ofWithMetric` by the same
+factor. Only the metric comparison for the given tangent vector is needed. -/
+theorem norm_mfderiv_ofWithMetric_le_mul {C : ℝ≥0} {x : WithMetric g}
+    {v : TangentSpace I x}
+    (hg : ‖mfderiv I I ofWithMetric x v‖ ^ 2 ≤ (C : ℝ) ^ 2 *
+      g.inner x.ofWithMetric (mfderiv I I ofWithMetric x v) (mfderiv I I ofWithMetric x v)) :
+    ‖mfderiv I I ofWithMetric x v‖ ≤ C * ‖v‖ := by
+  rw [← inner_def, real_inner_self_eq_norm_sq, ← mul_pow] at hg
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (mul_nonneg C.coe_nonneg (norm_nonneg _))
+    two_ne_zero).1 hg
 
 /-- The chart frames of the copy of `M` are those of `M`. -/
 theorem mfderiv_ofWithMetric_chartLocalFrame (α x : WithMetric g)
