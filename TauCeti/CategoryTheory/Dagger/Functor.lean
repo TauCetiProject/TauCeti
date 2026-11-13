@@ -34,7 +34,7 @@ class PreservesDagger (F : C ⥤ D) : Prop where
   map_dagger : ∀ {X Y : C} (f : X ⟶ Y), F.map (dagger f) = dagger (F.map f)
 
 /-- Mapping an arrow by a dagger-preserving functor commutes with its dagger. -/
-@[simp] theorem map_dagger (F : C ⥤ D) [F.PreservesDagger] {X Y : C} (f : X ⟶ Y) :
+@[simp, grind _=_] theorem map_dagger (F : C ⥤ D) [F.PreservesDagger] {X Y : C} (f : X ⟶ Y) :
     F.map (dagger f) = dagger (F.map f) := PreservesDagger.map_dagger f
 
 /-- Identity functors preserve daggers. -/
@@ -78,22 +78,22 @@ def dagger (α : F ⟶ G) : G ⟶ F where
     simpa using (congrArg TauCeti.dagger (α.naturality (TauCeti.dagger f))).symm
 
 /-- The dagger of a natural transformation acts componentwise. -/
-@[simp] theorem dagger_app (α : F ⟶ G) (X : C) :
+@[simp, grind =] theorem dagger_app (α : F ⟶ G) (X : C) :
     α.dagger.app X = TauCeti.dagger (α.app X) := (rfl)
 
 /-- Taking the pointwise dagger twice recovers the natural transformation. -/
-@[simp] theorem dagger_dagger (α : F ⟶ G) : α.dagger.dagger = α := by
+@[simp, grind =] theorem dagger_dagger (α : F ⟶ G) : α.dagger.dagger = α := by
   ext X
   simp
 
 /-- The pointwise dagger fixes identity natural transformations. -/
-@[simp] theorem dagger_id (F : C ⥤ D) [F.PreservesDagger] :
+@[simp, grind =] theorem dagger_id (F : C ⥤ D) [F.PreservesDagger] :
     (𝟙 F : F ⟶ F).dagger = 𝟙 F := by
   ext X
   simp
 
 /-- Taking pointwise daggers reverses vertical composition. -/
-@[simp] theorem dagger_comp [H.PreservesDagger] (α : F ⟶ G) (β : G ⟶ H) :
+@[simp, grind =] theorem dagger_comp [H.PreservesDagger] (α : F ⟶ G) (β : G ⟶ H) :
     (α ≫ β).dagger = β.dagger ≫ α.dagger := by
   ext X
   simp
@@ -104,15 +104,22 @@ def unitaryIso (α : F ⟶ G) (hα : ∀ X, IsUnitary (α.app X)) : F ≅ G :=
 
 omit [DaggerCategory C] [F.PreservesDagger] [G.PreservesDagger] in
 /-- The forward natural transformation of the pointwise unitary isomorphism. -/
-@[simp] theorem unitaryIso_hom (α : F ⟶ G) (hα : ∀ X, IsUnitary (α.app X)) :
+@[simp, grind =] theorem unitaryIso_hom (α : F ⟶ G) (hα : ∀ X, IsUnitary (α.app X)) :
     (α.unitaryIso hα).hom = α := by
   ext X
   simp [unitaryIso]
 
 /-- The inverse of the pointwise unitary isomorphism is the pointwise dagger. -/
-@[simp] theorem unitaryIso_inv (α : F ⟶ G) (hα : ∀ X, IsUnitary (α.app X)) :
+@[simp, grind =] theorem unitaryIso_inv (α : F ⟶ G) (hα : ∀ X, IsUnitary (α.app X)) :
     (α.unitaryIso hα).inv = α.dagger := by
   ext X
+  simp [unitaryIso]
+
+omit [DaggerCategory C] [F.PreservesDagger] [G.PreservesDagger] in
+/-- The inverse of the pointwise unitary isomorphism acts by the component's dagger. -/
+@[simp, grind =] theorem unitaryIso_inv_app (α : F ⟶ G)
+    (hα : ∀ X, IsUnitary (α.app X)) (X : C) :
+    (α.unitaryIso hα).inv.app X = TauCeti.dagger (α.app X) := by
   simp [unitaryIso]
 
 end CategoryTheory.NatTrans

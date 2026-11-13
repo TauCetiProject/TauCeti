@@ -27,6 +27,7 @@ public section
 noncomputable section
 
 open CategoryTheory
+open scoped BigOperators
 
 universe u v
 
@@ -65,6 +66,12 @@ instance : ConcreteCategory (HilbertCat.{u, v} 𝕜) (fun X Y => X →L[𝕜] Y)
   hom f := f
   ofHom f := f
 
+/-- Bundle a continuous linear map between unbundled Hilbert spaces as a morphism. -/
+abbrev ofHom {E F : Type v} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    (f : E →L[𝕜] F) : of 𝕜 E ⟶ of 𝕜 F :=
+  ConcreteCategory.ofHom f
+
 /-- Hom spaces retain the continuous-linear-map normed group structure. -/
 instance (X Y : HilbertCat.{u, v} 𝕜) : NormedAddCommGroup (X ⟶ Y) :=
   inferInstanceAs (NormedAddCommGroup (X →L[𝕜] Y))
@@ -102,6 +109,37 @@ variable {X Y Z : HilbertCat.{u, v} 𝕜}
 /-- The concrete-category projection retains the underlying continuous linear map. -/
 theorem hom_eq (f : X ⟶ Y) : ConcreteCategory.hom f = (f : X →L[𝕜] Y) := (rfl)
 
+/-- The underlying map of the zero morphism is zero. -/
+@[simp] theorem hom_zero : ConcreteCategory.hom (0 : X ⟶ Y) = 0 := (rfl)
+
+/-- The underlying map of a sum is the sum of the underlying maps. -/
+@[simp] theorem hom_add (f g : X ⟶ Y) :
+    ConcreteCategory.hom (f + g) = ConcreteCategory.hom f + ConcreteCategory.hom g := (rfl)
+
+/-- The underlying map of a negated morphism is the negated underlying map. -/
+@[simp] theorem hom_neg (f : X ⟶ Y) :
+    ConcreteCategory.hom (-f) = -ConcreteCategory.hom f := (rfl)
+
+/-- The underlying map of a difference is the difference of the underlying maps. -/
+@[simp] theorem hom_sub (f g : X ⟶ Y) :
+    ConcreteCategory.hom (f - g) = ConcreteCategory.hom f - ConcreteCategory.hom g := (rfl)
+
+/-- Natural scalar multiplication commutes with the underlying-map projection. -/
+@[simp] theorem hom_nsmul (n : ℕ) (f : X ⟶ Y) :
+    ConcreteCategory.hom (n • f) = n • ConcreteCategory.hom f := (rfl)
+
+/-- Integer scalar multiplication commutes with the underlying-map projection. -/
+@[simp] theorem hom_zsmul (n : ℤ) (f : X ⟶ Y) :
+    ConcreteCategory.hom (n • f) = n • ConcreteCategory.hom f := (rfl)
+
+/-- Field scalar multiplication commutes with the underlying-map projection. -/
+@[simp] theorem hom_smul (r : 𝕜) (f : X ⟶ Y) :
+    ConcreteCategory.hom (r • f) = r • ConcreteCategory.hom f := (rfl)
+
+/-- The underlying map of a finite sum is the finite sum of the underlying maps. -/
+@[simp] theorem hom_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
+    ConcreteCategory.hom (∑ i ∈ s, f i) = ∑ i ∈ s, ConcreteCategory.hom (f i) := (rfl)
+
 /-- The categorical identity is the continuous linear identity. -/
 theorem id_eq_id (X : HilbertCat 𝕜) :
     (𝟙 X : X ⟶ X) = ContinuousLinearMap.id 𝕜 X := (rfl)
@@ -117,6 +155,11 @@ theorem inner_dagger_left (f : X ⟶ Y) (x : X) (y : Y) :
     inner 𝕜 (dagger f y) x = inner 𝕜 y (f x) :=
   ContinuousLinearMap.adjoint_inner_left f x y
 
+/-- The dagger satisfies the adjoint inner-product identity in the right argument. -/
+theorem inner_dagger_right (f : X ⟶ Y) (x : X) (y : Y) :
+    inner 𝕜 x (dagger f y) = inner 𝕜 (f x) y :=
+  ContinuousLinearMap.adjoint_inner_right f x y
+
 /-- The operator norm is submultiplicative under composition. -/
 theorem norm_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) : ‖f ≫ g‖ ≤ ‖g‖ * ‖f‖ :=
   ContinuousLinearMap.opNorm_comp_le g f
@@ -126,7 +169,7 @@ theorem norm_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) : ‖f ≫ g‖ ≤ ‖g‖ * �
   ContinuousLinearMap.adjoint.norm_map f
 
 /-- The C*-identity for Hilbert-space morphisms, in categorical composition order. -/
-theorem norm_comp_dagger (f : X ⟶ Y) : ‖f ≫ dagger f‖ = ‖f‖ ^ 2 := by
+theorem norm_self_comp_dagger (f : X ⟶ Y) : ‖f ≫ dagger f‖ = ‖f‖ ^ 2 := by
   rw [comp_eq_comp, dagger_eq_adjoint, pow_two]
   exact ContinuousLinearMap.norm_adjoint_comp_self f
 
@@ -161,6 +204,11 @@ def linearIsometryEquivOfUnitary (f : X ⟶ Y) (hf : IsUnitary f) :
       norm_map' := (ContinuousLinearMap.norm_map_iff_adjoint_comp_self f).2
         (by simpa only [ContinuousLinearMap.one_def] using adjoint_comp_self) }
 
+/-- The recovered equivalence has the original continuous linear map. -/
+@[simp] theorem linearIsometryEquivOfUnitary_toContinuousLinearMap
+    (f : X ⟶ Y) (hf : IsUnitary f) :
+    (linearIsometryEquivOfUnitary f hf : X →L[𝕜] Y) = f := (rfl)
+
 /-- The recovered equivalence has the original arrow as its forward map. -/
 theorem linearIsometryEquivOfUnitary_apply (f : X ⟶ Y) (hf : IsUnitary f) (x : X) :
     linearIsometryEquivOfUnitary f hf x = f x := (rfl)
@@ -177,13 +225,26 @@ def unitaryEquivLinearIsometryEquiv :
   left_inv f := by apply Subtype.ext; ext x; rfl
   right_inv e := by ext x; rfl
 
+/-- The unitary-to-isometry correspondence uses the recovered isometric equivalence. -/
+theorem unitaryEquivLinearIsometryEquiv_eq (f : { f : X ⟶ Y // IsUnitary f }) :
+    unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.1 f.2 := (rfl)
+
+/-- The unitary-to-isometry correspondence preserves the underlying continuous linear map. -/
+@[simp] theorem unitaryEquivLinearIsometryEquiv_toContinuousLinearMap
+    (f : { f : X ⟶ Y // IsUnitary f }) :
+    (unitaryEquivLinearIsometryEquiv f : X →L[𝕜] Y) = f.1 := (rfl)
+
+/-- The inverse correspondence has the isometry's underlying continuous linear map. -/
+@[simp] theorem unitaryEquivLinearIsometryEquiv_symm_val (e : X ≃ₗᵢ[𝕜] Y) :
+    (unitaryEquivLinearIsometryEquiv.symm e).1 = ofHom (e : X →L[𝕜] Y) := (rfl)
+
 /-- The unitary-to-isometry correspondence preserves evaluation. -/
-@[simp] theorem unitaryEquivLinearIsometryEquiv_apply
+theorem unitaryEquivLinearIsometryEquiv_apply
     (f : { f : X ⟶ Y // IsUnitary f }) (x : X) :
     unitaryEquivLinearIsometryEquiv f x = f.1 x := (rfl)
 
 /-- The inverse correspondence regards an isometry as its continuous linear map. -/
-@[simp] theorem unitaryEquivLinearIsometryEquiv_symm_apply
+theorem unitaryEquivLinearIsometryEquiv_symm_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
 

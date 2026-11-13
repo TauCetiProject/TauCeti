@@ -43,13 +43,15 @@ class DaggerCategory (C : Type u) [Category.{v} C] where
 export DaggerCategory (dagger dagger_id dagger_comp dagger_dagger)
 
 attribute [simp] dagger_id dagger_comp dagger_dagger
+attribute [grind =] dagger_id dagger_dagger
+attribute [grind _=_] dagger_comp
 
-namespace Dagger
+namespace DaggerCategory
 
 /-- Postfix notation for the chosen dagger. -/
 scoped postfix:max "†" => TauCeti.DaggerCategory.dagger
 
-end Dagger
+end DaggerCategory
 
 variable {C : Type u} [Category.{v} C] [DaggerCategory C]
 variable {W X Y Z : C}
@@ -72,6 +74,28 @@ def daggerEquiv (X Y : C) : (X ⟶ Y) ≃ (Y ⟶ X) where
 @[simp] theorem dagger_inj {f g : X ⟶ Y} : dagger f = dagger g ↔ f = g :=
   (daggerEquiv X Y).injective.eq_iff
 
+/-- Taking the dagger preserves invertibility. -/
+instance isIso_dagger (f : X ⟶ Y) [IsIso f] : IsIso (dagger f) where
+  out := ⟨dagger (inv f), by
+    rw [← dagger_comp, IsIso.inv_hom_id, dagger_id], by
+    rw [← dagger_comp, IsIso.hom_inv_id, dagger_id]⟩
+
+/-- Taking the dagger preserves and reflects invertibility. -/
+@[simp] theorem isIso_dagger_iff (f : X ⟶ Y) : IsIso (dagger f) ↔ IsIso f := by
+  constructor
+  · intro h
+    have := h
+    simpa only [dagger_dagger] using (isIso_dagger (dagger f))
+  · intro h
+    have := h
+    infer_instance
+
+/-- Taking the dagger commutes with the inverse of an invertible arrow. -/
+@[simp] theorem dagger_inv (f : X ⟶ Y) [IsIso f] :
+    dagger (inv f) = inv (dagger f) := by
+  apply IsIso.eq_inv_of_hom_inv_id
+  rw [← dagger_comp, IsIso.inv_hom_id, dagger_id]
+
 /-- Additive compatibility of the chosen dagger on a preadditive category. -/
 class DaggerPreadditive (C : Type u) [Category.{v} C] [DaggerCategory C]
     [Preadditive C] : Prop where
@@ -79,7 +103,7 @@ class DaggerPreadditive (C : Type u) [Category.{v} C] [DaggerCategory C]
   dagger_add : ∀ {X Y : C} (f g : X ⟶ Y), dagger (f + g) = dagger f + dagger g
 
 export DaggerPreadditive (dagger_add)
-attribute [simp] dagger_add
+attribute [simp, grind =] dagger_add
 
 section Preadditive
 
@@ -94,17 +118,33 @@ def daggerAddEquiv (X Y : C) : (X ⟶ Y) ≃+ (Y ⟶ X) where
 @[simp] theorem daggerAddEquiv_apply (f : X ⟶ Y) :
     daggerAddEquiv X Y f = dagger f := (rfl)
 
+/-- The inverse additive dagger equivalence reverses its endpoints. -/
+@[simp] theorem daggerAddEquiv_symm : (daggerAddEquiv X Y).symm = daggerAddEquiv Y X := (rfl)
+
+/-- Forgetting additivity recovers the dagger bijection. -/
+@[simp] theorem daggerAddEquiv_toEquiv :
+    (daggerAddEquiv X Y : (X ⟶ Y) ≃ (Y ⟶ X)) = daggerEquiv X Y := (rfl)
+
 /-- The dagger fixes the zero arrow. -/
-@[simp] theorem dagger_zero : dagger (0 : X ⟶ Y) = 0 :=
+@[simp, grind =] theorem dagger_zero : dagger (0 : X ⟶ Y) = 0 :=
   (daggerAddEquiv X Y).map_zero
 
+/-- An arrow has zero dagger precisely when it is zero. -/
+@[simp] theorem dagger_eq_zero (f : X ⟶ Y) : dagger f = 0 ↔ f = 0 :=
+  (daggerAddEquiv X Y).map_eq_zero_iff
+
 /-- The dagger commutes with negation. -/
-@[simp] theorem dagger_neg (f : X ⟶ Y) : dagger (-f) = -dagger f :=
+@[simp, grind =] theorem dagger_neg (f : X ⟶ Y) : dagger (-f) = -dagger f :=
   (daggerAddEquiv X Y).map_neg f
 
 /-- The dagger commutes with subtraction. -/
-@[simp] theorem dagger_sub (f g : X ⟶ Y) : dagger (f - g) = dagger f - dagger g :=
+@[simp, grind =] theorem dagger_sub (f g : X ⟶ Y) : dagger (f - g) = dagger f - dagger g :=
   (daggerAddEquiv X Y).map_sub f g
+
+/-- Taking daggers commutes with finite sums of arrows. -/
+@[simp] theorem dagger_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
+    dagger (∑ i ∈ s, f i) = ∑ i ∈ s, dagger (f i) :=
+  map_sum (daggerAddEquiv X Y) f s
 
 end Preadditive
 
@@ -118,7 +158,7 @@ class DaggerLinear (R : Type w) [CommSemiring R] [StarRing R]
     dagger (r • f) = star r • dagger f
 
 export DaggerLinear (dagger_smul)
-attribute [simp] dagger_smul
+attribute [simp, grind =] dagger_smul
 
 /-- An arrow is unitary when its dagger is its two-sided inverse. -/
 def IsUnitary (f : X ⟶ Y) : Prop :=
@@ -131,11 +171,11 @@ theorem isUnitary_iff (f : X ⟶ Y) :
 namespace IsUnitary
 
 /-- A unitary arrow composed with its dagger is the identity. -/
-@[simp, reassoc] theorem hom_dagger_id {f : X ⟶ Y} (hf : IsUnitary f) :
+@[simp, reassoc, grind =] theorem hom_dagger_id {f : X ⟶ Y} (hf : IsUnitary f) :
     f ≫ dagger f = 𝟙 X := hf.1
 
 /-- The dagger of a unitary arrow composed with that arrow is the identity. -/
-@[simp, reassoc] theorem dagger_hom_id {f : X ⟶ Y} (hf : IsUnitary f) :
+@[simp, reassoc, grind =] theorem dagger_hom_id {f : X ⟶ Y} (hf : IsUnitary f) :
     dagger f ≫ f = 𝟙 Y := hf.2
 
 /-- Identity arrows are unitary. -/
@@ -160,10 +200,10 @@ def toIso {f : X ⟶ Y} (hf : IsUnitary f) : X ≅ Y where
   inv_hom_id := hf.2
 
 /-- The isomorphism of a unitary arrow has the original arrow as its forward map. -/
-@[simp] theorem toIso_hom {f : X ⟶ Y} (hf : IsUnitary f) : hf.toIso.hom = f := (rfl)
+@[simp, grind =] theorem toIso_hom {f : X ⟶ Y} (hf : IsUnitary f) : hf.toIso.hom = f := (rfl)
 
 /-- The isomorphism of a unitary arrow has the dagger as its inverse. -/
-@[simp] theorem toIso_inv {f : X ⟶ Y} (hf : IsUnitary f) :
+@[simp, grind =] theorem toIso_inv {f : X ⟶ Y} (hf : IsUnitary f) :
     hf.toIso.inv = TauCeti.dagger f := (rfl)
 
 end IsUnitary
@@ -189,7 +229,8 @@ theorem isUnitary_hom_iff (e : X ≅ Y) : IsUnitary e.hom ↔ dagger e.hom = e.i
     simp [isUnitary_iff, h]
 
 /-- The inverse of a unitary isomorphism is its dagger. -/
-theorem dagger_hom (e : X ≅ Y) (h : IsUnitary e.hom) : dagger e.hom = e.inv :=
+theorem dagger_hom_eq_inv_of_isUnitary (e : X ≅ Y) (h : IsUnitary e.hom) :
+    dagger e.hom = e.inv :=
   e.isUnitary_hom_iff.mp h
 
 end CategoryTheory.Iso
@@ -205,7 +246,7 @@ instance daggerStar : Star (End X) where
   star f := .of (dagger f.asHom)
 
 /-- The endomorphism star acts by the dagger on its underlying arrow. -/
-@[simp] theorem star_asHom (f : End X) : (star f).asHom = dagger f.asHom := (rfl)
+@[simp, grind =] theorem star_asHom (f : End X) : (star f).asHom = dagger f.asHom := (rfl)
 
 /-- The endomorphism dagger is involutive. -/
 instance daggerInvolutiveStar : InvolutiveStar (End X) where
