@@ -18,7 +18,9 @@ a Serre graph keeps those directed edge identities, so its paths can be used for
 graph groups, and labelled-graph arguments.
 
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
-unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them. An orientation
+chooses one dart above each geometric edge; orientations pull back along morphisms of Serre
+graphs.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
@@ -298,6 +300,20 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
   obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h
   · rfl
   · rw [f.map_rev, Δ.toGeomEdge_rev]
+
+/-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
+theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=
+  (isOrientation_iff Γ _).2 fun e => by simpa using (isOrientation_iff Δ O').1 hO' (f.mapE e)
+
+/-- A morphism carrying an orientation `O` of the source into an orientation `O'` of the target
+sends a dart into `O'` exactly when the dart lies in `O`: so `O` is the preimage of `O'`. -/
+theorem Hom.mapE_mem_iff {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {O : Set Γ.E} {O' : Set Δ.E} (hO : Γ.IsOrientation O) (hO' : Δ.IsOrientation O')
+    (hf : Set.MapsTo f.mapE O O') (e : Γ.E) : f.mapE e ∈ O' ↔ e ∈ O := by
+  refine ⟨fun he => ?_, fun he => hf he⟩
+  by_contra h
+  exact hO'.rev_notMem_of_mem Δ _ he (f.map_rev e ▸ hf ((hO.mem_rev_iff Γ e).mpr h))
 
 /-- The quiver prefunctor underlying a Serre-graph morphism. -/
 @[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
