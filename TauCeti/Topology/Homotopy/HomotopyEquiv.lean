@@ -37,6 +37,8 @@ homotopy equivalence is automatically a right homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
+* `ContinuousMap.HomotopyEquiv.zerothHomotopyCongr`: a homotopy equivalence induces a bijection
+  of the sets of path components.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
   componentwise.
 * `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
@@ -78,6 +80,25 @@ theorem HomotopyEquiv.pathConnectedSpace [PathConnectedSpace X]
         (Joined.map ⟨PathConnectedSpace.somePath (e.invFun y₀) (e.invFun y₁)⟩
           e.toFun.continuous)).trans
       (trace y₁)
+
+/-- **The set of path components is a homotopy invariant.** A homotopy equivalence induces a
+bijection of the sets of path components: the two composites are homotopic to the identity, so
+they move each point within its path component. -/
+def HomotopyEquiv.zerothHomotopyCongr (e : X ≃ₕ Y) : ZerothHomotopy X ≃ ZerothHomotopy Y where
+  toFun := Quotient.map e fun _ _ h ↦ h.map e.toFun.continuous
+  invFun := Quotient.map e.symm fun _ _ h ↦ h.map e.invFun.continuous
+  left_inv c := Quotient.inductionOn c fun a ↦ Quotient.sound ⟨e.left_inv.some.evalAt a⟩
+  right_inv c := Quotient.inductionOn c fun b ↦ Quotient.sound ⟨e.right_inv.some.evalAt b⟩
+
+@[simp]
+theorem HomotopyEquiv.zerothHomotopyCongr_mk (e : X ≃ₕ Y) (a : X) :
+    e.zerothHomotopyCongr (.mk a) = .mk (e a) :=
+  (rfl)
+
+@[simp]
+theorem HomotopyEquiv.zerothHomotopyCongr_symm_mk (e : X ≃ₕ Y) (b : Y) :
+    e.zerothHomotopyCongr.symm (.mk b) = .mk (e.symm b) :=
+  (rfl)
 
 /-- The product of two homotopy equivalences acts componentwise. -/
 @[simp]

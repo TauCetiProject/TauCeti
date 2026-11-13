@@ -30,7 +30,7 @@ namespace TauCeti.GradedModuleCat
 universe w v
 variable {k A B : Type*} [CommRing k] [Ring A] [Ring B]
   [Algebra k A] [Algebra k B]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
 
 section Left

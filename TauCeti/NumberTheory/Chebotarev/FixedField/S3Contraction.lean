@@ -105,7 +105,7 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
   have hindex : ¬ 2 ∣ theta.index :=
     theta.not_dvd_index_of_forall_eq_one_or_not_dvd_map
       hphi hphim hinj he hPhi hH hcrit
-  have hexp : ¬ 2 ∣ RingOfIntegers.exponent theta.1 := fun h ↦
+  have hexp : ¬ 2 ∣ NumberField.RingOfIntegers.exponent theta.1 := fun h ↦
     hindex (h.trans theta.exponent_dvd_index)
   obtain ⟨⟨q, hq⟩, hqP⟩ :=
     (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hexp).symm.surjective
@@ -120,7 +120,7 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
       C_0, sub_zero]
   rw [hmap]
   have hqX : q = X := by
-    rw [RingOfIntegers.monicFactorsMod, hmin, hmap, Multiset.mem_toFinset] at hq
+    rw [NumberField.RingOfIntegers.monicFactorsMod, hmin, hmap, Multiset.mem_toFinset] at hq
     rw [irreducible_X.normalizedFactors_pow] at hq
     simpa [monic_X.normalize_eq_self] using hq
   rw [hqX]

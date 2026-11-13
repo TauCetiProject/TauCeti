@@ -13,18 +13,15 @@ import TauCeti.Probability.Process.Stopping
 /-!
 # Bounded localization of continuous local martingales on raw filtrations
 
-An almost-surely continuous native local martingale admits a localizing sequence whose
-native stopped stages are bounded martingales. The centered stages have bound `n + 1`,
-and the full stages have bound `2 * n + 1`. In particular, on a finite measure space each
-stage has every finite moment. The original process need not be literally adapted and
-its initial value need not be integrable.
+On a finite measure space, an almost-surely continuous native local martingale admits a
+localizing sequence whose native stopped stages are bounded martingales. The centered stages
+have bound `n + 1`, and the full stages have bound `2 * n + 1`, simultaneously at all times
+outside one common null set. In particular, each stage has every finite moment.
 
-The construction stays on the original filtration. Select the adapted surrogate from
-`ProbabilityTheory.Locally.exists_stronglyAdapted_ae_eq`, use its countable-range level
-localizers, and cut them off at time zero where its initial norm exceeds `n`.
-Countable-range optional sampling of the original native martingale stages then gives
-actual bounded martingale stages, not merely indistinguishable stopped versions.
-No completeness or right continuity of the filtration is required.
+These stages evaluate the original process on its original filtration, providing bounded
+martingales for subsequent localized constructions. The original process need not be literally
+adapted and its initial value need not be integrable. No completeness or right continuity of
+the filtration is required.
 
 ## References
 
@@ -84,8 +81,9 @@ private theorem bounded_native_stage {Y : ℝ≥0 → Ω → E}
   · simp only [Set.indicator_apply, Set.mem_ofPred_eq, hpos, ↓reduceIte, sub_self, norm_zero]
     constructor <;> positivity
 
-/-- An almost-surely continuous native local martingale has bounded native martingale stages on
-its original raw filtration, even without adaptation or moments of its initial value. For the
+/-- On a finite measure space, an almost-surely continuous native local martingale has bounded
+native martingale stages on its original raw filtration, even without adaptation or moments
+of its initial value. For the
 native stage `Z := stoppedProcess (fun t ↦ {ω | 0 < ρ n ω}.indicator (M t)) (ρ n)`, the
 centered bound `‖Z t ω - Z 0 ω‖ ≤ n + 1` and full bound `‖Z t ω‖ ≤ 2 * n + 1` hold
 simultaneously for all stage indices `n` and times `t`, outside one common null set. -/
