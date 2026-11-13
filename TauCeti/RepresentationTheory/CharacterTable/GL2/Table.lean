@@ -249,7 +249,7 @@ theorem coe_classFunction_injective :
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2SteinbergTwist β α)
   · exact congrArg steinbergTwist (GL2SteinbergTwist_character_injective hij)
   · exact absurd hij (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries α _ _)
-  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ hψ)
+  · exact absurd hij (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter α _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_character_GL2PrincipalSeries β _ _)
   · exact absurd hij.symm (character_GL2SteinbergTwist_ne_character_GL2PrincipalSeries β _ _)
   · obtain ⟨e⟩ := FDRep.nonempty_iso_of_character_eq _ _ hij
@@ -257,7 +257,7 @@ theorem coe_classFunction_injective :
     exact Sym2.eq_iff.mpr ((nonempty_iso_GL2PrincipalSeries_iff F).mp ⟨e⟩)
   · exact absurd hij (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · exact absurd hij.symm (character_GL2Linear_ne_GL2CuspidalVirtualCharacter β _ hψ)
-  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ hψ)
+  · exact absurd hij.symm (character_GL2SteinbergTwist_ne_GL2CuspidalVirtualCharacter β _ _)
   · exact absurd hij.symm (character_GL2PrincipalSeries_ne_GL2CuspidalVirtualCharacter _ _ _ _)
   · simp only [cuspidal.injEq]
     exact Quotient.sound

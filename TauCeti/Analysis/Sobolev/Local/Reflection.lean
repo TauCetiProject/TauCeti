@@ -793,7 +793,7 @@ theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0
   have hset : ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
       (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
     rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
-    exact ae_eq_set_inter (ae_eq_refl _) (Complex.setOf_le_im_ae_eq 0)
+    exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
   exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
     (by rw [Measure.restrict_congr_set hset]; exact hD'.ae_eq hD)
 

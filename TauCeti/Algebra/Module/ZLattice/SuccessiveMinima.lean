@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 

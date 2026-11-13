@@ -274,6 +274,12 @@ theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
     value k (u + v) = value k u + value k v :=
   map_add (valueL k) u v
 
+/-- The value component preserves subtraction. -/
+@[simp]
+theorem value_sub (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u - v) = value k u - value k v :=
+  map_sub (valueL k) u v
+
 /-- The value component preserves scalar multiplication. -/
 @[simp]
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
