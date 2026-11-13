@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Aut
+import Mathlib.Basic.Finite.Sum
 
 /-!
 # Barycentric subdivision of a Serre graph
@@ -21,7 +22,8 @@ automorphism never maps a dart to its reverse: an automorphism inverting an edge
 the midpoint of that edge instead. This is how an action with inversions is replaced by an
 action without inversions.
 
-Subdivision preserves connectedness and acyclicity, so the subdivision of a tree is a tree.
+Subdivision preserves connectedness and acyclicity, so the subdivision of a tree is a tree. The
+subdivision of a finite graph is finite, with one new vertex for each geometric edge.
 
 ## Main declarations
 
@@ -137,28 +139,22 @@ theorem barycentricSubdivision_dart_cases {motive : Γ.barycentricSubdivision.E 
     Γ.barycentricSubdivision.tgt (Γ.barycentricDart e false) = Γ.barycentricVertex (Γ.src e) :=
   (rfl)
 
-/-! ### Counting darts -/
+/-! ### Finiteness -/
 
-/-- A Serre graph has twice as many darts as geometric edges, finitely many or not: each geometric
-edge consists of two darts. -/
-theorem card_E_eq_two_mul_card_geomEdge : Nat.card Γ.E = 2 * Nat.card Γ.GeomEdge := by
-  classical
-  obtain ⟨O, hO⟩ := Γ.exists_isOrientation
-  -- A dart is its geometric edge together with whether it lies in the orientation `O`.
-  have hbij : Function.Bijective fun e => (Γ.toGeomEdge e, decide (e ∈ O)) := by
-    refine ⟨fun e e' h => ?_, fun ⟨g, b⟩ => ?_⟩
-    · simp only [Prod.mk.injEq, decide_eq_decide] at h
-      rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 h.1 with he | he
-      · exact he.symm
-      · rw [he, hO.mem_rev_iff] at h
-        exact absurd h.2 iff_not_self
-    · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
-      by_cases he : decide (e ∈ O) = b
-      · exact ⟨e, by simp [he]⟩
-      · refine ⟨Γ.rev e, ?_⟩
-        cases b <;> simp_all [hO.mem_rev_iff]
-  rw [Nat.card_congr (Equiv.ofBijective _ hbij), Nat.card_prod,
-    Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, mul_comm]
+/-- The barycentric subdivision of a graph with finitely many vertices and geometric edges has
+finitely many vertices. -/
+instance [Finite Γ.V] [Finite Γ.GeomEdge] : Finite Γ.barycentricSubdivision.V :=
+  inferInstanceAs (Finite (Γ.V ⊕ Γ.GeomEdge))
+
+/-- The barycentric subdivision of a graph with finitely many darts has finitely many darts. -/
+instance [Finite Γ.E] : Finite Γ.barycentricSubdivision.E :=
+  inferInstanceAs (Finite (Γ.E × Bool))
+
+/-- The vertices of the barycentric subdivision are the vertices and the midpoints of the
+geometric edges of the graph. -/
+@[simp] theorem card_barycentricSubdivision_V [Finite Γ.V] [Finite Γ.GeomEdge] :
+    Nat.card Γ.barycentricSubdivision.V = Nat.card Γ.V + Nat.card Γ.GeomEdge :=
+  Nat.card_sum
 
 /-! ### Induced automorphisms -/
 

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.BarycentricSubdivision
+public import TauCeti.Combinatorics.Graph.Serre.Card
 public import TauCeti.Combinatorics.PolygonalComplex.Examples
-import Mathlib.Basic.Finite.Prod
-import Mathlib.Basic.Finite.Sum
+public import Mathlib.Basic.Finite.Sum
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -94,6 +94,9 @@ variable (C : PolygonalComplex.{u, v, w})
 /-- The vertices of a face: the vertices at its corners, where its sides start. -/
 def faceVertices (f : C.Face) : Set C.graph.V := Set.range fun i => C.graph.src (C.side f i)
 
+theorem faceVertices_def (f : C.Face) :
+    C.faceVertices f = Set.range fun i => C.graph.src (C.side f i) := (rfl)
+
 variable {C} in
 @[simp] theorem mem_faceVertices_iff {f : C.Face} {x : C.graph.V} :
     x ∈ C.faceVertices f ↔ ∃ i, C.graph.src (C.side f i) = x :=
@@ -128,8 +131,8 @@ structure IsRegular : Prop where
 variable {C}
 
 /-- In a regular complex, two corners of the same face at the same vertex coincide. -/
-theorem IsRegular.eq_of_cornerVertex_eq (h : C.IsRegular) {c c' : C.Corner} (hf : c.1 = c'.1)
-    (hv : C.cornerVertex c = C.cornerVertex c') : c = c' := by
+theorem IsRegular.eq_of_fst_eq_of_cornerVertex_eq (h : C.IsRegular) {c c' : C.Corner}
+    (hf : c.1 = c'.1) (hv : C.cornerVertex c = C.cornerVertex c') : c = c' := by
   obtain ⟨f, i⟩ := c
   obtain ⟨f', i'⟩ := c'
   obtain rfl : f = f' := hf
@@ -137,7 +140,8 @@ theorem IsRegular.eq_of_cornerVertex_eq (h : C.IsRegular) {c c' : C.Corner} (hf 
   exact congrArg (Sigma.mk f) (h.src_side_injective f hv)
 
 /-- In a regular complex, two sides of the same face on the same geometric edge coincide. -/
-theorem IsRegular.eq_of_toGeomEdge_outgoing_eq (h : C.IsRegular) {c c' : C.Corner} (hf : c.1 = c'.1)
+theorem IsRegular.eq_of_fst_eq_of_toGeomEdge_outgoing_eq (h : C.IsRegular) {c c' : C.Corner}
+    (hf : c.1 = c'.1)
     (he : C.graph.toGeomEdge (C.outgoing c) = C.graph.toGeomEdge (C.outgoing c')) : c = c' := by
   obtain ⟨f, i⟩ := c
   obtain ⟨f', i'⟩ := c'
@@ -227,11 +231,21 @@ def barycentricSide : C.Corner × Bool → Fin 3 → C.barycentricGraph.E
   | (c, true) => ![(.inr (.inr c), true), (.inl (C.graph.rev (C.outgoing c)), false),
       (.inr (.inl (C.nextCorner c)), false)]
 
+/-- The sides of the triangle `(c, false)` of the barycentric subdivision. -/
+@[simp] theorem barycentricSide_false (c : C.Corner) :
+    C.barycentricSide (c, false) =
+      ![(.inr (.inl c), true), (.inl (C.outgoing c), true), (.inr (.inr c), false)] := (rfl)
+
+/-- The sides of the triangle `(c, true)` of the barycentric subdivision. -/
+@[simp] theorem barycentricSide_true (c : C.Corner) :
+    C.barycentricSide (c, true) = ![(.inr (.inr c), true),
+      (.inl (C.graph.rev (C.outgoing c)), false), (.inr (.inl (C.nextCorner c)), false)] := (rfl)
+
 /-- The sides of each triangle of the barycentric subdivision form a closed dart sequence. -/
 theorem tgt_barycentricSide (f : C.Corner × Bool) (i : Fin 3) :
     C.barycentricGraph.tgt (C.barycentricSide f i) =
       C.barycentricGraph.src (C.barycentricSide f (finRotate 3 i)) := by
-  obtain ⟨c, _ | _⟩ := f <;> fin_cases i <;> simp [barycentricSide]
+  obtain ⟨c, _ | _⟩ := f <;> fin_cases i <;> simp
 
 /-- The barycentric subdivision of a polygonal complex: its one-skeleton is `C.barycentricGraph`,
 and it has two triangles `(c, false)` and `(c, true)` on the side starting at each corner `c`. It
@@ -248,43 +262,24 @@ abbrev barycentricSubdivision : PolygonalComplex.{max u v w, max v w, w} where
 /-- The vertices of a triangle of the barycentric subdivision: the centre of its face, the
 midpoint of its side, and the vertex at the start of that side (for `b = false`) or at its end
 (for `b = true`). -/
-theorem faceVertices_barycentricSubdivision (c : C.Corner) (b : Bool) :
+@[simp] theorem faceVertices_barycentricSubdivision (c : C.Corner) (b : Bool) :
     C.barycentricSubdivision.faceVertices (c, b) =
       {.inr c.1, .inl (C.graph.barycentricMidpoint (C.graph.toGeomEdge (C.outgoing c))),
-        .inl (C.graph.barycentricVertex (C.cornerVertex (cond b (C.nextCorner c) c)))} := by
+        .inl (C.graph.barycentricVertex (C.cornerVertex (if b then C.nextCorner c else c)))} := by
   ext x
   rw [mem_faceVertices_iff]
-  simp only [Fin.exists_fin_succ, Fin.exists_fin_zero, Set.mem_insert_iff, Set.mem_singleton_iff]
-  cases b
-  · simp only [barycentricSide, Fin.isValue, Matrix.cons_val_zero, eq_comm, Fin.succ_zero_eq_one,
-      Matrix.cons_val_one, SerreGraph.barycentricSubdivision_src_true, src_outgoing,
-      Fin.succ_one_eq_two, Matrix.cons_val, or_false, Bool.cond_false]
-    exact or_congr_right or_comm
-  · simp only [barycentricSide, Fin.isValue, Matrix.cons_val_zero, eq_comm, Fin.succ_zero_eq_one,
-      Matrix.cons_val_one, SerreGraph.barycentricSubdivision_src_false, SerreGraph.toGeomEdge_rev,
-      Fin.succ_one_eq_two, Matrix.cons_val, or_false, Bool.cond_true]
-
-/-- The barycentric subdivision has finitely many vertices when the complex has finitely many
-vertices, darts and faces. -/
-instance [Finite C.graph.V] [Finite C.graph.E] [Finite C.Face] : Finite C.barycentricGraph.V :=
-  haveI : Finite C.graph.GeomEdge := Finite.of_surjective _ C.graph.toGeomEdge_surjective
-  inferInstanceAs (Finite ((C.graph.V ⊕ C.graph.GeomEdge) ⊕ C.Face))
-
-/-- The barycentric subdivision has finitely many darts when the complex has finitely many darts
-and faces. -/
-instance [Finite C.graph.E] [Finite C.Face] : Finite C.barycentricGraph.E :=
-  inferInstanceAs (Finite ((C.graph.E ⊕ C.Corner ⊕ C.Corner) × Bool))
+  cases b <;> simp [Fin.exists_fin_succ, eq_comm, or_comm]
 
 /-- The barycentric subdivision of a polygonal complex is regular. -/
-theorem isRegular_barycentricSubdivision : C.barycentricSubdivision.IsRegular where
+@[simp] theorem isRegular_barycentricSubdivision : C.barycentricSubdivision.IsRegular where
   src_ne_tgt := by
     rintro ⟨e | c | c, _ | _⟩ <;> simp
   src_side_injective := by
-    rintro ⟨c, _ | _⟩ i j hij <;> fin_cases i <;> fin_cases j <;> simp_all [barycentricSide]
+    rintro ⟨c, _ | _⟩ i j hij <;> fin_cases i <;> fin_cases j <;> simp_all
   toGeomEdge_side_injective := by
     rintro ⟨c, _ | _⟩ i j hij <;>
       rcases C.barycentricGraph.toGeomEdge_eq_toGeomEdge_iff.1 hij with hij | hij <;>
-      fin_cases i <;> fin_cases j <;> simp_all [barycentricSide]
+      fin_cases i <;> fin_cases j <;> simp_all
 
 variable {C}
 
@@ -310,10 +305,10 @@ private theorem IsRegular.eq_of_src_eq_of_tgt_eq_barycentricSubdivision (h : C.I
     first
       | exact h.eq_of_src_eq_of_toGeomEdge_eq hs ht
       | exact h.eq_of_src_eq_of_toGeomEdge_eq ht hs
-      | exact h.eq_of_cornerVertex_eq hs ht
-      | exact h.eq_of_cornerVertex_eq ht hs
-      | exact h.eq_of_toGeomEdge_outgoing_eq hs ht
-      | exact h.eq_of_toGeomEdge_outgoing_eq ht hs
+      | exact h.eq_of_fst_eq_of_cornerVertex_eq hs ht
+      | exact h.eq_of_fst_eq_of_cornerVertex_eq ht hs
+      | exact h.eq_of_fst_eq_of_toGeomEdge_outgoing_eq hs ht
+      | exact h.eq_of_fst_eq_of_toGeomEdge_outgoing_eq ht hs
 
 /-- In the barycentric subdivision of a regular complex, a triangle is determined by its vertices:
 the centre gives the face, the midpoint gives the side, and the vertex gives the half of the
@@ -329,9 +324,9 @@ private theorem IsRegular.faceVertices_barycentricSubdivision_injective (h : C.I
     (.inr (.inl rfl))
   simp only [Sum.inr.injEq, reduceCtorEq, Sum.inl.injEq, SerreGraph.barycentricMidpoint_inj,
     SerreGraph.barycentricMidpoint_ne_barycentricVertex, or_false, false_or] at h₁ h₂
-  obtain rfl := h.eq_of_toGeomEdge_outgoing_eq h₁ h₂
+  obtain rfl := h.eq_of_fst_eq_of_toGeomEdge_outgoing_eq h₁ h₂
   have h₃ := (hmem (.inl (C.graph.barycentricVertex
-    (C.cornerVertex (cond b (C.nextCorner c) c))))).1 (.inr (.inr rfl))
+    (C.cornerVertex (if b then C.nextCorner c else c))))).1 (.inr (.inr rfl))
   simp only [reduceCtorEq, Sum.inl.injEq, SerreGraph.barycentricVertex_ne_barycentricMidpoint,
     SerreGraph.barycentricVertex_inj, false_or] at h₃
   cases b <;> cases b'
@@ -368,7 +363,7 @@ variable (C)
 
 /-- The barycentric subdivision of a polygonal complex is triangulated exactly when the complex
 is regular. -/
-theorem isTriangulated_barycentricSubdivision_iff :
+@[simp] theorem isTriangulated_barycentricSubdivision_iff :
     C.barycentricSubdivision.IsTriangulated ↔ C.IsRegular :=
   ⟨isRegular_of_isTriangulated_barycentricSubdivision,
     IsRegular.isTriangulated_barycentricSubdivision⟩
@@ -387,24 +382,9 @@ theorem IsTriangulated.barycentricSubdivision (h : C.IsTriangulated) :
 /-- The barycentric subdivision does not change the Euler characteristic. -/
 @[simp] theorem eulerChar_barycentricSubdivision [Finite C.graph.V] [Finite C.graph.E]
     [Finite C.Face] : C.barycentricSubdivision.eulerChar = C.eulerChar := by
-  have : Finite C.graph.GeomEdge := Finite.of_surjective _ C.graph.toGeomEdge_surjective
-  have hV : Nat.card C.barycentricGraph.V =
-      Nat.card C.graph.V + Nat.card C.graph.GeomEdge + Nat.card C.Face := by
-    have : Finite C.graph.barycentricSubdivision.V := inferInstanceAs (Finite (_ ⊕ _))
-    rw [Nat.card_sum, Nat.card_congr (α := C.graph.barycentricSubdivision.V)
-        (β := C.graph.V ⊕ C.graph.GeomEdge) (Equiv.refl _), Nat.card_sum]
-  have hE : Nat.card C.barycentricGraph.E =
-      (Nat.card C.graph.E + Nat.card C.Corner + Nat.card C.Corner) * 2 := by
-    rw [Nat.card_congr (α := C.barycentricGraph.E)
-        (β := (C.graph.E ⊕ C.Corner ⊕ C.Corner) × Bool) (Equiv.refl _),
-      Nat.card_prod, Nat.card_sum, Nat.card_sum, Nat.card_eq_fintype_card (α := Bool),
-      Fintype.card_bool, add_assoc]
-  have hF : Nat.card (C.Corner × Bool) = Nat.card C.Corner * 2 := by
-    rw [Nat.card_prod, Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool]
   have h₁ := C.barycentricGraph.card_E_eq_two_mul_card_geomEdge
   have h₂ := C.graph.card_E_eq_two_mul_card_geomEdge
-  rw [eulerChar_def, eulerChar_def, hV, hF]
-  push_cast
+  simp [eulerChar_def] at h₁ ⊢
   omega
 
 /-- A one-vertex polygon is not regular: its edges are loops. -/
