@@ -38,7 +38,8 @@ Each point `(a, w)` with `w ≠ ±a` has exactly two preimages, `((a, v), z)` an
 ## Main declarations
 
 * `TauCeti.stiefelRotationFamily`: the map `((u, v), z) ↦ (u, Re z • u + Im z • v)`.
-* `TauCeti.contMDiff_stiefelRotationFamily`: it is smooth.
+* `TauCeti.continuous_stiefelRotationFamily`, `TauCeti.contMDiff_stiefelRotationFamily`: it is
+  continuous, and smooth in finite dimension.
 * `TauCeti.stiefelRotationFamily_eq_stiefelRotationFamily_iff`: two points, one with `Im z ≠ 0`,
   have the same image exactly when they are equal or exchanged by `((u, v), z) ↦ ((u, -v), conj z)`.
 * `TauCeti.exists_stiefelRotationFamily_eq`: every `(a, w)` with `w ≠ ±a` is the image of a point
@@ -108,6 +109,32 @@ theorem coe_snd_stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
   simp only [coe_stiefelProj]
   -- The vector of `p^⊥` underlying `stiefelTangent p x.1 hx` is `x.1 1` by definition.
   rfl
+
+/-- At `z = 1`, the Stiefel rotation family sends a frame `(u, v)` to `(u, u)`. -/
+theorem stiefelRotationFamily_of_coe_eq_one (x : stiefel E 2) {z : sphere (0 : ℂ) 1}
+    (hz : (z : ℂ) = 1) :
+    stiefelRotationFamily (x, z) = (stiefelProj E 2 0 x, stiefelProj E 2 0 x) := by
+  refine Prod.ext rfl (Subtype.ext ?_)
+  simp [hz]
+
+/-- The Stiefel rotation family is continuous. -/
+@[fun_prop]
+theorem continuous_stiefelRotationFamily : Continuous (stiefelRotationFamily (E := E)) := by
+  have hv (i : Fin 2) : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.1 : Fin 2 → E) i :=
+    (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)
+  have hz : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.2 : ℂ) :=
+    continuous_subtype_val.comp continuous_snd
+  have h₁ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).1 :=
+    (continuous_stiefelProj 0).comp continuous_fst
+  have h₂ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).2 := by
+    refine continuous_induced_rng.2 ?_
+    rw [show Subtype.val ∘ (fun x => (stiefelRotationFamily x).2) =
+        fun x : stiefel E 2 × sphere (0 : ℂ) 1 =>
+          (x.2 : ℂ).re • (x.1 : Fin 2 → E) 0 + (x.2 : ℂ).im • (x.1 : Fin 2 → E) 1 from
+      funext coe_snd_stiefelRotationFamily]
+    exact ((Complex.continuous_re.comp hz).smul (hv 0)).add
+      ((Complex.continuous_im.comp hz).smul (hv 1))
+  exact h₁.prodMk h₂
 
 /-- The Stiefel rotation family is smooth. -/
 theorem contMDiff_stiefelRotationFamily [FiniteDimensional ℝ E] {n : ℕ}

@@ -49,7 +49,7 @@ private theorem IsClassicalSolution.hasDerivWithinAt_interpolate
     exact hu.mem_domain hs
   have hfull := S.realOperator_hasDerivWithinAt_Ici ⟨u s, hdom⟩
     (sub_pos.mpr hst).le
-  rw [S.realOperator_generator_map (sub_pos.mpr hst).le ⟨u s, hdom⟩] at hfull
+  rw [S.realOperator_generator_map ⟨u s, hdom⟩] at hfull
   have hback : HasDerivWithinAt (fun r => S.realOperator (t - r) (u s))
       (-S.realOperator (t - s) a) (Ici s) s :=
     ((hfull.hasDerivAt (Ici_mem_nhds (sub_pos.mpr hst))).comp_const_sub t s).hasDerivWithinAt

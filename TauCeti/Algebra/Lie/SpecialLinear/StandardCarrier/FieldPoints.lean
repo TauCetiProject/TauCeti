@@ -34,10 +34,6 @@ the equality of their defining Hopf ideals over `ℤ` is not asserted here.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 * R. Steinberg, *Lectures on Chevalley Groups*, §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it proves the missing generation statement for the
-explicit full-weight type `A` carrier on points over fields.
 -/
 
 public section

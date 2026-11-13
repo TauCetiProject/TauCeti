@@ -59,13 +59,12 @@ theorem IsEven.thetaSeries_slash_of_mem_Gamma0 (hL : IsEven L)
   intro B hB hc ha hao
   obtain ⟨a, haeq⟩ := Int.eq_ofNat_of_zero_le ha.le
   obtain ⟨c, hceq⟩ := Int.eq_ofNat_of_zero_le hc.le
-  have : NeZero c := ⟨by omega⟩
   have haodd : Odd a := by rw [haeq] at hao; exact_mod_cast hao
   have hN : level L ∣ c := by
     have h := CongruenceSubgroup.mem_Gamma0_iff_dvd.mp hB
     rw [hceq] at h
     exact_mod_cast h
-  exact hL.thetaSeries_slash_eq_thetaCharacter_smul_of_pos_odd
+  exact hL.thetaSeries_slash_eq_thetaCharacter_smul_of_odd
     ⟨k, by omega⟩ hk B haeq hceq haodd hN
 
 /-- The theta series of an even full lattice of rank `2k`, as a modular form on

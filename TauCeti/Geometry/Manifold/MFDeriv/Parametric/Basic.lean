@@ -43,7 +43,12 @@ boundary points.
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
   velocities of the curves `f q`, as a map of both parameters to the tangent bundle, are `C^m`
-  for `m + 1 ≤ n`.
+  for `m + 1 ≤ n`. `ContMDiffAt.contMDiffAt_curveVelocity_fst` is the same statement for the
+  curves `q ↦ f q r`. `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` and
+  `ContMDiffAt.contMDiffAt_curveVelocity_fst_slice` restrict these fields to a fixed time and
+  a fixed first parameter, respectively.
+* `ContMDiffAt.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
+  is a `C^m` field along its central curve for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
 * `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
@@ -54,7 +59,7 @@ boundary points.
 
 public section
 
-open Bundle Function Set
+open Bundle Filter Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -111,25 +116,20 @@ theorem eventuallyEq_extChartAt_family_of_eq_id [I.Boundaryless] {ψ : 𝕜 → 
   simp only [hz', id_eq]
   exact (extChartAt I x).right_inv hz
 
-variable [IsManifold I 1 M]
-
 /-- **Regularity of the parameter derivative.** If a family `F : 𝕜 → M → F'` is jointly `C^n` at
 `(t, x)`, then its parameter derivative `y ↦ ∂ᵣ F (r, y)` at `r = t` is `C^m` at `x` for every
 `m` with `m + 1 ≤ n`. -/
 theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     (hF : ContMDiffAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') n (uncurry F) (t, x)) (hmn : m + 1 ≤ n) :
     ContMDiffAt I 𝓘(𝕜, F') m (fun y ↦ deriv (fun r ↦ F r y) t) x := by
-  have hswap : ContMDiffAt (I.prod 𝓘(𝕜)) 𝓘(𝕜, F') n (uncurry fun y r ↦ F r y) (x, t) :=
-    hF.comp (x, t) (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  have h := (hswap.mfderiv (fun y r ↦ F r y) (fun _ ↦ t) contMDiffAt_const hmn).clm_apply
-    (contMDiffAt_const (c := (1 : 𝕜)))
-  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  dsimp only
-  -- Between model spaces, tangent coordinates are trivial; `erw` sees through the tangent spaces
-  -- of `𝕜` and `F'`, which are the model spaces themselves.
-  erw [inTangentCoordinates_model_space]
-  rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
-  rfl
+  have hrange (y : M) : extChartAt I x y ∈ range I := by
+    rw [extChartAt_coe]
+    exact mem_range_self _
+  have hD' := contDiffWithinAt_deriv_slice_left (m := m)
+    (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) (hrange x) hmn
+  exact contMDiffAt_iff_source.2 (contMDiffWithinAt_iff_contDiffWithinAt.2 hD')
+
+variable [IsManifold I 1 M]
 
 /-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
 `C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the
@@ -141,7 +141,7 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   let ι : 𝕜 × 𝕜 → TangentBundle 𝓘(𝕜, 𝕜 × 𝕜) (𝕜 × 𝕜) := fun z ↦ TotalSpace.mk' (𝕜 × 𝕜) z (0, 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, 𝕜 × 𝕜).tangent m ι := by
     intro z
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_id, ?_⟩
     refine (contMDiffAt_const (c := ((0 : 𝕜), (1 : 𝕜)))).congr_of_eventuallyEq ?_
     filter_upwards with r
@@ -155,25 +155,46 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → 
   filter_upwards [hnear] with z hz
   simp only [Function.comp_apply, ι, tangentMap, curveVelocity_eq_mfderiv_snd hz]
 
-/-- The second-parameter velocity of a `C²` surface is differentiable as a map into the
-actual tangent bundle along the first parameter. -/
-theorem _root_.ContMDiffAt.mdifferentiableAt_curveVelocity_snd {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
-    MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent
-      (fun q ↦ TotalSpace.mk' E (f q v) (curveVelocity I (f q) v)) u := by
-  exact ((hf.contMDiffAt_curveVelocity_snd (m := 1) (by norm_num)).comp u
-    (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left v)).contMDiffAt).mdifferentiableAt
-      one_ne_zero
+/-- **Regularity of the transverse velocity field of a two-parameter family.** If
+`f : 𝕜 → 𝕜 → M` is jointly `C^n` at `(u, v)`, then the velocities of the curves `q ↦ f q r`, as a
+map of both parameters to the tangent bundle, are `C^m` at `(u, v)` for every `m` with
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent m
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (curveVelocity I (fun q ↦ f q z.2) z.1))
+      (u, v) := by
+  have hswap : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.2 z.1) (v, u) :=
+    hf.comp (v, u) (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt
+  exact (hswap.contMDiffAt_curveVelocity_snd (f := fun q r ↦ f r q) hmn).comp (u, v)
+    (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt
 
-/-- The first-parameter velocity of a `C²` surface is differentiable as a map into the
-actual tangent bundle along the second parameter. -/
-theorem _root_.ContMDiffAt.mdifferentiableAt_curveVelocity_fst {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) :
-    MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent
+/-- At a fixed time `t`, the velocities at `t` of the curves `f s` of a family which is jointly
+`C^n` at `(u, t)` form a `C^m` map `s ↦ (f s t, ∂ₜ f (s, t))` to the tangent bundle at `u`, for
+every `m` with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd_slice {f : 𝕜 → 𝕜 → M} {u t : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun s ↦ TotalSpace.mk' E (f s t) (curveVelocity I (f s) t)) u :=
+  (hf.contMDiffAt_curveVelocity_snd hmn).comp u (contDiff_prodMk_left t).contMDiff.contMDiffAt
+
+/-- At a fixed first parameter `u`, the transverse velocities of a family `f : 𝕜 → 𝕜 → M`
+which is jointly `C^n` at `(u, v)` form a `C^m` map along `f u` at `v`, for every `m` with
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_fst_slice {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
       (fun r ↦ TotalSpace.mk' E (f u r) (curveVelocity I (fun q ↦ f q r) u)) v :=
-  (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
-    (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt)
-  |>.mdifferentiableAt_curveVelocity_snd (f := fun a b ↦ f b a)
+  (hf.contMDiffAt_curveVelocity_fst hmn).comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
+
+/-- **Regularity of the variation field.** The variation field of a family `f : 𝕜 → 𝕜 → M` which
+is jointly `C^n` at `(0, v)` is a `C^m` field along the central curve `f 0` at `v`, for every `m`
+with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_variationField {f : 𝕜 → 𝕜 → M} {v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (0, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f 0 r) (variationField I f r)) v := by
+  simpa only [variationField_apply] using hf.contMDiffAt_curveVelocity_fst_slice hmn
 
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the

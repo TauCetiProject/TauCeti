@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Annulus
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
 
 /-!
 # The boundary Maslov index on the disc
 
-Let `E` be a finite-dimensional complex normed space. A bundle pair `(E, F)` over the closed unit
+Let `E` be a complex normed space. A bundle pair `(E, F)` over the closed unit
 disc `D` is a complex vector bundle over `D` together with a maximal totally real subbundle `F`
 of its restriction to the boundary circle, that is, a totally real subbundle whose real rank is
 the complex rank of the bundle. Every complex bundle over `D` is trivial, and in a
@@ -22,8 +22,11 @@ properties that make this a well-defined invariant with the expected axioms on t
 
 * **Independence of the trivialization.** Two trivializations differ by a continuous map
   `B : D → GL(E)`, and the loop read in the second trivialization is `t ↦ B (e^{2πit}) (Λ t)`. Its
-  Maslov index is `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex_map_of_continuousOn_closedBall`):
-  by the product formula `μ(B Λ) = μ(Λ) + 2 deg (det B)` (`TauCeti.TotallyRealLoop.maslovIndex_map`)
+  Maslov index is `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex_map_of_continuousOn_closedBall`).
+  This is the case `r = 0` of the loop formula on the annulus `r ≤ ‖z‖ ≤ 1`
+  (`TauCeti.TotallyRealLoop.maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus`),
+  whose inner circle degenerates to the centre, where `B` is constant. Equivalently, by the product
+  formula `μ(B Λ) = μ(Λ) + 2 deg (det B)` (`TauCeti.TotallyRealLoop.maslovIndex_map`)
   it suffices that the loop of normalized determinants of `B` along the boundary has degree zero,
   and it is null-homotopic through the loops `t ↦ det B (s e^{2πit})`, `s ∈ [0, 1]`. The general
   statement behind it is that the Maslov index of `B Λ` only depends on the free homotopy class of
@@ -65,8 +68,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- **Independence of the trivialization on the disc.** Let `B` be a continuous map from the closed
 unit disc to the complex-linear automorphisms of `E`, and `b t = B (e^{2πit})` its loop of
@@ -77,23 +79,11 @@ theorem maslovIndex_map_of_continuousOn_closedBall (B : ℂ → E ≃L[ℂ] E)
     (b : I → E ≃L[ℂ] E) (hb : Continuous fun t => (b t : E →L[ℂ] E)) (hb01 : b 0 = b 1)
     (hbB : ∀ t, b t = B (Circle.expLoop t)) :
     (Λ.map b hb hb01).maslovIndex = Λ.maslovIndex := by
-  -- Contract the boundary circle to the centre through the circles of radius `s`.
-  let H (p : I × I) : E ≃L[ℂ] E := B ((p.1 : ℝ) * (Circle.expLoop p.2 : ℂ))
-  have hmem (p : I × I) : ((p.1 : ℝ) * (Circle.expLoop p.2 : ℂ) : ℂ) ∈ closedBall (0 : ℂ) 1 := by
-    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one, Complex.norm_real,
-      Real.norm_eq_abs, abs_of_nonneg p.1.2.1]
-    exact p.1.2.2
-  have hH : Continuous fun p => (H p : E →L[ℂ] E) :=
-    hB.comp_continuous (by fun_prop) hmem
-  have hH01 (s : I) : H (s, 0) = H (s, 1) := by
-    simp only [H, Circle.expLoop.source, Circle.expLoop.target]
-  have h₀ : Λ.map (fun t => H (0, t)) (hH.comp (Continuous.prodMk_right 0)) (hH01 0) =
-      Λ.map (fun _ => B 0) continuous_const rfl :=
-    ext fun t => by simp [H]
-  have h₁ : Λ.map (fun t => H (1, t)) (hH.comp (Continuous.prodMk_right 1)) (hH01 1) =
-      Λ.map b hb hb01 :=
-    ext fun t => by simp [H, hbB]
-  rw [← h₁, ← Λ.maslovIndex_map_eq_of_homotopy H hH hH01, h₀, maslovIndex_map_const]
+  have h := Λ.maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus Λ le_rfl zero_le_one
+    B (hB.mono Set.sdiff_subset) b hb hb01 (fun t => by simp [hbB]) (fun _ => B 0) continuous_const
+    rfl fun t => by simp
+  rw [maslovIndex_symm, maslovIndex_symm, maslovIndex_map_const] at h
+  omega
 
 /-! ### Checks -/
 

@@ -10,6 +10,7 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -77,7 +78,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
       ∃ b : ℕ → ℝ≥0∞, Tendsto b atTop (𝓝 0) ∧
         ∀ n, totalVariationOn μ ⊤ (v n) ≤ totalVariationOn μ ⊤ u + b n := by
   -- Cut off on expanding balls with derivative bound tending to zero.
-  obtain ⟨c, hc, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  obtain ⟨c, _, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
   have hcut' (n : ℕ) := hcut (0 : E) (r := n + 1) (R := 2 * (n + 1))
     (by positivity) (by linarith [Nat.cast_nonneg (α := ℝ) n])
   choose χ hχ hχ01 hχone hχsupp hχgrad _ using hcut'
@@ -108,7 +109,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
   refine ⟨fun n => χ n * u, fun n => ⟨hv n, (hχc n).mul_right⟩, hlim, b, hb, fun n => ?_⟩
   have hgrad (x : E) : ‖fderiv ℝ (χ n) x‖ ≤ c / (n + 1) := by
     have hr : 2 * ((n : ℝ) + 1) - (n + 1) = n + 1 := by ring
-    simpa only [← toDual_gradient (𝕜 := ℝ), LinearIsometryEquiv.norm_map, hr] using hχgrad n x
+    simpa only [← norm_gradient_eq_norm_fderiv (𝕜 := ℝ), hr] using hχgrad n x
   simpa only [b, ENNReal.ofReal_one, one_mul, Opens.coe_top, Measure.restrict_univ] using
     totalVariationOn_top_mul_le (μ := μ) (u := u) (c := 1) (Ω := ⊤) (hχ n)
       (fun x => by simpa only [Real.norm_eq_abs] using hχnorm n x)
@@ -159,10 +160,10 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
       (fun _ => zero_le) fun n => ?_
     have htri := lintegral_edist_triangle (μ := μ) (f := w n - v n) (g := u - v n) (h := 0)
       (hwi n).aestronglyMeasurable aestronglyMeasurable_zero
-    simp only [edist_eq_enorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
+    simp only [eDist_eq_eNorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
       Pi.zero_apply] at htri
     refine htri.trans (add_le_add (hk n).le ?_)
-    simp only [enorm_sub_rev (u _)]
+    simp only [eNorm_sub_rev (u _)]
     exact le_rfl
   -- Lower semicontinuity and the upper estimate give equality in the limit.
   refine ⟨w, hw, hwlim, TauCeti.tendsto_totalVariationOn_of_le_add
@@ -541,7 +542,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         ∑ k ∈ Finset.range m, (mollifiedPiece μ u ζ n k x - ζ k x * u x) := by
       rw [hwx, Finset.sum_sub_distrib, hux]
     rw [hsum]
-    exact (enorm_sum_le _ _).trans (sum_le_tsum _)
+    exact (eNorm_sum_le _ _).trans (sum_le_tsum _)
   calc ∫⁻ x in Ω, ‖∑' k, mollifiedPiece μ u ζ n k x - u x‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, ∑' k, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         setLIntegral_mono' Ω.isOpen.measurableSet hpt
@@ -549,7 +550,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         setLIntegral_le_lintegral _ _
     _ = ∑' k, ∫⁻ x, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         lintegral_tsum fun k => ((hf k).continuous.aestronglyMeasurable.sub
-          (hv k).aestronglyMeasurable).enorm
+          (hv k).aestronglyMeasurable).eNorm
     _ ≤ ∑' k, ENNReal.ofReal (δ / 2 / 2 ^ k) :=
         tsum_le_tsum fun k => by simpa only [mollifiedPiece] using hnv k
     _ = ENNReal.ofReal δ := by

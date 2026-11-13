@@ -16,11 +16,12 @@ expansion in the simple roots. This file records that height respects every inte
 among the roots: a vanishing integral combination of roots has a vanishing combination of heights,
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
-coordinates in the simple-root basis, and then an automorphism permuting the simple roots preserves
-heights. Over a field, a form taking value one on the simple roots exists even when they do not
-span the weight space. Ahead of all this, it records the extensionality of bases (a base is
-determined by the indices of its simple roots) and how reflection in a root changes height:
-reflection in a simple root subtracts the corresponding Cartan integer.
+coordinates in the simple-root basis. Over a field, a form taking value one on the simple roots
+exists even when they do not span the weight space. Ahead of all this, it records the
+extensionality of bases (a base is determined by the indices of its simple roots), how bases,
+heights and positivity are transported along equivalences of root pairings (in particular an
+automorphism permuting the simple roots preserves heights), and how reflection in a root changes
+height: reflection in a simple root subtracts the corresponding Cartan integer.
 
 ## Main definitions
 
@@ -30,6 +31,14 @@ reflection in a simple root subtracts the corresponding Cartan integer.
 ## Main results
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
+* `RootPairing.Base.map_one` and `RootPairing.Base.map_mul`: transporting bases is an action of the
+  automorphism group, and `RootPairing.Base.map_eq_of_forall_mem_support` says an automorphism
+  permuting the simple roots fixes the base.
+* `RootPairing.Base.height_map` and `RootPairing.Base.isPos_map_iff`: an equivalence of root
+  pairings carries the height and the positivity of a root relative to a base to those of its
+  image relative to the transported base; `RootPairing.Base.height_indexEquiv` and
+  `RootPairing.Base.isPos_indexEquiv_iff` say an automorphism permuting the simple roots preserves
+  both.
 * `RootPairing.Base.height_eq_one_iff`: the roots of height one are exactly the simple roots.
 * `RootPairing.Base.height_reflectionPerm` computes the height after an arbitrary root reflection;
   `RootPairing.Base.height_reflectionPerm_lt_iff` characterizes strict height decrease under a
@@ -42,7 +51,7 @@ reflection in a simple root subtracts the corresponding Cartan integer.
   relations among roots.
 * `TauCeti.sum_mul_height_eq_of_sum_zsmul_root_eq` compares the heights of two integral
   combinations of roots with the same value.
-* `RootPairing.Base.height_indexEquiv` says that an automorphism of a root system permuting the
+* `RootPairing.Base.height_indexEquiv` says that an automorphism of a root pairing permuting the
   simple roots preserves heights.
 
 ## References
@@ -65,6 +74,72 @@ theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
   cases b'
   subst h
   rfl
+
+section Map
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂}
+
+/-- Transporting a base along the identity automorphism does nothing. -/
+@[simp]
+protected theorem map_one (b : P.Base) : b.map (1 : P.Aut) = b := by
+  classical
+  ext i
+  simp
+
+/-- Transporting a base along a product of automorphisms transports it along each factor in turn,
+the right-hand factor first. -/
+protected theorem map_mul (b : P.Base) (g h : P.Aut) : b.map (g * h) = (b.map h).map g := by
+  classical
+  ext i
+  simp [Finset.image_image]
+
+/-- An automorphism carrying every simple root of `b` to a simple root fixes `b`. -/
+theorem map_eq_of_forall_mem_support {b : P.Base} {u : P.Aut}
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) : b.map u = b := by
+  classical
+  exact ext <| Finset.eq_of_subset_of_card_le (by simpa [Finset.image_subset_iff] using hu)
+    (by rw [support_map_eq, Finset.card_image_of_injective _ u.indexEquiv.injective])
+
+/-- **Heights are transported along equivalences of root pairings.** The image of a root under an
+equivalence `e` has, relative to the transported base `b.map e`, the height of the original root
+relative to `b`. -/
+@[simp]
+theorem height_map [CharZero R] (b : P.Base) (e : P.Equiv P₂) (i : ι) :
+    (b.map e).height (e.indexEquiv i) = b.height i := by
+  classical
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  have h : P₂.root (e.indexEquiv i) =
+      ∑ j ∈ (b.map e).support, f (e.indexEquiv.symm j) • P₂.root j := by
+    rw [support_map_eq, Finset.sum_image e.indexEquiv.injective.injOn,
+      ← Hom.root_weightMap_apply, hf, map_sum]
+    simp [Hom.root_weightMap_apply]
+  rw [height_eq_sum h, support_map_eq, Finset.sum_image e.indexEquiv.injective.injOn,
+    height_eq_sum hf]
+  simp
+
+/-- **Positivity is transported along equivalences of root pairings.** -/
+@[simp]
+theorem isPos_map_iff [CharZero R] (b : P.Base) (e : P.Equiv P₂) (i : ι) :
+    (b.map e).IsPos (e.indexEquiv i) ↔ b.IsPos i := by
+  rw [isPos_iff, isPos_iff, height_map]
+
+/-- **An automorphism permuting the simple roots preserves heights.** If an automorphism `u` of a
+root pairing carries every simple root of the base `b` to a simple root, then `u` fixes `b`, so
+`u α` has the same height as `α` for every root `α`. -/
+theorem height_indexEquiv [CharZero R] (b : P.Base) (u : P.Aut)
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
+    b.height (u.indexEquiv i) = b.height i := by
+  rw [← b.height_map u i, map_eq_of_forall_mem_support hu]
+
+/-- An automorphism permuting the simple roots of the base `b` preserves positivity of roots
+relative to `b`. -/
+theorem isPos_indexEquiv_iff [CharZero R] (b : P.Base) {u : P.Aut}
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
+    b.IsPos (u.indexEquiv i) ↔ b.IsPos i := by
+  rw [isPos_iff, isPos_iff, height_indexEquiv b u hu]
+
+end Map
 
 /-- **The roots of height one are exactly the simple roots.** -/
 theorem height_eq_one_iff [CharZero R] (b : P.Base) {i : ι} :
@@ -235,27 +310,3 @@ theorem sum_mul_height_eq_of_sum_zsmul_root_eq (b : P.Base) {s t : Finset ι} {e
       Finset.union_inter_cancel_left, Finset.union_inter_cancel_right, h, sub_self]
 
 end TauCeti
-
-namespace RootPairing.Base
-
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsRootSystem]
-
-/-- **An automorphism permuting the simple roots preserves heights.** If an automorphism `u` of a
-root system carries every simple root of the base `b` to a simple root, then `u α` has the same
-height as `α` for every root `α`. -/
-theorem height_indexEquiv (b : P.Base) (u : P.Aut)
-    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
-    b.height (u.indexEquiv i) = b.height i := by
-  have key (k : ι) :
-      TauCeti.heightLinearMap P b (u.weightMap (P.root k)) = b.height (u.indexEquiv k) := by
-    rw [Hom.root_weightMap_apply P P k u.toHom, TauCeti.heightLinearMap_root]
-  have h := TauCeti.apply_root_eq_height_zsmul P b
-    ((TauCeti.heightLinearMap P b).toAddMonoidHom.comp u.weightMap.toAddMonoidHom) (c := (1 : R))
-    (fun j hj ↦ by simpa [b.height_one_of_mem_support (hu j hj)] using key j) i
-  have h' : (b.height (u.indexEquiv i) : R) = b.height i := by
-    rw [← key]
-    simpa using h
-  exact_mod_cast h'
-
-end RootPairing.Base

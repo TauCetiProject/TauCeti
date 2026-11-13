@@ -110,7 +110,8 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
       (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (0, z.2) :=
     hu.comp (0, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
       ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hVt := ht.mdifferentiableAt_curveVelocity_snd (f := fun r t ↦ u r (z.1, t))
+  have hVt := (ht.contMDiffAt_curveVelocity_snd_slice (f := fun r t ↦ u r (z.1, t))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
   have hΔt := hVt.sub_sectionAlong (hXt.comp 0 hγ)
   have hYγ : ContinuousAt (fun r ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (γ r) (Y z (γ r))) 0 :=

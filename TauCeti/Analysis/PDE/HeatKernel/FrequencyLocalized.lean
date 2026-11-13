@@ -309,8 +309,7 @@ private theorem fourierInv_cutoffHeatSymbol_eq_re {χ : E → ℝ} (hχ : ContDi
     (𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x =
       (((𝓕⁻ (cutoffHeatSymbol hχ hχc hν t) : 𝓢(E, ℂ)) x).re : ℂ) := by
   rw [fourierInv_coe, fourierInv_eq_fourier_neg]
-  refine fourier_eq_re_of_map_neg_eq_conj _ (fun v ↦ ?_) (cutoffHeatSymbol hχ hχc hν t).integrable
-    (-x)
+  refine fourier_eq_re_of_map_neg_eq_conj _ (fun v ↦ ?_) (-x)
   simp only [cutoffHeatSymbol_apply, smul_neg, hχe, norm_neg, Complex.conj_ofReal]
 
 /-- For an even cutoff `χ` equal to `1` on the frequencies of `f`, the heat semigroup acts on `f`

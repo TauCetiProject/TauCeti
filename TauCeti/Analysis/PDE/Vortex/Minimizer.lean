@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.Analysis.InnerProductSpace.Convex
@@ -37,7 +37,8 @@ This file carries out the direct method of the calculus of variations:
   Hilbert space `H¹(ℂ)` are weakly compact.
 
 Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
-integrable. The Euler–Lagrange equation of the minimizer and its regularity are not treated here.
+integrable. The weak Euler–Lagrange equation of the minimizer is in
+`TauCeti.Analysis.PDE.Vortex.EulerLagrange`; its regularity is not treated here.
 
 ## References
 

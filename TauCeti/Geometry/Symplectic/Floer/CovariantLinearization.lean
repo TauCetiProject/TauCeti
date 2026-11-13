@@ -86,6 +86,25 @@ theorem floerOperator_eq (ω : SmoothTwoForm I M)
     curveVelocity_eq_mfderiv_snd (f := fun s t ↦ u (s, t)) hu']
   simp only [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
+/-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
+domain-dependent endomorphism fields, the intrinsic Floer operator is affine in `q`, with
+derivative `Y(u)(∂t u - X_Kt)` in the tangent fibre at `u z`. -/
+theorem hasDerivAt_floerOperator_add_smul (ω : SmoothTwoForm I M)
+    (J Y : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) (q : ℝ) :
+    HasDerivAt (fun q : ℝ ↦ (ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z : E))
+      (Y z (u z) (curveVelocity I (fun t ↦ u (z.1, t)) z.2 -
+        ω.hamiltonianVectorField (Kt z) (u z)) : E) q := by
+  set ξ := curveVelocity I (fun t ↦ u (z.1, t)) z.2 - ω.hamiltonianVectorField (Kt z) (u z)
+  have h (q : ℝ) : ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z =
+      ω.floerOperator J Ks Kt u z + q • Y z (u z) ξ := by
+    simp only [floerOperator_def, _root_.add_apply, _root_.smul_apply, ξ]
+    abel
+  have hd := ((hasDerivAt_id q).smul_const (F := E) (Y z (u z) ξ : E)).const_add (F := E)
+    (ω.floerOperator J Ks Kt u z : E)
+  exact (hd.congr_deriv (one_smul ℝ (Y z (u z) ξ : E))).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun q ↦ h q)
+
 variable [FiniteDimensional ℝ E]
 
 /-- For almost complex coefficients, the zero equation is complex linearity of `du - X_K`. -/
@@ -194,8 +213,10 @@ theorem mdifferentiableAt_floerOperator (ω : SmoothTwoForm I M)
       (fun p : ℝ × ℝ ↦ u p.1 (z.1, p.2)) (q, z.2) :=
     hu.comp (q, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
       ContDiff ℝ 2 (fun p : ℝ × ℝ ↦ (p.1, (z.1, p.2))))).contMDiffAt
-  have hVs := hs.mdifferentiableAt_curveVelocity_snd (f := fun a s ↦ u a (s, z.2))
-  have hVt := ht.mdifferentiableAt_curveVelocity_snd (f := fun a t ↦ u a (z.1, t))
+  have hVs := (hs.contMDiffAt_curveVelocity_snd_slice (f := fun a s ↦ u a (s, z.2))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hVt := (ht.contMDiffAt_curveVelocity_snd_slice (f := fun a t ↦ u a (z.1, t))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
   have hΔs := hVs.sub_sectionAlong (hKs.comp q hγ)
   have hΔt := hVt.sub_sectionAlong (hKt.comp q hγ)
   have hJΔt := (hJ.comp q hγ).clm_bundle_apply hΔt
@@ -237,8 +258,10 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
     (hu.comp q (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left z)).contMDiffAt).mdifferentiableAt
       (by norm_num)
   have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (u q z)
-  have hVs' := hs.mdifferentiableAt_curveVelocity_snd (f := fun a s ↦ u a (s, z.2))
-  have hVt' := ht.mdifferentiableAt_curveVelocity_snd (f := fun a t ↦ u a (z.1, t))
+  have hVs' := (hs.contMDiffAt_curveVelocity_snd_slice (f := fun a s ↦ u a (s, z.2))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
+  have hVt' := (ht.contMDiffAt_curveVelocity_snd_slice (f := fun a t ↦ u a (z.1, t))
+    (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero
   have hVs := differentiableAt_sectionCoord γ Vs hVs' hbase
   have hVt := differentiableAt_sectionCoord γ Vt hVt' hbase
   have hXs := hKs.comp q hγ
@@ -250,7 +273,7 @@ theorem alongCurve_floerOperator (ω : SmoothTwoForm I M)
   rw [alongCurve_add cov γ _ _
     (differentiableAt_sectionCoord _ _ hΔs hbase)
     (differentiableAt_sectionCoord _ _ hJΔt hbase),
-    alongCurve_clm_apply cov γ _ (J z) hγ hJ hΔt,
+    alongCurve_clm_apply cov γ _ (J z) hJ hΔt,
     alongCurve_sub cov γ Vs _ hVs (differentiableAt_sectionCoord _ _ hXs hbase),
     alongCurve_sub cov γ Vt _ hVt (differentiableAt_sectionCoord _ _ hXt hbase),
     alongCurve_pullback cov γ _ (hasMFDerivAt_curveVelocity hγ) hKs,

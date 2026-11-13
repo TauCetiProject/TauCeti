@@ -95,8 +95,7 @@ theorem not_dvd_index_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K)
   rw [θ.discr_minpoly_eq_index_sq_mul_discr]
   exact (dvd_pow (Int.natCast_dvd_natCast.mpr h) two_ne_zero).mul_right _
 
--- The corollary is the squarefree case of Dedekind's criterion, Layer 3.7 of the human-authored
--- roadmap `TauCetiRoadmap/NumberFieldArithmetic/README.md`.
+-- The corollary is the squarefree case of Dedekind's criterion.
 /-- **A prime modulo which the minimal polynomial is squarefree does not divide the index.**
 If `minpoly ℤ θ` is squarefree modulo the prime `p`, then its discriminant is nonzero modulo `p`,
 so `p` does not divide `[𝓞 K : ℤ[θ]]` by the index formula. -/

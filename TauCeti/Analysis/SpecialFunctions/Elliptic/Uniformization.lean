@@ -363,7 +363,6 @@ lemma weierstrassP_div_derivWeierstrassP_eq (hl₀ : l₀ ∈ L.lattice) (z : �
       ((z - l₀) ^ 3 * ℘'[L - l₀] z - 2)) := by
   rcases eq_or_ne z l₀ with rfl | hz
   · simp [L.weierstrassP_coe ⟨z, hl₀⟩]
-  have h2 : (z - l₀) ^ 2 ≠ 0 := pow_ne_zero _ (sub_ne_zero.mpr hz)
   rw [div_eq_mul_inv, L.inv_derivWeierstrassP_eq hl₀, L.weierstrassPExcept_def ⟨l₀, hl₀⟩]
   field_simp
   ring
@@ -496,7 +495,7 @@ lemma weierstrassP_div_derivWeierstrassP_eq_of_weierstrassPoint_eq {z w : ℂ}
       rwa [← L.weierstrassPoint_eq_zero_iff, ← h, L.weierstrassPoint_eq_zero_iff]
     rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw,
       Affine.Point.some.injEq] at h
-    rw [h.1, (div_left_inj' two_ne_zero).mp h.2]
+    rw [h.1, (div_left_inj₀ two_ne_zero).mp h.2]
 
 /-- The point map is injective near every lattice point, since the local parameter `℘ / ℘'` at
 the point at infinity has nonzero derivative there. -/

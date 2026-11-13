@@ -103,9 +103,11 @@ private theorem residue_notMem_range_of_isUnit_discrim
     linear_combination hroot - this
   refine coe_notMem_range_of_isUnit_discrim hω ?_
   rcases mul_eq_zero.mp hfac with h | h
-  · exact ⟨s, by rw [← coe_algebraMap_integerRing, ← sub_eq_zero.mp h]⟩
+  · exact ⟨s, by
+      rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), ← sub_eq_zero.mp h]⟩
   · refine ⟨((-(s - T) : 𝒪[K]) : K), ?_⟩
-    rw [← coe_algebraMap_integerRing, map_neg, ← eq_neg_of_add_eq_zero_left h]
+    rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), map_neg,
+      ← eq_neg_of_add_eq_zero_left h]
 
 /-- **An element of unit discriminant forces an unramified extension.** If `ω ∈ 𝒪[L]` has
 discriminant `Tr(ω)² - 4 N(ω)` a unit of `𝒪[K]`, then the quadratic extension `L/K` is
@@ -164,17 +166,17 @@ section SquareRoot
 variable {x : L} {a b s : K} {t c : 𝒪[K]}
 
 /-- **The integral basis `(1, (x - b)/s)` of an unramified quadratic extension.** Let `x ∈ L`,
-`x ∉ K`, be a square root of `a ∈ K`, and let `b, s ∈ K` with `s ≠ 0`, `2b = s t` and
+`x ∉ K`, be a square root of `a ∈ K`, and let `b, s ∈ K` with `2b = s t` and
 `b² - a = s² c` for some `t, c ∈ 𝒪[K]` with `t² - 4c` a unit. Then, for `ω = (x - b)/s`, `(1, ω)`
 is a basis of `𝒪[L]` over `𝒪[K]` with `Tr ω = -t` and `N ω = c`. The extension `L/K` is then
 unramified, by `TauCeti.isUnramified_of_isUnit_discrim`. -/
 theorem exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
-    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a) (hs : s ≠ 0)
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L a)
     (ht : 2 * b = s * t) (hbc : b ^ 2 - a = s ^ 2 * c) (hdisc : IsUnit (t ^ 2 - 4 * c)) :
     ∃ B : Module.Basis (Fin 2) 𝒪[K] 𝒪[L], B 0 = 1 ∧
       (B 1 : L) = (x - algebraMap K L b) / algebraMap K L s ∧
       Algebra.trace K L (B 1 : L) = -(t : K) ∧ Algebra.norm K (B 1 : L) = c := by
-  obtain ⟨ω, hω, htr, hn⟩ := exists_integerRing_eq_div_of_sq_eq hx hx2 hs ht hbc
+  obtain ⟨ω, hω, htr, hn⟩ := exists_integerRing_eq_div_of_sq_eq hx hx2 ht hbc
   have htr' : Algebra.trace 𝒪[K] 𝒪[L] ω = -t := Subtype.ext (by simpa using htr)
   have hn' : Algebra.norm 𝒪[K] ω = c := Subtype.ext (by simpa using hn)
   have hunit : IsUnit (Algebra.trace 𝒪[K] 𝒪[L] ω ^ 2 - 4 * Algebra.norm 𝒪[K] ω) := by
@@ -194,7 +196,7 @@ theorem exists_basis_integerRing_of_sq_eq_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) 
     rw [show (0 : 𝒪[K]) ^ 2 - 4 * -a = 2 * 2 * a by ring]
     exact (h2.mul h2).mul ha
   obtain ⟨B, h0, h1, htr, hn⟩ := exists_basis_integerRing_of_sq_eq_of_isUnit_discrim (b := 0)
-    (s := 1) hx hx2 one_ne_zero (by simp) (by simp) hdisc
+    (s := 1) hx hx2 (by simp) (by simp) hdisc
   exact ⟨B, h0, by simpa using h1, by simpa using htr, by simpa using hn⟩
 
 end SquareRoot
