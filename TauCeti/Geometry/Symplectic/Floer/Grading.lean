@@ -139,6 +139,13 @@ theorem quotientMk_sub_vadd (n : ℤ) (i : ι) (γ : PeriodGroup ω c) (D : P i)
       ((n - μ ⟨i, D⟩ : ℤ) : ℤ ⧸ (PeriodGroup.degree ω c).range) :=
   QuotientAddGroup.eq_iff_sub_mem.2 ⟨-γ, by rw [hμ, map_neg]; ring⟩
 
+/-- Recapping by `γ` changes the cochain degree `n - μ` by the even number `-2 c₁(γ)`. -/
+theorem even_cochain_vadd_sub (n : ℤ) (i : ι) (γ : PeriodGroup ω c) (D : P i) :
+    Even (n - μ ⟨i, γ +ᵥ D⟩ - (n - μ ⟨i, D⟩)) := by
+  rw [hμ, show n - (PeriodGroup.degree ω c γ + μ ⟨i, D⟩) - (n - μ ⟨i, D⟩) =
+    -PeriodGroup.degree ω c γ by ring]
+  exact (PeriodGroup.even_degree ω c γ).neg
+
 /-- If the first Chern number vanishes on spherical classes, recapping does not change the
 grading of a generator. Hence the integer grading is constant on each orbit, and the completed
 module over finitely many orbits is the direct sum of its integer-homogeneous pieces as a module

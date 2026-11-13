@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Cap.Map
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Product
 public import TauCeti.RingTheory.NovikovModule.Comparison
 
@@ -147,7 +148,7 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_novi
     hF₁ hF₂ hF₀ hG₁ hG₂ hG₀ r₁ r₂ r₀ s₁ s₂ s₀ _ _ _ _ _ _ _ _ _
     (even_cochain_vadd_sub hν₁ n) (fun s t l => ?_) ha b
   simpa only [map_sum, map_add, map_sub, _root_.map_mul,
-    coefficientComparison_negOnePowCast_smul] using
+    map_negOnePowCast_smul] using
     congrArg (coefficientComparison q hq) (hC s t l)
 
 include hν₁ in
@@ -217,7 +218,7 @@ theorem
     _ _ _ (fun l m => coefficientComparison q hq (E₀ l m)) _ _ _
     (even_cochain_vadd_sub hν₁ n) (fun s t l => ?_) ?_ ?_ ha b
   · simpa only [map_sum, map_add, map_sub, _root_.map_mul,
-      coefficientComparison_negOnePowCast_smul] using
+      map_negOnePowCast_smul] using
       congrArg (coefficientComparison q hq) (hC s t l)
   -- The count identities are matrix identities, which the ring homomorphism
   -- `coefficientComparison` carries to the matrices of comparisons.
@@ -342,10 +343,12 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_
   simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero, sub_zero]
   refine LinearMap.mem_coboundaries_iff.2 ⟨_, Submodule.sub_mem _ ?_ ?_,
     (novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀ _).symm⟩
-  · -- `K` is the product of rigid counts for the gradings `ν₀ - 1`, so `K(a, b)` has cochain
-    -- degree `e + f - 1`, which `Φ₀` preserves.
-    have hKab' := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_sub_one s₁ s₂
-      s₀ q hq hG₁ hG₂ hG₀ hν₁ hν₂ hν₀ K hK ha.2 hb.2
+  · -- `K` lowers the cochain degree by one, so `K(a, b)` has cochain degree `e + f - 1`, which
+    -- `Φ₀` preserves.
+    have hKab' := novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy_add s₁ s₂ s₀ q
+      hq hG₁ hG₂ hG₀ hν₁ hν₂ hν₀ K (ε := -1) (fun s t l A hA => by rw [hK s t l A hA]; ring)
+      ha.2 hb.2
+    rw [← sub_eq_add_neg] at hKab'
     simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy s₀ r₀
       q hq hν₀ hμ₀ hG₀ hF₀ (ε := 0) (fun l k A hA => by rw [sub_zero]; exact hΦ₀deg l k A hA)
       hKab'
