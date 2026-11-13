@@ -101,7 +101,7 @@ locus. -/
 theorem finite_setOf_mem_zeroLocus {a : Γ(X, ⊤)} (ha : a ≠ 0) :
     {x : CodimensionOnePoint X | (x : X) ∈ X.zeroLocus {a}}.Finite := by
   have : Nonempty (X.basicOpen a) := ⟨⟨genericPoint X, Scheme.genericPoint_mem_basicOpen ha⟩⟩
-  refine (finite_setOfPred_notMem (X.basicOpen a)).subset fun x hx ↦ ?_
+  refine (CodimensionOnePoint.finite_setOfPred_notMem (X.basicOpen a)).subset fun x hx ↦ ?_
   simpa [Scheme.zeroLocus_singleton] using hx
 
 /-- The principal divisor of a nonzero global function is effective: a regular function has no
