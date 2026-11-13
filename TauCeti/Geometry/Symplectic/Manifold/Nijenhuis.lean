@@ -72,12 +72,20 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
 
 ## Conventions
 
-No factor `1/4` is included; some sources use `N_J / 4` instead.
+The tensor is normalised as `N_J(X, Y) = [JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]`, with no factor
+`1/4` (some sources use `N_J / 4` instead). The normalisation and the overall sign vary between
+sources. Kobayashi and Nomizu define `N(X, Y) = 2 {[JX, JY] - [X, Y] - J[X, JY] - J[JX, Y]}`, which
+is twice `N_J` here, and the opposite overall sign `[X, Y] + J[JX, Y] + J[X, JY] - [JX, JY]` is also
+in common use. Statements about `N_J` here (for instance that the `(0,2)`-part of `dα` is
+`α ∘ N_J / 4`) refer to this normalisation and change accordingly under the others. The vanishing
+of the tensor does not depend on the convention.
 
 ## References
 
 * Daniel Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005,
   Section 2.6.
+* Shoshichi Kobayashi and Katsumi Nomizu, *Foundations of Differential Geometry, Volume II*,
+  Wiley, 1969, Chapter IX, Section 2.
 -/
 
 public noncomputable section
