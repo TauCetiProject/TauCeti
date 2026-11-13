@@ -30,9 +30,9 @@ quotient.
   of a compact group, or of a compact additive group, on a Hausdorff space is proper.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
-* `Topology.IsEmbedding.properSMul_of_monoidHom`: the same along an embedding of groups, provided
-  the elements of the larger group carrying a point of the image into the image come from the
-  smaller group.
+* `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
+  the acting groups, provided the elements of the larger group carrying a point of the image into
+  the image come from the smaller group.
 -/
 
 public section
@@ -56,21 +56,21 @@ theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] 
 end TauCeti
 
 open Filter Topology in
-/-- **Proper actions pull back along slices.** Let `φ : H →* G` be a topological embedding of
+/-- **Proper actions pull back along slices.** Let `φ : H → G` be a topological embedding between
 groups and `f : Y → X` a topological embedding intertwining an action of `H` on `Y` with a proper
 action of `G` on `X`, `f (h • y) = φ h • f y`. If every element of `G` carrying a point of the image
 of `f` into the image of `f` comes from `H`, then the action of `H` on `Y` is proper. For instance
 the coadjoint stabilizer of a value of an equivariant map acts properly on the corresponding
 level. -/
-@[to_additive /-- **Proper additive actions pull back along slices.** Let `φ : H →+ G` be a
-topological embedding of additive groups and `f : Y → X` a topological embedding intertwining an
-additive action of `H` on `Y` with a proper additive action of `G` on `X`. If every element of `G`
-carrying a point of the image of `f` into the image of `f` comes from `H`, then the additive
-action of `H` on `Y` is proper. -/]
-theorem Topology.IsEmbedding.properSMul_of_monoidHom {G H X Y : Type*} [Group G]
+@[to_additive /-- **Proper additive actions pull back along slices.** Let `φ : H → G` be a
+topological embedding between additive groups and `f : Y → X` a topological embedding
+intertwining an additive action of `H` on `Y` with a proper additive action of `G` on `X`. If every
+element of `G` carrying a point of the image of `f` into the image of `f` comes from `H`, then the
+additive action of `H` on `Y` is proper. -/]
+theorem Topology.IsEmbedding.properSMul_of_isEmbedding {G H X Y : Type*} [Group G]
     [TopologicalSpace G] [MulAction G X] [TopologicalSpace X] [ProperSMul G X] [Group H]
     [TopologicalSpace H] [MulAction H Y] [TopologicalSpace Y] {f : Y → X} (hf : IsEmbedding f)
-    {φ : H →* G} (hφ : IsEmbedding φ) (hsmul : ∀ (h : H) (y : Y), f (h • y) = φ h • f y)
+    {φ : H → G} (hφ : IsEmbedding φ) (hsmul : ∀ (h : H) (y : Y), f (h • y) = φ h • f y)
     (hrange : ∀ (g : G) (y y' : Y), g • f y = f y' → ∃ h : H, φ h = g) :
     ProperSMul H Y where
   isProperMap_smul_pair := by
@@ -97,4 +97,4 @@ theorem Topology.IsEmbedding.properSMul {G X Y : Type*} [Group G] [TopologicalSp
     [MulAction G X] [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y]
     {f : Y → X} (hf : IsEmbedding f) (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) :
     ProperSMul G Y :=
-  hf.properSMul_of_monoidHom (φ := MonoidHom.id G) IsEmbedding.id hsmul fun g _ _ _ ↦ ⟨g, rfl⟩
+  hf.properSMul_of_isEmbedding IsEmbedding.id hsmul fun g _ _ _ ↦ ⟨g, rfl⟩

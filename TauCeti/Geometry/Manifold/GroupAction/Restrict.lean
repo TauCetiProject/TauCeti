@@ -13,18 +13,18 @@ import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 # Restricting smooth actions to invariant submanifolds
 
 Let a group `G` act on a manifold `M` by a `C^n` map `G × M → M`
-(`ContMDiffSMul I I' n G M`). If `i : Z → M` is a `C^n` embedding intertwining an action of `G` on
-`Z` with the action on `M`, then the action on `Z` is `C^n`
-(`Manifold.IsSmoothEmbedding.contMDiffSMul`). The main case is the inclusion of an invariant
-embedded submanifold, with the induced action of a `SubMulAction`. The proof is the smooth
-universal property of a smooth embedding (`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`): a
-map into `Z` is `C^n` once its composite with `i` is `C^n`.
+(`ContMDiffSMul I I' n G M`). Let `f : G' → G` be a `C^n` map and `i : Z → M` a `C^n` embedding
+intertwining an action of `G'` on `Z` with the action on `M` along `f`, that is
+`i (g • z) = f g • i z`. Then the action of `G'` on `Z` is `C^n`
+(`Manifold.IsSmoothEmbedding.contMDiffSMul`). This is the smooth counterpart of Mathlib's
+`Topology.IsInducing.continuousSMul`. The proof is the smooth universal property of a smooth
+embedding (`Manifold.IsSmoothEmbedding.contMDiff_iff_comp`): a map into `Z` is `C^n` once its
+composite with `i` is `C^n`.
 
-Restricting the group instead is Mathlib's `MulAction.contMDiffSMul_compHom`: a subgroup of `G`
-with a manifold structure for which its inclusion is `C^n`, such as a closed subgroup of a Lie
-group with its closed-subgroup structure, acts in a `C^n` way. Combining the two, a closed subgroup
-of a Lie group stabilizing an embedded submanifold acts smoothly on it; this is how the stabilizer
-of a value of an equivariant moment map acts on the corresponding level.
+The main case is a subgroup `G'` of `G` with a manifold structure for which its inclusion is
+`C^n`, such as a closed subgroup of a Lie group with its closed-subgroup structure, acting on an
+invariant embedded submanifold `Z` by the induced action of a `SubMulAction`. This is how the
+stabilizer of a value of an equivariant moment map acts on the corresponding level.
 
 ## References
 
@@ -46,22 +46,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Manifold.IsSmoothEmbedding
 
-/-- **Restricting a smooth action to an invariant embedded submanifold.** If `i : Z → M` is a
-`C^n` embedding which intertwines an action of `G` on `Z` with a `C^n` action of `G` on `M`, then
-the action on `Z` is `C^n`. -/
-@[to_additive /-- If `i : Z → M` is a `C^n` embedding which intertwines an additive action of `G`
-on `Z` with a `C^n` additive action of `G` on `M`, then the additive action on `Z` is `C^n`. -/]
+/-- **Restricting a smooth action to an invariant embedded submanifold.** Let `f : G' → G` be a
+`C^n` map and `i : Z → M` a `C^n` embedding intertwining an action of `G'` on `Z` with a `C^n`
+action of `G` on `M` along `f`. Then the action of `G'` on `Z` is `C^n`. -/
+@[to_additive /-- Let `f : G' → G` be a `C^n` map and `i : Z → M` a `C^n` embedding intertwining
+an additive action of `G'` on `Z` with a `C^n` additive action of `G` on `M` along `f`. Then the
+additive action of `G'` on `Z` is `C^n`. -/]
 theorem contMDiffSMul {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [SMul G M]
+    [ContMDiffSMul I I' n G M]
+    {EG' : Type*} [NormedAddCommGroup EG'] [NormedSpace 𝕜 EG']
+    {HG' : Type*} [TopologicalSpace HG'] {IG' : ModelWithCorners 𝕜 EG' HG'}
+    {G' : Type*} [TopologicalSpace G'] [ChartedSpace HG' G']
     {EZ : Type*} [NormedAddCommGroup EZ] [NormedSpace 𝕜 EZ]
     {HZ : Type*} [TopologicalSpace HZ] {IZ : ModelWithCorners 𝕜 EZ HZ}
-    {Z : Type*} [TopologicalSpace Z] [ChartedSpace HZ Z] [SMul G Z] [ContMDiffSMul I I' n G M]
-    {i : Z → M} (hi : IsSmoothEmbedding IZ I' n i)
-    (hsmul : ∀ (g : G) (z : Z), i (g • z) = g • i z) :
-    ContMDiffSMul I IZ n G Z where
+    {Z : Type*} [TopologicalSpace Z] [ChartedSpace HZ Z] [SMul G' Z]
+    {i : Z → M} (hi : IsSmoothEmbedding IZ I' n i) {f : G' → G} (hf : ContMDiff IG' I n f)
+    (hsmul : ∀ (g : G') (z : Z), i (g • z) = f g • i z) :
+    ContMDiffSMul IG' IZ n G' Z where
   contMDiff_smul := by
-    have hcomp : (i ∘ fun p : G × Z ↦ p.1 • p.2) = fun p ↦ p.1 • i p.2 :=
+    have hcomp : (i ∘ fun p : G' × Z ↦ p.1 • p.2) = fun p ↦ f p.1 • i p.2 :=
       funext fun p ↦ hsmul p.1 p.2
     exact hi.contMDiff_iff_comp.2 <|
-      hcomp ▸ contMDiff_fst.smul (hi.isImmersion.contMDiff.comp contMDiff_snd)
+      hcomp ▸ (hf.comp contMDiff_fst).smul (hi.isImmersion.contMDiff.comp contMDiff_snd)
 
 end Manifold.IsSmoothEmbedding
