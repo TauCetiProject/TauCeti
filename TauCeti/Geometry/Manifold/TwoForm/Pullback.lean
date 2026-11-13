@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 If the derivative of a smooth map is surjective, the kernel of a pulled-back two-form is the
 preimage of the original kernel under that derivative
 (`TauCeti.SmoothTwoForm.ker_bilinFormAt_mpullback`). This identity supports the nondegeneracy
-criterion for descended symplectic forms.
+criterion for descended symplectic forms. A two-form preserved by a smooth self-map `f`,
+`f^* η = η`, is preserved by each differential of `f`
+(`TauCeti.SmoothTwoForm.eval₂_mfderiv_of_mpullback_eq`).
 -/
 
 public section
@@ -51,5 +53,12 @@ theorem ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p) (η : SmoothTwoForm
     simp only [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
       LinearMap.zero_apply] at hw ⊢
     exact hw
+
+/-- A two-form preserved by a smooth self-map `f`, `f^* η = η`, is preserved by every differential
+of `f`: `η_{f z}(df_z a, df_z b) = η_z(a, b)`. -/
+theorem eval₂_mfderiv_of_mpullback_eq {f : Z → Z} (hf : ContMDiff I I ∞ f) {η : SmoothTwoForm I Z}
+    (h : SmoothForm.mpullback f hf η = η) (z : Z) (a b : TangentSpace I z) :
+    η.eval₂ (f z) (mfderiv I I f z a) (mfderiv I I f z b) = η.eval₂ z a b := by
+  rw [← SmoothForm.eval₂_mpullback f hf, h]
 
 end TauCeti.SmoothTwoForm
