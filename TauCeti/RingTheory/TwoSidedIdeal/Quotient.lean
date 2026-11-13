@@ -179,7 +179,7 @@ theorem lift_surjective_of_surjective {I : TwoSidedIdeal A} [NonUnitalNonAssocSe
   obtain ⟨a, rfl⟩ := hsurj b
   exact ⟨mk I a, lift_mk I f hf a⟩
 
-theorem lift_injective_of_ker_le {I : TwoSidedIdeal A} [NonUnitalRing B]
+theorem lift_injective_of_ker_le {I : TwoSidedIdeal A} [NonUnitalNonAssocSemiring B]
     {f : A →ₙ+* B} (hf : ∀ a ∈ I, f a = 0) (hker : TwoSidedIdeal.ker f ≤ I) :
     Function.Injective (lift I f hf) := by
   rw [injective_iff_map_eq_zero]
