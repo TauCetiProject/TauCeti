@@ -27,6 +27,9 @@ reindexing operation is done here.
   map of a diffeotopy is a smooth ambient isotopy.
 * `TauCeti.SmoothEmbedding.SmoothAmbientIsotopic.compDiffeomorph`: reparametrisation preserves
   smooth ambient isotopy.
+* `TauCeti.SmoothEmbedding.SmoothAmbientIsotopic.transDiffeomorph`,
+  `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_iff`: transport by a
+  diffeomorphism of the ambient manifold preserves and reflects smooth ambient isotopy.
 -/
 
 public section
@@ -73,6 +76,32 @@ theorem SmoothAmbientIsotopic.compDiffeomorph [IsManifold I n M']
   rw [smoothAmbientIsotopic_iff_toContMDiffMap, hf, hg]
   exact TauCeti.SmoothAmbientIsotopic.precomp
     (smoothAmbientIsotopic_iff_toContMDiffMap.mp hfg) e.toContMDiffMap
+
+section Ambient
+
+variable {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
+
+/-- Transporting two smoothly ambient-isotopic embeddings by the same diffeomorphism of the
+ambient manifold preserves the relation: the witnessing diffeotopy is conjugated by the
+diffeomorphism. -/
+theorem SmoothAmbientIsotopic.transDiffeomorph [IsManifold J n P]
+    (hfg : f.SmoothAmbientIsotopic g) (e : N ≃ₘ^n⟮J, J⟯ P) :
+    (f.transDiffeomorph e).SmoothAmbientIsotopic (g.transDiffeomorph e) := by
+  obtain ⟨Φ, hΦ⟩ := smoothAmbientIsotopic_def.mp hfg
+  refine SmoothAmbientIsotopic.of_diffeotopy (Φ.transDiffeomorph e) fun x ↦ ?_
+  simp [Diffeotopy.final_transDiffeomorph, hΦ]
+
+/-- Transport by a diffeomorphism of the ambient manifold preserves and reflects smooth ambient
+isotopy of embeddings. -/
+@[simp]
+theorem smoothAmbientIsotopic_transDiffeomorph_iff [IsManifold J n N] [IsManifold J n P]
+    (e : N ≃ₘ^n⟮J, J⟯ P) :
+    (f.transDiffeomorph e).SmoothAmbientIsotopic (g.transDiffeomorph e) ↔
+      f.SmoothAmbientIsotopic g := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.transDiffeomorph e⟩
+  simpa [transDiffeomorph_transDiffeomorph] using h.transDiffeomorph e.symm
+
+end Ambient
 
 end SmoothEmbedding
 
