@@ -119,8 +119,8 @@ theorem singularValue_comp_comp_le_hilbertNumber (B : F →L[𝕜] ℓ²(ℕ, �
   · simpa [hB] using B.singularValue_comp_comp_le T A n
   rcases eq_or_ne ‖A‖₊ 0 with hA | hA
   · simpa [hA] using B.singularValue_comp_comp_le T A n
-  have hA₀ : ‖A‖ ≠ 0 := by rwa [← coe_nnnorm, NNReal.coe_ne_zero]
-  have hB₀ : ‖B‖ ≠ 0 := by rwa [← coe_nnnorm, NNReal.coe_ne_zero]
+  have hA₀ : ‖A‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
+  have hB₀ : ‖B‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
   -- The normalized compression `(‖B‖⁻¹ B) T (‖A‖⁻¹ A)` is admissible for `hₙ(T)`.
   have hle := T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one
     (A := ((‖A‖ : 𝕜))⁻¹ • A) (B := ((‖B‖ : 𝕜))⁻¹ • B)
@@ -196,13 +196,13 @@ theorem hilbertNumber_zero (T : E →L[𝕜] F) : T.hilbertNumber 0 = ‖T‖₊
   let B : F →L[𝕜] ℓ²(ℕ, 𝕜) := g.smulRight e
   have hBTA : (B ∘L T ∘L A) e = (‖T x‖ : 𝕜) • e := by
     simp [A, B, inner_self_eq_norm_sq_to_K, he, hgx]
-  have hA : ‖A‖₊ = ‖x‖₊ := by simp [A, nnnorm_smulRight_apply, ← NNReal.coe_inj, he]
+  have hA : ‖A‖₊ = ‖x‖₊ := by simp [A, ← NNReal.coe_inj, he]
   have hB : ‖B‖₊ ≤ 1 := by
-    rw [nnnorm_smulRight_apply]
+    rw [nnNorm_smulRight_apply]
     have : ‖e‖₊ = 1 := NNReal.coe_eq_one.mp he
     simpa [this] using (show ‖g‖₊ ≤ 1 from mod_cast hg)
   calc ‖T x‖₊ = ‖(B ∘L T ∘L A) e‖₊ := by
-        rw [hBTA, nnnorm_smul, ← NNReal.coe_inj]; simp [he]
+        rw [hBTA, nnNorm_smul, ← NNReal.coe_inj]; simp [he]
     _ ≤ ‖B ∘L T ∘L A‖₊ := by
         simpa [show ‖e‖₊ = 1 from NNReal.coe_eq_one.mp he] using (B ∘L T ∘L A).le_opNNNorm e
     _ = (B ∘L T ∘L A).singularValue 0 := (singularValue_zero _).symm
