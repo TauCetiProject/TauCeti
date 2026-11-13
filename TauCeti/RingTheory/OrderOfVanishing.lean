@@ -80,10 +80,8 @@ variable [IsDomain R] [IsNoetherianRing R] [Ring.KrullDimLE 1 R]
 theorem ordFrac_map_of_ringEquiv (σ : R ≃+* R') (τ : K →+* K')
     (h : ∀ a, τ (algebraMap R K a) = algebraMap R' K' (σ a)) (k : K) :
     Ring.ordFrac R' (τ k) = Ring.ordFrac R k := by
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := R) k
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  simp [h, Ring.ordFrac_eq_ord, ha, nonZeroDivisors.ne_zero hb]
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := R) k
+  simp [h, Ring.ordFrac_eq_ord]
 
 end RingEquiv
 
@@ -119,7 +117,7 @@ theorem isUnit_iff_ordFrac_one {x : R} : IsUnit x ↔ Ring.ordFrac R (algebraMap
   · simp
   have hnz : x ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hx
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (Ring.ord_ne_top hnz)
-  rw [Ring.ordFrac_eq_ord R hx, Ring.ordMonoidWithZeroHom_eq_coe R hnz hn.symm, ← ord_eq_zero_iff,
+  rw [Ring.ordFrac_eq_ord R, Ring.ordMonoidWithZeroHom_eq_coe R hnz hn.symm, ← ord_eq_zero_iff,
     ← hn]
   simp [← WithZero.coe_one]
 

@@ -138,13 +138,6 @@ section NormedSpace
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- An `Lᵖ` function is determined by its tempered distribution. -/
-theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
-    [Fact (1 ≤ p)] : Function.Injective fun f : Lp F p μ ↦ (f : 𝓢'(E, F)) := by
-  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
-  intro f g h
-  exact LinearMap.ker_eq_bot.1 ker_toTemperedDistributionCLM_eq_bot h
-
 /-- An `Lᵖ` function is almost everywhere equal to any locally integrable function with the same
 pairings against Schwartz functions. The two functions need not lie in the same `Lᵖ` space. -/
 theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTemperateGrowth]
@@ -159,6 +152,13 @@ theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTempera
   have hψ₁ : HasCompactSupport (Complex.ofRealCLM ∘ ψ) := hψc.comp_left rfl
   have hψ₂ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ) := by fun_prop
   simpa [Lp.toTemperedDistribution_apply] using h (hψ₁.toSchwartzMap hψ₂)
+
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
+    [Fact (1 ≤ p)] : Function.Injective fun f : Lp F p μ ↦ (f : 𝓢'(E, F)) := fun f g h ↦ by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  refine LinearMap.ker_eq_bot.1 ker_toTemperedDistributionCLM_eq_bot ?_
+  simpa only [ContinuousLinearMap.coe_coe, toTemperedDistributionCLM_apply] using h
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
@@ -366,10 +366,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
 continuous function is determined by its tempered distribution. -/
 theorem toTemperedDistribution_toLpTop_injective {μ : Measure E} [μ.HasTemperateGrowth]
     [μ.IsOpenPosMeasure] :
-    Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) := fun f g h ↦
+    Function.Injective fun f : E →ᵇ F ↦ Lp.toTemperedDistribution (toLpTop μ ℂ f) :=
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
-  toLpTop_injective (𝕜 := ℂ) μ <|
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simpa only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply] using h
+  Lp.toTemperedDistribution_injective.comp (toLpTop_injective (𝕜 := ℂ) μ)
 
 end BoundedContinuousFunction
