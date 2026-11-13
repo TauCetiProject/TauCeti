@@ -61,6 +61,16 @@ theorem IsCombinatorialSphere.exists_plHomeomorphic_simplexBoundary
   obtain ⟨V, hV, hPV⟩ := isCombinatorialSphere_iff.mp h
   exact ⟨V, hV, hPV.plHomeomorphic⟩
 
+/-- A finset of cardinality `m` is the image of an embedding of `Fin m`. -/
+private theorem exists_embedding_image_univ_eq [DecidableEq ι] {V : Finset ι} {m : ℕ}
+    (hV : V.card = m) :
+    ∃ j : Fin m ↪ ι, (Finset.univ : Finset (Fin m)).image j = V := by
+  refine ⟨(Finset.equivFinOfCardEq hV).symm.toEmbedding.trans (Function.Embedding.subtype _), ?_⟩
+  ext v
+  simp only [Finset.mem_image, Finset.mem_univ, true_and]
+  exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ ((Finset.equivFinOfCardEq hV).symm a).2,
+    fun hv ↦ ⟨Finset.equivFinOfCardEq hV ⟨v, hv⟩, by simp⟩⟩
+
 /-- A combinatorial ball has the PL homeomorphism type of the simplex on a canonical finite
 vertex type. This removes the arbitrary labels from `exists_plHomeomorphic_simplex`, which is
 useful when transporting the standard simplex charts. -/
@@ -68,25 +78,10 @@ theorem IsCombinatorialBall.plHomeomorphic_standardSimplex
     [DecidableEq ι] (h : IsCombinatorialBall P n) :
     PLHomeomorphic P (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
   obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplex
-  let e : V ≃ Fin (n + 1) := Finset.equivFinOfCardEq hV
-  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
-  let S : PreAbstractSimplicialComplex V := simplex Finset.univ
-  have hj : S.map j = simplex V := by
-    simp only [S, map_simplex]
-    congr 1
-    ext v
-    simp [j]
-  have he : S.map e.toEmbedding = simplex (Finset.univ : Finset (Fin (n + 1))) := by
-    simp only [S, map_simplex]
-    congr 1
-    exact Finset.image_univ_equiv e
-  have hleft : PLHomeomorphic (simplex V) S := by
-    rw [← hj]
-    exact (PLHomeomorphic.relabeling S j).symm
-  have hright : PLHomeomorphic S (simplex (Finset.univ : Finset (Fin (n + 1)))) := by
-    rw [← he]
-    exact PLHomeomorphic.relabeling S e.toEmbedding
-  exact hP.trans (hleft.trans hright)
+  obtain ⟨j, hjV⟩ := exists_embedding_image_univ_eq hV
+  have hj : (simplex Finset.univ).map j = simplex V := by
+    rw [map_simplex, hjV]
+  exact hP.trans (hj ▸ (PLHomeomorphic.relabeling _ j).symm)
 
 /-- A combinatorial sphere has the PL homeomorphism type of the boundary of the simplex on a
 canonical finite vertex type. This is the standard link model used by PL vertex charts. -/
@@ -94,27 +89,10 @@ theorem IsCombinatorialSphere.plHomeomorphic_standardSimplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n) :
     PLHomeomorphic P (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
   obtain ⟨V, hV, hP⟩ := h.exists_plHomeomorphic_simplexBoundary
-  let e : V ≃ Fin (n + 2) := Finset.equivFinOfCardEq hV
-  let j : V ↪ ι := Function.Embedding.subtype (· ∈ V)
-  let S : PreAbstractSimplicialComplex V := simplexBoundary Finset.univ
-  have hj : S.map j = simplexBoundary V := by
-    simp only [S, map_simplexBoundary]
-    congr 1
-    ext v
-    simp [j]
-  have he : S.map e.toEmbedding =
-      simplexBoundary (Finset.univ : Finset (Fin (n + 2))) := by
-    simp only [S, map_simplexBoundary]
-    congr 1
-    exact Finset.image_univ_equiv e
-  have hleft : PLHomeomorphic (simplexBoundary V) S := by
-    rw [← hj]
-    exact (PLHomeomorphic.relabeling S j).symm
-  have hright : PLHomeomorphic S
-      (simplexBoundary (Finset.univ : Finset (Fin (n + 2)))) := by
-    rw [← he]
-    exact PLHomeomorphic.relabeling S e.toEmbedding
-  exact hP.trans (hleft.trans hright)
+  obtain ⟨j, hjV⟩ := exists_embedding_image_univ_eq hV
+  have hj : (simplexBoundary Finset.univ).map j = simplexBoundary V := by
+    rw [map_simplexBoundary, hjV]
+  exact hP.trans (hj ▸ (PLHomeomorphic.relabeling _ j).symm)
 
 /-- A combinatorial ball has a PL homeomorphism to the realization of the standard simplex,
 with ambient PL coordinate formulas in both directions. -/
