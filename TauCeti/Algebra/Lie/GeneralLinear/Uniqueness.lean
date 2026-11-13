@@ -497,29 +497,14 @@ private theorem inr_notMem_lieSpan_prod (hv : IsGlHighestWeightVector mu v)
   rw [hc1, one_smul] at h1
   exact hv.ne_zero h1.symm
 
-omit [LinearOrder n] [IsDomain R] [CharZero R] in
-/-- A vector whose image under a Lie module map out of an irreducible module lies in a Lie
-submodule `D` is zero, as soon as some vector's image is not in `D`: the preimage of `D` is a Lie
-submodule of the irreducible source, and it is not everything. -/
-private theorem eq_zero_of_apply_mem {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
-    [LieRingModule (Matrix n n R) M₁] [LieModule.IsIrreducible R (Matrix n n R) M₁]
-    [AddCommGroup M₂] [Module R M₂] [LieRingModule (Matrix n n R) M₂]
-    (f : M₁ →ₗ⁅R,Matrix n n R⁆ M₂) (D : LieSubmodule R (Matrix n n R) M₂) {x₀ : M₁}
-    (h₀ : f x₀ ∉ D) {x : M₁} (hx : f x ∈ D) : x = 0 := by
-  rcases IsSimpleOrder.eq_bot_or_eq_top (D.comap f) with hb | ht
-  · have hxS : x ∈ D.comap f := hx
-    rw [hb, LieSubmodule.mem_bot] at hxS
-    exact hxS
-  · exact absurd (show x₀ ∈ D.comap f by rw [ht]; exact LieSubmodule.mem_top _) h₀
-
 /-- A vector of the first factor lying in the diagonal submodule is zero. -/
 private theorem eq_zero_of_inl_mem_lieSpan_prod
     [LieModule.IsIrreducible R (Matrix n n R) M] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') {x : M}
     (hx : ((x, 0) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
     x = 0 :=
-  eq_zero_of_apply_mem (LieModuleHom.inl R (Matrix n n R) M M')
-    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v)
+  eq_zero_of_apply_mem (f := LieModuleHom.inl R (Matrix n n R) M M')
+    (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v)
     (by simpa using inl_notMem_lieSpan_prod hv hv') (by simpa using hx)
 
 /-- A vector of the second factor lying in the diagonal submodule is zero. -/
@@ -528,8 +513,8 @@ private theorem eq_zero_of_inr_mem_lieSpan_prod
     (hv' : IsGlHighestWeightVector mu v') {y : M'}
     (hy : ((0, y) : M × M') ∈ LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) :
     y = 0 :=
-  eq_zero_of_apply_mem (LieModuleHom.inr R (Matrix n n R) M M')
-    (LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v')
+  eq_zero_of_apply_mem (f := LieModuleHom.inr R (Matrix n n R) M M')
+    (D := LieSubmodule.lieSpan R (Matrix n n R) {((v, v') : M × M')}) (x₀ := v')
     (by simpa using inr_notMem_lieSpan_prod hv hv') (by simpa using hy)
 
 private theorem injective_prodFst [LieModule.IsIrreducible R (Matrix n n R) M']
