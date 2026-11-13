@@ -72,14 +72,17 @@ theorem map {f : G →* G'} (hf : Function.Injective f) :
   · rw [← map_inf _ _ f hf, h.inf_eq_bot, map_bot]
   · rw [← map_sup, h.sup_eq]
 
+/-- When `N` is normal in `H`, a local complement of `N` in `H` normalizes `N`. -/
+theorem right_le_normalizer [(N.subgroupOf H).Normal] : K ≤ normalizer N :=
+  h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le)
+
 /-- Restrict a local complement to an intermediate subgroup containing the normal subgroup. -/
 theorem restrict [(N.subgroupOf H).Normal] (hNL : N ≤ L) (hLH : L ≤ H) :
     N.IsLocalComplement (K ⊓ L) L := by
   constructor
   · exact disjoint_iff.mp (h.disjoint.mono_right inf_le_left)
   · rw [inf_comm K L, sup_comm,
-      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _
-        (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le))) hNL,
+      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _ h.right_le_normalizer) hNL,
       sup_comm K N, h.sup_eq, inf_eq_left.mpr hLH]
 
 end IsLocalComplement
@@ -404,5 +407,60 @@ theorem IsLocalComplement.leftProjection_conj_smul (h : N.IsLocalComplement K H)
   exact (h.leftProjection_eq_iff x _).mp rfl
 
 end Conjugation
+
+section GlobalComparison
+
+/-- Evaluating `IsComplement'.QuotientMulEquiv` on a coset extracts the left component of the
+complement decomposition. -/
+theorem IsComplement'.quotientMulEquiv_mk [K.Normal] (h : H.IsComplement' K) (g : G) :
+    h.QuotientMulEquiv (g : G ⧸ K) = (h.equiv g).1 := by
+  apply h.QuotientMulEquiv.symm.injective
+  have hsymm : h.QuotientMulEquiv.symm (h.equiv g).1 = (((h.equiv g).1 : G) : G ⧸ K) :=
+    h.QuotientMulEquiv_symm_apply (h.equiv g).1
+  rw [MulEquiv.symm_apply_apply, hsymm]
+  conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
+  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+    (QuotientGroup.eq_one_iff _).mpr (h.equiv g).2.property, mul_one]
+
+/-- When the left subgroup is normal, the quotient isomorphism to the complement extracts the
+right component of the complement decomposition. -/
+theorem IsComplement'.symm_quotientMulEquiv_mk [N.Normal] (h : N.IsComplement' K) (g : G) :
+    h.symm.QuotientMulEquiv (g : G ⧸ N) = (h.equiv g).2 := by
+  apply h.symm.QuotientMulEquiv.symm.injective
+  have hsymm : h.symm.QuotientMulEquiv.symm (h.equiv g).2 = (((h.equiv g).2 : G) : G ⧸ N) :=
+    h.symm.QuotientMulEquiv_symm_apply (h.equiv g).2
+  rw [MulEquiv.symm_apply_apply, hsymm]
+  conv_lhs => rw [← h.equiv_fst_mul_equiv_snd g]
+  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+    (QuotientGroup.eq_one_iff _).mpr (h.equiv g).1.property, one_mul]
+
+/-- Viewing a global complement as a local complement in `⊤` preserves the product
+decomposition. -/
+@[simp]
+theorem IsComplement'.isLocalComplement_top_equiv [N.Normal] (h : N.IsComplement' K)
+    (x : (⊤ : Subgroup G)) :
+    (isLocalComplement_top_iff.mpr h).equiv x = h.equiv x := by
+  have hx : x = ⟨((h.equiv x).1 : G) * (h.equiv x).2, mem_top _⟩ :=
+    Subtype.ext (h.equiv_fst_mul_equiv_snd x).symm
+  conv_lhs => rw [hx]
+  exact (isLocalComplement_top_iff.mpr h).equiv_mul (h.equiv x).1 (h.equiv x).2
+
+/-- The left projection of a global complement viewed locally in `⊤` is the first component of
+`IsComplement.equiv`. -/
+@[simp]
+theorem IsComplement'.isLocalComplement_top_leftProjection [N.Normal] (h : N.IsComplement' K)
+    (x : (⊤ : Subgroup G)) :
+    (isLocalComplement_top_iff.mpr h).leftProjection x = (h.equiv x).1 := by
+  rw [IsLocalComplement.leftProjection_apply, h.isLocalComplement_top_equiv]
+
+/-- The right projection of a global complement viewed locally in `⊤` is the second component of
+`IsComplement.equiv`. -/
+@[simp]
+theorem IsComplement'.isLocalComplement_top_rightProjection [N.Normal] (h : N.IsComplement' K)
+    (x : (⊤ : Subgroup G)) :
+    (isLocalComplement_top_iff.mpr h).rightProjection x = (h.equiv x).2 := by
+  rw [IsLocalComplement.rightProjection_apply, h.isLocalComplement_top_equiv]
+
+end GlobalComparison
 
 end Subgroup

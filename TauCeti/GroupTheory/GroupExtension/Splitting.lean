@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupExtension.Basic
 public import TauCeti.GroupTheory.GroupExtension.Basic
-public import Mathlib.GroupTheory.Complement
 
 /-!
-# Splittings and their ranges
+# Splittings, their ranges, and semidirect products
 
 The range of a splitting complements the included kernel of an extension, and the range
 determines the splitting uniquely. Equivalences of extensions transport splittings in both
-directions. These results allow splitting criteria to be interpreted as existence criteria
-for actual subgroup complements.
+directions, and a splitting identifies the middle group with the semidirect product of the kernel
+and quotient by multiplying the included kernel factor with the section value. These results allow
+splitting criteria to be interpreted as existence criteria for subgroup complements and semidirect
+product decompositions.
 -/
 
 public section
@@ -27,6 +29,49 @@ variable {N E G : Type*} [Group N] [Group E] [Group G]
 @[simp]
 theorem Splitting.toMonoidHom_apply (s : S.Splitting) (g : G) :
     s.toMonoidHom g = s g := (rfl)
+
+/-- The equivalence from the semidirect product induced by a splitting multiplies the included
+kernel element with the image of the quotient element under the splitting. -/
+@[simp]
+theorem Splitting.semidirectProductToGroupExtensionEquiv_apply (s : S.Splitting)
+    (x : N ⋊[s.conjAct] G) :
+    s.semidirectProductToGroupExtensionEquiv x = S.inl x.left * s x.right := (rfl)
+
+/-- The multiplicative equivalence from the semidirect product induced by a splitting multiplies
+the included kernel element with the image of the quotient element under the splitting. -/
+@[simp]
+theorem Splitting.semidirectProductMulEquiv_apply (s : S.Splitting) (x : N ⋊[s.conjAct] G) :
+    s.semidirectProductMulEquiv x = S.inl x.left * s x.right := (rfl)
+
+/-- The inverse semidirect-product equivalence sends an included kernel element to the left
+factor. -/
+@[simp]
+theorem Splitting.semidirectProductMulEquiv_symm_inl (s : S.Splitting) (n : N) :
+    s.semidirectProductMulEquiv.symm (S.inl n) = SemidirectProduct.inl n := by
+  rw [MulEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse semidirect-product equivalence sends a splitting value to the right factor. -/
+@[simp]
+theorem Splitting.semidirectProductMulEquiv_symm_splitting (s : S.Splitting) (g : G) :
+    s.semidirectProductMulEquiv.symm (s g) = SemidirectProduct.inr g := by
+  rw [MulEquiv.symm_apply_eq]
+  simp
+
+/-- The right component of the inverse semidirect-product equivalence is the extension
+projection. -/
+@[simp]
+theorem Splitting.right_semidirectProductMulEquiv_symm (s : S.Splitting) (e : E) :
+    (s.semidirectProductMulEquiv.symm e).right = S.rightHom e := (rfl)
+
+/-- Including the left component of the inverse semidirect-product equivalence gives the kernel
+remainder after dividing out the splitting value. -/
+@[simp]
+theorem Splitting.inl_left_semidirectProductMulEquiv_symm (s : S.Splitting) (e : E) :
+    S.inl (s.semidirectProductMulEquiv.symm e).left = e * (s (S.rightHom e))⁻¹ := by
+  have he := s.semidirectProductMulEquiv.apply_symm_apply e
+  rw [semidirectProductMulEquiv_apply, right_semidirectProductMulEquiv_symm] at he
+  exact eq_mul_inv_of_mul_eq he
 
 /-- The range of a splitting is a complement of the included kernel. -/
 theorem Splitting.isComplement'_range (s : S.Splitting) :
