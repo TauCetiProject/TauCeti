@@ -56,6 +56,15 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   | nil => simp
   | cons p e ih => simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
 
+/-- The weight of a path is the ordered product of the weights of the darts it traverses. -/
+theorem Path.weight_eq_prod_map_darts {M : Type*} [Monoid M] (f : Γ.E → M) {a b : Γ.V}
+    (p : Γ.Path a b) :
+    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.1) =
+      ((Path.darts Γ p).map f).prod := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
 /-- A path traverses as many darts as its length. -/
 @[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
     (Path.darts Γ p).length = p.length := by
