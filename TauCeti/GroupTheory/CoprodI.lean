@@ -20,8 +20,8 @@ fundamental group of a wedge of circles as a free group.
 The free product of a family of two monoids indexed by `Bool` is the binary free product
 `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
 
-The free product of an empty family is trivial, and the free product of a family indexed by a
-type with a unique element is that single monoid.
+The free product of an empty family is trivial, and so is a free product of trivial monoids. The
+free product of a family indexed by a type with a unique element is that single monoid.
 
 ## Main declarations
 
@@ -29,6 +29,7 @@ type with a unique element is that single monoid.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
+* `Monoid.CoprodI.instSubsingleton`: the free product of a family of trivial monoids is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
 -/
@@ -45,6 +46,11 @@ variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
 instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) where
   default := 1
   uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 isEmptyElim) x
+
+/-- The free product of a family of trivial monoids is trivial. -/
+instance instSubsingleton [∀ i, Subsingleton (M i)] : Subsingleton (CoprodI M) :=
+  subsingleton_of_forall_eq 1 fun x ↦ by
+    simpa using DFunLike.congr_fun (ext_hom (.id (CoprodI M)) 1 fun _ ↦ Subsingleton.elim _ _) x
 
 end Monoid.CoprodI
 
