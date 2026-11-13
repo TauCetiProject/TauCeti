@@ -24,10 +24,6 @@ an algebra structure on the coalgebra.
   extension of the comultiplication, followed by `distribBaseChange`.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor_lTensor_comul`: cancellation
   commutes with comultiplication on a scalar-extended tensor factor.
-* `TensorProduct.AlgebraTensorModule.counit_cancelBaseChange` and
-  `TensorProduct.AlgebraTensorModule.comul_cancelBaseChange`: cancelling an intermediate base
-  change, `A ⊗[R'] (R' ⊗[R] C) ≃ A ⊗[R] C`, is compatible with the counits and the
-  comultiplications.
 * `TensorProduct.rid_counit_cancelBaseChange`: contraction against the counit commutes
   with cancellation of scalar extension.
 * `LinearMap.counit_rTensor`: the counit of `B ⊗[R] H` on the image of `x ∈ A ⊗[R] H` under
@@ -99,42 +95,6 @@ theorem cancelBaseChangeTensor_lTensor_comul (z : M ⊗[A] (A ⊗[R] C)) :
     | tmul a c =>
       rw [LinearMap.lTensor_tmul, TauCeti.Coalgebra.baseChange_comul_tmul]
       simp
-
-section Cancel
-
-variable {R' : Type*} [CommSemiring R'] [Algebra R R'] [Algebra R' A] [IsScalarTower R R' A]
-
-/-- Cancelling the intermediate base change, `A ⊗[R'] (R' ⊗[R] C) ≃ A ⊗[R] C`, preserves the
-counits of the two scalar extensions to `A`. -/
-@[simp]
-theorem counit_cancelBaseChange (x : A ⊗[R'] (R' ⊗[R] C)) :
-    Coalgebra.counit (R := A) (cancelBaseChange R R' A A C x) = Coalgebra.counit (R := A) x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a y =>
-    induction y using TensorProduct.inductionOn with
-    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
-    | tmul r h => simp
-
-/-- Cancelling the intermediate base change, `A ⊗[R'] (R' ⊗[R] C) ≃ A ⊗[R] C`, intertwines the
-comultiplications of the two scalar extensions to `A`. -/
-theorem comul_cancelBaseChange (x : A ⊗[R'] (R' ⊗[R] C)) :
-    Coalgebra.comul (R := A) (cancelBaseChange R R' A A C x) =
-      TensorProduct.map (cancelBaseChange R R' A A C).toLinearMap
-        (cancelBaseChange R R' A A C).toLinearMap (Coalgebra.comul (R := A) x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a y =>
-    induction y using TensorProduct.inductionOn with
-    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
-    | tmul r h =>
-      rw [cancelBaseChange_tmul, TauCeti.Coalgebra.baseChange_comul_tmul,
-        TauCeti.Coalgebra.baseChange_comul_tmul, TauCeti.Coalgebra.baseChange_comul_tmul]
-      induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
-      | add s t hs ht => simp only [TensorProduct.tmul_add, map_add, hs, ht]
-      | tmul h₁ h₂ => simp
-
-end Cancel
 
 end AlgebraTensorModule
 

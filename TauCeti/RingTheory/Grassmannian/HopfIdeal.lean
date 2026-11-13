@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.BaseChange
 public import TauCeti.Algebra.HopfAlgebra.BaseChange
 public import TauCeti.RingTheory.Grassmannian.ClosedCondition
 
+import TauCeti.Algebra.Bialgebra.BaseChange
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
@@ -50,7 +51,7 @@ antipode commute with base change (`LinearMap.counit_rTensor` and
 * `Module.Grassmannian.hopfIdealLocus_map`: the formation of `hopfIdealLocus` commutes with base
   change.
 * `Module.Grassmannian.hopfIdealLocus_map_eq_bot`: the Hopf-ideal locus is stable under base change.
-* `Module.Grassmannian.hopfIdealLocus_baseChangeEquiv`: for commutative `H` and an `R`-algebra
+* `Module.Grassmannian.hopfIdealLocus_baseChangeEquiv`: for an `R`-algebra
   `R'`, the ideal is unchanged when a point of the Grassmannian of the Hopf algebra `R' ⊗[R] H`
   over `R'` is read as a point of the Grassmannian of `H` over `R`.
 * `Module.Grassmannian.hopfIdealLocus_fg`: for `H` finite over `R`, the ideal `N.hopfIdealLocus` is
@@ -314,26 +315,39 @@ end Module.Grassmannian
 
 namespace Module.Grassmannian
 
-/-- Hopf ideals of a commutative Hopf algebra transport along an algebra isomorphism compatible with
-the counits, the comultiplications and the antipodes, in the form used by
+/-- Transport two-sided Hopf ideals along a bialgebra equivalence, in the form used by
 `Module.Grassmannian.hopfIdealLocus_eq_bot_iff`. -/
-private theorem exists_isHopfIdeal_map {B K L : Type*} [CommRing B] [CommRing K] [CommRing L]
-    [HopfAlgebra B K] [HopfAlgebra B L] (e : K ≃ₐ[B] L)
-    (hε : ∀ x, Coalgebra.counit (R := B) (e x) = Coalgebra.counit (R := B) x)
-    (hΔ : ∀ x, Coalgebra.comul (R := B) (e x) =
-      TensorProduct.map e.toLinearMap e.toLinearMap (Coalgebra.comul (R := B) x))
-    (hS : ∀ x, HopfAlgebra.antipode B (e x) = e (HopfAlgebra.antipode B x)) {P : Submodule B K}
+private theorem exists_isHopfIdeal_map {B K L : Type*} [CommRing B] [Ring K] [Ring L]
+    [HopfAlgebra B K] [HopfAlgebra B L] (e : K ≃ₐc[B] L) {P : Submodule B K}
     (h : ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B) :
-    ∃ J : Ideal L, J.restrictScalars B = P.map e.toLinearMap ∧ J.IsTwoSided ∧
+    ∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
       J.IsHopfIdeal B := by
-  obtain ⟨I, rfl, -, hI⟩ := h
-  refine ⟨I.map e, ?_, inferInstance, hI.map_algEquiv e hε hΔ hS⟩
+  obtain ⟨I, rfl, hI, hHopf⟩ := h
+  let := hI
+  let := hHopf
+  have : RingHomSurjective (e.toBialgHom : K →+* L) := ⟨e.surjective⟩
+  let J := (TauCeti.HopfIdeal.ofIsHopfIdeal B I).map e.toBialgHom
+  refine ⟨J.toIdeal, ?_, inferInstance, inferInstance⟩
+  dsimp only [J]
+  rw [TauCeti.HopfIdeal.map_toIdeal, TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
+  change (I.map e.toAlgEquiv).restrictScalars B = _
   ext y
   simp only [Submodule.restrictScalars_mem, Ideal.mem_map_of_equiv, Submodule.mem_map,
-    AlgEquiv.toLinearMap_apply]
+    AlgEquiv.toLinearMap_apply, BialgEquiv.coe_toAlgEquiv]
+
+/-- A bialgebra equivalence preserves and reflects the two-sided Hopf-ideal condition. -/
+private theorem exists_isHopfIdeal_map_iff {B K L : Type*} [CommRing B] [Ring K] [Ring L]
+    [HopfAlgebra B K] [HopfAlgebra B L] (e : K ≃ₐc[B] L) {P : Submodule B K} :
+    (∃ J : Ideal L, J.restrictScalars B = P.map e.toAlgEquiv.toLinearMap ∧ J.IsTwoSided ∧
+      J.IsHopfIdeal B) ↔
+      ∃ I : Ideal K, I.restrictScalars B = P ∧ I.IsTwoSided ∧ I.IsHopfIdeal B := by
+  refine ⟨fun h ↦ ?_, exists_isHopfIdeal_map e⟩
+  have hP : (P.map e.toAlgEquiv.toLinearMap).map e.symm.toAlgEquiv.toLinearMap = P :=
+    (Submodule.map_symm_eq_iff e.toAlgEquiv.toLinearEquiv).2 rfl
+  simpa only [hP] using exists_isHopfIdeal_map e.symm h
 
 variable {R R' : Type*} [CommRing R] [CommRing R'] [Algebra R R'] {k : ℕ} {A : Type w}
-  [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A] {H : Type v} [CommRing H]
+  [CommRing A] [Algebra R A] [Algebra R' A] [IsScalarTower R R' A] {H : Type v} [Ring H]
   [HopfAlgebra R H]
 
 /-- A point of `G(k, A ⊗[R'] (R' ⊗[R] H); A)` is a two-sided Hopf ideal exactly when its image in
@@ -343,32 +357,11 @@ private theorem exists_isHopfIdeal_baseChangeEquiv_iff (N : G(k, A ⊗[R'] (R' �
       I.IsTwoSided ∧ I.IsHopfIdeal A) ↔
       ∃ I : Ideal (A ⊗[R'] (R' ⊗[R] H)), I.restrictScalars A = N.toSubmodule ∧ I.IsTwoSided ∧
         I.IsHopfIdeal A := by
-  let e := Algebra.TensorProduct.cancelBaseChange R R' A A H
-  have hε (x) : Coalgebra.counit (R := A) (e x) = Coalgebra.counit (R := A) x :=
-    AlgebraTensorModule.counit_cancelBaseChange x
-  have hΔ (x) : Coalgebra.comul (R := A) (e x) =
-      TensorProduct.map e.toLinearMap e.toLinearMap (Coalgebra.comul (R := A) x) :=
-    AlgebraTensorModule.comul_cancelBaseChange x
-  have hS (x) : HopfAlgebra.antipode A (e x) = e (HopfAlgebra.antipode A x) :=
-    AlgebraTensorModule.antipode_cancelBaseChange x
-  rw [toSubmodule_baseChangeEquiv]
-  refine ⟨fun h ↦ ?_, exists_isHopfIdeal_map e hε hΔ hS⟩
-  -- transport back along `e.symm`, which satisfies the same compatibilities
-  have hε' (y) : Coalgebra.counit (R := A) (e.symm y) = Coalgebra.counit (R := A) y := by
-    rw [← hε, e.apply_symm_apply]
-  have hΔ' (y) : Coalgebra.comul (R := A) (e.symm y) =
-      TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap (Coalgebra.comul (R := A) y) := by
-    conv_rhs => rw [← e.apply_symm_apply y, hΔ, ← LinearMap.comp_apply (TensorProduct.map _ _),
-      ← TensorProduct.map_comp]
-    simp
-  have hS' (y) : HopfAlgebra.antipode A (e.symm y) = e.symm (HopfAlgebra.antipode A y) :=
-    e.injective (by rw [← hS, e.apply_symm_apply, e.apply_symm_apply])
-  have hN : (N.toSubmodule.map (AlgebraTensorModule.cancelBaseChange R R' A A H).toLinearMap).map
-      e.symm.toLinearMap = N.toSubmodule :=
-    -- `e` is `cancelBaseChange` as an algebra isomorphism, so `e.symm` is its inverse
-    (Submodule.map_symm_eq_iff (AlgebraTensorModule.cancelBaseChange R R' A A H)).2 rfl
-  rw [← hN]
-  exact exists_isHopfIdeal_map e.symm hε' hΔ' hS' h
+  rw [toSubmodule_baseChangeEquiv,
+    ← TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_toLinearEquiv R R' H A]
+  simpa only [TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_toAlgEquiv] using
+    exists_isHopfIdeal_map_iff (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R R' H A)
+      (P := N.toSubmodule)
 
 /-- **The locus of Hopf ideals is compatible with base change of the Hopf algebra.** For an
 `R`-algebra `R'` and a point `N` of the Grassmannian of `R' ⊗[R] H` over an `R'`-algebra `A`, the

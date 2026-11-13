@@ -30,7 +30,7 @@ base change (`Module.Grassmannian.hopfIdealLocus_map`). Over an affine open `U` 
 ideal of the closed subscheme is `hopfIdealLocus` of the point over `Γ(G(k, H), U)` classifying the
 inclusion of `U`.
 
-For commutative `H`, the closed subscheme commutes with base change along `Spec R' ⟶ Spec R`,
+The closed subscheme commutes with base change along `Spec R' ⟶ Spec R`,
 because the ideal `hopfIdealLocus` of a point of the Grassmannian of `R' ⊗[R] H` agrees with that of
 its image in the Grassmannian of `H` (`Module.Grassmannian.hopfIdealLocus_baseChangeEquiv`).
 
@@ -54,7 +54,7 @@ its image in the Grassmannian of `H` (`Module.Grassmannian.hopfIdealLocus_baseCh
   the closed subscheme is proper over `Spec R`.
 * `Module.Grassmannian.comap_baseChangeHom_schemeHopfIdealLocus` and
   `Module.Grassmannian.isPullback_baseChangeHom_schemeHopfIdealLocus`: **base change**; for
-  commutative `H` and an `R`-algebra `R'`, the closed subscheme of Hopf ideals of
+  an `R`-algebra `R'`, the closed subscheme of Hopf ideals of
   `G(k, R' ⊗[R] H)` over `Spec R'` is the base change of that of `G(k, H)` along
   `Spec R' ⟶ Spec R`.
 
@@ -156,14 +156,15 @@ namespace Module.Grassmannian
 
 section BaseChange
 
-variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] {H : Type u} [CommRing H]
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] {H : Type u} [Ring H]
   [HopfAlgebra R H] {k : ℕ}
 
 variable (R R' H k) in
-/-- **The closed subscheme of Hopf ideals is compatible with base change.** For a commutative Hopf
+/-- **The closed subscheme of Hopf ideals is compatible with base change.** For a Hopf
 algebra `H` over `R` and an `R`-algebra `R'`, the inverse image of the closed subscheme of Hopf
 ideals of `G(k, H)` along `G(k, R' ⊗[R] H) ⟶ G(k, H)` is the closed subscheme of Hopf ideals of
 `G(k, R' ⊗[R] H)`. -/
+@[simp]
 theorem comap_baseChangeHom_schemeHopfIdealLocus :
     (schemeHopfIdealLocus R H k).comap (baseChangeHom R R' H k) =
       schemeHopfIdealLocus R' (R' ⊗[R] H) k :=
@@ -171,7 +172,7 @@ theorem comap_baseChangeHom_schemeHopfIdealLocus :
     fun N ↦ hopfIdealLocus_baseChangeEquiv N
 
 variable (R R' H k) in
-/-- **Base change of the closed subscheme of Hopf ideals.** For a commutative Hopf algebra `H`
+/-- **Base change of the closed subscheme of Hopf ideals.** For a Hopf algebra `H`
 over `R` and an `R`-algebra `R'`, the closed subscheme of Hopf ideals of `G(k, R' ⊗[R] H)`, as a
 scheme over `Spec R'`, is the base change along `Spec R' ⟶ Spec R` of the closed subscheme of Hopf
 ideals of `G(k, H)`, as a scheme over `Spec R`. -/

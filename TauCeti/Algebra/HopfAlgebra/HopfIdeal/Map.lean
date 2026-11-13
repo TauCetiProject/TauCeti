@@ -48,8 +48,6 @@ of the augmentation ideal under `f`.
   `TauCeti.HopfIdeal.map_eq_bot_iff_le_ker`.
 * `TauCeti.HopfIdeal.comapOfSurjective_map_mkBialgHom`: pulling the image of `J` back from
   `H ⧸ I` along the quotient morphism recovers `J`, provided `I ≤ J`.
-* `Ideal.IsHopfIdeal.map_algEquiv`: an algebra isomorphism compatible with the counits, the
-  comultiplications and the antipodes carries Hopf ideals in Mathlib's sense to Hopf ideals.
 
 ## References
 
@@ -369,38 +367,3 @@ end Quotient
 end HopfIdeal
 
 end TauCeti
-
-namespace Ideal.IsHopfIdeal
-
-variable {R : Type u} [CommRing R] {H : Type v} {K : Type w} [Ring H] [Ring K]
-  [HopfAlgebra R H] [HopfAlgebra R K]
-
-/-- **Transport of Hopf ideals along an isomorphism.** An algebra isomorphism `e : H ≃ K`
-compatible with the counits, the comultiplications and the antipodes carries a Hopf ideal `I` of
-`H` to the Hopf ideal `I.map e` of `K`. -/
-theorem map_algEquiv (e : H ≃ₐ[R] K)
-    (hε : ∀ x, Coalgebra.counit (R := R) (e x) = Coalgebra.counit (R := R) x)
-    (hΔ : ∀ x, Coalgebra.comul (R := R) (e x) =
-      TensorProduct.map e.toLinearMap e.toLinearMap (Coalgebra.comul (R := R) x))
-    (hS : ∀ x, HopfAlgebra.antipode R (e x) = e (HopfAlgebra.antipode R x)) {I : Ideal H}
-    (hI : I.IsHopfIdeal R) : (I.map e).IsHopfIdeal R := by
-  -- the image of `I` under `e` is its inverse image under `e.symm`
-  have hmem (y : K) : y ∈ (I.map e).restrictScalars R ↔ e.symm y ∈ I := by
-    rw [Submodule.restrictScalars_mem, Ideal.mem_map_of_equiv]
-    exact ⟨fun ⟨x, hx, hxy⟩ ↦ by rwa [← hxy, e.symm_apply_apply], fun h ↦
-      ⟨_, h, e.apply_symm_apply y⟩⟩
-  have hle : I.restrictScalars R ≤ ((I.map e).restrictScalars R).comap e.toLinearMap :=
-    fun x hx ↦ (hmem _).2 (by simpa using hx)
-  have hcoideal : ((I.map e).restrictScalars R).IsCoideal := by
-    refine ⟨fun y hy ↦ ?_, fun y hy ↦ ?_⟩
-    · rw [← e.apply_symm_apply y, hε]
-      exact hI.counit_eq_zero ((hmem y).1 hy)
-    · -- the quotient map by the image of `I`, composed with `e`, factors through `H ⧸ I`
-      rw [← e.apply_symm_apply y, hΔ, ← LinearMap.comp_apply (TensorProduct.map _ _),
-        ← TensorProduct.map_comp, ← Submodule.mapQ_mkQ _ _ _ (h := hle), TensorProduct.map_comp,
-        LinearMap.comp_apply, hI.map_mkQ_comul_eq_zero ((hmem y).1 hy), map_zero]
-  refine ⟨fun y hy ↦ (hmem _).2 ?_⟩
-  rw [← e.apply_symm_apply y, hS, e.symm_apply_apply]
-  exact hI.antipode_mem ((hmem y).1 hy)
-
-end Ideal.IsHopfIdeal
