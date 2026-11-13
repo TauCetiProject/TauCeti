@@ -10,12 +10,15 @@ import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.Algebra.Group.Bool
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Sigma
+public import Mathlib.Data.List.Duplicate
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Group.List.Lemmas
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sum
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Data.List.NodupEquivFin
 import Mathlib.Data.Set.Card
 import Mathlib.Data.Set.Finite.List
 
@@ -59,11 +62,18 @@ spanned by `V_{ij}` at an occurrence `r_{ij} = x ^ ε`.
 * `TauCeti.GenEq.finite_setOf_isPartitionTable`, `TauCeti.GenEq.card_cancellationFamily_le`:
   there are finitely many partition tables, at most `(2 (|S| + |A|) + 1) ^ |S|` with `|S|`
   letters in `Z` (Lemma 13(1)).
+* `TauCeti.GenEq.systemSize_le`: a system of words of total length `N` has size
+  `|S| ≤ (N - 1) N`.
 * `TauCeti.GenEq.IsPartitionTable.exists_injOn_fin`: at most `|S|` letters of `Z` occur in a
   partition table, so for `|S| > 0` they can be renamed into `Fin |S|`.
 * `TauCeti.GenEq.length_wordMap_le`: the word maps have length at most the number of items
   (Lemma 14(2)), which is at most `|S|` for a partition table
   (`TauCeti.GenEq.IsPartitionTable.numItems_ofEntries_le`).
+* `TauCeti.GenEq.Solution.substituteVars_segment_entryStart_eq_wordMap`: in a solution of `Ω_T`,
+  the value `P_x(U)` does not depend on the occurrence of `x` at which it is read, when the words
+  of the entries of `x` are empty together.
+* `TauCeti.GenEq.IsPartitionTable.isReduced_substituteVars_wordMap`: in a solution of `Ω_T`, the
+  word `P_x(U)` of a variable occurring at least twice in `S` is reduced as written.
 * `TauCeti.GenEq.IsPartitionTable.eval_eq_one_of_mem_V`: if `v` is a solution of the system
   `Ω_T*` in a group over `F(A)`, then `x ↦ P_x(v)` is a solution of `S` there (Lemma 14(4)).
 * `TauCeti.GenEq.IsPartitionTable.eval_substituteVars_eq_one`: a solution of `Ω_T` gives the
@@ -362,6 +372,31 @@ theorem length_wordMap_le (x : X) : (wordMap E x).length ≤ (ofEntries E).numIt
     lia
   · exact Nat.zero_le _
 
+variable {E} in
+/-- In a solution of `ofEntries E`, the items spanned by the word of an entry of a variable `x`
+spell the same word as the word map of `x`, letter by letter, when the words of the entries of `x`
+are empty together: the value of `x` does not depend on the occurrence at which it is read. -/
+theorem Solution.substituteVars_segment_entryStart_eq_wordMap (U : (ofEntries E).Solution)
+    {x : X} (he : ∀ e ∈ E, ∀ e' ∈ E, e.1.1 = Sum.inl x → e'.1.1 = Sum.inl x →
+      (e.2 = [] ↔ e'.2 = []))
+    {k : Fin E.length} (hk : E[k].1.1 = Sum.inl x) :
+    substituteVars U.word
+        ((ofEntries E).segment (entryStart E k) (entryStart E ((k : ℕ) + 1)) E[k].1.2) =
+      substituteVars U.word (wordMap E x) := by
+  obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq E k hk
+  have hiff := he _ (List.getElem_mem k.isLt) _ (List.getElem_mem k₀.isLt) hk hk₀
+  have hnil (k' : Fin E.length) (h : E[k'].2 = []) :
+      (ofEntries E).segment (entryStart E k') (entryStart E ((k' : ℕ) + 1)) E[k'].1.2 = [] :=
+    List.eq_nil_of_length_eq_zero <| (length_segment_entryStart E k'.isLt _).trans <|
+      List.length_eq_zero_iff.2 h
+  rw [hw]
+  by_cases h : k = k₀
+  · rw [h]
+  by_cases hne : E[k].2 = []
+  · rw [hnil k hne, hnil k₀ (hiff.1 hne)]
+  · exact U.subst_eq _ (mem_equations_ofEntries_of_isVarPair E (p := (k, k₀))
+      ((isVarPair_iff E).2 ⟨h, by rw [hk]; rfl, hk.trans hk₀.symm, hne, mt hiff.2 hne⟩))
+
 end Entries
 
 /-! ### Solutions of `Ω_T` give solutions of the system -/
@@ -497,6 +532,21 @@ length of the words of a partition table. -/
 def systemSize {α : Type*} (r : List (List α)) : ℕ :=
   (r.map fun w => (w.length - 1) * w.length).sum
 
+/-- The size of a system of words is `∑ (l_i - 1) l_i`, for the lengths `l_i` of its words. -/
+theorem systemSize_def {α : Type*} (r : List (List α)) :
+    systemSize r = (r.map fun w => (w.length - 1) * w.length).sum := (rfl)
+
+/-- The empty system of words has size `0`. -/
+@[simp]
+theorem systemSize_nil {α : Type*} : systemSize ([] : List (List α)) = 0 := (rfl)
+
+/-- A system of words of total length `N` has size at most `(N - 1) N`. -/
+theorem systemSize_le {α : Type*} (r : List (List α)) :
+    systemSize r ≤ ((r.map List.length).sum - 1) * (r.map List.length).sum := by
+  rw [systemSize_def, ← List.sum_map_mul_left]
+  exact List.sum_le_sum fun w hw => Nat.mul_le_mul_right _
+    (Nat.sub_le_sub_right (List.le_sum_of_mem (List.mem_map_of_mem hw)) 1)
+
 /-- Summing `l_i - 1` over the occurrences of a system of words gives its size. -/
 theorem sum_occurrence_length_sub_one {α : Type*} (r : List (List α)) :
     ∑ o : Occurrence r, (r[o.1].length - 1) = systemSize r := by
@@ -504,6 +554,12 @@ theorem sum_occurrence_length_sub_one {α : Type*} (r : List (List α)) :
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.sum_const_nat (m := r[i].length - 1) fun _ _ => rfl]
   simp [mul_comm]
+
+/-- Every letter of a word of a system of words is the letter of an occurrence. -/
+theorem exists_occurrence_of_mem {α : Type*} {r : List (List α)} {w : List α} (hw : w ∈ r)
+    {j : ℕ} (hj : j < w.length) : ∃ o : Occurrence r, r[o.1][o.2] = w[j] := by
+  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hw
+  exact ⟨⟨⟨i, hi⟩, ⟨j, hj⟩⟩, rfl⟩
 
 /-- A partition table (Kharlampovich–Myasnikov, §4.2) of a system of equations written as the
 words `r`: a reduced word `T o = V_{ij}` over `Z^{±1} ∪ A^{±1}` for each occurrence `o = (i, j)`,
@@ -540,6 +596,65 @@ variable {r : List (List ((X ⊕ A) × Bool))} {T : Occurrence r → List ((Z �
 theorem mem_tableEntries {e : ((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)} :
     e ∈ tableEntries r T ↔ ∃ o : Occurrence r, (r[o.1][o.2], T o) = e := by
   simp [tableEntries, Sigma.exists]
+
+variable (T) in
+/-- Every occurrence of a system of words has an entry in the table. -/
+theorem exists_getElem_tableEntries (o : Occurrence r) :
+    ∃ i : Fin (tableEntries r T).length, (tableEntries r T)[i] = (r[o.1][o.2], T o) := by
+  obtain ⟨i, hi, h⟩ := List.getElem_of_mem (mem_tableEntries.2 ⟨o, rfl⟩)
+  exact ⟨⟨i, hi⟩, h⟩
+
+/-- In a partition table, two entries of the same letter have words which are empty together. -/
+theorem IsPartitionTable.eq_nil_iff_of_mem_tableEntries (hT : IsPartitionTable r T)
+    {e e' : ((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)} (he : e ∈ tableEntries r T)
+    (he' : e' ∈ tableEntries r T) (h : e.1.1 = e'.1.1) : e.2 = [] ↔ e'.2 = [] := by
+  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
+  obtain ⟨o', rfl⟩ := mem_tableEntries.1 he'
+  exact hT.eq_nil_iff o o' h
+
+/-- In a partition table, the word map of a variable is empty exactly when the word of an
+occurrence of the variable is empty. -/
+theorem IsPartitionTable.wordMap_eq_nil_iff (hT : IsPartitionTable r T) {x : X}
+    {o : Occurrence r} (ho : r[o.1][o.2].1 = Sum.inl x) :
+    wordMap (tableEntries r T) x = [] ↔ T o = [] := by
+  obtain ⟨i, hi⟩ := exists_getElem_tableEntries T o
+  obtain ⟨k, hk, hw⟩ := exists_wordMap_eq _ i ((congrArg (·.1.1) hi).trans ho)
+  rw [hw, ← List.length_eq_zero_iff, length_segment_entryStart _ k.isLt, List.length_eq_zero_iff]
+  exact hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem k.isLt) (mem_tableEntries.2 ⟨o, rfl⟩)
+    (hk.trans ho.symm)
+
+variable (T) in
+/-- The letters of the entries of a table are the letters of the system, word by word. -/
+@[simp]
+theorem map_fst_tableEntries : (tableEntries r T).map Prod.fst = r.flatten := by
+  simp [tableEntries, Function.comp_def, List.map_getElem_finRange, List.flatMap_def]
+
+/-- In a solution of the generalised equation of a partition table, the word map of a variable
+occurring at least twice in the system is reduced as written: it is empty, or it spans a base. -/
+theorem IsPartitionTable.isReduced_substituteVars_wordMap (hT : IsPartitionTable r T)
+    (U : (ofEntries (tableEntries r T)).Solution) {x : X}
+    (hx : (r.flatten.map Prod.fst).Duplicate (Sum.inl x)) :
+    FreeGroup.IsReduced (substituteVars U.word (wordMap (tableEntries r T) x)) := by
+  rw [← map_fst_tableEntries T, List.map_map, List.duplicate_iff_exists_distinct_get] at hx
+  obtain ⟨n, m, hnm, hn, hm⟩ := hx
+  simp only [List.get_eq_getElem, List.getElem_map, Function.comp_apply] at hn hm
+  obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq _ (n.cast (List.length_map _)) hn.symm
+  -- A second entry of `x`, besides the one at which its word map is read.
+  obtain ⟨k₁, hk₁, hne⟩ : ∃ k₁ : Fin (tableEntries r T).length,
+      (tableEntries r T)[k₁].1.1 = Sum.inl x ∧ k₀ ≠ k₁ := by
+    by_cases h : k₀ = n.cast (List.length_map _)
+    · exact ⟨m.cast (List.length_map _), hm.symm, h ▸ (Fin.cast_injective _).ne hnm.ne⟩
+    · exact ⟨n.cast (List.length_map _), hn.symm, h⟩
+  rw [hw]
+  by_cases h : (tableEntries r T)[k₀].2 = []
+  · rw [List.eq_nil_of_length_eq_zero ((length_segment_entryStart _ k₀.isLt _).trans
+      (List.length_eq_zero_iff.2 h))]
+    exact .nil
+  have hp : IsVarPair (tableEntries r T) (k₀, k₁) := (isVarPair_iff _).2 ⟨hne,
+    (congrArg Sum.isLeft hk₀).trans rfl, hk₀.trans hk₁.symm, h,
+    (hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem k₀.isLt) (List.getElem_mem k₁.isLt)
+      (hk₀.trans hk₁.symm)).not.1 h⟩
+  exact (U.isReduced_subst _ (mem_equations_ofEntries_of_isVarPair _ hp)).1
 
 /-- The concatenated word of a table has length the sum of the lengths of its words. -/
 theorem length_flatMap_tableEntries :
@@ -630,9 +745,11 @@ theorem mem_cancellationFamily [Finite A]
 variable (r) in
 /-- **Kharlampovich–Myasnikov, Lemma 13(1).** A system of size `|S|` over an alphabet `A` has at
 most `(2 (|S| + |A|) + 1) ^ |S|` partition tables. -/
-theorem card_cancellationFamily_le [Fintype A] :
-    (cancellationFamily r).card ≤ (2 * (systemSize r + Fintype.card A) + 1) ^ systemSize r := by
+theorem card_cancellationFamily_le [Finite A] :
+    (cancellationFamily r).card ≤ (2 * (systemSize r + Nat.card A) + 1) ^ systemSize r := by
   classical
+  cases nonempty_fintype A
+  rw [Nat.card_eq_fintype_card]
   let f (T : Occurrence r → List ((Fin (systemSize r) ⊕ A) × Bool)) (o : Occurrence r)
       (n : Fin (r[o.1].length - 1)) : Option ((Fin (systemSize r) ⊕ A) × Bool) :=
     (T o)[(n : ℕ)]?
@@ -663,6 +780,21 @@ theorem IsPartitionTable.length_wordMap_le (hT : IsPartitionTable r T) (x : X) :
     (wordMap (tableEntries r T) x).length ≤ systemSize r :=
   (GenEq.length_wordMap_le _ x).trans hT.numItems_ofEntries_le
 
+/-- The word maps of a partition table are no longer than the total length of the words of the
+system. -/
+theorem IsPartitionTable.length_wordMap_le_sum (hT : IsPartitionTable r T) (x : X) :
+    (wordMap (tableEntries r T) x).length ≤ (r.map List.length).sum := by
+  by_cases h : ∃ i : Fin (tableEntries r T).length, (tableEntries r T)[i].1.1 = Sum.inl x
+  · obtain ⟨i, hi⟩ := h
+    obtain ⟨k₀, -, hw⟩ := exists_wordMap_eq _ i hi
+    rw [hw, length_segment_entryStart _ k₀.isLt]
+    obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem k₀.isLt)
+    rw [← ho]
+    exact (hT.length_le o).trans (Nat.sub_le _ _) |>.trans
+      (List.le_sum_of_mem (List.mem_map_of_mem (List.getElem_mem o.1.isLt)))
+  · rw [wordMap_eq_nil _ (by simpa using h)]
+    exact Nat.zero_le _
+
 /-- **Kharlampovich–Myasnikov, Lemma 14(4).** If `v` is a solution of the system `Ω_T*` of the
 generalised equation of a partition table `T` in a group `H` over `F(A)`, then the word maps give
 the solution `x ↦ P_x(v)` of the system of equations `r` in `H`. -/
@@ -678,16 +810,12 @@ theorem IsPartitionTable.eval_eq_one_of_mem_V (hT : IsPartitionTable r T) {H : T
     simp only [mem_tableEntries, forall_exists_index]
     rintro _ o rfl a h
     exact hT.eq_of_eq_inr o h
-  have he : ∀ e ∈ tableEntries r T, ∀ e' ∈ tableEntries r T, e.1.1 = e'.1.1 →
-      (e.2 = [] ↔ e'.2 = []) := by
-    simp only [mem_tableEntries, forall_exists_index]
-    rintro _ o rfl _ o' rfl h
-    exact hT.eq_nil_iff o o' h
   set R := (List.finRange r[(⟨i, hi⟩ : Fin r.length)].length).map fun j =>
     (r[(⟨i, hi⟩ : Fin r.length)][j], T ⟨⟨i, hi⟩, j⟩) with hR
-  have := lift_mk_map_fst hc he hv hζ R fun e he => mem_tableEntries.2 (by
-    obtain ⟨j, -, rfl⟩ := List.mem_map.1 he
-    exact ⟨⟨⟨i, hi⟩, j⟩, rfl⟩)
+  have := lift_mk_map_fst hc (fun _ he _ he' => hT.eq_nil_iff_of_mem_tableEntries he he') hv hζ R
+    fun e he => by
+      obtain ⟨j, -, rfl⟩ := List.mem_map.1 he
+      exact mem_tableEntries.2 ⟨⟨⟨i, hi⟩, j⟩, rfl⟩
   have hfst : R.map Prod.fst = r[i] := by
     simp [hR, Function.comp_def, List.map_getElem_finRange]
   have hsnd : FreeGroup.mk (R.flatMap Prod.snd) = 1 := by
@@ -701,9 +829,8 @@ theorem IsPartitionTable.eval_substituteVars_eq_one (hT : IsPartitionTable r T)
     (U : (ofEntries (tableEntries r T)).Solution) {w : List ((X ⊕ A) × Bool)} (hw : w ∈ r) :
     EqIneqSystem.eval (fun x => FreeGroup.mk (substituteVars U.word (wordMap (tableEntries r T) x)))
       FreeGroup.of (FreeGroup.mk w) = 1 := by
-  have := hT.eval_eq_one_of_mem_V U.point_mem_V hw
-  rw [show U.point = fun k => FreeGroup.mk (U.word k) from funext U.point_apply] at this
-  simpa [EqIneqSystem.eval_eq_lift, FreeGroup.mk_substituteVars] using this
+  simpa only [MonoidHom.coe_id, Function.id_comp, U.eval_point_mk] using
+    hT.eval_eq_one_of_mem_V U.point_mem_V hw
 
 end Tables
 

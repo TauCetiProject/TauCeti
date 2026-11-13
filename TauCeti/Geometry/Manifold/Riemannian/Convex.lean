@@ -91,7 +91,7 @@ theorem riemannianEDist_eq_enorm_sub_of_convex (hU : Convex ℝ (U : Set F)) (x 
     (by
       have h := U.riemannianEDist_le_riemannianEDist_subtype (I := 𝓘(ℝ, F)) x y
       rwa [← IsRiemannianManifold.out (I := 𝓘(ℝ, F)) (x : F) (y : F),
-        edist_eq_enorm_sub] at h)
+        eDist_eq_eNorm_sub] at h)
 
 /-- A convex open subset of an inner product space, endowed with its ambient metric, satisfies
 the `IsRiemannianManifold` predicate: its ambient extended distance is the infimum of the lengths
@@ -99,7 +99,7 @@ of `C¹` curves, because that infimum is exactly the norm distance. -/
 theorem isRiemannianManifold_of_convex (hU : Convex ℝ (U : Set F)) :
     IsRiemannianManifold 𝓘(ℝ, F) U :=
   ⟨fun x y ↦ by
-    rw [Subtype.edist_eq, edist_eq_enorm_sub,
+    rw [Subtype.edist_eq, eDist_eq_eNorm_sub,
       riemannianEDist_eq_enorm_sub_of_convex U hU x y]⟩
 
 /-! ### Distance-realizing segments in convex open subsets -/
@@ -108,7 +108,7 @@ theorem isRiemannianManifold_of_convex (hU : Convex ℝ (U : Set F)) :
 endpoints. -/
 theorem pathELength_convexSegment_eq_edist (hU : Convex ℝ (U : Set F)) (x y : U) :
     pathELength (M := U) 𝓘(ℝ, F) ((U : Set F).convexSegment hU x y) 0 1 = edist x y := by
-  rw [pathELength_convexSegment U hU x y, Subtype.edist_eq, edist_eq_enorm_sub]
+  rw [pathELength_convexSegment U hU x y, Subtype.edist_eq, eDist_eq_eNorm_sub]
 
 /-- Any two points of a convex open subset of a real inner-product space are joined by a `C¹`
 path whose Riemannian length is their ambient distance. -/

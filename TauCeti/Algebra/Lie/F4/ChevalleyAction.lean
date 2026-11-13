@@ -119,7 +119,6 @@ theorem f4KillingRootSystem_chainBotCoeff (α β : Fin 48) :
     _ = (F4.rationalRootSystem valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
       (F4.rationalRootSystemEquiv valid_F4).toHom.chainBotCoeff_indexEquiv
-        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -139,7 +138,6 @@ theorem f4KillingRootSystem_chainTopCoeff (α β : Fin 48) :
     _ = (F4.rationalRootSystem valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
       (F4.rationalRootSystemEquiv valid_F4).toHom.chainTopCoeff_indexEquiv
-        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -458,7 +456,7 @@ theorem f4_ad_pow_rootVector_eq_zero_of_no_endpoint (α β : Fin 48) (n : ℕ)
     (ne_f4OppositeRootIndex_comm α β).mp hopp
   have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
   rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
-      hαnz hβnz hsum n with hzero | hnonzero
+      hsum n with hzero | hnonzero
   · exact hzero
   · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
     have hweight : (f4KillingRoot β : H → ℚ) + n • f4KillingRoot α ≠ 0 :=
