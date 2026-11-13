@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
-import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
-import TauCeti.Geometry.Symplectic.Floer.SpectralGap
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -67,13 +65,13 @@ estimate on the compact part of the domain, this is the estimate on the ends beh
 property of `D_u`; the Sobolev completion and the Fredholm property itself are not treated here.
 
 The same holds in the `L²` norms with exponential weight `e^{δ s}`, for every `δ` close enough to
-`0`, provided `J_t` is one-periodic in `t`. The weighted stationary operator `∂s + A - δ` is the
-stationary cylinder operator of `S_t - δ J_t`, which stays nondegenerate for small `δ`, so its
-finite-strip estimate
+`0`. The weighted stationary operator `∂s + A - δ` is the stationary cylinder operator of
+`S_t - δ J_t`, which stays nondegenerate for small `δ`, so its finite-strip estimate
 (`eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`)
 again survives the passage to `D_u - δ`
-(`eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`).
-Undoing the conjugation by `e^{δ s}` gives the weighted estimate
+(`eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`; the
+unweighted estimate is its case `δ = 0`). Undoing the conjugation by `e^{δ s}`
+(`TauCeti.Floer.setIntegral_exp_mul_associatedBilinForm_le`) gives the weighted estimate
 
 `∫ e^{2 δ s} (|∂s η|² + |∂t η - S η|² + |η|²) ≤ C ∫ e^{2 δ s} |D_u η|²`
 
@@ -294,96 +292,32 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     _ < (|C| + 1) * (ε / (|C| + 1)) := by gcongr
     _ = ε := by field_simp
 
-/-- **The `L²` estimate of the linearized operator on an end.** Let `x` be a nondegenerate
-one-periodic orbit of a one-periodic, jointly `C²` Hamiltonian `H` whose suspended vector field is
-globally Lipschitz, let `J_t(y)` be a `C¹` family of almost complex structures that are
-`ω`-compatible along `x`, and let `u` be a map that is `C¹` on the slices `s` eventually along a
-filter `l`, whose loops converge uniformly to `x` along `l` while its slice defect
+/-- **The weighted `L²` estimate of the linearized operator on an end, conjugated form.** Let `x`
+be an orbit of a jointly `C²` Hamiltonian `H` whose suspended vector field is globally Lipschitz,
+with `x(0)` a nondegenerate fixed point of the time-one map, as for a nondegenerate one-periodic
+orbit of a one-periodic Hamiltonian; let `J_t(y)` be a `C¹` family of almost complex structures
+that are `ω`-compatible along `x`, and let `u` be a map that is `C¹` on the slices `s` eventually
+along a filter `l`, whose loops converge uniformly to `x` along `l` while its slice defect
 `∂t u - X_{H_t}(u)` tends uniformly to zero, as for a Floer solution on a positive end
-(`l = atTop`) or a negative end (`l = atBot`) asymptotic to `x`. Then there are a constant
-`C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`, vanishing
-on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
-
-`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(D_u ξ, D_u ξ)`
-
-over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`,
-`S_t = dX_{H_t}(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. The constant does not depend on `a`, `b`
-or `ξ`. -/
-theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
-    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hxp : Function.Periodic x 1)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
-    {J : ℝ → V → AlmostComplexStructure V}
-    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ} {u : ℝ × ℝ → V}
-    (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
-    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
-    (hδ : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
-    ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
-      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U →
-      (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
-        ∫ z in Icc a b ×ˢ Icc 0 1,
-            ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
-                (fderiv ℝ ξ z stdComplexLineReal) +
-              ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
-                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
-                (fderiv ℝ ξ z stdComplexLineImag -
-                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
-              ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) ≤
-          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
-            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z)
-            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z) := by
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
-    (hJ.continuous.comp (continuous_fst.prodMk (hxc.comp continuous_fst))).clm_apply
-      continuous_snd
-  -- The stationary cylinder estimate at `x`, and its stability under small perturbations.
-  obtain ⟨C₀, hC₀, hest⟩ :=
-    ω.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator hX hH hHp hx hxp hnd
-      hJx hJxc
-  obtain ⟨ε, hε, C, hC, hpert⟩ :=
-    Floer.exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
-      (fun t ↦ (hJx t).tames) hJxc (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) hC₀
-  -- Eventually along the end, `D_u` is within `ε (‖∂t ξ‖ + ‖ξ‖)` of the stationary operator.
-  refine ⟨C, hC, _, (eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le ω hJ hH
-    isCompact_Icc hxc.continuousOn hux hδ hε).and hu,
-    fun ξ hξ hper a b hab hU ha hb ↦ hpert (hξ.of_le one_le_two) (hest hξ hper hab ha hb)
-      (fun z hz ↦ ?_) fun z hz ↦ (hU hz.1).1 z.2 hz.2 ξ⟩
-  -- `D_u ξ` is continuous where `u` is `C¹`.
-  exact (ω.continuousAt_floerLinearization
-    (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
-    (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-    contDiffAt_const (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
-    ((hU hz.1).2 z.2 hz.2)
-    (hξ.contDiffAt.of_le one_le_two)).continuousWithinAt
-
-/-- **The weighted `L²` estimate of the linearized operator on an end, conjugated form.** Under
-the hypotheses of `exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`, and if
-moreover `J` is one-periodic in `t`, for every weight `δ` close enough to `0` there are a constant
-`C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`, vanishing
-on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
+(`l = atTop`) or a negative end (`l = atBot`) asymptotic to `x`. Then for every weight `δ` close
+enough to `0` there are a constant `C ≥ 0` and a set `U ∈ l` of slices such that every `C²` map
+`ξ` of period one in `t`, vanishing on the slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
 
 `∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S_δ ξ, ∂t ξ - S_δ ξ) + g(ξ, ξ)) ≤ C ∫ g(D_u ξ - δ ξ, D_u ξ - δ ξ)`
 
-over `[a, b] × [0, 1]`, where `S_δ = dX_{H_t}(x(t)) - δ J_t(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`.
-By `floerLinearization_exp_smul`, `D_u - δ` is `D_u` conjugated by the weight `e^{δ s}`. The
-constant does not depend on `a`, `b` or `ξ`. -/
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`,
+`S_δ = dX_{H_t}(x(t)) - δ J_t(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. By
+`floerLinearization_exp_smul`, `D_u - δ` is `D_u` conjugated by the weight `e^{δ s}`. The constant
+does not depend on `a`, `b` or `ξ`. -/
 theorem eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hxp : Function.Periodic x 1)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJp : Function.Periodic J 1) (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ}
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ}
     {u : ℝ × ℝ → V} (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
     (hδ : TendstoUniformlyOn
@@ -411,15 +345,13 @@ theorem eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLineari
     hJ.continuous.comp (continuous_id.prodMk hxc)
   have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
     (hJxo.comp continuous_fst).clm_apply continuous_snd
-  have hJxp : Function.Periodic (fun t ↦ J t (x t)) 1 := fun t ↦ by
-    simp only [hJp t, hxp t]
   have hSδc (δ : ℝ) : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
       δ • (J t (x t)).toLinearMap.toContinuousLinearMap :=
     (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc).sub (hJxo.const_smul δ)
   -- The weighted stationary estimate at `x`, and its stability under small perturbations.
   filter_upwards [
     eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul ω
-      hX hH hHp hx hxp hnd hJx (AlmostComplexStructure.continuous_iff.2 hJxo) hJxp]
+      hX hH hx hnd hJx hJxc]
     with δ ⟨C₀, hC₀, hest⟩
   obtain ⟨ε, hε, C, hC, hpert⟩ :=
     Floer.exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
@@ -439,134 +371,53 @@ theorem eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLineari
     ((hU hz.1).2 z.2 hz.2) (hξ.contDiffAt.of_le one_le_two)).sub
     (hξ.continuous.continuousAt.const_smul δ)).continuousWithinAt
 
-omit [FiniteDimensional ℝ V] in
-/-- The pointwise comparison behind
-`eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization`:
-for a compatible `J₀` with metric `g = ω(·, J₀ ·)`, the vectors `a`, `c`, `b` are controlled by
-the shifted vectors `a + δ b` and `c + δ J₀ b`, since `g(J₀ b, J₀ b) = g(b, b)`. -/
-private theorem associatedBilinForm_add_add_le {ω : SymplecticForm V}
-    {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Compatible J₀) (δ : ℝ) (a b c : V) :
-    (ω.associatedBilinForm J₀ a a + ω.associatedBilinForm J₀ c c) +
-        ω.associatedBilinForm J₀ b b ≤
-      (2 + 4 * δ ^ 2) * ((ω.associatedBilinForm J₀ (a + δ • b) (a + δ • b) +
-        ω.associatedBilinForm J₀ (c + δ • J₀ b) (c + δ • J₀ b)) +
-          ω.associatedBilinForm J₀ b b) := by
-  -- `g(x, x) ≤ 2 g(x + y, x + y) + 2 g(y, y)`, since the difference is `g(x + 2 y, x + 2 y)`.
-  have key (x y : V) : ω.associatedBilinForm J₀ x x ≤
-      2 * ω.associatedBilinForm J₀ (x + y) (x + y) + 2 * ω.associatedBilinForm J₀ y y := by
-    have h := hJ₀.associatedBilinForm_self_nonneg (x + (2 : ℝ) • y)
-    simp only [associatedBilinForm_apply, map_add, map_smul, LinearMap.add_apply,
-      LinearMap.smul_apply, smul_eq_mul] at h ⊢
-    nlinarith [hJ₀.associatedBilinForm_apply_swap x y]
-  have h₁ := key a (δ • b)
-  have h₂ := key c (δ • J₀ b)
-  have hJb : ω.associatedBilinForm J₀ (J₀ b) (J₀ b) = ω.associatedBilinForm J₀ b b :=
-    hJ₀.associatedBilinForm_invariant b b
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hJb] at h₁ h₂
-  have ha := hJ₀.associatedBilinForm_self_nonneg (a + δ • b)
-  have hc := hJ₀.associatedBilinForm_self_nonneg (c + δ • J₀ b)
-  have hb := hJ₀.associatedBilinForm_self_nonneg b
-  nlinarith [sq_nonneg δ, mul_nonneg (sq_nonneg δ) ha, mul_nonneg (sq_nonneg δ) hc,
-    mul_nonneg (sq_nonneg δ) hb]
+/-- **The `L²` estimate of the linearized operator on an end.** Under the hypotheses of
+`eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`, as for
+a Floer solution on an end asymptotic to a nondegenerate orbit `x`, there are a constant `C ≥ 0`
+and a set `U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`, vanishing on the
+slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
 
-/-- The weighted energy density of `η` at `z` is controlled by the energy density of `e^{δ s} η`
-for the weighted field `S - δ J₀`: with `ξ = e^{δ s} η`, one has `e^{δ s} ∂s η = ∂s ξ - δ ξ` and
-`e^{δ s} (∂t η - S η) = (∂t ξ - (S - δ J₀) ξ) - δ J₀ ξ`. -/
-private theorem exp_mul_associatedBilinForm_le {ω : SymplecticForm V}
-    {J₀ : AlmostComplexStructure V}
-    (hJ₀ : ω.Compatible J₀) (S : V →L[ℝ] V) (δ : ℝ) {η : ℝ × ℝ → V} {z : ℝ × ℝ}
-    (hη : DifferentiableAt ℝ η z) :
-    Real.exp (2 * δ * z.1) * ((ω.associatedBilinForm J₀ (fderiv ℝ η z stdComplexLineReal)
-          (fderiv ℝ η z stdComplexLineReal) +
-        ω.associatedBilinForm J₀ (fderiv ℝ η z stdComplexLineImag - S (η z))
-          (fderiv ℝ η z stdComplexLineImag - S (η z))) +
-        ω.associatedBilinForm J₀ (η z) (η z)) ≤
-      (2 + 4 * δ ^ 2) *
-        ((ω.associatedBilinForm J₀
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal)
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal) +
-          ω.associatedBilinForm J₀
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
-              (S - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
-              (S - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
-          ω.associatedBilinForm J₀ (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
-  set e := Real.exp (δ * z.1)
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (δ * w.1))
-      (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ) z := by
-    simpa [e] using ((hasFDerivAt_fst (p := z)).const_smul δ).exp
-  have hd : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z =
-      e • fderiv ℝ η z + (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (η z) :=
-    (hc.smul hη.hasFDerivAt).fderiv
-  -- The derivatives of `ξ = e^{δ s} η` in terms of those of `η`.
-  have hs : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal =
-      e • fderiv ℝ η z stdComplexLineReal + δ • (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
-      smul_eq_mul, mul_one, smul_smul]
-    ring_nf
-  have ht : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
-      (S - δ • J₀.toLinearMap.toContinuousLinearMap) (e • η z) =
-      e • (fderiv ℝ η z stdComplexLineImag - S (η z)) + δ • J₀ (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst,
-      smul_eq_mul, mul_zero, zero_smul, add_zero, sub_apply,
-      LinearMap.coe_toContinuousLinearMap', map_smul]
-    module
-  have hexp : Real.exp (2 * δ * z.1) = e * e := by
-    rw [← Real.exp_add]
-    ring_nf
-  rw [hs, ht, hexp]
-  have h := associatedBilinForm_add_add_le hJ₀ δ (e • fderiv ℝ η z stdComplexLineReal) (e • η z)
-    (e • (fderiv ℝ η z stdComplexLineImag - S (η z)))
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h ⊢
-  linarith
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(D_u ξ, D_u ξ)`
 
-/-- The integrated form of `exp_mul_associatedBilinForm_le` over a compact set `R` of the
-cylinder: the `e^{2 δ s}`-weighted energy of a `C²` map `η` is at most `2 + 4 δ²` times the energy
-of `e^{δ s} η` for the weighted field `S_t - δ J_t`. -/
-private theorem setIntegral_exp_mul_associatedBilinForm_le {ω : SymplecticForm V}
-    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t))
-    (hJo : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) {S : ℝ → V →L[ℝ] V}
-    (hSc : Continuous S) (δ : ℝ) {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) {R : Set (ℝ × ℝ)}
-    (hR : IsCompact R) :
-    ∫ z in R, Real.exp (2 * δ * z.1) *
-        ((ω.associatedBilinForm (J z.2) (fderiv ℝ η z stdComplexLineReal)
-            (fderiv ℝ η z stdComplexLineReal) +
-          ω.associatedBilinForm (J z.2) (fderiv ℝ η z stdComplexLineImag - S z.2 (η z))
-            (fderiv ℝ η z stdComplexLineImag - S z.2 (η z))) +
-          ω.associatedBilinForm (J z.2) (η z) (η z)) ≤
-      (2 + 4 * δ ^ 2) * ∫ z in R,
-        ((ω.associatedBilinForm (J z.2)
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal)
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal) +
-          ω.associatedBilinForm (J z.2)
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
-              (S z.2 - δ • (J z.2).toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))
-            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
-              (S z.2 - δ • (J z.2).toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
-          ω.associatedBilinForm (J z.2) (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
-  have hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2 := (hJo.comp continuous_fst).clm_apply
-    continuous_snd
-  have hξ : ContDiff ℝ 2 fun w : ℝ × ℝ ↦ Real.exp (δ * w.1) • η w :=
-    (Real.contDiff_exp.comp (contDiff_const.mul contDiff_fst)).smul hη
-  have hL := ((Real.continuous_exp.comp ((continuous_const (y := 2 * δ)).mul continuous_fst)).mul
-    ((Floer.continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc
-      (hη.of_le one_le_two)).add (Floer.continuous_associatedBilinForm_apply_self (ω := ω) hJc
-        hη.continuous))).continuousOn.integrableOn_compact (μ := volume) hR
-  have hQ := ((Floer.continuous_associatedBilinForm_add_apply_self (ω := ω) hJc
-    (hSc.sub (hJo.const_smul δ)) (hξ.of_le one_le_two)).add
-      (Floer.continuous_associatedBilinForm_apply_self (ω := ω) hJc
-        hξ.continuous)).continuousOn.integrableOn_compact (μ := volume) hR
-  rw [← integral_const_mul]
-  exact setIntegral_mono_on hL (hQ.const_mul (2 + 4 * δ ^ 2)) hR.measurableSet
-    fun z _ ↦ exp_mul_associatedBilinForm_le (hJ z.2) _ δ (hη.differentiable two_ne_zero z)
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`,
+`S_t = dX_{H_t}(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. The constant does not depend on `a`, `b`
+or `ξ`. This is the case `δ = 0` of the weighted estimate. -/
+theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ} {u : ℝ × ℝ → V}
+    (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U →
+      (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ ξ z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (ξ z))) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
+            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z)
+            (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+              (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z) := by
+  simpa only [zero_smul, sub_zero] using
+    (eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul ω hX hH
+      hx hnd hJ hJx hu hux hδ).self_of_nhds
 
 /-- **The weighted `L²` estimate of the linearized operator on an end.** Under the hypotheses of
-`exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization`, and if moreover `J` is
-one-periodic in `t`, for every weight `δ` close enough to `0` there are a constant `C ≥ 0` and a
+`eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`, for
+every weight `δ` close enough to `0` there are a constant `C ≥ 0` and a
 set `U ∈ l` of slices such that every `C²` map `η` of period one in `t`, vanishing on the slices
 `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
 
@@ -580,13 +431,12 @@ negative end (`l = atBot`), the weight forces exponential decay. The constant do
 theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hxp : Function.Periodic x 1)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJp : Function.Periodic J 1) (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ}
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ}
     {u : ℝ × ℝ → V} (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
     (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
     (hδ : TendstoUniformlyOn
@@ -610,7 +460,7 @@ theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floe
                 (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z) := by
   filter_upwards [
     eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul ω hX hH
-      hHp hx hxp hnd hJ hJp hJx hu hux hδ] with δ ⟨C, hC, U, hU, hest⟩
+      hx hnd hJ hJx hu hux hδ] with δ ⟨C, hC, U, hU, hest⟩
   refine ⟨(2 + 4 * δ ^ 2) * C, by positivity, U, hU, fun η hη hper a b hab hUab ha hb ↦ ?_⟩
   -- Apply the conjugated estimate to `ξ = e^{δ s} η`.
   set ξ : ℝ × ℝ → V := fun w ↦ Real.exp (δ * w.1) • η w
@@ -643,9 +493,10 @@ theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floe
     simp only [hD z, map_smul, LinearMap.smul_apply, smul_eq_mul, hexp]
     ring
   -- The weighted energy of `η` is controlled by the energy of `ξ`.
-  calc _ ≤ _ := setIntegral_exp_mul_associatedBilinForm_le hJx
-        (hJ.continuous.comp (continuous_id.prodMk hxc))
-        (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) δ hη hR
+  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
+    ((hJ.continuous.comp (continuous_id.prodMk hxc)).comp continuous_fst).clm_apply continuous_snd
+  calc _ ≤ _ := Floer.setIntegral_exp_mul_associatedBilinForm_le hJx hJxc
+        (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) δ (hη.of_le one_le_two) hR
     _ ≤ (2 + 4 * δ ^ 2) * (C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
         (D ξ z - δ • ξ z) (D ξ z - δ • ξ z)) := by gcongr
     _ = _ := by rw [hRHS, mul_assoc]

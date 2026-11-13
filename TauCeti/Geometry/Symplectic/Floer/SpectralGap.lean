@@ -60,17 +60,14 @@ Sobolev completion, makes `D` injective with closed range at a nondegenerate orb
 
 **The weighted operator.** Conjugating `D` by the weight `e^{δ s}` gives `D - δ`, the stationary
 cylinder operator of `S_t - δ J_t` (`TauCeti.Floer.stationaryCylinderOperator_exp_smul`). For
-compatible `J_t` the family `S_t - δ J_t` is again infinitesimally symplectic, and at a
-nondegenerate orbit of a Hamiltonian it stays nondegenerate for all small `δ`
-(`TauCeti.SymplecticForm.eventually_eq_zero_of_asymptoticOperator_eq_smul`). So the estimate
+compatible `J_t` the family `S_t - δ J_t` is again infinitesimally symplectic, and if
+`det (1 - Ψ(1)) ≠ 0` its return map stays nondegenerate for all small `δ`
+(`TauCeti.Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero`). So the estimate
 holds for `D - δ` for every weight `δ` close to `0`
-(`eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul` in
+(`Floer.eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`),
+in particular at a nondegenerate orbit of a Hamiltonian (the theorem of the same name in
 `TauCeti.SymplecticForm`): this is the estimate for the linearized operator on the weighted
-spaces of maps decaying like `e^{-δ s}`. The finite-strip estimate of
-`TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate` holds for `D - δ` in the same range
-of weights
-(`eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`),
-which is the form used on the far part of a cylindrical end.
+spaces of maps decaying like `e^{-δ s}`.
 
 The Sobolev realizations of `A` and `D`, their surjectivity and the Fredholm theory of the
 linearized operator on a punctured domain are not treated here.
@@ -227,6 +224,44 @@ theorem exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left hEle hC
 
+/-- **The weighted estimate on the whole cylinder.** Let each `J_t` be `ω`-compatible and depend
+continuously on `t`, let each `S_t` be infinitesimally symplectic, and suppose that
+`det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1)` of `ζ' = S_t ζ`. Then for every weight `δ` close
+enough to `0` there is a constant `C ≥ 0` such that every `C²` map `ξ` of period one in `t`, which
+tends to zero together with `∂t ξ` as `|s| → ∞` and for which `g((D - δ) ξ, (D - δ) ξ)` is
+integrable on `ℝ × [0, 1]`, satisfies `∫ g(ξ, ξ) ≤ C ∫ g((D - δ) ξ, (D - δ) ξ)` there, for
+`g_t = ω(·, J_t ·)`. The weighted operator `D - δ` is the stationary cylinder operator of
+`S_t - δ J_t` (`stationaryCylinderOperator_sub_smul`), whose return map stays nondegenerate for
+small `δ` (`eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero`). -/
+theorem eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
+    (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous J)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), ∃ C, 0 ≤ C ∧ ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+      Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
+        (comap Prod.fst (cocompact ℝ)) (𝓝 0) →
+      IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2)
+        (stationaryCylinderOperator J S ξ z - δ • ξ z)
+        (stationaryCylinderOperator J S ξ z - δ • ξ z)) (univ ×ˢ Icc 0 1) →
+      IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) (univ ×ˢ Icc 0 1) ∧
+        ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) ≤
+          C * ∫ z in univ ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+            (stationaryCylinderOperator J S ξ z - δ • ξ z)
+            (stationaryCylinderOperator J S ξ z - δ • ξ z) := by
+  have hJo : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    AlmostComplexStructure.continuous_iff.1 hJc
+  have hJc' : Continuous fun p : ℝ × V ↦ J p.1 p.2 := by
+    simpa using (hJo.comp continuous_fst).clm_apply continuous_snd
+  filter_upwards [eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero hSc hJc hdet]
+    with δ hdetδ
+  obtain ⟨C, hC, hest⟩ := exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator hJ hJc'
+    (fun t ↦ sub_smul_apply_add_apply_eq_zero (hJ t).invariant (hS t) δ)
+    (hSc.sub (hJo.const_smul δ)) hdetδ
+  refine ⟨C, hC, fun ξ hξ hper hdecay hD ↦ ?_⟩
+  simp only [← stationaryCylinderOperator_sub_smul] at hD ⊢
+  exact hest ξ hξ hper hdecay hD
+
 end Cylinder
 
 end Floer
@@ -236,57 +271,10 @@ namespace SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 open Floer in
-/-- At a nondegenerate orbit and for every weight `δ` close to `0`, the weighted linearized field
-`S_t - δ J_t`, with `S_t = dX_{H_t}(x(t))`, is infinitesimally symplectic and its return map has no
-fixed vector: these are the hypotheses of the stationary cylinder estimates for `D - δ`. -/
-private theorem eventually_sub_smul_symm_and_det_ne_zero
-    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
-    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous J)
-    (hJp : Periodic J 1) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ),
-      (∀ t v w, ω ((fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-          δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) v) w +
-        ω v ((fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-          δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) w) = 0) ∧
-      LinearMap.det ((1 - dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-        δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 := by
-  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  have hSc : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hH
-    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-  have hSp : Periodic S 1 := fun t ↦ by simp only [S, hHp t, hxp t]
-  have hJop : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
-    AlmostComplexStructure.continuous_iff.1 hJc
-  filter_upwards [ω.eventually_eq_zero_of_asymptoticOperator_eq_smul hX hH hHp hx hxp hnd hJc
-    hJp] with δ hδ
-  refine ⟨fun t v w ↦ ?_, fun h ↦ ?_⟩
-  · -- `S_t` and `J_t` are both infinitesimally symplectic.
-    have h₁ : ω (S t v) w + ω v (S t w) = 0 :=
-      ω.apply_fderiv_hamiltonianVectorField_add (hH.comp (contDiff_prodMk_right t)).contDiffAt v w
-    have h₂ := (hJ t).invariant.apply_add_apply_eq_zero v w
-    simp only [sub_apply, smul_apply,
-      LinearMap.coe_toContinuousLinearMap', map_sub, map_smul, LinearMap.sub_apply,
-      LinearMap.smul_apply, smul_eq_mul] at h₂ ⊢
-    linear_combination h₁ - δ * h₂
-  · -- A fixed vector of the return map of `ζ' = (S_t - δ J_t) ζ` is an eigenloop of `A`.
-    have hSδc : Continuous fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap :=
-      hSc.sub (hJop.const_smul δ)
-    have hSδp : Periodic (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) 1 :=
-      fun t ↦ by simp only [hSp t, hJp t]
-    obtain ⟨ζ, hζ, hζp, hζne, hA⟩ :=
-      (exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := J) hSδc hSδp).2 h
-    refine hζne (hδ ζ hζ hζp fun t ↦ ?_)
-    have h := hA t
-    rwa [Floer.asymptoticOperator_sub_smul, sub_eq_zero] at h
-
-open Floer in
-/-- **The weighted stationary cylinder estimate at a nondegenerate orbit.** Let `x` be a
-nondegenerate one-periodic orbit of a one-periodic, jointly `C²` time-dependent Hamiltonian `H`
-whose suspended vector field is globally Lipschitz, let `J_t` be a continuous one-periodic family
-of `ω`-compatible structures, and let `D = ∂s + J_t (∂t - S_t)` be the stationary cylinder
+/-- **The weighted stationary cylinder estimate at a nondegenerate orbit.** Let `x` be an orbit
+of a jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
+Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, let `J_t` be a continuous
+family of `ω`-compatible structures, and let `D = ∂s + J_t (∂t - S_t)` be the stationary cylinder
 operator along `x`, with `S_t = dX_{H_t}(x(t))`. Then for every weight `δ` close enough to `0`
 there is a constant `C ≥ 0` such that every `C²` map `ξ` of period one in `t`, which tends to zero
 together with `∂t ξ` as `|s| → ∞` and for which `g((D - δ) ξ, (D - δ) ξ)` is integrable on
@@ -296,11 +284,10 @@ conjugated by the weight `e^{δ s}`. -/
 theorem eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
-    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous J)
-    (hJp : Periodic J 1) :
+    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous J) :
     ∀ᶠ δ in 𝓝 (0 : ℝ), ∃ C, 0 ≤ C ∧ ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 2 ξ →
       (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
       Tendsto (fun z ↦ (ξ z, fderiv ℝ ξ z stdComplexLineImag))
@@ -317,76 +304,14 @@ theorem eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOpera
             (Floer.stationaryCylinderOperator J
               (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z)
             (Floer.stationaryCylinderOperator J
-              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z) := by
-  have hJc' : Continuous fun p : ℝ × V ↦ J p.1 p.2 := by
-    simpa using ((AlmostComplexStructure.continuous_iff.1 hJc).comp continuous_fst).clm_apply
-      continuous_snd
-  have hSc (δ : ℝ) : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-      δ • LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z) :=
+  Floer.eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
+    (S := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) hJ hJc
+    (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
+      (hH.comp (contDiff_prodMk_right t)).contDiffAt)
     (ω.continuous_fderiv_hamiltonianVectorField_comp hH
-      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)).sub
-      ((AlmostComplexStructure.continuous_iff.1 hJc).const_smul δ)
-  filter_upwards [eventually_sub_smul_symm_and_det_ne_zero ω hX hH hHp hx hxp hnd hJ hJc hJp]
-    with δ ⟨hSδ, hdetδ⟩
-  obtain ⟨C, hC, hest⟩ := Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
-    hJ hJc' hSδ (hSc δ) hdetδ
-  refine ⟨C, hC, fun ξ hξ hper hdecay hD ↦ ?_⟩
-  simp only [← Floer.stationaryCylinderOperator_sub_smul] at hD ⊢
-  exact hest ξ hξ hper hdecay hD
-
-open Floer in
-/-- **The weighted stationary cylinder estimate on finite strips.** Under the hypotheses of
-`eventually_exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`, for every
-weight `δ` close enough to `0` there is a constant `C ≥ 0` such that every `C²` map `ξ` of period
-one in `t`, vanishing on two slices `s = a` and `s = b`, satisfies
-
-`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S_δ ξ, ∂t ξ - S_δ ξ) + g(ξ, ξ)) ≤ C ∫ g((D - δ) ξ, (D - δ) ξ)`
-
-over `[a, b] × [0, 1]`, where `S_δ = S_t - δ J_t` is the linearized field of the weighted operator
-`D - δ` (`TauCeti.Floer.stationaryCylinderOperator_sub_smul`) and `g_t = ω(·, J_t ·)`. The constant
-does not depend on `a`, `b` or `ξ`. -/
-theorem eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
-    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
-    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous J)
-    (hJp : Periodic J 1) :
-    ∀ᶠ δ in 𝓝 (0 : ℝ), ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
-      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ t, ξ (a, t) = 0) →
-      (∀ t, ξ (b, t) = 0) →
-        ∫ z in Icc a b ×ˢ Icc 0 1,
-            ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
-                (fderiv ℝ ξ z stdComplexLineReal) +
-              ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag -
-                  (fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) -
-                    δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))
-                (fderiv ℝ ξ z stdComplexLineImag -
-                  (fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) -
-                    δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))) +
-              ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
-          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
-            (Floer.stationaryCylinderOperator J
-              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z)
-            (Floer.stationaryCylinderOperator J
-              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z) := by
-  have hJc' : Continuous fun p : ℝ × V ↦ J p.1 p.2 := by
-    simpa using ((AlmostComplexStructure.continuous_iff.1 hJc).comp continuous_fst).clm_apply
-      continuous_snd
-  have hSc (δ : ℝ) : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
-      δ • LinearMap.toContinuousLinearMap (J t).toLinearMap :=
-    (ω.continuous_fderiv_hamiltonianVectorField_comp hH
-      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)).sub
-      ((AlmostComplexStructure.continuous_iff.1 hJc).const_smul δ)
-  filter_upwards [eventually_sub_smul_symm_and_det_ne_zero ω hX hH hHp hx hxp hnd hJ hJc hJp]
-    with δ ⟨hSδ, hdetδ⟩
-  obtain ⟨C, hC, hest⟩ :=
-    Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator hJ hJc' hSδ
-      (hSc δ) hdetδ
-  refine ⟨C, hC, fun ξ hξ hper a b hab ha hb ↦ ?_⟩
-  simp only [← Floer.stationaryCylinderOperator_sub_smul]
-  exact hest hξ hper hab ha hb
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
 
 end SymplecticForm
 
