@@ -127,8 +127,7 @@ private theorem mul_integral_norm_sq_smul_le (hx : Continuous x) {c R : ℝ}
         · rw [norm_smul, Real.norm_of_nonneg (hχ01 z).1]
           exact (mul_le_of_le_one_left (norm_nonneg _) (hχ01 z).2).trans (hψb n z)
       have hsq := pow_le_pow_left₀ (norm_nonneg _) hW 2
-      have hy0 := sq_nonneg ‖y z‖
-      nlinarith [sq_nonneg (‖χ' z‖ - A * ((n : ℝ) + 1)⁻¹)]
+      nlinarith [sq_nonneg (‖χ' z‖ - A * ((n : ℝ) + 1)⁻¹), sq_nonneg ‖y z‖]
     have hRHS : Integrable fun z ↦
         2 * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ‖y z‖ ^ 2 :=
       (hB.const_mul 2).add (hn.const_mul _)
