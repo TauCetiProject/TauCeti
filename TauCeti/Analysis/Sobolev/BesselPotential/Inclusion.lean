@@ -48,7 +48,9 @@ common compact support, are statements about this map.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
 * `BesselPotentialSpace.inclusionLp`: the inclusion `H^{s,p}(E, G) →L[ℂ] Lᵖ(E, G)` for `0 ≤ s`,
-  with `BesselPotentialSpace.toTemperedDistribution_inclusionLp`.
+  with `BesselPotentialSpace.toTemperedDistribution_inclusionLp` and the normal forms
+  `BesselPotentialSpace.inclusionLp_zero`, `BesselPotentialSpace.inclusionLp_inclusion` and
+  `BesselPotentialSpace.inclusionLp_toBesselPotentialSpaceCLM`.
 * `BesselPotentialSpace.norm_inclusion_le`: for `p = 2` its operator norm is at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
   of `u ∈ H^s` has norm at most `‖u‖`.
@@ -130,6 +132,25 @@ def inclusionLp (hs : 0 ≤ s) : H^{s, p}(E, G) →L[ℂ] Lp G p (volume : Measu
 theorem toTemperedDistribution_inclusionLp (hs : 0 ≤ s) (u : H^{s, p}(E, G)) :
     (inclusionLp hs u : 𝓢'(E, G)) = u.toDistr := by
   simpa [inclusionLp] using besselPotential_neg_toLp_eq (f := inclusion hs u)
+
+/-- On `H^{0,p}` the inclusion into `Lᵖ` is the `Lᵖ` part `toLp`. -/
+@[simp]
+theorem inclusionLp_zero (u : H^{0, p}(E, G)) : inclusionLp le_rfl u = u.toLp := by
+  simp [inclusionLp]
+
+/-- The inclusion into `Lᵖ` of an included element is the inclusion of the original element. -/
+@[simp]
+theorem inclusionLp_inclusion (h : r ≤ s) (hr : 0 ≤ r) (u : H^{s, p}(E, G)) :
+    inclusionLp hr (inclusion h u) = inclusionLp (hr.trans h) u := by
+  simp [inclusionLp]
+
+/-- On Schwartz functions the inclusion `H^{s,p} ⊆ Lᵖ` is the inclusion of `𝓢` into `Lᵖ`. -/
+@[simp]
+theorem inclusionLp_toBesselPotentialSpaceCLM (hs : 0 ≤ s) (u : 𝓢(E, G)) :
+    inclusionLp hs (SchwartzMap.toBesselPotentialSpaceCLM s p u) = u.toLp p := by
+  simp only [inclusionLp, ContinuousLinearMap.comp_apply, inclusion_toBesselPotentialSpaceCLM,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, toLpₗᵢ_apply]
+  exact SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero u
 
 section Hilbert
 
