@@ -401,29 +401,9 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
   have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := Subtype.ext (hp a').symm
   have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := Subtype.ext (hp b').symm
   have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := Subtype.ext (hp c').symm
-  let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
-      (Path.subpath_apply_mem hγ ha hb)
-  let qbc : Path (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi b') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ hb hc)
-  let qac : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
-      ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
-    (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
-      (Path.subpath_apply_mem hγ ha hc)
-  have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' b'
-  have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    Path.cast_subpath_eq_codRestrict γ p hp b' c'
-  have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' c'
-  have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
-      (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
-    rw [← hab', ← hbc', ← hac']
-    exact Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
-  exact locVal_comp_eq_of_trans hU F hF i _ _ _ _ _ _ hquot
+  apply locVal_comp_eq_of_trans hU F hF i
+  simpa only [Path.cast_subpath_eq_codRestrict γ p hp] using
+    Path.Homotopic.Quotient.subpath_cast_trans p a' b' c' hpa hpb hpc
 
 private lemma pathVal_congr {x y x' y' : X} (P : Path x y) (Q : Path x' y') (hx : x = x')
     (hy : y = y') (h : ∀ t, P t = Q t) (hP : ∃ i, ∀ t, P t ∈ U i) (hQ : ∃ i, ∀ t, Q t ∈ U i) :
