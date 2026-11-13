@@ -46,6 +46,8 @@ The classes are natural in the periodic orbit:
 * `TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_apply_iterate`,
   `TauCeti.SmoothMappingTorus.orbitTorusHomologyClass_apply_iterate`: the classes do not depend
   on the starting point in the periodic orbit.
+* `TauCeti.SmoothMappingTorus.closedOrbitHomologyClass_mul_apply_iterate`: the closed orbit of
+  period `d * m` through any point of an orbit of period `d` has `m` times its class.
 * `TauCeti.SmoothMappingTorus.singularHomologyMap_map_closedOrbitHomologyClass`,
   `TauCeti.SmoothMappingTorus.singularHomologyMap_prodMap_map_orbitTorusHomologyClass`:
   naturality under conjugacies.
@@ -167,6 +169,18 @@ theorem orbitTorusHomologyClass_apply_iterate (hx : Function.IsPeriodicPt φ d x
     orbitTorusHomologyClass (hx.apply_iterate j) = orbitTorusHomologyClass hx := by
   rw [orbitTorusHomologyClass_def, closedOrbitHomologyClass_apply_iterate,
     orbitTorusHomologyClass_def]
+
+/-- The closed orbit of period `d * m` through a point `φ^[j] x` of the orbit of a point `x` of
+period `d` has `m` times the class of the closed orbit of period `d` through `x`. -/
+theorem closedOrbitHomologyClass_mul_apply_iterate (hx : Function.IsPeriodicPt φ d x) (m j : ℕ)
+    (h : Function.IsPeriodicPt φ (d * m) ((⇑φ)^[j] x)) :
+    closedOrbitHomologyClass h = m • closedOrbitHomologyClass hx := by
+  have key : ∀ k (h₁ : Function.IsPeriodicPt φ k x) (h₂ : Function.IsPeriodicPt φ (m * d) x),
+      k = m * d → closedOrbitHomologyClass h₁ = closedOrbitHomologyClass h₂ := by
+    rintro _ _ _ rfl
+    rfl
+  rw [closedOrbitHomologyClass_apply_iterate (hx.mul_const m) j,
+    key _ _ (hx.const_mul m) (mul_comm d m), closedOrbitHomologyClass_const_mul]
 
 /-! ### Conjugacies -/
 

@@ -38,7 +38,7 @@ at `φ x` are `B A` and `A B` for `A = dφ_x`, so `det (1 - d(φ^[d n]))` is con
 (`TauCeti.det_id_sub_fixedPointDerivative_iterate_apply_iterate`). These `d` terms of weight
 `1 / (d n)` add up to the term `ε(n) / n · e^(n [γ_x])` of `L`.
 
-When all fixed points of `φ^[n]` are nondegenerate, the inner sum
+On a closed manifold, when all fixed points of `φ^[n]` are nondegenerate, the inner sum
 `∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)` is the signed fixed-point count of `φ^[n]`, so the right
 side is the homology-refined form of the series `∑_n L(φⁿ) tⁿ / n` of Lefschetz numbers. Identifying
 these counts with the alternating traces of `φ_*` on homology is the Lefschetz fixed-point formula,
@@ -46,6 +46,8 @@ which is not proved here.
 
 ## Main results
 
+* `TauCeti.SmoothMappingTorus.summable_single_closedOrbitHomologyClass`: if each positive iterate
+  has finitely many fixed points, the fixed-point terms are summable.
 * `TauCeti.SmoothMappingTorus.hasSum_single_closedOrbitHomologyClass_orbitLog`: the orbit
   logarithm is the sum over the fixed points of the iterates.
 * `TauCeti.SmoothMappingTorus.orbitZeta_eq_exp_tsum`: the orbit zeta function is the exponential
@@ -71,20 +73,6 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
-/-- The closed orbit of period `d * m` through a point `φ^[j] x` of the orbit of a point `x` of
-period `d` has `m` times the class of the closed orbit of period `d` through `x`. -/
-private theorem closedOrbitHomologyClass_mul_apply_iterate {d : ℕ} {x : M}
-    (hx : IsPeriodicPt φ d x) (m j : ℕ) (h : IsPeriodicPt φ (d * m) ((⇑φ)^[j] x)) :
-    closedOrbitHomologyClass h = m • closedOrbitHomologyClass hx := by
-  have key : ∀ n (h₁ : IsPeriodicPt φ n x) (h₂ : IsPeriodicPt φ (m * d) x), n = m * d →
-      closedOrbitHomologyClass h₁ = closedOrbitHomologyClass h₂ := by
-    rintro _ _ _ rfl
-    rfl
-  rw [closedOrbitHomologyClass_apply_iterate (hx.mul_const m) j,
-    key _ _ (hx.const_mul m) (mul_comm d m),
-    closedOrbitHomologyClass_const_mul]
-
 variable (hfin : ∀ n, 0 < n → (ptsOfPeriod φ n).Finite) {ι : Type*} {x : ι → M}
   (hx : ∀ i, x i ∈ periodicPts φ) (hrep : ∀ y ∈ periodicPts φ, ∃! i, ∃ j, (⇑φ)^[j] (x i) = y)
   (K : Type*) [CommRing K] [Algebra ℚ K]
@@ -93,7 +81,7 @@ include hfin in
 /-- The terms `sgn det (1 - d(φ^[n])_y) / n · e^[γ_(n, y)]` over the fixed points `y` of the
 positive iterates `φ^[n]` are summable: only finitely many of them have period `n` below any
 cutoff. -/
-private theorem summable_single_closedOrbitHomologyClass :
+theorem summable_single_closedOrbitHomologyClass :
     Summable (fun q : {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2} ↦
       (single (closedOrbitHomologyClass q.2.2) (algebraMap ℚ K
         ((SignType.sign (LinearMap.det (LinearMap.id -
@@ -168,7 +156,8 @@ theorem hasSum_single_closedOrbitHomologyClass_orbitLog :
       rw [hg _ ((hxi.mul_const (k + 1)).apply_iterate j)
           (coe_sigmaMinimalPeriodEquiv_apply hx hrep _),
         closedOrbitHomologyClass_mul_apply_iterate hxi,
-        det_id_sub_fixedPointDerivative_iterate_apply_iterate hdiff (hxi.mul_const (k + 1))]
+        det_id_sub_fixedPointDerivative_iterate_apply_iterate (hxi.mul_const (k + 1))
+          fun _ _ ↦ hdiff _]
     rw [Finset.sum_congr rfl fun j _ ↦ hterm j, Finset.sum_const, Finset.card_univ,
       Fintype.card_fin, smul_single, ← map_nsmul, nsmul_eq_mul]
     congr 2

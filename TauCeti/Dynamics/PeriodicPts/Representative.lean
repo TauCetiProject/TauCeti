@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Order.Filter.Cofinite
-public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
+public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Order.Filter.AtTopBot.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Periodic points of all periods through orbit representatives
@@ -127,6 +128,15 @@ noncomputable def sigmaMinimalPeriodEquiv (hx : ∀ i, x i ∈ periodicPts f)
   .ofBijective _ (bijective_sigmaMinimalPeriodMap hx hrep)
 
 @[simp]
+theorem sigmaMinimalPeriodEquiv_apply (hx : ∀ i, x i ∈ periodicPts f)
+    (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y)
+    (t : Σ p : ι × ℕ, Fin (minimalPeriod f (x p.1))) :
+    sigmaMinimalPeriodEquiv f hx hrep t =
+      ⟨(minimalPeriod f (x t.1.1) * (t.1.2 + 1), f^[t.2] (x t.1.1)),
+        Nat.mul_pos (minimalPeriod_pos_of_mem_periodicPts (hx t.1.1)) t.1.2.succ_pos,
+        ((isPeriodicPt_minimalPeriod f (x t.1.1)).mul_const _).apply_iterate _⟩ :=
+  (rfl)
+
 theorem coe_sigmaMinimalPeriodEquiv_apply (hx : ∀ i, x i ∈ periodicPts f)
     (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y)
     (t : Σ p : ι × ℕ, Fin (minimalPeriod f (x p.1))) :
@@ -140,18 +150,19 @@ summable family indexed by the pairs `(n, y)` with `n > 0` and `f^[n] y = y`. If
 `i` and each `k`, the `d i` terms of `g` at the points of the `i`-th orbit in period
 `d i * (k + 1)` add up to `F (i, k)`, and `F` sums to `a`, then `g` sums to `a`. -/
 theorem hasSum_of_hasSum_sum_sigmaMinimalPeriodEquiv {V : Type*} [AddCommMonoid V]
-    [TopologicalSpace V] [ContinuousAdd V] [RegularSpace V] [T2Space V]
+    [TopologicalSpace V] [R1Space V]
     (hx : ∀ i, x i ∈ periodicPts f)
     (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y)
     {g : {q : ℕ × α // 0 < q.1 ∧ IsPeriodicPt f q.1 q.2} → V} (hg : Summable g)
     {F : ι × ℕ → V} {a : V} (hF : HasSum F a)
     (hgF : ∀ p, ∑ j, g (sigmaMinimalPeriodEquiv f hx hrep ⟨p, j⟩) = F p) : HasSum g a := by
-  set e := sigmaMinimalPeriodEquiv f hx hrep
   obtain ⟨s, hs⟩ := hg
   -- Sum the reindexed family first over the phases `j` of each orbit, then over the orbits.
-  have hσ : HasSum F s := ((e.hasSum_iff (f := g)).2 hs).sigma fun p ↦ by
-    rw [← hgF p]
-    exact hasSum_fintype _
-  rwa [hσ.unique hF] at hs
+  have hσ : HasSum F s := by
+    simpa only [comp_apply, hgF] using
+      ((sigmaMinimalPeriodEquiv f hx hrep).hasSum_iff.2 hs).sigma_of_finite
+  -- The two limits of `F` are inseparable, so `g` also sums to `a`.
+  unfold HasSum at hs hσ hF ⊢
+  rwa [(tendsto_nhds_unique_inseparable hσ hF).nhds_eq] at hs
 
 end Function

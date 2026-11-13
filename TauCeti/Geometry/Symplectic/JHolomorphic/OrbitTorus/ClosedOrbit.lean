@@ -57,8 +57,9 @@ function is also the exponential of a sum over the fixed points of the iterates 
 (`TauCeti.SmoothMappingTorus.orbitZeta_eq_exp_tsum`). So the product of the orbit-torus series is
 `exp (∑_{n ≥ 1} ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y) e^[γ_(n, y)] / n)`, where `[γ_(n, y)]` is
 the class of the closed orbit of period `n` through `y`
-(`SmoothMappingTorus.exp_tsum_eq_mapRingHom_tprod_fixedPointDerivative`). For each `n` the inner
-coefficients are the local Lefschetz indices of the fixed points of `φ^[n]`.
+(`TauCeti.SmoothMappingTorus.exp_tsum_eq_mapRingHom_tprod_fixedPointDerivative`). On a surface
+without boundary, for each `n` the inner coefficients are the local Lefschetz indices of the fixed
+points of `φ^[n]`.
 
 ## Main results
 
@@ -260,7 +261,6 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
   simp only [hit]
   -- As above, `key` and the goal differ only in how the tangent space is written.
   exact key
-
 
 section FixedPoints
 
