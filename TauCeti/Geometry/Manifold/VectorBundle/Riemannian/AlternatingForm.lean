@@ -80,7 +80,7 @@ theorem ContMDiffWithinAt.alternatingFormInner_bundle
       (t : powersetCard (Fin (Module.finrank ℝ F)) k) :
       ContMDiffWithinAt I 𝓘(ℝ) n
         (fun y ↦ γ y (fun i ↦ v (powersetCard.ofFinEmbEquiv.symm t i) y)) s x :=
-    (contMDiffWithinAt_totalSpace.1 (hγ.continuousAlternatingMap_bundle_apply
+    (contMDiffWithinAt_totalSpace_iff.1 (hγ.continuousAlternatingMap_bundle_apply
       (fun i ↦ (hv _).contMDiffWithinAt))).2
   have hs := contMDiffWithinAt_finsetSum (t := Finset.univ) fun t _ ↦
     (hval α hα t).mul (hval β hβ t)
@@ -162,7 +162,7 @@ def alternatingFormSubbundleRiemannianMetric
             (eW.symm y c : V y [⋀^Fin k]→L[ℝ] ℝ)) x := by
         have hs : ContMDiffAt I (I.prod 𝓘(ℝ, ι → ℝ)) n
             (fun y ↦ TotalSpace.mk' (ι → ℝ) (E := fun z ↦ W z) y (eW.symm y c)) x := by
-          rw [contMDiffAt_section]
+          rw [contMDiffAt_section_iff]
           refine (contMDiffAt_const (c := c)).congr_of_eventuallyEq ?_
           filter_upwards [eW.open_baseSet.mem_nhds hx] with y hy
           exact congr(Prod.snd $(eW.apply_mk_symm hy c))

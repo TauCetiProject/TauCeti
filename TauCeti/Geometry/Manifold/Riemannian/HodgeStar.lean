@@ -419,7 +419,8 @@ theorem RoughForm.contMDiffAt_hodgeStar (o : Manifold.Orientation I M (Fin m)) (
   classical
   -- Read in the trivialization at `x`, it suffices that each value on a fixed tuple `v` of model
   -- vectors is `C^n` at `x`.
-  simp only [contMDiffAt_section, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply] at hφ ⊢
   intro v
@@ -492,11 +493,11 @@ theorem contMDiff_formHodgeStarCLM (o : Manifold.Orientation I M (Fin m)) (hkl :
   have hxl : x ∈ el.baseSet := FiberBundle.mem_baseSet_trivializationAt Fl Vl x
   have hsec : ContMDiffAt I (I.prod 𝓘(ℝ, Fk)) n
       (fun y ↦ TotalSpace.mk' Fk (E := Vk) y (ek.symm y α)) x := by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     refine (contMDiffAt_const (c := α)).congr_of_eventuallyEq ?_
     filter_upwards [ek.open_baseSet.mem_nhds hxk] with y hy
     exact congr(Prod.snd $(ek.apply_mk_symm hy α))
-  have hstar := (contMDiffAt_section (x₀ := x)).1
+  have hstar := (contMDiffAt_section_iff (x₀ := x)).1
     (RoughForm.contMDiffAt_hodgeStar o hkl (φ := fun y ↦ ek.symm y α) hsec)
   refine hstar.congr_of_eventuallyEq ?_
   filter_upwards [ek.open_baseSet.mem_nhds hxk, el.open_baseSet.mem_nhds hxl] with y hyk hyl
@@ -618,6 +619,15 @@ theorem isSmoothForm_inner_smul_riemannianVolumeForm (o : Manifold.Orientation I
 theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
   Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
+
+/-- The Hodge star of smooth forms commutes with multiplication by a smooth function,
+`⋆(f α) = f ⋆α`. -/
+@[simp]
+theorem hodgeStar_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
+    hodgeStar o hkl (funSMulₗ f α) = funSMulₗ f (hodgeStar o hkl α) :=
+  Subtype.ext <| funext fun x ↦ by
+    simp only [coe_hodgeStar, RoughForm.hodgeStar_apply, coe_funSMulₗ, map_smul]
 
 end SmoothForm
 
