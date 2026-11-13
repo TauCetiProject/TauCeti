@@ -346,7 +346,7 @@ private def hopfLoopPath (u : sphere (0 : ℍ) 1) : MoorePath (QuaternionicProje
     · simp [hu]
     · have hpos : 0 < ‖(u : ℍ) - 1‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm hu)
       rw [projIcc_of_right_le _ ((one_le_div hpos).2 (NNReal.coe_le_coe.2 ht)),
-        projIcc_of_right_le _ (by rw [coe_nnnorm, div_self hu])]
+        projIcc_of_right_le _ (by rw [coe_nnNorm, div_self hu])]
 
 private theorem length_hopfLoopPath (u : sphere (0 : ℍ) 1) :
     (hopfLoopPath v w hw hvw u).length = ‖(u : ℍ) - 1‖₊ :=
@@ -367,7 +367,7 @@ private theorem hopfLoopPath_apply_length_mul (u : sphere (0 : ℍ) 1) (s : I) :
     rw [hopfLift_one_left, hopfLift_one_left]
   · congr
     rw [length_hopfLoopPath, NNReal.coe_mul,
-      coe_nnnorm, unitInterval.coe_toNNReal, mul_div_cancel_left₀ _ (norm_sub_one_ne_zero hu),
+      coe_nnNorm, unitInterval.coe_toNNReal, mul_div_cancel_left₀ _ (norm_sub_one_ne_zero hu),
       projIcc_val]
 
 variable (v w) in
@@ -413,7 +413,7 @@ private theorem toMoorePath_hopfLoop (u : sphere (0 : ℍ) 1) :
 private theorem hopfLoop_one : hopfLoop v w hw hvw 1 = 1 :=
   MooreLoopSpace.eq_one_of_length_eq_zero <| by
     rw [← MooreLoopSpace.length_toMoorePath, toMoorePath_hopfLoop, length_hopfLoopPath,
-      unitSphere.coe_one, sub_self, nnnorm_zero]
+      unitSphere.coe_one, sub_self, nnNorm_zero]
 
 /-- The splitting loop at `u`, normalized to the unit interval, is `s ↦ [hopfLift (u, s)]`. -/
 private theorem toPath_hopfLoop (u : sphere (0 : ℍ) 1) (s : I) :
