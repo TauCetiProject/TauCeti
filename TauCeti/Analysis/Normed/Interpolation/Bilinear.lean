@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.RealMethod
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Normed.Interpolation.Exponent
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -152,21 +151,33 @@ private theorem norm_dyadic_piece_le {x : C.inter} {d : ℤ → C.inter × C.int
           ring
       _ ≤ _ := by linarith [hd₂ j, hd₂ (j - 1)]
 
+omit [ContinuousAdd V] [T1Space V] in
 /-- A dyadic decomposition of an element `x` of the intersection, controlled by its
 `K`-functional: `x = ∑ⱼ uⱼ` with `‖uⱼ‖_{X₀} ≤ 4 K(2 ^ j, x)` and `2 ^ j ‖uⱼ‖_{X₁} ≤ 6 K(2 ^ j, x)`.
 The partial sums over `-N < j ≤ N` differ from `x` by `y_N + z_N`, where `y_N` is small in `X₀`
-and `z_N` is small in `X₁`. The pieces are `uⱼ = x⁰ⱼ - x⁰ⱼ₋₁`, where `x = x⁰ⱼ + x¹ⱼ` is a
-near-optimal decomposition for `K(2 ^ j, x)` inside the intersection. -/
-private theorem exists_dyadic_decomposition (x : C.inter) :
-    ∃ (u : ℤ → C.inter) (y z : ℕ → C.inter),
-      (∀ j : ℤ, ‖C.interFst (u j)‖ ≤ 4 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))) ∧
-      (∀ j : ℤ, (2 : ℝ) ^ j * ‖C.interSnd (u j)‖ ≤
-        6 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))) ∧
-      (∀ N : ℕ, ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + y N + z N = x) ∧
-      (∀ N : ℕ, ‖C.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤
-        4 * ‖C.interFst x‖) ∧
-      (∀ N : ℕ, ‖C.interFst (y N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interSnd x‖) ∧
-      (∀ N : ℕ, ‖C.interSnd (z N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interFst x‖) := by
+and `z_N` is small in `X₁`. -/
+private structure DyadicDecomposition (x : C.inter) where
+  /-- The dyadic pieces. -/
+  u : ℤ → C.inter
+  /-- The part of the `N`-th remainder that is small in `X₀`. -/
+  y : ℕ → C.inter
+  /-- The part of the `N`-th remainder that is small in `X₁`. -/
+  z : ℕ → C.inter
+  norm_interFst_le (j : ℤ) :
+    ‖C.interFst (u j)‖ ≤ 4 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))
+  zpow_mul_norm_interSnd_le (j : ℤ) :
+    (2 : ℝ) ^ j * ‖C.interSnd (u j)‖ ≤ 6 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))
+  sum_add_add_eq (N : ℕ) : ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + y N + z N = x
+  norm_interFst_sum_le (N : ℕ) :
+    ‖C.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤ 4 * ‖C.interFst x‖
+  norm_interFst_y_le (N : ℕ) : ‖C.interFst (y N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interSnd x‖
+  norm_interSnd_z_le (N : ℕ) : ‖C.interSnd (z N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interFst x‖
+
+/-- Every element `x` of the intersection has a dyadic decomposition. The pieces are
+`uⱼ = x⁰ⱼ - x⁰ⱼ₋₁`, where `x = x⁰ⱼ + x¹ⱼ` is a near-optimal decomposition for `K(2 ^ j, x)` inside
+the intersection. -/
+private theorem nonempty_dyadicDecomposition (x : C.inter) :
+    Nonempty (C.DyadicDecomposition x) := by
   obtain ⟨d, hdsum, hd₁, hd₂⟩ := C.exists_dyadic_split x
   set K : ℝ → ℝ := fun t => C.kFunctional t (C.fstToSum (C.interFst x)) with hK_def
   have hKx₀ (j : ℤ) : K (2 ^ j) ≤ ‖C.interFst x‖ := C.kFunctional_fstToSum_le (by positivity) _
@@ -176,10 +187,10 @@ private theorem exists_dyadic_decomposition (x : C.inter) :
   have htel (N : ℕ) : ∑ i ∈ Finset.range (2 * N), ((d ((i : ℤ) + 1 - N)).1 -
       (d ((i : ℤ) + 1 - N - 1)).1) = (d N).1 - (d (-N)).1 :=
     sum_range_sub_sub_one (fun j => (d j).1) N
-  refine ⟨fun j => (d j).1 - (d (j - 1)).1, fun N => (d (-N)).1, fun N => (d N).2,
+  refine ⟨⟨fun j => (d j).1 - (d (j - 1)).1, fun N => (d (-N)).1, fun N => (d N).2,
     fun j => (C.norm_dyadic_piece_le hdsum hd₁ hd₂ j).1,
     fun j => (C.norm_dyadic_piece_le hdsum hd₁ hd₂ j).2, fun N => ?_, fun N => ?_, fun N => ?_,
-    fun N => ?_⟩
+    fun N => ?_⟩⟩
   · rw [htel, sub_add_cancel, hdsum]
   · rw [htel, map_sub]
     linarith [norm_sub_le (C.interFst (d N).1) (C.interFst (d (-N)).1), hd₁ N, hd₁ (-N),
@@ -201,68 +212,6 @@ private theorem exists_dyadic_decomposition (x : C.inter) :
 
 end Dyadic
 
-/-- For `A, B > 0`, `∫ t ^ (-θ) min A (t B) dt / t = A ^ (1 - θ) B ^ θ c_{θ,1}`, by the dilation
-`t ↦ (B / A) t`. -/
-private theorem lintegral_rpow_neg_mul_min {θ A B : ℝ} (hA : 0 < A) (hB : 0 < B) :
-    ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * min A (t * B)) ∂multHaar =
-      ENNReal.ofReal (A ^ (1 - θ) * B ^ θ) * kMethodConst θ 1 := by
-  set c := B / A with hc_def
-  have hc : 0 < c := div_pos hB hA
-  have hmp : MeasurePreserving (c * ·) multHaar multHaar :=
-    ⟨measurable_const_mul c, map_multHaar_mul_left hc⟩
-  have hmeas : Measurable fun t : ℝ => ‖t ^ (-θ) * min 1 t‖ₑ := by fun_prop
-  rw [kMethodConst_def, eLpNorm_one_eq_lintegral_eNorm
-    (by fun_prop : Measurable fun t : ℝ => t ^ (-θ) * min 1 t).aestronglyMeasurable,
-    ← hmp.lintegral_comp hmeas,
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine lintegral_congr_ae ?_
-  filter_upwards [ae_pos_multHaar] with t ht
-  have hct : 0 < c * t := mul_pos hc ht
-  rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg hct.le _) (le_min zero_le_one hct.le)),
-    ← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  have h1 : A ^ (1 - θ) = A / A ^ θ := by rw [Real.rpow_sub hA, Real.rpow_one]
-  have h2 : (c * t) ^ (-θ) = A ^ θ / B ^ θ * t ^ (-θ) := by
-    rw [Real.mul_rpow hc.le ht.le, hc_def, Real.rpow_neg (div_pos hB hA).le,
-      Real.div_rpow hB.le hA.le, inv_div]
-  have h3 : A * min 1 (c * t) = min A (t * B) := by
-    rw [mul_min_of_nonneg _ _ hA.le, mul_one, hc_def]
-    field_simp
-  rw [h1, h2, ← h3]
-  field_simp
-
-/-- `∫ u ^ α min 1 u⁻¹ ^ (α + β) du / u = α⁻¹ + β⁻¹` for `α, β > 0`: the integrand is `u ^ α` on
-`(0, 1]` and `u ^ (-β)` on `[1, ∞)`. -/
-private theorem lintegral_rpow_mul_min_inv_rpow {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
-    ∫⁻ u, ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) ∂multHaar =
-      ENNReal.ofReal (α⁻¹ + β⁻¹) := by
-  have hmeas : Measurable fun u : ℝ => ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) := by
-    fun_prop
-  rw [← map_volume_exp, lintegral_map hmeas Real.measurable_exp,
-    ← lintegral_add_compl _ (measurableSet_Iic (a := (0 : ℝ))), compl_Iic]
-  have hIic : ∫⁻ x in Iic 0, ENNReal.ofReal (Real.exp x ^ α * min 1 (Real.exp x)⁻¹ ^ (α + β)) =
-      ENNReal.ofReal α⁻¹ := by
-    rw [setLIntegral_congr_fun measurableSet_Iic (g := fun x => ENNReal.ofReal (Real.exp (α * x)))
-      fun x (hx : x ≤ 0) => ?_]
-    · rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Iic hα 0)
-        (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Iic hα, mul_zero,
-        Real.exp_zero, one_div]
-    · rw [min_eq_left (one_le_inv_iff₀.2 ⟨Real.exp_pos x, Real.exp_le_one_iff.2 hx⟩),
-        Real.one_rpow, mul_one, ← Real.exp_mul, mul_comm]
-  have hIoi : ∫⁻ x in Ioi 0, ENNReal.ofReal (Real.exp x ^ α * min 1 (Real.exp x)⁻¹ ^ (α + β)) =
-      ENNReal.ofReal β⁻¹ := by
-    rw [setLIntegral_congr_fun measurableSet_Ioi
-      (g := fun x => ENNReal.ofReal (Real.exp (-β * x))) fun x (hx : 0 < x) => ?_]
-    · rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_lt_zero.2 hβ) 0)
-        (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_lt_zero.2 hβ),
-        mul_zero, Real.exp_zero, neg_div, div_neg, neg_neg, one_div]
-    · rw [min_eq_right (inv_le_one_of_one_le₀ (Real.one_le_exp hx.le)), ← Real.exp_neg,
-        ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
-      congr 2
-      ring
-  rw [hIic, hIoi, ← ENNReal.ofReal_add (inv_nonneg.2 hα.le) (inv_nonneg.2 hβ.le)]
-
-
 /-- The dyadic intervals `[2 ^ j, 2 ^ (j + 1))` tile `(0, ∞)²` in pairs: if `G j k ≤ F s r` whenever
 `s` lies in the `j`-th and `r` in the `k`-th interval, then
 `(log 2)² ∑ⱼ ∑ₖ G j k ≤ ∫∫ F(s, r) ds / s dr / r`. -/
@@ -271,9 +220,16 @@ private theorem ofReal_log_two_mul_tsum_tsum_le {G : ℤ → ℤ → ℝ≥0∞}
       G j k ≤ F s r) :
     ENNReal.ofReal (Real.log 2) * (ENNReal.ofReal (Real.log 2) * ∑' j, ∑' k, G j k) ≤
       ∫⁻ s, ∫⁻ r, F s r ∂multHaar ∂multHaar := by
-  rw [← ENNReal.tsum_mul_left]
-  exact ofReal_log_mul_tsum_le_lintegral_multHaar_zpow one_lt_two fun j s hs =>
-    ofReal_log_mul_tsum_le_lintegral_multHaar_zpow one_lt_two fun k r hr => h j k s hs r hr
+  -- the intervals `[1 * 2 ^ (1 * j), 1 * 2 ^ (1 * j + |1|))` of the general comparison
+  have hI (j : ℤ) : Ico (1 * (2 : ℝ) ^ ((1 : ℝ) * j)) (1 * 2 ^ ((1 : ℝ) * j + |1|)) =
+      Ico (2 ^ j) (2 ^ (j + 1)) := by
+    simp only [abs_one, one_mul]
+    norm_cast
+  have hL : Real.log 2 = |1| * Real.log 2 := by rw [abs_one, one_mul]
+  rw [hL, ← ENNReal.tsum_mul_left]
+  exact ofReal_mul_tsum_int_le_lintegral_multHaar one_le_two one_pos fun j s hs =>
+    ofReal_mul_tsum_int_le_lintegral_multHaar one_le_two one_pos fun k r hr =>
+      h j k s (hI j ▸ hs) r (hI k ▸ hr)
 
 /-- The kernel `κ(s, r) = s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in `r`
 for every `s > 0`: the substitution `r = s u` turns it into `u ^ θ₁ min 1 u⁻¹ ^ (θ₀ + θ₁)`. -/
@@ -282,7 +238,8 @@ private theorem lintegral_kernel_right {θ₀ θ₁ s : ℝ} (hθ₀ : 0 < θ₀
       ENNReal.ofReal (θ₀⁻¹ + θ₁⁻¹) := by
   have hmp : MeasurePreserving (s * ·) multHaar multHaar :=
     ⟨measurable_const_mul s, map_multHaar_mul_left hs⟩
-  rw [← hmp.lintegral_comp (by fun_prop), add_comm θ₀⁻¹, ← lintegral_rpow_mul_min_inv_rpow hθ₁ hθ₀]
+  rw [← hmp.lintegral_comp (by fun_prop), add_comm θ₀⁻¹,
+    ← lintegral_multHaar_rpow_mul_min_inv_rpow hθ₁ hθ₀]
   refine lintegral_congr_ae ?_
   filter_upwards [ae_pos_multHaar] with u hu
   congr 1
@@ -293,22 +250,13 @@ private theorem lintegral_kernel_right {θ₀ θ₁ s : ℝ} (hθ₀ : 0 < θ₀
   field_simp
 
 /-- The kernel `κ(s, r) = s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in `s`
-for every `r > 0`: the substitution `s = r u` turns it into `u ^ θ₀ min 1 u⁻¹ ^ (θ₀ + θ₁)`. -/
+for every `r > 0`, by the symmetry `κ_{θ₀,θ₁}(s, r) = κ_{θ₁,θ₀}(r, s)`. -/
 private theorem lintegral_kernel_left {θ₀ θ₁ r : ℝ} (hθ₀ : 0 < θ₀) (hθ₁ : 0 < θ₁) (hr : 0 < r) :
     ∫⁻ s, ENNReal.ofReal (s ^ θ₀ * r ^ θ₁ * min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)) ∂multHaar =
       ENNReal.ofReal (θ₀⁻¹ + θ₁⁻¹) := by
-  have hmp : MeasurePreserving (r * ·) multHaar multHaar :=
-    ⟨measurable_const_mul r, map_multHaar_mul_left hr⟩
-  rw [← hmp.lintegral_comp (by fun_prop), ← lintegral_rpow_mul_min_inv_rpow hθ₀ hθ₁]
-  refine lintegral_congr_ae ?_
-  filter_upwards [ae_pos_multHaar] with u hu
-  congr 1
-  have hm : min (r * u)⁻¹ r⁻¹ = r⁻¹ * min 1 u⁻¹ := by
-    rw [mul_min_of_nonneg _ _ (inv_nonneg.2 hr.le), mul_one, mul_inv]
-    exact min_comm _ _
-  rw [hm, Real.mul_rpow (inv_nonneg.2 hr.le) (le_min zero_le_one (inv_nonneg.2 hu.le)),
-    Real.mul_rpow hr.le hu.le, Real.inv_rpow hr.le, Real.rpow_add hr]
-  field_simp
+  rw [add_comm θ₀⁻¹, ← lintegral_kernel_right hθ₁ hθ₀ hr]
+  refine lintegral_congr fun s => ?_
+  rw [mul_comm (s ^ θ₀), min_comm, add_comm θ₀]
 
 /-- **Schur's test and Hölder's inequality** for the kernel
 `κ(s, r) = s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` on `(0, ∞)²` with the measure `ds / s dr / r`:
@@ -390,15 +338,23 @@ variable {𝕜 X₀ X₁ V Y₀ Y₁ W Z₀ Z₁ U : Type*} [NormedField 𝕜]
   {C : CompatibleCouple 𝕜 Z₀ Z₁ U} (T : A.inter →ₗ[𝕜] B.inter →ₗ[𝕜] C.SumSpace) {M₀ M₁ : ℝ}
 
 omit [ContinuousAdd V] [ContinuousAdd W] in
+/-- The three endpoint bounds of `T`, read through the `K`-functional of `C`: for `t ≥ 0`,
+`K(t, T a b)` is at most `M₀ ‖a‖_{X₀} ‖b‖_{Y₀}`, `t M₁ ‖a‖_{X₀} ‖b‖_{Y₁}` and
+`t M₁ ‖a‖_{X₁} ‖b‖_{Y₀}`. -/
+private def EndpointBounds (M₀ M₁ : ℝ) : Prop :=
+  ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
+    C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
+    C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
+    C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖)
+
+omit [ContinuousAdd V] [ContinuousAdd W] in
 /-- The three endpoint bounds of `T`, read through the `K`-functional of `C`. -/
-private theorem kFunctional_apply_le
+private theorem endpointBounds
     (h₀₀ : ∀ a b, ∃ z : Z₀, T a b = C.fstToSum z ∧ ‖z‖ ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖)
     (h₀₁ : ∀ a b, ∃ z : Z₁, T a b = C.sndToSum z ∧ ‖z‖ ≤ M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖)
-    (h₁₀ : ∀ a b, ∃ z : Z₁, T a b = C.sndToSum z ∧ ‖z‖ ≤ M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖)
-    {t : ℝ} (ht : 0 ≤ t) (a : A.inter) (b : B.inter) :
-    C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖) := by
+    (h₁₀ : ∀ a b, ∃ z : Z₁, T a b = C.sndToSum z ∧ ‖z‖ ≤ M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖) :
+    EndpointBounds T M₀ M₁ := by
+  intro t ht a b
   obtain ⟨z₀, hz₀, hz₀le⟩ := h₀₀ a b
   obtain ⟨z₁, hz₁, hz₁le⟩ := h₀₁ a b
   obtain ⟨z₂, hz₂, hz₂le⟩ := h₁₀ a b
@@ -429,10 +385,7 @@ omit [ContinuousAdd V] [ContinuousAdd W] in
 `O(2 ^ (-N))` in the first spaces and `z, z'` in the second spaces, then the `K`-functional at `t`
 of `T S y' + T S z' + T y b + T z b` is `O(2 ^ (-N))`. -/
 private theorem kFunctional_remainder_le
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
+    (hK : EndpointBounds T M₀ M₁)
     (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) {t : ℝ} (ht : 0 ≤ t) {N : ℕ} {a S y z : A.inter}
     {b y' z' : B.inter} (hS : ‖A.interFst S‖ ≤ 4 * ‖A.interFst a‖)
     (hy : ‖A.interFst y‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interSnd a‖)
@@ -463,67 +416,47 @@ private theorem kFunctional_remainder_le
         exact kFunctional_add_le ht _ _
     _ ≤ _ := by linarith
 
-omit [ContinuousAdd V] [ContinuousAdd W] in
 /-- The `K`-functional of `T a b` at `t` is at most the sum over the dyadic pieces of the partial
 sums of `a` and `b` up to `N`, plus an `O(2 ^ (-N))` remainder. -/
 private theorem kFunctional_le_sum_sum_add
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
-    (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) {t : ℝ} (ht : 0 ≤ t) (N : ℕ) {a : A.inter} {b : B.inter}
-    {u : ℤ → A.inter} {v : ℤ → B.inter} {y z : A.inter} {y' z' : B.inter}
-    (hua : ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + y + z = a)
-    (hSa : ‖A.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤
-      4 * ‖A.interFst a‖)
-    (hy : ‖A.interFst y‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interSnd a‖)
-    (hz : ‖A.interSnd z‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interFst a‖)
-    (hvb : ∑ i ∈ Finset.range (2 * N), v ((i : ℤ) + 1 - N) + y' + z' = b)
-    (hy' : ‖B.interFst y'‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interSnd b‖)
-    (hz' : ‖B.interSnd z'‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interFst b‖) :
+    (hK : EndpointBounds T M₀ M₁)
+    (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) {t : ℝ} (ht : 0 ≤ t) {a : A.inter} {b : B.inter}
+    (da : A.DyadicDecomposition a) (db : B.DyadicDecomposition b) (N : ℕ) :
     C.kFunctional t (T a b) ≤ ∑ i ∈ Finset.range (2 * N), ∑ i' ∈ Finset.range (2 * N),
-        C.kFunctional t (T (u ((i : ℤ) + 1 - N)) (v ((i' : ℤ) + 1 - N))) + 2⁻¹ ^ N *
+        C.kFunctional t (T (da.u ((i : ℤ) + 1 - N)) (db.u ((i' : ℤ) + 1 - N))) + 2⁻¹ ^ N *
       (8 * M₀ * ‖A.interFst a‖ * ‖B.interSnd b‖ + 10 * t * M₁ * ‖A.interFst a‖ * ‖B.interFst b‖ +
         2 * M₀ * ‖A.interSnd a‖ * ‖B.interFst b‖) := by
-  set Sa := ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N)
-  have e1 : T a b = T Sa b + T y b + T z b := by
-    conv_lhs => rw [← hua]
+  set Sa := ∑ i ∈ Finset.range (2 * N), da.u ((i : ℤ) + 1 - N)
+  have e1 : T a b = T Sa b + T (da.y N) b + T (da.z N) b := by
+    conv_lhs => rw [← da.sum_add_add_eq N]
     simp only [Sa, map_add, LinearMap.add_apply]
   have e2 : T Sa b = ∑ i ∈ Finset.range (2 * N), ∑ i' ∈ Finset.range (2 * N),
-      T (u ((i : ℤ) + 1 - N)) (v ((i' : ℤ) + 1 - N)) + T Sa y' + T Sa z' := by
-    conv_lhs => rw [← hvb]
+      T (da.u ((i : ℤ) + 1 - N)) (db.u ((i' : ℤ) + 1 - N)) + T Sa (db.y N) + T Sa (db.z N) := by
+    conv_lhs => rw [← db.sum_add_add_eq N]
     simp only [Sa, map_add, map_sum, LinearMap.sum_apply]
     rw [Finset.sum_comm]
   have hsplit : T a b = ∑ i ∈ Finset.range (2 * N), ∑ i' ∈ Finset.range (2 * N),
-      T (u ((i : ℤ) + 1 - N)) (v ((i' : ℤ) + 1 - N)) + (T Sa y' + T Sa z' + T y b + T z b) := by
+      T (da.u ((i : ℤ) + 1 - N)) (db.u ((i' : ℤ) + 1 - N)) +
+        (T Sa (db.y N) + T Sa (db.z N) + T (da.y N) b + T (da.z N) b) := by
     rw [e1, e2]
     abel
   rw [hsplit]
   refine (kFunctional_add_le ht _ _).trans (add_le_add ?_
-    (kFunctional_remainder_le hK hM₀ hM₁ ht hSa hy hz hy' hz'))
+    (kFunctional_remainder_le hK hM₀ hM₁ ht (da.norm_interFst_sum_le N) (da.norm_interFst_y_le N)
+      (da.norm_interSnd_z_le N) (db.norm_interFst_y_le N) (db.norm_interSnd_z_le N)))
   exact (kFunctional_sum_le ht _ _).trans (Finset.sum_le_sum fun i _ => kFunctional_sum_le ht _ _)
 
-omit [ContinuousAdd V] [ContinuousAdd W] in
 /-- The pointwise step of the bilinear estimate: at each `t > 0`, `t ^ (-θ) K(t, T a b)` is at
 most the double series of `t ^ (-θ) K(t, T uⱼ vₖ)` over dyadic decompositions `a = ∑ⱼ uⱼ` and
 `b = ∑ₖ vₖ`, since the remainders of the partial sums are `O(2 ^ (-N))`. -/
 private theorem ofReal_rpow_mul_kFunctional_le_tsum_tsum (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
-    {θ t : ℝ} (ht : 0 < t) {a : A.inter} {b : B.inter} {u : ℤ → A.inter} {v : ℤ → B.inter}
-    {ya za : ℕ → A.inter} {yb zb : ℕ → B.inter}
-    (hua : ∀ N : ℕ, ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + ya N + za N = a)
-    (hSa : ∀ N : ℕ, ‖A.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤
-      4 * ‖A.interFst a‖)
-    (hya : ∀ N : ℕ, ‖A.interFst (ya N)‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interSnd a‖)
-    (hza : ∀ N : ℕ, ‖A.interSnd (za N)‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interFst a‖)
-    (hvb : ∀ N : ℕ, ∑ i ∈ Finset.range (2 * N), v ((i : ℤ) + 1 - N) + yb N + zb N = b)
-    (hyb : ∀ N : ℕ, ‖B.interFst (yb N)‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interSnd b‖)
-    (hzb : ∀ N : ℕ, ‖B.interSnd (zb N)‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interFst b‖) :
+    (hK : EndpointBounds T M₀ M₁)
+    {θ t : ℝ} (ht : 0 < t) {a : A.inter} {b : B.inter} (da : A.DyadicDecomposition a)
+    (db : B.DyadicDecomposition b) :
     ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T a b)) ≤
-      ∑' j, ∑' k, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (u j) (v k))) := by
+      ∑' j, ∑' k, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (da.u j) (db.u k))) := by
+  set u := da.u
+  set v := db.u
   set R := 8 * M₀ * ‖A.interFst a‖ * ‖B.interSnd b‖ +
     10 * t * M₁ * ‖A.interFst a‖ * ‖B.interFst b‖ + 2 * M₀ * ‖A.interSnd a‖ * ‖B.interFst b‖
   set Q := t ^ (-θ) * R
@@ -539,8 +472,8 @@ private theorem ofReal_rpow_mul_kFunctional_le_tsum_tsum (hM₀ : 0 ≤ M₀) (h
         2⁻¹ ^ N * Q := by
     simp only [← Finset.mul_sum]
     rw [show 2⁻¹ ^ N * Q = t ^ (-θ) * (2⁻¹ ^ N * R) by ring, ← mul_add]
-    exact mul_le_mul_of_nonneg_left (kFunctional_le_sum_sum_add hK hM₀ hM₁ ht.le N (hua N)
-      (hSa N) (hya N) (hza N) (hvb N) (hyb N) (hzb N)) (Real.rpow_nonneg ht.le _)
+    exact mul_le_mul_of_nonneg_left (kFunctional_le_sum_sum_add hK hM₀ hM₁ ht.le da db N)
+      (Real.rpow_nonneg ht.le _)
   have hnn (j k : ℤ) : 0 ≤ t ^ (-θ) * C.kFunctional t (T (u j) (v k)) :=
     mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le)
   calc ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T a b))
@@ -566,10 +499,7 @@ omit [ContinuousAdd V] [ContinuousAdd W] in
 `K(t, T u v) ≤ 48 α β min M₀ (t M₁ min s⁻¹ r⁻¹)`, and integrating against `t ^ (-θ) dt / t` gives
 `48 α β M₀ ^ (1 - θ) (M₁ min s⁻¹ r⁻¹) ^ θ c_{θ,1}`. -/
 private theorem lintegral_rpow_mul_kFunctional_le (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
+    (hK : EndpointBounds T M₀ M₁)
     (θ : ℝ) {u : A.inter} {v : B.inter} {α β s r : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β) (hs : 0 < s)
     (hr : 0 < r) (hu₀ : ‖A.interFst u‖ ≤ 4 * α) (hu₁ : s * ‖A.interSnd u‖ ≤ 12 * α)
     (hv₀ : ‖B.interFst v‖ ≤ 4 * β) (hv₁ : r * ‖B.interSnd v‖ ≤ 12 * β) :
@@ -608,42 +538,30 @@ private theorem lintegral_rpow_mul_kFunctional_le (hM₀ : 0 < M₀) (hM₁ : 0 
               mul_le_mul_of_nonneg_left (hpt t ht) (Real.rpow_nonneg ht.le _)
           _ = 48 * α * β * (t ^ (-θ) * min M₀ (t * c)) := by ring
     _ = _ := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_rpow_neg_mul_min hM₀ hc,
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_rpow_neg_mul_min θ hM₀ hc,
           ← mul_assoc, ← ENNReal.ofReal_mul h48]
 
 
-omit [ContinuousAdd V] [ContinuousAdd W] in
 /-- The `K`-method norm of exponent `1` of `T a b` is at most the double series over the dyadic
 pieces of `a` and `b`. -/
 private theorem kMethodENorm_le_tsum_tsum_lintegral (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
-    (θ : ℝ) {a : A.inter} {b : B.inter} {u : ℤ → A.inter} {v : ℤ → B.inter}
-    {ya za : ℕ → A.inter} {yb zb : ℕ → B.inter}
-    (hua : ∀ N : ℕ, ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + ya N + za N = a)
-    (hSa : ∀ N : ℕ, ‖A.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤
-      4 * ‖A.interFst a‖)
-    (hya : ∀ N : ℕ, ‖A.interFst (ya N)‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interSnd a‖)
-    (hza : ∀ N : ℕ, ‖A.interSnd (za N)‖ ≤ 2 * 2⁻¹ ^ N * ‖A.interFst a‖)
-    (hvb : ∀ N : ℕ, ∑ i ∈ Finset.range (2 * N), v ((i : ℤ) + 1 - N) + yb N + zb N = b)
-    (hyb : ∀ N : ℕ, ‖B.interFst (yb N)‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interSnd b‖)
-    (hzb : ∀ N : ℕ, ‖B.interSnd (zb N)‖ ≤ 2 * 2⁻¹ ^ N * ‖B.interFst b‖) :
-    C.kMethodENorm θ 1 (T a b) ≤
-      ∑' j, ∑' k, ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (u j) (v k))) ∂multHaar := by
+    (hK : EndpointBounds T M₀ M₁)
+    (θ : ℝ) {a : A.inter} {b : B.inter} (da : A.DyadicDecomposition a)
+    (db : B.DyadicDecomposition b) :
+    C.kMethodENorm θ 1 (T a b) ≤ ∑' j, ∑' k,
+      ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (da.u j) (db.u k))) ∂multHaar := by
   have hmeas (c : C.SumSpace) :
       AEMeasurable (fun t => ENNReal.ofReal (t ^ (-θ) * C.kFunctional t c)) multHaar :=
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ c).aemeasurable.ennreal_ofReal
   rw [kMethodENorm_def, eLpNorm_one_eq_lintegral_eNorm
     (aestronglyMeasurable_rpow_neg_mul_kFunctional θ _)]
   calc ∫⁻ t, ‖t ^ (-θ) * C.kFunctional t (T a b)‖ₑ ∂multHaar
-      ≤ ∫⁻ t, ∑' j, ∑' k, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (u j) (v k)))
+      ≤ ∫⁻ t, ∑' j, ∑' k, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (da.u j) (db.u k)))
           ∂multHaar := by
         refine lintegral_mono_ae ?_
         filter_upwards [ae_pos_multHaar] with t ht
         rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le))]
-        exact ofReal_rpow_mul_kFunctional_le_tsum_tsum hM₀ hM₁ hK ht hua hSa hya hza hvb hyb hzb
+        exact ofReal_rpow_mul_kFunctional_le_tsum_tsum hM₀ hM₁ hK ht da db
     _ = _ := by
         rw [lintegral_tsum fun j => AEMeasurable.tsum fun k => hmeas _]
         exact tsum_congr fun j => lintegral_tsum fun k => hmeas _
@@ -652,10 +570,7 @@ private theorem kMethodENorm_le_tsum_tsum_lintegral (hM₀ : 0 ≤ M₀) (hM₁ 
 by the integrand `f(s) κ(s, r) g(r)` of the final double integral at every point `(s, r)` of the
 dyadic square `[2 ^ j, 2 ^ (j + 1)) × [2 ^ k, 2 ^ (k + 1))`. -/
 private theorem lintegral_le_mul_kernel_of_mem_Ico (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
-    (hK : ∀ t, 0 ≤ t → ∀ (a : A.inter) (b : B.inter),
-      C.kFunctional t (T a b) ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖ ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interFst a‖ * ‖B.interSnd b‖) ∧
-      C.kFunctional t (T a b) ≤ t * (M₁ * ‖A.interSnd a‖ * ‖B.interFst b‖))
+    (hK : EndpointBounds T M₀ M₁)
     {θ₀ θ₁ : ℝ} {a' : A.SumSpace} {b' : B.SumSpace} {u : A.inter} {v : B.inter} {j k : ℤ}
     (hu₀ : ‖A.interFst u‖ ≤ 4 * A.kFunctional (2 ^ j) a')
     (hu₁ : (2 : ℝ) ^ j * ‖A.interSnd u‖ ≤ 6 * A.kFunctional (2 ^ j) a')
@@ -716,16 +631,9 @@ Then for `θ₀, θ₁ > 0` and Hölder conjugate exponents `p` and `p'`,
 `‖T a b‖_{(C₀, C₁)_{θ₀ + θ₁, 1}} ≤ K ‖a‖_{(A₀, A₁)_{θ₀, p}} ‖b‖_{(B₀, B₁)_{θ₁, p'}}`
 
 with `K = 48 c_{θ,1} M₀ ^ (1 - θ) M₁ ^ θ (θ₀⁻¹ + θ₁⁻¹) / (log 2)²`, `θ = θ₀ + θ₁`, where
-`c_{θ,1} = kMethodConst θ 1` is finite when `θ < 1` (`kMethodConst_lt_top`); for `θ ≥ 1` the
-bound is vacuous. No bound on `A₁ × B₁` is assumed, and the target carries the smallest secondary
-exponent `1`. This is the interpolation step of Keel and Tao's proof of the endpoint Strichartz
-estimate.
-
-The proof decomposes `a = ∑ⱼ uⱼ` and `b = ∑ₖ vₖ` dyadically in the intersections, with
-`uⱼ` controlled by `K(2 ^ j, a)`, bounds `K(t, T uⱼ vₖ)` by the endpoint estimates, compares the
-resulting double series with a double integral against `ds / s dr / r`, and concludes by Schur's
-test and Hölder's inequality for the kernel `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ θ`, a convolution
-kernel on the multiplicative group with integral `θ₀⁻¹ + θ₁⁻¹`. -/
+`c_{θ,1} = kMethodConst θ 1` is finite for `0 < θ < 1` (`kMethodConst_lt_top`). No bound on
+`A₁ × B₁` is assumed, and the target carries the smallest secondary exponent `1`. This is the
+interpolation step of Keel and Tao's proof of the endpoint Strichartz estimate. -/
 theorem kMethodENorm_apply_apply_le [T1Space V] [T1Space W]
     (T : A.inter →ₗ[𝕜] B.inter →ₗ[𝕜] C.SumSpace) (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
     (h₀₀ : ∀ a b, ∃ z : Z₀, T a b = C.fstToSum z ∧ ‖z‖ ≤ M₀ * ‖A.interFst a‖ * ‖B.interFst b‖)
@@ -739,9 +647,9 @@ theorem kMethodENorm_apply_apply_le [T1Space V] [T1Space W]
         A.kMethodENorm θ₀ p (A.fstToSum (A.interFst a)) *
         B.kMethodENorm θ₁ p' (B.fstToSum (B.interFst b)) := by
   -- dyadic decompositions of `a` and `b`, and the integrands `f`, `κ`, `g` of the final bound
-  obtain ⟨u, ya, za, hu₀, hu₁, hua, hSa, hya, hza⟩ := A.exists_dyadic_decomposition a
-  obtain ⟨v, yb, zb, hv₀, hv₁, hvb, -, hyb, hzb⟩ := B.exists_dyadic_decomposition b
-  have hK := fun t (ht : 0 ≤ t) => kFunctional_apply_le T h₀₀ h₀₁ h₁₀ ht
+  obtain ⟨da⟩ := A.nonempty_dyadicDecomposition a
+  obtain ⟨db⟩ := B.nonempty_dyadicDecomposition b
+  have hK := endpointBounds T h₀₀ h₀₁ h₁₀
   set θ := θ₀ + θ₁
   set a' := A.fstToSum (A.interFst a)
   set b' := B.fstToSum (B.interFst b)
@@ -763,12 +671,14 @@ theorem kMethodENorm_apply_apply_le [T1Space V] [T1Space W]
       (hf.comp measurable_fst).mul (hκ.mul (hg.comp measurable_snd))
     calc L * (L * C.kMethodENorm θ 1 (T a b))
         ≤ L * (L * ∑' j, ∑' k,
-            ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (u j) (v k))) ∂multHaar) := by
+            ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * C.kFunctional t (T (da.u j) (db.u k))) ∂multHaar) := by
           gcongr
-          exact kMethodENorm_le_tsum_tsum_lintegral hM₀.le hM₁.le hK θ hua hSa hya hza hvb hyb hzb
+          exact kMethodENorm_le_tsum_tsum_lintegral hM₀.le hM₁.le hK θ da db
       _ ≤ ∫⁻ s, ∫⁻ r, Cst * (f s * (κ s r * g r)) ∂multHaar ∂multHaar :=
           ofReal_log_two_mul_tsum_tsum_le fun j k s hs r hr =>
-            lintegral_le_mul_kernel_of_mem_Ico hM₀ hM₁ hK (hu₀ j) (hu₁ j) (hv₀ k) (hv₁ k) hs hr
+            lintegral_le_mul_kernel_of_mem_Ico hM₀ hM₁ hK (da.norm_interFst_le j)
+              (da.zpow_mul_norm_interSnd_le j) (db.norm_interFst_le k)
+              (db.zpow_mul_norm_interSnd_le k) hs hr
       _ = Cst * ∫⁻ s, ∫⁻ r, f s * (κ s r * g r) ∂multHaar ∂multHaar := by
           have hmeas : Measurable fun s => ∫⁻ r, f s * (κ s r * g r) ∂multHaar :=
             hF.lintegral_prod_right'

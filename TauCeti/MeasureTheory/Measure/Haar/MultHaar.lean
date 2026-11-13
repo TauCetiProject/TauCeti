@@ -32,16 +32,18 @@ Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
 (`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
 Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
 `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
-integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`).
+integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The
+integral of `u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
+(`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`).
 
 For `b > 1` the geometric intervals `[c b ^ (μ j), c b ^ (μ j + |μ|))`, `j ∈ ℕ`, are pairwise
 disjoint, each of `dt / t`-measure `|μ| log b`. Integrating over them compares a sequence with a
 function that dominates its `j`-th term on the `j`-th interval: the sum of the sequence is at most
 `(|μ| log b)⁻¹` times the integral (`TauCeti.ofReal_mul_tsum_le_lintegral_multHaar`), and likewise
 for `ℓ^q` and `L^q(dt / t)` norms (`TauCeti.ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar`).
-The intervals `[b ^ j, b ^ (j + 1))`, `j ∈ ℤ`, tile `(0, ∞)`, which gives the same comparison for
-two-sided sequences (`TauCeti.ofReal_log_mul_tsum_le_lintegral_multHaar_zpow`). This is how
-dyadic sums are bounded by integrals against `dt / t`.
+The intervals with `j ∈ ℤ` give the same comparison for two-sided sequences
+(`TauCeti.ofReal_mul_tsum_int_le_lintegral_multHaar`). This is how dyadic sums are bounded by
+integrals against `dt / t`.
 -/
 
 public section
@@ -197,15 +199,15 @@ theorem multHaar_Ico_mul_rpow {b c : ℝ} (hb : 1 ≤ b) (hc : 0 < c) (x μ : �
     Real.log_rpow hb0, Real.log_rpow hb0]
   ring_nf
 
-/-- For `1 ≤ b`, the intervals `[c b ^ (μ j), c b ^ (μ j + |μ|))` for `j ∈ ℕ` are pairwise
+/-- For `1 ≤ b`, the intervals `[c b ^ (μ j), c b ^ (μ j + |μ|))` for `j ∈ ℤ` are pairwise
 disjoint and have `dt / t`-measure `|μ| log b`. So if `g j ≤ f` on the `j`-th interval, then
 `|μ| log b ∑ j, g j ≤ ∫ f dt / t`. -/
-theorem ofReal_mul_tsum_le_lintegral_multHaar {b c μ : ℝ} (hb : 1 ≤ b) (hc : 0 < c)
-    {f : ℝ → ℝ≥0∞} {g : ℕ → ℝ≥0∞}
-    (h : ∀ j : ℕ, ∀ r ∈ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|)), g j ≤ f r) :
+theorem ofReal_mul_tsum_int_le_lintegral_multHaar {b c μ : ℝ} (hb : 1 ≤ b) (hc : 0 < c)
+    {f : ℝ → ℝ≥0∞} {g : ℤ → ℝ≥0∞}
+    (h : ∀ j : ℤ, ∀ r ∈ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|)), g j ≤ f r) :
     ENNReal.ofReal (|μ| * Real.log b) * ∑' j, g j ≤ ∫⁻ r, f r ∂multHaar := by
-  set S : ℕ → Set ℝ := fun j ↦ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|))
-  have hS (j : ℕ) : multHaar (S j) = ENNReal.ofReal (|μ| * Real.log b) :=
+  set S : ℤ → Set ℝ := fun j ↦ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|))
+  have hS (j : ℤ) : multHaar (S j) = ENNReal.ofReal (|μ| * Real.log b) :=
     multHaar_Ico_mul_rpow hb hc _ μ
   have hdisj : Pairwise (Function.onFun Disjoint S) := by
     intro j k hjk
@@ -236,6 +238,23 @@ theorem ofReal_mul_tsum_le_lintegral_multHaar {b c μ : ℝ} (hb : 1 ≤ b) (hc 
     _ = ∫⁻ r in ⋃ j, S j, f r ∂multHaar :=
         (lintegral_iUnion (fun _ ↦ measurableSet_Ico) hdisj f).symm
     _ ≤ ∫⁻ r, f r ∂multHaar := setLIntegral_le_lintegral _ _
+
+/-- The one-sided form of `ofReal_mul_tsum_int_le_lintegral_multHaar`: for `1 ≤ b`, if `g j ≤ f`
+on the interval `[c b ^ (μ j), c b ^ (μ j + |μ|))` for every `j ∈ ℕ`, then
+`|μ| log b ∑ j, g j ≤ ∫ f dt / t`. -/
+theorem ofReal_mul_tsum_le_lintegral_multHaar {b c μ : ℝ} (hb : 1 ≤ b) (hc : 0 < c)
+    {f : ℝ → ℝ≥0∞} {g : ℕ → ℝ≥0∞}
+    (h : ∀ j : ℕ, ∀ r ∈ Ico (c * b ^ (μ * j)) (c * b ^ (μ * j + |μ|)), g j ≤ f r) :
+    ENNReal.ofReal (|μ| * Real.log b) * ∑' j, g j ≤ ∫⁻ r, f r ∂multHaar := by
+  -- extend `g` by zero to the negative indices
+  rw [← tsum_extend_zero (Nat.cast_injective (R := ℤ)) g]
+  refine ofReal_mul_tsum_int_le_lintegral_multHaar hb hc fun j r hr ↦ ?_
+  by_cases hj : ∃ n : ℕ, (n : ℤ) = j
+  · obtain ⟨n, rfl⟩ := hj
+    rw [Nat.cast_injective.extend_apply]
+    exact h n r (by simpa using hr)
+  · rw [Function.extend_apply' _ _ _ hj, Pi.zero_apply]
+    exact zero_le
 
 /-- The `L^q` form of `ofReal_mul_tsum_le_lintegral_multHaar`: for `1 < b`, if `g j ≤ ‖f‖` on the
 interval `[c b ^ (μ j), c b ^ (μ j + |μ|))`, then the `ℓ^q` norm of `g`, written as its `L^q`
@@ -273,36 +292,6 @@ theorem ofReal_rpow_mul_eLpNorm_count_le_eLpNorm_multHaar {b c μ : ℝ} {q : �
     simp only [eNorm_eq_self]
     exact ENNReal.rpow_le_rpow (h j r hr') hr.le
 
-/-- For `b > 1`, the intervals `[b ^ j, b ^ (j + 1))` for `j ∈ ℤ` tile `(0, ∞)`: they are pairwise
-disjoint and have `dt / t`-measure `log b`. So if `g j ≤ f` on the `j`-th interval, then
-`log b ∑ j, g j ≤ ∫ f dt / t`. -/
-theorem ofReal_log_mul_tsum_le_lintegral_multHaar_zpow {b : ℝ} (hb : 1 < b)
-    {f : ℝ → ℝ≥0∞} {g : ℤ → ℝ≥0∞} (h : ∀ j : ℤ, ∀ r ∈ Ico (b ^ j) (b ^ (j + 1)), g j ≤ f r) :
-    ENNReal.ofReal (Real.log b) * ∑' j, g j ≤ ∫⁻ r, f r ∂multHaar := by
-  have hb0 : 0 < b := zero_lt_one.trans hb
-  set S : ℤ → Set ℝ := fun j ↦ Ico (b ^ j) (b ^ (j + 1))
-  have hS (j : ℤ) : multHaar (S j) = ENNReal.ofReal (Real.log b) := by
-    rw [multHaar_Ico (zpow_pos hb0 j) (zpow_le_zpow_right₀ hb.le (by omega)),
-      Real.log_zpow, Real.log_zpow]
-    push_cast
-    ring_nf
-  have hdisj : Pairwise (Function.onFun Disjoint S) := by
-    intro j k hjk
-    simp only [Function.onFun, S, Set.Ico_disjoint_Ico]
-    rcases lt_or_gt_of_ne hjk with h | h
-    · exact (min_le_left _ _).trans <|
-        (zpow_le_zpow_right₀ hb.le (by omega)).trans (le_max_right _ _)
-    · exact (min_le_right _ _).trans <|
-        (zpow_le_zpow_right₀ hb.le (by omega)).trans (le_max_left _ _)
-  calc ENNReal.ofReal (Real.log b) * ∑' j, g j = ∑' j, ∫⁻ _ in S j, g j ∂multHaar := by
-        rw [← ENNReal.tsum_mul_left]
-        exact tsum_congr fun j ↦ by rw [setLIntegral_const, hS, mul_comm]
-    _ ≤ ∑' j, ∫⁻ r in S j, f r ∂multHaar :=
-        tsum_le_tsum fun j ↦ setLIntegral_mono' measurableSet_Ico (h j)
-    _ = ∫⁻ r in ⋃ j, S j, f r ∂multHaar :=
-        (lintegral_iUnion (fun _ ↦ measurableSet_Ico) hdisj f).symm
-    _ ≤ ∫⁻ r, f r ∂multHaar := setLIntegral_le_lintegral _ _
-
 end GeometricIntervals
 
 /-! ### Integrals against `dt / t` -/
@@ -328,6 +317,33 @@ theorem integral_multHaar_eq_setIntegral (f : ℝ → E) :
     measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
   rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+/-- `∫ u ^ α min 1 u⁻¹ ^ (α + β) du / u = α⁻¹ + β⁻¹` for `α, β > 0`: the integrand is `u ^ α` on
+`(0, 1]` and `u ^ (-β)` on `[1, ∞)`. -/
+theorem lintegral_multHaar_rpow_mul_min_inv_rpow {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
+    ∫⁻ u, ENNReal.ofReal (u ^ α * min 1 u⁻¹ ^ (α + β)) ∂multHaar =
+      ENNReal.ofReal (α⁻¹ + β⁻¹) := by
+  rw [← map_volume_exp, lintegral_map (by fun_prop) Real.measurable_exp,
+    ← lintegral_add_compl _ (measurableSet_Iic (a := (0 : ℝ))), compl_Iic,
+    ENNReal.ofReal_add (inv_nonneg.2 hα.le) (inv_nonneg.2 hβ.le)]
+  -- in the variable `x = log u` the integrand is `exp (α x)` on `x ≤ 0` and `exp (-β x)` on `x > 0`
+  have hexp (x : ℝ) : (Real.exp x)⁻¹ = Real.exp (-x) := (Real.exp_neg x).symm
+  congr 1
+  · rw [setLIntegral_congr_fun measurableSet_Iic (g := fun x ↦ ENNReal.ofReal (Real.exp (α * x)))
+        fun x (hx : x ≤ 0) ↦ ?_, ← ofReal_integral_eq_lintegral_ofReal
+        (integrableOn_exp_mul_Iic hα 0) (ae_of_all _ fun _ ↦ (Real.exp_pos _).le),
+        integral_exp_mul_Iic hα]
+    · simp
+    · rw [min_eq_left (one_le_inv_iff₀.2 ⟨Real.exp_pos x, Real.exp_le_one_iff.2 hx⟩)]
+      simp [← Real.exp_mul, mul_comm]
+  · rw [setLIntegral_congr_fun measurableSet_Ioi
+        (g := fun x ↦ ENNReal.ofReal (Real.exp (-β * x))) fun x (hx : 0 < x) ↦ ?_,
+        ← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_lt_zero.2 hβ) 0)
+        (ae_of_all _ fun _ ↦ (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_lt_zero.2 hβ)]
+    · simp
+    · rw [min_eq_right (inv_le_one_of_one_le₀ (Real.one_le_exp hx.le)), hexp,
+        ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
+      ring_nf
 
 end Integral
 
