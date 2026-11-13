@@ -470,15 +470,10 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     (by rw [← Nat.cast_pow, ← hqn, ← map_natCast (Quotient.mk P)]; exact hq.isUnit)
   rw [hval, ← hg, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
   have hgq := mul_right_cancel₀ hg₀ hfrob
-  -- `f (Φ(P)) = g ^ m`, so `Φ(P) ∉ P'` and `ρ ((Φ(P) / P')_m) = gbar ^ (q - 1)`.
+  -- `f (Φ(P)) = g ^ m`, so `ρ ((Φ(P) / P')_m) = gbar ^ (q - 1)`.
   have hΦ : f (stickelbergerPhi P m) = g ^ m := stickelbergerPhi_prime P hP hm hf hψ
-  have hΦP' : Quotient.mk P' (stickelbergerPhi P m) ≠ 0 := by
-    rw [Ne, Quotient.eq_zero_iff_mem, ← hI, mem_comap, ← Quotient.eq_zero_iff_mem, hΦ,
-      map_pow]
-    exact pow_ne_zero m hg₀
-  refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP' (powerResidueSymbol_pow_eq_one hΦP')
-    (powerResidueSymbol_pow_eq_one hq) (hρ ?_)
-  rw [mk_powerResidueSymbol hP', map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
+  refine (powerResidueSymbol_eq_iff hP' (powerResidueSymbol_pow_eq_one hq)).mpr (hρ ?_)
+  rw [map_pow, quotientMap_mk, quotientMap_mk, hΦ, map_pow,
     ← pow_mul, Nat.mul_div_cancel' hmq, hgq]
 
 /-- `(Φ(P) / P')_m = (N P' / P)_m` at a maximal ideal `P`. -/
