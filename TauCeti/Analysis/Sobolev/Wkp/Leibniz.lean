@@ -40,12 +40,12 @@ from uniqueness of weak derivatives, so they hold for every `w` with value `ζ u
 produced. When `ζ` has compact support in `Ω` and `p < ∞`, such a `w` exists in `W^{k,p}_0(Ω)` by
 `TauCeti.Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul`.
 
-Such a `w` also exists in `W^{k,p}(Ω)` whenever `ζ` is smooth on an open set containing the
-compact set `closure Ω` (`TauCeti.Wkp.exists_value_ae_eq_mul_of_contDiffOn`), for every
-`1 ≤ p ≤ ∞`. The factor need not be smooth away from `closure Ω`: this is the
-form in which the derivatives of a coefficient field smooth on a larger domain act on Sobolev
-functions on a compactly contained subdomain. On an arbitrary open `Ω`, such a `w` exists in
-`W^{k,p}(Ω)` whenever `ζ` has compact support
+Such a `w` also exists in `W^{k,p}(Ω)` whenever `ζ` is smooth on a set of unique
+differentiability, for instance an open set, containing the compact set `closure Ω`
+(`TauCeti.Wkp.exists_value_ae_eq_mul_of_contDiffOn`), for every `1 ≤ p ≤ ∞`. The factor need
+not be smooth away from `closure Ω`: this is the form in which the derivatives of a coefficient
+field smooth on a larger domain act on Sobolev functions on a compactly contained subdomain. On
+an arbitrary open `Ω`, such a `w` exists in `W^{k,p}(Ω)` whenever `ζ` has compact support
 (`TauCeti.Wkp.exists_value_ae_eq_mul_of_hasCompactSupport`); the support may meet `∂Ω`, which is
 the situation of a cutoff near a boundary point.
 
@@ -249,13 +249,16 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
   · exact norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hM₁ hM₂ hζH hw
   · rw [sub_sub_cancel, Lp.norm_toLp, toReal_eLpNorm]
 
-/-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside an open set `U`.
-If `ψ` is smooth on `U` and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
-`W^{k,p}(Ω)` has value `ψ u` almost everywhere on `Ω`.
+/-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside a set `U` of
+unique differentiability, for instance an open set. If `ψ` is smooth on `U` and
+`u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of `W^{k,p}(Ω)` has value `ψ u`
+almost everywhere on `Ω`.
 
 No bound on `ψ` or its derivatives is assumed: they are bounded on the compact set `closure Ω`,
-which is all the proof uses. -/
-theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : IsOpen U)
+which is all the proof uses. The set `U` need not be open, so `ψ` may be smooth only up to the
+boundary of `Ω`, as for the chart reading of a smooth function on a manifold with boundary. On
+`Ω` the derivative of `ψ` within `U` is its derivative. -/
+theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : UniqueDiffOn ℝ U)
     (hΩ : IsCompact (closure (Omega : Set E))) (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ)
     {psi : E → ℝ} (hpsi : ContDiffOn ℝ ∞ psi U) (u : Wkp mu Omega p k) :
     ∃ w : Wkp mu Omega p k, (value k w : E → ℝ) =ᵐ[mu.restrict Omega]
@@ -275,18 +278,21 @@ theorem exists_value_ae_eq_mul_of_contDiffOn {U : Set E} (hU : IsOpen U)
     set b := stdOrthonormalBasis ℝ E
     refine (exists_value_eq_of_forall_hasWeakLineDerivOn b g k fun i => ?_).imp
       fun w (hw : value (k + 1) w = g) => hw ▸ hg
-    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction.
+    -- `∂ᵢ(ψ u) = ψ ∂ᵢu + (∂ᵢψ) u`, and both summands lie in `W^{k,p}(Ω)` by induction. On `Ω` the
+    -- derivative of `ψ` is its derivative within `U`, which is smooth on `U`.
     obtain ⟨d, hd⟩ := exists_hasWeakLineDerivOn_value k u (b i)
     obtain ⟨w₁, hw₁⟩ := ih hpsi d
-    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderiv_of_isOpen hU (by simp)).clm_apply contDiffOn_const)
+    obtain ⟨w₂, hw₂⟩ := ih ((hpsi.fderivWithin hU (by simp)).clm_apply contDiffOn_const)
       (lowerOrder k u)
     refine ⟨w₁ + w₂, (((hd.contDiffOn_smul (hpsi.mono (subset_closure.trans hΩU))).congr_ae
       ?_).congr_ae_deriv ?_)⟩
     · filter_upwards [hg] with x hx
       rw [hx, smul_eq_mul]
-    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂]
-        with x hx h₁ h₂
-      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul]
+    · filter_upwards [value_add k w₁ w₂ ▸ Lp.coeFn_add (value k w₁) (value k w₂), hw₁, hw₂,
+        ae_restrict_mem Omega.isOpen.measurableSet] with x hx h₁ h₂ hxΩ
+      rw [hx, Pi.add_apply, h₁, h₂, ← value_succ, smul_eq_mul, smul_eq_mul,
+        fderivWithin_of_mem_nhds (Filter.mem_of_superset (Omega.isOpen.mem_nhds hxΩ)
+          (subset_closure.trans hΩU))]
 
 /-- **Multiplication by a compactly supported smooth function in `W^{k,p}`.** If `ψ` is smooth with
 compact support and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of
@@ -302,7 +308,7 @@ theorem exists_value_ae_eq_mul_of_hasCompactSupport (k : ℕ) {psi : E → ℝ}
   have hsub : Omega' ≤ Omega := inf_le_left
   have hcl : closure (Omega' : Set E) ⊆ Metric.closedBall 0 r :=
     closure_minimal (fun x hx => Metric.ball_subset_closedBall hx.2) Metric.isClosed_closedBall
-  obtain ⟨w', hw'⟩ := exists_value_ae_eq_mul_of_contDiffOn isOpen_univ
+  obtain ⟨w', hw'⟩ := exists_value_ae_eq_mul_of_contDiffOn uniqueDiffOn_univ
     ((isCompact_closedBall 0 r).of_isClosed_subset isClosed_closure hcl) (Set.subset_univ _) k
     hpsi.contDiffOn (restrictL hsub k u)
   obtain ⟨w, hw⟩ := exists_value_ae_eq_indicator_of_isClosed (V := Omega) (isClosed_tsupport psi)
