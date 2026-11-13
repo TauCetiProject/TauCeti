@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import Mathlib.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.MorphismProperty.Representable
 
 /-!
 # Algebraic spaces
@@ -113,9 +113,7 @@ theorem RepresentableDiagonal.of_iso {F G : SchemePresheaf.{u}} (e : F ≅ G)
 theorem RepresentableDiagonal.monomorphisms_diag {F : SchemePresheaf.{u}}
     (hF : RepresentableDiagonal F) :
     MorphismProperty.presheaf (MorphismProperty.monomorphisms Scheme.{u}) (diag F) :=
-  MorphismProperty.relative_of_snd (representableDiagonal_iff_diag.1 hF) fun _ g ↦ by
-    have := ((representableDiagonal_iff_diag.1 hF).isPullback g).mono_snd_of_mono
-    exact yoneda.mono_of_mono_map ‹_›
+  MorphismProperty.relative_monomorphisms_of_mono (representableDiagonal_iff_diag.1 hF)
 
 /-- A morphism `a : h_U ⟶ F` from a scheme is an *étale atlas* if it is representable by schemes
 and its base change along every morphism `h_T ⟶ F` from a scheme is an étale surjective morphism
