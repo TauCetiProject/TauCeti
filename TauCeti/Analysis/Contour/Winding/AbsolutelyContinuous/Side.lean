@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Group.Order
 import TauCeti.Analysis.Calculus.Deriv.TraceNearTangent
-import TauCeti.Analysis.Complex.PlaneSeparation.Inside
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
 import TauCeti.Order.Interval.Set.Injective
 
 /-!
@@ -57,12 +54,13 @@ variable {γ : ℝ → ℂ} {a b t₀ s₀ : ℝ} {v w : ℂ} {p : ℝ → ℂ}
 
 /-- A transverse curve on the side selected by `σ = ±1` avoids the trace on a segment to
 that side's normal ray. The transverse inequality also guarantees that the tangent is nonzero. -/
-private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : a < b)
+private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hσ : σ = 1 ∨ σ = -1) (hp0 : p s₀ = γ t₀)
     (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : 0 < σ * (conj v * w).im) :
     v ≠ 0 ∧ ∀ᶠ s in 𝓝[>] s₀,
       segment ℝ (p s) (γ t₀ + (s - s₀) • (σ • (I * v))) ⊆ (γ '' uIcc a b)ᶜ := by
+  have hab : a < b := ht₀.1.trans ht₀.2
   have hv : v ≠ 0 := by
     rintro rfl
     simp at hw
@@ -87,23 +85,24 @@ parameter `t₀`. A curve `p` with `p s₀ = γ t₀` and right derivative `w` a
 `filledHull (γ '' uIcc a b) \ γ '' uIcc a b` for parameters sufficiently close to `s₀` from above.
 For a positively oriented curve, this is the case of a curve leaving `γ t₀` strictly to the left
 of the tangent. -/
-theorem eventually_mem_filledHull_sdiff_of_hasDerivAt (hab : a < b)
+theorem eventually_mem_filledHull_sdiff_of_hasDerivAt
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
     (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hw : 0 < (jordanSign γ a b : ℝ) * (conj v * w).im) :
     ∀ᶠ s in 𝓝[>] s₀, p s ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
-  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
+  have hab : a < b := ht₀.1.trans ht₀.2
+  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hγ hclosed hinj ht₀ hd
     (by exact_mod_cast hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj) hp0 hp hw
-  have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
     le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
     (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hclosed hinj ht₀ hd hv),
     hseg] with s hn hseg
-  rw [hC.filledHull_sdiff_eq_connectedComponentIn hn.1]
-  exact (convex_segment _ _).isPreconnected.subset_connectedComponentIn (right_mem_segment _ _ _)
-    hseg (left_mem_segment _ _ _)
+  have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn
+    (right_mem_segment _ _ _) hseg (left_mem_segment _ _ _)
+  exact ⟨(mem_filledHull_iff_of_mem_connectedComponentIn hmem).mpr hn.1.1,
+    hseg (left_mem_segment _ _ _)⟩
 
 /-- **A transverse curve enters the outside on the side opposite to the orientation.** Let `γ` be
 a simple closed absolutely continuous curve on `[a, b]`, with derivative `v` at an interior
@@ -111,20 +110,17 @@ parameter `t₀`. A curve `p` with `p s₀ = γ t₀` and right derivative `w` a
 `jordanSign γ a b * Im (conj v * w) < 0` lies outside `filledHull (γ '' uIcc a b)` for parameters
 sufficiently close to `s₀` from above. For a negatively oriented curve, this is the case of a curve
 leaving `γ t₀` strictly to the left of the tangent. -/
-theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
+theorem eventually_notMem_filledHull_of_hasDerivAt
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
     (hp : HasDerivWithinAt p w (Ici s₀) s₀)
     (hw : (jordanSign γ a b : ℝ) * (conj v * w).im < 0) :
     ∀ᶠ s in 𝓝[>] s₀, p s ∉ filledHull (γ '' uIcc a b) := by
+  have hab : a < b := ht₀.1.trans ht₀.2
   have hσ : -((jordanSign γ a b : ℤ) : ℝ) = 1 ∨ -((jordanSign γ a b : ℤ) : ℝ) = -1 := by
     rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> simp [h]
-  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
+  obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hγ hclosed hinj ht₀ hd
     hσ hp0 hp (by simpa using hw)
-  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
-  have hbdd := (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isBounded
   have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
     le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
@@ -133,38 +129,40 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
   simp only [neg_smul, smul_neg, ← sub_eq_add_neg] at hseg
   have hmem := (convex_segment _ _).isPreconnected.subset_connectedComponentIn
     (right_mem_segment _ _ _) hseg (left_mem_segment _ _ _)
-  rwa [← compl_filledHull_eq_connectedComponentIn hrank hbdd hn.2] at hmem
+  exact mt (mem_filledHull_iff_of_mem_connectedComponentIn hmem).mp hn.2
 
 /-- A transverse curve enters the bounded inside for all parameters sufficiently close to `s₀`
 from above if and only if its right derivative lies on the side selected by the orientation sign. -/
-theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
+theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
     (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : (conj v * w).im ≠ 0) :
     0 < (jordanSign γ a b : ℝ) * (conj v * w).im ↔
       ∀ᶠ s in 𝓝[>] s₀, p s ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
-  refine ⟨hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
+  have hab : a < b := ht₀.1.trans ht₀.2
+  refine ⟨hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hmem
   have hne := mul_ne_zero (Int.cast_ne_zero.mpr (hγ.jordanSign_ne_zero hab hclosed hinj)) hw
   by_contra h
-  have hout := hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
+  have hout := hγ.eventually_notMem_filledHull_of_hasDerivAt hclosed hinj ht₀ hd hp0 hp
     (lt_of_le_of_ne (le_of_not_gt h) hne)
   obtain ⟨ε, hin, hout⟩ := (hmem.and hout).exists
   exact hout hin.1
 
 /-- A transverse curve enters the unbounded outside for all parameters sufficiently close to `s₀`
 from above if and only if its right derivative lies on the side opposite to the orientation sign. -/
-theorem jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a < b)
+theorem jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p s₀ = γ t₀)
     (hp : HasDerivWithinAt p w (Ici s₀) s₀) (hw : (conj v * w).im ≠ 0) :
     (jordanSign γ a b : ℝ) * (conj v * w).im < 0 ↔
       ∀ᶠ s in 𝓝[>] s₀, p s ∉ filledHull (γ '' uIcc a b) := by
-  refine ⟨hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
+  have hab : a < b := ht₀.1.trans ht₀.2
+  refine ⟨hγ.eventually_notMem_filledHull_of_hasDerivAt hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hout
   have hne := mul_ne_zero (Int.cast_ne_zero.mpr (hγ.jordanSign_ne_zero hab hclosed hinj)) hw
   by_contra h
-  have hmem := hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
+  have hmem := hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hclosed hinj ht₀ hd hp0 hp
     (lt_of_le_of_ne (le_of_not_gt h) hne.symm)
   obtain ⟨ε, hin, hout⟩ := (hmem.and hout).exists
   exact hout hin.1

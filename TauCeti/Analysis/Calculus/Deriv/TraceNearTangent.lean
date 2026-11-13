@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Segment
 public import TauCeti.Analysis.Complex.Basic
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Tangent-cone estimates and transverse segments avoiding a trace
@@ -92,52 +93,48 @@ theorem IsCompact.exists_pos_forall_abs_im_conj_mul_sub_le {γ : ℝ → ℂ} {K
     _ ≤ 2 * ε * ‖γ s - γ t₀‖ := mul_le_mul_of_nonneg_left hlow (by positivity)
     _ ≤ η * ‖γ s - γ t₀‖ := mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
 
-/-- **Lower bound across the tangent line along a segment.** Let `z` be the point at parameter
-`l ∈ [0, 1]` of the segment from `ε • w + e` to `ε • (I * u)`, written relative to its base point.
-If `w` and `I * u` both lie at least `κ` to the left of `u` (measured by `Im (conj u * ·)`), and
-the error `e` is small enough, then `z` lies at least `3 / 4 * κ * ε` to the left of `u`. -/
-private theorem le_im_conj_mul_smul_add_smul {u w e : ℂ} {κ η ε l : ℝ}
-    (hκw : κ ≤ (conj u * w).im) (hκu : κ ≤ ‖u‖ ^ 2) (hηu : ‖u‖ * η ≤ κ / 4) (hε : 0 < ε)
-    (hl0 : 0 ≤ l) (hl1 : l ≤ 1) (he : ‖e‖ ≤ η * ε) :
-    3 / 4 * κ * ε ≤ (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im := by
+/-- The transverse endpoint and the normal endpoint lie in a common closed half-plane and
+closed ball. Convexity extends these bounds to their segment. -/
+private theorem segment_tangent_bounds {u w z₀ z₁ : ℂ} {κ η ε : ℝ}
+    (hκ : 0 < κ) (hκw : κ ≤ (conj u * w).im) (hκu : κ ≤ ‖u‖ ^ 2)
+    (hη1 : η ≤ 1) (hηu : ‖u‖ * η ≤ κ / 4) (hε : 0 < ε)
+    (he : ‖z₁ - z₀ - ε • w‖ ≤ η * ε) :
+    ∀ z ∈ segment ℝ z₁ (z₀ + ε • (I * u)),
+      3 / 4 * κ * ε ≤ (conj u * (z - z₀)).im ∧ ‖z - z₀‖ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
+  have hhalf : Convex ℝ {z : ℂ | 3 / 4 * κ * ε + (conj u * z₀).im ≤ (conj u * z).im} :=
+    convex_halfSpace_ge (Complex.imLm.comp (LinearMap.mulLeft ℝ (conj u))).isLinear _
+  have hball := convex_closedBall z₀ ((‖w‖ + ‖u‖ + 1) * ε)
+  have he' : |(conj u * (z₁ - z₀ - ε • w)).im| ≤ κ / 4 * ε := by
+    calc |(conj u * (z₁ - z₀ - ε • w)).im|
+        ≤ ‖u‖ * (η * ε) :=
+          (abs_im_conj_mul_le _ _).trans (mul_le_mul_of_nonneg_left he (norm_nonneg _))
+      _ ≤ κ / 4 * ε := by nlinarith [mul_le_mul_of_nonneg_right hηu hε.le]
+  have him : 3 / 4 * κ * ε ≤ (conj u * (z₁ - z₀)).im := by
+    simp only [mul_sub, mul_smul_comm, sub_im, smul_im, smul_eq_mul] at he'
+    simp only [mul_sub, sub_im]
+    nlinarith [(abs_le.mp he').1, mul_le_mul_of_nonneg_left hκw hε.le]
+  have hnorm : ‖z₁ - z₀‖ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
+    have h := norm_sub_le (z₁ - z₀ - ε • w) (-ε • w)
+    simp only [neg_smul, sub_neg_eq_add, sub_add_cancel, norm_neg,
+      norm_smul, Real.norm_eq_abs, abs_of_pos hε] at h
+    nlinarith [mul_le_mul_of_nonneg_right hη1 hε.le, norm_nonneg u]
   have hn : (conj u * (I * u)).im = ‖u‖ ^ 2 := by
     simp [mul_left_comm, Complex.conj_mul', ← Complex.ofReal_pow]
-  have him : (conj u * (ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e)).im =
-      ε * ((1 - l) * (conj u * w).im + l * ‖u‖ ^ 2) + (1 - l) * (conj u * e).im := by
-    rw [← hn]
-    simp only [mul_add, mul_smul_comm, add_im, smul_im, smul_eq_mul]
-  -- The error term moves the point by at most `κ / 4 * ε` across the tangent line.
-  have hime : |(conj u * e).im| ≤ κ / 4 * ε := by
-    refine (abs_im_conj_mul_le u e).trans ?_
-    calc ‖u‖ * ‖e‖ ≤ ‖u‖ * (η * ε) := mul_le_mul_of_nonneg_left he (norm_nonneg _)
-      _ = ‖u‖ * η * ε := by ring
-      _ ≤ κ / 4 * ε := mul_le_mul_of_nonneg_right hηu hε.le
-  -- The main term is a convex combination of two quantities which are both at least `κ`.
-  have h1 : κ ≤ (1 - l) * (conj u * w).im + l * ‖u‖ ^ 2 := by nlinarith
-  have h2 := (abs_le.mp hime).1
-  rw [him]
-  nlinarith [mul_le_mul_of_nonneg_left h1 hε.le, abs_nonneg (conj u * e).im]
-
-/-- **Upper bound on the norm along a segment.** The point at parameter `l ∈ [0, 1]` of the
-segment from `ε • w + e` to `ε • (I * u)` has norm at most `(‖w‖ + ‖u‖ + 1) * ε` when
-`‖e‖ ≤ η * ε` with `η ≤ 1`. -/
-private theorem norm_smul_add_smul_le {u w e : ℂ} {η ε l : ℝ} (hη1 : η ≤ 1) (hε : 0 < ε)
-    (hl0 : 0 ≤ l) (hl1 : l ≤ 1) (he : ‖e‖ ≤ η * ε) :
-    ‖ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e‖ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
-  have hl1' : 0 ≤ 1 - l := sub_nonneg.mpr hl1
-  calc ‖ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e‖
-      ≤ ε * ((1 - l) * ‖w‖ + l * ‖u‖) + (1 - l) * (η * ε) := by
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · simp only [norm_smul, Real.norm_eq_abs, abs_of_pos hε]
-          refine mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans_eq ?_) hε.le
-          simp only [norm_smul, norm_mul, norm_I, one_mul, Real.norm_eq_abs, abs_of_nonneg hl0,
-            abs_of_nonneg hl1']
-        · simp only [norm_smul, Real.norm_eq_abs, abs_of_nonneg hl1']
-          exact mul_le_mul_of_nonneg_left he hl1'
-    _ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
-        have hη0 : 0 ≤ η := nonneg_of_mul_nonneg_left ((norm_nonneg e).trans he) hε
-        nlinarith [norm_nonneg w, norm_nonneg u, mul_nonneg hl0 hε.le, mul_nonneg hl1' hε.le,
-          mul_nonneg (mul_nonneg hl0 hε.le) hη0]
+  have himn : 3 / 4 * κ * ε ≤ (conj u * (z₀ + ε • (I * u) - z₀)).im := by
+    simp only [add_sub_cancel_left, mul_smul_comm, smul_im, smul_eq_mul, hn]
+    nlinarith [mul_le_mul_of_nonneg_left hκu hε.le, mul_pos hκ hε]
+  have hnormn : ‖z₀ + ε • (I * u) - z₀‖ ≤ (‖w‖ + ‖u‖ + 1) * ε := by
+    simp only [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hε, norm_mul,
+      norm_I, one_mul]
+    nlinarith [norm_nonneg w]
+  have hseg := (hhalf.inter hball).segment_subset
+    ⟨by simpa only [mem_ofPred_eq, mul_sub, sub_im, le_sub_iff_add_le] using him,
+      mem_closedBall_iff_norm.mpr hnorm⟩
+    ⟨by simpa only [mem_ofPred_eq, mul_sub, sub_im, le_sub_iff_add_le] using himn,
+      mem_closedBall_iff_norm.mpr hnormn⟩
+  intro z hz
+  exact ⟨by simpa only [mem_ofPred_eq, mul_sub, sub_im, le_sub_iff_add_le] using (hseg hz).1,
+    mem_closedBall_iff_norm.mp (hseg hz).2⟩
 
 /-- If a set `S` near `z₀` lies in thin double cones around the line `z₀ + ℝ • u`, and a curve
 `p` with right derivative `w` at `s₀` leaves `z₀` strictly to the left of `u`
@@ -174,18 +171,11 @@ theorem HasDerivWithinAt.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_
     self_mem_nhdsWithin] with s hεo hsρ (hs : s₀ < s)
   set ε := s - s₀
   have hε : 0 < ε := sub_pos.mpr hs
-  set e := p s - p s₀ - ε • w
-  have he : ‖e‖ ≤ η * ε := by simpa [Real.norm_eq_abs, abs_of_pos hε] using hεo
-  rw [segment_eq_image']
-  rintro z ⟨l, ⟨hl0, hl1⟩, hlz⟩ hzS
-  have hz : z - z₀ = ε • ((1 - l) • w + l • (I * u)) + (1 - l) • e := by
-    rw [← hlz]
-    simp only [e, hp0, ε]
-    module
-  have hlow : 3 / 4 * κ * ε ≤ (conj u * (z - z₀)).im :=
-    hz ▸ le_im_conj_mul_smul_add_smul (min_le_left _ _) (min_le_right _ _) hηu hε hl0 hl1 he
-  have hnorm : ‖z - z₀‖ ≤ M * ε :=
-    hz ▸ norm_smul_add_smul_le (min_le_left _ _) hε hl0 hl1 he
+  have he : ‖p s - z₀ - ε • w‖ ≤ η * ε := by
+    simpa [hp0, Real.norm_eq_abs, abs_of_pos hε] using hεo
+  intro z hz hzS
+  obtain ⟨hlow, hnorm⟩ := segment_tangent_bounds hκ (min_le_left _ _) (min_le_right _ _)
+    (min_le_left _ _) hηu hε he z hz
   -- The point `z` is close to `z₀`, so it lies in the thin cone, which contradicts `hlow`.
   have hρs : ‖z - z₀‖ < ρ :=
     hnorm.trans_lt (by
