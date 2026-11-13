@@ -189,9 +189,7 @@ theorem injective_iff_exists_eq_mul_add (hf : Differentiable ℂ f) :
   rw [hab, hab] at h
   exact mul_left_cancel₀ ha (add_right_cancel h)
 
-/-- An entire function that is injective off a finite set is injective. If two points had the
-same value, then by the open mapping theorem disjoint neighbourhoods of them would share all
-values near it, including values not taken on the finite set. -/
+/-- An entire function that is injective off a finite set is injective. -/
 theorem injective_of_injOn_compl (hf : Differentiable ℂ f) {s : Set ℂ} (hs : s.Finite)
     (hinj : InjOn f sᶜ) : Injective f := by
   -- `f` is not constant, since it is injective on the infinite set `sᶜ`.
@@ -200,6 +198,8 @@ theorem injective_of_injOn_compl (hf : Differentiable ℂ f) {s : Set ℂ} (hs :
     rintro ⟨w, hw⟩
     obtain ⟨x, hx, y, hy, hxy⟩ := hs.infinite_compl.nontrivial
     exact hxy (hinj hx hy ((hw x).trans (hw y).symm))
+  -- If two points had the same value, then by the open mapping theorem disjoint neighbourhoods of
+  -- them would share all values near it, including values not taken on the finite set.
   intro x y hxy
   by_contra hne
   obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := t2_separation hne

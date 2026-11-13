@@ -119,7 +119,7 @@ theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCen
 /-- Plumbing into the input at `0` places the second input of the inserted pair of pants at
 `ε = e^{-2πL} / 4`. -/
 @[simp]
-theorem zero_plumbingMap_one (L : ℝ) :
+theorem plumbingMap_zero_one (L : ℝ) :
     zero.plumbingMap L 1 = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
   rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_zero, endScale_zero]
   push_cast
@@ -128,7 +128,7 @@ theorem zero_plumbingMap_one (L : ℝ) :
 /-- Plumbing into the input at `1` places the second input of the inserted pair of pants at
 `1 - ε`, with `ε = e^{-2πL} / 4`. -/
 @[simp]
-theorem one_plumbingMap_one (L : ℝ) :
+theorem plumbingMap_one_one (L : ℝ) :
     one.plumbingMap L 1 = 1 - ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
   rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_one, endScale_one]
   push_cast

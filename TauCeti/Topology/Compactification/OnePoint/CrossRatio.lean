@@ -55,8 +55,8 @@ square).
   `OnePoint.crossRatio_fourth_eq_first` and its two companions: its values at `a`, `b`, `c`.
 * `OnePoint.crossRatio_coe`, `OnePoint.crossRatio_coe_coe_coe_infty`,
   `OnePoint.crossRatio_coe_coe_infty_coe`: formulas in affine coordinates.
-* `OnePoint.exists_eq_mul_add_iff_crossRatio_eq`: two triples of distinct points of `K` are
-  related by an affine map exactly when their cross ratios with `∞` agree.
+* `OnePoint.exists_eq_mul_add_iff_crossRatio_eq`: two triples of points of `K` are related by an
+  affine map exactly when their cross ratios with `∞` agree.
 * `OnePoint.crossRatio_swap_first_second` and its five companions: the action of the
   transpositions of the four points.
 * `OnePoint.crossRatio_mem_compl`: the cross ratio of four distinct points is not `0`, `1`, `∞`.
@@ -284,29 +284,32 @@ theorem crossRatio_coe_coe_infty_coe {a b : K} (hab : a ≠ b) (d : K) :
   rw [crossRatio_eq_gl_smul (g := GeneralLinearGroup.mkOfDetNeZero _ hdet) _ (by simp [hsmul])
     (by simp [hsmul, sub_ne_zero.mpr hab.symm]) (smul_infty_eq_self_iff.mpr (by simp)), hsmul]
 
-/-- Three distinct points of `K` are carried to three distinct points by an affine map exactly
-when the cross ratios `(c 1 - c 0) / (c 2 - c 0)` of the two triples, read as the cross ratios
-`crossRatio (c 0) (c 2) ∞ (c 1)` of the projective line, agree. -/
-theorem exists_eq_mul_add_iff_crossRatio_eq {c c' : Fin 3 → K} (hc : Function.Injective c)
-    (hc' : Function.Injective c') :
+/-- Two triples of points of `K` with `c 0 ≠ c 2` are related by an affine map `w ↦ a w + b`,
+`a ≠ 0`, exactly when the cross ratios `(c 1 - c 0) / (c 2 - c 0)` of the two triples, read as the
+cross ratios `crossRatio (c 0) (c 2) ∞ (c 1)` of the projective line, agree. -/
+theorem exists_eq_mul_add_iff_crossRatio_eq {c c' : Fin 3 → K} (hc : c 0 ≠ c 2) :
     (∃ a b : K, a ≠ 0 ∧ ∀ i, c' i = a * c i + b) ↔
       crossRatio (c' 0 : OnePoint K) (c' 2) ∞ (c' 1) =
         crossRatio (c 0 : OnePoint K) (c 2) ∞ (c 1) := by
-  have h02 : c 0 ≠ c 2 := hc.ne (by decide)
-  have h02' : c' 0 ≠ c' 2 := hc'.ne (by decide)
-  rw [crossRatio_coe_coe_infty_coe h02', crossRatio_coe_coe_infty_coe h02, coe_eq_coe]
-  have h20 : c 2 - c 0 ≠ 0 := sub_ne_zero.2 h02.symm
-  have h20' : c' 2 - c' 0 ≠ 0 := sub_ne_zero.2 h02'.symm
+  rw [crossRatio_coe_coe_infty_coe hc]
+  have h20 : c 2 - c 0 ≠ 0 := sub_ne_zero.2 hc.symm
   constructor
   · rintro ⟨a, b, ha, hab⟩
     have hsub (i j : Fin 3) : c' i - c' j = a * (c i - c j) := by
       rw [hab i, hab j]
       ring
-    rw [hsub, hsub, mul_div_mul_left _ _ ha]
+    have hc' : c' 0 ≠ c' 2 := by
+      rw [Ne, ← sub_eq_zero, hsub]
+      exact mul_ne_zero ha (sub_ne_zero.2 hc)
+    rw [crossRatio_coe_coe_infty_coe hc', coe_eq_coe, hsub, hsub, mul_div_mul_left _ _ ha]
   · intro h
+    -- The cross ratio of `c'` is finite, so `c' 0 ≠ c' 2`.
+    have hc' : c' 0 ≠ c' 2 := fun h02 =>
+      infty_ne_coe _ ((crossRatio_of_not_pairwise_ne _ fun hne => hne.1 (by rw [h02])).symm.trans h)
+    have h20' : c' 2 - c' 0 ≠ 0 := sub_ne_zero.2 hc'.symm
+    rw [crossRatio_coe_coe_infty_coe hc', coe_eq_coe, div_eq_div_iff h20' h20] at h
     -- The affine map is determined by the images of `c 0` and `c 2`; the cross ratio then
     -- places `c' 1` correctly.
-    rw [div_eq_div_iff h20' h20] at h
     refine ⟨(c' 2 - c' 0) / (c 2 - c 0), c' 0 - (c' 2 - c' 0) / (c 2 - c 0) * c 0,
       div_ne_zero h20' h20, fun i => ?_⟩
     field_simp

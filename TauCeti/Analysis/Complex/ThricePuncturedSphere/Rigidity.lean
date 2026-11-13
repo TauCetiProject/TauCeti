@@ -24,9 +24,9 @@ This file proves the rigidity in a strong form. Let `f` be holomorphic and injec
 fix the two finite punctures in the sense that `f w → 0` as `w → 0` and `f w → 1` as `w → 1`.
 Then `f` is the identity of `S` (`TauCeti.ThricePuncturedSphere.eqOn_id_of_injOn`). Nothing is
 assumed at `∞`, `f` is not assumed to map `S` into itself, and it need not be surjective. Such an
-`f` is a punctured embedding of the plane punctured at `0` and `1` into itself, so it is affine
-(`TauCeti.IsPuncturedEmbedding.exists_eq_mul_add`), and the only affine map fixing `0` and `1` is
-the identity.
+`f` is a punctured embedding of the plane punctured at `0` and `1` into itself, so it is the
+identity (`TauCeti.IsPuncturedEmbedding.eqOn_id`): it is affine, and the only affine map fixing `0`
+and `1` is the identity.
 
 ## Main results
 
@@ -60,12 +60,7 @@ theorem eqOn_id_of_injOn {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f {w | w �
     { differentiableOn := hS ▸ hf
       injOn := hS ▸ hinj
       tendsto := fun i => by fin_cases i <;> simpa [c] }
-  -- `f` is affine, and the only affine map fixing `0` and `1` is the identity.
-  obtain ⟨a, b, -, hab, hc'⟩ := hemb.exists_eq_mul_add
-  have hb : b = 0 := by simpa [c] using (hc' 0).symm
-  have ha : a = 1 := by simpa [c, hb] using (hc' 1).symm
-  intro w hw
-  rw [← hS] at hw
-  rw [hab w hw, ha, hb, one_mul, add_zero, id]
+  -- A punctured embedding fixing the two distinct punctures `0` and `1` is the identity.
+  simpa only [hS] using hemb.eqOn_id (i := 0) (j := 1) (by simp [c])
 
 end TauCeti.ThricePuncturedSphere
