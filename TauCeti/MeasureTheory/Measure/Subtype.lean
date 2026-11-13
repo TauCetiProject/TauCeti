@@ -38,7 +38,7 @@ of `μ.comap (↑)`:
   embedding when `s` is measurable in `α`.
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
-  nested subtypes `s ⊆ t` with `t` measurable (from `MeasurableEmbedding.comap_comap`).
+  nested subtypes `s ⊆ t` with `t` measurable.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.

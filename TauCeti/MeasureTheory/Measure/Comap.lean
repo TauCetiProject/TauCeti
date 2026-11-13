@@ -13,7 +13,9 @@ import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 # Composing pullbacks of measures along a measurable embedding
 
 Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f` is the
-same as pulling it back along `g ∘ f`.
+same as pulling it back along `g ∘ f`. Mathlib's `MeasureTheory.Measure.comap_comap` needs a
+measurable-image hypothesis on `f`; strengthening `g` to a measurable embedding removes every
+hypothesis on `f`, which allows iterated pullbacks along maps such as arbitrary subtype inclusions.
 
 ## Main declarations
 
@@ -30,8 +32,8 @@ namespace MeasurableEmbedding
 variable {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ] {g : β → γ}
 
 /-- Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f`
-agrees with pulling it back along `g ∘ f`: no measurability assumption on `f` is needed, since both
-sides vanish unless the relevant images are null-measurable. -/
+agrees with pulling it back along `g ∘ f`, with no injectivity or measurable-image assumption on
+`f` (unlike `MeasureTheory.Measure.comap_comap`). -/
 theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure γ) :
     (μ.comap g).comap f = μ.comap (g ∘ f) := by
   have himg : ∀ A : Set β, MeasurableSet A → NullMeasurableSet (g '' A) μ :=
