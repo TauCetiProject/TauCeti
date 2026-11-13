@@ -14,6 +14,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.LSeries.ZetaMul
+import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
@@ -48,7 +49,9 @@ expresses the residue as `2 ^ r₁ (2π) ^ r₂ R h / (w √|D|)`. For an imagin
 signature is `(r₁, r₂) = (0, 1)` and the regulator is `1`, which gives the class number formula.
 The number of units is `6` for `D = -3`, `4` for `D = -4` and `2` otherwise
 (`TauCeti.NumberField.Units.card_units_of_isTotallyComplex_of_discr`), and the formula is also
-stated in each of these three cases.
+stated in each of these three cases. Solved for the `L`-value, the formula shows that `L(1, χ_D)` is
+the real number `2π h / (w √|D|)`; since `w ≥ 2`, this gives the lower bound
+`h ≥ √|D| L(1, χ_D) / π`, through which lower bounds for `L(1, χ_D)` bound the class number.
 
 ## Main results
 
@@ -60,6 +63,11 @@ stated in each of these three cases.
   on `Re s > 1`.
 * `TauCeti.NumberField.dedekindZeta_residue_eq_LFunction_one`: the residue of `ζ_K` at `1` is
   `L(1, χ_D)`.
+* `TauCeti.NumberField.LFunction_one_pos`: `L(1, χ_D)` is a positive real number.
+* `TauCeti.NumberField.LFunction_one_eq_two_mul_pi_mul_classNumber_div`: for an imaginary
+  quadratic field, `L(1, χ_D) = 2π h / (w √|D|)`, a real number.
+* `TauCeti.NumberField.sqrt_mul_LFunction_one_re_div_le_classNumber`: the lower bound
+  `√|D| L(1, χ_D) / π ≤ h` for an imaginary quadratic field.
 * `TauCeti.NumberField.classNumber_eq_card_units_mul_LFunction_one`: the class number formula
   `h = w √|D| L(1, χ_D) / (2π)` for an imaginary quadratic field, with the specializations
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_eq_neg_three`,
@@ -76,7 +84,7 @@ public section
 
 open Filter IsDedekindDomain Ideal Module NumberField NumberField.InfinitePlace
 open TauCeti.IdealArithmeticFunction TauCeti.Multiquadratic
-open scoped NumberField Real Topology
+open scoped ComplexOrder NumberField Real Topology
 
 namespace TauCeti.NumberField
 
@@ -246,6 +254,16 @@ theorem dedekindZeta_residue_eq_LFunction_one :
     rw [dedekindZeta_eq_riemannZeta_mul_LFunction hK (s := s) (by simpa using hs), mul_assoc]
   exact tendsto_nhds_unique (tendsto_sub_one_mul_dedekindZeta_nhdsGT K) hF
 
+/-- **`L(1, χ_D)` is a positive real number** for the complex quadratic character `χ_D` of the
+discriminant `D` of a quadratic field `K`. -/
+theorem LFunction_one_pos :
+    0 < DirichletCharacter.LFunction
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ)) 1 :=
+  DirichletCharacter.LFunction_apply_one_pos
+    ((fundamentalDiscriminantChar_isQuadratic _).comp _)
+    (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)
+
 /-! ### The class number formula of an imaginary quadratic field -/
 
 variable [IsTotallyComplex K]
@@ -272,6 +290,44 @@ theorem classNumber_eq_card_units_mul_LFunction_one :
     Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K hK, hw]
   push_cast
   field_simp
+
+/-- **The class number formula solved for `L(1, χ_D)`.** If `K` is imaginary quadratic of
+discriminant `D`, then `L(1, χ_D)` is the real number `2π h / (w √|D|)`, where `h` is the class
+number of `K` and `w` is the number of units of `𝓞 K`. -/
+theorem LFunction_one_eq_two_mul_pi_mul_classNumber_div :
+    DirichletCharacter.LFunction
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ)) 1 =
+      ((2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|) : ℝ) : ℂ) := by
+  have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr
+    (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))).ne'
+  have hw : (Nat.card (𝓞 K)ˣ : ℂ) ≠ 0 := by
+    rw [Units.card_units_of_isTotallyComplex_of_discr hK]
+    split_ifs <;> norm_num
+  push_cast
+  rw [classNumber_eq_card_units_mul_LFunction_one hK]
+  field_simp
+
+/-- **The lower bound `h ≥ √|D| L(1, χ_D) / π`.** If `K` is imaginary quadratic of discriminant
+`D`, then its class number `h` is at least `√|D| L(1, χ_D) / π`, read for the real part of
+`L(1, χ_D)`. This is the class number formula with the number of units bounded below by `2`. -/
+theorem sqrt_mul_LFunction_one_re_div_le_classNumber :
+    √|(discr K : ℝ)| * (DirichletCharacter.LFunction
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+        (Int.castRingHom ℂ)) 1).re / π ≤ classNumber K := by
+  have hD : 0 < √|(discr K : ℝ)| :=
+    Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
+  have hw : (2 : ℝ) ≤ Nat.card (𝓞 K)ˣ := by
+    rw [Units.card_units_of_isTotallyComplex_of_discr hK]
+    split_ifs <;> norm_num
+  -- With `L(1, χ_D) = 2π h / (w √|D|)` the claim reads `2h / w ≤ h`, and `w ≥ 2`.
+  have hL : √|(discr K : ℝ)| * (2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|)) =
+      2 * π * classNumber K / Nat.card (𝓞 K)ˣ := by
+    field_simp
+  rw [LFunction_one_eq_two_mul_pi_mul_classNumber_div hK, Complex.ofReal_re, hL,
+    div_div, div_le_iff₀ (by positivity)]
+  have := mul_le_mul_of_nonneg_left hw (by positivity : (0 : ℝ) ≤ π * classNumber K)
+  linarith
 
 /-- **The class number formula for `D = -3`.** The field of discriminant `-3` has six units, so
 `h = 3 √3 L(1, χ_{-3}) / π`. -/

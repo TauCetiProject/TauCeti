@@ -204,7 +204,7 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
       |>.differentiableWithinAt_mpullbackWithin_vectorField
   rw [fderivWithin_apply_lieBracket hfcoord le_rfl I.uniqueDiffOn
     (I.range_subset_closure_interior (Set.mem_range_self (f := I) _))
-    (Set.mem_range_self (f := I) _) hWcoord hVcoord,
+    (Set.mem_range_self (f := I) _) hVcoord hWcoord,
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
     TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
