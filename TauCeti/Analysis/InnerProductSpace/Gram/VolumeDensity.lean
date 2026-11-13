@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.Topology.Algebra.Module.Determinant
-import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Matrix.PosDef
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 
 /-!
@@ -103,36 +104,63 @@ theorem metricVolumeDensity_sq (b : Module.Basis ι ℝ F) (g : F →L[ℝ] F �
     b.metricVolumeDensity g ^ 2 = |(Matrix.of fun i j ↦ g (b i) (b j)).det| :=
   Real.sq_sqrt (abs_nonneg _)
 
-/-- The volume density of a nondegenerate bilinear form is positive. -/
-theorem metricVolumeDensity_pos_of_nondegenerate (b : Module.Basis ι ℝ F)
-    {g : F →L[ℝ] F →L[ℝ] ℝ} (hg : g.toBilinForm.Nondegenerate) :
-    0 < b.metricVolumeDensity g := by
+/-- The volume density is positive exactly when the bilinear form is nondegenerate. -/
+theorem metricVolumeDensity_pos_iff_nondegenerate (b : Module.Basis ι ℝ F)
+    (g : F →L[ℝ] F →L[ℝ] ℝ) :
+    0 < b.metricVolumeDensity g ↔ g.toBilinForm.Nondegenerate := by
   rw [metricVolumeDensity_eq_sqrt_abs_det_toMatrix, Real.sqrt_pos, abs_pos]
-  exact (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1 hg
+  exact (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).symm
+
+/-- The volume density vanishes exactly when the Gram determinant vanishes. -/
+theorem metricVolumeDensity_eq_zero (b : Module.Basis ι ℝ F)
+    (g : F →L[ℝ] F →L[ℝ] ℝ) :
+    b.metricVolumeDensity g = 0 ↔ (Matrix.of fun i j ↦ g (b i) (b j)).det = 0 := by
+  rw [metricVolumeDensity_def, Real.sqrt_eq_zero (abs_nonneg _), abs_eq_zero]
+
+/-- The volume density vanishes exactly when the bilinear form is degenerate. -/
+@[simp]
+theorem metricVolumeDensity_eq_zero_iff_not_nondegenerate (b : Module.Basis ι ℝ F)
+    (g : F →L[ℝ] F →L[ℝ] ℝ) :
+    b.metricVolumeDensity g = 0 ↔ ¬ g.toBilinForm.Nondegenerate := by
+  rw [← b.metricVolumeDensity_pos_iff_nondegenerate g, not_lt]
+  exact ⟨fun h ↦ h.le, fun h ↦ le_antisymm h (b.metricVolumeDensity_nonneg g)⟩
 
 /-- The volume density of a positive-definite bilinear form is positive, without symmetry. -/
 theorem metricVolumeDensity_pos_of_posDef (b : Module.Basis ι ℝ F)
     {g : F →L[ℝ] F →L[ℝ] ℝ} (hg : ∀ v, v ≠ 0 → 0 < g v v) :
     0 < b.metricVolumeDensity g := by
-  apply b.metricVolumeDensity_pos_of_nondegenerate
+  apply (b.metricVolumeDensity_pos_iff_nondegenerate g).2
   constructor <;> intro v hv <;> by_contra h
   all_goals
     have hvv := hv v
     rw [ContinuousLinearMap.toBilinForm_apply] at hvv
     exact (ne_of_gt (hg v h)) hvv
 
+/-- A linear pullback scales the density by the absolute coordinate determinant. -/
+theorem metricVolumeDensity_eq_of_pullback {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] (b : Module.Basis ι ℝ E) (c : Module.Basis ι ℝ F)
+    {g₁ : E →L[ℝ] E →L[ℝ] ℝ} {g₂ : F →L[ℝ] F →L[ℝ] ℝ} (L : E →ₗ[ℝ] F)
+    (h : ∀ u v, g₁ u v = g₂ (L u) (L v)) :
+    b.metricVolumeDensity g₁ = |(LinearMap.toMatrix b c L).det| * c.metricVolumeDensity g₂ := by
+  have hm : g₁.toBilinForm = g₂.toBilinForm.comp L L := by
+    ext u v
+    exact h u v
+  rw [metricVolumeDensity_eq_sqrt_abs_det_toMatrix, hm,
+    LinearMap.BilinForm.toMatrix_comp c b]
+  have hdet : ((LinearMap.toMatrix b c L)ᵀ * g₂.toBilinForm.toMatrix c *
+      LinearMap.toMatrix b c L).det =
+      (LinearMap.toMatrix b c L).det ^ 2 * (g₂.toBilinForm.toMatrix c).det := by
+    simp only [Matrix.det_mul, Matrix.det_transpose]
+    ring
+  rw [hdet, abs_mul, abs_of_nonneg (sq_nonneg _), Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
+    metricVolumeDensity_eq_sqrt_abs_det_toMatrix]
+
 /-- Under a change of basis, the volume density scales by the absolute determinant. -/
 theorem metricVolumeDensity_eq_abs_det_toMatrix_mul (b c : Module.Basis ι ℝ F)
     (g : F →L[ℝ] F →L[ℝ] ℝ) :
     b.metricVolumeDensity g = |(c.toMatrix b).det| * c.metricVolumeDensity g := by
-  have h := congrArg Matrix.det (g.toBilinForm.toMatrix_mul_basis_toMatrix c b)
-  have hdet : (g.toBilinForm.toMatrix b).det =
-      (c.toMatrix b).det ^ 2 * (g.toBilinForm.toMatrix c).det := by
-    rw [← h, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-    ring
-  rw [metricVolumeDensity_eq_sqrt_abs_det_toMatrix, hdet, abs_mul,
-    abs_of_nonneg (sq_nonneg _), Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
-    metricVolumeDensity_eq_sqrt_abs_det_toMatrix]
+  simpa only [LinearMap.toMatrix_id_eq_basis_toMatrix] using
+    b.metricVolumeDensity_eq_of_pullback c LinearMap.id (g₁ := g) (g₂ := g) (fun _ _ ↦ rfl)
 
 /-- Reindexing a basis does not change the volume density. -/
 @[simp]
@@ -179,31 +207,49 @@ theorem metricVolumeDensity_smul (b : Module.Basis ι ℝ F) (c : ℝ)
     (pow_nonneg (Real.sqrt_nonneg _) _)).2
   rw [← pow_mul, mul_comm (Fintype.card ι), pow_mul, Real.sq_sqrt (abs_nonneg _)]
 
+/-- Negating a bilinear form does not change its volume density. -/
+@[simp]
+theorem metricVolumeDensity_neg (b : Module.Basis ι ℝ F) (g : F →L[ℝ] F →L[ℝ] ℝ) :
+    b.metricVolumeDensity (-g) = b.metricVolumeDensity g := by
+  have h := b.metricVolumeDensity_smul (-1) g
+  have hneg : (-1 : ℝ) • g = -g := by
+    ext u v
+    simp
+  rw [hneg, abs_neg, abs_one, Real.sqrt_one, one_pow, one_mul] at h
+  exact h
+
+/-- The volume density is continuous in the bilinear form, including at degenerate forms. -/
+@[continuity, fun_prop]
+theorem continuous_metricVolumeDensity [ContinuousSMul ℝ F] (b : Module.Basis ι ℝ F) :
+    Continuous (metricVolumeDensity b) := by
+  rw [funext b.metricVolumeDensity_def]
+  exact (continuous_matrix fun i j ↦ by fun_prop).matrix_det.abs.sqrt
+
 end
 
 section
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsNormableSpace ℝ F]
+
+/-- Transposing a bilinear form does not change its volume density. -/
+@[simp]
+theorem metricVolumeDensity_flip (b : Module.Basis ι ℝ F) (g : F →L[ℝ] F →L[ℝ] ℝ) :
+    b.metricVolumeDensity g.flip = b.metricVolumeDensity g := by
+  rw [metricVolumeDensity_def, metricVolumeDensity_def]
+  have hm : (Matrix.of fun i j ↦ g.flip (b i) (b j)) =
+      (Matrix.of fun i j ↦ g (b i) (b j))ᵀ := by
+    ext i j
+    simp only [Matrix.of_apply, Matrix.transpose_apply, ContinuousLinearMap.flip_apply]
+  rw [hm, Matrix.det_transpose]
 
 /-- Pullback along a linear map scales the density by its absolute coordinate determinant. -/
-theorem metricVolumeDensity_bilinearComp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem metricVolumeDensity_bilinearComp {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsNormableSpace ℝ E]
     (b : Module.Basis ι ℝ E) (c : Module.Basis ι ℝ F)
     (g : F →L[ℝ] F →L[ℝ] ℝ) (L : E →L[ℝ] F) :
     b.metricVolumeDensity (g.bilinearComp L L) =
-      |(LinearMap.toMatrix b c L.toLinearMap).det| * c.metricVolumeDensity g := by
-  have hm : (g.bilinearComp L L).toBilinForm =
-      g.toBilinForm.comp L.toLinearMap L.toLinearMap := by
-    ext x y
-    simp
-  rw [metricVolumeDensity_eq_sqrt_abs_det_toMatrix, hm,
-    LinearMap.BilinForm.toMatrix_comp c b]
-  have hdet : ((LinearMap.toMatrix b c L.toLinearMap)ᵀ * g.toBilinForm.toMatrix c *
-      LinearMap.toMatrix b c L.toLinearMap).det =
-      (LinearMap.toMatrix b c L.toLinearMap).det ^ 2 * (g.toBilinForm.toMatrix c).det := by
-    simp only [Matrix.det_mul, Matrix.det_transpose]
-    ring
-  rw [hdet, abs_mul, abs_of_nonneg (sq_nonneg _), Real.sqrt_mul (sq_nonneg _),
-    Real.sqrt_sq_eq_abs, metricVolumeDensity_eq_sqrt_abs_det_toMatrix]
+      |(LinearMap.toMatrix b c L.toLinearMap).det| * c.metricVolumeDensity g :=
+  b.metricVolumeDensity_eq_of_pullback c L.toLinearMap (fun _ _ ↦ rfl)
 
 /-- Pullback by an endomorphism scales the density by the absolute determinant. -/
 theorem metricVolumeDensity_bilinearComp_self (b : Module.Basis ι ℝ F)
@@ -212,22 +258,22 @@ theorem metricVolumeDensity_bilinearComp_self (b : Module.Basis ι ℝ F)
   rw [b.metricVolumeDensity_bilinearComp b, LinearMap.det_toMatrix]
 
 /-- Mapping a basis and pulling back the form give the same density. -/
-@[simp]
-theorem metricVolumeDensity_map {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem metricVolumeDensity_map {E : Type*} [AddCommGroup E] [Module ℝ E]
+    [TopologicalSpace E] [IsNormableSpace ℝ E]
     (b : Module.Basis ι ℝ E) (e : E ≃L[ℝ] F) (g : F →L[ℝ] F →L[ℝ] ℝ) :
     (b.map e.toLinearEquiv).metricVolumeDensity g =
       b.metricVolumeDensity (g.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F)) := by
   simp only [metricVolumeDensity_def, map_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearMap.bilinearComp_apply, ContinuousLinearEquiv.coe_coe]
 
-/-- The volume density is continuous in the bilinear form, including at degenerate forms. -/
-@[continuity, fun_prop]
-theorem continuous_metricVolumeDensity (b : Module.Basis ι ℝ F) :
-    Continuous (metricVolumeDensity b) := by
-  rw [funext b.metricVolumeDensity_def]
-  exact (continuous_matrix fun i j ↦ by fun_prop).matrix_det.abs.sqrt
+end
+
+section
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The volume density is smooth in the bilinear form wherever the Gram determinant is nonzero. -/
+@[fun_prop]
 theorem contDiffAt_metricVolumeDensity (b : Module.Basis ι ℝ F) {g : F →L[ℝ] F →L[ℝ] ℝ}
     (hg : (Matrix.of fun i j ↦ g (b i) (b j)).det ≠ 0) {n : ℕ∞ω} :
     ContDiffAt ℝ n (metricVolumeDensity b) g := by
@@ -239,12 +285,19 @@ theorem contDiffAt_metricVolumeDensity (b : Module.Basis ι ℝ F) {g : F →L[�
   simpa only [Real.norm_eq_abs] using
     (hdet.contDiffAt.norm ℝ hg).sqrt (norm_ne_zero_iff.mpr hg)
 
+/-- The volume density is smooth wherever its value is nonzero. -/
+@[fun_prop]
+theorem contDiffAt_metricVolumeDensity_of_ne_zero (b : Module.Basis ι ℝ F)
+    {g : F →L[ℝ] F →L[ℝ] ℝ} (hg : b.metricVolumeDensity g ≠ 0) {n : ℕ∞ω} :
+    ContDiffAt ℝ n (metricVolumeDensity b) g :=
+  b.contDiffAt_metricVolumeDensity (mt (b.metricVolumeDensity_eq_zero g).2 hg)
+
 /-- The volume density is smooth at every nondegenerate bilinear form. -/
 theorem contDiffAt_metricVolumeDensity_of_nondegenerate (b : Module.Basis ι ℝ F)
     {g : F →L[ℝ] F →L[ℝ] ℝ} (hg : g.toBilinForm.Nondegenerate) {n : ℕ∞ω} :
     ContDiffAt ℝ n (metricVolumeDensity b) g := by
   exact b.contDiffAt_metricVolumeDensity
-    ((b.metricVolumeDensity_pos g).1 (b.metricVolumeDensity_pos_of_nondegenerate hg))
+    ((b.metricVolumeDensity_pos g).1 ((b.metricVolumeDensity_pos_iff_nondegenerate g).2 hg))
 
 /-- The volume density is smooth at every positive-definite bilinear form, even without symmetry. -/
 theorem contDiffAt_metricVolumeDensity_of_posDef (b : Module.Basis ι ℝ F)
@@ -269,6 +322,29 @@ theorem metricVolumeDensity_innerSL_pos {F : Type*} [NormedAddCommGroup F]
   exact b.metricVolumeDensity_pos_of_posDef fun _ hv ↦ by
     rw [innerSL_apply_apply]
     exact real_inner_self_pos.mpr hv
+
+/-- The density of the inner product is the square root of the Gram determinant. -/
+theorem metricVolumeDensity_innerSL_eq_sqrt_det_gram {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (b : Module.Basis ι ℝ F) :
+    b.metricVolumeDensity (innerSL ℝ) = √(Matrix.gram ℝ b).det := by
+  have hm : (Matrix.of fun i j ↦ innerSL ℝ (b i) (b j)) = Matrix.gram ℝ b := by
+    ext i j
+    simp only [Matrix.of_apply, innerSL_apply_apply, Matrix.gram_apply]
+  rw [metricVolumeDensity_def, hm, abs_of_nonneg (Matrix.posSemidef_gram ℝ b).det_nonneg]
+
+/-- A linear isometry preserves the density of the inner product in a mapped basis. -/
+@[simp]
+theorem metricVolumeDensity_map_linearIsometryEquiv_innerSL {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (b : Module.Basis ι ℝ E) (L : E ≃ₗᵢ[ℝ] F) :
+    (b.map L.toLinearEquiv).metricVolumeDensity (innerSL ℝ) =
+      b.metricVolumeDensity (innerSL ℝ) := by
+  rw [metricVolumeDensity_def, metricVolumeDensity_def]
+  congr 3
+  ext i j
+  simp only [Matrix.of_apply, map_apply, LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [innerSL_apply_apply, innerSL_apply_apply]
+  exact L.inner_map_map (b i) (b j)
 
 end
 
