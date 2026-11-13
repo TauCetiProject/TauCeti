@@ -773,7 +773,6 @@ private theorem perimeter_ball_setOf_inner_lt_le_liminf (hn : 2 ≤ finrank ℝ 
     tendsto_id (measurableSet_lt (by fun_prop) measurable_const).nullMeasurableSet
     (fun _ hK => tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK)
     one_pos).trans_eq (liminf_congr (eventually_nhdsWithin_of_forall fun _ hr => by
-      have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
       rw [perimeter_ball_zero_preimage_add_smul_eq_div hr, mul_one]))
 
 /-- **The perimeter measure of small balls is bounded by the blow-up pairings.** Let `φ` be a test
@@ -935,8 +934,9 @@ theorem tendsto_variationMeasure_closedBall_div (hn : 2 ≤ finrank ℝ E)
       (𝓝 (perimeter μ ⟨ball 0 1, isOpen_ball⟩ {y | ⟪y, outerNormal μ Ω s x⟫ < 0})) :=
   tendsto_of_le_liminf_of_limsup_le
     ((perimeter_ball_setOf_inner_lt_le_liminf hn hx).trans
-      (liminf_le_liminf ((eventually_perimeter_ball_le_variationMeasure_closedBall hx).mono
-        fun _ h => ENNReal.div_le_div_right h _)))
+      (liminf_le_liminf
+        ((eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx).mono
+          fun _ h => ENNReal.div_le_div_right h _)))
     (limsup_variationMeasure_closedBall_div_le_perimeter_ball_one hn hx)
 
 /-- **The density of the perimeter at the reduced boundary.** Let `E` have dimension `n ≥ 2` and
@@ -952,8 +952,9 @@ theorem tendsto_perimeter_ball_div (hn : 2 ≤ finrank ℝ E) (hx : x ∈ reduce
         ENNReal.ofReal (r ^ (finrank ℝ E - 1))) (𝓝[>] 0)
       (𝓝 (perimeter μ ⟨ball 0 1, isOpen_ball⟩ {y | ⟪y, outerNormal μ Ω s x⟫ < 0})) :=
   tendsto_of_le_liminf_of_limsup_le (perimeter_ball_setOf_inner_lt_le_liminf hn hx)
-    ((limsup_le_limsup ((eventually_perimeter_ball_le_variationMeasure_closedBall hx).mono
-        fun _ h => ENNReal.div_le_div_right h _)).trans
+    ((limsup_le_limsup
+        ((eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx).mono
+          fun _ h => ENNReal.div_le_div_right h _)).trans
       (limsup_variationMeasure_closedBall_div_le_perimeter_ball_one hn hx))
 
 /-- **The perimeter measure has density one with respect to `Hⁿ⁻¹` at the reduced boundary.** Let

@@ -88,6 +88,7 @@ private theorem exists_ae_measureReal_inter_ball_rpow_le
     ∃ ε > 0, ∀ᵐ ρ, ρ ∈ Ioo 0 ε → μ.real (s ∩ ball x ρ) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
       ((1 + t) * eLpNormLESNormFDerivOneConst μ p : ℝ≥0) *
         deriv (fun ρ => μ.real (s ∩ ball x ρ)) ρ := by
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   obtain ⟨ε₁, hε₁, hε₁Ω⟩ :=
     nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   obtain ⟨ε₂, hε₂, hε₂t⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
@@ -103,7 +104,7 @@ private theorem exists_ae_measureReal_inter_ball_rpow_le
   have hD : 0 ≤ deriv m ρ := (monotone_measureReal_inter_ball μ s x).deriv_nonneg
   -- At the reduced boundary, `P(s; ball x ρ) ≤ |Dχ_s| (closedBall x ρ) ≤ t m'(ρ)`.
   have hP : perimeter μ ⟨ball x ρ, isOpen_ball⟩ s ≤ t * ENNReal.ofReal (deriv m ρ) := by
-    refine (perimeter_ball_le_variationMeasure_closedBall hx
+    refine (perimeter_ball_le_variationMeasure_closedBall hu hfin
       (ball_subset_closedBall.trans hρΩ)).trans
       ((hε₂t ⟨hρ.1, hρ.2.trans_le (min_le_right _ _)⟩).trans ?_)
     gcongr
@@ -264,7 +265,8 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
         ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
           variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
   filter_upwards [eventually_ofReal_pow_le_mul_perimeter_ball hp hx ht,
-    eventually_perimeter_ball_le_variationMeasure_closedBall hx] with r h hP
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r h hP
   exact h.trans (mul_le_mul_right hP _)
 
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and

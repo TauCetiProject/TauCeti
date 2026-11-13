@@ -301,7 +301,8 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
   filter_upwards [eventually_variationMeasure_closedBall_le hx ht,
-    eventually_perimeter_ball_le_variationMeasure_closedBall hx] with r hr hP
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r hr hP
   exact hP.trans hr
 
 /-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
