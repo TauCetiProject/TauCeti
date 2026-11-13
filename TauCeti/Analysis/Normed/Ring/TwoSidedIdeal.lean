@@ -33,11 +33,11 @@ namespace TwoSidedIdeal.Quotient
 
 section NonUnital
 
-variable {A : Type*} [NonUnitalSeminormedRing A] (I : TwoSidedIdeal A)
-
-instance isClosed_toAddSubgroup [hI : IsClosed (I : Set A)] :
-    IsClosed (I.toAddSubgroup : Set A) :=
+instance isClosed_toAddSubgroup {A : Type*} [NonUnitalRing A] [TopologicalSpace A]
+    (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)] : IsClosed (I.toAddSubgroup : Set A) :=
   hI
+
+variable {A : Type*} [NonUnitalSeminormedRing A] (I : TwoSidedIdeal A)
 
 noncomputable instance seminormedAddCommGroup : SeminormedAddCommGroup (A ⧸ I) :=
   inferInstanceAs <| SeminormedAddCommGroup (A ⧸ I.toAddSubgroup)
