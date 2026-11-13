@@ -129,6 +129,18 @@ theorem labelα_rev (f : B.graph.E) :
       (B.labelα (B.graph.rev f)) = (B.labelω f)⁻¹ :=
   (inv_inv _).symm
 
+/-- The element `f_ω` at the end of a dart `f`, read in the vertex group of the type of the end of
+`f`, is the inverse of the element `(f⁻¹)_α` at the start of the reverse dart. This is the label
+condition `AGraph.labelα_rev`, read through `[t(f)] = [o(f⁻¹)]` in place of `o([f⁻¹]) = t([f])`. -/
+theorem cast_labelω (f : B.graph.E) :
+    MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f) =
+      (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src (B.graph.rev f))
+        (B.labelα (B.graph.rev f)))⁻¹ := by
+  rw [labelω_def, map_inv, MulEquiv.cast_apply, MulEquiv.cast_apply, MulEquiv.cast_apply,
+    cast_cast]
+  -- The two transports are along proofs of the same equality: `t(f)` is `o(f⁻¹)` by definition.
+  rfl
+
 /-- Start labels of equal darts agree after transport to a common vertex group. -/
 private theorem cast_labelα_congr {e₁ e₂ : B.graph.E} (h : e₁ = e₂) {a : Γ.V}
     (h₁ : Γ.src (B.typ.mapE e₁) = a) (h₂ : Γ.src (B.typ.mapE e₂) = a) :
@@ -200,6 +212,23 @@ def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.L
         (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e))) := by
   rw [letterPath, B.cast_labelα_congr (B.graph.dart_val e) _ (B.typ.map_src e),
     B.cast_labelω_congr (B.graph.dart_val e) _ (B.typ.map_tgt _ e)]
+
+/-- The letters read along a dart `f`, from equalities for its start label, its type and its end
+label. -/
+theorem letterPath_dart_eq (f : B.graph.E)
+    {g : 𝔸.vertexGroup (B.typ.mapV (B.graph.src f))}
+    {d : B.typ.mapV (B.graph.src f) ⟶ B.typ.mapV (B.graph.tgt f)}
+    {h : 𝔸.vertexGroup (B.typ.mapV (B.graph.tgt f))}
+    (hg : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f) = g)
+    (hd : B.typ.mapE f = d.1)
+    (hh : MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f) = h) :
+    B.letterPath (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
+      ((Path.ofVertex g).comp (Path.ofDart d)).comp (Path.ofVertex h) := by
+  obtain rfl : B.typ.toPrefunctor.map (B.graph.dart f) = d := Subtype.ext
+    (((SerreGraph.Hom.toPrefunctor_map_val _ _).trans (congrArg _ (SerreGraph.dart_val _ _))).trans
+      hd)
+  subst hg hh
+  exact B.letterPath_dart f
 
 /-- The path map: the `𝔸`-path read along a `𝔹`-path, letter by letter. -/
 def pathMap {x : B.toGraphOfGroups.LetterVertex} :

@@ -183,6 +183,32 @@ def setLast : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.vertexGroup b �
     (p.setLast g).setLast h = p.setLast h := by
   cases p <;> rfl
 
+/-- The length `k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k`: its number of darts. -/
+def length : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ
+  | _, single _ => 0
+  | _, cons p _ _ => p.length + 1
+
+@[simp] theorem length_single (g : 𝔸.vertexGroup a) :
+    (single g : 𝔸.AlternatingPath a a).length = 0 :=
+  (rfl)
+
+@[simp] theorem length_cons {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup c) : (cons p e g).length = p.length + 1 :=
+  (rfl)
+
+@[simp] theorem length_setLast {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) :
+    (p.setLast g).length = p.length := by
+  cases p <;> rfl
+
+/-- A closed alternating path has length zero exactly when it is a single vertex group element. -/
+theorem length_eq_zero_iff {p : 𝔸.AlternatingPath a a} : p.length = 0 ↔ ∃ g, p = single g := by
+  refine ⟨fun h => ?_, ?_⟩
+  · cases p with
+    | single g => exact ⟨g, rfl⟩
+    | cons p e g => simp at h
+  · rintro ⟨g, rfl⟩
+    exact length_single g
+
 /-- The `𝔸`-path `g₀ e₁ g₁ ⋯ e_k g_k` spelled by an alternating path. -/
 def toPath : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → 𝔸.Path ⟨a⟩ ⟨b⟩
   | _, single g => Path.ofVertex g
@@ -205,6 +231,22 @@ theorem toPath_setLast_mul_homotopic {b : Γ.V} (p : 𝔸.AlternatingPath a b)
   cases p with
   | single h => simpa [Path.ofVertex_eq_nil_cons] using (Path.Homotopic.mul _ h g).symm
   | cons p e h => exact (Path.Homotopic.mul _ h g).symm
+
+/-- Reading an alternating path `p`, then a vertex group element `g` and a path `r`, is reading
+`p` with its last element multiplied by `g`, then `r`. -/
+theorem toPath_setLast_mul_comp_homotopic {b : Γ.V} {y : 𝔸.LetterVertex}
+    (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) (r : 𝔸.Path ⟨b⟩ y) :
+    Path.Homotopic ((p.setLast (p.last * g)).toPath.comp r)
+      (p.toPath.comp ((Path.ofVertex g).comp r)) := by
+  rw [← Quiver.Path.comp_assoc, Path.comp_ofVertex]
+  exact (toPath_setLast_mul_homotopic p g).comp_right r
+
+/-- Reading `p` without its last element `g`, then `g` and a path `r`, is reading `p` and `r`. -/
+theorem toPath_setLast_one_comp_homotopic {b : Γ.V} {y : 𝔸.LetterVertex}
+    (p : 𝔸.AlternatingPath a b) (r : 𝔸.Path ⟨b⟩ y) :
+    Path.Homotopic ((p.setLast 1).toPath.comp ((Path.ofVertex p.last).comp r))
+      (p.toPath.comp r) := by
+  simpa using (toPath_setLast_mul_comp_homotopic (p.setLast 1) p.last r).symm
 
 /-- `p.Cancels e` says that `p` ends with the dart `rev e` followed by an element of `α_e(A_e)`,
 so that appending `e` creates the backtracking `rev e, α_e(c), e`. -/
