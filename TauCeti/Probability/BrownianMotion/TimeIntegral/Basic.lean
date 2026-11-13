@@ -9,6 +9,7 @@ public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
+import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # Mean-square time integration of Brownian motion
@@ -48,6 +49,19 @@ def toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) : Lp ℝ 2 P :=
 theorem coeFn_toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
     ⇑(hB.toL2 t) =ᵐ[P] B t :=
   MemLp.coeFn_toLp _
+
+/-- The `L²` class of a finite weighted sum of Brownian evaluations is the corresponding
+sum of evaluation classes, for any square-integrability witness on the sum. -/
+theorem toLp_sum_smul_eval (hB : IsPreBrownianReal B P) {ι : Type*}
+    (s : Finset ι) (t : ι → ℝ≥0) (w : ι → ℝ)
+    (hsum : MemLp (fun ω ↦ ∑ i ∈ s, w i * B (t i) ω) 2 P) :
+    hsum.toLp _ = ∑ i ∈ s, w i • hB.toL2 (t i) := by
+  let hf i : MemLp (B (t i)) 2 P :=
+    (hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)
+  exact (hsum.toLp_finsetSum (fun i ↦ (hf i).const_smul (w i))).trans
+    (Finset.sum_congr rfl fun i _ ↦ by
+      simpa only [toL2, Pi.smul_def, smul_eq_mul] using
+        MemLp.toLp_const_smul (w i) (hf i))
 
 /-- The inner product of two Brownian evaluation classes is their covariance `min s t`. -/
 @[simp]

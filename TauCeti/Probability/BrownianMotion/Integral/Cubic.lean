@@ -76,30 +76,19 @@ private theorem toLp_sum_eval_sq_mul_sub_eq (hB : IsPreBrownianReal B P)
     apply sum_congr rfl
     intro i _
     ring
-  have hrect : ⇑(∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) =ᵐ[P]
-      fun ω ↦ ∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) * B (t i) ω :=
-    (Lp.coeFn_finsetSum _ _).trans (by
-      simpa only [Finset.sum_fn, Pi.smul_def, smul_eq_mul] using
-        (eventuallyEq_sum (s := range n) fun i _ ↦
-          (Lp.coeFn_smul ((t (i + 1) : ℝ) - t i) (hB.toL2 (t i))).trans
-            ((hB.coeFn_toL2 (t i)).const_smul ((t (i + 1) : ℝ) - t i))))
-  apply Lp.ext
-  filter_upwards [(hB.memLp_sum_eval_sq_mul_sub t n).coeFn_toLp,
-    Lp.coeFn_sub ((1 / 3 : ℝ) • (hB.memLp_pow_eval (t n) 3 (by norm_num)).toLp _ -
-      hZ.toLp Z - (1 / 3 : ℝ) • hC.toLp C) _,
-    Lp.coeFn_sub ((1 / 3 : ℝ) • (hB.memLp_pow_eval (t n) 3 (by norm_num)).toLp _ -
-      hZ.toLp Z) _,
-    Lp.coeFn_sub ((1 / 3 : ℝ) •
-      (hB.memLp_pow_eval (t n) 3 (p := 2) (by norm_num)).toLp _) (hZ.toLp Z),
-    Lp.coeFn_smul (1 / 3 : ℝ) ((hB.memLp_pow_eval (t n) 3 (p := 2) (by norm_num)).toLp _),
-    Lp.coeFn_smul (1 / 3 : ℝ) (hC.toLp C),
-    (hB.memLp_pow_eval (t n) 3 (p := 2) (by norm_num)).coeFn_toLp,
-    hZ.coeFn_toLp, hC.coeFn_toLp, hrect, hB.eval_zero_ae_eq_zero]
-    with ω ha hsub₁ hsub₂ hsub₃ hsm₁ hsm₂ hpow hz hc hsum h0
-  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul] at hsub₁ hsub₂ hsub₃ hsm₁ hsm₂
-  rw [ha, hsub₁, hsub₂, hsub₃, hsm₁, hsm₂, hpow, hz, hc, hsum]
+  have hrect : MemLp (fun ω ↦ ∑ i ∈ range n,
+      ((t (i + 1) : ℝ) - t i) * B (t i) ω) 2 P :=
+    memLp_finsetSum _ fun i _ ↦
+      ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)).const_mul _
+  have hrect_eq := hB.toLp_sum_smul_eval (range n) t
+    (fun i ↦ (t (i + 1) : ℝ) - t i) hrect
+  rw [← hrect_eq, ← MemLp.toLp_const_smul, ← MemLp.toLp_const_smul,
+    ← MemLp.toLp_sub, ← MemLp.toLp_sub, ← MemLp.toLp_sub]
+  apply MemLp.toLp_congr
+  filter_upwards [hB.eval_zero_ae_eq_zero] with ω h0
   have hx := hexp ω
   rw [hzero, h0] at hx
+  simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
   linarith
 
 /-- A finite-grid mean-square error bound for the cubic Brownian Itô sums. The error is

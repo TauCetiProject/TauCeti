@@ -74,14 +74,13 @@ theorem coeFn_sum_leftRiemannError (hB : IsPreBrownianReal B P)
   rw [hB.sum_leftRiemannError_eq]
   have hsum : ⇑(∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) =ᵐ[P]
       fun ω ↦ ∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) * B (t i) ω := by
-    have hterm (i : ℕ) : ⇑(((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) =ᵐ[P]
-        fun ω ↦ ((t (i + 1) : ℝ) - t i) * B (t i) ω :=
-      (Lp.coeFn_smul _ _).trans ((hB.coeFn_toL2 (t i)).mono fun ω hω ↦ by
-        simp only [Pi.smul_apply, smul_eq_mul, hω])
-    filter_upwards [(Lp.coeFn_finsetSum (Finset.range n)
-      (fun i ↦ ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i))).trans
-      (eventuallyEq_sum fun i _ ↦ hterm i)] with ω hω
-    simpa only [Finset.sum_apply] using hω
+    have hrect : MemLp (fun ω ↦ ∑ i ∈ Finset.range n,
+        ((t (i + 1) : ℝ) - t i) * B (t i) ω) 2 P :=
+      memLp_finsetSum _ fun i _ ↦
+        ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)).const_mul _
+    rw [← hB.toLp_sum_smul_eval (Finset.range n) t
+      (fun i ↦ (t (i + 1) : ℝ) - t i) hrect]
+    exact hrect.coeFn_toLp
   exact (Lp.coeFn_sub _ _).trans
     (hsum.sub (hB.coeFn_integral_toL2 hspan hm))
 
