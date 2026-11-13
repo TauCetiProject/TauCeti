@@ -1429,13 +1429,6 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
 
-/-- The image of a smoothing symbol under a continuous linear map of the coefficient spaces is
-smoothing. -/
-theorem IsSmoothing.map {a : Symbol n V W m} (ha : a.IsSmoothing)
-    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsSmoothing := fun m' ↦ by
-  obtain ⟨b, hb⟩ := ha m'
-  exact ⟨b.map Φ, funext fun p ↦ by rw [coefficient_map, coefficient_map, hb]⟩
-
 /-- Spatial derivatives commute with the image under a continuous linear map. -/
 @[simp]
 theorem spatialDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (j : Fin n) :

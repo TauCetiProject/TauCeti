@@ -141,6 +141,22 @@ theorem IsSmoothing.exists_contDiff_hasCompactSupport_quantizeSobolev (ha : a.Is
 
 end Hilbert
 
+section Map
+
+variable {V W V' W' : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- The image of a smoothing symbol under a continuous linear map of the coefficient spaces is
+smoothing. -/
+theorem IsSmoothing.map {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsSmoothing := by
+  refine isSmoothing_iff.2 fun m' ↦ ?_
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha m'
+  exact ⟨b.map Φ, funext fun p ↦ by rw [coefficient_map, coefficient_map, hb]⟩
+
+end Map
+
 section FiniteDimensional
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
