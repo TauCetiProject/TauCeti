@@ -274,7 +274,7 @@ theorem negativeMultinomialMeasure_singleton_ne_zero_iff {r p₀ : ℝ}
 
 /-- At success weight one, all category weights vanish and the law is Dirac at zero. -/
 @[simp]
-theorem negativeMultinomialMeasure_eq_dirac_of_successWeight_eq_one {r : ℝ} (hr : 0 ≤ r) :
+theorem negativeMultinomialMeasure_one_zero {r : ℝ} (hr : 0 ≤ r) :
     negativeMultinomialMeasure r 1 (0 : ι → ℝ≥0) = Measure.dirac 0 := by
   classical
   apply Measure.ext_of_singleton
