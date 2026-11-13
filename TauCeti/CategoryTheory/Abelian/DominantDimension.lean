@@ -54,7 +54,7 @@ this the *flat-dominant dimension*). The flat version is not defined here.
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   Studies in Advanced Mathematics 36, CUP (1995), §VI.5, p. 211.
 * M. Hoshino, *On dominant dimension of Noetherian rings*, Osaka J. Math. 26 (1989), 275–280.
-* C. Xi, *On the finitistic dimension conjecture III*, J. Algebra 319 (2008), §1.
+* C. Xi, *Frobenius bimodules and flat-dominant dimensions*, arXiv:1903.07921v1, §1.
 -/
 
 public section
