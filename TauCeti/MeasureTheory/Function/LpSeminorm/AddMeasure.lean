@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Monotonicity and subadditivity of `eLpNorm` in the measure
@@ -27,11 +28,18 @@ No measurability of the sets is needed. The same bound holds on any set covered 
 pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
 piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
 
+Comparisons between two functions on each summand also pass to a countable sum of measures
+(`MeasureTheory.eLpNorm_sum_measure_le_of_forall_le`). Unlike subadditivity, this keeps the
+constant unchanged and works at every exponent, including `∞`; it therefore glues estimates
+on disjoint measurable pieces without a loss depending on the number of pieces.
+
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
 
 ## Main declarations
 
+* `MeasureTheory.eLpNorm_sum_measure_le_of_forall_le`: comparisons on each summand pass to
+  a countable sum of measures, with no loss in the constant.
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
 * `MeasureTheory.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is
@@ -48,6 +56,42 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- Comparisons of `Lᵖ` seminorms on each summand pass to a countable sum of measures, for every
+exponent, including `0` and `∞`. The functions may have different codomains, and no measurability
+assumptions are needed. -/
+theorem eLpNorm_sum_measure_le_of_forall_le {α ι E F : Type*} [MeasurableSpace α]
+    [Countable ι] [TopologicalSpace E] [ContinuousENorm E]
+    [TopologicalSpace.PseudoMetrizableSpace E] [TopologicalSpace F] [ContinuousENorm F]
+    {f : α → E} {g : α → F} {p : ℝ≥0∞} (μ : ι → Measure α)
+    (h : ∀ i, eLpNorm f p (μ i) ≤ eLpNorm g p (μ i)) :
+    eLpNorm f p (Measure.sum μ) ≤ eLpNorm g p (Measure.sum μ) := by
+  by_cases hg : eLpNorm g p (Measure.sum μ) = ∞
+  · simp [hg]
+  have hgm := aestronglyMeasurable_of_eLpNorm_ne_top hg
+  have hfm : ∀ i, AEStronglyMeasurable f (μ i) := fun i ↦
+    aestronglyMeasurable_of_eLpNorm_ne_top <| ne_top_of_le_ne_top hg <|
+      (h i).trans (eLpNorm_mono_measure g (Measure.le_sum μ i))
+  have hf := aestronglyMeasurable_sum_measure_iff.2 hfm
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp [eLpNorm_exponent_zero hf, eLpNorm_exponent_zero hgm]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · rw [eLpNorm_exponent_top hf]
+    apply eLpNormEssSup_le_of_ae_eNorm_bound
+    exact Measure.ae_sum_iff.2 fun i ↦
+      (eNorm_ae_le_eLpNormEssSup f (μ i)).mono fun x hx ↦
+        hx.trans <| eLpNormEssSup_le_eLpNorm_top.trans <|
+          (h i).trans (eLpNorm_mono_measure g (Measure.le_sum μ i))
+  have hr := ENNReal.toReal_pos hp0 hp
+  rw [← ENNReal.rpow_le_rpow_iff hr,
+    ← lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf,
+    ← lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hgm,
+    lintegral_sum_measure, lintegral_sum_measure]
+  exact tsum_le_tsum fun i ↦ by
+    rw [lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp (hfm i),
+      lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp
+        (hgm.mono_measure (Measure.le_sum μ i))]
+    exact ENNReal.rpow_le_rpow (h i) hr.le
 
 /-- The `p`-th power of the `Lᵖ` seminorm is subadditive under adding measures. For `p = 0` or
 `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability is assumed: if the
