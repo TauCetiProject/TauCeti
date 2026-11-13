@@ -49,8 +49,9 @@ modulo `p`.
   `Φ : R° ⧸ (ϖ) → R° ⧸ (ϖ ^ p)`.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.of_surjective`: surjectivity of `Φ` suffices.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.isUniform`,
-  `TauCeti.Perfectoid.IsPerfectoidTateRing.isReduced`: perfectoid Tate rings are uniform, hence
-  reduced.
+  `TauCeti.Perfectoid.IsPerfectoidTateRing.isReduced`,
+  `TauCeti.Perfectoid.IsPerfectoidTateRing.isTopologicallyNilpotent_natCast`: perfectoid Tate
+  rings are uniform, reduced, and have `p` topologically nilpotent.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.of_ringEquiv`: the notion is invariant under
   isomorphisms of topological rings.
 * `TauCeti.Perfectoid.IsPerfectoidTateRing.prod`: a product of perfectoid Tate rings is perfectoid,
@@ -108,6 +109,18 @@ theorem IsPerfectoidTateRing.isUniform [IsPerfectoidTateRing p R] : IsUniform R 
 theorem IsPerfectoidTateRing.isReduced [IsPerfectoidTateRing p R] : IsReduced R :=
   have := IsPerfectoidTateRing.isUniform p (R := R)
   IsUniform.isReduced
+
+/-- In a perfectoid Tate ring at `p ≠ 0`, `p` is topologically nilpotent, as `ϖ ^ p ∣ p` in
+`R°` for a pseudouniformiser `ϖ`. -/
+theorem IsPerfectoidTateRing.isTopologicallyNilpotent_natCast [NeZero p]
+    [IsPerfectoidTateRing p R] : IsTopologicallyNilpotent (p : R) := by
+  have := IsPerfectoidTateRing.isUniform p (R := R)
+  obtain ⟨ϖ, hϖ, ⟨c, hc⟩, -, -⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
+  have hp : (p : R) = (c : R) * (ϖ : R) ^ p := by
+    simpa [mul_comm] using congrArg (powerBoundedSubring R).subtype hc
+  rw [hp]
+  exact (mem_powerBoundedSubring.mp c.2).isTopologicallyNilpotent_mul
+    (hϖ.isTopologicallyNilpotent.pow (NeZero.ne p))
 
 variable (R) in
 /-- **The zero ring is a perfectoid Tate ring**: `0` is a topologically nilpotent unit, and all
