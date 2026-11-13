@@ -1216,7 +1216,6 @@ private theorem fiberwiseCellReattachment_fiberwiseCellReattachment_fiberwiseCel
       have hv₂ : 1 / 2 ≤ ‖(h i (p, TopCat.reattachmentRadial w)).down.1‖ := by
         rw [hv]
         linarith
-      have hw₀ : 0 < ‖w.down.1‖ := by linarith
       have ht := coe_reattachmentLoopTime_zero_annulusParam hw₄
       rw [min_eq_left (by linarith)] at ht
       rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm α₁ α₀ χ₁ χ₀ hχ₁ hχ₀ h'
@@ -1248,7 +1247,7 @@ include he he' hKK' in
 their inverses, and let `K' i (t, (p, x)) = K i (1 - t, (p, h' i (p, x)))`. Then the fiberwise
 reattachment map of `(h, K)` followed by that of `(h', K')` is homotopic to the identity relative to
 `P × A`, through maps over `P`. -/
-private theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment :
+private theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_id :
     ∃ G : (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK ≫
         fiberwiseCellReattachment α₁ α₀ χ₁ χ₀ hχ₁ hχ₀ h' hh' K' hK').hom.HomotopyRel
         (ContinuousMap.id _) (range (fiberwiseCellAttachmentIncl α₁)),
@@ -1461,7 +1460,7 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
         fiberwiseCellReattachmentInv α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he).hom.HomotopyRel
         (ContinuousMap.id _) (range (fiberwiseCellAttachmentIncl α₁)),
       ∀ t y, fiberwiseCellAttachmentProj α₁ (G (t, y)) = fiberwiseCellAttachmentProj α₁ y :=
-  exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁
+  exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_id α₀ α₁ χ₀ χ₁ hχ₀ hχ₁
     h (fiberwiseDiskInv h e he) hh (mapsTo_fiberwiseDiskInv h e he) K hK
     (fiberwiseReattachmentInvHomotopy χ₀ χ₁ h K e he)
     (fiberwiseReattachmentInvHomotopy_mem χ₀ χ₁ h K hK e he) e he
@@ -1475,7 +1474,7 @@ theorem exists_homotopyRel_fiberwiseCellReattachmentInv_comp_fiberwiseCellReatta
         fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).hom.HomotopyRel
         (ContinuousMap.id _) (range (fiberwiseCellAttachmentIncl α₀)),
       ∀ t y, fiberwiseCellAttachmentProj α₀ (G (t, y)) = fiberwiseCellAttachmentProj α₀ y :=
-  exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment α₁ α₀ χ₁ χ₀ hχ₁ hχ₀
+  exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment_id α₁ α₀ χ₁ χ₀ hχ₁ hχ₀
     (fiberwiseDiskInv h e he) h (mapsTo_fiberwiseDiskInv h e he) hh
     (fiberwiseReattachmentInvHomotopy χ₀ χ₁ h K e he)
     (fiberwiseReattachmentInvHomotopy_mem χ₀ χ₁ h K hK e he) K hK (fun i p ↦ (e i p).symm)
