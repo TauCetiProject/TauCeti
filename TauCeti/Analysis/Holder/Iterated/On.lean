@@ -857,7 +857,7 @@ def succInclusionL (hΩ : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
       rw [succInclusionₗ, LinearMap.coe_mk, AddHom.coe_mk, coe_iteratedFDerivHolder_ofContDiffOn]
       have h := NNReal.coe_le_coe.2
         (HolderWith.restrict_iff.2 (holderOnWith_succ f hΩ hα)).nnholderNorm_le
-      rwa [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnnorm, coe_nnnorm] at h
+      rwa [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm, coe_nnNorm] at h
     have hsum : ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i.castSucc‖ +
         ‖f.iteratedFDeriv (Fin.last (k + 1))‖ ≤ ‖f‖ := by
       rw [← Fin.sum_univ_castSucc (fun i ↦ ‖f.iteratedFDeriv i‖), norm_eq f]
