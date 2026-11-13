@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.WeakDeriv.AbsolutelyContinuous
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -20,7 +21,9 @@ existing construction of absolutely continuous representatives of interval Sobol
 The range of `W1p.intervalRepresentativeL` is exactly the continuous functions whose extension
 by endpoint projection is absolutely continuous and has derivative in `Lᵖ(a,b)`. In
 particular the characterization retains derivative integrability at `p = 2`; absolute
-continuity alone does not characterize `H¹`.
+continuity alone does not characterize `H¹`. A constant plus the primitive of an `Lᵖ` function is
+such a representative, with weak gradient that function
+(`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`).
 
 ## References
 
@@ -113,5 +116,34 @@ theorem mem_range_intervalRepresentativeL_iff (hab : a < b) (w : C(Icc a b, ℝ)
     refine ⟨u, ?_⟩
     ext t
     simpa only [projIcc_of_mem hab.le t.property] using hu t
+
+/-- A constant plus the primitive of a function `g ∈ Lᵖ(a, b)`, based at a point `t₀ ∈ [a, b]`, is
+the continuous representative of a Sobolev class, whose weak gradient is `g`. -/
+theorem exists_intervalRepresentativeL_eq_and_gradient_ae_eq (hab : a < b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Icc a b) (c : ℝ) {g : ℝ → ℝ} (hg : MemLp g p (volume.restrict (Ioo a b))) :
+    ∃ u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      (∀ t : Icc a b, intervalRepresentativeL hab u t = c + ∫ s in t₀..t, g s) ∧
+      gradient u =ᵐ[volume.restrict (Ioo a b)] g := by
+  have hint : IntervalIntegrable g volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 (hg.integrable Fact.out)
+  set f : ℝ → ℝ := fun t ↦ c + ∫ s in t₀..t, g s
+  have hAC : AbsolutelyContinuousOnInterval f a b :=
+    (LipschitzWith.const c).lipschitzOnWith.absolutelyContinuousOnInterval.add
+      (hint.absolutelyContinuousOnInterval_intervalIntegral (Icc_subset_uIcc ht₀))
+  -- By Lebesgue's differentiation theorem `f` has derivative `g` at almost every point.
+  have hfd : ∀ᵐ t, t ∈ Ioo a b → HasDerivAt f (g t) t := by
+    filter_upwards [hint.ae_hasDerivAt_integral] with t ht htI
+    exact (ht (Icc_subset_uIcc (Ioo_subset_Icc_self htI)) t₀ (Icc_subset_uIcc ht₀)).const_add c
+  have hderiv : deriv f =ᵐ[volume.restrict (Ioo a b)] g :=
+    (ae_restrict_iff' measurableSet_Ioo).2 (hfd.mono fun t ht htI ↦ (ht htI).deriv)
+  obtain ⟨u, hu, -⟩ := existsUnique_intervalRepresentativeL_eq hab hAC (hg.ae_eq hderiv.symm)
+  refine ⟨u, hu, (ae_restrict_iff' measurableSet_Ioo).2 ?_⟩
+  -- Near a point of `(a, b)` the representative of `u` is `f`, so their derivatives agree.
+  filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u, hfd] with t hut hft htI
+  refine (hut (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)).unique
+    ((hft htI).congr_of_eventuallyEq ?_)
+  filter_upwards [Ioo_mem_nhds htI.1 htI.2] with s hs
+  rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hs)]
+  exact hu ⟨s, Ioo_subset_Icc_self hs⟩
 
 end TauCeti.W1p
