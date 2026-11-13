@@ -62,6 +62,26 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+section FiniteDimensional
+
+variable {𝕜 E V H G M N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N]
+
+/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
+finite-dimensional model space. -/
+theorem finiteDimensional_of_injective_mfderiv {f : M → N} {x : M}
+    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional 𝕜 E := by
+  have : FiniteDimensional 𝕜 (TangentSpace I x) :=
+    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
+  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
+
+end FiniteDimensional
+
 variable {E V H G M N K : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -151,15 +171,6 @@ theorem finrank_orthogonalNormalSpace_add_finrank {f : M → N} {x : M}
   rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun y : N ↦ TangentSpace J y)] in
-/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
-finite-dimensional model space. -/
-theorem finiteDimensional_of_injective_mfderiv {f : M → N} {x : M}
-    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional ℝ E := by
-  have : FiniteDimensional ℝ (TangentSpace I x) :=
-    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
-  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
-
 omit [FiniteDimensional ℝ E] in
 /-- The orthogonal projection onto the normal space subtracts the tangential component of an
 ambient vector `v`. Inverting the pullback metric `df* df` on `T_x M` recovers that component from
@@ -188,7 +199,7 @@ theorem starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse {f : M → N
   · rw [orthogonalNormalSpace_def]
     exact Submodule.le_orthogonal_orthogonal _ ⟨_, rfl⟩
 
-variable {n m : ℕ∞ω} [IsManifold J 1 N] [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+variable {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
 omit [FiniteDimensional ℝ E] in
@@ -206,7 +217,6 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : K} (hf : ContMDiff I
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
   · exact fun p ↦ isEmptyElim p.proj
   have := finiteDimensional_of_injective_mfderiv (hinj x₀)
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
@@ -224,6 +234,8 @@ theorem contMDiff_starProjection_orthogonalNormalSpace {f : K} (hf : ContMDiff I
     ext w z
     exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
   simp only [hflat, hg]
+
+variable [IsManifold J (m + 1) N]
 
 omit [FiniteDimensional ℝ E] in
 /-- **Local frames of the normal bundle.** For a `C^n` immersion `f` with `m + 1 ≤ n`, a `C^m`

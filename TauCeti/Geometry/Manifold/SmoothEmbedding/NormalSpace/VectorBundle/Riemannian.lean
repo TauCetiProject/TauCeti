@@ -55,8 +55,7 @@ omit [FiniteDimensional ℝ E] in
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
-theorem contMDiff_normalRepresentative_normalClass
-    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+theorem contMDiff_normalRepresentative_normalClass [IsManifold I 1 M]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>

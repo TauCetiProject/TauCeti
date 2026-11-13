@@ -52,7 +52,7 @@ the map from the normal bundle to the ambient tangent bundle is `C^m` when `m + 
 (`TauCeti.SmoothEmbedding.contMDiff_symplecticNormalRepresentative`). As for the orthogonal
 representatives of a Riemannian metric
 (`TauCeti.SmoothEmbedding.contMDiff_normalRepresentative`), this is an instance of
-`TauCeti.SmoothEmbedding.contMDiff_of_eq_sub_mfderiv_inverse`, with the flat maps of `σ` and of
+`TauCeti.contMDiff_of_eq_sub_mfderiv_inverse`, with the flat maps of `σ` and of
 `f^* σ` in place of the ambient and induced metrics. No compactness of `M` and no closedness of `σ`
 is used.
 
@@ -355,8 +355,6 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
   have hmtop : m ≤ ∞ := le_self_add.trans hm'
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold J 1 N := .of_le (n := ∞) (by simp)
-  have : IsManifold I (m + 1) M := .of_le hm'
-  have : IsManifold J (m + 1) N := .of_le hm'
   -- The flat map of the pulled-back form `f^* σ` is a `C^m` section, invertible at every point.
   let τ := TauCeti.mpullback I J f σ.1
   have hτ : IsSmoothForm I m τ :=

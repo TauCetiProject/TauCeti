@@ -561,7 +561,7 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
   [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁]
   [VectorBundle 𝕜 F₁ E₁] [ContMDiffVectorBundle n F₁ E₁ IB]
   {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [NormedSpace 𝕜' F₂]
-  [FiniteDimensional 𝕜' F₂] {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜' (E₂ x)]
+  [FiniteDimensional 𝕜' F₂] {E₂ : B → Type*} [∀ x, AddCommMonoid (E₂ x)] [∀ x, Module 𝕜' (E₂ x)]
   [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂]
   [VectorBundle 𝕜' F₂ E₂]
 
@@ -577,6 +577,8 @@ theorem hasLocalContMDiffSubbundleFrames_of_contMDiff_totalSpace_range {r : ℕ}
       (fun p : TotalSpace F₁ E₁ ↦ (⟨p.proj, P p.proj p.2⟩ : TotalSpace F₂ E₂)))
     (hPV : ∀ x, LinearMap.range (P x) = V x) (hV : ∀ x, finrank 𝕜' (V x) = r) :
     HasLocalContMDiffSubbundleFrames IB n F₂ (Fin r) V := by
+  -- A module over a ring is an additive group, with negation `(-1) • ·`.
+  let := fun x ↦ Module.addCommMonoidToAddCommGroup 𝕜' (M := E₂ x)
   refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x₀ ↦ ?_
   let e₁ := trivializationAt F₁ E₁ x₀
   let e₂ := trivializationAt F₂ E₂ x₀
