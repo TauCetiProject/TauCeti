@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.ElementaryEtale.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 import TauCeti.AlgebraicGeometry.Pullback.OpenImmersion
 import TauCeti.AlgebraicGeometry.ResidueField
 
@@ -74,8 +75,6 @@ theorem Scheme.Hom.exists_finite_open_baseChange {X S U U' : Scheme.{u}}
       (hwv.trans hzv.symm) (hw.trans hzu.symm)
   let W := j.opensRange
   have hfinite : IsFinite (W.ι ≫ pullback.snd f (ψ ≫ φ)) := by
-    have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-      MorphismProperty.IsStableUnderBaseChange.respectsIso
     rw [← MorphismProperty.cancel_left_of_respectsIso @IsFinite
       (Scheme.Hom.isoOpensRange j).hom, Scheme.Hom.isoOpensRange_hom_ι_assoc, hjsnd]
     infer_instance

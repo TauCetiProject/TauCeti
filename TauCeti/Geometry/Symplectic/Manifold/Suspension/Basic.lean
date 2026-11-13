@@ -58,6 +58,10 @@ holds with that `d`.
   of `(ℝ / ℤ) × Y_φ`, through their components.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_mk`: in the coordinates `(s, t, x)`, `Ω` pairs
   `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `a b' - a' b + σ(v, v')`.
+* `TauCeti.SmoothMappingTorus.exists_eq_symm_tangentSpaceProdEquiv`,
+  `TauCeti.SmoothMappingTorus.symm_tangentSpaceProdEquiv_eq_zero_iff`: every tangent vector of
+  `(ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is `a ∂_s + b ∂_t + v` in the coordinates `(s, t, x)`, and it
+  vanishes exactly when `a`, `b` and `v` do.
 * `TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`: the kernel of the fiber form `σ_v` of a
   nondegenerate `σ` is the line spanned by `T = ∂_t`.
 * `TauCeti.SmoothMappingTorus.mpullback_prodMap_map_suspensionForm`: for a smooth map `g`
@@ -156,7 +160,7 @@ theorem eval₂_suspensionForm_mk (θ : UnitAddCircle) (t : ℝ) (x : M) (a a' b
 omit [T2Space M] [LocallyCompactSpace M] in
 /-- Every tangent vector of `(ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is `a ∂_s + b ∂_t + v` in the
 coordinates `(s, t, x)`. -/
-private theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
+theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
     (θ : UnitAddCircle) (t : ℝ) (x : M)
     (V : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (θ, mk φ t x)) :
     ∃ (a b : ℝ) (v : TangentSpace I x), V = (Manifold.tangentSpaceProdEquiv _).symm
@@ -173,7 +177,7 @@ private theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompact
 omit [T2Space M] [LocallyCompactSpace M] in
 /-- In the coordinates `(s, t, x)`, the vector `a ∂_s + b ∂_t + v` vanishes exactly when `a`, `b`
 and `v` do. -/
-private theorem symm_tangentSpaceProdEquiv_eq_zero_iff [T2Space M] [LocallyCompactSpace M]
+theorem symm_tangentSpaceProdEquiv_eq_zero_iff [T2Space M] [LocallyCompactSpace M]
     (θ : UnitAddCircle) (t : ℝ) (x : M) (a b : ℝ) (v : TangentSpace I x) :
     (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) (θ, mk φ t x)).symm
         (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
