@@ -114,6 +114,12 @@ theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
   rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
     ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
 
+/-- Increasing the horizon increases the predictable time-product measure. -/
+theorem predictableMeasure_mono (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    {S T : ℝ≥0} (hST : S ≤ T) : ℱ.predictableMeasure P S ≤ ℱ.predictableMeasure P T := by
+  rw [← min_eq_left hST, ← predictableMeasure_restrict]
+  exact Measure.restrict_le_self
+
 section Dictionary
 
 variable (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
