@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Cone
 public import TauCeti.Topology.PL.Compact
-import Mathlib.Basic.Finite.Sum
 import TauCeti.Analysis.Convex.Polyhedron.Homogenization
 
 /-!
@@ -55,17 +54,6 @@ private def coneAffinePiece (A : E →ᴬ[ℝ] F) :
     (E × ℝ) →ᴬ[ℝ] (F × ℝ) :=
   (A.homogenize.prod (ContinuousLinearMap.snd ℝ E ℝ)).toContinuousAffineMap
 
-private theorem coneAffinePiece_apply (A : E →ᴬ[ℝ] F) (p : E × ℝ) :
-    coneAffinePiece A p = (A.contLinear p.1 + p.2 • A 0, p.2) := by
-  rcases p with ⟨x, t⟩
-  simp [coneAffinePiece]
-
-private theorem coneAffinePiece_ray (A : E →ᴬ[ℝ] F) (x : E) (t : ℝ) :
-    coneAffinePiece A (t • x, t) = (t • A x, t) := by
-  rw [coneAffinePiece_apply, map_smul, ← smul_add]
-  congr 2
-  exact (congrFun A.decomp x).symm
-
 /-- A finite piecewise-affine map extends piecewise affinely over the whole geometric cone,
 including the apex. No boundedness, closedness or polyhedral assumption on the base is needed. -/
 theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s) :
@@ -103,17 +91,19 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s) :
       rw [hp0, coneMap_zero]
       rfl
     · rcases mem_cone.mp hp with rfl | ⟨ht, hx⟩
-      · simp [pieces, coneAffinePiece_apply]
-        rfl
+      · simp [pieces, coneAffinePiece]
       · have hbase : p.2⁻¹ • p.1 ∈ C i := by
           rw [ha i]
           intro j
           have hrow := (mem_homogeneousInequalityCone.mp hc).2 j
           rw [(a i j).homogenize_apply_of_ne_zero p.1 ht.ne'] at hrow
           exact nonpos_of_mul_nonpos_right (by simpa using hrow) ht
-        have hvalue := heq i ⟨hx, hbase⟩
-        have hpiece := coneAffinePiece_ray (A i) (p.2⁻¹ • p.1) p.2
-        simpa [smul_inv_smul₀ ht.ne', Prod.ext_iff, pieces, hvalue] using hpiece.symm
+        ext
+        · simp only [coneMap_fst, pieces, coneAffinePiece,
+            ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.prod_apply,
+            heq i ⟨hx, hbase⟩]
+          exact ((A i).homogenize_apply_of_ne_zero p.1 ht.ne').symm
+        · simp [pieces, coneAffinePiece]
 
 end PiecewiseAffine
 

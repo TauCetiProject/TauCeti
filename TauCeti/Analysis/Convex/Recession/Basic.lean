@@ -5,9 +5,10 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Algebra.AsymptoticCone
 public import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Tactic.Module
@@ -33,16 +34,12 @@ the empty set is the whole space by its universal definition.
 * `PointedCone.mem_iff_forall_linear_nonpos`: a cone cut out by affine inequalities is cut out by
   their linear parts.
 * `Set.isClosed_recessionCone`: closed sets have closed recession cones.
-* `StarConvex.mem_asymptoticCone_iff_forall_add_smul_mem`: asymptotic directions are detected
-  by a single ray from the center of a closed star-convex set.
 * `Convex.recessionCone_eq_asymptoticCone`: agreement with asymptotic directions for
   nonempty closed convex sets.
-* `TauCeti.asymptoticCone_setOf_forall`: asymptotic directions of an affine-inequality set.
 * `AffineMap.eventually_mem_atBot_iff`: the backward-ray eventual-membership criterion.
 
 Adapted from `Mei/Geometry/Convex/Recession.lean` at Mei commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f`. The single-ray asymptotic-cone lemmas
-are adapted from the same file at commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`.
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
 -/
 
 public section
@@ -187,60 +184,28 @@ end Topology
 section Asymptotic
 
 open Filter
-open scoped Topology
 
-variable {R V : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-  [TopologicalSpace R] [OrderTopology R]
-  [AddCommGroup V] [Module R V] [TopologicalSpace V]
-  [IsTopologicalAddGroup V] [ContinuousSMul R V] {P : Set V}
-
-/-- If one ray in direction `v` based at `p` stays in `P`, then `v` is in the asymptotic cone
-of `P`. The scaling parameter tends to infinity, and asymptotic neighborhoods are
-translation invariant. -/
-theorem _root_.TauCeti.mem_asymptoticCone_of_forall_add_smul_mem {p v : V}
-    (h : ∀ t : R, 0 ≤ t → p + t • v ∈ P) : v ∈ asymptoticCone R P := by
-  have hlim := tendsto_id.atTop_smul_const_tendsto_asymptoticNhds (k := R) v
-  exact (hlim.const_vadd_asymptoticNhds p).frequently
-    (((eventually_ge_atTop (0 : R)).mono h).frequently)
-
-/-- The asymptotic cone of a closed set star-convex at `p` consists of the directions
-whose nonnegative ray from `p` stays in the set. -/
-theorem _root_.StarConvex.mem_asymptoticCone_iff_forall_add_smul_mem {p v : V}
-    (hstar : StarConvex R p P) (hclosed : IsClosed P) :
-    v ∈ asymptoticCone R P ↔ ∀ t : R, 0 ≤ t → p + t • v ∈ P :=
-  ⟨fun hv t ht => by
-    simpa [add_comm] using hstar.smul_vadd_mem_of_isClosed_of_mem_asymptoticCone hclosed ht hv,
-    TauCeti.mem_asymptoticCone_of_forall_add_smul_mem⟩
-
-/-- The asymptotic cone of a closed convex set `P` consists of the directions `v` such that the
-ray `p + t • v`, `t ≥ 0`, stays in `P`, for any one base point `p ∈ P`. -/
-theorem _root_.Convex.mem_asymptoticCone_iff_forall_add_smul_mem (hconvex : Convex R P)
-    (hclosed : IsClosed P) {p v : V} (hp : p ∈ P) :
-    v ∈ asymptoticCone R P ↔ ∀ t : R, 0 ≤ t → p + t • v ∈ P :=
-  (hconvex hp).mem_asymptoticCone_iff_forall_add_smul_mem hclosed
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
 
 /-- For a nonempty closed convex set, recession and asymptotic directions coincide. -/
-theorem _root_.Convex.recessionCone_eq_asymptoticCone
-    (hconvex : Convex R P) (hclosed : IsClosed P) (hne : P.Nonempty) :
-    (recessionCone R P : Set V) = asymptoticCone R P := by
-  obtain ⟨p, hp⟩ := hne
+theorem _root_.Convex.recessionCone_eq_asymptoticCone {P : Set V}
+    (hconvex : Convex ℝ P) (hclosed : IsClosed P) (hne : P.Nonempty) :
+    (recessionCone ℝ P : Set V) = asymptoticCone ℝ P := by
   ext v
-  exact ⟨fun hv => TauCeti.mem_asymptoticCone_of_forall_add_smul_mem (hv p hp),
-    fun hv x hx => (hconvex.mem_asymptoticCone_iff_forall_add_smul_mem hclosed hx).mp hv⟩
-
-/-- The asymptotic cone of a nonempty solution set of continuous affine inequalities consists
-of the directions on which every linear part is nonpositive. The index family may be infinite. -/
-theorem _root_.TauCeti.asymptoticCone_setOf_forall {ι : Type*} (g : ι → (V →ᴬ[R] R))
-    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) :
-    asymptoticCone R {x : V | ∀ i, g i x ≤ 0} = {v | ∀ i, (g i).contLinear v ≤ 0} := by
-  have hconvex : Convex R {x : V | ∀ i, g i x ≤ 0} := by
-    rw [ofPred_forall]
-    exact convex_iInter fun i => (convex_Iic 0).affine_preimage (g i).toAffineMap
-  have hclosed : IsClosed {x : V | ∀ i, g i x ≤ 0} := by
-    rw [ofPred_forall]
-    exact isClosed_iInter fun i => isClosed_le (g i).continuous continuous_const
-  rw [← hconvex.recessionCone_eq_asymptoticCone hclosed hne]
-  exact recessionCone_setOf_forall_eq (fun i => (g i).toAffineMap) hne
+  constructor
+  · intro hv
+    obtain ⟨p, hp⟩ := hne
+    rw [mem_asymptoticCone_iff]
+    refine tendsto_id.atTop_smul_const_tendsto_asymptoticNhds v
+      |>.asymptoticNhds_vadd_const p |>.frequently (Eventually.frequently ?_)
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    simpa [vadd_eq_add, add_comm] using (mem_recessionCone.mp hv) p hp t ht
+  · intro hv
+    rw [SetLike.mem_coe, mem_recessionCone]
+    intro p hp t ht
+    simpa [vadd_eq_add, add_comm] using
+      hconvex.smul_vadd_mem_of_isClosed_of_mem_asymptoticCone hclosed ht hv hp
 
 end Asymptotic
 

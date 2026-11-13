@@ -13,8 +13,13 @@ public import TauCeti.Analysis.Convex.Homogenization
 /-!
 # Homogenization of convex polyhedra
 
+A homogeneous inequality cone defined by finitely many affine rows is a convex polyhedron
+(`TauCeti.isConvexPolyhedron_homogeneousInequalityCone`), without dimension or separation
+assumptions. This preserves polyhedral cells when extending piecewise-affine maps to cones.
+
 In a finite-dimensional Hausdorff space, the homogenization of a convex polyhedron is a
-finitely generated cone (`TauCeti.IsConvexPolyhedron.fg_homogenization`).
+finitely generated cone (`TauCeti.IsConvexPolyhedron.fg_homogenization`). This reduces questions
+about possibly unbounded polyhedra, including those with lineality, to finitely generated cones.
 The general affine-inequality description of homogenization is developed in
 `TauCeti.Analysis.Convex.Homogenization`.
 
