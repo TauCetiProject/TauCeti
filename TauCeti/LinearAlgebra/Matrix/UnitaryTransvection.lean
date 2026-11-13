@@ -89,6 +89,11 @@ theorem unitaryTransvection_def (Q : Matrix n n R) (σ : R →+* R) (v : n → R
 theorem unitaryTransvection_zero : Q.unitaryTransvection σ v 0 = 1 := by
   rw [unitaryTransvection_def, zero_smul, add_zero]
 
+/-- Along the zero vector `v = 0`, every unitary transvection is the identity matrix. -/
+@[simp]
+theorem unitaryTransvection_zero_left (a : R) : Q.unitaryTransvection σ 0 a = 1 := by
+  rw [unitaryTransvection_def, zero_vecMulVec, smul_zero, add_zero]
+
 /-- The unitary transvection `τ_{v,a}` sends `x` to `x + a B(v, x) v`. -/
 theorem unitaryTransvection_mulVec (a : R) (x : n → R) :
     Q.unitaryTransvection σ v a *ᵥ x = x + (a * ((σ ∘ v) ⬝ᵥ (Q *ᵥ x))) • v := by

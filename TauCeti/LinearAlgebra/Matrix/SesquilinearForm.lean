@@ -167,10 +167,10 @@ theorem comp_mulVec_dotProduct_mulVec_mulVec {g : Matrix n n R} (hg : (g.map σ)
 theorem map_mul_self_smul_eq_self {R n : Type*} [Semiring R] {Q : Matrix n n R} {σ : R →+* R}
     (hσ : Function.Involutive σ) {ε : R} (hQ : (Q.map σ)ᵀ = ε • Q) :
     (σ ε * ε) • Q = Q :=
-  Matrix.ext fun i j ↦ by
-    have h₁ : σ (Q i j) = ε * Q j i := congrFun (congrFun hQ j) i
-    have h₂ : σ (Q j i) = ε * Q i j := congrFun (congrFun hQ i) j
-    rw [Matrix.smul_apply, smul_eq_mul, mul_assoc, ← h₂, ← map_mul, ← h₁, hσ]
+  calc
+    (σ ε * ε) • Q = σ ε • (Q.map σ)ᵀ := by rw [hQ, smul_smul]
+    _ = ((ε • Q).map σ)ᵀ := by rw [map_smul' _ _ _ (map_mul σ), transpose_smul]
+    _ = Q := by rw [← hQ, transpose_map, transpose_transpose, map_map, hσ.comp_self, map_id]
 
 /-- **An `ε`-Hermitian form.** For the `σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y` of Gram matrix
 `Q`, if `σ` is an involution and `σ(Q)ᵀ = ε Q`, then `σ(B(x, y)) = ε B(y, x)`. -/
@@ -248,8 +248,7 @@ theorem mul_self_eq_one_of_trace (hσ : Function.Involutive σ) (hQ : (Q.map σ)
     by_contra h
     exact hQ0 (Matrix.ext fun i j ↦ not_not.mp fun h' ↦ h ⟨i, j, h'⟩)
   have hε' : σ ε * ε = 1 :=
-    mul_right_cancel₀ hij <|
-      (congrFun (congrFun (map_mul_self_smul_eq_self hσ hQ) i) j).trans (one_mul _).symm
+    mul_right_cancel₀ hij <| by simpa using Matrix.ext_iff.mpr (map_mul_self_smul_eq_self hσ hQ) i j
   -- `s = 1 + σ ε` satisfies `σ s = ε s`, so `s = t + ε σ t`, whence `ε σ s = s`.
   obtain ⟨t, ht⟩ := htr (1 + σ ε) <| by
     rw [map_add, map_one, hσ]

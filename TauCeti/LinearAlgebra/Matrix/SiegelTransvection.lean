@@ -64,7 +64,9 @@ isotropic points.
 * `Matrix.siegelTransvection_zero_eq_unitaryTransvection`: `S(u, 0, c) = τ_{u,c}`.
 * `Matrix.siegelTransvection_mulVec`: the action `v ↦ v + B(u, v) (w + c u) - ε B(w, v) u`.
 * `Matrix.siegelTransvection_mulVec_self`: `S(u, w, c)` fixes `u` when `B(u, u) = B(w, u) = 0`.
-* `Matrix.siegelTransvection_add_smul`: shifting `w` by `a u` shifts `c` to `c + a - ε σ(a)`.
+* `Matrix.siegelTransvection_add_smul` and `Matrix.siegelTransvection_smul_left`: shifting `w` by
+  `a u` shifts `c` to `c + a - ε σ(a)`, and for involutive `σ`, rescaling `u` by `a` rescales `w`
+  by `σ(a)` and `c` by `a σ(a)`.
 * `Matrix.siegelTransvection_eq_mul` and `Matrix.det_siegelTransvection`: two-factor product for
   isotropic `u`, and determinant one when `B(u, w) = B(w, u) = 0`.
 * `Matrix.siegelTransvection_mul_siegelTransvection` and
@@ -140,6 +142,16 @@ theorem siegelTransvection_add_smul (w : n → R) (a c : R) :
   refine mulVec_injective (funext fun v ↦ ?_)
   rw [siegelTransvection_mulVec, siegelTransvection_mulVec, comp_add_dotProduct_mulVec,
     TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul]
+  module
+
+/-- For an involutive `σ`, rescaling `u` by `a` rescales `w` by `σ(a)` and the scalar parameter
+`c` by `a σ(a)`: `S(a u, w, c) = S(u, σ(a) w, c a σ(a))`. -/
+theorem siegelTransvection_smul_left (hσ : Function.Involutive σ) (a : R) (w : n → R) (c : R) :
+    Q.siegelTransvection σ ε (a • u) w c =
+      Q.siegelTransvection σ ε u (σ a • w) (c * a * σ a) := by
+  refine mulVec_injective (funext fun v ↦ ?_)
+  rw [siegelTransvection_mulVec, siegelTransvection_mulVec, TauCeti.map_comp_smul,
+    TauCeti.map_comp_smul, hσ a, smul_dotProduct, smul_dotProduct, smul_eq_mul, smul_eq_mul]
   module
 
 /-- **Two-factor product for an isotropic `u`.** When `B(u, u) = 0`, the two rank-one perturbations

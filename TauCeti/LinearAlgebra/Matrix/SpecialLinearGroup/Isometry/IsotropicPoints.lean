@@ -46,14 +46,13 @@ the element is a scalar matrix. This scalar criterion,
 
 ## Main results
 
-* `Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq`: when `x`
-  and `y` are isotropic with `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, the unitary transvection
-  along `y - x` with parameter `h(y, x)⁻¹` lies in `Q.specialIsometryGroup σ` and sends `x` to `y`.
-* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero` and
-  `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`: an element
-  of `Q.specialIsometryGroup σ` fixes `u` and sends an isotropic `x ∈ u^⊥` to a nonzero multiple of
-  an isotropic `y ∈ u^⊥` when `h(y, x) ≠ 0`, and for any `x, y ∉ K ∙ u` in `u^⊥` under the two
-  trace hypotheses.
+* `Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq`: when `σ`
+  is an involution, `Q` is `ε`-Hermitian with `ε * ε = 1`, and `x` and `y` are isotropic with
+  `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, the unitary transvection along `y - x` with parameter
+  `h(y, x)⁻¹` lies in `Q.specialIsometryGroup σ` and sends `x` to `y`.
+* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`: under the
+  two trace hypotheses, an element of `Q.specialIsometryGroup σ` fixes `u` and sends any isotropic
+  `x ∈ u^⊥` off `K ∙ u` to a nonzero multiple of any isotropic `y ∈ u^⊥` off `K ∙ u`.
 * `Matrix.isPretransitive_isotropicPoints`: the special isometry group acts transitively on the
   isotropic points.
 * `Matrix.mem_center_specialIsometryGroup_of_forall_smul_eq`: if some point is isotropic, an
@@ -80,9 +79,10 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} 
 
 /-! ### Transitivity -/
 
-/-- **A unitary transvection joins two isotropic vectors.** If `x` and `y` are isotropic with
-`h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, the unitary transvection along `y - x` with parameter
-`h(y, x)⁻¹` lies in `Q.specialIsometryGroup σ` and sends `x` to `y`. -/
+/-- **A unitary transvection joins two isotropic vectors.** If `σ` is an involution, `Q` is
+`ε`-Hermitian with `ε * ε = 1`, and `x` and `y` are isotropic with `h(y, x) ≠ 0` and
+`h(x, y) + h(y, x) = 0`, then the unitary transvection along `y - x` with parameter `h(y, x)⁻¹`
+lies in `Q.specialIsometryGroup σ` and sends `x` to `y`. -/
 theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) {x y : n → K}
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
@@ -107,10 +107,12 @@ theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_sub_and_mulVe
   refine ⟨g, hg, hga, ?_⟩
   simp [hga, unitaryTransvection_mulVec, hx, ← hb, inv_mul_cancel₀ hyx]
 
-/-- **Connecting two non-orthogonal isotropic vectors in `u^⊥`.** If `x` and `y` are isotropic
-vectors orthogonal to `u` with `h(y, x) ≠ 0`, and some nonzero `d` satisfies `d + ε σ(d) = 0`, then
-some element of `Q.specialIsometryGroup σ` fixes `u` and sends `x` to a nonzero multiple of `y`. -/
-theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+/-- **Connecting two non-orthogonal isotropic vectors in `u^⊥`.** Let `σ` be an involution and let
+`Q` be an `ε`-Hermitian matrix with `ε * ε = 1`. If `x` and `y` are isotropic vectors orthogonal to
+`u` with `h(y, x) ≠ 0`, and some nonzero `d` satisfies `d + ε σ(d) = 0`, then some element of
+`Q.specialIsometryGroup σ` fixes `u` and sends `x` to a nonzero multiple of `y`. -/
+private theorem
+    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
     (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {u x y : n → K}
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
@@ -158,7 +160,7 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
   swap
-  · exact exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+  · exact exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
       hσ hQ hε hadm hx hy hux huy hyx
   -- Choose `v` orthogonal to `u` and paired nontrivially with both `x` and `y`, then correct
   -- `v` to an isotropic vector `z = v + a • x`.
@@ -177,10 +179,10 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_
     rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
     simpa [z, hxy] using hvy
   obtain ⟨g₁, hg₁, c₁, hc₁, hg₁u, hg₁x⟩ :=
-    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
       hσ hQ hε hadm hx hz hux huz hzx
   obtain ⟨g₂, hg₂, c₂, hc₂, hg₂u, hg₂z⟩ :=
-    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+    exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
       hσ hQ hε hadm hz hy huz huy hyz
   refine ⟨g₂ * g₁, mul_mem hg₂ hg₁, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
   · rw [SpecialLinearGroup.coe_mul, ← mulVec_mulVec, hg₁u, hg₂u]

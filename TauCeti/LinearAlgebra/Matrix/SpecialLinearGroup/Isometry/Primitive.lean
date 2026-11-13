@@ -41,10 +41,11 @@ special isometries:
 
 * **Non-orthogonal orbit (`B(u, x) ≠ 0` and `B(u, y) ≠ 0`).** After normalizing `u` to `u'` with
   `B(u', x) = 1` and rescaling `y` so that `B(u', y) = 1`, the Siegel transformation
-  `Matrix.siegelTransvection Q σ ε u' (y - x - c • u') c` with `c = ε B(x, y)` lies in
-  `Q.specialIsometryGroup σ`, fixes `u`, and sends `x` to `y`, giving a special isometry with this
-  action (`Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`) without using
-  either trace hypothesis or nondegeneracy of `Q`.
+  `Matrix.siegelTransvection Q σ ε u' (y - x - c' • u') c'` with `c' = ε B(x, y)` lies in
+  `Q.specialIsometryGroup σ`, fixes `u`, and sends `x` to `y`; rescaling `u'` back to `u` via
+  `Matrix.siegelTransvection_smul_left` exhibits it as an admissible Siegel transformation along `u`
+  (`Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq`)
+  without using either trace hypothesis or nondegeneracy of `Q`.
 * **Orthogonal orbit (`B(u, x) = 0` and `B(u, y) = 0`, off `K ∙ u`).** When `B(y, x) ≠ 0`, a
   unitary transvection along `c • y - x` fixes `u` (since `c • y - x ∈ u^⊥`) and sends `x` to
   `c • y`; when `B(y, x) = 0`, two such steps pass through an isotropic vector `v + a • x ∈ u^⊥`
@@ -65,9 +66,9 @@ The block-closure argument is modeled on the symplectic case in
 
 ## Main results
 
-* `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq`: an element of
-  `Q.specialIsometryGroup σ` fixes an isotropic `u` and sends an isotropic `x` to an isotropic `y`
-  whenever `B(u, x) = B(u, y) ≠ 0`.
+* `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq`:
+  an admissible Siegel transformation along an isotropic `u` in `Q.specialIsometryGroup σ` fixes `u`
+  and sends an isotropic `x` to an isotropic `y` whenever `B(u, x) = B(u, y) ≠ 0`.
 * `Matrix.exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul`: the stabilizer of an
   isotropic `u` sends an isotropic `x ∉ K ∙ u` to a nonzero multiple of an isotropic `y ∉ K ∙ u`
   whenever `B(u, x) = 0 ↔ B(u, y) = 0`.
@@ -93,63 +94,76 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} 
 
 /-! ### Stabilizer orbits on isotropic vectors -/
 
-/-- **A special isometry joins two isotropic vectors at a given nonzero pairing with `u`.** If
-`u`, `x`, `y` are isotropic and `B(u, x) = B(u, y) ≠ 0`, then some element of
-`Q.specialIsometryGroup σ` fixes `u` and sends `x` to `y`. -/
-theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq
+/-- **An admissible Siegel transformation joins two isotropic vectors at a given nonzero pairing
+with `u`.** Let `σ` be an involution and let `Q` be an `ε`-Hermitian matrix with `ε * ε = 1`. If
+`u`, `x`, `y` are isotropic and `B(u, x) = B(u, y) ≠ 0`, then for some `w` orthogonal to `u` and
+some `c` with `c + ε σ(c) + ε B(w, w) = 0`, the Siegel transformation `S(u, w, c)` lies in
+`Q.specialIsometryGroup σ`, fixes `u`, and sends `x` to `y`. -/
+theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
     {u x y : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0)
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
     (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0)
     (hxy : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = (σ ∘ u) ⬝ᵥ (Q *ᵥ y)) :
-    ∃ g ∈ Q.specialIsometryGroup σ,
-      (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = y := by
+    ∃ g ∈ Q.specialIsometryGroup σ, ∃ (w : n → K) (c : K),
+      (σ ∘ u) ⬝ᵥ (Q *ᵥ w) = 0 ∧
+        c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 ∧
+        (g : Matrix n n K) = Q.siegelTransvection σ ε u w c ∧
+        (g : Matrix n n K) *ᵥ u = u ∧ (g : Matrix n n K) *ᵥ x = y := by
   have hσε : σ ε = ε := TauCeti.map_eq_self_of_mul_self_eq_one σ hε
   -- Normalize `u` to `u' = σ(b)⁻¹ • u` so that `B(u', x) = B(u', y) = 1`.
   set b := (σ ∘ u) ⬝ᵥ (Q *ᵥ x)
   set u' := (σ b)⁻¹ • u
-  set c := ε * ((σ ∘ x) ⬝ᵥ (Q *ᵥ y))
-  set w := y - x - c • u'
+  set c' := ε * ((σ ∘ x) ⬝ᵥ (Q *ᵥ y))
+  set w' := y - x - c' • u'
   have hu'pair (v : n → K) : (σ ∘ u') ⬝ᵥ (Q *ᵥ v) = b⁻¹ * ((σ ∘ u) ⬝ᵥ (Q *ᵥ v)) := by
     rw [TauCeti.map_comp_smul, smul_dotProduct, smul_eq_mul, map_inv₀, hσ]
   have hu' : (σ ∘ u') ⬝ᵥ (Q *ᵥ u') = 0 := by rw [comp_smul_dotProduct_mulVec_smul, hu, mul_zero]
   have hu'x : (σ ∘ u') ⬝ᵥ (Q *ᵥ x) = 1 := by rw [hu'pair, inv_mul_cancel₀ hux]
   have hu'y : (σ ∘ u') ⬝ᵥ (Q *ᵥ y) = 1 := by rw [hu'pair, ← hxy, inv_mul_cancel₀ hux]
-  have hu'w : (σ ∘ u') ⬝ᵥ (Q *ᵥ w) = 0 := by
-    simp [w, mulVec_sub, mulVec_smul, hu'y, hu'x, hu']
-  have hwu' : (σ ∘ w) ⬝ᵥ (Q *ᵥ u') = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hu'w
+  have hu'w' : (σ ∘ u') ⬝ᵥ (Q *ᵥ w') = 0 := by
+    simp [w', mulVec_sub, mulVec_smul, hu'y, hu'x, hu']
+  have hwu' : (σ ∘ w') ⬝ᵥ (Q *ᵥ u') = 0 :=
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hu'w'
   have hxu' : (σ ∘ x) ⬝ᵥ (Q *ᵥ u') = ε := by
     rw [comp_dotProduct_mulVec_swap hσ hQ hε, hu'x, map_one, mul_one]
-  have hxw : (σ ∘ x) ⬝ᵥ (Q *ᵥ w) = 0 := by
-    simp only [w, mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, hx, hxu']
+  have hxw' : (σ ∘ x) ⬝ᵥ (Q *ᵥ w') = 0 := by
+    simp only [w', mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul, hx, hxu']
     linear_combination -((σ ∘ x) ⬝ᵥ (Q *ᵥ y)) * hε
-  have hwx : (σ ∘ w) ⬝ᵥ (Q *ᵥ x) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hxw
-  -- Isotropy of `y = (x + w) + c • u'` gives `c + ε σ(c) + ε B(w, w) = 0`.
-  have hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0 := by
-    have hy_eq : (x + w) + c • u' = y := by dsimp [w]; abel
-    have hxwu' : (σ ∘ (x + w)) ⬝ᵥ (Q *ᵥ u') = ε := by
+  have hwx : (σ ∘ w') ⬝ᵥ (Q *ᵥ x) = 0 :=
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hxw'
+  -- Isotropy of `y = (x + w') + c' • u'` gives `c' + ε σ(c') + ε B(w', w') = 0`.
+  have hc' : c' + ε * σ c' + ε * ((σ ∘ w') ⬝ᵥ (Q *ᵥ w')) = 0 := by
+    have hy_eq : (x + w') + c' • u' = y := by dsimp [w']; abel
+    have hxwu' : (σ ∘ (x + w')) ⬝ᵥ (Q *ᵥ u') = ε := by
       simp [hxu', hwu']
-    have hxw_self : (σ ∘ (x + w)) ⬝ᵥ (Q *ᵥ (x + w)) = (σ ∘ w) ⬝ᵥ (Q *ᵥ w) := by
-      simp [mulVec_add, hx, hxw, hwx]
-    have h0 := comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hu' (x + w) c
-    rw [hy_eq, hy, hxw_self, hxwu', map_mul, hσε, mul_left_comm ε (σ c) ε, hε, mul_one] at h0
-    linear_combination -ε * h0 - c * hε
+    have hxw_self : (σ ∘ (x + w')) ⬝ᵥ (Q *ᵥ (x + w')) = (σ ∘ w') ⬝ᵥ (Q *ᵥ w') := by
+      simp [mulVec_add, hx, hxw', hwx]
+    have h0 := comp_add_smul_dotProduct_mulVec_add_smul hσ hQ hε hu' (x + w') c'
+    rw [hy_eq, hy, hxw_self, hxwu', map_mul, hσε, mul_left_comm ε (σ c') ε, hε, mul_one] at h0
+    linear_combination -ε * h0 - c' * hε
   obtain ⟨g, hg, hS⟩ :=
-    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu' hu'w hc
-  refine ⟨g, hg, ?_, ?_⟩
-  · have hσb : σ b ≠ 0 := (map_ne_zero σ).mpr hux
-    have hu_eq : σ b • u' = u := smul_inv_smul₀ hσb u
-    rw [← hu_eq, mulVec_smul, hS, siegelTransvection_mulVec_self hu' hwu']
-  · simp only [w, hS, siegelTransvection_mulVec, hu'x, hwx, one_smul, mul_zero, zero_smul,
+    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection hσ hQ hu' hu'w' hc'
+  have hσb : σ b ≠ 0 := (map_ne_zero σ).mpr hux
+  have hu_eq : σ b • u' = u := smul_inv_smul₀ hσb u
+  -- Rescale `u'` back to `u` via `siegelTransvection_smul_left`.
+  refine ⟨g, hg, b⁻¹ • w', c' * (σ b)⁻¹ * b⁻¹, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← hu_eq, TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, hu'w',
+      smul_zero, smul_zero]
+  · rw [comp_smul_dotProduct_mulVec_smul, map_mul, map_mul, map_inv₀, map_inv₀, hσ]
+    linear_combination ((σ b)⁻¹ * b⁻¹) * hc'
+  · rw [hS, siegelTransvection_smul_left hσ, map_inv₀, hσ]
+  · rw [← hu_eq, mulVec_smul, hS, siegelTransvection_mulVec_self hu' hwu']
+  · simp only [w', hS, siegelTransvection_mulVec, hu'x, hwx, one_smul, mul_zero, zero_smul,
       sub_zero]
     abel
 
 /-- **The stabilizer of an isotropic vector `u` is projectively transitive on both orthogonality
-classes off `K ∙ u`.** Let `u`, `x`, `y` be isotropic vectors with `x ∉ K ∙ u`, `y ∉ K ∙ u`, and
-`B(u, x) = 0 ↔ B(u, y) = 0`. Then an element of `Q.specialIsometryGroup σ` fixes `u` and sends `x`
-to a nonzero scalar multiple of `y`. -/
+classes off `K ∙ u`.** Let `σ` be an involution, let `Q` be an invertible `ε`-Hermitian matrix, and
+suppose that the trace `t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` and has a
+nonzero kernel element. If `u`, `x`, `y` are isotropic vectors with `x ∉ K ∙ u`, `y ∉ K ∙ u`, and
+`B(u, x) = 0 ↔ B(u, y) = 0`, then some element of `Q.specialIsometryGroup σ` fixes `u` and sends
+`x` to a nonzero scalar multiple of `y`. -/
 theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
@@ -173,8 +187,9 @@ theorem exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq_smul
       rw [comp_smul_dotProduct_mulVec_smul, hy, mul_zero]
     have hucy : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = (σ ∘ u) ⬝ᵥ (Q *ᵥ (c • y)) := by
       rw [mulVec_smul, dotProduct_smul, smul_eq_mul, div_mul_cancel₀ _ huy]
-    obtain ⟨g, hg, hgu, hgx⟩ :=
-      exists_mem_specialIsometryGroup_mulVec_eq_self_and_mulVec_eq hσ hQ hε hu hx hcy hux hucy
+    obtain ⟨g, hg, -, -, -, -, -, hgu, hgx⟩ :=
+      exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_mulVec_eq_self_and_mulVec_eq
+        hσ hQ hε hu hx hcy hux hucy
     exact ⟨g, hg, c, hc, hgu, hgx⟩
 
 /-! ### Block closure and primitivity -/
