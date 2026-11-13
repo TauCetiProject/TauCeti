@@ -38,6 +38,12 @@ arbitrary values of the variables of `Y` (`TauCeti.GroupAlgGeom.V_addFreeVars`).
   variable `z` (`TauCeti.GroupAlgGeom.CoordGroup.not_injective_freeVarsHom_commutator`): every
   solution has `x = 1` or `y = 1`, so the commutator `[x, z y z⁻¹]` vanishes at every solution,
   but it is not trivial in `F_{R(S)} ∗ ⟨z⟩`.
+* More generally, a `G`-homomorphism `G_S ∗ F(Y) → G_T` of presented groups induces a
+  `G`-homomorphism `G_{R(S)} ∗ F(Y) → G_{R(T)}` of coordinate groups
+  (`TauCeti.GroupAlgGeom.CoordGroup.freeProdMap`), surjective if the first one is; `freeVarsHom` is
+  the one induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}`
+  (`TauCeti.GroupAlgGeom.CoordGroup.freeProdMap_addFreeVarsEquiv_symm`). This gives the coordinate
+  groups along a Tietze isomorphism that adds free generators.
 
 ## References
 
@@ -462,6 +468,101 @@ theorem freeVarsHom_injective_iff_isSeparatedBy (ι : G →* H) (Y : Type*) (S :
       (DFunLike.congr_fun (eq_eval (φ : GX (CoordGroup ι S) Y →* H)) w).symm
     refine ⟨_, (homEquiv ι S ψ).property, fun y => φ (inr (FreeGroup.of y)), ?_⟩
     rwa [hψ, hφ]
+
+end CoordGroup
+
+/-! ### Coordinate groups and homomorphisms of presented groups with free variables -/
+
+namespace CoordGroup
+
+variable {X' : Type*} {S : Set (GX G X)} {T : Set (GX G X')}
+  (ψ : GHom ((inl : SystemGroup G S →* GX (SystemGroup G S) Y).comp (SystemGroup.coeff S))
+    (SystemGroup.coeff T))
+
+/-- A `G`-homomorphism `ψ : G_S ∗ F(Y) → G_T` sends the class of an element of the radical of `S`
+into the kernel of `G_T → G_{R(T)}`: at a point of `T`, the composite `G_S → H` is evaluation at a
+point of `S`. -/
+private theorem toCoordGroup_apply_inl_eq_one {w : GX G X} (hw : w ∈ Rad ι S) :
+    SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) = 1 := by
+  obtain ⟨t, ht⟩ := QuotientGroup.mk_surjective (ψ (inl (w : SystemGroup G S)))
+  rw [← ht, SystemGroup.toCoordGroup_mk, QuotientGroup.eq_one_iff, mem_Rad]
+  intro v hv
+  let χ : GHom (SystemGroup.coeff S) ι :=
+    ⟨((SystemGroup.evalGHom v hv : SystemGroup G T →* H).comp
+      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inl, fun g => by
+      simpa using congrArg (SystemGroup.evalGHom v hv) (ψ.map_coeff g)⟩
+  have hχ : χ = SystemGroup.evalGHom _ (SystemGroup.homEquiv ι S χ).property :=
+    SystemGroup.gHom_ext fun _ => by simp
+  have h := mem_Rad.1 hw _ (SystemGroup.homEquiv ι S χ).property
+  rw [← SystemGroup.evalGHom_mk hv, ht]
+  rwa [← SystemGroup.evalGHom_mk (SystemGroup.homEquiv ι S χ).property, ← hχ] at h
+
+variable (ι) in
+/-- The homomorphism `G_{R(S)} → G_{R(T)}` induced by `G_S → G_S ∗ F(Y) → G_T`. -/
+private def inlCoordMap : CoordGroup ι S →* CoordGroup ι T :=
+  QuotientGroup.lift (Rad ι S)
+    (((SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp
+      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp
+        ((inl : SystemGroup G S →* GX (SystemGroup G S) Y).comp (QuotientGroup.mk' _)))
+    fun _ hw => toCoordGroup_apply_inl_eq_one ψ hw
+
+private theorem inlCoordMap_mk (w : GX G X) :
+    inlCoordMap ι ψ (w : CoordGroup ι S) =
+      SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) :=
+  (rfl)
+
+variable (ι) in
+/-- A `G`-homomorphism `ψ : G_S ∗ F(Y) → G_T` of presented groups induces a `G`-homomorphism
+`G_{R(S)} ∗ F(Y) → G_{R(T)}` of coordinate groups, compatible with the projections
+`G_S → G_{R(S)}` and `G_T → G_{R(T)}`. -/
+def freeProdMap :
+    GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S)) (coeff ι T) where
+  toMonoidHom := lift (inlCoordMap ι ψ)
+    (((SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp
+      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inr)
+  map_coeff' g := by
+    simpa [inlCoordMap_mk] using congrArg (SystemGroup.toCoordGroup ι T) (ψ.map_coeff g)
+
+/-- The homomorphism of coordinate groups induced by `ψ : G_S ∗ F(Y) → G_T` is `ψ` on the classes
+of the elements of `G_S ∗ F(Y)`. -/
+@[simp]
+theorem freeProdMap_map_toCoordGroup (w : GX (SystemGroup G S) Y) :
+    freeProdMap ι ψ
+        (Monoid.Coprod.map (SystemGroup.toCoordGroup ι S : SystemGroup G S →* CoordGroup ι S)
+          (.id _) w) =
+      SystemGroup.toCoordGroup ι T (ψ w) := by
+  induction w using induction_on with
+  | inl q =>
+    induction q using QuotientGroup.induction_on
+    simp [freeProdMap, inlCoordMap_mk]
+  | inr w => simp [freeProdMap]
+  | mul x y hx hy => simp only [map_mul, hx, hy]
+
+variable {ψ} in
+/-- A surjective homomorphism of presented groups induces a surjective homomorphism of
+coordinate groups. -/
+theorem freeProdMap_surjective (hψ : Function.Surjective ψ) :
+    Function.Surjective (freeProdMap ι ψ) := fun c => by
+  obtain ⟨q, rfl⟩ := SystemGroup.toCoordGroup_surjective (ι := ι) T c
+  obtain ⟨w, rfl⟩ := hψ q
+  exact ⟨_, freeProdMap_map_toCoordGroup ψ w⟩
+
+/-- The surjection `G_{R(S)} ∗ F(Y) → G_{R(S')}` onto the coordinate group of the system with free
+variables `Y` is induced by the isomorphism `G_S ∗ F(Y) ≃ G_{S'}` of presented groups. -/
+theorem freeProdMap_addFreeVarsEquiv_symm :
+    freeProdMap ι (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp) =
+      freeVarsHom ι Y S := by
+  refine GHom.ext fun c => ?_
+  induction c using induction_on with
+  | inl q =>
+    induction q using QuotientGroup.induction_on with | H w => ?_
+    simpa using freeProdMap_map_toCoordGroup (ι := ι)
+      (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp)
+      (inl (w : SystemGroup G S))
+  | inr w =>
+    simpa using freeProdMap_map_toCoordGroup (ι := ι)
+      (GHom.ofMulEquiv (SystemGroup.addFreeVarsEquiv Y S).symm fun g => by simp) (inr w)
+  | mul x y hx hy => simp only [map_mul, hx, hy]
 
 end CoordGroup
 
