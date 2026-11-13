@@ -28,6 +28,10 @@ derivative from a finite successor-order norm, the almost-everywhere vanishing o
 zero norm, monotonicity in the set, invariance under almost-everywhere change, the triangle
 inequality and the operator-norm bound under a continuous linear map of the codomain.
 
+An upper bound of the form `a + c ‖f‖_{W^{k+1,p}(U)}` for finite `c`
+(with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be checked through each weak
+derivative of `f` separately.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -88,6 +92,51 @@ theorem eLpNormWkp_succ_le {D : ℂ → ℂ →L[ℝ] F}
   gcongr
   exact iInf₂_le D hD
 
+/-- A finite successor-order norm provides a weak derivative on the interior of finite norm of
+the previous order. -/
+theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
+    ∃ D : ℂ → ℂ →L[ℝ] F,
+      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D ≠ ∞ := by
+  rw [eLpNormWkp_succ, ENNReal.add_ne_top] at hf
+  obtain ⟨D, hD, hlt⟩ : ∃ D : ℂ → ℂ →L[ℝ] F,
+      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D < ∞ := by
+    simpa [iInf_lt_iff, lt_top_iff_ne_top] using hf.2
+  exact ⟨D, hD, hlt.ne⟩
+
+/-- Let `c ≠ ∞`, and if `c = 0` let `f` have finite `W^{k+1,p}(U)` norm. To bound `b` by
+`a + c ‖f‖_{W^{k+1,p}(U)}` it suffices to bound it by `a + c (‖f‖_{Lᵖ(U)} + ‖D‖_{W^{k,p}(U)})`
+for every weak derivative `D` of `f` on `interior U` of finite `W^{k,p}(U)` norm. -/
+theorem le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn {a b c : ℝ≥0∞}
+    (hc : c ≠ ∞) (hf : c = 0 → eLpNormWkp p U (k + 1) f ≠ ∞)
+    (H : ∀ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D →
+      eLpNormWkp p U k D ≠ ∞ →
+        b ≤ a + c * (eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D)) :
+    b ≤ a + c * eLpNormWkp p U (k + 1) f := by
+  rcases eq_or_ne c 0 with rfl | hc0
+  · obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf rfl)
+    simpa using H D hD hDk
+  calc b
+      ≤ ⨅ (D : ℂ → ℂ →L[ℝ] F) (_ : HasWeakFDerivOn volume (Opens.interior U) f D),
+          a + c * (eLpNorm f p (volume.restrict U) + eLpNormWkp p U k D) :=
+        le_iInf₂ fun D hD => by
+          by_cases hDk : eLpNormWkp p U k D = ∞
+          · rw [hDk, add_top, ENNReal.mul_top hc0, add_top]
+            exact le_top
+          · exact H D hD hDk
+    _ = a + c * eLpNormWkp p U (k + 1) f := by
+        rw [eLpNormWkp_succ]
+        simp only [ENNReal.add_iInf, ENNReal.mul_iInf_of_ne hc0 hc]
+
+/-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set ℂ}
+    (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f ≠ ∞ := by
+  induction k generalizing F with
+  | zero => exact (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top
+  | succ k ih =>
+    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
+    refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
+    exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih hDk⟩
+
 /-- The `W^{k,p}` norm increases with the set. -/
 theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp p U k f := by
   induction k generalizing F with
@@ -122,17 +171,6 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
 
-/-- A finite successor-order norm provides a weak derivative on the interior of finite norm of
-the previous order. -/
-theorem exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top (hf : eLpNormWkp p U (k + 1) f ≠ ∞) :
-    ∃ D : ℂ → ℂ →L[ℝ] F,
-      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D ≠ ∞ := by
-  rw [eLpNormWkp_succ, ENNReal.add_ne_top] at hf
-  obtain ⟨D, hD, hlt⟩ : ∃ D : ℂ → ℂ →L[ℝ] F,
-      HasWeakFDerivOn volume (Opens.interior U) f D ∧ eLpNormWkp p U k D < ∞ := by
-    simpa [iInf_lt_iff, lt_top_iff_ne_top] using hf.2
-  exact ⟨D, hD, hlt.ne⟩
-
 /-- A function of finite `W^{k,p}` norm lies in the local Sobolev class `W^{k,p}_loc`. -/
 theorem memWkpLoc_of_eLpNormWkp_ne_top (hf : eLpNormWkp p U k f ≠ ∞) : MemWkpLoc p U k f := by
   induction k generalizing F with
@@ -150,16 +188,6 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top {Ω : Opens ℂ}
   obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
   rw [Opens.interior_coe] at hD
   exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
-
-/-- A local Sobolev function has finite `W^{k,p}` norm on every compact subset of its domain. -/
-theorem MemWkpLoc.eLpNormWkp_ne_top_of_isCompact (hf : MemWkpLoc p U k f) {K : Set ℂ}
-    (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f ≠ ∞ := by
-  induction k generalizing F with
-  | zero => exact (memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top
-  | succ k ih =>
-    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv
-    refine ne_top_of_le_ne_top ?_ (eLpNormWkp_succ_le (hD.mono (interior_mono hKU)))
-    exact ENNReal.add_ne_top.2 ⟨(memLpLoc_iff.1 hf.memLpLoc K hKU hK).eLpNorm_ne_top, ih hDk⟩
 
 /-- A local Sobolev function has finite `W^{k,p}` norm on every set whose closure is compact and
 contained in its domain. -/
