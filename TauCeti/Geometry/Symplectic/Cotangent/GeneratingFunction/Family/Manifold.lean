@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Generated
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Generating families on manifolds
@@ -121,45 +122,44 @@ theorem familyFiberDeriv_eq_neg_generatingTarget_snd (S : M × A → ℝ) (x : M
     (DFunLike.congr_fun (generatingTarget_snd (J := 𝓘(ℝ, A)) (S := S) x) b).symm)
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The fibre derivative of a smooth generating family is smooth. -/
-theorem contMDiff_familyFiberDeriv (hS : ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) ∞ S) :
-    ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) ∞ (familyFiberDeriv S) := by
-  intro x
-  -- Translate the auxiliary variable, so that the derivative is taken at the fixed point `0`.
-  have h := Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry (n := ∞) (m := ∞) (x := (0 : A))
-    (G := fun (y : M × A) (b : A) ↦ S (y.1, y.2 + b))
-    ((hS.comp ((contMDiff_fst.comp contMDiff_fst).prodMk
-      ((contMDiff_snd.comp contMDiff_fst).add contMDiff_snd))) (x, 0)) (by simp)
-  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
-  ext b
-  have h₁ := mvfderiv_eq_fderiv_apply (𝕜 := ℝ) (fun b' ↦ S (y.1, y.2 + b')) 0 b
-  have h₂ := fderiv_comp_add_left (𝕜 := ℝ) (f := fun a ↦ S (y.1, a)) y.2 (x := 0)
-  rw [add_zero] at h₂
-  rw [familyFiberDeriv_eq_fderiv, ← h₂]
-  exact h₁.symm
+/-- The fibre derivative of a generating family which is `C^n` at `x` is `C^m` at `x` when
+`m + 1 ≤ n`. -/
+theorem contMDiffAt_familyFiberDeriv [IsManifold I 1 M] {m n : WithTop ℕ∞} {x : M × A}
+    (hS : ContMDiffAt (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) n S x) (hmn : m + 1 ≤ n) :
+    ContMDiffAt (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) m (familyFiberDeriv S) x := by
+  -- The fibre derivative is the Fréchet derivative of `S` in its vector-space factor.
+  rw [funext (familyFiberDeriv_eq_fderiv S)]
+  exact hS.fderiv_right (g := Function.curry S) hmn
 
-variable [I.Boundaryless]
+/-- The fibre derivative of a `C^n` generating family is `C^m` when `m + 1 ≤ n`. -/
+theorem contMDiff_familyFiberDeriv [IsManifold I 1 M] {m n : WithTop ℕ∞}
+    (hS : ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) n S) (hmn : m + 1 ≤ n) :
+    ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) m (familyFiberDeriv S) :=
+  fun x ↦ contMDiffAt_familyFiberDeriv (hS x) hmn
 
-/-- **The differential of the fibre derivative.** For a smooth generating family `S`, the
-differential at `x = (q, a)` of the fibre derivative, applied to a tangent vector `v = (w, c)` and
-then to `b ∈ A`, is `d_a (d_q S) b w + D²_a S c b`: the mixed Hessian of `S` in `w`, plus the
-second derivative of `S(q, ·)` in `c`. -/
-theorem mvfderiv_familyFiberDeriv_apply (hS : ContMDiff (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) ∞ S) (x : M × A)
+/-- **The differential of the fibre derivative.** For a generating family `S` which is `C²` at
+`x = (q, a)`, the differential at `x` of the fibre derivative, applied to a tangent vector
+`v = (w, c)` and then to `b ∈ A`, is `d_a (d_q S) b w + D²_a S c b`: the mixed Hessian of `S` in
+`w`, plus the second derivative of `S(q, ·)` in `c`. -/
+theorem mvfderiv_familyFiberDeriv_apply [IsManifold I 2 M] [I.Boundaryless] {x : M × A}
+    (hS : ContMDiffAt (I.prod 𝓘(ℝ, A)) 𝓘(ℝ) 2 S x)
     (v : TangentSpace (I.prod 𝓘(ℝ, A)) x) (b : A) :
     mvfderiv (I.prod 𝓘(ℝ, A)) (familyFiberDeriv S) x v b =
       mixedHessian I 𝓘(ℝ, A) S x b v.1 + fderiv ℝ (fderiv ℝ fun a ↦ S (x.1, a)) x.2 v.2 b := by
-  have hF := (contMDiff_familyFiberDeriv hS x).mdifferentiableAt (by simp)
+  have hF := (contMDiffAt_familyFiberDeriv (m := 1) hS (by norm_num)).mdifferentiableAt
+    one_ne_zero
   rw [hF.mvfderiv_prod_eq_add_apply, add_apply]
   congr 1
   · -- Differentiating `∂_a S` in the base direction is the mixed Hessian of the swapped family.
-    rw [← mixedHessian_comp_swap_apply ((hS x).of_le (by simp)) (v.1 : TangentSpace I x.1) b,
-      mixedHessian_def]
+    rw [← mixedHessian_comp_swap_apply hS (v.1 : TangentSpace I x.1) b, mixedHessian_def]
     simp only [familyFiberDeriv_def, Function.comp_apply, Prod.swap_prod_mk, Prod.fst_swap,
       Prod.snd_swap]
   · simp only [familyFiberDeriv_eq_fderiv]
     exact DFunLike.congr_fun (mvfderiv_eq_fderiv_apply (𝕜 := ℝ) _ _ v.2) b
+
+variable [IsManifold I ∞ M] [I.Boundaryless]
 
 /-- At a point where the differential of the fibre derivative of a smooth generating family `S`
 is surjective, a tangent vector killed by it and by the differential of the source projection
@@ -191,7 +191,7 @@ private theorem eq_zero_of_mfderiv_generatingSource_eq_zero
   -- The second derivative of `S(q, ·)` in the direction `b` vanishes, by the hypothesis on
   -- `(0, b)`.
   have hb (c : A) : fderiv ℝ (fderiv ℝ fun a ↦ S (x.1, a)) x.2 b c = 0 := by
-    have h := mvfderiv_familyFiberDeriv_apply hS x (0, b) c
+    have h := mvfderiv_familyFiberDeriv_apply ((hS x).of_le (by simp)) (0, b) c
     rw [hu, map_zero, zero_apply, zero_add] at h
     exact h.symm
   -- Hence every covector in the range of the differential of `∂_a S`, which is all of `A'`,
@@ -201,7 +201,7 @@ private theorem eq_zero_of_mfderiv_generatingSource_eq_zero
       |>.isSymmSndFDerivAt (by simp)
   refine Prod.ext rfl (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ ?_)
   obtain ⟨v, rfl⟩ := hsurj β
-  rw [mvfderiv_familyFiberDeriv_apply hS x v b, hH, zero_apply, zero_add,
+  rw [mvfderiv_familyFiberDeriv_apply ((hS x).of_le (by simp)) v b, hH, zero_apply, zero_add,
     hsymm]
   exact hb v.2
 
@@ -232,7 +232,7 @@ the atlas of `TauCeti.regularLevelChartedSpace`. -/
 @[instance_reducible]
 def familyCriticalSetChartedSpace :
     ChartedSpace (Fin (finrank ℝ E) → ℝ) {x : M × A // familyFiberDeriv S x = 0} :=
-  regularLevelChartedSpace (fun x _ ↦ (contMDiff_familyFiberDeriv hS x).of_le (by simp)) hreg
+  regularLevelChartedSpace (fun x _ ↦ contMDiffAt_familyFiberDeriv (hS x) (by simp)) hreg
     finrank_prod_sub_finrank_strongDual
 
 /-- The fibre-critical set of a smooth transverse generating family is a smooth manifold of the
@@ -240,7 +240,8 @@ dimension of `M`. -/
 theorem isManifold_familyCriticalSet :
     letI := familyCriticalSetChartedSpace hS hreg
     IsManifold 𝓘(ℝ, Fin (finrank ℝ E) → ℝ) ∞ {x : M × A // familyFiberDeriv S x = 0} :=
-  isManifold_regularLevel (by simp) (fun x _ ↦ contMDiff_familyFiberDeriv hS x) hreg
+  isManifold_regularLevel (by simp)
+    (fun x _ ↦ contMDiff_familyFiberDeriv (m := ∞) hS (by simp) x) hreg
     finrank_prod_sub_finrank_strongDual
 
 /-- The fibre-critical set of a smooth transverse generating family is a smoothly embedded
@@ -249,7 +250,8 @@ theorem isSmoothEmbedding_coe_familyCriticalSet :
     letI := familyCriticalSetChartedSpace hS hreg
     IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E) → ℝ) (I.prod 𝓘(ℝ, A)) ∞
       (Subtype.val : {x : M × A // familyFiberDeriv S x = 0} → M × A) :=
-  isSmoothEmbedding_coe_regularLevel (by simp) (fun x _ ↦ contMDiff_familyFiberDeriv hS x) hreg
+  isSmoothEmbedding_coe_regularLevel (by simp)
+    (fun x _ ↦ contMDiff_familyFiberDeriv (m := ∞) hS (by simp) x) hreg
     finrank_prod_sub_finrank_strongDual
 
 /-- The tangent space of the fibre-critical set at `z` is the kernel of the differential of the
@@ -286,6 +288,9 @@ theorem mpullback_generatingSource_comp_coe_liouvilleForm :
     mvfderiv_comp_apply_of_eq z hSz hjz rfl, hSz.mvfderiv_prod_eq_add_apply,
     mfderiv_comp_apply z mdifferentiableAt_fst hjz, mfderiv_fst]
   -- The auxiliary component of `dS` is the fibre derivative, which vanishes on the critical set.
+  -- The ascription reads `∂_a S z = 0`, an equation in `A'`, on the tangent space of `A`, which is
+  -- `A` itself. The goal is not type-correct at implicit transparency, so `rw` and `simp` cannot
+  -- evaluate the zero covector after rewriting with `familyFiberDeriv_def` there.
   have h0 : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (z.1.1, a)) z.1.2 = 0 :=
     (familyFiberDeriv_def S z.1).symm.trans z.2
   rw [h0]
@@ -318,21 +323,18 @@ private theorem injective_mfderiv_generatingSource_comp_coe
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply] at hvw
   refine hj.isImmersion.mfderiv_injective (by simp) z (sub_eq_zero.mp ?_)
   have hsurj : Function.Surjective (mvfderiv (I.prod 𝓘(ℝ, A)) (familyFiberDeriv S) z.1) :=
-    fun β ↦ (isRegularPoint_iff.mp (hreg.isRegularPoint z.2) β).imp fun u hu ↦
-      (mvfderiv_apply_eq_mfderiv_apply _ _ u).trans hu
+    isRegularPoint_iff_surjective_mvfderiv.mp (hreg.isRegularPoint z.2)
   -- Vectors tangent to the critical set lie in the kernel of the differential of `∂_a S`.
   have hker (v' : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E) → ℝ) z) :
-      mfderiv (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) (familyFiberDeriv S) z.1
+      mvfderiv (I.prod 𝓘(ℝ, A)) (familyFiberDeriv S) z.1
         (mfderiv 𝓘(ℝ, Fin (finrank ℝ E) → ℝ) (I.prod 𝓘(ℝ, A)) Subtype.val z v') = 0 := by
     have h : mfderiv 𝓘(ℝ, Fin (finrank ℝ E) → ℝ) (I.prod 𝓘(ℝ, A)) Subtype.val z v' ∈
-        (mfderiv (I.prod 𝓘(ℝ, A)) 𝓘(ℝ, StrongDual ℝ A) (familyFiberDeriv S) z.1).ker := by
-      rw [← range_mfderiv_coe_familyCriticalSet hS hreg z]
+        (mvfderiv (I.prod 𝓘(ℝ, A)) (familyFiberDeriv S) z.1).ker := by
+      rw [ker_mvfderiv, ← range_mfderiv_coe_familyCriticalSet hS hreg z]
       exact ⟨v', rfl⟩
-    exact h
+    rwa [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at h
   refine eq_zero_of_mfderiv_generatingSource_eq_zero hS hsurj ?_ ?_
-  · rw [mvfderiv_apply_eq_mfderiv_apply, map_sub, hker v, hker w, sub_zero]
-    -- The zero of the tangent space at `∂_a S` is the zero of `A'`.
-    rfl
+  · rw [map_sub, hker v, hker w, sub_zero]
   · rw [map_sub, hvw, sub_self]
 
 /-- **The fibre-critical set of a generating family is an exact Lagrangian map.** Let `S` be a
