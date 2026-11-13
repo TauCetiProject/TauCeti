@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.VectorField.ModelChart
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
@@ -46,6 +46,8 @@ union with the interiors of the critical-point neighbourhoods is the returned ne
 * `TauCeti.MorseChart.hessianQuadraticForm_quadratic` and
   `TauCeti.MorseChart.hessianQuadraticForm_extChartAt`: the Hessian of the quadratic normal form,
   and the Hessian of `f` at the centre of a Morse chart, read in the preferred chart.
+* `IsCompact.exists_morseChart_closed_nhds`: Morse charts at the finitely many critical points of a
+  compact set, with pairwise disjoint closed neighbourhoods inside them.
 * `IsCompact.exists_contMDiff_pseudoGradientOn_nhds`: existence of a pseudo-gradient near a
   compact set whose critical points are nondegenerate, and its Morse-function specialization
   `TauCeti.IsMorse.exists_contMDiff_pseudoGradientOn_nhds`.
@@ -546,6 +548,37 @@ private theorem exists_isOpen_pseudoGradientOn_of_field {K : Set M}
 end LocalField
 
 open Filter in
+/-- **Morse charts on disjoint closed neighbourhoods of critical points.** Let `K` be a compact
+subset of a Hausdorff manifold and let `f` be smooth. If every critical point of `f` in `K` is
+nondegenerate, then `K` contains only finitely many critical points `c`. Moreover there are Morse
+charts `φ c` at them, pairwise disjoint open sets `W c`, and closed neighbourhoods `A c` of `c`
+inside both the source of `φ c` and `W c`. -/
+theorem _root_.IsCompact.exists_morseChart_closed_nhds [T2Space M] {K : Set M} (hK : IsCompact K)
+    (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f)
+    (hnd : ∀ x ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+      IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (criticalPoints 𝓘(ℝ, E) f ∩ K).Finite ∧
+      ∃ (φ : ∀ c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K), MorseChart E f c)
+        (W A : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) → Set M),
+        (∀ c, IsOpen (W c)) ∧ Pairwise (Disjoint on W) ∧ (∀ c, A c ∈ 𝓝 c.1) ∧
+          (∀ c, IsClosed (A c)) ∧ ∀ c, A c ⊆ (φ c).toChart.source ∩ W c := by
+  let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
+  -- Nondegenerate critical points are isolated, hence finitely many in `K`.
+  have hC : (criticalPoints 𝓘(ℝ, E) f ∩ K).Finite :=
+    finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
+      (hf.of_le (by simp)) hK fun x hx ↦ hnd x hx.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.1)
+  let φ (c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K)) : MorseChart E f c :=
+    ((hnd c c.2.2 (mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1)).nonempty_morseChart
+      (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
+  obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
+  choose A hAn hAc hAsub using fun c : ↥(criticalPoints 𝓘(ℝ, E) f ∩ K) ↦
+    exists_mem_nhds_isClosed_subset
+      (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
+        ((hW c).2.mem_nhds (hW c).1))
+  exact ⟨hC, φ, fun c ↦ W c, A, fun c ↦ (hW c).2,
+    fun c c' h ↦ hWdisj c.2 c'.2 (Subtype.coe_injective.ne h), hAn, hAc, hAsub⟩
+
+open Filter in
 /-- **Existence of a pseudo-gradient near a compact set.** Let `K` be a compact subset of a
 regular Hausdorff sigma-compact manifold and let `f` be smooth. If every critical point of `f` in
 `K` is nondegenerate,
@@ -570,27 +603,12 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [Sig
             ∃ φ : MorseChart E f x, φ.toChart.source ⊆ U ∧
               ∀ y ∈ φ.toChart.source, X y = φ.field y := by
   classical
-  let _ : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace E M
-  -- The critical points in `K` are isolated, hence finitely many. Choose a Morse chart at each,
-  -- and pairwise disjoint closed neighbourhoods `A c` inside these charts.
+  -- The critical points in `K` are finitely many. Take Morse charts at them, and pairwise
+  -- disjoint closed neighbourhoods `A c` inside these charts.
   let C := criticalPoints 𝓘(ℝ, E) f ∩ K
   have hCcrit (c : C) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 :=
     mem_criticalPoints_iff_mfderiv_eq_zero.1 c.2.1
-  have hC : C.Finite := by
-    refine (hK.inter_left (isClosed_criticalPoints (hf.of_le (by simp)))).finite ?_
-    rw [isDiscrete_iff_nhdsNE]
-    rintro x ⟨hx, hxK⟩
-    rw [inf_principal_eq_bot]
-    filter_upwards [(hnd x hxK
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx)).eventually_notMem_criticalPoints]
-      with y hy using fun h ↦ hy h.1
-  let φ : ∀ c : C, MorseChart E f c := fun c ↦
-    ((hnd c c.2.2 (hCcrit c)).nonempty_morseChart
-      (Eventually.of_forall fun _ ↦ hf.contMDiffAt)).some
-  obtain ⟨W, hW, hWdisj⟩ := hC.t2_separation
-  choose A hAn hAc hAsub using fun c : C ↦ exists_mem_nhds_isClosed_subset
-    (Filter.inter_mem ((φ c).toChart.open_source.mem_nhds (φ c).mem_source)
-      ((hW c).2.mem_nhds (hW c).1))
+  obtain ⟨hC, φ, W, A, hW, hWdisj, hAn, hAc, hAsub⟩ := hK.exists_morseChart_closed_nhds hf hnd
   have : Finite C := hC.to_subtype
   -- The regular core `R` of `K`, away from the interiors of these neighbourhoods, is compact.
   let R := K \ ⋃ c : C, interior (A c)
@@ -600,7 +618,7 @@ theorem _root_.IsCompact.exists_contMDiff_pseudoGradientOn_nhds [T2Space M] [Sig
   have hRreg : R ⊆ (criticalPoints 𝓘(ℝ, E) f)ᶜ := fun x hx hcrit ↦ hx.2 <|
     mem_iUnion.2 ⟨⟨x, hcrit, hx.1⟩, mem_interior_iff_mem_nhds.2 (hAn ⟨x, hcrit, hx.1⟩)⟩
   obtain ⟨s, hsm, hs⟩ := exists_contMDiff_field_lt_zero_and_eq_field hf hCcrit
-    (fun c ↦ (hW c).2) (fun c c' h ↦ hWdisj c.2 c'.2 (Subtype.coe_injective.ne h)) hAsub
+    hW (fun _ _ h ↦ hWdisj h) hAsub
     hRc.isClosed hRreg (isClosed_iUnion_of_finite hAc)
   exact exists_isOpen_pseudoGradientOn_of_field hf hCcrit hCK hAn (fun c y hy ↦ (hAsub c hy).1)
     (fun x hxK ↦ by
