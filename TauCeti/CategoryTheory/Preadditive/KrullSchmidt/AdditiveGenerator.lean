@@ -15,7 +15,8 @@ import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Uniqueness
 An object with a local endomorphism ring lies in the additive closure `add G` exactly when it is a
 direct summand of `G` (`TauCeti.additiveClosure_iff_nonempty_retract`), since the identity is a
 finite sum of composites through the copies of `G` and one of them is invertible; and it lies in
-`add (⨁ P)`, for `P j` with local endomorphism rings, exactly when it is isomorphic to some `P j`
+`add (⨁ P)`, for a finite biproduct `⨁ P` of objects with local endomorphism rings, exactly when it
+is isomorphic to some `P j`
 (`TauCeti.additiveClosure_biproduct_iff_exists_iso`). Hence, in a Krull-Schmidt category, `G` is
 an additive generator exactly when every indecomposable object is a direct summand of `G`. A
 biproduct of objects representing every indecomposable object is then an additive generator, and a
@@ -31,8 +32,9 @@ additive generator, but a non-principal ideal is indecomposable and not a direct
 
 * `TauCeti.additiveClosure_iff_nonempty_retract`: an object with a local endomorphism ring lies in
   `add G` exactly when it is a direct summand of `G`.
-* `TauCeti.additiveClosure_biproduct_iff_exists_iso`: the summands of `add (⨁ P)` with local
-  endomorphism rings are the `P j`, up to isomorphism.
+* `TauCeti.additiveClosure_biproduct_iff_exists_iso`: for a finite family `P` of objects with
+  local endomorphism rings, the objects of `add (⨁ P)` with local endomorphism rings are the `P j`,
+  up to isomorphism.
 * `TauCeti.isAdditiveGenerator_iff_forall_indecomposable`: in a Krull-Schmidt category, `G` is an
   additive generator exactly when every indecomposable object is a direct summand of `G`.
 * `TauCeti.isAdditiveGenerator_biproduct`: in a Krull-Schmidt category, a biproduct of objects
@@ -66,8 +68,9 @@ theorem additiveClosure_iff_nonempty_retract {G X : C} [IsLocalRing (End X)] :
   obtain ⟨n, ⟨h⟩⟩ := additiveClosure_iff.1 hX
   exact (exists_nonempty_retract_of_retract_biproduct _ h).choose_spec
 
-/-- **The local summands of `add (⨁ P)`**: if the objects `P j` and `X` have local endomorphism
-rings, `X` lies in the additive closure of `⨁ P` exactly when it is isomorphic to some `P j`. -/
+/-- **The objects of `add (⨁ P)` with local endomorphism rings**: for a finite family `P` of objects
+with local endomorphism rings and `X` with a local endomorphism ring, `X` lies in the additive
+closure of the finite biproduct `⨁ P` exactly when it is isomorphic to some `P j`. -/
 theorem additiveClosure_biproduct_iff_exists_iso {κ : Type w} [Finite κ] (P : κ → C)
     (hP : ∀ j, IsLocalRing (End (P j))) {X : C} [IsLocalRing (End X)] :
     additiveClosure (⨁ P) X ↔ ∃ j, Nonempty (X ≅ P j) := by

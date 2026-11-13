@@ -15,7 +15,8 @@ An object `G` of a preadditive category with finite biproducts is an **additive 
 `add G = C`: every object is a direct summand of a finite biproduct `Gⁿ` of copies of `G`, that is,
 lies in the additive closure `TauCeti.additiveClosure G`. In the category `mod A` of finitely
 generated modules over an Artin algebra, an additive generator exists exactly when `A` is
-representation-finite; its endomorphism ring is the Auslander algebra of `A`.
+representation-finite; its endomorphism ring is an Auslander algebra, Morita equivalent to the
+Auslander algebra of `A` (the endomorphism ring of a basic additive generator).
 
 Additive generators are invariant under isomorphism and under adding direct summands, and an
 equivalence of categories carries them to additive generators. In a Krull-Schmidt category they
