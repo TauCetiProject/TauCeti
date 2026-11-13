@@ -286,6 +286,11 @@ def retractionGHom (k : Fin n → ℤ) :
 theorem coe_retractionGHom (k : Fin n → ℤ) : ⇑(retractionGHom (u := u) k) = retraction k :=
   (rfl)
 
+@[simp]
+theorem coe_monoidHom_retractionGHom (k : Fin n → ℤ) :
+    (retractionGHom (u := u) k : CentralizerExt u n →* G) = retraction k :=
+  (rfl)
+
 /-- The second factor `ℤⁿ` of the amalgam, mapped into `G(u, ℤⁿ)`. -/
 private def ofPi : (Fin n → Multiplicative ℤ) →* CentralizerExt u n :=
   (Monoid.PushoutI.of (φ := centralizerExtMap u n) true).comp (MonoidHom.inr _ _)

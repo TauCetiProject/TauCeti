@@ -233,6 +233,8 @@ def edge (M : Subgroup (MulAut H)) (hM : M ≤ fixingSubgroup (MulAut H) (Set.ra
 variable {M : Subgroup (MulAut H)} {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)}
   {π : GHom ι κ} {D : MRDiagram κ}
 
+theorem edge_def : edge M hM π D = node M hM (n := 1) (fun _ => π) fun _ => D := (rfl)
+
 @[simp]
 theorem modular_edge : (edge M hM π D).modular = M := (rfl)
 
@@ -244,6 +246,12 @@ theorem mem_branchHoms_edge {φ : GHom ι ιL} :
       ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ x, φ x = ψ (π (σ x)) :=
   mem_branchHoms_node.trans ⟨fun ⟨_, h⟩ => h, fun h => ⟨0, h⟩⟩
 
+/-- Every choice of a modular automorphism of the root and of a branch composite of the
+subdiagram is realised by a branch composite of a diagram with one edge at the root. -/
+theorem exists_mem_branchHoms_edge {σ : MulAut H} (hσ : σ ∈ M) {ψ : GHom κ ιL}
+    (hψ : ψ ∈ D.branchHoms ιL) : ∃ φ ∈ (edge M hM π D).branchHoms ιL, ∀ x, φ x = ψ (π (σ x)) :=
+  exists_mem_branchHoms_node hM (fun _ => π) (fun _ => D) 0 hσ hψ
+
 end edge
 
 variable (ι) in
@@ -252,6 +260,14 @@ diagram of a system of equations without solutions. -/
 protected def empty : MRDiagram ι :=
   node ⊥ bot_le (n := 0) (K := fun _ => PUnit) (κ := fun _ => 1) (fun i => i.elim0)
     fun i => i.elim0
+
+theorem empty_def :
+    MRDiagram.empty ι = node ⊥ bot_le (n := 0) (K := fun _ => PUnit) (κ := fun _ => 1)
+      (fun i => i.elim0) fun i => i.elim0 :=
+  (rfl)
+
+@[simp]
+theorem modular_empty : (MRDiagram.empty ι).modular = ⊥ := (rfl)
 
 /-- The diagram without branches has no branch composite. -/
 @[simp]
@@ -264,10 +280,23 @@ root group to the target. -/
 theorem isComplete_empty_iff : (MRDiagram.empty ι).IsComplete ιL ↔ IsEmpty (GHom ι ιL) := by
   simp [isComplete_iff, isEmpty_iff]
 
+/-- The diagram without branches is sound for every system. -/
+@[simp]
+theorem isSound_empty {X : Type*} (S : Set (GX A X)) (x : X → H) :
+    (MRDiagram.empty ι).IsSound ιL S x :=
+  fun _ h => by simp at h
+
 /-- The one-edge diagram of a free `A`-group: the identity edge from the root to a leaf carrying
 the same group. -/
 def freeRoot (free : IsFreeGGroup ι) : MRDiagram ι :=
   edge ⊥ bot_le (GHom.id ι) (leaf free)
+
+theorem freeRoot_def (free : IsFreeGGroup ι) :
+    freeRoot free = edge ⊥ bot_le (GHom.id ι) (leaf free) :=
+  (rfl)
+
+@[simp]
+theorem modular_freeRoot (free : IsFreeGGroup ι) : (freeRoot free).modular = ⊥ := (rfl)
 
 /-- Every `A`-homomorphism from a free `A`-group is a branch composite of its one-edge diagram. -/
 @[simp]
@@ -358,10 +387,15 @@ theorem not_hasProperEdges_edge_of_injective {K : Type u} [Group K] {κ : A →*
     (hπ : Function.Injective π) (D : MRDiagram κ) : ¬(edge M hM π D).HasProperEdges :=
   fun h => (hasProperEdges_edge.1 h).2.1 hπ
 
+/-- The diagram without branches has no edge, so all its edges are proper epimorphisms. -/
+@[simp]
+theorem hasProperEdges_empty : (MRDiagram.empty ι).HasProperEdges :=
+  hasProperEdges_node.2 fun i => i.elim0
+
 /-- The diagram without branches has proper quotients. -/
 @[simp]
 theorem hasProperQuotients_empty : (MRDiagram.empty ι).HasProperQuotients :=
-  hasProperQuotients_node.2 fun i => i.elim0
+  hasProperEdges_empty.hasProperQuotients
 
 /-- The one-edge diagram of a free `A`-group has proper quotients: it has no edge below the
 root. -/
