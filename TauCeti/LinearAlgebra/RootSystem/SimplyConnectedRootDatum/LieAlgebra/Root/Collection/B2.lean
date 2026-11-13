@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo.Rational
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo.Positive
 import TauCeti.Algebra.Group.Subgroup.OrderedProduct
 
 /-!
@@ -51,6 +51,21 @@ variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ ((B 2).lieAlgebra ht) →�
 
 attribute [local instance high] Algebra.toModule
 
+private lemma b2_root_eq_nsmul_add (a b c : Fin 8) (n : ℕ)
+    (h : b2Root c = n • b2Root a + b2Root b) :
+    ((B 2).simplyConnectedRootDatum ht).root (b2Index c) =
+      n • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
+        ((B 2).simplyConnectedRootDatum ht).root (b2Index b) := by
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index] using h
+
+private lemma b2_nsmul_add_nsmul_not_mem_range (a b : Fin 8) (m n : ℕ)
+    (h : m • b2Root a + n • b2Root b ∉ Set.range b2Root) :
+    m • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
+        n • ((B 2).simplyConnectedRootDatum ht).root (b2Index b) ∉
+      Set.range ((B 2).simplyConnectedRootDatum ht).root := by
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index,
+    range_root_typeBSimplyConnectedRootDatum_two] using h
+
 private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
     (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)))
     (i j : Fin 4) (hij : i < j)
@@ -94,7 +109,7 @@ private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
         (b2_nsmul_add_nsmul_not_mem_range (ht := ht) (Fin.castAdd 4 j) (Fin.castAdd 4 i)
           1 1 (by simpa only [one_smul] using hz.1)))
       (by
-        simp only [root_simplyConnectedRootDatum_B_two_b2Index]
+        simp +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index]
         intro hzero
         apply hz.2
         funext k
@@ -150,9 +165,14 @@ theorem mem_biSup_posRoots_b2_iff_exists_list_prod_map (A : CommAlgCat ℤ)
       exact le_iSup_of_le ⟨k.val, hk⟩ le_rfl
     · exact iSup_le fun i => le_iSup₂_of_le _
         ((b2Index_mem_posRoots_iff _).mpr i.isLt) le_rfl
+  have hpos : posRoots ((B 2).rationalRootSystem ht) ((B 2).rationalBase ht) =
+      posRoots (typeBSimplyConnectedRootDatum 2) (typeBSimplyConnectedBase 2) := by
+    rw [posRoots_rationalRootSystem]
+    congr 1
+    · exact simplyConnectedRootDatum_B 2 ht
+    · exact eqRec_heq_iff.mp (heq_of_eq (simplyConnectedBase_B 2 ht))
   have hjoin' := (congrArg (fun S : Set (Fin (B 2).numRoots) =>
-    ⨆ γ ∈ S, (chevalleyRootSubgroup ρ M hM hnil γ A).range)
-      (posRoots_rationalRootSystem_B_two ht)).trans hjoin
+    ⨆ γ ∈ S, (chevalleyRootSubgroup ρ M hM hnil γ A).range) hpos).trans hjoin
   rw [hjoin']
   let X := fun i : Fin 4 =>
     chevalleyRootSubgroup ρ M hM hnil (b2Index (Fin.castAdd 4 i)) A
