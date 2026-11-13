@@ -44,8 +44,8 @@ This file constructs the connecting map and proves the exactness statements whic
   map are the orbits of `B(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_mem_range_connecting`: an `A`-torsor with an
   `i`-equivariant morphism to `B` is a torsor of lifts.
-* `CategoryTheory.Sheaf.NonabelianH1.connecting_naturality`: the connecting map is natural in
-  extensions of `A`.
+* `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_of_comp_eq`: the connecting map is
+  natural in morphisms of extensions of `A` which are the identity on `A`.
 
 ## References
 
@@ -355,8 +355,8 @@ theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial 
 `1 → A → B → Q → 1` to an extension `1 → A → B' → Q' → 1` which is the identity on `A`, given by
 `β : B ⟶ B'` and `γ : Q ⟶ Q'`, the torsor of lifts of a global section `q` of `Q` is isomorphic
 to the torsor of lifts of its image in `Q'`, through `b ↦ β b`. -/
-theorem connecting_naturality {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'} {π' : B' ⟶ Q'}
-    (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q') (hβ : i ≫ β = i')
+theorem connecting_eq_connecting_of_comp_eq {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'}
+    {π' : B' ⟶ Q'} (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q') (hβ : i ≫ β = i')
     (hγ : β ≫ π' = π ≫ γ) (q : (Q.obj ⋙ forget GrpCat).sections)
     (q' : (Q'.obj ⋙ forget GrpCat).sections) (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U) :
     connecting hE q = connecting hE' q' := by
@@ -373,8 +373,7 @@ theorem connecting_naturality {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'} {π' 
   refine (hE'.liftsObjEquiv q' U).injective (Subtype.ext ?_)
   simp only [ObjectProperty.homMk_hom, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
     Equiv.apply_symm_apply, IsGroupExtension.liftsObjEquiv_smul, map_mul]
-  exact congrArg (· * _)
-    (ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hβ) U) a)
+  simpa using ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hβ) U) a
 
 end NonabelianH1
 
