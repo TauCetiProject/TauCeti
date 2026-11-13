@@ -32,11 +32,12 @@ rather than `15`.
 
 It then shows that the ATLAS presentation `M23G1-P1` carried by `TauCeti.SporadicName.presentation`
 holds in the model. The presentation writes products left-to-right, whereas `Equiv.Perm` composes
-permutations right-to-left (`(σ * τ) i = σ (τ i)`): at `(a, b)` the seventh transcribed relator
-sends `0` to `16`, while sending index `0` to `a` and index `1` to `b⁻¹` makes all nine transcribed
-relators evaluate to `1`. Since `{a, b⁻¹}` and `{a, b}` generate the same subgroup, extending this
-assignment gives a homomorphism from `TauCeti.SporadicName.M23.Group` whose range is `M23`, hence a
-surjection onto `M23`; in particular both `M23` and the presented group are nontrivial.
+permutations right-to-left (`(σ * τ) i = σ (τ i)`): at `(a, b)` the sixth transcribed relator
+`(ab ab⁻¹ ab²)⁴` sends `0` to `16`, while sending index `0` to `a` and index `1` to `b⁻¹` makes
+all nine transcribed relators evaluate to `1`. Since `{a, b⁻¹}` and `{a, b}` generate the same
+subgroup, extending this assignment gives a homomorphism from `TauCeti.SporadicName.M23.Group`
+whose range is `M23`, hence a surjection onto `M23`; in particular both `M23` and the presented
+group are nontrivial.
 
 Finally it computes the order of the model, `10200960 = 2⁷ · 3² · 5 · 7 · 11 · 23`. Along the base
 `0, 1, 2, 3, 4, 5` the model has basic orbits of lengths `23`, `22`, `21`, `20`, `3` and `16`: the
@@ -176,14 +177,7 @@ theorem presentationImage_one (h : 1 < SporadicName.M23.presentation.generatorCo
 
 theorem range_presentationImage : Set.range presentationImage = {a, b⁻¹} := by
   have h : SporadicName.M23.presentation.generatorCount = 2 := by simp
-  ext σ
-  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨i, rfl⟩
-    by_cases hi : (i : ℕ) = 0 <;> simp [presentationImage, hi]
-  · rintro (rfl | rfl)
-    · exact ⟨⟨0, by omega⟩, presentationImage_zero _⟩
-    · exact ⟨⟨1, by omega⟩, presentationImage_one _⟩
+  exact Set.range_ite_const ⟨⟨0, by omega⟩, rfl⟩ ⟨⟨1, by omega⟩, one_ne_zero⟩
 
 /-- **The relators of `M₂₃` hold in the model.** All nine transcribed relators of the
 presentation of `M₂₃` evaluate to `1` at `presentationImage`. -/
