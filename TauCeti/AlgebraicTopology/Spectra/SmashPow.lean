@@ -94,15 +94,13 @@ example (f : X ⟶ Y) : IsMonHom (smashPowMap f) := inferInstance
 @[simp]
 lemma smashPowMap_id : smashPowMap (𝟙 X) = 𝟙 _ := by
   ext1
-  ext k
-  simp
+  exact PointedSSet.smashPowFunctorMap_id
 
 @[simp]
 lemma smashPowMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     smashPowMap (f ≫ g) = smashPowMap f ≫ smashPowMap g := by
   ext1
-  ext k
-  simp
+  exact PointedSSet.smashPowFunctorMap_comp f g
 
 /-- The isomorphism of monoids of smash powers induced by an isomorphism `e : X ≅ Y`. -/
 noncomputable def smashPowMapIso (e : X ≅ Y) : smashPow X ≅ smashPow Y where
