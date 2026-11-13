@@ -52,12 +52,13 @@ indicator is `0` by the convention `0⁻¹ = 0`.
 
 Nothing is asked of the characteristic beyond the invertibility of `|G|`.  The map `B ↦ B - B.flip`
 carries the invariant forms onto the invariant alternating forms, with the invariant symmetric forms
-as kernel: in finite dimensions an alternating form is `B₀ - B₀.flip` for some form `B₀`
+as kernel: over a field an alternating form is `B₀ - B₀.flip` for some form `B₀`
 (`LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`), and averaging `B₀` over `G` makes it invariant
 (`Representation.exists_mem_invariantForms_sub_flip_eq`).  So the invariant forms are as many as the
 invariant symmetric and the invariant alternating forms together, as natural numbers, even in
-characteristic two, where the two kinds of form overlap; with the two counts above this is
-`TauCeti.Representation.finrank_invariantForms`.  Characteristic two matters only for
+characteristic two, where the two kinds of form overlap: this is
+`Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible`
+in `TauCeti/RepresentationTheory/InvariantForm.lean`.  Characteristic two matters only for
 `TauCeti.Representation.frobeniusSchurIndicator_eq_neg_one_iff`, which assumes `2 ≠ 0`: when `2 = 0`
 we have `-1 = 1`, and the trivial one-dimensional representation has indicator `1 = -1` but no
 nonzero alternating form.
@@ -68,17 +69,13 @@ themselves and the symmetric and the alternating ones among them are in
 square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
 `TauCeti.BilinForm.ofExteriorSquareDual`, in `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`; and
 the fact that the dictionary carries the invariant functionals onto the invariant forms, with the
-two counts that follow and the count of all invariant forms by the symmetric and the alternating
-ones, is in `TauCeti/RepresentationTheory/InvariantForm/Squares.lean`.  What this file adds is the
-count of all invariant forms by the invariants of the two squares, the indicator as a signed count,
-and the trichotomy.
+two counts that follow and the count `Representation.finrank_invariantForms` of all invariant forms
+by the invariants of the two squares, is in
+`TauCeti/RepresentationTheory/InvariantForm/Squares.lean`.  What this file adds is the indicator as
+a signed count of invariant forms, and the trichotomy.
 
 ## Main results
 
-* `TauCeti.Representation.finrank_invariantForms`: **the invariant forms are as many as the
-  invariants of the two squares together**, as natural numbers, for a finite-dimensional
-  representation over a field in which `|G|` is invertible, in every characteristic; its image in
-  `k` is `TauCeti.Representation.finrank_invariantForms_cast`.
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_sub_finrank_invariantForms`: **the indicator is
   the signed count of invariant forms**, `ν₂(ρ) = dim {symmetric} - dim {alternating}`.
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_one_iff`,
@@ -130,36 +127,6 @@ namespace TauCeti
 namespace Representation
 
 open _root_.LinearMap (BilinForm)
-
-/-! ### Counting the invariant forms -/
-
-section Counting
-
-variable [Field k] [Group G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
-  [Invertible (Nat.card G : k)]
-
-/-- **The invariant forms are as many as the invariants of the two squares together**, for a
-finite-dimensional `V` over a field in which `|G|` is invertible, in every characteristic.  The
-invariant symmetric and alternating forms together are as many as the invariant forms, and they
-are as many as the invariants of the symmetric, respectively exterior, square; see
-`Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible`
-with `Representation.finrank_symmetricInvariantForms` and
-`Representation.finrank_alternatingInvariantForms`. -/
-theorem finrank_invariantForms (ρ : Representation k G V) :
-    finrank k (invariantForms ρ) =
-      finrank k (ρ.symmetricPower 2).invariants + finrank k (ρ.exteriorPower 2).invariants := by
-  rw [← ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible,
-    ρ.finrank_symmetricInvariantForms, ρ.finrank_alternatingInvariantForms]
-
-/-- **The invariant forms are as many as the invariants of the two squares together**, as an
-identity in `k`: the image in `k` of `TauCeti.Representation.finrank_invariantForms`. -/
-theorem finrank_invariantForms_cast (ρ : Representation k G V) :
-    (finrank k (invariantForms ρ) : k) =
-      (finrank k (ρ.symmetricPower 2).invariants : k) +
-        (finrank k (ρ.exteriorPower 2).invariants : k) := by
-  rw [finrank_invariantForms ρ, Nat.cast_add]
-
-end Counting
 
 /-! ### The indicator as a signed count of invariant forms -/
 
@@ -246,28 +213,21 @@ theorem frobeniusSchurIndicator_eq_neg_one_of_isAlt (hB : IsInvariantForm ρ B) 
 
 omit [Invertible (Nat.card G : k)] in
 /-- **The Frobenius-Schur trichotomy.** The indicator of an irreducible representation over an
-algebraically closed field takes only the values `1`, `0` and `-1`, in every characteristic.  The
-invariant forms span at most a line, so when `|G|` is invertible in `k` the indicator, the signed
-count `TauCeti.Representation.frobeniusSchurIndicator_eq_sub_finrank_invariantForms`, is a
-difference of two numbers in `{0, 1}`; when `(|G| : k) = 0` it is `0` by the convention
-`0⁻¹ = 0`. -/
+algebraically closed field takes only the values `1`, `0` and `-1`, in every characteristic: when
+`|G|` is invertible in `k` the representation is in the orthogonal, the symplectic or the complex
+case, and when `(|G| : k) = 0` the indicator is `0` by the convention `0⁻¹ = 0`. -/
 theorem frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one :
     frobeniusSchurIndicator ρ = 1 ∨ frobeniusSchurIndicator ρ = 0 ∨
       frobeniusSchurIndicator ρ = -1 := by
-  by_cases hbot : invariantForms ρ = ⊥
-  · exact Or.inr (Or.inl (frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ hbot))
   by_cases hcard : (Nat.card G : k) = 0
   · exact Or.inr (Or.inl (by rw [frobeniusSchurIndicator_def, hcard, inv_zero, zero_mul]))
   have : Invertible (Nat.card G : k) := invertibleOfNonzero hcard
   have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
-  obtain ⟨B, hB, hB0⟩ := (Submodule.ne_bot_iff _).mp hbot
-  have hspan := (mem_invariantForms.mp hB).invariantForms_eq_span hB0
-  have hs := Submodule.finrank_mono ((symmetricInvariantForms_le ρ).trans hspan.le)
-  have ha := Submodule.finrank_mono ((alternatingInvariantForms_le ρ).trans hspan.le)
-  rw [finrank_span_singleton (K := k) (V := BilinForm k V) hB0] at hs ha
-  rw [frobeniusSchurIndicator_eq_sub_finrank_invariantForms]
-  interval_cases finrank k (symmetricInvariantForms ρ) <;>
-    interval_cases finrank k (alternatingInvariantForms ρ) <;> simp
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
+    ⟨B, hB, hB0, hsymm⟩ | ⟨B, hB, hB0, halt⟩ | hbot
+  · exact Or.inl (frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm)
+  · exact Or.inr (Or.inr (frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt))
+  · exact Or.inr (Or.inl (frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ hbot))
 
 /-- **The indicator is `1` exactly in the orthogonal case**, that is, exactly when the
 representation carries a nondegenerate invariant symmetric form.  Nondegeneracy is nonvanishing

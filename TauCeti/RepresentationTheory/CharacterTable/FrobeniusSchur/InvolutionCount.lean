@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.SquareRoot
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Table
-public import TauCeti.RepresentationTheory.FDRep.FrobeniusSchur
+import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 
 /-!
 # The Frobenius-Schur involution count
@@ -222,14 +223,9 @@ theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one
     (i : Fin (Nat.card (ConjClasses G))) :
     frobeniusSchurIndicatorRow k i = 1 ∨ frobeniusSchurIndicatorRow k i = 0 ∨
       frobeniusSchurIndicatorRow k i = -1 := by
-  have : CategoryTheory.Simple (FDRep.of (irreducibleRepresentation k i)) :=
-    (FDRep.simple_iff_isIrreducible (FDRep.of (irreducibleRepresentation k i))).mpr (by
-      simpa only [FDRep.of_ρ'] using
-        (inferInstance : (irreducibleRepresentation k i).IsIrreducible))
-  have h := FDRep.frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one
-    (FDRep.of (irreducibleRepresentation k i))
-  rw [FDRep.frobeniusSchurIndicator_def, FDRep.of_ρ'] at h
-  rwa [frobeniusSchurIndicatorRow_def]
+  rw [frobeniusSchurIndicatorRow_def]
+  exact Representation.frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one
+    (irreducibleRepresentation k i)
 
 /-- **The involution-counting formula on the character table**: the number of square roots of `x`
 is the sum over the rows of the character table of the row's Frobenius-Schur indicator times the

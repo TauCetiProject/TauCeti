@@ -54,6 +54,8 @@ maps valued in an arbitrary module.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
   multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
+  `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
   torsion-free values sees each argument only modulo elements of finite additive order.
@@ -183,6 +185,34 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
   ring
 
 end LinearMap.BilinForm.IsSymm
+
+namespace LinearMap.BilinForm.IsAlt
+
+/-- **Every alternating form on a free module is `B - B.flip` for some form `B`**, in every
+characteristic and in any rank: order a basis and take for `B` the strictly upper triangular part
+of the alternating form in that basis. -/
+theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+    ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  let : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  let B : LinearMap.BilinForm R M :=
+    b.constr R fun i => b.constr R fun j => if i < j then A (b i) (b j) else 0
+  have key (i j) : B (b i) (b j) = if i < j then A (b i) (b j) else 0 := by
+    simp [B, Module.Basis.constr_basis]
+  refine ⟨B, LinearMap.BilinForm.ext_basis b fun i j => ?_⟩
+  simp only [LinearMap.sub_apply, LinearMap.BilinForm.flip_apply, key]
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [h, h.not_gt]
+  · simp [hA.self_eq_zero]
+  · -- polarization: `A (b i + b j) (b i + b j) = 0` gives `A (b i) (b j) = -A (b j) (b i)`
+    have h0 := hA.self_eq_zero (b i + b j)
+    simp only [map_add, LinearMap.add_apply, hA.self_eq_zero, zero_add, add_zero] at h0
+    simp only [h, h.not_gt, ↓reduceIte, zero_sub]
+    linear_combination -h0
+
+end LinearMap.BilinForm.IsAlt
 
 namespace LinearMap
 
