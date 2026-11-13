@@ -391,7 +391,7 @@ theorem explicitCor1_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
     explicitCor1_mk]
   apply congrArg (fun z : Z1 G M => (z : H1 G M))
   apply Subtype.ext
-  simp only [coe_cocyclesCor1, cocyclesMap1_coe]
+  simp only [coe_cocyclesCor1, coe_cocyclesMap1]
   have hpull :
       cochainsMap1 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
             V.subgroupOf U →* V) (AddMonoidHom.id M) f =
@@ -425,7 +425,7 @@ theorem explicitCor2_trans (hU : IsOpen (U : Set G)) (hV : IsOpen (V : Set G)) :
     explicitCor2_mk]
   apply congrArg (fun z : Z2 G M => (z : H2 G M))
   apply Subtype.ext
-  simp only [coe_cocyclesCor2, cocyclesMap2_coe]
+  simp only [coe_cocyclesCor2, coe_cocyclesMap2]
   have hpull :
       cochainsMap2 ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) :
             V.subgroupOf U →* V) (AddMonoidHom.id M) f =
