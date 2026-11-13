@@ -10,7 +10,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 
 /-!
-# Orientation-preserving maps into an oriented vector space
+# Orientation-preserving maps and volume-form positivity
+
+An orientation-preserving map between oriented Riemannian manifolds preserves positivity of
+the Riemannian volume form on families of tangent vectors under its derivative, and conversely.
 
 Let `M` be an oriented Riemannian manifold and `F` an oriented real inner product space of the
 same dimension, with its constant orientation. If `f : M → F` preserves orientations at `x`,
@@ -38,6 +41,26 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
+/-- The derivative of an orientation-preserving map between oriented Riemannian manifolds
+sends a family of tangent vectors to one with positive Riemannian volume form exactly when
+the original family has positive Riemannian volume form. -/
+theorem IsOrientationPreservingAt.riemannianVolumeForm_mfderiv_comp_pos_iff
+    {n : ℕ} {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+    [RiemannianBundle (fun y : M' ↦ TangentSpace I' y)]
+    {o : Manifold.Orientation I M (Fin n)} {o' : Manifold.Orientation I' M' (Fin n)}
+    {f : M → M'} {x : M} (hf : IsOrientationPreservingAt o o' f x)
+    (v : Fin n → TangentSpace I x) :
+    0 < riemannianVolumeForm o' (f x) (mfderiv I I' f x ∘ v) ↔
+      0 < riemannianVolumeForm o x v := by
+  let := o.fact_finrank_tangentSpace x
+  let := o'.fact_finrank_tangentSpace (f x)
+  obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hf
+  rw [riemannianVolumeForm_apply, riemannianVolumeForm_apply, ← he, ← hmap]
+  exact _root_.Orientation.volumeForm_map_comp_pos_iff _ e.toLinearEquiv v
+
 /-- If `f` maps an oriented Riemannian manifold into `F` with its constant orientation `oF`
 and preserves orientations at `x`, then `oF.volumeForm (mvfderiv I f x ∘ v)` is positive exactly
 when the Riemannian volume form is positive on the family of tangent vectors `v`. -/
@@ -48,17 +71,17 @@ theorem IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff {n : ℕ} {F 
     {f : M → F} {x : M} (hf : IsOrientationPreservingAt o (model (I := 𝓘(ℝ, F)) oF hn) f x)
     (v : Fin n → TangentSpace I x) :
     0 < oF.volumeForm (mvfderiv I f x ∘ v) ↔ 0 < riemannianVolumeForm o x v := by
-  let := o.fact_finrank_tangentSpace x
-  obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hf
-  let e' : TangentSpace I x ≃ₗ[ℝ] F :=
-    (e.trans (NormedSpace.fromTangentSpace (f x))).toLinearEquiv
-  have hmap' : _root_.Orientation.map (Fin n) e' (o.orientationAt x) = oF := by
-    simp only [e', ContinuousLinearEquiv.trans_toLinearEquiv, _root_.Orientation.map_trans,
-      hmap, map_orientationAt_model]
-  have hv : mvfderiv I f x ∘ v = e' ∘ v := by
-    ext i
-    simp [e', mvfderiv, ← he]
-  rw [riemannianVolumeForm_apply, hv, ← hmap', _root_.Orientation.volumeForm_map_comp_pos_iff]
+  let o' := model (I := 𝓘(ℝ, F)) oF hn
+  let := o'.fact_finrank_tangentSpace (f x)
+  have h := hf.riemannianVolumeForm_mfderiv_comp_pos_iff v
+  have ht := _root_.Orientation.volumeForm_map_comp_pos_iff (o'.orientationAt (f x))
+    (NormedSpace.fromTangentSpace (f x)).toLinearEquiv (mfderiv I 𝓘(ℝ, F) f x ∘ v)
+  rw [map_orientationAt_model] at ht
+  rw [riemannianVolumeForm_apply] at h
+  -- `mvfderiv` composes `mfderiv` with the target's `fromTangentSpace` identification.
+  refine Iff.trans ?_ h
+  simpa only [mvfderiv, Function.comp_def, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_coe] using ht
 
 /-- If `φ` maps an oriented Riemannian surface into `ℂ` with its constant standard orientation
 `Complex.orientation` and preserves orientations at `x`, then
