@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.Rank
+public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
 public import TauCeti.GroupTheory.PresentedGroup
 
 /-!
@@ -45,9 +45,6 @@ generators.
 * `TauCeti.SerreGraph.SpanningTree.graphPresentation_reducedLoop_bijective`: every element of
   the presentation relative to a spanning tree is the dart word of exactly one reduced closed
   path.
-* `TauCeti.SerreGraph.GraphPresentation.fg_iff_finite`,
-  `TauCeti.SerreGraph.GraphPresentation.rank_eq_nat_card`: finite generation and rank in terms
-  of the positive darts outside `T`.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
 * `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: an acyclic graph has trivial
@@ -150,32 +147,16 @@ def equivTreePresentation : Γ.GraphPresentation T ≃* GraphOfGroups.π₁Tree 
 
 end treePresentation
 
-end GraphPresentation
-
-/-- The graph of groups on `Γ` all of whose vertex and edge groups are trivial. -/
-private def trivialGraphOfGroups (Γ : SerreGraph.{u, w}) : GraphOfGroups.{u, w, 0, 0} Γ where
-  vertexGroup _ := PUnit
-  edgeGroup _ := PUnit
-  ω _ := 1
-  ω_injective _ := Function.injective_of_subsingleton _
-
-private instance (a : Γ.V) : Subsingleton ((trivialGraphOfGroups Γ).vertexGroup a) :=
-  inferInstanceAs (Subsingleton PUnit)
-
-namespace GraphPresentation
-
-variable {Γ} {T : Set Γ.E} {O : Set Γ.E}
-
 section free
 
-variable (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T)
+variable {O : Set Γ.E} (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T)
 
 /-- Relative to a set `T` of darts closed under reversal, the fundamental group of a graph is
 free on the darts of `O \ T` for any orientation `O`; the generator of a dart of `O \ T`
 corresponds to the free generator. For the darts of a spanning tree these are the positive
 edges outside the tree. -/
 noncomputable def equivFreeGroup : Γ.GraphPresentation T ≃* FreeGroup ↥(O \ T) :=
-  (equivTreePresentation T (trivialGraphOfGroups Γ)).trans
+  (equivTreePresentation T (GraphOfGroups.trivial Γ)).trans
     (GraphOfGroups.π₁Tree.equivFreeGroup _ hO hT)
 
 @[simp] theorem equivFreeGroup_of {e : Γ.E} (he : e ∈ O \ T) :
@@ -185,21 +166,6 @@ noncomputable def equivFreeGroup : Γ.GraphPresentation T ≃* FreeGroup ↥(O \
 @[simp] theorem equivFreeGroup_symm_of (e : ↥(O \ T)) :
     (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.1 := by
   simp [equivFreeGroup]
-
-include hO hT
-
-/-- Relative to a reversal-closed set `T` of darts, the fundamental group of a graph is
-finitely generated exactly when finitely many positive darts lie outside `T`. In particular a
-graph with finitely many darts has finitely generated fundamental group, which also follows
-from the presentation having finitely many generators. -/
-theorem fg_iff_finite : Group.FG (Γ.GraphPresentation T) ↔ Finite ↥(O \ T) :=
-  (FreeGroupBasis.ofRepr (equivFreeGroup hO hT)).fg_iff_finite
-
-/-- Relative to a reversal-closed set `T` of darts, the rank of the fundamental group of a
-graph is the number of positive darts outside `T`. -/
-theorem rank_eq_nat_card [Group.FG (Γ.GraphPresentation T)] :
-    Group.rank (Γ.GraphPresentation T) = Nat.card ↥(O \ T) :=
-  (FreeGroupBasis.ofRepr (equivFreeGroup hO hT)).rank_eq_nat_card
 
 end free
 
@@ -214,8 +180,8 @@ fundamental group relative to a spanning tree: a path is sent to the product of 
 a dart generator corresponds to its based tree loop. -/
 noncomputable def pathGroupEquivGraphPresentation :
     PathGroup Γ v ≃* Γ.GraphPresentation T.darts :=
-  (T.pathGroupEquivTreePresentation v (trivialGraphOfGroups Γ)).trans
-    (GraphPresentation.equivTreePresentation T.darts (trivialGraphOfGroups Γ)).symm
+  (T.pathGroupEquivTreePresentation v (GraphOfGroups.trivial Γ)).trans
+    (GraphPresentation.equivTreePresentation T.darts (GraphOfGroups.trivial Γ)).symm
 
 @[simp] theorem pathGroupEquivGraphPresentation_ofPath (p : Γ.Path v v) :
     T.pathGroupEquivGraphPresentation v (PathGroup.ofPath p) =
