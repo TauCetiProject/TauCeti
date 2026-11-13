@@ -118,7 +118,7 @@ private def presentationToCoordinate :
     presentationRing R →ₐ[R] coordinateHopfAlgebra R :=
   Polynomial.eval₂AlgHom (presentationCoefficientToCoordinate R)
     (upperRightCoordinate R)
-    fun _ ↦ mul_comm _ _
+    fun _ ↦ Commute.all _ _
 
 @[simp]
 private theorem presentationToCoordinate_X :
@@ -191,13 +191,8 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
     have hcoeff :
         (presentationToCoordinate R).comp Polynomial.CAlgHom =
           presentationCoefficientToCoordinate R := by
-      apply DFunLike.ext _ _
-      intro x
-      -- There is no application lemma for `Polynomial.eval₂AlgHom`; it is definitionally
-      -- `eval₂` on applications, so expose that equality to use `Polynomial.eval₂_C`.
-      change Polynomial.eval₂ (presentationCoefficientToCoordinate R).toRingHom
-        (upperRightCoordinate R) (Polynomial.C x) = _
-      simp
+      ext x
+      simp [presentationToCoordinate]
     rw [hcoeff]
     apply (laurentEvalEquiv (R := R) (A := presentationRing R)).symm.injective
     rw [laurentEvalEquiv_symm_comp]
