@@ -327,7 +327,7 @@ theorem continuousAt_geodesicCurvature_orientedUnitNormal (hγ : ContMDiff 𝓘(
     (V := fun x : M ↦ TangentSpace I x)
   have hnorm : Continuous fun r ↦ ‖curveVelocity I γ r‖ :=
     (continuous_norm_bundle E (TangentSpace I)).comp hV.continuous
-  exact ((contMDiffAt_totalSpace.mp heval).2.continuousAt.div (hnorm.pow 3).continuousAt
+  exact ((contMDiffAt_totalSpace_iff.mp heval).2.continuousAt.div (hnorm.pow 3).continuousAt
     (pow_ne_zero 3 (norm_ne_zero_iff.mpr hne))).congr
     (Eventually.of_forall fun r ↦ (geodesicCurvature_orientedUnitNormal o γ r).symm)
 
