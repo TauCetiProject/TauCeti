@@ -362,15 +362,6 @@ theorem isConvexPolyhedron_realFibre {n : ℕ} (B : Fin 3 → Fin n → ℝ) :
           (by simpa [g, edgeDiff, sub_nonpos] using h1 s i)⟩
   exact heq ▸ (isConvexPolyhedron_pointedCone n).inter (isConvexPolyhedron_setOf_forall g)
 
-private theorem norm_sum_filter_boundary_le {n : ℕ} (B : Fin 3 → Fin n → ℝ) (s : Fin 3)
-    (S : Finset (Fin n)) : ‖∑ i ∈ S, B s i‖ ≤ n * ‖B‖ := by
-  have hcard : (S.card : ℝ) ≤ n := by exact_mod_cast S.card_le_univ.trans_eq (Fintype.card_fin n)
-  calc ‖∑ i ∈ S, B s i‖ ≤ ∑ i ∈ S, ‖B s i‖ := norm_sum_le S (B s)
-    _ ≤ ∑ _i ∈ S, ‖B‖ := Finset.sum_le_sum fun i _ =>
-        (norm_le_pi_norm (B s) i).trans (norm_le_pi_norm B s)
-    _ = S.card * ‖B‖ := by simp
-    _ ≤ n * ‖B‖ := mul_le_mul_of_nonneg_right hcard (norm_nonneg B)
-
 /-- Uniform linear norm bound `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` on the real hive cone. -/
 theorem norm_le_three_mul_norm_boundary {n : ℕ} {f : Vertex n → ℝ} (hf : f ∈ pointedCone ℝ n) :
     ‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖ := by
@@ -382,22 +373,27 @@ theorem norm_le_three_mul_norm_boundary {n : ℕ} {f : Vertex n → ℝ} (hf : f
   have hB_eq : h.boundary = B := (boundaryLinear_coe ℝ h).symm
   have hlo : entryLowerBound B p ≤ f p := by simpa [hB_eq, h] using entryLowerBound_le h p
   have hhi : f p ≤ entryUpperBound B p := by simpa [hB_eq, h] using le_entryUpperBound h p
+  have hite (P : Prop) [Decidable P] (s : Fin 3) (i : Fin n) :
+      ‖if P then B s i else 0‖ ≤ ‖B‖ := by
+    split_ifs
+    · exact (norm_le_pi_norm (B s) i).trans (norm_le_pi_norm B s)
+    · simp
   have hlo_norm : ‖entryLowerBound B p‖ ≤ 3 * n * ‖B‖ := by
-    unfold entryLowerBound
-    have h1 := norm_sum_filter_boundary_le B 0 ({i : Fin n | i.val < p.y})
-    have h2 := norm_sum_filter_boundary_le B 0 ({i : Fin n | n - p.z ≤ i.val})
-    have h3 := norm_sum_filter_boundary_le B 1 ({i : Fin n | i.val < p.z})
+    rw [entryLowerBound, Finset.sum_filter, Finset.sum_filter, Finset.sum_filter,
+      ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+    refine (norm_sum_le_of_le Finset.univ (n := fun _ => 3 * ‖B‖) fun i _ => ?_).trans_eq
+      (by simp; ring)
     have htri := (norm_add_le
-      ((∑ i : Fin n with i.val < p.y, B 0 i) + ∑ i : Fin n with n - p.z ≤ i.val, B 0 i)
-      (∑ i : Fin n with i.val < p.z, B 1 i)).trans (add_le_add (norm_add_le _ _) le_rfl)
-    linarith
+      ((if i.val < p.y then B 0 i else 0) + if n - p.z ≤ i.val then B 0 i else 0)
+      (if i.val < p.z then B 1 i else 0)).trans (add_le_add (norm_add_le _ _) le_rfl)
+    linarith [hite (i.val < p.y) 0 i, hite (n - p.z ≤ i.val) 0 i, hite (i.val < p.z) 1 i]
   have hhi_norm : ‖entryUpperBound B p‖ ≤ 3 * n * ‖B‖ := by
-    unfold entryUpperBound
-    have h1 := norm_sum_filter_boundary_le B 0 ({i : Fin n | i.val < p.y})
-    have h2 := norm_sum_filter_boundary_le B 2 ({i : Fin n | n - p.z ≤ i.val})
-    have htri := norm_sub_le (∑ i : Fin n with i.val < p.y, B 0 i)
-      (∑ i : Fin n with n - p.z ≤ i.val, B 2 i)
-    linarith [mul_nonneg (Nat.cast_nonneg (α := ℝ) n) (norm_nonneg B)]
+    rw [entryUpperBound, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_sub_distrib]
+    refine (norm_sum_le_of_le Finset.univ (n := fun _ => 3 * ‖B‖) fun i _ => ?_).trans_eq
+      (by simp; ring)
+    linarith [norm_sub_le (if i.val < p.y then B 0 i else 0)
+      (if n - p.z ≤ i.val then B 2 i else 0), hite (i.val < p.y) 0 i,
+      hite (n - p.z ≤ i.val) 2 i, norm_nonneg B]
   rw [Real.norm_eq_abs] at hlo_norm hhi_norm ⊢
   exact abs_le.mpr ⟨by linarith [neg_le_of_abs_le hlo_norm], by linarith [le_of_abs_le hhi_norm]⟩
 

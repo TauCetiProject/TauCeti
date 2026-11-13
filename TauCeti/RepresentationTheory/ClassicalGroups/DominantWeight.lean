@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
@@ -47,7 +48,8 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 * `TauCeti.DominantWeight.shift`: translating a weight by an integer multiple of `(1, …, 1)`.
 * `TauCeti.DominantWeight.dual`: the contragredient weight `λ*ᵢ = -λₙ₋₁₋ᵢ`.
 * `TauCeti.DominantWeight.Dominates`: the `GL n` dominance partial-sum order (`μ` dominates `ν` when
-  they have the same total degree and every leading partial sum of `ν` is at most that of `μ`).
+  `TauCeti.Dominates ν.1 μ.1`, i.e., they have the same total degree and every leading partial sum
+  of `ν` is at most that of `μ`).
 * `TauCeti.DominantWeight.detShift`: the last entry `λₙ`, the determinant-twist exponent.
 * `TauCeti.DominantWeight.IsPolynomial`: having nonnegative entries.
 * `TauCeti.DominantWeight.shape` and `TauCeti.weightOfShape`: the two directions of the
@@ -152,22 +154,41 @@ instance : AddCommMonoid (DominantWeight n) :=
   ext i; simp [neg_add_rev, add_comm]
 
 /-- A dominant weight `μ` **dominates** `ν` (`ν ≤ μ` in the `GL n` dominance order) when `μ` and `ν`
-have the same total sum and every leading partial sum of `ν` is at most that of `μ`. -/
+have the same total sum and every leading partial sum of `ν` is at most that of `μ`. Since
+dominant weights are antitone while `TauCeti.Dominates` is oriented so the dominated vector has
+larger leading partial sums, this is `TauCeti.Dominates ν.1 μ.1`. -/
 def Dominates (μ ν : DominantWeight n) : Prop :=
-  (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
-    ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i
+  TauCeti.Dominates ν.1 μ.1
 
-/-- The defining partial-sum characterization of `Dominates`. -/
-theorem dominates_iff {μ ν : DominantWeight n} :
-    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
-      ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i := Iff.rfl
+/-- Unfold `DominantWeight.Dominates` to `TauCeti.Dominates` on the underlying sequences (with
+arguments reversed). -/
+theorem dominates_def {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ TauCeti.Dominates ν.1 μ.1 := Iff.rfl
 
 /-- Leading partial sums stabilize at index `n`, so `Dominates` only needs to test `k : Fin (n + 1)`
 and is decidable. -/
 theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
     μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧ ∀ k : Fin (n + 1),
       (∑ i : Fin n with i.val < k.val, ν.1 i) ≤ ∑ i : Fin n with i.val < k.val, μ.1 i := by
-  refine and_congr_right fun hsum => ⟨fun h k => h k.val, fun h k => ?_⟩
+  rw [dominates_def, TauCeti.dominates_def, eq_comm]
+  have hpre (f : Fin n → ℤ) {k : ℕ} (hk : k ≤ n) :
+      (∑ i : Fin n with i.val < k, f i) = ∑ j : Fin k, f (Fin.castLE hk j) := by
+    rw [show ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ.map (Fin.castLEEmb hk) by
+      ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
+        Fin.castLEEmb_apply]
+      exact ⟨fun hi => ⟨⟨i.val, hi⟩, Fin.ext rfl⟩, fun ⟨j, hj⟩ => hj ▸ j.isLt⟩, Finset.sum_map]
+    rfl
+  refine Iff.and Iff.rfl ⟨fun h k => ?_, fun h k hk => ?_⟩
+  · simpa only [hpre _ (Nat.lt_succ_iff.mp k.isLt)] using h k.val (Nat.lt_succ_iff.mp k.isLt)
+  · simpa only [hpre _ hk] using h ⟨k, Nat.lt_succ_of_le hk⟩
+
+/-- Partial-sum characterization of `Dominates` over all filtered prefixes
+`{i : Fin n | i.val < k}`. -/
+theorem dominates_iff {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ (∑ i, ν.1 i) = (∑ i, μ.1 i) ∧
+      ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.1 i) ≤ ∑ i : Fin n with i.val < k, μ.1 i := by
+  rw [dominates_iff_forall_fin]
+  refine and_congr_right fun hsum => ⟨fun h k => ?_, fun h k => h k.val⟩
   rcases le_or_gt k n with hk | hk
   · exact h ⟨k, Nat.lt_succ_of_le hk⟩
   · have hall : ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ := by
@@ -177,25 +198,19 @@ theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
 instance (μ ν : DominantWeight n) : Decidable (μ.Dominates ν) :=
   decidable_of_iff _ dominates_iff_forall_fin.symm
 
+/-- Every dominant weight dominates itself. -/
 @[simp, refl] theorem dominates_refl (μ : DominantWeight n) : μ.Dominates μ :=
-  ⟨rfl, fun _ => le_rfl⟩
+  TauCeti.Dominates.refl μ.1
 
+/-- Dominance on dominant weights is transitive. -/
 @[trans] theorem Dominates.trans {μ ν ξ : DominantWeight n}
     (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) : μ.Dominates ξ :=
-  ⟨hνξ.1.trans hμν.1, fun k => (hνξ.2 k).trans (hμν.2 k)⟩
+  TauCeti.Dominates.trans hνξ hμν
 
+/-- Dominance on dominant weights is antisymmetric. -/
 theorem Dominates.antisymm {μ ν : DominantWeight n} (hμν : μ.Dominates ν) (hνμ : ν.Dominates μ) :
-    μ = ν := by
-  ext i
-  have hlt := le_antisymm (hνμ.2 i.val) (hμν.2 i.val)
-  have hsucc := le_antisymm (hνμ.2 (i.val + 1)) (hμν.2 (i.val + 1))
-  have hsplit : ({j : Fin n | j.val < i.val + 1} : Finset (Fin n)) =
-      insert i ({j : Fin n | j.val < i.val} : Finset (Fin n)) := by
-    ext j; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
-    omega
-  have hni : i ∉ ({j : Fin n | j.val < i.val} : Finset (Fin n)) := by simp
-  rw [hsplit, Finset.sum_insert hni, Finset.sum_insert hni, hlt] at hsucc
-  exact add_right_cancel hsucc
+    μ = ν :=
+  Subtype.ext (TauCeti.Dominates.antisymm hνμ hμν)
 
 /-- The **determinant-twist exponent** of a dominant weight: its last entry `λₙ`, and `0` for the
 empty weight. -/
