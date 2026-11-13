@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
 # Uniqueness of Chevalley big-cell factors
@@ -26,7 +28,8 @@ The proof specializes `kostantSubsystemSubgroup_mul_torus_mul_injective` from
 height order makes negative roots upper unitriangular and positive roots lower unitriangular.
 The coordinate weights span the actual character lattice, making its torus
 parametrization faithful even over nonreduced rings. The transport from lattice operators
-to datum points follows the positive-point construction in `Chevalley.Positive.Basic`.
+to datum points uses `ChevalleyDatum.subsystemPoints` from
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Subsystem`.
 
 ## References
 
@@ -54,6 +57,23 @@ private theorem negativeSubgroup_mul_torus_mul_positiveSubgroup_injective :
         kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A) x.2.1 *
           x.2.2) := by
   let e := orderedWeightIndexEquiv (t.weightDegree ht) D.weight
+  -- Form the inequalities before installing the lifted order on the same finite type.
+  have hneg : ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
+        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ →
+          OrderDual.toDual (e r) < OrderDual.toDual (e s) := by
+    intro γ hγ r s m hm hrs
+    exact OrderDual.toDual_lt_toDual.mpr
+      (orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg (t.weightDegree ht) D.weight
+        (t.weightDegree_root_neg ht hγ) hm hrs)
+  have hpos : ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
+        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ →
+          OrderDual.toDual (e s) < OrderDual.toDual (e r) := by
+    intro γ hγ r s m hm hrs
+    exact OrderDual.toDual_lt_toDual.mpr
+      (orderedWeightIndexEquiv_lt_of_eq_add_nsmul (t.weightDegree ht) D.weight
+        (t.weightDegree_root_pos ht hγ) hm hrs)
   -- Reverse the height order: the first factor is the negative subgroup.
   let : LinearOrder (Fin D.dim) :=
     LinearOrder.lift' (OrderDual.toDual ∘ e) (OrderDual.toDual.injective.comp e.injective)
@@ -69,8 +89,7 @@ private theorem negativeSubgroup_mul_torus_mul_positiveSubgroup_injective :
     (posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
     (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
-    (fun _ hγ => D.orderedWeightIndexEquiv_lt_of_negRoot hγ)
-    (fun _ hγ => D.orderedWeightIndexEquiv_lt_of_posRoot hγ) A
+    hneg hpos A
     (kostantTorusPoints_injective D.lattice D.basis D.coordinateWeight
       D.span_range_coordinateWeight_eq_top)
   rw [D.negativeSubgroup_def, D.positiveSubgroup_def, D.subsystemSubgroup_def,
@@ -85,67 +104,68 @@ noncomputable def bigCellMul
 
 /-- The big-cell multiplication uses the actual torus between the two unipotent factors. -/
 @[simp]
-theorem bigCellMul_apply (u : D.negativePoints A) (s : Fin t.rank → Aˣ)
-    (v : D.positivePoints A) :
-    D.bigCellMul A (u, s, v) = u.val * D.torusPoints A s * v.val :=
+theorem bigCellMul_apply
+    (x : D.negativePoints A × ((Fin t.rank → Aˣ) × D.positivePoints A)) :
+    D.bigCellMul A x = x.1.val * D.torusPoints A x.2.1 * x.2.2.val :=
   (rfl)
 
 /-- A big-cell factorization determines both root-subgroup factors and the actual torus
 parameter uniquely, over every commutative ring. -/
 theorem bigCellMul_injective : Function.Injective (D.bigCellMul A) := by
   rintro ⟨u, s, v⟩ ⟨u', s', v'⟩ h
-  have hu := u.property
-  have hu' := u'.property
-  have hv := v.property
-  have hv' := v'.property
-  simp only [D.negativePoints_def] at hu hu'
-  simp only [D.positivePoints_def] at hv hv'
-  obtain ⟨a, ha, hau⟩ := (D.mem_subsystemPoints_iff _).mp hu
-  obtain ⟨a', ha', hau'⟩ := (D.mem_subsystemPoints_iff _).mp hu'
-  obtain ⟨b, hb, hbv⟩ := (D.mem_subsystemPoints_iff _).mp hv
-  obtain ⟨b', hb', hbv'⟩ := (D.mem_subsystemPoints_iff _).mp hv'
-  rw [← D.negativeSubgroup_def] at ha ha'
-  rw [← D.positiveSubgroup_def] at hb hb'
+  obtain ⟨a, rfl⟩ := (D.negativeSubgroupMulEquivPoints A).surjective u
+  obtain ⟨a', rfl⟩ := (D.negativeSubgroupMulEquivPoints A).surjective u'
+  obtain ⟨b, rfl⟩ := (D.positiveSubgroupMulEquivPoints A).surjective v
+  obtain ⟨b', rfl⟩ := (D.positiveSubgroupMulEquivPoints A).surjective v'
   have hmat := congrArg (D.points A).subtype h
-  simp only [bigCellMul_apply, map_mul, Subgroup.subtype_apply, coe_torusPoints,
-    ← hau, ← hau', ← hbv, ← hbv'] at hmat
-  have hlat : a * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-      (CommAlgCat.of ℤ A) s * b =
-      a' * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-        (CommAlgCat.of ℤ A) s' * b' := by
+  simp only [bigCellMul_apply, map_mul, Subgroup.subtype_apply] at hmat
+  rw [D.coe_negativeSubgroupMulEquivPoints_apply,
+    D.coe_negativeSubgroupMulEquivPoints_apply, D.coe_positiveSubgroupMulEquivPoints_apply,
+    D.coe_positiveSubgroupMulEquivPoints_apply, D.coe_torusPoints, D.coe_torusPoints] at hmat
+  have hlat : a.val * kostantTorusPoints D.lattice D.basis D.coordinateWeight
+      (CommAlgCat.of ℤ A) s * b.val =
+      a'.val * kostantTorusPoints D.lattice D.basis D.coordinateWeight
+        (CommAlgCat.of ℤ A) s' * b'.val := by
     apply Units.map_injective
       (f := (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
       (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
     simpa only [map_mul, MulEquiv.toMonoidHom_eq_coe,
       basisMatrix_kostantTorusPoints] using hmat
   have hcoords := D.negativeSubgroup_mul_torus_mul_positiveSubgroup_injective A
-    (a₁ := (⟨a, ha⟩, s, ⟨b, hb⟩)) (a₂ := (⟨a', ha'⟩, s', ⟨b', hb'⟩)) hlat
-  have haeq : a = a' := congrArg (fun x => x.1.val) hcoords
-  have hseq : s = s' := congrArg (fun x => x.2.1) hcoords
-  have hbeq : b = b' := congrArg (fun x => x.2.2.val) hcoords
-  subst a' b' s'
-  have hueq : u = u' := Subtype.ext (Subtype.ext (hau.symm.trans hau'))
-  have hveq : v = v' := Subtype.ext (Subtype.ext (hbv.symm.trans hbv'))
-  exact Prod.ext hueq (Prod.ext rfl hveq)
+    (a₁ := (a, s, b)) (a₂ := (a', s', b')) hlat
+  exact congrArg (fun x => (D.negativeSubgroupMulEquivPoints A x.1, x.2.1,
+    D.positiveSubgroupMulEquivPoints A x.2.2)) hcoords
+
+/-- A point is in the big-cell image exactly when it admits three such factors. -/
+theorem mem_range_bigCellMul_iff {g : D.points A} :
+    g ∈ Set.range (D.bigCellMul A) ↔
+      ∃ u ∈ D.negativePoints A, ∃ s : Fin t.rank → Aˣ,
+        ∃ v ∈ D.positivePoints A, u * D.torusPoints A s * v = g := by
+  constructor
+  · rintro ⟨⟨u, s, v⟩, h⟩
+    exact ⟨u.val, u.property, s, v.val, v.property, h⟩
+  · rintro ⟨u, hu, s, v, hv, h⟩
+    exact ⟨(⟨u, hu⟩, s, ⟨v, hv⟩), h⟩
+
+/-- Equality of negative-torus-positive products determines each factor. -/
+theorem eq_of_mul_torusPoints_mul_eq {u u' v v' : D.points A}
+    (hu : u ∈ D.negativePoints A) (hu' : u' ∈ D.negativePoints A)
+    (hv : v ∈ D.positivePoints A) (hv' : v' ∈ D.positivePoints A)
+    {s s' : Fin t.rank → Aˣ}
+    (h : u * D.torusPoints A s * v = u' * D.torusPoints A s' * v') :
+    u = u' ∧ s = s' ∧ v = v' := by
+  have heq := D.bigCellMul_injective A
+    (a₁ := (⟨u, hu⟩, s, ⟨v, hv⟩)) (a₂ := (⟨u', hu'⟩, s', ⟨v', hv'⟩)) h
+  exact ⟨congrArg (fun x => x.1.val) heq, congrArg (fun x => x.2.1) heq,
+    congrArg (fun x => x.2.2.val) heq⟩
 
 /-- Ring maps preserve big-cell multiplication and each of its three factors. -/
 theorem map_bigCellMul {B : Type w} [CommRing B] (f : A →+* B)
-    (u : D.negativePoints A) (s : Fin t.rank → Aˣ) (v : D.positivePoints A) :
-    (D.pointsPresentation A).map (D.pointsPresentation B) f (D.bigCellMul A (u, s, v)) =
-      D.bigCellMul B
-        (⟨(D.pointsPresentation A).map (D.pointsPresentation B) f u.val, by
-            rw [D.negativePoints_def]
-            apply D.map_subsystemPoints_le _ f
-            apply Subgroup.mem_map_of_mem
-            rw [← D.negativePoints_def]
-            exact u.property⟩,
-          (fun i => Units.map f.toMonoidHom (s i)),
-          ⟨(D.pointsPresentation A).map (D.pointsPresentation B) f v.val, by
-            rw [D.positivePoints_def]
-            apply D.map_subsystemPoints_le _ f
-            apply Subgroup.mem_map_of_mem
-            rw [← D.positivePoints_def]
-            exact v.property⟩) := by
-  simp only [bigCellMul_apply, map_mul, D.map_torusPoints]
+    (x : D.negativePoints A × ((Fin t.rank → Aˣ) × D.positivePoints A)) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f (D.bigCellMul A x) =
+      D.bigCellMul B (D.mapNegativePoints f x.1,
+        (fun i => Units.map f.toMonoidHom (x.2.1 i)), D.mapPositivePoints f x.2.2) := by
+  simp only [bigCellMul_apply, map_mul, D.map_torusPoints,
+    D.coe_mapNegativePoints_apply, D.coe_mapPositivePoints_apply]
 
 end TauCeti.DynkinType.ChevalleyDatum

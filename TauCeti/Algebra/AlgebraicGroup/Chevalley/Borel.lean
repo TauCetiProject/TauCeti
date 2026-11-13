@@ -73,7 +73,7 @@ theorem borelSubgroup_le_iff {P : Subgroup (D.points A)} :
     D.borelSubgroup A ≤ P ↔
       (∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
         D.rootSubgroupPoints γ A u ∈ P) ∧ (∀ s, D.torusPoints A s ∈ P) := by
-  rw [D.borelSubgroup_def, sup_le_iff, D.positivePoints_def, D.subsystemPoints_le_iff]
+  rw [D.borelSubgroup_def, sup_le_iff, D.positivePoints_le_iff]
   simp only [IsConcreteLE.le_iff, MonoidHom.mem_range, forall_exists_index,
     forall_apply_eq_imp_iff]
 
@@ -114,10 +114,7 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
       D.borelSubgroup B := by
   rw [D.borelSubgroup_def, Subgroup.map_sup]
   apply sup_le
-  · have hmap := D.map_subsystemPoints_le
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) f
-    rw [← D.positivePoints_def, ← D.positivePoints_def] at hmap
-    exact hmap.trans (D.positivePoints_le_borelSubgroup B)
+  · exact (D.map_positivePoints_le f).trans (D.positivePoints_le_borelSubgroup B)
   · rw [Subgroup.map_le_iff_le_comap]
     rintro _ ⟨s, rfl⟩
     simpa only [Subgroup.mem_comap, D.map_torusPoints] using
@@ -134,9 +131,7 @@ theorem rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots {γ : Fin t.num
   constructor
   · intro ha
     obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
-    rw [D.positivePoints_def] at hu
-    obtain ⟨v, hv, hvu⟩ := (D.mem_subsystemPoints_iff _).mp hu
-    rw [← D.positiveSubgroup_def] at hv
+    obtain ⟨v, hv, hvu⟩ := D.mem_positivePoints_iff.mp hu
     let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
     have hm : Function.Injective m :=
       Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
@@ -190,9 +185,8 @@ theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.r
   have hpos : t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
     support_subset_posRoots _ _ (t.simpleIndex_mem_support i)
   refine ⟨⟨D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1),
-    D.positivePoints_le_borelSubgroup A (by
-      rw [D.positivePoints_def]
-      exact D.rootSubgroupPoints_mem_subsystemPoints _ A hpos _)⟩, ?_⟩
+    D.positivePoints_le_borelSubgroup A
+      (D.rootSubgroupPoints_mem_positivePoints A hpos _)⟩, ?_⟩
   rw [D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff]
   exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i)
 
