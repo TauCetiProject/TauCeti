@@ -483,9 +483,9 @@ namespace ContMDiffAt
 theorem contDiffAt_comp_chartAt_symm {n : WithTop ℕ∞}
     (hg : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n g z) :
     ContDiffAt 𝕜 n (g ∘ (chartAt E z).symm) (chartAt E z z) := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  simpa only [hext, hext'] using hg.contDiffAt_comp_extChartAt_symm
+  simpa only [TauCeti.extChartAt_model_symm_eq_chartAt_symm,
+    TauCeti.extChartAt_model_apply_eq_chartAt_apply] using
+    hg.contDiffAt_comp_extChartAt_symm
 
 end ContMDiffAt
 
@@ -494,9 +494,8 @@ expression is the vector-valued manifold derivative. Both sides are `0` when the
 differentiable at the point. -/
 theorem TauCeti.fderiv_comp_chartAt_symm :
     fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) = mvfderiv 𝓘(𝕜, E) g z := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm,
+    TauCeti.extChartAt_model_symm_eq_chartAt_symm, TauCeti.extChartAt_model_apply_eq_chartAt_apply]
 
 /-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
 is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
@@ -619,8 +618,8 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
         ((extChartAt I α) '' s) y := by
   rintro _ ⟨x, hx, rfl⟩
   exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
-    obtain ⟨z, hz, rfl⟩ := hy
-    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+    obtain ⟨z, -, rfl⟩ := hy
+    exact mem_range_self _
 
 end ChartOverlap
 
@@ -690,7 +689,7 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   have hd : HasFDerivAt (extChartAt I α ∘ Q) L z := by
     have h := (hasMFDerivAt_extChartAt (I := I) hx).comp z hQ
     -- Cancel the canonical source tangent identification in the derivative composition.
-    convert! h.hasFDerivAt using 2
+    refine h.hasFDerivAt.congr_fderiv ?_
     ext v
     rw [← hη']
     rfl
@@ -788,10 +787,8 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
     (hf : ContMDiffAt I I' 1 f y) :
     HasStrictFDerivAt (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm)
       (fderiv 𝕜 (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm) (extChartAt I y y))
-      (extChartAt I y y) := by
-  have h := (contMDiffAt_iff.mp hf).2
-  rw [I.range_eq_univ, contDiffWithinAt_univ] at h
-  exact h.hasStrictFDerivAt_fderiv one_ne_zero
+      (extChartAt I y y) :=
+  hf.contDiffAt_writtenInExtChartAt.hasStrictFDerivAt_fderiv one_ne_zero
 
 end RCLikeCharts
 
