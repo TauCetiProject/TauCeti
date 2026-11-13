@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Torsion
 
 /-!
 # Centralizers in free groups
@@ -33,8 +34,6 @@ free basis.
   is trivial.
 * `FreeGroup.center_eq_bot_of_nontrivial`: the centre of a free group on at least two generators
   is trivial.
-* `FreeGroup.of_zpow_mul_of_zpow_eq_one_iff`: for distinct generators, `a ^ p * b ^ q = 1` only
-  for `p = q = 0`.
 * `FreeGroup.commute_of_zpow_of_zpow_iff`: nonzero powers of distinct generators do not commute.
 * `IsFreeGroup.commute_of_commute`: in a free group, two elements commuting with a common
   nontrivial element commute with each other.
@@ -158,24 +157,14 @@ namespace FreeGroup
 
 variable {α : Type*}
 
-/-- For distinct generators `a ≠ b` of a free group, `a ^ p * b ^ q = 1` only for `p = q = 0`.
-In particular `a ^ p * b ^ q ≠ 1` for all `p, q ≥ 1`: the noncommuting pair `(a, b)` satisfies the
-big powers condition with bound `1`. -/
-theorem of_zpow_mul_of_zpow_eq_one_iff {a b : α} (hab : a ≠ b) {p q : ℤ} :
-    of a ^ p * of b ^ q = 1 ↔ p = 0 ∧ q = 0 := by
-  refine ⟨fun h => ?_, fun ⟨hp, hq⟩ => by simp [hp, hq]⟩
-  simpa using eq_of_of_zpow_eq_of_zpow hab ((mul_eq_one_iff_eq_inv.1 h).trans (zpow_neg _ q).symm)
-
 /-- Nonzero powers of distinct generators of a free group do not commute: `of a ^ m` and
 `of b ^ n` commute only when `m = 0` or `n = 0`. -/
+@[simp]
 theorem commute_of_zpow_of_zpow_iff {a b : α} (hab : a ≠ b) {m n : ℤ} :
     Commute (of a ^ m) (of b ^ n) ↔ m = 0 ∨ n = 0 := by
-  refine ⟨fun h => or_iff_not_imp_right.2 fun hn => ?_, by rintro (rfl | rfl) <;> simp⟩
-  -- `of a ^ m` commutes with `of b ^ n ≠ 1`, hence with `of b`, so it is a power of `of b`.
-  have hbn : of b ^ n ≠ 1 := fun h1 =>
-    hn (eq_of_of_zpow_eq_of_zpow hab.symm (h1.trans (zpow_zero (of a)).symm)).1
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute
-    (IsFreeGroup.commute_of_commute hbn h ((Commute.refl (of b)).zpow_left n)))
-  exact (eq_of_of_zpow_eq_of_zpow hab hj.symm).1
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  by_contra! hmn
+  rw [Commute.zpow_left_iff hmn.1, Commute.zpow_right_iff hmn.2] at h
+  exact hab (eq_of_commute_of_of h)
 
 end FreeGroup
