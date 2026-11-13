@@ -123,35 +123,23 @@ theorem metrizableSpace_frameExhaustion [Countable ι] [∀ i, Countable (κ i)]
 /-- On sigma-compact frame domains, select actual countable covering chart centres and
 compact exhaustions whose native frame seminorms generate the specified frame topology.
 The empty-domain case uses an empty subtype, without choosing a point. -/
-theorem exists_countable_frameExhaustion
-    [LocallyCompactSpace E] [SecondCountableTopology E]
-    [∀ i, SigmaCompactSpace (U i)] :
+theorem exists_countable_frameExhaustion [LocallyCompactSpace E] [∀ i, SigmaCompactSpace (U i)] :
     ∃ s : ∀ i, Set (U i), (∀ i, (s i).Countable) ∧
       (∀ i (x : U i), ∃ j : s i, x ∈ (extChartAt I (j : U i)).source) ∧
       ∃ A : ∀ i (j : s i), CompactExhaustion (extChartAt I (j : U i)).target,
         let _ := frameTopology (I := I) (n := n) e U hU
         WithSeminorms (frameExhaustionSeminormFamily (n := n) e U hU
           (fun i (j : s i) ↦ (j : U i)) A) := by
-  choose s hs hcover using fun i ↦ countable_cover_nhds_of_sigmaCompact
-    (fun x : U i ↦ extChartAt_source_mem_nhds (I := I) x)
-  have hc : ∀ i (x : U i), ∃ j : s i, x ∈ (extChartAt I (j : U i)).source := by
-    intro i x
-    have hx : x ∈ ⋃ y ∈ s i, (extChartAt I y).source := by rw [hcover]; trivial
-    obtain ⟨y, hy, hx⟩ := mem_iUnion₂.mp hx
-    exact ⟨⟨y, hy⟩, hx⟩
-  let _ (i : ι) (j : s i) : LocallyCompactSpace (extChartAt I (j : U i)).target := by
-    rw [extChartAt_target]
-    exact ((chartAt H (j : U i)).open_target.preimage I.continuous_symm).isLocallyClosed.inter
-      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
-  let A (i : ι) (j : s i) := CompactExhaustion.choice (extChartAt I (j : U i)).target
+  choose s hs hc hA using fun i ↦ ContMDiffMap.exists_countable_chartExhaustion (I := I) (M := U i)
+  let A (i : ι) := (hA i).some
   exact ⟨s, hs, hc, A, withSeminorms_frameExhaustion (n := n) e U hU
     (fun i (j : s i) ↦ (j : U i)) A hc⟩
 
 /-- Countable covering frames on sigma-compact domains give metrizability of the same native
-frame topology on a manifold with locally compact, second-countable model, including
-manifolds with boundary and corners. -/
+frame topology on a manifold with locally compact model, including manifolds with boundary and
+corners. -/
 theorem metrizableSpace_frameTopology_of_sigmaCompactDomains [Countable ι]
-    [LocallyCompactSpace E] [SecondCountableTopology E]
+    [LocallyCompactSpace E]
     [∀ i, SigmaCompactSpace (U i)] (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     MetrizableSpace Cₛ^n⟮I; F, V⟯ := by

@@ -14,8 +14,8 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SecondCountable
 The compact derivative topology `ContMDiffSection.frameTopology` on the `C^n` sections of a
 vector bundle is induced by the tuple of weak Whitney frame coefficients
 (`ContMDiffSection.isInducing_sectionFrameCoordinates`). When there are countably many frame
-domains, each sigma-compact, the model space is locally compact and second countable, and the
-model fibre is second countable, each coefficient space is second countable
+domains, each sigma-compact, the base field is complete, the model space is locally compact, and
+the model fibre is second countable, each coefficient space is second countable
 (`ContMDiffMap.secondCountableTopology_manifoldWeakWhitney_of_sigmaCompact`), and so is the
 section space. In particular it is separable. No covering condition is needed.
 
@@ -54,17 +54,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-/-- For countably many sigma-compact frame domains, on a manifold with locally compact,
-second-countable model and with second-countable model fibre, the compact derivative topology on
-`C^n` sections is second countable, hence separable. -/
+/-- For countably many sigma-compact frame domains, on a manifold with locally compact model over a
+complete field and with second-countable model fibre, the compact derivative topology on `C^n`
+sections is second countable, hence separable. -/
 theorem secondCountableTopology_frameTopology [Countable ι] [CompleteSpace 𝕜]
-    [LocallyCompactSpace E] [SecondCountableTopology E] [SecondCountableTopology F]
-    [∀ i, SigmaCompactSpace (U i)] :
+    [LocallyCompactSpace E] [SecondCountableTopology F] [∀ i, SigmaCompactSpace (U i)] :
     let _ := frameTopology (I := I) (n := n) e U hU
     SecondCountableTopology Cₛ^n⟮I; F, V⟯ := by
   let _ := frameTopology (I := I) (n := n) e U hU
-  have (i : ι) : SecondCountableTopology C^n⟮I, U i; 𝓘(𝕜, F), F⟯ :=
-    ContMDiffMap.secondCountableTopology_manifoldWeakWhitney_of_sigmaCompact
   exact (isInducing_sectionFrameCoordinates e U hU).secondCountableTopology
 
 end ContMDiffSection

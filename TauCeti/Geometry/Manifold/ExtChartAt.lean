@@ -66,6 +66,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   a measurable embedding.
 * `MeasurableSet.image_extChartAt`: the image of a measurable subset of a chart source is
   measurable in the model space.
+* `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
+  chart target is locally compact.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
   manifold.
 * `TauCeti.IsChartMeasurable.measurableSet_inter_preimage`: measurable parameter pieces for maps
@@ -371,6 +373,14 @@ theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpac
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
     I.isClosed_range.measurableSet
+
+/-- On a manifold with locally compact model, each extended chart target is locally compact: it is
+the intersection of an open subset with the closed range of the model. -/
+instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
+    LocallyCompactSpace (extChartAt I x).target := by
+  rw [extChartAt_target]
+  exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
+    I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
 
 /-- The coordinate image of an open subset of a chart source is measurable, without a
 measurable structure on the manifold. -/
