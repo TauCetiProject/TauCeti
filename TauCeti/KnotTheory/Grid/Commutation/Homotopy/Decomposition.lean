@@ -39,7 +39,7 @@ whose counted finite families have membership characterizations.
 * `TauCeti.GridHexagonCompositeDecomposition` combines the two orders of hexagon--rectangle
   composition, with counted family `TauCeti.GridDiagram.hexagonCompositeDecompositions` and
   weight `TauCeti.GridDiagram.hexagonCompositeWeight`.
-* `TauCeti.GridDiagram.XSet_inter_coveredSquares_of_mem_commutationHexagons` and
+* `TauCeti.GridDiagram.XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons` and
   `TauCeti.GridDiagram.X_cutColumn_mul_commutationHexagonWeight`: the rectangle under a counted
   commutation hexagon carries exactly one `X`-marking, in the column the hexagon cuts away
   (`TauCeti.GridCommutationHexagonBetween.cutColumn`), and its weight exceeds the hexagon weight by
@@ -470,7 +470,7 @@ theorem mem_commutationHexagons {x y : GridState n}
 
 /-- The rectangle under a counted commutation hexagon carries exactly one `X`-marking, that of the
 column the hexagon cuts away. -/
-theorem XSet_inter_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
+theorem XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons {x y : GridState n}
     {P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y}
     (hP : P ∈ G.commutationHexagons C x y) :
     G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
@@ -504,7 +504,7 @@ theorem mem_commutationHexagons_iff_XSet_inter_eq {x y : GridState n}
         G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
           {(P.cutColumn, G.X P.cutColumn)} := by
   refine ⟨fun hP => ⟨((G.mem_commutationHexagons C P).mp hP).1,
-    G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP⟩,
+    G.XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons C hP⟩,
     fun ⟨hempty, hinter⟩ => (G.mem_commutationHexagons C P).mpr
       ⟨hempty, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩⟩
   obtain ⟨d, r⟩ := p
@@ -777,7 +777,7 @@ private theorem exists_X_mul_hexagonCompositeWeight {x z : GridState n}
         GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
     · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
         Finset.inter_union_distrib_left,
-        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP,
+        G.XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons C hP,
         Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
         Finset.union_empty]
   | inr D =>
@@ -789,7 +789,7 @@ private theorem exists_X_mul_hexagonCompositeWeight {x z : GridState n}
         GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
     · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
         Finset.inter_union_distrib_left,
-        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP,
+        G.XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons C hP,
         Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
         Finset.empty_union]
 
@@ -823,7 +823,7 @@ theorem injOn_toRectangleDecomposition_hexagonCompositeDecompositions (x z : Gri
     · obtain ⟨hP, -⟩ := (G.mem_hexagonRectangleDecompositions C D).mp
         ((G.inl_mem_hexagonCompositeDecompositions C D).mp hD)
       rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
-        G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP]
+        G.XSet_inter_toGridRectangle_coveredSquares_of_mem_commutationHexagons C hP]
       simp
     · obtain ⟨hr, -⟩ := (G.mem_rectangleHexagonDecompositions C D).mp
         ((G.inr_mem_hexagonCompositeDecompositions C D).mp hD)
