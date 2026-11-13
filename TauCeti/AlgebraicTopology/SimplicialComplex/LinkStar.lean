@@ -61,6 +61,10 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
+* `PreAbstractSimplicialComplex.closedStar_inf_deletion_singleton`,
+  `PreAbstractSimplicialComplex.map_closedStar`, and `PreAbstractSimplicialComplex.map_link`:
+  the boundary of a vertex star is the vertex link, and injective relabelings commute with closed
+  stars and links.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -339,6 +343,51 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
   · rintro ⟨hne, hnot, hlink⟩
     have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
     exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
+
+/-- At a singleton vertex, the part of the closed star avoiding that vertex is the vertex link. -/
+@[simp]
+theorem closedStar_inf_deletion_singleton (v : ι) :
+    closedStar K {v} ⊓ deletion K {v} = link K {v} := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_inf, mem_closedStar, mem_deletion, mem_link, singleton_subset_iff,
+    disjoint_singleton_right]
+  tauto
+
+/-- An injective relabeling commutes with taking the closed star. -/
+@[simp]
+theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (closedStar K σ).map f = closedStar (K.map f) (σ.image f) := by
+  refine SetLike.ext fun τ => ?_
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hρK, hρσK⟩ := mem_closedStar.mp hρ
+    rw [mem_closedStar, ← image_union, image_mem_map_iff_of_injective f hf,
+      image_mem_map_iff_of_injective f hf]
+    exact ⟨hρK, hρσK⟩
+  · intro hτ
+    obtain ⟨hτK, hτσK⟩ := mem_closedStar.mp hτ
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hτK
+    rw [← image_union, image_mem_map_iff_of_injective f hf] at hτσK
+    exact mem_map_iff.mpr ⟨ρ, mem_closedStar.mpr ⟨hρK, hτσK⟩, rfl⟩
+
+/-- An injective relabeling commutes with taking the link. -/
+@[simp]
+theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    (link K σ).map f = link (K.map f) (σ.image f) := by
+  refine SetLike.ext fun τ => ?_
+  have hdisj (ρ : Finset ι) : Disjoint (ρ.image f) (σ.image f) ↔ Disjoint ρ σ := by
+    simp [disjoint_left, hf.eq_iff]
+  constructor
+  · rintro ⟨ρ, hρ, rfl⟩
+    obtain ⟨hρK, hdis, hρσK⟩ := mem_link.mp hρ
+    rw [mem_link, ← image_union, image_mem_map_iff_of_injective f hf,
+      image_mem_map_iff_of_injective f hf, hdisj]
+    exact ⟨hρK, hdis, hρσK⟩
+  · intro hτ
+    obtain ⟨hτK, hdis, hτσK⟩ := mem_link.mp hτ
+    obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hτK
+    rw [← image_union, image_mem_map_iff_of_injective f hf] at hτσK
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (hdisj ρ).mp hdis, hτσK⟩, rfl⟩
 
 /-- A closed star has finitely many faces exactly when its link does, for any finset `σ`. -/
 theorem finite_faces_closedStar_iff :

@@ -73,6 +73,52 @@ theorem map_id [DecidableEq ι] : K.map id = K := by
   refine SetLike.ext fun τ => ?_
   simp [mem_map_iff]
 
+/-- An injective relabeling is injective on pre-abstract simplicial complexes. -/
+theorem map_injective {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
+    Function.Injective (fun K : PreAbstractSimplicialComplex ι => K.map f) := by
+  intro K L hKL
+  apply SetLike.ext'
+  exact (Finset.image_injective hf).image_injective (congrArg faces hKL)
+
+/-- Two pre-abstract simplicial complexes have the same image under an injective vertex map if and
+only if they are equal. -/
+theorem map_inj_of_injective {κ : Type*} [DecidableEq κ] (f : ι → κ)
+    (hf : Function.Injective f) : K.map f = L.map f ↔ K = L :=
+  (map_injective f hf).eq_iff
+
+/-- Mapping the void precomplex by any vertex map gives the void precomplex. -/
+@[simp]
+theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    (⊥ : PreAbstractSimplicialComplex ι).map f = ⊥ := by
+  refine SetLike.ext fun τ => ⟨?_, False.elim⟩
+  rintro ⟨σ, hσ, -⟩
+  exact hσ
+
+/-- The image of a precomplex under any vertex map is void if and only if the source precomplex is
+void. -/
+@[simp]
+theorem map_eq_bot_iff {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    K.map f = ⊥ ↔ K = ⊥ := by
+  constructor
+  · intro h
+    refine SetLike.ext fun σ => ⟨fun hσ => ?_, False.elim⟩
+    have hmem : σ.image f ∈ K.map f := mem_map_iff.mpr ⟨σ, hσ, rfl⟩
+    rw [h] at hmem
+    exact hmem
+  · rintro rfl
+    exact map_bot f
+
+/-- Under an injective vertex map, an imaged finset belongs to the image precomplex if and only if
+the original finset belongs to the source precomplex. -/
+theorem image_mem_map_iff_of_injective {κ : Type*} [DecidableEq κ] (f : ι → κ)
+    (hf : Function.Injective f) : σ.image f ∈ K.map f ↔ σ ∈ K := by
+  constructor
+  · intro h
+    obtain ⟨τ, hτ, heq⟩ := mem_map_iff.mp h
+    exact (Finset.image_injective hf heq) ▸ hτ
+  · intro h
+    exact mem_map_iff.mpr ⟨σ, h, rfl⟩
+
 /-- An injective relabeling preserves and reflects finiteness of the face collection. -/
 theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
     (f : ι → κ) (hf : Function.Injective f) : (K.map f).faces.Finite ↔ K.faces.Finite := by
@@ -88,6 +134,20 @@ theorem mem_inf {ρ : Finset ι} : ρ ∈ K ⊓ L ↔ ρ ∈ K ∧ ρ ∈ L :=
 /-- Every vertex of a face spans a singleton face. -/
 theorem singleton_mem_of_mem (hσ : σ ∈ K) (hv : v ∈ σ) : ({v} : Finset ι) ∈ K :=
   (K.isRelLowerSet_faces hσ).2 (Finset.singleton_subset_iff.mpr hv) (Finset.singleton_nonempty v)
+
+/-- A singleton is a face of an image precomplex if and only if it is the image of a singleton face
+of the source precomplex. -/
+@[simp]
+theorem singleton_mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ} {y : κ} :
+    ({y} : Finset κ) ∈ K.map f ↔ ∃ v, ({v} : Finset ι) ∈ K ∧ f v = y := by
+  constructor
+  · intro hy
+    obtain ⟨σ, hσ, hσy⟩ := mem_map_iff.mp hy
+    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
+    have hfv : f v ∈ ({y} : Finset κ) := hσy ▸ Finset.mem_image_of_mem f hv
+    exact ⟨v, singleton_mem_of_mem hσ hv, Finset.mem_singleton.mp hfv⟩
+  · rintro ⟨v, hv, rfl⟩
+    exact mem_map_iff.mpr ⟨{v}, hv, Finset.image_singleton f v⟩
 
 /-- A vertex whose singleton is not a face occurs in no face at all.  This is the convenient way
 to say that a vertex is *unused* by a complex, as needed when a construction adjoins a fresh

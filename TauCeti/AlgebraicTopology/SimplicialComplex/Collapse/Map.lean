@@ -48,13 +48,6 @@ namespace PreAbstractSimplicialComplex
 variable {α β : Type*} [DecidableEq β]
 variable {K L : _root_.PreAbstractSimplicialComplex α}
 
-private theorem map_injective (f : α → β) (hf : Function.Injective f) :
-    Function.Injective (fun K : _root_.PreAbstractSimplicialComplex α => K.map f) := by
-  intro K L hKL
-  apply SetLike.ext'
-  apply (Finset.image_injective hf).image_injective
-  exact congrArg (fun P => P.faces) hKL
-
 /-- Mapping a one-vertex complex along any vertex map gives the one-vertex complex at the image
 vertex. -/
 @[simp]
