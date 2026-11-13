@@ -212,26 +212,56 @@ private theorem perturbationPullback_realChart_cylindricalEndLift_stdComplexLine
   rw [perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineImag,
     endComponent_I hH]
 
+/-- The end lift in real coordinates is injective on every set whose angular coordinates differ
+by less than one, such as a band `ℝ × [t₀, t₀ + 1)`: two points with the same image differ by an
+integer multiple of `i`. -/
+theorem _root_.TauCeti.Floer.PSSPlane.injOn_realChart_cylindricalEndLift (p : PSSPlane)
+    {s : Set (ℝ × ℝ)} (hs : ∀ a ∈ s, ∀ b ∈ s, |a.2 - b.2| < 1) :
+    InjOn (realChart p.cylindricalEndLift) s := by
+  intro a ha b hb hab
+  have hπ := Real.pi_pos
+  rw [realChart_apply, realChart_apply] at hab
+  have hab' := Complex.equivRealProdCLM.injective hab
+  rw [cylindricalEndLift_def, cylindricalEndLift_def, Complex.exp_eq_exp_iff_exists_int] at hab'
+  obtain ⟨n, hn⟩ := hab'
+  have hn' : ((n : ℂ) * (2 * π * Complex.I)).re = 0 ∧
+      ((n : ℂ) * (2 * π * Complex.I)).im = 2 * π * n := by
+    exact ⟨by simp, by simp [mul_comm]⟩
+  have hre := congrArg Complex.re hn
+  have him := congrArg Complex.im hn
+  simp only [Complex.re_ofReal_mul, Complex.im_ofReal_mul, Complex.add_re, Complex.add_im,
+    Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im, hn'.1, hn'.2,
+    add_zero] at hre him
+  have hε := p.endSign_mul_endSign
+  -- The angular coordinates differ by `ε n`, which lies strictly between `-1` and `1`.
+  have hd : a.2 - b.2 = p.endSign * n := by
+    have h : 2 * π * (p.endSign * (a.2 - b.2)) = 2 * π * n := by linear_combination him
+    have h' := mul_left_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) h
+    linear_combination p.endSign * h' - (a.2 - b.2) * hε
+  have hlt : |(n : ℝ)| < 1 := by
+    have h := hs a ha b hb
+    rwa [hd, abs_mul, abs_endSign, one_mul] at h
+  have hn0 : n = 0 := by
+    rw [← Int.cast_abs] at hlt
+    exact Int.abs_lt_one_iff.1 (by exact_mod_cast hlt)
+  have h1 : a.1 = b.1 := by
+    have h : 2 * π * p.endSign * a.1 = 2 * π * p.endSign * b.1 := by linear_combination hre
+    exact mul_left_cancel₀ (by simp [Real.pi_ne_zero, p.endSign_ne_zero]) h
+  have h2 : a.2 = b.2 := by
+    rw [hn0, Int.cast_zero, mul_zero] at hd
+    linarith
+  exact Prod.ext h1 h2
+
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
 period. -/
 private theorem injOn_realChart (p : PSSPlane) :
-    InjOn (realChart p.cylindricalEndLift) (endStrip p) := by
-  intro a ha b hb hab
-  have hπ := Real.pi_pos
-  replace ha : -1 / 2 < p.endSign * a.2 ∧ p.endSign * a.2 ≤ 1 / 2 := ha.2
-  replace hb : -1 / 2 < p.endSign * b.2 ∧ p.endSign * b.2 ≤ 1 / 2 := hb.2
-  have him (z : ℝ × ℝ) :
-      (((2 * π * p.endSign : ℝ) : ℂ) * Complex.equivRealProdCLM.symm z).im =
-        2 * π * (p.endSign * z.2) := by
-    simp only [Complex.im_ofReal_mul, Complex.equivRealProdCLM_symm_apply_im]
-    ring
-  rw [realChart_apply, realChart_apply] at hab
-  have hab' := Complex.equivRealProdCLM.injective hab
-  rw [cylindricalEndLift_def, cylindricalEndLift_def] at hab'
-  have h := Complex.exp_inj_of_neg_pi_lt_of_le_pi (by rw [him]; nlinarith)
-    (by rw [him]; nlinarith) (by rw [him]; nlinarith) (by rw [him]; nlinarith) hab'
-  have hc : ((2 * π * p.endSign : ℝ) : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, p.endSign_ne_zero]
-  exact Complex.equivRealProdCLM.symm.injective (mul_left_cancel₀ hc h)
+    InjOn (realChart p.cylindricalEndLift) (endStrip p) :=
+  p.injOn_realChart_cylindricalEndLift fun a ha b hb ↦ by
+    replace ha : -1 / 2 < p.endSign * a.2 ∧ p.endSign * a.2 ≤ 1 / 2 := ha.2
+    replace hb : -1 / 2 < p.endSign * b.2 ∧ p.endSign * b.2 ≤ 1 / 2 := hb.2
+    have h : |p.endSign * a.2 - p.endSign * b.2| < 1 :=
+      abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
+    rwa [← mul_sub, abs_mul, abs_endSign, one_mul] at h
 
 /-- Every point of the plane other than the pole is the image of a point of the band. -/
 private theorem mem_image_realChart {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :

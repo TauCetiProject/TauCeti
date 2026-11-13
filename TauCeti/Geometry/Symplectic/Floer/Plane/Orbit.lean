@@ -86,56 +86,6 @@ theorem realChart_cylindricalEndLift_add_one (p : PSSPlane) (s t : ℝ) :
   rw [realChart_cylindricalEndLift_mk, realChart_cylindricalEndLift_mk]
   exact congrArg Complex.equivRealProdCLM (p.periodic_cylindricalEndLift s t)
 
-/-- The end lift in real coordinates is holomorphic: its derivative is complex linear. -/
-theorem isComplexLinearMap_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (z : ℝ × ℝ) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (realChart p.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe,
-    TauCeti.Complex.fderiv_realChart_apply (p.hasDerivAt_cylindricalEndLift _),
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;>
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
-
-/-- The end lift in real coordinates is injective on every band `ℝ × [t₀, t₀ + 1)` of angular
-width one: two points with the same image differ by an integer multiple of `i`. -/
-theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
-    InjOn (realChart p.cylindricalEndLift) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
-  rintro a ⟨-, ha₁, ha₂⟩ b ⟨-, hb₁, hb₂⟩ hab
-  have hπ := Real.pi_pos
-  rw [realChart_apply, realChart_apply] at hab
-  have hab' := Complex.equivRealProdCLM.injective hab
-  rw [cylindricalEndLift_def, cylindricalEndLift_def, Complex.exp_eq_exp_iff_exists_int] at hab'
-  obtain ⟨n, hn⟩ := hab'
-  have hn' : ((n : ℂ) * (2 * π * Complex.I)).re = 0 ∧
-      ((n : ℂ) * (2 * π * Complex.I)).im = 2 * π * n := by
-    exact ⟨by simp, by simp [mul_comm]⟩
-  have hre := congrArg Complex.re hn
-  have him := congrArg Complex.im hn
-  simp only [Complex.re_ofReal_mul, Complex.im_ofReal_mul, Complex.add_re, Complex.add_im,
-    Complex.equivRealProdCLM_symm_apply_re, Complex.equivRealProdCLM_symm_apply_im, hn'.1, hn'.2,
-    add_zero] at hre him
-  have hε := p.endSign_mul_endSign
-  -- The angular coordinates differ by `ε n`, which lies strictly between `-1` and `1`.
-  have hd : a.2 - b.2 = p.endSign * n := by
-    have h : 2 * π * (p.endSign * (a.2 - b.2)) = 2 * π * n := by linear_combination him
-    have h' := mul_left_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) h
-    linear_combination p.endSign * h' - (a.2 - b.2) * hε
-  have hlt : |(n : ℝ)| < 1 := by
-    have h : |a.2 - b.2| < 1 := abs_sub_lt_iff.2 ⟨by linarith, by linarith⟩
-    rwa [hd, abs_mul, abs_endSign, one_mul] at h
-  have hn0 : n = 0 := by
-    rw [← Int.cast_abs] at hlt
-    exact Int.abs_lt_one_iff.1 (by exact_mod_cast hlt)
-  have h1 : a.1 = b.1 := by
-    have h : 2 * π * p.endSign * a.1 = 2 * π * p.endSign * b.1 := by linear_combination hre
-    exact mul_left_cancel₀ (by simp [Real.pi_ne_zero, p.endSign_ne_zero]) h
-  have h2 : a.2 = b.2 := by
-    rw [hn0, Int.cast_zero, mul_zero] at hd
-    linarith
-  exact Prod.ext h1 h2
-
 /-- **The perturbation is `H(t) dt` far out on the end, in real coordinates.** On the part
 `ε s ≥ 2` of the end, the pullback of the perturbation along the end lift in real coordinates sends
 a tangent vector `v = (σ, τ)` of the cylinder to `τ H(t)`. -/
@@ -220,7 +170,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift (hH
       one_ne_zero ζ) hu
     (differentiableAt_perturbation_realChart hHd hζ 1 _)
     (differentiableAt_perturbation_realChart hHd hζ Complex.I _)
-    (isComplexLinearMap_fderiv_realChart_cylindricalEndLift p ζ) hfloer
+    (isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)) hfloer
 
 /-- **The energy of the end of a PSS plane.** For a set `P` of longitudinal coordinates with
 `ε s ≥ 2` on `P`, the energy of `u ∘ ψ` for the cylindrical datum `H(t) dt` over the band
@@ -260,7 +210,8 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le (hH
       (hψ ζ) (hu _) (differentiableAt_perturbation_realChart hHd hζ₂ 1 _)
       (differentiableAt_perturbation_realChart hHd hζ₂ Complex.I _)
   rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
-    ((injOn_realChart_cylindricalEndLift p 0).mono (prod_mono (subset_univ _) (by simp)))
+    (p.injOn_realChart_cylindricalEndLift fun a ha b hb ↦
+      abs_sub_lt_iff.2 ⟨by linarith [ha.2.2, hb.2.1], by linarith [ha.2.1, hb.2.2]⟩)
     (fun ζ _ ↦ hψ ζ) hdens]
   exact setLIntegral_le_lintegral _ _
 
