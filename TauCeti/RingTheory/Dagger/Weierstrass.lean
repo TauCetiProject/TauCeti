@@ -81,8 +81,9 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
-/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
-with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+/-- **Uniqueness in overconvergent Weierstrass division.** If `g` is distinguished of degree `s`
+in the separated variable at unit radius and `q * g + r = q' * g + r'` with polynomial
+remainders `r, r'` of degree less than `s` in that variable, then
 `q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
 theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
