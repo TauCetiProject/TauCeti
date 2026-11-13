@@ -30,6 +30,10 @@ A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant su
   Mathlib's `LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`).
 * `TauCeti.SymplecticForm.disjoint_span_pair_orthogonal`: a pair with nonzero symplectic pairing
   spans a subspace disjoint from its symplectic complement.
+* `TauCeti.SymplecticForm.orthogonalSpanPairProj`,
+  `TauCeti.SymplecticForm.apply_eq_orthogonalSpanPairProj`: for `ω e' e = 1`, the projection
+  onto the symplectic complement of the plane of `e` and `e'` along that plane, and the splitting
+  of `ω` it induces.
 * `TauCeti.SymplecticForm.isSymplectomorphism_prodEquivOfIsCompl`: the equivalence associated to
   `V = L ⊕ L^ω` is a symplectomorphism from the product of the restricted forms to `ω`.
 * `TauCeti.SymplecticForm.Compatible.restrict`: compatibility passes to these restrictions.
@@ -110,6 +114,60 @@ lemma disjoint_span_pair_orthogonal (ω : SymplecticForm V) {x y : V} (h : ω x 
   have ha : a = 0 := by simpa [h] using mem_orthogonal_iff'.1 hv' y hymem
   have hb : b = 0 := by simpa [h] using mem_orthogonal_iff.1 hv' x hxmem
   simp [ha, hb]
+
+section SpanPair
+
+variable (ω : SymplecticForm V) {e e' : V}
+
+/-- On vectors `w + a e + b e'` with `w` in the symplectic complement of the plane of `e` and `e'`,
+where `ω e' e = 1`, the form splits as the form on the complement plus the area form of the
+plane. -/
+lemma apply_add_smul_add_smul (h : ω e' e = 1) {w w' : V}
+    (hw : w ∈ ω.orthogonal (Submodule.span ℝ {e, e'}))
+    (hw' : w' ∈ ω.orthogonal (Submodule.span ℝ {e, e'})) (a b a' b' : ℝ) :
+    ω (w + a • e + b • e') (w' + a' • e + b' • e') = ω w w' - a * b' + b * a' := by
+  rw [mem_orthogonal_span_pair_iff] at hw hw'
+  have h₁ : ω.toBilinForm e e = 0 := ω.self_eq_zero e
+  have h₂ : ω.toBilinForm e' e' = 0 := ω.self_eq_zero e'
+  have h₃ : ω.toBilinForm e' e = 1 := h
+  have h₄ : ω.toBilinForm e e' = -1 := ω.isAlt.apply_eq_neg_one_of_apply_eq_one h
+  have h₅ : ω.toBilinForm e w' = 0 := hw'.1
+  have h₆ : ω.toBilinForm e' w' = 0 := hw'.2
+  have h₇ : ω.toBilinForm w e = 0 := by rw [← neg_eq_zero]; exact (ω.neg_eq w e).trans hw.1
+  have h₈ : ω.toBilinForm w e' = 0 := by rw [← neg_eq_zero]; exact (ω.neg_eq w e').trans hw.2
+  -- Unfold the coercion of `ω` to its bilinear form, to expand by bilinearity.
+  change ω.toBilinForm _ _ = ω.toBilinForm w w' - _ + _
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h₁, h₂,
+    h₃, h₄, h₅, h₆, h₇, h₈]
+  ring
+
+/-- The projection onto the symplectic complement of the plane of `e` and `e'` along that plane,
+where `ω e' e = 1`: `v ↦ v - ω(e', v) e + ω(e, v) e'`. -/
+@[expose] def orthogonalSpanPairProj (h : ω e' e = 1) :
+    V →ₗ[ℝ] ω.orthogonal (Submodule.span ℝ {e, e'}) :=
+  LinearMap.codRestrict _
+    (LinearMap.id - (ω.toBilinForm e').smulRight e + (ω.toBilinForm e).smulRight e')
+    (ω.isAlt.sub_smul_add_smul_mem_orthogonal_span_pair h)
+
+@[simp]
+lemma coe_orthogonalSpanPairProj (h : ω e' e = 1) (v : V) :
+    (ω.orthogonalSpanPairProj h v : V) = v - ω e' v • e + ω e v • e' :=
+  rfl
+
+/-- The splitting of `ω` along the plane of `e` and `e'` and its symplectic complement. -/
+lemma apply_eq_orthogonalSpanPairProj (h : ω e' e = 1) (u v : V) :
+    ω u v = ω (ω.orthogonalSpanPairProj h u) (ω.orthogonalSpanPairProj h v) +
+      (ω e' u * ω e v - ω e' v * ω e u) := by
+  have hdec (x : V) : x = (ω.orthogonalSpanPairProj h x : V) + ω e' x • e + (-ω e x) • e' := by
+    rw [coe_orthogonalSpanPairProj]
+    module
+  have key := ω.apply_add_smul_add_smul h (ω.orthogonalSpanPairProj h u).2
+    (ω.orthogonalSpanPairProj h v).2 (ω e' u) (-ω e u) (ω e' v) (-ω e v)
+  rw [← hdec, ← hdec] at key
+  rw [key]
+  ring
+
+end SpanPair
 
 /-- A compatible pair `(ω, J)` restricts to a compatible pair on a `J`-invariant subspace on which
 `ω` stays nondegenerate. -/

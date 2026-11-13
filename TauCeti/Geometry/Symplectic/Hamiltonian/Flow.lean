@@ -22,12 +22,14 @@ form on tangent vectors: differentiating the pairing of two variations and using
 Hessian gives zero.
 
 The time maps carry the Hamiltonian vector field to itself
-(`TauCeti.SymplecticForm.fderiv_hamiltonianFlow_apply_hamiltonianVectorField`), and the flow is
-jointly smooth in time and space. Consequently, for maps `τ` to times and `k` to points, the map
-`q ↦ φ_{τ q} (k q)` pulls `ω` back to the pullback along `k` corrected by `dτ ∧ d(H ∘ k)`
-(`TauCeti.SymplecticForm.apply_fderiv_hamiltonianFlow_comp`). A function whose derivative along
-the Hamiltonian vector field is a constant `c` on a region grows at the rate `c` along the pieces
-of flow lines in that region (`TauCeti.SymplecticForm.apply_hamiltonianFlow_eq_add_mul`).
+(`TauCeti.SymplecticForm.fderiv_hamiltonianFlow_apply_hamiltonianVectorField`), and the flow of a
+`C^(n + 2)` Hamiltonian is `C^(n + 1)` jointly in time and space
+(`TauCeti.SymplecticForm.contDiff_uncurry_hamiltonianFlow`). Consequently, for maps `τ` to times
+and `k` to points, the map `q ↦ φ_{τ q} (k q)` pulls `ω` back to the pullback along `k`
+corrected by `dτ ∧ d(H ∘ k)` (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianFlow_comp`). A
+function whose derivative along the Hamiltonian vector field is a constant `c` on a region grows
+at the rate `c` along the pieces of flow lines in that region
+(`TauCeti.SymplecticForm.apply_hamiltonianFlow_eq_add_mul`).
 
 The construction and variational equation reuse `TauCeti.flowOfLipschitz`.
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Hamiltonian flows.

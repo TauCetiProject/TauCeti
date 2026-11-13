@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Darboux.Basic
-import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -112,88 +112,6 @@ theorem exists_fderiv_apply_hamiltonianVectorField_eq_one {F : V → ℝ} {U : S
     ContinuousLinearMap.comp_apply]
   exact (congrArg ℓ (hφX z hzφ)).trans hℓ
 
-/-! ### The symplectic complement of a symplectic plane -/
-
-section Plane
-
-variable {e e' : V}
-
-omit [FiniteDimensional ℝ V] in
-private theorem mem_orthogonal_span_pair {v : V} :
-    v ∈ σ.orthogonal (Submodule.span ℝ {e, e'}) ↔ σ e v = 0 ∧ σ e' v = 0 := by
-  rw [mem_orthogonal_span_iff]
-  simp
-
-omit [FiniteDimensional ℝ V] in
-/-- On vectors `w + a e + b e'` with `w` in the symplectic complement of the plane of `e` and `e'`,
-where `σ e' e = 1`, the form splits as the form on the complement plus the area form of the
-plane. -/
-private theorem apply_add_smul_add_smul (h : σ e' e = 1) {w w' : V}
-    (hw : w ∈ σ.orthogonal (Submodule.span ℝ {e, e'}))
-    (hw' : w' ∈ σ.orthogonal (Submodule.span ℝ {e, e'})) (a b a' b' : ℝ) :
-    σ (w + a • e + b • e') (w' + a' • e + b' • e') = σ w w' - a * b' + b * a' := by
-  rw [mem_orthogonal_span_pair] at hw hw'
-  have h₁ : σ.toBilinForm e e = 0 := σ.self_eq_zero e
-  have h₂ : σ.toBilinForm e' e' = 0 := σ.self_eq_zero e'
-  have h₃ : σ.toBilinForm e' e = 1 := h
-  have h₄ : σ.toBilinForm e e' = -1 := by rw [← h₃]; exact (σ.neg_eq e' e).symm
-  have h₅ : σ.toBilinForm e w' = 0 := hw'.1
-  have h₆ : σ.toBilinForm e' w' = 0 := hw'.2
-  have h₇ : σ.toBilinForm w e = 0 := by rw [← neg_eq_zero]; exact (σ.neg_eq w e).trans hw.1
-  have h₈ : σ.toBilinForm w e' = 0 := by rw [← neg_eq_zero]; exact (σ.neg_eq w e').trans hw.2
-  -- Unfold the coercion of `σ` to its bilinear form, to expand by bilinearity.
-  change σ.toBilinForm _ _ = σ.toBilinForm w w' - _ + _
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h₁, h₂,
-    h₃, h₄, h₅, h₆, h₇, h₈]
-  ring
-
-/-- The projection onto the symplectic complement of the plane of `e` and `e'` along that plane,
-where `σ e' e = 1`: `v ↦ v - σ(e', v) e + σ(e, v) e'`. -/
-private def planeComplProj (h : σ e' e = 1) :
-    V →L[ℝ] σ.orthogonal (Submodule.span ℝ {e, e'}) :=
-  LinearMap.toContinuousLinearMap <| LinearMap.codRestrict _
-    (LinearMap.id - (σ.toBilinForm e').smulRight e + (σ.toBilinForm e).smulRight e') fun v ↦ by
-      rw [mem_orthogonal_span_pair]
-      have h₁ : σ.toBilinForm e e = 0 := σ.self_eq_zero e
-      have h₂ : σ.toBilinForm e' e' = 0 := σ.self_eq_zero e'
-      have h₃ : σ.toBilinForm e' e = 1 := h
-      have h₄ : σ.toBilinForm e e' = -1 := by rw [← h₃]; exact (σ.neg_eq e' e).symm
-      -- Unfold the coercion of `σ` to its bilinear form, to expand by bilinearity.
-      change σ.toBilinForm e _ = 0 ∧ σ.toBilinForm e' _ = 0
-      simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.id_apply,
-        LinearMap.smulRight_apply, map_add, map_sub, map_smul, smul_eq_mul, h₁, h₂, h₃, h₄]
-      constructor <;> ring
-
-private theorem coe_planeComplProj (h : σ e' e = 1) (v : V) :
-    (σ.planeComplProj h v : V) = v - σ e' v • e + σ e v • e' :=
-  (rfl)
-
-/-- The splitting of `σ` along the plane of `e` and `e'` and its symplectic complement. -/
-private theorem apply_eq_planeComplProj (h : σ e' e = 1) (u v : V) :
-    σ u v = σ (σ.planeComplProj h u) (σ.planeComplProj h v) +
-      (σ e' u * σ e v - σ e' v * σ e u) := by
-  have hdec (x : V) : x = (σ.planeComplProj h x : V) + σ e' x • e + (-σ e x) • e' := by
-    rw [coe_planeComplProj]
-    module
-  have key := σ.apply_add_smul_add_smul h (σ.planeComplProj h u).2 (σ.planeComplProj h v).2
-    (σ e' u) (-σ e u) (σ e' v) (-σ e v)
-  rw [← hdec, ← hdec] at key
-  rw [key]
-  ring
-
-/-- `σ` is nondegenerate on the symplectic complement of the plane of `e` and `e'`. -/
-private theorem eq_zero_of_mem_orthogonal_span_pair (h : σ e' e = 1) {v : V}
-    (hv : v ∈ σ.orthogonal (Submodule.span ℝ {e, e'}))
-    (hvw : ∀ w ∈ σ.orthogonal (Submodule.span ℝ {e, e'}), σ v w = 0) : v = 0 := by
-  refine σ.nondegenerate.1 v fun x ↦ ?_
-  have hvx := σ.apply_eq_planeComplProj h v x
-  rw [mem_orthogonal_span_pair] at hv
-  have hv' : (σ.planeComplProj h v : V) = v := by simp [coe_planeComplProj, hv.1, hv.2]
-  rw [hv', hvw _ (σ.planeComplProj h x).2, hv.1, hv.2] at hvx
-  simpa using hvx
-
-end Plane
-
 /-! ### The normal form -/
 
 /-- **Darboux's theorem on the slice.** Let `σ e' e = 1`, and let `F`, `G` be smooth with
@@ -214,9 +132,9 @@ private theorem exists_diffeomorph_orthogonal_span_pair {F G : V → ℝ} (hF : 
         σ (fderiv ℝ D w a) (fderiv ℝ D w b) := by
   set W := σ.orthogonal (Submodule.span ℝ {e, e'})
   have hdF₀ (a : W) : fderiv ℝ F x₀ a = 0 :=
-    (hFe a).symm.trans ((σ.mem_orthogonal_span_pair).1 a.2).1
+    (hFe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.2).1
   have hdG₀ (a : W) : fderiv ℝ G x₀ a = 0 :=
-    (hGe a).symm.trans ((σ.mem_orthogonal_span_pair).1 a.2).2
+    (hGe a).symm.trans (mem_orthogonal_span_pair_iff.1 a.2).2
   -- The slice `s : W → V` and the closed two-form `η = s^* σ` on `W`.
   let s : W → V := fun w ↦ x₀ + (w : V) + (G (x₀ + w) - G x₀) • e + (F (x₀ + w) - F x₀) • e'
   have hk (w : W) : HasFDerivAt (fun w : W ↦ x₀ + (w : V)) W.subtypeL w :=
@@ -267,8 +185,9 @@ private theorem exists_diffeomorph_orthogonal_span_pair {F G : V → ℝ} (hF : 
     simp
   have hηnd : ∀ v : W, (∀ w : W, η 0 ![v, w] = 0) → v = 0 := by
     intro v hv
-    refine Subtype.ext (σ.eq_zero_of_mem_orthogonal_span_pair hee' v.2 fun w hw ↦ ?_)
-    have h := hv ⟨w, hw⟩
+    refine (σ.nondegenerate_restrict_orthogonal_of_isCompl
+      (σ.isAlt.isCompl_span_pair_orthogonal hee')).1 v fun w ↦ ?_
+    have h := hv w
     rwa [hη₀] at h
   -- Darboux's theorem on `W` straightens `η` to the constant form `σ|_W`.
   obtain ⟨D, V₀, hD0, hV₀o, h0V₀, -, hηD⟩ :=
@@ -318,7 +237,7 @@ private theorem exists_contDiff_eventually_apply_eq_add_fderiv {f : V → ℝ} {
   set e' := σ.hamiltonianVectorField G x₀
   have hee' : σ e' e = 1 := (σ.apply_hamiltonianVectorField G x₀ e).trans hGF.self_of_nhds
   set W := σ.orthogonal (Submodule.span ℝ {e, e'})
-  set Z := σ.planeComplProj hee'
+  set Z : V →L[ℝ] W := LinearMap.toContinuousLinearMap (σ.orthogonalSpanPairProj hee')
   -- Darboux's theorem on `W` for the pullback of `σ` to the slice through `x₀`.
   obtain ⟨D, hD0, hDev⟩ := σ.exists_diffeomorph_orthogonal_span_pair hF hG hee'
     (σ.apply_hamiltonianVectorField F x₀) (σ.apply_hamiltonianVectorField G x₀)
@@ -415,7 +334,8 @@ private theorem exists_contDiff_eventually_apply_eq_add_fderiv {f : V → ℝ} {
     have h := hV₀D hyV₀ (fderiv ℝ D.symm (Z y) (Z u)) (fderiv ℝ D.symm (Z y) (Z v))
     rwa [hw, D.fderiv_apply_fderiv_symm_apply (by simp),
       D.fderiv_apply_fderiv_symm_apply (by simp)] at h
-  have hσuv := σ.apply_eq_planeComplProj hee' u v
+  have hσuv : σ u v = σ (Z u) (Z v) + (σ e' u * σ e v - σ e' v * σ e u) :=
+    σ.apply_eq_orthogonalSpanPairProj hee' u v
   -- `filter_upwards` beta-reduced the goal, so the coercion of `σ` is unfolded there.
   beta_reduce at hχ' hk₁' hslice hσuv
   rw [hχ', hk₁', hFk₁d, hFk₁d, hσuv, ← hslice]
