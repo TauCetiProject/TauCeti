@@ -40,28 +40,6 @@ open Set Topology
 
 namespace TauCeti
 
-/-- Two factorizations of the same composite induce the same map on fundamental groups. -/
-private lemma mapOfEq_mapOfEq_eq_mapOfEq {A B D : Type*} [TopologicalSpace A]
-    [TopologicalSpace B] [TopologicalSpace D] {a : A} {b : B} {d : D} {f : C(A, B)}
-    {g : C(B, D)} {k : C(A, D)} (h : g.comp f = k) (hf : f a = b) (hg : g b = d) (hk : k a = d)
-    (p : FundamentalGroup A a) :
-    FundamentalGroup.mapOfEq g hg (FundamentalGroup.mapOfEq f hf p) =
-      FundamentalGroup.mapOfEq k hk p := by
-  rw [FundamentalGroup.mapOfEq_comp]
-  exact FundamentalGroup.mapOfEq_congr h _ _ p
-
-/-- Two factorizations of the same map through different spaces induce the same map on
-fundamental groups. -/
-private lemma mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq {A B C D : Type*} [TopologicalSpace A]
-    [TopologicalSpace B] [TopologicalSpace C] [TopologicalSpace D] {a : A} {b : B} {c : C}
-    {d : D} {f₁ : C(A, B)} {g₁ : C(B, D)} {f₂ : C(A, C)} {g₂ : C(C, D)}
-    (h : g₁.comp f₁ = g₂.comp f₂) (hf₁ : f₁ a = b) (hg₁ : g₁ b = d)
-    (hf₂ : f₂ a = c) (hg₂ : g₂ c = d) (p : FundamentalGroup A a) :
-    FundamentalGroup.mapOfEq g₁ hg₁ (FundamentalGroup.mapOfEq f₁ hf₁ p) =
-      FundamentalGroup.mapOfEq g₂ hg₂ (FundamentalGroup.mapOfEq f₂ hf₂ p) := by
-  rw [FundamentalGroup.mapOfEq_comp, FundamentalGroup.mapOfEq_comp]
-  exact FundamentalGroup.mapOfEq_congr h _ _ p
-
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   {ι κ η : Type*} {U : ι → Set X} {V : κ → Set Y} {W : η → Set Z}
   {x : X} {y : Y} (hx : ∀ i, x ∈ U i) (f : C(X, Y)) (r : ι → κ)
@@ -100,7 +78,7 @@ lemma vanKampenWideLift_comp_vanKampenCoverFreeMap :
   simp only [MonoidHom.comp_apply, vanKampenCoverFreeMap_of, vanKampenWideLift_of,
     ← FundamentalGroup.mapOfEq_rfl]
   -- Both sides map the loop into `Y` by the restriction of `f` to `U i`.
-  exact mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
+  exact FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
 
 /-- Pointwise form of `vanKampenWideLift_comp_vanKampenCoverFreeMap`. -/
 @[simp]
@@ -128,10 +106,10 @@ lemma vanKampenCoverRelations_le_comap_vanKampenCoverFreeMap :
       (Subtype.ext hxy) a) using 3
   · refine (vanKampenCoverFreeMap_of hx f r hf hy hxy i _).trans (congrArg Monoid.CoprodI.of ?_)
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    exact mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
+    exact FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
   · refine (vanKampenCoverFreeMap_of hx f r hf hy hxy j _).trans (congrArg Monoid.CoprodI.of ?_)
     simp only [← FundamentalGroup.mapOfEq_rfl]
-    exact mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
+    exact FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq_mapOfEq (by ext; rfl) _ _ _ _ a
 
 /-- The quotient map between van Kampen presentations induced by a map of based families.
 Neither family needs to cover, and intersections need not be path connected. -/
@@ -185,7 +163,7 @@ lemma vanKampenCoverFreeMap_comp :
   refine Eq.trans ?_ (vanKampenCoverFreeMap_of hx (g.comp f) (s ∘ r) _ hz _ i a).symm
   -- Both restricted composites apply `g` after `f`.
   exact congrArg Monoid.CoprodI.of
-    (mapOfEq_mapOfEq_eq_mapOfEq (by ext; rfl) _ _ _ a)
+    (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq (by ext; rfl) _ _ _ a)
 
 /-- Pointwise form of `vanKampenCoverFreeMap_comp`. -/
 @[simp]
@@ -196,38 +174,6 @@ lemma vanKampenCoverFreeMap_vanKampenCoverFreeMap
         (fun i ↦ mapsTo_iff_subset_preimage.2 ((hg (r i)).comp (hf i))) hz
         ((g.comp_apply f x).trans ((congrArg g hxy).trans hyz)) a :=
   DFunLike.congr_fun (vanKampenCoverFreeMap_comp hx f r hf hy hxy g s hg hz hyz) a
-
-/-- The identity of a based family induces the identity on its presentation quotient. -/
-@[simp]
-lemma vanKampenCoverQuotientMap_id (hid : ∀ i, MapsTo (ContinuousMap.id X) (U i) (U (id i)))
-    (h : ContinuousMap.id X x = x) :
-    vanKampenCoverQuotientMap hx (ContinuousMap.id X) id hid hx h =
-      MonoidHom.id _ := by
-  simp only [vanKampenCoverQuotientMap, vanKampenCoverFreeMap_id]
-  exact QuotientGroup.map_id _ _
-
-/-- Presentation quotient maps compose according to the maps of spaces and index assignments. -/
-@[simp]
-lemma vanKampenCoverQuotientMap_comp :
-    (vanKampenCoverQuotientMap hy g s hg hz hyz).comp
-        (vanKampenCoverQuotientMap hx f r hf hy hxy) =
-      vanKampenCoverQuotientMap hx (g.comp f) (s ∘ r)
-        (fun i ↦ mapsTo_iff_subset_preimage.2 ((hg (r i)).comp (hf i))) hz
-        ((g.comp_apply f x).trans ((congrArg g hxy).trans hyz)) := by
-  refine (QuotientGroup.map_comp_map _ _ _ _ _ _ _).trans ?_
-  congr 1
-  exact vanKampenCoverFreeMap_comp hx f r hf hy hxy g s hg hz hyz
-
-/-- Pointwise form of `vanKampenCoverQuotientMap_comp`. -/
-@[simp]
-lemma vanKampenCoverQuotientMap_vanKampenCoverQuotientMap
-    (a : (Monoid.CoprodI fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) ⧸
-      vanKampenCoverRelations U x hx) :
-    vanKampenCoverQuotientMap hy g s hg hz hyz (vanKampenCoverQuotientMap hx f r hf hy hxy a) =
-      vanKampenCoverQuotientMap hx (g.comp f) (s ∘ r)
-        (fun i ↦ mapsTo_iff_subset_preimage.2 ((hg (r i)).comp (hf i))) hz
-        ((g.comp_apply f x).trans ((congrArg g hxy).trans hyz)) a :=
-  DFunLike.congr_fun (vanKampenCoverQuotientMap_comp hx f r hf hy hxy g s hg hz hyz) a
 
 /-- The quotient map is independent of the assignment of target members, and depends only on
 the restrictions of the map to the source members, even when the families do not cover and
@@ -254,11 +200,47 @@ lemma vanKampenCoverQuotientMap_eq {f' : C(X, Y)} (hff' : ∀ i, EqOn f f' (U i)
       (Subtype.ext hxy) a) using 3
   · rw [← FundamentalGroup.mapOfEq_rfl]
     exact congrArg Monoid.CoprodI.of
-      (mapOfEq_mapOfEq_eq_mapOfEq (by ext; rfl) _ _ _ a).symm
+      (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq (by ext; rfl) _ _ _ a).symm
   · rw [← FundamentalGroup.mapOfEq_rfl]
     refine congrArg Monoid.CoprodI.of
-      (mapOfEq_mapOfEq_eq_mapOfEq ?_ _ _ _ a).symm
+      (FundamentalGroup.mapOfEq_mapOfEq_eq_mapOfEq ?_ _ _ _ a).symm
     exact ContinuousMap.ext fun z ↦ Subtype.ext (hff' i z.2)
+
+/-- Every self-refinement of a based family induces the identity on its presentation quotient. -/
+@[simp]
+lemma vanKampenCoverQuotientMap_id (r : ι → ι)
+    (hid : ∀ i, MapsTo (ContinuousMap.id X) (U i) (U (r i)))
+    (h : ContinuousMap.id X x = x) :
+    vanKampenCoverQuotientMap hx (ContinuousMap.id X) r hid hx h =
+      MonoidHom.id _ := by
+  have hid' : ∀ i, MapsTo (ContinuousMap.id X) (U i) (U (id i)) := fun _ _ ha ↦ ha
+  rw [vanKampenCoverQuotientMap_eq hx (ContinuousMap.id X) r hid hx h
+    (f' := ContinuousMap.id X) (fun _ _ _ ↦ rfl) id hid' h]
+  simp only [vanKampenCoverQuotientMap, vanKampenCoverFreeMap_id]
+  exact QuotientGroup.map_id _ _
+
+/-- Presentation quotient maps compose according to the maps of spaces and index assignments. -/
+@[simp]
+lemma vanKampenCoverQuotientMap_comp :
+    (vanKampenCoverQuotientMap hy g s hg hz hyz).comp
+        (vanKampenCoverQuotientMap hx f r hf hy hxy) =
+      vanKampenCoverQuotientMap hx (g.comp f) (s ∘ r)
+        (fun i ↦ mapsTo_iff_subset_preimage.2 ((hg (r i)).comp (hf i))) hz
+        ((g.comp_apply f x).trans ((congrArg g hxy).trans hyz)) := by
+  refine (QuotientGroup.map_comp_map _ _ _ _ _ _ _).trans ?_
+  congr 1
+  exact vanKampenCoverFreeMap_comp hx f r hf hy hxy g s hg hz hyz
+
+/-- Pointwise form of `vanKampenCoverQuotientMap_comp`. -/
+@[simp]
+lemma vanKampenCoverQuotientMap_vanKampenCoverQuotientMap
+    (a : (Monoid.CoprodI fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) ⧸
+      vanKampenCoverRelations U x hx) :
+    vanKampenCoverQuotientMap hy g s hg hz hyz (vanKampenCoverQuotientMap hx f r hf hy hxy a) =
+      vanKampenCoverQuotientMap hx (g.comp f) (s ∘ r)
+        (fun i ↦ mapsTo_iff_subset_preimage.2 ((hg (r i)).comp (hf i))) hz
+        ((g.comp_apply f x).trans ((congrArg g hxy).trans hyz)) a :=
+  DFunLike.congr_fun (vanKampenCoverQuotientMap_comp hx f r hf hy hxy g s hg hz hyz) a
 
 variable (hU : ∀ z, ∃ i, U i ∈ 𝓝 z)
   (hUt : ∀ i j k, IsPathConnected (U i ∩ U j ∩ U k))
@@ -362,5 +344,101 @@ lemma vanKampenCoverRefinementEquiv_eq_trans
   ext a
   rw [vanKampenCoverRefinementEquiv_apply, MulEquiv.trans_apply, MulEquiv.eq_symm_apply,
     vanKampenCoverQuotientEquiv_vanKampenCoverQuotientMap, FundamentalGroup.mapOfEq_id]
+
+section Refinement
+
+variable {V : κ → Set X} (hy : ∀ j, x ∈ V j) (r : ι → κ)
+  (hf : ∀ i, U i ⊆ V (r i)) (hVt : ∀ i j k, IsPathConnected (V i ∩ V j ∩ V k))
+
+/-- The underlying homomorphism of the refinement isomorphism is the presentation map. -/
+@[simp]
+lemma vanKampenCoverRefinementEquiv_toMonoidHom :
+    (vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt : _ →* _) =
+      vanKampenCoverQuotientMap hx (ContinuousMap.id X) r
+        (fun i ↦ mapsTo_iff_subset_preimage.2 (hf i)) hy (ContinuousMap.id_apply x) :=
+  MonoidHom.ext (vanKampenCoverRefinementEquiv_apply hx hU hUt hy r hf hVt)
+
+/-- The inverse refinement isomorphism sends a representative to its ambient loop class,
+transported back through the finer cover presentation. -/
+@[simp]
+lemma vanKampenCoverRefinementEquiv_symm_mk
+    (a : Monoid.CoprodI fun j ↦ FundamentalGroup (V j) ⟨x, hy j⟩) :
+    (vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt).symm (QuotientGroup.mk a) =
+      (vanKampenCoverQuotientEquiv (hx := hx) hU hUt).symm (vanKampenWideLift V x hy a) := by
+  have hV : ∀ z, ∃ j, V j ∈ 𝓝 z := fun z ↦
+    let ⟨i, hi⟩ := hU z
+    ⟨r i, Filter.mem_of_superset hi (hf i)⟩
+  rw [vanKampenCoverRefinementEquiv_eq_trans hx hU hUt hy r hf hV hVt,
+    MulEquiv.symm_trans_apply, MulEquiv.symm_symm, vanKampenCoverQuotientEquiv_mk]
+
+/-- The inverse refinement isomorphism cancels the refinement presentation map. -/
+@[simp]
+lemma vanKampenCoverRefinementEquiv_symm_vanKampenCoverQuotientMap
+    (a : (Monoid.CoprodI fun i ↦ FundamentalGroup (U i) ⟨x, hx i⟩) ⧸
+      vanKampenCoverRelations U x hx) :
+    (vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt).symm
+        (vanKampenCoverQuotientMap hx (ContinuousMap.id X) r
+          (fun i ↦ mapsTo_iff_subset_preimage.2 (hf i)) hy (ContinuousMap.id_apply x) a) = a := by
+  rw [← vanKampenCoverRefinementEquiv_apply hx hU hUt hy r hf hVt,
+    MulEquiv.symm_apply_apply]
+
+/-- The refinement presentation map cancels the inverse refinement isomorphism. -/
+@[simp]
+lemma vanKampenCoverQuotientMap_vanKampenCoverRefinementEquiv_symm
+    (a : (Monoid.CoprodI fun j ↦ FundamentalGroup (V j) ⟨x, hy j⟩) ⧸
+      vanKampenCoverRelations V x hy) :
+    vanKampenCoverQuotientMap hx (ContinuousMap.id X) r
+        (fun i ↦ mapsTo_iff_subset_preimage.2 (hf i)) hy (ContinuousMap.id_apply x)
+        ((vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt).symm a) = a := by
+  rw [← vanKampenCoverRefinementEquiv_apply hx hU hUt hy r hf hVt,
+    MulEquiv.apply_symm_apply]
+
+/-- A refinement sends each generator to its image under the inclusion into its target member. -/
+lemma vanKampenCoverRefinementEquiv_mk_of (i : ι)
+    (a : FundamentalGroup (U i) ⟨x, hx i⟩) :
+    vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt
+        (QuotientGroup.mk (Monoid.CoprodI.of a)) =
+      QuotientGroup.mk (Monoid.CoprodI.of (i := r i)
+        (FundamentalGroup.mapOfEq (ContinuousMap.inclusion (hf i))
+          (x := ⟨x, hx i⟩) (y := ⟨x, hy (r i)⟩) (Subtype.ext rfl) a)) := by
+  rw [vanKampenCoverRefinementEquiv_apply, vanKampenCoverQuotientMap_mk,
+    vanKampenCoverFreeMap_of]
+  -- Restricting the identity to a member gives its inclusion into the target member.
+  congr 2
+
+/-- The refinement isomorphism is independent of the assignment of target members. -/
+lemma vanKampenCoverRefinementEquiv_eq (r' : ι → κ) (hf' : ∀ i, U i ⊆ V (r' i)) :
+    vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt =
+      vanKampenCoverRefinementEquiv hx hU hUt hy r' hf' hVt := by
+  apply MulEquiv.ext
+  intro a
+  simp only [vanKampenCoverRefinementEquiv_apply]
+  exact DFunLike.congr_fun (vanKampenCoverQuotientMap_eq hx _ r _ hy _
+    (fun _ _ _ ↦ rfl) r' _ _) a
+
+/-- Every self-refinement induces the identity isomorphism of presentations. -/
+@[simp]
+lemma vanKampenCoverRefinementEquiv_refl (r : ι → ι) (hf : ∀ i, U i ⊆ U (r i)) :
+    vanKampenCoverRefinementEquiv hx hU hUt hx r hf hUt = MulEquiv.refl _ := by
+  ext a
+  simp only [vanKampenCoverRefinementEquiv_apply, vanKampenCoverQuotientMap_id,
+    MonoidHom.id_apply, MulEquiv.refl_apply]
+
+/-- Composing refinement isomorphisms gives the isomorphism of the composite refinement. -/
+@[simp]
+lemma vanKampenCoverRefinementEquiv_trans {W : η → Set X} (hz : ∀ k, x ∈ W k)
+    (s : κ → η) (hg : ∀ j, V j ⊆ W (s j)) (hWt : ∀ i j k, IsPathConnected (W i ∩ W j ∩ W k))
+    (hV : ∀ z, ∃ j, V j ∈ 𝓝 z) :
+    (vanKampenCoverRefinementEquiv hx hU hUt hy r hf hVt).trans
+        (vanKampenCoverRefinementEquiv hy hV hVt hz s hg hWt) =
+      vanKampenCoverRefinementEquiv hx hU hUt hz (s ∘ r) (fun i ↦ (hf i).trans (hg (r i)))
+        hWt := by
+  ext a
+  simp only [MulEquiv.trans_apply, vanKampenCoverRefinementEquiv_apply]
+  rw [vanKampenCoverQuotientMap_vanKampenCoverQuotientMap]
+  exact DFunLike.congr_fun (vanKampenCoverQuotientMap_eq hx _ _ _ hz _
+    (fun _ _ _ ↦ rfl) (s ∘ r) _ _) a
+
+end Refinement
 
 end TauCeti
