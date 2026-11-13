@@ -26,9 +26,8 @@ defines the abstract polynomial one-parameter subgroup `t ↦ exp(t d)` of
 The abstract curve lies in every closed subgroup whose Lie algebra contains `d`, because `D`
 preserves the defining Hopf ideal. So for a closed subgroup `H ⊆ GLₙ` over a rational ring and a
 nilpotent matrix `X ∈ Lie H`, the matrices `exp(tX)` are points of `H` over every commutative
-value algebra, with no smoothness, connectedness or reducedness assumption on `H`. Over a rational
-domain this is the converse of
-`TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`, and together with
+value algebra, with no smoothness, connectedness or reducedness assumption on `H`. This is the
+converse of `TauCeti.GeneralLinear.mem_map_lieSubalgebra_of_nilpotentExpUnit_mem`, and together with
 `TauCeti.GeneralLinear.log_mem_map_lieSubalgebra` it shows that the finite exponential and
 logarithm are inverse bijections between the nilpotent elements of `Lie H` and the
 unipotent points of `H`.
@@ -43,8 +42,8 @@ unipotent points of `H`.
 * `TauCeti.GeneralLinear.expSMulHom_mem_hopfIdealPointsSubgroup`: for nilpotent `X ∈ Lie H`, the
   curve `exp(tX)` lies in `H` over every rational value algebra.
 * `TauCeti.GeneralLinear.nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff`: over a rational
-  domain, `exp X ∈ H` exactly when `X ∈ Lie H`, for nilpotent `X`.
-* `TauCeti.GeneralLinear.expEquivHopfIdealPoints`: over a rational domain, exponential and
+  ring, `exp X ∈ H` exactly when `X ∈ Lie H`, for nilpotent `X`.
+* `TauCeti.GeneralLinear.expEquivHopfIdealPoints`: over a rational ring, exponential and
   logarithm identify the nilpotent elements of `Lie H` with the unipotent points of `H`.
 
 ## References
@@ -92,11 +91,11 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero (hX : IsNilpotent (tangen
     simpa only [trace_tangentMatrix, Bialgebra.CounitAlgebra.algEquivSelf_apply] using
       Matrix.isNilpotent_trace_of_isNilpotent hX
 
-variable [Algebra ℚ R] [Algebra ℚ (coordinateHopfAlgebra R n)]
+variable [Algebra ℚ (coordinateHopfAlgebra R n)]
 
 /-- **The exponential curve of a nilpotent tangent vector to `GLₙ` is the matrix curve
 `t ↦ exp(tX)`.** The coefficients of the abstract curve are `ε(Dᵐ x) / m! = Xᵐ / m!`. -/
-theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap
+theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     Bialgebra.expPointPolynomial d hd = nilpotentOneParameterCoordinateMap n hX := by
@@ -115,6 +114,10 @@ theorem pointsMulEquiv_expPointAt
     {A : Type v} [CommRing A] [Algebra R A] [Algebra ℚ A] (t : A) :
     pointsMulEquiv n (Bialgebra.expPointAt d hd t) =
       expSMulHom A (hX.map (algebraMap R A).mapMatrix) (Multiplicative.ofAdd t) := by
+  -- The base ring is a retract of the coordinate algebra, so it inherits its `ℚ`-structure.
+  let : Algebra ℚ R :=
+    ((Bialgebra.counitAlgHom R (coordinateHopfAlgebra R n)).toRingHom.comp
+      (algebraMap ℚ (coordinateHopfAlgebra R n))).toAlgebra
   rw [← Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t]
   ext i j
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply, Bialgebra.expPointAt_apply,
@@ -124,7 +127,7 @@ theorem pointsMulEquiv_expPointAt
 
 /-- The exponential of a nilpotent tangent vector to `GLₙ` is the matrix exponential of its
 tangent matrix. -/
-theorem pointsMulEquiv_expPoint
+theorem pointsMulEquiv_expPoint [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     pointsMulEquiv n (toConv (Bialgebra.expPoint d hd)) = nilpotentExpUnit hX := by
@@ -171,19 +174,19 @@ theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup
   ext i j
   simp
 
-/-- **Over a rational domain, a nilpotent matrix lies in the Lie algebra of a closed subgroup of
+/-- **Over a rational ring, a nilpotent matrix lies in the Lie algebra of a closed subgroup of
 `GLₙ` exactly when its exponential is a point of the subgroup.** -/
-theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff [IsDomain R]
+theorem nilpotentExpUnit_mem_hopfIdealPointsSubgroup_iff
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) (hX : IsNilpotent X) :
     nilpotentExpUnit hX ∈ hopfIdealPointsSubgroup n I R ↔
       X ∈ (I.lieSubalgebra (B := R)).map (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom :=
   ⟨mem_map_lieSubalgebra_of_nilpotentExpUnit_mem n I hX,
     nilpotentExpUnit_mem_hopfIdealPointsSubgroup n I hX⟩
 
-/-- **Over a rational domain, the finite exponential and logarithm identify the nilpotent
+/-- **Over a rational ring, the finite exponential and logarithm identify the nilpotent
 elements of the Lie algebra of a closed subgroup of `GLₙ` with its unipotent points.** This is an
 equivalence of sets, not of groups. -/
-noncomputable def expEquivHopfIdealPoints [IsDomain R]
+noncomputable def expEquivHopfIdealPoints
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     {X : Matrix (Fin n) (Fin n) R // X ∈ (I.lieSubalgebra (B := R)).map
         (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom ∧ IsNilpotent X} ≃
@@ -200,7 +203,7 @@ noncomputable def expEquivHopfIdealPoints [IsDomain R]
 
 /-- The forward map of `expEquivHopfIdealPoints` is the finite exponential. -/
 @[simp]
-theorem coe_expEquivHopfIdealPoints_apply [IsDomain R]
+theorem coe_expEquivHopfIdealPoints_apply
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (X : {X : Matrix (Fin n) (Fin n) R // X ∈ (I.lieSubalgebra (B := R)).map
         (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom ∧ IsNilpotent X}) :
@@ -210,7 +213,7 @@ theorem coe_expEquivHopfIdealPoints_apply [IsDomain R]
 
 /-- The inverse map of `expEquivHopfIdealPoints` is the finite logarithm. -/
 @[simp]
-theorem coe_expEquivHopfIdealPoints_symm_apply [IsDomain R]
+theorem coe_expEquivHopfIdealPoints_symm_apply
     (I : HopfIdeal R (coordinateHopfAlgebra R n))
     (g : {g : Matrix.GeneralLinearGroup (Fin n) R //
         g ∈ hopfIdealPointsSubgroup n I R ∧ IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1)}) :

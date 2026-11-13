@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Chains
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
+public import TauCeti.Topology.Homotopy.Cube.Basic
 import Mathlib.LinearAlgebra.Quotient.Bilinear
 
 /-!
@@ -17,7 +18,10 @@ The cubical cross product descends to pairs:
 It is bilinear, natural under maps of pairs, and satisfies the signed Leibniz rule,
 including when either factor has degree zero. In particular, the product of relative
 cycles is a relative cycle. This is the chain operation used to take products of
-fundamental chains relative to the boundary of a product of manifolds.
+fundamental chains relative to the boundary of a product of manifolds. For the cubes themselves
+the product is exact: the cross product of the identity cubes of `(Iᵖ, ∂Iᵖ)` and `(I^q, ∂I^q)`,
+read in `(I^(p + q), ∂I^(p + q))`, is the identity cube
+(`TauCeti.RelativeCubicalChain.map_appendHomeomorph_crossProduct_mk_ofCube_id`).
 
 The support lemmas on normalized chains allow any target subspace containing the
 appropriate product subspace. No closedness or separation assumptions are needed.
@@ -160,6 +164,23 @@ theorem boundary_crossProduct_zero_left {q : ℕ} (a : RelativeCubicalChain X A 
   | H a =>
     induction b using Submodule.Quotient.induction_on with
     | H b => simp [NormalizedCubicalChain.boundary_crossProduct_zero_left]
+
+open unitInterval in
+/-- **The cross product of the fundamental relative chains of cubes**: pushed to
+`(I^(p + q), ∂I^(p + q))` along `Fin.appendHomeomorph : Iᵖ × I^q ≃ₜ I^(p + q)`, which carries
+`∂Iᵖ × I^q ∪ Iᵖ × ∂I^q` onto `∂I^(p + q)` (`Cube.preimage_appendHomeomorph_boundary`), the cross
+product of the identity cubes of `(Iᵖ, ∂Iᵖ)` and `(I^q, ∂I^q)` is the identity cube of
+`(I^(p + q), ∂I^(p + q))`, on the nose. -/
+theorem map_appendHomeomorph_crossProduct_mk_ofCube_id (p q : ℕ) :
+    map R (Fin.appendHomeomorph (X := I) p q : C((Fin p → I) × (Fin q → I), Fin (p + q) → I))
+        (Set.mapsTo_iff_subset_preimage.2 (Cube.preimage_appendHomeomorph_boundary p q).ge)
+        (p + q)
+        (crossProduct (Fin p → I) (Fin q → I) R (Cube.boundary (Fin p)) (Cube.boundary (Fin q))
+          p q (Submodule.Quotient.mk (NormalizedCubicalChain.ofCube _ R (ContinuousMap.id _)))
+          (Submodule.Quotient.mk (NormalizedCubicalChain.ofCube _ R (ContinuousMap.id _)))) =
+      Submodule.Quotient.mk
+        (NormalizedCubicalChain.ofCube (Fin (p + q) → I) R (ContinuousMap.id _)) := by
+  rw [crossProduct_mk, map_mk, NormalizedCubicalChain.map_appendHomeomorph_crossProduct_ofCube_id]
 
 end RelativeCubicalChain
 

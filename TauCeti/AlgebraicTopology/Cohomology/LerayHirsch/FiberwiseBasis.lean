@@ -259,7 +259,7 @@ private lemma diagMap_comp (n : ℕ)
     simp only [LinearMap.comp_apply, diagMap_lof, map_sum]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
-    exact X.singularCup_assoc_tensorUnit k (add_zero q) (add_zero q) rfl (add_zero q) a (E' p i j)
+    exact X.singularCup_assoc_unit k (add_zero q) (add_zero q) rfl (add_zero q) a (E' p i j)
       (E p j l)
 
 private lemma diagMap_eq_id (n : ℕ)
@@ -427,7 +427,7 @@ private lemma lerayHirschProdOfClasses_eq (n : ℕ)
   | add g g' hg hg' => simp only [map_add, hg, hg']
   | lof p' q' h' i' β =>
     rw [lerayHirschProd_lof, shiftCup_lof, lerayHirschProd_lof, ← singularCup_naturality,
-      (X ⊗ F).singularCup_assoc_tensorUnit k (m' := p) rfl (by omega) (by omega) (by omega)]
+      (X ⊗ F).singularCup_assoc_unit k (m' := p) rfl (by omega) (by omega) (by omega)]
 
 variable (X) in
 /-- **The restriction of the Leray–Hirsch map of the classes to a fibre**: restricting the image of
