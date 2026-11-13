@@ -229,39 +229,18 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
   rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
 
-/-- The inverse of the preferred chart of `TM` at `z` sends `(q, u)` to the tangent vector with
-fibre coordinate `u`, in the trivialization at `z.proj`, at the point with chart coordinate `q`. -/
-theorem _root_.TangentBundle.extChartAt_symm_apply (z : TangentBundle I M) {w : E × E}
-    (hw : w ∈ (extChartAt I.tangent z).target) :
-    (extChartAt I.tangent z).symm w =
-      TotalSpace.mk' E ((extChartAt I z.proj).symm w.1)
-        ((trivializationAt E (TangentSpace I) z.proj).symm ((extChartAt I z.proj).symm w.1)
-          w.2) := by
-  have hb : (extChartAt I z.proj).symm w.1 ∈
-      (trivializationAt E (TangentSpace I) z.proj).baseSet := by
-    rw [FiberBundle.extChartAt_target] at hw
-    exact hw.1.2
-  rw [FiberBundle.extChartAt]
-  exact ((trivializationAt E (TangentSpace I) z.proj).mk_symm hb w.2).symm
-
 /-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
 point and its own fibre coordinate. -/
 theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
-    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (id z.2 : E)) := by
-  rw [FiberBundle.extChartAt]
+    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (z.2 : E)) := by
+  simp only [FiberBundle.extChartAt, PartialEquiv.coe_trans, Function.comp_apply,
+    PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
+    OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
+    TangentBundle.trivializationAt_fst]
   refine Prod.ext rfl ?_
-  simp only [PartialEquiv.coe_trans, Function.comp_apply, PartialEquiv.prod_coe,
-    PartialEquiv.refl_coe, id_eq]
   exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
     (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.2).symm.trans
     (continuousLinearMapAt_trivializationAt_self z.proj z.2)
-
-/-- The first coordinate of a point of the target of the chart of `TM` at `z` lies in the target
-of the chart of `M` at `z.proj`. -/
-theorem _root_.TangentBundle.mapsTo_fst_extChartAt_target (z : TangentBundle I M) :
-    MapsTo Prod.fst (extChartAt I.tangent z).target (extChartAt I z.proj).target := fun w hw ↦ by
-  rw [FiberBundle.extChartAt_target] at hw
-  exact hw.1.1
 
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
