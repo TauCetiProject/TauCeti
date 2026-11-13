@@ -27,6 +27,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.intervalIntegral.integral_eq_integral_of_forall_notMem_eq_zero`: the integral from `a`
+  to `b` of a function vanishing on `(a, b)` outside `(c, d) ⊆ (a, b)` is its integral from `c`
+  to `d`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -130,6 +133,18 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- If `a ≤ c ≤ d ≤ b` and `g` vanishes at the points of `(a, b)` outside `(c, d)`, then the
+integral of `g` from `a` to `b` is its integral from `c` to `d`. -/
+theorem integral_eq_integral_of_forall_notMem_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [NullSingletonClass μ] {a b c d : ℝ} {g : ℝ → E}
+    (hac : a ≤ c) (hcd : c ≤ d) (hdb : d ≤ b) (hg : ∀ x ∈ Ioo a b, x ∉ Ioo c d → g x = 0) :
+    ∫ x in a..b, g x ∂μ = ∫ x in c..d, g x ∂μ := by
+  rw [_root_.intervalIntegral.integral_of_le (hac.trans (hcd.trans hdb)),
+    _root_.intervalIntegral.integral_of_le hcd, integral_Ioc_eq_integral_Ioo,
+    integral_Ioc_eq_integral_Ioo]
+  exact setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioo
+    (Ioo_subset_Ioo hac hdb) fun x hx ↦ hg x hx.1 hx.2
 
 end intervalIntegral
 

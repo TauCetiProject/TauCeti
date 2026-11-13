@@ -212,6 +212,12 @@ theorem sphericalPendulumEffectivePotential_def (j z : ℝ) :
     sphericalPendulumEffectivePotential j z = j ^ 2 / (2 * (1 - z ^ 2)) + z :=
   (rfl)
 
+/-- The effective potential is even in the angular momentum. -/
+@[simp]
+theorem sphericalPendulumEffectivePotential_neg_left (j z : ℝ) :
+    sphericalPendulumEffectivePotential (-j) z = sphericalPendulumEffectivePotential j z := by
+  simp only [sphericalPendulumEffectivePotential_def, neg_sq]
+
 /-! ### The phase space in coordinates -/
 
 /-- At a pole `z² = 1`, the condition `j² ≤ 2 (h - z) (1 - z²)` forces `j = 0`. -/

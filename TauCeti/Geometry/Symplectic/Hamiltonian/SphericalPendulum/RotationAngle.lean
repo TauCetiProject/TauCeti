@@ -125,7 +125,7 @@ theorem sphericalPendulumRotationAngle_zero_right (h : ℝ) :
 /-! ### The limits of the rotation angle as `j → 0` -/
 
 /-- The derivative of `2 (h - σ z) (1 - z²)` in `z`. -/
-private theorem hasDerivAt_two_mul_sub_mul_mul_one_sub_sq (h σ z : ℝ) :
+theorem hasDerivAt_two_mul_sub_mul_mul_one_sub_sq (h σ z : ℝ) :
     HasDerivAt (fun z ↦ 2 * (h - σ * z) * (1 - z ^ 2))
       (6 * σ * z ^ 2 - 4 * h * z - 2 * σ) z := by
   have := (((hasDerivAt_id z).const_mul σ).const_sub h).const_mul 2 |>.mul
