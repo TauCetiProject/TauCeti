@@ -60,8 +60,7 @@ instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
     rw [simplyConnectedRootDatum_F4]
     exact abs_pairing_f4SimplyConnectedRootDatum_le_two)
 
-/-- The rational root system of a simply-laced Dynkin type has no triple root strings. -/
-theorem isNotG2_rationalRootSystem_of_isSimplyLaced {t : DynkinType} {ht : t.Valid}
+private theorem isNotG2_rationalRootSystem_of_isSimplyLaced {t : DynkinType} {ht : t.Valid}
     (hs : t.IsSimplyLaced) : (t.rationalRootSystem ht).IsNotG2 := by
   apply isNotG2_rationalRootSystem_of_abs_pairing_le_two
   intro i j
@@ -99,5 +98,11 @@ instance instIsNotG2RationalRootSystemE7 (ht : E7.Valid) :
 instance instIsNotG2RationalRootSystemE8 (ht : E8.Valid) :
     (E8.rationalRootSystem ht).IsNotG2 :=
   isNotG2_rationalRootSystem_of_isSimplyLaced isSimplyLaced_E8
+
+/-- The pinned rational root system of every Dynkin type other than G₂ has no triple
+root strings. -/
+theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
+    (h : t ≠ G2) : (t.rationalRootSystem ht).IsNotG2 := by
+  cases t <;> first | exact (h rfl).elim | infer_instance
 
 end TauCeti.DynkinType
