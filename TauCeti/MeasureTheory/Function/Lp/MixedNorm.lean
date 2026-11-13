@@ -107,7 +107,7 @@ private theorem eLpNorm_le_of_re_inner_eq_rpow {p p' q' : ℝ≥0∞} [hpp : p.H
   set X := eLpNorm u p ν
   have hXr : X ^ p.toReal = ENNReal.ofReal (∫ t, u t ^ p.toReal ∂ν) := by
     rw [hu.eLpNorm_rpow_toReal_eq_enorm_integral (𝕜 := ℝ) hp0 hp,
-      ← Real.enorm_eq_ofReal (integral_nonneg fun t ↦ Real.rpow_nonneg (hu0 t) _)]
+      ← Real.eNorm_eq_ofReal (integral_nonneg fun t ↦ Real.rpow_nonneg (hu0 t) _)]
     congr 2 with t
     rw [Real.norm_of_nonneg (hu0 t), RCLike.ofReal_real_eq_id, id]
   refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := p.toReal) hu.eLpNorm_ne_top ?_
@@ -120,9 +120,9 @@ private theorem eLpNorm_le_of_re_inner_eq_rpow {p p' q' : ℝ≥0∞} [hpp : p.H
     _ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) p' ν := hC
     _ ≤ C * eLpNorm (fun t ↦ u t ^ (p.toReal - 1)) p' ν := by
         gcongr
-        refine eLpNorm_mono_enorm (hG.aemeasurable_eLpNorm_Lp
+        refine eLpNorm_mono_eNorm (hG.aemeasurable_eLpNorm_Lp
           Measure.AbsolutelyContinuous.rfl q').aestronglyMeasurable fun t ↦ ?_
-        rw [enorm_eq_self, Real.enorm_eq_ofReal (Real.rpow_nonneg (hu0 t) _)]
+        rw [eNorm_eq_self, Real.eNorm_eq_ofReal (Real.rpow_nonneg (hu0 t) _)]
         exact hGq t
     _ ≤ C * X ^ (p.toReal - 1) := by
         gcongr
@@ -237,7 +237,7 @@ private theorem eLpNorm_indicator_finsetSup_le {p p' q' : ℝ≥0∞} [hpp : p.H
   obtain ⟨ψ, hψm, hψN, hψ⟩ := TauCeti.exists_measurable_finsetSup_eq hf N
   set K : ℝ≥0 := ∑ m ∈ Finset.range (N + 1), ‖g m‖₊
   have hgK : ∀ m ≤ N, ‖g m‖ ≤ K := fun m hm ↦ by
-    rw [← coe_nnnorm]
+    rw [← coe_nnNorm]
     exact NNReal.coe_le_coe.2 (Finset.single_le_sum (f := fun m ↦ ‖g m‖₊) (fun m _ ↦ zero_le)
       (Finset.mem_range_succ_iff.2 hm))
   refine eLpNorm_indicator_le_of_re_inner_eq hp hF hg1 hC hs hsν hR
@@ -302,12 +302,12 @@ private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite μ] [SigmaFinite ν]
       filter_upwards [eventually_mem_spanningSets ν t,
         tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖F' t‖] with N ht₁ ht₂
       rw [show u N t = φ N t from Set.indicator_of_mem (⟨ht₁, ht₂⟩ : t ∈ s N) _,
-        Real.enorm_eq_ofReal (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal]
+        Real.eNorm_eq_ofReal (NNReal.coe_nonneg _), ENNReal.ofReal_coe_nnreal]
     rw [← hiSup]
     exact (tendsto_atTop_iSup fun N M hNM ↦ ENNReal.coe_le_coe.2
       (Finset.sup_mono (Finset.range_mono hNM))).congr' hev
-  exact TauCeti.eLpNorm_ennreal_le_of_ae_tendsto (fun N ↦ (hum N).enorm.aemeasurable) hΦ
-    (Frequently.of_forall fun N ↦ (eLpNorm_enorm _ (hum N).aestronglyMeasurable).trans_le (hX N))
+  exact TauCeti.eLpNorm_ennreal_le_of_ae_tendsto (fun N ↦ (hum N).eNorm.aemeasurable) hΦ
+    (Frequently.of_forall fun N ↦ (eLpNorm_eNorm _ (hum N).aestronglyMeasurable).trans_le (hX N))
 
 /-- The case `p = ∞` of `eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`. For a set `A` of
 finite measure, testing against `1_A G` and applying the case `p = 1` to the restriction of `ν` to
@@ -320,13 +320,13 @@ private theorem eLpNorm_eLpNorm_top_le [SigmaFinite μ] [SigmaFinite ν] {q q' :
   have hFq : AEMeasurable (fun t ↦ eLpNorm (F t) q μ) ν :=
     hF.aemeasurable_eLpNorm_Lp Measure.AbsolutelyContinuous.rfl q
   rw [eLpNorm_exponent_top hFq.aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_enorm_bound ?_
+  refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
   refine (ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ (g := fun _ ↦ C) hFq
-    fun A hA hAν ↦ ?_).mono fun t ht ↦ (enorm_eq_self _).trans_le ht
+    fun A hA hAν ↦ ?_).mono fun t ht ↦ (eNorm_eq_self _).trans_le ht
   have h1 := eLpNorm_eLpNorm_le_of_ne_top (𝕜 := 𝕜) (p := 1) (p' := ∞) (q := q) (q' := q')
     ENNReal.one_ne_top (hF.restrict (s := A)) (C := C * ν A) fun G _ _ _ hG ↦ ?_
-  · rw [eLpNorm_one_eq_lintegral_enorm (hFq.restrict (s := A)).aestronglyMeasurable] at h1
-    simpa only [enorm_eq_self, setLIntegral_const] using h1
+  · rw [eLpNorm_one_eq_lintegral_eNorm (hFq.restrict (s := A)).aestronglyMeasurable] at h1
+    simpa only [eNorm_eq_self, setLIntegral_const] using h1
   -- Test against `1_A G`, which vanishes off `A`.
   have hGA := hC (A.indicator G) A hAν.ne (fun t ht ↦ Set.indicator_of_notMem ht _)
     ((memLp_indicator_iff_restrict hA.nullMeasurableSet).2 hG)
