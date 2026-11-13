@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
-public import TauCeti.RepresentationTheory.Character.Twist
-import TauCeti.RepresentationTheory.AsModule
+public import TauCeti.RepresentationTheory.LinearCharacter.Tensor
 
 /-!
 # Linear characters in the exact Grothendieck ring
@@ -24,7 +23,6 @@ Grothendieck ring, in arbitrary characteristic.
 public section
 
 open CategoryTheory MonoidalCategory
-open scoped MonoidAlgebra
 
 namespace TauCeti
 
@@ -36,9 +34,7 @@ universe u
 theorem exactK0_ofLinearCharacter_one {k G : Type u} [Field k] [Monoid G] [Finite G] :
     fdRepK0RingEquiv k G
       (ExactK0.of (FDRep.ofLinearCharacter (1 : G →* kˣ))) = 1 := by
-  rw [FDRep.ofLinearCharacter_def, Representation.ofLinearCharacter_one,
-    fdRepK0RingEquiv_of, FDRep.of_ρ']
-  exact (exactK0_one_eq_of_trivial (k := k) (G := G)).symm
+  rw [FDRep.ofLinearCharacter_one, ← ExactK0.one_def, map_one]
 
 /-- The product of the classes of two linear characters is the class of their product. -/
 theorem exactK0_ofLinearCharacter_mul {k G : Type u} [Field k] [Monoid G] [Finite G]
@@ -46,25 +42,6 @@ theorem exactK0_ofLinearCharacter_mul {k G : Type u} [Field k] [Monoid G] [Finit
     fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter χ)) *
       fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter ψ)) =
         fdRepK0RingEquiv k G (ExactK0.of (FDRep.ofLinearCharacter (χ * ψ))) := by
-  have h : Representation.charTwist χ (Representation.ofLinearCharacter ψ) =
-      Representation.ofLinearCharacter (χ * ψ) := by
-    rw [← Representation.charTwist_trivial ψ,
-      Representation.charTwist_charTwist, Representation.charTwist_trivial]
-  let e : ((Representation.ofLinearCharacter χ).tprod
-      (Representation.ofLinearCharacter ψ)).Equiv
-      (Representation.ofLinearCharacter (χ * ψ)) := by
-    simpa only [h] using
-      Representation.tprodEquivCharTwist χ (Representation.ofLinearCharacter ψ)
-  have : Module.Finite k[G] (Representation.asModule
-      (FDRep.of (Representation.ofLinearCharacter χ) ⊗
-        FDRep.of (Representation.ofLinearCharacter ψ)).ρ) :=
-    Module.Finite.of_restrictScalars_finite k k[G] _
-  have : Module.Finite k[G] (Representation.asModule
-      (FDRep.of (Representation.ofLinearCharacter (χ * ψ))).ρ) :=
-    Module.Finite.of_restrictScalars_finite k k[G] _
-  rw [FDRep.ofLinearCharacter_def, FDRep.ofLinearCharacter_def,
-    FDRep.ofLinearCharacter_def, fdRepK0RingEquiv_of, fdRepK0RingEquiv_of,
-    fdRepK0RingEquiv_of, of_asModule_mul_of_asModule]
-  exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
+  rw [← map_mul, ExactK0.of_mul_of, ExactK0.of_congr (FDRep.ofLinearCharacterTensorIso χ ψ)]
 
 end TauCeti
