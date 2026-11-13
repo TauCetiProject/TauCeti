@@ -17,8 +17,9 @@ An equation or inequation with variables `X` and coefficient letters `A` is a wo
 `FreeGroup (X ⊕ A)`. A solution assigns group elements to the variables and coefficients,
 then evaluates each word by `FreeGroup.lift`. Keeping the two finite lists separate makes
 their conjunction available to normal forms for quantifier-free group formulas.
-Read with coefficients in `F(A)`, such a word is an equation of algebraic geometry over `F(A)`,
-an element of `F(A)[X]` (`TauCeti.EqIneqSystem.toGX`).
+Read through a coefficient map `c : A → G`, such a word is an equation of algebraic geometry
+over `G`, an element of `G[X]` (`TauCeti.EqIneqSystem.toGX`); every element of `G[X]` arises
+this way when the coefficients generate `G` (`TauCeti.EqIneqSystem.toGX_surjective`).
 
 A system is presented as finite syntax by two lists of possibly unreduced words
 (`TauCeti.EqIneqSystem.ofWords`); whether an assignment solves it depends only on the variables
@@ -69,33 +70,48 @@ theorem eval_mk_congr {v v' : X → G} (c : A → G) {w : List ((X ⊕ A) × Boo
   · simp [h x b hy]
   · simp
 
-variable (X A) in
-/-- Words in variables `X` and letters of `A` as elements of `F(A)[X] = F(A) ∗ F(X)`, the
-equations of algebraic geometry over `F(A)`. -/
-def toGX : FreeGroup (X ⊕ A) →* GroupAlgGeom.GX (FreeGroup A) X :=
+variable (X) in
+/-- Words in variables `X` and letters of `A`, read as elements of `G[X] = G ∗ F(X)` through the
+coefficient map `c : A → G`: the equations of algebraic geometry over `G`. For `G = F(A)` and
+`c = FreeGroup.of` these are the equations over `F(A)`. -/
+def toGX (c : A → G) : FreeGroup (X ⊕ A) →* GroupAlgGeom.GX G X :=
   FreeGroup.lift (Sum.elim (fun x => Monoid.Coprod.inr (FreeGroup.of x))
-    (fun a => Monoid.Coprod.inl (FreeGroup.of a)))
+    (fun a => Monoid.Coprod.inl (c a)))
 
 /-- A variable is sent to the corresponding generator of `F(X)`. -/
 @[simp]
-theorem toGX_of_inl (x : X) :
-    toGX X A (FreeGroup.of (Sum.inl x)) = Monoid.Coprod.inr (FreeGroup.of x) := by
+theorem toGX_of_inl (c : A → G) (x : X) :
+    toGX X c (FreeGroup.of (Sum.inl x)) = Monoid.Coprod.inr (FreeGroup.of x) := by
   simp [toGX]
 
-/-- A coefficient letter is sent to the corresponding generator of `F(A)`. -/
+/-- A coefficient letter is sent to its coefficient in `G`. -/
 @[simp]
-theorem toGX_of_inr (a : A) :
-    toGX X A (FreeGroup.of (Sum.inr a)) = Monoid.Coprod.inl (FreeGroup.of a) := by
+theorem toGX_of_inr (c : A → G) (a : A) :
+    toGX X c (FreeGroup.of (Sum.inr a)) = Monoid.Coprod.inl (c a) := by
   simp [toGX]
 
-/-- Evaluating the image of a word in `F(A)[X]` at `v` evaluates the word at `v` and at the
+/-- Evaluating the image of a word in `G[X]` at `v` evaluates the word at `v` and at the
 coefficients. -/
 @[simp]
-theorem eval_toGX (ι : FreeGroup A →* H) (v : X → H) (w : FreeGroup (X ⊕ A)) :
-    GroupAlgGeom.eval ι v (toGX X A w) = eval v (ι ∘ FreeGroup.of) w := by
+theorem eval_toGX (c : A → G) (ι : G →* H) (v : X → H) (w : FreeGroup (X ⊕ A)) :
+    GroupAlgGeom.eval ι v (toGX X c w) = eval v (ι ∘ c) w := by
   rw [← MonoidHom.comp_apply]
   congr 1
   ext (x | a) <;> simp
+
+/-- If the coefficients `c` generate `G`, every element of `G[X]` is the image of a word in the
+variables and the coefficient letters. -/
+theorem toGX_surjective {c : A → G} (hc : Subgroup.closure (Set.range c) = ⊤) :
+    Function.Surjective (toGX X c) := by
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← Monoid.Coprod.range_inl_sup_range_inr]
+  refine sup_le ?_ ?_
+  · rw [MonoidHom.range_eq_map, ← hc, MonoidHom.map_closure, Subgroup.closure_le]
+    rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨FreeGroup.of (Sum.inr a), by simp⟩
+  · rw [MonoidHom.range_eq_map, ← FreeGroup.closure_range_of, MonoidHom.map_closure,
+      Subgroup.closure_le]
+    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨FreeGroup.of (Sum.inl x), by simp⟩
 
 /-- A variable assignment solves a system when all equations vanish and all inequations
 remain nontrivial after evaluation. -/
