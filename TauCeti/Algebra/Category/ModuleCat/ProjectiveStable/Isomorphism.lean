@@ -6,21 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.RingTheory.FiniteLength
-import Mathlib.LinearAlgebra.Projection
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Isomorphism
 
 /-!
 # Recovering isomorphisms from the projective stable category
 
-The projective stable quotient detects invertibility and isomorphism classes between
-finite-length modules with no nonzero projective retracts. Indecomposability is not required:
-the modules may be sums of non-projective indecomposables. This lets stable inverse
-comparisons recover actual modules after projective summands have been excluded.
+The projective stable quotient detects invertibility and isomorphism classes between finite-length
+modules with no nonzero projective retracts. Indecomposability is not required: the modules may be
+sums of non-projective indecomposables. This lets stable inverse comparisons recover actual modules
+after projective summands have been excluded.
 
-The argument uses Mathlib's Fitting decomposition
-`LinearMap.eventually_isCompl_ker_pow_range_pow`. If an endomorphism becomes the identity
-in the quotient, its eventual kernel is a projective retract and hence vanishes.
+This is the case of `ModuleCat.isIso_map_iff_of_reflects_isZero_retract` for the
+projective stable functor, which sends exactly the projective modules to zero.
 
 ## References
 
@@ -41,45 +38,13 @@ variable {A : Type u} [Ring A]
 local notation "S" =>
   ExactStructure.projectiveStableFunctor (ExactStructure.abelian (ModuleCat A))
 
-private theorem isIso_of_projectiveStableFunctor_map_eq_id (M : ModuleCat.{v} A)
-    (hM : IsFiniteLength A M)
+/-- A retract killed by the projective stable functor is projective, hence zero when `M` has no
+nonzero projective retract. -/
+private theorem isZero_of_retract_of_isZero_projectiveStableFunctor_obj {M : ModuleCat.{v} A}
     (hP : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
-    (f : End M) (hf : (S).map f.asHom = 𝟙 ((S).obj M)) : IsIso f.asHom := by
-  obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp hM
-  obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp
-    (LinearMap.eventually_isCompl_ker_pow_range_pow f.asHom.hom)
-  let K := LinearMap.ker (f.asHom.hom ^ (n + 1))
-  have hc := hn (n + 1) (Nat.le_succ n)
-  let r : Retract (ModuleCat.of A K) M :=
-    { i := ofHom K.subtype
-      r := ofHom (K.projectionOnto _ hc)
-      retract := by
-        ext x
-        exact congrArg Subtype.val (Submodule.projectionOnto_apply_left hc x) }
-  have hpow : (S).map (f ^ (n + 1)).asHom = 𝟙 ((S).obj M) := by
-    have hfe : (S).mapEnd M f = 1 := End.ext hf
-    have he : (S).mapEnd M (f ^ (n + 1)) = 1 := by rw [map_pow, hfe, one_pow]
-    exact congrArg End.asHom he
-  have hhom : (f ^ (n + 1)).asHom.hom = f.asHom.hom ^ (n + 1) :=
-    map_pow M.endRingEquiv f (n + 1)
-  have hkill : r.i ≫ (f ^ (n + 1)).asHom = 0 := by
-    ext x
-    simp [r, hhom]
-  have hi : (S).map r.i = 0 := by
-    have := congrArg (S).map hkill
-    simpa [Functor.map_comp, hpow] using this
-  have hzero : IsZero ((S).obj (ModuleCat.of A K)) :=
-    (IsZero.iff_id_eq_zero _).mpr (by
-      rw [← (S).map_id, ← r.retract, Functor.map_comp, hi, zero_comp])
-  have hK : IsZero (ModuleCat.of A K) := hP r
-    ((ExactStructure.abelian_isProjective_iff _).mp
-      ((ExactStructure.isZero_projectiveStableFunctor_obj_iff _ _).mp hzero))
-  have hk : K = ⊥ := Submodule.subsingleton_iff_eq_bot.mp
-    (ModuleCat.isZero_iff_subsingleton.mp hK)
-  have hu : IsUnit (f.asHom.hom ^ (n + 1)) := (Module.End.isUnit_iff _).mpr
-    (IsArtinian.bijective_of_injective_endomorphism _ (LinearMap.ker_eq_bot.mp hk))
-  exact (isUnit_iff_isIso f).mp
-    ((isUnit_pow_succ_iff (n := n)).mp hu |>.map M.endRingEquiv.symm)
+    {K : ModuleCat.{v} A} (r : Retract K M) (hK : IsZero ((S).obj K)) : IsZero K :=
+  hP r ((ExactStructure.abelian_isProjective_iff _).mp
+    ((ExactStructure.isZero_projectiveStableFunctor_obj_iff _ _).mp hK))
 
 /-- The projective stable quotient detects invertibility between finite-length modules
 whose projective retracts are all zero. The modules need not be indecomposable. -/
@@ -88,25 +53,10 @@ theorem isIso_projectiveStableFunctor_map_iff_of_isZero_projective_retract
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
-    IsIso ((S).map f) ↔ IsIso f := by
-  constructor
-  · intro hf
-    let := hf
-    obtain ⟨g, hg⟩ := (S).map_surjective (CategoryTheory.inv ((S).map f))
-    have hfg : IsIso (f ≫ g) := isIso_of_projectiveStableFunctor_map_eq_id M hM hPM
-      (End.of (f ≫ g)) (by
-      simp [Functor.map_comp, hg])
-    have hgf : IsIso (g ≫ f) := isIso_of_projectiveStableFunctor_map_eq_id N hN hPN
-      (End.of (g ≫ f)) (by
-      simp [Functor.map_comp, hg])
-    let := hfg
-    let := hgf
-    have : Mono f := mono_of_mono f g
-    have : Epi f := epi_of_epi g f
-    exact isIso_of_mono_of_epi f
-  · intro hf
-    let := hf
-    infer_instance
+    IsIso ((S).map f) ↔ IsIso f :=
+  ModuleCat.isIso_map_iff_of_reflects_isZero_retract (S) f ((S).map_surjective) hM hN
+    (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
+    (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
 
 /-- Stable isomorphism is equivalent to actual isomorphism for finite-length modules
 with no nonzero projective retracts. In particular this removes projective ambiguity
@@ -115,15 +65,10 @@ theorem nonempty_iso_projectiveStableFunctor_obj_iff_of_isZero_projective_retrac
     (M N : ModuleCat.{v} A) (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hPM : ∀ {P : ModuleCat.{v} A}, Retract P M → Projective P → IsZero P)
     (hPN : ∀ {P : ModuleCat.{v} A}, Retract P N → Projective P → IsZero P) :
-    Nonempty ((S).obj M ≅ (S).obj N) ↔ Nonempty (M ≅ N) := by
-  constructor
-  · rintro ⟨e⟩
-    obtain ⟨f, hf⟩ := (S).map_surjective e.hom
-    have : IsIso ((S).map f) := hf.symm ▸ e.isIso_hom
-    have : IsIso f :=
-      (isIso_projectiveStableFunctor_map_iff_of_isZero_projective_retract
-        f hM hN hPM hPN).mp inferInstance
-    exact ⟨asIso f⟩
-  · exact fun ⟨e⟩ ↦ ⟨(S).mapIso e⟩
+    Nonempty ((S).obj M ≅ (S).obj N) ↔ Nonempty (M ≅ N) :=
+  ModuleCat.nonempty_iso_obj_iff_of_reflects_isZero_retract (S) M N ((S).map_surjective)
+    ((S).map_surjective) hM hN
+    (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPM)
+    (isZero_of_retract_of_isZero_projectiveStableFunctor_obj hPN)
 
 end ModuleCat
