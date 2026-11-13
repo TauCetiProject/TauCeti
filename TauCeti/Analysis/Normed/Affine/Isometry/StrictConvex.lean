@@ -111,7 +111,7 @@ private theorem inv_smul_apply_smul_eq (h0 : A 0 = 0)
   have hss : s • v = (s / s') • s' • v := by rw [smul_smul, div_mul_cancel₀ _ hs'.ne']
   rw [hss, apply_smul_of_forall_dist_eq h0 hA hs'v
     ⟨div_nonneg hs.le hs'.le, div_le_one_of_le₀ h hs'.le⟩, smul_smul, inv_mul_eq_div,
-    div_div_cancel_left' hs.ne']
+    div_div_cancel_left₀ hs.ne']
 
 /-- **A map preserving distances on a ball about the origin is linear there.** If `A : V → W`
 fixes the origin and preserves distances between points of the ball of radius `ρ > 0` about the
