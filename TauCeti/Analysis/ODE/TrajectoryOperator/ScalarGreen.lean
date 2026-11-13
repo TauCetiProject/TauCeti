@@ -96,6 +96,18 @@ theorem scalarGreenIntegral_eq_neg_integral (g : ℝ → ℝ) (f : ℝ → E) (s
 theorem scalarGreenIntegral_zero (g : ℝ → ℝ) (s : ℝ) : scalarGreenIntegral g (0 : ℝ → E) s = 0 := by
   simp [scalarGreenIntegral_def]
 
+/-- The Green integral is homogeneous in its forcing term. -/
+@[simp]
+theorem scalarGreenIntegral_smul (g : ℝ → ℝ) (c : ℝ) (f : ℝ → E) (s : ℝ) :
+    scalarGreenIntegral g (c • f) s = c • scalarGreenIntegral g f s := by
+  simp only [scalarGreenIntegral_def, Pi.smul_apply, smul_comm _ c, integral_smul, smul_neg]
+
+/-- The Green integral commutes with negation of the forcing term. -/
+@[simp]
+theorem scalarGreenIntegral_neg (g : ℝ → ℝ) (f : ℝ → E) (s : ℝ) :
+    scalarGreenIntegral g (-f) s = -scalarGreenIntegral g f s := by
+  simpa using scalarGreenIntegral_smul g (-1) f s
+
 /-- **The Green integral recovers compactly supported paths.** If `g` is a positive solution of
 `v' = b v` for a continuous coefficient `b`, then every compactly supported `C¹` path `u` is the
 Green integral of `u' - b u`. No growth of `g` is needed: the integrand is the derivative of the
@@ -112,7 +124,7 @@ theorem scalarGreenIntegral_deriv_sub_eq [CompleteSpace E] {g b : ℝ → ℝ} (
   have hderiv (t : ℝ) : HasDerivAt (fun t ↦ (g t)⁻¹ • u t)
       ((g t)⁻¹ • (deriv u t - b t • u t)) t := by
     convert (hinv t).smul (hu.differentiable one_ne_zero t).hasDerivAt using 1
-    rw [smul_sub, smul_smul, neg_mul, neg_smul, mul_comm, sub_eq_add_neg]
+    module
   have hcont : Continuous fun t ↦ (g t)⁻¹ • (deriv u t - b t • u t) :=
     (hgc.inv₀ fun t ↦ (hpos t).ne').smul
       ((hu.continuous_deriv le_rfl).sub (hb.smul hu.continuous))
@@ -134,9 +146,10 @@ variable {g b : ℝ → ℝ} {K α M : ℝ} {f : ℝ → E}
 private theorem inv_le_mul_exp_mul_inv (hpos : ∀ s, 0 < g s)
     (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) {s t : ℝ} (hst : s ≤ t) :
     (g t)⁻¹ ≤ K * Real.exp (-α * (t - s)) * (g s)⁻¹ := by
-  rw [inv_le_iff_one_le_mul₀ (hpos t), mul_right_comm, ← div_eq_mul_inv,
-    one_le_div (hpos s)]
-  exact hK s t hst
+  calc (g t)⁻¹ = g s / g t * (g s)⁻¹ := by field_simp [(hpos s).ne']
+    _ ≤ K * Real.exp (-α * (t - s)) * (g s)⁻¹ :=
+      mul_le_mul_of_nonneg_right ((div_le_iff₀ (hpos t)).2 (hK s t hst))
+        (inv_nonneg.2 (hpos s).le)
 
 /-- The growth constant is at least `1`, by the growth bound at `s = t`. -/
 private theorem one_le_of_growth (hpos : ∀ s, 0 < g s)
@@ -165,6 +178,32 @@ private theorem integrableOn_inv_smul_Ioi (hgc : Continuous g) (hpos : ∀ s, 0 
     _ = K * Real.exp (α * c) * (g c)⁻¹ * M * Real.exp (-α * t) := by
         rw [show -α * (t - c) = α * c + -α * t by ring, Real.exp_add]
         ring
+
+section Additivity
+
+variable {f₁ f₂ : ℝ → E} {M₁ M₂ : ℝ} (hgc : Continuous g) (hpos : ∀ s, 0 < g s)
+  (hK : ∀ s t, s ≤ t → g s ≤ K * Real.exp (-α * (t - s)) * g t) (hα : 0 < α)
+  (hf₁ : Continuous f₁) (hf₁M : ∀ t, ‖f₁ t‖ ≤ M₁) (hf₂ : Continuous f₂) (hf₂M : ∀ t, ‖f₂ t‖ ≤ M₂)
+include hgc hpos hK hα hf₁ hf₁M hf₂ hf₂M
+
+/-- Under the growth bound, the Green integral is additive on continuous bounded forcing
+terms. -/
+theorem scalarGreenIntegral_add (s : ℝ) :
+    scalarGreenIntegral g (f₁ + f₂) s =
+      scalarGreenIntegral g f₁ s + scalarGreenIntegral g f₂ s := by
+  simp only [scalarGreenIntegral_def, Pi.add_apply, smul_add]
+  rw [integral_add (integrableOn_inv_smul_Ioi hgc hpos hK hα hf₁ hf₁M s)
+    (integrableOn_inv_smul_Ioi hgc hpos hK hα hf₂ hf₂M s), smul_add, neg_add]
+
+/-- Under the growth bound, the Green integral commutes with subtraction of continuous bounded
+forcing terms. -/
+theorem scalarGreenIntegral_sub (s : ℝ) :
+    scalarGreenIntegral g (f₁ - f₂) s =
+      scalarGreenIntegral g f₁ s - scalarGreenIntegral g f₂ s := by
+  rw [sub_eq_add_neg, scalarGreenIntegral_add hgc hpos hK hα hf₁ hf₁M hf₂.neg (M₂ := M₂)
+    (by simpa using hf₂M), scalarGreenIntegral_neg, sub_eq_add_neg]
+
+end Additivity
 
 /-- **The Green integral solves the forced equation.** If `g` is a positive solution of
 `v' = b v` with `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`, then for a continuous
@@ -209,10 +248,11 @@ theorem enorm_scalarGreenIntegral_le (hpos : ∀ s, 0 < g s)
   refine (eNorm_integral_le_lintegral_eNorm _).trans
     ((lintegral_mono_ae ?_).trans (setLIntegral_le_lintegral _ _))
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t hst
-  have hk : g s / g t ≤ K * Real.exp (-(α * |s - t|)) := by
-    rw [div_le_iff₀ (hpos t), abs_of_nonpos (sub_nonpos.2 (le_of_lt hst)),
-      show -(α * -(s - t)) = -α * (t - s) by ring]
-    exact hK s t (le_of_lt hst)
+  have hk : g s / g t ≤ K * Real.exp (-(α * |s - t|)) :=
+    calc g s / g t ≤ K * Real.exp (-α * (t - s)) := (div_le_iff₀ (hpos t)).2 (hK s t hst.le)
+      _ = K * Real.exp (-(α * |s - t|)) := by
+        rw [abs_of_nonpos (sub_nonpos.2 hst.le)]
+        ring_nf
   rw [eNorm_smul, Real.eNorm_eq_ofReal (div_pos (hpos s) (hpos t)).le]
   gcongr
 

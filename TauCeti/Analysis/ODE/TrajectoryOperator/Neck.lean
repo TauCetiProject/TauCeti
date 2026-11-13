@@ -533,9 +533,10 @@ theorem exists_norm_trajectoryOperator_neg_neckCoeff_smul_id_le (R : ℝ) {e : F
 /-- **The inverse of the glued operator has norm at least `exp (2 R) / 2`.** If
 `‖u‖ ≤ C ‖D_R u‖` for every `u ∈ W^{1,2}(ℝ, F)`, with `F ≠ 0`, then `C ≥ exp (2 R) / 2`. So the
 bounded inverse of `D_R` (which exists by
-`TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_neckCoeff_smul_id` and
-`TauCeti.WeakDerivStep.range_trajectoryOperator_neg_neckCoeff_smul_id` when `F` is a
-finite-dimensional inner product space) blows up exponentially in the length of the neck. -/
+`TauCeti.WeakDerivStep.bijective_trajectoryOperator_neg_neckCoeff_smul_id` when `F` is a
+finite-dimensional normed space) blows up exponentially in the length of the neck. It has norm
+at most `2 exp (4 |R|)` by
+`TauCeti.WeakDerivStep.norm_prev_le_mul_norm_trajectoryOperator_neg_neckCoeff_smul_id`. -/
 theorem exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff
     [Nontrivial F] (R : ℝ) (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
