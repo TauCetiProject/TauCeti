@@ -22,8 +22,9 @@ It also records basic facts about lattices: a full lattice is the `ℤ`-span of 
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
-equivalence. A discrete subgroup containing a full lattice is a full lattice, and so is a discrete
-subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
+equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
+and fullness of its range. A discrete subgroup containing a full lattice is a full lattice, and so
+is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
 
 ## Main results
 
@@ -45,6 +46,9 @@ subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
+* `ZLattice.instDiscreteTopologyRangeCompEquiv`, `ZLattice.instIsZLatticeRangeCompEquiv`:
+  precomposing a linear map with a linear equivalence preserves discreteness and fullness of its
+  range.
 * `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a normed
   space over a normed field forces the space to be finite-dimensional.
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
@@ -189,6 +193,25 @@ instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
   inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
 
 end LinearIsometryEquiv
+
+/-- Precomposing a linear map with a linear equivalence leaves its range unchanged, hence preserves
+discreteness of the range. -/
+instance instDiscreteTopologyRangeCompEquiv {R Λ Λ' E : Type*} [Semiring R]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [AddCommMonoid E]
+    [Module R Λ] [Module R Λ'] [Module R E] [TopologicalSpace E]
+    (f : Λ →ₗ[R] E) (α : Λ' ≃ₗ[R] Λ) [DiscreteTopology (LinearMap.range f)] :
+    DiscreteTopology (LinearMap.range (f.comp α.toLinearMap)) :=
+  α.range_comp f ▸ inferInstance
+
+/-- Precomposing a `ℤ`-linear map with a `ℤ`-linear equivalence leaves its range unchanged, hence
+preserves `IsZLattice`. -/
+instance instIsZLatticeRangeCompEquiv {K Λ Λ' E : Type*} [NormedField K]
+    [AddCommMonoid Λ] [AddCommMonoid Λ'] [Module ℤ Λ] [Module ℤ Λ']
+    [NormedAddCommGroup E] [NormedSpace K E]
+    (f : Λ →ₗ[ℤ] E) (α : Λ' ≃ₗ[ℤ] Λ) [DiscreteTopology (LinearMap.range f)]
+    [IsZLattice K (LinearMap.range f)] :
+    IsZLattice K (LinearMap.range (f.comp α.toLinearMap)) where
+  span_top := by rw [α.range_comp f]; exact IsZLattice.span_top
 
 /-- A finitely generated full lattice in a normed space over a normed field `K` forces the space
 to be finite-dimensional over `K`: finitely many generators span it. -/

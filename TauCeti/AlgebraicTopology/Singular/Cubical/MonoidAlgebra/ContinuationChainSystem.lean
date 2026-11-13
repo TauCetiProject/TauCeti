@@ -73,6 +73,8 @@ relating the Barraud–Cornea cocycles of two choices of data.
 * `TauCeti.cubicalChainDifferential_continuationChainSum` and
   `TauCeti.cubicalChainDifferential_parametrizedChainSum`: the continuation and parametrized sums
   are cycles.
+* `TauCeti.cubicalChainDifferential_continuationChainSum_of_eq_add`: the boundary of the
+  continuation sum when the continuation equation only holds up to error terms.
 * `TauCeti.cubicalChainSumMap_continuationChainSum` and
   `TauCeti.cubicalChainSumMap_parametrizedChainSum`: push-forward along multiplicative evaluation
   maps.
@@ -210,52 +212,58 @@ section Cycle
 variable {κ κ'} (S : TwistingChainSystem ind ι R) (S' : TwistingChainSystem indQ ι' R)
   {ν : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
 
-/-- The continuation equation holds automatically at the pairs `(x, y)` with `ind x ≤ indQ y`,
-where both sides vanish for degree reasons. -/
-private theorem continuation_of_le
-    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) {x : P} {y : Q}
+/-- The continuation equation with error terms `e` holds automatically at the pairs `(x, y)` with
+`ind x ≤ indQ y`, where all its terms vanish for degree reasons. -/
+private theorem continuation_of_le {e : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x))
+    (he : ∀ x y, e x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x + 1)) {x : P} {y : Q}
     (hxy : ind x ≤ indQ y) :
     cubicalChainDifferential (N x y) R (ν x y) =
-      continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x y := by
+      e x y + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x y := by
   rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) (hν x y),
-    continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hν hxy]
+    eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (he x y),
+    continuationChainSum_eq_zero_of_le S.mem_graded S'.mem_graded hν hxy, add_zero]
 
 /-- The Leibniz rule on a term of the first sum of the continuation sum, with the boundaries of
-the factors replaced by their sums. -/
+the factors replaced by their sums, up to the error terms `e`. -/
 private theorem cubicalChainDifferential_continuation_left
-    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) {x z : P} {y : Q}
+    {e : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x))
+    (he : ∀ x y, e x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x + 1)) {x z : P} {y : Q}
     (hl : indQ y < ind z → ind z < ind x → cubicalChainDifferential (N z y) R (ν z y) =
-      continuationChainSum ind indQ κ κ' R S.chain S'.chain ν z y) :
+      e z y + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν z y) :
     cubicalChainDifferential (N x y) R
       (cubicalChainSumPairing R (κ x z y) (S.chain x z) (ν z y)) =
         cubicalChainSumPairing R (κ x z y) (twistingChainSum ind ι R S.chain x z) (ν z y) +
           (ind z - ind x + 1).negOnePow • cubicalChainSumPairing R (κ x z y) (S.chain x z)
-            (continuationChainSum ind indQ κ κ' R S.chain S'.chain ν z y) := by
+            (e z y + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν z y) := by
   rw [cubicalChainDifferential_cubicalChainSumPairing _ (S.mem_graded x z), S.twisting]
   by_cases hzx : ind z < ind x
   · by_cases hyz : indQ y < ind z
     · rw [hl hyz hzx]
-    · rw [continuation_of_le S S' hν (show ind z ≤ indQ y by omega)]
+    · rw [continuation_of_le S S' hν he (show ind z ≤ indQ y by omega)]
   · rw [S.chain_eq_zero_of_le (show ind x ≤ ind z by omega), map_zero, LinearMap.zero_apply,
       LinearMap.zero_apply]
 
 /-- The Leibniz rule on a term of the second sum of the continuation sum, with the boundaries of
-the factors replaced by their sums. -/
+the factors replaced by their sums, up to the error terms `e`. -/
 private theorem cubicalChainDifferential_continuation_right
-    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) {x : P} {y z : Q}
+    {e : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x))
+    (he : ∀ x y, e x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x + 1)) {x : P} {y z : Q}
     (hr : indQ y < indQ z → indQ z < ind x → cubicalChainDifferential (N x z) R (ν x z) =
-      continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) :
+      e x z + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) :
     cubicalChainDifferential (N x y) R
       (cubicalChainSumPairing R (κ' x z y) (ν x z) (S'.chain z y)) =
         cubicalChainSumPairing R (κ' x z y)
-            (continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) (S'.chain z y) +
+            (e x z + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) (S'.chain z y) +
           (indQ z - ind x).negOnePow • cubicalChainSumPairing R (κ' x z y) (ν x z)
             (twistingChainSum indQ ι' R S'.chain z y) := by
   rw [cubicalChainDifferential_cubicalChainSumPairing _ (hν x z), S'.twisting]
   by_cases hyz : indQ y < indQ z
   · by_cases hzx : indQ z < ind x
     · rw [hr hyz hzx]
-    · rw [continuation_of_le S S' hν (show ind x ≤ indQ z by omega)]
+    · rw [continuation_of_le S S' hν he (show ind x ≤ indQ z by omega)]
   · rw [S'.chain_eq_zero_of_le (show indQ z ≤ indQ y by omega), map_zero, map_zero]
 
 omit [Fintype Q] in
@@ -320,6 +328,50 @@ private theorem continuation_cancel_right {x : P} {y : Q}
       (b := ind x - indQ w - 1 + (indQ w - ind x) + (indQ w - indQ z))
       ⟨ind x - indQ w - 1, by ring⟩, Units.neg_smul, neg_add_cancel]
 
+/-- **The boundary of the continuation sum, up to error terms.** Let the composition maps be
+associative, `κ (ι (a, b), c) = κ (a, κ (b, c))`, `κ' (κ (a, b), c) = κ (a, κ' (b, c))` and
+`κ' (κ' (a, b), c) = κ' (a, ι' (b, c))`, and let `ν` be a family of chains of cohomological degrees
+`indQ y - ind x` satisfying the continuation equation up to a family `e` of chains of cohomological
+degrees `indQ y - ind x + 1`, that is, `∂ ν z y = e z y + c z y` for the continuation sum `c`,
+at the pairs `(z, y)` with `indQ y < ind z < ind x` and `(x, z)` with `indQ y < indQ z < ind x`.
+Then the boundary of the continuation sum of `(x, y)` is
+
+`Σ_z (-1) ^ (ind z - ind x + 1) • κ_* (s x z × e z y)
+  + Σ_z (-1) ^ (ind x - indQ z - 1) • κ'_* (e x z × s' z y)`.
+
+For `e = 0` this says that the continuation sum is a cycle
+(`TauCeti.cubicalChainDifferential_continuationChainSum`). -/
+theorem cubicalChainDifferential_continuationChainSum_of_eq_add
+    {e : ∀ x y, normalizedCubicalChainAlgebra (N x y) R}
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x))
+    (he : ∀ x y, e x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x + 1)) {x : P} {y : Q}
+    (hκ : ∀ w z (a : M x w) (b : M w z) (c : N z y),
+      κ x z y (ι x w z (a, b), c) = κ x w y (a, κ w z y (b, c)))
+    (hκκ' : ∀ w z (a : M x w) (b : N w z) (c : M' z y),
+      κ' x z y (κ x w z (a, b), c) = κ x w y (a, κ' w z y (b, c)))
+    (hκ' : ∀ w z (a : N x w) (b : M' w z) (c : M' z y),
+      κ' x z y (κ' x w z (a, b), c) = κ' x w y (a, ι' w z y (b, c)))
+    (hl : ∀ z, indQ y < ind z → ind z < ind x → cubicalChainDifferential (N z y) R (ν z y) =
+      e z y + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν z y)
+    (hr : ∀ z, indQ y < indQ z → indQ z < ind x → cubicalChainDifferential (N x z) R (ν x z) =
+      e x z + continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) :
+    cubicalChainDifferential (N x y) R
+      (continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x y) =
+        ∑ z, (ind z - ind x + 1).negOnePow •
+            cubicalChainSumPairing R (κ x z y) (S.chain x z) (e z y) +
+          ∑ z, (ind x - indQ z - 1).negOnePow •
+            cubicalChainSumPairing R (κ' x z y) (e x z) (S'.chain z y) := by
+  rw [continuationChainSum_def, map_add, map_sum, map_sum]
+  simp only [map_zsmul_unit,
+    fun z ↦ cubicalChainDifferential_continuation_left S S' hν he (hl z),
+    fun z ↦ cubicalChainDifferential_continuation_right S S' hν he (hr z), continuationChainSum_def,
+    map_add, map_sum, LinearMap.add_apply, LinearMap.sum_apply, LinearMap.smul_apply, smul_add,
+    Finset.sum_add_distrib]
+  rw [eq_neg_of_add_eq_zero_left (continuation_cancel_left S (ν := ν) hκ),
+    eq_neg_of_add_eq_zero_left (continuation_cancel_middle S S' (ν := ν) hκκ'),
+    eq_neg_of_add_eq_zero_left (continuation_cancel_right S' (ν := ν) hκ')]
+  abel
+
 /-- **The continuation sum is a cycle.** Let the composition maps be associative,
 `κ (ι (a, b), c) = κ (a, κ (b, c))`, `κ' (κ (a, b), c) = κ (a, κ' (b, c))` and
 `κ' (κ' (a, b), c) = κ' (a, ι' (b, c))`, and let `ν` be a family of chains of cohomological degrees
@@ -340,15 +392,10 @@ theorem cubicalChainDifferential_continuationChainSum
       continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x z) :
     cubicalChainDifferential (N x y) R
       (continuationChainSum ind indQ κ κ' R S.chain S'.chain ν x y) = 0 := by
-  rw [continuationChainSum_def, map_add, map_sum, map_sum]
-  simp only [map_zsmul_unit, fun z ↦ cubicalChainDifferential_continuation_left S S' hν (hl z),
-    fun z ↦ cubicalChainDifferential_continuation_right S S' hν (hr z), continuationChainSum_def,
-    map_add, map_sum, LinearMap.add_apply, LinearMap.sum_apply, LinearMap.smul_apply, smul_add,
-    Finset.sum_add_distrib]
-  have hregroup : ∀ a b c d e f : normalizedCubicalChainAlgebra (N x y) R,
-      a + (b + c) + (d + e + f) = (a + b) + (c + d) + (e + f) := fun _ _ _ _ _ _ ↦ by abel
-  rw [hregroup, continuation_cancel_left S hκ, continuation_cancel_middle S S' hκκ',
-    continuation_cancel_right S' hκ', add_zero, add_zero]
+  rw [cubicalChainDifferential_continuationChainSum_of_eq_add S S' (e := 0) hν
+    (fun _ _ ↦ zero_mem _) hκ hκκ' hκ' (fun z h₁ h₂ ↦ (hl z h₁ h₂).trans (zero_add _).symm)
+    (fun z h₁ h₂ ↦ (hr z h₁ h₂).trans (zero_add _).symm)]
+  simp
 
 end Cycle
 
