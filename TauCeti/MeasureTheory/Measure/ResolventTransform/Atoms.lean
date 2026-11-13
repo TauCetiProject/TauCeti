@@ -96,4 +96,10 @@ theorem tendsto_mul_im_resolventTransform (a : ℝ) :
   rw [heq] at hlim
   simpa only [mul_im_resolventTransform] using hlim
 
+/-- At an atomless point, the rescaled imaginary part of the resolvent transform tends to zero. -/
+theorem tendsto_mul_im_resolventTransform_of_nullSingletonClass [NullSingletonClass μ] (a : ℝ) :
+    Tendsto (fun η : ℝ => η * (resolventTransform μ ((a : ℂ) + η * I)).im)
+      (𝓝[>] 0) (𝓝 0) := by
+  simpa [Measure.real] using (tendsto_mul_im_resolventTransform (μ := μ) a)
+
 end MeasureTheory

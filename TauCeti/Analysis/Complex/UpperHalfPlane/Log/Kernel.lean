@@ -5,72 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
 
 /-!
 # Logarithmic kernels in the upper half-plane
 
-Points in a suitable ball around an upper-half-plane point remain above a horizontal line.
-This yields a uniform bound on the reciprocal kernel, while the logarithmic kernel is
-continuous in its real argument. A logarithmic bound also controls its approach to the real
-axis on a compact interval.
+The logarithmic kernel is continuous in its real argument when its complex parameter is in the
+upper half-plane. A logarithmic bound also controls its approach to the real axis for bounded real
+arguments and imaginary offsets of magnitude at most one.
 -/
 
 public section
 
-open Complex Set
-
 namespace TauCeti
 
-/-- A point in the upper half-plane is not real. -/
-theorem ofReal_ne_of_im_pos {z : ℂ} (hz : 0 < z.im) (y : ℝ) : (y : ℂ) ≠ z := by
-  intro h
-  have him := congrArg Complex.im h
-  simp at him
-  linarith
-
-/-- A point in the upper half-plane is not in the range of the real embedding. -/
-theorem not_mem_range_ofReal_of_im_pos {z : ℂ} (hz : 0 < z.im) :
-    z ∉ Set.range (algebraMap ℝ ℂ) := by
-  rintro ⟨x, hx⟩
-  exact ofReal_ne_of_im_pos hz x hx
-
-/-- A ball of radius `z.im / 2` around `z` stays above height `z.im / 2`. -/
-theorem im_gt_of_mem_ball {z w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2)) :
-    z.im / 2 < w.im := by
-  rw [Metric.mem_ball, dist_eq_norm] at hw
-  have h := Complex.abs_im_le_norm (w - z)
-  simp only [Complex.sub_im] at h
-  have := neg_abs_le (w.im - z.im)
-  linarith
-
-/-- The reciprocal kernel is uniformly bounded in a ball inside the upper half-plane. -/
-theorem norm_inv_sub_le {z : ℂ} (hz : 0 < z.im) {w : ℂ}
-    (hw : w ∈ Metric.ball z (z.im / 2)) (y : ℝ) : ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / z.im := by
-  have h1 := im_gt_of_mem_ball hw
-  have h2 : w.im ≤ ‖w - (y : ℂ)‖ := by
-    have := Complex.abs_im_le_norm (w - (y : ℂ))
-    simp only [Complex.sub_im, Complex.ofReal_im, sub_zero] at this
-    exact (le_abs_self _).trans this
-  rw [norm_inv]
-  calc ‖w - (y : ℂ)‖⁻¹ ≤ (z.im / 2)⁻¹ := inv_anti₀ (by positivity) (by linarith)
-    _ = 2 / z.im := by field_simp
-
-/-- Subtracting a real number from an upper-half-plane point stays in the slit plane. -/
-theorem mem_slitPlane_sub {w : ℂ} (hw : 0 < w.im) (y : ℝ) :
-    (w - y : ℂ) ∈ Complex.slitPlane := by
-  rw [Complex.mem_slitPlane_iff]
-  right
-  simpa using hw.ne'
-
-/-- The logarithmic kernel is continuous as a function of its real argument. -/
-theorem continuous_log_sub {w : ℂ} (hw : 0 < w.im) :
+/-- The logarithmic kernel is continuous in its real argument for a point in the upper
+half-plane. -/
+theorem continuous_log_sub_of_im_pos {w : ℂ} (hw : 0 < w.im) :
     Continuous fun y : ℝ ↦ Complex.log (w - y) :=
-  continuous_iff_continuousAt.2 fun y ↦
-    ((by fun_prop : Continuous fun y : ℝ ↦ (w - y : ℂ)).continuousAt).clog (mem_slitPlane_sub hw y)
+  (by fun_prop : Continuous fun y : ℝ ↦ w - (y : ℂ)).clog
+    (sub_ofReal_mem_slitPlane_of_im_pos hw)
 
 /-- A bound for the logarithmic kernel near the real axis on a bounded set. -/
-theorem log_norm_sub_bound (x y ε R : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
+theorem norm_log_norm_add_mul_I_sub_le (x y ε R : ℝ) (hε : |ε| ≤ 1)
     (hy : |y| ≤ R) (hxy : y ≠ x) :
     ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤
       ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) := by
@@ -89,9 +47,9 @@ theorem log_norm_sub_bound (x y ε R : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
         push_cast
         ring
       _ ≤ ‖((x - y : ℝ) : ℂ)‖ + ‖(ε : ℂ) * Complex.I‖ := norm_add_le _ _
-      _ = |x - y| + ε := by
+      _ = |x - y| + |ε| := by
         rw [Complex.norm_real, Real.norm_eq_abs]
-        simp [abs_of_pos hεpos]
+        simp [Complex.norm_I]
       _ ≤ |x - y| + 1 := by linarith
   have hdiff_le : |x - y| ≤ |x| + R := by
     linarith [abs_sub x y]
