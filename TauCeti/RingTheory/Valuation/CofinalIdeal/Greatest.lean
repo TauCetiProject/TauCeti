@@ -55,8 +55,8 @@ positive powers propagates it across `√I = √J`, for every convex subgroup.
   presupposes.
 * `Valuation.exists_mem_valueSet_mem_characteristicSubgroupOfIdeal` and
   `Valuation.isLeast_characteristicSubgroupOfIdeal` : **Lemma 7.2's attainment and
-  minimality conclusions** for `cΓ_v(I)` — off the first branch and with `v` not identically zero
-  on `I`, it contains a value of `I` and is the least convex subgroup that does.
+  minimality conclusions** for `cΓ_v(I)` — with `v` not identically zero on `I`, it contains a
+  value of `I` (and, off the first branch, is the least convex subgroup that does).
 * `Valuation.characteristicSubgroup_le_characteristicSubgroupOfIdeal` : `cΓ_v(I)` always
   contains `cΓ_v`.
 * `Valuation.characteristicSubgroupOfIdeal_eq_top_iff` and
@@ -305,12 +305,12 @@ lives on `J` rather than on `I`. -/
 theorem isGreatestIdealCofinal_closure_singleton_of_span {v : Valuation A Γ₀}
     {I J : Ideal A} {T : Set A} {h : v.valueGroup} {n : ℕ}
     (hH : characteristicSubgroup v < TauCeti.ConvexSubgroup.closure {h})
-    (hspan : Ideal.span T = J) (hrad : I.radical = J.radical) (hlt : h < 1) (hn : n ≠ 0)
+    (hspan : Ideal.span T = J) (hrad : I.radical = J.radical) (hlt : h < 1)
     (hdom : ∀ t ∈ T, v.restrict t ≤ (h : v.ValueGroup₀))
     (hatt : h ^ n ∈ valueSet v I) :
     IsGreatest {K | IdealCofinalFor v K I} (TauCeti.ConvexSubgroup.closure {h}) := by
-  constructor
-  · -- membership: generators → J (ideal) → I (radical)
+  have hmem : IdealCofinalFor v (TauCeti.ConvexSubgroup.closure {h}) I := by
+    -- membership: generators → J (ideal) → I (radical)
     refine (idealCofinalFor_congr_of_radical_eq hrad).mpr ?_
     refine idealCofinalFor_of_span hH hspan fun t ht ↦ ?_
     by_cases h0 : v t = 0
@@ -318,10 +318,14 @@ theorem isGreatestIdealCofinal_closure_singleton_of_span {v : Valuation A Γ₀}
     · refine cofinalValueFor_closure_singleton_of_le h0 ?_ hlt
       have := hdom t ht
       rwa [v.restrict_eq_mk h0, WithZero.coe_le_coe] at this
-  · -- maximality: `h ^ n` is attained on `I`, and generates the same subgroup as `h`
-    intro K hK
-    have := le_closure_singleton_of_idealCofinalFor hatt hK
-    rwa [TauCeti.ConvexSubgroup.closure_singleton_pow hn] at this
+  refine ⟨hmem, fun K hK ↦ ?_⟩
+  -- maximality: `h ^ n` is attained on `I`, and generates the same subgroup as `h`
+  have := le_closure_singleton_of_idealCofinalFor hatt hK
+  -- `n = 0` is impossible: `1` cannot be a cofinal value
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact (idealCofinalFor_iff_forall_isCofinalElement.mp hK _ hatt).lt_one.ne (pow_zero h)
+  rwa [TauCeti.ConvexSubgroup.closure_singleton_pow hn] at this
 
 /-- Under Wedhorn's disjointness hypothesis the class of a generator stays out of `cΓ_v`: were
 it inside, so would be its `n`-th power, which is the class of `t ^ n ∈ I` — exactly the
@@ -379,7 +383,7 @@ private theorem exists_isGreatestIdealCofinal {v : Valuation A Γ₀} {I : Ideal
   refine ⟨TauCeti.ConvexSubgroup.closure {h}, ?_,
     (TauCeti.ConvexSubgroup.lt_closure_singleton hnot).le, h ^ n, hatt, hmem⟩
   refine isGreatestIdealCofinal_closure_singleton_of_span
-    (TauCeti.ConvexSubgroup.lt_closure_singleton hnot) hT hrad hlt hn0 ?_ hatt
+    (TauCeti.ConvexSubgroup.lt_closure_singleton hnot) hT hrad hlt ?_ hatt
   intro t ht
   rw [← hrestr]
   exact ht₀max t ht
@@ -448,19 +452,21 @@ theorem characteristicSubgroup_le_characteristicSubgroupOfIdeal (v : Valuation A
   · rw [characteristicSubgroupOfIdeal, dite_eq_right h]
     exact (exists_isGreatestIdealCofinal_of_not_meets hfg h).choose_spec.2.1
 
-/-- **`cΓ_v(I)` meets `v(I)`** — the attainment half of Wedhorn Lemma 7.2, on the branch where
-Definition 7.3 invokes it: some value of `I` lies in `cΓ_v(I)`.
+/-- **`cΓ_v(I)` meets `v(I)`** — the attainment half of Wedhorn Lemma 7.2: some value of `I`
+lies in `cΓ_v(I)`. On the first branch of Definition 7.3 this is the meeting itself.
 
 Nonvanishing cannot be dropped: if `v` vanishes identically on `I` then `valueSet v I` is empty
 and nothing meets it. -/
 theorem exists_mem_valueSet_mem_characteristicSubgroupOfIdeal {v : Valuation A Γ₀} {I : Ideal A}
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
-    (h : ¬ IdealMeetsCharacteristicSubgroup v I)
     (hne : ∃ a ∈ I, v a ≠ 0) :
     ∃ γ ∈ valueSet v I, γ ∈ characteristicSubgroupOfIdeal v I hfg := by
   classical
-  rw [characteristicSubgroupOfIdeal, dite_eq_right h]
-  exact (exists_isGreatestIdealCofinal_of_not_meets hfg h).choose_spec.2.2 hne
+  by_cases h : IdealMeetsCharacteristicSubgroup v I
+  · obtain ⟨γ, hγI, hγc⟩ := idealMeetsCharacteristicSubgroup_iff.mp h
+    exact ⟨γ, hγI, characteristicSubgroup_le_characteristicSubgroupOfIdeal v I hfg hγc⟩
+  · rw [characteristicSubgroupOfIdeal, dite_eq_right h]
+    exact (exists_isGreatestIdealCofinal_of_not_meets hfg h).choose_spec.2.2 hne
 
 /-- **`cΓ_v(I)` is the least convex subgroup meeting `v(I)`** — the minimality conclusion of
 Wedhorn Lemma 7.2, on the branch where Definition 7.3 invokes it.
@@ -473,7 +479,7 @@ theorem isLeast_characteristicSubgroupOfIdeal {v : Valuation A Γ₀} {I : Ideal
     (hne : ∃ a ∈ I, v a ≠ 0) :
     IsLeast {K | ∃ γ ∈ valueSet v I, γ ∈ K} (characteristicSubgroupOfIdeal v I hfg) :=
   isLeast_of_idealCofinalFor (isGreatestIdealCofinal_characteristicSubgroupOfIdeal hfg h).1
-    (exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg h hne)
+    (exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg hne)
 
 /-! ### Wedhorn Lemma 7.4 -/
 

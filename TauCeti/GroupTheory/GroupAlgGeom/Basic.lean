@@ -49,6 +49,8 @@ injectivity.
   and, for trivial `G`, `G[X] ≅ F(X)`, under which evaluation is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.GX.not_commute_inl_inr_of`: a nontrivial coefficient does not commute
   with a variable, so the inclusions of `G` and `F(X)` do not commute in `G[X]`.
+* `TauCeti.GroupAlgGeom.GHom.mem_range_of_pow_mem_range`: if a group with unique roots admits a
+  `G`-homomorphism back to `G`, the image of `G` in it is closed under roots.
 
 ## References
 
@@ -196,6 +198,36 @@ theorem symmOfBijective_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g
   apply h.1
   simp
 
+section Retraction
+
+variable [HasUniqueRoots H] {h : H} {n : ℕ}
+
+/-- A coefficient-preserving homomorphism `φ : H → G` from a group with unique roots back to the
+coefficients fixes the roots of coefficients: if `hⁿ` is a coefficient for some `n ≠ 0`, then
+`ιH (φ h) = h`. -/
+theorem coeff_apply_eq_self_of_pow_mem_range (φ : GHom ιH (.id G)) (hn : n ≠ 0)
+    (hh : h ^ n ∈ ιH.range) : ιH (φ h) = h := by
+  -- Both sides are `n`-th roots of `hⁿ`.
+  obtain ⟨g, hg⟩ := hh
+  refine pow_left_injective hn ?_
+  simp only [← map_pow, ← hg, map_coeff, MonoidHom.id_apply]
+
+/-- If a group `H` with unique roots admits a coefficient-preserving homomorphism back to the
+coefficients, then the image of the coefficients contains every element of `H` having a nonzero
+power in it. -/
+theorem mem_range_of_pow_mem_range (φ : GHom ιH (.id G)) (hn : n ≠ 0) (hh : h ^ n ∈ ιH.range) :
+    h ∈ ιH.range :=
+  ⟨φ h, φ.coeff_apply_eq_self_of_pow_mem_range hn hh⟩
+
+/-- A retract of a group with unique roots is closed under roots: if there is a retraction
+`φ : H → F` onto the subgroup `F`, that is, a homomorphism fixing `F` pointwise, then every `h`
+with `hⁿ ∈ F` for some `n ≠ 0` lies in `F`. -/
+theorem mem_of_pow_mem {F : Subgroup H} (φ : GHom F.subtype (.id F)) (hn : n ≠ 0)
+    (hh : h ^ n ∈ F) : h ∈ F := by
+  simpa using φ.mem_range_of_pow_mem_range hn (by simpa using hh)
+
+end Retraction
+
 end GHom
 
 /-! ### `G`-groups -/
@@ -327,6 +359,19 @@ values on the variables. -/
 theorem eval_eq_of_comp_inl {f : GX G X →* H} (hf : f.comp inl = ι) :
     eval ι (fun x => f (inr (FreeGroup.of x))) = f :=
   hf ▸ (eq_eval f).symm
+
+/-- If no coefficient survives, every word evaluates to `1` at the trivial tuple. -/
+@[simp]
+theorem eval_one_one : eval (1 : G →* H) (1 : X → H) = 1 :=
+  eval_eq_of_comp_inl (f := 1) rfl
+
+/-- In a commutative group a word is a constant times a homomorphism of the tuple of values, so
+evaluation is compatible with the operation `(u, v, w) ↦ u * v⁻¹ * w` on tuples. -/
+theorem eval_mul_inv_mul {A : Type*} [CommGroup A] (ι : G →* A) (u v w : X → A) (s : GX G X) :
+    eval ι (u * v⁻¹ * w) s = eval ι u s * (eval ι v s)⁻¹ * eval ι w s := by
+  have h : eval ι (u * v⁻¹ * w) = eval ι u * (eval ι v)⁻¹ * eval ι w :=
+    hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
+  simp [h]
 
 /-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
 theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
