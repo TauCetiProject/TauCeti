@@ -36,7 +36,7 @@ namespace TauCeti.Probability.IsMarkovChain
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
   [Countable S] [MeasurableSingletonClass S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ]
+  [IsMarkovKernel κ]
 
 /-- On an event known at time `n`, the future has the Markov-chain law whose initial
 measure is the restricted law of the current state. No normalization of that event
@@ -45,6 +45,7 @@ theorem map_processShift_restrict (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
     {A : Set Ω} (hA : MeasurableSet[ℱ n] A) :
     (μ.restrict A).map (processShift X n) =
       markovChainLaw ((μ.restrict A).map (X n)) κ := by
+  have := h.isFiniteMeasure
   -- Discrete topology is used only to invoke the natural-filtration characterization.
   let : TopologicalSpace S := ⊥
   let : DiscreteTopology S := ⟨rfl⟩
@@ -104,6 +105,7 @@ theorem condExp_processShift (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
     (hb : ∃ C : ℝ, ∀ w, ‖f w‖ ≤ C) :
     μ[fun ω => f (processShift X n ω) | ℱ n] =ᵐ[μ]
       fun ω => ∫ w, f w ∂κ.markovChainKernel (X n ω) := by
+  have := h.isFiniteMeasure
   obtain ⟨C, hC⟩ := hb
   have hshift := measurable_processShift (fun _ => h.adapted.measurable) (m := n)
   have hi (ν : Measure (ℕ → S)) [IsFiniteMeasure ν] : Integrable f ν :=

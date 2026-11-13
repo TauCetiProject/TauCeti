@@ -54,12 +54,13 @@ structure IsMarkovChain (ℱ : Filtration ℕ mΩ) (X : ℕ → Ω → S)
 namespace IsMarkovChain
 
 variable {ℱ 𝒢 : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
-  [IsFiniteMeasure μ] [IsMarkovKernel κ]
+  [IsMarkovKernel κ]
 
-omit [IsFiniteMeasure μ] in
-/-- A measure for which a Markov chain exists is finite: conditioning the constant function
-`1` is only consistent with its integral against a Markov kernel when `μ` is finite (or zero). -/
+/-- The measure of a Markov chain is finite. This supplies the finite-measure hypothesis of the
+conditional-expectation results about `IsMarkovChain ℱ X κ μ`, which therefore do not assume it. -/
 theorem isFiniteMeasure (h : IsMarkovChain ℱ X κ μ) : IsFiniteMeasure μ := by
+  -- Conditioning the constant function `1` is only consistent with its integral against a Markov
+  -- kernel when `μ` is finite (or zero).
   by_contra hμ
   have hint : ¬ Integrable (fun _ : Ω => (1 : ℝ)) μ := fun hi =>
     hμ ((integrable_const_iff.1 hi).resolve_left one_ne_zero)
@@ -72,7 +73,6 @@ theorem isFiniteMeasure (h : IsMarkovChain ℱ X κ μ) : IsFiniteMeasure μ := 
     simpa using this
   exact hμ (hzero ▸ inferInstance)
 
-omit [IsFiniteMeasure μ] in
 /-- The multi-step conditional law of a chain relative to its given filtration. This includes
 zero steps, when adaptation makes the tested current state measurable for the conditioning. -/
 theorem condExp_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ) {f : S → ℝ}
@@ -108,7 +108,6 @@ theorem condExp_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ) {f : S → ℝ}
       simpa only [Nat.add_assoc, heq] using
         htower.symm.trans ((condExp_congr_ae hstep).trans hind)
 
-omit [IsFiniteMeasure μ] in
 /-- The event form of the multi-step conditional law, including measurable sets that are not
 singletons. -/
 theorem condExp_indicator_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ)
@@ -125,6 +124,7 @@ theorem condExp_indicator_add (h : IsMarkovChain ℱ X κ μ) (n k : ℕ)
 This direction does not require independence from any additional information. -/
 theorem mono (h : IsMarkovChain ℱ X κ μ) (hle : 𝒢 ≤ ℱ) (hX : Adapted 𝒢 X) :
     IsMarkovChain 𝒢 X κ μ := by
+  have := h.isFiniteMeasure
   refine ⟨hX, fun n f hf hb => ?_⟩
   obtain ⟨C, hC⟩ := hb
   have hg : StronglyMeasurable[𝒢 n] (fun ω => ∫ y, f y ∂κ (X n ω)) :=
@@ -275,12 +275,7 @@ theorem hasLaw_markovChainLaw_iff_isMarkovChain_natural
       isMarkovChain_iff_prefix_recursion
         (Filtration.natural_eq_comap_prefix X hX)]
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · have hfin : IsFiniteMeasure μ := ⟨by
-      have hu := congrArg (fun m => m Set.univ) h.map_eq
-      simp only [Measure.map_apply_of_aemeasurable h.aemeasurable MeasurableSet.univ,
-        Set.preimage_univ] at hu
-      rw [hu]
-      exact measure_lt_top _ _⟩
+  · have hfin : IsFiniteMeasure μ := h.isFiniteMeasure
     exact (key hfin).1 h
   · exact (key h.2.isFiniteMeasure).2 h
 
