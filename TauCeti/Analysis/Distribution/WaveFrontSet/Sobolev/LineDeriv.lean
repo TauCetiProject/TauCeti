@@ -9,11 +9,12 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # The Sobolev wave front set of a derivative
 
-A derivative costs exactly one order of Sobolev regularity, microlocally as well: for a complex
+A derivative costs at most one order of Sobolev regularity, microlocally as well: for a complex
 distribution `T` on an open subset `Ω` of a finite-dimensional real inner product space, a direction
 `v` and a real `s`, the `H^(s - 1)` wave front set of `∂_{v} T` lies in the `H^s` wave front set of
 `T`. Iterating, an iterated derivative `∂^{m}` of order `n` maps `WF_s` into `WF_(s - n)`, and a
@@ -69,25 +70,20 @@ Sobolev weight: `⟨η⟩ ^ (s - 1) ‖2 π i ⟪v, η⟫‖ ≤ 2 π ‖v‖ �
 private theorem weight_mul_norm_two_mul_pi_mul_I_mul_inner_le (s : ℝ) (v η : E) :
     (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤
       2 * π * ‖v‖ * (1 + ‖η‖ ^ 2) ^ (s / 2) := by
-  have hpos : 0 < 1 + ‖η‖ ^ 2 := by positivity
   have hn : ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
     simp [abs_of_pos pi_pos]
-  -- `‖η‖ ≤ ⟨η⟩`, and `⟨η⟩ ^ (s - 1) ⟨η⟩ = ⟨η⟩ ^ s`.
-  have hη : ‖η‖ ≤ (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2) := by
-    rw [← Real.sqrt_eq_rpow]
-    exact Real.le_sqrt_of_sq_le (by linarith)
-  have hw : (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2) =
-      (1 + ‖η‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_add hpos]
-    ring_nf
-  rw [hn, ← hw]
-  have hinner : |⟪v, η⟫| ≤ ‖v‖ * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2) :=
-    (abs_real_inner_le_norm v η).trans (by gcongr)
+  -- `⟨η⟩ ^ (s - 1) ‖η‖ ≤ ⟨η⟩ ^ s`.
+  have hw := TauCeti.one_add_norm_sq_rpow_mul_norm_le η (s - 1)
+  rw [sub_add_cancel] at hw
+  rw [hn]
   calc (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * |⟪v, η⟫|)
-      ≤ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * (‖v‖ * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2))) := by
+      ≤ (1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (2 * π * (‖v‖ * ‖η‖)) := by
         gcongr
-    _ = 2 * π * ‖v‖ * ((1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2)) := by
+        exact abs_real_inner_le_norm v η
+    _ = 2 * π * ‖v‖ * ((1 + ‖η‖ ^ 2) ^ ((s - 1) / 2) * ‖η‖) := by
         ring
+    _ ≤ 2 * π * ‖v‖ * (1 + ‖η‖ ^ 2) ^ (s / 2) := by
+        gcongr
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
