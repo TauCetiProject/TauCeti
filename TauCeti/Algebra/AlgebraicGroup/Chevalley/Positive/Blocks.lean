@@ -72,7 +72,7 @@ theorem blockUnitriangular_of_mem_positivePoints {g : D.points A}
     simpa only [Subgroup.coe_inv, Matrix.coe_units_inv, Matrix.blockUnitriangular_iff] using hg.inv
 
 /-- On each entire weight space, a positive point has the identity matrix block. -/
-theorem coe_apply_eq_one_of_mem_positivePoints_of_weight_eq {g : D.points A}
+theorem coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq {g : D.points A}
     (hg : g ∈ D.positivePoints A) {i j : Fin D.dim} (hij : D.weight i = D.weight j) :
     ((g : Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A) i j =
       (1 : Matrix (Fin D.dim) (Fin D.dim) A) i j :=

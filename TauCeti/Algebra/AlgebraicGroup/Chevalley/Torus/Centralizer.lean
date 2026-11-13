@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
+import TauCeti.Algebra.Group.Subgroup.ModularLaw
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
@@ -16,16 +17,20 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 Over an infinite field, the actual character-lattice torus of a Chevalley datum is
 self-centralizing inside its Borel-type subgroup. Its centralizer in the positive subgroup
 is trivial. These are local inputs to the torus-centralizer calculation in the whole
-generated group; no assertion about elements outside the Borel subgroup is made here.
+generated group. `ChevalleyDatum.mem_centralizer_range_torusPoints_iff` characterizes
+centralizing elements of the whole point group by weight-space preservation, but containment
+of that centralizer in the Borel subgroup or torus is not proved here.
 
 Commuting with every torus point forces a matrix to preserve each weight space. Positive
-points act as the identity on each such space, by
-`ChevalleyDatum.coe_apply_eq_one_of_mem_positivePoints_of_weight_eq`. This proves the trivial
-intersection without root coordinates. The Borel calculation then uses its existing
-positive-times-torus factorization. The diagonal-family criterion
-`mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL` and the separation theorem
-`exists_torusCharacter_ne` supply the matrix argument. The infinite-field hypothesis is
-essential: over the field with two elements the torus has only one point.
+points have identity diagonal blocks on these spaces, by
+`ChevalleyDatum.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq`, so a positive
+point that also preserves every weight space equals `1`. This proves the trivial intersection
+without root coordinates. The Borel calculation then uses its existing positive-times-torus
+factorization and `Subgroup.inf_sup_assoc_of_le`. The diagonal-family criterion
+`mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL` supplies the matrix argument.
+The infinite-field hypothesis lets `exists_torusCharacter_ne` separate arbitrary distinct
+weights without root coordinates. Some hypothesis on the field is needed: over the field
+with two elements the torus has only one point.
 
 ## References
 
@@ -47,12 +52,11 @@ variable (K : Type v) [Field K] [Infinite K]
 /-- Over an infinite field, centralizing the actual torus means preserving every weight space.
 This allows arbitrary weight multiplicities and arbitrary character lattices. -/
 theorem mem_centralizer_range_torusPoints_iff (g : D.points K) :
-    g ∈ Subgroup.centralizer ((D.torusPoints K).range : Set (D.points K)) ↔
+    g ∈ Subgroup.centralizer (Set.range (D.torusPoints K)) ↔
       ∀ i j, D.weight i ≠ D.weight j →
         ((g : Matrix.GeneralLinearGroup (Fin D.dim) K) : Matrix (Fin D.dim) (Fin D.dim) K)
           i j = 0 := by
-  rw [MonoidHom.coe_range,
-    mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL
+  rw [mem_centralizer_range_iff_apply_eq_zero_of_coe_eq_diagGL
       (fun s => (D.coe_torusPoints K s).trans
         (kostantTorusMatrix_apply D.lattice D.basis D.coordinateWeight s))]
   constructor
@@ -72,9 +76,9 @@ theorem mem_centralizer_range_torusPoints_iff (g : D.points K) :
     exact hs (congrArg (torusCharacter s) hcoord)
 
 /-- No nonidentity positive point centralizes the actual torus over an infinite field. -/
-@[simp↓]
+@[simp]
 theorem positivePoints_inf_centralizer_range_torusPoints :
-    D.positivePoints K ⊓ Subgroup.centralizer ((D.torusPoints K).range : Set (D.points K)) =
+    D.positivePoints K ⊓ Subgroup.centralizer (Set.range (D.torusPoints K)) =
       ⊥ := by
   apply eq_bot_iff.mpr
   rintro g ⟨hg, hc⟩
@@ -83,33 +87,25 @@ theorem positivePoints_inf_centralizer_range_torusPoints :
   apply Units.ext
   ext i j
   by_cases hij : D.weight i = D.weight j
-  · simpa using D.coe_apply_eq_one_of_mem_positivePoints_of_weight_eq K hg hij
+  · simpa using D.coe_apply_eq_one_apply_of_mem_positivePoints_of_weight_eq K hg hij
   · have hne : i ≠ j := fun heq => hij (congrArg D.weight heq)
     simpa [Matrix.one_apply, hne] using
       (D.mem_centralizer_range_torusPoints_iff K g).mp hc i j hij
 
 /-- Inside the Borel-type subgroup, the actual torus is its own centralizer over an infinite
 field. This is not a statement about the centralizer in the whole point group. -/
-@[simp↓]
+@[simp]
 theorem borelSubgroup_inf_centralizer_range_torusPoints :
-    D.borelSubgroup K ⊓ Subgroup.centralizer ((D.torusPoints K).range : Set (D.points K)) =
+    D.borelSubgroup K ⊓ Subgroup.centralizer (Set.range (D.torusPoints K)) =
       (D.torusPoints K).range := by
   have hT : (D.torusPoints K).range ≤
-      Subgroup.centralizer ((D.torusPoints K).range : Set (D.points K)) :=
-    Subgroup.le_centralizer _
-  apply le_antisymm
-  · rintro g ⟨hg, hc⟩
-    obtain ⟨u, hu, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hg
-    have huc : u ∈ Subgroup.centralizer
-        ((D.torusPoints K).range : Set (D.points K)) := by
-      simpa using (Subgroup.centralizer _).mul_mem hc
-        ((Subgroup.centralizer _).inv_mem (hT ⟨s, rfl⟩))
-    have huone : u = 1 := by
-      apply Subgroup.mem_bot.mp
-      rw [← D.positivePoints_inf_centralizer_range_torusPoints K]
-      exact ⟨hu, huc⟩
-    rw [huone, one_mul]
-    exact ⟨s, rfl⟩
-  · exact le_inf (D.range_torusPoints_le_borelSubgroup K) hT
+      Subgroup.centralizer (Set.range (D.torusPoints K)) := by
+    simpa only [MonoidHom.coe_range] using Subgroup.le_centralizer (D.torusPoints K).range
+  rw [D.borelSubgroup_def, inf_comm,
+    ← Subgroup.inf_sup_assoc_of_le
+      (Subgroup.coe_mul_of_right_le_normalizer_left _ _
+        (D.range_torusPoints_le_normalizer_positivePoints K))
+      hT,
+    inf_comm, D.positivePoints_inf_centralizer_range_torusPoints K, bot_sup_eq]
 
 end TauCeti.DynkinType.ChevalleyDatum
