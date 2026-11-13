@@ -212,8 +212,8 @@ theorem sub_referenceField_mem_sobolevFields {x : ℂ → EuclideanSpace ℝ (Fi
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
     (f : ContDiffBump (0 : ℝ)) (k : ℕ) : x - referenceField f m ∈ sobolevFields k := by
   have hxi (i : Fin 4) : ContDiff ℝ ∞ (fun w ↦ x w i) := contDiff_euclidean.1 hx i
-  obtain ⟨K, hK⟩ := exists_norm_sub_referenceField_le_mul_exp ((hxi 0).differentiable (by simp))
-    ((hxi 1).differentiable (by simp)) ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
+  obtain ⟨K, hK⟩ := exists_norm_sub_referenceField_le_mul_exp (hxi 0).continuous
+    (hxi 1).continuous ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
     hlim hphase f (c := 1 / 4) (by norm_num)
   have hK0 : 0 ≤ K := by simpa using (norm_nonneg _).trans (hK 0)
   have hne : ∀ᶠ z in cocompact ℂ, sectionValue x z ≠ 0 :=
