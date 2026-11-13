@@ -35,6 +35,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
+* `TestFunction.map_lineDeriv_eq_zero_of_forall`: a continuous linear map killing a test function
+  along a line kills its directional derivative along that line.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -122,6 +124,18 @@ theorem lineDerivCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [
     rw [ContinuousLinearMap.coe_restrictScalars'] at hL
     rw [hL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars']
   · simp
+
+/-- If a continuous linear map `L` kills a test function along the line through `x` in the
+direction `v`, it kills the directional derivative of the test function at `x` in that direction.
+For instance, the derivative along `ℝ` of a complex test function real on `ℝ` is real on `ℝ`. -/
+theorem map_lineDeriv_eq_zero_of_forall {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    (L : F →L[ℝ] F') (φ : 𝓓(Ω, F)) {x v : E} (h : ∀ t : ℝ, L (φ (x + t • v)) = 0) :
+    L (lineDeriv ℝ (φ : E → F) x v) = 0 := by
+  have hL := congrFun (congrArg DFunLike.coe
+    (lineDerivCLM_postcompCLM (n := ⊤) (k := ⊤) L v φ)) x
+  simp only [coe_lineDerivCLM, postcompCLM_apply, Function.comp_apply] at hL
+  rw [← hL, lineDeriv]
+  simp [h]
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/

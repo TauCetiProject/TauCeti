@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -62,6 +63,9 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 
 * `TestFunction.enorm_integral_inner_le_withDensity`: the pairing of a test field supported in `U`
   and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
+
+* `TestFunction.tendsto_integral_smul_of_tendsto_setIntegral_norm_sub`: `L¹` convergence on the
+  compact subsets of `Ω` passes to the pairings `∫ ψ • ws i` with a scalar test function `ψ`.
 
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
@@ -221,6 +225,36 @@ theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonem
     exact inv_mul_cancel₀ hpos.ne'
 
 end IntegralOne
+
+section Limits
+
+open Filter Topology
+
+variable [OpensMeasurableSpace E] {μ : Measure E}
+
+/-- If `ws i → w` in `L¹` on every compact subset of `Ω`, then the pairings with a scalar test
+function converge: `∫ ψ • ws i → ∫ ψ • w`. The approximants need only be eventually locally
+integrable. -/
+theorem tendsto_integral_smul_of_tendsto_setIntegral_norm_sub {𝕜 ι : Type*} [RCLike 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {l : Filter ι} {ws : ι → E → F} {w : E → F}
+    (hws : ∀ᶠ i in l, LocallyIntegrableOn (ws i) Ω μ) (hw : LocallyIntegrableOn w Ω μ)
+    (ht : ∀ K ⊆ (Ω : Set E), IsCompact K → Tendsto (fun i ↦ ∫ x in K, ‖ws i x - w x‖ ∂μ) l (𝓝 0))
+    (ψ : 𝓓(Ω, 𝕜)) :
+    Tendsto (fun i ↦ ∫ x, ψ x • ws i x ∂μ) l (𝓝 (∫ x, ψ x • w x ∂μ)) := by
+  have hint {f : E → F} (hf : LocallyIntegrableOn f Ω μ) : Integrable (fun x ↦ ψ x • f x) μ :=
+    ψ.integrable_bilin (ContinuousLinearMap.lsmul ℝ 𝕜 : 𝕜 →L[ℝ] F →L[ℝ] F) hf
+  obtain ⟨C, hC⟩ := ψ.continuous.bounded_above_of_compact_support ψ.hasCompactSupport
+  refine TauCeti.MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
+    (s := tsupport (ψ : E → 𝕜)) (ae_of_all _ hC)
+    (ae_of_all _ fun _ hx ↦ image_eq_zero_of_notMem_tsupport hx)
+    (hws.mono fun i hi ↦ hint hi) (hint hw).aestronglyMeasurable ?_
+  refine TauCeti.MeasureTheory.tendsto_lintegral_enorm_of_tendsto_integral_norm ?_
+    (ht _ ψ.tsupport_subset ψ.hasCompactSupport)
+  filter_upwards [hws] with i hi
+  exact (hi.integrableOn_compact_subset ψ.tsupport_subset ψ.hasCompactSupport).sub
+    (hw.integrableOn_compact_subset ψ.tsupport_subset ψ.hasCompactSupport)
+
+end Limits
 
 section LineDeriv
 

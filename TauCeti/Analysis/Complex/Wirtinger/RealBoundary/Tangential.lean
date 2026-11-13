@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
+public import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.Translation
+import TauCeti.Analysis.Green.HalfPlane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 
 /-!
@@ -33,6 +36,8 @@ by parts in `s` produces no boundary term.
 
 ## Main results
 
+* `ContDiffOn.hasWeakLineDerivOn_restrict_im_nonneg_one`: a map of class `C¹` on `Ω` has its
+  classical tangential derivative as tangential weak derivative up to the boundary.
 * `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.comp_add_ofReal`: real translation
   invariance.
 * `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.differenceQuotient`: tangential difference
@@ -42,12 +47,12 @@ by parts in `s` produces no boundary term.
   `∂_s η` up to the boundary, then `∂_s ξ` solves `\bar∂ (∂_s ξ) = ∂_s η` with the real boundary
   condition.
   Combined with the weak Schwarz reflection
-  `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflection`, this
-  gives `\bar∂ (R ∂_s ξ) = R ∂_s η` on the doubled domain.
-* Checks: `z²` and its tangential derivative `2z` are solutions with `η = 0`, while `i z` and its
-  tangential derivative `i`, which are not real on `ℝ`, are not. These follow from the holomorphic
-  criteria `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_of_differentiableOn` and
-  `TauCeti.not_hasWeakConjWirtingerDerivRealBoundaryOn_of_im_pos`.
+  `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflection` of
+  `Analysis/Complex/Wirtinger/RealBoundary/Reflection.lean`, this gives
+  `\bar∂ (R ∂_s ξ) = R ∂_s η` on the doubled domain.
+* Check: the tangential derivative `2z` of the solution `z²` is again a solution with `η = 0`,
+  obtained from `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_sq` through
+  `HasWeakConjWirtingerDerivRealBoundaryOn.weakLineDeriv_one`.
 
 This is the constant-structure model `J = i`, `S = 0` of the tangential step of
 McDuff–Salamon, Lemma B.4.6 and Proposition B.4.9.
@@ -77,20 +82,6 @@ private theorem crTest_apply (χ : 𝓓(Ω, ℂ)) (z : ℂ) :
     crTest χ z = lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I := by
   simp [crTest]
 
-/-- The tangential derivative of a test function real on `ℝ` is real on `ℝ`. -/
-private theorem im_lineDeriv_one_eq_zero (χ : 𝓓(Ω, ℂ)) (hχ : ∀ x : ℝ, (χ (x : ℂ)).im = 0)
-    (x : ℝ) : (lineDeriv ℝ (χ : ℂ → ℂ) (x : ℂ) 1).im = 0 := by
-  have hd : HasLineDerivAt ℝ (χ : ℂ → ℂ) (lineDeriv ℝ (χ : ℂ → ℂ) (x : ℂ) 1) (x : ℂ) 1 :=
-    (χ.contDiff.differentiable (by simp) _).lineDifferentiableAt.hasLineDerivAt
-  have h2 : HasDerivAt (fun t : ℝ ↦ (χ ((x : ℂ) + t • (1 : ℂ))).im)
-      (lineDeriv ℝ (χ : ℂ → ℂ) (x : ℂ) 1).im 0 := by
-    simpa only [Function.comp_def, Complex.imCLM_apply] using
-      Complex.imCLM.hasFDerivAt.comp_hasDerivAt _ hd
-  have h3 : (fun t : ℝ ↦ (χ ((x : ℂ) + t • (1 : ℂ))).im) = fun _ ↦ 0 :=
-    funext fun t ↦ by simpa using hχ (x + t)
-  rw [h3] at h2
-  exact h2.unique (hasDerivAt_const _ _)
-
 variable [StarAddMonoid F] [StarModule ℂ F] {ξ η ξ' η' : ℂ → F}
 
 /-- The weak real-boundary equation, stated with `crTest`. -/
@@ -99,7 +90,7 @@ private theorem HasWeakConjWirtingerDerivRealBoundaryOn.crTest_eq
     (hχ : ∀ x : ℝ, (χ (x : ℂ)).im = 0) :
     ℜ (∫ z in {z : ℂ | 0 ≤ z.im}, crTest χ z • ξ z) =
       -(2 : ℝ) • ℜ (∫ z in {z : ℂ | 0 ≤ z.im}, χ z • η z) := by
-  simpa only [crTest_apply] using (hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h).2.2.2 χ hχ
+  simpa only [crTest_apply] using h.realPart_setIntegral_eq χ hχ
 
 /-- A constructor for the weak real-boundary equation, stated with `crTest`. -/
 private theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_crTest [CompleteSpace F]
@@ -112,6 +103,50 @@ private theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_crTest [CompleteSpace
   hasWeakConjWirtingerDerivRealBoundaryOn_iff.2
     ⟨‹_›, hξ, hη, fun χ hχ ↦ by simpa only [crTest_apply] using hw χ hχ⟩
 
+omit [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F] in
+/-- **Classical tangential derivatives up to the boundary.** A map `f` of class `C¹` on `Ω` has
+its classical derivative `∂_s f` in the direction `1` as weak derivative in that direction for the
+Lebesgue measure restricted to `{0 ≤ im}`, tested against all test functions on `Ω`. -/
+theorem _root_.ContDiffOn.hasWeakLineDerivOn_restrict_im_nonneg_one {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {f : ℂ → G}
+    (hf : ContDiffOn ℝ 1 f Ω) :
+    HasWeakLineDerivOn (volume.restrict {z : ℂ | 0 ≤ z.im}) Ω f (fun z ↦ fderiv ℝ f z 1) 1 := by
+  have hH : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const Complex.continuous_im
+  have hD : ContinuousOn (fun z ↦ fderiv ℝ f z 1) Ω :=
+    (hf.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).clm_apply continuousOn_const
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
+    ((hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet).mono_set
+      inter_subset_left).restrict_of_inter Ω.isOpen hH,
+    ((hD.locallyIntegrableOn Ω.isOpen.measurableSet).mono_set
+      inter_subset_left).restrict_of_inter Ω.isOpen hH, fun φ ↦ ?_⟩
+  set L : G →L[ℝ] ℝ →L[ℝ] G := (ContinuousLinearMap.lsmul ℝ ℝ).flip
+  set g : ℂ → G := fun z ↦ L (f z) (φ z)
+  have hg : ContDiff ℝ 1 g := L.contDiff_of_tsupport_subset_right hf
+    (φ.contDiff.of_le (by simp)).contDiffOn Ω.isOpen φ.tsupport_subset
+  have hgc : HasCompactSupport g := φ.hasCompactSupport.mono fun z hz h0 ↦ hz (by simp [g, h0])
+  have hgd (z : ℂ) :
+      fderiv ℝ g z 1 = lineDeriv ℝ (φ : ℂ → ℝ) z 1 • f z + φ z • fderiv ℝ f z 1 := by
+    rw [L.fderiv_of_tsupport_subset_right (hf.differentiableOn one_ne_zero)
+      (φ.contDiff.differentiable (by simp)) Ω.isOpen φ.tsupport_subset, φ.lineDeriv_eq_fderiv]
+    simp [L]
+  have hint : Integrable fun z ↦ fderiv ℝ g z 1 :=
+    ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
+      (hgc.fderiv_apply (𝕜 := ℝ) 1)
+  have hint' : Integrable fun z ↦ φ z • fderiv ℝ f z 1 :=
+    ((φ.continuous.continuousOn.smul hD).continuous_of_tsupport_subset Ω.isOpen
+      ((tsupport_smul_subset_left _ _).trans φ.tsupport_subset)).integrable_of_hasCompactSupport
+      (φ.hasCompactSupport.mono fun z hz h0 ↦ hz (by simp [h0]))
+  have hpt (z : ℂ) :
+      lineDeriv ℝ (φ : ℂ → ℝ) z 1 • f z = fderiv ℝ g z 1 - φ z • fderiv ℝ f z 1 := by
+    rw [hgd, add_sub_cancel_right]
+  have hae : {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} :=
+    (Complex.setOf_le_im_ae_eq 0).symm
+  simp_rw [hpt]
+  rw [← setIntegral_congr_set hae, ← setIntegral_congr_set hae,
+    integral_sub (f := fun z ↦ fderiv ℝ g z 1) (g := fun z ↦ φ z • fderiv ℝ f z 1)
+      hint.integrableOn hint'.integrableOn,
+    setIntegral_im_pos_fderiv_one_eq_zero hg hgc, zero_sub]
+
 namespace HasWeakConjWirtingerDerivRealBoundaryOn
 
 /-! ### Real translations and difference quotients -/
@@ -121,11 +156,12 @@ the weak real-boundary equation on `Ω'` with right-hand side `z ↦ η (z + a)`
 theorem comp_add_ofReal (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (a : ℝ)
     (hΩ' : MapsTo (· + (a : ℂ)) Ω' Ω) :
     HasWeakConjWirtingerDerivRealBoundaryOn Ω' (fun z ↦ ξ (z + a)) (fun z ↦ η (z + a)) := by
-  obtain ⟨hF, hξ, hη, -⟩ := hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h
+  have := h.completeSpace
   have hmaps : MapsTo (· + (a : ℂ)) ((Ω' : Set ℂ) ∩ {z | 0 ≤ z.im})
       ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := fun y hy ↦ ⟨hΩ' hy.1, by simpa using hy.2⟩
   refine hasWeakConjWirtingerDerivRealBoundaryOn_of_crTest
-    (hξ.comp_add_right_of_mapsTo hmaps) (hη.comp_add_right_of_mapsTo hmaps) fun χ hχ ↦ ?_
+    (h.locallyIntegrableOn.comp_add_right_of_mapsTo hmaps)
+    (h.locallyIntegrableOn_deriv.comp_add_right_of_mapsTo hmaps) fun χ hχ ↦ ?_
   set χ' : 𝓓(Ω, ℂ) := translateTestFunction hΩ' χ
   have hχ' : ∀ x : ℝ, (χ' (x : ℂ)).im = 0 := fun x ↦ by
     simpa [χ'] using hχ (x - a)
@@ -165,13 +201,14 @@ theorem weakLineDeriv_one (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
     (hξ : HasWeakLineDerivOn (volume.restrict {z : ℂ | 0 ≤ z.im}) Ω ξ ξ' 1)
     (hη : HasWeakLineDerivOn (volume.restrict {z : ℂ | 0 ≤ z.im}) Ω η η' 1) :
     HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ' η' := by
-  have hF := (hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h).1
+  have := h.completeSpace
   refine hasWeakConjWirtingerDerivRealBoundaryOn_of_crTest
     hξ.locallyIntegrableOn_deriv.inter_of_restrict hη.locallyIntegrableOn_deriv.inter_of_restrict
     fun χ hχ ↦ ?_
   have hχs : ∀ x : ℝ, ((∂_{(1 : ℂ)} χ : 𝓓(Ω, ℂ)) (x : ℂ)).im = 0 := fun x ↦ by
     rw [TestFunction.lineDerivOp_apply]
-    exact im_lineDeriv_one_eq_zero χ hχ x
+    exact TestFunction.map_lineDeriv_eq_zero_of_forall Complex.imCLM χ fun t ↦ by
+      simpa using hχ (x + t)
   have key := h.crTest_eq (∂_{(1 : ℂ)} χ) hχs
   have hcomm (z : ℂ) : lineDeriv ℝ (crTest χ : ℂ → ℂ) z 1 = crTest (∂_{(1 : ℂ)} χ) z := by
     rw [← TestFunction.lineDerivOp_apply, crTest, crTest, LineDeriv.lineDerivOp_add,
@@ -186,32 +223,16 @@ end HasWeakConjWirtingerDerivRealBoundaryOn
 
 /-! ### Checks -/
 
-/-- **Check.** `z ↦ z²` is real on `ℝ` and solves the weak real-boundary equation with `η = 0`. -/
-theorem hasWeakConjWirtingerDerivRealBoundaryOn_sq :
-    HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun z : ℂ ↦ z ^ 2) 0 :=
-  hasWeakConjWirtingerDerivRealBoundaryOn_of_differentiableOn
-    (differentiable_id.pow 2).differentiableOn fun x _ ↦ by simp [pow_two]
-
-/-- **Check.** The tangential derivative `2z` of `z²` is again real on `ℝ` and solves the weak
-real-boundary equation with `η = 0`, as
-`HasWeakConjWirtingerDerivRealBoundaryOn.weakLineDeriv_one` predicts. -/
+/-- **Check.** The tangential derivative `2z` of the solution `z²` is again real on `ℝ` and solves
+the weak real-boundary equation with `η = 0`. -/
 theorem hasWeakConjWirtingerDerivRealBoundaryOn_two_mul :
-    HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun z : ℂ ↦ 2 * z) 0 :=
-  hasWeakConjWirtingerDerivRealBoundaryOn_of_differentiableOn
-    ((differentiable_const 2).mul differentiable_id).differentiableOn fun x _ ↦ by simp
-
-/-- **Check.** `z ↦ i z` is holomorphic but imaginary on `ℝ`, and does not solve the weak
-real-boundary equation on any `Ω` meeting the positive real axis. -/
-theorem not_hasWeakConjWirtingerDerivRealBoundaryOn_I_mul {x : ℝ} (hx : (x : ℂ) ∈ Ω)
-    (hx0 : 0 < x) : ¬ HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun z : ℂ ↦ I * z) 0 :=
-  not_hasWeakConjWirtingerDerivRealBoundaryOn_of_im_pos
-    ((differentiable_const I).mul differentiable_id).differentiableOn hx (by simpa using hx0)
-
-/-- **Check.** The tangential derivative `i` of `i z` does not solve the weak real-boundary
-equation either, on any `Ω` meeting `ℝ`. -/
-theorem not_hasWeakConjWirtingerDerivRealBoundaryOn_const_I {x : ℝ} (hx : (x : ℂ) ∈ Ω) :
-    ¬ HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun _ : ℂ ↦ I) 0 :=
-  not_hasWeakConjWirtingerDerivRealBoundaryOn_of_im_pos
-    (differentiable_const I).differentiableOn hx (by simp)
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun z : ℂ ↦ 2 * z) 0 := by
+  have hd (z : ℂ) : fderiv ℝ (fun w : ℂ ↦ w ^ 2) z 1 = 2 * z := by
+    rw [((hasDerivAt_pow 2 z).hasFDerivAt.restrictScalars ℝ).fderiv]
+    simp
+  have h := hasWeakConjWirtingerDerivRealBoundaryOn_sq.weakLineDeriv_one
+    (by fun_prop : ContDiffOn ℝ 1 (fun w : ℂ ↦ w ^ 2) Ω).hasWeakLineDerivOn_restrict_im_nonneg_one
+    (hasWeakLineDerivOn_zero (μ := volume.restrict {z : ℂ | 0 ≤ z.im}) (Ω := Ω))
+  simpa only [hd] using h
 
 end TauCeti
