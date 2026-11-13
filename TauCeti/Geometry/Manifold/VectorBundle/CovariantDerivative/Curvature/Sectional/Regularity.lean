@@ -17,8 +17,7 @@ regularity on a parameter set, so they apply both to local frames and to familie
 Independence is needed only at the point in the pointwise statements. No regularity is
 asserted for the quotient's junk values at dependent pairs.
 
-The proof uses the native smooth curvature tensor `curvatureTensorCLM`, smooth evaluation
-in Hom bundles, and the Gram determinant. No frame or Grassmannian carrier is chosen.
+No frame or Grassmannian carrier is chosen.
 The convention and quotient follow J. M. Lee, *Introduction to Riemannian Manifolds*,
 second edition, Chapter 8.
 -/
