@@ -56,6 +56,7 @@ the unit tangent vector at every time.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`, `TauCeti.homotopyOperator_sub`: `h` is additive on continuous
   forms.
+* `TauCeti.homotopyOperator_mpullback_fst`: `h` kills forms pulled back from `M`.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
   a map `g` with invertible derivatives.
 * `TauCeti.homotopyOperator_mpullback_prodMap_id_of_isSmoothForm`: the same for a continuous form
@@ -158,6 +159,17 @@ theorem homotopyOperator_smul (c : ℝ)
   funext x
   -- The integrand of `c • φ` is `c` times the integrand of `φ`.
   exact intervalIntegral.integral_smul (μ := volume) (a := 0) (b := 1) c (homotopyIntegrand φ x)
+
+/-- The homotopy operator kills every form pulled back from `M` along the projection
+`M × [0, 1] → M`: such a form vanishes on the unit time vector `∂ₜ`. -/
+@[simp]
+theorem homotopyOperator_mpullback_fst (φ : RoughForm I M F (k + 1)) :
+    homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I Prod.fst φ) = 0 := by
+  funext x
+  refine homotopyOperator_apply_eq_zero fun t v ↦ ?_
+  rw [mpullback_apply, mfderiv_fst]
+  -- The projection sends the first vector `∂ₜ = (0, 1)` to `0`.
+  exact (φ x).map_coord_zero 0 rfl
 
 /-- The integrand of the homotopy operator of a pullback along `g × id` is the integrand at the
 image point, evaluated on the images of the vectors under the derivative of `g`. -/
@@ -520,7 +532,7 @@ theorem mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv [IsManifold I 
       eventually_of_mem self_mem_nhdsWithin fun y hy ↦ inChartAt_homotopyOperator x₀ hsub hsu φ hy
     have hset : s =ᶠ[𝓝 (extChartAt I x₀ x₀)] range I := by
       filter_upwards [mem_nhdsWithin_iff_eventually.1 hsn] with y hy
-      exact propext ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
+      exact ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
     rw [mextDeriv_def, ← extDerivWithin_congr_set hset]
     exact heq.extDerivWithin_eq (heq.self_of_nhdsWithin hxs)
   -- `h (d φ)` at `x₀` is the cylinder homotopy operator of the flat exterior derivative of `η`.

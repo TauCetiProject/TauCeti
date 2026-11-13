@@ -58,6 +58,22 @@ theorem MeasureTheory.IsStronglyPredictable.add [Add E] [ContinuousAdd E]
   unfold IsStronglyPredictable at *
   exact hH.add hK
 
+/-- The product of two strongly predictable processes is strongly predictable. -/
+theorem MeasureTheory.IsStronglyPredictable.mul [Mul E] [ContinuousMul E]
+    (hH : IsStronglyPredictable ℱ H) (hK : IsStronglyPredictable ℱ K) :
+    IsStronglyPredictable ℱ (fun t ω ↦ H t ω * K t ω) := by
+  -- Uncurrying respects pointwise multiplication; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact hH.mul hK
+
+/-- Inversion, with zero sent to zero, preserves strong predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.inv₀ [GroupWithZero E] [ContinuousInv₀ E]
+    [MetrizableSpace E] (h : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ (H t ω)⁻¹) := by
+  -- Uncurrying respects pointwise inversion; predictability is strong measurability.
+  unfold IsStronglyPredictable at *
+  exact h.inv₀
+
 /-- Multiplication by a constant preserves strong predictability. -/
 theorem MeasureTheory.IsStronglyPredictable.const_mul [Mul E] [ContinuousMul E]
     (h : IsStronglyPredictable ℱ H) (c : E) :

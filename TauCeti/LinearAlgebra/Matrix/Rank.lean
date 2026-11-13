@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Matrix rank
@@ -28,6 +29,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
+  homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
@@ -117,8 +120,23 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
   let K := FractionRing R
   rw [← linearIndependent_map_algebraMap_row_iff (S := K),
     linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
-  simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    map_ne_zero_iff _ (IsFractionRing.injective R K)]
+  simp only [det_submatrix_map_ne_zero_iff (IsFractionRing.injective R K)]
+
+omit [Fintype m] [DecidableEq m] in
+/-- **Row independence lifts along a ring homomorphism of domains.** If the rows of `A.map f` are
+linearly independent over `S`, then the rows of `A` are linearly independent over `R`, for every
+ring homomorphism `f`, injective or not (for instance the reduction `ℤ → ZMod ℓ`): a nonzero
+maximal minor of `A.map f` lifts to a nonzero maximal minor of `A` on the same columns.
+`Matrix.linearIndependent_map_algebraMap_row_iff` is the converse for a faithful scalar extension
+to a domain. -/
+theorem linearIndependent_row_of_map {S : Type*} [Finite m] [CommRing R] [IsDomain R]
+    [CommRing S] [IsDomain S] (f : R →+* S) {A : Matrix m n R}
+    (h : LinearIndependent S (A.map f).row) : LinearIndependent R A.row := by
+  have := Fintype.ofFinite m
+  classical
+  obtain ⟨e, he⟩ := linearIndependent_row_iff_exists_det_submatrix_ne_zero.1 h
+  exact linearIndependent_row_iff_exists_det_submatrix_ne_zero.2
+    ⟨e, det_submatrix_ne_zero_of_map f he⟩
 
 omit [Fintype m] [DecidableEq m] [Finite n] in
 /-- **Rank and minors.** Over a field, a matrix has rank at least `p` exactly when one of its
@@ -159,8 +177,7 @@ its entries, since the images of its minors are the minors of its image. -/
 theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
     (φ : K →+* L) : (A.map φ).rank = A.rank :=
   eq_of_forall_le_iff fun p ↦ by
-    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det, map_ne_zero]
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, det_submatrix_map_ne_zero_iff φ.injective]
 
 omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
