@@ -40,6 +40,10 @@ variable {α : Type*} {m : ℕ}
 def cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) : Fin (k + 1) → α :=
   fun i ↦ w (Fin.ofNat k i.val)
 
+/-- Evaluate the path extension by reducing the index modulo the cyclic word's length. -/
+theorem cyclicPath_apply {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin (k + 1)) :
+    cyclicPath w i = w (Fin.ofNat k i.val) := (rfl)
+
 @[simp] theorem cyclicPath_castSucc {k : ℕ} [NeZero k] (w : Fin k → α) (i : Fin k) :
     cyclicPath w i.castSucc = w i := by
   simp [cyclicPath]
@@ -56,6 +60,30 @@ def cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) : Fin (k + 1) → α :=
 @[simp] theorem cyclicPath_last {k : ℕ} [NeZero k] (w : Fin k → α) :
     cyclicPath w (Fin.last k) = w 0 := by
   simp [cyclicPath]
+
+/-- Repeating the initial vertex at the endpoint preserves the set of visited vertices. -/
+@[simp] theorem range_cyclicPath {k : ℕ} [NeZero k] (w : Fin k → α) :
+    Set.range (cyclicPath w) = Set.range w := by
+  ext x
+  constructor
+  · rintro ⟨i, rfl⟩
+    exact ⟨Fin.ofNat k i.val, (cyclicPath_apply w i).symm⟩
+  · rintro ⟨i, rfl⟩
+    exact ⟨i.castSucc, cyclicPath_castSucc w i⟩
+
+/-- Vertex relabeling commutes with extending a cyclic word to a path. -/
+theorem comp_cyclicPath {β : Type*} {k : ℕ} [NeZero k] (f : α → β) (w : Fin k → α) :
+    f ∘ cyclicPath w = cyclicPath (f ∘ w) := (rfl)
+
+/-- The path extension determines the original cyclic word. -/
+@[simp] theorem cyclicPath_inj {k : ℕ} [NeZero k] {w₁ w₂ : Fin k → α} :
+    cyclicPath w₁ = cyclicPath w₂ ↔ w₁ = w₂ := by
+  constructor
+  · intro h
+    funext i
+    simpa only [cyclicPath_castSucc] using congrFun h i.castSucc
+  · rintro rfl
+    rfl
 
 variable [DecidableEq α]
 

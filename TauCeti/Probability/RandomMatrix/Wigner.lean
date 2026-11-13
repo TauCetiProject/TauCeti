@@ -38,7 +38,7 @@ and resolvent methods:
   law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * entries at distinct off-diagonal unordered positions, and their squared absolute values, are
   independent (`iIndepFun_wignerMatrix_apply_of_ne`,
-  `iIndepFun_norm_wignerMatrix_apply_sq`);
+  `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
@@ -351,7 +351,7 @@ theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → 
 /-- Squared absolute values of entries at distinct unordered off-diagonal positions are
 independent whenever the upper-triangular coordinates are independent. No condition is needed
 on the diagonal entries. -/
-theorem iIndepFun_norm_wignerMatrix_apply_sq {ι : Type*} {n : ℕ} (u v : ι → Fin n)
+theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
     (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
     (hindep : iIndepFun ξ P) :
     iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P :=

@@ -191,7 +191,7 @@ private noncomputable def discoveryFactor (v : Fin (2 * m + 1) → Fin n)
 private theorem indep_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
     (hindep : iIndepFun ξ P) :
     iIndepFun (discoveryFactor (ξ := ξ) (η := η) v) P :=
-  iIndepFun_norm_wignerMatrix_apply_sq _ _
+  iIndepFun_norm_wignerMatrix_apply_sq_of_ne _ _
     (fun i ↦ ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2)
     (fun i j hij ↦ Subtype.ext (injOn_edge_setOf_canonicalWalk_succ_eq v
       (mem_filter.mp i.property).2 (mem_filter.mp j.property).2 hij)) hindep
@@ -281,6 +281,25 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
   rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, hv,
     Nat.add_sub_cancel]
   simp only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast]
+
+/-- A leading cyclic Wigner word is integrable when the upper entries are independent
+and their squared absolute values are integrable. The diagonal entries may be arbitrary. -/
+theorem integrable_prod_wignerMatrix_apply_leading
+    (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hindep : iIndepFun ξ P)
+    (w : Fin (2 * m) → Fin n)
+    (h : ∀ i, ∃ j ≠ i,
+      s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
+    (hv : #(univ.image w) = m + 1) :
+    Integrable (fun ω ↦ ∏ i,
+      wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i))) P := by
+  have hm : m ≠ 0 := by
+    rintro rfl
+    simp at hv
+  have := NeZero.mk hm
+  have hp := integrable_prod_wignerMatrix_apply_path
+    (η := η) hξ hindep (cyclicPath w) (by simp) (by simpa using hv)
+    (card_edge_fiber_cyclicPath w h hv)
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using hp
 
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
