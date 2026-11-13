@@ -122,8 +122,9 @@ private theorem coefficient_sub_sum_sharpTerm_left_congr {a : Symbol n V W m} {N
 
 /-- The correction step for left parametrix symbols: if `r = 1 - ∑_{k < N} sharpTerm b a k` has
 order `-N` and `t` is `(r - sharpTerm b a N) (b₀ a - 1)` at order `-N - 1`, then changing `b` by
-the symbol `d = (r - sharpTerm b a N) b₀` of order `-m - N` makes the sum over `k ≤ N` equal to
-`1 + t + ∑_{k < N} sharpTerm d a (k + 1)`, of order `-N - 1`. -/
+the symbol `d = (r - sharpTerm b a N) b₀` of order `-m - N` makes the new remainder
+`1 - ∑_{k ≤ N} sharpTerm (b + d) a k` equal to `-t - ∑_{k < N} sharpTerm d a (k + 1)`, which has
+order `-N - 1`. -/
 private theorem exists_coefficient_sub_sum_sharpTerm_left_succ {a : Symbol n V W m}
     {b₀ : Symbol n W V (-m)} {N : ℕ} {b : Symbol n W V (-m)} {r : Symbol n V V (-m + m - N)}
     (hr : (const (.id ℂ V) : Symbol n V V 0).coefficient -
@@ -256,8 +257,9 @@ private theorem coefficient_sub_sum_sharpTerm_right_congr {a : Symbol n V W m} {
 
 /-- The correction step for right parametrix symbols: if `r = 1 - ∑_{k < N} sharpTerm a b k` has
 order `-N` and `t` is `(a b₀ - 1) (r - sharpTerm a b N)` at order `-N - 1`, then changing `b` by
-the symbol `d = b₀ (r - sharpTerm a b N)` of order `-m - N` makes the sum over `k ≤ N` equal to
-`1 + t + ∑_{k < N} sharpTerm a d (k + 1)`, of order `-N - 1`. -/
+the symbol `d = b₀ (r - sharpTerm a b N)` of order `-m - N` makes the new remainder
+`1 - ∑_{k ≤ N} sharpTerm a (b + d) k` equal to `-t - ∑_{k < N} sharpTerm a d (k + 1)`, which has
+order `-N - 1`. -/
 private theorem exists_coefficient_sub_sum_sharpTerm_right_succ {a : Symbol n V W m}
     {b₀ : Symbol n W V (-m)} {N : ℕ} {b : Symbol n W V (-m)} {r : Symbol n W W (m + -m - N)}
     (hr : (const (.id ℂ W) : Symbol n W W 0).coefficient -

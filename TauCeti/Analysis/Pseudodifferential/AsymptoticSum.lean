@@ -307,14 +307,6 @@ private theorem contDiff_borelSum (χ : FrequencyCutoff (CoordinateSpace n)) {t 
       ContDiff.sum fun j _ => (a j).contDiff_cutoff_smul_coefficient χ (t j)
   exact hs.contDiffAt.congr_of_eventuallyEq (borelSum_eventuallyEq χ ht a hJ)
 
-/-- A compact set of positions lies in the balls of radius `j` for all large `j`. -/
-private theorem eventually_subset_closedBall_of_isCompact {K : Set (CoordinateSpace n)}
-    (hK : IsCompact K) : ∀ᶠ j : ℕ in atTop, K ⊆ closedBall 0 j := by
-  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
-  obtain ⟨JK, hJK⟩ := exists_nat_ge r
-  filter_upwards [eventually_ge_atTop JK] with j hj
-  exact hr.trans (closedBall_subset_closedBall (hJK.trans (by exact_mod_cast hj)))
-
 /-- Given orders `mⱼ → -∞`, an index `N`, sets `Sⱼ` of positions which eventually contain a set
 `K`, and words `α`, `β`, there is `j₁ ≥ N` such that for every `j ≥ j₁`, a function that is at
 most `2^{-j}` in the estimates of order `mⱼ + 1` for the derivatives of length at most `j` on `Sⱼ`
@@ -460,8 +452,10 @@ private theorem exists_norm_mixedDeriv_borelSum_sub_le (χ : FrequencyCutoff (Co
       ‖mixedDeriv α β (borelSum χ t a - ∑ j ∈ Finset.range N, (a j).coefficient) x ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m N - β.length) / 2) := by
   have ht1 : ∀ j, 1 ≤ t j := fun j => by linarith [ht j, (Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
+  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
   refine exists_norm_mixedDeriv_borelSum_sub_le_of_forall χ hm hm' a ht hsmall N
-    (eventually_subset_closedBall_of_isCompact hK) α β (fun j => ?_)
+    ((tendsto_natCast_atTop_atTop.eventually_ge_atTop r).mono fun j hj =>
+      hr.trans (closedBall_subset_closedBall hj)) α β (fun j => ?_)
     fun j => (a j).exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
   -- The removed cutoffs `(χ(ξ / tⱼ) - 1) aⱼ` have bounded frequency support.
   have hR : ∀ x ξ, 2 * t j ≤ ‖ξ‖ →
@@ -604,9 +598,11 @@ private theorem exists_continuous_borelSum_sub (χ : FrequencyCutoff (Coordinate
   choose E hEc hE using fun j => exists_continuous_cutoff_smul_sub χ (ht1 j) (ha j) (m N)
   -- From `j₂` on, the cut-off terms are at most `2^{-j}` in the estimate of order `m_N` on `K`,
   -- and `4 ⋅ 2^{-j₂} ≤ ε / 4`.
+  obtain ⟨R, hR⟩ := K.isCompact.isBounded.subset_closedBall 0
   obtain ⟨j₁, hNj₁, htail⟩ :=
     exists_forall_ge_norm_mixedDeriv_le (V := V) (W := W) hm' N
-      (eventually_subset_closedBall_of_isCompact K.isCompact) α β
+      ((tendsto_natCast_atTop_atTop.eventually_ge_atTop R).mono fun j hj =>
+        hR.trans (closedBall_subset_closedBall hj)) α β
   obtain ⟨L, hL⟩ := exists_pow_lt_of_lt_one (by positivity : 0 < ε / 16)
     (by norm_num : (1 / 2 : ℝ) < 1)
   set j₂ := max j₁ L
@@ -715,12 +711,6 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
   obtain ⟨r, -, hr⟩ := hb N
   exact ⟨r (), hr ()⟩
 
-/-- The orders `μ - j` of successive corrections are antitone and tend to `-∞`. -/
-private theorem antitone_sub_natCast_and_tendsto (μ : ℝ) :
-    Antitone (fun j : ℕ ↦ μ - j) ∧ Tendsto (fun j : ℕ ↦ μ - j) atTop atBot :=
-  ⟨fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ, tendsto_atBot_add_const_left atTop μ <|
-    tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop⟩
-
 /-- The successive approximations of `b₀`: if every `b` with `P N b` can be improved to
 `P (N + 1)` by a correction `d` of order `μ - N` with `Q N d`, then there are corrections `c N`
 with `Q N (c N)` such that each `b₀ + ∑_{j < N} c j` has the property `P N`. -/
@@ -753,8 +743,10 @@ theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → 
     ∃ b, ∀ N, P N b := by
   obtain ⟨c, -, hc⟩ := exists_corrections_of_exists_add P (fun _ _ ↦ True) h₀
     fun N b hb ↦ (hsucc N b hb).imp fun _ hd ↦ ⟨trivial, hd⟩
-  obtain ⟨B, hB⟩ := exists_asymptoticSum (antitone_sub_natCast_and_tendsto μ).1
-    (antitone_sub_natCast_and_tendsto μ).2 c
+  have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ => μ - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
   refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
   obtain ⟨b, hb, hbc⟩ := hc N
@@ -904,8 +896,10 @@ theorem exists_isUniform_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V
   obtain ⟨c, hcu, hc⟩ := exists_corrections_of_exists_add (fun N b ↦ b.IsUniform ∧ P N b)
     (fun _ d ↦ d.IsUniform) ⟨hb₀, h₀⟩ fun N b hb ↦
       (hsucc N b hb.1 hb.2).imp fun _ hd ↦ ⟨hd.1, hb.1.add (hd.1.inclusion _), hd.2⟩
-  obtain ⟨B, hB⟩ := exists_isUniformAsymptoticSum (antitone_sub_natCast_and_tendsto μ).1
-    (antitone_sub_natCast_and_tendsto μ).2 hcu
+  have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ => μ - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨B, hB⟩ := exists_isUniformAsymptoticSum hm hm' hcu
   refine ⟨b₀ + inclusion (by simp) B, hb₀.add (hB.isUniform.inclusion _), fun N ↦ ?_⟩
   obtain ⟨r, hr, hBr⟩ := hB N
   obtain ⟨b, hb, hbc⟩ := hc N
@@ -930,8 +924,10 @@ theorem exists_term_eq
     ∃ b : ClassicalSymbol n V W m, b.term = a := by
   let χ : FrequencyCutoff (CoordinateSpace n) := default
   -- An asymptotic sum of the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` is the required full symbol.
-  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum (Symbol.antitone_sub_natCast_and_tendsto m).1
-    (Symbol.antitone_sub_natCast_and_tendsto m).2 fun j => cutoffSymbol χ (a j)
+  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
+  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop m <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (a j)
   refine ⟨⟨Symbol.inclusion (by simp) b, a, χ, fun N => ?_⟩, rfl⟩
   obtain ⟨r, hr⟩ := hb N
   exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
