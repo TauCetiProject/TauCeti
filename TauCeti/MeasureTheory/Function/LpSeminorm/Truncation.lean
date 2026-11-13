@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Truncated second moments
@@ -16,12 +17,15 @@ probability space the second moment splits as `E[X²] ≤ ε² + E[X²; ε ≤ |
 (`MeasureTheory.MemLp.integral_sq_le_sq_add_integral_indicator`). The truncated second moment is
 the quantity in the Lindeberg condition of the central limit theorem, and the split is how that
 condition controls each individual variance. Only almost-everywhere measurability is used, through
-`Integrable.indicator₀`.
+`Integrable.indicator₀`. For a square-integrable normed-group-valued variable,
+`MeasureTheory.MemLp.tendsto_integral_indicator_norm_sq` shows that the discarded second
+absolute moment tends to zero as the norm cutoff tends to infinity.
 -/
 
 public section
 
-open Set
+open Set Filter
+open scoped Topology NNReal
 
 namespace MeasureTheory
 
@@ -52,5 +56,29 @@ theorem MemLp.integral_sq_le_sq_add_integral_indicator [IsProbabilityMeasure P]
     _ = ε ^ 2 + ∫ ω, ({ω | ε ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P := by
         rw [integral_add (integrable_const _) h]
         simp
+
+/-- The discarded second moment tends to zero for a square-integrable variable. -/
+theorem MemLp.tendsto_integral_indicator_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {X : Ω → E} (hX : MemLp X 2 P) :
+    Tendsto (fun R : ℝ≥0 ↦
+      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P)
+      atTop (𝓝 0) := by
+  have hi := (memLp_two_iff_integrable_sq_norm hX.aestronglyMeasurable).mp hX
+  suffices Tendsto (fun R : ℝ≥0 ↦
+      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P)
+      atTop (𝓝 (∫ _ : Ω, (0 : ℝ) ∂P)) by simpa only [integral_zero] using this
+  apply tendsto_integral_filter_of_dominated_convergence (fun ω ↦ ‖X ω‖ ^ 2)
+  · exact .of_forall fun R ↦
+      hi.aestronglyMeasurable.indicator₀
+        (nullMeasurableSet_lt aemeasurable_const hX.aestronglyMeasurable.norm.aemeasurable)
+  · exact .of_forall fun R ↦ .of_forall fun ω ↦ by
+      calc
+        _ ≤ ‖‖X ω‖ ^ 2‖ := norm_indicator_le_norm_self (fun ω ↦ ‖X ω‖ ^ 2) ω
+        _ = _ := Real.norm_of_nonneg (sq_nonneg _)
+  · exact hi
+  · exact .of_forall fun ω ↦ tendsto_const_nhds.congr' (by
+      filter_upwards [eventually_ge_atTop (⟨‖X ω‖, norm_nonneg _⟩ : ℝ≥0)] with R hR
+      have hn : ¬ (R : ℝ) < ‖X ω‖ := not_lt.mpr hR
+      simp [Set.indicator, hn])
 
 end MeasureTheory

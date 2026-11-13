@@ -218,6 +218,16 @@ theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCom
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
 
+/-- Integrating a continuous function against a Hermitian spectral measure depends
+continuously on the matrix. The test function need not be bounded. -/
+@[fun_prop] theorem continuous_integral_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} ↦
+      ∫ x, f x ∂(A.1.spectralMeasure A.2 : Measure ℝ)) := by
+  simp_rw [integral_spectralMeasure_eq_sum_eigenvalues₀]
+  exact (continuous_finsetSum _ fun i _ ↦
+    hf.comp ((continuous_apply i).comp continuous_eigenvalues₀)).const_smul _
+
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
 theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHermitian)
