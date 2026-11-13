@@ -55,8 +55,8 @@ the pair `π a, π b` for `φ` is one of the pair `a, b` for `φ ∘ π`, `Hom.i
 surjective `π`, for instance a quotient map by an invariant ideal, the norm condition is automatic,
 and a positive functional `ω` of the quotient dynamics is a β-KMS state exactly when `ω ∘ π` is,
 `isKMSState_comp_iff_of_surjective`. For the inclusion of a closed invariant star subalgebra this
-gives restriction of KMS states, `IsKMSState.restrict`, which needs the norm condition: the
-restriction of a state need not be a state.
+gives restriction of KMS states, `IsKMSState.comp` at `hS.subtypeHom`, which needs the norm
+condition: the restriction of a state need not be a state.
 
 ## References
 
@@ -337,14 +337,6 @@ theorem isKMSState_comp_iff_of_surjective {ω : B →P[ℂ] ℂ} (π : Hom α γ
   obtain ⟨a, rfl⟩ := hπ x
   obtain ⟨b, rfl⟩ := hπ y
   exact (hω.exists_isKMSFunction a b).imp fun _ => (π.isKMSFunction_iff fun _ => rfl).mp
-
-/-- **Restriction of KMS states.** The restriction of a β-KMS state to a closed invariant star
-subalgebra `S` is a β-KMS state of the restricted dynamics as soon as it has norm one. -/
-theorem IsKMSState.restrict (hω : α.IsKMSState β ω) {S : NonUnitalStarSubalgebra ℂ A}
-    (hS : _root_.IsInvariant (fun t a => α t a) (S : Set A)) [IsClosed (S : Set A)]
-    (hωS : ‖((ω.comp (.ofClass hS.subtypeHom) : S →P[ℂ] ℂ) : S →L[ℂ] ℂ)‖ = 1) :
-    hS.restrict.IsKMSState β (ω.comp (.ofClass hS.subtypeHom)) :=
-  hω.comp hS.subtypeHom hωS
 
 end Pullback
 
