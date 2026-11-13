@@ -93,9 +93,8 @@ theorem toBoundedContinuousFunction_apply (f : HolderSpace α X Y) (x : X) :
 
 @[simp]
 theorem coe_toBoundedContinuousFunction (f : HolderSpace α X Y) :
-    (f.toBoundedContinuousFunction : X → Y) = f := by
-  funext x
-  exact toBoundedContinuousFunction_apply f x
+    (f.toBoundedContinuousFunction : X → Y) = f :=
+  (rfl)
 
 @[simp]
 theorem ofBoundedContinuousFunction_apply (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y))
@@ -444,9 +443,8 @@ theorem norm_const [Nonempty X] (c : Y) : ‖const (α := α) (X := X) c‖ = �
 
 @[simp]
 theorem const_zero : const (α := α) (X := X) (0 : Y) = 0 := by
-  apply toBoundedContinuousFunction_injective
-  ext x
-  simp
+  ext
+  rfl
 
 @[simp]
 theorem const_add (c d : Y) :
@@ -500,7 +498,7 @@ theorem norm_toBoundedContinuousFunctionCLM [Nonempty X] [Nontrivial Y] :
 /-- With nontrivial values, evaluation has operator norm one. -/
 @[simp]
 theorem norm_evalCLM [Nontrivial Y] (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ = 1 := by
-  let : Nonempty X := ⟨x⟩
+  have : Nonempty X := ⟨x⟩
   obtain ⟨y, hy⟩ := exists_ne (0 : Y)
   refine le_antisymm (norm_evalCLM_le_one x) ?_
   have h := (evalCLM (α := α) x).le_opNorm (const y)
