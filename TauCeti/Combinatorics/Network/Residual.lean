@@ -430,8 +430,9 @@ Exposed and reducible so its dependent arrow family computes to `ResidualHom N.H
 @[expose, reducible]
 def residual (N : Network K V) (f : N.Assignment K) (hf : f ∈ Set.Icc N.lower N.upper) :
     Network K V :=
-  ofCapacity (ResidualHom N.Hom) (residualCapacity N.lower N.upper f)
-    (fun {_ _} e ↦ residualCapacity_nonneg hf _ _ e)
+  { ofCapacity (ResidualHom N.Hom) (residualCapacity N.lower N.upper f)
+      (fun {_ _} e ↦ residualCapacity_nonneg hf _ _ e) with
+    lower := 0 }
 
 /-- Residual arrows depend only on the original arrow family, not on the feasible assignment. -/
 @[simp]
@@ -443,15 +444,15 @@ theorem residual_Hom (N : Network K V) (f : N.Assignment K)
 /-- Every residual lower bound is zero. -/
 @[simp]
 theorem residual_lower (N : Network K V) (f : N.Assignment K)
-    (hf : f ∈ Set.Icc N.lower N.upper) {x y : V} (a : (N.residual f hf).Hom x y) :
-    (N.residual f hf).lower a = 0 :=
+    (hf : f ∈ Set.Icc N.lower N.upper) :
+    (N.residual f hf).lower = 0 :=
   (rfl)
 
 /-- The upper bounds of the bundled residual network are the unbundled residual capacities. -/
 @[simp]
 theorem residual_upper (N : Network K V) (f : N.Assignment K)
-    (hf : f ∈ Set.Icc N.lower N.upper) {x y : V} (a : (N.residual f hf).Hom x y) :
-    (N.residual f hf).upper a = residualCapacity N.lower N.upper f a :=
+    (hf : f ∈ Set.Icc N.lower N.upper) :
+    (N.residual f hf).upper = residualCapacity N.lower N.upper f :=
   (rfl)
 
 end Network

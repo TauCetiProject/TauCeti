@@ -69,7 +69,8 @@ example : relabel.assignmentEquiv ℤ
     residualUpdate (relabel.assignmentEquiv ℤ assignment)
       ((relabel.residual assignment assignment_feasible).assignmentEquiv ℤ
         (residualDifference assignment 0)) :=
-  relabel.assignmentEquiv_residualUpdate assignment assignment_feasible assignment _
+  by simpa only [Network.Iso.residual_assignmentEquiv] using
+    relabel.assignmentEquiv_residualUpdate assignment (residualDifference assignment 0)
 
 example :
     (relabel.residual assignment assignment_feasible).assignmentEquiv ℤ
@@ -81,5 +82,36 @@ example :
   apply ((relabel.residual assignment assignment_feasible).assignmentEquiv_mem_Icc_iff _).2
   exact residualDifference_mem_Icc assignment_feasible
     ⟨fun _ _ _ ↦ by norm_num [network], fun _ _ _ ↦ by norm_num [network]⟩
+
+-- Bounds simplify as assignments, without supplying a residual arrow.
+example : (network.residual assignment assignment_feasible).lower = 0 := by simp
+
+example : (network.residual assignment assignment_feasible).upper =
+    residualCapacity network.lower network.upper assignment := by simp
+
+-- Evaluation also simplifies on a residual arrow whose tag is not known.
+example {V W : Type*} {N : Network ℤ V} {M : Network ℤ W} (e : N.Iso M)
+    (f : N.Assignment ℤ) (hf : f ∈ Set.Icc N.lower N.upper)
+    (r : TauCeti.Assignment (ResidualHom N.Hom) ℤ) {x y : V}
+    (a : ResidualHom N.Hom x y) :
+    (e.residual f hf).assignmentEquiv ℤ r ((e.residual f hf).homEquiv x y a) = r a := by
+  simp
+
+-- Residual assignment transport needs no feasible assignment or group structure on bounds.
+section NaturalBounds
+
+variable {V W : Type*} {N : Network ℕ V} {M : Network ℕ W} (e : N.Iso M)
+
+example (r : TauCeti.Assignment (ResidualHom N.Hom) ℤ) :
+    e.assignmentEquiv ℤ (residualNet r) = residualNet (e.residualAssignmentEquiv ℤ r) := by
+  rw [e.assignmentEquiv_residualNet]
+
+example (lo hi g : N.Assignment ℤ) :
+    e.residualAssignmentEquiv ℤ (residualCapacity lo hi g) =
+      residualCapacity (e.assignmentEquiv ℤ lo) (e.assignmentEquiv ℤ hi)
+        (e.assignmentEquiv ℤ g) := by
+  simp
+
+end NaturalBounds
 
 end TauCeti.Examples.ResidualIsomorphism
