@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
 
 /-!
@@ -141,6 +142,9 @@ theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBound
   let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
   have hmap : eB (φ a) = (eA a).map φ := by
     ext i j
+    -- Mathlib's `StarAlgEquiv.toNonUnitalStarAlgHom_apply` does not rewrite here: the
+    -- `Add`/`Mul`/`SMul` instances `toOneByOne` is stated with differ syntactically from those
+    -- `toNonUnitalStarAlgHom` expects, so we unfold the coercion definitionally.
     change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
       φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
     simp
@@ -275,7 +279,7 @@ private theorem norm_map_comp_le {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (
     (mul_le_mul_of_nonneg_left (norm_map_le_cbNorm_mul hφ x) (cbNorm_nonneg ψ))
 
 /-- The composite of completely bounded maps is completely bounded. -/
-@[grind →]
+@[grind ←]
 theorem IsCompletelyBounded.comp {ψ : B →ₗ[ℂ] C} {φ : A →ₗ[ℂ] B} (hψ : IsCompletelyBounded ψ)
     (hφ : IsCompletelyBounded φ) : IsCompletelyBounded (ψ ∘ₗ φ) :=
   ⟨_, mul_nonneg (cbNorm_nonneg ψ) (cbNorm_nonneg φ), fun _ x => norm_map_comp_le hψ hφ x⟩
@@ -377,12 +381,6 @@ private theorem sum_star_blockMatrixUnit_mul [DecidableEq m] [DecidableEq n] :
   refine Fintype.sum_equiv (Equiv.prodComm n n) _ _ fun p => ?_
   simp [star_blockMatrixUnit]
 
-private theorem norm_natCast_smul_one_le {D : Type*} [CStarAlgebra D] (n : ℕ) :
-    ‖(n : ℂ) • (1 : D)‖ ≤ n := by
-  rcases subsingleton_or_nontrivial D with hD | hD
-  · simp [Subsingleton.elim ((n : ℂ) • (1 : D)) 0]
-  · simp [norm_smul]
-
 /-- Every amplification of the transpose on `M_n(ℂ)` is bounded by `n`. -/
 theorem norm_map_transposeₗ_le (x : CStarMatrix m m (CStarMatrix n n ℂ)) :
     ‖x.map (transposeₗ ℂ)‖ ≤ Fintype.card n * ‖x‖ := by
@@ -390,7 +388,11 @@ theorem norm_map_transposeₗ_le (x : CStarMatrix m m (CStarMatrix n n ℂ)) :
   have h := Finset.norm_sum_mul_mul_sq_le Finset.univ
     (fun p : n × n => blockMatrixUnit m p.1 p.2) (fun p : n × n => blockMatrixUnit m p.1 p.2) x
   rw [sum_blockMatrixUnit_mul_star, sum_star_blockMatrixUnit_mul, ← map_transposeₗ_eq_sum] at h
-  have hn := norm_natCast_smul_one_le (D := CStarMatrix m m (CStarMatrix n n ℂ)) (Fintype.card n)
+  have hn : ‖(Fintype.card n : ℂ) • (1 : CStarMatrix m m (CStarMatrix n n ℂ))‖ ≤
+      Fintype.card n := by
+    refine (norm_smul_le (Fintype.card n : ℂ) (1 : CStarMatrix m m (CStarMatrix n n ℂ))).trans ?_
+    simpa using mul_le_of_le_one_right (Nat.cast_nonneg (Fintype.card n))
+      (CStarRing.norm_one_le (E := CStarMatrix m m (CStarMatrix n n ℂ)))
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp (h.trans ?_)
   calc _ ≤ (Fintype.card n : ℝ) * ‖x‖ ^ 2 * Fintype.card n := by gcongr
     _ = (Fintype.card n * ‖x‖) ^ 2 := by ring

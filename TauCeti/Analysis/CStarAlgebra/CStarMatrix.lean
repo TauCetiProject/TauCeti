@@ -84,11 +84,8 @@ lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
-    (f : ι → CStarMatrix m n A) (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [zero_apply]
-  | insert k s hk ih => simp [Finset.sum_insert hk, ih]
+    (f : ι → CStarMatrix m n A) (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j :=
+  Matrix.sum_apply i j s f
 
 /-- The entry of the `1 × 1` C⋆-matrix associated to `a`. -/
 @[simp]
