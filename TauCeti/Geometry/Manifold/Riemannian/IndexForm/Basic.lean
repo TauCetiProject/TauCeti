@@ -709,11 +709,12 @@ theorem hasDerivAt_inner_alongCurve {t : ℝ}
     hasDerivWithinAt_inner_alongCurveWithin uniqueDiffOn_univ hV.contMDiffWithinAt
       (mem_univ t) hW.mdifferentiableWithinAt
 
-/-- **Integration by parts.** For a `C²` field `V` on a set containing `[a, b]` and a `C¹`
-field `W` on the closed segment,
+/-- **Integration by parts.** For a field `V` with a `C²` lift within `s` at every point of
+`[a, b] ⊆ s` and a `C¹` field `W` on the closed segment,
 `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫ - ∫_a^b ⟪D_t² V + R(V, γ') γ', W⟫ dt`. -/
 theorem indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hV : ∀ t ∈ uIcc a b, ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t)
     (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (W r)) (uIcc a b))
     (hsub : uIcc a b ⊆ s) :
@@ -728,23 +729,25 @@ theorem indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
   · simp only [indexForm_same, sub_self, intervalIntegral.integral_same]
   let u := uIcc a b
   have hu : UniqueDiffOn ℝ u := uniqueDiffOn_uIcc hab
-  have hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s :=
-    ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 2))
-      |>.comp_contMDiffOn hV).mdifferentiableOn (by norm_num)
+  have hVu : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) u := fun t ht ↦ (hV t ht).mono hsub
+  have hγ (t : ℝ) (ht : t ∈ u) : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t :=
+    ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 2)).contMDiffAt
+      |>.comp_contMDiffWithinAt t (hV t ht)).mdifferentiableWithinAt (by norm_num)
   -- Restrict the first derivative to the closed segment, where derivatives are unique.
   have hD (r : ℝ) (hr : r ∈ u) : alongCurveWithin (leviCivitaConnection I M) γ V u r =
       alongCurveWithin (leviCivitaConnection I M) γ V s r :=
     alongCurveWithin_subset _ γ V hsub (hu r hr)
       (differentiableWithinAt_sectionCoord γ V
-        ((hV r (hsub hr)).mdifferentiableWithinAt (by norm_num))
+        ((hV r hr).mdifferentiableWithinAt (by norm_num))
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)))
       (by simpa [writtenInExtChartAt] using
-        (hγ r (hsub hr)).differentiableWithinAt_writtenInExtChartAt)
+        (hγ r hr).differentiableWithinAt_writtenInExtChartAt)
   have hDV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) u :=
     (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) (m := ∞) (k := ∞)
-      (by simp) (by simp) hu (hV.mono hsub)).congr fun r hr ↦ by rw [hD r hr]
+      (by simp) (by simp) hu hVu).congr fun r hr ↦ by rw [hD r hr]
   let A := fun r ↦ inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s r) (W r)
   let J := fun r ↦ inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ
       (alongCurveWithin (leviCivitaConnection I M) γ V s) s r +
@@ -760,7 +763,7 @@ theorem indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
     have hst : s ∈ 𝓝 t := mem_of_superset hut hsub
     have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
     have hd := hm.hasDerivWithinAt_inner_alongCurveWithin
-        ((hγ t (hsub (uIoo_subset_uIcc_self ht))).mono hsub)
+        ((hγ t (uIoo_subset_uIcc_self ht)).mono hsub)
         (differentiableWithinAt_sectionCoord γ _
           ((hDV t (uIoo_subset_uIcc_self ht)).mdifferentiableWithinAt one_ne_zero)
           (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
@@ -776,7 +779,7 @@ theorem indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
   have hdA : IntervalIntegrable (derivWithin A u) MeasureTheory.volume a b :=
     (hA.continuousOn_derivWithin hu le_rfl).intervalIntegrable
   have hI := intervalIntegrable_indexFormIntegrandWithin
-    ((hV.mono hsub).of_le one_le_two) hW (uIoo_subset_uIcc_self.trans hsub)
+    (hVu.of_le one_le_two) hW (uIoo_subset_uIcc_self.trans hsub)
   have hJ : IntervalIntegrable J MeasureTheory.volume a b :=
     (hdA.sub hI).congr_uIoo fun t ht ↦ by
       simp only [hd t ht, add_sub_cancel_left]
@@ -804,29 +807,10 @@ theorem indexForm_eq_inner_sub_inner_sub_integral
             (alongCurve (leviCivitaConnection I M) γ V) t +
           (leviCivitaConnection I M).curvatureTensor (γ t) (V t)
             (curveVelocity I γ t) (curveVelocity I γ t)) (W t) := by
-  -- The finite-order regularity locus is a neighbourhood of each of its points.
-  -- Apply within-set integration by parts there and identify both derivatives by their germs.
-  let u : Set ℝ := {t | ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
-    (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t}
-  have hu (t : ℝ) (ht : t ∈ u) : u ∈ 𝓝 t :=
-    (contMDiffAt_iff_contMDiffAt_nhds (by norm_num)).mp ht
-  have hD (t : ℝ) (ht : t ∈ u) :
-      alongCurveWithin (leviCivitaConnection I M) γ V u t =
-        alongCurve (leviCivitaConnection I M) γ V t :=
-    alongCurveWithin_of_mem_nhds _ γ V (hu t ht)
-  have hDD (t : ℝ) (ht : t ∈ u) :
-      alongCurveWithin (leviCivitaConnection I M) γ
-          (alongCurveWithin (leviCivitaConnection I M) γ V u) u t =
-        alongCurve (leviCivitaConnection I M) γ
-          (alongCurve (leviCivitaConnection I M) γ V) t := by
-    rw [alongCurveWithin_of_mem_nhds _ γ _ (hu t ht)]
-    exact alongCurve_congr _ γ _ (by filter_upwards [hu t ht] with r hr using hD r hr)
-  rw [indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
-    (s := u) (fun t ht ↦ ht.contMDiffWithinAt) hW hV,
-    hD b (hV b right_mem_uIcc), hD a (hV a left_mem_uIcc)]
-  congr 1
-  exact intervalIntegral.integral_congr fun t ht ↦ by
-    rw [hDD t (hV t ht), curveVelocityWithin_of_mem_nhds (hu t (hV t ht))]
+  simpa only [alongCurveWithin_univ,
+    funext (alongCurveWithin_univ (leviCivitaConnection I M) γ V), curveVelocityWithin_univ] using
+    indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
+      (s := univ) (fun t ht ↦ (hV t ht).contMDiffWithinAt) hW (subset_univ _)
 
 /-- **Jacobi integration by parts.** For a Jacobi field `V` on a set containing `[a, b]`
 and a `C¹` field `W` on that closed segment, `I(V, W) = ⟪D_t V(b), W(b)⟫ - ⟪D_t V(a), W(a)⟫`. -/
@@ -837,7 +821,8 @@ theorem IsJacobiFieldOn.indexForm_eq_inner_sub_inner (h : IsJacobiFieldOn I γ V
     indexForm I γ V W a b =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s b) (W b) -
         inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s a) (W a) := by
-  rw [indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral h.contMDiffOn hW hsub,
+  rw [indexForm_eq_inner_alongCurveWithin_sub_inner_sub_integral
+    (fun t ht ↦ h.contMDiffOn t (hsub ht)) hW hsub,
     intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ by
       simp only [h.equation t (hsub ht), inner_zero_left],
     intervalIntegral.integral_zero, sub_zero]
