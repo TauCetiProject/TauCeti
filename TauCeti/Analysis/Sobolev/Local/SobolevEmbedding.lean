@@ -177,7 +177,7 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le (hu : MemWkpLoc q Ω 1 u) (hq : 1 �
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_mul_eLpNormWkp_one (F := F) (W := W) hq hqs hgap
     (by rwa [hKc]) (by rwa [hKc])
   exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top hWc hWΩ))))
+    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`
