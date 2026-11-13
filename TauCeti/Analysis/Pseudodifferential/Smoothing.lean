@@ -13,33 +13,35 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 /-!
 # Smoothing operators produce smooth functions
 
-Let `a` be a smoothing symbol on `ℝⁿ`, that is a symbol of every real order, which vanishes at
-positions outside a compact set. Its quantization `Op(a)` extends from Schwartz functions to a
-bounded operator `T : H^s(ℝⁿ; V) → H^r(ℝⁿ; W)` for all real `s` and `r`. This file shows that
-`T u` is a smooth function for every `u ∈ H^s`, however negative `s` is: smoothing operators send
-distributions of finite Sobolev order to smooth functions. Moreover `T u` vanishes at every
-position at which the symbol vanishes for all frequencies, so it is compactly supported.
+Let `a` be a smoothing symbol on `ℝⁿ` (`TauCeti.Symbol.IsSmoothing`: its coefficient satisfies the
+symbol estimates of every real order) that vanishes for positions outside a compact set. Its
+quantization `Op(a)` extends from Schwartz functions to a bounded operator
+`T : H^s(ℝⁿ; V) → H^r(ℝⁿ; W)` for all real `s` and `r`. This file shows that `T u` is a smooth
+function for every `u ∈ H^s`, however negative `s` is: smoothing operators send distributions of
+finite Sobolev order to smooth functions. Moreover `T u` vanishes at every position at which the
+symbol vanishes for all frequencies, so it is compactly supported.
 
 This is the property that makes the smoothing remainders of a parametrix harmless in elliptic
 regularity: if `Q P = 1 + R` with `R` smoothing, then `u = Q (P u) - R u` differs from `Q (P u)`
 by a smooth function.
 
-The extensions of `Op(a)` to the various Bessel-potential spaces agree as maps into tempered
-distributions, since they agree on the dense subspace of Schwartz functions
+Since `a` has every real order `m'`, the same operator also maps `H^s` into `H^{s - m'}` for every
+`m'`: the Sobolev extension of `Op(a)` depends only on the coefficient of `a`
 (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`,
-`TauCeti.Symbol.toDistr_apply_eq_toDistr_quantizeSobolev`). As `a` has every order `m'`, the
-distribution `T u` lies in `H^{s - m'}` for every `m'`, so in every `H^t`
-(`TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`), and the Sobolev embedding
-`TemperedDistribution.exists_contDiff_ae_eq_of_forall_memSobolev` makes it a smooth function. For
-the support, if `a` vanishes outside a closed set `L` and `x ∉ L`, a smooth cutoff `φ` equal to
-`1` near the part of `L` where `a` lives and vanishing at `x` satisfies `φ · T u = T u`
-(`TauCeti.Symbol.smulLeftCLM_comp_quantizeSobolev`), so the smooth function vanishes at `x`.
+`TauCeti.Symbol.toDistr_apply_eq_toDistr_quantizeSobolev`), because two continuous extensions that
+agree on the dense subspace of Schwartz functions agree everywhere. Hence `Op(a) u` lies in `H^t`
+for every real `t` (`TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`), and the
+Sobolev embedding `H^t ⊆ C^k`, `t > k + n / 2`
+(`TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`), makes it a smooth
+function. For the support, if `a` vanishes outside a closed set `L` and `x ∉ L`, a smooth cutoff
+`φ` equal to `1` near the part of `L` where `a` lives and vanishing at `x` satisfies
+`φ · T u = T u` (`TauCeti.Symbol.smulLeftCLM_comp_quantizeSobolev`), so the smooth function
+vanishes at `x`.
 
 ## Main results
 
-* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: for smoothing `a`, the
-  distribution `Op(a) u` lies in every `H^t`.
-* `TauCeti.Symbol.IsSmoothing.exists_contDiff_toDistr_quantizeSobolev_apply_eq`: for complex
+* `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeSobolev`: `Op(a) u` is a smooth function.
+* `TauCeti.Symbol.IsSmoothing.exists_contDiff_hasCompactSupport_quantizeSobolev`: for complex
   Hilbert spaces `V` and `W`, `Op(a) u` is a smooth compactly supported function vanishing outside
   every closed set outside which `a` vanishes.
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_toDistr_apply_eq`: the same for every bounded
@@ -47,13 +49,17 @@ the support, if `a` vanishes outside a closed set `L` and `x ∉ L`, a smooth cu
 
 ## References
 
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1 (operators
+  with symbols of order `-∞`).
+* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embedding `H_s ⊆ C^k` for
+  `s > k + n / 2`).
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §3
   (operators of order `-∞` map `H^s` into `H^∞`).
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1 (smoothing
-  operators have smooth kernels and map distributions to smooth functions).
 -/
 
 public section
+
+noncomputable section
 
 open MeasureTheory Set TemperedDistribution
 open scoped SchwartzMap BesselPotentialSpace ContDiff
@@ -69,20 +75,19 @@ section Hilbert
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {a : Symbol n V W m}
 
-/-- **Smoothing operators map into `H^∞`.** For a smoothing symbol `a` with compact spatial
-support and every `u ∈ H^s`, the distribution `Op(a) u` lies in the Bessel-potential space `H^t`
-for every real `t`. -/
-theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
-    (hc : a.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) (t : ℝ) :
-    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
-  -- The coefficient of `a` is also a symbol `b` of order `s - t`, and `Op(b)` maps `H^s` to `H^t`.
-  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
-  have hbc := hc.of_coefficient_eq hb
-  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
-  exact (b.quantizeSobolev hbc s u).memSobolev_toDistr.mono (sub_sub_cancel s t).ge
+/-- **Smoothing operators produce smooth functions.** For a smoothing symbol `a` with compact
+spatial support and every `u ∈ H^s`, `s` real, the quantization `Op(a) u` is a smooth function
+`g`: it pairs with every Schwartz function `φ` as `∫ φ • g`. Taking `s` negative, this applies to
+distributions that are not functions. -/
+theorem IsSmoothing.exists_contDiff_quantizeSobolev (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ∃ g : CoordinateSpace n → W, ContDiff ℝ ∞ g ∧
+      ∀ φ : 𝓢(CoordinateSpace n, ℂ), (a.quantizeSobolev hc s u).toDistr φ = ∫ x, φ x • g x :=
+  exists_contDiff_eq_integral_of_forall_memSobolev fun t ↦
+    ha.memSobolev_toDistr_quantizeSobolev hc s t u
 
-/-- A smooth representative of `Op(a) u` vanishes at every position `x` outside a closed set `L`
-outside which `a` vanishes: a cutoff `φ` equal to `1` near the part of `L` where `a` lives and
+/-- A continuous representative of `Op(a) u` vanishes at every position `x` outside a closed set
+`L` outside which `a` vanishes: a cutoff `φ` equal to `1` near the part of `L` where `a` lives and
 vanishing at `x` satisfies `φ · Op(a) u = Op(a) u`. -/
 private theorem eq_zero_of_toDistr_quantizeSobolev_apply_eq (hc : a.HasCompactSpatialSupport)
     {L : Set (CoordinateSpace n)} (hL : IsClosed L) (hLa : ∀ x ∉ L, ∀ ξ, a.coefficient (x, ξ) = 0)
@@ -111,28 +116,28 @@ private theorem eq_zero_of_toDistr_quantizeSobolev_apply_eq (hc : a.HasCompactSp
   rwa [hφ, image_eq_zero_of_notMem_tsupport fun h ↦ hψx h rfl, Complex.ofReal_zero, zero_smul]
     at hgφ
 
-/-- **Smoothing operators produce smooth functions.** Let `a` be a smoothing symbol with compact
-spatial support between complex Hilbert spaces. For every `u ∈ H^s(ℝⁿ; V)`, whatever the real
-order `s`, the distribution `Op(a) u` is a smooth compactly supported function `g`, which
-vanishes outside every closed set `K` outside which the symbol vanishes. -/
-theorem IsSmoothing.exists_contDiff_toDistr_quantizeSobolev_apply_eq (ha : a.IsSmoothing)
+/-- **Smoothing operators produce smooth compactly supported functions.** Let `a` be a smoothing
+symbol with compact spatial support between complex Hilbert spaces. For every `u ∈ H^s(ℝⁿ; V)`,
+whatever the real order `s`, the distribution `Op(a) u` is a smooth compactly supported function
+`g`, which vanishes outside every closed set `K` outside which the symbol vanishes. -/
+theorem IsSmoothing.exists_contDiff_hasCompactSupport_quantizeSobolev (ha : a.IsSmoothing)
     (hc : a.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)} (hK : IsClosed K)
     (hKa : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
     ∃ g : CoordinateSpace n → W, ContDiff ℝ ∞ g ∧ HasCompactSupport g ∧ tsupport g ⊆ K ∧
       ∀ φ : 𝓢(CoordinateSpace n, ℂ),
         (a.quantizeSobolev hc s u).toDistr φ = ∫ x, φ x • g x := by
-  have hS := ha.memSobolev_toDistr_quantizeSobolev hc s u
-  obtain ⟨v, hv⟩ := memSobolev_zero_iff.1 (hS 0)
-  obtain ⟨g, hg, hvg⟩ := exists_contDiff_ae_eq_of_forall_memSobolev fun t ↦ hv ▸ hS t
+  obtain ⟨g, hg, hgφ⟩ := ha.exists_contDiff_quantizeSobolev hc s u
+  obtain ⟨v, hv⟩ := memSobolev_zero_iff.1 (ha.memSobolev_toDistr_quantizeSobolev hc s 0 u)
+  have hvg : v =ᵐ[volume] g :=
+    Lp.ae_eq_of_toTemperedDistribution_apply_eq v hg.continuous.locallyIntegrable fun φ ↦ by
+      rw [← hv, hgφ]
   have hsupp {L : Set (CoordinateSpace n)} (hL : IsClosed L)
       (hLa : ∀ x ∉ L, ∀ ξ, a.coefficient (x, ξ) = 0) : tsupport g ⊆ L :=
     closure_minimal (fun x hx ↦ by_contra fun hxL ↦ hx
       (eq_zero_of_toDistr_quantizeSobolev_apply_eq hc hL hLa hv hg.continuous hvg hxL)) hL
   obtain ⟨K₀, hK₀, hK₀a⟩ := hasCompactSpatialSupport_iff.mp hc
-  refine ⟨g, hg, hK₀.of_isClosed_subset (isClosed_tsupport g) (hsupp hK₀.isClosed hK₀a),
-    hsupp hK hKa, fun φ ↦ ?_⟩
-  rw [hv, Lp.toTemperedDistribution_apply]
-  exact integral_congr_ae (hvg.mono fun x hx ↦ by simp only [hx])
+  exact ⟨g, hg, hK₀.of_isClosed_subset (isClosed_tsupport g) (hsupp hK₀.isClosed hK₀a),
+    hsupp hK hKa, hgφ⟩
 
 end Hilbert
 
@@ -152,7 +157,7 @@ outside every closed set `K` outside which the symbol vanishes.
 
 As in `TauCeti.Symbol.exists_quantizeSobolev`, isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and
 `e₂ : W ≃L[ℂ] ℂ^l` reduce this to the Hilbert-space statement
-`TauCeti.Symbol.IsSmoothing.exists_contDiff_toDistr_quantizeSobolev_apply_eq`. -/
+`TauCeti.Symbol.IsSmoothing.exists_contDiff_hasCompactSupport_quantizeSobolev`. -/
 theorem IsSmoothing.exists_contDiff_toDistr_apply_eq (ha : a.IsSmoothing)
     (hc : a.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)} (hK : IsClosed K)
     (hKa : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) {s r : ℝ}
@@ -194,7 +199,7 @@ theorem IsSmoothing.exists_contDiff_toDistr_apply_eq (ha : a.IsSmoothing)
   have hu : T u = BesselPotentialSpace.postcomp _ r 2 e₂.symm.toContinuousLinearMap
       (S (BesselPotentialSpace.postcomp _ s 2 e₁.toContinuousLinearMap u)) :=
     BesselPotentialSpace.ext (by ext φ; simp [S, he₁])
-  obtain ⟨g, hg, hgc, hgK, hgφ⟩ := (ha.map Φ).exists_contDiff_toDistr_quantizeSobolev_apply_eq
+  obtain ⟨g, hg, hgc, hgK, hgφ⟩ := (ha.map Φ).exists_contDiff_hasCompactSupport_quantizeSobolev
     (hc.map Φ) hK (fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]) s
     (BesselPotentialSpace.postcomp _ s 2 e₁.toContinuousLinearMap u)
   refine ⟨e₂.symm ∘ g, (e₂.symm.toContinuousLinearMap.restrictScalars ℝ).contDiff.comp hg,

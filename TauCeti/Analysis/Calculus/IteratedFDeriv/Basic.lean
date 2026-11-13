@@ -15,7 +15,8 @@ The `i`-th iterated derivative of the `m`-th iterated derivative of a function h
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
-(`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`). The file also supplies the
+(`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
+`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
@@ -69,6 +70,12 @@ theorem continuousMultilinearCurryFin1_iteratedFDeriv_one (f : E → F) (x : E) 
     continuousMultilinearCurryFin1 𝕜 E F (iteratedFDeriv 𝕜 1 f x) = fderiv 𝕜 f x := by
   ext v
   simp [iteratedFDeriv_one_apply]
+
+/-- The Fréchet derivative is the first iterated derivative, curried, including at points where
+these derivatives are junk-valued. -/
+theorem fderiv_eq_continuousMultilinearCurryFin1_comp (f : E → F) :
+    fderiv 𝕜 f = continuousMultilinearCurryFin1 𝕜 E F ∘ iteratedFDeriv 𝕜 1 f :=
+  funext fun x ↦ (continuousMultilinearCurryFin1_iteratedFDeriv_one f x).symm
 
 /-- Currying the second iterated derivative gives the Fréchet derivative of the first
 Fréchet derivative, including at points where these derivatives are junk-valued. -/
