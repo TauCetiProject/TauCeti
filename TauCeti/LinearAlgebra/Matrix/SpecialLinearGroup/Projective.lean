@@ -20,7 +20,8 @@ It then records how subgroups of `PSL(n, R) = SL(n, R) ⧸ Z(SL(n, R))` correspo
 `SL(n, R)`. The full preimage `Γ.liftSL` of `Γ ≤ PSL(n, R)` contains the centre, has the same
 index as `Γ`, maps back onto `Γ`, and is compatible with conjugation; this is the correspondence
 theorem `QuotientGroup.comapMk'OrderIso` read for the projective special linear group. For
-`Γ ≤ SL(n, R)` the preimage of its image is `Γ.withCenter`.
+`Γ ≤ SL(n, R)` the preimage of its image is `Γ.withCenter`, and the image has the index of `Γ`
+when `Γ` contains the centre.
 
 In rank two over a ring without zero divisors the centre is `{±I}`, so containing the centre
 means containing `-I`. The image of `Γ ≤ SL(2, R)` in `PSL(2, R)` then has the index of `Γ` when
@@ -39,6 +40,8 @@ index.
   of the image of `Γ ≤ SL(n, R)` is `Γ.withCenter`.
 * `Subgroup.index_liftSL`: `Γ.liftSL` has the index of `Γ`.
 * `Subgroup.liftSL_conjAct_smul`: lifting commutes with conjugation.
+* `Subgroup.index_map_mk'_of_center_le`: the image in `PSL(n, R)` of a subgroup of `SL(n, R)`
+  containing the centre has the same index.
 * `Subgroup.index_map_mk'_of_neg_one_mem` and `Subgroup.two_mul_index_map_mk'_of_neg_one_notMem`:
   the index of the image in `PSL(2, R)` of a subgroup of `SL(2, R)`.
 * `Subgroup.finiteIndex_map_mk'_iff`: that image has finite index exactly when the subgroup does.
@@ -205,6 +208,13 @@ instance (Γ : Subgroup (ProjectiveSpecialLinearGroup n R)) [Γ.FiniteIndex] :
     Γ.liftSL.FiniteIndex :=
   inferInstanceAs (Γ.comap (QuotientGroup.mk' (center (SpecialLinearGroup n R)))).FiniteIndex
 
+/-- The image in `PSL(n, R)` of a subgroup `Γ` of `SL(n, R)` containing the centre has the index
+of `Γ`. -/
+theorem index_map_mk'_of_center_le {Γ : Subgroup (SpecialLinearGroup n R)}
+    (h : center (SpecialLinearGroup n R) ≤ Γ) :
+    (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup n R)))).index = Γ.index :=
+  index_map_eq _ (QuotientGroup.mk'_surjective _) <| by rwa [QuotientGroup.ker_mk']
+
 /-- Lifting commutes with conjugation: the lift of the conjugate of `Γ` by the class of `g` is the
 conjugate of the lift of `Γ` by `g`. -/
 theorem liftSL_conjAct_smul (g : SpecialLinearGroup n R)
@@ -240,9 +250,7 @@ theorem liftSL_map_of_neg_one_mem (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ �
 `Γ`. -/
 theorem index_map_mk'_of_neg_one_mem (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
     (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).index = Γ.index :=
-  index_map_eq _ (QuotientGroup.mk'_surjective _) <| by
-    rw [QuotientGroup.ker_mk']
-    exact SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h
+  index_map_mk'_of_center_le <| SpecialLinearGroup.center_le_iff_neg_one_mem.mpr h
 
 /-- The image in `PSL(2, R)` of a subgroup `Γ` of `SL(2, R)` not containing `-I` has half the
 index of `Γ`: the cosets of `Γ` pair up into the cosets of `±Γ`. -/

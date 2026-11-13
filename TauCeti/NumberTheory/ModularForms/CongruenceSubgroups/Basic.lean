@@ -596,21 +596,20 @@ theorem Gamma0Map_toHomUnits_negOne :
     (Gamma0Map N).toHomUnits (Gamma0.negOne N) = -1 :=
   Units.ext (by simp)
 
+/-- `-1 = 1` in `ZMod N` exactly when `N ∣ 2`. -/
+private lemma neg_one_eq_one_iff_dvd_two : (-1 : ZMod N) = 1 ↔ N ∣ 2 := by
+  rw [neg_eq_iff_add_eq_zero, ← ZMod.natCast_eq_zero_iff 2 N]
+  norm_num
+
 /-- `-I` lies in `Γ₁(N)` exactly when `N ∣ 2`, i.e. for `N ∈ {1, 2}`. This is the degenerate
 range in which `Γ₁(N)` contains `-I`, so that all odd-weight forms for it vanish. -/
 theorem neg_one_mem_Gamma1_iff : (-1 : SL(2, ℤ)) ∈ Gamma1 N ↔ N ∣ 2 := by
-  have h : (-1 : ZMod N) = 1 ↔ N ∣ 2 := by
-    rw [neg_eq_iff_add_eq_zero, ← ZMod.natCast_eq_zero_iff 2 N]
-    norm_num
-  simp [Gamma1_mem, h]
+  simp [Gamma1_mem, neg_one_eq_one_iff_dvd_two]
 
 /-- `-I` lies in `Γ(N)` exactly when `N ∣ 2`, i.e. for `N ∈ {1, 2}`: `-I ≡ I` modulo `N`
 exactly when `N ∣ 2`. -/
 theorem neg_one_mem_Gamma_iff : (-1 : SL(2, ℤ)) ∈ Gamma N ↔ N ∣ 2 := by
-  have h : (-1 : ZMod N) = 1 ↔ N ∣ 2 := by
-    rw [neg_eq_iff_add_eq_zero, ← ZMod.natCast_eq_zero_iff 2 N]
-    norm_num
-  simp [Gamma_mem, h]
+  simp [Gamma_mem, neg_one_eq_one_iff_dvd_two]
 
 /-- **Every power of the translation matrix lies in `Γ₁(N)`, at every level.** `Tⁿ` has diagonal
 `(1, 1)` and vanishing lower-left entry, so the three congruences of `Gamma1_mem` hold with no

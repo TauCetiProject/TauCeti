@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
 # The projective images of `Γ₀(N)` and `Γ(N)`
@@ -81,9 +80,8 @@ theorem mem_Gamma0Projective_iff (N : ℕ) (g : PSL(2, ℤ)) :
 /-- The projective image of `Γ₀(N)` has the same index as `Γ₀(N)`: the quotient map's kernel,
 the center of `SL₂(ℤ)`, is already contained in `Γ₀(N)`. -/
 theorem Gamma0Projective_index (N : ℕ) :
-    (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index := by
-  rw [Gamma0Projective_def, Subgroup.index_map_mk'_eq_index_sup,
-    sup_eq_left.mpr (center_le_Gamma0 N)]
+    (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index :=
+  Subgroup.index_map_mk'_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
 
 /-- The lift of the projective image of `Γ₀(N)` to `SL₂(ℤ)` is `Γ₀(N)`, which contains `-I`. -/
 @[simp]
