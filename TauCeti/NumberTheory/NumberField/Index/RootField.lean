@@ -120,7 +120,7 @@ theorem ramificationIdx_eq_one_of_liesOver_span
   have hf0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod p)) ≠ 0 :=
     ((minpoly.monic θ.isIntegral).map _).ne_zero
   rw [UniqueFactorizationMonoid.multiplicity_eq_count_normalizedFactors
-    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ) hf0,
+    (UniqueFactorizationMonoid.irreducible_of_normalized_factor _ hφ),
     UniqueFactorizationMonoid.normalize_normalized_factor _ hφ]
   exact Multiset.count_eq_one_of_mem
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf0).mp hsq) hφ
