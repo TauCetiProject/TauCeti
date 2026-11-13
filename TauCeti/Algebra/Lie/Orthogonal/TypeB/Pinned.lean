@@ -115,6 +115,14 @@ theorem typeBPinnedLieEquiv_symm_typeBSimpleNegativeRootGenerator (i : Fin (n + 
       ((DynkinType.B (n + 1)).lieBasis ht).f i := by
   rw [LieEquiv.symm_apply_eq, typeBPinnedLieEquiv_lieBasis_f]
 
+/-- The inverse identification preserves the numbered signed simple-root family. -/
+@[simp]
+theorem typeBPinnedLieEquiv_symm_typeBSimpleRootGeneratorFamily
+    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    (typeBPinnedLieEquiv n ht).symm (typeBSimpleRootGeneratorFamily k) =
+      ((DynkinType.B (n + 1)).lieBasis ht).rootGenerator k := by
+  rw [LieEquiv.symm_apply_eq, typeBPinnedLieEquiv_lieBasis_rootGenerator]
+
 /-- The inverse identification sends the terminal short coroot to the pinned Cartan generator. -/
 @[simp]
 theorem typeBPinnedLieEquiv_symm_typeBShortCorootGenerator_last :

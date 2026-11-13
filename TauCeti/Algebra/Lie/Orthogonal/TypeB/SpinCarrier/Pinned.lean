@@ -54,6 +54,15 @@ def pinnedRep :
       Module.End ℚ (ExteriorAlgebra ℚ (polarization n).W) :=
   (rep n).comp (map ℚ (typeBPinnedLieEquiv n ht).toLieHom)
 
+/-- The pinned action is the native spin action composed with the induced enveloping map. -/
+theorem pinnedRep_def :
+    pinnedRep n ht = (rep n).comp (map ℚ (typeBPinnedLieEquiv n ht).toLieHom) := (rfl)
+
+/-- On an enveloping-algebra element, the pinned action is the native action of its image. -/
+theorem pinnedRep_apply
+    (u : _root_.UniversalEnvelopingAlgebra ℚ ((DynkinType.B (n + 1)).lieAlgebra ht)) :
+    pinnedRep n ht u = rep n (map ℚ (typeBPinnedLieEquiv n ht).toLieHom u) := (rfl)
+
 /-- On a Lie element, the pinned action is the native spin action after the numbered
 orthogonal Lie equivalence. -/
 -- Try the numbered-operator equations before this fallback: simplifying the included
@@ -63,6 +72,16 @@ theorem pinnedRep_ι (x : (DynkinType.B (n + 1)).lieAlgebra ht) :
     pinnedRep n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (typeBPinnedLieEquiv n ht x)) := by
   simp only [pinnedRep, AlgHom.comp_apply, map_ι, LieEquiv.coe_toLieHom]
+
+/-- The generator equation for the pinned action in the simplifier's normal form. -/
+@[simp]
+theorem pinnedRep_ι' (x : (DynkinType.B (n + 1)).lieAlgebra ht) :
+    pinnedRep n ht (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ
+        ((DynkinType.B (n + 1)).lieAlgebra ht) (TensorAlgebra.ι ℚ x)) =
+      rep n (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ
+        (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) ℚ)
+        (TensorAlgebra.ι ℚ (typeBPinnedLieEquiv n ht x))) := by
+  simp only [pinnedRep, AlgHom.comp_apply, map_ι', LieEquiv.coe_toLieHom]
 
 /-- The pinned Cartan operator is the original spin simple-coroot operator. -/
 @[simp↓]
