@@ -78,9 +78,10 @@ applies to every class of functions for which that estimate is available, with t
 * For strong supersolutions, functions `u ∈ W^{2,n}(B(c, R))` with a representative continuous on
   `closedBall c R` satisfying `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` almost everywhere for the weak Hessian, it is
   `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp`, applied on `Ω'` to the
-  restriction of `u` minus the Sobolev function represented by the smooth barrier term
-  (`TauCeti.Wkp.exists_value_ae_eq_sub_of_contDiffOn`). Here `a` is taken symmetric, as in the
-  non-divergence theory of strong solutions; again no measurability of `a` is needed.
+  Sobolev function represented by the smooth barrier term `-φ`, minus the restriction of `u`; this
+  difference represents `v = -φ - u` (`TauCeti.Wkp.exists_value_ae_eq_sub_of_contDiffOn`). Here
+  `a` is taken symmetric, as in the non-divergence theory of strong solutions; again no
+  measurability of `a` is needed.
 
 ## Main declarations
 
