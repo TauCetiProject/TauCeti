@@ -69,6 +69,8 @@ compactness of `M` is needed.
 * `TauCeti.IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel`: a CW model of `M_a`
   extends to a CW model of `M_b` containing it as a subcomplex along a closed cofibration, with
   one new `λ`-cell for each critical point of index `λ` with value in `(a, b]`.
+* `TauCeti.IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel`: the same, where a
+  finite CW model of `M_a` extends to a finite CW model of `M_b`.
 * `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv_sublevel`: if `M_a` has a finite CW model,
   then so does `M_b`, with one more `λ`-cell in the count for each critical point of index `λ`
   with value in `(a, b]`.
@@ -277,6 +279,42 @@ theorem IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel (hf : IsMorse 
   subst hD'
   exact ⟨W', _, ‹_›, RelCWComplex.toCWComplex _, ι, h', hι, hA, hh, e, he⟩
 
+/-- **Extending finite CW models of sublevels.** Let `f` be a Morse function and `a ≤ b` regular
+values of `f` with compact band `f⁻¹[a, b]`, and let `h : W ≃ₕ M_a` be a homotopy equivalence from a
+finite CW complex `W` to the sublevel `M_a = {f ≤ a}`. Then the extension `h' : W' ≃ₕ M_b` of
+`TauCeti.IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel` can be taken with `W'` a finite
+CW complex: the compact band holds only finitely many critical points, so `W'` has finitely many
+new cells. -/
+theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel (hf : IsMorse I f)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (W : Type u)
+    [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)] [RelCWComplex.Finite (univ : Set W)]
+    (h : W ≃ₕ {x | f x ≤ a}) :
+    ∃ (W' : Type u) (_ : TopologicalSpace W') (_ : T2Space W') (_ : CWComplex (univ : Set W'))
+      (ι : C(W, W')) (h' : W' ≃ₕ {x | f x ≤ b}),
+      RelCWComplex.Finite (univ : Set W') ∧ IsClosedEmbedding ι ∧
+      HasHomotopyExtensionProperty (range ι) ∧ (∀ w, (h' (ι w) : M) = h w) ∧
+      ∃ e : ∀ m, cell (univ : Set W') m ≃ cell (univ : Set W) m ⊕
+          ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m},
+        ∀ m j x, map m ((e m).symm (.inl j)) x = ι (map m j x) := by
+  obtain ⟨W', _, _, _, ι, h', hι, hA, hh, e, he⟩ :=
+    hf.exists_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W h
+  -- Only finitely many critical points lie in the compact band.
+  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
+    (hf.finite_criticalPoints_inter hcompact).subset
+      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
+  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
+  have := hS.to_subtype
+  have : Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :=
+    .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ f ⁻¹' Ioc a b)))
+      fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
+        cases Subtype.ext_iff.1 hxy
+        cases hx.2.symm.trans hy.2
+        rfl
+  exact ⟨W', _, ‹_›, ‹_›, ι, h', RelCWComplex.finite_of_finite_cells
+    (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm)),
+    hι, hA, hh, e, he⟩
+
 /-- **The relative CW model of a regular band.** Let `f` be a Morse function and `a ≤ b` regular
 values of `f` with compact band `f⁻¹[a, b]`. Then the sublevel `M_b = {f ≤ b}` is homotopy
 equivalent to a CW complex `X` relative to a copy of `M_a = {f ≤ a}`, with one `m`-cell for each
@@ -306,7 +344,7 @@ with compact band `f⁻¹[a, b]`. If `W` is a finite CW complex homotopy equival
 `M_a = {f ≤ a}`, then `M_b` is homotopy equivalent to a finite CW complex `W'` whose number of
 `m`-cells, in each dimension `m`, is that of `W` plus the number of critical points of index `m`
 with value in `(a, b]`. The model `W'` can be chosen to contain `W` as a subcomplex
-(`TauCeti.IsMorse.exists_cwComplex_extension_homotopyEquiv_sublevel`). -/
+(`TauCeti.IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel`). -/
 theorem IsMorse.exists_cwComplex_homotopyEquiv_sublevel (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (hb : IsRegularValue I 𝓘(ℝ) f b) (W : Type u) [TopologicalSpace W] [T2Space W]
@@ -315,23 +353,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_sublevel (hf : IsMorse I f) {a b 
       RelCWComplex.Finite (univ : Set W') ∧ Nonempty (W' ≃ₕ {x | f x ≤ b}) ∧
       ∀ m, ENat.card (cell (univ : Set W') m) = ENat.card (cell (univ : Set W) m) +
         {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}.encard := by
-  obtain ⟨W', _, _, _, -, h', -, -, -, c, -⟩ :=
-    hf.exists_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W e
-  -- Only finitely many critical points lie in the compact band.
-  have hS : (criticalPoints I f ∩ f ⁻¹' Ioc a b).Finite :=
-    (hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
-  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
-  have := hS.to_subtype
-  have : Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :=
-    .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ f ⁻¹' Ioc a b)))
-      fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
-        cases Subtype.ext_iff.1 hxy
-        cases hx.2.symm.trans hy.2
-        rfl
-  refine ⟨W', _, ‹_›, ‹_›, RelCWComplex.finite_of_finite_cells
-    (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight c).symm)),
-    ⟨h'⟩, fun m ↦ ?_⟩
+  obtain ⟨W', _, _, _, -, h', hfin, -, -, -, c, -⟩ :=
+    hf.exists_finite_cwComplex_extension_homotopyEquiv_sublevel hab hcompact ha hb W e
+  refine ⟨W', _, ‹_›, ‹_›, hfin, ⟨h'⟩, fun m ↦ ?_⟩
   rw [ENat.card_congr (c m), ENat.card_sum, ENat.card_coe_set_eq]
 
 /-- **The CW model of a compact manifold.** A compact boundaryless manifold `M` carrying a Morse

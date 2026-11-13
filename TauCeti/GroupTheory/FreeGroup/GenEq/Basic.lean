@@ -188,6 +188,26 @@ theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤
   conv_rhs => rw [← List.take_append_drop j M]
   rw [List.drop_append_of_le_length (by simp [M]; omega)]
 
+/-- The letters of `A` used by a word `h[i, j] ^ ±1` after substitution of words for the items
+are the letters used by the words of the items between the boundaries `i` and `j`. -/
+theorem exists_mem_substituteVars_segment_iff (u : Fin Ω.numItems → List (A × Bool))
+    {i j : ℕ} {s : Bool} {a : A} :
+    (∃ l ∈ substituteVars u (Ω.segment i j s), l.1 = a) ↔
+      ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
+  have hmem (k : Fin Ω.numItems) :
+      k ∈ ((List.finRange Ω.numItems).take j).drop i ↔ i ≤ k ∧ (k : ℕ) < j := by
+    simp only [List.mem_iff_getElem, List.getElem_drop, List.getElem_take, List.getElem_finRange,
+      List.length_drop, List.length_take, List.length_finRange, Fin.ext_iff, Fin.val_cast]
+    exact ⟨by grind, fun h => ⟨k - i, by grind⟩⟩
+  have htrue : (∃ l ∈ substituteVars u (Ω.segment i j true), l.1 = a) ↔
+      ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
+    simp only [segment_true, substituteVars_map_inl, List.mem_flatMap, hmem]
+    grind
+  cases s
+  · rw [← htrue, segment_false, substituteVars_invRev]
+    simp [FreeGroup.invRev, or_comm]
+  · exact htrue
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=
@@ -323,12 +343,13 @@ structure Solution where
 /-- The system `Ω*` of group equations over `F(A)` in the items: `L R⁻¹` for each equation
 `L = R` of `Ω`. -/
 def toSystem : Set (GX (FreeGroup A) (Fin Ω.numItems)) :=
-  (fun e => EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) '' Ω.equations
+  (fun e => EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) ''
+    Ω.equations
 
 /-- The elements of `Ω*` are the words `L R⁻¹` for the equations `L = R` of `Ω`. -/
 theorem mem_toSystem_iff {w : GX (FreeGroup A) (Fin Ω.numItems)} :
     w ∈ Ω.toSystem ↔ ∃ e ∈ Ω.equations,
-      EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
   Iff.rfl
 
 /-- The points of `Ω*` are the group solutions of the equations of `Ω`: the assignments under
