@@ -31,7 +31,7 @@ to manipulate positive elements.
 
 ## Main results
 
-* `TauCeti.hasRieszInterpolation_iff_decomposition`: in a partially ordered abelian group,
+* `TauCeti.hasRieszInterpolation_iff_decomposition`: in a preordered abelian group,
   interpolation is equivalent to the Riesz decomposition property: `0 ≤ g ≤ a + b` with
   `0 ≤ a, b` splits as `g = g₁ + g₂` with `0 ≤ g₁ ≤ a` and `0 ≤ g₂ ≤ b`.
 * `TauCeti.hasRieszInterpolation_iff_refinement`: both are equivalent to Riesz refinement of
@@ -42,7 +42,7 @@ to manipulate positive elements.
   groups and their products, in particular the simplicial groups `ℤʳ`, are dimension groups.
 
 The equivalences of interpolation with decomposition and with refinement hold in every
-partially ordered abelian group; directedness is not needed.
+preordered abelian group; neither antisymmetry nor directedness is needed.
 
 ## References
 
@@ -67,14 +67,15 @@ def HasRieszInterpolation (G : Type*) [LE G] : Prop :=
   ∀ a₁ a₂ b₁ b₂ : G, a₁ ≤ b₁ → a₁ ≤ b₂ → a₂ ≤ b₁ → a₂ ≤ b₂ →
     ∃ c, a₁ ≤ c ∧ a₂ ≤ c ∧ c ≤ b₁ ∧ c ≤ b₂
 
-/-- An ordered additive monoid is unperforated when `0 ≤ n • g` for some `n ≠ 0` forces
-`0 ≤ g`. -/
-def IsUnperforated (G : Type*) [AddMonoid G] [LE G] : Prop :=
+/-- A partially ordered abelian group is unperforated when `0 ≤ n • g` for some `n ≠ 0`
+forces `0 ≤ g`. -/
+def IsUnperforated (G : Type*) [AddCommGroup G] [PartialOrder G] : Prop :=
   ∀ ⦃n : ℕ⦄, n ≠ 0 → ∀ ⦃g : G⦄, 0 ≤ n • g → 0 ≤ g
 
-/-- A dimension group: a directed, unperforated ordered group with Riesz interpolation. It is
-used for partially ordered abelian groups; countability and a scale are separate data. -/
-structure IsDimensionGroup (G : Type*) [AddMonoid G] [LE G] : Prop where
+/-- A dimension group: a directed, unperforated partially ordered abelian group with Riesz
+interpolation. Countability and a scale are separate data. -/
+structure IsDimensionGroup (G : Type*) [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G] :
+    Prop where
   /-- A dimension group is directed. -/
   isDirectedOrder : IsDirectedOrder G
   /-- A dimension group is unperforated. -/
@@ -90,7 +91,7 @@ theorem hasRieszInterpolation_iff (G : Type*) [LE G] :
   Iff.rfl
 
 /-- Unfolding lemma for `IsUnperforated`. -/
-theorem isUnperforated_iff (G : Type*) [AddMonoid G] [LE G] :
+theorem isUnperforated_iff (G : Type*) [AddCommGroup G] [PartialOrder G] :
     IsUnperforated G ↔ ∀ ⦃n : ℕ⦄, n ≠ 0 → ∀ ⦃g : G⦄, 0 ≤ n • g → 0 ≤ g :=
   Iff.rfl
 
@@ -124,12 +125,12 @@ end LE
 
 section OrderedGroup
 
-variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+variable {G : Type*} [AddCommGroup G]
 
 /-- **Riesz decomposition**: under interpolation, `0 ≤ g ≤ a + b` with `0 ≤ a` and `0 ≤ b`
 splits as `g = g₁ + g₂` with `0 ≤ g₁ ≤ a` and `0 ≤ g₂ ≤ b`. -/
-theorem exists_decomposition (h : HasRieszInterpolation G) {a b g : G} (ha : 0 ≤ a)
-    (hb : 0 ≤ b) (hg : 0 ≤ g) (hgab : g ≤ a + b) :
+theorem exists_decomposition [Preorder G] [IsOrderedAddMonoid G] (h : HasRieszInterpolation G)
+    {a b g : G} (ha : 0 ≤ a) (hb : 0 ≤ b) (hg : 0 ≤ g) (hgab : g ≤ a + b) :
     ∃ g₁ g₂, 0 ≤ g₁ ∧ g₁ ≤ a ∧ 0 ≤ g₂ ∧ g₂ ≤ b ∧ g₁ + g₂ = g := by
   obtain ⟨c, h0c, hc, hca, hcg⟩ :=
     h.exists_ge_ge_le_le ha hg (sub_le_iff_le_add.2 hgab) (sub_le_self g hb)
@@ -137,7 +138,8 @@ theorem exists_decomposition (h : HasRieszInterpolation G) {a b g : G} (ha : 0 �
 
 /-- Riesz decomposition below a finite sum: under interpolation, `0 ≤ g ≤ ∑ i ∈ s, a i` with
 every `a i` positive splits as `g = ∑ i ∈ s, f i` with `0 ≤ f i ≤ a i`. -/
-theorem exists_decomposition_sum (h : HasRieszInterpolation G) {ι : Type*} (s : Finset ι)
+theorem exists_decomposition_sum [PartialOrder G] [IsOrderedAddMonoid G]
+    (h : HasRieszInterpolation G) {ι : Type*} (s : Finset ι)
     {a : ι → G} (ha : ∀ i ∈ s, 0 ≤ a i) {g : G} (hg : 0 ≤ g) (hgs : g ≤ ∑ i ∈ s, a i) :
     ∃ f : ι → G, (∀ i ∈ s, 0 ≤ f i ∧ f i ≤ a i) ∧ ∑ i ∈ s, f i = g := by
   classical
@@ -164,7 +166,7 @@ end HasRieszInterpolation
 
 section RieszEquivalences
 
-variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+variable {G : Type*} [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
 
 /-- Riesz decomposition gives Riesz refinement: decompose `x₁ ≤ y₁ + y₂` and take the
 complements in `y₁` and `y₂` as the second row. -/
@@ -212,8 +214,8 @@ theorem HasRieszInterpolation.exists_refinement (h : HasRieszInterpolation G)
   exists_refinement_of_decomposition
     (fun _ _ _ ha hb hg hgab ↦ h.exists_decomposition ha hb hg hgab) hx₁ hx₂ hy₁ hy₂ hxy
 
-/-- In a partially ordered abelian group, Riesz interpolation is equivalent to the Riesz
-decomposition property. No directedness is needed. -/
+/-- In a preordered abelian group, Riesz interpolation is equivalent to the Riesz
+decomposition property. Neither antisymmetry nor directedness is needed. -/
 theorem hasRieszInterpolation_iff_decomposition :
     HasRieszInterpolation G ↔
       ∀ a b g : G, 0 ≤ a → 0 ≤ b → 0 ≤ g → g ≤ a + b →
@@ -222,8 +224,9 @@ theorem hasRieszInterpolation_iff_decomposition :
     hasRieszInterpolation_of_refinement fun _ _ _ _ hx₁ hx₂ hy₁ hy₂ hxy ↦
       exists_refinement_of_decomposition hdec hx₁ hx₂ hy₁ hy₂ hxy⟩
 
-/-- In a partially ordered abelian group, Riesz interpolation is equivalent to the Riesz
-refinement property for equal sums of two positive elements. No directedness is needed. -/
+/-- In a preordered abelian group, Riesz interpolation is equivalent to the Riesz
+refinement property for equal sums of two positive elements. Neither antisymmetry nor
+directedness is needed. -/
 theorem hasRieszInterpolation_iff_refinement :
     HasRieszInterpolation G ↔
       ∀ x₁ x₂ y₁ y₂ : G, 0 ≤ x₁ → 0 ≤ x₂ → 0 ≤ y₁ → 0 ≤ y₂ → x₁ + x₂ = y₁ + y₂ →
@@ -236,29 +239,30 @@ end RieszEquivalences
 
 namespace IsUnperforated
 
-/-- In an unperforated monoid, `0 ≤ g` follows from `0 ≤ n • g` for any `n ≠ 0`. -/
-theorem nonneg_of_nsmul_nonneg {G : Type*} [AddMonoid G] [LE G] (h : IsUnperforated G)
+variable {G : Type*} [AddCommGroup G]
+
+/-- In an unperforated group, `0 ≤ g` follows from `0 ≤ n • g` for any `n ≠ 0`. -/
+theorem nonneg_of_nsmul_nonneg [PartialOrder G] (h : IsUnperforated G)
     {n : ℕ} (hn : n ≠ 0) {g : G} (hg : 0 ≤ n • g) : 0 ≤ g :=
   h hn hg
 
-/-- In an unperforated ordered monoid, `0 ≤ n • g ↔ 0 ≤ g` for `n ≠ 0`. -/
-theorem nsmul_nonneg_iff {G : Type*} [AddMonoid G] [Preorder G] [AddLeftMono G]
+/-- In an unperforated group, `0 ≤ n • g ↔ 0 ≤ g` for `n ≠ 0`. -/
+theorem nsmul_nonneg_iff [PartialOrder G] [IsOrderedAddMonoid G]
     (h : IsUnperforated G) {n : ℕ} (hn : n ≠ 0) {g : G} : 0 ≤ n • g ↔ 0 ≤ g :=
   ⟨h.nonneg_of_nsmul_nonneg hn, fun hg ↦ nsmul_nonneg hg n⟩
 
-/-- A linearly ordered monoid is unperforated. -/
-theorem of_linearOrder {G : Type*} [AddMonoid G] [LinearOrder G] [AddLeftMono G] :
-    IsUnperforated G :=
+/-- A linearly ordered abelian group is unperforated. -/
+theorem of_linearOrder [LinearOrder G] [IsOrderedAddMonoid G] : IsUnperforated G :=
   fun _ hn _ ↦ (_root_.nsmul_nonneg_iff hn).1
 
 /-- Unperforation passes to products, ordered componentwise. -/
-theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddMonoid (G i)] [∀ i, LE (G i)]
+theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddCommGroup (G i)] [∀ i, PartialOrder (G i)]
     (h : ∀ i, IsUnperforated (G i)) : IsUnperforated (∀ i, G i) :=
   fun _ hn _ hg i ↦ (h i).nonneg_of_nsmul_nonneg hn (hg i)
 
 /-- An unperforated partially ordered abelian group is torsion-free: `n • g = n • h` with
 `n ≠ 0` forces `g = h`, since then `0 ≤ g - h` and `0 ≤ h - g`. -/
-theorem hasUniqueDiv {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+theorem hasUniqueDiv [PartialOrder G] [IsOrderedAddMonoid G]
     (h : IsUnperforated G) : HasUniqueDiv G where
   nsmul_right_injective n hn a b hab := by
     have hab' : n • a = n • b := hab
@@ -269,8 +273,8 @@ end IsUnperforated
 
 namespace IsDimensionGroup
 
-/-- A linearly ordered monoid, for instance `ℤ`, `ℚ` or `ℝ`, is a dimension group. -/
-theorem of_linearOrder {G : Type*} [AddMonoid G] [LinearOrder G] [AddLeftMono G] :
+/-- A linearly ordered abelian group, for instance `ℤ`, `ℚ` or `ℝ`, is a dimension group. -/
+theorem of_linearOrder {G : Type*} [AddCommGroup G] [LinearOrder G] [IsOrderedAddMonoid G] :
     IsDimensionGroup G where
   isDirectedOrder := inferInstance
   isUnperforated := .of_linearOrder
@@ -278,8 +282,9 @@ theorem of_linearOrder {G : Type*} [AddMonoid G] [LinearOrder G] [AddLeftMono G]
 
 /-- A product of dimension groups, ordered componentwise, is a dimension group. In particular
 the simplicial groups `Fin r → ℤ` are dimension groups. -/
-theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddMonoid (G i)] [∀ i, LE (G i)]
-    (h : ∀ i, IsDimensionGroup (G i)) : IsDimensionGroup (∀ i, G i) where
+theorem pi {ι : Type*} {G : ι → Type*} [∀ i, AddCommGroup (G i)] [∀ i, PartialOrder (G i)]
+    [∀ i, IsOrderedAddMonoid (G i)] (h : ∀ i, IsDimensionGroup (G i)) :
+    IsDimensionGroup (∀ i, G i) where
   isDirectedOrder := ⟨fun a b ↦ by
     choose c hc using fun i ↦ (h i).isDirectedOrder.directed (a i) (b i)
     exact ⟨c, fun i ↦ (hc i).1, fun i ↦ (hc i).2⟩⟩
