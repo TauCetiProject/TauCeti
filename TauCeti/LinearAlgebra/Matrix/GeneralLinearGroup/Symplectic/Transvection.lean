@@ -86,10 +86,11 @@ private theorem one_add_smul_vecMulVec_JFin_mem (v : Fin (m + m) → R) (c : R) 
     (1 + c • vecMulVec v (v ᵥ* JFin m R))ᵀ * JFin m R * (1 + c • vecMulVec v (v ᵥ* JFin m R)) =
       JFin m R := by
   have h := transpose_map_unitaryTransvection_mul_mul_self (σ := RingHom.id R) (fun _ ↦ rfl)
-    (ε := -1) (by rw [RingHom.coe_id, map_id, JFin_transpose, neg_one_smul])
+    (ε := -1) (by rw [RingHom.coe_id, Matrix.map_id, JFin_transpose, neg_one_smul])
     (dotProduct_JFin_mulVec_self v) (a := c) (by rw [RingHom.id_apply, neg_one_mul,
       add_neg_cancel])
-  rwa [RingHom.coe_id, map_id, unitaryTransvection_def, RingHom.coe_id, Function.id_comp] at h
+  rwa [RingHom.coe_id, Matrix.map_id, unitaryTransvection_def, RingHom.coe_id,
+    Function.id_comp] at h
 
 /-- **The symplectic transvection** `τ_{v,c} : x ↦ x + c ω(v, x) v` along the vector `v`, where
 `ω(x, y) = xᵀ J y` is the standard alternating form. Its matrix is `1 + c v (vᵀ J)`
@@ -216,7 +217,7 @@ theorem mul_symplecticTransvection_mul_inv (g : GLSymplecticFin m R) (v : Fin (m
   obtain ⟨G, hg⟩ := g
   have hG : (((G : Matrix (Fin (m + m)) (Fin (m + m)) R)).map (RingHom.id R))ᵀ * JFin m R *
       (G : Matrix (Fin (m + m)) (Fin (m + m)) R) = JFin m R := by
-    rw [RingHom.coe_id, map_id, mem_iff'.mp hg]
+    rw [RingHom.coe_id, Matrix.map_id, mem_iff'.mp hg]
   refine Subtype.ext (Units.ext ?_)
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul,
     coe_symplecticTransvection_eq_unitaryTransvection]
