@@ -89,11 +89,11 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_enorm_sub
     (by norm_num : (1 : ℝ≥0∞) ≤ 2) hL₂
   have hiter : Tendsto (fun k ↦ ∫⁻ ω, ∫⁻ t, ‖D k (t, ω)‖ₑ ∂ν ∂P)
       atTop (𝓝 0) := by
-    simpa only [eLpNorm_one_eq_lintegral_enorm (hDprod _).aestronglyMeasurable,
-      lintegral_prod_symm _ (hDprod _).measurable.enorm.aemeasurable] using hL₁
+    simpa only [eLpNorm_one_eq_lintegral_eNorm (hDprod _).aestronglyMeasurable,
+      lintegral_prod_symm _ (hDprod _).measurable.eNorm.aemeasurable] using hL₁
   -- One subsequence makes the grid-to-quantization L¹ errors vanish almost surely.
   obtain ⟨φ, hφ, hpath⟩ := exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
-    (fun k ↦ ((hDprod k).measurable.enorm.lintegral_prod_left).aemeasurable) hiter
+    (fun k ↦ ((hDprod k).measurable.eNorm.lintegral_prod_left).aemeasurable) hiter
   refine ⟨n ∘ φ, fun k ↦ τ (φ k), fun k ↦ a (φ k), C ∘ φ,
     fun k ↦ hτ₀ (φ k), fun k ↦ hτ (φ k), fun k ↦ ha (φ k), fun k ↦ hb (φ k), ?_⟩
   filter_upwards [hint, hpath] with ω hω herror
@@ -101,7 +101,7 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_enorm_sub
   have hm : Measurable (fun t ↦ H t ω) :=
     (hH.measurable.mono ℱ.predictable_le_prod le_rfl).comp measurable_prodMk_right
   have hquant : Tendsto (fun k ↦ ∫⁻ t, ‖G k t ω - H t ω‖ₑ ∂ν) atTop (𝓝 0) := by
-    have h := SimpleFunc.tendsto_approxOn_L1_enorm hm (mem_univ (0 : ℝ))
+    have h := SimpleFunc.tendsto_approxOn_L1_eNorm hm (mem_univ (0 : ℝ))
       (ae_of_all ν fun _ ↦ by simp) (by simpa using hω.hasFiniteIntegral)
     have heq (k : ℕ) : (q k).comp (fun t ↦ H t ω) hm =
         SimpleFunc.approxOn (fun t ↦ H t ω) hm univ 0 (mem_univ 0) k :=
@@ -115,10 +115,10 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_enorm_sub
     _ ≤ ∫⁻ t, ‖D (φ k) (t, ω)‖ₑ + ‖G (φ k) t ω - H t ω‖ₑ ∂ν := by
       apply lintegral_mono
       intro t
-      simpa only [D, Function.comp_apply, sub_add_sub_cancel] using enorm_add_le
+      simpa only [D, Function.comp_apply, sub_add_sub_cancel] using eNorm_add_le
         (simpleHolding (τ (φ k)) (n (φ k)) (a (φ k)) t ω - G (φ k) t ω)
         (G (φ k) t ω - H t ω)
     _ = _ := lintegral_add_left
-      ((hDprod (φ k)).measurable.comp measurable_prodMk_right).enorm _
+      ((hDprod (φ k)).measurable.comp measurable_prodMk_right).eNorm _
 
 end MeasureTheory.Filtration
