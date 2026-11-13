@@ -60,6 +60,12 @@ def shift (n : ℤ) (L : WindingWord α) : WindingWord α :=
 @[simp] theorem length_shift (n : ℤ) (L : WindingWord α) : (shift n L).length = L.length := by
   simp [shift]
 
+@[simp] theorem mem_shift_iff (p : α × ℤ) (n : ℤ) (L : WindingWord α) :
+    p ∈ shift n L ↔ (p.1, p.2 - n) ∈ L := by
+  induction L with
+  | nil => simp
+  | cons q L ih => simp [ih, Prod.ext_iff, sub_eq_iff_eq_add]
+
 @[simp] theorem shift_zero (L : WindingWord α) : shift 0 L = L := by simp [shift]
 
 /-- Shifts compose by addition, without reducing levels modulo two. -/
@@ -82,6 +88,14 @@ theorem rightDual_eq_shift_reverse (L : WindingWord α) :
 
 theorem leftDual_eq_shift_reverse (L : WindingWord α) :
     L.leftDual = shift (-1) L.reverse := by rfl
+
+@[simp] theorem mem_rightDual_iff (p : α × ℤ) (L : WindingWord α) :
+    p ∈ L.rightDual ↔ (p.1, p.2 - 1) ∈ L := by
+  simp [rightDual_eq_shift_reverse]
+
+@[simp] theorem mem_leftDual_iff (p : α × ℤ) (L : WindingWord α) :
+    p ∈ L.leftDual ↔ (p.1, p.2 + 1) ∈ L := by
+  simp [leftDual_eq_shift_reverse]
 
 @[simp] theorem rightDual_shift (n : ℤ) (L : WindingWord α) :
     (shift n L).rightDual = shift n L.rightDual := by
