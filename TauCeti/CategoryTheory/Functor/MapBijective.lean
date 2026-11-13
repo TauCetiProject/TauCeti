@@ -87,10 +87,9 @@ theorem map_bijective_op_biproduct [Preadditive C] [Preadditive D] (F : Cᵒᵖ 
     calc F.map (biproduct.lift fun j ↦ (k j).unop).op
         = ∑ j, F.map (biproduct.π f j ≫ biproduct.ι f j).op ≫ φ := by
           rw [biproduct.lift_eq, op_sum, F.map_sum]
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [op_comp, F.map_comp, Quiver.Hom.op_unop, hk, op_comp, F.map_comp, Category.assoc]
+          exact Finset.sum_congr rfl fun j _ ↦ by simp [hk]
       _ = φ := by
-          rw [← Preadditive.sum_comp, ← F.map_sum, ← op_sum, biproduct.total, op_id, F.map_id,
-            Category.id_comp]
+          rw [← Preadditive.sum_comp, ← F.map_sum, ← op_sum, biproduct.total]
+          simp
 
 end CategoryTheory.Functor
