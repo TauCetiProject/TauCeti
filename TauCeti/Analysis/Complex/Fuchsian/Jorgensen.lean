@@ -311,7 +311,6 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
   obtain ⟨P, rfl⟩ := QuotientGroup.mk_surjective g
   -- move to the frame where `A` is the dilation: `X = P⁻¹ B P` in `Γ' = P⁻¹ Γ P`
   let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ
-  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
   have hD : ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
     rw [mk_inv_mul_mul]
     exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA
@@ -469,7 +468,6 @@ theorem one_le_abs_trace_commutatorElement_sub_two_of_isParabolic [DiscreteTopol
   obtain ⟨x, hx, hAx⟩ := hpar.exists_conj_eq_upperRightHom hσ
   obtain ⟨S, rfl⟩ := QuotientGroup.mk_surjective σ
   let Γ' : Subgroup PSL(2, ℝ) := ConjAct.toConjAct (S : PSL(2, ℝ))⁻¹ • Γ
-  have : DiscreteTopology Γ' := TauCeti.discreteTopology_of_conjAct_smul_eq rfl
   have hTmem : ((S⁻¹ * A * S : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' := by
     rw [mk_inv_mul_mul]
     exact (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (S : PSL(2, ℝ)) _ Γ).2 hA

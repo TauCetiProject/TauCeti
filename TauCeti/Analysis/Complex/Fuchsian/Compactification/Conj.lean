@@ -34,7 +34,7 @@ compactified quotient of `Γ` by biholomorphisms. The construction is functorial
 identity (`Subgroup.CompactifiedQuotient.conjBiholomorph_one`), and conjugating by `g` and then by
 `g'` is conjugating by `g' * g` (`Subgroup.CompactifiedQuotient.conjBiholomorph_trans`). Only `Γ`
 is assumed discrete: discreteness of `Γ'` follows
-(`TauCeti.discreteTopology_of_conjAct_smul_eq`).
+from Mathlib's instance for the pointwise action of `ConjAct G` on subgroups.
 
 ## Main declarations
 
@@ -184,10 +184,10 @@ chart of the transported datum `D.conj h` after the map induced by conjugation i
 theorem cuspChart_conj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ')
     (D : Γ.CuspDatum) {A : ℝ} (hA : D.width ≤ A) {x : Γ.CompactifiedQuotient}
     (hx : x ∈ cuspNhd D A) :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     cuspChart (D.conj h) ((D.conj_width h).trans_le hA) (compactifiedQuotientConj h x) =
       cuspChart D hA x := by
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have : DiscreteTopology Γ' := h ▸ inferInstance
   cases x with
   | ofQuotient p =>
       obtain ⟨z, hz, rfl⟩ := (ofQuotient_mem_cuspNhd_iff D A).mp hx
@@ -201,9 +201,9 @@ theorem cuspChart_conj_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ 
 /-- The map of compactified quotients induced by conjugation is continuous, including at the
 adjoined cusp points. -/
 theorem continuous_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     Continuous (compactifiedQuotientConj h) := by
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have : DiscreteTopology Γ' := h ▸ inferInstance
   rw [continuous_iff_continuousAt]
   intro x
   cases x with
@@ -221,9 +221,9 @@ theorem continuous_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ
 quotient this is holomorphic descent; at a cusp, read in the cusp charts of a cusp datum and of
 its transport, the map is the identity. -/
 theorem mdifferentiable_compactifiedQuotientConj (h : ConjAct.toConjAct g • Γ = Γ') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientConj h) := by
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have : DiscreteTopology Γ' := h ▸ inferInstance
   intro x
   cases x with
   | ofQuotient p =>
@@ -257,9 +257,9 @@ a discrete `Γ`, translation by `g` induces a biholomorphism between the compact
 `Γ` and `Γ'`, sending the orbit of `z` to the orbit of `g • z` and the cusp orbit of `c` to the
 cusp orbit of `g • c`. -/
 def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     Γ.CompactifiedQuotient ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ Γ'.CompactifiedQuotient :=
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have : DiscreteTopology Γ' := h ▸ inferInstance
   have h' : ConjAct.toConjAct g⁻¹ • Γ' = Γ := by rw [← h, map_inv, inv_smul_smul]
   { toFun := compactifiedQuotientConj h
     invFun := compactifiedQuotientConj h'
@@ -277,17 +277,17 @@ def conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
 
 @[simp]
 theorem coe_conjBiholomorph (h : ConjAct.toConjAct g • Γ = Γ') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     ⇑(conjBiholomorph h) = compactifiedQuotientConj h :=
   (rfl)
 
 /-- The inverse of the biholomorphism induced by `g` is the one induced by `g⁻¹`. -/
 @[simp]
 theorem conjBiholomorph_symm (h : ConjAct.toConjAct g • Γ = Γ') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
     (conjBiholomorph h).symm =
       conjBiholomorph (by rw [← h, map_inv, inv_smul_smul] : ConjAct.toConjAct g⁻¹ • Γ' = Γ) := by
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
+  have : DiscreteTopology Γ' := h ▸ inferInstance
   exact Diffeomorph.ext fun _ ↦ rfl
 
 /-- Conjugation by `1` induces the identity biholomorphism. -/
@@ -301,13 +301,13 @@ theorem conjBiholomorph_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ
 @[simp]
 theorem conjBiholomorph_trans {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
     (h : ConjAct.toConjAct g • Γ = Γ') (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h
-    letI := TauCeti.discreteTopology_of_conjAct_smul_eq h'
+    letI : DiscreteTopology Γ' := h ▸ inferInstance
+    letI : DiscreteTopology Γ'' := h' ▸ inferInstance
     (conjBiholomorph h).trans (conjBiholomorph h') =
       conjBiholomorph (by rw [map_mul, mul_smul, h, h'] :
         ConjAct.toConjAct (g' * g) • Γ = Γ'') := by
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h
-  have := TauCeti.discreteTopology_of_conjAct_smul_eq h'
+  have : DiscreteTopology Γ' := h ▸ inferInstance
+  have : DiscreteTopology Γ'' := h' ▸ inferInstance
   exact Diffeomorph.ext fun x ↦ congrFun (compactifiedQuotientConj_comp h h') x
 
 end CompactifiedQuotient
