@@ -425,7 +425,7 @@ private theorem isQuotientSandwiched_of_nullMeasurableSet {E : Set G}
     have hae₁ : E₁ =ᵐ[μ] E := by
       simpa [E₁] using (hE.compl.toMeasurable_ae_eq).compl
     have hae₂ : E₂ =ᵐ[μ] E := hE.toMeasurable_ae_eq
-    exact ae_le_set.mp (hae₂.trans hae₁.symm).le
+    exact ae_subset.mp (hae₂.trans hae₁.symm).subset
   let pair : Bool → Set G := fun b ↦ cond b E₁ E₂
   have hpair : ∀ b, IsQuotientSandwiched μ (pair b)
     | true => isQuotientSandwiched_of_measurableSet hE₁_meas
