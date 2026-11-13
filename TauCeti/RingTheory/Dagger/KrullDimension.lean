@@ -156,7 +156,7 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   obtain ⟨p, _, hp⟩ := N.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient (R := W σ)
     (Ideal.mem_comap.mpr (hv ▸ M.mul_mem_right _ hfM)) hg
     (polynomialQuotientEquiv hd hm).toRingEquiv
-  rw [← RingEquiv.height_comap E M, Finite.card_option, Nat.cast_add, Nat.cast_one]
+  rw [← RingEquiv.height_comap E.toRingEquiv M, Finite.card_option, Nat.cast_add, Nat.cast_one]
   exact le_trans (by gcongr; exact IH p) hp
 
 end washnitzerAlgebra

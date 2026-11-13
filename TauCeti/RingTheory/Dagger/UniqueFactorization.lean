@@ -75,11 +75,8 @@ private theorem uniqueFactorizationMonoid_option [Finite σ] [UniqueFactorizatio
   set g : W' := e f
   -- Weierstrass preparation: `g = u * ω(Y)` with `u` a unit and `ω` monic.
   obtain ⟨u, ω, hu', hm, hg⟩ := exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq hd hu
-  have hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) := by
-    rw [← hg, map_mul, map_mul, Subring.coe_mul,
-      restrictedOptionEquiv_toTate_polynomialToOption] at hd
-    exact hd.of_isUnit_mul one_pos
-      ((hu'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
+  have hω : PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) :=
+    isDistinguished_of_isUnit_mul_polynomialToOption_eq hd hu' hg
   have hassoc : Associated (polynomialToOption ω) g := by
     rw [← hg, mul_comm]
     exact associated_mul_unit_right _ _ hu'

@@ -72,7 +72,9 @@ private theorem spanFinrank_le_natCard_option {σ : Type*} [Finite σ]
   · simp
   obtain ⟨f, hfM, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hM
   obtain ⟨E, s, ω, hd, hm, v, hv⟩ := exists_associated_polynomialToOption f hf
-  rw [← Ideal.map_comap_of_surjective E E.surjective M, Ideal.spanFinrank_map_eq_of_ringEquiv]
+  have hrank : (Ideal.map E (M.comap E)).spanFinrank = (M.comap E).spanFinrank :=
+    Ideal.spanFinrank_map_eq_of_ringEquiv E.toRingEquiv _
+  rw [← Ideal.map_comap_of_surjective E E.surjective M, hrank]
   set N : Ideal (W (Option σ)) := M.comap E
   have : N.IsMaximal := Ideal.comap_isMaximal_of_surjective E E.surjective
   have hωN : polynomialToOption ω ∈ N := Ideal.mem_comap.mpr (hv ▸ M.mul_mem_right _ hfM)
