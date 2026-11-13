@@ -228,7 +228,7 @@ private theorem mem_normalCylinder_of_indicator_ne_zero
 
 /-- Reflection through a Lipschitz chart preserves nonnegativity when the cutoff is
 nonnegative on the source domain. -/
-theorem W1p.value_lipschitzChartExtensionL_nonneg
+theorem W1p.value_lipschitzChartExtensionL_ae_nonneg
     (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L e φ a b)
     (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
     (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)

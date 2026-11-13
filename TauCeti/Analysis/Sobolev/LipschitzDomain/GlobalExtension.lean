@@ -101,7 +101,7 @@ private theorem exists_local_extension
     intro ψ hψ M hM hv hg hs hψ0
     exact ⟨W1p.lipschitzChartExtensionL hc' ψ hψ hM hv hg (hs.trans inter_subset_left),
       W1p.restrictL_lipschitzChartExtensionL hc' hψ hM hv hg _,
-      fun _ hu => W1p.value_lipschitzChartExtensionL_nonneg hc' hψ hM hv hg _ hψ0 hu⟩
+      fun _ hu => W1p.value_lipschitzChartExtensionL_ae_nonneg hc' hψ hM hv hg _ hψ0 hu⟩
 
 /-- **Extension theorem for bounded Lipschitz domains.** There is a bounded linear extension
 from `W^{1,p}(Ω)` to the whole space, and restriction to `Ω` recovers the original function.
