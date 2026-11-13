@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.Bond.Trading
+public import TauCeti.Probability.Finance.Bond.Basic
 public import TauCeti.Probability.Finance.SimpleStrategy.L1Approximation
 
 /-!
@@ -17,11 +17,12 @@ measure's L¹ norm by bounded finite-grid holdings, chosen at the left endpoints
 approximations preserve the information constraint of trading and control precisely the
 absolute-income error, even when the rate vanishes or changes sign.
 
-`variation_vectorMeasureIcc_bondPrice` identifies the weight, and
-`Filtration.exists_seq_simpleHolding_tendsto_eLpNorm_one` supplies the density theorem.
-The hypothesis is expected absolute-variation integrability; no square moment, path
-continuity or boundedness of the holding is assumed. The result constructs approximations,
-and does not assert a self-financing identity or a stochastic stock integral.
+The weight is the absolute-variation density identified by
+`variation_vectorMeasureIcc_bondPrice` in `TauCeti.Probability.Finance.Bond.Trading`, and
+`Filtration.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable` supplies
+the density theorem. The hypothesis is expected absolute-variation integrability; no square
+moment, path continuity or boundedness of the holding is assumed. The result constructs
+approximations, and does not assert a self-financing identity or a stochastic stock integral.
 
 ## References
 
@@ -46,7 +47,7 @@ approximated in expected absolute-variation L¹ by bounded left-measurable finit
 holdings. Only continuity of the rate on the declared horizon is required. Rates and
 holdings may have either sign, and neither the initial bond price nor the horizon needs
 to be positive. -/
-theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_bond
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_bondPrice
     (hr : ContinuousOn r (Icc 0 (T : ℝ)))
     {b : ℝ≥0 → Ω → ℝ} (hb : IsStronglyPredictable ℱ b)
     (hint : Integrable (Function.uncurry b)
@@ -60,8 +61,6 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_bond
         (fun p ↦ simpleHolding (τ k) (n k) (a k) p.1 p.2 - b p.1 p.2) 1
         (((timeMeasure T).prod P).withDensity
           (fun p : ℝ≥0 × Ω ↦ ‖r p.1 * bondPrice r β₀ p.1‖ₑ))) atTop (𝓝 0) := by
-  let ν := ((timeMeasure T).prod P).withDensity
-    (fun p : ℝ≥0 × Ω ↦ ‖r p.1 * bondPrice r β₀ p.1‖ₑ)
   have hcont : ContinuousOn (fun u : ℝ≥0 ↦ r u * bondPrice r β₀ u) (Icc 0 T) :=
     (hr.mul (continuousOn_bondPrice hr β₀)).comp (by fun_prop)
       (fun u hu ↦ ⟨by exact_mod_cast hu.1, by exact_mod_cast hu.2⟩)
@@ -71,28 +70,11 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_bond
       Ioc_subset_Icc_self
     simpa only [timeMeasure_def, Measure.restrict_apply_univ] using
       (measure_ne_top (timeMeasure T) univ)
-  have : IsFiniteMeasure ν :=
+  have : IsFiniteMeasure (((timeMeasure T).prod P).withDensity
+      (fun p : ℝ≥0 × Ω ↦ ‖r p.1 * bondPrice r β₀ p.1‖ₑ)) :=
     isFiniteMeasure_withDensity (htime.comp_fst P).hasFiniteIntegral.ne
-  let μ := ν.trim ℱ.predictable_le_prod
-  have hzero : μ ({0} ×ˢ (univ : Set Ω)) = 0 := by
-    have hset : MeasurableSet[ℱ.predictable] ({0} ×ˢ (univ : Set Ω)) := by
-      simpa only [NNReal.bot_eq_zero] using
-        (measurableSet_predictable_singleton_bot_prod (𝓕 := ℱ) MeasurableSet.univ)
-    dsimp only [μ]
-    rw [trim_measurableSet_eq _ hset]
-    apply withDensity_absolutelyContinuous
-    simp only [Measure.prod_prod, timeMeasure_singleton_zero, zero_mul]
-  have hmem : Integrable (Function.uncurry b) μ := by
-    rw [← memLp_one_iff_integrable] at hint ⊢
-    simpa only [MemLp, μ, eLpNorm_trim ℱ.predictable_le_prod hb] using hint
-  obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, hlim⟩ :=
-    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one μ hzero hmem
-  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hbound, ?_⟩
-  have heq k : eLpNorm
-      (fun p ↦ simpleHolding (τ k) (n k) (a k) p.1 p.2 - b p.1 p.2) 1 μ =
-        eLpNorm (fun p ↦ simpleHolding (τ k) (n k) (a k) p.1 p.2 - b p.1 p.2) 1 ν :=
-    eLpNorm_trim ℱ.predictable_le_prod
-      ((isStronglyPredictable_simpleHolding (ℱ := ℱ) (ha k)).sub hb)
-  exact hlim.congr fun k ↦ heq k
+  exact ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_of_isStronglyPredictable _
+    (withDensity_absolutelyContinuous _ _
+      (by simp only [Measure.prod_prod, timeMeasure_singleton_zero, zero_mul])) hb hint
 
 end TauCeti.Finance
