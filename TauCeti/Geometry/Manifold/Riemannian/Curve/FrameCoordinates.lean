@@ -83,25 +83,19 @@ theorem curveVelocity_eq_frameVelocityCoordinates (hs : IsLocalFrameOn I E n s u
     (ht : γ t ∈ u) (ho : Orthonormal ℝ (fun i ↦ s i (γ t))) :
     curveVelocity I γ t = (frameVelocityCoordinates s γ t).re • s 0 (γ t) +
       (frameVelocityCoordinates s γ t).im • s 1 (γ t) := by
-  have h := hs.coeff_sum_eq (FiberBundle.extend E (curveVelocity I γ t)) ht
-  simp only [FiberBundle.extend_apply_self, Fin.sum_univ_two] at h
-  rw [hs.coeff_eq_inner ht ho 0, hs.coeff_eq_inner ht ho 1] at h
-  rw [frameVelocityCoordinates_re, frameVelocityCoordinates_im]
-  exact h
+  simpa only [Fin.sum_univ_two, frameVelocityCoordinates_re, frameVelocityCoordinates_im] using
+    (hs.sum_inner_smul_eq ht ho (curveVelocity I γ t)).symm
 
 /-- In a frame orthonormal at `γ t`, the complex coordinates of the velocity have the norm of the
 velocity. -/
 theorem norm_frameVelocityCoordinates (hs : IsLocalFrameOn I E n s u) (ht : γ t ∈ u)
     (ho : Orthonormal ℝ (fun i ↦ s i (γ t))) :
     ‖frameVelocityCoordinates s γ t‖ = ‖curveVelocity I γ t‖ := by
-  have horth := orthonormal_iff_ite.mp ho
-  have hsq : ‖curveVelocity I γ t‖ ^ 2 = ‖frameVelocityCoordinates s γ t‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_frameVelocityCoordinates hs ht ho,
-      ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-    simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right,
-      horth]
-    norm_num
-  exact ((sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq).symm
+  apply (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
+  rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+  simpa only [Fin.sum_univ_two, Real.norm_eq_abs, sq_abs,
+    frameVelocityCoordinates_re, frameVelocityCoordinates_im, ← pow_two] using
+    hs.sum_sq_norm_inner ht ho (curveVelocity I γ t)
 
 /-- In a frame orthonormal at `γ t`, the complex coordinates of a nonzero velocity are nonzero. -/
 theorem frameVelocityCoordinates_ne_zero (hs : IsLocalFrameOn I E n s u) (ht : γ t ∈ u)
