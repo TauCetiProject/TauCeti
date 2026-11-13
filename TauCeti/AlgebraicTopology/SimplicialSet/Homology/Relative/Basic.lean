@@ -152,15 +152,12 @@ lemma chainComplexXSplitting_s_d_r_comp (P : SSetPair.{w}) (R : A) (m : ℕ) :
         (SSet.chainComplexMap P.hom R).f m =
       (P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
         (P.right.chainComplex R).d (m + 1) m := by
-  have hid := (chainComplexXSplitting R P m).id
+  have hr := (chainComplexXSplitting R P m).r_f
   have hsg := (chainComplexXSplitting R P (m + 1)).s_g
-  dsimp at hid hsg
+  dsimp at hr hsg
   have hπ : (P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
       (P.right.chainComplex R).d (m + 1) m ≫ (P.chainComplexπ R).f m = 0 := by
     rw [← HomologicalComplex.Hom.comm, reassoc_of% hsg, HomologicalComplex.iCycles_d]
-  have hr : (chainComplexXSplitting R P m).r ≫ (SSet.chainComplexMap P.hom R).f m =
-      𝟙 _ - (P.chainComplexπ R).f m ≫ (chainComplexXSplitting R P m).s :=
-    eq_sub_of_add_eq hid
   simp only [Category.assoc, hr, Preadditive.comp_sub, Category.comp_id, reassoc_of% hπ,
     zero_comp, sub_zero]
 
