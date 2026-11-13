@@ -43,7 +43,7 @@ the invariance statements it unlocks.
   presentation**, in the form that each degree occurs equally often in the two.
 * `AlgEquiv.nonempty_equiv_index_simpleSubmoduleClasses`: the block index is in bijection with the
   isomorphism classes of simple `k[G]`-modules.
-* `TauCeti.existsUnique_nonempty_equiv_irreducibleRepresentation`: every irreducible
+* `Representation.existsUnique_nonempty_equiv_irreducibleRepresentation`: every irreducible
   representation, with carrier in any universe, is equivalent to exactly one of the chosen
   irreducible models `Zᵢ = TauCeti.irreducibleRepresentation k i`.
 * `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: the same lookup for simple
@@ -210,8 +210,8 @@ variable {k G} in
 /-- **Every irreducible representation is one of the chosen irreducible models**, and only one:
 for an irreducible `ρ` there is exactly one row `i` of the character table with `ρ ≃ Zᵢ`. The
 carrier of `ρ` may lie in any universe, not only in that of `k`. -/
-theorem existsUnique_nonempty_equiv_irreducibleRepresentation {V : Type w} [AddCommGroup V]
-    [Module k V] (ρ : Representation k G V) [ρ.IsIrreducible] :
+theorem _root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation {V : Type w}
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) [ρ.IsIrreducible] :
     ∃! i : Fin (Nat.card (ConjClasses G)), Nonempty (ρ.Equiv (irreducibleRepresentation k i)) := by
   obtain ⟨i, ⟨φ⟩⟩ := ClassFunction.exists_nonempty_equiv (irreducibleRepresentation k)
     (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) ρ
@@ -231,8 +231,9 @@ theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w)
   have : (_root_.Representation.ofModule' (k := k) (G := G) N).IsIrreducible :=
     (Representation.isIrreducible_ofModule'_iff N).mpr inferInstance
   let eN := (Representation.ofModule'AsModuleEquiv (k := k) (G := G) N).symm
-  refine (existsUnique_congr fun i ↦ ?_).mp (existsUnique_nonempty_equiv_irreducibleRepresentation
-    (_root_.Representation.ofModule' (k := k) (G := G) N))
+  refine (existsUnique_congr fun i ↦ ?_).mp
+    (_root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation
+      (_root_.Representation.ofModule' (k := k) (G := G) N))
   rw [Representation.nonempty_equiv_iff]
   exact ⟨fun ⟨e⟩ ↦ ⟨eN ≪≫ₗ e⟩, fun ⟨e⟩ ↦ ⟨eN.symm ≪≫ₗ e⟩⟩
 

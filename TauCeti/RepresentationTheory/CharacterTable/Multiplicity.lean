@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
+import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
 /-!
@@ -156,27 +157,8 @@ theorem intrinsicMultiplicity_directSum {ι : Type*} [Fintype ι] {W : ι → Ty
     [∀ j, AddCommGroup (W j)] [∀ j, Module k (W j)] [∀ j, FiniteDimensional k (W j)]
     (σ : ∀ j, Representation k G (W j)) (i : Fin (Nat.card (ConjClasses G))) :
     (directSum σ).intrinsicMultiplicity i = ∑ j, (σ j).intrinsicMultiplicity i := by
-  classical
   simp only [intrinsicMultiplicity_def, ← finrank_pi_fintype]
-  let e := DirectSum.linearEquivFunOnFintype k ι W
-  have he (g : G) (x : DirectSum ι W) (j : ι) : e (directSum σ g x) j = σ j g (e x j) := by
-    simp [e, directSum_apply]
-  refine LinearEquiv.finrank_eq
-    { toFun f := fun j ↦ ⟨LinearMap.proj j ∘ₗ e.toLinearMap ∘ₗ f.toLinearMap, fun g ↦
-        LinearMap.ext fun x ↦ by
-          simp only [LinearMap.comp_apply, LinearMap.proj_apply, LinearEquiv.coe_coe,
-            IntertwiningMap.coe_toLinearMap]
-          rw [f.isIntertwining, he]⟩
-      invFun f := ⟨e.symm.toLinearMap ∘ₗ LinearMap.pi fun j ↦ (f j).toLinearMap, fun g ↦
-        LinearMap.ext fun x ↦ e.injective <| funext fun j ↦ by
-          simp only [LinearMap.comp_apply]
-          rw [he]
-          simp [IntertwiningMap.isIntertwining]⟩
-      left_inv f := IntertwiningMap.ext <| LinearMap.ext fun x ↦ e.injective <| funext fun j ↦ by
-        simp
-      right_inv f := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp
-      map_add' f f' := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp
-      map_smul' c f := funext fun j ↦ IntertwiningMap.ext <| LinearMap.ext fun x ↦ by simp }
+  exact (IntertwiningMap.directSumLinearEquiv _ σ).finrank_eq
 
 open Classical in
 /-- **The cross-universe Hom-dimension formula**: an irreducible representation, with carrier in
