@@ -427,7 +427,7 @@ example {X A : Type*} [DecidableEq X] [DecidableEq A] (x : X) :
       (Or.inr ⟨⟨0, Nat.zero_lt_one⟩, Or.inr rfl⟩)) (j := 0) (by simp)
   exact h.ne_nil o ⟨0, Nat.zero_lt_one⟩ (by rw [ho]; rfl) rfl
 
-/-- The table `(a | a⁻¹ ; a | a⁻¹)` of the words `x z⁻¹`, `z z⁻¹` of `x ≠ 1` over `F(a)`. -/
+/-- The table `(a | a⁻¹; a | a⁻¹)` of the words `x z⁻¹`, `z z⁻¹` of `x ≠ 1` over `F(a)`. -/
 private def xNeOneTable (o : Occurrence (⟨[], [FreeGroup.of (Sum.inl 0)]⟩ :
     EqIneqSystem (Fin 1) (Fin 1)).toWords) :
     List ((Fin (systemSize (⟨[], [FreeGroup.of (Sum.inl 0)]⟩ :
