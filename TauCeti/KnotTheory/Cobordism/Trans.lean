@@ -278,9 +278,8 @@ private theorem proj_surjective : Surjective (proj S₁ S₂) :=
 private theorem isEmbedding_stackMap : IsEmbedding (stackMap S₁ S₂) :=
   ⟨⟨rfl⟩, Setoid.kerLift_injective _⟩
 
-private theorem range_stackMap : range (stackMap S₁ S₂) = range (piecesMap S₁ S₂) := by
-  rw [← (proj_surjective S₁ S₂).range_comp]
-  exact congrArg range (funext (stackMap_proj S₁ S₂))
+private theorem range_stackMap : range (stackMap S₁ S₂) = range (piecesMap S₁ S₂) :=
+  Setoid.range_kerLift_eq_range _
 
 private theorem continuous_proj : Continuous (proj S₁ S₂) :=
   continuous_induced_rng.2 <| continuous_sum_dom.2
