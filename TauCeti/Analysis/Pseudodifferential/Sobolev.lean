@@ -119,6 +119,8 @@ families of operators.
 * `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`: a smoothing
   symbol with compact spatial support quantizes, on every `H^t`, to a bounded operator
   `H^r → H^s` for arbitrary orders `r` and `s`.
+* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: such a symbol quantizes every
+  element of `H^s` into `H^t` for all real `s` and `t`.
 
 ## References
 
@@ -1050,6 +1052,17 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
     SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
+
+/-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
+spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
+theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s t : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
+  -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
+  have hbc := hc.of_coefficient_eq hb
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
+  simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
 
 end Sobolev
 
