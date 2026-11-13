@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -44,6 +45,8 @@ section.
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
   read through an atlas trivialization, is a `C^n` section over its base set.
+* `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
+  section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
 -/
 
 public noncomputable section
@@ -253,3 +256,24 @@ theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.base
   (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] {n : WithTop ℕ∞} [ContMDiffVectorBundle n F V 𝓘(𝕜, E)]
+
+/-- **The expression of a `C^n` section in a chart and a trivialization is `C^n`.** For a chart `φ`
+of the maximal `C^n` atlas of `M` and a trivialization `e` of the bundle's trivialization atlas, the
+expression `y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2` of a `C^n` section `s` is `C^n` on the open set of
+points of `φ.target` lying over `e.baseSet`. -/
+theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
+    (hs : ContMDiff 𝓘(𝕜, E) (𝓘(𝕜, E).prod 𝓘(𝕜, F)) n fun x ↦ TotalSpace.mk' F x (s x))
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
+    ContDiffOn 𝕜 n (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2) (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
+  (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
+
+end TauCeti

@@ -192,16 +192,8 @@ transposition of two opposite points, is the centralizer of the double transposi
 `finRotate 4 ^ 2`. -/
 theorem closure_finRotate_four_swap_eq_centralizer :
     Subgroup.closure {finRotate 4, swap 0 2} = Subgroup.centralizer {finRotate 4 ^ 2} := by
-  refine le_antisymm ((Subgroup.closure_le _).2 ?_) fun σ hσ => ?_
-  · rintro σ (rfl | rfl) <;> rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff] <;>
-      decide
-  · -- Each of the eight elements of the centralizer is a word in the two generators.
-    have hword : ∀ σ : Perm (Fin 4), σ * finRotate 4 ^ 2 = finRotate 4 ^ 2 * σ →
-        ∃ i : Fin 4, ∃ j : Fin 2, σ = finRotate 4 ^ (i : ℕ) * swap 0 2 ^ (j : ℕ) := by
-      decide +kernel
-    obtain ⟨i, j, rfl⟩ := hword σ (Subgroup.mem_centralizer_singleton_iff.1 hσ)
-    exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
-      (pow_mem (Subgroup.subset_closure (by simp)) _)
+  rw [← centralizer_symmetricGroupFourMatching_two_eq_closure, symmetricGroupFourMatching_two,
+    show finRotate 4 ^ 2 = swap 0 2 * swap 1 3 by decide]
 
 /-- The reference subgroup of `4T1` has order `4`. -/
 theorem natCard_referenceSubgroup_four_zero :

@@ -226,14 +226,11 @@ private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * �
     rw [← hg, littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierMultiplierCLM_apply
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)
       (lowPass φ (j + n₀)).hasTemperateGrowth, inhomogeneousLittlewoodPaley_mul_lowPass φ hn₀]
-  obtain ⟨g', hg', hae, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
-    (lowPass φ (j + n₀)) g (q := ∞) le_rfl (by simp)
-  have hgg' : g' = g := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg', hrep]
   have hconv : 𝓕⁻ (⇑(lowPass φ (j + n₀))) ⋆[lsmul ℂ ℂ] (g : E → F) = smoothBlock φ n₀ j g := by
     ext x
     simp only [smoothBlock, coe_kernel, convolution_def, lsmul_apply]
-  rwa [hgg', hconv] at hae
+  rw [← hconv]
+  exact ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq hrep
 
 end Kernel
 
