@@ -205,7 +205,7 @@ example :
       ¬ ∀ i j, ((![1, 1] : Fin 2 → ℕ) i : ℤ) * !![2, -2; -1, 2] i j =
         (![1, 1] : Fin 2 → ℕ) j * !![2, -2; -1, 2] j i := by
   refine ⟨by simp [simpleTorus_def], ?_, fun h ↦ by simpa using h 0 1⟩
-  rw [braidLength_of_ne_of_le _ (by decide) (by simp)]
+  rw [braidLength_of_le _ (by simp)]
   simp
 
 /-- The braid lengths of `A₁ × A₁`, `A₂` and `G₂` (with `a₁₂ = −3`, `a₂₁ = −1` and symmetrizer
@@ -221,7 +221,7 @@ example :
       (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
       (by simp [Matrix.det_fin_two_of])).braidLength 0 1 = 6 := by
   refine ⟨?_, ?_, ?_⟩ <;>
-  · rw [braidLength_of_ne_of_le _ (by decide) (by simp)]
+  · rw [braidLength_of_le _ (by simp)]
     simp
 
 end Checks
