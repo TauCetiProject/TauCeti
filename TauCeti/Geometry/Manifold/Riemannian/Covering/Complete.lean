@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Lifting
-public import TauCeti.Analysis.Convex.SimplyConnected
+public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.HopfRinow
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Geodesic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Completeness
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+import TauCeti.Topology.ContinuousOn.Extension
+import TauCeti.Topology.Covering.Convex
 
 /-!
 # Completeness lifts along Riemannian coverings
@@ -84,40 +85,21 @@ theorem exists_isGeodesicCurveOnFrom_of_isCoveringMap
     {v : TangentSpace I x} {γ : ℝ → N} {s : Set ℝ} (hs : s.OrdConnected)
     (hγ : IsGeodesicCurveOnFrom J γ s (f x) (mfderiv I J f x v)) :
     ∃ Γ : ℝ → M, IsGeodesicCurveOnFrom I Γ s x v ∧ EqOn (f ∘ Γ) γ s := by
-  classical
-  have hconv : Convex ℝ s := hs.convex
-  have : SimplyConnectedSpace s := hconv.isSimplyConnected ⟨0, hγ.zero_mem⟩
-  have : LocallyPathConnectedSpace s := hconv.locallyPathConnectedSpace
-  obtain ⟨L, ⟨hL0, hL⟩, -⟩ := hcov.existsUnique_continuousMap_lifts
+  obtain ⟨L, ⟨hL0, hL⟩, -⟩ := hcov.existsUnique_continuousMap_lifts_of_convex hs.convex
     ⟨s.domRestrict γ, hγ.isGeodesicCurveOn.continuousOn.domRestrict⟩
     ⟨0, hγ.zero_mem⟩ x hγ.base_eq.symm
-  let Γ : ℝ → M := fun t ↦ if ht : t ∈ s then L ⟨t, ht⟩ else x
-  have hΓL : s.domRestrict Γ = L := by
-    funext t
-    simp [Γ, Set.domRestrict]
-  have hΓ0 : Γ 0 = x := by
-    simpa [Γ, hγ.zero_mem] using hL0
-  have hΓc : ContinuousOn Γ s := by
-    rw [continuousOn_iff_continuous_domRestrict, hΓL]
-    exact L.continuous
+  have : Nonempty M := ⟨x⟩
+  obtain ⟨Γ, hΓc, hΓL⟩ := L.continuous.exists_continuousOn_eq (A := s)
+  have hΓ0 : Γ 0 = x := (hΓL ⟨0, hγ.zero_mem⟩).trans hL0
   have hΓγ : EqOn (f ∘ Γ) γ s := by
     intro t ht
-    simpa [Γ, ht, Set.domRestrict] using congrFun hL ⟨t, ht⟩
+    simpa only [Function.comp_apply, hΓL ⟨t, ht⟩, ContinuousMap.coe_mk, Set.domRestrict] using
+      congrFun hL ⟨t, ht⟩
   have hΓ2 : ContMDiffOn 𝓘(ℝ) I 2 Γ s :=
     ContMDiffOn.of_comp_isLocalDiffeomorph
       (hf.isLocalDiffeomorph (n := 2) (by norm_num) (by simp)) hΓc
       (hγ.isGeodesicCurveOn.contMDiffOn.congr hΓγ)
-  have hγ' : IsGeodesicCurveOnFrom J (f ∘ Γ) s (f x) (mfderiv I J f x v) := by
-    refine ⟨hγ.isGeodesicCurveOn.congr hΓγ, hγ.zero_mem, ?_⟩
-    calc
-      _ = TotalSpace.mk' F (γ 0) (curveVelocityWithin J γ s 0) := by
-        simpa only [tangentMapWithin_unit_eq_curveVelocityLiftWithin,
-          curveVelocityLiftWithin_apply] using
-          tangentMapWithin_congr (I := 𝓘(ℝ)) (I' := J) hΓγ
-            (TotalSpace.mk' ℝ 0 ((NormedSpace.fromTangentSpace (𝕜 := ℝ) 0).symm 1))
-            hγ.zero_mem
-      _ = _ := hγ.initial_eq
-  exact ⟨Γ, (hf.isGeodesicCurveOnFrom_comp_iff hΓ2 hΓ0).mp hγ', hΓγ⟩
+  exact ⟨Γ, (hf.isGeodesicCurveOnFrom_comp_iff hΓ2 hΓ0).mp (hγ.congr hΓγ), hΓγ⟩
 
 /-- An all-time geodesic lifts through a Riemannian covering with prescribed initial data. -/
 theorem exists_isGeodesicCurveOnFrom_univ_of_isCoveringMap
@@ -146,37 +128,27 @@ theorem geodesicInterval_mfderiv_of_isCoveringMap
     (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) (x : M)
     (v : TangentSpace I x) :
     geodesicInterval J N (f x) (mfderiv I J f x v) = geodesicInterval I M x v := by
-  ext t
-  simp only [mem_geodesicInterval_iff]
-  constructor
-  · rintro ⟨γ, a, b, hγ, ht⟩
-    obtain ⟨Γ, hΓ, -⟩ := hf.exists_isGeodesicCurveOnFrom_of_isCoveringMap
-      hcov ordConnected_Ioo hγ
-    exact ⟨Γ, a, b, hΓ, ht⟩
-  · rintro ⟨γ, a, b, hγ, ht⟩
-    exact ⟨f ∘ γ, a, b, hf.isGeodesicCurveOnFrom_comp hγ, ht⟩
-
-/-- Geodesic completeness at corresponding points is equivalent along a Riemannian covering. -/
-theorem isGeodesicallyCompleteAt_iff_of_isCoveringMap
-    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) (x : M) :
-    IsGeodesicallyCompleteAt J N (f x) ↔ IsGeodesicallyCompleteAt I M x := by
-  rw [isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval,
-    isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval]
-  constructor
-  · intro h v
-    rw [← hf.geodesicInterval_mfderiv_of_isCoveringMap hcov]
-    exact h _
-  · intro h w
-    obtain ⟨v, rfl⟩ := hf.mfderiv_surjective x w
-    rw [hf.geodesicInterval_mfderiv_of_isCoveringMap hcov]
-    exact h v
+  refine Subset.antisymm ?_ (hf.geodesicInterval_subset_geodesicInterval_mfderiv x v)
+  intro t ht
+  rcases mem_geodesicInterval_iff.mp ht with ⟨γ, a, b, hγ, ht⟩
+  obtain ⟨Γ, hΓ, -⟩ := hf.exists_isGeodesicCurveOnFrom_of_isCoveringMap
+    hcov ordConnected_Ioo hγ
+  exact mem_geodesicInterval_iff.mpr ⟨Γ, a, b, hΓ, ht⟩
 
 /-- **Geodesic completeness lifts along a Riemannian covering.** If every geodesic leaving
 `f x` is defined for all time, then every geodesic leaving `x` is defined for all time. -/
 theorem isGeodesicallyCompleteAt_of_isCoveringMap (hf : IsLocalRiemannianIsometry I J f)
     (hcov : IsCoveringMap f) {x : M} (h : IsGeodesicallyCompleteAt J N (f x)) :
-    IsGeodesicallyCompleteAt I M x :=
-  (hf.isGeodesicallyCompleteAt_iff_of_isCoveringMap hcov x).mp h
+    IsGeodesicallyCompleteAt I M x := by
+  refine isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval.2 fun v ↦ ?_
+  rw [← hf.geodesicInterval_mfderiv_of_isCoveringMap hcov, h.geodesicInterval_eq_univ]
+  exact mem_univ 1
+
+/-- Geodesic completeness at corresponding points is equivalent along a Riemannian covering. -/
+theorem isGeodesicallyCompleteAt_iff_of_isCoveringMap
+    (hf : IsLocalRiemannianIsometry I J f) (hcov : IsCoveringMap f) (x : M) :
+    IsGeodesicallyCompleteAt J N (f x) ↔ IsGeodesicallyCompleteAt I M x :=
+  ⟨hf.isGeodesicallyCompleteAt_of_isCoveringMap hcov, hf.isGeodesicallyCompleteAt⟩
 
 /-- **Geodesic completeness lifts along a Riemannian covering**, global form. -/
 theorem forall_isGeodesicallyCompleteAt_of_isCoveringMap (hf : IsLocalRiemannianIsometry I J f)
@@ -221,13 +193,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-  [BoundarylessManifold I M]
 
 /-- **Pullback metrics along coverings are geodesically complete.** Let `f : M → N` be a smooth
 covering map whose differential is everywhere invertible, and `g` a smooth Riemannian metric on
 `N`. If every geodesic of `g` leaving `f x` is defined for all time, then so is every geodesic of
 the pullback metric `f^* g` leaving `x`. -/
-theorem isGeodesicallyCompleteAt_pullback_of_isCoveringMap
+theorem isGeodesicallyCompleteAt_pullback_of_isCoveringMap [BoundarylessManifold I M]
     (g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {f : M → N}
     (hf : ContMDiff I J (∞ + 1) f) (hinv : ∀ x, (mfderiv I J f x).IsInvertible)
     (hcov : IsCoveringMap f) {x : M}
