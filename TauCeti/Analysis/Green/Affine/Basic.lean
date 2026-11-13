@@ -77,6 +77,10 @@ theorem hasFDerivAt_affineMap (A : ℂ →L[ℝ] ℂ) (c z : ℂ) :
     HasFDerivAt (affineMap A c) A z :=
   A.hasFDerivAt.add_const c
 
+/-- The affine coordinate map is continuous. -/
+theorem continuous_affineMap (A : ℂ →L[ℝ] ℂ) (c : ℂ) : Continuous (affineMap A c) :=
+  continuous_iff_continuousAt.2 fun z ↦ (hasFDerivAt_affineMap A c z).continuousAt
+
 /-- Curl transforms by the signed determinant under an affine pullback. Only differentiability
 at the image point is needed, in particular this applies to locally real `C¹` fields. -/
 theorem curl_affinePullback (A : ℂ →L[ℝ] ℂ) (c : ℂ) {P Q : ℂ → ℝ} {z : ℂ}
@@ -181,7 +185,7 @@ theorem map_withDensity_affineMap (A : ℂ →L[ℝ] ℂ) (c : ℂ) (s : Set ℂ
     Measure.map (affineMap A c)
       ((volume.restrict s).withDensity (fun _ ↦ ENNReal.ofReal |A.toLinearMap.det|)) =
       volume.restrict (affineMap A c '' s) := by
-  have he : Measurable (affineMap A c) := (A.continuous.add continuous_const).measurable
+  have he : Measurable (affineMap A c) := (continuous_affineMap A c).measurable
   ext t ht
   rw [Measure.map_apply he ht, withDensity_apply _ (he ht), setLIntegral_const,
     Measure.restrict_apply (he ht), Measure.restrict_apply ht, ← volume_affineMap_image A c _,
