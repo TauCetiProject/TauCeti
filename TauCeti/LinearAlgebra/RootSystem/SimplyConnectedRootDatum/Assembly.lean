@@ -490,8 +490,11 @@ coroot is a standard basis vector, so the dot product picks out one entry. -/
   rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
     root_simpleIndex, coroot_simpleIndex, dotProduct_single, mul_one]
 
-/-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`. -/
-@[simp] theorem pairingIn_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
+/-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`.
+
+The priority makes this specialized rule fire before `RootPairing.pairingIn_eq_pairing` when
+`TauCeti.LinearAlgebra.RootSystem.PairingInvariance` is also imported. -/
+@[simp 1100] theorem pairingIn_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).pairingIn ℤ (t.simpleIndex ht i) (t.simpleIndex ht j) =
       t.cartanMatrix i j := by
   simpa using (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ (t.simpleIndex ht i)

@@ -174,18 +174,10 @@ variable (N) in
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
 
-theorem idMorphism_def [DecidableEq X] : N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
-  (rfl)
-
 @[simp]
 theorem idMorphism_apply [DecidableEq X] (x y : X) :
     N.idMorphism x y = if x = y then ι (N.idem x) else 0 := by
   simp only [idMorphism, Matrix.diagonal_apply]
-
-/-- The entries of the identity morphism are `0` or idempotents. -/
-theorem idMorphism_eq_zero_or_mem_range [DecidableEq X] (x y : X) :
-    N.idMorphism x y = 0 ∨ N.idMorphism x y ∈ Set.range ι := by
-  by_cases h : x = y <;> simp [h]
 
 /-- A matrix is a morphism exactly when the identity morphisms of its source and target are
 units for it on the left and on the right. -/
