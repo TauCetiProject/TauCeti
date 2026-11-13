@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.Algebra.Group.ZMultiples
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Comparison
 
 /-!
 # The absolute Hurewicz theorem
@@ -37,6 +38,11 @@ maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and hence everywhere.
   the cubical Hurewicz map, transported to simplicial singular homology, for a universal sign `ε`.
 * `HomotopyGroup.bijective_hurewicz` and `HomotopyGroup.hurewiczAddEquiv`: **the Hurewicz
   theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space.
+* `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`: in that range, the Hurewicz class of
+  a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class generates
+  `πₙ₊₂(X, x)` freely.
+* `HomotopyGroup.bijective_hurewiczIntHom_loopSpace_loopSpace`: the Hurewicz theorem for the
+  double loop space of an `(n + 2)`-connected space in degree `n + 1`, including degree one.
 
 ## References
 
@@ -166,5 +172,58 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
+
+/-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
+`GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
+theorem hurewiczAddEquiv_ofMul_mk (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
+    (p : Ω^ (Fin (n + 2)) X x) :
+    hurewiczAddEquiv hX (Additive.ofMul ⟦p⟧) = (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
+  rw [hurewiczAddEquiv_apply, hurewiczHom_apply]
+  exact congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) p)
+
+/-- **The Hurewicz class of a generalized loop generates exactly when its homotopy class does**,
+in any degree `n + 1` where the integral Hurewicz homomorphism `HomotopyGroup.hurewiczIntHom` is
+bijective: the Hurewicz class of `p` is an isomorphism `ℤ ≅ Hₙ₊₁(X; ℤ)` exactly when the class of
+`p` generates `πₙ₊₁(X, x)` freely, `k ↦ [p]ᵏ` being bijective. -/
+theorem isIso_hurewicz_iff_bijective_zmultiplesHom_of_bijective
+    (hX : Function.Bijective (hurewiczIntHom X x n)) (p : Ω^ (Fin (n + 1)) X x) :
+    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
+      Function.Bijective
+        (zmultiplesHom (Additive (HomotopyGroup (Fin (n + 1)) X x)) (Additive.ofMul ⟦p⟧)) := by
+  have h : ⇑(GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom =
+      zmultiplesHom _ ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) := by
+    funext t
+    rw [zmultiplesHom_apply, ← map_zsmul, smul_eq_mul, mul_one]
+  rw [ConcreteCategory.isIso_iff_bijective, h,
+    ← (AddEquiv.ofBijective _ hX).bijective_zmultiplesHom_apply_iff, AddEquiv.ofBijective_apply,
+    hurewiczIntHom_ofMul_mk]
+
+/-- **The Hurewicz class of a generalized loop generates exactly when its homotopy class does.**
+For an `(n + 1)`-connected space, the Hurewicz class of `p` is an isomorphism `ℤ ≅ Hₙ₊₂(X; ℤ)`
+exactly when the class of `p` generates `πₙ₊₂(X, x)` freely: `k ↦ [p]ᵏ` is bijective. -/
+theorem isIso_hurewicz_iff_bijective_zmultiplesHom
+    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) (p : Ω^ (Fin (n + 2)) X x) :
+    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
+      Function.Bijective
+        (zmultiplesHom (Additive (HomotopyGroup (Fin (n + 2)) X x)) (Additive.ofMul ⟦p⟧)) :=
+  isIso_hurewicz_iff_bijective_zmultiplesHom_of_bijective (hurewiczAddEquiv hX).bijective p
+
+/-- **The Hurewicz theorem for a double loop space**, down to degree one: if `πₖ(X, x)` is trivial
+for every `k < n + 3`, the integral Hurewicz homomorphism `πₙ₊₁(Ω²X) → Hₙ₊₁(Ω²X; ℤ)` of the double
+loop space at the constant loop is bijective. For `n ≥ 1` this is `HomotopyGroup.bijective_hurewicz`
+for the `n`-connected space `Ω²X`. For `n = 0` it is the Hurewicz theorem in degree one,
+`HomotopyGroup.bijective_hurewiczIntHom_zero`, which applies because `π₁(Ω²X) ≅ π₂(ΩX)` is
+commutative. -/
+theorem bijective_hurewiczIntHom_loopSpace_loopSpace
+    (hX : ∀ k < n + 3, Subsingleton (HomotopyGroup (Fin k) X x)) :
+    Function.Bijective (hurewiczIntHom (Ω (Ω X x) (Path.refl x)) (Path.refl (Path.refl x)) n) := by
+  have hΩ (k : ℕ) (hk : k < n + 1) :
+      Subsingleton (HomotopyGroup (Fin k) (Ω (Ω X x) (Path.refl x)) (Path.refl (Path.refl x))) :=
+    (subsingleton_homotopyGroup_loopSpace_iff _ k).2
+      ((subsingleton_homotopyGroup_loopSpace_iff x (k + 1)).2 (hX (k + 1 + 1) (by omega)))
+  rcases n with _ | n
+  · have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero _).2 (hΩ 0 (by omega))
+    exact bijective_hurewiczIntHom_zero fundamentalGroupLoopSpaceMulEquiv
+  · exact (hurewiczAddEquiv hΩ).bijective
 
 end HomotopyGroup

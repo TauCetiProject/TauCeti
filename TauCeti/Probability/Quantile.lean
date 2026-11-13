@@ -149,7 +149,7 @@ transport of an atomless standard-Borel space to the unit interval, proved as Th
 S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, Arkiv för
 Matematik 52 (2014); see also `TauCeti.MeasureTheory.Measure.exists_mpModNull_equiv_unitInterval`
 in `TauCeti.MeasureTheory.Measure.AtomlessStandardBorel`, which composes it with
-`TauCeti.embeddingRealMod0MeasureIso`.
+`MeasurableEmbedding.mod0MeasureIso` along `embeddingReal`.
 -/
 
 public section

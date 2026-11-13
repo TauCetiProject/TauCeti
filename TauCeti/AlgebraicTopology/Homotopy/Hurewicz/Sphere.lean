@@ -442,15 +442,4 @@ theorem singularHomologyMap_diskBoundaryMap_mem_zmultiples {X : TopCat.{0}} {x :
   rw [e]
   exact singularHomologyMap_toSphere_mem_zmultiples p _
 
-/-- **A generalized loop that is a homeomorphism off the boundary has a generating Hurewicz
-class**, with integer coefficients: if `GenLoop.toSphere p` is bijective onto a Hausdorff space
-`X`, every class of `Hₙ₊₁(X; ℤ)` is a unique integer multiple of the Hurewicz class of `p`. -/
-theorem bijective_zsmul_hurewicz_of_bijective_toSphere {X : Type} [TopologicalSpace X]
-    [T2Space X] {x : X} {p : Ω^ (Fin (n + 1)) X x} (hp : Function.Bijective (toSphere p)) :
-    Function.Bijective (fun z : ℤ ↦ z • (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) := by
-  have := isIso_hurewicz_of_bijective_toSphere (ModuleCat.of ℤ ℤ) hp
-  convert ConcreteCategory.bijective_of_isIso (hurewicz (ModuleCat.of ℤ ℤ) p) using 1
-  funext z
-  rw [← map_zsmul, smul_eq_mul, mul_one]
-
 end GenLoop

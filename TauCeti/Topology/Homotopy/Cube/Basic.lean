@@ -58,9 +58,9 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
-* `Cube.comp_mem_boundary_iff`: permuting the coordinates preserves the boundary.
 * `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
   `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
+* `Cube.dense_boundary`: for an infinite index set the boundary of `I^N` is dense.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -124,14 +124,6 @@ theorem Cube.isClosed_boundary {N : Type*} [Finite N] : IsClosed (Cube.boundary 
       (isClosed_eq (continuous_apply i) continuous_const)
 
 open scoped Topology unitInterval in
-/-- Permuting the coordinates of a point of the cube along an equivalence of index types keeps it
-on the boundary, and off it. -/
-@[simp]
-theorem Cube.comp_mem_boundary_iff {M N : Type*} (e : M ≃ N) {y : I^N} :
-    y ∘ e ∈ Cube.boundary M ↔ y ∈ Cube.boundary N :=
-  ⟨fun ⟨i, hi⟩ ↦ ⟨e i, hi⟩, fun ⟨i, hi⟩ ↦ ⟨e.symm i, by simpa using hi⟩⟩
-
-open scoped Topology unitInterval in
 /-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate
 is `0` or `1`, or its remaining coordinates `Fin.tail y` lie on the boundary of `I^(Fin n)`. -/
 theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :
@@ -179,6 +171,20 @@ theorem Cube.preimage_appendHomeomorph_boundary (m n : ℕ) :
   ext ⟨x, y⟩
   simp only [Set.mem_preimage, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and]
   exact Cube.append_mem_boundary_iff
+
+open scoped Topology unitInterval in
+/-- **The boundary of a cube indexed by an infinite set is dense.** -/
+theorem Cube.dense_boundary (N : Type*) [Infinite N] : Dense (Cube.boundary N) := fun y ↦ by
+  -- A basic open set constrains only finitely many coordinates, so it meets the boundary through
+  -- a free coordinate set to `0`.
+  rw [mem_closure_iff]
+  intro U hU hyU
+  obtain ⟨s, u, hu, hsU⟩ := isOpen_pi_iff.1 hU y hyU
+  classical
+  obtain ⟨i, hi⟩ := Infinite.exists_notMem_finset s
+  refine ⟨Function.update y i 0, hsU fun a ha ↦ ?_, i, Or.inl (by simp)⟩
+  rw [Function.update_of_ne (by rintro rfl; exact hi (Finset.mem_coe.1 ha))]
+  exact (hu a ha).2
 
 namespace TauCeti
 
