@@ -58,11 +58,11 @@ sheaf. The forward map is the canonical exterior-power pushforward comparison. -
 def restrictExteriorPowerIso (n : ℕ) :
     restrictFunctor f ⋙ _root_.SheafOfModules.exteriorPower X.sheaf n ≅
       _root_.SheafOfModules.exteriorPower Y.sheaf n ⋙ restrictFunctor f :=
-  @asIso _ _ _ _ (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison
+  @asIso _ _ _ _ (SheafOfModules.pushforwardExteriorPowerComparison
     (restrictRingCatSheafHom f) n)
     -- The scheme and generic site sheaf categories have different instance heads;
     -- pass the coefficient-map isomorphism explicitly.
-    (@TauCeti.SheafOfModules.isIso_pushforwardExteriorPowerComparison
+    (@SheafOfModules.isIso_pushforwardExteriorPowerComparison
       _ _ _ _ _ _ _ _ _ _ _ _ f.opensFunctor _ X.sheaf Y.sheaf
       (restrictRingCatSheafHom f) inferInstance
       (isIso_restrictRingCatSheafHom f) n)
@@ -72,7 +72,7 @@ def restrictExteriorPowerIso (n : ℕ) :
 -- generic isomorphism inverse laws in importing modules.
 theorem restrictExteriorPowerIso_hom_app (n : ℕ) (M : Y.Modules) :
     (restrictExteriorPowerIso f n).hom.app M =
-      (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison
+      (SheafOfModules.pushforwardExteriorPowerComparison
         (restrictRingCatSheafHom f) n).app M :=
   (rfl)
 
@@ -82,7 +82,7 @@ immersion is compatible with the exterior-power comparisons of pushforward and r
 theorem restrictAdjunction_unit_app_exteriorPower (n : ℕ) (M : Y.Modules) :
     (restrictAdjunction f).unit.app ((_root_.SheafOfModules.exteriorPower Y.sheaf n).obj M) =
       (_root_.SheafOfModules.exteriorPower Y.sheaf n).map ((restrictAdjunction f).unit.app M) ≫
-        (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n).app
+        (SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n).app
           (M.restrict f) ≫
         (pushforward f).map ((restrictExteriorPowerIso f n).hom.app M) := by
   rw [restrictExteriorPowerIso_hom_app]
