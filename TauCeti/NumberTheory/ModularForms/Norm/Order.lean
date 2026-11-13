@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.Order.OfVanishing
+import TauCeti.GroupTheory.DoubleCoset.Orbits
 import TauCeti.NumberTheory.ModularForms.Norm.Trace
 import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.NumberTheory.ModularForms.Order.Orbits
@@ -126,25 +127,16 @@ private lemma orbit_sl_eq_orbit_slGL (z : ℍ) :
     exact ⟨g, rfl⟩
 
 -- Step 2, and the crux: a single `SL(2, ℤ)`-orbit meets only finitely many `𝒢`-orbits. This is
--- purely group-theoretic — `𝒢 ⊓ 𝒮ℒ` is a finite-index subgroup of `𝒮ℒ`, so it cuts the
--- pretransitive `𝒮ℒ`-orbit into finitely many pieces, and each piece lies in one `𝒢`-orbit.
+-- purely group-theoretic — `𝒢 ⊓ 𝒮ℒ` is a finite-index subgroup of `𝒮ℒ`, so the coset-translate
+-- map from the `𝒮ℒ`-orbit has finite range, which contains the image.
 private lemma finite_image_orbit_mk_orbit (𝒢 : Subgroup (GL (Fin 2) ℝ))
     [𝒢.IsFiniteRelIndex 𝒮ℒ] (z : ℍ) :
     Set.Finite ((Quotient.mk'' : ℍ → MulAction.orbitRel.Quotient 𝒢 ℍ) ''
       MulAction.orbit SL(2, ℤ) z) := by
   rw [orbit_sl_eq_orbit_slGL]
-  have : Finite (MulAction.orbitRel.Quotient (𝒢.subgroupOf 𝒮ℒ) (MulAction.orbit 𝒮ℒ z)) :=
-    Subgroup.finite_quotient_of_pretransitive_of_index_ne_zero Subgroup.relIndex_ne_zero
-  -- the `𝒢`-class of a point of the orbit depends only on its `𝒢 ⊓ 𝒮ℒ`-piece
-  set F : MulAction.orbitRel.Quotient (𝒢.subgroupOf 𝒮ℒ) (MulAction.orbit 𝒮ℒ z) →
-      MulAction.orbitRel.Quotient 𝒢 ℍ :=
-    fun q ↦ Quotient.liftOn' q (fun p ↦ Quotient.mk'' p.val) (by
-      rintro ⟨a, ha⟩ ⟨b, hb⟩ ⟨h, hh⟩
-      have hval : ((h : ↥𝒮ℒ) : GL (Fin 2) ℝ) • b = a := congrArg Subtype.val hh
-      exact Quotient.sound' ⟨(⟨((h : ↥𝒮ℒ) : GL (Fin 2) ℝ), h.2⟩ : ↥𝒢), hval⟩) with _
-  refine (Set.finite_range F).subset ?_
-  rintro _ ⟨p, hp, rfl⟩
-  exact ⟨Quotient.mk'' ⟨p, hp⟩, rfl⟩
+  refine (Set.finite_range (orbitOfCosetTranslate (𝒢 := 𝒢) (ℋ := 𝒮ℒ) z)).subset ?_
+  rintro _ ⟨_, ⟨h, rfl⟩, rfl⟩
+  exact ⟨((h⁻¹ : 𝒮ℒ) : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ), by simp [Subgroup.smul_def]⟩
 
 /-- **At any level of finite relative index in `𝒮ℒ`, the nonzero-order points of a form meet
 only finitely many `𝒢`-orbits**: the image in `𝒢 \ ℍ` of `{p | orderOfVanishingAt f p ≠ 0}` is

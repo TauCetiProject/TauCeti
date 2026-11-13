@@ -84,86 +84,6 @@ theorem logDeriv_comp_ofComplex_fdBoundary_arc_add_four_sub_eq_neg
   ring
 
 
-/-- The reflected-half integrability: interval integrability of the arc contour
-integrand on `[2, 3]` follows from integrability on `[1, 2]` through the pairing, which
-writes the second half as a reflected constant-minus-first-half integrand. -/
-theorem intervalIntegrable_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3
-    [SlashInvariantFormClass F Γ k] (f : F) (hS : ModularGroup.S ∈ Γ) {H : ℝ}
-    (hd : ∀ t ∈ Ioo (1 : ℝ) 2, DifferentiableAt ℂ (⇑f ∘ ofComplex) (fdBoundary H t))
-    (hne : ∀ t ∈ Ioo (1 : ℝ) 2, (⇑f ∘ ofComplex) (fdBoundary H t) ≠ 0)
-    (hint : IntervalIntegrable
-      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
-      volume 1 2) :
-    IntervalIntegrable
-      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
-      volume 2 3 := by
-  have hconst : IntervalIntegrable
-      (fun u : ℝ ↦ -(↑k * logDeriv (fdBoundary H) u)) volume 1 2 :=
-    ((intervalIntegrable_logDeriv_fdBoundary_arc H ⟨le_rfl, by norm_num⟩
-      ⟨by norm_num, by norm_num⟩).const_mul _).neg
-  have hI := ((hconst.sub hint).comp_sub_left 4).symm
-  have h42 : (4 : ℝ) - 2 = 2 := by norm_num
-  have h41 : (4 : ℝ) - 1 = 3 := by norm_num
-  rw [h42, h41] at hI
-  refine hI.congr_uIoo ?_
-  rw [Set.uIoo_of_le (by norm_num : (2 : ℝ) ≤ 3)]
-  intro x hx
-  have hu : 4 - x ∈ Ioo (1 : ℝ) 2 := ⟨by linarith [hx.2], by linarith [hx.1]⟩
-  have hp := logDeriv_comp_ofComplex_fdBoundary_arc_add_four_sub_eq_neg f hS
-    ⟨hu.1, by linarith [hu.2]⟩ (hd _ hu) (hne _ hu)
-  have hxx : (4 : ℝ) - (4 - x) = x := by ring
-  rw [hxx] at hp
-  simp only [smul_eq_mul] at hp ⊢
-  linear_combination -hp
-
-/-- The arc contour integral of a slash-invariant form's logarithmic derivative is
-`-(k * (π/6 * I))` — the arc's `-k/12` contribution to the `(2πi)⁻¹`-normalized valence
-contour. The two halves of the arc pair through the `S`-transformation under the
-substitution `t ↦ 4 - t`, leaving `-k` times the constant arc integral of the contour's
-own logarithmic derivative. -/
-theorem intervalIntegral_deriv_smul_logDeriv_comp_ofComplex_fdBoundary_arc
-    [SlashInvariantFormClass F Γ k] (f : F)
-    (hS : ModularGroup.S ∈ Γ) {H : ℝ}
-    (hd : ∀ t ∈ Ioo (1 : ℝ) 2, DifferentiableAt ℂ (⇑f ∘ ofComplex) (fdBoundary H t))
-    (hne : ∀ t ∈ Ioo (1 : ℝ) 2, (⇑f ∘ ofComplex) (fdBoundary H t) ≠ 0)
-    (hint : IntervalIntegrable
-      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
-      volume 1 2) :
-    ∫ t in (1 : ℝ)..3,
-        deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t) =
-      -(k * ((Real.pi / 6 : ℝ) * Complex.I)) := by
-  have hpair : ∀ u ∈ Ioo (1 : ℝ) 2,
-      deriv (fdBoundary H) (4 - u) • logDeriv (⇑f ∘ ofComplex) (fdBoundary H (4 - u)) =
-        -(↑k * logDeriv (fdBoundary H) u) -
-          deriv (fdBoundary H) u • logDeriv (⇑f ∘ ofComplex) (fdBoundary H u) := by
-    intro u hu
-    have hu13 : u ∈ Ioo (1 : ℝ) 3 := ⟨hu.1, by linarith [hu.2]⟩
-    have hp := logDeriv_comp_ofComplex_fdBoundary_arc_add_four_sub_eq_neg f hS hu13
-      (hd u hu) (hne u hu)
-    linear_combination hp
-  have hconst : IntervalIntegrable
-      (fun u : ℝ ↦ -(↑k * logDeriv (fdBoundary H) u)) volume 1 2 :=
-    ((intervalIntegrable_logDeriv_fdBoundary_arc H ⟨le_rfl, by norm_num⟩
-      ⟨by norm_num, by norm_num⟩).const_mul _).neg
-  have hint' := intervalIntegrable_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3
-    f hS hd hne hint
-  rw [← intervalIntegral.integral_add_adjacent_intervals hint hint']
-  have h23 : (∫ t in (2 : ℝ)..3,
-      deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t)) =
-      ∫ u in (1 : ℝ)..2,
-        deriv (fdBoundary H) (4 - u) • logDeriv (⇑f ∘ ofComplex) (fdBoundary H (4 - u)) := by
-    have h42 : (4 : ℝ) - 2 = 2 := by norm_num
-    have h41 : (4 : ℝ) - 1 = 3 := by norm_num
-    have h := intervalIntegral_comp_fdBoundary_four_sub H
-      (logDeriv (⇑f ∘ ofComplex)) (a := 1) (b := 2)
-    rwa [h42, h41] at h
-  rw [h23, intervalIntegral.integral_congr_Ioo_of_le (by norm_num) hpair,
-    intervalIntegral.integral_sub hconst hint, intervalIntegral.integral_neg,
-    intervalIntegral.integral_const_mul,
-    integral_logDeriv_fdBoundary_arc H (by norm_num) (by norm_num)]
-  push_cast
-  ring
-
 /-- The inversion `z ↦ -1/z` turns a difference into the negated difference of inverses, the
 shape `dist_inv_inv₀` reads. Division by zero being zero, no nonvanishing is needed. -/
 private lemma neg_one_div_sub_neg_one_div (z w : ℂ) :
@@ -387,6 +307,49 @@ theorem two_mul_intervalIntegral_excised_deriv_smul_logDeriv_comp_ofComplex_fdBo
   rw [two_mul, hsum, ← intervalIntegral.integral_const_mul]
   refine intervalIntegral.integral_congr fun t _ => ?_
   by_cases hc : ∃ s ∈ S, ‖fdBoundary H t - s‖ ≤ ε <;> simp [hc]
+
+/-- The reflected-half integrability: interval integrability of the arc contour
+integrand on `[2, 3]` follows from integrability on `[1, 2]` through the pairing, which
+writes the second half as a reflected constant-minus-first-half integrand. This is the case of an
+empty excision set of
+`intervalIntegrable_excised_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3`. -/
+theorem intervalIntegrable_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3
+    [SlashInvariantFormClass F Γ k] (f : F) (hS : ModularGroup.S ∈ Γ) {H : ℝ}
+    (hd : ∀ t ∈ Ioo (1 : ℝ) 2, DifferentiableAt ℂ (⇑f ∘ ofComplex) (fdBoundary H t))
+    (hne : ∀ t ∈ Ioo (1 : ℝ) 2, (⇑f ∘ ofComplex) (fdBoundary H t) ≠ 0)
+    (hint : IntervalIntegrable
+      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
+      volume 1 2) :
+    IntervalIntegrable
+      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
+      volume 2 3 := by
+  simpa using intervalIntegrable_excised_deriv_smul_logDeriv_comp_ofComplex_fdBoundarySegment3
+    f hS (S := ∅) (ε := 0) (by simp) (by simp) (fun t ht _ ↦ hd t ht) (fun t ht _ ↦ hne t ht)
+    (by simpa using hint)
+
+/-- The arc contour integral of a slash-invariant form's logarithmic derivative is
+`-(k * (π/6 * I))` — the arc's `-k/12` contribution to the `(2πi)⁻¹`-normalized valence
+contour. The two halves of the arc pair through the `S`-transformation under the
+substitution `t ↦ 4 - t`, leaving `-k` times the constant arc integral of the contour's
+own logarithmic derivative. -/
+theorem intervalIntegral_deriv_smul_logDeriv_comp_ofComplex_fdBoundary_arc
+    [SlashInvariantFormClass F Γ k] (f : F)
+    (hS : ModularGroup.S ∈ Γ) {H : ℝ}
+    (hd : ∀ t ∈ Ioo (1 : ℝ) 2, DifferentiableAt ℂ (⇑f ∘ ofComplex) (fdBoundary H t))
+    (hne : ∀ t ∈ Ioo (1 : ℝ) 2, (⇑f ∘ ofComplex) (fdBoundary H t) ≠ 0)
+    (hint : IntervalIntegrable
+      (fun t ↦ deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t))
+      volume 1 2) :
+    ∫ t in (1 : ℝ)..3,
+        deriv (fdBoundary H) t • logDeriv (⇑f ∘ ofComplex) (fdBoundary H t) =
+      -(k * ((Real.pi / 6 : ℝ) * Complex.I)) := by
+  have h := two_mul_intervalIntegral_excised_deriv_smul_logDeriv_comp_ofComplex_fdBoundary_arc
+    f hS (S := ∅) (ε := 0) (by simp) (by simp) (fun t ht _ ↦ hd t ht) (fun t ht _ ↦ hne t ht)
+    (by simpa using hint)
+  simp only [Finset.notMem_empty, false_and, exists_false, ite_false,
+    integral_logDeriv_fdBoundary_arc H (a := 1) (b := 3) (by norm_num) (by norm_num)] at h
+  push_cast at h ⊢
+  linear_combination h / 2
 
 end ModularForm
 
