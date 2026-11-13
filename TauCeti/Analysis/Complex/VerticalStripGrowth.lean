@@ -65,7 +65,7 @@ theorem add (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
     HasVerticalStripGrowth (fun s ↦ f s + g s) := by
   intro a b hab
   obtain ⟨C, hC, A, hA, T, hT, hfbound⟩ := hf a b hab
-  obtain ⟨D, hD, B, hB, U, hU, hgbound⟩ := hg a b hab
+  obtain ⟨D, hD, B, _, U, _, hgbound⟩ := hg a b hab
   refine ⟨C + D, add_pos hC hD, max A B, le_max_of_le_left hA,
     max T U, le_max_of_le_left hT, fun s hs ht ↦ ?_⟩
   have hbase : 1 ≤ 1 + |s.im| := le_add_of_nonneg_right (abs_nonneg _)
@@ -88,7 +88,7 @@ theorem mul (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
     HasVerticalStripGrowth (fun s ↦ f s * g s) := by
   intro a b hab
   obtain ⟨C, hC, A, hA, T, hT, hfbound⟩ := hf a b hab
-  obtain ⟨D, hD, B, hB, U, hU, hgbound⟩ := hg a b hab
+  obtain ⟨D, hD, B, hB, U, _, hgbound⟩ := hg a b hab
   refine ⟨C * D, mul_pos hC hD, A + B, add_nonneg hA hB,
     max T U, le_max_of_le_left hT, fun s hs ht ↦ ?_⟩
   calc
@@ -117,7 +117,7 @@ end HasVerticalStripGrowth
 /-- Constant functions have vertical-strip growth. -/
 @[simp]
 theorem hasVerticalStripGrowth_const {c : ℂ} : HasVerticalStripGrowth (fun _ ↦ c) := by
-  intro a b hab
+  intro a b _
   exact ⟨‖c‖ + 1, by positivity, 0, le_rfl, 0, le_rfl, fun s _ _ ↦ by simp⟩
 
 namespace HasVerticalStripGrowth
@@ -146,7 +146,7 @@ theorem hasVerticalStripGrowth_congr {f g : ℂ → ℂ} (h : ∀ s, f s = g s) 
 /-- Real exponentials `exp (r * s)` have vertical-strip growth. -/
 theorem hasVerticalStripGrowth_cexp_ofReal_mul {r : ℝ} :
     HasVerticalStripGrowth (fun s : ℂ ↦ Complex.exp (r * s)) := by
-  intro a b hab
+  intro a b _
   refine ⟨Real.exp (|r| * max |a| |b|), Real.exp_pos _, 0, le_rfl,
     0, le_rfl, fun s hs _ ↦ ?_⟩
   have hre : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hs.1 hs.2

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
 public import TauCeti.NumberTheory.Padics.AlgebraicClosure
 public import TauCeti.RingTheory.Valuation.Approximation
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # Weak approximation at finite and infinite places
@@ -38,8 +39,8 @@ elements of prescribed valuation gives independent valuations instead.  The arch
 prescription is not redone here: the target family and the estimate that reads a sign off an
 approximation of it are
 `NumberField.exists_forall_apply_eq_one_and_embedding_of_isReal_eq` and
-`NumberField.mul_pos_of_infinitePlace_sub_lt`, shared with the purely archimedean statement
-`NumberField.exists_ne_zero_forall_isReal_pos`.
+`NumberField.InfinitePlace.IsReal.mul_pos_of_apply_sub_lt`, shared with the purely archimedean
+statement `NumberField.exists_ne_zero_forall_isReal_pos`.
 
 The conclusions use `Kˣ` to package the required nonvanishing and make `signHom` applicable.  A
 `K`-valued formulation would instead need an explicit `x ≠ 0` condition and sign predicates stated
@@ -222,12 +223,12 @@ theorem weakApproximation_denseRange
     (v.1.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
   have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
       DenseRange (fun x : K => algebraMap K w.1.Completion x) := by
-    simp only [InfinitePlace.Completion.algebraMap_apply]
+    simp only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
     change DenseRange
       (((↑) : WithAbs w.1.1 → w.1.Completion) ∘ (WithAbs.equiv w.1.1).symm)
-    exact (InfinitePlace.Completion.denseRange_coe (v := w.1)).comp
+    exact (AbsoluteValue.Completion.denseRange_coe (v := w.1.1)).comp
       (WithAbs.equiv w.1.1).symm.surjective.denseRange
-      (InfinitePlace.Completion.continuous_coe (v := w.1))
+      (AbsoluteValue.Completion.continuous_coe (v := w.1.1))
   choose ainf hainf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
     (hdenseinf w).exists_mem_open (hVinf w).1 ⟨y.2 w, (hVinf w).2⟩
   choose γ hγ using fun (v : FinitePlace K Sₑ) =>
@@ -270,9 +271,9 @@ theorem weakApproximation_denseRange
     -- `Metric.mem_nhds_iff` presents the chosen neighbourhood as this open ball.
     change dist (algebraMap K w.1.Completion x)
       (algebraMap K w.1.Completion (ainf w)) < einf w
-    rw [dist_eq_norm, ← map_sub, InfinitePlace.Completion.algebraMap_apply,
+    rw [dist_eq_norm, ← map_sub, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
-      InfinitePlace.Completion.norm_coe]
+      AbsoluteValue.Completion.norm_coe]
     exact hxinf w
 
 /-- **Approximation at Galois `p`-adic embeddings.** Let
@@ -457,7 +458,7 @@ theorem denseRange_algebraMap_embedding_of_isReal
   ext w
   · rw [Function.comp_apply, Prod.map_fst, id]
   · rw [Function.comp_apply, Prod.map_snd]
-    simp only [r, Completion.algebraMap_apply]
+    simp only [r, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
     exact ((Completion.extensionEmbeddingOfIsReal_coe w.1.2 (WithAbs.toAbs _ x)).trans
       (by simp)).symm
 
@@ -489,11 +490,12 @@ theorem exists_fieldUnit_valuation_sub_lt_and_signHom_eq
   obtain ⟨x, hxf, hxi⟩ := exists_mixed_approximation (Sₑ := S) (Sinf := Finset.univ)
     (fun v => a v.1) (fun w => b w.1) (fun v => γ v.1) (fun v => hγ v.1 v.2)
     (fun _ => 1) (fun _ => one_pos)
-  have hxi' : ∀ w : InfinitePlace K, w (x - b w) < 1 := fun w => hxi ⟨w, Finset.mem_univ w⟩
-  have hx0 := NumberField.ne_zero_of_infinitePlace_sub_lt (hbabs w₀) (hxi' w₀)
+  have hxi' : ∀ w : InfinitePlace K, w (x - b w) < w (b w) := fun w =>
+    (hxi ⟨w, Finset.mem_univ w⟩).trans_eq (hbabs w).symm
+  have hx0 := NumberField.ne_zero_of_infinitePlace_sub_lt (hxi' w₀)
   refine ⟨Units.mk0 x hx0, fun v hv => by simpa using hxf ⟨v, hv⟩, ?_⟩
   funext w
-  have h := NumberField.mul_pos_of_infinitePlace_sub_lt w.2 (hbabs w.1) (hxi' w.1)
+  have h := w.2.mul_pos_of_apply_sub_lt (hxi' w.1)
   rw [hbsign w] at h
   rcases Int.units_eq_one_or (s w) with hs | hs <;> rw [hs] at h ⊢
   · rw [signHom_apply_eq_one_iff, Units.val_mk0]

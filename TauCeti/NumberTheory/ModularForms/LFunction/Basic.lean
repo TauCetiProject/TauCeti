@@ -9,6 +9,7 @@ import Mathlib.Analysis.Analytic.Order
 import Mathlib.NumberTheory.LSeries.Injectivity
 public import Mathlib.NumberTheory.ModularForms.LFunction
 public import TauCeti.NumberTheory.LSeries.EntireExtension
+import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 import TauCeti.NumberTheory.LSeries.MeanSquare
 
 /-!
@@ -28,7 +29,7 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 ## Main results
 
 * `ModularForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a modular form of weight
-  `k ≥ 0`, the abscissa of absolute convergence of the coefficient series is at most
+  `k`, the abscissa of absolute convergence of the coefficient series is at most
   `k + 1` (from `aₙ = O(nᵏ)`).
 * `CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`: for a cusp form, at most `(k+1)/2`
   (from Mathlib's mean-square coefficient bound and Cauchy–Schwarz). In weight one this
@@ -41,8 +42,8 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 * `ModularForm.Λ_natCast_add_one`: `Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)` at the positive
   integers, so that there `Λ` and `L` vanish together (`ModularForm.Λ_natCast_add_one_eq_zero_iff`).
 * `CuspForm.hasEntireExtension_qExpansion_coeff`: the coefficient series of a cusp form
-  of positive weight has an entire extension (the Layer-7 continuation milestone).
-* `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero positive-index coefficient makes
+  has an entire extension.
+* `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero coefficient makes
   the entire L-function nonzero.
 * `CuspForm.eq_strictWidthInfty_cpow_mul_L`: uniqueness of the width-normalized entire
   continuation.
@@ -88,17 +89,21 @@ private lemma LSeries_eq_of_hasSum {a : ℕ → ℂ} {v : ℂ} (hs0 : s ≠ 0)
 
 namespace ModularForm
 
-/-- **Hecke's abscissa bound for modular forms**: for weight `k ≥ 0`, the Dirichlet series
-of the `q`-expansion coefficients converges absolutely for `Re s > k + 1`
-(from `aₙ = O(nᵏ)`). -/
-theorem abscissaOfAbsConv_qExpansion_coeff_le (hk : 0 ≤ k) [ModularFormClass F Γ k]
-    (f : F) :
+/-- **Hecke's abscissa bound for modular forms**: the Dirichlet series of the `q`-expansion
+coefficients converges absolutely for `Re s > k + 1` (from `aₙ = O(nᵏ)` for `k ≥ 0`; in negative
+weight the form is zero). -/
+theorem abscissaOfAbsConv_qExpansion_coeff_le [ModularFormClass F Γ k] (f : F) :
     abscissaOfAbsConv (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) ≤
       ((k : ℝ) : EReal) + 1 := by
-  refine LSeries.abscissaOfAbsConv_le_of_isBigO_rpow ?_
-  refine (ModularFormClass.qExpansion_isBigO hk f).congr' EventuallyEq.rfl
-    (Eventually.of_forall fun n ↦ ?_)
-  simp only [Real.rpow_intCast]
+  by_cases hk : 0 ≤ k
+  · refine LSeries.abscissaOfAbsConv_le_of_isBigO_rpow ?_
+    refine (ModularFormClass.qExpansion_isBigO hk f).congr' EventuallyEq.rfl
+      (Eventually.of_forall fun n ↦ ?_)
+    simp only [Real.rpow_intCast]
+  · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
+    rw [qExpansion_eq_zero_of_neg_weight (lt_of_not_ge hk) f]
+    simp only [map_zero]
+    exact LSeriesSummable_zero
 
 /-- On the half-plane `Re s > k + 1`, the Dirichlet series of the `q`-expansion
 coefficients is Mathlib's `ModularForm.L`, up to the width factor. Not `@[simp]`: the
@@ -156,12 +161,10 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
     simpa only [Int.cast_natCast] using
       TauCeti.LSeries.abscissaOfAbsConv_le_of_sum_norm_sq_bigO hO
         (le_trans (by norm_num) (Nat.cast_nonneg k))
-  · have hf : (f : ℍ → ℂ) = 0 := by
-      simpa using congrArg DFunLike.coe
-        (ModularForm.isZero_of_neg_weight (lt_of_not_ge hk) (ModularFormClass.modularForm f))
-    refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [hf, qExpansion_zero]
-    simpa only [map_zero, Pi.zero_def] using (LSeriesSummable_zero (s := (y : ℂ)))
+  · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
+    rw [qExpansion_eq_zero_of_weight_nonpos (le_of_lt (lt_of_not_ge hk)) f]
+    simp only [map_zero]
+    exact LSeriesSummable_zero
 
 /-- The Dirichlet series of the `q`-expansion coefficients of a cusp form converges absolutely
 on the half-plane `Re s > (k+1)/2`. -/
@@ -185,25 +188,34 @@ theorem LSeries_qExpansion_coeff_eq (hk : 0 < k) [CuspFormClass F Γ k] (f : F)
     linarith
   exact LSeries_eq_of_hasSum hs0 (hasSum_L hk f hs)
 
-/-- **Entire continuation of the L-series of a cusp form** — the roadmap's Layer-7
-continuation milestone: the Dirichlet series of the `q`-expansion coefficients of a cusp
-form of positive weight has an entire extension, namely
-`s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s`. -/
-theorem hasEntireExtension_qExpansion_coeff (hk : 0 < k) [CuspFormClass F Γ k] (f : F) :
+/-- **Entire continuation of the L-series of a cusp form**: the Dirichlet series of the
+`q`-expansion coefficients of a cusp form has an entire extension, namely
+`s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` in positive weight (in nonpositive weight the
+form is zero). -/
+theorem hasEntireExtension_qExpansion_coeff [CuspFormClass F Γ k] (f : F) :
     LSeries.HasEntireExtension (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) := by
-  refine LSeries.HasEntireExtension.of_extension_of_eq_on_lt_re (c := (k : ℝ) / 2 + 1)
-    ?_ ?_ (fun {s} hs ↦ (LSeries_qExpansion_coeff_eq hk f hs).symm)
-  · refine (abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt ?_
-    exact EReal.coe_lt_top _
-  · exact (Differentiable.const_cpow differentiable_neg
-      (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
-      (differentiable_L hk f)
+  rcases lt_or_ge 0 k with hk | hk
+  · refine LSeries.HasEntireExtension.of_extension_of_eq_on_lt_re (c := (k : ℝ) / 2 + 1)
+      ?_ ?_ (fun {s} hs ↦ (LSeries_qExpansion_coeff_eq hk f hs).symm)
+    · refine (abscissaOfAbsConv_qExpansion_coeff_le f).trans_lt ?_
+      exact EReal.coe_lt_top _
+    · exact (Differentiable.const_cpow differentiable_neg
+        (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
+        (differentiable_L hk f)
+  · refine LSeries.hasEntireExtension_of_support_finite ?_
+    rw [qExpansion_eq_zero_of_weight_nonpos hk f]
+    simp
 
 /-- The entire L-function of a positive-weight cusp form is nonzero if one of its
-positive-index coefficients is nonzero. This ensures that its analytic order is finite. -/
+coefficients is nonzero (the constant coefficient is always zero). This ensures that its
+analytic order is finite. -/
 theorem L_ne_zero_of_qExpansion_coeff_ne_zero [CuspFormClass F Γ k] (f : F) (hk : 0 < k)
-    {n : ℕ} (hn : n ≠ 0) (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
+    {n : ℕ} (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
     ModularForm.L hk f ≠ 0 := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact hcoeff (CuspFormClass.qExpansion_coeff_zero f Γ.strictWidthInfty_pos
+      Γ.strictWidthInfty_mem_strictPeriods)
   intro hL
   have hzero :
       (fun x : ℝ ↦ LSeries (fun m ↦ (qExpansion Γ.strictWidthInfty f).coeff m) x)
@@ -213,18 +225,18 @@ theorem L_ne_zero_of_qExpansion_coeff_ne_zero [CuspFormClass F Γ k] (f : F) (hk
     simpa [hL] using CuspForm.LSeries_qExpansion_coeff_eq hk f hs
   rcases LSeries_eventually_eq_zero_iff'.mp hzero with hzero | habscissa
   · exact hcoeff (hzero n hn)
-  · have hfinite := (CuspForm.hasEntireExtension_qExpansion_coeff hk f).abscissa_lt_top
+  · have hfinite := (CuspForm.hasEntireExtension_qExpansion_coeff f).abscissa_lt_top
     rw [habscissa] at hfinite
     exact (lt_irrefl ⊤ hfinite).elim
 
-/-- A positive-weight cusp form with a nonzero positive-index coefficient has finite analytic
+/-- A positive-weight cusp form with a nonzero coefficient has finite analytic
 order at every point. -/
 theorem analyticOrderAt_L_ne_top_of_qExpansion_coeff_ne_zero [CuspFormClass F Γ k] (f : F)
-    (hk : 0 < k) (s : ℂ) {n : ℕ} (hn : n ≠ 0)
+    (hk : 0 < k) (s : ℂ) {n : ℕ}
     (hcoeff : (qExpansion Γ.strictWidthInfty f).coeff n ≠ 0) :
     analyticOrderAt (ModularForm.L hk f) s ≠ ⊤ := by
   intro htop
-  apply L_ne_zero_of_qExpansion_coeff_ne_zero f hk hn hcoeff
+  apply L_ne_zero_of_qExpansion_coeff_ne_zero f hk hcoeff
   exact (AnalyticOnNhd.analyticOrderAt_eq_top_iff_eq_zero s fun _ ↦
     (CuspForm.differentiable_L hk f).analyticAt _).mp htop
 

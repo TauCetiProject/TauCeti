@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
@@ -19,10 +19,14 @@ and let `u ∈ Hⁿ(E, E₀; K)` be a relative class with coefficients in a comm
 `Φ_u : Hᵖ(B; M) ⟶ Hᵖ⁺ⁿ(E, E₀; M)`,  `a ↦ π^*a ⌣ u`,
 
 the pull-back along the projection `π : E ⟶ B` followed by the cup product of absolute and
-relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`. When `u` is a
+relative cohomology (`TopPair.singularCup`), for any `K`-module of coefficients `M`: the map
+`TopPair.pullbackCup` of the Thom pair and its projection. When `u` is a
 Thom class of a real vector bundle of rank `n` this is the Thom isomorphism: Milnor and Stasheff
 (Theorem 10.4) and Hatcher (Theorem 4D.10) prove that it is bijective in every degree, first for a
 product bundle over a trivializing open set and then by Mayer–Vietoris over unions of such sets.
+The Mayer–Vietoris step holds for `TopPair.pullbackCup` of any pair and map
+(`TopCat.bijective_pullbackCupRestrict_union`); for the Thom pair, the pair over an open set `W` of
+the base is the Thom pair `(E|_W, E₀|_W)` of the restriction of the bundle.
 
 This file sets up the map and the properties that argument uses. It is linear in `u` and in `a`
 (`TauCeti.thomMap`), and sends the unit `1 ∈ H⁰(B; K)` to `u` (`TauCeti.thomMap_one`). It is
@@ -75,8 +79,14 @@ def thomMap (n p m : ℕ) (h : p + n = m) :
     (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p →ₗ[K]
         (thomPair F E).singularCohomology (ModuleCat.of K K) K M m :=
-  ((thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h ∘ₗ
-    (TopCat.singularCohomologyMap (thomPairProj F E) p).hom).flip
+  (thomPair F E).pullbackCup M (thomPairProj F E) n p m h
+
+/-- The Thom map of a vector bundle is `TopPair.pullbackCup` of its Thom pair and its projection,
+so the results stated for the latter, such as the Mayer–Vietoris step
+`TopCat.bijective_pullbackCupRestrict_union`, apply to it. -/
+theorem thomMap_def (n p m : ℕ) (h : p + n = m) :
+    thomMap F E M n p m h = (thomPair F E).pullbackCup M (thomPairProj F E) n p m h :=
+  (rfl)
 
 variable {M}
 
@@ -87,7 +97,7 @@ theorem thomMap_apply {n p m : ℕ} (h : p + n = m)
     thomMap F E M n p m h u a =
       (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h
         (TopCat.singularCohomologyMap (thomPairProj F E) p a) u :=
-  (rfl)
+  TopPair.pullbackCup_apply _ _ h u a
 
 /-- **The Thom map sends `1` to `u`**: the image of the class of the constant `0`-cocycle with
 value `1 ∈ K` is `u`. -/
@@ -96,14 +106,8 @@ theorem thomMap_one {n : ℕ} (h : 0 + n = n)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     thomMap F E (ModuleCat.of K K) n 0 n h u
         (((TopCat.of B).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).homologyπ 0
-          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u := by
-  rw [thomMap_apply]
-  refine (congrArg (fun x ↦ (thomPair F E).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
-    (ρ_ (ModuleCat.of K K)).hom 0 n n h x u)
-    (TopCat.singularCohomologyMap_homologyπ_constSingularCocycle (thomPairProj F E) K
-      (𝟙 (ModuleCat.of K K)))).trans ?_
-  exact TopPair.singularCup_constSingularCocycle_left K (thomPair F E) (η := 𝟙 _)
-    (by monoidal) (by monoidal) h u
+          ((TopCat.of B).constSingularCocycle K (𝟙 (ModuleCat.of K K)))) = u :=
+  TopPair.pullbackCup_one _ _ h u
 
 /-- **Naturality of the Thom map.** A map of Thom pairs `φ : (E', E'₀) ⟶ (E, E₀)` covering a map
 of bases `g : B' ⟶ B` intertwines the Thom map of `u` with that of its pull-back `φ^*u`:
@@ -118,11 +122,8 @@ theorem thomMap_naturality {B' : Type w} [TopologicalSpace B'] {F' : Type*} [Top
     (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
     thomMap F' E' M n p m h (TopPair.singularCohomologyMap φ n u)
         (TopCat.singularCohomologyMap g p a) =
-      TopPair.singularCohomologyMap φ m (thomMap F E M n p m h u a) := by
-  rw [thomMap_apply, thomMap_apply, ← TopPair.singularCup_naturality, ← ConcreteCategory.comp_apply,
-    ← TopCat.singularCohomologyMap_comp, ← hφ, TopCat.singularCohomologyMap_comp,
-    ConcreteCategory.comp_apply]
-  rfl
+      TopPair.singularCohomologyMap φ m (thomMap F E M n p m h u a) :=
+  TopPair.pullbackCup_naturality φ _ _ g hφ h u a
 
 attribute [local instance] pullbackFiberZero in
 /-- **The Thom map of a pull-back bundle.** For a continuous map `f : B' ⟶ B`, the Thom map of

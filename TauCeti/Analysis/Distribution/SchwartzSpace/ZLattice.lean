@@ -84,17 +84,10 @@ theorem summable_poisson_left [CompleteSpace F] (f : 𝓢(E, F)) (v : E) :
 decays faster than every power of `1 + ‖ℓ‖`: the family `ℓ ↦ (1 + ‖ℓ‖) ^ k * ‖f ℓ‖` is summable
 for every `k`. -/
 theorem summable_one_add_norm_pow_mul_norm (f : 𝓢(E, F)) (k : ℕ) :
-    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖f ℓ‖ := by
-  set r := finrank ℤ L + 1
-  obtain ⟨C, hC⟩ : ∃ C, ∀ y, (1 + ‖y‖) ^ (k + r) * ‖f y‖ ≤ C :=
-    ⟨_, fun y ↦ by
-      simpa using f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (k + r, 0)) (k := k + r) (n := 0)
-        le_rfl le_rfl y⟩
-  have hsum := summable_one_add_norm_pow_inv L (r := r) (by omega)
-  refine (hsum.mul_left C).of_nonneg_of_le (fun ℓ ↦ by positivity) fun ℓ ↦ ?_
-  have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ r := by positivity
-  rw [← div_eq_mul_inv, le_div_iff₀ hpos, mul_right_comm, ← pow_add]
-  exact hC ℓ
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖f ℓ‖ :=
+  summable_one_add_norm_pow_mul_norm_of_decay L (fun N ↦ ⟨_, fun y ↦ by
+    simpa using f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (N, 0)) (k := N) (n := 0)
+      le_rfl le_rfl y⟩) k
 
 /-- The translates `ℓ ↦ f (x + ℓ)` of a Schwartz function are dominated, uniformly for `x` in a
 closed ball, by a single summable family over a discrete subgroup `L`. -/
