@@ -68,8 +68,9 @@ theorem simpleCorootParameter_eq_fullWeightTorusRestriction (i : Fin t.rank)
   ext j
   simp
 
-/-- Evaluation of any character on a simple coroot is its pairing with that coroot. The
-character is written in the chosen basis of the actual weight lattice. -/
+/-- Evaluating a character on a simple coroot gives `s` raised to its pairing with that coroot.
+The character is written in the chosen basis of the actual weight lattice. -/
+@[simp]
 theorem torusCharacter_simpleCorootParameter (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) (μ : D.weightLattice) :
     torusCharacter (D.simpleCorootParameter i A s) (D.weightLatticeBasis.repr μ) =
@@ -92,6 +93,15 @@ theorem torusCharacter_simpleCorootParameter_coordinateWeight (i : Fin t.rank)
       s ^ D.weight j i := by
   rw [coordinateWeight_def]
   exact D.torusCharacter_simpleCorootParameter i A s ⟨D.weight j, D.weight_mem_weightLattice j⟩
+
+/-- A root character on a simple coroot gives `s` raised to the root's node coordinate. -/
+@[simp]
+theorem torusCharacter_simpleCorootParameter_coordinateRoot (i : Fin t.rank)
+    (A : Type v) [CommRing A] (s : Aˣ) (β : Fin t.numRoots) :
+    torusCharacter (D.simpleCorootParameter i A s) (D.coordinateRoot β) =
+      s ^ (t.simplyConnectedRootDatum ht).root β i := by
+  rw [coordinateRoot_def]
+  exact D.torusCharacter_simpleCorootParameter i A s ⟨_, D.root_mem_weightLattice β⟩
 
 /-- The simple coroot as a homomorphism into the points of the datum, obtained by evaluating
 its actual torus at `simpleCorootParameter`. -/
@@ -147,14 +157,15 @@ theorem basisMatrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [
   simp only [basisMatrix_kostantTorusPoints, kostantTorusMatrix_apply, torusCharacter_mulSingle]
 
 /-- Simple coroot values commute with every scalar extension of the value ring. -/
+@[simp↓]
 theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) (s : Aˣ) :
-    Matrix.GeneralLinearGroup.map f (D.simpleCorootPoints i A s) =
-      (D.simpleCorootPoints i B (Units.map f.toMonoidHom s) :
-        Matrix.GeneralLinearGroup (Fin D.dim) B) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro r c
-  simp [coe_simpleCorootPoints, diagGL_apply]
+    (D.pointsPresentation A).map (D.pointsPresentation B) f (D.simpleCorootPoints i A s) =
+      D.simpleCorootPoints i B (Units.map f.toMonoidHom s) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map, coe_simpleCorootPoints,
+    coe_simpleCorootPoints]
+  simp only [map_diagGL, map_zpow, RingHom.toMonoidHom_eq_coe]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
