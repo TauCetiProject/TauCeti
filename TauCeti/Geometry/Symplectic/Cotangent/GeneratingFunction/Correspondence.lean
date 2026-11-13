@@ -156,13 +156,13 @@ theorem generatingTarget_eq_generatingSource_iff {K : Type*} {T : N × K → ℝ
   have hadd : mvfderiv J (fun a' ↦ S (q, a') + T (a', Q)) a =
       mvfderiv J (fun a' ↦ S (q, a')) a + mvfderiv J (fun a' ↦ T (a', Q)) a :=
     mvfderiv_add hS hT
-  have hT : generatingTarget J S (q, a) =
+  have hTgt : generatingTarget J S (q, a) =
       TotalSpace.mk' (F →L[ℝ] ℝ) a (-mvfderiv J (fun a' ↦ S (q, a')) a) :=
     CotangentBundle.ext (proj_generatingTarget (q, a)) fun v ↦ by rw [generatingTarget_snd]; rfl
-  have hS : generatingSource J T (a, Q) =
+  have hSrc : generatingSource J T (a, Q) =
       TotalSpace.mk' (F →L[ℝ] ℝ) a (mvfderiv J (fun a' ↦ T (a', Q)) a) :=
     CotangentBundle.ext (proj_generatingSource (a, Q)) fun v ↦ by rw [generatingSource_snd]; rfl
-  rw [hT, hS, TotalSpace.mk_inj, hadd, neg_eq_iff_add_eq_zero]
+  rw [hTgt, hSrc, TotalSpace.mk_inj, hadd, neg_eq_iff_add_eq_zero]
 
 /-! ### The relation as the graph of `dS` -/
 

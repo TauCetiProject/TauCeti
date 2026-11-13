@@ -232,9 +232,6 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
   have hS' : ContDiffAt ℝ (n + 2) S' (e₁ q₀, e₂ a₀) := hS.contDiffAt_comp_prod_extChartAt_symm
   have hT' : ContDiffAt ℝ (n + 2) T' (e₂ a₀, e₃ Q₀) := hT.contDiffAt_comp_prod_extChartAt_symm
   have h1 : (1 : WithTop ℕ∞) ≤ n + 2 := le_add_left one_le_two
-  have hv₀ : e₁ q₀ ∈ e₁.target := mem_extChartAt_target q₀
-  have hw₀ : e₂ a₀ ∈ e₂.target := mem_extChartAt_target a₀
-  have hu₀ : e₃ Q₀ ∈ e₃.target := mem_extChartAt_target Q₀
   /- Step 1: the hypotheses of the normed-space composition theorem, read in the charts. -/
   have hcoord : (fun a ↦ S (q₀, a) + T (a, Q₀)) ∘ e₂.symm =
       fun w ↦ S' (e₁ q₀, w) + T' (w, e₃ Q₀) := by
@@ -273,27 +270,13 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
   have hb₀ : b (q₀, Q₀) = a₀ := by
     simp only [b, hb'₀, e₂, extChartAt_to_inv]
   have htarget : ∀ᶠ y' in 𝓝 (e₁ q₀, e₃ Q₀), b' y' ∈ e₂.target :=
-    hb'.continuousAt.preimage_mem_nhds (hb'₀ ▸ extChartAt_target_mem_nhds' hw₀)
-  -- Read in the charts at `(q₀, Q₀)` and `a₀`, the branch `b` is `b'` near `(e₁ q₀, e₃ Q₀)`.
+    hb'.continuousAt.preimage_mem_nhds (hb'₀ ▸ extChartAt_target_mem_nhds a₀)
+  -- `b` is `b'` read back through the product chart at `(q₀, Q₀)` and the chart at `a₀`.
   have hb : ContMDiffAt (I₁.prod I₃) I₂ (n + 1) b (q₀, Q₀) := by
-    have hcont : ContinuousAt b (q₀, Q₀) := by
-      have he₂ : ContinuousAt e₂.symm (b' (e₁ q₀, e₃ Q₀)) := by
-        rw [hb'₀]
-        exact continuousAt_extChartAt_symm a₀
-      have hinner : ContinuousAt (fun y : M₁ × M₃ ↦ (e₁ y.1, e₃ y.2)) (q₀, Q₀) :=
-        ((continuousAt_extChartAt (I := I₁) q₀).comp continuousAt_fst).prodMk
-          ((continuousAt_extChartAt (I := I₃) Q₀).comp continuousAt_snd)
-      have hb'c : ContinuousAt (fun y : M₁ × M₃ ↦ b' (e₁ y.1, e₃ y.2)) (q₀, Q₀) :=
-        ContinuousAt.comp (g := b') hb'.continuousAt hinner
-      exact he₂.comp_of_eq hb'c rfl
-    rw [contMDiffAt_iff, hb₀, extChartAt_prod, ModelWithCorners.range_eq_univ,
-      contDiffWithinAt_univ]
-    refine ⟨hcont, hb'.congr_of_eventuallyEq ?_⟩
-    filter_upwards [htarget, prod_mem_nhds (extChartAt_target_mem_nhds' hv₀)
-      (extChartAt_target_mem_nhds' hu₀)] with z hz hz'
-    simp only [b, e₁, e₂, e₃, comp_apply, PartialEquiv.prod_symm, PartialEquiv.prod_coe] at hz hz' ⊢
-    rw [PartialEquiv.right_inv _ hz'.1, PartialEquiv.right_inv _ hz'.2, Prod.mk.eta,
-      PartialEquiv.right_inv _ hz]
+    simpa only [extChartAt_prod, PartialEquiv.prod_coe] using
+      ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt (I := I₁.prod I₃) (x := (q₀, Q₀))
+        (by simpa only [extChartAt_prod, PartialEquiv.prod_coe] using hb')
+        (by simpa only [extChartAt_prod, PartialEquiv.prod_coe] using hb'₀)
   have hR : ContMDiffAt (I₁.prod I₃) 𝓘(ℝ) (n + 1) R (q₀, Q₀) := by
     have hle : n + 1 ≤ n + 2 := by gcongr; norm_num
     have hS₀ : ContMDiffAt (I₁.prod I₂) 𝓘(ℝ) (n + 1) S (q₀, b (q₀, Q₀)) := hb₀ ▸ hS.of_le hle
@@ -364,32 +347,15 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
           (continuousAt_snd.comp continuousAt_fst))).prodMk
         ((continuousAt_extChartAt (I := I₂) a₀).comp continuousAt_snd)
     have hsrc : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀),
-        x.1.1 ∈ e₁.source ∧ x.1.2 ∈ e₃.source ∧ x.2 ∈ e₂.source := by
-      have h₁ : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀), x.1.1 ∈ e₁.source :=
-        (continuousAt_fst.comp continuousAt_fst).preimage_mem_nhds
-          (extChartAt_source_mem_nhds (I := I₁) q₀)
-      have h₂ : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀), x.1.2 ∈ e₃.source :=
-        (continuousAt_snd.comp continuousAt_fst).preimage_mem_nhds
-          (extChartAt_source_mem_nhds (I := I₃) Q₀)
-      have h₃ : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀), x.2 ∈ e₂.source :=
-        continuousAt_snd.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I₂) a₀)
-      filter_upwards [h₁, h₂, h₃] with x hx₁ hx₂ hx₃
-      exact ⟨hx₁, hx₂, hx₃⟩
-    have htarget : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀),
-        b' (e₁ x.1.1, e₃ x.1.2) ∈ e₂.target := by
-      have hU' : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀), (e₁ x.1.1, e₃ x.1.2) ∈ U :=
-        (hmap.fst).preimage_mem_nhds (hUo.mem_nhds hUmem)
-      filter_upwards [hU'] with x hx
-      exact (hUsub hx).2.1
-    have hSd : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀),
-        DifferentiableAt ℝ S' (e₁ x.1.1, e₂ x.2) :=
-      (hmap.fst.fst.prodMk hmap.snd).eventually (hS'.eventually_differentiableAt h1)
-    have hTd : ∀ᶠ x : (M₁ × M₃) × M₂ in 𝓝 ((q₀, Q₀), a₀),
-        DifferentiableAt ℝ T' (e₂ x.2, e₃ x.1.2) :=
-      (hmap.snd.prodMk hmap.fst.snd).eventually (hT'.eventually_differentiableAt h1)
-    filter_upwards [hmap.eventually huniq, hsrc, htarget, hSd, hTd] with x hx hs ht hSx hTx
-    rw [generatingTarget_eq_generatingSource_iff_extChartAt q₀ a₀ Q₀ hs.1 hs.2.2 hs.2.1 hSx hTx]
-    exact hx.trans (e₂.symm_apply_eq hs.2.2 ht).symm
+        x ∈ (e₁.source ×ˢ e₃.source) ×ˢ e₂.source :=
+      prod_mem_nhds (prod_mem_nhds (extChartAt_source_mem_nhds q₀)
+        (extChartAt_source_mem_nhds Q₀)) (extChartAt_source_mem_nhds a₀)
+    filter_upwards [hmap.eventually huniq, hsrc, hmap.fst.preimage_mem_nhds (hUo.mem_nhds hUmem),
+      (hmap.fst.fst.prodMk hmap.snd).eventually (hS'.eventually_differentiableAt h1),
+      (hmap.snd.prodMk hmap.fst.snd).eventually (hT'.eventually_differentiableAt h1)]
+      with x hx hs hU hSx hTx
+    rw [generatingTarget_eq_generatingSource_iff_extChartAt q₀ a₀ Q₀ hs.1.1 hs.2 hs.1.2 hSx hTx]
+    exact hx.trans (e₂.symm_apply_eq hs.2 (hUsub hU).2.1).symm
 
 end Charts
 

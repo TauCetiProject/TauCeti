@@ -38,6 +38,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
+* `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt`: a map between model spaces that is
+  `C^n` at the chart image of a point, read back through extended charts into a boundaryless
+  target, is `C^n` on the manifolds.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
   `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
   derivative at any point of a chart's source, in terms of the Fréchet derivative of the
@@ -204,6 +207,26 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
     exact (mdifferentiableAt_extChartAt hy).hasMFDerivAt
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
     ((hchart.comp _ hf').comp_hasMFDerivWithinAt _ hsymm)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- A map `g` between model spaces which is `C^n` at the chart image of `x` and sends it to the
+chart image of `y` gives, read back through the extended charts at `x` and `y`, a map `M → M'`
+which is `C^n` at `x`. The target model must be boundaryless, so that `g` stays in the chart
+target near the chart image of `x`. -/
+theorem ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt [I'.Boundaryless]
+    {n : WithTop ℕ∞} {g : E → E'} {x : M} {y : M'} (hg : ContDiffAt 𝕜 n g (extChartAt I x x))
+    (hgx : g (extChartAt I x x) = extChartAt I' y y) :
+    ContMDiffAt I I' n (fun z ↦ (extChartAt I' y).symm (g (extChartAt I x z))) x := by
+  have hy : (extChartAt I' y).symm (g (extChartAt I x x)) = y := by
+    rw [hgx, extChartAt_to_inv]
+  have htarget : ∀ᶠ w in 𝓝 (extChartAt I x x), g w ∈ (extChartAt I' y).target :=
+    hg.continuousAt.preimage_mem_nhds (hgx ▸ extChartAt_target_mem_nhds y)
+  rw [contMDiffAt_iff, hy]
+  refine ⟨ContinuousAt.comp_of_eq (continuousAt_extChartAt_symm y)
+    (hg.continuousAt.comp (continuousAt_extChartAt x)) hgx, ?_⟩
+  refine hg.contDiffWithinAt.congr_of_eventuallyEq_of_mem ?_ (mem_range_self _)
+  filter_upwards [nhdsWithin_le_nhds htarget, extChartAt_target_mem_nhdsWithin x] with w hw hw'
+  simp only [Function.comp_apply, (extChartAt I x).right_inv hw', (extChartAt I' y).right_inv hw]
 
 /-! ### Maps into a normed space, read in a chart of the source -/
 
