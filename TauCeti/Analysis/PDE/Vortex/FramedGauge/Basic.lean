@@ -419,12 +419,18 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
   have hup := (mem_framedGaugeGroup _).mp u.property
   exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
+/-- The logarithmic derivative of a gauge which is `Cⁿ⁺¹` at a point is `Cⁿ` there. -/
+theorem contDiffAt_gaugeForm {u : ℂ → Circle} {z : ℂ} {n : WithTop ℕ∞}
+    (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z) : ContDiffAt ℝ n (gaugeForm u) z :=
+  contDiffAt_const.clm_comp
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
+      (conjCLE.contDiff.contDiffAt.comp z (hu.of_le le_self_add)) |>.clm_comp
+      (hu.fderiv_right le_rfl))
+
 /-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
 theorem contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) := by
-  exact contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp hu) |>.clm_comp
-      (hu.fderiv_right (by simp)))
+    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_gaugeForm (hu.of_le (by simp)).contDiffAt
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -455,23 +461,15 @@ theorem contDiff_coe_of_contDiff_gaugeForm {u : ℂ → Circle}
 /-- A `C²` gauge has a differentiable logarithmic derivative. -/
 theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z) :
-    DifferentiableAt ℝ (gaugeForm u) z := by
-  have h : ContDiffAt ℝ 1 (gaugeForm u) z :=
-    contDiffAt_const.clm_comp
-      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
-        (conjCLE.contDiff.contDiffAt.comp z (hu.of_le (by norm_num))) |>.clm_comp
-        (hu.fderiv_right (by norm_num)))
-  exact h.differentiableAt one_ne_zero
+    DifferentiableAt ℝ (gaugeForm u) z :=
+  (contDiffAt_gaugeForm (n := 1) hu).differentiableAt one_ne_zero
 
 /-- A gauge transformation is `Cⁿ` at a point where the gauge is `Cⁿ⁺¹` and the field is `Cⁿ`. -/
 theorem contDiffAt_gaugeTransform {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     {n : WithTop ℕ∞} (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z)
     (hx : ContDiffAt ℝ n x z) : ContDiffAt ℝ n (gaugeTransform u x) z := by
   have hu' : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z := hu.of_le le_self_add
-  have hg : ContDiffAt ℝ n (gaugeForm u) z :=
-    contDiffAt_const.clm_comp
-      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
-        (conjCLE.contDiff.contDiffAt.comp z hu') |>.clm_comp (hu.fderiv_right le_rfl))
+  have hg : ContDiffAt ℝ n (gaugeForm u) z := contDiffAt_gaugeForm hu
   have hr : ContDiffAt ℝ n (fun w ↦ (u w : ℂ).re) z := reCLM.contDiff.contDiffAt.comp z hu'
   have hi : ContDiffAt ℝ n (fun w ↦ (u w : ℂ).im) z := imCLM.contDiff.contDiffAt.comp z hu'
   have hc (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := contDiffAt_euclidean.1 hx i

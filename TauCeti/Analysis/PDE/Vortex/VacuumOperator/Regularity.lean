@@ -107,8 +107,8 @@ theorem integral_norm_sq_gaugeFixedOperator_vacuumField {φ : ℂ → EuclideanS
     ∫ z, ‖gaugeFixedOperator vacuumField φ z‖ ^ 2 =
       (∫ z, ‖fderiv ℝ φ z 1‖ ^ 2) + (∫ z, ‖fderiv ℝ φ z I‖ ^ 2) + 1 / 4 * ∫ z, ‖φ z‖ ^ 2 := by
   have h := integral_norm_sq_vacuumOperator (μ := volume) (hc.toSchwartzMap hφ)
-  simp only [SchwartzMap.lineDerivOp_apply_eq_fderiv] at h
-  simp only [← gaugeFixedOperator_vacuumField] at h
+  simp only [funext (hc.toSchwartzMap_toFun hφ), SchwartzMap.lineDerivOp_apply_eq_fderiv,
+    ← gaugeFixedOperator_vacuumField] at h
   exact h
 
 /-- **The first regularity step for the vacuum operator.** A smooth field `y` in `L²` such that

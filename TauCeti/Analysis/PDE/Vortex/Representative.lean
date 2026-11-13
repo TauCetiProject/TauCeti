@@ -160,7 +160,7 @@ theorem eventually_gaugeTransform_inv_windingPhase {x : ℂ → EuclideanSpace �
     (hphase.and hne).and (tendsto_norm_cocompact_atTop.eventually_gt_atTop 0))
   set U : Set ℂ := {z | R < ‖z‖}
   have hUo : IsOpen U := isOpen_lt continuous_const continuous_norm
-  have hRU {z : ℂ} (hz : z ∈ U) := hR (show R ≤ ‖z‖ from hz.le)
+  have hRU {z : ℂ} (hz : z ∈ U) := hR (Set.mem_ofPred.2 hz.le)
   have hU0 {z : ℂ} (hz : z ∈ U) : z ≠ 0 := norm_pos_iff.1 (hRU hz).2
   set Y := gaugeTransform (windingPhase m)⁻¹ x
   have hY {z : ℂ} (hz : z ∈ U) : ContDiffAt ℝ ∞ Y z :=
@@ -226,7 +226,7 @@ theorem sub_referenceField_mem_sobolevFields {x : ℂ → EuclideanSpace ℝ (Fi
     (eventually_gaugeTransform_inv_windingPhase hx hsol hphase hne).and
       (tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)))
   set R₀ := max R 0
-  have hRU {z : ℂ} (hz : R₀ < ‖z‖) := hR (show R ≤ ‖z‖ from (le_max_left _ _).trans hz.le)
+  have hRU {z : ℂ} (hz : R₀ < ‖z‖) := hR ((le_max_left _ _).trans hz.le)
   -- The deformation `y` of the end trivialization from the vacuum is the end trivialization of
   -- `x - x_ref`.
   set y := gaugeTransform (windingPhase m)⁻¹ x - vacuumField
@@ -280,8 +280,9 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace {x : ℂ → Euclidean
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
   refine ⟨u, fun s ↦ ?_⟩
   obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
-  have hux : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform huc hx
-  have hsol' (z : ℂ) : equation (u • x) z = 0 :=
+  rw [framedGaugeGroup_smul] at hu ⊢
+  have hux : ContDiff ℝ ∞ (gaugeTransform u.val x) := contDiff_gaugeTransform huc hx
+  have hsol' (z : ℂ) : equation (gaugeTransform u.val x) z = 0 :=
     (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
