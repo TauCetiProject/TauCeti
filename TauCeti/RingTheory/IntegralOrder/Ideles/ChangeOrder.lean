@@ -208,7 +208,7 @@ theorem mem_map_unitIdeles_changeOrder (hΛ : IsOrder K Λ) (hΓ : IsOrder K Γ)
 /-- **Unit ideles grow with the order.** For orders `Λ ≤ Γ`, the image of `U(Λ)` in `J(Γ)` lies in
 `U(Γ)`. -/
 theorem map_unitIdeles_changeOrder_le (hΛ : IsOrder K Λ) (hΓ : IsOrder K Γ) (hle : Λ ≤ Γ) :
-    (unitIdeles K Λ).map (changeOrder hΛ hΓ).toMonoidHom ≤ unitIdeles K Γ := fun _ hα ↦
+    (unitIdeles K Λ).map (MonoidHom.ofClass (changeOrder hΛ hΓ)) ≤ unitIdeles K Γ := fun _ hα ↦
   mem_unitIdeles.2 <| OrderIdeles.map_unitIdeles_changeOrder_le hΛ hΓ hle <|
     (OrderIdeles.mem_map_unitIdeles_changeOrder hΛ hΓ).2
       ((mem_map_unitIdeles_changeOrder hΛ hΓ).1 hα)
