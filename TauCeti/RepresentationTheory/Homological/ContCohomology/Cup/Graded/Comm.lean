@@ -213,7 +213,7 @@ def cupOne : (m n k : ℕ) → k = n + m →
       by
         refine ((continuous_postcomp _).comp continuous_prodMk_const_right).add ?_
         exact (continuous_const_smul _).comp
-          ((continuous_postcomp _).comp (ContinuousMap.continuous_prodMk.comp continuous_swap))⟩
+          ((continuous_postcomp _).comp (ContinuousMap.continuous_prodMk'.comp continuous_swap))⟩
   | _ + 1, _, 0, hk => absurd hk (by omega)
 
 /-- The cup-one product vanishes when the first factor has degree zero. -/

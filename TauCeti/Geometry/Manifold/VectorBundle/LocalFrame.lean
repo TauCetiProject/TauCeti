@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -60,6 +61,8 @@ trivialization.
   bundle are.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a trivialization agrees with a family of globally smooth sections.
+* `Bundle.Trivialization.contMDiff_mul_localFrameCoeff`: the local-frame coefficients of a `C^n`
+  section, multiplied by a `C^n` function supported in the base set, are globally `C^n`.
 * `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
   `Bundle.Trivialization.coordRatio_eq_of_eq_smul`: in a bundle with model fibre `𝕜`, over the
   base set of a trivialization, every vector is the multiple of a nonzero vector by their ratio
@@ -269,6 +272,29 @@ theorem exists_contMDiff_eventuallyEq_localFrame
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+
+/-- The coefficients of a `C^n` section in the local frame of a trivialization `e`, multiplied by a
+`C^n` function `ρ` supported in `e.baseSet`, are globally `C^n`. Only regularity on `e.baseSet`
+is needed. -/
+theorem contMDiff_mul_localFrameCoeff
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] {n : ℕ∞ω} [ContMDiffVectorBundle 1 G W I]
+    [ContMDiffVectorBundle n G W I]
+    {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι 𝕜 G)
+    {ρ : M → 𝕜} (hρ_diff : CMDiff[e.baseSet] n ρ) (hρ : tsupport ρ ⊆ e.baseSet)
+    {s : Π y : M, W y} (hs : CMDiff[e.baseSet] n (T% s)) (i : ι) :
+    CMDiff n (fun y ↦ ρ y * e.localFrameCoeff I b i y (s y)) := by
+  refine contMDiff_of_tsupport fun y hy ↦ ?_
+  have hy : y ∈ e.baseSet := hρ (tsupport_mul_subset_left hy)
+  have hnhds : e.baseSet ∈ nhds y := e.open_baseSet.mem_nhds hy
+  exact (hρ_diff.contMDiffAt hnhds).mul
+    (contMDiffAt_localFrameCoeff b hy (hs.contMDiffAt hnhds) i)
 
 /-! ### Ratios of vectors in a line bundle -/
 
