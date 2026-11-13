@@ -96,8 +96,9 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_qExpansionSu
 /-- **A form supported on the multiples of `q` is `V_q` of a form of the same level.** If
 `F ∈ S_k(Γ₁(M), χ)` has its `q`-expansion supported on the multiples of `q`, then there is
 `G ∈ S_k(Γ₁(M), χ)` with `a_n(F) = a_{n/q}(G)` for `q ∣ n` and `a_n(F) = 0` otherwise. Nothing
-relates `q` to `M`: the descent is carried out at level `q M`, where `q` divides the level, and
-the level `q M / q` it lands at is `M`. -/
+relates `q` to `M`. For `q ≠ 0` the descent is carried out at level `q M`, where `q` divides the
+level, and lands back at level `q M / q = M`. For `q = 0` the hypotheses force every coefficient of
+`F` to vanish (the constant term of a cusp form is zero), so `G = 0` works. -/
 theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd {M q : ℕ} [NeZero M]
     {χ : (ZMod M)ˣ →* ℂˣ} {F : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
     (hFχ : F ∈ cuspFormCharSpace k χ) (hF : QExpansionSupportedOnDvd q F) :
