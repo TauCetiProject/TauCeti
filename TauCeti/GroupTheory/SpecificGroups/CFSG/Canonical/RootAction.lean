@@ -7,8 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.GraphSteinberg
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected.Frobenius
 
 /-!
 # The indexed Steinberg action on every root subgroup
@@ -67,32 +66,13 @@ theorem scSteinberg_chevalleyToralRootSubgroupPoints
         (Multiplicative.ofAdd
           (((d.1.dynkinType.chevalleyDiagramSign d.1.dynkinType_valid
             d.diagramPerm_mem_diagramSymmetry α : ℤ) : A) * u ^ d.1.fieldOrder)) := by
-  let D := d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid
-  have hf := congrArg Subtype.val
-    (D.frobenius_rootSubgroupPoints d.1.characteristic d.1.fieldExponent A α u)
-  simp only [DynkinType.ChevalleyDatum.coe_frobenius,
-    DynkinType.ChevalleyDatum.coe_rootSubgroupPoints] at hf
   have hγ := congrArg Subtype.val
     (d.1.dynkinType.scToralDiagramAutPoints_chevalleyToralRootSubgroupPoints
       d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry α A
         (u ^ d.1.characteristic ^ d.1.fieldExponent))
   simp only [DynkinType.coe_scToralDiagramAutPoints] at hγ
-  -- The datum fields are the same full-weight representation, lattice and basis as the
-  -- unbundled point construction; the torus coordinates do not occur in this matrix equation.
-  dsimp only [D] at hf
-  simp only [DynkinType.scChevalleyDatum_representation,
-    DynkinType.scChevalleyDatum_basis] at hf
-  have hx (v : A) := DynkinType.coe_chevalleyToralRootSubgroupPoints
-    (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
-      (d.1.dynkinType.scModule d.1.dynkinType_valid))
-    (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
-    (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
-    (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
-    (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
-    (d.1.dynkinType.scWeight d.1.dynkinType_valid) α A (Multiplicative.ofAdd v)
-  have hp := (congrArg (Matrix.GeneralLinearGroup.map
-    (iterateFrobenius A d.1.characteristic d.1.fieldExponent)) (hx u)).trans
-      (hf.trans (hx (u ^ d.1.characteristic ^ d.1.fieldExponent)).symm)
+  have hp := d.1.dynkinType.map_iterateFrobenius_chevalleyToralRootSubgroupPoints
+    d.1.dynkinType_valid d.1.characteristic d.1.fieldExponent A α u
   apply Subtype.ext
   refine (d.coe_scSteinberg A _).trans ?_
   simpa only [d.1.fieldOrder_eq_characteristic_pow] using
