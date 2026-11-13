@@ -66,7 +66,6 @@ variable {M V : Type*} [TopologicalSpace M] [SeminormedAddCommGroup V]
 include hε in
 /-- The chart ball `chartBall e b ε` is homeomorphic to the ball of radius `ε` about `0` through
 `x ↦ e x - e b`, when the ball about `e b` lies in the target of `e`. -/
-@[expose]
 def chartBallHomeomorph : chartBall e b ε ≃ₜ ball (0 : V) ε :=
   (e.transHomeomorph (IsometryEquiv.subRight (e b)).toHomeomorph).homeomorphOfImageSubsetSource
     (e.chartBall_subset_source b ε) <| by
@@ -76,12 +75,12 @@ def chartBallHomeomorph : chartBall e b ε ≃ₜ ball (0 : V) ε :=
 @[simp]
 lemma coe_chartBallHomeomorph_apply (x : chartBall e b ε) :
     (chartBallHomeomorph e hε x : V) = e x - e b :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma coe_chartBallHomeomorph_symm_apply (v : ball (0 : V) ε) :
     ((chartBallHomeomorph e hε).symm v : M) = e.symm (v + e b) :=
-  rfl
+  (rfl)
 
 end SeminormedAddCommGroup
 
