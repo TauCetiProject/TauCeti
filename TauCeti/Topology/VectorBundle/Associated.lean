@@ -48,7 +48,7 @@ instance instModule (b : B) : Module 𝕜 (AssociatedBundle G P F b) :=
 /-- Associated-bundle charts are linear when the structure-group action is linear. -/
 instance localTriv_isLinear (b : B) :
     ((associatedBundleCore G P F).localTriv b).IsLinear 𝕜 where
-  linear x hx := by
+  linear x _ := by
     refine ⟨?_, ?_⟩
     · intro v w
       simp only [FiberBundleCore.localTriv_apply]

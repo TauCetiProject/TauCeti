@@ -250,7 +250,6 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
     rw [real_inner_smul_left, real_inner_comm,
       Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
     simp
-  have hnorm : (0 : ℝ) < ‖v‖ := norm_pos_iff.2 hv0
   obtain ⟨m, hm⟩ := isIntegral_iff.1 h.isIntegral _ (hmem (1 / (√2 * ‖v‖))) _
     (hmem (1 / (√2 * ‖v‖)))
   rw [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm

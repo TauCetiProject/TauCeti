@@ -6,20 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.IsIntegral
-public import Mathlib.FieldTheory.Minpoly.Field
+public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 
 /-!
 # The minimal polynomial of `i`
 
-For a field `K` mapping to `ℂ`, the minimal polynomial of `Complex.I` over `K` is `X ^ 2 + 1`
-whenever that polynomial is irreducible over `K`, that is, whenever `-1` is not a square in `K`.
-This holds over every ordered field, such as `ℚ` or `ℝ`, where `X ^ 2 + 1` has no root
-(`Polynomial.irreducible_X_sq_add_one`). Mathlib records only that `Complex.I` is integral
-(`Complex.isIntegral_I`).
+For an integrally closed domain `R` embedded in `ℂ`, the minimal polynomial of `Complex.I` over
+`R` is `X ^ 2 + 1` whenever that polynomial is irreducible over `R`. This covers `ℤ` and every
+field in which `-1` is not a square, in particular every ordered field, such as `ℚ` or `ℝ`, where
+`X ^ 2 + 1` has no root (`Polynomial.irreducible_X_sq_add_one`). Mathlib records only that
+`Complex.I` is integral (`Complex.isIntegral_I`).
 
 ## Main results
 
-* `Complex.minpoly_I`: the minimal polynomial of `i` over `K` is `X ^ 2 + 1` when the latter is
+* `Complex.minpoly_I`: the minimal polynomial of `i` over `R` is `X ^ 2 + 1` when the latter is
   irreducible.
 -/
 
@@ -27,9 +27,13 @@ public section
 
 open Polynomial
 
-/-- **The minimal polynomial of `i` is `X ^ 2 + 1`** over any field `K` mapping to `ℂ` over which
-`X ^ 2 + 1` is irreducible; for instance over an ordered field, by
+/-- **The minimal polynomial of `i` is `X ^ 2 + 1`** over any integrally closed domain `R` embedded
+in `ℂ` over which `X ^ 2 + 1` is irreducible; for instance over `ℤ`, or over an ordered field, by
 `Polynomial.irreducible_X_sq_add_one`. -/
-theorem Complex.minpoly_I {K : Type*} [Field K] [Algebra K ℂ]
-    (h : Irreducible (X ^ 2 + 1 : K[X])) : minpoly K Complex.I = X ^ 2 + 1 :=
-  (minpoly.eq_of_irreducible_of_monic h (by simp) (monic_X_pow_add_C 1 two_ne_zero)).symm
+theorem Complex.minpoly_I {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+    [Algebra R ℂ] [Module.IsTorsionFree R ℂ] (h : Irreducible (X ^ 2 + 1 : R[X])) :
+    minpoly R Complex.I = X ^ 2 + 1 :=
+  have hI := Complex.isIntegral_I R
+  eq_of_monic_of_associated (minpoly.monic hI) (monic_X_pow_add_C 1 two_ne_zero) <|
+    (minpoly.prime_of_isIntegrallyClosed hI).irreducible.associated_of_dvd h <|
+      minpoly.isIntegrallyClosed_dvd hI (by simp)

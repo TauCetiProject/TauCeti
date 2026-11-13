@@ -78,17 +78,17 @@ namespace SobolevSection
 
 variable {A μ p k} [IsManifold 𝓘(ℝ, E) ∞ M] {φ ψ : M → ℝ}
 
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [IsManifold 𝓘(ℝ, E) ∞ M] in
+omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- If the chart-`i` components of `w'` are those of `w` multiplied by `φ` read in chart `i`, the
 chart data of `w'` are those of `w` multiplied by `φ` read in chart `i`. -/
-private theorem chartValueL_ae_of_value_ae {w w' : SobolevData A μ p k} {i : Fin A.n}
+private theorem chartValueL_ae_of_value_ae {w w' : A.sectionChartData.SobolevData μ p k}
+    {i : Fin A.n}
     (h : ∀ j, (Wkp.value k (w' i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
       fun y ↦ φ ((A.chart i).symm y) * Wkp.value k (w i j) y) :
-    A.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ φ ((A.chart i).symm y) • A.chartValueL μ p k i w y := by
-  filter_upwards [A.chartValueL_apply_ae μ p k i w', A.chartValueL_apply_ae μ p k i w,
-    ae_all_iff.2 h] with y hy' hy hj
+    A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ φ ((A.chart i).symm y) • A.sectionChartData.chartValueL μ p k i w y := by
+  filter_upwards [A.sectionChartData.chartValueL_apply_ae μ p k i w',
+    A.sectionChartData.chartValueL_apply_ae μ p k i w, ae_all_iff.2 h] with y hy' hy hj
   rw [hy', hy, Finset.smul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
 
@@ -100,39 +100,44 @@ component is multiplied by `φ ∘ (chart i).symm`. If `w` consists of the compo
 (`TauCeti.SobolevSection.chartValueL_contMDiffSMulL_ae_coord`). -/
 def contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) :
     SobolevSection A μ p k →L[ℝ] SobolevSection A μ p k :=
-  ((SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL (A.chart i).open_target
+  ((SectionChartData.SobolevData.mapL fun i ↦ Wkp.contDiffOnSMulL (A.chart i).open_target
       (A.isCompact_closure_image i) (A.closure_image_subset_target i) k
-      (A.contDiffOn_comp_chart_symm hφ i)).comp (sobolevSections A μ p k).subtypeL).codRestrict
-    (sobolevSections A μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := (mem_sobolevSections_iff A μ p k).1 w.2
-      refine (mem_sobolevSections_iff A μ p k).2 ⟨fun x ↦ φ x • s x, fun i ↦ ?_⟩
+      (A.contDiffOn_comp_chart_symm hφ i)).comp
+        (A.sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
+    (A.sectionChartData.sobolevSections μ p k) fun w ↦ by
+      obtain ⟨s, hs⟩ := (A.sectionChartData.mem_sobolevSections_iff μ p k).1 w.2
+      refine (A.sectionChartData.mem_sobolevSections_iff μ p k).2 ⟨fun x ↦ φ x • s x, fun i ↦ ?_⟩
       rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
-      refine (chartValueL_ae_of_value_ae (φ := φ) (w := (w : SobolevData A μ p k))
+      refine (chartValueL_ae_of_value_ae (φ := φ) (w := (w : A.sectionChartData.SobolevData μ p k))
         fun j ↦ ?_).trans ?_
-      · rw [SobolevData.mapL_apply]
+      · erw [SectionChartData.SobolevData.mapL_apply]
         exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
       · filter_upwards [hs i, ae_restrict_mem (A.image i).isOpen.measurableSet] with y hsy hy
-        rw [hsy, A.coord_fun_smul i φ s hy]
+        rw [hsy, A.sectionChartData_coord_of_mem _ hy, A.sectionChartData_coord_of_mem _ hy,
+          A.coord_fun_smul i φ s hy]
 
 /-- The components in chart `i` of `φ • w` are those of `w` multiplied by `φ` read in chart `i`,
 using `TauCeti.Wkp.contDiffOnSMulL`. -/
 @[simp]
 theorem contMDiffSMulL_apply (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) (w : SobolevSection A μ p k)
     (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-    (contMDiffSMulL A μ p k hφ w : SobolevData A μ p k) i j =
+    (contMDiffSMulL A μ p k hφ w : A.sectionChartData.SobolevData μ p k) i j =
       Wkp.contDiffOnSMulL (A.chart i).open_target (A.isCompact_closure_image i)
         (A.closure_image_subset_target i) k (A.contDiffOn_comp_chart_symm hφ i)
-        ((w : SobolevData A μ p k) i j) := by
+        ((w : A.sectionChartData.SobolevData μ p k) i j) := by
   rw [contMDiffSMulL, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
-    Submodule.subtypeL_apply, SobolevData.mapL_apply]
+    Submodule.subtypeL_apply]
+  erw [SectionChartData.SobolevData.mapL_apply]
+  rfl
 
 /-- The components in chart `i` of `φ • w` are those of `w` multiplied by `φ ∘ (chart i).symm`,
 almost everywhere on the image of the chart. -/
 theorem value_contMDiffSMulL_ae (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ) (w : SobolevSection A μ p k)
     (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-    (Wkp.value k ((contMDiffSMulL A μ p k hφ w : SobolevData A μ p k) i j) : E → ℝ)
-      =ᵐ[μ.restrict (A.image i)]
-        fun y ↦ φ ((A.chart i).symm y) * Wkp.value k ((w : SobolevData A μ p k) i j) y := by
+    (Wkp.value k
+      ((contMDiffSMulL A μ p k hφ w : A.sectionChartData.SobolevData μ p k) i j) : E → ℝ)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ φ ((A.chart i).symm y) *
+        Wkp.value k ((w : A.sectionChartData.SobolevData μ p k) i j) y := by
   rw [contMDiffSMulL_apply]
   exact Wkp.value_contDiffOnSMulL_ae _ _ _ k _ _
 
@@ -142,10 +147,11 @@ components in chart `i` is the corresponding component of `w` multiplied by
 theorem eq_contMDiffSMulL_iff (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     {w w' : SobolevSection A μ p k} :
     w' = contMDiffSMulL A μ p k hφ w ↔ ∀ i j,
-      (Wkp.value k ((w' : SobolevData A μ p k) i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
-        fun y ↦ φ ((A.chart i).symm y) * Wkp.value k ((w : SobolevData A μ p k) i j) y := by
+      (Wkp.value k ((w' : A.sectionChartData.SobolevData μ p k) i j) : E → ℝ)
+        =ᵐ[μ.restrict (A.image i)] fun y ↦ φ ((A.chart i).symm y) *
+          Wkp.value k ((w : A.sectionChartData.SobolevData μ p k) i j) y := by
   refine ⟨fun h ↦ h ▸ value_contMDiffSMulL_ae hφ w, fun h ↦ ?_⟩
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
+  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
   rw [contMDiffSMulL_apply]
   exact (Wkp.eq_contDiffOnSMulL_iff _ _ _ k _).2 (h i j)
 
@@ -153,16 +159,17 @@ theorem eq_contMDiffSMulL_iff (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
 almost everywhere on the image of the chart. -/
 theorem chartValueL_contMDiffSMulL_ae (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (w : SobolevSection A μ p k) (i : Fin A.n) :
-    A.chartValueL μ p k i (contMDiffSMulL A μ p k hφ w) =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ φ ((A.chart i).symm y) • A.chartValueL μ p k i w y :=
+    A.sectionChartData.chartValueL μ p k i (contMDiffSMulL A μ p k hφ w) =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ φ ((A.chart i).symm y) • A.sectionChartData.chartValueL μ p k i w y :=
   chartValueL_ae_of_value_ae (value_contMDiffSMulL_ae hφ w i)
 
 /-- **Sections.** If `w` consists of the chartwise components of a section `s`, then `φ • w`
 consists of the chartwise components of the section `x ↦ φ x • s x`. -/
 theorem chartValueL_contMDiffSMulL_ae_coord (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     {w : SobolevSection A μ p k} {s : ∀ x, V x}
-    (hs : ∀ i, A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) (i : Fin A.n) :
-    A.chartValueL μ p k i (contMDiffSMulL A μ p k hφ w) =ᵐ[μ.restrict (A.image i)]
+    (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ p k i (contMDiffSMulL A μ p k hφ w) =ᵐ[μ.restrict (A.image i)]
       A.coord i fun x ↦ φ x • s x := by
   filter_upwards [chartValueL_contMDiffSMulL_ae hφ w i, hs i,
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hsy hy
@@ -173,7 +180,7 @@ theorem chartValueL_contMDiffSMulL_ae_coord (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(�
 theorem contMDiffSMulL_const (c : ℝ) :
     contMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
   ext1 w
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
+  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
   rw [contMDiffSMulL_apply]
   exact Wkp.contDiffOnSMulL_const _ _ _ k c _
 
@@ -187,8 +194,8 @@ theorem contMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) :
     contMDiffSMulL A μ p k (hφ.add hψ) = contMDiffSMulL A μ p k hφ + contMDiffSMulL A μ p k hψ := by
   ext1 w
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  rw [add_apply, Submodule.coe_add, Pi.add_apply, Pi.add_apply,
+  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
+  erw [add_apply, Submodule.coe_add, Pi.add_apply, Pi.add_apply,
     contMDiffSMulL_apply, contMDiffSMulL_apply, contMDiffSMulL_apply]
   exact DFunLike.congr_fun (Wkp.contDiffOnSMulL_add (mu := μ) (p := p) _ _ _ k _ _) _
 
@@ -198,7 +205,7 @@ theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     contMDiffSMulL A μ p k (hφ.mul hψ) =
       (contMDiffSMulL A μ p k hφ).comp (contMDiffSMulL A μ p k hψ) := by
   ext1 w
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
+  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
   rw [ContinuousLinearMap.comp_apply, contMDiffSMulL_apply, contMDiffSMulL_apply,
     contMDiffSMulL_apply]
   exact DFunLike.congr_fun (Wkp.contDiffOnSMulL_mul (mu := μ) (p := p) _ _ _ k _ _) _
@@ -206,10 +213,11 @@ theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
     (w : SobolevSection A μ p (k + 1)) :
-    lowerOrderL A μ p k (contMDiffSMulL A μ p (k + 1) hφ w) =
-      contMDiffSMulL A μ p k hφ (lowerOrderL A μ p k w) := by
-  refine Subtype.ext <| funext fun i ↦ funext fun j ↦ ?_
-  rw [lowerOrderL_apply, contMDiffSMulL_apply, contMDiffSMulL_apply, lowerOrderL_apply]
+    A.sectionChartData.lowerOrderL μ p k (contMDiffSMulL A μ p (k + 1) hφ w) =
+      contMDiffSMulL A μ p k hφ (A.sectionChartData.lowerOrderL μ p k w) := by
+  refine Subtype.ext <| funext fun (i : Fin A.n) ↦ funext fun j ↦ ?_
+  erw [SectionChartData.lowerOrderL_apply, contMDiffSMulL_apply, contMDiffSMulL_apply,
+    SectionChartData.lowerOrderL_apply]
   exact Wkp.lowerOrder_contDiffOnSMulL _ _ _ k _ _
 
 end SobolevSection
