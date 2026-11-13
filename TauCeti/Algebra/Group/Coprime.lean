@@ -33,6 +33,10 @@ virtual characters induced from `p`-elementary subgroups.
   and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are `v ^ n` and `v ^ m` for a
   single `v`; `TauCeti.pow_eq_pow_iff_of_coprime'` and
   `TauCeti.nsmul_eq_nsmul_iff_of_coprime'` specialize this to commutative groups.
+* `Commute.zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow` and its additive form
+  `AddCommute.zsmul_add_zsmul_zsmul_eq_of_zsmul_eq_zsmul`: the explicit common root for integer
+  exponents: if `x ^ m = y ^ n` and `u * m + v * n = 1`, then `x ^ v * y ^ u` is an `n`-th root of
+  `x`, and, exchanging `x` and `y`, an `m`-th root of `y`.
 * `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
   `TauCeti.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
   prime at a time, in any subgroup (or additive subgroup) of a group.
@@ -86,6 +90,20 @@ for coprime `m` and `n`, `m • x = n • y` exactly when `x` and `y` are the mu
 theorem pow_eq_pow_iff_of_coprime' {G : Type*} [CommGroup G] {x y : G} {m n : ℕ}
     (hmn : m.Coprime n) : x ^ m = y ^ n ↔ ∃ v, x = v ^ n ∧ y = v ^ m :=
   (Commute.all x y).pow_eq_pow_iff_of_coprime' hmn
+
+/-- **The common root from a Bézout identity.** If commuting elements `x` and `y` of a group
+satisfy `x ^ m = y ^ n` for integers `m` and `n`, and `u * m + v * n = 1`, then `x ^ v * y ^ u` is
+an `n`-th root of `x`. Exchanging `x` and `y` shows that it is also an `m`-th root of `y`. -/
+@[to_additive /-- **The common division from a Bézout identity.** If commuting elements `x` and
+`y` of an additive group satisfy `m • x = n • y` for integers `m` and `n`, and
+`u * m + v * n = 1`, then `n • (v • x + u • y) = x`. -/]
+theorem _root_.Commute.zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow {G : Type*} [Group G] {x y : G}
+    {m n u v : ℤ} (hxy : Commute x y) (h : x ^ m = y ^ n) (huv : u * m + v * n = 1) :
+    (x ^ v * y ^ u) ^ n = x :=
+  calc (x ^ v * y ^ u) ^ n = x ^ (v * n) * (y ^ n) ^ u := by
+        rw [(hxy.zpow_zpow v u).mul_zpow, ← zpow_mul, ← zpow_mul, ← zpow_mul, mul_comm u n]
+    _ = x ^ (v * n + m * u) := by rw [← h, ← zpow_mul, zpow_add]
+    _ = x := by rw [mul_comm m u, add_comm, huv, zpow_one]
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/

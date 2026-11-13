@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
 public import TauCeti.GroupTheory.PresentedGroup
 public import Mathlib.Algebra.Group.Torsion
@@ -446,16 +447,12 @@ private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
       congrArg Group.Abelianization.of (cyclicAmalgamRelator_relation m n)
   -- The inverse sends the generator `1` to `x ^ v y ^ u`, whose `n`-th power is `x` and whose
   -- `m`-th power is `y`, because `x ^ m = y ^ n` and `u m + v n = 1`.
-  have hx : (x ^ v * y ^ u) ^ n = x := by
-    rw [mul_zpow, ← zpow_mul, ← zpow_mul, mul_comm u n, zpow_mul y n u, ← hxy, ← zpow_mul,
-      ← zpow_add]
-    conv_rhs => rw [← zpow_one x, ← huv]
-    ac_rfl
+  have hx : (x ^ v * y ^ u) ^ n = x :=
+    (Commute.all x y).zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow hxy huv
   have hy : (x ^ v * y ^ u) ^ m = y := by
-    rw [mul_zpow, ← zpow_mul, ← zpow_mul, mul_comm v m, zpow_mul x m v, hxy, ← zpow_mul,
-      ← zpow_add]
-    conv_rhs => rw [← zpow_one y, ← huv]
-    ac_rfl
+    rw [mul_comm]
+    exact (Commute.all y x).zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow hxy.symm
+      ((add_comm _ _).trans huv)
   let ψ := zpowersHom _ (x ^ v * y ^ u)
   have hleft :
       ψ.comp (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)) = MonoidHom.id _ := by
