@@ -44,7 +44,7 @@ theorem quantile_generalizedExtremeValueMeasure_of_shape_ne_zero (hs : 0 < s) (m
   have hlog : 0 < -log u := neg_pos.mpr (log_neg hu.1 hu.2)
   have hmap : generalizedExtremeValueMap m s ξ (-log u) =
       m + s * ((-log u) ^ (-ξ) - 1) / ξ := by
-    rw [generalizedExtremeValueMap_eq_rpow hlog, ite_eq_right hξ]
+    rw [generalizedExtremeValueMap_eq_rpow hlog hξ]
   rw [← hmap]
   refine eq_of_forall_ge_iff fun x ↦ ?_
   rw [Measure.quantile_le_iff _ hu.1 hu.2,
