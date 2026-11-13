@@ -35,7 +35,7 @@ vanishing cohomology, so the connecting morphism of the Mayer–Vietoris sequenc
 the cohomology of `X` up to the sign `(-1)ᵖ`
 (`TopCat.singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap`). So if cupping
 with `q^* g'` is bijective for `W'`, then so is cupping with `q^* δ g' = δ q^* g'` for `W`.
-Starting from `W = F`, where the subspace is empty and `g = 1`, and repeating `c` times reaches
+Starting from `W = F`, where `q⁻¹(F ∖ W)` is empty and `g = 1`, and repeating `c` times reaches
 `W`.
 
 ## Main results
@@ -104,70 +104,35 @@ private abbrev unionPair : TopPair.{w} :=
   TopPair.ofInclusion (Set.union_subset_union (half_subset_univ q s s.extend)
     (half_subset_univ q s (-s.extend)))
 
-/-- The map of pairs `(univ ∩ univ, half₊ ∩ half₋) ⟶ (X, q⁻¹(F ∖ W'))` forgetting the subtypes. -/
-private def interHom : interPair q s ⟶ subspaceComplPair q s.W' :=
-  TopPair.ofHom (TopCat.ofHom (ContinuousMap.subtypeVal _))
-    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (mem_half_inter_half_iff q s x.1).1 x.2⟩, by fun_prop⟩)
-    (by ext; rfl)
-
-/-- The map of pairs `(X, q⁻¹(F ∖ W)) ⟶ (univ ∪ univ, half₊ ∪ half₋)`. -/
-private def unionHom : subspaceComplPair q W ⟶ unionPair q s :=
-  TopPair.ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x, Or.inl trivial⟩, by fun_prop⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨x.1, (mem_half_union_half_iff q s x.1).2 x.2⟩, by fun_prop⟩)
-    (by ext; rfl)
-
 /-- The intersection pair of the Mayer–Vietoris sequence of the two half-subspace complements of
 a step is `(X, q⁻¹(F ∖ W'))`. -/
 private def interIso : interPair q s ≅ subspaceComplPair q s.W' :=
-  have h : TopPair.Hom.fst (interHom q s) =
-      (TopCat.isoOfHomeo (X := TopCat.of ↥(Set.univ ∩ Set.univ)) (Y := X)
-        ((Homeomorph.setCongr (Set.inter_self _)).trans (Homeomorph.Set.univ X))).hom :=
-    TopCat.ext fun _ ↦ rfl
-  have : IsIso (TopPair.Hom.fst (interHom q s)) := by
-    rw [h]
-    exact (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (interHom q s) fun y ↦
-    ⟨⟨y.1, (mem_half_inter_half_iff q s y.1).2 y.2⟩, rfl⟩
-  asIso (interHom q s)
+  TopPair.ofInclusionIsoOfSubset (Set.inter_subset_inter (half_subset_univ q s s.extend)
+    (half_subset_univ q s (-s.extend))) (fun _ ↦ ⟨trivial, trivial⟩) (mem_half_inter_half_iff q s)
 
 /-- The pair `(X, q⁻¹(F ∖ W))` is the union pair of the Mayer–Vietoris sequence of the two
 half-subspace complements of a step. -/
 private def unionIso : subspaceComplPair q W ≅ unionPair q s :=
-  have h : TopPair.Hom.fst (unionHom q s) = (TopCat.isoOfHomeo (X := X)
-      (Y := TopCat.of ↥(Set.univ ∪ Set.univ))
-      ((Homeomorph.setCongr (Set.union_self _)).trans (Homeomorph.Set.univ X)).symm).hom :=
-    TopCat.ext fun _ ↦ rfl
-  have : IsIso (TopPair.Hom.fst (unionHom q s)) := by
-    rw [h]
-    exact (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (unionHom q s) fun y ↦
-    ⟨⟨y.1, (mem_half_union_half_iff q s y.1).1 y.2⟩, rfl⟩
-  asIso (unionHom q s)
+  (TopPair.ofInclusionIsoOfSubset (Set.union_subset_union (half_subset_univ q s s.extend)
+    (half_subset_univ q s (-s.extend))) (fun _ ↦ Or.inl trivial)
+      (mem_half_union_half_iff q s)).symm
 
 private lemma interIso_hom_fst : TopPair.Hom.fst (interIso q s).hom =
-    TopCat.ofHom (ContinuousMap.subtypeVal ((Set.univ : Set X) ∩ Set.univ)) := by
-  simp only [interIso, asIso_hom]
-  rfl
+    TopCat.ofHom (ContinuousMap.subtypeVal ((Set.univ : Set X) ∩ Set.univ)) :=
+  TopCat.ext fun x ↦ TopPair.ofInclusionIsoOfSubset_hom_fst_apply _ _ x
+
+private lemma unionIso_inv_fst : TopPair.Hom.fst (unionIso q s).inv =
+    TopCat.ofHom (ContinuousMap.subtypeVal ((Set.univ : Set X) ∪ Set.univ)) :=
+  TopCat.ext fun x ↦ TopPair.ofInclusionIsoOfSubset_hom_fst_apply _ _ x
 
 private lemma unionIso_hom_fst_comp : TopPair.Hom.fst (unionIso q s).hom ≫
     TopCat.ofHom (ContinuousMap.subtypeVal ((Set.univ : Set X) ∪ Set.univ)) = 𝟙 X := by
-  simp only [unionIso, asIso_hom]
-  rfl
+  have h := congrArg TopPair.Hom.fst (unionIso q s).hom_inv_id
+  rw [TopPair.Hom.fst_comp, unionIso_inv_fst, TopPair.Hom.fst_id] at h
+  exact h
 
-/-- The map of pairs `(univ, A) ⟶ (X, A)` forgetting the subtype. -/
-private def univHom (A : Set X) : TopPair.ofInclusion (Set.subset_univ A) ⟶ TopPair.ofSubset A :=
-  TopPair.ofHom (TopCat.ofHom (ContinuousMap.subtypeVal _)) (𝟙 (TopCat.of ↥A))
-
-/-- The pair `(univ, A)` of subspaces of `X` is the pair `(X, A)`. -/
-private def univIso (A : Set X) : TopPair.ofInclusion (Set.subset_univ A) ≅ TopPair.ofSubset A :=
-  have h : TopPair.Hom.fst (univHom A) = (TopCat.isoOfHomeo (X := TopCat.of ↥(Set.univ : Set X))
-      (Y := X) (Homeomorph.Set.univ X)).hom :=
-    TopCat.ext fun _ ↦ rfl
-  have : IsIso (TopPair.Hom.fst (univHom A)) := by
-    rw [h]
-    exact (TopCat.isoOfHomeo _).isIso_hom
-  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (univHom A) fun y ↦ ⟨y, rfl⟩
-  asIso (univHom A)
+private lemma unionIso_hom_fst_apply (x : X) : (TopPair.Hom.fst (unionIso q s).hom x).1 = x :=
+  ConcreteCategory.congr_hom (unionIso_hom_fst_comp q s) x
 
 variable [FiniteDimensional ℝ F]
 
@@ -273,7 +238,8 @@ private lemma singularCohomologyMap_subspaceComplPairMap_comp_stepδ (n m : ℕ)
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, subspaceComplPairMap_fst]
     exact TopCat.ext fun x ↦ Subtype.ext ((congrArg Subtype.val
-      (TopPair.ofInclusionMap_fst_apply _ _ _)).trans rfl)
+      (TopPair.ofInclusionMap_fst_apply _ _ _)).trans ((congrArg f
+        (unionIso_hom_fst_apply q s x)).trans (unionIso_hom_fst_apply q' s (f x)).symm))
   simp only [stepδ, ← Category.assoc, ← TopPair.singularCohomologyMap_comp, hinter]
   rw [TopPair.singularCohomologyMap_comp, Category.assoc, Category.assoc, Category.assoc,
     ← TopCat.singularCohomologyPairMayerVietorisδ_naturality_assoc R K M
@@ -307,7 +273,8 @@ private lemma isZero_singularCohomology_half (W' : Submodule ℝ F) (ψ : F →�
     IsZero ((TopPair.ofInclusion (Set.subset_univ (half q W' ψ))).singularCohomology R K M n) :=
   ((TopPair.ofSubset (half q W' ψ)).isZero_singularCohomology_of_isZero_singularHomology R M n
     fun j _ ↦ hq W' ψ v hv hψv j).of_iso
-      ((TopPair.singularCohomologyFunctor R K M n).mapIso (univIso (half q W' ψ)).op).symm
+      ((TopPair.singularCohomologyFunctor R K M n).mapIso
+        (TopPair.ofInclusionIsoOfSubset _ Set.mem_univ fun _ ↦ Iff.rfl).op).symm
 
 include hq in
 private lemma isIso_stepδ (n m : ℕ) (h : n + 1 = m) : IsIso (stepδ q s R M n m h) := by
@@ -331,6 +298,11 @@ private lemma isIso_stepδ (n m : ℕ) (h : n + 1 = m) : IsIso (stepδ q s R M n
   have := isIso_singularCohomologyMap_hom (R := R) M (unionIso q s) m
   unfold stepδ
   infer_instance
+
+/-- Multiplying by the Koszul sign `(-1)ⁿ` is an involution. -/
+private lemma involutive_neg_one_pow_smul {N : Type*} [AddCommGroup N] (n : ℕ) :
+    Function.Involutive fun x : N ↦ ((-1 : ℤ) ^ n) • x := fun x ↦ by
+  simp only [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
 
 end SubspaceComplPair
 
@@ -419,12 +391,10 @@ theorem exists_bijective_singularCup_subspaceComplPair :
         (rfl : n + (c + 1) = n + (c + 1)) a (TopPair.singularCohomologyMap
           (subspaceComplPairMap (TopCat.ofHom q) (fun _ ↦ rfl) s.W') c g')
       erw [e]
-      rw [smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
-      rfl
+      exact (involutive_neg_one_pow_smul n _).symm
     have hsign : Function.Bijective fun x : (subspaceComplPair q W).singularCohomology
         (ModuleCat.of K K) K M (n + (c + 1)) ↦ ((-1 : ℤ) ^ n) • x :=
-      Function.Involutive.bijective fun x ↦ by
-        rw [smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+      (involutive_neg_one_pow_smul n).bijective
     convert hsign.comp ((ConcreteCategory.bijective_of_isIso
       (stepδ q s (ModuleCat.of K K) M (n + c) (n + (c + 1)) rfl)).comp
         (hg' X q hq M n (n + c) rfl)) using 1
