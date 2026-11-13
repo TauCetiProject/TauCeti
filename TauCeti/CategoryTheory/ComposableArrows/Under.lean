@@ -27,7 +27,8 @@ namespace CategoryTheory.ComposableArrows
 
 variable {C : Type u} [Category.{v} C] (x : C)
 
-/-- Strings of n arrows under x correspond to strings of n + 1 arrows starting at x. -/
+/-- Strings of n + 1 arrows starting at x correspond to strings of n arrows under x, taking the
+arrows from x as structure arrows. -/
 -- The object map must reduce so the structure arrows and right parts have their stated types.
 @[expose]
 def underEquiv (n : ℕ) :
@@ -84,7 +85,7 @@ lemma underEquiv_apply_map_right {n : ℕ}
     {i j : Fin (n + 1)} (f : i ⟶ j) :
     ((underEquiv x n t).map f).right = t.1.map ((Fin.succFunctor (n + 1)).map f) := (rfl)
 
-/-- Forgetting the structure arrows of a string under x drops its first arrow. -/
+/-- Forgetting the structure arrows of `underEquiv x n t` drops the first arrow of `t`. -/
 @[simp]
 lemma underEquiv_comp_forget {n : ℕ} (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) :
     underEquiv x n t ⋙ Under.forget x = t.1.δ₀ := (rfl)

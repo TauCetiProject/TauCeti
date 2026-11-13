@@ -17,9 +17,9 @@ its ordinary under category, through `CategoryTheory.nerve.cosliceIso`. Projecti
 is given simplexwise by `CategoryTheory.nerve.yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe`:
 restricting the comparison along `join.inr` sends a string `s` to `s ⋙ Under.forget x`
 (`CategoryTheory.nerve.cosliceIso_inv_app_comp_forget` is the inverse form). When the objects of
-the category live in a universe containing its morphisms, so that the forgetful functor has a
-nerve, the comparison takes the coslice projection to `nerveMap (Under.forget x)`
-(`CategoryTheory.nerve.cosliceIso_hom_comp_π`).
+the category live in a universe containing its morphisms, so that `Under x` and the category have
+the same object universe as `CategoryTheory.nerveMap` requires, the comparison takes the coslice
+projection to `nerveMap (Under.forget x)` (`CategoryTheory.nerve.cosliceIso_hom_comp_π`).
 The comparison identifies the join description of a coslice simplex with a string of arrows
 under x, retaining the structure arrows and all simplicial operators.
 
@@ -49,17 +49,21 @@ lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : Composa
       (nerve C).map (SimplexCategory.vertexJoin.map f).op
         ((ComposableArrows.underEquiv x n).symm s).1 := by
   symm
-  -- Both strings drop their first arrow to the reindexing along f of the string s. The nerve acts
-  -- by reindexing strings, and dropping the first arrow is reindexing along δ 0, so the steps
-  -- between these reindexings hold by unfolding `nerve`.
+  -- Both strings drop their first arrow to the reindexing along f of the string s: dropping the
+  -- first arrow is the face `δ 0`, and the nerve reindexes strings by whiskering.
   have h₁ : ((nerve C).map (SimplexCategory.vertexJoin.map f).op
       ((ComposableArrows.underEquiv x n).symm s).1).δ₀ =
       (nerve C).map (SimplexCategory.δ 0 ≫ SimplexCategory.vertexJoin.map f).op
-        ((ComposableArrows.underEquiv x n).symm s).1 := rfl
+        ((ComposableArrows.underEquiv x n).symm s).1 :=
+    nerve.δ₀_eq.symm.trans (Functor.map_comp_apply _ _ _ _).symm
   have h₂ : (nerve C).map (f ≫ SimplexCategory.δ 0).op
-      ((ComposableArrows.underEquiv x n).symm s).1 = (nerve C).map f.op (s ⋙ Under.forget x) := rfl
+      ((ComposableArrows.underEquiv x n).symm s).1 = (nerve C).map f.op (s ⋙ Under.forget x) :=
+    (Functor.map_comp_apply _ _ _ _).trans
+      (congrArg _ (nerve.δ₀_eq.trans (ComposableArrows.precomp_δ₀ _ _)))
   have h₃ : (nerve C).map f.op (s ⋙ Under.forget x) =
-      ((nerve (Under x)).map f.op s ⋙ Under.forget x) := rfl
+      ((nerve (Under x)).map f.op s ⋙ Under.forget x) := by
+    rw [nerve_map, nerve_map]
+    exact Functor.assoc _ s (Under.forget x)
   refine ComposableArrows.ext_succ_of_totalArrow (h₁.trans ((congrArg (fun g : ⦋m⦌ ⟶ ⦋n + 1⦌ ↦
       (nerve C).map g.op ((ComposableArrows.underEquiv x n).symm s).1)
       (SimplexCategory.δ_zero_comp_vertexJoin_map f)).trans (h₂.trans (h₃.trans
@@ -241,8 +245,9 @@ end CategoryTheory.nerve
 
 namespace CategoryTheory.nerve
 
-/-! When the objects of `C` live in a universe containing its morphisms, the nerves of `Under x`
-and of `C` live in the same universe and the projection is a map of simplicial sets. -/
+/-! When the objects of `C` live in a universe containing its morphisms, `Under x` and `C` have the
+same object universe, as required to write the induced map of nerves as
+`CategoryTheory.nerveMap (Under.forget x)`. -/
 
 variable {C : Type (max u v)} [Category.{v} C] (x : C)
 

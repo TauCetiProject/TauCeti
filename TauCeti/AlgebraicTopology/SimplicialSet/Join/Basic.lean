@@ -708,31 +708,22 @@ lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
 factors: every vertex of the join comes from one of them. -/
 theorem hom_ext_stdSimplex {K L : SSet.{u}} {k : ℕ} {σ σ' : join K L ⟶ Δ[k]}
     (h₀ : inl K L ≫ σ = inl K L ≫ σ') (h : inr K L ≫ σ = inr K L ≫ σ') : σ = σ' := by
-  have hv (y : (join K L) _⦋0⦌) : σ.app _ y = σ'.app _ y := by
-    by_cases hy : (univ K L).p.app _ y 0 = 0
-    · have hy' : y ∈ (joinFiber (univ K L).p 0).obj _ := by
-        rw [mem_joinFiber_iff]
-        intro j
-        fin_cases j
-        exact hy
-      rw [← inl_app_univ_left_app y hy']
-      exact ConcreteCategory.congr_hom (NatTrans.congr_app h₀ _) _
-    · have hy' : y ∈ (joinFiber (univ K L).p 1).obj _ := by
-        rw [mem_joinFiber_iff]
-        intro j
-        fin_cases j
-        exact Fin.eq_one_of_ne_zero _ hy
-      rw [← inr_app_univ_right_app y hy']
-      exact ConcreteCategory.congr_hom (NatTrans.congr_app h _) _
-  ext ⟨n⟩ x
-  induction n using SimplexCategory.rec with | _ n
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  -- Naturality along each vertex inclusion reduces the goal to equality on vertices.
-  have hσ := σ.naturality_apply (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x
-  have hσ' := σ'.naturality_apply (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op x
-  exact (congrArg (fun z : Δ[k] _⦋0⦌ ↦ z 0) hσ).symm.trans
-    ((congrArg (fun z : Δ[k] _⦋0⦌ ↦ z 0) (hv _)).trans
-      (congrArg (fun z : Δ[k] _⦋0⦌ ↦ z 0) hσ'))
+  refine stdSimplex.hom_ext fun y ↦ ?_
+  by_cases hy : (univ K L).p.app _ y 0 = 0
+  · have hy' : y ∈ (joinFiber (univ K L).p 0).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact hy
+    rw [← inl_app_univ_left_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h₀ _) _
+  · have hy' : y ∈ (joinFiber (univ K L).p 1).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact Fin.eq_one_of_ne_zero _ hy
+    rw [← inr_app_univ_right_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h _) _
 
 variable (K L) in
 /-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/

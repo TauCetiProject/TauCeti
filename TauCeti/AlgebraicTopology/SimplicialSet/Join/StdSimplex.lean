@@ -395,13 +395,10 @@ lemma inr_comp_coneIso_hom :
     inr Δ[0] Δ[n] ≫ (coneIso.{u} n).hom = stdSimplex.δ 0 := by
   apply yonedaEquiv.injective
   refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [coneIso, Iso.trans_hom, Functor.mapIso_hom, ← Category.assoc, yonedaEquiv_comp,
-    stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom]
-  -- Both sides are now vertex maps of morphisms of `SimplexCategory`, evaluated at `i`.
-  rw [CosimplicialObject.δ, yonedaEquiv_map, yonedaEquiv_map, stdSimplex.objEquiv_symm_apply,
-    stdSimplex.objEquiv_symm_apply]
+  rw [coneIso, Iso.trans_hom, Functor.mapIso_hom, ← Category.assoc,
+    stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom]
   ext
-  simp [SimplexCategory.δ, SimplexCategory.eqToHom_toOrderHom]
+  simp [CosimplicialObject.δ, SimplexCategory.δ, SimplexCategory.eqToHom_toOrderHom]
 
 /-- The vertex `0` of `Δ[n + 1]` is the cone point of `Δ[0] ⋆ Δ[n]`. -/
 @[reassoc (attr := simp)]
@@ -444,8 +441,7 @@ lemma vertexJoin_map_comp_coneIso_inv {m : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
 
 /-- For `n = 0`, the cone isomorphism is `stdSimplexIso 0 0 : Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
 lemma coneIso_zero : coneIso.{u} 0 = stdSimplexIso 0 0 :=
-  Iso.ext ((congrArg _ ((congrArg stdSimplex.map (eqToHom_refl _ rfl)).trans
-    (stdSimplex.map_id _))).trans (Category.comp_id _))
+  Iso.ext (by simp [coneIso])
 
 /-- Under `Δ[0] ⋆ Δ[0] ≅ Δ[1]`, the cone point is the source of the edge. -/
 lemma δ_one_comp_stdSimplexIso_inv :
