@@ -25,7 +25,9 @@ Complete coefficient groups give complete restricted families. The construction 
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm.
+with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
+coefficient maps induce continuous linear maps over the scalar restricted series, and
+coefficient equivalences bounded in both directions induce topological isomorphisms.
 
 ## References
 
@@ -465,6 +467,47 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
     ‖ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)‖ = ‖f‖ := by
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
+
+variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
+
+/-- A coefficient map bounded by `C` induces a continuous linear map of Gauss families over the
+scalar restricted series. -/
+def mapContinuousLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) :
+    Gauss c E →L[IsRestricted.subring (R := R) c] Gauss c F where
+  toFun := mapLinearMap φ hφ
+  map_add' := map_add _
+  map_smul' := LinearMap.mapGaussFamily_isRestrictedSubring_smul φ hφ
+  cont := (uniformContinuous_mapLinearMap φ hφ).continuous
+
+/-- The induced continuous linear map applies the coefficient map coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearMap_apply (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearMap φ hφ a t = φ (a t) :=
+  mapLinearMap_apply φ hφ a t
+
+/-- A coefficient equivalence bounded in both directions induces a topological isomorphism of
+Gauss families over the scalar restricted series. -/
+def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
+    (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
+    Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
+  .equivOfInverse (mapContinuousLinearMap e.toLinearMap he)
+    (mapContinuousLinearMap e.symm.toLinearMap he')
+    (fun a ↦ ext fun t ↦ by simp) (fun b ↦ ext fun t ↦ by simp)
+
+/-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (a : Gauss c E) (t : σ →₀ ℕ) : mapContinuousLinearEquiv e he he' a t = e (a t) :=
+  mapLinearMap_apply _ he a t
+
+/-- The inverse of the induced isomorphism applies the inverse equivalence coefficientwise. -/
+@[simp]
+theorem mapContinuousLinearEquiv_symm_apply (e : E ≃ₗ[R] F) {C D : ℝ}
+    (he : ∀ x, ‖e x‖ ≤ C * ‖x‖) (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖)
+    (b : Gauss c F) (t : σ →₀ ℕ) :
+    (mapContinuousLinearEquiv e he he').symm b t = e.symm (b t) :=
+  mapLinearMap_apply _ he' b t
 
 end Convolution
 

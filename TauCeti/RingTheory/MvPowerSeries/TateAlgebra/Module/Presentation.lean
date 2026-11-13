@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.FiniteFree
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Quotient
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FiniteModuleTopology
 import Mathlib.Analysis.Matrix.Normed
+import TauCeti.Analysis.Normed.Module.Quotient
 
 /-!
 # Presentations of module-valued restricted series
@@ -24,6 +25,15 @@ as constant series. The crucial input is the uniform bound on preimages on the r
 linear map into a finite free Tate module. Thus coefficient lifts still tend to zero with the
 prescribed weights. No spherical completeness or discrete valuation is needed, and the new
 variables and their positive radii are arbitrary.
+
+The series with coefficients in a finitely presented module do not depend on the presentation.
+Every linear equivalence of quotients of finite free modules induces a topological isomorphism
+of the quotient-valued Gauss families over the scalar restricted series, with equivalent Gauss
+norms (`LinearEquiv.mapGaussFamily`). Indeed every linear map out of a quotient of a finite
+free module is bounded for the quotient norms. Applied to the identification of the quotients
+of two finite free presentations of one module, this compares the two series modules
+coefficientwise through that module. It holds over any ultrametric normed ring, in particular
+over a Tate algebra.
 
 ## References
 
@@ -114,6 +124,63 @@ theorem isQuotientMap_restrictedFamilyPresentation (N : Submodule R (ι → R))
     (piRingLinearIsometryEquiv R c).symm.toHomeomorph.isQuotientMap
 
 end Submodule
+
+namespace LinearEquiv
+
+open _root_.MvPowerSeries
+
+variable {σ ι κ θ R : Type*} [Fintype ι] [Fintype κ] [Fintype θ]
+  [NormedRing R] [IsUltrametricDist R] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+  {N₁ : Submodule R (ι → R)} {N₂ : Submodule R (κ → R)} {N₃ : Submodule R (θ → R)}
+
+/-- A linear equivalence of quotients of finite free modules induces a topological isomorphism
+of the restricted series with coefficients in them, linearly over the scalar restricted series.
+No bound needs to be supplied: both directions are bounded for the quotient norms. Applied to
+`(π₁.quotKerEquivOfSurjective hπ₁).trans (π₂.quotKerEquivOfSurjective hπ₂).symm` for two finite
+free presentations `π₁`, `π₂` of the same module, this shows that the restricted series with
+coefficients in a finitely presented module do not depend on the presentation. -/
+def mapGaussFamily (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    Gauss c ((ι → R) ⧸ N₁) ≃L[IsRestricted.subring (R := R) c] Gauss c ((κ → R) ⧸ N₂) :=
+  mapContinuousLinearEquiv e e.toLinearMap.exists_bound_of_pi_quotient.choose_spec.2
+    e.symm.toLinearMap.exists_bound_of_pi_quotient.choose_spec.2
+
+/-- The induced isomorphism applies the equivalence coefficientwise. -/
+@[simp]
+theorem mapGaussFamily_apply (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (a : Gauss c ((ι → R) ⧸ N₁)) (t : σ →₀ ℕ) :
+    e.mapGaussFamily a t = e (a t) :=
+  mapContinuousLinearEquiv_apply _ _ _ a t
+
+/-- The inverse of the induced isomorphism is induced by the inverse equivalence. -/
+@[simp]
+theorem mapGaussFamily_symm (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    (e.mapGaussFamily (c := c)).symm = e.symm.mapGaussFamily :=
+  ContinuousLinearEquiv.ext <| funext fun a ↦ (ContinuousLinearEquiv.symm_apply_eq _).mpr <|
+    Gauss.ext fun t ↦ by simp
+
+/-- The identity equivalence induces the identity. -/
+@[simp]
+theorem mapGaussFamily_refl :
+    (LinearEquiv.refl R ((ι → R) ⧸ N₁)).mapGaussFamily (c := c) = .refl _ _ := by
+  ext a t
+  simp
+
+/-- Composite equivalences induce the composite isomorphisms. -/
+@[simp]
+theorem mapGaussFamily_trans (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂))
+    (f : ((κ → R) ⧸ N₂) ≃ₗ[R] ((θ → R) ⧸ N₃)) :
+    (e.mapGaussFamily (c := c)).trans f.mapGaussFamily = (e.trans f).mapGaussFamily := by
+  ext a t
+  simp
+
+/-- The induced isomorphism is bounded for the Gauss norms. Applied to `e.symm`, this bounds the
+inverse as well, so the two Gauss norms are equivalent. -/
+theorem exists_norm_mapGaussFamily_le (e : ((ι → R) ⧸ N₁) ≃ₗ[R] ((κ → R) ⧸ N₂)) :
+    ∃ C > 0, ∀ a : Gauss c ((ι → R) ⧸ N₁), ‖e.mapGaussFamily a‖ ≤ C * ‖a‖ := by
+  obtain ⟨C, hC, he⟩ := e.toLinearMap.exists_bound_of_pi_quotient
+  exact ⟨C, hC, fun a ↦ norm_le_mul_of_norm_coeff_le fun t ↦ by simpa using he (a t)⟩
+
+end LinearEquiv
 
 namespace Matrix
 
