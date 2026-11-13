@@ -71,7 +71,6 @@ lattice.
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.4.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
 -/
 
 public section

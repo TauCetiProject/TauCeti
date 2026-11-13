@@ -45,8 +45,7 @@ constructs a `Fintype` internally for the finite sum.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 
 This supplies the idempotent decomposition needed for the identity component and component group
-in Layer 3 of the ReductiveGroups roadmap; it does not itself assert compatibility with base
-change.
+of an affine group scheme; it does not itself assert compatibility with base change.
 -/
 
 public section
