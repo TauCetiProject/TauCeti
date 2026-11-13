@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Positive
-public import TauCeti.LinearAlgebra.RootSystem.RankTwo
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -111,17 +110,6 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
           (t.simplyConnectedRootDatum ht).root α := by
   simp only [funext_iff, Pi.add_apply, Pi.smul_apply, root_rationalRootSystem,
     smul_eq_mul, ← Int.cast_mul, ← Int.cast_add, Int.cast_inj]
-
-/-- An integral root sum gives the corresponding sum of heights in the rational base. -/
-theorem height_rationalBase_add {α β γ : Fin t.numRoots}
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
-    (t.rationalBase ht).height γ = (t.rationalBase ht).height α +
-      (t.rationalBase ht).height β := by
-  apply (t.rationalBase ht).height_add
-  ext q
-  simp only [Pi.add_apply, root_rationalRootSystem]
-  exact_mod_cast congrFun hγ q
 
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
@@ -244,14 +232,6 @@ theorem hasCartanType_rationalRootSystem :
 which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
-
-/-- A valid pinned rational root system outside type G₂ has no triple root strings. -/
-theorem isNotG2_rationalRootSystem (hG2 : t ≠ G2) :
-    (t.rationalRootSystem ht).IsNotG2 := by
-  apply (RootPairing.not_isG2_iff_isNotG2 _).mp
-  intro h
-  exact hG2 ((hasCartanType_rationalRootSystem t ht).eq_of_valid
-    (hasCartanType_G2_of_isG2 h (t.rationalBase ht)) ht (by decide))
 
 /-! ## The Bourbaki numbering of the base support -/
 

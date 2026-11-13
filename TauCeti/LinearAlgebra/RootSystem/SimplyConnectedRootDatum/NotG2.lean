@@ -7,22 +7,36 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
+import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
-# The classical doubly-laced root systems are not G₂
+# Pinned rational root systems outside G₂
 
-The Cartan integers of the pinned rational systems of types B and C have absolute value at
-most two. These instances make the root-string bounds outside G₂ available for the classical
-families in arbitrary valid rank, in particular for collecting their positive root subgroups.
+A valid pinned rational system whose Dynkin type is not G₂ has no triple root strings.
+Instances make these root-string bounds available for types B and C in arbitrary valid rank
+and for F₄, in particular for collecting their positive root subgroups.
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates II and III.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates II, III and VIII.
 -/
 
 public section
 
 namespace TauCeti.DynkinType
+
+/-- A valid pinned rational root system outside type G₂ has no triple root strings. -/
+theorem isNotG2_rationalRootSystem (t : DynkinType) (ht : t.Valid) (hG2 : t ≠ G2) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  apply (RootPairing.not_isG2_iff_isNotG2 _).mp
+  intro h
+  exact hG2 ((hasCartanType_rationalRootSystem t ht).eq_of_valid
+    (hasCartanType_G2_of_isG2 h (t.rationalBase ht)) ht (by decide))
+
+/-- The rational F₄ system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
+    (F4.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem F4 ht (by intro h; cases h)
 
 private theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
     {t : DynkinType} {ht : t.Valid}
