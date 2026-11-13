@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PolygonalComplex.Boundary
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Basic
 
 /-!
 # A triangulated disc
@@ -39,7 +40,7 @@ its interval link. The boundary forms a single component, and the Euler characte
   `TauCeti.SurfaceModel.boundaryGerms_triangulatedDisc_some`: the centre has a circle link and the
   rim vertices have interval links.
 * `TauCeti.SurfaceModel.card_boundaryComponent_triangulatedDisc`: the triangulated disc has one
-  boundary component.
+  boundary component; its boundary components form a `Unique` type.
 * `TauCeti.SurfaceModel.eulerChar_triangulatedDisc`: the triangulated disc has Euler
   characteristic `1`.
 
@@ -75,6 +76,17 @@ equality. -/
 instance : DecidableEq triangulatedDiscGraph.E :=
   inferInstanceAs (DecidableEq ((Fin 3 ⊕ Fin 3) × Bool))
 
+/-- The one-skeleton of the triangulated disc has twelve darts: the two directions of three spokes
+and three rim edges. -/
+instance : Fintype triangulatedDiscGraph.E :=
+  inferInstanceAs (Fintype ((Fin 3 ⊕ Fin 3) × Bool))
+
+/-- The vertices of the triangulated disc, being options, have decidable equality. -/
+instance : DecidableEq triangulatedDiscGraph.V := inferInstanceAs (DecidableEq (Option (Fin 3)))
+
+/-- The triangulated disc has four vertices: the centre and the three rim vertices. -/
+instance : Fintype triangulatedDiscGraph.V := inferInstanceAs (Fintype (Option (Fin 3)))
+
 /-- The spoke `sᵢ` starts at the centre and its reverse at the rim vertex `some i`. -/
 @[simp] theorem triangulatedDiscGraph_src_inl (i : Fin 3) (b : Bool) :
     triangulatedDiscGraph.src (.inl i, b) = cond b none (some i) := (rfl)
@@ -86,21 +98,24 @@ instance : DecidableEq triangulatedDiscGraph.E :=
 @[simp] theorem triangulatedDiscGraph_rev (x : Fin 3 ⊕ Fin 3) (b : Bool) :
     triangulatedDiscGraph.rev (x, b) = (x, !b) := (rfl)
 
-/-- The one-skeleton of the triangulated disc has six geometric edges: three spokes and three rim
-edges. -/
-theorem card_geomEdge_triangulatedDiscGraph : Nat.card triangulatedDiscGraph.GeomEdge = 6 := by
-  have hO : triangulatedDiscGraph.IsOrientation {e | e.2 = true} := by
-    refine (triangulatedDiscGraph.isOrientation_iff _).2 fun ⟨_, b⟩ => ?_
-    -- The darts are pairs, and reversal flips their second component.
-    change (b = true) ↔ ¬(!b = true)
-    cases b <;> decide
-  calc Nat.card triangulatedDiscGraph.GeomEdge
-      = Nat.card {e : triangulatedDiscGraph.E | e.2 = true} :=
-        (Nat.card_congr (Equiv.ofBijective _ hO.bijective_toGeomEdge)).symm
-    _ = Nat.card (Fin 3 ⊕ Fin 3) := Nat.card_congr
-        ⟨fun e => e.1.1, fun x => ⟨(x, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
-          fun _ => rfl⟩
-    _ = 6 := by simp
+/-- The spoke `sᵢ` ends at the rim vertex `some i` and its reverse at the centre. -/
+@[simp] theorem triangulatedDiscGraph_tgt_inl (i : Fin 3) (b : Bool) :
+    triangulatedDiscGraph.tgt (.inl i, b) = cond b (some i) none := by
+  cases b <;> rfl
+
+/-- The rim edge `bᵢ` ends at `some (i + 1)` and its reverse at `some i`. -/
+@[simp] theorem triangulatedDiscGraph_tgt_inr (i : Fin 3) (b : Bool) :
+    triangulatedDiscGraph.tgt (.inr i, b) = cond b (some (i + 1)) (some i) := by
+  cases b <;> rfl
+
+/-- The one-skeleton of the triangulated disc has six geometric edges, three spokes and three rim
+edges: its darts and their reversal are those of the rose with six petals. -/
+@[simp] theorem card_geomEdge_triangulatedDiscGraph :
+    Nat.card triangulatedDiscGraph.GeomEdge = 6 := by
+  rw [Nat.card_congr ((SerreGraph.GeomEdge.congr triangulatedDiscGraph
+    (Δ := SerreGraph.rose (Fin 3 ⊕ Fin 3)) (Equiv.refl _) fun _ => rfl).trans
+      (SerreGraph.roseGeomEdgeEquiv _))]
+  simp
 
 /-! ### The three triangles -/
 
@@ -121,26 +136,36 @@ private theorem card_side_eq : ∀ e : (Fin 3 ⊕ Fin 3) × Bool,
     (Finset.univ.filter fun c : Σ _ : Fin 3, Fin 3 =>
       ([(.inl c.1, true), (.inr c.1, true), (.inl (c.1 + 1), false)] :
         List ((Fin 3 ⊕ Fin 3) × Bool))[c.2] = e).card =
-      cond e.2 1 (e.1.elim (fun _ => 1) fun _ => 0) := by
+      e.1.elim (fun _ => 1) fun _ => cond e.2 1 0 := by
   decide
 
 private theorem sideCount_triangulatedDisc (e : triangulatedDiscGraph.E) :
-    triangulatedDisc.sideCount e = cond e.2 1 (e.1.elim (fun _ => 1) fun _ => 0) := by
+    triangulatedDisc.sideCount e = e.1.elim (fun _ => 1) fun _ => cond e.2 1 0 := by
   rw [sideCount_def, Nat.card_congr (Equiv.subtypeEquivRight fun c => by rw [outgoing_def]),
     Nat.card_eq_fintype_card, Fintype.card_subtype]
   exact card_side_eq e
 
+/-- Each direction of each spoke is a side of one triangle. -/
+@[simp] theorem sideCount_triangulatedDisc_inl (i : Fin 3) (b : Bool) :
+    triangulatedDisc.sideCount (.inl i, b) = 1 :=
+  sideCount_triangulatedDisc _
+
+/-- Each rim edge is a side of one triangle, traversed in its own direction. -/
+@[simp] theorem sideCount_triangulatedDisc_inr (i : Fin 3) (b : Bool) :
+    triangulatedDisc.sideCount (.inr i, b) = cond b 1 0 :=
+  sideCount_triangulatedDisc _
+
 /-- Each spoke of the triangulated disc lies on two triangles. -/
-theorem linkDegree_triangulatedDisc_inl (i : Fin 3) (b : Bool) :
-    triangulatedDisc.linkDegree (.inl i, b) = 2 := by
-  cases b <;> exact (linkDegree_eq_sideCount_rev_add_sideCount _ _).trans
-    (congrArg₂ (· + ·) (sideCount_triangulatedDisc _) (sideCount_triangulatedDisc _))
+@[simp] theorem linkDegree_triangulatedDisc_inl (i : Fin 3) (b : Bool) :
+    triangulatedDisc.linkDegree (.inl i, b) = 2 :=
+  (linkDegree_eq_sideCount_rev_add_sideCount _ _).trans
+    (congrArg₂ (· + ·) (sideCount_triangulatedDisc_inl i !b) (sideCount_triangulatedDisc_inl i b))
 
 /-- Each rim edge of the triangulated disc lies on a single triangle. -/
-theorem linkDegree_triangulatedDisc_inr (i : Fin 3) (b : Bool) :
+@[simp] theorem linkDegree_triangulatedDisc_inr (i : Fin 3) (b : Bool) :
     triangulatedDisc.linkDegree (.inr i, b) = 1 := by
   cases b <;> exact (linkDegree_eq_sideCount_rev_add_sideCount _ _).trans
-    (congrArg₂ (· + ·) (sideCount_triangulatedDisc _) (sideCount_triangulatedDisc _))
+    (congrArg₂ (· + ·) (sideCount_triangulatedDisc_inr i _) (sideCount_triangulatedDisc_inr i _))
 
 /-- In the link of `x`, the corner `c` joins its outgoing side to the reverse of its incoming
 side. -/
@@ -153,6 +178,9 @@ private theorem nonempty_path_of_corner {x : triangulatedDiscGraph.V}
   Quiver.Reachable.trans (triangulatedDisc.nonempty_vertexLink_path_of_corner c
     (ha.trans (outgoing_def _ _).symm) (hb.trans (congrArg _ (incoming_def _ _).symm))) h
 
+/-- The links of the triangulated disc are finite. The vertex is a variable of type
+`triangulatedDiscGraph.V`: instance search does not see that a literal `none` or `some i`, of type
+`Option (Fin 3)`, is such a vertex. -/
 private theorem finite_vertexLink_triangulatedDisc (v : triangulatedDiscGraph.V) :
     Finite (triangulatedDisc.vertexLink v).E :=
   inferInstance
@@ -184,23 +212,11 @@ private theorem hasSurfaceLink_triangulatedDisc_none :
 private theorem nonempty_vertexLink_path_triangulatedDisc_some (i : Fin 3)
     (e : triangulatedDiscGraph.E) (he : triangulatedDiscGraph.src e = some i) :
     Nonempty ((triangulatedDisc.vertexLink (some i)).Path ⟨(.inr i, true), rfl⟩ ⟨e, he⟩) := by
-  obtain ⟨k | k, _ | _⟩ := e
-  · cases he
-    fin_cases i
-    · exact nonempty_path_of_corner ⟨(.inl 0, false), rfl⟩ ⟨0, 1⟩ rfl rfl ⟨.nil⟩
-    · exact nonempty_path_of_corner ⟨(.inl 1, false), rfl⟩ ⟨1, 1⟩ rfl rfl ⟨.nil⟩
-    · exact nonempty_path_of_corner ⟨(.inl 2, false), rfl⟩ ⟨2, 1⟩ rfl rfl ⟨.nil⟩
-  · cases he
-  · cases he
-    fin_cases k
-    · exact nonempty_path_of_corner ⟨(.inl 1, false), rfl⟩ ⟨1, 1⟩ rfl rfl <|
-        nonempty_path_of_corner ⟨(.inr 0, false), rfl⟩ ⟨0, 2⟩ rfl rfl ⟨.nil⟩
-    · exact nonempty_path_of_corner ⟨(.inl 2, false), rfl⟩ ⟨2, 1⟩ rfl rfl <|
-        nonempty_path_of_corner ⟨(.inr 1, false), rfl⟩ ⟨1, 2⟩ rfl rfl ⟨.nil⟩
-    · exact nonempty_path_of_corner ⟨(.inl 0, false), rfl⟩ ⟨0, 1⟩ rfl rfl <|
-        nonempty_path_of_corner ⟨(.inr 2, false), rfl⟩ ⟨2, 2⟩ rfl rfl ⟨.nil⟩
-  · cases he
-    exact ⟨.nil⟩
+  obtain ⟨k | k, _ | _⟩ := e <;> cases he
+  · exact nonempty_path_of_corner ⟨(.inl i, false), rfl⟩ ⟨i, 1⟩ rfl rfl ⟨.nil⟩
+  · exact nonempty_path_of_corner ⟨(.inl (k + 1), false), rfl⟩ ⟨k + 1, 1⟩ rfl rfl <|
+      nonempty_path_of_corner ⟨(.inr k, false), rfl⟩ ⟨k, 2⟩ rfl rfl ⟨.nil⟩
+  · exact ⟨.nil⟩
 
 /-- The link of the rim vertex `some i` is the interval `bᵢ, sᵢ⁻¹, b_{i-1}⁻¹` through the corners
 of the two triangles at `some i`. -/
@@ -211,14 +227,14 @@ private theorem hasSurfaceLink_triangulatedDisc_some (i : Fin 3) :
       SerreGraph.preconnected_of_forall_nonempty_path _ ⟨(.inr i, true), rfl⟩
         fun ⟨e, he⟩ => nonempty_vertexLink_path_triangulatedDisc_some i e he⟩,
     .inr ⟨(.inr i, true), (.inr (i - 1), false), fun h => Bool.noConfusion (congrArg Prod.snd h),
-      rfl, by fin_cases i <;> rfl, linkDegree_triangulatedDisc_inr i true,
+      rfl, congrArg some (sub_add_cancel i 1), linkDegree_triangulatedDisc_inr i true,
       linkDegree_triangulatedDisc_inr (i - 1) false, ?_⟩⟩
   rintro ⟨k | k, _ | _⟩ he h₁ h₂
   · cases he
     exact linkDegree_triangulatedDisc_inl _ false
   · cases he
   · cases he
-    fin_cases k <;> exact absurd rfl h₂
+    exact absurd (by rw [add_sub_cancel_right]) h₂
   · cases he
     exact absurd rfl h₁
 
@@ -254,48 +270,40 @@ abbrev triangulatedDisc : SurfaceModel.{0, 0, 0} where
 
 /-- The centre of the triangulated disc is an inner vertex: it has no boundary germ, so its link is
 a circle. -/
-theorem boundaryGerms_triangulatedDisc_none : triangulatedDisc.boundaryGerms none = ∅ := by
+@[simp] theorem boundaryGerms_triangulatedDisc_none :
+    triangulatedDisc.boundaryGerms none = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun e he => ?_
   obtain ⟨hb, hs⟩ := mem_boundaryGerms_iff.1 he
-  obtain ⟨i | i, _ | _⟩ := e
-  · cases hs
-  · exact inl_notMem_boundaryDarts_triangulatedDisc i true hb
-  · cases hs
-  · cases hs
+  obtain ⟨i | i, _ | _⟩ := e <;> cases hs
+  exact inl_notMem_boundaryDarts_triangulatedDisc i true hb
 
 /-- The rim vertex `some i` of the triangulated disc is a boundary vertex: its boundary germs, the
 two ends of its interval link, are the rim dart `bᵢ` and the reverse of `b_{i-1}`. -/
-theorem boundaryGerms_triangulatedDisc_some (i : Fin 3) :
-    triangulatedDisc.boundaryGerms (some i) = {(.inr i, true), (.inr (i - 1), false)} := by
-  ext e
-  refine ⟨fun he => ?_, fun he => ?_⟩
-  · obtain ⟨hb, hs⟩ := mem_boundaryGerms_iff.1 he
-    obtain ⟨k | k, _ | _⟩ := e
-    · exact absurd hb (inl_notMem_boundaryDarts_triangulatedDisc k false)
-    · cases hs
-    · cases hs
-      exact .inr (by fin_cases k <;> rfl)
-    · cases hs
-      exact .inl rfl
-  · rcases he with rfl | rfl
-    · exact mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_triangulatedDisc i true, rfl⟩
-    · exact mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_triangulatedDisc (i - 1) false,
-        by fin_cases i <;> rfl⟩
+@[simp] theorem boundaryGerms_triangulatedDisc_some (i : Fin 3) :
+    triangulatedDisc.boundaryGerms (some i) =
+      {((.inr i, true) : triangulatedDisc.graph.E), (.inr (i - 1), false)} := by
+  have hsub : {((.inr i, true) : triangulatedDisc.graph.E), (.inr (i - 1), false)} ⊆
+      triangulatedDisc.boundaryGerms (some i) :=
+    Set.pair_subset_iff.2
+      ⟨mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_triangulatedDisc i true, rfl⟩,
+        mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_triangulatedDisc (i - 1) false,
+          congrArg some (sub_add_cancel i 1)⟩⟩
+  refine (Set.eq_of_subset_of_ncard_le hsub ?_).symm
+  exact ((ncard_boundaryGerms_eq_two _ ⟨_, hsub (.inl rfl)⟩).trans
+    (Set.ncard_pair fun h => Bool.noConfusion (congrArg Prod.snd h)).symm).le
 
 /-- The rim edges `b₀, b₁, b₂` follow one another around the rim, so they lie in the boundary
 component of `b₀`. -/
 private theorem boundaryClass_triangulatedDisc_inr (k : Fin 3) :
     triangulatedDisc.boundaryClass ⟨(.inr k, true), inr_mem_boundaryDarts_triangulatedDisc k true⟩ =
       triangulatedDisc.boundaryClass
-        ⟨(.inr 0, true), inr_mem_boundaryDarts_triangulatedDisc 0 true⟩ := by
-  have h (k : Fin 3) : triangulatedDisc.boundaryClass ⟨(.inr k, true),
-      inr_mem_boundaryDarts_triangulatedDisc k true⟩ = triangulatedDisc.boundaryClass
-        ⟨(.inr (k + 1), true), inr_mem_boundaryDarts_triangulatedDisc (k + 1) true⟩ :=
-    boundaryClass_eq_of_tgt_eq_src (Subtype.ext rfl)
-  fin_cases k
-  · rfl
-  · exact (h 0).symm
-  · exact ((h 0).trans (h 1)).symm
+        ⟨(.inr 0, true), inr_mem_boundaryDarts_triangulatedDisc 0 true⟩ :=
+  apply_eq_apply_zero_of_add_one (f := fun k => triangulatedDisc.boundaryClass
+    ⟨(.inr k, true), inr_mem_boundaryDarts_triangulatedDisc k true⟩)
+    (fun k => (boundaryClass_eq_of_tgt_eq_src (S := triangulatedDisc)
+      (e := ⟨(.inr k, true), inr_mem_boundaryDarts_triangulatedDisc k true⟩)
+      (e' := ⟨(.inr (k + 1), true), inr_mem_boundaryDarts_triangulatedDisc (k + 1) true⟩)
+      (Subtype.ext rfl)).symm) k
 
 /-- Every boundary dart of the triangulated disc lies in the boundary component of `b₀`. -/
 private theorem boundaryClass_triangulatedDisc (e : triangulatedDisc.boundary.E) :
@@ -311,12 +319,15 @@ private theorem boundaryClass_triangulatedDisc (e : triangulatedDisc.boundary.E)
 
 /-- The triangulated disc has a single boundary component, formed by its three rim edges. -/
 theorem card_boundaryComponent_triangulatedDisc :
-    Nat.card triangulatedDisc.BoundaryComponent = 1 := by
-  refine Nat.card_eq_one_iff_unique.2 ⟨⟨fun b b' => ?_⟩, ⟨triangulatedDisc.boundaryClass
-    ⟨(.inr 0, true), inr_mem_boundaryDarts_triangulatedDisc 0 true⟩⟩⟩
-  obtain ⟨e, rfl⟩ := triangulatedDisc.boundaryClass_surjective b
-  obtain ⟨e', rfl⟩ := triangulatedDisc.boundaryClass_surjective b'
-  rw [boundaryClass_triangulatedDisc e, boundaryClass_triangulatedDisc e']
+    Nat.card triangulatedDisc.BoundaryComponent = 1 :=
+  Nat.card_eq_one_iff_exists.2
+    ⟨_, triangulatedDisc.boundaryClass_surjective.forall.2 boundaryClass_triangulatedDisc⟩
+
+/-- The single boundary component of the triangulated disc is the class of its rim edges. -/
+instance : Unique triangulatedDisc.BoundaryComponent :=
+  have := (Nat.card_eq_one_iff_unique.1 card_boundaryComponent_triangulatedDisc).1
+  uniqueOfSubsingleton (triangulatedDisc.boundaryClass
+    ⟨(.inr 0, true), inr_mem_boundaryDarts_triangulatedDisc 0 true⟩)
 
 /-- The triangulated disc has Euler characteristic `1`: four vertices, six edges and three
 faces. -/

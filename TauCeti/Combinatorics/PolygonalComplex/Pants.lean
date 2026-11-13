@@ -39,6 +39,8 @@ pinched point, with no disc or half-disc neighbourhood.
 * `TauCeti.PolygonalComplex.pantsWord`: the word `c₀ h₀ c₀⁻¹ c₁ h₁ c₁⁻¹ c₂ h₂ c₂⁻¹`.
 * `TauCeti.PolygonalComplex.pantsPolygon`: the complex with one face attached along this word.
 * `TauCeti.SurfaceModel.pants`: the pair of pants.
+* `TauCeti.SurfaceModel.pantsBoundaryComponentEquiv`: the boundary components of the pair of pants
+  are indexed by its three holes.
 
 ## Main results
 
@@ -50,6 +52,9 @@ pinched point, with no disc or half-disc neighbourhood.
   `TauCeti.PolygonalComplex.not_hasSurfaceLink_pantsPolygon`: identifying two distinct hole
   vertices disconnects the link of the identified vertex, which therefore has no surface link.
 * `TauCeti.SurfaceModel.eulerChar_pants`: the pair of pants has Euler characteristic `-1`.
+* `TauCeti.SurfaceModel.boundaryGerms_pants_none`, `TauCeti.SurfaceModel.boundaryGerms_pants_some`:
+  the centre is an inner vertex and the boundary germs at a hole vertex are the two darts of its
+  loop.
 * `TauCeti.SurfaceModel.card_boundaryComponent_pants`: the pair of pants has three boundary
   components.
 
@@ -88,6 +93,19 @@ variable {V : Type u} (centre : V) (hole : Fin 3 → V)
 instance : DecidableEq (pantsGraph centre hole).E :=
   inferInstanceAs (DecidableEq ((Fin 3 ⊕ Fin 3) × Bool))
 
+/-- The pants graph has twelve darts: the two directions of three arcs and three loops. -/
+instance : Fintype (pantsGraph centre hole).E :=
+  inferInstanceAs (Fintype ((Fin 3 ⊕ Fin 3) × Bool))
+
+/-- The vertices of the pants graph are the points of `V`. -/
+instance [DecidableEq V] : DecidableEq (pantsGraph centre hole).V := inferInstanceAs (DecidableEq V)
+
+/-- The vertices of the pants graph are the points of `V`. -/
+instance [Fintype V] : Fintype (pantsGraph centre hole).V := inferInstanceAs (Fintype V)
+
+/-- The vertices of the pants graph are the points of `V`. -/
+instance [Finite V] : Finite (pantsGraph centre hole).V := inferInstanceAs (Finite V)
+
 /-- The arc `cᵢ` starts at the centre and its reverse at the `i`-th hole vertex. -/
 @[simp] theorem pantsGraph_src_inl (i : Fin 3) (b : Bool) :
     (pantsGraph centre hole).src (.inl i, b) = cond b centre (hole i) := (rfl)
@@ -99,20 +117,22 @@ instance : DecidableEq (pantsGraph centre hole).E :=
 @[simp] theorem pantsGraph_rev (x : Fin 3 ⊕ Fin 3) (b : Bool) :
     (pantsGraph centre hole).rev (x, b) = (x, !b) := (rfl)
 
-/-- The pants graph has six geometric edges: the three arcs and the three loops. -/
-theorem card_geomEdge_pantsGraph : Nat.card (pantsGraph centre hole).GeomEdge = 6 := by
-  have hO : (pantsGraph centre hole).IsOrientation {e | e.2 = true} := by
-    refine ((pantsGraph centre hole).isOrientation_iff _).2 fun ⟨_, b⟩ => ?_
-    -- The darts are pairs, and reversal flips their second component.
-    change (b = true) ↔ ¬(!b = true)
-    cases b <;> decide
-  calc Nat.card (pantsGraph centre hole).GeomEdge
-      = Nat.card {e : (pantsGraph centre hole).E | e.2 = true} :=
-        (Nat.card_congr (Equiv.ofBijective _ hO.bijective_toGeomEdge)).symm
-    _ = Nat.card (Fin 3 ⊕ Fin 3) := Nat.card_congr
-        ⟨fun e => e.1.1, fun x => ⟨(x, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
-          fun _ => rfl⟩
-    _ = 6 := by simp
+/-- The arc `cᵢ` ends at the `i`-th hole vertex and its reverse at the centre. -/
+@[simp] theorem pantsGraph_tgt_inl (i : Fin 3) (b : Bool) :
+    (pantsGraph centre hole).tgt (.inl i, b) = cond b (hole i) centre := by
+  cases b <;> rfl
+
+/-- Both darts of the loop `hᵢ` end at the `i`-th hole vertex. -/
+@[simp] theorem pantsGraph_tgt_inr (i : Fin 3) (b : Bool) :
+    (pantsGraph centre hole).tgt (.inr i, b) = hole i := (rfl)
+
+/-- The pants graph has six geometric edges, the three arcs and the three loops: its darts and
+their reversal are those of the rose with six petals. -/
+@[simp] theorem card_geomEdge_pantsGraph : Nat.card (pantsGraph centre hole).GeomEdge = 6 := by
+  rw [Nat.card_congr ((SerreGraph.GeomEdge.congr (pantsGraph centre hole)
+    (Δ := SerreGraph.rose (Fin 3 ⊕ Fin 3)) (Equiv.refl _) fun _ => rfl).trans
+      (SerreGraph.roseGeomEdgeEquiv _))]
+  simp
 
 /-! ### The pants polygon -/
 
@@ -131,6 +151,13 @@ abbrev pantsPolygon : PolygonalComplex.{u, 0, 0} :=
   singleFace (pantsGraph centre hole) pantsWord (List.cons_ne_nil _ _)
     (by intro i; fin_cases i <;> rfl)
 
+/-- Each arc occurs once in each direction in the pants word, and each loop once, in its own
+direction. -/
+private theorem count_pantsWord : ∀ e : (Fin 3 ⊕ Fin 3) × Bool,
+    @List.count _ instBEqOfDecidableEq e pantsWord =
+      e.1.elim (fun _ => 1) fun _ => cond e.2 1 0 := by
+  decide
+
 /-- Each letter of the pants word occurs, together with its reverse, twice if it is an arc and
 once if it is a loop. -/
 private theorem count_rev_add_count_pantsWord : ∀ e : (Fin 3 ⊕ Fin 3) × Bool,
@@ -138,14 +165,24 @@ private theorem count_rev_add_count_pantsWord : ∀ e : (Fin 3 ⊕ Fin 3) × Boo
       @List.count _ instBEqOfDecidableEq e pantsWord = e.1.elim (fun _ => 2) fun _ => 1 := by
   decide
 
+/-- Each direction of each arc is one side of the face of the pants polygon. -/
+@[simp] theorem sideCount_pantsPolygon_inl (i : Fin 3) (b : Bool) :
+    (pantsPolygon centre hole).sideCount (.inl i, b) = 1 :=
+  (sideCount_singleFace _).trans (count_pantsWord (.inl i, b))
+
+/-- Each loop is one side of the face of the pants polygon, traversed in its own direction. -/
+@[simp] theorem sideCount_pantsPolygon_inr (i : Fin 3) (b : Bool) :
+    (pantsPolygon centre hole).sideCount (.inr i, b) = cond b 1 0 :=
+  (sideCount_singleFace _).trans (count_pantsWord (.inr i, b))
+
 /-- Each arc lies on two face sides of the pants polygon, whichever vertices are identified. -/
-theorem linkDegree_pantsPolygon_inl (i : Fin 3) (b : Bool) :
+@[simp] theorem linkDegree_pantsPolygon_inl (i : Fin 3) (b : Bool) :
     (pantsPolygon centre hole).linkDegree (.inl i, b) = 2 :=
   (linkDegree_singleFace _).trans (count_rev_add_count_pantsWord (.inl i, b))
 
 /-- Each loop lies on a single face side of the pants polygon, whichever vertices are
 identified. -/
-theorem linkDegree_pantsPolygon_inr (i : Fin 3) (b : Bool) :
+@[simp] theorem linkDegree_pantsPolygon_inr (i : Fin 3) (b : Bool) :
     (pantsPolygon centre hole).linkDegree (.inr i, b) = 1 :=
   (linkDegree_singleFace _).trans (count_rev_add_count_pantsWord (.inr i, b))
 
@@ -157,46 +194,48 @@ theorem eulerChar_pantsPolygon : (pantsPolygon centre hole).eulerChar = Nat.card
   change (Nat.card V : ℤ) - (6 : ℕ) + 1 = Nat.card V - 5
   omega
 
-/-- The hole to which a germ of the pants polygon belongs: `none` for the arcs leaving the centre,
-`some i` for the reverse of the arc `cᵢ` and for both darts of the loop `hᵢ`. -/
-private def holeIndex (e : (Fin 3 ⊕ Fin 3) × Bool) : Option (Fin 3) :=
-  e.1.elim (fun i => cond e.2 none (some i)) some
-
-/-- Each corner of the pants word joins two germs belonging to the same hole. -/
-private theorem holeIndex_pantsWord : ∀ k : Fin pantsWord.length,
-    holeIndex pantsWord[k] = holeIndex ((pantsWord[(finRotate pantsWord.length).symm k]).1,
-      !(pantsWord[(finRotate pantsWord.length).symm k]).2) := by
-  decide
-
-private theorem holeIndex_outgoing (c : (pantsPolygon centre hole).Corner) :
-    holeIndex ((pantsPolygon centre hole).outgoing c) =
-      holeIndex ((pantsGraph centre hole).rev ((pantsPolygon centre hole).incoming c)) := by
+/-- Whichever vertices are identified, each corner of the pants polygon joins two germs that start
+at the same vertex of the pair of pants `pantsGraph none some`, whose vertices are the centre and
+the holes. -/
+private theorem src_outgoing_pantsPolygon (c : (pantsPolygon centre hole).Corner) :
+    (pantsGraph (none : Option (Fin 3)) some).src ((pantsPolygon centre hole).outgoing c) =
+      (pantsGraph (none : Option (Fin 3)) some).src
+        ((pantsGraph centre hole).rev ((pantsPolygon centre hole).incoming c)) := by
   obtain ⟨⟨⟩, k⟩ := c
-  rw [outgoing_def, incoming_def]
-  exact holeIndex_pantsWord k
+  have h := ((pantsPolygon (none : Option (Fin 3)) some).src_outgoing ⟨(), k⟩).trans
+    ((pantsPolygon (none : Option (Fin 3)) some).tgt_incoming ⟨(), k⟩).symm
+  rw [outgoing_def, incoming_def] at h ⊢
+  exact h
 
-/-- The two ends of a link dart of the pants polygon belong to the same hole. -/
-private theorem holeIndex_src_eq_tgt {x : (pantsGraph centre hole).V}
+/-- The two ends of a link dart of the pants polygon start at the same vertex of the pair of
+pants. -/
+private theorem src_src_eq_src_tgt {x : (pantsGraph centre hole).V}
     (d : ((pantsPolygon centre hole).vertexLink x).E) :
-    holeIndex (((pantsPolygon centre hole).vertexLink x).src d).1 =
-      holeIndex (((pantsPolygon centre hole).vertexLink x).tgt d).1 := by
+    (pantsGraph (none : Option (Fin 3)) some).src
+        (((pantsPolygon centre hole).vertexLink x).src d).1 =
+      (pantsGraph (none : Option (Fin 3)) some).src
+        (((pantsPolygon centre hole).vertexLink x).tgt d).1 := by
   obtain ⟨c, _ | _⟩ := d
-  · exact (congrArg holeIndex (vertexLink_src_false _ c)).trans
-      ((holeIndex_outgoing centre hole c.1).symm.trans
-        (congrArg holeIndex (vertexLink_src_true _ c)).symm)
-  · exact (congrArg holeIndex (vertexLink_src_true _ c)).trans
-      ((holeIndex_outgoing centre hole c.1).trans
-        (congrArg holeIndex (vertexLink_src_false _ c)).symm)
+  · exact (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_false _ c)).trans
+      ((src_outgoing_pantsPolygon centre hole c.1).symm.trans
+        (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_true _ c)).symm)
+  · exact (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_true _ c)).trans
+      ((src_outgoing_pantsPolygon centre hole c.1).trans
+        (congrArg (pantsGraph (none : Option (Fin 3)) some).src (vertexLink_src_false _ c)).symm)
 
-/-- Germs joined by a path in a vertex link of the pants polygon belong to the same hole. -/
-private theorem holeIndex_eq_of_path {x : (pantsGraph centre hole).V}
+/-- Germs joined by a path in a vertex link of the pants polygon start at the same vertex of the
+pair of pants. -/
+private theorem src_eq_of_path {x : (pantsGraph centre hole).V}
     {a b : ((pantsPolygon centre hole).vertexLink x).V}
-    (p : ((pantsPolygon centre hole).vertexLink x).Path a b) : holeIndex a.1 = holeIndex b.1 := by
+    (p : ((pantsPolygon centre hole).vertexLink x).Path a b) :
+    (pantsGraph (none : Option (Fin 3)) some).src a.1 =
+      (pantsGraph (none : Option (Fin 3)) some).src b.1 := by
   induction p with
   | nil => rfl
   | cons _ d ih =>
-    exact ih.trans ((congrArg (holeIndex ∘ Subtype.val) d.2.1).symm.trans
-      ((holeIndex_src_eq_tgt centre hole d.1).trans (congrArg (holeIndex ∘ Subtype.val) d.2.2)))
+    exact ih.trans ((congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.1)
+      d.2.1).symm.trans ((src_src_eq_src_tgt centre hole d.1).trans
+        (congrArg (fun y => (pantsGraph (none : Option (Fin 3)) some).src y.1) d.2.2)))
 
 variable {centre hole}
 
@@ -207,7 +246,7 @@ theorem not_connected_vertexLink_pantsPolygon {i j : Fin 3} (hij : i ≠ j) (h :
   obtain ⟨-, hpre⟩ := ((pantsPolygon centre hole).vertexLink _).connected_iff.1 hconn
   obtain ⟨p⟩ := ((pantsPolygon centre hole).vertexLink _).preconnected_iff.1 hpre
     ⟨(.inr i, true), rfl⟩ ⟨(.inr j, true), h.symm⟩
-  exact hij (Option.some_injective _ (holeIndex_eq_of_path centre hole p))
+  exact hij (Option.some_injective _ (src_eq_of_path centre hole p))
 
 /-- Identifying two distinct hole vertices of the pants polygon is rejected by the surface-link
 condition, although every edge still lies on one or two face sides: the identified vertex is a
@@ -222,8 +261,6 @@ end PolygonalComplex
 open PolygonalComplex
 
 namespace SurfaceModel
-
-open Quiver (StronglyConnectedComponent)
 
 /-! ### The pair of pants -/
 
@@ -258,29 +295,23 @@ private theorem nonempty_vertexLink_path_pants_some (i : Fin 3)
     (he : (pantsGraph (none : Option (Fin 3)) some).src e = some i) :
     Nonempty (((pantsPolygon (none : Option (Fin 3)) some).vertexLink (some i)).Path
       ⟨(.inr i, true), rfl⟩ ⟨e, he⟩) := by
-  obtain ⟨k | k, _ | _⟩ := e
-  · cases he
+  -- The corner at position `3 i + 1` joins `hᵢ` to `cᵢ⁻¹`, the next one `cᵢ⁻¹` to `hᵢ⁻¹`.
+  have h₁ : Nonempty (((pantsPolygon (none : Option (Fin 3)) some).vertexLink (some i)).Path
+      ⟨(.inr i, true), rfl⟩ ⟨(.inl i, false), rfl⟩) := by
     fin_cases i
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 1, false), rfl⟩ ⟨4, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 2, false), rfl⟩ ⟨7, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-  · cases he
-  · cases he
+    · exact nonempty_vertexLink_path_singleFace _ ⟨1, by decide⟩ rfl rfl rfl ⟨.nil⟩
+    · exact nonempty_vertexLink_path_singleFace _ ⟨4, by decide⟩ rfl rfl rfl ⟨.nil⟩
+    · exact nonempty_vertexLink_path_singleFace _ ⟨7, by decide⟩ rfl rfl rfl ⟨.nil⟩
+  have h₂ : Nonempty (((pantsPolygon (none : Option (Fin 3)) some).vertexLink (some i)).Path
+      ⟨(.inl i, false), rfl⟩ ⟨(.inr i, false), rfl⟩) := by
     fin_cases i
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 0, false), rfl⟩ ⟨1, by decide⟩ rfl rfl
-        rfl <| nonempty_vertexLink_path_singleFace ⟨(.inr 0, false), rfl⟩ ⟨2, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 1, false), rfl⟩ ⟨4, by decide⟩ rfl rfl
-        rfl <| nonempty_vertexLink_path_singleFace ⟨(.inr 1, false), rfl⟩ ⟨5, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-    · exact nonempty_vertexLink_path_singleFace ⟨(.inl 2, false), rfl⟩ ⟨7, by decide⟩ rfl rfl
-        rfl <| nonempty_vertexLink_path_singleFace ⟨(.inr 2, false), rfl⟩ ⟨8, by decide⟩ rfl rfl
-        rfl ⟨.nil⟩
-  · cases he
-    exact ⟨.nil⟩
+    · exact nonempty_vertexLink_path_singleFace _ ⟨2, by decide⟩ rfl rfl rfl ⟨.nil⟩
+    · exact nonempty_vertexLink_path_singleFace _ ⟨5, by decide⟩ rfl rfl rfl ⟨.nil⟩
+    · exact nonempty_vertexLink_path_singleFace _ ⟨8, by decide⟩ rfl rfl rfl ⟨.nil⟩
+  obtain ⟨k | k, _ | _⟩ := e <;> cases he
+  · exact h₁
+  · exact Quiver.Reachable.trans h₁ h₂
+  · exact ⟨.nil⟩
 
 /-- The link of the hole vertex `some i` of the pair of pants is the interval
 `hᵢ, cᵢ⁻¹, hᵢ⁻¹`. -/
@@ -329,6 +360,25 @@ theorem eulerChar_pants : pants.eulerChar = -1 := by
   rw [eulerChar_pantsPolygon (none : Option (Fin 3)) some]
   simp
 
+/-- The centre of the pair of pants is an inner vertex: it has no boundary germ. -/
+@[simp] theorem boundaryGerms_pants_none : pants.boundaryGerms none = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun e he => ?_
+  obtain ⟨hb, hs⟩ := mem_boundaryGerms_iff.1 he
+  obtain ⟨i | i, _ | _⟩ := e <;> cases hs
+  exact inl_notMem_boundaryDarts_pants i true hb
+
+/-- The hole vertex `some i` of the pair of pants is a boundary vertex: its boundary germs, the two
+ends of its interval link, are the two darts of the loop `hᵢ`. -/
+@[simp] theorem boundaryGerms_pants_some (i : Fin 3) :
+    pants.boundaryGerms (some i) = {((.inr i, true) : pants.graph.E), (.inr i, false)} := by
+  have hsub : {((.inr i, true) : pants.graph.E), (.inr i, false)} ⊆
+      pants.boundaryGerms (some i) :=
+    Set.pair_subset_iff.2 ⟨mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_pants i true, rfl⟩,
+      mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_pants i false, rfl⟩⟩
+  refine (Set.eq_of_subset_of_ncard_le hsub ?_).symm
+  exact ((ncard_boundaryGerms_eq_two _ ⟨_, hsub (.inl rfl)⟩).trans
+    (Set.ncard_pair fun h => Bool.noConfusion (congrArg Prod.snd h)).symm).le
+
 /-- Every boundary dart of the pair of pants is a loop. -/
 private theorem boundary_src_eq_tgt_pants (e : pants.boundary.E) :
     pants.boundary.src e = pants.boundary.tgt e := by
@@ -336,31 +386,42 @@ private theorem boundary_src_eq_tgt_pants (e : pants.boundary.E) :
   · exact absurd he (inl_notMem_boundaryDarts_pants i b)
   · cases b <;> rfl
 
-/-- The boundary vertices of the pair of pants are its hole vertices. -/
-private theorem nonempty_boundaryGerms_pants_iff (x : pants.graph.V) :
-    (pants.boundaryGerms x).Nonempty ↔ x.isSome := by
-  refine ⟨fun ⟨e, he⟩ => ?_, fun hx => ?_⟩
-  · obtain ⟨hb, rfl⟩ := mem_boundaryGerms_iff.1 he
-    obtain ⟨i | i, _ | _⟩ := e
-    · rfl
-    · exact absurd hb (inl_notMem_boundaryDarts_pants i true)
-    · rfl
-    · rfl
-  · obtain ⟨i, rfl⟩ := Option.isSome_iff_exists.1 hx
-    exact ⟨(.inr i, true), mem_boundaryGerms_iff.2 ⟨inr_mem_boundaryDarts_pants i true, rfl⟩⟩
+/-- Both darts of the loop `hᵢ` lie in the same boundary component. -/
+private theorem boundaryClass_pants_inr (i : Fin 3) (b : Bool)
+    (h : ((.inr i, b) : pants.graph.E) ∈ pants.boundaryDarts) :
+    pants.boundaryClass ⟨(.inr i, b), h⟩ =
+      pants.boundaryClass ⟨(.inr i, true), inr_mem_boundaryDarts_pants i true⟩ := by
+  cases b
+  · exact boundaryClass_rev (S := pants) ⟨(.inr i, true), inr_mem_boundaryDarts_pants i true⟩
+  · rfl
+
+/-- The boundary components of the pair of pants are indexed by its holes: the component of the
+hole `i` is the loop `hᵢ`. -/
+noncomputable def pantsBoundaryComponentEquiv : pants.BoundaryComponent ≃ Fin 3 :=
+  (Equiv.ofBijective
+    (fun i => pants.boundaryClass ⟨(.inr i, true), inr_mem_boundaryDarts_pants i true⟩)
+    ⟨fun i j h => Option.some_injective _ (congrArg Subtype.val
+      (SerreGraph.eq_of_path_of_forall_src_eq_tgt _ boundary_src_eq_tgt_pants
+        (boundaryClass_eq_boundaryClass_iff.1 h).some)), fun x => by
+      obtain ⟨⟨⟨i | i, b⟩, he⟩, rfl⟩ := pants.boundaryClass_surjective x
+      · exact absurd he (inl_notMem_boundaryDarts_pants i b)
+      · exact ⟨i, (boundaryClass_pants_inr i b he).symm⟩⟩).symm
+
+/-- The boundary component of the hole `i` of the pair of pants is the class of the loop `hᵢ`. -/
+@[simp] theorem pantsBoundaryComponentEquiv_symm_apply (i : Fin 3) :
+    pantsBoundaryComponentEquiv.symm i =
+      pants.boundaryClass ⟨(.inr i, true), inr_mem_boundaryDarts_pants i true⟩ :=
+  (rfl)
+
+/-- Either dart of the loop `hᵢ` lies in the boundary component of the hole `i`. -/
+@[simp] theorem pantsBoundaryComponentEquiv_boundaryClass_inr (i : Fin 3) (b : Bool)
+    (h : ((.inr i, b) : pants.graph.E) ∈ pants.boundaryDarts) :
+    pantsBoundaryComponentEquiv (pants.boundaryClass ⟨(.inr i, b), h⟩) = i :=
+  (Equiv.eq_symm_apply _).1 (boundaryClass_pants_inr i b h)
 
 /-- The pair of pants has three boundary components, the loops `h₀`, `h₁` and `h₂`. -/
-theorem card_boundaryComponent_pants : Nat.card pants.BoundaryComponent = 3 := by
-  -- Every boundary dart is a loop, so each boundary component is a single boundary vertex.
-  have hinj : Function.Injective (StronglyConnectedComponent.mk : pants.boundary.V → _) :=
-    fun x y h => SerreGraph.eq_of_path_of_forall_src_eq_tgt _ boundary_src_eq_tgt_pants
-      (StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path.1 h).some
-  calc Nat.card pants.BoundaryComponent = Nat.card pants.BoundaryVertex :=
-        (Nat.card_congr (Equiv.ofBijective _ ⟨hinj, StronglyConnectedComponent.mk_surjective⟩)).symm
-    _ = Nat.card (Fin 3) := Nat.card_congr
-        ((Equiv.subtypeEquivRight nonempty_boundaryGerms_pants_iff).trans
-          (Equiv.optionIsSomeEquiv _))
-    _ = 3 := Nat.card_fin 3
+theorem card_boundaryComponent_pants : Nat.card pants.BoundaryComponent = 3 :=
+  (Nat.card_congr pantsBoundaryComponentEquiv).trans (Nat.card_fin 3)
 
 end SurfaceModel
 
