@@ -59,7 +59,8 @@ a family `J₀ λ`, a prescription which is `J₀ λ` on part of the time-end co
 the family equal to `J₀ λ` there, so the collars stay fixed even inside `U`
 (`TauCeti.SmoothMappingTorus.exists_verticalFamily_eqOn_seamFamily`). Descending, the block
 structures `J λ` on `X_φ` depend smoothly on `λ`, are compatible with `Ω = ds ∧ dt + σ_v` when `φ`
-preserves `σ`, and have vertical part `K₁` over `A` and `K₀` outside `U` and wherever `K₁` is `K₀`
+preserves `σ`, send `∂_s` to the suspension vector field everywhere, and have vertical part `K₁`
+over `A` and `K₀` outside `U` and wherever `K₁` is `K₀`
 (`TauCeti.SmoothMappingTorus.exists_suspensionAlmostComplexStructure_eqOn`).
 
 No `φ`-invariant structure is needed, and the prescribed family need not extend smoothly beyond
@@ -75,7 +76,8 @@ No `φ`-invariant structure is needed, and the prescribed family need not extend
 * `TauCeti.SmoothMappingTorus.exists_verticalFamily_eqOn_seamFamily`: the same with background
   the seam path construction from a smooth family of compatible structures on `M`.
 * `TauCeti.SmoothMappingTorus.exists_suspensionAlmostComplexStructure_eqOn`: the descended
-  compatible block structures on `X_φ` with prescribed vertical part over a closed region.
+  compatible block structures on `X_φ`, sending `∂_s` to the suspension vector field, with
+  prescribed vertical part over a closed region.
 
 ## References
 
@@ -390,8 +392,8 @@ hypotheses of `exists_verticalFamily_eqOn`, there is a family `J λ` of almost c
 `X_φ = (ℝ / ℤ) × Y_φ`, jointly smooth in `(λ, y)` and each compatible with
 `Ω = ds ∧ dt + σ_v`, which in the coordinates `(s, t, x)` sends `a ∂_s + b ∂_t + v` to
 `-b ∂_s + a ∂_t + K₁ λ ((s, t), x) v` over the closed set `A`, and to
-`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U` and wherever `K₁` is `K₀`. In particular, there
-`J λ` sends `∂_s` to the suspension vector field. -/
+`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U` and wherever `K₁` is `K₀`. Everywhere on `X_φ`,
+`J λ` sends `∂_s` to the suspension vector field `T`. -/
 theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ]
     [T2Space Λ] [SecondCountableTopology Λ] [SecondCountableTopology M]
     (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
@@ -407,6 +409,8 @@ theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [Fi
                 TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) y) r.2
             ((J r.1).toEndomorphism r.2)) ∧
       (∀ l, (suspensionForm φ σ hσ).Compatible (J l)) ∧
+      (∀ l y, J l y ((Manifold.tangentSpaceProdEquiv y).symm ((1 : ℝ), 0)) =
+        (Manifold.tangentSpaceProdEquiv y).symm ((0 : ℝ), timeVectorField φ y.2)) ∧
       (∀ l (s t : ℝ) (x : M), (l, ((s : UnitAddCircle), mk φ t x)) ∈ A →
         ∀ (a b : ℝ) (v : TangentSpace I x),
           J l ((s : UnitAddCircle), mk φ t x)
@@ -431,7 +435,8 @@ theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [Fi
   refine ⟨fun l ↦ suspensionAlmostComplexStructure φ
       (hK.comp (contMDiff_const.prodMk contMDiff_id)) (hs l) (ht l),
     contMDiff_suspensionAlmostComplexStructure_family φ hK hs ht,
-    fun l ↦ compatible_suspensionAlmostComplexStructure φ _ _ _ hσn (hc l), ?_, ?_⟩
+    fun l ↦ compatible_suspensionAlmostComplexStructure φ _ _ _ hσn (hc l),
+    fun l ↦ suspensionAlmostComplexStructure_apply_symm_one_zero φ _ _ _, ?_, ?_⟩
   · intro l s t x h a b v
     refine (suspensionAlmostComplexStructure_mk φ _ _ _ s t x a b v).trans ?_
     dsimp only [id]
