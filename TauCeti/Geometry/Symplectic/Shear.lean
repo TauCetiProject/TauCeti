@@ -21,8 +21,8 @@ standard symplectic form
 `dq ∧ dp`. It shows that the preserved metric cannot be dropped from the theorem that the fixed
 locus of a group of symplectomorphisms preserving a Riemannian metric is a symplectic submanifold:
 
-* its fixed locus is the plane `p = 0` (`TauCeti.fixedPoints_symplecticShear`), which is a
-  Lagrangian subspace (`TauCeti.isLagrangian_stdSymplecticForm_ker_snd`), not a symplectic one;
+* its fixed locus is the plane `V × {0}` (`TauCeti.fixedPoints_symplecticShear`), which is a
+  Lagrangian subspace (`TauCeti.SymplecticForm.isLagrangian_prod_top_bot`), not a symplectic one;
 * accordingly it preserves no Riemannian metric on `V × V` (for `V ≠ 0`): no Riemannian isometry
   of `V × V` is the shear (`TauCeti.RiemannianIsometry.coe_ne_symplecticShear`).
 
@@ -42,8 +42,8 @@ completeness of the metric.
 ## Main results
 
 * `TauCeti.isSymplectomorphism_symplecticShear`: the shear preserves `ω₀`.
-* `TauCeti.fixedPoints_symplecticShear`: its fixed points are the plane `p = 0`.
-* `TauCeti.isLagrangian_stdSymplecticForm_ker_snd`: the plane `p = 0` is Lagrangian for `ω₀`.
+* `TauCeti.fixedPoints_symplecticShear`: its fixed points are the plane `V × {0}`, which is
+  Lagrangian for `ω₀` by `TauCeti.SymplecticForm.isLagrangian_prod_top_bot`.
 * `TauCeti.not_isIsometry_symplecticShear`: for `V ≠ 0`, the shear preserves no anisotropic
   bilinear form.
 * `TauCeti.RiemannianIsometry.coe_ne_symplecticShear`: for `V ≠ 0`, the shear is not a
@@ -67,14 +67,12 @@ section Shear
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 variable (V) in
-/-- The shear `(q, p) ↦ (q + p, p)` of `V × V`, with inverse `(q, p) ↦ (q - p, p)`. -/
+/-- The shear `(q, p) ↦ (q + p, p)` of `V × V`, with inverse `(q, p) ↦ (q - p, p)`: the shear
+`(p, q) ↦ (p, q + p)` of `ContinuousLinearEquiv.skewProd` conjugated by swapping the factors. -/
 noncomputable def symplecticShear : (V × V) ≃L[ℝ] (V × V) :=
-  ContinuousLinearEquiv.equivOfInverse
-    ((ContinuousLinearMap.fst ℝ V V + ContinuousLinearMap.snd ℝ V V).prod
-      (ContinuousLinearMap.snd ℝ V V))
-    ((ContinuousLinearMap.fst ℝ V V - ContinuousLinearMap.snd ℝ V V).prod
-      (ContinuousLinearMap.snd ℝ V V))
-    (fun _ ↦ by simp) (fun _ ↦ by simp)
+  (ContinuousLinearEquiv.prodComm ℝ V V).trans
+    (((ContinuousLinearEquiv.refl ℝ V).skewProd (ContinuousLinearEquiv.refl ℝ V)
+      (ContinuousLinearMap.id ℝ V)).trans (ContinuousLinearEquiv.prodComm ℝ V V))
 
 @[simp]
 theorem symplecticShear_apply (x : V × V) : symplecticShear V x = (x.1 + x.2, x.2) := (rfl)
@@ -88,9 +86,10 @@ theorem symplecticShear_apply_eq_self_iff (x : V × V) : symplecticShear V x = x
   rw [symplecticShear_apply, Prod.ext_iff]
   simp
 
-/-- The fixed points of the shear form the plane `p = 0`. -/
+/-- The fixed points of the shear form the plane `V × {0}`, that is `p = 0`. -/
 theorem fixedPoints_symplecticShear :
-    Function.fixedPoints (symplecticShear V) = (ker (LinearMap.snd ℝ V V) : Set (V × V)) := by
+    Function.fixedPoints (symplecticShear V) =
+      ((⊤ : Submodule ℝ V).prod (⊥ : Submodule ℝ V) : Set (V × V)) := by
   ext x
   rw [Function.mem_fixedPoints, Function.IsFixedPt, symplecticShear_apply_eq_self_iff]
   simp
@@ -150,19 +149,6 @@ theorem isSymplectomorphism_symplecticShear :
   simp only [ContinuousLinearEquiv.coe_toLinearEquiv, symplecticShear_apply,
     stdSymplecticForm_apply, inner_add_left, inner_add_right]
   ring
-
-/-- The plane `p = 0` of `V × V` is a Lagrangian subspace for the standard symplectic form. -/
-theorem isLagrangian_stdSymplecticForm_ker_snd :
-    (stdSymplecticForm (V := V)).IsLagrangian (ker (LinearMap.snd ℝ V V)) := by
-  rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff,
-    SymplecticForm.isCoisotropic_iff_le]
-  constructor
-  · intro x hx y hy
-    rw [mem_ker, snd_apply] at hx hy
-    simp [hx, hy]
-  · intro y hy
-    rw [SymplecticForm.mem_orthogonal_iff] at hy
-    simpa using hy (y.2, 0) rfl
 
 end Symplectic
 

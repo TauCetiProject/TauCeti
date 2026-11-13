@@ -32,8 +32,8 @@ rotations by the angles `n • θ` (`TauCeti.weightRotation_nsmul`).
 * The fixed subspace is a symplectic subspace
   (`TauCeti.isSymplectic_eqLocus_weightRotation`). The rotation commutes with the complex
   structure `J(q, p) = (-p, q)`, multiplication by `i`
-  (`TauCeti.weightRotation_product_apply`), so `J` preserves the fixed subspace, and
-  `ω(z, J z) = ‖z‖²` shows that no nonzero fixed vector is `ω`-orthogonal to all fixed vectors.
+  (`TauCeti.weightRotation_product_apply`), so `J` preserves the fixed subspace, and `ω` tames `J`
+  (`TauCeti.stdSymplecticForm_tames_product`).
 
 For the rotation of a single coordinate `z_{j₀}` of `ℂ^ι` by an irrational multiple `2π a` of
 `2π` (`Irrational.orderOf_weightRotation_single`,
@@ -43,7 +43,8 @@ fixed locus is the coordinate subspace `z_{j₀} = 0`, of real dimension `2 (|ι
 `j₀` the first coordinate, this is the plane `{0} × ℂ`, of dimension `2`. The group is not
 finite, and its fixed locus is a symplectic subspace because the group preserves both `ω` and the
 Euclidean metric. By contrast the shear `(q, p) ↦ (q + p, p)` of `ℝ²` preserves `ω` and no metric,
-and its fixed line is Lagrangian (`TauCeti.isLagrangian_stdSymplecticForm_ker_snd`).
+and its fixed line is Lagrangian (`TauCeti.fixedPoints_symplecticShear`,
+`TauCeti.SymplecticForm.isLagrangian_prod_top_bot`).
 
 ## References
 
@@ -154,19 +155,13 @@ theorem weightRotation_product_apply (θ : ι → ℝ) (x : EuclideanSpace ℝ �
 /-- **The fixed subspace of a rotation is symplectic** for the standard symplectic form. -/
 theorem isSymplectic_eqLocus_weightRotation (θ : ι → ℝ) :
     (stdSymplecticForm (V := EuclideanSpace ℝ ι)).IsSymplectic
-      (LinearMap.eqLocus (weightRotation θ).toLinearMap LinearMap.id) := by
-  rw [SymplecticForm.isSymplectic_iff_disjoint, Submodule.disjoint_def]
-  intro x hx hxω
-  rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearMap.id_apply] at hx
-  -- `J x` is fixed as well, and `ω(x, J x) = ‖x‖²`.
-  have hJx : AlmostComplexStructure.product _ x ∈
-      LinearMap.eqLocus (weightRotation θ).toLinearMap LinearMap.id := by
-    rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearMap.id_apply,
-      weightRotation_product_apply, hx]
-  have h := SymplecticForm.mem_orthogonal_iff'.mp hxω _ hJx
-  rw [stdSymplecticForm_apply_product_self] at h
-  have h' := (add_eq_zero_iff_of_nonneg real_inner_self_nonneg real_inner_self_nonneg).mp h
-  exact Prod.ext (inner_self_eq_zero.mp h'.1) (inner_self_eq_zero.mp h'.2)
+      (LinearMap.eqLocus (weightRotation θ).toLinearMap LinearMap.id) :=
+  stdSymplecticForm_tames_product.isSymplectic_of_mem_invtSubmodule <|
+    (Module.End.mem_invtSubmodule _).2 fun x hx ↦ by
+      rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearMap.id_apply] at hx
+      rw [Submodule.mem_comap, LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe,
+        LinearMap.id_apply]
+      exact (weightRotation_product_apply θ x).trans (congrArg _ hx)
 
 end TauCeti
 
