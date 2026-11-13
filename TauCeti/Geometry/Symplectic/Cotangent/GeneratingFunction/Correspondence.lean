@@ -28,7 +28,8 @@ between `T*M` and `T*N`. It is parametrized by `(q, Q)` through its source proje
 version of the linear relation of `TauCeti.cotangentGeneratingSource` and
 `TauCeti.cotangentGeneratingTarget`. The target point of the relation of `S` over `(q, Q)` is the
 source point of the relation of a second function `T` on `N × P` over `(Q, Q')` exactly when the
-two covectors at `Q` agree (`TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff`).
+two covectors at `Q` agree
+(`TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq`).
 
 * The relation is the graph of `dS` in `T*(M × N)` with the second covector reversed: the
   identification `T*(M × N) ≃ T*M × T*N` of `TauCeti.CotangentBundle.prodDiffeomorph` sends the
@@ -131,7 +132,7 @@ theorem generatingTarget_snd (x : M × N) :
 omit [TopologicalSpace M] in
 /-- The target point of the relation of `S` over `(a, b)` is the source point of the relation of
 `T` over `(b, c)` exactly when their covectors at `b` agree. -/
-theorem generatingTarget_eq_generatingSource_iff {P : Type*} {T : N × P → ℝ}
+theorem generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq {P : Type*} {T : N × P → ℝ}
     {a : M} {b : N} {c : P} :
     generatingTarget J S (a, b) = generatingSource J T (b, c) ↔
       -mvfderiv J (fun x ↦ S (a, x)) b = mvfderiv J (fun x ↦ T (x, c)) b := by
@@ -196,13 +197,7 @@ theorem generatingTarget_eq_generatingSource_iff {K : Type*} {T : N × K → ℝ
   have hadd : mvfderiv J (fun a' ↦ S (q, a') + T (a', Q)) a =
       mvfderiv J (fun a' ↦ S (q, a')) a + mvfderiv J (fun a' ↦ T (a', Q)) a :=
     mvfderiv_add hS hT
-  have hTgt : generatingTarget J S (q, a) =
-      TotalSpace.mk' (F →L[ℝ] ℝ) a (-mvfderiv J (fun a' ↦ S (q, a')) a) :=
-    CotangentBundle.ext (proj_generatingTarget (q, a)) fun v ↦ by rw [generatingTarget_snd]; rfl
-  have hSrc : generatingSource J T (a, Q) =
-      TotalSpace.mk' (F →L[ℝ] ℝ) a (mvfderiv J (fun a' ↦ T (a', Q)) a) :=
-    CotangentBundle.ext (proj_generatingSource (a, Q)) fun v ↦ by rw [generatingSource_snd]; rfl
-  rw [hTgt, hSrc, TotalSpace.mk_inj, hadd, neg_eq_iff_add_eq_zero]
+  rw [generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq, hadd, neg_eq_iff_add_eq_zero]
 
 /-! ### The relation as the graph of `dS` -/
 

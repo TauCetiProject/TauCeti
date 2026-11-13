@@ -142,7 +142,8 @@ theorem mvfderiv_cyclicAction_eq_zero_iff {S : ZMod N → Q × Q → ℝ} {q : Z
       generatingSource I (S i) (q i, q (i + 1)) ↔
         mvfderiv I (fun x ↦ S i (x, q (i + 1))) (q i) +
           mvfderiv I (fun x ↦ S (i - 1) (q (i - 1), x)) (q i) = 0 := by
-    rw [generatingTarget_eq_generatingSource_iff, neg_eq_iff_add_eq_zero, add_comm]
+    rw [generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq, neg_eq_iff_add_eq_zero,
+      add_comm]
   simp only [key]
   constructor
   · -- Test the vanishing differential on tangent vectors supported at a single vertex. The
@@ -248,7 +249,7 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
     rw [mvfderiv_cyclicAction_eq_zero_iff (N := 1) (S := fun _ ↦ S) (q := fun _ ↦ q)
         fun _ ↦ hS _ hq, mvfderiv_diag_eq_add (hS _ hq),
       add_comm, ← neg_eq_iff_add_eq_zero]
-    simp only [generatingTarget_eq_generatingSource_iff, forall_const]
+    simp only [generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq, forall_const]
   -- On `ℤ/1` every index is the default one, so a function on `ℤ/1` is its value there and the
   -- successor of every index is itself.
   have h1 (i : ZMod 1) : i + 1 = i := Subsingleton.elim _ _
