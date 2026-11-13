@@ -7,9 +7,12 @@ module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
 public import TauCeti.RingTheory.Huber.PowerBounded
+public import TauCeti.RingTheory.Norm.Projective
 public import TauCeti.Topology.Algebra.Ring.Subring
+import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Algebra.Module.Submodule.MultiplierRing
+import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
@@ -47,6 +50,9 @@ Tate, the image of a pseudouniformiser of `A` is one of `B`.
   preserves power-boundedness.
 * `TauCeti.Huber.isOpen_integralClosure_map_algebraMap`: the integral closure in `B` of the image
   of an open subring of `A` is open.
+* `TauCeti.Huber.IsBounded.image_projectiveNorm`, `TauCeti.Huber.IsPowerBounded.projectiveNorm`:
+  over a topological ring, the norm of a finite projective, not necessarily commutative, algebra
+  maps bounded sets to bounded sets and power-bounded elements to power-bounded elements.
 
 ## References
 
@@ -62,7 +68,11 @@ open Filter Topology Pointwise
 
 namespace TauCeti.Huber
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Type*} [CommRing B] [Algebra A B]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Type*}
+
+section CommRing
+
+variable [CommRing B] [Algebra A B]
 
 namespace PairOfDefinition
 
@@ -172,6 +182,52 @@ theorem isOpen_integralClosure_map_algebraMap [IsHuberRing A] {C : Subring A}
     ((algebraMap A B).comp P.ringOfDefinition.subtype).codRestrict _
       fun a ↦ Subring.mem_map.mpr ⟨a, hP a.2, rfl⟩
   exact (hQ b hb).map_of_comp_eq φ (RingHom.id B) (RingHom.ext fun _ ↦ rfl)
+
+end CommRing
+
+section Norm
+
+variable [Ring B] [Algebra A B]
+
+/-- **Norms of a bounded set form a bounded set.** For a finite projective, not necessarily
+commutative, algebra `B` over a topological ring `A`, with its natural topology, the norms
+`N_{B/A}(b)` of the elements `b` of a bounded subset of `B` form a bounded subset of `A`. -/
+theorem IsBounded.image_projectiveNorm [IsTopologicalRing A]
+    [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
+    {S : Set B} (hS : IsBounded S) : IsBounded (Algebra.projectiveNorm A '' S) := by
+  have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective A B
+  -- the coordinates of a bounded subset of `B` form a bounded subset of `A`
+  have hcoord (ℓ : B →ₗ[A] A) {S : Set B} (hS : IsBounded S) : IsBounded (ℓ '' S) :=
+    isModuleBounded_self_iff.mp ((hS.isModuleBounded (continuous_algebraMap A B).continuousAt).image
+      (IsModuleTopology.continuous_of_linearMap ℓ).continuousAt)
+  -- `N_{B/A}(c)` is the determinant of `σ ∘ (c ·) ∘ π + (1 - σ ∘ π)` on `Aⁿ`, whose matrix
+  -- entries lie in the bounded set `T` for `c ∈ S`
+  set T : Set A := ⋃ i, ⋃ k, ({((1 - σ ∘ₗ π) (Pi.single k 1) : Fin n → A) i} +
+    (LinearMap.proj i ∘ₗ σ) '' (S * {π (Pi.single k 1)}))
+  have hT : IsBounded T := isBounded_iUnion fun i ↦ isBounded_iUnion fun k ↦
+    (isBounded_singleton _).add (hcoord _ (hS.mul (isBounded_singleton _)))
+  refine (isBounded_image_det (n := Fin n) hT).subset ?_
+  rintro _ ⟨c, hc, rfl⟩
+  refine ⟨LinearMap.toMatrix' (σ ∘ₗ Algebra.lmul A B c ∘ₗ π + (1 - σ ∘ₗ π)),
+    fun i k ↦ ?_, ?_⟩
+  · refine Set.mem_iUnion.mpr ⟨i, Set.mem_iUnion.mpr ⟨k, ?_⟩⟩
+    refine ⟨_, rfl, _, ⟨c * π (Pi.single k 1), ⟨_, hc, _, rfl, rfl⟩, rfl⟩, ?_⟩
+    simp [LinearMap.toMatrix'_apply, add_comm]
+  · rw [LinearMap.det_toMatrix', ← LinearMap.projectiveDet_eq_det_of_comp_eq_id π σ h,
+      ← Algebra.projectiveNorm_apply]
+
+/-- **The norm of a power-bounded element is power-bounded.** For a finite projective, not
+necessarily commutative, algebra `B` over a topological ring `A`, with its natural topology, the
+norm `N_{B/A}(b)` of a power-bounded `b ∈ B` is power-bounded in `A`. -/
+theorem IsPowerBounded.projectiveNorm [IsTopologicalRing A]
+    [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
+    {b : B} (hb : IsPowerBounded b) : IsPowerBounded (Algebra.projectiveNorm A b) := by
+  refine isPowerBounded_iff.mpr ((isPowerBounded_iff.mp hb).image_projectiveNorm.subset ?_)
+  rintro _ ⟨j, rfl⟩
+  exact ⟨b ^ j, ⟨j, rfl⟩, map_pow _ _ _⟩
+
+end Norm
 
 end TauCeti.Huber
 
