@@ -613,6 +613,17 @@ theorem covariantDeriv_sub_covariantDBar_isComplexLinear (b : E → E [⋀^Fin 1
   rw [coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart]
   exact complexLinearPart_isComplexLinear J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
 
+/-- `∂bar_a α` vanishes at `x` exactly when the covariant derivative `∇_a α` is complex linear
+there, `∇_a α (J v) = i ∇_a α v`. -/
+theorem covariantDBar_eq_zero_iff (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
+    covariantDBar J b α x = 0 ↔ ∀ v, covariantDeriv b α x (J v) = I * covariantDeriv b α x v := by
+  refine ⟨fun h v ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · have hv := congrArg (fun L ↦ L v) h
+    simp only [covariantDBar_apply, zero_apply] at hv
+    linear_combination (-2 * I) * hv + covariantDeriv b α x (J v) * I_sq
+  · simp only [covariantDBar_apply, h v, zero_apply]
+    linear_combination covariantDeriv b α x v * I_sq / 2
+
 /-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
 `∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
 theorem norm_covariantDeriv_sub_covariantDBar_le (hJ : ∀ v, ‖J v‖ = ‖v‖)
