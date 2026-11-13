@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.Hofer
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Topology.VectorBundle.Trivialization

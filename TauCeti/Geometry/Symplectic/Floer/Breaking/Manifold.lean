@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Rotation
 public import TauCeti.Geometry.Symplectic.Floer.Stationary
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
