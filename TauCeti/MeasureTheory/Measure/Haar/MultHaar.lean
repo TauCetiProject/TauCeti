@@ -34,7 +34,10 @@ Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^
 `dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
 integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The
 integral of `u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
-(`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`).
+(`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`), and by dilation the kernel
+`s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in each variable
+(`TauCeti.lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_right`,
+`TauCeti.lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_left`).
 
 For `b > 1` the geometric intervals `[c b ^ (μ j), c b ^ (μ j + |μ|))`, `j ∈ ℕ`, are pairwise
 disjoint, each of `dt / t`-measure `|μ| log b`. Integrating over them compares a sequence with a
@@ -344,6 +347,35 @@ theorem lintegral_multHaar_rpow_mul_min_inv_rpow {α β : ℝ} (hα : 0 < α) (h
     · rw [min_eq_right (inv_le_one_of_one_le₀ (Real.one_le_exp hx.le)), hexp,
         ← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
       ring_nf
+
+/-- The kernel `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in `r`
+for every `s > 0`: the substitution `r = s u` turns it into `u ^ θ₁ min 1 u⁻¹ ^ (θ₀ + θ₁)`. -/
+theorem lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_right {θ₀ θ₁ s : ℝ} (hθ₀ : 0 < θ₀)
+    (hθ₁ : 0 < θ₁) (hs : 0 < s) :
+    ∫⁻ r, ENNReal.ofReal (s ^ θ₀ * r ^ θ₁ * min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)) ∂multHaar =
+      ENNReal.ofReal (θ₀⁻¹ + θ₁⁻¹) := by
+  have hmp : MeasurePreserving (s * ·) multHaar multHaar :=
+    ⟨measurable_const_mul s, map_multHaar_mul_left hs⟩
+  rw [← hmp.lintegral_comp (by fun_prop), add_comm θ₀⁻¹,
+    ← lintegral_multHaar_rpow_mul_min_inv_rpow hθ₁ hθ₀]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_pos_multHaar] with u hu
+  congr 1
+  have hm : min s⁻¹ (s * u)⁻¹ = s⁻¹ * min 1 u⁻¹ := by
+    rw [mul_min_of_nonneg _ _ (inv_nonneg.2 hs.le), mul_one, mul_inv]
+  rw [hm, Real.mul_rpow (inv_nonneg.2 hs.le) (le_min zero_le_one (inv_nonneg.2 hu.le)),
+    Real.mul_rpow hs.le hu.le, Real.inv_rpow hs.le, add_comm θ₁ θ₀, Real.rpow_add hs]
+  field_simp
+
+/-- The kernel `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in `s`
+for every `r > 0`, by the symmetry of the kernel under exchanging `(s, θ₀)` and `(r, θ₁)`. -/
+theorem lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_left {θ₀ θ₁ r : ℝ} (hθ₀ : 0 < θ₀)
+    (hθ₁ : 0 < θ₁) (hr : 0 < r) :
+    ∫⁻ s, ENNReal.ofReal (s ^ θ₀ * r ^ θ₁ * min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)) ∂multHaar =
+      ENNReal.ofReal (θ₀⁻¹ + θ₁⁻¹) := by
+  rw [add_comm θ₀⁻¹, ← lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_right hθ₁ hθ₀ hr]
+  refine lintegral_congr fun s ↦ ?_
+  rw [mul_comm (s ^ θ₀), min_comm, add_comm θ₀]
 
 end Integral
 

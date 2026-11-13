@@ -29,7 +29,10 @@ We prove the basic properties of `K` from Bergh–Löfström, §3.1:
   and `K(t, x) ≤ min 1 t * ‖x‖`;
 * a linear map of sum spaces restricting to maps `X₀ → Y₀`, `X₁ → Y₁` bounded by `M₀ > 0`
   and `M₁` satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`);
-* for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`).
+* for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`);
+* every `x` in the intersection has a dyadic decomposition `x = ∑ⱼ uⱼ`, `j ∈ ℤ`, with
+  `‖uⱼ‖_{X₀} ≤ 4 K(2 ^ j, x)` and `2 ^ j ‖uⱼ‖_{X₁} ≤ 6 K(2 ^ j, x)`
+  (`CompatibleCouple.DyadicDecomposition`, `nonempty_dyadicDecomposition`).
 
 ## References
 
@@ -265,6 +268,129 @@ which it is concave. -/
 theorem continuousOn_kFunctional (u : C.SumSpace) :
     ContinuousOn (C.kFunctional · u) (Set.Ioi 0) := by
   simpa using (concaveOn_kFunctional u).continuousOn_interior
+
+section Dyadic
+
+variable (C)
+
+/-- Near-optimal decompositions `x = x⁰ⱼ + x¹ⱼ` inside the intersection for `K(2 ^ j, x)` at every
+dyadic scale, with `‖x⁰ⱼ‖_{X₀} ≤ 2 K(2 ^ j, x)` and `2 ^ j ‖x¹ⱼ‖_{X₁} ≤ 2 K(2 ^ j, x)`. -/
+private theorem exists_dyadic_split [T1Space V] (x : C.inter) :
+    ∃ d : ℤ → C.inter × C.inter, (∀ j, (d j).1 + (d j).2 = x) ∧
+      (∀ j : ℤ, ‖C.interFst (d j).1‖ ≤ 2 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))) ∧
+      (∀ j : ℤ, (2 : ℝ) ^ j * ‖C.interSnd (d j).2‖ ≤
+        2 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))) := by
+  set K : ℝ → ℝ := fun t => C.kFunctional t (C.fstToSum (C.interFst x))
+  have hpos (j : ℤ) : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
+  have hK0 (j : ℤ) : 0 ≤ K (2 ^ j) := kFunctional_nonneg (hpos j).le
+  have hd (j : ℤ) : ∃ d : C.inter × C.inter, d.1 + d.2 = x ∧
+      ‖C.interFst d.1‖ + 2 ^ j * ‖C.interSnd d.2‖ ≤ 2 * K (2 ^ j) := by
+    by_cases hx : x = 0
+    · exact ⟨(0, 0), by simp [hx], by simpa using mul_nonneg zero_le_two (hK0 j)⟩
+    -- `K(2 ^ j, x) > 0`, so a decomposition within a factor `2` of the infimum exists
+    have hKpos : 0 < K (2 ^ j) := by
+      refine (hK0 j).lt_of_ne fun h => hx ?_
+      have h0 := (kFunctional_eq_zero_iff (hpos j)).1 h.symm
+      exact C.interFst_injective (C.fstToSum_injective (by simpa using h0))
+    obtain ⟨y, z, hyz, hlt⟩ := C.exists_add_eq_and_norm_interFst_add_mul_norm_interSnd_lt
+      (hpos j).le x (r := 2 * K (2 ^ j)) (by linarith)
+    exact ⟨(y, z), hyz, hlt.le⟩
+  choose d hdsum hdle using hd
+  refine ⟨d, hdsum, fun j => ?_, fun j => ?_⟩
+  · linarith [hdle j, mul_nonneg (hpos j).le (norm_nonneg (C.interSnd (d j).2))]
+  · linarith [hdle j, norm_nonneg (C.interFst (d j).1)]
+
+/-- The bounds on one dyadic piece `x⁰ⱼ - x⁰ⱼ₋₁ = x¹ⱼ₋₁ - x¹ⱼ`, from those on the near-optimal
+decompositions at the scales `2 ^ j` and `2 ^ (j - 1)` and monotonicity of `K`. -/
+private theorem norm_dyadic_piece_le {x : C.inter} {d : ℤ → C.inter × C.inter}
+    (hdsum : ∀ j, (d j).1 + (d j).2 = x)
+    (hd₁ : ∀ j : ℤ, ‖C.interFst (d j).1‖ ≤ 2 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x)))
+    (hd₂ : ∀ j : ℤ, (2 : ℝ) ^ j * ‖C.interSnd (d j).2‖ ≤
+      2 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))) (j : ℤ) :
+    ‖C.interFst ((d j).1 - (d (j - 1)).1)‖ ≤
+        4 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x)) ∧
+      (2 : ℝ) ^ j * ‖C.interSnd ((d j).1 - (d (j - 1)).1)‖ ≤
+        6 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x)) := by
+  have hmono := kFunctional_mono (zpow_pos two_pos (j - 1)).le
+    (zpow_le_zpow_right₀ one_le_two (by omega : j - 1 ≤ j)) (C.fstToSum (C.interFst x))
+  have hu' : (d j).1 - (d (j - 1)).1 = (d (j - 1)).2 - (d j).2 := by
+    rw [sub_eq_sub_iff_add_eq_add, hdsum j, add_comm, hdsum (j - 1)]
+  have h2 : (2 : ℝ) ^ j = 2 * 2 ^ (j - 1) := by
+    rw [← zpow_one_add₀ two_ne_zero]
+    ring_nf
+  refine ⟨?_, ?_⟩
+  · rw [map_sub]
+    linarith [norm_sub_le (C.interFst (d j).1) (C.interFst (d (j - 1)).1), hd₁ j, hd₁ (j - 1)]
+  · calc (2 : ℝ) ^ j * ‖C.interSnd ((d j).1 - (d (j - 1)).1)‖ ≤
+          2 ^ j * (‖C.interSnd (d (j - 1)).2‖ + ‖C.interSnd (d j).2‖) := by
+          rw [hu', map_sub]
+          exact mul_le_mul_of_nonneg_left (norm_sub_le _ _) (zpow_pos two_pos j).le
+      _ = 2 * (2 ^ (j - 1) * ‖C.interSnd (d (j - 1)).2‖) + 2 ^ j * ‖C.interSnd (d j).2‖ := by
+          rw [h2]
+          ring
+      _ ≤ _ := by linarith [hd₂ j, hd₂ (j - 1)]
+
+omit [ContinuousAdd V] in
+/-- A dyadic decomposition of an element `x` of the intersection, controlled by its
+`K`-functional: `x = ∑ⱼ uⱼ` with `‖uⱼ‖_{X₀} ≤ 4 K(2 ^ j, x)` and `2 ^ j ‖uⱼ‖_{X₁} ≤ 6 K(2 ^ j, x)`.
+The partial sums over `-N < j ≤ N` differ from `x` by `y_N + z_N`, where `y_N` is small in `X₀`
+and `z_N` is small in `X₁`. -/
+structure DyadicDecomposition (x : C.inter) where
+  /-- The dyadic pieces. -/
+  u : ℤ → C.inter
+  /-- The part of the `N`-th remainder that is small in `X₀`. -/
+  y : ℕ → C.inter
+  /-- The part of the `N`-th remainder that is small in `X₁`. -/
+  z : ℕ → C.inter
+  norm_interFst_le (j : ℤ) :
+    ‖C.interFst (u j)‖ ≤ 4 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))
+  zpow_mul_norm_interSnd_le (j : ℤ) :
+    (2 : ℝ) ^ j * ‖C.interSnd (u j)‖ ≤ 6 * C.kFunctional (2 ^ j) (C.fstToSum (C.interFst x))
+  sum_add_add_eq (N : ℕ) : ∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N) + y N + z N = x
+  norm_interFst_sum_le (N : ℕ) :
+    ‖C.interFst (∑ i ∈ Finset.range (2 * N), u ((i : ℤ) + 1 - N))‖ ≤ 4 * ‖C.interFst x‖
+  norm_interFst_y_le (N : ℕ) : ‖C.interFst (y N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interSnd x‖
+  norm_interSnd_z_le (N : ℕ) : ‖C.interSnd (z N)‖ ≤ 2 * 2⁻¹ ^ N * ‖C.interFst x‖
+
+/-- Every element `x` of the intersection has a dyadic decomposition. The pieces are
+`uⱼ = x⁰ⱼ - x⁰ⱼ₋₁`, where `x = x⁰ⱼ + x¹ⱼ` is a near-optimal decomposition for `K(2 ^ j, x)` inside
+the intersection. -/
+theorem nonempty_dyadicDecomposition [T1Space V] (x : C.inter) :
+    Nonempty (C.DyadicDecomposition x) := by
+  obtain ⟨d, hdsum, hd₁, hd₂⟩ := C.exists_dyadic_split x
+  set K : ℝ → ℝ := fun t => C.kFunctional t (C.fstToSum (C.interFst x)) with hK_def
+  have hKx₀ (j : ℤ) : K (2 ^ j) ≤ ‖C.interFst x‖ := C.kFunctional_fstToSum_le (by positivity) _
+  have hKx₁ (j : ℤ) : K (2 ^ j) ≤ 2 ^ j * ‖C.interSnd x‖ := by
+    simp only [hK_def, fstToSum_interFst]
+    exact C.kFunctional_sndToSum_le (by positivity) _
+  have htel (N : ℕ) : ∑ i ∈ Finset.range (2 * N), ((d ((i : ℤ) + 1 - N)).1 -
+      (d ((i : ℤ) + 1 - N - 1)).1) = (d N).1 - (d (-N)).1 := by
+    convert Finset.sum_range_sub (fun i : ℕ => (d ((i : ℤ) - N)).1) (2 * N) using 2 with i <;>
+      push_cast <;> ring_nf
+  refine ⟨⟨fun j => (d j).1 - (d (j - 1)).1, fun N => (d (-N)).1, fun N => (d N).2,
+    fun j => (C.norm_dyadic_piece_le hdsum hd₁ hd₂ j).1,
+    fun j => (C.norm_dyadic_piece_le hdsum hd₁ hd₂ j).2, fun N => ?_, fun N => ?_, fun N => ?_,
+    fun N => ?_⟩⟩
+  · rw [htel, sub_add_cancel, hdsum]
+  · rw [htel, map_sub]
+    linarith [norm_sub_le (C.interFst (d N).1) (C.interFst (d (-N)).1), hd₁ N, hd₁ (-N),
+      hKx₀ N, hKx₀ (-N)]
+  · have h := hKx₁ (-N)
+    have h1 := hd₁ (-N)
+    rw [zpow_neg, zpow_natCast] at h h1
+    calc ‖C.interFst (d (-N)).1‖ ≤ 2 * K ((2 ^ N)⁻¹) := h1
+      _ ≤ 2 * ((2 ^ N)⁻¹ * ‖C.interSnd x‖) := by linarith
+      _ = 2 * 2⁻¹ ^ N * ‖C.interSnd x‖ := by rw [inv_pow]; ring
+  · have h := hd₂ N
+    have hN : (0 : ℝ) < 2 ^ N := pow_pos two_pos N
+    have h' := hKx₀ N
+    rw [zpow_natCast] at h h'
+    calc ‖C.interSnd (d N).2‖ ≤ 2 * ‖C.interFst x‖ / 2 ^ N := by
+          rw [le_div_iff₀ hN]
+          nlinarith
+      _ = 2 * 2⁻¹ ^ N * ‖C.interFst x‖ := by rw [inv_pow]; ring
+
+end Dyadic
 
 section Map
 
