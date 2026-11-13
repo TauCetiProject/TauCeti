@@ -75,7 +75,7 @@ The coefficients of `Q` are ranks of boundary maps. Cut the band at regular valu
 critical value; on a compact manifold such values exist
 (`TauCeti.IsMorse.exists_regular_sublevel_partition`). Each piece then has `bᵢ = cᵢ dim V`, and
 summing the defects of subadditivity of `Sₙ` over the triples
-`(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`TauCeti.sum_range_finrank_range_singularHomologyδ_eq`)
+`(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`Monotone.sum_range_finrank_range_singularHomologyδ_eq`)
 shows that the coefficient of `tⁿ` in `Q` is the sum over `j < N` of the ranks of the connecting
 maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
 (`TauCeti.IsMorse.coeff_eq_sum_range_finrank_range_singularHomologyδ_sublevelPair`).
@@ -614,7 +614,7 @@ theorem IsMorse.sum_range_finrank_range_singularHomologyδ_sublevelPair_eq (hf :
       (hreg j (by lia)) (hreg (j + 1) (by lia)) (hcrit j hj) i]
     push_cast
     ring
-  have h := TauCeti.sum_range_finrank_range_singularHomologyδ_eq hA V hfin n
+  have h := hA.sum_range_finrank_range_singularHomologyδ_eq V n fun j hj i _ ↦ hfin j hj i
   linarith
 
 /-- **The coefficients of the quotient polynomial are ranks of connecting maps.** Let `f` be a

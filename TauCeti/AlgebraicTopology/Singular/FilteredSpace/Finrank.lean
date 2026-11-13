@@ -33,8 +33,9 @@ a module over a division ring `k`. For `a ≤ b`, compare the relative singular 
   coefficients, the coefficient of `tⁱ` being the gap in the `i`-th strong inequality for
   `i < n` and zero for `i ≥ n`
   (`Monotone.exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul`);
-* **the lacunary principle**: if no two consecutive `cᵢ` are both nonzero, then `bᵢ = cᵢ` for
-  every `i` (`Monotone.finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or`).
+* **the lacunary principle**: if the homology of the steps is finite-dimensional in every degree
+  and no two consecutive `cᵢ` are both nonzero, then `bᵢ = cᵢ` for every `i`
+  (`Monotone.finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or`).
 
 The proof is Milnor's. The long exact sequence of the triple `(X (q + 1), X q, X a)` makes
 dimensions and alternating sums subadditive
@@ -46,13 +47,11 @@ consequences `TauCeti.exists_sum_range_monomial_eq_add_mul` and
 `TauCeti.eq_of_forall_sum_range_neg_one_pow_mul_le` of these.
 
 For a filtration `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` indexed by `ℕ`, write
-`Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. If the steps have finite-dimensional
-relative homology in degree `i`, so does `(A (N + 1), A 0)`
-(`TauCeti.finite_singularHomology_ofInclusion_of_monotone`). When the steps have
-finite-dimensional relative homology in every degree, the defect
-`∑ⱼ Sₙ(A (j + 1), A j) - Sₙ(A (N + 1), A 0)` of subadditivity is the sum of the ranks of the
-connecting maps `Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples
-`(A (j + 2), A (j + 1), A 0)` (`TauCeti.sum_range_finrank_range_singularHomologyδ_eq`). When a
+`Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. When the steps have finite-dimensional
+relative homology in degrees `≤ n`, the defect `∑ⱼ Sₙ(A (j + 1), A j) - Sₙ(A (N + 1), A 0)` of
+subadditivity is the sum of the ranks of the connecting maps
+`Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples `(A (j + 2), A (j + 1), A 0)`
+(`Monotone.sum_range_finrank_range_singularHomologyδ_eq`). When a
 compact band of a Morse function is cut at regular values into pieces containing at most one
 critical value each, every piece satisfies the Morse inequalities with equality, so each
 coefficient of the polynomial measuring the failure of the Morse inequalities to be equalities is
@@ -84,81 +83,7 @@ open scoped Polynomial
 
 universe w
 
-namespace TauCeti
-
-/-! ### Finite filtrations indexed by `ℕ` -/
-
-section Filtration
-
-variable {Y : TopCat.{w}} {A : ℕ → Set Y} (hA : Monotone A) {k : Type*} [DivisionRing k]
-  (V : ModuleCat.{w} k)
-
-/-- **Finiteness along a filtration.** If `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` and every step
-`Hᵢ(A (j + 1), A j)`, `j ≤ N`, is finite-dimensional, then so is `Hᵢ(A (N + 1), A 0)`. -/
-theorem finite_singularHomology_ofInclusion_of_monotone {N : ℕ} (i : ℕ)
-    (hfin : ∀ j ≤ N, Module.Finite k
-      ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k)) :
-    Module.Finite k
-      ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i : ModuleCat k) := by
-  induction N with
-  | zero => exact hfin 0 le_rfl
-  | succ N ih =>
-    let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
-    have : Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
-      ih fun j hj ↦ hfin j (hj.trans N.le_succ)
-    have : Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
-      hfin (N + 1) le_rfl
-    exact T.finite_singularHomology_totalPair V i
-
-/-- **The dimension count along a filtration.** Let `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` be subspaces of
-a space such that every step `Hᵢ(A (j + 1), A j)`, `j ≤ N`, is finite-dimensional in every
-degree, and write `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. Then the defect of
-subadditivity of `Sₙ` along the filtration,
-`Sₙ(A 1, A 0) + ⋯ + Sₙ(A (N + 1), A N) - Sₙ(A (N + 1), A 0)`, is the sum over `j < N` of the
-ranks of the connecting maps `Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples
-`(A (j + 2), A (j + 1), A 0)`. -/
-theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ}
-    (hfin : ∀ j ≤ N, ∀ i, Module.Finite k
-      ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k)) (n : ℕ) :
-    (∑ j ∈ Finset.range N, finrank k (LinearMap.range
-        ((TopTriple.ofInclusions (hA (Nat.zero_le (j + 1))) (hA (j + 1).le_succ)
-          ).singularHomologyδ V (n + 1) n rfl).hom) : ℤ) =
-      ∑ j ∈ Finset.range (N + 1), ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
-          finrank k ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k) -
-        ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
-          finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i :
-            ModuleCat k) := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
-    have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
-    let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
-    have hinner (i : ℕ) :
-        Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
-      finite_singularHomology_ofInclusion_of_monotone hA V i fun j hj ↦ hfin' j hj i
-    have houter (i : ℕ) :
-        Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
-      hfin (N + 1) le_rfl i
-    -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by
-    -- `TopTriple.innerPair_obj_ofInclusions` and its siblings, which hold by `rfl`.
-    have h : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
-        ((finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i :
-            ModuleCat k) : ℤ) -
-          finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1 + 1)))).singularHomology V i :
-            ModuleCat k) +
-          finrank k ((TopPair.ofInclusion (hA (N + 1).le_succ)).singularHomology V i :
-            ModuleCat k)) =
-        finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) :=
-      T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n (fun i _ ↦ hinner i)
-        (fun i _ ↦ houter i)
-    simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib] at h
-    rw [Finset.sum_range_succ, ih hfin', Finset.sum_range_succ _ (N + 1)]
-    linarith
-
-end Filtration
-
-end TauCeti
+section Int
 
 variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X) {k : Type*} [DivisionRing k]
   (V : ModuleCat.{w} k)
@@ -345,3 +270,68 @@ theorem finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or {a b : ℤ} (h
           fun q hq i _ ↦ h q hq i) hc) n
 
 end Monotone
+
+end Int
+
+/-! ### Finite filtrations indexed by `ℕ` -/
+
+section Nat
+
+variable {Y : TopCat.{w}} {A : ℕ → Set Y} (hA : Monotone A) {k : Type*} [DivisionRing k]
+  (V : ModuleCat.{w} k)
+
+namespace Monotone
+
+open TauCeti
+
+/-- **The dimension count along a filtration.** Let `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` be subspaces of
+a space such that every step `Hᵢ(A (j + 1), A j)`, `j ≤ N`, is finite-dimensional in degrees
+`i ≤ n`, and write `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)`. Then the defect of
+subadditivity of `Sₙ` along the filtration,
+`Sₙ(A 1, A 0) + ⋯ + Sₙ(A (N + 1), A N) - Sₙ(A (N + 1), A 0)`, is the sum over `j < N` of the
+ranks of the connecting maps `Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples
+`(A (j + 2), A (j + 1), A 0)`. -/
+theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ} (n : ℕ)
+    (hfin : ∀ j ≤ N, ∀ i ≤ n, Module.Finite k
+      ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k)) :
+    (∑ j ∈ Finset.range N, finrank k (LinearMap.range
+        ((TopTriple.ofInclusions (hA (Nat.zero_le (j + 1))) (hA (j + 1).le_succ)
+          ).singularHomologyδ V (n + 1) n rfl).hom) : ℤ) =
+      ∑ j ∈ Finset.range (N + 1), ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+          finrank k ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k) -
+        ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+          finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i :
+            ModuleCat k) := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
+    have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
+    let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
+    have hinner (i : ℕ) (hi : i ≤ n) :
+        Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) := by
+      -- On `[0, N + 1]`, the `ℤ`-indexed filtration `q ↦ A q.toNat` has the same pairs as `A`.
+      refine (hA.comp fun _ _ ↦ Int.toNat_le_toNat
+        ).finite_singularHomology_ofInclusion_of_forall_mem_Ico V (Nat.cast_nonneg (N + 1)) i
+        fun q hq ↦ ?_
+      rw [Finset.mem_Ico] at hq
+      lift q to ℕ using hq.1
+      exact hfin' q (by lia) i hi
+    -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by
+    -- `TopTriple.innerPair_obj_ofInclusions` and its siblings, which hold by `rfl`.
+    have h : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        ((finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i :
+            ModuleCat k) : ℤ) -
+          finrank k ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1 + 1)))).singularHomology V i :
+            ModuleCat k) +
+          finrank k ((TopPair.ofInclusion (hA (N + 1).le_succ)).singularHomology V i :
+            ModuleCat k)) =
+        finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) :=
+      T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n hinner (hfin (N + 1) le_rfl)
+    simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib] at h
+    rw [Finset.sum_range_succ, ih hfin', Finset.sum_range_succ _ (N + 1)]
+    linarith
+
+end Monotone
+
+end Nat
