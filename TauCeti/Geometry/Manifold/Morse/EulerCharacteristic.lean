@@ -119,7 +119,7 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (hf : I
       finrank k V * (totalCriticalCount I f).toNat [ZMOD 2] := by
   have hfin := hf.finite_criticalPoints
   rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
-    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin.toFinset hfin.coe_toFinset hn,
+    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin hn,
     totalCriticalCount_def, hfin.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
     Finset.card_eq_sum_ones]
   push_cast

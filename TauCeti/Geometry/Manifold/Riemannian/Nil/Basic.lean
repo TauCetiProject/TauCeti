@@ -299,6 +299,29 @@ theorem inner_def (p : Nil) (v w : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) 
             p.x * (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p w).2.1) :=
   riemannianMetric_inner p v w
 
+/-! ### Isometries in global coordinates -/
+
+/-- A Nil isometry is smooth when expressed in the global coordinates. -/
+theorem contDiff_toProd_isometry (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil) :
+    ContDiff ℝ ∞ (toProd ∘ Φ ∘ toProd.symm) := by
+  simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
+    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph,
+    Function.comp_assoc] using
+    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
+
+/-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
+read through the canonical tangent-space identifications. -/
+theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
+        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
+  -- Nil has the inherited model-space charts. In those charts both tangent casts
+  -- are identities, and the coordinate map is the same function as the original map.
+  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
+    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
+
 /-! ### Left multiplication is an isometry -/
 
 /-- The linear part `(v₁, v₂, v₃) ↦ (v₁, v₂, v₃ + a v₂)` of left multiplication by a point `p`
