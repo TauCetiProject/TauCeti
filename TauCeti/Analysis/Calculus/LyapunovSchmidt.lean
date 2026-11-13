@@ -27,7 +27,7 @@ In a perturbative construction, `P` and its kernel `W` are often chosen once nea
 and then held fixed. Then `∂ᵥ P = 0`, so the second term of the derivative vanishes, and for a
 family of equations `L(σ) f + S(σ) = 0` the reduced section `σ ↦ Π_σ S(σ)` takes values in the
 fixed space `W`; its zeros are the parameters at which the equation is solvable
-(`ContinuousLinearMap.apply_add_eq_zero_iff`).
+(`ContinuousLinearMap.apply_add_eq_zero_iff_eq_neg_inverse_and_lyapunovSchmidtProj_eq_zero`).
 
 ## References
 
@@ -84,12 +84,9 @@ differentiable within `s` at `σ`, if `P(σ) L(σ)` is invertible. -/
 theorem DifferentiableWithinAt.lyapunovSchmidtProj (hL : DifferentiableWithinAt 𝕜 L s σ)
     (hP : DifferentiableWithinAt 𝕜 P s σ) (h : (P σ ∘L L σ).IsInvertible) :
     DifferentiableWithinAt 𝕜 (fun σ => (L σ).lyapunovSchmidtProj (P σ)) s σ := by
-  have hinv : DifferentiableAt 𝕜 (fun T : X →L[𝕜] Z => T.inverse) (P σ ∘L L σ) :=
-    (h.contDiffAt_map_inverse (n := 1)).differentiableAt one_ne_zero
-  have hA : DifferentiableWithinAt 𝕜 (fun σ => (P σ ∘L L σ).inverse) s σ :=
-    hinv.comp_differentiableWithinAt (f := fun σ => P σ ∘L L σ) σ (hP.clm_comp hL)
   simp only [lyapunovSchmidtProj_def]
-  exact (differentiableWithinAt_const _).sub (hL.clm_comp (hA.clm_comp hP))
+  exact (differentiableWithinAt_const _).sub
+    (hL.clm_comp (((hP.clm_comp hL).clm_inverse_of_completeSpace h).clm_comp hP))
 
 /-- The Lyapunov–Schmidt projections of families `L` and `P` differentiable at `σ` are
 differentiable at `σ`, if `P(σ) L(σ)` is invertible. -/

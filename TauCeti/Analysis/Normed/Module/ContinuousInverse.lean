@@ -47,8 +47,8 @@ This gives continuity of quotient-range coordinates for families of valid splitt
   where the family is eventually invertible, without completeness.
 * `Continuous.clm_inverse`: inversion is continuous along a continuous family
   of invertible operators between normed spaces, with no completeness assumption.
-* `ContinuousAt.eventually_isInvertible_clm_comp`: invertibility of a composite `P(σ) L(σ)` of
-  continuous families out of a Banach space persists near a point.
+* `ContinuousWithinAt.clm_inverse`: inversion preserves continuity within a set at an invertible
+  member of a family of operators out of a Banach space.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -136,15 +136,15 @@ theorem ContinuousAt.clm_inverse_of_eventually_isInvertible {X E F : Type*} [Top
     _ ≤ (2 * ‖g x₀‖) * (‖f y - f x₀‖ * ‖g x₀‖) := mul_le_mul_of_nonneg_right h2 hdc
     _ = 2 * ‖g x₀‖ ^ 2 * ‖f y - f x₀‖ := by ring
 
-/-- If `P(σ) L(σ)` is invertible and both families are continuous at `σ`, then `P(σ') L(σ')` is
-invertible for all `σ'` near `σ`, provided the domain of `L(σ)` is complete. -/
-theorem ContinuousAt.eventually_isInvertible_clm_comp {E X Y Z : Type*} [TopologicalSpace E]
-    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X] [SeminormedAddCommGroup Y]
-    [NormedSpace 𝕜 Y] [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z] {P : E → Y →L[𝕜] Z}
-    {L : E → X →L[𝕜] Y} {σ : E} (hP : ContinuousAt P σ) (hL : ContinuousAt L σ)
-    (h : (P σ ∘L L σ).IsInvertible) :
-    ∀ᶠ σ' in 𝓝 σ, (P σ' ∘L L σ').IsInvertible :=
-  (hP.clm_comp hL).eventually h.eventually_nhds
+/-- Inversion preserves continuity within a set at an invertible member of a family of operators
+out of a Banach space. -/
+theorem ContinuousWithinAt.clm_inverse {X E F : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : X → E →L[𝕜] F} {s : Set X} {x₀ : X} (hf : ContinuousWithinAt f s x₀)
+    (h : (f x₀).IsInvertible) :
+    ContinuousWithinAt (fun x => (f x).inverse) s x₀ :=
+  (continuousAt_id.clm_inverse_of_eventually_isInvertible h.eventually_nhds).comp_continuousWithinAt
+    hf
 
 /-- Inversion is continuous along a continuous family of invertible operators, without
 completeness of either space. -/

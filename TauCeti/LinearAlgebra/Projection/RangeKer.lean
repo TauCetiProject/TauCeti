@@ -92,15 +92,11 @@ include hA
 private theorem apply_apply_eq_of_comp_eq (x : X) : P (L x) = A x :=
   congr($hA x)
 
-/-- If `P ∘ L` is an equivalence, the range of `L` and the kernel of `P` are complementary. -/
-theorem isCompl_range_ker_of_comp_eq : IsCompl (range L) (ker P) :=
-  isCompl_range_ker_of_bijective_comp (by rw [hA]; exact A.bijective)
-
 /-- If `P ∘ L` is the equivalence `A`, then `L A⁻¹ P` is the projection onto the range of `L`
 along the kernel of `P`. -/
 theorem comp_comp_eq_projection :
     L ∘ₗ A.symm.toLinearMap ∘ₗ P =
-      (range L).projection (ker P) (isCompl_range_ker_of_comp_eq A hA) := by
+      (range L).projection (ker P) (isCompl_range_ker_of_bijective_comp (hA ▸ A.bijective)) := by
   ext y
   have hk : y - L (A.symm (P y)) ∈ ker P := by
     simp [mem_ker, apply_apply_eq_of_comp_eq A hA]
@@ -113,14 +109,16 @@ theorem comp_comp_eq_projection :
 `P` along the range of `L`. -/
 theorem id_sub_comp_comp_eq_projection :
     LinearMap.id - L ∘ₗ A.symm.toLinearMap ∘ₗ P =
-      (ker P).projection (range L) (isCompl_range_ker_of_comp_eq A hA).symm := by
+      (ker P).projection (range L)
+        (isCompl_range_ker_of_bijective_comp (hA ▸ A.bijective)).symm := by
   rw [comp_comp_eq_projection A hA]
   exact (projection_eq_id_sub_projection _).symm
 
 /-- If `P ∘ L` is the equivalence `A`, then `y - L A⁻¹ P y` vanishes exactly when `y` lies in the
 range of `L`. -/
 theorem sub_apply_symm_apply_eq_zero_iff {y : Y} : y - L (A.symm (P y)) = 0 ↔ y ∈ range L := by
-  rw [← projection_apply_eq_zero_iff (isCompl_range_ker_of_comp_eq A hA).symm,
+  rw [← projection_apply_eq_zero_iff
+      (isCompl_range_ker_of_bijective_comp (L := L) (P := P) (hA ▸ A.bijective)).symm,
     ← id_sub_comp_comp_eq_projection A hA]
   simp
 

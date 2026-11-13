@@ -18,8 +18,8 @@ parameter where `P(σ) L(σ)` is invertible and both families are continuous, th
 Lyapunov–Schmidt projections `Π_σ = id - L(σ) (P(σ) L(σ))⁻¹ P(σ)`
 (`ContinuousLinearMap.lyapunovSchmidtProj`) depend continuously on `σ`
 (`ContinuousAt.lyapunovSchmidtProj`, with `ContinuousWithinAt`, `ContinuousOn` and `Continuous`
-variants). Invertibility of `P(σ) L(σ)` itself persists near such a parameter
-(`ContinuousAt.eventually_isInvertible_clm_comp`).
+variants). Invertibility of `P(σ) L(σ)` itself persists near such a parameter, by
+`(hP.clm_comp hL).eventually h.eventually_nhds`.
 -/
 
 public section
@@ -37,12 +37,8 @@ continuous within `s` at `σ`, if `P(σ) L(σ)` is invertible. -/
 theorem ContinuousWithinAt.lyapunovSchmidtProj (hL : ContinuousWithinAt L s σ)
     (hP : ContinuousWithinAt P s σ) (h : (P σ ∘L L σ).IsInvertible) :
     ContinuousWithinAt (fun σ => (L σ).lyapunovSchmidtProj (P σ)) s σ := by
-  have hinv : ContinuousAt (fun T : X →L[𝕜] Z => T.inverse) (P σ ∘L L σ) :=
-    continuousAt_id.clm_inverse_of_eventually_isInvertible h.eventually_nhds
-  have hA : ContinuousWithinAt (fun σ => (P σ ∘L L σ).inverse) s σ :=
-    hinv.comp_continuousWithinAt (f := fun σ => P σ ∘L L σ) (hP.clm_comp hL)
   simp only [lyapunovSchmidtProj_def]
-  exact continuousWithinAt_const.sub (hL.clm_comp (hA.clm_comp hP))
+  exact continuousWithinAt_const.sub (hL.clm_comp (((hP.clm_comp hL).clm_inverse h).clm_comp hP))
 
 /-- The Lyapunov–Schmidt projections of families `L` and `P` continuous at `σ` are continuous at
 `σ`, if `P(σ) L(σ)` is invertible. -/

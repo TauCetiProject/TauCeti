@@ -22,9 +22,11 @@ topological complements (`ContinuousLinearMap.isTopCompl_range_ker_of_isInvertib
 `ContinuousLinearMap.lyapunovSchmidtProj_eq_projectionL`). It depends on `P` only through `W`
 (`ContinuousLinearMap.lyapunovSchmidtProj_eq_of_ker_eq`), and it reduces the linear equation
 `L f + S = 0` to an equation in `W`: the vector `f = -A⁻¹ P S` is the unique one with
-`L f + S ∈ W` (`ContinuousLinearMap.apply_add_mem_ker_iff`), for it `L f + S = Π S`
+`L f + S ∈ W` (`ContinuousLinearMap.apply_add_mem_ker_iff_eq_neg_inverse`), for it `L f + S = Π S`
 (`ContinuousLinearMap.apply_neg_inverse_apply_add`), and `L f + S = 0` exactly when moreover
-`Π S = 0` (`ContinuousLinearMap.apply_add_eq_zero_iff`), that is, when `S` lies in the range of `L`
+`Π S = 0`
+(`ContinuousLinearMap.apply_add_eq_zero_iff_eq_neg_inverse_and_lyapunovSchmidtProj_eq_zero`),
+that is, when `S` lies in the range of `L`
 (`ContinuousLinearMap.lyapunovSchmidtProj_apply_eq_zero_iff`). The algebra is
 `LinearMap.id_sub_comp_comp_eq_projection`.
 
@@ -43,7 +45,8 @@ idempotent (`ContinuousLinearMap.isIdempotentElem_lyapunovSchmidtProj`).
 * `ContinuousLinearMap.lyapunovSchmidtProj_eq_projectionL`: for invertible `P L`, `Π` is the
   continuous projection onto `ker P` along `range L`.
 * `ContinuousLinearMap.lyapunovSchmidtProj_eq_of_ker_eq`: `Π` depends on `P` only through `ker P`.
-* `ContinuousLinearMap.apply_add_eq_zero_iff`: the Lyapunov–Schmidt reduction of `L f + S = 0`.
+* `ContinuousLinearMap.apply_add_eq_zero_iff_eq_neg_inverse_and_lyapunovSchmidtProj_eq_zero`: the
+  Lyapunov–Schmidt reduction of `L f + S = 0`.
 
 ## References
 
@@ -62,6 +65,13 @@ variable {R X Y Z : Type*} [Ring R] [TopologicalSpace X] [AddCommGroup X] [Modul
   [TopologicalSpace Y] [AddCommGroup Y] [Module R Y] [TopologicalSpace Z] [AddCommGroup Z]
   [Module R Z] {L : X →L[R] Y} {P : Y →L[R] Z}
 
+/-- If `P L` is the continuous linear equivalence `A`, then the underlying linear maps compose to
+the linear equivalence underlying `A`. This transfers the algebra of
+`TauCeti/LinearAlgebra/Projection/RangeKer.lean` to continuous linear maps. -/
+private theorem toLinearMap_comp_eq_of_eq {A : X ≃L[R] Z} (hA : (A : X →L[R] Z) = P ∘L L) :
+    (P : Y →ₗ[R] Z) ∘ₗ (L : X →ₗ[R] Y) = A.toLinearEquiv :=
+  LinearMap.ext fun x => by simpa using congr($hA x).symm
+
 section Invertible
 
 variable (h : (P ∘L L).IsInvertible)
@@ -76,19 +86,23 @@ theorem isTopCompl_range_ker_of_isInvertible_comp : L.range.IsTopCompl P.ker := 
 
 /-- If `P L` is invertible, then `x = -(P L)⁻¹ P y` is the unique vector with `L x + y ∈ ker P`.
 -/
-theorem apply_add_mem_ker_iff {x : X} {y : Y} :
+theorem apply_add_mem_ker_iff_eq_neg_inverse {x : X} {y : Y} :
     L x + y ∈ P.ker ↔ x = -(P ∘L L).inverse (P y) := by
-  rw [LinearMap.mem_ker, map_add, add_eq_zero_iff_eq_neg, eq_comm, ← map_neg (P ∘L L).inverse,
-    eq_comm (a := x), h.inverse_apply_eq, comp_apply, coe_coe]
+  obtain ⟨A, hA⟩ := h
+  rw [← hA, inverse_equiv]
+  simpa using LinearMap.add_mem_ker_iff_eq_neg_symm _ (toLinearMap_comp_eq_of_eq hA)
 
 /-- The composite `(P L)⁻¹ P` depends on `P` only through its kernel: if `P L` and `P' L` are
 invertible and `ker P = ker P'`, then `(P L)⁻¹ P = (P' L)⁻¹ P'`. -/
 theorem inverse_comp_eq_of_ker_eq {Z' : Type*} [TopologicalSpace Z'] [AddCommGroup Z']
     [Module R Z'] {P' : Y →L[R] Z'} (h' : (P' ∘L L).IsInvertible) (hker : P.ker = P'.ker) :
     (P ∘L L).inverse ∘L P = (P' ∘L L).inverse ∘L P' := by
+  obtain ⟨A, hA⟩ := h
+  obtain ⟨A', hA'⟩ := h'
+  rw [← hA, ← hA', inverse_equiv, inverse_equiv]
   ext y
-  have hk : L (-(P ∘L L).inverse (P y)) + y ∈ P'.ker := hker ▸ (apply_add_mem_ker_iff h).2 rfl
-  simpa using (apply_add_mem_ker_iff h').1 hk
+  simpa using congr($(LinearMap.symm_comp_eq_of_ker_eq _ _ (toLinearMap_comp_eq_of_eq hA)
+    (toLinearMap_comp_eq_of_eq hA') hker) y)
 
 end Invertible
 
@@ -144,11 +158,9 @@ theorem lyapunovSchmidtProj_eq_projectionL :
     L.lyapunovSchmidtProj P =
       P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm := by
   obtain ⟨A, hA⟩ := h
-  have hA' : (P : Y →ₗ[R] Z) ∘ₗ (L : X →ₗ[R] Y) = A.toLinearEquiv := by
-    rw [← toLinearMap_comp, ← hA]
-    rfl
   refine coe_inj.mp ?_
-  rw [Submodule.toLinearMap_projectionL, ← LinearMap.id_sub_comp_comp_eq_projection _ hA']
+  rw [Submodule.toLinearMap_projectionL,
+    ← LinearMap.id_sub_comp_comp_eq_projection _ (toLinearMap_comp_eq_of_eq hA)]
   ext y
   simp [lyapunovSchmidtProj_apply, ← hA]
 
@@ -182,7 +194,9 @@ theorem lyapunovSchmidtProj_comp : L.lyapunovSchmidtProj P ∘L L = 0 :=
 in the range of `L`. -/
 theorem lyapunovSchmidtProj_apply_eq_zero_iff {y : Y} :
     L.lyapunovSchmidtProj P y = 0 ↔ y ∈ L.range := by
-  rw [lyapunovSchmidtProj_eq_projectionL h, Submodule.projectionL_apply_eq_zero_iff]
+  obtain ⟨A, hA⟩ := h
+  rw [lyapunovSchmidtProj_apply, ← hA, inverse_equiv]
+  simpa using LinearMap.sub_apply_symm_apply_eq_zero_iff _ (toLinearMap_comp_eq_of_eq hA)
 
 /-- If `P L` is invertible, the Lyapunov–Schmidt projection fixes `y` exactly when `y` lies in the
 kernel of `P`. -/
@@ -202,10 +216,10 @@ theorem ker_lyapunovSchmidtProj : (L.lyapunovSchmidtProj P).ker = L.range := by
 
 /-- **Lyapunov–Schmidt reduction.** If `P L` is invertible, then `L x + y = 0` exactly when
 `x = -(P L)⁻¹ P y` and the Lyapunov–Schmidt projection of `y` vanishes. -/
-theorem apply_add_eq_zero_iff {x : X} {y : Y} :
+theorem apply_add_eq_zero_iff_eq_neg_inverse_and_lyapunovSchmidtProj_eq_zero {x : X} {y : Y} :
     L x + y = 0 ↔ x = -(P ∘L L).inverse (P y) ∧ L.lyapunovSchmidtProj P y = 0 := by
   refine ⟨fun hxy => ?_, fun ⟨hx, hy⟩ => by rw [hx, apply_neg_inverse_apply_add, hy]⟩
-  have hx := (apply_add_mem_ker_iff h).1 (hxy ▸ P.ker.zero_mem)
+  have hx := (apply_add_mem_ker_iff_eq_neg_inverse h).1 (hxy ▸ P.ker.zero_mem)
   exact ⟨hx, by rw [← apply_neg_inverse_apply_add, ← hx, hxy]⟩
 
 /-- The Lyapunov–Schmidt projection depends on `P` only through its kernel: if `P L` and `P' L`
