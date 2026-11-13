@@ -57,8 +57,9 @@ Two facts make the notion usable, and both are proved here.
 
 * **Uniqueness.** Two weak derivatives of the same function in the same direction agree almost
   everywhere on `Ω` (`TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`). This
-  is the fundamental lemma of the calculus of variations, consumed from Mathlib in the form
-  `IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`.
+  is the fundamental lemma of the calculus of variations, consumed from Mathlib as the injectivity
+  of the embedding of locally integrable functions into distributions
+  (`Distribution.ofFun_injective`).
 * **Consistency.** For a Haar measure `μ`, a classical derivative that is locally integrable on
   `Ω` is a weak derivative (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`,
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`), by integration by parts. Differentiability alone
@@ -914,11 +915,8 @@ variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Meas
 /-- **A weak derivative is unique almost everywhere.** Two weak derivatives of `u` in the same
 direction on `Ω` agree almost everywhere on `Ω`.
 
-This is the injectivity of Mathlib's embedding of locally integrable functions into distributions
-(`Distribution.ofFun_injective`): both derivatives are locally integrable on `Ω` because that is
-part of `TauCeti.HasWeakLineDerivOn`, and they define the same distribution by the defining
-identity of the weak derivative. Completeness of `F`, which that embedding needs, comes from `h₁`
-for the same reason. -/
+Local integrability of the derivatives and completeness of `F` are not hypotheses, because
+`TauCeti.HasWeakLineDerivOn` carries them. -/
 theorem HasWeakLineDerivOn.ae_eq {u₁' u₂' : E → F} (h₁ : HasWeakLineDerivOn μ Ω u u₁' v)
     (h₂ : HasWeakLineDerivOn μ Ω u u₂' v) : u₁' =ᵐ[μ.restrict Ω] u₂' := by
   have := h₁.completeSpace
