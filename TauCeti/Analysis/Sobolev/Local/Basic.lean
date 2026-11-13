@@ -249,28 +249,24 @@ theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [Norme
   memLpLoc_iff.2 fun K hKU hK => (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p
     (memLpLoc_iff.1 hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
-/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
-applied to a locally `L^q` field is locally integrable on a locally closed set when
-`1/p + 1/q ≤ 1`. -/
-theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
-    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
-  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact MemLpLoc.locallyIntegrableOn
-    (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
-      (hw K hK hc))
-    (ENNReal.one_le_inv.2 hpq) hU
 
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally `Lʳ` when `1/p + 1/q ≤ 1/r`. -/
 theorem MemLpLoc.clm_apply {r : ENNReal} {A : ℂ → F →L[ℝ] G} {w : ℂ → F} (hA : MemLpLoc p U A)
     (hw : MemLpLoc q U w) (hpqr : p⁻¹ + q⁻¹ ≤ r⁻¹) : MemLpLoc r U (fun z => A z (w z)) := by
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  refine memLpLoc_iff.2 fun K hKU hK => ?_
-  have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
-  have hm := (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin (p⁻¹ + q⁻¹)⁻¹
-    (memLpLoc_iff.1 hA K hKU hK) (memLpLoc_iff.1 hw K hKU hK)
-  exact hm.mono_exponent (ENNReal.inv_le_inv.1 (by rwa [inv_inv]))
+  exact MemLpLoc.mono_exponent (p := (p⁻¹ + q⁻¹)⁻¹)
+    (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
+      (hw K hK hc))
+    (ENNReal.inv_le_inv.1 (by rwa [inv_inv]))
+
+/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
+applied to a locally `L^q` field is locally integrable on a locally closed set when
+`1/p + 1/q ≤ 1`. -/
+theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
+    (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
+    (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume :=
+  (hA.clm_apply hw (r := 1) (by rwa [inv_one])).locallyIntegrableOn le_rfl hU
 
 /-- A field of continuous linear maps continuous on `U`, applied to a locally `Lᵖ` field, is
 locally `Lᵖ`, since the continuous factor is bounded on every compact subset of `U`. -/
@@ -307,10 +303,7 @@ theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ
 `Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
 theorem MemLpLoc.clm_apply_continuousOn {A : ℂ → F →L[ℝ] G} (hA : MemLpLoc p U A)
     (hf : ContinuousOn f U) : MemLpLoc p U (fun z => A z (f z)) :=
-  memLpLoc_iff.2 fun K hK hc =>
-    (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
-      (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
-      (.of_forall fun z => by simpa using (A z).le_opNNNorm (f z))
+  hA.clm_apply (hf.memLpLoc (p := ⊤)) (by simp)
 
 /-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
 `Lᵖ` function on the whole plane: on a compact set `K` the product only sees

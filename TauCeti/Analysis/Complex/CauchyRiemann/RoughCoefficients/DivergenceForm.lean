@@ -10,10 +10,10 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
-import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # The weak Cauchy–Riemann equation in divergence form
@@ -34,22 +34,21 @@ Lemma B.4.6: for smooth data it follows by applying `∂_s - J ∂_t` to the equ
 For rough `J` the proof tests the weak equation against `ψ = ∂_s Φ - Jᵀ ∂_t Φ`. Its formal
 adjoint is `-Δ Φ` plus terms of order at most one in `Φ`, using `Jᵀ Jᵀ = -1`; the term
 `((∂_t J) J + J (∂_t J))ᵀ ∂_t Φ` vanishes because `(∂ J) J + J (∂ J) = 0` is the weak derivative
-of `J² = -1`. Since `ψ` is not smooth, `Jᵀ` is replaced by smooth approximations converging
-uniformly near the support of `Φ`, with derivatives converging in `Lᵖ`
-(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn`), and the identity passes
-to the limit.
+of `J² = -1` (`TauCeti.HasWeakFDerivOn.ae_deriv_comp_add_comp_deriv_eq_zero`). Since `ψ` is not
+smooth, `Jᵀ` is replaced by smooth approximations converging uniformly near the support of `Φ`,
+with derivatives converging in `Lᵖ`
+(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn`), and the identity passes to
+the limit.
 
 ## Main results
 
-* `TauCeti.HasWeakFDerivOn.ae_deriv_comp_add_comp_deriv_eq_zero`: if `J` is continuous with
-  `J² = -1` on `Ω` and has weak derivative `DJ`, then `DJ v ∘ J + J ∘ DJ v = 0` almost everywhere
-  on `Ω`, for every direction `v`.
 * `TauCeti.IsWeakCRSolution.integral_inner_laplacian_eq`: for every test function
   `Φ ∈ 𝓓(Ω, V)`, `∫ ⟪Δ Φ, ξ⟫ = -∫ (⟪∂_s Φ, f⟫ + ⟪∂_t Φ, g⟫)`.
 * `TauCeti.IsWeakCRSolution.integral_laplacian_smul_eq`: the same identity for real test
   functions `φ ∈ 𝓓(Ω, ℝ)`, `∫ Δ φ • ξ = -∫ (∂_s φ • f + ∂_t φ • g)`, in the form consumed by
   the divergence-form Laplace regularity
-  `TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`.
+  `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq` and by the `Lʳ_loc`-plus-harmonic
+  decomposition `TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_crDivergenceFst` and
   `TauCeti.IsSobolevCRCoefficients.memLpLoc_crDivergenceSnd`: if `ξ` is locally `L^q` and `η`
   is locally `Lʳ` with `1/p + 1/q ≤ 1/r`, then `f` and `g` are locally `Lʳ`; for `r = 1` these
@@ -57,7 +56,7 @@ to the limit.
   `TauCeti.IsSobolevCRCoefficients.locallyIntegrableOn_crDivergenceSnd`.
 
 For the standard structure `J = i` and `S = 0` on `V = ℂ`, the data are `f = η` and `g = -i η`
-(`TauCeti.crDivergenceFst_zero_zero`, `TauCeti.crDivergenceSnd_mul_I`).
+(`TauCeti.crDivergenceFst_zero_zero`, `TauCeti.crDivergenceSnd_mul_I_zero_zero`).
 
 ## References
 
@@ -113,66 +112,40 @@ theorem crDivergenceSnd_zero_zero :
   funext z
   simp [crDivergenceSnd]
 
-/-- For the zero solution `ξ = 0` the `s`-component is the right-hand side `η`. -/
+/-- For `ξ = 0` the `s`-component is the right-hand side `η`. -/
 @[simp]
-theorem crDivergenceFst_zero_solution : crDivergenceFst DJ S 0 η = η := by
+theorem crDivergenceFst_zero_left : crDivergenceFst DJ S 0 η = η := by
   funext z
   simp [crDivergenceFst]
 
-/-- For the zero solution `ξ = 0` the `t`-component is `-J η`. -/
+/-- For `ξ = 0` the `t`-component is `-J η`. -/
 @[simp]
-theorem crDivergenceSnd_zero_solution : crDivergenceSnd J DJ S 0 η = fun z => -J z (η z) := by
+theorem crDivergenceSnd_zero_left : crDivergenceSnd J DJ S 0 η = fun z => -J z (η z) := by
   funext z
   simp [crDivergenceSnd]
 
-/-- The `s`-component depends on `ξ` and `η` only up to almost-everywhere equality. -/
-theorem crDivergenceFst_congr_ae {μ : Measure ℂ} {ξ' η' : ℂ → V} (hξ : ξ =ᵐ[μ] ξ')
-    (hη : η =ᵐ[μ] η') : crDivergenceFst DJ S ξ η =ᵐ[μ] crDivergenceFst DJ S ξ' η' := by
-  filter_upwards [hξ, hη] with z h₁ h₂
-  simp only [crDivergenceFst_apply, h₁, h₂]
+/-- The `s`-component depends on its data only up to almost-everywhere equality. -/
+theorem crDivergenceFst_congr_ae {μ : Measure ℂ} {DJ' : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
+    {S' : ℂ → V →L[ℝ] V} {ξ' η' : ℂ → V} (hDJ : DJ =ᵐ[μ] DJ') (hS : S =ᵐ[μ] S')
+    (hξ : ξ =ᵐ[μ] ξ') (hη : η =ᵐ[μ] η') :
+    crDivergenceFst DJ S ξ η =ᵐ[μ] crDivergenceFst DJ' S' ξ' η' := by
+  filter_upwards [hDJ, hS, hξ, hη] with z h₁ h₂ h₃ h₄
+  simp only [crDivergenceFst_apply, h₁, h₂, h₃, h₄]
 
-/-- The `t`-component depends on `ξ` and `η` only up to almost-everywhere equality. -/
-theorem crDivergenceSnd_congr_ae {μ : Measure ℂ} {ξ' η' : ℂ → V} (hξ : ξ =ᵐ[μ] ξ')
-    (hη : η =ᵐ[μ] η') : crDivergenceSnd J DJ S ξ η =ᵐ[μ] crDivergenceSnd J DJ S ξ' η' := by
-  filter_upwards [hξ, hη] with z h₁ h₂
-  simp only [crDivergenceSnd_apply, h₁, h₂]
+/-- The `t`-component depends on its data only up to almost-everywhere equality. -/
+theorem crDivergenceSnd_congr_ae {μ : Measure ℂ} {J' S' : ℂ → V →L[ℝ] V}
+    {DJ' : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ' η' : ℂ → V} (hJ : J =ᵐ[μ] J') (hDJ : DJ =ᵐ[μ] DJ')
+    (hS : S =ᵐ[μ] S') (hξ : ξ =ᵐ[μ] ξ') (hη : η =ᵐ[μ] η') :
+    crDivergenceSnd J DJ S ξ η =ᵐ[μ] crDivergenceSnd J' DJ' S' ξ' η' := by
+  filter_upwards [hJ, hDJ, hS, hξ, hη] with z h₁ h₂ h₃ h₄ h₅
+  simp only [crDivergenceSnd_apply, h₁, h₂, h₃, h₄, h₅]
 
 /-- For the standard structure `J = i` on `ℂ` and `S = 0` the `t`-component is `-i η`. -/
-theorem crDivergenceSnd_mul_I {ξ η : ℂ → ℂ} :
+theorem crDivergenceSnd_mul_I_zero_zero {ξ η : ℂ → ℂ} :
     crDivergenceSnd (fun _ => ContinuousLinearMap.mul ℝ ℂ I) 0 0 ξ η = fun z => -(I * η z) := by
   simp
 
 end Data
-
-/-! ### The derivative of `J² = -1` -/
-
-/-- **The weak derivative of `J² = -1`.** If `J` is continuous on `Ω` with `J² = -1` there, and
-`DJ` is a weak derivative of `J` on `Ω`, then `DJ v ∘ J + J ∘ DJ v = 0` almost everywhere on `Ω`,
-for every direction `v`. -/
-theorem HasWeakFDerivOn.ae_deriv_comp_add_comp_deriv_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} [NormedSpace ℝ V]
-    {J : E → V →L[ℝ] V} {DJ : E → E →L[ℝ] V →L[ℝ] V} (hDJ : HasWeakFDerivOn μ Ω J DJ)
-    (hJc : ContinuousOn J Ω) (hJ : ∀ z ∈ Ω, J z ∘L J z = -1) :
-    ∀ᵐ z ∂μ.restrict Ω, ∀ v, DJ z v ∘L J z + J z ∘L DJ z v = 0 := by
-  have := hDJ.completeSpace
-  have hg : ∀ T : V →L[ℝ] V, HasFDerivAt (fun T : V →L[ℝ] V => T ∘L T)
-      ((ContinuousLinearMap.compL ℝ V V V T).comp (ContinuousLinearMap.id ℝ _) +
-        ((ContinuousLinearMap.compL ℝ V V V).flip T).comp (ContinuousLinearMap.id ℝ _)) T :=
-    fun T => (hasFDerivAt_id T).clm_comp (hasFDerivAt_id T)
-  have hL := hDJ.contDiff_comp hJc (g := fun T : V →L[ℝ] V => T ∘L T)
-    (contDiff_id.clm_comp contDiff_id)
-  have h0 : HasWeakFDerivOn μ Ω (fun z => J z ∘L J z) 0 := by
-    have hconst : HasWeakFDerivOn μ Ω (fun _ : E => (-1 : V →L[ℝ] V)) 0 :=
-      hasWeakFDerivOn_iff.2 fun v => by
-        simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (-1 : V →L[ℝ] V)
-    refine hconst.congr_ae ?_
-    filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with z hz
-    exact (hJ z hz).symm
-  filter_upwards [hL.ae_eq h0] with z hz v
-  have := congrArg (fun T : E →L[ℝ] V →L[ℝ] V => T v) hz
-  simp only [(hg _).fderiv] at this
-  simpa [add_comm] using this
 
 variable [InnerProductSpace ℝ V]
   {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
@@ -579,7 +552,8 @@ locally `W^{1,p}` and `Lᵖ` for a finite `p`, and `1/p + 1/q ≤ 1`. Then `ξ` 
 
 with `f = TauCeti.crDivergenceFst DJ S ξ η` and `g = TauCeti.crDivergenceSnd J DJ S ξ η`. This
 is the hypothesis of the divergence-form Laplace regularity
-`TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`. -/
+`TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq` and of the `Lʳ_loc`-plus-harmonic
+decomposition `TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`. -/
 theorem IsWeakCRSolution.integral_laplacian_smul_eq
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hp_top : p ≠ ⊤) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hJc : ContinuousOn J Ω)

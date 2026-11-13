@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Wkp.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Mollification
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Local smooth approximation in higher-order Sobolev spaces
@@ -25,15 +24,12 @@ then multiplies the smooth representative by a fixed test function equal to one 
 smaller domain. Interior derivative identities identify all its derivatives with mollified
 weak derivative fields.
 
-The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to zero
-(`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a map `A` continuous on `Ω` whose weak
-derivative is `Lᵖ` on compact subsets, they converge uniformly on every compact `K ⊆ Ω`, with
-derivatives converging in `Lᵖ(K)`
-(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn`). For a `W^{2,p}(Ω)` function
-with a continuous representative `ū`, a single mollification is then a smooth function close to `ū`
-uniformly on a given compact subset `K` of `Ω` and with Hessian close to the weak Hessian in `Lᵖ(K)`
-(`TauCeti.Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le`). This is how estimates
-for classical solutions of second-order equations pass to strong solutions.
+The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to
+zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a `W^{2,p}(Ω)` function with a continuous
+representative `ū`, a single mollification is then a smooth function close to `ū` uniformly on a
+given compact subset `K` of `Ω` and with Hessian close to the weak Hessian in `Lᵖ(K)`
+(`TauCeti.Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le`). This is how
+estimates for classical solutions of second-order equations pass to strong solutions.
 
 ## References
 
@@ -264,72 +260,6 @@ theorem _root_.TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ (hp : p
   have h := Wkp.restrictL_mem_closure_range_ofTestFunctionₗ hp hcompact hclosure 1 u
   simp only [Wkp.restrictL_one, Wkp.ofTestFunctionₗ_one] at h
   exact h
-
-/-- **Smooth approximation of a continuous Sobolev map near a compact set.** Let `A` be continuous
-on `Ω` with a weak derivative `DA` that is `Lᵖ` on every compact subset of `Ω`, `p < ∞`. For every
-compact `K ⊆ Ω` there are smooth maps `A' n` with `A' n → A` uniformly on `K` and
-`fderiv (A' n) → DA` in `Lᵖ(K)`. -/
-theorem _root_.TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (hp : p ≠ ∞) {A : E → F} {DA : E → E →L[ℝ] F}
-    (hA : HasWeakFDerivOn mu Omega A DA) (hAc : ContinuousOn A Omega)
-    (hDA : ∀ L, IsCompact L → L ⊆ Omega → MemLp DA p (mu.restrict L)) {K : Set E}
-    (hK : IsCompact K) (hKΩ : K ⊆ Omega) :
-    ∃ A' : ℕ → E → F, (∀ n, ContDiff ℝ (⊤ : ℕ∞) (A' n)) ∧ TendstoUniformlyOn A' A atTop K ∧
-      Tendsto (fun n => eLpNorm (fderiv ℝ (A' n) - DA) p (mu.restrict K)) atTop (𝓝 0) := by
-  have := hA.completeSpace
-  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Omega.isOpen hKΩ
-  let U : Opens E := ⟨W, hWo⟩
-  have hUΩ : U ≤ Omega := subset_closure.trans hWΩ
-  obtain ⟨δ, hδ, hKδ⟩ := hK.exists_cthickening_subset_open hWo hKW
-  have : IsFiniteMeasure (mu.restrict (U : Set E)) :=
-    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
-  have hAp : MemLp A p (mu.restrict (U : Set E)) :=
-    ((hAc.mono hWΩ).memLp_top_restrict_of_subset_isCompact hWc hWo.measurableSet
-      subset_closure).mono_exponent le_top
-  have hDAp : MemLp DA p (mu.restrict (U : Set E)) :=
-    (hDA _ hWc hWΩ).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-  let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨((n : ℝ) + 1)⁻¹ / 2, ((n : ℝ) + 1)⁻¹, by positivity, half_lt_self (by positivity)⟩
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := by
-    simpa only [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
-  set fA : Lp F p (mu.restrict (U : Set E)) := hAp.toLp A
-  set fD : Lp (E →L[ℝ] F) p (mu.restrict (U : Set E)) := hDAp.toLp DA
-  have hfA : (fA : E → F) =ᵐ[mu.restrict (U : Set E)] A := hAp.coeFn_toLp
-  have hfD : (fD : E → E →L[ℝ] F) =ᵐ[mu.restrict (U : Set E)] DA := hDAp.coeFn_toLp
-  have hball : ∀ᶠ n in atTop, ∀ x ∈ K, Metric.closedBall x (φ n).rOut ⊆ U := by
-    filter_upwards [(tendsto_order.1 hφ).2 δ hδ] with n hn x hx
-    exact (Metric.closedBall_subset_closedBall hn.le).trans
-      ((Metric.closedBall_subset_cthickening hx δ).trans hKδ)
-  refine ⟨fun n => smoothField (φ n) fA, fun n => contDiff_smoothField _ _, ?_, ?_⟩
-  · -- uniform convergence on `K`, from the uniform continuity of `A` near `K`
-    have hAu : UniformContinuousOn A (closure W) :=
-      hWc.uniformContinuousOn_of_continuous (hAc.mono hWΩ)
-    refine Metric.tendstoUniformlyOn_iff.2 fun ε hε => ?_
-    obtain ⟨δ', hδ', hu⟩ := Metric.uniformContinuousOn_iff_le.1 hAu (ε / 2) (half_pos hε)
-    filter_upwards [hball, (tendsto_order.1 hφ).2 δ' hδ'] with n hn hn' x hx
-    rw [dist_comm]
-    refine (dist_smoothField_le (φ n) hfA
-      (Metric.ball_subset_closedBall.trans (hn x hx)) fun y hy => ?_).trans_lt (half_lt_self hε)
-    have hyx : dist y x ≤ δ' := (Metric.mem_ball.1 hy).le.trans hn'.le
-    exact hu y (subset_closure (Metric.ball_subset_closedBall.trans (hn x hx) hy)) x
-      (subset_closure (hKW hx)) hyx
-  · -- convergence of the derivatives in `Lᵖ(K)`, from the `Lᵖ` approximate identity
-    have hA' : HasWeakFDerivOn mu U (fA : E → F) (fD : E → E →L[ℝ] F) :=
-      ((hA.mono hUΩ).congr_ae hfA.symm).congr_ae_deriv hfD.symm
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      (tendsto_eLpNorm_smoothField_sub hp hφ fD) (Eventually.of_forall fun _ => by simp) ?_
-    filter_upwards [hball] with n hn
-    have hae : fderiv ℝ (smoothField (φ n) fA) - DA =ᵐ[mu.restrict K]
-        smoothField (φ n) fD - (fD : E → E →L[ℝ] F) := by
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset hKW hfD,
-        ae_restrict_mem hK.measurableSet] with x hx hxK
-      simp only [Pi.sub_apply, hx]
-      congr 1
-      simpa only [smoothField_def, convolution_flip] using
-        hA'.fderiv_indicator_convolution_normed (Lp.memLp fA) (Lp.memLp fD) Fact.out Fact.out
-          (φ n) x (hn x hxK)
-    rw [eLpNorm_congr_ae hae]
-    exact eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)
 
 /-- **Smooth approximation of a `W^{2,p}` function on a compact set.** Let `u ∈ W^{2,p}(Ω)`,
 `p < ∞`, have a representative `ū` continuous on `Ω`, and let `K ⊆ Ω` be compact. For every
