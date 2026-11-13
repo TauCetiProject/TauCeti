@@ -111,7 +111,7 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
     ext t
     rw [mem_crossingTimes, mem_crossingTimes, hbp, hDP, hg.mem_set_image]
   exact gaussCode_eq_of_strictMonoOn b hs hπ b' hs' hπ' (φ := id) (strictMono_id.strictMonoOn _)
-    (by rw [hct, image_id]) (fun t _ ↦ hbp t) hg.injOn (fun x _ y _ ↦ (hfib x y).2)
+    (by rw [hct, image_id]) (fun t _ ↦ hbp t) (fun x _ y _ ↦ (hfib x y).2)
     (fun x _ y _ ↦ (hover x y).2) fun t _ t' _ _ ↦ hsign _ _
 
 /-! ### Affine maps -/
@@ -177,8 +177,8 @@ theorem gaussCode_eq_mirror_of_orientation_eq_neg (hs : poly.IsSimple ℝ)
   -- The partner visits do not depend on the basis.
   have hpartner (j) : D'.partner.val j = D.partner.val j := by
     simpa only [Fin.cast_eq_self, Equiv.refl_symm, Equiv.refl_apply] using
-      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (injOn_id _)
-        (fun _ hx ↦ doublePoints_subset_boundary hx) (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
+      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (g := id)
+        (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
         (fun _ ↦ by simp only [Fin.cast_eq_self, Equiv.refl_apply, id_eq]) j
   have hover (j) : D'.over j = D.over j := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner]
