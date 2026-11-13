@@ -62,12 +62,9 @@ theorem tendsto_add_inv_comp_inv {G : ℂ → ℂ} (p : ℂ)
   have hG0t : Tendsto G (𝓝 0) (𝓝 0) := by
     have := hGc.tendsto
     rwa [hG0] at this
-  have hinv : Tendsto (fun w : ℂ => w⁻¹) (cobounded ℂ) (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.mpr ⟨tendsto_inv₀_cobounded,
-      Filter.mem_of_superset (isBounded_def.mp (isBounded_closedBall (x := (0 : ℂ)) (r := 1)))
-        fun w hw => (bijOn_inv_compl_closedBall_one.mapsTo hw).2⟩
   exact (tendsto_const_add_cobounded p).comp (tendsto_inv₀_nhdsNE_zero.comp
-    (tendsto_nhdsWithin_iff.mpr ⟨hG0t.comp tendsto_inv₀_cobounded, hinv.eventually hne⟩))
+    (tendsto_nhdsWithin_iff.mpr ⟨hG0t.comp tendsto_inv₀_cobounded,
+      tendsto_inv₀_cobounded'.eventually hne⟩))
 
 /-- **Reading a Riemann map of an inverted set back.** Let `K` be a set whose punctured copy
 `K \ {0}` is the inversion `z ↦ (z - p)⁻¹` of a set `S`, and `G` a bijection of the closed unit disc
@@ -99,28 +96,17 @@ theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {K S : S
   have hιW {y : ℂ} (hy : y ∈ S) : (y - p)⁻¹ ∈ K \ {0} := by
     rw [hK]
     exact mem_image_of_mem _ hy
-  have hGinvW {y : ℂ} (hy : y ∈ S) :
-      Ginv (y - p)⁻¹ ∈ closedBall (0 : ℂ) 1 \ {0} ∧ G (Ginv (y - p)⁻¹) = (y - p)⁻¹ := by
-    have hs := hGcl.surjOn (hιW hy).1
-    refine ⟨⟨invFunOn_mem hs, fun h0' => (hιW hy).2 ?_⟩, invFunOn_eq hs⟩
-    have hGy := invFunOn_eq hs
-    rw [← hGinv, mem_singleton_iff.mp h0', hG0] at hGy
-    exact hGy.symm
   set k : ℂ → ℂ := fun y => (Ginv (y - p)⁻¹)⁻¹ with hk
-  have hkmaps : MapsTo k S (ball 0 1)ᶜ := fun y hy => by
-    obtain ⟨w, hw, hwe⟩ := hI1.surjOn (hGinvW hy).1
-    simp only [hk]
-    rwa [← hwe, inv_inv]
-  have hinvc : ContinuousOn (fun y : ℂ => (y - p)⁻¹) S :=
-    ContinuousOn.inv₀ (by fun_prop) fun y hy hyp => hp (by rwa [sub_eq_zero.mp hyp] at hy)
-  have hkc : ContinuousOn k S :=
-    (hGinvc.comp hinvc fun y hy => (hιW hy).1).inv₀ fun y hy => (hGinvW hy).1.2
   have hleft : LeftInvOn k h (ball 0 1)ᶜ := fun w hw => by
     simp only [hk, hh, add_sub_cancel_left, inv_inv]
     rw [hGinv, hGcl.injOn.leftInvOn_invFunOn (hI1.mapsTo hw).1, inv_inv]
-  have hright : RightInvOn k h S := fun y hy => by
-    simp only [hk, hh, inv_inv]
-    rw [(hGinvW hy).2, inv_inv, add_sub_cancel]
+  have hkmaps : MapsTo k S (ball 0 1)ᶜ := hleft.mapsTo hbij.surjOn
+  have hright : RightInvOn k h S := hbij.surjOn.leftInvOn_of_rightInvOn hleft
+  have hinvc : ContinuousOn (fun y : ℂ => (y - p)⁻¹) S :=
+    ContinuousOn.inv₀ (by fun_prop) fun y hy hyp => hp (by rwa [sub_eq_zero.mp hyp] at hy)
+  have hkc : ContinuousOn k S :=
+    (hGinvc.comp hinvc fun y hy => (hιW hy).1).inv₀ fun y hy h0 =>
+      hkmaps hy (by rw [Function.comp_apply] at h0; simp [hk, h0])
   exact ⟨hhc, ⟨⟨hbij.mapsTo.restrict h _ _, hkmaps.restrict k _ _, fun w => Subtype.ext (hleft w.2),
     fun y => Subtype.ext (hright y.2)⟩, hhc.mapsToRestrict hbij.mapsTo,
     hkc.mapsToRestrict hkmaps⟩, fun _ => rfl⟩
