@@ -24,12 +24,13 @@ almost surely for a random measure.
 * `MeasureTheory.measure_Iic_lt_top`
 * `MeasureTheory.measure_Ici_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
 -/
 
 public section
 
 open Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory
 
@@ -44,6 +45,20 @@ theorem Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top {α : Type*} [Linea
     exact ⟨Iic u, Iic_mem_nhds hu, hfin u⟩
   · exact ⟨Iic t, Filter.mem_of_superset Filter.univ_mem
       (fun u _ ↦ le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)), hfin t⟩
+
+/-- A measure on a linearly ordered space is locally finite if every closed final interval
+has finite mass and strict upper rays are open. -/
+theorem Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [ClosedIicTopology α] [MeasurableSpace α] (μ : Measure α)
+    (hfin : ∀ t : α, μ (Ici t) < ∞) : IsLocallyFiniteMeasure μ :=
+  μ.isLocallyFiniteMeasure_of_measure_Iic_lt_top (α := αᵒᵈ) hfin
+
+/-- Scaling a locally finite measure by a finite extended nonnegative scalar preserves
+local finiteness. -/
+instance isLocallyFiniteMeasureSMulCoeNNReal {α : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] (μ : Measure α) [IsLocallyFiniteMeasure μ] (c : ℝ≥0) :
+    IsLocallyFiniteMeasure ((c : ℝ≥0∞) • μ) :=
+  μ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
 
 variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
   {m : MeasurableSpace α} {μ : Measure α} [IsLocallyFiniteMeasure μ] {a : α}

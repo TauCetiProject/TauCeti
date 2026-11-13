@@ -12,19 +12,22 @@ public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
-# Splitting two-colour temporal Poisson measures
+# Splitting marked temporal Poisson measures
 
-For a Poisson random measure on `ℝ≥0 × Bool`, the two colour-count paths are independent
-for the whole product sigma-algebra, not just at individual observation times. With locally
-finite intensity, their sum agrees with the ground count simultaneously at every time.
-All counts retain multiplicities and count `(0,t]`, excluding the origin.
+Disjoint measurable mark families of a Poisson random measure on `ℝ≥0 × E` have independent
+count paths for the whole product sigma-algebra, not just at individual observation times.
+Finite intensity on each selected bounded window `Iic t ×ˢ A` gives monotonicity, independent
+increments, interval laws and simultaneous additivity for disjoint selections, without product
+structure. Singleton selections need only intensity finite on compact sets.
+Cumulative counts retain multiplicities and count `(0,t]`, excluding the origin; interval
+counts use `(s,t]`.
 
-Disjoint measurable mark families have mutually independent count paths. For product intensity
-`r dt ⊗ Q` with s-finite `Q`, any measurable mark set of finite mass has independent increments
-and Poisson increment laws of rate `r * Q A`. Bernoulli colour intensities give
-the rates `p*r` and `(1-p)*r`, including `p = 0, 1` and zero ground rate. These statements start
-from a coloured Poisson measure; they do not construct independent marks on a given uncoloured
-realization.
+For product intensity `ν.prod Q` with locally finite `ν`, finite-mass measurable mark selections
+have independent increments and simultaneous monotonicity and additivity. If `Q` is s-finite,
+their Poisson parameters are ground interval intensity times mark mass. Homogeneous intensity
+`r dt ⊗ Q` gives rate `r * Q A`. Bernoulli mark intensities give rates `p*r` and `(1-p)*r`,
+including `p = 0, 1` and zero ground rate. These statements start from a marked Poisson measure;
+they do not construct independent marks on a given uncoloured realization.
 
 The proofs consume the random-measure restriction, acceptance and count APIs. See G. Last
 and M. Penrose, *Lectures on the Poisson Process* (2018), Chapters 5 and 7.
@@ -76,15 +79,15 @@ all observation times simultaneously. No local finiteness is required. -/
 theorem ae_nat_count_prod_eq_zero {E : Type*} [MeasurableSpace E]
     {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
     (h : IsPoissonRandomMeasure P M Λ) {A : Set E} (hA : MeasurableSet A)
-    (hΛ : Λ (univ ×ˢ A) = 0) :
+    (hΛ : Λ (Ioi 0 ×ˢ A) = 0) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ = 0 := by
-  have hz : ∀ᵐ ω ∂P, M ω (univ ×ˢ A) = 0 := by
-    have hl := h.hasLaw (MeasurableSet.univ.prod hA) (by simp [hΛ])
+  have hz : ∀ᵐ ω ∂P, M ω (Ioi 0 ×ˢ A) = 0 := by
+    have hl := h.hasLaw (A := Ioi 0 ×ˢ A) (measurableSet_Ioi.prod hA) (by simp [hΛ])
     simp only [hΛ, ENNReal.toNNReal_zero, poissonMeasure_zero, Measure.map_dirac,
       Nat.cast_zero] at hl
     exact hl.ae_eq_of_dirac
   filter_upwards [hz] with ω hω t
-  rw [measure_mono_null (prod_mono (subset_univ _) Subset.rfl) hω]
+  rw [measure_mono_null (prod_mono Ioc_subset_Ioi_self Subset.rfl) hω]
   simp
 
 /-- Every coordinate of a measurable mark-selection count path is measurable, without
@@ -181,24 +184,24 @@ variable {M : Ω → Measure (ℝ≥0 × Bool)} {Λ : Measure (ℝ≥0 × Bool)}
 
 /-- The complete paths of the two colour counts are independent, even for intensities
 that are not product measures or locally finite. -/
-theorem indepFun_nat_count_colors (h : IsPoissonRandomMeasure P M Λ) :
+theorem indepFun_nat_count_prod_singleton_bool (h : IsPoissonRandomMeasure P M Λ) :
     IndepFun (fun ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ {true})).toNNReal⌋₊)
       (fun ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ {false})).toNNReal⌋₊) P := by
   exact h.indepFun_nat_count_prod (measurableSet_singleton true)
     (measurableSet_singleton false) (by simp)
 
 /-- Each coordinate of a colour count path is measurable, for arbitrary intensity. -/
-theorem measurable_nat_count_color {E : Type*} [MeasurableSpace E]
+theorem measurable_nat_count_prod_singleton {E : Type*} [MeasurableSpace E]
     [MeasurableSingletonClass E] {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
     (h : IsPoissonRandomMeasure P M Λ) (b : E) (t : ℝ≥0) :
     Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊) :=
   h.measurable_nat_count_prod (measurableSet_singleton b) t
 
-/-- Colour count paths are monotone on one full-measure event when the intensity is locally
-finite. -/
-theorem ae_monotone_nat_count_color {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+/-- A singleton-mark count path is monotone on a full-measure event when the intensity is
+finite on compact sets. -/
+theorem ae_monotone_nat_count_prod_singleton {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
     [MeasurableSingletonClass E] {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
-    [IsLocallyFiniteMeasure Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) :
+    [IsFiniteMeasureOnCompacts Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊) := by
   exact h.ae_monotone_nat_count_prod_of_measure_Iic_prod_lt_top (measurableSet_singleton b)
     (fun t ↦ by simpa only [Icc_bot] using
@@ -207,9 +210,9 @@ theorem ae_monotone_nat_count_color {E : Type*} [TopologicalSpace E] [Measurable
 
 /-- A colour count on a right-closed interval has Poisson law with its interval intensity,
 including empty intervals. -/
-theorem hasLaw_nat_count_color_Ioc {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+theorem hasLaw_nat_count_prod_singleton_Ioc {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
     [MeasurableSingletonClass E] {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
-    [IsLocallyFiniteMeasure Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) (s t : ℝ≥0) :
+    [IsFiniteMeasureOnCompacts Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) (s t : ℝ≥0) :
     HasLaw (fun ω ↦ ⌊(M ω (Ioc s t ×ˢ {b})).toNNReal⌋₊)
       (poissonMeasure (Λ (Ioc s t ×ˢ {b})).toNNReal) P := by
   exact h.hasLaw_nat_count_prod_Ioc_of_measure_Iic_prod_lt_top (measurableSet_singleton b)
@@ -219,7 +222,7 @@ theorem hasLaw_nat_count_color_Ioc {E : Type*} [TopologicalSpace E] [MeasurableS
 
 /-- The colour counts add to the ground count on a single full-measure event. This is a
 simultaneous identity in time, rather than a separate almost-sure statement for each time. -/
-theorem ae_nat_count_eq_add_colors [IsLocallyFiniteMeasure Λ]
+theorem ae_nat_count_prod_univ_eq_add_bool [IsFiniteMeasureOnCompacts Λ]
     (h : IsPoissonRandomMeasure P M Λ) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊(M ω (Ioc 0 t ×ˢ univ)).toNNReal⌋₊ =
@@ -237,22 +240,23 @@ theorem ae_nat_count_eq_add_colors [IsLocallyFiniteMeasure Λ]
       ((isCompact_Icc (a := (⊥ : ℝ≥0)) (b := t)).prod
         (isCompact_singleton (x := false))).measure_lt_top)
 
-/-- Colour counts have independent increments for any locally finite intensity, without
-requiring product structure or homogeneity. -/
-theorem hasIndepIncrements_nat_count_color {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
-    [MeasurableSingletonClass E] {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
-    [IsLocallyFiniteMeasure Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) :
+/-- Singleton-mark counts have independent increments for any intensity finite on compact
+sets, without requiring product structure or homogeneity. -/
+theorem hasIndepIncrements_nat_count_prod_singleton {E : Type*} [TopologicalSpace E]
+    [MeasurableSpace E] [MeasurableSingletonClass E]
+    {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
+    [IsFiniteMeasureOnCompacts Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E) :
     HasIndepIncrements (fun t ω ↦ ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊) P := by
   exact h.hasIndepIncrements_nat_count_prod_of_measure_Iic_prod_lt_top (measurableSet_singleton b)
     (fun t ↦ by simpa only [Icc_bot] using
       ((isCompact_Icc (a := (⊥ : ℝ≥0)) (b := t)).prod
         (isCompact_singleton (x := b))).measure_lt_top)
 
-/-- A colour-count increment has Poisson law with parameter equal to its interval intensity,
-for any locally finite intensity. -/
-theorem hasLaw_nat_count_color_sub {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
+/-- A singleton-mark count increment has Poisson law with parameter equal to its interval
+intensity, for any intensity finite on compact sets. -/
+theorem hasLaw_nat_count_prod_singleton_sub {E : Type*} [TopologicalSpace E] [MeasurableSpace E]
     [MeasurableSingletonClass E] {M : Ω → Measure (ℝ≥0 × E)} {Λ : Measure (ℝ≥0 × E)}
-    [IsLocallyFiniteMeasure Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E)
+    [IsFiniteMeasureOnCompacts Λ] (h : IsPoissonRandomMeasure P M Λ) (b : E)
     {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω ↦ ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊ -
       ⌊(M ω (Ioc 0 s ×ˢ {b})).toNNReal⌋₊)
@@ -263,15 +267,18 @@ theorem hasLaw_nat_count_color_sub {E : Type*} [TopologicalSpace E] [MeasurableS
         (isCompact_singleton (x := b))).measure_lt_top) hst
 
 /-- Selecting a finite-mass mark set preserves independent temporal count increments for an
-arbitrary locally finite ground intensity and s-finite mark measure. -/
+arbitrary locally finite ground intensity and any mark measure. -/
 theorem hasIndepIncrements_nat_count_prod {E : Type*} [MeasurableSpace E]
     {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} [IsLocallyFiniteMeasure ν]
-    {Q : Measure E} [SFinite Q] (h : IsPoissonRandomMeasure P M (ν.prod Q))
+    {Q : Measure E} (h : IsPoissonRandomMeasure P M (ν.prod Q))
     {A : Set E} (hA : MeasurableSet A) (hQA : Q A ≠ ∞ := by finiteness) :
     HasIndepIncrements (fun t ω ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊) P := by
   exact h.hasIndepIncrements_nat_count_prod_of_measure_Iic_prod_lt_top hA (fun t ↦ by
-    simpa only [Measure.prod_prod, Icc_bot] using
-      ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top)
+    by_cases hQ : SFinite Q
+    · let := hQ
+      simpa only [Measure.prod_prod, Icc_bot] using
+        ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top
+    · simp [Measure.prod_eq_zero_of_not_sfinite hQ])
 
 /-- For locally finite ground intensity, a finite-mass mark-count increment has Poisson law
 with parameter equal to the ground interval intensity times the mark mass. -/
@@ -288,16 +295,19 @@ theorem hasLaw_nat_count_prod_sub {E : Type*} [MeasurableSpace E]
       simpa only [Measure.prod_prod, Icc_bot] using
         ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top) hst
 
-/-- Finite-mass mark-selection paths are simultaneously monotone for locally finite ground
-intensity and s-finite mark measure. -/
+/-- A finite-mass mark-selection path is simultaneously monotone in time for locally finite
+ground intensity and any mark measure. -/
 theorem ae_monotone_nat_count_prod {E : Type*} [MeasurableSpace E]
     {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} [IsLocallyFiniteMeasure ν]
-    {Q : Measure E} [SFinite Q] (h : IsPoissonRandomMeasure P M (ν.prod Q))
+    {Q : Measure E} (h : IsPoissonRandomMeasure P M (ν.prod Q))
     {A : Set E} (hA : MeasurableSet A) (hQA : Q A ≠ ∞ := by finiteness) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊) := by
   exact h.ae_monotone_nat_count_prod_of_measure_Iic_prod_lt_top hA (fun t ↦ by
-    simpa only [Measure.prod_prod, Icc_bot] using
-      ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top)
+    by_cases hQ : SFinite Q
+    · let := hQ
+      simpa only [Measure.prod_prod, Icc_bot] using
+        ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top
+    · simp [Measure.prod_eq_zero_of_not_sfinite hQ])
 
 /-- A finite-mass selected interval count has Poisson parameter equal to the ground interval
 intensity times the mark mass, including empty intervals. -/
@@ -313,10 +323,10 @@ theorem hasLaw_nat_count_prod_Ioc {E : Type*} [MeasurableSpace E]
         ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := u)) hQA.lt_top) s t
 
 /-- Counts on two disjoint finite-mass mark sets add simultaneously at every time for
-locally finite ground intensity and s-finite mark measure. -/
+locally finite ground intensity and any mark measure. -/
 theorem ae_nat_count_prod_union_eq_add {E : Type*} [MeasurableSpace E]
     {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} [IsLocallyFiniteMeasure ν]
-    {Q : Measure E} [SFinite Q] (h : IsPoissonRandomMeasure P M (ν.prod Q))
+    {Q : Measure E} (h : IsPoissonRandomMeasure P M (ν.prod Q))
     {A B : Set E} (hA : MeasurableSet A) (hB : MeasurableSet B) (hd : Disjoint A B)
     (hQA : Q A ≠ ∞ := by finiteness) (hQB : Q B ≠ ∞ := by finiteness) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
@@ -324,11 +334,17 @@ theorem ae_nat_count_prod_union_eq_add {E : Type*} [MeasurableSpace E]
         ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ + ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ := by
   exact h.ae_nat_count_prod_union_eq_add_of_measure_Iic_prod_lt_top hA hB hd
     (fun t ↦ by
-      simpa only [Measure.prod_prod, Icc_bot] using
-        ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top)
+      by_cases hQ : SFinite Q
+      · let := hQ
+        simpa only [Measure.prod_prod, Icc_bot] using
+          ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQA.lt_top
+      · simp [Measure.prod_eq_zero_of_not_sfinite hQ])
     (fun t ↦ by
-      simpa only [Measure.prod_prod, Icc_bot] using
-        ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQB.lt_top)
+      by_cases hQ : SFinite Q
+      · let := hQ
+        simpa only [Measure.prod_prod, Icc_bot] using
+          ENNReal.mul_lt_top (measure_Icc_lt_top (μ := ν) (a := ⊥) (b := t)) hQB.lt_top
+      · simp [Measure.prod_eq_zero_of_not_sfinite hQ])
 
 /-- Under homogeneous product intensity, a selected interval count has parameter
 `r * Q A` times elapsed time, including zero rates and empty intervals. -/
@@ -354,24 +370,34 @@ theorem hasLaw_nat_count_prod_sub_smul_nnvolume {E : Type*} [MeasurableSpace E]
   simpa only [Measure.map_fst_restrict_univ_prod_apply _ _ measurableSet_Ioc] using
     (h.acceptance_univ_prod_smul hA hQA).hasLaw_nat_count_sub_smul_nnvolume hst
 
-/-- A zero-rate mark selection is the identically zero count path on a single event of full
-probability. This covers zero ground rate and zero mark mass. -/
-theorem ae_nat_count_prod_eq_zero_of_smul_prod_of_mul_eq_zero {E : Type*} [MeasurableSpace E]
-    {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} {Q : Measure E} {r : ℝ≥0}
-    (h : IsPoissonRandomMeasure P M (((r : ℝ≥0∞) • ν).prod Q))
-    {A : Set E} (hA : MeasurableSet A) (hzero : (r : ℝ≥0∞) * Q A = 0) :
+/-- A product-intensity selection with zero mass on positive times has identically zero
+count path on a single full-measure event, without finiteness assumptions. -/
+theorem ae_nat_count_prod_eq_zero_of_mul_eq_zero {E : Type*} [MeasurableSpace E]
+    {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} {Q : Measure E}
+    (h : IsPoissonRandomMeasure P M (ν.prod Q))
+    {A : Set E} (hA : MeasurableSet A) (hzero : ν (Ioi 0) * Q A = 0) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ = 0 := by
   apply h.ae_nat_count_prod_eq_zero hA
   by_cases hQ : SFinite Q
   · let := hQ
-    rw [Measure.prod_prod, smul_apply, smul_eq_mul, mul_right_comm, hzero, zero_mul]
+    simpa only [Measure.prod_prod] using hzero
   · simp [Measure.prod_eq_zero_of_not_sfinite hQ]
+
+/-- A zero-rate mark selection is the identically zero count path on a single event of full
+probability. This covers zero ground scale and zero mark mass, including infinite scales. -/
+theorem ae_nat_count_prod_eq_zero_of_smul_prod_of_mul_eq_zero {E : Type*} [MeasurableSpace E]
+    {M : Ω → Measure (ℝ≥0 × E)} {ν : Measure ℝ≥0} {Q : Measure E} {r : ℝ≥0∞}
+    (h : IsPoissonRandomMeasure P M ((r • ν).prod Q))
+    {A : Set E} (hA : MeasurableSet A) (hzero : r * Q A = 0) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ A)).toNNReal⌋₊ = 0 := by
+  apply h.ae_nat_count_prod_eq_zero_of_mul_eq_zero hA
+  rw [smul_apply, smul_eq_mul, mul_right_comm, hzero, zero_mul]
 
 variable {r : ℝ≥0}
 
 /-- Bernoulli colour interval counts have parameters `r*p` and `r*(1-p)` times elapsed
 time, including endpoint parameters, zero ground rate, and empty intervals. -/
-theorem hasLaw_nat_count_color_Ioc_of_bernoulliMeasure {p : unitInterval}
+theorem hasLaw_nat_count_prod_singleton_Ioc_of_bernoulliMeasure {p : unitInterval}
     (h : IsPoissonRandomMeasure P M
       (((r : ℝ≥0∞) • nnvolume).prod (bernoulliMeasure true false p)))
     (b : Bool) (s t : ℝ≥0) :
@@ -384,7 +410,7 @@ theorem hasLaw_nat_count_color_Ioc_of_bernoulliMeasure {p : unitInterval}
 
 /-- Bernoulli colour intensities split the temporal rate into `r*p` and `r*(1-p)`.
 The endpoint parameters produce a zero-rate colour, without any positive-rate assumption. -/
-theorem hasLaw_nat_count_color_sub_of_bernoulliMeasure
+theorem hasLaw_nat_count_prod_singleton_sub_of_bernoulliMeasure
     {p : unitInterval}
     (h : IsPoissonRandomMeasure P M
       (((r : ℝ≥0∞) • nnvolume).prod (bernoulliMeasure true false p)))
