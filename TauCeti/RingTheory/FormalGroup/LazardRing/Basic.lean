@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -67,8 +68,6 @@ classifying a commutative formal group law over `A` is graded exactly when the c
 
 ## Main results
 
-* `FormalGroup.coeff_single_zero`, `FormalGroup.coeff_single_one`: the coefficients of `Xⁿ` and
-  `Yⁿ` in a formal group law are `1` for `n = 1` and `0` otherwise.
 * `TauCeti.coeff_lazardSeries_eq`: the coefficient of an arbitrary monomial in
   `X + Y + ∑ aᵢⱼ Xⁱ Yʲ`.
 * `TauCeti.lazardSeries_coeff_toPowerSeries`: every formal group law is the series
@@ -97,24 +96,6 @@ public section
 noncomputable section
 
 open MvPowerSeries Finsupp
-
-namespace FormalGroup
-
-variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-/-- The coefficient of `Xⁿ` in a formal group law `F(X, Y)`: since `F(X, 0) = X`, it is `1` for
-`n = 1` and `0` otherwise. -/
-theorem coeff_single_zero (n : ℕ) :
-    coeff (single 0 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  rw [← coeff_subst_X_zero, ← Xzero, Xzero_eq_X, PowerSeries.coeff_X]
-
-/-- The coefficient of `Yⁿ` in a formal group law `F(X, Y)`: since `F(0, Y) = Y`, it is `1` for
-`n = 1` and `0` otherwise. -/
-theorem coeff_single_one (n : ℕ) :
-    coeff (single 1 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  rw [← coeff_subst_zero_X, ← zeroX, zeroX_eq_X, PowerSeries.coeff_X]
-
-end FormalGroup
 
 namespace TauCeti
 
