@@ -68,9 +68,8 @@ Ginzburg differential vanish on the adjoined loops.
 
 public section
 
-namespace TauCeti
-
-namespace PathAlgebra
+open TauCeti (commutatorSubmodule commutatorSubmodule_le_ker_iff cyclicQuotient pathAlgebra)
+open TauCeti.PathAlgebra
 
 universe u v w
 
@@ -84,7 +83,7 @@ path `u`, of `ofPath v * y * ofPath u * e_j`. The cyclic derivative of a path `p
 value at the vertex idempotent `y = e_s`; the general `y` is the accumulator of the recursion
 along the last arrow of `p`. -/
 private noncomputable def cyclicDerivativePath {i j : Q} (a : i ⟶ j) :
-    ∀ {s t : Q}, _root_.Quiver.Path s t → pathAlgebra k Q → pathAlgebra k Q
+    ∀ {s t : Q}, Quiver.Path s t → pathAlgebra k Q → pathAlgebra k Q
   | _, _, .nil, _ => 0
   | _, _, .cons p e, y =>
       (if (⟨_, _, e⟩ : Σ x z : Q, x ⟶ z) = ⟨i, j, a⟩ then
@@ -94,11 +93,11 @@ private noncomputable def cyclicDerivativePath {i j : Q} (a : i ⟶ j) :
 variable {i j : Q} (a : i ⟶ j)
 
 private theorem cyclicDerivativePath_nil (s : Q) (y : pathAlgebra k Q) :
-    cyclicDerivativePath k a (.nil : _root_.Quiver.Path s s) y = 0 := by
+    cyclicDerivativePath k a (.nil : Quiver.Path s s) y = 0 := by
   simp [cyclicDerivativePath]
 
 open scoped Classical in
-private theorem cyclicDerivativePath_cons {s m t : Q} (p : _root_.Quiver.Path s m) (e : m ⟶ t)
+private theorem cyclicDerivativePath_cons {s m t : Q} (p : Quiver.Path s m) (e : m ⟶ t)
     (y : pathAlgebra k Q) :
     cyclicDerivativePath k a (p.cons e) y =
       (if (⟨m, t, e⟩ : Σ x z : Q, x ⟶ z) = ⟨i, j, a⟩ then
@@ -107,7 +106,7 @@ private theorem cyclicDerivativePath_cons {s m t : Q} (p : _root_.Quiver.Path s 
   rw [cyclicDerivativePath]
 
 /-- The recursion lands in the left corner of the tail `i` of `a`. -/
-private theorem vertexIdempotent_mul_cyclicDerivativePath {s t : Q} (p : _root_.Quiver.Path s t)
+private theorem vertexIdempotent_mul_cyclicDerivativePath {s t : Q} (p : Quiver.Path s t)
     (y : pathAlgebra k Q) :
     vertexIdempotent k i * cyclicDerivativePath k a p y = cyclicDerivativePath k a p y := by
   induction p generalizing y with
@@ -120,7 +119,7 @@ private theorem vertexIdempotent_mul_cyclicDerivativePath {s t : Q} (p : _root_.
       · rw [mul_zero]
 
 /-- The recursion lands in the right corner of the head `j` of `a`. -/
-private theorem cyclicDerivativePath_mul_vertexIdempotent {s t : Q} (p : _root_.Quiver.Path s t)
+private theorem cyclicDerivativePath_mul_vertexIdempotent {s t : Q} (p : Quiver.Path s t)
     (y : pathAlgebra k Q) :
     cyclicDerivativePath k a p y * vertexIdempotent k j = cyclicDerivativePath k a p y := by
   induction p generalizing y with
@@ -133,7 +132,7 @@ private theorem cyclicDerivativePath_mul_vertexIdempotent {s t : Q} (p : _root_.
 
 /-- The accumulator may be restricted to the corner of the target of the path. -/
 private theorem cyclicDerivativePath_mul_vertexIdempotent_right {s t : Q}
-    (p : _root_.Quiver.Path s t) (y : pathAlgebra k Q) :
+    (p : Quiver.Path s t) (y : pathAlgebra k Q) :
     cyclicDerivativePath k a p (y * vertexIdempotent k t) = cyclicDerivativePath k a p y := by
   cases p with
   | nil => rw [cyclicDerivativePath_nil, cyclicDerivativePath_nil]
@@ -146,7 +145,7 @@ private theorem cyclicDerivativePath_mul_vertexIdempotent_right {s t : Q}
         simp only [mul_assoc, vertexIdempotent_mul_self]
       · rfl
 
-private theorem cyclicDerivativePath_zero {s t : Q} (p : _root_.Quiver.Path s t) :
+private theorem cyclicDerivativePath_zero {s t : Q} (p : Quiver.Path s t) :
     cyclicDerivativePath k a p 0 = 0 := by
   induction p with
   | nil => rw [cyclicDerivativePath_nil]
@@ -156,45 +155,44 @@ private theorem cyclicDerivativePath_zero {s t : Q} (p : _root_.Quiver.Path s t)
 /-- **Concatenation.** An occurrence of `a` in `p` followed by `q` lies either in `q`, where the
 part `p` before it is carried along with the accumulator, or in `p`, where the part `q` after it
 is. -/
-private theorem cyclicDerivativePath_comp {s t r : Q} (p : _root_.Quiver.Path s t)
-    (q : _root_.Quiver.Path t r) (y : pathAlgebra k Q) :
+private theorem cyclicDerivativePath_comp {s t r : Q} (p : Quiver.Path s t)
+    (q : Quiver.Path t r) (y : pathAlgebra k Q) :
     cyclicDerivativePath k a (p.comp q) y =
       cyclicDerivativePath k a q (ofPath ⟨s, t, p⟩ * y) +
         cyclicDerivativePath k a p (y * ofPath ⟨t, r, q⟩) := by
   induction q generalizing y with
   | nil =>
-      rw [_root_.Quiver.Path.comp_nil, cyclicDerivativePath_nil, zero_add,
+      rw [Quiver.Path.comp_nil, cyclicDerivativePath_nil, zero_add,
         ← vertexIdempotent_eq_ofPath, cyclicDerivativePath_mul_vertexIdempotent_right]
   | cons q e ih =>
-      rw [_root_.Quiver.Path.comp_cons, cyclicDerivativePath_cons, cyclicDerivativePath_cons, ih,
+      rw [Quiver.Path.comp_cons, cyclicDerivativePath_cons, cyclicDerivativePath_cons, ih,
         ← ofPath_mul_ofPath_of_comp, ← ofArrow_mul_ofPath]
       simp only [mul_assoc, add_assoc]
 
 /-- A path has only finitely many decompositions as a path `v`, then `a`, then a path `u`: such a
 decomposition is determined by the length of `v`. -/
-private theorem finite_setOf_comp_toPath_comp_eq {s t : Q} (p : _root_.Quiver.Path s t) :
-    {d : _root_.Quiver.Path s i × _root_.Quiver.Path j t |
+private theorem finite_setOf_comp_toPath_comp_eq {s t : Q} (p : Quiver.Path s t) :
+    {d : Quiver.Path s i × Quiver.Path j t |
       d.1.comp (a.toPath.comp d.2) = p}.Finite := by
   refine Set.Finite.of_finite_image (f := fun d => d.1.length)
     ((Set.finite_Iic p.length).subset ?_) ?_
   · rintro _ ⟨d, rfl, rfl⟩
-    simp [_root_.Quiver.Path.length_comp]
+    simp [Quiver.Path.length_comp]
   · rintro ⟨v, u⟩ hd ⟨v', u'⟩ hd' hl
     -- Unfold the decomposition-set memberships to expose the path equalities required for
     -- dependent cancellation.
     change v.comp (a.toPath.comp u) = p at hd
     change v'.comp (a.toPath.comp u') = p at hd'
-    obtain ⟨rfl, h⟩ := (_root_.Quiver.Path.comp_inj' hl).1
-      (hd.trans hd'.symm)
-    rw [_root_.Quiver.Path.comp_inj_right.1 h]
+    obtain ⟨rfl, h⟩ := (Quiver.Path.comp_inj' hl).1 (hd.trans hd'.symm)
+    rw [Quiver.Path.comp_inj_right.1 h]
 
 /-- The decompositions of `p.cons e` as a path `v`, then `a`, then a nonempty path are those of
 `p`, with `e` appended to the path after `a`. -/
-private theorem setOf_comp_toPath_comp_eq_cons_diff {s m t : Q} (p : _root_.Quiver.Path s m)
+private theorem setOf_comp_toPath_comp_eq_cons_diff {s m t : Q} (p : Quiver.Path s m)
     (e : m ⟶ t) :
-    {d : _root_.Quiver.Path s i × _root_.Quiver.Path j t |
+    {d : Quiver.Path s i × Quiver.Path j t |
         d.1.comp (a.toPath.comp d.2) = p.cons e} \ {d | d.2.length = 0} =
-      (fun d => (d.1, d.2.cons e)) '' {d : _root_.Quiver.Path s i × _root_.Quiver.Path j m |
+      (fun d => (d.1, d.2.cons e)) '' {d : Quiver.Path s i × Quiver.Path j m |
         d.1.comp (a.toPath.comp d.2) = p} := by
   ext ⟨v, u⟩
   constructor
@@ -205,10 +203,10 @@ private theorem setOf_comp_toPath_comp_eq_cons_diff {s m t : Q} (p : _root_.Quiv
     | nil => exact absurd rfl hu
     | cons u e' =>
         have hd' : (v.comp (a.toPath.comp u)).cons e' = p.cons e := by
-          simpa only [_root_.Quiver.Path.comp_cons] using hd
-        obtain rfl := _root_.Quiver.Path.obj_eq_of_cons_eq_cons hd'
-        obtain rfl := eq_of_heq (_root_.Quiver.Path.heq_of_cons_eq_cons hd')
-        obtain rfl := eq_of_heq (_root_.Quiver.Path.hom_heq_of_cons_eq_cons hd')
+          simpa only [Quiver.Path.comp_cons] using hd
+        obtain rfl := Quiver.Path.obj_eq_of_cons_eq_cons hd'
+        obtain rfl := eq_of_heq (Quiver.Path.heq_of_cons_eq_cons hd')
+        obtain rfl := eq_of_heq (Quiver.Path.hom_heq_of_cons_eq_cons hd')
         exact ⟨(v, u), rfl, rfl⟩
   · rintro ⟨⟨v', u'⟩, hd, h⟩
     -- Again, the image source is a decomposition set; unfold its membership before appending `e`
@@ -218,23 +216,23 @@ private theorem setOf_comp_toPath_comp_eq_cons_diff {s m t : Q} (p : _root_.Quiv
     refine ⟨?_, by simp⟩
     -- The target decomposition equality is the result of appending `e` to the source one.
     change v'.comp (a.toPath.comp (u'.cons e)) = p.cons e
-    simpa only [_root_.Quiver.Path.comp_cons] using congrArg (fun q => q.cons e) hd
+    simpa only [Quiver.Path.comp_cons] using congrArg (fun q => q.cons e) hd
 
 open scoped Classical in
 /-- The decomposition of `p.cons e` as a path `v`, then `a`, then the empty path exists exactly when
 `e` is `a`, and then `v = p`. -/
 private theorem finsum_mem_setOf_comp_toPath_comp_eq_cons_inter {s m t : Q}
-    (p : _root_.Quiver.Path s m) (e : m ⟶ t) (y : pathAlgebra k Q) :
-    ∑ᶠ d ∈ {d : _root_.Quiver.Path s i × _root_.Quiver.Path j t |
+    (p : Quiver.Path s m) (e : m ⟶ t) (y : pathAlgebra k Q) :
+    ∑ᶠ d ∈ {d : Quiver.Path s i × Quiver.Path j t |
         d.1.comp (a.toPath.comp d.2) = p.cons e} ∩ {d | d.2.length = 0},
         ofPath ⟨s, i, d.1⟩ * y * ofPath ⟨j, t, d.2⟩ =
       if (⟨m, t, e⟩ : Σ x z : Q, x ⟶ z) = ⟨i, j, a⟩ then
         ofPath ⟨s, m, p⟩ * y * vertexIdempotent k j else 0 := by
   split_ifs with h
   · cases h
-    have hsingle : {d : _root_.Quiver.Path s i × _root_.Quiver.Path j j |
+    have hsingle : {d : Quiver.Path s i × Quiver.Path j j |
           d.1.comp (a.toPath.comp d.2) = p.cons a} ∩ {d | d.2.length = 0} =
-        {(p, _root_.Quiver.Path.nil)} := by
+        {(p, Quiver.Path.nil)} := by
       ext ⟨v, u⟩
       constructor
       · rintro ⟨hd, hu⟩
@@ -244,9 +242,9 @@ private theorem finsum_mem_setOf_comp_toPath_comp_eq_cons_inter {s m t : Q}
         cases u with
         | nil =>
             have hd' : v.cons a = p.cons a := by
-              simpa only [Quiver.Hom.toPath, _root_.Quiver.Path.comp_cons,
-                _root_.Quiver.Path.comp_nil] using hd
-            rw [eq_of_heq (_root_.Quiver.Path.heq_of_cons_eq_cons hd')]
+              simpa only [Quiver.Hom.toPath, Quiver.Path.comp_cons,
+                Quiver.Path.comp_nil] using hd
+            rw [eq_of_heq (Quiver.Path.heq_of_cons_eq_cons hd')]
             rfl
         | cons u e' => simp at hu
       · intro h
@@ -259,30 +257,29 @@ private theorem finsum_mem_setOf_comp_toPath_comp_eq_cons_inter {s m t : Q}
     cases u with
     | nil =>
         have hd : v.cons a = p.cons e := by
-          simpa only [Set.mem_ofPred_eq, Quiver.Hom.toPath, _root_.Quiver.Path.comp_cons,
-            _root_.Quiver.Path.comp_nil] using hd
-        obtain rfl := _root_.Quiver.Path.obj_eq_of_cons_eq_cons hd
-        obtain rfl := eq_of_heq (_root_.Quiver.Path.hom_heq_of_cons_eq_cons hd)
+          simpa only [Set.mem_ofPred_eq, Quiver.Hom.toPath, Quiver.Path.comp_cons,
+            Quiver.Path.comp_nil] using hd
+        obtain rfl := Quiver.Path.obj_eq_of_cons_eq_cons hd
+        obtain rfl := eq_of_heq (Quiver.Path.hom_heq_of_cons_eq_cons hd)
         exact h rfl
     | cons u e' => simp at hu
 
 /-- The recursion sums `ofPath v * y * ofPath u` over the decompositions of `p` as a path `v`, then
 `a`, then a path `u`. -/
-private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path s t)
+private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : Quiver.Path s t)
     (y : pathAlgebra k Q) :
     cyclicDerivativePath k a p y =
-      ∑ᶠ d ∈ {d : _root_.Quiver.Path s i × _root_.Quiver.Path j t |
+      ∑ᶠ d ∈ {d : Quiver.Path s i × Quiver.Path j t |
         d.1.comp (a.toPath.comp d.2) = p}, ofPath ⟨s, i, d.1⟩ * y * ofPath ⟨j, t, d.2⟩ := by
   induction p generalizing y with
   | nil =>
-      have hempty : {d : _root_.Quiver.Path s i × _root_.Quiver.Path j s |
+      have hempty : {d : Quiver.Path s i × Quiver.Path j s |
           d.1.comp (a.toPath.comp d.2) = .nil} = ∅ :=
         Set.eq_empty_of_forall_notMem fun d hd => by
           -- Membership in the decomposition set is precisely this path equality, whose lengths
           -- contradict the empty path.
           change d.1.comp (a.toPath.comp d.2) = .nil at hd
-          simpa [_root_.Quiver.Path.length_comp] using
-            congrArg _root_.Quiver.Path.length hd
+          simpa [Quiver.Path.length_comp] using congrArg Quiver.Path.length hd
       rw [cyclicDerivativePath_nil, hempty, finsum_mem_empty]
   | @cons m t p e ih =>
       -- The decompositions of `p.cons e` with `u` nonempty are those of `p` followed by `e`; the
@@ -290,12 +287,12 @@ private theorem cyclicDerivativePath_eq_finsum {s t : Q} (p : _root_.Quiver.Path
       rw [cyclicDerivativePath_cons, ih, ← finsum_mem_inter_add_sdiff {d | d.2.length = 0}
         (finite_setOf_comp_toPath_comp_eq a (p.cons e)),
         finsum_mem_setOf_comp_toPath_comp_eq_cons_inter, setOf_comp_toPath_comp_eq_cons_diff]
-      have hinj : Set.InjOn (fun d : _root_.Quiver.Path s i × _root_.Quiver.Path j m =>
+      have hinj : Set.InjOn (fun d : Quiver.Path s i × Quiver.Path j m =>
           (d.1, d.2.cons e)) {d | d.1.comp (a.toPath.comp d.2) = p} := by
         rintro ⟨v, u⟩ - ⟨v', u'⟩ - h
         simp only [Prod.mk.injEq] at h
         obtain ⟨rfl, h⟩ := h
-        rw [eq_of_heq (_root_.Quiver.Path.heq_of_cons_eq_cons h)]
+        rw [eq_of_heq (Quiver.Path.heq_of_cons_eq_cons h)]
       rw [finsum_mem_image hinj]
       refine congrArg _ (finsum_mem_congr rfl fun d _ => ?_)
       rw [← ofArrow_mul_ofPath, mul_assoc, mul_assoc, mul_assoc]
@@ -310,19 +307,19 @@ variable (k : Type w) [Semiring k] {Q : Type u} [Quiver.{v} Q]
 traverses a path `v`, then `a`, then a path `u`, each such occurrence of `a` contributes the path
 `u` followed by `v`, which is `ofPath v * ofPath u` in the later-factor-first convention; paths
 which are not cycles have cyclic derivative `0`. -/
-noncomputable def cyclicDerivative {i j : Q} (a : i ⟶ j) :
+noncomputable def TauCeti.PathAlgebra.cyclicDerivative {i j : Q} (a : i ⟶ j) :
     pathAlgebra k Q →ₗ[k] pathAlgebra k Q :=
   liftLinear k fun x => cyclicDerivativePath k a x.2.2 (vertexIdempotent k x.1)
 
 variable {k} {i j : Q} (a : i ⟶ j)
 
-private theorem cyclicDerivative_ofPath_eq (x : Quiver.TotalPath Q) :
+private theorem cyclicDerivative_ofPath_eq (x : TauCeti.Quiver.TotalPath Q) :
     cyclicDerivative k a (ofPath x) = cyclicDerivativePath k a x.2.2 (vertexIdempotent k x.1) :=
   liftLinear_ofPath k _ x
 
 /-- **The cyclic derivative with respect to `a : i ⟶ j` lies in the right corner of `j`.** -/
 @[simp]
-theorem cyclicDerivative_mul_vertexIdempotent (z : pathAlgebra k Q) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_mul_vertexIdempotent (z : pathAlgebra k Q) :
     cyclicDerivative k a z * vertexIdempotent k j = cyclicDerivative k a z := by
   induction z using induction_linear with
   | zero => simp
@@ -333,7 +330,8 @@ theorem cyclicDerivative_mul_vertexIdempotent (z : pathAlgebra k Q) :
 
 /-- **A path which is not a cycle has cyclic derivative `0`.** -/
 @[simp]
-theorem cyclicDerivative_ofPath_of_ne {s t : Q} (p : _root_.Quiver.Path s t) (h : s ≠ t) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_ofPath_of_ne {s t : Q} (p : Quiver.Path s t)
+    (h : s ≠ t) :
     cyclicDerivative k a (ofPath ⟨s, t, p⟩) = 0 := by
   rw [cyclicDerivative_ofPath_eq, ← cyclicDerivativePath_mul_vertexIdempotent_right,
     vertexIdempotent_mul_vertexIdempotent_of_ne h, cyclicDerivativePath_zero]
@@ -341,9 +339,9 @@ theorem cyclicDerivative_ofPath_of_ne {s t : Q} (p : _root_.Quiver.Path s t) (h 
 /-- **The cyclic derivative of a cycle**: the cyclic derivative with respect to `a : i ⟶ j` of a
 cycle `c` is the sum, over the ways of writing `c` as a path `v`, then `a`, then a path `u`, of the
 rotated remainder, the path traversing `u` and then `v`. -/
-theorem cyclicDerivative_ofPath {s : Q} (c : _root_.Quiver.Path s s) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_ofPath {s : Q} (c : Quiver.Path s s) :
     cyclicDerivative k a (ofPath ⟨s, s, c⟩) =
-      ∑ᶠ d ∈ {d : _root_.Quiver.Path s i × _root_.Quiver.Path j s |
+      ∑ᶠ d ∈ {d : Quiver.Path s i × Quiver.Path j s |
         d.1.comp (a.toPath.comp d.2) = c}, ofPath ⟨j, i, d.2.comp d.1⟩ := by
   rw [cyclicDerivative_ofPath_eq, cyclicDerivativePath_eq_finsum]
   exact finsum_mem_congr rfl fun d _ => by
@@ -351,14 +349,14 @@ theorem cyclicDerivative_ofPath {s : Q} (c : _root_.Quiver.Path s s) :
 
 /-- The cyclic derivative kills the vertex idempotents, which are paths of length `0`. -/
 @[simp]
-theorem cyclicDerivative_vertexIdempotent (v : Q) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_vertexIdempotent (v : Q) :
     cyclicDerivative k a (vertexIdempotent k v) = 0 := by
   rw [vertexIdempotent_eq_ofPath, cyclicDerivative_ofPath_eq, cyclicDerivativePath_nil]
 
 /-- The cyclic derivative of a loop with respect to itself is the vertex idempotent at its
 vertex. -/
 @[simp]
-theorem cyclicDerivative_ofArrow_self (a : i ⟶ i) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_ofArrow_self (a : i ⟶ i) :
     cyclicDerivative k a (ofPath ⟨i, i, a.toPath⟩) = vertexIdempotent k i := by
   classical
   rw [cyclicDerivative_ofPath_eq, Quiver.Hom.toPath, cyclicDerivativePath_cons,
@@ -367,7 +365,7 @@ theorem cyclicDerivative_ofArrow_self (a : i ⟶ i) :
 
 /-- The cyclic derivative of an arrow with respect to a different arrow vanishes. -/
 @[simp]
-theorem cyclicDerivative_ofArrow_of_ne {m t : Q} (b : m ⟶ t)
+theorem TauCeti.PathAlgebra.cyclicDerivative_ofArrow_of_ne {m t : Q} (b : m ⟶ t)
     (h : (⟨m, t, b⟩ : Σ x z : Q, x ⟶ z) ≠ ⟨i, j, a⟩) :
     cyclicDerivative k a (ofPath ⟨m, t, b.toPath⟩) = 0 := by
   classical
@@ -375,7 +373,7 @@ theorem cyclicDerivative_ofArrow_of_ne {m t : Q} (b : m ⟶ t)
     cyclicDerivativePath_nil, ite_eq_right h, add_zero]
 
 /-- The cyclic derivative of a product of two basis paths does not depend on their order. -/
-private theorem cyclicDerivative_ofPath_mul_ofPath_comm (x y : Quiver.TotalPath Q) :
+private theorem cyclicDerivative_ofPath_mul_ofPath_comm (x y : TauCeti.Quiver.TotalPath Q) :
     cyclicDerivative k a (ofPath x * ofPath y) = cyclicDerivative k a (ofPath y * ofPath x) := by
   obtain ⟨t, s', q⟩ := x
   obtain ⟨s, t', p⟩ := y
@@ -400,7 +398,7 @@ variable {k : Type w} [CommSemiring k] {Q : Type u} [Quiver.{v} Q] {i j : Q} (a 
 
 /-- **The cyclic derivative with respect to `a : i ⟶ j` lies in the left corner of `i`.** -/
 @[simp]
-theorem vertexIdempotent_mul_cyclicDerivative (z : pathAlgebra k Q) :
+theorem TauCeti.PathAlgebra.vertexIdempotent_mul_cyclicDerivative (z : pathAlgebra k Q) :
     vertexIdempotent k i * cyclicDerivative k a z = cyclicDerivative k a z := by
   induction z using induction_linear with
   | zero => simp
@@ -412,7 +410,7 @@ theorem vertexIdempotent_mul_cyclicDerivative (z : pathAlgebra k Q) :
 /-- **The cyclic derivative is invariant under cyclic permutation**: it takes the same value on
 `x * y` and on `y * x`, so that it vanishes on commutators and only depends on a potential up to
 cyclic equivalence. -/
-theorem cyclicDerivative_mul_comm (x y : pathAlgebra k Q) :
+theorem TauCeti.PathAlgebra.cyclicDerivative_mul_comm (x y : pathAlgebra k Q) :
     cyclicDerivative k a (x * y) = cyclicDerivative k a (y * x) := by
   induction x using induction_linear with
   | zero => simp
@@ -433,19 +431,19 @@ section CyclicQuotient
 variable {k : Type w} [CommRing k] {Q : Type u} [Quiver.{v} Q] {i j : Q} (a : i ⟶ j)
 
 /-- The cyclic derivative kills the commutator submodule. -/
-theorem commutatorSubmodule_le_ker_cyclicDerivative :
+theorem TauCeti.PathAlgebra.commutatorSubmodule_le_ker_cyclicDerivative :
     commutatorSubmodule k (pathAlgebra k Q) ≤ LinearMap.ker (cyclicDerivative k a) :=
   (commutatorSubmodule_le_ker_iff (cyclicDerivative k a)).2 (cyclicDerivative_mul_comm a)
 
 /-- The cyclic derivative with respect to `a`, descended to the cyclic quotient
 `kQ / [kQ, kQ]`. -/
-noncomputable def cyclicDerivativeCyclicQuotient :
+noncomputable def TauCeti.PathAlgebra.cyclicDerivativeCyclicQuotient :
     cyclicQuotient k (pathAlgebra k Q) →ₗ[k] pathAlgebra k Q :=
   (commutatorSubmodule k (pathAlgebra k Q)).liftQ (cyclicDerivative k a)
     (commutatorSubmodule_le_ker_cyclicDerivative a)
 
 @[simp]
-theorem cyclicDerivativeCyclicQuotient_mk (x : pathAlgebra k Q) :
+theorem TauCeti.PathAlgebra.cyclicDerivativeCyclicQuotient_mk (x : pathAlgebra k Q) :
     cyclicDerivativeCyclicQuotient a (Submodule.Quotient.mk x) =
       cyclicDerivative k a x :=
   Submodule.liftQ_apply _ _ x
@@ -498,7 +496,7 @@ private theorem sum_sum_ite_mul_ofArrow {m t : Q} (e : m ⟶ t) (v : Q) (y : pat
 /-- The telescoping identity behind the cyclic identity, for a path `p` from `s` to `t` and an
 arbitrary accumulator `y`. -/
 private theorem sum_ofArrow_mul_cyclicDerivativePath (v : Q) {s t : Q}
-    (p : _root_.Quiver.Path s t) (y : pathAlgebra k Q) :
+    (p : Quiver.Path s t) (y : pathAlgebra k Q) :
     (∑ i : Q, ∑ a : i ⟶ v, ofArrow a * cyclicDerivativePath k a p y) +
         vertexIdempotent k v * vertexIdempotent k s * y * ofPath ⟨s, t, p⟩ =
       (∑ j : Q, ∑ a : v ⟶ j, cyclicDerivativePath k a p y * ofArrow a) +
@@ -538,7 +536,7 @@ variable {k : Type w} [CommSemiring k] {Q : Type u} [Quiver.{v} Q] [Fintype Q]
 
 /-- **The local cyclic identity**: at every vertex `v`, the arrows `a` with head `v` and those
 with tail `v` give `∑_{head a = v} a ∂_a(x) = ∑_{tail a = v} ∂_a(x) a`. -/
-theorem sum_ofArrow_mul_cyclicDerivative_eq_sum_cyclicDerivative_mul_ofArrow
+theorem TauCeti.PathAlgebra.sum_ofArrow_mul_cyclicDerivative_eq_sum_cyclicDerivative_mul_ofArrow
     (x : pathAlgebra k Q) (v : Q) :
     ∑ i : Q, ∑ a : i ⟶ v, ofArrow a * cyclicDerivative k a x =
       ∑ j : Q, ∑ a : v ⟶ j, cyclicDerivative k a x * ofArrow a := by
@@ -586,7 +584,7 @@ theorem sum_ofArrow_mul_cyclicDerivative_eq_sum_cyclicDerivative_mul_ofArrow
 
 /-- **The global cyclic identity** `∑_a a ∂_a(x) = ∑_a ∂_a(x) a`, the sums running over all arrows
 of `Q`. -/
-theorem sum_sum_sum_ofArrow_mul_cyclicDerivative_comm (x : pathAlgebra k Q) :
+theorem TauCeti.PathAlgebra.sum_sum_sum_ofArrow_mul_cyclicDerivative_comm (x : pathAlgebra k Q) :
     ∑ i : Q, ∑ j : Q, ∑ a : i ⟶ j, ofArrow a * cyclicDerivative k a x =
       ∑ i : Q, ∑ j : Q, ∑ a : i ⟶ j, cyclicDerivative k a x * ofArrow a := by
   rw [Finset.sum_comm]
@@ -594,7 +592,3 @@ theorem sum_sum_sum_ofArrow_mul_cyclicDerivative_comm (x : pathAlgebra k Q) :
     sum_ofArrow_mul_cyclicDerivative_eq_sum_cyclicDerivative_mul_ofArrow x v
 
 end CyclicIdentity
-
-end PathAlgebra
-
-end TauCeti
