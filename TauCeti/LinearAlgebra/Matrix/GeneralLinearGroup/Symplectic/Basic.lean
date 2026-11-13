@@ -498,6 +498,14 @@ theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
       Equiv.reindexGL finSumFinEquiv.symm R (M : GL (Fin (m + m)) R) := by
   simp [mulEquivGLSymplectic]
 
+/-- The inverse of the identification of the two presentations reindexes the underlying invertible
+matrix back along `finSumFinEquiv`. -/
+@[simp]
+theorem coe_mulEquivGLSymplectic_symm_apply (N : GLSymplectic (Fin m) R) :
+    (((mulEquivGLSymplectic m R).symm N : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
+      (Equiv.reindexGL finSumFinEquiv.symm R).symm (N : GL (Fin m ⊕ Fin m) R) :=
+  (rfl)
+
 variable {m R} in
 /-- **A `Fin`-indexed symplectic matrix has determinant one.** So the determinant denominators
 of rational functions on `GL (m + m)` disappear when they are restricted to the symplectic
@@ -530,6 +538,19 @@ theorem coe_map {S : Type*} [CommRing S] (f : R →+* S) (M : GLSymplecticFin m 
     ((GLSymplecticFin.map m R f M : GLSymplecticFin m S) : GL (Fin (m + m)) S) =
       Matrix.GeneralLinearGroup.map f (M : GL (Fin (m + m)) R) :=
   (rfl)
+
+/-- The map induced by the identity ring morphism is the identity. -/
+@[simp]
+theorem map_id : map m R (RingHom.id R) = MonoidHom.id (GLSymplecticFin m R) := by
+  refine MonoidHom.ext fun M => Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j => ?_)
+  simp
+
+/-- The map induced by a composite of ring morphisms is the composite of the induced maps. -/
+@[simp]
+theorem map_comp {S T : Type*} [CommRing S] [CommRing T] (f : R →+* S) (g : S →+* T) :
+    map m R (g.comp f) = (map m S g).comp (map m R f) := by
+  refine MonoidHom.ext fun M => Subtype.ext (Matrix.GeneralLinearGroup.ext fun i j => ?_)
+  simp
 
 variable {m R} in
 /-- Entrywise application of an injective ring morphism is injective on `Fin`-indexed symplectic

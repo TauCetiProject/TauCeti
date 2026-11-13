@@ -547,10 +547,10 @@ theorem spinGroupToEven_mul_reverseEven (x : spinGroup Q) :
 
 /-- Reversal inverts the even part of a Spin element. -/
 @[simp]
-theorem reverseEven_spinGroupToEven_inv (x : spinGroup Q) :
-    reverseEven Q (spinGroupToEven Q x⁻¹) = spinGroupToEven Q x :=
-  left_inv_eq_right_inv (reverseEven_spinGroupToEven_mul_self Q x⁻¹)
-    (by rw [← map_mul, inv_mul_cancel, map_one])
+theorem reverseEven_spinGroupToEven (x : spinGroup Q) :
+    reverseEven Q (spinGroupToEven Q x) = spinGroupToEven Q x⁻¹ :=
+  left_inv_eq_right_inv (reverseEven_spinGroupToEven_mul_self Q x)
+    (by rw [← map_mul, mul_inv_cancel, map_one])
 
 /-- The canonical map from Spin to the even unitary carrier is injective. -/
 theorem spinGroupToEvenUnitary_injective :
@@ -594,10 +594,9 @@ in the even Clifford algebra. -/
 theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
     (s : spinGroup Q) (m : M) :
     rightIotaEven Q e (s • m) =
-      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
-        rightIotaEven Q e m *
-          conjugateNegativeIotaEven Q e he
-            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+      spinGroupToEven Q s * rightIotaEven Q e m *
+        conjugateNegativeIotaEven Q e he (reverseEven Q (spinGroupToEven Q s)) := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
   apply Subtype.ext
   rw [coe_rightIotaEven, spinGroup_smul_apply, ι_spinVectorAction_apply]
   simp only [Subalgebra.coe_mul, coe_rightIotaEven, coe_conjugateNegativeIotaEven]
@@ -628,10 +627,8 @@ theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
 theorem neg_rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
     (s : spinGroup Q) (m : M) :
     (-rightIotaEven Q e) (s • m) =
-      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
-        (-rightIotaEven Q e) m *
-          conjugateNegativeIotaEven Q e he
-            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+      spinGroupToEven Q s * (-rightIotaEven Q e) m *
+        conjugateNegativeIotaEven Q e he (reverseEven Q (spinGroupToEven Q s)) := by
   have h := congrArg Neg.neg (rightIotaEven_spinGroup_smul Q e he s m)
   simpa [neg_mul, mul_neg] using h
 

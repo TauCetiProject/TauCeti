@@ -253,6 +253,7 @@ private theorem realCliffordTwoOneVectorEven_spin_action
             (CliffordAlgebra.reverseEven realCliffordFormTwoOne
               (CliffordAlgebra.evenUnitaryGroupEvenPart realCliffordFormTwoOne
                 (CliffordAlgebra.spinGroupToEvenUnitary realCliffordFormTwoOne s))) := by
+  rw [CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
   exact CliffordAlgebra.rightIotaEven_spinGroup_smul realCliffordFormTwoOne
     realCliffordTwoOneLastVector realCliffordTwoOneLastVector_negOne s v
 
