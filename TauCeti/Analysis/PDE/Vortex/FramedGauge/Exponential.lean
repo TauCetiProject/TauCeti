@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 import TauCeti.MeasureTheory.Measure.OpenPos
