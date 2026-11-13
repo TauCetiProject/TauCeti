@@ -175,10 +175,9 @@ theorem isProbabilityMeasure_bind_spectralMeasure_wignerMatrix [IsProbabilityMea
     (.of_forall fun _ ↦ inferInstance)
 
 /-- On a finite measure space, the monomial `x ↦ x ^ k` is integrable against the expected
-empirical spectral measure `P.bind L_{H_{n+1}}` whenever the entry coordinates are almost
-everywhere measurable and lie in `L^(2 * k)`. -/
+empirical spectral measure `P.bind L_{H_{n+1}}` whenever the entry coordinates lie in
+`L^(2 * k)`. -/
 theorem integrable_pow_bind_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ k)
       (P.bind fun ω ↦ ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -186,7 +185,9 @@ theorem integrable_pow_bind_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k 
   set L : Ω → Measure ℝ := fun ω ↦
     ((wignerMatrix ξ η (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian ξ η ω (n + 1)) :
       Measure ℝ)
-  have hL : AEMeasurable L P := aemeasurable_spectralMeasure_wignerMatrix hξm hηm n
+  have hL : AEMeasurable L P := aemeasurable_spectralMeasure_wignerMatrix
+    (fun ij ↦ (hξp ij).aestronglyMeasurable.aemeasurable)
+    (fun i ↦ (hηp i).aestronglyMeasurable.aemeasurable) n
   refine ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr ?_⟩
   rw [Measure.lintegral_bind hL (by fun_prop)]
   have hdom_pt (x : ℝ) : ‖x ^ k‖ ≤ 1 + x ^ (2 * k) := by
@@ -316,8 +317,7 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix_of_array
   have hint (k n : ℕ) : Integrable (fun x : ℝ ↦ x ^ k)
       ((P n).bind fun ω ↦ ((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) :=
-    integrable_pow_bind_spectralMeasure_wignerMatrix
-      (hξm n) (hηm n) (hξp (2 * k) n) (hηp (2 * k) n) n
+    integrable_pow_bind_spectralMeasure_wignerMatrix (hξp (2 * k) n) (hηp (2 * k) n) n
   refine ProbabilityMeasure.tendsto_of_tendsto_integral_pow
     (K := Set.Icc (0 - 2 * Real.sqrt s) (0 + 2 * Real.sqrt s)) isCompact_Icc
     (ae_iff.mp (ae_mem_Icc_semicircleReal 0 s))

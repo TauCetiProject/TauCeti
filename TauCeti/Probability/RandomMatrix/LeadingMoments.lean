@@ -18,7 +18,7 @@ singleton unordered edge that visits `m + 1` vertices — pairing each discovery
 expected product of Wigner entries along `w` to the product of the second absolute moments at its
 `m` discovery steps. Since each discovery step reads an off-diagonal entry whose squared norm has
 expectation `n⁻¹ s`, every leading word contributes `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal
-coordinates have common second absolute moment `s`.
+coordinates have common second absolute moment `s` (`integral_prod_wignerMatrix_of_leading`).
 
 Summing over the `catalan m * n.descFactorial (m + 1)` leading cyclic words and combining with the
 nonleading trace-word bound from `TauCeti.Probability.RandomMatrix.MomentBounds` and the
@@ -29,10 +29,6 @@ even trace `n⁻¹ E[tr(Hₙ ^ (2 * m))]` and `s ^ m * catalan m`, valid for eve
 
 ## Main results
 
-* `TauCeti.integrable_trace_pow_wignerMatrix`: on a finite measure space, `(Hₙ ^ k).trace` is
-  integrable whenever the entries lie in `Lᵏ`.
-* `TauCeti.integral_prod_wignerMatrix_of_leading`: the expected product of Wigner entries along any
-  leading cyclic word of length `2 * m` is `((n : ℂ)⁻¹ * s) ^ m`.
 * `TauCeti.sum_integral_prod_wignerMatrix_leading` and
   `TauCeti.norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le`: for `m ≠ 0`, the sum of
   expected Wigner entry products over all leading cyclic words of length `2 * m` is
@@ -58,44 +54,6 @@ namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
   {η : ℕ → Ω → ℝ}
-
-/-- On a finite measure space, the trace of the `k`th power of a Wigner matrix is integrable
-whenever all coordinates of the underlying array lie in `Lᵏ`. Neither independence nor centering is
-required, and `k = 0` is included. -/
-theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
-    (hξ : ∀ ij, MemLp (ξ ij) k P) (hη : ∀ i, MemLp (η i) k P) (n : ℕ) :
-    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · simp_rw [trace_pow_eq_sum_prod _ hk]
-    exact integrable_finsetSum _ fun w _ ↦
-      integrable_prod_wignerMatrix_apply (by simpa using hξ) (by simpa using hη) _ _
-
-/-- Along any leading cyclic word `w : Fin (2 * m) → Fin n`, the expected product of Wigner entries
-equals `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal coordinates `ξ` are independent, have
-almost-everywhere strongly measurable squared norms, and have common second absolute moment `s`.
-Neither centering nor any assumption on the diagonal entries `η` is needed, because leading words
-have no self-loops. -/
-theorem integral_prod_wignerMatrix_of_leading {m n : ℕ} {s : ℝ}
-    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hξindep : iIndepFun ξ P)
-    (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) {w : Fin (2 * m) → Fin n}
-    (h : ∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t)))
-    (hv : #(univ.image w) = m + 1) :
-    ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P =
-      ((n : ℂ)⁻¹ * s) ^ m := by
-  have : NeZero m := ⟨by rintro rfl; simp at hv⟩
-  rw [integral_prod_wignerMatrix_apply_leading hξ hξindep w h hv]
-  have hterm (i : Fin (2 * m)) (hi : i ∈
-      ({i : Fin (2 * m) |
-        TreeWalk.canonicalWalk (TreeWalk.cyclicPath w) i.succ = i.succ} : Finset _)) :
-      ∫ ω, ‖wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i))‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
-    have hne : w i ≠ w (finRotate (2 * m) i) := by
-      simpa only [TreeWalk.cyclicPath_castSucc, TreeWalk.cyclicPath_succ] using
-        TreeWalk.ne_of_canonicalWalk_succ_eq (TreeWalk.cyclicPath w) i (mem_filter.mp hi).2
-    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul, hξsq]
-  rw [prod_congr rfl hterm, prod_const, TreeWalk.card_filter_canonicalWalk_succ_eq,
-    TreeWalk.image_cyclicPath, hv, Nat.add_sub_cancel]
-  simp only [Complex.ofReal_pow, Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast]
 
 /-- For `m ≠ 0`, the sum of expected Wigner entry products over all leading cyclic words of length
 `2 * m` is `(catalan m * n.descFactorial (m + 1)) * ((n : ℂ)⁻¹ * s) ^ m`. -/

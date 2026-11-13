@@ -27,25 +27,29 @@ walks are then classified by their numbers of vertices and distinct edges.
 
 For a leading word of length `2 * m`, the maximal `m + 1` visited vertices force a
 double-traversal tree. Pairing each discovery with its reverse reduces the entry product
-to independent squared absolute values. Unit off-diagonal second moments then give exactly
-`n⁻ᵐ`, without centering, higher moments, or any assumptions on the diagonal entries.
-The path formulation includes the zero-step case and proves integrability first.
+to independent squared absolute values. Common off-diagonal second moment `s` then gives
+`((n : ℂ)⁻¹ * s) ^ m` (in particular `n⁻ᵐ` when `s = 1`), without centering, higher moments, or
+any assumptions on the diagonal entries. The path formulation includes the zero-step case and
+proves integrability first.
 
 ## Main results
 
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
   of entries reading some edge exactly once has expectation zero.
-* `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
-  expected trace of `Hₙᵏ` is the sum, over the closed walks of length `k` traversing each of
-  their edges at least twice, of the expected products of entries along the walk.
+* `TauCeti.integrable_trace_pow_wignerMatrix` and `TauCeti.integral_trace_pow_wignerMatrix`: on a
+  finite measure space with entries in `Lᵏ`, `(Hₙ ^ k).trace` is integrable, and when the entries
+  are independent and centred its expectation is the sum, over the closed walks of length `k`
+  traversing each of their edges at least twice, of the expected products of entries along the walk.
 
 * `TauCeti.integrable_prod_wignerMatrix_apply_path` and
   `TauCeti.integral_prod_wignerMatrix_apply_path`: integrability and a second-moment product
   formula for double-traversal tree paths.
 * `TauCeti.integral_prod_wignerMatrix_apply_leading`: a second-moment product formula for
   leading cyclic Wigner words.
-* `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`: every leading
-  cyclic Wigner word contributes `n⁻ᵐ` under independence and unit off-diagonal second moments.
+* `TauCeti.integral_prod_wignerMatrix_of_leading` and
+  `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`: every leading
+  cyclic Wigner word contributes `((n : ℂ)⁻¹ * s) ^ m` under independence and common off-diagonal
+  second moment `s` (and `n⁻ᵐ` when `s = 1`).
 
 ## References
 
@@ -147,6 +151,18 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι]
     (hφ.comp_aemeasurable hXS).aestronglyMeasurable (hψ.comp_aemeasurable hXT).aestronglyMeasurable
   simp only [Function.comp_apply] at hmul
   rw [hmul, hφt, zero_mul]
+
+/-- On a finite measure space, the trace of the `k`th power of a Wigner matrix is integrable
+whenever all coordinates of the underlying array lie in `Lᵏ`. Neither independence nor centering is
+required, and `k = 0` is included. -/
+theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
+    (hξ : ∀ ij, MemLp (ξ ij) k P) (hη : ∀ i, MemLp (η i) k P) (n : ℕ) :
+    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · simp_rw [trace_pow_eq_sum_prod _ hk]
+    exact integrable_finsetSum _ fun w _ ↦
+      integrable_prod_wignerMatrix_apply (by simpa using hξ) (by simpa using hη) _ _
 
 /-- **Trace-word expansion of Wigner moments.** Let the entries of the array be independent,
 centred and in `Lᵏ`, `k ≠ 0`. Then the expected trace of `Hₙᵏ` is the sum, over the closed walks
@@ -322,6 +338,31 @@ theorem integral_prod_wignerMatrix_apply_leading [NeZero m]
   simpa only [cyclicPath_castSucc, cyclicPath_succ] using
     integral_prod_wignerMatrix_apply_path (η := η) hξ hindep (cyclicPath w)
       (by simp) (by simpa using hv) (card_edge_fiber_cyclicPath w h hv)
+
+/-- Along any leading cyclic word `w : Fin (2 * m) → Fin n`, the expected product of Wigner entries
+equals `((n : ℂ)⁻¹ * s) ^ m` whenever the off-diagonal coordinates `ξ` are independent, have
+almost-everywhere strongly measurable squared norms, and have common second absolute moment `s`.
+Neither centering nor any assumption on the diagonal entries `η` is needed, because leading words
+have no self-loops. -/
+theorem integral_prod_wignerMatrix_of_leading {s : ℝ}
+    (hξ : ∀ ij, AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hξindep : iIndepFun ξ P)
+    (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) {w : Fin (2 * m) → Fin n}
+    (h : ∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t)))
+    (hv : #(univ.image w) = m + 1) :
+    ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P =
+      ((n : ℂ)⁻¹ * s) ^ m := by
+  have : NeZero m := ⟨by rintro rfl; simp at hv⟩
+  rw [integral_prod_wignerMatrix_apply_leading hξ hξindep w h hv]
+  have hterm (i : Fin (2 * m)) (hi : i ∈
+      ({i : Fin (2 * m) | canonicalWalk (cyclicPath w) i.succ = i.succ} : Finset _)) :
+      ∫ ω, ‖wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i))‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+    have hne : w i ≠ w (finRotate (2 * m) i) := by
+      simpa only [cyclicPath_castSucc, cyclicPath_succ] using
+        ne_of_canonicalWalk_succ_eq (cyclicPath w) i (mem_filter.mp hi).2
+    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul, hξsq]
+  rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, image_cyclicPath, hv,
+    Nat.add_sub_cancel]
+  simp only [Complex.ofReal_pow, Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast]
 
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
