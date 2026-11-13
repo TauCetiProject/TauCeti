@@ -165,6 +165,20 @@ def addBasepointForgetAdjunction :
         ext n x
         cases x <;> rfl }
 
+/-- The hom-set bijection of `(-)₊ ⊣ forget` is `addBasepointHomEquiv`. -/
+lemma addBasepointForgetAdjunction_homEquiv (K : SSet.{u}) (X : PointedSSet.{u}) :
+    addBasepointForgetAdjunction.homEquiv K X = addBasepointHomEquiv K X := by
+  rw [addBasepointForgetAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+
+/-- Adjoining a disjoint basepoint is a left adjoint, hence preserves colimits of all sizes. -/
+instance : addBasepoint.{u}.IsLeftAdjoint :=
+  addBasepointForgetAdjunction.isLeftAdjoint
+
+/-- Forgetting the basepoint of a pointed simplicial set is a right adjoint, hence preserves limits
+of all sizes. -/
+instance : forgetBasepoint.{u}.IsRightAdjoint :=
+  addBasepointForgetAdjunction.isRightAdjoint
+
 /-- The unit `K ⟶ K₊` of `(-)₊ ⊣ forget` sends every simplex `x` to `some x`. -/
 @[simp]
 lemma addBasepointForgetAdjunction_unit_app_app (K : SSet.{u}) (n : SimplexCategoryᵒᵖ)

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Factorization
-public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
 public import TauCeti.AlgebraicTopology.Spectra.Colimits
-public import TauCeti.AlgebraicTopology.Spectra.Free
+public import TauCeti.AlgebraicTopology.Spectra.Limits
+public import TauCeti.AlgebraicTopology.Spectra.Suspension
+public import TauCeti.CategoryTheory.LiftingProperties.Under
 public import TauCeti.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.CategoryTheory.Presentable.Finite
 
@@ -64,8 +65,13 @@ systems on simplicial sets.
 * `SymmetricSpectrum.levelTrivialFibrations_le_levelFibrations` and
   `SymmetricSpectrum.levelTrivialFibrations_le_levelEquivalences`: level trivial fibrations are
   level fibrations and level equivalences.
-* `SymmetricSpectrum.free_map_addBasepoint_map_mem_projectiveCofibrations`: free spectra on
-  monomorphisms are projective cofibrations.
+* `SymmetricSpectrum.levelFibrations_terminal_from_iff`: `E ⟶ ⊤` is a level fibration precisely
+  when every level of `E` is a Kan complex.
+* `SymmetricSpectrum.free_map_mem_projectiveCofibrations`,
+  `SymmetricSpectrum.free_map_mem_llp_levelFibrations`,
+  `SymmetricSpectrum.projectiveCofibrations_initial_to_free`, and
+  `SymmetricSpectrum.projectiveCofibrations_initial_to_unit`: free maps on based monomorphisms and
+  anodyne maps, and projective cofibrancy of all free spectra `F_n K` and the sphere spectrum.
 
 ## References
 
@@ -77,7 +83,7 @@ systems on simplicial sets.
 
 public section
 
-open CategoryTheory MorphismProperty HomotopicalAlgebra Limits
+open CategoryTheory MonoidalCategory MorphismProperty HomotopicalAlgebra Limits
 open SSet.modelCategoryQuillen
 open scoped Simplicial
 
@@ -107,6 +113,24 @@ instance (W : MorphismProperty SSet.{0}) [W.IsMultiplicative] :
     (levelwise W).IsMultiplicative := by
   rw [levelwise]
   infer_instance
+
+instance (W : MorphismProperty SSet.{0}) [W.HasTwoOutOfThreeProperty] :
+    (levelwise W).HasTwoOutOfThreeProperty where
+  comp_mem f g hf hg := by
+    simp only [levelwise, iInf_iff] at hf hg ⊢
+    exact fun n ↦ (W.inverseImage _).comp_mem f g (hf n) (hg n)
+  of_postcomp f g hg hfg := by
+    simp only [levelwise, iInf_iff] at hg hfg ⊢
+    exact fun n ↦ (W.inverseImage _).of_postcomp f g (hg n) (hfg n)
+  of_precomp f g hf hfg := by
+    simp only [levelwise, iInf_iff] at hf hfg ⊢
+    exact fun n ↦ (W.inverseImage _).of_precomp f g (hf n) (hfg n)
+
+instance (W : MorphismProperty SSet.{0}) [W.IsStableUnderRetracts] :
+    (levelwise W).IsStableUnderRetracts where
+  of_retract h hg := by
+    simp only [levelwise, iInf_iff] at hg ⊢
+    exact fun n ↦ (W.inverseImage _).of_retract h (hg n)
 
 /-- The free cells `F_n (i₊) : F_n (A₊) ⟶ F_n (B₊)` on the maps `i : A ⟶ B` of `T`, in all
 levels `n`. -/
@@ -264,6 +288,14 @@ instance : levelEquivalences.IsMultiplicative := by
   rw [levelEquivalences]
   infer_instance
 
+instance : levelEquivalences.HasTwoOutOfThreeProperty := by
+  rw [levelEquivalences]
+  infer_instance
+
+instance : levelEquivalences.IsStableUnderRetracts := by
+  rw [levelEquivalences]
+  infer_instance
+
 instance : projectiveCofibrations.IsMultiplicative := by
   rw [projectiveCofibrations]
   infer_instance
@@ -333,21 +365,60 @@ lemma llp_levelFibrations_le_projectiveCofibrations :
     levelFibrations.llp ≤ projectiveCofibrations :=
   antitone_llp levelTrivialFibrations_le_levelFibrations
 
-/-- The free spectrum `F_n (i₊)` on a monomorphism `i` of simplicial sets is a projective
-cofibration. -/
-lemma free_map_addBasepoint_map_mem_projectiveCofibrations {A B : SSet.{0}} (i : A ⟶ B) [Mono i]
-    (n : ℕ) : projectiveCofibrations ((free n).map (addBasepoint.map i)) := by
-  refine (freeAddBasepointAdjunction n).strictMap_llp_le_llp (P := (monomorphisms SSet.{0}).rlp)
-    (fun _ _ f hf ↦ (levelTrivialFibrations_iff f).1 hf n) _ ⟨?_⟩
-  exact le_llp_rlp _ _ (.infer_property i)
+/-- A symmetric spectrum `E` has `E ⟶ ⊤` in `levelFibrations` if and only if every level `E_n` is
+a Kan complex. -/
+lemma levelFibrations_terminal_from_iff (E : SymmetricSpectrum) :
+    levelFibrations (terminal.from E) ↔
+      ∀ n, SSet.KanComplex ((evaluation n).obj E).right := by
+  rw [levelFibrations_iff]
+  refine forall_congr' fun n ↦ ?_
+  have hT := terminalIsTerminal.isTerminalObj (evaluation n ⋙ forgetBasepoint)
+    (⊤_ SymmetricSpectrum)
+  exact (isFibrant_iff_of_isTerminal ((evaluation n).map (terminal.from E)).right hT).symm
 
-/-- The free spectrum `F_n (i₊)` on an anodyne extension `i` lifts against every level
-fibration. -/
-lemma free_map_addBasepoint_map_mem_llp_levelFibrations {A B : SSet.{0}} {i : A ⟶ B}
-    (hi : SSet.anodyneExtensions i) (n : ℕ) :
-    levelFibrations.llp ((free n).map (addBasepoint.map i)) := by
-  refine (freeAddBasepointAdjunction n).strictMap_llp_le_llp (P := fibrations SSet.{0})
-    (fun _ _ f hf ↦ ((levelFibrations_iff f).1 hf n).mem) _ ⟨?_⟩
-  rwa [fibrations_eq, ← SSet.anodyneExtensions_eq_llp_rlp]
+/-- For every based map `j : K ⟶ L` of pointed simplicial sets whose underlying map is a
+monomorphism, the free spectrum map `F_n j` is a projective cofibration. -/
+lemma free_map_mem_projectiveCofibrations {K L : PointedSSet.{0}} (j : K ⟶ L) [Mono j.right]
+    (n : ℕ) : projectiveCofibrations ((free n).map j) := by
+  rw [projectiveCofibrations_iff]
+  intro E F p hp
+  rw [(freeEvaluationAdjunction n).hasLiftingProperty_iff]
+  have : HasLiftingProperty j.right ((evaluation n).map p).right :=
+    (levelTrivialFibrations_iff p).1 hp n j.right (.infer_property j.right)
+  exact HasLiftingProperty.under j ((evaluation n).map p)
+
+/-- For every based map `j : K ⟶ L` of pointed simplicial sets whose underlying map is an anodyne
+extension, the free spectrum map `F_n j` lifts against all level fibrations. -/
+lemma free_map_mem_llp_levelFibrations {K L : PointedSSet.{0}} {j : K ⟶ L}
+    (hj : SSet.anodyneExtensions j.right) (n : ℕ) :
+    levelFibrations.llp ((free n).map j) := by
+  intro E F p hp
+  rw [(freeEvaluationAdjunction n).hasLiftingProperty_iff]
+  have : HasLiftingProperty j.right ((evaluation n).map p).right :=
+    hj _ ((levelFibrations_iff p).1 hp n).mem
+  exact HasLiftingProperty.under j ((evaluation n).map p)
+
+/-- Every free symmetric spectrum `F_n K` on a pointed simplicial set `K` is projectively
+cofibrant. -/
+lemma projectiveCofibrations_initial_to_free (K : PointedSSet.{0}) (n : ℕ) :
+    projectiveCofibrations (initial.to ((free n).obj K)) := by
+  let u : Under.mk (𝟙 (Δ[0] : SSet.{0})) ⟶ K := Under.homMk K.hom
+  have : Mono u.right := SSet.stdSimplex.isTerminalObj₀.mono_from K.hom
+  let hI := Under.mkIdInitial.isInitialObj (free n) (Under.mk (𝟙 (Δ[0] : SSet.{0})))
+  let e : (free n).obj (Under.mk (𝟙 (Δ[0] : SSet.{0}))) ≅ ⊥_ SymmetricSpectrum :=
+    hI.uniqueUpToIso initialIsInitial
+  have he : e.inv ≫ (free n).map u = initial.to ((free n).obj K) :=
+    initialIsInitial.hom_ext _ _
+  rw [← he, projectiveCofibrations.cancel_left_of_respectsIso]
+  exact free_map_mem_projectiveCofibrations u n
+
+/-- The sphere spectrum `𝟙_ SymmetricSpectrum` is projectively cofibrant. -/
+lemma projectiveCofibrations_initial_to_unit :
+    projectiveCofibrations (initial.to (𝟙_ SymmetricSpectrum)) := by
+  have he : initial.to ((free 0).obj (𝟙_ PointedSSet.{0})) ≫ suspensionUnitIso.hom =
+      initial.to (𝟙_ SymmetricSpectrum) :=
+    initialIsInitial.hom_ext _ _
+  rw [← he, projectiveCofibrations.cancel_right_of_respectsIso]
+  exact projectiveCofibrations_initial_to_free (𝟙_ PointedSSet.{0}) 0
 
 end TauCeti.SymmetricSpectrum
