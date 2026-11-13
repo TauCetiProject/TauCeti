@@ -122,8 +122,11 @@ theorem heatCauchyPotentialBCF_add {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) :
   rw [coe_heatCauchyPotentialBCF_of_pos (add_pos hs ht),
     coe_heatCauchyPotentialBCF_of_pos hs, coe_heatCauchyPotentialBCF_of_pos ht,
     ← heatKernel_convolution_heatKernel hs ht]
-  exact congrFun (convolution_lsmul_assoc_of_integrable_of_ae_norm_le
-    (integrable_heatKernel hs) (integrable_heatKernel ht) g.continuous.aestronglyMeasurable
+  exact congrFun (convolution_assoc_of_integrable_of_ae_norm_le
+    (ContinuousLinearMap.lsmul ℝ ℝ) (ContinuousLinearMap.lsmul ℝ ℝ)
+    (ContinuousLinearMap.lsmul ℝ ℝ) (ContinuousLinearMap.lsmul ℝ ℝ)
+    (fun a b c ↦ mul_smul a b c) (integrable_heatKernel hs) (integrable_heatKernel ht)
+    g.continuous.aestronglyMeasurable
     (ae_of_all _ g.norm_coe_le_norm)) x
 
 end TauCeti

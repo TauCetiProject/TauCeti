@@ -17,7 +17,7 @@ import TauCeti.Analysis.Convolution.Basic
 
 For a function in `W^{k+2,p}(Ω)`, the Fréchet derivative of the mollification of its
 order-`k+1` weak derivative is the mollification of its order-`k+2` weak derivative.
-The convolution uses zero extensions, but the identity holds only where the translated
+The convolution uses zero extensions, but the identity is guaranteed wherever the translated
 kernel support is contained in `Ω`; no regularity of the boundary is assumed.
 
 The result supplies the successive derivative identities needed to construct smooth
@@ -299,22 +299,9 @@ theorem gradient_smoothField (u : Wkp mu Omega p 1)
   filter_upwards with y
   by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
 
-/-- Where every bump centred near `x` stays in `Ω`, the derivative at `x` of the gradient of the
-mollified value of `u ∈ W^{2,p}(Ω)`, its Hessian operator, is the mollified weak Hessian. -/
-theorem fderiv_gradient_smoothField_value (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E))
-    {x : E} (hx : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega) :
-    fderiv ℝ (∇ (smoothField phi (value 2 u))) x = smoothField phi (iteratedGradient 1 u) x := by
-  have hgrad : ∇ (smoothField phi (value 2 u)) =ᶠ[𝓝 x]
-      smoothField phi (iteratedGradient 0 (lowerOrder 1 u)) := by
-    filter_upwards [hx] with y hy
-    rw [value_succ]
-    exact gradient_smoothField (lowerOrder 1 u) phi y hy
-  rw [hgrad.fderiv_eq]
-  exact fderiv_smoothField 0 u phi x hx.self_of_nhds
-
-/-- Every classical iterated gradient of the mollified value is the mollified weak-gradient
-field wherever the closed bump ball lies in `Ω`. The identity holds at arbitrary order and
-for every Sobolev exponent `1 ≤ p ≤ ∞`. -/
+/-- For `u ∈ W^{k+1,p}(Ω)`, the classical order-`k+1` iterated gradient of
+`smoothField phi (value (k + 1) u)` equals the mollification of its highest weak derivative
+`iteratedGradient k u` wherever the closed bump ball lies in `Ω`, for `1 ≤ p ≤ ∞`. -/
 theorem iteratedGradientChain_smoothField_value (k : ℕ) (u : Wkp mu Omega p (k + 1))
     (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
@@ -339,6 +326,42 @@ theorem iteratedGradientChain_smoothField_value (k : ℕ) (u : Wkp mu Omega p (k
       exact ih (lowerOrder (k + 1) u) y hy
     rw [iteratedGradientChain_succ, heq.fderiv_eq]
     exact fderiv_smoothField k u phi x hx
+
+/-- Where the closed bump ball stays in `Ω`, the derivative at `x` of the gradient of the
+mollified value of `u ∈ W^{2,p}(Ω)`, its Hessian operator, is the mollified weak Hessian. -/
+theorem fderiv_gradient_smoothField_value (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E))
+    {x : E} (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
+    fderiv ℝ (∇ (smoothField phi (value 2 u))) x = smoothField phi (iteratedGradient 1 u) x := by
+  simpa only [iteratedGradientChain_succ, iteratedGradientChain_zero] using
+    iteratedGradientChain_smoothField_value 1 u phi x hx
+
+omit [Fact (1 ≤ p)] in
+/-- The classical order-`k+1` derivative of a mollified Sobolev function is bounded by the
+essential supremum of its weak derivative wherever the closed bump ball stays in `Ω`. -/
+theorem norm_iteratedGradientChain_smoothField_value_top_le (k : ℕ)
+    (u : Wkp mu Omega ∞ (k + 1)) (phi : ContDiffBump (0 : E)) (x : E)
+    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
+    ‖iteratedGradientChain (smoothField phi (value (k + 1) u)) k x‖ ≤
+      ‖iteratedGradient k u‖ := by
+  rw [iteratedGradientChain_smoothField_value k u phi x hx]
+  exact norm_smoothField_top_le phi _ x
+
+/-- On compact `K ⊆ Ω`, the classical order-`k+1` iterated gradient of
+`smoothField (phi i) (value (k + 1) u)` eventually agrees on `K` with
+`smoothField (phi i) (iteratedGradient k u)`, for `u ∈ W^{k+1,p}(Ω)`. -/
+theorem eventually_eqOn_iteratedGradientChain_smoothField_value
+    (k : ℕ) (u : Wkp mu Omega p (k + 1))
+    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (𝓝 0))
+    {K : Set E} (hK : IsCompact K) (hKO : K ⊆ Omega) :
+    ∀ᶠ i in l, EqOn (iteratedGradientChain (smoothField (phi i) (value (k + 1) u)) k)
+      (smoothField (phi i) (iteratedGradient k u)) K := by
+  obtain ⟨δ, hδ, hδO⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKO
+  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi x hx
+  apply iteratedGradientChain_smoothField_value k u (phi i) x
+  intro y hy
+  exact hδO (Metric.mem_cthickening_of_dist_le y x δ K hx
+    ((Metric.mem_closedBall.mp hy).trans hi.le))
 
 omit [Fact (1 ≤ p)] in
 /-- **Mollification of a continuous representative.** If `f ∈ Lᵖ(Ω)` agrees almost everywhere on

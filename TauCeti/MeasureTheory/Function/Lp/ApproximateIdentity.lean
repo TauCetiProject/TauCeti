@@ -197,7 +197,7 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
 /-- Pairing mollifications of a bounded function with any integrable field through a
 continuous bilinear map converges in norm. This is the `L¹`–`L^∞` weak-star endpoint. -/
 theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top
-    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [CompleteSpace F]
     (B : G →L[ℝ] F →L[ℝ] H) {I : Type*} {l : Filter I}
     {phi : I → ContDiffBump (0 : E)}
@@ -206,19 +206,21 @@ theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top
     Tendsto (fun i ↦ ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu)
       l (nhds (∫ x, B (a x) (f x) ∂mu)) := by
   -- Reflect the test field to express the pairing as convolution evaluated at zero.
-  let b : E → G := fun x ↦ a (-x)
-  have hb : Integrable b mu := ha.comp_neg
+  let b : E → F →L[ℝ] H := fun x ↦ B (a (-x))
+  have hb : Integrable b mu := B.integrable_comp ha.comp_neg
   have hbmem : MemLp b 1 mu := memLp_one_iff_integrable.mpr hb
   have hfn : MemLp (fun x ↦ f (-x)) ∞ mu :=
     hf.comp_measurePreserving (Measure.measurePreserving_neg mu)
-  let L : Lp G 1 mu →L[ℝ] H := B.flip.lpPairing mu ∞ 1 (hfn.toLp (fun x ↦ f (-x)))
-  have hL (v : Lp G 1 mu) (g : E → G) (hv : v =ᵐ[mu] g) :
-      L v = ∫ x, B (g x) (f (-x)) ∂mu := by
+  let C := ContinuousLinearMap.id ℝ (F →L[ℝ] H)
+  let L : Lp (F →L[ℝ] H) 1 mu →L[ℝ] H :=
+    C.flip.lpPairing mu ∞ 1 (hfn.toLp (fun x ↦ f (-x)))
+  have hL (v : Lp (F →L[ℝ] H) 1 mu) (g : E → F →L[ℝ] H) (hv : v =ᵐ[mu] g) :
+      L v = ∫ x, g x (f (-x)) ∂mu := by
     dsimp only [L]
     rw [lpPairing_eq_integral]
     apply integral_congr_ae
     filter_upwards [hfn.coeFn_toLp, hv] with x hx hx'
-    simp only [flip_apply, hx, hx']
+    simp only [flip_apply, hx, hx', C, id_apply]
   -- Strong L¹ convergence of the test field gives convergence through the L¹–L∞ pairing.
   have hlim := L.continuous.tendsto (hbmem.toLp b) |>.comp
     (tendsto_normedBumpLp ENNReal.one_ne_top hphi (hbmem.toLp b))
@@ -228,62 +230,65 @@ theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution_top
   have hsource (i : I) : L (normedBumpLp ENNReal.one_ne_top (phi i) mu (hbmem.toLp b)) =
       ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu := by
     rw [hL _ _ (normedBumpLp_ae_eq_convolution ENNReal.one_ne_top (phi i) hbmem)]
-    -- The L¹–L∞ bound supplies the norm-integrability hypothesis for associativity.
-    have hbound (x : E) : ‖((fun y ↦ ‖(phi i).normed mu y‖) ⋆[mul ℝ ℝ, mu]
-        (fun y ↦ ‖f y‖)) x‖ ≤ (∫ y, ‖(phi i).normed mu y‖ ∂mu) * lpNorm f ∞ mu := by
-      have h := norm_convolution_lsmul_le_integral_norm_mul_norm
-        (phi i).integrable_normed.norm (hf.norm.toLp _) x
-      rw [convolution_congr (lsmul ℝ ℝ) (EventuallyEq.refl _ _) hf.norm.coeFn_toLp] at h
-      simpa only [convolution_def, lsmul_apply, smul_eq_mul, mul_apply', norm_norm,
-        Lp.norm_toLp, eLpNorm_norm f hf.aestronglyMeasurable, toReal_eLpNorm] using h
-    have hassoc := convolution_assoc (lsmul ℝ ℝ).flip B B (lsmul ℝ ℝ)
-      (fun g r v ↦ by simp only [flip_apply, lsmul_apply, map_smul, smul_apply])
-      hb.aestronglyMeasurable (phi i).integrable_normed.aestronglyMeasurable
-      hf.aestronglyMeasurable (hb.ae_convolution_exists _ (phi i).integrable_normed)
-      (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _
-        (phi i).integrable_normed.norm hf.aestronglyMeasurable.norm
-        ((ae_le_lpNorm_exponent_top hf).mono fun _ hx ↦ by
-          simpa only [norm_norm] using hx)))
-      (convolutionExists_of_integrable_of_ae_norm_le _ hb.norm
-        ((phi i).integrable_normed.aestronglyMeasurable.norm.convolution _
-          hf.aestronglyMeasurable.norm) (ae_of_all _ hbound) 0)
+    have hassoc := congrFun (convolution_assoc_of_integrable_of_ae_norm_le
+      (lsmul ℝ ℝ).flip C C (lsmul ℝ ℝ)
+      (fun g r v ↦ by simp [C]) hb (phi i).integrable_normed
+      hf.aestronglyMeasurable (ae_le_lpNorm_exponent_top hf)) 0
     rw [convolution_flip] at hassoc
-    have hpair : (b ⋆[B, mu] ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f)) 0 =
+    have hpair : (b ⋆[C, mu] ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f)) 0 =
         ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu := by
       rw [convolution_def]
-      simpa only [zero_sub, b] using integral_neg_eq_self (fun x ↦
+      simpa only [zero_sub, b, C, id_apply] using integral_neg_eq_self (fun x ↦
         B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x)) mu
-    simpa only [convolution_def, zero_sub] using hassoc.trans hpair
+    simpa only [convolution_def, zero_sub, C, id_apply] using hassoc.trans hpair
   simpa only [Function.comp_def, hsource, htarget] using hlim
 
-/-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges
-in the Banach codomain. The bump family and convergence filter are arbitrary. -/
-theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0∞}
-    [Fact (1 ≤ q)] [p.HolderConjugate q] {I : Type*} {l : Filter I}
+omit [Fact (1 ≤ p)] in
+/-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` field through a continuous
+bilinear map converges in the Banach codomain, including the infinite exponent endpoint. -/
+theorem _root_.ContinuousLinearMap.tendsto_integral_bilin_normed_convolution
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H] [CompleteSpace F]
+    (B : G →L[ℝ] F →L[ℝ] H) {q : ℝ≥0∞} [p.HolderConjugate q]
+    {I : Type*} {l : Filter I}
     {phi : I → ContDiffBump (0 : E)}
-    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → ℝ} (ha : MemLp a q mu)
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → G} (ha : MemLp a q mu)
     {f : E → F} (hf : MemLp f p mu) :
-    Tendsto (fun i ↦ ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu)
-      l (nhds (∫ x, a x • f x ∂mu)) := by
+    Tendsto (fun i ↦ ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu)
+      l (nhds (∫ x, B (a x) (f x) ∂mu)) := by
+  have : Fact (1 ≤ p) := ⟨ENNReal.HolderConjugate.one_le p q⟩
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   by_cases hp : p = ∞
   · subst p
     have hq : q = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q).mp rfl
     subst q
-    exact (lsmul ℝ ℝ).tendsto_integral_bilin_normed_convolution_top hphi
+    exact B.tendsto_integral_bilin_normed_convolution_top hphi
       (memLp_one_iff_integrable.mp ha) hf
-  let L : Lp F p mu →L[ℝ] F := (lsmul ℝ ℝ).lpPairing mu q p (ha.toLp a)
+  let L : Lp F p mu →L[ℝ] H := B.lpPairing mu q p (ha.toLp a)
   have hpair (g : Lp F p mu) (G : E → F) (hg : g =ᵐ[mu] G) :
-      L g = ∫ x, a x • G x ∂mu := by
+      L g = ∫ x, B (a x) (G x) ∂mu := by
     dsimp only [L]
     rw [lpPairing_eq_integral]
     apply integral_congr_ae
     filter_upwards [ha.coeFn_toLp, hg] with x hx hG
-    simp only [lsmul_apply, hx, hG]
+    simp only [hx, hG]
   have hlim := L.continuous.tendsto (hf.toLp f) |>.comp (tendsto_normedBumpLp hp hphi (hf.toLp f))
   have hpairphi (i : I) : L (normedBumpLp hp (phi i) mu (hf.toLp f)) =
-      ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu :=
+      ∫ x, B (a x) (((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x) ∂mu :=
     hpair _ _ (normedBumpLp_ae_eq_convolution hp (phi i) hf)
   simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
+
+omit [Fact (1 ≤ p)] in
+/-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges
+in the Banach codomain. The bump family and convergence filter are arbitrary. -/
+theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0∞}
+    [p.HolderConjugate q] {I : Type*} {l : Filter I}
+    {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → ℝ} (ha : MemLp a q mu)
+    {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu)
+      l (nhds (∫ x, a x • f x ∂mu)) :=
+  (lsmul ℝ ℝ).tendsto_integral_bilin_normed_convolution hphi ha hf
 
 /-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
 `phi i` centred at zero whose outer radii tend to zero, the classical convolutions

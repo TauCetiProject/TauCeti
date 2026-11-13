@@ -11,11 +11,16 @@ public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 /-!
 # Local approximation of bounded Sobolev functions
 
-The classical derivatives of the single smooth approximant
-`smoothField phi (value (k + 1) u)` equal the mollified weak derivatives only where the
-closed bump ball stays inside `Ω`. On compact subsets of `Ω`, these derivatives preserve
-the essential-supremum bound eventually, converge in every finite lower `Lᵖ` norm, and
-converge against arbitrary integrable test fields through continuous bilinear maps.
+For `u ∈ W^{k+1,∞}(Ω)`, the classical order-`k+1` iterated gradient of the single smooth
+approximant `smoothField phi (value (k + 1) u)` equals the mollification of its highest weak
+derivative `iteratedGradient k u` wherever the closed bump ball stays inside `Ω`. There it
+is bounded by the essential supremum of that weak derivative
+(`norm_iteratedGradientChain_smoothField_value_top_le` in `Mollification.lean`). The two
+fields agree eventually on compact subsets of `Ω`
+(`eventually_eqOn_iteratedGradientChain_smoothField_value`, also in `Mollification.lean`).
+Here we prove finite lower-`Lᵖ` convergence and convergence against arbitrary integrable
+test fields through continuous bilinear maps on these compact subsets. Lower orders of
+the same approximant follow by applying these results to `lowerOrder` and using `value_succ`.
 
 The underlying zero-extended field mollifications also converge against integrable tests
 on the whole domain. This does not assert convergence of classical derivatives near the
@@ -42,23 +47,13 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductS
   [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
 
-/-- The classical order-`k+1` derivative of a mollified Sobolev function is bounded by the
-essential supremum of its weak derivative wherever the closed bump ball stays in `Ω`. -/
-theorem norm_iteratedGradientChain_smoothField_value_top_le (k : ℕ)
-    (u : Wkp mu Omega ∞ (k + 1)) (phi : ContDiffBump (0 : E)) (x : E)
-    (hx : closedBall x phi.rOut ⊆ Omega) :
-    ‖iteratedGradientChain (smoothField phi (value (k + 1) u)) k x‖ ≤
-      ‖iteratedGradient k u‖ := by
-  rw [iteratedGradientChain_smoothField_value k u phi x hx]
-  exact norm_smoothField_top_le phi _ x
-
 variable [CompleteSpace F]
 
 /-- Zero-extended bounded field mollifications converge against integrable test fields on
 any measurable subset of `Ω`. Specializing the bilinear map to `lsmul ℝ ℝ` gives scalar tests.
 For classical derivatives of one smooth approximant, use the compact-interior theorem below. -/
 theorem _root_.ContinuousLinearMap.tendsto_setIntegral_bilin_smoothField_top
-    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
     (B : G →L[ℝ] F →L[ℝ] H) {I : Type*} {l : Filter I}
     {phi : I → ContDiffBump (0 : E)}
@@ -106,24 +101,9 @@ theorem tendsto_eLpNorm_smoothField_sub_restrict {p q : ℝ≥0∞}
     (ae_mono (Measure.restrict_mono_set mu hsO))] with x hx
   simp only [Pi.sub_apply, smoothField_def, indicator_of_mem hx]
 
-/-- On a compact subset of `Ω`, every classical derivative of the mollified value eventually
-agrees with the corresponding mollified weak derivative, uniformly over the subset. -/
-theorem eventually_eqOn_iteratedGradientChain_smoothField_value
-    {q : ℝ≥0∞} [Fact (1 ≤ q)] (k : ℕ) (u : Wkp mu Omega q (k + 1))
-    {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
-    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (𝓝 0))
-    {K : Set E} (hK : IsCompact K) (hKO : K ⊆ Omega) :
-    ∀ᶠ i in l, EqOn (iteratedGradientChain (smoothField (phi i) (value (k + 1) u)) k)
-      (smoothField (phi i) (iteratedGradient k u)) K := by
-  obtain ⟨δ, hδ, hδO⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKO
-  filter_upwards [hphi.eventually (gt_mem_nhds hδ)] with i hi x hx
-  apply iteratedGradientChain_smoothField_value k u (phi i) x
-  intro y hy
-  exact hδO (mem_cthickening_of_dist_le y x δ K hx
-    ((mem_closedBall.mp hy).trans hi.le))
-
-/-- On compact subsets of `Ω`, the classical derivatives of a single mollified Sobolev
-function converge in every finite lower `Lᵖ` norm, including for bounded weak derivatives. -/
+/-- For `u ∈ W^{k+1,q}(Ω)`, the classical order-`k+1` iterated gradient of
+`smoothField (phi i) (value (k + 1) u)` converges to the highest weak derivative
+`iteratedGradient k u` in `Lᵖ(K)` on compact `K ⊆ Ω`, whenever `1 ≤ p < ∞` and `p ≤ q`. -/
 theorem tendsto_eLpNorm_iteratedGradientChain_smoothField_value_sub_restrict
     {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (hp : p ≠ ∞) (hpq : p ≤ q)
     (k : ℕ) (u : Wkp mu Omega q (k + 1))
@@ -141,10 +121,11 @@ theorem tendsto_eLpNorm_iteratedGradientChain_smoothField_value_sub_restrict
   filter_upwards [ae_restrict_mem hK.measurableSet] with x hx
   simp only [Pi.sub_apply, hi hx]
 
-/-- Classical derivatives of the single mollified value converge weak-star on compact subsets
-of `Ω`, paired with arbitrary integrable test fields through a continuous bilinear map. -/
+/-- For `u ∈ W^{k+1,∞}(Ω)`, the classical order-`k+1` iterated gradient of
+`smoothField (phi i) (value (k + 1) u)` converges weak-star to `iteratedGradient k u` on
+compact `K ⊆ Ω`, against integrable test fields through the continuous bilinear map `B`. -/
 theorem tendsto_setIntegral_bilin_iteratedGradientChain_smoothField_value_top
-    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
     (k : ℕ) (B : G →L[ℝ] IteratedGradient E k →L[ℝ] H)
     (u : Wkp mu Omega ∞ (k + 1))
@@ -163,10 +144,11 @@ theorem tendsto_setIntegral_bilin_iteratedGradientChain_smoothField_value_top
   intro x hx
   simp only [hi hx]
 
-/-- On the whole space, classical derivatives of the mollified value converge against all
-integrable test fields, without a compact-support or finite-measure hypothesis. -/
+/-- For `u ∈ W^{k+1,∞}` on the whole space, the classical order-`k+1` iterated gradient of
+`smoothField (phi i) (value (k + 1) u)` converges weak-star to `iteratedGradient k u` against
+any integrable test field through `B`, without compact-support or finite-measure hypotheses. -/
 theorem tendsto_integral_bilin_iteratedGradientChain_smoothField_value_top
-    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
     (k : ℕ) (B : G →L[ℝ] IteratedGradient E k →L[ℝ] H)
     (u : Wkp mu ⊤ ∞ (k + 1))
