@@ -38,8 +38,8 @@ variable {𝕜 ι : Type*} [RCLike 𝕜]
 
 /-- The gliding hump: if the mass of `x n` on every finite set of coordinates tends to zero while
 `ε ≤ ‖x n‖` for infinitely many `n`, then there are indices `m 0 < m 1 < ⋯` and finite sets
-`A 0 ⊆ A 1 ⊆ ⋯` such that `x (m k)` has mass less than `δ` on `A k` and more than `‖x (m k)‖ - δ`
-on `A (k + 1)`. -/
+`A 0 ⊆ A 1 ⊆ ⋯` such that `ε ≤ ‖x (m k)‖`, and `x (m k)` has mass less than `δ` on `A k` and more
+than `‖x (m k)‖ - δ` on `A (k + 1)`. -/
 private theorem exists_strictMono_monotone_of_frequently_le {x : ℕ → lp (fun _ : ι ↦ 𝕜) 1}
     (hcoord : ∀ A : Finset ι, Tendsto (fun n ↦ ∑ i ∈ A, ‖x n i‖) atTop (𝓝 0))
     {ε δ : ℝ} (hδ : 0 < δ) (hlarge : ∃ᶠ n in atTop, ε ≤ ‖x n‖) :
