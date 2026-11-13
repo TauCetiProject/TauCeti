@@ -59,19 +59,20 @@ theorem canonicalSteinberg_def :
       (d.1.dynkinType.chevalleyGroup_eq_kostantToralPointsSubgroup d.1.dynkinType_valid d.1.Closure)
       (d.scSteinberg d.1.Closure) := (rfl)
 
-private theorem pointEquiv_canonicalSteinberg (g : d.1.CanonicalAmbientGroup) :
-    d.pointEquiv (d.canonicalSteinberg g) = d.scSteinberg d.1.Closure (d.pointEquiv g) := by
-  apply Subtype.ext
-  simp only [pointEquiv, canonicalSteinberg_def, MonoidHom.coe_subgroupCongr_apply,
-    MulEquiv.subgroupCongr_apply]
-  rfl
-
 private theorem coe_pointEquiv (g : d.1.CanonicalAmbientGroup) :
     (d.pointEquiv g : Matrix.GeneralLinearGroup
       (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) =
       (g : Matrix.GeneralLinearGroup
         (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) :=
   MulEquiv.subgroupCongr_apply _ g
+
+private theorem pointEquiv_canonicalSteinberg (g : d.1.CanonicalAmbientGroup) :
+    d.pointEquiv (d.canonicalSteinberg g) = d.scSteinberg d.1.Closure (d.pointEquiv g) := by
+  apply Subtype.ext
+  simp only [coe_pointEquiv, canonicalSteinberg_def, MonoidHom.coe_subgroupCongr_apply]
+  exact congrArg (fun y => (d.scSteinberg d.1.Closure y : Matrix.GeneralLinearGroup
+    (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure))
+    (Subtype.ext (d.coe_pointEquiv g)).symm
 
 /-- On every canonical point, the Steinberg map is integral lattice conjugation after
 entrywise Frobenius, without a point-generation hypothesis. -/
@@ -194,9 +195,7 @@ theorem canonicalSteinberg_canonicalRootSubgroup_reflectionPerm_simpleIndex
 including the inverse diagram action. -/
 theorem isCharacterMap_canonicalSteinberg :
     IsCharacterMap d.1.canonicalTorus d.canonicalSteinberg d.datumSteinberg.weightMap := by
-  rw [isCharacterMap_iff_comp]
-  apply MonoidHom.ext
-  intro s
+  refine isCharacterMap_iff.mpr fun s => ?_
   apply d.pointEquiv.injective
   exact (d.pointEquiv_canonicalSteinberg _).trans
     ((congrArg (d.scSteinberg d.1.Closure) (d.pointEquiv_torus s)).trans
