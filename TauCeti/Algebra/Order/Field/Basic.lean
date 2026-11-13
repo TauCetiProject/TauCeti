@@ -78,6 +78,7 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
   on `b² / (2τ) - a² / (2τ₀)`, for `0 < τ < τ₀`.
+* `TauCeti.pos_of_mem_Ioo_neg_one_div`: if `t ∈ (-1 / s, 1 / s)` then `0 < s`.
 * `TauCeti.mul_div_lt_self`: `d * e / a < d` for `0 < d`, `0 < a` and `e < a`.
 * `TauCeti.mul_abs_mul_sub_eq_sq_mul_abs_sub_div`: `q |q x - m| = q² |x - m / q|` for `q > 0`.
 * `TauCeti.abs_div_sub_div_le`: `|x / a - y / b| ≤ 2 (e + y δ) / b` for a relative perturbation
@@ -405,6 +406,12 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
 theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {a A t : α} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k) (ha : 0 ≤ a) : 0 ≤ A := by
   simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
+
+/-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
+`s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
+theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
+  one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
 
 end TauCeti
 
