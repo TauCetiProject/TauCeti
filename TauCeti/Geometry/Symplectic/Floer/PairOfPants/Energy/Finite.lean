@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Finite-energy pairs of pants have limiting end actions
@@ -301,23 +302,15 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff (ω : Sy
     ω.sum_endSign_mul_hamiltonianAction_le hH hHs hu hJ hfloer hE hR
   -- Each signed end action is increasing and bounded above, so it converges.
   have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) := by
-    set g : ℝ → ℝ := fun R ↦ q.endSign * A q (max R 2)
-    have hg : Monotone g := fun R₁ R₂ hR ↦ hmono q (le_max_right R₁ 2) (le_max_right R₂ 2)
-      (max_le_max_right 2 hR)
-    have hbdd : BddAbove (range g) := by
-      refine ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩
-      rintro _ ⟨R, rfl⟩
-      have hR : 2 ≤ max R 2 := le_max_right R 2
-      have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
-          ∑ r ∈ Finset.univ.erase q, r.endSign * A r (max R 2) :=
-        Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
-      have h := hsum hR
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
-      simp only [g]
-      linarith
-    refine ⟨⨆ R, g R, (tendsto_atTop_ciSup hg hbdd).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop 2] with R hR
-    simp only [g, max_eq_left hR]
+    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmono q)
+      ⟨C - ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2, ?_⟩⟩
+    rintro _ ⟨R, hR, rfl⟩
+    have hrest : ∑ r ∈ Finset.univ.erase q, r.endSign * A r 2 ≤
+        ∑ r ∈ Finset.univ.erase q, r.endSign * A r R :=
+      Finset.sum_le_sum fun r _ ↦ hmono r (mem_Ici.2 le_rfl) hR hR
+    have h := hsum hR
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ q)] at h
+    linarith
   choose b hb using hconv
   refine ⟨fun q ↦ q.endSign * b q, fun q ↦ ((hb q).const_mul q.endSign).congr fun R ↦ ?_⟩
   rw [← mul_assoc, endSign_mul_self, one_mul]

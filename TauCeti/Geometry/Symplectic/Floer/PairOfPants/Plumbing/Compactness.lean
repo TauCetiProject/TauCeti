@@ -179,9 +179,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
         (ω.perturbedFDeriv (Ka 1) (Ka I) (u k ∘ ψ k) w : ℝ × ℝ →ₗ[ℝ] V) := by
     have h := hfl k (ψ k w) (hψP k hw)
     rw [hJw] at h
+    have hinf := (mem_truncation.1 hw).2.2 inf
+    rw [endSign_inf, neg_one_mul] at hinf
     exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap hq hHa hHb
       (fun r ↦ (hHas r).of_le (by norm_num)) (fun r ↦ (hHbs r).of_le (by norm_num)) hab (hL4 k)
-      (hRL k) hw (((hu k).differentiableOn (by norm_num)).differentiableAt
+      ⟨⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩, by linarith [hRL k]⟩
+      (((hu k).differentiableOn (by norm_num)).differentiableAt
         ((hPopen k).mem_nhds (hψP k hw)))
       h
   -- The densities are continuous on neighbourhoods of the compact truncation, so integrable.

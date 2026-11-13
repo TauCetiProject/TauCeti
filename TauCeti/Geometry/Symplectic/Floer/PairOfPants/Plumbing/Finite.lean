@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Finite
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
 # Finite-energy Floer solutions on the plumbed four-punctured sphere
@@ -118,11 +120,10 @@ theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTrunca
     -- The plumbed datum is differentiable in the domain at `z`.
     have hK (v : ℂ) : DifferentiableAt ℝ
         (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-        (realChart (q.plumbingMap L) w) := by
-      rw [hzw]
-      exact ((contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x
-        v).differentiableAt one_ne_zero).comp (f := fun z : ℝ × ℝ ↦ (z, x)) z
-          (differentiableAt_id.prodMk (differentiableAt_const x))
+        (realChart (q.plumbingMap L) w) :=
+      hzw ▸ differentiableAt_plumbedPerturbation_domain hq hHa hHb
+        (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
+        (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hz x v
     -- Its pullback along the plumbing chart is the datum of `S'`, whose curvature vanishes at `w`.
     have h := ω.hamiltonianCurvature_perturbationPullback
       (Ks := fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
@@ -160,13 +161,7 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SymplecticFo
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  have hK (v : ℂ) : ContDiffOn ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := fun p hp ↦
-    (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hp.1 p.2
-      v).contDiffWithinAt
+  have hK := contDiffOn_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
   exact (((ω.continuousOn_hamiltonianCurvature_comp (isOpen_plumbedSphere q L) hu (hK 1)
     (hK Complex.I)).mono fun z hz ↦
       plumbedTruncation_subset hq (by linarith) _ hz).integrableOn_compact
@@ -319,8 +314,6 @@ theorem monotoneOn_hamiltonianAction_plumbingMap_of_plumbedPerturbation (ω : Sy
     refine ⟨⟨hS, hinf⟩, ?_⟩
     rw [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
     exact mapsTo_plumbingMap hq (by linarith) ⟨hS, by linarith⟩
-  have hψd {w : ℝ × ℝ} : DifferentiableAt ℝ ψ w :=
-    (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w
   -- Along `ψ`, `u ∘ ψ` solves the Floer equation for the datum of the inserted pair of pants.
   have hfloer' (ζ : ℝ × ℝ) (hζ : 2 ≤ r.endSign * ζ.1) :
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (ψ (endChart r ζ)))
@@ -329,36 +322,9 @@ theorem monotoneOn_hamiltonianAction_plumbingMap_of_plumbedPerturbation (ω : Sy
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
           (u ∘ ψ) (endChart r ζ) : ℝ × ℝ →ₗ[ℝ] V) := by
     obtain ⟨⟨hS, hre⟩, hψS⟩ := hend hζ
-    have hK (v : ℂ) : DifferentiableAt ℝ
-        (fun x ↦ plumbedPerturbation Ha Hb q L
-          (Complex.equivRealProdCLM.symm (ψ (endChart r ζ))) x v) (u (ψ (endChart r ζ))) :=
-      ((contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hψS
-        (u (ψ (endChart r ζ))) v).differentiableAt one_ne_zero).comp
-          (f := fun y : V ↦ (ψ (endChart r ζ), y)) _
-          ((differentiableAt_const _).prodMk differentiableAt_id)
-    have heq : ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u ∘ ψ) (endChart r ζ) = ω.perturbedFDeriv
-        (perturbationPullback ψ
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineReal)
-        (perturbationPullback ψ
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineImag)
-        (u ∘ ψ) (endChart r ζ) := by
-      refine ω.perturbedFDeriv_congr _ (funext fun x ↦ ?_) (funext fun x ↦ ?_) <;>
-        rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _)]
-      · rw [equivRealProdCLM_symm_stdComplexLineReal,
-          plumbedPerturbation_plumbingMap hq hab hS.1 (by linarith)]
-      · rw [equivRealProdCLM_symm_stdComplexLineImag,
-          plumbedPerturbation_plumbingMap hq hab hS.1 (by linarith)]
-    rw [heq]
-    exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback hψd
+    exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab
+      hL ⟨hS, by linarith⟩
       ((hu.contDiffAt ((isOpen_plumbedSphere q L).mem_nhds hψS)).differentiableAt two_ne_zero)
-      (hK 1) (hK Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _))
       (hfloer _ hψS)
   have h := ω.monotoneOn_endSign_mul_hamiltonianAction hHa hHas (q := r)
     ((isOpen_plumbedSphere q L).preimage (contDiff_realChart_plumbingMap q L (n := 0)).continuous)
@@ -412,13 +378,7 @@ private theorem lintegral_floerEnergyDensity_plumbedTruncation_eq (ω : Symplect
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := fun z hz ↦
     plumbedTruncation_subset hq (by linarith) R hz
-  have hK (v : ℂ) : ContDiffOn ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := fun p hp ↦
-    (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hp.1 p.2
-      v).contDiffWithinAt
+  have hK := contDiffOn_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
   have hint := ((ω.continuousOn_floerEnergyDensity (isOpen_plumbedSphere q L)
     (hu.of_le one_le_two) (hK 1) (hK Complex.I)).mono hPS).integrableOn_compact (μ := volume)
     (isCompact_preimage_plumbedTruncation q L R)
@@ -428,22 +388,6 @@ private theorem lintegral_floerEnergyDensity_plumbedTruncation_eq (ω : Symplect
     integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction ω hq hHa hHb hHas hHbs
       hab hL hR hu,
     setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hR u]
-
-/-- The integrals of a function over the truncations `Σ_R` tend to its integral over the plumbed
-sphere. -/
-private theorem tendsto_setLIntegral_plumbedTruncation (hq : q ≠ inf) (hL : 0 < L)
-    (f : ℝ × ℝ → ENNReal) :
-    Tendsto (fun R ↦ ∫⁻ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, f z)
-      atTop (𝓝 (∫⁻ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, f z)) := by
-  have h := tendsto_measure_iUnion_atTop (μ := volume.withDensity f)
-    (s := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
-    fun _ _ hR ↦ preimage_mono (plumbedTruncation_mono q L hR)
-  rw [← preimage_iUnion, iUnion_plumbedTruncation hq hL, preimage_ofPred_eq,
-    withDensity_apply _ (isOpen_plumbedSphere q L).measurableSet] at h
-  refine h.congr fun R ↦ ?_
-  rw [comp_apply, withDensity_apply _ (measurableSet_preimage_plumbedTruncation q L R)]
 
 /-- **The energy identity on the plumbed four-punctured sphere.** Let `u` be `C²` on the plumbed
 four-punctured sphere `Σ = ℂ ∖ {0, 1, ψ(1)}` and solve the Floer equation `(du - X_K)^{0,1} = 0`
@@ -504,7 +448,7 @@ theorem lintegral_floerEnergyDensity_plumbedPerturbation_eq (ω : SymplecticForm
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z))
-  refine tendsto_nhds_unique (tendsto_setLIntegral_plumbedTruncation hq (by linarith) _)
+  refine tendsto_nhds_unique (tendsto_setLIntegral_plumbedTruncation hq (by linarith) volume _)
     (((ENNReal.continuous_ofReal.tendsto _).comp hP).congr' ?_)
   filter_upwards [eventually_ge_atTop (L / 2)] with R hR
   exact (lintegral_floerEnergyDensity_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hu hJ
@@ -569,18 +513,7 @@ theorem sum_add_sum_hamiltonianAction_le_of_plumbedPerturbation (ω : Symplectic
       plumbedTruncation_subset hq (by linarith) R hz)
   rw [lintegral_floerEnergyDensity_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hu hJ
     hfloer hR, ENNReal.toReal_ofReal'] at hle
-  linarith [le_max_left ((∑ r ∈ Finset.univ.erase q, r.endSign * ω.hamiltonianAction (Hb r)
-      (fun t ↦ u (Complex.equivRealProdCLM
-        (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))))) +
-    (∑ r ∈ Finset.univ.erase inf, ω.hamiltonianAction (Ha r)
-      (fun t ↦ u (Complex.equivRealProdCLM
-        (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)))))) -
-    ∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, ω.hamiltonianCurvature
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)) 0]
+  linarith [(le_max_left _ 0).trans hle]
 
 /-- **Finite energy is equivalent to convergence of the end actions.** Let `u` be `C²` on the
 plumbed four-punctured sphere `Σ = ℂ ∖ {0, 1, ψ(1)}` and solve the Floer equation
@@ -639,38 +572,35 @@ theorem lintegral_floerEnergyDensity_plumbedPerturbation_ne_top_iff (ω : Symple
       (∑ r ∈ Finset.univ.erase q, fB r R) + ∑ r ∈ Finset.univ.erase inf, fA r R ≤ M :=
     ⟨_, fun R hR ↦ ω.sum_add_sum_hamiltonianAction_le_of_plumbedPerturbation hq hHa hHb hHas hHbs
       hab hL hu hJ hfloer hE hR⟩
-  -- A function increasing and bounded above on `[L/2, ∞)` converges.
-  have hconv (f : ℝ → ℝ) (hf : MonotoneOn f (Ici (L / 2))) (c : ℝ)
-      (hc : ∀ R, L / 2 ≤ R → f R ≤ c) : ∃ l, Tendsto f atTop (𝓝 l) := by
-    have hg : Monotone fun R ↦ f (max R (L / 2)) := fun R₁ R₂ hR ↦
-      hf (le_max_right R₁ _) (le_max_right R₂ _) (max_le_max_right _ hR)
-    refine ⟨⨆ R, f (max R (L / 2)), (tendsto_atTop_ciSup hg
-      ⟨c, by rintro _ ⟨R, rfl⟩; exact hc _ (le_max_right _ _)⟩).congr' ?_⟩
-    filter_upwards [eventually_ge_atTop (L / 2)] with R hR
-    rw [max_eq_left hR]
-  -- Each end action is increasing, and bounded above by `M` minus the others at `L/2`.
+  -- Each end action increases by at most the increase of the signed sum since `L/2`, so it is
+  -- increasing and bounded above, and converges.
+  have hdB {R : ℝ} (hR : L / 2 ≤ R) (r : Puncture) (hr : r ∈ Finset.univ.erase q) :
+      0 ≤ fB r R - fB r (L / 2) :=
+    sub_nonneg.2 (hmB r (Finset.ne_of_mem_erase hr) (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR)
+  have hdA {R : ℝ} (hR : L / 2 ≤ R) (r : Puncture) (hr : r ∈ Finset.univ.erase inf) :
+      0 ≤ fA r R - fA r (L / 2) :=
+    sub_nonneg.2 (hmA r (Finset.ne_of_mem_erase hr) (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR)
+  have hd {R : ℝ} (hR : L / 2 ≤ R) :
+      (∑ r ∈ Finset.univ.erase q, (fB r R - fB r (L / 2))) +
+        ∑ r ∈ Finset.univ.erase inf, (fA r R - fA r (L / 2)) ≤
+      M - ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) +
+        ∑ r ∈ Finset.univ.erase inf, fA r (L / 2)) := by
+    simp only [Finset.sum_sub_distrib]
+    linarith [hsum R hR]
   have hB (r : Puncture) (hr : r ≠ q) : ∃ l, Tendsto (fB r) atTop (𝓝 l) := by
-    refine hconv _ (hmB r hr) (M - (∑ r' ∈ (Finset.univ.erase q).erase r, fB r' (L / 2)) -
-      ∑ r' ∈ Finset.univ.erase inf, fA r' (L / 2)) fun R hR ↦ ?_
-    have h := hsum R hR
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩)] at h
-    have h₁ := Finset.sum_le_sum fun r' (hr' : r' ∈ (Finset.univ.erase q).erase r) ↦
-      hmB r' (Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hr')) (mem_Ici.2 le_rfl)
-        (mem_Ici.2 hR) hR
-    have h₂ := Finset.sum_le_sum fun r' (hr' : r' ∈ Finset.univ.erase inf) ↦
-      hmA r' (Finset.ne_of_mem_erase hr') (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR
-    linarith
+    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmB r hr) ⟨fB r (L / 2) + (M -
+      ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) + ∑ r ∈ Finset.univ.erase inf, fA r (L / 2))),
+      ?_⟩⟩
+    rintro _ ⟨R, hR, rfl⟩
+    linarith [Finset.single_le_sum (hdB hR) (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩),
+      Finset.sum_nonneg (hdA hR), hd hR]
   have hA (r : Puncture) (hr : r ≠ inf) : ∃ l, Tendsto (fA r) atTop (𝓝 l) := by
-    refine hconv _ (hmA r hr) (M - (∑ r' ∈ Finset.univ.erase q, fB r' (L / 2)) -
-      ∑ r' ∈ (Finset.univ.erase inf).erase r, fA r' (L / 2)) fun R hR ↦ ?_
-    have h := hsum R hR
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩)] at h
-    have h₁ := Finset.sum_le_sum fun r' (hr' : r' ∈ Finset.univ.erase q) ↦
-      hmB r' (Finset.ne_of_mem_erase hr') (mem_Ici.2 le_rfl) (mem_Ici.2 hR) hR
-    have h₂ := Finset.sum_le_sum fun r' (hr' : r' ∈ (Finset.univ.erase inf).erase r) ↦
-      hmA r' (Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hr')) (mem_Ici.2 le_rfl)
-        (mem_Ici.2 hR) hR
-    linarith
+    refine ⟨_, tendsto_atTop_ciSup_of_monotoneOn_Ici (hmA r hr) ⟨fA r (L / 2) + (M -
+      ((∑ r ∈ Finset.univ.erase q, fB r (L / 2)) + ∑ r ∈ Finset.univ.erase inf, fA r (L / 2))),
+      ?_⟩⟩
+    rintro _ ⟨R, hR, rfl⟩
+    linarith [Finset.single_le_sum (hdA hR) (Finset.mem_erase.2 ⟨hr, Finset.mem_univ r⟩),
+      Finset.sum_nonneg (hdB hR), hd hR]
   choose! lB hlB using hB
   choose! lA hlA using hA
   refine ⟨⟨fun r ↦ r.endSign * lB r, fun r hr ↦ ((hlB r hr).const_mul r.endSign).congr

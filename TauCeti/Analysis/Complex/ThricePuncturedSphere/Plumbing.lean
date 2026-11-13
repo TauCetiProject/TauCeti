@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -80,6 +82,8 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_mono`,
   `TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`: the truncations `Σ_R`
   increase with `R` and exhaust the four-punctured sphere.
+* `TauCeti.ThricePuncturedSphere.Puncture.tendsto_setLIntegral_plumbedTruncation`: so the
+  integrals of a function over the truncations `Σ_R` tend to its integral over the plumbed sphere.
 
 ## References
 
@@ -666,5 +670,22 @@ theorem iUnion_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL :
     exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inl ⟨hR, hre⟩)⟩
   · obtain ⟨R, hR⟩ := mem_iUnion.1 (iUnion_truncation.symm ▸ hS : w' ∈ ⋃ R, truncation R)
     exact ⟨R, mem_plumbedTruncation_iff.2 (Or.inr ⟨w', hR, hre, rfl⟩)⟩
+
+/-- **Integrals over the plumbed truncations.** In the real coordinates, the integrals of a
+function `f` over the truncations `Σ_R` tend to its integral over the plumbed four-punctured sphere
+`ℂ ∖ {0, 1, ψ(1)}` as `R → ∞`. -/
+theorem tendsto_setLIntegral_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L)
+    (μ : MeasureTheory.Measure (ℝ × ℝ)) [MeasureTheory.SFinite μ] (f : ℝ × ℝ → ENNReal) :
+    Filter.Tendsto
+      (fun R ↦ ∫⁻ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, f z ∂μ)
+      Filter.atTop (nhds (∫⁻ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, f z ∂μ)) := by
+  have h := MeasureTheory.tendsto_measure_iUnion_atTop (μ := μ.withDensity f)
+    (s := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
+    fun _ _ hR ↦ preimage_mono (plumbedTruncation_mono q L hR)
+  rw [← preimage_iUnion, iUnion_plumbedTruncation hq hL, preimage_ofPred_eq,
+    MeasureTheory.withDensity_apply'] at h
+  exact h.congr fun R ↦ MeasureTheory.withDensity_apply' f _
 
 end TauCeti.ThricePuncturedSphere.Puncture
