@@ -261,12 +261,10 @@ theorem lintegral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] [μ.IsMul
 @[to_additive /-- **Left-coset representative independence for Bochner integrals.** -/]
 theorem integral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [μ.IsMulLeftInvariant]
-    (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → E) :
+    {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → E) :
     ∫ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-      (MeasurableEmbedding.subtype_coe hH)
+  have := Measure.isMulLeftInvariant_comap_subtype H μ
   rw [← integral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
