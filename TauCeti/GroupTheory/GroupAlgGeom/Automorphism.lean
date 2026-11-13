@@ -36,7 +36,10 @@ Each comes with its values on coefficients and variables, its inverse, and its e
 evaluation: the value of `φ w` at a point `v` is the value of `w` at the point obtained from `v`
 by the corresponding substitution. The words in which `x` does not occur form the subgroup
 `GX.avoiding x`: they are the words unchanged by the substitution `x ↦ 1`, and their values do
-not depend on the coordinate `x` of a point.
+not depend on the coordinate `x` of a point. Transvections of finitely many variables, by words in
+which none of these variables occurs, are carried out at once by one elementary automorphism,
+which fixes the words in which none of them occurs
+(`GX.exists_mem_elementaryAut_forall_apply_inr_of`).
 
 These are the automorphisms by which a strictly quadratic word is normalized in [IFT], §2.7,
 Lemma 1: up to conjugation in `G[X]`, a product of elementary `G`-automorphisms brings it either
@@ -394,6 +397,30 @@ theorem apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ element
   | one => rfl
   | mul f f' _ _ hf hf' => simp [hf, hf']
   | inv f _ hf => simpa [MulEquiv.symm_apply_eq] using hf.symm
+
+/-- Simultaneous transvections: for a finite set `Y` of variables and words `a y`, `b y` in which
+no variable of `Y` occurs, there is an elementary automorphism with `y ↦ a y * y * b y` for every
+`y ∈ Y` which fixes every word in which no variable of `Y` occurs. -/
+theorem exists_mem_elementaryAut_forall_apply_inr_of (Y : Finset X) (a b : X → GX G X)
+    (ha : ∀ y ∈ Y, ∀ y' ∈ Y, a y ∈ avoiding y') (hb : ∀ y ∈ Y, ∀ y' ∈ Y, b y ∈ avoiding y') :
+    ∃ f ∈ elementaryAut G X,
+      (∀ y ∈ Y, f (inr (FreeGroup.of y)) = a y * inr (FreeGroup.of y) * b y) ∧
+      ∀ w : GX G X, (∀ y ∈ Y, w ∈ avoiding y) → f w = w := by
+  induction Y using Finset.induction_on with
+  | empty => exact ⟨1, one_mem _, by simp, fun w _ => rfl⟩
+  | insert y₀ Y hy₀ ih =>
+    simp only [Finset.mem_insert, forall_eq_or_imp] at ha hb ⊢
+    obtain ⟨f, hf, hfY, hfw⟩ :=
+      ih (fun y hy y' hy' => (ha.2 y hy).2 y' hy') (fun y hy y' hy' => (hb.2 y hy).2 y' hy')
+    -- first the transvections of the variables of `Y`, then the one of `y₀`
+    refine ⟨transvection y₀ (a y₀) (b y₀) ha.1.1 hb.1.1 * f,
+      mul_mem (transvection_mem_elementaryAut _ _ _) hf, ⟨?_, fun y hy => ?_⟩, fun w hw => ?_⟩
+    · rw [MulAut.mul_apply,
+        hfw _ fun y hy => inr_of_mem_avoiding (ne_of_mem_of_not_mem hy hy₀).symm,
+        transvection_inr_of_self]
+    · rw [MulAut.mul_apply, hfY y hy]
+      simp [(ha.2 y hy).1, (hb.2 y hy).1, ne_of_mem_of_not_mem hy hy₀]
+    · rw [MulAut.mul_apply, hfw w hw.2, transvection_apply_of_mem_avoiding _ _ hw.1]
 
 end Elementary
 
