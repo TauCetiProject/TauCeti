@@ -65,6 +65,8 @@ finite; this is proved in `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCe
   `π [x, y] = [π x, y] = [x, π y]` away from degree zero.
 * `TauCeti.gradedMap_gradedBracket`, `TauCeti.gradedMap_gradedPow`: naturality of the bracket and
   of `π`.
+* `TauCeti.gradedMap_gradedMap_symm`, `TauCeti.gradedMap_injective`: the companion composite and
+  injectivity of the graded map of a topological isomorphism.
 * `TauCeti.gradedMap_symm_gradedMap`: the graded map of the inverse of a topological isomorphism
   inverts the graded map of the isomorphism.
 * `MulEquiv.gradedPowIter_gradedMkZero_ne_zero_multiplicative_zmod_pow`: in a discrete group
@@ -921,6 +923,19 @@ theorem gradedMap_symm_gradedMap (e : G ≃ₜ* H) (k : ℕ) (x : gradedPiece p 
   rw [gradedMap_gradedMk, gradedMap_gradedMk]
   congr 1
   exact Subtype.ext (e.symm_apply_apply x)
+
+/-- The graded map of a topological isomorphism, after the graded map of its inverse, is the
+identity, in every degree. -/
+@[simp]
+theorem gradedMap_gradedMap_symm (e : G ≃ₜ* H) (k : ℕ) (y : gradedPiece p H k) :
+    gradedMap p (e : G →* H) (map_continuous e) k
+      (gradedMap p (e.symm : H →* G) (map_continuous e.symm) k y) = y :=
+  gradedMap_symm_gradedMap e.symm k y
+
+/-- The graded map of a topological isomorphism is injective in every degree. -/
+theorem gradedMap_injective (e : G ≃ₜ* H) (k : ℕ) :
+    Function.Injective (gradedMap p (e : G →* H) (map_continuous e) k) :=
+  Function.LeftInverse.injective (gradedMap_symm_gradedMap (p := p) e k)
 
 /-- A continuous closed surjection (for instance a continuous surjection from a compact group onto
 a Hausdorff group, by `Continuous.isClosedMap`) induces a surjection in every degree. -/
