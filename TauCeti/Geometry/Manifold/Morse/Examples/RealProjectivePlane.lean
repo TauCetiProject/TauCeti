@@ -33,7 +33,7 @@ that the band of `[eₖ]` sits at `(-2k, k)`.
   `TauCeti.mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction`,
   `TauCeti.nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction`
   and
-  `TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_projectiveMomentFunction`
+  `filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul_projectiveMomentFunction`
   respectively. For any coefficients, the differential from the band of the saddle to the band of
   the minimum vanishes
   (`TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction`).
@@ -58,8 +58,9 @@ sequences of those triples. The inputs are the relative homology of a band with 
 (`TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd`), and the
 injectivity of the zeroth homology of the bottom sublevel into that of every larger sublevel. The
 bottom sublevel is path-connected
-(`TauCeti.isPathConnected_setOf_projectiveMomentFunction_le`), so its augmentation is an
-isomorphism, and it factors through that map.
+(`TauCeti.isPathConnected_setOf_projectiveMomentFunction_le`), and a map out of a path-connected
+space is injective on zeroth homology
+(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
 
 ## References
 
@@ -259,16 +260,13 @@ private theorem mono_singularHomologyMap_innerToTotal_zero {t : ℝ} (h : s₁ �
     ((projectiveMomentFunction_mem_Icc hw.monotone x).1.trans hx).not_gt h₀
   have : IsEmpty (TopTriple.innerPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
   have : IsEmpty (TopTriple.totalPair.obj T).snd := ⟨fun x ↦ hempty x.1 x.2⟩
-  -- On absolute homology, the augmentation of `{f ≤ s₁}` factors through the map, and it is an
-  -- isomorphism since `{f ≤ s₁}` is path-connected.
+  -- On absolute homology, the map is injective since `{f ≤ s₁}` is path-connected.
   have : PathConnectedSpace (TopTriple.innerPair.obj T).fst :=
     isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_setOf_projectiveMomentFunction_le
       h₁.le fun i hi ↦ h₁'.trans_le (hw.monotone (Fin.pos_iff_ne_zero.2 hi)))
-  have : IsIso (SSet.homology₀ε (TopCat.toSSet.obj (TopTriple.innerPair.obj T).fst) R) :=
-    inferInstanceAs (IsIso ((TopTriple.innerPair.obj T).fst.singularHomology₀ε R))
   have : Mono (SSet.homologyMap (TopCat.toSSet.map
       (TopPair.Hom.fst (TopTriple.innerToTotal.app T))) R 0) :=
-    mono_of_mono_fac (SSet.homologyMap_homology₀ε R _)
+    mono_singularHomologyMap_zero_of_pathConnectedSpace R _
   have hπ : IsIso ((TopTriple.totalPair.obj T).singularHomologyπ R 0) := inferInstance
   rw [(IsIso.eq_inv_comp _).2 (TopPair.singularHomologyπ_naturality
     (TopTriple.innerToTotal.app T) R 0).symm]
@@ -436,7 +434,8 @@ Under the hypotheses of
 integer coefficients, read through any identifications of the objects at `(-4, 2)` and `(-2, 1)` of
 the first page with `ℤ`, the differential between them is multiplication by `2` or by `-2`; the
 sign depends on the identifications. -/
-theorem filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_projectiveMomentFunction
+theorem
+    filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul_projectiveMomentFunction
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1)))
     (e₂ : ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X
