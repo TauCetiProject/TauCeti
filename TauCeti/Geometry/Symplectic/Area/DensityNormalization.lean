@@ -20,8 +20,9 @@ import TauCeti.MeasureTheory.Constructions.UnitInterval
 /-!
 # Normalizing an area density on the strip
 
-Let `ρ` be a positive density on the closed strip `ℝ × [0, 1]` (`TauCeti.unitStrip`), the universal
-cover of the closed annulus `(ℝ / ℤ) × [0, 1]`, which is `1`-periodic in the first coordinate. Put
+Let `ρ` be a positive density, continuous on the closed strip `ℝ × [0, 1]` (`TauCeti.unitStrip`),
+the universal cover of the closed annulus `(ℝ / ℤ) × [0, 1]`, which is `1`-periodic in the first
+coordinate. Put
 
 `s(x) = ∫₀¹ ρ(x, r) dr`  (`TauCeti.stripColumnMass`),  `a = ∫₀¹ s(x) dx`  (`TauCeti.stripMass`).
 
@@ -29,22 +30,22 @@ This file studies the map `Φ(x, y) = (u, v)` (`TauCeti.stripNormalization`) wit
 
 `u = a⁻¹ ∫₀ˣ s(t) dt`,  `v = s(x)⁻¹ ∫₀ʸ ρ(x, r) dr`.
 
-It carries the area form `ρ dx ∧ dy` to `a` times the standard area form: at every point `p` of the
-strip, `a · det dΦ_p = ρ(p)`, the derivative being taken within the strip
-(`TauCeti.stripMass_mul_det_fderivWithin_stripNormalization`). It is a bijection of the strip onto
-itself (`TauCeti.bijOn_stripNormalization`) which commutes with the deck translation
-`(x, y) ↦ (x + 1, y)` (`TauCeti.stripNormalization_add_one`), maps each boundary line to itself
-(`TauCeti.stripNormalization_mk_zero`, `TauCeti.stripNormalization_mk_one`), and is as smooth on
-the strip as `ρ` (`TauCeti.contDiffOn_stripNormalization`). Its first coordinate depends only on
-`x` and is strictly increasing (`TauCeti.stripNormalizedAngle_strictMono`), so for a boundary
-lift `f : ℝ → ℝ` the displacements `f x - x` and `u (f x) - u x` have the same sign. For the
-constant density `1` it is the identity (`TauCeti.stripNormalization_one`); for the density `1 + y`
-it is `(x, y) ↦ (x, (2 y + y²) / 3)` (`TauCeti.stripNormalization_one_add_snd`).
+If `ρ` is `C^1` on the strip, then `Φ` carries the area form `ρ dx ∧ dy` to `a` times the standard
+area form: at every point `p` of the strip, `a · det dΦ_p = ρ(p)`, the derivative being taken
+within the strip (`TauCeti.stripMass_mul_det_fderivWithin_stripNormalization`). It is a bijection
+of the strip onto itself (`TauCeti.bijOn_stripNormalization`) which commutes with the deck
+translation `(x, y) ↦ (x + 1, y)` (`TauCeti.stripNormalization_add_one`), maps each boundary line
+to itself (`TauCeti.stripNormalization_mk_zero`, `TauCeti.stripNormalization_mk_one`), and is as
+smooth on the strip as `ρ` (`TauCeti.contDiffOn_stripNormalization`). Its first coordinate
+depends only on `x` and is strictly increasing (`TauCeti.stripNormalizedAngle_strictMono`), so for
+a boundary lift `f : ℝ → ℝ` the displacements `f x - x` and `u (f x) - u x` have the same sign.
+For the constant density `1` it is the identity (`TauCeti.stripNormalization_one`); for the
+density `1 + y` it is `(x, y) ↦ (x, (2 y + y²) / 3)` (`TauCeti.stripNormalization_one_add_snd`).
 
-Conjugation by `Φ` compares area-preserving maps for the two forms. If `Φ ∘ F = G ∘ Φ` on the
-strip, then `ρ(F p) · det dF_p = ρ(p) · det dG_(Φ p)` at every point `p` at which `F` and `G` are
-differentiable within the strip
-(`TauCeti.mul_det_fderivWithin_eq_of_stripNormalization_conj`), so `G`
+Conjugation by `Φ` compares area-preserving maps for the two forms. If `ρ` is `C^1` on the strip
+and `Φ ∘ F = G ∘ Φ` on the strip, then `ρ(F p) · det dF_p = ρ(p) · det dG_(Φ p)` at every point `p`
+of the strip such that `F` is differentiable within the strip at `p` and `G` is differentiable
+within the strip at `Φ p` (`TauCeti.mul_det_fderivWithin_eq_of_stripNormalization_conj`), so `G`
 preserves `dx ∧ dy` at `Φ p` exactly when `F` preserves `ρ dx ∧ dy` at `p`
 (`TauCeti.det_fderivWithin_eq_one_iff_of_stripNormalization_conj`). This is the reduction of
 statements about area-preserving maps of the annulus for a positive area form `ρ dx ∧ dy`, such as
@@ -69,9 +70,10 @@ from `Convex.contDiffOn_integral_smul_of_contDiffOn`.
 * `TauCeti.contDiffOn_stripNormalization`: `Φ` is `C^n` on the strip when `ρ` is.
 * `TauCeti.bijOn_stripNormalization`: `Φ` is a bijection of the strip onto itself.
 * `TauCeti.stripNormalization_add_one`: `Φ` commutes with the deck translation.
-* `TauCeti.stripMass_mul_det_fderivWithin_stripNormalization`: `a · det dΦ = ρ`.
-* `TauCeti.det_fderivWithin_eq_one_iff_of_stripNormalization_conj`: conjugating by `Φ` turns
-  preservation of `ρ dx ∧ dy` into preservation of `dx ∧ dy`.
+* `TauCeti.stripMass_mul_det_fderivWithin_stripNormalization`: `a · det dΦ = ρ` for a `C^1`
+  density.
+* `TauCeti.det_fderivWithin_eq_one_iff_of_stripNormalization_conj`: for a `C^1` density,
+  conjugating by `Φ` turns preservation of `ρ dx ∧ dy` into preservation of `dx ∧ dy`.
 
 ## References
 
@@ -95,6 +97,9 @@ namespace TauCeti
 /-- The closed strip `ℝ × [0, 1]`, the universal cover of the closed annulus `(ℝ / ℤ) × [0, 1]`. -/
 def unitStrip : Set (ℝ × ℝ) := univ ×ˢ Icc 0 1
 
+theorem unitStrip_def : unitStrip = univ ×ˢ Icc (0 : ℝ) 1 :=
+  (rfl)
+
 @[simp]
 theorem mem_unitStrip {p : ℝ × ℝ} : p ∈ unitStrip ↔ p.2 ∈ Icc (0 : ℝ) 1 := by
   simp [unitStrip]
@@ -104,6 +109,9 @@ theorem convex_unitStrip : Convex ℝ unitStrip :=
 
 theorem uniqueDiffOn_unitStrip : UniqueDiffOn ℝ unitStrip :=
   uniqueDiffOn_univ.prod (uniqueDiffOn_Icc zero_lt_one)
+
+theorem isClosed_unitStrip : IsClosed unitStrip :=
+  isClosed_univ.prod isClosed_Icc
 
 /-! ### Masses of a density -/
 
@@ -123,9 +131,9 @@ def stripNormalizedAngle (ρ : ℝ × ℝ → ℝ) (x : ℝ) : ℝ :=
   (∫ t in (0 : ℝ)..x, stripColumnMass ρ t) / stripMass ρ
 
 /-- The **normalization** `Φ(x, y) = (a⁻¹ ∫₀ˣ s(t) dt, s(x)⁻¹ ∫₀ʸ ρ(x, r) dr)` of a density `ρ` on
-the strip. For a positive periodic density it is a bijection of the strip that commutes with the
-deck translation and maps each boundary line to itself; if the density is also `C^1`, then
-`a · det dΦ = ρ`. -/
+the strip. For a positive periodic density continuous on the strip it is a bijection of the strip
+that commutes with the deck translation and maps each boundary line to itself; if the density is
+also `C^1` on the strip, then `a · det dΦ = ρ`. -/
 def stripNormalization (ρ : ℝ × ℝ → ℝ) (p : ℝ × ℝ) : ℝ × ℝ :=
   (stripNormalizedAngle ρ p.1, (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1)
 
@@ -141,6 +149,11 @@ theorem stripNormalizedAngle_def (x : ℝ) :
     stripNormalizedAngle ρ x = (∫ t in (0 : ℝ)..x, stripColumnMass ρ t) / stripMass ρ :=
   (rfl)
 
+theorem stripNormalization_def (p : ℝ × ℝ) :
+    stripNormalization ρ p =
+      (stripNormalizedAngle ρ p.1, (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1) :=
+  (rfl)
+
 @[simp]
 theorem stripNormalization_fst (p : ℝ × ℝ) :
     (stripNormalization ρ p).1 = stripNormalizedAngle ρ p.1 :=
@@ -149,6 +162,17 @@ theorem stripNormalization_fst (p : ℝ × ℝ) :
 theorem stripNormalization_snd (p : ℝ × ℝ) :
     (stripNormalization ρ p).2 = (∫ r in (0 : ℝ)..p.2, ρ (p.1, r)) / stripColumnMass ρ p.1 :=
   (rfl)
+
+/-- The column masses of the constant density `1` are `1`. -/
+@[simp]
+theorem stripColumnMass_one : stripColumnMass (1 : ℝ × ℝ → ℝ) = 1 := by
+  funext x
+  simp [stripColumnMass_def]
+
+/-- The constant density `1` gives the fundamental domain mass `1`. -/
+@[simp]
+theorem stripMass_one : stripMass (1 : ℝ × ℝ → ℝ) = 1 := by
+  simp [stripMass_def]
 
 /-- A density continuous on the strip is continuous on each vertical segment. -/
 private theorem continuousOn_comp_mk_left (hρ : ContinuousOn ρ unitStrip) (x : ℝ) :
@@ -161,7 +185,7 @@ private theorem intervalIntegrable_comp_mk_left (hρ : ContinuousOn ρ unitStrip
     IntervalIntegrable (fun r ↦ ρ (x, r)) volume y y' :=
   ((continuousOn_comp_mk_left hρ x).mono (uIcc_subset_Icc hy hy')).intervalIntegrable
 
-/-- A density positive on the strip has positive column masses. -/
+/-- A density continuous and positive on the strip has positive column masses. -/
 theorem stripColumnMass_pos (hρ : ContinuousOn ρ unitStrip) (hpos : ∀ p ∈ unitStrip, 0 < ρ p)
     (x : ℝ) : 0 < stripColumnMass ρ x :=
   intervalIntegral_pos_of_pos_on
@@ -186,7 +210,7 @@ theorem continuous_stripColumnMass (hρ : ContinuousOn ρ unitStrip) :
     Continuous (stripColumnMass ρ) :=
   (contDiff_stripColumnMass (n := 0) (contDiffOn_zero.2 hρ)).continuous
 
-/-- A density positive on the strip gives the fundamental domain positive mass. -/
+/-- A density continuous and positive on the strip gives the fundamental domain positive mass. -/
 theorem stripMass_pos (hρ : ContinuousOn ρ unitStrip) (hpos : ∀ p ∈ unitStrip, 0 < ρ p) :
     0 < stripMass ρ :=
   intervalIntegral_pos_of_pos_on ((continuous_stripColumnMass hρ).intervalIntegrable 0 1)
@@ -198,34 +222,44 @@ theorem stripMass_pos (hρ : ContinuousOn ρ unitStrip) (hpos : ∀ p ∈ unitSt
 theorem stripNormalizedAngle_zero : stripNormalizedAngle ρ 0 = 0 := by
   simp [stripNormalizedAngle_def]
 
+/-- For a density giving the fundamental domain nonzero mass, `u(1) = 1`. -/
+theorem stripNormalizedAngle_one (h : stripMass ρ ≠ 0) : stripNormalizedAngle ρ 1 = 1 := by
+  rw [stripNormalizedAngle_def, ← stripMass_def, div_self h]
+
+/-- The first coordinate of the normalization of the constant density `1` is the identity. -/
+@[simp]
+theorem stripNormalizedAngle_one_left : stripNormalizedAngle (1 : ℝ × ℝ → ℝ) = id := by
+  funext x
+  simp [stripNormalizedAngle_def]
+
 /-- The derivative of the first coordinate of the normalization is `s(x) / a`. -/
 theorem hasDerivAt_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip) (x : ℝ) :
     HasDerivAt (stripNormalizedAngle ρ) (stripColumnMass ρ x / stripMass ρ) x :=
   ((continuous_stripColumnMass hρ).integral_hasStrictDerivAt 0 x).hasDerivAt.div_const _
 
-/-- The first coordinate of the normalization is `C^n` when the density is `C^n` on the strip. -/
+/-- The first coordinate of the normalization is `C^(n + 1)` when the density is `C^n` on the
+strip. -/
 theorem contDiff_stripNormalizedAngle {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip) :
-    ContDiff ℝ n (stripNormalizedAngle ρ) := by
+    ContDiff ℝ ((n : WithTop ℕ∞) + 1) (stripNormalizedAngle ρ) := by
   have hc : ContinuousOn ρ unitStrip := hρ.continuousOn
   have hd : deriv (stripNormalizedAngle ρ) = fun x ↦ stripColumnMass ρ x / stripMass ρ :=
     funext fun x ↦ (hasDerivAt_stripNormalizedAngle hc x).deriv
-  have h : ContDiff ℝ ((n : WithTop ℕ∞) + 1) (stripNormalizedAngle ρ) :=
-    contDiff_succ_iff_deriv.2 ⟨fun x ↦ (hasDerivAt_stripNormalizedAngle hc x).differentiableAt,
-      fun h ↦ absurd h (by simp), hd ▸ (contDiff_stripColumnMass hρ).div_const _⟩
-  exact h.of_le le_self_add
+  exact contDiff_succ_iff_deriv.2 ⟨fun x ↦ (hasDerivAt_stripNormalizedAngle hc x).differentiableAt,
+    fun h ↦ absurd h (by simp), hd ▸ (contDiff_stripColumnMass hρ).div_const _⟩
 
 theorem continuous_stripNormalizedAngle (hρ : ContinuousOn ρ unitStrip) :
     Continuous (stripNormalizedAngle ρ) :=
   (contDiff_stripNormalizedAngle (n := 0) (contDiffOn_zero.2 hρ)).continuous
 
-/-- For a positive density the first coordinate of the normalization is strictly increasing. -/
+/-- For a density continuous and positive on the strip the first coordinate of the normalization is
+strictly increasing. -/
 theorem stripNormalizedAngle_strictMono (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : StrictMono (stripNormalizedAngle ρ) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_stripNormalizedAngle hρ)
     fun x ↦ div_pos (stripColumnMass_pos hρ hpos x) (stripMass_pos hρ hpos)
 
-/-- For a periodic density the first coordinate of the normalization is a lift of a degree-one
-circle map: `u(x + 1) = u(x) + 1`. -/
+/-- For a periodic density continuous and positive on the strip the first coordinate of the
+normalization commutes with the unit translation: `u(x + 1) = u(x) + 1`. -/
 theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p)
     (x : ℝ) : stripNormalizedAngle ρ (x + 1) = stripNormalizedAngle ρ x + 1 := by
@@ -236,8 +270,8 @@ theorem stripNormalizedAngle_add_one (hρ : ContinuousOn ρ unitStrip)
     hperiodic.intervalIntegral_add_eq x 0, zero_add, add_div, ← stripMass_def,
     div_self (stripMass_pos hρ hpos).ne']
 
-/-- For a positive periodic density the first coordinate of the normalization is onto `ℝ`: it is
-a continuous lift of a degree-one circle map. -/
+/-- For a periodic density continuous and positive on the strip the first coordinate of the
+normalization is onto `ℝ`: it is a continuous lift of a degree-one circle map. -/
 theorem stripNormalizedAngle_surjective (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (hper : ∀ p ∈ unitStrip, ρ (p.1 + 1, p.2) = ρ p) :
     Function.Surjective (stripNormalizedAngle ρ) :=
@@ -254,8 +288,8 @@ theorem stripNormalization_mk_zero (x : ℝ) :
     stripNormalization ρ (x, 0) = (stripNormalizedAngle ρ x, 0) := by
   simp [stripNormalization]
 
-/-- For a positive density the normalization maps the upper boundary line of the strip to
-itself. -/
+/-- For a density continuous and positive on the strip the normalization maps the upper boundary
+line of the strip to itself. -/
 theorem stripNormalization_mk_one (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) (x : ℝ) :
     stripNormalization ρ (x, 1) = (stripNormalizedAngle ρ x, 1) :=
@@ -304,7 +338,8 @@ theorem bijOn_stripNormalization_snd (hρ : ContinuousOn ρ unitStrip)
 
 /-! ### The normalization map -/
 
-/-- For a positive density the normalization maps the strip to itself. -/
+/-- For a density continuous and positive on the strip the normalization maps the strip to
+itself. -/
 theorem mapsTo_stripNormalization (hρ : ContinuousOn ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : MapsTo (stripNormalization ρ) unitStrip unitStrip :=
   fun p hp ↦ mem_unitStrip.2 ((bijOn_stripNormalization_snd hρ hpos p.1).mapsTo
@@ -340,7 +375,7 @@ theorem stripNormalization_add_one (hρ : ContinuousOn ρ unitStrip)
 @[simp]
 theorem stripNormalization_one : stripNormalization 1 = id := by
   funext p
-  simp [stripNormalization, stripNormalizedAngle_def, stripMass_def, stripColumnMass_def]
+  simp [stripNormalization_def]
 
 /-- For the density `1 + y`, with column masses `3 / 2`, the normalization is
 `(x, y) ↦ (x, (2 y + y²) / 3)`. -/
@@ -386,16 +421,20 @@ private theorem contDiffOn_integral_comp_mk_left {n : ℕ∞} (hρ : ContDiffOn 
 /-- **The normalization is as smooth as the density**, up to the boundary of the strip. -/
 theorem contDiffOn_stripNormalization {n : ℕ∞} (hρ : ContDiffOn ℝ n ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : ContDiffOn ℝ n (stripNormalization ρ) unitStrip :=
-  ((contDiff_stripNormalizedAngle hρ).comp contDiff_fst).contDiffOn.prodMk
+  (((contDiff_stripNormalizedAngle hρ).of_le le_self_add).comp contDiff_fst).contDiffOn.prodMk
     ((contDiffOn_integral_comp_mk_left hρ).div
       ((contDiff_stripColumnMass hρ).comp contDiff_fst).contDiffOn
       fun p _ ↦ (stripColumnMass_pos hρ.continuousOn hpos p.1).ne')
 
+theorem continuousOn_stripNormalization (hρ : ContinuousOn ρ unitStrip)
+    (hpos : ∀ p ∈ unitStrip, 0 < ρ p) : ContinuousOn (stripNormalization ρ) unitStrip :=
+  (contDiffOn_stripNormalization (n := 0) (contDiffOn_zero.2 hρ) hpos).continuousOn
+
 /-! ### The Jacobian -/
 
-/-- **The normalization rescales the area form `ρ dx ∧ dy` to the standard one**: at every point
-`p` of the strip, `a · det dΦ_p = ρ(p)`, where `a` is the mass of the fundamental domain and the
-derivative is taken within the strip. -/
+/-- **The normalization rescales the area form `ρ dx ∧ dy` to the standard one**: for a positive
+density `C^1` on the strip, at every point `p` of the strip, `a · det dΦ_p = ρ(p)`, where `a` is
+the mass of the fundamental domain and the derivative is taken within the strip. -/
 theorem stripMass_mul_det_fderivWithin_stripNormalization (hρ : ContDiffOn ℝ 1 ρ unitStrip)
     (hpos : ∀ p ∈ unitStrip, 0 < ρ p) {p : ℝ × ℝ} (hp : p ∈ unitStrip) :
     stripMass ρ * (fderivWithin ℝ (stripNormalization ρ) unitStrip p).det = ρ p := by
@@ -437,9 +476,10 @@ theorem stripMass_mul_det_fderivWithin_stripNormalization (hρ : ContDiffOn ℝ 
   field_simp
   ring
 
-/-- **Conjugating by the normalization.** If `Φ ∘ F = G ∘ Φ` on the strip, where `F` maps the strip
-to itself, then `ρ(F p) · det dF_p = ρ(p) · det dG_(Φ p)` at every point `p` of the strip at which
-`F` and `G` are differentiable within the strip. -/
+/-- **Conjugating by the normalization.** Let `ρ` be a positive density `C^1` on the strip. If
+`Φ ∘ F = G ∘ Φ` on the strip, where `F` maps the strip to itself, then
+`ρ(F p) · det dF_p = ρ(p) · det dG_(Φ p)` at every point `p` of the strip such that `F` is
+differentiable within the strip at `p` and `G` is differentiable within the strip at `Φ p`. -/
 theorem mul_det_fderivWithin_eq_of_stripNormalization_conj
     (hρ : ContDiffOn ℝ 1 ρ unitStrip) (hpos : ∀ p ∈ unitStrip, 0 < ρ p) {F G : ℝ × ℝ → ℝ × ℝ}
     (hF : MapsTo F unitStrip unitStrip)
@@ -461,9 +501,10 @@ theorem mul_det_fderivWithin_eq_of_stripNormalization_conj
     ← stripMass_mul_det_fderivWithin_stripNormalization hρ hpos hp, mul_assoc, hdet]
   ring
 
-/-- **Conjugating by the normalization turns `ρ dx ∧ dy` into `dx ∧ dy`.** If `Φ ∘ F = G ∘ Φ` on
-the strip, where `F` maps the strip to itself, then at a point `p` of the strip at which `F` and
-`G` are differentiable within the strip, `G` preserves the standard area form at `Φ p` exactly
+/-- **Conjugating by the normalization turns `ρ dx ∧ dy` into `dx ∧ dy`.** Let `ρ` be a positive
+density `C^1` on the strip. If `Φ ∘ F = G ∘ Φ` on the strip, where `F` maps the strip to itself,
+then at a point `p` of the strip such that `F` is differentiable within the strip at `p` and `G`
+is differentiable within the strip at `Φ p`, `G` preserves the standard area form at `Φ p` exactly
 when `F` preserves `ρ dx ∧ dy` at `p`, that is `ρ(F p) · det dF_p = ρ(p)`. -/
 theorem det_fderivWithin_eq_one_iff_of_stripNormalization_conj
     (hρ : ContDiffOn ℝ 1 ρ unitStrip) (hpos : ∀ p ∈ unitStrip, 0 < ρ p) {F G : ℝ × ℝ → ℝ × ℝ}
