@@ -164,11 +164,11 @@ theorem commute_multiplicationOperator_fourierLp_one_iff
   have hb : eLpNorm (⇑b) ∞ haarAddCircle ≤ ‖W‖ₑ := by
     refine eLpNorm_top_le_of_forall_mem_span_fourier (p := 2) ENNReal.ofNat_ne_top
       (Lp.aestronglyMeasurable b) fun q hq ↦ ?_
-    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.enorm_def,
+    rw [← eLpNorm_congr_ae (coeFn_apply_toLp_of_commute hW hq), ← Lp.eNorm_def,
       ← eLpNorm_congr_ae (ContinuousMap.coeFn_toLp (E := ℂ) (p := 2) (𝕜 := ℂ) haarAddCircle q),
-      ← Lp.enorm_def]
+      ← Lp.eNorm_def]
     exact W.le_opENorm _
-  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt enorm_lt_top)
+  have hb_mem : MemLp (⇑b) ∞ haarAddCircle := memLp_iff.2 (hb.trans_lt eNorm_lt_top)
   -- `W` agrees with multiplication by `b` on the Fourier basis, whose span is dense.
   refine ⟨hb_mem.toLp b, ContinuousLinearMap.ext_on
     (dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := T)).dense_span) ?_⟩

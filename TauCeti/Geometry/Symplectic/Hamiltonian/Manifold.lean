@@ -322,6 +322,13 @@ theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I
     σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
   rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
 
+/-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
+integrand of the first variation of the action functional. -/
+theorem apply_sub_hamiltonianVectorField (f : M → ℝ) (x : M) (a b : TangentSpace I x) :
+    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
+  rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
+    sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField, SmoothBundleForm.eval₂_swap]
+
 /-- The Hamiltonian vector field of `f` is a Hamiltonian vector field of `f`. -/
 theorem isHamiltonianVectorField_hamiltonianVectorField (f : M → ℝ) :
     σ.IsHamiltonianVectorField f (σ.hamiltonianVectorField f) :=
