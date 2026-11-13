@@ -259,16 +259,6 @@ theorem integrable_asymmetricLaplacePDFReal (m l r : ℝ) :
     · simp [funext (asymmetricLaplacePDFReal_of_nonpos_right (not_lt.mp hr) m l)]
   · simp [funext (asymmetricLaplacePDFReal_of_nonpos_left (not_lt.mp hl) m r)]
 
-/-- The asymmetric Laplace density is integrable on every lower half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Iic :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Iic x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
-/-- The asymmetric Laplace density is integrable on every upper half-line. -/
-theorem integrableOn_asymmetricLaplacePDFReal_Ioi :
-    IntegrableOn (asymmetricLaplacePDFReal m l r) (Ioi x) :=
-  (integrable_asymmetricLaplacePDFReal m l r).integrableOn
-
 /-- The asymmetric Laplace density integrates to `1`. -/
 theorem integral_asymmetricLaplacePDFReal (hl : 0 < l) (hr : 0 < r) (m : ℝ) :
     ∫ y, asymmetricLaplacePDFReal m l r y = 1 := by
