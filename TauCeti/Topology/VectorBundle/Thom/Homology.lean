@@ -189,27 +189,23 @@ theorem bijective_homologyThomMap_iff {K : Type w} [Field K] {n p m : ℕ} (h : 
     Function.Bijective (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom ↔
       Function.Bijective (thomMap F E (ModuleCat.of K K) n p m (by omega) u) := by
   set T := (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom
-  have hc : IsUnit ((-1 : K) ^ (n * p)) := isUnit_neg_one.pow _
+  have hc : ((-1 : K) ^ (n * p)) ≠ 0 := pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)
   -- The linear form of `π^*a ⌣ u` is `(-1)^(n p)` times the dual map of `T` applied to that
   -- of `a`.
   have key : ∀ a, (thomPair F E).singularCohomologyDualEquiv m
       (thomMap F E (ModuleCat.of K K) n p m (by omega) u a) =
-      LinearEquiv.smulOfUnit hc.unit
+      LinearEquiv.smulOfNeZero K _ _ hc
         (T.dualMap ((TopCat.of B).singularCohomologyDualEquiv p a)) := by
     intro a
     ext x
     have hx := congrArg (fun φ ↦ φ.hom x) (homologyThomMap_comp_singularKronecker F E h u a)
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zsmul,
       LinearMap.smul_apply] at hx
-    have hs : ∀ y : Module.Dual K
-        ((thomPair F E).singularHomology (C := ModuleCat.{w} K) (ModuleCat.of K K) m),
-        LinearEquiv.smulOfUnit hc.unit y = ((-1 : K) ^ (n * p)) • y := fun _ ↦ rfl
-    rw [hs, LinearMap.smul_apply, LinearMap.dualMap_apply,
-      TopPair.singularCohomologyDualEquiv_apply, TopCat.singularCohomologyDualEquiv_apply, hx,
-      ← Int.cast_smul_eq_zsmul K, smul_smul, Int.cast_pow, Int.cast_neg, Int.cast_one, ← mul_pow,
-      neg_one_mul, neg_neg, one_pow, one_smul]
+    rw [LinearEquiv.smulOfNeZero_apply, LinearMap.smul_apply, LinearMap.dualMap_apply,
+      TopPair.singularCohomologyDualEquiv_apply, TopCat.singularCohomologyDualEquiv_apply, hx]
+    simp [← Int.cast_smul_eq_zsmul K, ← mul_assoc, ← mul_pow]
   have e : ⇑(thomMap F E (ModuleCat.of K K) n p m (by omega) u) =
-      ⇑((thomPair F E).singularCohomologyDualEquiv m).symm ∘ ⇑(LinearEquiv.smulOfUnit hc.unit) ∘
+      ⇑((thomPair F E).singularCohomologyDualEquiv m).symm ∘ ⇑(LinearEquiv.smulOfNeZero K _ _ hc) ∘
         ⇑T.dualMap ∘ ⇑((TopCat.of B).singularCohomologyDualEquiv p) := by
     funext a
     simp only [Function.comp_apply, ← key, LinearEquiv.symm_apply_apply]

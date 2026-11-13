@@ -144,9 +144,10 @@ lemma alexanderWhitneyDiagonalKoszulBraidingHomotopy_hom_naturality {X Y : TopCa
   simp only [alexanderWhitneyDiagonalKoszulBraidingHomotopy, Homotopy.trans_hom,
     Homotopy.ofEq_hom, Homotopy.compLeft_hom, Pi.zero_apply, zero_add, add_zero,
     HomologicalComplex.comp_f, Category.assoc]
+  -- Naturality of the diagonal: `f ≫ Δ_Y = Δ_X ≫ (f ⊗ f)`.
+  have hΔ : f ≫ lift (𝟙 Y) (𝟙 Y) = lift (𝟙 X) (𝟙 X) ≫ (f ⊗ₘ f) := by simp
   rw [SSet.chainComplexMap_f_chainComplexFunctor_map_app_f_assoc,
-    SSet.chainComplexMap_f_comp_assoc, ← Functor.map_comp, comp_lift, Category.comp_id,
-    ← Category.id_comp f, ← lift_map, Category.id_comp, Functor.map_comp,
+    SSet.chainComplexMap_f_comp_assoc, ← Functor.map_comp, hΔ, Functor.map_comp,
     ← SSet.chainComplexMap_f_comp_assoc, alexanderWhitneyKoszulBraidingHomotopy_hom_naturality]
 
 end TopCat
