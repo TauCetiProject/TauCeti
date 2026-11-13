@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.SpecialFunctions.Exp
@@ -19,9 +20,15 @@ bound `K exp (-c ‖x‖)` outside a compact set extends to the whole space for 
 function, after enlarging the constant. The analogous statement on a closed forward ray absorbs
 an initial compact time interval into the constant.
 
+For a positive rate `c` the profile `exp (-c ‖x‖)` tends to zero at infinity, and a faster profile
+is `O` of a slower one, so a decay estimate at one rate gives one at every slower rate.
+
 ## Main declarations
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
+* `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
+* `TauCeti.isBigO_exp_neg_mul_norm_of_le`: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` for `c ≤ c'`, so a
+  decay estimate at a rate `c'` gives one at every slower rate `c`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
 * `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
@@ -39,6 +46,23 @@ theorem exp_neg_mul_sub (c t R : ℝ) :
     Real.exp (-(c * (t - R))) = Real.exp (c * R) * Real.exp (-(c * t)) := by
   rw [← Real.exp_add]
   ring_nf
+
+open Filter Topology in
+/-- For a positive rate `c`, the radial exponential `exp (-c ‖x‖)` tends to zero at infinity. -/
+theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
+    {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
+  Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
+
+open Asymptotics in
+/-- A faster exponential decay is a stronger bound: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` along any
+filter when `c ≤ c'`. -/
+theorem isBigO_exp_neg_mul_norm_of_le {E : Type*} [SeminormedAddGroup E] {c c' : ℝ}
+    (hcc' : c ≤ c') (l : Filter E) :
+    (fun x : E ↦ Real.exp (-(c' * ‖x‖))) =O[l] fun x ↦ Real.exp (-(c * ‖x‖)) :=
+  isBigO_of_le _ fun x ↦ by
+    simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp, neg_le_neg_iff]
+    exact mul_le_mul_of_nonneg_right hcc' (norm_nonneg _)
 
 open Filter in
 /-- A continuous function bounded by `K exp (-c ‖x‖)` outside a compact set is bounded by

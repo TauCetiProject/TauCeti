@@ -37,7 +37,8 @@ statement into the probabilists' mean ergodic theorem: the time averages
 `birkhoffAverage ℝ T f n` of an integrable square-integrable observable converge in `L²` to
 `μ[f | MeasurableSpace.invariants T]`. The translation between the operator Birkhoff averages of
 the composition operator and the pointwise Birkhoff averages of a representative is
-`coeFn_birkhoffAverage_compMeasurePreserving` of `TauCeti.Probability.Ergodic.BirkhoffLp`.
+`MeasureTheory.Lp.coeFn_birkhoffAverage_compMeasurePreserving` of
+`TauCeti.Probability.Ergodic.BirkhoffLp`.
 
 ## Main results
 
@@ -55,8 +56,7 @@ the composition operator and the pointwise Birkhoff averages of a representative
   expectation tends to `0`. This is the shape a consumer integrating against a bounded weight
   wants, and it needs no integrability hypothesis of its own.
 
-The `Exchangeability` roadmap records this identification as the Layer 5 milestone
-`proj_eq_condexp`, whose migration source is the `Ergodic` subtree of
+The same identification is `proj_eq_condexp` in the `Ergodic` subtree of
 `cameronfreer/exchangeability`. Nothing here is a port: the statements are for an arbitrary
 measure-preserving map rather than the path-space shift, and the proofs consume Mathlib's
 `condExpL2` and von Neumann mean ergodic theorem.
@@ -148,8 +148,8 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (T : Ω → Ω) (hT : Measur
   have haverage : ⇑(birkhoffAverage ℝ
       (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap id n (hf.toLp f)) =ᵐ[μ]
       birkhoffAverage ℝ T f n := by
-    rw [LinearIsometry.coe_toContinuousLinearMap, coe_compMeasurePreservingₗᵢ]
-    exact (coeFn_birkhoffAverage_compMeasurePreserving hT (hf.toLp f) n).trans
+    rw [LinearIsometry.coe_toContinuousLinearMap, Lp.coe_compMeasurePreservingₗᵢ]
+    exact (Lp.coeFn_birkhoffAverage_compMeasurePreserving ℝ (hf.toLp f) hT n).trans
       (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
   have hprojection : ⇑(metProjection (𝕜 := ℝ) T hT (hf.toLp f)) =ᵐ[μ]
       μ[f | MeasurableSpace.invariants T] :=

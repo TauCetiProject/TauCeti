@@ -64,19 +64,34 @@ namespace MvPolynomial
 
 variable {k K σ : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K] [Finite σ]
 
-/-- **The dimension theorem at the origin**: let `K` be an algebraically closed extension of `k`.
-Fewer than `#σ` polynomials in `k[X_σ]` vanishing at the origin have a common zero in `K^σ` other
-than the origin. -/
-theorem exists_ne_zero_forall_aeval_eq_zero {s : Finset (MvPolynomial σ k)}
-    (hs : s.card < Nat.card σ) (h0 : ∀ p ∈ s, constantCoeff p = 0) :
+omit [Field k] [Algebra k K] in
+/-- **The dimension theorem at the origin**: let `K` be an algebraically closed field and an
+algebra over a commutative semiring `k`. Fewer than `#σ` polynomials in `k[X_σ]` vanishing at the
+origin have a common zero in `K^σ` other than the origin. -/
+theorem exists_ne_zero_forall_aeval_eq_zero {k : Type*} [CommSemiring k] [Algebra k K]
+    {s : Finset (MvPolynomial σ k)} (hs : s.card < Nat.card σ)
+    (h0 : ∀ p ∈ s, constantCoeff p = 0) :
     ∃ x : σ → K, x ≠ 0 ∧ ∀ p ∈ s, aeval x p = 0 := by
+  classical
+  -- Replace the polynomials by their images in `K[X_σ]`.
+  set t : Finset (MvPolynomial σ K) := s.image (map (algebraMap k K))
+  have ht : t.card < Nat.card σ := (Finset.card_image_le).trans_lt hs
+  have ht0 : ∀ p ∈ t, constantCoeff p = 0 := by
+    simp only [t, Finset.mem_image]
+    rintro _ ⟨p, hp, rfl⟩
+    rw [constantCoeff_map, h0 p hp, map_zero]
+  suffices ∃ x : σ → K, x ≠ 0 ∧ ∀ p ∈ t, eval x p = 0 by
+    obtain ⟨x, hx, hxt⟩ := this
+    refine ⟨x, hx, fun p hp ↦ ?_⟩
+    rw [aeval_def, ← eval_map]
+    exact hxt _ (Finset.mem_image_of_mem _ hp)
   by_contra! H
-  set I := Ideal.span (s : Set (MvPolynomial σ k))
+  set I := Ideal.span (t : Set (MvPolynomial σ K))
   -- The polynomials vanishing at the origin form a maximal ideal `m` containing `I`.
-  set m := RingHom.ker (constantCoeff (σ := σ) (R := k))
+  set m := RingHom.ker (constantCoeff (σ := σ) (R := K))
   have hm : m.IsMaximal :=
     RingHom.ker_isMaximal_of_surjective _ fun c ↦ ⟨C c, constantCoeff_C σ c⟩
-  have hIm : I ≤ m := Ideal.span_le.mpr fun p hp ↦ h0 p hp
+  have hIm : I ≤ m := Ideal.span_le.mpr fun p hp ↦ ht0 p hp
   -- The origin is the only zero of `I`, so the Nullstellensatz gives `m ≤ √I`.
   have hmI : m ≤ I.radical := by
     rw [← vanishingIdeal_zeroLocus_eq_radical (K := K)]
@@ -84,15 +99,15 @@ theorem exists_ne_zero_forall_aeval_eq_zero {s : Finset (MvPolynomial σ k)}
     have hx0 : x = 0 := by
       by_contra hx0
       obtain ⟨q, hq, hqx⟩ := H x hx0
-      exact hqx (hx q (Ideal.subset_span hq))
+      exact hqx (by simpa using hx q (Ideal.subset_span hq))
     rw [hx0, aeval_zero, RingHom.mem_ker.mp hp, map_zero]
-  -- Hence `m` is a minimal prime over `I`, of height at most `#s` by Krull's height theorem.
+  -- Hence `m` is a minimal prime over `I`, of height at most `#t` by Krull's height theorem.
   obtain ⟨p, hp⟩ := Ideal.nonempty_minimalPrimes (hIm.trans_lt hm.ne_top.lt_top).ne
   have hpm : m = p :=
     hm.eq_of_le hp.1.1.ne_top (hmI.trans ((hp.1.1.radical_le_iff).mpr hp.1.2))
   have h1 := Ideal.height_le_card_of_mem_minimalPrimes_span_finset hp
   rw [← hpm, height_eq_natCard_of_isMaximal] at h1
-  exact hs.not_ge (by exact_mod_cast h1)
+  exact ht.not_ge (by exact_mod_cast h1)
 
 /-- **A reducible cone is singular away from its vertex**: let `K` be an algebraically closed
 extension of `k` and `σ` have at least three elements. If `a, b ∈ k[X_σ]` vanish at the origin,

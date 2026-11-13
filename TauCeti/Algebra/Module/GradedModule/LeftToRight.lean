@@ -91,6 +91,7 @@ theorem leftToRight_isScalarTower (G : InternalGrading R A)
       rw [map_smul, smul_assoc]⟩
   exact H.quadraticTwistEquiv.isScalarTower (GradedOpposite G)ᵐᵒᵖ
 
+omit [IsScalarTower R A M] in
 /-- A homogeneous scalar of degree `p` acts on a homogeneous module element of degree `q` by the
 original left action multiplied by the Koszul sign `(-1) ^ (p * q)`. -/
 theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R M)
@@ -103,7 +104,15 @@ theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R
   rw [leftToRight_smul G H]
   rw [opAlgEquiv_op_op, G.quadraticTwist_apply_of_mem ha,
     H.quadraticTwist_apply_of_mem hx]
-  rw [smul_assoc, smul_comm a, smul_smul]
+  -- Without a scalar tower, the sign `((u : ℤˣ) : R)` still commutes with the `A`-action: on an
+  -- additive group an integer cast scalar is the integer multiple, which commutes with every
+  -- additive action.
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
+  have hsign (u : ℤˣ) (y : M) : ((u : ℤ) : R) • (a • y) = a • (((u : ℤ) : R) • y) ∧
+      (((u : ℤ) : R) • a) • y = ((u : ℤ) : R) • (a • y) := by
+    simp only [Int.cast_smul_eq_zsmul R]
+    exact ⟨smul_comm _ _ _, smul_assoc _ _ _⟩
+  rw [(hsign _ _).2, ← (hsign _ _).1, smul_smul]
   have hax : a • x ∈ H.piece (p + q) := SetLike.GradedSMul.smul_mem ha hx
   rw [map_smul, H.quadraticTwist_apply_of_mem hax]
   simp only [smul_smul]
@@ -130,6 +139,7 @@ theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R
           (InternalGrading.quadraticExponent q).negOnePow) := by ac_rfl
     _ = (p * q).negOnePow := by simp [hp, hq]
 
+omit [IsScalarTower R A M] in
 /-- A homogeneous scalar of even degree acts through the graded opposite by the original left
 action, on every module element: the Koszul sign `(-1) ^ (p * q)` is trivial on each homogeneous
 component. -/
@@ -145,6 +155,7 @@ theorem leftToRight_smul_of_mem_of_even (G : InternalGrading R A) (H : InternalG
   rw [leftToRight_smul_of_mem G H ha (SetLike.coe_mem _),
     Int.negOnePow_even _ (hp.mul_right q), Units.val_one, Int.cast_one, one_smul]
 
+omit [IsScalarTower R A M] in
 /-- The transported graded-opposite action adds the scalar degree to the module degree. -/
 theorem leftToRight_gradedSMul (G : InternalGrading R A) (H : InternalGrading R M)
     [SetLike.GradedSMul G.piece H.piece] :
@@ -180,7 +191,7 @@ by their respective theories.
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  [AddCommGroup M] [Module R M] [Module A M]
   (G : InternalGrading R A) (H : InternalGrading R M) [SetLike.GradedSMul G.piece H.piece]
   {d : A →ₗ[R] A} {dM : M →ₗ[R] M}
 

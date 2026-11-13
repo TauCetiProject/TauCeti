@@ -45,8 +45,7 @@ private theorem D_translation_genericX_some {x y : F} (h : (W⁄F).toAffine.Nons
     h.left.baseChange (Algebra.ofId F W.FunctionField)
   have hd := derivation_addX_slope_of_right_constant
     (W := W) (KaehlerDifferential.D F W.FunctionField)
-    (equation_genericX_genericY W) h₂ (genericX_ne_algebraMap W x)
-    (evalEval_polynomialY_genericX_genericY_ne_zero W)
+    (equation_genericX_genericY W) h₂ (fun _ ↦ evalEval_polynomialY_genericX_genericY_ne_zero W)
     (KaehlerDifferential.D F W.FunctionField |>.map_algebraMap x)
     (KaehlerDifferential.D F W.FunctionField |>.map_algebraMap y)
   rw [translation_apply_genericX_some W h]

@@ -426,6 +426,20 @@ theorem Connected.reachable (hG : G.Connected) {x y : α} (hx : x ∈ V(G)) (hy 
     G.Reachable x y :=
   (connected_iff_forall_reachable.mp hG).2 hx hy
 
+/-- The union of two compatible connected multigraphs sharing an actual vertex is connected. -/
+theorem Compatible.connected_union (h : G.Compatible H) (hG : G.Connected) (hH : H.Connected)
+    (hinter : (V(G) ∩ V(H)).Nonempty) : h.union.Connected := by
+  obtain ⟨z, hzG, hzH⟩ := hinter
+  refine connected_iff_forall_reachable.mpr
+    ⟨⟨z, h.vertexSet_union.symm ▸ Or.inl hzG⟩, fun x y hx hy ↦ ?_⟩
+  have hreach : ∀ {w}, w ∈ V(h.union) → h.union.Reachable z w := by
+    intro w hw
+    rw [h.vertexSet_union] at hw
+    rcases hw with hw | hw
+    · exact (hG.reachable hzG hw).mono h.left_le_union
+    · exact (hH.reachable hzH hw).mono h.right_le_union
+  exact (hreach hx).symm.trans (hreach hy)
+
 /-- The graph traced by a walk is connected. -/
 theorem Walk.connected_walkGraph {x y : α} (p : G.Walk x y) : (G.walkGraph p).Connected := by
   rw [connected_iff_forall_reachable]

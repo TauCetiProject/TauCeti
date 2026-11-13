@@ -29,8 +29,8 @@ periodic functions on half-strips.
   so its integral over a band of `k` periods is `k` times its integral over one period
   (`Function.Periodic.setLIntegral_reProdIm_Ico_intCast_add_natCast`). A disc of radius at most
   `1/2` lies in two periods, so the integral over it is at most twice the integral over one period
-  of the half-strip to its right
-  (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi`), and the same holds
+  of the vertical strip of the same width
+  (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), and the same holds
   for the Bochner integral of a nonnegative real function
   (`Function.Periodic.setIntegral_ball_le_two_mul`).
 * If the integral over the half-strip `(a, ∞) ×ℂ t` is finite, then the integrals over the
@@ -90,14 +90,14 @@ theorem setLIntegral_reProdIm_Ico_intCast_add_natCast (hf : Periodic f I) {s : S
     ring
 
 /-- For a function periodic under `z ↦ z + I`, its integral over a disc of radius `r ≤ 1/2` about
-`z₀` is at most twice its integral over one period `(z₀.re - r, ∞) ×ℂ [0, 1]` of the half-strip
-to the right of the disc. -/
-theorem setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi (hf : Periodic f I) (z₀ : ℂ)
+`z₀` is at most twice its integral over one period `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` of the
+vertical strip of the same width as the disc. -/
+theorem setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo (hf : Periodic f I) (z₀ : ℂ)
     {r : ℝ} (hr : r ≤ 1 / 2) :
-    ∫⁻ y in ball z₀ r, f y ≤ 2 * ∫⁻ y in Ioi (z₀.re - r) ×ℂ Icc 0 1, f y := by
+    ∫⁻ y in ball z₀ r, f y ≤ 2 * ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, f y := by
   -- The disc lies in the two periods `n ≤ im < n + 2` for `n = ⌊z₀.im - 1/2⌋`.
   set n : ℤ := ⌊z₀.im - 1 / 2⌋
-  have hsub : ball z₀ r ⊆ Ioi (z₀.re - r) ×ℂ Ico (n : ℝ) (n + (2 : ℕ)) := by
+  have hsub : ball z₀ r ⊆ Ioo (z₀.re - r) (z₀.re + r) ×ℂ Ico (n : ℝ) (n + (2 : ℕ)) := by
     intro y hy
     rw [mem_ball, dist_eq_norm] at hy
     have hre := abs_re_le_norm (y - z₀)
@@ -106,32 +106,33 @@ theorem setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi (hf : Periodic f 
     rw [abs_le] at hre him
     have h₁ := Int.floor_le (z₀.im - 1 / 2)
     have h₂ := Int.lt_floor_add_one (z₀.im - 1 / 2)
-    simp only [mem_reProdIm, mem_Ioi, mem_Ico, Nat.cast_ofNat]
-    refine ⟨by linarith, by linarith, by linarith⟩
+    simp only [mem_reProdIm, mem_Ioo, mem_Ico, Nat.cast_ofNat]
+    refine ⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩
   calc ∫⁻ y in ball z₀ r, f y
-      ≤ ∫⁻ y in Ioi (z₀.re - r) ×ℂ Ico (n : ℝ) (n + (2 : ℕ)), f y := lintegral_mono_set hsub
-    _ = 2 * ∫⁻ y in Ioi (z₀.re - r) ×ℂ Ico 0 1, f y := by
-        rw [hf.setLIntegral_reProdIm_Ico_intCast_add_natCast measurableSet_Ioi]
+      ≤ ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Ico (n : ℝ) (n + (2 : ℕ)), f y :=
+        lintegral_mono_set hsub
+    _ = 2 * ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Ico 0 1, f y := by
+        rw [hf.setLIntegral_reProdIm_Ico_intCast_add_natCast measurableSet_Ioo]
         norm_num
-    _ ≤ 2 * ∫⁻ y in Ioi (z₀.re - r) ×ℂ Icc 0 1, f y := by
+    _ ≤ 2 * ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, f y := by
         gcongr
         exact reProdIm_subset_iff.2 (prod_mono le_rfl Ico_subset_Icc_self)
 
 /-- For a nonnegative real function periodic under `z ↦ z + I`, if its integral over one period
-`(R, ∞) ×ℂ [0, 1]` of a half-strip is at most `ε`, then its integral over every disc of radius
-`r ≤ 1/2` lying in the half-plane `re > R` is at most `2 ε`. -/
+`s ×ℂ [0, 1]` of a set `s` of real parts containing `(z₀.re - r, z₀.re + r)` is at most `ε`, then
+its integral over the disc of radius `r ≤ 1/2` about `z₀` is at most `2 ε`. -/
 theorem setIntegral_ball_le_two_mul {g : ℂ → ℝ} (hg : Periodic g I) (hg0 : ∀ y, 0 ≤ g y)
-    {z₀ : ℂ} {r R ε : ℝ} (hr : r ≤ 1 / 2) (hR : R ≤ z₀.re - r) (hε : 0 ≤ ε)
-    (hm : AEStronglyMeasurable g (volume.restrict (ball z₀ r)))
-    (hle : ∫⁻ y in Ioi R ×ℂ Icc 0 1, ENNReal.ofReal (g y) ≤ ENNReal.ofReal ε) :
+    {z₀ : ℂ} {r ε : ℝ} {s : Set ℝ} (hr : r ≤ 1 / 2) (hs : Ioo (z₀.re - r) (z₀.re + r) ⊆ s)
+    (hε : 0 ≤ ε) (hm : AEStronglyMeasurable g (volume.restrict (ball z₀ r)))
+    (hle : ∫⁻ y in s ×ℂ Icc 0 1, ENNReal.ofReal (g y) ≤ ENNReal.ofReal ε) :
     ∫ y in ball z₀ r, g y ≤ 2 * ε := by
   have hlE : ∫⁻ y in ball z₀ r, ENNReal.ofReal (g y) ≤ ENNReal.ofReal (2 * ε) := by
     calc ∫⁻ y in ball z₀ r, ENNReal.ofReal (g y)
-        ≤ 2 * ∫⁻ y in Ioi (z₀.re - r) ×ℂ Icc 0 1, ENNReal.ofReal (g y) :=
-          (hg.comp ENNReal.ofReal).setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioi z₀ hr
-      _ ≤ 2 * ∫⁻ y in Ioi R ×ℂ Icc 0 1, ENNReal.ofReal (g y) := by
+        ≤ 2 * ∫⁻ y in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, ENNReal.ofReal (g y) :=
+          (hg.comp ENNReal.ofReal).setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo z₀ hr
+      _ ≤ 2 * ∫⁻ y in s ×ℂ Icc 0 1, ENNReal.ofReal (g y) := by
           gcongr
-          exact reProdIm_subset_iff.2 (prod_mono (Ioi_subset_Ioi hR) le_rfl)
+          exact reProdIm_subset_iff.2 (prod_mono hs le_rfl)
       _ ≤ 2 * ENNReal.ofReal ε := by gcongr
       _ = ENNReal.ofReal (2 * ε) := by
           rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
