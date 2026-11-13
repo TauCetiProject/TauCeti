@@ -31,7 +31,7 @@ namespace Finset
 variable {G 𝕜 : Type*} [Group G] [DecidableEq G] [RCLike 𝕜]
 
 /-- The convolution of a finite set with its inverse is positive definite, over either `ℝ`
-or `ℂ`. Its kernel is the Gram kernel of the indicators of the left translates of the set. -/
+or `ℂ`. -/
 theorem posSemidef_convolution_inv (F : Finset G) :
     (Matrix.of fun g h : G ↦ (F.convolution F⁻¹ (g⁻¹ * h) : 𝕜)).PosSemidef := by
   let : MeasurableSpace G := ⊤
