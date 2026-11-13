@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Analysis.Distribution.Sobolev
+import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.PDE.Vortex.Zeros
 
@@ -27,6 +30,17 @@ equation `Δη = P η`.
 
 * `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
+* `logVariation_congr_nhds`, `contDiff_logVariation`: it is local in `η`, and `Cⁿ` along a `Cⁿ`
+  field when `η` is `Cⁿ⁺¹`.
+* `logVariation_apply_zero_eq_zero_of_differentiableAt`,
+  `logVariation_apply_one_eq_zero_of_differentiableAt`: the connection part vanishes where `η` is
+  holomorphic.
+* `memLp_logVariation`: it is square integrable when `η` and `Dη` are, along a field with bounded
+  section components.
+* `memLp_logVariation_of_mem_realSobolevFunctions`: square integrability for a `C¹` function
+  `η ∈ H²(ℂ; ℂ)` along a field with bounded section.
+* `logVariation_eq_of_differentiableAt`: where `η` is holomorphic, the logarithmic variation has
+  no connection part.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -56,8 +70,9 @@ with `|α|² → 1` at infinity) it suffices that `y ∈ L²`, which gives `η �
 of `δα / α` at the zeros of `α`. This is the vanishing step behind the injectivity half of the
 identification of the kernel of `L_x` with the tangent space of the divisor space `Sym^m ℂ`
 through the principal parts of `δα / α`. The principal-part map itself, which needs the local
-structure of `δα / α` at a zero of `α`, and the construction of a kernel element with prescribed
-principal parts are not treated here.
+structure of `δα / α` at a zero of `α`, is in `TauCeti.Analysis.PDE.Vortex.PrincipalPart`.
+Kernel elements with prescribed principal parts are constructed in
+`TauCeti.Analysis.PDE.Vortex.KernelExistence` and `TauCeti.Analysis.PDE.Vortex.ZeroMode`.
 
 ## References
 
@@ -72,7 +87,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter MeasureTheory Set
+open Complex Filter MeasureTheory Set TemperedDistribution
 open scoped Laplacian Topology
 
 /-- The **logarithmic variation** of a field `x` along a complex function `η`: the variation
@@ -129,6 +144,72 @@ theorem logVariation_zero_add_one_mul_I (x : ℂ → EuclideanSpace ℝ (Fin 4))
     congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (imCLM.hasFDerivAt.comp z hη.hasFDerivAt).fderiv
   rw [conjWirtingerDeriv_apply]
   apply Complex.ext <;> simp [hre, him] <;> ring
+
+/-- Where `η` is holomorphic, the connection variation `2 i ∂bar η` of its logarithmic variation
+vanishes. -/
+private theorem logVariation_zero_add_one_mul_I_eq_zero (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) :
+    (logVariation x η z 0 : ℂ) + logVariation x η z 1 * I = 0 := by
+  rw [logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ), hη.conjWirtingerDeriv_eq_zero,
+    _root_.zero_apply, mul_zero]
+
+/-- The first connection component of the logarithmic variation vanishes where `η` is
+holomorphic. -/
+theorem logVariation_apply_zero_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 0 = 0 := by
+  simpa using congrArg re (logVariation_zero_add_one_mul_I_eq_zero x hη)
+
+/-- The second connection component of the logarithmic variation vanishes where `η` is
+holomorphic. -/
+theorem logVariation_apply_one_eq_zero_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 1 = 0 := by
+  simpa using congrArg im (logVariation_zero_add_one_mul_I_eq_zero x hη)
+
+/-- Where `η` is holomorphic, its logarithmic variation is the pure section variation
+`δα = α η`, with no connection part. -/
+theorem logVariation_eq_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → ℂ}
+    {z : ℂ} (hη : DifferentiableAt ℂ η z) :
+    logVariation x η z =
+      !₂[0, 0, (sectionValue x z * η z / 2).re, (sectionValue x z * η z / 2).im] := by
+  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
+  rw [hη.conjWirtingerDeriv_eq_zero] at h
+  ext i
+  fin_cases i
+  · simpa using congrArg re h
+  · simpa using congrArg im h
+  · simp [sectionValue_apply]
+    ring
+  · simp [sectionValue_apply]
+    ring
+
+/-- The logarithmic variation of a `C¹` function `η ∈ H²(ℂ; ℂ)` along a field with bounded section
+is square integrable: its connection part consists of first derivatives of `η`, and its section
+part `α η` has a bounded factor `α`. -/
+theorem memLp_logVariation_of_mem_realSobolevFunctions {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx₂ : MemLp (fun z ↦ x z 2) ⊤ volume) (hx₃ : MemLp (fun z ↦ x z 3) ⊤ volume) {η : ℂ → ℂ}
+    (hη : ContDiff ℝ 1 η) (hre : (fun z ↦ (η z).re) ∈ realSobolevFunctions ℂ 2 2)
+    (him : (fun z ↦ (η z).im) ∈ realSobolevFunctions ℂ 2 2) :
+    MemLp (logVariation x η) 2 volume := by
+  have hd (f : ℂ → ℝ) (hf : ContDiff ℝ 1 f) (hf2 : f ∈ realSobolevFunctions ℂ 2 2) (v : ℂ) :
+      MemLp (fun z ↦ fderiv ℝ f z v) 2 volume := by
+    refine memLp_of_mem_realSobolevFunctions (s := 1)
+      (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by simp) zero_le_one hf ?_ v)
+    norm_num
+    exact hf2
+  have hu : ContDiff ℝ 1 (fun z ↦ (η z).re) := reCLM.contDiff.comp hη
+  have hv : ContDiff ℝ 1 (fun z ↦ (η z).im) := imCLM.contDiff.comp hη
+  have hu2 := memLp_of_mem_realSobolevFunctions hre
+  have hv2 := memLp_of_mem_realSobolevFunctions him
+  refine MemLp.of_eval_piLp fun i ↦ ?_
+  fin_cases i
+  · exact ((hd _ hv him 1).neg.sub (hd _ hu hre I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hd _ hu hre 1).sub (hd _ hv him I)).ae_eq (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx₂.mul hu2 : MemLp (fun z ↦ x z 2 * (η z).re) 2 volume).sub
+      (hx₃.mul hv2 : MemLp (fun z ↦ x z 3 * (η z).im) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
+  · exact ((hx₂.mul hv2 : MemLp (fun z ↦ x z 2 * (η z).im) 2 volume).add
+      (hx₃.mul hu2 : MemLp (fun z ↦ x z 3 * (η z).re) 2 volume)).ae_eq
+      (ae_of_all _ fun z ↦ by simp)
 
 /-- The two `∂bar` rows of `L_x` on a logarithmic variation: they are the real and imaginary
 parts of `η E`, where `E` is the complex holomorphicity defect of `x` (rows `1` and `2` of
@@ -384,6 +465,78 @@ theorem logVariation_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ �
   have hneg : -ζ = (-1 : ℝ) • ζ := by simp
   rw [sub_eq_add_neg, sub_eq_add_neg, hneg, logVariation_add x hη (hζ.const_smul _),
     logVariation_smul, neg_one_smul]
+
+/-- The logarithmic variation at a point depends only on the germ of `η` there. -/
+theorem logVariation_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ} {z : ℂ}
+    (h : η =ᶠ[𝓝 z] ζ) : logVariation x η z = logVariation x ζ z := by
+  have hre : (fun w ↦ (η w).re) =ᶠ[𝓝 z] fun w ↦ (ζ w).re := h.mono fun w hw ↦ by simp only [hw]
+  have him : (fun w ↦ (η w).im) =ᶠ[𝓝 z] fun w ↦ (ζ w).im := h.mono fun w hw ↦ by simp only [hw]
+  refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
+  · simp only [logVariation_apply_zero, hre.fderiv_eq, him.fderiv_eq]
+  · simp only [logVariation_apply_one, hre.fderiv_eq, him.fderiv_eq]
+  · rw [sectionValue_logVariation, sectionValue_logVariation, h.eq_of_nhds]
+
+/-- The logarithmic variation of a `Cⁿ⁺¹` function along a `Cⁿ` field is `Cⁿ`, at a point. -/
+theorem contDiffAt_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ} {z : ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiffAt ℝ n x z) (hη : ContDiffAt ℝ (n + 1) η z) :
+    ContDiffAt ℝ n (logVariation x η) z := by
+  have hu : ContDiffAt ℝ (n + 1) (fun w ↦ (η w).re) z := reCLM.contDiff.contDiffAt.comp z hη
+  have hv : ContDiffAt ℝ (n + 1) (fun w ↦ (η w).im) z := imCLM.contDiff.contDiffAt.comp z hη
+  have hdu (a : ℂ) : ContDiffAt ℝ n (fun w ↦ fderiv ℝ (fun w ↦ (η w).re) w a) z :=
+    (hu.fderiv_right le_rfl).clm_apply contDiffAt_const
+  have hdv (a : ℂ) : ContDiffAt ℝ n (fun w ↦ fderiv ℝ (fun w ↦ (η w).im) w a) z :=
+    (hv.fderiv_right le_rfl).clm_apply contDiffAt_const
+  have hxi (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := contDiffAt_euclidean.1 hx i
+  have hu' := hu.of_le le_self_add
+  have hv' := hv.of_le le_self_add
+  have h₀ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 0) z := by
+    simpa only [logVariation_apply_zero] using (hdv 1).neg.sub (hdu I)
+  have h₁ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 1) z := by
+    simpa only [logVariation_apply_one] using (hdu 1).sub (hdv I)
+  have h₂ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 2) z := by
+    simpa only [logVariation_apply_two] using ((hxi 2).mul hu').sub ((hxi 3).mul hv')
+  have h₃ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 3) z := by
+    simpa only [logVariation_apply_three] using ((hxi 2).mul hv').add ((hxi 3).mul hu')
+  refine contDiffAt_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
+
+/-- The logarithmic variation of a `Cⁿ⁺¹` function along a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) :
+    ContDiff ℝ n (logVariation x η) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_logVariation hx.contDiffAt hη.contDiffAt
+
+/-- The logarithmic variation of `η` is in `Lᵖ` when the real and imaginary parts of `η` and their
+derivatives are, along a continuous field whose section components are bounded. -/
+theorem memLp_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) {B : ℝ}
+    (hB : ∀ w, |x w 2| ≤ B ∧ |x w 3| ≤ B) {η : ℂ → ℂ} {p : ENNReal} {μ : Measure ℂ}
+    (hu : MemLp (fun w ↦ (η w).re) p μ) (hv : MemLp (fun w ↦ (η w).im) p μ)
+    (hdu : MemLp (fderiv ℝ fun w ↦ (η w).re) p μ) (hdv : MemLp (fderiv ℝ fun w ↦ (η w).im) p μ) :
+    MemLp (logVariation x η) p μ := by
+  have happ {f : ℂ → ℝ} (hf : MemLp (fderiv ℝ f) p μ) (a : ℂ) :
+      MemLp (fun w ↦ fderiv ℝ f w a) p μ :=
+    (ContinuousLinearMap.apply ℝ ℝ a).comp_memLp' hf
+  have hxi (i : Fin 4) : Continuous fun w ↦ x w i := by fun_prop
+  have hmul {f : ℂ → ℝ} (hf : MemLp f p μ) (i : Fin 4) (hi : ∀ w, |x w i| ≤ B) :
+      MemLp (fun w ↦ x w i * f w) p μ :=
+    hf.of_le_mul (c := B) ((hxi i).aestronglyMeasurable.mul hf.aestronglyMeasurable)
+      (ae_of_all _ fun w ↦ by rw [norm_mul, Real.norm_eq_abs]; gcongr; exact hi w)
+  have h₀ : MemLp (fun w ↦ logVariation x η w 0) p μ := by
+    simp only [logVariation_apply_zero]
+    exact (happ hdv 1).neg.sub (happ hdu I)
+  have h₁ : MemLp (fun w ↦ logVariation x η w 1) p μ := by
+    simp only [logVariation_apply_one]
+    exact (happ hdu 1).sub (happ hdv I)
+  have h₂ : MemLp (fun w ↦ logVariation x η w 2) p μ := by
+    simp only [logVariation_apply_two]
+    exact (hmul hu 2 fun w ↦ (hB w).1).sub (hmul hv 3 fun w ↦ (hB w).2)
+  have h₃ : MemLp (fun w ↦ logVariation x η w 3) p μ := by
+    simp only [logVariation_apply_three]
+    exact (hmul hv 2 fun w ↦ (hB w).1).add (hmul hu 3 fun w ↦ (hB w).2)
+  refine memLp_piLp_iff.2 fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
 
 /-- **A kernel element with regular `δα / α` vanishes.** Let `x` be a differentiable field whose
 holomorphicity rows vanish everywhere and whose zeros have dense complement, and let `y` be a

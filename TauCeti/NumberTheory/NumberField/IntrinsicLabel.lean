@@ -8,12 +8,6 @@ module
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
--- Roadmap source: `TauCetiRoadmap/NumberFieldArithmetic/README.md` @ `ce02686a0c05`, Layer 8.1,
--- which specifies the predicate below and the sign-recovery statement proved from
--- `NumberField.sign_discr`. This credit sits outside the module docstring deliberately: the
--- docstring documents the mathematics, so the roadmap citation belongs here rather than in
--- its References section.
-
 /-!
 # The intrinsic label prefix of a number field
 

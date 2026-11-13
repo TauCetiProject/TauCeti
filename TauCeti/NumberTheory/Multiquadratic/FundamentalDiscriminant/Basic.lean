@@ -18,14 +18,14 @@ These are exactly the discriminants of quadratic fields (together with `1`, the 
 `Int.IsFundamentalDiscr`, and this description is its characterization
 `Int.isFundamentalDiscr_iff_squarefree`.
 
-The genus-field layer of the multiquadratic roadmap needs the passage between a fundamental
-discriminant and the **prime discriminants** dividing it: the genus field of `ℚ(√d)` is the
+Genus theory needs the passage between a fundamental discriminant and the
+**prime discriminants** dividing it: the genus field of `ℚ(√d)` is the
 compositum of the quadratic fields `ℚ(√p*)` attached to the prime discriminants dividing
 `disc ℚ(√d)`, and it is those prime discriminants, not the squarefree radicands, that behave
 correctly at `2`. This file supplies the *synthesis* half of that passage: a product of prime
 discriminants with pairwise distinct underlying primes is again a fundamental discriminant. The
-analysis half (every fundamental discriminant factors as such a product, uniquely) is left to a
-later file.
+analysis half (every fundamental discriminant factors as such a product, uniquely) is proved in
+`FundamentalDiscriminant/Factorization.lean`.
 
 Since two distinct even prime discriminants are both divisible by `4`, a product of prime
 discriminants can only be fundamental if at most one factor is even. The two component theorems
@@ -39,10 +39,8 @@ pairwise-coprime specialization.
 The definition of a fundamental discriminant and the fact that products of prime discriminants
 are fundamental are classical; see Cox, *Primes of the Form x² + ny²*, and Lemmermeyer,
 *Reciprocity Laws*, following the same prime-discriminant convention as the sibling files in this
-directory. The `-20` and `-84` worked examples of the `Worked examples` section of
-`TauCetiRoadmap/Multiquadratic/README.md` have their fundamental-discriminant component established
-in `FundamentalDiscriminant/Examples.lean`; their class-group and concrete genus-field
-identifications remain future work.
+directory. The worked examples `-20` and `-84` (the discriminants of `ℚ(√-5)` and `ℚ(√-21)`) are
+shown to be fundamental in `FundamentalDiscriminant/Examples.lean`.
 
 ## Main results
 

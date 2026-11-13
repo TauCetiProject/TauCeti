@@ -187,7 +187,7 @@ theorem smul_eq_self_iff {g : unitary (V →L[𝕜] V)} {p : OrthonormalFrameBun
 when they lie over the same base point. -/
 theorem exists_smul_eq_iff {p q : OrthonormalFrameBundle 𝕜 F E V} :
     (∃ g : unitary (V →L[𝕜] V), op g • p = q) ↔ p.proj = q.proj := by
-  refine ⟨fun ⟨g, h⟩ ↦ h ▸ rfl, fun h ↦ ?_⟩
+  refine ⟨fun ⟨_, h⟩ ↦ h ▸ rfl, fun h ↦ ?_⟩
   obtain ⟨b, φ⟩ := p
   obtain ⟨b', ψ⟩ := q
   obtain rfl : b = b' := h
