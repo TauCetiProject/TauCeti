@@ -179,7 +179,7 @@ def foxColoringsRightHandedTrefoilPDCodeEquiv :
     simp [h₀, h₁]
 
 /-- The first coordinate is the label of the arc over crossing `0`. -/
-@[simp]
+@[simp↓]
 theorem foxColoringsRightHandedTrefoilPDCodeEquiv_fst
     (v : rightHandedTrefoilPDCode.foxColorings R M) :
     (foxColoringsRightHandedTrefoilPDCodeEquiv R M v).1 =
@@ -187,7 +187,7 @@ theorem foxColoringsRightHandedTrefoilPDCodeEquiv_fst
   (rfl)
 
 /-- The torsion coordinate is the difference of the labels over crossings `1` and `0`. -/
-@[simp]
+@[simp↓]
 theorem foxColoringsRightHandedTrefoilPDCodeEquiv_snd
     (v : rightHandedTrefoilPDCode.foxColorings R M) :
     ((foxColoringsRightHandedTrefoilPDCodeEquiv R M v).2 : M) =
@@ -195,7 +195,7 @@ theorem foxColoringsRightHandedTrefoilPDCodeEquiv_snd
   (rfl)
 
 /-- The inverse labels the Wirtinger arcs by `a`, `a + u` and `a - u`. -/
-@[simp]
+@[simp↓]
 theorem foxColoringsRightHandedTrefoilPDCodeEquiv_symm_apply
     (x : M × LinearMap.ker ((3 : ℕ) • LinearMap.id : M →ₗ[R] M)) (h : Fin 12) :
     ((foxColoringsRightHandedTrefoilPDCodeEquiv R M).symm x).1 (.inl h) =

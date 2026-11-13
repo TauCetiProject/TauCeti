@@ -133,7 +133,7 @@ theorem apply_crossing_add_two_of_mem_foxColorings_of_not_isOver
 
 variable (D R) in
 /-- Every constant family is a Fox colouring. -/
-@[simp]
+@[simp↓]
 theorem const_mem_foxColorings (m : M) :
     Function.const (Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) m ∈ D.foxColorings R M := by
   refine mem_foxColorings_iff.2 ⟨fun _ ↦ rfl, fun i slot ↦ ?_⟩

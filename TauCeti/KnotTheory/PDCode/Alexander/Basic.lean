@@ -132,6 +132,21 @@ theorem alexanderWeight_add_two_mul_alexanderWeight (i : Fin n) (slot : Fin 4) :
     simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ↓reduceIte, mul_one, ← T_add,
       neg_add_cancel, add_neg_cancel, T_zero]
 
+/-- At `t = -1`, the Alexander weight of a slot is `1` on the over-strand and `-1` on the
+under-strand, for evaluation along any ring homomorphism `f : ℤ →+* S`. -/
+@[simp]
+theorem eval₂_neg_one_alexanderWeight {S : Type*} [CommRing S] (f : ℤ →+* S) (i : Fin n)
+    (slot : Fin 4) :
+    eval₂ f (-1) (D.alexanderWeight i slot) = if D.isOver i slot then 1 else -1 := by
+  have key (k : ℤ) (hk : k = 1 ∨ k = -1) : eval₂ f (-1) (T k) = -1 := by
+    rcases hk with rfl | rfl <;> simp [eval₂_T]
+  have hsign := D.crossingSign_eq_one_or_neg_one i
+  rw [alexanderWeight_def]
+  split_ifs
+  · exact map_one _
+  · exact key _ (by rcases hsign with h | h <;> simp [h])
+  · exact key _ hsign
+
 /-- The relations of a crossing at its slots `0` and `1` imply those at its slots `2` and `3`, for
 any family of elements indexed by the half-edges: one of the two slots lies on the over-strand, and
 the weights of opposite slots are inverse to each other. -/
