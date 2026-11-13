@@ -127,6 +127,7 @@ variable {ι κ K L M M' : Type*} [Field K] [Field L] (σ : K →+* L)
 linearly independent exactly when `v` is: the coordinates of the image are the images under `σ` of
 the coordinates of `v`, and linear independence of coordinate vectors is unchanged by extending
 scalars along `σ`. -/
+@[simp]
 theorem linearIndependent_semilinearMap_comp_iff (b : Basis ι K M) (b' : Basis ι L M')
     {v : κ → M} : LinearIndependent L (b.semilinearMap σ b' ∘ v) ↔ LinearIndependent K v := by
   let := σ.toAlgebra
