@@ -95,7 +95,7 @@ structure ProjValMeasure (X : Type*) [MeasurableSpace X] (H : Type*)
   proj : ∀ B : Set X, MeasurableSet B → (H →L[ℂ] H)
   /-- The diagonal scalar measures, carried as data. -/
   diag : H → Measure X
-  /-- Each diagonal measure is finite (its mass is `‖ξ‖ ^ 2`, by `diag_univ_toReal`). -/
+  /-- Each diagonal measure is finite (its mass is `‖ξ‖ ^ 2`, by `diag_real_univ`). -/
   diag_finite : ∀ ξ : H, IsFiniteMeasure (diag ξ)
   /-- The weld: diagonal matrix elements of the projections are the diagonal measures. -/
   inner_proj : ∀ (B : Set X) (hB : MeasurableSet B) (ξ : H),
@@ -265,19 +265,14 @@ lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 
-/-- Total mass of the diagonal scalar measure, as a real number. -/
-lemma diag_univ_toReal (P : ProjValMeasure X H) (ξ : H) :
-    ((P.diag ξ) Set.univ).toReal = ‖ξ‖ ^ 2 := by
-  -- The projection of the whole space is the identity, so its norm identity
-  -- already computes the mass, without any complex-real coercion argument.
-  simpa [P.proj_univ] using
-    (P.norm_sq_proj_apply Set.univ MeasurableSet.univ ξ).symm
-
 /-- The total mass of the diagonal measure as a real number. -/
 @[simp]
 theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
     (P.diag ξ).real Set.univ = ‖ξ‖ ^ 2 := by
-  simpa only [measureReal_def] using P.diag_univ_toReal ξ
+  -- The projection of the whole space is the identity, so its norm identity
+  -- already computes the mass, without any complex-real coercion argument.
+  simpa [measureReal_def, P.proj_univ] using
+    (P.norm_sq_proj_apply Set.univ MeasurableSet.univ ξ).symm
 
 /-- The total mass of the diagonal measure in `ℝ≥0∞`. -/
 @[simp]
@@ -289,7 +284,7 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
       (ENNReal.ofReal_toReal
         (measure_ne_top (μ := P.diag ξ) (s := Set.univ))).symm
     _ = ENNReal.ofReal (‖ξ‖ ^ 2) :=
-      congrArg ENNReal.ofReal (P.diag_univ_toReal ξ)
+      congrArg ENNReal.ofReal (P.diag_real_univ ξ)
     _ = ‖ξ‖ₑ ^ 2 := by
       rw [ENNReal.ofReal_pow (norm_nonneg ξ), ofReal_norm]
 
