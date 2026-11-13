@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Lagrangian.Composition.Clean
 public import TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -29,6 +30,12 @@ correspondence exactly when it is a topological embedding
 (`IsLagrangianImmersion.isLagrangianEmbedding_relComp_transverseFiberProduct_iff`). The
 composite need not be injective, even for embedded `f` and `g`, so the embedding hypothesis is
 kept separate.
+
+For a clean composition with excess, the composite may instead factor as `j ∘ q` through a
+surjective smooth submersion `q` whose kernel contains every excess direction. Then `j` is a
+Lagrangian correspondence `M₁ ⇝ M₃` exactly when it is a topological embedding
+(`IsLagrangianMap.isLagrangianEmbedding_relComp_of_isSubmersion`, building on
+`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Clean`).
 
 ## References
 
@@ -149,5 +156,46 @@ theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_transverseFiberProdu
   exact ⟨fun he ↦ he.isEmbedding, fun he ↦ ⟨h.isImmersion, he, h.isLagrangianMap⟩⟩
 
 end Transverse
+
+section Clean
+
+variable {EQ HQ Q : Type*} [KC.Boundaryless]
+  [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+  {KQ : ModelWithCorners ℝ EQ HQ} [KQ.Boundaryless]
+  [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold KQ ∞ Q] {q : C → Q} {j : Q → M₁ × M₃}
+
+/-- **Clean composition with a smooth excess quotient.** Under the hypotheses of
+`IsLagrangianMap.relComp` for smooth data, suppose the endpoint map
+`c ↦ ((f (a c)).1, (g (b c)).2)` factors as `j ∘ q` through a surjective smooth submersion `q`,
+with boundaryless models, whose kernel contains every excess direction: every tangent vector
+killed by both outer differentials. If `j` is a topological embedding, it is a Lagrangian
+correspondence `M₁ ⇝ M₃`. Smoothness and the immersion property of `j` are conclusions, and `Q`
+may be empty.
+
+The excess condition is stated in the original correspondence coordinates. It allows nonzero
+excess and does not assert existence of a smooth global quotient from cleanliness alone. -/
+theorem IsLagrangianMap.isLagrangianEmbedding_relComp_of_isSubmersion
+    [I₁.Boundaryless] [I₃.Boundaryless]
+    (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
+    (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g)
+    (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f) (hg : ContMDiff K₂ (I₂.prod I₃) ∞ g)
+    (ha : ContMDiff KC K₁ ∞ a) (hb : ContMDiff KC K₂ ∞ b)
+    (hab : ∀ c, (f (a c)).2 = (g (b c)).1)
+    (hfib : ∀ c u w, (mfderiv K₁ (I₁.prod I₂) f (a c) u).2 =
+        (mfderiv K₂ (I₂.prod I₃) g (b c) w).1 →
+      ∃ ξ, mfderiv KC K₁ a c ξ = u ∧ mfderiv KC K₂ b c ξ = w)
+    (hq : Manifold.IsSubmersion KC KQ ∞ q) (hsurj : Function.Surjective q)
+    (hfactor : j ∘ q = fun c ↦ ((f (a c)).1, (g (b c)).2))
+    (hexc : ∀ c ξ, (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).1 = 0 →
+      (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).2 = 0 →
+        mfderiv KC KQ q c ξ = 0)
+    (hemb : Topology.IsEmbedding j) : (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KQ j :=
+  ⟨isImmersion_relComp_of_isSubmersion hf hg ha hb hq hsurj hfactor hexc, hemb,
+    hfL.relComp_of_isSubmersion (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL
+      (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp))
+      (ha.mdifferentiable (by simp)) (hb.mdifferentiable (by simp)) hab hfib hq (by simp) hsurj
+      hfactor⟩
+
+end Clean
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
