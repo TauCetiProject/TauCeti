@@ -105,8 +105,8 @@ blocks `Δⱼ u`.
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
-  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass truncations, uniformly in `N`
-  (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
+  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass truncations, uniformly in `N`, by
+  `‖𝓕⁻ φ‖₁` (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -535,17 +535,15 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
   rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
 
-/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** There is `K`, depending
-only on `φ`, such that for every `1 ≤ p ≤ ∞`, every `N` and every `f ∈ Lᵖ`, the truncation
-`S_N f = ∑_{j ≤ N} Δⱼ f` is a function in `Lᵖ` with `‖S_N f‖_p ≤ K ‖f‖_p`. The truncation is the
-Fourier multiplier by `φ (2^{-N} ·)`, whose kernel is an `L¹`-normalised dilate of `𝓕⁻ φ`. -/
-theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
-    ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (N : ℕ) (f : Lp F p (volume : Measure E)),
-      ∃ g : Lp F p (volume : Measure E),
-        ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
-          ‖g‖ ≤ K * ‖f‖ := by
-  refine ⟨∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖, integral_nonneg fun _ ↦ norm_nonneg _,
-    fun {p} _ N f ↦ ?_⟩
+/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** For every `1 ≤ p ≤ ∞`,
+every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function in `Lᵖ` with
+`‖S_N f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. The truncation is the Fourier multiplier by `φ (2^{-N} ·)`, whose
+kernel is an `L¹`-normalised dilate of `𝓕⁻ φ`. -/
+theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (N : ℕ) (f : Lp F p (volume : Measure E)) :
+    ∃ g : Lp F p (volume : Measure E),
+      ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
+        ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
   have hc : ((2 : ℝ) ^ N)⁻¹ ≠ 0 := by positivity
   -- The symbol `φ (2^{-N} ·)` is smooth and compactly supported, hence a Schwartz function.
   have hσ : HasCompactSupport fun ξ : E ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) :=

@@ -10,7 +10,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
-import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Normed.Group.Pointwise
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -178,23 +177,12 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
     ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
   rcases m with _ | m
   · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
-  -- `S_{m+1}` is the multiplier by the Schwartz function `σ = φ (2^{-m} ·)`.
-  set c : ℝ := ((2 : ℝ) ^ m)⁻¹
-  have hc : c ≠ 0 := inv_ne_zero (pow_ne_zero _ two_ne_zero)
-  have hσ : HasCompactSupport fun ξ : E ↦ (φ (c • ξ) : ℂ) :=
-    (φ.hasCompactSupport.comp_smul hc).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) := hσ.toSchwartzMap
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul c)))
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ (c • ξ) : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  rw [hσ_coe] at hg hgf
-  rw [TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ)) hc] at hgf
+  obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
   -- `S_{m+1} u` and `g` are the same tempered distribution, hence the same `Lᵖ` function.
   have h : u.lowPass (m + 1) = g :=
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
       simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
-      rw [coe_lowPass_succ, hf, hg]
+      rw [coe_lowPass, hf, hg]
   rwa [h]
 
 /-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then

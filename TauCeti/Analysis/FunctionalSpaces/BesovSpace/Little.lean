@@ -12,15 +12,12 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 # The little Besov spaces
 
 Schwartz functions lie in every inhomogeneous Besov space `B^s_{p,q}`, `q ≠ 0`
-(`SchwartzMap.memBesov`): a Schwartz function lies in every Bessel-potential space `H^{s+1,p}`,
-hence in `B^{s+1}_{p,∞}`, and a loss of smoothness absorbs every change of the fine index.
-
-Their closure in `B^s_{p,∞}` is the **little Besov space** `b^s_{p,∞}`
-(`TauCeti.BesovSpace.littleBesov`); at `p = ∞` it is the little Hölder–Zygmund space `c^s`, the
-closure of the Schwartz functions in `𝒞^s = B^s_{∞,∞}`. A general element of `B^s_{p,∞}` only has
-bounded weighted blocks `2^{js} ‖Δⱼ u‖_p`; the elements of `b^s_{p,∞}` are characterised through
-their Littlewood–Paley blocks `Δⱼ u` (`TauCeti.BesovSpace.mem_littleBesov_iff`): `u ∈ b^s_{p,∞}`
-exactly when
+(`SchwartzMap.memBesov`, with the inclusion `SchwartzMap.toBesovSpaceLM`). Their closure in
+`B^s_{p,∞}` is the **little Besov space** `b^s_{p,∞}` (`TauCeti.BesovSpace.littleBesov`); at
+`p = ∞` it is the little Hölder–Zygmund space `c^s`, the closure of the Schwartz functions in
+`𝒞^s = B^s_{∞,∞}`. A general element of `B^s_{p,∞}` only has bounded weighted blocks
+`2^{js} ‖Δⱼ u‖_p`; the elements of `b^s_{p,∞}` are characterised through their Littlewood–Paley
+blocks `Δⱼ u` (`TauCeti.BesovSpace.mem_littleBesov_iff`): `u ∈ b^s_{p,∞}` exactly when
 
 * the weighted blocks vanish at high frequency, `2^{js} ‖Δⱼ u‖_p → 0`, and
 * every block `Δⱼ u` lies in the `Lᵖ` closure of the Schwartz functions.
@@ -52,10 +49,10 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
 
 ## Main declarations
 
-* `SchwartzMap.memBesov`: Schwartz functions lie in every Besov space `B^s_{p,q}`, `q ≠ 0`.
-* `SchwartzMap.toBesovSpaceLM`: the inclusion of the Schwartz functions in `B^s_{p,q}`.
 * `TauCeti.BesovSpace.littleBesov`: the little Besov space `b^s_{p,∞}`, the closure of the
-  Schwartz functions in `B^s_{p,∞}`; at `p = ∞` the little Hölder–Zygmund space `c^s`.
+  Schwartz functions in `B^s_{p,∞}`; at `p = ∞` the little Hölder–Zygmund space `c^s`. As a set it
+  is `TauCeti.BesovSpace.coe_littleBesov`, and it is the smallest closed subspace containing the
+  Schwartz functions (`TauCeti.BesovSpace.littleBesov_le`).
 * `TauCeti.BesovSpace.mem_littleBesov_iff`: the characterisation by the blocks, assembled from
   `TauCeti.BesovSpace.tendsto_rpow_mul_norm_block_of_mem_littleBesov`,
   `TauCeti.BesovSpace.block_mem_closure_of_mem_littleBesov` and
@@ -80,47 +77,11 @@ open scoped ENNReal SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
-namespace SchwartzMap
-
-/-- **Schwartz functions lie in every Besov space.** A Schwartz function lies in `H^{s+1,p}`,
-hence in `B^{s+1}_{p,∞}`, hence in `B^s_{p,q}` for every fine index `q ≠ 0`. -/
-theorem memBesov (f : 𝓢(E, F)) (φ : ContDiffBump (0 : E)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    {q : ℝ≥0∞} (hq : q ≠ 0) : (f : 𝓢'(E, F)).MemBesov φ s p q :=
-  ((f.memSobolev (s := s + 1) (p := p)).memBesov φ).of_lt (lt_add_one s) hq
-
-variable (F) in
-/-- The inclusion of the Schwartz functions in the Besov space `B^s_{p,q}`. -/
-def toBesovSpaceLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)]
-    [Fact (1 ≤ q)] : 𝓢(E, F) →ₗ[ℂ] TauCeti.BesovSpace F φ s p q where
-  toFun f := (f.memBesov φ s p (zero_lt_one.trans_le Fact.out).ne').toBesovSpace
-  map_add' f g := TauCeti.BesovSpace.ext <| by
-    simp only [TauCeti.BesovSpace.toDistr_add, MemBesov.toDistr_toBesovSpace, map_add]
-  map_smul' c f := TauCeti.BesovSpace.ext <| by
-    simp only [TauCeti.BesovSpace.toDistr_smul, MemBesov.toDistr_toBesovSpace, map_smul,
-      RingHom.id_apply]
-
-@[simp]
-theorem toDistr_toBesovSpaceLM (φ : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)]
-    [Fact (1 ≤ q)] (f : 𝓢(E, F)) : (toBesovSpaceLM F φ s p q f).toDistr = f :=
-  MemBesov.toDistr_toBesovSpace _
-
-end SchwartzMap
-
 namespace TauCeti
 
 namespace BesovSpace
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The `j`-th block of a Schwartz function `f` is the Schwartz function `𝓕⁻ (ψⱼ • 𝓕 f)`, where
-`ψⱼ` is the `j`-th piece of the Littlewood–Paley partition. -/
-theorem block_toBesovSpaceLM {q : ℝ≥0∞} [Fact (1 ≤ q)] (f : 𝓢(E, F)) (j : ℕ) :
-    (SchwartzMap.toBesovSpaceLM F φ s p q f).block j =
-      (SchwartzMap.fourierMultiplierCLM F
-        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f).toLp p :=
-  Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, SchwartzMap.toDistr_toBesovSpaceLM,
-      littlewoodPaleyBlock_toTemperedDistributionCLM_eq, Lp.toTemperedDistribution_toLp_eq]
 
 /-- The weighted blocks of a Schwartz function in `B^s_{p,∞}` tend to zero: they are at most
 `2^{-j}` times its norm in `B^{s+1}_{p,∞}`. -/
@@ -154,17 +115,31 @@ def littleBesov : Submodule ℂ (BesovSpace F φ s p ∞) :=
 theorem isClosed_littleBesov : IsClosed (littleBesov F φ s p : Set (BesovSpace F φ s p ∞)) :=
   Submodule.isClosed_topologicalClosure _
 
+/-- As a set, the little Besov space is the closure of the image of the Schwartz functions. -/
+theorem coe_littleBesov : (littleBesov F φ s p : Set (BesovSpace F φ s p ∞)) =
+    closure (Set.range (SchwartzMap.toBesovSpaceLM F φ s p ∞)) := by
+  rw [littleBesov, Submodule.topologicalClosure_coe, LinearMap.coe_range]
+
 /-- Schwartz functions lie in the little Besov space. -/
+@[simp]
 theorem toBesovSpaceLM_mem_littleBesov (f : 𝓢(E, F)) :
     SchwartzMap.toBesovSpaceLM F φ s p ∞ f ∈ littleBesov F φ s p :=
   Submodule.le_topologicalClosure _ ⟨f, rfl⟩
+
+/-- **Minimality.** The little Besov space is contained in every closed subspace of `B^s_{p,∞}`
+containing the Schwartz functions. -/
+theorem littleBesov_le {S : Submodule ℂ (BesovSpace F φ s p ∞)}
+    (hS : IsClosed (S : Set (BesovSpace F φ s p ∞)))
+    (h : ∀ f : 𝓢(E, F), SchwartzMap.toBesovSpaceLM F φ s p ∞ f ∈ S) :
+    littleBesov F φ s p ≤ S :=
+  Submodule.topologicalClosure_minimal _ (by rintro _ ⟨f, rfl⟩; exact h f) hS
 
 /-- **The weighted blocks of an element of `b^s_{p,∞}` vanish at high frequency:**
 `2^{js} ‖Δⱼ u‖_p → 0`. -/
 theorem tendsto_rpow_mul_norm_block_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
     (hu : u ∈ littleBesov F φ s p) :
     Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0) := by
-  rw [littleBesov, ← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hu
+  rw [← SetLike.mem_coe, coe_littleBesov] at hu
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
   obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.1 hu (ε / 2) (half_pos hε)
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1
@@ -189,7 +164,7 @@ theorem tendsto_rpow_mul_norm_block_of_mem_littleBesov {u : BesovSpace F φ s p 
 theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
     (hu : u ∈ littleBesov F φ s p) (j : ℕ) :
     u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p) := by
-  rw [littleBesov, ← SetLike.mem_coe, Submodule.topologicalClosure_coe] at hu
+  rw [← SetLike.mem_coe, coe_littleBesov] at hu
   refine map_mem_closure (f := fun x : BesovSpace F φ s p ∞ ↦ x.block j) (continuous_block j) hu ?_
   rintro _ ⟨f, rfl⟩
   exact ⟨_, (block_toBesovSpaceLM f j).symm⟩
@@ -204,7 +179,9 @@ private theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ
       v.toDistr = ((∑ j ∈ Finset.range (N + 1), u.block j : Lp F p (volume : Measure E)) :
         𝓢'(E, F)) ∧ ‖u - v‖ ≤ ε := by
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-  obtain ⟨K, hK0, hK⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
+  have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _
+  have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- Past `N₀` the weighted blocks are at most `ε / (1 + K)`.
   obtain ⟨N₀, hN₀⟩ := Metric.tendsto_atTop.1 hdecay (ε / (1 + K)) (by positivity)
@@ -250,12 +227,13 @@ private theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
     (hM : ∀ k, M ≤ k → littlewoodPaleyBlock F φ k (w : 𝓢'(E, F)) = 0) :
     v ∈ littleBesov F φ s p := by
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-  obtain ⟨K, hK0, hK⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
+  have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨C, hC0, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- `S_M` fixes `w`.
   have hSw : ∑ j ∈ Finset.range (M + 1), littlewoodPaleyBlock F φ j (w : 𝓢'(E, F)) = w :=
     sum_littlewoodPaleyBlock_eq_self φ _ fun j hj ↦ hM j (Nat.le_of_lt (by simpa using hj))
-  rw [littleBesov, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+  rw [← SetLike.mem_coe, coe_littleBesov]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   set A := 2 ^ (|s| * ((M + L : ℕ) : ℝ)) * C * K
   obtain ⟨_, ⟨g, rfl⟩, hg⟩ := Metric.mem_closure_iff.1 hw (ε / (A + 1)) (by positivity)

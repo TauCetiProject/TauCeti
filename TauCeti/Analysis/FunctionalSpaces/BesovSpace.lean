@@ -838,18 +838,14 @@ theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero :
         simp only [← hf k, hr k hk, Lp.toTemperedDistribution_zero]
       rw [hf0, norm_zero, mul_zero]
       positivity
-  have hmem : (r : 𝓢'(E, F)).MemBesov φ s p ∞ :=
-    memBesov_iff.2 ⟨f, hf, memℓp_infty ⟨_, by
-      rintro _ ⟨k, rfl⟩
-      dsimp only
-      rw [Real.norm_of_nonneg (by positivity)]
-      exact hbound k⟩⟩
-  refine ⟨hmem.toBesovSpace, MemBesov.toDistr_toBesovSpace _,
-    (norm_eq_ciSup _).trans_le (ciSup_le fun k ↦ ?_)⟩
-  have hblock : hmem.toBesovSpace.block k = f k := Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, MemBesov.toDistr_toBesovSpace, hf k]
-  rw [hblock]
-  exact hbound k
+  -- The constant sequence `2^{|s| M} C ‖r‖` lies in `ℓ^∞` and bounds the weighted blocks.
+  set c : ℝ := 2 ^ (|s| * M) * max C₁ 0 * ‖r‖
+  have hc : 0 ≤ c := by positivity
+  let b : lp (fun _ : ℕ ↦ ℝ) ∞ := ⟨fun _ ↦ c, memℓp_infty ⟨c, by
+    rintro _ ⟨k, rfl⟩
+    exact (Real.norm_of_nonneg hc).le⟩⟩
+  obtain ⟨x, hx, hxb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f b hf hbound
+  exact ⟨x, hx, hxb.trans (lp.norm_le_of_forall_le hc fun _ ↦ (Real.norm_of_nonneg hc).le)⟩
 
 end BandLimited
 
