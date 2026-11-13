@@ -458,8 +458,8 @@ theorem DifferentiableAt.enorm_fderiv_smoothTransition_mul_sub {E : Type*}
     ‖fderiv ℝ (fun y => Real.smoothTransition (c * (t - u y))) x‖ₑ =
       ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) * ‖fderiv ℝ u x‖ₑ := by
   rw [((hu.hasFDerivAt.const_sub t).const_mul c).smoothTransition.fderiv, smul_smul, mul_comm,
-    enorm_smul, enorm_neg,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    eNorm_smul, eNorm_neg,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- If `u` is locally Lipschitz on `s`, then so is `ψ (c (u - t))` for the smooth transition
 function `ψ`. -/
@@ -536,7 +536,7 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     (hcont.continuousOn (s := Icc (m / 4) m))
   refine ⟨Real.toNNReal (max C K), fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm]
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
   refine le_trans ?_ (Real.le_coe_toNNReal _)
   rcases lt_or_ge t (m / 4) with ht | ht
   · -- Below `m/4` the derivative vanishes.

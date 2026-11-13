@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.NumberField
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
-import TauCeti.NumberTheory.Height.FiniteOrder
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Roots
 import TauCeti.RingTheory.Polynomial.GaussNorm
 

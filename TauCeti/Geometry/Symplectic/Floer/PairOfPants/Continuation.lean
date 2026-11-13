@@ -516,7 +516,7 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
   · -- In the coordinates of the end the curvature is
     -- `±(β'(σ - 1) C_q + β(σ - 1) β'(σ - L_q) (H_q - G_q))`.
     rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs
-      (endSign_mul_pos_of_mem_endStrip hz), Real.enorm_eq_ofReal_abs, abs_mul, abs_endSign,
+      (endSign_mul_pos_of_mem_endStrip hz), Real.eNorm_eq_ofReal_abs, abs_mul, abs_endSign,
       one_mul]
     simp only [hf]
     rw [← ENNReal.ofReal_mul (hψ _), ← ENNReal.ofReal_mul (hψ _),
@@ -585,8 +585,8 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation
     rw [ENNReal.ofReal_sum_of_nonneg fun q _ => add_nonneg (hB₀ q) (hD₀ q)]
     exact Finset.sum_congr rfl fun q _ => (ENNReal.ofReal_add (hB₀ q) (hD₀ q)).symm
   rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => add_nonneg (hB₀ q) (hD₀ q)),
-    ← Real.enorm_eq_ofReal_abs, ← hsum]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    ← Real.eNorm_eq_ofReal_abs, ← hsum]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs
       hGB hHB hD L u))
 

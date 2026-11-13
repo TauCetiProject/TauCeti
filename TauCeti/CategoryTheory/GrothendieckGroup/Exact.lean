@@ -404,8 +404,8 @@ theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
     (hs : ∀ n, n ∉ s → IsZero (X n)) (ht : ∀ n, n ∉ t → IsZero (X n)) :
     a.finiteEulerSum X s = a.finiteEulerSum X t :=
   TauCeti.finiteEulerSum_eq_of_eq_zero _
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
+    (fun n _ hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
+    (fun n _ hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
 
 /-- Pointwise isomorphic object families have the same Euler sum. -/
 theorem finiteEulerSum_iso {X Y : ℤ → C} {s : Finset ℤ}

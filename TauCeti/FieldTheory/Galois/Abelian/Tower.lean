@@ -45,22 +45,22 @@ theorem prime_finrank_of_covBy (E F : IntermediateField K L) (h : E ⋖ F)
   have : IsAbelianGalois E F := .tower_bot E F L
   -- A tower-compatible algebra between these subfields is their inclusion algebra. Identifying
   -- it explicitly lets the interval correspondences retain the caller's algebra instance.
-  have hinst : aEF = (IntermediateField.inclusion h.le).toAlgebra := by
+  have hinst : aEF = (inclusion h.le).toAlgebra := by
     apply Algebra.algebra_ext
     intro x
     apply (algebraMap F L).injective
     rw [← IsScalarTower.algebraMap_apply E F L]
     rfl
   subst aEF
-  let : Algebra E F := (IntermediateField.inclusion h.le).toAlgebra
-  have ha : IsAtom (IntermediateField.extendScalars h.le) :=
-    ((IntermediateField.extendScalars.orderIso E).isAtom_iff ⟨F, h.le⟩).2
+  let : Algebra E F := (inclusion h.le).toAlgebra
+  have ha : IsAtom (extendScalars h.le) :=
+    ((extendScalars.orderIso E).isAtom_iff ⟨F, h.le⟩).2
       ((covBy_iff_atom_Ici h.le).1 h)
-  have : IsSimpleOrder (Set.Iic (IntermediateField.extendScalars h.le)) :=
+  have : IsSimpleOrder (Set.Iic (extendScalars h.le)) :=
     Set.isSimpleOrder_Iic_iff_isAtom.2 ha
   -- `extendScalars` retains the field carrier, with precisely the inclusion algebra above.
   have : IsSimpleOrder (IntermediateField E F) :=
-    (IntermediateField.liftOrderIso (IntermediateField.extendScalars h.le)).isSimpleOrder
+    (liftOrderIso (extendScalars h.le)).isSimpleOrder
   have : IsSimpleOrder (Subgroup (Gal(F/E)))ᵒᵈ :=
     (IsGalois.intermediateFieldEquivSubgroup (F := E) (E := F)).symm.isSimpleOrder
   have : IsSimpleOrder (Subgroup (Gal(F/E))) :=

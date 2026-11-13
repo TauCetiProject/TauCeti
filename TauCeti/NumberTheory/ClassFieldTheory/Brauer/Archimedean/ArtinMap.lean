@@ -124,7 +124,7 @@ theorem infiniteArtinAt_layer (w : InfinitePlace K)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = infiniteArtinAt w x) :
     (infiniteClassFormation w).artinMap (ofOpenNormal V)
         (localGroundEquiv w.Completion V (Additive.ofMul x)) =
-      Additive.ofMul (Abelianization.of ((galOfOpenNormalEquiv V).symm
+      Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
         (absoluteGaloisGroupRestrictEquiv w.Completion σ :
           AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup))) := by
   have hmem : (absoluteGaloisGroupRestrictEquiv w.Completion σ : AbsoluteGaloisGroup w.Completion)
@@ -148,8 +148,8 @@ theorem character_infiniteArtinAt (w : InfinitePlace K)
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion)) (x : w.Completionˣ)
     (σ : Field.absoluteGaloisGroup w.Completion)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = infiniteArtinAt w x)
-    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ)) :
-    χ (Additive.ofMul (Abelianization.of ((galOfOpenNormalEquiv V).symm
+    (χ : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ)) :
+    χ (Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
         (absoluteGaloisGroupRestrictEquiv w.Completion σ :
           AbsoluteGaloisGroup w.Completion ⧸ V.toSubgroup)))) =
       infiniteInvMap w (brInfl V ((ofOpenNormal V).artinCharacterCup
@@ -193,9 +193,9 @@ private theorem exists_infiniteArtinAt_ne_one_of_isReal :
   have : Fact (Nat.card (ofOpenNormal V).Gal).Prime := ⟨hcard ▸ Nat.prime_two⟩
   have : IsCyclic (ofOpenNormal V).Gal := isCyclic_of_prime_card rfl
   have : Nontrivial (ofOpenNormal V).Gal := Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  have : Nontrivial (Abelianization (ofOpenNormal V).Gal) :=
-    Abelianization.equivOfComm.injective.nontrivial
-  obtain ⟨y, hy⟩ := exists_ne (0 : Additive (Abelianization (ofOpenNormal V).Gal))
+  have : Nontrivial (Group.Abelianization (ofOpenNormal V).Gal) :=
+    Group.Abelianization.equivOfComm.injective.nontrivial
+  obtain ⟨y, hy⟩ := exists_ne (0 : Additive (Group.Abelianization (ofOpenNormal V).Gal))
   obtain ⟨a, ha⟩ := (infiniteClassFormation w).surjective_artinMap (ofOpenNormal V) y
   obtain ⟨x, rfl⟩ := (localGroundEquiv w.Completion V).surjective a
   exact ⟨x.toMul, fun hx ↦ hy (ha ▸ artinMap_eq_zero_of_infiniteArtinAt_eq_one w V hx)⟩
