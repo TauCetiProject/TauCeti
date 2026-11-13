@@ -69,9 +69,10 @@ every dimension at least `2`. Its universal cover is a simply connected CW compl
 dimension at least `2`, so it has no homology in those degrees and, by the Hurewicz theorem, no
 homotopy. -/
 theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2Space X]
-    [CWComplex (univ : Set X)] [ConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    [CWComplex (univ : Set X)] [PreconnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (h : ∀ n, IsEmpty (cell (univ : Set X) (n + 2))) (x : X) : IsAspherical X x := by
   -- a connected CW complex is locally path-connected, hence path-connected
+  have : ConnectedSpace X := ⟨⟨x⟩⟩
   have : PathConnectedSpace X := PathConnectedSpace.of_locallyPathConnectedSpace
   have hp := UniversalCover.isCoveringMap x
   let := cwComplexPreimage (univ : Set X) hp
