@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.Basic
+import Mathlib.GroupTheory.Commutator.Basic
 import TauCeti.GroupTheory.FreeGroup.TwoGenerator
 
 /-!
@@ -53,10 +54,12 @@ closed under roots (`TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_ran
 group of rank two (`FreeGroup.injective_lift_of_pow_of_ne`). Then `F(α)` is fully residually free
 (`TauCeti.LimitGroup.isFullyResiduallyFree_of_isFreeGroup`), but as `aⁿ ∈ F` and `a ∉ F` there is
 no `F`-homomorphism `F(α) → F` at all. Hence `F(α)` is neither `F`-separated nor `F`-discriminated
-by `F`, and it is not `F`-isomorphic to any coordinate group over `F`. For finitely generated
-`F`-groups over a free nonabelian `F`, being `F`-discriminated by `F` and being the coordinate
-group of an irreducible algebraic set over `F` each imply full residual freeness; this example,
-with `α` finite, shows that the converse fails for a specified inclusion of the coefficients.
+by `F`, and it is not `F`-isomorphic to any coordinate group over `F`. These three negative
+statements also hold for `n = 0`, for another reason: every homomorphism to the cyclic group
+`⟨b⟩` kills the commutator of `a` and `b`. For finitely generated `F`-groups over a free
+nonabelian `F`, being `F`-discriminated by `F` and being the coordinate group of an irreducible
+algebraic set over `F` each imply full residual freeness; this example, with `α` finite, shows
+that the converse fails for a specified inclusion of the coefficients.
 
 No hypothesis on the coefficient maps is needed: they are arbitrary homomorphisms, so the results
 also cover systems without solutions, whose coordinate group is trivial.
@@ -93,10 +96,10 @@ also cover systems without solutions, whose coordinate group is trivial.
   surjective `G`-homomorphisms of such groups, all but finitely many are injective.
 * `TauCeti.GroupAlgGeom.isEmpty_gHom_closure_freeGroup_of_pow_of_ne`: for distinct basis elements
   `a`, `b` of `F(α)` and `n ≥ 2`, there is no `⟨aⁿ, b⟩`-homomorphism `F(α) → ⟨aⁿ, b⟩`.
-* `TauCeti.GroupAlgGeom.not_isDiscriminatedBy_closure_freeGroup_of_pow_of_ne`: hence `F(α)` is
-  not `⟨aⁿ, b⟩`-discriminated by `⟨aⁿ, b⟩`.
-* `TauCeti.GroupAlgGeom.not_bijective_gHom_coordGroup_closure_freeGroup_of_pow_of_ne`: and `F(α)`
-  is not `⟨aⁿ, b⟩`-isomorphic to a coordinate group over `⟨aⁿ, b⟩`.
+* `TauCeti.GroupAlgGeom.not_isDiscriminatedBy_closure_freeGroup_of_pow_of_ne`: for `n ≠ 1`,
+  `F(α)` is not `⟨aⁿ, b⟩`-discriminated by `⟨aⁿ, b⟩`.
+* `TauCeti.GroupAlgGeom.not_bijective_gHom_coordGroup_closure_freeGroup_of_pow_of_ne`: for
+  `n ≠ 1`, `F(α)` is not `⟨aⁿ, b⟩`-isomorphic to a coordinate group over `⟨aⁿ, b⟩`.
 
 ## References
 
@@ -303,6 +306,8 @@ section FreeGroup
 
 /-! ### Separation depends on the inclusion of the coefficients -/
 
+open scoped commutatorElement
+
 variable {α : Type*} {a b : α} {n : ℕ}
 
 /-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≥ 2`, there is no
@@ -313,28 +318,42 @@ theorem isEmpty_gHom_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : 1 < n)
   ⟨fun φ => FreeGroup.of_notMem_closure_of_pow_of_ne hab hn.ne'
     (φ.mem_of_pow_mem (by lia) (subset_closure (Set.mem_insert _ _)))⟩
 
-/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≥ 2`, the group `F(α)`
+/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≠ 1`, the group `F(α)`
 is not separated by `⟨aⁿ, b⟩` over `⟨aⁿ, b⟩`. -/
-theorem not_isSeparatedBy_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : 1 < n) :
-    ¬IsSeparatedBy (closure {FreeGroup.of a ^ n, FreeGroup.of b}).subtype (.id _) := fun h =>
-  -- Separation would force the `n`-th root `a` of `aⁿ ∈ ⟨aⁿ, b⟩` into `⟨aⁿ, b⟩`.
-  FreeGroup.of_notMem_closure_of_pow_of_ne hab hn.ne' <| by
-    simpa using h.mem_range_of_pow_mem_range (k := FreeGroup.of a) (by lia)
+theorem not_isSeparatedBy_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 1) :
+    ¬IsSeparatedBy (closure {FreeGroup.of a ^ n, FreeGroup.of b}).subtype (.id _) := by
+  intro h
+  obtain rfl | hn₀ := eq_or_ne n 0
+  · -- Every homomorphism to the cyclic group `⟨1, b⟩` kills the commutator `⁅a, b⁆ ≠ 1`.
+    have hle : closure {FreeGroup.of a ^ 0, FreeGroup.of b} ≤ zpowers (FreeGroup.of b) := by
+      simp [Subgroup.closure_le]
+    obtain ⟨φ, hφ⟩ := (isSeparatedBy_def _ _).1 h ⁅FreeGroup.of a, FreeGroup.of b⁆ fun h1 =>
+      hab (FreeGroup.eq_of_commute_of_of (commutatorElement_eq_one_iff_commute.1 h1))
+    obtain ⟨i, hi⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of a)).2)
+    obtain ⟨j, hj⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of b)).2)
+    have hc : Commute (φ (FreeGroup.of a)) (φ (FreeGroup.of b)) := by
+      refine (commute_iff_eq _ _).2 (Subtype.ext ?_)
+      rw [Subgroup.coe_mul, Subgroup.coe_mul, ← hi, ← hj]
+      exact (Commute.zpow_zpow_self _ i j).eq
+    exact hφ (by rw [map_commutatorElement]; exact commutatorElement_eq_one_iff_commute.2 hc)
+  · -- Separation would force the `n`-th root `a` of `aⁿ ∈ ⟨aⁿ, b⟩` into `⟨aⁿ, b⟩`.
+    refine FreeGroup.of_notMem_closure_of_pow_of_ne hab hn ?_
+    simpa using h.mem_range_of_pow_mem_range (k := FreeGroup.of a) hn₀
       ⟨⟨_, subset_closure (Set.mem_insert _ _)⟩, rfl⟩
 
-/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≥ 2`, the group `F(α)`
-is not discriminated by `⟨aⁿ, b⟩` over `⟨aⁿ, b⟩`, although `⟨aⁿ, b⟩` is free of rank two
-(`FreeGroup.injective_lift_of_pow_of_ne`) and `F(α)` is fully residually free
+/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≠ 1`, the group `F(α)`
+is not discriminated by `⟨aⁿ, b⟩` over `⟨aⁿ, b⟩`. For `n ≥ 2` this holds although `⟨aⁿ, b⟩` is
+free of rank two (`FreeGroup.injective_lift_of_pow_of_ne`) and `F(α)` is fully residually free
 (`TauCeti.LimitGroup.isFullyResiduallyFree_of_isFreeGroup`). -/
-theorem not_isDiscriminatedBy_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : 1 < n) :
+theorem not_isDiscriminatedBy_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 1) :
     ¬IsDiscriminatedBy (closure {FreeGroup.of a ^ n, FreeGroup.of b}).subtype (.id _) := fun h =>
   not_isSeparatedBy_closure_freeGroup_of_pow_of_ne hab hn h.isSeparatedBy
 
-/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≥ 2`, the group `F(α)`
+/-- For distinct basis elements `a` and `b` of a free group `F(α)` and `n ≠ 1`, the group `F(α)`
 is not `⟨aⁿ, b⟩`-isomorphic to a coordinate group over `⟨aⁿ, b⟩`: for every set of variables `X`
 and every system `S`, finite or not, with irreducible algebraic set or not, no
 coefficient-preserving homomorphism from the coordinate group of `S` to `F(α)` is bijective. -/
-theorem not_bijective_gHom_coordGroup_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : 1 < n)
+theorem not_bijective_gHom_coordGroup_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 1)
     (S : Set (GX (closure {FreeGroup.of a ^ n, FreeGroup.of b}) X))
     (φ : GHom (CoordGroup.coeff (.id _) S) (closure {FreeGroup.of a ^ n, FreeGroup.of b}).subtype) :
     ¬Function.Bijective φ := fun hφ =>
