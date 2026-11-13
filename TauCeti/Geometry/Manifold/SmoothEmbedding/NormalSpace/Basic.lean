@@ -291,6 +291,16 @@ theorem normalLift_comp_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn 
     (f.normalLift x hn g hg).comp (f.normalClass x hn) = g :=
   (f.tangentRange x hn).liftQ_mkQ g _
 
+/-- The quotient lift sends the normal class of an ambient tangent vector to the value of the
+original linear map on that vector. -/
+@[simp]
+theorem normalLift_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
+    {V : Type*} [AddCommGroup V] [Module 𝕜 V]
+    (g : TangentSpace J (f x) →ₗ[𝕜] V)
+    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
+    f.normalLift x hn g hg (f.normalClass x hn v) = g v :=
+  LinearMap.congr_fun (f.normalLift_comp_normalClass x hn g hg) v
+
 /-- A map out of the normal space is determined by its values on ambient tangent classes. -/
 theorem normalLift_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     {V : Type*} [AddCommGroup V] [Module 𝕜 V]

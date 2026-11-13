@@ -188,6 +188,15 @@ theorem normalSpaceEquivOfIsLagrangianMap_normalClass (hf : hσ.IsLagrangianMap 
   rw [normalSpaceEquivOfIsLagrangianMap, LinearEquiv.coe_toContinuousLinearEquiv',
     LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
 
+/-- The covector `σ_(f x)(df_x ·, v)` corresponds to the normal class `[v]`. -/
+@[simp]
+theorem normalSpaceEquivOfIsLagrangianMap_symm_pairingCovector (hf : hσ.IsLagrangianMap I f)
+    (hn : n ≠ 0) (x : M) (v : TangentSpace J (f x)) :
+    (f.normalSpaceEquivOfIsLagrangianMap hf hn x).symm (f.pairingCovector σ x v) =
+      f.normalClass x hn v :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2
+    (f.normalSpaceEquivOfIsLagrangianMap_normalClass hf hn x v).symm
+
 /-- The codimension of a Lagrangian embedding of a nonempty manifold into a finite-dimensional
 manifold is the dimension of its cotangent model fibre, so `E →L[ℝ] ℝ` is a model fibre for its
 normal bundle. The source model space is finite-dimensional since `f` is an immersion. -/
