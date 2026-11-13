@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Induction.Artin.Modular
 /-!
 # Modular Artin induction with uniform coefficients
 
-For a finite group `G` and a field of prime characteristic `p`, multiplication by `|G|` on
+For a finite group `G` and a field of characteristic `p`, multiplication by `|G|` on
 `G₀(k[G])` is a finite integral linear combination of induction after restriction from cyclic
 subgroups of order prime to `p`. One coefficient family works for every virtual class.
 
@@ -55,7 +55,7 @@ cyclic subgroups of order prime to `p` expresses `|G|` times every virtual class
 induced restrictions. -/
 theorem exists_linearCombination_indK0_resK0_eq_natCard_nsmul
     {k G : Type u} [Field k] [Group G] [Finite G]
-    (p : ℕ) [Fact p.Prime] [CharP k p] :
+    (p : ℕ) [CharP k p] :
     ∃ a : {D : Subgroup G // IsCyclic D ∧ ¬ p ∣ Nat.card D} →₀ ℤ,
       ∀ x : ExactK0 (finiteModulesExactStructure k[G]),
         Finsupp.linearCombination ℤ
@@ -90,6 +90,7 @@ theorem modularArtin_exists_nsmul_mem_indCyclicCoprimeK0
     ∃ N : ℕ, 0 < N ∧ N • x ∈ indCyclicCoprimeK0 k G p :=
   ⟨Nat.card G, Nat.card_pos, modularArtin_natCard_nsmul_mem_indCyclicCoprimeK0 p x⟩
 
+omit [Fact p.Prime] in
 /-- **Equality from modular Artin induction.** Two additive invariants of modular representation
 classes with values in a torsion-free group agree if they agree after induction from every cyclic
 subgroup whose order is prime to the characteristic. -/

@@ -64,7 +64,7 @@ theorem holderOnWith_comp₂ (B : E →SL[σ₁₃] F →SL[σ₂₃] G)
   calc
     edist (B (f x) (g x)) (B (f y) (g y)) ≤
         ‖B‖₊ * ‖f x‖₊ * edist (g x) (g y) + ‖B‖₊ * edist (f x) (f y) * ‖g y‖₊ := by
-      simp only [edist_nndist, nndist_eq_nnnorm]
+      simp only [edist_nndist, nnDist_eq_nnNorm]
       exact_mod_cast hle
     _ ≤ ‖B‖₊ * Mf * (Kg * edist x y ^ (α : ℝ)) + ‖B‖₊ * (Kf * edist x y ^ (α : ℝ)) * Mg := by
       gcongr
@@ -103,7 +103,7 @@ theorem holderWith_comp₂_of_eq_zero (B : E →SL[σ₁₃] F →SL[σ₂₃] G
       exact B.le_opNorm₂ _ _
     calc
       edist (B (f x) (g x)) (B (f y) (g y)) ≤ ‖B‖₊ * ‖f x‖₊ * edist (g x) (g y) := by
-        simp only [edist_nndist, nndist_eq_nnnorm]
+        simp only [edist_nndist, nnDist_eq_nnNorm]
         exact_mod_cast hle
       _ ≤ ‖B‖₊ * Mf * (Kg * edist x y ^ (α : ℝ)) := by
         gcongr
