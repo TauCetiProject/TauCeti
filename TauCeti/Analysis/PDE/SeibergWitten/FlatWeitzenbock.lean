@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
+import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Weitzenböck formula for the twisted Dirac operator on a flat space
@@ -75,13 +74,11 @@ does not contain.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.covariantDeriv_fun_sum`,
-  `TauCeti.SeibergWitten.covariantDeriv_apply_apply`,
-  `TauCeti.SeibergWitten.differentiableAt_covariantDeriv`: sums, evaluation and differentiability
-  of covariant derivatives.
 * `TauCeti.SeibergWitten.twistedDirac_eq_sum`: `D_b ψ` may be computed in any orthonormal basis.
-* `TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`: the Ricci identity
-  `∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`.
+* `TauCeti.SeibergWitten.twistedDirac_add`, `TauCeti.SeibergWitten.twistedDirac_const_smul`:
+  `D_b` is complex-linear on differentiable spinor fields.
+* `TauCeti.SeibergWitten.sum_sum_apply_apply_eq`: the algebraic splitting of `D_b D_b` into a trace
+  and an antisymmetric part under the Clifford relations.
 * `TauCeti.SeibergWitten.twistedDirac_twistedDirac`: the Weitzenböck formula
   `D_b D_b ψ = -∑ₖ ∇²_{eₖ, eₖ} ψ - i c₂(F) ψ`.
 * `TauCeti.SeibergWitten.cliffordRestriction_apply_of_add_hodgeStar_eq`: the action of the
@@ -108,122 +105,6 @@ open scoped RealInnerProductSpace InnerProductSpace Topology
 
 namespace TauCeti.SeibergWitten
 
-/-! ### Covariant derivatives -/
-
-section CovariantDeriv
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
-  {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {ψ : E → W} {x : E} {κ : Type*} [Fintype κ]
-
-/-- The covariant derivative of a finite sum of differentiable sections is the sum of their
-covariant derivatives. -/
-theorem covariantDeriv_fun_sum {f : κ → E → W} (hf : ∀ k, DifferentiableAt ℝ (f k) x) :
-    covariantDeriv b (fun y ↦ ∑ k, f k y) x = ∑ k, covariantDeriv b (f k) x := by
-  ext v
-  simp only [sum_apply, covariantDeriv_apply_eq_add_smul,
-    Finset.sum_add_distrib, Finset.smul_sum]
-  rw [fderiv_fun_sum fun k _ ↦ hf k]
-  simp
-
-/-- The covariant derivative of a section of `Hom(E, W)` evaluated at a fixed vector `w` is the
-covariant derivative of the section `y ↦ G y w` of `W`. -/
-theorem covariantDeriv_apply_apply {G : E → E →L[ℝ] W} (hG : DifferentiableAt ℝ G x)
-    (v w : E) : covariantDeriv b G x v w = covariantDeriv b (fun y ↦ G y w) x v := by
-  have hd : fderiv ℝ (fun y ↦ G y w) x = (ContinuousLinearMap.apply ℝ W w).comp (fderiv ℝ G x) :=
-    ((ContinuousLinearMap.apply ℝ W w).hasFDerivAt.comp x hG.hasFDerivAt).fderiv
-  simp [covariantDeriv_apply_eq_add_smul, hd]
-
-/-- The covariant derivative of a section differentiable at `x`, for a connection form
-differentiable at `x`, is differentiable at `x`. -/
-theorem differentiableAt_covariantDeriv (hψ : DifferentiableAt ℝ (fderiv ℝ ψ) x)
-    (hψ' : DifferentiableAt ℝ ψ x) (hb : DifferentiableAt ℝ b x) :
-    DifferentiableAt ℝ (covariantDeriv b ψ) x := by
-  -- `∇ψ(y) = dψ(y) + (b y) ⊗ i ψ(y)`, a sum of differentiable maps.
-  have heq : covariantDeriv b ψ = fun y ↦ fderiv ℝ ψ y +
-      ContinuousLinearMap.smulRightL ℝ E W
-        ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (b y)) (I • ψ y) := by
-    ext y v
-    simp [covariantDeriv_apply_eq_add_smul, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
-  rw [heq]
-  refine hψ.add ?_
-  have h₁ : DifferentiableAt ℝ
-      (fun y ↦ (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (b y)) x := by
-    fun_prop
-  have h₂ : DifferentiableAt ℝ (fun y ↦ I • ψ y) x := hψ'.const_smul I
-  exact ((ContinuousLinearMap.smulRightL ℝ E W).differentiableAt.comp x h₁).clm_apply h₂
-
-/-- The covariant derivative `y ↦ ∇_w ψ(y)` in a fixed direction `w` is
-`y ↦ dψ(y) w + b(y)(w) i ψ(y)`. -/
-private theorem covariantDeriv_apply_fun (w : E) :
-    (fun y ↦ covariantDeriv b ψ y w) =
-      fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y := by
-  ext y
-  exact covariantDeriv_apply_eq_add_smul b ψ y w
-
-/-- The second covariant derivative `∇²_{v, w} ψ = ∇_v (∇ψ)(w)`, expanded. -/
-private theorem covariantDeriv_covariantDeriv_apply (hψ : DifferentiableAt ℝ (fderiv ℝ ψ) x)
-    (hψ' : DifferentiableAt ℝ ψ x) (hb : DifferentiableAt ℝ b x) (v w : E) :
-    covariantDeriv b (covariantDeriv b ψ) x v w =
-      fderiv ℝ (fderiv ℝ ψ) x v w + b x (fun _ ↦ w) • I • fderiv ℝ ψ x v +
-        fderiv ℝ (fun y ↦ b y (fun _ ↦ w)) x v • I • ψ x +
-        b x (fun _ ↦ v) • I • (fderiv ℝ ψ x w + b x (fun _ ↦ w) • I • ψ x) := by
-  rw [covariantDeriv_apply_apply (differentiableAt_covariantDeriv hψ hψ' hb),
-    covariantDeriv_apply_eq_add_smul, covariantDeriv_apply_fun, covariantDeriv_apply_eq_add_smul]
-  have hbw : DifferentiableAt ℝ (fun y ↦ b y (fun _ ↦ w)) x :=
-    hb.continuousAlternatingMap_apply_const _
-  have hfw : DifferentiableAt ℝ (fun y ↦ fderiv ℝ ψ y w) x :=
-    (ContinuousLinearMap.apply ℝ W w).differentiableAt.comp x hψ
-  have h₁ : fderiv ℝ (fun y ↦ fderiv ℝ ψ y w) x v = fderiv ℝ (fderiv ℝ ψ) x v w := by
-    rw [fderiv_clm_apply hψ (differentiableAt_const w)]
-    simp
-  have hd : HasFDerivAt (fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y) _ x :=
-    hfw.hasFDerivAt.add (hbw.hasFDerivAt.smul (hψ'.hasFDerivAt.const_smul I))
-  rw [hd.fderiv]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁]
-  abel
-
-/-- **The Ricci identity** for the twisted connection on flat space: the curvature of
-`∇ = d + i b` is `i db`, so `∇²_{v, w} ψ - ∇²_{w, v} ψ = db(v, w) i ψ`. -/
-theorem covariantDeriv_covariantDeriv_sub (hψ : ContDiffAt ℝ 2 ψ x)
-    (hb : DifferentiableAt ℝ b x) (v w : E) :
-    covariantDeriv b (covariantDeriv b ψ) x v w - covariantDeriv b (covariantDeriv b ψ) x w v =
-      extDeriv b x ![v, w] • I • ψ x := by
-  have hψ₁ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
-    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hψ' : DifferentiableAt ℝ ψ x := hψ.differentiableAt two_ne_zero
-  have hsymm : fderiv ℝ (fderiv ℝ ψ) x v w = fderiv ℝ (fderiv ℝ ψ) x w v :=
-    hψ.isSymmSndFDerivAt (by simp) v w
-  rw [covariantDeriv_covariantDeriv_apply hψ₁ hψ' hb,
-    covariantDeriv_covariantDeriv_apply hψ₁ hψ' hb, extDeriv_apply_pair_of_differentiableAt hb,
-    hsymm, sub_smul]
-  simp only [smul_add, smul_comm (b x (fun _ ↦ v)) I, smul_comm (b x (fun _ ↦ w)) I,
-    smul_smul (b x (fun _ ↦ v)), smul_smul (b x (fun _ ↦ w)), mul_comm (b x (fun _ ↦ w))]
-  abel
-
-section FiniteDimensional
-
-variable [FiniteDimensional ℂ W]
-
-/-- The covariant derivative commutes with a complex-linear endomorphism of the fibre:
-`∇ (T ψ) = T (∇ ψ)`. -/
-private theorem covariantDeriv_comp_apply (T : Module.End ℂ W) (hψ : DifferentiableAt ℝ ψ x)
-    (v : E) : covariantDeriv b (fun y ↦ T (ψ y)) x v = T (covariantDeriv b ψ x v) := by
-  set L := (LinearMap.toContinuousLinearMap T).restrictScalars ℝ
-  have hd : fderiv ℝ (fun y ↦ T (ψ y)) x = L.comp (fderiv ℝ ψ x) :=
-    (L.hasFDerivAt.comp x hψ.hasFDerivAt).fderiv
-  simp [covariantDeriv_apply_eq_add_smul, hd, L, LinearMap.map_smul_of_tower]
-
-/-- A complex-linear endomorphism of the fibre preserves differentiability of sections. -/
-private theorem differentiableAt_end_comp (T : Module.End ℂ W) {f : E → W}
-    (hf : DifferentiableAt ℝ f x) : DifferentiableAt ℝ (fun y ↦ T (f y)) x :=
-  (((LinearMap.toContinuousLinearMap T).restrictScalars ℝ).hasFDerivAt.comp x
-    hf.hasFDerivAt).differentiableAt
-
-end FiniteDimensional
-
-end CovariantDeriv
-
 section Dirac
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -235,28 +116,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-! ### Clifford relations in an orthonormal basis -/
 
-/-- The polarization of `Q v = -‖v‖²` on an orthonormal basis: `polar Q eⱼ eₖ = -2 δⱼₖ`. -/
-private theorem polar_apply_apply [DecidableEq κ] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (e : OrthonormalBasis κ ℝ V) (j k : κ) :
-    QuadraticMap.polar Q (e j) (e k) = if j = k then -2 else 0 := by
-  have hpolar : QuadraticMap.polar Q (e j) (e k) = -2 * ⟪e j, e k⟫ := by
-    rw [QuadraticMap.polar, hQ, hQ, hQ, norm_add_sq_real]
-    ring
-  rw [hpolar, e.inner_eq_ite]
-  split_ifs <;> simp
-
-/-- The Clifford relation `c(eⱼ) c(eₖ) + c(eₖ) c(eⱼ) = -2 δⱼₖ` of an orthonormal basis. -/
-private theorem map_ι_mul_ι_add_swap [DecidableEq κ] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (e : OrthonormalBasis κ ℝ V) (j k : κ) :
-    ρ (ι Q (e j)) * ρ (ι Q (e k)) + ρ (ι Q (e k)) * ρ (ι Q (e j)) =
-      if j = k then -2 else 0 := by
-  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap, AlgHom.commutes,
-    polar_apply_apply hQ e j k]
-  split_ifs <;> simp [map_ofNat]
-
 /-- The algebra of the Weitzenböck formula: if `cⱼ cₖ + cₖ cⱼ = -2 δⱼₖ`, then
 `∑ⱼ ∑ₖ cⱼ cₖ Xⱼₖ = -∑ₖ Xₖₖ + ½ ∑ⱼ ∑ₖ cⱼ cₖ (Xⱼₖ - Xₖⱼ)`. -/
-private theorem sum_sum_mul_apply_eq [DecidableEq κ] (c : κ → Module.End ℂ W) (X : κ → κ → W)
+theorem sum_sum_apply_apply_eq [DecidableEq κ] (c : κ → Module.End ℂ W) (X : κ → κ → W)
     (hc : ∀ j k, c j * c k + c k * c j = if j = k then -2 else 0) :
     ∑ j, ∑ k, c j (c k (X j k)) =
       -∑ k, X k k + (2⁻¹ : ℂ) • ∑ j, ∑ k, c j (c k (X j k - X k j)) := by
@@ -288,18 +150,6 @@ private def cliffordBilin (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
 
 variable [FiniteDimensional ℝ V]
 
-/-- The trace of a real bilinear map over an orthonormal basis does not depend on the basis. -/
-private theorem sum_apply_apply_eq_of_orthonormalBasis {κ' : Type*} [Fintype κ']
-    (B : V →ₗ[ℝ] V →ₗ[ℝ] W) (e : OrthonormalBasis κ ℝ V) (e' : OrthonormalBasis κ' ℝ V) :
-    ∑ k, B (e k) (e k) = ∑ k, B (e' k) (e' k) := by
-  have h (f : OrthonormalBasis κ ℝ V) :
-      ∑ k, B (f k) (f k) = TensorProduct.lift B (InnerProductSpace.canonicalCovariantTensor V) := by
-    simp [InnerProductSpace.canonicalCovariantTensor_eq_sum V f]
-  have h' (f : OrthonormalBasis κ' ℝ V) :
-      ∑ k, B (f k) (f k) = TensorProduct.lift B (InnerProductSpace.canonicalCovariantTensor V) := by
-    simp [InnerProductSpace.canonicalCovariantTensor_eq_sum V f]
-  rw [h e, h' e']
-
 /-- The **twisted Dirac operator** `D_b ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ` of a spinor field `ψ : V → W` for
 the imaginary connection form `a = i b`, where `c(v) = ρ (ι v)` is Clifford multiplication and
 `∇ψ = dψ + i b ψ` (`TauCeti.SeibergWitten.covariantDeriv`). It is computed in the standard
@@ -315,6 +165,23 @@ theorem twistedDirac_eq_sum (e : OrthonormalBasis κ ℝ V) (b : V → V [⋀^Fi
     twistedDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) :=
   sum_apply_apply_eq_of_orthonormalBasis (cliffordBilin ρ (covariantDeriv b ψ x))
     (stdOrthonormalBasis ℝ V) e
+
+/-- The twisted Dirac operator of the zero spinor field vanishes. -/
+@[simp]
+theorem twistedDirac_zero : twistedDirac ρ b (0 : V → W) x = 0 := by
+  simp [twistedDirac]
+
+/-- The twisted Dirac operator is additive on spinor fields differentiable at `x`. -/
+theorem twistedDirac_add {φ : V → W} (hψ : DifferentiableAt ℝ ψ x)
+    (hφ : DifferentiableAt ℝ φ x) :
+    twistedDirac ρ b (ψ + φ) x = twistedDirac ρ b ψ x + twistedDirac ρ b φ x := by
+  simp [twistedDirac, covariantDeriv_add hψ hφ, Finset.sum_add_distrib]
+
+/-- The twisted Dirac operator commutes with multiplication of a spinor field differentiable at
+`x` by a complex constant. -/
+theorem twistedDirac_const_smul (c : ℂ) (hψ : DifferentiableAt ℝ ψ x) :
+    twistedDirac ρ b (c • ψ) x = c • twistedDirac ρ b ψ x := by
+  simp [twistedDirac, covariantDeriv_const_smul c hψ, Finset.smul_sum]
 
 /-- The twisted Dirac operator vanishes at a point near which the spinor field vanishes. -/
 theorem twistedDirac_eq_zero_of_eventuallyEq_zero (hψ : ψ =ᶠ[𝓝 x] 0) :
@@ -346,7 +213,7 @@ private theorem sum_sum_inner_smul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     rcases eq_or_ne j k with rfl | hjk
     · rw [(exteriorPower.ιMulti ℝ 2).map_eq_zero_of_eq ![e j, e j] (i := 0) (j := 1) (by simp)
         (by decide), inner_zero_right, zero_smul]
-    · simp [polar_apply_apply hQ e j k, hjk]
+    · simp [e.polar_apply_apply hQ j k, hjk]
   simp only [ι_mul_ι_eq_bivector_add, smul_add, hdiag, add_zero, real_inner_comm F]
 
 variable [FiniteDimensional ℂ W]
@@ -383,7 +250,8 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
     rw [twistedDirac_eq_sum ρ e, hfun]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [covariantDeriv_fun_sum (f := fun k y ↦ ρ (ι Q (e k)) (covariantDeriv b ψ y (e k)))
-      fun k ↦ differentiableAt_end_comp _ (hcovk k), sum_apply, map_sum]
+      fun k ↦ ((LinearMap.toContinuousLinearMap (ρ (ι Q (e k)))).restrictScalars
+        ℝ).differentiableAt.comp x (hcovk k), sum_apply, map_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [covariantDeriv_comp_apply _ (hcovk k), ← covariantDeriv_apply_apply hcov]
   -- The antisymmetric part is the curvature term, by the Ricci identity.
@@ -405,7 +273,11 @@ theorem twistedDirac_twistedDirac (hQ : ∀ v, Q v = -‖v‖ ^ 2) (e : Orthonor
           congr 1
           push_cast
           ring
-  rw [hDD, sum_sum_mul_apply_eq _ X fun j k ↦ map_ι_mul_ι_add_swap ρ hQ e j k, hcurv, smul_smul]
+  have hrel (j k : κ) : ρ (ι Q (e j)) * ρ (ι Q (e k)) + ρ (ι Q (e k)) * ρ (ι Q (e j)) =
+      if j = k then -2 else 0 := by
+    rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_of_orthonormal hQ e j k]
+    split_ifs <;> simp [map_ofNat]
+  rw [hDD, sum_sum_apply_apply_eq _ X hrel, hcurv, smul_smul]
   rw [sub_eq_add_neg, ← neg_smul]
   congr 2
   ring

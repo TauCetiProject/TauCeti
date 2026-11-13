@@ -27,6 +27,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 
 * `QuadraticMap.isOrtho_iff_inner_eq_zero`: orthogonality for `Q` is orthogonality for the inner
   product.
+* `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
+* `OrthonormalBasis.polar_apply_apply`: the polar form of `Q` on an orthonormal basis is `-2 δᵢⱼ`.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
   of `Q`.
 * `OrthonormalBasis.isOrtho_apply`, `OrthonormalBasis.pairwise_isOrtho_map`: distinct orthonormal
@@ -36,6 +38,10 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
+* `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`,
+  `CliffordAlgebra.ι_mul_ι_add_swap_of_orthonormal`: the Clifford relation
+  `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`, and `c(eᵢ) c(eⱼ) + c(eⱼ) c(eᵢ) = -2 δᵢⱼ` on an orthonormal
+  basis.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -56,6 +62,11 @@ theorem QuadraticMap.isOrtho_iff_inner_eq_zero {x y : V} : Q.IsOrtho x y ↔ ⟪
   rw [QuadraticMap.isOrtho_def, hQ, hQ, hQ, norm_add_sq_real]
   constructor <;> intro h <;> linarith
 
+/-- For `Q v = -‖v‖²`, the polar form of `Q` is `-2 ⟪u, v⟫`. -/
+theorem QuadraticMap.polar_eq_neg_two_inner (u v : V) : QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
+  rw [QuadraticMap.polar, hQ, hQ, hQ, norm_add_sq_real]
+  ring
+
 namespace OrthonormalBasis
 
 variable {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
@@ -73,6 +84,12 @@ theorem isOrtho_apply {i j : ι} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) :=
 orthogonal for `Q`. -/
 theorem pairwise_isOrtho_map {l : List ι} (hl : l.Nodup) : (l.map b).Pairwise Q.IsOrtho :=
   List.pairwise_map.mpr <| hl.imp (b.isOrtho_apply hQ)
+
+/-- For `Q v = -‖v‖²`, the polar form of `Q` on orthonormal basis vectors is `-2 δᵢⱼ`. -/
+theorem polar_apply_apply [DecidableEq ι] (i j : ι) :
+    QuadraticMap.polar Q (b i) (b j) = if i = j then -2 else 0 := by
+  rw [QuadraticMap.polar_eq_neg_two_inner hQ, b.inner_eq_ite]
+  split_ifs <;> simp
 
 /-- For `Q v = -‖v‖²`, the product of the values of `Q` at two orthonormal basis vectors is one. -/
 theorem map_apply_mul_map_apply (i j : ι) : Q (b i) * Q (b j) = 1 := by
@@ -97,6 +114,19 @@ theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
   congr 1
   simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
   ring
+
+/-- For `Q v = -‖v‖²`, the Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
+    ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
+  rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
+
+/-- For `Q v = -‖v‖²`, the Clifford relation on an orthonormal basis is
+`c(eᵢ) c(eⱼ) + c(eⱼ) c(eᵢ) = -2 δᵢⱼ`. -/
+theorem ι_mul_ι_add_swap_of_orthonormal {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (b : OrthonormalBasis κ ℝ V) (i j : κ) :
+    ι Q (b i) * ι Q (b j) + ι Q (b j) * ι Q (b i) = if i = j then -2 else 0 := by
+  rw [ι_mul_ι_add_swap, b.polar_apply_apply hQ]
+  split_ifs <;> simp [map_ofNat]
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies

@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm
 public import TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -126,6 +127,16 @@ The phase form `Im (α⁻¹ dα)` (`TauCeti.phaseForm`) and the twisted differen
 * `TauCeti.SeibergWitten.modulusPotential χ`: the integral `H(s) = ∫₁ˢ χ(t) / t dt`, a primitive of
   `χ(s) / s` when `χ` is continuous and vanishes near `0`.
 
+## Main results
+
+* `TauCeti.SeibergWitten.covariantDeriv_add`, `TauCeti.SeibergWitten.covariantDeriv_const_smul`,
+  `TauCeti.SeibergWitten.covariantDeriv_fun_sum`,
+  `TauCeti.SeibergWitten.covariantDeriv_apply_apply`,
+  `TauCeti.SeibergWitten.differentiableAt_covariantDeriv`: linearity, evaluation and
+  differentiability of covariant derivatives of vector-valued sections.
+* `TauCeti.SeibergWitten.covariantDeriv_covariantDeriv_sub`: the Ricci identity
+  `∇²_{v, w} ψ - ∇²_{w, v} ψ = i db(v, w) ψ`.
+
 ## References
 
 * C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
@@ -234,6 +245,128 @@ theorem covariantPhaseForm_sub_phaseForm_mul (hu : DifferentiableAt ℝ u x)
   rw [covariantPhaseForm_apply, covariantPhaseForm_apply, phaseForm_mul hu hα hu₀ hα₀,
     Pi.sub_apply]
   abel
+
+/-! ### Covariant derivatives of vector-valued sections -/
+
+section VectorValued
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] {ψ φ : E → W} {κ : Type*}
+  [Fintype κ]
+
+/-- The covariant derivative of the zero section vanishes. -/
+@[simp]
+theorem covariantDeriv_zero : covariantDeriv b (0 : E → W) x = 0 := by
+  ext v
+  simp [covariantDeriv_apply_eq_add_smul]
+
+/-- The covariant derivative of a sum of differentiable sections is the sum of their covariant
+derivatives. -/
+theorem covariantDeriv_add (hψ : DifferentiableAt ℝ ψ x) (hφ : DifferentiableAt ℝ φ x) :
+    covariantDeriv b (ψ + φ) x = covariantDeriv b ψ x + covariantDeriv b φ x := by
+  ext v
+  simp only [_root_.add_apply, covariantDeriv_apply_eq_add_smul, fderiv_add hψ hφ,
+    Pi.add_apply, smul_add]
+  abel
+
+/-- The covariant derivative commutes with multiplication of a differentiable section by a
+complex constant. -/
+theorem covariantDeriv_const_smul (c : ℂ) (hψ : DifferentiableAt ℝ ψ x) :
+    covariantDeriv b (c • ψ) x = c • covariantDeriv b ψ x := by
+  ext v
+  simp only [_root_.smul_apply, covariantDeriv_apply_eq_add_smul,
+    fderiv_const_smul hψ c, Pi.smul_apply, smul_add, smul_comm c]
+
+/-- The covariant derivative of a finite sum of differentiable sections is the sum of their
+covariant derivatives. -/
+theorem covariantDeriv_fun_sum {f : κ → E → W} (hf : ∀ k, DifferentiableAt ℝ (f k) x) :
+    covariantDeriv b (fun y ↦ ∑ k, f k y) x = ∑ k, covariantDeriv b (f k) x := by
+  ext v
+  simp only [_root_.sum_apply, covariantDeriv_apply_eq_add_smul,
+    Finset.sum_add_distrib, Finset.smul_sum]
+  rw [fderiv_fun_sum fun k _ ↦ hf k]
+  simp
+
+/-- The covariant derivative of a section of `Hom(E, W)` evaluated at a fixed vector `w` is the
+covariant derivative of the section `y ↦ G y w` of `W`. -/
+theorem covariantDeriv_apply_apply {G : E → E →L[ℝ] W} (hG : DifferentiableAt ℝ G x)
+    (v w : E) : covariantDeriv b G x v w = covariantDeriv b (fun y ↦ G y w) x v := by
+  have hd : fderiv ℝ (fun y ↦ G y w) x = (ContinuousLinearMap.apply ℝ W w).comp (fderiv ℝ G x) :=
+    ((ContinuousLinearMap.apply ℝ W w).hasFDerivAt.comp x hG.hasFDerivAt).fderiv
+  simp [covariantDeriv_apply_eq_add_smul, hd]
+
+/-- The covariant derivative of a section `ψ` is differentiable at `x` when `ψ`, its derivative
+`dψ` and the connection form `b` are differentiable at `x`. -/
+theorem differentiableAt_covariantDeriv (hψ : DifferentiableAt ℝ (fderiv ℝ ψ) x)
+    (hψ' : DifferentiableAt ℝ ψ x) (hb : DifferentiableAt ℝ b x) :
+    DifferentiableAt ℝ (covariantDeriv b ψ) x := by
+  -- `∇ψ(y) = dψ(y) + (b y) ⊗ i ψ(y)`, a sum of differentiable maps.
+  have heq : covariantDeriv b ψ = fun y ↦ fderiv ℝ ψ y +
+      ContinuousLinearMap.smulRightL ℝ E W
+        ((ofSubsingletonLIE (0 : Fin 1)).symm (b y)) (I • ψ y) := by
+    ext y v
+    simp [covariantDeriv_apply_eq_add_smul, ofSubsingletonLIE_symm_apply]
+  rw [heq]
+  refine hψ.add ?_
+  have h₁ : DifferentiableAt ℝ (fun y ↦ (ofSubsingletonLIE (0 : Fin 1)).symm (b y)) x := by
+    fun_prop
+  have h₂ : DifferentiableAt ℝ (fun y ↦ I • ψ y) x := hψ'.const_smul I
+  exact ((ContinuousLinearMap.smulRightL ℝ E W).differentiableAt.comp x h₁).clm_apply h₂
+
+/-- The second covariant derivative `∇²_{v, w} ψ = ∇_v (∇ψ)(w)`, expanded. -/
+theorem covariantDeriv_covariantDeriv_apply (hψ : DifferentiableAt ℝ (fderiv ℝ ψ) x)
+    (hψ' : DifferentiableAt ℝ ψ x) (hb : DifferentiableAt ℝ b x) (v w : E) :
+    covariantDeriv b (covariantDeriv b ψ) x v w =
+      fderiv ℝ (fderiv ℝ ψ) x v w + b x (fun _ ↦ w) • I • fderiv ℝ ψ x v +
+        fderiv ℝ (fun y ↦ b y (fun _ ↦ w)) x v • I • ψ x +
+        b x (fun _ ↦ v) • I • (fderiv ℝ ψ x w + b x (fun _ ↦ w) • I • ψ x) := by
+  have hfun : (fun y ↦ covariantDeriv b ψ y w) =
+      fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y :=
+    funext fun y ↦ covariantDeriv_apply_eq_add_smul b ψ y w
+  rw [covariantDeriv_apply_apply (differentiableAt_covariantDeriv hψ hψ' hb),
+    covariantDeriv_apply_eq_add_smul, hfun, covariantDeriv_apply_eq_add_smul]
+  have hbw : DifferentiableAt ℝ (fun y ↦ b y (fun _ ↦ w)) x :=
+    hb.continuousAlternatingMap_apply_const _
+  have hfw : DifferentiableAt ℝ (fun y ↦ fderiv ℝ ψ y w) x :=
+    (ContinuousLinearMap.apply ℝ W w).differentiableAt.comp x hψ
+  have h₁ : fderiv ℝ (fun y ↦ fderiv ℝ ψ y w) x v = fderiv ℝ (fderiv ℝ ψ) x v w := by
+    rw [fderiv_clm_apply hψ (differentiableAt_const w)]
+    simp
+  have hd : HasFDerivAt (fun y ↦ fderiv ℝ ψ y w + b y (fun _ ↦ w) • I • ψ y) _ x :=
+    hfw.hasFDerivAt.add (hbw.hasFDerivAt.smul (hψ'.hasFDerivAt.const_smul I))
+  rw [hd.fderiv]
+  simp only [_root_.add_apply, _root_.smul_apply,
+    ContinuousLinearMap.smulRight_apply, h₁]
+  abel
+
+/-- **The Ricci identity** for the twisted connection on flat space: the curvature of
+`∇ = d + i b` is `i db`, so `∇²_{v, w} ψ - ∇²_{w, v} ψ = db(v, w) i ψ`. -/
+theorem covariantDeriv_covariantDeriv_sub (hψ : ContDiffAt ℝ 2 ψ x)
+    (hb : DifferentiableAt ℝ b x) (v w : E) :
+    covariantDeriv b (covariantDeriv b ψ) x v w - covariantDeriv b (covariantDeriv b ψ) x w v =
+      extDeriv b x ![v, w] • I • ψ x := by
+  have hψ₁ : DifferentiableAt ℝ (fderiv ℝ ψ) x :=
+    (hψ.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hψ' : DifferentiableAt ℝ ψ x := hψ.differentiableAt two_ne_zero
+  have hsymm : fderiv ℝ (fderiv ℝ ψ) x v w = fderiv ℝ (fderiv ℝ ψ) x w v :=
+    hψ.isSymmSndFDerivAt (by simp) v w
+  rw [covariantDeriv_covariantDeriv_apply hψ₁ hψ' hb,
+    covariantDeriv_covariantDeriv_apply hψ₁ hψ' hb, extDeriv_apply_pair_of_differentiableAt hb,
+    hsymm, sub_smul]
+  simp only [smul_add, smul_comm (b x (fun _ ↦ v)) I, smul_comm (b x (fun _ ↦ w)) I,
+    smul_smul (b x (fun _ ↦ v)), smul_smul (b x (fun _ ↦ w)), mul_comm (b x (fun _ ↦ w))]
+  abel
+
+/-- The covariant derivative commutes with a complex-linear endomorphism of a finite-dimensional
+fibre: `∇ (T ψ) = T (∇ ψ)`. -/
+theorem covariantDeriv_comp_apply [FiniteDimensional ℂ W] (T : Module.End ℂ W)
+    (hψ : DifferentiableAt ℝ ψ x) (v : E) :
+    covariantDeriv b (fun y ↦ T (ψ y)) x v = T (covariantDeriv b ψ x v) := by
+  set L := (LinearMap.toContinuousLinearMap T).restrictScalars ℝ
+  have hd : fderiv ℝ (fun y ↦ T (ψ y)) x = L.comp (fderiv ℝ ψ x) :=
+    (L.hasFDerivAt.comp x hψ.hasFDerivAt).fderiv
+  simp [covariantDeriv_apply_eq_add_smul, hd, L, LinearMap.map_smul_of_tower]
+
+end VectorValued
 
 /-! ### The cutoff phase form and the cutoff current -/
 
