@@ -24,6 +24,7 @@ convergence estimates.
 * `Real.pow_le_pow_iff_div_le_logb_of_base_lt_one`: `x ^ n ≤ b ^ m ↔ m / n ≤ logb b x`.
 * `Real.pow_le_pow_iff_logb_le_div_of_base_lt_one`: `b ^ m ≤ x ^ n ↔ logb b x ≤ m / n`.
 * `Real.le_floor_logb_iff_zpow_le_of_base_lt_one`: `n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n` for `n : ℤ`.
+* `Real.logb_zpow_self`: `logb b (b ^ n) = n` for `n : ℤ` and a base `b > 0`, `b ≠ 1`.
 * `Real.pow_natFloor_logb_le_self`: `b ^ ⌊logb b x⌋₊ ≤ x` for `1 < b` and `1 ≤ x`.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 -/
@@ -33,6 +34,11 @@ public section
 namespace Real
 
 variable {b x : ℝ} {m n : ℕ}
+
+/-- A nontrivial positive base `b` has `logb b (b ^ n) = n` for an integer `n`. -/
+@[simp]
+theorem logb_zpow_self (b_pos : 0 < b) (b_ne_one : b ≠ 1) (n : ℤ) : logb b (b ^ n) = n := by
+  rw [← rpow_intCast, logb_rpow b_pos b_ne_one]
 
 /-- For a base `b ∈ (0, 1)` and `0 < x`, the power comparison `x ^ n ≤ b ^ m` is the lower bound
 `m / n ≤ logb b x`. -/

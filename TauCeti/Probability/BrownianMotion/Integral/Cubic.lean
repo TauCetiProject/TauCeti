@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-public import TauCeti.Probability.BrownianMotion.TimeIntegral
+public import TauCeti.Probability.BrownianMotion.TimeIntegral.Basic
 import TauCeti.Probability.BrownianMotion.CubicVariation
 import TauCeti.Probability.BrownianMotion.WeightedQuadraticVariation
 import TauCeti.MeasureTheory.Function.Lp.Norm

@@ -94,7 +94,7 @@ theorem weightHomogenization_mem_weightReesIdeal {n : ℕ} {p : MvPolynomial σ 
     (hp : p ∈ weightFiltration R w n) : weightHomogenization R w n p ∈ I.weightReesIdeal w := by
   rw [mem_weightReesIdeal_iff, weightReesHom_weightHomogenization hp]
   intro k
-  rw [Polynomial.coeff_monomial]
+  rw [Polynomial.coeff_monomial, Finsupp.single_apply]
   split_ifs
   exacts [hpI, zero_mem I]
 
