@@ -6,29 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Disintegration
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Functoriality
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Nondegenerate
-public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Representation
-import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# Disintegration and the multiplier universal property of full crossed products
+# The multiplier universal property of full crossed products
 
 Let `α` be a point-norm continuous action of a locally compact group `G : Type u` on a possibly
 nonunital C⋆-algebra `A : Type v` with left Haar measure `μ`. The canonical maps
 `FullCrossedProduct.coefficientMultiplier` and `FullCrossedProduct.groupMultiplier` form a covariant
 multiplier homomorphism `FullCrossedProduct.covariantMultiplierHom α μ`.
 
-* **Strict Bochner multiplier-integral formula** (`FullCrossedProduct.of_mul_eq_integral`,
-  `FullCrossedProduct.mul_of_eq_integral`,
-  `FullCrossedProduct.covariantMultiplierHom_integratedMultiplier`): left and right multiplication
-  by `of α μ f` agree with the strict Bochner integral of `r ↦ i_A(f(r)) i_G(r)`.
-* **Hilbert-space disintegration** (`FullCrossedProduct.disintegrate`,
-  `CovariantRepresentation.integratedFull_disintegrate`,
-  `FullCrossedProduct.disintegrate_integratedFull`,
-  `CovariantRepresentation.eq_integratedFull_iff`): nondegenerate representations of `A ⋊_α G` on
-  Hilbert spaces correspond bijectively to nondegenerate covariant representations of `(A, G, α)`.
+* **Strict Bochner multiplier-integral identification**
+  (`FullCrossedProduct.covariantMultiplierHom_integratedMultiplier`,
+  `FullCrossedProduct.integral_coefficientMultiplier_mul_groupMultiplier_snd`): the strict Bochner
+  integrated form of `(i_A, i_G)` on `C_c(G, A)` is the canonical inclusion into
+  `A ⋊_α G ⊆ 𝓜(ℂ, A ⋊_α G)`, and right multiplication by `of α μ f` agrees with the strict
+  Bochner integral `∫ s, (i_A(f(s)) i_G(s)).snd y ∂μ`.
 * **Multiplier-algebra universal property and disintegration**
   (`CovariantMultiplierHom.integratedFull`, `FullCrossedProduct.disintegrateMultiplier`,
   `CovariantMultiplierHom.integratedFull_disintegrateMultiplier`,
@@ -86,24 +81,15 @@ theorem covariantMultiplierHom_coefficient :
 theorem covariantMultiplierHom_group :
     (covariantMultiplierHom α μ).group = groupMultiplier α μ := (rfl)
 
-/-- Left multiplication by `of α μ f` in the full crossed product is given in the strict topology
-by the Bochner integral `∫ r, (i_A(f(r)) i_G(r)).fst x ∂μ`. -/
-theorem of_mul_eq_integral (f : ConvolutionAlgebra α μ) (x : FullCrossedProduct α μ) :
-    of α μ f * x =
-      ∫ r, (coefficientMultiplier α μ (f.ofConv r) * groupMultiplier α μ r).fst x ∂μ := by
-  have hint := (covariantMultiplierHom α μ).integrable_integrand_fst μ f.ofConv x
-  rw [covariantMultiplierHom_coefficient, covariantMultiplierHom_group] at hint
-  refine eq_of_sub_eq_zero <| norm_le_zero_iff.1 <| norm_le_iff.2 fun H _ _ _ P => ?_
-  refine ContinuousLinearMap.opNorm_le_bound _ le_rfl fun v => ?_
-  have hev := AddMonoidHom.integral_comp_comm
-    (AddMonoidHom.mk' (fun y => P.integratedFull μ y v) fun _ _ => by simp)
-    ((ContinuousLinearMap.apply ℂ H v).continuous.comp (map_continuous (P.integratedFull μ))) hint
-  simp only [AddMonoidHom.mk'_apply] at hev
-  rw [zero_mul, norm_le_zero_iff, map_sub, sub_apply, sub_eq_zero, ← hev,
-    map_mul, P.integratedFull_of, CovariantRepresentation.integratedStarAlgHom_apply,
-    mul_apply_eq_comp, P.integratedOperator_apply]
-  exact integral_congr_ae <| .of_forall fun r => by
-    simp [DoubleCentralizer.mul_fst, mul_apply_eq_comp]
+/-- Composing `(i_A, i_G)` with `L.multiplierExtension hL` yields the disintegrated covariant
+representation `L.toCovariantRepresentation hL`. -/
+@[simp]
+theorem covariantMultiplierHom_toCovariantRepresentation {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H]
+    {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hL : L.IsNondegenerate) :
+    (covariantMultiplierHom α μ).toCovariantRepresentation hL =
+      L.toCovariantRepresentation hL :=
+  CovariantRepresentation.ext (by ext; simp) (DFunLike.ext _ _ fun _ => by simp)
 
 /-- The strict Bochner integrated form of the canonical covariant multiplier homomorphism on
 `C_c(G, A)` is the canonical inclusion into `A ⋊_α G ⊆ 𝓜(ℂ, A ⋊_α G)`. -/
@@ -112,7 +98,8 @@ theorem covariantMultiplierHom_integratedMultiplier (f : C_c(G, A)) :
     (covariantMultiplierHom α μ).integratedMultiplier μ f =
       (of α μ (ConvolutionAlgebra.toConv f) : 𝓜(ℂ, FullCrossedProduct α μ)) :=
   DoubleCentralizer.ext_fst fun x => by
-    simpa using (of_mul_eq_integral (ConvolutionAlgebra.toConv f) x).symm
+    simpa using integral_coefficientMultiplier_mul_groupMultiplier_fst
+      (ConvolutionAlgebra.toConv f) x
 
 /-- The integrated ⋆-homomorphism of `(i_A, i_G)` on the twisted convolution algebra is `of α μ`
 followed by the canonical inclusion into `𝓜(ℂ, A ⋊_α G)`. -/
@@ -121,11 +108,12 @@ theorem covariantMultiplierHom_integratedStarAlgHom (f : ConvolutionAlgebra α �
       (of α μ f : 𝓜(ℂ, FullCrossedProduct α μ)) := by simp
 
 /-- Right multiplication by `of α μ f` in the full crossed product is given in the strict topology
-by the Bochner integral `∫ r, (i_A(f(r)) i_G(r)).snd x ∂μ`. -/
-theorem mul_of_eq_integral (f : ConvolutionAlgebra α μ) (x : FullCrossedProduct α μ) :
-    x * of α μ f =
-      ∫ r, (coefficientMultiplier α μ (f.ofConv r) * groupMultiplier α μ r).snd x ∂μ := by
-  have hsnd : x * of α μ f = (of α μ f : 𝓜(ℂ, FullCrossedProduct α μ)).snd x := by simp
+by the Bochner integral `∫ s, (i_A(f(s)) i_G(s)).snd y ∂μ = y * of α μ f`. -/
+theorem integral_coefficientMultiplier_mul_groupMultiplier_snd (f : ConvolutionAlgebra α μ)
+    (y : FullCrossedProduct α μ) :
+    ∫ s, (coefficientMultiplier α μ (f.ofConv s) *
+      (groupMultiplier α μ s : 𝓜(ℂ, FullCrossedProduct α μ))).snd y ∂μ = y * of α μ f := by
+  have hsnd : y * of α μ f = (of α μ f : 𝓜(ℂ, FullCrossedProduct α μ)).snd y := by simp
   rw [hsnd, ← covariantMultiplierHom_integratedStarAlgHom]
   simp only [CovariantMultiplierHom.integratedStarAlgHom_apply,
     CovariantMultiplierHom.integratedMultiplier_snd_apply, covariantMultiplierHom_coefficient,
@@ -147,70 +135,6 @@ theorem dense_span_covariantMultiplierHom_integratedMultiplier :
       Set (FullCrossedProduct α μ)) :=
   ((covariantMultiplierHom α μ).dense_span_integratedMultiplier_iff μ).2
     isMultiplierNondegenerate_coefficientMultiplier
-
-/-! ### Disintegration of nondegenerate Hilbert-space representations -/
-
-section DisintegrateHilbert
-
-variable {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Disintegrate a nondegenerate Hilbert-space representation `L` of `A ⋊_α G` into a covariant
-representation of `(A, G, α)` by applying `L.multiplierExtension hL` to `(i_A, i_G)`. -/
-def disintegrate (L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H))
-    (hL : L.IsNondegenerate) : CovariantRepresentation α H :=
-  (covariantMultiplierHom α μ).toCovariantRepresentation hL
-
-@[simp]
-theorem disintegrate_coefficient {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) :
-    (disintegrate L hL).coefficient =
-      (L.multiplierExtension hL).toNonUnitalStarAlgHom.comp (coefficientMultiplier α μ) := by
-  simp [disintegrate]
-
-@[simp]
-theorem disintegrate_group_apply {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) (r : G) :
-    (disintegrate L hL).group r = L.multiplierExtension hL (groupMultiplier α μ r) := by
-  simp [disintegrate]
-
-/-- The disintegrated covariant representation has a nondegenerate coefficient representation. -/
-theorem isNondegenerate_disintegrate_coefficient {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) : (disintegrate L hL).coefficient.IsNondegenerate :=
-  disintegrate_coefficient hL ▸
-    hL.multiplierExtension_comp isMultiplierNondegenerate_coefficientMultiplier
-
-@[simp]
-theorem disintegrate_integratedOperator {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) (f : C_c(G, A)) :
-    (disintegrate L hL).integratedOperator μ f =
-      L (of α μ (ConvolutionAlgebra.toConv f)) := by
-  rw [disintegrate, ← (covariantMultiplierHom α μ).multiplierExtension_integratedMultiplier μ hL,
-    covariantMultiplierHom_integratedMultiplier, L.multiplierExtension_coe hL]
-
-@[simp]
-theorem disintegrate_integratedStarAlgHom {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) :
-    (disintegrate L hL).integratedStarAlgHom μ = L.comp (of α μ) :=
-  NonUnitalStarAlgHom.ext fun _ => by simp [CovariantRepresentation.integratedStarAlgHom_apply]
-
-/-- Uniqueness of Hilbert-space disintegration: any covariant representation `P` on `H` whose
-integrated ⋆-homomorphism agrees with `L ∘ of α μ` automatically has nondegenerate `P.coefficient`
-and equals `disintegrate L hL`. -/
-theorem eq_disintegrate_of_integratedStarAlgHom_eq {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) {P : CovariantRepresentation α H}
-    (hP : P.integratedStarAlgHom μ = L.comp (of α μ)) : P = disintegrate L hL := by
-  have hop (f : C_c(G, A)) :
-      P.integratedOperator μ f = L (of α μ (ConvolutionAlgebra.toConv f)) := by
-    simpa [CovariantRepresentation.integratedStarAlgHom_apply] using
-      congr($hP (ConvolutionAlgebra.toConv f))
-  have hPnd : P.coefficient.IsNondegenerate :=
-    (P.dense_span_integratedOperator_iff μ).1 <| by
-      simpa only [Function.comp_apply, hop] using
-        (NonUnitalStarAlgHom.isNondegenerate_iff_dense_span_comp denseRange_of_toConv).1 hL
-  exact P.ext_integratedOperator μ hPnd fun f =>
-    (hop f).trans (disintegrate_integratedOperator hL f).symm
-
-end DisintegrateHilbert
 
 /-! ### Disintegration of nondegenerate multiplier homomorphisms -/
 
@@ -283,77 +207,6 @@ theorem eq_disintegrateMultiplier_of_integratedStarAlgHom_eq
 end DisintegrateMultiplier
 
 end FullCrossedProduct
-
-/-! ### Round-trip identities and universal property on Hilbert spaces -/
-
-namespace CovariantRepresentation
-
-open FullCrossedProduct
-
-section ArbitraryUniverse
-
-variable {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- Integrating the disintegrated covariant representation of a nondegenerate representation `L`
-recovers `L`. -/
-@[simp]
-theorem integratedFull_disintegrate {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
-    (hL : L.IsNondegenerate) : (disintegrate L hL).integratedFull μ = L :=
-  FullCrossedProduct.starAlgHom_ext <|
-    ((disintegrate L hL).integratedFull_comp_of).trans (disintegrate_integratedStarAlgHom hL)
-
-/-- Applying the multiplier extension of `P.integratedFull μ` to `i_A(a)` recovers
-`P.coefficient a`. -/
-@[simp]
-theorem multiplierExtension_integratedFull_coefficientMultiplier (P : CovariantRepresentation α H)
-    (μ : Measure G) [μ.IsHaarMeasure] (h : (P.integratedFull μ).IsNondegenerate) (a : A) :
-    (P.integratedFull μ).multiplierExtension h (coefficientMultiplier α μ a) = P.coefficient a := by
-  simpa only [disintegrate_coefficient, NonUnitalStarAlgHom.comp_apply,
-    StarAlgHom.coe_toNonUnitalStarAlgHom] using
-    congrArg (fun Q => Q.coefficient a)
-      (eq_disintegrate_of_integratedStarAlgHom_eq h P.integratedFull_comp_of.symm).symm
-
-/-- Applying the multiplier extension of `P.integratedFull μ` to `i_G(r)` recovers `P.group r`. -/
-@[simp]
-theorem multiplierExtension_integratedFull_groupMultiplier (P : CovariantRepresentation α H)
-    (μ : Measure G) [μ.IsHaarMeasure] (h : (P.integratedFull μ).IsNondegenerate) (r : G) :
-    (P.integratedFull μ).multiplierExtension h (groupMultiplier α μ r) = P.group r := by
-  simpa only [disintegrate_group_apply] using
-    congrArg (fun Q => Q.group r)
-      (eq_disintegrate_of_integratedStarAlgHom_eq h P.integratedFull_comp_of.symm).symm
-
-/-- Universal property of `(A ⋊_α G, i_A, i_G)` for nondegenerate Hilbert-space representations:
-a nondegenerate representation `L` of `A ⋊_α G` equals `P.integratedFull μ` if and only if its
-multiplier extension sends `i_A` to `P.coefficient` and `i_G` to `P.group`. When `P.coefficient` is
-nondegenerate, `P.integratedFull μ` is therefore the unique nondegenerate representation with this
-property. -/
-theorem eq_integratedFull_iff {P : CovariantRepresentation α H}
-    {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hL : L.IsNondegenerate) :
-    L = P.integratedFull μ ↔
-      (∀ a, L.multiplierExtension hL (coefficientMultiplier α μ a) = P.coefficient a) ∧
-        ∀ r, L.multiplierExtension hL (groupMultiplier α μ r) = P.group r := by
-  refine ⟨?_, fun ⟨hA, hG⟩ => ?_⟩
-  · rintro rfl
-    exact ⟨P.multiplierExtension_integratedFull_coefficientMultiplier μ hL,
-      P.multiplierExtension_integratedFull_groupMultiplier μ hL⟩
-  · have hdis : disintegrate L hL = P :=
-      CovariantRepresentation.ext (NonUnitalStarAlgHom.ext fun a => by simp [hA])
-        (DFunLike.ext _ _ fun r => by simp [hG])
-    rw [← integratedFull_disintegrate hL, hdis]
-
-end ArbitraryUniverse
-
-/-- Disintegrating `P.integratedFull μ` recovers any nondegenerate covariant representation `P`. -/
-@[simp]
-theorem _root_.TauCeti.CStarAction.FullCrossedProduct.disintegrate_integratedFull
-    {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    (P : CovariantRepresentation α H) (μ : Measure G) [μ.IsHaarMeasure]
-    (hP : P.coefficient.IsNondegenerate) :
-    disintegrate (P.integratedFull μ) ((P.isNondegenerate_integratedFull_iff μ).2 hP) = P :=
-  (eq_disintegrate_of_integratedStarAlgHom_eq
-    ((P.isNondegenerate_integratedFull_iff μ).2 hP) P.integratedFull_comp_of.symm).symm
-
-end CovariantRepresentation
 
 /-! ### Universal property and round-trip identities for multiplier algebras -/
 
