@@ -344,11 +344,11 @@ are their chosen unit and counit isomorphisms. -/
       simpa [inverseNaturality] using! η.inverseNaturality_comp f g X }
   unit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso)
     (fun {a b} f => by
-      exact Cat.unit_modification _ _ _ _
+      exact Cat.whiskerLeft_comp_eq_rightUnitor_hom_comp_leftUnitor_inv_comp_whiskerRight _ _ _ _
         (fun X => η.inverse_unit_naturality f X))
   counit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso)
     (fun {a b} f => by
-      exact Cat.counit_modification _ _ _ _
+      exact Cat.whiskerLeft_comp_rightUnitor_hom_comp_leftUnitor_inv _ _ _ _
         (fun X => η.map_inverseNaturality_hom_app_comp f X))
   left_triangle := by
     apply Iso.ext

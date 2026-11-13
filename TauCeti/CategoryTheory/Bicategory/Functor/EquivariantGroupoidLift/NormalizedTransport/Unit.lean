@@ -73,10 +73,12 @@ lemma normalizationJointIso_hom_app {X Y : Γ × SingleObj H} (f : X ⟶ Y)
               apply congrArg Quiver.Hom.toLoc
               exact Prod.ext (Category.id_comp _) (Category.comp_id _))).inv.toNatTrans.app
               ((L.fiberEquivalence X.1).inverse.obj x) := by
-  -- Present the comparison in the original target fiber before simplifying its unitors.
-  change _ ≫ 𝟙 _ ≫ _ ≫ _ = _
-  simp only [Category.id_comp]
-  rfl
+  obtain ⟨p, ⟨⟩⟩ := X
+  obtain ⟨q, ⟨⟩⟩ := Y
+  -- Normalize the implicit reconstructed source carrier before simplifying the comparison.
+  dsimp only [normalizationJointIso, NormalizedTransport.jointFunctor,
+    normalizedTransport, transport]
+  simp
 
 lemma normalizationJointIso_inv_app {X Y : Γ × SingleObj H} (f : X ⟶ Y)
     (x : fiber actions X.1) :
@@ -91,10 +93,11 @@ lemma normalizationJointIso_inv_app {X Y : Γ × SingleObj H} (f : X ⟶ Y)
           (L.fiberEquivalence Y.1).unit.app
             ((L.jointMap f.1).obj ((L.fiberEquivalence X.1).inverse.obj
               ((act actions X.1 f.2).obj x))) := by
-  -- The intermediate right unitor has identity components in the original joint fiber.
-  change ((_ ≫ (L.jointMap f.1).map ((L.actInverseIso X.1 f.2).inv.app x)) ≫ 𝟙 _) ≫ _ = _
-  simp only [Category.comp_id, Category.assoc]
-  rfl
+  obtain ⟨p, ⟨⟩⟩ := X
+  obtain ⟨q, ⟨⟩⟩ := Y
+  dsimp only [normalizationJointIso, NormalizedTransport.jointFunctor,
+    normalizedTransport, transport]
+  simp
 
 private lemma joint_mapId_hom_app (p : Γ) (z : L.jointFiber p) :
     (L.joint.mapId ⟨(p, SingleObj.star H)⟩).hom.toNatTrans.app z =
@@ -107,29 +110,13 @@ private lemma normalizationJointIso_id (p : Γ) (x : fiber actions p) :
         (L.jointMapId p).hom.app ((L.fiberEquivalence p).inverse.obj x) =
       (L.fiberEquivalence p).inverse.map
         ((L.normalizedTransport.jointId (p, SingleObj.star H)).hom.app x) := by
+  dsimp only [NormalizedTransport.jointFunctor, normalizedTransport, transport_obj,
+    Functor.comp_obj]
   simp only [normalizationJointIso_hom_app, NormalizedTransport.jointId_hom_app,
-    normalizedTransport_transportId, transportId_hom_app, prod_id_fst, prod_id_snd]
-  -- State both sides in the original joint fiber. The reconstructed functor's dependent
-  -- endpoints otherwise prevent rewriting its component maps.
-  change
-    ((L.fiberEquivalence p).unitInv.app
-        ((L.jointMap (𝟙 p)).obj ((L.fiberEquivalence p).inverse.obj
-          ((act actions p (𝟙 (SingleObj.star H))).obj x))) ≫
-      (L.jointMap (𝟙 p)).map ((L.actInverseIso p (𝟙 (SingleObj.star H))).hom.app x) ≫
-      (L.joint.mapComp' (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc
-        (𝟙 p ×ₘ 𝟙 (SingleObj.star H)).toLoc (𝟙 (p, SingleObj.star H)).toLoc
-        (by simp [← Quiver.Hom.comp_toLoc])).inv.toNatTrans.app
-          ((L.fiberEquivalence p).inverse.obj x)) ≫
-      (L.jointMapId p).hom.app ((L.fiberEquivalence p).inverse.obj x) =
-    (L.fiberEquivalence p).inverse.map
-      ((L.fiberEquivalence p).functor.map
-          ((L.jointMap (𝟙 p)).map ((L.fiberEquivalence p).inverse.map
-            ((actId actions p).hom.app x))) ≫
-        (L.fiberEquivalence p).functor.map
-          ((L.jointMapId p).hom.app ((L.fiberEquivalence p).inverse.obj x)) ≫
-        (L.fiberEquivalence p).counit.app x)
-  simp only [Functor.map_comp, Category.assoc]
-  erw [Pseudofunctor.mapComp'_comp_id_inv_app]
+    transportId_hom_app, prod_id_fst, prod_id_snd]
+  simp only [Category.assoc]
+  simp only [← prod_id, Quiver.Hom.id_toLoc]
+  rw [Pseudofunctor.mapComp'_comp_id_inv_app]
   rw [L.joint_mapId_hom_app]
   erw [(L.jointMapId p).hom.naturality_assoc]
   simp only [Functor.id_map]
@@ -195,8 +182,9 @@ private lemma unit_inverse_map_transportCommIso_hom_app_comp {p q : Γ} (g : p �
     (L.fiberEquivalence q).unit.app
         ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj ((act actions p b).obj x))) ≫
       (L.fiberEquivalence q).inverse.map ((L.transportCommIso g b).hom.app x) ≫
-      (L.actInverseIso q b).hom.app ((L.transport g).obj x) ≫
-      (L.jointAct q b).map ((L.fiberEquivalence q).unitInv.app
+      (L.actInverseIso q b).hom.app ((L.fiberEquivalence q).functor.obj
+        ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj x))) ≫
+      (L.joint.map (𝟙 q ×ₘ b).toLoc).toFunctor.map ((L.fiberEquivalence q).unitInv.app
         ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj x))) =
     (L.jointMap g).map ((L.actInverseIso p b).hom.app x) ≫
       (L.jointActCommIso g b).hom.app ((L.fiberEquivalence p).inverse.obj x) := by
@@ -221,15 +209,11 @@ private lemma normalizationJointComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q �
             ((act actions p b).obj ((act actions p a).obj x))))) ≫
         (L.jointMap h).map ((L.fiberEquivalence q).inverse.map
           ((L.transportCommIso g b).hom.app ((act actions p a).obj x)))) := by
-  simp only [NormalizedTransport.jointComp_hom_app, normalizedTransport_transportComp,
-    normalizedTransport_transportCommIso, transportComp_inv_app]
-  -- Fix the actual prescribed fibers before collecting the three functor images.
-  change (L.fiberEquivalence r).functor.map _ ≫
-    (L.fiberEquivalence r).functor.map (_ ≫ _) ≫
-      (L.fiberEquivalence r).functor.map
-        ((L.jointMap h).map ((L.fiberEquivalence q).inverse.map _)) = _
+  dsimp only [NormalizedTransport.jointFunctor, normalizedTransport, transport_obj,
+    Functor.comp_obj]
+  simp only [NormalizedTransport.jointComp_hom_app, transportComp_inv_app, transport_map]
+  dsimp only [normalizedTransport, transport_obj, Functor.comp_obj]
   simp only [Functor.map_comp, Category.assoc]
-  rfl
 
 private lemma normalizationJointIso_comp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (a b : SingleObj.star H ⟶ SingleObj.star H) (x : fiber actions p) :
@@ -245,62 +229,38 @@ private lemma normalizationJointIso_comp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r
           ((L.normalizedTransport.jointFunctor (g ×ₘ a)).obj x) ≫
         (L.joint.map (h ×ₘ b).toLoc).toFunctor.map
           ((L.normalizationJointIso (g ×ₘ a)).hom.app x) := by
-  let y := (L.fiberEquivalence p).inverse.obj ((act actions p a).obj x)
   rw [L.normalizationJointComp_hom_app]
   simp only [normalizationJointIso_hom_app]
-  let c₀ := L.joint.mapComp' (𝟙 p ×ₘ (a ≫ b)).toLoc
-    ((g ≫ h) ×ₘ 𝟙 (SingleObj.star H)).toLoc ((g ≫ h) ×ₘ (a ≫ b)).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc])
-  let c₁ := L.joint.mapComp' (𝟙 p ×ₘ a).toLoc
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (g ×ₘ a).toLoc
-    (by simp [← Quiver.Hom.comp_toLoc])
   let c₂ := L.joint.mapComp' (𝟙 q ×ₘ b).toLoc
     (h ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ b).toLoc
     (by simp [← Quiver.Hom.comp_toLoc])
-  let c₃ := L.joint.mapComp' (g ×ₘ a).toLoc (h ×ₘ b).toLoc
-    ((g ≫ h) ×ₘ (a ≫ b)).toLoc (by simp [← Quiver.Hom.comp_toLoc])
-  -- Name the compositor data so simplification retains their original arrow carriers.
-  change
-    ((L.fiberEquivalence r).unitInv.app
-        ((L.jointMap (g ≫ h)).obj ((L.fiberEquivalence p).inverse.obj
-          ((act actions p (a ≫ b)).obj x))) ≫
-      (L.jointMap (g ≫ h)).map ((L.actInverseIso p (a ≫ b)).hom.app x) ≫
-      c₀.inv.toNatTrans.app ((L.fiberEquivalence p).inverse.obj x)) ≫
-        c₃.hom.toNatTrans.app ((L.fiberEquivalence p).inverse.obj x) =
-    (L.fiberEquivalence r).inverse.map ((L.fiberEquivalence r).functor.map _) ≫
-      ((L.fiberEquivalence r).unitInv.app
-        ((L.jointMap h).obj ((L.fiberEquivalence q).inverse.obj
-          ((act actions q b).obj ((L.fiberEquivalence q).functor.obj
-            ((L.jointMap g).obj y))))) ≫
-        (L.jointMap h).map ((L.actInverseIso q b).hom.app
-          ((L.fiberEquivalence q).functor.obj ((L.jointMap g).obj y))) ≫
-        c₂.inv.toNatTrans.app ((L.fiberEquivalence q).inverse.obj
-          ((L.fiberEquivalence q).functor.obj ((L.jointMap g).obj y)))) ≫
-      (L.joint.map (h ×ₘ b).toLoc).toFunctor.map
-        ((L.fiberEquivalence q).unitInv.app ((L.jointMap g).obj y) ≫
-          (L.jointMap g).map ((L.actInverseIso p a).hom.app x) ≫
-          c₁.inv.toNatTrans.app ((L.fiberEquivalence p).inverse.obj x))
-  dsimp only [transport_obj, Functor.comp_obj]
+  dsimp only [NormalizedTransport.jointFunctor, normalizedTransport,
+    transport_obj, Functor.comp_obj]
   repeat rw [Category.assoc]
   -- Cancel the outer comparison at the target before examining the intermediate fiber.
-  erw [(L.fiberEquivalence r).unitInv_naturality_assoc]
+  rw [(L.fiberEquivalence r).unitInv_naturality_assoc]
   apply congrArg ((L.fiberEquivalence r).unitInv.app _ ≫ ·)
   simp only [Functor.map_comp, Category.assoc]
   -- Naturality of the original joint compositor brings the middle fiber unit next to its mate.
-  erw [← c₂.inv.toNatTrans.naturality_assoc]
+  rw [← c₂.inv.toNatTrans.naturality_assoc]
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_map, Functor.id_obj]
   repeat rw [← Functor.map_comp_assoc (L.jointMap h)]
   simp only [Category.assoc]
-  erw [L.unit_inverse_map_transportCommIso_hom_app_comp]
+  -- The mate cancellation uses the original joint-action carrier in its implicit endpoints.
+  erw [L.unit_inverse_map_transportCommIso_hom_app_comp g b ((act actions p a).obj x)]
   simp only [Functor.map_comp, Category.assoc]
-  erw [← c₂.inv.toNatTrans.naturality_assoc]
+  rw [← c₂.inv.toNatTrans.naturality_assoc]
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_map]
-  erw [← Functor.map_comp_assoc (L.jointMap h)
-    ((L.jointActCommIso g b).hom.app y)]
-  erw [← (L.jointActCommIso g b).hom.naturality]
-  simp only [Functor.comp_map, Functor.map_comp, Category.assoc]
-  erw [← (L.jointMapComp g h (g ≫ h) rfl).hom.naturality_assoc]
-  erw [← (L.jointMapComp g h (g ≫ h) rfl).hom.naturality_assoc]
+  rw [← Functor.map_comp_assoc (L.jointMap h)
+    ((L.jointActCommIso g b).hom.app
+      ((L.fiberEquivalence p).inverse.obj ((act actions p a).obj x)))]
+  have hb := (L.jointActCommIso g b).hom.naturality ((L.actInverseIso p a).hom.app x)
+  dsimp only [Functor.comp_map, Functor.comp_obj, jointAct] at hb
+  rw [← hb]
+  simp only [Functor.map_comp, Category.assoc]
+  simp only [← Functor.comp_map (L.jointMap g) (L.jointMap h)]
+  rw [← (L.jointMapComp g h (g ≫ h) rfl).hom.naturality_assoc]
+  rw [← (L.jointMapComp g h (g ≫ h) rfl).hom.naturality_assoc]
   -- The remaining source-action comparisons combine by the existing product law.
   rw [← Functor.map_comp_assoc, ← Functor.map_comp_assoc, Category.assoc,
     L.actInverseIso_actComp]
@@ -390,15 +350,12 @@ private lemma normalizationJointIso_fiber (p : Γ)
       (L.fiberEquivalence p).counit.app
           ((L.normalizedTransport.jointFunctor (𝟙 p ×ₘ a)).obj x) ≫
         (L.transportId p).hom.app ((act actions p a).obj x) := by
+  dsimp only [NormalizedTransport.jointFunctor, normalizedTransport, transport_obj,
+    Functor.comp_obj]
   rw [normalizationJointIso_hom_app, transportId_hom_app]
-  -- The normalized identity transport has its original joint-fiber presentation.
-  change (L.fiberEquivalence p).functor.map (_ ≫ _ ≫ _) ≫ _ ≫ _ =
-    (L.fiberEquivalence p).counit.app
-      ((L.fiberEquivalence p).functor.obj
-        ((L.jointMap (𝟙 p)).obj ((L.fiberEquivalence p).inverse.obj
-          ((act actions p a).obj x)))) ≫ _ ≫ _
   simp only [Functor.map_comp, Category.assoc]
-  erw [Pseudofunctor.mapComp'_comp_id_inv_app]
+  simp only [← prod_id, Quiver.Hom.id_toLoc]
+  rw [Pseudofunctor.mapComp'_comp_id_inv_app]
   rw [L.joint_mapId_hom_app]
   rw [← Functor.map_comp_assoc (L.fiberEquivalence p).functor
     ((L.jointMap (𝟙 p)).map ((L.actInverseIso p a).hom.app x))]

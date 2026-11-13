@@ -43,92 +43,50 @@ instance isEquivalence_joint_app (φ : L.Hom L')
   cases a
   exact isEquivalence_jointFunctor φ p
 
-private noncomputable abbrev jointEquivalence (φ : L.Hom L') :
-    Bicategory.Equivalence L.joint L'.joint := φ.joint.equivalenceOfIsEquivalence
+private lemma inverseComparison_hom_as_app
+    {K J A : LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
+    (R : J ⟶ K) (S : K ⟶ J) (c : J ⟶ A) (d : K ⟶ A)
+    (i : S ≫ c ≅ d) (ε : R ≫ S ≅ 𝟙 J) (a : LocallyDiscrete (SingleObj H)) :
+    (whiskerLeftIso R i.symm ≪≫ (α_ R S c).symm ≪≫
+        whiskerRightIso ε c ≪≫ λ_ c).hom.as.app a =
+      R.app a ◁ i.inv.as.app a ≫ (α_ (R.app a) (S.app a) (c.app a)).inv ≫
+        ε.hom.as.app a ▷ c.app a ≫ (λ_ (c.app a)).hom := by
+  simp
 
-private noncomputable def restrictedCounit (φ : L.Hom L') (p : Γ) :
-    let P := (CategoryTheory.Prod.sectR p (SingleObj H)).toPseudofunctor
-    P.whiskerLeft (jointEquivalence φ).inv ≫ P.whiskerLeft φ.joint ≅ 𝟙 (P.comp L'.joint) := by
-  let P := (CategoryTheory.Prod.sectR p (SingleObj H)).toPseudofunctor
-  let e := jointEquivalence φ
-  exact Pseudofunctor.StrongTrans.isoMk (fun a => isoApp e.counit (P.obj a))
-    (fun f => by simpa only [isoApp_hom] using! e.counit.hom.as.naturality (P.map f))
-
-private noncomputable def inverseComparison (φ : L.Hom L') (p : Γ) :
-    (CategoryTheory.Prod.sectR p (SingleObj H)).toPseudofunctor.whiskerLeft
-        (jointEquivalence φ).inv ≫ L.comparison p ≅ L'.comparison p := by
-  let ε := restrictedCounit φ p
-  exact whiskerLeftIso _ (φ.fiberIso p).symm ≪≫ (α_ _ _ _).symm ≪≫
-    whiskerRightIso ε _ ≪≫ λ_ _
-
-/-- The inverse lift morphism, with the chosen quasi-inverses of the component functors. -/
-private noncomputable def inverse (φ : L.Hom L') : L'.Hom L where
-  joint := φ.joint.equivalenceOfIsEquivalence.inv
-  fiberIso := inverseComparison φ
-
-private lemma inverse_fiberIso_hom_as_app (φ : L.Hom L') (p : Γ)
-    (a : LocallyDiscrete (SingleObj H)) :
-    ((inverse φ).fiberIso p).hom.as.app a =
-      (jointEquivalence φ).inv.app ⟨(p, a.as)⟩ ◁ (φ.fiberIso p).inv.as.app a ≫
-        (α_ _ _ _).inv ≫
-        (jointEquivalence φ).counit.hom.as.app ⟨(p, a.as)⟩ ▷ (L'.comparison p).app a ≫
-        (λ_ ((L'.comparison p).app a)).hom := by
-  have key {K J A : LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
-      (R : J ⟶ K) (S : K ⟶ J) (c : J ⟶ A) (d : K ⟶ A)
-      (i : S ≫ c ≅ d) (ε : R ≫ S ≅ 𝟙 J)
-      (a : LocallyDiscrete (SingleObj H)) :
-      (whiskerLeftIso R i.symm ≪≫ (α_ R S c).symm ≪≫
-          whiskerRightIso ε c ≪≫ λ_ c).hom.as.app a =
-        R.app a ◁ i.inv.as.app a ≫ (α_ (R.app a) (S.app a) (c.app a)).inv ≫
-          ε.hom.as.app a ▷ c.app a ≫ (λ_ (c.app a)).hom := by
-    simp
-  let P := (CategoryTheory.Prod.sectR p (SingleObj H)).toPseudofunctor
-  let e := jointEquivalence φ
-  let ε := restrictedCounit φ p
-  have h := key (P.whiskerLeft e.inv) (P.whiskerLeft e.hom)
-    (L'.comparison p) (L.comparison p) (φ.fiberIso p) ε a
-  refine h.trans ?_
-  dsimp only [ε, restrictedCounit, Pseudofunctor.StrongTrans.isoMk]
-  simp only [isoApp_hom]
+private lemma inverseComparison_inv_as_app
+    {K J A : LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
+    (R : J ⟶ K) (S : K ⟶ J) (c : J ⟶ A) (d : K ⟶ A)
+    (i : S ≫ c ≅ d) (ε : R ≫ S ≅ 𝟙 J) (a : LocallyDiscrete (SingleObj H)) :
+    (whiskerLeftIso R i.symm ≪≫ (α_ R S c).symm ≪≫
+        whiskerRightIso ε c ≪≫ λ_ c).inv.as.app a =
+      (λ_ (c.app a)).inv ≫ ε.inv.as.app a ▷ c.app a ≫
+        (α_ (R.app a) (S.app a) (c.app a)).hom ≫ R.app a ◁ i.hom.as.app a := by
+  simp
   rfl
 
-private noncomputable def inverseCounit (φ : L.Hom L') : (inverse φ).comp φ ≅ id L' :=
-  isoMk (jointEquivalence φ).counit fun p a => by
-    have key {C D A : Cat.{v, w}} (F : C ⟶ D) (G : D ⟶ C)
-        (E : D ⟶ A) (E₀ : C ⟶ A) (i : F ≫ E ≅ E₀) (ε : G ≫ F ⟶ 𝟙 D) :
-        ε ▷ E ≫ (λ_ E).hom =
-          (α_ G F E).hom ≫ G ◁ i.hom ≫
-            (G ◁ i.inv ≫ (α_ G F E).inv ≫ ε ▷ E ≫ (λ_ E).hom) := by
-      simp
-    simp only [id_fiberIso_hom_as_app, comp_fiberIso_hom_as_app,
-      inverse_fiberIso_hom_as_app]
-    simpa only [isoApp_hom, isoApp_inv] using!
-      key (φ.joint.app ⟨(p, a.as)⟩) ((jointEquivalence φ).inv.app ⟨(p, a.as)⟩)
-        ((L'.comparison p).app a) ((L.comparison p).app a)
-        (isoApp (φ.fiberIso p) a) ((jointEquivalence φ).counit.hom.as.app ⟨(p, a.as)⟩)
+private lemma inverseCounit_compatibility {C D A : Cat.{v, w}}
+    (F : C ⟶ D) (G : D ⟶ C) (E : D ⟶ A) (E₀ : C ⟶ A)
+    (i : F ≫ E ≅ E₀) (ε : G ≫ F ⟶ 𝟙 D) :
+    ε ▷ E ≫ (λ_ E).hom =
+      (α_ G F E).hom ≫ G ◁ i.hom ≫
+        (G ◁ i.inv ≫ (α_ G F E).inv ≫ ε ▷ E ≫ (λ_ E).hom) := by
+  simp
 
-private noncomputable def inverseUnit (φ : L.Hom L') : id L ≅ φ.comp (inverse φ) :=
-  isoMk (jointEquivalence φ).unit fun p a => by
-    have key {C D A : Cat.{v, w}} (F : C ⟶ D)
-        [F.toFunctor.IsEquivalence] (E : D ⟶ A) (E₀ : C ⟶ A) (i : F ≫ E ≅ E₀) :
-        (Cat.Hom.isoMk F.toFunctor.asEquivalence.unitIso).hom ▷ E₀ ≫
-          (α_ F F.toFunctor.inv.toCatHom E₀).hom ≫
-          F ◁ (F.toFunctor.inv.toCatHom ◁ i.inv ≫
-            (α_ F.toFunctor.inv.toCatHom F E).inv ≫
-            (Cat.Hom.isoMk F.toFunctor.asEquivalence.counitIso).hom ▷ E ≫ (λ_ E).hom) ≫
-          i.hom = (λ_ E₀).hom := by
-      let adj := F.toFunctor.asEquivalence.toAdjunction.toCat
-      apply (cancel_epi (λ_ E₀).inv).mp
-      have h := congrArg (fun m => m ≫ i.hom) (adj.homEquiv₁.symm_apply_apply i.inv)
-      simpa only [Bicategory.Adjunction.homEquiv₁_symm_apply,
-        Bicategory.Adjunction.homEquiv₁_apply, Category.assoc, Iso.inv_hom_id,
-        Iso.inv_hom_id_assoc] using! h
-    simp only [id_fiberIso_hom_as_app, comp_fiberIso_hom_as_app,
-      inverse_fiberIso_hom_as_app]
-    have h := key (φ.joint.app ⟨(p, a.as)⟩)
-      ((L'.comparison p).app a) ((L.comparison p).app a) (isoApp (φ.fiberIso p) a)
-    simpa only [jointEquivalence, equivalenceOfIsEquivalence_unit_hom_as_app,
-      equivalenceOfIsEquivalence_counit_hom_as_app, isoApp_hom, isoApp_inv] using! h
+private lemma inverseUnit_compatibility {C D A : Cat.{v, w}}
+    (F : C ⟶ D) [F.toFunctor.IsEquivalence] (E : D ⟶ A) (E₀ : C ⟶ A)
+    (i : F ≫ E ≅ E₀) :
+    (Cat.Hom.isoMk F.toFunctor.asEquivalence.unitIso).hom ▷ E₀ ≫
+        (α_ F F.toFunctor.inv.toCatHom E₀).hom ≫
+        F ◁ (F.toFunctor.inv.toCatHom ◁ i.inv ≫
+          (α_ F.toFunctor.inv.toCatHom F E).inv ≫
+          (Cat.Hom.isoMk F.toFunctor.asEquivalence.counitIso).hom ▷ E ≫ (λ_ E).hom) ≫
+        i.hom = (λ_ E₀).hom := by
+  let adj := F.toFunctor.asEquivalence.toAdjunction.toCat
+  apply (cancel_epi (λ_ E₀).inv).mp
+  have h := congrArg (fun m => m ≫ i.hom) (adj.homEquiv₁.symm_apply_apply i.inv)
+  simpa only [Bicategory.Adjunction.homEquiv₁_symm_apply,
+    Bicategory.Adjunction.homEquiv₁_apply, Category.assoc, Iso.inv_hom_id,
+    Iso.inv_hom_id_assoc] using! h
 
 /-- Every morphism of equivariant lifts is an adjoint equivalence. Its forward morphism is
 the given morphism, and its inverse uses the chosen quasi-inverses of the component functors.
@@ -149,18 +107,24 @@ The unit and counit are the compatible modifications induced by the component un
           _ ≪≫ λ_ _ }
   unit := isoMk φ.joint.equivalenceOfIsEquivalence.unit
     (fun p a => by
-      have h := (inverseUnit φ).hom.comm p a
-      have hj : (inverseUnit φ).hom.joint = φ.joint.equivalenceOfIsEquivalence.unit.hom :=
-        TauCeti.EquivariantGroupoidLift.Hom.isoMk_hom_joint _ _
-      rw [hj] at h
-      exact h)
+      simp only [EquivariantGroupoidLift.id_fiberIso, EquivariantGroupoidLift.comp_fiberIso,
+        id_fiberIso_hom_as_app, comp_fiberIso_hom_as_app,
+        inverseComparison_hom_as_app, Pseudofunctor.StrongTrans.isoMk]
+      have h := inverseUnit_compatibility (φ.joint.app ⟨(p, a.as)⟩)
+        ((L'.comparison p).app a) ((L.comparison p).app a) (isoApp (φ.fiberIso p) a)
+      simpa only [equivalenceOfIsEquivalence_unit_hom_as_app,
+        equivalenceOfIsEquivalence_counit_hom_as_app, isoApp_hom, isoApp_inv] using! h)
   counit := isoMk φ.joint.equivalenceOfIsEquivalence.counit
     (fun p a => by
-      have h := (inverseCounit φ).hom.comm p a
-      have hj : (inverseCounit φ).hom.joint = φ.joint.equivalenceOfIsEquivalence.counit.hom :=
-        TauCeti.EquivariantGroupoidLift.Hom.isoMk_hom_joint _ _
-      rw [hj] at h
-      exact h)
+      simp only [EquivariantGroupoidLift.id_fiberIso, EquivariantGroupoidLift.comp_fiberIso,
+        id_fiberIso_hom_as_app, comp_fiberIso_hom_as_app,
+        inverseComparison_hom_as_app, Pseudofunctor.StrongTrans.isoMk]
+      simpa only [isoApp_hom, isoApp_inv] using!
+        inverseCounit_compatibility (φ.joint.app ⟨(p, a.as)⟩)
+          (φ.joint.equivalenceOfIsEquivalence.inv.app ⟨(p, a.as)⟩)
+          ((L'.comparison p).app a) ((L.comparison p).app a)
+          (isoApp (φ.fiberIso p) a)
+          (φ.joint.equivalenceOfIsEquivalence.counit.hom.as.app ⟨(p, a.as)⟩))
   left_triangle := Iso.ext (Subsingleton.elim _ _)
 
 @[simp]
@@ -198,8 +162,11 @@ lemma equivalence_inv_fiberIso_hom_as_app (φ : L.Hom L') (p : Γ)
       φ.joint.equivalenceOfIsEquivalence.inv.app ⟨(p, a.as)⟩ ◁ (φ.fiberIso p).inv.as.app a ≫
         (α_ _ _ _).inv ≫
         φ.joint.equivalenceOfIsEquivalence.counit.hom.as.app ⟨(p, a.as)⟩ ▷
-          (L'.comparison p).app a ≫ (λ_ ((L'.comparison p).app a)).hom :=
-  inverse_fiberIso_hom_as_app φ p a
+          (L'.comparison p).app a ≫ (λ_ ((L'.comparison p).app a)).hom := by
+  dsimp only [equivalence]
+  rw [inverseComparison_hom_as_app]
+  simp only [Pseudofunctor.StrongTrans.isoMk, isoApp_hom]
+  rfl
 
 /-- The inverse direction of the inverse fiber comparison. -/
 lemma equivalence_inv_fiberIso_inv_as_app (φ : L.Hom L') (p : Γ)
@@ -209,24 +176,9 @@ lemma equivalence_inv_fiberIso_inv_as_app (φ : L.Hom L') (p : Γ)
         φ.joint.equivalenceOfIsEquivalence.counit.inv.as.app ⟨(p, a.as)⟩ ▷
           (L'.comparison p).app a ≫ (α_ _ _ _).hom ≫
         φ.joint.equivalenceOfIsEquivalence.inv.app ⟨(p, a.as)⟩ ◁ (φ.fiberIso p).hom.as.app a := by
-  have key {K J A : LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
-      (R : J ⟶ K) (S : K ⟶ J) (c : J ⟶ A) (d : K ⟶ A)
-      (i : S ≫ c ≅ d) (ε : R ≫ S ≅ 𝟙 J)
-      (a : LocallyDiscrete (SingleObj H)) :
-      (whiskerLeftIso R i.symm ≪≫ (α_ R S c).symm ≪≫
-          whiskerRightIso ε c ≪≫ λ_ c).inv.as.app a =
-        (λ_ (c.app a)).inv ≫ ε.inv.as.app a ▷ c.app a ≫
-          (α_ (R.app a) (S.app a) (c.app a)).hom ≫ R.app a ◁ i.hom.as.app a := by
-    simp
-    rfl
-  let P := (CategoryTheory.Prod.sectR p (SingleObj H)).toPseudofunctor
-  let e := jointEquivalence φ
-  let ε := restrictedCounit φ p
-  have h := key (P.whiskerLeft e.inv) (P.whiskerLeft e.hom)
-    (L'.comparison p) (L.comparison p) (φ.fiberIso p) ε a
-  refine h.trans ?_
-  dsimp only [ε, restrictedCounit, Pseudofunctor.StrongTrans.isoMk]
-  simp only [isoApp_inv]
+  dsimp only [equivalence]
+  rw [inverseComparison_inv_as_app]
+  simp only [Pseudofunctor.StrongTrans.isoMk, isoApp_inv]
   rfl
 
 /-- The inverse of the equivalence uses the chosen quasi-inverse on each joint fiber. -/

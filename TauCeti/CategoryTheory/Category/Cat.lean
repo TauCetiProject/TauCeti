@@ -20,8 +20,10 @@ unit-shaped and counit-shaped components, independently of any equivalence const
 * `Cat.Hom₂.isIso_of_isIso_app`: componentwise invertibility of a 2-morphism implies invertibility.
 * `Cat.associator_id_hom`, `Cat.associator_id_inv`, `Cat.rightUnitor_id_hom`, and
   `Cat.rightUnitor_id_inv`: coherence maps of identity functors are identities.
-* `Cat.counit_modification` and `Cat.unit_modification`: componentwise criteria for the
-  modification conditions with counit-shaped and unit-shaped components.
+* `Cat.whiskerLeft_comp_rightUnitor_hom_comp_leftUnitor_inv`: a componentwise criterion
+  for whiskering a counit-shaped 2-morphism across the unitors.
+* `Cat.whiskerLeft_comp_eq_rightUnitor_hom_comp_leftUnitor_inv_comp_whiskerRight`: a
+  componentwise criterion for whiskering a unit-shaped 2-morphism across the unitors.
 -/
 
 public section
@@ -73,7 +75,7 @@ lemma rightUnitor_id_inv (C : Type w) [Category.{v} C] :
 /-- The modification condition for counit-shaped components in `Cat`, reduced to a
 componentwise identity. The 2-morphisms `m` and `n` are the naturality cells of the two
 transformations; no adjunction or equivalence assumptions are required. -/
-lemma counit_modification {C D E E' : Cat.{v, w}}
+lemma whiskerLeft_comp_rightUnitor_hom_comp_leftUnitor_inv {C D E E' : Cat.{v, w}}
     {T : C ⟶ D} {U : E ⟶ E'} {P : E ⟶ C} {Q : E' ⟶ D}
     {R : C ⟶ E} {S : D ⟶ E'} (m : T ≫ S ⟶ R ≫ U) (n : U ≫ Q ⟶ P ≫ T)
     (ε : R ≫ P ⟶ 𝟙 C) (ε' : S ≫ Q ⟶ 𝟙 D)
@@ -89,7 +91,8 @@ lemma counit_modification {C D E E' : Cat.{v, w}}
 /-- The modification condition for unit-shaped components in `Cat`, reduced to a
 componentwise identity. The 2-morphisms `m` and `n` are the naturality cells of the two
 transformations; no adjunction or equivalence assumptions are required. -/
-lemma unit_modification {C D E E' : Cat.{v, w}}
+lemma whiskerLeft_comp_eq_rightUnitor_hom_comp_leftUnitor_inv_comp_whiskerRight
+    {C D E E' : Cat.{v, w}}
     {T : C ⟶ D} {U : E ⟶ E'} {P : C ⟶ E} {Q : D ⟶ E'}
     {R : E ⟶ C} {S : E' ⟶ D} (m : T ≫ Q ⟶ P ≫ U) (n : U ≫ S ⟶ R ≫ T)
     (ι : 𝟙 C ⟶ P ≫ R) (ι' : 𝟙 D ⟶ Q ≫ S)
