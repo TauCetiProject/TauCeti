@@ -724,7 +724,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul (ω : Symplectic
       (𝓝 (∑ q, q.endSign * A q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
+      (by simpa only [Puncture.inv_endSign] using hA q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm ω hK hKH hH hHc hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)
@@ -1293,7 +1293,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) atTop (𝓝 (∑ q, q.endSign * h q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have hlim := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hh q)
+      (by simpa only [Puncture.inv_endSign] using hh q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm hK hKH hH hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)
