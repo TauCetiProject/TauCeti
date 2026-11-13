@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-public import TauCeti.Geometry.Manifold.Flow.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Christoffel
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Cogeodesic
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Hyperregular
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LagrangianVectorField
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
@@ -53,10 +52,15 @@ canonical symplectic form (`TauCeti.mfderiv_legendreMap_geodesicSpray`). Hence t
 flow is the kinetic Hamiltonian flow: a `C²` curve `γ` is a geodesic exactly when the Legendre
 transform `t ↦ g(γ'(t), ·)` of its velocity is an integral curve of the cogeodesic field.
 The equivalence also holds within any parameter set with unique derivatives
-(`TauCeti.isMIntegralCurveOn_legendreMap_comp_curveVelocityLiftWithin_iff`). On a boundaryless
-manifold every kinetic Hamiltonian trajectory projects to a geodesic, and the Legendre map
-conjugates the maximal flows and their domains, by `Diffeomorph.apply_flowOf` and
-`Diffeomorph.mem_flowDomain_apply_iff`; no geodesic completeness is assumed.
+(`TauCeti.isMIntegralCurveOn_legendreMap_comp_curveVelocityLiftWithin_iff`). These results
+specialize the conjugacy of Lagrangian and Hamiltonian flows of a hyperregular Lagrangian
+(`TauCeti.IsHyperregularLagrangian.isMIntegralCurveOn_legendreMap_comp_iff`,
+`TauCeti.IsHyperregularLagrangian.legendreMap_flowOf_hamiltonianVectorField`). The Legendre map
+inverts the Riesz isomorphism and is isometric on fibres, so the flow results are also stated for
+an arbitrary initial covector `p`, whose geodesic starts with the Riesz dual of `p`. On a
+boundaryless manifold every kinetic Hamiltonian trajectory projects to a geodesic, and the
+Legendre map conjugates the maximal flows and their domains; no geodesic completeness is
+assumed.
 
 ## Main results
 
@@ -83,6 +87,9 @@ In the namespace `TauCeti`:
 * `TauCeti.legendreMap_flowOf_geodesicSpray` and
   `TauCeti.mem_flowDomain_kineticEnergy_legendreMap_iff`: conjugacy of the maximal flows and
   identification of their time domains with the maximal geodesic interval.
+* `TauCeti.flowOf_kineticEnergy`, `TauCeti.proj_flowOf_kineticEnergy` and
+  `TauCeti.mem_flowDomain_kineticEnergy_iff`: the kinetic Hamiltonian flow through an arbitrary
+  covector `p`, read through the maximal geodesic with initial velocity the Riesz dual of `p`.
 
 ## References
 
@@ -194,54 +201,52 @@ private theorem energyChartDeriv_apply (x : M) (u : E) (w : E × E) :
     ContinuousLinearMap.flip_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
 
-/-- The Legendre map of a mechanical Lagrangian has derivative `legendreChartDeriv` in charts. -/
-private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian (V : M → ℝ)
-    (z : TangentBundle I M) (hL : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g V)) :
-    HasMFDerivAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g V)) z
+/-- **Manifold derivatives on `TM` from chart derivatives.** If the chart expression at `z` of a
+map `f` out of `TM`, continuous at `z`, agrees on the chart target with a map `φ` that has
+derivative `f'` within that target at the chart image `p` of `z`, then `f'` is the manifold
+derivative of `f` at `z`, since the chart target is a neighbourhood of `p` within the range of the
+model. Here `f'` is a linear map between the model spaces `E × E` and `F`, which are the tangent
+spaces of `TM` at `z` and of `N` at `f z` by definition. -/
+private theorem hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target
+    {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+    {J : ModelWithCorners ℝ F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+    {f : TangentBundle I M → N} {z : TangentBundle I M} {φ : E × E → F} {f' : E × E →L[ℝ] F}
+    {p : E × E} (hp : extChartAt I.tangent z z = p) (hf : ContinuousAt f z)
+    (hφ : HasFDerivWithinAt φ f' (extChartAt I.tangent z).target p)
+    (heq : EqOn (writtenInExtChartAt I.tangent J z f) φ (extChartAt I.tangent z).target) :
+    HasMFDerivAt I.tangent J f z f' := by
+  subst hp
+  exact ⟨hf, (hasFDerivWithinAt_inter' (extChartAt_target_mem_nhdsWithin z)).1
+    ((hφ.mono inter_subset_right).congr (fun _ hw ↦ heq hw.2) (heq (mem_extChartAt_target z)))⟩
+
+/-- The Legendre map of the kinetic Lagrangian has derivative `legendreChartDeriv` in charts. -/
+private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian_zero (z : TangentBundle I M) :
+    HasMFDerivAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g 0)) z
       (legendreChartDeriv g z.proj z.2) := by
+  -- On the chart target the chart expression is `(q, u) ↦ (q, G(q) u)`.
   have hΦ := HasFDerivWithinAt.fst_prodMk_clm_apply_snd (E := E) (F := E)
     (p := ((extChartAt I z.proj z.proj : E), (z.2 : E)))
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
       (by simp)).hasFDerivWithinAt (fun _ ↦ fst_mem_extChartAt_target z)
-  have hp := TangentBundle.extChartAt_self z
-  -- On the chart target the chart expression is `(q, u) ↦ (q, G(q) u)`, and that target is a
-  -- neighbourhood of the chart image of `z` within the range of the model.
-  have h : HasFDerivWithinAt (writtenInExtChartAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z
-      (legendreMap (mechanicalLagrangian g V))) (legendreChartDeriv g z.proj z.2) (range I.tangent)
-      (extChartAt I.tangent z z) := by
-    rw [hp]
-    refine (hasFDerivWithinAt_inter' (hp ▸ extChartAt_target_mem_nhdsWithin z)).1 ?_
-    refine (hΦ.mono inter_subset_right).congr (fun w hw ↦ ?_) ?_
-    · exact writtenInExtChartAt_legendreMap_mechanicalLagrangian g V z hw.2
-    · exact writtenInExtChartAt_legendreMap_mechanicalLagrangian g V z
-        (hp ▸ mem_extChartAt_target z)
-  exact ⟨(contMDiff_legendreMap (m := 0) hL (by norm_num) z).continuousAt,
-    h.congr_fderiv (ContinuousLinearMap.ext fun _ ↦ rfl)⟩
+  exact hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target (TangentBundle.extChartAt_self z)
+    (contMDiff_legendreMap (m := 0) g.contMDiff_mechanicalLagrangian_zero (by simp) z).continuousAt
+    hΦ fun _ hw ↦ writtenInExtChartAt_legendreMap_mechanicalLagrangian g 0 z hw
 
 /-- The energy of the kinetic Lagrangian has derivative `energyChartDeriv` in charts. -/
 private theorem hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian_zero (z : TangentBundle I M) :
     HasMFDerivAt I.tangent 𝓘(ℝ) (lagrangianEnergy (mechanicalLagrangian g 0)) z
       (energyChartDeriv g z.proj z.2) := by
+  -- On the chart target the chart expression is `(q, u) ↦ ½ G(q)(u, u)`.
   have hΦ := (HasFDerivWithinAt.comp_fst_clm_apply_snd_self (E := E) (F := E)
     (p := ((extChartAt I z.proj z.proj : E), (z.2 : E)))
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
       (by simp)).hasFDerivWithinAt (fun _ ↦ fst_mem_extChartAt_target z)).const_smul
     (2⁻¹ : ℝ)
-  have hp := TangentBundle.extChartAt_self z
-  have h : HasFDerivWithinAt (writtenInExtChartAt I.tangent 𝓘(ℝ) z
-      (lagrangianEnergy (mechanicalLagrangian g 0))) (energyChartDeriv g z.proj z.2)
-      (range I.tangent)
-      (extChartAt I.tangent z z) := by
-    rw [hp]
-    refine (hasFDerivWithinAt_inter' (hp ▸ extChartAt_target_mem_nhdsWithin z)).1 ?_
-    refine (hΦ.mono inter_subset_right).congr (fun w hw ↦ ?_) ?_
-    · rw [writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian_zero g z hw.2, Pi.smul_apply,
-        smul_eq_mul]
-    · rw [writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian_zero g z
-        (hp ▸ mem_extChartAt_target z), Pi.smul_apply, smul_eq_mul]
-  exact ⟨(contMDiff_lagrangianEnergy (m := 0)
-      g.contMDiff_mechanicalLagrangian_zero (by norm_num) z).continuousAt,
-    h.congr_fderiv (ContinuousLinearMap.ext fun _ ↦ rfl)⟩
+  refine hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target (TangentBundle.extChartAt_self z)
+    (contMDiff_lagrangianEnergy (m := 0)
+      g.contMDiff_mechanicalLagrangian_zero (by norm_num) z).continuousAt hΦ fun w hw ↦ ?_
+  rw [writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian_zero g z hw, Pi.smul_apply,
+    smul_eq_mul]
 
 end Chart
 
@@ -275,8 +280,6 @@ theorem IsLeviCivitaConnection.eval₂_cartanTwoForm_mechanicalLagrangian_zero
           (s := (trivializationAt E (TangentSpace I) z.proj).baseSet)) z.proj z.2 z.2) :
           TangentSpace I.tangent z) Y =
       mvfderiv I.tangent (lagrangianEnergy (mechanicalLagrangian g 0)) z Y := by
-  have hL2 : ContMDiff I.tangent 𝓘(ℝ) 2 (mechanicalLagrangian g 0) :=
-    g.contMDiff_mechanicalLagrangian_zero.of_le (by simp)
   obtain ⟨a, b⟩ := Y
   -- Abbreviations for the chart data at the base point `x`: the chart metric `G` at the chart
   -- image of `x`, its derivative `DG`, the fibre coordinate `u` and the Christoffel map `Γ`.
@@ -290,16 +293,16 @@ theorem IsLeviCivitaConnection.eval₂_cartanTwoForm_mechanicalLagrangian_zero
   have hX : mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g 0)) z
       ((z.2, -Γ z.2 z.2) : TangentSpace I.tangent z) =
       ((u, G (-Γ u u) + DG u u) : E × (E →L[ℝ] ℝ)) := by
-    rw [(hasMFDerivAt_legendreMap_mechanicalLagrangian g 0 z hL2).mfderiv]
+    rw [(hasMFDerivAt_legendreMap_mechanicalLagrangian_zero g z).mfderiv]
     exact legendreChartDeriv_apply g z.proj z.2 _
   have hY : mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g 0)) z
       ((a, b) : TangentSpace I.tangent z) = ((a, G b + DG a u) : E × (E →L[ℝ] ℝ)) := by
-    rw [(hasMFDerivAt_legendreMap_mechanicalLagrangian g 0 z hL2).mfderiv]
+    rw [(hasMFDerivAt_legendreMap_mechanicalLagrangian_zero g z).mfderiv]
     exact legendreChartDeriv_apply g z.proj z.2 _
   have hE : mvfderiv I.tangent (lagrangianEnergy (mechanicalLagrangian g 0)) z
       ((a, b) : TangentSpace I.tangent z) = 2⁻¹ * (G u b + (G b u + DG a u u)) := by
-    rw [mvfderiv, (hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian_zero g z).mfderiv]
-    -- The model tangent space of ℝ is identified with ℝ by `fromTangentSpace`.
+    refine (mvfderiv_apply_eq_mfderiv_apply _ z _).trans ?_
+    rw [(hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian_zero g z).mfderiv]
     exact energyChartDeriv_apply g z.proj z.2 (a, b)
   -- `ω_L = FL^* ω`, and `ω` is the linear cotangent form in the chart at `FL(z)`.
   have h := SmoothForm.eval₂_mpullback (legendreMap (mechanicalLagrangian g 0))
@@ -360,6 +363,38 @@ open _root_.TauCeti.Manifold
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
+/-- **The Legendre map of a Riemannian mechanical Lagrangian inverts the Riesz isomorphism:** it
+sends the Riesz dual of a covector `p` back to `p`. -/
+@[simp]
+theorem legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual (V : M → ℝ)
+    (p : CotangentBundle I M) :
+    legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V)
+        (TotalSpace.mk' E p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2)) = p := by
+  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
+  -- The metric lowers the index of the Riesz dual of `p` back to `p`.
+  have hR : g p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) = p.2 := by
+    ext w
+    rw [ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, Riemannian.Tensor.inner_rieszDual]
+  rw [legendreMap_mechanicalLagrangian g.apply_comm]
+  exact TotalSpace.ext rfl (heq_of_eq hR)
+
+/-- **The Legendre map of a Riemannian mechanical Lagrangian is isometric on fibres:** the
+covector `⟪v, ·⟫` has the norm of `v`. -/
+@[simp]
+theorem norm_legendreMap_mechanicalLagrangian_ofRiemannianBundle_snd (V : M → ℝ)
+    (v : TangentBundle I M) :
+    ‖(legendreMap
+      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V) v).2‖ =
+      ‖v.2‖ := by
+  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
+  -- `v` is the Riesz dual of `⟪v, ·⟫`, and the Riesz isomorphism is isometric.
+  have hv : v.2 = Riemannian.Tensor.rieszDual (I := I) v.proj (g v.proj v.2) :=
+    Riemannian.Tensor.eq_rieszDual_iff_inner_eq.2 fun w ↦
+      (ContMDiffNondegenerateMetric.ofRiemannianBundle_apply I M v.proj _ w).symm
+  rw [legendreMap_mechanicalLagrangian g.apply_comm]
+  conv_rhs => rw [hv]
+  exact ((Riemannian.Tensor.rieszDual (I := I) v.proj).norm_map _).symm
+
 /-- The Hamiltonian of a Riemannian mechanical Lagrangian is covector kinetic energy plus
 its potential. -/
 theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian_ofRiemannianBundle
@@ -367,14 +402,11 @@ theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian_ofRiemannianBu
       (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V))
     (p : CotangentBundle I M) :
     h.hamiltonian p = CotangentBundle.kineticEnergy I M p + V p.proj := by
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  have hinv := g.isInvertible p.proj
-  -- The metric lowers the index of the Riesz dual of `p` back to `p`.
-  have hR : g p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) = p.2 := by
-    ext w
-    rw [ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, Riemannian.Tensor.inner_rieszDual]
-  rw [h.hamiltonian_mechanicalLagrangian g.apply_comm, CotangentBundle.kineticEnergy_apply,
-    Riemannian.Tensor.norm_sq_eq_apply_rieszDual, ← hR, hinv.inverse_apply_self, hR]
+  have hp := legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual V p
+  conv_lhs => rw [← hp]
+  rw [h.hamiltonian_legendreMap, lagrangianEnergy_mechanicalLagrangian,
+    ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, CotangentBundle.kineticEnergy_apply,
+    Riemannian.Tensor.norm_sq_eq_apply_rieszDual, Riemannian.Tensor.inner_rieszDual]
   ring
 
 /-- **The Hamiltonian of the kinetic Lagrangian is the kinetic energy of covectors.** For the
@@ -387,6 +419,8 @@ theorem IsHyperregularLagrangian.hamiltonian_eq_kineticEnergy
     h.hamiltonian = CotangentBundle.kineticEnergy I M := by
   funext p
   simpa using h.hamiltonian_mechanicalLagrangian_ofRiemannianBundle p
+
+section BoundarylessTangentBundle
 
 variable [BoundarylessManifold I.tangent (TangentBundle I M)]
 
@@ -442,26 +476,12 @@ theorem isMIntegralCurveOn_legendreMap_comp_iff_geodesicSpray
           (CotangentBundle.kineticEnergy I M)) s ↔
       IsMIntegralCurveOn γ (geodesicSpray I M) s := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  let h := g.isHyperregularLagrangian_mechanicalLagrangian 0
-  let Φ := h.legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hcoe : ⇑Φ = legendreMap (mechanicalLagrangian g 0) :=
-    h.coe_legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hΦ : ∀ z, mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) Φ z
-      (geodesicSpray I M z) =
-      (CotangentBundle.symplecticForm I M).hamiltonianVectorField
-        (CotangentBundle.kineticEnergy I M) (Φ z) := by
-    rw [hcoe]
-    exact mfderiv_legendreMap_geodesicSpray (I := I) (M := M)
-  constructor
-  · intro hγ
-    have hback := hγ.map_of_mfderiv_eq (fun _ _ ↦ Φ.symm.mdifferentiable (by simp) _)
-      (fun _ _ ↦ Φ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq (by simp) hΦ _)
-    simpa only [Function.comp_def, Φ, g,
-      IsHyperregularLagrangian.legendreDiffeomorph_symm_apply_legendreMap] using hback
-  · intro hγ
-    simpa only [Φ, g, IsHyperregularLagrangian.coe_legendreDiffeomorph] using
-      hγ.map_of_mfderiv_eq (fun _ _ ↦ Φ.mdifferentiable (by simp) _) (fun _ _ ↦ hΦ _)
+  have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  rw [← h.hamiltonian_eq_kineticEnergy,
+    ← hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray]
+  exact h.isMIntegralCurveOn_legendreMap_comp_iff
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero
 
 /-- A `C²` curve is a geodesic on a parameter set with unique derivatives exactly when the
 Legendre transform of its within-velocity lift is an integral curve of the kinetic Hamiltonian
@@ -496,6 +516,78 @@ theorem isMIntegralCurve_legendreMap_comp_curveVelocityLift_iff
   exact isMIntegralCurveOn_legendreMap_comp_curveVelocityLiftWithin_iff uniqueDiffOn_univ
     (contMDiffOn_univ.2 hγ)
 
+/-- A kinetic Hamiltonian trajectory is the Legendre transform of the within-velocity lift of
+its projection, at every parameter at which the parameter set has unique derivatives. -/
+theorem eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn_kineticEnergy
+    {δ : ℝ → CotangentBundle I M} {s : Set ℝ} {t : ℝ} (hs : UniqueDiffWithinAt ℝ s t)
+    (hδ : IsMIntegralCurveOn δ ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+      (CotangentBundle.kineticEnergy I M)) s) (ht : t ∈ s) :
+    δ t = legendreMap
+      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
+        (curveVelocityLiftWithin I (fun r ↦ (δ r).proj) s t) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  rw [← h.hamiltonian_eq_kineticEnergy] at hδ
+  exact h.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero
+    hs hδ ht
+
+variable [T2Space M]
+
+/-- The Legendre map conjugates the maximal geodesic-spray flow and the kinetic Hamiltonian
+flow, including their initial-point junk values outside the common maximal domain. -/
+theorem legendreMap_flowOf_geodesicSpray (t : ℝ) (z : TangentBundle I M) :
+    legendreMap
+        (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
+        (flowOf (geodesicSpray I M) t z) =
+      flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+        (CotangentBundle.kineticEnergy I M)) t
+        (legendreMap
+          (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0) z) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  rw [← h.hamiltonian_eq_kineticEnergy,
+    ← hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray]
+  exact h.legendreMap_flowOf_hamiltonianVectorField
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero t z
+
+/-- The kinetic Hamiltonian flow is the Legendre transform of the geodesic-spray flow through the
+Riesz dual of the initial covector. -/
+theorem flowOf_kineticEnergy (t : ℝ) (p : CotangentBundle I M) :
+    flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+        (CotangentBundle.kineticEnergy I M)) t p =
+      legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
+        (flowOf (geodesicSpray I M) t
+          (TotalSpace.mk' E p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2))) := by
+  rw [legendreMap_flowOf_geodesicSpray,
+    legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual]
+
+/-- Projecting the kinetic Hamiltonian flow with initial covector `g(v, ·)` gives the maximal
+geodesic with initial data `(p, v)`. -/
+theorem proj_flowOf_kineticEnergy_legendreMap
+    (p : M) (v : TangentSpace I p) (t : ℝ) :
+    (flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+      (CotangentBundle.kineticEnergy I M)) t
+      (legendreMap
+        (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
+          (TotalSpace.mk' E p v))).proj = maximalGeodesic I M p v t := by
+  rw [← legendreMap_flowOf_geodesicSpray, proj_legendreMap, flowOf_apply, maximalGeodesic_def]
+
+/-- Projecting the kinetic Hamiltonian flow with initial covector `p` gives the maximal geodesic
+whose initial velocity is the Riesz dual of `p`. -/
+theorem proj_flowOf_kineticEnergy (p : CotangentBundle I M) (t : ℝ) :
+    (flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+      (CotangentBundle.kineticEnergy I M)) t p).proj =
+      maximalGeodesic I M p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) t := by
+  conv_lhs => rw [← legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual 0 p]
+  exact proj_flowOf_kineticEnergy_legendreMap _ _ t
+
+end BoundarylessTangentBundle
+
+section Boundaryless
+
 variable [I.Boundaryless]
 
 /-- Every integral curve of the kinetic Hamiltonian vector field projects to a geodesic;
@@ -506,41 +598,18 @@ theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn_kineticEnergy
       (CotangentBundle.kineticEnergy I M)) s) :
     IsGeodesicCurveOn I (fun t ↦ (δ t).proj) s := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  let h := g.isHyperregularLagrangian_mechanicalLagrangian 0
-  let Φ := h.legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hz : IsMIntegralCurveOn (Φ.symm ∘ δ) (geodesicSpray I M) s :=
-    isMIntegralCurveOn_legendreMap_comp_iff_geodesicSpray.1 (by
-      simpa only [Function.comp_def, Φ, g,
-        IsHyperregularLagrangian.legendreMap_legendreDiffeomorph_symm_apply] using hδ)
-  simpa only [Function.comp_apply, Φ, g,
-    IsHyperregularLagrangian.proj_legendreDiffeomorph_symm_apply] using
-    isGeodesicCurveOn_proj_of_isMIntegralCurveOn hs hz
-
-omit [I.Boundaryless] in
-/-- A kinetic Hamiltonian trajectory is the Legendre transform of the within-velocity lift of
-its projection on every parameter set with unique derivatives. -/
-theorem eqOn_legendreMap_comp_curveVelocityLiftWithin_of_isMIntegralCurveOn_kineticEnergy
-    {δ : ℝ → CotangentBundle I M} {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hδ : IsMIntegralCurveOn δ ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
-      (CotangentBundle.kineticEnergy I M)) s) :
-    EqOn δ (legendreMap
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0) ∘
-        curveVelocityLiftWithin I (fun t ↦ (δ t).proj) s) s := by
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  let h := g.isHyperregularLagrangian_mechanicalLagrangian 0
-  let Φ := h.legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hz : IsMIntegralCurveOn (Φ.symm ∘ δ) (geodesicSpray I M) s :=
-    isMIntegralCurveOn_legendreMap_comp_iff_geodesicSpray.1 (by
-      simpa only [Function.comp_def, Φ, g,
-        IsHyperregularLagrangian.legendreMap_legendreDiffeomorph_symm_apply] using hδ)
-  intro t ht
-  have hlift := eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (hs t ht) hz ht
-  simpa only [Function.comp_apply, Φ, g, IsHyperregularLagrangian.coe_legendreDiffeomorph,
-    IsHyperregularLagrangian.proj_legendreDiffeomorph_symm_apply,
-    IsHyperregularLagrangian.legendreMap_legendreDiffeomorph_symm_apply] using
-    congrArg Φ hlift
+  have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  -- Pull `δ` back along the Legendre diffeomorphism to an integral curve of the geodesic spray.
+  set γ : ℝ → TangentBundle I M := fun t ↦ (h.legendreDiffeomorph
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero).symm
+      (δ t)
+  have hFγ : legendreMap
+      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0) ∘ γ = δ :=
+    funext fun t ↦ h.legendreMap_legendreDiffeomorph_symm_apply _ (δ t)
+  have hγ := isMIntegralCurveOn_legendreMap_comp_iff_geodesicSpray.1 (hFγ ▸ hδ)
+  simpa only [γ, IsHyperregularLagrangian.proj_legendreDiffeomorph_symm_apply] using
+    isGeodesicCurveOn_proj_of_isMIntegralCurveOn hs hγ
 
 /-- The kinetic Hamiltonian flow through the Legendre transform of `(p, v)` has exactly the
 maximal geodesic interval of `(p, v)` as its time domain. -/
@@ -552,54 +621,23 @@ theorem mem_flowDomain_kineticEnergy_legendreMap_iff
       flowDomain ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
         (CotangentBundle.kineticEnergy I M)) ↔ t ∈ geodesicInterval I M p v := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  let h := g.isHyperregularLagrangian_mechanicalLagrangian 0
-  let Φ := h.legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hcoe : ⇑Φ = legendreMap (mechanicalLagrangian g 0) :=
-    h.coe_legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hdomain := Φ.mem_flowDomain_apply_iff (by simp)
-    (X := geodesicSpray I M)
-    (Y := (CotangentBundle.symplecticForm I M).hamiltonianVectorField
-      (CotangentBundle.kineticEnergy I M))
-    (by rw [hcoe]; exact mfderiv_legendreMap_geodesicSpray (I := I) (M := M))
-    (t := t) (x := TotalSpace.mk' E p v)
-  simpa only [hcoe, mem_flowDomain,
-    maximalIntegralCurveInterval_geodesicSpray] using hdomain
+  have h := ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian
+    (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0
+  rw [← h.hamiltonian_eq_kineticEnergy, h.mem_flowDomain_legendreMap_iff
+      (ContMDiffNondegenerateMetric.ofRiemannianBundle I M).contMDiff_mechanicalLagrangian_zero,
+    hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray, mem_flowDomain,
+    maximalIntegralCurveInterval_geodesicSpray]
 
-/-- The Legendre map conjugates the maximal geodesic-spray flow and the kinetic Hamiltonian
-flow, including their initial-point junk values outside the common maximal domain. -/
-theorem legendreMap_flowOf_geodesicSpray [T2Space M] (t : ℝ) (z : TangentBundle I M) :
-    legendreMap
-        (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
-        (flowOf (geodesicSpray I M) t z) =
-      flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
-        (CotangentBundle.kineticEnergy I M)) t
-        (legendreMap
-          (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0) z) := by
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  let h := g.isHyperregularLagrangian_mechanicalLagrangian 0
-  let Φ := h.legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  have hcoe : ⇑Φ = legendreMap (mechanicalLagrangian g 0) :=
-    h.coe_legendreDiffeomorph g.contMDiff_mechanicalLagrangian_zero
-  simpa only [hcoe] using
-    Φ.apply_flowOf (by simp)
-      (CotangentBundle.isSymplectic_symplecticForm.isNondegenerate.contMDiff_hamiltonianVectorField
-        (n := 1) (by simp) ((CotangentBundle.contMDiff_kineticEnergy (n := ∞)).of_le (by simp)))
-      (X := geodesicSpray I M)
-      (by rw [hcoe]; exact mfderiv_legendreMap_geodesicSpray (I := I) (M := M)) t z
+/-- The kinetic Hamiltonian flow through a covector `p` has exactly the maximal geodesic interval
+of the Riesz dual of `p` as its time domain. -/
+theorem mem_flowDomain_kineticEnergy_iff (p : CotangentBundle I M) (t : ℝ) :
+    (t, p) ∈ flowDomain ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
+        (CotangentBundle.kineticEnergy I M)) ↔
+      t ∈ geodesicInterval I M p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) := by
+  conv_lhs => rw [← legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual 0 p]
+  exact mem_flowDomain_kineticEnergy_legendreMap_iff _ _ t
 
-/-- Projecting the kinetic Hamiltonian flow with initial covector `g(v, ·)` gives the maximal
-geodesic with initial data `(p, v)`. -/
-theorem proj_flowOf_kineticEnergy_legendreMap [T2Space M]
-    (p : M) (v : TangentSpace I p) (t : ℝ) :
-    (flowOf ((CotangentBundle.symplecticForm I M).hamiltonianVectorField
-      (CotangentBundle.kineticEnergy I M)) t
-      (legendreMap
-        (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)
-          (TotalSpace.mk' E p v))).proj = maximalGeodesic I M p v t := by
-  rw [← legendreMap_flowOf_geodesicSpray, proj_legendreMap, flowOf_apply, maximalGeodesic_def]
+end Boundaryless
 
 end Riemannian
 
