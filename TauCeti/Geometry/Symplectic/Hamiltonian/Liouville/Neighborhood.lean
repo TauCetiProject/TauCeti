@@ -23,13 +23,13 @@ restriction to a suitable open neighbourhood of any compact connected component 
 Indeed `L` has an open neighbourhood `W` meeting every level of `F` in a compact set
 (`Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton`). On the open submanifold
 `W`, with the restriction of `σ`, the restricted functions still Poisson-commute
-(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_subtype_val`), so each of them is a
+(`TauCeti.SmoothTwoForm.poissonBracket_comp_subtype_val`), so each of them is a
 first integral of the others. Every maximal integral curve of their Hamiltonian vector fields
 therefore stays in one compact level of `F` in `W`, and these vector fields are complete
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`).
 Since `L ⊆ W`, the set `L` is also the connected component of its level in `W`
-(`TauCeti.image_val_connectedComponentIn_preimage_val`), and it is compact and regular there when
-it is so in `M`
+(`Topology.IsInducing.image_connectedComponentIn_preimage`), and it is compact and regular there
+when it is so in `M`
 (`IsNondegenerate.exists_opens_isCompact_connectedComponentIn_isCompleteVectorField`).
 
 This is how the theorems about the action of complete commuting Hamiltonian flows, such as the
@@ -97,14 +97,14 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
     have hc := hWc c
     rw [← Subtype.image_preimage_coe] at hc
     exact Subtype.isCompact_iff.2 hc
-  have hcommU (i j : ι) (y : U) := (hσ.poissonBracket_comp_subtype_val U
-    ((hFi i).mdifferentiable (by simp) y) ((hFi j).mdifferentiable (by simp) y)).trans
-    (hcomm i j y)
+  have hcommU (i j : ι) (y : U) :=
+    (poissonBracket_comp_subtype_val σ (F · i) (F · j) y).trans (hcomm i j y)
   refine ⟨U, hLW, hlev, hcommU, fun i ↦ ?_⟩
   have hσU := hσ.mpullback_subtype_val U
   -- each restricted `F_j` is a first integral of the restricted `F_i`
   exact hσU.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
-    ((hFi i).comp contMDiff_subtype_val) hlev (fun j ↦ isFirstIntegral_iff.2 (hcommU j i))
+    ((hFi i).comp contMDiff_subtype_val) (fun _ ↦ hlev _)
+    (fun j ↦ isFirstIntegral_iff.2 (hcommU j i))
     fun j ↦ ((hFi j).comp contMDiff_subtype_val).mdifferentiable (by simp)
 
 /-- **Restriction to a neighbourhood of a compact regular component of a level.** Let `F` be a
@@ -137,7 +137,8 @@ theorem exists_opens_isCompact_connectedComponentIn_isCompleteVectorField [T2Spa
   have hxW : x ∈ W := hLW (mem_connectedComponentIn rfl)
   have himage : ((↑) : W → M) '' connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩ =
       connectedComponentIn (F ⁻¹' {F x}) x :=
-    image_val_connectedComponentIn_preimage_val hxW hLW
+    Topology.IsInducing.subtypeVal.image_connectedComponentIn_preimage (F := F ⁻¹' {F x})
+      (y := ⟨x, hxW⟩) (by rwa [Subtype.range_coe])
   refine ⟨W, hxW, himage, by rwa [Subtype.isCompact_iff, himage], fun z hz ↦ ?_, hcommW, hcW⟩
   exact (hreg z (himage ▸ mem_image_of_mem _ hz)).comp (isRegularPoint_subtype_val z)
 

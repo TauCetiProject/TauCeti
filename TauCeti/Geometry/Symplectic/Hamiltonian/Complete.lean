@@ -90,11 +90,12 @@ variable (hσ : σ.IsNondegenerate)
 include hσ
 
 /-- **A Hamiltonian vector field with first integrals with compact levels is complete.** If the
-functions `G_i = G (·) i` are differentiable first integrals of a `C²` Hamiltonian `f` and every
-fibre of `G : M → (ι → ℝ)` is compact, then every maximal integral curve of the Hamiltonian vector
-field of `f` stays in a compact fibre of `G`, so the field is complete. -/
+functions `G_i = G (·) i` are differentiable first integrals of a `C²` Hamiltonian `f` and the
+fibre of `G : M → (ι → ℝ)` through each point is compact, then every maximal integral curve of the
+Hamiltonian vector field of `f` stays in a compact fibre of `G`, so the field is complete. -/
 theorem isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
-    (hf : ContMDiff I 𝓘(ℝ) 2 f) {ι : Type*} {G : M → ι → ℝ} (hG : ∀ c, IsCompact (G ⁻¹' {c}))
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) {ι : Type*} {G : M → ι → ℝ}
+    (hG : ∀ x, IsCompact (G ⁻¹' {G x}))
     (hGf : ∀ i, σ.IsFirstIntegral f (G · i)) (hG' : ∀ i, MDifferentiable I 𝓘(ℝ) (G · i)) :
     IsCompleteVectorField (σ.hamiltonianVectorField f) :=
   isCompleteVectorField_of_isCompact_preimage_singleton

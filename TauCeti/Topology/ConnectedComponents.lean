@@ -51,8 +51,9 @@ space by them.
 * `Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton`: in a locally compact
   Hausdorff space, a compact connected component of a level of a continuous map has an open
   neighbourhood meeting every level in a compact set.
-* `TauCeti.image_val_connectedComponentIn_preimage_val`: a connected component of `F` contained in
-  a subspace `s` is the connected component of the preimage of `F` in `s`.
+* `Topology.IsInducing.image_connectedComponentIn_preimage`: a connected component of `F`
+  contained in the range of an inducing map `f` is the image of the connected component of the
+  preimage of `F`, for instance in a subspace containing it.
 * `TauCeti.isClopen_connectedComponentIn_compl`: a component of `X \ K` that starts outside a
   neighbourhood `L` of `K` and misses its frontier is clopen.
 * `TauCeti.connectedComponentIn_compl_inter_frontier_nonempty`: in a preconnected, locally
@@ -366,28 +367,28 @@ theorem _root_.Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleto
     exact hVc.inter_right (isClosed_singleton.preimage hf)
 
 /-- **Connected components seen from a subspace containing them.** If the connected component of
-`x` in `F` lies in a set `s`, then it is the image of the connected component of `x` in the
-preimage of `F` in the subspace `s`. -/
-theorem image_val_connectedComponentIn_preimage_val {F s : Set X} {x : X} (hx : x ∈ s)
-    (hs : connectedComponentIn F x ⊆ s) :
-    ((↑) : s → X) '' connectedComponentIn (((↑) : s → X) ⁻¹' F) ⟨x, hx⟩ =
-      connectedComponentIn F x := by
-  by_cases hxF : x ∈ F
-  · have hxF' : (⟨x, hx⟩ : s) ∈ ((↑) : s → X) ⁻¹' F := hxF
-    refine ((continuous_subtype_val.continuousOn.image_connectedComponentIn_subset hxF').trans
-      (connectedComponentIn_mono _ (image_preimage_subset _ _))).antisymm ?_
-    -- the component in `F` is preconnected in `s`, so it lies in the component in the subspace
-    have hpre : IsPreconnected (((↑) : s → X) ⁻¹' connectedComponentIn F x) :=
-      IsInducing.subtypeVal.isPreconnected_image.mp (by
-        rw [image_preimage_eq_of_subset (by rwa [Subtype.range_coe])]
+`f y` in `F` lies in the range of an inducing map `f`, then it is the image of the connected
+component of `y` in the preimage of `F`. For the inclusion of a subspace `s`, this is the connected
+component of the preimage of `F` in `s`. -/
+theorem _root_.Topology.IsInducing.image_connectedComponentIn_preimage {Y : Type*}
+    [TopologicalSpace Y] {f : Y → X} (hf : IsInducing f) {F : Set X} {y : Y}
+    (hs : connectedComponentIn F (f y) ⊆ range f) :
+    f '' connectedComponentIn (f ⁻¹' F) y = connectedComponentIn F (f y) := by
+  by_cases hyF : f y ∈ F
+  · refine ((hf.continuous.continuousOn.image_connectedComponentIn_subset
+      (mem_preimage.2 hyF)).trans
+        (connectedComponentIn_mono _ (image_preimage_subset _ _))).antisymm ?_
+    -- the component in `F` is preconnected in `Y`, so it lies in the component of the preimage
+    have hpre : IsPreconnected (f ⁻¹' connectedComponentIn F (f y)) :=
+      hf.isPreconnected_image.mp (by
+        rw [image_preimage_eq_of_subset hs]
         exact isPreconnected_connectedComponentIn)
-    calc connectedComponentIn F x
-        = ((↑) : s → X) '' (((↑) : s → X) ⁻¹' connectedComponentIn F x) :=
-          (image_preimage_eq_of_subset (by rwa [Subtype.range_coe])).symm
-      _ ⊆ _ := image_mono (hpre.subset_connectedComponentIn (mem_connectedComponentIn hxF)
-          (preimage_mono (connectedComponentIn_subset F x)))
-  · rw [connectedComponentIn_eq_empty hxF,
-      connectedComponentIn_eq_empty (mt mem_preimage.1 hxF),
+    calc connectedComponentIn F (f y)
+        = f '' (f ⁻¹' connectedComponentIn F (f y)) := (image_preimage_eq_of_subset hs).symm
+      _ ⊆ _ := image_mono (hpre.subset_connectedComponentIn (mem_connectedComponentIn hyF)
+          (preimage_mono (connectedComponentIn_subset F _)))
+  · rw [connectedComponentIn_eq_empty hyF,
+      connectedComponentIn_eq_empty (mt mem_preimage.1 hyF),
       image_empty]
 
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a

@@ -52,7 +52,7 @@ on an open neighbourhood `W` of a compact component of a level
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`),
 so the angle map built on `W`, followed by the inclusion `W → M`, gives action-angle coordinates
 near the component for any smooth family of Poisson-commuting functions
-(`TauCeti.SmoothTwoForm.IsSymplectic.exists_actionAngleChart_of_isCompact`).
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact`).
 
 ## Main results
 
@@ -62,8 +62,8 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
   independent periods, the angle map is a local diffeomorphism.
 * `exists_isLocalDiffeomorphAt_angleMap_of_isCompact`: local action-angle coordinates near a
   compact regular component of a level, given by the angle map of complete commuting flows.
-* `exists_actionAngleChart_of_isCompact`: local action-angle coordinates near a compact regular
-  component of a level, with no completeness hypothesis.
+* `exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact`: local action-angle coordinates
+  near a compact regular component of a level, with no completeness hypothesis.
 
 ## References
 
@@ -275,7 +275,7 @@ diffeomorphism at `F x`, and an open neighbourhood `U` of `F x` such that the an
 
 So `(θ mod 2π, A)` are action-angle coordinates on a neighbourhood of `L`, in which
 `σ = ∑ᵢ dθᵢ ∧ dIᵢ` with `I = A`. -/
-theorem exists_actionAngleChart_of_isCompact (hσ : σ.IsSymplectic)
+theorem exists_isLocalDiffeomorphAt_eval₂_mfderiv_eq_of_isCompact (hσ : σ.IsSymplectic)
     (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F) (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
