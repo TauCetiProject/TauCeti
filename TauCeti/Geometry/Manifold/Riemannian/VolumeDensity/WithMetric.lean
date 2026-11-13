@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 
 /-!
 # The Riemannian volume of a metric-indexed copy
