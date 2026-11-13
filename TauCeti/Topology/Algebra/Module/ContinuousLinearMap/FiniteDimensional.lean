@@ -12,10 +12,10 @@ import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 # Continuous endomorphisms of a finite-dimensional topological vector space
 
 A continuous linear map on a finite-dimensional topological vector space is invertible once it is
-invertible as a linear map, so its spectrum is the spectrum of its underlying linear map, which is
-the finite set of its eigenvalues. Neither a norm nor completeness of the scalars is needed. This
-holds over every field of scalars acting compatibly, for instance over `ℝ` for a map on a complex
-space.
+invertible as a linear map. Neither a norm nor completeness of the scalars is needed. Hence the
+spectrum of such a map over the scalar field `𝕜` is the spectrum of its underlying linear map,
+which is the finite set of its eigenvalues. Consequently its spectrum over any field `S` of scalars
+acting compatibly, for instance over `ℝ` for a map on a complex space, is finite.
 
 Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap` and
 `ContinuousLinearMap.spectrum_eq` are the corresponding statements on a Banach space.
