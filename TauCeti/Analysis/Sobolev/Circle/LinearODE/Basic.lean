@@ -55,8 +55,9 @@ comparing weak and classical derivatives
 * `TauCeti.CircleSobolev.mulLoop_add`, `TauCeti.CircleSobolev.mulLoop_sub`,
   `TauCeti.CircleSobolev.mulLoop_smul` and their companions: the zero-order term depends linearly
   on the coefficient loop `S`.
-* `TauCeti.CircleSobolev.loopOperator_add`, `TauCeti.CircleSobolev.loopOperator_sub`: `L_S`
-  depends affinely on `S`, with `L_{S₁ ± S₂} = L_{S₁} ∓ mulLoop S₂`.
+* `TauCeti.CircleSobolev.loopOperator_zero`, `TauCeti.CircleSobolev.loopOperator_add`,
+  `TauCeti.CircleSobolev.loopOperator_sub`: `L_S` depends affinely on `S`, with `L_0 = d/dt` and
+  `L_{S₁ ± S₂} = L_{S₁} ∓ mulLoop S₂`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
   is multiplication by that scalar.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
@@ -161,10 +162,13 @@ theorem mulLoop_smul (hs : 1 / 2 < s) (c : ℝ) (S : C(AddCircle T, E →L[ℝ] 
 
 /-- Multiplication by the constant loop `z • id`, for a complex scalar `z`, is multiplication by
 `z` after the inclusion `H^s ⊆ H⁰`. -/
-theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) (a : CircleSobolev s E) :
-    mulLoop T hs (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a =
-      z • inclusion (by linarith) a := by
-  rw [← ofContinuousMap_toContinuousMap T hs, ← map_smul, mulLoop_apply]
+@[simp]
+theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) :
+    mulLoop T hs (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) =
+      z • (inclusion (E := E) (by linarith : (0 : ℝ) ≤ s)).restrictScalars ℝ := by
+  ext a : 1
+  rw [smul_apply, ContinuousLinearMap.coe_restrictScalars',
+    ← ofContinuousMap_toContinuousMap T hs, ← map_smul, mulLoop_apply]
   congr 1
   ext x
   simp
@@ -191,6 +195,13 @@ theorem loopOperator_apply (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobole
     loopOperator T S a =
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a - mulLoop T (by norm_num) S a :=
   (rfl)
+
+/-- With the zero coefficient loop, `L_0` is the derivative `ζ ↦ ζ'`. -/
+@[simp]
+theorem loopOperator_zero :
+    loopOperator (E := E) T 0 =
+      (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num)).restrictScalars ℝ := by
+  rw [loopOperator, mulLoop_zero, sub_zero]
 
 /-- Adding `S₂` to the coefficient loop subtracts multiplication by `S₂` from `L_S`. -/
 theorem loopOperator_add (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :

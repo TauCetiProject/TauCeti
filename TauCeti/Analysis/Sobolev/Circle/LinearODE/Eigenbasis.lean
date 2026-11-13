@@ -182,7 +182,7 @@ theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 E) (lam : ℝ) :
       loopOperator T S a + ((lam : ℂ) * I) • inclusion zero_le_one a := by
     -- `L_{S₁ - S₂} = L_{S₁} + mulLoop S₂`, and multiplication by the constant loop `J₀` is `J₀`.
     rw [hS', loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
-      mul_smul, Complex.coe_smul]
+      smul_apply, ContinuousLinearMap.coe_restrictScalars', mul_smul, Complex.coe_smul]
   -- Multiplying by `-J₀` turns `J₀ y = λ z` into `y + λ J₀ z = 0`.
   have hiff (y z : CircleSobolev 0 E) (c : ℂ) : I • y = c • z ↔ y + (c * I) • z = 0 := by
     constructor
