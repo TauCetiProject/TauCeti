@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 import Mathlib.Basic.Finite.Sum
 
@@ -82,7 +82,7 @@ theorem card_le_sum_of_forall_not_reachableAvoiding [DecidableEq V] {A B : Finse
     (hX : ∀ a ∈ A, ∀ b ∈ B, ¬ReachableAvoiding Q (X : Set V) a b) :
     Fintype.card ι ≤ ∑ v ∈ X, c v := by
   -- Lift every member to a walk between the auxiliary terminals.
-  choose P' hP' using fun i ↦ AuxTerminalHom.exists_arrowWalk_vertices_eq (ha i) (hb i) (P i)
+  let P' i := AuxTerminalHom.liftWalk (ha i) (hb i) (P i)
   have hsep : ¬ReachableAvoiding (AuxTerminalHom Q A B)
       ((X.map .inl : Finset (V ⊕ Bool)) : Set (V ⊕ Bool)) (inr false) (inr true) := by
     rw [reachableAvoiding_auxTerminalHom_iff (by simp) (by simp)]
@@ -92,7 +92,7 @@ theorem card_le_sum_of_forall_not_reachableAvoiding [DecidableEq V] {A B : Finse
     (fun x hxs hxt ↦ ?_) (by simp) (by simp) hsep).trans_eq (by simp)
   -- A lifted member visits `inl v` exactly when the original member visits `v`.
   rcases x with v | (_ | _)
-  · simpa [hP'] using hP v
+  · simpa [P'] using hP v
   · exact absurd rfl hxs
   · exact absurd rfl hxt
 
@@ -117,11 +117,14 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
   have h (i : Fin k) : ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
       q.vertices.map inl ⊆ (P' i).vertices ∧
       ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
+    let q := AuxTerminalHom.projectWalk (P' i)
     obtain ⟨a', ha', b', hb', r, hr, hrq, -, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) q ha hb
-    exact ⟨a', ha', b', hb', r, hr, List.Subset.trans (List.map_subset _ hrq) hq,
-      by simpa using hint⟩
+      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V))
+        q.2.2 q.1.2 q.2.1.2
+    refine ⟨a', ha', b', hb', r, hr, ?_, by simpa using hint⟩
+    intro x hx
+    obtain ⟨v, hv, rfl⟩ := List.mem_map.1 hx
+    exact (AuxTerminalHom.mem_vertices_projectWalk (P' i) v).1 (hrq hv)
   choose a ha b hb P hP hsub hint using h
   have hpre : inl ⁻¹' (X' : Set (V ⊕ Bool)) = (X'.toLeft : Set V) := by
     ext

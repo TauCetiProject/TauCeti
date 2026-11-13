@@ -30,10 +30,12 @@ has capacity at least the total capacity leaving `a`, and each arrow `b → τ` 
 capacity entering `b`, then this *normalization* of `S` has original cut capacity at most the
 capacity of `S`, for arbitrary `A` and `B`.
 
-A walk from a vertex of `A` to a vertex of `B` lifts to a walk from `σ` to `τ` through the same
-original vertices, and every walk from `σ` to `τ` contains a walk along original arrows from a
-vertex of `A` to a vertex of `B`, so deleting a set of original vertices separates `σ` from `τ`
-exactly when it separates `A` from `B`.
+A walk from `σ` to `τ` factors uniquely into one source arrow, an original walk from `A` to `B`,
+and one sink arrow. Lifting and projection retain vertex order and every arrow occurrence,
+including loops, parallel arrows and repetitions, and preserve and reflect simplicity. When
+`A` and `B` overlap, the original segment may have length zero. Projection does not trim further
+visits to `A ∪ B`; trimming to a set-to-set path is a separate, non-invertible operation. Deleting
+a set of original vertices separates `σ` from `τ` exactly when it separates `A` from `B`.
 
 ## Main definitions
 
@@ -59,9 +61,9 @@ exactly when it separates `A` from `B`.
 * `TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff` and
   `TauCeti.TerminalCut.IsMinimum.arrowSum_union_sdiff`: normalizing a minimum `σ`–`τ` cut gives a
   minimum cut between `A` and `B` of the same capacity.
-* `TauCeti.AuxTerminalHom.exists_arrowWalk_vertices_eq` and
-  `TauCeti.AuxTerminalHom.exists_arrowWalk_map_vertices_subset`: lifting walks between `A` and `B`
-  to walks between the auxiliary terminals, and projecting them back.
+* `TauCeti.AuxTerminalHom.walkEquiv`: the exact correspondence between original walks with
+  endpoints in `A` and `B` and walks between the auxiliary terminals, preserving arrow identities,
+  vertex lists and simplicity. Projection does not trim visits to further terminal vertices.
 * `TauCeti.reachableAvoiding_auxTerminalHom_iff`: reachability between the auxiliary terminals
   after deleting vertices is reachability from `A` to `B`.
 * `TauCeti.AuxTerminalHom.excessAt_inl` and `TauCeti.AuxTerminalHom.excessAt_inr_true`: the excess
@@ -500,62 +502,357 @@ section Walk
 
 namespace AuxTerminalHom
 
-/-- A walk from `a ∈ A` along original arrows, preceded by the arrow from the fresh source. -/
-private theorem exists_arrowWalk_vertices_eq_cons {a w : V} (ha : a ∈ A) (q : ArrowWalk Q a w) :
-    ∃ p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl w),
-      p.vertices = inr false :: q.vertices.map inl := by
-  induction q with
-  | nil => exact ⟨(ArrowWalk.nil _).cons (source ha), rfl⟩
-  | cons q e ih =>
-    obtain ⟨p, hp⟩ := ih
-    refine ⟨p.cons (original e), ?_⟩
-    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons] at hp ⊢
-    simp [hp]
+/-- Prepend the source arrow to a walk along original arrows. -/
+def liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b) := by
+  induction p with
+  | nil => exact (ArrowWalk.nil _).cons (source ha)
+  | cons _ e ih => exact ih.cons (original e)
 
-/-- **Lifting a walk to auxiliary terminals.** A walk from `a ∈ A` to `b ∈ B` gives a walk from
-the fresh source to the fresh sink through the same original vertices. -/
-theorem exists_arrowWalk_vertices_eq {a b : V} (ha : a ∈ A) (hb : b ∈ B) (q : ArrowWalk Q a b) :
-    ∃ p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true),
-      p.vertices = inr false :: q.vertices.map inl ++ [inr true] := by
-  obtain ⟨p, hp⟩ := exists_arrowWalk_vertices_eq_cons (B := B) ha q
-  refine ⟨p.cons (sink hb), ?_⟩
-  simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons] at hp ⊢
-  simp [hp]
+@[simp]
+theorem liftFromSource_nil {a : V} (ha : a ∈ A) :
+    liftFromSource (Q := Q) (B := B) ha (ArrowWalk.nil a) = (ArrowWalk.nil _).cons (source ha) :=
+  (rfl)
 
-/-- A walk from the fresh source to an original vertex `w` contains a walk along original arrows
-from a vertex of `A` to `w`. -/
-private theorem exists_arrowWalk_map_vertices_subset_of_eq_inl {y : V ⊕ Bool}
-    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {w : V} (hy : y = inl w) :
-    ∃ a ∈ A, ∃ q : ArrowWalk Q a w, q.vertices.map inl ⊆ p.vertices := by
-  induction p generalizing w with
-  | nil => exact absurd hy Sum.inr_ne_inl
+@[simp]
+theorem liftFromSource_cons {a b c : V} (ha : a ∈ A) (p : ArrowWalk Q a b) (e : Q b c) :
+    liftFromSource (B := B) ha (p.cons e) = (liftFromSource ha p).cons (original e) :=
+  (rfl)
+
+/-- Adjoin the auxiliary source and sink arrows to an original walk. -/
+def liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true) :=
+  (liftFromSource ha p).cons (sink hb)
+
+/-- A walk lifted to both auxiliary terminals is a lifted source prefix followed by its sink
+arrow. -/
+theorem liftWalk_def {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    liftWalk ha hb p = (liftFromSource ha p).cons (sink hb) :=
+  (rfl)
+
+@[simp]
+theorem vertices_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    (liftFromSource (B := B) ha p).vertices = inr false :: p.vertices.map inl := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
+
+@[simp]
+theorem vertices_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    (liftWalk ha hb p).vertices = inr false :: p.vertices.map inl ++ [inr true] := by
+  simp [liftWalk_def]
+
+@[simp]
+theorem length_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    (liftFromSource (B := B) ha p).length = p.length + 1 := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih, Nat.add_assoc]
+
+@[simp]
+theorem length_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    (liftWalk ha hb p).length = p.length + 2 := by
+  simp [liftWalk_def, Nat.add_assoc]
+
+/-- The inclusion of original arrow identities, with their endpoints. -/
+def originalArrow : (Σ a b, Q a b) → Σ x y, AuxTerminalHom Q A B x y :=
+  Sigma.map inl fun _ => Sigma.map inl fun _ => original
+
+theorem originalArrow_def (e : Σ a b, Q a b) :
+    originalArrow (A := A) (B := B) e = ⟨inl e.1, inl e.2.1, original e.2.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem originalArrow_fst (e : Σ a b, Q a b) :
+    (originalArrow (A := A) (B := B) e).1 = inl e.1 :=
+  (rfl)
+
+@[simp]
+theorem originalArrow_snd_fst (e : Σ a b, Q a b) :
+    (originalArrow (A := A) (B := B) e).2.1 = inl e.2.1 :=
+  (rfl)
+
+@[simp]
+theorem originalArrow_mk {a b : V} (e : Q a b) :
+    originalArrow (A := A) (B := B) ⟨a, b, e⟩ = ⟨inl a, inl b, original e⟩ :=
+  (rfl)
+
+/-- Inclusion retains the identity of each original arrow. -/
+@[grind inj]
+theorem originalArrow_injective :
+    Function.Injective (originalArrow (Q := Q) (A := A) (B := B)) :=
+  inl_injective.sigma_map fun _ => inl_injective.sigma_map fun _ => original_injective
+
+@[simp]
+theorem originalArrow_inj {e f : Σ a b, Q a b} :
+    originalArrow (A := A) (B := B) e = originalArrow f ↔ e = f :=
+  originalArrow_injective.eq_iff
+
+@[simp]
+theorem originalArrow_eq_mk_original {e : Σ a b, Q a b} {a b : V} {f : Q a b} :
+    originalArrow (A := A) (B := B) e = ⟨inl a, inl b, original f⟩ ↔ e = ⟨a, b, f⟩ := by
+  rw [← originalArrow_mk, originalArrow_inj]
+
+@[simp]
+theorem originalArrow_ne_mk_inr_left (e : Σ a b, Q a b) (s : Bool) (y : V ⊕ Bool)
+    (f : AuxTerminalHom Q A B (inr s) y) :
+    originalArrow e ≠ ⟨inr s, y, f⟩ :=
+  fun h => Sum.inl_ne_inr (congrArg Sigma.fst h)
+
+@[simp]
+theorem originalArrow_ne_mk_inr_right (e : Σ a b, Q a b) (x : V ⊕ Bool) (t : Bool)
+    (f : AuxTerminalHom Q A B x (inr t)) :
+    originalArrow e ≠ ⟨x, inr t, f⟩ :=
+  fun h => Sum.inl_ne_inr (congrArg (fun z => z.2.1) h)
+
+@[simp]
+theorem arrows_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    (liftFromSource (B := B) ha p).arrows =
+      ⟨inr false, inl a, source ha⟩ :: p.arrows.map originalArrow := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [ih]
+
+@[simp]
+theorem arrows_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    (liftWalk ha hb p).arrows =
+      ⟨inr false, inl a, source ha⟩ :: p.arrows.map originalArrow ++
+        [⟨inl b, inr true, sink hb⟩] := by
+  simp [liftWalk_def]
+
+/-- An original arrow occurs in a lifted walk exactly when it occurred in the original walk.
+This is not a simp lemma because `arrows_liftWalk` first expands the entire arrow list. -/
+@[grind =]
+theorem originalArrow_mem_arrows_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B)
+    (p : ArrowWalk Q a b) (e : Σ v w, Q v w) :
+    originalArrow e ∈ (liftWalk ha hb p).arrows ↔ e ∈ p.arrows := by
+  have hs : originalArrow (A := A) (B := B) e ≠ ⟨inr false, inl a, source ha⟩ :=
+    fun h => Sum.inl_ne_inr (congrArg Sigma.fst h)
+  have ht : originalArrow (A := A) (B := B) e ≠ ⟨inl b, inr true, sink hb⟩ :=
+    fun h => Sum.inl_ne_inr (congrArg (fun x => x.2.1) h)
+  simp only [arrows_liftWalk, List.mem_cons, List.mem_append, List.not_mem_nil,
+    hs, ht, false_or, or_false, List.mem_map_of_injective originalArrow_injective]
+
+/-- Prepending the source arrow preserves and reflects simplicity. -/
+@[simp]
+theorem isPath_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    (liftFromSource (B := B) ha p).IsPath ↔ p.IsPath := by
+  simp [ArrowWalk.isPath_def, List.nodup_map_iff inl_injective]
+
+/-- Adding auxiliary terminals preserves and reflects simplicity of a walk. -/
+@[simp]
+theorem isPath_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    (liftWalk ha hb p).IsPath ↔ p.IsPath := by
+  simp [ArrowWalk.isPath_def, List.nodup_append, List.nodup_map_iff inl_injective]
+
+/-- A walk from the auxiliary source to an original vertex has a unique original segment. -/
+private def projectPrefix {y : V ⊕ Bool}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {b : V} (hy : y = inl b) :
+    Σ a : {a // a ∈ A}, ArrowWalk Q a.1 b := by
+  induction p generalizing b with
+  | nil => exact (Sum.inr_ne_inl hy).elim
   | @cons z y p e ih =>
     subst hy
-    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append]
-    rcases z with u | _ | _
-    · obtain ⟨a, ha, q, hq⟩ := ih rfl
-      refine ⟨a, ha, q.cons (originalEquiv.symm e), ?_⟩
-      simp only [Quiver.Path.vertices_cons, List.concat_eq_append,
-        List.map_append, List.map_singleton]
-      exact List.append_subset.2
-        ⟨List.Subset.trans hq (List.subset_append_left _ _), List.subset_append_right _ _⟩
-    · exact ⟨w, mem_of_source e, ArrowWalk.nil w, by simp⟩
-    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl w)) e
+    rcases z with a | _ | _
+    · obtain ⟨a, q⟩ := ih rfl
+      exact ⟨a, q.cons (originalEquiv.symm e)⟩
+    · exact ⟨⟨b, mem_of_source e⟩, ArrowWalk.nil b⟩
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl b)) e
 
-/-- **Projecting a walk from auxiliary terminals.** A walk from the fresh source to the fresh sink
-contains a walk along original arrows from a vertex of `A` to a vertex of `B`. -/
-theorem exists_arrowWalk_map_vertices_subset
+private theorem projectPrefix_cons {a b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl a))
+    (e : AuxTerminalHom Q A B (inl a) (inl b)) :
+    projectPrefix (p.cons e) rfl =
+      ⟨(projectPrefix p rfl).1, (projectPrefix p rfl).2.cons (originalEquiv.symm e)⟩ :=
+  (rfl)
+
+private theorem liftFromSource_projectPrefix {y : V ⊕ Bool}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {b : V} (hy : y = inl b) :
+    HEq (liftFromSource (B := B) (projectPrefix p hy).1.2 (projectPrefix p hy).2) p := by
+  induction p generalizing b with
+  | nil => exact (Sum.inr_ne_inl hy).elim
+  | @cons z y p e ih =>
+    subst hy
+    rcases z with a | _ | _
+    · have h := eq_of_heq (ih (b := a) rfl)
+      apply heq_of_eq
+      rw [projectPrefix_cons, liftFromSource_cons, original_originalEquiv_symm, h]
+    · have hp : p = ArrowWalk.nil (inr false) := by
+        cases p with
+        | nil => rfl
+        | @cons z _ p e => exact isEmptyElim (α := AuxTerminalHom Q A B z (inr false)) e
+      subst hp
+      exact heq_of_eq <| (liftFromSource_nil (Q := Q) (B := B) (mem_of_source e)).trans
+        (congrArg (fun f => (ArrowWalk.nil (inr false)).cons f) (eq_source e).symm)
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl b)) e
+
+private theorem projectPrefix_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    projectPrefix (liftFromSource (B := B) ha p) rfl = ⟨⟨a, ha⟩, p⟩ := by
+  induction p with
+  | nil => rfl
+  | cons p e ih =>
+    rw [liftFromSource_cons, projectPrefix_cons, ih, originalEquiv_symm_original]
+
+/-- Remove the source arrow from a walk ending at an original vertex. -/
+def projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    Σ a : {a // a ∈ A}, ArrowWalk Q a.1 b :=
+  projectPrefix p rfl
+
+@[simp]
+theorem projectFromSource_nil_cons {b : V} (e : AuxTerminalHom Q A B (inr false) (inl b)) :
+    projectFromSource ((ArrowWalk.nil _).cons e) = ⟨⟨b, mem_of_source e⟩, ArrowWalk.nil b⟩ :=
+  (rfl)
+
+@[simp]
+theorem projectFromSource_cons {a b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl a))
+    (e : AuxTerminalHom Q A B (inl a) (inl b)) :
+    projectFromSource (p.cons e) =
+      ⟨(projectFromSource p).1, (projectFromSource p).2.cons (originalEquiv.symm e)⟩ :=
+  (rfl)
+
+@[simp]
+theorem projectFromSource_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
+    projectFromSource (liftFromSource (B := B) ha p) = ⟨⟨a, ha⟩, p⟩ :=
+  projectPrefix_liftFromSource ha p
+
+@[simp]
+theorem liftFromSource_projectFromSource {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
+    liftFromSource (projectFromSource p).1.2 (projectFromSource p).2 = p :=
+  eq_of_heq (liftFromSource_projectPrefix p rfl)
+
+/-- Remove the two auxiliary terminal arrows, retaining the endpoints and every original arrow.
+The original segment need not avoid `A ∪ B` in its interior. -/
+def projectWalk
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
-    ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.vertices.map inl ⊆ p.vertices := by
+    Σ a : {a // a ∈ A}, Σ b : {b // b ∈ B}, ArrowWalk Q a.1 b.1 := by
   cases p with
   | @cons y _ p e =>
     rcases y with b | _ | _
-    · obtain ⟨a, ha, q, hq⟩ := exists_arrowWalk_map_vertices_subset_of_eq_inl p rfl
-      refine ⟨a, ha, b, mem_of_sink e, q, List.Subset.trans hq ?_⟩
-      simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append]
-      exact List.subset_append_left _ _
+    · obtain ⟨a, q⟩ := projectPrefix p rfl
+      exact ⟨a, ⟨b, mem_of_sink e⟩, q⟩
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr false) (inr true)) e
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inr true)) e
+
+@[simp]
+theorem projectWalk_cons {b : V}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b))
+    (e : AuxTerminalHom Q A B (inl b) (inr true)) :
+    projectWalk (p.cons e) =
+      ⟨(projectFromSource p).1, ⟨b, mem_of_sink e⟩, (projectFromSource p).2⟩ :=
+  (rfl)
+
+/-- Projection after lifting recovers both endpoints and the entire original walk. -/
+@[simp]
+theorem projectWalk_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B) (p : ArrowWalk Q a b) :
+    projectWalk (liftWalk ha hb p) = ⟨⟨a, ha⟩, ⟨b, hb⟩, p⟩ := by
+  rw [liftWalk_def, projectWalk_cons, projectFromSource_liftFromSource]
+
+/-- Lifting the projected original segment recovers the entire auxiliary walk. -/
+@[simp]
+theorem liftWalk_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2 (projectWalk p).2.2 = p := by
+  cases p with
+  | @cons y _ p e =>
+    rcases y with b | _ | _
+    · rw [projectWalk_cons, liftWalk_def, liftFromSource_projectFromSource, ← eq_sink e]
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr false) (inr true)) e
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inr true)) e
+
+/-- Projection removes exactly two arrows. This is not a simp lemma: `length_projectWalk`
+already normalizes the length on its left-hand side. -/
+theorem length_projectWalk_add_two
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (projectWalk p).2.2.length + 2 = p.length := by
+  rw [← length_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2, liftWalk_projectWalk]
+
+@[simp]
+theorem length_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (projectWalk p).2.2.length = p.length - 2 := by
+  rw [← length_projectWalk_add_two p, Nat.add_sub_cancel]
+
+@[simp]
+theorem mem_vertices_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) (v : V) :
+    v ∈ (projectWalk p).2.2.vertices ↔ inl v ∈ p.vertices := by
+  have h := vertices_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2 (projectWalk p).2.2
+  rw [liftWalk_projectWalk] at h
+  rw [h]
+  simp
+
+/-- Recover the vertex list of the original segment, with its original order and repetitions. -/
+@[simp]
+theorem map_vertices_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (projectWalk p).2.2.vertices.map inl = p.vertices.tail.dropLast := by
+  have h := vertices_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2 (projectWalk p).2.2
+  rw [liftWalk_projectWalk] at h
+  rw [h]
+  simp
+
+@[simp]
+theorem mem_arrows_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) (e : Σ a b, Q a b) :
+    e ∈ (projectWalk p).2.2.arrows ↔ originalArrow e ∈ p.arrows := by
+  simpa only [liftWalk_projectWalk] using
+    (originalArrow_mem_arrows_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2
+      (projectWalk p).2.2 e).symm
+
+/-- Recover every original arrow occurrence in order. -/
+@[simp]
+theorem map_arrows_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (projectWalk p).2.2.arrows.map originalArrow = p.arrows.tail.dropLast := by
+  have h := arrows_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2 (projectWalk p).2.2
+  rw [liftWalk_projectWalk] at h
+  rw [h]
+  simp
+
+/-- An empty source-terminal set gives no walk between the auxiliary terminals. -/
+instance instIsEmptyWalkSourceEmpty :
+    IsEmpty (ArrowWalk (AuxTerminalHom Q ∅ B) (inr false) (inr true)) :=
+  ⟨fun p => Finset.notMem_empty _ (projectWalk p).1.2⟩
+
+/-- An empty sink-terminal set gives no walk between the auxiliary terminals. -/
+instance instIsEmptyWalkSinkEmpty :
+    IsEmpty (ArrowWalk (AuxTerminalHom Q A ∅) (inr false) (inr true)) :=
+  ⟨fun p => Finset.notMem_empty _ (projectWalk p).2.1.2⟩
+
+variable (Q A B) in
+/-- Walks through the auxiliary terminals correspond to original walks with first endpoint in
+`A` and last endpoint in `B`. Repetitions and zero-length original segments are allowed. -/
+def walkEquiv :
+    (Σ a : {a // a ∈ A}, Σ b : {b // b ∈ B}, ArrowWalk Q a.1 b.1) ≃
+      ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true) where
+  toFun p := liftWalk p.1.2 p.2.1.2 p.2.2
+  invFun := projectWalk
+  left_inv := by
+    rintro ⟨⟨a, ha⟩, ⟨b, hb⟩, p⟩
+    exact projectWalk_liftWalk ha hb p
+  right_inv := liftWalk_projectWalk
+
+@[simp]
+theorem walkEquiv_apply (p : Σ a : {a // a ∈ A}, Σ b : {b // b ∈ B}, ArrowWalk Q a.1 b.1) :
+    walkEquiv Q A B p = liftWalk p.1.2 p.2.1.2 p.2.2 :=
+  (rfl)
+
+@[simp]
+theorem walkEquiv_symm_apply
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (walkEquiv Q A B).symm p = projectWalk p :=
+  (rfl)
+
+/-- Removing auxiliary terminals preserves and reflects simplicity of a walk. -/
+@[simp]
+theorem isPath_projectWalk
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inr true)) :
+    (projectWalk p).2.2.IsPath ↔ p.IsPath := by
+  rw [← isPath_liftWalk (projectWalk p).1.2 (projectWalk p).2.1.2, liftWalk_projectWalk]
+
 
 end AuxTerminalHom
 
@@ -569,13 +866,13 @@ theorem reachableAvoiding_auxTerminalHom_iff {X : Set (V ⊕ Bool)} (hσ : inr f
   constructor
   · intro h
     obtain ⟨p, hp⟩ := reachableAvoiding_def.1 h
-    obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset p
-    exact ⟨a, ha, b, hb, reachableAvoiding_def.2 ⟨q, fun v hv ↦ hp _ (hq (List.mem_map_of_mem hv))⟩⟩
+    let q := AuxTerminalHom.projectWalk p
+    refine ⟨q.1.1, q.1.2, q.2.1.1, q.2.1.2, reachableAvoiding_def.2 ⟨q.2.2, ?_⟩⟩
+    exact fun v hv ↦ hp _ ((AuxTerminalHom.mem_vertices_projectWalk p v).1 hv)
   · rintro ⟨a, ha, b, hb, h⟩
     obtain ⟨q, hq⟩ := reachableAvoiding_def.1 h
-    obtain ⟨p, hp⟩ := AuxTerminalHom.exists_arrowWalk_vertices_eq ha hb q
-    refine reachableAvoiding_def.2 ⟨p, fun x hx ↦ ?_⟩
-    rw [hp] at hx
+    refine reachableAvoiding_def.2 ⟨AuxTerminalHom.liftWalk ha hb q, fun x hx ↦ ?_⟩
+    rw [AuxTerminalHom.vertices_liftWalk] at hx
     simp only [List.cons_append, List.mem_cons, List.mem_append, List.mem_map,
       List.not_mem_nil, or_false] at hx
     rcases hx with rfl | ⟨v, hv, rfl⟩ | rfl

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Walk
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 
 /-!
 # Examples of auxiliary-terminal walk projection
@@ -65,11 +65,11 @@ theorem repeated_loop_projection :
 /-- An empty source-terminal set gives no walk between the auxiliary terminals. -/
 example {V : Type*} (Q : V → V → Type*) (B : Finset V) :
     IsEmpty (ArrowWalk (AuxTerminalHom Q ∅ B) (inr false) (inr true)) :=
-  ⟨fun p => Finset.notMem_empty _ (projectWalk (Q := Q) (A := ∅) (B := B) p).1.2⟩
+  inferInstance
 
 /-- An empty sink-terminal set gives no walk between the auxiliary terminals. -/
 example {V : Type*} (Q : V → V → Type*) (A : Finset V) :
     IsEmpty (ArrowWalk (AuxTerminalHom Q A ∅) (inr false) (inr true)) :=
-  ⟨fun p => Finset.notMem_empty _ (projectWalk (Q := Q) (A := A) (B := ∅) p).2.1.2⟩
+  inferInstance
 
 end TauCeti.Examples.AuxiliaryTerminals

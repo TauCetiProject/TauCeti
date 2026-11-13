@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Group.Int
@@ -38,9 +38,9 @@ and `B`, the `A`–`B` flows then correspond exactly to the ordinary flows betwe
 terminals, with the same values on the original arrows and the same value
 (`TauCeti.SetFlow.auxFlowEquiv`), and normalizing a minimum cut between the fresh terminals gives a
 minimum `A`–`B` cut of the same capacity (`TauCeti.TerminalCut.IsMinimum.isMinimum_union_sdiff`, in
-`TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic`). For arbitrary `A` and `B`, a vertex in
-both sets is conserved, so the `A`–`B` flows are the flows between the disjoint sets `A \ B` and
-`B \ A` with the same arrow assignments, values and maximum flows (`TauCeti.SetFlow.sdiffEquiv`,
+`TauCeti.Combinatorics.Network.AuxiliaryTerminals`). For arbitrary `A` and `B`, a vertex in both
+sets is conserved, so the `A`–`B` flows are the flows between the disjoint sets `A \ B` and `B \ A`
+with the same arrow assignments, values and maximum flows (`TauCeti.SetFlow.sdiffEquiv`,
 `TauCeti.SetFlow.isMaximum_toSdiff`), and the existence results pass to this disjoint pair.
 
 ## Main definitions

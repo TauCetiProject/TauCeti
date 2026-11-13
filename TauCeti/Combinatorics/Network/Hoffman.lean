@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Shift
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 public import TauCeti.Combinatorics.Network.ShortestAugmentation
 import TauCeti.Algebra.Order.BigOperators.Sum.PosPart
 

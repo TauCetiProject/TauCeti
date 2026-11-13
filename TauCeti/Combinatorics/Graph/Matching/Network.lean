@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Matching.Capacitated
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Basic
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 
 /-!
 # The flow network of a bipartite multigraph
