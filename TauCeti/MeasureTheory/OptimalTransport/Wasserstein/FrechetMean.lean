@@ -25,7 +25,11 @@ barycenters of `∑ j, w j • δ_{μ j}` are exactly the minimizers of that cos
   the weighted `p`-Wasserstein cost.
 * `TauCeti.WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter` — on a
   Polish space, a barycenter in `P_p(X)` of `∑ j, w j • δ_{μ j}` minimizes the weighted cost over
-  all laws.
+  all laws;
+* `TauCeti.WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_univ_iff` and
+  `TauCeti.WassersteinSpace.existsUnique_isMinOn_sum_mul_wassersteinEDist_rpow_of_existsUnique` —
+  when at least one weight is nonzero, minimizers over `ProbabilityMeasure X` coincide with
+  `p`-Fréchet barycenters in `P_p(X)`.
 -/
 
 public section
@@ -98,5 +102,56 @@ theorem WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBaryc
     congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
   have hz := isMinOn_iff.1 hmin (WassersteinSpace.mk ⟨ν', hν'⟩ hmom) (mem_univ _)
   rwa [hcoe] at hz
+
+/-- **Minimizers over `ProbabilityMeasure X` are Fréchet barycenters in `P_p(X)`.** On a Polish
+metric space and for `1 ≤ p < ∞`, when at least one weight `w j₀` is nonzero, a probability measure
+`ν : ProbabilityMeasure X` minimizes `ν' ↦ ∑ j, w j * W_p(ν', μ j) ^ p` over all of
+`ProbabilityMeasure X` if and only if `ν` arises from a `p`-Fréchet barycenter of
+`∑ j, w j • δ_{μ j}` in `P_p(X)`. -/
+theorem WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_univ_iff [Fact (1 ≤ p)]
+    (hp_top : p ≠ ∞) {μ : J → WassersteinSpace p X} {j₀ : J} (hj₀ : w j₀ ≠ 0)
+    (ν : ProbabilityMeasure X) :
+    IsMinOn (fun ν' : ProbabilityMeasure X ↦ ∑ j, (w j : ℝ≥0∞) *
+        wassersteinEDist p (ν' : Measure X)
+          ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal) univ ν ↔
+      ∃ νW : WassersteinSpace p X, (νW : ProbabilityMeasure X) = ν ∧
+        IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) νW := by
+  refine ⟨fun hmin ↦ ?_, ?_⟩
+  · have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+    have hle := isMinOn_iff.1 hmin (μ j₀ : ProbabilityMeasure X) (mem_univ _)
+    have htop := ne_top_of_le_ne_top (WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top μ
+      (μ j₀)) hle
+    have hmom := hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top measurable_edist
+      (Finset.mem_univ j₀) (ENNReal.coe_ne_zero.2 hj₀) (μ j₀).hasFiniteMoment
+      (ENNReal.toReal_pos hp0 hp_top) htop
+    refine ⟨WassersteinSpace.mk ν hmom, WassersteinSpace.coe_mk _ _,
+      (WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn hp_top μ _).2
+        (isMinOn_iff.2 fun z _ ↦ ?_)⟩
+    simpa only [WassersteinSpace.coe_mk] using isMinOn_iff.1 hmin (z : ProbabilityMeasure X)
+      (mem_univ _)
+  · rintro ⟨νW, rfl, hbary⟩
+    have hmin := WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
+      hp_top hbary
+    exact isMinOn_iff.2 fun ν' _ ↦ isMinOn_iff.1 hmin (ν' : Measure X) ν'.prop
+
+/-- **Unique Fréchet barycenter in `P_p(X)` implies unique minimizer over `ProbabilityMeasure X`.**
+On a Polish metric space and for `1 ≤ p < ∞`, if at least one weight `w j₀` is nonzero and
+`∑ j, w j • δ_{μ j}` has a unique `p`-Fréchet barycenter in `P_p(X)`, then exactly one probability
+measure minimizes `ν' ↦ ∑ j, w j * W_p(ν', μ j) ^ p` over `ProbabilityMeasure X`. -/
+theorem WassersteinSpace.existsUnique_isMinOn_sum_mul_wassersteinEDist_rpow_of_existsUnique
+    [Fact (1 ≤ p)] (hp_top : p ≠ ∞) {μ : J → WassersteinSpace p X} {j₀ : J} (hj₀ : w j₀ ≠ 0)
+    (huniq : ∃! ν : WassersteinSpace p X,
+      IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) ν) :
+    ∃! ν : ProbabilityMeasure X,
+      IsMinOn (fun ν' : ProbabilityMeasure X ↦ ∑ j, (w j : ℝ≥0∞) *
+          wassersteinEDist p (ν' : Measure X)
+            ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal) univ ν := by
+  obtain ⟨ν₀, hν₀, hν₀_uniq⟩ := huniq
+  refine ⟨(ν₀ : ProbabilityMeasure X),
+    (WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_univ_iff hp_top hj₀ _).2 ⟨ν₀, rfl, hν₀⟩,
+    fun ν' hν' ↦ ?_⟩
+  obtain ⟨νW, rfl, hbary⟩ :=
+    (WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_univ_iff hp_top hj₀ _).1 hν'
+  exact congrArg _ (hν₀_uniq νW hbary)
 
 end TauCeti

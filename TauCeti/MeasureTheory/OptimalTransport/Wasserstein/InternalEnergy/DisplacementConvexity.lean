@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
-import TauCeti.MeasureTheory.OptimalTransport.Brenier
+import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
 /-!
