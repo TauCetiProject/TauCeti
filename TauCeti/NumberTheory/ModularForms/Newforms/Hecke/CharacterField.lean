@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Charpoly
+public import Mathlib.RingTheory.Etale.Basic
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus
+import TauCeti.RingTheory.Etale.Reduced
 
 /-!
 # The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over the character field
@@ -26,6 +28,11 @@ The values of the character of `f` lie in the coefficient field `K_f = ℚ(aₙ(
 contains `ℚ(χ)`. Hence the algebra embeds into the product of the coefficient fields `K_f` over
 the newforms of nebentypus `χ`, and it is a finite-dimensional commutative `ℚ(χ)`-algebra in
 weight at least two, where each `K_f` is a number field.
+
+The algebra is reduced, since its newform characters separate elements. In weight at least two
+it is consequently semisimple and finite étale over `ℚ(χ)`. In particular, after extension to
+`ℂ` it splits into one copy of `ℂ` for every algebra character. This does not identify those
+characters with the original newforms: that further identification requires Galois stability.
 
 Composing the character of `f`, viewed as valued in `K_f`, with an embedding `σ : K_f → ℂ`
 fixing `ℚ(χ)` produces another `ℚ(χ)`-algebra character of the same algebra, sending `Tₙ` to
@@ -57,6 +64,10 @@ the Galois stability of the newforms, which this file does not prove.
   characters.
 * `TauCeti.heckeTCuspNewCharFieldAlgebra_finite`: the algebra is finite-dimensional over `ℚ(χ)`
   in weight at least two.
+* `TauCeti.heckeTCuspNewCharFieldAlgebra_isSemisimpleRing`: the algebra is semisimple in
+  weight at least two.
+* `TauCeti.heckeTCuspNewCharFieldAlgebra_etale`: the algebra is finite étale over `ℚ(χ)` in
+  weight at least two.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_apply_heckeTCuspNewCharEnd`: the conjugate
   character sends `Tₙ` to `σ(aₙ(f))`.
 * `TauCeti.conjHeckeTCuspNewCharFieldCharacter_injective`: distinct embeddings give distinct
@@ -216,12 +227,23 @@ theorem heckeTCuspNewCharFieldCharacter_injective :
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩
 
 /-- The Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` is commutative, with its existing
-operator semiring structure. -/
-instance instCommSemiringHeckeTCuspNewCharFieldAlgebra :
-    CommSemiring (heckeTCuspNewCharFieldAlgebra k χ) where
-  __ := (heckeTCuspNewCharFieldAlgebra k χ).toSemiring
+operator ring structure. -/
+instance instCommRingHeckeTCuspNewCharFieldAlgebra :
+    CommRing (heckeTCuspNewCharFieldAlgebra k χ) where
+  -- Specifying the ambient endomorphism ring avoids a typeclass-search timeout when Lean
+  -- reconstructs the scalar and module structures from the subalgebra subtype.
+  toRing := Subalgebra.toRing (R := CharacterField χ)
+    (A := Module.End ℂ ((cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype)) _
   mul_comm T S := eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun _ ↦
     (map_mul _ T S).trans ((mul_comm _ _).trans (map_mul _ S T).symm)
+
+/-- The Hecke algebra over `ℚ(χ)` has no nonzero nilpotent elements: the newform characters
+embed it into a product of copies of `ℂ`. -/
+instance instIsReducedHeckeTCuspNewCharFieldAlgebra :
+    IsReduced (heckeTCuspNewCharFieldAlgebra k χ) :=
+  isReduced_of_injective
+    (AlgHom.pi (heckeTCuspNewCharFieldCharacter (k := k) (χ := χ)))
+    (fun _ _ h ↦ eq_of_forall_heckeTCuspNewCharFieldCharacter_eq (congrFun h))
 
 /-- Every value of the character of a newform lies in its coefficient field. -/
 theorem heckeTCuspNewCharFieldCharacter_mem_CoefficientField
@@ -260,6 +282,22 @@ theorem heckeTCuspNewCharFieldAlgebra_finite (hk : 2 ≤ k) :
   refine Module.Finite.of_injective E fun T S h ↦
     eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun f ↦ ?_
   simpa [E] using congrArg Subtype.val (congrFun h f)
+
+/-- The newspace Hecke algebra over `ℚ(χ)` is semisimple in weight at least two. -/
+theorem heckeTCuspNewCharFieldAlgebra_isSemisimpleRing (hk : 2 ≤ k) :
+    IsSemisimpleRing (heckeTCuspNewCharFieldAlgebra k χ) := by
+  have := heckeTCuspNewCharFieldAlgebra_finite (χ := χ) hk
+  have : IsArtinianRing (heckeTCuspNewCharFieldAlgebra k χ) :=
+    .of_finite (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ)
+  exact IsArtinianRing.isSemisimpleRing_of_isReduced _
+
+/-- The newspace Hecke algebra over `ℚ(χ)` is finite étale in weight at least two. Thus its
+scalar extension to a separably closed field is the algebra of functions on all its characters,
+by `Algebra.Etale.tensorProductEquivPi`. -/
+theorem heckeTCuspNewCharFieldAlgebra_etale (hk : 2 ≤ k) :
+    Algebra.Etale (CharacterField χ) (heckeTCuspNewCharFieldAlgebra k χ) :=
+  algebraEtale_iff_finite_and_isReduced.mpr
+    ⟨heckeTCuspNewCharFieldAlgebra_finite hk, inferInstance⟩
 
 /-- The character of a newform of nebentypus `χ`, valued in its coefficient field viewed as an
 extension of `ℚ(χ)`. -/
@@ -416,8 +454,7 @@ theorem exists_conjHeckeTCuspNewCharFieldCharacter_eq (hk : 2 ≤ k)
     apply_eq_of_heckeTCuspNewCharFieldCharacter_eq hφ
       ((coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _).symm.trans
         ((congrArg Subtype.val h).trans (coe_heckeTCuspNewCharFieldCoefficientCharacter_apply f _)))
-  -- `AlgHom.liftOfSurjective` would need a `CommRing` instance on the Hecke algebra, and
-  -- assembling one from `Subalgebra.toRing` times out, so `φ` descends along `χf` by its fibres.
+  -- Descend `φ` along the surjection `χf` using its constancy on the fibres.
   exact ⟨f, χf.descend (heckeTCuspNewCharFieldCoefficientCharacter_surjective hk f) φ hφ',
     χf.descend_comp _ φ hφ'⟩
 
