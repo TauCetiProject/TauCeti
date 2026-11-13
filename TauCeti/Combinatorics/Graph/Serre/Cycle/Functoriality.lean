@@ -13,23 +13,26 @@ import TauCeti.Data.Finsupp.MapDomain
 # Functoriality of cycle classes
 
 A morphism of Serre graphs `f : Γ.Hom Δ` pushes chains forward along its dart map. When the
-chosen darts of `Γ` are exactly the darts sent to chosen darts of `Δ` (for instance, for
-orientations `O` and `O'` with `f` carrying `O` into `O'`), the pushforward of the chain of a
-path is the chain of its image. Consequently the cycle class of closed paths commutes with the
-homomorphism of reduced path groups induced by `f`; this applies in particular to the inclusion
-of a based subgraph.
+chosen darts of `Γ` are exactly the darts sent to chosen darts of `Δ`, the pushforward of the
+chain of a path is the chain of its image. This holds for orientations `O` of `Γ` and `O'` of
+`Δ` with `f` carrying `O` into `O'`, since `O` is then the preimage of `O'`. For such
+orientations the cycle class of closed paths therefore commutes with the homomorphism of reduced
+path groups induced by `f`; this applies in particular to the inclusion of a based subgraph,
+oriented by the preimage of an orientation of `Δ`.
 
-For connected graphs, the identification of the abelianized path group with the integral cycle
-lattice is therefore natural for graph morphisms carrying chosen darts to chosen darts.
+For connected graphs `Γ` and `Δ` with orientations `O` and `O'`, and a morphism carrying `O` into
+`O'`, the identification of the abelianized path group with the integral cycle lattice is
+therefore natural.
 
 ## Main results
 
 * `TauCeti.SerreGraph.Hom.mapDomain_chain`: pushing forward the chain of a path gives the chain of
   its image.
-* `TauCeti.SerreGraph.PathGroup.coe_cycleClass_map`: cycle classes commute with induced
-  homomorphisms.
-* `TauCeti.SerreGraph.SpanningTree.coe_abelianizationEquivCycle_map`: the identification of the
-  abelianized path group with the cycle lattice is natural.
+* `TauCeti.SerreGraph.PathGroup.coe_cycleClass_map`: for a morphism carrying an orientation into
+  an orientation, cycle classes commute with the induced homomorphism.
+* `TauCeti.SerreGraph.SpanningTree.coe_abelianizationEquivCycle_map`: for a morphism carrying an
+  orientation into an orientation, the identification of the abelianized path group with the
+  cycle lattice is natural.
 
 ## References
 

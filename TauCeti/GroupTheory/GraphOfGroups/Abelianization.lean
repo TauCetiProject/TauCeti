@@ -34,7 +34,8 @@ into a tree and positive darts outside the tree to positive darts outside the tr
 * `TauCeti.SerreGraph.SpanningTree.equivFinsupp_abelianizationEquivFreeAbelianGroup_symm_of`:
   change of spanning tree in free abelian coordinates.
 * `TauCeti.SerreGraph.SpanningTree.abelianizationEquivFreeAbelianGroup_map`: the free abelian
-  coordinates are natural for graph morphisms carrying a spanning tree into a spanning tree.
+  coordinates are natural for graph morphisms carrying a spanning tree into a spanning tree and
+  the positive darts outside the first tree to positive darts outside the second.
 
 ## References
 
