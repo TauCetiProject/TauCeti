@@ -42,6 +42,8 @@ frequency derivative of `a`, of order `m - 1`.
 * `TauCeti.HomogeneousSymbol.isSmoothing_pullback_cutoffSymbol_sub_cutoffSymbol_pullback`: pulling
   back the cut-off term `χ(ξ) a(x, ξ)` gives the cut-off term of the pulled back homogeneous
   symbol, up to a smoothing symbol.
+* `TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`: a symbol vanishing, for
+  positions in each compact set, at all large enough frequencies is smoothing.
 * `TauCeti.ClassicalSymbol.pullback κ M`: the pullback of a classical symbol, whose homogeneous
   terms are the pullbacks of those of `a` (`TauCeti.ClassicalSymbol.term_pullback`); its principal
   symbol is the pullback of the principal symbol (`TauCeti.ClassicalSymbol.principal_pullback`), and
@@ -78,6 +80,45 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
   {M : CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n}
 
 namespace Symbol
+
+/-- A symbol is smoothing if, for positions in each compact set, it vanishes at all large enough
+frequencies. Unlike `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`, the frequency radius may
+grow with the compact set, as for the difference `(χ(M(x) ξ) - χ(ξ)) a(x, ξ)` of two cutoffs
+related by a position-dependent linear change of frequency. -/
+theorem isSmoothing_of_forall_isCompact_coefficient_eq_zero {a : Symbol n V W m}
+    (ha : ∀ K : Set (CoordinateSpace n), IsCompact K →
+      ∃ R, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    a.IsSmoothing := by
+  refine isSmoothing_iff.2 fun m' => ⟨⟨a.coefficient, a.contDiff_coefficient, fun K hK α β => ?_⟩,
+    rfl⟩
+  -- The radius for the unit neighbourhood of `K` makes every mixed derivative vanish at larger
+  -- frequencies over `K`; on `K ×ˢ closedBall 0 R` the derivative divided by the weight is
+  -- continuous, hence bounded.
+  obtain ⟨R, hR⟩ := ha _ (hK.cthickening (r := 1))
+  have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      (1 + ‖p.2‖ ^ 2) ^ ((m' - β.length) / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
+  have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
+  obtain ⟨C, hC⟩ := hKR.exists_bound_of_continuousOn
+    ((a.contDiff_coefficient.mixedDeriv α β).continuous.norm.div hw
+      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := (le_abs_self _).trans ((hC (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
+      (le_max_left C 0))
+    rwa [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
+  · have hzero : (fun y => coordinateDeriv β (fun η => a.coefficient (y, η)) ξ) =ᶠ[nhds x] 0 := by
+      filter_upwards [Metric.ball_mem_nhds x one_pos] with y hy
+      have hy' : (fun η => a.coefficient (y, η)) =ᶠ[nhds ξ] 0 :=
+        Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+          fun η hη => hR y (Metric.mem_cthickening_of_dist_le y x 1 K hx
+            (Metric.mem_ball.1 hy).le) η (le_of_lt hη)
+      rw [(hy'.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
+      rfl
+    rw [mixedDeriv_def, (hzero.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply,
+      norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
 
 section Estimates
 
