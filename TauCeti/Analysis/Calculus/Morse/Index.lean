@@ -43,8 +43,8 @@ index zero at every point.
 The index depends only on the germ of the function and is invariant under a twice continuously
 differentiable change of coordinates with invertible derivative.  Finally, Sylvester's law of
 inertia puts the Hessian into a diagonal normal form with weights `±1`; the number of negative
-weights is exactly the Morse index.  This supplies the integer grading of critical points needed
-by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
+weights is exactly the Morse index.  This is the integer grading of critical points used by the
+Morse complex.
 
 ## Main declarations
 
@@ -80,8 +80,6 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 1.
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, §2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -381,6 +379,14 @@ theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional �
   rw [Module.finrank_of_not_finite hE] at h
   omega
 
+/-- A constant function has Morse index `0` at every point, since its Hessian vanishes. -/
+@[simp]
+theorem morseIndex_const (c : ℝ) : morseIndex (fun _ : E ↦ c) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [morseIndex_def, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    simp
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
+
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. In an infinite-dimensional space both indices and the dimension
 are `0` by convention. -/
@@ -395,17 +401,17 @@ theorem morseIndex_neg_add_morseIndex_eq_finrank
     QuadraticForm.sigPos_add_sigNeg_of_nondegenerate (hessianQuadraticForm f x) h
 
 /-- At a nondegenerate critical point, the positive index of the Hessian and the Morse index add
-to the dimension of the ambient space. -/
+to the dimension of the ambient space. For a space that is not finite both sides are `0` by
+convention. -/
 theorem IsNondegenerateCriticalPoint.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
-    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x) :
+    (h : IsNondegenerateCriticalPoint f x) :
     sigPos (hessianQuadraticForm f x) + morseIndex f x = Module.finrank ℝ E := by
-  have hsig := QuadraticForm.sigPos_add_sigNeg_add_radical
-    (Q := hessianQuadraticForm f x)
-  rw [h.hessianQuadraticForm_nondegenerate.radical_eq_bot, finrank_bot, add_zero] at hsig
-  simpa only [morseIndex_def] using hsig
+  simpa only [morseIndex_def] using
+    QuadraticForm.sigPos_add_sigNeg_of_nondegenerate _ h.hessianQuadraticForm_nondegenerate
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
-the dimension of the ambient space. -/
+the dimension of the ambient space. For a space that is not finite both sides are `0` by
+convention. -/
 theorem IsNondegenerateCriticalPoint.morseIndex_neg_add_morseIndex_eq_finrank
     (h : IsNondegenerateCriticalPoint f x) :
     morseIndex (-f) x + morseIndex f x = Module.finrank ℝ E := by

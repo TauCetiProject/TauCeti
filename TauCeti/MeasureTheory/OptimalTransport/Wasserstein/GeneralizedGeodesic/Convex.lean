@@ -224,7 +224,6 @@ theorem GeneralizedGeodesicallyConvex.add_edist_sq_div (h : GeneralizedGeodesica
   have hreal : dist μ ν ^ 2 / (2 * τ) - m / 2 * t * (1 - t) * I ≤
       (1 - t) * (dist μ ν₀ ^ 2 / (2 * τ)) + t * (dist μ ν₁ ^ 2 / (2 * τ)) -
         (m + (τ : ℝ)⁻¹) / 2 * t * (1 - t) * I := by
-    have hτ' : (0 : ℝ) < τ := hτ
     have key : (1 - t) * (dist μ ν₀ ^ 2 / (2 * τ)) + t * (dist μ ν₁ ^ 2 / (2 * τ)) -
         (m + (τ : ℝ)⁻¹) / 2 * t * (1 - t) * I -
         (dist μ ν ^ 2 / (2 * τ) - m / 2 * t * (1 - t) * I) =
@@ -274,7 +273,6 @@ theorem GeneralizedGeodesicallyConvex.eq_of_mem_moreauYosidaResolvent
   lift φ ν₀ to ℝ using ⟨htop, hbot⟩ with a
   simp only [← EReal.coe_add, ← EReal.coe_mul, ← EReal.coe_sub, EReal.coe_le_coe_iff] at hle
   have hpos : 0 < m + (τ : ℝ)⁻¹ := by
-    have hτ' : (0 : ℝ) < τ := hτ
     have : m + (τ : ℝ)⁻¹ = (1 + m * τ) / τ := by field_simp; ring
     rw [this]
     positivity

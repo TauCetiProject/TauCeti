@@ -12,9 +12,10 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 /-!
 # Transferring occupation limits through first entrance
 
-An almost-sure occupation limit for the chain started at `y` determines the limit from every
-finite initial measure: it is the same on paths that enter `y`, and zero on paths that never
-enter `y`. Bounded convergence gives the corresponding expected-frequency limit.
+An almost-sure occupation limit for the chain started at `y` determines the almost-sure limit from
+every initial measure: it is the same on paths that enter `y`, and zero on paths that never
+enter `y`. Bounded convergence gives the corresponding expected-frequency limit from every finite
+initial measure.
 
 These transfer theorems do not require recurrence, irreducibility or a finite mean return time.
 The candidate frequency is an arbitrary real number; identifying it from return cycles is a
@@ -35,7 +36,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
-/-- A point-started occupation limit extends to any finite initial measure, multiplied pathwise
+omit [IsFiniteMeasure ν] in
+/-- A point-started occupation limit extends to any initial measure, multiplied pathwise
 by the indicator of ever entering the visited state. Both premise and conclusion count positive
 times only. -/
 theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}

@@ -86,7 +86,7 @@ theorem EssentiallyNonbranching.of_absolutelyContinuous (hM : M.EssentiallyNonbr
 reference measure on that carrier is essentially nonbranching. -/
 theorem essentiallyNonbranching_of_isNonbranchingGeodesics (M : MetricMeasureSpace X)
     (hX : (geodesicPaths X).IsNonbranchingGeodesics) : M.EssentiallyNonbranching := by
-  intro μ₀ μ₁ hμ₀ hμ₁ η hη
+  intro μ₀ μ₁ _ _ η hη
   exact ⟨geodesicPaths X, hX, hη.ae_mem_geodesicPaths⟩
 
 section StrictConvex

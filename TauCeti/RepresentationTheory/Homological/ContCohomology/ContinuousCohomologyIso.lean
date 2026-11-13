@@ -35,8 +35,8 @@ Degree zero needs no hypothesis beyond the ones that make the two sides exist. I
 needs neither profiniteness of `G` nor continuity of the action `G × M → M`: a `0`-cochain is a
 single element of `M`, so no continuity condition constrains it, and `ContinuousCohomology.zeroIso`
 holds for every object of `TopRep ℤ G`. The comparison is nevertheless stated only for objects in
-the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a general object of
-`TopRep ℤ G` need not be discrete, and the explicit complex is not a description of its cohomology.
+the image of `TauCeti.ofDiscreteModule`: a general object of `TopRep ℤ G` need not be discrete, and
+the explicit complex is not a description of its cohomology.
 
 ## Main definitions
 
@@ -62,20 +62,18 @@ the image of `TauCeti.ofDiscreteModule`, as Layer 3 of the roadmap requires: a g
 * `TauCeti.coeffMap_zero_injective`: the coefficient map of an injective equivariant map is
   injective on `H⁰`.
 
-## Roadmap
+## Implementation notes
 
-This implements the degree-zero part of the "comparison isomorphisms" milestone of Layer 3 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean`
-fixes the name `explicitH0IsoContinuousCohomology`, together with the degree-zero rows of the
-transport table in its §2. The names of the three transports carry the degree explicitly, because
-`Suggested.lean` pins the unsuffixed `explicitIso_map`, `explicitIso_res` and `explicitIso_coeffMap`
-to degree one. Degrees one and two of the comparison need the passage between the canonical
-homogeneous cochains `C(G, C(G, …))` and functions on `Gⁿ`, hence the compact-open exponential law
-and profiniteness of `G`, and are not in this file.
+The names of the three transports carry the degree explicitly, because the unsuffixed
+`TauCeti.ContCohomology.explicitIso_map`, `explicitIso_res` and `explicitIso_coeffMap` are the
+degree-one transports. Degrees one and two of the comparison need the passage between the
+canonical homogeneous cochains `C(G, C(G, …))` and functions on `Gⁿ`, and are not in this file:
+they are `TauCeti.ContCohomology.explicitH1IsoContinuousCohomology` and
+`explicitH2IsoContinuousCohomology` in `CohomologyComparison.lean`.
 
 The sibling file `GroupCohomologyIso/Basic.lean` compares the same explicit model with Mathlib's
 *discrete* `groupCohomology`; this file compares it with the *continuous* carrier, which is the
-canonical object the roadmap fixes.
+canonical object.
 
 ## References
 
@@ -153,11 +151,11 @@ section Comparison
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
-/-- **Layer 3, degree zero against the canonical object.** The explicit `H⁰(G, M)` is Mathlib's
+/-- **Degree zero against the canonical object.** The explicit `H⁰(G, M)` is Mathlib's
 `continuousCohomology 0` of the canonical object attached to `M`, as an isomorphism in
 `TopModuleCat ℤ`.
 
-Unlike the comparisons in degrees one and two this needs no profiniteness: it is
+Unlike the comparisons in degrees one and two this needs no compactness of `G`: it is
 `ContinuousCohomology.zeroIso`, which holds over an arbitrary topological group, composed with the
 identification of the invariants above. -/
 noncomputable def explicitH0IsoContinuousCohomology :
@@ -237,8 +235,8 @@ section Transport
 variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
 
-/-- **Layer 3, transport of the compatible-pair pullback in degree zero.** The comparison carries
-the explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
+/-- **Transport of the compatible-pair pullback in degree zero.** The comparison carries the
+explicit pullback `TauCeti.ContCohomology.explicitMap0` along a compatible pair to Mathlib's
 `ContinuousCohomology.map` along the same pair. The two transports below are its instances at the
 inclusion of a subgroup and at the identity of the group. -/
 theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -262,8 +260,8 @@ theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopolog
   exact (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
       (fun h m => hf h m) x.1).trans (coe_explicitMap0 G M (φ : H →* G) f hf x).symm
 
-/-- **Layer 3, transport of restriction in degree zero.** The comparison carries the explicit
-inclusion `M^G ⊆ M^S` to the canonical restriction. The two sides land in the same object because
+/-- **Transport of restriction in degree zero.** The comparison carries the explicit inclusion
+`M^G ⊆ M^S` to the canonical restriction. The two sides land in the same object because
 `TauCeti.res_ofDiscreteModule` identifies the restriction of the canonical object of `M` with the
 canonical object of `M` over the subgroup. -/
 theorem explicitH0Iso_res (S : Subgroup G) (x : H0 G M) :
@@ -280,7 +278,7 @@ theorem explicitH0Iso_res (S : Subgroup G) (x : H0 G M) :
   exact explicitH0Iso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     (fun _ _ => rfl) x
 
-/-- **Layer 3, transport of coefficient maps in degree zero.** The comparison carries the explicit
+/-- **Transport of coefficient maps in degree zero.** The comparison carries the explicit
 coefficient map to the canonical one attached to the same equivariant homomorphism; the canonical
 coefficient morphism is the compatible pair at the identity, by
 `TauCeti.ofDiscreteModulePair_id`. -/

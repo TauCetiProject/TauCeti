@@ -75,11 +75,8 @@ grading itself is a priori only rational, and a square-disjoint rectangle preser
 
 ## References
 
-This supplies `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.2, "Gradings.
-The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`; grading-change formulas across a
-rectangle", in the closed form Lanes G.3 and G.4 consume. The
-formulas are Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.3, where the
-grading changes across a rectangle `r` from `x` to `y` are `A(x) - A(y) = #(r ∩ 𝕏) - #(r ∩ 𝕆)`
+The formulas are Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.3, where
+the grading changes across a rectangle `r` from `x` to `y` are `A(x) - A(y) = #(r ∩ 𝕏) - #(r ∩ 𝕆)`
 and, for an empty rectangle, `M_O(x) - M_O(y) = 1 - 2 #(r ∩ 𝕆)`.
 -/
 

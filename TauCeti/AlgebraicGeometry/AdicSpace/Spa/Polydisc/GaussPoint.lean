@@ -316,7 +316,7 @@ theorem closedDiscGaussValuation_weightedC_pow_pos (hr₀ : 0 < r) (hr₁ : r �
     0 < closedDiscGaussValuation hr₀ hr₁
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight c ^ n) := by
   rw [map_pow, closedDiscGaussValuation_weightedC]
-  exact pow_pos (by rw [← NNReal.coe_pos, coe_nnnorm, hc]; exact hr₀) n
+  exact pow_pos (by rw [← NNReal.coe_pos, coe_nnNorm, hc]; exact hr₀) n
 
 /-- Multiplying by a constant of norm larger than `1` strictly increases a nonzero Gauss norm. -/
 theorem closedDiscGaussValuation_lt_mul_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) {d : R}
@@ -326,7 +326,7 @@ theorem closedDiscGaussValuation_lt_mul_weightedC (hr₀ : 0 < r) (hr₁ : r ≤
     closedDiscGaussValuation hr₀ hr₁ f <
       closedDiscGaussValuation hr₀ hr₁ (f * weightedC _ isWeightFamily_one_weight d) := by
   rw [map_mul, closedDiscGaussValuation_weightedC]
-  exact lt_mul_of_one_lt_right hf (by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one])
+  exact lt_mul_of_one_lt_right hf (by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one])
 
 /-- The Gauss valuation of radius `r` takes the value `r` on the variable. -/
 @[simp]
@@ -344,7 +344,7 @@ theorem closedDiscGaussValuation_weightedX_eq_weightedC (hr₀ : 0 < r) (hr₁ :
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) =
       closedDiscGaussValuation hr₀ hr₁ (weightedC _ isWeightFamily_one_weight c) :=
   NNReal.eq <| by rw [coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
-    coe_nnnorm, hc]
+    coe_nnNorm, hc]
 
 /-- The powers of `T` and of a constant `c` of norm `r` have the same Gauss norm `rⁿ` at
 radius `r`. -/
@@ -370,7 +370,7 @@ theorem coe_closedDiscGaussValuation_weightedX_sub_weightedC (hr₀ : 0 < r) (hr
   refine le_antisymm ?_ (max_le ?_ ?_)
   · refine (NNReal.coe_le_coe.mpr (Valuation.map_sub _ _ _)).trans ?_
     rw [NNReal.coe_max, coe_closedDiscGaussValuation_weightedX, closedDiscGaussValuation_weightedC,
-      coe_nnnorm]
+      coe_nnNorm]
   · simpa [MvPowerSeries.coeff_X, MvPowerSeries.coeff_C] using h 1
   · simpa using h 0
 
@@ -544,8 +544,9 @@ theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (h
       closedDiscGaussValuationBelow hr₀ hr₁
         (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) := by
   have hr : |r| ≤ 1 := (abs_of_pos hr₀).trans_le hr₁
-  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := -c) (by rwa [norm_neg])
-  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀)
+  have h₁ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := -c) (by rwa [norm_neg])
+  have h₂ := TauCeti.PowerSeries.isLowestDominant_X_sub_C (c := r) (b := (0 : R))
+    (by simpa using hr₀)
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
   -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`
@@ -587,7 +588,7 @@ theorem closedDiscGaussValuation_le_one_of_isPowerBounded (hr₀ : 0 < r) (hr₁
   exact (isContinuous_closedDiscGaussValuation hr₀ hr₁ : v.IsContinuous).le_one_of_isPowerBounded
     hnil
     (by rw [closedDiscGaussValuation_weightedC]
-        exact nnnorm_ne_zero_iff.mpr (norm_pos_iff.mp hc₀)) hf
+        exact nnNorm_ne_zero_iff.mpr (norm_pos_iff.mp hc₀)) hf
 
 /-- **The Gauss point `η_r` of the closed unit disc**, for `0 < r ≤ 1`: the point of
 `Spa (K⟨T⟩, K⟨T⟩°)` given by the Gauss valuation `f ↦ sup_n ‖aₙ‖ rⁿ`. At `r = 1` it is the Gauss
@@ -643,7 +644,7 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPoint_vle_iff, map_pow, closedDiscGaussValuation_weightedC, eq_iff_iff,
     ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX,
-    coe_nnnorm] at key
+    coe_nnNorm] at key
   exact (key.mp hrm.le).not_gt hcs
 
 /-! ### The points just above and just below a Gauss point -/
@@ -838,12 +839,12 @@ theorem closedDiscGaussValuationAbove_weightedX_le_iff (hr₀ : 0 < r) (hr₁ : 
   · refine iff_of_false (not_le.mpr (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_))
       (lt_asymm h)
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
   · exact iff_of_false (not_closedDiscGaussValuationAbove_weightedX_le hr₀ hr₁ h)
       fun h' ↦ h'.ne' h
   · refine iff_of_true (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_).le h
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
 
 /-- **Just below `r`, a constant `c` is at most the variable `T` exactly when `‖c‖ < r`**: the
 Gauss norms decide unless `‖c‖ = r`, and then `c` is strictly larger. -/
@@ -856,12 +857,12 @@ theorem closedDiscGaussValuationBelow_weightedC_le_iff (hr₀ : 0 < r) (hr₁ : 
   rcases lt_trichotomy ‖c‖ r with h | h | h
   · refine iff_of_true (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le h
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
   · exact iff_of_false (not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ h) fun h' ↦ h'.ne h
   · refine iff_of_false (not_le.mpr (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_))
       (lt_asymm h)
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
 
 /-- **Just above `r`, a constant `c` is at most the variable `T` exactly when `‖c‖ ≤ r`**: this
 is the complement of `closedDiscGaussValuationAbove_weightedX_le_iff`. -/
@@ -875,7 +876,7 @@ theorem closedDiscGaussValuationAbove_weightedC_le_iff (hr₀ : 0 < r) (hr₁ : 
   · refine iff_of_false (not_le.mpr (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁ ?_))
       h.not_ge
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
   · exact iff_of_true (not_le.mp
       ((closedDiscGaussValuationAbove_weightedX_le_iff hr₀ hr₁ c).not.mpr h.not_gt)).le h
 
@@ -891,7 +892,7 @@ theorem closedDiscGaussValuationBelow_weightedX_le_iff (hr₀ : 0 < r) (hr₁ : 
   · refine iff_of_false (not_le.mpr (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_))
       h.not_ge
     rwa [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-      closedDiscGaussValuation_weightedC, coe_nnnorm]
+      closedDiscGaussValuation_weightedC, coe_nnNorm]
   · exact iff_of_true (not_le.mp
       ((closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c).not.mpr h.not_gt)).le h
 
@@ -974,7 +975,7 @@ theorem gaussPointAbove_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) (hs₀ : 0
   refine (closedDiscGaussValuationAbove_lt_of_lt hs₀ hs₁.le ?_).not_ge
     (key.mp (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).le) <;>
   simpa only [← NNReal.coe_lt_coe, map_pow, NNReal.coe_pow, closedDiscGaussValuation_weightedC,
-    coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+    coe_closedDiscGaussValuation_weightedX, coe_nnNorm]
 
 /-- **Distinct radii `0 < r, s ≤ 1` give distinct points `η_{r⁻}`**: they refine the distinct
 Gauss points `η_r` and `η_s`. -/
@@ -993,7 +994,7 @@ theorem gaussPointBelow_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ :
   refine (closedDiscGaussValuationBelow_lt_of_lt hs₀ hs₁ ?_).not_ge
     (key.mp (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le) <;>
   simpa only [← NNReal.coe_lt_coe, map_pow, NNReal.coe_pow, closedDiscGaussValuation_weightedC,
-    coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+    coe_closedDiscGaussValuation_weightedX, coe_nnNorm]
 
 /-- **A point refining the Gauss point `η_r` is a specialization of it.** If a strictly smaller
 Gauss norm of radius `r` gives a strictly smaller value at `x ∈ Spv K⟨T⟩`, then `x` lies in the

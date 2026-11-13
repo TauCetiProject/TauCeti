@@ -38,9 +38,6 @@ homomorphism density under random sampling.
 * L. Lovász, *Large Networks and Graph Limits*, §5.2.
 -/
 
-/- The formal statement follows `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, generalized
-   from a `SimpleGraph (Fin m)` host to an arbitrary finite host graph. -/
-
 public section
 
 namespace TauCeti

@@ -223,7 +223,7 @@ private theorem upperCrossExponent_eq_distance_add_lower (P : DyadicJordanProfil
               i * P.ranks i * P.ranks j) := by
       unfold upperCrossExponent
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       calc
         (∑ j ∈ P.ranks.support.filter fun j ↦ i < j,
             j * P.ranks i * P.ranks j) =
@@ -263,14 +263,15 @@ theorem nQ_sub_nM_eq_densityExponent (P : DyadicJordanProfile) :
     P.nQ - P.nM = P.densityExponent := by
   rw [P.nQ_eq_nM_add_densityExponent, Nat.add_sub_cancel_left]
 
-/-- The empty dyadic Jordan profile. -/
-def empty : DyadicJordanProfile where
-  ranks := 0
-  typeI := ∅
-  typeI_subset_support := by simp
-  even_rank_of_notMem_typeI _ _ := by simp
+/-- The zero profile has no constituents; it is the profile of the zero lattice. -/
+instance instZero : Zero DyadicJordanProfile where
+  zero :=
+    { ranks := 0
+      typeI := ∅
+      typeI_subset_support := by simp
+      even_rank_of_notMem_typeI _ _ := by simp }
 
-/-- A single type-II unimodular constituent of even rank `n`. At `n = 0` this is the empty
+/-- A single type-II unimodular constituent of even rank `n`. At `n = 0` this is the zero
 profile. -/
 noncomputable def unimodularTypeII (n : ℕ) (hn : Even n) : DyadicJordanProfile where
   ranks := Finsupp.single 0 n
@@ -301,13 +302,13 @@ noncomputable def adjacentUnaryTypeI : DyadicJordanProfile where
     simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hj
     simp [Finsupp.single_eq_of_ne hj.1, Finsupp.single_eq_of_ne hj.2]
 
-/-- The empty profile has no nonzero ranks. -/
+/-- The zero profile has no constituents. -/
 @[simp]
-theorem empty_ranks : empty.ranks = 0 := (rfl)
+theorem zero_ranks : (0 : DyadicJordanProfile).ranks = 0 := (rfl)
 
-/-- The empty profile has no type-I constituents. -/
+/-- The zero profile has no type-I scales. -/
 @[simp]
-theorem empty_typeI : empty.typeI = ∅ := (rfl)
+theorem zero_typeI : (0 : DyadicJordanProfile).typeI = ∅ := (rfl)
 
 /-- The unimodular type-II profile has one possibly nonzero rank at scale zero. -/
 @[simp]
@@ -336,10 +337,10 @@ theorem adjacentUnaryTypeI_ranks :
 @[simp]
 theorem adjacentUnaryTypeI_typeI : adjacentUnaryTypeI.typeI = {0, 1} := (rfl)
 
-/-- The empty profile has density exponent zero. -/
+/-- The zero profile has density exponent zero. -/
 @[simp]
-theorem densityExponent_empty : empty.densityExponent = 0 := by
-  simp [empty, densityExponent, typeICount, adjacentTypeICount, lowerCrossExponent,
+theorem densityExponent_zero : (0 : DyadicJordanProfile).densityExponent = 0 := by
+  simp [densityExponent, typeICount, adjacentTypeICount, lowerCrossExponent,
     diagonalExponent, typeIIRank]
 
 /-- A unimodular type-II constituent of even rank `n` has density exponent `n`. -/
