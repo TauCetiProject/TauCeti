@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 public import Mathlib.Analysis.ODE.Gronwall
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
+public import TauCeti.Analysis.Calculus.TangentCone.InnerProductSpace
 public import TauCeti.Analysis.ODE.UniformTime
 
 /-!
@@ -39,8 +39,6 @@ systems: invariance of a closed convex set of curvature operators under the reac
 
 ## Main results
 
-* `TauCeti.real_inner_le_zero_of_mem_posTangentConeAt`: an outward normal of a set pairs
-  nonpositively with its positive tangent vectors.
 * `Convex.mapsTo_Icc_of_inner_le_zero`: a solution of a time-dependent locally Lipschitz ODE
   whose field satisfies the supporting half-space inequalities of a complete convex set `K` and
   which starts in `K` stays in `K`.
@@ -67,15 +65,6 @@ open scoped NNReal Topology RealInnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 namespace TauCeti
-
-/-- An outward normal `n` of a set `s` at `y`, in the sense that `⟪n, k - y⟫ ≤ 0` for every
-`k ∈ s`, pairs nonpositively with every positive tangent vector of `s` at `y`. -/
-theorem real_inner_le_zero_of_mem_posTangentConeAt {s : Set E} {y n w : E}
-    (hn : ∀ k ∈ s, ⟪n, k - y⟫ ≤ 0) (hw : w ∈ posTangentConeAt s y) : ⟪n, w⟫ ≤ 0 := by
-  have hmax : IsLocalMaxOn (innerSL ℝ n) s y :=
-    eventually_nhdsWithin_of_forall fun k hk ↦ by
-      simpa [innerSL_apply_apply, inner_sub_right] using hn k hk
-  simpa using hmax.hasFDerivWithinAt_nonpos (innerSL ℝ n).hasFDerivWithinAt hw
 
 variable {K : Set E} {v : ℝ → E → E} {x : ℝ → E} {a b : ℝ}
 
