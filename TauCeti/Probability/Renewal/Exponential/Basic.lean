@@ -33,7 +33,9 @@ natural-valued count `renewalCountNat` agrees almost surely with the extended co
 The increments are real-valued in the hypotheses through their coercions, because Mathlib's
 exponential law `ProbabilityTheory.expMeasure` lives on `ℝ`. No separate positivity hypothesis on
 the rate `r : ℝ≥0` is needed: `expMeasure 0` is the zero measure, which is not the law of a random
-variable on a probability space.
+variable on a probability space. Under mutual independence (`iIndepFun`) this excludes `r = 0`.
+Under pairwise independence alone, as in the almost sure rate theorem, `r = 0` forces `P = 0` and
+the almost sure claim is vacuous, while `r > 0` makes `P` a probability measure.
 
 ## Main results
 
@@ -160,8 +162,9 @@ theorem integral_renewalCountNat_of_expMeasure (hindep : iIndepFun T P)
 
 /-- **The long-run rate of exponential renewals.** For pairwise independent exponential
 increments of rate `r`, the count per unit time converges almost surely to `r`. The convergence
-holds along all nonnegative real times on one event of probability one, not just along integer
-times. The law hypotheses supply a.e. measurability and force `r > 0`. -/
+holds along all nonnegative real times on one full-measure event, not just along integer
+times. The law hypotheses supply a.e. measurability. For `r > 0` they force `P` to be a
+probability measure; for `r = 0` they force `P = 0`, and the statement is vacuous. -/
 theorem ae_tendsto_renewalCountNat_div_of_expMeasure
     (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
@@ -171,15 +174,12 @@ theorem ae_tendsto_renewalCountNat_div_of_expMeasure
   by_cases hr0 : 0 < r
   swap
   · have h0 : P = 0 := by
-      have h := (hlaw 0).map_eq
-      rw [expMeasure_of_nonpos (by exact_mod_cast not_lt.1 hr0)] at h
-      have h' := congrArg (· Set.univ) h
-      rw [Measure.map_apply_of_aemeasurable (hlaw 0).aemeasurable MeasurableSet.univ] at h'
-      simpa using h'
+      rw [← Measure.map_eq_zero_iff (hlaw 0).aemeasurable, (hlaw 0).map_eq,
+        expMeasure_of_nonpos (by exact_mod_cast not_lt.1 hr0)]
     simp [h0]
+  have hr : 0 < (r : ℝ) := NNReal.coe_pos.2 hr0
   have : IsProbabilityMeasure P :=
-    (hlaw 0).isProbabilityMeasure_iff.2 (isProbabilityMeasure_expMeasure (by exact_mod_cast hr0))
-  have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
+    (hlaw 0).isProbabilityMeasure_iff.2 (isProbabilityMeasure_expMeasure hr)
   have hmean : (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal = (r : ℝ)⁻¹ := by
     have h := integral_eq_lintegral_of_nonneg_ae
       (Eventually.of_forall fun ω ↦ (T 0 ω).coe_nonneg)
