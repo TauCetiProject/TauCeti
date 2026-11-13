@@ -15,10 +15,13 @@ public import TauCeti.Analysis.ODE.UniformTime
 /-!
 # Invariance of closed convex sets under ODEs: Nagumo's criterion
 
-Let `K` be a closed convex subset of a real inner product space and `v` a vector field which is
-locally Lipschitz in space. Nagumo's criterion says that every solution of `x' = v(t, x)`
-starting in `K` stays in `K` exactly when `v` points into `K` along `K`, that is, `v t y` lies in
-the positive tangent cone `posTangentConeAt K y` for every `y ∈ K`.
+Let `K` be a complete convex subset of a real inner product space and `v` a possibly
+time-dependent vector field which is Lipschitz in space near each point of a solution, with one
+constant for all times just after the given one. If `v t y` lies in the positive tangent cone
+`posTangentConeAt K y` for every `y ∈ K`, then every solution of `x' = v(t, x)` starting in `K`
+stays in `K`. For an autonomous locally Lipschitz field and a closed convex set in a complete
+space this condition is also necessary, which gives Nagumo's criterion: every solution starting
+in `K` stays in `K` exactly when `v y ∈ posTangentConeAt K y` for every `y ∈ K`.
 
 Sufficiency is proved through the supporting half-spaces of `K`. If `p` is a nearest point of
 `K` to `x`, then `x - p` is an outward normal of `K` at `p`: `⟪x - p, k - p⟫ ≤ 0` for all `k ∈ K`.
