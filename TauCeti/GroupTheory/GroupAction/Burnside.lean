@@ -11,7 +11,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Data.Set.Card
-import Mathlib.Logic.Equiv.Sigma
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Burnside's lemma on a product of two `G`-sets
@@ -47,22 +47,6 @@ carries `Fintype` instances for each fixed-point set, which are supplied here fr
 public section
 
 open MulAction
-
-/-- The cardinality of a sigma type of finite fibres is the finite sum of the fibre cardinalities:
-if infinitely many fibres are nonempty, both sides are `0`. -/
-theorem Nat.card_sigma_eq_finsum {ι : Type*} (β : ι → Type*) [∀ i, Finite (β i)] :
-    Nat.card (Σ i, β i) = ∑ᶠ i, Nat.card (β i) := by
-  set s := Function.support fun i ↦ Nat.card (β i)
-  have e : (Σ i : s, β i) ≃ Σ i, β i := Equiv.sigmaSubtypeEquivOfSubset β (· ∈ s)
-    fun i x ↦ have : Nonempty (β i) := ⟨x⟩; Nat.card_pos.ne'
-  rw [← Nat.card_congr e]
-  by_cases hs : s.Finite
-  · have := hs.fintype
-    rw [Nat.card_sigma, ← finsum_mem_support, ← finsum_set_coe_eq_finsum_mem,
-      finsum_eq_sum_of_fintype]
-  · have : Infinite s := Set.infinite_coe_iff.mpr hs
-    have (i : s) : Nonempty (β i) := (Nat.card_ne_zero.mp i.2).1
-    rw [Nat.card_eq_zero_of_infinite, finsum_of_infinite_support hs]
 
 namespace TauCeti
 
