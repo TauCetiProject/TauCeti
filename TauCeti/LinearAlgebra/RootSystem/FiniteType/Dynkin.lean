@@ -57,11 +57,9 @@ recorded in `TauCeti.DynkinType.rootLength_F4` and `TauCeti.DynkinType.rootLengt
 
 ## References
 
-This file advances the "classification of finite-type Cartan matrices" target in Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.  The `E₈` model is the list of simple
-roots of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plate VII; the `F₄` and `G₂`
-models are the coroots dual to the simple roots of plates VIII and IX.  See also Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, Chapter 11.
+The `E₈` model is the list of simple roots of Bourbaki, *Lie Groups and Lie Algebras, Chapters
+4--6*, plate VII; the `F₄` and `G₂` models are the coroots dual to the simple roots of plates VIII
+and IX.  See also Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter 11.
 -/
 
 public section

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.PresentedGroup
+public import TauCeti.GroupTheory.FreeGroup.Basic
+public import TauCeti.GroupTheory.PresentedGroup
 
 /-!
 # Changing generators of a group presentation
@@ -24,10 +25,18 @@ recovery words must preserve the relations and recover each generator modulo the
 relations. The words need not be inverse substitutions in the free groups. Its evaluation
 lemmas retain both dictionaries on arbitrary words, not merely an unspecified isomorphism.
 
+`PresentedGroup.adjoinGenerators` is the converse move for relators in the old generators: new
+generators with defining words in the old generators may be added to any presentation.
+`PresentedGroup.splitRelator` replaces a relator `u * v` by the two relators `u * d` and
+`d⁻¹ * v` for a new generator `d`. This is the presentation counterpart of cutting a polygonal
+face with boundary word `u v` into the faces `u d` and `d⁻¹ v` along a new side `d`.
+
 ## References
 
 * R. C. Lyndon and P. E. Schupp, *Combinatorial Group Theory*, Chapter II, §2
   (Tietze transformations).
+* J. Gallier and D. Xu, *A Guide to the Classification Theorem for Compact Surfaces*,
+  Chapter 6, Definition 6.3, operation (P2) (cutting a face along a new edge).
 -/
 
 public section
@@ -198,5 +207,136 @@ theorem eliminateGenerators_symm_mk (w : β → FreeGroup α) (R : Set (FreeGrou
   conv_rhs => arg 2; rw [FreeGroup.map_eq_lift]
   dsimp only [eliminateGenerators]
   apply equivOfGeneratorWords_symm_mk
+
+section AdjoinGenerators
+
+variable (w : β → FreeGroup α) (R : Set (FreeGroup α))
+
+/-- **Adjoining generators defined by words.** New generators `b : β`, each with a defining
+relator `b * (w b)⁻¹` for a word `w b` in the old generators `α`, do not change the group
+presented by relators `R` in the old generators.
+
+The forward map includes the old generators; the inverse substitutes `w b` for each new
+generator `b`. This is the inverse of
+`PresentedGroup.eliminateGenerators w (FreeGroup.map Sum.inl '' R)`, after identifying its
+substituted relators `FreeGroup.lift (Sum.elim FreeGroup.of w) '' (FreeGroup.map Sum.inl '' R)`
+with `R`. -/
+def adjoinGenerators : PresentedGroup R ≃* PresentedGroup
+    (Set.range (fun b ↦ FreeGroup.of (Sum.inr b) * (FreeGroup.map Sum.inl (w b))⁻¹) ∪
+      FreeGroup.map Sum.inl '' R) :=
+  (equivOfNormalClosureEq (congrArg _ (FreeGroup.lift_sumElim_image_map_inl w R).symm)).trans
+    (eliminateGenerators w (FreeGroup.map Sum.inl '' R)).symm
+
+/-- On a word in the old generators, adjoining generators is induced by inclusion. -/
+@[simp]
+theorem adjoinGenerators_mk (r : FreeGroup α) :
+    adjoinGenerators w R (mk R r) = mk _ (FreeGroup.map Sum.inl r) := by
+  simp [adjoinGenerators]
+
+/-- An old generator maps to the same generator after adjoining generators. -/
+@[simp]
+theorem adjoinGenerators_of (a : α) : adjoinGenerators w R (of a) = of (Sum.inl a) := by
+  simp [of]
+
+/-- On an arbitrary word, the inverse substitutes the defining words of the new generators. -/
+@[simp]
+theorem adjoinGenerators_symm_mk (r : FreeGroup (α ⊕ β)) :
+    (adjoinGenerators w R).symm (mk _ r) = mk R (FreeGroup.lift (Sum.elim FreeGroup.of w) r) := by
+  simp [adjoinGenerators]
+
+/-- The inverse of adjoining generators sends an old generator to itself. -/
+@[simp]
+theorem adjoinGenerators_symm_of_inl (a : α) :
+    (adjoinGenerators w R).symm (of (Sum.inl a)) = of a := by
+  simp [of]
+
+/-- The inverse of adjoining generators sends a new generator to its defining word. -/
+@[simp]
+theorem adjoinGenerators_symm_of_inr (b : β) :
+    (adjoinGenerators w R).symm (of (Sum.inr b)) = mk R (w b) := by
+  simp [of]
+
+end AdjoinGenerators
+
+section SplitRelator
+
+variable (R : Set (FreeGroup α)) (u v : FreeGroup α)
+
+private theorem normalClosure_adjoin_eq_split : Subgroup.normalClosure
+        (Set.range (fun _ : Unit ↦ FreeGroup.of (Sum.inr ()) * (FreeGroup.map Sum.inl v)⁻¹) ∪
+          FreeGroup.map Sum.inl '' insert (u * v) R) =
+      Subgroup.normalClosure ({FreeGroup.map Sum.inl u * FreeGroup.of (Sum.inr () : α ⊕ Unit),
+          (FreeGroup.of (Sum.inr () : α ⊕ Unit))⁻¹ * FreeGroup.map Sum.inl v} ∪
+        FreeGroup.map Sum.inl '' R) := by
+  set d : FreeGroup (α ⊕ Unit) := FreeGroup.of (Sum.inr ())
+  set ι : FreeGroup α →* FreeGroup (α ⊕ Unit) := FreeGroup.map Sum.inl
+  refine le_antisymm (Subgroup.normalClosure_le_normal ?_) (Subgroup.normalClosure_le_normal ?_)
+  · -- In the split presentation `d = v` and `u * d = 1`, hence `u * v = 1`.
+    have hd : mk ({ι u * d, d⁻¹ * ι v} ∪ ι '' R) d = mk _ (ι v) :=
+      mk_eq_mk_of_inv_mul_mem (Or.inl (Or.inr rfl))
+    have hu : mk ({ι u * d, d⁻¹ * ι v} ∪ ι '' R) (ι u) * mk _ d = 1 := by
+      rw [← map_mul]
+      exact one_of_mem (Or.inl (Or.inl rfl))
+    rintro _ (⟨_, rfl⟩ | ⟨r, rfl | hr, rfl⟩)
+    · rw [SetLike.mem_coe, ← mk_eq_one_iff, map_mul, map_inv, hd, mul_inv_cancel]
+    · rw [SetLike.mem_coe, ← mk_eq_one_iff, map_mul ι, map_mul, ← hd, hu]
+    · exact Subgroup.subset_normalClosure (Or.inr ⟨r, hr, rfl⟩)
+  · -- After adjoining `d` with defining word `v`, `d = v` and `u * v = 1`.
+    have hd : mk (Set.range (fun _ : Unit ↦ d * (ι v)⁻¹) ∪ ι '' insert (u * v) R) d =
+        mk _ (ι v) :=
+      mk_eq_mk_of_mul_inv_mem (Or.inl ⟨(), rfl⟩)
+    have huv : mk (Set.range (fun _ : Unit ↦ d * (ι v)⁻¹) ∪ ι '' insert (u * v) R) (ι u) *
+        mk _ (ι v) = 1 := by
+      rw [← map_mul, ← map_mul]
+      exact one_of_mem (Or.inr ⟨_, Set.mem_insert _ _, rfl⟩)
+    rintro _ ((rfl | rfl) | ⟨r, hr, rfl⟩)
+    · rw [SetLike.mem_coe, ← mk_eq_one_iff, map_mul, hd, huv]
+    · rw [SetLike.mem_coe, ← mk_eq_one_iff, map_mul, map_inv, hd, inv_mul_cancel]
+    · exact Subgroup.subset_normalClosure (Or.inr ⟨r, Set.mem_insert_of_mem _ hr, rfl⟩)
+
+/-- **Splitting a relator along a fresh generator.** Replacing a relator `u * v` by the two
+relators `u * d` and `d⁻¹ * v`, where `d` is a new generator, does not change the presented
+group. Geometrically, a face with boundary word `u v` is cut into the two faces `u d` and
+`d⁻¹ v` along a new side `d`.
+
+The forward map includes the old generators; the inverse sends `d` to `v`. -/
+def splitRelator : PresentedGroup (insert (u * v) R) ≃* PresentedGroup
+    ({FreeGroup.map Sum.inl u * FreeGroup.of (Sum.inr () : α ⊕ Unit),
+        (FreeGroup.of (Sum.inr () : α ⊕ Unit))⁻¹ * FreeGroup.map Sum.inl v} ∪
+      FreeGroup.map Sum.inl '' R) :=
+  -- Adjoin `d` with defining word `v`, then exchange `u * v`, `d * v⁻¹` for `u * d`, `d⁻¹ * v`.
+  (adjoinGenerators (fun _ ↦ v) _).trans
+    (equivOfNormalClosureEq (normalClosure_adjoin_eq_split R u v))
+
+/-- On a word in the old generators, splitting a relator is induced by inclusion. -/
+@[simp]
+theorem splitRelator_mk (r : FreeGroup α) :
+    splitRelator R u v (mk _ r) = mk _ (FreeGroup.map Sum.inl r) := by
+  simp [splitRelator]
+
+/-- An old generator maps to the same generator after splitting a relator. -/
+@[simp]
+theorem splitRelator_of (a : α) : splitRelator R u v (of a) = of (Sum.inl a) := by
+  simp [of]
+
+/-- On an arbitrary word, the inverse of splitting a relator substitutes `v` for the new
+generator. -/
+@[simp]
+theorem splitRelator_symm_mk (r : FreeGroup (α ⊕ Unit)) : (splitRelator R u v).symm (mk _ r) =
+    mk _ (FreeGroup.lift (Sum.elim FreeGroup.of fun _ ↦ v) r) := by
+  simp [splitRelator]
+
+/-- The inverse of splitting a relator sends an old generator to itself. -/
+@[simp]
+theorem splitRelator_symm_of_inl (a : α) : (splitRelator R u v).symm (of (Sum.inl a)) = of a := by
+  simp [of]
+
+/-- The inverse of splitting a relator sends the new generator to `v`. -/
+@[simp]
+theorem splitRelator_symm_of_inr (x : Unit) :
+    (splitRelator R u v).symm (of (Sum.inr x)) = mk _ v := by
+  simp [of]
+
+end SplitRelator
 
 end PresentedGroup
