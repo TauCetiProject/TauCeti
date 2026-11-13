@@ -64,7 +64,6 @@ and is not treated here.
   `|d_a α (v)| ≤ K |v| exp (-c |z|)`.
 * `TauCeti.Vortex.exists_energyDensity_le_mul_exp`: the energy density is bounded by
   `K exp (-c |z|)` for every `c < 1`.
-* `TauCeti.Vortex.aestronglyMeasurable_energyDensity`: the energy density is measurable.
 * `TauCeti.Vortex.isBigO_iteratedFDeriv_log_normSq`,
   `TauCeti.Vortex.isBigO_iteratedFDeriv_normSq_sub_one`: every iterated derivative of `log |α|²`
   and of `|α|² - 1` is `O(exp (-c |z|))` for every `c < 1 / 2`.
@@ -314,32 +313,6 @@ theorem exists_norm_covariantDerivative_le_mul_exp
   rw [covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
     (by simp [hsol z]) v, norm_mul, mul_comm K', mul_assoc]
   exact mul_le_mul_of_nonneg_left (hK' z) (norm_nonneg v)
-
-/-- On a vortex whose `b₁` is continuous and whose section is `C²`, the energy density is
-measurable: the equation gives `|d_a α (i)| = |d_a α (1)|`, which does not involve `b₂`. -/
-theorem aestronglyMeasurable_energyDensity (hb : Continuous (fun w ↦ x w 0))
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0) (μ : MeasureTheory.Measure ℂ) :
-    MeasureTheory.AEStronglyMeasurable (energyDensity x) μ := by
-  have hαcd : ContDiff ℝ 2 (sectionValue x) := contDiff_sectionValue hp hq
-  have h₁ : Continuous fun z ↦ covariantDerivative x z 1 := by
-    have h : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
-      (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
-    simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
-    exact h.add ((continuous_const.mul (continuous_ofReal.comp hb)).mul hαcd.continuous)
-  have heq : energyDensity x = fun z ↦ curvature x z ^ 2 +
-      2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
-    funext z
-    rw [energyDensity_apply, covariantDerivative_eq_mul_of_equation_eq_zero
-      (hp.differentiable (by norm_num) z) (hq.differentiable (by norm_num) z)
-      (by simp [hsol z]) (by simp [hsol z]) I, norm_mul, norm_I, one_mul]
-    ring
-  have hcurv : Measurable (curvature x) := by
-    simp only [funext (curvature_apply x)]
-    fun_prop
-  rw [heq]
-  exact (((hcurv.pow_const 2).add ((h₁.norm.pow 2).measurable.const_mul 2)).add
-    ((continuous_const.sub (hαcd.continuous.norm.pow 2)).pow 2).measurable).aestronglyMeasurable
 
 /-- **Exponential decay of the energy density of a plane vortex.** A vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has energy density
