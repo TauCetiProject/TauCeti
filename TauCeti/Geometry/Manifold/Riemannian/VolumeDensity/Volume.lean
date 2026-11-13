@@ -227,17 +227,24 @@ theorem integral_riemannianVolume_le_mul_integral_of_support_subset (α : M) {Ω
 
 /-- **Lower bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
 vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
-density times `f` read in the chart is at least `c k` for a nonnegative integrable `k` vanishing
-outside `Ω`, then `c ∫ k ≤ ∫ f dV`. -/
+density times `f` read in the chart is at least `c k` for a nonnegative `k` vanishing outside `Ω`,
+then `c ∫ k ≤ ∫ f dV`. -/
 theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω : Set E}
     (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
     (hfi : Integrable f (riemannianVolume I M))
     (hf : Function.support f ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω)
-    {k : E → ℝ} (hk0 : 0 ≤ k) (hki : Integrable k (Module.finBasis ℝ E).addHaar)
-    (hk : Function.support k ⊆ Ω) {c : ℝ} (hc : 0 ≤ c) (hfk : ∀ y ∈ Ω,
+    {k : E → ℝ} (hk0 : 0 ≤ k) (hk : Function.support k ⊆ Ω) {c : ℝ} (hfk : ∀ y ∈ Ω,
       c * k y ≤
         chartVolumeDensity (I := I) α ((extChartAt I α).symm y) * f ((extChartAt I α).symm y)) :
     c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar ≤ ∫ x, f x ∂riemannianVolume I M := by
+  -- Without integrability of `k` its integral is `0`, and for `c < 0` the left side is nonpositive.
+  by_cases hki : Integrable k (Module.finBasis ℝ E).addHaar
+  swap
+  · rw [integral_undef hki, mul_zero]
+    exact integral_nonneg hf0
+  rcases lt_or_ge c 0 with hc | hc
+  · have := integral_nonneg hk0 (μ := (Module.finBasis ℝ E).addHaar)
+    nlinarith [integral_nonneg hf0 (μ := riemannianVolume I M)]
   rw [← ENNReal.ofReal_le_ofReal_iff (integral_nonneg hf0),
     ofReal_integral_riemannianVolume_eq_of_support_subset α hΩ hΩt hf0 hfi hf,
     ← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
