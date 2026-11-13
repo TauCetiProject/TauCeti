@@ -351,25 +351,25 @@ section TrivializationCoordinates
 
 /-- If a tangent vector field is `C^n` on `V`, then its coordinate expression in the preferred
 trivialization of the tangent bundle at `a`, read through the inverse extended chart, is `C^n` on
-the interior points of the chart target which lie over `V`. -/
+the points of the chart target which lie over `V`. -/
 theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (v : (x : M) → TangentSpace I x) (a : M) {V : Set M} :
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
     ContMDiffOn I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V →
     ContDiffOn 𝕜 n (fun z ↦ (trivializationAt E (TangentSpace I) a
       (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
-      (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
+      ((extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
   have _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
   have _ : IsManifold I n M := IsManifold.of_le (n := n + 1) le_self_add
   have _ : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
   intro hv
   let e := trivializationAt E (TangentSpace I) a
-  let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
+  let W := (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
   have hsection : ContMDiffOn (modelWithCornersSelf 𝕜 E) I.tangent n
       ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
       W := hv.comp
-    ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
+    ((contMDiffOn_extChartAt_symm a).mono inter_subset_left)
     (fun _ hz ↦ hz.2)
   have hmap : MapsTo
       ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
@@ -379,8 +379,7 @@ theorem contDiffOn_trivializationAt_extChartAt_symm {n : ℕ∞ω} [IsManifold I
     -- Membership in this preimage reduces definitionally by projecting the displayed
     -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
     change (extChartAt I a).symm z ∈ (chartAt H a).source
-    simpa only [extChartAt_source] using
-      (extChartAt I a).map_target (interior_subset hz.1)
+    simpa only [extChartAt_source] using (extChartAt I a).map_target hz.1
   have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
   simpa only [Function.comp_apply] using hcoord.contDiffOn
 
@@ -813,37 +812,46 @@ theorem tangentMap_subtype_val {U : Opens M}
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
-/-- If a differentiable map `f` between open submanifolds is the restriction of a map `A` of the
-ambient manifolds, then under the canonical tangent-space identifications the differential of `f`
-at `x` is the differential of `A` at `x`. -/
+/-- If a map `f` between open submanifolds is the restriction of a map `A` of the ambient
+manifolds, then under the canonical tangent-space identifications the differential of `f` at `x`
+is the differential of `A` at `x` (both are `0` when `f` is not differentiable at `x`). -/
 theorem tangentSpaceOpenEquiv_mfderiv_apply
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
-    (hf : MDifferentiableAt I I' f x)
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
-  have hA : MDifferentiableAt I I' A x := by
-    have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
-    rw [hcomp] at h1
-    exact ((differentiableWithinAt_localInvariantProp (I := I)
-      (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
-  have h := mfderiv_comp_apply x
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
-  rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
-    mfderiv_subtype_val, mfderiv_subtype_val] at h
-  exact h.symm
+  by_cases hf : MDifferentiableAt I I' f x
+  · have hA : MDifferentiableAt I I' A x := by
+      have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
+        (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
+      rw [hcomp] at h1
+      exact ((differentiableWithinAt_localInvariantProp (I := I)
+        (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
+    have h := mfderiv_comp_apply x
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
+    rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
+      mfderiv_subtype_val, mfderiv_subtype_val] at h
+    exact h.symm
+  · have hA : ¬ MDifferentiableAt I I' A x := fun hA ↦ hf <| by
+      have h1 : MDifferentiableAt I I' (A ∘ Subtype.val) x :=
+        ((differentiableWithinAt_localInvariantProp (I := I)
+          (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).1 hA
+      rw [← hcomp] at h1
+      exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x).1 h1
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hA,
+      zero_apply, zero_apply, map_zero]
+    -- both zeros are the zero of the model space `E'`
+    rfl
 
 /-- The differential of the inclusion of nested open submanifolds is the identity of the common
 model vector space. -/
 @[simp]
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
-  have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) rfl v
+  have h' := tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion h) (A := id) rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
 
