@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Coercive bounded operators
@@ -82,11 +83,13 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
 Hermitian part of the similar operator. -/
 theorem conj_add_star_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
-    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
-    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hR : IsSelfAdjoint R) (hRR : R * R = C) (hRRinv : R * Rinv = 1)
     (hlyap : C * W + star W * C = B + B) :
     R * W * Rinv + star (R * W * Rinv) =
       Rinv * B * Rinv + Rinv * B * Rinv := by
+  have hRinv := hR.of_mul_eq_one hRRinv
+  have hRinvR : Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, hRinv.star_eq, star_one] using congrArg star hRRinv
   have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
   have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
   have hconj : Rinv * (C * W + star W * C) * Rinv =
@@ -97,26 +100,27 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
   rw [hlyap, mul_add, add_mul] at hconj
   simpa only [star_mul, hR.star_eq, hRinv.star_eq, mul_assoc] using hconj.symm
 
-/-- If `C = R²`, `Rinv` is the two-sided inverse of the self-adjoint `R`, and
+/-- If `C = R²`, `Rinv` is a right inverse of the self-adjoint `R`, and
 `C W + W† C = 2 B`, a quadratic-form lower bound `δ` for `B` gives the lower bound
 `δ / (1 + ‖R‖²)` for `R W Rinv`. No positivity of `R` or nontriviality of the space
 is required, and `δ = 0` is allowed. -/
 theorem coercive_conj_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
-    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
-    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hR : IsSelfAdjoint R)
+    (hRR : R * R = C) (hRRinv : R * Rinv = 1)
     (hlyap : C * W + star W * C = B + B)
     {δ : ℝ} (hδ : 0 ≤ δ) (hBcoer : B.LowerFormBoundOn ⊤ δ) :
     ∀ x, δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
       RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 := by
   intro x
+  have hRinv := hR.of_mul_eq_one hRRinv
   let y := Rinv x
   have hxy : R y = x := by
     simpa only [y, mul_apply_eq_comp, one_apply_eq_self] using DFunLike.congr_fun hRRinv x
   -- Transfer the quadratic form using the conjugated Lyapunov identity.
   have hreal : RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
     have hsum := congrArg (fun T : E →L[𝕜] E => RCLike.re ⟪T x, x⟫_𝕜)
-      (conj_add_star_of_lyapunov B C W R Rinv hR hRinv hRR hRinvR hRRinv hlyap)
+      (conj_add_star_of_lyapunov B C W R Rinv hR hRR hRRinv hlyap)
     simp only [add_apply, inner_add_left, map_add, re_inner_star_apply_self,
       mul_apply_eq_comp] at hsum
     have hRinvAdj : Rinv.adjoint = Rinv := by
@@ -229,8 +233,7 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   exact le_re_of_mem_spectrum_of_coercive _
     (coercive_conj_of_lyapunov B C W R Rinv
       (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
-      (CFC.rpow_nonneg (a := C) (y := (-(1 / 2 : ℝ)))).isSelfAdjoint
-      hRR hRinvR hRRinv hlyap hδ hB) hz'
+      hRR hRRinv hlyap hδ hB) hz'
 
 section Real
 
