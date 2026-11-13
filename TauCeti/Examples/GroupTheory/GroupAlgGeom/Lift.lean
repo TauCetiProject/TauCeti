@@ -23,9 +23,9 @@ with solutions in a group `H` receiving the coefficients through `ι : G →* H`
 
 ## References
 
-* [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
-  290 (2005), §2.4 (the radical and the coordinate group, pp. 5–6) and §6, Definitions 24–27
-  (lifts to a generic point, pp. 66–67).
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §2.4 (the radical and the coordinate group) and §6, Definitions 24–27 (lifts to a
+  generic point).
 -/
 
 open Monoid.Coprod TauCeti.GroupAlgGeom TauCeti.GroupAlgGeom.Lift TauCeti.GroupAlgGeom.Quadratic
