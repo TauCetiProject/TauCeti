@@ -21,6 +21,11 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
+For `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
+are `C¹` (`continuousAt_floerLinearization`), so its `L²` norms over compact sets are finite.
+It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
+(`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
+(`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
 The universal variation theorem identifies its direction field with the actual parameter derivative
 of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
@@ -158,6 +163,97 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
   module
+
+/-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
+linearized Floer operator at the domain point `z`. -/
+noncomputable def floerLinearizationCoeff (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    V →L[ℝ] V :=
+  (fderiv ℝ (J z) (u z)).flip
+      (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) -
+    fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) -
+    (J z (u z)).comp (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z))
+
+/-- The zeroth-order part of the linearized Floer operator, evaluated on a vector. -/
+theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V) :
+    ω.floerLinearizationCoeff J Ks Kt u z v =
+      fderiv ℝ (J z) (u z) v
+          (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) -
+        fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) v -
+        J z (u z) (fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) v) :=
+  (rfl)
+
+/-- The linearized Floer operator is `∂s ξ + J(z, u z) ∂t ξ` plus its zeroth-order part
+`floerLinearizationCoeff`. -/
+theorem floerLinearization_eq_add (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization J Ks Kt u ξ z =
+      fderiv ℝ ξ z stdComplexLineReal + J z (u z) (fderiv ℝ ξ z stdComplexLineImag) +
+        ω.floerLinearizationCoeff J Ks Kt u z (ξ z) := by
+  simp only [floerLinearization_def, floerLinearizationCoeff_apply, map_sub]
+  abel
+
+/-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
+`C¹` (and the Hamiltonians `C²`) at `(z, u z)`, and `u` is `C¹` at `z`. -/
+theorem continuousAt_floerLinearizationCoeff (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ 1 u z) :
+    ContinuousAt (ω.floerLinearizationCoeff J Ks Kt u) z := by
+  have hu₀ : ContDiffAt ℝ 0 u z := hu.of_le (by norm_num)
+  have hgraph : ContinuousAt (fun z ↦ (z, u z)) z := continuousAt_id.prodMk hu₀.continuousAt
+  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKs
+  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKt
+  have hdJ : ContinuousAt (fun z ↦ fderiv ℝ (J z) (u z)) z :=
+    (hJ.fderiv (f := fun z y ↦ J z y) hu₀ le_rfl).continuousAt
+  have hdXs : ContinuousAt (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z)) z :=
+    (hXs.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Ks z) y) hu₀ le_rfl).continuousAt
+  have hdXt : ContinuousAt (fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) z :=
+    (hXt.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Kt z) y) hu₀ le_rfl).continuousAt
+  have hut : ContinuousAt (fun z ↦ fderiv ℝ u z stdComplexLineImag) z :=
+    (hu.fderiv_right (m := 0) le_rfl).continuousAt.clm_apply continuousAt_const
+  have hXtu : ContinuousAt (fun z ↦ ω.hamiltonianVectorField (Kt z) (u z)) z :=
+    hXt.continuousAt.comp (f := fun z ↦ (z, u z)) hgraph
+  have hJu : ContinuousAt (fun z ↦ J z (u z)) z :=
+    hJ.continuousAt.comp (f := fun z ↦ (z, u z)) hgraph
+  have hflip : ContinuousAt (fun z ↦ (fderiv ℝ (J z) (u z)).flip) z :=
+    (flipₗᵢ ℝ V V V).continuous.continuousAt.comp hdJ
+  exact ((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
+
+/-- The zeroth-order part of the linearized Floer operator is continuous on `K` when the data are
+`C¹` (and the Hamiltonians `C²`) at the points `(z, u z)` with `z ∈ K`, and `u` is `C¹` on `K`. -/
+theorem continuousOn_floerLinearizationCoeff (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)}
+    (hJ : ∀ z ∈ K, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
+    (hKs : ∀ z ∈ K, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ K, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) :
+    ContinuousOn (ω.floerLinearizationCoeff J Ks Kt u) K := fun z hz ↦
+  (ω.continuousAt_floerLinearizationCoeff (hJ z hz) (hKs z hz) (hKt z hz)
+    (hu z hz)).continuousWithinAt
+
+/-- **Continuity of the linearization.** Let `u` and `ξ` be `C¹` at `z`, and let the
+coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at `(z, u z)`, jointly in the
+domain and target point. Then the linearized Floer operator along `u` in the direction `ξ` is
+continuous at `z`. -/
+theorem continuousAt_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiffAt ℝ 1 u z)
+    (hξ : ContDiffAt ℝ 1 ξ z) :
+    ContinuousAt (ω.floerLinearization J Ks Kt u ξ) z := by
+  have hdξ (v : ℝ × ℝ) : ContinuousAt (fun w ↦ fderiv ℝ ξ w v) z :=
+    (hξ.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const
+  have hJu : ContinuousAt (fun w ↦ J w (u w)) z :=
+    ContinuousAt.comp (f := fun w ↦ (w, u w)) hJ.continuousAt
+      (continuousAt_id.prodMk hu.continuousAt)
+  rw [show ω.floerLinearization J Ks Kt u ξ = _ from
+    funext (ω.floerLinearization_eq_add J Ks Kt u ξ)]
+  exact ((hdξ _).add (hJu.clm_apply (hdξ _))).add
+    ((ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu).clm_apply hξ.continuousAt)
 
 section Families
 

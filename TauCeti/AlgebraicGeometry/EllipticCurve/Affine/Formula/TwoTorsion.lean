@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.Derivation
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 
 /-!
 # Points of order two on the Weierstrass equation
@@ -21,15 +21,18 @@ nonzero when `T` is nonsingular, since the other partial derivative `ψ₂(e, t)
 equation is `y² = (x - e)(x - e')(x - e'')`, it is `(e - e')(e - e'')`.
 
 This file records the facts about such solutions that do not involve the group law, valid in every
-characteristic: `(e, t)` is the only solution over `e`, and two of them `T = (e, t)` and
-`T₀ = (e₀, t₀)` with `e₀ ≠ e` have `c_T + c_{T₀} = (e - e₀)²`. The characterization of `ψ₂ = 0`
-holds over any commutative ring, uniqueness over `e` holds over any reduced commutative ring, and
-the identity for `c_T + c_{T₀}` holds over any commutative ring without zero divisors. The formulas
-for translation by a point of order two are in
+characteristic. At every pair `(x, y)` the `y`-coordinates of the point and of its negative differ
+by `ψ₂(x, y)`, so `ψ₂` vanishes exactly at the points that are their own negatives. Moreover
+`(e, t)` is the only solution over `e`, and two of them `T = (e, t)` and `T₀ = (e₀, t₀)` with
+`e₀ ≠ e` have `c_T + c_{T₀} = (e - e₀)²`. The identity for `y - negY x y` and the characterization
+of `ψ₂ = 0` hold over any commutative ring, uniqueness over `e` holds over any reduced commutative
+ring, and the identity for `c_T + c_{T₀}` holds over any commutative ring without zero divisors.
+The formulas for translation by a point of order two are in
 `TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion`.
 
 ## Main results
 
+* `WeierstrassCurve.Affine.sub_negY`: `y - negY x y = ψ₂(x, y)`.
 * `WeierstrassCurve.Affine.evalEval_polynomialY_eq_zero_iff`: `ψ₂(x, y) = 0` exactly when
   `y = negY x y`.
 * `WeierstrassCurve.Affine.Y_eq_of_evalEval_polynomialY_eq_zero`: if `ψ₂(e, t) = 0`, the only
@@ -46,7 +49,15 @@ public section
 
 namespace WeierstrassCurve.Affine
 
-variable {R : Type*} [CommRing R] {W : Affine R} {e t x y : R}
+variable {R : Type*} [CommRing R]
+
+/-- **The `y`-coordinates of a point and of its negative differ by `ψ₂`**:
+`y - negY x y = ψ₂(x, y)`. -/
+theorem sub_negY (W : Affine R) (x y : R) : y - W.negY x y = W.polynomialY.evalEval x y := by
+  rw [evalEval_polynomialY, negY]
+  ring
+
+variable {W : Affine R} {e t x y : R}
 
 /-- **`ψ₂` vanishes exactly at the points that are their own negatives**:
 `ψ₂(x, y) = 0 ↔ y = negY x y`. -/

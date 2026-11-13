@@ -355,8 +355,8 @@ private theorem initialPentagonTerminalOverlapPartner_injective :
   have hD := G.initialPentagonTerminalOverlapPartner_isRecut C D
   have hE := G.initialPentagonTerminalOverlapPartner_isRecut C E
   rw [← h] at hE
-  obtain ⟨-, honeD, hfD, hsD⟩ := G.initialPentagonTerminalOverlapSource_data C D.val D.property
-  obtain ⟨-, honeE, hfE, hsE⟩ := G.initialPentagonTerminalOverlapSource_data C E.val E.property
+  obtain ⟨-, _, hfD, hsD⟩ := G.initialPentagonTerminalOverlapSource_data C D.val D.property
+  obtain ⟨-, _, hfE, hsE⟩ := G.initialPentagonTerminalOverlapSource_data C E.val E.property
   have hbackD := hD.symm hfD hsD
   have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
