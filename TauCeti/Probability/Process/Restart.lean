@@ -169,7 +169,7 @@ theorem measure_inter_stoppedValue_preimage_eq_mul [TopologicalSpace β] [Discre
       MeasurableSet.iInter fun _ => hmEn n
   have hLF : L =ᵐ[P] F := by
     filter_upwards [hlim] with ω hω
-    exact propext ((eventually_congr hω).trans eventually_const)
+    exact (eventually_congr hω).trans eventually_const
   have hconv : Tendsto (fun n => P (E n)) atTop (𝓝 (P L)) := by
     apply tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hmL hmEn
     filter_upwards [hlim, hLF] with ω hω hLFω
