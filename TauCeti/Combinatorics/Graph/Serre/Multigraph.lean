@@ -274,7 +274,8 @@ theorem endpointGraph_isLink_src_tgt {e : Γ.E} (he : e ∈ O) :
     (Γ.endpointGraph O).IsLink e (Γ.src e) (Γ.tgt e) :=
   ⟨he, rfl⟩
 
-/-- A dart is a loop of the multigraph exactly when it is chosen and its ends coincide. -/
+/-- A dart is a loop at a vertex `x` of the multigraph exactly when it is chosen and both of its
+ends equal `x`. -/
 @[simp, grind =] theorem endpointGraph_isLoopAt_iff (e : Γ.E) (x : Γ.V) :
     (Γ.endpointGraph O).IsLoopAt e x ↔ e ∈ O ∧ Γ.src e = x ∧ Γ.tgt e = x := by
   simp [← Graph.isLink_self_iff]
