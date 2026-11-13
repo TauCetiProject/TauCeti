@@ -73,6 +73,7 @@ section FiberMeasurability
 variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [MeasurableSpace Y]
   [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
 
+omit [FiniteDimensional ℝ Y] in
 /-- **Fiber measures of a Lipschitz map are almost everywhere measurable.** Let `f` be Lipschitz
 on `A`, with values in an `m`-dimensional real normed space with additive Haar measure `μ`, and
 let `t` be real. If `A` contains a σ-compact set `S` with `μH[m + t] (A \ S) = 0`, then
@@ -85,6 +86,7 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
     (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS)
 
+omit [FiniteDimensional ℝ Y] in
 /-- **Fiber measures of a locally Lipschitz map on a second-countable domain are almost everywhere
 measurable.** Let `f` be locally Lipschitz on `A`, with values in an `m`-dimensional real normed
 space with additive Haar measure `μ`, and let `t` be real. If `A` contains a σ-compact set `S` with
@@ -100,6 +102,7 @@ theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
     (hf.continuousOn.mono hSA)
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS)
 
+omit [FiniteDimensional ℝ Y] in
 /-- **Normalized fiber measures of a locally Lipschitz map on a Lebesgue measurable set are almost
 everywhere measurable.** Let `f` be locally Lipschitz on a Lebesgue measurable subset `A` of an
 `n`-dimensional real inner product space, with values in an `m`-dimensional real normed space
