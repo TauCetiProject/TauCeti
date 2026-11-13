@@ -9,6 +9,9 @@ public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Alternating.Basic
+public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.Analysis.RCLike.Basic
 
 /-!
 # Vector structures on associated bundles
@@ -23,6 +26,12 @@ fibers: an equivariant alternating map `η` induces `TauCeti.AssociatedBundle.al
 reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`), and
 an invariant sesquilinear form `f` induces `TauCeti.AssociatedBundle.sesqForm`, which reads
 `[p, v], [p, w] ↦ f v w` in every frame (`TauCeti.AssociatedBundle.sesqForm_mk`).
+A nonzero alternating form of top degree with values in a line induces an isomorphism from the
+top exterior power of each fiber onto the fiber of the associated line
+(`TauCeti.AssociatedBundle.alternatingMapLinearEquiv_bijective`). Symmetry, positivity and
+definiteness of an invariant form descend to the induced form
+(`TauCeti.AssociatedBundle.isSymm_sesqForm`, `TauCeti.AssociatedBundle.re_sesqForm_self_nonneg`,
+`TauCeti.AssociatedBundle.sesqForm_self_eq_zero`).
 
 ## References
 
@@ -227,6 +236,31 @@ theorem alternatingMap_eq_zero_iff {η : F [⋀^ι]→ₗ[𝕜] F'} (b : B) :
     zero_apply, map_eq_zero_iff _ (ContinuousLinearEquiv.injective _)] at hv
   exact hv
 
+/-- **The top exterior power of the fibers.** If the model `F` has dimension `n` and `F'` is a
+line, a nonzero alternating `n`-form `η` on the model induces a bijection from `⋀ⁿ` of the fiber
+of `P ×_G F` over `b` onto the fiber of `P ×_G F'`. -/
+theorem alternatingMapLinearEquiv_bijective [FiniteDimensional 𝕜 F] {n : ℕ}
+    (hF : Module.finrank 𝕜 F = n) (hF' : Module.finrank 𝕜 F' = 1)
+    {η : F [⋀^Fin n]→ₗ[𝕜] F'} (hη : η ≠ 0) (b : B) :
+    Function.Bijective (exteriorPower.alternatingMapLinearEquiv (alternatingMap G P η b)) := by
+  set f := exteriorPower.alternatingMapLinearEquiv (alternatingMap G P η b)
+  have hdom : Module.finrank 𝕜 (⋀[𝕜]^n (AssociatedBundle G P F b)) = 1 := by
+    rw [exteriorPower.finrank_eq, finrank_eq, hF, Nat.choose_self]
+  have hcod : Module.finrank 𝕜 (AssociatedBundle G P F' b) = 1 :=
+    (finrank_eq 𝕜 G F' P b).trans hF'
+  have : FiniteDimensional 𝕜 F' := Module.finite_of_finrank_eq_succ hF'
+  have : FiniteDimensional 𝕜 (⋀[𝕜]^n (AssociatedBundle G P F b)) :=
+    Module.finite_of_finrank_eq_succ hdom
+  -- `f` is nonzero, since it restricts to the induced alternating map on decomposable vectors.
+  have hf : f ≠ 0 := by
+    intro h0
+    apply (alternatingMap_eq_zero_iff (G := G) (P := P) b).not.2 hη
+    ext v
+    simpa [f] using congrArg (fun g ↦ g (exteriorPower.ιMulti 𝕜 n v)) h0
+  have hsurj : Function.Surjective f := surjective_of_ne_zero_of_finrank_eq_one hcod hf
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (hdom.trans hcod.symm)).2 hsurj, hsurj⟩
+
 end AlternatingMap
 
 section SesqForm
@@ -254,6 +288,44 @@ theorem sesqForm_mk {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜} (hf : ∀ (g : G) 
   simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_toLinearEquiv, mkContinuousLinearEquiv_symm_apply_mk, hf]
 
+/-- The form induced by an invariant symmetric sesquilinear form is symmetric. -/
+theorem isSymm_sesqForm {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜}
+    (hf : ∀ (g : G) (v w : F), f (g • v) (g • w) = f v w) (hfs : f.IsSymm) (b : B) :
+    (sesqForm G P f b).IsSymm := by
+  refine ⟨fun v w ↦ ?_⟩
+  obtain ⟨p, v, w, rfl, rfl⟩ := exists_mk_mk v w
+  simp only [sesqForm_mk hf, hfs.eq]
+
+/-- The form induced by an invariant definite sesquilinear form is definite. -/
+theorem sesqForm_self_eq_zero {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜}
+    (hf : ∀ (g : G) (v w : F), f (g • v) (g • w) = f v w) (hf₀ : ∀ v, f v v = 0 → v = 0) {b : B}
+    {w : AssociatedBundle G P F b} :
+    sesqForm G P f b w w = 0 ↔ w = 0 := by
+  obtain ⟨p, v, rfl⟩ := exists_mk w
+  rw [sesqForm_mk hf, ← mk_zero (G := G) p, (mk_bijective (G := G) p).1.eq_iff]
+  exact ⟨hf₀ v, fun h ↦ by simp [h]⟩
+
 end SesqForm
+
+end TauCeti.AssociatedBundle
+
+namespace TauCeti.AssociatedBundle
+
+variable {𝕜 B G F : Type*} [RCLike 𝕜]
+  [TopologicalSpace B] [Group G] [TopologicalSpace G]
+  {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
+  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [DistribMulAction G F] [SMulCommClass G 𝕜 F] [ContinuousSMul G F]
+
+/-- The form induced by an invariant positive semidefinite sesquilinear form is positive
+semidefinite. -/
+theorem re_sesqForm_self_nonneg {f : F →ₗ⋆[𝕜] F →ₗ[𝕜] 𝕜}
+    (hf : ∀ (g : G) (v w : F), f (g • v) (g • w) = f v w) (hf₀ : ∀ v, 0 ≤ RCLike.re (f v v))
+    {b : B} (w : AssociatedBundle G P F b) :
+    0 ≤ RCLike.re (sesqForm G P f b w w) := by
+  obtain ⟨p, v, rfl⟩ := exists_mk w
+  rw [sesqForm_mk hf]
+  exact hf₀ v
 
 end TauCeti.AssociatedBundle

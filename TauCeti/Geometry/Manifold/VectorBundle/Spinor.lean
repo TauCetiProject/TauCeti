@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
 public import TauCeti.Geometry.Manifold.VectorBundle.Associated
 public import TauCeti.LinearAlgebra.Determinant.Basic
-public import TauCeti.LinearAlgebra.Determinant.Line
 
 /-!
 # Spinor bundles and the determinant line of a principal Spinᶜ(4)-bundle
@@ -291,47 +290,17 @@ theorem alternatingMap_spinorBundle_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ
       AssociatedBundle.mk SpinC p (η v) :=
   AssociatedBundle.alternatingMap_mk (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η) p v
 
-/-- If `W^ε` has complex dimension two, so has every fiber of the spinor bundle, and its second
-exterior power is a line. -/
-theorem finrank_exteriorPower_two_spinorBundle (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
-    (x : B) : finrank ℂ (⋀[ℂ]^2 (o.spinorBundle hQ b ρ ε P x)) = 1 := by
-  have h : finrank ℂ (⋀[ℂ]^(finrank ℂ (o.spinorBundle hQ b ρ ε P x))
-      (o.spinorBundle hQ b ρ ε P x)) = 1 :=
-    TauCeti.finrank_detLine ℂ (o.spinorBundle hQ b ρ ε P x)
-  rwa [AssociatedBundle.finrank_eq, h₂] at h
-
-/-- If `W^ε` has complex dimension two, a nonzero alternating form `η` on the model half-spinors
-induces a bijection from `⋀² W^ε_x` onto `L_x`. -/
-theorem alternatingMapLinearEquiv_spinorBundle_bijective
-    (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
-    {η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos} (hη : η ≠ 0)
-    (x : B) :
-    Function.Bijective (exteriorPower.alternatingMapLinearEquiv
-      (AssociatedBundle.alternatingMap SpinC P η x)) := by
-  set f := exteriorPower.alternatingMapLinearEquiv (AssociatedBundle.alternatingMap SpinC P η x)
-  have hdom := o.finrank_exteriorPower_two_spinorBundle hQ b ρ ε P h₂ x
-  have hcod := spinCGroup.finrank_detLineBundle 4 hpos P x
-  have : FiniteDimensional ℂ (⋀[ℂ]^2 (o.spinorBundle hQ b ρ ε P x)) :=
-    Module.finite_of_finrank_eq_succ hdom
-  -- `f` is nonzero, since it restricts to the induced alternating map on decomposable vectors.
-  have hf : f ≠ 0 := by
-    intro h0
-    apply (AssociatedBundle.alternatingMap_eq_zero_iff (G := SpinC) (P := P) x).not.2 hη
-    ext v
-    simpa [f] using congrArg (fun g ↦ g (exteriorPower.ιMulti ℂ 2 v)) h0
-  have hsurj : Function.Surjective f := surjective_of_ne_zero_of_finrank_eq_one hcod hf
-  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (hdom.trans hcod.symm)).2 hsurj, hsurj⟩
-
 /-- **The determinant line of the spinor bundle.** If `W^ε` has complex dimension two, a nonzero
 alternating form `η` on the model half-spinors induces, for each `x`, a linear isomorphism from
 `⋀² W^ε_x` onto the fiber `L_x` of the determinant line bundle, sending `[p, v 0] ∧ [p, v 1]` to
-`[p, η v]` in every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). -/
+`[p, η v]` in every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). Bijectivity is
+`TauCeti.AssociatedBundle.alternatingMapLinearEquiv_bijective`. -/
 def spinorDetEquiv (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (x : B) :
     ⋀[ℂ]^2 (o.spinorBundle hQ b ρ ε P x) ≃ₗ[ℂ] spinCGroup.detLineBundle 4 hpos P x :=
-  LinearEquiv.ofBijective _ (o.alternatingMapLinearEquiv_spinorBundle_bijective hQ b ρ ε P h₂ hη x)
+  LinearEquiv.ofBijective _ (AssociatedBundle.alternatingMapLinearEquiv_bijective h₂
+    (spinCGroup.DetFiber.finrank_eq 4 hpos) hη x)
 
 /-- **The determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
 `spinorDetEquiv` sends `[p, v 0] ∧ [p, v 1]` to `[p, η v]`. -/
@@ -372,6 +341,13 @@ def spinorInner (x : B) :
     o.spinorBundle hQ b ρ ε P x →ₗ⋆[ℂ] o.spinorBundle hQ b ρ ε P x →ₗ[ℂ] ℂ :=
   AssociatedBundle.sesqForm SpinC P (innerₛₗ ℂ) x
 
+/-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts unitarily on the
+half-spinor model. -/
+theorem SpinCHalfSpinor.inner_smul_smul (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (g : SpinC) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) : ⟪g • ψ, g • χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
+  rw [SpinCHalfSpinor.smul_def, SpinCHalfSpinor.smul_def]
+  exact inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ g ψ χ
+
 /-- **The Hermitian form in a frame.** If the Clifford generators act skew-adjointly on `W`,
 then for every frame `p` of `P` over `x` the Hermitian form of the classes `[p, ψ]` and `[p, χ]`
 is the inner product `⟪ψ, χ⟫`. -/
@@ -380,42 +356,29 @@ theorem spinorInner_mk (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q
     (p : P x) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) :
     o.spinorInner hQ b ρ ε P x (AssociatedBundle.mk SpinC p ψ) (AssociatedBundle.mk SpinC p χ) =
       ⟪ψ, χ⟫_ℂ :=
-  AssociatedBundle.sesqForm_mk
-    (fun g ψ χ ↦ by
-      rw [SpinCHalfSpinor.smul_def, SpinCHalfSpinor.smul_def]
-      exact inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ g ψ χ) p ψ χ
-
-/-- Two vectors of a fiber of the spinor bundle are classes in a common frame. -/
-private theorem exists_mk_mk {x : B} (w w' : o.spinorBundle hQ b ρ ε P x) :
-    ∃ (p : P x) (ψ χ : SpinCHalfSpinor o hQ b ρ ε),
-      AssociatedBundle.mk SpinC p ψ = w ∧ AssociatedBundle.mk SpinC p χ = w' := by
-  obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk w
-  obtain ⟨χ, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC) p).2 w'
-  exact ⟨p, ψ, χ, rfl, rfl⟩
+  AssociatedBundle.sesqForm_mk (SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ) p ψ χ
 
 /-- The Hermitian form of the spinor bundle is conjugate-symmetric. -/
 theorem spinorInner_conj_symm (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {x : B}
     (w w' : o.spinorBundle hQ b ρ ε P x) :
-    starRingEnd ℂ (o.spinorInner hQ b ρ ε P x w' w) = o.spinorInner hQ b ρ ε P x w w' := by
-  obtain ⟨p, ψ, χ, rfl, rfl⟩ := o.exists_mk_mk hQ b ρ ε P w w'
-  simp only [o.spinorInner_mk hQ b ρ ε P hρ, inner_conj_symm]
+    starRingEnd ℂ (o.spinorInner hQ b ρ ε P x w' w) = o.spinorInner hQ b ρ ε P x w w' :=
+  (AssociatedBundle.isSymm_sesqForm (SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ)
+    ⟨fun ψ χ ↦ inner_conj_symm χ ψ⟩ x).eq w' w
 
 /-- The Hermitian form of the spinor bundle is positive semidefinite. -/
 theorem re_spinorInner_self_nonneg (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     {x : B} (w : o.spinorBundle hQ b ρ ε P x) :
-    0 ≤ (o.spinorInner hQ b ρ ε P x w w).re := by
-  obtain ⟨p, ψ, -, rfl, -⟩ := o.exists_mk_mk hQ b ρ ε P w w
-  rw [o.spinorInner_mk hQ b ρ ε P hρ]
-  exact inner_self_nonneg (𝕜 := ℂ) (x := ψ)
+    0 ≤ (o.spinorInner hQ b ρ ε P x w w).re :=
+  AssociatedBundle.re_sesqForm_self_nonneg (f := innerₛₗ ℂ)
+    (SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ) (fun ψ ↦ inner_self_nonneg (x := ψ)) w
 
 /-- The Hermitian form of the spinor bundle is definite. -/
 @[simp]
 theorem spinorInner_self_eq_zero (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     {x : B} {w : o.spinorBundle hQ b ρ ε P x} :
-    o.spinorInner hQ b ρ ε P x w w = 0 ↔ w = 0 := by
-  obtain ⟨p, ψ, -, rfl, -⟩ := o.exists_mk_mk hQ b ρ ε P w w
-  rw [o.spinorInner_mk hQ b ρ ε P hρ, inner_self_eq_zero, ← AssociatedBundle.mk_zero (G := SpinC) p,
-    (AssociatedBundle.mk_bijective (G := SpinC) p).1.eq_iff]
+    o.spinorInner hQ b ρ ε P x w w = 0 ↔ w = 0 :=
+  AssociatedBundle.sesqForm_self_eq_zero (SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ)
+    (fun ψ ↦ (inner_self_eq_zero (𝕜 := ℂ) (x := ψ)).1)
 
 end Hermitian
 
