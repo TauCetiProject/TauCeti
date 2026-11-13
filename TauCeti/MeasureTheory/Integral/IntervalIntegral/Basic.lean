@@ -47,6 +47,27 @@ namespace TauCeti
 
 namespace intervalIntegral
 
+/-- Interval integrals add over a `Fin`-indexed partition, which need not be increasing. -/
+theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    (hint : ∀ i : Fin n, IntervalIntegrable f μ (τ i.castSucc) (τ i.succ)) :
+    ∑ i : Fin n, ∫ t in τ i.castSucc..τ i.succ, f t ∂μ =
+      ∫ t in τ 0..τ (Fin.last n), f t ∂μ := by
+  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
+  have ha (i : Fin (n + 1)) : a i = τ i := by
+    simp [a, Fin.ofNat_eq_cast]
+  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable f μ (a k) (a (k + 1)) := by
+    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
+      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
+  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
+  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals hint'
+  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
+  rw [← hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
+
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/
 theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b : ℝ}
