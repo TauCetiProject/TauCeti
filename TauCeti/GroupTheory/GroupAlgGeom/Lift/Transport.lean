@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
-public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Lift.CoordGroup
 
 /-!
-# Lifts under changes of coordinates
+# Lifts under changes of coordinates and substitution
 
 A change of coordinates, a bijective `G`-homomorphism `σ : G[X'] → G[X]`, transforms a system
 `S ⊆ G[X]` into `σ ⁻¹' S ⊆ G[X']` and, extended by the identity on further variables `Y`
@@ -19,6 +19,9 @@ the solutions at the generic points correspond under the induced isomorphism of 
 `G_{R(σ⁻¹S)} ≃ G_{R(S)}` (`TauCeti.GroupAlgGeom.CoordGroup.equivOfCoordinateChange`). A family of
 solutions of `S` is generic exactly when its image under the word map of `σ` is generic for
 `σ ⁻¹' S`.
+
+Lifts compose: if `T(X, Y)` admits an `S`-lift and `T'(X, Y, Z)` admits an `(S ∪ T)`-lift, then
+`T ∪ T'` admits an `S`-lift.
 
 ## Main results
 
@@ -31,11 +34,12 @@ solutions of `S` is generic exactly when its image under the word map of `σ` is
   `TauCeti.GroupAlgGeom.Lift.hasCompleteLift_preimage_iff`: invariance of lifts and complete
   lifts.
 * `TauCeti.GroupAlgGeom.Lift.isGenericFamily_preimage_image_iff`: invariance of generic families.
+* `TauCeti.GroupAlgGeom.Lift.HasLift.trans`: composition of lifts.
 
 ## References
 
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §6, Definitions 24–27.
+  (2005), §6, Definitions 24–27 and Lemma 40.
 -/
 
 public section
@@ -43,6 +47,10 @@ public section
 namespace TauCeti.GroupAlgGeom.Lift
 
 open Monoid.Coprod
+
+/-! ### Changes of coordinates -/
+
+section ChangeOfCoordinates
 
 variable {G H X X' Y : Type*} [Group G] [Group H]
   {σ : GHom (inl : G →* GX G X') (inl : G →* GX G X)} (hσ : Function.Bijective σ)
@@ -135,5 +143,41 @@ family of all solutions of `S` is. -/
 theorem isGenericFamily_preimage_V_iff :
     IsGenericFamily ι (σ ⁻¹' S) (V ι (σ ⁻¹' S)) ↔ IsGenericFamily ι S (V ι S) := by
   rw [← image_coordinateChangeEquiv_V ι σ hσ, isGenericFamily_preimage_image_iff hσ]
+
+end ChangeOfCoordinates
+
+/-! ### Composition of lifts -/
+
+variable {G H X Y Z : Type*} [Group G] [Group H]
+
+/-- Lifts compose: if `T(X, Y)` admits an `S`-lift and `T'(X, Y, Z)` admits an `(S ∪ T)`-lift,
+then the system `T ∪ T'` admits an `S`-lift. Here `T ∪ T'` is `jointSystem T T'` with its variables
+`(X ⊔ Y) ⊔ Z` re-bracketed along `Equiv.sumAssoc`, so that `Y ⊔ Z` are the further variables of
+the lift. -/
+theorem HasLift.trans {ι : G →* H} {S : Set (GX G X)} {T : Set (GX G (X ⊕ Y))}
+    {T' : Set (GX G ((X ⊕ Y) ⊕ Z))} (h : HasLift ι S T) (h' : HasLift ι (jointSystem S T) T') :
+    HasLift ι S (Monoid.Coprod.map (.id G) (FreeGroup.map (Equiv.sumAssoc X Y Z)) ''
+      jointSystem T T') := by
+  obtain ⟨w, hw⟩ := hasLift_iff.1 h
+  obtain ⟨z, hz⟩ := hasLift_iff.1 h'
+  -- The retraction `ρ` of `G_{R(S ∪ T)}` onto `G_{R(S)}` substitutes `w` for the variables `Y`;
+  -- it carries the solution `z` of `T'` over the generic point of `S ∪ T` to one over `(μ, w)`.
+  let ρ := ((retractionEquiv ι S T).symm ⟨w, hw⟩).val
+  refine hasLift_iff.2 ⟨Sum.elim w (ρ ∘ z), ?_⟩
+  have hμ : ρ ∘ CoordGroup.genericPoint ι (jointSystem S T) =
+      Sum.elim (CoordGroup.genericPoint ι S) w :=
+    funext (retractionEquiv_symm_apply_genericPoint _)
+  have hT' := ρ.comp_mem_V hz
+  rw [Sum.comp_elim, hμ] at hT'
+  have he : Sum.elim (CoordGroup.genericPoint ι S) (Sum.elim w (ρ ∘ z)) ∘ Equiv.sumAssoc X Y Z =
+      Sum.elim (Sum.elim (CoordGroup.genericPoint ι S) w) (ρ ∘ z) := by
+    ext ((_ | _) | _) <;> rfl
+  -- The point is stated explicitly: inferring it from `hw` would be a higher-order unification
+  -- problem (`?v ∘ Sum.inl = (μ, w)`).
+  have hjoint : Sum.elim (Sum.elim (CoordGroup.genericPoint ι S) w) (ρ ∘ z) ∈
+      V (CoordGroup.coeff ι S) (jointSystem T T') := mem_V_jointSystem.2 ⟨hw, hT'⟩
+  refine mem_V.2 <| Set.forall_mem_image.2 fun u hu => ?_
+  rw [eval_map, MonoidHom.comp_id, he]
+  exact mem_V.1 hjoint u hu
 
 end TauCeti.GroupAlgGeom.Lift
