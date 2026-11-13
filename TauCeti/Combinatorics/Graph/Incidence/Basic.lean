@@ -258,10 +258,10 @@ theorem mem_incidentEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
   classical
   simp [incidentEdges]
 
-open Classical in
-/-- Reading internal edges as ambient identities removes the vertex subtype from membership.
-Restrict `S` to the graph's actual vertices. -/
-theorem mem_map_internalEdges_subtype (S : Finset α) (e : β) :
+/-- Mapping internal edges into `β` and restricting `S` to actual vertices via
+`S.subtype (· ∈ V(G))` give a membership criterion without edge or vertex subtypes.
+Vertices of `S` outside `V(G)` do not contribute. -/
+theorem mem_map_internalEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset α) (e : β) :
     e ∈ (G.internalEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e x y := by
   simp only [Finset.mem_map, mem_internalEdges, Finset.mem_subtype,
@@ -273,10 +273,10 @@ theorem mem_map_internalEdges_subtype (S : Finset α) (e : β) :
     exact ⟨⟨e, hxy.edge_mem⟩,
       ⟨⟨x, hxy.left_mem⟩, hx, ⟨y, hxy.right_mem⟩, hy, hxy⟩, rfl⟩
 
-open Classical in
-/-- Reading incident edges as ambient identities removes the vertex subtype from membership.
-Vertices of `S` outside the graph do not contribute. -/
-theorem mem_map_incidentEdges_subtype (S : Finset α) (e : β) :
+/-- Mapping incident edges into `β` and restricting `S` to actual vertices via
+`S.subtype (· ∈ V(G))` give a membership criterion without edge or vertex subtypes.
+Vertices of `S` outside `V(G)` do not contribute. -/
+theorem mem_map_incidentEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset α) (e : β) :
     e ∈ (G.incidentEdges (S.subtype (· ∈ V(G)))).map
       (Function.Embedding.subtype _) ↔ ∃ x ∈ S, G.Inc e x := by
   simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_subtype,

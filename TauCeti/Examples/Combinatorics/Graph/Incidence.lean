@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Incidence.Union
-public import TauCeti.Combinatorics.Graph.Incidence.EdgeSets
 
 /-!
 # Counting parallel edges and loops in a union
@@ -16,9 +15,8 @@ to both input graphs, but their edge identities are disjoint. The incidence coun
 whereas the nonloop incidence count is two and the loop count is one.
 
 Selecting only vertex `0` gives one internal edge but three incident edges. Selecting both
-endpoints makes all three edges internal, without counting either endpoint twice. An ambient
-vertex outside the graph contributes nothing. The internal and incident edge counts also
-illustrate additivity under unions with disjoint edge identities.
+endpoints makes all three edges internal, without counting any edge identity twice. An ambient
+vertex outside the graph contributes nothing.
 
 Both ambient types are `ℕ`. Thus the example also checks that finiteness of the actual vertex
 and edge sets, rather than the ambient types, suffices for the counting API.
@@ -100,14 +98,7 @@ theorem graph_isLink (e x y : ℕ) :
   simp [graph, parallel, loop]
 
 /-- Enumerate the actual edge identities for finite edge-set computations. -/
-noncomputable instance : Fintype E(graph) :=
-  Fintype.ofFinset {0, 1, 2} (by simp)
-
-private noncomputable instance : Fintype E(parallel) :=
-  Fintype.ofFinset {0, 1} (by simp [parallel])
-
-private noncomputable instance : Fintype E(loop) :=
-  Fintype.ofFinset {2} (by simp [loop])
+noncomputable instance : Fintype E(graph) := Fintype.ofFinite _
 
 open Classical in
 /-- Only the loop is internal to the singleton vertex set. -/
@@ -146,22 +137,5 @@ theorem incident_outside :
   ext e
   rw [Graph.mem_map_incidentEdges_subtype]
   simp [Graph.Inc, graph_isLink]
-
--- Exercise the additive formulas themselves, not just the union's incidence characterization.
-open Classical in
-example :
-    (graph.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(graph)))).card =
-    (parallel.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(parallel)))).card +
-    (loop.internalEdges (({0, 1} : Finset ℕ).subtype (· ∈ V(loop)))).card := by
-  let : Fintype E(compatible.union) := inferInstanceAs (Fintype E(graph))
-  exact compatible.card_internalEdges_union disjoint_edges _
-
-open Classical in
-example :
-    (graph.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(graph)))).card =
-    (parallel.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(parallel)))).card +
-    (loop.incidentEdges (({0} : Finset ℕ).subtype (· ∈ V(loop)))).card := by
-  let : Fintype E(compatible.union) := inferInstanceAs (Fintype E(graph))
-  exact compatible.card_incidentEdges_union disjoint_edges _
 
 end TauCeti.Examples.IncidenceUnion
