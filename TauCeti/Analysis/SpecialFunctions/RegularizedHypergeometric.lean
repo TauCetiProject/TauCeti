@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.RingTheory.Binomial
 
 /-!
 # The regularized hypergeometric function `₀F₁`
@@ -16,10 +17,13 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
 of its power series. This file records that series as a `HasSum` statement and develops the
 function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
-Bessel functions.
+Bessel and Airy functions.
 
 For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
+For every pair of complex parameters `a`, `b`, the product `₀F₁(; a; z) ₀F₁(; b; z)` expands as
+an everywhere convergent power series with coefficients
+`(a + b + n - 1)_n / (n! Γ(a + n) Γ(b + n))`, valid without pole exclusions on `a` or `b`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a hypothesis on `b`.
@@ -32,8 +36,12 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
+* `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
+  `Complex.hasSum_regularizedHGFun_zero_singleton_mul` — the Cauchy product series of
+  `₀F₁(; a; z) ₀F₁(; b; z)`, absolutely convergent by
+  `Complex.summable_norm_regularizedHGFun_zero_singleton_mul`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
-  arguments.
+  arguments, with Cauchy product `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul`.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
 -/
@@ -203,5 +211,117 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
         ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (n * R ^ (n - 1) / n !) := by ring
+
+private theorem descPochhammer_int_smeval_eq_eval (z : ℂ) (m : ℕ) :
+    (descPochhammer ℤ m).smeval z = (descPochhammer ℂ m).eval z := by
+  rw [← Polynomial.aeval_eq_smeval, Polynomial.aeval_def, ← Polynomial.eval_map, descPochhammer_map]
+
+/-- The finite convolution of the coefficients of `₀F₁(; a; z)` and `₀F₁(; b; z)`, valid at every
+pair of complex parameters `a`, `b`, including poles of `Γ`. -/
+theorem sum_regularizedHGFunCoeff_zero_singleton_mul (a b : ℂ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1),
+      regularizedHGFunCoeff 0 {a} k * regularizedHGFunCoeff 0 {b} (n - k) =
+    (ascPochhammer ℂ n).eval (a + b + n - 1) / (n ! * Gamma (a + n) * Gamma (b + n)) := by
+  have hterm : ∀ k ∈ Finset.range (n + 1),
+      regularizedHGFunCoeff 0 {a} k * regularizedHGFunCoeff 0 {b} (n - k) =
+        ((n.choose k : ℂ) *
+          ((descPochhammer ℤ k).smeval (b + n - 1) *
+            (descPochhammer ℤ (n - k)).smeval (a + n - 1))) /
+          (n ! * Gamma (a + n) * Gamma (b + n)) := by
+    intro k hk_mem
+    have hk : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk_mem)
+    have ha : (Gamma (a + k))⁻¹ =
+        (descPochhammer ℤ (n - k)).smeval (a + n - 1) * (Gamma (a + n))⁻¹ := by
+      have han : a + k + ((n - k : ℕ) : ℂ) = a + n := by rw [Nat.cast_sub hk]; ring
+      have hsub : a + n - 1 - ((n - k : ℕ) : ℂ) + 1 = a + k := by rw [Nat.cast_sub hk]; ring
+      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (a + k) (n - k), han, ← hsub,
+        ← descPochhammer_eval_eq_ascPochhammer, descPochhammer_int_smeval_eq_eval]
+    have hb : (Gamma (b + (n - k : ℕ)))⁻¹ =
+        (descPochhammer ℤ k).smeval (b + n - 1) * (Gamma (b + n))⁻¹ := by
+      have hbn : b + ((n - k : ℕ) : ℂ) + k = b + n := by rw [Nat.cast_sub hk]; ring
+      have hsub : b + n - 1 - k + 1 = b + ((n - k : ℕ) : ℂ) := by rw [Nat.cast_sub hk]; ring
+      rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (b + (n - k : ℕ)) k, hbn, ← hsub,
+        ← descPochhammer_eval_eq_ascPochhammer, descPochhammer_int_smeval_eq_eval]
+    have hfac : (k ! : ℂ)⁻¹ * ((n - k)! : ℂ)⁻¹ = (n.choose k : ℂ) * (n ! : ℂ)⁻¹ := by
+      have hchoose : (n.choose k : ℂ) * k ! * (n - k)! = n ! := by
+        exact_mod_cast Nat.choose_mul_factorial_mul_factorial hk
+      have hk0 : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.2 k.factorial_ne_zero
+      have hnk0 : ((n - k)! : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (n - k).factorial_ne_zero
+      have hn0 : (n ! : ℂ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
+      field_simp
+      linear_combination -hchoose
+    rw [regularizedHGFunCoeff_zero_singleton, regularizedHGFunCoeff_zero_singleton,
+      mul_inv, mul_inv, mul_mul_mul_comm, hfac, ha, hb]
+    ring
+  have harg : b + n - 1 + (a + n - 1) - n + 1 = a + b + n - 1 := by ring
+  rw [Finset.sum_congr rfl hterm, ← Finset.sum_div,
+    ← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l =>
+      (n.choose k : ℂ) *
+        ((descPochhammer ℤ k).smeval (b + n - 1) * (descPochhammer ℤ l).smeval (a + n - 1)),
+    ← Ring.descPochhammer_smeval_add n (Commute.all _ _), descPochhammer_int_smeval_eq_eval,
+    descPochhammer_eval_eq_ascPochhammer, harg]
+
+private theorem sum_range_regularizedHGFun_zero_singleton_mul (a b z : ℂ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1),
+      (regularizedHGFunCoeff 0 {a} k * z ^ k) *
+        (regularizedHGFunCoeff 0 {b} (n - k) * z ^ (n - k)) =
+    (ascPochhammer ℂ n).eval (a + b + n - 1) / (n ! * Gamma (a + n) * Gamma (b + n)) * z ^ n := by
+  have hpow : ∀ k ∈ Finset.range (n + 1),
+      (regularizedHGFunCoeff 0 {a} k * z ^ k) *
+        (regularizedHGFunCoeff 0 {b} (n - k) * z ^ (n - k)) =
+      (regularizedHGFunCoeff 0 {a} k * regularizedHGFunCoeff 0 {b} (n - k)) * z ^ n := by
+    intro k hk_mem
+    have hk : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk_mem)
+    rw [mul_mul_mul_comm, ← pow_add, Nat.add_sub_of_le hk]
+  rw [Finset.sum_congr rfl hpow, ← Finset.sum_mul, sum_regularizedHGFunCoeff_zero_singleton_mul]
+
+/-- The Cauchy product series of `₀F₁(; a; z) ₀F₁(; b; z)` converges everywhere, without pole
+exclusions on `a` or `b`. -/
+theorem hasSum_regularizedHGFun_zero_singleton_mul (a b z : ℂ) :
+    HasSum
+      (fun n : ℕ =>
+        (ascPochhammer ℂ n).eval (a + b + n - 1) /
+          (n ! * Gamma (a + n) * Gamma (b + n)) * z ^ n)
+      (regularizedHGFun 0 {a} z * regularizedHGFun 0 {b} z) := by
+  have ha := hasSum_regularizedHGFun (a := 0) (b := {a}) (by simp) z
+  have hb := hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z
+  have h := hasSum_sum_range_mul_of_summable_norm
+    (summable_norm_regularizedHGFun (a := 0) (b := {a}) (by simp) z)
+    (summable_norm_regularizedHGFun (a := 0) (b := {b}) (by simp) z)
+  rw [ha.tsum_eq, hb.tsum_eq] at h
+  simpa only [sum_range_regularizedHGFun_zero_singleton_mul] using h
+
+/-- The Cauchy product series of `₀F₁(; a; z) ₀F₁(; b; z)` converges absolutely everywhere. -/
+theorem summable_norm_regularizedHGFun_zero_singleton_mul (a b z : ℂ) :
+    Summable fun n : ℕ =>
+      ‖(ascPochhammer ℂ n).eval (a + b + n - 1) /
+        (n ! * Gamma (a + n) * Gamma (b + n)) * z ^ n‖ := by
+  simpa only [sum_range_regularizedHGFun_zero_singleton_mul] using
+    summable_norm_sum_mul_range_of_summable_norm
+      (summable_norm_regularizedHGFun (a := 0) (b := {a}) (by simp) z)
+      (summable_norm_regularizedHGFun (a := 0) (b := {b}) (by simp) z)
+
+/-- At real parameters and a real argument, the product of two `₀F₁` functions is given by the real
+Cauchy product series. -/
+theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul (a b y : ℝ) :
+    HasSum
+      (fun n : ℕ =>
+        (ascPochhammer ℝ n).eval (a + b + n - 1) /
+          (n ! * Real.Gamma (a + n) * Real.Gamma (b + n)) * y ^ n)
+      ((regularizedHGFun 0 {(a : ℂ)} y).re * (regularizedHGFun 0 {(b : ℂ)} y).re) := by
+  have h := hasSum_re (hasSum_regularizedHGFun_zero_singleton_mul a b y)
+  have hre : (regularizedHGFun 0 {(a : ℂ)} y * regularizedHGFun 0 {(b : ℂ)} y).re =
+      (regularizedHGFun 0 {(a : ℂ)} y).re * (regularizedHGFun 0 {(b : ℂ)} y).re := by
+    simp [mul_re]
+  rw [hre] at h
+  refine h.congr_fun fun n => ?_
+  have heval : (ascPochhammer ℂ n).eval ((a + b + n - 1 : ℝ) : ℂ) =
+      (((ascPochhammer ℝ n).eval (a + b + n - 1) : ℝ) : ℂ) := by
+    simpa using Polynomial.eval_map_apply ofRealHom (a + b + n - 1) (p := ascPochhammer ℝ n)
+  have hc : (a : ℂ) + b + n - 1 = ((a + b + n - 1 : ℝ) : ℂ) := by push_cast; ring
+  have ha : (a : ℂ) + n = ((a + n : ℝ) : ℂ) := by push_cast; ring
+  have hb : (b : ℂ) + n = ((b + n : ℝ) : ℂ) := by push_cast; ring
+  rw [hc, ha, hb, heval, Gamma_ofReal, Gamma_ofReal]
+  norm_cast
 
 end Complex

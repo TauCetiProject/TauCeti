@@ -29,6 +29,8 @@ inclusion.
 ## Main results
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
+* `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_rpow`: integrability of
+  `t ^ q * exp (a * t - b * t ^ p)` on `(0, ∞)` when `1 < p`, `-1 < q`, and `0 < b`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
 * `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
   Stieltjes-kernel integral.
@@ -62,6 +64,47 @@ theorem integrableOn_pow_mul_exp_neg_mul_Ioi (n : ℕ) {b : ℝ} (hb : 0 < b) :
     (p := (1 : ℝ)) (s := (n : ℝ)) (b := b)
     (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) one_pos hb
   simpa only [Real.rpow_one, Real.rpow_natCast, neg_mul] using h
+
+/-- For `1 < p`, `-1 < q`, and `0 < b`, a linear drift `a * t` in the exponent is dominated by
+`-b * t ^ p`, so `t ^ q * exp (a * t - b * t ^ p)` is integrable on `(0, ∞)`. -/
+theorem integrableOn_rpow_mul_exp_mul_sub_mul_rpow {p q b : ℝ} (hp : 1 < p) (hq : -1 < q)
+    (hb : 0 < b) (a : ℝ) :
+    IntegrableOn (fun t : ℝ => t ^ q * Real.exp (a * t - b * t ^ p)) (Set.Ioi 0) := by
+  have hp0 : 0 < p := zero_lt_one.trans hp
+  have hp1 : 0 < p - 1 := sub_pos.mpr hp
+  set M : ℝ := max 1 ((2 * |a| / b) ^ (p - 1)⁻¹)
+  have hmajor : IntegrableOn
+      (fun t : ℝ => Real.exp (|a| * M) * (t ^ q * Real.exp (-(b / 2) * t ^ p))) (Set.Ioi 0) :=
+    (integrableOn_rpow_mul_exp_neg_mul_rpow hq hp0 (half_pos hb)).const_mul _
+  refine hmajor.mono' (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
+  have hexp : a * t - b * t ^ p ≤ |a| * M - b / 2 * t ^ p := by
+    have hat : a * t ≤ |a| * t := mul_le_mul_of_nonneg_right (le_abs_self a) ht.le
+    rcases le_total t M with htM | hMt
+    · have h1 : |a| * t ≤ |a| * M := mul_le_mul_of_nonneg_left htM (abs_nonneg a)
+      have h2 : 0 ≤ b / 2 * t ^ p := by positivity
+      linarith
+    · have h2ab : 2 * |a| / b ≤ t ^ (p - 1) := by
+        rcases eq_or_lt_of_le (abs_nonneg a) with ha0 | ha0
+        · rw [← ha0, mul_zero, zero_div]; positivity
+        · have hbase : 0 < 2 * |a| / b := by positivity
+          calc 2 * |a| / b
+              = ((2 * |a| / b) ^ (p - 1)⁻¹) ^ (p - 1) := by
+                  rw [← Real.rpow_mul hbase.le, inv_mul_cancel₀ hp1.ne', Real.rpow_one]
+            _ ≤ M ^ (p - 1) := Real.rpow_le_rpow (by positivity) (le_max_right _ _) hp1.le
+            _ ≤ t ^ (p - 1) := Real.rpow_le_rpow (by positivity) hMt hp1.le
+      have hbt : 2 * |a| ≤ t ^ (p - 1) * b := (div_le_iff₀ hb).mp h2ab
+      have hbtp : 2 * (|a| * t) ≤ b * t ^ p := by
+        calc 2 * (|a| * t) = (2 * |a|) * t := by ring
+          _ ≤ (t ^ (p - 1) * b) * t := mul_le_mul_of_nonneg_right hbt ht.le
+          _ = b * (t ^ (p - 1) * t ^ (1 : ℝ)) := by rw [Real.rpow_one]; ring
+          _ = b * t ^ p := by rw [← Real.rpow_add ht, sub_add_cancel]
+      have hM0 : 0 ≤ |a| * M := mul_nonneg (abs_nonneg a) (zero_le_one.trans (le_max_left _ _))
+      linarith
+  rw [Real.norm_eq_abs, abs_of_pos (mul_pos (Real.rpow_pos_of_pos ht q) (Real.exp_pos _)),
+    mul_left_comm, ← Real.exp_add]
+  gcongr
+  linarith
 
 /-- The integral of a natural power times an exponentially decaying factor on `(0, ∞)`. -/
 theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
