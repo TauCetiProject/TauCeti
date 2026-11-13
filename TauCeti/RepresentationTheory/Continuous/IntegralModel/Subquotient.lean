@@ -73,7 +73,7 @@ def submodelInclusion [IsFractionRing O E] [IsNoetherianRing O] :
   (W.subtype.restrictScalars O).submoduleComap Λ.lattice
 
 @[simp]
-theorem coe_submodelInclusion [IsFractionRing O E] [IsNoetherianRing O]
+theorem coe_submodelInclusion_apply [IsFractionRing O E] [IsNoetherianRing O]
     (x : (Λ.submodel W hW).lattice) :
     (Λ.submodelInclusion W hW x : V) = (x : W) :=
   (rfl)
@@ -131,7 +131,7 @@ def quotientProjection : Λ.lattice →ₗ[O] (Λ.quotientModel W hW).lattice :=
   (W.mkQ.restrictScalars O).submoduleMap Λ.lattice
 
 @[simp]
-theorem coe_quotientProjection (x : Λ.lattice) :
+theorem coe_quotientProjection_apply (x : Λ.lattice) :
     (Λ.quotientProjection W hW x : V ⧸ W) = W.mkQ (x : V) :=
   (rfl)
 
