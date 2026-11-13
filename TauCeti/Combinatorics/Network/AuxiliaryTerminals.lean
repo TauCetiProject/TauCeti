@@ -626,12 +626,9 @@ This is not a simp lemma because `arrows_liftWalk` first expands the entire arro
 theorem originalArrow_mem_arrows_liftWalk {a b : V} (ha : a ∈ A) (hb : b ∈ B)
     (p : ArrowWalk Q a b) (e : Σ v w, Q v w) :
     originalArrow e ∈ (liftWalk ha hb p).arrows ↔ e ∈ p.arrows := by
-  have hs : originalArrow (A := A) (B := B) e ≠ ⟨inr false, inl a, source ha⟩ :=
-    fun h => Sum.inl_ne_inr (congrArg Sigma.fst h)
-  have ht : originalArrow (A := A) (B := B) e ≠ ⟨inl b, inr true, sink hb⟩ :=
-    fun h => Sum.inl_ne_inr (congrArg (fun x => x.2.1) h)
   simp only [arrows_liftWalk, List.mem_cons, List.mem_append, List.not_mem_nil,
-    hs, ht, false_or, or_false, List.mem_map_of_injective originalArrow_injective]
+    originalArrow_ne_mk_inr_left, originalArrow_ne_mk_inr_right, false_or, or_false,
+    List.mem_map_of_injective originalArrow_injective]
 
 /-- Prepending the source arrow preserves and reflects simplicity. -/
 @[simp]
@@ -659,40 +656,6 @@ private def projectPrefix {y : V ⊕ Bool}
     · exact ⟨⟨b, mem_of_source e⟩, ArrowWalk.nil b⟩
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl b)) e
 
-private theorem projectPrefix_cons {a b : V}
-    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl a))
-    (e : AuxTerminalHom Q A B (inl a) (inl b)) :
-    projectPrefix (p.cons e) rfl =
-      ⟨(projectPrefix p rfl).1, (projectPrefix p rfl).2.cons (originalEquiv.symm e)⟩ :=
-  (rfl)
-
-private theorem liftFromSource_projectPrefix {y : V ⊕ Bool}
-    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {b : V} (hy : y = inl b) :
-    HEq (liftFromSource (B := B) (projectPrefix p hy).1.2 (projectPrefix p hy).2) p := by
-  induction p generalizing b with
-  | nil => exact (Sum.inr_ne_inl hy).elim
-  | @cons z y p e ih =>
-    subst hy
-    rcases z with a | _ | _
-    · have h := eq_of_heq (ih (b := a) rfl)
-      apply heq_of_eq
-      rw [projectPrefix_cons, liftFromSource_cons, original_originalEquiv_symm, h]
-    · have hp : p = ArrowWalk.nil (inr false) := by
-        cases p with
-        | nil => rfl
-        | @cons z _ p e => exact isEmptyElim (α := AuxTerminalHom Q A B z (inr false)) e
-      subst hp
-      exact heq_of_eq <| (liftFromSource_nil (Q := Q) (B := B) (mem_of_source e)).trans
-        (congrArg (fun f => (ArrowWalk.nil (inr false)).cons f) (eq_source e).symm)
-    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl b)) e
-
-private theorem projectPrefix_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
-    projectPrefix (liftFromSource (B := B) ha p) rfl = ⟨⟨a, ha⟩, p⟩ := by
-  induction p with
-  | nil => rfl
-  | cons p e ih =>
-    rw [liftFromSource_cons, projectPrefix_cons, ih, originalEquiv_symm_original]
-
 /-- Remove the source arrow from a walk ending at an original vertex. -/
 def projectFromSource {b : V}
     (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) (inl b)) :
@@ -712,10 +675,37 @@ theorem projectFromSource_cons {a b : V}
       ⟨(projectFromSource p).1, (projectFromSource p).2.cons (originalEquiv.symm e)⟩ :=
   (rfl)
 
+private theorem liftFromSource_projectPrefix {y : V ⊕ Bool}
+    (p : ArrowWalk (AuxTerminalHom Q A B) (inr false) y) {b : V} (hy : y = inl b) :
+    HEq (liftFromSource (B := B) (projectPrefix p hy).1.2 (projectPrefix p hy).2) p := by
+  induction p generalizing b with
+  | nil => exact (Sum.inr_ne_inl hy).elim
+  | @cons z y p e ih =>
+    subst hy
+    rcases z with a | _ | _
+    · have h : liftFromSource (B := B) (projectFromSource p).1.2
+          (projectFromSource p).2 = p := eq_of_heq (ih (b := a) rfl)
+      apply heq_of_eq
+      -- Fold the private projection at this original endpoint to use its public cons equation.
+      change liftFromSource (B := B) (projectFromSource (ArrowWalk.cons p e)).1.2
+        (projectFromSource (ArrowWalk.cons p e)).2 = ArrowWalk.cons p e
+      rw [projectFromSource_cons, liftFromSource_cons, original_originalEquiv_symm, h]
+    · have hp : p = ArrowWalk.nil (inr false) := by
+        cases p with
+        | nil => rfl
+        | @cons z _ p e => exact isEmptyElim (α := AuxTerminalHom Q A B z (inr false)) e
+      subst hp
+      exact heq_of_eq <| (liftFromSource_nil (Q := Q) (B := B) (mem_of_source e)).trans
+        (congrArg (fun f => (ArrowWalk.nil (inr false)).cons f) (eq_source e).symm)
+    · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inl b)) e
+
 @[simp]
 theorem projectFromSource_liftFromSource {a b : V} (ha : a ∈ A) (p : ArrowWalk Q a b) :
-    projectFromSource (liftFromSource (B := B) ha p) = ⟨⟨a, ha⟩, p⟩ :=
-  projectPrefix_liftFromSource ha p
+    projectFromSource (liftFromSource (B := B) ha p) = ⟨⟨a, ha⟩, p⟩ := by
+  induction p with
+  | nil => rfl
+  | cons p e ih =>
+    rw [liftFromSource_cons, projectFromSource_cons, ih, originalEquiv_symm_original]
 
 @[simp]
 theorem liftFromSource_projectFromSource {b : V}
@@ -731,7 +721,7 @@ def projectWalk
   cases p with
   | @cons y _ p e =>
     rcases y with b | _ | _
-    · obtain ⟨a, q⟩ := projectPrefix p rfl
+    · obtain ⟨a, q⟩ := projectFromSource p
       exact ⟨a, ⟨b, mem_of_sink e⟩, q⟩
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr false) (inr true)) e
     · exact isEmptyElim (α := AuxTerminalHom Q A B (inr true) (inr true)) e
