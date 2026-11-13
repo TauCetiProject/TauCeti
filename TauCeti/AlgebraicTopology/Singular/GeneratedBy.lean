@@ -24,9 +24,11 @@ No separation or compact-generation hypothesis on that space is required. This i
 isomorphism, not just a homology equivalence, and does not assert a homotopy equivalence of
 spaces or a homotopy lifting property.
 
-Naturality of the cubical-to-singular comparison makes its square with the two counits
-commute. Thus this singular comparison and the normalized cubical comparison in
-`TauCeti.AlgebraicTopology.Singular.Cubical.GeneratedBy` use the same underlying map of spaces.
+When a common family `G` generates both standard simplices and finite cubes (for instance,
+`CompHaus`), this singular comparison and the normalized cubical comparison in
+`TauCeti.AlgebraicTopology.Singular.Cubical.GeneratedBy` are induced by the same space-level
+counit `(GeneratedByTopCat.adjCounit (X := G)).app X`. Naturality of `TauCeti.cubicalToSingular`
+therefore makes their comparison square commute.
 
 ## References
 
@@ -57,13 +59,9 @@ theorem bijective_toSSet_map_generatedByCounit_app (X : TopCat.{u}) (n : Simplex
   constructor
   · intro σ τ h
     apply (toSSetObjEquiv _ n).injective
-    ext z
-    apply (WithGeneratedByTopology.equiv (X := G)).injective
-    have hc := congrArg (toSSetObjEquiv X n) h
-    rw [toSSetObjEquiv_toSSet_map_app, toSSetObjEquiv_toSSet_map_app] at hc
-    simpa only [ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply,
-      WithGeneratedByTopology.counit_apply]
-      using! ContinuousMap.congr_fun hc z
+    simpa only [toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom,
+      ContinuousMap.toGeneratedBy_equiv_comp] using
+      congrArg (fun ρ ↦ (toSSetObjEquiv X n ρ).toGeneratedBy G) h
   · intro σ
     refine ⟨(toSSetObjEquiv _ n).symm ((toSSetObjEquiv X n σ).toGeneratedBy G), ?_⟩
     apply (toSSetObjEquiv X n).injective
@@ -80,8 +78,9 @@ instance isIso_toSSet_map_generatedByCounit (X : TopCat.{u}) :
   have (n : SimplexCategoryᵒᵖ) :
       IsIso ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n) :=
     (CategoryTheory.isIso_iff_bijective _).2 (by
-      simpa only [← GeneratedByTopCat.adjCounit_app_hom, ofHom_hom] using!
-        bijective_toSSet_map_generatedByCounit_app G X n)
+      have h := bijective_toSSet_map_generatedByCounit_app G X n
+      rw [← GeneratedByTopCat.adjCounit_app_hom] at h
+      exact h)
   exact NatIso.isIso_of_isIso_app _
 
 /-- The natural singular simplicial set comparison induced by the generated-topology counit. -/
@@ -100,27 +99,47 @@ theorem toSSetGeneratedByIso_hom_app (X : TopCat.{u}) :
       toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
   (rfl)
 
+/-- The inverse singular-set comparison is the inverse of the counit-induced map. -/
+@[simp]
+theorem toSSetGeneratedByIso_inv_app (X : TopCat.{u}) :
+    (toSSetGeneratedByIso G).inv.app X =
+      inv (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)) :=
+  (rfl)
+
 /-- The inverse singular-set comparison lifts precisely the same continuous simplex to the
 refined topology. -/
 theorem toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app (X : TopCat.{u}) (n : SimplexCategoryᵒᵖ)
     (σ : (toSSet.obj X).obj n) :
-    toSSetObjEquiv ((TopCat.toGeneratedByTopCat (X := G)).obj X).obj n
+    toSSetObjEquiv ((TopCat.toGeneratedByTopCat (X := G) ⋙
+        GeneratedByTopCat.toTopCat).obj X) n
         (((toSSetGeneratedByIso G).inv.app X).app n σ) =
       (toSSetObjEquiv X n σ).toGeneratedBy G := by
+  -- The composite functor's object has carrier `WithGeneratedByTopology G X` definitionally.
   let f : C(StdSimplex ℝ (Fin (n.unop.len + 1)), WithGeneratedByTopology G X) :=
     toSSetObjEquiv _ n (((toSSetGeneratedByIso G).inv.app X).app n σ)
   have h : ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n)
-      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ := by
-    simpa only [NatTrans.comp_app, types_comp_apply, NatTrans.id_app, types_id_apply,
-      Iso.app_hom, Iso.app_inv, toSSetGeneratedByIso_hom_app] using
-      ConcreteCategory.congr_hom
-        (NatTrans.congr_app ((toSSetGeneratedByIso G).app X).inv_hom_id n) σ
+      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ :=
+    ((((toSSetGeneratedByIso G).app X).app n).inv_hom_id_apply σ)
   have hc := congrArg (toSSetObjEquiv X n) h
   rw [toSSetObjEquiv_toSSet_map_app] at hc
   have hf : (WithGeneratedByTopology.counit G X).comp f = toSSetObjEquiv X n σ := by
-    simpa only [← GeneratedByTopCat.adjCounit_app_hom, Hom.hom] using! hc
+    rwa [← GeneratedByTopCat.adjCounit_app_hom]
   exact (ContinuousMap.toGeneratedBy_equiv_comp f).symm.trans
     (congrArg (fun τ : C(StdSimplex ℝ (Fin (n.unop.len + 1)), X) ↦ τ.toGeneratedBy G) hf)
+
+/-- After applying the counit, the inverse comparison evaluates to the original simplex. -/
+theorem adjCounit_toSSetObjEquiv_toSSetGeneratedByIso_inv_app_app (X : TopCat.{u})
+    (n : SimplexCategoryᵒᵖ) (σ : (toSSet.obj X).obj n)
+    (z : StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    ((GeneratedByTopCat.adjCounit (X := G)).app X)
+        (toSSetObjEquiv _ n (((toSSetGeneratedByIso G).inv.app X).app n σ) z) =
+      toSSetObjEquiv X n σ z := by
+  have h : ((toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)).app n)
+      ((((toSSetGeneratedByIso G).inv.app X).app n) σ) = σ :=
+    ((((toSSetGeneratedByIso G).app X).app n).inv_hom_id_apply σ)
+  have hc := congrArg (toSSetObjEquiv X n) h
+  rw [toSSetObjEquiv_toSSet_map_app] at hc
+  exact ContinuousMap.congr_fun hc z
 
 -- Exercise compact generation with independent test-space and target universes.
 example (X : TopCat.{u}) :
@@ -153,7 +172,6 @@ def singularChainComplexFunctorGeneratedByIso :
   Functor.isoWhiskerRight (TopCat.toSSetGeneratedByIso G) ((SSet.chainComplexFunctor C).obj R)
 
 /-- The forward chain comparison is the singular chain map of the counit. -/
-@[simp]
 theorem singularChainComplexFunctorGeneratedByIso_hom_app (X : TopCat.{u}) :
     (singularChainComplexFunctorGeneratedByIso G R).hom.app X =
       ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map
@@ -161,7 +179,6 @@ theorem singularChainComplexFunctorGeneratedByIso_hom_app (X : TopCat.{u}) :
   (rfl)
 
 /-- The inverse chain comparison is induced by the inverse singular-set comparison. -/
-@[simp]
 theorem singularChainComplexFunctorGeneratedByIso_inv_app (X : TopCat.{u}) :
     (singularChainComplexFunctorGeneratedByIso G R).inv.app X =
       SSet.chainComplexMap ((TopCat.toSSetGeneratedByIso G).inv.app X) R :=
@@ -169,7 +186,6 @@ theorem singularChainComplexFunctorGeneratedByIso_inv_app (X : TopCat.{u}) :
 
 /-- On each singular-chain summand, the inverse comparison is induced by lifting its simplex
 to the generated topology. -/
-@[reassoc]
 theorem ιChainComplex_singularChainComplexFunctorGeneratedByIso_inv_app_f
     (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSSet.obj X).obj (Opposite.op ⦋n⦌)) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫
