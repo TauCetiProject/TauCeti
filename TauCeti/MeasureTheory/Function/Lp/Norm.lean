@@ -123,13 +123,8 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
   · refine ⟨0, fun u => ?_⟩
     rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
     exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq
   have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg hexp hm
   refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
@@ -137,12 +132,12 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
       ≤ eLpNorm (v u) pstar m * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
         eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
     _ = ‖S u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
-        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u)]
+        rw [Lp.eNorm_def, eLpNorm_congr_ae (hS u)]
     _ ≤ ‖S‖ₑ * ‖u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
         gcongr
         exact S.le_opENorm u
     _ = ↑(‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal) * ‖u‖ₑ := by
-        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, enorm_eq_nnnorm]
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, eNorm_eq_nnNorm]
         ring
 
 /-- On a finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere
@@ -280,8 +275,8 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
-  rw [integral_norm_eq_lintegral_enorm (Lp.aestronglyMeasurable f),
-    ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
+  rw [integral_norm_eq_lintegral_eNorm (Lp.aestronglyMeasurable f),
+    ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
@@ -331,7 +326,7 @@ theorem Lp.setIntegral_norm_sq_le_norm_sq {alpha F : Type*} [MeasurableSpace alp
     (hst : s ⊆ t) : ∫ x in s, ‖f x‖ ^ 2 ∂m ≤ ‖f‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   exact setIntegral_mono_set ((Lp.memLp f).integrable_norm_pow two_ne_zero)
-    (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
 
 /-- On a finite measure space, a function in `Lᵖ` bounded almost everywhere in norm by `C ≥ 0` has
 `Lᵖ` norm at most `measureUnivNNReal μ ^ p.toReal⁻¹ * C`. -/

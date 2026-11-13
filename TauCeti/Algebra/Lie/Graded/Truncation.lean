@@ -51,7 +51,7 @@ public section
 
 namespace TauCeti.PositiveDegrees
 
-variable {N : Type} [AddCommMonoid N] {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {N : Type*} [AddCommMonoid N] {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (d : PositiveDegrees N) (ℒ : N → Submodule R L)
 
 /-- Bracketing terms above cutoffs `k` and `l` gives terms above `k + l + 1`. -/

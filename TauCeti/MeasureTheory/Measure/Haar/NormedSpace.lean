@@ -254,7 +254,7 @@ theorem addHaar_closedBall_ae_eq_ball_of_ne_zero
     (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) (hr : r ≠ 0) :
     closedBall x r =ᵐ[mu] ball x r := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · apply Filter.EventuallyEq.of_eq
+  · apply Filter.EventuallyEqSet.of_eq
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
