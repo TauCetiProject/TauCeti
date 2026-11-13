@@ -239,14 +239,14 @@ private def assocInr (y : puncture c) :
     haveI := t1Space hb' hc
     puncture (inlBall b' c b hbb') :=
   haveI := t1Space hb' hc
-  ⟨inr b' c y, mem_puncture.2 (inr_ne_inlBall_zero hb'.injective hc.injective hbb' hb'b y)⟩
+  ⟨inr b' c y, mem_puncture.2 (inr_ne_inlBall_zero hbb' hb'b y)⟩
 
 /-- The first summand `M ∖ {a 0}`, as a subspace of the punctured summand of `M # N`. -/
 private def assocInl (x : puncture a) :
     haveI := t1Space ha hb
     puncture (inrBall a b b' hb'b) :=
   haveI := t1Space ha hb
-  ⟨inl a b x, mem_puncture.2 (inl_ne_inrBall_zero ha.injective hb.injective hb'b hbb' x)⟩
+  ⟨inl a b x, mem_puncture.2 (inl_ne_inrBall_zero hb'b hbb' x)⟩
 
 /-- `M # (N ∖ {b' 0})` maps to `M # (N # P)`, by the identity on `M ∖ {a 0}` and on
 `N ∖ {b 0, b' 0}`. -/
@@ -334,7 +334,7 @@ private def assocFun :
     (inr a (inlBall b' c b hbb') ∘ assocInr hbb' hb'b hb' hc) fun v hv hx hy ↦ by
       simp only [comp_apply, leftHomeomorph_symm_inrBall hbb' hb'b ha hb hb' hv hx, leftMap_inr,
         assocInr]
-      exact congrArg _ (Subtype.ext (inl_eq_inr v hv _ hy))
+      exact congrArg _ (Subtype.ext (inl_eq_inr v _ hy))
 
 /-- The map `M # (N # P) → (M # N) # P`: the identity on `M ∖ {a 0}`, `N ∖ {b 0, b' 0}` and
 `P ∖ {c 0}`. -/
@@ -348,7 +348,7 @@ private def assocInvFun :
     (rightMap hb'b ha hb ∘ (rightHomeomorph hbb' hb'b hb' hc).symm) fun v hv hx hy ↦ by
       simp only [comp_apply, rightHomeomorph_symm_inlBall hbb' hb'b hb hb' hc
         (by simpa [inversion_eq_center one_ne_zero] using hv) hy, rightMap_inl, assocInl]
-      exact congrArg _ (Subtype.ext (inl_eq_inr v hv hx _))
+      exact congrArg _ (Subtype.ext (inl_eq_inr v hx _))
 
 private theorem assocFun_inl (x : haveI := t1Space ha hb; puncture (inrBall a b b' hb'b)) :
     haveI := t1Space ha hb
@@ -507,7 +507,7 @@ theorem assocHomeomorph_inr (y : puncture c) :
     haveI := t1Space hb' hc
     assocHomeomorph hbb' hb'b ha hb hb' hc (inr _ c y) =
       inr a _ ⟨inr b' c y,
-        mem_puncture.2 (inr_ne_inlBall_zero hb'.injective hc.injective hbb' hb'b y)⟩ :=
+        mem_puncture.2 (inr_ne_inlBall_zero hbb' hb'b y)⟩ :=
   haveI := t1Space ha hb
   haveI := t1Space hb' hc
   assocFun_inr hbb' hb'b ha hb hb' hc y
@@ -518,7 +518,7 @@ theorem assocHomeomorph_symm_inl (x : puncture a) :
     haveI := t1Space hb' hc
     (assocHomeomorph hbb' hb'b ha hb hb' hc).symm (inl a _ x) =
       inl _ c ⟨inl a b x,
-        mem_puncture.2 (inl_ne_inrBall_zero ha.injective hb.injective hb'b hbb' x)⟩ := by
+        mem_puncture.2 (inl_ne_inrBall_zero hb'b hbb' x)⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [Homeomorph.symm_apply_eq, assocHomeomorph_inl_inl]
