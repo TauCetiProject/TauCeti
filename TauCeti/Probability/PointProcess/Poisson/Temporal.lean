@@ -84,7 +84,7 @@ theorem isPoissonRandomMeasure_of_count_increments
     exact ENNReal.natCast_ne_top _
   -- Compare the full natural-valued path law with the constructed Poisson random measure.
   let Q := Λ.poissonLaw
-  have hQ : IsPoissonRandomMeasure Q id Λ := isPoissonRandomMeasure_poissonLaw Λ
+  have hQ : IsPoissonRandomMeasure Q id Λ := Λ.isPoissonRandomMeasure_poissonLaw
   let C : ℝ≥0 → Measure ℝ≥0 → ℕ := fun t μ ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊
   have hCcount : ∀ᵐ μ ∂Q, ∀ t, μ (Iic t) = (C t μ : ℝ≥0∞) :=
     hQ.ae_forall_measure_Iic_eq_natCast_nat_count hΛ
@@ -108,45 +108,45 @@ theorem isPoissonRandomMeasure_of_count_increments
     ((identDistrib_measure_iff_Iic hM.aemeasurable measurable_id.aemeasurable
       hfinite hQfinite).mpr hcum').symm
 
-/-- For a cumulative natural-valued representation starting at zero almost surely, the Poisson
-property is equivalent to independent Poisson increments. The intensity is locally finite and
-has no mass at the origin; atoms at positive times are allowed. -/
+/-- For a cumulative natural-valued representation, the Poisson property is equivalent to
+starting at zero almost surely and having independent Poisson increments. The intensity is
+locally finite and has no mass at the origin; atoms at positive times are allowed. -/
 theorem isPoissonRandomMeasure_iff_count_increments
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {M : Ω → Measure ℝ≥0} {N : ℝ≥0 → Ω → ℕ} {Λ : Measure ℝ≥0}
     [IsLocallyFiniteMeasure Λ] (hΛ : Λ {0} = 0) (hM : Measurable M)
-    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞))
-    (h0 : ∀ᵐ ω ∂P, N 0 ω = 0) :
-    IsPoissonRandomMeasure P M Λ ↔ HasIndepIncrements N P ∧
+    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
+    IsPoissonRandomMeasure P M Λ ↔ (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
       ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
         (poissonMeasure (Λ (Ioc s t)).toNNReal) P := by
-  refine ⟨fun h ↦ ?_, fun ⟨hind, hlaw⟩ ↦
+  refine ⟨fun h ↦ ?_, fun ⟨h0, hind, hlaw⟩ ↦
     isPoissonRandomMeasure_of_count_increments hΛ hM hcount h0 hind hlaw⟩
   have heq : ∀ᵐ ω ∂P, ∀ t, ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ = N t ω := by
     filter_upwards [h.ae_forall_measure_Iic_eq_natCast_nat_count hΛ, hcount] with ω hc hn t
     exact_mod_cast (hc t).symm.trans (hn t)
-  constructor
+  refine ⟨heq.mono (fun ω hω ↦ by simpa using (hω 0).symm), ?_, ?_⟩
   · intro n t ht
     exact (h.hasIndepIncrements_nat_count n t ht).congr fun i ↦
       heq.mono fun ω hω ↦ by simp [hω]
   · intro s t hst
     exact (h.hasLaw_nat_count_sub hst).congr (heq.mono fun ω hω ↦ by simp [hω])
 
-/-- Homogeneous temporal Poisson random measures are characterized by independent increments
-with parameter rate times elapsed time. This includes rate zero and equal increment endpoints. -/
+/-- Homogeneous temporal Poisson random measures are characterized by a zero initial count
+almost surely and independent increments with parameter rate times elapsed time. This includes
+rate zero and equal increment endpoints. -/
 theorem isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {M : Ω → Measure ℝ≥0} {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
     (hM : Measurable M)
-    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞))
-    (h0 : ∀ᵐ ω ∂P, N 0 ω = 0) :
-    IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) ↔ HasIndepIncrements N P ∧
+    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
+    IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
       ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
         (poissonMeasure (r * (t - s))) P := by
   have : IsLocallyFiniteMeasure ((r : ℝ≥0∞) • nnvolume) :=
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   simpa only [smul_nnvolume_Ioc, ENNReal.toNNReal_coe] using
     isPoissonRandomMeasure_iff_count_increments (Λ := (r : ℝ≥0∞) • nnvolume)
-      (by simp) hM hcount h0
+      (by simp) hM hcount
 
 end TauCeti.Probability

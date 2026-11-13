@@ -86,7 +86,7 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) (hΛ : Λ {0} = 0) :
     ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
   filter_upwards [h.ae_isIntegerValued, h.ae_isLocallyFiniteMeasure,
-    h.ae_eq_zero (measurableSet_singleton 0) hΛ]
+    h.ae_eq_zero hΛ]
     with ω hint hfin hz t
   let := hfin
   obtain ⟨n, hn⟩ := hint.exists_eq_natCast (A := Ioc 0 t)

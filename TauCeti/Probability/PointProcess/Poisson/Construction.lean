@@ -136,15 +136,10 @@ theorem laplaceFunctional_poissonLaw (Λ : Measure X) [SigmaFinite Λ]
     infinitePi_dirac, Measure.map_dirac' measurable_sum]
   simp
 
-end MeasureTheory.Measure
-
-namespace TauCeti.Probability
-
 /-- The sigma-finite sampling law realizes a Poisson random measure with its specified intensity. -/
-theorem isPoissonRandomMeasure_poissonLaw {X : Type*} [MeasurableSpace X]
-    (Λ : MeasureTheory.Measure X) [MeasureTheory.SigmaFinite Λ] :
+theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
     IsPoissonRandomMeasure Λ.poissonLaw id Λ :=
   isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-    (fun _ hf ↦ MeasureTheory.Measure.laplaceFunctional_poissonLaw Λ hf)
+    (fun _ hf ↦ laplaceFunctional_poissonLaw Λ hf)
 
-end TauCeti.Probability
+end MeasureTheory.Measure
