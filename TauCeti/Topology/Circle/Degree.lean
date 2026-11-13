@@ -311,6 +311,8 @@ theorem degree_eq_of_homotopy_div_norm {x y : Circle} (γ₀ : Path x x) (γ₁ 
     degree γ₀ = degree γ₁ := by
   let G : C(I × I, Circle) := TauCeti.normalizeToSphere F F.continuous hne
   have hG (st : I × I) : (G st : ℂ) = F st / ‖F st‖ := by
+    -- `Circle` is the unit sphere with its own coercion to `ℂ`. The normalization lemma
+    -- uses the sphere subtype coercion, so expose that coercion here to allow rewriting.
     change ((TauCeti.normalizeToSphere F F.continuous hne st : Metric.sphere (0 : ℂ) 1) : ℂ) = _
     rw [TauCeti.coe_normalizeToSphere_apply, NormedSpace.normalize, Complex.real_smul,
       Complex.ofReal_inv, inv_mul_eq_div]
