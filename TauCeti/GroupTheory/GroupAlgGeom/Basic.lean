@@ -328,6 +328,19 @@ theorem eval_eq_of_comp_inl {f : GX G X →* H} (hf : f.comp inl = ι) :
     eval ι (fun x => f (inr (FreeGroup.of x))) = f :=
   hf ▸ (eq_eval f).symm
 
+/-- If no coefficient survives, every word evaluates to `1` at the trivial tuple. -/
+@[simp]
+theorem eval_one_one : eval (1 : G →* H) (1 : X → H) = 1 :=
+  eval_eq_of_comp_inl (f := 1) rfl
+
+/-- In a commutative group a word is a constant times a homomorphism of the tuple of values, so
+evaluation is compatible with the operation `(u, v, w) ↦ u * v⁻¹ * w` on tuples. -/
+theorem eval_mul_inv_mul {A : Type*} [CommGroup A] (ι : G →* A) (u v w : X → A) (s : GX G X) :
+    eval ι (u * v⁻¹ * w) s = eval ι u s * (eval ι v s)⁻¹ * eval ι w s := by
+  have h : eval ι (u * v⁻¹ * w) = eval ι u * (eval ι v)⁻¹ * eval ι w :=
+    hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
+  simp [h]
+
 /-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
 theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
     f.comp (eval ι v) = eval (f.comp ι) (f ∘ v) :=

@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Compactness.HalfDisc
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -199,8 +200,8 @@ theorem tendsto_eLpNorm_fderiv_sineWave {p : ℝ≥0∞} (hp : 1 ≤ p) :
   set μ := volume.restrict (ball (0 : ℂ) 1)
   have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set C := μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal)
-  have hC : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (MeasureTheory.sub_one_div_toReal_nonneg hp)
-    (measure_ne_top μ univ)
+  have hC : C ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ univ)
   have hC0 : C ≠ 0 := by
     refine (ENNReal.rpow_pos ?_ (measure_ne_top μ univ)).ne'
     simpa [μ] using measure_ball_pos volume (0 : ℂ) one_pos
