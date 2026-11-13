@@ -52,8 +52,6 @@ vectors again form a symplectic subspace
 
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
   maps complex linear for an almost complex structure `J` tamed by `ω` form a symplectic subspace.
-* `TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`: a linear isometry
-  preserving `ω` commutes with the polar normalization of `ω`.
 * `TauCeti.SymplecticForm.isSymplectic_invariants_of_inner`: the fixed vectors of a
   representation by linear isometries preserving `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
@@ -99,18 +97,6 @@ section Isometric
 
 variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [Group G] {ω : SymplecticForm E} {ρ : Representation ℝ G E}
-
-/-- On a finite-dimensional real inner product space, a linear map preserving the inner product
-and a symplectic form `ω` commutes with the polar normalization of `ω`. -/
-theorem isComplexLinearMap_polarComplexStructure_of_inner (ω : SymplecticForm E) {f : E →ₗ[ℝ] E}
-    (hf : ∀ u v, inner ℝ (f u) (f v) = inner ℝ u v) (hω : ∀ u v, ω (f u) (f v) = ω u v) :
-    IsComplexLinearMap ω.polarComplexStructure ω.polarComplexStructure f := by
-  -- `f` is a linear isometric equivalence and a symplectomorphism.
-  let e : E ≃ₗᵢ[ℝ] E := (f.isometryOfInner hf).toLinearIsometryEquiv rfl
-  have he : IsSymplectomorphism ω ω e.toLinearEquiv :=
-    isSymplectomorphism_iff.2 fun u v ↦ hω u v
-  rw [isComplexLinearMap_iff_apply]
-  exact fun v ↦ (he.polarComplexStructure_apply v).symm
 
 /-- **The fixed vectors of a group of symplectic isometries form a symplectic subspace.** On a
 finite-dimensional real inner product space, the vectors fixed by a representation by linear
