@@ -433,7 +433,8 @@ end RowOrthogonality
 
 section Nonconstant
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k] [CharZero k]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k] [CharZero k]
+  [Invertible (Nat.card G : k)]
 
 /-- **A nontrivial irreducible character is not constant.** Over an algebraically closed field of
 characteristic zero, if `i₀` indexes the trivial character, the constant function `1`, and
@@ -443,8 +444,8 @@ which is its value `χᵢ(1)` at the identity (`TauCeti.irreducibleCharacter_one
 theorem exists_irreducibleCharacter_ne_characterDegree {i₀ i : Fin (Nat.card (ConjClasses G))}
     (hi₀ : irreducibleCharacter k i₀ = fun _ : G => (1 : k)) (hne : i ≠ i₀) :
     ∃ g : G, irreducibleCharacter k i g ≠ characterDegree k i := by
+  have := finite_of_neZero_natCast_natCard k G
   let _ : Fintype G := Fintype.ofFinite G
-  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   by_contra! htriv
   -- row orthogonality of `χᵢ` against the trivial character: `χᵢ(1) = 0`
   simpa [htriv, hi₀, hne, (characterDegree_pos k i).ne'] using
@@ -521,12 +522,13 @@ end ColumnOrthogonality
 
 section Complex
 
-variable {G : Type v} [Group G] [Finite G]
+variable {G : Type v} [Group G] [Invertible (Nat.card G : ℂ)]
 
 /-- **Complex conjugation of an irreducible character value inverts the group element.** -/
 @[simp]
 theorem conj_irreducibleCharacter (i : Fin (Nat.card (ConjClasses G))) (g : G) :
     (starRingEnd ℂ) (irreducibleCharacter ℂ i g) = irreducibleCharacter ℂ i g⁻¹ := by
+  have := finite_of_neZero_natCast_natCard ℂ G
   rw [← character_irreducibleRepresentation ℂ i]
   exact Representation.conj_char _ g
 
@@ -570,6 +572,7 @@ theorem card_inv_mul_sum_card_conjClass_mul_characterTable_mul_conj [Fintype (Co
     (Nat.card G : ℂ)⁻¹ * ∑ C : ConjClasses G, (Nat.card C.carrier : ℂ) *
         characterTable ℂ G i C * (starRingEnd ℂ) (characterTable ℂ G j C) =
       if i = j then 1 else 0 := by
+  have := finite_of_neZero_natCast_natCard ℂ G
   let _ : Fintype G := Fintype.ofFinite G
   rw [← card_inv_mul_sum_characterTable_mul_conj i j]
   congr 1

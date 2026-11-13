@@ -269,7 +269,7 @@ classes.**
 
 A row of `TauCeti.characterTable ℂ G` is fixed by complex conjugation exactly when it is fixed by
 inverting the class, because conjugating a character value inverts the group element. -/
-theorem card_realValued_eq_card_realClasses (G : Type v) [Group G] [Finite G] :
+theorem card_realValued_eq_card_realClasses (G : Type v) [Group G] [Invertible (Nat.card G : ℂ)] :
     Nat.card {i : Fin (Nat.card (ConjClasses G)) //
         ∀ C : ConjClasses G, (starRingEnd ℂ) (characterTable ℂ G i C) = characterTable ℂ G i C} =
       Nat.card {C : ConjClasses G // IsRealClass C} := by
