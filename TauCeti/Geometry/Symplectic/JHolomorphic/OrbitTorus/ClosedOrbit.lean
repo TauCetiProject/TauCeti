@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
-public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
+public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint.Basic
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!

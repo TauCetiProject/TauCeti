@@ -31,6 +31,8 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `RiemannianIsometry.mfderiv_image_expDomain`: the differential of an isometry maps the domain of
   the exponential map onto the domain at the image point.
 * `RiemannianIsometry.riemannianExp_mfderiv`: an isometry intertwines the exponential maps.
+* `RiemannianIsometry.mfderiv_apply_mfderiv_riemannianExp`: on the natural domain, it also
+  intertwines their differentials.
 -/
 
 public section
@@ -118,6 +120,26 @@ theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M]
     (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) :
     riemannianExp J N (Φ p) (mfderiv I J Φ p v) = Φ (riemannianExp I M p v) := by
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]
+
+/-- **Naturality of the differential of the exponential map.** At a vector `v` of the natural
+domain of `exp_p`, a smooth Riemannian isometry intertwines the differentials of the exponential
+maps: `dΦ_(exp_p v) (d(exp_p)_v w) = d(exp_(Φ p))_(dΦ_p v) (dΦ_p w)`. -/
+theorem mfderiv_apply_mfderiv_riemannianExp [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    [T2Space N] (Φ : RiemannianIsometry I J M N) {p : M} {v : TangentSpace I p}
+    (hv : v ∈ expDomain I M p) (w : TangentSpace I p) :
+    mfderiv I J Φ (riemannianExp I M p v)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w) =
+      mfderiv 𝓘(ℝ, TangentSpace J (Φ p)) J (riemannianExp J N (Φ p)) (mfderiv I J Φ p v)
+        (mfderiv I J Φ p w) := by
+  -- Both sides are derivatives at `v` of the same map `Φ ∘ exp_p = exp_(Φ p) ∘ dΦ_p`.
+  have hfun : Φ ∘ riemannianExp I M p = riemannianExp J N (Φ p) ∘ mfderiv I J Φ p :=
+    funext fun u ↦ (Φ.riemannianExp_mfderiv p u).symm
+  have hleft := (Φ.mdifferentiableAt _).hasMFDerivAt.comp v
+    ((contMDiffAt_riemannianExp hv).mdifferentiableAt (by simp)).hasMFDerivAt
+  have hright := ((contMDiffAt_riemannianExp (Φ.mfderiv_mem_expDomain_iff.2 hv)).mdifferentiableAt
+    (by simp)).hasMFDerivAt.comp v (mfderiv I J Φ p).hasMFDerivAt
+  rw [hfun] at hleft
+  exact congrArg (fun L ↦ L w) (hasMFDerivAt_unique hleft hright)
 
 end TauCeti.RiemannianIsometry
 
