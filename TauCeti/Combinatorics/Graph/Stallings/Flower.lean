@@ -38,9 +38,9 @@ variable {α : Type*}
   (Σ i : Fin ws.length, Fin ws[i].length) × Bool
 
 /-- The based labelled flower with one polygonal petal per word. The `j`th forward dart of a
-petal runs from position `j` to position `j + 1` on it (see `flowerPos`), and the first and last
-positions of a petal are the base vertex. Empty words contribute no edges, and a one-letter word
-contributes a loop at the base vertex. -/
+petal runs from position `j` to position `j + 1` on it (see `flowerDart` and `flowerPos`), and
+the first and last positions of a petal are the base vertex. Empty words contribute no edges,
+and a one-letter word contributes a loop at the base vertex. -/
 @[expose] def flower (ws : List (List (α × Bool))) : StallingsGraph α where
   graph := {
     V := FlowerVertex ws
@@ -73,18 +73,26 @@ contributes a loop at the base vertex. -/
   if h : 0 < k ∧ k < ws[i].length then
     some ⟨i, ⟨k - 1, by omega⟩⟩ else none
 
+/-- The dart at position `j` on petal `i` of the flower, forward if `s` is `true` and reverse
+otherwise. -/
+@[expose] def flowerDart (ws : List (List (α × Bool))) (i : Fin ws.length)
+    (j : Fin ws[i].length) (s : Bool) : (flower ws).graph.E :=
+  (⟨i, j⟩, s)
+
+/-- Every dart of the flower is the dart at some position of some petal, in some direction. -/
+@[simp] theorem forall_flower_E {ws : List (List (α × Bool))} {p : (flower ws).graph.E → Prop} :
+    (∀ e, p e) ↔ ∀ i j s, p (flowerDart ws i j s) :=
+  ⟨fun h _ _ _ => h _, fun h ⟨⟨i, j⟩, s⟩ => h i j s⟩
+
 @[simp] theorem flower_rev (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
-    (flower ws).graph.rev (⟨i, j⟩, s) = (⟨i, j⟩, !s) := rfl
+    (flower ws).graph.rev (flowerDart ws i j s) = flowerDart ws i j (!s) := rfl
 
 /-- Two darts of a flower are equal exactly when they lie on the same petal, at the same
 position, with the same direction. -/
--- The equality is stated in the dart type of the flower, the type in which equations between
--- darts of the graph arise, so that the lemma rewrites them.
-@[simp] theorem flower_dart_eq_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
+@[simp] theorem flowerDart_eq_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
     (j : Fin ws[i].length) (j' : Fin ws[i'].length) (s s' : Bool) :
-    @Eq (flower ws).graph.E (⟨i, j⟩, s) (⟨i', j'⟩, s') ↔
-      i = i' ∧ j.val = j'.val ∧ s = s' := by
+    flowerDart ws i j s = flowerDart ws i' j' s' ↔ i = i' ∧ j.val = j'.val ∧ s = s' := by
   refine ⟨fun h => ?_, ?_⟩
   · obtain rfl : i = i' := congrArg (fun e => e.1.1) h
     exact ⟨rfl, congrArg (fun e => e.1.2.val) h, congrArg Prod.snd h⟩
@@ -94,29 +102,30 @@ position, with the same direction. -/
 
 @[simp] theorem flower_src_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).graph.src (⟨i, j⟩, true) = flowerPos ws i j.val := rfl
+    (flower ws).graph.src (flowerDart ws i j true) = flowerPos ws i j.val := rfl
 
 @[simp] theorem flower_src_reverse (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).graph.src (⟨i, j⟩, false) = flowerPos ws i (j.val + 1) := rfl
+    (flower ws).graph.src (flowerDart ws i j false) = flowerPos ws i (j.val + 1) := rfl
 
 /-- The origin of a dart of a flower: a forward dart starts at its own position on the petal
 and a reverse dart at the next one. -/
 theorem flower_src (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
-    (flower ws).graph.src (⟨i, j⟩, s) = flowerPos ws i (if s then j.val else j.val + 1) := by
+    (flower ws).graph.src (flowerDart ws i j s) =
+      flowerPos ws i (if s then j.val else j.val + 1) := by
   cases s <;> rfl
 
 /-- The label of a dart of a flower: a forward dart reads the letter at its position and a
 reverse dart reads the inverse letter. -/
 theorem flower_label (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
-    (flower ws).label (⟨i, j⟩, s) =
+    (flower ws).label (flowerDart ws i j s) =
       if s then ws[i][j.val] else (ws[i][j.val].1, !ws[i][j.val].2) := rfl
 
 @[simp] theorem flower_label_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).label (⟨i, j⟩, true) = ws[i][j.val] := rfl
+    (flower ws).label (flowerDart ws i j true) = ws[i][j.val] := rfl
 
 @[simp] theorem flowerPos_zero (ws : List (List (α × Bool))) (i : Fin ws.length) :
     flowerPos ws i 0 = none := by
@@ -171,26 +180,27 @@ theorem flowerPos_eq_flowerPos_iff (ws : List (List (α × Bool))) (i i' : Fin w
 
 @[simp] theorem flower_tgt_forward (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).graph.tgt (⟨i, j⟩, true) = flowerPos ws i (j.val + 1) := by
-  exact ((flower ws).graph.tgt_def (⟨i, j⟩, true)).trans (by rfl)
+    (flower ws).graph.tgt (flowerDart ws i j true) = flowerPos ws i (j.val + 1) := by
+  exact ((flower ws).graph.tgt_def (flowerDart ws i j true)).trans (by rfl)
 
 @[simp] theorem flower_tgt_reverse (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).graph.tgt (⟨i, j⟩, false) = flowerPos ws i j.val := by
-  exact ((flower ws).graph.tgt_def (⟨i, j⟩, false)).trans (by rfl)
+    (flower ws).graph.tgt (flowerDart ws i j false) = flowerPos ws i j.val := by
+  exact ((flower ws).graph.tgt_def (flowerDart ws i j false)).trans (by rfl)
 
 /-- The terminus of a dart of a flower: a forward dart ends at the position after its own on
 the petal and a reverse dart at its own position. -/
 theorem flower_tgt (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) (s : Bool) :
-    (flower ws).graph.tgt (⟨i, j⟩, s) = flowerPos ws i (if s then j.val + 1 else j.val) := by
+    (flower ws).graph.tgt (flowerDart ws i j s) =
+      flowerPos ws i (if s then j.val + 1 else j.val) := by
   cases s
   · exact flower_tgt_reverse ws i j
   · exact flower_tgt_forward ws i j
 
 @[simp] theorem flower_label_reverse (ws : List (List (α × Bool)))
     (i : Fin ws.length) (j : Fin ws[i].length) :
-    (flower ws).label (⟨i, j⟩, false) =
+    (flower ws).label (flowerDart ws i j false) =
       (ws[i][j.val].1, !ws[i][j.val].2) := rfl
 
 /-- The forward dart at position `k` on petal `i`. -/
@@ -198,8 +208,7 @@ def flowerForwardHom (ws : List (List (α × Bool))) (i : Fin ws.length)
     (k : ℕ) (hk : k < ws[i].length) :
     @Quiver.Hom (flower ws).graph.V (flower ws).graph.toQuiver
       (flowerPos ws i k) (flowerPos ws i (k + 1)) :=
-  ⟨(⟨i, ⟨k, hk⟩⟩, true),
-    flower_src_forward ws i ⟨k, hk⟩, flower_tgt_forward ws i ⟨k, hk⟩⟩
+  ⟨flowerDart ws i ⟨k, hk⟩ true, flower_src_forward ws i ⟨k, hk⟩, flower_tgt_forward ws i ⟨k, hk⟩⟩
 
 /-- The one-edge path traversing the `k`th letter of petal `i`. -/
 def flowerForward (ws : List (List (α × Bool))) (i : Fin ws.length)
@@ -303,14 +312,15 @@ private theorem flowerPotential_edge (ws : List (List (α × Bool)))
     flowerPotential ws ((flower ws).graph.src e) * FreeGroup.mk [(flower ws).label e] *
       (flowerPotential ws ((flower ws).graph.tgt e))⁻¹ ∈
         Subgroup.closure {g : FreeGroup α | ∃ w ∈ ws, FreeGroup.mk w = g} := by
-  obtain ⟨⟨i, j⟩, b⟩ := e
-  cases b with
+  revert e
+  refine forall_flower_E.mpr fun i j s => ?_
+  cases s with
   | true =>
       simpa only [flower_src_forward, flower_tgt_forward, flower_label_forward] using
         flowerPotential_step ws i j
   | false =>
       have h := (Subgroup.inv_mem _ (flowerPotential_step ws i j))
-      have hlabel : FreeGroup.mk [(flower ws).label (⟨i, j⟩, false)] =
+      have hlabel : FreeGroup.mk [(flower ws).label (flowerDart ws i j false)] =
           (FreeGroup.mk [ws[i][j.val]])⁻¹ := by
         simp [flower_label_reverse, FreeGroup.inv_mk, FreeGroup.invRev]
       simp only [flower_src_reverse, flower_tgt_reverse, hlabel]

@@ -41,36 +41,36 @@ variable {α : Type*} (a b c : α × Bool)
 /-- Folding the initial darts of the petals `a b` and `a c` leaves two vertices: the base vertex
 and the common image of the two interior vertices. -/
 theorem card_foldAt_V_flower_fork :
-    Nat.card ((flower [[a, b], [a, c]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.V = 2 := by
-  have h := card_foldAt_V_add_one (flower [[a, b], [a, c]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl
-    fun h => by
+    Nat.card ((flower [[a, b], [a, c]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.V = 2 := by
+  have h := card_foldAt_V_add_one (flower [[a, b], [a, c]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    rfl rfl fun h => by
       simpa using (flowerPos_eq_flowerPos_iff [[a, b], [a, c]] ⟨0, by simp⟩ ⟨1, by simp⟩ 1 1).mp h
   simpa using h
 
 /-- Folding the initial darts of the petals `a b` and `a c` leaves three pairs of mutually
 reverse darts. -/
 theorem card_foldAt_E_flower_fork :
-    Nat.card ((flower [[a, b], [a, c]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.E = 6 := by
-  have h := card_foldAt_E_add_two (flower [[a, b], [a, c]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
-    rfl rfl
+    Nat.card ((flower [[a, b], [a, c]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.E = 6 := by
+  have h := card_foldAt_E_add_two (flower [[a, b], [a, c]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    (by simp) rfl rfl
   simpa using h
 
 /-- In the fold of the petals `a b` and `a c` along their initial darts, the image of the
 interior vertices is not the base vertex: the folded `a`-dart is not a loop. -/
 theorem foldHom_mapV_flower_fork_ne_base :
-    ((flower [[a, b], [a, c]]).foldHom (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graphHom.mapV
+    ((flower [[a, b], [a, c]]).foldHom (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graphHom.mapV
         (flowerPos [[a, b], [a, c]] ⟨0, by simp⟩ 1) ≠
-      ((flower [[a, b], [a, c]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-        (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).base := by
+      ((flower [[a, b], [a, c]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+        (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).base := by
   intro h
-  have hb := ((flower [[a, b], [a, c]]).foldHom (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).map_base
-  obtain h₁ | ⟨-, h₂⟩ | ⟨-, h₂⟩ := (foldHom_mapV_eq_iff_eq_or ..).mp (h.trans hb.symm)
+  have hb := ((flower [[a, b], [a, c]]).foldHom (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+    (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).map_base
+  obtain h₁ | ⟨-, h₂⟩ | ⟨-, h₂⟩ := (foldHom_mapV_eq_iff ..).mp (h.trans hb.symm)
   · simpa using (flowerPos_eq_flowerPos_iff [[a, b], [a, c]] ⟨0, by simp⟩ ⟨0, by simp⟩ 1 0).mp h₁
   · simpa using (flowerPos_eq_flowerPos_iff [[a, b], [a, c]] ⟨0, by simp⟩ ⟨1, by simp⟩ 0 1).mp h₂
   · simpa using (flowerPos_eq_flowerPos_iff [[a, b], [a, c]] ⟨0, by simp⟩ ⟨0, by simp⟩ 0 1).mp h₂
@@ -96,16 +96,16 @@ and `c` are distinct and neither is the inverse of `a`: the labels leaving the b
 holds when the underlying generators of `a`, `b` and `c` are pairwise distinct. -/
 theorem isFolded_foldAt_flower_fork (hbc : b ≠ c) (hab : b ≠ (a.1, !a.2))
     (hac : c ≠ (a.1, !a.2)) :
-    ((flower [[a, b], [a, c]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).IsFolded := by
-  refine (isFolded_foldAt_iff ..).mpr ?_
-  rintro ⟨⟨⟨i, hi⟩, ⟨j, hj⟩⟩, s⟩ ⟨⟨⟨i', hi'⟩, ⟨j', hj'⟩⟩, s'⟩ hV hl
-  replace hV := (foldHom_mapV_eq_iff_eq_or ..).mp hV
-  refine (foldHom_mapE_eq_iff_eq_or ..).mpr ?_
+    ((flower [[a, b], [a, c]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).IsFolded := by
+  refine (isFolded_foldAt_iff ..).mpr <| forall_flower_E.mpr fun ⟨i, hi⟩ ⟨j, hj⟩ s =>
+    forall_flower_E.mpr fun ⟨i', hi'⟩ ⟨j', hj'⟩ s' hV hl => ?_
+  replace hV := (foldHom_mapV_eq_iff ..).mp hV
+  refine (foldHom_mapE_eq_iff ..).mpr ?_
   have hj₂ : j < 2 := fork_length a b c i hi ▸ hj
   have hj₂' : j' < 2 := fork_length a b c i' hi' ▸ hj'
   -- Express the origins, labels and equalities of darts through petals, positions and letters.
-  simp only [flower_dart_eq_iff, flower_rev, flower_label, flower_src, flower_tgt_forward,
+  simp only [flowerDart_eq_iff, flower_rev, flower_label, flower_src, flower_tgt_forward,
     flowerPos_eq_flowerPos_iff, Fin.mk.injEq, Fin.getElem_fin, fork_getElem, fork_length]
     at hV hl ⊢
   obtain ⟨x, t⟩ := a
@@ -118,38 +118,39 @@ theorem isFolded_foldAt_flower_fork (hbc : b ≠ c) (hab : b ≠ (a.1, !a.2))
 
 /-- Folding two loops with the same label leaves the single vertex of their flower. -/
 theorem card_foldAt_V_flower_loop_loop :
-    Nat.card ((flower [[a], [a]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.V = 1 := by
-  have h := card_foldAt_V_of_tgt_eq (flower [[a], [a]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl rfl
+    Nat.card ((flower [[a], [a]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.V = 1 := by
+  have h := card_foldAt_V_of_tgt_eq (flower [[a], [a]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    rfl rfl rfl
   simpa using h
 
 /-- Folding two loops with the same label leaves a single loop, that is, one pair of mutually
 reverse darts. -/
 theorem card_foldAt_E_flower_loop_loop :
-    Nat.card ((flower [[a], [a]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.E = 2 := by
-  have h := card_foldAt_E_add_two (flower [[a], [a]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
-    rfl rfl
+    Nat.card ((flower [[a], [a]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.E = 2 := by
+  have h := card_foldAt_E_add_two (flower [[a], [a]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    (by simp) rfl rfl
   simpa using h
 
 /-- The single loop obtained by folding two loops with the same label is a folded graph. -/
 theorem isFolded_foldAt_flower_loop_loop :
-    ((flower [[a], [a]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).IsFolded := by
+    ((flower [[a], [a]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).IsFolded := by
   have hlen (i : ℕ) (hi : i < [[a], [a]].length) : [[a], [a]][i] = [a] := by
     obtain rfl | rfl : i = 0 ∨ i = 1 := by simp at hi; omega
     all_goals rfl
-  refine (isFolded_foldAt_iff ..).mpr ?_
-  rintro ⟨⟨⟨i, hi⟩, ⟨j, hj⟩⟩, s⟩ ⟨⟨⟨i', hi'⟩, ⟨j', hj'⟩⟩, s'⟩ - hl
-  refine (foldHom_mapE_eq_iff_eq_or ..).mpr ?_
+  refine (isFolded_foldAt_iff ..).mpr <| forall_flower_E.mpr fun ⟨i, hi⟩ ⟨j, hj⟩ s =>
+    forall_flower_E.mpr fun ⟨i', hi'⟩ ⟨j', hj'⟩ s' _ hl => ?_
+  refine (foldHom_mapE_eq_iff ..).mpr ?_
   have hi₂ : i < 2 := by simpa using hi
   have hi₂' : i' < 2 := by simpa using hi'
   have hj₁ : j < 1 := by simpa [hlen] using hj
   have hj₁' : j' < 1 := by simpa [hlen] using hj'
   -- Express the labels and equalities of darts through petals, positions and letters.
-  simp only [flower_dart_eq_iff, flower_rev, flower_label, Fin.mk.injEq, Fin.getElem_fin, hlen,
+  simp only [flowerDart_eq_iff, flower_rev, flower_label, Fin.mk.injEq, Fin.getElem_fin, hlen,
     List.getElem_singleton] at hl ⊢
   obtain ⟨x, t⟩ := a
   cases s <;> cases s' <;> simp at hl <;> grind
@@ -159,22 +160,22 @@ theorem isFolded_foldAt_flower_loop_loop :
 /-- Folding the loop `a` with the first dart of the petal `a b` identifies the interior vertex
 of that petal with the base vertex: a single vertex remains. -/
 theorem card_foldAt_V_flower_loop_petal :
-    Nat.card ((flower [[a], [a, b]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.V = 1 := by
-  have h := card_foldAt_V_add_one (flower [[a], [a, b]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl
-    fun h => by
+    Nat.card ((flower [[a], [a, b]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.V = 1 := by
+  have h := card_foldAt_V_add_one (flower [[a], [a, b]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    rfl rfl fun h => by
       simpa using (flowerPos_eq_flowerPos_iff [[a], [a, b]] ⟨0, by simp⟩ ⟨1, by simp⟩ 1 1).mp h
   simpa using h
 
 /-- Folding the loop `a` with the first dart of the petal `a b` leaves two pairs of mutually
 reverse darts, all of them loops at the single remaining vertex. -/
 theorem card_foldAt_E_flower_loop_petal :
-    Nat.card ((flower [[a], [a, b]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-      (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) rfl rfl).graph.E = 4 := by
-  have h := card_foldAt_E_add_two (flower [[a], [a, b]]) (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
-    (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true) (fun h => by simpa using (flower_dart_eq_iff ..).mp h)
-    rfl rfl
+    Nat.card ((flower [[a], [a, b]]).foldAt (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true)
+      (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true) rfl rfl).graph.E = 4 := by
+  have h := card_foldAt_E_add_two (flower [[a], [a, b]])
+    (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)
+    (by simp) rfl rfl
   simpa using h
 
 /-- Identifying the loop `a` with the first dart of the petal `a b` forces the identification
@@ -184,13 +185,11 @@ So no morphism from the flower identifies the two darts while keeping these two 
 distinct. -/
 theorem mapV_eq_of_mapE_eq_flower_loop_petal {Δ : SerreGraph}
     (g : (flower [[a], [a, b]]).graph.Hom Δ)
-    (h : g.mapE (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true) =
-      g.mapE (⟨⟨1, by simp⟩, ⟨0, by simp⟩⟩, true)) :
+    (h : g.mapE (flowerDart _ ⟨0, by simp⟩ ⟨0, by simp⟩ true) =
+      g.mapE (flowerDart _ ⟨1, by simp⟩ ⟨0, by simp⟩ true)) :
     g.mapV (flowerPos [[a], [a, b]] ⟨1, by simp⟩ 1) = g.mapV (flower [[a], [a, b]]).base := by
-  -- A morphism commutes with termini. `Hom.map_tgt` is applied as a term because `rw` and
-  -- `simp` do not identify the edge type of the flower with the type of the dart literals.
-  have ht := (g.map_tgt _ _).symm.trans ((congrArg Δ.tgt h).trans (g.map_tgt _ _))
-  simp only [flower_tgt_forward, zero_add] at ht
+  have ht := congrArg Δ.tgt h
+  simp only [SerreGraph.Hom.map_tgt, flower_tgt_forward, zero_add] at ht
   rw [← ht, flower_base]
   exact congrArg g.mapV ((flowerPos_eq_none_iff _ _ _).mpr (by simp))
 

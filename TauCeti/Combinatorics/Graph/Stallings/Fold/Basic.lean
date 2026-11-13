@@ -110,34 +110,16 @@ def foldHom : S.Hom (S.foldAt f₁ f₂ hsrc hlabel) where
   map_base := rfl
   map_label := by intro e; rfl
 
-/-- Two vertices have the same image exactly when the fold relation identifies them. -/
-theorem foldHom_mapV_eq_iff (x y : S.graph.V) :
-    (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV x =
-      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV y ↔
-      Relation.EqvGen (fun a b => a = S.graph.tgt f₁ ∧ b = S.graph.tgt f₂) x y := by
-  -- The vertex map of foldHom reduces to Quot.mk for the vertex relation.
-  change Quot.mk (vertexRel S f₁ f₂) x = Quot.mk (vertexRel S f₁ f₂) y ↔ _
-  exact ⟨Quot.eqvGen_exact, Quot.eqvGen_sound⟩
-
-/-- Two darts have the same image exactly when the fold relation identifies them. -/
-theorem foldHom_mapE_eq_iff (e e' : S.graph.E) :
-    (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e =
-      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e' ↔
-      Relation.EqvGen (fun a b =>
-        (a = f₁ ∧ b = f₂) ∨
-          (a = S.graph.rev f₁ ∧ b = S.graph.rev f₂)) e e' := by
-  -- The dart map of foldHom reduces to Quot.mk for the dart relation.
-  change Quot.mk (dartRel S f₁ f₂) e = Quot.mk (dartRel S f₁ f₂) e' ↔ _
-  exact ⟨Quot.eqvGen_exact, Quot.eqvGen_sound⟩
-
 /-- Two vertices have the same image in a fold exactly when they are equal or are the two
 termini of the folded darts. -/
-theorem foldHom_mapV_eq_iff_eq_or (x y : S.graph.V) :
+theorem foldHom_mapV_eq_iff (x y : S.graph.V) :
     (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV x =
       (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV y ↔
       x = y ∨ (x = S.graph.tgt f₁ ∧ y = S.graph.tgt f₂) ∨
         (x = S.graph.tgt f₂ ∧ y = S.graph.tgt f₁) := by
-  rw [foldHom_mapV_eq_iff]
+  -- The vertex map of foldHom reduces to Quot.mk for the vertex relation.
+  change Quot.mk (vertexRel S f₁ f₂) x = Quot.mk (vertexRel S f₁ f₂) y ↔ _
+  rw [Quot.eq]
   refine ⟨fun h => ?_, ?_⟩
   · induction h with
     | rel x y h => exact .inr (.inl h)
@@ -151,20 +133,22 @@ theorem foldHom_mapV_eq_iff_eq_or (x y : S.graph.V) :
 
 /-- Two darts have the same image in a fold exactly when they are equal, are the two folded
 darts, or are the reverses of the two folded darts. -/
-theorem foldHom_mapE_eq_iff_eq_or (e e' : S.graph.E) :
+theorem foldHom_mapE_eq_iff (e e' : S.graph.E) :
     (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e =
       (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE e' ↔
       e = e' ∨ (e = f₁ ∧ e' = f₂) ∨ (e = f₂ ∧ e' = f₁) ∨
         (e = S.graph.rev f₁ ∧ e' = S.graph.rev f₂) ∨
         (e = S.graph.rev f₂ ∧ e' = S.graph.rev f₁) := by
-  rw [foldHom_mapE_eq_iff]
+  -- The dart map of foldHom reduces to Quot.mk for the dart relation.
+  change Quot.mk (dartRel S f₁ f₂) e = Quot.mk (dartRel S f₁ f₂) e' ↔ _
+  rw [Quot.eq]
   have h₁ := S.graph.rev_rev f₁
   have h₂ := S.graph.rev_rev f₂
   have h₃ := S.graph.rev_ne f₁
   have h₄ := S.graph.rev_ne f₂
   refine ⟨fun h => ?_, ?_⟩
   · induction h with
-    | rel x y h => grind
+    | rel x y h => grind [dartRel]
     | refl x => exact .inl rfl
     | symm x y _ ih => grind
     | trans x y z _ _ ih₁ ih₂ => grind
@@ -179,7 +163,7 @@ theorem foldHom_mapE_eq_iff_eq_or (e e' : S.graph.E) :
 theorem foldHom_mapV_injective (htgt : S.graph.tgt f₁ = S.graph.tgt f₂) :
     Function.Injective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV := by
   intro x y h
-  rw [foldHom_mapV_eq_iff_eq_or] at h
+  rw [foldHom_mapV_eq_iff] at h
   grind
 
 /-- The two selected darts have the same image in the fold. -/
