@@ -409,25 +409,11 @@ manifolds into the continuous linear endomorphisms of the model space. -/
 theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {x y : M}
     (hy : x ∈ (extChartAt I y).source) :
     haveI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-    ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) n (tangentCoordChange I x y) x := by
-  have hI : IsManifold I 1 M := IsManifold.of_le (n := n + 1) le_add_self
-  rw [contMDiffAt_iff]
-  refine ⟨?_, ?_⟩
-  · refine (continuousOn_tangentCoordChange (I := I) (𝕜 := 𝕜) x y).continuousAt ?_
-    exact Filter.inter_mem (extChartAt_source_mem_nhds (I := I) (x := x))
-      ((isOpen_extChartAt_source y).mem_nhds hy)
-  · have hmem : extChartAt I x x ∈ ((extChartAt I x).symm ≫ extChartAt I y).source := by
-      rw [PartialEquiv.trans_source'', PartialEquiv.symm_symm, PartialEquiv.symm_target]
-      exact mem_image_of_mem _ ⟨mem_extChartAt_source x, hy⟩
-    have hychart : x ∈ (chartAt H y).source := by
-      rw [← OpenPartialHomeomorph.extend_source (f := chartAt H y) (I := I)]
-      exact hy
-    have hset : ((extChartAt I x).symm ≫ extChartAt I y).source
-        ∈ nhdsWithin (extChartAt I x x) (range I) :=
-      I.extendCoordChange_source_mem_nhdsWithin' (e := chartAt H x) (e' := chartAt H y)
-        (ChartedSpace.mem_chart_source x) hychart
-    refine ((contDiffOn_tangentCoordChange (I := I) (𝕜 := 𝕜) x y).contDiffWithinAt
-      hmem).mono_of_mem_nhdsWithin hset
+    ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E) n (tangentCoordChange I x y) x :=
+  ((tangentBundleCore.isContMDiff (I := I) (M := M) (n := n)).contMDiffOn_coordChange
+    (achart H x) (achart H y)).contMDiffAt
+    (((chartAt H x).open_source.inter (chartAt H y).open_source).mem_nhds
+      ⟨mem_chart_source H x, by simpa using hy⟩)
 
 /-! ### Coordinate changes on the tangent of the tangent bundle -/
 
@@ -857,8 +843,8 @@ theorem mvfderiv_subtype_val_apply {U : Opens E} (x : U) (v : TangentSpace 𝓘(
 /-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
 is injective. -/
 theorem injective_mvfderiv_subtype_val {U : Opens E} (x : U) :
-    Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) := fun v w h ↦ by
-  rwa [mvfderiv_subtype_val_apply, mvfderiv_subtype_val_apply] at h
+    Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) :=
+  TauCeti.injective_mvfderiv_iff.2 (mfderiv_subtype_val_injective x)
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
@@ -1116,20 +1102,11 @@ theorem tangentSpaceProdEquiv_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 
 invertible. -/
 theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
     (hφ' : deriv φ p.2 ≠ 0) :
-    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible := by
+    (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible :=
   have hφ := differentiableAt_of_deriv_ne_zero hφ'
-  refine ⟨(tangentSpaceProdEquiv p).trans
-    (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I p.1)).prodCongr
-      ((NormedSpace.fromTangentSpace p.2).trans
-        ((ContinuousLinearEquiv.unitsEquivAut 𝕜 (Units.mk0 _ hφ')).trans
-          (NormedSpace.fromTangentSpace (φ p.2)).symm))).trans
-      (tangentSpaceProdEquiv (p.1, φ p.2)).symm),
-    ContinuousLinearMap.ext fun v ↦ (tangentSpaceProdEquiv (p.1, φ p.2)).injective ?_⟩
-  rw [tangentSpaceProdEquiv_mfderiv_prodMap_id hφ]
-  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
-    ContinuousLinearEquiv.refl_apply, ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0,
-    Prod.map, mul_comm]
+  isInvertible_mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt
+    ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
+    ⟨_, (hφ.hasDerivAt.hasFDerivAt_equiv hφ').hasMFDerivAt.mfderiv.symm⟩
 
 /-- On the common domain of two product charts, the tangent coordinate change of a product
 manifold is the product of the tangent coordinate changes of the factors. -/
