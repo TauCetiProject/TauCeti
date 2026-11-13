@@ -523,7 +523,7 @@ theorem upperQuantile_of_neg (μ : Measure ℝ) (ht : t < 0) : μ.upperQuantile 
   rw [upperQuantile_def, hset, Real.sInf_univ]
 
 /-- At a level of at least `1` the upper quantile function takes the junk value `0`: no point has
-cumulative mass that large. -/
+cumulative mass strictly above the level. -/
 @[simp]
 theorem upperQuantile_of_one_le (μ : Measure ℝ) (ht : 1 ≤ t) : μ.upperQuantile t = 0 := by
   have hset : {x : ℝ | t < cdf μ x} = ∅ :=
@@ -1029,7 +1029,8 @@ theorem cdf_map_eq_volume_restrict (ν : Measure ℝ) [IsProbabilityMeasure ν]
       rintro ⟨_, hx1⟩; exact le_trans hx1 hy1
     rw [hset, hrset, measure_univ, Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
 
-/-- On the closed unit interval, the CDF and quantile are inverse almost everywhere. -/
+/-- For an atomless probability law, the cumulative distribution function is a left inverse of the
+quantile function at almost every level of the closed unit interval. -/
 theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν] :
     (fun u => cdf ν (ν.quantile u)) =ᵐ[volume.restrict (Set.Icc 0 1)] id := by
   refine (ae_restrict_iff' measurableSet_Icc).mpr ?_
