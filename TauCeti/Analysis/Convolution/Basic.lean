@@ -87,6 +87,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   semicontinuity.
 * `MeasureTheory.convolution_indicator_eq_of_forall_sub_mem`: replacing `g` by its indicator on a
   set containing `x - support f` does not change `(f ⋆ g) x`.
+* `MeasureTheory.indicator_convolution_eq_of_forall_sub_mem` and
+  `MeasureTheory.convolutionExistsAt_indicator_iff_of_forall_sub_mem`: replacing `f` by its
+  indicator on a set containing every `t` with `x - t ∈ support g` changes neither `(f ⋆ g) x` nor
+  its existence.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
   `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`: the same
@@ -373,6 +377,40 @@ theorem convolution_indicator_eq_of_forall_sub_mem [Sub G] [MeasurableSpace G] {
   · simp [ht]
   · simp only [Set.indicator_of_mem (h t ht)]
 
+section Indicator
+
+variable [Sub G] (L : E →L[𝕜] E' →L[𝕜] F) {K : G → E} {f : G → E'} {s : Set G} {x : G}
+
+omit [NormedSpace ℝ F] in
+/-- The integrand of a convolution at `x` sees the kernel `K` only at the points `t` with
+`x - t` in the support of `f`, so `K` may be replaced by its indicator on any set containing all
+of them. -/
+private theorem indicator_convolution_integrand_eq (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    (fun t ↦ L (s.indicator K t) (f (x - t))) = fun t ↦ L (K t) (f (x - t)) := by
+  funext t
+  by_cases ht : f (x - t) = 0
+  · simp [ht]
+  · rw [Set.indicator_of_mem (h t ht)]
+
+variable [MeasurableSpace G] {μ : Measure G}
+
+/-- A convolution at `x` sees the kernel `K` only at the points `t` with `x - t` in the support of
+`f`, so `K` may be replaced by its indicator on any set containing all of them. -/
+theorem indicator_convolution_eq_of_forall_sub_mem
+    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    (s.indicator K ⋆[L, μ] f) x = (K ⋆[L, μ] f) x := by
+  simp only [convolution_def, indicator_convolution_integrand_eq L h]
+
+omit [NormedSpace ℝ F] in
+/-- The convolution of `K` and `f` exists at `x` exactly when that of the indicator of `K` on a set
+containing every `t` with `x - t` in the support of `f` does. -/
+theorem convolutionExistsAt_indicator_iff_of_forall_sub_mem
+    (h : ∀ t, x - t ∈ Function.support f → t ∈ s) :
+    ConvolutionExistsAt (s.indicator K) f x L μ ↔ ConvolutionExistsAt K f x L μ := by
+  simp only [ConvolutionExistsAt, indicator_convolution_integrand_eq L h]
+
+end Indicator
+
 end Support
 
 section Fubini
@@ -435,11 +473,7 @@ theorem integral_mul_convolution_eq_integral_mul_integral_left_comp_sub [SFinite
     (hψ : Continuous ψ) (hψc : HasCompactSupport ψ) (hK : LocallyIntegrable K μ)
     (hg : Integrable g μ) (hgc : HasCompactSupport g) :
     ∫ x, ψ x * (K ⋆[lsmul ℝ ℝ, μ] g) x ∂μ = ∫ t, g t * ∫ x, ψ x * K (x - t) ∂μ ∂μ := by
-  have hcomm : K ⋆[lsmul ℝ ℝ, μ] g = g ⋆[lsmul ℝ ℝ, μ] K := by
-    funext x
-    rw [convolution_lsmul_swap, convolution_lsmul]
-    simp only [smul_eq_mul, mul_comm]
-  rw [hcomm]
+  rw [convolution_symm (lsmul ℝ ℝ) (by ext; simp)]
   exact integral_mul_convolution_eq_integral_mul_integral_comp_sub hψ hψc hg hgc
     (hK.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _
 
