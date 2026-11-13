@@ -353,6 +353,19 @@ theorem Compatible.cayleyInterp_one (h₀ : ω.Compatible J₀) (h₁ : ω.Compa
     h₀.cayleyInterp h₁ (b := 1) (by simp) = J₁ := by
   exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ _).tames h₁.tames (by simp)
 
+/-- Interpolating towards a structure equal to the initial one returns the initial structure at
+every weight: its Cayley coordinate is zero. -/
+theorem Compatible.cayleyInterp_of_eq (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
+    (h : J₁ = J₀) {b : ℝ} (hb : b ∈ Icc 0 1) : h₀.cayleyInterp h₁ hb = J₀ := by
+  subst h
+  exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyInterp h₁ hb).tames h₀.tames (by simp)
+
+/-- Interpolating a structure with itself leaves it fixed at every weight. -/
+@[simp]
+theorem Compatible.cayleyInterp_self (h₀ : ω.Compatible J₀) {b : ℝ} (hb : b ∈ Icc 0 1) :
+    h₀.cayleyInterp h₀ hb = J₀ :=
+  h₀.cayleyInterp_of_eq h₀ rfl hb
+
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
 def Compatible.cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁) (t : ℝ) :
