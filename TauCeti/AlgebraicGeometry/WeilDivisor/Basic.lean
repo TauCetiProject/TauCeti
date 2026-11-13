@@ -40,8 +40,9 @@ support is finite.
 * `pointDifference`, `weightedPointBaseDifference`: the divisors `[x] - [y]` and
   `[x] - w x • [x₀]`. The first has degree zero; the second has weighted degree zero when
   `w x₀ = 1`.
-* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, valued
-  in `weightedDegreeZeroSubgroup w` (not in `WeilDivisor X`), for a base point with `w x₀ = 1`.
+* `weightedAbelJacobiDegreeZeroDivisor`: the degree-corrected representative of a divisor, as an
+  additive map to `weightedDegreeZeroSubgroup w` (not to `WeilDivisor X`), for a base point with
+  `w x₀ = 1`.
 * `pushforwardDegreeZero`, `pushforwardWeightedDegreeZero`: pushforward restricted to the
   degree-zero subgroups.
 
@@ -559,11 +560,15 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
 
 For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
 weighted-degree-zero divisor. -/
-noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
-    (D : WeilDivisor X) : weightedDegreeZeroSubgroup w :=
-  ⟨D - weightedDegree w D • ofPoint x₀, by
+noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
+    WeilDivisor X →+ weightedDegreeZeroSubgroup w where
+  toFun D := ⟨D - weightedDegree w D • ofPoint x₀, by
     rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
     simp⟩
+  map_zero' := Subtype.ext <| by simp
+  map_add' D E := Subtype.ext <| by
+    simp only [AddSubgroup.coe_add, map_add, add_zsmul]
+    exact add_sub_add_comm _ _ _ _
 
 @[simp]
 lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}

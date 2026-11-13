@@ -47,23 +47,8 @@ noncomputable section
 /-- The quotient class of the degree-corrected representative
 `D - weightedDegree(D) • [x₀]`. -/
 def weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
-    WeilDivisor X →+
-      weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w where
-  toFun D := QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D)
-  map_zero' := by
-    apply (QuotientAddGroup.eq_zero_iff _).mpr
-    rw [mem_principalSubgroupOfWeightedDegreeZero, coe_weightedAbelJacobiDegreeZeroDivisor]
-    simp
-  map_add' D E := by
-    have hdiv :
-        weightedAbelJacobiDegreeZeroDivisor w hx₀ (D + E) =
-          weightedAbelJacobiDegreeZeroDivisor w hx₀ D +
-            weightedAbelJacobiDegreeZeroDivisor w hx₀ E := by
-      ext x
-      simp [map_add, add_zsmul, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
-    -- `QuotientAddGroup.mk` is the underlying homomorphism `QuotientAddGroup.mk'`, so its
-    -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
-    simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
+    WeilDivisor X →+ weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w :=
+  (QuotientAddGroup.mk' _).comp (weightedAbelJacobiDegreeZeroDivisor w hx₀)
 
 private lemma weightedAbelJacobiQuotientClass_mk_def (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) :
