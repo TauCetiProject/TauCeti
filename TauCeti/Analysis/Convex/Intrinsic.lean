@@ -469,7 +469,7 @@ theorem eq_of_le_of_mem_intrinsicInterior {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
   have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := b - a)
     (fun z hz ↦ by simpa [sub_nonneg] using le_of_forall_le_of_mem_convexHull h hz) hx
     (by simp [hxe]) hy
-  rw [AffineMap.coe_sub, Pi.sub_apply, sub_eq_zero] at this
+  rw [FunLike.coe_sub, Pi.sub_apply, sub_eq_zero] at this
   exact this.symm
 
 /-- A subset `u` of a convex set `s` meeting the intrinsic interior of `s` has its intrinsic

@@ -495,7 +495,7 @@ lemma weierstrassP_div_derivWeierstrassP_eq_of_weierstrassPoint_eq {z w : ℂ}
       rwa [← L.weierstrassPoint_eq_zero_iff, ← h, L.weierstrassPoint_eq_zero_iff]
     rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw,
       Affine.Point.some.injEq] at h
-    rw [h.1, (div_left_inj' two_ne_zero).mp h.2]
+    rw [h.1, (div_left_inj₀ two_ne_zero).mp h.2]
 
 /-- The point map is injective near every lattice point, since the local parameter `℘ / ℘'` at
 the point at infinity has nonzero derivative there. -/

@@ -167,7 +167,7 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
   let g : ℂ → ℂ := fun z => (f z - f x) / b
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz w hw hzw
-    exact hinj hz hw (by simpa [g, div_left_inj' hb] using hzw)
+    exact hinj hz hw (by simpa [g, div_left_inj₀ hb] using hzw)
   obtain ⟨h, hh, -, hhx, hdh, hpow, hright, -, -⟩ :=
     exists_differentiableOn_injOn_cpow_eq_of_sector (f := g) hβ hΩopen hΩ hx
       (by simp [g]) ((hcont.sub continuousOn_const).div_const b)

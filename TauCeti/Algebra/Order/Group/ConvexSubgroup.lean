@@ -74,6 +74,8 @@ the order facts the coarsening construction consumes.
 
 public section
 
+open scoped Pointwise
+
 namespace TauCeti
 
 variable (Γ : Type*) [Group Γ] [PartialOrder Γ]

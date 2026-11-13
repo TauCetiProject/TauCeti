@@ -52,7 +52,7 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
-open scoped NumberField NumberField.LiesOver
+open scoped NumberField TauCeti.InfinitePlace.LiesOver
 
 namespace TauCeti.GlobalNumberFields
 

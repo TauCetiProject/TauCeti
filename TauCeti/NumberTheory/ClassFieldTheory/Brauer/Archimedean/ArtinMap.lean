@@ -291,7 +291,7 @@ end Real
 
 section Norm
 
-open scoped NumberField.LiesOver
+open scoped TauCeti.InfinitePlace.LiesOver
 
 variable {L : Type} [Field L] [Algebra K L]
 

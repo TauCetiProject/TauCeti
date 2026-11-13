@@ -84,7 +84,7 @@ namespace TauCeti.ClassFieldTheory
 
 open Function IsDedekindDomain NumberField
 open _root_.ValuativeRel
-open scoped AdicCompletionExtension NumberField.LiesOver TensorProduct
+open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver TensorProduct
 
 variable (p : ℕ) [Fact p.Prime]
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]

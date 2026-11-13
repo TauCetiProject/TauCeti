@@ -117,7 +117,7 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver Pointwise
+open scoped TensorProduct AdicCompletionExtension TauCeti.InfinitePlace.LiesOver Pointwise
 
 namespace TauCeti.GlobalNumberFields
 

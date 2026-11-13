@@ -62,7 +62,7 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -197,9 +197,15 @@ of the norm of an infinite adele `x` of `L` at an infinite place `v` of `K` is
 `z ↦ |z|²`. -/
 def infiniteAdeleNorm : InfiniteAdeleRing L →* InfiniteAdeleRing K where
   toFun x v := ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)
-  map_one' := funext fun _ ↦ (congrArg finprod (funext fun _ ↦ map_one _)).trans finprod_one
-  map_mul' _ _ := funext fun _ ↦ (congrArg finprod (funext fun _ ↦ map_mul _ _ _)).trans
-    (finprod_mul_distrib (Set.toFinite _) (Set.toFinite _))
+  map_one' := funext fun v ↦ by
+    change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion 1 = 1
+    simp
+  map_mul' x y := funext fun v ↦ by
+    change ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1 * y w.1) =
+      (∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1)) *
+        ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (y w.1)
+    simp only [map_mul]
+    exact finprod_mul_distrib (Set.toFinite _) (Set.toFinite _)
 
 omit [NumberField K] in
 variable {K L} in
@@ -269,8 +275,7 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
     Subtype.ext (InfinitePlace.liesOverTowerEquiv_apply v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
   exact IsScalarTower.of_algebraMap_eq fun y ↦
-    (RingHom.congr_fun (LiesOver.completionMap_comp (v := v) (w := p.1.1)
-      (u := p.2.1)) y).symm
+    (RingHom.congr_fun (AbsoluteValue.Completion.map_comp_map v.1 p.1.1.1 p.2.1.1) y).symm
 
 /-! ### Adeles -/
 

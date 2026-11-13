@@ -92,7 +92,7 @@ theorem exists_analyticOnNhd_eq_C_mul_prod_X_sub_C_powerSubstitution [CompleteSp
   refine ⟨r, fun i ↦ (hsa i).div hl hl0, fun b hb ↦ ?_⟩
   -- Divide the normalized roots by the leading coefficient and recover the original factors.
   have hinj : Injective (fun i ↦ r i b) := fun i j hij ↦ (hs b hb).1
-    ((div_left_inj' (hl0 b hb)).mp hij)
+    ((div_left_inj₀ (hl0 b hb)).mp hij)
   have hroot : ∀ i, (F (q b)).IsRoot (r i b) := by
     intro i
     rw [← (F (q b)).isRoot_integralNormalization_mul_iff,

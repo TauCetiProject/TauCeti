@@ -275,7 +275,7 @@ theorem infiniteHilbertInvariantAt_eq_ite_of_isReal {w : InfinitePlace K} (hw : 
   have he (x : Kˣ) : Completion.ringEquivRealOfIsReal hw
       (Units.map (algebraMap K w.Completion : K →* w.Completion) x : w.Completion) =
       embedding_of_isReal hw (x : K) := by
-    simp
+    simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
   rw [he, he] at key
   have ha := (map_ne_zero (embedding_of_isReal hw)).2 a.ne_zero
   have hb := (map_ne_zero (embedding_of_isReal hw)).2 b.ne_zero

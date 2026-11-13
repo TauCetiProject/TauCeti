@@ -28,7 +28,7 @@ and hence on idele classes.
 public section
 
 open IsDedekindDomain NumberField
-open scoped AdicCompletionExtension NumberField.LiesOver RestrictedProduct Valued
+open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver RestrictedProduct Valued
 
 namespace TauCeti.GlobalNumberFields
 

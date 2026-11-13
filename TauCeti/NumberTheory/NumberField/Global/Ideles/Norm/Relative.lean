@@ -76,7 +76,7 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
 
 namespace TauCeti.GlobalNumberFields
 

@@ -18,8 +18,11 @@ real place doubles the normalization exponent. Multiplying over all places above
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
 
-Completed extensions at infinite places are finite dimensional, with degree one or two. A place
-indexed by the places above `v` carries its proof of lying over `v` as an instance.
+In the `TauCeti.InfinitePlace.LiesOver` scope, `L_w` is a `K_v`-algebra through
+`AbsoluteValue.Completion.map` whenever `w` lies over `v`, with the scalar tower and continuity
+instances that Mathlib's `AbsoluteValue.Completion.algebraOfLiesOver` provides. Completed
+extensions at infinite places are finite dimensional, with degree one or two. A place indexed by
+the places above `v` carries its proof of lying over `v` as an instance.
 
 The formulas are in `NumberField.InfinitePlace`, alongside
 `completionNormalizedAbsValue`. For the ordinary norm, use
@@ -42,7 +45,29 @@ public section
 noncomputable section
 
 open NumberField
-open scoped NumberField.LiesOver
+
+namespace TauCeti.InfinitePlace.LiesOver
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+  (v : NumberField.InfinitePlace K) (w : NumberField.InfinitePlace L) [w.LiesOver v]
+
+/-- If `w` lies over `v`, then `L_w` is a `K_v`-algebra through
+`AbsoluteValue.Completion.map`, so that `algebraMap K_v L_w` unfolds to the completion map. -/
+scoped instance : Algebra v.Completion w.Completion :=
+  (AbsoluteValue.Completion.map v.1 w.1).toAlgebra
+
+scoped instance : IsScalarTower K v.Completion w.Completion :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    change _ = AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)
+    simp [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply]
+
+scoped instance : ContinuousSMul v.Completion w.Completion :=
+  continuousSMul_of_algebraMap v.Completion w.Completion
+    (AbsoluteValue.Completion.continuous_map v.1 w.1)
+
+end TauCeti.InfinitePlace.LiesOver
+
+open scoped TauCeti.InfinitePlace.LiesOver
 
 namespace NumberField.InfinitePlace
 
@@ -60,49 +85,19 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
   exact Nat.pos_of_ne_zero h.2
 
-/-- Canonical maps between archimedean completions compose in a tower of fields. -/
-@[simp]
-theorem _root_.NumberField.LiesOver.completionMap_comp
-    {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
-    {v : InfinitePlace K} {w : InfinitePlace L} {u : InfinitePlace M}
-    [w.LiesOver v] [u.LiesOver w] :
-    (LiesOver.completionMap w u).comp
-        (LiesOver.completionMap v w) =
-      @LiesOver.completionMap K M _ _ _ v u (InfinitePlace.LiesOver.trans u w v) := by
-  let _ : u.LiesOver v := InfinitePlace.LiesOver.trans u w v
-  apply DFunLike.coe_injective
-  apply (InfinitePlace.Completion.denseRange_coe v).equalizer
-    ((LiesOver.continuous_completionMap w u).comp (LiesOver.continuous_completionMap v w))
-    (LiesOver.continuous_completionMap v u)
-  funext x
-  simp [Function.comp_apply, LiesOver.completionMap_coe,
-    WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
-    ← IsScalarTower.algebraMap_apply]
-
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
 theorem Completion.norm_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    ‖LiesOver.completionMap v w x‖ = ‖x‖ := by
-  -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
-  -- to transport Mathlib's norm preservation from the dense base field.
-  induction x using InfinitePlace.Completion.induction_on with
-  | hp =>
-    exact isClosed_eq
-      (continuous_norm.comp (LiesOver.continuous_completionMap v w))
-      continuous_norm
-  | ih y =>
-    rw [LiesOver.completionMap_coe]
-    simpa only [InfinitePlace.Completion.norm_coe, WithAbs.norm_eq_apply_ofAbs,
-      WithAbs.equiv_apply, InfinitePlace.coe_apply] using
-      (InfinitePlace.LiesOver.isometry_algebraMap w v).norm_map_of_map_zero (map_zero _) y
+    ‖AbsoluteValue.Completion.map v.1 w.1 x‖ = ‖x‖ :=
+  (AbsoluteValue.Completion.isometry_map v.1 w.1).norm_map_of_map_zero (map_zero _) x
 
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
 theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    completionNormalizedAbsValue w (LiesOver.completionMap v w x) =
+    completionNormalizedAbsValue w (AbsoluteValue.Completion.map v.1 w.1 x) =
       completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
   rw [completionNormalizedAbsValue_apply, Completion.norm_completionMap,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
@@ -117,14 +112,14 @@ normalized absolute value at `v` raised to the global degree. -/
 theorem prod_completionNormalizedAbsValue_completionMap
     (v : InfinitePlace K) (x : v.Completion) :
     ∏ w : {w : InfinitePlace L // w.LiesOver v}, completionNormalizedAbsValue w.1
-        (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
+        (@AbsoluteValue.Completion.map K L _ _ _ v.1 w.1.1 w.2 x) =
       completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
   have : CharZero K := (algebraMap K L).charZero
   have : NumberField K := NumberField.of_tower ℚ L K
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
       completionNormalizedAbsValue w.1
-        (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
+        (@AbsoluteValue.Completion.map K L _ _ _ v.1 w.1.1 w.2 x) =
         completionNormalizedAbsValue v x ^ v.inertiaDeg w.1 := by
     let := w.2
     rw [completionNormalizedAbsValue_completionMap,

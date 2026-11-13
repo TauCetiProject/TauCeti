@@ -65,7 +65,7 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace CategoryTheory
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct TauCeti.InfinitePlace.LiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -85,8 +85,10 @@ theorem infiniteSemilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
     rw [Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul,
-      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes, Completion.algebraMap_apply,
-      Completion.algebraMap_apply, completionCongr_algebraMap]
+      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes,
+      AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+      Algebra.algebraMap_self_apply, AbsoluteValue.Completion.algebraMap_def,
+      WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom

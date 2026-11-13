@@ -52,7 +52,7 @@ compatibility of the normalizations of `K` and `L` with one another.
 public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace Module
-open scoped NumberField AdicCompletionExtension NumberField.LiesOver
+open scoped NumberField AdicCompletionExtension TauCeti.InfinitePlace.LiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -97,7 +97,7 @@ private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : Infinite
     [w.LiesOver v] (x : K) :
     normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
       completionNormalizedAbsValue w
-        (LiesOver.completionMap v w (algebraMap K v.Completion x)) := by
+        (AbsoluteValue.Completion.map v.1 w.1 (algebraMap K v.Completion x)) := by
   rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
     ← IsScalarTower.algebraMap_apply K L w.Completion,
     IsScalarTower.algebraMap_apply K v.Completion w.Completion]
