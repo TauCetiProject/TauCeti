@@ -11,8 +11,8 @@ public import TauCeti.GroupTheory.Coxeter.Geometric.Integral
 # Integral geometric realizations in rank one and two
 
 Run `CoxeterSystem.reflectionRepresentation` over `ℤ` on three matrices. In rank one the matrix
-`[2]` gives `x ↦ -x`, while `[1]` fails the Gram hypothesis and its reflection would send `1` to
-`0`. For `A₂` the matrix `!![2, -1; -1, 2]` gives `s₀ e₁ = e₀ + e₁`. For the infinite dihedral
+`[2]` gives `s₀ e₀ = -e₀`, while `[1]` fails the Gram hypothesis and its reflection would send `1`
+to `0`. For `A₂` the matrix `!![2, -1; -1, 2]` gives `s₀ e₁ = e₀ + e₁`. For the infinite dihedral
 group, a Coxeter matrix on `Fin 2` with off-diagonal entry `0` (standing for `∞`), the degenerate
 matrix `!![2, -2; -2, 2]` is allowed, and `s₀ s₁` sends `e₀` to `3 e₀ + 2 e₁`. Each Gram hypothesis
 is checked in its own example; the reflection examples take it as a hypothesis, which by proof
@@ -30,8 +30,7 @@ example (i j : Fin 1) :
   fin_cases i; fin_cases j
   simp
 
-/-- In rank one the integral reflection of `[2]` is `x ↦ -x`, matching `c (-1) = -1 = ρ(s) c(1)`
-for the real reflection. -/
+/-- In rank one the integral simple reflection `s₀` of `[2]` sends `e₀` to `-e₀`. -/
 example (hA : ∀ i j : Fin 1, algebraMap ℤ ℝ (!![2] i j) =
       2 * (CoxeterMatrix.A 1).geometricForm (Finsupp.single i 1) (Finsupp.single j 1)) :
     (CoxeterMatrix.A 1).toCoxeterSystem.reflectionRepresentation (algebraMap ℤ ℝ).injective_int
