@@ -12,7 +12,7 @@ public import TauCeti.Topology.PathComponent
 /-!
 # The action of the fundamental group on the path components of a fibre
 
-Let `p : E → B` be a continuous map with the homotopy lifting property with respect to the unit
+Let `p : E → B` be a map with the homotopy lifting property with respect to the unit
 interval, for instance a Serre fibration
 (`TauCeti.TopCat.hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations`) or a Hurewicz
 fibration (`TauCeti.IsHurewiczFibration.hasHomotopyLiftingProperty`). A path `γ` from `b₀` to
@@ -28,7 +28,8 @@ which is functorial in the path class, hence a bijection
 (`TauCeti.HasHomotopyLiftingProperty.fiberComponentTransportEquiv`). For loops at `b` it is an
 action of `π₁(B, b)` on `π₀(p⁻¹(b))`
 (`TauCeti.HasHomotopyLiftingProperty.fiberComponentMulAction`). This action is the part of the
-long exact homotopy sequence of a fibration at its low end that pointed-set exactness forgets:
+long exact homotopy sequence of a fibration at its low end that pointed-set exactness forgets.
+When `p` is moreover continuous:
 
 * two points of the fibre lie in the same path component of `E` exactly when their components
   lie in the same orbit (`TauCeti.HasHomotopyLiftingProperty.joined_iff_mem_orbit`);
@@ -61,8 +62,8 @@ transport along `γ.trans δ`, and multiplication in `FundamentalGroup B b` is
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.2, the long exact
-  sequence of a fibration and Proposition 4.61.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.2 (Theorem 4.41,
+  the long exact sequence of a fibration) and Section 4.3 (Proposition 4.61).
 * G. W. Whitehead, *Elements of Homotopy Theory*, GTM 61, Springer, 1978, Chapter IV.8.
 -/
 
@@ -74,8 +75,9 @@ open unitInterval
 
 namespace TauCeti.HasHomotopyLiftingProperty
 
-variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : C(E, B)} {b b₀ b₁ b₂ : B}
+variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b b₀ b₁ b₂ : B}
 
+omit [TopologicalSpace B] in
 /-- A map of the interval into `E` lying over `b` joins its end points within the fibre over
 `b`. -/
 private theorem joined_of_forall {u v : p ⁻¹' {b}} (c : C(I, E)) (hc : ∀ t, p (c t) = b)
@@ -127,14 +129,6 @@ theorem joined_of_homotopic (hp : HasHomotopyLiftingProperty p I) {γ γ' : Path
   · simp only [Path.trans_apply, Path.symm_apply, Path.refl_apply]
     split_ifs <;> simp [hΓ, hΓ', hc]
 
-/-- A path of `B` lifts, from each point of the fibre over its start, to a path of `E` ending in
-the fibre over its end. -/
-private theorem exists_lift (hp : HasHomotopyLiftingProperty p I) (γ : Path b₀ b₁)
-    (x : p ⁻¹' {b₀}) : ∃ (y : p ⁻¹' {b₁}) (Γ : Path (x : E) y), ∀ t, p (Γ t) = γ t := by
-  obtain ⟨Γ, hΓ₀, hΓ⟩ := hp.exists_path_lift (γ.cast x.2 rfl)
-  have hΓ' (t : I) : p (Γ t) = γ t := congrFun hΓ t
-  exact ⟨⟨Γ 1, (hΓ' 1).trans γ.target⟩, ⟨Γ, hΓ₀, rfl⟩, hΓ'⟩
-
 /-- **Transport of the path components of the fibres** of a map with the homotopy lifting
 property with respect to the interval, along a homotopy class `γ` of paths from `b₀` to `b₁`:
 the path component of a point `x` of the fibre over `b₀` goes to the path component of the end
@@ -144,12 +138,12 @@ def fiberComponentTransport (hp : HasHomotopyLiftingProperty p I)
     (γ : Path.Homotopic.Quotient b₀ b₁) :
     ZerothHomotopy (p ⁻¹' {b₀}) → ZerothHomotopy (p ⁻¹' {b₁}) :=
   fun a ↦ Quotient.lift₂ (s₁ := Path.Homotopic.setoid b₀ b₁) (s₂ := pathSetoid _)
-    (fun γ x ↦ ZerothHomotopy.mk (exists_lift hp γ x).choose)
+    (fun γ x ↦ ZerothHomotopy.mk (hp.exists_path_lift_fiber γ x).choose)
     (fun γ x γ' x' hγ hx ↦ ZerothHomotopy.mk_eq_mk_iff.2 <|
-      hp.joined_of_homotopic hγ (exists_lift hp γ x).choose_spec.choose
-        (exists_lift hp γ' x').choose_spec.choose
-        (exists_lift hp γ x).choose_spec.choose_spec
-        (exists_lift hp γ' x').choose_spec.choose_spec hx)
+      hp.joined_of_homotopic hγ (hp.exists_path_lift_fiber γ x).choose_spec.choose
+        (hp.exists_path_lift_fiber γ' x').choose_spec.choose
+        (hp.exists_path_lift_fiber γ x).choose_spec.choose_spec
+        (hp.exists_path_lift_fiber γ' x').choose_spec.choose_spec hx)
     γ a
 
 /-- Transport of path components along the class of a path `γ` sends the component of `x` to
@@ -158,7 +152,8 @@ theorem fiberComponentTransport_mk (hp : HasHomotopyLiftingProperty p I) {γ : P
     {x : p ⁻¹' {b₀}} {y : p ⁻¹' {b₁}} (Γ : Path (x : E) y) (hΓ : ∀ t, p (Γ t) = γ t) :
     hp.fiberComponentTransport (.mk γ) (.mk x) = .mk y :=
   ZerothHomotopy.mk_eq_mk_iff.2 <| hp.joined_of_homotopic (Path.Homotopic.refl γ)
-    (exists_lift hp γ x).choose_spec.choose Γ (exists_lift hp γ x).choose_spec.choose_spec hΓ
+    (hp.exists_path_lift_fiber γ x).choose_spec.choose Γ
+    (hp.exists_path_lift_fiber γ x).choose_spec.choose_spec hΓ
     (Joined.refl x)
 
 /-- Transport along the constant path is the identity. -/
@@ -178,8 +173,8 @@ theorem fiberComponentTransport_trans (hp : HasHomotopyLiftingProperty p I)
   induction γ using Path.Homotopic.Quotient.ind with | mk γ =>
   induction δ using Path.Homotopic.Quotient.ind with | mk δ =>
   induction a with | mk x =>
-  obtain ⟨y, Γ, hΓ⟩ := exists_lift hp γ x
-  obtain ⟨z, Δ, hΔ⟩ := exists_lift hp δ y
+  obtain ⟨y, Γ, hΓ⟩ := hp.exists_path_lift_fiber γ x
+  obtain ⟨z, Δ, hΔ⟩ := hp.exists_path_lift_fiber δ y
   rw [Function.comp_apply, hp.fiberComponentTransport_mk Γ hΓ,
     hp.fiberComponentTransport_mk Δ hΔ, ← Path.Homotopic.Quotient.mk_trans]
   refine hp.fiberComponentTransport_mk (Γ.trans Δ) fun t ↦ ?_
@@ -247,10 +242,11 @@ theorem fromPath_mk_smul_mk (hp : HasHomotopyLiftingProperty p I) {γ : Path b b
     FundamentalGroup.fromPath (.mk γ) • ZerothHomotopy.mk x = ZerothHomotopy.mk y :=
   hp.fiberComponentTransport_mk Γ hΓ
 
-/-- **Orbits are the path components of the total space.** Two points of the fibre over `b` are
-joined by a path in `E` exactly when the path components of the fibre containing them lie in one
-orbit of `π₁(B, b)`. -/
-theorem joined_iff_mem_orbit (hp : HasHomotopyLiftingProperty p I) {x y : p ⁻¹' {b}} :
+/-- **Points of the fibre are joined in the total space iff their components lie in one orbit.**
+For continuous `p`, two points of the fibre over `b` are joined by a path in `E` exactly when the
+path components of the fibre containing them lie in one orbit of `π₁(B, b)`. -/
+theorem joined_iff_mem_orbit (hp : HasHomotopyLiftingProperty p I) (hpc : Continuous p)
+    {x y : p ⁻¹' {b}} :
     letI := hp.fiberComponentMulAction b
     Joined (x : E) y ↔
       ZerothHomotopy.mk y ∈ MulAction.orbit (FundamentalGroup B b) (ZerothHomotopy.mk x) := by
@@ -259,24 +255,26 @@ theorem joined_iff_mem_orbit (hp : HasHomotopyLiftingProperty p I) {x y : p ⁻�
   constructor
   · -- A path of `E` from `x` to `y` lies over its image, a loop at `b`.
     rintro ⟨β⟩
-    exact ⟨_, hp.fromPath_mk_smul_mk (γ := (β.map p.continuous).cast x.2.symm y.2.symm) β
+    exact ⟨_, hp.fromPath_mk_smul_mk (γ := (β.map hpc).cast x.2.symm y.2.symm) β
       fun _ ↦ rfl⟩
   · -- A lift from `x` of a loop sending the component of `x` to that of `y` ends in the
     -- component of `y` in the fibre.
     rintro ⟨g, hg⟩
     obtain ⟨γ, hγ⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
-    obtain ⟨z, Γ, hΓ⟩ := exists_lift hp γ x
+    obtain ⟨z, Γ, hΓ⟩ := hp.exists_path_lift_fiber γ x
     have hz : Joined z y := by
       rw [← ZerothHomotopy.mk_eq_mk_iff, ← hg, smul_eq_fiberComponentTransport, ← hγ]
       exact (hp.fiberComponentTransport_mk Γ hΓ).symm
     exact ⟨Γ.trans (hz.somePath.map continuous_subtype_val)⟩
 
 /-- **Stabilizers are images of fundamental groups of the total space.** The stabilizer of the
-path component of a point `e` of the fibre over `b` is the image of `π₁(E, e)` in `π₁(B, b)`. -/
-theorem stabilizer_mk_eq_range (hp : HasHomotopyLiftingProperty p I) (e : p ⁻¹' {b}) :
+path component of a point `e` of the fibre over `b` of a continuous map `p` is the image of
+`π₁(E, e)` in `π₁(B, b)`. -/
+theorem stabilizer_mk_eq_range (hp : HasHomotopyLiftingProperty p I) (hpc : Continuous p)
+    (e : p ⁻¹' {b}) :
     letI := hp.fiberComponentMulAction b
     MulAction.stabilizer (FundamentalGroup B b) (ZerothHomotopy.mk e) =
-      (FundamentalGroup.mapOfEq p (Set.eq_of_mem_singleton e.2)).range := by
+      (FundamentalGroup.mapOfEq ⟨p, hpc⟩ (Set.eq_of_mem_singleton e.2)).range := by
   let := hp.fiberComponentMulAction b
   ext g
   obtain ⟨γ, hγ⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
@@ -286,7 +284,7 @@ theorem stabilizer_mk_eq_range (hp : HasHomotopyLiftingProperty p I) (e : p ⁻�
   · -- Close the lift of `γ` from `e` by a path in the fibre back to `e`: the resulting loop at
     -- `e` lies over `γ` followed by the constant loop.
     intro hg
-    obtain ⟨z, Γ, hΓ⟩ := exists_lift hp γ e
+    obtain ⟨z, Γ, hΓ⟩ := hp.exists_path_lift_fiber γ e
     have hz : Joined z e := by
       rw [← ZerothHomotopy.mk_eq_mk_iff, ← hp.fromPath_mk_smul_mk Γ hΓ, hg]
     refine ⟨.fromPath (.mk (Γ.trans (hz.somePath.map continuous_subtype_val))), ?_⟩
@@ -308,17 +306,11 @@ theorem stabilizer_mk_eq_range (hp : HasHomotopyLiftingProperty p I) (e : p ⁻�
       ← Path.Homotopic.Quotient.mk_cast]
     exact hp.fromPath_mk_smul_mk β fun _ ↦ rfl
 
-/-- If `B` is path connected, every point of `E` is joined to a point of the fibre over `b`. -/
-theorem exists_joined (hp : HasHomotopyLiftingProperty p I) [PathConnectedSpace B] (b : B)
-    (y : E) : ∃ x : p ⁻¹' {b}, Joined (x : E) y := by
-  obtain ⟨Γ, hΓ₀, hΓ⟩ := hp.exists_path_lift (PathConnectedSpace.somePath (p y) b)
-  exact ⟨⟨Γ 1, (congrFun hΓ 1).trans (Path.target _)⟩, ⟨(⟨Γ, hΓ₀, rfl⟩ : Path y (Γ 1)).symm⟩⟩
-
 /-- **The path components of the total space are the orbits of `π₁(B, b)`** on the path
-components of the fibre over `b`, when `B` is path connected: the inclusion of the fibre induces
-a bijection `π₀(p⁻¹(b)) / π₁(B, b) ≃ π₀(E)`. -/
+components of the fibre over `b`, when `p` is continuous and `B` is path connected: the inclusion
+of the fibre induces a bijection `π₀(p⁻¹(b)) / π₁(B, b) ≃ π₀(E)`. -/
 def orbitRelQuotientEquivZerothHomotopy (hp : HasHomotopyLiftingProperty p I)
-    [PathConnectedSpace B] (b : B) :
+    (hpc : Continuous p) [PathConnectedSpace B] (b : B) :
     letI := hp.fiberComponentMulAction b
     MulAction.orbitRel.Quotient (FundamentalGroup B b) (ZerothHomotopy (p ⁻¹' {b})) ≃
       ZerothHomotopy E :=
@@ -331,14 +323,14 @@ def orbitRelQuotientEquivZerothHomotopy (hp : HasHomotopyLiftingProperty p I)
         induction a with | mk x =>
         induction a' with | mk y =>
         exact ZerothHomotopy.mk_eq_mk_iff.2
-          (hp.joined_iff_mem_orbit.2 (MulAction.orbitRel_apply.1 h)).symm)
+          ((hp.joined_iff_mem_orbit hpc).2 (MulAction.orbitRel_apply.1 h)).symm)
     ⟨fun q q' h ↦ by
       induction q using Quotient.ind with | _ a =>
       induction q' using Quotient.ind with | _ a' =>
       induction a with | mk x =>
       induction a' with | mk y =>
       exact Quotient.sound (MulAction.orbitRel_apply.2
-        (hp.joined_iff_mem_orbit.1 (ZerothHomotopy.mk_eq_mk_iff.1 h).symm)),
+        ((hp.joined_iff_mem_orbit hpc).1 (ZerothHomotopy.mk_eq_mk_iff.1 h).symm)),
     fun c ↦ by
       induction c with | mk y =>
       obtain ⟨x, hx⟩ := hp.exists_joined b y
@@ -346,9 +338,9 @@ def orbitRelQuotientEquivZerothHomotopy (hp : HasHomotopyLiftingProperty p I)
 
 @[simp]
 theorem orbitRelQuotientEquivZerothHomotopy_mk (hp : HasHomotopyLiftingProperty p I)
-    [PathConnectedSpace B] (x : p ⁻¹' {b}) :
+    (hpc : Continuous p) [PathConnectedSpace B] (x : p ⁻¹' {b}) :
     letI := hp.fiberComponentMulAction b
-    hp.orbitRelQuotientEquivZerothHomotopy b
+    hp.orbitRelQuotientEquivZerothHomotopy hpc b
         (Quotient.mk (MulAction.orbitRel _ _) (ZerothHomotopy.mk x)) =
       ZerothHomotopy.mk (x : E) :=
   (rfl)
