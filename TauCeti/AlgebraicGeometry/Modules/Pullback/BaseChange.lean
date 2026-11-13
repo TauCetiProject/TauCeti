@@ -14,6 +14,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
@@ -65,8 +66,8 @@ statements.
   affine open, along any base-ring map.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
   `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`;
-  `AlgebraicGeometry.Scheme.Hom.isBaseChange_eqToHom_app_pullbackSectionsLE` transports this
-  along an equation `g^* M = N`.
+  `AlgebraicGeometry.Scheme.Hom.isBaseChange_app_pullbackSectionsLE_of_isIso` transports this
+  along an isomorphism `g^* M ≅ N`.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
   affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
@@ -888,17 +889,18 @@ variable {X Y : Scheme.{u}} (g : Y ⟶ X) (M : X.Modules) [M.IsQuasicoherent]
 of `X` and `V ≤ g⁻¹ U` of `Y`, and `M` quasi-coherent, pulling back sections along `g` and
 restricting them to `V` exhibits `Γ(V, g^* M)` as the base change
 `Γ(Y, V) ⊗[Γ(X, U)] Γ(U, M)` along `g.appLE U V hVU`. Unlike `pullbackSectionsEquiv`, the inverse
-image `g⁻¹ U` need not be affine. The `Γ(X, U)`-module structure on `Γ(V, g^* M)` and the linear
-map are caller parameters. -/
+image `g⁻¹ U` need not be affine. The `Γ(X, U)`-algebra structure on `Γ(Y, V)`, which must be
+given by `g.appLE U V hVU`, the `Γ(X, U)`-module structure on `Γ(V, g^* M)` and the linear map
+are caller parameters. -/
 theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
-    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) :
-    letI := (g.appLE U V hVU).hom.toAlgebra
-    ∀ [Module Γ(X, U) Γ((pullback g).obj M, V)]
-      [IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V)]
-      (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V)),
-      (∀ s, φ s = g.pullbackSectionsLE M U V hVU s) → IsBaseChange Γ(Y, V) φ := by
-  let := (g.appLE U V hVU).hom.toAlgebra
-  intro _ _ φ hφ
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [Algebra Γ(X, U) Γ(Y, V)]
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(Y, V) r = g.appLE U V hVU r)
+    [Module Γ(X, U) Γ((pullback g).obj M, V)]
+    [IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V)]
+    (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V))
+    (hφ : ∀ s, φ s = g.pullbackSectionsLE M U V hVU s) : IsBaseChange Γ(Y, V) φ := by
+  obtain rfl : ‹Algebra Γ(X, U) Γ(Y, V)› = (g.appLE U V hVU).hom.toAlgebra :=
+    Algebra.algebra_ext _ _ hA
   -- Apply the base change theorem for cartesian squares to the square with identity verticals.
   -- Its statement lets the identities act on functions through `(𝟙 _).appLE`, so the two
   -- corresponding scalar towers are supplied explicitly.
@@ -913,18 +915,29 @@ theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V :
   convert h using 1
   exact LinearMap.ext hφ
 
-/-- Variant of `isBaseChange_pullbackSectionsLE` for a module `N` equal to `g^* M`, such as a
+/-- Variant of `isBaseChange_pullbackSectionsLE` for a module `N` isomorphic to `g^* M`, such as a
 component of a pulled-back graded algebra: pulling back sections to `V` and transporting them
-along `g^* M = N` is a base change along `g.appLE U V hVU`. -/
-theorem isBaseChange_eqToHom_app_pullbackSectionsLE {N : Y.Modules}
-    (h : (pullback g).obj M = N) {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
-    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) :
-    letI := (g.appLE U V hVU).hom.toAlgebra
-    ∀ [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
-      (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V)),
-      (∀ s, φ s = (eqToHom h).app V (g.pullbackSectionsLE M U V hVU s)) →
-        IsBaseChange Γ(Y, V) φ := by
-  subst h
-  exact g.isBaseChange_pullbackSectionsLE M hU hV hVU
+along an isomorphism `α : g^* M ⟶ N` is a base change along `g.appLE U V hVU`. -/
+theorem isBaseChange_app_pullbackSectionsLE_of_isIso {N : Y.Modules}
+    (α : (pullback g).obj M ⟶ N) [IsIso α] {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) [Algebra Γ(X, U) Γ(Y, V)]
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(Y, V) r = g.appLE U V hVU r)
+    [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
+    (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V))
+    (hφ : ∀ s, φ s = α.app V (g.pullbackSectionsLE M U V hVU s)) : IsBaseChange Γ(Y, V) φ := by
+  -- Restrict scalars on `Γ(V, g^* M)` along `Γ(X, U) → Γ(Y, V)`, so that pulling back sections
+  -- is `Γ(X, U)`-linear, and transport the base change along the sections of `α` over `V`.
+  let : Module Γ(X, U) Γ((pullback g).obj M, V) := Module.compHom _ (algebraMap Γ(X, U) Γ(Y, V))
+  have : IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
+  let ψ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V) :=
+    { toFun := g.pullbackSectionsLE M U V hVU
+      map_add' := map_add _
+      map_smul' r s := ((g.pullbackSectionsLE M U V hVU).map_smulₛₗ r s).trans
+        (congrArg (· • _) (hA r).symm) }
+  exact (IsBaseChange.iff_of_equiv_comm (.refl _ _)
+    (Scheme.Modules.sectionsLinearEquiv (asIso α) V) (LinearMap.ext fun s ↦
+      (hφ s).trans (Scheme.Modules.sectionsLinearEquiv_apply (asIso α) V _).symm)).mp
+    (g.isBaseChange_pullbackSectionsLE M hU hV hVU hA ψ fun _ ↦ rfl)
 
 end AlgebraicGeometry.Scheme.Hom

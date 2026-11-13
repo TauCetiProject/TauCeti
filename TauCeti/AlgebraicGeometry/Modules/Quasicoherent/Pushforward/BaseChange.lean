@@ -28,9 +28,8 @@ in degree zero. It suffices to check bijectivity on sections over the affine ope
 lying over affine opens `W` of `S`, since these form a basis
 (`Scheme.Hom.isBasis_range_affineOpens_le_preimage`). There both sides are base changes of
 `Γ(f⁻¹ W, M)` from `Γ(S, W)` to `Γ(S', W')`: the source because `f_* M` is quasi-coherent and
-`W`, `W'` are affine (`Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear` for the
-identity square on `g`), and the target by flat base change of sections over the quasi-compact
-quasi-separated open `f⁻¹ W`
+`W`, `W'` are affine (`Scheme.Hom.isBaseChange_pullbackSectionsLE`), and the target by flat
+base change of sections over the quasi-compact quasi-separated open `f⁻¹ W`
 (`Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear_of_isQuasiSeparated`). The base change
 morphism is compatible with both identifications, so it is bijective
 (`IsBaseChange.bijective_of_comp_eq`).
@@ -81,7 +80,7 @@ theorem bijective_pushforwardBaseChange_app_app (H : IsPullback g' f' f g) [Quas
     { toFun := g.pullbackSectionsLE N W W' h
       map_add' := map_add _
       map_smul' := (g.pullbackSectionsLE N W W' h).map_smulₛₗ }
-  have hα := g.isBaseChange_pullbackSectionsLE N hW hW' h α fun _ ↦ rfl
+  have hα := g.isBaseChange_pullbackSectionsLE N hW hW' h (fun _ ↦ rfl) α fun _ ↦ rfl
   -- Then the target, the sections of `f'_* g'^* M` over `W'`, by flat base change over
   -- `W' ⟶ W`.
   have hUY := Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq H.w h
