@@ -39,20 +39,18 @@ functions.
 `ModularForm`s, cut out as a joint diamond eigenspace. The twisted slash sum acts on plain
 functions and is not yet known to preserve modularity, so it needs the condition at the level of
 functions. To keep that from becoming a second, unrelated spelling of a relation the library
-already has, `functionCharSpace` is defined by *the very relation* that
-`mem_modFormCharSpace_iff_nebentypus` puts on the right-hand side, and
-`coe_mem_functionCharSpace_iff` records that a modular form lies in the character space exactly
-when its underlying function lies here.
+already has, `TauCeti.functionCharSpace` (`ModularForms/DiamondOperators.lean`) is defined by
+*the very relation* that `mem_modFormCharSpace_iff_nebentypus` puts on the right-hand side, and
+`TauCeti.coe_mem_functionCharSpace_iff` records that a modular form lies in the character space
+exactly when its underlying function lies there.
 
 ## Main definitions
 
-* `functionCharSpace`: the `χ`-invariant functions `ℍ → ℂ` for `Γ₀(N)`.
 * `HeckeRing.GL2.twistedHeckeSlashRingLinearMap`: the `ℤ`-linear extension of
   `twistedHeckeSlashSumEnd` to the Hecke ring.
 
 ## Main results
 
-* `coe_mem_functionCharSpace_iff`: the bridge to `modFormCharSpace`.
 * `TauCeti.slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
   `TauCeti.slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is
   invariant under `Γ₁(N)`, so its slash by a matrix of `SL(2, ℤ)` depends only on the lower row
@@ -84,41 +82,6 @@ open scoped MatrixGroups ModularForm HeckeCosetModule
 
 variable {N : ℕ} (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
 
-/-- **The `χ`-invariant functions for `Γ₀(N)`**: those `f : ℍ → ℂ` with
-`f ∣[k] g = χ(d_g) • f` for every `g ∈ Γ₀(N)`.
-
-This is the nebentypus relation of `mem_modFormCharSpace_iff_nebentypus` read on plain functions
-rather than on bundled modular forms, which is the generality the twisted slash sum acts in. -/
-def functionCharSpace : Submodule ℂ (ℍ → ℂ) where
-  carrier := {f | ∀ g : ↥(Gamma0 N),
-    f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f}
-  zero_mem' := by simp
-  add_mem' := by
-    intro f₁ f₂ hf₁ hf₂ g
-    rw [SlashAction.add_slash, hf₁ g, hf₂ g, smul_add]
-  smul_mem' := by
-    intro c f hf g
-    rw [ModularForm.smul_slash_of_det_pos k
-      (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩)), hf g]
-    exact smul_comm c _ f
-
-/-- Membership in `functionCharSpace` is the nebentypus relation, by definition.
-
-The carrier is that relation verbatim -- main's own vocabulary for it -- and *not* a joint
-eigenspace: unlike `modFormCharSpace`, this is not `⨅ d, eigenspace ...`, because the diamond
-operators are built from the slash as a bundled endomorphism of `ModularForm` and have no
-counterpart on plain functions. `coe_mem_functionCharSpace_iff` is what ties the two together. -/
-@[simp] lemma mem_functionCharSpace_iff (f : ℍ → ℂ) :
-    f ∈ functionCharSpace k χ ↔ ∀ g : ↥(Gamma0 N),
-      f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f := Iff.rfl
-
-/-- **Bridge to the modular-form character space**: a modular form lies in `modFormCharSpace k χ`
-exactly when its underlying function is `χ`-invariant. Both sides are the same relation; this
-records that `functionCharSpace` is not a second notion. -/
-lemma coe_mem_functionCharSpace_iff (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    (⇑f) ∈ functionCharSpace k χ ↔ f ∈ modFormCharSpace k χ :=
-  (mem_modFormCharSpace_iff_nebentypus k χ f).symm
-
 namespace TauCeti
 
 variable {k χ} in
@@ -126,7 +89,7 @@ variable {k χ} in
 lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {f : ℍ → ℂ}
     (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
     f ∣[k] mapGL ℝ γ = f := by
-  have h := hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
+  have h := (mem_functionCharSpace_iff k χ f).mp hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
   rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
 
 variable {k χ} in

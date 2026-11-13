@@ -193,8 +193,7 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
     (hlN : l ∣ N) (k : ℤ)
     {χ : (ZMod N)ˣ →* ℂˣ}
     (hχ : ¬ ∀ u : (ZMod N)ˣ, ZMod.unitsMap (Nat.div_dvd_of_dvd hlN) u = 1 → χ u = 1) (f : ℍ → ℂ)
-    (hnb : ∀ (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 N), (f ∣[k] scaleGL l) ∣[k] mapGL ℝ γ = (χ ((Gamma0Map
-      N).toHomUnits ⟨γ, hγ⟩) : ℂ) • (f ∣[k] scaleGL l))
+    (hnb : f ∣[k] scaleGL l ∈ functionCharSpace k χ)
     (hT : f ∣[k] (mapGL ℝ ModularGroup.T : GL (Fin 2) ℝ) = f) : f = 0 := by
   rcases eq_or_ne N 0 with rfl | hN
   · -- at level `0` the reduction `(ZMod 0)ˣ → (ZMod (0 / l))ˣ` is the identity, so `hχ` fails
@@ -215,7 +214,8 @@ theorem eq_zero_of_not_forall_apply_eq_one_of_unitsMap_eq_one {l : ℕ} [NeZero 
         (gamma0TwistOfUnit_apply_one_zero_eq_mul hlN _)) : GL (Fin 2) ℝ) = (χ v : ℂ) • f := by
     intro v
     have h := slash_conjScale_eq_smul_of_slash_scaleGL (k := k) f (gamma0TwistOfUnit v)
-      (gamma0TwistOfUnit_apply_one_zero_eq_mul hlN _) (hnb _ (gamma0TwistOfUnit_mem_Gamma0 _))
+      (gamma0TwistOfUnit_apply_one_zero_eq_mul hlN _)
+      ((mem_functionCharSpace_iff k χ _).mp hnb ⟨_, gamma0TwistOfUnit_mem_Gamma0 _⟩)
     rwa [Gamma0Map_toHomUnits_gamma0TwistOfUnit] at h
   -- the same slash, read through the refactoring, has the multiplier of the separating unit
   have halt : f ∣[k] (mapGL ℝ (conjScale l (gamma0TwistOfUnit 1) ((N / l : ℕ) : ℤ)

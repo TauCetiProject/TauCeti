@@ -49,6 +49,8 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
   Diamond–Shurman §5.3, extended by zero when `n` is not coprime to `N`.
 * `modFormCharSpace`/`cuspFormCharSpace`: the nebentypus character spaces `M_k(Γ₁(N), χ)` and
   `S_k(Γ₁(N), χ)`, cut out as simultaneous diamond eigenspaces.
+* `functionCharSpace`: the `χ`-invariant functions `ℍ → ℂ` for `Γ₀(N)`, the nebentypus relation
+  on plain functions; `coe_mem_functionCharSpace_iff` is the bridge to `modFormCharSpace`.
 
 ## Main results
 
@@ -366,6 +368,42 @@ theorem mem_modFormCharSpace_iff_nebentypus (k : ℤ) (χ₀ : (ZMod N)ˣ →* �
   · obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
     rw [diamondOpHom_apply, diamondOp_eq_diamondOpAux k d g hg, ← hg]
     exact ModularForm.ext (congr_fun (h g))
+
+/-- **The `χ`-invariant functions for `Γ₀(N)`**: those `f : ℍ → ℂ` with
+`f ∣[k] g = χ(d_g) • f` for every `g ∈ Γ₀(N)`.
+
+This is the nebentypus relation of `mem_modFormCharSpace_iff_nebentypus` read on plain functions
+rather than on bundled modular forms, which is the generality the twisted slash sum acts in. -/
+def functionCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) : Submodule ℂ (ℍ → ℂ) where
+  carrier := {f | ∀ g : ↥(Gamma0 N),
+    f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f₁ f₂ hf₁ hf₂ g
+    rw [SlashAction.add_slash, hf₁ g, hf₂ g, smul_add]
+  smul_mem' := by
+    intro c f hf g
+    rw [ModularForm.smul_slash_of_det_pos k
+      (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩)), hf g]
+    exact smul_comm c _ f
+
+/-- Membership in `functionCharSpace` is the nebentypus relation, by definition.
+
+The carrier is that relation verbatim -- main's own vocabulary for it -- and *not* a joint
+eigenspace: unlike `modFormCharSpace`, this is not `⨅ d, eigenspace ...`, because the diamond
+operators are built from the slash as a bundled endomorphism of `ModularForm` and have no
+counterpart on plain functions. `coe_mem_functionCharSpace_iff` is what ties the two together. -/
+@[simp] lemma mem_functionCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : ℍ → ℂ) :
+    f ∈ functionCharSpace k χ ↔ ∀ g : ↥(Gamma0 N),
+      f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f := Iff.rfl
+
+/-- **Bridge to the modular-form character space**: a modular form lies in `modFormCharSpace k χ`
+exactly when its underlying function is `χ`-invariant. Both sides are the same relation; this
+records that `functionCharSpace` is not a second notion. -/
+lemma coe_mem_functionCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    (⇑f) ∈ functionCharSpace k χ ↔ f ∈ modFormCharSpace k χ :=
+  (mem_modFormCharSpace_iff_nebentypus k χ f).symm
 
 /-- **A matrix of `Γ₀(N)` whose lower-right entry is `1` modulo a divisor `M` acts trivially on
 `M_k(Γ₁(N), χ)` when `χ` is pulled back from a character modulo `M`**: its nebentypus value is
