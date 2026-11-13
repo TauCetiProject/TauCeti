@@ -472,7 +472,7 @@ theorem intCast_div_two_mem_leechLattice_carrier_and_sum_sq_eq_iff (a : Fin 24 �
     obtain ⟨m, hm, b, hb, hsum, hx⟩ := (mem_leechLattice_carrier_iff_exists _).1 ha
     have hab : a = fun i ↦ 2 * b i + m := funext fun i ↦ by
       have := congrFun hx i
-      exact_mod_cast (div_left_inj' two_ne_zero).mp this
+      exact_mod_cast (div_left_inj₀ two_ne_zero).mp this
     subst hab
     rcases hm with rfl | rfl
     · simp only [add_zero, mul_zero] at hsq hsum ⊢
@@ -785,7 +785,7 @@ theorem ncard_vectorsOfNorm_four_leechLattice :
     funext i
     have := congrFun (congrArg Subtype.val h) i
     simp only at this
-    exact_mod_cast (div_left_inj' two_ne_zero).mp this
+    exact_mod_cast (div_left_inj₀ two_ne_zero).mp this
   · intro x hx
     obtain ⟨a, ha, hxa⟩ := (mem_vectorsOfNorm_four_leechLattice_iff x).1 hx
     exact ⟨a, ha, Subtype.ext hxa.symm⟩

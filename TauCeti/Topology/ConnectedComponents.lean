@@ -48,6 +48,12 @@ space by them.
 * `IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier`: in a locally compact Hausdorff
   space, a compact connected component of a closed set `F` has an open neighbourhood with compact
   closure whose frontier misses `F`.
+* `Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton`: in a locally compact
+  Hausdorff space, a compact connected component of a level of a continuous map has an open
+  neighbourhood meeting every level in a compact set.
+* `Topology.IsInducing.image_connectedComponentIn_preimage`: a connected component of `F`
+  contained in the range of an inducing map `f` is the image of the connected component of the
+  preimage of `F`, for instance in a subspace containing it.
 * `TauCeti.isClopen_connectedComponentIn_compl`: a component of `X \ K` that starts outside a
   neighbourhood `L` of `K` and misses its frontier is clopen.
 * `TauCeti.connectedComponentIn_compl_inter_frontier_nonempty`: in a preconnected, locally
@@ -325,6 +331,65 @@ theorem _root_.IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier [T2Spa
       rw [← hOs]
       exact hzWO.2
     exact hz.2 (by rw [hVo.interior_eq]; exact hsV ⟨_, hzs, rfl⟩)
+
+/-- **A compact component of a level set has a neighbourhood with compact levels.** In a locally
+compact Hausdorff space, if the connected component of `x` in the level `f⁻¹(f x)` of a continuous
+map `f` to a Hausdorff space is compact, then it has an open neighbourhood `W` which meets every
+level `f⁻¹(c)` of `f` in a compact set. -/
+theorem _root_.Continuous.exists_isOpen_forall_isCompact_inter_preimage_singleton [T2Space X]
+    [LocallyCompactSpace X] {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : X → Y}
+    (hf : Continuous f) {x : X} (hx : IsCompact (connectedComponentIn (f ⁻¹' {f x}) x)) :
+    ∃ W, IsOpen W ∧ connectedComponentIn (f ⁻¹' {f x}) x ⊆ W ∧
+      ∀ c, IsCompact (W ∩ f ⁻¹' {c}) := by
+  obtain ⟨V, hVo, hLV, hVc, hVF⟩ :=
+    (isClosed_singleton.preimage hf).exists_isOpen_isCompact_closure_disjoint_frontier hx
+  -- the values of `f` on the frontier of `V` form a compact set that misses `f x`; removing its
+  -- preimage from `V` leaves an open set whose levels are closed in the compact `closure V`
+  have hK : IsCompact (f '' frontier V) :=
+    (hVc.of_isClosed_subset isClosed_frontier frontier_subset_closure).image hf
+  refine ⟨V ∩ f ⁻¹' (f '' frontier V)ᶜ, hVo.inter (hK.isClosed.isOpen_compl.preimage hf),
+    fun y hy ↦ ⟨hLV hy, ?_⟩, fun c ↦ ?_⟩
+  · rintro ⟨z, hz, hzy⟩
+    exact disjoint_left.mp hVF hz (hzy.trans (connectedComponentIn_subset _ _ hy))
+  by_cases hc : c ∈ f '' frontier V
+  · convert isCompact_empty
+    exact eq_empty_of_forall_notMem fun y h ↦ h.1.2 (by rwa [mem_singleton_iff.1 h.2])
+  · -- a point of `closure V` in the level `c` is not on the frontier, so it lies in `V`
+    have heq : V ∩ f ⁻¹' (f '' frontier V)ᶜ ∩ f ⁻¹' {c} = closure V ∩ f ⁻¹' {c} := by
+      ext y
+      refine ⟨fun h ↦ ⟨subset_closure h.1.1, h.2⟩, fun ⟨hyV, hyc⟩ ↦ ?_⟩
+      have hyc' : f y = c := hyc
+      have hyV' : y ∈ V := by
+        by_contra h
+        exact hc ⟨y, by rw [hVo.frontier_eq]; exact ⟨hyV, h⟩, hyc'⟩
+      exact ⟨⟨hyV', fun ⟨z, hz, hzy⟩ ↦ hc ⟨z, hz, hzy.trans hyc'⟩⟩, hyc⟩
+    rw [heq]
+    exact hVc.inter_right (isClosed_singleton.preimage hf)
+
+/-- **Connected components seen from a subspace containing them.** If the connected component of
+`f y` in `F` lies in the range of an inducing map `f`, then it is the image of the connected
+component of `y` in the preimage of `F`. For the inclusion of a subspace `s`, this is the connected
+component of the preimage of `F` in `s`. -/
+theorem _root_.Topology.IsInducing.image_connectedComponentIn_preimage {Y : Type*}
+    [TopologicalSpace Y] {f : Y → X} (hf : IsInducing f) {F : Set X} {y : Y}
+    (hs : connectedComponentIn F (f y) ⊆ range f) :
+    f '' connectedComponentIn (f ⁻¹' F) y = connectedComponentIn F (f y) := by
+  by_cases hyF : f y ∈ F
+  · refine ((hf.continuous.continuousOn.image_connectedComponentIn_subset
+      (mem_preimage.2 hyF)).trans
+        (connectedComponentIn_mono _ (image_preimage_subset _ _))).antisymm ?_
+    -- the component in `F` is preconnected in `Y`, so it lies in the component of the preimage
+    have hpre : IsPreconnected (f ⁻¹' connectedComponentIn F (f y)) :=
+      hf.isPreconnected_image.mp (by
+        rw [image_preimage_eq_of_subset hs]
+        exact isPreconnected_connectedComponentIn)
+    calc connectedComponentIn F (f y)
+        = f '' (f ⁻¹' connectedComponentIn F (f y)) := (image_preimage_eq_of_subset hs).symm
+      _ ⊆ _ := image_mono (hpre.subset_connectedComponentIn (mem_connectedComponentIn hyF)
+          (preimage_mono (connectedComponentIn_subset F _)))
+  · rw [connectedComponentIn_eq_empty hyF,
+      connectedComponentIn_eq_empty (mt mem_preimage.1 hyF),
+      image_empty]
 
 /-- **A complementary component missing the frontier of a neighbourhood is clopen.** Let `K` be a
 closed set lying in the interior of a set `L`. If the component of a point `y ∉ L` in `X \ K`
