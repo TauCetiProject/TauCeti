@@ -35,6 +35,8 @@ The composite `ι.gelfandDual ∘ ι : V →L[ℝ] StrongDual ℝ V` is the symm
 * `ContinuousLinearMap.gelfandDual_injective`: for normed `H`, it is injective when `ι` has dense
   range.
 * `ContinuousLinearMap.flip_gelfandDual_comp`: the form `⟪ι x, ι y⟫` on `V` is symmetric.
+* `ContinuousLinearMap.norm_apply_sub_inner_le`: the pointwise bound `‖B x p - ⟪ι x, ι q⟫‖ ≤
+  (|Λ| C₁ + ‖ι‖² C₂) ‖x‖` behind the integrand estimates of variational formulations.
 * `ContinuousLinearMap.gelfandDual_comp_injective_iff`: for normed `H`, the composite `V → V*` is
   injective exactly when `ι` is.
 
@@ -93,6 +95,23 @@ symmetric. -/
 theorem flip_gelfandDual_comp : (ι.gelfandDual.comp ι).flip = ι.gelfandDual.comp ι := by
   ext x y
   simp [real_inner_comm]
+
+/-- The pointwise bound behind the integrand estimate of a variational formulation in a Gelfand
+triple: for `‖B‖ ≤ Λ`, `‖p‖ ≤ C₁` and `‖q‖ ≤ C₂`, the difference `B x p - ⟪ι x, ι q⟫` is at most
+`(|Λ| C₁ + ‖ι‖ ‖ι‖ C₂) ‖x‖` in norm. -/
+theorem norm_apply_sub_inner_le {B : V →L[ℝ] StrongDual ℝ V} {Λ C₁ C₂ : ℝ} (hB : ‖B‖ ≤ Λ)
+    {x p q : V} (hp : ‖p‖ ≤ C₁) (hq : ‖q‖ ≤ C₂) :
+    ‖B x p - ⟪ι x, ι q⟫_ℝ‖ ≤ (|Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂) * ‖x‖ :=
+  calc ‖B x p - ⟪ι x, ι q⟫_ℝ‖
+      ≤ ‖B x p‖ + ‖⟪ι x, ι q⟫_ℝ‖ := norm_sub_le _ _
+    _ ≤ ‖B‖ * ‖x‖ * ‖p‖ + ‖ι x‖ * ‖ι q‖ :=
+        add_le_add (B.le_opNorm₂ _ _) (norm_inner_le_norm _ _)
+    _ ≤ |Λ| * ‖x‖ * C₁ + ‖ι‖ * ‖x‖ * (‖ι‖ * C₂) := by
+        gcongr
+        · exact hB.trans (le_abs_self Λ)
+        · exact ι.le_opNorm _
+        · exact (ι.le_opNorm _).trans (by gcongr)
+    _ = (|Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂) * ‖x‖ := by ring
 
 end Seminormed
 

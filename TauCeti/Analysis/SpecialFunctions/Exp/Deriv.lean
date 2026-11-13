@@ -28,6 +28,8 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
   differentiable at `exp y`.
 * `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
+* `Real.hasDerivAt_sub_mul_exp_mul_mul_const`: the derivative of `s ↦ f s - ε (exp (K s) c)` from
+  that of `f`.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
@@ -51,6 +53,18 @@ namespace Real
     ‖fderiv ℝ (fun y : ℝ => exp (a * y)) x‖ = |a| * exp (a * x) := by
   rw [← norm_deriv_eq_norm_fderiv, deriv_exp_mul, Real.norm_eq_abs, abs_mul,
     abs_of_pos (exp_pos _)]
+
+/-- The derivative of `s ↦ f s - ε (exp (K s) c)` at `t`, from that of `f`. -/
+theorem hasDerivAt_sub_mul_exp_mul_mul_const {f : ℝ → ℝ} {f' t : ℝ} (K ε c : ℝ)
+    (hf : HasDerivAt f f' t) :
+    HasDerivAt (fun s ↦ f s - ε * (Real.exp (K * s) * c))
+      (f' - ε * (K * Real.exp (K * t) * c)) t := by
+  have hexp : HasDerivAt (fun s ↦ Real.exp (K * s)) (K * Real.exp (K * t)) t := by
+    have := ((hasDerivAt_id t).const_mul K).exp
+    simp only [id, mul_one] at this
+    rw [mul_comm]
+    exact this
+  exact hf.sub ((hexp.mul_const c).const_mul ε)
 
 end Real
 
