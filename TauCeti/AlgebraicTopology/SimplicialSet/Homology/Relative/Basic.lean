@@ -23,7 +23,9 @@ the pair: they commute with morphisms of simplicial-set pairs. The short exact s
 complexes of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the
 injection of the `n`-simplices of `X` into those of `Y` (`SSetPair.chainComplexXSplitting`); so
 the relative chains are a retract of the ambient chains (`SSetPair.chainComplexXRetract`), and are
-projective when those are (`SSetPair.projective_chainComplex_X`). A morphism of pairs which is a
+projective when those are (`SSetPair.projective_chainComplex_X`). The splitting computes the
+connecting morphism on a relative cycle: lift it by the section, take the boundary and retract it
+onto the chains of `X` (`SSetPair.homologyπ_homologyδ`). A morphism of pairs which is a
 quasi-isomorphism on subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative
 chains (`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
@@ -140,6 +142,61 @@ noncomputable def homologyδNatTrans (R : A) (n m : ℕ) (h : m + 1 = n := by li
 lemma homologyδNatTrans_app (R : A) (n m : ℕ) (h : m + 1 = n) (P : SSetPair.{w}) :
     (homologyδNatTrans R n m h).app P = P.homologyδ R n m h := by
   rw [homologyδNatTrans.eq_def]
+
+/-- The boundary of the lift of a relative cycle by the degreewise section of the quotient map
+`C(Y) ⟶ C(Y, X)` comes from the chains of `X`: retracting it onto `X` and including back does not
+change it. -/
+lemma chainComplexXSplitting_s_d_r_comp (P : SSetPair.{w}) (R : A) (m : ℕ) :
+    ((P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+        (P.right.chainComplex R).d (m + 1) m ≫ (chainComplexXSplitting R P m).r) ≫
+        (SSet.chainComplexMap P.hom R).f m =
+      (P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+        (P.right.chainComplex R).d (m + 1) m := by
+  have hr := (chainComplexXSplitting R P m).r_f
+  have hsg := (chainComplexXSplitting R P (m + 1)).s_g
+  dsimp at hr hsg
+  have hπ : (P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+      (P.right.chainComplex R).d (m + 1) m ≫ (P.chainComplexπ R).f m = 0 := by
+    rw [← HomologicalComplex.Hom.comm, reassoc_of% hsg, HomologicalComplex.iCycles_d]
+  simp only [Category.assoc, hr, Preadditive.comp_sub, Category.comp_id, reassoc_of% hπ,
+    zero_comp, sub_zero]
+
+/-- The retracted boundary of the lift of a relative cycle is a cycle of the subobject. -/
+lemma chainComplexXSplitting_s_d_r_comp_d (P : SSetPair.{w}) (R : A) (m j : ℕ) :
+    ((P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+        (P.right.chainComplex R).d (m + 1) m ≫ (chainComplexXSplitting R P m).r) ≫
+        (P.left.chainComplex R).d m j = 0 := by
+  rw [← cancel_mono ((SSet.chainComplexMap P.hom R).f j), zero_comp, Category.assoc,
+    ← HomologicalComplex.Hom.comm, ← Category.assoc, chainComplexXSplitting_s_d_r_comp]
+  simp
+
+/-- On a relative cycle, the connecting morphism `Hₘ₊₁(Y, X) ⟶ Hₘ(X)` is computed by the
+degreewise splitting of `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0`: lift the cycle to a chain of `Y` by the
+section, take its boundary and retract it onto the chains of `X`. -/
+@[reassoc]
+lemma homologyπ_homologyδ (P : SSetPair.{w}) (R : A) (m : ℕ) :
+    (P.chainComplex R).homologyπ (m + 1) ≫ P.homologyδ R (m + 1) m =
+      (P.left.chainComplex R).liftCycles
+          ((P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+            (P.right.chainComplex R).d (m + 1) m ≫ (chainComplexXSplitting R P m).r) _
+          rfl (chainComplexXSplitting_s_d_r_comp_d P R m _) ≫
+        (P.left.chainComplex R).homologyπ m := by
+  have := (P.shortExact_chainComplexShortComplex R).δ_eq (m + 1) m (by simp)
+    ((P.chainComplex R).iCycles (m + 1)) (by simp)
+    ((P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s)
+    (by
+      have hsg := (chainComplexXSplitting R P (m + 1)).s_g
+      dsimp at hsg
+      simp [hsg])
+    ((P.chainComplex R).iCycles (m + 1) ≫ (chainComplexXSplitting R P (m + 1)).s ≫
+      (P.right.chainComplex R).d (m + 1) m ≫ (chainComplexXSplitting R P m).r)
+    (by simpa using chainComplexXSplitting_s_d_r_comp P R m) _ rfl
+  have hlift : (P.chainComplex R).liftCycles ((P.chainComplex R).iCycles (m + 1)) m (by simp)
+      (by simp) = 𝟙 _ := by
+    rw [← cancel_mono ((P.chainComplex R).iCycles (m + 1)), HomologicalComplex.liftCycles_i,
+      Category.id_comp]
+  rw [hlift, Category.id_comp] at this
+  exact this
 
 /-- A morphism of pairs of simplicial sets which is a quasi-isomorphism on the subcomplexes and
 on the ambient simplicial sets is a quasi-isomorphism on relative chains. -/
