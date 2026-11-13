@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
@@ -13,6 +14,8 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -40,6 +43,10 @@ invertible affine map `x ↦ c + A x` pushes it to its multiple by `|det A|⁻¹
 measure of the image of the closed unit ball under a linear endomorphism `f` with that of the
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field.
+
+For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
+`t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
+`tⁿ / ρ`, when `L` carries the measure to `ρ⁻¹` times a Haar measure of the target.
 
 ## Main results
 
@@ -99,6 +106,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
+* `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
+  target integrals scaled by `tⁿ / ρ`.
 -/
 
 public section
@@ -245,7 +254,7 @@ theorem addHaar_closedBall_ae_eq_ball_of_ne_zero
     (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) (hr : r ≠ 0) :
     closedBall x r =ᵐ[mu] ball x r := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · apply Filter.EventuallyEq.of_eq
+  · apply Filter.EventuallyEqSet.of_eq
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
@@ -576,5 +585,38 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
 end Fubini
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+section Rescale
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- Integrals of functions of the rescaled coordinate `Ψ y = t⁻¹ • L (y - x)` are integrals over
+the target scaled by `t ^ n / ρ`, when `L` carries the measure `μ` to `ρ⁻¹` times a Haar measure
+`ν` of the target (here `n` is the dimension of the target). The integrand may take values in any
+real normed space. -/
+theorem integral_comp_rescale_eq [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace F] [BorelSpace F] {μ : Measure E} [μ.IsAddRightInvariant]
+    {ν : Measure F} [ν.IsAddHaarMeasure] {ρ t : ℝ} (hρ : 0 < ρ) (ht0 : 0 < t) (L : E ≃L[ℝ] F)
+    (hmap : Measure.map L μ = ρ⁻¹.toNNReal • ν) (x : E) {Ψ : E → F}
+    (hΨ : Ψ = fun y ↦ t⁻¹ • L (y - x)) (k : F → G) :
+    ∫ y, k (Ψ y) ∂μ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
+  subst hΨ
+  have h := integral_map_equiv L.toHomeomorph.toMeasurableEquiv (μ := μ) fun z ↦ k (t⁻¹ • z)
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
+  calc ∫ y, k (t⁻¹ • L (y - x)) ∂μ
+      = ∫ z, k (t⁻¹ • z) ∂Measure.map L μ := by
+        rw [integral_sub_right_eq_self (fun y ↦ k (t⁻¹ • L y)) x, h]
+    _ = ρ⁻¹ • ∫ z, k (t⁻¹ • z) ∂ν := by
+        rw [hmap, integral_smul_nnreal_measure]
+        simp [NNReal.smul_def, hρ.le]
+    _ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
+        rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, smul_smul]
+
+end Rescale
+
+end TauCeti
 
 end

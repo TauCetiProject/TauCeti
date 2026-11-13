@@ -74,6 +74,7 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 
 variable (I M) in
 include I in
+omit [FiniteDimensional ℝ E] in
 /-- **The Betti numbers of a compact manifold vanish above its dimension.** For a compact
 boundaryless manifold `M` of dimension `m` and a nontrivial ring `k`, `bⱼ(M; k) = 0` for `j > m`:
 a Morse function on `M` has no critical points of index above `m`. -/
@@ -101,7 +102,10 @@ theorem IsMorse.exists_cwComplex_criticalCount_eq_bettiNumber_add_coeff (hf : Is
         (bettiNumber k M j + ((1 + X) * ∑ i ∈ Finset.range (finrank ℝ E), monomial i (finrank k
           (LinearMap.range ((cellularChainComplex (univ : Set W) (ModuleCat.of k k)).d (i + 1)
             i).hom))).coeff j : ℕ) := by
-  obtain ⟨W, _, _, _, _, ⟨e⟩, hcount⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  obtain ⟨W, _, _, _, _, ⟨e⟩, hcell⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  have hcount (m : ℕ) : ENat.card (cell (univ : Set W) m) = criticalCount I f m := by
+    obtain ⟨c⟩ := hcell m
+    rw [ENat.card_congr c, ENat.card_coe_set_eq, criticalCount_def]
   refine ⟨W, _, ‹_›, ‹_›, ‹_›, ⟨e⟩, hcount, fun k _ j ↦ ?_⟩
   have hfinite (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
   have := hfinite j

@@ -182,7 +182,6 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
     (v : ParabolicC2HolderSpace α ℝ ℝ ht) {C : ℝ → ℝ → ℝ}
     (hC : ∀ y (s : Icc t₀ t₁), C (exp y) s = (1 + exp y) * v (slabMk y s))
     (x : ℝ) (t : Icc t₀ t₁) (σ : ℝ) (ha : a (slabMk x t) = σ ^ 2 / 2)
-    (hCs : ∀ᶠ s in 𝓝 (exp x), DifferentiableAt ℝ (fun s ↦ C s t) s)
     (hCss : DifferentiableAt ℝ (deriv fun s ↦ C s t) (exp x))
     (hCt : DifferentiableAt ℝ (C (exp x)) t) :
     weightedLogSpotPricingOperatorL hα a r v (slabMk x t) =
@@ -207,7 +206,7 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
       (iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod (𝕜 := ℝ) (n := 2)
         (f := fun y ↦ C (exp y) t) (x := x) (m := fun _ ↦ 1))
   rw [hs, htime, ha, hsecond, fderiv_apply_one_eq_deriv, ← hC x t] at hw
-  have hpde := pde_comp_exp σ (r (slabMk x t)) hCs hCss
+  have hpde := pde_comp_exp σ (r (slabMk x t)) hCss
   apply (eq_div_iff (by positivity : 1 + exp x ≠ 0)).2
   linear_combination hw + hpde
 

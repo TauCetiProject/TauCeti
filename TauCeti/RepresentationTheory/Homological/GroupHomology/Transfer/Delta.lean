@@ -47,7 +47,7 @@ of `Y` with the connecting map of the induced sequence `Ind_S^G Y`. Exactness of
 hypothesis because Mathlib provides left exactness of induction only for finite-index `S`, where
 `hIY` is `hY.map_of_exact _`. -/
 @[reassoc]
-theorem δ_comp_indIso_inv [DecidableEq G] {Y : ShortComplex (Rep.{u} R S)} (hY : Y.ShortExact)
+theorem δ_comp_indIso_inv {Y : ShortComplex (Rep.{u} R S)} (hY : Y.ShortExact)
     (hIY : (Y.map (indFunctor R S.subtype)).ShortExact) (i j : ℕ) (hij : j + 1 = i) :
     δ hY i j hij ≫ (indIso S Y.X₁ j).inv = (indIso S Y.X₃ i).inv ≫ δ hIY i j hij := by
   rw [indIso_inv, indIso_inv]
