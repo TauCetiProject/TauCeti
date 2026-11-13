@@ -223,8 +223,8 @@ theorem eq_orbitRelQuotientLift_iff (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x)
     {u : C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯} :
     u = f.orbitRelQuotientLift hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
-  rw [← DFunLike.coe_fn_eq (f := u), coe_orbitRelQuotientLift,
-    MulAction.eq_orbitRelQuotientLift_iff, ← DFunLike.coe_fn_eq (f := u.comp _)]
-  rfl
+  refine ⟨fun h ↦ h ▸ orbitRelQuotientLift_comp_smoothQuotientMk f hf, fun h ↦ DFunLike.ext' ?_⟩
+  rw [coe_orbitRelQuotientLift, MulAction.eq_orbitRelQuotientLift_iff]
+  exact funext fun x ↦ by simpa using DFunLike.congr_fun h x
 
 end ContMDiffMap
