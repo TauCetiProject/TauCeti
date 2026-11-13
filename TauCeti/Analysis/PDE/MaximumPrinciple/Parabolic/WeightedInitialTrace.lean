@@ -49,7 +49,7 @@ lower-order coefficients
 * `c_w = c + ∑ᵢⱼ aⁱʲ (∂ᵢ∂ⱼℓ + ∂ᵢℓ ∂ⱼℓ) + ⟪Dℓ, b⟫`
 
 (`TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq` in
-`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence`). These are bounded in terms of
+`TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic`). These are bounded in terms of
 `Λ`, `β`, `γ`, `L₁` and `L₂`, so the unweighted estimate applies to the bounded solution
 `v = u / w` of `P_w v = P u / w`.
 
