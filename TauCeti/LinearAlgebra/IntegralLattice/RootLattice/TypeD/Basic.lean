@@ -654,14 +654,6 @@ private theorem notMem_checkerboardCarrier_of_two_mul_odd {u : Fin n → ℚ} (i
   have hz2 : (2 * z : ℤ) = 2 * k + 1 := by exact_mod_cast h
   omega
 
-/-- A vector with odd coordinate sum is not a lattice vector. -/
-private theorem notMem_checkerboardCarrier_of_sum_odd {u : Fin n → ℚ} (k : ℤ)
-    (h : ∑ i, u i = ((2 * k + 1 : ℤ) : ℚ)) : u ∉ checkerboardCarrier n := by
-  rintro ⟨-, m, hm⟩
-  rw [hm] at h
-  have hm2 : (2 * m : ℤ) = 2 * k + 1 := by exact_mod_cast h
-  omega
-
 variable (n)
 
 section
@@ -670,7 +662,7 @@ variable [NeZero n]
 /-- The vector representative is not a lattice vector: its coordinate sum is odd. -/
 theorem checkerboardVector_notMem_checkerboardCarrier :
     checkerboardVector n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_sum_odd 0 (by rw [sum_checkerboardVector]; norm_num)
+  single_one_notMem_checkerboardCarrier n ⊤
 
 /-- The spinor representative is not a lattice vector: its coordinates are half-integral. -/
 theorem checkerboardSpinor_notMem_checkerboardCarrier :
@@ -737,27 +729,16 @@ theorem checkerboardSpinorClass_ne_checkerboardCospinorClass :
 /-- **The checkerboard discriminant group has order four.** -/
 theorem natCard_discriminantGroup_checkerboardLattice :
     Nat.card (checkerboardLattice n).DiscriminantGroup = 4 := by
-  have huniv : (Set.univ : Set (checkerboardLattice n).DiscriminantGroup) =
-      {0, checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n} := by
-    ext g
-    simp only [Set.mem_univ, true_iff, Set.mem_insert_iff, Set.mem_singleton_iff]
-    exact
-      checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
-        g
-  have h2 : checkerboardVectorClass n ∉ ({checkerboardSpinorClass n, checkerboardCospinorClass n} :
-      Set (checkerboardLattice n).DiscriminantGroup) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-    exact ⟨fun h ↦ checkerboardSpinorClass_ne_checkerboardVectorClass n h.symm,
-      fun h ↦ checkerboardCospinorClass_ne_checkerboardVectorClass n h.symm⟩
-  have h3 : (0 : (checkerboardLattice n).DiscriminantGroup) ∉
-      ({checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n} :
-        Set (checkerboardLattice n).DiscriminantGroup) := by
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-    exact ⟨fun h ↦ checkerboardVectorClass_ne_zero n h.symm,
-      fun h ↦ checkerboardSpinorClass_ne_zero n h.symm,
-      fun h ↦ checkerboardCospinorClass_ne_zero n h.symm⟩
-  rw [← Set.ncard_univ, huniv, Set.ncard_insert_of_notMem h3, Set.ncard_insert_of_notMem h2,
-    Set.ncard_pair (checkerboardSpinorClass_ne_checkerboardCospinorClass n)]
+  rw [← Set.ncard_univ, Set.ncard_eq_four]
+  refine ⟨0, checkerboardVectorClass n, checkerboardSpinorClass n, checkerboardCospinorClass n,
+    (checkerboardVectorClass_ne_zero n).symm, (checkerboardSpinorClass_ne_zero n).symm,
+    (checkerboardCospinorClass_ne_zero n).symm,
+    (checkerboardSpinorClass_ne_checkerboardVectorClass n).symm,
+    (checkerboardCospinorClass_ne_checkerboardVectorClass n).symm,
+    checkerboardSpinorClass_ne_checkerboardCospinorClass n, ?_⟩
+  ext g
+  simpa using
+    checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass g
 
 /-- **The discriminant of the checkerboard lattice is `4`**: the Gram determinant of any integral
 basis has absolute value `4`. -/
@@ -1010,8 +991,7 @@ theorem discriminantPairing_checkerboardVectorClass_self [NeZero n] :
       (checkerboardVectorClass n) = 0 := by
   rw [checkerboardVectorClass, discriminantPairing_mk,
     checkerboardLattice_form_checkerboardVector_self]
-  rw [AddCircle.coe_eq_zero_iff]
-  exact ⟨1, by norm_num⟩
+  exact AddCircle.coe_period (1 : ℚ)
 
 /-- **The spinor class has self-pairing `b(s, s) = n / 4`.** -/
 @[simp]
@@ -1085,10 +1065,7 @@ theorem checkerboardStandardQuadraticModule_quadratic_one_one (hn : Even n) :
   unfold checkerboardStandardQuadraticModule
   rw [FiniteQuadraticModule.kleinFour_quadratic,
     FiniteQuadraticModule.kleinFourMap_apply_one_one, add_right_comm, ← AddCircle.coe_add]
-  have hhalf :
-      ((((1 : ℚ) / 2 : ℚ) + (1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 :=
-    (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).mpr ⟨1, by norm_num⟩
-  rw [hhalf, zero_add]
+  norm_num [AddCircle.coe_period]
 
 /-- The two standard generators pair to `1 / 2`. -/
 @[simp]
