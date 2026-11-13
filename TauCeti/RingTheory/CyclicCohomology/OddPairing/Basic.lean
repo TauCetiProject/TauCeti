@@ -91,7 +91,7 @@ private theorem add_add_mul_eq_zero_of_units (u : Aˣ) {m : ℕ} {x : Fin (2 * m
 `(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` of an invertible `u`. -/
 theorem apply_units_eq_zero_of_mem_cyclicCoboundaries (u : Aˣ) {m : ℕ}
     {φ : cyclicCochains R A M (2 * m + 1)} (hφ : φ ∈ cyclicCoboundaries R A M (2 * m + 1)) :
-    (φ : MultilinearMap R (fun _ : Fin (2 * m + 2) ↦ A) M)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 2) ↦ A) M)
       (fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1) = 0 :=
   apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero hφ
     (add_add_mul_eq_zero_of_units u rfl)
@@ -109,7 +109,7 @@ def oddPairing (u : Aˣ) (m : ℕ) : cyclicCohomology ℂ A M (2 * m + 1) →ₗ
     (((1 + Complex.I)⁻¹ * ((2 : ℂ) ^ (2 * m + 1))⁻¹ *
         ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
       { toFun φ := ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-          MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+          MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
             fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1
         map_add' _ _ := rfl
         map_smul' _ _ := rfl })
@@ -123,7 +123,7 @@ theorem oddPairing_mk (u : Aˣ) (m : ℕ) (φ : cyclicCocycles ℂ A M (2 * m + 
       ((1 + Complex.I)⁻¹ * ((2 : ℂ) ^ (2 * m + 1))⁻¹ *
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-          MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+          MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
             fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   simp [oddPairing]
 
@@ -160,7 +160,7 @@ theorem oddPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι]
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         matrixCochainExtension ι (2 * m + 1)
           ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-            MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+            MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [matrixExtension_mk, oddPairing_mk, coe_matrixCyclicCochainExtension_apply]
 

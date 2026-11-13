@@ -52,7 +52,7 @@ theorem ContMDiffAt.innerSL_smulRight_bundle {σ τ : Π x, V x} {x : M}
     simpa only [hmetric] using ContMDiffAt.clm_bundle_apply (hg x) hs
   have hσ' := hdual hσ
   have hτ' := hdual hτ
-  rw [contMDiffAt_section] at hσ' hτ' ⊢
+  rw [contMDiffAt_section_iff] at hσ' hτ' ⊢
   -- Cache operator norms before composing the curried multiplication map.
   let _ : NormedAddCommGroup (F →L[ℝ] ℝ) := inferInstance
   let _ : NormedSpace ℝ (F →L[ℝ] ℝ) := inferInstance
