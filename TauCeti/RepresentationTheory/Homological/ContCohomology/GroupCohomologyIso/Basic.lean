@@ -80,10 +80,6 @@ lemmas here, but they are stated for `{k G A : Type u}` — all three in one uni
 not reused; the proofs below go through `groupCohomology.mem_cocycles₁_iff` and
 `mem_cocycles₂_iff`, which carry no such constraint.
 
-This implements the "continuous against discrete" milestone of Layer 3 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean` fixes the names
-`explicitH0IsoGroupCohomology`, `explicitH1IsoGroupCohomology` and `explicitH2IsoGroupCohomology`.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Ch. I, §2: the
@@ -218,8 +214,8 @@ section ComparisonDegree0
 
 variable (G : Type) [Group G] (M : Type) [AddCommGroup M] [DistribMulAction G M]
 
-/-- **Layer 3, degree 0 against Mathlib's discrete group cohomology.** The explicit `H⁰(G, M)` is
-Mathlib's `H⁰` of the representation attached to the action. -/
+/-- **Degree 0 against Mathlib's discrete group cohomology.** The explicit `H⁰(G, M)` is Mathlib's
+`H⁰` of the representation attached to the action. -/
 noncomputable def explicitH0IsoGroupCohomology :
     H0 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 0 :=
   (H0AddEquivInvariants G M).trans
@@ -485,10 +481,9 @@ variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 variable [ContinuousSMul G M]
 
-/-- **Layer 3, degree 1 against Mathlib's discrete group cohomology.** Every continuity condition
-is vacuous for a discrete group, so this identifies subquotients of the same function space.
-Layer 4 uses it at every finite level. It is `explicitH1AddEquivGroupCohomology` along the
-identities. -/
+/-- **Degree 1 against Mathlib's discrete group cohomology.** Every continuity condition is vacuous
+for a discrete group, so this identifies subquotients of the same function space. It is
+`explicitH1AddEquivGroupCohomology` along the identities. -/
 noncomputable def explicitH1IsoGroupCohomology :
     H1 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 1 :=
   explicitH1AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl
@@ -550,10 +545,9 @@ variable (G : Type) [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 variable [ContinuousSMul G M]
 
-/-- **Layer 3, degree 2 against Mathlib's discrete group cohomology.** The denominator is where
-discreteness is used twice over: `B²` is the image of the *continuous* `1`-cochains, and over a
-discrete group those exhaust `G → M`. It is `explicitH2AddEquivGroupCohomology` along the
-identities. -/
+/-- **Degree 2 against Mathlib's discrete group cohomology.** The denominator is where discreteness
+is used twice over: `B²` is the image of the *continuous* `1`-cochains, and over a discrete group
+those exhaust `G → M`. It is `explicitH2AddEquivGroupCohomology` along the identities. -/
 noncomputable def explicitH2IsoGroupCohomology :
     H2 G M ≃+ groupCohomology (Rep.ofDistribMulAction ℤ G M) 2 :=
   explicitH2AddEquivGroupCohomology (.refl G) (.refl M) fun _ _ ↦ rfl

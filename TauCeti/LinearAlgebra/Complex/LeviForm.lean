@@ -218,7 +218,6 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
   have h₂ := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι W
   have h₃ : finrank ℝ P = 2 * finrank ℂ P := TauCeti.finrank_real_eq_two_mul_finrank_complex
   have h₄ : finrank ℝ V = 2 * finrank ℂ V := TauCeti.finrank_real_eq_two_mul_finrank_complex
-  have h₅ := Submodule.finrank_le P
   omega
 
 /-- **Negative inertia bound from a complex positive subspace.** If the Levi form of `B` is

@@ -88,7 +88,8 @@ private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
 /-- **`Map(S², Q)` is the space of paths of free loops from a constant loop to a constant
 loop.** Precomposition with the suspension map `I × S¹ → S²`, followed by currying. -/
 def sphere2HomeomorphConstLoopPath : C(Sphere2, Q) ≃ₜ ConstLoopPath Q :=
-  (ContinuousMap.homeomorphFactorsThrough suspensionToSphere suspensionToSphere_surjective).trans
+  (ContinuousMap.homeomorphFactorsThrough suspensionToSphere
+      suspensionToSphere.continuous.isProperMap suspensionToSphere_surjective).trans
     (Homeomorph.subtype Homeomorph.curry factorsThrough_suspensionToSphere_iff)
 
 /-- The path of loops attached to `f : C(S², Q)` evaluates at `(t, z)` to the value of `f` at

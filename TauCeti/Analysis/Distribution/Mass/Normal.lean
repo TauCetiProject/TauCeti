@@ -175,9 +175,9 @@ theorem IsNormal.add (hT : IsNormal T) (hS : IsNormal S) : IsNormal (T + S) := b
 theorem IsNormal.smul (hT : IsNormal T) (a : ℝ) : IsNormal (a • T) := by
   cases k
   · rw [isNormal_finZero_iff, FunLike.coe_smul, mass_smul]
-    exact ENNReal.mul_ne_top enorm_ne_top hT
+    exact ENNReal.mul_ne_top eNorm_ne_top hT
   · rw [isNormal_succ_iff, smul_comp, FunLike.coe_smul, FunLike.coe_smul, mass_smul, mass_smul]
-    exact ⟨ENNReal.mul_ne_top enorm_ne_top hT.1, ENNReal.mul_ne_top enorm_ne_top hT.2⟩
+    exact ⟨ENNReal.mul_ne_top eNorm_ne_top hT.1, ENNReal.mul_ne_top eNorm_ne_top hT.2⟩
 
 theorem IsNormal.neg (hT : IsNormal T) : IsNormal (-T) := by
   simpa using hT.smul (-1)
@@ -260,7 +260,7 @@ theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) (h : Ω' ≤ Ω) :
     rw [isLocallyNormal_finZero_iff, coe_comp]
     exact HasLocallyFiniteMass.comp_monoCLM hT h
   | succ k =>
-    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨hT.1.comp_monoCLM h, hT.2.comp_monoCLM h⟩
 
 /-- **Restriction.** The restriction of a normal current to an open subset `Ω' ⊆ Ω` is normal: its
@@ -277,7 +277,7 @@ theorem IsNormal.comp_monoCLM (hT : IsNormal T) :
     rw [isNormal_finZero_iff, coe_comp]
     exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
   | succ k =>
-    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
       ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
 
