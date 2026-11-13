@@ -29,8 +29,8 @@ chooses one of its points.
 An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
 (`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
 
-A limiting value of a continuous image of a preconnected set lies in the closure of the component
-containing the image of any point of that set.
+For `f` mapping a preconnected set `s` into `u`, a limiting value along `s` lies in the closure
+of the connected component of `f x` in `u` (`IsPreconnected.mem_closure_connectedComponentIn`).
 
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
@@ -44,6 +44,13 @@ from a neighbourhood of a maximum point to the whole domain.
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
+
+## Attribution
+
+The closure lemma is adapted from `Mei/Topology/Connected/Basic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -52,8 +59,8 @@ open Filter Function Set Topology
 
 variable {α ι : Type*} [TopologicalSpace α]
 
-/-- A limiting value of a continuous image of a preconnected set lies in the
-closure of the component containing the image of any point of that set. -/
+/-- If `f` maps a preconnected set `s` into `u`, a limiting value along `s` lies in the closure
+of the connected component in `u` containing the image of any point of `s`. -/
 theorem IsPreconnected.mem_closure_connectedComponentIn {β : Type*} [TopologicalSpace β]
     {s : Set α} {u : Set β} {f : α → β} (hs : IsPreconnected s) (hf : ContinuousOn f s)
     {x t : α} (hx : x ∈ s) (ht : t ∈ closure s) (hft : ContinuousWithinAt f s t)

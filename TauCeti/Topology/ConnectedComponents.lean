@@ -82,6 +82,14 @@ space by them.
   components is split into two disjoint nonempty open sets, these are its components.
 * `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
   disjoint open set `v`, is a connected component of `u ∪ v`.
+
+## Attribution
+
+The `mk_eq_mk_iff_mem_connectedComponentIn`, `carrierIn`, and `subset_carrierIn` material is
+adapted from `Mei/Topology/Connected/Adjacency.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), at
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -131,7 +139,7 @@ theorem coe_eq_coe_iff_connectedComponentIn_eq {F : Set X} {a b : X} (ha : a ∈
     Subtype.val_injective.image_injective.eq_iff, coe_eq_coe]
 
 /-- Two points of a set represent the same connected component exactly when the first point lies
-in the ambient connected component of the second. -/
+in the connected component of the second in `F`. -/
 theorem mk_eq_mk_iff_mem_connectedComponentIn {F : Set X} {x y : F} :
     ConnectedComponents.mk x = ConnectedComponents.mk y ↔
       x.val ∈ connectedComponentIn F y.val := by
@@ -142,13 +150,12 @@ section Carrier
 variable {s : Set X}
 
 /-- The ambient carrier of a connected component of a subset. -/
-@[expose]
 def carrierIn (c : ConnectedComponents s) : Set X :=
   Subtype.val '' {x : s | ConnectedComponents.mk x = c}
 
 /-- The ambient carrier is the ambient image of the quotient fibre. -/
 theorem carrierIn_def (c : ConnectedComponents s) :
-    c.carrierIn = Subtype.val '' {x : s | ConnectedComponents.mk x = c} := rfl
+    c.carrierIn = Subtype.val '' {x : s | ConnectedComponents.mk x = c} := (rfl)
 
 /-- A point belongs to a component's ambient carrier exactly when it lies in
 the subset and represents that component. -/
@@ -158,7 +165,7 @@ theorem mem_carrierIn_iff {c : ConnectedComponents s} {x : X} :
   rfl
 
 /-- At a represented component the carrier is the actual `connectedComponentIn`. -/
-@[simp]
+@[simp, grind =]
 theorem carrierIn_mk (x : s) :
     (ConnectedComponents.mk x).carrierIn = connectedComponentIn s x.val := by
   rw [carrierIn, connectedComponentIn_eq_image x.property,
@@ -199,6 +206,7 @@ theorem eq_of_mem_carrierIn {c c' : ConnectedComponents s} {z : X} (hz : z ∈ c
   rfl
 
 /-- Distinct connected components have distinct ambient carriers. -/
+@[grind inj]
 theorem carrierIn_injective : Function.Injective (@carrierIn X _ s) := by
   intro c d h
   obtain ⟨x, hx⟩ := carrierIn_nonempty c
@@ -211,7 +219,7 @@ theorem carrierIn_inj {c d : ConnectedComponents s} : c.carrierIn = d.carrierIn 
 
 /-- Distinct connected components have disjoint ambient carriers. -/
 theorem pairwise_disjoint_carrierIn :
-    ∀ ⦃c d : ConnectedComponents s⦄, c ≠ d → Disjoint c.carrierIn d.carrierIn := by
+    Pairwise (Disjoint on (carrierIn (s := s))) := by
   intro c d hcd
   exact disjoint_left.mpr fun _ hc hd => hcd (eq_of_mem_carrierIn hc hd)
 
@@ -271,6 +279,13 @@ theorem iSup_opens : ⨆ C : ConnectedComponents X, C.opens = ⊤ :=
 end Opens
 
 end ConnectedComponents
+
+/-- Two points of a preconnected subset of `s` represent the same connected component of `s`. -/
+theorem IsPreconnected.connectedComponents_mk_eq {s A : Set X} (hA : IsPreconnected A)
+    (hAs : A ⊆ s) {x y : X} (hx : x ∈ A) (hy : y ∈ A) :
+    ConnectedComponents.mk (⟨x, hAs hx⟩ : s) = ConnectedComponents.mk ⟨y, hAs hy⟩ :=
+  ConnectedComponents.mk_eq_mk_iff_mem_connectedComponentIn.mpr
+    (hA.subset_connectedComponentIn hy hAs hx)
 
 /-- A preconnected subset lies in the ambient carrier of any component containing one of
 its points. -/
