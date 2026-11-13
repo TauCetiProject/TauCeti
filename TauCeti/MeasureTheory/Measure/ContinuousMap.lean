@@ -8,9 +8,15 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import TauCeti.Topology.CompactOpen
+import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
 # Laws on spaces of continuous maps
+
+A finite measure on the path space `C(T, E)` is determined by its finite-dimensional evaluation
+marginals when `T` is second-countable and locally compact and `E` is second-countable and regular,
+since the Borel sigma-algebra on `C(T, E)` is pulled back from the product sigma-algebra on
+`T → E`.
 
 A law on the path space `C(T, E)` whose time marginals at the times of a countable dense set are
 concentrated on a closed set `F` is concentrated on the paths with values in `F` at all times.
@@ -19,6 +25,8 @@ on `C(T, X)` under postcomposition with `g`.
 
 ## Main results
 
+* `TauCeti.measure_continuousMap_eq_of_forall_finset_map_restrict_eq`: a finite measure on `C(T, E)`
+  is uniquely determined by its finite-dimensional evaluation marginals.
 * `TauCeti.ae_forall_apply_mem_of_dense`: a law on continuous paths whose time marginals at the
   times of a countable dense set are concentrated on a closed set is concentrated on the paths
   with values in that set.
@@ -38,6 +46,36 @@ namespace TauCeti
 
 variable {T X E : Type*} [TopologicalSpace T] [TopologicalSpace X] [TopologicalSpace E]
   {D : Set T}
+
+/-- Two measures on `C(T, E)`, with `μ` finite, that have the same finite-dimensional evaluation
+marginals are equal. Finiteness of `ν` is not assumed. -/
+theorem measure_continuousMap_eq_of_forall_finset_map_restrict_eq
+    [SecondCountableTopology T] [LocallyCompactSpace T]
+    [SecondCountableTopology E] [RegularSpace E] [MeasurableSpace E] [BorelSpace E]
+    {μ ν : Measure C(T, E)} [IsFiniteMeasure μ]
+    (h : ∀ I : Finset T, μ.map (fun γ : C(T, E) ↦ I.restrict (γ ·)) =
+      ν.map (fun γ : C(T, E) ↦ I.restrict (γ ·))) :
+    μ = ν := by
+  have hcoe : Measurable ((⇑) : C(T, E) → T → E) :=
+    measurable_pi_iff.mpr fun t ↦ ContinuousMap.measurable_eval t
+  have hP : IsProjectiveLimit (μ.map ((⇑) : C(T, E) → T → E))
+      (fun I : Finset T ↦ μ.map (fun γ : C(T, E) ↦ I.restrict (γ ·))) := fun I ↦ by
+    rw [Measure.map_map (Finset.measurable_restrict I) hcoe, Function.comp_def]
+  have hQ : IsProjectiveLimit (ν.map ((⇑) : C(T, E) → T → E))
+      (fun I : Finset T ↦ μ.map (fun γ : C(T, E) ↦ I.restrict (γ ·))) := fun I ↦ by
+    rw [Measure.map_map (Finset.measurable_restrict I) hcoe, Function.comp_def]
+    exact (h I).symm
+  have hmap : μ.map ((⇑) : C(T, E) → T → E) = ν.map ((⇑) : C(T, E) → T → E) :=
+    hP.unique hQ
+  have hcomap : ContinuousMap.measurableSpace (X := T) (Y := E) =
+      MeasurableSpace.comap ((⇑) : C(T, E) → T → E) MeasurableSpace.pi := by
+    rw [ContinuousMap.measurableSpace_eq_iSup_comap_eval, MeasurableSpace.pi,
+      MeasurableSpace.comap_iSup]
+    refine iSup_congr fun t ↦ ?_
+    rw [MeasurableSpace.comap_comp, Function.comp_def]
+  ext s hs
+  obtain ⟨u, hu, rfl⟩ := MeasurableSpace.measurableSet_comap.mp (hcomap ▸ hs)
+  rw [← Measure.map_apply hcoe hu, hmap, Measure.map_apply hcoe hu]
 
 /-- A law on paths `C(T, E)` whose time marginals at the times of a countable dense set `D` are
 concentrated on a closed set `F` is concentrated on the paths with values in `F` at all times. -/
