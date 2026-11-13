@@ -121,35 +121,6 @@ theorem groupSchemeMap_def {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
   unfold groupSchemeMap
   rfl
 
-/-- The group-scheme morphism induced by the identity homomorphism is the identity. -/
-@[simp]
-theorem groupSchemeMap_id (G : FGCommGrpCat.{u}) :
-    groupSchemeMap R (𝟙 G) = 𝟙 (groupScheme R G) := by
-  have h := congrArg
-    (fun k : coordinateRing R G ⟶ coordinateRing R G ↦ k.hom.op)
-    ((coordinateRingFunctor R).map_id G)
-  simp only [coordinateRingFunctor_obj, coordinateRingFunctor_map,
-    ObjectProperty.FullSubcategory.id_hom, op_id] at h
-  unfold groupSchemeMap
-  rw [h]
-  simpa only [groupScheme] using
-    (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map_id
-      (Opposite.op (coordinateRing R G).obj)
-
-/-- Composition of group homomorphisms becomes composition in the reverse order on their
-diagonalizable group schemes. -/
-@[simp]
-theorem groupSchemeMap_comp {G H K : FGCommGrpCat.{u}} (f : G ⟶ H) (g : H ⟶ K) :
-    groupSchemeMap R (f ≫ g) = groupSchemeMap R g ≫ groupSchemeMap R f := by
-  have h := congrArg
-    (fun k : coordinateRing R G ⟶ coordinateRing R K ↦ k.hom.op)
-    ((coordinateRingFunctor R).map_comp f g)
-  simp only [coordinateRingFunctor_obj, coordinateRingFunctor_map,
-    ObjectProperty.FullSubcategory.comp_hom, op_comp] at h
-  unfold groupSchemeMap
-  rw [h, Functor.map_comp]
-  rfl
-
 /-- The diagonalizable group-scheme functor. It is contravariant in finitely generated
 commutative groups and covariant on their opposite category. -/
 noncomputable def schemeFunctor :
@@ -170,6 +141,24 @@ noncomputable def schemeFunctorIsoHopfSpec :
           (_root_.CommHopfAlgCat.{u} R)).op ⋙
         AlgebraicGeometry.hopfSpec (CommRingCat.of R) :=
   Iso.refl _
+
+/-- The group-scheme morphism induced by the identity homomorphism is the identity. -/
+@[simp]
+theorem groupSchemeMap_id (G : FGCommGrpCat.{u}) :
+    groupSchemeMap R (𝟙 G) = 𝟙 (groupScheme R G) := by
+  -- `groupSchemeMap` is definitionally the action of `schemeFunctor` on morphisms.
+  change (schemeFunctor R).map (𝟙 (Opposite.op G)) = _
+  exact (schemeFunctor R).map_id _
+
+/-- Composition of group homomorphisms becomes composition in the reverse order on their
+diagonalizable group schemes. -/
+@[simp]
+theorem groupSchemeMap_comp {G H K : FGCommGrpCat.{u}} (f : G ⟶ H) (g : H ⟶ K) :
+    groupSchemeMap R (f ≫ g) = groupSchemeMap R g ≫ groupSchemeMap R f := by
+  -- `groupSchemeMap` is definitionally the action of `schemeFunctor` on morphisms.
+  change (schemeFunctor R).map (g.op ≫ f.op) =
+    (schemeFunctor R).map g.op ≫ (schemeFunctor R).map f.op
+  exact (schemeFunctor R).map_comp _ _
 
 /-- On objects, the diagonalizable group-scheme functor is `G ↦ Spec R[G]`. -/
 @[simp]

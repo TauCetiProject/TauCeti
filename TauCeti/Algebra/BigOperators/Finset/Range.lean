@@ -247,6 +247,29 @@ theorem sum_range_min_diag_flip {B : Type*} [AddCommMonoid B]
   · rintro ⟨⟨m, n⟩, k⟩ _
     rfl
 
+/-- The reindexing `(m, n, k) ↦ (n - k, k, m - k)` of the triangle `k ≤ min m n` identifies the
+expanded product of two scalar-weighted sums with the part of the cube where the reordered terms
+`Dy p * Dz k * Dx q` lie below the truncation `N`. -/
+private theorem sum_sigma_min_smul_eq_sum_filter_product {R : Type*} [CommMonoid R]
+    {B : Type*} [NonUnitalSemiring B] [DistribSMul R B] (Dx Dy Dz : ℕ → B) (N : ℕ) (t u : R) :
+    ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
+        (t ^ w.1.1 * u ^ w.1.2) • (Dy (w.1.2 - w.2) * Dz w.2 * Dx (w.1.1 - w.2)) =
+      ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N,
+        (u ^ w.1 * (t * u) ^ w.2.1 * t ^ w.2.2) • (Dy w.1 * Dz w.2.1 * Dx w.2.2) := by
+  rw [← sum_range_min_diag_flip (fun w : ℕ × ℕ × ℕ =>
+    (u ^ w.1 * (t * u) ^ w.2.1 * t ^ w.2.2) • (Dy w.1 * Dz w.2.1 * Dx w.2.2)) N]
+  refine sum_congr rfl ?_
+  -- On the triangle `m = a + k`, `n = b + k`, so the scalar `t ^ m * u ^ n` is the weight
+  -- `u ^ b * (t * u) ^ k * t ^ a`.
+  rintro ⟨⟨m, n⟩, k⟩ hw
+  simp only [mem_sigma, mem_product, mem_range, Nat.lt_succ_iff, le_min_iff] at hw
+  obtain ⟨a, rfl⟩ : ∃ a, m = a + k := ⟨m - k, (Nat.sub_add_cancel hw.2.1).symm⟩
+  obtain ⟨b, rfl⟩ : ∃ b, n = b + k := ⟨n - k, (Nat.sub_add_cancel hw.2.2).symm⟩
+  simp only [Nat.add_sub_cancel]
+  congr 1
+  rw [mul_pow, pow_add, pow_add]
+  ac_rfl
+
 /-- A coefficient-one normal-ordering identity for three sequences gives a factorization of their
 finite generating sums, provided the reordered terms outside the truncated triangle vanish.
 The scalar parameters only need a commutative monoid, and the coefficients need neither a unit
@@ -278,22 +301,7 @@ theorem sum_smul_mul_sum_smul_of_mul_eq_sum {R : Type*} [CommMonoid R]
     rw [sum_sigma, sum_mul_sum]
     simp only [sum_product, smul_mul_smul_comm, hno, smul_sum]
   -- Step 3: the reindexing itself, onto the part of the cube it covers.
-  have hbij : ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
-        (t ^ w.1.1 * u ^ w.1.2) • (Dy (w.1.2 - w.2) * Dz w.2 * Dx (w.1.1 - w.2)) =
-      ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N, G w := by
-    rw [← sum_range_min_diag_flip G N]
-    refine sum_congr rfl ?_
-    -- On the triangle `m = a + k`, `n = b + k`, so the scalar `t ^ m * u ^ n` is `G`'s
-    -- `u ^ b * (t * u) ^ k * t ^ a`.
-    rintro ⟨⟨m, n⟩, k⟩ hw
-    simp only [mem_sigma, mem_product, mem_range, Nat.lt_succ_iff,
-      le_min_iff] at hw
-    obtain ⟨a, rfl⟩ : ∃ a, m = a + k := ⟨m - k, (Nat.sub_add_cancel hw.2.1).symm⟩
-    obtain ⟨b, rfl⟩ : ∃ b, n = b + k := ⟨n - k, (Nat.sub_add_cancel hw.2.2).symm⟩
-    simp only [hG, Nat.add_sub_cancel]
-    congr 1
-    rw [mul_pow, pow_add, pow_add]
-    ac_rfl
+  have hbij := sum_sigma_min_smul_eq_sum_filter_product Dx Dy Dz N t u
   -- Step 4: the terms of the cube outside that part vanish.
   have hsub : ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N,
         G w = ∑ w ∈ range N ×ˢ range N ×ˢ range N, G w := by
@@ -345,44 +353,12 @@ theorem sum_range_add_antidiagonal_of_support
     (hf : ∀ i j, k ≤ i ∨ l ≤ j → f (i, j) = 0) :
     ∑ n ∈ range (k + l), ∑ ij ∈ antidiagonal n, f ij =
       ∑ i ∈ range k, ∑ j ∈ range l, f (i, j) := by
-  classical
-  let s := (range (k + l)).sigma fun n => antidiagonal n
-  let t := s.filter fun q => q.2.1 < k ∧ q.2.2 < l
-  rw [sum_sigma']
-  -- `sum_sigma'` leaves the sigma index in the dependent pair `q`; unfolding the local
-  -- abbreviation is the only normalization needed to expose the original summand `f q.2`.
-  change (∑ q ∈ s, f q.2) = _
-  have hfilter : (∑ q ∈ t, f q.2) = ∑ q ∈ s, f q.2 := by
-    apply sum_subset (by simp [t])
-    intro q hqs hqt
-    rw [mem_filter] at hqt
-    simp only [hqs, true_and, not_and_or, not_lt] at hqt
-    exact hf q.2.1 q.2.2 hqt
-  rw [← hfilter, ← sum_product']
-  apply sum_bij (fun q _ => q.2)
-  · intro q hq
-    rw [mem_filter] at hq
-    rw [mem_product, mem_range, mem_range]
-    exact hq.2
-  · intro q₁ hq₁ q₂ hq₂ hqq
-    rcases q₁ with ⟨n₁, ij₁⟩
-    rcases q₂ with ⟨n₂, ij₂⟩
-    dsimp only at hqq
-    subst ij₂
-    rw [mem_filter, mem_sigma, mem_antidiagonal] at hq₁ hq₂
-    have hn : n₁ = n₂ := hq₁.1.2.symm.trans hq₂.1.2
-    subst n₂
-    rfl
-  · intro ij hij
-    rw [mem_product, mem_range, mem_range] at hij
-    let q : (_ : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
-    have hsum : ij.1 + ij.2 < k + l := by omega
-    have hq : q ∈ t := by
-      rw [mem_filter, mem_sigma, mem_range, mem_antidiagonal]
-      exact ⟨⟨hsum, rfl⟩, hij⟩
-    exact ⟨q, hq, rfl⟩
-  · intro q _
-    rfl
+  simp_rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+    sum_range_triangle (k + l) (fun c q ↦ f (c, q)) fun c q h ↦ hf c q (by omega)]
+  rw [← sum_subset (range_subset_range.2 (Nat.le_add_right k l)) fun i _ hi ↦
+    sum_eq_zero fun j _ ↦ hf i j (.inl (by simpa using hi))]
+  exact sum_congr rfl fun i _ ↦ (sum_subset (range_subset_range.2 (Nat.le_add_left l k))
+    fun j _ hj ↦ hf i j (.inr (by simpa using hj))).symm
 
 /-- Multiplying two sums `∑_{i < k} eⁱ uᵢ` and `∑_{j < k} eʲ vⱼ` truncated at a power `eᵏ = 0`
 gives the truncation of their Cauchy product, since the terms of total degree at least `k`

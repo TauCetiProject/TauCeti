@@ -428,6 +428,48 @@ theorem iSupIndep.map_of_ker_inf_iSup_le {R ι M N : Type*} [Ring R] [AddCommGro
 
 namespace DirectSum.IsInternal
 
+/-- The recomposition map of the fiberwise collection of an internal decomposition is injective. -/
+private theorem injective_coeLinearMap_iSup_fiber {R M ι κ : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [DecidableEq ι] [DecidableEq κ] {P : ι → Submodule R M}
+    (hP : IsInternal P) (degree : ι → κ) :
+    Function.Injective (coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i) := by
+  -- Projection onto each fiber recovers that component of the recomposed direct sum.
+  let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
+  let _ : Decomposition P := hP.chooseDecomposition
+  let projection (j : κ) : M →ₗ[R] M :=
+    (toModule R ι M fun i ↦
+      if degree i = j then (P i).subtype else 0) ∘ₗ
+        (decomposeLinearEquiv P).toLinearMap
+  have projection_piece (j : κ) (i : ι) (x : P i) :
+      projection j x = if degree i = j then (x : M) else 0 := by
+    simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      decomposeLinearEquiv_apply_coe, toModule_lof]
+    split <;> rfl
+  have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
+      projection j x = if k = j then x else 0 := by
+    dsimp only [Q] at hx
+    rw [iSup_subtype'] at hx
+    refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
+      (motive := fun y ↦ projection j y = if k = j then y else 0) hx
+      (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
+    · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
+    · simp only [map_add, ihx, ihy, ite_add_zero]
+  have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
+      projection j (coeLinearMap Q z) = z j := by
+    induction z using DirectSum.induction_on with
+    | zero => simp
+    | of k x =>
+        rw [coeLinearMap_of, projection_mem j k x.property]
+        simp only [coe_of_apply]
+        split <;> rfl
+    | add x y ihx ihy =>
+        rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
+        rfl
+  intro x y hxy
+  apply ext fun j ↦ Subtype.ext ?_
+  exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
+    (projection_coe j y))
+
 /-- Collecting an internal decomposition along the fibers of any map again gives an internal
 decomposition. Each new summand is the sum of the original summands over the corresponding fiber. -/
 theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
@@ -437,45 +479,9 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
   -- of the canonical linear recomposition map.
   change Function.Bijective (coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
-  refine ⟨?_, ?_⟩
-  · -- Projection onto each fiber recovers that component of the recomposed direct sum.
-    let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
-    let _ : Decomposition P := hP.chooseDecomposition
-    let projection (j : κ) : M →ₗ[R] M :=
-      (toModule R ι M fun i ↦
-        if degree i = j then (P i).subtype else 0) ∘ₗ
-          (decomposeLinearEquiv P).toLinearMap
-    have projection_piece (j : κ) (i : ι) (x : P i) :
-        projection j x = if degree i = j then (x : M) else 0 := by
-      simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        decomposeLinearEquiv_apply_coe, toModule_lof]
-      split <;> rfl
-    have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
-        projection j x = if k = j then x else 0 := by
-      dsimp only [Q] at hx
-      rw [iSup_subtype'] at hx
-      refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
-        (motive := fun y ↦ projection j y = if k = j then y else 0) hx
-        (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
-      · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
-      · simp only [map_add, ihx, ihy, ite_add_zero]
-    have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
-        projection j (coeLinearMap Q z) = z j := by
-      induction z using DirectSum.induction_on with
-      | zero => simp
-      | of k x =>
-          rw [coeLinearMap_of, projection_mem j k x.property]
-          simp only [coe_of_apply]
-          split <;> rfl
-      | add x y ihx ihy =>
-          rw [map_add (coeLinearMap Q), map_add (projection j), ihx, ihy]
-          rfl
-    intro x y hxy
-    apply ext fun j ↦ Subtype.ext ?_
-    exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
-      (projection_coe j y))
-  · rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
-    simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
+  refine ⟨injective_coeLinearMap_iSup_fiber hP degree, ?_⟩
+  rw [← LinearMap.range_eq_top, range_coeLinearMap, iSup_comm]
+  simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
 
 /-- An internal direct sum of submodules can be reindexed along an equivalence of the index
 types. -/

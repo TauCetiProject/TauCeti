@@ -243,6 +243,19 @@ private theorem slotMap_skew (hD : frameMap R D = 0) (j : Fin 3) (a b : Octonion
     simpa [slotMap, offDiagSingle_mul_offDiagSingle, derivation_apply_diagIdempotent_eq_zero hD,
       add_smul] using h'.symm
 
+/-- If a derivation killing the frame kills the slot `0`, and its action on the slot `1` is
+multiplication by a scalar `r`, then `r = 0`: the relation through the slot `1` at `x = y = 1` gives
+`r • 1 = conj (f₂ 1) = -(r • 1)`. -/
+private theorem eq_zero_of_slotMap_one_one_eq_smul_one (hD : frameMap R D = 0)
+    (h0 : slotMap D 0 = 0) {r : R} (hr : slotMap D 1 1 = r • 1)
+    (hf₂ : ∀ y, slotMap D 2 y = -(slotMap D 1 1 * y)) : r = 0 := by
+  have h := slotMap_conj_mul hD 2 1 1
+  simp only [Fin.isValue, Fin.reduceAdd, mul_one, Octonion.conj_one, hr, hf₂, h0,
+    LinearMap.zero_apply, mul_zero, add_zero, map_neg, map_smul] at h
+  have ha : r = -r := by simpa using congrArg Octonion.a h
+  have h2 : (2 : R) * r = 0 := by linear_combination ha
+  simpa using congrArg (⅟(2 : R) * ·) h2
+
 /-- **A derivation killing the frame is determined by its action on one slot**: if it kills the
 slot `0`, then the local triality relations force its actions on the two other slots to be
 multiplications by a common octonion in the nucleus, which is a scalar, and then that scalar is
@@ -265,13 +278,7 @@ private theorem eq_zero_of_slotMap_zero (hD : frameMap R D = 0) (h0 : slotMap D 
     have h := r₀ x y
     rwa [hf₁, hf₂, mul_neg, ← sub_eq_add_neg, sub_eq_zero] at h
   -- The relation through the slot `1` at `x = y = 1` gives `c = conj (f₂ 1) = -c`.
-  have hc : r = 0 := by
-    have h := slotMap_conj_mul hD 2 1 1
-    simp only [Fin.isValue, Fin.reduceAdd, mul_one, Octonion.conj_one, ← hc_def, hr, hf₂, h0,
-      LinearMap.zero_apply, mul_zero, add_zero, map_neg, map_smul] at h
-    have ha : r = -r := by simpa using congrArg Octonion.a h
-    have h2 : (2 : R) * r = 0 := by linear_combination ha
-    simpa using congrArg (⅟(2 : R) * ·) h2
+  have hc : r = 0 := eq_zero_of_slotMap_one_one_eq_smul_one hD h0 (hc_def ▸ hr) hf₂
   have hslot (j : Fin 3) (a : Octonion R) :
       ((D : Module.End R (AlbertAlgebra R)) (offDiagSingle j a)).offDiag j = 0 := by
     rw [← slotMap_apply]
