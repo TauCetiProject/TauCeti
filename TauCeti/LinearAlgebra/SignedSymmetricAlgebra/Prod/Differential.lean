@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Prod.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.TensorProduct
 
-import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
-
 /-!
 # Differentials on the signed symmetric algebra of a product
 
@@ -116,27 +114,6 @@ theorem prodDifferential_generator (hV : dV 1 = 0) (hW : dW 1 = 0) (z : V × W) 
       add_zero, zero_add, Prod.mk.eta]
   rw [hz, map_add, prodDifferential_inl hW, prodDifferential_inr hV]
 
-/-- A signed Leibniz map with the prescribed factor values on generators is the product
-differential. This permits comparison with a differential constructed independently. -/
-theorem eq_prodDifferential (hV : IsDGAlgebra (signedSymPiece G) dV)
-    (hW : IsDGAlgebra (signedSymPiece H) dW)
-    {d : SignedSym (G.prod H) →ₗ[R] SignedSym (G.prod H)}
-    (hleibniz : ∀ {p : ℤ} {a : SignedSym (G.prod H)}, a ∈ signedSymPiece (G.prod H) p →
-      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
-    (hgen : ∀ z : V × W, d (generator (G.prod H) z) =
-      inl G H (dV (generator G z.1)) + inr G H (dW (generator H z.2))) :
-    d = prodDifferential G H dV dW := by
-  have hd := isDGAlgebra_prodDifferential hV hW
-  have hδ : LinearMap.IsHomogeneous
-      (prodDifferential G H dV dW ∘ₗ generator (G.prod H))
-      (G.prod H).piece (signedSymPiece (G.prod H)) 1 :=
-    LinearMap.isHomogeneous_def.2 fun p x hx => hd.map_mem
-      (generator_mem_signedSymPiece (G.prod H) hx)
-  exact (eq_liftDerivation hδ hleibniz (fun z => by
-    rw [LinearMap.comp_apply, prodDifferential_generator hV.map_one_eq_zero
-      hW.map_one_eq_zero, hgen])).trans
-    (eq_liftDerivation hδ hd.leibniz (fun _ => rfl)).symm
-
 /-- The product differential obeys the signed tensor rule on products of included elements. -/
 theorem prodDifferential_inl_mul_inr {p : ℤ} {a : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (b : SignedSym H) :
@@ -147,6 +124,62 @@ theorem prodDifferential_inl_mul_inr {p : ℤ} {a : SignedSym G}
   simp only [prodEquiv_apply, ofProd_prodDifferential, map_mul, map_add, map_zsmul_unit,
     ofProd_inl, ofProd_inr, GradedTensorProduct.tmul_one_mul_one_tmul]
   exact dgTensorDifferential_tmul_of_mem ha b
+
+-- A graded map intertwines signed Leibniz maps if it does so on generators.
+-- This handles both factor inclusions without any degree-shift or square-zero assumption.
+private theorem map_leibniz_of_generator {U : Type*} [AddCommGroup U] [Module R U]
+    {K : InternalGrading R U ℤ} {dU : SignedSym K →ₗ[R] SignedSym K}
+    (hU : ∀ {p : ℤ} {a : SignedSym K}, a ∈ signedSymPiece K p →
+      ∀ b, dU (a * b) = dU a * b + p.negOnePow • (a * dU b))
+    {d : SignedSym (G.prod H) →ₗ[R] SignedSym (G.prod H)}
+    (hd : ∀ {p : ℤ} {a : SignedSym (G.prod H)}, a ∈ signedSymPiece (G.prod H) p →
+      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (f : signedSymPiece K →ₐᵍ[R] signedSymPiece (G.prod H))
+    (hgen : ∀ x, d (f (generator K x)) = f (dU (generator K x)))
+    {p : ℤ} {a : SignedSym K} (ha : a ∈ signedSymPiece K p) :
+    d (f a) = f (dU a) := by
+  have hUone := map_one_eq_zero_of_leibniz hU
+  have hdone := map_one_eq_zero_of_leibniz hd
+  exact (homogeneous_induction K
+    (P := fun p a => a ∈ signedSymPiece K p ∧ d (f a) = f (dU a))
+    ⟨SetLike.one_mem_graded _, by simp [hUone, hdone]⟩
+    (fun p x hx => ⟨generator_mem_signedSymPiece K hx, hgen x⟩)
+    (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
+      rw [map_mul, hd (Graded.map_mem f ha.1), hU ha.1, ha.2, hb.2]
+      simp only [map_add, map_zsmul_unit, map_mul]⟩)
+    (fun p => ⟨zero_mem _, by simp⟩)
+    (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by simp [ha.2, hb.2]⟩)
+    (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by simp [ha.2]⟩) ha).2
+
+/-- A signed Leibniz map with the prescribed factor values on generators is the product
+differential. Only the signed Leibniz laws on the factors are needed, not degree-one
+homogeneity or square-zero laws. -/
+theorem eq_prodDifferential
+    (hV : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p →
+      ∀ b, dV (a * b) = dV a * b + p.negOnePow • (a * dV b))
+    (hW : ∀ {p : ℤ} {a : SignedSym H}, a ∈ signedSymPiece H p →
+      ∀ b, dW (a * b) = dW a * b + p.negOnePow • (a * dW b))
+    {d : SignedSym (G.prod H) →ₗ[R] SignedSym (G.prod H)}
+    (hleibniz : ∀ {p : ℤ} {a : SignedSym (G.prod H)}, a ∈ signedSymPiece (G.prod H) p →
+      ∀ b, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hgen : ∀ z : V × W, d (generator (G.prod H) z) =
+      inl G H (dV (generator G z.1)) + inr G H (dW (generator H z.2))) :
+    d = prodDifferential G H dV dW := by
+  have hinl {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) :=
+    map_leibniz_of_generator hV hleibniz (inl G H)
+      (fun x => by simpa using hgen (x, 0)) ha
+  have hinr {q : ℤ} {b : SignedSym H} (hb : b ∈ signedSymPiece H q) :=
+    map_leibniz_of_generator hW hleibniz (inr G H)
+      (fun y => by simpa using hgen (0, y)) hb
+  have hcomp : d ∘ₗ (toProd G H).toAlgHom.toLinearMap =
+      prodDifferential G H dV dW ∘ₗ (toProd G H).toAlgHom.toLinearMap := by
+    refine gradedTensor_linearMap_ext (signedSymPiece G) (signedSymPiece H)
+      fun p q a ha b hb => ?_
+    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, GradedAlgHom.coe_toAlgHom,
+      toProd_tmul, prodDifferential_inl_mul_inr ha,
+      hleibniz (Graded.map_mem (inl G H) ha), hinl ha, hinr hb]
+  ext a
+  simpa using LinearMap.congr_fun hcomp (ofProd G H a)
 
 /-- The DG algebra map `A(V) → A(V × W)` induced by the first factor inclusion. -/
 noncomputable def dgInl (hV : IsDGAlgebra (signedSymPiece G) dV)
