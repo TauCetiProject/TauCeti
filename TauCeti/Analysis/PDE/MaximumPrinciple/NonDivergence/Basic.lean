@@ -11,7 +11,6 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -83,8 +82,6 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_mul`: the principal part of a product.
-* `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: the bound on its first-order cross
-  term.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -332,28 +329,6 @@ theorem sum_mul_fderiv_fderiv_mul (A : Matrix ι ι ℝ) {η u : EuclideanSpace 
           fderiv ℝ u x (EuclideanSpace.single j 1) + fderiv ℝ u x (EuclideanSpace.single i 1) *
             fderiv ℝ η x (EuclideanSpace.single j 1)) := by
   simp only [fderiv_fderiv_mul_apply hη hu, Finset.mul_sum, ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-
-/-- If the bilinear form of `A` is bounded, `|ηᵀ A ξ| ≤ Λ ‖η‖ ‖ξ‖`, then so is its pairing with
-the coordinates of two linear functionals: `|∑ᵢⱼ Aᵢⱼ L₁(eᵢ) L₂(eⱼ)| ≤ Λ ‖L₁‖ ‖L₂‖`. This bounds
-the first-order cross term `∑ᵢⱼ Aᵢⱼ ∂ᵢη ∂ⱼu` of the principal part of a product. -/
-theorem abs_sum_mul_apply_single_mul_apply_single_le {A : Matrix ι ι ℝ} {Lam : ℝ}
-    (hA : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (L₁ L₂ : EuclideanSpace ℝ ι →L[ℝ] ℝ) :
-    |∑ i, ∑ j, A i j * (L₁ (EuclideanSpace.single i 1) * L₂ (EuclideanSpace.single j 1))| ≤
-      Lam * ‖L₁‖ * ‖L₂‖ := by
-  set X := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)).symm L₁
-  set Y := (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)).symm L₂
-  have hX (i : ι) : L₁ (EuclideanSpace.single i 1) = X i := by
-    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
-    simp [X]
-  have hY (i : ι) : L₂ (EuclideanSpace.single i 1) = Y i := by
-    rw [← InnerProductSpace.toDual_symm_apply, EuclideanSpace.inner_single_right]
-    simp [Y]
-  have h := hA X Y
-  rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map] at h
-  convert h using 2
-  simp only [hX, hY, dotProduct, mulVec, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 variable [Nonempty ι]
