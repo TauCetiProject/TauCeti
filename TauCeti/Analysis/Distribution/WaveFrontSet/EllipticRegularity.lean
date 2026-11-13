@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
@@ -93,17 +94,6 @@ private theorem norm_two_pi_I_inner_le (v η : E) :
         exact (abs_real_inner_le_norm v η).trans
           (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
     _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
-
-/-- A product of `r` inner products with `η` is bounded by `(∏ ‖m l‖) ‖η‖ ^ r`. -/
-private theorem norm_prod_inner_le {r : ℕ} (m : Fin r → E) (η : E) :
-    ‖∏ l, (⟪m l, η⟫ : ℂ)‖ ≤ (∏ l, ‖m l‖) * ‖η‖ ^ r := by
-  rw [norm_prod]
-  calc ∏ l, ‖(⟪m l, η⟫ : ℂ)‖ ≤ ∏ l, (‖m l‖ * ‖η‖) :=
-        Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun l _ ↦ by
-          rw [Complex.norm_real, Real.norm_eq_abs]
-          exact abs_real_inner_le_norm _ _
-    _ = (∏ l, ‖m l‖) * ‖η‖ ^ r := by
-        rw [← Finset.prod_mul_pow_card, Finset.card_univ, Fintype.card_fin]
 
 /-- The symbol of `∂^m` in the frequency variable of the localized Fourier transform is
 `(2πi) ^ r` times the product of the inner products. -/
@@ -197,7 +187,8 @@ private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → �
     calc ‖c i‖ * ((2 * π) ^ k i * ‖∏ l, (⟪m i l, η⟫ : ℂ)‖) * ‖η‖
         ≤ ‖c i‖ * ((2 * π) ^ k i * ((∏ l, ‖m i l‖) * ‖η‖ ^ k i)) * ‖η‖ := by
           gcongr
-          exact norm_prod_inner_le _ _
+          rw [← ofReal_prod, norm_real]
+          simpa using TauCeti.norm_prod_inner_le (𝕜 := ℝ) Finset.univ (m i) η
       _ = ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ (k i + 1) := by ring
       _ ≤ ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖) * ‖η‖ ^ M :=
           mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h1 hki) (by positivity)
