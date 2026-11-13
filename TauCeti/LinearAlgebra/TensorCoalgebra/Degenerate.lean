@@ -174,7 +174,7 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     have hb : 0 < b := by omega
     have hvanish : ∀ c, 1 < c → a + c ≤ n → i.1 < a + c →
         f (subword R x a c) = 0 := by
-      intro c hc hac hic
+      intro c hc _ hic
       rw [apply_eq_comp_letter_of_mem_degenerateWords f hf
         (subword_mem_degenerateWords x ⟨i, hai, hic, hi⟩),
         letter_subword_of_ne_one R M x a (by omega), map_zero, map_zero]

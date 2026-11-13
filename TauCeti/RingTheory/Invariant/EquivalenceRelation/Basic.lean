@@ -374,7 +374,7 @@ theorem coeff_projectiveCharpolyRev_mem_eqLocus (f : A) (i : ℕ) :
     congr 1
     ext a
     simp
-  simpa using congr(coeff $hQ i)
+  simpa using congr(AddMonoidAlgebra.coeff $hQ i)
 
 /-- **Integrality over the invariants** (Stacks 03BK). If `Spec B ⇉ Spec A` is an equivalence
 relation whose first morphism is finite locally free, that is, `B` is a finite projective

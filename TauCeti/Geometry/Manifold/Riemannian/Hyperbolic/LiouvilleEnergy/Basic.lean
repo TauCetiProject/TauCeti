@@ -277,7 +277,6 @@ theorem exists_le_liouvilleEnergy_add [I.Boundaryless] {K : M → ℝ}
       ring
     rwa [hav, average_eq, smul_eq_mul, le_inv_mul_iff₀ hV] at hJ
   have hmeanS := Real.neg_mul_abs_sub_sq_div_le_mul_add_mul_exp_div (S := S) (t := ū) hV
-  have hG : 0 ≤ G := integral_nonneg fun x ↦ by positivity
   have hdiv : (∫ x, (u x - ū) ^ 2 ∂μ) / (4 * Q) ≤ G / 4 := by
     rw [div_le_iff₀ (by positivity)]
     nlinarith

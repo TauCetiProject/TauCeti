@@ -293,7 +293,6 @@ private theorem sq_le_mul_one_sub_sq {δ t : ℝ} (hδ : 0 < δ) (ht : t ∈ Icc
     δ ^ 2 ≤ t * (1 - t ^ 2) := by
   obtain ⟨h₁, h₂⟩ := ht
   have h₃ : δ * δ ≤ t * (1 - t) := mul_le_mul h₁ (by linarith) hδ.le (by linarith)
-  have h₄ : 0 ≤ t * (1 - t) := by nlinarith
   nlinarith
 
 variable {X : Type*} {g : X → ℝ → ℝ} {s : Set X} {δ : ℝ}
@@ -543,7 +542,7 @@ theorem continuationRescaling_mem_Icc (hK : 0 ≤ K) (hKC : K < C)
     (hb : z.2 ∈ Ioo 0 1 → |deriv (fun s ↦ f (z.1, s)) z.2| ≤ K * z.2 * (1 - z.2 ^ 2))
     (hend : z.2 ∉ Ioo 0 1 → deriv (fun s ↦ f (z.1, s)) z.2 = 0) :
     continuationRescaling C f z ∈ Icc (C / (C + K)) (C / (C - K)) := by
-  have hC : 0 < C := hK.trans_lt hKC
+  have _ : 0 < C := hK.trans_lt hKC
   by_cases ht : z.2 ∈ Ioo 0 1
   · set b := deriv (fun s ↦ f (z.1, s)) z.2
     have hw : 0 < z.2 * (1 - z.2 ^ 2) := mul_pos ht.1 (by nlinarith [ht.1, ht.2])

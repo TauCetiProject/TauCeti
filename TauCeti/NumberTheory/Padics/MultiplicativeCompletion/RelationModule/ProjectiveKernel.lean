@@ -176,7 +176,7 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
   have : Module.Projective Λ T.X₁.ρ.asModule := by
     refine TateCohomology.projective_X₁_of_forall_isPGroup
       (fun _ ↦ PadicInt.isUnit_natCast_or_isMaximal_span) hT (q := 2) (fun ℓ _ S _ hS ↦ ?_)
-      (fun ℓ _ S _ hS ↦ ?_) (fun ℓ _ S _ hS ↦ @Function.injective_of_subsingleton _ _
+      (fun ℓ _ S _ hS ↦ ?_) (fun ℓ _ S _ _ ↦ @Function.injective_of_subsingleton _ _
         (ModuleCat.subsingleton_of_isZero
           (TateCohomology.isZero_tateCohomology_three_res_relationModule ℤ_[p] hg S)) _)
     · by_cases hℓ : ℓ = p
