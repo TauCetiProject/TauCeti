@@ -21,7 +21,7 @@ computable pieces:
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
   is c.e., by unbounded search;
-* `Computable.rePred_mem_range`: the range of a total computable sequence is c.e.
+* `Computable.rePred_mem_range`: the range of a total computable function is c.e.
 
 ## References
 
@@ -85,12 +85,22 @@ end ComputablePred
 
 namespace Computable
 
-/-- The range of a total computable sequence is c.e. -/
-theorem rePred_mem_range {α : Type*} [Primcodable α] {f : ℕ → α} (hf : Computable f) :
+/-- The range of a total computable function is c.e. -/
+theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Computable f) :
     REPred (· ∈ Set.range f) := by
   classical
-  have heq : ComputablePred fun p : α × ℕ => f p.2 = p.1 :=
-    (Primrec.eq.decide.to_comp.comp (hf.comp Computable.snd) Computable.fst).computablePred
-  exact heq.rePred_exists
+  have hmap : Computable fun p : β × ℕ => (Encodable.decode p.2).map f :=
+    (Computable.decode.comp Computable.snd).option_map (hf.comp Computable.snd)
+  have heq : ComputablePred fun p : β × ℕ => (Encodable.decode p.2).map f = some p.1 :=
+    (Primrec.eq.decide.to_comp.comp hmap
+      (Computable.option_some.comp Computable.fst)).computablePred
+  refine (ComputablePred.rePred_exists
+    (p := fun b n => (Encodable.decode (α := α) n).map f = some b) heq).of_eq fun b => ?_
+  constructor
+  · rintro ⟨n, hn⟩
+    obtain ⟨a, -, hab⟩ := Option.map_eq_some_iff.mp hn
+    exact ⟨a, hab⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨Encodable.encode a, by simp⟩
 
 end Computable

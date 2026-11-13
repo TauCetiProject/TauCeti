@@ -33,19 +33,23 @@ public section
 namespace REPred
 
 /-- A nonempty c.e. set has a total computable range presentation. -/
-theorem exists_computable_range {S : Set ℕ} (hS : REPred (· ∈ S)) (hne : S.Nonempty) :
-    ∃ f : ℕ → ℕ, Computable f ∧ Set.range f = S := by
+theorem exists_computable_range {α : Type*} [Primcodable α] {S : Set α}
+    (hS : REPred (· ∈ S)) (hne : S.Nonempty) :
+    ∃ f : ℕ → α, Computable f ∧ Set.range f = S := by
   obtain ⟨a, ha⟩ := hne
-  obtain ⟨c, hc⟩ := TauCeti.Enumeration.rePred_iff_exists_code.mp hS
-  let f : ℕ → ℕ := fun n =>
-    if (Nat.Partrec.Code.evaln n.unpair.2 c n.unpair.1).isSome then n.unpair.1 else a
+  let d : ℕ → α := fun n => (Encodable.decode n).getD a
+  have hd : Computable d := Computable.decode.option_getD (Computable.const a)
+  have hpre : REPred fun n => d n ∈ S := Partrec.comp hS hd
+  obtain ⟨c, hc⟩ := TauCeti.Enumeration.rePred_iff_exists_code.mp hpre
+  let f : ℕ → α := fun n =>
+    if (Nat.Partrec.Code.evaln n.unpair.2 c n.unpair.1).isSome then d n.unpair.1 else a
   have heval : Computable fun n : ℕ => Nat.Partrec.Code.evaln n.unpair.2 c n.unpair.1 :=
     Nat.Partrec.Code.primrec_evaln.to_comp.comp
       (((Computable.snd.comp Computable.unpair).pair (Computable.const c)).pair
         (Computable.fst.comp Computable.unpair))
   have hf : Computable f := by
     simpa only [f, Bool.cond_eq_ite] using (Primrec.option_isSome.to_comp.comp heval).cond
-      (Computable.fst.comp Computable.unpair) (Computable.const a)
+      (hd.comp (Computable.fst.comp Computable.unpair)) (Computable.const a)
   refine ⟨f, hf, Set.Subset.antisymm ?_ ?_⟩
   · rintro x ⟨n, rfl⟩
     dsimp [f]
@@ -54,10 +58,11 @@ theorem exists_computable_range {S : Set ℕ} (hS : REPred (· ∈ S)) (hne : S.
       exact (hc _).mpr (Nat.Partrec.Code.evaln_sound hy).fst
     · exact ha
   · intro x hx
-    obtain ⟨y, hy⟩ := Part.dom_iff_mem.mp ((hc x).mp hx)
+    obtain ⟨n, rfl⟩ := Encodable.surjective_decode_getD α a x
+    obtain ⟨y, hy⟩ := Part.dom_iff_mem.mp ((hc n).mp hx)
     obtain ⟨s, hs⟩ := Nat.Partrec.Code.evaln_complete.mp hy
-    refine ⟨Nat.pair x s, ?_⟩
-    simp [f, Nat.unpair_pair, Option.isSome_iff_exists.mpr ⟨y, hs⟩]
+    refine ⟨Nat.pair n s, ?_⟩
+    simp [f, Nat.unpair_pair, Option.isSome_iff_exists.mpr ⟨y, hs⟩, d]
 
 end REPred
 
@@ -112,14 +117,7 @@ private theorem mem_freshHistory {f : ℕ → α} (h : (Set.range f).Infinite) (
       or_and_right, exists_or, exists_eq_left]
     grind
 
-end TauCeti.Enumeration
-
-namespace Computable
-
-open TauCeti.Enumeration
-
-/-- An infinite computable range admits a total computable enumeration without repetitions. -/
-theorem exists_injective_range {α : Type*} [Primcodable α] {f : ℕ → α}
+private theorem exists_injective_range_nat {α : Type*} [Primcodable α] {f : ℕ → α}
     (hf : Computable f) (h : (Set.range f).Infinite) :
     ∃ g : ℕ → α, Computable g ∧ Function.Injective g ∧ Set.range g = Set.range f := by
   classical
@@ -151,14 +149,31 @@ theorem exists_injective_range {α : Type*} [Primcodable α] {f : ℕ → α}
       exact ⟨_, Finset.mem_range.mpr (by have := hbound n; omega), rfl⟩)
     exact Set.infinite_range_of_injective hinj hfinite
 
+end TauCeti.Enumeration
+
+namespace Computable
+
+/-- An infinite computable range admits a total computable enumeration without repetitions. -/
+theorem exists_injective_range {α β : Type*} [Primcodable α] [Primcodable β] {f : α → β}
+    (hf : Computable f) (h : (Set.range f).Infinite) :
+    ∃ g : ℕ → β, Computable g ∧ Function.Injective g ∧ Set.range g = Set.range f := by
+  obtain ⟨_, a, _⟩ := h.nonempty
+  let d : ℕ → α := fun n => (Encodable.decode n).getD a
+  have hd : Computable d := Computable.decode.option_getD (Computable.const a)
+  have hrange : Set.range (f ∘ d) = Set.range f :=
+    (Encodable.surjective_decode_getD α a).range_comp f
+  obtain ⟨g, hg, hinj, hgrange⟩ :=
+    TauCeti.Enumeration.exists_injective_range_nat (hf.comp hd) (hrange ▸ h)
+  exact ⟨g, hg, hinj, hgrange.trans hrange⟩
+
 end Computable
 
 namespace REPred
 
 /-- Every infinite c.e. set has an injective total computable enumeration. -/
-theorem exists_injective_computable_range {S : Set ℕ} (hS : REPred (· ∈ S))
-    (h : S.Infinite) :
-    ∃ f : ℕ → ℕ, Computable f ∧ Function.Injective f ∧ Set.range f = S := by
+theorem exists_injective_computable_range {α : Type*} [Primcodable α] {S : Set α}
+    (hS : REPred (· ∈ S)) (h : S.Infinite) :
+    ∃ f : ℕ → α, Computable f ∧ Function.Injective f ∧ Set.range f = S := by
   obtain ⟨f, hf, hfrange⟩ := hS.exists_computable_range h.nonempty
   obtain ⟨g, hg, hinj, hgrange⟩ := hf.exists_injective_range (hfrange ▸ h)
   exact ⟨g, hg, hinj, hgrange.trans hfrange⟩
