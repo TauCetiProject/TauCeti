@@ -36,7 +36,7 @@ structure group of orthonormal frame bundles.
   matrix of the vector action of `x` in the basis `b`.
 * `OrthonormalBasis.realCliffordSpinFrameProjection_surjective`: the frame projection is onto.
 * `OrthonormalBasis.realCliffordSpinFrameProjection_eq_one_iff`: its kernel consists of `1`
-  and `-1`.
+  and `-1` (only `1` in dimension zero, where `-1` is not a Spin element).
 * `OrthonormalBasis.isCoveringMap_realCliffordSpinFrameProjection`: it is a covering map.
 * `OrthonormalBasis.realCliffordSpinFrameProjection_eq_conj` and
   `OrthonormalBasis.exists_realCliffordSpinFrameProjection_eq_conj`: changing to an equally

@@ -28,9 +28,10 @@ definite, so its Spin action surjects onto the special orthogonal group. Consequ
 closed carriers are given their Lie-group structures, automatic smoothness makes this map available
 to the Lie functor without changing either carrier.
 
-The carrier homomorphism is again the Spin double cover: its kernel consists of the units `1`
-and `-1` (only `1` in dimension zero, where the Spin group is trivial), and it is a covering map.
-The covering is the compact real Spin covering
+The carrier homomorphism is a covering map in every dimension. In dimension zero both carriers
+are points and the covering is trivial (one sheet); its kernel consists of the unit `1` only. In
+positive dimension it is again the Spin double cover: its kernel consists of the units `1` and
+`-1`, and the covering is the compact real Spin covering
 `CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero`, transported along the
 homeomorphisms of `Spin(n)` and `SO(n)` with the unit-group carriers that serve as frame structure
 groups.
@@ -48,8 +49,9 @@ groups.
   specializes the formula to the canonical representative of a Spin element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_surjective` proves that the
   carrier homomorphism is onto.
-* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_eq_one_iff` identifies its
-  kernel with the units `1` and `-1`.
+* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_eq_one_iff` characterizes the
+  kernel as the Spin-carrier points equal to the unit `1` or `-1` (`{1, -1}` in positive dimension,
+  `{1}` in dimension zero).
 * `TauCeti.CliffordAlgebra.isCoveringMap_realCliffordSpinToSpecialOrthogonalRange` proves that it
   is a covering map.
 
@@ -231,6 +233,7 @@ theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ)
         (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = -1 := by
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero the Spin group is trivial.
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
     have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
       (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
@@ -254,21 +257,14 @@ theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
     IsCoveringMap (realCliffordSpinToSpecialOrthogonalRange n) := by
   obtain rfl | hn := n.eq_zero_or_pos
   · -- In dimension zero both carriers are points.
+    -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
     have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
     have hX : Subsingleton (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
       (Set.subsingleton_coe _).mpr (MonoidHom.subsingleton_coe_range _)
-    have hY : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+    have : Subsingleton (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
         (realCliffordForm 0 0))) :=
       (realCliffordSpinToSpecialOrthogonalRange_surjective 0).subsingleton
-    let _ : Unique (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 0 0))) :=
-      ⟨⟨1⟩, fun _ ↦ Subsingleton.elim _ _⟩
-    let _ : Unique (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (realCliffordForm 0 0))) :=
-      ⟨⟨1⟩, fun _ ↦ Subsingleton.elim _ _⟩
-    have h : ⇑(realCliffordSpinToSpecialOrthogonalRange 0) = ⇑(Homeomorph.homeomorphOfUnique _ _) :=
-      funext fun _ ↦ Subsingleton.elim _ _
-    rw [← isLocalHomeomorph_iff_isCoveringMap, h]
-    exact (Homeomorph.homeomorphOfUnique _ _).isLocalHomeomorph
+    exact .of_discreteTopology _
   have : NeZero n := ⟨hn.ne'⟩
   have h : ⇑(realCliffordSpinToSpecialOrthogonalRange n) =
       realCliffordSpecialOrthogonalContinuousMulEquivRange n ∘ realCliffordSpinProjectionZero n ∘

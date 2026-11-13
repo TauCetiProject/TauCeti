@@ -25,8 +25,9 @@ We keep their native units-range carriers and select the matrix operator topolog
 The operator-induced matrix topology agrees with the entrywise topology, including on
 units and the special orthogonal range, so the topological covering applies to these carriers.
 
-The positive-dimensional statement includes rank one. Native Spin in rank zero is trivial;
-the geometric two-element rank-zero group is a separate construction.
+The statement holds in every dimension, including zero and one. In dimension zero it concerns
+the native Spin group, which is trivial; the geometric two-element rank-zero group is a separate
+construction.
 
 ## References
 
