@@ -46,9 +46,8 @@ The roots-of-unity hypothesis on the last three statements is not merely a devic
 `A₄` are the pairs of cube roots of unity, nine of them, and a nontrivial one such as `(ω, 1)` has
 neither `(1, ω)` nor its inverse among its powers, so the classification genuinely fails there.
 `HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization (alternatingGroup α)))` rules that
-out by
-asking for a primitive cube root of unity in `M` and for the cube roots of unity in `M` to form a
-cyclic group. It is a sufficient condition, not one shown here to be necessary.
+out by asking for a primitive cube root of unity in `M` and for the cube roots of unity in `M` to
+form a cyclic group. It is a sufficient condition, not one shown here to be necessary.
 
 For `4 < Nat.card α` the alternating group is perfect instead, and the statements above are then all
 vacuously about the trivial character.
@@ -69,8 +68,8 @@ vacuously about the trivial character.
   members of one orbit.
 * `TauCeti.card_abelianization_alternatingGroup`: **the abelianization of `A₄` has order three.**
 * `TauCeti.monoidHom_alternatingGroup_apply_pow_three` and
-  `TauCeti.monoidHom_alternatingGroup_pow_three`: **the linear characters of `A₄` are
-  cube-root-of-unity valued**, over arbitrary commutative coefficients.
+  `TauCeti.monoidHom_alternatingGroup_pow_three`: **the linear characters of an alternating group
+  are cube-root-of-unity valued**, over arbitrary commutative coefficients.
 * `TauCeti.card_monoidHom_alternatingGroup`: **`A₄` has exactly three linear characters**, with
   `TauCeti.exists_monoidHom_alternatingGroup_ne_one` the corollary that one of them is nontrivial.
 * `TauCeti.monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv`: **the linear characters of `A₄` are
@@ -122,6 +121,12 @@ private theorem map_conjNormal_alternatingGroup_of_fixed {s : Perm α}
         rw [← MulAut.mul_apply, ← map_mul, inv_mul_cancel_right]
     _ = χ x := (map_conjNormal_val χ ⟨g * s⁻¹, hgs⟩ _).trans (h x)
 
+/-- The three-cycles generate the alternating group. -/
+private theorem closure_isThreeCycle_alternatingGroup :
+    Subgroup.closure {c : alternatingGroup α | (c : Perm α).IsThreeCycle} = ⊤ := by
+  rw [← closure_three_cycles_eq_alternating]
+  exact Subgroup.closure_closure_coe_preimage
+
 /-- **A linear character of the alternating group fixed by conjugation by an odd permutation is
 trivial.** Equivalently, the conjugation action of `Equiv.Perm α` on the linear characters of
 `alternatingGroup α` has only the trivial character as a fixed point. -/
@@ -129,10 +134,8 @@ theorem eq_one_of_map_conjNormal_eq_alternatingGroup {s : Perm α} (hs : s ∉ a
     (h : ∀ x : alternatingGroup α, χ (MulAut.conjNormal s x) = χ x) : χ = 1 := by
   have hall := map_conjNormal_alternatingGroup_of_fixed χ hs h
   -- Three-cycles generate the alternating group, so it suffices that `χ` kills each of them.
-  have hgen : Subgroup.closure {c : alternatingGroup α | (c : Perm α).IsThreeCycle} = ⊤ := by
-    rw [← closure_three_cycles_eq_alternating]
-    exact Subgroup.closure_closure_coe_preimage
-  refine eq_of_eqOn_dense hgen fun c (hc : (c : Perm α).IsThreeCycle) => ?_
+  refine eq_of_eqOn_dense closure_isThreeCycle_alternatingGroup
+    fun c (hc : (c : Perm α).IsThreeCycle) => ?_
   -- A three-cycle is conjugate in `Equiv.Perm α` to its inverse, so its value squares to `1`.
   obtain ⟨g, hg⟩ := isConj_iff.mp (isConj_iff_cycleType_eq.mpr (cycleType_inv (c : Perm α)).symm)
   have hinv : χ c⁻¹ = χ c := by
@@ -237,29 +240,22 @@ section CubeRoots
 
 variable {M : Type*} [CommMonoid M]
 
--- The two reductions below spell their hypothesis with `Fintype.card α`, the `simp`-normal form of
--- `Nat.card α = 4`, so that `simp` can discharge it and they can carry `@[simp]`.
-
-/-- **The linear characters of `A₄` are cube-root-of-unity valued**, over arbitrary commutative
-coefficients. -/
+/-- **A linear character of an alternating group is a cube root of unity in the character
+monoid**, over arbitrary commutative coefficients: the three-cycles generate the alternating group
+and have order three. -/
 @[simp]
-theorem monoidHom_alternatingGroup_apply_pow_three (hα : Fintype.card α = 4)
-    (χ : alternatingGroup α →* M) (x : alternatingGroup α) : χ x ^ 3 = 1 := by
-  have hx : Group.Abelianization.of x ^ 3 = 1 := by
-    rw [← card_abelianization_alternatingGroup (α := α) (by rwa [Nat.card_eq_fintype_card])]
-    exact pow_card_eq_one'
-  rw [← χ.coe_toHomUnits, ← Units.val_pow_eq_pow_val, ← Group.Abelianization.lift_apply_of, ←
-      map_pow,
-    hx, map_one, Units.val_one]
+theorem monoidHom_alternatingGroup_pow_three (χ : alternatingGroup α →* M) : χ ^ 3 = 1 :=
+  MonoidHom.eq_of_eqOn_dense MonoidHom.closure_isThreeCycle_alternatingGroup
+    fun c (hc : (c : Perm α).IsThreeCycle) => by
+      rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, ← hc.orderOf,
+        Subgroup.orderOf_coe, pow_orderOf_eq_one, map_one]
 
-/-- **A linear character of `A₄` is a cube root of unity in the character group**, the form of
-`TauCeti.monoidHom_alternatingGroup_apply_pow_three` as an equation between homomorphisms. -/
+/-- **The linear characters of an alternating group are cube-root-of-unity valued**, the pointwise
+form of `TauCeti.monoidHom_alternatingGroup_pow_three`. -/
 @[simp]
-theorem monoidHom_alternatingGroup_pow_three (hα : Fintype.card α = 4)
-    (χ : alternatingGroup α →* M) : χ ^ 3 = 1 := by
-  ext x
-  rw [MonoidHom.pow_apply, MonoidHom.one_apply,
-    monoidHom_alternatingGroup_apply_pow_three hα χ x]
+theorem monoidHom_alternatingGroup_apply_pow_three (χ : alternatingGroup α →* M)
+    (x : alternatingGroup α) : χ x ^ 3 = 1 := by
+  rw [← MonoidHom.pow_apply, monoidHom_alternatingGroup_pow_three, MonoidHom.one_apply]
 
 end CubeRoots
 
@@ -286,19 +282,45 @@ theorem exists_monoidHom_alternatingGroup_ne_one (hα : Nat.card α = 4) :
 
 variable {M}
 
-/-- **`A₄` has exactly three linear characters**, and once a nontrivial one `χ` is fixed they are
-`1`, `χ` and `χ⁻¹`. Some hypothesis on `M` is needed on both counts: without roots of unity there
-are too few characters, while over `M = ℂ × ℂ` there are nine of them and the conclusion fails. -/
-theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv (hα : Nat.card α = 4)
+/-- **Once a nontrivial linear character `χ` of an alternating group is fixed, the linear characters
+are `1`, `χ` and `χ⁻¹`**: for `A₄` there are exactly three of them. Some hypothesis on `M` is
+needed on both counts: without roots of unity there are too few characters, while over
+`M = ℂ × ℂ` there are nine of them and the conclusion fails. -/
+theorem monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv
     {χ : alternatingGroup α →* Mˣ} (hχ : χ ≠ 1) (ψ : alternatingGroup α →* Mˣ) :
     ψ = 1 ∨ ψ = χ ∨ ψ = χ⁻¹ := by
-  have h3 := card_monoidHom_alternatingGroup M hα
   have _ : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
-  -- The character group has prime order three, so `χ` has order three and generates it.
-  have hcube : χ ^ 3 = 1 := h3 ▸ pow_card_eq_one'
+  have hcube : χ ^ 3 = 1 := monoidHom_alternatingGroup_pow_three χ
   have hord : orderOf χ = 3 := orderOf_eq_prime hcube hχ
-  have hsq : χ ^ 2 = χ⁻¹ := eq_inv_of_mul_eq_one_left (by rwa [← pow_succ])
+  -- The character group has order three: the alternating group is perfect for `5 ≤ #α`, has
+  -- order at most three for `#α ≤ 3`, and the case `#α = 4` is `card_monoidHom_alternatingGroup`.
+  have h3 : Nat.card (alternatingGroup α →* Mˣ) = 3 := by
+    by_cases h4 : Nat.card α = 4
+    · exact card_monoidHom_alternatingGroup M h4
+    rcases lt_or_gt_of_ne h4 with hlt | hgt
+    · have hle : Nat.card (alternatingGroup α) ≤ 3 := by
+        rcases subsingleton_or_nontrivial α with hα | hα
+        · have : Subsingleton (alternatingGroup α) :=
+            (Subtype.val_injective (p := (· ∈ alternatingGroup α))).subsingleton
+          have := Nat.card_unique (α := alternatingGroup α)
+          omega
+        · rw [nat_card_alternatingGroup]
+          calc (Nat.card α).factorial / 2 ≤ (3 : ℕ).factorial / 2 :=
+                Nat.div_le_div_right (Nat.factorial_le (by omega))
+            _ = 3 := rfl
+      have hab : Nat.card (Group.Abelianization (alternatingGroup α)) ≤ 3 :=
+        (Nat.card_le_card_of_surjective _
+          (QuotientGroup.mk_surjective (s := commutator (alternatingGroup α)))).trans hle
+      have hdvd : 3 ∣ Nat.card (alternatingGroup α →* Mˣ) := hord ▸ orderOf_dvd_natCard χ
+      rw [card_monoidHom_eq_card_abelianization] at hdvd ⊢
+      have hpos : 0 < Nat.card (Group.Abelianization (alternatingGroup α)) := Nat.card_pos
+      exact le_antisymm hab (Nat.le_of_dvd hpos hdvd)
+    · exact absurd (MonoidHom.ext fun x => by
+        simpa using Group.Abelianization.commutator_le_ker χ
+          (by rw [commutator_alternatingGroup_eq_top (by omega)]; trivial : x ∈ commutator _))
+        hχ
   obtain ⟨n, rfl⟩ := (Submonoid.mem_powers_iff ψ χ).mp (mem_powers_of_prime_card h3 hχ)
+  have hsq : χ ^ 2 = χ⁻¹ := eq_inv_of_mul_eq_one_left (by rwa [← pow_succ])
   rw [← pow_mod_orderOf, hord]
   have : n % 3 < 3 := n.mod_lt three_pos
   interval_cases n % 3 <;> simp [hsq]
@@ -308,7 +330,7 @@ action of `Equiv.Perm α` is transitive on them. -/
 theorem exists_comp_conjNormal_alternatingGroup_eq (hα : Nat.card α = 4)
     {χ ψ : alternatingGroup α →* Mˣ} (hχ : χ ≠ 1) (hψ : ψ ≠ 1) :
     ∃ s : Perm α, χ.comp (MulAut.conjNormal s : MulAut (alternatingGroup α)) = ψ := by
-  rcases monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv hα hχ ψ with h | rfl | rfl
+  rcases monoidHom_alternatingGroup_eq_one_or_eq_or_eq_inv hχ ψ with h | rfl | rfl
   · exact absurd h hψ
   · exact ⟨1, by ext; simp⟩
   · -- An odd permutation inverts `χ`.
