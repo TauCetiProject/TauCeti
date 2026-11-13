@@ -112,10 +112,8 @@ theorem extends_iff_extends_pullback_of_flat [IsNoetherianRing A']
     (hdepth : 2 ≤ depth (ModuleCat.of A A))
     (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
     (∃ Y : FiniteEtaleScheme (Spec (.of A)), Nonempty ((restrictPunctured A).obj Y ≅ V)) ↔
-      ∃ Y : FiniteEtaleScheme (Spec (.of A')), Nonempty ((restrictPunctured A').obj Y ≅
-        (FiniteEtaleScheme.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-          (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge)).obj
-          V) := by
+      ∃ Y : FiniteEtaleScheme (Spec (.of A')),
+        Nonempty ((restrictPunctured A').obj Y ≅ (pullbackPunctured h).obj V) := by
   have : IsLocalHom (algebraMap A A') :=
     ((local_hom_tfae (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
   have : Module.FaithfullyFlat A A' := .of_flat_of_isLocalHom
@@ -141,12 +139,9 @@ theorem extends_iff_completion_extends_of_two_le_depth (hdepth : 2 ≤ depth (Mo
     (∃ Y : FiniteEtaleScheme (Spec (.of A)), Nonempty ((restrictPunctured A).obj Y ≅ V)) ↔
       ∃ Y : FiniteEtaleScheme (Spec (.of (AdicCompletion (maximalIdeal A) A))),
         Nonempty ((restrictPunctured (AdicCompletion (maximalIdeal A) A)).obj Y ≅
-          (FiniteEtaleScheme.pullback ((Spec.map (CommRingCat.ofHom
-            (algebraMap A (AdicCompletion (maximalIdeal A) A)))).resLE (puncturedSpectrum A)
-            (puncturedSpectrum (AdicCompletion (maximalIdeal A) A))
-            (preimage_puncturedSpectrum (by
-              rw [← AdicCompletion.maximalIdeal_eq_map]
-              exact (maximalIdeal.isMaximal _).isPrime.radical)).ge)).obj V) :=
+          (pullbackPunctured (A' := AdicCompletion (maximalIdeal A) A) (by
+            rw [← AdicCompletion.maximalIdeal_eq_map]
+            exact (maximalIdeal.isMaximal _).isPrime.radical)).obj V) :=
   extends_iff_extends_pullback_of_flat (by
     rw [← AdicCompletion.maximalIdeal_eq_map]
     exact (maximalIdeal.isMaximal _).isPrime.radical) hdepth V

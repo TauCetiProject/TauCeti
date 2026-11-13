@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Linear extension of coordinate functions by zero
@@ -41,13 +42,12 @@ theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : 
     (he : Injective e) (i : ι) (a : M) : linearMap R M e (Pi.single i a) = Pi.single (e i) a :=
   he.extend_single i a
 
-/-- Extension by zero along a composite of injective index maps is the composite of the
-extensions. -/
-theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he : Injective e)
-    (he' : Injective e') :
+/-- Extension by zero along `e' ∘ e` is the composite of the extensions, provided the outer map
+`e'` is injective; the inner map `e` may be arbitrary. -/
+theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he' : Injective e') :
     linearMap R M (e' ∘ e) = linearMap R M e' ∘ₗ linearMap R M e := by
   ext v : 1
-  exact he.extend_comp he' v 0
+  exact he'.extend_comp_extend v 0
 
 /-- Extension by zero along the identity is the identity. -/
 @[simp]

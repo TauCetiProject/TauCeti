@@ -157,7 +157,7 @@ prediction of `H'` by at most
 + δ / 6) * |V| ^ k`, where `d` is the edit discrepancy between `H` and `H'`, `m` is the number of
 pair colors and `μ` is the exceptional polyad mass of `H'`. -/
 theorem abs_inducedCopyCount_sub_expectedInducedCount_le_of_placed_le {H' : Colored3Graph κ V}
-    (hC : C.IsPolyadDecomposition) {ε δ e η : ℝ} {r : ℕ} (hε : 0 ≤ ε)
+    (hC : C.IsPolyadDecomposition) {ε δ e η : ℝ} {r : ℕ}
     (hreg : C.skeleton.IsPairColorRegular ε) (hδ : 0 < δ)
     (hcells : C.VertexCellsControlled (diagonalControl3 F.k δ)) (he : 0 ≤ e)
     (hlocal : ∀ φ : PatternPlacement3 C F, φ.Transversal → ∀ ψ : PairColorPlacement3 φ,
@@ -196,7 +196,7 @@ theorem abs_inducedCopyCount_sub_expectedInducedCount_le_of_placed_le {H' : Colo
           rw [← mul_sum, ← mul_sum, hsumB, mul_assoc]
   have hcore := H'.abs_inducedCopyCount_sub_expectedInducedCount_le F hC η r
   have hedit := H.inducedCopyCount_edit_transfer H' F
-  have hpred := exceptional_route_prediction_mass_le (H := H') (F := F) hε hreg η r
+  have hpred := exceptional_route_prediction_mass_le (H := H') (F := F) hreg η r
   have hnon := H'.nontransversal_actual_and_predicted_mass_le hδ hcells
   have htri := abs_sub_le (H.inducedCopyCount F : ℝ) (H'.inducedCopyCount F)
     (H'.expectedInducedCount C F)

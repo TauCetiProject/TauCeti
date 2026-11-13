@@ -100,7 +100,7 @@ private theorem exists_isCellularSet_image_eq_compl [FiniteDimensional ℝ E] [T
     obtain ⟨w, hw, hwv⟩ := hUκ hv
     rwa [← hκ.injective hwv]
   refine ⟨closedBall 0 1 ∩ f ⁻¹' {j ∞}, isCellularSet_closedBall_inter_preimage (by simp)
-    hf.continuousOn (fun v hv w hw hvw ↦ ?_) ?_ ?_, ?_⟩
+    hf.continuousOn (fun v hv w _ hvw ↦ ?_) ?_ ?_, ?_⟩
   · -- `f` is injective off the fibre over `∞`.
     have := (onePointCollapse_eq_onePointCollapse_iff Subtype.val_injective injective_id).1
       (j.injective hvw)

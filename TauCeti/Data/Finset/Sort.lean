@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -43,11 +44,14 @@ The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`.
 
-Every nonempty finset can be listed by a sequence strictly increasing on a finite initial segment
+Every nonempty finset can be listed by a monotone sequence strictly increasing through its first
+`card` entries, starting at its minimum and reaching its maximum at index `card - 1`
 (`Finset.exists_strictMonoOn_Iic_surj`).
 
 If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
 order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+Sorting the interval `[a, b)` of natural numbers lists `a, a + 1, …, b - 1`, `Nat.sort_Ico`.
 
 The support-enlargement and adjacent-swap ordered-product lemmas are adapted from
 `Mei/Algebra/BigOperators/Group/Finset/Ordered.lean` in
@@ -76,32 +80,34 @@ section LinearOrder
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
 
-/-- A nonempty finset in a linear order can be listed by a sequence strictly increasing on
-`Set.Iic n`, with all entries on that segment in the finset and every element reached there. -/
+/-- A nonempty finset in a linear order has a monotone enumeration, strictly increasing on
+`Set.Iic (d.card - 1)`. Its image on that segment is exactly the finset, and its first and last
+entries are the minimum and maximum. -/
 theorem exists_strictMonoOn_Iic_surj (d : Finset α) (hd : d.Nonempty) :
-    ∃ (n : ℕ) (τ : ℕ → α), StrictMonoOn τ (Set.Iic n) ∧
-      (∀ j ≤ n, τ j ∈ d) ∧ ∀ x ∈ d, ∃ j ≤ n, τ j = x := by
+    ∃ τ : ℕ → α, Monotone τ ∧ StrictMonoOn τ (Set.Iic (d.card - 1)) ∧
+      (∀ j, τ j ∈ d) ∧ τ '' Set.Iic (d.card - 1) = (d : Set α) ∧
+      τ 0 = d.min' hd ∧ τ (d.card - 1) = d.max' hd := by
   classical
   have hcard : 0 < d.card := card_pos.mpr hd
-  let n := d.card - 1
-  have hn : n + 1 = d.card := by omega
-  let e := d.orderIsoOfFin hn.symm
   -- Freeze the increasing enumeration after its last entry.
-  let τ : ℕ → α := fun j ↦ (e ⟨min j n, by omega⟩ : α)
-  have hτj (j : ℕ) (hj : j ≤ n) : τ j = (e ⟨j, by omega⟩ : α) := by
-    simp [τ, min_eq_left hj]
-  refine ⟨n, τ, ?_, ?_, ?_⟩
+  let τ : ℕ → α := fun j ↦ d.orderEmbOfFin rfl ⟨min j (d.card - 1), by omega⟩
+  have hτj (j : ℕ) (hj : j ≤ d.card - 1) :
+      τ j = d.orderEmbOfFin rfl ⟨j, by omega⟩ := by
+    simp only [τ, min_eq_left hj]
+  refine ⟨τ, ?_, ?_, fun j ↦ orderEmbOfFin_mem d rfl _, ?_, ?_, ?_⟩
+  · exact fun i j hij ↦ (d.orderEmbOfFin rfl).monotone (min_le_min_right _ hij)
   · intro i hi j hj hij
     rw [hτj i hi, hτj j hj]
-    exact e.strictMono hij
-  · intro j hj
-    rw [hτj j hj]
-    exact (e ⟨j, by omega⟩).property
-  · intro x hx
-    let j := e.symm ⟨x, hx⟩
-    refine ⟨j, by omega, ?_⟩
-    rw [hτj j (by omega)]
-    exact congrArg Subtype.val (e.apply_symm_apply ⟨x, hx⟩)
+    exact (d.orderEmbOfFin rfl).strictMono hij
+  · apply Set.Subset.antisymm
+    · rintro _ ⟨j, _, rfl⟩
+      exact orderEmbOfFin_mem d rfl _
+    · intro x hx
+      obtain ⟨j, rfl⟩ := (range_orderEmbOfFin d rfl).symm ▸ hx
+      refine ⟨j.val, Nat.le_sub_one_of_lt j.isLt, ?_⟩
+      exact hτj j.val (Nat.le_sub_one_of_lt j.isLt)
+  · rw [hτj 0 (Nat.zero_le _), orderEmbOfFin_zero rfl hcard]
+  · rw [hτj _ le_rfl, orderEmbOfFin_last rfl hcard]
 
 /-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
 `i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
@@ -178,15 +184,15 @@ theorem prod_map_sort_eq_of_ne_one (s t : Finset ι) (f : ι → M)
     (s.sort.map f).prod = (t.sort.map f).prod := by
   classical
   have hs : (s.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
-    apply prod_map_sort_subset Finset.subset_union_left
+    apply prod_map_sort_subset subset_union_left
     intro i hi his
     by_contra hfi
-    exact his ((h i hfi).mpr ((Finset.mem_union.mp hi).resolve_left his))
+    exact his ((h i hfi).mpr ((mem_union.mp hi).resolve_left his))
   have ht : (t.sort.map f).prod = ((s ∪ t).sort.map f).prod := by
-    apply prod_map_sort_subset Finset.subset_union_right
+    apply prod_map_sort_subset subset_union_right
     intro i hi hit
     by_contra hfi
-    exact hit ((h i hfi).mp ((Finset.mem_union.mp hi).resolve_right hit))
+    exact hit ((h i hfi).mp ((mem_union.mp hi).resolve_right hit))
   exact hs.trans ht.symm
 
 /-- Swapping two consecutive indices in a finite increasing product preserves it
@@ -341,17 +347,18 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
 /-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
 enumeration of `s.erase i`. -/
 theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hsCard : s.card = n + 1)
+    (hn : (s.erase i).card = n) :
     ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
-      (s.erase i).orderEmbOfFin rfl := by
-  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+      (s.erase i).orderEmbOfFin hn := by
+  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  apply Finset.orderEmbOfFin_unique
+  apply orderEmbOfFin_unique
   · intro j
-    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-      Finset.orderEmbOfFin_mem s hsCard _⟩
+    exact mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      orderEmbOfFin_mem s hsCard _⟩
   · exact e.strictMono.comp (Fin.strictMono_succAbove k)
 
 end LinearOrder
@@ -388,3 +395,13 @@ theorem monotone_bot_orderEmbOfFin_snoc {T : Type*} [LinearOrder T] [OrderBot T]
       simp [hn, hnI, hncard, hne, h1]
 
 end Finset
+
+namespace Nat
+
+/-- Sorting the interval `[a, b)` of natural numbers gives the list `a, a + 1, …, b - 1`. -/
+@[simp]
+theorem sort_Ico (a b : ℕ) : (Finset.Ico a b).sort = List.range' a (b - a) := by
+  rw [Nat.Ico_eq_range']
+  exact List.mergeSort_eq_self _ List.pairwise_le_range'
+
+end Nat

@@ -284,8 +284,6 @@ end Compact
 variable [TopologicalSpace R]
 
 variable (R M) in
--- The predicate and API are adapted from `IsCompactModule` in
--- `TauCetiRoadmap/ProfiniteProPGroups/Suggested.lean` (`CompactModules`).
 /-- A **compact module** over a topological ring `R`: a topological `R`-module that is a compact,
 totally disconnected topological additive group with continuous scalar action. Over a compact ring
 these are the modules that are inverse limits of finite modules with surjective transition maps.

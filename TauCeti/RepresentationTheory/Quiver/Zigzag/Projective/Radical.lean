@@ -51,9 +51,13 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
 
 local notation "Z" => nonisolatedZigzagQuotient k G
+
+section Powers
+
+variable [Finite V]
 
 /-- The `n`-th radical power of the vertex projective `P_i = Z e_i`, namely `J^n P_i`. -/
 noncomputable def zigzagProjectiveRadicalPower (i : V) (n : ℕ) :
@@ -293,9 +297,11 @@ theorem ker_zigzagProjectiveHeadCoeff_eq_restrictScalars_radicalPower_one
       exact RingHom.mem_ker.mp hx'
     rw [hzero, Pi.zero_apply]
 
+end Powers
+
 section Finite
 
-variable [Fintype V] [DecidableRel G.Adj]
+variable {k G} [Fintype V] [DecidableRel G.Adj]
 
 /-- The first radical power of `P_i` has dimension `deg(i) + 1`: its basis consists of the
 outgoing arrows and the volume vector. -/
@@ -319,6 +325,10 @@ theorem finrank_restrictScalars_zigzagProjectiveRadicalPower_one
   omega
 
 end Finite
+
+section Dimensions
+
+variable {k G} [Finite V]
 
 /-- The second radical power of `P_i` is one-dimensional. -/
 theorem finrank_restrictScalars_zigzagProjectiveRadicalPower_two
@@ -447,17 +457,6 @@ theorem isSimpleModule_zigzagProjectiveRadicalLayer_zero
     is_simple_module_of_finrank_eq_one
       (finrank_zigzagProjectiveRadicalLayer_zero hns i)
 
-/-- The middle radical layer `J P_i / J² P_i` has one dimension for each edge incident to `i`. -/
-theorem finrank_zigzagProjectiveRadicalLayer_one
-    [Fintype V] [DecidableRel G.Adj]
-    (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
-    Module.finrank k (zigzagProjectiveRadicalLayer k G i 1) = G.degree i := by
-  have hdim := finrank_zigzagProjectiveRadicalLayer_add_finrank_succ
-    (k := k) (G := G) hns i 1
-  rw [finrank_restrictScalars_zigzagProjectiveRadicalPower_two hns,
-    finrank_restrictScalars_zigzagProjectiveRadicalPower_one hns] at hdim
-  omega
-
 /-- The socle layer `J² P_i / J³ P_i` is one-dimensional. -/
 theorem finrank_zigzagProjectiveRadicalLayer_two
     (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
@@ -470,5 +469,24 @@ theorem finrank_zigzagProjectiveRadicalLayer_two
   exact hdim
 
 end Layers
+
+end Dimensions
+
+section LayerOne
+
+variable {k G}
+
+/-- The middle radical layer `J P_i / J² P_i` has one dimension for each edge incident to `i`. -/
+theorem finrank_zigzagProjectiveRadicalLayer_one
+    [Fintype V] [DecidableRel G.Adj]
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
+    Module.finrank k (zigzagProjectiveRadicalLayer k G i 1) = G.degree i := by
+  have hdim := finrank_zigzagProjectiveRadicalLayer_add_finrank_succ
+    (k := k) (G := G) hns i 1
+  rw [finrank_restrictScalars_zigzagProjectiveRadicalPower_two hns,
+    finrank_restrictScalars_zigzagProjectiveRadicalPower_one hns] at hdim
+  omega
+
+end LayerOne
 
 end TauCeti

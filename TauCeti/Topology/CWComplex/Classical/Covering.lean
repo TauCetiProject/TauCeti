@@ -98,7 +98,7 @@ private abbrev CoverCell (n : ℕ) : Type u := Σ i : cell C n, p ⁻¹' {map n 
 
 variable (C) in
 private theorem finite_coverCell [RelCWComplex.FiniteType C]
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) (n : ℕ) :
+    (_ : ∀ b, Finite ↥(p ⁻¹' {b})) (n : ℕ) :
     _root_.Finite (CoverCell p C n) :=
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   inferInstance
