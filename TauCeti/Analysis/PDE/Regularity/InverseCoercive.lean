@@ -84,7 +84,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_isUniformlyEllipticAE (rati
         HolderOnWith (C * r ^ (-(α : ℝ)) * (r ^ (-(Fintype.card ι : ℝ) / 2) *
             √(∫ y in ball x₀ (2 * r), W1p.value u y ^ 2 ∂mu))).toNNReal α
           (preciseRepresentative mu (W1p.value u)) (ball x₀ r) := by
-  rcases isEmpty_or_nonempty ι with hι | hι
+  rcases isEmpty_or_nonempty ι with hι | _
   · -- In dimension zero the space is a single point.
     exact ⟨1, 1, one_pos, le_rfl, one_pos, fun _ _ _ _ =>
       Set.subsingleton_of_subsingleton.holderOnWith _ _ _⟩
