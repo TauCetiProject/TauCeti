@@ -76,12 +76,19 @@ variable {S : Scheme.{u}} {Ω Ω' Ω'' : Type u} [Field Ω] [IsSepClosed Ω] [Fi
 /-- A morphism `a : Spec Ω' ⟶ Spec Ω` of geometric points of `S`, with `a ≫ s = s'`, induces a
 morphism of points `pointSmallEtale s' ⟶ pointSmallEtale s` of the small étale site: a lift `t`
 of `s` to an étale `S`-scheme goes to the lift `a ≫ t` of `s'`. -/
-@[expose, simps]
 noncomputable def pointSmallEtaleHom {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') ⟶ S}
     (a : Spec (.of Ω') ⟶ Spec (.of Ω)) (h : a ≫ s = s') :
     pointSmallEtale s' ⟶ pointSmallEtale s where
   hom := Functor.whiskerLeft (Etale.forget S)
     (coyoneda.map (Over.homMk a h : Over.mk s' ⟶ Over.mk s).op)
+
+/-- The morphism of points induced by `a` is precomposition with `Over.homMk a h` on the fiber
+functors. -/
+theorem pointSmallEtaleHom_hom {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') ⟶ S}
+    (a : Spec (.of Ω') ⟶ Spec (.of Ω)) (h : a ≫ s = s') :
+    (pointSmallEtaleHom a h).hom = Functor.whiskerLeft (Etale.forget S)
+      (coyoneda.map (Over.homMk a h : Over.mk s' ⟶ Over.mk s).op) :=
+  (rfl)
 
 /-- The morphism of points induced by `a` sends a lift `t` to `a ≫ t`. -/
 @[simp]
@@ -89,7 +96,7 @@ theorem pointSmallEtaleHom_hom_app_left {s : Spec (.of Ω) ⟶ S} {s' : Spec (.o
     (a : Spec (.of Ω') ⟶ Spec (.of Ω)) (h : a ≫ s = s') (X : S.Etale)
     (t : (pointSmallEtale s).fiber.obj X) :
     ((pointSmallEtaleHom a h).hom.app X t).left = a ≫ t.left :=
-  rfl
+  (rfl)
 
 /-- The identity of a geometric point induces the identity of its point of the small étale
 site. -/
@@ -122,19 +129,20 @@ theorem pointSmallEtaleHom_congr {s : Spec (.of Ω) ⟶ S} {s' : Spec (.of Ω') 
 
 end Hom
 
+/-- An `R`-algebra map `f : A → B` gives a morphism `Spec f : Spec B ⟶ Spec A` over `Spec R`. In
+particular, every `σ ∈ Gal(Ω/K)` gives an automorphism `Spec σ` of the geometric point
+`Spec Ω ⟶ Spec K` over `Spec K`. -/
+@[reassoc (attr := simp)]
+theorem SpecMap_algHom_comp {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A]
+    [Algebra R B] {F : Type*} [FunLike F A B] [AlgHomClass F R A B] (f : F) :
+    Spec.map (CommRingCat.ofHom (f : A →+* B)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
+      Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg _ (congrArg _ (RingHom.ext (AlgHomClass.commutes f)))
+
 section Galois
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
-
-/-- An element `σ ∈ Gal(Ω/K)` gives an automorphism `Spec σ` of the geometric point
-`Spec Ω ⟶ Spec K` over `Spec K`. -/
-theorem SpecMap_algEquiv_comp (σ : Gal(Ω/K)) :
-    Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) ≫ Spec.map (CommRingCat.ofHom (algebraMap K Ω)) =
-      Spec.map (CommRingCat.ofHom (algebraMap K Ω)) := by
-  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  congr 2
-  ext r
-  exact σ.commutes r
 
 /-- **A point of a locally quasi-finite `K`-scheme with values in `Ω` is fixed by an open
 subgroup of `Gal(Ω/K)`.** If `t : Spec Ω ⟶ X` lifts `Spec Ω ⟶ Spec K`, then `t` is a point `y` of
@@ -192,7 +200,7 @@ noncomputable def galoisStalkMap (σ : Gal(Ω/K)) :
       (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber :=
   GrothendieckTopology.Point.Hom.sheafFiber
     (pointSmallEtaleHom (Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)))
-      (SpecMap_algEquiv_comp K Ω σ))
+      (SpecMap_algHom_comp σ))
 
 /-- The identity of `Gal(Ω/K)` acts trivially on stalks. -/
 @[simp]
@@ -220,22 +228,53 @@ theorem galoisStalkMap_mul (σ τ : Gal(Ω/K)) :
     rw [h1, CommRingCat.ofHom_comp, Spec.map_comp]
   simp only [galoisStalkMap]
   rw [← GrothendieckTopology.Point.Hom.sheafFiber_comp, ← pointSmallEtaleHom_comp _ _
-    (SpecMap_algEquiv_comp K Ω σ) (SpecMap_algEquiv_comp K Ω τ)
-    (by rw [Category.assoc, SpecMap_algEquiv_comp, SpecMap_algEquiv_comp])]
+    (SpecMap_algHom_comp σ) (SpecMap_algHom_comp τ)
+    (by rw [Category.assoc, SpecMap_algHom_comp, SpecMap_algHom_comp])]
   exact congrArg _ (pointSmallEtaleHom_congr this _ _)
 
 /-- `σ ∈ Gal(Ω/K)` sends the germ at a lift `t` of a section of an étale sheaf on `Spec K` to its
 germ at the lift `Spec σ ≫ t`. -/
-@[simp, reassoc]
+@[simp]
 theorem toPresheafFiber_galoisStalkMap_app (σ : Gal(Ω/K))
     (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) (X : (Spec (.of K)).Etale)
     (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) :
     (pointSmallEtale _).toPresheafFiber X t F.obj ≫ (galoisStalkMap K Ω A σ).app F =
       (pointSmallEtale _).toPresheafFiber X
-        ((pointSmallEtaleHom _ (SpecMap_algEquiv_comp K Ω σ)).hom.app X t) F.obj := by
+        ((pointSmallEtaleHom _ (SpecMap_algHom_comp σ)).hom.app X t) F.obj := by
   simp only [galoisStalkMap, Functor.whiskerLeft_app,
     GrothendieckTopology.Point.Hom.presheafFiber_app]
   exact GrothendieckTopology.Point.toPresheafFiber_presheafFiberDesc _ _ _ _ _
+
+-- `reassoc` and `elementwise` cannot generate these two forms: the germ lands in the presheaf
+-- fiber, while `(galoisStalkMap K Ω A σ).app F` starts at the sheaf fiber, and the two objects
+-- are only equal after unfolding `sheafFiber`, so `Category.assoc` does not rewrite the
+-- composite and the generated lemmas keep it left-associated.
+
+/-- Version of `toPresheafFiber_galoisStalkMap_app` for a right-associated composite. -/
+@[simp]
+theorem toPresheafFiber_galoisStalkMap_app_assoc (σ : Gal(Ω/K))
+    (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X) {Z : A}
+    (h : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).sheafFiber.obj F ⟶ Z) :
+    (pointSmallEtale _).toPresheafFiber X t F.obj ≫ (galoisStalkMap K Ω A σ).app F ≫ h =
+      (pointSmallEtale _).toPresheafFiber X
+        ((pointSmallEtaleHom _ (SpecMap_algHom_comp σ)).hom.app X t) F.obj ≫ h :=
+  (Category.assoc _ _ _).symm.trans
+    (eq_whisker (toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) h)
+
+/-- Version of `toPresheafFiber_galoisStalkMap_app` for elements of the germs, for concrete
+coefficients. -/
+@[simp]
+theorem toPresheafFiber_galoisStalkMap_app_apply {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA] (σ : Gal(Ω/K))
+    (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) (X : (Spec (.of K)).Etale)
+    (t : (pointSmallEtale (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).fiber.obj X)
+    (z : ToType (F.obj.obj (op X))) :
+    (galoisStalkMap K Ω A σ).app F ((pointSmallEtale _).toPresheafFiber X t F.obj z) =
+      (pointSmallEtale _).toPresheafFiber X
+        ((pointSmallEtaleHom _ (SpecMap_algHom_comp σ)).hom.app X t) F.obj z :=
+  (ConcreteCategory.comp_apply _ _ z).symm.trans
+    congr($(toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) z)
 
 /-- **The Galois action on stalks of étale sheaves on a field.** The stalk at the geometric point
 `Spec Ω ⟶ Spec K` of an étale sheaf on `Spec K`, with the action of `Gal(Ω/K)` through the
@@ -278,13 +317,11 @@ theorem isOpen_stabilizer_galoisStalk (F : Sheaf (smallEtaleTopology (Spec (.of 
   refine Subgroup.isOpen_mono (H₁ := L.fixingSubgroup)
     (fun σ hσ ↦ MulAction.mem_stabilizer_iff.mpr ?_)
     (IntermediateField.fixingSubgroup_isOpen L)
-  have ht : (pointSmallEtaleHom _ (SpecMap_algEquiv_comp K Ω σ)).hom.app X t = t :=
+  have ht : (pointSmallEtaleHom _ (SpecMap_algHom_comp σ)).hom.app X t = t :=
     Over.OverMorphism.ext ((pointSmallEtaleHom_hom_app_left _ _ X t).trans (hL σ hσ))
   -- `σ` acts on `p` through `galoisStalkMap`, which sends the germ at `t` to the germ at `t`.
   subst hp
-  have h := congr($(toPresheafFiber_galoisStalkMap_app K Ω A σ F X t) z)
-  rw [ht] at h
-  exact (ConcreteCategory.comp_apply _ _ z).symm.trans h
+  exact (toPresheafFiber_galoisStalkMap_app_apply K Ω A σ F X t z).trans (by rw [ht])
 
 end Concrete
 
