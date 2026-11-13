@@ -36,6 +36,8 @@ onto `E` and `E` is injective as a retract of an injective module.
 * `LinearMap.exists_isInjectiveEnvelope_submodule`: an embedding into an injective module restricts
   to an injective envelope inside that module.
 * `TauCeti.exists_isInjectiveEnvelope`: every module has an injective envelope.
+* `TauCeti.injective_of_maximal_isEssential`: a maximal essential extension of a submodule inside
+  an injective module is injective.
 
 ## References
 
@@ -53,12 +55,11 @@ variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
   {Q : Type w} [AddCommGroup Q] [Module R Q]
 
 /-- A maximal essential extension `E` of a submodule `N` inside an injective module `Q` is
-injective. -/
-private theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule R Q}
+injective (Lam, §3D). -/
+theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : Submodule R Q}
     (hE : Maximal (fun P : Submodule R Q => N ≤ P ∧ IsEssential (N.comap P.subtype)) E) :
     Module.Injective R E := by
-  let S : Set (Submodule R Q) := {P | N ≤ P ∧ IsEssential (N.comap P.subtype)}
-  -- Zorn's lemma again gives `K` maximal among the submodules disjoint from `E`.
+  -- Zorn's lemma gives `K` maximal among the submodules disjoint from `E`.
   obtain ⟨K, -, hK⟩ := zorn_le_nonempty₀ {K : Submodule R Q | Disjoint E K}
     (fun c hcS hc y _ =>
       ⟨sSup c, hc.directedOn.disjoint_sSup_right.mpr fun _ hL => hcS hL, fun z hz => le_sSup hz⟩)
@@ -72,13 +73,16 @@ private theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : S
   have hjess : IsEssential (LinearMap.range j) := isEssential_range_mkQ_comp_subtype hK
   -- Extend the inclusion of `E` along `j`; the extension is injective since `j` is essential.
   obtain ⟨φ, hφj⟩ := Module.Injective.out j hj E.subtype
-  have hφ : φ ∘ₗ j = E.subtype := LinearMap.ext hφj
+  have hφ : φ ∘ₗ j = E.subtype :=
+    LinearMap.ext fun e => by simp only [LinearMap.comp_apply, hφj]
   have hφ_inj : Function.Injective φ :=
     hjess.injective_of_injective_comp (by rw [hφ]; exact E.injective_subtype)
   -- The range of `φ` is an essential extension of `N` containing `E`, so it is `E`: transport
   -- the essential trace of `N` on `E` along `j` and then along `φ`.
-  have hEφ : E ≤ LinearMap.range φ := fun x hx => ⟨j ⟨x, hx⟩, hφj ⟨x, hx⟩⟩
-  have hφS : LinearMap.range φ ∈ S := by
+  have hEφ : E ≤ LinearMap.range φ := fun x hx =>
+    ⟨j ⟨x, hx⟩, by simpa only [Submodule.subtype_apply] using hφj ⟨x, hx⟩⟩
+  have hφS : N ≤ LinearMap.range φ ∧
+      IsEssential (N.comap (LinearMap.range φ).subtype) := by
     refine ⟨hE.prop.1.trans hEφ, ((isEssential_map_equiv_iff
       (LinearEquiv.ofInjective φ hφ_inj)).mpr (hE.prop.2.map hj hjess)).mono ?_⟩
     rintro _ ⟨_, ⟨e, he, rfl⟩, rfl⟩
@@ -86,7 +90,8 @@ private theorem injective_of_maximal_isEssential [Module.Injective R Q] {N E : S
   have hφE : LinearMap.range φ = E := (hE.eq_of_le hφS hEφ).symm
   -- So `Q → Q ⧸ K → E` retracts `Q` onto `E`, and `E` is injective.
   let ρ : Q →ₗ[R] E := (φ ∘ₗ K.mkQ).codRestrict E fun q => hφE ▸ ⟨K.mkQ q, rfl⟩
-  have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext (hφj e)
+  have hρ (e : E) : ρ (E.subtype e) = e := Subtype.ext
+    (by simp only [ρ, LinearMap.codRestrict_apply, LinearMap.comp_apply]; exact hφj e)
   exact Module.Injective.of_leftInverse ‹_› E.subtype ρ hρ
 
 /-- **Injective envelopes inside an injective module.** Every embedding into an injective module
@@ -106,7 +111,7 @@ theorem _root_.LinearMap.exists_isInjectiveEnvelope_submodule [Module.Injective 
         fun z hz => le_sSup hz⟩)
     N ⟨le_rfl, by rw [Submodule.comap_subtype_self]; exact isEssential_top⟩
   have hEinj : Module.Injective R E := injective_of_maximal_isEssential hE
-  refine ⟨E, hE.prop.1, hEinj, fun a b hab => hi (congrArg Subtype.val hab), ?_⟩
+  refine ⟨E, hE.prop.1, hEinj, (LinearMap.injective_codRestrict_iff _).mpr hi, ?_⟩
   rw [LinearMap.range_codRestrict]
   exact hE.prop.2
 
