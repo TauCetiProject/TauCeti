@@ -283,6 +283,16 @@ theorem exists_betaPoint_iff (g : D.Generator) (q : Point) :
 theorem beta_betaPoint (g : D.Generator) (j : Fin n) : D.beta (D.betaPoint g j) = j := by
   simp [betaPoint]
 
+/-- An intersection point is the point of a generator on its own `β`-curve exactly when it is the
+generator's point on its own `α`-curve. -/
+@[simp]
+theorem betaPoint_beta_eq_iff (g : D.Generator) (q : Point) :
+    D.betaPoint g (D.beta q) = q ↔ D.point g (D.alpha q) = q := by
+  rw [← exists_betaPoint_iff]
+  refine ⟨fun h ↦ ⟨_, h⟩, ?_⟩
+  rintro ⟨j, rfl⟩
+  rw [beta_betaPoint]
+
 /-- The point of a generator on the `β`-curve `j` lies on the `α`-curve matched with `j`. -/
 @[simp]
 theorem alpha_betaPoint (g : D.Generator) (j : Fin n) : D.alpha (D.betaPoint g j) = g.1.symm j := by
@@ -337,6 +347,13 @@ theorem betaPoint_generatorOfBetaPoint (q : Fin n → Point) (hβ : ∀ j, D.bet
   simp only [Function.comp_apply] at hj
   simp [betaPoint, generatorOfBetaPoint, hj]
 
+/-- The generator built from the points of a generator on the `β`-curves is that generator. -/
+@[simp]
+theorem generatorOfBetaPoint_betaPoint (g : D.Generator) :
+    D.generatorOfBetaPoint (D.betaPoint g) (D.beta_betaPoint g)
+      (D.alpha_comp_betaPoint_bijective g) = g :=
+  D.betaPoint_injective (by simp)
+
 /-- The generators are the choices of one intersection point on each `β`-curve whose `α`-curves
 are all different and exhaust the `α`-curves. -/
 noncomputable def generatorEquivBetaPoint :
@@ -344,7 +361,7 @@ noncomputable def generatorEquivBetaPoint :
       Function.Bijective (D.alpha ∘ q)} where
   toFun g := ⟨D.betaPoint g, D.beta_betaPoint g, D.alpha_comp_betaPoint_bijective g⟩
   invFun q := D.generatorOfBetaPoint q.1 q.2.1 q.2.2
-  left_inv g := D.betaPoint_injective (by simp)
+  left_inv := D.generatorOfBetaPoint_betaPoint
   right_inv q := Subtype.ext (by simp)
 
 @[simp]

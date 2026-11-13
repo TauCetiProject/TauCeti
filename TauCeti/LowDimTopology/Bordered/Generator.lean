@@ -266,14 +266,36 @@ theorem typeAIdem_mul_typeDIdem [Fintype Arc] (x₁ : H.Generator) (x₂ : H₂.
       if H.occupied x₁ = (H₂.occupied x₂)ᶜ then H.typeAIdem R M x₁ else 0 :=
   StrandsAlgebra.matchedIdem_mul_matchedIdem M _ _
 
+/-- The product `I_D(x₂) I_A(x₁)` of the idempotents of generators of two diagrams with the same
+arcs is `I_D(x₂)` when `o(x₂)ᶜ = o(x₁)`, and zero otherwise. -/
+@[simp]
+theorem typeDIdem_mul_typeAIdem [Fintype Arc] (x₁ : H.Generator) (x₂ : H₂.Generator) :
+    H₂.typeDIdem R M x₂ * H.typeAIdem R M x₁ =
+      if (H₂.occupied x₂)ᶜ = H.occupied x₁ then H₂.typeDIdem R M x₂ else 0 :=
+  StrandsAlgebra.matchedIdem_mul_matchedIdem M _ _
+
+variable {M}
+
+/-- When every arc has an end and the coefficients are nontrivial, `I_A(x)` is nonzero. -/
+theorem typeAIdem_ne_zero [Nontrivial R] (hM : Function.Surjective M) (x : H.Generator) :
+    H.typeAIdem R M x ≠ 0 :=
+  StrandsAlgebra.matchedIdem_ne_zero (by simp [hM.range_eq])
+
+/-- When every arc has an end and the coefficients are nontrivial, `I_D(x)` is nonzero. -/
+theorem typeDIdem_ne_zero [Fintype Arc] [Nontrivial R] (hM : Function.Surjective M)
+    (x : H.Generator) : H.typeDIdem R M x ≠ 0 :=
+  StrandsAlgebra.matchedIdem_ne_zero (by simp [hM.range_eq])
+
+variable {H H₂} in
 /-- When every arc has an end and the coefficients are nontrivial, `I_A(x₁) I_D(x₂)` is nonzero
 exactly when the occupancies `o(x₁)` and `o(x₂)` are complementary. These are the pairs giving
 generators `x₁ ⊗ x₂` of the box tensor product of the type `A` module of the first diagram with
 the type `D` structure of the second over the idempotents. -/
 theorem typeAIdem_mul_typeDIdem_ne_zero_iff [Fintype Arc] [Nontrivial R]
-    (hM : Function.Surjective M) (x₁ : H.Generator) (x₂ : H₂.Generator) :
+    (hM : Function.Surjective M) {x₁ : H.Generator} {x₂ : H₂.Generator} :
     H.typeAIdem R M x₁ * H₂.typeDIdem R M x₂ ≠ 0 ↔ H.occupied x₁ = (H₂.occupied x₂)ᶜ :=
-  StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff (by simp [hM.range_eq])
+  StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff.trans
+    (and_iff_left (by simp [hM.range_eq]))
 
 end Idempotents
 
@@ -381,7 +403,7 @@ theorem glue_beta_inr (p : Point₂) :
     (glue H₁ H₂ e).beta (.inr p) = Fin.natAdd g₁ (H₂.beta p) :=
   (rfl)
 
-variable {H₁ H₂}
+variable {H₁ H₂ e}
 
 /-- The points of the glued diagram on the `β`-circle `j` of the first diagram are the points of
 the first diagram on `j`. -/
@@ -486,43 +508,43 @@ theorem glue_alpha_comp_gluePoint_bijective_iff [Fintype Arc] [DecidableEq Arc]
 intersection point of the first diagram. -/
 private noncomputable def glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) : Point₁ :=
   ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j)).getLeft (by
-    obtain ⟨p, hp, -⟩ := (glue_beta_eq_castAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    obtain ⟨p, hp, -⟩ := (glue_beta_eq_castAdd_iff _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
     simp [hp])
 
 /-- The point of a generator of the glued diagram on the `β`-circle `j` of the second diagram, an
 intersection point of the second diagram. -/
 private noncomputable def glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) : Point₂ :=
   ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j)).getRight (by
-    obtain ⟨p, hp, -⟩ := (glue_beta_eq_natAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    obtain ⟨p, hp, -⟩ := (glue_beta_eq_natAdd_iff _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
     simp [hp])
 
 private theorem inl_glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
-    .inl (glueLeftPoint e x j) = (glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j) :=
+    .inl (glueLeftPoint x j) = (glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j) :=
   Sum.inl_getLeft _ _
 
 private theorem inr_glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
-    .inr (glueRightPoint e x j) = (glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j) :=
+    .inr (glueRightPoint x j) = (glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j) :=
   Sum.inr_getRight _ _
 
 private theorem beta_glueLeftPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
-    H₁.beta (glueLeftPoint e x j) = j := by
+    H₁.beta (glueLeftPoint x j) = j := by
   obtain ⟨p, hp, rfl⟩ :=
-    (glue_beta_eq_castAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    (glue_beta_eq_castAdd_iff _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
   rw [← inl_glueLeftPoint, Sum.inl.injEq] at hp
   rw [hp]
 
 private theorem beta_glueRightPoint (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
-    H₂.beta (glueRightPoint e x j) = j := by
+    H₂.beta (glueRightPoint x j) = j := by
   obtain ⟨p, hp, rfl⟩ :=
-    (glue_beta_eq_natAdd_iff e _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
+    (glue_beta_eq_natAdd_iff _ j).1 ((glue H₁ H₂ e).beta_betaPoint x _)
   rw [← inr_glueRightPoint, Sum.inr.injEq] at hp
   rw [hp]
 
 /-- The generator of the first diagram cut out of a generator of the glued diagram: its points on
 the `β`-circles of the first diagram. -/
 noncomputable def glueLeft (x : (glue H₁ H₂ e).Generator) : H₁.Generator where
-  point := glueLeftPoint e x
-  beta_point := beta_glueLeftPoint e x
+  point := glueLeftPoint x
+  beta_point := beta_glueLeftPoint x
   alpha_comp_point_injective i j hij := by
     have h : (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ i)) =
         (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j)) := by
@@ -536,7 +558,7 @@ noncomputable def glueLeft (x : (glue H₁ H₂ e).Generator) : H₁.Generator w
       simp only [Function.comp_apply, hq, glue_alpha_inl, glue_alpha_inr, glue_beta_inl,
         glue_beta_inr, EmbeddingLike.apply_eq_iff_eq] at hj hβ
     · refine ⟨H₁.beta p, ?_⟩
-      have hp : glueLeftPoint e x (H₁.beta p) = p := by
+      have hp : glueLeftPoint x (H₁.beta p) = p := by
         apply Sum.inl_injective
         rw [inl_glueLeftPoint, hβ, hq]
       rw [hp]
@@ -546,8 +568,8 @@ noncomputable def glueLeft (x : (glue H₁ H₂ e).Generator) : H₁.Generator w
 /-- The generator of the second diagram cut out of a generator of the glued diagram: its points on
 the `β`-circles of the second diagram. -/
 noncomputable def glueRight (x : (glue H₁ H₂ e).Generator) : H₂.Generator where
-  point := glueRightPoint e x
-  beta_point := beta_glueRightPoint e x
+  point := glueRightPoint x
+  beta_point := beta_glueRightPoint x
   alpha_comp_point_injective i j hij := by
     have h : (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ i)) =
         (glue H₁ H₂ e).alpha ((glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j)) := by
@@ -562,29 +584,29 @@ noncomputable def glueRight (x : (glue H₁ H₂ e).Generator) : H₂.Generator 
         glue_beta_inr, EmbeddingLike.apply_eq_iff_eq] at hj hβ
     · rcases hp : H₁.alpha p with b | d <;> simp [hp] at hj
     · refine ⟨H₂.beta p, ?_⟩
-      have hp : glueRightPoint e x (H₂.beta p) = p := by
+      have hp : glueRightPoint x (H₂.beta p) = p := by
         apply Sum.inr_injective
         rw [inr_glueRightPoint, hβ, hq]
       rw [hp]
       exact glueCurveRight_injective (hj.trans (glueCurveRight_inr c).symm)
 
-/-- The points of the generator cut out of the first diagram are the points of the generator of
-the glued diagram on the `β`-circles of the first diagram. -/
+/-- The points of a generator of the glued diagram on the `β`-circles of the first diagram are
+the points of the generator cut out of the first diagram. -/
 @[simp]
-theorem inl_glueLeft_point (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
-    .inl ((glueLeft e x).point j) = (glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j) :=
-  inl_glueLeftPoint e x j
+theorem glue_betaPoint_castAdd (x : (glue H₁ H₂ e).Generator) (j : Fin g₁) :
+    (glue H₁ H₂ e).betaPoint x (Fin.castAdd g₂ j) = .inl ((glueLeft x).point j) :=
+  (inl_glueLeftPoint x j).symm
 
-/-- The points of the generator cut out of the second diagram are the points of the generator of
-the glued diagram on the `β`-circles of the second diagram. -/
+/-- The points of a generator of the glued diagram on the `β`-circles of the second diagram are
+the points of the generator cut out of the second diagram. -/
 @[simp]
-theorem inr_glueRight_point (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
-    .inr ((glueRight e x).point j) = (glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j) :=
-  inr_glueRightPoint e x j
+theorem glue_betaPoint_natAdd (x : (glue H₁ H₂ e).Generator) (j : Fin g₂) :
+    (glue H₁ H₂ e).betaPoint x (Fin.natAdd g₁ j) = .inr ((glueRight x).point j) :=
+  (inr_glueRightPoint x j).symm
 
 /-- A generator of the glued diagram consists of the points of the two generators cut out of it. -/
 theorem gluePoint_glueLeft_glueRight (x : (glue H₁ H₂ e).Generator) :
-    gluePoint (glueLeft e x) (glueRight e x) = (glue H₁ H₂ e).betaPoint x := by
+    gluePoint (glueLeft x) (glueRight x) = (glue H₁ H₂ e).betaPoint x := by
   ext j
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   cases j <;> simp
@@ -593,67 +615,82 @@ theorem gluePoint_glueLeft_glueRight (x : (glue H₁ H₂ e).Generator) :
 theorem glueLeft_generatorOfBetaPoint (x₁ : H₁.Generator) (x₂ : H₂.Generator)
     (hβ : ∀ j, (glue H₁ H₂ e).beta (gluePoint x₁ x₂ j) = j)
     (hα : Function.Bijective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂)) :
-    glueLeft e ((glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x₁ x₂) hβ hα) = x₁ := by
+    glueLeft ((glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x₁ x₂) hβ hα) = x₁ := by
   ext j
   apply Sum.inl_injective (β := Point₂)
-  simp
+  rw [← glue_betaPoint_castAdd, HeegaardIntersectionSystem.betaPoint_generatorOfBetaPoint,
+    gluePoint_castAdd]
 
 @[simp]
 theorem glueRight_generatorOfBetaPoint (x₁ : H₁.Generator) (x₂ : H₂.Generator)
     (hβ : ∀ j, (glue H₁ H₂ e).beta (gluePoint x₁ x₂ j) = j)
     (hα : Function.Bijective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂)) :
-    glueRight e ((glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x₁ x₂) hβ hα) = x₂ := by
+    glueRight ((glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x₁ x₂) hβ hα) = x₂ := by
   ext j
   apply Sum.inr_injective (α := Point₁)
-  simp
+  rw [← glue_betaPoint_natAdd, HeegaardIntersectionSystem.betaPoint_generatorOfBetaPoint,
+    gluePoint_natAdd]
+
+/-- The generators cut out of a generator of the glued diagram have disjoint occupancies. -/
+theorem disjoint_occupied_glueLeft_occupied_glueRight (x : (glue H₁ H₂ e).Generator) :
+    Disjoint (H₁.occupied (glueLeft x)) (H₂.occupied (glueRight x)) :=
+  (glue_alpha_comp_gluePoint_injective_iff (e := e) _ _).1 (by
+    rw [gluePoint_glueLeft_glueRight]
+    exact ((glue H₁ H₂ e).alpha_comp_betaPoint_bijective x).1)
 
 variable [Fintype Arc] [DecidableEq Arc]
 
+/-- The generators cut out of a generator of the glued diagram have complementary occupancies. -/
+theorem occupied_glueLeft (x : (glue H₁ H₂ e).Generator) :
+    H₁.occupied (glueLeft x) = (H₂.occupied (glueRight x))ᶜ :=
+  (glue_alpha_comp_gluePoint_bijective_iff (e := e) _ _).1 (by
+    rw [gluePoint_glueLeft_glueRight]
+    exact (glue H₁ H₂ e).alpha_comp_betaPoint_bijective x)
+
+variable (H₁ H₂ e) in
 /-- **The generators of a glued diagram.** The generators of the closed diagram `H₁ ∪ H₂` are the
 pairs of generators of `H₁` and of `H₂` whose occupancies are complementary: a generator of
 `H₁ ∪ H₂` has one point on each `α`-circle made of two arcs, lying on one of the two arcs. -/
 noncomputable def glueGeneratorEquiv :
     (glue H₁ H₂ e).Generator ≃
       {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ} where
-  toFun x := ⟨(glueLeft e x, glueRight e x),
-    (glue_alpha_comp_gluePoint_bijective_iff e _ _).1 (by
-      rw [gluePoint_glueLeft_glueRight]
-      exact (glue H₁ H₂ e).alpha_comp_betaPoint_bijective x)⟩
+  toFun x := ⟨(glueLeft x, glueRight x), occupied_glueLeft x⟩
   invFun x := (glue H₁ H₂ e).generatorOfBetaPoint (gluePoint x.1.1 x.1.2)
-    (glue_beta_gluePoint e _ _) ((glue_alpha_comp_gluePoint_bijective_iff e _ _).2 x.2)
+    (glue_beta_gluePoint _ _) ((glue_alpha_comp_gluePoint_bijective_iff _ _).2 x.2)
   left_inv x := (glue H₁ H₂ e).betaPoint_injective (by simp [gluePoint_glueLeft_glueRight])
-  right_inv x := Subtype.ext (Prod.ext (glueLeft_generatorOfBetaPoint e _ _ _ _)
-    (glueRight_generatorOfBetaPoint e _ _ _ _))
+  right_inv x := Subtype.ext (Prod.ext (glueLeft_generatorOfBetaPoint _ _ _ _)
+    (glueRight_generatorOfBetaPoint _ _ _ _))
 
 @[simp]
 theorem coe_glueGeneratorEquiv (x : (glue H₁ H₂ e).Generator) :
-    (glueGeneratorEquiv e x : H₁.Generator × H₂.Generator) = (glueLeft e x, glueRight e x) :=
+    (glueGeneratorEquiv H₁ H₂ e x : H₁.Generator × H₂.Generator) = (glueLeft x, glueRight x) :=
   (rfl)
 
 /-- The points of the generator of the glued diagram given by a pair of generators. -/
 @[simp]
 theorem betaPoint_glueGeneratorEquiv_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ}) :
-    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv e).symm x) = gluePoint x.1.1 x.1.2 :=
+    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquiv H₁ H₂ e).symm x) = gluePoint x.1.1 x.1.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 @[simp]
 theorem glueLeft_glueGeneratorEquiv_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ}) :
-    glueLeft e ((glueGeneratorEquiv e).symm x) = x.1.1 :=
-  glueLeft_generatorOfBetaPoint e _ _ _ _
+    glueLeft ((glueGeneratorEquiv H₁ H₂ e).symm x) = x.1.1 :=
+  glueLeft_generatorOfBetaPoint _ _ _ _
 
 @[simp]
 theorem glueRight_glueGeneratorEquiv_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.occupied x.1 = (H₂.occupied x.2)ᶜ}) :
-    glueRight e ((glueGeneratorEquiv e).symm x) = x.1.2 :=
-  glueRight_generatorOfBetaPoint e _ _ _ _
+    glueRight ((glueGeneratorEquiv H₁ H₂ e).symm x) = x.1.2 :=
+  glueRight_generatorOfBetaPoint _ _ _ _
 
 section TypeAIdemMulTypeDIdem
 
 variable (R : Type*) [CommSemiring R] [Nontrivial R] {α : Type*} [LinearOrder α] [Fintype α]
   {M : α → Arc} (hM : Function.Surjective M)
 
+variable (H₁ H₂ e) in
 /-- **The generators of a glued diagram are those of the box tensor product.** When every arc has
 an end and the coefficients are nontrivial, the generators of `H₁ ∪ H₂` are the pairs of
 generators `x₁` of `H₁` and `x₂` of `H₂` with `I_A(x₁) I_D(x₂) ≠ 0`, which index the generators
@@ -662,13 +699,13 @@ generators `x₁` of `H₁` and `x₂` of `H₂` with `I_A(x₁) I_D(x₂) ≠ 0
 noncomputable def glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero :
     (glue H₁ H₂ e).Generator ≃
       {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0} :=
-  (glueGeneratorEquiv e).trans
-    (Equiv.subtypeEquivRight fun _ ↦ (typeAIdem_mul_typeDIdem_ne_zero_iff H₁ R M H₂ hM _ _).symm)
+  (glueGeneratorEquiv H₁ H₂ e).trans
+    (Equiv.subtypeEquivRight fun _ ↦ (typeAIdem_mul_typeDIdem_ne_zero_iff R hM).symm)
 
 @[simp]
 theorem coe_glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero (x : (glue H₁ H₂ e).Generator) :
-    (glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero e R hM x : H₁.Generator × H₂.Generator) =
-      (glueLeft e x, glueRight e x) :=
+    (glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero H₁ H₂ e R hM x : H₁.Generator × H₂.Generator) =
+      (glueLeft x, glueRight x) :=
   (rfl)
 
 /-- The points of the generator of the glued diagram given by a pair of generators `x₁`, `x₂`
@@ -676,21 +713,21 @@ with `I_A(x₁) I_D(x₂) ≠ 0`. -/
 @[simp]
 theorem betaPoint_glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
-    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero e R hM).symm x) =
+    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero H₁ H₂ e R hM).symm x) =
       gluePoint x.1.1 x.1.2 :=
   (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 @[simp]
 theorem glueLeft_glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
-    glueLeft e ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero e R hM).symm x) = x.1.1 :=
-  glueLeft_generatorOfBetaPoint e _ _ _ _
+    glueLeft ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero H₁ H₂ e R hM).symm x) = x.1.1 :=
+  glueLeft_generatorOfBetaPoint _ _ _ _
 
 @[simp]
 theorem glueRight_glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero_symm
     (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
-    glueRight e ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero e R hM).symm x) = x.1.2 :=
-  glueRight_generatorOfBetaPoint e _ _ _ _
+    glueRight ((glueGeneratorEquivTypeAIdemMulTypeDIdemNeZero H₁ H₂ e R hM).symm x) = x.1.2 :=
+  glueRight_generatorOfBetaPoint _ _ _ _
 
 end TypeAIdemMulTypeDIdem
 
@@ -735,7 +772,7 @@ private def twoArcs : (Empty ⊕ Empty) ⊕ Fin 2 ≃ Fin (1 + 1) :=
 
 /-- The `β`-circles meet different arcs: the glued diagram has exactly one generator. -/
 example : Nat.card (glue (oneArc 0) (oneArc 1) twoArcs).Generator = 1 := by
-  rw [Nat.card_congr (glueGeneratorEquiv twoArcs), Nat.card_eq_one_iff_exists]
+  rw [Nat.card_congr (glueGeneratorEquiv _ _ twoArcs), Nat.card_eq_one_iff_exists]
   refine ⟨⟨(oneArcGenerator 0, oneArcGenerator 1), ?_⟩, fun y ↦ ?_⟩
   · rw [occupied_oneArc, occupied_oneArc]
     decide
@@ -743,7 +780,7 @@ example : Nat.card (glue (oneArc 0) (oneArc 1) twoArcs).Generator = 1 := by
 
 /-- The `β`-circles meet the same arc: the glued diagram has no generator. -/
 example : IsEmpty (glue (oneArc 0) (oneArc 0) twoArcs).Generator := by
-  rw [(glueGeneratorEquiv twoArcs).isEmpty_congr]
+  rw [(glueGeneratorEquiv _ _ twoArcs).isEmpty_congr]
   refine ⟨fun ⟨x, hx⟩ ↦ ?_⟩
   rw [occupied_oneArc, occupied_oneArc] at hx
   exact absurd hx (by decide)

@@ -100,10 +100,10 @@ spanning the matched subalgebra are generators.
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
-* `TauCeti.StrandsAlgebra.matchedIdem_ne_zero`,
+* `TauCeti.StrandsAlgebra.matchedIdem_ne_zero_iff`,
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem_ne_zero_iff`: over a nontrivial semiring
-  `I(s)` is nonzero when every element of `s` is a value of `M`, so `I(s) I(t) ≠ 0` exactly when
-  `s = t`.
+  `I(s)` is nonzero exactly when every element of `s` is a value of `M`, so `I(s) I(t) ≠ 0` exactly
+  when moreover `s = t`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -462,15 +462,26 @@ theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
   have h' := congrArg (fun x ↦ (basis R α).repr x (idOn (s.attach.image f))) h
   simp [repr_matchedIdem_apply, hS, hcard] at h'
 
-/-- The idempotents `I(s)` of two sets of values of `M` multiply to a nonzero element exactly when
-the sets agree. -/
-theorem matchedIdem_mul_matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s t : Finset β}
-    (hs : (s : Set β) ⊆ Set.range M) :
-    matchedIdem R M s * matchedIdem R M t ≠ 0 ↔ s = t := by
+/-- The idempotent `I(s)` vanishes when some element of `s` is not a value of `M`: no set of
+points is mapped onto `s` by `M`. -/
+theorem matchedIdem_eq_zero_of_not_subset {M : α → β} {s : Finset β}
+    (hs : ¬(s : Set β) ⊆ Set.range M) : matchedIdem R M s = 0 := by
+  refine sum_eq_zero fun S hS ↦ absurd ?_ hs
+  obtain ⟨rfl, -⟩ := (mem_filter.1 hS).2
+  simp
+
+/-- Over a nontrivial semiring the idempotent `I(s)` is nonzero exactly when every element of `s`
+is a value of `M`. -/
+theorem matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s : Finset β} :
+    matchedIdem R M s ≠ 0 ↔ (s : Set β) ⊆ Set.range M :=
+  ⟨fun h ↦ by_contra fun hs ↦ h (matchedIdem_eq_zero_of_not_subset hs), matchedIdem_ne_zero⟩
+
+/-- Over a nontrivial semiring the idempotents `I(s)` and `I(t)` multiply to a nonzero element
+exactly when the sets agree and consist of values of `M`. -/
+theorem matchedIdem_mul_matchedIdem_ne_zero_iff [Nontrivial R] {M : α → β} {s t : Finset β} :
+    matchedIdem R M s * matchedIdem R M t ≠ 0 ↔ s = t ∧ (s : Set β) ⊆ Set.range M := by
   rw [matchedIdem_mul_matchedIdem]
-  split_ifs with hst
-  · exact iff_of_true (matchedIdem_ne_zero hs) hst
-  · exact iff_of_false (fun h ↦ h rfl) hst
+  split_ifs with hst <;> simp [hst, matchedIdem_ne_zero_iff]
 
 end Idempotents
 
