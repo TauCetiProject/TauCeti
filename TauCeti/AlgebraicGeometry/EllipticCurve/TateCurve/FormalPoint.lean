@@ -123,6 +123,14 @@ theorem coeff_coeff_tateParamHom (f : ℤ⟦X⟧) (a b : ℕ) :
     coeff a (coeff b (tateParamHom R f)) = if a = b then ((coeff b f : ℤ) : R) else 0 := by
   simp [tateParamHom]
 
+/-- The coefficient of `uᵃ` in the constant coefficient in `v` of `f(u v)` is the constant
+coefficient of `f` when `a = 0`, and `0` otherwise. -/
+@[simp]
+theorem coeff_constantCoeff_tateParamHom (f : ℤ⟦X⟧) (a : ℕ) :
+    coeff a (constantCoeff (tateParamHom R f)) =
+      if a = 0 then ((constantCoeff f : ℤ) : R) else 0 := by
+  simpa using coeff_coeff_tateParamHom (R := R) f a 0
+
 /-- The substitution `q = u v` sends `q` to the product of the inner variable `u` and the outer
 variable `v`. -/
 @[simp]
@@ -414,6 +422,11 @@ theorem coeff_zero_tateFormalX : coeff 0 (tateFormalX R) = mk fun a ↦ (a : R) 
   · simp
   · simp [ha, Nat.dist_zero_right]
 
+/-- `coeff_zero_tateFormalX` in the simp normal form `constantCoeff`. -/
+@[simp]
+theorem constantCoeff_tateFormalX : constantCoeff (tateFormalX R) = mk fun a ↦ (a : R) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_zero_tateFormalX]
+
 /-- The constant coefficient in `v` of `y` is `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² / (1 - u)³`. -/
 theorem coeff_zero_tateFormalY : coeff 0 (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
   refine PowerSeries.ext fun a ↦ ?_
@@ -421,6 +434,12 @@ theorem coeff_zero_tateFormalY : coeff 0 (tateFormalY R) = mk fun a ↦ (a.choos
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · simp [ha, Nat.dist_zero_right, Nat.pos_of_ne_zero ha]
+
+/-- `coeff_zero_tateFormalY` in the simp normal form `constantCoeff`. -/
+@[simp]
+theorem constantCoeff_tateFormalY :
+    constantCoeff (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_zero_tateFormalY]
 
 /-- `(1 - u)²` times the constant coefficient in `v` of `x` is `u`. -/
 theorem coeff_zero_tateFormalX_mul_one_sub_X_sq : coeff 0 (tateFormalX R) * (1 - X) ^ 2 = X := by
@@ -710,6 +729,12 @@ theorem map_map_comp_tateParamHom (f : R →+* S) :
   simp only [RingHom.comp_apply, coeff_map, coeff_coeff_tateParamHom]
   split_ifs <;> simp
 
+/-- The substitution `q = u v` is compatible with change of coefficients, applied form. -/
+@[simp]
+theorem map_map_tateParamHom (f : R →+* S) (g : ℤ⟦X⟧) :
+    map (map f) (tateParamHom R g) = tateParamHom S g :=
+  DFunLike.congr_fun (map_map_comp_tateParamHom f) g
+
 variable (R) in
 /-- **The formal Tate point lies on the Tate curve**: over `R⟦u⟧⟦v⟧` with `q = u v`, the formal
 Tate coordinates satisfy `y² + x y = x³ + a₄(q) x + a₆(q)` (Silverman, *Advanced Topics*, §V.1). -/
@@ -761,6 +786,18 @@ theorem tateClearedX_def : tateClearedX =
         (Polynomial.X ^ (N + d) + Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N) :=
   (rfl)
 
+/-- The constant coefficient in `v` of `tateClearedX` is `u`. -/
+@[simp]
+theorem constantCoeff_tateClearedX : constantCoeff tateClearedX = Polynomial.X := by
+  simp [tateClearedX_def]
+
+/-- The coefficient of `vᴺ` in `tateClearedX` for `N ≠ 0`. -/
+@[simp]
+theorem coeff_tateClearedX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
+    coeff N tateClearedX = (1 - Polynomial.X) ^ 2 * ∑ d ∈ N.divisors, (d : Polynomial ℤ) *
+      (Polynomial.X ^ (N + d) + Polynomial.X ^ (N - d) - 2 * Polynomial.X ^ N) := by
+  rw [tateClearedX_def, map_add, coeff_C, coeff_C_mul, coeff_mk, ite_eq_right hN, zero_add]
+
 /-- `(1 - u)³ y` as a power series in `v` with polynomial coefficients in `u`: the coefficient of
 `v⁰` is `u²`, and for `N ≥ 1` the coefficient of `vᴺ` is
 `(1 - u)³ ∑_{d ∣ N} (d (d - 1) / 2 · uᴺ⁺ᵈ - d (d + 1) / 2 · uᴺ⁻ᵈ + d uᴺ)`. -/
@@ -777,6 +814,20 @@ theorem tateClearedY_def : tateClearedY =
         ((d + 1).choose 2 : Polynomial ℤ) * Polynomial.X ^ (N - d) +
           (d : Polynomial ℤ) * Polynomial.X ^ N) :=
   (rfl)
+
+/-- The constant coefficient in `v` of `tateClearedY` is `u²`. -/
+@[simp]
+theorem constantCoeff_tateClearedY : constantCoeff tateClearedY = Polynomial.X ^ 2 := by
+  simp [tateClearedY_def]
+
+/-- The coefficient of `vᴺ` in `tateClearedY` for `N ≠ 0`. -/
+@[simp]
+theorem coeff_tateClearedY_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
+    coeff N tateClearedY = (1 - Polynomial.X) ^ 3 * ∑ d ∈ N.divisors,
+      ((d.choose 2 : Polynomial ℤ) * Polynomial.X ^ (N + d) -
+        ((d + 1).choose 2 : Polynomial ℤ) * Polynomial.X ^ (N - d) +
+          (d : Polynomial ℤ) * Polynomial.X ^ N) := by
+  rw [tateClearedY_def, map_add, coeff_C, coeff_C_mul, coeff_mk, ite_eq_right hN, zero_add]
 
 /-- The substitution `q = u v`, as a ring map `ℤ⟦q⟧ → ℤ[u]⟦v⟧`. -/
 noncomputable def tateClearedParamHom : ℤ⟦X⟧ →+* (Polynomial ℤ)⟦X⟧ :=
