@@ -72,19 +72,12 @@ theorem mem_sameSidePentagonPartners_or_mem_mixedSidePentagonPartners {x z : Gri
     F ∈ G.sameSidePentagonPartners C x z ∨ F ∈ G.mixedSidePentagonPartners C x z := by
   rw [mem_sameSidePentagonPartners, mem_mixedSidePentagonPartners]
   obtain ⟨hFc, -, hnot⟩ := (G.mem_unpairedHexagonComposites C F).mp hF
-  obtain ⟨⟨m, P, Q⟩, ⟨hP, hQ⟩, hD⟩ := exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C
+  obtain ⟨D, hpair, hD⟩ := exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff G C
     C.reverse C.reverse_column C.reverse_turnRow C.X_column_below C.X_next_above
     (G.mem_commutationHexagons_iff_XSet_inter_eq C)
     ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F).mp hFc)
     (fun F' hF' => hnot F' ((G.mem_hexagonCompositeDecompositions_iff_mem_disjSum C F').mpr hF'))
     (G.hasMixedSideOverlap_of_mem_unpairedHexagonComposites C hzx hF)
-  -- The counted commutation pentagons are the counted pentagons of both turn-side kinds.
-  have hpair : (⟨m, P, Q⟩ : GridPentagonPairDecomposition _ _ _ _ x z) ∈
-      G.pentagonPairDecompositions C C.reverse x z := by
-    rw [mem_pentagonPairDecompositions]
-    constructor
-    · cases P <;> simpa using hP
-    · cases Q <;> simpa using hQ
   rcases hD with ⟨hside, hrec⟩ | ⟨hside, hrec⟩
   · exact Or.inl ⟨hF, _, (G.mem_sameSidePentagonPairs C _).mpr ⟨hpair, hside⟩, hrec⟩
   · exact Or.inr ⟨hF, _, (G.mem_mixedSidePentagonPairs C _).mpr ⟨hpair, hside⟩, hrec⟩

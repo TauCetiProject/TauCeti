@@ -27,9 +27,6 @@ semiring. Counting the two possible annuli gives an explicit diagonal coefficien
 for the round-trip commutation map. Combining this count with the four hexagon--rectangle
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
 
-Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
-every pentagon pair, for arbitrary turn rows of the two pentagons.
-
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and

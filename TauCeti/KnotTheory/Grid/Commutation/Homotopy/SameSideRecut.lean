@@ -33,8 +33,18 @@ composite covers exactly one `X`-marking, so a repartition of its domain into tw
 one of which underlies a hexagon, is again a counted composite; in particular so is the recut of a
 same-side overlap. Each homotopy instantiates this with its own counted hexagons.
 
+The pentagon pairs on the other side of these homotopy equations are matched with such
+composites. The replaced grid line is a common side of the two rectangles of every pair of
+pentagons at the same column, whatever their turn rows, but not of the recut of a pair whose
+pentagons turn on the same side. This separates the partners of same-side pairs from those of
+mixed-side pairs.
+
 ## Main results
 
+* `TauCeti.GridPentagonPairDecomposition.finRotate_mem_commonSideColumns`: the replaced grid line
+  is a common side of the two rectangles of a pentagon pair.
+* `TauCeti.GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_isRecut`: the
+  replaced grid line is not a common side of the recut of a same-side pentagon pair.
 * `TauCeti.GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`: for a hexagon composite
   whose two empty rectangles have a same-side overlap, one piece of its recut underlies a
   commutation hexagon.

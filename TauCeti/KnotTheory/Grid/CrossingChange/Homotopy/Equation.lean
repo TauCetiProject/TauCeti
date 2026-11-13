@@ -41,8 +41,8 @@ of the rectangles of every pair but not of the recut of a same-side pair.
 
 * `TauCeti.GridDiagram.pentagonPairDecompositions` and `TauCeti.GridDiagram.pentagonPairWeight`
   from `Commutation.Homotopy.Decomposition` supply the pairs counted by `Ψ ∘ Φ` and their weights.
-* `TauCeti.GridDiagram.sum_crossingChangePentagonPairWeight_eq_sum_unpaired`: off the diagonal,
-  the pentagon pairs and the unpaired composites have the same total weight.
+* `TauCeti.GridDiagram.sum_pentagonPairWeight_eq_sum_crossingChangeUnpairedHexagonComposites`:
+  off the diagonal, the pentagon pairs and the unpaired composites have the same total weight.
 * `TauCeti.GridDiagram.unblockedDifferential_crossingChangeHomotopy_add_eq`: the homotopy
   equation `∂ ∘ H + H ∘ ∂ = w • 1 + Ψ ∘ Φ` in characteristic two.
 * `TauCeti.GridDiagram.unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc` and
@@ -130,8 +130,8 @@ private theorem exists_unpaired_partner (hst : C.turnRow ≠ t)
 squares carry no `X`-marking, then off the diagonal the pentagon pairs counted by the round trip
 `Ψ ∘ Φ` and the unpaired composites of the crossing change homotopy equation have the same total
 weight, over every commutative semiring. -/
-theorem sum_crossingChangePentagonPairWeight_eq_sum_unpaired (hst : C.turnRow ≠ t)
-    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet)
+theorem sum_pentagonPairWeight_eq_sum_crossingChangeUnpairedHexagonComposites
+    (hst : C.turnRow ≠ t) (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet)
     {x z : GridState n} (hzx : z ≠ x) :
     ∑ D ∈ G.pentagonPairDecompositions C (C.withTurnRow t) x z,
         G.pentagonPairWeight C (C.withTurnRow t) R D =
@@ -169,10 +169,7 @@ theorem sum_crossingChangePentagonPairWeight_eq_sum_unpaired (hst : C.turnRow �
     · exact (hside hside').elim
     · exact hrect.symm.trans hrect'
   · -- Every unpaired composite is a partner.
-    obtain ⟨D, hD, hDF⟩ :=
-      exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites hX hzx hF
-    refine ⟨D, (G.mem_pentagonPairDecompositions C (C.withTurnRow t) D).mpr ?_, hDF⟩
-    simpa only [commutationPentagons_def] using hD
+    exact exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites hX hzx hF
 
 /-! ### The homotopy equation -/
 
@@ -193,7 +190,7 @@ theorem unblockedDifferential_crossingChangeHomotopy_add_eq (hst : C.turnRow ≠
     (fun x z hxz => ?_) c
   rw [G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient
     C (C.withTurnRow t) R,
-    sum_crossingChangePentagonPairWeight_eq_sum_unpaired R hst hX (Ne.symm hxz)]
+    sum_pentagonPairWeight_eq_sum_crossingChangeUnpairedHexagonComposites R hst hX (Ne.symm hxz)]
 
 /-- **The homotopy of the composite of the crossing change maps**, for markings in the order
 `O_b, O_a, X_b, X_a`. If the segments of the columns `a` and `b = finRotate n a` interleave with

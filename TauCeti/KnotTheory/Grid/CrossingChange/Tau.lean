@@ -31,22 +31,24 @@ turning in the row of `X_b`, of Alexander degree `-1`
 (`GridDiagram.commutationBidegree_eq_zero_of_mem_columnArc` and
 `GridDiagram.commutationBidegree_eq_of_notMem_columnArc`). Ozsváth, Stipsicz and Szabó show that
 both composites are chain homotopic to multiplication by a variable, `ΨΦ` to `V_b` and `ΦΨ` to
-`V_a`, with hexagon-counting maps such as `GridDiagram.crossingChangeHomotopy` as the homotopies.
-Given two such homotopies, `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
-(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`). No assumption that `GH⁻` is non-torsion
-is needed here: the two composites show that `GH⁻(G)` and `GH⁻(G')` are torsion together, and then
-both invariants vanish. The two homotopies are supplied by the homotopy equations of
-`CrossingChange/Homotopy/Equation.lean`, which gives the inequality unconditionally
-(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc`). This is the inequality from which the bound of `|τ|`
-by the unknotting number follows.
+`V_a`, with the hexagon-counting maps `GridDiagram.crossingChangeHomotopy` as the homotopies; these
+homotopy equations are in `CrossingChange/Homotopy/Equation.lean`. Together they give
+`τ(G) - 1 ≤ τ(G') ≤ τ(G)` (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`). No
+assumption that `GH⁻` is non-torsion is needed here: the two composites show that `GH⁻(G)` and
+`GH⁻(G')` are torsion together, and then both invariants vanish. With `O_a` off the arc of column
+`b`, the markings of `G'` are in the first order and exchanging its columns returns `G`, so
+`τ(G) ≤ τ(G') ≤ τ(G) + 1`. In either case `τ` changes by at most one. This is the inequality from
+which the bound of `|τ|` by the unknotting number follows.
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
-  across a crossing change whose two composites are chain homotopic to multiplication by the
-  variables of the exchanged columns.
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc`: **the crossing change inequality**,
-  `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across every crossing change with `O_a` on the arc of column `b`.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`: **the crossing change
+  inequality**, `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across every crossing change with `O_a` on the arc of
+  column `b`.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`:
+  `τ(G) ≤ τ(G') ≤ τ(G) + 1` across every crossing change with `O_a` off the arc of column `b`.
+* `TauCeti.GridDiagram.IsKnot.abs_tau_swapColumns_sub_tau_le_one`: `|τ(G') - τ(G)| ≤ 1` across
+  every crossing change.
 
 ## References
 
@@ -69,28 +71,13 @@ namespace IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
-section
-
-variable (C : ColumnTurn n)
-
-local notation "a" => C.column
-local notation "b" => finRotate n C.column
-local notation "G'" => G.swapColumns a b
-
-/-- Exchanging the same two columns twice returns the original knot grid, with the same `τ`. -/
-private theorem tau_swapColumns_swapColumns :
-    ((hG.swapColumns a b).swapColumns a b).tau K = hG.tau K := by
-  have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G → h₁.tau K = hG.tau K := by
-    rintro _ _ rfl
-    rfl
-  exact key _ (swapColumns_swapColumns ..)
-
 /-- Exchanging the same two columns twice returns the original knot grid, whose `GH⁻` is torsion
 exactly when it was before. -/
-private theorem isTorsion_swapColumns_swapColumns_iff :
+private theorem isTorsion_swapColumns_swapColumns_iff (a b : Fin n) :
     letI := hG.unblockedHomologyModule K
     letI := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
-    Module.IsTorsion (Polynomial K) (((G').swapColumns a b).unblockedHomology K) ↔
+    Module.IsTorsion (Polynomial K)
+        (((G.swapColumns a b).swapColumns a b).unblockedHomology K) ↔
       Module.IsTorsion (Polynomial K) (G.unblockedHomology K) := by
   have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G →
       (letI := hG.unblockedHomologyModule K
@@ -101,78 +88,91 @@ private theorem isTorsion_swapColumns_swapColumns_iff :
     exact Iff.rfl
   exact key _ (swapColumns_swapColumns ..)
 
-variable {K C}
-
-/-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
-`b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`, and let `C`
-turn in the row of `O_a`. Suppose that the crossing change maps, the commutation map `Φ` of `C`
-and the commutation map `Ψ` of `G' = G.swapColumns a b` turning in the row of `X_b`, have
-composites `ΨΦ` and `ΦΨ` chain homotopic to multiplication by `V_b` and `V_a`. Then
-`τ(G) - 1 ≤ τ(G') ≤ τ(G)`. -/
-theorem tau_swapColumns_mem_Icc_of_homotopy
-    (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b) (hs : C.turnRow = G.O a)
-    (hH : ∃ H : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n,
-      ∀ c, G.unblockedDifferential K (H c) + H (G.unblockedDifferential K c) =
-        (MvPolynomial.X b : MvPolynomial (Fin n) K) • c +
-          (G').commutationMap K (C.withTurnRow (G.X b)) (G.commutationMap K C c))
-    (hH' : ∃ H' : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n,
-      ∀ c, (G').unblockedDifferential K (H' c) + H' ((G').unblockedDifferential K c) =
-        (MvPolynomial.X a : MvPolynomial (Fin n) K) • c +
-          ((G').swapColumns a b).commutationMap K ((C.withTurnRow (G.X b)).withTurnRow (G.O a))
-            ((G').commutationMap K (C.withTurnRow (G.X b)) c)) :
-    (hG.swapColumns a b).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
-  obtain ⟨H, hH⟩ := hH
-  obtain ⟨H', hH'⟩ := hH'
-  let _ := hG.unblockedHomologyModule K
-  let _ := (hG.swapColumns a b).unblockedHomologyModule K
-  let _ := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
-  have hp (c : Fin n) :
-      aeval (fun _ => (Polynomial.X : Polynomial K)) (MvPolynomial.X c : MvPolynomial (Fin n) K) =
-        Polynomial.X ^ 1 := by
-    rw [aeval_X, pow_one]
-  -- In `G'` the markings of the exchanged columns appear in the other cyclic order, so the
-  -- commutation map back has the bidegree of multiplication by `U`.
-  have hΦ := commutationBidegree_eq_zero_of_mem_columnArc C h hO hs
-  have hΨ := commutationBidegree_eq_of_notMem_columnArc (G := G') (C.withTurnRow (G.X b))
-    (((columnsInterleaving_swapColumns G _ _).mpr h.symm))
-    (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
-    (by simp [swapColumns_X, GridState.swapColumns_apply])
-  have hΨ' := (hG.swapColumns a b).not_isTorsion_swapColumns_of_homotopy K
-    (C.withTurnRow (G.X b)) (G.O a) H' (hp a) hH'
-  by_cases hT : Module.IsTorsion (Polynomial K) (G.unblockedHomology K)
-  · -- Both homologies are torsion, and both invariants vanish.
-    have hT' : Module.IsTorsion (Polynomial K) ((G').unblockedHomology K) := by
-      by_contra hT'
-      exact (hΨ' hT') ((isTorsion_swapColumns_swapColumns_iff hG K C).mpr hT)
-    rw [hG.tau_eq_zero_of_isTorsion K hT, (hG.swapColumns a b).tau_eq_zero_of_isTorsion K hT']
-    simp
-  · have h₁ := hG.tau_swapColumns_le_of_homotopy K C (G.X b) H (hp b) hH hT
-    have h₂ := (hG.swapColumns a b).tau_swapColumns_le_of_homotopy K (C.withTurnRow (G.X b))
-      (G.O a) H' (hp a) hH' (hG.not_isTorsion_swapColumns_of_homotopy K C (G.X b) H (hp b) hH hT)
-    rw [hΦ, Prod.snd_zero, sub_zero] at h₁
-    rw [hΨ, tau_swapColumns_swapColumns hG K C, sub_neg_eq_add] at h₂
-    exact ⟨by linarith, h₁⟩
-
-end
+variable {K}
 
 /-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
 `b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`. Then
 `τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every commutative ring of
-characteristic two. -/
-theorem tau_swapColumns_mem_Icc {a : Fin n}
+characteristic two.
+
+The crossing change maps are the commutation map `Φ` turning in the row of `O_a` and the
+commutation map `Ψ` of `G'` turning in the row of `X_b`. Their composites `ΨΦ` and `ΦΨ` are chain
+homotopic to multiplication by `V_b` and `V_a`, which bounds `τ` in both directions. -/
+theorem tau_swapColumns_mem_Icc_of_mem_columnArc {a : Fin n}
     (h : G.ColumnsInterleaving a (finRotate n a)) (hO : G.O a ∈ G.columnArc (finRotate n a)) :
     (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
   let C : ColumnTurn n := ⟨a, G.O a, h.ne⟩
-  exact hG.tau_swapColumns_mem_Icc_of_homotopy (C := C) h hO rfl
-    ⟨G.crossingChangeHomotopy K C (G.X (finRotate n a)),
-      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO rfl rfl⟩
-    ⟨(G.swapColumns a (finRotate n a)).crossingChangeHomotopy K
-        (C.withTurnRow (G.X (finRotate n a))) (G.O a),
-      unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
-        ((columnsInterleaving_swapColumns G _ _).mpr h.symm)
-        (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
-        (by simp [C, swapColumns_X, GridState.swapColumns_apply])
-        (by simp [C, swapColumns_O, GridState.swapColumns_apply])⟩
+  let _ := hG.unblockedHomologyModule K
+  let _ := (hG.swapColumns a (finRotate n a)).unblockedHomologyModule K
+  let _ := ((hG.swapColumns a (finRotate n a)).swapColumns a
+    (finRotate n a)).unblockedHomologyModule K
+  have hp (c : Fin n) :
+      aeval (fun _ => (Polynomial.X : Polynomial K)) (MvPolynomial.X c : MvPolynomial (Fin n) K) =
+        Polynomial.X ^ 1 := by
+    rw [aeval_X, pow_one]
+  -- In `G'` the markings of the exchanged columns appear in the other cyclic order.
+  have h' := (columnsInterleaving_swapColumns G _ _).mpr h.symm
+  have hO' : (G.swapColumns a (finRotate n a)).O a ∉
+      (G.swapColumns a (finRotate n a)).columnArc (finRotate n a) :=
+    fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO
+  have hs' : (C.withTurnRow (G.X (finRotate n a))).turnRow =
+      (G.swapColumns a (finRotate n a)).X a := by
+    simp [swapColumns_X, GridState.swapColumns_apply]
+  have hH := unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc (C := C) K h hO
+    rfl rfl
+  have hH' := unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc
+    (C := C.withTurnRow (G.X (finRotate n a))) (t := G.O a) K h' hO' hs'
+    (by simp [C, swapColumns_O, GridState.swapColumns_apply])
+  -- The commutation map back has the bidegree of multiplication by `U`.
+  have hΦ := commutationBidegree_eq_zero_of_mem_columnArc C h hO rfl
+  have hΨ := commutationBidegree_eq_of_notMem_columnArc (C.withTurnRow (G.X (finRotate n a))) h'
+    hO' hs'
+  have hΨ' := (hG.swapColumns a (finRotate n a)).not_isTorsion_swapColumns_of_homotopy K
+    (C.withTurnRow (G.X (finRotate n a))) (G.O a) _ (hp a) hH'
+  by_cases hT : Module.IsTorsion (Polynomial K) (G.unblockedHomology K)
+  · -- Both homologies are torsion, and both invariants vanish.
+    have hT' : Module.IsTorsion (Polynomial K)
+        ((G.swapColumns a (finRotate n a)).unblockedHomology K) := by
+      by_contra hT'
+      exact (hΨ' hT') ((isTorsion_swapColumns_swapColumns_iff hG K _ _).mpr hT)
+    rw [hG.tau_eq_zero_of_isTorsion K hT,
+      (hG.swapColumns a (finRotate n a)).tau_eq_zero_of_isTorsion K hT']
+    simp
+  · have h₁ := hG.tau_swapColumns_le_of_homotopy K C (G.X (finRotate n a)) _ (hp _) hH hT
+    have h₂ := (hG.swapColumns a (finRotate n a)).tau_swapColumns_le_of_homotopy K
+      (C.withTurnRow (G.X (finRotate n a))) (G.O a) _ (hp a) hH'
+      (hG.not_isTorsion_swapColumns_of_homotopy K C (G.X (finRotate n a)) _ (hp _) hH hT)
+    rw [hΦ, Prod.snd_zero, sub_zero] at h₁
+    rw [hΨ, hG.tau_swapColumns_swapColumns, sub_neg_eq_add] at h₂
+    exact ⟨by linarith, h₁⟩
+
+/-- **The crossing change inequality for `τ`**, for the other crossing sign. Let the segments of
+the columns `a` and `b = finRotate n a` of a knot grid `G` interleave with `O_a` off the arc of
+column `b`. Then `τ(G) ≤ τ(G') ≤ τ(G) + 1` for `G' = G.swapColumns a b`, over every commutative
+ring of characteristic two. -/
+theorem tau_swapColumns_mem_Icc_of_notMem_columnArc {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a)) (hO : G.O a ∉ G.columnArc (finRotate n a)) :
+    (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K) (hG.tau K + 1) := by
+  -- In `G'` the markings of the exchanged columns appear in the other cyclic order, and
+  -- exchanging the columns of `G'` again returns `G`.
+  have key := (hG.swapColumns a (finRotate n a)).tau_swapColumns_mem_Icc_of_mem_columnArc (K := K)
+    ((columnsInterleaving_swapColumns G _ _).mpr h.symm) (h.O_swapColumns_mem_columnArc_iff.mpr hO)
+  rw [hG.tau_swapColumns_swapColumns] at key
+  exact ⟨key.2, by linarith [key.1]⟩
+
+/-- **The crossing change inequality for `τ`**, for either crossing sign: if the segments of the
+columns `a` and `b = finRotate n a` of a knot grid `G` interleave, then `τ` changes by at most one
+under the crossing change `G' = G.swapColumns a b`, over every commutative ring of characteristic
+two. -/
+theorem abs_tau_swapColumns_sub_tau_le_one {a : Fin n}
+    (h : G.ColumnsInterleaving a (finRotate n a)) :
+    |(hG.swapColumns a (finRotate n a)).tau K - hG.tau K| ≤ 1 := by
+  rw [abs_sub_le_iff]
+  by_cases hO : G.O a ∈ G.columnArc (finRotate n a)
+  · have key := hG.tau_swapColumns_mem_Icc_of_mem_columnArc (K := K) h hO
+    exact ⟨by linarith [key.2], by linarith [key.1]⟩
+  · have key := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc (K := K) h hO
+    exact ⟨by linarith [key.2], by linarith [key.1]⟩
 
 end IsKnot
 
