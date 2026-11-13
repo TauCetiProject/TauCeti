@@ -64,9 +64,9 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.relativeDegree_eq_of_restrict_eq`: `e` and `f` are constant on a fibre, whence
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
-* `TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`: for a Galois extension the places over a
-  place `P` of `F` all share one ramification index, which is `TauCeti.Place.ramificationIdxIn`
-  (defined for any algebraic extension in
+* `TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`: for a finite Galois extension the places
+  over a place `P` of `F` all share one ramification index, which is
+  `TauCeti.Place.ramificationIdxIn` (defined for any algebraic extension in
   `TauCeti.FieldTheory.FunctionField.Place.Extension.Basic`), with
   `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
   `∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`, cleared of the division.

@@ -59,7 +59,8 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
   algebraic extension, computed at an arbitrary chosen place above `P` and zero when there is
   none. Without the Galois hypothesis the places above `P` need not share one ramification
-  index; in a Galois extension they do (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
+  index; in a finite Galois extension they do
+  (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
 
 ## Main results
 
@@ -1267,9 +1268,9 @@ open scoped Classical in
 /-- **The ramification index of a place of the base in an algebraic extension**: the ramification
 index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
 places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
-extension of function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`). Without
+extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`). Without
 the Galois hypothesis the places over `P` may have different ramification indices, so this value
-need not be common to them; for a Galois extension it is
+need not be common to them; for a finite Galois extension it is
 (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
 Mathlib's `Ideal.ramificationIdxIn`. -/
 noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
