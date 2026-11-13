@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GTree.Basic
-public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 
 /-!
@@ -21,11 +20,14 @@ A lifting (`GTree.Lifting`) consists of a spanning tree of `B`, a lift of every 
 element `twist y` of `G` carrying the lift of the reverse of `y` to the reverse of the lift of
 `y`. The elements `twist y` are trivial on the darts of the spanning tree and satisfy
 `twist (rev y) = (twist y)⁻¹`. The lift of a dart `y` ends at the translate by `twist y` of the
-lift of the target of `y` (`GTree.Lifting.tgt_dart`); in particular the lifts of the darts of the
-spanning tree join lifted vertices and are closed under reversal
-(`GTree.Lifting.dart_rev_of_mem`), so that they lift the spanning tree. Distinct vertices of `B`
-have distinct lifts, and every dart of `T` issuing from a lifted vertex is a translate of a lifted
-dart by an element of the stabilizer of that vertex (`GTree.Lifting.exists_smul_dart_eq`).
+lift of the target of `y` (`GTree.Lifting.tgt_dart`), and the lift of the reverse of `y` is the
+translate by `(twist y)⁻¹` of the reverse of the lift of `y` (`GTree.Lifting.dart_rev`); in
+particular the lifts of the darts of the spanning tree join lifted vertices
+(`GTree.Lifting.tgt_dart_of_mem`) and are closed under reversal
+(`GTree.Lifting.dart_rev_of_mem`), so that they lift the spanning tree. Distinct vertices and
+distinct darts of `B` have distinct lifts, and every dart of `T` issuing from a lifted vertex is a
+translate of a lifted dart by an element of the stabilizer of that vertex
+(`GTree.Lifting.exists_smul_dart_eq`).
 
 This is the data of the explicit construction of the quotient graph of groups in
 Kapovich–Weidmann–Myasnikov, Remark 2.7: the lifted vertices and tree darts form their lift `T₁`
@@ -38,8 +40,6 @@ vertex, and the other darts are lifted with their sources at lifted vertices.
 
 ## Main declarations
 
-* `TauCeti.GTree.quotient`, `TauCeti.GTree.quotientMap`: the quotient graph of a `G`-tree and
-  the projection onto it.
 * `TauCeti.GTree.Lifting`: a lifting of the quotient graph to the tree.
 * `TauCeti.GTree.exists_lifting`: liftings exist, with any spanning tree and any base lift.
 * `TauCeti.GTree.Lifting.tgt_dart`: the lift of a dart ends at a translate of a lifted vertex.
@@ -64,44 +64,6 @@ open SerreGraph _root_.MulAction
 namespace GTree
 
 variable {G : Type w} [Group G] (T : GTree.{u, v} G)
-
-/-- The quotient graph `T / G` of a `G`-tree. -/
-abbrev quotient : SerreGraph.{u, v} :=
-  T.toSerreGraph.quotient T.action T.smul_ne_rev
-
-/-- The projection of a `G`-tree to its quotient graph. -/
-abbrev quotientMap : T.toSerreGraph.Hom T.quotient :=
-  T.toSerreGraph.quotientMap T.action T.smul_ne_rev
-
-variable {T}
-
-/-- Two vertices of a `G`-tree have the same image in the quotient graph exactly when they are in
-the same orbit. -/
-theorem quotientMap_mapV_eq_iff {a b : T.V} :
-    T.quotientMap.mapV a = T.quotientMap.mapV b ↔ ∃ g : G, g • a = b :=
-  SerreGraph.quotientMap_mapV_eq_iff
-
-/-- Two darts of a `G`-tree have the same image in the quotient graph exactly when they are in
-the same orbit. -/
-theorem quotientMap_mapE_eq_iff {e f : T.E} :
-    T.quotientMap.mapE e = T.quotientMap.mapE f ↔ ∃ g : G, g • e = f :=
-  SerreGraph.quotientMap_mapE_eq_iff
-
-/-- A vertex of a `G`-tree and its translates have the same image in the quotient graph. -/
-@[simp] theorem quotientMap_mapV_smul (g : G) (a : T.V) :
-    T.quotientMap.mapV (g • a) = T.quotientMap.mapV a :=
-  SerreGraph.quotientMap_mapV_smul g a
-
-/-- A dart of a `G`-tree and its translates have the same image in the quotient graph. -/
-@[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
-    T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
-  SerreGraph.quotientMap_mapE_smul g e
-
-variable (T)
-
-/-- The quotient graph of a `G`-tree is connected. -/
-theorem quotient_connected : T.quotient.Connected :=
-  SerreGraph.quotient_connected T.isTree.connected
 
 /-- A lifting of the quotient graph `T / G` of a `G`-tree to the tree: a spanning tree of the
 quotient, a lift of every vertex, a lift of every dart issuing from the lift of its source, and
@@ -131,7 +93,7 @@ lifts of its darts are closed under reversal and join lifted vertices. -/
   twist_eq_one : ∀ y ∈ tree.darts, twist y = 1
 
 attribute [simp] Lifting.quotientMap_vertex Lifting.quotientMap_dart Lifting.src_dart
-  Lifting.twist_rev
+  Lifting.twist_rev Lifting.twist_eq_one
 
 /-! ### Existence of liftings -/
 
@@ -237,8 +199,9 @@ theorem exists_lifting (S : T.quotient.SpanningTree) (x₀ : T.V) :
   choose c hc₁ hc₂ hc₃ hc₄ using key
   exact ⟨Lifting.ofLifts S s (fun y => (c y).1) (fun y => (c y).2) hs hc₁ hc₂ hc₃ hc₄, rfl, hs₀⟩
 
+variable {T} in
 /-- Every `G`-tree has a lifting of its quotient graph. -/
-theorem nonempty_lifting : Nonempty T.Lifting :=
+instance : Nonempty T.Lifting :=
   (T.quotient.exists_spanningTree T.quotient_connected).map fun S =>
     (T.exists_lifting S (Classical.arbitrary T.V)).choose
 
@@ -251,14 +214,35 @@ variable {T} (D : T.Lifting)
     T.tgt (D.dart y) = D.twist y • D.vertex (T.quotient.tgt y) := by
   simpa using (congrArg T.src (D.twist_smul_dart_rev y)).symm
 
+/-- The lift of the reverse of a dart is the translate by the inverse of its element of the
+reverse of its lift. -/
+theorem dart_rev (y : T.quotient.E) :
+    D.dart (T.quotient.rev y) = (D.twist y)⁻¹ • T.rev (D.dart y) :=
+  eq_inv_smul_iff.mpr (D.twist_smul_dart_rev y)
+
+/-- The lift of a dart of the spanning tree ends at the lift of its target. -/
+theorem tgt_dart_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts) :
+    T.tgt (D.dart y) = D.vertex (T.quotient.tgt y) := by
+  simp [hy]
+
 /-- The lifts of the darts of the spanning tree are closed under reversal. -/
-theorem dart_rev_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts) :
+@[simp] theorem dart_rev_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts) :
     D.dart (T.quotient.rev y) = T.rev (D.dart y) := by
-  simpa [D.twist_eq_one y hy] using D.twist_smul_dart_rev y
+  simp [dart_rev, hy]
 
 /-- Distinct vertices of the quotient graph have distinct lifts. -/
 theorem vertex_injective : Function.Injective D.vertex :=
   Function.LeftInverse.injective D.quotientMap_vertex
+
+/-- Distinct darts of the quotient graph have distinct lifts. -/
+theorem dart_injective : Function.Injective D.dart :=
+  Function.LeftInverse.injective D.quotientMap_dart
+
+@[simp] theorem vertex_inj {b₁ b₂ : T.quotient.V} : D.vertex b₁ = D.vertex b₂ ↔ b₁ = b₂ :=
+  D.vertex_injective.eq_iff
+
+@[simp] theorem dart_inj {y₁ y₂ : T.quotient.E} : D.dart y₁ = D.dart y₂ ↔ y₁ = y₂ :=
+  D.dart_injective.eq_iff
 
 /-- Every dart issuing from a lifted vertex is a translate, by an element of the stabilizer of
 that vertex, of the lift of its image. -/

@@ -127,6 +127,14 @@ noncomputable def GeomEdge.out (y : Γ.GeomEdge) : Γ.E :=
 @[simp] theorem toGeomEdge_out (y : Γ.GeomEdge) : Γ.toGeomEdge (GeomEdge.out Γ y) = y :=
   Quot.out_eq y
 
+/-- Distinct geometric edges have distinct chosen darts. -/
+theorem GeomEdge.out_injective : Function.Injective (GeomEdge.out Γ) :=
+  Function.LeftInverse.injective Γ.toGeomEdge_out
+
+@[simp] theorem GeomEdge.out_inj {x y : Γ.GeomEdge} :
+    GeomEdge.out Γ x = GeomEdge.out Γ y ↔ x = y :=
+  (GeomEdge.out_injective Γ).eq_iff
+
 /-- The dart representing the geometric edge of a dart `e` is `e` or its reverse. -/
 theorem GeomEdge.out_toGeomEdge_eq_or_eq_rev (e : Γ.E) :
     GeomEdge.out Γ (Γ.toGeomEdge e) = e ∨ GeomEdge.out Γ (Γ.toGeomEdge e) = Γ.rev e :=
