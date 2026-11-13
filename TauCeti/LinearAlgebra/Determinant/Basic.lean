@@ -75,6 +75,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `Module.Basis.det_comp_eq_mul`: `b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v` for a linear map
+  `f` between two modules with bases `b` and `b'`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
@@ -231,6 +233,13 @@ linear equivalence `e` gives the determinant of the matrix of `e` with respect t
 theorem det_map_eq_det_toMatrix (b : Basis ι R M) (b' : Basis ι R M') (e : M ≃ₗ[R] M') :
     b'.det (b.map e) = (LinearMap.toMatrix b b' (e : M →ₗ[R] M')).det := by
   rw [det_apply, coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
+
+/-- Evaluating the determinant form of a basis `b'` of `M'` on the image `f ∘ v` of a family `v`
+under a linear map `f : M → M'` gives its value on `f ∘ b` times the determinant of `v` in a basis
+`b` of `M`. This is `Module.Basis.det_comp` for linear maps between two different modules. -/
+theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R] M') (v : ι → M) :
+    b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
+  DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
 
 end Module.Basis
 

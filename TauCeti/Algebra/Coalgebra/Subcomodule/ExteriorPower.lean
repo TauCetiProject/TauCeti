@@ -77,20 +77,21 @@ local instance : Module.Flat k H := by
   let : AddCommGroup H := Module.addCommMonoidToAddCommGroup k
   infer_instance
 
-/-- The exterior image of a finite-dimensional subrepresentation has the expected
-binomial dimension. -/
+/-- The exterior image of a subrepresentation has the expected binomial dimension. For an
+infinite-dimensional subrepresentation both sides are the junk value `0`, except for `n = 0`
+where both are `1`. -/
 @[simp]
-theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
-    [Module.Finite k W.toSubmodule] (n : ℕ) :
+theorem finrank_exteriorPowerImage (W : Subcomodule k H M) (n : ℕ) :
     Module.finrank k (W.exteriorPowerImage n) =
       (Module.finrank k W.toSubmodule).choose n := by
   change Module.finrank k (W.exteriorPowerImage n).toSubmodule = _
   rw [exteriorPowerImage_toSubmodule,
     exteriorPower.finrank_range_map W.toSubmodule.injective_subtype]
 
-/-- The top exterior image of a finite-dimensional subrepresentation is a line. -/
-theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)
-    [Module.Finite k W.toSubmodule] :
+/-- The exterior image of a subrepresentation `W` in degree `Module.finrank k W` is a line. For a
+finite-dimensional `W` this is the top exterior image; for an infinite-dimensional `W` the junk
+value `Module.finrank k W = 0` makes it the zeroth exterior image, the line of scalars. -/
+theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M) :
     Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 :=
   (finrank_exteriorPowerImage W _).trans (Nat.choose_self _)
 
@@ -100,13 +101,14 @@ local instance : Module.Flat k K := by
   let : AddCommGroup K := Module.addCommMonoidToAddCommGroup k
   infer_instance
 
-/-- A finite-dimensional subrepresentation of a restricted representation determines
-an invariant line in the restriction of the ambient `n`th exterior-power representation,
-where `n` is the dimension of the subrepresentation. The carrier is the image of its top
-exterior power, with no basis choices. -/
+/-- A subrepresentation of a restricted representation determines an invariant line in the
+restriction of the ambient `n`th exterior-power representation, where `n = Module.finrank k W`.
+The carrier is the image of the `n`th exterior power of the subrepresentation, with no basis
+choices: its top exterior power when the subrepresentation is finite-dimensional, and the
+zeroth exterior power (the junk value `n = 0`) otherwise. -/
 theorem exists_line_corestrict_exteriorPower (f : H →ₐc[k] K) :
     letI : Comodule k K M := Comodule.Corestrict f.toCoalgHom
-    ∀ W : Subcomodule k K M, Module.Finite k W.toSubmodule →
+    ∀ W : Subcomodule k K M,
       let n := Module.finrank k W.toSubmodule
       letI : Comodule k H (⋀[k]^n M) := Comodule.exteriorPower k H M n
       letI : Comodule k K (⋀[k]^n M) := Comodule.Corestrict f.toCoalgHom
@@ -114,8 +116,7 @@ theorem exists_line_corestrict_exteriorPower (f : H →ₐc[k] K) :
         L.toSubmodule = LinearMap.range (_root_.exteriorPower.map n W.toSubmodule.subtype) ∧
         Module.finrank k L.toSubmodule = 1 := by
   let : Comodule k K M := Comodule.Corestrict f.toCoalgHom
-  intro W hW
-  let : Module.Finite k W.toSubmodule := hW
+  intro W
   let n := Module.finrank k W.toSubmodule
   let E := W.exteriorPowerImage n
   have hEsub := W.exteriorPowerImage_toSubmodule n
