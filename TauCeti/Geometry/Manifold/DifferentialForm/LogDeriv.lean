@@ -10,10 +10,11 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
--- Private: pointwise regularity of derivatives, the derivative of the squared norm, and the
--- square-zero property of the exterior derivative are used only inside proofs.
+-- Private: the degree-one section API, the derivative of the squared norm, and the square-zero
+-- property of the exterior derivative are used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
@@ -214,22 +215,20 @@ theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} {x : M}
     (hu : ContMDiffAt I 𝓘(ℝ, ℂ) (n + 1) u x) (hx : u x ≠ 0) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℂ)) n
       (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℂ) y (mlogDeriv I u y)) x := by
-  rw [Bundle.contMDiffAt_section_iff]
-  have hd := (ContinuousAlternatingMap.ofSubsingletonLIE
-    (𝕜 := ℝ) (E := E) (F := ℂ) (0 : Fin 1)).toContinuousLinearEquiv.contDiff
-    |>.comp_contMDiffAt (hu.mfderiv_const (m := n) le_rfl)
-  have h := contDiff_smul.comp_contMDiffAt
-    (((contDiffAt_inv ℝ hx).comp_contMDiffAt hu.of_succ).prodMk_space hd)
-  refine h.congr_of_eventuallyEq ?_
-  filter_upwards [] with y
-  simp only [FiberBundle.trivializationAt_continuousAlternatingMap_apply, Function.comp_apply,
-    ContinuousAlternatingMap.inCoordinates, inTangentCoordinates,
-    ContinuousLinearMap.inCoordinates, mlogDeriv, mextDeriv_ofFunction]
-  ext v
-  simp [ContinuousAlternatingMap.ofSubsingletonLIE, mvfderiv, NormedSpace.fromTangentSpace,
-    -mul_eq_mul_left_iff]
-  -- The remaining identifications between the tangent space of ℂ and ℂ are identity maps.
-  rfl
+  have hlog (y : M) : mlogDeriv I u y =
+      ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I y) ℂ (0 : Fin 1)
+        ((u y)⁻¹ • mvfderiv I u y) := by
+    ext v
+    simp only [mlogDeriv_apply, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      smul_apply, smul_eq_mul]
+  simp_rw [hlog]
+  rw [contMDiffAt_ofSubsingleton_iff]
+  have hd := hu.contMDiffAt_totalSpaceMk_mvfderiv
+  rw [contMDiffAt_hom_bundle] at hd ⊢
+  -- Complex scalar multiplication is smooth over ℝ and commutes with these coordinates.
+  simp_rw [ContinuousLinearMap.inCoordinates_smul]
+  exact ⟨contMDiffAt_id, contDiff_smul.comp_contMDiffAt
+    (((contDiffAt_inv ℝ hx).comp_contMDiffAt hu.of_succ).prodMk_space hd.2)⟩
 
 /-- The logarithmic derivative of a nowhere-vanishing `C^(n+1)` function is a `C^n` form. -/
 theorem isSmoothForm_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)

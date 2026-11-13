@@ -62,7 +62,6 @@ theorem exists_isSmoothForm_eventuallyEq_nhdsSet {n : ℕ∞} {φ : RoughForm I 
   · refine ((IsSmoothForm.zero (I := I) (M := M) (F := F) (k := k) n).contMDiff x)
       |>.congr_of_eventuallyEq ?_
     filter_upwards [(nhds_le_nhdsSet (show x ∈ Uᶜ from hx)) hb0] with y hy
-    simp only [hy, zero_smul]
-    rfl
+    simp only [hy, zero_smul, Pi.zero_apply]
 
 end TauCeti.RoughForm
