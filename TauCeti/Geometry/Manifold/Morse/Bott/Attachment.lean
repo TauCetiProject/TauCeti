@@ -8,14 +8,14 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Morse.HandleRetraction.Bundle
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.Morse.Deformation
+import TauCeti.Geometry.Manifold.Morse.MilnorFunction
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Topology.FiberBundle.Prod
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.DiscSphere
 
@@ -45,16 +45,18 @@ and its critical points lie in these sources, then `M_{c-ε}` with the negative 
 
 The proof is Milnor's (Theorem 3.2), run fibrewise. The function `F = f - μ(‖u‖² + 2‖v‖²)`, where
 `μ` is a smooth nonincreasing cutoff with `μ = 2ε` on `(-∞, ε]` and `μ = 0` on `[2ε, ∞)`, agrees
-with `f` outside the tubes `‖u‖² + 2‖v‖² ≤ 2ε`, which are compact because the bases are. It has
-the same sublevel `{F ≤ c + ε} = M_{c+ε}`, and no critical points in the band
-`F⁻¹[c - ε, c + ε]`. Inside a tube, the derivative of `F` along the curve which scales `v` is
-`2‖v‖²(1 - 2μ') > 0` unless `v = 0`, and on `v = 0` the value `c - ‖u‖² - μ(‖u‖²)` lies below
-`c - ε`. Only fibre directions are differentiated, so no metric connection or horizontal
-derivative is involved. Hence `M_{c+ε}` deformation retracts onto `{F ≤ c - ε}`
-(`TauCeti.exists_sublevelDeformation`). This set is preserved by shrinking `v`, so Milnor's
-fibrewise retraction `TauCeti.bundleQuadraticHandleDeformation`, read in the `Ψ i` and glued to
-the identity outside them (`TauCeti.exists_inter_deformation_of_charts`), retracts it onto
-`M_{c-ε}` with the negative disc bundles attached.
+with `f` outside the tubes `‖u‖² + 2‖v‖² ≤ 2ε`, which are compact because the bases are; its
+smoothness and the absence of critical points outside the tubes come from the construction
+`TauCeti.lowerOn` shared with the cell attachment theorem. It has the same sublevel
+`{F ≤ c + ε} = M_{c+ε}`, and no critical points in the band `F⁻¹[c - ε, c + ε]`. Inside a tube,
+the derivative of `F` along the curve which scales `v` is `2‖v‖²(1 - 2μ') > 0` unless `v = 0`, and
+on `v = 0` the value `c - ‖u‖² - μ(‖u‖²)` lies below `c - ε`. Only fibre directions are
+differentiated, so no metric connection or horizontal derivative is involved. Hence `M_{c+ε}`
+deformation retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`). This set is
+preserved by shrinking `v`, so Milnor's fibrewise retraction
+`TauCeti.bundleQuadraticHandleDeformation`, read in the `Ψ i` and glued to the identity outside them
+(`TauCeti.exists_inter_deformation_of_charts`), retracts it onto `M_{c-ε}` with the negative disc
+bundles attached.
 
 ## Main results
 
@@ -100,6 +102,15 @@ private theorem norm_fibreScale_snd_snd (σ : ℝ) (z : TotalSpace (Fᵤ × Fₛ
   rw [← Real.norm_eq_abs]
   exact norm_smul σ z.2.2
 
+/-- Scaling the second component of a point of the closed tube `‖u‖² + ‖v‖² ≤ r` by a factor in
+`[0, 1]` keeps it in the tube. -/
+private theorem fibreScale_mem_tube {r s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
+    {z : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)} (hz : z ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r}) :
+    fibreScale s z ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r} := by
+  rw [mem_ofPred_eq] at hz ⊢
+  rw [norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs]
+  linarith [mul_le_of_le_one_left (sq_nonneg ‖z.2.2‖) (pow_le_one₀ (n := 2) hs.1 hs.2)]
+
 /-- The curve scaling the second component of a vector of a Whitney sum is smooth. -/
 private theorem contMDiff_fibreScale {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
     [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} [TopologicalSpace B]
@@ -128,63 +139,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [∀ i, FiberBundle (Fᵤ i) (Eᵤ i)] [∀ i, FiberBundle (Fₛ i) (Eₛ i)]
   {f : M → ℝ} {c ε : ℝ}
 
-section SmoothNorms
-
-variable (i : ι)
-
-variable [∀ i b, InnerProductSpace ℝ (Eᵤ i b)] [∀ i, VectorBundle ℝ (Fᵤ i) (Eᵤ i)]
-  [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fᵤ i) (Eᵤ i)] in
-/-- The squared norm `‖u‖²` of the first component of a vector of a Whitney sum is a smooth
-function on the total space when the first summand is a smooth Riemannian bundle. -/
-private theorem contMDiff_norm_fst_sq :
-    ContMDiff ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) 𝓘(ℝ) ∞
-      fun z : TotalSpace (Fᵤ i × Fₛ i) (Eᵤ i ×ᵇ Eₛ i) ↦ ‖z.2.1‖ ^ 2 := by
-  have h := (Bundle.Prod.contMDiff_fst (I := IB i) (F₁ := Fᵤ i) (F₂ := Fₛ i) (E₁ := Eᵤ i)
-    (E₂ := Eₛ i) (n := ∞)).inner_bundle Bundle.Prod.contMDiff_fst
-  simpa only [real_inner_self_eq_norm_sq] using h
-
-variable [∀ i b, InnerProductSpace ℝ (Eₛ i b)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)]
-  [∀ i, IsContMDiffRiemannianBundle (IB i) ∞ (Fₛ i) (Eₛ i)] in
-/-- The squared norm `‖v‖²` of the second component of a vector of a Whitney sum is a smooth
-function on the total space when the second summand is a smooth Riemannian bundle. -/
-private theorem contMDiff_norm_snd_sq :
-    ContMDiff ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) 𝓘(ℝ) ∞
-      fun z : TotalSpace (Fᵤ i × Fₛ i) (Eᵤ i ×ᵇ Eₛ i) ↦ ‖z.2.2‖ ^ 2 := by
-  have h := (Bundle.Prod.contMDiff_snd (I := IB i) (F₁ := Fᵤ i) (F₂ := Fₛ i) (E₁ := Eᵤ i)
-    (E₂ := Eₛ i) (n := ∞)).inner_bundle Bundle.Prod.contMDiff_snd
-  simpa only [real_inner_self_eq_norm_sq] using h
-
-end SmoothNorms
-
-section Tube
-
-variable (i : ι) [∀ b, InnerProductSpace ℝ (Eᵤ i b)] [∀ b, InnerProductSpace ℝ (Eₛ i b)]
-  [VectorBundle ℝ (Fᵤ i) (Eᵤ i)] [VectorBundle ℝ (Fₛ i) (Eₛ i)]
-  [IsContinuousRiemannianBundle (Fᵤ i) (Eᵤ i)] [IsContinuousRiemannianBundle (Fₛ i) (Eₛ i)]
-
-/-- The closed tube `‖u‖² + ‖v‖² ≤ r` of a Whitney sum of continuous Riemannian bundles with
-finite-dimensional fibres over a compact Hausdorff base is compact. -/
-private theorem isCompact_tube [CompactSpace (B i)] [T2Space (B i)]
-    [FiniteDimensional ℝ (Fᵤ i)] [FiniteDimensional ℝ (Fₛ i)] (r : ℝ) :
-    IsCompact {z : TotalSpace (Fᵤ i × Fₛ i) (Eᵤ i ×ᵇ Eₛ i) | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r} := by
-  -- The tube lies in the product of the closed disc bundles of radius `√r` of the summands.
-  have hdiag := FiberBundle.Prod.isClosedEmbedding_diag (E₁ := Eᵤ i) (E₂ := Eₛ i)
-    (FiberBundle.continuous_proj (Fᵤ i) (Eᵤ i)) (FiberBundle.continuous_proj (Fₛ i) (Eₛ i))
-  have hu := (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i)).comp
-    (FiberBundle.Prod.continuous_totalSpaceFst (F₂ := Fₛ i) (E₂ := Eₛ i))
-  have hv := (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)).comp
-    (FiberBundle.Prod.continuous_totalSpaceSnd (F₁ := Fᵤ i) (E₁ := Eᵤ i))
-  refine (hdiag.isCompact_preimage
-    ((isCompact_setOf_norm_le_bundle (F := Fᵤ i) (V := Eᵤ i) (continuous_const (y := √r))).prod
-      (isCompact_setOf_norm_le_bundle (F := Fₛ i) (V := Eₛ i)
-        (continuous_const (y := √r))))).of_isClosed_subset
-    (isClosed_le ((hu.pow 2).add (hv.pow 2)) continuous_const) fun z hz ↦ ?_
-  have hz : ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r := hz
-  exact ⟨Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.2‖]),
-    Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.1‖])⟩
-
-end Tube
-
 section MilnorFunction
 
 variable
@@ -197,28 +151,49 @@ variable
 private def milnorBottFunction [Fintype ι]
     (Ψ : ∀ i, PartialDiffeomorph I ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) M
       (TotalSpace (Fᵤ i × Fₛ i) (Eᵤ i ×ᵇ Eₛ i)) ∞)
-    (f : M → ℝ) (μ : ℝ → ℝ) (x : M) : ℝ :=
-  f x - ∑ i, (Ψ i).source.indicator (fun y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2)) x
+    (f : M → ℝ) (μ : ℝ → ℝ) : M → ℝ :=
+  lowerOn (fun i ↦ (Ψ i).source) (fun i y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2)) f
 
-variable [Fintype ι]
-
-private theorem milnorBottFunction_of_mem (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source))
+/-- In a normal form, the model set `bundleQuadraticSublevelUnionCell` of Milnor's retraction
+is the part of the source in the lower sublevel or in the negative disc bundle. -/
+private theorem mem_bundleQuadraticSublevelUnionCell_iff
+    (hf : ∀ y ∈ (Ψ i).source, f y = c - ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2)
     (hx : x ∈ (Ψ i).source) :
-    milnorBottFunction Ψ f μ x = f x - μ (‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2) := by
-  rw [milnorBottFunction, Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem
-    (fun hj ↦ (hΨ hji).ne_of_mem hj hx rfl) _) (by simp), indicator_of_mem hx]
+    Ψ i x ∈ bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε ↔
+      f x ≤ c - ε ∨ x ∈ (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0} := by
+  rw [mem_bundleQuadraticSublevelUnionCell, hf x hx]
+  exact or_congr ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩ (by simp [hx])
 
-private theorem milnorBottFunction_of_forall_notMem (hx : ∀ i, x ∉ (Ψ i).source) :
-    milnorBottFunction Ψ f μ x = f x := by
-  simp [milnorBottFunction, indicator_of_notMem (hx _)]
+/-- Each lowering term of Milnor's function vanishes in the source of its normal form outside
+the image of the closed tube `‖u‖² + ‖v‖² ≤ 2ε`. -/
+private theorem eqOn_zero_of_notMem_image (hμ₀ : ∀ r, 2 * ε ≤ r → μ r = 0) (i : ι) :
+    EqOn (fun y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2)) 0
+      ((Ψ i).source \ (Ψ i).toOpenPartialHomeomorph.symm ''
+        {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) := by
+  rintro y ⟨hys, hy⟩
+  have hlt : 2 * ε < ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2 := by
+    by_contra h
+    exact hy ⟨Ψ i y, not_lt.1 h, (Ψ i).toOpenPartialHomeomorph.left_inv hys⟩
+  exact hμ₀ _ (by nlinarith [sq_nonneg ‖(Ψ i y).2.2‖])
 
-private theorem milnorBottFunction_le (hμ : ∀ r, 0 ≤ μ r) (x : M) :
-    milnorBottFunction Ψ f μ x ≤ f x :=
-  sub_le_self _ (Finset.sum_nonneg fun _ _ ↦ indicator_nonneg (fun _ _ ↦ hμ _) _)
+/-- The image of the closed tube `‖u‖² + ‖v‖² ≤ 2ε` lies in the source of its normal form. -/
+private theorem image_tube_subset_source
+    (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target) (i : ι) :
+    (Ψ i).toOpenPartialHomeomorph.symm '' {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆
+      (Ψ i).source := by
+  rintro _ ⟨z, hz, rfl⟩
+  exact (Ψ i).toOpenPartialHomeomorph.map_target (hdisc i hz)
 
-variable (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source))
-  (hf : ∀ i, ∀ y ∈ (Ψ i).source, f y = c - ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2)
-include hΨ hf
+variable [Fintype ι] (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source))
+include hΨ
+
+/-- In the source of `Ψ i`, Milnor's function is `f - μ(‖u‖² + 2‖v‖²)`. -/
+private theorem milnorBottFunction_of_mem (hx : x ∈ (Ψ i).source) :
+    milnorBottFunction Ψ f μ x = f x - μ (‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2) :=
+  lowerOn_of_mem hΨ hx
+
+variable (hf : ∀ i, ∀ y ∈ (Ψ i).source, f y = c - ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2)
+include hf
 
 /-- In the coordinates `(u, v)` of a normal form, `f` is `c - ‖u‖² + ‖v‖²` and Milnor's function
 is `c - ‖u‖² + ‖v‖² - μ(‖u‖² + 2‖v‖²)`. -/
@@ -240,16 +215,13 @@ variable [∀ i b, NormedSpace ℝ (Eₛ i b)] in
 in `[0, 1]` does not increase Milnor's function. -/
 private theorem milnorBottFunction_symm_scale_le (hμa : Antitone μ)
     (hdisc : {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target) (hx : x ∈ (Ψ i).source)
-    (hxε : ‖(Ψ i x).2.1‖ ^ 2 + ‖(Ψ i x).2.2‖ ^ 2 ≤ 2 * ε) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
+    (hxε : Ψ i x ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
     milnorBottFunction Ψ f μ ((Ψ i).toOpenPartialHomeomorph.symm (fibreScale s (Ψ i x))) ≤
       milnorBottFunction Ψ f μ x := by
-  have hs2 : s ^ 2 ≤ 1 := pow_le_one₀ hs.1 hs.2
-  have hw : fibreScale s (Ψ i x) ∈ (Ψ i).target := hdisc <| by
-    rw [mem_ofPred_eq, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs]
-    linarith [mul_le_of_le_one_left (sq_nonneg ‖(Ψ i x).2.2‖) hs2]
-  rw [(milnorBottFunction_symm_apply hΨ hf (μ := μ) hw).2, milnorBottFunction_of_mem hΨ hx,
-    hf i x hx, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs]
-  have hst := mul_le_of_le_one_left (sq_nonneg ‖(Ψ i x).2.2‖) hs2
+  rw [(milnorBottFunction_symm_apply hΨ hf (μ := μ) (hdisc (fibreScale_mem_tube hs hxε))).2,
+    milnorBottFunction_of_mem hΨ hx, hf i x hx, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd,
+    mul_pow, sq_abs]
+  have hst := mul_le_of_le_one_left (sq_nonneg ‖(Ψ i x).2.2‖) (pow_le_one₀ (n := 2) hs.1 hs.2)
   have hμle := hμa (show ‖(Ψ i x).2.1‖ ^ 2 + 2 * (s ^ 2 * ‖(Ψ i x).2.2‖ ^ 2) ≤
     ‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2 by linarith)
   linarith
@@ -263,49 +235,86 @@ private theorem milnorBottFunction_le_of_mem_disc (hμ_eq : ∀ r ≤ ε, μ r =
     show ‖(Ψ i x).2.1‖ ^ 2 + 2 * (0 : ℝ) ^ 2 = ‖(Ψ i x).2.1‖ ^ 2 by ring, hμ_eq _ hxε]
   linarith [sq_nonneg ‖(Ψ i x).2.1‖]
 
+/-- A point of `{F ≤ c - ε}` lies in the lower sublevel with the negative disc bundles attached
+exactly when its image in every normal form containing it lies in the model set of Milnor's
+retraction. -/
+private theorem mem_sublevel_union_negativeDiscBundles_iff
+    (hxX : milnorBottFunction Ψ f μ x ≤ c - ε) :
+    x ∈ {x | f x ≤ c - ε} ∪ ⋃ i, (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0} ↔
+      ∀ i, x ∈ (Ψ i).toOpenPartialHomeomorph.source →
+        (Ψ i).toOpenPartialHomeomorph x ∈
+          bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε := by
+  refine ⟨fun hxS i hi ↦ (mem_bundleQuadraticSublevelUnionCell_iff (hf i) hi).2 ?_, fun h ↦ ?_⟩
+  · rcases hxS with h | h
+    · exact .inl h
+    · obtain ⟨j, hj⟩ := mem_iUnion.1 h
+      obtain rfl : j = i := hΨ.eq (not_disjoint_iff.2 ⟨x, hj.1, hi⟩)
+      exact .inr hj
+  · by_cases hx : ∃ i, x ∈ (Ψ i).source
+    · obtain ⟨i, hi⟩ := hx
+      rcases (mem_bundleQuadraticSublevelUnionCell_iff (hf i) hi).1 (h i hi) with h' | h'
+      · exact .inl h'
+      · exact .inr (mem_iUnion.2 ⟨i, h'⟩)
+    · rw [milnorBottFunction, lowerOn_of_forall_notMem (not_exists.1 hx)] at hxX
+      exact .inl hxX
+
 variable (hμ₀ : ∀ r, 2 * ε ≤ r → μ r = 0)
 include hμ₀
-
-omit hf in
-/-- Outside the closed tube `‖u‖² + ‖v‖² ≤ 2ε` of a normal form, Milnor's function agrees with
-`f`. -/
-private theorem milnorBottFunction_eq_of_lt (hx : x ∈ (Ψ i).source)
-    (hxε : 2 * ε < ‖(Ψ i x).2.1‖ ^ 2 + ‖(Ψ i x).2.2‖ ^ 2) :
-    milnorBottFunction Ψ f μ x = f x := by
-  rw [milnorBottFunction_of_mem hΨ hx, hμ₀ _ (by nlinarith [sq_nonneg ‖(Ψ i x).2.2‖]), sub_zero]
-
-omit [Fintype ι] hΨ hf in
-/-- Each lowering term of Milnor's function vanishes outside the image of the closed tube
-`‖u‖² + ‖v‖² ≤ 2ε` of its normal form. -/
-private theorem indicator_eq_zero_of_notMem_image [Finite ι] (i : ι) {y : M}
-    (hy : y ∉ (Ψ i).toOpenPartialHomeomorph.symm ''
-      {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) :
-    (Ψ i).source.indicator (fun y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2)) y = 0 := by
-  have := Fintype.ofFinite ι
-  by_cases hys : y ∈ (Ψ i).source
-  · have hlt : 2 * ε < ‖(Ψ i y).2.1‖ ^ 2 + ‖(Ψ i y).2.2‖ ^ 2 := by
-      by_contra h
-      exact hy ⟨Ψ i y, not_lt.1 h, (Ψ i).toOpenPartialHomeomorph.left_inv hys⟩
-    rw [indicator_of_mem hys]
-    exact hμ₀ _ (by nlinarith [sq_nonneg ‖(Ψ i y).2.2‖])
-  · exact indicator_of_notMem hys _
 
 /-- Milnor's function has the same sublevel `{F ≤ c + ε}` as `f`: inside the tube
 `‖u‖² + 2‖v‖² < 2ε` of a normal form, `f = c - ‖u‖² + ‖v‖² < c + ε`. -/
 private theorem setOf_milnorBottFunction_le (hμ_nonneg : ∀ r, 0 ≤ μ r) :
     {x | milnorBottFunction Ψ f μ x ≤ c + ε} = {x | f x ≤ c + ε} := by
   ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ (milnorBottFunction_le hμ_nonneg x).trans hx⟩
+  refine ⟨fun hx ↦ ?_, fun hx ↦ (lowerOn_le (fun _ _ _ ↦ hμ_nonneg _) x).trans hx⟩
+  rw [mem_ofPred_eq] at hx ⊢
   by_cases hxs : ∃ i, x ∈ (Ψ i).source
   · obtain ⟨i, hi⟩ := hxs
-    have hfx := hf i x hi
-    have hFx := milnorBottFunction_of_mem (f := f) (μ := μ) hΨ hi
+    rw [milnorBottFunction_of_mem hΨ hi] at hx
     rcases le_or_gt (2 * ε) (‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2) with h | h
-    · rw [mem_ofPred_eq, hFx, hμ₀ _ h, sub_zero] at hx
-      exact hx
-    · rw [mem_ofPred_eq, hfx]
+    · rwa [hμ₀ _ h, sub_zero] at hx
+    · rw [hf i x hi]
       nlinarith [sq_nonneg ‖(Ψ i x).2.1‖]
-  · rwa [mem_ofPred_eq, milnorBottFunction_of_forall_notMem (not_exists.1 hxs)] at hx
+  · rwa [milnorBottFunction, lowerOn_of_forall_notMem (not_exists.1 hxs)] at hx
+
+/-- Points of `{F ≤ c - ε}` moved by Milnor's retraction lie in the closed tubes
+`‖u‖² + ‖v‖² ≤ 2ε`, where the retraction only shrinks the second component, so it keeps them
+in the tube and in `{F ≤ c - ε}`. -/
+private theorem bundleQuadraticHandleDeformation_mem_tube_and_mem
+    [∀ i b, InnerProductSpace ℝ (Eᵤ i b)] [∀ i b, InnerProductSpace ℝ (Eₛ i b)]
+    [∀ i, VectorBundle ℝ (Fᵤ i) (Eᵤ i)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)]
+    [∀ i, IsContinuousRiemannianBundle (Fᵤ i) (Eᵤ i)]
+    [∀ i, IsContinuousRiemannianBundle (Fₛ i) (Eₛ i)] (hμa : Antitone μ)
+    (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target) (i : ι) (x : M)
+    (hx : x ∈ {x | milnorBottFunction Ψ f μ x ≤ c - ε} ∩ (Ψ i).toOpenPartialHomeomorph.source)
+    (hxQ : (Ψ i).toOpenPartialHomeomorph x ∉
+      bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε) (t : unitInterval) :
+    bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
+        (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε
+        (t, (Ψ i).toOpenPartialHomeomorph x) ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ∧
+      (Ψ i).toOpenPartialHomeomorph.symm (bundleQuadraticHandleDeformation
+        (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
+        (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε
+        (t, (Ψ i).toOpenPartialHomeomorph x)) ∈ {x | milnorBottFunction Ψ f μ x ≤ c - ε} := by
+  obtain ⟨hxX, hx⟩ := hx
+  rw [mem_ofPred_eq] at hxX
+  -- Outside the tube, Milnor's function is `f`, so the point lies in the lower sublevel and in
+  -- the model set of the retraction.
+  have hxε : Ψ i x ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} := by
+    rw [mem_ofPred_eq]
+    by_contra hlt
+    refine hxQ ((mem_bundleQuadraticSublevelUnionCell_iff (hf i) hx).2 (.inl ?_))
+    rwa [milnorBottFunction_of_mem hΨ hx, hμ₀ _ (by nlinarith [sq_nonneg ‖(Ψ i x).2.2‖]),
+      sub_zero] at hxX
+  obtain ⟨s, hs, hst⟩ := exists_quadraticHandleDeformation_apply_eq_smul ε t (Ψ i x).2
+  have hG : bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
+      (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε (t, (Ψ i).toOpenPartialHomeomorph x) =
+        fibreScale s (Ψ i x) := by
+    rw [bundleQuadraticHandleDeformation_apply]
+    exact congrArg (TotalSpace.mk (Ψ i x).proj) hst
+  rw [hG, mem_ofPred_eq]
+  exact ⟨fibreScale_mem_tube hs hxε,
+    (milnorBottFunction_symm_scale_le hΨ hf hμa (hdisc i) hx hxε hs).trans hxX⟩
 
 omit hμ₀ in
 variable [∀ i b, NormedSpace ℝ (Eₛ i b)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)] in
@@ -319,8 +328,6 @@ private theorem snd_eq_zero_of_mfderiv_milnorBottFunction_eq_zero (hμ : ContDif
     (Ψ i x).2.2 = 0 := by
   set φ := (Ψ i).toOpenPartialHomeomorph
   set z := Ψ i x
-  set a := ‖z.2.1‖ ^ 2
-  set b := ‖z.2.2‖ ^ 2
   -- The curve `γ` scales the second component of `Ψ i x` by `t`.
   set γ : ℝ → M := fun t ↦ (Ψ i).symm (fibreScale t z)
   have h1 : fibreScale 1 z = z := by simp [fibreScale]
@@ -335,21 +342,17 @@ private theorem snd_eq_zero_of_mfderiv_milnorBottFunction_eq_zero (hμ : ContDif
       ((contMDiff_fibreScale z 1).mdifferentiableAt (by simp))
     have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
     rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
-  -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
+  -- Explicitly, `F (γ t) = c - ‖u‖² + t² ‖v‖² - μ (‖u‖² + 2 t² ‖v‖²)` near `t = 1`.
   have heq : milnorBottFunction Ψ f μ ∘ γ =ᶠ[𝓝 1]
-      fun t ↦ c - a + t ^ 2 * b - μ (a + 2 * (t ^ 2 * b)) := by
+      fun t ↦ c - ‖z.2.1‖ ^ 2 + t ^ 2 * ‖z.2.2‖ ^ 2 -
+        μ (‖z.2.1‖ ^ 2 + 2 * (t ^ 2 * ‖z.2.2‖ ^ 2)) := by
     filter_upwards [(contMDiff_fibreScale (IB := IB i) z).continuous.continuousAt.preimage_mem_nhds
       ((Ψ i).open_target.mem_nhds hz)] with t ht
     have h := (milnorBottFunction_symm_apply hΨ hf (μ := μ) ht).2
     rw [norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs] at h
     exact h
-  have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
-  have hg := ((hq.const_add (c - a))).sub
-    (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
-  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
-  have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
-  have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
-  simpa [b] using (mul_eq_zero.1 h).resolve_right (by linarith)
+  simpa using eq_zero_of_hasDerivAt_add_sq_mul_sub_comp (hμ.differentiable (by simp)) hμa heq
+    (by simpa using hd.hasDerivAt)
 
 omit hμ₀ in
 variable [∀ i b, NormedSpace ℝ (Eₛ i b)] [∀ i, VectorBundle ℝ (Fₛ i) (Eₛ i)] in
@@ -389,52 +392,24 @@ private theorem isCompact_image_tube (i : ι) :
     (n := ∞) (F := Fᵤ i) (V := Eᵤ i)
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (HB := HB i) (IB := IB i)
     (n := ∞) (F := Fₛ i) (V := Eₛ i)
-  (isCompact_tube i (2 * ε)).image_of_continuousOn
+  (isCompact_setOf_norm_sq_add_norm_sq_le_prod (2 * ε)).image_of_continuousOn
     ((Ψ i).toOpenPartialHomeomorph.continuousOn_symm.mono (hdisc i))
 
 variable [T2Space M]
 
 omit hΨ hf in
-/-- Away from the images of the closed tubes `‖u‖² + ‖v‖² ≤ 2ε`, Milnor's function agrees with
-`f` on a neighbourhood. -/
-private theorem milnorBottFunction_eventuallyEq
-    (hx : x ∉ ⋃ i, (Ψ i).toOpenPartialHomeomorph.symm ''
-      {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) :
-    milnorBottFunction Ψ f μ =ᶠ[𝓝 x] f := by
-  have hclosed : IsClosed (⋃ i, (Ψ i).toOpenPartialHomeomorph.symm ''
-      {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) :=
-    isClosed_iUnion_of_finite fun i ↦ (isCompact_image_tube hdisc i).isClosed
-  filter_upwards [hclosed.isOpen_compl.mem_nhds hx] with y hy
-  rw [milnorBottFunction, Finset.sum_eq_zero fun i _ ↦
-    indicator_eq_zero_of_notMem_image hμ₀ i fun h ↦ hy (mem_iUnion.2 ⟨i, h⟩), sub_zero]
-
-omit hΨ hf in
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorBottFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hμ : ContDiff ℝ ∞ μ) : ContMDiff I 𝓘(ℝ) ∞ (milnorBottFunction Ψ f μ) := by
-  refine ContMDiff.sub hfs (ContMDiff.sum fun i _ ↦ contMDiff_of_tsupport fun y hy ↦ ?_)
-  -- The lowering term is supported in the compact image of the tube, inside the source.
-  have hK : tsupport ((Ψ i).source.indicator
-        fun y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2)) ⊆
-      (Ψ i).toOpenPartialHomeomorph.symm '' {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} :=
-    closure_minimal (fun y hy ↦ not_not.1 fun h ↦ hy
-      (indicator_eq_zero_of_notMem_image hμ₀ i h))
-      (isCompact_image_tube hdisc i).isClosed
-  obtain ⟨z, hz, rfl⟩ := hK hy
-  have hs : (Ψ i).toOpenPartialHomeomorph.symm z ∈ (Ψ i).source :=
-    (Ψ i).toOpenPartialHomeomorph.map_target (hdisc i hz)
-  have hΨ' : ContMDiffAt I ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) ∞ (Ψ i)
-      ((Ψ i).toOpenPartialHomeomorph.symm z) :=
-    (Ψ i).contMDiffOn.contMDiffAt ((Ψ i).open_source.mem_nhds hs)
-  have hterm : ContMDiffAt I 𝓘(ℝ) ∞
-      (fun y ↦ μ (‖(Ψ i y).2.1‖ ^ 2 + 2 * ‖(Ψ i y).2.2‖ ^ 2))
-      ((Ψ i).toOpenPartialHomeomorph.symm z) :=
+    (hμ : ContDiff ℝ ∞ μ) : ContMDiff I 𝓘(ℝ) ∞ (milnorBottFunction Ψ f μ) :=
+  contMDiff_lowerOn (eqOn_zero_of_notMem_image hμ₀) (isCompact_image_tube hdisc)
+    (fun i ↦ (Ψ i).open_source) (image_tube_subset_source hdisc) hfs fun i ↦
     -- `μ (s + 2 t)` is a smooth function of `(s, t) = (‖u‖², ‖v‖²)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμ.comp (by fun_prop)
-    hg.contMDiff.contMDiffAt.comp _ (((contMDiff_norm_fst_sq i).contMDiffAt.comp _ hΨ').prodMk_space
-      ((contMDiff_norm_snd_sq i).contMDiffAt.comp _ hΨ'))
-  exact hterm.congr_of_eventuallyEq
-    (eventuallyEq_of_mem ((Ψ i).open_source.mem_nhds hs) fun y hy ↦ indicator_of_mem hy _)
+    hg.contMDiff.comp_contMDiffOn
+      ((((contMDiff_norm_sq_bundle (IB := IB i) (n := ∞) (Fᵤ i) (Eᵤ i)).comp
+        Bundle.Prod.contMDiff_fst).comp_contMDiffOn (Ψ i).contMDiffOn).prodMk_space
+      (((contMDiff_norm_sq_bundle (IB := IB i) (n := ∞) (Fₛ i) (Eₛ i)).comp
+        Bundle.Prod.contMDiff_snd).comp_contMDiffOn (Ψ i).contMDiffOn))
 
 /-- Milnor's function has no critical points in the band `F⁻¹[c - ε, c + ε]`, provided the
 critical points of `f` in the band `f⁻¹[c - ε, c + ε]` lie in the sources of the normal forms. -/
@@ -442,24 +417,14 @@ private theorem mfderiv_milnorBottFunction_ne_zero_of_mem_Icc
     (hε : 0 < ε) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) (hμa : Antitone μ)
     (hμ_nonneg : ∀ r, 0 ≤ μ r) (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (Ψ i).source)
-    (h₁ : c - ε ≤ milnorBottFunction Ψ f μ x) (h₂ : milnorBottFunction Ψ f μ x ≤ c + ε) :
+    (hx : milnorBottFunction Ψ f μ x ∈ Icc (c - ε) (c + ε)) :
     mfderiv I 𝓘(ℝ) (milnorBottFunction Ψ f μ) x ≠ 0 := by
   by_cases hxs : ∃ i, x ∈ (Ψ i).source
   · obtain ⟨i, hi⟩ := hxs
     exact mfderiv_milnorBottFunction_ne_zero hΨ hf hε hμ hμa hμ_nonneg hμ_eq
-      ((contMDiff_milnorBottFunction hμ₀ hdisc hfs hμ).mdifferentiableAt (by simp)) hi h₁
-  · replace hxs := not_exists.1 hxs
-    have hK : x ∉ ⋃ i, (Ψ i).toOpenPartialHomeomorph.symm ''
-        {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} := by
-      intro h
-      obtain ⟨i, z, hz, rfl⟩ := mem_iUnion.1 h
-      exact hxs i ((Ψ i).toOpenPartialHomeomorph.map_target (hdisc i hz))
-    have hfx := milnorBottFunction_of_forall_notMem (f := f) (μ := μ) hxs
-    rw [(milnorBottFunction_eventuallyEq hμ₀ hdisc hK).mfderiv_eq]
-    intro h0
-    obtain ⟨i, hi⟩ := mem_iUnion.1
-      (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, hfx ▸ h₁, hfx ▸ h₂⟩)
-    exact hxs i hi
+      ((contMDiff_milnorBottFunction hμ₀ hdisc hfs hμ).mdifferentiableAt (by simp)) hi hx.1
+  · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hμ₀)
+      (isCompact_image_tube hdisc) (image_tube_subset_source hdisc) hcrit (not_exists.1 hxs) hx
 
 end MilnorFunction
 
@@ -511,84 +476,37 @@ theorem exists_sublevel_union_negativeDiscBundles_deformation [Finite ι]
   obtain ⟨μ, hμ, hμa, hμ_nonneg, hμ₀, hμ_eq, -⟩ :=
     exists_contDiff_antitone_cutoff (by linarith : ε < 2 * ε) (by positivity : 0 ≤ 2 * ε)
   set F := milnorBottFunction Ψ f μ
-  set S := {x | f x ≤ c - ε} ∪ ⋃ i, (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0}
   have hFs : ContMDiff I 𝓘(ℝ) ∞ F := contMDiff_milnorBottFunction hμ₀ hdisc hfs hμ
+  have hFf (x : M) : F x ≤ f x := lowerOn_le (fun _ _ _ ↦ hμ_nonneg _) x
   have hX : {x | F x ≤ c + ε} = {x | f x ≤ c + ε} :=
     setOf_milnorBottFunction_le hΨ hf hμ₀ hμ_nonneg
-  have hSY : S ⊆ {x | F x ≤ c - ε} :=
-    union_subset (fun x hx ↦ (milnorBottFunction_le hμ_nonneg x).trans hx) <| iUnion_subset
-      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorBottFunction_le_of_mem_disc hΨ hf hμ_eq hxi hxε hxv
   have hab : c - ε ≤ c + ε := by linarith
-  have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := fun _ hx ↦ le_trans hx hab
+  have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := sublevel_mono F hab
+  have hSY : {x | f x ≤ c - ε} ∪
+      ⋃ i, (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0} ⊆ {x | F x ≤ c - ε} :=
+    union_subset (fun x hx ↦ (hFf x).trans hx) <| iUnion_subset
+      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorBottFunction_le_of_mem_disc hΨ hf hμ_eq hxi hxε hxv
   have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hFs.continuous) fun x hx ↦
-      ⟨hx.1.trans (milnorBottFunction_le hμ_nonneg x), (Set.ext_iff.1 hX x).1 hx.2⟩
-  -- In a normal form, the model set of Milnor's retraction is the part of `S` in the source.
-  have hQ (i : ι) {x : M} (hx : x ∈ (Ψ i).source) :
-      Ψ i x ∈ bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε ↔
-        f x ≤ c - ε ∨ x ∈ (Ψ i).source ∩ Ψ i ⁻¹' {z | ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0} := by
-    rw [mem_bundleQuadraticSublevelUnionCell, hf i x hx]
-    exact or_congr ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩ (by simp [hx])
-  have hS (x : M) (hxX : x ∈ {x | F x ≤ c - ε}) :
-      x ∈ S ↔ ∀ i, x ∈ (Ψ i).toOpenPartialHomeomorph.source →
-        (Ψ i).toOpenPartialHomeomorph x ∈
-          bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε := by
-    refine ⟨fun hxS i hi ↦ (hQ i hi).2 ?_, fun h ↦ ?_⟩
-    · rcases hxS with h | h
-      · exact .inl h
-      · obtain ⟨j, hj⟩ := mem_iUnion.1 h
-        obtain rfl : j = i := hΨ.eq (not_disjoint_iff.2 ⟨x, hj.1, hi⟩)
-        exact .inr hj
-    · by_cases hx : ∃ i, x ∈ (Ψ i).source
-      · obtain ⟨i, hi⟩ := hx
-        rcases (hQ i hi).1 (h i hi) with h' | h'
-        · exact .inl h'
-        · exact .inr (mem_iUnion.2 ⟨i, h'⟩)
-      · have hxX' : F x ≤ c - ε := hxX
-        rw [show F x = f x from milnorBottFunction_of_forall_notMem (not_exists.1 hx)] at hxX'
-        exact .inl hxX'
-  -- Points of `{F ≤ c - ε}` moved by Milnor's retraction lie in the tubes, where the retraction
-  -- only shrinks the second component.
-  have hXmove (i : ι) (x : M)
-      (hx : x ∈ {x | F x ≤ c - ε} ∩ (Ψ i).toOpenPartialHomeomorph.source)
-      (hxQ : (Ψ i).toOpenPartialHomeomorph x ∉
-        bundleQuadraticSublevelUnionCell (Fᵤ i) (Fₛ i) (Eᵤ i) (Eₛ i) ε) (t : unitInterval) :
-      bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
-          (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε
-          (t, (Ψ i).toOpenPartialHomeomorph x) ∈ {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ∧
-        (Ψ i).toOpenPartialHomeomorph.symm (bundleQuadraticHandleDeformation
-          (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
-          (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε
-          (t, (Ψ i).toOpenPartialHomeomorph x)) ∈ {x | F x ≤ c - ε} := by
-    obtain ⟨hxX, hx⟩ := hx
-    have hxε : ‖(Ψ i x).2.1‖ ^ 2 + ‖(Ψ i x).2.2‖ ^ 2 ≤ 2 * ε := by
-      by_contra hlt
-      refine hxQ ((hQ i hx).2 (.inl ?_))
-      have hxX' : F x ≤ c - ε := hxX
-      rwa [show F x = f x from milnorBottFunction_eq_of_lt hΨ hμ₀ hx (lt_of_not_ge hlt)] at hxX'
-    obtain ⟨s, hs, hst⟩ := exists_quadraticHandleDeformation_apply_eq_smul ε t (Ψ i x).2
-    have hG : bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
-        (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε (t, (Ψ i).toOpenPartialHomeomorph x) =
-          fibreScale s (Ψ i x) := by
-      rw [bundleQuadraticHandleDeformation_apply]
-      exact congrArg (TotalSpace.mk (Ψ i x).proj) hst
-    rw [hG]
-    refine ⟨?_, (milnorBottFunction_symm_scale_le hΨ hf hμa (hdisc i) hx hxε hs).trans hxX⟩
-    rw [mem_ofPred_eq, norm_fibreScale_snd_fst, norm_fibreScale_snd_snd, mul_pow, sq_abs]
-    linarith [mul_le_of_le_one_left (sq_nonneg ‖(Ψ i x).2.2‖) (pow_le_one₀ (n := 2) hs.1 hs.2)]
-  -- `{F ≤ c + ε}` retracts onto `{F ≤ c - ε}`, as `F` has no critical points in the compact band,
-  -- which retracts onto `S`, as shrinking the second component of a normal form lowers `F`.
-  exact hX ▸ ContinuousMap.HomotopicRel.exists_inter_deformation_trans hYX
-    (inter_subset_right.trans hSY)
-    (sublevelInclusion_eq_inclusion F hab ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
-      mfderiv_milnorBottFunction_ne_zero_of_mem_Icc hΨ hf hμ₀ hdisc hε hfs hμ hμa hμ_nonneg
-        hμ_eq hcrit)
-    (exists_inter_deformation_of_charts (φ := fun i ↦ (Ψ i).toOpenPartialHomeomorph)
-      (G := fun i ↦ bundleQuadraticHandleDeformation
-        (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
-        (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε)
-      hΨ hdisc hXmove (fun i ↦ isCompact_tube i (2 * ε))
-      (fun i ↦ bundleQuadraticHandleRetraction_mem _ _) hS)
+      ⟨hx.1.trans (hFf x), (Set.ext_iff.1 hX x).1 hx.2⟩
+  -- `{F ≤ c + ε}` retracts onto `{F ≤ c - ε}`, as `F` has no critical points in the compact band.
+  have hband := exists_sublevelDeformation hFs hab hFcompact fun _ h₁ h₂ ↦
+    mfderiv_milnorBottFunction_ne_zero_of_mem_Icc hΨ hf hμ₀ hdisc hε hfs hμ hμa hμ_nonneg hμ_eq
+      hcrit ⟨h₁, h₂⟩
+  rw [sublevelInclusion_eq_inclusion] at hband
+  -- `{F ≤ c - ε}` retracts onto the lower sublevel with the negative disc bundles attached, as
+  -- shrinking the second component of a normal form lowers `F`.
+  have hcell := exists_inter_deformation_of_charts (φ := fun i ↦ (Ψ i).toOpenPartialHomeomorph)
+    (G := fun i ↦ bundleQuadraticHandleDeformation (TauCeti.continuous_norm_bundle (Fᵤ i) (Eᵤ i))
+      (TauCeti.continuous_norm_bundle (Fₛ i) (Eₛ i)) ε)
+    hΨ hdisc (bundleQuadraticHandleDeformation_mem_tube_and_mem hΨ hf hμ₀ hμa hdisc)
+    (fun i ↦ isCompact_setOf_norm_sq_add_norm_sq_le_prod (2 * ε))
+    (fun i ↦ bundleQuadraticHandleRetraction_mem _ _)
+    fun x hx ↦ mem_sublevel_union_negativeDiscBundles_iff hΨ hf hx
+  -- The goal is stated for `{f ≤ c + ε}`, which is the same set as `{F ≤ c + ε}`.
+  rw [← hX]
+  exact ContinuousMap.HomotopicRel.exists_inter_deformation_trans hYX
+    (inter_subset_right.trans hSY) hband hcell
 
 end Attachment
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
+import TauCeti.Topology.FiberBundle.Prod
 
 /-!
 # Closed fibre discs and the frontier of their images
@@ -16,7 +17,8 @@ fibre discs as the closure of the open fibre discs. Over a compact base with fin
 model fibre, the closed discs are compact. Consequently a partial homeomorphism defined on
 these closed discs takes the sphere bundle precisely onto the frontier of the open disc image.
 The fibre spheres are compact as well, which makes, for instance, the unit tangent bundle of a
-compact Riemannian manifold compact.
+compact Riemannian manifold compact, and so are the closed tubes `‖u‖² + ‖v‖² ≤ r` of a Whitney
+sum over a compact Hausdorff base.
 This gives the topological boundary calculation for closed tubular neighbourhoods.
 
 ## References
@@ -74,6 +76,34 @@ theorem isCompact_setOf_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F
   (isCompact_setOf_norm_le_bundle hr).of_isClosed_subset
     (isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V)))
     fun _ hp => le_of_eq hp
+
+/-- The closed tube `‖u‖² + ‖v‖² ≤ r` of a Whitney sum `V₁ ×ᵇ V₂` of continuous Riemannian bundles
+with finite-dimensional model fibres over a compact Hausdorff base is compact. -/
+theorem isCompact_setOf_norm_sq_add_norm_sq_le_prod [CompactSpace B] [T2Space B]
+    {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
+    {V₁ V₂ : B → Type*} [∀ b, NormedAddCommGroup (V₁ b)] [∀ b, InnerProductSpace ℝ (V₁ b)]
+    [∀ b, NormedAddCommGroup (V₂ b)] [∀ b, InnerProductSpace ℝ (V₂ b)]
+    [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
+    [IsContinuousRiemannianBundle F₁ V₁]
+    [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+    [IsContinuousRiemannianBundle F₂ V₂] (r : ℝ) :
+    IsCompact {z : TotalSpace (F₁ × F₂) (V₁ ×ᵇ V₂) | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ r} := by
+  -- The tube lies in the product of the closed disc bundles of radius `√r` of the summands.
+  have hdiag := FiberBundle.Prod.isClosedEmbedding_diag (E₁ := V₁) (E₂ := V₂)
+    (FiberBundle.continuous_proj F₁ V₁) (FiberBundle.continuous_proj F₂ V₂)
+  have hu := (continuous_norm_bundle F₁ V₁).comp
+    (FiberBundle.Prod.continuous_totalSpaceFst (F₂ := F₂) (E₂ := V₂))
+  have hv := (continuous_norm_bundle F₂ V₂).comp
+    (FiberBundle.Prod.continuous_totalSpaceSnd (F₁ := F₁) (E₁ := V₁))
+  refine (hdiag.isCompact_preimage
+    ((isCompact_setOf_norm_le_bundle (F := F₁) (V := V₁) (continuous_const (y := √r))).prod
+      (isCompact_setOf_norm_le_bundle (F := F₂) (V := V₂)
+        (continuous_const (y := √r))))).of_isClosed_subset
+    (isClosed_le ((hu.pow 2).add (hv.pow 2)) continuous_const) fun z hz ↦ ?_
+  rw [mem_ofPred_eq] at hz
+  exact ⟨Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.2‖]),
+    Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.2.1‖])⟩
 
 end TauCeti
 
