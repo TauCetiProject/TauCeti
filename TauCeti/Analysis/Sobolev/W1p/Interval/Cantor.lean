@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.SpecialFunctions.CantorFunction
+import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 
 /-!
 # The Cantor function is not an interval Sobolev function
@@ -18,8 +19,6 @@ weak-derivative definition from mere almost-everywhere classical differentiabili
 
 We also obtain a smooth test function supported compactly inside `(0,1)` for which
 `∫ φ' C ≠ 0`: the zero classical derivative fails the defining weak-derivative identity.
-The proofs use the interval weak fundamental theorem of calculus and the existing
-Cantor-function facts, without constructing a second singular function or measure.
 
 ## References
 
@@ -66,7 +65,7 @@ theorem exists_testFunction_integral_lineDeriv_mul_cantorFunction_ne_zero :
     measurableSet_Ioo, locallyIntegrableOn_zero, fun φ ↦ ?_⟩
   simpa only [smul_eq_mul, mul_zero, integral_zero, neg_zero] using h φ
 
-/-- No interval Sobolev class has the Cantor function as an almost-everywhere
+/-- No Sobolev class in `W^{1,p}(0,1)` has the Cantor function as an almost-everywhere
 representative, for any `1 ≤ p ≤ ∞`. -/
 theorem W1p.value_not_ae_eq_cantorFunction {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ p) :
