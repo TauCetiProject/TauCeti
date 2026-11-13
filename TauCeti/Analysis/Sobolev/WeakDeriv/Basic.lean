@@ -134,6 +134,8 @@ weaken them for no gain.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
 * `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: the integrability fact, next to
   Mathlib's `TestFunction.integrable_smul`, that makes the defining integrals honest.
+* `TauCeti.integrable_fderiv_smul_of_locallyIntegrableOn`: the same fact with the derivative of
+  the test function written as `fderiv`.
 * `TauCeti.setIntegral_smul_eq_integral_smul` and
   `TauCeti.setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul`: a test function on `Ω` and its
   directional derivative vanish off `Ω`, so the defining integrals may equivalently be taken over
@@ -397,6 +399,16 @@ theorem integrable_lineDeriv_smul_of_locallyIntegrableOn {w : E → F}
     funext fun _ => TestFunction.lineDerivCLM_apply_of_le le_top
   simpa [hcoe] using
     TestFunction.integrable_smul (TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, ℝ)) hw
+
+/-- The `fderiv` form of `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: a first
+derivative of a test function on `Ω` scales a function locally integrable on `Ω` to a globally
+integrable one. -/
+theorem integrable_fderiv_smul_of_locallyIntegrableOn {w : E → F}
+    (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
+    Integrable (fun x => fderiv ℝ (φ : E → ℝ) x v • w x) μ := by
+  have hφ (x : E) : lineDeriv ℝ (φ : E → ℝ) x v = fderiv ℝ (φ : E → ℝ) x v :=
+    (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
+  simpa only [hφ] using integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v
 
 omit [OpensMeasurableSpace E] in
 /-- A test function on `Ω` vanishes off `Ω`, so integrating `φ • w` over `Ω` is the same as
