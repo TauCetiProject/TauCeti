@@ -91,8 +91,6 @@ algebras.
   algebra, the dimension count that makes the action an isomorphism, and the product decomposition
   of the even subalgebra on the two half-spin summands.
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
-* [Spin-representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The even-dimensional case".
 -/
 
 public section
@@ -398,7 +396,7 @@ noncomputable def SpinPolarizationData.evenCliffordEquivProdMatrix {l : ℕ}
   have hline := P.line_eq_bot_of_even_finrank (hV ▸ even_two_mul l)
   have hWfin := P.finrank_W_eq_of_finrank_eq_two_mul hV
   have hplus : finrank K (spinPlus Q P) = 2 ^ (l - 1) := by
-    rw [finrank_spinPlus P hW, hWfin]
+    rw [finrank_spinPlus P, hWfin]
   have hminus : finrank K (spinMinus Q P) = 2 ^ (l - 1) := by
     rw [finrank_spinMinus P hW, hWfin]
   exact (P.evenCliffordEquivProdEnd hline).trans
@@ -412,7 +410,7 @@ theorem SpinPolarizationData.evenCliffordEquivProdMatrix_apply {l : ℕ}
     (hW : P.W ≠ ⊥) (hV : finrank K V = 2 * l) (x : CliffordAlgebra.even Q) :
     P.evenCliffordEquivProdMatrix hW hV x =
       (Algebra.endAlgEquivMatrix K (spinPlus Q P)
-          (by rw [finrank_spinPlus P hW, P.finrank_W_eq_of_finrank_eq_two_mul hV])
+          (by rw [finrank_spinPlus P, P.finrank_W_eq_of_finrank_eq_two_mul hV])
           (spinPlusAction Q P (P.line_eq_bot_of_even_finrank (hV ▸ even_two_mul l)) x),
         Algebra.endAlgEquivMatrix K (spinMinus Q P)
           (by rw [finrank_spinMinus P hW, P.finrank_W_eq_of_finrank_eq_two_mul hV])

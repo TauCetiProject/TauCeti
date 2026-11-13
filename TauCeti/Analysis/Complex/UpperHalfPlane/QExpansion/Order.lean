@@ -17,6 +17,9 @@ order of its cusp function at zero, whenever that cusp function is analytic ther
 comparison applies both to periodic functions and to twisted functions used to construct
 Laurent expansions at cusps, including the zero germ with infinite order.
 
+Mathlib's `UpperHalfPlane.analyticOrderAt_eq_qExpansion_order` is the special case of a periodic,
+holomorphic function bounded at infinity, where analyticity of the cusp function is automatic.
+
 ## References
 
 * [Mathlib PR #39083](https://github.com/leanprover-community/mathlib4/pull/39083)
@@ -36,12 +39,7 @@ lemma qExpansion_order_eq_analyticOrderAt_cuspFunction {f : ℍ → ℂ}
     (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
     (qExpansion h f).order = analyticOrderAt (cuspFunction h f) 0 := by
   refine ENat.eq_of_forall_natCast_le_iff fun n ↦ ?_
-  rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hf]
-  refine ⟨fun H i hi ↦ ?_, fun H ↦ PowerSeries.nat_le_order _ _ fun i hi ↦ ?_⟩
-  · have hcoeff : (qExpansion h f).coeff i = 0 :=
-      PowerSeries.coeff_of_lt_order _ (lt_of_lt_of_le (mod_cast hi) H)
-    rw [qExpansion_coeff] at hcoeff
-    exact (mul_eq_zero.mp hcoeff).resolve_left (inv_ne_zero (mod_cast Nat.factorial_ne_zero i))
-  · rw [qExpansion_coeff, H i hi, mul_zero]
+  rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hf, PowerSeries.nat_le_order_iff]
+  simp [qExpansion_coeff, Nat.factorial_ne_zero]
 
 end TauCeti

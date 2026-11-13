@@ -11,15 +11,15 @@ public import TauCeti.Analysis.PDE.SymmetricEnergy
 /-!
 # Symmetry of integrated zero-drift energy forms
 
-Lane D of the PDE roadmap needs symmetric bilinear forms for the energy method and the
-Dirichlet spectrum.  `TauCeti.Analysis.PDE.SymmetricEnergy` proves the corresponding
-finite-dimensional facts for the pointwise jet integrand.  This file passes those facts
-through the Bochner integral for raw jet fields.
+The energy method and the Dirichlet spectrum need symmetric bilinear forms.
+`TauCeti.Analysis.PDE.SymmetricEnergy` proves the corresponding finite-dimensional facts for the
+pointwise jet integrand.  This file passes those facts through the Bochner integral for raw jet
+fields.
 
-The statements remain below the weak-derivative Sobolev-space layer: the inputs are coefficient
-fields and raw value-gradient jets `U V : X → ℝ × EuclideanSpace ℝ n`.  Once Lane A supplies
-Sobolev jets, these lemmas give the symmetric part of the weak form without unfolding the
-integrand.
+The inputs are coefficient fields and raw value-gradient jets
+`U V : X → ℝ × EuclideanSpace ℝ n` rather than Sobolev functions.  Applied to the jets of
+`H¹(Ω)` functions, these lemmas give the symmetry of the weak form without unfolding the
+integrand (`TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`).
 
 ## Main declarations
 

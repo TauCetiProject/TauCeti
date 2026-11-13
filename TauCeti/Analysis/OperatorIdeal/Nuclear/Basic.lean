@@ -9,8 +9,8 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import Mathlib.Topology.Semicontinuity.Basic
-public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 /-!
 # The nuclear gauge of a bounded operator
@@ -23,7 +23,7 @@ laws needed to construct the trace-class operator ideal.
 
 The gauge is lower semicontinuous in operator norm. Finite gauge forces approximation
 numbers to tend to zero. Over a locally compact scalar field this implies compactness
-when the target is complete, and the identity on an infinite-dimensional Banach space
+when the target is complete, and the identity on an infinite-dimensional normed space
 has infinite gauge.
 Finite-rank operators have finite gauge, computed by any prefix beyond their rank.
 
@@ -70,7 +70,7 @@ theorem kyFanGauge_le_nuclearENorm (T : E →L[𝕜] F) (k : ℕ) :
 
 /-- The nuclear gauge dominates the operator norm. -/
 theorem enorm_le_nuclearENorm (T : E →L[𝕜] F) : ‖T‖ₑ ≤ T.nuclearENorm := by
-  simpa [enorm_eq_nnnorm] using T.kyFanGauge_le_nuclearENorm 1
+  simpa [eNorm_eq_nnNorm] using T.kyFanGauge_le_nuclearENorm 1
 
 @[simp]
 theorem nuclearENorm_zero : (0 : E →L[𝕜] F).nuclearENorm = 0 := by
@@ -80,7 +80,7 @@ theorem nuclearENorm_zero : (0 : E →L[𝕜] F).nuclearENorm = 0 := by
 @[simp]
 theorem nuclearENorm_smul (c : 𝕜) (T : E →L[𝕜] F) :
     (c • T).nuclearENorm = ‖c‖ₑ * T.nuclearENorm := by
-  simp [nuclearENorm_def, singularValue_smul, ENNReal.tsum_mul_left, enorm_eq_nnnorm]
+  simp [nuclearENorm_def, singularValue_smul, ENNReal.tsum_mul_left, eNorm_eq_nnNorm]
 
 /-- Negation preserves the nuclear gauge. -/
 @[simp]
@@ -90,7 +90,7 @@ theorem nuclearENorm_neg (T : E →L[𝕜] F) : (-T).nuclearENorm = T.nuclearENo
 /-- The nuclear gauge satisfies the two-sided ideal bound. -/
 theorem nuclearENorm_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E →L[𝕜] F) :
     (A ∘L T ∘L B).nuclearENorm ≤ ‖A‖ₑ * T.nuclearENorm * ‖B‖ₑ := by
-  simp only [nuclearENorm_def, enorm_eq_nnnorm, ← ENNReal.tsum_mul_left,
+  simp only [nuclearENorm_def, eNorm_eq_nnNorm, ← ENNReal.tsum_mul_left,
     ← ENNReal.tsum_mul_right]
   exact _root_.tsum_le_tsum fun n ↦ by
     exact ENNReal.coe_le_coe.mpr (singularValue_comp_comp_le A T B n)
@@ -127,7 +127,7 @@ theorem nuclearENorm_smulRight (f : StrongDual 𝕜 E) (y : F) :
           exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_singleton y)))
       _ ≤ 1 := by simpa using rank_span_le ({y} : Set F)
   rw [nuclearENorm_eq_kyFanGauge_of_rank_le _ hr]
-  simp [enorm_eq_nnnorm, nnnorm_smulRight_apply]
+  simp [eNorm_eq_nnNorm, nnNorm_smulRight_apply]
 
 /-- Finite-rank operators have finite nuclear gauge. -/
 theorem nuclearENorm_ne_top_of_rank_le (T : E →L[𝕜] F) {k : ℕ} (hT : T.rank ≤ k) :
@@ -174,15 +174,20 @@ end Compact
 
 section Identity
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [LocallyCompactSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The identity on an infinite-dimensional Banach space has infinite nuclear gauge. -/
+/-- The identity on an infinite-dimensional normed space has infinite nuclear gauge. -/
 theorem nuclearENorm_id_eq_top (hE : ¬ FiniteDimensional 𝕜 E) :
     (ContinuousLinearMap.id 𝕜 E).nuclearENorm = ∞ := by
   by_contra h
-  exact hE (FiniteDimensional.of_isCompactOperator_id
-    ((ContinuousLinearMap.id 𝕜 E).isCompactOperator_of_nuclearENorm_ne_top h))
+  have hs := (nuclearENorm_ne_top_iff_summable _).1 h
+  obtain ⟨n, hn⟩ := ((NNReal.tendsto_atTop_zero_of_summable hs).eventually
+    (gt_mem_nhds one_pos)).exists
+  -- an infinite-dimensional space has rank above every natural number, so `aₙ(id) = 1`
+  have hrank : (n : Cardinal) < Module.rank 𝕜 E :=
+    Cardinal.natCast_lt_aleph0.trans_le
+      (not_lt.1 fun h ↦ hE (Module.rank_lt_aleph0_iff.1 h))
+  simp [hrank] at hn
 
 end Identity
 

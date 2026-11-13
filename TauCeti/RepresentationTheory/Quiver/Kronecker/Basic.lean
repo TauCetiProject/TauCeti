@@ -198,11 +198,11 @@ theorem isEmpty_hom_from_tgt (b : Kronecker A) : IsEmpty ((tgt : Kronecker A) �
 
 /-- The source vertex is a source. -/
 theorem isSource_src : IsSource (src : Kronecker A) :=
-  (IsSource_def _).mpr isEmpty_hom_to_src
+  (isSource_iff _).mpr isEmpty_hom_to_src
 
 /-- The target vertex is a sink. -/
 theorem isSink_tgt : IsSink (tgt : Kronecker A) :=
-  (IsSink_def _).mpr isEmpty_hom_from_tgt
+  (isSink_iff _).mpr isEmpty_hom_from_tgt
 
 instance instFiniteHom [Finite A] : ∀ a b : Kronecker A, Finite (a ⟶ b)
   | .src, .src => inferInstanceAs (Finite PEmpty)
@@ -413,7 +413,7 @@ instance elaborated from it would be the unreflected one. -/
 /-- **In the reflected quiver the source vertex is a sink.** Reflecting at `tgt` reverses every
 arrow, so the generalized Kronecker quiver becomes the same quiver read the other way round. -/
 theorem isSink_reflect_src : @IsSink (Reflect (Kronecker A) tgt) _ src :=
-  (@IsSink_def (Reflect (Kronecker A) tgt) _ src).mpr fun b ↦ by
+  (@isSink_iff (Reflect (Kronecker A) tgt) _ src).mpr fun b ↦ by
     cases b with
     | src =>
       rw [hom_reflect tgt src src, reflectHom_of_ne_of_ne src_ne_tgt src_ne_tgt]

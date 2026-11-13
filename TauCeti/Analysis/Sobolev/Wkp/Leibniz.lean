@@ -196,7 +196,7 @@ theorem norm_iteratedGradient_one_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2}
   exact h.trans
     (add_le_add hzun (norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hg hh hzu hw))
 
-/-- **The Leibniz remainder of a cutoff in `Lᵖ`.** Let `ζ` be smooth with compact support,
+/-- **The Leibniz remainder of a cutoff in `Lᵖ`.** Let `ζ` be smooth with
 `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`, and let `u, w ∈ W^{2,p}(Ω)` with `w = ζ u` almost everywhere on `Ω`.
 Then `D²w = ζ D²u + T` for some `T ∈ Lᵖ(Ω)` that vanishes off the support of `ζ` and satisfies
 `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`, where `∇u` is the weak gradient
@@ -205,7 +205,7 @@ Then `D²w = ζ D²u + T` for some `T ∈ Lᵖ(Ω)` that vanishes off the suppor
 Leibniz rule `TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul` enters the localization
 of second-order estimates. -/
 theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ zeta)
-    (hcpt : HasCompactSupport zeta) {M₁ M₂ : ℝ} (hM₁ : ∀ x, ‖∇ zeta x‖ ≤ M₁)
+    {M₁ M₂ : ℝ} (hM₁ : ∀ x, ‖∇ zeta x‖ ≤ M₁)
     (hM₂ : ∀ x, ‖fderiv ℝ (∇ zeta) x‖ ≤ M₂) {u w : Wkp mu Omega p 2}
     (hw : (value 2 w : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta x * value 2 u x) :
     ∃ T : Lp (IteratedGradient E 1) p (mu.restrict Omega),
@@ -214,8 +214,23 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
       ‖T‖ ≤ 2 * M₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + M₂ * ‖value 2 u‖ ∧
       lpNorm (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) =
         ‖iteratedGradient 1 w - T‖ := by
-  have hζH : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) :=
-    (hzeta.continuous.memLp_top_of_hasCompactSupport hcpt (mu.restrict Omega)).smul (Lp.memLp _)
+  -- `ζ D²u ∈ Lᵖ` because `D²w ∈ Lᵖ` and the Leibniz remainder is bounded by `Lᵖ` functions.
+  have hζH : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) := by
+    have hR : MemLp (fun x => iteratedGradient 1 w x - zeta x • iteratedGradient 1 u x) p
+        (mu.restrict Omega) := by
+      refine MemLp.of_le (((Lp.memLp (iteratedGradient 0 (lowerOrder 1 u))).norm.const_mul
+        (2 * M₁)).add ((Lp.memLp (value 2 u)).norm.const_mul M₂)) ?_ ?_
+      · exact (Lp.aestronglyMeasurable _).sub
+          (hzeta.continuous.aestronglyMeasurable.smul (Lp.aestronglyMeasurable _))
+      · filter_upwards [iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw] with x hx
+        rw [hx, add_assoc, add_assoc, add_sub_cancel_left, ← add_assoc]
+        refine (norm_leibnizRemainder_le zeta _ _ x).trans ?_
+        simp only [Pi.add_apply, Real.norm_eq_abs]
+        refine le_trans ?_ (le_abs_self _)
+        gcongr <;> apply_assumption
+    convert (Lp.memLp (iteratedGradient 1 w)).sub hR using 1
+    ext x
+    simp
   -- The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is the difference `D²w - ζ D²u` in `Lᵖ`.
   have hT : ∀ᵐ x ∂mu.restrict Omega, (iteratedGradient 1 w - hζH.toLp _) x =
       (innerSL ℝ (∇ zeta x)).smulRight (iteratedGradient 0 (lowerOrder 1 u) x)

@@ -25,9 +25,9 @@ proves that it is additive in short exact sequences. This file adds the facts ab
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
 generated submodules already see the whole length, the ascent of finite length along a scalar
-tower, the length of `R ⧸ 𝔪` for a local ring, the finite length of a quotient of a noetherian
-local ring by a maximal-primary ideal, and the infinite length of a ring of positive Krull
-dimension over itself.
+tower, the length of `R ⧸ 𝔪` for a maximal ideal `𝔪`, the finite length of a quotient of a
+noetherian ring by an ideal whose radical is maximal, and the infinite length of a ring of positive
+Krull dimension over itself.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -63,18 +63,19 @@ applies to the quotients appearing here without any further appeal to defeq.
   ambient module.
 * `TauCeti.length_quotient_lsmul_congr`: the length of `M ⧸ aM` is a linear-equivalence invariant.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
-* `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: `A ⧸ I` has finite length when `I`
-  contains a non-zero-divisor.
+* `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: over a noetherian ring `A` of dimension
+  at most one, `A ⧸ I` has finite length when `I` contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
   at most one, a finitely generated module killed by a non-zero-divisor has finite length.
 * `LinearMap.ker_mkQ_comp_codRestrict` and `LinearMap.length_quotient_sup_comap_ker`: for a
   linear map `e`, the kernel of the induced map `M → eM ⧸ a·eM`, and the length of the quotient
   of `M` by it.
-* `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
+* `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
+  `A`, the quotient being a simple module.
 * `Ideal.isFiniteLength_quotient_of_isMaximal_radical`: `A ⧸ I` has finite length when `A` is
   noetherian and the radical of `I` is maximal. It is in the namespace of `Ideal` rather than that
   of `TauCeti` because its first explicit argument is an ideal, so that a consumer reads it as
@@ -311,12 +312,6 @@ open _root_.IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsLocalRing A]
 
-/-- The length of a quotient by the maximal ideal of a local ring is one, the quotient being the
-residue field. -/
-@[simp]
-theorem length_quotient_maximalIdeal_eq_one : Module.length A (A ⧸ maximalIdeal A) = 1 :=
-  Module.length_eq_one_iff.mpr (isSimpleModule_iff_isCoatom.mpr (maximalIdeal.isMaximal A).out)
-
 /-- The residue field of a local ring has length one over the ring. -/
 @[simp]
 theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
@@ -329,6 +324,18 @@ end LocalRing
 end TauCeti
 
 namespace Ideal
+
+section Ring
+
+variable {A : Type*} [Ring A]
+
+/-- The quotient of a ring by a maximal left ideal has length one over the ring, being a simple
+module. -/
+@[simp]
+theorem length_quotient_eq_one (m : Ideal A) [m.IsMaximal] : Module.length A (A ⧸ m) = 1 :=
+  Module.length_eq_one_iff.mpr (isSimpleModule_iff_isCoatom.mpr IsMaximal.out)
+
+end Ring
 
 section NoetherianRing
 
@@ -402,7 +409,7 @@ theorem length_localizedModule_quotient_eq_one (𝔭 : Ideal A) [𝔭.IsPrime] :
       (Algebra.linearMap A (Localization.AtPrime 𝔭)))
     (LocalizedModule.mkLinearMap 𝔭.primeCompl (A ⧸ 𝔭))).restrictScalars (Localization.AtPrime 𝔭)
   rw [← e.length_eq, Ideal.localized'_eq_map, Localization.AtPrime.map_eq_maximalIdeal,
-    TauCeti.length_quotient_maximalIdeal_eq_one]
+    length_quotient_eq_one]
 
 end Localization
 

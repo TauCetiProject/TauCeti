@@ -186,6 +186,13 @@ theorem _root_.ContRepresentation.integratedOperatorL1_toL1 {f : G → 𝕜} (hf
   filter_upwards [hf.coeFn_toL1] with g hg
   rw [hg]
 
+/-- On an incomplete space every Bochner integral is the junk value `0`, so the integrated form
+vanishes. -/
+theorem _root_.ContRepresentation.integratedOperatorL1_of_not_completeSpace
+    (hE : ¬CompleteSpace E) (f : G →₁[μ] 𝕜) : π.integratedOperatorL1 hcont hbdd μ f = 0 := by
+  ext v
+  simp [ContRepresentation.integratedOperatorL1_apply, integral_of_not_completeSpace hE]
+
 /-- The integrated form is bounded by the uniform bound of the representation times the `L¹`
 norm of the weight. -/
 theorem _root_.ContRepresentation.norm_integratedOperatorL1_le {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C)
@@ -208,11 +215,14 @@ variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddGroup G] [Topolog
 
 /-- Translating the weight on the left by `h` amounts to composing the integrated form with
 `π h`. -/
-theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [MeasurableAdd G]
+theorem _root_.ContRepresentation.comp_integratedOperatorL1 [MeasurableAdd G]
     [μ.IsAddLeftInvariant] (h : G) (f : G →₁[μ] 𝕜) :
     π (.ofAdd h) ∘L π.integratedOperatorL1 hcont hbdd μ f =
       π.integratedOperatorL1 hcont hbdd μ
         (Lp.compMeasurePreserving (fun g ↦ -h + g) (measurePreserving_add_left μ (-h)) f) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [ContRepresentation.integratedOperatorL1_of_not_completeSpace hE]
   ext v
   rw [ContinuousLinearMap.comp_apply, ContRepresentation.integratedOperatorL1_apply,
     ContRepresentation.integratedOperatorL1_apply]
@@ -234,7 +244,7 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [CompleteSpace E] [M
 /-- Although `π` is only strongly continuous, `h ↦ π h ∘L π(f)` is continuous in the operator norm:
 by `comp_integratedOperatorL1` it is the integrated form of the left translates of `f`, which
 depend continuously on `h` in `L¹`. -/
-theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1 [CompleteSpace E]
+theorem _root_.ContRepresentation.continuous_comp_integratedOperatorL1
     [IsTopologicalAddGroup G] [MeasurableAdd G] [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ]
     (f : G →₁[μ] 𝕜) :
     Continuous fun h : G ↦ π (.ofAdd h) ∘L π.integratedOperatorL1 hcont hbdd μ f := by
@@ -251,7 +261,6 @@ section Commute
 variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [AddCommMonoid G] [TopologicalSpace G]
   [MeasurableSpace G] [R1Space G] [BorelSpace G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
 
@@ -260,6 +269,9 @@ integrated operators. No invariance hypothesis on the measure is needed. -/
 theorem _root_.ContRepresentation.commute_integratedOperatorL1
     (g : Multiplicative G) (f : G →₁[μ] 𝕜) :
     Commute (π g) (π.integratedOperatorL1 hcont hbdd μ f) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [ContRepresentation.integratedOperatorL1_of_not_completeSpace hE]
   apply ContinuousLinearMap.ext
   intro v
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
@@ -279,6 +291,9 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
 theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G →₁[μ] 𝕜) :
     Commute (π.integratedOperatorL1 hcont hbdd μ f₁)
       (π.integratedOperatorL1 hcont hbdd μ f₂) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [ContRepresentation.integratedOperatorL1_of_not_completeSpace hE]
   apply ContinuousLinearMap.ext
   intro v
   simp only [mul_apply_eq_comp]
@@ -304,7 +319,7 @@ section Convolution
 variable {𝕜 G E : Type*} [RCLike 𝕜] [AddCommGroup G] [TopologicalSpace G] [MeasurableSpace G]
   [R1Space G] [BorelSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E]
-  [CompleteSpace E] [SecondCountableTopologyEither G E]
+  [SecondCountableTopologyEither G E]
   {μ : Measure G} [μ.InnerRegularCompactLTTop] [SFinite μ] [μ.IsAddRightInvariant]
   {π : ContRepresentation 𝕜 (Multiplicative G) E}
   {hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v} {hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C}
@@ -317,6 +332,9 @@ theorem _root_.ContRepresentation.integratedOperatorL1_convolution {f₁ f₂ : 
         ((hf₁.integrable_convolution (ContinuousLinearMap.mul 𝕜 𝕜) hf₂).toL1 _) =
       π.integratedOperatorL1 hcont hbdd μ (hf₁.toL1 f₁) ∘L
         π.integratedOperatorL1 hcont hbdd μ (hf₂.toL1 f₂) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [ContRepresentation.integratedOperatorL1_of_not_completeSpace hE]
   obtain ⟨C, hC⟩ := hbdd
   ext v
   rw [ContinuousLinearMap.comp_apply, ContRepresentation.integratedOperatorL1_toL1,
