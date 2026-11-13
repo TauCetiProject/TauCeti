@@ -119,7 +119,7 @@ theorem zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure {
           by_contra h
           exact hrp ⟨lt_of_le_of_ne hv.1 (Ne.symm h), hv.2.1⟩
         rw [negativeBinomialMeasure_zero hv.2.1 hv.2.2, Measure.map_dirac' (by fun_prop)]
-        exact integrable_dirac enorm_lt_top
+        exact integrable_dirac eNorm_lt_top
       · rw [negativeBinomialMeasure_eq_zero_of_invalid hv, Measure.map_zero]
         exact integrable_zero_measure
     rw [huniv, interior_univ]
