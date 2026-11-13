@@ -31,9 +31,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   into unitarity.
 * `Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup`: a complex `2 × 2` matrix is
   unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
-* `Matrix.im_apply_eq_zero_of_mul_transpose_eq_one`: a complex unitary matrix `W` with `W Wᵀ = 1`
-  is real.
-* `Matrix.exists_mem_orthogonalGroup_map_ofReal_eq`: such a matrix is a real orthogonal matrix.
 
 
 ## Main definitions
@@ -52,31 +49,6 @@ theorem Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- A complex unitary matrix `W` with `W Wᵀ = 1` has real entries: `Wᵀ` and `Wᴴ` are then both
-inverses of `W`, so they agree. -/
-theorem im_apply_eq_zero_of_mul_transpose_eq_one {W : Matrix n n ℂ} (hW : W ∈ unitaryGroup n ℂ)
-    (hWT : W * Wᵀ = 1) (i j : n) : (W i j).im = 0 := by
-  have hT : Wᵀ = star W := by
-    calc Wᵀ = star W * W * Wᵀ := by rw [mem_unitaryGroup_iff'.1 hW, one_mul]
-      _ = star W := by rw [mul_assoc, hWT, mul_one]
-  have h := congrFun (congrFun hT j) i
-  rw [transpose_apply, star_apply, RCLike.star_def] at h
-  exact Complex.conj_eq_iff_im.1 h.symm
-
-/-- A complex unitary matrix `W` with `W Wᵀ = 1` is a real orthogonal matrix. -/
-theorem exists_mem_orthogonalGroup_map_ofReal_eq {W : Matrix n n ℂ} (hW : W ∈ unitaryGroup n ℂ)
-    (hWT : W * Wᵀ = 1) : ∃ O ∈ orthogonalGroup n ℝ, O.map ((↑) : ℝ → ℂ) = W := by
-  have hOW : (W.map Complex.re).map ((↑) : ℝ → ℂ) = W := by
-    ext i j
-    exact Complex.ext (by simp) (by simp [im_apply_eq_zero_of_mul_transpose_eq_one hW hWT])
-  refine ⟨W.map Complex.re, ?_, hOW⟩
-  rw [mem_orthogonalGroup_iff]
-  refine map_injective Complex.ofReal_injective ?_
-  change Complex.ofRealHom.mapMatrix (_ * _) = Complex.ofRealHom.mapMatrix 1
-  rw [map_mul, map_one]
-  change (W.map Complex.re).map ((↑) : ℝ → ℂ) * (W.map Complex.re)ᵀ.map ((↑) : ℝ → ℂ) = 1
-  rw [transpose_map, hOW, hWT]
 
 /-- **Recognizing unitary matrices.** If `Aᴴ A` is a scalar matrix and the determinant of `A` has
 norm one, then `A` is unitary: the scalar is the squared norm of a column of `A`, a nonnegative

@@ -6,42 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Unitary
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Lagrangian
 public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
-# The Robbin–Salamon index of a closed path of Lagrangian frames
+# The Robbin–Salamon index of a loop of Lagrangian subspaces
 
 There are two Maslov indices of a loop of Lagrangian subspaces of `ℂⁿ`, defined differently.
 
-* The **native index** `TauCeti.TotallyRealLoop.maslovIndex` of a loop of maximal totally real
-  subspaces is the degree of its loop of Maslov phases `t ↦ det A / conj (det A)`, where `A` is a
-  complex-linear automorphism carrying a fixed reference subspace to the subspace at time `t`.
+* The **phase-degree index** `TauCeti.TotallyRealLoop.maslovIndex` of a loop of maximal totally
+  real subspaces is the degree of its loop of Maslov phases `t ↦ det A / conj (det A)`, where `A`
+  is a complex-linear automorphism carrying a fixed reference subspace to the subspace at time `t`.
 * The **Robbin–Salamon index** `Matrix.UnitaryGroup.maslovIndex` of a path `γ` of unitary frames is
   Souriau's spectral formula for the index of the path of Lagrangians `γ t ℝⁿ` relative to `ℝⁿ`.
   It is defined for every path, with half-integer contributions from the endpoints.
 
 This file shows that the two agree when the path of Lagrangians closes up
-(`Matrix.UnitaryGroup.coe_maslovIndex_lagrangianLoop`): the Robbin–Salamon index of a path of
-unitary frames whose Lagrangians close up into a loop is the native index of that loop. This is the
-comparison between the phase-degree normalization of the Maslov index of loops, the one used for
-totally real boundary conditions, and the path index of Robbin and Salamon, through which the
-Conley–Zehnder index of a symplectic path is defined by its graph. The pointwise input is that the
-Maslov phase of `U ℝⁿ` relative to `ℝⁿ` is `det U ^ 2` for a unitary `U`
+(`Matrix.UnitaryGroup.intCast_maslovIndex_lagrangianLoop`): the Robbin–Salamon index of a path of
+unitary frames whose Lagrangians close up into a loop is the phase-degree index of that loop. This
+is the comparison between the phase-degree normalization of the Maslov index of loops, the one
+used for totally real boundary conditions, and the path index of Robbin and Salamon, through which
+the Conley–Zehnder index of a symplectic path is defined by its graph. The pointwise input is that
+the Maslov phase of `U ℝⁿ` relative to `ℝⁿ` is `det U ^ 2` for a unitary `U`
 (`Matrix.UnitaryGroup.maslovPhase_eq_det_sq`), which is also the determinant of the Souriau map
 `U Uᵀ`. Together with
 `TauCeti.TotallyRealLoop.exists_unitary_maslovIndex_eq`, which deforms every loop of maximal
 totally real subspaces of `ℂⁿ` to a loop of Lagrangian subspaces framed by unitary matrices, it
-expresses the native index of every such loop as a Robbin–Salamon index.
+expresses the phase-degree index of every such loop as a Robbin–Salamon index.
 
 The Lagrangians framed by two unitary matrices agree exactly when their Souriau maps `U Uᵀ` agree
 (`Matrix.UnitaryGroup.souriau_eq_souriau_iff_realImage_eq`); a path of unitary frames whose
 Lagrangians close up therefore defines a loop of maximal totally real subspaces
 (`Matrix.UnitaryGroup.lagrangianLoop`).
 
-Through the comparison, the Robbin–Salamon index of closed paths inherits the invariance of the
-native index under free homotopies, along which the endpoints move
+Through the comparison, the Robbin–Salamon index of paths whose Lagrangians close up inherits the
+invariance of the phase-degree index under free homotopies, along which the endpoints move
 (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`). For a general path the
 Robbin–Salamon index is only invariant under homotopies fixing the endpoints
 (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopic`).
@@ -53,10 +54,10 @@ Robbin–Salamon index is only invariant under homotopies fixing the endpoints
 * `Matrix.UnitaryGroup.maslovPhase_eq_det_sq`: the Maslov phase of `U ℝⁿ` relative to `ℝⁿ`.
 * `Matrix.UnitaryGroup.lagrangianLoop`: the loop `t ↦ γ t ℝⁿ` of a path of unitary frames whose
   Lagrangians close up.
-* `Matrix.UnitaryGroup.coe_maslovIndex_lagrangianLoop`: its native index is the Robbin–Salamon
-  index of `γ`.
+* `Matrix.UnitaryGroup.intCast_maslovIndex_lagrangianLoop`: its phase-degree index is the
+  Robbin–Salamon index of `γ`.
 * `Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`: free homotopy invariance of the
-  Robbin–Salamon index of closed paths.
+  Robbin–Salamon index of paths whose Lagrangians close up.
 
 ## References
 
@@ -99,11 +100,16 @@ theorem souriau_eq_souriau_iff_realImage_eq {U V : unitaryGroup n ℂ} :
             (star (U : Matrix n n ℂ) * (U : Matrix n n ℂ))ᵀ := by
             rw [hUV, transpose_mul]; simp only [mul_assoc]
         _ = 1 := by rw [star_mul_self U, transpose_one, one_mul]
-    obtain ⟨O, hO, hOW⟩ := exists_mem_orthogonalGroup_map_ofReal_eq hWu hWT
-    have hV : (V : Matrix n n ℂ) = U * O.map ((↑) : ℝ → ℂ) := by
-      rw [hOW, hWdef, ← mul_assoc, mem_unitaryGroup_iff.1 U.2, one_mul]
-    have hOu : IsUnit O := (Unitary.toUnits (⟨O, hO⟩ : orthogonalGroup n ℝ)).isUnit
-    rw [hV, realImage_mul_map_ofReal _ hOu]
+    -- `O(n, ℂ) ∩ U(n) = O(n)`, so `W` is a real orthogonal matrix `O`.
+    have hWO : Unitary.toUnits (⟨W, hWu⟩ : unitaryGroup n ℂ) ∈
+        GLOrthogonal n ℂ ⊓ unitarySubgroup (GL n ℂ) :=
+      ⟨GLOrthogonal.mem_iff'.2 hWT, mem_unitarySubgroup_GL_iff_mem_unitaryGroup.2 hWu⟩
+    obtain ⟨O, -, hOW⟩ := (GLOrthogonal.inf_unitarySubgroup_eq_map_real n ℂ).le hWO
+    have hV : (V : Matrix n n ℂ) = U * (O : Matrix n n ℝ).map ((↑) : ℝ → ℂ) := by
+      have hOW' : (O : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = W := by
+        simpa [Matrix.GeneralLinearGroup.map, Unitary.toUnits] using congrArg Units.val hOW
+      rw [hOW', hWdef, ← mul_assoc, mem_unitaryGroup_iff.1 U.2, one_mul]
+    rw [hV, realImage_mul_map_ofReal _ O.isUnit]
   · intro h
     -- Frames of the same Lagrangian differ by a real orthogonal matrix, which drops out of `U Uᵀ`.
     have hre (W : unitaryGroup n ℂ) :
@@ -156,10 +162,11 @@ theorem maslovPhase_eq_det_sq (U : unitaryGroup n ℂ) {L : Submodule ℝ (Eucli
     Unitary.star_mul_self_of_mem (det_of_mem_unitary U.2)
   linear_combination -(U : Matrix n n ℂ).det * hconj
 
-/-- **Loop comparison.** The native Maslov index of the loop of Lagrangians `t ↦ γ t ℝⁿ` of a path
-`γ` of unitary frames that closes up is the Robbin–Salamon index of `γ`. -/
+/-- **Loop comparison.** Let `γ` be a path of unitary frames whose path of Lagrangians `t ↦ γ t ℝⁿ`
+closes up. The phase-degree Maslov index (`TauCeti.TotallyRealLoop.maslovIndex`) of this loop of
+Lagrangians is the Robbin–Salamon index of `γ`. -/
 @[simp]
-theorem coe_maslovIndex_lagrangianLoop {U V : unitaryGroup n ℂ} (γ : Path U V)
+theorem intCast_maslovIndex_lagrangianLoop {U V : unitaryGroup n ℂ} (γ : Path U V)
     (h : souriau U = souriau V) :
     ((lagrangianLoop γ h).maslovIndex : ℝ) = maslovIndex γ := by
   rw [maslovIndex_eq_degree γ h,
@@ -168,10 +175,11 @@ theorem coe_maslovIndex_lagrangianLoop {U V : unitaryGroup n ℂ} (γ : Path U V
   rw [maslovPhase_eq_det_sq (γ t) _ (lagrangianLoop_apply γ h t)]
   simp [detCircle_souriau, coe_detCircle]
 
-/-- **Free homotopy invariance for closed paths.** Let `F` be a continuous two-parameter family of
-unitary frames such that every path `t ↦ F (s, t)` closes up, that is, its endpoint frames have
-the same Souriau map. Then the paths `t ↦ F (0, t)` and `t ↦ F (1, t)` have the same
-Robbin–Salamon index, although the endpoints move along the homotopy. -/
+/-- **Free homotopy invariance.** Let `F` be a continuous two-parameter family of unitary frames
+such that for every `s` the path of Lagrangians `t ↦ F (s, t) ℝⁿ` closes up, that is, the endpoint
+frames of `t ↦ F (s, t)` have the same Souriau map. Then the paths `t ↦ F (0, t)` and
+`t ↦ F (1, t)` have the same Robbin–Salamon index, although the endpoints move along the
+homotopy. -/
 theorem maslovIndex_eq_of_homotopy_of_souriau_eq {U₀ V₀ U₁ V₁ : unitaryGroup n ℂ}
     (γ₀ : Path U₀ V₀) (γ₁ : Path U₁ V₁) (F : I × I → unitaryGroup n ℂ) (hF : Continuous F)
     (h₀ : ∀ t, F (0, t) = γ₀ t) (h₁ : ∀ t, F (1, t) = γ₁ t)
@@ -179,8 +187,8 @@ theorem maslovIndex_eq_of_homotopy_of_souriau_eq {U₀ V₀ U₁ V₁ : unitaryG
     maslovIndex γ₀ = maslovIndex γ₁ := by
   have hγ₀ : souriau U₀ = souriau V₀ := by simpa [h₀] using hF01 0
   have hγ₁ : souriau U₁ = souriau V₁ := by simpa [h₁] using hF01 1
-  rw [← coe_maslovIndex_lagrangianLoop γ₀ hγ₀,
-    ← coe_maslovIndex_lagrangianLoop γ₁ hγ₁]
+  rw [← intCast_maslovIndex_lagrangianLoop γ₀ hγ₀,
+    ← intCast_maslovIndex_lagrangianLoop γ₁ hγ₁]
   exact congrArg _ <| TotallyRealLoop.maslovIndex_eq_of_realImage_homotopy _ _
     (fun p ↦ Unitary.toUnits (F p)) (Unitary.continuous_toUnits.comp hF)
     (fun t ↦ by simp [h₀]) (fun t ↦ by simp [h₁])

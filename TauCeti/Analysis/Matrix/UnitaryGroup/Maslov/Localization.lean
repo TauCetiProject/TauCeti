@@ -170,15 +170,6 @@ private noncomputable def eigenFrame (B : SymmMatrix n) : unitaryGroup n ℂ :=
   ⟨(B.2.eigenvectorUnitary : Matrix n n ℝ).map (↑),
     map_ofReal_mem_unitaryGroup B.2.eigenvectorUnitary.2⟩
 
-private theorem eigenFrame_mul_transpose (B : SymmMatrix n) :
-    (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 := by
-  have h := Unitary.coe_mul_star_self B.2.eigenvectorUnitary
-  rw [Unitary.coe_star, star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial] at h
-  simp only [eigenFrame, ← transpose_map]
-  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
-  exact (Matrix.map_mul (f := Complex.ofRealHom)).symm.trans <| by
-    rw [h, Matrix.map_one _ (by simp) (by simp)]
-
 /-- The diagonal frames `diag (e^{i arctan (t λⱼ)})` of the graphs of `t D`, for `D` the
 diagonal matrix of eigenvalues of `B`. -/
 private noncomputable def diagonalFrame (B : SymmMatrix n) :
@@ -226,7 +217,8 @@ Souriau maps are the Cayley transforms of `t B`. -/
 private theorem souriau_segmentFrame (B : SymmMatrix n) (t : I) :
     (souriau (segmentFrame B t) : Matrix n n ℂ) =
       cayley ((segment B t).1.map ((↑) : ℝ → ℂ)) := by
-  have hO := eigenFrame_mul_transpose B
+  have hO : (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 :=
+    map_ofReal_mul_transpose_eq_one B.2.eigenvectorUnitary.2
   have hD : (souriau (diagonalFrame B t) : Matrix n n ℂ) =
       diagonal fun j => exp (↑(2 * Real.arctan (t * B.2.eigenvalues j)) * Complex.I) := by
     rw [coe_souriau_of_coe_eq_diagonal (d := fun j =>
@@ -245,7 +237,8 @@ private theorem maslovIndex_segmentFrame (B : SymmMatrix n) :
     maslovIndex (segmentFrame B) = (signature B.1 : ℝ) / 2 := by
   have hsig : signature B.1 = B.2.signature :=
     (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (M := B.1) B.2).symm
-  rw [hsig, segmentFrame, maslovIndex_map_mul_left _ (eigenFrame_mul_transpose B),
+  rw [hsig, segmentFrame, maslovIndex_map_mul_left _
+    (map_ofReal_mul_transpose_eq_one B.2.eigenvectorUnitary.2),
     maslovIndex_eq_sum_sign_of_diagonal_arctan (diagonalFrame B)
       (a := fun j t => t * B.2.eigenvalues j)
       (fun j => continuous_subtype_val.mul continuous_const)
