@@ -72,7 +72,7 @@ noncomputable section
 namespace LinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -85,10 +85,11 @@ private def chartLift {x₀ : M} (β : SmoothBumpFunction I x₀) :
   map_add' g h := by ext y; exact smul_add (β y) (g _) (h _)
   map_smul' c g := by ext y; exact smul_comm (β y) c (g _)
 
-omit [I.Boundaryless] in
 private theorem chartLift_apply {x₀ : M} (β : SmoothBumpFunction I x₀) (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
     (y : M) : chartLift β g y = β y • g (extChartAt I x₀ y) :=
   (rfl)
+
+variable [BoundarylessManifold I M]
 
 /-- **Peetre's theorem**, local form: near each point `x₀` of `U` there is a common order `r` such
 that `(P f) y = 0` for every `y` near `x₀` and every `f ∈ I_y ^ (r + 1)`. -/
@@ -107,24 +108,25 @@ private theorem exists_mem_nhds_forall_apply_eq_zero (P : C^∞⟮I, M; ℝ⟯ �
   -- The operator `P` read in the chart `e`, as an operator on functions on the model space.
   let Q : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] E → G := funLeft ℝ G e.symm ∘ₗ P ∘ₗ chartLift β
   have hQ (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (z : E) : Q g z = P (chartLift β g) (e.symm z) := (rfl)
-  set U' := e.target ∩ e.symm ⁻¹' (W ∩ U)
-  have hU' : IsOpen U' := (continuousOn_extChartAt_symm x₀).isOpen_inter_preimage
-    (isOpen_extChartAt_target x₀) (hWo.inter hU)
+  set U' := interior e.target ∩ e.symm ⁻¹' (W ∩ U)
+  have hU' : IsOpen U' := ((continuousOn_extChartAt_symm x₀).mono interior_subset)
+    |>.isOpen_inter_preimage isOpen_interior (hWo.inter hU)
   have hQloc (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (z : E) (hz : z ∈ U') (hg : (g : E → ℝ) =ᶠ[𝓝 z] 0) :
       Q g z = 0 := by
     rw [hQ]
     refine hloc _ _ hz.2.2 ?_
     have he : Tendsto e (𝓝 (e.symm z)) (𝓝 z) := by
-      have h := (continuousAt_extChartAt' (I := I) (e.map_target hz.1)).tendsto
-      rwa [e.right_inv hz.1] at h
+      have h := (continuousAt_extChartAt' (I := I) (e.map_target (interior_subset hz.1))).tendsto
+      rwa [e.right_inv (interior_subset hz.1)] at h
     filter_upwards [he.eventually hg] with y hy
     rw [Pi.zero_apply] at hy
     rw [chartLift_apply, hy, smul_zero, Pi.zero_apply]
   have hQcont (g : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) : ContinuousOn (Q g) U' :=
-    (hcont _).comp ((continuousOn_extChartAt_symm x₀).mono inter_subset_left)
+    (hcont _).comp
+      ((continuousOn_extChartAt_symm x₀).mono (inter_subset_left.trans interior_subset))
       fun z hz ↦ hz.2.2
   have hx₀U' : e x₀ ∈ U' :=
-    ⟨mem_extChartAt_target x₀, by
+    ⟨I.isInteriorPoint_iff.mp BoundarylessManifold.isInteriorPoint, by
       rw [mem_preimage, extChartAt_to_inv]
       exact ⟨⟨hx₀W₀, mem_extChartAt_source x₀⟩, hx₀⟩⟩
   obtain ⟨δ, hδ, hδU'⟩ := Metric.isOpen_iff.1 hU' _ hx₀U'
@@ -138,9 +140,7 @@ private theorem exists_mem_nhds_forall_apply_eq_zero (P : C^∞⟮I, M; ℝ⟯ �
   have hz : e y ∈ U' := hδU' (ball_subset_ball (by linarith) hyb)
   have hy : e.symm (e y) = y := e.left_inv hys
   have hyW : y ∈ W := hy ▸ hz.2.1
-  have hint : e y ∈ interior e.target := by
-    rw [(isOpen_extChartAt_target x₀).interior_eq]
-    exact hz.1
+  have hint : e y ∈ interior e.target := hz.1
   -- Near `y`, `f` is the lift of a smooth function `g` on the model space.
   obtain ⟨g, hg, hfg⟩ := TauCeti.exists_contDiff_comp_extChartAt_symm_eventuallyEq hint f
   set g' : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨g, hg.contMDiff⟩ with hg'
@@ -209,10 +209,6 @@ theorem exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq [Comp
     (P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
     (∃ r, P ∈ TauCeti.differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ r) ↔
       ∀ (f : C^∞⟮I, M; ℝ⟯) (x : M), (f : M → ℝ) =ᶠ[𝓝 x] 0 → P f x = 0 := by
-  -- The kernel of evaluation at `x` is the vanishing ideal `I_x`, and `I_x • C^∞(M) = I_x`.
-  have hI (x : M) : RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) =
-      TauCeti.smoothVanishingIdeal I x := Ideal.ext fun g ↦ by
-    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply, TauCeti.mem_smoothVanishingIdeal_iff]
   constructor
   · rintro ⟨r, hP⟩ f x hf
     -- A function vanishing near `x` has vanishing jets at `x`.
@@ -234,7 +230,8 @@ theorem exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq [Comp
     refine ⟨r, (TauCeti.mem_differentialOperators_iff_forall_apply_mem_smul_top
       (fun x : M ↦ (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ)) hsep).2
       fun x g hg ↦ ?_⟩
-    rw [smul_eq_mul, Ideal.mul_top, hI] at hg ⊢
+    -- The kernel of evaluation at `x` is the vanishing ideal `I_x`, and `I_x • C^∞(M) = I_x`.
+    rw [smul_eq_mul, Ideal.mul_top, TauCeti.ker_evalAlgHom_eq_smoothVanishingIdeal] at hg ⊢
     exact TauCeti.mem_smoothVanishingIdeal_iff.2 (hr x (mem_univ x) g hg)
 
 end LinearMap

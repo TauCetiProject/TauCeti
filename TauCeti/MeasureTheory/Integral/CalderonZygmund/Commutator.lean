@@ -588,8 +588,7 @@ private theorem exists_eLpNorm_smul_sub_le_of_memLp_top {F : Type*} [NormedAddCo
     (E := E) (F := F) hs hsq A C₀ hδ
   -- The constants of the Fefferman–Stein inequality and of the `Lᵖ` bound for `M_q`.
   set CFS : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * n + 2) * p)) ^ (1 / p)
-  set CM : ℝ≥0∞ := (ENNReal.ofReal (2 * (p / q) * 2 ^ (p / q - 1) / (p / q - 1)) *
-    4 ^ Module.finrank ℝ (ι → ℝ)) ^ (1 / p)
+  set CM : ℝ≥0∞ := maximalFunctionConst (Module.finrank ℝ (ι → ℝ)) (p / q) ^ (1 / p)
   have hC : CFS * CJ * CM * (A + 1) ≠ ∞ := by
     have hp' : 0 ≤ 1 / p := one_div_nonneg.2 (by linarith)
     have hCFS : CFS ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hp' ENNReal.ofReal_ne_top
