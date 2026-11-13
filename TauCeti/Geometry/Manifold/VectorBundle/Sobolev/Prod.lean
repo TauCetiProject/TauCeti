@@ -65,7 +65,7 @@ namespace TauCeti
 namespace SobolevSection
 
 open FiniteBundleAtlas
-open SectionChartData (fibreMapData fibreMapData_apply chartValueL_ae_of_eq_fibreMap)
+open SectionChartData (fiberMapData fiberMapData_apply chartValueL_ae_of_eq_fiberMap)
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
@@ -117,7 +117,7 @@ variable (h μ p k) in
 -/
 private def fstData :
     (A.prod h).sectionChartData.SobolevData μ p k →L[ℝ] A.sectionChartData.SobolevData μ p k :=
-  fibreMapData μ p k (ContinuousLinearMap.fst ℝ F F') fun i ↦
+  fiberMapData μ p k (ContinuousLinearMap.fst ℝ F F') fun i ↦
     (FiniteBundleAtlas.image_prod (A := A) (h := h) i).ge
 
 variable (h μ p k) in
@@ -126,7 +126,7 @@ variable (h μ p k) in
 private def sndData :
     (A.prod h).sectionChartData.SobolevData μ p k →L[ℝ]
       (A.ofBaseSet h).sectionChartData.SobolevData μ p k :=
-  fibreMapData μ p k (ContinuousLinearMap.snd ℝ F F') fun i ↦
+  fiberMapData μ p k (ContinuousLinearMap.snd ℝ F F') fun i ↦
     ((image_ofBaseSet (A := A) (h := h) i).trans
       (FiniteBundleAtlas.image_prod (A := A) (h := h) i).symm).le
 
@@ -135,7 +135,7 @@ variable (h μ p k) in
 the charts of `A`. -/
 private def inlData :
     A.sectionChartData.SobolevData μ p k →L[ℝ] (A.prod h).sectionChartData.SobolevData μ p k :=
-  fibreMapData μ p k (ContinuousLinearMap.inl ℝ F F') fun i ↦
+  fiberMapData μ p k (ContinuousLinearMap.inl ℝ F F') fun i ↦
     (FiniteBundleAtlas.image_prod (A := A) (h := h) i).le
 
 variable (h μ p k) in
@@ -144,7 +144,7 @@ on the charts of `A.ofBaseSet h`. -/
 private def inrData :
     (A.ofBaseSet h).sectionChartData.SobolevData μ p k →L[ℝ]
       (A.prod h).sectionChartData.SobolevData μ p k :=
-  fibreMapData μ p k (ContinuousLinearMap.inr ℝ F F') fun i ↦
+  fiberMapData μ p k (ContinuousLinearMap.inr ℝ F F') fun i ↦
     ((FiniteBundleAtlas.image_prod (A := A) (h := h) i).trans
       (image_ofBaseSet (A := A) (h := h) i).symm).le
 
@@ -152,36 +152,36 @@ private theorem chartValueL_fstData_ae (w : (A.prod h).sectionChartData.SobolevD
     (i : Fin A.n) :
     A.sectionChartData.chartValueL μ p k i (fstData h μ p k w) =ᵐ[μ.restrict (A.image i)]
       fun y ↦ ((A.prod h).sectionChartData.chartValueL μ p k i w y).1 :=
-  chartValueL_ae_of_eq_fibreMap μ p k (C₁ := (A.prod h).sectionChartData)
+  chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.prod h).sectionChartData)
     (C₂ := A.sectionChartData) (ContinuousLinearMap.fst ℝ F F') (i₁ := i) (i₂ := i)
-    (FiniteBundleAtlas.image_prod (h := h) i).ge (w₁ := w) (fibreMapData_apply μ p k _ _ w i)
+    (FiniteBundleAtlas.image_prod (h := h) i).ge (w₁ := w) (fiberMapData_apply μ p k _ _ w i)
 
 private theorem chartValueL_sndData_ae (w : (A.prod h).sectionChartData.SobolevData μ p k)
     (i : Fin A.n) :
     (A.ofBaseSet h).sectionChartData.chartValueL μ p k i (sndData h μ p k w)
       =ᵐ[μ.restrict (A.image i)]
       fun y ↦ ((A.prod h).sectionChartData.chartValueL μ p k i w y).2 :=
-  (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).1 <| chartValueL_ae_of_eq_fibreMap μ p k
+  (ae_restrict_image_ofBaseSet_iff (A := A) (h := h)).1 <| chartValueL_ae_of_eq_fiberMap μ p k
     (C₁ := (A.prod h).sectionChartData) (C₂ := (A.ofBaseSet h).sectionChartData)
     (ContinuousLinearMap.snd ℝ F F') (i₁ := i) (i₂ := i)
     ((image_ofBaseSet (A := A) (h := h) i).trans
       (FiniteBundleAtlas.image_prod (A := A) (h := h) i).symm).le (w₁ := w)
-    (fibreMapData_apply μ p k _ _ w i)
+    (fiberMapData_apply μ p k _ _ w i)
 
 private theorem chartValueL_inlData_add_inrData_ae (u : A.sectionChartData.SobolevData μ p k)
     (v : (A.ofBaseSet h).sectionChartData.SobolevData μ p k) (i : Fin A.n) :
     (A.prod h).sectionChartData.chartValueL μ p k i (inlData h μ p k u + inrData h μ p k v)
       =ᵐ[μ.restrict (A.image i)] fun y ↦ (A.sectionChartData.chartValueL μ p k i u y,
         (A.ofBaseSet h).sectionChartData.chartValueL μ p k i v y) := by
-  have hu := chartValueL_ae_of_eq_fibreMap μ p k (C₁ := A.sectionChartData)
+  have hu := chartValueL_ae_of_eq_fiberMap μ p k (C₁ := A.sectionChartData)
     (C₂ := (A.prod h).sectionChartData) (ContinuousLinearMap.inl ℝ F F') (i₁ := i) (i₂ := i)
     (FiniteBundleAtlas.image_prod (A := A) (h := h) i).le (w₁ := u) (w₂ := inlData h μ p k u)
-    (fibreMapData_apply μ p k _ _ u i)
-  have hv := chartValueL_ae_of_eq_fibreMap μ p k (C₁ := (A.ofBaseSet h).sectionChartData)
+    (fiberMapData_apply μ p k _ _ u i)
+  have hv := chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.ofBaseSet h).sectionChartData)
     (C₂ := (A.prod h).sectionChartData) (ContinuousLinearMap.inr ℝ F F') (i₁ := i) (i₂ := i)
     ((FiniteBundleAtlas.image_prod (A := A) (h := h) i).trans
       (image_ofBaseSet (A := A) (h := h) i).symm).le (w₁ := v) (w₂ := inrData h μ p k v)
-    (fibreMapData_apply μ p k _ _ v i)
+    (fiberMapData_apply μ p k _ _ v i)
   refine (ae_restrict_image_prod_iff (A := A) (h := h)).1 ?_
   filter_upwards [hu, hv, Lp.coeFn_add
     ((A.prod h).sectionChartData.chartValueL μ p k i (inlData h μ p k u))
