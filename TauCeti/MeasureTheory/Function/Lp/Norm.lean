@@ -64,11 +64,19 @@ bounds.
   `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
   integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
   to any constant.
+* `MeasureTheory.MemLp.norm_toLp_le_of_ae_bound`: on a finite measure space, a function in `Lᵖ`
+  bounded almost everywhere in norm by `C ≥ 0` has `Lᵖ` norm at most
+  `measureUnivNNReal μ ^ p.toReal⁻¹ * C`.
+* `TauCeti.Lp.isBounded_range_of_ae_bound` and `TauCeti.isBounded_range_toLp_of_ae_bound`: on a
+  finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere pointwise norm
+  bound has bounded range.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
+* `MeasureTheory.Lp.norm_le_mul_norm_of_ae_eq_smul`: multiplying an `Lᵖ` class by a function
+  bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -121,13 +129,8 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
   · refine ⟨0, fun u => ?_⟩
     rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
     exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq
   have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg hexp hm
   refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
@@ -135,13 +138,32 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
       ≤ eLpNorm (v u) pstar m * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
         eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
     _ = ‖S u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
-        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u)]
+        rw [Lp.eNorm_def, eLpNorm_congr_ae (hS u)]
     _ ≤ ‖S‖ₑ * ‖u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
         gcongr
         exact S.le_opENorm u
     _ = ↑(‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal) * ‖u‖ₑ := by
-        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, enorm_eq_nnnorm]
+        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, eNorm_eq_nnNorm]
         ring
+
+/-- On a finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere
+pointwise norm bound has bounded range. -/
+theorem Lp.isBounded_range_of_ae_bound {ι : Sort*} {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {μ : Measure α} [IsFiniteMeasure μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f : ι → Lp E p μ} {C : ℝ} (hfC : ∀ i, ∀ᵐ x ∂μ, ‖f i x‖ ≤ C) :
+    Bornology.IsBounded (Set.range f) :=
+  isBounded_iff_forall_norm_le.2 ⟨measureUnivNNReal μ ^ p.toReal⁻¹ * max C 0,
+    Set.forall_mem_range.2 fun i ↦ Lp.norm_le_of_ae_bound (le_max_right C 0)
+      ((hfC i).mono fun _ hx ↦ hx.trans (le_max_left C 0))⟩
+
+/-- On a finite measure space, a family of `Lᵖ` functions (`1 ≤ p`) with a uniform
+almost-everywhere pointwise norm bound defines a bounded subset of `Lᵖ`. -/
+theorem isBounded_range_toLp_of_ae_bound {ι : Sort*} {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {μ : Measure α} [IsFiniteMeasure μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f : ι → α → E} (hf : ∀ i, MemLp (f i) p μ) {C : ℝ} (hfC : ∀ i, ∀ᵐ x ∂μ, ‖f i x‖ ≤ C) :
+    Bornology.IsBounded (Set.range fun i ↦ (hf i).toLp (f i)) :=
+  Lp.isBounded_range_of_ae_bound fun i ↦
+    (hf i).coeFn_toLp.mp ((hfC i).mono fun _ hx hxy ↦ hxy ▸ hx)
 
 end TauCeti
 
@@ -273,8 +295,8 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
-  rw [integral_norm_eq_lintegral_enorm (Lp.aestronglyMeasurable f),
-    ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
+  rw [integral_norm_eq_lintegral_eNorm (Lp.aestronglyMeasurable f),
+    ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
@@ -324,7 +346,15 @@ theorem Lp.setIntegral_norm_sq_le_norm_sq {alpha F : Type*} [MeasurableSpace alp
     (hst : s ⊆ t) : ∫ x in s, ‖f x‖ ^ 2 ∂m ≤ ‖f‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   exact setIntegral_mono_set ((Lp.memLp f).integrable_norm_pow two_ne_zero)
-    (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
+
+/-- On a finite measure space, a function in `Lᵖ` bounded almost everywhere in norm by `C ≥ 0` has
+`Lᵖ` norm at most `measureUnivNNReal μ ^ p.toReal⁻¹ * C`. -/
+theorem MemLp.norm_toLp_le_of_ae_bound {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
+    {μ : Measure α} [IsFiniteMeasure μ] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p μ) {C : ℝ}
+    (hC : 0 ≤ C) (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
+    ‖hf.toLp f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C :=
+  Lp.norm_le_of_ae_bound hC (hf.coeFn_toLp.mp (hfC.mono fun _ hx hxy ↦ hxy ▸ hx))
 
 section Restrict
 
@@ -367,9 +397,7 @@ theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)
   · -- Otherwise the bound holds at some point, so `0 ≤ M`.
     have : (ae (μ.restrict s)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
     obtain ⟨x, hx⟩ := hgM.exists
-    have h := Lp.norm_le_of_ae_bound ((norm_nonneg _).trans hx) (f := hg.toLp g) (by
-      filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
-      rwa [hy])
+    have h := hg.norm_toLp_le_of_ae_bound ((norm_nonneg _).trans hx) hgM
     rwa [← measureReal_restrict_apply_univ]
 
 /-- **Gluing `Lᵖ` classes along a finite cover.** For `1 ≤ p`, let finitely many sets `u i` cover
@@ -391,6 +419,23 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
+
+section Smul
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+
+/-- **Multiplication by a bounded function.** If `‖ψ‖ ≤ C` almost everywhere and `v = ψ • u`
+almost everywhere for `u, v ∈ Lᵖ`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem Lp.norm_le_mul_norm_of_ae_eq_smul {𝕜 : Type*} [SeminormedAddGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {ψ : X → 𝕜} {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ C)
+    {u v : Lp F p μ} (hv : v =ᵐ[μ] fun x ↦ ψ x • u x) :
+    ‖v‖ ≤ C * ‖u‖ := by
+  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+  filter_upwards [hv, hC] with x hx hCx
+  rw [hx]
+  exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hCx (norm_nonneg _))
+
+end Smul
 
 section IntegralRpow
 

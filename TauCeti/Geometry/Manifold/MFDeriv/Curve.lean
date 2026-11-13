@@ -56,6 +56,10 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   depends only on the germ of the curve within `s` at `t` and on its value at `t`.
 * `TauCeti.Manifold.tangentMap_curveVelocityLiftWithin`: tangent maps carry velocity lifts to
   velocity lifts, with `TauCeti.Manifold.tangentMap_curveVelocityLift` as its unrestricted form.
+* `TauCeti.Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt`: a curve in the tangent
+  bundle whose velocity projects to the curve itself is the velocity lift of its base curve, as
+  along integral curves of second-order vector fields, with
+  `TauCeti.Manifold.eq_curveVelocityLift_of_hasMFDerivAt` as its unrestricted form.
 * `ContMDiffOn.contMDiffOn_curveVelocityLiftWithin`: the within-domain velocity lift of a
   `C^(m + 1)` curve is `C^m` on a unique-differentiability domain, and
   `ContMDiffOn.continuousOn_curveVelocityLiftWithin` is its continuous case, with open-domain and
@@ -679,6 +683,35 @@ theorem tangentMap_curveVelocityLift
 
 variable [IsManifold I 1 M]
 
+/-- **A curve in `TM` over the velocity of its base curve is a velocity lift.** If the velocity `w`
+of a curve `z` in the tangent bundle at `t`, within a parameter set `s` with unique derivatives at
+`t`, projects under the derivative of the bundle projection to the point `z t` itself, then `z t`
+is the velocity within `s` of the base curve `r ↦ (z r).proj` at `t`. This holds along every
+integral curve of a second-order vector field on `TM`. -/
+theorem eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt {z : 𝕜 → TangentBundle I M} {s : Set 𝕜}
+    {t : 𝕜} {w : TangentSpace I.tangent (z t)} (hs : UniqueDiffWithinAt 𝕜 s t)
+    (hz : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I.tangent z s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).2) :
+    z t = curveVelocityLiftWithin I (fun r ↦ (z r).proj) s t := by
+  have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).2 := by
+    refine (curveVelocityWithin_map (f := π E (TangentSpace I))
+      ((contMDiff_proj (TangentSpace I) (z t)).mdifferentiableAt (n := 1) one_ne_zero)
+      hs hz.mdifferentiableWithinAt).trans ?_
+    rw [curveVelocityWithin_eq_of_hasMFDerivWithinAt hz hs, hw]
+  rw [curveVelocityLiftWithin_apply, hvel]
+
+/-- The all-time case of `TauCeti.Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt`: a
+curve in `TM` whose velocity at `t` projects to `z t` is the velocity lift of its base curve at
+`t`. -/
+theorem eq_curveVelocityLift_of_hasMFDerivAt {z : 𝕜 → TangentBundle I M} {t : 𝕜}
+    {w : TangentSpace I.tangent (z t)}
+    (hz : HasMFDerivAt 𝓘(𝕜, 𝕜) I.tangent z t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hw : mfderiv I.tangent I (π E (TangentSpace I)) (z t) w = (z t).2) :
+    z t = curveVelocityLift I (fun s ↦ (z s).proj) t := by
+  rw [← curveVelocityLiftWithin_univ]
+  exact eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt uniqueDiffWithinAt_univ
+    hz.hasMFDerivWithinAt hw
+
 /-- The within-domain velocity lift of a `C^n` curve is `C^m` on a domain with unique manifold
 derivatives, when `m + 1 ≤ n`. -/
 theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} {u : Set 𝕜}
@@ -689,7 +722,7 @@ theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} 
     TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
   have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι := by
     intro t
-    rw [contMDiffAt_totalSpace]
+    rw [contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_id, ?_⟩
     refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
     filter_upwards with r

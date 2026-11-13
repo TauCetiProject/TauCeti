@@ -48,6 +48,11 @@ right-hand side lies in `H^s`.
   bootstrap. If `x` is smooth and its coordinates have bounded derivatives through order `k`, a
   weak `L²` solution of `L_x y = f` with `f ∈ H^k` lies in `H^(k+1)`. The multiplication by the
   coefficients of `L_x - L₀` preserves `H^k` (`mulVec_mem_sobolevFields_natCast`).
+* `mem_sobolevFields_one_of_mem_framedFieldSpace`: a continuous field of `A_m^s`, `s > 1`, is
+  bounded (`exists_norm_le_of_mem_framedFieldSpace`), so there weak `L²` solutions of `L_x y = f`
+  with `f ∈ L²`, in particular the weak `L²` kernel of `L_x`, lie in `H¹`.
+* `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`: at a
+  `C¹` vortex of `A_m^s`, `s > 1`, the weak right inverse `Q` takes values in `H¹`.
 
 These are regularity statements for weak solutions. The Fredholm property of `L_x` between
 Sobolev spaces and the dimension of its kernel are not treated here.
@@ -306,5 +311,41 @@ theorem mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
         (sobolevFields_mono (by simp) hf)
     exact_mod_cast mem_sobolevFields_natCast_add_one_of_mem_sobolevFields hx hbound
       (by exact_mod_cast hy') hf hweak
+
+/-! ### Fields of `A_m^s` and plane vortices -/
+
+/-- **Weak solutions at a field of `A_m^s` lie in `H¹`.** Let `x` be a continuous field of the
+affine space `A_m^s`, `s > 1`, and `g ∈ L²(ℂ; ℝ⁴)`. Every `L²` weak solution of `L_x y = g` lies
+in `H¹`; in particular the weak kernel of `L_x` lies in `H¹`. -/
+theorem mem_sobolevFields_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
+    (hs : 1 < s) {x y g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hcont : Continuous x) (hy : MemLp y 2 volume) (hg : MemLp g 2 volume)
+    (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) :
+    y ∈ sobolevFields 1 :=
+  let ⟨_, hC⟩ := exists_norm_le_of_mem_framedFieldSpace hs hx hcont
+  mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq hcont.aestronglyMeasurable
+    (ae_of_all _ hC) hy hg hweak
+
+/-- **The weak right inverse at a plane vortex takes values in `H¹`.** Let `x` be a `C¹` solution
+of the plane vortex equation in the affine space `A_m^s`, `s > 1`. Then there is a bounded
+operator `Q` on `L²(ℂ; ℝ⁴)` such that, for every `g ∈ L²`, `Q g` is a weak solution of
+`L_x y = g`, orthogonal to the weak kernel of `L_x`, and lies in `H¹`. -/
+theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : x ∈ framedFieldSpace f m s) (hx₁ : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0) :
+    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
+        Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+      (∀ g η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪Q g z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) ∧
+      (∀ g u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = 0) →
+        ∫ z, ⟪Q g z, u z⟫ = 0) ∧
+      ∀ g, (Q g : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 1 := by
+  obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
+    (μ := volume) hx₁ hsol (tendsto_normSq_of_mem_framedFieldSpace hs hx hx₁.continuous)
+  exact ⟨Q, hQ, hQK, fun g ↦ mem_sobolevFields_one_of_mem_framedFieldSpace hs hx hx₁.continuous
+    (Lp.memLp _) (Lp.memLp g) fun η hη hc ↦ hQ g η (hη.of_le (by simp)) hc⟩
 
 end TauCeti.Vortex
