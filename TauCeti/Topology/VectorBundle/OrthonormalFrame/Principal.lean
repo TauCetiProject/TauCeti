@@ -387,7 +387,6 @@ variable [CompleteSpace V] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A trivialization belongs to the atlas of the orthonormal frame bundle `Fiber 𝕜 F E V` exactly
 when it is the Gram–Schmidt trivialization over a trivialization in the atlas of `E`. -/
-@[simp]
 theorem memTrivializationAtlas_orthonormalFrameBundleFiber_iff
     (t : Trivialization (unitary (V →L[𝕜] V)) (π (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V))) :
     MemTrivializationAtlas t ↔
@@ -396,5 +395,14 @@ theorem memTrivializationAtlas_orthonormalFrameBundleFiber_iff
         (b : OrthonormalBasis (Fin (Module.finrank 𝕜 V)) 𝕜 V),
         t = (e.orthonormalFrameBundle c b).orthonormalFrameBundleFiber :=
   ⟨fun h ↦ h.out, fun h ↦ ⟨h⟩⟩
+
+/-- The Gram–Schmidt trivialization of `Fiber 𝕜 F E V` over a trivialization in the atlas of `E`
+belongs to the atlas of the orthonormal frame bundle. -/
+instance memTrivializationAtlas_orthonormalFrameBundleFiber_orthonormalFrameBundle
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+    (c : Module.Basis (Fin (Module.finrank 𝕜 V)) 𝕜 F)
+    (b : OrthonormalBasis (Fin (Module.finrank 𝕜 V)) 𝕜 V) :
+    MemTrivializationAtlas (e.orthonormalFrameBundle c b).orthonormalFrameBundleFiber :=
+  ⟨⟨e, inferInstance, c, b, rfl⟩⟩
 
 end Bundle.Trivialization
