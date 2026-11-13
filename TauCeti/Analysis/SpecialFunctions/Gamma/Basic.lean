@@ -297,9 +297,7 @@ theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast (s : ℝ) (n : ℕ)
   apply Complex.ofReal_inj.mp
   have hcast : ((s + n : ℝ) : ℂ) = (s : ℂ) + n := by push_cast; ring
   have hp : (((ascPochhammer ℝ n).eval s : ℝ) : ℂ) = (ascPochhammer ℂ n).eval (s : ℂ) := by
-    induction n with
-    | zero => simp
-    | succ n ih => simp [ascPochhammer_succ_eval, ih]
+    simpa using (Polynomial.eval_map_apply Complex.ofRealHom (p := ascPochhammer ℝ n) s).symm
   rw [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_inv, ← Complex.Gamma_ofReal,
     ← Complex.Gamma_ofReal, hcast, hp]
   exact Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add_natCast (s : ℂ) n

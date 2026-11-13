@@ -274,6 +274,17 @@ theorem sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul (a b : ℂ) (n
   have harg : b + n - 1 + (a + n - 1) - n + 1 = a + b + n - 1 := by ring
   rw [harg]
 
+private theorem sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul_pow
+    (a b z : ℂ) (n : ℕ) :
+    ∑ kl ∈ Finset.antidiagonal n,
+        regularizedHGFunCoeff 0 {a} kl.1 * z ^ kl.1 *
+          (regularizedHGFunCoeff 0 {b} kl.2 * z ^ kl.2) =
+      (ascPochhammer ℂ n).eval (a + b + n - 1) / (n ! * Gamma (a + n) * Gamma (b + n)) *
+        z ^ n := by
+  rw [← sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun kl hkl => ?_
+  rw [mul_mul_mul_comm, ← pow_add, Finset.mem_antidiagonal.mp hkl]
+
 /-- The Maclaurin series of `₀F₁(; a; z) ₀F₁(; b; z)` converges absolutely at every `z : ℂ`. -/
 theorem summable_norm_regularizedHGFun_zero_singleton_mul (a b z : ℂ) :
     Summable fun n : ℕ =>
@@ -283,21 +294,7 @@ theorem summable_norm_regularizedHGFun_zero_singleton_mul (a b z : ℂ) :
     (summable_norm_regularizedHGFun (a := 0) (b := {a}) (by simp) z)
     (summable_norm_regularizedHGFun (a := 0) (b := {b}) (by simp) z)
   refine hconv.congr fun n => ?_
-  have hpow : ∑ kl ∈ Finset.antidiagonal n,
-      regularizedHGFunCoeff 0 {a} kl.1 * z ^ kl.1 *
-        (regularizedHGFunCoeff 0 {b} kl.2 * z ^ kl.2) =
-      (∑ kl ∈ Finset.antidiagonal n,
-        regularizedHGFunCoeff 0 {a} kl.1 * regularizedHGFunCoeff 0 {b} kl.2) * z ^ n := by
-    rw [Finset.sum_mul]
-    refine Finset.sum_congr rfl fun kl hkl => ?_
-    have hkl' : kl.1 + kl.2 = n := Finset.mem_antidiagonal.mp hkl
-    calc regularizedHGFunCoeff 0 {a} kl.1 * z ^ kl.1 *
-          (regularizedHGFunCoeff 0 {b} kl.2 * z ^ kl.2)
-        = regularizedHGFunCoeff 0 {a} kl.1 * regularizedHGFunCoeff 0 {b} kl.2 *
-            (z ^ kl.1 * z ^ kl.2) := by ring
-      _ = regularizedHGFunCoeff 0 {a} kl.1 * regularizedHGFunCoeff 0 {b} kl.2 * z ^ n := by
-          rw [← pow_add, hkl']
-  rw [hpow, sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul]
+  rw [sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul_pow]
 
 /-- For all `a, b, z : ℂ` (including poles of `Γ`), the Cauchy-product Maclaurin series sums to
 `₀F₁(; a; z) ₀F₁(; b; z)`. -/
@@ -313,15 +310,8 @@ theorem hasSum_regularizedHGFun_zero_singleton_mul (a b z : ℂ) :
   rw [(hasSum_regularizedHGFun (a := 0) (b := {a}) (by simp) z).tsum_eq,
     (hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z).tsum_eq] at hmul
   rw [hmul]
-  refine tsum_congr fun n => ?_
-  rw [← sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun kl hkl => ?_
-  have hkl' : kl.1 + kl.2 = n := Finset.mem_antidiagonal.mp hkl
-  calc regularizedHGFunCoeff 0 {a} kl.1 * regularizedHGFunCoeff 0 {b} kl.2 * z ^ n
-      = regularizedHGFunCoeff 0 {a} kl.1 * regularizedHGFunCoeff 0 {b} kl.2 *
-          (z ^ kl.1 * z ^ kl.2) := by rw [← pow_add, hkl']
-    _ = regularizedHGFunCoeff 0 {a} kl.1 * z ^ kl.1 *
-          (regularizedHGFunCoeff 0 {b} kl.2 * z ^ kl.2) := by ring
+  exact tsum_congr fun n =>
+    (sum_antidiagonal_regularizedHGFunCoeff_zero_singleton_mul_pow a b z n).symm
 
 /-- **Bailey's product formula for `₀F₁` (DLMF 16.12.1)** in regularized form: when
 `a + b - 1` is not a nonpositive integer,

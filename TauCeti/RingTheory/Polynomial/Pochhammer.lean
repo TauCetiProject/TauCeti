@@ -332,10 +332,10 @@ theorem descPochhammer_eval_add {R : Type*} [Ring R] {r s : R} (k : ℕ) (h : Co
     rw [← aeval_eq_smeval, aeval_def, algebraMap_int_eq, ← eval_map, descPochhammer_map]
   simpa only [hsmeval] using Ring.descPochhammer_smeval_add k h
 
-/-- **Doubling formula for rising factorials.** Over a semifield of characteristic zero, the
-rising factorial of even length `2 * n` at `a` factors into `4 ^ n` times the rising factorials of
-length `n` at `a / 2` and `(a + 1) / 2`. -/
-theorem ascPochhammer_two_mul_eval {K : Type*} [Semifield K] [CharZero K] (n : ℕ) (a : K) :
+/-- **Doubling formula for rising factorials.** Over a semifield in which `2 ≠ 0`, the rising
+factorial of even length `2 * n` at `a` factors into `4 ^ n` times the rising factorials of length
+`n` at `a / 2` and `(a + 1) / 2`. -/
+theorem ascPochhammer_two_mul_eval {K : Type*} [Semifield K] [NeZero (2 : K)] (n : ℕ) (a : K) :
     (ascPochhammer K (2 * n)).eval a =
       4 ^ n * ((ascPochhammer K n).eval (a / 2) * (ascPochhammer K n).eval ((a + 1) / 2)) := by
   induction n with

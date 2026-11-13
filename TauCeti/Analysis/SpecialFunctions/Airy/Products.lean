@@ -44,16 +44,16 @@ coefficient; grouping the integral series into blocks of length `3` via
 ## Main results
 
 * `TauCeti.integrableOn_cexp_sub_cubic_mul_cpow`: absolute convergence of
-  `∫ t in Ioi 0, exp(z t - t³ / 12) t ^ s` for every `z : ℂ` and `-1 < Re s`.
-* `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral`,
-  `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral_rpow`: DLMF 9.11.4 for every `z : ℂ`.
+  `∫ t in Ioi 0, exp(z t - b t³) t ^ s` for every `b, z, s : ℂ` with `0 < Re b` and `-1 < Re s`.
+* `TauCeti.airyAi_sq_add_airyBi_sq_eq_integral`: DLMF 9.11.4 for every `z : ℂ`.
 * `TauCeti.hasSum_airyAi_sq_add_airyBi_sq`: the everywhere-convergent Maclaurin series of
   `airyAi z ^ 2 + airyBi z ^ 2`.
 * `TauCeti.airyAi_zero_sq_add_airyBi_zero_sq`, `TauCeti.four_mul_airyAi_zero_sq`: the value
   `airyAi 0 ^ 2 + airyBi 0 ^ 2 = 4 * airyAi 0 ^ 2 = π ^ (-3 / 2) * 12 ^ (1 / 6) * Γ(1 / 6) / 3`.
-* `TauCeti.iteratedDeriv_airyAi_sq_add_airyBi_sq_eq_integral`,
-  `TauCeti.airyAi_mul_deriv_add_airyBi_mul_deriv_eq_integral`: parametric derivatives of the
-  integral representation.
+* `TauCeti.hasDerivAt_integral_cexp_sub_cubic_mul_cpow`,
+  `TauCeti.iterate_deriv_airyAi_sq_add_airyBi_sq_eq_integral`,
+  `TauCeti.airyAi_mul_deriv_add_airyBi_mul_deriv_eq_integral`: parametric derivatives under the
+  integral sign and iterated derivatives of the integral representation.
 
 ## References
 
@@ -169,56 +169,76 @@ private def airyProductTerm (z : ℂ) (m : ℕ) : ℂ :=
   (π : ℂ) ^ (-3 / 2 : ℂ) * (12 : ℂ) ^ ((2 * (m : ℂ) + 1) / 6) *
     Gamma ((2 * (m : ℂ) + 1) / 6) / (3 * m !) * z ^ m
 
-private theorem hasSum_airyProductTerm_mul_three (z : ℂ) :
-    HasSum (fun n : ℕ => airyProductTerm z (3 * n))
-      (4 * (3 : ℂ) ^ (-4 / 3 : ℂ) * regularizedHGFun 0 {(2 / 3 : ℂ)} (z ^ 3 / 9) ^ 2) := by
-  have hpole : ∀ k : ℕ, 2 * (2 / 3 : ℂ) - 1 ≠ -k := ne_neg_natCast_of_re_pos (by norm_num)
-  rw [regularizedHGFun_zero_singleton_sq_eq hpole (z ^ 3 / 9)]
-  have h2a : 2 * (2 / 3 : ℂ) - 1 = 1 / 3 := by norm_num
-  have ha2 : (2 / 3 : ℂ) - 1 / 2 = 1 / 6 := by norm_num
-  rw [h2a, ha2, ← mul_assoc]
-  refine ((hasSum_regularizedHGFun (a := {(1 / 6 : ℂ)}) (b := {(2 / 3 : ℂ), (1 / 3 : ℂ)})
-    (by simp) (4 * (z ^ 3 / 9))).mul_left
-    (4 * (3 : ℂ) ^ (-4 / 3 : ℂ) * (Gamma (1 / 3) / Gamma (2 / 3)))).congr_fun fun n => ?_
-  have hp : (ascPochhammer ℂ n).eval (1 / 6) = Gamma (1 / 6 + n) / Gamma (1 / 6) :=
-    (Gamma_add_nat_div_Gamma_eq _ (ne_neg_natCast_of_re_pos (by norm_num))).symm
-  have h230 : (2 : ℂ) ^ (2 / 3 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl two_ne_zero)
-  have hGquot : Gamma (1 / 3 : ℂ) / Gamma (2 / 3) =
-      Gamma (1 / 6) / ((2 : ℂ) ^ (2 / 3 : ℂ) * ((√π : ℝ) : ℂ)) := by
-    have hq := gamma_two_mul_div_gamma_add_half (s := 1 / 6) (by norm_num)
-    have hd1 : 2 * (1 / 6 : ℂ) = 1 / 3 := by norm_num
-    have hd2 : (1 / 6 : ℂ) + 1 / 2 = 2 / 3 := by norm_num
-    have hd3 : (1 : ℂ) - 1 / 3 = 2 / 3 := by norm_num
-    rwa [hd1, hd2, hd3] at hq
-  have htrip : (n ! : ℂ) * (Gamma (2 / 3 + (n : ℂ)) * Gamma (1 / 3 + (n : ℂ))) =
-      2 * π * ((3 : ℂ) ^ (-1 / 2 : ℂ) / (9 ^ n * 3 ^ n)) * ((3 * n)! : ℂ) := by
-    have ht := gamma_mul_add_third_nat 0 n
-    have h3 : ((0 + 3 : ℕ) : ℂ) / 3 + n = (n : ℂ) + 1 := by push_cast; ring
-    have he : -(2 * ((0 : ℕ) : ℂ) + 1) / 2 = (-1 / 2 : ℂ) := by norm_num
-    rw [h3, Gamma_nat_eq_factorial, he] at ht
-    simp only [Nat.zero_add, Nat.add_zero, Nat.cast_one, Nat.cast_ofNat] at ht
-    linear_combination ht
-  have h2pow : (2 : ℂ) ^ (2 * (1 / 6 : ℂ)) = 2 / (2 : ℂ) ^ (2 / 3 : ℂ) := by
-    rw [eq_div_iff h230, ← cpow_add _ _ two_ne_zero]; norm_num
-  have h3pow : (3 : ℂ) ^ (-4 / 3 : ℂ) = (3 : ℂ) ^ (1 / 6 : ℂ) * (3 : ℂ) ^ (-1 / 2 : ℂ) / 3 := by
-    have he : (-4 / 3 : ℂ) = (1 / 6 : ℂ) + -1 / 2 - 1 := by norm_num
+private theorem hasSum_airyProductTerm_sq_piece (r : ℕ)
+    (htrip : ∀ n : ℕ,
+      (n ! : ℂ) * (Gamma (((r + 2 : ℕ) : ℂ) / 3 + n) *
+          Gamma (2 * (((r + 2 : ℕ) : ℂ) / 3) - 1 + n)) =
+        2 * π * ((3 : ℂ) ^ (-(2 * (r : ℂ) + 1) / 2) / (9 ^ n * 3 ^ n)) *
+          ((3 * n + r)! : ℂ))
+    (z : ℂ) :
+    HasSum (fun n : ℕ => airyProductTerm z (3 * n + r))
+      (4 * (3 : ℂ) ^ (-2 * (((r + 2 : ℕ) : ℂ) / 3)) * z ^ r *
+        regularizedHGFun 0 {((r + 2 : ℕ) : ℂ) / 3} (z ^ 3 / 9) ^ 2) := by
+  set a : ℂ := ((r + 2 : ℕ) : ℂ) / 3
+  set c : ℂ := (2 * (r : ℂ) + 1) / 6
+  have hc_re : 0 < c.re := by
+    simp only [c, add_re, mul_re, re_ofNat, natCast_re, im_ofNat, natCast_im, mul_zero, sub_zero,
+      one_re, div_ofNat_re]
+    positivity
+  have hac : a - 1 / 2 = c := by simp only [a, c]; push_cast; ring
+  have h2ac : 2 * a - 1 = 2 * c := by simp only [a, c]; push_cast; ring
+  have hpole : ∀ k : ℕ, 2 * a - 1 ≠ -k := by
+    rw [h2ac]
+    refine ne_neg_natCast_of_re_pos ?_
+    simp only [mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero]
+    linarith
+  rw [regularizedHGFun_zero_singleton_sq_eq hpole (z ^ 3 / 9), hac, ← mul_assoc]
+  refine ((hasSum_regularizedHGFun (a := {c}) (b := {a, 2 * a - 1}) (by simp)
+    (4 * (z ^ 3 / 9))).mul_left
+    (4 * (3 : ℂ) ^ (-2 * a) * z ^ r * (Gamma (2 * a - 1) / Gamma a))).congr_fun fun n => ?_
+  have hp : (ascPochhammer ℂ n).eval c = Gamma (c + n) / Gamma c :=
+    (Gamma_add_nat_div_Gamma_eq c (ne_neg_natCast_of_re_pos hc_re)).symm
+  have hGquot : Gamma (2 * a - 1) / Gamma a =
+      Gamma c / ((2 : ℂ) ^ (1 - 2 * c) * ((√π : ℝ) : ℂ)) := by
+    have hca : c + 1 / 2 = a := by linear_combination -hac
+    rw [h2ac, ← hca]
+    exact gamma_two_mul_div_gamma_add_half hc_re
+  have h20 : (2 : ℂ) ^ (1 - 2 * c) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl two_ne_zero)
+  have h2pow : (2 : ℂ) ^ (2 * c) = 2 / (2 : ℂ) ^ (1 - 2 * c) := by
+    rw [eq_div_iff h20, ← cpow_add _ _ two_ne_zero, add_sub_cancel, cpow_one]
+  have h3pow : (3 : ℂ) ^ (-2 * a) =
+      (3 : ℂ) ^ c * (3 : ℂ) ^ (-(2 * (r : ℂ) + 1) / 2) / 3 := by
+    have he : -2 * a = c + -(2 * (r : ℂ) + 1) / 2 - 1 := by simp only [a, c]; push_cast; ring
     rw [he, cpow_sub _ _ (by norm_num), cpow_add _ _ (by norm_num), cpow_one]
-  have harg : (2 * ((3 * n : ℕ) : ℂ) + 1) / 6 = (1 / 6 : ℂ) + n := by push_cast; ring
+  have harg : (2 * ((3 * n + r : ℕ) : ℂ) + 1) / 6 = c + n := by simp only [c]; push_cast; ring
+  have hzr : z ^ (3 * n + r) = z ^ r * z ^ (3 * n) := by rw [pow_add, mul_comm]
   simp only [airyProductTerm, regularizedHGFunCoeff, Multiset.insert_eq_cons, Multiset.map_cons,
     Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton, harg, hp,
-    four_mul_cube_div_nine_pow, twelve_cpow_add_natCast, h2pow, h3pow, hGquot, htrip,
+    four_mul_cube_div_nine_pow, hzr, twelve_cpow_add_natCast, h2pow, h3pow, hGquot, htrip n,
     pi_cpow_neg_three_halves]
-  set G := Gamma ((1 / 6 : ℂ) + n)
-  set Z := z ^ (3 * n)
-  have : Gamma (1 / 6 : ℂ) ≠ 0 := Gamma_ne_zero (ne_neg_natCast_of_re_pos (by norm_num))
+  have : Gamma c ≠ 0 := Gamma_ne_zero (ne_neg_natCast_of_re_pos hc_re)
   have : ((√π : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)
   have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
-  have : (3 : ℂ) ^ (-1 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (by norm_num))
-  have : ((3 * n)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (3 * n).factorial_ne_zero
+  have : (3 : ℂ) ^ (-(2 * (r : ℂ) + 1) / 2) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (by norm_num))
+  have : ((3 * n + r)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (3 * n + r).factorial_ne_zero
   have : (9 : ℂ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
   have : (3 : ℂ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
   field_simp
   ring
+
+private theorem hasSum_airyProductTerm_mul_three (z : ℂ) :
+    HasSum (fun n : ℕ => airyProductTerm z (3 * n))
+      (4 * (3 : ℂ) ^ (-4 / 3 : ℂ) * regularizedHGFun 0 {(2 / 3 : ℂ)} (z ^ 3 / 9) ^ 2) := by
+  have h := hasSum_airyProductTerm_sq_piece 0 (fun n => by
+    have ht := gamma_mul_add_third_nat 0 n
+    have h1 : ((0 + 1 : ℕ) : ℂ) / 3 + n = 2 * (((0 + 2 : ℕ) : ℂ) / 3) - 1 + n := by
+      push_cast; ring
+    have h3 : ((0 + 3 : ℕ) : ℂ) / 3 + n = (n : ℂ) + 1 := by push_cast; ring
+    rw [h1, h3, Gamma_nat_eq_factorial] at ht
+    linear_combination ht) z
+  have ha : ((0 + 2 : ℕ) : ℂ) / 3 = 2 / 3 := by norm_num
+  have he : -2 * (2 / 3 : ℂ) = -4 / 3 := by norm_num
+  simpa only [Nat.add_zero, pow_zero, mul_one, ha, he] using h
 
 private theorem hasSum_airyProductTerm_mul_three_add_one (z : ℂ) :
     HasSum (fun n : ℕ => airyProductTerm z (3 * n + 1))
@@ -233,10 +253,6 @@ private theorem hasSum_airyProductTerm_mul_three_add_one (z : ℂ) :
   refine ((hasSum_regularizedHGFun (a := {(1 / 2 : ℂ), (1 : ℂ)})
     (b := {(2 / 3 : ℂ), (4 / 3 : ℂ), (1 : ℂ)}) (by simp) (4 * (z ^ 3 / 9))).mul_left
     (4 / 9 * z)).congr_fun fun n => ?_
-  have hp1 : (ascPochhammer ℂ n).eval 1 = (n ! : ℂ) := by
-    have h1 := (Gamma_add_nat_div_Gamma_eq 1 (ne_neg_natCast_of_re_pos (by norm_num)) (n := n)).symm
-    rw [Gamma_one, div_one, add_comm] at h1
-    rw [h1, Gamma_nat_eq_factorial]
   have hp2 : (ascPochhammer ℂ n).eval (1 / 2) = Gamma (1 / 2 + n) / ((√π : ℝ) : ℂ) := by
     rw [← Gamma_add_nat_div_Gamma_eq _ (ne_neg_natCast_of_re_pos (by norm_num)),
       Gamma_one_half_eq, Real.sqrt_eq_rpow, ofReal_cpow Real.pi_nonneg]
@@ -256,11 +272,9 @@ private theorem hasSum_airyProductTerm_mul_three_add_one (z : ℂ) :
   have harg : (2 * ((3 * n + 1 : ℕ) : ℂ) + 1) / 6 = (1 / 2 : ℂ) + n := by push_cast; ring
   have hz1 : z ^ (3 * n + 1) = z * z ^ (3 * n) := pow_succ' z (3 * n)
   simp only [airyProductTerm, regularizedHGFunCoeff, Multiset.insert_eq_cons, Multiset.map_cons,
-    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton, harg, hp1, hp2,
-    four_mul_cube_div_nine_pow, hz1, twelve_cpow_add_natCast, h2pow, htrip, h3pow,
-    pi_cpow_neg_three_halves]
-  set G := Gamma ((1 / 2 : ℂ) + n)
-  set Z := z ^ (3 * n)
+    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton, harg,
+    ascPochhammer_eval_one, hp2, four_mul_cube_div_nine_pow, hz1, twelve_cpow_add_natCast, h2pow,
+    htrip, h3pow, pi_cpow_neg_three_halves]
   have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
   have : ((√π : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)
   have : (3 : ℂ) ^ (1 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (by norm_num))
@@ -275,95 +289,56 @@ private theorem hasSum_airyProductTerm_mul_three_add_two (z : ℂ) :
     HasSum (fun n : ℕ => airyProductTerm z (3 * n + 2))
       (4 * (3 : ℂ) ^ (-8 / 3 : ℂ) * z ^ 2 *
         regularizedHGFun 0 {(4 / 3 : ℂ)} (z ^ 3 / 9) ^ 2) := by
-  have hpole : ∀ k : ℕ, 2 * (4 / 3 : ℂ) - 1 ≠ -k := ne_neg_natCast_of_re_pos (by norm_num)
-  rw [regularizedHGFun_zero_singleton_sq_eq hpole (z ^ 3 / 9)]
-  have h2a : 2 * (4 / 3 : ℂ) - 1 = 5 / 3 := by norm_num
-  have ha2 : (4 / 3 : ℂ) - 1 / 2 = 5 / 6 := by norm_num
-  rw [h2a, ha2, ← mul_assoc]
-  refine ((hasSum_regularizedHGFun (a := {(5 / 6 : ℂ)}) (b := {(4 / 3 : ℂ), (5 / 3 : ℂ)})
-    (by simp) (4 * (z ^ 3 / 9))).mul_left
-    (4 * (3 : ℂ) ^ (-8 / 3 : ℂ) * z ^ 2 * (Gamma (5 / 3) / Gamma (4 / 3)))).congr_fun fun n => ?_
-  have hp : (ascPochhammer ℂ n).eval (5 / 6) = Gamma (5 / 6 + n) / Gamma (5 / 6) :=
-    (Gamma_add_nat_div_Gamma_eq _ (ne_neg_natCast_of_re_pos (by norm_num))).symm
-  have h230 : (2 : ℂ) ^ (-2 / 3 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl two_ne_zero)
-  have hGquot : Gamma (5 / 3 : ℂ) / Gamma (4 / 3) =
-      Gamma (5 / 6) / ((2 : ℂ) ^ (-2 / 3 : ℂ) * ((√π : ℝ) : ℂ)) := by
-    have hq := gamma_two_mul_div_gamma_add_half (s := 5 / 6) (by norm_num)
-    have hd1 : 2 * (5 / 6 : ℂ) = 5 / 3 := by norm_num
-    have hd2 : (5 / 6 : ℂ) + 1 / 2 = 4 / 3 := by norm_num
-    have hd3 : (1 : ℂ) - 5 / 3 = -2 / 3 := by norm_num
-    rwa [hd1, hd2, hd3] at hq
-  have htrip : (n ! : ℂ) * (Gamma (4 / 3 + (n : ℂ)) * Gamma (5 / 3 + (n : ℂ))) =
-      2 * π * ((3 : ℂ) ^ (-5 / 2 : ℂ) / (9 ^ n * 3 ^ n)) * ((3 * n + 2)! : ℂ) := by
+  have h := hasSum_airyProductTerm_sq_piece 2 (fun n => by
     have ht := gamma_mul_add_third_nat 2 n
     have h1 : ((2 + 1 : ℕ) : ℂ) / 3 + n = (n : ℂ) + 1 := by push_cast; ring
-    have he : -(2 * ((2 : ℕ) : ℂ) + 1) / 2 = (-5 / 2 : ℂ) := by norm_num
-    rw [h1, Gamma_nat_eq_factorial, he] at ht
-    simp only [Nat.reduceAdd, Nat.cast_ofNat] at ht
-    linear_combination ht
-  have h2pow : (2 : ℂ) ^ (2 * (5 / 6 : ℂ)) = 2 / (2 : ℂ) ^ (-2 / 3 : ℂ) := by
-    rw [eq_div_iff h230, ← cpow_add _ _ two_ne_zero]; norm_num
-  have h3pow : (3 : ℂ) ^ (-8 / 3 : ℂ) = (3 : ℂ) ^ (5 / 6 : ℂ) * (3 : ℂ) ^ (-5 / 2 : ℂ) / 3 := by
-    have he : (-8 / 3 : ℂ) = (5 / 6 : ℂ) + -5 / 2 - 1 := by norm_num
-    rw [he, cpow_sub _ _ (by norm_num), cpow_add _ _ (by norm_num), cpow_one]
-  have harg : (2 * ((3 * n + 2 : ℕ) : ℂ) + 1) / 6 = (5 / 6 : ℂ) + n := by push_cast; ring
-  have hz2 : z ^ (3 * n + 2) = z ^ 2 * z ^ (3 * n) := by rw [pow_add, mul_comm]
-  simp only [airyProductTerm, regularizedHGFunCoeff, Multiset.insert_eq_cons, Multiset.map_cons,
-    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton, harg, hp,
-    four_mul_cube_div_nine_pow, hz2, twelve_cpow_add_natCast, h2pow, h3pow, hGquot, htrip,
-    pi_cpow_neg_three_halves]
-  set G := Gamma ((5 / 6 : ℂ) + n)
-  set Z := z ^ (3 * n)
-  have : Gamma (5 / 6 : ℂ) ≠ 0 := Gamma_ne_zero (ne_neg_natCast_of_re_pos (by norm_num))
-  have : ((√π : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)
-  have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
-  have : (3 : ℂ) ^ (-5 / 2 : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (by norm_num))
-  have : ((3 * n + 2)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (3 * n + 2).factorial_ne_zero
-  have : (9 : ℂ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
-  have : (3 : ℂ) ^ n ≠ 0 := pow_ne_zero n (by norm_num)
-  field_simp
-  ring
+    have h3 : ((2 + 3 : ℕ) : ℂ) / 3 + n = 2 * (((2 + 2 : ℕ) : ℂ) / 3) - 1 + n := by
+      push_cast; ring
+    rw [h1, h3, Gamma_nat_eq_factorial] at ht
+    linear_combination ht) z
+  have ha : ((2 + 2 : ℕ) : ℂ) / 3 = 4 / 3 := by norm_num
+  have he : -2 * (4 / 3 : ℂ) = -8 / 3 := by norm_num
+  simpa only [ha, he] using h
 
 /-! ### Integral representation (DLMF 9.11.4) and Maclaurin series -/
 
-private theorem continuousOn_cexp_sub_cubic_mul_cpow (z s : ℂ) :
-    ContinuousOn (fun t : ℝ => cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ s) (Ioi 0) := by
+private theorem continuousOn_cexp_sub_cubic_mul_cpow (b z s : ℂ) :
+    ContinuousOn (fun t : ℝ => cexp (z * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ s) (Ioi 0) := by
   refine ContinuousOn.mul (by fun_prop) fun t ht => ?_
   exact (continuousAt_ofReal_cpow_const t s (Or.inr (mem_Ioi.mp ht).ne')).continuousWithinAt
 
-private theorem cexp_sub_cubic_re (z : ℂ) (t : ℝ) :
-    (z * t - (t : ℂ) ^ 3 / 12).re = z.re * t - t ^ 3 / 12 := by
+private theorem cexp_sub_cubic_re (b z : ℂ) (t : ℝ) :
+    (z * t - b * (t : ℂ) ^ 3).re = z.re * t - b.re * t ^ 3 := by
   simp [pow_three]
 
-/-- For every `z : ℂ` and every `s : ℂ` with `-1 < Re s`, the integrand
-`t ↦ exp(z * t - t ^ 3 / 12) * t ^ s` is Bochner integrable on `(0, ∞)`. -/
-theorem integrableOn_cexp_sub_cubic_mul_cpow (z : ℂ) {s : ℂ} (hs : -1 < s.re) :
-    IntegrableOn (fun t : ℝ => cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ s) (Ioi 0) := by
-  set A : ℝ := |z.re| + 1
-  set C : ℝ := 6 * A ^ 2 + (6 * A) ^ 3 / 24
+/-- For every `b : ℂ` with `0 < Re b`, every `z : ℂ`, and every `s : ℂ` with `-1 < Re s`, the
+integrand `t ↦ exp(z * t - b * t ^ 3) * t ^ s` is Bochner integrable on `(0, ∞)`. -/
+theorem integrableOn_cexp_sub_cubic_mul_cpow {b : ℂ} (hb : 0 < b.re) (z : ℂ) {s : ℂ}
+    (hs : -1 < s.re) :
+    IntegrableOn (fun t : ℝ => cexp (z * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ s) (Ioi 0) := by
+  set R : ℝ := |z.re| / b.re + 1
+  set C : ℝ := b.re * R ^ 3
   have hdom : IntegrableOn
-      (fun t : ℝ => Real.exp C * (t ^ s.re * Real.exp (-(1 / 24) * t ^ (3 : ℝ)))) (Ioi 0) :=
-    (integrableOn_rpow_mul_exp_neg_mul_rpow hs (by norm_num) (by norm_num)).const_mul (Real.exp C)
-  refine hdom.mono' ((continuousOn_cexp_sub_cubic_mul_cpow z s).aestronglyMeasurable
+      (fun t : ℝ => Real.exp C * (t ^ s.re * Real.exp (-(b.re / 2) * t ^ (3 : ℝ)))) (Ioi 0) :=
+    (integrableOn_rpow_mul_exp_neg_mul_rpow hs (by norm_num) (half_pos hb)).const_mul (Real.exp C)
+  refine hdom.mono' ((continuousOn_cexp_sub_cubic_mul_cpow b z s).aestronglyMeasurable
     measurableSet_Ioi) ((ae_restrict_mem measurableSet_Ioi).mono fun t ht => ?_)
   replace ht : 0 < t := mem_Ioi.mp ht
-  have hleA : z.re ≤ A := (le_abs_self z.re).trans (by simp [A])
-  have h1A : 1 ≤ A := by simp [A]
-  have hbound_exp : z.re * t - t ^ 3 / 12 ≤ C - (1 / 24) * t ^ 3 := by
-    have ht30 : 0 ≤ t ^ 3 := by positivity
-    have hA3 : 0 ≤ (6 * A) ^ 3 := by positivity
-    rcases le_total t (6 * A) with htA | htA
-    · have hzt : z.re * t ≤ 6 * A ^ 2 := by nlinarith
-      simp only [C]
-      linarith
-    · have ht2 : 24 * A ≤ t ^ 2 := by nlinarith
-      have hzt : z.re * t ≤ t ^ 3 / 24 := by nlinarith
-      have hC0 : 0 ≤ C := by positivity
-      linarith
+  have hR1 : 1 ≤ R := by simp only [R]; linarith [div_nonneg (abs_nonneg z.re) hb.le]
+  have hbR : |z.re| + b.re = b.re * R := by simp only [R]; field_simp
+  have hbR2 : b.re * R ≤ b.re * R ^ 2 := mul_le_mul_of_nonneg_left (by nlinarith) hb.le
+  have hzR : z.re ≤ 3 / 2 * b.re * R ^ 2 := by
+    linarith [le_abs_self z.re, mul_nonneg hb.le (sq_nonneg R)]
+  have hsq : 0 ≤ b.re / 2 * (t - R) ^ 2 * (t + 2 * R) := by positivity
+  have hbound_exp : z.re * t - b.re * t ^ 3 ≤ C - b.re / 2 * t ^ 3 := by
+    have : (C - b.re / 2 * t ^ 3) - (z.re * t - b.re * t ^ 3) =
+        b.re / 2 * (t - R) ^ 2 * (t + 2 * R) + (3 / 2 * b.re * R ^ 2 - z.re) * t := by
+      simp only [C]; ring
+    nlinarith
   rw [norm_mul, norm_exp, cexp_sub_cubic_re, norm_cpow_eq_rpow_re_of_pos ht, Real.rpow_ofNat]
-  calc Real.exp (z.re * t - t ^ 3 / 12) * t ^ s.re
-      ≤ Real.exp (C - (1 / 24) * t ^ 3) * t ^ s.re := by gcongr
-    _ = Real.exp C * (t ^ s.re * Real.exp (-(1 / 24) * t ^ 3)) := by
+  calc Real.exp (z.re * t - b.re * t ^ 3) * t ^ s.re
+      ≤ Real.exp (C - b.re / 2 * t ^ 3) * t ^ s.re := by gcongr
+    _ = Real.exp C * (t ^ s.re * Real.exp (-(b.re / 2) * t ^ 3)) := by
         rw [sub_eq_add_neg, Real.exp_add, neg_mul]; ring
 
 private theorem integral_cexp_neg_cubic_mul_cpow {q : ℝ} (hq : -1 < q) :
@@ -412,13 +387,14 @@ private theorem hasSum_integral_cexp_sub_cubic_mul_cpow {q : ℝ} (hq : -1 < q) 
   set bound : ℕ → ℝ → ℝ := fun m t =>
     (‖z‖ ^ m / m !) * (t ^ (m + q) * Real.exp (-(t ^ 3 / 12)))
   have hF_meas (m : ℕ) : AEStronglyMeasurable (F m) (volume.restrict (Ioi 0)) := by
-    simpa [F] using ((continuousOn_cexp_sub_cubic_mul_cpow 0 ((m + q : ℝ) : ℂ)).const_mul
+    have h0 (t : ℝ) : -((t : ℂ) ^ 3 / 12) = 0 * t - (1 / 12 : ℂ) * (t : ℂ) ^ 3 := by ring
+    simp_rw [F, h0]
+    exact ((continuousOn_cexp_sub_cubic_mul_cpow (1 / 12) 0 ((m + q : ℝ) : ℂ)).const_mul
       (z ^ m / m !)).aestronglyMeasurable measurableSet_Ioi
   have h_bound (m : ℕ) : ∀ᵐ t ∂volume.restrict (Ioi 0), ‖F m t‖ ≤ bound m t := by
     refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht => ?_
     replace ht : 0 < t := mem_Ioi.mp ht
-    have hexp_re : (-((t : ℂ) ^ 3 / 12)).re = -(t ^ 3 / 12) := by
-      simpa using cexp_sub_cubic_re 0 t
+    have hexp_re : (-((t : ℂ) ^ 3 / 12)).re = -(t ^ 3 / 12) := by simp [pow_three]
     simp only [F, bound, norm_mul, norm_div, norm_pow, Complex.norm_natCast, norm_exp, hexp_re,
       norm_cpow_eq_rpow_re_of_pos ht, ofReal_re]
     exact le_of_eq (by ring)
@@ -426,13 +402,16 @@ private theorem hasSum_integral_cexp_sub_cubic_mul_cpow {q : ℝ} (hq : -1 < q) 
     (ae_restrict_mem measurableSet_Ioi).mono fun _ ht =>
       (hasSum_norm_airyKernel_term z ht).summable
   have bound_integrable : Integrable (fun t => ∑' m, bound m t) (volume.restrict (Ioi 0)) := by
-    refine (integrableOn_cexp_sub_cubic_mul_cpow (‖z‖ : ℂ) (s := (q : ℂ))
-      (by simpa using hq)).norm.congr ?_
+    refine (integrableOn_cexp_sub_cubic_mul_cpow (b := 1 / 12) (by norm_num) (‖z‖ : ℂ)
+      (s := (q : ℂ)) (by simpa using hq)).norm.congr ?_
     refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht => ?_
     dsimp only
     replace ht : 0 < t := mem_Ioi.mp ht
     rw [(hasSum_norm_airyKernel_term z ht).tsum_eq, norm_mul, norm_exp, cexp_sub_cubic_re,
       ofReal_re, norm_cpow_eq_rpow_re_of_pos ht, ofReal_re, mul_comm]
+    congr 2
+    norm_num
+    ring
   have h_lim : ∀ᵐ t ∂volume.restrict (Ioi 0),
       HasSum (fun m => F m t) (cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (q : ℂ)) := by
     refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht => ?_
@@ -480,20 +459,6 @@ theorem airyAi_sq_add_airyBi_sq_eq_integral (z : ℂ) :
   refine hmod.unique (hblock.congr_fun fun n => ?_)
   simp [Fin.sum_univ_three, Nat.mul_comm n 3]
 
-/-- Real-power weight form of DLMF 9.11.4: for every `z : ℂ`,
-`airyAi z ^ 2 + airyBi z ^ 2 = π ^ (-3 / 2) * ∫ t in Ioi 0, exp(z t - t³ / 12) * ↑(t ^ (-1 / 2))`.
--/
-theorem airyAi_sq_add_airyBi_sq_eq_integral_rpow (z : ℂ) :
-    airyAi z ^ 2 + airyBi z ^ 2 =
-      (π : ℂ) ^ (-3 / 2 : ℂ) *
-        ∫ t in Ioi (0 : ℝ), cexp (z * t - (t : ℂ) ^ 3 / 12) * ((t ^ (-1 / 2 : ℝ) : ℝ) : ℂ) := by
-  rw [airyAi_sq_add_airyBi_sq_eq_integral z]
-  congr 1
-  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-  rw [ofReal_cpow (mem_Ioi.mp ht).le]
-  push_cast
-  rfl
-
 /-- **Maclaurin series of `Ai(z)² + Bi(z)²`.** For every `z : ℂ`, the power series with `m`-th
 coefficient `π ^ (-3 / 2) * 12 ^ ((2m + 1) / 6) * Γ((2m + 1) / 6) / (3 * m!)` converges to
 `airyAi z ^ 2 + airyBi z ^ 2`. -/
@@ -531,24 +496,25 @@ theorem four_mul_airyAi_zero_sq :
 
 /-! ### Parametric derivatives of the integral representation -/
 
-/-- Differentiating `z ↦ ∫ t in Ioi 0, exp(z t - t³ / 12) * t ^ s` under the integral sign shifts
-the power exponent `s` to `s + 1` whenever `-1 < Re s`. -/
-theorem hasDerivAt_integral_cexp_sub_cubic_mul_cpow (z : ℂ) {s : ℂ} (hs : -1 < s.re) :
+/-- Differentiating `z ↦ ∫ t in Ioi 0, exp(z t - b t³) * t ^ s` under the integral sign shifts the
+power exponent `s` to `s + 1` whenever `0 < Re b` and `-1 < Re s`. -/
+theorem hasDerivAt_integral_cexp_sub_cubic_mul_cpow {b : ℂ} (hb : 0 < b.re) (z : ℂ) {s : ℂ}
+    (hs : -1 < s.re) :
     HasDerivAt
-      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ s)
-      (∫ t in Ioi (0 : ℝ), cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (s + 1)) z := by
+      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), cexp (w * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ s)
+      (∫ t in Ioi (0 : ℝ), cexp (z * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ (s + 1)) z := by
   have hs1 : -1 < (s + 1).re := by simp; linarith
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (F := fun (w : ℂ) (t : ℝ) => cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ s)
-    (F' := fun (w : ℂ) (t : ℝ) => cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (s + 1))
+    (F := fun (w : ℂ) (t : ℝ) => cexp (w * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ s)
+    (F' := fun (w : ℂ) (t : ℝ) => cexp (w * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ (s + 1))
     (μ := volume.restrict (Ioi (0 : ℝ)))
-    (bound := fun t => ‖cexp ((z + 1) * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (s + 1)‖)
+    (bound := fun t => ‖cexp ((z + 1) * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ (s + 1)‖)
     (Metric.ball_mem_nhds z zero_lt_one)
     (Eventually.of_forall fun w =>
-      (continuousOn_cexp_sub_cubic_mul_cpow w s).aestronglyMeasurable measurableSet_Ioi)
-    (integrableOn_cexp_sub_cubic_mul_cpow z hs)
-    ((continuousOn_cexp_sub_cubic_mul_cpow z (s + 1)).aestronglyMeasurable measurableSet_Ioi)
-    ?_ (integrableOn_cexp_sub_cubic_mul_cpow (z + 1) hs1).norm ?_).2
+      (continuousOn_cexp_sub_cubic_mul_cpow b w s).aestronglyMeasurable measurableSet_Ioi)
+    (integrableOn_cexp_sub_cubic_mul_cpow hb z hs)
+    ((continuousOn_cexp_sub_cubic_mul_cpow b z (s + 1)).aestronglyMeasurable measurableSet_Ioi)
+    ?_ (integrableOn_cexp_sub_cubic_mul_cpow hb (z + 1) hs1).norm ?_).2
   · refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht w hw => ?_
     replace ht : 0 < t := mem_Ioi.mp ht
     rw [Metric.mem_ball, dist_eq_norm] at hw
@@ -561,18 +527,18 @@ theorem hasDerivAt_integral_cexp_sub_cubic_mul_cpow (z : ℂ) {s : ℂ} (hs : -1
     gcongr
   · refine (ae_restrict_mem measurableSet_Ioi).mono fun t ht w _ => ?_
     replace ht : 0 < t := mem_Ioi.mp ht
-    have hlin : HasDerivAt (fun u : ℂ => u * t - (t : ℂ) ^ 3 / 12) (t : ℂ) w := by
-      simpa using ((hasDerivAt_id w).mul_const (t : ℂ)).sub_const ((t : ℂ) ^ 3 / 12)
+    have hlin : HasDerivAt (fun u : ℂ => u * t - b * (t : ℂ) ^ 3) (t : ℂ) w := by
+      simpa using ((hasDerivAt_id w).mul_const (t : ℂ)).sub_const (b * (t : ℂ) ^ 3)
     have hd := (hlin.cexp).mul_const ((t : ℂ) ^ s)
-    have hpow : cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) * (t : ℂ) ^ s =
-        cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (s + 1) := by
+    have hpow : cexp (w * t - b * (t : ℂ) ^ 3) * (t : ℂ) * (t : ℂ) ^ s =
+        cexp (w * t - b * (t : ℂ) ^ 3) * (t : ℂ) ^ (s + 1) := by
       rw [mul_assoc, cpow_add _ _ (ofReal_ne_zero.mpr ht.ne'), cpow_one, mul_comm (t : ℂ)]
     rwa [hpow] at hd
 
 /-- **Iterated derivatives of DLMF 9.11.4.** For every `k : ℕ` and `z : ℂ`,
 `deriv^[k] (fun w => airyAi w ^ 2 + airyBi w ^ 2) z` equals
 `π ^ (-3 / 2) * ∫ t in Ioi 0, exp(z t - t³ / 12) * t ^ (k - 1 / 2)`. -/
-theorem iteratedDeriv_airyAi_sq_add_airyBi_sq_eq_integral (k : ℕ) (z : ℂ) :
+theorem iterate_deriv_airyAi_sq_add_airyBi_sq_eq_integral (k : ℕ) (z : ℂ) :
     deriv^[k] (fun w => airyAi w ^ 2 + airyBi w ^ 2) z =
       (π : ℂ) ^ (-3 / 2 : ℂ) *
         ∫ t in Ioi (0 : ℝ), cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ ((k : ℂ) - 1 / 2) := by
@@ -580,12 +546,15 @@ theorem iteratedDeriv_airyAi_sq_add_airyBi_sq_eq_integral (k : ℕ) (z : ℂ) :
   | zero =>
     simpa [zero_sub, neg_div] using airyAi_sq_add_airyBi_sq_eq_integral z
   | succ k ih =>
+    have hdiv (u : ℂ) (t : ℝ) : u * t - (t : ℂ) ^ 3 / 12 = u * t - (1 / 12 : ℂ) * (t : ℂ) ^ 3 := by
+      ring
     rw [Function.iterate_succ_apply', funext ih]
+    simp_rw [hdiv]
     have hk : -1 < ((k : ℂ) - 1 / 2).re := by
       simp only [sub_re, natCast_re, one_re, div_ofNat_re]
       linarith [k.cast_nonneg (α := ℝ)]
-    have hd := (hasDerivAt_integral_cexp_sub_cubic_mul_cpow z hk).const_mul
-      ((π : ℂ) ^ (-3 / 2 : ℂ))
+    have hd := (hasDerivAt_integral_cexp_sub_cubic_mul_cpow (b := 1 / 12) (by norm_num) z
+      hk).const_mul ((π : ℂ) ^ (-3 / 2 : ℂ))
     have hshift : ((k : ℂ) - 1 / 2) + 1 = ((k + 1 : ℕ) : ℂ) - 1 / 2 := by push_cast; ring
     rw [hshift] at hd
     exact hd.deriv
@@ -604,7 +573,7 @@ theorem airyAi_mul_deriv_add_airyBi_mul_deriv_eq_integral (z : ℂ) :
     have h := (hdAi.pow 2).add (hdBi.pow 2)
     rw [Pi.add_def, Pi.pow_def, Pi.pow_def] at h
     simpa [pow_one] using h
-  have h1 := iteratedDeriv_airyAi_sq_add_airyBi_sq_eq_integral 1 z
+  have h1 := iterate_deriv_airyAi_sq_add_airyBi_sq_eq_integral 1 z
   have hhalf : ((1 : ℕ) : ℂ) - 1 / 2 = (1 / 2 : ℂ) := by norm_num
   rw [Function.iterate_one, hhalf, hd.deriv] at h1
   linear_combination h1 / 2
