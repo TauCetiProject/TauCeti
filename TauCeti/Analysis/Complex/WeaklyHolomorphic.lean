@@ -38,8 +38,8 @@ Completeness of `E` is used only in the last step, where the vector-valued integ
 
 * `TauCeti.continuousWithinAt_of_forall_dual`: weak differentiability within a set at a point
   implies continuity within the set at that point.
-* `TauCeti.continuousOn_of_forall_dual`: weak differentiability on any set implies continuity,
-  even when `E` is not complete.
+* `TauCeti.continuousOn_of_forall_dual_differentiableOn`: weak differentiability on any set
+  implies continuity, even when `E` is not complete.
 * `TauCeti.differentiableOn_of_forall_dual`: weak holomorphy on an open set implies holomorphy.
 * `TauCeti.differentiableOn_iff_forall_dual`, `TauCeti.differentiable_iff_forall_dual`: the
   equivalence of holomorphy and weak holomorphy.
@@ -102,7 +102,7 @@ theorem continuousWithinAt_of_forall_dual {c : ℂ}
 
 /-- A function that is weakly differentiable on a set `U` is continuous on `U`. This needs neither
 openness of `U` nor completeness of `E`. -/
-theorem continuousOn_of_forall_dual
+theorem continuousOn_of_forall_dual_differentiableOn
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) :
     ContinuousOn f U := fun c hc ↦ continuousWithinAt_of_forall_dual fun ℓ ↦ hf ℓ c hc
 
@@ -112,7 +112,7 @@ functional `ℓ` on `E`, then `f` is complex differentiable on `U`. -/
 theorem differentiableOn_of_forall_dual [CompleteSpace E]
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) (hU : IsOpen U) :
     DifferentiableOn ℂ f U := by
-  have hcont := continuousOn_of_forall_dual hf
+  have hcont := continuousOn_of_forall_dual_differentiableOn hf
   intro c hc
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1 hU c hc
   obtain ⟨R, hR, hRε⟩ : ∃ R : ℝ≥0, 0 < R ∧ (R : ℝ) < ε :=
