@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
@@ -19,6 +21,10 @@ of a submodule, since a submodule is closed under negation. A unit of a ring sta
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
 inverse both preserve it.
 
+Membership in a pointwise translate under a group action is tested by the inverse action.
+For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
+`s⁻¹ t` is a unit of `C`.
+
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
 Mathlib's pointwise action on submodules.
@@ -30,6 +36,10 @@ this file to restate both.
 
 ## Main results
 
+* `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
+  membership of `g⁻¹ • x` in `N`.
+* `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
+  units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
   `sⁿ : A` lands in `⟨s, _⟩ⁿ • M₀`, so a consumer speaking `A` needs no coercion plumbing.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
@@ -45,6 +55,12 @@ public section
 open scoped Pointwise
 
 namespace Submodule
+
+/-- Membership in a pointwise translate under a group action is tested by the inverse action. -/
+theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
+    {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
+  rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 
@@ -130,6 +146,41 @@ theorem mem_stabilizer_units_iff {R : Type*} [Ring R] {L : Submodule ℤ R} {u :
 end Ring
 
 end Submodule
+
+section Subalgebra
+
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- Two translates `s C` and `t C` of a subalgebra agree exactly when `s⁻¹ t` is a unit of `C`. -/
+theorem Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff {C : Subalgebra R S} {s t : Sˣ} :
+    s • Subalgebra.toSubmodule C = t • Subalgebra.toSubmodule C ↔
+      s⁻¹ * t ∈ C.toSubmonoid.units := by
+  -- If `s C ≤ t C`, then `s ∈ t C`, that is `t⁻¹ s ∈ C`.
+  have key {s t : Sˣ} (h : s • Subalgebra.toSubmodule C ≤ t • Subalgebra.toSubmodule C) :
+      (↑(t⁻¹ * s) : S) ∈ C := by
+    have hs : (s : S) ∈ s • Subalgebra.toSubmodule C := by
+      exact (Submodule.mem_pointwise_smul_iff_inv_smul_mem (g := s)).2
+        (by simp [Units.smul_def])
+    have hmem := h hs
+    exact (Submodule.mem_pointwise_smul_iff_inv_smul_mem (g := t)).1 hmem
+  refine ⟨fun h ↦ ⟨key h.ge, by simpa using key h.le⟩, fun h ↦ ?_⟩
+  -- If `u = s⁻¹ t` is a unit of `C`, then `t C = s u C = s C`.
+  obtain ⟨h₁, h₂⟩ := (Submonoid.mem_units_iff _ _).1 h
+  rw [Subsemiring.mem_toSubmonoid, Subalgebra.mem_toSubsemiring] at h₁ h₂
+  ext z
+  suffices h : (↑s⁻¹ : S) * z ∈ C ↔ (↑t⁻¹ : S) * z ∈ C from
+    (Submodule.mem_pointwise_smul_iff_inv_smul_mem (N := C.toSubmodule) (g := s) (x := z)).trans
+      (h.trans (Submodule.mem_pointwise_smul_iff_inv_smul_mem
+        (N := C.toSubmodule) (g := t) (x := z)).symm)
+  constructor
+  · intro hz
+    have := mul_mem h₂ hz
+    rwa [← mul_assoc, ← Units.val_mul, mul_inv_rev, inv_inv, mul_inv_cancel_right] at this
+  · intro hz
+    have := mul_mem h₁ hz
+    rwa [← mul_assoc, ← Units.val_mul, mul_assoc, mul_inv_cancel, mul_one] at this
+
+end Subalgebra
 
 namespace TauCeti
 

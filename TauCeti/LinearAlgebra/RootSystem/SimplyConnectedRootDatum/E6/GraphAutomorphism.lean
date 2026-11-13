@@ -39,8 +39,8 @@ The coordinates and node numbering follow Bourbaki, *Lie Groups and Lie Algebras
 Plate V. The graph automorphism and its role in the twisted family `²E₆` follow R. W. Carter,
 *Simple Groups of Lie Type*, §12.2.
 
-The pinned-isomorphism target in Layer 9 of the ReductiveGroups roadmap lifts root-datum
-automorphisms such as this one to pinned group-scheme automorphisms.
+The isomorphism theorem for pinned reductive groups lifts root-datum automorphisms such as this one
+to pinned group-scheme automorphisms.
 -/
 
 public section

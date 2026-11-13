@@ -74,8 +74,8 @@ theorem timeEHolderNorm_le_of_timeEHolderNorm_le [PseudoMetricSpace F]
   refine timeEHolderNorm_le_iff.2 fun x => ?_
   have hx : HolderOnWith K β (fun t => v (slabMk x t)) univ :=
     fun t _ s _ => timeEHolderNorm_le_iff.1 h x t s
-  exact fun t s => hx.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s
-    (mem_univ s)
+  exact fun t s => HolderOnWith.of_le_of_dist_le (fun _ ht _ hs _ => hx.dist_le ht hs)
+    (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s (mem_univ s)
 
 /-- **The parabolic seminorm at a smaller exponent.** Let `v` be a function on the slab
 `E × [a, b]` whose values lie within distance `D` of each other, with spatial `β₁`-seminorm at most
@@ -95,8 +95,8 @@ theorem eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le [MetricSpace
   · refine spaceEHolderNorm_le_iff.2 fun t => ?_
     have ht : HolderOnWith K₁ β₁ (fun x => v (slabMk x t)) univ :=
       fun x _ y _ => spaceEHolderNorm_le_iff.1 h₁ t x y
-    exact fun x y => ht.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y
-      (mem_univ y)
+    exact fun x y => HolderOnWith.of_le_of_dist_le (fun _ hx _ hy _ => ht.dist_le hx hy)
+      (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y (mem_univ y)
   · exact timeEHolderNorm_le_of_timeEHolderNorm_le h₂ hD hα₂ hδ₂
 
 /-- Values bounded in norm by `C` on the slab lie within distance `2 C` of each other. -/
@@ -121,8 +121,8 @@ theorem timeEHolderNorm_one_le_of_hasDerivWithinAt {w wₜ : E → ℝ → F} {C
     timeEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnnorm_hasDerivWithin_le (hw x)
-    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC x t ht).to_restrict
+  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le (hw x)
+    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC x t ht).to_restrict
   simpa only [space_slabMk, slabTime_slabMk, Set.domRestrict_apply] using holderWith_one.2 hlip t s
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -136,9 +136,9 @@ theorem spaceEHolderNorm_one_le_of_hasFDerivAt {w : E → ℝ → F} {w' : E →
     spaceEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine spaceEHolderNorm_le_iff.2 fun t x y => ?_
-  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
     (fun z _ => (hw t t.2 z).hasFDerivWithinAt)
-    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC z t t.2)
+    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC z t t.2)
   simpa only [space_slabMk, slabTime_slabMk] using holderWith_one.2 hlip x y
 
 /-- The comparison of constants in `eHolderNorm_add_eHolderNorm_le`: with `M₁ = 2 M₀ / ε + M₂ ε`

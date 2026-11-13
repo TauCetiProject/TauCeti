@@ -160,7 +160,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ioc (p q : R[X]) {a 
     cauchyIndex p q (Ioc a b) =
       (signVariationsRight (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
   rcases hab.lt_or_eq with hab | rfl
-  · rw [← Ioo_insert_right hab, cauchyIndex_insert _ _ (by simp),
+  · rw [← insert_right_Ioo hab, cauchyIndex_insert _ _ (by simp),
       cauchyIndex_eq_sub_signVariations_Ioo _ _ hab, cauchyJump_eq_sub_signVariations]
     ring
   · simp
@@ -171,7 +171,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Icc (p q : R[X]) {a 
     (hab : a ≤ b) :
     cauchyIndex p q (Icc a b) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsRight (sturmSeq p q) b := by
-  rw [← Ioc_insert_left hab, cauchyIndex_insert _ _ (by simp),
+  rw [← insert_left_Ioc hab, cauchyIndex_insert _ _ (by simp),
     cauchyIndex_eq_sub_signVariations_Ioc _ _ hab, cauchyJump_eq_sub_signVariations]
   ring
 
@@ -181,7 +181,7 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ico (p q : R[X]) {a 
     cauchyIndex p q (Ico a b) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsLeft (sturmSeq p q) b := by
   have h := cauchyIndex_eq_sub_signVariations_Icc p q hab
-  rw [← Ico_insert_right hab, cauchyIndex_insert _ _ (by simp),
+  rw [← insert_right_Ico hab, cauchyIndex_insert _ _ (by simp),
     cauchyJump_eq_sub_signVariations] at h
   linarith only [h]
 
@@ -208,7 +208,7 @@ at `+∞`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Ici (p q : R[X]) (a : R) :
     cauchyIndex p q (Ici a) =
       (signVariationsLeft (sturmSeq p q) a : ℤ) - signVariationsAtTop (sturmSeq p q) := by
-  rw [← Ioi_insert, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Ioi,
+  rw [← insert_Ioi, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Ioi,
     cauchyJump_eq_sub_signVariations]
   ring
 
@@ -235,7 +235,7 @@ at `b`. -/
 theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_Iic (p q : R[X]) (b : R) :
     cauchyIndex p q (Iic b) =
       (signVariationsAtBot (sturmSeq p q) : ℤ) - signVariationsRight (sturmSeq p q) b := by
-  rw [← Iio_insert, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Iio,
+  rw [← insert_Iio, cauchyIndex_insert _ _ (by simp), cauchyIndex_eq_sub_signVariations_Iio,
     cauchyJump_eq_sub_signVariations]
   ring
 
@@ -278,8 +278,8 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod {p q : R[X
   rw [List.signVariations_cons_cons_of_ne_zero _ (by simpa using hp') (by simpa using hq'),
     List.signVariations_cons_cons_of_ne_zero _ hp' hq']
   simp only [sign_mul, sign_pow, Left.sign_neg, sign_one]
-  rw [← SignType.ite_mul_neg_one_pow_sub_ite _ _ (sign_ne_zero.mpr hp') (sign_ne_zero.mpr hq')]
   push_cast
+  rw [← SignType.ite_mul_neg_one_pow_sub_ite]
   ring
 
 end TauCeti

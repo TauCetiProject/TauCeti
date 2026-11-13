@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Schur
 public import TauCeti.Algebra.Lie.Submodule.DirectSum
 
@@ -51,6 +52,15 @@ enveloping-algebra dictionary lives,
 `TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean`, exactly as
 `TauCeti/Algebra/Lie/UniversalEnveloping/Isotypic.lean` does for the isotypic component.
 
+The multiplicity is stated for an arbitrary irreducible `S` rather than for the irreducible
+quotient `L(λ)`; the `L(λ)`-indexed form is this statement with `S` instantiated. The finrank of
+the isotypic component, `dim (LieModule.isotypicComponent S M) = isotypicMultiplicity · dim S`, is
+proved through the enveloping-algebra dictionary, as `LieModule.finrank_isotypicComponent` of
+`TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean`. The packaged decomposition
+`M ≃ ⨁_λ L(λ)^{⊕ m_λ}` is `TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient` of
+`TauCeti/Algebra/Lie/HighestWeight/Decomposition.lean`, which counts the summands of a
+decomposition with the theorems below.
+
 ## Main definitions
 
 * `LieModule.isotypicMultiplicity`: the finrank of `S →ₗ⁅R,L⁆ M`, which the theorems below
@@ -60,7 +70,8 @@ enveloping-algebra dictionary lives,
 
 * `LieModule.isotypicMultiplicity_eq_sum_of_isInternal`: **the multiplicity is additive over a
   finite decomposition of `M` into Lie submodules.** `LieModule.isotypicMultiplicity_directSum` is
-  the same for a finite external direct sum.
+  the same for a finite external direct sum, and `LieModule.isotypicMultiplicity_prod` for a binary
+  product.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton`: the zero module occurs with
   multiplicity zero.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton_codomain`: everything occurs in the zero
@@ -74,25 +85,6 @@ enveloping-algebra dictionary lives,
   equivalent to `S`** in a finite decomposition of `M` into irreducibles.
 * `LieModule.ncard_setOf_nonempty_lieModuleEquiv_eq`: **the count is independent of which finite
   decomposition is taken.**
-
-## Roadmap
-
-This is the `isotypicMultiplicity` target of the decomposition toolkit in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, together with the additivity of
-the morphism space over a direct-sum decomposition that `TauCeti/Algebra/Lie/Schur.lean` names as
-the missing ingredient of the multiplicity theorem. The multiplicity is stated for an arbitrary
-irreducible `S` rather than for the irreducible quotient `L(λ)`, which the roadmap's own signature
-uses; the `L(λ)`-indexed form is this statement with `S` instantiated. The finrank of the isotypic
-component, `dim (LieModule.isotypicComponent S M) = isotypicMultiplicity · dim S`, is the next item
-of that milestone, "Isotypic components and multiplicities, through the enveloping-algebra
-dictionary"; it is proved through the dictionary, as
-`LieModule.finrank_isotypicComponent` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Multiplicity.lean`. The packaged decomposition
-`M ≃ ⨁_λ L(λ)^{⊕ m_λ}` that closes the milestone is
-`TauCeti.nonempty_lieModuleEquiv_directSum_irreducibleQuotient` of
-`TauCeti/Algebra/Lie/HighestWeight/Decomposition.lean`, which counts the summands of a
-decomposition with the theorems below. The toolkit's remaining milestone, the tensor
-multiplicities with the minuscule Pieri rule, is untouched here.
 
 ## References
 
@@ -151,6 +143,15 @@ theorem isotypicMultiplicity_eq_zero_of_subsingleton_codomain [Nontrivial R] [Su
     ⟨fun _ _ ↦ LieModuleHom.ext fun _ ↦ Subsingleton.elim _ _⟩
   Module.finrank_zero_of_subsingleton
 
+/-- The multiplicity in a Noetherian module of an irreducible type that is not finitely generated
+is `0`. -/
+theorem isotypicMultiplicity_eq_zero_of_not_finite [IsNoetherian R M] [IsIrreducible R L S]
+    (hS : ¬ Module.Finite R S) : isotypicMultiplicity R L M S = 0 :=
+  have := subsingleton_lieModuleHom_of_not_finite (R := R) (L := L) (M := M) (S := S) hS
+  have := nontrivial_of_isIrreducible R L S
+  have := Module.nontrivial R S
+  (isotypicMultiplicity_def R L M S).trans Module.finrank_zero_of_subsingleton
+
 end Def
 
 /-! ### The multiplicity depends only on the two equivalence classes -/
@@ -168,7 +169,7 @@ variable [AddCommGroup S'] [Module R S'] [LieRingModule L S']
 Postcomposition with an equivalence identifies the two morphism spaces. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv (e : M ≃ₗ⁅R,L⁆ M') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M' S :=
-  (TauCeti.LieModuleEquiv.congrRight (M := S) e).finrank_eq
+  (e.congrRight (M := S)).finrank_eq
 
 /-- **The multiplicity only depends on the equivalence class of the module being counted.**
 Precomposition with an equivalence identifies the two morphism spaces. This is what lets the
@@ -176,7 +177,7 @@ multiplicity be read for an irreducible determined only up to equivalence, such 
 highest-weight quotient. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv_type (e : S ≃ₗ⁅R,L⁆ S') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M S' :=
-  (TauCeti.LieModuleEquiv.congrLeft (P := M) e).finrank_eq
+  (e.congrLeft (P := M)).finrank_eq
 
 end Invariance
 
@@ -216,6 +217,18 @@ theorem isotypicMultiplicity_directSum (P : ι → Type w₃) [∀ i, AddCommGro
   simp_rw [isotypicMultiplicity_def]
 
 end Additivity
+
+omit [LieModule K L S] in
+/-- **Multiplicity is additive over a binary product.** A morphism into `M × N` is the pair of its
+two components. Unlike `LieModule.isotypicMultiplicity_directSum`, the two factors may live in
+different universes. -/
+theorem isotypicMultiplicity_prod (N : Type w₃) [AddCommGroup N] [Module K N] [LieRingModule L N]
+    [LieModule K L N] (hM : FiniteDimensional K (S →ₗ⁅K,L⁆ M))
+    (hN : FiniteDimensional K (S →ₗ⁅K,L⁆ N)) :
+    isotypicMultiplicity K L (M × N) S =
+      isotypicMultiplicity K L M S + isotypicMultiplicity K L N S := by
+  rw [isotypicMultiplicity_def, ← (TauCeti.LieModuleHom.prodEquiv K L M N S).finrank_eq,
+    Module.finrank_prod, isotypicMultiplicity_def, isotypicMultiplicity_def]
 
 /-- **An irreducible module occurs in itself with multiplicity one.** -/
 @[simp]

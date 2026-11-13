@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Stable
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Dynamics.Flow.LevelCrossing
 
 /-!
 # Level slices of connecting gradient trajectories
@@ -55,7 +55,7 @@ theorem IsNegativeGradient.orbit_strictAnti_of_nonconstant
     exact hanti ht.2.le
   have hgrad : ∀ t ∈ Ioo a b, ∇ f (φ t x) = 0 := by
     intro t ht
-    apply (hφ.isIntegralCurve x).gradient_eq_zero_of_eventually_const_value (hf t)
+    apply (hφ.isIntegralCurve x).gradient_eq_zero_of_eventually_const_value
     exact Filter.Eventually.mono (isOpen_Ioo.mem_nhds ht) fun u hu ↦ hval u hu
   have hderiv : ∀ t ∈ Ioo a b, deriv (fun u ↦ φ u x) t = 0 := by
     intro t ht
@@ -110,25 +110,13 @@ theorem IsNegativeGradient.existsUnique_time_value_of_mem_unstableSet_inter_stab
     (hx : x ∈ unstableSet φ p ∩ stableSet φ q)
     {c : ℝ} (hc : f q < c ∧ c < f p) :
     ∃! t : ℝ, f (φ t x) = c := by
-  have hcont : Continuous (fun t : ℝ ↦ f (φ t x)) := by
-    apply continuous_iff_continuousAt.mpr
-    intro t
-    exact ContinuousAt.comp' (f := fun u : ℝ ↦ φ u x) (hf t).continuousAt
-      ((φ.continuous continuous_id continuous_const :
-        Continuous (fun u : ℝ ↦ φ u x)).continuousAt)
-  have hbot : Tendsto (fun t ↦ f (φ t x)) atBot (𝓝 (f p)) :=
-    hfp.tendsto.comp (mem_unstableSet.mp hx.1)
-  have htop : Tendsto (fun t ↦ f (φ t x)) atTop (𝓝 (f q)) :=
-    hfq.tendsto.comp (mem_stableSet.mp hx.2)
-  obtain ⟨t, ht⟩ := intermediate_value_univ₂_eventually₂ continuous_const hcont
-    (hbot.eventually (eventually_gt_nhds hc.2) |>.mono fun _ h ↦ h.le)
-    (htop.eventually (eventually_lt_nhds hc.1) |>.mono fun _ h ↦ h.le)
   have hpq : p ≠ q := by
-    intro hpq
-    simp only [hpq] at hc
-    exact (lt_asymm hc.1 hc.2)
-  exact ⟨t, ht.symm, fun u hu ↦
-    (hφ.orbit_strictAnti_of_mem_unstableSet_inter_stableSet hf hpq hx).injective
-      (hu.trans ht)⟩
+    rintro rfl
+    exact lt_asymm hc.1 hc.2
+  exact Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
+    (continuous_iff_continuousAt.2 fun t ↦
+      ContinuousAt.comp' (f := fun u : ℝ ↦ φ u x) (hf t).continuousAt
+        (φ.continuous continuous_id continuous_const).continuousAt)
+    hfp hfq (hφ.orbit_strictAnti_of_mem_unstableSet_inter_stableSet hf hpq hx) hx hc
 
 end Flow

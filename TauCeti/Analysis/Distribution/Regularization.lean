@@ -14,13 +14,13 @@ import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Multilinear.Basis
-import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
 
@@ -130,6 +130,16 @@ theorem translatePairing_zero (ρ : 𝓓(V, ℝ)) :
   ext x
   simp [translatePairing]
 
+/-- The regularization by the zero test function vanishes. -/
+@[simp]
+theorem translatePairing_zero_kernel (T : 𝓓'(Ω, F)) :
+    T.translatePairing (0 : 𝓓(V, ℝ)) = 0 := by
+  funext x
+  by_cases hx : MapsTo (· + x) (tsupport (0 : 𝓓(V, ℝ))) Ω
+  · rw [translatePairing_eq T (φ := 0) fun y => by simp]
+    simp
+  · exact translatePairing_eq_zero_of_not_mapsTo T hx
+
 /-- Regularization is additive in the distribution. -/
 @[simp]
 theorem translatePairing_add (T S : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
@@ -177,14 +187,17 @@ private theorem translatePairing_add_sub_sub_eq (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
     translatePairing_eq _ (translateOfMapsTo_apply ρ hx), lineDerivOp_apply_apply]
   simp [sub_eq_add_neg]
 
-variable [FiniteDimensional ℝ E]
-
 /-- The regularization is differentiable at every admissible translation, with derivative given
 by the regularizations of the distributional derivatives of `T`. -/
 private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (T.translatePairing ρ) L x ∧
       ∀ v, L v = (∂_{v} T).translatePairing ρ x := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · -- If `ρ = 0` every translate is zero, so the regularization and its derivatives vanish.
+    obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    exact ⟨0, by rw [translatePairing_zero_kernel]; exact hasFDerivAt_const (0 : F) x,
+      fun v => by simp⟩
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v => (∂_{v} T).translatePairing ρ x
       map_add' := fun v w => by simp [lineDerivOp_left_add]
@@ -196,42 +209,31 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   obtain ⟨δ, hδ, hδΩ, hδx⟩ := exists_cthickening_tsupport_translateOfMapsTo_subset ρ hx
   let K : Compacts E := ⟨cthickening δ (tsupport φ₀), φ₀.hasCompactSupport.isCompact.cthickening⟩
   obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) hδΩ
-  rw [hasFDerivAt_iff_isLittleO_nhds_zero, Asymptotics.isLittleO_iff]
-  intro c hc
-  -- Choose a radius on which all derivatives of order at most `N` of the Taylor remainder are
-  -- bounded by `c / (C + 1) * ‖h‖`.
-  have hε : 0 < c / (C + 1) := div_pos hc (by linarith)
-  have hrem := fun i => φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
-    φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
-  choose r hr hrem using hrem
-  let r₀ := min δ ((Finset.range (N + 1)).inf' (by simp) r)
-  have hr₀ : 0 < r₀ := lt_min hδ ((Finset.lt_inf'_iff _).2 fun i _ => hr i)
-  filter_upwards [ball_mem_nhds (0 : E) hr₀] with h hh
-  rw [mem_ball_zero_iff] at hh
-  have hhδ : ‖h‖ ≤ δ := hh.le.trans (min_le_left _ _)
-  -- The translate of `ρ` by `x + h`, and the Taylor remainder as a test function on `Ω`.
-  let φh : 𝓓(Ω, ℝ) := translateOfMapsTo ρ (hδx h hhδ)
-  let R : 𝓓(Ω, ℝ) := φh - φ₀ + ∂_{h} φ₀
-  have hR : (R : E → ℝ) = fun y => φ₀ (y - h) - φ₀ y + fderiv ℝ φ₀ y h := by
+  -- For `‖h‖ ≤ δ`, the Taylor remainder of the translates of `ρ`, as a test function on `Ω`.
+  let R (h : E) : 𝓓(Ω, ℝ) :=
+    if hh : ‖h‖ ≤ δ then translateOfMapsTo ρ (hδx h hh) - φ₀ + ∂_{h} φ₀ else 0
+  have hR (h : E) (hh : ‖h‖ ≤ δ) :
+      (R h : E → ℝ) = fun y => φ₀ (y - h) - φ₀ y + fderiv ℝ φ₀ y h := by
     ext y
     have hd := φ₀.contDiff.differentiable (by simp) y
-    simp [R, φh, hφ₀, translateOfMapsTo_apply, hd.lineDeriv_eq_fderiv, sub_sub, add_comm h x]
-  have hRK : tsupport R ⊆ K := by
-    rw [hR]
-    exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hhδ
-  have hRbound : ∀ i ≤ N, ∀ y, ‖iteratedFDeriv ℝ i R y‖ ≤ c / (C + 1) * ‖h‖ := by
-    intro i hi y
-    have hri : ‖h‖ < r i := hh.trans_le ((min_le_right _ _).trans
-      (Finset.inf'_le _ (Finset.mem_range.2 (Nat.lt_succ_of_le hi))))
-    rw [hR]
-    exact hrem i h hri y
-  rw [show L h = (∂_{h} T).translatePairing ρ x from rfl,
-    translatePairing_add_sub_sub_eq T ρ hx (hδx h hhδ)]
-  calc ‖T R‖ ≤ C * (c / (C + 1) * ‖h‖) :=
-        hT R hRK _ (by positivity) hRbound
-    _ = C / (C + 1) * (c * ‖h‖) := by ring
-    _ ≤ c * ‖h‖ :=
-      mul_le_of_le_one_left (by positivity) ((div_le_one (by linarith)).2 (by linarith))
+    simp [R, hh, hφ₀, translateOfMapsTo_apply, hd.lineDeriv_eq_fderiv, sub_sub, add_comm h x]
+  have hδ' : ∀ᶠ h in 𝓝 (0 : E), ‖h‖ ≤ δ := by
+    filter_upwards [closedBall_mem_nhds (0 : E) hδ] with h hh using mem_closedBall_zero_iff.1 hh
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  refine (isLittleO_apply_of_norm_iteratedFDeriv_le (R := R) hC hT ?_ fun i _ ε hε => ?_).congr' ?_
+    EventuallyEq.rfl
+  · filter_upwards [hδ'] with h hh
+    rw [hR h hh]
+    exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hh
+  · obtain ⟨r, hr, hrem⟩ := φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
+      φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
+    filter_upwards [hδ', ball_mem_nhds (0 : E) hr] with h hh hhr
+    rw [hR h hh]
+    exact hrem h (mem_ball_zero_iff.1 hhr)
+  · filter_upwards [hδ'] with h hh
+    rw [show L h = (∂_{h} T).translatePairing ρ x from rfl,
+      translatePairing_add_sub_sub_eq T ρ hx (hδx h hh)]
+    simp only [R, φ₀, hh, dite_true]
 
 /-- The regularization is differentiable at every admissible translation. -/
 theorem differentiableAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
@@ -252,6 +254,10 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
 set of translations for which `ρ (· - x)` is supported in `Ω`. -/
 theorem contDiffOn_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
     ContDiffOn ℝ ∞ (T.translatePairing ρ) {x | MapsTo (· + x) (tsupport ρ) Ω} := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · obtain rfl : ρ = 0 := TestFunction.ext (congrFun h)
+    rw [translatePairing_zero_kernel]
+    exact contDiffOn_const
   have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
   rw [contDiffOn_infty]
   intro n
@@ -278,6 +284,8 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
+
+variable [FiniteDimensional ℝ E]
 
 section Convolution
 
@@ -307,9 +315,6 @@ private theorem basisEvalCLM_injective (N : ℕ) : Injective (basisEvalCLM (E :=
 vectors. -/
 private theorem exists_norm_le_mul_norm_basisEvalCLM (N : ℕ) :
     ∃ C : ℝ≥0, ∀ A : Π i : Fin (N + 1), E [×i]→L[ℝ] ℝ, ‖A‖ ≤ C * ‖basisEvalCLM N A‖ := by
-  have _ (i : Fin (N + 1)) : FiniteDimensional ℝ (E [×i]→L[ℝ] ℝ) :=
-    Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
-      ContinuousMultilinearMap.toMultilinearMap_injective
   obtain ⟨C, -, hC⟩ := (basisEvalCLM (E := E) N).toLinearMap.exists_antilipschitzWith
     (LinearMap.ker_eq_bot.2 (basisEvalCLM_injective N))
   exact ⟨C, ZeroHomClass.bound_of_antilipschitz _ hC⟩
@@ -368,8 +373,129 @@ private theorem continuous_basisJetCLM_compContinuous (K : Compacts E) (N : ℕ)
   refine (BoundedContinuousFunction.dist_le (half_pos hε).le).2 fun x => ?_
   exact (hδε (show dist (x - y') (x - y) < δ by rwa [dist_sub_left])).le
 
+/-- On tests supported in a compact `K ⊆ Ω`, a distribution is bounded by a constant multiple of
+the norm of a jet of finite order. -/
+private theorem exists_norm_apply_le_mul_norm_basisJetCLM (T : 𝓓'(Ω, F)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) :
+    ∃ (N : ℕ) (C : ℝ), 0 ≤ C ∧
+      ∀ χ : 𝓓_{K}(E, ℝ), ‖T (ofSupportedInCLM ℝ hKΩ χ)‖ ≤ C * ‖basisJetCLM K N χ‖ := by
+  obtain ⟨N, C, hC0, hC⟩ := T.exists_norm_apply_le hKΩ
+  obtain ⟨C₀, hC₀⟩ := exists_norm_iteratedFDeriv_le_mul_norm_basisJetCLM K N
+  refine ⟨N, C * C₀, by positivity, fun χ => ?_⟩
+  rw [mul_assoc]
+  exact hC _ (by simpa using χ.tsupport_subset) _ (by positivity) fun i hi x => by
+    simpa using hC₀ χ i hi x
+
+/-- A scalar functional of a distribution, restricted to tests supported in `K` and bounded by
+the norm of their jets, is the composition of the jet with a continuous functional on the space of
+jets (Hahn–Banach). -/
+private theorem exists_continuousLinearMap_comp_basisJetCLM_eq (T : 𝓓'(Ω, F)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {N : ℕ} {C : ℝ} (hC0 : 0 ≤ C)
+    (hbound : ∀ χ : 𝓓_{K}(E, ℝ), ‖T (ofSupportedInCLM ℝ hKΩ χ)‖ ≤ C * ‖basisJetCLM K N χ‖)
+    (ℓ : F →L[ℝ] ℝ) :
+    ∃ g : (E →ᵇ (JetIndex E N → ℝ)) →L[ℝ] ℝ,
+      ∀ χ : 𝓓_{K}(E, ℝ), g (basisJetCLM K N χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) := by
+  have hinj : Injective (basisJetCLM K N) := fun χ χ' h => by
+    refine ContDiffMapSupportedIn.structureMapCLM_zero_injective ℝ (n := ⊤) ?_
+    ext1 x
+    have hx : (fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x) =
+        fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ' x :=
+      basisEvalCLM_injective N (by rw [← basisJetCLM_apply K N χ x, ← basisJetCLM_apply, h])
+    simpa [ContDiffMapSupportedIn.structureMapCLM_top_apply] using congrFun hx ⟨0, N.succ_pos⟩
+  let e := LinearEquiv.ofInjective (basisJetCLM K N).toLinearMap hinj
+  let g₁ : LinearMap.range (basisJetCLM K N).toLinearMap →ₗ[ℝ] ℝ :=
+    (ℓ ∘L (T : 𝓓(Ω, ℝ) →L[ℝ] F) ∘L ofSupportedInCLM ℝ hKΩ).toLinearMap ∘ₗ e.symm.toLinearMap
+  -- `g₁` is by definition `ℓ ∘ T` read through the inverse of `e`.
+  have hg₁ (χ : 𝓓_{K}(E, ℝ)) : g₁ (e χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) :=
+    congrArg (fun χ => ℓ (T (ofSupportedInCLM ℝ hKΩ χ))) (e.symm_apply_apply χ)
+  have hc : 0 ≤ ‖ℓ‖ * C := by positivity
+  obtain ⟨g, hg, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm _ g₁
+    (p := (‖ℓ‖ * C).toNNReal • normSeminorm ℝ _)
+    (continuous_norm.const_smul _) fun w => by
+      obtain ⟨χ, rfl⟩ := e.surjective w
+      rw [hg₁, smul_apply, coe_normSeminorm, LinearEquiv.ofInjective_apply, NNReal.smul_def,
+        Real.coe_toNNReal _ hc, smul_eq_mul, mul_assoc]
+      exact (ℓ.le_opNorm _).trans (by gcongr; exact hbound χ)
+  exact ⟨g, fun χ => by
+    rw [← hg₁, ← hg, LinearEquiv.ofInjective_apply, ContinuousLinearMap.coe_coe]⟩
+
 variable [CompleteSpace F] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ]
   [μ.IsAddLeftInvariant]
+
+omit [SFinite μ] [μ.IsAddLeftInvariant] in
+/-- The translates of a test function `ρ` have a jet which is a bounded continuous path in the
+space of jets, integrable against any integrable `f`. -/
+private theorem exists_translate_jet_path (ρ : 𝓓(V, ℝ)) {f : E → ℝ} (hf : Integrable f μ)
+    (N : ℕ) :
+    ∃ Θ : E → E →ᵇ (JetIndex E N → ℝ),
+      (∀ y x k, Θ y x k =
+        iteratedFDeriv ℝ k.1 ρ (x - y) (fun l => Module.finBasis ℝ E (k.2 l))) ∧
+      Integrable (fun y => f y • Θ y) μ := by
+  let Kρ : Compacts E := ⟨tsupport ρ, ρ.hasCompactSupport.isCompact⟩
+  let ρK : 𝓓_{Kρ}(E, ℝ) := .of_support_subset ρ.contDiff (subset_tsupport _)
+  have hρK : ⇑ρK = ρ := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  let Θ (y : E) : E →ᵇ (JetIndex E N → ℝ) :=
+    (basisJetCLM Kρ N ρK).compContinuous ⟨(· - y), continuous_sub_right y⟩
+  have hΘb (y : E) : ‖Θ y‖ ≤ ‖basisJetCLM Kρ N ρK‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x =>
+      (basisJetCLM Kρ N ρK).norm_coe_le_norm (x - y)
+  refine ⟨Θ, fun y x k => by simp [Θ, basisJetCLM_apply_apply, hρK], ?_⟩
+  exact hf.smul_bdd _ (continuous_basisJetCLM_compContinuous Kρ N ρK).aestronglyMeasurable
+    (ae_of_all _ hΘb)
+
+omit [CompleteSpace F] [MeasurableSpace E] [BorelSpace E] in
+/-- The translate of `ρ` by a point of `tsupport f` is a test supported in `K` whose jet is the
+corresponding point of the path of jets. -/
+private theorem exists_basisJetCLM_eq_translate (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {f : E → ℝ}
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) (hK : tsupport f + tsupport ρ ⊆ K) {N : ℕ}
+    {Θ : E → E →ᵇ (JetIndex E N → ℝ)}
+    (hΘ : ∀ y x k, Θ y x k =
+      iteratedFDeriv ℝ k.1 ρ (x - y) (fun l => Module.finBasis ℝ E (k.2 l)))
+    {y : E} (hy : y ∈ tsupport f) : ∃ χ : 𝓓_{K}(E, ℝ),
+      basisJetCLM K N χ = Θ y ∧ T (ofSupportedInCLM ℝ hKΩ χ) = T.translatePairing ρ y := by
+  have hs : support (fun x => ρ (x - y)) ⊆ K := fun x hx =>
+    hK ⟨y, hy, x - y, subset_tsupport _ hx, add_sub_cancel y x⟩
+  let χ : 𝓓_{K}(E, ℝ) := .of_support_subset (ρ.contDiff.comp (contDiff_id.sub contDiff_const)) hs
+  have hχ : ⇑χ = fun x => ρ (x - y) := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  refine ⟨χ, ?_, (translatePairing_eq T fun x => by simp [hχ]).symm⟩
+  ext x k : 2
+  rw [basisJetCLM_apply_apply, hΘ, hχ, iteratedFDeriv_comp_sub]
+
+/-- The path of jets of the translates of `ρ` integrates, against `f`, to the jet of `f ⋆ ρ`. -/
+private theorem integral_smul_eq_basisJetCLM (ρ : 𝓓(V, ℝ)) {f : E → ℝ} (hf : Integrable f μ)
+    {K : Compacts E} {N : ℕ} {Θ : E → E →ᵇ (JetIndex E N → ℝ)}
+    (hΘ : ∀ y x k, Θ y x k =
+      iteratedFDeriv ℝ k.1 ρ (x - y) (fun l => Module.finBasis ℝ E (k.2 l)))
+    (hfΘ : Integrable (fun y => f y • Θ y) μ) {ψK : 𝓓_{K}(E, ℝ)}
+    (hψ : ⇑ψK = f ⋆[lsmul ℝ ℝ, μ] ρ) : ∫ y, f y • Θ y ∂μ = basisJetCLM K N ψK := by
+  ext x k : 2
+  have hL := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) k).comp
+    (BoundedContinuousFunction.evalCLM ℝ x)).integral_comp_comm hfΘ
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+    BoundedContinuousFunction.evalCLM_apply] at hL
+  have hconv := (ρ.hasCompactSupport.iteratedFDeriv k.1).convolutionExists_right
+    ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k.1 => E) ℝ ℝ).comp
+      (lsmul ℝ ℝ)) hf.locallyIntegrable (ρ.contDiff.continuous_iteratedFDeriv (by simp)) x
+  rw [← hL, basisJetCLM_apply_apply, hψ,
+    ρ.hasCompactSupport.iteratedFDeriv_convolution_right _ hf.locallyIntegrable ρ.contDiff
+      (by exact_mod_cast le_top), convolution_def,
+    ContinuousMultilinearMap.integral_apply hconv]
+  congr 1
+  ext y
+  simp [hΘ]
+
+omit [CompleteSpace F] [SFinite μ] [μ.IsAddLeftInvariant] in
+/-- The regularization of a distribution against an integrable compactly supported `f` is
+integrable, when the translates of `ρ` by the points of `tsupport f` are supported in `Ω`. -/
+private theorem integrable_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {f : E → ℝ}
+    (hf : Integrable f μ) (hfc : HasCompactSupport f)
+    (hfρ : ∀ y ∈ tsupport f, MapsTo (· + y) (tsupport ρ) Ω) :
+    Integrable (fun y => f y • T.translatePairing ρ y) μ := by
+  have hcont : ContinuousOn (T.translatePairing ρ) (tsupport f) :=
+    (T.contDiffOn_translatePairing ρ).continuousOn.mono hfρ
+  refine (hf.integrableOn.smul_continuousOn hcont hfc.isCompact
+    ).integrable_of_forall_notMem_eq_zero fun y hy => ?_
+  simp [image_eq_zero_of_notMem_tsupport hy]
 
 /-- **A distribution passes under a convolution integral.** Let `ψ` be a test function which is
 the convolution `f ⋆ ρ`, `ψ x = ∫ f y * ρ (x - y) ∂μ(y)`, of an integrable compactly supported
@@ -390,48 +516,14 @@ theorem apply_eq_integral_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
   -- finite order, valued in a Banach space. After applying a functional `ℓ` on `F`, Hahn–Banach
   -- extends `ℓ ∘ T` to a continuous functional `g` on that space, and `g` commutes with the
   -- Bochner integral of the jets of the translates of `ρ`, which is the jet of `ψ`.
-  -- The translates of `ρ` and the test function `ψ` are supported in one compact `K ⊆ Ω`, on
-  -- which `T` is bounded by the norm of the jets of order `N`.
+  -- The translates of `ρ` and the test function `ψ` are supported in one compact `K ⊆ Ω`.
   let K : Compacts E :=
     ⟨tsupport f + tsupport ρ, hfc.isCompact.add ρ.hasCompactSupport.isCompact⟩
   have hKΩ : (K : Set E) ⊆ Ω := by
     rintro _ ⟨y, hy, z, hz, rfl⟩
     simpa [add_comm] using hfρ y hy hz
-  obtain ⟨N, C, hC0, hC⟩ := T.exists_norm_apply_le hKΩ
-  obtain ⟨C₀, hC₀⟩ := exists_norm_iteratedFDeriv_le_mul_norm_basisJetCLM K N
-  have hbound (χ : 𝓓_{K}(E, ℝ)) :
-      ‖T (ofSupportedInCLM ℝ hKΩ χ)‖ ≤ C * C₀ * ‖basisJetCLM K N χ‖ := by
-    rw [mul_assoc]
-    exact hC _ (by simpa using χ.tsupport_subset) _ (by positivity) fun i hi x => by
-      simpa using hC₀ χ i hi x
-  -- The translates of the jet of `ρ` form a bounded continuous path `Θ`.
-  let Kρ : Compacts E := ⟨tsupport ρ, ρ.hasCompactSupport.isCompact⟩
-  let ρK : 𝓓_{Kρ}(E, ℝ) := .of_support_subset ρ.contDiff (subset_tsupport _)
-  have hρK : ⇑ρK = ρ := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
-  let Θ (y : E) : E →ᵇ (JetIndex E N → ℝ) :=
-    (basisJetCLM Kρ N ρK).compContinuous ⟨(· - y), continuous_sub_right y⟩
-  have hΘ (y x : E) (k : JetIndex E N) :
-      Θ y x k = iteratedFDeriv ℝ k.1 ρ (x - y) (fun l => Module.finBasis ℝ E (k.2 l)) := by
-    simp [Θ, basisJetCLM_apply_apply, hρK]
-  have hΘb (y : E) : ‖Θ y‖ ≤ ‖basisJetCLM Kρ N ρK‖ :=
-    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x =>
-      (basisJetCLM Kρ N ρK).norm_coe_le_norm (x - y)
-  have hfΘ : Integrable (fun y => f y • Θ y) μ :=
-    hf.smul_bdd _ (continuous_basisJetCLM_compContinuous Kρ N ρK).aestronglyMeasurable
-      (ae_of_all _ hΘb)
-  -- The translate of `ρ` by a point of `tsupport f` is a test supported in `K` whose jet is the
-  -- corresponding point of the path.
-  have htrans (y : E) (hy : y ∈ tsupport f) : ∃ χ : 𝓓_{K}(E, ℝ),
-      basisJetCLM K N χ = Θ y ∧ T (ofSupportedInCLM ℝ hKΩ χ) = T.translatePairing ρ y := by
-    have hs : support (fun x => ρ (x - y)) ⊆ K := fun x hx =>
-      ⟨y, hy, x - y, subset_tsupport _ hx, add_sub_cancel y x⟩
-    let χ : 𝓓_{K}(E, ℝ) :=
-      .of_support_subset (ρ.contDiff.comp (contDiff_id.sub contDiff_const)) hs
-    have hχ : ⇑χ = fun x => ρ (x - y) :=
-      funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
-    refine ⟨χ, ?_, (translatePairing_eq T fun x => by simp [hχ]).symm⟩
-    ext x k : 2
-    rw [basisJetCLM_apply_apply, hΘ, hχ, iteratedFDeriv_comp_sub]
+  obtain ⟨N, C, hC0, hbound⟩ := exists_norm_apply_le_mul_norm_basisJetCLM T hKΩ
+  obtain ⟨Θ, hΘ, hfΘ⟩ := exists_translate_jet_path ρ hf N
   -- The test function `ψ` is supported in `K`, and the path integrates to its jet.
   have hψK : support ψ ⊆ K := by
     rw [hψ]
@@ -442,58 +534,16 @@ theorem apply_eq_integral_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
   have hψψK : ofSupportedInCLM ℝ hKΩ ψK = ψ := by
     ext x
     simp [hψK']
-  have hint : ∫ y, f y • Θ y ∂μ = basisJetCLM K N ψK := by
-    ext x k : 2
-    have hL := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) k).comp
-      (BoundedContinuousFunction.evalCLM ℝ x)).integral_comp_comm hfΘ
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
-      BoundedContinuousFunction.evalCLM_apply] at hL
-    have hconv := (ρ.hasCompactSupport.iteratedFDeriv k.1).convolutionExists_right
-      ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k.1 => E) ℝ ℝ).comp
-        (lsmul ℝ ℝ)) hf.locallyIntegrable (ρ.contDiff.continuous_iteratedFDeriv (by simp)) x
-    rw [← hL, basisJetCLM_apply_apply, hψK', hψ,
-      ρ.hasCompactSupport.iteratedFDeriv_convolution_right _ hf.locallyIntegrable ρ.contDiff
-        (by exact_mod_cast le_top), convolution_def,
-      ContinuousMultilinearMap.integral_apply hconv]
-    congr 1
-    ext y
-    simp [hΘ]
+  have hint := integral_smul_eq_basisJetCLM ρ hf hΘ hfΘ (ψK := ψK) (hψK'.trans hψ)
   -- Scalarize, and extend the bounded functional `T` from the jets of tests by Hahn–Banach.
-  have hint' : Integrable (fun y => f y • T.translatePairing ρ y) μ := by
-    have hcont : ContinuousOn (T.translatePairing ρ) (tsupport f) :=
-      (T.contDiffOn_translatePairing ρ).continuousOn.mono hfρ
-    refine (hf.integrableOn.smul_continuousOn hcont hfc.isCompact
-      ).integrable_of_forall_notMem_eq_zero fun y hy => ?_
-    simp [image_eq_zero_of_notMem_tsupport hy]
   refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ => ?_
-  rw [← ContinuousLinearMap.integral_comp_comm ℓ hint']
-  have hinj : Injective (basisJetCLM K N) := fun χ χ' h => by
-    refine ContDiffMapSupportedIn.structureMapCLM_zero_injective ℝ (n := ⊤) ?_
-    ext1 x
-    have hx : (fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x) =
-        fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ' x :=
-      basisEvalCLM_injective N (by rw [← basisJetCLM_apply K N χ x, ← basisJetCLM_apply, h])
-    simpa [ContDiffMapSupportedIn.structureMapCLM_top_apply] using congrFun hx ⟨0, N.succ_pos⟩
-  let e := LinearEquiv.ofInjective (basisJetCLM K N).toLinearMap hinj
-  let g₁ : LinearMap.range (basisJetCLM K N).toLinearMap →ₗ[ℝ] ℝ :=
-    (ℓ ∘L (T : 𝓓(Ω, ℝ) →L[ℝ] F) ∘L ofSupportedInCLM ℝ hKΩ).toLinearMap ∘ₗ e.symm.toLinearMap
-  -- `g₁` is by definition `ℓ ∘ T` read through the inverse of `e`.
-  have hg₁ (χ : 𝓓_{K}(E, ℝ)) : g₁ (e χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) :=
-    congrArg (fun χ => ℓ (T (ofSupportedInCLM ℝ hKΩ χ))) (e.symm_apply_apply χ)
-  have hc : 0 ≤ ‖ℓ‖ * (C * C₀) := by positivity
-  obtain ⟨g, hg, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm _ g₁
-    (p := (‖ℓ‖ * (C * C₀)).toNNReal • normSeminorm ℝ _)
-    (continuous_norm.const_smul _) fun w => by
-      obtain ⟨χ, rfl⟩ := e.surjective w
-      rw [hg₁, smul_apply, coe_normSeminorm, LinearEquiv.ofInjective_apply, NNReal.smul_def,
-        Real.coe_toNNReal _ hc, smul_eq_mul, mul_assoc]
-      exact (ℓ.le_opNorm _).trans (by gcongr; exact hbound χ)
-  have hgjet (χ : 𝓓_{K}(E, ℝ)) :
-      g (basisJetCLM K N χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) := by
-    rw [← hg₁, ← hg, LinearEquiv.ofInjective_apply, ContinuousLinearMap.coe_coe]
+  rw [← ContinuousLinearMap.integral_comp_comm ℓ
+    (integrable_smul_translatePairing T ρ hf hfc hfρ)]
+  obtain ⟨g, hgjet⟩ := exists_continuousLinearMap_comp_basisJetCLM_eq T hKΩ hC0 hbound ℓ
   have hpt (y : E) : g (f y • Θ y) = ℓ (f y • T.translatePairing ρ y) := by
     by_cases hy : y ∈ tsupport f
-    · obtain ⟨χ, hχ, hTχ⟩ := htrans y hy
+    · obtain ⟨χ, hχ, hTχ⟩ := exists_basisJetCLM_eq_translate T ρ hKΩ
+        (K := K) subset_rfl hΘ hy
       rw [map_smul, map_smul, ← hχ, hgjet, hTχ]
     · simp [image_eq_zero_of_notMem_tsupport hy]
   calc ℓ (T ψ) = g (∫ y, f y • Θ y ∂μ) := by rw [hint, hgjet, hψψK]

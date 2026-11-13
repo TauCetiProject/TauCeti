@@ -154,7 +154,7 @@ private theorem add_mul_add_lt_zero {a b c₁ c₂ C h q d r : ℝ} (hc₁ : 0 <
     (hr : r ≤ c₂ / 8 * h * (2 * a ^ 2 + 2 * b ^ 2)) :
     q + h * d + r < 0 := by
   set K₀ := C + 2 * C ^ 2 / c₂ + c₂ / 4
-  have hK₀ : 0 ≤ K₀ := by positivity
+  have _ : 0 ≤ K₀ := by positivity
   -- Absorb the cross term `2 C a b` into the two squares.
   have hcross : 2 * C * a * b ≤ c₂ / 2 * b ^ 2 + 2 * C ^ 2 / c₂ * a ^ 2 := by
     have h := two_mul_le_add_mul_sq (a := b) (b := C * a) (half_pos hc₂)
@@ -419,7 +419,7 @@ theorem finite_setOfPred_not_nondegenerate (hc : ContinuousOn V (Icc a b))
   have hclosed : IsClosed {t ∈ Icc a b | ¬ (V t).toBilinForm.Nondegenerate} := by
     simpa only [Set.preimage_compl, Set.preimage_ofPred_eq, Set.compl_ofPred,
       Set.inter_ofPred_eq_sep] using hc.preimage_isClosed_of_isClosed isClosed_Icc
-        (TauCeti.isOpen_setOfPred_nondegenerate_toBilinForm ℝ E).isClosed_compl
+        ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm.isClosed_compl
   refine (isCompact_Icc.of_isClosed_subset hclosed fun t ht ↦ ht.1).finite
     (isDiscrete_iff_nhdsNE.2 fun t ht ↦ ?_)
   have ht' := mem_Ioo_of_not_nondegenerate ha hb ht.1 ht.2
@@ -447,7 +447,7 @@ private theorem sigNeg_sub_sigNeg_eq_sum_crossingForm_of_finset (S : Finset ℝ)
     exact sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc hc hsymm
       (fun t ht ↦ hnd t ht (Finset.notMem_empty t)) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
   | insert s S hlt ih =>
-    intro b hab hc hsymm hnd hS
+    intro b _ hc hsymm hnd hS
     obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
     -- Choose `t₁ < s < t₂`, with `t₁` above every other crossing, across which the negative index
     -- jumps by the signature of the crossing form at `s`.

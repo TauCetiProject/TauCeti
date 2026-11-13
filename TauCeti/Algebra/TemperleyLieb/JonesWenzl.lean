@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TemperleyLieb.Basic
+public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
 
 /-!
@@ -39,6 +39,8 @@ left and one on the right, are therefore equal.
 
 * `TauCeti.TemperleyLieb.jonesWenzl_add_two`: Wenzl's quadratic recursion.
 * `TauCeti.TemperleyLieb.aug_jonesWenzl`: the augmentation of `f_n` is `1`.
+* `TauCeti.TemperleyLieb.star_jonesWenzl`: for a self-adjoint loop value, `f_n` is fixed by the
+  analytic adjoint.
 * `TauCeti.TemperleyLieb.isIdempotentElem_jonesWenzl`, `TauCeti.TemperleyLieb.e_mul_jonesWenzl`,
   `TauCeti.TemperleyLieb.jonesWenzl_mul_e`: when `[1], …, [n]` are units, `f_n` is an idempotent
   killed on both sides by every generator.
@@ -75,27 +77,21 @@ variable {R : Type*} [CommSemiring R] {δ : R} {n : ℕ}
 the scalar given by the augmentation. -/
 theorem mul_eq_aug_smul_of_mul_e_eq_zero {f : TemperleyLieb R δ n}
     (hf : ∀ i, f * e δ i = 0) (x : TemperleyLieb R δ n) : f * x = aug x • f := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := adjoin_range_e (R := R) ▸ trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [hf]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [hf]
   | algebraMap r => simp [Algebra.smul_def, Algebra.commutes]
-  | add x y _ _ hx hy => rw [mul_add, hx, hy, map_add, add_smul]
-  | mul x y _ _ hx hy => rw [← mul_assoc, hx, smul_mul_assoc, hy, smul_smul, map_mul]
+  | add x y hx hy => rw [mul_add, hx, hy, map_add, add_smul]
+  | mul x y hx hy => rw [← mul_assoc, hx, smul_mul_assoc, hy, smul_smul, map_mul]
 
 /-- An element killed on the left by every generator multiplies every element on the right as
 the scalar given by the augmentation. -/
 theorem mul_eq_aug_smul_of_e_mul_eq_zero {f : TemperleyLieb R δ n}
     (hf : ∀ i, e δ i * f = 0) (x : TemperleyLieb R δ n) : x * f = aug x • f := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := adjoin_range_e (R := R) ▸ trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [hf]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [hf]
   | algebraMap r => simp [Algebra.smul_def]
-  | add x y _ _ hx hy => rw [add_mul, hx, hy, map_add, add_smul]
-  | mul x y _ _ hx hy => rw [mul_assoc, hy, mul_smul_comm, hx, smul_smul, map_mul, mul_comm]
+  | add x y hx hy => rw [add_mul, hx, hy, map_add, add_smul]
+  | mul x y hx hy => rw [mul_assoc, hy, mul_smul_comm, hx, smul_smul, map_mul, mul_comm]
 
 /-- **Uniqueness of the Jones–Wenzl projection**, with no invertibility hypothesis: an element of
 augmentation `1` killed on the left by every generator equals an element of augmentation `1`
@@ -158,6 +154,27 @@ theorem aug_jonesWenzl : ∀ n, aug (jonesWenzl δ n) = 1
   | 0 => by simp
   | 1 => by simp
   | m + 2 => by simp [jonesWenzl_add_two, aug_jonesWenzl (m + 1)]
+
+section Star
+
+variable [StarRing R] [Fact (IsSelfAdjoint δ)]
+
+/-- For a self-adjoint loop value, the Jones–Wenzl projection is fixed by the analytic adjoint,
+with no invertibility assumption on the quantum integers. -/
+@[simp]
+theorem star_jonesWenzl : ∀ n, star (jonesWenzl δ n) = jonesWenzl δ n
+  | 0 => by simp
+  | 1 => by simp
+  | m + 2 => by
+    have hq (k : ℕ) := ((Fact.out : IsSelfAdjoint δ).qInt k).star_eq
+    simp [jonesWenzl_add_two, star_mul', ← Ring.inverse_star, hq, ← strandIncl_star,
+      star_jonesWenzl (m + 1), mul_assoc]
+
+/-- For a self-adjoint loop value, the Jones–Wenzl projection is self-adjoint. -/
+theorem isSelfAdjoint_jonesWenzl (n : ℕ) : IsSelfAdjoint (jonesWenzl δ n) :=
+  star_jonesWenzl n
+
+end Star
 
 section Recursion
 

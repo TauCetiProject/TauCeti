@@ -112,7 +112,7 @@ theorem differentiableOn_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e 
     DifferentiableOn ℂ (schwarzChristoffelDiscIntegrand w e) (ball 0 1) := by
   intro ζ hζ
   exact DifferentiableWithinAt.fun_finsetProd fun i _ =>
-    ((hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt.cpow_const
+    (DifferentiableAt.cpow_const (f := fun ξ : ℂ => 1 - ξ / w i) (by fun_prop)
       (one_sub_div_mem_slitPlane (w i) hζ)).differentiableWithinAt
 
 /-- The disc Schwarz--Christoffel integrand has no zero in the open unit disc. -/
@@ -134,19 +134,18 @@ theorem logDeriv_schwarzChristoffelDiscIntegrand (w : ι → Circle) (e : ι →
     funext (schwarzChristoffelDiscIntegrand_def w e)
   rw [hfun, logDeriv_fun_prod]
   · refine Finset.sum_congr rfl fun i _ => ?_
-    rw [logDeriv_fun_cpow (hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt
-      (one_sub_div_mem_slitPlane (w i) hζ), logDeriv_apply,
-      (hasDerivAt_one_sub_div (w i : ℂ) ζ).deriv]
+    rw [logDeriv_fun_cpow (f := fun ξ : ℂ => 1 - ξ / w i) (by fun_prop)
+      (one_sub_div_mem_slitPlane (w i) hζ), logDeriv_apply, deriv_const_sub, deriv_div_const,
+      deriv_id'']
     have hw : (w i : ℂ) ≠ 0 := Circle.coe_ne_zero _
-    have hζw : (w i : ℂ) - ζ ≠ 0 := sub_ne_zero.mpr
-      (ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (w i))).symm
+    have hζw : (w i : ℂ) - ζ ≠ 0 := sub_ne_zero.mpr (ne_of_mem_of_not_mem hζ (by simp)).symm
     have hζw' : ζ - (w i : ℂ) ≠ 0 := by rwa [← neg_sub, neg_ne_zero]
     rw [one_sub_div hw]
     field_simp
     ring
   · exact fun i _ => cpow_ne_zero_iff.mpr
       (Or.inl (slitPlane_ne_zero (one_sub_div_mem_slitPlane (w i) hζ)))
-  · exact fun i _ => (hasDerivAt_one_sub_div (w i : ℂ) ζ).differentiableAt.cpow_const
+  · exact fun i _ => .cpow_const (f := fun ξ : ℂ => 1 - ξ / w i) (by fun_prop)
       (one_sub_div_mem_slitPlane (w i) hζ)
 
 /-- The **normalized disc Schwarz--Christoffel primitive**: the integral of
@@ -243,8 +242,7 @@ private theorem exists_affine_transport_with_infty
   set F := schwarzChristoffelPrimitive a e z₀
   set c : ℂ → ℂ := fun ζ => I * (1 + ζ) / (1 - ζ) with hc_def
   have hmaps : MapsTo c (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball.mapsTo
-  have hne : ∀ ζ ∈ ball (0 : ℂ) 1, ζ ≠ 1 := fun _ hζ =>
-    ne_of_mem_ball_of_norm_eq_one hζ norm_one
+  have hne : ∀ ζ ∈ ball (0 : ℂ) 1, ζ ≠ 1 := fun _ hζ => ne_of_mem_of_not_mem hζ (by simp)
   have hcd : ∀ ζ ∈ ball (0 : ℂ) 1, HasDerivAt c (2 * I / (1 - ζ) ^ 2) ζ := fun ζ hζ =>
     hasDerivAt_I_mul_one_add_div_one_sub (hne ζ hζ)
   have hcne : ∀ ζ ∈ ball (0 : ℂ) 1, 2 * I / (1 - ζ) ^ 2 ≠ 0 := fun ζ hζ =>
@@ -260,18 +258,16 @@ private theorem exists_affine_transport_with_infty
     (((hasDerivAt_schwarzChristoffelPrimitive a e z₀ (hmaps hζ)).comp ζ (hcd ζ hζ)).deriv).trans
       (by rw [deriv_schwarzChristoffelPrimitive a e z₀ (hmaps hζ)])
   refine (exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn isOpen_ball
-    (convex_ball 0 1).isPreconnected (hFdiff.comp hcdiff hmaps)
-    (differentiableOn_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e))
+    (convex_ball 0 1).isPreconnected
     (fun ζ hζ => hderiv ζ hζ ▸ mul_ne_zero (hFn _ (hmaps hζ)) (hcne ζ hζ))
     (fun ζ hζ => deriv_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e) hζ ▸
       schwarzChristoffelDiscIntegrand_ne_zero w
         (Option.elim' (-∑ i, e i - 2) e) hζ)).mpr fun ζ hζ => ?_
   -- the pre-Schwarzian chain rule for `F ∘ c`
   refine (logDeriv_deriv_comp (hFdiff.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds (hmaps hζ)))
-    (hcdiff.analyticAt (isOpen_ball.mem_nhds hζ)) (hFn _ (hmaps hζ))
-    ((hcd ζ hζ).deriv ▸ hcne ζ hζ)).trans ?_
+    (hcdiff.analyticAt (isOpen_ball.mem_nhds hζ)) (hFn _ (hmaps hζ))).trans ?_
   rw [logDeriv_deriv_schwarzChristoffelPrimitive a e z₀ (hmaps hζ), (hcd ζ hζ).deriv,
-    logDeriv_deriv_I_mul_one_add_div_one_sub (hne ζ hζ),
+    logDeriv_deriv_I_mul_one_add_div_one_sub,
     logDeriv_deriv_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e) hζ]
   -- The pole at `1` records the half-plane's point at infinity instead of requiring
   -- a closing condition on the finite exponents.
@@ -283,7 +279,7 @@ private theorem exists_affine_transport_with_infty
     rw [hw i, hc_def]
     have hζa : ζ ≠ (a i - I) / (a i + I) := by
       rw [← hw i]
-      exact ne_of_mem_ball_of_norm_eq_one hζ (Circle.norm_coe (w (some i)))
+      exact ne_of_mem_of_not_mem hζ (by simp)
     linear_combination (e i : ℂ) * cayley_simple_fraction (a i) (hne ζ hζ) hζa
   rw [Finset.sum_mul]
   simp_rw [hfrac]

@@ -7,14 +7,13 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
-public import TauCeti.CategoryTheory.Monoidal.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Duals in a monoidal preadditive category
 
 In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition, and the coevaluation of an exact pairing out of a nonzero
-object is nonzero, by the zigzag identity.
+built from whiskering and composition.
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
 `tensorRightHomEquiv` are `k`-linear, so they compare dimensions of morphism spaces, for instance
@@ -23,9 +22,8 @@ of the multiplicity spaces of a fusion category. Specializing to `tensorPow V 2`
 
 ## Main declarations
 
-* `TauCeti.rightAdjointMate_zero` and `TauCeti.rightAdjointMate_add`: the right adjoint mate is
-  additive;
-* `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` is nonzero when `X` is;
+* `TauCeti.rightAdjointMate_zero`, `TauCeti.rightAdjointMate_add`, and
+  `TauCeti.rightAdjointMate_sum`: the right adjoint mate is additive;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences, and `TauCeti.homTensorPowTwoLinearEquiv` (with
   `TauCeti.homTensorPowTwoLinearEquiv_apply` and `TauCeti.homTensorPowTwoLinearEquiv_symm_apply`):
@@ -57,15 +55,14 @@ theorem rightAdjointMate_zero : (0 : X ⟶ Y)ᘁ = 0 := by
 theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
   simp [rightAdjointMate]
 
-end Mate
+/-- Taking right adjoint mates commutes with finite sums. -/
+@[simp]
+theorem rightAdjointMate_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
+    (∑ i ∈ s, f i)ᘁ = ∑ i ∈ s, (f i)ᘁ := by
+  simp [rightAdjointMate, sum_whiskerRight, whiskerLeft_sum, Preadditive.comp_sum,
+    Preadditive.sum_comp]
 
-/-- The coevaluation of an exact pairing of `X` with `Y` is nonzero when `X` is nonzero: otherwise
-the zigzag identity would make the identity of `X` zero. -/
-theorem coevaluation_ne_zero {X Y : C} [ExactPairing X Y] (hX : ¬IsZero X) : η_ X Y ≠ 0 := by
-  intro h
-  have hz := ExactPairing.evaluation_coevaluation X Y
-  rw [h, MonoidalPreadditive.zero_whiskerRight, zero_comp] at hz
-  exact hX ((IsZero.iff_id_eq_zero X).2 (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom))
+end Mate
 
 section Linear
 

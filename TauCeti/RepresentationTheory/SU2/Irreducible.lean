@@ -52,10 +52,8 @@ Exhaustion -- that every finite-dimensional irreducible representation of `SU(2)
 
 ## References
 
-This is the "the `su2Irrep n` are irreducible, pairwise inequivalent" half of the classification
-asked for by the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, which insists that the
-classification be proved by the weight/highest-weight argument rather than read off Peter-Weyl.
+Irreducibility is proved by the weight/highest-weight argument above rather than read off from
+Peter-Weyl.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
@@ -117,9 +115,9 @@ private theorem weightBasis_eq_reindex :
 /-- The index of the highest weight is the constant unordered tuple `(0, …, 0)`: the monomial that
 is the `d`-th power of the first standard basis vector. -/
 private theorem symFinTwoEquiv_symm_last :
-    (symFinTwoEquiv d).symm (Fin.last d) = TauCeti.Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
+    (symFinTwoEquiv d).symm (Fin.last d) = Sym.ofFn fun _ : Fin d => (0 : Fin 2) := by
   refine Sym.coe_injective ?_
-  rw [coe_symFinTwoEquiv_symm_apply, TauCeti.Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
+  rw [coe_symFinTwoEquiv_symm_apply, Sym.coe_ofFn, List.ofFn_const, Multiset.coe_replicate]
   simp
 
 /-! ### The rotated weight vectors have nonzero coordinates -/

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.FullSeminorm
 public import TauCeti.Analysis.CStarAlgebra.Completion
+import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 
 /-!
 # The full crossed product of a C⋆-dynamical system
@@ -59,6 +60,8 @@ assumed.
 * `TauCeti.CStarAction.FullCrossedProduct.of_eq_of_iff`: two elements of the twisted convolution
   algebra have the same image in the full crossed product exactly when all their integrated forms
   agree.
+* `TauCeti.CStarAction.CovariantRepresentation.integratedFull_eq_zero_iff`: an extended integrated
+  form vanishes precisely when its coefficient representation is zero.
 
 ## References
 
@@ -424,18 +427,36 @@ theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
     P.integratedFull μ (of α μ f) = P.integratedStarAlgHom μ f :=
   lift_of _ _ f
 
+/-- The vector formula for the extended integrated form on the twisted convolution algebra:
+`(π ⋊ U)(f) ξ = ∫ π(f(s)) U_s ξ dμ(s)`. -/
+theorem integratedFull_of_apply (f : ConvolutionAlgebra α μ) (ξ : H) :
+    P.integratedFull μ (of α μ f) ξ = ∫ s, P.coefficient (f.ofConv s) (P.group s ξ) ∂μ := by
+  rw [integratedFull_of, integratedStarAlgHom_apply, integratedOperator_apply]
+
 @[simp]
 theorem integratedFull_comp_of :
     (P.integratedFull μ).comp (of α μ) = P.integratedStarAlgHom μ :=
   NonUnitalStarAlgHom.ext (integratedFull_of P)
 
+/-- The extended integrated form of a covariant pair on the full crossed product vanishes
+precisely when the coefficient representation is zero. -/
+@[simp]
+theorem integratedFull_eq_zero_iff :
+    P.integratedFull μ = 0 ↔ P.coefficient = 0 := by
+  refine ⟨fun h => (P.forall_integratedOperator_eq_zero_iff μ).1 fun f => ?_, fun h => ?_⟩
+  · simpa only [integratedFull_of, integratedStarAlgHom_apply, ConvolutionAlgebra.ofConv_toConv,
+      NonUnitalStarAlgHom.zero_apply] using DFunLike.congr_fun h (of α μ (.toConv f))
+  · refine starAlgHom_ext (NonUnitalStarAlgHom.ext fun f => ?_)
+    simpa only [NonUnitalStarAlgHom.comp_apply, integratedFull_of, integratedStarAlgHom_apply,
+      NonUnitalStarAlgHom.zero_apply] using (P.forall_integratedOperator_eq_zero_iff μ).2 h f.ofConv
+
 end CovariantRepresentation
 
 namespace FullCrossedProduct
 
-/-- The norm of the full crossed product is the least nonnegative bound for the extended
+/-- The norm of the full crossed product is the least bound for the extended
 integrated forms of covariant representations on Hilbert spaces in the universe `max u v`. -/
-theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
+theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} :
     ‖x‖ ≤ c ↔
       ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
         (P : CovariantRepresentation α H), ‖P.integratedFull μ x‖ ≤ c := by
@@ -446,7 +467,7 @@ theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
   obtain ⟨f, hf⟩ := (denseRange_of (α := α) (μ := μ)).exists_dist_lt x (half_pos hε)
   have hf' : ‖x - of α μ f‖ < ε / 2 := by rwa [← dist_eq_norm]
   have hfc : ‖of α μ f‖ ≤ c + ε / 2 := by
-    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff (by positivity)]
+    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff]
     intro H _ _ _ P
     rw [← P.integratedFull_of]
     calc ‖P.integratedFull μ (of α μ f)‖
@@ -468,7 +489,7 @@ theorem of_eq_of_iff {f g : ConvolutionAlgebra α μ} :
           P.integratedStarAlgHom μ f = P.integratedStarAlgHom μ g := by
   refine ⟨fun h H _ _ _ P => by simpa using congr(P.integratedFull μ $h), fun h => ?_⟩
   rw [← sub_eq_zero, ← map_sub, ← norm_eq_zero, norm_of]
-  refine le_antisymm ((ConvolutionAlgebra.fullSeminorm_le_iff le_rfl).2 fun H _ _ _ P => ?_)
+  refine le_antisymm (ConvolutionAlgebra.fullSeminorm_le_iff.2 fun H _ _ _ P => ?_)
     (apply_nonneg _ _)
   rw [map_sub, h H P, sub_self, norm_zero]
 

@@ -29,6 +29,9 @@ the family of nonemptiness assertions `∀ x, Nonempty (x₀ ⟶ x)` rather than
 space, whose fundamental groupoid comes with paths from a chosen basepoint, and the equivalence
 of the two formulations is not needed.
 
+Only the property that every morphism of `C` is an isomorphism is used, so `C` is a category with
+`[IsGroupoid C]` rather than a bundled `CategoryTheory.Groupoid`; no chosen inverse is involved.
+
 ## Main declarations
 
 * `TauCeti.Groupoid.natTrans_ext`: a natural transformation is determined by its component at the
@@ -52,7 +55,7 @@ open CategoryTheory
 
 namespace TauCeti.Groupoid
 
-variable {C : Type u} [CategoryTheory.Groupoid.{v} C] {D : Type w} [Category.{t} D]
+variable {C : Type u} [Category.{v} C] [IsGroupoid C] {D : Type w} [Category.{t} D]
   {F G : C ⥤ D} {x₀ : C} (hconn : ∀ x : C, Nonempty (x₀ ⟶ x))
 
 include hconn in
@@ -67,11 +70,11 @@ include hconn in
 /-- A natural isomorphism between functors out of a groupoid is determined by its component at
 a weakly initial object. -/
 theorem natIso_ext {α β : F ≅ G} (h : α.app x₀ = β.app x₀) : α = β :=
-  Iso.ext (natTrans_ext hconn (by simpa using congrArg Iso.hom h))
+  Iso.ext (natTrans_ext hconn (by simpa only [Iso.app_hom] using congrArg Iso.hom h))
 
 /-- A chosen isomorphism from the weakly initial object `x₀` to an arbitrary object. -/
 private def chosenIso (x : C) : x₀ ≅ x :=
-  (CategoryTheory.Groupoid.isoEquivHom x₀ x).symm (hconn x).some
+  asIso (hconn x).some
 
 /-- An `End x₀`-equivariant morphism between the values of two functors at a weakly initial
 object of a groupoid extends to a natural transformation.
@@ -99,8 +102,7 @@ private theorem natTransOfEnd_app (φ : F.obj x₀ ⟶ G.obj x₀)
 theorem natTransOfEnd_app_self (φ : F.obj x₀ ⟶ G.obj x₀)
     (hφ : ∀ g : x₀ ⟶ x₀, F.map g ≫ φ = φ ≫ G.map g) :
     (natTransOfEnd hconn φ hφ).app x₀ = φ := by
-  rw [natTransOfEnd_app, ← hφ (chosenIso hconn x₀).hom, ← Category.assoc, ← F.map_comp,
-    Iso.inv_hom_id, F.map_id, Category.id_comp]
+  rw [natTransOfEnd_app, ← hφ (chosenIso hconn x₀).hom, Iso.inv_hom_id_map_assoc]
 
 /-- The extension is the only natural transformation restricting to the given morphism at the
 weakly initial object. -/

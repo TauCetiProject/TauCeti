@@ -141,6 +141,18 @@ lemma cotangentMap_mul (a b : A) :
     simp only [_root_.Bialgebra.counit_mul, Algebra.smul_def, map_mul]
     ring
 
+/-- The preimage of the augmentation ideal of `K` under a bialgebra map `f : H → K` is the
+augmentation ideal of `H`, because `f` commutes with the counits. -/
+@[simp]
+theorem _root_.BialgHom.comap_augmentationIdeal {k H K : Type*} [CommRing k] [CommRing H]
+    [CommRing K] [Bialgebra k H] [Bialgebra k K] (f : H →ₐc[k] K) :
+    (TauCeti.Bialgebra.AugmentationIdeal k K).comap f =
+      TauCeti.Bialgebra.AugmentationIdeal k H := by
+  ext x
+  simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
+  exact ⟨fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx,
+    fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx⟩
+
 section Map
 
 variable {R A} {A' : Type*} [CommRing A'] [Bialgebra R A']
@@ -149,10 +161,11 @@ variable {R A} {A' : Type*} [CommRing A'] [Bialgebra R A']
 `A` into that of `A'`, hence the cotangent space of `A` to that of `A'`. -/
 noncomputable def cotangentSpaceMap (φ : A →ₐc[R] A') :
     CotangentSpace R A →ₗ[R] CotangentSpace R A' :=
-  Ideal.mapCotangent _ _ (φ : A →ₐ[R] A') fun x hx ↦ by
-    simp only [RingHom.mem_ker, Ideal.mem_comap] at hx ⊢
-    simpa only [_root_.Bialgebra.counitAlgHom_apply, AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom,
-      CoalgHomClass.counit_comp_apply] using hx
+  -- `show` gives the containment proof the type `Ideal.mapCotangent` expects (comap along the
+  -- algebra map `↑φ`, not along `φ`), so rewriting with `Ideal.mapCotangent_toCotangent` applies.
+  Ideal.mapCotangent _ _ (φ : A →ₐ[R] A') fun x hx ↦
+    show x ∈ (AugmentationIdeal R A').comap (φ : A →ₐ[R] A') from
+      (BialgHom.comap_augmentationIdeal φ).ge hx
 
 /-- The cotangent map sends the displacement of `a` from the identity to that of `φ a`. -/
 @[simp]
@@ -518,6 +531,40 @@ lemma tangentScalarExtensionEquiv_lTensor_dualCotangentMap {A' : Type*} [CommRin
       tangentScalarExtensionEquiv_tmul_apply, ← cotangentLinearEquiv_apply_apply,
       ← cotangentLinearEquiv_apply_apply, cotangentLinearEquiv_dualCotangentMap,
       derivationComp_apply]
+
+open TrivSqZeroExt WithConv in
+/-- Extracting the infinitesimal coefficient after scalar extension to the dual numbers: the
+coefficient of the cotangent-linear equivalence agrees with the infinitesimal part of the
+scalar-extended tangent vector. -/
+theorem algEquivSelf_cotangentLinearEquiv_rTensor_sndHom
+    (z : DualNumber (Bialgebra.CounitAlgebra R A R) ⊗[R]
+      Module.Dual R (Bialgebra.CotangentSpace R A)) (a : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A R
+        (cotangentLinearEquiv (B := R)
+          (TensorProduct.lid R (Module.Dual R (Bialgebra.CotangentSpace R A))
+            (LinearMap.rTensor (Module.Dual R (Bialgebra.CotangentSpace R A))
+              ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ
+                (sndHom (Bialgebra.CounitAlgebra R A R)
+                  (Bialgebra.CounitAlgebra R A R)).restrictScalars R) z)) a) =
+      Bialgebra.CounitAlgebra.algEquivSelf R A R
+        ((Bialgebra.CounitAlgebra.algEquivSelf R A (DualNumber (Bialgebra.CounitAlgebra R A R))
+          (tangentScalarExtensionEquiv (R := R) (A := A)
+            (B := DualNumber (Bialgebra.CounitAlgebra R A R)) z a)).snd) := by
+  induction z using TensorProduct.inductionOn with
+  | add z w hz hw => simp only [map_add, add_apply, snd_add, hz, hw]
+  | tmul c y =>
+    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
+      algEquivSelf_cotangentLinearEquiv_apply,
+      algEquivSelf_tangentScalarExtensionEquiv_tmul_apply,
+      LinearMap.smul_apply, smul_eq_mul]
+    simp only [algebraMap_eq_inl', snd_mul, snd_inl, fst_inl,
+      op_smul_eq_smul, smul_eq_mul]
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+      LinearMap.restrictScalars_apply, sndHom_apply]
+    -- The coefficient synonym carries the same ring operations, with transported instances.
+    erw [mul_zero, zero_add, map_mul]
+    rw [AlgEquiv.commutes]
+    exact mul_comm _ _
 
 end ScalarExtension
 

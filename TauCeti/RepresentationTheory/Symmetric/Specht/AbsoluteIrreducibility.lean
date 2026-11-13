@@ -34,8 +34,6 @@ equivariant endomorphism therefore maps `e_t` to a scalar multiple of itself.  S
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Section 2.4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Absolute irreducibility".
 -/
 
 public section
@@ -60,21 +58,8 @@ private theorem intertwiningMap_eq_smul_one_of_apply_polytabloid_eq
   let orbit : Set (spechtSubrepresentation (R := ℚ) mu).toSubmodule :=
     Set.range fun sigma : Equiv.Perm (Fin mu.card) =>
       (spechtSubrepresentation (R := ℚ) mu).toRepresentation sigma et
-  have hspan : Submodule.span ℚ orbit = ⊤ := by
-    apply Submodule.map_injective_of_injective
-      (spechtSubrepresentation (R := ℚ) mu).toSubmodule.injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
-    have himage : (spechtSubrepresentation (R := ℚ) mu).toSubmodule.subtype '' orbit =
-        Set.range (fun sigma : Equiv.Perm (Fin mu.card) =>
-          (permutationModule (R := ℚ) (shapePartition mu)).ρ sigma (polytabloid (R := ℚ) t)) := by
-      ext x
-      constructor
-      · rintro ⟨y, ⟨sigma, rfl⟩, rfl⟩
-        exact ⟨sigma, rfl⟩
-      · rintro ⟨sigma, rfl⟩
-        exact ⟨_, ⟨sigma, rfl⟩, rfl⟩
-    rw [himage]
-    exact (spechtSubrepresentation_eq_span_orbit t).symm
+  have hspan : Submodule.span ℚ orbit = ⊤ :=
+    spechtSubrepresentation_span_orbit_polytabloid_eq_top (R := ℚ) t
   apply Representation.IntertwiningMap.ext
   refine (Submodule.linearMap_eq_iff_of_span_eq_top _ _ hspan).2 ?_
   rintro ⟨_, ⟨sigma, rfl⟩⟩

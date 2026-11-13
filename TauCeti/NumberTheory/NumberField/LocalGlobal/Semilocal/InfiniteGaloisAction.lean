@@ -65,7 +65,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace CategoryTheory
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -85,8 +86,9 @@ theorem infiniteSemilocalEquiv_baseChangeAutHom (σ : L ≃ₐ[K] L)
   induction z using TensorProduct.inductionOn with
   | tmul a x =>
     rw [Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul,
-      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes, Completion.algebraMap_apply,
-      Completion.algebraMap_apply, completionCongr_algebraMap]
+      infiniteSemilocalEquiv_tmul, map_mul, AlgEquiv.commutes,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+      NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe, completionCongr_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
 end GaloisHom
@@ -173,10 +175,6 @@ private theorem infiniteSemilocalUnitsToCoind_bijective [IsGalois K L] :
       ((Units.mapEquiv (infiniteSemilocalEquiv L v).toMulEquiv).trans MulEquiv.piUnits).toEquiv)
     (fun g y _ _ h ↦ Units.ext (infiniteSemilocalEquiv_baseChangeAutHom g h
       (Additive.toMul (α := (v.Completion ⊗[K] L)ˣ) y).1)) Additive.toMul (fun _ ↦ rfl)
-    (fun d a ↦ Units.ext (DFunLike.congr_fun (decompositionHom_apply (v := v) (w := w) d)
-      (Additive.toMul (α := w.Completionˣ) a).1))
-    (fun g g' _ _ _ h h' a ↦
-      Units.ext (DFunLike.congr_fun (completionCongr_trans (v := v) g g' h h') a.1))
     (exists_eq_smul v w) (exists_place_eq_smul v w)
 
 /-- **The semi-local units at an infinite place are coinduced.** For `L/K` Galois and `w` a

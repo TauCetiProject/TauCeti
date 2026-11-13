@@ -97,7 +97,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty ZeroObject
 
-universe uk uA
+universe v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A)
@@ -187,7 +187,7 @@ private structure GradedFGModuleRepr where
   /-- The small representative of the underlying finitely generated module. -/
   moduleRepr : FGModuleRepr A
   /-- The internal grading on the representative. -/
-  grading : InternalGrading k moduleRepr
+  grading : InternalGrading k moduleRepr ℤ
   /-- Multiplication by a homogeneous algebra element shifts the degree as prescribed. -/
   [gradedSMul : SetLike.GradedSMul 𝒜 grading.piece]
 
@@ -235,7 +235,7 @@ private noncomputable def moduleEquiv :
   FGModuleRepr.ofFiniteEquiv A M
 
 private noncomputable def smallGrading :
-    InternalGrading k (FGModuleRepr.ofFinite A M) :=
+    InternalGrading k (FGModuleRepr.ofFinite A M) ℤ :=
   M.grading.map ((moduleEquiv M).symm.restrictScalars k)
 
 private noncomputable instance smallGradedSMul :
@@ -340,9 +340,11 @@ instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
 instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
 
-/-- The canonical exact structure on graded modules, graded by the internal shift. -/
+/-- The canonical exact structure on graded modules, graded by the internal shift. It exists in
+every module universe, like the abelian structure and the shift it is built from; the finite
+subcategories below live in the universe `uA` of the ring. -/
 noncomputable abbrev gradedModuleCanonicalExactStructure (𝒜 : ℤ → Submodule k A) :
-    GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
+    GradedExactStructure (GradedModuleCat.{v} 𝒜) :=
   GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
 
 /-- Finite graded modules are extension closed for the graded abelian exact structure of the
@@ -462,6 +464,13 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
 theorem gradedFiniteModules_shiftObj {M : GradedModuleCat.{uA} 𝒜} (hM : gradedFiniteModules 𝒜 M)
     (d : ℤ) : gradedFiniteModules 𝒜 (M.shiftObj d) :=
   gradedFiniteModules_iff.2 (gradedFiniteModules_iff.1 hM)
+
+/-- Any integer power of `GradedModuleCat.shift 𝒜` preserves `gradedFiniteModules 𝒜`. -/
+theorem gradedFiniteModules_shiftPow {M : GradedModuleCat.{uA} 𝒜}
+    (hM : gradedFiniteModules 𝒜 M) (j : ℤ) :
+    gradedFiniteModules 𝒜 (((GradedModuleCat.shift 𝒜) ^ j).functor.obj M) :=
+  (gradedFiniteModules 𝒜).prop_of_iso (((GradedModuleCat.shiftPowIso 𝒜 j).app M).symm)
+    (gradedFiniteModules_shiftObj hM j)
 
 /-- In a full subcategory stable under internal shifts, whose exact-structure shift agrees with
 the ambient grading shift, the class of the explicit `d`-shift is `T d` times the original class. -/

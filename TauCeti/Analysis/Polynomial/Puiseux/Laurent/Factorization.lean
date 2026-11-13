@@ -84,7 +84,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   have hfit : R' ^ d.factorial ≤ R :=
     (pow_le_of_le_one hR'.le hR'1 d.factorial_ne_zero).trans hR'R
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
-    hU hR' d.factorial_ne_zero hfit (dvd_refl _) hF hdeg hdiscr hu hu0
+    hU d.factorial_ne_zero hfit (dvd_refl _) hF hdeg hdiscr hu hu0
     (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩)
   obtain ⟨s, hsa, hscale, hnorm⟩ :=
     exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
@@ -125,7 +125,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
     -- The trailing coefficient forces each normalized root to have constant finite
     -- order. Dividing by the leading coefficient gives the Laurent exponent and bound.
     obtain ⟨m, w, hw, hw0, hform⟩ := TauCeti.exists_root_eq_zpow_mul_unit
-      (Nat.pos_of_ne_zero hd) (fun i ↦ hsa i _ hx') ((hv.comp hq hqmem) _ hx')
+      (fun i ↦ hsa i _ hx') ((hv.comp hq hqmem) _ hx')
       (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hv0 _ hxR)
       ((hu.comp hq hqmem) _ hx')
       (by simpa only [comp_apply, q, zero_pow d.factorial_ne_zero] using hu0 _ hxR) hnorm'
@@ -153,7 +153,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   -- Globalize each branch's Laurent unit germs using nonvanishing off the hyperplane.
   have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
   have hglobal (i : Fin d) := TauCeti.exists_analyticOnNhd_eq_zpow_mul
-    hU hUc isOpen_ball (mem_ball_self hR') (hra i) (hr0 i) (fun x hx ↦ by
+    hU hUc isOpen_ball (hra i) (hr0 i) (fun x hx ↦ by
       obtain ⟨e, -, w, hw⟩ := hlocal i x hx
       exact ⟨e, w, hw⟩)
   choose e w hw hw0 hform using hglobal

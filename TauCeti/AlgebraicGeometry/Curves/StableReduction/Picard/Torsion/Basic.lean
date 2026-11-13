@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.FieldTheory.Finiteness
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Rank
+import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
 # Prime torsion for a numerical type
@@ -64,16 +65,14 @@ The ambient Picard group is finitely generated because it is a quotient of the f
 of multidegrees.  Its `ℓ`-torsion subgroup is therefore a finitely generated torsion abelian group.
 -/
 theorem finite_torsion {ℓ : ℕ} (hℓ : ℓ ≠ 0) : Finite (T.torsion ℓ) := by
-  let _ : Module.Finite ℤ (T.torsion ℓ) := by
-    exact (inferInstance : Module.Finite ℤ (T.torsion ℓ).toIntSubmodule)
   apply Module.finite_of_fg_torsion
   exact Submodule.torsionBy_isTorsion_nonZeroDivisor (ℓ : ℤ) (by simp [hℓ])
 
-/-- For nonzero `ℓ`, the `ℓ`-torsion subgroup of `Pic(T)` is finitely generated over `ZMod ℓ`. -/
-noncomputable instance torsionModuleFinite (ℓ : ℕ) [NeZero ℓ] :
-    Module.Finite (ZMod ℓ) (T.torsion ℓ) := by
-  let _ : Finite (T.torsion ℓ) := T.finite_torsion (NeZero.ne ℓ)
-  infer_instance
+/-- The `ℓ`-torsion subgroup of `Pic(T)` is finitely generated over `ZMod ℓ`, for every `ℓ`:
+it is a finitely generated abelian group, as a subgroup of the finitely generated group `Pic(T)`.
+-/
+noncomputable instance torsionModuleFinite (ℓ : ℕ) : Module.Finite (ZMod ℓ) (T.torsion ℓ) :=
+  Module.Finite.of_restrictScalars_finite ℤ _ _
 
 /-- The cardinality of prime torsion is the prime raised to its vector-space dimension. -/
 theorem natCard_torsion (ℓ : ℕ) [Fact ℓ.Prime] :
@@ -186,8 +185,8 @@ lemma torsionCongr_symm (f : T.Equiv T') (ℓ : ℕ) :
       rw [← f.picCongr_symm]
       exact (f.picCongr.apply_symm_apply x).symm
 
-/-- Prime-torsion dimension is invariant under equivalence of numerical types. -/
-theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) [Fact ℓ.Prime] :
+/-- Torsion dimension is invariant under equivalence of numerical types. -/
+theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) :
     Module.finrank (ZMod ℓ) (T.torsion ℓ) =
       Module.finrank (ZMod ℓ) (T'.torsion ℓ) :=
   (f.torsionCongr ℓ).finrank_eq

@@ -144,9 +144,7 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
   have hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
   refine locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_spaBasicOpen P P'
     hP hP' φ hφ hsheaf hT _ hden ?_
-  rw [rationalLocalizationPair_plus]
-  exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
-    U.isRingOfIntegralElements.isPowerBounded_of_mem hP _ _ _ hden hT hsheafA
+  exact isSheaf_presentationLimitPresheaf_rationalLocalizationPair P U hP _ _ _ hden hT hsheafA
 
 end ValuationSpectrum
 

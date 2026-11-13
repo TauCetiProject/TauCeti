@@ -93,15 +93,15 @@ theorem range_val_eq_Icc {f g : BoundedFlow lo hi s t}
 
 /-- The feasible values are precisely the interval between the two directed minimum-cut
 bounds. The left endpoint uses the minimum upper cut bound with the terminals exchanged. -/
-theorem range_val_eq_Icc_pairMinimumValue [DecidableEq V] (hst : s ≠ t)
+theorem range_val_eq_Icc_pairMinimumValue [DecidableEq V]
     (f : BoundedFlow lo hi s t) :
     Set.range (val : BoundedFlow lo hi s t → K) =
       Set.Icc (-TerminalCut.pairMinimumValue (cutBound lo hi) t s)
         (TerminalCut.pairMinimumValue (cutBound lo hi) s t) := by
   obtain ⟨m, hm⟩ := f.exists_isMinimum
   obtain ⟨M, hM⟩ := f.exists_isMaximum
-  rw [range_val_eq_Icc hm hM, hM.val_eq_pairMinimumValue hst]
-  have hmval := ((isMaximum_swap m).2 hm).val_eq_pairMinimumValue hst.symm
+  rw [range_val_eq_Icc hm hM, hM.val_eq_pairMinimumValue]
+  have hmval := ((isMaximum_swap m).2 hm).val_eq_pairMinimumValue
   rw [← neg_neg m.val, ← val_swap, hmval]
 
 /-- **Integral extrema without an integral starting assignment.** If the bounds take values

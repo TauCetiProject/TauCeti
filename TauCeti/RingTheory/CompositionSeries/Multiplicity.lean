@@ -66,12 +66,9 @@ definitional identity.
 
 ## References
 
-The Jordan-Hölder multiplicities `[Pᵢ : Sⱼ]` are what the Cartan matrix of a finite-dimensional
-algebra is defined by, in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` ("The Cartan matrix of an
-algebra", *"defined primarily by the Jordan-Hölder multiplicities `Cᵢⱼ = [Pᵢ : Sⱼ]` of `Sⱼ` in the
-projective cover `Pᵢ`, well-defined by Jordan-Hölder"*); this file supplies that multiplicity and
-its well-definedness.
+The Cartan matrix of a finite-dimensional algebra is defined by the Jordan-Hölder multiplicities
+`Cᵢⱼ = [Pᵢ : Sⱼ]` of the simple modules `Sⱼ` in the projective covers `Pᵢ`, well defined by the
+Jordan-Hölder theorem; this file supplies that multiplicity and its well-definedness.
 
 * Assem, Simson and Skowroński, *Elements of the Representation Theory of Associative Algebras* I,
   §I.4 and §III.3.
@@ -264,8 +261,8 @@ theorem isCompositionFactorAt_mapCompositionSeriesOfInjective_iff (f : M →ₗ[
       IsCompositionFactorAt s (i.cast (mapCompositionSeriesOfInjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     mapCompositionSeriesOfInjective_apply, mapCompositionSeriesOfInjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(mapSubquotientEquivOfInjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.mapSubquotientEquivOfInjective hf _ _).trans g⟩⟩
 
 /-- Transporting a composition series along a surjective linear map does not change which module
 sits at an index; the index is transported along
@@ -279,8 +276,8 @@ theorem isCompositionFactorAt_comapCompositionSeriesOfSurjective_iff (f : M →�
       IsCompositionFactorAt s (i.cast (comapCompositionSeriesOfSurjective_length f hf s)) S := by
   rw [isCompositionFactorAt_iff, isCompositionFactorAt_iff,
     comapCompositionSeriesOfSurjective_apply, comapCompositionSeriesOfSurjective_apply]
-  exact ⟨fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).symm.trans g⟩,
-    fun ⟨g⟩ => ⟨(comapSubquotientEquivOfSurjective f hf _ _).trans g⟩⟩
+  exact ⟨fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).symm.trans g⟩,
+    fun ⟨g⟩ => ⟨(f.comapSubquotientEquivOfSurjective hf _ _).trans g⟩⟩
 
 /-- **An injective map preserves multiplicities**: the image of a composition series counts every
 module the same number of times as the series itself. -/

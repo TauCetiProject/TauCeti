@@ -10,14 +10,12 @@ public import TauCeti.Probability.Exchangeability.Contractability
 /-!
 # Coordinatewise maps of exchangeable processes
 
-This file records that the Layer 0 symmetry notions for sequence laws are preserved by
-applying a measurable map to every coordinate of the process. It supplies the process-level
-closure API promised by the Exchangeability roadmap from the law-level lemmas
-`map_blockLaw`, `map_prefixLaw`, and `map_pathLaw` in `Basic.lean`.
+This file records that the symmetry notions for sequence laws are preserved by
+applying a measurable map to every coordinate of the process. It derives this process-level
+closure API from the law-level lemmas `map_blockLaw`, `map_prefixLaw`, and `map_pathLaw` in
+`Basic.lean`.
 
-These statements follow `TauCetiRoadmap/Exchangeability/README.md`, Layer 0, the item
-asking for closure of the symmetry classes under coordinatewise pushforward. The proofs use
-only Tau Ceti's existing finite-dimensional law API and Mathlib's `Measure.map`
+The proofs use only Tau Ceti's existing finite-dimensional law API and Mathlib's `Measure.map`
 composition lemmas.
 -/
 

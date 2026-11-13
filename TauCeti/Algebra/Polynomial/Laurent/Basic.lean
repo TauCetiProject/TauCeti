@@ -56,6 +56,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
 * `LaurentPolynomial.hom_eval₂`: a ring homomorphism commutes with `LaurentPolynomial.eval₂`.
+* `LaurentPolynomial.laurentEval_one_eq_sum`: evaluating a Laurent polynomial at `1` sums its
+  coefficients.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
@@ -90,6 +92,13 @@ theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
     (T (∑ i ∈ s, f i) : LaurentPolynomial R) = ∏ i ∈ s, T (f i) := by
   simpa only [single_eq_C_mul_T, Finset.prod_const_one, map_one, one_mul] using
     (AddMonoidAlgebra.prod_single s f (fun _ ↦ (1 : R))).symm
+
+/-- Distinct Laurent monomials have nonzero difference over a nontrivial ring. -/
+theorem T_sub_T_ne_zero {R : Type*} [Ring R] [Nontrivial R] {m n : ℤ} (h : m ≠ n) :
+    (T m - T n : R[T;T⁻¹]) ≠ 0 := by
+  intro hzero
+  have hc := congrArg (fun p : R[T;T⁻¹] => p.coeff m) hzero
+  simp [AddMonoidAlgebra.coeff_sub, h.symm] at hc
 
 /-- The substitution `T ↦ Tⁿ` sends the Laurent monomial `Tᵐ` to `T^{mn}`. -/
 theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
@@ -236,6 +245,11 @@ theorem laurentEval_eq_eval₂ {S : Type*} [CommSemiring S] [Algebra R S] (u : S
   induction p using LaurentPolynomial.induction_on' with
   | add p q hp hq => simp [hp, hq]
   | C_mul_T n a => simp
+
+/-- Evaluating a Laurent polynomial at `1` sums its coefficients. -/
+theorem _root_.LaurentPolynomial.laurentEval_one_eq_sum (f : R[T;T⁻¹]) :
+    laurentEval (1 : Rˣ) f = f.coeff.sum fun _ c ↦ c := by
+  simp [laurentEval, AddMonoidAlgebra.lift_apply']
 
 /-- **Substituting a nonzero power of `T` is injective.**  Evaluating a Laurent polynomial at a
 unit of `R[T;T⁻¹]` whose value is `T k` substitutes `Tᵏ` for `T`; for `k ≠ 0` this sends distinct

@@ -131,8 +131,7 @@ private theorem isRestricted_restrictedOptionSeries (f : Flat) :
   refine (hbad.image fun t ↦ t none).subset fun n hn ↦ ?_
   by_contra hnn
   refine (half_lt_self hε).not_ge ((not_lt.mp hn).trans ?_)
-  rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
-    (div_nonneg (half_pos hε).le (hpos n).le)]
+  rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff]
   intro t
   rw [le_div_iff₀ (hpos n), coeff_restrictedOptionSeries,
     norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
@@ -325,15 +324,14 @@ theorem coe_restrictedOptionEquiv_X_some (i : σ) :
 theorem norm_restrictedOptionEquiv (f : Flat) : ‖restrictedOptionEquiv f‖ = ‖f‖ := by
   have hpos (n : ℕ) : 0 < c none ^ n := pow_pos Fact.out n
   apply le_antisymm
-  · rw [TauCeti.PowerSeries.norm_le_iff (norm_nonneg _)]
+  · rw [TauCeti.PowerSeries.norm_le_iff]
     intro n
-    rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff
-      (div_nonneg (norm_nonneg _) (hpos n).le)]
+    rw [← le_div_iff₀ (hpos n), MvPowerSeries.norm_le_iff]
     intro t
     rw [le_div_iff₀ (hpos n), coeff_restrictedOptionEquiv,
       norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
     exact MvPowerSeries.norm_coeff_mul_prod_le f _
-  · rw [MvPowerSeries.norm_le_iff (norm_nonneg _)]
+  · rw [MvPowerSeries.norm_le_iff]
     intro t
     rw [← Finsupp.optionElim_some t, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow,
       ← coeff_restrictedOptionEquiv]

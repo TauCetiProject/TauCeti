@@ -6,80 +6,85 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
-# Fourier transform of the theta-series Gaussian
+# The Fourier transform of the theta-series Gaussian
 
-For `τ` in the upper half-plane, the Gaussian `x ↦ exp (π i τ ‖x‖²)` on a finite-dimensional real
-inner product space `V` has Fourier transform
-`y ↦ (τ / i) ^ (-n / 2) * exp (π i (-1 / τ) ‖y‖²)`, `n = dim V`. This is the normalisation of
-theta series, whose terms are `exp (π i ‖v‖² τ)`: Poisson summation turns the lattice sum of
-this Gaussian into the dual-lattice sum of its transform, and the formula above is what makes
-`τ ↦ -1 / τ` appear. When `n = 2 * k` is even the power is the honest integer power
-`((τ / i) ^ k)⁻¹ = ((-i) ^ k * τ ^ k)⁻¹`, with no branch of the complex power left.
+On a finite-dimensional real inner product space `E` of dimension `n`, the Gaussian
+`x ↦ exp (π i τ ‖x‖²)` with `0 < im τ` is the case `b = -π i τ` of the Gaussian
+`x ↦ exp (-b ‖x‖²)`, `0 < re b`, whose Fourier transform Mathlib's
+`fourier_gaussian_innerProductSpace` computes, and which is a Schwartz function
+(`SchwartzMap.gaussian`). Summed over a lattice, these Gaussians give its theta series. In the
+shape used for the inversion law of theta series,
 
-Both statements are rewritings of Mathlib's `fourier_gaussian_innerProductSpace` at
-`b = -π i τ`. The only point needing care is the complex power: `(π / b) ^ (n / 2)` is
-`((τ / i)⁻¹) ^ (n / 2)`, which equals `(τ / i) ^ (-n / 2)` because `τ / i` has positive real part
-and so does not lie on the branch cut of `Complex.cpow`.
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n / 2) * exp (π i (-1 / τ) ‖y‖²)`,
 
-## Main results
+with the complex power `cpow`, and for even `n = 2k` the factor is the integer power
+`((-i) ^ k * τ ^ k)⁻¹`.
 
-* `TauCeti.fourier_gaussian_of_im_pos`: the transform at arbitrary dimension.
-* `TauCeti.fourier_gaussian_of_im_pos_of_finrank_eq_two_mul`: the same in even dimension `2 * k`,
-  with the automorphy-factor shape `((-i) ^ k * τ ^ k)⁻¹`.
+## Main declarations
+
+* `TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul`: the Fourier transform of
+  `x ↦ exp (π i τ ‖x‖²)`, with the factor `(τ / i) ^ (-n / 2)`.
+* `TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq`: the same in even rank `2k`, with
+  the factor `((-i) ^ k * τ ^ k)⁻¹`.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Ch. VII §6.
 -/
 
 public section
 
-open Complex Real
-open scoped FourierTransform
+open Complex Module
+open scoped Real FourierTransform
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [MeasurableSpace V] [BorelSpace V]
-
-/-- The Fourier transform of the theta-series Gaussian `x ↦ exp (π i ‖x‖² τ)` for `0 < τ.im`:
-it is `(τ / i) ^ (-n / 2)` times the Gaussian at `-1 / τ`, where `n` is the dimension. -/
-theorem fourier_gaussian_of_im_pos {τ : ℂ} (hτ : 0 < τ.im) (y : V) :
-    𝓕 (fun x : V ↦ cexp (π * I * ‖x‖ ^ 2 * τ)) y =
-      (τ / I) ^ (-(Module.finrank ℝ V : ℂ) / 2) * cexp (π * I * ‖y‖ ^ 2 * (-1 / τ)) := by
-  have hτ0 : τ ≠ 0 := fun h ↦ by simp [h] at hτ
-  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr pi_ne_zero
-  set b : ℂ := -(π * I * τ)
-  have hb : 0 < b.re := by simpa [b] using mul_pos pi_pos hτ
-  have hb0 : b ≠ 0 := fun h ↦ by simp [h] at hb
-  -- `τ / i = -i τ` has positive real part, so it is off the branch cut of `cpow`.
+/-- **The Fourier transform of the Gaussian `x ↦ exp (π i τ ‖x‖²)`**: for `0 < im τ` and
+`n = finrank ℝ E`,
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n / 2) * exp (π i (-1 / τ) ‖y‖²)`,
+with the principal branch of the complex power; `τ / i` lies in the right half-plane. -/
+theorem fourier_cexp_pi_mul_I_mul_norm_sq_mul {τ : ℂ} (hτ : 0 < τ.im) (y : E) :
+    𝓕 (fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * τ)) y =
+      (τ / I) ^ (-(finrank ℝ E : ℂ) / 2) * cexp (π * I * (‖y‖ ^ 2 : ℝ) * (-1 / τ)) := by
+  have hb : 0 < (-(π * I * τ)).re := by simpa using mul_pos Real.pi_pos hτ
+  have hτ₀ : τ ≠ 0 := by rintro rfl; simp at hτ
+  have hfun : (fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * τ)) =
+      fun x : E ↦ cexp (-(-(π * I * τ)) * ‖x‖ ^ 2) := by
+    ext x
+    push_cast
+    ring_nf
+  -- `τ / i` has positive real part, so it is off the branch cut of `cpow`.
   have harg : (τ / I).arg ≠ π := by
     rw [Ne, arg_eq_pi_iff, not_and_or, not_lt]
-    exact Or.inl (by simpa [div_I] using hτ.le)
-  have hfun : (fun x : V ↦ cexp (π * I * ‖x‖ ^ 2 * τ)) = fun x : V ↦ cexp (-b * ‖x‖ ^ 2) := by
-    ext x
-    congr 1
-    simp only [b]
-    ring
-  have hpow : (π / b : ℂ) = (τ / I)⁻¹ := by
-    simp only [b]
+    left
+    simpa [div_I] using hτ.le
+  have hpow : π / -(π * I * τ) = (τ / I)⁻¹ := by
     field_simp
+    ring_nf
     simp [I_sq]
   rw [hfun, fourier_gaussian_innerProductSpace hb, hpow, inv_cpow _ _ harg, neg_div, cpow_neg]
   congr 2
-  simp only [b]
   field_simp
   ring_nf
   simp [I_sq]
 
-/-- The Fourier transform of the theta-series Gaussian in even dimension `2 * k`, with the factor
-written as the integer power `((-i) ^ k * τ ^ k)⁻¹`. -/
-theorem fourier_gaussian_of_im_pos_of_finrank_eq_two_mul {k : ℕ}
-    (hk : Module.finrank ℝ V = 2 * k) {τ : ℂ} (hτ : 0 < τ.im) (y : V) :
-    𝓕 (fun x : V ↦ cexp (π * I * ‖x‖ ^ 2 * τ)) y =
-      ((-I) ^ k * τ ^ k)⁻¹ * cexp (π * I * ‖y‖ ^ 2 * (-1 / τ)) := by
-  -- Half the dimension `2 * k` is the natural number `k`, so the complex power is an integer power.
-  have hhalf : ((2 * k : ℕ) : ℂ) / 2 = (k : ℕ) := by push_cast; ring
-  rw [fourier_gaussian_of_im_pos hτ, hk, neg_div, cpow_neg, hhalf, cpow_natCast, div_I, ← mul_pow]
+/-- **The Fourier transform of the Gaussian `x ↦ exp (π i τ ‖x‖²)` in even rank**: if
+`finrank ℝ E = 2 * k` and `0 < im τ`, then
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = ((-i) ^ k * τ ^ k)⁻¹ * exp (π i (-1 / τ) ‖y‖²)`. -/
+theorem fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq {k : ℕ}
+    (hk : finrank ℝ E = 2 * k) {τ : ℂ} (hτ : 0 < τ.im) (y : E) :
+    𝓕 (fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * τ)) y =
+      ((-I) ^ k * τ ^ k)⁻¹ * cexp (π * I * (‖y‖ ^ 2 : ℝ) * (-1 / τ)) := by
+  have hexp : -(finrank ℝ E : ℂ) / 2 = -(k : ℂ) := by
+    rw [hk]
+    push_cast
+    ring
+  rw [fourier_cexp_pi_mul_I_mul_norm_sq_mul hτ, hexp, cpow_neg, cpow_natCast, ← mul_pow, div_I]
   congr 2
   ring
 

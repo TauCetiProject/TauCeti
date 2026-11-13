@@ -54,7 +54,8 @@ theorem weightParabolicDefiningHopfIdeal_toIdeal_le_ker_weightTorusCoordinateBia
   apply weightParabolicDefiningHopfIdeal_toIdeal_le_ker
   intro a b hab
   have hab' : a ≠ b := by rintro rfl; exact lt_irrefl _ hab
-  simpa only [hab', ↓reduceIte, BialgHom.coe_toAlgHom] using
+  simpa only [hab', ↓reduceIte, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    BialgHom.coe_toAlgHom] using
     weightTorusCoordinateBialgHom_X (S := R) wt a b
 
 /-- A closed subgroup of the weight parabolic attached to `w` stabilizes the coordinate span of

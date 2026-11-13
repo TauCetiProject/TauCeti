@@ -7,6 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Product.Homeomorph
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Sequence
+import TauCeti.Topology.Homotopy.HomotopyEquiv
+import Mathlib.Analysis.Convex.Contractible
 
 /-!
 # Realizing finite simplicial cylinders
@@ -19,7 +22,9 @@ cylinder, as needed for relative homotopies and simplicial collapse.
 
 The construction composes the staircase-product homeomorphism with
 `realizationOneSimplexHomeomorphUnitInterval`, which uses Mathlib's
-`Convexity.StdSimplex.homeomorphI`.
+`Convexity.StdSimplex.homeomorphI`. As a consequence,
+`contractibleSpace_realization_of_collapsible_orderedCylinder` shows that a finite complex with a
+collapsible ordered cylinder has contractible realization.
 
 ## References
 
@@ -171,5 +176,18 @@ theorem orderedCylinderRealizationHomeomorph_symm_one (x : Realization K) :
       (orderedCylinderOne K).realizationMap x := by
   apply (K.orderedCylinderRealizationHomeomorph hK).injective
   simp
+
+include hK in
+/-- A finite complex whose ordered cylinder is collapsible has contractible realization: the
+realization of the cylinder is contractible and homeomorphic to the product of the realization
+with the unit interval. -/
+theorem contractibleSpace_realization_of_collapsible_orderedCylinder
+    (h : PreAbstractSimplicialComplex.Collapsible
+      K.orderedCylinder.toPreAbstractSimplicialComplex) :
+    ContractibleSpace (Realization K) := by
+  have := h.contractibleSpace_realization
+  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
+  exact ((ContinuousMap.HomotopyEquiv.prodContractible _ unitInterval).symm.trans
+    (K.orderedCylinderRealizationHomeomorph hK).symm.toHomotopyEquiv).contractibleSpace
 
 end AbstractSimplicialComplex

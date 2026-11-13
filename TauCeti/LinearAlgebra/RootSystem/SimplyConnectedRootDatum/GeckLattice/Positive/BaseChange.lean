@@ -435,7 +435,6 @@ theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_comp_root
     rw [kostantTorusSubsystemBaseChangeInclusionCoordinateMap_comp_root]
   slice_lhs 2 3 =>
     rw [kostantToralBaseChangeIso_inv_comp_rootSubgroupToralBaseChangeCoordinateMap]
-  rw [← t.geckRootSubgroupIntegralCoordinateMap_def ht (.inl i)]
   exact t.geckBaseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap ht A (.inl i)
 
 /-- The base-changed inclusion intertwines the transported weight torus with the canonical
@@ -445,7 +444,7 @@ theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_comp_weightTorus :
     t.geckTorusPositiveBaseChangeInclusionCoordinateMap ht A ≫
           t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A ≫
         (_root_.CommHopfAlgCat.ofHom
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+          (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
             (G := SplitTorus.characterGroup (Fin t.rank)))) =
       t.geckWeightTorusToBaseChangeCoordinateMap ht A := by
   rw [geckTorusPositiveBaseChangeInclusionCoordinateMap,

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Topology.ContinuousMap.Ordered
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Uniform positivity of continuous functions
@@ -14,6 +16,24 @@ public import Mathlib.Analysis.Convex.Basic
 The continuous real-valued functions bounded below by a positive constant form a convex set.
 On a compact domain this set is open for the uniform topology. These facts apply, for example,
 to separating positive continuous functions in the proof of Pietsch domination.
+
+A linear functional on `C(X, ℝ)` that is bounded above on the uniformly positive functions is
+nonpositive on them, since they form a cone, and hence nonpositive on every nonnegative function:
+adding a small positive constant to a nonnegative function makes it uniformly positive. This is the
+positivity of the functional produced by separating the uniformly positive functions from a cone.
+
+A continuous map from a compact space into a metric space (or normed additive group) stays at a
+uniform positive distance from every point outside its range.
+
+## Main results
+
+* `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
+* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space they form an open set.
+* `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
+  metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
+* `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
+  uniformly positive functions is nonpositive on the nonnegative functions.
 -/
 
 public section
@@ -46,4 +66,57 @@ theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace 
   rw [Real.dist_eq] at this
   linarith [hhδ f, (abs_le.1 this).1]
 
+/-- A continuous map from a compact space into a metric space stays at a uniform positive distance
+from every point outside its range. -/
+theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [MetricSpace Y] (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
+    ∃ δ > 0, ∀ x, δ ≤ dist (f x) y := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨1, zero_lt_one, isEmptyElim⟩
+  · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty
+      (f.continuous.dist continuous_const).continuousOn
+    exact ⟨dist (f x₀) y, dist_pos.2 fun h ↦ hy ⟨x₀, h⟩, fun x ↦ hx₀ trivial⟩
+
+/-- A continuous map from a compact space into a normed additive group has `‖f x - y‖` uniformly
+bounded below by a positive constant whenever `y ∉ Set.range f`. -/
+theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X] [CompactSpace X]
+    [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
+    ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
+  simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
+
 end ContinuousMap
+
+namespace LinearMap
+
+/-- A linear functional on `C(X, ℝ)` that is bounded above on the functions bounded below by a
+positive constant is nonpositive on the nonnegative functions. -/
+theorem apply_nonpos_of_forall_uniformlyPositive_lt {X : Type*} [TopologicalSpace X]
+    (L : C(X, ℝ) →ₗ[ℝ] ℝ) {u : ℝ}
+    (hL : ∀ h ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, ℝ)} (hh : 0 ≤ h) :
+    L h ≤ 0 := by
+  -- The uniformly positive functions form a cone, so `L` is nonpositive on them: if `L g > 0`,
+  -- then `t • g` with `t = |u| / L g + 1` is uniformly positive and `L (t • g) = |u| + L g > u`.
+  have hL' (g : C(X, ℝ)) (hg : g ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
+    obtain ⟨δ, hδ, hgδ⟩ := hg
+    by_contra! hpos
+    have ht : 0 < |u| / L g + 1 := by
+      have := div_nonneg (abs_nonneg u) hpos.le
+      linarith
+    have hlt := hL ((|u| / L g + 1) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
+      simpa using mul_le_mul_of_nonneg_left (hgδ x) ht.le⟩
+    rw [map_smul, smul_eq_mul, add_mul, div_mul_cancel₀ _ hpos.ne', one_mul] at hlt
+    linarith [le_abs_self u]
+  have hL1 : L 1 ≤ 0 := hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩
+  have h1 : 0 < 1 - L 1 := by linarith
+  -- If `0 < L h`, then `h + ε • 1` with `ε = L h / (1 - L 1)` is uniformly positive, and
+  -- `L (h + ε • 1) = L h / (1 - L 1)` is positive.
+  by_contra! hpos
+  have hε : 0 < L h / (1 - L 1) := div_pos hpos h1
+  have hle := hL' (h + (L h / (1 - L 1)) • 1) ⟨_, hε, fun x ↦ by simpa using hh x⟩
+  rw [map_add, map_smul, smul_eq_mul] at hle
+  have heq : L h + L h / (1 - L 1) * L 1 = L h / (1 - L 1) := by
+    field_simp
+    ring
+  linarith
+
+end LinearMap

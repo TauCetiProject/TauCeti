@@ -77,6 +77,16 @@ theorem isSemisimple_one [IsSemisimpleModule K V] :
   unfold IsSemisimple
   exact Module.End.isSemisimple_id
 
+/-- A linear automorphism that is both semisimple and unipotent is the identity, over any
+commutative ring. -/
+theorem IsSemisimple.eq_one_of_isUnipotent {g : GeneralLinearGroup K V} (hg : IsSemisimple g)
+    (hu : IsUnipotent g) : g = 1 := by
+  rw [isSemisimple_def] at hg
+  have hs : Module.End.IsSemisimple ((g : End K V) - 1) := by
+    simpa using (Module.End.isSemisimple_sub_algebraMap_iff (μ := (1 : K))).mpr hg
+  exact Units.ext (sub_eq_zero.mp
+    (Module.End.eq_zero_of_isNilpotent_isSemisimple ((isUnipotent_def g).mp hu) hs))
+
 end Definitions
 
 section Field
@@ -89,7 +99,7 @@ theorem IsSemisimple.inv {g : GeneralLinearGroup K V} (hg : IsSemisimple g) :
     IsSemisimple g⁻¹ := by
   rw [isSemisimple_def] at hg ⊢
   exact hg.of_mem_adjoin_singleton
-    (TauCeti.Units.coe_inv_mem_adjoin g (IsIntegral.of_finite K (g : End K V)))
+    (Units.inv_mem_adjoin g (IsIntegral.of_finite K (g : End K V)))
 
 /-- A linear automorphism is semisimple if and only if its inverse is semisimple. -/
 @[simp]

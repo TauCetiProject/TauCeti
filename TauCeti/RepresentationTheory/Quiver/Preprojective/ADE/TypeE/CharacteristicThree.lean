@@ -143,6 +143,19 @@ private theorem e6Weight_backtrack (v a b c : Fin 6)
   · exact e6Weight_backtrack_4 a b c ha hb hc hd
   · exact e6Weight_backtrack_5 a b c ha hb hc hd
 
+/-- The necklace weights of the closed walks `v, a, b, c, v, w` over the neighbours `w` of `v`
+sum to zero. -/
+private theorem e6Weight_sum_neighborSet (v a b c : Fin 6) [Fintype ((G).neighborSet v)]
+    (ha : (G).Adj v a) (hb : (G).Adj a b) (hc : (G).Adj b c) (hd : (G).Adj c v) :
+    ∑ w : (G).neighborSet v, e6Weight [v, a, b, c, v, (w : Fin 6)] = 0 := by
+  have hrot (w : Fin 6) : e6Weight [v, a, b, c, v, w] = e6Weight [v, w, v, a, b, c] :=
+    e6Weight_rotated (List.isRotated_append (l := [v, a, b, c]) (l' := [v, w]))
+  simp_rw [hrot]
+  have h := e6Weight_backtrack v a b c ha hb hc hd
+  rw [← Finset.sum_filter, Finset.sum_subtype _
+    (p := (· ∈ (G).neighborSet v)) (fun w => by simp)] at h
+  exact h
+
 variable (k : Type*) [CommRing k] [CharP k 3]
 
 local notation "Q" => DoubledQuiver G
@@ -257,16 +270,7 @@ private theorem e6TraceAux_relator_mul_ofPath (v : Fin 6)
       List.dropLast_singleton, List.nil_append, List.cons_append,
       List.map_cons, List.map_nil, vertexEquiv_symm_vertex]
     rw [← map_sum]
-    have hrot (w : Fin 6) : e6Weight [v, a, b, c, v, w] =
-        e6Weight [v, w, v, a, b, c] :=
-      e6Weight_rotated (List.isRotated_append (l := [v, a, b, c]) (l' := [v, w]))
-    simp_rw [hrot]
-    have hsum : (∑ w : (G).neighborSet v, e6Weight [v, (w : Fin 6), v, a, b, c]) = 0 := by
-      have hh := e6Weight_backtrack v a b c he hf hg hh
-      rw [← Finset.sum_filter, Finset.sum_subtype _
-        (p := (· ∈ (G).neighborSet v)) (fun w => by simp)] at hh
-      exact hh
-    rw [hsum, map_zero]
+    rw [e6Weight_sum_neighborSet v a b c he hf hg hh, map_zero]
 
 private theorem e6TraceAux_relator_mul (v : Fin 6)
     [Fintype (Quiver.Star (vertex G v))]

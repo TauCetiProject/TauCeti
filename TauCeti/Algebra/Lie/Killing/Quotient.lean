@@ -23,7 +23,7 @@ Killing property of `L ⧸ I` transfers to this quotient of `P`.
 
 public section
 
-namespace TauCeti
+namespace LieIdeal
 
 open LieAlgebra
 
@@ -32,10 +32,10 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- A Lie subalgebra `P` supplementing an ideal `I` with Killing quotient has Killing quotient by
 `I ∩ P`, since `P ⧸ (I ∩ P)` is isomorphic to `L ⧸ I`. -/
-theorem _root_.LieIdeal.isKilling_quotient_comap_incl [IsKilling R (L ⧸ I)]
+theorem isKilling_quotient_comap_incl [IsKilling R (L ⧸ I)]
     (hIP : Codisjoint I.toSubmodule P.toSubmodule) : IsKilling R (P ⧸ I.comap P.incl) := by
   rw [← I.ker_mkQ_comp_incl]
   exact isKilling_of_equiv
-    ((I.mkQ.comp P.incl).quotKerEquivOfSurjective (I.mkQ_comp_incl_surjective hIP)).symm
+    ((I.mkQ.comp P.incl).quotKerEquivOfSurjective (I.mkQ_comp_incl_surjective_iff.2 hIP)).symm
 
-end TauCeti
+end LieIdeal

@@ -8,13 +8,16 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
-/-!
-# Basic results on fundamental groupoids and fundamental groups
+import TauCeti.CategoryTheory.Groupoid.SingleObj
+import TauCeti.Topology.Homotopy.Path
 
-This file records a basic connectedness result for fundamental groupoids, the general
-transport facts about the basepoint-adjusted induced map `FundamentalGroup.mapOfEq`, and when a
-map induced on fundamental groups is trivial: a characterization of trivial range loop by loop,
-and the basic consequences of triviality of the *source* fundamental group.
+/-!
+# Basic results on fundamental groups
+
+This file records the general transport facts about the basepoint-adjusted induced map
+`FundamentalGroup.mapOfEq`, and when a map induced on fundamental groups is trivial: a
+characterization of trivial range loop by loop, and the basic consequences of triviality of the
+*source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
 `semilocallySimplyConnectedAt_iff_range_eq_bot` in
@@ -38,8 +41,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   exactly when the image of the loop is nullhomotopic.
 * `FundamentalGroup.mapOfEq_mapOfEq_of_comp_eq_id`: the induced map of a map whose composite
   with `f` is the identity undoes the induced map of `f`.
-* `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
-  space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
   when every loop at the basepoint becomes nullhomotopic in the target.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_of_subsingleton`: if the source fundamental group
@@ -50,6 +51,12 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.subsingleton_fundamentalGroup_iff`: the fundamental group at a basepoint is trivial
+  exactly when every loop there is nullhomotopic.
+* `Path.homotopic_refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
+  group at the basepoint is trivial is nullhomotopic.
+* `TauCeti.exists_functor_map_asHom_eq`: a homomorphism out of the fundamental group of a
+  path-connected space extends to a functor from its fundamental groupoid.
 * `TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup`: a path-connected space whose
   fundamental group at one basepoint is trivial is simply connected.
 -/
@@ -57,16 +64,6 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 public section
 
 open CategoryTheory
-
-namespace FundamentalGroupoid
-
-/-- In the fundamental groupoid of a path-connected space every object receives a morphism from
-every other one, so the groupoid is connected. -/
-theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
-    [PathConnectedSpace Y] (x y : FundamentalGroupoid Y) : Nonempty (x ⟶ y) :=
-  ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
-
-end FundamentalGroupoid
 
 namespace FundamentalGroup
 
@@ -249,6 +246,31 @@ theorem FundamentalGroup.map_range_le_of_simplyConnectedSpace [SimplyConnectedSp
     (_root_.FundamentalGroup.map f a₀).range ≤ H :=
   FundamentalGroup.map_range_le_of_subsingleton f H
 
+/-- **The fundamental group is trivial exactly when every loop is nullhomotopic**: the fundamental
+group at `x` is a subsingleton if and only if every loop at `x` is homotopic, relative to its
+endpoints, to the constant loop. -/
+theorem subsingleton_fundamentalGroup_iff {x : X} :
+    Subsingleton (_root_.FundamentalGroup X x) ↔ ∀ γ : Path x x, γ.Homotopic (Path.refl x) := by
+  refine ⟨fun _ γ ↦ ?_, fun h ↦ ⟨fun g g' ↦ ?_⟩⟩
+  · simpa using (FundamentalGroup.map_range_eq_bot_iff (ContinuousMap.id X) x).1
+      (FundamentalGroup.map_range_eq_bot_of_subsingleton _) γ
+  -- Every element is the class of a loop, and every loop is in the class of the constant loop.
+  have key (g : _root_.FundamentalGroup X x) :
+      g = _root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)) := by
+    rw [← FundamentalGroup.fromPath_mk_out g]
+    exact congrArg _ (Quotient.sound (h _))
+  rw [key g, key g']
+
+/-- **A loop in a set with trivial fundamental group is nullhomotopic.** If a loop `γ` at `x` lies
+in a set `s` whose fundamental group at `x` is trivial, then `γ` is homotopic, relative to its
+endpoints, to the constant loop. -/
+theorem _root_.Path.homotopic_refl_of_forall_mem_of_subsingleton {s : Set X} {x : s}
+    [Subsingleton (_root_.FundamentalGroup s x)] (γ : Path x.val x.val) (hγ : ∀ t, γ t ∈ s) :
+    γ.Homotopic (Path.refl x.val) := by
+  have h := (subsingleton_fundamentalGroup_iff.1 ‹_› (γ.codRestrict hγ)).map
+    ⟨_, continuous_subtype_val⟩
+  rwa [Path.map_codRestrict, Path.map_refl] at h
+
 /-- **A path-connected space with a trivial fundamental group is simply connected.** It suffices
 that the fundamental group at a single basepoint is trivial. -/
 theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpace X] (x : X)
@@ -257,7 +279,26 @@ theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpac
   have : Subsingleton (_root_.FundamentalGroup X y) :=
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath
       (PathConnectedSpace.somePath x y)).symm.injective.subsingleton
-  simpa using (FundamentalGroup.map_range_eq_bot_iff (ContinuousMap.id X) y).1
-    (FundamentalGroup.map_range_eq_bot_of_subsingleton _) γ
+  exact subsingleton_fundamentalGroup_iff.1 this γ
+
+variable {K : Type*} [Monoid K]
+
+/-- A homomorphism out of the fundamental group of a path connected space extends to a functor
+from its fundamental groupoid to the one-object category on the units of the target: the
+functor sends the based loops `g.asHom` to the image of `g` in the units. -/
+theorem exists_functor_map_asHom_eq {Y : Type*} [TopologicalSpace Y] [PathConnectedSpace Y]
+    (y : Y) (f : FundamentalGroup Y y →* K) :
+    ∃ F : FundamentalGroupoid Y ⥤ SingleObj Kˣ,
+      ∀ g : FundamentalGroup Y y, F.map g.asHom = f.toHomUnits g := by
+  classical
+  let b := FundamentalGroupoid.mk y
+  let τ (z : FundamentalGroupoid Y) : b ⟶ z :=
+    if hz : z = b then eqToHom hz.symm else (FundamentalGroupoid.nonempty_hom _ _).some
+  have hτ : τ b = 𝟙 _ := by simp [τ]
+  refine ⟨Groupoid.functorOfEndHom b τ f.toHomUnits, fun g ↦ ?_⟩
+  rw [Groupoid.functorOfEndHom_map]
+  -- Pin the chosen basepoint carrier before applying its normalized transport equation.
+  change f.toHomUnits (.of (τ b ≫ g.asHom ≫ inv (τ b))) = _
+  erw [hτ, IsIso.inv_id, Category.id_comp, Category.comp_id]
 
 end TauCeti

@@ -29,8 +29,9 @@ are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
 along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
 (`ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le`). Pullback along an
-isomorphism onto a subgroup `S` followed by its inclusion, with bijective discrete coefficients,
-vanishes exactly when restriction to `S` does (`explicitMap1_eq_zero_iff_explicitRes1_eq_zero`).
+isomorphism onto a subgroup `S` followed by its inclusion, with a continuous bijective coefficient
+map, vanishes exactly when restriction to `S` does
+(`explicitMap1_eq_zero_iff_explicitRes1_eq_zero`).
 The constructions
 `explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
@@ -444,7 +445,7 @@ def explicitMap1Equiv
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H1 G M ≃+ H1 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
-    AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv
+    AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply hequiv
   exact
     { toFun := explicitMap1 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap1 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
@@ -485,7 +486,8 @@ theorem explicitMap1Equiv_symm_apply
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (x : H1 H N) :
     (explicitMap1Equiv G M H N φ e he he' hequiv).symm x =
       explicitMap1 H N G M φ.symm e.symm.toAddMonoidHom he'
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv) x :=
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply
+          hequiv) x :=
   (rfl)
 
 /-- Pullback on the explicit second continuous cohomology group along a compatible pair. -/
@@ -551,7 +553,7 @@ def explicitMap2Equiv [ContinuousMul G] [ContinuousMul H]
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H2 G M ≃+ H2 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
-    AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv
+    AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply hequiv
   exact
     { toFun := explicitMap2 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap2 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
@@ -592,7 +594,8 @@ theorem explicitMap2Equiv_symm_apply [ContinuousMul G] [ContinuousMul H]
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (x : H2 H N) :
     (explicitMap2Equiv G M H N φ e he he' hequiv).symm x =
       explicitMap2 H N G M φ.symm e.symm.toAddMonoidHom he'
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv) x :=
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply
+          hequiv) x :=
   (rfl)
 
 end Cohomology
@@ -665,30 +668,42 @@ theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
 variable {G M} in
 /-- **Pullback along an isomorphism onto a subgroup detects restriction to that subgroup.** If
 `φ : H → G` is a continuous isomorphism `e : H ≃ₜ* S` onto a subgroup `S` of `G` followed by the
-inclusion, and `f : M → N` is a compatible bijection of discrete coefficient modules, then a class
-of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S` vanishes: the
-pullback is restriction to `S` followed by the equivalence `explicitMap1Equiv` along `(e, f)`. -/
-theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero [DiscreteTopology M]
+inclusion, and `f : M → N` is a continuous compatible bijection of coefficient modules, then a
+class of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S`
+vanishes. -/
+theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero
     {H : Type uH} [Group H] [TopologicalSpace H]
-    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
     {S : Subgroup G} (e : H ≃ₜ* S) {φ : H →ₜ* G}
     (hφ : φ = (ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) {f : M →+ N}
-    (hf : Function.Bijective f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    {c : H1 G M} :
-    explicitMap1 G M H N φ f continuous_of_discreteTopology hequiv c = 0 ↔
+    (hf : Function.Bijective f) (hcont : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {c : H1 G M} :
+    explicitMap1 G M H N φ f hcont hequiv c = 0 ↔
       explicitRes1 G M S c = 0 := by
   subst hφ
-  have h := explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) H N e
-    (AddEquiv.ofBijective f hf).toAddMonoidHom continuous_of_discreteTopology hequiv hequiv
-  rw [← explicitRes1_eq_explicitMap1] at h
-  rw [explicitMap1_congr_of_eq G M H N _ _ f
-      ((AddEquiv.ofBijective f hf).toAddMonoidHom.comp (AddMonoidHom.id M))
-      (hq := continuous_of_discreteTopology) (hψ := hequiv) rfl rfl,
-    DFunLike.congr_fun h c, AddMonoidHom.comp_apply,
-    ← explicitMap1Equiv_apply S M H N e (AddEquiv.ofBijective f hf) continuous_of_discreteTopology
-      continuous_of_discreteTopology hequiv, AddEquivClass.map_eq_zero_iff]
+  obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective c
+  rw [explicitRes1_eq_explicitMap1, explicitMap1_mk, explicitMap1_mk]
+  rw [QuotientAddGroup.eq_zero_iff, QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf,
+    AddSubgroup.mem_addSubgroupOf]
+  simp only [mem_B1_iff, groupCohomology.IsCoboundary₁, cocyclesMap1_apply]
+  have hcomp : ∀ h : H,
+      ((ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) h = ((e h : S) : G) :=
+    fun _ => rfl
+  have hsub : ∀ s : S, ContinuousMonoidHom.subgroupSubtype S s = (s : G) := fun _ => rfl
+  refine ⟨fun ⟨n, hn⟩ => ?_, fun ⟨m, hm⟩ => ⟨f m, fun h => ?_⟩⟩
+  · obtain ⟨m, rfl⟩ := hf.2 n
+    refine ⟨m, fun s => hf.1 ?_⟩
+    have h1 := hn (e.symm s)
+    have h3 := hequiv (e.symm s) m
+    simp only [hcomp, e.apply_symm_apply] at h1 h3
+    simp only [Subgroup.smul_def, AddMonoidHom.id_apply, hsub]
+    rw [map_sub, h3, h1]
+  · have h1 := hm (e h)
+    have h3 := hequiv h m
+    simp only [hcomp] at h3 ⊢
+    rw [← h3, ← map_sub]
+    exact congrArg f h1
 
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/
@@ -998,10 +1013,10 @@ theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGrou
     [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) := by
-  have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective f hf)
     continuous_of_discreteTopology continuous_of_discreteTopology
     (AddEquiv.ofBijective_smul hf)).bijective
-  have e : ⇑(explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have e : ⇑(explicitCoeff1Equiv G M (AddEquiv.ofBijective f hf)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (AddEquiv.ofBijective_smul hf)) =
       ⇑(explicitCoeff1 G M f continuous_of_discreteTopology) := funext fun x => by
@@ -1016,10 +1031,10 @@ theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Typ
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) := by
-  have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective f hf)
     continuous_of_discreteTopology continuous_of_discreteTopology
     (AddEquiv.ofBijective_smul hf)).bijective
-  have e : ⇑(explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have e : ⇑(explicitCoeff2Equiv G M (AddEquiv.ofBijective f hf)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (AddEquiv.ofBijective_smul hf)) =
       ⇑(explicitCoeff2 G M f continuous_of_discreteTopology) := funext fun x => by

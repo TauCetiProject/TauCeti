@@ -12,17 +12,14 @@ public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 # The adjoint action on left-invariant derivations
 
 The tangent adjoint action is transported across the canonical Lie equivalence between the tangent
-space at the identity and left-invariant derivations. The result is the roadmap-facing group adjoint
-`Ad` on Mathlib's Lie algebra `LeftInvariantDerivation I G`.
+space at the identity and left-invariant derivations. The result is the group adjoint `Ad` on
+Mathlib's Lie algebra `LeftInvariantDerivation I G`.
 
 The canonical derivation–tangent equivalence uses Hausdorffness to identify point derivations with
 tangent vectors through global smooth functions. This imposes no extra public hypothesis on `Ad`
 or its group laws: a charted space over the normed model is `T1`, and a `T1` topological group is
 Hausdorff. No boundaryless manifold assumption is needed, because a Lie group's identity is
 automatically an interior point.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -36,10 +33,8 @@ This advances Deliverable A, Layer 1 of
 * `TauCeti.Lie.leftInvariantDerivationLinearIsometryEquivModelVectorSpace_Ad`: the canonical
   derivation–model equivalence intertwines `Ad` and `tangentAd`.
 
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
+* `TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph`:
+  the inverse tangent identification intertwines the adjoint actions.
 -/
 
 public section
@@ -90,6 +85,25 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_Ad
           (I := I) (G := G)
           (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) D) := by
   rw [Ad_apply, LieEquiv.apply_symm_apply]
+
+/-- The inverse tangent identification intertwines the tangent and derivation adjoint actions. -/
+@[simp high]
+theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph
+    (g : G) (a : GroupLieAlgebra I G) :
+    (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm
+        (mfderiv I I (conjDiffeomorph (I := I) (n := 1) g) (1 : G) a) =
+      Ad (I := I) g
+        ((leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm a) := by
+  -- The adjoint-map codomain lets the tangent Lie equivalence apply its inverse law.
+  rw [← adjointContinuousLinearMap_apply (I := I) g a]
+  apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).injective
+  simpa only [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, tangentAd_apply] using
+    (leftInvariantDerivationLieEquivGroupLieAlgebra_Ad g
+      ((leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm a)).symm
 
 /-- The canonical isometric identification with the model space intertwines the derivation and
 tangent adjoint actions. -/

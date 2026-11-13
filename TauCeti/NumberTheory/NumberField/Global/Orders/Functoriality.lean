@@ -76,13 +76,13 @@ theorem coe_mapFractionalIdeal (f : Hom O O')
     (f.mapFractionalIdeal I : Submodule O'.toSubalgebra L) =
       Submodule.span O'.toSubalgebra (f '' I) := by
   rw [mapFractionalIdeal, FractionalIdeal.extendedHom'_apply,
-    FractionalIdeal.coe_extended_eq_span, isLocalization_map_toOrderHom]
+    FractionalIdeal.coeToSubmodule_extended_eq_span, isLocalization_map_toOrderHom]
 
 /-- An element of the extension is an `O'`-linear combination of images of elements of `I`. -/
 theorem mem_mapFractionalIdeal_iff (f : Hom O O')
     (I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) (y : L) :
     y ∈ f.mapFractionalIdeal I ↔ y ∈ Submodule.span O'.toSubalgebra (f '' I) := by
-  rw [← coe_mapFractionalIdeal, FractionalIdeal.mem_coe]
+  rw [← coe_mapFractionalIdeal, FractionalIdeal.mem_coeToSubmodule]
 
 /-- The image of an element of a fractional ideal lies in the extended ideal. -/
 theorem map_mem_mapFractionalIdeal (f : Hom O O')

@@ -49,13 +49,13 @@ namespace CharacterModule
 `q` to `1 / N`. -/
 theorem exists_apply_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
     ∃ χ : CharacterModule (Additive (ZMod (q ^ N - 1))ˣ),
-      χ (.ofMul (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN))) =
+      χ (.ofMul (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN))) =
         ((1 / N : ℚ) : AddCircle (1 : ℚ)) := by
-  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)
+  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)
   have horder : addOrderOf (Additive.ofMul u) = N := by
     rw [addOrderOf_ofMul_eq_orderOf, ZMod.orderOf_unitOfCoprime_pow_sub_one q N hq hN]
   obtain ⟨χ, hχ⟩ :=
-    exists_apply_eq_inv_addOrderOf (Additive.ofMul u) (horder.trans_ne hN)
+    exists_apply_eq_inv_addOrderOf (Additive.ofMul u)
   exact ⟨χ, by simpa only [horder] using hχ⟩
 
 end CharacterModule
@@ -88,8 +88,8 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   -- transparency); evaluate it definitionally instead.
   change χ (.ofMul (hζ.autToPow K σ)) = _
   have haut : hζ.autToPow K σ =
-      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN) :=
-    Units.ext ((hζ.coe_autToPow_eq_natCast hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
+      ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN) :=
+    Units.ext ((hζ.coe_autToPow_eq_natCast_iff.2 hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
   rw [haut, hχ]
 
 end IsPrimitiveRoot

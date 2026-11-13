@@ -8,15 +8,15 @@ module
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.RingTheory.Huber.Adic
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The p-adic integers are a Huber ring, and not a Tate ring
 
 `ℤ_[p]` with its norm topology is a Huber ring, with `(ℤ_[p], (p))` as a pair of definition, and
-it is not a Tate ring. It is the roadmap's Layer-0 example after the discrete case, and the first
-to separate `TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for
-the proper ideal `(p)`, so no unit is topologically nilpotent.
+it is not a Tate ring. After the discrete case it is the simplest example, and it separates
+`TauCeti.Huber.IsHuberRing` from `TauCeti.Huber.IsTateRing`: the topology is adic for the proper
+ideal `(p)`, so no unit is topologically nilpotent.
 
 ## Main results
 

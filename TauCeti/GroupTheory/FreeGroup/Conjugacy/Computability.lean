@@ -82,6 +82,25 @@ theorem primrec_reduceCyclically [Primcodable α] :
   exact (Primrec.nat_iterate Primrec.list_length Primrec.id
     (step.comp₂ Primrec₂.right)).of_eq fun w => peel_iterate_eq w w.length le_rfl
 
+/-- The conjugating prefix that cyclic reduction removes is primitive recursive. The input
+need not be reduced. -/
+theorem primrec_reduceCyclically_conjugator [Primcodable α] :
+    Primrec (reduceCyclically.conjugator : List (α × Bool) → List (α × Bool)) := by
+  -- The prefix is the initial segment of half the length that cyclic reduction removes.
+  have size : Primrec fun w : List (α × Bool) =>
+      (w.length - (reduceCyclically w).length) / 2 :=
+    Primrec.nat_div.comp (Primrec.nat_sub.comp Primrec.list_length
+      (Primrec.list_length.comp primrec_reduceCyclically)) (Primrec.const 2)
+  refine (Primrec.list_take.comp size Primrec.id).of_eq fun w => ?_
+  have hw := (reduceCyclically.conj_conjugator_reduceCyclically w).symm
+  generalize reduceCyclically.conjugator w = c at hw ⊢
+  generalize reduceCyclically w = v at hw ⊢
+  subst hw
+  have hc : ((c ++ v ++ invRev c).length - v.length) / 2 = c.length := by
+    simp only [List.length_append, invRev, List.length_reverse, List.length_map]
+    omega
+  rw [hc, id_eq, List.append_assoc, List.take_left]
+
 omit [DecidableEq α] in
 /-- Conjugacy of the free-group elements represented by arbitrary words is primitive
 recursive. This includes the identity and does not require a finite alphabet. -/

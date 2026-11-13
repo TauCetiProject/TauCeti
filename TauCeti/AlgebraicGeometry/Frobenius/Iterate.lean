@@ -193,11 +193,13 @@ theorem qPowerFrobenius_naturality (k : Type u) [Field k] [CharP k p]
 
 /-- The `a`-fold absolute Frobenius of the spectrum of a field with `p ^ a` elements
 is the identity. -/
-theorem iterateFrobenius_spec_eq_id (k : Type u) [Field k] [Finite k] [CharP k p]
+theorem iterateFrobenius_spec_eq_id (k : Type u) [Field k] [CharP k p]
     (a : ℕ) (ha : Nat.card k = p ^ a) :
     (Spec (CommRingCat.of k)).iterateFrobenius p
       (natCast_spec_eq_zero (CommRingCat.of k)) a = 𝟙 _ := by
   rw [← Spec_map_iterateFrobenius]
+  have : Finite k :=
+    Nat.finite_of_card_ne_zero (by rw [ha]; exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero)
   let _ : Fintype k := Fintype.ofFinite k
   have ha' : Fintype.card k = p ^ a := by simpa using ha
   rw [_root_.iterateFrobenius_eq_pow, FiniteField.frobenius_pow ha']
@@ -205,7 +207,7 @@ theorem iterateFrobenius_spec_eq_id (k : Type u) [Field k] [Finite k] [CharP k p
 
 /-- The finite-field `q`-power Frobenius is a morphism over the given finite field. -/
 @[reassoc (attr := simp)]
-theorem qPowerFrobenius_over (k : Type u) [Field k] [Finite k] [CharP k p]
+theorem qPowerFrobenius_over (k : Type u) [Field k] [CharP k p]
     {X : Scheme.{u}} (f : X ⟶ Spec (CommRingCat.of k)) (a : ℕ)
     (ha : Nat.card k = p ^ a) :
     qPowerFrobenius k f a ha ≫ f = f := by

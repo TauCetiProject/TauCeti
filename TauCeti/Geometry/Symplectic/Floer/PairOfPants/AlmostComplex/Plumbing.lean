@@ -25,7 +25,8 @@ and external manifold parameter. In particular the moving seam introduces no los
 regularity: near it both formulas are the same cylindrical structure.
 
 The structures act on a fixed symplectic vector space; the external parameter may be a target
-point. This is not a construction of sections of the tangent bundle of a general target.
+point. The construction on the tangent bundle of a manifold target, which applies this one in
+each tangent fiber, is `TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex`.
 The two pieces may use different compatible base structures in their Cayley constructions.
 
 ## References
@@ -181,17 +182,15 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
       (by linarith : (q.endCoord p.2.1).re ≤ p.1 - 2)]
     rfl
   · have h2 : 2 < (q.endCoord w).re := by linarith
-    set w' := (w - q.endCenter) / q.plumbingFactor L
-    have hw'0 : w' ≠ 0 := q.sub_endCenter_div_plumbingFactor_ne_zero L hc
-    have hw'1 : w' ≠ 1 := fun h => hw.2
-      ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))
+    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).2
+    rw [coe_plumbingPreimage] at hw'
     -- The inserted piece also moves with the length through the inverse plumbing map.
     have hf := (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt (x := (L, w))
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=
       hf.contMDiffAt.comp (f := fun p : ℝ × (ℂ × M) => (p.1, p.2.1)) (L, (w, x))
         (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
-    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨w', hw'0, hw'1⟩ x).comp
+    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨_, hw'⟩ x).comp
       (L, (w, x)) (hcoord.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp
     rw [plumbedAlmostComplex_eq_inserted hₐ hᵦ hq hab hp]

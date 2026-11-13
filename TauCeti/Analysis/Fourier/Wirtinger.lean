@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
+import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.SpectralGap
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Wirtinger's inequality for periodic functions
@@ -48,6 +52,8 @@ the estimate behind removal of singularities and energy quantization for holomor
 
 * `TauCeti.integral_norm_sub_average_sq_le`: Wirtinger's inequality.
 * `TauCeti.integral_norm_sub_average_sq_eq_iff`: its equality case.
+* `TauCeti.integral_norm_sq_eq_sum_integral_inner_sq`: the interval integral of `‖F‖ ^ 2` is the
+  sum of those of the squared coordinates of `F` in an orthonormal basis.
 * `ContinuousLinearMap.norm_integral_apply_apply_le`: the bound on the integral of a bilinear form
   along a loop.
 
@@ -84,14 +90,10 @@ private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a <
   set c := fourierCoeffOn hab g
   set K := ((b - a) / (2 * π)) ^ 2
   have hinv : 0 < (b - a)⁻¹ := inv_pos.2 (sub_pos.2 hab)
-  -- `g` is continuous on the compact interval, hence bounded, hence square integrable.
-  have hgL2 : MemLp g 2 (volume.restrict (Ioc a b)) := by
-    have hgc : ContinuousOn g (Icc a b) := by
-      simpa only [uIcc_of_le hab.le] using hg.continuousOn
-    obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hgc
-    exact MemLp.of_bound ((hgc.aestronglyMeasurable measurableSet_Icc).mono_set
-      Ioc_subset_Icc_self) C
-      (ae_restrict_of_forall_mem measurableSet_Ioc fun x hx => hC x (Ioc_subset_Icc_self hx))
+  have hgc : ContinuousOn g (Icc a b) := by
+    simpa only [uIcc_of_le hab.le] using hg.continuousOn
+  have hgL2 : MemLp g 2 (volume.restrict (Ioc a b)) :=
+    hgc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc Ioc_subset_Icc_self 2
   -- Parseval for `g` and for `g'`, both normalized by `(b - a)⁻¹`.
   have hP : HasSum (fun n : ℤ => ‖c n‖ ^ 2) ((b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2) := by
     simpa only [smul_eq_mul] using hasSum_sq_fourierCoeffOn hab hgL2
@@ -104,21 +106,10 @@ private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a <
     simp only [K]
     field_simp
   let _ : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
-  let G₀ := AddCircle.liftIoc (b - a) a g
-  have hG₀ : MemLp G₀ 2 AddCircle.haarAddCircle := by
-    have hab' : a + (b - a) = b := by ring
-    have hgL2' : MemLp g 2 (volume.restrict (Ioc a (a + (b - a)))) := by
-      rw [hab']
-      exact hgL2
-    exact hgL2'.memLp_liftIoc.haarAddCircle
-  let G : Lp ℂ 2 AddCircle.haarAddCircle := hG₀.toLp
-  have hGc (n : ℤ) : fourierCoeff G n = c n := by
-    simp [G, G₀, c, fourierCoeff_congr_ae hG₀.coeFn_toLp, fourierCoeff_liftIoc_eq]
-  have hGnorm : (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) =
-      (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 := by
-    calc
-      (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) =
-          ∑' n : ℤ, ‖fourierCoeff G n‖ ^ 2 := (tsum_sq_fourierCoeff G).symm
+  obtain ⟨G, hGc⟩ := exists_Lp_fourierCoeff_eq_fourierCoeffOn hab hgL2
+  have hGnorm : (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) = (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 :=
+    calc (∫ t, ‖G t‖ ^ 2 ∂AddCircle.haarAddCircle) = ∑' n : ℤ, ‖fourierCoeff G n‖ ^ 2 :=
+          (tsum_sq_fourierCoeff G).symm
       _ = ∑' n : ℤ, ‖c n‖ ^ 2 := tsum_congr fun n => by rw [hGc]
       _ = (b - a)⁻¹ * ∫ x in a..b, ‖g x‖ ^ 2 := hP.tsum_eq
   have hGenergy : HasSum (fun n : ℤ => (n : ℝ) ^ 2 * ‖fourierCoeff G n‖ ^ 2)
@@ -136,13 +127,10 @@ private theorem integral_norm_sq_le_and_eq_iff_of_fourierCoeffOn_zero (hab : a <
   · intro heq
     have heq' := congrArg (fun x : ℝ => (b - a)⁻¹ * x) heq
     rw [← hGnorm, ← hGenergy.tsum_eq] at heq'
-    obtain ⟨u, v, hG⟩ := (integral_norm_sq_eq_tsum_frequency_sq_fourierCoeff_iff
-      G hGzero hGenergy.summable).1 heq'
     intro n hn₁ hn₂
-    classical
-    rw [← hGc, ← fourierBasis_repr, HilbertBasis.repr_apply_apply, hG, coe_fourierBasis]
-    simp [inner_add_right, inner_smul_right,
-      orthonormal_iff_ite.mp (orthonormal_fourier (T := b - a)), hn₁, hn₂]
+    exact (hGc n).symm.trans
+      (Lp.fourierCoeff_eq_zero_of_integral_norm_sq_eq_tsum_frequency_sq G hGzero hGenergy.summable
+        heq' hn₁ hn₂)
   · -- Otherwise the two series agree term by term.
     intro hc
     apply mul_left_cancel₀ hinv.ne'
@@ -229,6 +217,17 @@ private theorem integral_inner_sub_average_sq_le_and_eq_iff (hab : a < b)
   · rw [huv t ht]
     simp only [ofReal_add, ofReal_mul, real_smul]
 
+/-- **Splitting an `L²` norm into coordinates.** For `F` square integrable on `(a, b]` and valued
+in a finite-dimensional real inner product space, the interval integral of `‖F‖ ^ 2` is the sum of
+those of the squares of its coordinates in the standard orthonormal basis. -/
+theorem integral_norm_sq_eq_sum_integral_inner_sq {F : ℝ → V} (hab : a ≤ b)
+    (hF : MemLp F 2 (volume.restrict (Ioc a b))) :
+    ∫ x in a..b, ‖F x‖ ^ 2 = ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, F x⟫ ^ 2 := by
+  simp_rw [← (stdOrthonormalBasis ℝ V).sum_sq_inner_right]
+  exact intervalIntegral.integral_finsetSum fun i _ =>
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
+      ((innerSL ℝ (stdOrthonormalBasis ℝ V i)).comp_memLp' hF).integrable_sq
+
 /-- The squared distance from the mean and the squared derivative split into the squares of their
 coordinates in an orthonormal basis. -/
 private theorem integral_norm_sq_eq_sum (hab : a < b) (hfc : ContinuousOn f [[a, b]])
@@ -236,15 +235,12 @@ private theorem integral_norm_sq_eq_sum (hab : a < b) (hfc : ContinuousOn f [[a,
     (∫ x in a..b, ‖f x - ⨍ y in a..b, f y‖ ^ 2) =
         ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f x - ⨍ y in a..b, f y⟫ ^ 2 ∧
       ∫ x in a..b, ‖f' x‖ ^ 2 = ∑ i, ∫ x in a..b, ⟪stdOrthonormalBasis ℝ V i, f' x⟫ ^ 2 := by
-  set e := stdOrthonormalBasis ℝ V
-  have hint₁ (i) : IntervalIntegrable (fun x => ⟪e i, f x - ⨍ y in a..b, f y⟫ ^ 2) volume a b :=
-    ((continuousOn_const.inner (hfc.sub continuousOn_const)).pow 2).intervalIntegrable
-  have hint₂ (i) : IntervalIntegrable (fun x => ⟪e i, f' x⟫ ^ 2) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-      ((innerSL ℝ (e i)).comp_memLp' hf').integrable_sq
-  simp_rw [← e.sum_sq_inner_right]
-  exact ⟨intervalIntegral.integral_finsetSum fun i _ => hint₁ i,
-    intervalIntegral.integral_finsetSum fun i _ => hint₂ i⟩
+  have hc : ContinuousOn (fun x => f x - ⨍ y in a..b, f y) (Icc a b) := by
+    rw [← uIcc_of_le hab.le]
+    exact hfc.sub continuousOn_const
+  exact ⟨integral_norm_sq_eq_sum_integral_inner_sq hab.le
+      (hc.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc Ioc_subset_Icc_self 2),
+    integral_norm_sq_eq_sum_integral_inner_sq hab.le hf'⟩
 
 /-- **Wirtinger's inequality.** An absolutely continuous function on `[a, b]` with `f a = f b`,
 valued in a finite-dimensional real inner product space and with square-integrable
@@ -301,11 +297,16 @@ loop. For a symplectic form `B` the left side is twice the symplectic area enclo
 and this is the isoperimetric inequality. -/
 theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) (hab : a < b) {f f' : ℝ → V}
+    (B : V →L[ℝ] V →L[ℝ] G) (hab : a < b) {f f' : ℝ → V}
     (hf : ∀ x ∈ [[a, b]], HasDerivAt f (f' x) x) (hfab : f a = f b)
     (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
     ‖∫ x in a..b, B (f x) (f' x)‖ ≤
       ‖B‖ * ((b - a) / (2 * π)) * ∫ x in a..b, ‖f' x‖ ^ 2 := by
+  by_cases hG : CompleteSpace G
+  swap
+  · rw [intervalIntegral.integral_of_le hab.le, integral_of_not_completeSpace hG, norm_zero]
+    exact mul_nonneg (mul_nonneg (norm_nonneg B) (div_nonneg (sub_nonneg.2 hab.le) (by positivity)))
+      (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ by positivity)
   set m := ⨍ y in a..b, f y
   set c := (b - a) / (2 * π)
   have hc : 0 < c := div_pos (sub_pos.2 hab) (by positivity)
@@ -318,35 +319,12 @@ theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
       ((memLp_two_iff_integrable_sq_norm hf'.aestronglyMeasurable).1 hf')
   have hdev : IntervalIntegrable (fun x => ‖f x - m‖ ^ 2) volume a b :=
     ((hfc.sub continuousOn_const).norm.pow 2).intervalIntegrable
-  -- The mean contributes nothing, since `∫ f' = f b - f a = 0`.
-  have hmean : ∫ x in a..b, B m (f' x) = 0 := by
-    rw [(B m).intervalIntegral_comp_comm hf'ii,
-      integral_eq_sub_of_hasDerivAt hf hf'ii, hfab, sub_self, map_zero]
-  -- Pointwise, `‖B (f - m) f'‖ ≤ ‖B‖ (‖f - m‖² / c + c ‖f'‖²) / 2`.
-  have hpt (x : ℝ) : ‖B (f x - m) (f' x)‖ ≤
-      ‖B‖ * ((c⁻¹ * ‖f x - m‖ ^ 2 + c * ‖f' x‖ ^ 2) / 2) := by
-    refine (B.le_opNorm₂ _ _).trans ?_
-    rw [mul_assoc]
-    gcongr
-    have hsplit : (c⁻¹ * ‖f x - m‖ ^ 2 + c * ‖f' x‖ ^ 2) / 2 - ‖f x - m‖ * ‖f' x‖ =
-        c⁻¹ * (‖f x - m‖ - c * ‖f' x‖) ^ 2 / 2 := by
-      field_simp
-      ring
-    have : 0 ≤ c⁻¹ * (‖f x - m‖ - c * ‖f' x‖) ^ 2 / 2 := by positivity
-    linarith
+  have hpt (x : ℝ) := B.norm_apply_apply_le_mul_add_sq hc (f x - m) (f' x)
   have hbound : IntervalIntegrable
       (fun x => ‖B‖ * ((c⁻¹ * ‖f x - m‖ ^ 2 + c * ‖f' x‖ ^ 2) / 2)) volume a b :=
     (((hdev.const_mul c⁻¹).add (hsq.const_mul c)).div_const 2).const_mul ‖B‖
-  have hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b :=
-    hbound.mono_fun' (B.aestronglyMeasurable_comp₂
-      (((hfc.sub continuousOn_const).mono uIoc_subset_uIcc).aestronglyMeasurable
-        measurableSet_uIoc) hf'ii.def'.aestronglyMeasurable) (Filter.Eventually.of_forall hpt)
-  have hrewrite : ∫ x in a..b, B (f x) (f' x) = ∫ x in a..b, B (f x - m) (f' x) := by
-    have hBm : IntervalIntegrable (fun x => B m (f' x)) volume a b :=
-      (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2 ((B m).integrable_comp hf'int)
-    rw [← add_zero (∫ x in a..b, B (f x - m) (f' x)), ← hmean,
-      ← intervalIntegral.integral_add hint hBm]
-    simp [map_sub]
+  have hrewrite := B.intervalIntegral_apply_apply_eq_sub_const hfc
+    (fun x hx => hf x (Ioo_subset_Icc_self hx)) hfab hf'ii m
   rw [hrewrite]
   refine (norm_integral_le_of_norm_le hab.le (Filter.Eventually.of_forall fun x _ => hpt x)
     hbound).trans ?_

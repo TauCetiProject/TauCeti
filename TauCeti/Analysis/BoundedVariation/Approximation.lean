@@ -10,9 +10,11 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
 /-!
 # Smooth strict approximation
@@ -76,7 +78,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
       ∃ b : ℕ → ℝ≥0∞, Tendsto b atTop (𝓝 0) ∧
         ∀ n, totalVariationOn μ ⊤ (v n) ≤ totalVariationOn μ ⊤ u + b n := by
   -- Cut off on expanding balls with derivative bound tending to zero.
-  obtain ⟨c, hc, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
+  obtain ⟨c, _, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := E)
   have hcut' (n : ℕ) := hcut (0 : E) (r := n + 1) (R := 2 * (n + 1))
     (by positivity) (by linarith [Nat.cast_nonneg (α := ℝ) n])
   choose χ hχ hχ01 hχone hχsupp hχgrad _ using hcut'
@@ -89,26 +91,11 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
   have hv (n : ℕ) : Integrable (χ n * u) μ :=
     hu.bdd_mul (hχ n).continuous.aestronglyMeasurable (.of_forall (hχnorm n))
   -- Dominated convergence controls the discarded L¹ mass.
-  have hlim : Tendsto (fun n => ∫⁻ x, ‖χ n x * u x - u x‖ₑ ∂μ) atTop (𝓝 0) := by
-    have hdom (n : ℕ) (x : E) : ‖χ n x * u x - u x‖ₑ ≤ ‖u x‖ₑ := by
-      rw [← sub_one_mul, enorm_mul]
-      have hle : ‖χ n x - 1‖ₑ ≤ 1 := by
-        rw [← ofReal_norm, Real.norm_eq_abs]
-        exact (ENNReal.ofReal_le_ofReal (by
-          have h0 := (hχ01 n (mem_range_self x)).1
-          have h1 := (hχ01 n (mem_range_self x)).2
-          rw [abs_of_nonpos (by linarith)]
-          linarith)).trans_eq ENNReal.ofReal_one
-      simpa using mul_le_mul_left hle ‖u x‖ₑ
-    have hpoint (x : E) : ∀ᶠ n : ℕ in atTop, χ n x = 1 := by
-      filter_upwards [(tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖x‖)] with n hn
-      exact hχone n (by simpa using (hn.trans (by linarith : (n : ℝ) ≤ n + 1)))
-    simpa only [Pi.mul_apply, Pi.sub_apply, lintegral_zero] using
-      tendsto_lintegral_of_dominated_convergence' (f := fun _ => 0) (fun x => ‖u x‖ₑ)
-        (fun n => ((hv n).sub hu).aestronglyMeasurable.enorm)
-        (fun n => .of_forall (hdom n)) hu.hasFiniteIntegral.ne
-        (.of_forall fun x => tendsto_const_nhds.congr' ((hpoint x).mono fun n hn => by
-          simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, enorm_zero]))
+  have hlim := tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one (l := atTop) hu
+    (fun n => .of_forall fun x => hχ01 n (mem_range_self x))
+    (fun n => (hχ n).continuous.aestronglyMeasurable)
+    (.of_forall fun x => (tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖x‖).mono fun n hn =>
+      hχone n (by simpa using hn.trans (by linarith : (n : ℝ) ≤ n + 1)))
   -- The product estimate bounds the additional variation by the L¹ mass times c / (n + 1).
   let b (n : ℕ) : ℝ≥0∞ := ENNReal.ofReal (c / (n + 1)) * ∫⁻ x, ‖u x‖ₑ ∂μ
   have hb : Tendsto b atTop (𝓝 0) := by
@@ -122,7 +109,7 @@ private theorem exists_cutoff_approximation (hu : Integrable u μ) :
   refine ⟨fun n => χ n * u, fun n => ⟨hv n, (hχc n).mul_right⟩, hlim, b, hb, fun n => ?_⟩
   have hgrad (x : E) : ‖fderiv ℝ (χ n) x‖ ≤ c / (n + 1) := by
     have hr : 2 * ((n : ℝ) + 1) - (n + 1) = n + 1 := by ring
-    simpa only [← toDual_gradient (𝕜 := ℝ), LinearIsometryEquiv.norm_map, hr] using hχgrad n x
+    simpa only [← norm_gradient_eq_norm_fderiv (𝕜 := ℝ), hr] using hχgrad n x
   simpa only [b, ENNReal.ofReal_one, one_mul, Opens.coe_top, Measure.restrict_univ] using
     totalVariationOn_top_mul_le (μ := μ) (u := u) (c := 1) (Ω := ⊤) (hχ n)
       (fun x => by simpa only [Real.norm_eq_abs] using hχnorm n x)
@@ -166,21 +153,18 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
   -- The two L¹ errors vanish; mollification does not increase the cutoff variation.
   have hwlim : Tendsto (fun n => ∫⁻ x, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) := by
     have hzero : Tendsto (fun n : ℕ => ENNReal.ofReal (1 / (n + 1))) atTop (𝓝 0) := by
-      simpa only [Function.comp_def, one_div, ENNReal.ofReal_zero] using
-        ENNReal.continuous_ofReal.tendsto 0 |>.comp
-        tendsto_one_div_add_atTop_nhds_zero_nat
+      simpa using ENNReal.tendsto_ofReal tendsto_one_div_add_atTop_nhds_zero_nat
     have hsum := hzero.add hvlim
     rw [add_zero] at hsum
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
       (fun _ => zero_le) fun n => ?_
-    calc ∫⁻ x, ‖w n x - u x‖ₑ ∂μ
-        ≤ ∫⁻ x, ‖w n x - v n x‖ₑ + ‖v n x - u x‖ₑ ∂μ :=
-          lintegral_mono fun x => by
-            simpa only [sub_add_sub_cancel] using
-              (enorm_add_le (a := w n x - v n x) (b := v n x - u x))
-      _ = (∫⁻ x, ‖w n x - v n x‖ₑ ∂μ) + ∫⁻ x, ‖v n x - u x‖ₑ ∂μ :=
-          lintegral_add_left' (hwi n).aestronglyMeasurable.enorm _
-      _ ≤ _ := add_le_add (hk n).le le_rfl
+    have htri := lintegral_edist_triangle (μ := μ) (f := w n - v n) (g := u - v n) (h := 0)
+      (hwi n).aestronglyMeasurable aestronglyMeasurable_zero
+    simp only [eDist_eq_eNorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
+      Pi.zero_apply] at htri
+    refine htri.trans (add_le_add (hk n).le ?_)
+    simp only [eNorm_sub_rev (u _)]
+    exact le_rfl
   -- Lower semicontinuity and the upper estimate give equality in the limit.
   refine ⟨w, hw, hwlim, TauCeti.tendsto_totalVariationOn_of_le_add
     (fun n => (hw n).1.continuous.locallyIntegrable.locallyIntegrableOn ⊤)
@@ -558,7 +542,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         ∑ k ∈ Finset.range m, (mollifiedPiece μ u ζ n k x - ζ k x * u x) := by
       rw [hwx, Finset.sum_sub_distrib, hux]
     rw [hsum]
-    exact (enorm_sum_le _ _).trans (sum_le_tsum _)
+    exact (eNorm_sum_le _ _).trans (sum_le_tsum _)
   calc ∫⁻ x in Ω, ‖∑' k, mollifiedPiece μ u ζ n k x - u x‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, ∑' k, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         setLIntegral_mono' Ω.isOpen.measurableSet hpt
@@ -566,7 +550,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         setLIntegral_le_lintegral _ _
     _ = ∑' k, ∫⁻ x, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         lintegral_tsum fun k => ((hf k).continuous.aestronglyMeasurable.sub
-          (hv k).aestronglyMeasurable).enorm
+          (hv k).aestronglyMeasurable).eNorm
     _ ≤ ∑' k, ENNReal.ofReal (δ / 2 / 2 ^ k) :=
         tsum_le_tsum fun k => by simpa only [mollifiedPiece] using hnv k
     _ = ENNReal.ofReal δ := by

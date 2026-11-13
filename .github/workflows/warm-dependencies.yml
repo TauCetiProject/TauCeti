@@ -44,7 +44,7 @@ jobs:
       matrix:
         replica: ${{ fromJSON(inputs.capacity && '[1,2,3]' || '[1]') }}
     # Existing provisioned staging shape; ordinary priority leaves bors first.
-    runs-on: [nscloud-ubuntu-24.04-amd64-8x16-with-features, 'namespace-features:container.privileged=true']
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout immutable trusted tooling
         uses: actions/checkout@v4
@@ -54,10 +54,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: .
       - name: Resolve immutable pins and validate before any dependency code executes
         env:
@@ -94,8 +94,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -176,7 +179,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${BWRAP_VER}_amd64.deb" -o bwrap.deb
+          cp "$RUNNER_TEMP/tauceti-shared-scripts/vendor/bubblewrap_${BWRAP_VER}_amd64.deb" bwrap.deb
           echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -
           sudo dpkg -i bwrap.deb >/dev/null
           echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -

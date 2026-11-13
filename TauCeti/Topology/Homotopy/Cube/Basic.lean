@@ -58,6 +58,8 @@ at `0` while releasing the first.
   connected.
 * `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
   and `I^(Fin (n + 1))`.
+* `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
+  `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
 * `Cube.boundary_eq_empty`: the boundary of the cube over an empty index type is empty.
 * `Cube.update_mem_boundary`: changing an endpoint coordinate of a boundary point to an endpoint
   value stays on the boundary.
@@ -66,6 +68,8 @@ at `0` while releasing the first.
   of `I^(Option N)`.
 * `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
   `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
+* `TauCeti.Cube.update_mem_prodBoundary`: changing a coordinate of the second component of a
+  boundary point of `I × I^N`, keeping its endpoint values, stays on the boundary.
 * `GenLoop.ofProd`: a map `I × I^N → X` taking the value `x` on `TauCeti.Cube.prodBoundary N`,
   read as a generalized loop in `Ω^ (Option N) X x`; conversely
   `GenLoop.apply_symm_of_mem_prodBoundary` evaluates such a loop on that boundary.
@@ -140,6 +144,33 @@ theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
   rw [Cube.boundary_fin_succ_iff]
   simp
 
+open scoped Topology unitInterval in
+/-- A point `Fin.append x y` of the cube `I^(Fin (m + n))` lies on its boundary exactly when `x`
+lies on the boundary of `I^(Fin m)` or `y` lies on the boundary of `I^(Fin n)`. This is the
+`Fin`-indexed form of Mathlib's `Cube.boundary_sum_iff`. -/
+theorem Cube.append_mem_boundary_iff {m n : ℕ} {x : I^(Fin m)} {y : I^(Fin n)} :
+    Fin.append x y ∈ Cube.boundary (Fin (m + n)) ↔
+      x ∈ Cube.boundary (Fin m) ∨ y ∈ Cube.boundary (Fin n) := by
+  constructor
+  · rintro ⟨j, hj⟩
+    induction j using Fin.addCases with
+    | left i => exact Or.inl ⟨i, by simpa using hj⟩
+    | right i => exact Or.inr ⟨i, by simpa using hj⟩
+  · rintro (⟨i, hi⟩ | ⟨i, hi⟩)
+    · exact ⟨Fin.castAdd n i, by simpa using hi⟩
+    · exact ⟨Fin.natAdd m i, by simpa using hi⟩
+
+open scoped Topology unitInterval in
+/-- **The boundary of a product of cubes**: under the homeomorphism
+`Fin.appendHomeomorph : I^(Fin m) × I^(Fin n) ≃ₜ I^(Fin (m + n))`, the boundary of `I^(Fin (m + n))`
+is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`. -/
+theorem Cube.preimage_appendHomeomorph_boundary (m n : ℕ) :
+    Fin.appendHomeomorph (X := I) m n ⁻¹' Cube.boundary (Fin (m + n)) =
+      Cube.boundary (Fin m) ×ˢ Set.univ ∪ Set.univ ×ˢ Cube.boundary (Fin n) := by
+  ext ⟨x, y⟩
+  simp only [Set.mem_preimage, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and]
+  exact Cube.append_mem_boundary_iff
+
 namespace TauCeti
 
 open scoped Topology Topology.Homotopy
@@ -163,6 +194,20 @@ theorem Cube.mk_zero_mem_prodBoundary (t : I^N) : ((0, t) : I × I^N) ∈ Cube.p
 theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.boundary N) :
     ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
   h.elim (fun hs => .inl (.inr hs)) .inr
+
+/-- Changing the coordinate `j` of the second component of a point on the boundary of `I × I^N`
+keeps it on the boundary, provided an endpoint value of that coordinate is left unchanged. -/
+theorem Cube.update_mem_prodBoundary [DecidableEq N] {j : N} {w : I × I^N}
+    (hw : w ∈ Cube.prodBoundary N) {a : I} (ha : w.2 j = 0 ∨ w.2 j = 1 → a = w.2 j) :
+    (w.1, Function.update w.2 j a) ∈ Cube.prodBoundary N := by
+  rcases Cube.mem_prodBoundary_iff.1 hw with hs | ⟨i, hi⟩
+  · exact Cube.mem_prodBoundary_iff.2 (.inl hs)
+  refine Cube.mem_prodBoundary_iff.2 (.inr ⟨i, ?_⟩)
+  dsimp only
+  by_cases hij : i = j
+  · subst hij
+    rwa [Function.update_self, ha hi]
+  · rwa [Function.update_of_ne hij]
 
 /-- `TauCeti.piOptionEquivProdHomeomorph` identifies the boundary of `I^(Option N)` with the
 boundary of `I × I^N`. -/
@@ -259,6 +304,11 @@ def cubeContraction (N : Type*) :
 theorem cubeContraction_apply (N : Type*) (t : I) (x : N → I) (i : N) :
     cubeContraction N (t, x) i = Set.Icc.convexComb 0 (x i) t :=
   (rfl)
+
+/-- The straight-line contraction of the cube fixes its corner `0` at all times. -/
+@[simp]
+theorem cubeContraction_apply_zero (N : Type*) (t : I) : cubeContraction N (t, 0) = 0 :=
+  funext fun _ => by rw [cubeContraction_apply]; exact Set.Icc.convexComb_eq _ _
 
 /-- The cube `I^N` is contractible, by the straight-line contraction onto its corner `0`. -/
 instance (N : Type*) : ContractibleSpace (N → I) :=

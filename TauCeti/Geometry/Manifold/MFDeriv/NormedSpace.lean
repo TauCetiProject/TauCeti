@@ -7,31 +7,54 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
-# Vanishing of the derivative of a vector-valued function
+# Derivatives of vector-valued functions
 
 For a function `g` from a manifold to a normed space `F`, Mathlib has two derivatives at `x`:
 `mfderiv I 𝓘(𝕜, F) g x`, with values in the tangent space `TangentSpace 𝓘(𝕜, F) (g x)`, and
 `mvfderiv I g x`, with values in `F` itself. They differ by the identification of the tangent space
-with `F`, so one vanishes exactly when the other does.
+with `F`. The canonical identification relates their vanishing, injectivity and ranges.
 
 ## Main results
 
+* `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
+  `fderiv` applied to it.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
+* `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
+  linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
+  a curve in a manifold.
+* `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
+  family along a `C¹` manifold-valued map is continuous.
+* `TauCeti.mfderiv_apply_eq_zero_of_const_line`: the derivative of a map from a normed space
+  vanishes on a direction along which the map is constant.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
+* `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
+  submodule.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
+  differentiability hypothesis.
+* `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
+  their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
+* `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
+  at `x` has the identity as derivative at `x`.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
+* `TauCeti.injective_mvfderiv_iff`:
+  `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
@@ -61,6 +84,14 @@ As with `fromTangentSpace_apply`, this equation is for explicit tangent/model co
 theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm v = v := rfl
 
+/-- For maps between normed spaces, the vector-valued manifold derivative applied to a tangent
+vector is the Fréchet derivative applied to the same vector. Not `@[simp]`: `mvfderiv_eq_fderiv`
+already rewrites the left-hand side. -/
+theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
+  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+  exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/
 @[simp] theorem _root_.mvfderiv_apply_eq_mfderiv_apply
@@ -68,6 +99,14 @@ theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     mvfderiv I f x v = mfderiv I 𝓘(𝕜, F) f x v := by
   rw [mvfderiv, ContinuousLinearMap.comp_apply]
   exact NormedSpace.fromTangentSpace_apply _ _
+
+/-- The image of a tangent submodule under the vector-valued derivative agrees with its image
+under the manifold derivative into the self model of the target. -/
+@[simp] theorem _root_.Submodule.map_mvfderiv_eq_map_mfderiv {x : M}
+    (S : Submodule 𝕜 (TangentSpace I x)) (f : M → F) :
+    S.map (mvfderiv I f x).toLinearMap = S.map (mfderiv I 𝓘(𝕜, F) f x).toLinearMap := by
+  exact congrArg (fun A : TangentSpace I x →ₗ[𝕜] F ↦ S.map A)
+    (LinearMap.ext fun v ↦ mvfderiv_apply_eq_mfderiv_apply f x v)
 
 /-- The derivative at `x` of a vector-valued function, read in the target space, depends only on
 the germ of the function at `x`. -/
@@ -78,6 +117,15 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
   rfl
 
+/-- A map into the model space with the germ of the extended chart at `x` has the identity as
+derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
+theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
+    (hf : f =ᶠ[𝓝 x] extChartAt I x) (v : TangentSpace I x) : mvfderiv I f x v = v := by
+  rw [hf.mvfderiv_eq]
+  simp only [mvfderiv, mfderiv_extChartAt_eq_id]
+  -- Both tangent identifications are the identity of `E` across type synonyms.
+  rfl
+
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/
 theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x : M}
@@ -86,6 +134,24 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The chain rule for a scalar function on a manifold followed by a scalar function
+differentiable at the relevant point: the derivative is scaled by `φ'(g x)`. -/
+theorem mvfderiv_scalar_comp {g : M → 𝕜} {φ : 𝕜 → 𝕜} {x : M} (hg : MDiffAt g x)
+    (hφ : DifferentiableAt 𝕜 φ (g x)) :
+    mvfderiv I (φ ∘ g) x = deriv φ (g x) • mvfderiv I g x := by
+  ext v
+  rw [mvfderiv_comp_apply_of_differentiableAt hφ hg, hφ.hasDerivAt.hasFDerivAt.fderiv]
+  simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_apply]
+  -- Both sides are products of two scalars, the first read in the tangent space of `𝕜`.
+  exact mul_comm _ _
+
+/-- The chain rule for a vector-valued function on a manifold followed by a continuous linear map,
+evaluated on a tangent vector: the derivative of `L ∘ g` is `L` applied to the derivative of `g`. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_apply (L : F →L[𝕜] F') {g : M → F} {x : M}
+    (hg : MDiffAt g x) (v : TangentSpace I x) :
+    mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
+  rw [mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hg, ContinuousLinearMap.fderiv]
 
 /-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
 theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
@@ -140,6 +206,37 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
 
+/-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
+`w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative
+`∂_t f(t, u t) + d(f t)(w)` at `t`: the derivative of `f` in the time variable plus the
+derivative of the slice `f t` along the velocity. -/
+theorem _root_.HasMFDerivAt.hasDerivAt_comp_graph {u : 𝕜 → M} {f : 𝕜 → M → F'} {t : 𝕜}
+    {w : TangentSpace I (u t)} (hu : HasMFDerivAt 𝓘(𝕜) I u t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hf : MDifferentiableAt (𝓘(𝕜).prod I) 𝓘(𝕜, F') (Function.uncurry f) (t, u t)) :
+    HasDerivAt (fun s ↦ f s (u s)) (deriv (fun s ↦ f s (u t)) t + mvfderiv I (f t) (u t) w) t := by
+  have hd : DifferentiableAt 𝕜 (fun s ↦ f s (u s)) t :=
+    mdifferentiableAt_iff_differentiableAt.1
+      (hf.comp t (mdifferentiableAt_id.prodMk hu.mdifferentiableAt))
+  -- The velocity map `r ↦ r • w` sends `1` to `w`.
+  have hw : mfderiv 𝓘(𝕜) I u t (1 : 𝕜) = w := by
+    rw [hu.mfderiv]
+    exact one_smul 𝕜 w
+  have h := fderiv_comp_graph_apply_of_mdifferentiableAt hu.mdifferentiableAt hf 1
+  rw [hw, fderiv_apply_one_eq_deriv, fderiv_apply_one_eq_deriv] at h
+  exact h ▸ hd.hasDerivAt
+
+/-- Along a `C¹` map `u : F → M` from a normed space to a manifold, the derivative in the domain
+variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)`, depends continuously on `y`. It is
+a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
+theorem continuous_fderiv_of_contMDiff {u : F → M} {f : F → M → F'}
+    (hu : ContMDiff 𝓘(𝕜, F) I 1 u)
+    (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) :
+    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y :=
+  Continuous.fderiv_one (f := fun y w ↦ f w (u y))
+    (contMDiff_iff_contDiff.mp
+      (hf.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))))
+    continuous_id
+
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
 a complex normed space regarded as a real one. -/
@@ -170,6 +267,47 @@ theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
 
+/-- Adding a constant does not change the derivative of a vector-valued function, read in the
+target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
+points. This is the manifold version of `fderiv_add_const`. -/
+@[simp]
+theorem mvfderiv_add_const (g : M → F) (c : F) (x : M) :
+    mvfderiv I (fun y ↦ g y + c) x = mvfderiv I g x := by
+  by_cases hg : MDiffAt g x
+  · rw [mvfderiv_fun_add hg mdifferentiableAt_const, mvfderiv_const, add_zero]
+  -- Neither `g` nor `g + c` is differentiable at `x`, so both derivatives vanish.
+  have hgc : ¬MDiffAt (fun y ↦ g y + c) x := fun hgc ↦ by
+    have hfun : ((fun y ↦ g y + c) + fun _ : M ↦ -c) = g := by
+      funext y
+      simp
+    exact hg (hfun ▸ hgc.add mdifferentiableAt_const)
+  simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
+    mfderiv_zero_of_not_mdifferentiableAt hgc]
+
+/-- The derivative of a finite sum of vector-valued functions, read in the target space, is the
+sum of their derivatives at a point where each summand is differentiable. This is the manifold
+version of `fderiv_fun_sum`. -/
+theorem mvfderiv_fun_sum {ι : Type*} {u : Finset ι} {f : ι → M → F} {x : M}
+    (hf : ∀ i ∈ u, MDiffAt (f i) x) :
+    mvfderiv I (fun y ↦ ∑ i ∈ u, f i y) x = ∑ i ∈ u, mvfderiv I (f i) x := by
+  have hfun : (fun y ↦ ∑ i ∈ u, f i y) = ∑ i ∈ u, f i := by
+    ext y
+    simp
+  have hH : HasMFDerivAt I 𝓘(𝕜, F) (∑ i ∈ u, f i) x (∑ i ∈ u, mvfderiv I (f i) x) :=
+    HasMFDerivAt.sum fun i hi ↦ (hf i hi).hasMFDerivAt
+  ext v
+  rw [hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
+  -- The tangent spaces of `F` in which `mfderiv` takes values are `F` itself.
+  rfl
+
+/-- The range of the vector-valued derivative is the image of the manifold derivative's range
+under the canonical identification of the target tangent space with its model. -/
+theorem range_mvfderiv {g : M → F} {x : M} :
+    (mvfderiv I g x).range =
+      (mfderiv I 𝓘(𝕜, F) g x).range.map
+        (NormedSpace.fromTangentSpace (g x)).toLinearMap :=
+  LinearMap.range_comp _ _
+
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/
 theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
@@ -177,6 +315,14 @@ theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [mvfderiv, h]⟩
   ext u
   simpa [mvfderiv] using congrArg (fun L ↦ L u) h
+
+/-- The derivative of a vector-valued function, read in the target space, is injective if and only
+if its manifold derivative is. -/
+theorem injective_mvfderiv_iff {g : M → F} {x : M} :
+    Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x) := by
+  refine ⟨fun h v w hvw ↦ h (by rwa [mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_apply_eq_mfderiv_apply]), fun h v w hvw ↦ h ?_⟩
+  rwa [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
 
 /-- A vector-valued function whose derivative does not vanish on some tangent vector is
 differentiable there. -/
@@ -199,9 +345,30 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
     {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (i : ι) :
     mvfderiv I (fun y ↦ Φ y i) x = (ContinuousLinearMap.proj i).comp (mvfderiv I Φ x) := by
   ext v
-  have := mvfderiv_comp_apply_of_differentiableAt
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
-  rwa [ContinuousLinearMap.fderiv] at this
+  exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
+
+/-- The derivative of a map from a normed space vanishes on a direction `w` along which the map is
+constant. -/
+theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
+    (hconst : ∀ t : 𝕜, f (z + t • w) = f z) : mfderiv 𝓘(𝕜, F) I f z w = 0 := by
+  by_cases hd : MDifferentiableAt 𝓘(𝕜, F) I f z
+  · let c : 𝕜 → F := fun t ↦ z + t • w
+    have hc : HasFDerivAt c ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) 0 :=
+      ((hasFDerivAt_id (0 : 𝕜)).smul_const w).const_add z
+    have hmc : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 = (1 : 𝕜 →L[𝕜] 𝕜).smulRight w := by
+      rw [mfderiv_eq_fderiv, hc.fderiv]
+      -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
+      rfl
+    have hmc' : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 (1 : 𝕜) = w := by
+      rw [hmc]
+      -- Read the tangent spaces of the model spaces as the model spaces.
+      change ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) (1 : 𝕜) = w
+      simp
+    rw [← hmc', ← mfderiv_comp_apply_of_eq (0 : 𝕜) hd hc.differentiableAt.mdifferentiableAt
+      (by simp [c]) (1 : 𝕜), show f ∘ c = fun _ ↦ f z from funext hconst, mfderiv_const]
+    rfl
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
+    rfl
 
 end TauCeti

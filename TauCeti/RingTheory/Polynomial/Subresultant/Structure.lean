@@ -22,7 +22,7 @@ For consecutive entries `s` and `t` after the first:
 The two indices coincide unless the degree drops by more than one from `s` to `t`; in that case
 the indices between them form a *degree gap*. Together with the vanishing of all subresultants
 below the degree of the last entry, which divides `p` and `q`
-(`Polynomial.getLast?_sturmSeq_dvd` and
+(`TauCeti.getLast?_sturmSeq_dvd` and
 `Polynomial.subresultant_eq_zero_of_lt_natDegree_commonDivisor`), this determines every
 subresultant polynomial of `p` and `q` at an index below `n`, up to nonzero scalars. The left
 input is taken at a formal bound `m` dominating its degree, as in the rest of the subresultant
@@ -53,9 +53,7 @@ Chapter 8 (the structure theorem for subresultants and signed remainder sequence
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {K : Type*} [Field K]
 
@@ -66,7 +64,7 @@ variable [DecidableEq K]
 /-- The subresultants of `p` and `q` are nonzero multiples of those of any two consecutive
 entries `a, b` of the signed remainder sequence after the first, each taken at its actual
 degree, at every index below the degree of `b`. -/
-theorem _root_.Polynomial.exists_subresultant_eq_C_mul_subresultant_of_getElem?_sturmSeq
+theorem exists_subresultant_eq_C_mul_subresultant_of_getElem?_sturmSeq
     {p q a b : K[X]} {m i j : ℕ} (hp : p.natDegree ≤ m)
     (ha : (sturmSeq p q)[i + 1]? = some a) (hb : (sturmSeq p q)[i + 2]? = some b)
     (hj : j < b.natDegree) :
@@ -79,7 +77,7 @@ theorem _root_.Polynomial.exists_subresultant_eq_C_mul_subresultant_of_getElem?_
 signed remainder sequence of `p` and `q` after the first, the subresultant of `p` and `q` at
 index `deg s - 1` is a nonzero multiple of `t`. Only the initial pair additionally requires
 `q.natDegree ≤ m`. -/
-theorem _root_.Polynomial.exists_subresultant_natDegree_sub_one_eq_C_mul_of_getElem?_sturmSeq
+theorem exists_subresultant_natDegree_sub_one_eq_C_mul_of_getElem?_sturmSeq
     {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : i = 0 → q.natDegree ≤ m)
     (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t) :
     ∃ c : K, c ≠ 0 ∧ subresultant p q m q.natDegree (s.natDegree - 1) = C c * t := by
@@ -94,7 +92,7 @@ theorem _root_.Polynomial.exists_subresultant_natDegree_sub_one_eq_C_mul_of_getE
 signed remainder sequence of `p` and `q` after the first, the subresultant of `p` and `q` at
 index `deg t` is a nonzero multiple of `t`. Only the initial pair additionally requires
 `q.natDegree ≤ m`. -/
-theorem _root_.Polynomial.exists_subresultant_natDegree_eq_C_mul_of_getElem?_sturmSeq
+theorem exists_subresultant_natDegree_eq_C_mul_of_getElem?_sturmSeq
     {p q s t : K[X]} {m i : ℕ} (hp : p.natDegree ≤ m) (hq : i = 0 → q.natDegree ≤ m)
     (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t) :
     ∃ c : K, c ≠ 0 ∧ subresultant p q m q.natDegree t.natDegree = C c * t := by
@@ -111,7 +109,7 @@ theorem _root_.Polynomial.exists_subresultant_natDegree_eq_C_mul_of_getElem?_stu
 /-- **Structure theorem for subresultants**, degree gap. For consecutive entries `s, t` of the
 signed remainder sequence of `p` and `q` after the first, the subresultants of `p` and `q` at
 the indices strictly between `deg t` and `deg s - 1` vanish. -/
-theorem _root_.Polynomial.subresultant_eq_zero_of_getElem?_sturmSeq
+theorem subresultant_eq_zero_of_getElem?_sturmSeq
     {p q s t : K[X]} {m i j : ℕ} (hp : p.natDegree ≤ m)
     (hs : (sturmSeq p q)[i + 1]? = some s) (ht : (sturmSeq p q)[i + 2]? = some t)
     (htj : t.natDegree < j) (hjs : j + 1 < s.natDegree) :
@@ -125,4 +123,4 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_getElem?_sturmSeq
     subresultant_eq_zero_of_degree_mod_lt hma
       ((degree_le_natDegree).trans_lt (by exact_mod_cast htj)) hjs, mul_zero]
 
-end TauCeti
+end Polynomial

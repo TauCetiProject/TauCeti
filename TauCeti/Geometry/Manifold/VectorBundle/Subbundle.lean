@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 public import TauCeti.Topology.VectorBundle.Subbundle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.IdempotentRange
 import TauCeti.Analysis.Normed.Operator.QuotientRange
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
@@ -19,26 +22,37 @@ import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.FiberwiseLinear
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Subbundles spanned by smooth local frames, and subbundle inclusions
 
-Let `E` be a `C^n` vector bundle over a manifold `B` with model fibre `F`, and let `V` assign to
-every point `x` a subspace `V x` of the fibre `E x`. A continuous local frame `X` of `V` on an open
+Let `𝕜 → 𝕜'` be a normed field extension, and let `E` be a `C^n` bundle over a `𝕜`-manifold
+`B`, with compatible `𝕜`- and `𝕜'`-vector bundle structures on the same atlas and model fibre
+`F`. Let `V` assign to every point `x` a `𝕜'`-subspace `V x` of the fibre `E x`. A continuous
+local frame `X` of `V` on an open
 set `U` gives the local trivialization `TauCeti.IsSubbundleFrameOn.trivialization` of `V`, which
 sends a vector of `V y` to its coordinates in the basis `X · y`; with the subspace topology, these
 trivializations make `V` a topological vector bundle. This file shows that when the sections
 `X i` are `C^n`, the coordinate changes between such trivializations are `C^n`. This is the
 compatibility condition for the trivializations of `C^n` local frames to form a `C^n` vector
-bundle structure on `V`, a `C^n` subbundle of `E`;
-`TauCeti.IsContMDiffDistribution.contMDiffVectorBundle` assembles it for the distributions of a
-manifold.
+bundle structure on `V`, a `C^n` subbundle of `E`. When `V` has `C^n` local frames of a fixed
+finite size near every point (`TauCeti.HasLocalContMDiffSubbundleFrames`), the atlas of all their
+trivializations is such a structure
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). The distributions of a
+manifold (`TauCeti.IsContMDiffDistribution.contMDiffVectorBundle`) and conormal bundles
+(`TauCeti.CotangentBundle.conormalContMDiffVectorBundle`) are instances.
 
 Read in a trivialization of `E` near a point `y₀`, a `C^n` frame `X` becomes a `C^n` family of
-injective operators `A_X y : 𝕜ᵏ →L[𝕜] F`, namely `c ↦ ∑ i, c i • X i y`
+injective operators `A_X y : (𝕜')ᵏ →L[𝕜'] F`, namely `c ↦ ∑ i, c i • X i y`
 (`TauCeti.IsSubbundleFrameOn.contMDiffAt_trivOperator`). Such a family has `C^n` left inverses
 near `y₀` (`ContMDiffAt.exists_contMDiffAt_leftInverse`), and the coordinate change from the frame
-`X` to a second frame `Y` is `L_Y y ∘ A_X y` for a left inverse `L_Y y` of `A_Y y`.
+`X` to a second frame `Y` is `L_Y y ∘ A_X y` for a `𝕜'`-linear left inverse `L_Y y` of
+`A_Y y`. All smoothness is over the ground field `𝕜`. The finite-frame coordinate argument uses
+`IsRCLikeNormedField 𝕜'` for Hahn–Banach splitting; it requires no finite rank of the ambient
+fibre. In particular it applies to complex subbundles of real-smooth complex vector bundles
+without assuming an ambient global trivialization. The native subspace topology, frame
+trivializations and coordinate changes are unchanged.
 
 Conversely, whenever a family of subspaces `V x ⊆ E (f x)` along `f : B' → B` carries a `C^n`
 vector bundle structure with finite-dimensional model fibre `F'` inside a finite-dimensional model
@@ -57,6 +71,15 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
   trivialization of `E`, form a `C^n` family of operators.
 * `TauCeti.IsSubbundleFrameOn.contMDiffOn_coordChangeL`: the coordinate changes between the
   trivializations of two `C^n` local frames of `V` are `C^n` on the intersection of their domains.
+* `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`: **smooth local frame
+  criterion**: a family of subspaces with `C^n` local frames of a fixed finite size near every
+  point is a `C^n` subbundle of `E`.
+* `TauCeti.exists_isSubbundleFrameOn_map_synthesisMap`: a `C^n` family of orthogonal projections
+  of a coefficient space, synthesized against `C^n` linearly independent sections, gives `C^n`
+  local frames of the image subspaces.
+* `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of
+  operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
+  frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -81,63 +104,73 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.IsSubbundleFrameOn
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜']
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
-  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F]
+  [IsScalarTower 𝕜 𝕜' F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  [TopologicalSpace (TotalSpace F E)]
   [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
   {n : ℕ∞ω} [ContMDiffVectorBundle n F E IB]
-  {ι : Type*} [Fintype ι] {V : Π x, Submodule 𝕜 (E x)}
+  {ι : Type*} [Fintype ι]
 
 /-- A family of sections `X i` of `E` that are `C^n` at `y`, read in the trivialization of `E` at
 any point `y₀` whose base set contains `y`, is an operator `c ↦ ∑ i, c i • X i` depending `C^n`
-on the base point at `y`. -/
+over `𝕜` on the base point at `y`, retaining its `𝕜'`-linear coefficients. -/
 theorem contMDiffAt_trivOperator {X : ι → Π x, E x} {y₀ y : B}
     (hX : ∀ i, CMDiffAt n (T% (X i)) y) (hy : y ∈ (trivializationAt F E y₀).baseSet) :
-    ContMDiffAt IB 𝓘(𝕜, (ι → 𝕜) →L[𝕜] F) n (trivOperator 𝕜 F X y₀) y := by
+    ContMDiffAt IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜'] F) n (trivOperator 𝕜' F X y₀) y := by
   have h (i : ι) := ((trivializationAt F E y₀).contMDiffAt_section_iff hy).mp (hX i)
-  rw [funext (trivOperator_eq_sum (𝕜 := 𝕜) (F := F) (X := X) y₀)]
-  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) F
-    (ContinuousLinearMap.proj i)).contDiff.contDiffAt).comp_contMDiffAt (h i)
+  rw [funext (trivOperator_eq_sum (𝕜 := 𝕜') (F := F) (X := X) y₀)]
+  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜' (ι → 𝕜') F
+    (ContinuousLinearMap.proj i)).restrictScalars 𝕜 |>.contDiff.contDiffAt).comp_contMDiffAt (h i)
 
-variable [IsRCLikeNormedField 𝕜]
+variable [∀ x, Module 𝕜' (E x)] [VectorBundle 𝕜' F E]
+  {V : Π x, Submodule 𝕜' (E x)} [IsRCLikeNormedField 𝕜']
 
 /-- **Coordinate changes between `C^n` local frames are `C^n`.** If `X` and `Y` are local frames
 of `V` on open sets `U` and `U'` whose sections are `C^n`, then the coordinate change from the
-trivialization of `X` to that of `Y` is a `C^n` family of operators on `U ∩ U'`. -/
+trivialization of `X` to that of `Y` is a `C^n` family of `𝕜'`-linear operators over the ground
+field `𝕜` on `U ∩ U'`. The finite frame may span a subspace of an infinite-dimensional ambient
+fibre. -/
 theorem contMDiffOn_coordChangeL {X Y : ι → Π x, E x} {U U' : Set B}
     (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen U) (hXn : ∀ i, CMDiff[U] n (T% (X i)))
     (hY : IsSubbundleFrameOn F V Y U') (hU' : IsOpen U') (hYn : ∀ i, CMDiff[U'] n (T% (Y i))) :
-    letI := subbundleTopology F (F' := ι → 𝕜) V
-    ContMDiffOn IB 𝓘(𝕜, (ι → 𝕜) →L[𝕜] ι → 𝕜) n
-      (fun y ↦ ((hX.trivialization hU).coordChangeL 𝕜 (hY.trivialization hU') y :
-        (ι → 𝕜) →L[𝕜] ι → 𝕜)) (U ∩ U') := by
-  let := subbundleTopology F (F' := ι → 𝕜) V
-  have : CompleteSpace 𝕜 := by
-    let := IsRCLikeNormedField.rclike 𝕜
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    ContMDiffOn IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜'] ι → 𝕜') n
+      (fun y ↦ ((hX.trivialization hU).coordChangeL 𝕜' (hY.trivialization hU') y :
+        (ι → 𝕜') →L[𝕜'] ι → 𝕜')) (U ∩ U') := by
+  let := subbundleTopology F (F' := ι → 𝕜') V
+  have : CompleteSpace 𝕜' := by
+    let := IsRCLikeNormedField.rclike 𝕜'
     infer_instance
   intro y₀ hy₀
   refine ContMDiffAt.contMDiffWithinAt ?_
   have hy₀e := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) y₀
-  have hAX := contMDiffAt_trivOperator (y₀ := y₀)
+  have hAX := contMDiffAt_trivOperator (𝕜 := 𝕜) (𝕜' := 𝕜') (y₀ := y₀)
     (fun i ↦ (hXn i).contMDiffAt (hU.mem_nhds hy₀.1)) hy₀e
-  have hAY := contMDiffAt_trivOperator (y₀ := y₀)
+  have hAY := contMDiffAt_trivOperator (𝕜 := 𝕜) (𝕜' := 𝕜') (y₀ := y₀)
     (fun i ↦ (hYn i).contMDiffAt (hU'.mem_nhds hy₀.2)) hy₀e
   -- Coordinates in `Y` are recovered from the vector read in the trivialization of `E` by a
   -- `C^n` left inverse of the frame operator of `Y`.
   obtain ⟨L, hL, hLinv⟩ := hAY.exists_contMDiffAt_leftInverse
     (.of_injective_of_finiteDimensional_domain (hY.injective_trivOperator hy₀.2))
-  refine (hL.clm_comp hAX).congr_of_eventuallyEq ?_
+  have hcomp : ContMDiffAt IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜'] ι → 𝕜') n
+      (fun y ↦ (L y).comp (trivOperator 𝕜' F X y₀ y)) y₀ :=
+    ((ContinuousLinearMap.compL 𝕜' (ι → 𝕜') F (ι → 𝕜')).bilinearRestrictScalars 𝕜)
+      |>.isBoundedBilinearMap.contDiff.comp_contMDiffAt (hL.prodMk_space hAX)
+  refine hcomp.congr_of_eventuallyEq ?_
   filter_upwards [hLinv, (hU.inter hU').mem_nhds hy₀,
     (trivializationAt F E y₀).open_baseSet.mem_nhds hy₀e] with y hyL hy hye
   ext1 c
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    (hX.trivialization hU).coordChangeL_apply' (R := 𝕜) (hY.trivialization hU')
+    (hX.trivialization hU).coordChangeL_apply' (R := 𝕜') (hY.trivialization hU')
       (by simpa only [trivialization_baseSet] using hy),
     trivialization_symm_apply hX hU (q := (y, c)) hy.1]
-  rw [trivialization_apply hY hU' (p := TotalSpace.mk' (ι → 𝕜) (E := fun x ↦ V x) y _) hy.2]
+  rw [trivialization_apply hY hU' (p := TotalSpace.mk' (ι → 𝕜') (E := fun x ↦ V x) y _) hy.2]
   -- The coordinates `d` of the vector in `Y` and its coordinates `c` in `X` describe the same
   -- vector of `E y`, so the frame operators of `Y` and of `X` send them to the same point.
   set d := (hY.basis hy.2).equivFun ((hX.basis hy.1).equivFun.symm c)
@@ -146,45 +179,374 @@ theorem contMDiffOn_coordChangeL {X Y : ι → Π x, E x} {U U' : Set B}
       LinearEquiv.symm_apply_apply]
   rw [← hyL d, trivOperator_apply hye, trivOperator_apply hye, hd]
 
+variable [∀ x, IsScalarTower 𝕜 𝕜' (E x)]
+
 /-- **The canonical inclusion of a frame-trivialized subbundle is `C^n`.** At any point `p` in the
 domain `U` of a `C^n` local frame `X` whose trivialization belongs to the bundle atlas of `V`, the
-canonical inclusion `(x, v) ↦ (x, ↑v)` from `TotalSpace (ι → 𝕜) (fun x ↦ V x)` into
-`TotalSpace F E` is `C^n`. -/
+canonical inclusion `(x, v) ↦ (x, ↑v)` from `TotalSpace (ι → 𝕜') (fun x ↦ V x)` into
+`TotalSpace F E` is `C^n` over the ground field `𝕜`, with its original scalar structures. -/
 theorem contMDiffAt_totalSpace_subbundle {X : ι → Π x, E x} {U : Set B}
     (hX : IsSubbundleFrameOn F V X U) (hU : IsOpen U) (hXn : ∀ i, CMDiff[U] n (T% (X i)))
-    [letI := subbundleTopology F (F' := ι → 𝕜) V; FiberBundle (ι → 𝕜) (fun x ↦ V x)]
-    [letI := subbundleTopology F (F' := ι → 𝕜) V; VectorBundle 𝕜 (ι → 𝕜) (fun x ↦ V x)]
-    [letI := subbundleTopology F (F' := ι → 𝕜) V; ContMDiffVectorBundle n (ι → 𝕜) (fun x ↦ V x) IB]
-    [letI := subbundleTopology F (F' := ι → 𝕜) V; MemTrivializationAtlas (hX.trivialization hU)]
-    {p : TotalSpace (ι → 𝕜) (fun x ↦ V x)} (hp : p.proj ∈ U) :
-    letI := subbundleTopology F (F' := ι → 𝕜) V
-    ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜)) (IB.prod 𝓘(𝕜, F)) n
-      (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) p := by
-  let := subbundleTopology F (F' := ι → 𝕜) V
-  have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜)) IB n
-      (fun q : TotalSpace (ι → 𝕜) (fun x ↦ V x) ↦ q.proj) p :=
+    [letI := subbundleTopology F (F' := ι → 𝕜') V; FiberBundle (ι → 𝕜') (fun x ↦ V x)]
+    [letI := subbundleTopology F (F' := ι → 𝕜') V; VectorBundle 𝕜 (ι → 𝕜') (fun x ↦ V x)]
+    [letI := subbundleTopology F (F' := ι → 𝕜') V;
+      ContMDiffVectorBundle n (ι → 𝕜') (fun x ↦ V x) IB]
+    [letI := subbundleTopology F (F' := ι → 𝕜') V; MemTrivializationAtlas (hX.trivialization hU)]
+    {p : TotalSpace (ι → 𝕜') (fun x ↦ V x)} (hp : p.proj ∈ U) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) (IB.prod 𝓘(𝕜, F)) n
+      (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨q.proj, q.2⟩ : TotalSpace F E)) p := by
+  let := subbundleTopology F (F' := ι → 𝕜') V
+  have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) IB n
+      (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ q.proj) p :=
     (Bundle.contMDiff_proj (fun x ↦ V x)).contMDiffAt
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hproj, ?_⟩
   have hpE := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) p.proj
-  have hA := (contMDiffAt_trivOperator (y₀ := p.proj)
+  have hA := (contMDiffAt_trivOperator (𝕜 := 𝕜) (𝕜' := 𝕜') (y₀ := p.proj)
     (fun i ↦ (hXn i).contMDiffAt (hU.mem_nhds hp)) hpE).comp p hproj
   let eV := hX.trivialization hU
   have hpV : p ∈ eV.source := eV.mem_source.mpr (by simpa [eV] using hp)
-  have hcoord : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜)) 𝓘(𝕜, ι → 𝕜) n (fun q ↦ (eV q).2) p :=
+  have hcoord : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) 𝓘(𝕜, ι → 𝕜') n (fun q ↦ (eV q).2) p :=
     ((eV.contMDiffOn (IB := IB) (n := n)).contMDiffAt (eV.open_source.mem_nhds hpV)).snd
-  refine (hA.clm_apply hcoord).congr_of_eventuallyEq ?_
+  have hA' : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) 𝓘(𝕜, (ι → 𝕜') →L[𝕜] F) n
+      (fun q ↦ (trivOperator 𝕜' F X p.proj q.proj).restrictScalars 𝕜) p :=
+    (ContinuousLinearMap.restrictScalarsIsometry 𝕜' (ι → 𝕜') F 𝕜 𝕜).toContinuousLinearMap
+      |>.contDiff.comp_contMDiffAt hA
+  refine (hA'.clm_apply hcoord).congr_of_eventuallyEq ?_
   filter_upwards [eV.open_source.mem_nhds hpV,
     hproj.continuousAt.preimage_mem_nhds
       ((trivializationAt F E p.proj).open_baseSet.mem_nhds hpE)] with q hqV hqE
   have hqU : q.proj ∈ U := by simpa [eV] using eV.mem_source.mp hqV
   dsimp only [Function.comp_apply, eV]
-  rw [trivialization_apply hX hU hqU, trivOperator_apply hqE, ← coe_basis_equivFun_symm hX hqU,
+  rw [trivialization_apply hX hU hqU, ContinuousLinearMap.coe_restrictScalars',
+    trivOperator_apply hqE, ← coe_basis_equivFun_symm hX hqU,
     LinearEquiv.symm_apply_apply]
 
 end TauCeti.IsSubbundleFrameOn
 
 namespace TauCeti
+
+section ContMDiffFrames
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] {ι : Type*}
+
+variable (IB n F ι) in
+/-- Every point of the base has an open neighbourhood carrying a local frame of the family of
+`𝕜'`-subspaces `V`, indexed by `ι`, whose members are `C^n` sections of `E` over the ground field
+`𝕜`. Over `ℝ` or `ℂ`, when `ι` is finite and `E` is a `C^n` vector bundle, such a family, with the
+subspace topology, is a `C^n` vector bundle with model fibre `ι → 𝕜'`, a `C^n` subbundle of `E`
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). With `𝕜' = ℂ` and `𝕜 = ℝ`
+this covers complex subbundles of real-smooth complex vector bundles. -/
+def HasLocalContMDiffSubbundleFrames (V : Π x, Submodule 𝕜' (E x)) : Prop :=
+  ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
+    ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U ∧ ∀ i, CMDiff[U] n (T% (X i))
+
+variable {V : Π x, Submodule 𝕜' (E x)}
+
+/-- Unfolding `TauCeti.HasLocalContMDiffSubbundleFrames`. -/
+theorem hasLocalContMDiffSubbundleFrames_iff :
+    HasLocalContMDiffSubbundleFrames IB n F ι V ↔
+      ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
+        ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U ∧ ∀ i, CMDiff[U] n (T% (X i)) :=
+  Iff.rfl
+
+namespace HasLocalContMDiffSubbundleFrames
+
+/-- `C^n` local frames are in particular continuous local frames. -/
+theorem hasLocalSubbundleFrames (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    HasLocalSubbundleFrames F ι V :=
+  hasLocalSubbundleFrames_iff.mpr fun x ↦ by
+    obtain ⟨U, hU, hx, X, hX, -⟩ := hV x
+    exact ⟨U, hU, hx, X, hX⟩
+
+/-- `C^n` local frames are `C^m` local frames for every `m ≤ n`. -/
+theorem of_le {m : ℕ∞ω} (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hmn : m ≤ n) :
+    HasLocalContMDiffSubbundleFrames IB m F ι V := fun x ↦ by
+  obtain ⟨U, hU, hx, X, hX, hXn⟩ := hV x
+  exact ⟨U, hU, hx, X, hX, fun i ↦ (hXn i).of_le hmn⟩
+
+variable [NormedSpace 𝕜' F] [VectorBundle 𝕜' F E] [IsRCLikeNormedField 𝕜']
+
+/-- A family of subspaces with `C^n` local frames indexed by a finite type `ι` near every point is
+a fibre bundle with fibre `ι → 𝕜'`, the topology of its total space being that of a subspace of
+the total space of `E`. Its trivializations are those of all `C^n` local frames of `V` on open sets
+(`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition as a local instance; it chooses
+a local frame near every point. -/
+@[instance_reducible]
+def fiberBundle [Finite ι] (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    FiberBundle (ι → 𝕜') fun x ↦ V x :=
+  letI := subbundleTopology F (F' := ι → 𝕜') V
+  let U := fun x ↦ (hV x).choose
+  have hU := fun x ↦ (hV x).choose_spec
+  let X := fun x ↦ (hU x).2.2.choose
+  have hX := fun x ↦ (hU x).2.2.choose_spec
+  { totalSpaceMk_isInducing' := isInducing_totalSpaceMk_subbundle F (ι → 𝕜') V
+    trivializationAtlas' :=
+      {e | ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        (∀ i, CMDiff[U] n (T% (Y i))) ∧ hY.trivialization hU = e}
+    trivializationAt' := fun x ↦ (hX x).1.trivialization (hU x).1
+    mem_baseSet_trivializationAt' := fun x ↦ by
+      rw [IsSubbundleFrameOn.trivialization_baseSet]
+      exact (hU x).2.1
+    trivialization_mem_atlas' := fun x ↦ ⟨U x, (hU x).1, X x, (hX x).1, (hX x).2, rfl⟩ }
+
+/-- The trivializations of `hV.fiberBundle` are the trivializations of the `C^n` local frames of
+`V` on open sets. -/
+theorem mem_trivializationAtlas_fiberBundle_iff [Finite ι]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V)
+    (e : letI := subbundleTopology F (F' := ι → 𝕜') V
+      Trivialization (ι → 𝕜') (π (ι → 𝕜') fun x ↦ V x)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    e ∈ trivializationAtlas (ι → 𝕜') (fun x ↦ V x) ↔
+      ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        (∀ i, CMDiff[U] n (T% (Y i))) ∧ hY.trivialization hU = e :=
+  Iff.rfl
+
+/-- A family of subspaces with `C^n` local frames indexed by a finite type `ι` near every point,
+with the subspace topology of the total space of `E` and the atlas of `hV.fiberBundle`, is a
+topological vector bundle over `𝕜'` with model fibre `ι → 𝕜'`. -/
+theorem vectorBundle [Fintype ι] (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    VectorBundle 𝕜' (ι → 𝕜') fun x ↦ V x :=
+  vectorBundle_of_forall_mem_trivializationAtlas hV.fiberBundle fun e he ↦ by
+    obtain ⟨U, hU, Y, hY, -, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he
+    exact ⟨U, hU, Y, hY, rfl⟩
+
+variable [NormedAlgebra 𝕜 𝕜'] [∀ x, Module 𝕜 (E x)] [∀ x, IsScalarTower 𝕜 𝕜' (E x)]
+  [IsScalarTower 𝕜 𝕜' F] [VectorBundle 𝕜 F E]
+
+/-- **Smooth local frame criterion for subbundles.** If `E` is a `C^n` vector bundle over the
+ground field `𝕜` and the family of `𝕜'`-subspaces `V` has `C^n` local frames indexed by a finite
+type `ι` near every point, then `V`, with the subspace topology of the total space of `E` and the
+atlas of `hV.fiberBundle`, is a `C^n` vector bundle with model fibre `ι → 𝕜'`: a `C^n` subbundle
+of `E`. Its `𝕜`-vector bundle structure is the restriction of scalars of `hV.vectorBundle`. -/
+theorem contMDiffVectorBundle [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffVectorBundle n (ι → 𝕜') (fun x ↦ V x) IB := by
+  let := subbundleTopology F (F' := ι → 𝕜') V
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+  refine ⟨fun e e' he he' ↦ ?_⟩
+  obtain ⟨U, hU, Y, hY, hYn, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he.out
+  obtain ⟨U', hU', Y', hY', hYn', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e').mp he'.out
+  have h := hY.contMDiffOn_coordChangeL hU hYn hY' hU' hYn'
+  have hr : ContMDiffOn IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜] ι → 𝕜') n
+      (fun y ↦ ((hY.trivialization hU).coordChangeL 𝕜' (hY'.trivialization hU') y :
+        (ι → 𝕜') →L[𝕜'] ι → 𝕜').restrictScalars 𝕜) (U ∩ U') :=
+    fun y hy ↦ (ContinuousLinearMap.restrictScalarsIsometry 𝕜' (ι → 𝕜') (ι → 𝕜') 𝕜 𝕜
+      ).toContinuousLinearMap.contDiff.comp_contMDiffWithinAt (h y hy)
+  simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
+    hr.congr fun y _ ↦ (Bundle.Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _).symm
+
+/-- The canonical inclusion `(x, v) ↦ (x, ↑v)` of a subbundle given by `C^n` local frames into
+the total space of `E` is `C^n` over the ground field. -/
+theorem contMDiff_totalSpace_inclusion [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiff (IB.prod 𝓘(𝕜, ι → 𝕜')) (IB.prod 𝓘(𝕜, F)) n
+      (fun v : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ (⟨v.proj, v.2⟩ : TotalSpace F E)) := by
+  let := subbundleTopology F (F' := ι → 𝕜') V
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+  let := hV.contMDiffVectorBundle
+  intro p
+  obtain ⟨U, hU, hp, Y, hY, hYn⟩ := hV p.proj
+  have : MemTrivializationAtlas (hY.trivialization hU) :=
+    ⟨(mem_trivializationAtlas_fiberBundle_iff hV _).mpr ⟨U, hU, Y, hY, hYn, rfl⟩⟩
+  exact hY.contMDiffAt_totalSpace_subbundle hU hYn hp
+
+/-- A `C^n` map into the total space of `E` with values in a subbundle given by `C^n` local frames
+is `C^n` as a map into the subbundle. The frame coordinates are recovered from the ambient vector
+by a `C^n` left inverse of the frame (`ContMDiffAt.exists_contMDiffAt_leftInverse`). -/
+theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+    {HM : Type*} [TopologicalSpace HM] {J : ModelWithCorners 𝕜 EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) {b : M → B} {w : ∀ m, E (b m)} {m₀ : M}
+    (hw : ContMDiffAt J (IB.prod 𝓘(𝕜, F)) n (fun m ↦ (⟨b m, w m⟩ : TotalSpace F E)) m₀)
+    (hmem : ∀ m, w m ∈ V (b m)) :
+    letI := subbundleTopology F (F' := ι → 𝕜') V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+    ContMDiffAt J (IB.prod 𝓘(𝕜, ι → 𝕜')) n
+      (fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ : TotalSpace (ι → 𝕜') fun x ↦ V x)) m₀ := by
+  let := subbundleTopology F (F' := ι → 𝕜') V
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  let := VectorBundle.restrictScalars 𝕜 𝕜' (ι → 𝕜') fun x ↦ V x
+  let := hV.contMDiffVectorBundle
+  have : CompleteSpace 𝕜' := by
+    let := IsRCLikeNormedField.rclike 𝕜'
+    infer_instance
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp hw
+  obtain ⟨U, hU, hbU, Y, hY, hYn⟩ := hV (b m₀)
+  let eV := hY.trivialization hU
+  have : MemTrivializationAtlas eV :=
+    ⟨(mem_trivializationAtlas_fiberBundle_iff hV _).mpr ⟨U, hU, Y, hY, hYn, rfl⟩⟩
+  refine (eV.contMDiffAt_iff (IM := J) (f := fun m ↦ (⟨b m, ⟨w m, hmem m⟩⟩ :
+    TotalSpace (ι → 𝕜') fun x ↦ V x)) (eV.mem_source.mpr (by simpa [eV] using hbU))).mpr
+    ⟨hb, ?_⟩
+  let eE := trivializationAt F E (b m₀)
+  have hbE : b m₀ ∈ eE.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
+  obtain ⟨L, hL, hLinv⟩ := ContMDiffAt.exists_contMDiffAt_leftInverse
+    (IsSubbundleFrameOn.contMDiffAt_trivOperator (𝕜' := 𝕜') (y₀ := b m₀)
+      (fun i ↦ (hYn i).contMDiffAt (hU.mem_nhds hbU)) hbE)
+    (.of_injective_of_finiteDimensional_domain (hY.injective_trivOperator hbU))
+  have hLr : ContMDiffAt J 𝓘(𝕜, F →L[𝕜] ι → 𝕜') n (fun m ↦ (L (b m)).restrictScalars 𝕜) m₀ :=
+    (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F (ι → 𝕜') 𝕜 𝕜
+      ).toContinuousLinearMap.contDiff.comp_contMDiffAt (hL.comp m₀ hb)
+  refine (hLr.clm_apply hv).congr_of_eventuallyEq ?_
+  filter_upwards [hb.continuousAt.eventually hLinv, hb.continuousAt.eventually
+    (hU.mem_nhds hbU), hb.continuousAt.eventually (eE.open_baseSet.mem_nhds hbE)]
+    with m hmL hmU hmE
+  -- Read in `E`, the frame sends the coordinates `c` of `w m` back to `w m`; `L` undoes this.
+  set c := (hY.basis hmU).equivFun ⟨w m, hmem m⟩
+  have hc : IsSubbundleFrameOn.trivOperator 𝕜' F Y (b m₀) (b m) c = (eE ⟨b m, w m⟩).2 := by
+    rw [IsSubbundleFrameOn.trivOperator_apply hmE, ← hY.coe_basis_equivFun_symm hmU,
+      LinearEquiv.symm_apply_apply]
+  rw [IsSubbundleFrameOn.trivialization_apply hY hU (p := ⟨b m, ⟨w m, hmem m⟩⟩) hmU]
+  dsimp only
+  rw [ContinuousLinearMap.coe_restrictScalars', ← hc, hmL c]
+
+end HasLocalContMDiffSubbundleFrames
+
+end ContMDiffFrames
+
+section OrthogonalProjections
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {E : B → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
+  [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- **Local frames from smooth orthogonal projections.** Let `ε` be a `C^n` family of sections of
+`E`, linearly independent at every point of an open set `U₀`, and let `W y` be subspaces of the
+coefficient space `ℝ^d` whose orthogonal projections are `C^n` on `U₀`. Near a point `x₀ ∈ U₀`
+where `W x₀` has dimension `r`, the images of the `W y` under the synthesis maps
+`c ↦ ∑ i, c i • ε i y` have a `C^n` local frame of size `r`: project a basis of `W x₀` onto the
+nearby `W y` and synthesize. -/
+theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → Π x, E x}
+    {U₀ : Set B} (hU₀ : IsOpen U₀) (hε : ∀ i, CMDiff[U₀] n (T% (ε i)))
+    (hli : ∀ y ∈ U₀, LinearIndependent ℝ (ε · y))
+    {W : B → Submodule ℝ (EuclideanSpace ℝ (Fin d))}
+    (hP : ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d)) n
+      (fun y ↦ (W y).starProjection) U₀) {x₀ : B} (hx₀ : x₀ ∈ U₀)
+    (hr : finrank ℝ (W x₀) = r) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
+      IsSubbundleFrameOn F (fun y ↦ (W y).map (synthesisMap ℝ (ε · y))) X U ∧
+      ∀ i, CMDiff[U] n (T% (X i)) := by
+  let β := Module.finBasisOfFinrankEq ℝ (W x₀) hr
+  set Y : B → Fin r → EuclideanSpace ℝ (Fin d) := fun y k ↦ (W y).starProjection (β k)
+  have hYc : ContinuousOn Y U₀ :=
+    continuousOn_pi.mpr fun k ↦ hP.continuousOn.clm_apply continuousOn_const
+  have hY₀ : LinearIndependent ℝ (Y x₀) := by
+    have hY : Y x₀ = fun k ↦ ((β k : W x₀) : EuclideanSpace ℝ (Fin d)) :=
+      funext fun k ↦ Submodule.starProjection_eq_self_iff.mpr (β k).2
+    rw [hY]
+    exact β.linearIndependent.map' (W x₀).subtype (Submodule.ker_subtype _)
+  -- The rank of a continuous family of projections is locally constant.
+  set S := Subtype.val '' {y : U₀ | finrank ℝ (W y).starProjection.range = r}
+  have hS : IsOpen S :=
+    hU₀.isOpenMap_subtype_val _ ((isLocallyConstant_finrank_range
+      (p := fun y : U₀ ↦ (W y).starProjection) hP.continuousOn.domRestrict
+      fun y ↦ (W y).isIdempotentElem_starProjection).isOpen_fiber _)
+  -- Synthesizing `C^n` coordinates against the `C^n` sections `ε i` gives `C^n` sections.
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ synthesisMap ℝ (ε · y) (Y y k))) := by
+    intro y hy
+    have hy' := hU₀.mem_nhds hy
+    have hci (i : Fin d) : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ Y y k i) y :=
+      ((EuclideanSpace.proj i).contMDiff.comp_contMDiffOn
+        (hP.clm_apply contMDiffOn_const)).contMDiffAt hy'
+    have hsec := ContMDiffAt.sum_section (s := Finset.univ) fun i _ ↦
+      (hci i).smul_section ((hε i).contMDiffAt hy')
+    refine (hsec.congr_of_eventuallyEq (Eventually.of_forall fun z ↦ ?_)).contMDiffWithinAt
+    simp
+  obtain ⟨U, hUS, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq (hS.inter hU₀)
+    (hYc.mono inter_subset_right) (fun y _ k ↦ (W y).starProjection_apply_mem _)
+    (fun y hy ↦ by
+      obtain ⟨⟨z, hzU⟩, hz, rfl⟩ := hy.1
+      rwa [Set.mem_ofPred_eq, Submodule.range_starProjection] at hz)
+    ⟨⟨⟨x₀, hx₀⟩, by rwa [Set.mem_ofPred_eq, Submodule.range_starProjection], rfl⟩, hx₀⟩ hY₀
+  refine ⟨U, fun y hy ↦ (hUS hy).2, hU, hx₀U, fun k y ↦ synthesisMap ℝ (ε · y) (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono fun y hy ↦ (hUS hy).2, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono fun y hy ↦ (hUS hy).2⟩
+  · exact (hYU y hy).1.map' (synthesisMap ℝ (ε · y))
+      (LinearMap.ker_eq_bot.mpr ((linearIndependent_iff_injective_synthesisMap _).mp
+        (hli y (hUS hy).2)))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, comp_def]
+
+end OrthogonalProjections
+
+section Operators
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+
+/-- **Local frames from a smooth family of operators of constant rank.** Let `e` be a
+trivialization of `E` in its atlas and let `A y` be operators on the model fibre `F`, depending
+`C^n` on `y` in an open subset `U₀` of the base set of `e`, all of rank `r`. Read through `e`, their
+ranges are subspaces of the fibres `E y`; near every point of `U₀` these have a `C^n` local frame
+of size `r`. -/
+theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : ℕ}
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀)
+    (hU₀e : U₀ ⊆ e.baseSet)
+    {A : B → F →L[𝕜] F} (hA : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n A U₀)
+    (hr : ∀ y ∈ U₀, finrank 𝕜 (A y).range = r) {x₀ : B} (hx₀ : x₀ ∈ U₀) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
+      IsSubbundleFrameOn F (fun y ↦ (A y).range.map (e.symmₗ 𝕜 y)) X U ∧
+      ∀ i, CMDiff[U] n (T% (X i)) := by
+  let β := Module.finBasisOfFinrankEq 𝕜 (A x₀).range (hr x₀ hx₀)
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (β k).2
+  set Y : B → Fin r → F := fun y k ↦ A y (u k)
+  have hYc : ContinuousOn Y U₀ :=
+    continuousOn_pi.mpr fun k ↦ hA.continuousOn.clm_apply continuousOn_const
+  have hY₀ : LinearIndependent 𝕜 (Y x₀) := by
+    have hY : Y x₀ = fun k ↦ ((β k : (A x₀).range) : F) := funext hu
+    rw [hY]
+    exact β.linearIndependent.map' (A x₀).range.subtype (Submodule.ker_subtype _)
+  obtain ⟨U, hUU₀, hU, hx₀U, hYU⟩ := exists_isOpen_linearIndependent_span_range_eq hU₀ hYc
+    (fun y _ k ↦ LinearMap.mem_range_self _ _) hr hx₀ hY₀
+  -- Read through `e`, a `C^n` family of vectors of `F` is a `C^n` family of sections.
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ e.symm y (Y y k))) :=
+    e.contMDiffOn_section_symm hU₀ hU₀e (hA.clm_apply contMDiffOn_const)
+  refine ⟨U, hUU₀, hU, hx₀U, fun k y ↦ e.symm y (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono hUU₀, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono hUU₀⟩
+  · simpa [Function.comp_def, e.symmₗ_apply (hU₀e (hUU₀ hy))] using
+      (hYU y hy).1.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr (e.symmₗ_injective 𝕜
+        (hU₀e (hUU₀ hy))))
+  · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e (hUU₀ hy)),
+      comp_def]
+
+end Operators
 
 section SubbundleInclusion
 
@@ -336,7 +698,7 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
     ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
       IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
         (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let eV := trivializationAt F' (fun x ↦ V x) p.proj
   let eE := trivializationAt F E (f p.proj)
   have hx₀V : p.proj ∈ eV.baseSet := FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) _

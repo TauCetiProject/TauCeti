@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Finance.BlackScholes.Hedge
 
 /-!
@@ -112,10 +112,8 @@ theorem hedgeBondHolding_callPrice
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
       hedgeBondHolding (fun s => callPrice s r σ K (T - t)) (S t ω) (β t) else 0) := by
   have ht := ℱ.measurable_fst_predictable
-  have htm := ht.coe_nnreal_real
   have hd := measurable_dMinus_process (r := r) (σ := σ) (K := K) (T := T) hS
   have hΦ := (monotone_cdf (μ := gaussianReal 0 1)).measurable.comp hd
-  have hβm := hβ.comp ht
   refine isStronglyPredictable_before_maturity (f := fun p =>
     -(K * exp (-r * (T - p.1)) * cdf (gaussianReal 0 1)
       (dMinus (S p.1 p.2) r σ K (T - p.1))) / β p.1) (by fun_prop) ?_
@@ -132,10 +130,8 @@ theorem hedgeBondHolding_putPrice
     IsStronglyPredictable ℱ (fun t ω => if (t : ℝ) < T then
       hedgeBondHolding (fun s => putPrice s r σ K (T - t)) (S t ω) (β t) else 0) := by
   have ht := ℱ.measurable_fst_predictable
-  have htm := ht.coe_nnreal_real
   have hd := measurable_dMinus_process (r := r) (σ := σ) (K := K) (T := T) hS
   have hΦ := (monotone_cdf (μ := gaussianReal 0 1)).measurable.comp hd.neg
-  have hβm := hβ.comp ht
   refine isStronglyPredictable_before_maturity (f := fun p =>
     K * exp (-r * (T - p.1)) * cdf (gaussianReal 0 1)
       (-dMinus (S p.1 p.2) r σ K (T - p.1)) / β p.1) (by fun_prop) ?_

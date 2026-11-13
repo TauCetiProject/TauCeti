@@ -34,9 +34,20 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.relCWComplexCellEquiv`: its `n`-cells are the `n`-cells of `C`
   not in `E`.
 * `Topology.RelCWComplex.Subcomplex.finite_relCWComplex`: it is finite when `C` is.
+* `Topology.RelCWComplex.Subcomplex.mem_I_iff_of_mem_openCell`: a cell belongs to a subcomplex
+  exactly when any point of its open cell does.
+* `Topology.RelCWComplex.Subcomplex.mem_iff_mem_base_or_exists_mem_openCell`: a point lies in a
+  subcomplex exactly when it lies in the base or in an open cell of the subcomplex.
+* `Topology.RelCWComplex.Subcomplex.coe_inf`, `Topology.RelCWComplex.Subcomplex.coe_sup`,
+  `Topology.RelCWComplex.Subcomplex.mem_inf`, `Topology.RelCWComplex.Subcomplex.mem_sup`:
+  subcomplexes form a distributive lattice, whose meet and join are intersection and union.
+* `Topology.RelCWComplex.Subcomplex.coe_bot`, `Topology.RelCWComplex.Subcomplex.coe_top`: it is
+  bounded, by the base and the whole complex.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
+* `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
+  of `C`.
 
 ## References
 
@@ -137,9 +148,8 @@ lemma cellFrontier_relCWComplex (E : Subcomplex C) (n : ℕ)
 lemma finiteDimensional_relCWComplex [FiniteDimensional C] (E : Subcomplex C) :
     @FiniteDimensional X _ C E E.relCWComplex :=
   @FiniteDimensional.mk X _ C E E.relCWComplex <| by
-    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n hn
-    rw [(E.relCWComplexCellEquiv n).isEmpty_congr]
-    simp [isEmpty_subtype]
+    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n _
+    exact (E.relCWComplexCellEquiv n).isEmpty_congr.2 inferInstance
 
 /-- The CW structure on `C` relative to a subcomplex is of finite type when `C` is. -/
 lemma finiteType_relCWComplex [FiniteType C] (E : Subcomplex C) :
@@ -153,6 +163,154 @@ lemma finite_relCWComplex [Finite C] (E : Subcomplex C) :
     @Finite X _ C E E.relCWComplex :=
   @finite_of_finiteDimensional_finiteType X _ C E E.relCWComplex
     (finiteDimensional_relCWComplex E) (finiteType_relCWComplex E)
+
+omit [T2Space X] in
+private lemma openCell_subset_of_mem_I (E : Subcomplex C) {n : ℕ} {j : cell C n}
+    (hj : j ∈ E.I n) : openCell n j ⊆ E := fun x hx ↦ by
+  rw [← E.union]
+  exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj⟩, hx⟩)
+
+omit [T2Space X] in
+/-- A cell belongs to a subcomplex exactly when any point of its open cell does. -/
+lemma mem_I_iff_of_mem_openCell (E : Subcomplex C) {n : ℕ} {j : cell C n} {x : X}
+    (hxj : x ∈ openCell n j) : j ∈ E.I n ↔ x ∈ E :=
+  ⟨fun h ↦ E.openCell_subset_of_mem_I h hxj, fun hx ↦
+    by_contra fun hj ↦ (E.disjoint_openCell_subcomplex_of_notMem hj).notMem_of_mem_left hxj hx⟩
+
+omit [T2Space X] in
+/-- A point lies in a subcomplex exactly when it lies in the base or in an open cell of the
+subcomplex. -/
+lemma mem_iff_mem_base_or_exists_mem_openCell (E : Subcomplex C) {x : X} :
+    x ∈ E ↔ x ∈ D ∨ ∃ (n : ℕ) (j : cell C n), j ∈ E.I n ∧ x ∈ openCell n j := by
+  rw [← SetLike.mem_coe, ← E.union, mem_union, mem_iUnion₂]
+  exact or_congr_right ⟨fun ⟨n, j, hx⟩ ↦ ⟨n, j, j.2, hx⟩, fun ⟨n, j, hj, hx⟩ ↦ ⟨n, ⟨j, hj⟩, hx⟩⟩
+
+/-! ### The lattice of subcomplexes -/
+
+omit [T2Space X] in
+/-- The intersection of two subcomplexes, whose cells are the common cells. -/
+instance instMin : Min (Subcomplex C) where
+  min A B :=
+    { carrier := A ∩ B
+      I n := A.I n ∩ B.I n
+      closed' := A.closed.inter B.closed
+      union' := by
+        refine subset_antisymm (union_subset (subset_inter A.base_subset B.base_subset)
+          (iUnion₂_subset fun n j ↦ subset_inter (A.openCell_subset_of_mem_I j.2.1)
+            (B.openCell_subset_of_mem_I j.2.2))) fun x ⟨hxA, hxB⟩ ↦ ?_
+        obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hxA
+        · exact .inl hD
+        · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, hj, (B.mem_I_iff_of_mem_openCell hxj).2 hxB⟩, hxj⟩) }
+
+omit [T2Space X] in
+/-- The union of two subcomplexes, whose cells are the cells of either. -/
+instance instMax : Max (Subcomplex C) where
+  max A B :=
+    { carrier := A ∪ B
+      I n := A.I n ∪ B.I n
+      closed' := A.closed.union B.closed
+      union' := by
+        refine subset_antisymm (union_subset (A.base_subset.trans subset_union_left)
+          (iUnion₂_subset fun n j ↦ ?_)) fun x hx ↦ ?_
+        · exact j.2.elim (fun h ↦ (A.openCell_subset_of_mem_I h).trans subset_union_left)
+            fun h ↦ (B.openCell_subset_of_mem_I h).trans subset_union_right
+        · obtain hx | hx := hx
+          · obtain hD | ⟨n, j, hj, hxj⟩ := A.mem_iff_mem_base_or_exists_mem_openCell.1 hx
+            · exact .inl hD
+            · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, .inl hj⟩, hxj⟩)
+          · obtain hD | ⟨n, j, hj, hxj⟩ := B.mem_iff_mem_base_or_exists_mem_openCell.1 hx
+            · exact .inl hD
+            · exact .inr (mem_iUnion₂.2 ⟨n, ⟨j, .inr hj⟩, hxj⟩) }
+
+omit [T2Space X] in
+@[simp, norm_cast]
+lemma coe_inf (A B : Subcomplex C) : ((A ⊓ B : Subcomplex C) : Set X) = (A : Set X) ∩ B :=
+  (rfl)
+
+omit [T2Space X] in
+@[simp, norm_cast]
+lemma coe_sup (A B : Subcomplex C) : ((A ⊔ B : Subcomplex C) : Set X) = (A : Set X) ∪ B :=
+  (rfl)
+
+omit [T2Space X] in
+@[simp]
+lemma mem_inf {A B : Subcomplex C} {x : X} : x ∈ A ⊓ B ↔ x ∈ A ∧ x ∈ B :=
+  .rfl
+
+omit [T2Space X] in
+@[simp]
+lemma mem_sup {A B : Subcomplex C} {x : X} : x ∈ A ⊔ B ↔ x ∈ A ∨ x ∈ B :=
+  .rfl
+
+omit [T2Space X] in
+@[simp]
+lemma inf_I (A B : Subcomplex C) (n : ℕ) : (A ⊓ B).I n = A.I n ∩ B.I n :=
+  (rfl)
+
+omit [T2Space X] in
+@[simp]
+lemma sup_I (A B : Subcomplex C) (n : ℕ) : (A ⊔ B).I n = A.I n ∪ B.I n :=
+  (rfl)
+
+omit [T2Space X] in
+/-- Subcomplexes form a distributive lattice under intersection and union. -/
+instance instDistribLattice : DistribLattice (Subcomplex C) :=
+  SetLike.coe_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
+
+omit [T2Space X] in
+/-- The smallest subcomplex: the base, with no cells. -/
+instance instBot : Bot (Subcomplex C) where
+  bot :=
+    { carrier := D
+      I _ := ∅
+      closed' := isClosedBase C
+      union' := by simp }
+
+/-- The largest subcomplex: the whole complex, with all cells. -/
+instance instTop : Top (Subcomplex C) where
+  top :=
+    { carrier := C
+      I _ := univ
+      closed' := RelCWComplex.isClosed
+      union' := by simpa [iUnion_coe_set] using union_iUnion_openCell_eq_complex (C := C) }
+
+omit [T2Space X] in
+@[simp, norm_cast]
+lemma coe_bot : ((⊥ : Subcomplex C) : Set X) = D :=
+  (rfl)
+
+@[simp, norm_cast]
+lemma coe_top : ((⊤ : Subcomplex C) : Set X) = C :=
+  (rfl)
+
+omit [T2Space X] in
+@[simp]
+lemma mem_bot {x : X} : x ∈ (⊥ : Subcomplex C) ↔ x ∈ D :=
+  .rfl
+
+@[simp]
+lemma mem_top {x : X} : x ∈ (⊤ : Subcomplex C) ↔ x ∈ C :=
+  .rfl
+
+omit [T2Space X] in
+@[simp]
+lemma bot_I (n : ℕ) : (⊥ : Subcomplex C).I n = ∅ :=
+  (rfl)
+
+@[simp]
+lemma top_I (n : ℕ) : (⊤ : Subcomplex C).I n = univ :=
+  (rfl)
+
+omit [T2Space X] in
+/-- The base is the smallest subcomplex. -/
+instance instOrderBot : OrderBot (Subcomplex C) where
+  bot_le E := E.base_subset
+
+/-- The whole complex is the largest subcomplex. -/
+instance instOrderTop : OrderTop (Subcomplex C) where
+  le_top E := E.subset_complex
+
+instance instBoundedOrder : BoundedOrder (Subcomplex C) where
 
 omit [T2Space X] in
 /-- One subcomplex lies in another exactly when its cells are among the cells of the other. -/
@@ -192,3 +350,23 @@ lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
   (rfl)
 
 end Topology.RelCWComplex.Subcomplex
+
+namespace Topology.RelCWComplex
+
+variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+
+/-- The subcomplex `skeletonLT C m`, viewed as a relative CW complex in its own right, has
+`skeletonLT C (min n m)` as its `skeletonLT _ n`: both are the union of the base `D` with the cells
+of dimension strictly less than both `n` and `m`. In particular, for `n ≤ m` it has the same
+`skeletonLT _ n` as `C`. -/
+@[simp]
+lemma coe_skeletonLT_skeletonLT (n m : ℕ∞) :
+    (skeletonLT (skeletonLT C m : Set X) n : Set X) = skeletonLT C (min n m) := by
+  ext x
+  simp only [SetLike.mem_coe, mem_skeletonLT_iff, lt_min_iff]
+  refine or_congr_right ⟨fun ⟨k, hk, j, hj⟩ ↦ ⟨k, ⟨hk, ?_⟩, j.1, by simpa using hj⟩,
+    fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk.1, ⟨j, ?_⟩, by simpa using hj⟩⟩
+  · simpa only [skeletonLT_I, mem_ofPred_eq] using j.2
+  · simpa only [skeletonLT_I, mem_ofPred_eq] using hk.2
+
+end Topology.RelCWComplex

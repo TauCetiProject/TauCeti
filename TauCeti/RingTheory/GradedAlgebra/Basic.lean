@@ -66,13 +66,14 @@ theorem coe_decompose_mul_zero_of_nonneg (hneg : ∀ p < 0, 𝒜 p = ⊥) (x y :
     rwa [hneg p hp, Submodule.mem_bot] at hc
   induction x using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
-  | add x x' hx hx' => simp only [add_mul, decompose_add, add_apply, Submodule.coe_add, hx, hx']
+  | add x x' hx hx' => simp only [add_mul, decompose_add, DirectSum.add_apply, Submodule.coe_add,
+    hx, hx']
   | @homogeneous i x =>
     obtain ⟨c, hc⟩ := x
     induction y using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | add y y' hy hy' =>
-      simp only [mul_add, decompose_add, add_apply, Submodule.coe_add, hy, hy']
+      simp only [mul_add, decompose_add, DirectSum.add_apply, Submodule.coe_add, hy, hy']
     | @homogeneous j y =>
       obtain ⟨c', hc'⟩ := y
       dsimp only
@@ -149,10 +150,11 @@ end Regular
 
 section GradeZero
 
-variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [CommSemiring A]
-  [Algebra R A] (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜]
+variable {R A ι : Type*} [AddMonoid ι] [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) [SetLike.GradedMonoid 𝒜]
 
-/-- The scalars of a graded algebra act on it through its degree-zero part. -/
+/-- The scalars of an algebra with a graded monoid of submodules act on it through its degree-zero
+part. Only the multiplicative structure of the grading is used, not a decomposition. -/
 instance isScalarTower_gradeZero : IsScalarTower R (𝒜 0) A :=
   ⟨fun r a b ↦ by
     simp only [Algebra.smul_def (A := A) (R := 𝒜 0), SetLike.GradeZero.algebraMap_apply,

@@ -118,7 +118,7 @@ noncomputable def triangulatedSpectralObjectMap (α : F ⟶ G) :
     (spectralObjectMappingCone C).ω₁
   comm {i j k} f g := by
     rw [precomp_spectralObjectMappingCone_δ, precomp_spectralObjectMappingCone_δ]
-    exact quotient_mappingConeCompTriangle_mor₃_naturality (F.map f) (F.map g) (G.map f)
+    exact mappingConeCompTriangleh_mor₃_naturality (F.map f) (F.map g) (G.map f)
       (G.map g) (α.app i) (α.app j) (α.app k) (α.naturality f) (α.naturality g)
 
 @[simp]
@@ -403,6 +403,10 @@ section SpectralSequence
 lemma coe_le_coe_of_eq_add_one {i₁ i₂ q : ℤ} (hi₁ : i₁ = q) (hi₂ : i₂ = q + 1) :
     (i₁ : EInt) ≤ i₂ := by
   simp [hi₁, hi₂]
+
+/-- The morphism `a ⟶ b` of `EInt` between integers `a ≤ b`. -/
+abbrev _root_.TauCeti.eIntHomOfLE {a b : ℤ} (h : a ≤ b) : (a : EInt) ⟶ (b : EInt) :=
+  homOfLE (WithBotTop.coe_le_coe.mpr h)
 
 variable (F : EInt ⥤ CochainComplex C ℤ)
 

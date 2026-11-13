@@ -112,13 +112,19 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
   · have := (P.mem_filtration_iff_le_ord hzero).mp hmem
     omega
 
-/-- Over a perfect residue field in characteristic `p`, every Artin–Schreier class has
-an integral representative or a representative with negative order not divisible by `p`.
-The substitution lies in `F` itself; no completion is used. -/
-theorem exists_reduced_artinSchreier_representative (p : ℕ) [Fact p.Prime] [CharP F p]
+/-- Over a perfect residue field in characteristic `p`, with `p` prime, every Artin–Schreier class
+`u + {w ^ p - w}` has an integral representative or a representative with negative order not
+divisible by `p`. The substitution lies in `F` itself; no completion is used. For `p = 0` the map
+`w ↦ w ^ 0 - w` is not the Artin–Schreier map: the statement is then a formal extension, in which
+the zero (hence integral) representative `u - (w ^ 0 - w) = 0` is obtained with `w = 1 - u`. -/
+theorem exists_reduced_artinSchreier_representative (p : ℕ) [CharP F p]
     [PerfectField P.ResidueField] (u : F) :
     ∃ w : F, u - (w ^ p - w) ∈ P.integers ∨
       (P.ord (u - (w ^ p - w)) < 0 ∧ ¬(p : ℤ) ∣ P.ord (u - (w ^ p - w))) := by
+  rcases CharP.char_is_prime_or_zero F p with hp | rfl
+  swap
+  · exact ⟨1 - u, Or.inl (by simp)⟩
+  have : Fact p.Prime := ⟨hp⟩
   have : CharP P.integers p :=
     (ValuationSubring.subtype P.integers).charP (Subtype.val_injective) p
   have : CharP P.ResidueField p := by
@@ -146,21 +152,42 @@ theorem exists_reduced_artinSchreier_representative (p : ℕ) [Fact p.Prime] [Ch
       rwa [heq]
     · exact ⟨0, by simpa [hp0] using Or.inr ⟨hu, hdiv⟩⟩
 
+/-- If no element of the residue field has `n`-th power equal to the residue of `u * s ^ n`, then
+`u * s ^ n` is nonzero, since its residue differs from that of `0 = 0 ^ n`. -/
+theorem mul_pow_ne_zero_of_forall_pow_ne_residue {n : ℕ} (hn : n ≠ 0) {u s : F}
+    (hs : u * s ^ n ∈ P.integers)
+    (hres : ∀ c : P.ResidueField, c ^ n ≠ IsLocalRing.residue P.integers ⟨u * s ^ n, hs⟩) :
+    u * s ^ n ≠ 0 := by
+  intro h
+  apply hres 0
+  have h0 : (⟨u * s ^ n, hs⟩ : P.integers) = 0 := Subtype.ext h
+  rw [zero_pow hn, h0, map_zero]
+
 /-- Suppose the leading coefficient of `u`, read in the residue field after multiplying by
 `s ^ n`, is not an `n`-th power. Then no `n`-th power `y ^ n` agrees with `u` beyond the
 leading order of `u`. This complements the cancellation step
 `exists_ord_sub_pow_sub_self_gt_of_dvd_ord`, which removes a leading term whose residue is an
 `n`-th power. -/
-theorem ord_sub_pow_le_of_forall_pow_ne_residue {n : ℕ} (hn : n ≠ 0) {u s : F}
+theorem ord_sub_pow_le_of_forall_pow_ne_residue {n : ℕ} {u s : F}
     (hs : u * s ^ n ∈ P.integers)
     (hres : ∀ c : P.ResidueField, c ^ n ≠ IsLocalRing.residue P.integers ⟨u * s ^ n, hs⟩)
     (y : F) : P.ord (u - y ^ n) ≤ P.ord u := by
   by_contra! hlt
-  have hus0 : u * s ^ n ≠ 0 := by
-    intro h
-    apply hres 0
-    have h0 : (⟨u * s ^ n, hs⟩ : P.integers) = 0 := Subtype.ext h
-    rw [zero_pow hn, h0, map_zero]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- for `n = 0` the hypothesis `hres` says that `u` does not reduce to `1`
+    have hu : u ∈ P.integers := by simpa using hs
+    have hord := P.mem_integers_iff_ord_nonneg.mp hu
+    rw [pow_zero] at hlt
+    have hne : u - 1 ≠ 0 := fun h ↦ by
+      rw [h, P.ord_zero] at hlt
+      omega
+    have hmem : u - 1 ∈ P.filtration 1 := by
+      rw [P.mem_filtration_iff_le_ord hne]
+      omega
+    refine hres 1 ?_
+    rw [one_pow, ← map_one (IsLocalRing.residue P.integers)]
+    exact (P.residue_eq_iff_sub_mem_filtration_one.mpr (by simpa using hmem)).symm
+  have hus0 := P.mul_pow_ne_zero_of_forall_pow_ne_residue hn.ne' hs hres
   have hu0 : u ≠ 0 := left_ne_zero_of_mul hus0
   have hsn0 : s ^ n ≠ 0 := right_ne_zero_of_mul hus0
   -- Multiplying `u - y ^ n` by `s ^ n` lands in the maximal ideal.
@@ -184,29 +211,50 @@ theorem ord_sub_pow_le_of_forall_pow_ne_residue {n : ℕ} (hn : n ≠ 0) {u s : 
       exact add_mem (P.mem_filtration_zero_iff.mp (P.filtration_antitone zero_le_one hmem)) hs
     rw [P.mem_integers_iff_ord_nonneg, P.ord_pow] at hpow
     rw [P.mem_integers_iff_ord_nonneg]
-    have : (0 : ℤ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
+    have : (0 : ℤ) < n := by exact_mod_cast hn
     nlinarith
   apply hres (IsLocalRing.residue P.integers ⟨y * s, hys⟩)
   rw [← map_pow, P.residue_eq_iff_sub_mem_filtration_one]
   simpa using hmem
 
-/-- **Reduction fails over an imperfect residue field.** Let `n > 1` divide the negative order
-of `u`, and suppose the leading coefficient of `u`, read in the residue field after multiplying
-by `s ^ n`, is not an `n`-th power. Then `u` has no reduced representative for the map
-`w ↦ w ^ n - w`: no `u - (w ^ n - w)` is integral or has a pole of order prime to `n`.
+/-- **Reduction fails over an imperfect residue field.** Let `u` have negative order
+and suppose the leading coefficient of `u`, read in the residue field after multiplying by `s ^ n`,
+is not an `n`-th power. Then `n` divides the order of `u`, and `u` has no reduced representative
+for the map `w ↦ w ^ n - w`: no `u - (w ^ n - w)` is integral or has a pole of order prime to `n`.
 For `n = p` in characteristic `p` this is the Artin–Schreier map, and this shows that
 `exists_reduced_artinSchreier_representative` needs its perfect residue field. -/
 theorem not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue {n : ℕ}
-    (hn : 1 < n) {u s : F} (hu : P.ord u < 0) (hdvd : (n : ℤ) ∣ P.ord u)
+    {u s : F} (hu : P.ord u < 0)
     (hs : u * s ^ n ∈ P.integers)
     (hres : ∀ c : P.ResidueField, c ^ n ≠ IsLocalRing.residue P.integers ⟨u * s ^ n, hs⟩) :
     ¬∃ w : F, u - (w ^ n - w) ∈ P.integers ∨
       (P.ord (u - (w ^ n - w)) < 0 ∧ ¬(n : ℤ) ∣ P.ord (u - (w ^ n - w))) := by
   rintro ⟨w, hw⟩
-  obtain ⟨hneg, hdvd'⟩ := ord_sub_pow_sub_self_neg_and_dvd (v := P.valuation) hn
+  -- the cases `n = 0` and `n = 1` are inconsistent with the hypotheses
+  have hn : 1 < n := by
+    by_contra! hn
+    interval_cases n
+    · rw [pow_zero, mul_one, P.mem_integers_iff_ord_nonneg] at hs
+      omega
+    · exact hres _ (pow_one _)
+  -- The leading term `u * s ^ n` is a unit of `P.integers`, so `n` divides the order of `u`.
+  have hus0 := P.mul_pow_ne_zero_of_forall_pow_ne_residue (by omega) hs hres
+  have hu0 : u ≠ 0 := left_ne_zero_of_mul hus0
+  have hsn0 : s ^ n ≠ 0 := right_ne_zero_of_mul hus0
+  have hlt : P.ord (u * s ^ n) < 1 := by
+    by_contra! hge
+    have hz := (P.residue_eq_zero_iff_ord_pos (f := ⟨u * s ^ n, hs⟩) hus0).mpr
+      (by simp only; omega)
+    exact hres 0 (by rw [zero_pow (by omega)]; exact hz.symm)
+  have hge : 0 ≤ P.ord (u * s ^ n) := P.mem_integers_iff_ord_nonneg.mp hs
+  have hdvd : (n : ℤ) ∣ P.ord u := by
+    have h := P.ord_mul hu0 hsn0
+    rw [P.ord_pow] at h
+    exact ⟨-P.ord s, by linarith⟩
+  obtain ⟨hneg, hdvd'⟩ := ord_sub_pow_sub_self_neg_and_dvd (v := P.valuation)
     (by rwa [ord_valuation]) (by rwa [ord_valuation]) w
     (by simpa only [ord_valuation] using
-      P.ord_sub_pow_le_of_forall_pow_ne_residue (by omega) hs hres w)
+      P.ord_sub_pow_le_of_forall_pow_ne_residue hs hres w)
   rw [ord_valuation] at hneg hdvd'
   rcases hw with hint | ⟨-, hndvd⟩
   · rw [P.mem_integers_iff_ord_nonneg] at hint
@@ -237,9 +285,8 @@ theorem not_exists_reduced_artinSchreier_representative_of_degree_eq_one (hP : P
   have hs : algebraMap k F a / t ^ n * t ^ n ∈ P.integers := by
     rw [hmul]
     exact P.algebraMap_mem_integers a
-  refine P.not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue hn
-    (s := t) (by rw [hord]; nlinarith) ⟨-P.ord t, hord⟩
-    hs ?_
+  refine P.not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue
+    (s := t) (by rw [hord]; nlinarith) hs ?_
   -- The leading coefficient is the residue of the constant `a`.
   intro c hc
   obtain ⟨c, rfl⟩ := (P.degree_eq_one_iff_algebraMap_surjective).mp hP c

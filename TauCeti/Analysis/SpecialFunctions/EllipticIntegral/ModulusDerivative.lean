@@ -155,12 +155,16 @@ theorem hasDerivAt_legendreE_modulus_zero (φ : ℝ) : HasDerivAt (legendreE φ)
   rw [funext (legendreE_def φ)]
   simpa using hasDerivAt_integral_one_sub_sq_mul_sin_sq_rpow (k := 0) (by norm_num) (1 / 2) 0 φ
 
-/-- **The derivative of `F(φ, k)` in the modulus** (DLMF §19.4): for `k ≠ 0` and `k ^ 2 < 1`,
-`∂F/∂k = (E - (1 - k²) F) / (k (1 - k²)) - k sin φ cos φ / ((1 - k²) √(1 - k² sin² φ))`. -/
-theorem hasDerivAt_legendreF_modulus (φ : ℝ) {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- **The derivative of `F(φ, k)` in the modulus** (DLMF §19.4): for `k ^ 2 < 1`,
+`∂F/∂k = (E - (1 - k²) F) / (k (1 - k²)) - k sin φ cos φ / ((1 - k²) √(1 - k² sin² φ))`. At
+`k = 0` both terms vanish by the convention `x / 0 = 0`, in accordance with
+`hasDerivAt_legendreF_modulus_zero`. -/
+theorem hasDerivAt_legendreF_modulus (φ : ℝ) {k : ℝ} (hk : k ^ 2 < 1) :
     HasDerivAt (legendreF φ)
       ((legendreE φ k - (1 - k ^ 2) * legendreF φ k) / (k * (1 - k ^ 2)) -
         k * sin φ * cos φ / ((1 - k ^ 2) * √(1 - k ^ 2 * sin φ ^ 2))) k := by
+  rcases eq_or_ne k 0 with rfl | hk₀
+  · simpa using hasDerivAt_legendreF_modulus_zero φ
   have h := hasDerivAt_integral_one_sub_sq_mul_sin_sq_rpow hk (-1 / 2) 0 φ
   -- `k` times the integrand of the derivative is the integrand of `Π(φ, k, k²)` minus that of `F`
   have hint : k * ∫ θ in (0 : ℝ)..φ,
@@ -183,10 +187,13 @@ theorem hasDerivAt_legendreF_modulus (φ : ℝ) {k : ℝ} (hk₀ : k ≠ 0) (hk 
   field_simp
   ring
 
-/-- **The derivative of `E(φ, k)` in the modulus** (DLMF §19.4): for `k ≠ 0` and `k ^ 2 < 1`,
-`∂E/∂k = (E - F) / k`. -/
-theorem hasDerivAt_legendreE_modulus (φ : ℝ) {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- **The derivative of `E(φ, k)` in the modulus** (DLMF §19.4): for `k ^ 2 < 1`,
+`∂E/∂k = (E - F) / k`. At `k = 0` the right-hand side is `0` by the convention `x / 0 = 0`, in
+accordance with `hasDerivAt_legendreE_modulus_zero`. -/
+theorem hasDerivAt_legendreE_modulus (φ : ℝ) {k : ℝ} (hk : k ^ 2 < 1) :
     HasDerivAt (legendreE φ) ((legendreE φ k - legendreF φ k) / k) k := by
+  rcases eq_or_ne k 0 with rfl | hk₀
+  · simpa using hasDerivAt_legendreE_modulus_zero φ
   have h := hasDerivAt_integral_one_sub_sq_mul_sin_sq_rpow hk (1 / 2) 0 φ
   -- `k` times the integrand of the derivative is the integrand of `E` minus that of `F`
   have hint : k * ∫ θ in (0 : ℝ)..φ,
@@ -207,19 +214,21 @@ theorem hasDerivAt_legendreE_modulus (φ : ℝ) {k : ℝ} (hk₀ : k ≠ 0) (hk 
   rw [← hint]
   field_simp
 
-/-- **The derivative of `K`** (DLMF 19.4.1): for `k ≠ 0` and `k ^ 2 < 1`,
-`K′(k) = (E(k) - (1 - k²) K(k)) / (k (1 - k²))`. -/
-theorem hasDerivAt_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- **The derivative of `K`** (DLMF 19.4.1): for `k ^ 2 < 1`,
+`K′(k) = (E(k) - (1 - k²) K(k)) / (k (1 - k²))`. At `k = 0` the right-hand side is `0` by the
+convention `x / 0 = 0`, in accordance with `hasDerivAt_legendreK_zero`. -/
+theorem hasDerivAt_legendreK {k : ℝ} (hk : k ^ 2 < 1) :
     HasDerivAt legendreK ((legendreEc k - (1 - k ^ 2) * legendreK k) / (k * (1 - k ^ 2))) k := by
-  have h := hasDerivAt_legendreF_modulus (π / 2) hk₀ hk
+  have h := hasDerivAt_legendreF_modulus (π / 2) hk
   rw [← funext legendreK_def, ← legendreEc_def] at h
   simpa using h
 
-/-- **The derivative of `E`** (DLMF 19.4.1): for `k ≠ 0` and `k ^ 2 < 1`,
-`E′(k) = (E(k) - K(k)) / k`. -/
-theorem hasDerivAt_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- **The derivative of `E`** (DLMF 19.4.1): for `k ^ 2 < 1`, `E′(k) = (E(k) - K(k)) / k`. At
+`k = 0` the right-hand side is `0` by the convention `x / 0 = 0`, in accordance with
+`hasDerivAt_legendreEc_zero`. -/
+theorem hasDerivAt_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     HasDerivAt legendreEc ((legendreEc k - legendreK k) / k) k := by
-  have h := hasDerivAt_legendreE_modulus (π / 2) hk₀ hk
+  have h := hasDerivAt_legendreE_modulus (π / 2) hk
   rw [← funext legendreEc_def, ← legendreK_def] at h
   exact h
 
@@ -235,16 +244,15 @@ theorem hasDerivAt_legendreEc_zero : HasDerivAt legendreEc 0 0 := by
 
 /-! ### Second derivatives and Legendre's differential equations -/
 
-/-- `K′(k) = (E(k) - (1 - k²) K(k)) / (k (1 - k²))` for `k ≠ 0` and `k ^ 2 < 1`, in `deriv`
-form. -/
-theorem deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- `K′(k) = (E(k) - (1 - k²) K(k)) / (k (1 - k²))` for `k ^ 2 < 1`, in `deriv` form. -/
+theorem deriv_legendreK {k : ℝ} (hk : k ^ 2 < 1) :
     deriv legendreK k = (legendreEc k - (1 - k ^ 2) * legendreK k) / (k * (1 - k ^ 2)) :=
-  (hasDerivAt_legendreK hk₀ hk).deriv
+  (hasDerivAt_legendreK hk).deriv
 
-/-- `E′(k) = (E(k) - K(k)) / k` for `k ≠ 0` and `k ^ 2 < 1`, in `deriv` form. -/
-theorem deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
+/-- `E′(k) = (E(k) - K(k)) / k` for `k ^ 2 < 1`, in `deriv` form. -/
+theorem deriv_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
     deriv legendreEc k = (legendreEc k - legendreK k) / k :=
-  (hasDerivAt_legendreEc hk₀ hk).deriv
+  (hasDerivAt_legendreEc hk).deriv
 
 @[simp]
 theorem deriv_legendreK_zero : deriv legendreK 0 = 0 :=
@@ -268,10 +276,10 @@ theorem hasDerivAt_deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) 
         (k ^ 2 * (1 - k ^ 2) ^ 2)) k := by
   have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
   have hsq := (hasDerivAt_pow 2 k).const_sub 1
-  have h := ((hasDerivAt_legendreEc hk₀ hk).sub (hsq.mul (hasDerivAt_legendreK hk₀ hk))).div
+  have h := ((hasDerivAt_legendreEc hk).sub (hsq.mul (hasDerivAt_legendreK hk))).div
     ((hasDerivAt_id' k).mul hsq) (mul_ne_zero hk₀ hc)
   refine (h.congr_of_eventuallyEq ((eventually_ne_zero_and_sq_lt_one hk₀ hk).mono
-    fun x hx ↦ deriv_legendreK hx.1 hx.2)).congr_deriv ?_
+    fun x hx ↦ deriv_legendreK hx.2)).congr_deriv ?_
   simp only [Pi.sub_apply, Pi.mul_apply]
   field_simp
   ring
@@ -283,10 +291,10 @@ theorem hasDerivAt_deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1)
     HasDerivAt (deriv legendreEc)
       (-(legendreEc k - (1 - k ^ 2) * legendreK k) / (k ^ 2 * (1 - k ^ 2))) k := by
   have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
-  have h := ((hasDerivAt_legendreEc hk₀ hk).sub (hasDerivAt_legendreK hk₀ hk)).div
+  have h := ((hasDerivAt_legendreEc hk).sub (hasDerivAt_legendreK hk)).div
     (hasDerivAt_id' k) hk₀
   refine (h.congr_of_eventuallyEq ((eventually_ne_zero_and_sq_lt_one hk₀ hk).mono
-    fun x hx ↦ deriv_legendreEc hx.1 hx.2)).congr_deriv ?_
+    fun x hx ↦ deriv_legendreEc hx.2)).congr_deriv ?_
   simp only [Pi.sub_apply]
   field_simp
   ring
@@ -300,7 +308,7 @@ theorem legendreK_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
   · simp
   have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
   rw [Function.iterate_succ_apply', Function.iterate_one,
-    (hasDerivAt_deriv_legendreK hk₀ hk).deriv, deriv_legendreK hk₀ hk]
+    (hasDerivAt_deriv_legendreK hk₀ hk).deriv, deriv_legendreK hk]
   field_simp
   ring
 
@@ -313,7 +321,7 @@ theorem legendreEc_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
   · simp
   have hc : 1 - k ^ 2 ≠ 0 := (sub_pos.2 hk).ne'
   rw [Function.iterate_succ_apply', Function.iterate_one,
-    (hasDerivAt_deriv_legendreEc hk₀ hk).deriv, deriv_legendreEc hk₀ hk]
+    (hasDerivAt_deriv_legendreEc hk₀ hk).deriv, deriv_legendreEc hk]
   field_simp
   ring
 

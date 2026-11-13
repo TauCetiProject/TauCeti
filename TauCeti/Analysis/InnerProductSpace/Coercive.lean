@@ -5,7 +5,12 @@ Authors: Jon Crall, Claude Fable 5, OpenAI GPT-5.6 Thinking, Claude Opus 5, Open
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Positive
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Coercive bounded operators
@@ -19,6 +24,25 @@ real part of every spectral value below by the coercivity constant.
 
 These facts supply the invertibility and spectral half-plane steps in
 Lyapunov arguments comparing positive spectral subspaces.
+
+For an operator on a real inner product space, the quadratic form `⟪T v, v⟫` is bounded by
+`‖T‖ ‖v‖²` (`ContinuousLinearMap.abs_inner_apply_le`), and the form `⟪S (A v), v⟫` of `S`
+against `A` by `‖S‖ ‖A‖ ‖v‖²` (`ContinuousLinearMap.abs_inner_apply_apply_le`). Two consequences
+bound the change of this form under a perturbation of `A`
+(`ContinuousLinearMap.inner_apply_apply_sub_le`) and bound below the form
+`⟪S (A v), v⟫ - ½ ⟪D v, v⟫` that appears when integrating against a family of quadratic forms
+(`ContinuousLinearMap.neg_mul_norm_sq_le_inner_sub`).
+
+In a real inner product space we also record the quadratic perturbation estimates for a coercive
+symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a quadratic centred at
+`x + z` up to the second-order error of `F`
+(`LinearMap.IsSymmetric.increment_sub_quadratic_eq`), and a coercive quadratic of this form
+dominates its perturbation on a sphere (`LinearMap.lt_on_sphere_of_abs_increment_le`).
+
+A real coercive quadratic form also loses at most the size of a perturbation of the operator
+(`sub_norm_mul_norm_sq_le_inner`) and stays nonnegative under a small perturbation and scalar
+shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
+of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
 
 ## Provenance
 
@@ -55,6 +79,110 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
   intro x
   exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
 
+/-- Conjugating a Lyapunov identity by an inverse self-adjoint square root gives the
+Hermitian part of the similar operator. -/
+theorem conj_add_star_of_lyapunov [CompleteSpace E]
+    (B C W R Rinv : E →L[𝕜] E)
+    (hR : IsSelfAdjoint R) (hRR : R * R = C) (hRRinv : R * Rinv = 1)
+    (hlyap : C * W + star W * C = B + B) :
+    R * W * Rinv + star (R * W * Rinv) =
+      Rinv * B * Rinv + Rinv * B * Rinv := by
+  have hRinv := hR.of_mul_eq_one hRRinv
+  have hRinvR : Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, hRinv.star_eq, star_one] using congrArg star hRRinv
+  have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
+  have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
+  have hconj : Rinv * (C * W + star W * C) * Rinv =
+      R * W * Rinv + Rinv * star W * R := by
+    calc
+      _ = (Rinv * C) * W * Rinv + Rinv * star W * (C * Rinv) := by noncomm_ring
+      _ = _ := by rw [hleft, hright]
+  rw [hlyap, mul_add, add_mul] at hconj
+  simpa only [star_mul, hR.star_eq, hRinv.star_eq, mul_assoc] using hconj.symm
+
+/-- If `C = R²`, `Rinv` is a right inverse of the self-adjoint `R`, and
+`C W + W† C = 2 B`, a quadratic-form lower bound `δ` for `B` gives the lower bound
+`δ / (1 + ‖R‖²)` for `R W Rinv`. No positivity of `R` or nontriviality of the space
+is required, and `δ = 0` is allowed. -/
+theorem coercive_conj_of_lyapunov [CompleteSpace E]
+    (B C W R Rinv : E →L[𝕜] E)
+    (hR : IsSelfAdjoint R)
+    (hRR : R * R = C) (hRRinv : R * Rinv = 1)
+    (hlyap : C * W + star W * C = B + B)
+    {δ : ℝ} (hδ : 0 ≤ δ) (hBcoer : B.LowerFormBoundOn ⊤ δ) :
+    ∀ x, δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
+      RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 := by
+  intro x
+  have hRinv := hR.of_mul_eq_one hRRinv
+  let y := Rinv x
+  have hxy : R y = x := by
+    simpa only [y, mul_apply_eq_comp, one_apply_eq_self] using DFunLike.congr_fun hRRinv x
+  -- Transfer the quadratic form using the conjugated Lyapunov identity.
+  have hreal : RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
+    have hsum := congrArg (fun T : E →L[𝕜] E => RCLike.re ⟪T x, x⟫_𝕜)
+      (conj_add_star_of_lyapunov B C W R Rinv hR hRR hRRinv hlyap)
+    simp only [add_apply, inner_add_left, map_add, re_inner_star_apply_self,
+      mul_apply_eq_comp] at hsum
+    have hRinvAdj : Rinv.adjoint = Rinv := by
+      rw [← star_eq_adjoint]; exact hRinv.star_eq
+    have hinner : RCLike.re ⟪Rinv (B y), x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
+      rw [← hRinvAdj, adjoint_inner_left]
+    rw [hinner] at hsum
+    simp only [mul_apply_eq_comp]
+    linarith
+  -- The inverse change of variables costs at most the square of the operator norm.
+  have hnorm : ‖x‖ ≤ ‖R‖ * ‖y‖ := by rw [← hxy]; exact R.le_opNorm y
+  have hsq : ‖x‖ ^ 2 ≤ ‖R‖ ^ 2 * ‖y‖ ^ 2 := by
+    nlinarith [hnorm, norm_nonneg x, norm_nonneg R, norm_nonneg y]
+  have hden : 0 < 1 + ‖R‖ ^ 2 := by positivity
+  have hcoef : δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2 ≤ δ := by
+    rw [div_mul_eq_mul_div]
+    apply (div_le_iff₀ hden).2
+    nlinarith [hδ]
+  rw [hreal]
+  calc
+    δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
+        δ / (1 + ‖R‖ ^ 2) * (‖R‖ ^ 2 * ‖y‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hsq (div_nonneg hδ hden.le)
+    _ = (δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2) * ‖y‖ ^ 2 := by ring
+    _ ≤ δ * ‖y‖ ^ 2 := mul_le_mul_of_nonneg_right hcoef (sq_nonneg ‖y‖)
+    _ ≤ RCLike.re ⟪B y, y⟫_𝕜 := (lowerFormBoundOn_iff B ⊤ δ).mp hBcoer y Submodule.mem_top
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The quadratic form of a bounded operator `T` is bounded by `‖T‖ ‖v‖²`. -/
+theorem abs_inner_apply_le (T : F →L[ℝ] F) (v : F) : |⟪T v, v⟫_ℝ| ≤ ‖T‖ * ‖v‖ ^ 2 :=
+  calc |⟪T v, v⟫_ℝ| ≤ ‖T v‖ * ‖v‖ := abs_real_inner_le_norm _ _
+    _ ≤ ‖T‖ * ‖v‖ * ‖v‖ := by gcongr; exact T.le_opNorm v
+    _ = ‖T‖ * ‖v‖ ^ 2 := by ring
+
+/-- The quadratic form of `S` against `A` is bounded by `‖S‖ ‖A‖ ‖v‖²`. -/
+theorem abs_inner_apply_apply_le (S A : F →L[ℝ] F) (v : F) :
+    |⟪S (A v), v⟫_ℝ| ≤ ‖S‖ * ‖A‖ * ‖v‖ ^ 2 :=
+  ((S.comp A).abs_inner_apply_le v).trans
+    (mul_le_mul_of_nonneg_right (S.opNorm_comp_le A) (sq_nonneg _))
+
+/-- The quadratic form of `S` against `B` differs from that against `A` by at most
+`‖S‖ ‖B - A‖ ‖v‖²`. -/
+theorem inner_apply_apply_sub_le (S A B : F →L[ℝ] F) (v : F) :
+    ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ ≤ ‖S‖ * ‖B - A‖ * ‖v‖ ^ 2 := by
+  have h : ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ = -⟪S ((B - A) v), v⟫_ℝ := by
+    simp only [sub_apply, map_sub, inner_sub_left]
+    ring
+  rw [h, neg_le]
+  exact neg_le_of_abs_le (S.abs_inner_apply_apply_le (B - A) v)
+
+/-- The quadratic form `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` is at least `-(‖S‖ ‖A‖ + ‖D‖ / 2) ‖v‖²`. -/
+theorem neg_mul_norm_sq_le_inner_sub (S A D : F →L[ℝ] F) (v : F) :
+    -((‖S‖ * ‖A‖ + ‖D‖ / 2) * ‖v‖ ^ 2) ≤ ⟪S (A v), v⟫_ℝ - ⟪D v, v⟫_ℝ / 2 := by
+  have h₁ := neg_le_of_abs_le (S.abs_inner_apply_apply_le A v)
+  have h₂ := le_of_abs_le (D.abs_inner_apply_le v)
+  linarith
+
+end Real
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
 /-- A uniform lower bound for the real quadratic form bounds real parts of spectral values below. -/
@@ -75,4 +203,140 @@ theorem le_re_of_mem_spectrum_of_coercive (N : E →L[ℂ] E) {c : ℝ}
   rw [spectrum.mem_iff] at hz
   exact hz (by simpa [Algebra.algebraMap_eq_smul_one] using hunit.neg)
 
+/-- A positive invertible Lyapunov weight transports a coercive form bound to a spectral
+half-plane bound, with the square-root similarity made explicit in the constant. -/
+theorem le_re_of_mem_spectrum_of_positive_lyapunov
+    (B C W : E →L[ℂ] E) (hC : IsStrictlyPositive C)
+    (hlyap : C * W + star W * C = B + B) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hB : B.LowerFormBoundOn ⊤ δ)
+    {z : ℂ} (hz : z ∈ spectrum ℂ W) :
+    δ / (1 + ‖C ^ (1 / 2 : ℝ)‖ ^ 2) ≤ z.re := by
+  let R := C ^ (1 / 2 : ℝ)
+  let Rinv := C ^ (-(1 / 2 : ℝ))
+  have hRinvR : Rinv * R = 1 := CFC.rpow_neg_mul_rpow (1 / 2 : ℝ) hC
+  have hRRinv : R * Rinv = 1 := CFC.rpow_mul_rpow_neg (1 / 2 : ℝ) hC
+  have hRR : R * R = C := by
+    simpa only [CFC.sqrt_eq_rpow, R] using CFC.sqrt_mul_sqrt_self C hC.nonneg
+  -- The inverse-equivalence constructor uses composition; translate at this boundary only.
+  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv
+    (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRRinv)
+    (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRinvR)
+  have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R * W * Rinv := by
+    ext x
+    simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
+      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
+      mul_apply_eq_comp, e]
+  have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
+    rwa [AlgEquiv.spectrum_eq]
+  rw [he] at hz'
+  exact le_re_of_mem_spectrum_of_coercive _
+    (coercive_conj_of_lyapunov B C W R Rinv
+      (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
+      hRR hRRinv hlyap hδ hB) hz'
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **A coercive quadratic form loses at most the size of the perturbation.** If
+`κ ‖v‖² ≤ ⟪A v, v⟫`, then `(κ - ‖D - A‖) ‖v‖² ≤ ⟪D v, v⟫`. -/
+theorem sub_norm_mul_norm_sq_le_inner {A : F →L[ℝ] F} {κ : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (D : F →L[ℝ] F) (v : F) :
+    (κ - ‖D - A‖) * ‖v‖ ^ 2 ≤ inner ℝ (D v) v := by
+  have h₁ : -(‖D - A‖ * ‖v‖ ^ 2) ≤ inner ℝ ((D - A) v) v :=
+    neg_le_of_abs_le ((D - A).abs_inner_apply_le v)
+  have h₂ : inner ℝ (D v) v = inner ℝ (A v) v + inner ℝ ((D - A) v) v := by
+    rw [← inner_add_left]; simp
+  nlinarith [hA v]
+
+/-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
+and `‖D - A‖ ≤ κ + t`, then `0 ≤ ⟪(D + t • id) v, v⟫`. -/
+theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
+    0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
+  have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
+      inner ℝ (D v) v + t * ‖v‖ ^ 2 := by
+    simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.id_apply,
+      inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+  rw [h₂]
+  nlinarith [sub_norm_mul_norm_sq_le_inner hA D v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+
+end Real
+
 end ContinuousLinearMap
+
+namespace LinearMap
+
+section Real
+
+open Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The increment of `g = F - ⟪·, p⟫` for `p = y + A z` from `x` to `x'` is
+`⟪A (x' - x - z), x' - x - z⟫ / 2 - ⟪A z, z⟫ / 2`, up to the error of the second-order expansion
+of `F` at `x` with gradient `y` and Hessian `A`: for symmetric `A`, the difference of the two
+is exactly that error, where `F x' = a` and `F x = b`. -/
+theorem IsSymmetric.increment_sub_quadratic_eq {A : E →ₗ[ℝ] E} (hA : A.IsSymmetric)
+    {x x' y z : E} {a b : ℝ} :
+    (a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
+      (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2) =
+      a - b - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2 := by
+  have hsym : ⟪A z, x' - x⟫_ℝ = ⟪A (x' - x), z⟫_ℝ := by
+    exact (hA z (x' - x)).trans (real_inner_comm _ _)
+  have hexp : ⟪A (x' - x - z), x' - x - z⟫_ℝ =
+      ⟪A (x' - x), x' - x⟫_ℝ - 2 * ⟪A (x' - x), z⟫_ℝ + ⟪A z, z⟫_ℝ := by
+    generalize x' - x = h at hsym ⊢
+    rw [map_sub, inner_sub_left, inner_sub_right, inner_sub_right, hsym]
+    ring
+  have hpx : ⟪x', y + A z⟫_ℝ - ⟪x, y + A z⟫_ℝ = ⟪y, x' - x⟫_ℝ + ⟪A (x' - x), z⟫_ℝ := by
+    rw [← inner_sub_left, inner_add_right, ← hsym, real_inner_comm y, real_inner_comm (A z)]
+  linarith
+
+/-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
+to `δ ‖x' - x‖ ^ 2` with `δ` small relative to the coercivity constant `c` of `A` and `‖z‖ ≤ s * r`
+for `s < 1`, then `g` on the sphere exceeds `g (x + z)`. -/
+theorem lt_on_sphere_of_abs_increment_le {A : E →ₗ[ℝ] E} {g : E → ℝ} {x z : E}
+    {r s c δ : ℝ} (hc : 0 < c) (hcA : ∀ w, c * ‖w‖ ^ 2 ≤ ⟪A w, w⟫_ℝ) (hs : s < 1) (hr : 0 < r)
+    (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
+    (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
+      ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
+    ∀ x' ∈ sphere x r, g (x + z) < g x' := by
+  have hη : 0 < 1 - s := sub_pos.2 hs
+  have hsr : s * r ≤ r := by nlinarith [norm_nonneg z]
+  intro x' hx'
+  have hnorm : ‖x' - x‖ = r := by
+    rw [← dist_eq_norm]
+    exact mem_sphere.1 hx'
+  replace hx' := sphere_subset_closedBall hx'
+  have hzr : x + z ∈ closedBall x r := by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
+    exact hz.trans hsr
+  have h₁ := hincr _ hzr
+  have h₂ := hincr x' hx'
+  have hδ0 : 0 ≤ δ := by
+    have := (abs_nonneg _).trans h₂
+    rw [hnorm] at this
+    exact nonneg_of_mul_nonneg_left this (pow_pos hr 2)
+  rw [add_sub_cancel_left, sub_self, map_zero, inner_zero_left, zero_div, zero_sub] at h₁
+  have hηr : (1 - s) * r ≤ ‖x' - x - z‖ := by
+    have := norm_sub_norm_le (x' - x) z
+    rw [hnorm] at this
+    linarith
+  have hq := hcA (x' - x - z)
+  have hq' : c * ((1 - s) * r) ^ 2 ≤ c * ‖x' - x - z‖ ^ 2 :=
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mul_pos hη hr).le hηr 2) hc.le
+  have hzr' : ‖z‖ ^ 2 ≤ r ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hz.trans hsr) 2
+  have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ0
+  have hδr : δ * r ^ 2 ≤ c * ((1 - s) * r) ^ 2 / 8 := by
+    have := mul_le_mul_of_nonneg_right hδ (sq_nonneg r)
+    linarith [this, show c * (1 - s) ^ 2 / 8 * r ^ 2 = c * ((1 - s) * r) ^ 2 / 8 by ring]
+  have hpos : 0 < c * ((1 - s) * r) ^ 2 := by positivity
+  rw [abs_le] at h₁ h₂
+  rw [hnorm] at h₂
+  linarith [h₁.2, h₂.1]
+
+end Real
+
+end LinearMap

@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Finpartition
 
@@ -110,6 +111,19 @@ theorem irregularPairs_subset_offDiag : S.irregularPairs ε P ⊆ P.parts.offDia
   obtain ⟨h₁, h₂, h₃, -⟩ := S.mem_irregularPairs.1 hAB
   exact mem_offDiag.2 ⟨h₁, h₂, h₃⟩
 
+/-- Choosing two sets for each irregular pair gives at most `2 * #P.parts ^ 2` sets. -/
+private theorem card_image_union_irregularPairs_le (P : Finpartition (univ : Finset V))
+    (X Y : Finset V × Finset V → Finset V) :
+    #((S.irregularPairs ε P).image X ∪ (S.irregularPairs ε P).image Y) ≤ 2 * #P.parts ^ 2 := by
+  have hI : #(S.irregularPairs ε P) ≤ #P.parts * #P.parts :=
+    (card_le_card S.irregularPairs_subset_offDiag).trans
+      ((card_offDiag_le_sq P.parts).trans_eq (sq _))
+  calc _ ≤ #((S.irregularPairs ε P).image X) + #((S.irregularPairs ε P).image Y) :=
+        card_union_le _ _
+    _ ≤ #(S.irregularPairs ε P) + #(S.irregularPairs ε P) :=
+        add_le_add card_image_le card_image_le
+    _ ≤ 2 * #P.parts ^ 2 := by rw [sq]; omega
+
 variable [Fintype κ]
 
 /-- **Energy increment.** If the ordered pairs of distinct parts of `P` that are not `ε`-regular
@@ -141,17 +155,11 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
   set R := atomise univ (I.image X ∪ I.image Y)
   refine ⟨P ⊓ R, inf_le_left, ?_, ?_⟩
   · -- There are at most `2 * #P.parts ^ 2` witnesses to cut along.
-    have hF : #(I.image X ∪ I.image Y) ≤ 2 * #P.parts ^ 2 := by
-      have hI' : #I ≤ #P.parts * #P.parts :=
-        (card_le_card (S.irregularPairs_subset_offDiag)).trans
-          (by rw [offDiag_card]; exact Nat.sub_le _ _)
-      calc #(I.image X ∪ I.image Y) ≤ #(I.image X) + #(I.image Y) := card_union_le _ _
-        _ ≤ #I + #I := add_le_add card_image_le card_image_le
-        _ ≤ 2 * #P.parts ^ 2 := by rw [sq]; omega
-    calc #(P ⊓ R).parts ≤ #P.parts * #R.parts := card_parts_inf_le_mul P R
-      _ ≤ #P.parts * 2 ^ (2 * #P.parts ^ 2) := by
-        gcongr
-        exact card_atomise_le.trans (Nat.pow_le_pow_right two_pos hF)
+    calc #(P ⊓ R).parts ≤ #P.parts * 2 ^ #(I.image X ∪ I.image Y) :=
+          P.card_parts_inf_atomise_le _
+      _ ≤ #P.parts * 2 ^ (2 * #P.parts ^ 2) :=
+          Nat.mul_le_mul_left _
+            (Nat.pow_le_pow_right two_pos (S.card_image_union_irregularPairs_le P X Y))
       _ = #P.parts * 4 ^ #P.parts ^ 2 := by rw [pow_mul]; norm_num
   · -- Every witness is a union of parts of the refinement.
     have hres {Z : Finset V} (hZ : Z ∈ I.image X ∪ I.image Y) :
@@ -159,14 +167,9 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
       fun _ hC ↦ subset_or_disjoint_of_mem_inf_atomise hC hZ
     -- Each witness rectangle carries an `ε²`-fraction of its block.
     have hsize : ∀ AB ∈ I, ε ^ 2 * #((AB.1 ×ˢ AB.2).filter fun p => p.1 ≠ p.2) ≤
-        (#((X AB ×ˢ Y AB).filter fun p => p.1 ≠ p.2) : ℝ) := fun AB hAB ↦ by
-      rw [filter_ne_product_of_disjoint (hdisj hAB),
-        filter_ne_product_of_disjoint ((hdisj hAB).mono (hXsub AB hAB) (hYsub AB hAB)),
-        card_product, card_product]
-      push_cast
-      calc ε ^ 2 * (#AB.1 * #AB.2 : ℝ) = (ε * #AB.1) * (ε * #AB.2) := by ring
-        _ ≤ #(X AB) * #(Y AB) :=
-          mul_le_mul (hXcard AB hAB) (hYcard AB hAB) (by positivity) (Nat.cast_nonneg _)
+        (#((X AB ×ˢ Y AB).filter fun p => p.1 ≠ p.2) : ℝ) := fun AB hAB ↦
+      Finset.sq_mul_card_filter_ne_product_le hε.le (hdisj hAB) (hXsub AB hAB) (hYsub AB hAB)
+        (hXcard AB hAB) (hYcard AB hAB)
     have hgain := S.energy_increment_of_witnesses (inf_le_left : P ⊓ R ≤ P) I
       (fun AB hAB ↦ ⟨(hmem hAB).1, (hmem hAB).2.1⟩) c X Y hε.le hXsub hYsub
       (fun AB hAB ↦ hres (mem_union_left _ (mem_image_of_mem X hAB)))
@@ -187,19 +190,11 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
       exact Nat.cast_pos.2 (card_pos.2 ⟨(a, b), mem_offDiag.2 ⟨mem_univ _, mem_univ _,
         (hdisj hAB₀).forall_ne_finset ha hb⟩⟩)
     have hDn : D ≤ n ^ 2 := by
-      have : #(univ : Finset V).offDiag ≤ Fintype.card V * Fintype.card V := by
-        rw [offDiag_card, card_univ]
-        exact Nat.sub_le _ _
-      have h := Nat.cast_le (α := ℝ) |>.2 this
-      rw [Nat.cast_mul] at h
-      rw [sq]
+      have h := (Nat.cast_le (α := ℝ)).2 (card_offDiag_le_sq (univ : Finset V))
+      rw [card_univ] at h
+      push_cast at h
       exact h
-    have hn : 0 < n ^ 2 := hD.trans_le hDn
-    have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
-    have hM : ε < M / D :=
-      ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
-    have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
-    nlinarith
+    linarith [TauCeti.pow_five_lt_of_mul_div_le hε hD hDn hbad hgain]
 
 /-- The refinement invariant: after `k` rounds starting from `P₀`, either the irregular pairs
 cover at most `ε |V|²` ordered pairs of vertices, or the energy has grown by at least `k ε⁵`. -/

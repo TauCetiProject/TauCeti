@@ -29,6 +29,8 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
   an integral element, then the square root is integral.
 * `TauCeti.one_add_pow_ne_zero_of_valuation_lt_one`: a positive power of an element of valuation
   less than one cannot equal `-1`.
+* `TauCeti.valueGroup_valuation_eq_top`: the `valueGroup` of the canonical valuation of any ring
+  with a valuative relation is `⊤`.
 * `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
   less than one are the image of the maximal ideal of the ring of integers.
 * `TauCeti.natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd`: a positive integer
@@ -107,6 +109,27 @@ theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)
   intro h
   simpa [h] using (valuation K).map_one_add_of_lt hxpow
 
+variable (K) in
+/-- The value group of the canonical valuation of a ring with a valuative relation is the entire
+group of units `(ValueGroupWithZero K)ˣ`. -/
+@[simp]
+theorem valueGroup_valuation_eq_top :
+    MonoidWithZeroHom.valueGroup (valuation K : K →*₀ ValueGroupWithZero K) = ⊤ := by
+  refine (Subgroup.eq_top_iff' _).2 fun γ ↦ ?_
+  obtain ⟨a, b, hab⟩ := exists_valuation_posSubmonoid_div_valuation_posSubmonoid_eq γ
+  have ha0 : valuation K a ≠ 0 := by
+    rw [ne_eq, valuation_eq_zero_iff, not_vle]
+    exact (posSubmonoid_def _).1 a.2
+  have hb0 : valuation K b ≠ 0 := by
+    rw [ne_eq, valuation_eq_zero_iff, not_vle]
+    exact (posSubmonoid_def _).1 b.2
+  have hγ : γ = Units.mk0 (valuation K a) ha0 * (Units.mk0 (valuation K b) hb0)⁻¹ := by
+    ext
+    simp [div_eq_mul_inv, ← hab]
+  rw [hγ]
+  exact mul_mem (MonoidWithZeroHom.mem_valueGroup _ ⟨a, rfl⟩)
+    (MonoidWithZeroHom.inv_mem_valueGroup _ ⟨b, rfl⟩)
+
 /-- An element of a field has valuation below `1` exactly when it lies in the maximal ideal of the
 ring of integers. -/
 theorem valuation_lt_one_iff_mem_image_maximalIdeal {K : Type*} [Field K] [ValuativeRel K]
@@ -135,7 +158,8 @@ theorem natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd {K : Type*
   have : CharP (valuation K).integer (ringChar K) :=
     (Subring.subtype _).charP Subtype.val_injective _
   have hO : ringChar (valuation K).integer = ringChar K := ringChar.eq _ _
-  rw [IsLocalRing.ringChar_residueField_of_ringChar_ne_zero (hO ▸ hK), hO]
+  rw [IsLocalRing.ringChar_residueField_of_prime_ringChar
+    (hO ▸ CharP.char_prime_of_ne_zero K hK), hO]
   exact ⟨rfl, hdvd⟩
 
 end TauCeti

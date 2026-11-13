@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.RepresentationTheory.Spin.Weight
 import TauCeti.Data.Fin.Basic
-import TauCeti.LinearAlgebra.RootSystem.Chain
+import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 
 /-!
 # Type `B` spin weights in the simply connected character lattice
@@ -351,13 +351,10 @@ theorem typeBSpinReflection_eq_erase_of_mem_last {n : ℕ} {i : Fin n}
 
 /-- An adjacent reflection moves a positive successor sign to the negative node. -/
 theorem typeBSpinReflection_eq_insert_erase_of_not_mem {n : ℕ} {i : Fin n}
-    (h : (i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∉ s) (hj : Order.succ i ∈ s) :
+    {s : Finset (Fin n)} (hi : i ∉ s) (hj : Order.succ i ∈ s) :
     typeBSpinReflection i s = insert i (s.erase (Order.succ i)) := by
-  have hne : i ≠ Order.succ i := by
-    intro heq
-    have hv := congrArg Fin.val heq
-    rw [Fin.val_orderSucc_of_lt h] at hv
-    omega
+  have hne : i ≠ Order.succ i := fun heq => hi (heq ▸ hj)
+  have h : (i : ℕ) + 1 < n := by_contra fun h ↦ hne (Fin.orderSucc_eq_self_of_not_lt h).symm
   ext a
   rw [mem_typeBSpinReflection_iff_of_lt h]
   by_cases ha : a = i
@@ -368,13 +365,10 @@ theorem typeBSpinReflection_eq_insert_erase_of_not_mem {n : ℕ} {i : Fin n}
 
 /-- An adjacent reflection moves a positive node sign to its negative successor. -/
 theorem typeBSpinReflection_eq_insert_erase_of_mem {n : ℕ} {i : Fin n}
-    (h : (i : ℕ) + 1 < n) {s : Finset (Fin n)} (hi : i ∈ s) (hj : Order.succ i ∉ s) :
+    {s : Finset (Fin n)} (hi : i ∈ s) (hj : Order.succ i ∉ s) :
     typeBSpinReflection i s = insert (Order.succ i) (s.erase i) := by
-  have hne : i ≠ Order.succ i := by
-    intro heq
-    have hv := congrArg Fin.val heq
-    rw [Fin.val_orderSucc_of_lt h] at hv
-    omega
+  have hne : i ≠ Order.succ i := fun heq => hj (heq ▸ hi)
+  have h : (i : ℕ) + 1 < n := by_contra fun h ↦ hne (Fin.orderSucc_eq_self_of_not_lt h).symm
   ext a
   rw [mem_typeBSpinReflection_iff_of_lt h]
   by_cases ha : a = i
@@ -666,7 +660,7 @@ private theorem exists_typeBSpinReflections_eq_aux {n : ℕ} (d : ℕ) :
     have hsucca : ((Order.succ a : Fin n) : ℕ) = (a : ℕ) + 1 := Fin.val_orderSucc_of_lt hlt
     have hasucclt : a < (Order.succ a : Fin n) := by rw [Fin.lt_def, hsucca]; omega
     have hsuccnotmem : (Order.succ a : Fin n) ∉ s := hmax _ hasucclt
-    have hrefl := typeBSpinReflection_eq_insert_erase_of_mem hlt ha hsuccnotmem
+    have hrefl := typeBSpinReflection_eq_insert_erase_of_mem ha hsuccnotmem
     have hmax' : ∀ b : Fin n, (Order.succ a : Fin n) < b → b ∉ insert
         (Order.succ a : Fin n) (s.erase a) := by
       intro b hb hmem

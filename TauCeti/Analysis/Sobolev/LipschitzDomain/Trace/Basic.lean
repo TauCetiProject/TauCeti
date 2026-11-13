@@ -148,7 +148,7 @@ theorem W1p.lipschitzChartTrace_eq_zero_of_mem_w1p0Submodule (hp : p ≠ (∞ : 
     W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
   rw [W1p.lipschitzChartTrace_apply]
   exact (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp _ _).1
-    (W1p.lipschitzChartLocalizeL_mem_w1p0Submodule hp h hψ hM hψM hgM hs hu)
+    (W1p.lipschitzChartLocalizeL_mem_w1p0Submodule h hψ hM hψM hgM hs hu)
 
 /-- The local trace depends only on the cutoff product on the original domain. In particular,
 values outside the support of the cutoff have no effect on it. -/

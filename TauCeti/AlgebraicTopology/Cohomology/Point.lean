@@ -29,8 +29,9 @@ positive-degree singular cohomology (`TopCat.singularCohomologyMap_eq_zero_of_nu
 and positive-degree singular cohomology of a contractible space vanishes
 (`TauCeti.isZero_singularCohomology_of_contractibleSpace`). For the open sets of a categorical
 cover in the sense of Lusternik and Schnirelmann, whose inclusions are nullhomotopic, this says
-that every positive-degree class restricts to zero on each open of the cover, which is the input
-to the cup-length lower bound for the Lusternik–Schnirelmann category.
+that every positive-degree class restricts to zero on each open of the cover, so comes from the
+cohomology relative to that open (`TopPair.epi_singularCohomologyπ_of_nullhomotopic`), which is the
+input to the cup-length lower bound for the Lusternik–Schnirelmann category.
 
 ## Main declarations
 
@@ -46,6 +47,10 @@ to the cup-length lower bound for the Lusternik–Schnirelmann category.
   `TauCeti.singularCohomologyPointZeroIso_hom_naturality_left`).
 * `TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic` and
   `TauCeti.isZero_singularCohomology_of_contractibleSpace`.
+* `TopPair.epi_singularCohomologyπ_of_nullhomotopic`: if the inclusion `A ⟶ X` is nullhomotopic,
+  every positive-degree class of `X` comes from `Hⁿ(X, A)`.
+* `TauCeti.isZero_singularCohomology_of_isEmpty`: the singular cohomology of the empty space
+  vanishes.
 
 The cochain contraction follows the unmerged Tau Ceti pull request
 https://github.com/TauCetiProject/TauCeti/pull/20882.
@@ -180,7 +185,7 @@ lemma singularCohomologyPointZeroIso_hom_naturality_right {M' : C} (g : M ⟶ M'
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M' X σ,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X σ]
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   -- The cochain map postcomposes with `g` (`ChainComplex.linearYonedaObjMap_f_hom_apply`), and
   -- so does `Linear.rightComp`; its statement is typed in the cochain module, so it is applied
   -- as a term.
@@ -228,16 +233,32 @@ theorem singularCohomologyMap_eq_zero_of_nullhomotopic {X Y : TopCat.{w}} {f : X
     (hf : f.hom.Nullhomotopic) {n : ℕ} (hn : n ≠ 0) :
     TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f n = 0 := by
   obtain ⟨y, ⟨H⟩⟩ := hf
-  let p : X ⟶ TopCat.of PUnit.{w + 1} := TopCat.ofHom (ContinuousMap.const X PUnit.unit)
-  let s : TopCat.of PUnit.{w + 1} ⟶ Y := TopCat.ofHom (ContinuousMap.const _ y)
+  let p : X ⟶ of PUnit.{w + 1} := ofHom (ContinuousMap.const X PUnit.unit)
+  let s : of PUnit.{w + 1} ⟶ Y := ofHom (ContinuousMap.const _ y)
   -- The underlying continuous map of `p ≫ s` is `ContinuousMap.const X y` by definition, so `H`
   -- is a homotopy from `f` to `p ≫ s`.
-  rw [TopCat.Homotopy.congr_singularCohomologyMap (f := f) (g := p ≫ s) H R k M n,
+  rw [Homotopy.congr_singularCohomologyMap (f := f) (g := p ≫ s) H R k M n,
     singularCohomologyMap_comp,
-    (TauCeti.isZero_singularCohomology_point R k M (TopCat.of PUnit.{w + 1}) hn).eq_of_tgt
+    (TauCeti.isZero_singularCohomology_point R k M (of PUnit.{w + 1}) hn).eq_of_tgt
       (TopCat.singularCohomologyMap s n) 0, zero_comp]
 
 end TopCat
+
+namespace TopPair
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+
+/-- **Positive-degree classes lift relative to a nullhomotopic subspace.** If the inclusion
+`A ⟶ X` of a pair `(X, A)` is nullhomotopic, then in positive degrees the map `Hⁿ(X, A) ⟶ Hⁿ(X)`
+is an epimorphism: by exactness of the long exact sequence of the pair, since the restriction
+`Hⁿ(X) ⟶ Hⁿ(A)` vanishes. -/
+theorem epi_singularCohomologyπ_of_nullhomotopic (P : TopPair.{w}) (hP : P.map.hom.Nullhomotopic)
+    {n : ℕ} (hn : n ≠ 0) : Epi (P.singularCohomologyπ R k M n) :=
+  (P.singularCohomology_exact_space R k M n).epi_f
+    (TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic hP hn)
+
+end TopPair
 
 namespace TauCeti
 
@@ -250,5 +271,16 @@ theorem isZero_singularCohomology_of_contractibleSpace (X : TopCat.{w}) [Contrac
     {n : ℕ} (hn : n ≠ 0) : IsZero (X.singularCohomology R k M n) := by
   rw [IsZero.iff_id_eq_zero, ← TopCat.singularCohomologyMap_id]
   exact TopCat.singularCohomologyMap_eq_zero_of_nullhomotopic (f := 𝟙 X) (id_nullhomotopic X) hn
+
+/-- **The singular cohomology of the empty space vanishes** in every degree, for arbitrary
+coefficients: there are no singular simplices, so the singular cochain complex is zero. -/
+theorem isZero_singularCohomology_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
+    IsZero (X.singularCohomology R k M n) := by
+  have : (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
+    ((ChainComplex.linearYonedaFunctor k M).map_isZero
+      ((TopCat.toSSet.obj X).isZero_chainComplex R).op)
 
 end TauCeti

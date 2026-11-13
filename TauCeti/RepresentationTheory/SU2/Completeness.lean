@@ -65,13 +65,11 @@ the span.
 
 ## References
 
-This is the completeness half of the "the `{χ_n}` are an orthonormal basis of the class functions
-of `SU(2)`" item of the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`; orthonormality is
-`TauCeti.SU2.character_symPower_orthonormal_torusExp`. It is the analytic input to the remaining
-item of that engine case, that the `Symᵈ(ℂ²)` exhaust the finite-dimensional irreducibles, which
-is *not* proved here: that deduction additionally needs the symmetric powers as continuous unitary
-representations, so that the character orthogonality of
+Orthonormality of the characters is `TauCeti.SU2.character_symPower_orthonormal_torusExp`. The
+density proved here is the analytic input to the exhaustion theorem, that the `Symᵈ(ℂ²)` exhaust the
+finite-dimensional irreducibles, which is *not* proved here but in
+`TauCeti/RepresentationTheory/SU2/Exhaustion.lean`: that deduction additionally needs the symmetric
+powers as continuous representations, so that the character orthogonality of
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` applies to them.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
@@ -340,26 +338,15 @@ theorem exists_mem_characterSpan_norm_sub_lt {f : C(SU2, ℂ)}
         + Complex.I * ((p₂.eval (2 * Real.cos θ) : ℝ) : ℂ) := by
     simp [polyTrace_apply p₁ htr, polyTrace_apply p₂ htr]
   rw [ContinuousMap.sub_apply, hfg, hval]
-  have hsplit : F (2 * Real.cos θ)
-        - (((p₁.eval (2 * Real.cos θ) : ℝ) : ℂ)
-          + Complex.I * ((p₂.eval (2 * Real.cos θ) : ℝ) : ℂ))
-      = ((((F (2 * Real.cos θ)).re - p₁.eval (2 * Real.cos θ) : ℝ)) : ℂ)
-        + Complex.I * ((((F (2 * Real.cos θ)).im - p₂.eval (2 * Real.cos θ) : ℝ)) : ℂ) := by
-    push_cast
-    linear_combination -Complex.re_add_im (F (2 * Real.cos θ))
   have h₁' : |(F (2 * Real.cos θ)).re - p₁.eval (2 * Real.cos θ)| < ε / 3 := by
     rw [abs_sub_comm]; exact h₁
   have h₂' : |(F (2 * Real.cos θ)).im - p₂.eval (2 * Real.cos θ)| < ε / 3 := by
     rw [abs_sub_comm]; exact h₂
-  rw [hsplit]
-  calc ‖((((F (2 * Real.cos θ)).re - p₁.eval (2 * Real.cos θ) : ℝ)) : ℂ)
-          + Complex.I * ((((F (2 * Real.cos θ)).im - p₂.eval (2 * Real.cos θ) : ℝ)) : ℂ)‖
-      ≤ |(F (2 * Real.cos θ)).re - p₁.eval (2 * Real.cos θ)|
-        + |(F (2 * Real.cos θ)).im - p₂.eval (2 * Real.cos θ)| := by
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Complex.norm_real,
-          Real.norm_eq_abs, Real.norm_eq_abs]
-    _ < ε := by linarith
+  refine (Complex.norm_le_abs_re_add_abs_im _).trans_lt ?_
+  simp only [Complex.sub_re, Complex.sub_im, Complex.add_re, Complex.add_im, Complex.mul_re,
+    Complex.mul_im, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
+    one_mul, mul_zero, sub_zero, zero_add, add_zero]
+  linarith [h₁', h₂']
 
 /-- **The closure of the span of the characters is exactly the continuous class functions of
 `SU(2)`.** Membership of the closure is uniform approximability by linear combinations of the

@@ -116,7 +116,7 @@ private theorem ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq {P : Plac
   set f := relativeDegree k k⟮x⟯ P
   set c := D₀.coeff P₀
   have hc : 0 < c := by
-    rcases (Int.natCast_nonneg e).lt_or_eq with he | he
+    rcases (Int.natCast_nonneg e).lt_or_eq with _ | he
     · nlinarith
     · rw [← he] at hcoeff
       omega
@@ -159,7 +159,7 @@ theorem ramificationIdx_mul_relativeDegree_eq_two_of_isPoleNumber {P : Place k F
   set z₀ : k⟮x⟯ := ⟨u, hzx⟩
   have hz₀ : z₀ ≠ 0 := fun h ↦ hz0 (congrArg Subtype.val h)
   refine ramificationIdx_mul_relativeDegree_eq_two_of_conorm_eq hx hdeg hm
-    (Divisor.isEffective_poles hK (Units.mk0 z₀ hz₀)).zero_le ?_
+    (Divisor.poles_nonneg hK (Units.mk0 z₀ hz₀)) ?_
   rw [Divisor.conorm_poles k F hK hF, ← hpoles]
   congr 1
   exact Units.ext (by simp [z₀])
@@ -189,7 +189,7 @@ private theorem conorm_ofPoint_restrict_of_one_lt_ramificationIdx {P : Place k F
     · simp [he, P₀]
     · rw [WeilDivisor.coeff_ofPoint_of_ne hQP, mul_zero, sub_zero]
       exact mul_nonneg (Int.natCast_nonneg _)
-        (WeilDivisor.coeff_le_coeff (WeilDivisor.isEffective_ofPoint P₀).zero_le _)
+        (WeilDivisor.coeff_le_coeff (WeilDivisor.ofPoint_nonneg P₀) _)
   have hEdeg : Divisor.degree E = 0 := by
     simp only [E, map_sub, Divisor.degree_conorm_of_finrank_eq_one k F hK (Module.finrank_self k),
       hdeg, Divisor.degree_ofPoint, hP₀, Divisor.degree_zsmul, hP]
@@ -236,7 +236,7 @@ theorem isPoleNumber_two_of_one_lt_ramificationIdx {P : Place k F} (hP : P.degre
 theorem weierstrassGaps_eq_image_range_of_one_lt_ramificationIdx {P : Place k F}
     (hP : P.degree = 1) (hram : 1 < ramificationIdx k⟮x⟯ P) :
     P.weierstrassGaps = (Finset.range (genus k F)).image fun i ↦ 2 * i + 1 :=
-  weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hex hP
+  weierstrassGaps_eq_image_range_of_isPoleNumber_two hF hP
     (isPoleNumber_two_of_one_lt_ramificationIdx hF hex hx hdeg hP hram)
 
 /-- **No number up to the genus is a pole number at an unramified rational place.** -/
@@ -262,7 +262,7 @@ theorem weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one {P : Place k F} (hP : P
   · obtain ⟨hm1, hmg⟩ := Finset.mem_Icc.mp hm
     exact (P.mem_weierstrassGaps_iff_isGap hF hex m).mpr
       (isGap_of_ramificationIdx_eq_one hF hex hx hdeg hP hram hm1 hmg)
-  · rw [card_weierstrassGaps hF hex hP, Nat.card_Icc, Nat.add_sub_cancel]
+  · rw [card_weierstrassGaps hF hP, Nat.card_Icc, Nat.add_sub_cancel]
 
 /-- **For `g ≥ 2`, `2` is a pole number at a rational place exactly when the place ramifies over
 `k(x)`.** In particular the rational places whose gap sequence is not `1, …, g` are exactly the
@@ -283,13 +283,13 @@ weight. -/
 theorem weierstrassWeight_eq_genus_choose_two_iff_one_lt_ramificationIdx (hg : 2 ≤ genus k F)
     {P : Place k F} (hP : P.degree = 1) :
     P.weierstrassWeight = (genus k F).choose 2 ↔ 1 < ramificationIdx k⟮x⟯ P :=
-  (weierstrassWeight_eq_genus_choose_two_iff hF hex hP).trans
+  (weierstrassWeight_eq_genus_choose_two_iff hF hP).trans
     (isPoleNumber_two_iff_one_lt_ramificationIdx hF hex hx hdeg hg hP)
 
 /-- **A rational place unramified over `k(x)` has Weierstrass weight zero.** -/
 theorem weierstrassWeight_eq_zero_of_ramificationIdx_eq_one {P : Place k F} (hP : P.degree = 1)
     (hram : ramificationIdx k⟮x⟯ P = 1) : P.weierstrassWeight = 0 :=
-  (weierstrassWeight_eq_zero_iff hF hex hP).mpr
+  (weierstrassWeight_eq_zero_iff hF hP).mpr
     (weierstrassGaps_eq_Icc_of_ramificationIdx_eq_one hF hex hx hdeg hP hram)
 
 end Place
@@ -316,8 +316,7 @@ private theorem two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two (hF : IsFunctio
     2 ≤ Divisor.dim ((2 : ℤ) • WeilDivisor.ofPoint P) := by
   have hlt := (P.isPoleNumber_iff_dim_lt hF (by norm_num : 0 < 2)).mp hpole
   have hle : Divisor.dim (0 : Divisor k F) ≤ Divisor.dim ((1 : ℤ) • WeilDivisor.ofPoint P) :=
-    Divisor.dim_mono hF (by simpa using
-      WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
+    Divisor.dim_mono hF (by simp)
   rw [Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at hle
   simp only [Nat.add_one_sub_one, Nat.cast_one, Nat.cast_ofNat] at hlt
   omega
@@ -345,7 +344,7 @@ theorem isHyperellipticFunctionField_of_isPoleNumber_two_of_perfectField [Perfec
     {P : Place k F} (hP : P.degree = 1) (hpole : P.IsPoleNumber 2) :
     IsHyperellipticFunctionField k F :=
   isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
-    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega)
+    ⟨hg, exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex
       (by simp [hP]) (two_le_dim_two_zsmul_ofPoint_of_isPoleNumber_two hF hex hpole)⟩
 
 end TauCeti

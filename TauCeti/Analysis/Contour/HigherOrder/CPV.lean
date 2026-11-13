@@ -148,7 +148,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then c / (γ t - s) ^ k * deriv γ t else 0)
       MeasureTheory.volume a b :=
-    fun _ hε => intervalIntegrable_pow_inv_mul_deriv_truncated c k h_imm.continuousOn
+    fun _ hε => intervalIntegrable_pow_inv_mul_deriv_truncated c k
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   have h_plain := fun l u =>
     plain_piece_integral_eq (s := s) h_imm hk c (l := l) (u := u)
@@ -160,7 +160,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
     exists_common_window_radius_le h_Ioo (fun _ => 1) fun _ _ => one_pos
   exact hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint
     (Φ := fun z => c * (-(↑(k - 1) : ℂ)⁻¹ * ((z - s) ^ (k - 1))⁻¹))
-    hab.le T (fun _ => hρ_pos.le)
+    hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)

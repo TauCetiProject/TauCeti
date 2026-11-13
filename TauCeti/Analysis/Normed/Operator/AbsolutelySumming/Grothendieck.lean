@@ -133,7 +133,7 @@ private theorem sum_norm_apply_sum_smul_indicatorConstLp_le {ι : Type*} [Fintyp
       (‖T‖ : 𝕜) * ∑ j, (c i j * μ.real (A j)) * ⟪u i, v j⟫_𝕜 := by
     have hnorm : ((‖T (y i)‖ : ℝ) : 𝕜) = ⟪u i, T (y i)⟫_𝕜 := by
       rw [hu_def, inner_smul_left, inner_self_eq_norm_sq_to_K, map_inv₀, RCLike.conj_ofReal]
-      rcases eq_or_ne ‖T (y i)‖ 0 with h | h
+      rcases eq_or_ne ‖T (y i)‖ 0 with h | _
       · simp [h]
       · field_simp
     rw [hnorm, hy_def]

@@ -110,6 +110,81 @@ theorem map_eq_zero_of_natCard_H2_dvd_degree {L : NormalLayer G}
   rw [← hk, mul_comm, mul_zsmul, natCast_zsmul, L.degree_eq_natCard_gal,
     groupCohomology.natCard_nsmul_eq_zero, zsmul_zero]
 
+include hσ hker h1 in
+/-- **The prime-degree case of the reduction, for a `p`-group layer.** Suppose that `L` has degree
+`n ≠ 1` and Galois group a `p`-group, so that `L` refines the layer of a quotient of order `p`. If
+`φ` is surjective on `H²` and kills the classes with `σ = 0` on the layers of prime degree, and
+the class `φ(y)` restricts to zero on every layer of smaller degree, then `φ(y) = 0` for a class
+`y` with `σ(y) = 0`. -/
+private theorem map_eq_zero_of_isPGroup
+    (hsurj : ∀ L : NormalLayer G, L.degree.Prime → ∀ x : L.H F' 2, ∃ y : L.H F 2,
+      groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = x)
+    (hprime : ∀ L : NormalLayer G, L.degree.Prime → ∀ y : L.H F 2, σ L y = 0 →
+      groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = 0)
+    {L : NormalLayer G} {n : ℕ} (hn : L.degree = n) (hn1 : n ≠ 1) {y : L.H F 2}
+    (hy : σ L y = 0)
+    (hres0 : ∀ {H : Subgroup L.Gal}, (L.subgroupLayer H).degree < n →
+      (L.subgroupRestriction H).cohomologyRes F' 2
+        (groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y) = 0)
+    {p : ℕ} (hp : p.Prime) (hpG : IsPGroup p L.Gal) :
+    groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = 0 := by
+  have : Fact p.Prime := ⟨hp⟩
+  have hdvd : p ∣ Nat.card L.Gal :=
+    hpG.card_eq_or_dvd.resolve_left (by rwa [← L.degree_eq_natCard_gal, hn])
+  have := IsPGroup.isNilpotent hpG
+  obtain ⟨N, hNi, hN⟩ := Group.IsNilpotent.exists_normal_index_eq_of_dvd_card hdvd
+  let T := L.quotientRefinement N
+  have hQ : (L.quotientLayer N).degree.Prime := (L.degree_quotientLayer N).trans hNi ▸ hp
+  -- The restriction of `φ(y)` to the layer of `N` vanishes, so `φ(y)` is inflated from `L_N`.
+  have hlt : (L.subgroupLayer T.galHom.ker).degree < n := by
+    have h := (L.subgroupRestriction T.galHom.ker).degree_mul_relativeDegree
+    rw [T.relativeDegree_subgroupRestriction_ker, hn] at h
+    have hn0 : 0 < n := hn ▸ L.degree_pos
+    nlinarith [hQ.two_le]
+  obtain ⟨x₀, hx₀⟩ := T.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero F' (h1 _) (hres0 hlt)
+  obtain ⟨y₀, rfl⟩ := hsurj _ hQ x₀
+  -- `φ(y - infl y₀) = 0`, so `σ(y₀) = σ(y) = 0`, and the prime-degree case kills `φ(y₀)`.
+  have hσ₀ : σ _ y₀ = 0 := by
+    have h := hker L (y - T.cohomologyInfl F 2 y₀) (by
+      rw [map_sub, LayerRefinement.cohomologyInfl_comp_map_repMap_apply, hx₀, sub_self])
+    rwa [map_sub, hy, hσ, zero_sub, neg_eq_zero] at h
+  rw [← hx₀, hprime _ hQ y₀ hσ₀, map_zero]
+
+/-- **The prime-degree case of the reduction, for a layer that is not a `p`-group.** If the class
+`φ(y)` restricts to zero on every layer of smaller degree, then the index of every Sylow subgroup
+kills it, and so it vanishes, as the indices of the Sylow subgroups have no common prime factor. -/
+private theorem map_eq_zero_of_not_isPGroup
+    {L : NormalLayer G} {n : ℕ} (hn : L.degree = n) {y : L.H F 2}
+    (hpg : ¬∃ p, p.Prime ∧ IsPGroup p L.Gal)
+    (hres0 : ∀ {H : Subgroup L.Gal}, (L.subgroupLayer H).degree < n →
+      (L.subgroupRestriction H).cohomologyRes F' 2
+        (groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y) = 0) :
+    groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = 0 := by
+  -- Not a `p`-group: the index of every Sylow subgroup kills `φ(y)`.
+  have hsyl (q : ℕ) [Fact q.Prime] (P : Sylow q L.Gal) :
+      (P : Subgroup L.Gal).index • groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y =
+        0 := by
+    have hP : (P : Subgroup L.Gal).index ≠ 1 := fun h ↦ by
+      have hpq := P.isPGroup
+      rw [Subgroup.index_eq_one.1 h] at hpq
+      exact hpg ⟨q, Fact.out, hpq.of_equiv Subgroup.topEquiv⟩
+    have hlt : (L.subgroupLayer (P : Subgroup L.Gal)).degree < n := by
+      rw [degree_subgroupLayer, ← hn, degree_eq_natCard_gal,
+        ← (P : Subgroup L.Gal).card_mul_index]
+      exact lt_mul_right Nat.card_pos
+        (lt_of_le_of_ne (Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero) hP.symm)
+    have h := (L.subgroupRestriction (P : Subgroup L.Gal)).cohomologyCor_cohomologyRes_apply F' 2
+      (groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y)
+    rwa [hres0 hlt, map_zero, ← (L.subgroupRestriction (P : Subgroup L.Gal)).relativeDegree_def,
+      relativeDegree_subgroupRestriction, eq_comm] at h
+  -- No prime divides the order of `φ(y)`, since none divides the indices of all Sylow subgroups.
+  generalize groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = x at hsyl ⊢
+  rw [← AddMonoid.addOrderOf_eq_one_iff]
+  by_contra hne
+  have : Fact (addOrderOf x).minFac.Prime := ⟨Nat.minFac_prime hne⟩
+  exact (Classical.arbitrary (Sylow (addOrderOf x).minFac L.Gal)).not_dvd_index
+    ((Nat.minFac_dvd _).trans (addOrderOf_dvd_of_nsmul_eq_zero (hsyl _ _)))
+
 include hσ hres hker h1 in
 /-- **The classes with invariant zero are killed by `φ`, from the layers of prime degree.** Suppose
 that `σ` does not change under inflation, multiplies by the relative degree under restriction and
@@ -141,56 +216,9 @@ theorem map_eq_zero_of_prime_degree
     rw [← one_smul ℕ (groupCohomology.map _ _ 2 y), ← hn, L.degree_eq_natCard_gal,
       groupCohomology.natCard_nsmul_eq_zero]
   by_cases hpg : ∃ p, p.Prime ∧ IsPGroup p L.Gal
-  · -- A `p`-group: `L` refines the layer of a quotient of `Γ` of order `p`.
-    obtain ⟨p, hp, hpG⟩ := hpg
-    have : Fact p.Prime := ⟨hp⟩
-    have hdvd : p ∣ Nat.card L.Gal := by
-      obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
-      rcases k with _ | k
-      · exact absurd (hk.trans (pow_zero p)) (by rwa [← L.degree_eq_natCard_gal, hn])
-      · exact hk ▸ dvd_pow_self p k.succ_ne_zero
-    have := IsPGroup.isNilpotent hpG
-    obtain ⟨N, hNi, hN⟩ := Group.IsNilpotent.exists_normal_index_eq_of_dvd_card hdvd
-    let T := L.quotientRefinement N
-    have hQ : (L.quotientLayer N).degree.Prime := (L.degree_quotientLayer N).trans hNi ▸ hp
-    -- The restriction of `φ(y)` to the layer of `N` vanishes, so `φ(y)` is inflated from `L_N`.
-    have hlt : (L.subgroupLayer T.galHom.ker).degree < n := by
-      have h := (L.subgroupRestriction T.galHom.ker).degree_mul_relativeDegree
-      rw [T.relativeDegree_subgroupRestriction_ker, hn] at h
-      have hn0 : 0 < n := hn ▸ L.degree_pos
-      nlinarith [hQ.two_le]
-    obtain ⟨x₀, hx₀⟩ := T.exists_cohomologyInfl_eq_of_cohomologyRes_eq_zero F' (h1 _) (hres0 hlt)
-    obtain ⟨y₀, rfl⟩ := hsurj _ hQ x₀
-    -- `φ(y - infl y₀) = 0`, so `σ(y₀) = σ(y) = 0`, and the prime-degree case kills `φ(y₀)`.
-    have hσ₀ : σ _ y₀ = 0 := by
-      have h := hker L (y - T.cohomologyInfl F 2 y₀) (by
-        rw [map_sub, LayerRefinement.cohomologyInfl_comp_map_repMap_apply, hx₀, sub_self])
-      rwa [map_sub, hy, hσ, zero_sub, neg_eq_zero] at h
-    rw [← hx₀, hprime _ hQ y₀ hσ₀, map_zero]
-  · -- Not a `p`-group: the index of every Sylow subgroup kills `φ(y)`.
-    have hsyl (q : ℕ) [Fact q.Prime] (P : Sylow q L.Gal) :
-        (P : Subgroup L.Gal).index • groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y =
-          0 := by
-      have hP : (P : Subgroup L.Gal).index ≠ 1 := fun h ↦ by
-        have hpq := P.isPGroup
-        rw [Subgroup.index_eq_one.1 h] at hpq
-        exact hpg ⟨q, Fact.out, hpq.of_equiv Subgroup.topEquiv⟩
-      have hlt : (L.subgroupLayer (P : Subgroup L.Gal)).degree < n := by
-        rw [degree_subgroupLayer, ← hn, degree_eq_natCard_gal,
-          ← (P : Subgroup L.Gal).card_mul_index]
-        exact lt_mul_right Nat.card_pos
-          (lt_of_le_of_ne (Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero) hP.symm)
-      have h := (L.subgroupRestriction (P : Subgroup L.Gal)).cohomologyCor_cohomologyRes_apply F' 2
-        (groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y)
-      rwa [hres0 hlt, map_zero, ← (L.subgroupRestriction (P : Subgroup L.Gal)).relativeDegree_def,
-        relativeDegree_subgroupRestriction, eq_comm] at h
-    -- No prime divides the order of `φ(y)`, since none divides the indices of all Sylow subgroups.
-    generalize groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = x at hsyl ⊢
-    rw [← AddMonoid.addOrderOf_eq_one_iff]
-    by_contra hne
-    have : Fact (addOrderOf x).minFac.Prime := ⟨Nat.minFac_prime hne⟩
-    exact (Classical.arbitrary (Sylow (addOrderOf x).minFac L.Gal)).not_dvd_index
-      ((Nat.minFac_dvd _).trans (addOrderOf_dvd_of_nsmul_eq_zero (hsyl _ _)))
+  · obtain ⟨p, hp, hpG⟩ := hpg
+    exact map_eq_zero_of_isPGroup φ σ hσ hker h1 hsurj hprime hn hn1 hy hres0 hp hpG
+  · exact map_eq_zero_of_not_isPGroup φ hn hpg hres0
 
 end NormalLayer
 

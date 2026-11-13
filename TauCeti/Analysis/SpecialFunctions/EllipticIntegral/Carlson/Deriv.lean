@@ -70,8 +70,7 @@ private theorem exists_carlsonRF_deriv_bound {x y z : ℂ} (hx : x ∈ slitPlane
     hεsub (Metric.ball_subset_ball (min_le_right c ε) hw)
   obtain ⟨Cx, hCx⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hx
     (by norm_num : (-(1 / 2) : ℝ) ≤ 0)
-  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hy
-    (by norm_num : (-(1 / 2) : ℝ) ≤ 0)
+  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hy (-(1 / 2))
   push_cast at hCx hCy
   have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
   have hwbound {w : ℂ} (hw : w ∈ s) {t : ℝ} (ht : 0 < t) :

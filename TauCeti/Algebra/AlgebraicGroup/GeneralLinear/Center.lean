@@ -164,44 +164,46 @@ theorem coe_scalarTorusCenterHom_apply (A : CommAlgCat.{u} k)
       scalarTorusPoints n f := by
   rfl
 
+/-- Every universally central point of `GLₙ` is a scalar-matrix point. -/
+theorem scalarTorusCenterHom_surjective (A : CommAlgCat.{u} k) :
+    Function.Surjective (scalarTorusCenterHom n A) := by
+  intro g
+  have hgcentral :
+      pointsMulEquiv (R := k) (A := A) n g.1 ∈
+        Subgroup.center (Matrix.GeneralLinearGroup (Fin n) A) := by
+    have hgcenter :
+        g.1 ∈ Subgroup.center
+          (HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) := by
+      apply HopfAlgebra.center_le_center
+      rw [← CommHopfAlgCat.centerPointsSubgroup_eq_center]
+      exact g.2
+    exact (Subgroup.centerCongr (pointsMulEquiv (R := k) (A := A) n)
+      ⟨g.1, hgcenter⟩).2
+  rw [Matrix.GeneralLinearGroup.center_eq_range_scalar] at hgcentral
+  obtain ⟨a, ha⟩ := hgcentral
+  refine ⟨(MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).symm a, ?_⟩
+  apply Subtype.ext
+  rw [coe_scalarTorusCenterHom_apply]
+  apply (pointsMulEquiv (R := k) (A := A) n).injective
+  rw [pointsMulEquiv_scalarTorusPoints, MulEquiv.apply_symm_apply]
+  exact ha
+
 /-- In positive rank, scalar matrices give every universally central point of `GLₙ`. -/
 theorem scalarTorusCenterHom_bijective (hn : 0 < n) (A : CommAlgCat.{u} k) :
     Function.Bijective (scalarTorusCenterHom n A) := by
-  constructor
-  · intro f g hfg
-    apply scalarTorusPoints_injective (R := k) n hn
-    exact congrArg Subtype.val hfg
-  · intro g
-    have hgcentral :
-        pointsMulEquiv (R := k) (A := A) n g.1 ∈
-          Subgroup.center (Matrix.GeneralLinearGroup (Fin n) A) := by
-      have hgcenter :
-          g.1 ∈ Subgroup.center
-            (HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) := by
-        apply HopfAlgebra.center_le_center
-        rw [← CommHopfAlgCat.centerPointsSubgroup_eq_center]
-        exact g.2
-      exact (Subgroup.centerCongr (pointsMulEquiv (R := k) (A := A) n)
-        ⟨g.1, hgcenter⟩).2
-    rw [Matrix.GeneralLinearGroup.center_eq_range_scalar] at hgcentral
-    obtain ⟨a, ha⟩ := hgcentral
-    refine ⟨(MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).symm a, ?_⟩
-    apply Subtype.ext
-    rw [coe_scalarTorusCenterHom_apply]
-    apply (pointsMulEquiv (R := k) (A := A) n).injective
-    rw [pointsMulEquiv_scalarTorusPoints, MulEquiv.apply_symm_apply]
-    exact ha
+  refine ⟨fun f g hfg ↦ ?_, scalarTorusCenterHom_surjective n A⟩
+  apply scalarTorusPoints_injective (R := k) n hn
+  exact congrArg Subtype.val hfg
 
 /-- A general-linear point is universally central exactly when it is a scalar point. -/
-theorem mem_centerPointsSubgroup_iff_exists_scalarTorusPoints (hn : 0 < n)
-    (A : CommAlgCat.{u} k)
+theorem mem_centerPointsSubgroup_iff_exists_scalarTorusPoints (A : CommAlgCat.{u} k)
     (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) :
     g ∈ CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A ↔
       ∃ f : HopfAlgebra.points (R := k) (H := k[T;T⁻¹]) A,
         scalarTorusPoints n f = g := by
   constructor
   · intro hg
-    obtain ⟨f, hf⟩ := (scalarTorusCenterHom_bijective n hn A).2 ⟨g, hg⟩
+    obtain ⟨f, hf⟩ := scalarTorusCenterHom_surjective n A ⟨g, hg⟩
     refine ⟨f, ?_⟩
     calc
       scalarTorusPoints n f =
@@ -218,33 +220,21 @@ theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (A : CommAlgCat.{u} k)
     (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A).map
         (pointsMulEquiv (R := k) (A := A) n) =
       Subgroup.center (Matrix.GeneralLinearGroup (Fin n) A) := by
-  by_cases hn : n = 0
-  · subst n
-    apply le_antisymm <;> intro g _
-    all_goals
-      have hg_one : g = 1 := by
-        apply Matrix.GeneralLinearGroup.ext
-        exact fun i ↦ i.elim0
-      rw [hg_one]
-      exact Subgroup.one_mem _
-  · apply le_antisymm
-    · rintro _ ⟨q, hq, rfl⟩
-      obtain ⟨f, rfl⟩ :=
-        (mem_centerPointsSubgroup_iff_exists_scalarTorusPoints n
-          (Nat.pos_of_ne_zero hn) A q).1 hq
-      rw [Matrix.GeneralLinearGroup.center_eq_range_scalar]
-      exact ⟨MultiplicativeGroup.pointsMulEquiv f,
-        (pointsMulEquiv_scalarTorusPoints n f).symm⟩
-    · intro g hg
-      rw [Matrix.GeneralLinearGroup.center_eq_range_scalar] at hg
-      obtain ⟨a, ha⟩ := hg
-      let f := (MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).symm a
-      refine ⟨scalarTorusPoints n f,
-        (mem_centerPointsSubgroup_iff_exists_scalarTorusPoints n
-          (Nat.pos_of_ne_zero hn) A _).2 ⟨f, rfl⟩, ?_⟩
-      exact (pointsMulEquiv_scalarTorusPoints n f).trans
-        ((congrArg (Matrix.GeneralLinearGroup.scalar (Fin n))
-          ((MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).apply_symm_apply a)).trans ha)
+  apply le_antisymm
+  · rintro _ ⟨q, hq, rfl⟩
+    obtain ⟨f, rfl⟩ := (mem_centerPointsSubgroup_iff_exists_scalarTorusPoints n A q).1 hq
+    rw [Matrix.GeneralLinearGroup.center_eq_range_scalar]
+    exact ⟨MultiplicativeGroup.pointsMulEquiv f,
+      (pointsMulEquiv_scalarTorusPoints n f).symm⟩
+  · intro g hg
+    rw [Matrix.GeneralLinearGroup.center_eq_range_scalar] at hg
+    obtain ⟨a, ha⟩ := hg
+    let f := (MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).symm a
+    refine ⟨scalarTorusPoints n f,
+      (mem_centerPointsSubgroup_iff_exists_scalarTorusPoints n A _).2 ⟨f, rfl⟩, ?_⟩
+    exact (pointsMulEquiv_scalarTorusPoints n f).trans
+      ((congrArg (Matrix.GeneralLinearGroup.scalar (Fin n))
+        ((MultiplicativeGroup.pointsMulEquiv (R := k) (A := A)).apply_symm_apply a)).trans ha)
 
 /-- For every value algebra, scalar matrices identify the multiplicative group with the
 represented center of `GLₙ`. -/

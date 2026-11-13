@@ -48,6 +48,8 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
+* `CovariantDerivative.alongCurveWithin_sum` and `CovariantDerivative.alongCurve_sum`: additivity
+  over finite sums of fields with differentiable coordinate readings.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
@@ -61,8 +63,6 @@ ambient covariant derivative.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2.
 * The moving-chart construction was informed by
   `formalized-sources/DoCarmo/DoCarmoLib/Riemannian/Connection/CovariantDerivativeAlong.lean` and
@@ -138,6 +138,32 @@ theorem alongCurveWithin_apply (s : Set 𝕜) (t : 𝕜) :
         (alongCurveInChartWithin cov γ V s (γ t) t) :=
   (rfl)
 
+variable {γ} in
+/-- In the trivialization `C` at `γ t`, the covariant derivative along `γ` of `Q` is the ordinary
+derivative of its coordinate reading plus the Christoffel term. -/
+theorem continuousLinearMapAt_alongCurveWithin
+    {s : Set 𝕜} {t : 𝕜} {C : TangentSpace I (γ t) →L[𝕜] E}
+    (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt 𝕜 (γ t))
+    (Q : ∀ r, TangentSpace I (γ r)) :
+    C (alongCurveWithin cov γ Q s t) =
+      derivWithin (sectionCoord (F := E) γ Q (γ t)) s t +
+        christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn
+            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
+          (C (Q t)) (derivWithin (extChartAt I (γ t) ∘ γ) s t) := by
+  subst hC
+  rw [alongCurveWithin_apply, Trivialization.continuousLinearMapAt_symmL
+      _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
+    alongCurveInChartWithin_apply, sectionCoord_apply]
+
+/-- The junk value of the along-curve candidate: it vanishes where the parameter set does not have
+unique derivatives, because `derivWithin` is then `0`. -/
+theorem alongCurveWithin_of_not_uniqueDiffWithinAt {s : Set 𝕜} {t : 𝕜}
+    (hu : ¬UniqueDiffWithinAt 𝕜 s t) : alongCurveWithin cov γ V s t = 0 := by
+  simp [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    derivWithin_zero_of_not_uniqueDiffWithinAt hu]
+  rfl
+
 /-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
 in the canonical tangent trivialization at that point. -/
 theorem alongCurveWithin_eq_derivWithin_sectionCoord_of_eq_zero {s : Set 𝕜} {t : 𝕜}
@@ -198,6 +224,38 @@ theorem alongCurve_add (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
       alongCurve cov γ V t + alongCurve cov γ W t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← alongCurveWithin_univ]
   exact alongCurveWithin_add cov γ V W Set.univ hV.differentiableWithinAt
+    hW.differentiableWithinAt
+
+/-- The coordinate formula within a parameter set respects subtraction of fields. -/
+private theorem alongCurveInChartWithin_sub (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜)
+    (x : M) {t : 𝕜}
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V x) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W x) s t) :
+    alongCurveInChartWithin cov γ (fun r ↦ V r - W r) s x t =
+      alongCurveInChartWithin cov γ V s x t - alongCurveInChartWithin cov γ W s x t := by
+  rw [alongCurveInChartWithin_apply, alongCurveInChartWithin_apply,
+    alongCurveInChartWithin_apply, sectionCoord_sub, derivWithin_sub hV hW]
+  simp only [Pi.sub_apply, map_sub, sub_apply]
+  abel
+
+/-- Covariant differentiation within a parameter set respects subtraction of differentiable
+fields. -/
+theorem alongCurveWithin_sub (W : ∀ t, TangentSpace I (γ t)) (s : Set 𝕜) {t : 𝕜}
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ W (γ t)) s t) :
+    alongCurveWithin cov γ (fun r ↦ V r - W r) s t =
+      alongCurveWithin cov γ V s t - alongCurveWithin cov γ W s t := by
+  rw [alongCurveWithin_apply, alongCurveWithin_apply, alongCurveWithin_apply,
+    alongCurveInChartWithin_sub cov γ V W s (γ t) hV hW, map_sub]
+
+/-- Covariant differentiation along a curve respects subtraction of differentiable fields. -/
+theorem alongCurve_sub (W : ∀ t, TangentSpace I (γ t)) {t : 𝕜}
+    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt 𝕜 (sectionCoord (F := E) γ W (γ t)) t) :
+    alongCurve cov γ (fun r ↦ V r - W r) t =
+      alongCurve cov γ V t - alongCurve cov γ W t := by
+  rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← alongCurveWithin_univ]
+  exact alongCurveWithin_sub cov γ V W Set.univ hV.differentiableWithinAt
     hW.differentiableWithinAt
 
 /-- The coordinate formula within a parameter set obeys the scalar Leibniz rule. -/
@@ -279,24 +337,15 @@ theorem alongCurve_zero (t : 𝕜) :
 /-! ### Constant curves -/
 
 /-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
-ordinary derivative within that set of the field, read in the model space `E = T_x M`, wherever
-the set has unique derivatives.  No differentiability of the field is needed. -/
+ordinary derivative within that set of the field, read in the model space `E = T_x M`.  No
+differentiability of the field is needed; where the set does not have unique derivatives at `t`,
+both sides are `0`. -/
 @[simp]
-theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffWithinAt 𝕜 s t) :
+theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜} :
     alongCurveWithin cov (fun _ : 𝕜 ↦ x) W s t = derivWithin W s t := by
-  have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x
-  set L : E ≃L[𝕜] E := (trivializationAt E (TangentSpace I) x).continuousLinearEquivAt 𝕜 x hx
-  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = L ∘ W :=
+  have hcoord : sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x = W :=
     funext fun r ↦ (sectionCoord_apply (F := E) (V := TangentSpace I) _ W x r).trans
-      (congrFun (Trivialization.coe_continuousLinearEquivAt_eq (R := 𝕜) _ hx) (W r)).symm
-  -- `L` is an equivalence, so it commutes with `derivWithin` even where `W` is not
-  -- differentiable.
-  have hderiv : derivWithin (L ∘ W) s t = L (derivWithin W s t) := by
-    simp only [derivWithin, L.comp_fderivWithin hs]
-    rfl
-  have hchart : derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t = 0 := by
-    rw [Function.comp_def, derivWithin_fun_const, Pi.zero_apply]
+      (continuousLinearMapAt_trivializationAt_self (I := I) x (W r))
   -- Unfold the candidate by `change`: `W` is `E`-valued, so rewriting with the defining lemmas
   -- would have to see through the identification `TangentSpace I x = E`.
   change (trivializationAt E (TangentSpace I) x).symmL 𝕜 x
@@ -305,9 +354,10 @@ theorem alongCurveWithin_const (x : M) (W : 𝕜 → E) {s : Set 𝕜} {t : 𝕜
           (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet)) x
             (sectionCoord (F := E) (V := TangentSpace I) (fun _ : 𝕜 ↦ x) W x t)
             (derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t)) = _
-  rw [hcoord, hderiv, hchart, map_zero, add_zero,
-    ← Trivialization.symm_continuousLinearEquivAt_eq _ hx]
-  exact L.symm_apply_apply _
+  have hchart : derivWithin (extChartAt I x ∘ fun _ : 𝕜 ↦ x) s t = 0 := by
+    rw [Function.comp_def, derivWithin_fun_const, Pi.zero_apply]
+  rw [hcoord, hchart, map_zero, add_zero]
+  exact symmL_trivializationAt_self (I := I) x (derivWithin W s t)
 
 /-- Along a constant curve at `x`, the unrestricted moving-chart candidate is the ordinary
 derivative of the field, read in the model space `E = T_x M`. -/
@@ -315,7 +365,7 @@ derivative of the field, read in the model space `E = T_x M`. -/
 theorem alongCurve_const (x : M) (W : 𝕜 → E) (t : 𝕜) :
     alongCurve cov (fun _ : 𝕜 ↦ x) W t = deriv W t :=
   (alongCurveWithin_univ cov _ W t).symm.trans
-    ((alongCurveWithin_const cov x W uniqueDiffWithinAt_univ).trans
+    ((alongCurveWithin_const cov x W).trans
       (congrFun (derivWithin_univ (f := W)) t))
 
 /-- Along a constant curve at `x`, the moving-chart candidate within a parameter set is the
@@ -328,7 +378,7 @@ theorem alongCurveWithin_const_of_hasDerivWithinAt (x : M) {W : 𝕜 → Tangent
   -- induces that topology, to read off the derivative.
   let _ : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
   let _ : NormedSpace 𝕜 (TangentSpace I x) := inferInstanceAs (NormedSpace 𝕜 E)
-  exact (alongCurveWithin_const cov x W hs).trans (hW.derivWithin hs)
+  exact (alongCurveWithin_const cov x W).trans (hW.derivWithin hs)
 
 /-- Along a constant curve at `x`, the unrestricted moving-chart candidate is the ordinary
 derivative of the field in the fixed tangent space `TangentSpace I x`. -/
@@ -421,5 +471,32 @@ theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
   exact alongCurveWithin_comp cov γ V φ hφ.differentiableWithinAt (Set.mapsTo_univ φ Set.univ)
     hγ.differentiableWithinAt hV.differentiableWithinAt
+
+/-! ### Finite sums -/
+
+/-- Covariant differentiation within a parameter set commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r))
+    {s : Set 𝕜} {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) s t) :
+    alongCurveWithin cov γ (fun r ↦ ∑ i ∈ A, W i r) s t =
+      ∑ i ∈ A, alongCurveWithin cov γ (W i) s t := by
+  classical
+  induction A using Finset.induction_on with
+  | empty => simp
+  | @insert i A hi ih =>
+    have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W j) (γ t)) s t :=
+      fun j hj ↦ hW j (Finset.mem_insert_of_mem hj)
+    simp only [Finset.sum_insert hi]
+    rw [alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A))
+      (differentiableWithinAt_sectionCoord_sum γ hWA), ih hWA]
+
+/-- Covariant differentiation along a curve commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r)) {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) t) :
+    alongCurve cov γ (fun r ↦ ∑ i ∈ A, W i r) t = ∑ i ∈ A, alongCurve cov γ (W i) t := by
+  simpa only [alongCurveWithin_univ] using
+    alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
 
 end CovariantDerivative

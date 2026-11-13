@@ -6,18 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.HolderNorm
+public import Mathlib.Topology.MetricSpace.Thickening
 
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
-# Hölder functions: a `dist` criterion, extension from a dense set, finite sums, and the seminorm
+# Hölder functions: a `dist` criterion, extension from a dense set, sums, and the seminorm
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
-`edist`. A function with bounded oscillation is Hölder with every smaller exponent, with a
-constant depending on a free scale. A function with bounded oscillation which satisfies a Hölder
-bound between nearby points is Hölder, which turns Hölder bounds on the pieces of a cover into one
-on the whole set.
+`edist`. A function with bounded oscillation which satisfies a Hölder bound between nearby points
+is Hölder, which turns Hölder bounds on the pieces of a cover into one on the whole set, and is
+Hölder with every smaller exponent, with a constant depending on the scale; in particular, so is a
+function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
+compact set are uniform on a thickening of the set.
 
 A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
 pseudo-emetric space and takes values in a complete emetric space extends to a function which is
@@ -29,34 +33,63 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Finite sums of Hölder functions are Hölder, with the sum of the constants.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
+`b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
+Littlewood–Paley series.
+Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
+Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
 supremum of the difference quotients `edist (f x) (f y) / edist x y ^ r` over pairs of distinct
 points, the form in which Hölder seminorms are written in analysis texts.
 
+By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
+`α ≤ 1`.
+
 ## Main declarations
 
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
+* `HolderOnWith.sub`: differences preserve the exponent and add the Hölder constants.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
-* `HolderOnWith.of_le_of_dist_le`: a `β`-Hölder function with values within distance `D` of each
-  other is `γ`-Hölder for `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)` for every scale `δ > 0`.
+* `HolderOnWith.of_le_of_dist_le`: a function satisfying a `β`-Hölder bound between points at
+  distance less than `δ > 0`, with values within distance `D` of each other, is `γ`-Hölder for
+  `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`.
+* `LipschitzOnWith.holderOnWith_of_norm_le`: a bounded `L`-Lipschitz function with norm bound
+  `M` is Hölder of any exponent at most one with constant `L + 2 M`.
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
+* `HolderOnWith.comp_const_smul`: precomposing with a rescaling `z ↦ a • z` multiplies the Hölder
+  constant by `‖a‖ ^ r`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
+* `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
+  preserves Hölder bounds.
+* `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
+  in both directions.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
+* `HolderOnWith.add`: sums of Hölder functions on a set.
+* `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
+  constant `2 M`.
+* `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
+  satisfy `‖fⱼ‖_∞ ≤ a 2^{-jα}` and are `b 2^{j(1-α)}`-Lipschitz is `α`-Hölder with constant
+  `C (a + b)`.
+* `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
+  around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
+  of `K`.
 * `le_mul_edist_rpow_iff`: between distinct points, a bound by a multiple of `edist x y ^ r` is a
   bound on the difference quotient.
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
   extended constant `C`.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
+* `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
+  `α ≤ 1`.
 -/
 
 public section
@@ -102,12 +135,47 @@ theorem HolderOnWith.of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetri
     ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul C.coe_nonneg]
   exact ENNReal.ofReal_le_ofReal (h x hx y hy)
 
+/-- The difference of two Hölder functions on a set has the same exponent and the sum
+of their Hölder constants. -/
+theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C D r : ℝ≥0} {f g : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) (hg : HolderOnWith D r g s) :
+    HolderOnWith (C + D) r (f - g) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  calc
+    dist (f x - g x) (f y - g y) ≤ dist (f x) (f y) + dist (g x) (g y) :=
+      dist_sub_sub_le _ _ _ _
+    _ ≤ (C : ℝ) * dist x y ^ (r : ℝ) + (D : ℝ) * dist x y ^ (r : ℝ) :=
+      add_le_add (hf.dist_le hx hy) (hg.dist_le hx hy)
+    _ = _ := by rw [NNReal.coe_add, add_mul]
+
 /-- `HolderOnWith` is equivalent to the Hölder bound stated with `dist`. Compare
 `lipschitzOnWith_iff_dist_le_mul`. -/
 theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
     {C r : ℝ≥0} {f : X → Y} {s : Set X} :
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
+
+/-- Postcomposition with an isometry preserves a Hölder bound on a set, with the same constant
+and exponent. -/
+theorem Isometry.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) : HolderOnWith C r (g ∘ f) s := fun x hx y hy => by
+  simpa only [Function.comp_apply, hg.edist_eq] using hf x hx y hy
+
+/-- Postcomposition with an isometry preserves a global Hölder bound, with the same constant and
+exponent. -/
+theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
+    (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
+  holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
+/-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
+is Hölder with constant `C` and exponent `r` exactly when `f` is. -/
+theorem Isometry.holderWith_comp_iff {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0}
+    {f : X → Y} : HolderWith C r (g ∘ f) ↔ HolderWith C r f := by
+  simp only [HolderWith, Function.comp_apply, hg.edist_eq]
 
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
@@ -133,20 +201,22 @@ theorem HolderOnWith.of_dist_lt_of_dist_le {X Y : Type*} [PseudoMetricSpace X]
       _ ≤ D * (δ : ℝ) ^ (-(r : ℝ)) * dist x y ^ (r : ℝ) := by gcongr
       _ ≤ _ := le_add_of_nonneg_left hK
 
-/-- A function that is `β`-Hölder with constant `K` on `s`, and whose values on `s` lie within
-distance `D` of each other, is `γ`-Hölder on `s` for every `γ ≤ β`. For each scale `δ > 0` the
-constant is `K δ^(β - γ) + D δ^(-γ)`: the `β`-Hölder bound is used at distances at most `δ` and
-the bound `D` at larger distances. A small scale makes the coefficient of `K` small at the price
-of a large coefficient of `D`. Compare Mathlib's `HolderOnWith.of_le`, which bounds the domain
-instead of the values. -/
+/-- A function that satisfies the `β`-Hölder bound with constant `K` between points of `s` at
+distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other, is
+`γ`-Hölder on `s` for every `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`: the `β`-Hölder bound
+is used at distances less than `δ` and the bound `D` at larger distances. A small scale makes the
+coefficient of `K` small at the price of a large coefficient of `D`. For `β = 1` the hypothesis is
+a Lipschitz bound between nearby points, as given by a derivative bound on balls of radius `δ`.
+Compare Mathlib's `HolderOnWith.of_le`, which bounds the domain instead of the values. -/
 theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
-    {K D δ β γ : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith K β f s)
+    {K D δ β γ : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : ∀ x ∈ s, ∀ y ∈ s, dist x y < δ → dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ))
     (hD : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ D) (hγβ : γ ≤ β) (hδ : 0 < δ) :
     HolderOnWith (K * δ ^ ((β : ℝ) - γ) + D * δ ^ (-(γ : ℝ))) γ f s := by
   have hγβ' : (γ : ℝ) ≤ β := hγβ
   refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun x hx y hy h => ?_) hD
   push_cast
-  calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf.dist_le hx hy
+  calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf x hx y hy h
     _ = K * dist x y ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by
       rw [mul_assoc, ← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hγβ') γ.coe_nonneg,
         sub_add_cancel]
@@ -157,11 +227,34 @@ theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [Pseud
 theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpace X]
     [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {x₀ x : X} {ρ : ℝ}
     (hf : HolderOnWith C r f (Metric.ball x₀ ρ)) (hx : x ∈ Metric.ball x₀ ρ) :
-    dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) := by
-  have hx' := Metric.mem_ball.1 hx
-  calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
-        hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
-    _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+    dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) :=
+  hf.dist_le_of_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt (Metric.mem_ball.1 hx)))
+    (Metric.mem_ball.1 hx).le
+
+/-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
+assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
+theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
+    [PseudoMetricSpace X] [SeminormedAddCommGroup F]
+    {s : Set X} {f : X → F}
+    {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
+    HolderOnWith (L + 2 * M) α f s := by
+  have hdiam : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ ((2 * M : ℝ≥0) : ℝ) := by
+    intro x hx y hy
+    rw [dist_eq_norm]
+    exact (_root_.norm_sub_le _ _).trans (by push_cast; linarith [hb x hx, hb y hy])
+  simpa using HolderOnWith.of_le_of_dist_le (K := L) (β := 1)
+    (fun x hx y hy _ => by simpa using h.dist_le_mul x hx y hy) hdiam hα
+    (by norm_num : (0 : ℝ≥0) < 1)
+
+/-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
+`z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/
+theorem HolderOnWith.comp_const_smul {𝕜 E X : Type*} [SeminormedRing 𝕜] [SeminormedAddGroup E]
+    [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] [PseudoMetricSpace X] {g : E → X} {C r : ℝ≥0}
+    {s t : Set E} (hg : HolderOnWith C r g t) (a : 𝕜) (hst : MapsTo (a • ·) s t) :
+    HolderOnWith (C * ‖a‖₊ ^ (r : ℝ)) r (fun z ↦ g (a • z)) s := by
+  have h := hg.comp ((lipschitzWith_smul a).holderWith.holderOnWith s) hst
+  rw [mul_one] at h
+  exact h
 
 /-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
 constants. -/
@@ -178,6 +271,116 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     simp_rw [Finset.sum_insert ha]
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
+
+/-- The sum of two functions that are Hölder on `s` with a common exponent is Hölder on `s`, with
+the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
+theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f + g) s :=
+  HolderOnWith.of_dist_le fun x hx y hy => by
+    simp only [Pi.add_apply, NNReal.coe_add]
+    linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
+exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the
+oscillation of a Hölder function on a bounded space instead. -/
+theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
+    [SeminormedAddCommGroup Y] {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
+    HolderWith (2 * M) 0 f := fun x y ↦ by
+  rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
+    nnDist_eq_nnNorm, two_mul]
+  exact (nnNorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
+
+/-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
+a ball around each point of a compact set `K`, with radii and constants depending on the point, then
+on some open thickening of `K` the function `f` is `α`-Hölder with one constant and is bounded. -/
+theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {K : Set X} (hK : IsCompact K) {α : ℝ≥0} {f : X → Y}
+    (hf : ∀ x ∈ K, ∃ r > 0, ∃ L : ℝ≥0, HolderOnWith L α f (Metric.ball x r)) :
+    ∃ δ > 0, ∃ L M : ℝ≥0, HolderOnWith L α f (Metric.thickening δ K) ∧
+      ∀ y ∈ Metric.thickening δ K, ‖f y‖ ≤ M := by
+  choose! r hr L hL using hf
+  obtain ⟨t, htK, hcover⟩ := hK.elim_nhds_subcover (fun x => Metric.ball x (r x)) fun x hx =>
+    Metric.ball_mem_nhds x (hr x hx)
+  -- A Lebesgue number `δ₀` of the finite cover by the balls `B(z, r z)`, `z ∈ t`.
+  obtain ⟨δ₀, hδ₀, hδ₀K⟩ := lebesgue_number_lemma_of_metric hK
+    (c := fun z : t => Metric.ball (z : X) (r z)) (fun _ => Metric.isOpen_ball) fun y hy => by
+      obtain ⟨z, hzt, hyz⟩ := mem_iUnion₂.1 (hcover hy)
+      exact mem_iUnion.2 ⟨⟨z, hzt⟩, hyz⟩
+  -- Two points of the `δ₀ / 2`-thickening at distance less than `δ₀ / 2` lie in one ball `B(x, δ₀)`
+  -- about a point `x ∈ K`, hence in one ball `B(z, r z)` of the cover.
+  have hball : ∀ y ∈ Metric.thickening (δ₀ / 2) K, ∀ y', dist y y' < δ₀ / 2 →
+      ∃ z ∈ t, y ∈ Metric.ball z (r z) ∧ y' ∈ Metric.ball z (r z) := by
+    intro y hy y' hyy'
+    obtain ⟨x, hxK, hyx⟩ := Metric.mem_thickening_iff.1 hy
+    obtain ⟨⟨z, hzt⟩, hz⟩ := hδ₀K x hxK
+    refine ⟨z, hzt, hz (Metric.mem_ball.2 (by linarith)), hz (Metric.mem_ball.2 ?_)⟩
+    linarith [dist_triangle y' y x, dist_comm y y']
+  set M : ℝ≥0 := ∑ z ∈ t, (‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ))
+  have hM : ∀ y ∈ Metric.thickening (δ₀ / 2) K, ‖f y‖ ≤ M := by
+    intro y hy
+    obtain ⟨z, hzt, hyz, -⟩ := hball y hy y (by rw [dist_self]; positivity)
+    calc ‖f y‖ ≤ ‖f z‖ + dist (f y) (f z) := by
+          linarith [norm_le_norm_add_norm_sub' (f y) (f z), dist_eq_norm (f y) (f z)]
+      _ ≤ ‖f z‖ + L z * (r z) ^ (α : ℝ) := by
+          gcongr
+          exact (hL z (htK z hzt)).dist_le_mul_rpow_of_mem_ball hyz
+      _ = ((‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ) : ℝ≥0) : ℝ) := by
+          rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
+            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnNorm]
+      _ ≤ M := by
+          exact_mod_cast Finset.single_le_sum
+            (f := fun z => ‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ)) (fun _ _ => zero_le) hzt
+  set δ : ℝ≥0 := ⟨δ₀ / 2, by positivity⟩
+  have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hδ₀
+  refine ⟨δ₀ / 2, half_pos hδ₀, ∑ z ∈ t, L z + 2 * M * δ ^ (-(α : ℝ)), M, ?_, hM⟩
+  refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun y hy y' _ hyy' => ?_) fun y hy y' hy' => ?_
+  · obtain ⟨z, hzt, hyz, hy'z⟩ := hball y hy y' hyy'
+    refine ((hL z (htK z hzt)).dist_le hyz hy'z).trans ?_
+    gcongr
+    exact_mod_cast Finset.single_le_sum (fun _ _ => zero_le) hzt
+  · push_cast
+    linarith [dist_le_norm_add_norm (f y) (f y'), hM y hy, hM y' hy']
+
+namespace TauCeti
+
+/-- **Dyadic sums of smooth pieces are Hölder.** For `0 < α < 1` there is `C` such that, if the
+functions `fⱼ`, `j ∈ ℕ`, satisfy `‖fⱼ‖_∞ ≤ a 2^{-jα}` and are Lipschitz with constants
+`b 2^{j(1-α)}`, then `∑ⱼ fⱼ` is `α`-Hölder with constant `C (a + b)`. This is how the
+Littlewood–Paley pieces of a Hölder–Zygmund distribution reassemble into a Hölder function. -/
+theorem exists_holderWith_tsum_of_rpow_mul_le {X Y : Type*} [PseudoMetricSpace X]
+    [NormedAddCommGroup Y] [CompleteSpace Y] {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
+    ∃ C : ℝ≥0, ∀ (f : ℕ → X → Y) (a b : ℝ≥0),
+      (∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖f j x‖ ≤ a) →
+      (∀ (j : ℕ) x y, 2 ^ ((α : ℝ) * j) * dist (f j x) (f j y) ≤ b * 2 ^ j * dist x y) →
+      HolderWith (C * (a + b)) α fun x ↦ ∑' j, f j x := by
+  obtain ⟨C, hC0, hC⟩ := exists_tsum_le_mul_rpow_of_rpow_mul_le (α := α) hα0 hα1
+  refine ⟨(2 * C).toNNReal, fun f a b ha hb ↦ ?_⟩
+  -- Each `f · x` is summable: its terms satisfy both bounds with `b = a` and `d = 1`.
+  have hsum : ∀ x, Summable fun j ↦ f j x := fun x ↦
+    (hC (fun j ↦ ‖f j x‖) a.coe_nonneg a.coe_nonneg zero_le_one (fun _ ↦ norm_nonneg _)
+      (ha · x) fun j ↦ (ha j x).trans (by
+        rw [mul_one]
+        exact le_mul_of_one_le_right a.coe_nonneg (one_le_pow₀ one_le_two))).1.of_norm
+  rw [← holderOnWith_univ]
+  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
+  -- The increments `dist (f j x) (f j y)` satisfy both bounds with `2 a`, `b` and `d = dist x y`.
+  obtain ⟨hgs, hg⟩ := hC (fun j ↦ dist (f j x) (f j y)) (a := 2 * a) (by positivity)
+    b.coe_nonneg dist_nonneg (fun _ ↦ dist_nonneg) (fun j ↦ by
+      have := dist_le_norm_add_norm (f j x) (f j y)
+      nlinarith [ha j x, ha j y, Real.rpow_nonneg zero_le_two ((α : ℝ) * j)])
+    (hb · x y)
+  calc dist (∑' j, f j x) (∑' j, f j y) ≤ ∑' j, dist (f j x) (f j y) := by
+        rw [dist_eq_norm, ← (hsum x).tsum_sub (hsum y)]
+        simp only [dist_eq_norm] at hgs ⊢
+        exact norm_tsum_le_tsum_norm hgs
+    _ ≤ C * (2 * a + b) * dist x y ^ (α : ℝ) := hg
+    _ ≤ ((2 * C).toNNReal * (a + b) : ℝ≥0) * dist x y ^ (α : ℝ) := by
+        rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity), NNReal.coe_add]
+        exact mul_le_mul_of_nonneg_right (by nlinarith [a.coe_nonneg, b.coe_nonneg])
+          (by positivity)
+
+end TauCeti
 
 /-- Between distinct points `x ≠ y` of a metric space, a bound `a ≤ C * edist x y ^ r` is
 equivalent to the bound `a / edist x y ^ r ≤ C` on the difference quotient. -/
@@ -233,3 +436,49 @@ theorem eHolderNorm_eq_iSup_dist {X Y : Type*} [MetricSpace X] [PseudoMetricSpac
   refine iSup_congr fun x => iSup_congr fun y => iSup_congr fun hxy => ?_
   rw [ENNReal.ofReal_div_of_pos (Real.rpow_pos_of_pos (dist_pos.2 hxy) _), edist_dist,
     edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg]
+
+/-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
+with constant `c ^ (1 / 2)`. -/
+theorem HolderOnWith.of_edist_sq_le {u : ℝ → X} {S : Set ℝ} {c : ℝ} (hc0 : 0 ≤ c)
+    (hsq : ∀ s ∈ S, ∀ t ∈ S, s ≤ t → edist (u s) (u t) ^ 2 ≤ ENNReal.ofReal (c * |s - t|)) :
+    HolderOnWith (c.toNNReal ^ (2⁻¹ : ℝ)) (1 / 2) u S := by
+  refine fun s hs t ht ↦
+    ((ENNReal.le_rpow_inv_iff (y := ENNReal.ofReal (c * |s - t|)) two_pos).2 ?_).trans_eq ?_
+  · rw [ENNReal.rpow_two]
+    rcases le_total s t with hst | hst
+    · exact hsq s hs t ht hst
+    · rw [edist_comm, abs_sub_comm]
+      exact hsq t ht s hs hst
+  · -- the exponent `1 / 2 : ℝ≥0` is coerced to `ℝ` here and must become `2⁻¹`
+    have hhalf : ((1 / 2 : ℝ≥0) : ℝ) = 2⁻¹ := by norm_num
+    rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
+      Real.dist_eq, hhalf, ENNReal.ofReal_mul hc0,
+      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
+
+namespace TauCeti
+
+/-- For `α ≤ 1`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1`. -/
+theorem holderWith_norm_rpow {E : Type*} [SeminormedAddCommGroup E] {α : ℝ≥0} (hα : α ≤ 1) :
+    HolderWith 1 α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) := by
+  have hα' : (α : ℝ) ≤ 1 := hα
+  -- Subadditivity of `t ↦ t ^ α` gives `b ^ α - a ^ α ≤ (b - a) ^ α` for `0 ≤ a ≤ b`.
+  have key : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ^ (α : ℝ) - a ^ (α : ℝ) ≤ (b - a) ^ (α : ℝ) := by
+    intro a b ha hab
+    have h := Real.rpow_add_le_add_rpow ha (sub_nonneg.2 hab) α.coe_nonneg hα'
+    rw [add_sub_cancel] at h
+    linarith
+  rw [← holderOnWith_univ]
+  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
+  rw [Real.dist_eq, NNReal.coe_one, one_mul]
+  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
+    rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y
+  rcases le_total ‖y‖ ‖x‖ with h | h
+  · rw [abs_of_nonneg (sub_nonneg.2 (Real.rpow_le_rpow (norm_nonneg y) h α.coe_nonneg))]
+    refine (key _ _ (norm_nonneg y) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
+    exact (le_abs_self _).trans hxy
+  · rw [abs_of_nonpos (sub_nonpos.2 (Real.rpow_le_rpow (norm_nonneg x) h α.coe_nonneg)), neg_sub]
+    refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
+    rw [abs_sub_comm] at hxy
+    exact (le_abs_self _).trans hxy
+
+end TauCeti

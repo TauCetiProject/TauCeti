@@ -121,59 +121,43 @@ private lemma trans_pt_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : �
   · obtain rfl : k = 0 := by omega
     simp [pt_zero]
   have _ : (0 : ℝ) < N := by exact_mod_cast hN
-  refine Path.trans_apply_of_le γ δ ?_ _ ?_
-  · rw [coe_pt (by omega : k ≤ N + N), div_le_iff₀ (by push_cast; positivity)]
-    push_cast
-    have hk' : (k : ℝ) ≤ N := by exact_mod_cast hk
-    linarith
-  · rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
+  rw [coe_pt hk, coe_pt (by omega : k ≤ N + N)]
+  push_cast
+  field_simp
+  ring
 
 private lemma trans_pt_right {x y z : X} (γ : Path x y) (δ : Path y z) {N : ℕ} (hN : N ≠ 0)
     (k : ℕ) : γ.trans δ (pt (N + N) (N + k)) = δ (pt N k) := by
   rcases le_or_gt k N with hk | hk
   · have _ : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
-    refine Path.trans_apply_of_ge γ δ ?_ _ ?_
-    · rw [coe_pt (by omega : N + k ≤ N + N), le_div_iff₀ (by push_cast; positivity)]
-      push_cast
-      have _ : (0 : ℝ) ≤ k := by positivity
-      linarith
-    · rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
-      push_cast
-      field_simp
-      ring
+    refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
+    rw [coe_pt hk, coe_pt (by omega : N + k ≤ N + N)]
+    push_cast
+    field_simp
+    ring
   · rw [pt_eq_one (by omega) (by omega), pt_eq_one hN hk.le, Path.target, Path.target]
 
 private lemma trans_subpath_left {x y z : X} (γ : Path x y) (δ : Path y z) {N k : ℕ} (hk : k < N)
     (t : I) : (γ.trans δ).subpath (pt (N + N) k) (pt (N + N) (k + 1)) t =
       γ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_le γ δ ?_ _ ?_
-  · rw [coe_convexComb_pt (by omega : k < N + N), div_le_iff₀ (by push_cast; positivity)]
-    push_cast
-    have hk' : (k : ℝ) + 1 ≤ N := by exact_mod_cast hk
-    linarith [t.2.2]
-  · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul γ δ _ ?_
+  rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : k < N + N)]
+  push_cast
+  field_simp
+  ring
 
 private lemma trans_subpath_right {x y z : X} (γ : Path x y) (δ : Path y z) {N k : ℕ}
     (hk : k < N) (t : I) :
     (γ.trans δ).subpath (pt (N + N) (N + k)) (pt (N + N) (N + k + 1)) t =
       δ.subpath (pt N k) (pt N (k + 1)) t := by
   have hN' : (0 : ℝ) < N := by exact_mod_cast Nat.zero_lt_of_lt hk
-  refine Path.trans_apply_of_ge γ δ ?_ _ ?_
-  · rw [coe_convexComb_pt (by omega : N + k < N + N), le_div_iff₀ (by push_cast; positivity)]
-    push_cast
-    have _ : (0 : ℝ) ≤ k := by positivity
-    linarith [t.2.1]
-  · rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
-    push_cast
-    field_simp
-    ring
+  refine Path.trans_apply_of_eq_two_mul_sub_one γ δ _ ?_
+  rw [coe_convexComb_pt hk, coe_convexComb_pt (by omega : N + k < N + N)]
+  push_cast
+  field_simp
+  ring
 
 /-- A path traced by a homotopy of paths: the `k`-th partition point, while the homotopy
 parameter runs through the `l`-th piece of the uniform partition into `N` pieces. -/
@@ -412,15 +396,11 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩⟩,
     g.continuous.codRestrict _⟩
   let p : Path (g' 0) (g' 1) := Path.id.map g'.continuous
-  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := by
-    apply Subtype.ext
-    rfl
-  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := by
-    apply Subtype.ext
-    rfl
-  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := by
-    apply Subtype.ext
-    rfl
+  -- `p` parametrises `γ` on `[lo, hi]`: this holds by unfolding `Path.map`, `codRestrict`, `comp`
+  have hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t) := fun _ ↦ rfl
+  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := Subtype.ext (hp a').symm
+  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := Subtype.ext (hp b').symm
+  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := Subtype.ext (hp c').symm
   let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
       ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
@@ -433,29 +413,12 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
       ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
       (Path.subpath_apply_mem hγ ha hc)
-  have cast_subpath_eq_codRestrict (r s : I)
-      (hrU : γ (Icc.convexComb lo hi r) ∈ U i) (hsU : γ (Icc.convexComb lo hi s) ∈ U i)
-      (hr : (⟨γ (Icc.convexComb lo hi r), hrU⟩ : U i) = p r)
-      (hs : (⟨γ (Icc.convexComb lo hi s), hsU⟩ : U i) = p s)
-      (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ U i) :
-      (p.subpath r s).cast hr hs =
-        (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
-    apply Path.ext
-    funext t
-    apply Subtype.ext
-    simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
-        Icc.convexComb lo hi (Icc.convexComb r s t) := by
-      ext
-      simp only [Icc.coe_convexComb]
-      ring
-    exact congrArg γ hcomb.symm
   have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (Path.subpath_apply_mem hγ ha hb)
+    Path.cast_subpath_eq_codRestrict γ p hp a' b'
   have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (Path.subpath_apply_mem hγ hb hc)
+    Path.cast_subpath_eq_codRestrict γ p hp b' c'
   have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (Path.subpath_apply_mem hγ ha hc)
+    Path.cast_subpath_eq_codRestrict γ p hp a' c'
   have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
       (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
     rw [← hab', ← hbc', ← hac']

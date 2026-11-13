@@ -102,9 +102,11 @@ theorem topologicalClosure_closure_range_basis [IsTopologicalGroup F]
 
 /-- Two continuous homomorphisms out of `F` into a Hausdorff monoid that agree on the basis are
 equal. -/
-theorem hom_ext_basis [IsTopologicalGroup F] {M : Type*} [Monoid M] [TopologicalSpace M]
+theorem hom_ext_basis {M : Type*} [Monoid M] [TopologicalSpace M]
     [T2Space M] (e : F ≃ₜ* freeProP p (Fin r)) {f g : F →ₜ* M}
     (h : ∀ i, f (basis e i) = g (basis e i)) : f = g :=
+  haveI : IsTopologicalGroup F :=
+    Topology.IsInducing.isTopologicalGroup (e : F →* freeProP p (Fin r)) e.toHomeomorph.isInducing
   ContinuousMonoidHom.toMonoidHom_injective <|
     MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top
       (topologicalClosure_closure_range_basis e) f.continuous g.continuous

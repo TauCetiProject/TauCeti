@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -20,6 +22,9 @@ On an oriented Riemannian manifold `M` of dimension `m = k + l`, the Hodge star 
 spaces, `Orientation.formHodgeStar`, applied fibrewise sends real `k`-forms to real `l`-forms.
 This is `TauCeti.RoughForm.hodgeStar`. Fibrewise it satisfies `α ∧ ⋆β = ⟨α, β⟩ vol`, with `vol`
 the Riemannian volume form, `⋆⋆ = (-1) ^ (k l)`, and it changes sign with the orientation.
+On functions it is `⋆f = f vol`, with inverse `⋆(f vol) = f`, and on differentials of functions it
+is `⋆df = ι_(grad f) vol`; these identities express the codifferential of `df` through the
+divergence of the gradient.
 
 For a `C^n` metric on a `C^(n+1)` manifold the star preserves `C^n` forms
 (`TauCeti.IsSmoothForm.hodgeStar`), so it restricts to a linear map of smooth forms,
@@ -33,13 +38,19 @@ fixed tuples of model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_app
 
 * `TauCeti.RoughForm.hodgeStar`: the Hodge star of rough real forms.
 * `TauCeti.SmoothForm.hodgeStar`: the Hodge star of smooth real forms.
+* `TauCeti.SmoothForm.innerZeroForm`: the smooth zero-form `⋆(α ∧ ⋆β)` representing `⟨α, β⟩`.
 
 ## Main results
 
 * `TauCeti.IsSmoothForm.hodgeStar`: the Hodge star of a `C^n` form is `C^n`.
 * `TauCeti.RoughForm.wedge_hodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`, and its smooth-form version
   `TauCeti.SmoothForm.inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar`.
+* `TauCeti.SmoothForm.innerZeroForm_apply`, `TauCeti.SmoothForm.hodgeStar_wedge_zero_right`:
+  pointwise evaluation of `innerZeroForm` and right `C^∞(M)`-linearity of `SmoothForm.hodgeStar`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
+* `TauCeti.RoughForm.hodgeStar_ofFunction`, `TauCeti.RoughForm.hodgeStar_smul_riemannianVolumeForm`:
+  `⋆f = f vol` and `⋆(f vol) = f`.
+* `TauCeti.RoughForm.hodgeStar_mextDeriv_ofFunction`: `⋆df = ι_(grad f) vol`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
   `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
   an involution and is pointwise self-adjoint.
@@ -61,8 +72,11 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I 1 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [FiniteDimensional ℝ E]
+
+section Main
+
+variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {m k l : ℕ}
 
 namespace RoughForm
@@ -130,6 +144,51 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
   let := o.fact_finrank_tangentSpace x
   rw [hodgeStar_apply, Pi.neg_apply, hodgeStar_apply, Manifold.Orientation.orientationAt_neg,
     Orientation.formHodgeStar_neg_orientation]
+
+/-- The Hodge star of a function is the function times the volume form, `⋆f = f vol`. -/
+@[simp]
+theorem hodgeStar_ofFunction (o : Manifold.Orientation I M (Fin m)) (hm : 0 + m = m)
+    (f : M → ℝ) :
+    hodgeStar o hm (ofFunction I f) = fun x ↦ f x • riemannianVolumeForm o x := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  rw [hodgeStar_apply, ofFunction_apply_eq_constOfIsEmpty,
+    Orientation.formHodgeStar_constOfIsEmpty, riemannianVolumeForm_def]
+
+/-- The Hodge star of a function times the volume form is the function, `⋆(f vol) = f`. -/
+@[simp]
+theorem hodgeStar_smul_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m))
+    (hm : m + 0 = m) (f : M → ℝ) :
+    hodgeStar o hm (fun x ↦ f x • riemannianVolumeForm o x) = ofFunction I f := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  rw [hodgeStar_apply, map_smul, riemannianVolumeForm_def,
+    Orientation.formHodgeStar_volumeFormL, ofFunction_apply_eq_constOfIsEmpty]
+  ext v
+  simp
+
+/-- **The Hodge star of a differential**: on an oriented Riemannian manifold of dimension
+`l + 1`, the star of the differential of a function is the contraction of the volume form with the
+gradient, `⋆df = ι_(grad f) vol`. -/
+theorem hodgeStar_mextDeriv_ofFunction (o : Manifold.Orientation I M (Fin (l + 1)))
+    (hl : 1 + l = l + 1) (f : M → ℝ) :
+    hodgeStar o hl (mextDeriv (ofFunction I f)) =
+      (riemannianVolumeForm o).interior (Manifold.mgradient I f) := by
+  funext x
+  let := o.fact_finrank_tangentSpace x
+  -- The differential `df_x = ⟪grad f x, ·⟫` is the form dual to the vector `grad f x`.
+  have hdf : mextDeriv (ofFunction I f) x = alternatingFormEquiv (TangentSpace I x) 1
+      (exteriorPower.ιMulti ℝ 1 ![Manifold.mgradient I f x]) := by
+    ext v
+    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      alternatingFormEquiv_ιMulti_apply, Matrix.det_unique, Matrix.of_apply,
+      Fin.default_eq_zero, Matrix.cons_val_zero, Manifold.inner_mgradient]
+  ext w
+  rw [hodgeStar_apply, hdf, Orientation.formHodgeStar_alternatingFormEquiv_ιMulti_apply,
+    interior_apply, riemannianVolumeForm_apply, Fin.append_left_eq_cons]
+  simp only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self, Matrix.cons_val_zero]
+  -- `Matrix.vecCons`, used by the interior product, is by definition `Fin.cons`.
+  rfl
 
 /-- The Hodge star does not enlarge supports. -/
 theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
@@ -299,6 +358,18 @@ def hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
   (RoughForm.hodgeStar o hkl).restrict fun φ hφ ↦
     ((SmoothForm.isSmoothForm ⟨φ, hφ⟩).hodgeStar o hkl).mem_smoothBundleForms
 
+end SmoothForm
+
+end Main
+
+section Theorems
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {m k l : ℕ}
+  [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+namespace SmoothForm
+
 /-- The Hodge star of a smooth form is the Hodge star of the underlying rough form. -/
 @[simp]
 theorem coe_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
@@ -341,6 +412,61 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
     (α : SmoothForm I M ℝ k) : hodgeStar (-o) hkl α = -hodgeStar o hkl α :=
   Subtype.ext (RoughForm.hodgeStar_neg_orientation o hkl α)
 
+/-- The Hodge star of smooth forms commutes with multiplication by a smooth function,
+`⋆(f α) = f ⋆α`. -/
+@[simp]
+theorem hodgeStar_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
+    hodgeStar o hkl (funSMulₗ f α) = funSMulₗ f (hodgeStar o hkl α) :=
+  Subtype.ext <| funext fun x ↦ by
+    simp only [coe_hodgeStar, RoughForm.hodgeStar_apply, coe_funSMulₗ, map_smul]
+
+/-- The smooth zero-form `⋆(α ∧ ⋆β)`, linear in `β`, representing the pointwise inner product
+`⟨α, β⟩` of smooth `k`-forms on an oriented Riemannian `(k + l)`-manifold. -/
+def innerZeroForm (o : Manifold.Orientation I M (Fin (k + l)))
+    (α : SmoothForm I M ℝ k) : SmoothForm I M ℝ k →ₗ[ℝ] SmoothForm I M ℝ 0 :=
+  hodgeStar o (Nat.add_zero (k + l)) ∘ₗ wedge α ∘ₗ hodgeStar o rfl
+
+/-- Unfolding `innerZeroForm` as `⋆(α ∧ ⋆β)`. -/
+theorem innerZeroForm_def (o : Manifold.Orientation I M (Fin (k + l)))
+    (α β : SmoothForm I M ℝ k) :
+    innerZeroForm o α β = hodgeStar o (Nat.add_zero (k + l)) (wedge α (hodgeStar o rfl β)) :=
+  (rfl)
+
+/-- Evaluating `innerZeroForm o α β` at `x : M` recovers `alternatingFormInner` of `α_x` and
+`β_x`. -/
+@[simp]
+theorem innerZeroForm_apply (o : Manifold.Orientation I M (Fin (k + l)))
+    (α β : SmoothForm I M ℝ k) (x : M) (u : Fin 0 → TangentSpace I x) :
+    (innerZeroForm o α β).1 x u =
+      alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) := by
+  let _ := o.fact_finrank_tangentSpace x
+  have hu : u = 0 := Subsingleton.elim _ _
+  rw [hu, innerZeroForm, LinearMap.comp_apply, LinearMap.comp_apply, coe_hodgeStar,
+    RoughForm.hodgeStar_apply]
+  have hw : (wedge α (hodgeStar o rfl β)).1 x =
+      (α.1 x).wedge ((o.orientationAt x).formHodgeStar
+        (o.fact_finrank_tangentSpace x).out.symm (β.1 x)) := by
+    ext w
+    rw [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+      ← ContinuousAlternatingMap.wedge_def, coe_hodgeStar, RoughForm.hodgeStar_apply]
+  rw [hw]
+  exact (o.orientationAt x).formHodgeStar_wedge_formHodgeStar_apply_zero _ _ (α.1 x) (β.1 x)
+
+/-- The Hodge star commutes with right multiplication by a smooth zero-form. -/
+theorem hodgeStar_wedge_zero_right (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) (φ : SmoothForm I M ℝ k) (f : SmoothForm I M ℝ 0) :
+    hodgeStar o hkl (wedge φ f) = wedge (hodgeStar o hkl φ) f := by
+  apply Subtype.ext
+  funext x
+  let _ := o.fact_finrank_tangentSpace x
+  ext v
+  rw [wedge_apply_zero_right, coe_hodgeStar, RoughForm.hodgeStar_apply,
+    wedge_zero_right_apply_eq_smul, map_smul, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    mul_comm, coe_hodgeStar, RoughForm.hodgeStar_apply]
+
 end SmoothForm
+
+end Theorems
 
 end TauCeti

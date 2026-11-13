@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # Realification of matrices is a closed embedding
@@ -40,6 +41,9 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
   groups from `U(n)` onto the orthogonal symplectic matrices.
+* `Matrix.GeneralLinearGroup.realifyUnitaryHomeomorph`: realification is a homeomorphism from
+  `U(n)` onto the orthogonal matrices of any subgroup of `GL (n ⊕ n) ℝ` whose orthogonal elements
+  are the realified unitary matrices, such as the symplectic group and the realified `GL(n, ℂ)`.
 * `TauCeti.GLSymplectic.ofUnitary`: the realification `U(n) →* Sp(2n, ℝ)`, a continuous group
   morphism (`TauCeti.GLSymplectic.continuous_ofUnitary`).
 
@@ -106,11 +110,7 @@ theorem isClosedEmbedding_realify_comp_toUnits :
   -- The unitary group is compact, so a continuous injection into a Hausdorff space suffices.
   refine Continuous.isClosedEmbedding ?_
     ((realify_injective).comp Unitary.toUnits_injective)
-  refine (isClosedEmbedding_realify n 𝕜).continuous.comp (Units.continuous_iff.2
-    ⟨continuous_subtype_val, ?_⟩)
-  -- The inverse of the unit of a unitary matrix is its conjugate transpose, again unitary.
-  simp only [Unitary.val_inv_toUnits_apply, UnitaryGroup.inv_val, continuous_fun_star_iff]
-  exact continuous_subtype_val
+  exact (isClosedEmbedding_realify n 𝕜).continuous.comp Unitary.continuous_toUnits
 
 end GeneralLinearGroup
 
@@ -141,6 +141,64 @@ theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
     GeneralLinearGroup.realify n ℂ
       (Unitary.toUnits (unitaryGroupEquivSymplecticInfOrthogonal.symm M)) = M := by
   rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
+
+namespace GeneralLinearGroup
+
+variable {G : Subgroup (GL (n ⊕ n) ℝ)}
+
+/-- If the orthogonal elements of a subgroup `G` of `GL (n ⊕ n) ℝ` are the realified unitary
+matrices, then realification is a homeomorphism from `U(n)` onto the orthogonal matrices whose
+units lie in `G`. This applies to the symplectic group (`TauCeti.GLSymplectic.inf_unitarySubgroup`)
+and to the realified `GL(n, ℂ)` (`Matrix.GeneralLinearGroup.unitarySubgroup_inf_range_realify`). -/
+noncomputable def realifyUnitaryHomeomorph
+    (hG : G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) = (unitarySubgroup (GL n ℂ)).map (realify n ℂ)) :
+    unitaryGroup n ℂ ≃ₜ {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G} :=
+  have hmem (U : unitaryGroup n ℂ) : (U : Matrix n n ℂ).realify ∈ unitaryGroup (n ⊕ n) ℝ :=
+    realify_mem_orthogonalGroup_iff.2 U.2
+  have hG' (U : unitaryGroup n ℂ) : Unitary.toUnits ⟨_, hmem U⟩ ∈ G := by
+    have hU : realify n ℂ (Unitary.toUnits U) ∈ G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
+      hG ▸ Subgroup.mem_map_of_mem _ (by simp [mem_unitarySubgroup_iff, Units.unitary_eq])
+    have hUnits : Unitary.toUnits ⟨_, hmem U⟩ = realify n ℂ (Unitary.toUnits U) :=
+      Units.ext (by simp [coe_realify])
+    exact hUnits ▸ (Subgroup.mem_inf.1 hU).1
+  let f : unitaryGroup n ℂ → {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G} :=
+    fun U ↦ ⟨⟨_, hmem U⟩, hG' U⟩
+  have hf : Function.Bijective f := by
+    refine ⟨fun U V h ↦ Subtype.ext (Matrix.realify_injective ?_), fun u ↦ ?_⟩
+    · exact congrArg (fun u : {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G} ↦
+        ((u : unitaryGroup (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) h
+    have hu : Unitary.toUnits (u : unitaryGroup (n ⊕ n) ℝ) ∈
+        G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) :=
+      Subgroup.mem_inf.2 ⟨u.2, by simp [mem_unitarySubgroup_iff, Units.unitary_eq]⟩
+    rw [hG] at hu
+    obtain ⟨A, hA, hAu⟩ := hu
+    refine ⟨⟨A, by simpa [mem_unitarySubgroup_iff, Units.unitary_eq] using hA⟩, ?_⟩
+    refine Subtype.ext (Subtype.ext ?_)
+    simpa [f, coe_realify] using congrArg Units.val hAu
+  -- `U(n)` is compact, so a continuous bijection onto a Hausdorff space is a homeomorphism.
+  Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)
+    (((Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := ℂ)).continuous.comp
+      continuous_subtype_val).subtype_mk _ |>.subtype_mk _)
+
+/-- Realification identifies `U(n)` with the orthogonal matrices of `G`, as matrices. -/
+@[simp]
+theorem coe_realifyUnitaryHomeomorph_apply
+    (hG : G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) = (unitarySubgroup (GL n ℂ)).map (realify n ℂ))
+    (U : unitaryGroup n ℂ) :
+    ((realifyUnitaryHomeomorph hG U : unitaryGroup (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      (U : Matrix n n ℂ).realify :=
+  (rfl)
+
+/-- The unitary matrix corresponding to an orthogonal matrix of `G` realifies to it. -/
+@[simp]
+theorem realify_realifyUnitaryHomeomorph_symm_apply
+    (hG : G ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) = (unitarySubgroup (GL n ℂ)).map (realify n ℂ))
+    (u : {u : unitaryGroup (n ⊕ n) ℝ // Unitary.toUnits u ∈ G}) :
+    (((realifyUnitaryHomeomorph hG).symm u : unitaryGroup n ℂ) : Matrix n n ℂ).realify =
+      ((u : unitaryGroup (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
+  rw [← coe_realifyUnitaryHomeomorph_apply hG, Homeomorph.apply_symm_apply]
+
+end GeneralLinearGroup
 
 end Matrix
 

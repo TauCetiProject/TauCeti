@@ -20,9 +20,16 @@ curvature:
   times the corresponding rank-one operators.
 * `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the two-basis expansion
   `⟪x, T y⟫ = ∑ᵢ ∑ⱼ ⟪x, uᵢ⟫ ⟪uᵢ, T vⱼ⟫ ⟪vⱼ, y⟫`.
+* `OrthonormalBasis.inner_sum_inner_smul`: expanding two vectors in `b` and reassembling along an
+  orthonormal family `e` preserves their inner product,
+  `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
+* `OrthonormalBasis.real_inner_fin_two`: in a real plane with orthonormal basis `b`,
+  `⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`.
+* `Complex.isometryOfOrthonormal_symm_apply_eq_mk`: in the same plane, the complex coordinate of
+  `x` given by `Complex.isometryOfOrthonormal b` is `⟪x, b₀⟫ + i ⟪x, b₁⟫`.
 -/
 
 public section
@@ -52,6 +59,14 @@ theorem inner_eq_sum_repr (b : OrthonormalBasis ι 𝕜 E) (x y : E) :
     ⟪x, y⟫_𝕜 = ∑ i, conj (b.repr x i) * b.repr y i := by
   simp [← b.sum_inner_mul_inner x y, b.repr_apply_apply]
 
+/-- The real inner product in the two coordinates of an orthonormal basis `b` of a plane:
+`⟪x, y⟫ = ⟪x, b₀⟫ ⟪y, b₀⟫ + ⟪x, b₁⟫ ⟪y, b₁⟫`. -/
+theorem real_inner_fin_two {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (b : OrthonormalBasis (Fin 2) ℝ V) (x y : V) :
+    ⟪x, y⟫_ℝ = ⟪x, b 0⟫_ℝ * ⟪y, b 0⟫_ℝ + ⟪x, b 1⟫_ℝ * ⟪y, b 1⟫_ℝ := by
+  rw [← b.sum_inner_mul_inner x y, Fin.sum_univ_two, real_inner_comm (b 0) y,
+    real_inner_comm (b 1) y]
+
 variable {F κ : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype κ]
 
 /-- **Expansion in rank-one operators.** For orthonormal bases `(uᵢ)` of `E` and `(vⱼ)` of `F`,
@@ -77,4 +92,20 @@ theorem sum_sum_inner_mul_inner_mul_inner (u : OrthonormalBasis ι 𝕜 E)
   simp only [map_sum, map_smul, inner_sum, inner_smul_right, Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
 
+/-- Expanding two vectors in an orthonormal basis `b` and reassembling their coordinates along an
+orthonormal family `e` preserves their inner product. -/
+theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he : Orthonormal 𝕜 e)
+    (x y : E) :
+    ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
+  simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
+
 end OrthonormalBasis
+
+open scoped InnerProductSpace in
+/-- The complex coordinate of `x` given by `Complex.isometryOfOrthonormal b` is
+`⟪x, b₀⟫ + i ⟪x, b₁⟫`. -/
+theorem Complex.isometryOfOrthonormal_symm_apply_eq_mk {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (b : OrthonormalBasis (Fin 2) ℝ V) (x : V) :
+    (Complex.isometryOfOrthonormal b).symm x = ⟨⟪x, b 0⟫_ℝ, ⟪x, b 1⟫_ℝ⟩ := by
+  rw [Complex.isometryOfOrthonormal_symm_apply]
+  apply Complex.ext <;> simp [b.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_comm]

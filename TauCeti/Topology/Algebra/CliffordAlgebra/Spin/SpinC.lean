@@ -53,6 +53,11 @@ instance instT2Space [ContinuousMul (CliffordAlgebra Q)] : T2Space (spinCGroup Q
     (finite_spinCKernel Q hQ).isClosed
   infer_instance
 
+/-- The finite diagonal kernel has the discrete topology inherited from `Spin(Q) × Circle`. -/
+instance instDiscreteTopologySpinCKernel :
+    DiscreteTopology (spinCKernel Q hQ) :=
+  isDiscrete_iff_discreteTopology.mp (finite_spinCKernel Q hQ).isDiscrete
+
 /-- The actual quotient map from `Spin(Q) × Circle` to `Spinᶜ(Q)` is a quotient covering map
 by its diagonal order-two kernel. -/
 theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :
@@ -74,6 +79,43 @@ theorem continuous_det : Continuous (det Q hQ) := by
   simp only [Function.comp_def, ← mk_apply, det_mk]
   -- Function powers are pointwise, so this is the square of the second projection.
   exact continuous_snd.pow 2
+
+/-- The weight-one central circle inclusion is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
+  have h : Continuous (fun z : Circle ↦ mk Q hQ (1, z)) := by
+    simpa only [coe_mk, Function.comp_def, id_eq] using
+      (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
+        (continuous_const.prodMk continuous_id)
+  exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
+
+/-- The determinant character as a continuous homomorphism on the Spinᶜ quotient. -/
+def detContinuousMonoidHom : spinCGroup Q hQ →ₜ* Circle where
+  toMonoidHom := det Q hQ
+  continuous_toFun := continuous_det Q hQ
+
+/-- The weight-one central circle as a continuous homomorphism into the Spinᶜ quotient. -/
+def ofCircleContinuousMonoidHom : Circle →ₜ* spinCGroup Q hQ where
+  toMonoidHom := ofCircle Q hQ
+  continuous_toFun := continuous_ofCircle Q hQ
+
+/-- The bundled determinant character is the original quotient determinant. -/
+@[simp]
+theorem detContinuousMonoidHom_apply (x : spinCGroup Q hQ) :
+    detContinuousMonoidHom Q hQ x = det Q hQ x := (rfl)
+
+/-- The bundled central inclusion is the original weight-one circle inclusion. -/
+@[simp]
+theorem ofCircleContinuousMonoidHom_apply (z : Circle) :
+    ofCircleContinuousMonoidHom Q hQ z = ofCircle Q hQ z := (rfl)
+
+/-- The determinant restricted to the central circle is the square character. -/
+@[simp]
+theorem detContinuousMonoidHom_comp_ofCircleContinuousMonoidHom :
+    (detContinuousMonoidHom Q hQ).comp (ofCircleContinuousMonoidHom Q hQ) =
+      (ContinuousMonoidHom.id Circle) ^ 2 := by
+  ext z
+  simp [ContinuousMonoidHom.pow_apply, det_ofCircle]
 
 section Coordinates
 

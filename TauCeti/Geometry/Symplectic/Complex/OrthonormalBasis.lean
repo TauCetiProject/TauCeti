@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.CompatibleMetric
+public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -16,7 +19,10 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 An orthogonal almost complex structure `J` on a finite-dimensional real inner product space
 of dimension `2 * n` admits an orthonormal basis `(u₁, J u₁, …, uₙ, J uₙ)`. The statement
-includes dimension zero. Such a basis gives the orientation induced by `J`.
+includes dimension zero. Every such basis is a Darboux basis for the associated symplectic form
+`ω(v, w) = ⟪J v, w⟫` (`TauCeti.AlmostComplexStructure.symplecticForm`) and therefore induces the
+symplectic orientation `ω.orientation`
+(`TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`).
 
 The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`,
 then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate
@@ -24,18 +30,31 @@ immediately before its imaginary coordinate. Both constructions preserve the ori
 and real scalar action.
 
 Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
-structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`.
+structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`. In dimension
+four, any unit vector extends to an oriented unitary orthonormal frame for a compatible symplectic
+form
+(`exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`).
 
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
-  exist.
+  exist in every even dimension `2 * n`.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
   structures exist in even dimension.
+* `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
+  orthonormal basis in dimension `2 * n` induces the symplectic orientation of `ω(v, w) = ⟪J v, w⟫`.
+* `TauCeti.AlmostComplexStructure.exists_unitary_orthonormalBasis_of_norm_eq_one`,
+  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`, and
+  `exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation`:
+  existence of oriented unitary frames and completion of a unit vector in dimension four.
+* `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
+  an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
+* D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
+  Section 2.1.
 -/
 
 public section
@@ -43,6 +62,9 @@ public section
 namespace TauCeti.AlmostComplexStructure
 
 open Module
+open scoped RealInnerProductSpace
+
+section EvenDimension
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -99,4 +121,150 @@ theorem exists_forall_norm_apply_eq (hV : Even (finrank ℝ V)) :
     simp [L, smul_smul]
   · simp [L, norm_smul]
 
+/-- **Every adapted orthonormal basis induces the symplectic orientation.** For a symplectic form
+`ω` and an almost complex structure `J` satisfying `ω(v, w) = ⟪J v, w⟫` on a `2 * n`-dimensional
+real inner product space, any orthonormal basis `b` with `b (2k + 1) = J (b (2k))` is a Darboux
+basis of `ω` and therefore induces `ω.orientation`. -/
+theorem toBasis_orientation_eq_symplecticForm_orientation {n : ℕ} {ω : SymplecticForm V}
+    {J : AlmostComplexStructure V} (hω : ∀ v w, ω v w = ⟪J v, w⟫) (hdim : finrank ℝ V = 2 * n)
+    {b : OrthonormalBasis (Fin (2 * n)) ℝ V}
+    (hb : ∀ k : Fin n, b ⟨2 * k.val + 1, by omega⟩ = J (b ⟨2 * k.val, by omega⟩)) :
+    b.toBasis.orientation = ω.orientation hdim := by
+  let E : Fin n × Fin 2 ≃ Fin (2 * n) :=
+    (finProdFinEquiv (m := n) (n := 2)).trans (finCongr (Nat.mul_comm n 2))
+  let c : Basis (Fin n × Fin 2) ℝ V := b.toBasis.reindex E.symm
+  have hc (p : Fin n × Fin 2) : c p = b (E p) := by simp [c]
+  have hE0 (i : Fin n) : E (i, 0) = ⟨2 * i.val, by omega⟩ := by
+    ext; simp [E, finProdFinEquiv]
+  have hE1 (i : Fin n) : E (i, 1) = ⟨2 * i.val + 1, by omega⟩ := by
+    ext; simp [E, finProdFinEquiv]; omega
+  have hb_inner := orthonormal_iff_ite.1 b.orthonormal
+  have hcd : ω.IsDarbouxBasis c := by
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+    · rw [hc, hc, hE0, hE0, hω, ← hb i, hb_inner, ite_eq_right_iff]
+      intro h
+      simp only [Fin.ext_iff] at h
+      omega
+    · rw [hc, hc, hE1, hE1, hb i, hω, J.apply_apply, inner_neg_left, hb_inner, neg_eq_zero,
+        ite_eq_right_iff]
+      intro h
+      simp only [Fin.ext_iff] at h
+      omega
+    · rw [hc, hc, hE0, hE1, hω, ← hb i, hb_inner]
+      have hij : (⟨2 * i.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ i = j := by
+        simp only [Fin.ext_iff]
+        omega
+      simp only [hij]
+  have hre : c.reindex E = b.toBasis := Basis.eq_of_apply_eq fun x ↦ by simp [c]
+  rw [← hre]
+  exact hcd.orientation_reindex hdim (Nat.mul_comm n 2)
+
+end EvenDimension
+
+section DimensionFour
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
+
+local instance finiteDimensional_of_finrank_eq_four : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
+
+/-- Four-dimensional specialization of `toBasis_orientation_eq_symplecticForm_orientation`: a
+unitary orthonormal basis `e` (`J (e 0) = e 1`, `J (e 2) = e 3`) induces `ω.orientation Fact.out`
+when `ω(v, w) = ⟪J v, w⟫`. -/
+theorem toBasis_orientation_eq_symplecticForm_orientation_four {ω : SymplecticForm V}
+    {J : AlmostComplexStructure V} (hω : ∀ v w, ω v w = ⟪J v, w⟫)
+    {e : OrthonormalBasis (Fin 4) ℝ V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+    e.toBasis.orientation = ω.orientation Fact.out :=
+  toBasis_orientation_eq_symplecticForm_orientation (n := 2) hω Fact.out fun k ↦ by
+    fin_cases k
+    · exact h₀.symm
+    · exact h₂.symm
+
+/-- Given an orthogonal almost complex structure `J` on a four-dimensional real inner product space
+`V` and a unit vector `ξ`, there exists a unitary orthonormal basis `e` extending `e 0 = ξ`,
+`J (e 0) = e 1`, `J (e 2) = e 3`. -/
+theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ : V} (hξ : ‖ξ‖ = 1) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V, e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  classical
+  have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
+    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
+  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
+  obtain ⟨η, hη_norm, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+    ({ξ, J ξ} : Finset V) (by
+      rw [Fact.out (p := finrank ℝ V = 4)]
+      exact Finset.card_le_two.trans_lt (by norm_num))
+  have hξη : ⟪ξ, η⟫ = 0 := hηK ξ (by simp)
+  have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
+  have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
+  have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
+  have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
+    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
+    have hξJ := hself ξ
+    have hηJη := hself η
+    fin_cases i <;> fin_cases j <;> dsimp only <;> first
+      | exact absurd rfl hij
+      | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη
+      | (rw [real_inner_comm]; first
+          | exact hξJ | exact hξη | exact hξJη | exact hJξη | exact hJξJη | exact hηJη)
+  have hcard : Fintype.card (Fin 4) = finrank ℝ V :=
+    (Fintype.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm
+  let e : OrthonormalBasis (Fin 4) ℝ V :=
+    (basisOfOrthonormalOfCardEqFinrank hon₄ hcard).toOrthonormalBasis
+      (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
+  have he_coe : (e : Fin 4 → V) = ![ξ, J ξ, η, J η] := by
+    rw [Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
+  exact ⟨e, congrFun he_coe 0, by simp [he_coe], by simp [he_coe]⟩
+
+/-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product induces
+an oriented unitary orthonormal frame extending any given unit vector `ξ`.** -/
+theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V} (hg : ∀ v w, ⟪v, w⟫ = ω v (J w))
+    {ξ : V} (hξ : ‖ξ‖ = 1) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V,
+      e.toBasis.orientation = ω.orientation Fact.out ∧
+        e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  have hinv := ω.invariant_of_apply_apply_eq_inner fun v w ↦ (hg v w).symm
+  have hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫ := fun v w ↦ by
+    rw [hg, hg]
+    exact hinv.associatedBilinForm_invariant v w
+  have hω : ∀ v w, ω v w = ⟪J v, w⟫ := fun v w ↦ by
+    rw [hg]
+    exact hinv.symplecticForm_apply_eq_associatedBilinForm_apply_left_apply v w
+  obtain ⟨e, he₀, h₀, h₂⟩ := exists_unitary_orthonormalBasis_of_norm_eq_one hJ hξ
+  exact ⟨e, toBasis_orientation_eq_symplecticForm_orientation_four hω h₀ h₂, he₀, h₀, h₂⟩
+
+/-- **Every pair `(ω, J)` whose associated bilinear form `ω(·, J ·)` is the inner product admits a
+positively oriented unitary orthonormal frame for `ω.orientation Fact.out`.** -/
+theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V} (hg : ∀ v w, ⟪v, w⟫ = ω v (J w)) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V,
+      e.toBasis.orientation = ω.orientation Fact.out ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  have hv : finrank ℝ V = 4 := Fact.out
+  let ξ := stdOrthonormalBasis ℝ V ⟨0, by omega⟩
+  have hξ : ‖ξ‖ = 1 := (stdOrthonormalBasis ℝ V).orthonormal.1 _
+  obtain ⟨e, he, _, h₀, h₂⟩ :=
+    exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one hg hξ
+  exact ⟨e, he, h₀, h₂⟩
+
+end DimensionFour
+
 end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
+planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
+  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
+  have hsquare : L.comp L = -LinearMap.id := by
+    apply e.toBasis.ext
+    intro i
+    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
+  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+end OrthonormalBasis

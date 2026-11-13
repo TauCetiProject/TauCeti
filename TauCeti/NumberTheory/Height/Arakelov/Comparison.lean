@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Basic
 public import TauCeti.NumberTheory.Height.ProjectiveTuple
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Comparison of Euclidean and sup heights
@@ -52,7 +53,11 @@ open Height Module NumberField
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] {ι : Type*} [Finite ι]
+variable {K : Type*} [Field K] {ι : Type*}
+
+section FiniteIndex
+
+variable [Finite ι]
 
 -- The two local estimates below are the comparison of the sup and Euclidean norms on `ℂ^ι`,
 -- stated directly for the embedded tuple and the place, as they enter the height formulas.
@@ -93,10 +98,7 @@ private theorem rpow_sum_sq_eq_sqrt_pow (w : InfinitePlace K) (y : ι → K) :
     (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) =
       √(∑ i, ‖w.embedding (y i)‖ ^ 2) ^ w.mult := by
   let _ := Fintype.ofFinite ι
-  rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
-  congr 1
-  ring
+  rw [Real.pow_sqrt_eq_rpow (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
 
 variable [NumberField K]
 
@@ -164,39 +166,6 @@ theorem height2_le_sqrt_natCard_mul_absoluteProjectiveTupleHeight (y : ι → K)
       rw [Real.mul_rpow (by positivity) (mulHeight_pos y).le, ← Real.rpow_natCast,
         ← Real.rpow_mul (Real.sqrt_nonneg _), mul_one_div_cancel hD, Real.rpow_one, one_div]
 
-/-- A nonzero tuple of algebraic integers whose embedding at every infinite place has Euclidean
-norm at most `c` has relative Euclidean projective height at most `c ^ [K : ℚ]`. -/
-theorem arakelovMulHeight_le_pow_finrank_of_forall_le [Fintype ι] {y : ι → 𝓞 K} (hy : y ≠ 0)
-    {c : ℝ} (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
-    arakelovMulHeight (fun i ↦ (y i : K)) ≤ c ^ finrank ℚ K := by
-  obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
-  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
-  rw [arakelovMulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
-  refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ by positivity)
-    (NumberField.finprod_iSup_finitePlace_le_one hy)).trans ?_
-  refine Finset.prod_le_prod₀ (fun w _ ↦ by positivity) fun w _ ↦ ?_
-  rw [rpow_sum_sq_eq_sqrt_pow]
-  exact pow_le_pow_left₀ (Real.sqrt_nonneg _) (hc w) _
-
-/-- A tuple of algebraic integers whose embedding at every infinite place has Euclidean norm at
-most `c` has absolute Euclidean height at most `c`. -/
-theorem height2_le_of_forall_le [Fintype ι] {y : ι → 𝓞 K} {c : ℝ}
-    (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
-    height2 (fun i ↦ (y i : K)) ≤ c := by
-  have hc0 : 0 ≤ c := (Real.sqrt_nonneg _).trans (hc (Classical.arbitrary _))
-  rcases eq_or_ne y 0 with rfl | hy
-  · rw [RingOfIntegers.coe_tuple_eq_zero_iff.mpr rfl, height2_zero]
-    exact hc0
-  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
-  have h := arakelovMulHeight_eq_height2 (fun i ↦ (y i : K))
-  rw [ite_eq_right hy'] at h
-  rw [← h]
-  calc arakelovMulHeight (fun i ↦ (y i : K)) ^ ((1 : ℝ) / finrank ℚ K)
-      ≤ (c ^ finrank ℚ K) ^ ((1 : ℝ) / finrank ℚ K) :=
-        Real.rpow_le_rpow (arakelovMulHeight_nonneg _)
-          (arakelovMulHeight_le_pow_finrank_of_forall_le hy hc) (by positivity)
-    _ = c := by rw [one_div, Real.pow_rpow_inv_natCast hc0 finrank_pos.ne']
-
 /-- The logarithmic form of `mulHeight_le_arakelovMulHeight`. -/
 theorem logHeight_le_arakelovLogHeight (y : ι → K) : logHeight y ≤ arakelovLogHeight y := by
   rw [logHeight_eq_log_mulHeight, arakelovLogHeight_eq_log_arakelovMulHeight]
@@ -220,5 +189,47 @@ theorem arakelovLogHeight_le_mul_log_natCard_add_logHeight (y : ι → K) :
       rw [Real.log_mul (pow_pos hc _).ne' (mulHeight_pos y).ne', Real.log_pow,
         Real.log_sqrt (Nat.cast_nonneg _), logHeight_eq_log_mulHeight]
       ring
+
+end FiniteIndex
+
+section FintypeIndex
+
+variable [NumberField K]
+
+/-- A nonzero tuple of algebraic integers whose embedding at every infinite place has Euclidean
+norm at most `c` has relative Euclidean projective height at most `c ^ [K : ℚ]`. -/
+theorem arakelovMulHeight_le_pow_finrank_of_forall_le [Fintype ι] {y : ι → 𝓞 K} (hy : y ≠ 0)
+    {c : ℝ} (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
+    arakelovMulHeight (fun i ↦ (y i : K)) ≤ c ^ finrank ℚ K := by
+  have hF : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
+  rw [hF] at hc ⊢
+  rw [arakelovMulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
+  refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ by positivity)
+    (NumberField.finprod_iSup_finitePlace_le_one y)).trans ?_
+  refine Finset.prod_le_prod₀ (fun w _ ↦ by positivity) fun w _ ↦ ?_
+  rw [rpow_sum_sq_eq_sqrt_pow]
+  exact pow_le_pow_left₀ (Real.sqrt_nonneg _) (hc w) _
+
+/-- A tuple of algebraic integers whose embedding at every infinite place has Euclidean norm at
+most `c` has absolute Euclidean height at most `c`. -/
+theorem height2_le_of_forall_le [Fintype ι] {y : ι → 𝓞 K} {c : ℝ}
+    (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
+    height2 (fun i ↦ (y i : K)) ≤ c := by
+  have hc0 : 0 ≤ c := (Real.sqrt_nonneg _).trans (hc (Classical.arbitrary _))
+  rcases eq_or_ne y 0 with rfl | hy
+  · rw [RingOfIntegers.coe_tuple_eq_zero_iff.mpr rfl, height2_zero]
+    exact hc0
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
+  have h := arakelovMulHeight_eq_height2 (fun i ↦ (y i : K))
+  rw [ite_eq_right hy'] at h
+  rw [← h]
+  calc arakelovMulHeight (fun i ↦ (y i : K)) ^ ((1 : ℝ) / finrank ℚ K)
+      ≤ (c ^ finrank ℚ K) ^ ((1 : ℝ) / finrank ℚ K) :=
+        Real.rpow_le_rpow (arakelovMulHeight_nonneg _)
+          (arakelovMulHeight_le_pow_finrank_of_forall_le hy hc) (by positivity)
+    _ = c := by rw [one_div, Real.pow_rpow_inv_natCast hc0 finrank_pos.ne']
+
+end FintypeIndex
 
 end TauCeti

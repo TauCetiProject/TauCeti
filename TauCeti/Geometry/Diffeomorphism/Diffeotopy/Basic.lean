@@ -24,10 +24,9 @@ Diffeotopies coerce to their spatial component, so `Φ (t, x)` is the point of `
 Diffeotopies compose and invert, and forgetting smoothness gives the existing
 `TauCeti.AmbientIsotopy`.
 
-This supplies the smooth ambient-isotopy half of the geometric-topology roadmap's requirement
-that isotopy notions be defined generally before they are specialized to knots.  The non-ambient
-smooth isotopy of arbitrary maps is separate and is not defined here.  The specialization to
-bundled smooth embeddings, used for geometric knot presentations, is in
+The notion is defined for an arbitrary manifold `M`, before any specialization to knots.  The
+non-ambient smooth isotopy of arbitrary maps is separate and is not defined here.  The
+specialization to bundled smooth embeddings, used for geometric knot presentations, is in
 `TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic`.
 
 ## Main definitions
@@ -35,6 +34,7 @@ bundled smooth embeddings, used for geometric knot presentations, is in
 * `TauCeti.Diffeotopy`: a level-preserving diffeomorphism of `I × M` starting at the identity.
 * `TauCeti.Diffeotopy.timeSlice`: the self-diffeomorphism of `M` at a fixed time.
 * `TauCeti.Diffeotopy.final`: the self-diffeomorphism at time one.
+* `TauCeti.Diffeotopy.cylinderMap`: the motion `(x, t) ↦ Φ (t, x)` on the cylinder `M × I`.
 * `TauCeti.Diffeotopy.refl`, `trans`, and `symm`: the constant, composite, and inverse
   diffeotopies.
 * `TauCeti.Diffeotopy.toAmbientIsotopy`: forget smoothness to obtain a continuous ambient
@@ -48,6 +48,8 @@ bundled smooth embeddings, used for geometric knot presentations, is in
   diffeomorphisms.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
+* `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
+  stationary at the final time have the same final diffeomorphism.
 
 ## References
 
@@ -205,6 +207,46 @@ theorem mapsTo_final_of_eqOn_compl {K U : Set M} (hKU : K ⊆ U)
   simpa only [compl_compl] using
     ((Set.surjOn_id Uᶜ).congr hfix.symm).mapsTo_compl Φ.final.injective
 
+/-- The final diffeomorphism of a conjugated diffeotopy is the conjugated final diffeomorphism. -/
+theorem final_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
+    (Φ.transDiffeomorph f).final = (f.symm.trans Φ.final).trans f :=
+  _root_.Diffeomorph.ext fun x ↦ by simp
+
+/-! ### The motion on the cylinder -/
+
+/-- The motion of a diffeotopy read on the cylinder `M × I`, with time as the second
+coordinate: `(x, t) ↦ Φ (t, x)`. This is the order used by `TauCeti.homotopyOperator`. -/
+def cylinderMap : M × I → M :=
+  fun p ↦ Φ (p.2, p.1)
+
+@[simp]
+theorem cylinderMap_apply (p : M × I) : Φ.cylinderMap p = Φ (p.2, p.1) :=
+  (rfl)
+
+theorem contMDiff_cylinderMap : ContMDiff (J.prod (𝓡∂ 1)) J n Φ.cylinderMap :=
+  Φ.contMDiff.comp (contMDiff_snd.prodMk contMDiff_fst)
+
+/-- The cylinder map at time zero is the identity. -/
+theorem cylinderMap_comp_zero : Φ.cylinderMap ∘ (fun x ↦ (x, (0 : I))) = id :=
+  funext Φ.apply_zero
+
+/-- The cylinder map at time one is the final diffeomorphism. -/
+theorem cylinderMap_comp_one : Φ.cylinderMap ∘ (fun x ↦ (x, (1 : I))) = Φ.final :=
+  funext fun x ↦ (Φ.final_apply x).symm
+
+/-- The motion of a conjugated diffeotopy is the conjugated motion. -/
+theorem cylinderMap_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
+    (Φ.transDiffeomorph f).cylinderMap = f ∘ Φ.cylinderMap ∘ Prod.map f.symm id :=
+  funext fun p ↦ by simp
+
+/-- If the motion of `Φ` is joined to the motion of `Ψ` by a homotopy `G` that is stationary at the
+final time, then `Φ` and `Ψ` have the same final diffeomorphism. -/
+theorem final_eq_of_homotopy {Ψ : Diffeotopy J n M} {G : (M × I) × I → M}
+    (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p) (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) :
+    Ψ.final = Φ.final :=
+  _root_.Diffeomorph.ext fun x ↦ by
+    rw [final_apply, ← cylinderMap_apply Ψ (x, 1), ← hG₁, h₁]
+
 /-- The constant diffeotopy at the identity. -/
 def refl (J : ModelWithCorners ℝ E H) (n : ℕ∞ω) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] : Diffeotopy J n M where
@@ -249,6 +291,12 @@ theorem trans_apply (Ψ : Diffeotopy J n M) (p : I × M) :
   unfold trans
   rw [congr_fun (_root_.Diffeomorph.coe_trans Φ.toDiffeomorph Ψ.toDiffeomorph) p,
     Function.comp_apply, Φ.toDiffeomorph_apply]
+
+/-- The motion of a composite diffeotopy is the motion of `Ψ` after the level-preserving motion
+`(x, t) ↦ (Φ (t, x), t)` of `Φ`. -/
+theorem cylinderMap_trans (Ψ : Diffeotopy J n M) :
+    (Φ.trans Ψ).cylinderMap = Ψ.cylinderMap ∘ fun p ↦ (Φ.cylinderMap p, p.2) :=
+  funext fun p ↦ by simp
 
 /-- The time slice of a composite diffeotopy is the composite of its time slices. -/
 @[simp]

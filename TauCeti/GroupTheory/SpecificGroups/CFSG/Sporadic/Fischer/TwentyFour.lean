@@ -639,37 +639,41 @@ order of the two generators. -/
 theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
       fi24AutomorphismCoxeterMatrix i j = 1 := by
-  have hmem : fi24AutomorphismCoxeterMatrix.relation i j ∈
-      Subgroup.normalClosure (Relator.relatorSet fi24AutomorphismRelators) := by
-    rw [fi24AutomorphismRelators_def, normalClosure_relatorSet_coxeterRelators_append]
-    exact Subgroup.subset_normalClosure (Or.inl ⟨(i, j), rfl⟩)
-  have key := PresentedGroup.mk_eq_one_iff.mpr hmem
-  rw [CoxeterMatrix.relation, map_pow, map_mul] at key
-  exact key
+  -- `Fi24AutomorphismGroup` is presented by `fi24AutomorphismRelators`, which is the Coxeter
+  -- relators followed by the extra ones by `fi24AutomorphismRelators_def`.
+  unfold Fi24AutomorphismGroup
+  rw [fi24AutomorphismRelators_def]
+  exact of_mul_of_pow_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+    fi24AutomorphismAdditionalRelators i j
 
 /-- Every source generator is an involution in the source presented group. -/
 theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 := by
-  have key := fi24AutomorphismGroup_of_mul_of_pow i i
-  rwa [fi24AutomorphismCoxeterMatrix.diagonal, pow_one] at key
+  -- `Fi24AutomorphismGroup` is presented by `fi24AutomorphismRelators`, which is the Coxeter
+  -- relators followed by the extra ones by `fi24AutomorphismRelators_def`.
+  unfold Fi24AutomorphismGroup
+  rw [fi24AutomorphismRelators_def]
+  exact of_mul_of_self_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+    fi24AutomorphismAdditionalRelators i
 
 /-- **All source generators agree in the abelianization of the source presented group.** Two
 generators joined by an edge of the diagram are involutions whose product has order dividing
 three, so they coincide in any abelian quotient, and the diagram is connected. -/
 theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
-    Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-      Abelianization.of (PresentedGroup.of 0) := by
+    Group.Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+      Group.Abelianization.of (PresentedGroup.of 0) := by
   have step : ∀ i j : Fin 12, fi24AutomorphismCoxeterMatrix i j = 3 →
-      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-        Abelianization.of (PresentedGroup.of j) := by
+      Group.Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+        Group.Abelianization.of (PresentedGroup.of j) := by
     intro i j hij
     have hsquare (k : Fin 12) :
-        Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
+        Group.Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
       rw [← map_pow, sq, fi24AutomorphismGroup_of_mul_of_self, map_one]
-    have hprod := congrArg Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
+    have hprod := congrArg Group.Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
     rw [hij, map_pow, map_mul, map_one, mul_pow, pow_succ _ 2, pow_succ _ 2,
       hsquare, hsquare, one_mul, one_mul] at hprod
-    apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
+    apply mul_right_cancel (b := Group.Abelianization.of (PresentedGroup.of j :
+        Fi24AutomorphismGroup))
     simpa only [← sq, hsquare] using hprod
   -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
   have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by

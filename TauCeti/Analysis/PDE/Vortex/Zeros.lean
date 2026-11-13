@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Deformation
-public import TauCeti.Analysis.Complex.Wirtinger.Similarity
+public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
+import TauCeti.Analysis.Analytic.Order
 
 /-!
 # Isolated zeros and local multiplicities of plane vortex sections
@@ -44,25 +45,35 @@ namespace TauCeti.Vortex
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The two holomorphicity rows give the scalar Cauchy–Riemann equation for `α = 2(p + i q)`. -/
+/-- The conjugate Wirtinger derivative `∂bar α (1)` of the section `α = 2 (p + i q)` in terms of
+the derivatives of its real coordinates. -/
+theorem conjWirtingerDeriv_apply_one_sectionValue {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    conjWirtingerDeriv (sectionValue x) z 1 =
+      ((fderiv ℝ (fun w ↦ x w 2) z 1 - fderiv ℝ (fun w ↦ x w 3) z I : ℝ) : ℂ) +
+        ((fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I : ℝ) : ℂ) * I := by
+  rw [conjWirtingerDeriv_apply, fderiv_sectionValue_apply hp hq,
+    fderiv_sectionValue_apply hp hq, smul_eq_mul, smul_eq_mul, smul_eq_mul, mul_one]
+  apply Complex.ext <;> simp <;> ring
+
+/-- The two holomorphicity rows give the scalar Cauchy–Riemann equation `∂bar α = c α` for
+`α = 2(p + i q)`, with `c = (b₂ - i b₁) / 2`. -/
 theorem conjWirtingerDeriv_apply_one_section_eq_mul {z : ℂ}
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
     (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0) :
-    conjWirtingerDeriv (fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)) z 1 =
-      ((x z 1 : ℂ) - I * x z 0) / 2 * (2 * ((x z 2 : ℂ) + I * x z 3)) := by
-  have hP := Complex.ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt
-  have hQ := Complex.ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt
-  have hA := (hP.fun_add (hQ.const_mul I)).const_mul (2 : ℂ)
-  simp only [Function.comp_def, Complex.ofRealCLM_apply] at hA
-  rw [conjWirtingerDeriv_apply, hA.fderiv]
+    conjWirtingerDeriv (sectionValue x) z 1 =
+      ((x z 1 : ℂ) - I * x z 0) / 2 * sectionValue x z := by
+  rw [conjWirtingerDeriv_apply_one_sectionValue hp hq, sectionValue_apply]
   rw [equation_apply_one] at h₁
   rw [equation_apply_two] at h₂
-  apply Complex.ext <;>
-    simp [smul_eq_mul, Complex.ofRealCLM_apply] <;> linarith
+  apply Complex.ext <;> simp <;> linarith
 
-private theorem sectionValue_eq (w : ℂ) : sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
-  rw [sectionValue_apply, mul_comm (x w 3 : ℂ) I]
+/-- The coefficient `c = (b₂ - i b₁) / 2` is as regular as the connection. -/
+theorem contDiff_connectionCoeff {k : WithTop ℕ∞} (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
+    (hb₂ : ContDiff ℝ k (fun w ↦ x w 1)) :
+    ContDiff ℝ k fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2 :=
+  ((ofRealCLM.contDiff.comp hb₂).sub (contDiff_const.mul (ofRealCLM.contDiff.comp hb₁))).div_const 2
 
 section LocalFactor
 
@@ -74,15 +85,11 @@ variable {k : ℕ∞} (hn : 1 ≤ k) (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
 include hb₁ hb₂ hp hq hhol
 
 private theorem section_scalar_equation :
-    ContDiff ℝ k (fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) ∧
-      Differentiable ℝ (fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)) ∧
-      ∀ w, conjWirtingerDeriv (fun y ↦ 2 * ((x y 2 : ℂ) + I * x y 3)) w 1 =
-        ((x w 1 : ℂ) - I * x w 0) / 2 * (2 * ((x w 2 : ℂ) + I * x w 3)) := by
-  refine ⟨?_, ?_, fun w ↦
-    conjWirtingerDeriv_apply_one_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2⟩
-  · exact ((Complex.ofRealCLM.contDiff.comp hb₂).sub
-      (contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hb₁))).div_const 2
-  · fun_prop
+    ContDiff ℝ k (fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) ∧ Differentiable ℝ (sectionValue x) ∧
+      ∀ w, conjWirtingerDeriv (sectionValue x) w 1 =
+        ((x w 1 : ℂ) - I * x w 0) / 2 * sectionValue x w :=
+  ⟨contDiff_connectionCoeff hb₁ hb₂, fun w ↦ differentiableAt_sectionValue (hp w) (hq w),
+    fun w ↦ conjWirtingerDeriv_apply_one_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2⟩
 
 include hn
 
@@ -93,9 +100,8 @@ theorem exists_contDiffAt_sectionValue_eq_pow_mul
     ∃ (n : ℕ) (v : ℂ → ℂ), ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n * v w := by
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
-  have hneα : ∃ w ∈ (univ : Set ℂ), 2 * ((x w 2 : ℂ) + I * x w 3) ≠ 0 := by
-    simpa only [mem_univ, true_and, sectionValue_eq] using hne
-  simp only [sectionValue_eq]
+  have hneα : ∃ w ∈ (univ : Set ℂ), sectionValue x w ≠ 0 := by
+    simpa only [mem_univ, true_and] using hne
   exact exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
     ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) (mem_univ z)
     (not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
@@ -105,16 +111,13 @@ theorem exists_contDiffAt_sectionValue_eq_pow_mul
 theorem finite_setOfPred_sectionValue_eq_zero
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     {w | sectionValue x w = 0}.Finite := by
-  let α := fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3)
   obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
-  have htail : ∀ᶠ w in cocompact ℂ, α w ≠ 0 := by
+  have htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0 := by
     filter_upwards [hlim.eventually (lt_mem_nhds (by norm_num : (0 : ℝ) < 1))] with w hw
     intro hz
-    have hr : x w 2 = 0 := by simpa [α] using congrArg Complex.re hz
-    have hi : x w 3 = 0 := by simpa [α] using congrArg Complex.im hz
-    simp [hr, hi] at hw
-  simpa only [sectionValue_eq] using
-    finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
+    rw [sectionValue_eq_zero_iff] at hz
+    simp [hz] at hw
+  exact finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
 
 end LocalFactor
 
@@ -123,11 +126,6 @@ end LocalFactor
 section Quotient
 
 variable {k : ℕ∞} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- The section in the form used by `exists_contDiffAt_sectionValue_eq_pow_mul`. -/
-private theorem sectionValue_eq_two_mul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ) :
-    sectionValue x w = 2 * ((x w 2 : ℂ) + I * x w 3) := by
-  rw [sectionValue_apply, mul_comm I]
 
 /-- A local factorization of a vortex section with a factor only continuous at `z` can be
 replaced by one with the same exponent and a `Cᵏ` factor. -/

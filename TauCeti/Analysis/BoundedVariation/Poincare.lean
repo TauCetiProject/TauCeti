@@ -13,7 +13,9 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The Poincaré inequality for functions of bounded variation
@@ -43,8 +45,8 @@ and by convexity of `Ω` the segment from `x` to `x + h` lies in `Ω` whenever b
 the inner integral is at most `‖h‖ |Du|(Ω)`. Averaging `|u x - u y|` over `y ∈ S` then bounds the
 deviation of `u x` from the mean of `u` over `S`.
 
-For bounded `Ω`, `S ⊆ Ω` of positive measure and `u` integrable on `Ω`, the file also proves the
-inequality localized to an arbitrary subset `A ⊆ Ω`:
+For bounded `Ω`, `S ⊆ Ω` of positive measure and `u` locally integrable on `Ω`, the file also
+proves the inequality localized to an arbitrary subset `A ⊆ Ω`:
 
 `∫_A |u - ⨍_S u| ≤ μ(B(0, 1)) ^ (1 - 1/n) (diam Ω) ^ n / μ(S) μ(A) ^ (1/n) |Du|(Ω)`.
 
@@ -68,6 +70,8 @@ exhaustion of `Ω` by such sets
   a convex open set, with constant `(∫_{Ω - Ω} ‖h‖) / μ(S)`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex`: the Poincaré
   inequality on a bounded convex open set, with constant `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)`.
+* `TauCeti.integrableOn_of_totalVariationOn_ne_top_of_convex`: a locally integrable function of
+  finite total variation on a bounded convex open set is integrable there.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball`: the Poincaré
   inequality on a ball of radius `R`, with constant `2 ^ (n + 1) R`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex`:
@@ -113,7 +117,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
     have hset : MeasurableSet {p : E × E | p.1 + p.2 ∈ U} :=
       (measurable_fst.add measurable_snd) hU
     have hg : Measurable fun p : E × E => ‖u (p.1 + p.2) - u p.1‖ₑ :=
-      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).enorm
+      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).eNorm
     have hF_eq : Function.uncurry F =
         {p : E × E | p.1 + p.2 ∈ U}.indicator fun p => ‖u (p.1 + p.2) - u p.1‖ₑ := by
       ext ⟨x, h⟩
@@ -153,7 +157,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
         lintegral_mono hinner
     _ = (∫⁻ h in U - U, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u := by
         have hUU : MeasurableSet (U - U) := (Ω.isOpen.sub_left).measurableSet
-        rw [lintegral_mul_const _ (measurable_enorm.indicator hUU), lintegral_indicator hUU]
+        rw [lintegral_mul_const _ (measurable_eNorm.indicator hUU), lintegral_indicator hUU]
 
 /-- **The double-integral estimate.** On a convex open set `Ω`, a locally integrable `u`
 satisfies `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)`, where `|Du|(Ω)` is the total
@@ -172,7 +176,7 @@ theorem setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn
         filter_upwards [hv] with x hx
         refine lintegral_congr_ae ?_
         filter_upwards [hv] with y hy
-        rw [hx, hy, enorm_sub_rev]
+        rw [hx, hy, eNorm_sub_rev]
     _ ≤ _ := setLIntegral_setLIntegral_enorm_sub_le_of_measurable hconv (hu.congr hv)
         hm.stronglyMeasurable_mk.measurable
 
@@ -188,12 +192,12 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn
     hu.aestronglyMeasurable.mono_measure (Measure.restrict_mono hS le_rfl)
   calc ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, (∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ) * (μ S)⁻¹ ∂μ := lintegral_mono fun x => by
-        rw [enorm_sub_rev, ← div_eq_mul_inv]
+        rw [eNorm_sub_rev, ← div_eq_mul_inv]
         refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans ?_
         rw [setLAverage_eq]
         gcongr ?_ / _
         refine (lintegral_mono_set hS).trans_eq' (lintegral_congr fun y => ?_)
-        exact enorm_sub_rev _ _
+        exact eNorm_sub_rev _ _
     _ = (∫⁻ x in Ω, ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ ∂μ) * (μ S)⁻¹ :=
         lintegral_mul_const' _ _ (ENNReal.inv_ne_top.2 hS₀)
     _ ≤ (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u * (μ S)⁻¹ := by
@@ -277,7 +281,6 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
   set C := ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
     diam U ^ finrank ℝ E / μ.real T) * μ A ^ (finrank ℝ E : ℝ)⁻¹
   have hUb : Bornology.IsBounded U := hUK.isBounded.subset subset_closure
-  have hUfin : μ U ≠ ∞ := hUb.measure_lt_top.ne
   have huK : IntegrableOn u (closure U) μ := hu.integrableOn_compact_subset hUΩ hUK
   -- `C¹` functions `v n` converging to `u` in `L¹(closure U)`, with variation on `U` eventually at
   -- most `|Du|(Ω)`. The `L¹(closure U)` distance from `v n` to `u` is `e n`.
@@ -285,52 +288,23 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
     exists_mollifier_seq_of_isCompact_closure (Ω' := ⟨U, hU⟩) hu hUK hUΩ
   have he := hconv (closure U) hUK Subset.rfl
   set e : ℕ → ℝ≥0∞ := fun n => ∫⁻ x in closure U, ‖v n x - u x‖ₑ ∂μ
-  set M : ℝ≥0∞ := μ U / μ T
-  have hM : M ≠ ∞ := ENNReal.div_ne_top hUfin hT₀
+  set M : ℝ≥0∞ := μ (closure U) / μ T
+  have hM : M ≠ ∞ := ENNReal.div_ne_top hUK.measure_lt_top.ne hT₀
   -- Once the variation bound holds, the inequality holds for `u` up to an error `(1 + M) e n`.
   have hbound (n : ℕ) (hvn : totalVariationOn μ ⟨U, hU⟩ (v n) ≤ totalVariationOn μ Ω u) :
       ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤ e n + M * e n + C * totalVariationOn μ Ω u := by
     -- The smooth inequality for `v n` on `U`, whose variation there is at most `|Du|(Ω)`.
     have hvA : ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ ≤ C * totalVariationOn μ Ω u := by
-      refine (setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex hU hUc hUb
+      refine (setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex hUc hUb
         (hv n).contDiffOn hT hT₀ hA).trans (mul_le_mul_right ?_ _)
       have hL := ((hv n).locallyLipschitz.locallyLipschitzOn (s := U)
         ).totalVariationOn_eq_setLIntegral_enorm_fderiv (μ := μ) (Ω := ⟨U, hU⟩)
       rw [Opens.coe_mk] at hL
       exact hL ▸ hvn
-    -- The means over `T` differ by at most `e n / μ(T)`.
-    have hab : ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e n / μ T := by
-      have hTK : T ⊆ closure U := hT.trans subset_closure
-      rw [← setAverage_fun_sub
-        (((hv n).continuous.locallyIntegrable.integrableOn_isCompact hUK).mono_set hTK)
-        (huK.mono_set hTK)]
-      refine (enorm_setAverage_le_setLAverage μ _ T).trans ?_
-      rw [setLAverage_eq]
-      gcongr
-      exact lintegral_mono_set hTK
-    -- The triangle inequality through `v n` and its mean.
-    have hdist : AEMeasurable (fun x => ‖v n x - u x‖ₑ) (μ.restrict A) :=
-      (((hv n).continuous.aestronglyMeasurable.restrict.sub huK.aestronglyMeasurable).enorm
-        ).mono_measure (Measure.restrict_mono (hA.trans subset_closure) le_rfl)
-    calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
-        ≤ ∫⁻ x in A, (‖v n x - u x‖ₑ + ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ +
-            ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
-          refine lintegral_mono fun x => ?_
-          rw [← enorm_neg (v n x - u x)]
-          refine le_of_eq_of_le ?_
-            ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
-          congr 1
-          ring
-      _ = ∫⁻ x in A, ‖v n x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ +
-            ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ * μ A := by
-          rw [lintegral_add_right _ measurable_const, lintegral_add_left' hdist,
-            setLIntegral_const]
-      _ ≤ e n + C * totalVariationOn μ Ω u + e n / μ T * μ U := by
-          gcongr
-          exact lintegral_mono_set (hA.trans subset_closure)
-      _ = e n + M * e n + C * totalVariationOn μ Ω u := by
-          simp only [M, div_eq_mul_inv]
-          ring
+    refine (setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn huK
+      ((hv n).continuous.locallyIntegrable.integrableOn_isCompact hUK)
+      (hT.trans subset_closure) (hA.trans subset_closure)).trans ?_
+    gcongr
   have hlim : Tendsto (fun n => e n + M * e n + C * totalVariationOn μ Ω u) atTop
       (𝓝 (0 + M * 0 + C * totalVariationOn μ Ω u)) :=
     (he.add (ENNReal.Tendsto.const_mul he (Or.inr hM))).add tendsto_const_nhds
@@ -373,7 +347,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
         ≤ ∫⁻ x in A ∩ V n, (‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) ∂μ :=
           lintegral_mono fun x => by
-            simpa only [sub_add_sub_cancel] using enorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
+            simpa only [sub_add_sub_cancel] using eNorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
               ((⨍ y in S ∩ V n, u y ∂μ) - a)
       _ = ∫⁻ x in A ∩ V n, ‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ ∂μ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ * μ (A ∩ V n) := by
@@ -394,34 +368,13 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
   -- The bounds converge to `C μ(A) ^ (1/n) |Du|(Ω)`.
   have hlim : Tendsto (fun n => ENNReal.ofReal (K / μ.real (S ∩ V n)) * T +
       μ Ω * ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) atTop
-      (𝓝 (ENNReal.ofReal (K / μ.real S) * T + μ Ω * 0)) := by
-    refine Tendsto.add ?_ (ENNReal.Tendsto.const_mul ?_ (Or.inr hΩfin))
-    · rcases eq_or_ne K 0 with hK | hK
-      · simp [hK]
-      refine ENNReal.Tendsto.mul_const
-        (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hmeas hSpos.ne')) (Or.inl ?_)
-      exact (ENNReal.ofReal_pos.2 (div_pos (lt_of_le_of_ne (by positivity) hK.symm) hSpos)).ne'
-    · have h0 : Tendsto (fun n ↦ (⨍ y in S ∩ V n, u y ∂μ) - a) atTop (𝓝 0) := by
-        simpa using havg.sub_const a
-      simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : ℝ)).comp h0
-  -- `A` is the increasing union of the sets `A ∩ V n`.
-  have hAV : ⋃ n, A ∩ V n = A := by rw [← inter_iUnion, hVunion, inter_eq_left.2 hA]
-  have hdir : Directed (· ⊆ ·) fun n => A ∩ V n :=
-    Monotone.directed_le fun m n hmn => inter_subset_inter_right A (hVmono hmn)
-  have hsup : ∫⁻ x in A, ‖u x - a‖ₑ ∂μ = ⨆ k, ∫⁻ x in A ∩ V k, ‖u x - a‖ₑ ∂μ := by
-    rw [← setLIntegral_iUnion_of_directed _ hdir, hAV]
-  rw [hsup, mul_assoc]
-  refine iSup_le fun k => ge_of_tendsto (by simpa using hlim) ?_
-  filter_upwards [hpiece, eventually_ge_atTop k] with n hn hkn
-  exact (lintegral_mono_set (inter_subset_inter_right A (hVmono hkn))).trans hn
+      (𝓝 (ENNReal.ofReal (K / μ.real S) * T)) := by
+    simpa using tendsto_ofReal_div_mul_add_mul_enorm_sub hSpos hmeas havg hΩfin
+  rw [mul_assoc]
+  exact setLIntegral_le_of_forall_inter_le hVmono (hVunion ▸ hA) hlim hpiece
 
-/-- **The Poincaré–Wirtinger inequality for functions of bounded variation, localized to a
-subset.** Let `Ω` be a bounded convex open set in a finite-dimensional real inner product space of
-dimension `n`, and let `S ⊆ Ω` have positive measure. For every `u` integrable on `Ω` and every
-`A ⊆ Ω`, the integral over `A` of the deviation of `u` from its mean over `S` is at most
-`μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the total variation
-`|Du|(Ω)`, finite or infinite. -/
-theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
+/-- The localized Poincaré–Wirtinger inequality for `u` integrable on `Ω`. -/
+private theorem setLIntegral_enorm_sub_setAverage_le_of_integrableOn
     (hΩc : Convex ℝ (Ω : Set E)) (hb : Bornology.IsBounded (Ω : Set E))
     (hu : IntegrableOn u Ω μ) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) (hA : A ⊆ Ω) :
     ∫⁻ x in A, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
@@ -442,5 +395,77 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariation
   exact setLIntegral_enorm_sub_setAverage_le_of_measurableSet hΩc hb hu
     (Ω.isOpen.measurableSet.inter (measurableSet_toMeasurable μ S)) inter_subset_left
     (hμ ▸ hS₀) hA
+
+/-- A function locally integrable on a bounded convex open set `Ω` and of finite total variation
+there is integrable on `Ω`. This is the integrability half of membership in `BV(Ω)`. -/
+theorem integrableOn_of_totalVariationOn_ne_top_of_convex
+    (hΩc : Convex ℝ (Ω : Set E)) (hb : Bornology.IsBounded (Ω : Set E))
+    (hu : LocallyIntegrableOn u Ω μ) (htv : totalVariationOn μ Ω u ≠ ∞) :
+    IntegrableOn u Ω μ := by
+  have hΩfin : μ (Ω : Set E) ≠ ∞ := hb.measure_lt_top.ne
+  -- Poincaré on a small ball, whose mean is finite, bounds `u - c` in `L¹(Ω)`.
+  rcases (Ω : Set E).eq_empty_or_nonempty with h | ⟨x₀, hx₀⟩
+  · rw [h]
+    exact integrableOn_empty
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ hx₀
+  have hB : ball x₀ (r / 2) ⊆ Ω := (ball_subset_ball (by linarith)).trans hrΩ
+  have hP := setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex hΩc hb hu hB
+    (measure_ball_pos μ x₀ (by linarith)).ne'
+  set c := ⨍ y in ball x₀ (r / 2), u y ∂μ
+  have hfin : ∫⁻ x in Ω, ‖u x - c‖ₑ ∂μ < ∞ :=
+    hP.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (lt_top_iff_ne_top.2 htv))
+  have h1 : IntegrableOn (fun x => u x - c) Ω μ :=
+    ⟨hu.aestronglyMeasurable.sub aestronglyMeasurable_const, hfin⟩
+  have h2 : IntegrableOn (fun _ => c) Ω μ := integrableOn_const hΩfin
+  convert h1.add h2 using 1
+  ext x
+  simp
+
+/-- The Poincaré constant of the localized inequality is nonzero when `S ⊆ Ω` has positive
+measure. -/
+private lemma ofReal_poincareConstant_ne_zero
+    (hb : Bornology.IsBounded (Ω : Set E)) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
+    ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
+      diam (Ω : Set E) ^ finrank ℝ E / μ.real S) ≠ 0 := by
+  have hSpos : 0 < μ.real S :=
+    ENNReal.toReal_pos hS₀ (ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono hS))
+  have hball : 0 < μ.real (ball (0 : E) 1) :=
+    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hd : 0 < diam (Ω : Set E) ^ finrank ℝ E := by
+    rcases Nat.eq_zero_or_pos (finrank ℝ E) with hn | hn
+    · simp [hn]
+    have : Nontrivial E := Module.finrank_pos_iff.1 hn
+    obtain ⟨x, hx, y, hy, hxy⟩ : ∃ x ∈ S, ∃ y ∈ S, x ≠ y := by
+      by_contra! h
+      exact hS₀ (Set.Subsingleton.measure_zero (fun x hx y hy => h x hx y hy) μ)
+    exact pow_pos ((dist_pos.2 hxy).trans_le (dist_le_diam_of_mem hb (hS hx) (hS hy))) _
+  rw [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+  exact div_pos (mul_pos (Real.rpow_pos_of_pos hball _) hd) hSpos
+
+/-- **The Poincaré–Wirtinger inequality for functions of bounded variation, localized to a
+subset.** Let `Ω` be a bounded convex open set in a finite-dimensional real inner product space of
+dimension `n`, and let `S ⊆ Ω` have positive measure. For every `u` locally integrable on `Ω`
+and every `A ⊆ Ω`, the integral over `A` of the deviation of `u` from its mean over `S` is at most
+`μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the total variation
+`|Du|(Ω)`, finite or infinite. -/
+theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
+    (hΩc : Convex ℝ (Ω : Set E)) (hb : Bornology.IsBounded (Ω : Set E))
+    (hu : LocallyIntegrableOn u Ω μ) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) (hA : A ⊆ Ω) :
+    ∫⁻ x in A, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
+      ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
+        diam (Ω : Set E) ^ finrank ℝ E / μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ *
+        totalVariationOn μ Ω u := by
+  by_cases htv : totalVariationOn μ Ω u = ∞
+  · -- The right-hand side is infinite unless `A` is null.
+    by_cases hA0 : μ A = 0
+    · rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure]
+      exact zero_le
+    rw [htv, ENNReal.mul_top]
+    · exact le_top
+    exact mul_ne_zero (ofReal_poincareConstant_ne_zero hb hS hS₀)
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hA0)
+        (ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono hA))).ne'
+  · exact setLIntegral_enorm_sub_setAverage_le_of_integrableOn hΩc hb
+      (integrableOn_of_totalVariationOn_ne_top_of_convex hΩc hb hu htv) hS hS₀ hA
 
 end TauCeti

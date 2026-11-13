@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.CentralExtension
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CenterFinite
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Domain
 public import TauCeti.Algebra.Module.Submodule.FilteredIntersection
 public import TauCeti.RepresentationTheory.Lie.Ado.FiniteQuotient
 public import TauCeti.RepresentationTheory.Lie.Ado.Quotient
@@ -81,8 +82,7 @@ prime characteristic the centre of `U(L)` is Noetherian and `U(L)` is a finite m
 the generalized Krull intersection theorem applies: an element of every power is fixed by a
 central multiplier of augmentation zero, and the complement to `1` of such a multiplier has
 augmentation `1`, hence is nonzero. -/
-theorem iInf_centralAugmentationIdeal_pow_eq_bot (p : ℕ) [Fact p.Prime] [CharP K p]
-    [NoZeroDivisors Uₖ] :
+theorem iInf_centralAugmentationIdeal_pow_eq_bot (p : ℕ) [Fact p.Prime] [CharP K p] :
     ⨅ n : ℕ, HopfIdeal.centralAugmentationIdeal K Uₖ ^ n = ⊥ := by
   have := isNoetherianRing_center K L p
   have := moduleFinite_over_center K L p
@@ -93,7 +93,7 @@ theorem iInf_centralAugmentationIdeal_pow_eq_bot (p : ℕ) [Fact p.Prime] [CharP
 descending filtration by the powers `UC ^ n` stabilize at its trace on their intersection, which
 is zero. -/
 theorem exists_forall_ι_eq_zero_of_mem_centralAugmentationIdeal_pow (p : ℕ) [Fact p.Prime]
-    [CharP K p] [NoZeroDivisors Uₖ] :
+    [CharP K p] :
     ∃ n : ℕ, ∀ x : L,
       _root_.UniversalEnvelopingAlgebra.ι K x ∈ HopfIdeal.centralAugmentationIdeal K Uₖ ^ n →
         _root_.UniversalEnvelopingAlgebra.ι K x = 0 := by
@@ -114,8 +114,7 @@ for a power `UC ^ n` that meets the canonical copy of `L` only in zero.
 With the injectivity of `ι`, which over a field is a corollary of the Poincaré--Birkhoff--Witt
 theorem, this is a finite-dimensional associative target of `U(L)` separating the canonical copy of
 `L`, the input from which a faithful finite-dimensional representation of `L` is built. -/
-theorem exists_algHom_eq_zero_iff_ι_eq_zero (p : ℕ) [Fact p.Prime] [CharP K p]
-    [NoZeroDivisors Uₖ] :
+theorem exists_algHom_eq_zero_iff_ι_eq_zero (p : ℕ) [Fact p.Prime] [CharP K p] :
     ∃ (A : Type (max u v)) (_ : Ring A) (_ : Algebra K A) (_ : FiniteDimensional K A)
       (q : Uₖ →ₐ[K] A),
       (∀ x : L, q (_root_.UniversalEnvelopingAlgebra.ι K x) = 0 ↔
@@ -138,8 +137,7 @@ action of `L` on the separating finite-dimensional quotient of `U(L)`.
 Injectivity of `ι`, which over a field is a corollary of the Poincaré--Birkhoff--Witt theorem,
 makes this representation faithful; it is then Hochschild's strengthening of the Ado--Iwasawa
 theorem in prime characteristic. -/
-theorem exists_representation_eq_zero_iff_ι_eq_zero (p : ℕ) [Fact p.Prime] [CharP K p]
-    [NoZeroDivisors Uₖ] :
+theorem exists_representation_eq_zero_iff_ι_eq_zero (p : ℕ) [Fact p.Prime] [CharP K p] :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (ρ : L →ₗ⁅K⁆ Module.End K V),
       (∀ x : L, ρ x = 0 ↔ _root_.UniversalEnvelopingAlgebra.ι K x = 0) ∧
