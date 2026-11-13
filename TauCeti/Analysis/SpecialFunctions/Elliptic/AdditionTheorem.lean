@@ -423,6 +423,11 @@ def weierstrassPointHom : ℂ →+ L.weierstrassCurve.toAffine.Point where
 @[simp]
 lemma weierstrassPointHom_apply (z : ℂ) : L.weierstrassPointHom z = L.weierstrassPoint z := (rfl)
 
+/-- Multiplication of the argument multiplies the corresponding elliptic-curve point. -/
+theorem weierstrassPoint_nsmul (n : ℕ) (z : ℂ) :
+    L.weierstrassPoint (n • z) = n • L.weierstrassPoint z := by
+  simpa only [weierstrassPointHom_apply] using L.weierstrassPointHom.map_nsmul n z
+
 /-- The kernel of the point map is the period lattice. -/
 lemma ker_weierstrassPointHom : L.weierstrassPointHom.ker = L.lattice.toAddSubgroup := by
   ext z

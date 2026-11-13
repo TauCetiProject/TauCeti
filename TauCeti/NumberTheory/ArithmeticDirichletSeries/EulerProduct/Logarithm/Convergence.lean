@@ -69,7 +69,7 @@ theorem summable_norm_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductDat
   have hlog := PowerSeries.summable_norm_coeff_logDeriv_mul_pow_of_zeroFree
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
     (fun z hz' ↦ hne z (by
-      rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
+      rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hz'
       exact_mod_cast hz')) hz
   -- Multiplication by `X` shifts the formal logarithmic derivative by one degree.
   rw [← summable_nat_add_iff 1]
