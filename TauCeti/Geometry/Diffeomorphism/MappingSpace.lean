@@ -24,20 +24,20 @@ trivializes evaluation
 at `b₀` around every point of `M`, with fibre the based mapping space of maps sending `b₀` to
 `x₀` (`TauCeti.exists_trivialization_mappingSpaceEval_of_preconnectedSpace`, through
 `TauCeti.mappingSpaceEvalTrivialization`). So evaluation is a Serre fibration
-(`TauCeti.TopCat.mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace`). Unlike the
+(`TauCeti.mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace`). Unlike the
 restriction fibrations of `TauCeti.Topology.MappingSpace.Fibration`, this needs neither local
 compactness of `B` nor that `b₀` be a cofibrant point.
 
 In these charts the action map `Diff(M) × Map_*(B, M) → Map(B, M)`, `(φ, u) ↦ φ ∘ u`
-(`TauCeti.mappingSpaceAction`), is the action of the stabilizer of `x₀` on the fibre
-(`TauCeti.mappingSpaceEvalTrivialization_mappingSpaceAction`). For `B = S²` this is the map of
+(`TauCeti.BasedMap.actionMap`), is the action of the stabilizer of `x₀` on the fibre
+(`TauCeti.mappingSpaceEvalTrivialization_actionMap`). For `B = S²` this is the map of
 fibrations along which classes of `Diff(M)` are compared with classes of `Map(S², M)`.
 
 ## Main results
 
 * `TauCeti.exists_trivialization_mappingSpaceEval_of_preconnectedSpace`: evaluation
   `Map(B, M) → M` is locally trivial, with fibre `Map_*(B, M)`.
-* `TauCeti.TopCat.mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace`: evaluation
+* `TauCeti.mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace`: evaluation
   `Map(B, M) → M` is a Serre fibration.
 
 ## References
@@ -85,19 +85,19 @@ theorem exists_trivialization_mappingSpaceEval_of_preconnectedSpace (hm : 1 ≤ 
     [TopologicalSpace B] (b₀ : B) (x₀ z : M) :
     ∃ e : Bundle.Trivialization (BasedMap B M b₀ x₀) (mappingSpaceEval (X := M) b₀),
       z ∈ e.baseSet :=
-  exists_trivialization_mappingSpaceEval_of_localSection
-    (exists_localSection_diffeomorph I m hm x₀) z
+  exists_trivialization_mappingSpaceEval b₀ x₀ (exists_localSection_diffeomorph I m hm x₀) z
 
 variable (I) in
 include I in
 /-- **Evaluation on maps into a closed connected manifold is a Serre fibration.** Let `M` be a
 compact connected boundaryless `C^m` manifold modelled on a finite-dimensional space, `1 ≤ m`.
 For every pointed space `(B, b₀)`, evaluation `Map(B, M) → M` at `b₀` is a Serre fibration. -/
-theorem TopCat.mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace [Nonempty M]
-    (hm : 1 ≤ m) {B : Type u}
-    [TopologicalSpace B] (b₀ : B) :
-    TopCat.serreFibrations (TopCat.ofHom (mappingSpaceEval (X := M) b₀)) :=
-  TopCat.mappingSpaceEval_mem_serreFibrations_of_localSection b₀
+theorem mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace [Nonempty M] (hm : 1 ≤ m)
+    {B : Type u} [TopologicalSpace B] (b₀ : B) :
+    TopCat.serreFibrations
+      (_root_.TopCat.ofHom (mappingSpaceEval b₀) :
+        _root_.TopCat.of C(B, M) ⟶ _root_.TopCat.of M) :=
+  mappingSpaceEval_mem_serreFibrations b₀ (Classical.arbitrary M)
     (exists_localSection_diffeomorph I m hm (Classical.arbitrary M))
 
 end TauCeti

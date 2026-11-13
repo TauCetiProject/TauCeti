@@ -494,12 +494,7 @@ private lemma finiteDimensional_and_finrank_le_of_le (hF : IsFunctionField k F) 
       exact hne (WeilDivisor.ext fun P ↦ le_antisymm (WeilDivisor.coeff_le_coeff hDE P) (hcon P))
     have hPdeg : 1 ≤ (P.degree : ℤ) := by
       exact_mod_cast P.one_le_degree_of_isFunctionField hF
-    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.le_iff.mpr fun Q ↦ by
-      rcases eq_or_ne Q P with rfl | hQ
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
-        omega
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQ, add_zero]
-        exact WeilDivisor.coeff_le_coeff hDE Q
+    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.add_ofPoint_le_of_coeff_lt hDE hP
     have hdeg : Divisor.degree (D + WeilDivisor.ofPoint P) =
         Divisor.degree D + (P.degree : ℤ) := by
       rw [Divisor.degree_add, Divisor.degree_ofPoint]
