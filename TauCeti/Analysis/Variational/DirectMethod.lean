@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Order.Filter.Extr
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Semicontinuity.Basic
@@ -12,7 +13,7 @@ public import Mathlib.Topology.Semicontinuity.Basic
 /-!
 # The direct method in the weak topology
 
-A weakly lower semicontinuous real energy on a nonempty weakly closed admissible set
+A weakly lower semicontinuous ordered-valued energy on a nonempty weakly closed admissible set
 attains its minimum if its sublevels are norm bounded and the canonical bidual map is
 surjective. No lower bound on the energy is assumed: compactness of one nonempty sublevel
 provides it. Every sublevel and the entire set of minimizers are weakly compact.
@@ -79,7 +80,7 @@ theorem exists_isMinOn_of_weak_closed_of_isBounded_sublevel
 
 /-- **The direct method.** A weakly lower semicontinuous energy with bounded sublevels on
 a nonempty weakly closed set in a reflexive space attains its minimum. -/
-theorem exists_isMinOn_of_weak_closed {E : V → ℝ}
+theorem exists_isMinOn_of_weak_closed
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
     (hne : S.Nonempty) (hS : IsClosed (toWeakSpace 𝕜 V '' S))
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
@@ -89,37 +90,28 @@ theorem exists_isMinOn_of_weak_closed {E : V → ℝ}
   exact exists_isMinOn_of_weak_closed_of_isBounded_sublevel hV hS hE
     ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
 
-/-- One nonempty bounded sublevel, whenever the admissible set is nonempty, suffices
-for weak compactness of all minimizers. -/
-theorem isCompact_toWeakSpace_minimizers_of_isBounded_sublevel
+/-- A bounded set of minimizers of a weakly lower semicontinuous energy on a weakly
+closed set in a reflexive space is weakly compact. -/
+theorem isCompact_toWeakSpace_minimizers_of_isBounded
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
     (hS : IsClosed (toWeakSpace 𝕜 V '' S))
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
       (toWeakSpace 𝕜 V '' S))
-    (hb : S.Nonempty → ∃ b : β, {u ∈ S | E u ≤ b}.Nonempty ∧
-      IsBounded {u ∈ S | E u ≤ b}) :
+    (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) := by
-  by_cases hne : S.Nonempty
-  swap
-  · simp [Set.not_nonempty_iff_eq_empty.1 hne]
-  obtain ⟨b, hnelevel, hbound⟩ := hb hne
-  obtain ⟨u, hu, hmin⟩ :=
-    exists_isMinOn_of_weak_closed_of_isBounded_sublevel hV hS hE hnelevel hbound
-  obtain ⟨v, hv⟩ := hnelevel
-  rw [hmin.minimizers_eq_sublevel hu]
-  exact isCompact_toWeakSpace_sublevel hV hS hE (E u)
-    (hbound.subset fun x hx ↦ ⟨hx.1, hx.2.trans ((hmin hv.1).trans hv.2)⟩)
+  obtain hempty | ⟨u, hu, hmin⟩ := {u ∈ S | IsMinOn E S u}.eq_empty_or_nonempty
+  · simp [hempty]
+  · rw [hmin.minimizers_eq_sublevel hu] at hb ⊢
+    exact isCompact_toWeakSpace_sublevel hV hS hE (E u) hb
 
 /-- The full set of minimizers is weakly compact, including when the admissible set is empty. -/
-theorem isCompact_toWeakSpace_minimizers {E : V → ℝ}
+theorem isCompact_toWeakSpace_minimizers
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
     (hS : IsClosed (toWeakSpace 𝕜 V '' S))
     (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
       (toWeakSpace 𝕜 V '' S))
     (hb : HasBoundedSublevelsOn E S) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) := by
-  apply isCompact_toWeakSpace_minimizers_of_isBounded_sublevel hV hS hE
-  rintro ⟨v, hv⟩
-  exact ⟨E v, ⟨v, hv, le_rfl⟩, hb.isBounded_sublevel (E v)⟩
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
+  isCompact_toWeakSpace_minimizers_of_isBounded hV hS hE hb.isBounded_minimizers
 
 end TauCeti
