@@ -201,7 +201,7 @@ theorem integral_comp_polarCoord_symm_Icc_Icc (f : ℂ → W) (z₀ : ℂ) {a b 
     exact ⟨And.right, fun h ↦ ⟨ha.trans h.1, h⟩⟩
   have hang : Ioo (-π) π ∩ Icc c d =ᵐ[volume] Icc c d := by
     have h := ae_eq_set_inter (Ioo_ae_eq_Icc (μ := (volume : Measure ℝ)) (a := -π) (b := π))
-      (Filter.EventuallyEq.rfl : Icc c d =ᵐ[volume] Icc c d)
+      (.rfl (s := Icc c d))
     rwa [inter_eq_right.mpr (Icc_subset_Icc hc hd)] at h
   rw [he, Icc_prod_eq, Measure.volume_eq_prod]
   exact setIntegral_congr_set (Measure.set_prod_ae_eq hrad hang).symm
