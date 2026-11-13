@@ -125,14 +125,16 @@ section Admissible
 
 variable {k : Type w} [Field k] [Algebra k A]
 
-/-- **Admissibility criterion for a bound-quiver presentation.** Let `J` be a nilpotent two-sided
-ideal containing the arrow values, and let the vertex idempotents be nonzero. If for all vertices
-`i` and `j` the classes of the arrows `i ⟶ j` in `A ⧸ J ^ 2` are linearly independent, then the
-kernel of the algebra map from the path algebra is admissible. -/
-theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0)
+include he hl hr in
+/-- The classes of the vertex idempotents and of the arrows in `A ⧸ J ^ 2` are linearly
+independent together, when the vertex idempotents are nonzero, the arrows lie in the nilpotent
+ideal `J`, and for all vertices `i` and `j` the classes of the arrows `i ⟶ j` are linearly
+independent. -/
+private theorem linearIndependent_vertex_sum_arrow (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0)
     (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
     (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
-    IsAdmissibleIdeal (RingHom.ker (liftAlgHomOfArrows k e he f hl hr).toRingHom) := by
+    LinearIndependent k (Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
+      (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2))) := by
   classical
   have hJ2 : J ^ 2 ≤ J := Ideal.pow_le_self two_ne_zero
   -- A nonzero idempotent is not nilpotent, so it does not lie in `J`.
@@ -140,15 +142,6 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
     obtain ⟨n, hn⟩ := hJ
     exact hne i ((he.idem i).eq_zero_of_isNilpotent
       ⟨n, by simpa [hn] using Ideal.pow_mem_pow hmem n⟩)
-  refine (liftAlgHomOfArrows k e he f hl hr).isAdmissibleIdeal_ker J hJ
-    (fun i j a => by simpa [ofArrow_eq_ofPath] using harrows a) ?_
-  rw [← linearIndependent_equiv shortPathTwoEquiv]
-  have hfun : (fun p : ShortPath Q 2 => Ideal.Quotient.mk (J ^ 2)
-      (liftAlgHomOfArrows k e he f hl hr (ofPath p.1))) ∘ shortPathTwoEquiv =
-      Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
-        (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2)) := by
-    ext (i | ⟨i, j, a⟩) <;> simp
-  rw [hfun]
   -- The vertex classes, the arrow classes, and the disjointness of their spans.
   have hvert (I : Ideal A) [I.IsTwoSided] (hI : I ≤ J) :
       LinearIndependent k fun i => Ideal.Quotient.mk I (e i) :=
@@ -172,6 +165,26 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
     simpa [ψ, Ideal.Quotient.eq_zero_iff_mem] using harrows a.2.2
   have hc := Fintype.linearIndependent_iff.mp (hvert J le_rfl) c (by simpa [ψ] using hψ hy')
   simp [hc]
+
+/-- **Admissibility criterion for a bound-quiver presentation.** Let `J` be a nilpotent two-sided
+ideal containing the arrow values, and let the vertex idempotents be nonzero. If for all vertices
+`i` and `j` the classes of the arrows `i ⟶ j` in `A ⧸ J ^ 2` are linearly independent, then the
+kernel of the algebra map from the path algebra is admissible. -/
+theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0)
+    (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
+    (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
+    IsAdmissibleIdeal (RingHom.ker (liftAlgHomOfArrows k e he f hl hr).toRingHom) := by
+  classical
+  refine (liftAlgHomOfArrows k e he f hl hr).isAdmissibleIdeal_ker J hJ
+    (fun i j a => by simpa [ofArrow_eq_ofPath] using harrows a) ?_
+  rw [← linearIndependent_equiv shortPathTwoEquiv]
+  have hfun : (fun p : ShortPath Q 2 => Ideal.Quotient.mk (J ^ 2)
+      (liftAlgHomOfArrows k e he f hl hr (ofPath p.1))) ∘ shortPathTwoEquiv =
+      Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
+        (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2)) := by
+    ext (i | ⟨i, j, a⟩) <;> simp
+  rw [hfun]
+  exact linearIndependent_vertex_sum_arrow e he f hl hr J hJ hne harrows hind
 
 end Admissible
 
