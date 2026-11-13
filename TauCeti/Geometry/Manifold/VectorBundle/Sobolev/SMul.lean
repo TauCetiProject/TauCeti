@@ -45,6 +45,8 @@ element of `W^{k,p}(V)`.
 * `TauCeti.SobolevSection.contMDiffSMulL_const`, `TauCeti.SobolevSection.contMDiffSMulL_one`,
   `TauCeti.SobolevSection.contMDiffSMulL_add`, `TauCeti.SobolevSection.contMDiffSMulL_mul`:
   multiplication by constants, additivity and multiplicativity in the multiplier.
+* `TauCeti.SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one`: a finite family of smooth
+  functions summing to one decomposes every element of `W^{k,p}(V)`.
 * `TauCeti.SobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the inclusion
   `W^{k+1,p}(V) → W^{k,p}(V)`.
 
@@ -209,6 +211,41 @@ theorem contMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
   rw [ContinuousLinearMap.comp_apply, contMDiffSMulL_apply, contMDiffSMulL_apply,
     contMDiffSMulL_apply]
   exact DFunLike.congr_fun (Wkp.contDiffOnSMulL_mul (mu := μ) (p := p) _ _ _ k _ _) _
+
+/-- Smooth multiplication depends only on the multiplier, not on the proof of its smoothness. -/
+theorem contMDiffSMulL_congr (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
+    (hψ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ) (h : φ = ψ) :
+    contMDiffSMulL A μ p k hφ = contMDiffSMulL A μ p k hψ := by
+  subst h
+  rfl
+
+/-- **Partition of unity.** If smooth functions `φ i`, finitely many, sum to one at every point,
+then every element of `W^{k,p}(V)` is the sum of its products with the `φ i`. -/
+theorem sum_contMDiffSMulL_eq_self_of_sum_eq_one {ι : Type*} [Fintype ι] {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ (φ i)) (h : ∀ x, ∑ i, φ i x = 1)
+    (w : SobolevSection A μ p k) : ∑ i, contMDiffSMulL A μ p k (hφ i) w = w := by
+  classical
+  -- The sum over a finite set `s` is multiplication by the partial sum of the `φ i`.
+  have key : ∀ s : Finset ι, ∃ hs : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ fun x ↦ ∑ i ∈ s, φ i x,
+      ∑ i ∈ s, contMDiffSMulL A μ p k (hφ i) w = contMDiffSMulL A μ p k hs w := by
+    intro s
+    induction s using Finset.cons_induction with
+    | empty =>
+      refine ⟨by simpa using contMDiff_const (c := (0 : ℝ)), ?_⟩
+      rw [Finset.sum_empty, contMDiffSMulL_congr _ (contMDiff_const (c := (0 : ℝ)))
+        (funext fun x ↦ Finset.sum_empty), contMDiffSMulL_const]
+      simp
+    | cons a s ha ih =>
+      obtain ⟨hs, hsum⟩ := ih
+      have hcons : (fun x ↦ ∑ i ∈ Finset.cons a s ha, φ i x) =
+          φ a + fun x ↦ ∑ i ∈ s, φ i x := funext fun x ↦ by rw [Finset.sum_cons, Pi.add_apply]
+      refine ⟨hcons ▸ (hφ a).add hs, ?_⟩
+      rw [Finset.sum_cons, hsum, contMDiffSMulL_congr _ ((hφ a).add hs) hcons, contMDiffSMulL_add,
+        add_apply]
+  obtain ⟨hs, hsum⟩ := key Finset.univ
+  rw [hsum, contMDiffSMulL_congr _ (contMDiff_const (c := (1 : ℝ))) (funext h),
+    contMDiffSMulL_const]
+  simp
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ)
