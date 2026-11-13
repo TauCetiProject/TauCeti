@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import TauCeti.LinearAlgebra.Projection.RangeKer
 
 /-!
 # Exact preimages from approximate preimages
@@ -36,6 +37,9 @@ a bijective continuous linear map between Banach spaces is invertible.
   `2 * C * ‖y‖`.
 * `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
   linear map between Banach spaces is invertible exactly when it is bijective.
+* `ContinuousLinearMap.isInvertible_comp_iff`: a composite `P L` out of and into Banach spaces is
+  invertible exactly when `L` is injective, `P` is surjective and `range L` is complementary to
+  `ker P`.
 * `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
   operator on a Banach space.
 
@@ -150,6 +154,15 @@ is, a continuous linear equivalence, exactly when it is bijective. -/
 theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bijective f :=
   ⟨IsInvertible.bijective, fun h ↦ ⟨.ofBijective f (LinearMap.ker_eq_bot.2 h.1)
     (LinearMap.range_eq_top.2 h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩⟩
+
+/-- For Banach spaces `E` and `F`, a composite `P L` of continuous linear maps `L : E →L[𝕜] Y` and
+`P : Y →L[𝕜] F` is invertible exactly when `L` is injective, `P` is surjective, and the range of
+`L` is complementary to the kernel of `P`. -/
+theorem isInvertible_comp_iff {Y : Type*} [TopologicalSpace Y] [AddCommGroup Y] [Module 𝕜 Y]
+    {L : E →L[𝕜] Y} {P : Y →L[𝕜] F} :
+    (P ∘L L).IsInvertible ↔ Injective L ∧ Surjective P ∧ IsCompl L.range P.ker := by
+  simpa [isInvertible_iff_bijective, ← coe_comp] using
+    LinearMap.bijective_comp_iff (L := (L : E →ₗ[𝕜] Y)) (P := (P : Y →ₗ[𝕜] F))
 
 end ContinuousLinearMap
 

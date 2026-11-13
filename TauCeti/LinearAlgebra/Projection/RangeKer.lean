@@ -22,11 +22,13 @@ the two projections of the splitting `Y = range L ⊕ ker P` are explicit:
 * `id - L A⁻¹ P` is the projection onto `ker P` along `range L`
   (`LinearMap.id_sub_comp_comp_eq_projection`).
 
-In particular `L A⁻¹ P` depends only on `L` and on the kernel `W = ker P`, not on `P` itself
-(`LinearMap.comp_comp_eq_of_ker_eq`).
+In particular `L A⁻¹ P` and `A⁻¹ P` depend only on `L` and on the kernel `W = ker P`, not on `P`
+itself (`LinearMap.comp_comp_eq_of_ker_eq`, `LinearMap.symm_comp_eq_of_ker_eq`).
 
-This is the algebra of the Lyapunov–Schmidt reduction. To solve `L f + S = 0` for a linear map `L`
-whose range has a complement `W`, choose any `P` with kernel `W` for which `A = P L` is invertible.
+This is the algebra of the Lyapunov–Schmidt reduction. To solve `L f + S = 0` for an injective
+linear map `L` (in practice, `L` restricted to a complement of its kernel) whose range has a
+complement `W`, choose any surjective `P` with kernel `W`; then `A = P L` is invertible by
+`LinearMap.bijective_comp_iff`.
 The vector `f = -A⁻¹ P S` is the unique one with `L f + S ∈ W`
 (`LinearMap.add_mem_ker_iff_eq_neg_symm`), and then `L f + S = S - L A⁻¹ P S` is the projection of
 `S` onto `W` along `range L`. That projection vanishes exactly when `S ∈ range L`
@@ -136,11 +138,16 @@ omit hA in
 theorem comp_comp_eq_of_ker_eq {Z' : Type*} [AddCommGroup Z'] [Module R Z'] {P' : Y →ₗ[R] Z'}
     (A' : X ≃ₗ[R] Z') (hA : P ∘ₗ L = A) (hA' : P' ∘ₗ L = A') (hker : ker P = ker P') :
     L ∘ₗ A.symm.toLinearMap ∘ₗ P = L ∘ₗ A'.symm.toLinearMap ∘ₗ P' := by
+  simp only [comp_comp_eq_projection A hA, comp_comp_eq_projection A' hA', hker]
+
+omit hA in
+/-- The map `A⁻¹ P` depends on `P` only through its kernel: if `P ∘ L = A` and `P' ∘ L = A'` are
+equivalences and `ker P = ker P'`, then `A⁻¹ P = A'⁻¹ P'`. -/
+theorem symm_comp_eq_of_ker_eq {Z' : Type*} [AddCommGroup Z'] [Module R Z'] {P' : Y →ₗ[R] Z'}
+    (A' : X ≃ₗ[R] Z') (hA : P ∘ₗ L = A) (hA' : P' ∘ₗ L = A') (hker : ker P = ker P') :
+    A.symm.toLinearMap ∘ₗ P = A'.symm.toLinearMap ∘ₗ P' := by
+  have hL : Function.Injective L := (bijective_comp_iff.1 (by rw [hA]; exact A.bijective)).1
   ext y
-  have hk : y - L (A.symm (P y)) ∈ ker P' := by
-    rw [← hker]
-    simp [mem_ker, apply_apply_eq_of_comp_eq A hA]
-  rw [mem_ker, map_sub, sub_eq_zero, apply_apply_eq_of_comp_eq A' hA'] at hk
-  simp [hk]
+  exact hL congr($(comp_comp_eq_of_ker_eq A A' hA hA' hker) y)
 
 end LinearMap
