@@ -189,7 +189,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoi
         ∀ x ∈ S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid,
           ∃ z ∈ F, ∃ s ∈ S, x = z + s := by
   classical
-  have := hS.moduleFinite_addSubgroup_closure
+  have := hS.moduleFinite_addSubgroupClosure
   have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
   obtain ⟨F₀, hF₀_sub, hF₀_add⟩ :=
     hS.comap_subtype_closure.exists_finset_subset_nsmulSaturation_add
@@ -211,7 +211,7 @@ theorem FG.exists_finset_subset_nsmulSaturation_inf_closure_add {S : AddSubmonoi
 submonoid `S` to `AddSubgroup.closure (S : Set G)` is finitely generated. -/
 theorem FG.nsmulSaturation_comap_subtype_closure {S : AddSubmonoid G} (hS : S.FG) :
     (S.comap (AddSubgroup.closure (S : Set G)).subtype).nsmulSaturation.FG := by
-  have := hS.moduleFinite_addSubgroup_closure
+  have := hS.moduleFinite_addSubgroupClosure
   have : Module.Free ℤ (AddSubgroup.closure (S : Set G)) := Module.free_of_finite_type_torsion_free'
   exact hS.comap_subtype_closure.nsmulSaturation
 

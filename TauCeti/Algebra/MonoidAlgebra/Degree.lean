@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Support
-import Mathlib.Algebra.Order.Monoid.Unbundled.Pow
 
 /-!
-# Additive weight bounds on the support of an `AddMonoidAlgebra`
+# Weight bounds on the support of an `AddMonoidAlgebra`
 
-Given an additive homomorphism `φ : G →+ M` into a preordered additive monoid `M`, this file bounds
-`φ` from below across the support of products, powers, perturbed powers `(f₀ + f₁) ^ n - f₀ ^ n`,
-and lower-degree polynomial expressions `∑ i ∈ Finset.range d, c i * f ^ i` in `R[G]`.
+Given a weight function `φ : G → M` into an ordered type `M`, this file bounds `φ` from below
+across the support of binary sums `f + h` and finite sums `∑ i ∈ s, F i` in `R[G]`. When
+`φ : G →+ M` is an additive homomorphism into a preordered (or partially ordered) additive monoid
+`M`, it further bounds `φ` from below across the support of products, powers, and perturbed powers
+`(f₀ + f₁) ^ n - f₀ ^ n`.
 
 Unlike `AddMonoidAlgebra.infDegree` in `Mathlib.Algebra.MonoidAlgebra.Degree`, which takes infima in
 an `OrderTop` (where `WithTop M` is not strictly ordered under addition because `⊤ + a = ⊤`),
@@ -22,20 +23,74 @@ bounds over arbitrary partially ordered additive monoids with strictly monotone 
 
 ## Main results
 
+* `AddMonoidAlgebra.le_apply_of_mem_support_coeff_add`,
+  `AddMonoidAlgebra.lt_apply_of_mem_support_coeff_add`,
+  `AddMonoidAlgebra.le_apply_of_mem_support_coeff_sum`, and
+  `AddMonoidAlgebra.lt_apply_of_mem_support_coeff_sum`: non-strict and strict lower bounds on `φ`
+  over the support of binary sums and `Finset.sum`.
 * `AddMonoidAlgebra.add_le_apply_of_mem_support_coeff_mul` and
   `AddMonoidAlgebra.nsmul_le_apply_of_mem_support_coeff_pow`: lower bounds on `φ` over the support
   of a product and of a power.
 * `AddMonoidAlgebra.nsmul_lt_apply_of_mem_support_coeff_add_pow_sub_pow`: if `f₀` has `φ`-weight at
   least `μ` and `f₁` has `φ`-weight strictly above `μ`, then `(f₀ + f₁) ^ n - f₀ ^ n` is supported
   at `φ`-weights strictly above `n • μ`.
-* `AddMonoidAlgebra.nsmul_lt_apply_of_mem_support_coeff_sum_mul_pow`: when `μ < 0`, `f` has
-  `φ`-weight at least `μ`, and each `c i` (`i < d`) has nonnegative `φ`-weight, the sum
-  `∑ i ∈ Finset.range d, c i * f ^ i` is supported at `φ`-weights strictly above `d • μ`.
 -/
 
 public section
 
 namespace AddMonoidAlgebra
+
+section AddAndSum
+
+variable {R G M : Type*} [Semiring R]
+
+/-- If `f` and `h` are both supported at `φ`-weights at least `μ`, then `f + h` is supported at
+`φ`-weights at least `μ`. -/
+theorem le_apply_of_mem_support_coeff_add [LE M] (φ : G → M) {f h : AddMonoidAlgebra R G} {μ : M}
+    (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g) (hh : ∀ g ∈ h.coeff.support, μ ≤ φ g)
+    {g : G} (hg : g ∈ (f + h).coeff.support) :
+    μ ≤ φ g := by
+  classical
+  rw [coeff_add] at hg
+  rcases Finset.mem_union.mp (Finsupp.support_add hg) with hg | hg
+  · exact hf g hg
+  · exact hh g hg
+
+/-- If `f` and `h` are both supported at `φ`-weights strictly above `μ`, then `f + h` is supported
+at `φ`-weights strictly above `μ`. -/
+theorem lt_apply_of_mem_support_coeff_add [LT M] (φ : G → M) {f h : AddMonoidAlgebra R G} {μ : M}
+    (hf : ∀ g ∈ f.coeff.support, μ < φ g) (hh : ∀ g ∈ h.coeff.support, μ < φ g)
+    {g : G} (hg : g ∈ (f + h).coeff.support) :
+    μ < φ g := by
+  classical
+  rw [coeff_add] at hg
+  rcases Finset.mem_union.mp (Finsupp.support_add hg) with hg | hg
+  · exact hf g hg
+  · exact hh g hg
+
+/-- If each `F i` (`i ∈ s`) is supported at `φ`-weights at least `μ`, then `∑ i ∈ s, F i` is
+supported at `φ`-weights at least `μ`. -/
+theorem le_apply_of_mem_support_coeff_sum {ι : Type*} [LE M] (φ : G → M) {s : Finset ι}
+    {F : ι → AddMonoidAlgebra R G} {μ : M} (hF : ∀ i ∈ s, ∀ g ∈ (F i).coeff.support, μ ≤ φ g)
+    {g : G} (hg : g ∈ (∑ i ∈ s, F i).coeff.support) :
+    μ ≤ φ g := by
+  have hsum_ne : ∑ i ∈ s, (F i).coeff g ≠ 0 := by
+    simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg
+  obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
+  exact hF i hi g (Finsupp.mem_support_iff.mpr hgi_ne)
+
+/-- If each `F i` (`i ∈ s`) is supported at `φ`-weights strictly above `μ`, then `∑ i ∈ s, F i` is
+supported at `φ`-weights strictly above `μ`. -/
+theorem lt_apply_of_mem_support_coeff_sum {ι : Type*} [LT M] (φ : G → M) {s : Finset ι}
+    {F : ι → AddMonoidAlgebra R G} {μ : M} (hF : ∀ i ∈ s, ∀ g ∈ (F i).coeff.support, μ < φ g)
+    {g : G} (hg : g ∈ (∑ i ∈ s, F i).coeff.support) :
+    μ < φ g := by
+  have hsum_ne : ∑ i ∈ s, (F i).coeff g ≠ 0 := by
+    simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg
+  obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
+  exact hF i hi g (Finsupp.mem_support_iff.mpr hgi_ne)
+
+end AddAndSum
 
 section Monotone
 
@@ -82,11 +137,8 @@ theorem nsmul_lt_apply_of_mem_support_coeff_add_pow_sub_pow [Ring R] (φ : G →
     (n : ℕ) {g : G} (hg : g ∈ ((f₀ + f₁) ^ n - f₀ ^ n).coeff.support) :
     n • μ < φ g := by
   classical
-  have hf : ∀ x ∈ (f₀ + f₁).coeff.support, μ ≤ φ x := fun x hx => by
-    rw [coeff_add] at hx
-    rcases Finset.mem_union.mp (Finsupp.support_add hx) with hx₀ | hx₁
-    · exact hf₀ x hx₀
-    · exact (hf₁ x hx₁).le
+  have hf : ∀ x ∈ (f₀ + f₁).coeff.support, μ ≤ φ x :=
+    fun _ => le_apply_of_mem_support_coeff_add φ hf₀ fun x hx => (hf₁ x hx).le
   induction n generalizing g with
   | zero => simp at hg
   | succ n ih =>
@@ -95,39 +147,15 @@ theorem nsmul_lt_apply_of_mem_support_coeff_add_pow_sub_pow [Ring R] (φ : G →
     have hid : (f₀ + f₁) ^ (n + 1) - f₀ ^ (n + 1) =
         ((f₀ + f₁) ^ n - f₀ ^ n) * f₀ + (f₀ + f₁) ^ n * f₁ := by
       rw [pow_succ, pow_succ, mul_add, sub_mul, add_sub_right_comm]
-    rw [hid, coeff_add] at hg
+    rw [hid] at hg
     rw [succ_nsmul]
-    rcases Finset.mem_union.mp (Finsupp.support_add hg) with hg_left | hg_right
-    · obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_add.mp (support_coeff_mul_subset _ _ hg_left)
+    refine lt_apply_of_mem_support_coeff_add φ (fun x hx => ?_) (fun x hx => ?_) hg
+    · obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_add.mp (support_coeff_mul_subset _ _ hx)
       rw [map_add]
       exact add_lt_add_of_lt_of_le (ih ha) (hf₀ b hb)
-    · obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_add.mp (support_coeff_mul_subset _ _ hg_right)
+    · obtain ⟨a, ha, b, hb, rfl⟩ := Finset.mem_add.mp (support_coeff_mul_subset _ _ hx)
       rw [map_add]
       exact add_lt_add_of_le_of_lt (nsmul_le_apply_of_mem_support_coeff_pow φ hf n ha) (hf₁ b hb)
-
-/-- If `μ < 0`, `f` has `φ`-weights at least `μ`, and each coefficient `c i` (`i < d`) has
-nonnegative `φ`-weights, then every monomial in `∑ i ∈ Finset.range d, c i * f ^ i` has `φ`-weight
-strictly above `d • μ`. -/
-theorem nsmul_lt_apply_of_mem_support_coeff_sum_mul_pow [Semiring R] (φ : G →+ M) {d : ℕ}
-    {c : ℕ → AddMonoidAlgebra R G} (hc : ∀ i < d, ∀ g ∈ (c i).coeff.support, 0 ≤ φ g)
-    {f : AddMonoidAlgebra R G} {μ : M} (hμ_neg : μ < 0)
-    (hf : ∀ g ∈ f.coeff.support, μ ≤ φ g)
-    {g : G} (hg : g ∈ (∑ i ∈ Finset.range d, c i * f ^ i).coeff.support) :
-    d • μ < φ g := by
-  have := addLeftMono_of_addLeftStrictMono M
-  have := addRightMono_of_addRightStrictMono M
-  have hsum_ne : ∑ i ∈ Finset.range d, (c i * f ^ i).coeff g ≠ 0 := by
-    simpa [coeff_sum, Finsupp.finsetSum_apply] using Finsupp.mem_support_iff.mp hg
-  obtain ⟨i, hi, hgi_ne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum_ne
-  have hi_lt : i < d := Finset.mem_range.mp hi
-  have hterm : i • μ ≤ φ g := by
-    simpa only [zero_add] using add_le_apply_of_mem_support_coeff_mul φ (hc i hi_lt)
-      (fun _ hx => nsmul_le_apply_of_mem_support_coeff_pow φ hf i hx)
-      (Finsupp.mem_support_iff.mpr hgi_ne)
-  have hlt : d • μ < i • μ := by
-    rw [← Nat.sub_add_cancel hi_lt.le, add_nsmul]
-    exact add_lt_of_neg_left _ (nsmul_neg hμ_neg (Nat.sub_ne_zero_of_lt hi_lt))
-  exact hlt.trans_le hterm
 
 end StrictMono
 
