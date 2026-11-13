@@ -48,7 +48,9 @@ file proves:
 `Floer.novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right`
 and
 `Floer.novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left`).
-  On a common complex, with `Φ` the identity matrix, this says that `e ⋆ b - b` is a coboundary
+  On a common complex, with `Φ` the identity matrix, whose comparison gives the identity map
+  (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_one`), this says that `e ⋆ b - b` is a
+  coboundary
   (`TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries_right`,
   `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries_left`).
 
@@ -105,7 +107,7 @@ theorem mem_cochain_gradeBy_zero_of_coordinates_eq_coefficientComparison [Semiri
   intro i
   rw [he i, show n - μ₁ ⟨i, r₁ i⟩ = -(μ₁ ⟨i, r₁ i⟩ - n) by ring]
   exact coefficientComparison_mem_gradeBy q hq ((degree ω c).comp q) (degree ω c) (fun _ => rfl)
-    fun A hA => show degree ω c (q A) = _ by linarith [hE i A hA]
+    fun A hA => by rw [AddMonoidHom.comp_apply]; linarith [hE i A hA]
 
 include hμ₂ hμ₀ in
 /-- **The degree of the map of class-indexed counts.** If every class counted by the series
@@ -126,7 +128,7 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_gradeBy [CommSemiring R] [F
   refine Submodule.sum_mem _ fun j _ => ?_
   have hc := coefficientComparison_mem_gradeBy q hq ((degree ω c).comp q) (degree ω c)
     (fun _ => rfl) (k := μ₀ ⟨l, r₀ l⟩ - μ₂ ⟨j, r₂ j⟩ - ε)
-    fun A hA => show degree ω c (q A) = _ by linarith [hK j l A hA]
+    fun A hA => by rw [AddMonoidHom.comp_apply]; linarith [hK j l A hA]
   have h := SetLike.mul_mem_graded (hb j) hc
   rwa [show k - μ₂ ⟨j, r₂ j⟩ + -(μ₀ ⟨l, r₀ l⟩ - μ₂ ⟨j, r₂ j⟩ - ε) = k + ε - μ₀ ⟨l, r₀ l⟩ by ring]
     at h
@@ -199,6 +201,27 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_left
   simpa only [he] using h
 
 end Homotopy
+
+section Identity
+
+variable [CommSemiring R] [Finite ι₀] [DecidableEq ι₀]
+
+/-- The comparison of the identity matrix of class-indexed counts gives the identity map. -/
+@[simp]
+theorem novikovMapOfMatrix_coefficientComparison_one :
+    letI := module (R := R) hF₀
+    novikovMapOfMatrix hF₀ hF₀ r₀ r₀
+        (fun k l => coefficientComparison q hq ((1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) k l)) =
+      LinearMap.id := by
+  have h1 :
+      (fun k l => coefficientComparison q hq ((1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) k l)) =
+        (1 : Matrix ι₀ ι₀ (NovikovSeries R (PeriodGroup ω c) (-area ω c))) :=
+    Matrix.map_one _ (map_zero (coefficientComparison q hq))
+      (map_one (coefficientComparison q hq))
+  rw [h1]
+  exact novikovMapOfMatrix_one hF₀ r₀
+
+end Identity
 
 section Cocycles
 
@@ -317,13 +340,8 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries_right 
     novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
       r₁ r₀ r₀ hF₁ hF₀ hF₀ q hq hμ₀ hμ₀ Q E (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₀ D₀
       hunit he hK hm₀ hm₀ hb
-  have h1 :
-      (fun k l => coefficientComparison q hq ((1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) k l)) =
-        (1 : Matrix ι₀ ι₀ (NovikovSeries R (PeriodGroup ω c) (-area ω c))) :=
-    Matrix.map_one _ (map_zero (coefficientComparison q hq))
-      (map_one (coefficientComparison q hq))
   let := module (R := R) hF₀
-  rwa [h1, novikovMapOfMatrix_one, LinearMap.id_apply] at h
+  rwa [novikovMapOfMatrix_coefficientComparison_one, LinearMap.id_apply] at h
 
 include hμ₀ in
 /-- **The unit on a common complex, in the second input.** If the first input and the output of
@@ -354,13 +372,8 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries_left [
     novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
       r₀ r₂ r₀ hF₀ hF₂ hF₀ q hq hμ₀ hμ₀ Q E (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₀ D₀
       hunit he hK hm₀ hm₀ ha
-  have h1 :
-      (fun k l => coefficientComparison q hq ((1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) k l)) =
-        (1 : Matrix ι₀ ι₀ (NovikovSeries R (PeriodGroup ω c) (-area ω c))) :=
-    Matrix.map_one _ (map_zero (coefficientComparison q hq))
-      (map_one (coefficientComparison q hq))
   let := module (R := R) hF₀
-  rwa [h1, novikovMapOfMatrix_one, LinearMap.id_apply] at h
+  rwa [novikovMapOfMatrix_coefficientComparison_one, LinearMap.id_apply] at h
 
 end Cocycles
 
