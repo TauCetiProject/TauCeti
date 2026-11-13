@@ -35,7 +35,8 @@ general.
 * `TauCeti.LimitGroup.NTQ.TowerLevel H`: the data of one level over the carrier `H`, with its
   carrier `TowerLevel.Carrier`, `TowerLevel.inclusion` and `TowerLevel.retraction`.
 * `TauCeti.LimitGroup.NTQ.Tower G T ι`: a normalized tower over `G` with top carrier `T` and
-  coefficient homomorphism `ι : G →* T`, with `Tower.height` and `Tower.retraction`.
+  coefficient homomorphism `ι : G →* T`, with `Tower.height` and `Tower.retraction`;
+  `Tower.single L` is the tower with the single level `L`.
 
 ## Main results
 
@@ -132,8 +133,11 @@ def retraction : (L : TowerLevel H) → L.Carrier →* H
 section Equations
 
 /-! The defining equations of `inclusion` and `retraction` on the four kinds of level, for rewriting
-after a case split. They are not `simp` lemmas: their right-hand sides live on the underlying
-groups, where the `simp` lemmas about elements of the carrier no longer apply. -/
+after a case split, as homomorphisms and as functions. Rewrite an applied map with the function
+forms `coe_…`: they replace the whole coercion, so that the result is an application of a
+homomorphism between the underlying groups. They are not `simp` lemmas: their right-hand sides
+live on the underlying groups, where the `simp` lemmas about elements of the carrier no longer
+apply. -/
 
 variable {X : Type u} [Finite X]
 
@@ -161,6 +165,33 @@ theorem retraction_abelian (n : ℕ) : (abelian n : TowerLevel H).retraction = f
 
 theorem retraction_free : (free X : TowerLevel H).retraction = fst := (rfl)
 
+theorem coe_inclusion_quadratic (Q : Quadratic.Standard H X) (v : X → H)
+    (hv : v ∈ V (MonoidHom.id H) {Q.toWord}) :
+    ⇑(quadratic X Q v hv).inclusion = CoordGroup.coeff (MonoidHom.id H) {Q.toWord} := (rfl)
+
+theorem coe_inclusion_centralizer (u : H) (U : Finset H) (n : ℕ)
+    (h : IsAdmissibleCentralizerLevel u U n) :
+    ⇑(centralizer u U n h).inclusion = (CentralizerExt.of : H →* CentralizerExt u n) := (rfl)
+
+theorem coe_inclusion_abelian (n : ℕ) : ⇑(abelian n : TowerLevel H).inclusion =
+    (inl : H →* Monoid.Coprod H (Fin n → Multiplicative ℤ)) := (rfl)
+
+theorem coe_inclusion_free : ⇑(free X : TowerLevel H).inclusion = (inl : H →* GX H X) := (rfl)
+
+theorem coe_retraction_quadratic (Q : Quadratic.Standard H X) (v : X → H)
+    (hv : v ∈ V (MonoidHom.id H) {Q.toWord}) :
+    ⇑(quadratic X Q v hv).retraction = CoordGroup.evalGHom v hv := (rfl)
+
+theorem coe_retraction_centralizer (u : H) (U : Finset H) (n : ℕ)
+    (h : IsAdmissibleCentralizerLevel u U n) :
+    ⇑(centralizer u U n h).retraction = (CentralizerExt.retraction 0 : CentralizerExt u n →* H) :=
+  (rfl)
+
+theorem coe_retraction_abelian (n : ℕ) : ⇑(abelian n : TowerLevel H).retraction =
+    (fst : Monoid.Coprod H (Fin n → Multiplicative ℤ) →* H) := (rfl)
+
+theorem coe_retraction_free : ⇑(free X : TowerLevel H).retraction = (fst : GX H X →* H) := (rfl)
+
 /-- The retraction of a quadratic level evaluates the class of a word at the specified solution. -/
 @[simp]
 theorem retraction_quadratic_mk (Q : Quadratic.Standard H X) (v : X → H)
@@ -168,6 +199,21 @@ theorem retraction_quadratic_mk (Q : Quadratic.Standard H X) (v : X → H)
     (quadratic X Q v hv).retraction (w : CoordGroup (MonoidHom.id H) {Q.toWord}) =
       eval (MonoidHom.id H) v w :=
   CoordGroup.evalGHom_mk hv w
+
+/-- The retraction of a quadratic level sends the generic point to the specified solution. -/
+@[simp]
+theorem retraction_quadratic_genericPoint (Q : Quadratic.Standard H X) (v : X → H)
+    (hv : v ∈ V (MonoidHom.id H) {Q.toWord}) (x : X) :
+    (quadratic X Q v hv).retraction (CoordGroup.genericPoint (.id H) {Q.toWord} x) = v x :=
+  CoordGroup.evalGHom_genericPoint hv x
+
+/-- Composing the generic point with the retraction of a quadratic level gives the specified
+solution. -/
+@[simp]
+theorem retraction_quadratic_comp_genericPoint (Q : Quadratic.Standard H X) (v : X → H)
+    (hv : v ∈ V (MonoidHom.id H) {Q.toWord}) :
+    (quadratic X Q v hv).retraction ∘ CoordGroup.genericPoint (.id H) {Q.toWord} = v :=
+  CoordGroup.evalGHom_comp_genericPoint hv
 
 /-- The retraction of a centralizer level fixes the elements of the carrier below it. -/
 @[simp]
@@ -313,6 +359,17 @@ def retraction {T : Type u} [Group T] {ι : G →* T} : Tower G T ι → T →* 
 @[simp] theorem retraction_cons (t : Tower G T ι) (L : TowerLevel T) :
     (cons t L).retraction = t.retraction.comp L.retraction := (rfl)
 
+/-- The tower with the single level `L` over `G`. -/
+def single (L : TowerLevel G) : Tower G L.Carrier L.inclusion :=
+  cons base L
+
+theorem single_eq_cons_base (L : TowerLevel G) : single L = cons base L := (rfl)
+
+@[simp] theorem height_single (L : TowerLevel G) : (single L).height = 1 := (rfl)
+
+@[simp] theorem retraction_single (L : TowerLevel G) : (single L).retraction = L.retraction :=
+  (rfl)
+
 /-- The retraction of a tower is a left inverse of its coefficient homomorphism. -/
 @[simp]
 theorem retraction_comp (t : Tower G T ι) : t.retraction.comp ι = MonoidHom.id G := by
@@ -373,8 +430,8 @@ theorem fg [Group.FG G] (t : Tower G T ι) : Group.FG T := by
   | cons _ L ih => infer_instance
 
 /-- The tower with one free level in the variables `X` over `G` is `G[X] = G ∗ F(X)`. -/
-example (X : Type u) [Finite X] : Tower G (GX G X) (inl.comp (MonoidHom.id G)) :=
-  cons base (.free X)
+example (X : Type u) [Finite X] : Tower G (GX G X) inl :=
+  single (.free X)
 
 end Tower
 
@@ -398,13 +455,13 @@ theorem isAdmissibleCentralizerLevel_inr_of [IsFreeGroup G] {X : Type*} (x : X) 
 extending the centralizer `⟨z⟩` of `z` by `ℤ`, with top carrier `K = H ∗_{⟨z⟩} (⟨z⟩ × ⟨x⟩)`. -/
 example [IsFreeGroup G] :
     Tower G (CentralizerExt (inr (FreeGroup.of .unit) : GX G PUnit) 1)
-      ((CentralizerExt.of : GX G PUnit →* _).comp (inl.comp (MonoidHom.id G))) :=
-  (Tower.base.cons (.free PUnit)).cons
+      ((CentralizerExt.of : GX G PUnit →* _).comp inl) :=
+  (Tower.single (.free PUnit)).cons
     (.centralizer _ _ 1 (isAdmissibleCentralizerLevel_inr_of PUnit.unit one_pos))
 
 /-- Over a free group `G`, let `H = G ∗ ⟨z⟩` be the carrier of a free level and
 `K = H ∗_{⟨z⟩} (⟨z⟩ × ⟨x⟩)` the carrier of the level above it extending the centralizer of `z`: the
-top carrier of the tower `(Tower.base.cons (.free PUnit)).cons (.centralizer z {z} 1 _)`. Every
+top carrier of the tower `(Tower.single (.free PUnit)).cons (.centralizer z {z} 1 _)`. Every
 homomorphism `ρ : K → H` over `H`, in particular every retraction of the upper level, sends `x`
 into the centralizer `⟨z⟩` of `z`; so every homomorphism of `H` killing `z` kills `ρ x`. -/
 theorem map_gHom_t_eq_one_of_map_inr_of_eq_one [IsFreeGroup G] {M : Type*} [Group M]
@@ -421,15 +478,14 @@ theorem map_gHom_t_eq_one_of_map_inr_of_eq_one [IsFreeGroup G] {M : Type*} [Grou
   rw [← hk, map_zpow, hψ, one_zpow]
 
 /-- Over a free group `G`, let `H = G ∗ ⟨z⟩` and `K = H ∗_{⟨z⟩} (⟨z⟩ × ⟨x⟩)` be the carriers of the
-tower `(Tower.base.cons (.free PUnit)).cons (.centralizer z {z} 1 _)`. For every `g ∈ G` there is a
+tower `(Tower.single (.free PUnit)).cons (.centralizer z {z} 1 _)`. For every `g ∈ G` there is a
 `G`-homomorphism `K → G` with `z ↦ 1` and `x ↦ g`. For `g ≠ 1` it is not the retraction of the
 tower, which sends `x` to `1` (`TowerLevel.retraction_centralizer_t`), nor any homomorphism
 `K → H` over `H` followed by a homomorphism `H → G` killing `z`
 (`map_gHom_t_eq_one_of_map_inr_of_eq_one`). -/
 theorem exists_gHom_centralizerExt_inr_of_eq_one_and_t_eq [IsFreeGroup G] (g : G) :
     ∃ φ : GHom ((CentralizerExt.of : GX G PUnit.{u + 1} →* CentralizerExt
-        (inr (FreeGroup.of .unit) : GX G PUnit) 1).comp (inl.comp (MonoidHom.id G)))
-        (MonoidHom.id G),
+        (inr (FreeGroup.of .unit) : GX G PUnit) 1).comp inl) (MonoidHom.id G),
       φ (CentralizerExt.of (inr (FreeGroup.of .unit))) = 1 ∧ φ (CentralizerExt.t 0) = g := by
   -- Lift the projection `H → G` killing `z`, which kills `C_H(z) = ⟨z⟩`, and send `x` to `g`.
   refine ⟨⟨CentralizerExt.lift fst (fun _ ↦ g) (fun _ _ ↦ .refl _) fun c hc _ ↦ ?_,
