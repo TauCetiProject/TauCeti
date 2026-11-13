@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.RingQuot
+public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.LinearAlgebra.TensorAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
@@ -13,14 +14,17 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 # The signed symmetric algebra of an internally graded module
 
 `TauCeti.SignedSym G` is the quotient of the tensor algebra by the Koszul swap relation
-on homogeneous generators. Its universal property extends precisely the linear maps whose
-homogeneous images satisfy that relation. In particular, degree-preserving linear maps induce
-algebra maps, and degree-preserving linear equivalences induce algebra equivalences.
+on homogeneous generators, for an internal grading `G` indexed by any commutative semiring `ι`
+equipped with `Module ι (Additive ℤˣ)` (such as `ℤ`, `ZMod 2`, or `ℕ`). Its universal property
+extends precisely the linear maps whose homogeneous images satisfy that relation. In particular,
+degree-preserving linear maps induce algebra maps, and degree-preserving linear equivalences induce
+algebra equivalences.
 
 This is the generator-and-relations construction of the supercommutative orbit algebra in
-J. Pardon, *Contact homology and virtual fundamental cycles*, equation (1.1). We work over a
-commutative ring; odd squares vanish when 2 is invertible. No grading of the quotient or
-monomial basis is constructed in this file.
+J. Pardon, *Contact homology and virtual fundamental cycles*, equation (1.1), covering both
+integer-graded and parity-graded (`ZMod 2`) generating modules. We work over a commutative ring;
+odd squares vanish when `2` is invertible. No grading of the quotient or monomial basis is
+constructed in this file.
 
 The construction uses Mathlib's `TensorAlgebra.lift` and `RingQuot.liftAlgHom` for the two
 successive universal properties, rather than implementing a new quotient mechanism.
@@ -34,20 +38,21 @@ universe u v w
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
+variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
 
 /-- The Koszul swap relation on homogeneous generators of the tensor algebra. -/
-inductive signedSwapRel (G : InternalGrading R V ℤ) :
+inductive signedSwapRel (G : InternalGrading R V ι) :
     TensorAlgebra R V → TensorAlgebra R V → Prop where
-  | swap (p q : ℤ) (x y : V) (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
+  | swap (p q : ι) (x y : V) (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
       signedSwapRel G (TensorAlgebra.ι R x * TensorAlgebra.ι R y)
-        (((p * q).negOnePow : ℤ) • (TensorAlgebra.ι R y * TensorAlgebra.ι R x))
+        (((-1 : ℤˣ) ^ (p * q)) • (TensorAlgebra.ι R y * TensorAlgebra.ι R x))
 
 /-- The tensor algebra modulo signed swaps of homogeneous generators. -/
-abbrev SignedSym (G : InternalGrading R V ℤ) := RingQuot (signedSwapRel G)
+abbrev SignedSym (G : InternalGrading R V ι) := RingQuot (signedSwapRel G)
 
 namespace SignedSym
 
-variable (G : InternalGrading R V ℤ)
+variable (G : InternalGrading R V ι)
 
 /-- The quotient map from the tensor algebra. -/
 abbrev quotient : TensorAlgebra R V →ₐ[R] SignedSym G :=
@@ -72,12 +77,12 @@ theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
     Function.comp_def, quotient_ι]
 
 /-- Homogeneous generators supercommute with the Koszul sign. -/
-theorem generator_mul_generator {p q : ℤ} {x y : V}
+theorem generator_mul_generator {p q : ι} {x y : V}
     (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
     generator G x * generator G y =
-      ((p * q).negOnePow : ℤ) • (generator G y * generator G x) := by
-  simpa only [← quotient_ι, ← map_mul, ← map_zsmul] using
-    (RingQuot.mkAlgHom_rel R (signedSwapRel.swap p q x y hx hy))
+      ((-1 : ℤˣ) ^ (p * q)) • (generator G y * generator G x) := by
+  simpa only [← quotient_ι, ← map_mul, ← map_zsmul_unit] using
+    RingQuot.mkAlgHom_rel R (signedSwapRel.swap p q x y hx hy)
 
 /-- Induction on expressions in the generating module and the coefficient ring. -/
 @[elab_as_elim]
@@ -106,12 +111,13 @@ theorem hom_ext {f g : SignedSym G →ₐ[R] A}
 /-- Extend a linear map whose homogeneous images obey signed commutativity. No grading on the
 receiving algebra is required: the relation is tested on the images of generators. -/
 def lift (f : V →ₗ[R] A)
-    (hf : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
-      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x)) : SignedSym G →ₐ[R] A :=
+    (hf : ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x)) : SignedSym G →ₐ[R] A :=
   RingQuot.liftAlgHom R ⟨TensorAlgebra.lift R f, by
     intro a b h
     cases h with
-    | swap p q x y hx hy => simpa using hf p q x y hx hy⟩
+    | swap p q x y hx hy =>
+      simpa only [map_mul, TensorAlgebra.lift_ι_apply, map_zsmul_unit] using hf p q x y hx hy⟩
 
 @[simp]
 theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
@@ -135,13 +141,14 @@ theorem lift_unique (f : V →ₗ[R] A) (hf) (g : SignedSym G →ₐ[R] A)
 
 /-- The universal property, as an equivalence between compatible linear maps and algebra maps. -/
 def liftEquiv :
-    {f : V →ₗ[R] A // ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
-      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x)} ≃
+    {f : V →ₗ[R] A // ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x)} ≃
       (SignedSym G →ₐ[R] A) where
   toFun f := lift G f.1 f.2
   invFun g := ⟨g.toLinearMap.comp (generator G), by
     intro p q x y hx hy
-    simpa using congrArg g (generator_mul_generator G hx hy)⟩
+    simpa only [AlgHom.toLinearMap_apply, LinearMap.comp_apply, ← map_mul, ← map_zsmul_unit] using
+      congrArg g (generator_mul_generator G hx hy)⟩
   left_inv f := Subtype.ext (LinearMap.ext fun x => lift_generator G f.1 f.2 x)
   right_inv g := (lift_unique G _ _ g fun _ => rfl).symm
 
@@ -170,7 +177,7 @@ instance [Nontrivial R] : Nontrivial (SignedSym G) :=
 section Map
 
 variable {W : Type*} [AddCommGroup W] [Module R W]
-variable (H : InternalGrading R W ℤ)
+variable (H : InternalGrading R W ι)
 
 /-- A degree-preserving linear map induces a map of signed symmetric algebras. -/
 def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
@@ -194,7 +201,7 @@ theorem map_id : map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
 variable {U : Type*} [AddCommGroup U] [Module R U]
 
 /-- The induced algebra maps respect composition. -/
-theorem map_comp (K : InternalGrading R U ℤ) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+theorem map_comp (K : InternalGrading R U ι) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
     (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
     map G K (g.comp f) (by simpa using hg.comp hf) =
@@ -234,7 +241,7 @@ theorem congr_symm (e : V ≃ₗ[R] W) (he) :
   simp
 
 /-- The induced algebra equivalences respect composition. -/
-theorem congr_trans (K : InternalGrading R U ℤ) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
+theorem congr_trans (K : InternalGrading R U ι) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
     (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
     (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
     congr G K (e.trans f) (by simpa using hf.comp he) =

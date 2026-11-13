@@ -31,7 +31,8 @@ public section
 namespace TauCeti.SignedSym
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V ℤ)
+variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
+variable (G : InternalGrading R V ι)
 
 /-- The length-`n` piece is the `n`-th submodule power of the generating module's image. -/
 def lengthPiece (n : ℕ) : Submodule R (SignedSym G) :=
@@ -62,7 +63,7 @@ theorem isHomogeneous_ker_quotient_length :
       simpa only [pow_two] using Submodule.mul_mem_mul
         (LinearMap.mem_range_self (TensorAlgebra.ι R) x)
         (LinearMap.mem_range_self (TensorAlgebra.ι R) y)
-    exact ⟨2, Submodule.sub_mem _ (h x y) (zsmul_mem (h y x) _)⟩
+    exact ⟨2, Submodule.sub_mem _ (h x y) (Submodule.smul_of_tower_mem _ _ (h y x))⟩
 
 /-- Word-length pieces form an internal direct sum. -/
 theorem isInternal_lengthPiece : DirectSum.IsInternal (lengthPiece G) := by
@@ -179,7 +180,7 @@ theorem decompose_lengthPiece_zero (a : SignedSym G) :
 
 section Map
 
-variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ι)
 
 /-- A map induced from the generators preserves word length. -/
 theorem isHomogeneous_map_length (f : V →ₗ[R] W)

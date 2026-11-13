@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
-import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # The parity reduction of a signed derivation
@@ -26,8 +25,9 @@ Only the forward direction holds in general: a parity datum does not determine a
 ## Main results
 
 * `TauCeti.map_mem_parityGrading_of_map_mem`: a map raising integer degree by one is odd.
-* `TauCeti.leibniz_parityGrading_of_leibniz`: the integer Leibniz rule implies the parity Leibniz
-  rule.
+* `TauCeti.leibniz_coarsenGrading_of_leibniz` and `TauCeti.leibniz_parityGrading_of_leibniz`:
+  the graded Leibniz rule passes to sign-preserving coarsenings, and in particular from integer
+  degree to parity.
 -/
 
 public section
@@ -53,23 +53,35 @@ end Odd
 
 section Leibniz
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
+variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A] {d : A →ₗ[R] A}
 
-/-- **The integer Leibniz rule implies the parity Leibniz rule.** If `d` satisfies the graded
-Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p`, it satisfies the graded
-Leibniz rule with the sign `(-1) ^ i` on a left factor of parity `i`. -/
-theorem leibniz_parityGrading_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
-    {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
+/-- **The graded Leibniz rule passes to any sign-preserving coarsening.** If `d` satisfies the
+graded Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p` and `f : ι → κ`
+preserves `(-1) ^ ·`, then `d` satisfies the graded Leibniz rule with the sign `(-1) ^ i` on a
+left factor in the coarsened piece of degree `i`. -/
+theorem leibniz_coarsenGrading_of_leibniz {ι κ : Type*}
+    [CommSemiring ι] [Module ι (Additive ℤˣ)] [CommSemiring κ] [Module κ (Additive ℤˣ)]
+    {𝒜 : ι → Submodule R A} {f : ι → κ} (hf : ∀ p : ι, (-1 : ℤˣ) ^ f p = (-1 : ℤˣ) ^ p)
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A,
+      d (a * b) = d a * b + ((-1 : ℤˣ) ^ p) • (a * d b))
+    {i : κ} {a : A} (ha : a ∈ coarsenGrading 𝒜 f i) (b : A) :
     d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) := by
   -- Both sides are additive in `a`, so it suffices to treat homogeneous elements.
   refine coarsenGrading_induction
     (motive := fun a ↦ d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) ha
     (fun p hp a ha ↦ ?_) (by simp) fun x y hx hy ↦ ?_
-  · rw [hl ha b, ← hp, Int.coe_castAddHom, uzpow_intCast_eq_negOnePow]
+  · rw [hl ha b, ← hp, hf]
   · rw [add_mul, map_add, hx, hy, map_add, add_mul, add_mul, smul_add]
     abel
+
+/-- **The integer Leibniz rule implies the parity Leibniz rule.** If `d` satisfies the graded
+Leibniz rule with the sign `(-1) ^ p` on a left factor of degree `p`, it satisfies the graded
+Leibniz rule with the sign `(-1) ^ i` on a left factor of parity `i`. -/
+theorem leibniz_parityGrading_of_leibniz {𝒜 : ℤ → Submodule R A}
+    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    {i : ZMod 2} {a : A} (ha : a ∈ parityGrading 𝒜 i) (b : A) :
+    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
+  leibniz_coarsenGrading_of_leibniz (fun p ↦ uzpow_intCast (-1) p) hl ha b
 
 end Leibniz
 

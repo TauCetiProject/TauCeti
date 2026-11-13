@@ -279,17 +279,17 @@ noncomputable def gradedTensorIncludeRight : ℬ →ₐᵍ[R] gradedTensorGradin
 theorem gradedTensorIncludeRight_apply (b : B) :
     gradedTensorIncludeRight 𝒜 ℬ b = (1 : A) ᵍ⊗ₜ[R] b := (rfl)
 
-variable {𝒜 ℬ} in
 /-- The images `a ᵍ⊗ₜ 1` and `1 ᵍ⊗ₜ b` of homogeneous elements of the two factors supercommute,
 with the Koszul sign of their degrees. -/
-theorem gradedTensor_tmul_one_mul_one_tmul_comm {p q : ℤ} {a : A} {b : B}
+theorem gradedTensor_tmul_one_mul_one_tmul_comm {ι : Type*} [CommSemiring ι] [DecidableEq ι]
+    [Module ι (Additive ℤˣ)] {𝒜 : ι → Submodule R A} {ℬ : ι → Submodule R B}
+    [GradedAlgebra 𝒜] [GradedAlgebra ℬ] {p q : ι} {a : A} {b : B}
     (ha : a ∈ 𝒜 p) (hb : b ∈ ℬ q) :
     (a ᵍ⊗ₜ[R] (1 : B) * (1 : A) ᵍ⊗ₜ[R] b : 𝒜 ᵍ⊗[R] ℬ) =
-      ((p * q).negOnePow : ℤ) • ((1 : A) ᵍ⊗ₜ[R] b * a ᵍ⊗ₜ[R] (1 : B)) := by
+      ((-1 : ℤˣ) ^ (p * q)) • ((1 : A) ᵍ⊗ₜ[R] b * a ᵍ⊗ₜ[R] (1 : B)) := by
   rw [GradedTensorProduct.tmul_one_mul_one_tmul,
     GradedTensorProduct.tmul_coe_mul_coe_tmul 𝒜 ℬ (1 : A) ⟨b, hb⟩ ⟨a, ha⟩ (1 : B),
-    one_mul, mul_one, ← Units.smul_def, smul_smul, mul_comm q p, ← Int.negOnePow_def,
-    Int.units_mul_self, one_smul]
+    one_mul, mul_one, smul_smul, mul_comm q p, Int.units_mul_self, one_smul]
 
 /-! ### The tensor product of two homomorphisms into degree zero -/
 

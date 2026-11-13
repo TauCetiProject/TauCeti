@@ -161,14 +161,15 @@ variable {N : Type*} [AddCommMonoid N] [Module R N] [AddMonoid ι] [AddMonoid κ
 
 /-- A linear map that is homogeneous of degree `q` for two gradings is homogeneous of degree
 `f q` for the gradings coarsened along an additive homomorphism `f`. -/
-theorem LinearMap.IsHomogeneous.coarsenGrading {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
-    {𝒩 : ι → Submodule R N} {q : ι} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 q) (f : ι →+ κ) :
+theorem LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
+    [AddMonoidHomClass F ι κ] {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} {q : ι} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 q) (f : F) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) (f q) :=
   LinearMap.isHomogeneous_def.2 fun k x hx ↦ by
     have hle : TauCeti.coarsenGrading ℳ f k ≤
         (TauCeti.coarsenGrading 𝒩 f (k + f q)).comap g :=
       coarsenGrading_le_iff.2 fun i hi y hy ↦ by
-        simpa [hi] using mem_coarsenGrading_of_mem f (hg.map_mem hy)
+        simpa [hi, map_add] using mem_coarsenGrading_of_mem f (hg.map_mem hy)
     exact hle hx
 
 end Homogeneous
@@ -218,9 +219,10 @@ variable {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
 
 /-- The coarsening of an internal grading along a map `f : ι → κ` of index types: the degree-`k`
 piece is the sum of the pieces whose degree lies in the fibre over `k`. -/
-noncomputable def coarsen (G : InternalGrading R M ι) (f : ι → κ) : InternalGrading R M κ where
+@[expose] noncomputable def coarsen (G : InternalGrading R M ι) (f : ι → κ) :
+    InternalGrading R M κ where
   piece := coarsenGrading G.piece f
-  isInternal := G.isInternal.iSup_fiber f
+  isInternal := by exact IsInternal.iSup_fiber G.isInternal f
 
 @[simp]
 theorem coarsen_piece (G : InternalGrading R M ι) (f : ι → κ) :
@@ -229,7 +231,7 @@ theorem coarsen_piece (G : InternalGrading R M ι) (f : ι → κ) :
 /-- The parity grading of an internal integer grading: the internal `ZMod 2`-grading whose even
 piece is the sum of the pieces of degree `2 * k` and whose odd piece is the sum of the pieces of
 degree `2 * k + 1`. -/
-noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZMod 2) :=
+@[expose] noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZMod 2) :=
   G.coarsen (Int.castAddHom (ZMod 2))
 
 @[simp]
