@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.Divisor
 public import TauCeti.Analysis.Complex.GrowthOrder
-import TauCeti.Analysis.Calculus.Deriv.ConstantDeriv
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.Liouville
@@ -333,7 +333,9 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
     rw [hPdef, divisorProductOne_zero, one_mul]
   · rw [heq (Set.mem_univ z)]
     beta_reduce
-    rw [hL'.eq_add_sub_smul_of_deriv_eq hconst z 0, sub_zero, smul_eq_mul, hb, mul_comm, mul_comm z]
+    have hLz : L z = L 0 + z * deriv L 0 := by
+      simpa using apply_add_smul_eq_of_fderiv_apply_eq hL' (v := 1) hconst 0 z
+    rw [hLz, hb, mul_comm, mul_comm z]
 
 /-- **Hadamard's theorem at order at most one**, with the product taken over all of `ℂ`: for
 every `s` the family `ρ ↦ E₁(ρ⁻¹ s) ^ m_ρ` over `ℂ` is multipliable and
