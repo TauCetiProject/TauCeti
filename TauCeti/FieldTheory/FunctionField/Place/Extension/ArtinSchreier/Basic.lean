@@ -79,6 +79,17 @@ theorem natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq
     _ = ramificationIdx F P' * (P'.restrict k F).ord u := by
       rw [hy, ord_algebraMap_restrict k F P']
 
+/-- A pole of `u` of order coprime to `n` forces `n` to divide the ramification index in
+`y ^ n - y = u`: comparing orders gives `n · ord_{P'} y = e(P' ∣ P) · ord_P u`. No generation
+hypothesis on `y` is needed. -/
+theorem dvd_ramificationIdx_of_pow_sub_self_eq_of_gcd_ord_eq_one
+    {y : F'} {n : ℕ} {u : F} (hn : 1 < n)
+    (hy : y ^ n - y = algebraMap F F' u) (hu : (P'.restrict k F).ord u < 0)
+    (hcop : Int.gcd n ((P'.restrict k F).ord u) = 1) : n ∣ ramificationIdx F P' :=
+  Int.natCast_dvd_natCast.mp <| Int.dvd_of_dvd_mul_left_of_gcd_one
+    ⟨P'.ord y, (natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F hn hy hu).symm⟩
+    hcop
+
 private theorem finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq
     {y : F'} {n : ℕ} {u : F} (hn : 1 < n) (hgen : F⟮y⟯ = ⊤)
     (hy : y ^ n - y = algebraMap F F' u) (hu : (P'.restrict k F).ord u < 0)
@@ -102,11 +113,9 @@ private theorem finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq
   have hle : Module.finrank F F' ≤ n := by
     rw [hfr, ← hdeg]
     exact natDegree_le_natDegree (minpoly.min F y hmonic hroot)
-  have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F hn hy hu
-  have hdvd : (n : ℤ) ∣ (ramificationIdx F P' : ℤ) :=
-    Int.dvd_of_dvd_mul_left_of_gcd_one ⟨P'.ord y, hkey.symm⟩ hcop
   have hlow : n ≤ ramificationIdx F P' :=
-    Nat.le_of_dvd (ramificationIdx_pos F P') (Int.natCast_dvd_natCast.mp hdvd)
+    Nat.le_of_dvd (ramificationIdx_pos F P')
+      (dvd_ramificationIdx_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hy hu hcop)
   have he : ramificationIdx F P' ≤ Module.finrank F F' := ramificationIdx_le_finrank F P'
   omega
 
@@ -243,5 +252,22 @@ theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
     ramificationIdx F P' = p :=
   (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
     hgen hy hpole).2
+
+/-- At a reduced Artin--Schreier pole, `p` divides the ramification index: comparing orders in
+`(y - w) ^ p - (y - w) = u - (w ^ p - w)` gives `p · ord (y - w) = e · ord (u - (w ^ p - w))`,
+and `p` does not divide the second order. -/
+theorem dvd_ramificationIdx_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    p ∣ ramificationIdx F P' := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  have : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  exact dvd_ramificationIdx_of_pow_sub_self_eq_of_gcd_ord_eq_one k F (Fact.out : p.Prime).one_lt
+    (y := y - algebraMap F F' w) (P' := P')
+    (by rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]) hwneg
+    (Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd))
 
 end TauCeti.Place

@@ -6,6 +6,7 @@ Authors: Jon Crall, OpenAI GPT-5.6 Thinking
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Intertwining
 
 /-!
 # Sylvester equations for partial linear maps
@@ -16,7 +17,8 @@ operators `A` and `B` and bounded maps `X` and `C`.
 The equation requires `X` to carry the domain of `B` into that of `A`.
 It specializes the ordinary bounded Sylvester equation and is preserved by
 addition, negation, subtraction, and scalar multiplication of solutions and
-right-hand sides.
+right-hand sides. The homogeneous equation `A X - X B = 0` says exactly that `X`
+intertwines `B` with `A` in the domain-aware sense of `LinearPMap.Intertwines`.
 
 Adapted from the Kitware DKPS formalization,
 `ForTauCeti/Analysis/InnerProductSpace/LinearPMap/Sylvester.lean`.
@@ -173,4 +175,12 @@ theorem smul {A : E →ₗ.[𝕜] E} {B : F →ₗ.[𝕜] F}
       _ = c • C (x : F) := by rw [hEqX]
 
 end SylvesterEquation
+
+/-- The homogeneous domain-aware Sylvester equation `A X - X B = 0` says exactly that `X`
+intertwines `B` with `A`. -/
+theorem sylvesterEquation_zero_iff_intertwines {A : E →ₗ.[𝕜] E} {B : F →ₗ.[𝕜] F}
+    {X : F →L[𝕜] E} : SylvesterEquation A B X 0 ↔ B.Intertwines A X :=
+  ⟨fun h => ⟨h.mapsTo_domain, fun x => (sub_eq_zero.mp (by simpa using h.equation x)).symm⟩,
+    fun h => ⟨h.mem_domain, fun x => by simpa using sub_eq_zero.mpr (h.apply_eq x).symm⟩⟩
+
 end LinearPMap
