@@ -251,8 +251,9 @@ section Restriction
 
 variable {Ω' : Opens E} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
 
-/-- **Restriction.** The restriction of a locally normal current to an open subset `Ω' ⊆ Ω` is
-locally normal. -/
+/-- **Restriction.** Precomposing a locally normal current with `monoCLM` is locally normal: for
+`Ω' ≤ Ω` this restricts `T` to `Ω'`, and otherwise `monoCLM` is zero (cf.
+`TestFunction.extDerivCLM_monoCLM`). -/
 theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) :
     IsLocallyNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
   cases k with
@@ -263,8 +264,8 @@ theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) :
     rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨hT.1.comp_monoCLM, hT.2.comp_monoCLM⟩
 
-/-- **Restriction.** The restriction of a normal current to an open subset `Ω' ⊆ Ω` is normal: its
-mass and the mass of its boundary are local masses of `T` and `∂T` on `Ω'`. -/
+/-- **Restriction.** Precomposing a normal current with `monoCLM` is normal: for `Ω' ≤ Ω` this
+restricts `T` to `Ω'`, and otherwise `monoCLM` is zero. -/
 theorem IsNormal.comp_monoCLM (hT : IsNormal T) :
     IsNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
   cases k with
