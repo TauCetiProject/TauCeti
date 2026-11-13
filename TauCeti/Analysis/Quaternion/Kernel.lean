@@ -10,6 +10,8 @@ public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.Quaternion.Fueter
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 
 /-!
 # The Cauchy–Fueter kernel
@@ -21,10 +23,19 @@ Fueter equations away from the pole. Together with `RightFueterAt.sum_fderiv_mul
 these give zero divergence for both ordered kernel-weighted boundary forms in the Cauchy–Fueter
 formula.
 
+Homogeneity of degree `-3` bounds the `m`-th real derivative by
+`C / ‖q - q₀‖^(3 + m)`, with a positive constant depending only on the prescribed
+maximum order. Derivatives in the second argument have the same bound and differ
+from spatial derivatives by `(-1)^m`. Positive separation gives uniform bounds,
+including on closed balls about the pole, for differentiating boundary integrals.
+The compact-sphere argument is supplied by
+`TauCeti.exists_norm_iteratedFDeriv_le_mul_zpow_of_smul_eq`.
+
 ## References
 
 * I. Frenkel and M. Libine, *Quaternionic analysis, representation theory and physics*,
-  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Proposition 3.
+  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Proposition 3 and Theorem 9
+  (the integral formula).
 -/
 
 public section
@@ -134,11 +145,27 @@ theorem contDiffAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) {n : With
   funext x
   simp [cauchyFueterKernel_eq, hC, ← pow_mul]
 
+/-- The kernel is smooth in its second argument away from the first argument. -/
+theorem contDiffAt_cauchyFueterKernel_right {q q₀ : ℍ} (hq : q ≠ q₀)
+    {n : WithTop ℕ∞} : ContDiffAt ℝ n (cauchyFueterKernel q) q₀ := by
+  -- Eta-expand so the pointwise kernel formula can rewrite the partially applied function.
+  change ContDiffAt ℝ n (fun x ↦ cauchyFueterKernel q x) q₀
+  simpa [Function.comp_def, cauchyFueterKernel_eq] using
+    (contDiffAt_cauchyFueterKernel (sub_ne_zero.mpr hq) (n := n)).comp q₀
+      (contDiffAt_const.sub contDiffAt_id)
+
 /-- The kernel is continuous on every set that avoids its pole. -/
 theorem continuousOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
     ContinuousOn (fun q ↦ cauchyFueterKernel q q₀) s := by
   intro q hq
   exact (contDiffAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+    (n := 0)).continuousAt.continuousWithinAt
+
+/-- The kernel is continuous in its second argument on every set avoiding the first argument. -/
+theorem continuousOn_cauchyFueterKernel_right {s : Set ℍ} {q : ℍ} (h : q ∉ s) :
+    ContinuousOn (cauchyFueterKernel q) s := by
+  intro q₀ hq₀
+  exact (contDiffAt_cauchyFueterKernel_right (ne_of_mem_of_not_mem hq₀ h).symm
     (n := 0)).continuousAt.continuousWithinAt
 
 /-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. At the pole
@@ -221,5 +248,92 @@ theorem rightFueterOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ �
     RightFueterOn (fun q ↦ cauchyFueterKernel q q₀) s :=
   rightFueterOn_iff.mpr fun _ hq ↦
     rightFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+
+/-- Spatial derivatives of a kernel with arbitrary pole are translates of those
+of the kernel with pole zero. This identity also holds at the totalized pole. -/
+theorem iteratedFDeriv_cauchyFueterKernel (m : ℕ) (q q₀ : ℍ) :
+    iteratedFDeriv ℝ m (fun x ↦ cauchyFueterKernel x q₀) q =
+      iteratedFDeriv ℝ m (fun x ↦ cauchyFueterKernel x 0) (q - q₀) := by
+  have heq : (fun x ↦ cauchyFueterKernel x q₀) =
+      (fun x ↦ cauchyFueterKernel (x - q₀) 0) := by
+    funext x
+    simp [cauchyFueterKernel_eq]
+  rw [heq, iteratedFDeriv_comp_sub (f := fun x ↦ cauchyFueterKernel x 0)]
+
+/-- Differentiation in the second argument contributes one minus sign per derivative.
+No differentiability hypothesis is needed for this identity of totalized derivatives. -/
+theorem iteratedFDeriv_cauchyFueterKernel_right (m : ℕ) (q q₀ : ℍ) :
+    iteratedFDeriv ℝ m (cauchyFueterKernel q) q₀ =
+      (-1 : ℝ) ^ m • iteratedFDeriv ℝ m (fun x ↦ cauchyFueterKernel x 0) (q - q₀) := by
+  have heq : cauchyFueterKernel q =
+      (fun x ↦ cauchyFueterKernel (q + (-1 : ℝ) • x) 0) := by
+    funext x
+    simp [cauchyFueterKernel_eq, sub_eq_add_neg]
+  rw [heq, iteratedFDeriv_comp_const_smul_apply
+    (fun x ↦ cauchyFueterKernel (q + x) 0),
+    iteratedFDeriv_comp_add_left (f := fun x ↦ cauchyFueterKernel x 0)]
+  simp [sub_eq_add_neg]
+
+/-- Uniform bounds through any prescribed finite order for spatial derivatives of
+the kernel, with a positive constant independent of the pole and evaluation point. -/
+theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ m ≤ N, ∀ q q₀ : ℍ, q ≠ q₀ →
+      ‖iteratedFDeriv ℝ m (fun x ↦ cauchyFueterKernel x q₀) q‖ ≤
+        C / ‖q - q₀‖ ^ (3 + m) := by
+  have hs : ContDiffOn ℝ N (fun x ↦ cauchyFueterKernel x 0) {0}ᶜ :=
+    fun x hx ↦ (contDiffAt_cauchyFueterKernel hx).contDiffWithinAt
+  have hh (t : ℝ) (_ht : 0 < t) (x : ℍ) (_hx : x ≠ 0) :
+      cauchyFueterKernel (t • x) 0 = t ^ (-3 : ℤ) • cauchyFueterKernel x 0 := by
+    simpa [zpow_neg, zpow_ofNat] using cauchyFueterKernel_smul t x 0
+  obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_mul_zpow_of_smul_eq hs hh
+  refine ⟨A + 1, by positivity, fun m hm q q₀ hq ↦ ?_⟩
+  rw [iteratedFDeriv_cauchyFueterKernel]
+  have h := hA m hm (q - q₀) (sub_ne_zero.mpr hq)
+  have hexp : (-3 : ℤ) - m = -((3 + m : ℕ) : ℤ) := by omega
+  rw [hexp, zpow_neg, zpow_natCast, ← div_eq_mul_inv] at h
+  exact h.trans (div_le_div_of_nonneg_right (by simp) (by positivity))
+
+/-- The same pole-independent decay estimate holds for derivatives in the second
+argument, as used in the differentiated boundary representation. -/
+theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ m ≤ N, ∀ q q₀ : ℍ, q ≠ q₀ →
+      ‖iteratedFDeriv ℝ m (cauchyFueterKernel q) q₀‖ ≤
+        C / ‖q - q₀‖ ^ (3 + m) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_cauchyFueterKernel_le N
+  refine ⟨C, hC, fun m hm q q₀ hq ↦ ?_⟩
+  simpa [iteratedFDeriv_cauchyFueterKernel_right, norm_smul,
+    iteratedFDeriv_cauchyFueterKernel] using h m hm q q₀ hq
+
+/-- Positive separation bounds derivatives in the second argument, with a constant
+depending only on the maximum order, not on the points or separation scale. -/
+theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_le_norm_sub (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ m ≤ N, ∀ {q q₀ : ℍ} {δ : ℝ}, 0 < δ → δ ≤ ‖q - q₀‖ →
+      ‖iteratedFDeriv ℝ m (cauchyFueterKernel q) q₀‖ ≤ C / δ ^ (3 + m) := by
+  obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le N
+  refine ⟨C, hC, fun m hm q q₀ δ hδ hsep ↦ ?_⟩
+  have hne : q ≠ q₀ := by
+    intro heq
+    simp [heq] at hsep
+    linarith
+  exact (h m hm _ _ hne).trans
+    (div_le_div_of_nonneg_left hC.le (by positivity) (pow_le_pow_left₀ hδ.le hsep _))
+
+/-- If a point is at distance at least `δ` from a pole, its kernel derivatives in
+the second argument have a common bound on every closed ball of radius `r < δ`
+about that pole. The positive constant depends only on the maximum order `N`,
+providing a common-neighbourhood dominator for boundary integrals. -/
+theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_mem_closedBall (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ m ≤ N, ∀ {q q₀ p : ℍ} {δ r : ℝ}, r < δ →
+      δ ≤ ‖q - q₀‖ → p ∈ Metric.closedBall q₀ r →
+      ‖iteratedFDeriv ℝ m (cauchyFueterKernel q) p‖ ≤ C / (δ - r) ^ (3 + m) := by
+  obtain ⟨C, hC, h⟩ :=
+    exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_le_norm_sub N
+  refine ⟨C, hC, fun m hm q q₀ p δ r hr hsep hp ↦ ?_⟩
+  apply h m hm (sub_pos.mpr hr)
+  have hdist : ‖p - q₀‖ ≤ r := by
+    simpa only [Metric.mem_closedBall, dist_eq_norm] using hp
+  have htri := dist_triangle q p q₀
+  simp only [dist_eq_norm] at htri
+  linarith
 
 end TauCeti
