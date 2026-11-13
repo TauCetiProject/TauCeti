@@ -148,15 +148,56 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`
+and `b ∈ s j` at two distinct coordinates `i` and `j`, times the volume of the cells at those
+coordinates. -/
+theorem prod_card_eq_card_filter_piFinset_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j : ι} (hij : i ≠ j) (s : ∀ m, Finset (κ m))
+    {a : κ i} {b : κ j} (ha : a ∈ s i) (hb : b ∈ s j) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b} * (#(s i) * #(s j)) := by
+  have hfib : {h ∈ piFinset s | h i = a ∧ h j = b} =
+      piFinset (Function.update (Function.update s i {a}) j {b}) := by
+    rw [piFinset_update_singleton_eq_filter_piFinset_eq _ _ (by simpa [hij.symm] using hb),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter]
+  have hsplit (f : ι → ℕ) : ∏ m, f m = f i * f j * ∏ m ∈ (univ.erase i).erase j, f m := by
+    rw [mul_assoc, mul_prod_erase _ _ (by simp [hij.symm]), mul_prod_erase _ _ (mem_univ i)]
+  rw [hfib, card_piFinset, hsplit fun m ↦ #(s m),
+    hsplit fun m ↦ #(Function.update (Function.update s i {a}) j {b} m)]
+  simp only [Function.update_self, Function.update_of_ne hij, card_singleton, one_mul]
+  rw [mul_comm]
+  congr 1
+  refine Finset.prod_congr rfl fun m hm ↦ ?_
+  simp only [mem_erase] at hm
+  simp [Function.update_of_ne hm.1, Function.update_of_ne hm.2.1]
+
 /-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`,
 `b ∈ s j` and `c ∈ s l` at three distinct coordinates `i`, `j` and `l`, times the volume of the
 cells at those coordinates. -/
-theorem prod_card_eq_card_filter_mul {ι κ : Type*} [Fintype ι] [DecidableEq ι] [DecidableEq κ]
-    {i j l : ι} (hij : i ≠ j) (hil : i ≠ l) (hjl : j ≠ l) (s : ι → Finset κ) {a b c : κ}
-    (ha : a ∈ s i) (hb : b ∈ s j) (hc : c ∈ s l) :
-    ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
-  have := sum_piFinset_eq_sum_filter_sum_sum_sum_update (M := ℕ) hij hil hjl s ha hb hc fun _ ↦ 1
-  simpa only [sum_const, nsmul_eq_mul, Nat.cast_id, mul_one, card_piFinset, mul_assoc] using this
+theorem prod_card_eq_card_filter_piFinset_mul_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j l : ι} (hij : i ≠ j) (hil : i ≠ l)
+    (hjl : j ≠ l) (s : ∀ m, Finset (κ m)) {a : κ i} {b : κ j} {c : κ l} (ha : a ∈ s i)
+    (hb : b ∈ s j) (hc : c ∈ s l) :
+    ∏ m, #(s m) =
+      #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
+  have hfib : {h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} =
+      piFinset (Function.update (Function.update (Function.update s i {a}) j {b}) l {c}) := by
+    rw [piFinset_update_singleton_eq_filter_piFinset_eq _ _
+        (by simpa [hil.symm, hjl.symm] using hc),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ (by simpa [hij.symm] using hb),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter, filter_filter]
+  have hsplit (f : ι → ℕ) :
+      ∏ m, f m = f i * f j * f l * ∏ m ∈ ((univ.erase i).erase j).erase l, f m := by
+    rw [mul_assoc, mul_assoc, mul_prod_erase _ _ (by simp [hil.symm, hjl.symm]),
+      mul_prod_erase _ _ (by simp [hij.symm]), mul_prod_erase _ _ (mem_univ i)]
+  rw [hfib, card_piFinset, hsplit fun m ↦ #(s m), hsplit fun m ↦
+    #(Function.update (Function.update (Function.update s i {a}) j {b}) l {c} m)]
+  simp only [Function.update_self, Function.update_of_ne hij, Function.update_of_ne hil,
+    Function.update_of_ne hjl, card_singleton, one_mul]
+  rw [mul_comm]
+  congr 1
+  refine Finset.prod_congr rfl fun m hm ↦ ?_
+  simp only [mem_erase] at hm
+  simp [Function.update_of_ne hm.1, Function.update_of_ne hm.2.1, Function.update_of_ne hm.2.2.1]
 
 /-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
 its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
