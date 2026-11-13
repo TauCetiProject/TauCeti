@@ -10,7 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.Topology.Order.DenselyOrdered
-import TauCeti.Analysis.Normed.Operator.IdempotentRange
+import TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCalculus
 import TauCeti.LinearAlgebra.Projection.Add
 import TauCeti.Topology.Algebra.Indicator
 
@@ -40,8 +40,8 @@ The main facts are the following.
 * Windows persist along convergent families of self-adjoint operators
   (`ContinuousLinearMap.IsSpectralWindow.eventually`), and the spectral rank of a set whose
   frontier misses the spectrum is locally constant
-  (`Filter.Tendsto.eventually_spectralRank_eq`): the spectral projectors converge, and
-  converging projections have isomorphic ranges.
+  (`Filter.Tendsto.eventually_spectralRank_eq`), by the local constancy of the rank of spectral
+  projectors (`IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq`).
 * For two windows `r` and `r'` of the limit, the difference of the counts in `[0, r)` and `[0, r')`
   is locally constant (`ContinuousLinearMap.IsSpectralWindow.eventually_spectralRank_sub_eq`), since
   it is the count in `[r, r')` up to sign. This makes spectral flow independent of the windows used
@@ -61,9 +61,12 @@ namespace ContinuousLinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
-/-- The rank of the spectral projector of `T` onto `s`: for self-adjoint `T` whose spectrum
-meets `s` in isolated eigenvalues, the number of eigenvalues of `T` in `s`, counted with
-multiplicity. -/
+/-- The rank of the spectral projector `cfc (s.indicator 1) T` of `T` onto `s`. When `T` is
+self-adjoint, the indicator of `s` is continuous on the spectrum of `T` (for instance when `s` lies
+in a spectral window, `ContinuousLinearMap.IsSpectralWindow.continuousOn_indicator`) and the
+projector has finite rank, this is the number of eigenvalues of `T` in `s`, counted with
+multiplicity. Otherwise it is a junk value: `0` if the projector has infinite rank, or if the
+indicator is discontinuous on the spectrum, where `cfc` returns `0`. -/
 noncomputable def spectralRank (T : E →L[ℂ] E) (s : Set ℝ) : ℕ :=
   finrank ℂ (cfc (s.indicator (1 : ℝ → ℝ)) T).range
 
@@ -82,40 +85,20 @@ structure IsSpectralWindow (T : E →L[ℂ] E) (r : ℝ) : Prop where
   finiteDimensional_range_Ioo :
     FiniteDimensional ℂ (cfc ((Ioo (-r) r).indicator (1 : ℝ → ℝ)) T).range
 
-omit [CompleteSpace E] in
-/-- A real polynomial in `T` acts on a `T`-invariant subspace as the same polynomial in the
-restriction `C` of `T`. -/
-private theorem aeval_apply_coe (T : E →L[ℂ] E) {F : Submodule ℂ E} (C : Module.End ℝ F)
-    (hC : ∀ y, (C y : E) = T y) (q : ℝ[X]) (y : F) :
-    aeval T q (y : E) = (aeval C q y : E) := by
-  induction q using Polynomial.induction_on generalizing y with
-  | C a => simp [Algebra.algebraMap_eq_smul_one]
-  | add p q hp hq => simp [hp, hq]
-  | monomial n a h =>
-    rw [pow_succ, ← mul_assoc, map_mul (aeval T) (Polynomial.C a * X ^ n) X,
-      map_mul (aeval C) (Polynomial.C a * X ^ n) X, aeval_X, aeval_X, mul_apply_eq_comp,
-      mul_apply_eq_comp, ← hC]
-    exact h (C y)
-
-omit [CompleteSpace E] in
-private theorem frontier_Ioo_disjoint_spectrum {T : E →L[ℂ] E} {r : ℝ} (hr0 : 0 < r)
-    (hr : r ∉ spectrum ℝ T) (hr' : -r ∉ spectrum ℝ T) :
-    Disjoint (frontier (Ioo (-r) r)) (spectrum ℝ T) := by
-  rw [frontier_Ioo (by linarith)]
-  refine Set.disjoint_left.2 fun x hx hxT ↦ ?_
-  rcases hx with h | h
-  · exact hr' (h ▸ hxT)
-  · exact hr (h ▸ hxT)
-
 namespace IsSpectralWindow
 
 variable {T : E →L[ℂ] E} {r : ℝ}
 
+/-- The frontier `{-r, r}` of a spectral window misses the spectrum. -/
+theorem disjoint_frontier_Ioo (hT : IsSpectralWindow T r) :
+    Disjoint (frontier (Ioo (-r) r)) (spectrum ℝ T) := by
+  rw [frontier_Ioo (by linarith [hT.pos])]
+  simp [hT.notMem_spectrum, hT.neg_notMem_spectrum]
+
 /-- The indicator of a spectral window is continuous on the spectrum. -/
 private theorem continuousOn_indicator_Ioo (hT : IsSpectralWindow T r) :
     ContinuousOn ((Ioo (-r) r).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) :=
-  continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-    (frontier_Ioo_disjoint_spectrum hT.pos hT.notMem_spectrum hT.neg_notMem_spectrum)
+  continuousOn_const.continuousOn_indicator_of_disjoint_frontier hT.disjoint_frontier_Ioo
 
 /-- The spectrum meets a spectral window in finitely many points. -/
 theorem finite_spectrum_inter (hT : IsSpectralWindow T r) :
@@ -133,12 +116,18 @@ theorem finite_spectrum_inter (hT : IsSpectralWindow T r) :
   have : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
   let C : Module.End ℝ F := ((T : E →ₗ[ℂ] E).restrict hF).restrictScalars ℝ
   have hμ : minpoly ℝ C ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral C)
-  -- The minimal polynomial of `T` on the range of the window projector kills that range.
+  -- A real polynomial in `T` acts on `F` as the same polynomial in its restriction `C`.
+  have haeval (q : ℝ[X]) (y : F) : aeval T q (y : E) = (aeval C q y : E) := by
+    have hsc : Function.Semiconj ((↑) : F → E) C T := fun _ ↦ rfl
+    induction q using Polynomial.induction_on' with
+    | add p q hp hq => simp [hp, hq]
+    | monomial n a =>
+      simp [aeval_monomial, Algebra.algebraMap_eq_smul_one, FunLike.coe_pow_eq_iterate,
+        hsc.iterate_right n y]
+  -- So the minimal polynomial of `T` on the range of the window projector kills that range.
   have hzero : aeval T (minpoly ℝ C) * P = 0 := by
     ext x
-    have h := aeval_apply_coe T C (fun _ ↦ rfl) (minpoly ℝ C) ⟨P x, x, rfl⟩
-    rw [minpoly.aeval] at h
-    simpa using h
+    simpa [minpoly.aeval] using haeval (minpoly ℝ C) ⟨P x, x, rfl⟩
   rw [← cfc_polynomial (minpoly ℝ C) T, hP,
     ← cfc_mul _ _ T (Polynomial.continuous _).continuousOn hT.continuousOn_indicator_Ioo] at hzero
   -- So every spectral point of the window is a root of the minimal polynomial.
@@ -197,8 +186,7 @@ theorem spectralRank_union (hT : IsSpectralWindow T r) {s t : Set ℝ} (hs : s �
   have := hT.finiteDimensional_range ht
   have hidem (u : Set ℝ) :
       IsIdempotentElem ((cfc (u.indicator (1 : ℝ → ℝ)) T : E →L[ℂ] E) : E →ₗ[ℂ] E) :=
-    LinearMap.ext fun x ↦
-      congr($((TauCeti.isStarProjection_cfc_indicator T u).isIdempotentElem.eq) x)
+    IsIdempotentElem.toLinearMap (TauCeti.isStarProjection_cfc_indicator T u).isIdempotentElem
   -- Spectral projectors of disjoint sets are orthogonal.
   have hzero {u v : Set ℝ} (huv : Disjoint u v)
       (hu : ContinuousOn (u.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
@@ -211,10 +199,10 @@ theorem spectralRank_union (hT : IsSpectralWindow T r) {s t : Set ℝ} (hs : s �
     by_cases hx : x ∈ u
     · simp [indicator_of_mem hx, indicator_of_notMem (huv.notMem_of_mem_left hx)]
     · simp [indicator_of_notMem hx]
-  rw [spectralRank_def, indicator_union_of_disjoint hst, cfc_add (a := T) _ _ hsc htc,
+  simp only [spectralRank_def]
+  rw [indicator_union_of_disjoint hst, cfc_add (a := T) _ _ hsc htc,
     ContinuousLinearMap.toLinearMap_add, LinearMap.IsIdempotentElem.finrank_range_add_of_mul_eq_zero
       (hidem s) (hidem t) (hzero hst hsc htc) (hzero hst.symm htc hsc)]
-  rfl
 
 end IsSpectralWindow
 
@@ -222,43 +210,32 @@ section Family
 
 variable {ι : Type*} {l : Filter ι} {A : ι → E →L[ℂ] E} {T : E →L[ℂ] E}
 
-/-- The range of a spectral projector moves isomorphically along a convergent family of
-self-adjoint operators, as long as the frontier of the spectral set misses the spectrum of the
-limit. -/
-private theorem eventually_nonempty_continuousLinearEquiv_range_cfc_indicator {s : Set ℝ}
-    (hA : Tendsto A l (𝓝 T)) (hsa : ∀ᶠ i in l, IsSelfAdjoint (A i)) (hT : IsSelfAdjoint T)
-    (hs : Disjoint (frontier s) (spectrum ℝ T)) :
-    ∀ᶠ i in l, Nonempty ((cfc (s.indicator (1 : ℝ → ℝ)) T).range ≃L[ℂ]
-      (cfc (s.indicator (1 : ℝ → ℝ)) (A i)).range) :=
-  TauCeti.eventually_nonempty_continuousLinearEquiv_range
-    ((hT.continuousWithinAt_cfc_indicator hs).tendsto.comp
-      (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩))
-    (TauCeti.isStarProjection_cfc_indicator T s).isIdempotentElem
-    (.of_forall fun i ↦ (TauCeti.isStarProjection_cfc_indicator (A i) s).isIdempotentElem)
-
 /-- The spectral rank of a set whose frontier misses the spectrum is locally constant along a
 convergent family of self-adjoint operators. -/
 theorem _root_.Filter.Tendsto.eventually_spectralRank_eq {s : Set ℝ} (hA : Tendsto A l (𝓝 T))
     (hsa : ∀ᶠ i in l, IsSelfAdjoint (A i)) (hT : IsSelfAdjoint T)
     (hs : Disjoint (frontier s) (spectrum ℝ T)) :
     ∀ᶠ i in l, spectralRank (A i) s = spectralRank T s :=
-  (eventually_nonempty_continuousLinearEquiv_range_cfc_indicator hA hsa hT hs).mono
-    fun _ ⟨e⟩ ↦ e.toLinearEquiv.finrank_eq.symm
+  ((tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
+    (hT.eventually_rank_range_cfc_indicator_eq hs)).mono fun _ h ↦ by
+      simp only [spectralRank_def, finrank, h]
 
 /-- A spectral window of the limit of a convergent family of self-adjoint operators is a spectral
 window of the nearby operators. -/
 theorem IsSpectralWindow.eventually {r : ℝ} (hT : IsSpectralWindow T r)
     (hA : Tendsto A l (𝓝 T)) (hsa : ∀ᶠ i in l, IsSelfAdjoint (A i)) :
     ∀ᶠ i in l, IsSpectralWindow (A i) r := by
-  have hd := frontier_Ioo_disjoint_spectrum hT.pos hT.notMem_spectrum hT.neg_notMem_spectrum
-  have := hT.finiteDimensional_range_Ioo
+  have hd := hT.disjoint_frontier_Ioo
   filter_upwards [hsa,
     hA.eventually (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hd),
-    eventually_nonempty_continuousLinearEquiv_range_cfc_indicator hA hsa hT.isSelfAdjoint hd]
-    with i hi hdi ⟨e⟩
+    (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
+      (hT.isSelfAdjoint.eventually_rank_range_cfc_indicator_eq hd)]
+    with i hi hdi hrank
   rw [frontier_Ioo (by linarith [hT.pos])] at hdi
   exact ⟨hi, hT.pos, fun h ↦ hdi.notMem_of_mem_right h (by simp),
-    fun h ↦ hdi.notMem_of_mem_right h (by simp), e.toLinearEquiv.finiteDimensional⟩
+    fun h ↦ hdi.notMem_of_mem_right h (by simp),
+    Module.rank_lt_aleph0_iff.1 <|
+      hrank ▸ Module.rank_lt_aleph0_iff.2 hT.finiteDimensional_range_Ioo⟩
 
 /-- **Comparison of spectral windows.** For two spectral windows `r` and `r'` of the limit of a
 convergent family of self-adjoint operators, the difference between the numbers of eigenvalues in
@@ -284,10 +261,7 @@ theorem IsSpectralWindow.eventually_spectralRank_sub_eq {r r' : ℝ} (hr : IsSpe
   have hd : Disjoint (frontier (Ico r r')) (spectrum ℝ T) := by
     rcases hle.lt_or_eq with hlt | rfl
     · rw [frontier_Ico hlt]
-      refine Set.disjoint_left.2 fun x hx hxT ↦ ?_
-      rcases hx with h | h
-      · exact hr.notMem_spectrum (h ▸ hxT)
-      · exact hr'.notMem_spectrum (h ▸ hxT)
+      simp [hr.notMem_spectrum, hr'.notMem_spectrum]
     · simp
   filter_upwards [hr'.eventually hA hsa, hA.eventually_spectralRank_eq hsa hr.isSelfAdjoint hd]
     with i hi hrank
@@ -299,8 +273,8 @@ end Family
 
 section Scalar
 
-/-- The spectral projector of a scalar operator `c` onto a set is the identity if the set
-contains `c` and zero otherwise. -/
+/-- The spectral rank of a scalar operator `c` on a set is the dimension of `E` if the set contains
+`c`, and zero otherwise. -/
 theorem spectralRank_algebraMap (c : ℝ) (s : Set ℝ) [Decidable (c ∈ s)] :
     spectralRank (algebraMap ℝ (E →L[ℂ] E) c) s = if c ∈ s then finrank ℂ E else 0 := by
   rw [spectralRank_def, cfc_algebraMap]

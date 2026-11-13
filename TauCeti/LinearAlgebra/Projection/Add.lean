@@ -32,7 +32,9 @@ open Module
 
 namespace LinearMap
 
-variable {K M : Type*} [DivisionRing K] [AddCommGroup M] [Module K M] {p q : Module.End K M}
+section Semiring
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p q : Module.End R M}
 
 /-- If `p` is idempotent and `p * q = 0`, the ranges of `p` and `q` meet only in `0`. -/
 theorem IsIdempotentElem.disjoint_range_of_mul_eq_zero (hp : IsIdempotentElem p)
@@ -53,6 +55,12 @@ theorem IsIdempotentElem.range_add_of_mul_eq_zero (hp : IsIdempotentElem p)
   · rintro _ ⟨a, rfl⟩
     exact ⟨q a, by simpa using congr($hpq a + $hq.eq a)⟩
 
+end Semiring
+
+section DivisionRing
+
+variable {K M : Type*} [DivisionRing K] [AddCommGroup M] [Module K M] {p q : Module.End K M}
+
 /-- The rank of a sum of orthogonal idempotents of finite rank is the sum of their ranks. -/
 theorem IsIdempotentElem.finrank_range_add_of_mul_eq_zero (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) (hpq : p * q = 0) (hqp : q * p = 0)
@@ -61,5 +69,7 @@ theorem IsIdempotentElem.finrank_range_add_of_mul_eq_zero (hp : IsIdempotentElem
   rw [IsIdempotentElem.range_add_of_mul_eq_zero hp hq hpq hqp,
     ← Submodule.finrank_sup_add_finrank_inf_eq,
     (IsIdempotentElem.disjoint_range_of_mul_eq_zero hp hpq).eq_bot, finrank_bot, add_zero]
+
+end DivisionRing
 
 end LinearMap

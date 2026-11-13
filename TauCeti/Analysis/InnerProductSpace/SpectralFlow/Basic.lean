@@ -38,7 +38,8 @@ operator differ by a locally constant amount
   potential.
 * `TauCeti.spectralFlow_eq_of_isSpectralWindow`: over an interval with a single window `r`, the
   spectral flow is the change in the number of eigenvalues in `[0, r)`.
-* `TauCeti.spectralFlow_add`: the spectral flow is additive under concatenation of intervals.
+* `TauCeti.spectralFlow_add_adjacent_intervals`: the spectral flow is additive under
+  concatenation of intervals.
 
 The scalar path `tanh t` crosses `0` upwards once and has spectral flow `1` on `[-1, 1]`; this is
 checked at the end of the file.
@@ -191,6 +192,16 @@ noncomputable def spectralFlow (A : ℝ → E →L[ℂ] E) (a b : ℝ) : ℤ :=
   if h : a ≤ b ∧ ∃ F, IsSpectralFlowPotential A (Icc a b) F then
     h.2.choose b - h.2.choose a else 0
 
+/-- The spectral flow over a reversed interval is `0` by convention. -/
+theorem spectralFlow_eq_zero_of_lt (A : ℝ → E →L[ℂ] E) {a b : ℝ} (h : b < a) :
+    spectralFlow A a b = 0 :=
+  dite_eq_right fun h' ↦ h.not_ge h'.1
+
+/-- The spectral flow of a family without a potential is `0` by convention. -/
+theorem spectralFlow_eq_zero_of_forall_not_isSpectralFlowPotential {a b : ℝ}
+    (h : ∀ F, ¬IsSpectralFlowPotential A (Icc a b) F) : spectralFlow A a b = 0 :=
+  dite_eq_right fun ⟨_, F, hF⟩ ↦ h F hF
+
 /-- The spectral flow is computed by any potential. -/
 theorem IsSpectralFlowPotential.spectralFlow_eq {F : ℝ → ℤ} {a b : ℝ}
     (hF : IsSpectralFlowPotential A (Icc a b) F) (hA : ContinuousOn A (Icc a b)) (hab : a ≤ b) :
@@ -216,11 +227,11 @@ theorem spectralFlow_self (A : ℝ → E →L[ℂ] E) (a : ℝ) : spectralFlow A
   unfold spectralFlow
   split_ifs <;> simp
 
-/-- **Concatenation.** The spectral flow over `[a, c]` is the sum of the flows over `[a, b]` and
-`[b, c]`. -/
-theorem spectralFlow_add {a b c : ℝ} (hA : ContinuousOn A (Icc a c))
+/-- **Concatenation.** The spectral flows over `[a, b]` and `[b, c]` add up to the flow over
+`[a, c]`. -/
+theorem spectralFlow_add_adjacent_intervals {a b c : ℝ} (hA : ContinuousOn A (Icc a c))
     (hw : ∀ t ∈ Icc a c, ∃ r, IsSpectralWindow (A t) r) (hab : a ≤ b) (hbc : b ≤ c) :
-    spectralFlow A a c = spectralFlow A a b + spectralFlow A b c := by
+    spectralFlow A a b + spectralFlow A b c = spectralFlow A a c := by
   obtain ⟨F, hF⟩ := exists_isSpectralFlowPotential hA hw
   have hab' : Icc a b ⊆ Icc a c := Icc_subset_Icc le_rfl hbc
   have hbc' : Icc b c ⊆ Icc a c := Icc_subset_Icc hab le_rfl
