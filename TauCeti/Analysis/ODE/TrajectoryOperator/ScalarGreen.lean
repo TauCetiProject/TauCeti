@@ -31,11 +31,12 @@ is bounded by `K exp (-α |s - t|)`, so `G` is bounded on every `Lᵖ` with norm
 supported `C¹` path `u` from `u' - b u` (`TauCeti.scalarGreenIntegral_deriv_sub_eq`), which needs
 no growth bound.
 
-For a finite-dimensional real normed space `E` and `1 ≤ p < ∞`, this inverts the trajectory
-operator `d/ds - b(s) : W^{1,p}(ℝ, E) → Lᵖ(ℝ, E)` (`TauCeti.WeakDerivStep.trajectoryOperator` of
-the coefficient `-b(s) • id`): it satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`, is bijective,
-and its inverse sends a continuous compactly supported `f` to `G f`. This is the case of a
-coefficient with an exponential dichotomy whose stable part is zero, with a time-dependent
+For a finite-dimensional real normed space `E`, `1 ≤ p < ∞` and a continuous essentially bounded
+`b`, this inverts the trajectory operator `d/ds - b(s) : W^{1,p}(ℝ, E) → Lᵖ(ℝ, E)`
+(`TauCeti.WeakDerivStep.trajectoryOperator` of the `L∞` class `AL` of `-b(s) • id`, which exists
+because `b` is essentially bounded): it satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`, is
+bijective, and its inverse sends a continuous compactly supported `f` to `G f`. This is the case
+of a coefficient with an exponential dichotomy whose stable part is zero, with a time-dependent
 coefficient; the constant-coefficient case with a general dichotomy is
 `TauCeti.Analysis.ODE.TrajectoryOperator.Hyperbolic`. A typical coefficient is `b → 1` at both
 ends, as for the operator on a neck glued from `d/ds + tanh` and `d/ds - tanh`
@@ -310,9 +311,10 @@ theorem exists_prev_ae_eq_scalarGreenIntegral_and_trajectoryOperator_ae_eq [Comp
 
 variable [FiniteDimensional ℝ E]
 
-/-- **The a priori estimate for `d/ds - b`.** If `b` is continuous and `g` is a positive solution
-of `v' = b v` with `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`, then for
-`1 ≤ p < ∞` every `u ∈ W^{1,p}(ℝ, E)` satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`. -/
+/-- **The a priori estimate for `d/ds - b`.** Let `b` be continuous and essentially bounded, so
+that `-b(s) • id` has an `L∞` class `AL`, and let `g` be a positive solution of `v' = b v` with
+`g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`. Then for `1 ≤ p < ∞` every
+`u ∈ W^{1,p}(ℝ, E)` satisfies `‖u‖_{Lᵖ} ≤ 2 K / α ‖u' - b u‖_{Lᵖ}`. -/
 theorem norm_prev_le_mul_norm_trajectoryOperator_of_scalarGrowth (hb : Continuous b)
     (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
@@ -366,9 +368,11 @@ theorem surjective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : 
       (exists_prev_ae_eq_scalarGreenIntegral_and_trajectoryOperator_ae_eq hg hpos hK hα hAL
         hf.continuous hfc).imp fun _ h ↦ h.2
 
-/-- **`d/ds - b` is bijective.** If `b` is continuous and `g` is a positive solution of
-`v' = b v` with `g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`, then for `1 ≤ p < ∞` the
-trajectory operator `u ↦ u' - b u` is a bijection from `W^{1,p}(ℝ, E)` onto `Lᵖ(ℝ, E)`. -/
+/-- **`d/ds - b` is bijective.** Let `b` be continuous and essentially bounded, so that
+`-b(s) • id` has an `L∞` class `AL`, and let `g` be a positive solution of `v' = b v` with
+`g s ≤ K exp (-α (t - s)) g t` for `s ≤ t` and `α > 0`. Then for `1 ≤ p < ∞` the trajectory
+operator `u ↦ u' - b u` with coefficient `AL` is a bijection from `W^{1,p}(ℝ, E)` onto
+`Lᵖ(ℝ, E)`. -/
 theorem bijective_trajectoryOperator_of_scalarGrowth (hb : Continuous b) (hp : p ≠ ∞) :
     Function.Bijective (trajectoryOperator (p := p) AL) :=
   ⟨injective_trajectoryOperator_of_scalarGrowth hg hpos hK hα hAL hb hp,
