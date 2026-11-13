@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Preadditive
+public import Mathlib.CategoryTheory.Monoidal.Linear
 
 /-!
 # Negatives, differences and integer multiples in a monoidal preadditive category
@@ -23,6 +23,14 @@ morphisms.
 Consequently, if a natural number `e` kills an object `X`, in the sense that `e • 𝟙 X = 0`, then it
 kills `X ⊗ Y` and `Y ⊗ X` (`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
 `CategoryTheory.nsmul_id_tensor_eq_zero_of_right`).
+
+In particular every monoidal preadditive category is `MonoidalLinear ℤ` for the `ℤ`-linear
+structure `CategoryTheory.Linear.preadditiveIntLinear` of a preadditive category
+(`CategoryTheory.MonoidalPreadditive.monoidalLinearInt`).  For a category of modules such as
+`ModuleCat ℤ` this is the `ℤ`-linear structure found by instance search, to which Mathlib's
+`MonoidalLinear` instance for its structure as a category of modules does not apply; files working
+with integral coefficients install it as a local instance.  It is not a global instance, as the
+simp lemmas of `MonoidalLinear` would then subsume the integer-multiple simp lemmas above.
 -/
 
 public section
@@ -96,5 +104,12 @@ lemma tensorHom_zsmul {W X Y Z : C} (m : ℤ) (f : W ⟶ X) (g : Y ⟶ Z) :
     f ⊗ₘ (m • g) = m • (f ⊗ₘ g) := by
   rw [tensorHom_def', tensorHom_def', ← Preadditive.zsmul_comp]
   exact congrArg (· ≫ f ▷ Z) ((tensorLeft W).map_zsmul (f := g) (r := m))
+
+/-- A monoidal preadditive category is monoidal linear over `ℤ`, for the `ℤ`-linear structure
+`Linear.preadditiveIntLinear` of a preadditive category: whiskering commutes with integer
+multiples. Install it with `attribute [local instance]` where needed. -/
+lemma MonoidalPreadditive.monoidalLinearInt : MonoidalLinear ℤ C where
+  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
+  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
 
 end CategoryTheory

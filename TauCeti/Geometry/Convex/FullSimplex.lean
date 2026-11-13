@@ -250,6 +250,13 @@ theorem simplexMapAmbient_coe {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) (x :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   cases i using Fin.cases <;> simp
 
+/-- At a point of the full-dimensional simplex, the `j`-th coordinate of the affine ambient
+extension of `f` is the barycentric weight at the vertex `j + 1` of the image point. -/
+theorem simplexMapAmbient_coe_apply {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1))
+    (x : fullSimplex m) (j : Fin n) :
+    simplexMapAmbient f x.val j = ((fullSimplexEquivStdSimplex m x).map f).weights j.succ := by
+  rw [simplexMapAmbient_coe, fullSimplexEquivStdSimplex_symm_apply]
+
 /-- The ambient extension of the `i`-th coface vertex map restricts to the face inclusion. -/
 theorem simplexMapAmbient_succAbove_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
     simplexMapAmbient i.succAbove x.val = (simplexFace p i x).val :=

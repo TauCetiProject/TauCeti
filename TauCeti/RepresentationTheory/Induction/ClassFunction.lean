@@ -118,29 +118,29 @@ noncomputable def indTerm (f : S → k) (g x : G) : k :=
 open scoped Classical in
 /-- The defining case split of `Function.indTerm`. -/
 theorem indTerm_apply (f : S → k) (g x : G) :
-    Function.indTerm f g x = if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 :=
+    indTerm f g x = if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 :=
   (rfl)
 
 /-- **A summand vanishes unless `g` fixes the coset of its representative.**  The conjugate
 `x⁻¹ g x` lies in `S` exactly when `g • xS = xS`, so only the fixed cosets contribute to
 `Subgroup.indClassFun`. -/
 theorem indTerm_eq_zero_of_smul_mk_ne (f : S → k) {g x : G}
-    (h : g • (x : G ⧸ S) ≠ (x : G ⧸ S)) : Function.indTerm f g x = 0 := by
+    (h : g • (x : G ⧸ S) ≠ (x : G ⧸ S)) : indTerm f g x = 0 := by
   classical
-  rw [Function.indTerm, dite_eq_right fun hx => h (smul_quotientGroup_mk_eq_self_iff S g x |>.2 hx)]
+  rw [indTerm, dite_eq_right fun hx => h (smul_quotientGroup_mk_eq_self_iff S g x |>.2 hx)]
 
 /-- Conjugating the argument of the summand translates the representative. -/
 theorem indTerm_conj (f : S → k) (g x c : G) :
-    Function.indTerm f (c * g * c⁻¹) x = Function.indTerm f g (c⁻¹ * x) := by
+    indTerm f (c * g * c⁻¹) x = indTerm f g (c⁻¹ * x) := by
   classical
   have h : x⁻¹ * (c * g * c⁻¹) * x = (c⁻¹ * x)⁻¹ * g * (c⁻¹ * x) := by group
-  simp only [Function.indTerm, h]
+  simp only [indTerm, h]
 
 open scoped Classical in
 /-- The value of the summand at the identity representative. -/
 theorem indTerm_one (f : S → k) (g : G) :
-    Function.indTerm f g 1 = if h : g ∈ S then f ⟨g, h⟩ else 0 := by
-  simp [Function.indTerm]
+    indTerm f g 1 = if h : g ∈ S then f ⟨g, h⟩ else 0 := by
+  simp [indTerm]
 
 /-- **A conjugation-invariant summand depends only on the left coset of its representative.**
 This form of `Function.indTerm_eq_of_mk_eq` needs only a zero in the coefficients and an explicit
@@ -148,7 +148,7 @@ conjugation-invariance hypothesis on `f`. -/
 theorem indTerm_eq_of_mk_eq_of_conj (f : S → k)
     (hf : ∀ y s : S, f (s * y * s⁻¹) = f y) (g x y : G)
     (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
-    Function.indTerm f g x = Function.indTerm f g y := by
+    indTerm f g x = indTerm f g y := by
   have hs : x⁻¹ * y ∈ S := QuotientGroup.leftRel_apply.mp (Quotient.exact' hxy)
   let s : S := ⟨x⁻¹ * y, hs⟩
   have hy : x * (s : G) = y := by simp [s]
@@ -157,7 +157,7 @@ theorem indTerm_eq_of_mk_eq_of_conj (f : S → k)
   by_cases hx : x⁻¹ * g * x ∈ S
   · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∈ S := by
       simpa [mul_assoc] using S.mul_mem (S.mul_mem (S.inv_mem s.2) hx) s.2
-    rw [Function.indTerm, dite_eq_left hx, Function.indTerm, dite_eq_left hxs]
+    rw [indTerm, dite_eq_left hx, indTerm, dite_eq_left hxs]
     have helem : (⟨(x * (s : G))⁻¹ * g * (x * s), hxs⟩ : S) =
         s⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s⁻¹⁻¹ := by
       apply Subtype.ext
@@ -167,12 +167,12 @@ theorem indTerm_eq_of_mk_eq_of_conj (f : S → k)
   · have hxs : (x * (s : G))⁻¹ * g * (x * s) ∉ S := by
       intro h
       exact hx (by simpa [mul_assoc] using S.mul_mem (S.mul_mem s.2 h) (S.inv_mem s.2))
-    rw [Function.indTerm, dite_eq_right hx, Function.indTerm, dite_eq_right hxs]
+    rw [indTerm, dite_eq_right hx, indTerm, dite_eq_right hxs]
 
 private theorem indTerm_zero (g x : G) :
-    Function.indTerm (S := S) (0 : S → k) g x = 0 := by
+    indTerm (S := S) (0 : S → k) g x = 0 := by
   classical
-  by_cases h : x⁻¹ * g * x ∈ S <;> simp [Function.indTerm, h]
+  by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
 
 end Zero
 
@@ -185,9 +185,9 @@ variable [AddCommMonoid k]
 namespace Function
 
 private theorem indTerm_add (f₁ f₂ : S → k) (g x : G) :
-    Function.indTerm (f₁ + f₂) g x = Function.indTerm f₁ g x + Function.indTerm f₂ g x := by
+    indTerm (f₁ + f₂) g x = indTerm f₁ g x + indTerm f₂ g x := by
   classical
-  by_cases h : x⁻¹ * g * x ∈ S <;> simp [Function.indTerm, h]
+  by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
 
 end Function
 
@@ -214,7 +214,7 @@ noncomputable def indClassFun (S : Subgroup G) [S.FiniteIndex] (f : S → k) :
 open scoped Classical in
 /-- The defining coset sum of `Subgroup.indClassFun`. -/
 theorem indClassFun_apply (S : Subgroup G) [S.FiniteIndex] (f : S → k) (g : G) :
-    Subgroup.indClassFun S f g =
+    indClassFun S f g =
       letI := Fintype.ofFinite (G ⧸ S)
       ∑ t : G ⧸ S,
         if h : (Quotient.out t)⁻¹ * g * Quotient.out t ∈ S then
@@ -228,7 +228,7 @@ set `T` of cosets that contains every fixed one already gives the whole sum.  In
 the set of fixed cosets itself, which for a concrete group is a short explicit list. -/
 theorem indClassFun_eq_sum_of_smul_eq_self_mem (S : Subgroup G) [S.FiniteIndex]
     (f : S → k) (g : G) (T : Finset (G ⧸ S)) (hT : ∀ t : G ⧸ S, g • t = t → t ∈ T) :
-    Subgroup.indClassFun S f g = ∑ t ∈ T, Function.indTerm f g (Quotient.out t) := by
+    indClassFun S f g = ∑ t ∈ T, Function.indTerm f g (Quotient.out t) := by
   let := Fintype.ofFinite (G ⧸ S)
   refine ((Finset.sum_subset (Finset.subset_univ T) fun t _ ht => ?_).trans rfl).symm
   refine Function.indTerm_eq_zero_of_smul_mk_ne f fun hfix => ht (hT t ?_)
@@ -241,10 +241,10 @@ uses only addition and zero, so no characteristic or invertibility hypothesis is
 @[simp]
 theorem indClassFun_comp (S : Subgroup G) [S.FiniteIndex] {k' : Type*}
     [AddCommMonoid k'] (φ : k →+ k') (f : S → k) :
-    Subgroup.indClassFun S (φ ∘ f) = φ ∘ Subgroup.indClassFun S f := by
+    indClassFun S (φ ∘ f) = φ ∘ indClassFun S f := by
   classical
   funext g
-  simp only [Subgroup.indClassFun_apply, Function.comp_apply, map_sum]
+  simp only [indClassFun_apply, Function.comp_apply, map_sum]
   apply Finset.sum_congr rfl
   intro t _
   split <;> simp
@@ -252,16 +252,16 @@ theorem indClassFun_comp (S : Subgroup G) [S.FiniteIndex] {k' : Type*}
 /-- Induction of functions kills the zero function. -/
 @[simp]
 theorem indClassFun_zero (S : Subgroup G) [S.FiniteIndex] :
-    Subgroup.indClassFun S (0 : S → k) = 0 := by
+    indClassFun S (0 : S → k) = 0 := by
   funext g
-  simp [Subgroup.indClassFun, Function.indTerm_zero]
+  simp [indClassFun, Function.indTerm_zero]
 
 /-- Induction of functions is additive. -/
 @[simp]
 theorem indClassFun_add (S : Subgroup G) [S.FiniteIndex] (f₁ f₂ : S → k) :
-    Subgroup.indClassFun S (f₁ + f₂) = Subgroup.indClassFun S f₁ + Subgroup.indClassFun S f₂ := by
+    indClassFun S (f₁ + f₂) = indClassFun S f₁ + indClassFun S f₂ := by
   funext g
-  simp [Subgroup.indClassFun, Function.indTerm_add, Finset.sum_add_distrib]
+  simp [indClassFun, Function.indTerm_add, Finset.sum_add_distrib]
 
 /-- **Induction of functions on a finite-index subgroup, as an additive map.**  It is
 `Subgroup.indClassFun` bundled by the two lemmas above, which is what lets a property be propagated
@@ -269,13 +269,13 @@ through the additive generation of an `AddSubgroup` of functions; `Subgroup.indC
 the finer bundling, as a `k`-linear map on class functions. -/
 noncomputable def indClassFunAddHom (S : Subgroup G) [S.FiniteIndex] :
     (S → k) →+ (G → k) where
-  toFun := Subgroup.indClassFun S
-  map_zero' := Subgroup.indClassFun_zero S
-  map_add' := Subgroup.indClassFun_add S
+  toFun := indClassFun S
+  map_zero' := indClassFun_zero S
+  map_add' := indClassFun_add S
 
 @[simp]
 theorem indClassFunAddHom_apply (S : Subgroup G) [S.FiniteIndex] (ψ : S → k) :
-    Subgroup.indClassFunAddHom S ψ = Subgroup.indClassFun S ψ :=
+    indClassFunAddHom S ψ = indClassFun S ψ :=
   (rfl)
 
 /-- Induction commutes with any scalar action preserving zero and addition. In particular,
@@ -283,8 +283,8 @@ this applies to module coefficients without requiring multiplication on the coef
 @[simp]
 theorem indClassFun_smul (S : Subgroup G) [S.FiniteIndex] {R : Type*}
     [DistribSMul R k] (c : R) (f : S → k) :
-    Subgroup.indClassFun S (c • f) = c • Subgroup.indClassFun S f :=
-  Subgroup.indClassFun_comp S (DistribSMul.toAddMonoidHom k c) f
+    indClassFun S (c • f) = c • indClassFun S f :=
+  indClassFun_comp S (DistribSMul.toAddMonoidHom k c) f
 
 /-! ### The projection formula -/
 
@@ -295,10 +295,10 @@ needs only addition and a distributive scalar action; the inducing function `ψ`
 theorem indClassFun_comp_subtype_smul (S : Subgroup G) [S.FiniteIndex]
     {R : Type*} [DistribSMul R k] {f : G → R}
     (hf : ∀ g c, f (c * g * c⁻¹) = f g) (ψ : S → k) :
-    Subgroup.indClassFun S ((fun s : S => f s) • ψ) = f • Subgroup.indClassFun S ψ := by
+    indClassFun S ((fun s : S => f s) • ψ) = f • indClassFun S ψ := by
   classical
   funext g
-  simp only [Subgroup.indClassFun, Pi.smul_apply', Finset.smul_sum]
+  simp only [indClassFun, Pi.smul_apply', Finset.smul_sum]
   refine Finset.sum_congr rfl fun t _ => ?_
   have hconj : f (t.out⁻¹ * g * t.out) = f g := by
     simpa using hf g t.out⁻¹
@@ -310,12 +310,12 @@ theorem indClassFun_comp_subtype_smul (S : Subgroup G) [S.FiniteIndex]
 @[simp]
 theorem indClassFun_conj (S : Subgroup G) [S.FiniteIndex] {f : S → k}
     (hf : ∀ y s, f (s * y * s⁻¹) = f y) (g c : G) :
-    Subgroup.indClassFun S f (c * g * c⁻¹) = Subgroup.indClassFun S f g := by
+    indClassFun S f (c * g * c⁻¹) = indClassFun S f g := by
   let := Fintype.ofFinite (G ⧸ S)
-  calc Subgroup.indClassFun S f (c * g * c⁻¹)
+  calc indClassFun S f (c * g * c⁻¹)
       = ∑ t : G ⧸ S, Function.indTerm f g (c⁻¹ * Quotient.out t) := by
-        simp only [Subgroup.indClassFun, Function.indTerm_conj]
-    _ = Subgroup.indClassFun S f g :=
+        simp only [indClassFun, Function.indTerm_conj]
+    _ = indClassFun S f g :=
         Fintype.sum_equiv (MulAction.toPerm c⁻¹) _ _ fun t =>
           Function.indTerm_eq_of_mk_eq_of_conj f hf _ _ _ (QuotientGroup.mk_out_smul _ t).symm
 
@@ -325,19 +325,19 @@ coefficients need only form an additive commutative monoid. -/
 @[simp]
 theorem indClassFun_top {f : (⊤ : Subgroup G) → k}
     (hf : ∀ y s, f (s * y * s⁻¹) = f y) (g : G) :
-    Subgroup.indClassFun ⊤ f g = f ⟨g, Subgroup.mem_top g⟩ := by
+    indClassFun ⊤ f g = f ⟨g, mem_top g⟩ := by
   let := Fintype.ofFinite (G ⧸ (⊤ : Subgroup G))
   have := QuotientGroup.subsingleton_quotient_top (G := G)
-  rw [Subgroup.indClassFun, Fintype.sum_subsingleton _ (QuotientGroup.mk 1),
+  rw [indClassFun, Fintype.sum_subsingleton _ (QuotientGroup.mk 1),
     Function.indTerm_eq_of_mk_eq_of_conj f hf g _ 1 (Subsingleton.elim _ _), Function.indTerm_one,
-    dite_eq_left (Subgroup.mem_top g)]
+    dite_eq_left (mem_top g)]
 
 open scoped Classical in
 /-- Induction from the trivial subgroup is supported at the identity, where its value is
 `|G|` times the value of the inducing function. -/
 @[simp]
 theorem indClassFun_bot [Finite G] (f : (⊥ : Subgroup G) → k) (g : G) :
-    Subgroup.indClassFun ⊥ f g = if g = 1 then Nat.card G • f 1 else 0 := by
+    indClassFun ⊥ f g = if g = 1 then Nat.card G • f 1 else 0 := by
   let := Fintype.ofFinite (G ⧸ (⊥ : Subgroup G))
   have hcard : Fintype.card (G ⧸ (⊥ : Subgroup G)) = Nat.card G := by
     rw [← Nat.card_eq_fintype_card]
@@ -346,7 +346,7 @@ theorem indClassFun_bot [Finite G] (f : (⊥ : Subgroup G) → k) (g : G) :
     congrArg f (Subsingleton.elim _ _)
   have hconj (x : G) : x⁻¹ * g * x = 1 ↔ g = 1 := by
     simpa only [inv_inv] using (conj_eq_one_iff (a := x⁻¹) (b := g))
-  by_cases hg : g = 1 <;> simp [Subgroup.indClassFun_apply, hconj, hg, hf, hcard]
+  by_cases hg : g = 1 <;> simp [indClassFun_apply, hconj, hg, hf, hcard]
 
 open scoped Classical in
 /-- **Transitivity of induction.**  For subgroups `L ≤ T` with `L` of finite index, inducing a
@@ -359,33 +359,33 @@ Only an additive commutative monoid of coefficients is needed. -/
 theorem indClassFun_indClassFun_subgroupOf (L : Subgroup G) {T : Subgroup G}
     (hLT : L ≤ T) [L.FiniteIndex]
     {f : L → k} (hf : ∀ y s, f (s * y * s⁻¹) = f y) :
-    haveI := Subgroup.finiteIndex_of_le hLT
-    Subgroup.indClassFun T (Subgroup.indClassFun (L.subgroupOf T) fun x => f
-      (Subgroup.subgroupOfEquivOfLe hLT x)) =
-      Subgroup.indClassFun L f := by
-  have := Subgroup.finiteIndex_of_le hLT
+    haveI := finiteIndex_of_le hLT
+    indClassFun T (indClassFun (L.subgroupOf T) fun x => f
+      (subgroupOfEquivOfLe hLT x)) =
+      indClassFun L f := by
+  have := finiteIndex_of_le hLT
   funext g
   let := Fintype.ofFinite (G ⧸ T)
   let := Fintype.ofFinite (T ⧸ L.subgroupOf T)
   let := Fintype.ofFinite (G ⧸ L)
   -- At a fixed outer representative `x`, the summand of `Ind_T^G` is the inner coset sum.
-  have hinner (x : G) : Function.indTerm (Subgroup.indClassFun (L.subgroupOf T)
-      fun y => f (Subgroup.subgroupOfEquivOfLe hLT y)) g x =
+  have hinner (x : G) : Function.indTerm (indClassFun (L.subgroupOf T)
+      fun y => f (subgroupOfEquivOfLe hLT y)) g x =
       ∑ s : T ⧸ L.subgroupOf T, Function.indTerm f g (x * (s.out : T)) := by
     by_cases hx : x⁻¹ * g * x ∈ T
-    · rw [Function.indTerm, dite_eq_left hx, Subgroup.indClassFun]
+    · rw [Function.indTerm, dite_eq_left hx, indClassFun]
       refine Finset.sum_congr rfl fun s _ => ?_
       have hconj : ((s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out : T) : G) =
           (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) := by
-        simp only [Subgroup.coe_mul, Subgroup.coe_inv]
+        simp only [coe_mul, coe_inv]
         group
       by_cases hs : (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) ∈ L
       · have hs' : s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out ∈ L.subgroupOf T := by
-          rwa [Subgroup.mem_subgroupOf, hconj]
+          rwa [mem_subgroupOf, hconj]
         rw [Function.indTerm, dite_eq_left hs', Function.indTerm, dite_eq_left hs]
         exact congrArg f (Subtype.ext hconj)
       · have hs' : s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out ∉ L.subgroupOf T := by
-          rwa [Subgroup.mem_subgroupOf, hconj]
+          rwa [mem_subgroupOf, hconj]
         rw [Function.indTerm, dite_eq_right hs', Function.indTerm, dite_eq_right hs]
     · -- If `x⁻¹ g x ∉ T`, no conjugate `(x s)⁻¹ g (x s)` with `s ∈ T` lies in `L ≤ T`.
       rw [Function.indTerm, dite_eq_right hx]
@@ -394,11 +394,11 @@ theorem indClassFun_indClassFun_subgroupOf (L : Subgroup G) {T : Subgroup G}
         have := T.mul_mem (T.mul_mem (s.out : T).2 (hLT h)) (T.inv_mem (s.out : T).2)
         simpa [mul_assoc] using this
       rw [Function.indTerm, dite_eq_right hs]
-  calc Subgroup.indClassFun T _ g
+  calc indClassFun T _ g
       = ∑ t : G ⧸ T, ∑ s : T ⧸ L.subgroupOf T, Function.indTerm f g (t.out * (s.out : T)) :=
         Finset.sum_congr rfl fun t _ => hinner t.out
-    _ = Subgroup.indClassFun L f g := by
-        rw [Subgroup.indClassFun, ← (Subgroup.mk_out_mul_out_bijective hLT).sum_comp
+    _ = indClassFun L f g := by
+        rw [indClassFun, ← (mk_out_mul_out_bijective hLT).sum_comp
           (fun q : G ⧸ L => Function.indTerm f g q.out), Fintype.sum_prod_type]
         refine Finset.sum_congr rfl fun t _ => Finset.sum_congr rfl fun s _ => ?_
         exact Function.indTerm_eq_of_mk_eq_of_conj f hf _ _ _ (Quotient.out_eq' _).symm
@@ -412,18 +412,18 @@ than over coset representatives adds `|S|` copies of the induced value. No multi
 coefficients is needed. -/
 theorem natCard_nsmul_indClassFun (S : Subgroup G) [Fintype G] {f : S → k}
     (hf : ∀ y s, f (s * y * s⁻¹) = f y) (g : G) :
-    Nat.card S • Subgroup.indClassFun S f g =
+    Nat.card S • indClassFun S f g =
       ∑ x : G, if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 := by
   let := Fintype.ofFinite (G ⧸ S)
-  let e : G ≃ (G ⧸ S) × S := Subgroup.groupEquivQuotientProdSubgroup
+  let e : G ≃ (G ⧸ S) × S := groupEquivQuotientProdSubgroup
   have hterm (q : G ⧸ S) (s : S) : Function.indTerm f g (e.symm (q, s)) =
       Function.indTerm f g q.out := by
     refine Function.indTerm_eq_of_mk_eq_of_conj f hf _ _ _ ?_
-    simpa only [e, Subgroup.groupEquivQuotientProdSubgroup_apply_fst,
+    simpa only [e, groupEquivQuotientProdSubgroup_apply_fst,
       QuotientGroup.out_eq'] using congrArg Prod.fst (e.apply_symm_apply (q, s))
-  calc Nat.card S • Subgroup.indClassFun S f g
+  calc Nat.card S • indClassFun S f g
       = ∑ q : G ⧸ S, ∑ _s : S, Function.indTerm f g q.out := by
-        simp [Subgroup.indClassFun, Finset.sum_nsmul]
+        simp [indClassFun, Finset.sum_nsmul]
     _ = ∑ q : G ⧸ S, ∑ s : S, Function.indTerm f g (e.symm (q, s)) :=
         Finset.sum_congr rfl fun q _ => Finset.sum_congr rfl fun s _ => (hterm q s).symm
     _ = ∑ x : G, Function.indTerm f g x := by
@@ -451,8 +451,8 @@ namespace Function
 representative. -/
 theorem indTerm_eq_of_mk_eq (f : S → k) (hf : f ∈ ClassFunction k S) (g x y : G)
     (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
-    Function.indTerm f g x = Function.indTerm f g y :=
-  Function.indTerm_eq_of_mk_eq_of_conj f (ClassFunction.mem_iff.mp hf) g x y hxy
+    indTerm f g x = indTerm f g y :=
+  indTerm_eq_of_mk_eq_of_conj f (ClassFunction.mem_iff.mp hf) g x y hxy
 
 end Function
 
@@ -461,8 +461,8 @@ namespace Subgroup
 /-- **The induced function of a class function is a class function.** -/
 theorem indClassFun_mem_classFunction (S : Subgroup G) [S.FiniteIndex] {f : S → k}
     (hf : f ∈ ClassFunction k S) :
-    Subgroup.indClassFun S f ∈ ClassFunction k G :=
-  ClassFunction.mem_iff.mpr (Subgroup.indClassFun_conj S (ClassFunction.mem_iff.mp hf))
+    indClassFun S f ∈ ClassFunction k G :=
+  ClassFunction.mem_iff.mpr (indClassFun_conj S (ClassFunction.mem_iff.mp hf))
 
 end Subgroup
 
@@ -487,9 +487,9 @@ the identity is pointwise in `ψ`. -/
 @[simp]
 theorem indClassFun_comp_subtype_mul (S : Subgroup G) [S.FiniteIndex]
     (hf : f ∈ ClassFunction k G) (ψ : S → k) :
-    Subgroup.indClassFun S ((fun s : S => f s) * ψ) = f * Subgroup.indClassFun S ψ := by
+    indClassFun S ((fun s : S => f s) * ψ) = f * indClassFun S ψ := by
   simpa only [smul_eq_mul] using
-    Subgroup.indClassFun_comp_subtype_smul S (ClassFunction.mem_iff.mp hf) ψ
+    indClassFun_comp_subtype_smul S (ClassFunction.mem_iff.mp hf) ψ
 
 end Projection
 
@@ -499,14 +499,14 @@ end Projection
 `ClassFunction k S →ₗ[k] ClassFunction k G`. -/
 noncomputable def indClassFunction (S : Subgroup G) [S.FiniteIndex] :
     ClassFunction k S →ₗ[k] ClassFunction k G where
-  toFun f := ⟨Subgroup.indClassFun S f.1, Subgroup.indClassFun_mem_classFunction S f.2⟩
-  map_add' f₁ f₂ := Subtype.ext (Subgroup.indClassFun_add S f₁.1 f₂.1)
-  map_smul' c f := Subtype.ext (Subgroup.indClassFun_smul S c f.1)
+  toFun f := ⟨indClassFun S f.1, indClassFun_mem_classFunction S f.2⟩
+  map_add' f₁ f₂ := Subtype.ext (indClassFun_add S f₁.1 f₂.1)
+  map_smul' c f := Subtype.ext (indClassFun_smul S c f.1)
 
 @[simp]
 theorem indClassFunction_apply (S : Subgroup G) [S.FiniteIndex]
     (f : ClassFunction k S) (g : G) :
-    (Subgroup.indClassFunction S f).1 g = Subgroup.indClassFun S f.1 g :=
+    (indClassFunction S f).1 g = indClassFun S f.1 g :=
   (rfl)
 
 end Subgroup
@@ -527,9 +527,9 @@ The order of the subgroup must be invertible in the coefficient division semirin
 hypothesis, `Subgroup.natCard_nsmul_indClassFun` is the division-free identity to use. -/
 theorem indClassFun_eq_natCard_inv_mul_sum (S : Subgroup G) [Fintype G] {f : S → k}
     (hS : IsUnit (Nat.card S : k)) (hf : f ∈ ClassFunction k S) (g : G) :
-    Subgroup.indClassFun S f g =
+    indClassFun S f g =
       (Nat.card S : k)⁻¹ * ∑ x : G, if h : x⁻¹ * g * x ∈ S then f ⟨x⁻¹ * g * x, h⟩ else 0 := by
-  rw [← Subgroup.natCard_nsmul_indClassFun S (ClassFunction.mem_iff.mp hf) g, nsmul_eq_mul,
+  rw [← natCard_nsmul_indClassFun S (ClassFunction.mem_iff.mp hf) g, nsmul_eq_mul,
     ← mul_assoc, inv_mul_cancel₀ hS.ne_zero, one_mul]
 
 end DivisionSemiring

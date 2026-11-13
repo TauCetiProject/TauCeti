@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Basis
 public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.Algebra.Module.Torsion.Finite
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.GroupWithZero.Irreducible
 
@@ -208,15 +209,8 @@ theorem IsDistinguished.finite_of_isTorsionBy
     [Module.Finite (PowerSeries.IsRestricted.subring (R := R) c) M]
     (hfM : Module.IsTorsionBy (PowerSeries.IsRestricted.subring (R := R) c) M f) :
     Module.Finite R M := by
-  -- `M` is a finite module over the quotient by `f`, which is finite over `R`.
-  let S := PowerSeries.IsRestricted.subring (R := R) c
-  have hM : Module.IsTorsionBySet S M (Ideal.span {f}) :=
-    (Module.isTorsionBySet_span_singleton_iff f).mpr hfM
-  let := hM.module
   have := (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).finite_quotient hc
-  have : IsScalarTower R (S ⧸ Ideal.span {f}) M := hM.isScalarTower
-  have : Module.Finite (S ⧸ Ideal.span {f}) M := Module.Finite.of_restrictScalars_finite S _ M
-  exact Module.Finite.trans (S ⧸ Ideal.span {f}) M
+  exact hfM.finite_of_finite_quotient (A := R)
 
 /-- A maximal ideal of restricted power series containing a distinguished series `f` with a unit
 dominant coefficient contracts to a maximal ideal of the coefficient ring. -/

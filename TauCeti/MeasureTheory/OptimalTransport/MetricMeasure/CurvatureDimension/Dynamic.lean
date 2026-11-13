@@ -146,8 +146,8 @@ theorem DynamicCurvatureDimension.mono (h : M.DynamicCurvatureDimension K N) (hK
   refine ⟨η, hη, fun t N'' hN'' ↦ (hle t N'' (hN.trans hN'')).trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun γ ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 t.2.2) (sub_le_self _ t.2.1) hK
-  · exact distortionTau_left_monotone t.2.1 t.2.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ t.2.1) hK
+  · exact distortionTau_left_monotone t.2.2 hK
 
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/

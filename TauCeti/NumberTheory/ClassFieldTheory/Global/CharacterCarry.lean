@@ -425,9 +425,9 @@ open NormalLayer
 
 variable (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
   (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-  (χ' : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+  (χ' : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
   (hχ' : ∀ g : AbsoluteGaloisGroup K, χ (.ofMul g) =
-    χ' (.ofMul (Abelianization.of
+    χ' (.ofMul (Group.Abelianization.of
       ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
   (a' : (ideleFormation K).level (ofOpenNormal V).ground)
 
@@ -446,7 +446,7 @@ theorem ideleLayerCorInfl_artinCharacterCup
       (characterCarryCocycle χ hχ a : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) := by
   -- The carry of `χ` at `u, v ∈ G_K` is the carry of `χ'` at their classes in `G_K ⧸ V`.
   have hcarry (u v : (ofOpenNormal V).ground) :
-      characterCarry (χ'.comp Abelianization.of.toAdditive) (u : (ofOpenNormal V).Gal) v =
+      characterCarry (χ'.comp Group.Abelianization.of.toAdditive) (u : (ofOpenNormal V).Gal) v =
         characterCarry χ (u : AbsoluteGaloisGroup K) v := by
     simpa only [galOfOpenNormalEquiv_symm_mk] using
       characterCarry_galOfOpenNormalEquiv_symm V χ' χ hχ' u v
@@ -570,9 +570,9 @@ theorem ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv
   -- The layer morphism induced on `V ◁ G_K` by the map from ideles to idele classes is the
   -- identity on the Galois group of the layer, and it carries `a' ∪ δχ'` to `[a'] ∪ δχ'`.
   have hχ'' : χ'.comp (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).galEquiv
-      |>.abelianizationCongr : Abelianization (ofOpenNormal V).Gal →*
-        Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
-    rw [NormalLayer.repMapLayerHom_galEquiv, abelianizationCongr_refl]
+      |>.abelianizationCongr : Group.Abelianization (ofOpenNormal V).Gal →*
+        Group.Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
+    rw [NormalLayer.repMapLayerHom_galEquiv, Group.abelianizationCongr_refl]
     rfl
   have h := (congrArg (fun χ'' ↦
     ((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).cohomologyMap 2

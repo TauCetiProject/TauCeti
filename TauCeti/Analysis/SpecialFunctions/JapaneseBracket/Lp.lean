@@ -48,7 +48,7 @@ theorem memLp_rpow_neg_one_add_norm_sq [NormedSpace ℝ V] [FiniteDimensional �
   have hc : Continuous fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2) :=
     (by fun_prop : Continuous fun x : V => 1 + ‖x‖ ^ 2).rpow_const fun x =>
       Or.inl (by positivity : (0 : ℝ) < 1 + ‖x‖ ^ 2).ne'
-  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
+  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
     hc.aestronglyMeasurable]
   convert (integrable_rpow_neg_one_add_norm_sq (μ := μ) hs).lintegral_lt_top using 2
   funext x

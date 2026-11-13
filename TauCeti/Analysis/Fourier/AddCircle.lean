@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
@@ -68,6 +69,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
+* `TauCeti.fourier_apply_eq_coe_toCircle_zpow`: `fourier n` is the `n`-th power of the point of
+  the unit circle, and `TauCeti.coe_toCircle_coe_eq_circleMap` identifies that point with
+  `circleMap 0 1 θ` for the period `2π`.
 * `TauCeti.exists_polynomial_of_mem_span_fourier`: every trigonometric polynomial on `AddCircle T`
   factors as `fourier (-N) x * P.eval (fourier 1 x)`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
@@ -89,6 +93,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   conjugate, or Hilbert-space adjoint) of the reflected coefficients of `f`.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
+* `TauCeti.fourierCoeff_sub`: the Fourier coefficients of a difference of integrable functions.
+* `TauCeti.fourierCoeff_fourier_mul_conj`: twisting by `fourier k` and conjugating sends the
+  `n`-th Fourier coefficient to the conjugate of the `(k - n)`-th one.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
@@ -166,6 +173,18 @@ theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 :=
 /-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
 theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
   rw [← fourier_add, neg_add_cancel, fourier_zero]
+
+/-- The Fourier monomial `fourier n` is the `n`-th power of the point `toCircle x` of the unit
+circle. -/
+theorem fourier_apply_eq_coe_toCircle_zpow (n : ℤ) (x : AddCircle T) :
+    fourier n x = (toCircle x : ℂ) ^ n := by
+  rw [fourier_apply, toCircle_zsmul, Circle.coe_zpow]
+
+/-- For the period `2π`, the point `toCircle θ` of the unit circle is `e^{iθ} = circleMap 0 1 θ`. -/
+theorem coe_toCircle_coe_eq_circleMap (θ : ℝ) :
+    (toCircle (θ : AddCircle (2 * Real.pi)) : ℂ) = circleMap 0 1 θ := by
+  rw [toCircle_apply_mk, Circle.coe_exp, circleMap, div_self Real.two_pi_pos.ne']
+  simp
 
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the
@@ -271,6 +290,29 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   congr 1
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- The Fourier coefficients of a difference of integrable functions. -/
+theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f g : AddCircle T → E} (hf : Integrable f haarAddCircle) (hg : Integrable g haarAddCircle)
+    (n : ℤ) :
+    fourierCoeff (fun x ↦ f x - g x) n = fourierCoeff f n - fourierCoeff g n := by
+  have hfg : (fun x ↦ f x - g x) = f + (-1 : ℂ) • g := by
+    ext
+    simp [sub_eq_add_neg]
+  rw [hfg, fourierCoeff.add hf (hg.smul (-1 : ℂ)), Pi.add_apply, fourierCoeff.const_smul]
+  simp [sub_eq_add_neg]
+
+/-- Twisting by the monomial `fourier k` and conjugating reflects the Fourier coefficients about
+`k / 2`: the `n`-th coefficient of `fourier k x * conj (g x)` is the conjugate of the `(k - n)`-th
+coefficient of `g`. -/
+theorem fourierCoeff_fourier_mul_conj (g : AddCircle T → ℂ) (k n : ℤ) :
+    fourierCoeff (fun x ↦ fourier k x * starRingEnd ℂ (g x)) n =
+      starRingEnd ℂ (fourierCoeff g (k - n)) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_conj]
+  congr 1
+  funext x
+  rw [smul_eq_mul, smul_eq_mul, map_mul, ← fourier_neg, ← mul_assoc, ← fourier_add, neg_neg,
+    neg_add_eq_sub]
 
 /-- Fourier coefficients commute with continuous linear maps: the coefficients of `x ↦ φ (f x)`
 are the images under `φ` of those of an integrable `f`. -/

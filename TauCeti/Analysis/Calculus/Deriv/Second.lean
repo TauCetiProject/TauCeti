@@ -11,8 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Second derivatives of functions of one variable
@@ -47,9 +47,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   second derivatives of the affine line `t ↦ a + t • b`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
-* `TauCeti.mul_deriv_comp_log`, `TauCeti.sq_mul_deriv_deriv_comp_log`,
-  `TauCeti.deriv_deriv_comp_exp`: the first and second derivatives under the change of variables
-  `x = e^y`.
+* `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
+  under the change of variables `x = e^y`.
 -/
 
 public section
@@ -157,23 +156,13 @@ section LogExp
 
 variable {f v : ℝ → ℝ} {x y : ℝ}
 
-/-- Under the change of variables `x = e^y` the operator `x d/dx` is `d/dy`:
-`x (v ∘ log)'(x) = v'(log x)` for `x ≠ 0`. -/
-theorem mul_deriv_comp_log (hv : DifferentiableAt ℝ v (log x)) (hx : x ≠ 0) :
-    x * deriv (fun x ↦ v (log x)) x = deriv v (log x) := by
-  have h : HasDerivAt (fun x ↦ v (log x)) (deriv v (log x) * x⁻¹) x :=
-    hv.hasDerivAt.comp x (hasDerivAt_log hx)
-  rw [h.deriv]
-  field_simp
-
 /-- Under the change of variables `x = e^y` the operator `x² d²/dx²` is `d²/dy² - d/dy`:
 `x² (v ∘ log)''(x) = v''(log x) - v'(log x)` for `x ≠ 0`. -/
-theorem sq_mul_deriv_deriv_comp_log (hv : ∀ᶠ y in 𝓝 (log x), DifferentiableAt ℝ v y)
-    (hv' : DifferentiableAt ℝ (deriv v) (log x)) (hx : x ≠ 0) :
+theorem sq_mul_deriv_deriv_comp_log (hv' : DifferentiableAt ℝ (deriv v) (log x)) (hx : x ≠ 0) :
     x ^ 2 * deriv (deriv fun x ↦ v (log x)) x = deriv (deriv v) (log x) - deriv v (log x) := by
   have hev : deriv (fun x ↦ v (log x)) =ᶠ[𝓝 x] fun x ↦ deriv v (log x) / x := by
-    filter_upwards [(continuousAt_log hx).eventually hv, eventually_ne_nhds hx] with z hz hz0
-    rw [← mul_deriv_comp_log hz hz0]
+    filter_upwards [eventually_ne_nhds hx] with z hz0
+    rw [← mul_deriv_comp_log hz0]
     field_simp
   have h : HasDerivAt (fun x ↦ deriv v (log x) / x)
       ((deriv (deriv v) (log x) * x⁻¹ * x - deriv v (log x) * 1) / x ^ 2) x :=
@@ -182,19 +171,15 @@ theorem sq_mul_deriv_deriv_comp_log (hv : ∀ᶠ y in 𝓝 (log x), Differentiab
   field_simp
 
 /-- The second derivative of `f ∘ exp`: `(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. -/
-theorem deriv_deriv_comp_exp (hf : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ f x)
-    (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
+theorem deriv_deriv_comp_exp (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
     deriv (deriv fun y ↦ f (exp y)) y =
       exp y * deriv f (exp y) + exp y ^ 2 * deriv (deriv f) (exp y) := by
-  have hev : deriv (fun y ↦ f (exp y)) =ᶠ[𝓝 y] fun y ↦ exp y * deriv f (exp y) := by
-    filter_upwards [continuous_exp.continuousAt.eventually hf] with z hz
-    have h : HasDerivAt (fun y ↦ f (exp y)) (deriv f (exp z) * exp z) z :=
-      hz.hasDerivAt.comp z (hasDerivAt_exp z)
-    rw [h.deriv, mul_comm]
+  have hd : deriv (fun y ↦ f (exp y)) = fun y ↦ exp y * deriv f (exp y) :=
+    funext fun _ ↦ deriv_comp_exp
   have h : HasDerivAt (fun y ↦ exp y * deriv f (exp y))
       (exp y * deriv f (exp y) + exp y * (deriv (deriv f) (exp y) * exp y)) y :=
     (hasDerivAt_exp y).mul (hf'.hasDerivAt.comp y (hasDerivAt_exp y))
-  rw [hev.deriv_eq, h.deriv]
+  rw [hd, h.deriv]
   ring
 
 end LogExp
