@@ -20,8 +20,9 @@ standardized increments, with coefficients computed on the original probability 
 This is a finite-grid completeness statement, not a representation by a stochastic integral.
 It needs only pre-Brownian laws and a measurable increment vector, not continuous paths or a
 filtration. The one-point grid {0} (`n = 0`, empty increment vector) is allowed: its observation
-is zero almost surely and only constant classes remain. Measurability is explicitly up to null
-sets, so the result also applies to claims measured in the completed observation sigma algebra.
+is zero almost surely and only constant classes remain. Measurability means
+`AEStronglyMeasurable` for the raw observation `comap` sigma algebra: claims agreeing almost
+surely with a strongly observation-measurable function are covered.
 
 The range and expansion are stated using `HasLaw.gaussianVectorL2Isometry` and
 `HasLaw.gaussianVectorHermite` applied to `IsPreBrownianReal.hasLaw_normalizedBrownianIncrements`.
