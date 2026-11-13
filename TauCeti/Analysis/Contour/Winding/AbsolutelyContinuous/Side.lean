@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.Topology.Algebra.Group.Order
 import TauCeti.Analysis.Calculus.Deriv.TraceNearTangent
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
@@ -33,10 +34,14 @@ inside of a positively oriented curve and the unbounded outside of a negatively 
   a regular point on the side selected by `jordanSign γ a b` enters the bounded inside.
 * `AbsolutelyContinuousOnInterval.eventually_notMem_filledHull_of_hasDerivAt`: a curve leaving a
   regular point on the other side enters the unbounded outside.
-* `jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff`:
-  a transverse curve enters the inside exactly when its direction agrees with the orientation.
-* `jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull`:
-  a transverse curve enters the outside exactly when its direction opposes the orientation.
+
+`AbsolutelyContinuousOnInterval.jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff`
+states that a transverse curve enters the inside exactly when its direction agrees with the
+orientation.
+
+`AbsolutelyContinuousOnInterval.jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull`
+states that a transverse curve enters the outside exactly when its direction opposes the
+orientation.
 -/
 
 public section
@@ -91,11 +96,8 @@ theorem eventually_mem_filledHull_sdiff_of_hasDerivAt (hab : a < b)
   obtain ⟨hv, hseg⟩ := eventually_segment_subset_compl_of_hasDerivAt hab hγ hclosed hinj ht₀ hd
     (by exact_mod_cast hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj) hp0 hp hw
   have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
-  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · simpa using (continuous_sub_right s₀).continuousAt.tendsto.mono_left
-        (nhdsWithin_le_nhds : 𝓝[>] s₀ ≤ 𝓝 s₀)
-    · filter_upwards [self_mem_nhdsWithin] with s hs using sub_pos.mpr hs
+  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
+    le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
     (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
     hseg] with s hn hseg
@@ -123,11 +125,8 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
     rw [Complex.rank_real_complex]
     exact Cardinal.one_lt_two
   have hbdd := (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).isBounded
-  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · simpa using (continuous_sub_right s₀).continuousAt.tendsto.mono_left
-        (nhdsWithin_le_nhds : 𝓝[>] s₀ ≤ 𝓝 s₀)
-    · filter_upwards [self_mem_nhdsWithin] with s hs using sub_pos.mpr hs
+  have hsub : Tendsto (fun s : ℝ ↦ s - s₀) (𝓝[>] s₀) (𝓝[>] 0) :=
+    le_of_eq (by rw [Filter.map_subRight_nhdsGT, sub_self])
   filter_upwards [hsub.eventually
     (hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt hab hclosed hinj ht₀ hd hv),
     hseg] with s hn hseg
@@ -146,9 +145,7 @@ theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab 
       ∀ᶠ s in 𝓝[>] s₀, p s ∈ filledHull (γ '' uIcc a b) \ γ '' uIcc a b := by
   refine ⟨hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hmem
-  have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
-    refine mul_ne_zero ?_ hw
-    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> norm_num [h]
+  have hne := mul_ne_zero (Int.cast_ne_zero.mpr (hγ.jordanSign_ne_zero hab hclosed hinj)) hw
   by_contra h
   have hout := hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
     (lt_of_le_of_ne (le_of_not_gt h) hne)
@@ -165,9 +162,7 @@ theorem jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a
       ∀ᶠ s in 𝓝[>] s₀, p s ∉ filledHull (γ '' uIcc a b) := by
   refine ⟨hγ.eventually_notMem_filledHull_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp, ?_⟩
   intro hout
-  have hne : (jordanSign γ a b : ℝ) * (conj v * w).im ≠ 0 := by
-    refine mul_ne_zero ?_ hw
-    rcases hγ.jordanSign_eq_one_or_neg_one hab hclosed hinj with h | h <;> norm_num [h]
+  have hne := mul_ne_zero (Int.cast_ne_zero.mpr (hγ.jordanSign_ne_zero hab hclosed hinj)) hw
   by_contra h
   have hmem := hγ.eventually_mem_filledHull_sdiff_of_hasDerivAt hab hclosed hinj ht₀ hd hp0 hp
     (lt_of_le_of_ne (le_of_not_gt h) hne.symm)
