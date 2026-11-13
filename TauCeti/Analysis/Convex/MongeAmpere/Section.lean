@@ -129,7 +129,7 @@ theorem mongeAmpereMeasure_ite_convexSection_add_linearMap {Ω : Set E} [Decidab
       (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
         (convexSection Ω u x ℓ h) := by
   rw [mongeAmpereMeasure_ite_add_linearMap μ u L c,
-    mongeAmpereMeasure_ite_eq_restrict μ hΩ
+    mongeAmpereMeasure_ite_eq_restrict μ
       (isOpen_convexSection hΩ (hu.continuousOn hΩ) ℓ.continuous_of_finiteDimensional)
       (convex_convexSection hu) convexSection_subset hu]
 
