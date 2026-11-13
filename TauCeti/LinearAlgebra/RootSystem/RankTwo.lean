@@ -450,6 +450,15 @@ can be supplied by the right-hand side here. -/
     HasCartanType P b .G2 ↔ P.IsG2 :=
   ⟨isG2_of_hasCartanType_G2, fun h ↦ hasCartanType_G2_of_isG2 h b⟩
 
+/-- A reduced irreducible finite root pairing of valid Cartan type other than `G₂` has no
+triple root strings. -/
+theorem HasCartanType.isNotG2 [Finite ι] [CharZero R] [IsDomain R]
+    [P.IsReduced] [P.IsIrreducible] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) (hG2 : t ≠ .G2) : P.IsNotG2 := by
+  apply (RootPairing.not_isG2_iff_isNotG2 _).mp
+  intro hP
+  exact hG2 (h.eq_of_valid (hasCartanType_G2_of_isG2 hP b) ht (by decide))
+
 /-- **A pairing with a single simple root is of type `A₁`.** Neither finiteness nor irreducibility
 is needed, nor even that the pairing is a root system: the Cartan matrix is the `1 × 1` matrix `[2]`
 by `RootPairing.Base.cartanMatrix_apply_same`, which is all the rank-one classification consumes. -/

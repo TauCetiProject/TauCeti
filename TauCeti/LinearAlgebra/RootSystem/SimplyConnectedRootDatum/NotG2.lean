@@ -27,43 +27,22 @@ namespace TauCeti.DynkinType
 
 /-- A valid pinned rational root system outside type G₂ has no triple root strings. -/
 theorem isNotG2_rationalRootSystem (t : DynkinType) (ht : t.Valid) (hG2 : t ≠ G2) :
-    (t.rationalRootSystem ht).IsNotG2 := by
-  apply (RootPairing.not_isG2_iff_isNotG2 _).mp
-  intro h
-  exact hG2 ((hasCartanType_rationalRootSystem t ht).eq_of_valid
-    (hasCartanType_G2_of_isG2 h (t.rationalBase ht)) ht (by decide))
+    (t.rationalRootSystem ht).IsNotG2 :=
+  (hasCartanType_rationalRootSystem t ht).isNotG2 ht hG2
 
 /-- The rational F₄ system has no triple root strings. -/
 instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
     (F4.rationalRootSystem ht).IsNotG2 :=
   isNotG2_rationalRootSystem F4 ht (by intro h; cases h)
 
-private theorem isNotG2_rationalRootSystem_of_abs_pairing_le_two
-    {t : DynkinType} {ht : t.Valid}
-    (hbound : ∀ i j, |(t.simplyConnectedRootDatum ht).pairing i j| ≤ 2) :
-    (t.rationalRootSystem ht).IsNotG2 where
-  pairingIn_mem_zero_one_two i j := by
-    have heq : (t.rationalRootSystem ht).pairingIn ℤ i j =
-        (t.simplyConnectedRootDatum ht).pairing i j := by
-      rw [pairingIn_rationalRootSystem]
-      exact (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ i j
-    have h := abs_le.mp (hbound i j)
-    rw [heq]
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
-
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
     ((B n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
-    rw [simplyConnectedRootDatum_B]
-    exact abs_pairing_typeBSimplyConnectedRootDatum_le_two)
+  isNotG2_rationalRootSystem (B n) hn (by intro h; cases h)
 
 /-- The Cartan integers of the rational type-C system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemC (n : ℕ) (hn : (C n).Valid) :
     ((C n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem_of_abs_pairing_le_two (by
-    rw [simplyConnectedRootDatum_C]
-    exact abs_pairing_typeCSimplyConnectedRootDatum_le_two)
+  isNotG2_rationalRootSystem (C n) hn (by intro h; cases h)
 
 end TauCeti.DynkinType
