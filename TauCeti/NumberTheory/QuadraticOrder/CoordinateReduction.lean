@@ -16,9 +16,9 @@ public import Mathlib.SetTheory.Cardinal.Finite
 At positive modulus `m`, a coordinate rectangle with injectively reduced coordinates
 has cardinality at most `m ^ 2`. Reduction is injective on rectangles of half-open integer
 intervals with signed endpoint differences at most `m`, and of closed integer intervals
-with signed endpoint differences strictly less than `m`. Thus a closed interval cannot
-contain both endpoints of a full period. No squarefreeness or irreducibility assumption
-on the quadratic presentation is needed.
+with signed endpoint differences strictly less than `m`. The strict bound excludes closed
+intervals containing both endpoints of a full period. No squarefreeness or irreducibility
+assumption on the quadratic presentation is needed.
 
 General coordinate-rectangle injectivity and image cardinality for coefficient maps are
 provided in `TauCeti.Algebra.QuadraticAlgebra.CoordinateSet`, without a positivity assumption.
@@ -45,8 +45,9 @@ theorem ncard_setOf_re_mem_im_mem_le_sq [NeZero m] {U V : Set ℤ}
   simpa [Nat.card_congr (equivProd ((a : ZMod m)) ((b : ZMod m))),
     Nat.card_prod, Nat.card_zmod, pow_two, ncard_setOf_re_mem_im_mem] using h
 
-/-- Two half-open coordinate intervals with signed endpoint differences at most the modulus
-reduce injectively, with arbitrary integer endpoints. -/
+/-- Reduction modulo `m` via `mapRingHom` is injective on the coordinate rectangle in
+`QuadraticAlgebra ℤ a b` of two half-open integer intervals satisfying `t - s ≤ m` and
+`v - u ≤ m`. This includes shifted and empty intervals. -/
 theorem injOn_mapRingHom_setOf_re_mem_Ico_im_mem_Ico
     (s t u v : ℤ) (hst : t - s ≤ m) (huv : v - u ≤ m) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
@@ -55,8 +56,9 @@ theorem injOn_mapRingHom_setOf_re_mem_Ico_im_mem_Ico
     (CharP.intCast_injOn_Ico_of_sub_le (ZMod m) m hst)
     (CharP.intCast_injOn_Ico_of_sub_le (ZMod m) m huv)
 
-/-- Two closed coordinate intervals with signed endpoint differences strictly less than the
-modulus reduce injectively, with arbitrary integer endpoints. -/
+/-- Reduction modulo `m` via `mapRingHom` is injective on the coordinate rectangle in
+`QuadraticAlgebra ℤ a b` of two closed integer intervals satisfying `t - s < m` and
+`v - u < m`. This includes shifted and empty intervals. -/
 theorem injOn_mapRingHom_setOf_re_mem_Icc_im_mem_Icc
     (s t u v : ℤ) (hst : t - s < m) (huv : v - u < m) :
     Set.InjOn (mapRingHom (Int.castRingHom (ZMod m)) a b)
