@@ -325,7 +325,7 @@ def writhe (D : BasedOrientedGaussCode n) : ℤ :=
 
 /-- Expand the writhe as the sum of the integer values of the crossing signs. -/
 theorem writhe_def (D : BasedOrientedGaussCode n) :
-    D.writhe = ∑ c : Fin n, ((D.sign c : ℤˣ) : ℤ) := by simp [writhe]
+    D.writhe = ∑ c : Fin n, ((D.sign c : ℤˣ) : ℤ) := (rfl)
 
 /-- Summing the sign of the crossing met at each visit counts every crossing twice, so it gives
 twice the writhe. -/
@@ -349,20 +349,18 @@ def mirror (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
   over_partner := D.over_partner
 
 /-- Mirroring preserves the sequence of crossing labels. -/
-@[simp] theorem visit_mirror (D : BasedOrientedGaussCode n) : D.mirror.visit = D.visit := by
-  simp [mirror]
+@[simp] theorem visit_mirror (D : BasedOrientedGaussCode n) : D.mirror.visit = D.visit := (rfl)
 
 /-- Mirroring preserves the over/under data. -/
-@[simp] theorem over_mirror (D : BasedOrientedGaussCode n) : D.mirror.over = D.over := by
-  simp [mirror]
+@[simp] theorem over_mirror (D : BasedOrientedGaussCode n) : D.mirror.over = D.over := (rfl)
 
 /-- Mirroring negates every crossing sign. -/
 @[simp] theorem sign_mirror (D : BasedOrientedGaussCode n) (c : Fin n) :
-    D.mirror.sign c = -D.sign c := by simp [mirror]
+    D.mirror.sign c = -D.sign c := (rfl)
 
 /-- Mirroring preserves the partner matching. -/
-@[simp] theorem partner_mirror (D : BasedOrientedGaussCode n) : D.mirror.partner = D.partner := by
-  simp [mirror]
+@[simp] theorem partner_mirror (D : BasedOrientedGaussCode n) : D.mirror.partner = D.partner :=
+  (rfl)
 
 /-- Mirroring twice recovers the original Gauss code. -/
 @[simp] theorem mirror_mirror (D : BasedOrientedGaussCode n) : D.mirror.mirror = D := by
@@ -402,15 +400,14 @@ def reverse (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
 
 /-- Reversing orientation reads the crossing labels in reverse order. -/
 @[simp] theorem visit_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.reverse.visit i = D.visit (Fin.rev i) := by simp [reverse]
+    D.reverse.visit i = D.visit (Fin.rev i) := (rfl)
 
 /-- Reversing orientation reads the over/under statuses in reverse order. -/
 @[simp] theorem over_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.reverse.over i = D.over (Fin.rev i) := by simp [reverse]
+    D.reverse.over i = D.over (Fin.rev i) := (rfl)
 
 /-- Reversing orientation preserves every crossing sign. -/
-@[simp] theorem sign_reverse (D : BasedOrientedGaussCode n) : D.reverse.sign = D.sign := by
-  simp [reverse]
+@[simp] theorem sign_reverse (D : BasedOrientedGaussCode n) : D.reverse.sign = D.sign := (rfl)
 
 /-- Reversing orientation conjugates the partner matching by reversal of the visit indices. -/
 @[simp] theorem partner_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
@@ -478,20 +475,19 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
 
 /-- Relabelling composes the visit labels with the given equivalence. -/
 @[simp] theorem visit_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n)
-    (i : Fin (2 * n)) : (D.relabel e).visit i = e (D.visit i) := by
-  simp [relabel]
+    (i : Fin (2 * n)) : (D.relabel e).visit i = e (D.visit i) := (rfl)
 
 /-- Relabelling preserves the over/under data. -/
 @[simp] theorem over_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
-    (D.relabel e).over = D.over := by simp [relabel]
+    (D.relabel e).over = D.over := (rfl)
 
 /-- Relabelling transports signs along the inverse equivalence. -/
 @[simp] theorem sign_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) (c : Fin n) :
-    (D.relabel e).sign c = D.sign (e.symm c) := by simp [relabel]
+    (D.relabel e).sign c = D.sign (e.symm c) := (rfl)
 
 /-- Relabelling preserves the partner matching. -/
 @[simp] theorem partner_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
-    (D.relabel e).partner = D.partner := by simp [relabel]
+    (D.relabel e).partner = D.partner := (rfl)
 
 /-- Relabelling preserves the writhe. -/
 @[simp] theorem writhe_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
@@ -631,7 +627,7 @@ def positiveKink : BasedOrientedGaussCode 1 where
 
 /-- Both visits of the positive kink carry its unique crossing label. -/
 @[simp] theorem visit_positiveKink (i : Fin 2) :
-    positiveKink.visit i = 0 := by simp [positiveKink]
+    positiveKink.visit i = 0 := (rfl)
 
 /-- The first visit of the positive kink is over and the second is under. -/
 @[simp] theorem over_positiveKink (i : Fin 2) :
@@ -640,7 +636,7 @@ def positiveKink : BasedOrientedGaussCode 1 where
 
 /-- The unique crossing of the positive kink has positive sign. -/
 @[simp] theorem sign_positiveKink (c : Fin 1) :
-    positiveKink.sign c = 1 := by simp [positiveKink]
+    positiveKink.sign c = 1 := (rfl)
 
 /-- The positive kink pairs its two visits by swapping them. -/
 @[simp] theorem partner_positiveKink :
