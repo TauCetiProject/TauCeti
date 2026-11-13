@@ -61,11 +61,8 @@ theorem dualSubmodule_baseChange_of_basis (B : LinearMap.BilinForm K V) (hB : B.
       Submodule.span A' ((fun x : V ↦ (1 : K') ⊗ₜ[K] x) '' Submodule.span A s) =
         Submodule.span A' ((fun x : V ↦ (1 : K') ⊗ₜ[K] x) '' s) := by
     let f : V →ₗ[A] K' ⊗[K] V := (TensorProduct.mk K K' V 1).restrictScalars A
-    refine le_antisymm (Submodule.span_le.mpr ?_)
-      (Submodule.span_mono (Set.image_mono Submodule.subset_span))
-    exact (Submodule.image_span_subset f s
-      ((Submodule.span A' (f '' s)).restrictScalars A)).mpr
-        (fun x hx ↦ Submodule.subset_span ⟨x, hx, rfl⟩)
+    rw [show (fun x : V ↦ (1 : K') ⊗ₜ[K] x) = f from rfl, ← Submodule.map_coe,
+      Submodule.map_span, Submodule.span_span_of_tower]
   rw [hb, dualSubmodule_span_of_basis B hB, hspan, hspan]
   simp only [← Set.range_comp, Function.comp_def, ← Basis.baseChange_apply]
   rw [dualSubmodule_span_of_basis _ (hB.baseChange K'), dualBasis_baseChange]
