@@ -10,8 +10,6 @@ public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 public import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.Algebra.CharP.Algebra
-import TauCeti.RingTheory.Subsemiring.SpanSingleton
-import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # Basic facts about valuative relations
@@ -35,9 +33,6 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
   with a valuative relation is `⊤`.
 * `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
   less than one are the image of the maximal ideal of the ring of integers.
-* `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` in the ring of integers of a
-  valuation on a field, the image of the `k`-th power of the maximal ideal is the scaled copy
-  `ϖ ^ k • 𝒪`.
 * `TauCeti.natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd`: a positive integer
   vanishes in a field exactly when the field has the characteristic `p` of its residue field and
   `p` divides the integer.
@@ -146,20 +141,6 @@ theorem valuation_lt_one_iff_mem_image_maximalIdeal {K : Type*} [Field K] [Valua
     (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
   rintro ⟨c, hc, rfl⟩
   exact (valuation K).mem_maximalIdeal_iff.1 hc
-
-open Pointwise in
-/-- For an irreducible element `ϖ` of the ring of integers of a valuation `v` on a field `K`, the
-image in `K` of the power `𝓂 ^ k` of the maximal ideal is the scaled copy `ϖ ^ k • 𝒪`. -/
-theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {K Γ₀ : Type*} [Field K]
-    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} {ϖ : v.integer} (hϖ : Irreducible ϖ)
-    (k : ℕ) :
-    ((↑) : v.integer → K) '' ↑(IsLocalRing.maximalIdeal v.integer ^ k) =
-      (ϖ : K) ^ k • (v.integer : Set K) := by
-  rw [hϖ.maximalIdeal_eq_of_preValuationRing,
-    SubsemiringClass.coe_span_singleton_pow _ ϖ.2, Set.image_preimage_eq_inter_range,
-    Subtype.range_coe, Set.inter_eq_left]
-  rintro _ ⟨y, hy, rfl⟩
-  exact mul_mem (pow_mem ϖ.2 k) hy
 
 /-- A positive integer `n` vanishes in a field `K` with a valuative relation exactly when `K` has
 equal characteristic `p`, the characteristic of its residue field, and `p ∣ n`. -/
