@@ -245,12 +245,8 @@ theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
     (T : Set (GX G Y)) :
     wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T = V ι (σ '' T) := by
-  calc
-    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T =
-        V ι ((eval (inl : G →* GX G X)
-          (fun y => σ (inr (FreeGroup.of y)))) '' T) := preimage_wordMap_V _ _
-    _ = V ι (σ '' T) := congrArg (fun f : GX G Y →* GX G X => V ι (f '' T))
-      (eval_eq_of_comp_inl σ.comp_coeff)
+  ext v
+  simp [eval_wordMap]
 
 /-- A word map sends solutions to solutions of the inverse-image system. -/
 theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
