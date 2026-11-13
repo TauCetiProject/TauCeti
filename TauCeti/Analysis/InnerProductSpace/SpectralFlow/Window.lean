@@ -38,10 +38,9 @@ The main facts are the following.
 * Spectral ranks add over disjoint parts of a window
   (`ContinuousLinearMap.IsSpectralWindow.spectralRank_union`).
 * Windows persist along convergent families of self-adjoint operators
-  (`ContinuousLinearMap.IsSpectralWindow.eventually`), and the spectral rank of a set whose
-  frontier misses the spectrum is locally constant
-  (`Filter.Tendsto.eventually_spectralRank_eq`), by the local constancy of the rank of spectral
-  projectors (`IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq`).
+  (`ContinuousLinearMap.IsSpectralWindow.eventually`), since the rank of a spectral projector is
+  locally constant as long as the frontier of its set misses the spectrum
+  (`IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq`).
 * For two windows `r` and `r'` of the limit, the difference of the counts in `[0, r)` and `[0, r')`
   is locally constant (`ContinuousLinearMap.IsSpectralWindow.eventually_spectralRank_sub_eq`), since
   it is the count in `[r, r')` up to sign. This makes spectral flow independent of the windows used
@@ -210,16 +209,6 @@ section Family
 
 variable {ι : Type*} {l : Filter ι} {A : ι → E →L[ℂ] E} {T : E →L[ℂ] E}
 
-/-- The spectral rank of a set whose frontier misses the spectrum is locally constant along a
-convergent family of self-adjoint operators. -/
-theorem _root_.Filter.Tendsto.eventually_spectralRank_eq {s : Set ℝ} (hA : Tendsto A l (𝓝 T))
-    (hsa : ∀ᶠ i in l, IsSelfAdjoint (A i)) (hT : IsSelfAdjoint T)
-    (hs : Disjoint (frontier s) (spectrum ℝ T)) :
-    ∀ᶠ i in l, spectralRank (A i) s = spectralRank T s :=
-  ((tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
-    (hT.eventually_rank_range_cfc_indicator_eq hs)).mono fun _ h ↦ by
-      simp only [spectralRank_def, finrank, h]
-
 /-- A spectral window of the limit of a convergent family of self-adjoint operators is a spectral
 window of the nearby operators. -/
 theorem IsSpectralWindow.eventually {r : ℝ} (hT : IsSpectralWindow T r)
@@ -231,10 +220,8 @@ theorem IsSpectralWindow.eventually {r : ℝ} (hT : IsSpectralWindow T r)
     (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
       (hT.isSelfAdjoint.eventually_rank_range_cfc_indicator_eq hd)]
     with i hi hdi hrank
-  rw [frontier_Ioo (by linarith [hT.pos])] at hdi
-  exact ⟨hi, hT.pos, fun h ↦ hdi.notMem_of_mem_right h (by simp),
-    fun h ↦ hdi.notMem_of_mem_right h (by simp),
-    Module.rank_lt_aleph0_iff.1 <|
+  rw [frontier_Ioo (by linarith [hT.pos]), disjoint_insert_left, disjoint_singleton_left] at hdi
+  exact ⟨hi, hT.pos, hdi.2, hdi.1, Module.rank_lt_aleph0_iff.1 <|
       hrank ▸ Module.rank_lt_aleph0_iff.2 hT.finiteDimensional_range_Ioo⟩
 
 /-- **Comparison of spectral windows.** For two spectral windows `r` and `r'` of the limit of a
@@ -263,9 +250,10 @@ theorem IsSpectralWindow.eventually_spectralRank_sub_eq {r r' : ℝ} (hr : IsSpe
     · rw [frontier_Ico hlt]
       simp [hr.notMem_spectrum, hr'.notMem_spectrum]
     · simp
-  filter_upwards [hr'.eventually hA hsa, hA.eventually_spectralRank_eq hsa hr.isSelfAdjoint hd]
-    with i hi hrank
-  rw [hsplit hi, hsplit hr', hrank]
+  filter_upwards [hr'.eventually hA hsa, (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩).eventually
+    (hr.isSelfAdjoint.eventually_rank_range_cfc_indicator_eq hd)] with i hi hrank
+  rw [hsplit hi, hsplit hr', spectralRank_def (A i) (Ico r r'), spectralRank_def T (Ico r r'),
+    finrank, finrank, hrank]
   push_cast
   ring
 
@@ -273,8 +261,8 @@ end Family
 
 section Scalar
 
-/-- The spectral rank of a scalar operator `c` on a set is the dimension of `E` if the set contains
-`c`, and zero otherwise. -/
+/-- The spectral rank of a scalar operator `c` on a set is `finrank ℂ E` if the set contains `c`,
+and zero otherwise. (`finrank ℂ E` is itself zero when `E` is infinite-dimensional.) -/
 theorem spectralRank_algebraMap (c : ℝ) (s : Set ℝ) [Decidable (c ∈ s)] :
     spectralRank (algebraMap ℝ (E →L[ℂ] E) c) s = if c ∈ s then finrank ℂ E else 0 := by
   rw [spectralRank_def, cfc_algebraMap]
