@@ -489,10 +489,12 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_isMaximal (P P' : Ideal (
       powerResidueSymbol P m (Quotient.mk P (absNorm P' : 𝓞 K)) := by
   let _ := Ideal.Quotient.field P
   obtain ⟨ψ, hψ⟩ := TauCeti.exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
-  obtain ⟨f, hf, I, hI, hIP'⟩ :=
-    P'.exists_injective_algHom_and_isPrime_comap_eq_of_isIntegralClosure (integralClosure ℤ ℂ)
-      (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom) (RingHom.injective _)
-  exact powerResidueSymbol_stickelbergerPhi_of_comap P P' hP' hPP' hm hf hψ I hIP'
+  have hinj : Function.Injective (Classical.arbitrary (K →+* ℂ)).toIntAlgHom :=
+    RingHom.injective _
+  obtain ⟨I, _, hIP'⟩ :=
+    P'.exists_isPrime_comap_isIntegralClosure_map_eq (integralClosure ℤ ℂ) hinj
+  exact powerResidueSymbol_stickelbergerPhi_of_comap P P' hP' hPP' hm
+    (TauCeti.IsIntegralClosure.map_injective _ _ hinj) hψ I hIP'
 
 /-- **The residue symbol of `Φ(A)` at a second prime.** Let `m ≥ 2`, let `P'` be a maximal ideal of
 `𝓞 K` whose norm is prime to `m`, and let `A` be an ideal whose norm is prime to that of `P'`.

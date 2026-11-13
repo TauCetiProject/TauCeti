@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.GaussSum
-public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Basic
-import Mathlib.NumberTheory.LegendreSymbol.Complex
 import TauCeti.Algebra.GroupWithZero.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
@@ -28,8 +26,9 @@ quartic reciprocity between a primary element `π` of `ℤ[i]` and an odd ration
 For a primary prime `π` and an odd rational prime `q`, the proof splits according to `q mod 4`:
 
 * When `q ≡ 1 (mod 4)`, `q = (σ β) β` splits in `ℤ[i]` and the identity follows by evaluating the
-  Gauss sum power `Φ(π 𝓞 K) = π · (σ π) ^ 3` (`Ideal.stickelbergerPhi_span_singleton_four_eq`)
-  modulo `β 𝓞 K` through `Ideal.powerResidueSymbol_stickelbergerPhi`.
+  Gauss sum power `Φ(π 𝓞 K) = π · (σ π) ^ 3`
+  (`TauCeti.IsPrimaryGaussian.stickelbergerPhi_span_singleton_four_eq`) modulo `β 𝓞 K` through
+  `Ideal.powerResidueSymbol_stickelbergerPhi`.
 * When `q ≡ 3 (mod 4)`, `Q = q 𝓞 K` is inert of norm `q²` and the `(q + 1)`-st power of the
   quartic Gauss sum modulo a prime of the algebraic integers over `Q` is computed in two ways: by
   the Frobenius congruence in characteristic `q` and from `g(χ, ψ) ^ 4 = π ^ 3 σ π`.
@@ -46,8 +45,6 @@ reciprocity between arbitrary primary elements is deduced in
 
 ## Main results
 
-* `Ideal.stickelbergerPhi_span_singleton_four_eq`: `Φ(π 𝓞 K) = π · (σ π) ^ 3` for a primary
-  element `π` of `ℤ[i]` and complex conjugation `σ`.
 * `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd`,
   `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_add_mul_of_odd`:
   `(m / π)_4 = (π / m)_4 · (-1) ^ (((m - 1) / 2) * ((N(π) - 1) / 4))` for primary `π` and an odd
@@ -66,75 +63,6 @@ reciprocity between arbitrary primary elements is deduced in
 public section
 
 open NumberField
-
-namespace Ideal
-
-open TauCeti
-
-variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
-
-/-- For a maximal ideal `P = π 𝓞 K` of `ℤ[i]` with `π` primary and a ring-homomorphism-like map
-`σ` cubing the fourth roots of unity, `Φ(P) = π · (σ π) ^ 3`. -/
-private theorem stickelbergerPhi_four_eq_of_isMaximal {P : Ideal (𝓞 K)} [P.IsMaximal] {π : 𝓞 K}
-    (hπ : P = span {π}) (hπ' : IsPrimaryGaussian π)
-    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
-    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) :
-    stickelbergerPhi P 4 = π * σ π ^ 3 := by
-  let _ := Ideal.Quotient.field P
-  let _ := Fintype.ofFinite (𝓞 K ⧸ P)
-  have hP : (absNorm P).Coprime 4 := hπ ▸ hπ'.absNorm_span_singleton_coprime_four
-  have hσ_inv : Function.LeftInverse σ σ := apply_apply_eq_self_of_four hσ
-  let ι : K →+* ℂ := Classical.arbitrary _
-  let f : 𝓞 K →+* ℂ := ι.comp (algebraMap (𝓞 K) K)
-  have hf : Function.Injective f := ι.injective.comp RingOfIntegers.coe_injective
-  have hfσ : Function.Injective (f.comp (RingHomClass.toRingHom σ)) := hf.comp hσ_inv.injective
-  have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
-  -- Conjugation inverts the quartic residue character, identifying `χ_P` with `σ ∘ (· / P)_4`.
-  have hχ : (powerResidueSymbol P 4)⁻¹.ringHomComp f =
-      (powerResidueSymbol P 4).ringHomComp (f.comp (RingHomClass.toRingHom σ)) := by
-    refine MulChar.ext fun u ↦ ?_
-    have hu4 := powerResidueSymbol_pow_eq_one hP u.ne_zero
-    have h4 : powerResidueSymbol P 4 * powerResidueSymbol P 4 ^ 3 = 1 :=
-      MulChar.ext fun v ↦ by
-        rw [MulChar.mul_apply, MulChar.pow_apply_coe, ← pow_succ', MulChar.one_apply_coe,
-          powerResidueSymbol_pow_eq_one hP v.ne_zero]
-    have hinv : (powerResidueSymbol P 4)⁻¹ u = powerResidueSymbol P 4 u ^ 3 := by
-      rw [inv_eq_of_mul_eq_one_right h4, MulChar.pow_apply_coe]
-    simp only [MulChar.ringHomComp_apply, RingHom.comp_apply, RingHom.coe_coe, hinv, hσ _ hu4]
-  apply hf
-  rw [stickelbergerPhi_prime P hP (by decide) hf hψ, hχ,
-    gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul hπ hπ'
-      (σ := RingHomClass.toRingHom σ) hσ hfσ hψ,
-    RingHom.comp_apply, RingHom.coe_coe, map_mul, map_pow, hσ_inv π, mul_comm]
-
-/-- **The Stickelberger element `Φ(π 𝓞 K)` of a primary element of `ℤ[i]`.** If `K = ℚ(i)`, `π` is
-primary in `𝓞 K = ℤ[i]`, and `σ` is a ring-homomorphism-like map on `𝓞 K` cubing the fourth roots
-of unity (that is, complex conjugation), then `Φ(π 𝓞 K) = π · (σ π) ^ 3`. -/
-theorem stickelbergerPhi_span_singleton_four_eq {π : 𝓞 K} (hπ : IsPrimaryGaussian π)
-    {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
-    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) :
-    stickelbergerPhi (span {π}) 4 = π * σ π ^ 3 := by
-  obtain ⟨s, hs, rfl⟩ := hπ.exists_multiset_prod_eq
-  induction s using Multiset.induction_on with
-  | empty =>
-    rw [Multiset.prod_zero, span_singleton_one, stickelbergerPhi_top, map_one, one_pow, mul_one]
-  | cons p s ih =>
-    have hp := hs p (Multiset.mem_cons_self p s)
-    have hs' : ∀ q ∈ s, Prime q ∧ IsPrimaryGaussian q := fun q hq ↦
-      hs q (Multiset.mem_cons_of_mem hq)
-    have hs_prim : IsPrimaryGaussian s.prod :=
-      hp.2.mul_left_iff.mp (by rwa [Multiset.prod_cons] at hπ)
-    have hpmax : (span {p}).IsMaximal :=
-      ((span_singleton_prime hp.1.ne_zero).mpr hp.1).isMaximal (by simpa using hp.1.ne_zero)
-    have hp0 : span {p} ≠ ⊥ := by simpa using hp.1.ne_zero
-    have hs0 : span {s.prod} ≠ ⊥ := by
-      rw [Ne, span_singleton_eq_bot]
-      exact fun h ↦ absurd (h ▸ hs_prim.odd_norm) (by simp)
-    rw [Multiset.prod_cons, ← span_singleton_mul_span_singleton, stickelbergerPhi_mul hp0 hs0,
-      stickelbergerPhi_four_eq_of_isMaximal rfl hp.2 hσ, ih hs' hs_prim, map_mul, mul_pow]
-    ring
-
-end Ideal
 
 namespace TauCeti
 
@@ -175,7 +103,7 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_one {π : 𝓞 
     exact absNorm_mem (span {π})
   -- Apply `powerResidueSymbol_stickelbergerPhi` at `(P, L) = (π 𝓞 K, β 𝓞 K)`.
   have hstick := powerResidueSymbol_stickelbergerPhi (span {π}) (span {β}) hL4 hPL (by decide)
-  rw [hNβ, stickelbergerPhi_span_singleton_four_eq hπ hτ, map_mul, map_pow, map_mul, map_pow]
+  rw [hNβ, hπ.stickelbergerPhi_span_singleton_four_eq hτ, map_mul, map_pow, map_mul, map_pow]
     at hstick
   have hττ : ∀ z : 𝓞 K, τ (τ z) = z := apply_apply_eq_self_of_four hτ
   have hmapL : (span {β}).map τ = span {τ β} := by rw [map_span, Set.image_singleton]
@@ -234,13 +162,7 @@ private theorem gaussSum_pow_succ_of_mod_four_eq_three {P : Ideal (𝓞 K)} [P.I
     rw [MulChar.ringHomComp_ne_one_iff hf, Ne, ← orderOf_eq_one_iff, orderOf_powerResidueSymbol hP4]
     decide
   have hg_prod : gaussSum χ ψ * gaussSum χ⁻¹ ψ = χ (-1) * absNorm P := by
-    have hneg1 : χ⁻¹ (-1) = χ (-1) := by
-      have hχ_inv : χ⁻¹ = χ ^ 3 :=
-        inv_eq_of_mul_eq_one_right
-          (by rw [← pow_succ', MulChar.ringHomComp_pow, hχ4, MulChar.ringHomComp_one])
-      rw [hχ_inv, MulChar.pow_apply' χ (by decide), pow_succ, ← map_pow, neg_one_sq, map_one,
-        one_mul]
-    rw [← mul_gaussSum_inv_eq_gaussSum χ⁻¹ ψ, hneg1, mul_left_comm,
+    rw [← mul_gaussSum_inv_eq_gaussSum χ⁻¹ ψ, MulChar.inv_apply', inv_neg_one, mul_left_comm,
       gaussSum_mul_gaussSum_eq_card hχ_ne hψ, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard]
   have hq_neg : χ (q : 𝓞 K ⧸ P) * (χ (-1) * absNorm P) =
       f (powerResidueSymbol P 4 (Ideal.Quotient.mk P (-(q : 𝓞 K))) * absNorm P) := by
@@ -313,11 +235,14 @@ private theorem mk_powerResidueSymbol_neg_natCast_mul_absNorm_of_mod_four_eq_thr
   let _ := Fintype.ofFinite (𝓞 K ⧸ P)
   have hP4 : (absNorm P).Coprime 4 := hπ.absNorm_span_singleton_coprime_four
   obtain ⟨ψ, hψ⟩ := exists_primitive_addChar_integralClosure (𝓞 K ⧸ P)
-  obtain ⟨g, hf, I, _, hIQ⟩ :=
-    Q.exists_injective_algHom_and_isPrime_comap_eq_of_isIntegralClosure
-      (integralClosure ℤ ℂ) (f := (Classical.arbitrary (K →+* ℂ)).toIntAlgHom)
-      (RingHom.injective _)
-  let f : 𝓞 K →+* integralClosure ℤ ℂ := g.toRingHom
+  have hinj : Function.Injective (Classical.arbitrary (K →+* ℂ)).toIntAlgHom :=
+    RingHom.injective _
+  obtain ⟨I, _, hIQ⟩ :=
+    Q.exists_isPrime_comap_isIntegralClosure_map_eq (integralClosure ℤ ℂ) hinj
+  let f : 𝓞 K →+* integralClosure ℤ ℂ :=
+    (IsIntegralClosure.map (𝓞 K) (integralClosure ℤ ℂ)
+      (Classical.arbitrary (K →+* ℂ)).toIntAlgHom).toRingHom
+  have hf : Function.Injective f := IsIntegralClosure.map_injective _ _ hinj
   let ρ := quotientMap I f hIQ.ge
   have hρ : Function.Injective ρ := quotientMap_injective' hIQ.le
   have : CharP (integralClosure ℤ ℂ ⧸ I) q := CharP.of_ringHom_of_ne_zero ρ q hq.ne_zero
@@ -432,46 +357,45 @@ private theorem coe_quartic_reciprocity_intCast_prime {π : 𝓞 K} (hπ : IsPri
       ((powerResidueSymbolIdeal (span {(p : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) *
         (-1) ^ (((p - 1) / 2) * (((absNorm (span {π}) - 1) / 4 : ℕ) : ℤ)) := by
   set N4 : ℤ := (((absNorm (span {π}) - 1) / 4 : ℕ) : ℤ)
-  set q : ℕ := p.natAbs
+  set q : ℕ := p.natAbs with hq_def
   have hq : q.Prime := Int.prime_iff_natAbs_prime.mp hp_int
   have hq_odd : Odd q := Int.natAbs_odd.mpr hp_odd
   have hq2 : q ≠ 2 := fun h2 ↦ absurd (h2 ▸ hq_odd) (by decide)
-  have hnat := quartic_reciprocity_natCast_prime hπ hp hq hq2
-  have hspan : span {(p : 𝓞 K)} = span {(q : 𝓞 K)} := by
-    rcases Int.natAbs_eq p with hp_eq | hp_eq
-    · rw [hp_eq, Int.cast_natCast]
-    · rw [hp_eq, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
-  rw [hspan]
-  have hq_mod : q % 4 = 1 ∨ q % 4 = 3 := by obtain ⟨k, hk⟩ := hq_odd; omega
-  -- Check the two signs `p = ±q` and the two residue classes `q ≡ 1, 3 (mod 4)`.
-  have hflip (x : 𝓞 K) (hx : (p : 𝓞 K) = (-1) * x) (ho : Odd ((p - 1) / 2)) :
-      ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (p : 𝓞 K)) : 𝓞 K) : K) =
-        ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ x) : 𝓞 K) : K) *
-          (-1) ^ (((p - 1) / 2) * N4) := by
-    obtain ⟨t, ht⟩ := ho
-    rw [hx]
+  have hnat_coe :
+      (-1 : K) ^ ((((q - 1) / 2 : ℕ) : ℤ) * N4) *
+        ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (q : 𝓞 K)) : 𝓞 K) : K) =
+      ((powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) := by
+    have h := congrArg ((↑) : 𝓞 K → K) (quartic_reciprocity_natCast_prime hπ hp hq hq2)
+    simp only [map_mul, map_pow, ← RingOfIntegers.coe_eq_algebraMap] at h
+    rwa [coe_powerResidueSymbolIdeal_mk_neg_one hπ, ← zpow_natCast, ← zpow_mul'] at h
+  have hnat :
+      ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (q : 𝓞 K)) : 𝓞 K) : K) =
+      ((powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) *
+        (-1) ^ ((((q - 1) / 2 : ℕ) : ℤ) * N4) := by
+    have hev : Even (2 * ((((q - 1) / 2 : ℕ) : ℤ) * N4)) := ⟨_, two_mul _⟩
+    rw [← hnat_coe, mul_right_comm, ← zpow_add₀ (by norm_num), ← two_mul, hev.neg_one_zpow,
+      one_mul]
+  rcases Int.natAbs_eq p with hp_eq | hp_eq
+  · have hexp : (p - 1) / 2 = (((q - 1) / 2 : ℕ) : ℤ) := by
+      have := hq.one_le
+      omega
+    rw [hexp, hp_eq, ← hq_def, Int.cast_natCast, hnat]
+  · have hneg : (p : 𝓞 K) = (-1) * (q : 𝓞 K) := by
+      rw [hp_eq, ← hq_def, Int.cast_neg, Int.cast_natCast, neg_one_mul]
+    have hspan : span {(p : 𝓞 K)} = span {(q : 𝓞 K)} := by
+      rw [hp_eq, ← hq_def, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
+    rw [hspan, hneg]
     simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
-    rw [coe_powerResidueSymbolIdeal_mk_neg_one hπ, mul_comm]
+    rw [coe_powerResidueSymbolIdeal_mk_neg_one hπ, hnat, mul_left_comm,
+      ← zpow_add₀ (by norm_num)]
     congr 1
+    obtain ⟨k, hk⟩ := hq_odd
+    have h1 : (((q - 1) / 2 : ℕ) : ℤ) = k := by omega
+    have h2 : (p - 1) / 2 = -((k : ℤ) + 1) := by omega
+    rw [h1, h2]
+    dsimp only [N4]
     exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
-      (Int.modEq_iff_dvd.mpr ⟨t * N4, by rw [ht]; ring⟩)
-  rcases Int.natAbs_eq p with hp_eq | hp_eq <;> rcases hq_mod with hq1 | hq3
-  · have he : Even ((p - 1) / 2) := ⟨(q - 1) / 4, by omega⟩
-    have hqe : Even ((q - 1) / 2) := ⟨(q - 1) / 4, by omega⟩
-    rw [hqe.neg_one_pow, one_mul] at hnat
-    rw [(he.mul_right N4).neg_one_zpow, mul_one, hp_eq, Int.cast_natCast, hnat]
-  · have ho : Odd ((p - 1) / 2) := ⟨(q - 3) / 4, by omega⟩
-    have hqo : Odd ((q - 1) / 2) := ⟨(q - 3) / 4, by omega⟩
-    rw [hqo.neg_one_pow, neg_one_mul] at hnat
-    rw [hflip (-(q : 𝓞 K)) (by rw [hp_eq, Int.cast_natCast]; ring) ho, hnat]
-  · have ho : Odd ((p - 1) / 2) := ⟨-(((q : ℤ) - 1) / 4) - 1, by omega⟩
-    have hqe : Even ((q - 1) / 2) := ⟨(q - 1) / 4, by omega⟩
-    rw [hqe.neg_one_pow, one_mul] at hnat
-    rw [hflip (q : 𝓞 K) (by rw [hp_eq, Int.cast_neg, Int.cast_natCast]; ring) ho, hnat]
-  · have he : Even ((p - 1) / 2) := ⟨-(((q : ℤ) + 1) / 4), by omega⟩
-    have hqo : Odd ((q - 1) / 2) := ⟨(q - 3) / 4, by omega⟩
-    rw [hqo.neg_one_pow, neg_one_mul] at hnat
-    rw [(he.mul_right N4).neg_one_zpow, mul_one, hp_eq, Int.cast_neg, Int.cast_natCast, hnat]
+      (Int.modEq_iff_dvd.mpr ⟨-(((k : ℤ) + 1) * N4), by dsimp only [N4]; ring⟩)
 
 /-- Odd-integer quartic reciprocity at a primary prime `π`, read in `K`. -/
 private theorem coe_quartic_reciprocity_intCast_of_prime_of_odd {π : 𝓞 K}
@@ -515,32 +439,6 @@ private theorem coe_quartic_reciprocity_intCast_of_prime_of_odd {π : 𝓞 K}
     rw [hxy, hu, hv]
     exact Int.modEq_iff_dvd.mpr ⟨u * v, by ring⟩
 
-/-- For nonzero ideals `I` and `J` whose norms are prime to `4`, `(N(I J) - 1) / 4` has the parity
-of `(N I - 1) / 4 + (N J - 1) / 4`. -/
-private theorem neg_one_zpow_mul_absNorm_sub_one_div_four {F : Type*} [Field F] {I J : Ideal (𝓞 K)}
-    (hI0 : I ≠ ⊥) (hJ0 : J ≠ ⊥) (hI4 : (absNorm I).Coprime 4) (hJ4 : (absNorm J).Coprime 4)
-    (k : ℤ) :
-    (-1 : F) ^ (k * (((absNorm (I * J) - 1) / 4 : ℕ) : ℤ)) =
-      (-1 : F) ^ (k * (((absNorm I - 1) / 4 : ℕ) : ℤ)) *
-        (-1 : F) ^ (k * (((absNorm J - 1) / 4 : ℕ) : ℤ)) := by
-  have hI1 : 1 ≤ absNorm I := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr hI0)
-  have hJ1 : 1 ≤ absNorm J := Nat.one_le_iff_ne_zero.mpr (absNorm_eq_zero_iff.not.mpr hJ0)
-  obtain ⟨u, hu⟩ := (Nat.modEq_iff_dvd' hI1).mp (absNorm_modEq_one hI4).symm
-  obtain ⟨v, hv⟩ := (Nat.modEq_iff_dvd' hJ1).mp (absNorm_modEq_one hJ4).symm
-  have hIu : absNorm I = 4 * u + 1 := by omega
-  have hJv : absNorm J = 4 * v + 1 := by omega
-  have hmulN : (absNorm (I * J) - 1) / 4 = u + v + 4 * (u * v) := by
-    have h : (4 * u + 1) * (4 * v + 1) = 4 * (u + v + 4 * (u * v)) + 1 := by ring
-    rw [map_mul, hIu, hJv, h]
-    omega
-  have hu4 : (absNorm I - 1) / 4 = u := by omega
-  have hv4 : (absNorm J - 1) / 4 = v := by omega
-  have heven : Even (k * (4 * ((u : ℤ) * v))) := ⟨k * (2 * ((u : ℤ) * v)), by ring⟩
-  rw [hmulN, hu4, hv4]
-  push_cast
-  rw [mul_add, mul_add, zpow_add₀ (by norm_num), zpow_add₀ (by norm_num), heven.neg_one_zpow,
-    mul_one]
-
 /-- **Quartic reciprocity between a primary element and an odd rational integer.** If `K = ℚ(i)`,
 `π` is primary in `𝓞 K = ℤ[i]`, and `m` is an odd rational integer, then
 `(m / π)_4 = (π / m)_4 · (-1) ^ (((m - 1) / 2) * ((N(π) - 1) / 4))`, read in `K` with
@@ -570,14 +468,17 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd {π : 𝓞 K}
       have hs0 : span {s.prod} ≠ ⊥ := by
         rw [Ne, span_singleton_eq_bot]
         exact fun h ↦ absurd (h ▸ hs_prim.odd_norm) (by simp)
+      have hneg := coe_powerResidueSymbolIdeal_mk_neg_one (hp.2.mul hs_prim)
+      rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hp0 hs0,
+        RingOfIntegers.coe_eq_algebraMap, map_mul, ← RingOfIntegers.coe_eq_algebraMap,
+        ← RingOfIntegers.coe_eq_algebraMap, coe_powerResidueSymbolIdeal_mk_neg_one hp.2,
+        coe_powerResidueSymbolIdeal_mk_neg_one hs_prim] at hneg
       rw [Multiset.prod_cons]
       simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
       rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hp0 hs0]
       simp only [RingHom.map_mul, ← RingOfIntegers.coe_eq_algebraMap]
       rw [coe_quartic_reciprocity_intCast_of_prime_of_odd hp.2 hp.1 hm, ih hs' hs_prim,
-        mul_mul_mul_comm,
-        neg_one_zpow_mul_absNorm_sub_one_div_four hp0 hs0 hp.2.absNorm_span_singleton_coprime_four
-          hs_prim.absNorm_span_singleton_coprime_four]
+        mul_mul_mul_comm, zpow_mul', zpow_mul', ← mul_zpow, hneg, ← zpow_mul']
   rw [hgen hπ, hπ.natCast_absNorm_sub_one_div_four]
 
 /-- **Quartic reciprocity in coordinates between a primary element and an odd rational integer.**

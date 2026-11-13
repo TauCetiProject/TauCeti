@@ -17,7 +17,9 @@ normalisation of the quartic residue symbol used in the statement of biquadratic
 every element of odd norm has exactly one primary associate. The congruence does not depend on
 the choice of the primitive fourth root of unity `i`, since `1 - i = -i (1 + i)`.
 
-The unit `1` is primary, so the reciprocity statements carry their nonunit hypotheses separately.
+The unit `1` is primary: prime-level Jacobi and Gauss sum evaluations add a `Prime` or `IsMaximal`
+hypothesis separately, whereas the supplementary and biquadratic reciprocity laws hold at `1`
+without a nonunit hypothesis.
 
 ## Main definitions and results
 
@@ -66,8 +68,10 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- An element `α` of `𝓞 K = ℤ[i]` is *primary* if `α ≡ 1 (mod (1 + i)³)`, where `i` is a
 primitive fourth root of unity; by `IsPrimitiveRoot.isPrimaryGaussian_iff` the choice of `i` does
-not matter. This is the normalisation of primes used in biquadratic reciprocity. The unit `1` is
-primary, so the predicate is used together with a nonunit hypothesis. -/
+not matter. Every element of odd norm has a unique primary associate, normalising the generators of
+odd ideals in biquadratic reciprocity. The unit `1` is primary: prime-level Gauss and Jacobi sum
+lemmas add a `Prime` or `IsMaximal` hypothesis, while the reciprocity and supplementary laws hold at
+`1` without a nonunit hypothesis. -/
 def IsPrimaryGaussian (x : 𝓞 K) : Prop :=
   (1 + (IsCyclotomicExtension.zeta_spec 4 ℚ K).toInteger) ^ 3 ∣ x - 1
 
