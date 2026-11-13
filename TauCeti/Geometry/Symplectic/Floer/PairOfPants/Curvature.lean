@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Rectangle
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Group.Integral
