@@ -19,7 +19,8 @@ Let `f : X ⟶ Y` be a quasi-compact and quasi-separated morphism of schemes and
 quasi-coherent `𝒪_X`-module. Then every higher direct image `Rⁿ f_* M` is quasi-coherent
 (`AlgebraicGeometry.Scheme.Hom.isQuasicoherent_higherDirectImage`). Over an affine base `Y` with
 `X` quasi-compact and quasi-separated, its sections over a basic open `D(g)` of `Y` are the
-cohomology `Hⁿ(f⁻¹ D(g), M)` (`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv`).
+cohomology `Hⁿ(f⁻¹ D(g), M)`
+(`AlgebraicGeometry.Scheme.Hom.higherDirectImageBasicOpenSectionsAddEquiv`).
 
 The higher direct image is the sheafification of the presheaf of `𝒪_Y`-modules
 `V ↦ Hⁿ(f⁻¹ V, M)` (`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheaf`). If `X` is
@@ -45,8 +46,8 @@ open of `Y` to a morphism from a quasi-compact quasi-separated scheme.
   from `Y` to `D(g)` is the localization at the powers of `g`;
 * `AlgebraicGeometry.Scheme.Hom.isQuasicoherent_higherDirectImage`: the higher direct images of a
   quasi-coherent module along a quasi-compact quasi-separated morphism are quasi-coherent;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv`: over an affine base, the
-  sections of `Rⁿ f_* M` over `D(g)` are `Hⁿ(f⁻¹ D(g), M)`.
+* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBasicOpenSectionsAddEquiv`: over an affine base,
+  the sections of `Rⁿ f_* M` over `D(g)` are `Hⁿ(f⁻¹ D(g), M)`.
 
 ## References
 
@@ -106,60 +107,42 @@ theorem isLocalizedModule_higherDirectImagePresheaf_map_basicOpen [CompactSpace 
 
 section Affine
 
-variable [IsAffine Y] [CompactSpace X] [QuasiSeparatedSpace X] (M : X.Modules)
+variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f] (M : X.Modules)
   [M.IsQuasicoherent] (n : ℕ)
-
-/-- Over an affine base, the sheafification of `V ↦ Hⁿ(f⁻¹ V, M)` is quasi-coherent, and the
-sheafification unit is bijective over basic opens. -/
-private lemma isQuasicoherent_sheafification_and_bijective_unit_app :
-    ((PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).obj
-        ((f.higherDirectImagePresheaf n).obj M)).IsQuasicoherent ∧
-      ∀ g : Γ(Y, ⊤), Function.Bijective (((PresheafOfModules.sheafificationAdjunction
-        (𝟙 Y.ringCatSheaf.obj)).unit.app ((f.higherDirectImagePresheaf n).obj M)).app
-          (.op (Y.basicOpen g))) := by
-  let P := (f.higherDirectImagePresheaf n).obj M
-  let S : Y.Modules := (PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).obj P
-  let η : P ⟶ S.val :=
-    (PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P
-  have : Presheaf.IsLocallyInjective (Opens.grothendieckTopology Y)
-      ((PresheafOfModules.toPresheaf (Y.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
-      (𝟙 Y.ringCatSheaf.obj) P).symm ▸
-      Presheaf.isLocallyInjective_toSheafify' (J := Opens.grothendieckTopology Y) P.presheaf
-  have : Presheaf.IsLocallySurjective (Opens.grothendieckTopology Y)
-      ((PresheafOfModules.toPresheaf (Y.presheaf ⋙ forget₂ CommRingCat RingCat)).map η) :=
-    (PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app
-      (𝟙 Y.ringCatSheaf.obj) P).symm ▸
-      Presheaf.isLocallySurjective_toSheafify' (J := Opens.grothendieckTopology Y) P.presheaf
-  have hP (g : Γ(Y, ⊤)) := f.isLocalizedModule_higherDirectImagePresheaf_map_basicOpen M n g
-  exact ⟨Scheme.Modules.isQuasicoherent_of_isLocallyBijective (P := P) η (fun _ : Unit ↦ ⊤)
-    (fun _ ↦ isAffineOpen_top Y) iSup_const fun _ ↦ hP,
-    (isAffineOpen_top Y).bijective_app_basicOpen_of_isLocalizedModule (P := P) η hP⟩
 
 /-- **Higher direct images over an affine base.** For a quasi-compact quasi-separated scheme `X`
 over an affine scheme `Y` and a quasi-coherent `M`, the sections of the higher direct image
-`Rⁿ f_* M` over the basic open `D(g)` of a global function `g` are the cohomology
-`Hⁿ(f⁻¹ D(g), M)`. The equivalence sends a class to the section of the sheafification of
-`V ↦ Hⁿ(f⁻¹ V, M)` that it defines (`higherDirectImageSectionsAddEquiv_hom_app`). -/
-def higherDirectImageSectionsAddEquiv (g : Γ(Y, ⊤)) :
-    cohomologyOn M n (f ⁻¹ᵁ Y.basicOpen g) ≃+ Γ((f.higherDirectImage n).obj M, Y.basicOpen g) :=
+`Rⁿ f_* M` over an open `V` equal to the basic open of a global function are the cohomology
+`Hⁿ(f⁻¹ V, M)`. The equivalence sends a class to the section of the sheafification of
+`V ↦ Hⁿ(f⁻¹ V, M)` that it defines
+(`higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app`). -/
+def higherDirectImageBasicOpenSectionsAddEquiv {V : Y.Opens}
+    (hV : ∃ g : Γ(Y, ⊤), Y.basicOpen g = V) :
+    cohomologyOn M n (f ⁻¹ᵁ V) ≃+ Γ((f.higherDirectImage n).obj M, V) := by
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace f
+  have : QuasiSeparatedSpace X := quasiSeparatedSpace_of_quasiSeparated f
   let η := ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app
-    ((f.higherDirectImagePresheaf n).obj M)).app (.op (Y.basicOpen g))
-  let e := ((f.higherDirectImagePresheafToPresheafIso M n).app (.op (Y.basicOpen g))).symm
+    ((f.higherDirectImagePresheaf n).obj M)).app (.op V)
+  let e := ((f.higherDirectImagePresheafToPresheafIso M n).app (.op V)).symm
   let i := ((Scheme.Modules.toPresheaf Y).mapIso
-    ((f.higherDirectImagePresheafSheafificationIso n).app M)).app (.op (Y.basicOpen g))
-  e.addCommGroupIsoToAddEquiv.trans ((AddEquiv.ofBijective η.hom.toAddMonoidHom
-    ((isQuasicoherent_sheafification_and_bijective_unit_app f M n).2 g)).trans
+    ((f.higherDirectImagePresheafSheafificationIso n).app M)).app (.op V)
+  exact e.addCommGroupIsoToAddEquiv.trans ((AddEquiv.ofBijective η.hom.toAddMonoidHom
+    (by
+      obtain ⟨g, rfl⟩ := hV
+      have hY := isAffineOpen_top Y
+      exact hY.bijective_sheafificationAdjunction_unit_app_basicOpen_of_isLocalizedModule _
+        (f.isLocalizedModule_higherDirectImagePresheaf_map_basicOpen M n) g)).trans
       i.addCommGroupIsoToAddEquiv)
 
-/-- The equivalence `higherDirectImageSectionsAddEquiv` sends the class in `Hⁿ(f⁻¹ D(g), M)` of a
-section `x` of the presheaf `V ↦ Hⁿ(f⁻¹ V, M)` to the section of its sheafification `Rⁿ f_* M`
-defined by `x`. -/
+/-- The equivalence `higherDirectImageBasicOpenSectionsAddEquiv` sends the class in
+`Hⁿ(f⁻¹ V, M)` of a section `x` of the presheaf `V ↦ Hⁿ(f⁻¹ V, M)` to the section of its
+sheafification `Rⁿ f_* M` defined by `x`. -/
 -- Apply before simp normalizes the cohomology presheaf section type.
 @[simp↓]
-lemma higherDirectImageSectionsAddEquiv_hom_app (g : Γ(Y, ⊤))
-    (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op (Y.basicOpen g))) :
-    f.higherDirectImageSectionsAddEquiv M n g
+lemma higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+    {V : Y.Opens} (hV : ∃ g : Γ(Y, ⊤), Y.basicOpen g = V)
+    (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op V)) :
+    f.higherDirectImageBasicOpenSectionsAddEquiv M n hV
         ((f.higherDirectImagePresheafToPresheafIso M n).hom.app _ x) =
       ((f.higherDirectImagePresheafSheafificationIso n).app M).hom.val.app _
         (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app
@@ -173,10 +156,14 @@ lemma higherDirectImageSectionsAddEquiv_hom_app (g : Γ(Y, ⊤))
 /-- Over an affine base, the higher direct images of a quasi-coherent module on a quasi-compact
 quasi-separated scheme are quasi-coherent. -/
 private lemma isQuasicoherent_higherDirectImage_of_isAffine :
-    ((f.higherDirectImage n).obj M).IsQuasicoherent :=
-  (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
+    ((f.higherDirectImage n).obj M).IsQuasicoherent := by
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace f
+  have : QuasiSeparatedSpace X := quasiSeparatedSpace_of_quasiSeparated f
+  apply (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
     ((f.higherDirectImagePresheafSheafificationIso n).app M)
-    (isQuasicoherent_sheafification_and_bijective_unit_app f M n).1
+  exact Scheme.Modules.isQuasicoherent_sheafification_of_isLocalizedModule _
+    (fun _ : Unit ↦ ⊤) (fun _ ↦ isAffineOpen_top Y) iSup_const
+    fun _ ↦ f.isLocalizedModule_higherDirectImagePresheaf_map_basicOpen M n
 
 end Affine
 
@@ -190,11 +177,6 @@ instance isQuasicoherent_higherDirectImage [QuasiCompact f] [QuasiSeparated f] (
   -- over the affine open `U`, the higher direct image is that of `f ∣_ U`, whose source
   -- `f⁻¹ U` is quasi-compact and quasi-separated
   have : IsAffine U.1 := U.2
-  have : CompactSpace (f ⁻¹ᵁ U.1) :=
-    isCompact_iff_compactSpace.1 (f.isCompact_preimage U.2.isCompact)
-  have : QuasiSeparatedSpace (f ⁻¹ᵁ U.1) :=
-    (isQuasiSeparated_iff_quasiSeparatedSpace _ (f ⁻¹ᵁ U.1).2).1
-      (f.isQuasiSeparated_preimage U.2.isQuasiSeparated)
   exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
     ((f.higherDirectImageRestrictIso U.1 n).app M).symm
     (isQuasicoherent_higherDirectImage_of_isAffine (f ∣_ U.1) (M.restrict (f ⁻¹ᵁ U.1).ι) n)
