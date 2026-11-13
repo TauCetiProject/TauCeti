@@ -96,6 +96,8 @@ product.
 * `TauCeti.StrandGradingGroup.linking_add_linking_swap`, `TauCeti.StrandGradingGroup.linking_self`:
   the symmetric part of `L` is minus the product of the total sums of the boundaries, so `L` is
   antisymmetric on boundaries of total sum zero.
+* `TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff`: the elements of `G'(n)` with zero class
+  are the powers of `λ`.
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
@@ -121,9 +123,9 @@ product.
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.1 (the
-  group `G'(n)`, the multiplicity `m`, the grading of `A(n, k)` and its compatibility with the
-  product and the differential) and Proposition 3.40 (the grading is unchanged by adding horizontal
-  strands).
+  group `G'(n)` and Lemma 3.35, the multiplicity `m`, the grading of `A(n, k)` and its
+  compatibility with the product and the differential) and Proposition 3.40 (the grading is
+  unchanged by adding horizontal strands).
 -/
 
 public section
@@ -451,6 +453,26 @@ theorem exists_maslov_eq_of_mem_gPrime {g : StrandGradingGroup α} (hg : g ∈ g
 
 theorem lambda_mem_gPrime : (lambda : StrandGradingGroup α) ∈ gPrime :=
   mem_gPrime_iff_sum_sq.2 ⟨⟨1, by simp⟩, by simp⟩
+
+/-- Every class with boundary of total sum zero is the class of an element of `G'(n)`, with
+Maslov component `ε(β)`. -/
+theorem mk_mem_gPrime {δ : α → ℤ} (hδ : ∑ x, δ x = 0) :
+    mk ((#{x | Odd (δ x)} : ℚ) / 4) δ ∈ gPrime :=
+  ⟨⟨0, by simp⟩, by simpa using hδ⟩
+
+/-- **The kernel of the class map on `G'(n)`.** The elements of `G'(n)` with zero class are exactly
+the powers of `λ`: the condition `j ≡ ε(0) = 0 (mod 1)` makes their Maslov component an integer. -/
+theorem mem_zpowers_lambda_iff {g : StrandGradingGroup α} :
+    g ∈ Subgroup.zpowers lambda ↔ g ∈ gPrime ∧ g.boundary = 0 := by
+  constructor
+  · rintro ⟨n, rfl⟩
+    exact ⟨zpow_mem lambda_mem_gPrime n, by simp [lambda_zpow]⟩
+  · rintro ⟨⟨⟨k, hk⟩, -⟩, hb⟩
+    refine Subgroup.mem_zpowers_iff.2 ⟨k, ?_⟩
+    rw [lambda_zpow]
+    ext
+    · simp [hk, hb]
+    · simp [hb]
 
 end StrandGradingGroup
 
