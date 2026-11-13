@@ -21,9 +21,10 @@ import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
 # Stability of monomorphic quasi-isomorphisms
 
 Monomorphic quasi-isomorphisms of complexes in an abelian category are stable under
-pushouts. If filtered colimits are exact, they are also stable under transfinite
-composition. These closure properties allow cell attachments by monomorphic
-quasi-isomorphisms in the construction of injective resolutions of unbounded complexes.
+pushouts. If coproducts are exact, they are stable under coproducts, and if filtered colimits are
+exact, they are also stable under transfinite composition. These closure properties allow cell
+attachments by monomorphic quasi-isomorphisms in the construction of injective resolutions of
+unbounded complexes.
 
 The pushout assertion uses the acyclicity of the cokernel and the canonical
 isomorphism between the cokernels of parallel arrows of a pushout square.
@@ -97,6 +98,10 @@ instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
     exact h (fun j ↦ by
       have : QuasiIso (f.app j) := hf j
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).mp inferInstance) φ hφ
+
+/-- Under AB4, quasi-isomorphisms are stable under coproducts. -/
+instance [HasCoproducts.{w} C] [AB4OfSize.{w} C] :
+    MorphismProperty.IsStableUnderCoproducts.{w} (quasiIso C c) where
 
 /-- Under AB5, quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :

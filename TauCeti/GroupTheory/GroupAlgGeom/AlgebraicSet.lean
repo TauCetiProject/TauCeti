@@ -284,6 +284,13 @@ theorem singleton_comp_eq_V (g : X → G) :
     simpa only [Function.comp_apply, map_mul, map_inv, eval_inl, eval_inr_of,
       mul_inv_eq_one] using hx
 
+/-- If a coefficient becomes trivial in `H`, every point is a solution of the equation with that
+constant. -/
+theorem V_singleton_inl_eq_univ {g : G} (hg : ι g = 1) :
+    V ι ({inl g} : Set (GX G X)) = Set.univ := by
+  ext v
+  simp [hg]
+
 /-- If some coefficient remains nontrivial in `H`, an equation with that constant has no
 solutions. -/
 theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
@@ -370,6 +377,12 @@ theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
 @[simp]
 theorem I_iUnion {κ : Sort*} (Y : κ → Set (X → H)) : I ι (⋃ k, Y k) = ⨅ k, I ι (Y k) :=
   SetLike.coe_injective ((lowerPolar_iUnion _ Y).trans (coe_iInf (S := fun k => I ι (Y k))).symm)
+
+/-- Conjugating an equation does not change its solutions. -/
+@[simp]
+theorem V_singleton_conj (u w : GX G X) : V ι {u * w * u⁻¹} = V ι {w} := by
+  ext v
+  simp
 
 /-- A system and its normal closure have the same solutions. -/
 @[simp]
@@ -464,6 +477,11 @@ theorem V_Rad (S : Set (GX G X)) : V ι (Rad ι S : Set (GX G X)) = V ι S :=
 @[simp]
 theorem Rad_Rad (S : Set (GX G X)) : Rad ι (Rad ι S : Set (GX G X)) = Rad ι S := by
   rw [Rad_def, V_Rad, Rad_def]
+
+/-- Conjugating an equation does not change its radical. -/
+@[simp]
+theorem Rad_singleton_conj (u w : GX G X) : Rad ι {u * w * u⁻¹} = Rad ι {w} := by
+  rw [Rad_def, V_singleton_conj, Rad_def]
 
 @[simp]
 theorem Rad_normalClosure (S : Set (GX G X)) :

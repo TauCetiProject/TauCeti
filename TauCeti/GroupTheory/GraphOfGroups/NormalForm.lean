@@ -303,7 +303,7 @@ def IsReduced : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → Prop
 
 @[simp] theorem isReduced_single (g : 𝔸.vertexGroup a) :
     (single g : 𝔸.AlternatingPath a a).IsReduced :=
-  trivial
+  True.intro
 
 @[simp] theorem isReduced_cons_iff {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) : (cons p e g).IsReduced ↔ p.IsReduced ∧ ¬ p.Cancels e :=
@@ -323,7 +323,7 @@ def IsNormalized : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → Prop
 
 @[simp] theorem isNormalized_single (g : 𝔸.vertexGroup a) :
     (single g : 𝔸.AlternatingPath a a).IsNormalized d :=
-  trivial
+  True.intro
 
 @[simp] theorem isNormalized_cons_iff {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) : (cons p e g).IsNormalized d ↔ p.IsNormalized d ∧ p.last ∈ (d e).1 :=
@@ -492,7 +492,7 @@ variable {𝔸} {d : 𝔸.Transversal} {a : Γ.V}
 variable (d) in
 /-- The normal word `g` of length zero, for an element `g` of the vertex group `A_a`. -/
 def single (g : 𝔸.vertexGroup a) : NormalWord d a a :=
-  ⟨.single g, trivial, trivial⟩
+  ⟨.single g, True.intro, True.intro⟩
 
 variable (d a) in
 /-- The normal word `1` of length zero. -/
