@@ -43,8 +43,8 @@ All in the namespace `TauCeti.UniversalEnvelopingAlgebra`:
   weight difference.
 * `tangentMatrix_derivationComp_kostantRootSubgroupToralCoordinateMap`: the differential of a
   factored root subgroup is the tangent parameter times the integral root matrix.
-* `tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCoordinateMap`:
-  the same matrix normalization after transporting the root subgroup to an arbitrary base ring.
+* `tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap`:
+  the same matrix normalization after base change of the root subgroup to an arbitrary base ring.
 * `kostantToralRootVector`: the normalized root vector, with
   `tangentMatrix_kostantToralRootVector` and
   `range_derivationCompLieHom_kostantRootSubgroupToralCoordinateMap_eq_span`.
@@ -105,26 +105,25 @@ end Support
 
 section BaseChange
 
-variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (R : Type*) [CommRing R] {B : Type*} [CommRing B] [Algebra R B]
 
-/-- The differential of a transported Kostant root subgroup is the additive tangent parameter
+/-- The differential of a base-changed Kostant root subgroup is the additive tangent parameter
 times the integral root-operator matrix, over every commutative base ring and value algebra. -/
-theorem tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCoordinateMap
-    (i : I)
+theorem tangentMatrix_derivationComp_kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
+    (i : I) (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
       (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
     GeneralLinear.tangentMatrix n
       (derivationComp (B := B)
-        (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b R i).hom d) =
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i hnil b R).hom d) =
       AdditiveGroup.gaTangentLinearEquiv d •
         (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
           (Int.cast : ℤ → B) := by
   -- Linearity and coefficient naturality reduce all value algebras to the unit tangent over `R`.
   suffices hunit : GeneralLinear.tangentMatrix n
       (derivationComp (B := R)
-        (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b R i).hom
+        (kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap e h ρ M hM i hnil b R).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)) =
       (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
         (Int.cast : ℤ → R) by
@@ -134,7 +133,7 @@ theorem tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCo
     congr 1
     ext a c
     simp
-  rw [kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
+  rw [kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def,
     GeneralLinear.tangentMatrix_derivationComp_transportedBaseChange,
     tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap]
   simp only [algebraMap_int_eq, Int.coe_castRingHom]

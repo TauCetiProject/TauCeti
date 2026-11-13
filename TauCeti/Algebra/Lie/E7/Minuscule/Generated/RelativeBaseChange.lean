@@ -78,8 +78,8 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
   | inl j =>
       rw [generatorCoordinateMap_inl, generatorCoordinateMap_inl,
         GeneralLinear.coordinateHopfAlgebraBaseChangeMap_X]
-      rw [UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
-        UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
+      rw [UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def,
+        UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_def]
       simp only [generatorCoordinateAlgebraBaseChangeIso,
         _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
       rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
