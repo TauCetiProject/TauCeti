@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.ModEq
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Nat.GCD.Basic
+import Mathlib.Data.Nat.ModEq
 
 /-!
 # Reindexing products and sums of residues
@@ -29,7 +31,8 @@ theorem Coprime.prod_range_mul_mod {M : Type*} [CommMonoid M] {a n : ℕ} (han :
   have himage : (Finset.range n).image (fun r ↦ a * r % n) = Finset.range n := by
     refine Finset.eq_of_subset_of_card_le (fun x hx ↦ ?_) (Finset.card_image_of_injOn hinj).ge
     obtain ⟨r, hr, rfl⟩ := Finset.mem_image.1 hx
-    exact Finset.mem_range.2 (mod_lt _ (pos_of_ne_zero (Finset.nonempty_range_iff.1 ⟨r, hr⟩)))
+    exact Finset.mem_range.2
+      (mod_lt _ (Nat.pos_of_ne_zero (Finset.nonempty_range_iff.1 ⟨r, hr⟩)))
   rw [← Finset.prod_image hinj, himage]
 
 end Nat

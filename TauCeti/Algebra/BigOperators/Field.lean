@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.CharZero.Defs
-import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.NormNum.Basic
