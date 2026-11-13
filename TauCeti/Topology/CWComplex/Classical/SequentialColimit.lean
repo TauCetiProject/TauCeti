@@ -37,15 +37,16 @@ topology makes their union a CW complex (`TauCeti.cwSubcomplexTowerUnion`).
 For the comparison of such a colimit with another increasing union up to homotopy, the stages are
 linked by closed cofibrations: the range of the `k`-th stage has the homotopy extension property
 in the range of the next one (`TauCeti.hasHomotopyExtensionProperty_preimage_range_ι`), since it
-is a subcomplex. If the stages are Hausdorff, so is the colimit
-(`TauCeti.t2Space_of_isColimit_cwComplex`): the range of each bonding map has the homotopy extension
-property, so the bonding maps extend disjoint open sets
-(`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`). The colimit is then a model
-for any space exhausted compatibly by spaces of the homotopy types of the stages. Let `Y` be the
-union of an increasing sequence of subsets `A 0 ⊆ A 1 ⊆ ⋯`, each with the homotopy extension property
-in the next, carrying the topology coherent with them, and let `h k : F k ≃ₕ A k` be homotopy
-equivalences commuting strictly with the inclusions. Then the colimit is homotopy equivalent to `Y`
-by a homotopy equivalence restricting to `h k` on `F k`
+is a subcomplex.
+
+If the stages are Hausdorff, so is the colimit (`TauCeti.t2Space_of_isColimit_cwComplex`): the
+range of each bonding map has the homotopy extension property, so the bonding maps extend disjoint
+open sets (`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`). The colimit is
+then a model for any space exhausted compatibly by spaces of the homotopy types of the stages. Let
+`Y` be the union of an increasing sequence of subsets `A 0 ⊆ A 1 ⊆ ⋯`, each with the homotopy
+extension property in the next, carrying the topology coherent with them, and let
+`h k : F k ≃ₕ A k` be homotopy equivalences commuting strictly with the inclusions. Then the
+colimit is homotopy equivalent to `Y` by a homotopy equivalence restricting to `h k` on `F k`
 (`TauCeti.exists_homotopyEquiv_of_isColimit`), since the maps `h k` induce a map from the colimit
 to `Y` which is a homotopy equivalence on every stage
 (`TauCeti.exists_homotopyEquiv_of_isCoherentWith`).

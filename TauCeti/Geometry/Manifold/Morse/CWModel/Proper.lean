@@ -189,37 +189,19 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
     exact (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <| (Equiv.emptySum _ _).trans <|
       (Equiv.sigmaCongrRight fun k ↦ (e k (S k) m).complRangeSymmInl).trans
         (sigmaCriticalPointsIocEquiv hmono htop ha0 m)
-  -- The models glue to a map `X → M`, a homotopy equivalence on every stage.
-  let φ : Cocone F :=
-    { pt := TopCat.of M
-      ι := NatTrans.ofSequence
-        (fun k ↦ TopCat.ofHom ((ContinuousMap.subtypeVal _).comp (S k).h.toFun)) fun k ↦ by
-          ext w
-          rw [Functor.ofSequence_map_homOfLE_succ]
-          exact hh k (S k) w }
-  let g : C(c.pt, M) := (hc.desc φ).hom
-  have hg (k : ℕ) (w : F.obj k) : g (c.ι.app k w) = (S k).h w :=
-    ConcreteCategory.congr_hom (hc.fac φ k) w
-  have hemb := TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc
-  let eA (k : ℕ) : (range (c.ι.app k) : Set c.pt) ≃ₕ {x | f x ≤ a k} :=
-    (hemb k).isEmbedding.toHomeomorph.symm.toHomotopyEquiv.trans (S k).h
-  have heA (k : ℕ) (x : (range (c.ι.app k) : Set c.pt)) : (eA k x : M) = g x := by
-    obtain ⟨_, w, rfl⟩ := x
-    -- `eA k` inverts `c.ι.app k` on its range and then applies the model `(S k).h`.
-    exact (congrArg (fun y ↦ ((S k).h y : M))
-      ((hemb k).isEmbedding.toHomeomorph_symm_apply w)).trans (hg k w).symm
-  -- The stages of `X` and the sublevels of `M` are towers of closed cofibrations, exhausting
-  -- `X` and `M` with the coherent topology.
+  -- The sublevels of `M` are a tower of closed cofibrations exhausting `M` with the coherent
+  -- topology, and the models commute with their inclusions.
   have hBH (k : ℕ) : HasHomotopyExtensionProperty
       ((↑) ⁻¹' {x | f x ≤ a k} : Set {x | f x ≤ a (k + 1)}) := by
     rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
     exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
       hf.contMDiff (hmono k.lt_succ_self) (hcompact k) (hreg k) (hmono k.lt_succ_self).le
-  obtain ⟨h, -, -⟩ := exists_homotopyEquiv_of_isCoherentWith (TopCat.monotone_range_ι c)
-    ((sublevel_mono f).comp hmono.monotone) (TopCat.iUnion_range_ι_of_isColimit hc)
-    (iUnion_sublevel_eq_univ_of_tendsto f htop) (TopCat.isCoherentWith_range_ι_of_isColimit hc)
-    (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop)
-    (hasHomotopyExtensionProperty_preimage_range_ι hF hιc hc) hBH g eA heA
+  obtain ⟨h, -⟩ := exists_homotopyEquiv_of_isColimit hF hιc hc
+    ((sublevel_mono f).comp hmono.monotone) (iUnion_sublevel_eq_univ_of_tendsto f htop)
+    (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop) hBH
+    (fun k ↦ (S k).h) fun k w ↦ by
+      rw [Functor.ofSequence_map_homOfLE_succ]
+      exact hh k (S k) w
   exact ⟨h.symm⟩
 
 end TauCeti
