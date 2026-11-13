@@ -52,11 +52,13 @@ identify the underlying graph morphisms with the identity and the composite.
 
 ## Main results
 
+* `TauCeti.GraphOfGroups.Hom.ext`: a morphism is determined by its graph morphism, its vertex
+  group homomorphisms and its twisting elements.
 * `TauCeti.GraphOfGroups.Hom.vertexHom_ω`: the compatibility of a morphism with the maps `ω`.
 * `TauCeti.GraphOfGroups.Hom.comp_assoc`, `TauCeti.GraphOfGroups.Hom.id_comp`,
   `TauCeti.GraphOfGroups.Hom.comp_id`: composition is associative and unital.
-* `TauCeti.GraphOfGroups.π₁Tree.map_id`, `TauCeti.GraphOfGroups.π₁Tree.map_comp`: functoriality
-  of the induced homomorphisms.
+* `TauCeti.GraphOfGroups.π₁Tree.map_id`, `TauCeti.GraphOfGroups.π₁Tree.map_comp_map`:
+  functoriality of the induced homomorphisms.
 
 ## References
 
@@ -82,7 +84,6 @@ variable {Γ : SerreGraph.{u₁, v₁}} {Δ : SerreGraph.{u₂, v₂}} {Θ : Ser
 /-- A morphism of graphs of groups `𝔸 → 𝔹`: a morphism `[·]` of the underlying graphs,
 homomorphisms `φ_v : A_v →* B_[v]` and `φ_e : A_e →* B_[e]` with `φ_{rev e} = φ_e`, and twisting
 elements `δ_e ∈ B_[src e]` such that `φ_{src e} (α_e c) = δ_e · α_[e] (φ_e c) · δ_e⁻¹`. -/
-@[ext]
 structure Hom (𝔸 : GraphOfGroups.{u₁, v₁, w₁, x₁} Γ) (𝔹 : GraphOfGroups.{u₂, v₂, w₂, x₂} Δ) where
   /-- The underlying morphism of graphs. -/
   graph : Γ.Hom Δ
@@ -103,6 +104,23 @@ structure Hom (𝔸 : GraphOfGroups.{u₁, v₁, w₁, x₁} Γ) (𝔹 : GraphOf
       (𝔹.α (graph.mapE e) (edgeHom e c)) * (twist e)⁻¹
 
 namespace Hom
+
+/-- Two morphisms of graphs of groups are equal when they have the same underlying graph
+morphism, the same vertex group homomorphisms and the same twisting elements. The edge group
+homomorphisms are then equal too, since `α` is injective. -/
+@[ext]
+theorem ext {Φ Ψ : Hom 𝔸 𝔹} (hgraph : Φ.graph = Ψ.graph)
+    (hvertex : ∀ v a, Φ.vertexHom v a ≍ Ψ.vertexHom v a) (htwist : ∀ e, Φ.twist e ≍ Ψ.twist e) :
+    Φ = Ψ := by
+  cases Φ with | mk f φ ε δ _ hα => ?_
+  cases Ψ with | mk g ψ ε' δ' _ hα' => ?_
+  subst hgraph
+  obtain rfl : φ = ψ := funext fun v => MonoidHom.ext fun a => eq_of_heq (hvertex v a)
+  obtain rfl : δ = δ' := funext fun e => eq_of_heq (htwist e)
+  obtain rfl : ε = ε' := funext fun e => MonoidHom.ext fun c => 𝔹.α_injective _ <|
+    (MulEquiv.cast _).injective <| mul_left_cancel <| mul_right_cancel <|
+      (hα e c).symm.trans (hα' e c)
+  rfl
 
 /-! ### Transport along equalities of vertices and darts -/
 
@@ -125,20 +143,23 @@ theorem edgeHom_cast (Φ : Hom 𝔸 𝔹) {e e' : Γ.E} (h : Γ.toGeomEdge e = �
   · simp only [Φ.edgeHom_rev, MulEquiv.cast_apply, cast_cast, cast_eq]
 
 /-- Compatibility of a morphism with the boundary monomorphisms `ω`, up to conjugation by the
-twisting element of the reverse dart: `φ_{tgt e} (ω_e c) = δ_{rev e} · ω_[e] (φ_e c) · δ_{rev e}⁻¹`.
-The vertex `tgt e` is written `src (rev e)`, the vertex at which `δ_{rev e}` lives. -/
+twisting element of the reverse dart: `φ_{tgt e} (ω_e c) = δ_{rev e} · ω_[e] (φ_e c) · δ_{rev e}⁻¹`,
+with `δ_{rev e} ∈ B_[src (rev e)]` transported to `B_[tgt e]`. -/
 theorem vertexHom_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
-    Φ.vertexHom (Γ.src (Γ.rev e)) (𝔸.ω e c) =
-      Φ.twist (Γ.rev e) * MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.tgt_mapE_eq_mapV_src_rev e)
-        (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) * (Φ.twist (Γ.rev e))⁻¹ := by
+    Φ.vertexHom (Γ.tgt e) (𝔸.ω e c) =
+      MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV (Γ.src_rev e))
+          (Φ.twist (Γ.rev e)) *
+        MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_tgt _ e)
+          (𝔹.ω (Φ.graph.mapE e) (Φ.edgeHom e c)) *
+        (MulEquiv.cast (M := 𝔹.vertexGroup) (congrArg Φ.graph.mapV (Γ.src_rev e))
+          (Φ.twist (Γ.rev e)))⁻¹ := by
   -- `α` at a dart equal to `rev (Φ.graph.mapE e)` is `ω` at `Φ.graph.mapE e`, up to transport.
   have key : ∀ (e' : Δ.E) (_ : e' = Δ.rev (Φ.graph.mapE e))
       (h₁ : Δ.toGeomEdge (Φ.graph.mapE e) = Δ.toGeomEdge e')
       (h₂ : Δ.src e' = Φ.graph.mapV (Γ.src (Γ.rev e)))
       (x : 𝔹.edgeGroup (Δ.toGeomEdge (Φ.graph.mapE e))),
       MulEquiv.cast (M := 𝔹.vertexGroup) h₂ (𝔹.α e' (MulEquiv.cast (M := 𝔹.edgeGroup) h₁ x)) =
-        MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.tgt_mapE_eq_mapV_src_rev e)
-          (𝔹.ω (Φ.graph.mapE e) x) := by
+        MulEquiv.cast (M := 𝔹.vertexGroup) (Φ.graph.map_tgt _ e) (𝔹.ω (Φ.graph.mapE e) x) := by
     rintro _ rfl h₁ h₂ x
     simp only [α_rev_apply, MulEquiv.cast_apply, cast_cast, cast_eq]
     -- Both sides are now `ω_[e] x` transported to the same vertex group; the two transports
@@ -146,7 +167,10 @@ theorem vertexHom_ω (Φ : Hom 𝔸 𝔹) (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toG
     rfl
   have h := Φ.vertexHom_α (Γ.rev e) (MulEquiv.cast (M := 𝔸.edgeGroup) (Γ.toGeomEdge_rev e).symm c)
   rw [Φ.edgeHom_rev, key _ (Φ.graph.map_rev e)] at h
-  simpa only [α_rev_apply, MulEquiv.cast_apply, cast_cast, cast_eq] using h
+  -- `h` is the claim at the vertex `src (rev e)`; the transports along `src (rev e) = tgt e` in
+  -- the claim are identities, since `tgt e` unfolds to `src (rev e)`.
+  simp only [α_rev_apply, MulEquiv.cast_apply, cast_cast, cast_eq] at h ⊢
+  exact h
 
 /-! ### Identities and composition -/
 
@@ -230,26 +254,23 @@ theorem comp_twist (e : Γ.E) :
 
 end comp
 
--- In the next three proofs the underlying graph morphisms agree by `rfl`: `Hom.id` and `Hom.comp`
--- are reducible and give their graph morphisms as structure literals, so both sides unfold to the
--- same pair of maps. The types of the remaining fields then agree, and `heq_of_eq` compares them.
+-- In the next three proofs `rfl` identifies the underlying graph morphisms: `Hom.id` and
+-- `Hom.comp` are reducible and give them as structure literals. The vertex groups at the image
+-- vertices then agree, and `heq_of_eq` reduces the remaining fields to equations.
 
 /-- The identity morphism is a left unit for composition. -/
 @[simp] theorem id_comp (Φ : Hom 𝔸 𝔹) : (Hom.id 𝔹).comp Φ = Φ :=
-  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.id_comp _)
-    (heq_of_eq <| funext fun _ => MonoidHom.id_comp _) <| heq_of_eq <| funext fun e => by
+  Hom.ext rfl (fun _ _ => heq_of_eq <| by simp) fun _ => heq_of_eq <| by
     simp only [MonoidHom.id_apply, map_one, mul_one]
 
 /-- The identity morphism is a right unit for composition. -/
 @[simp] theorem comp_id (Φ : Hom 𝔸 𝔹) : Φ.comp (Hom.id 𝔸) = Φ :=
-  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.comp_id _)
-    (heq_of_eq <| funext fun _ => MonoidHom.comp_id _) <| heq_of_eq <| funext fun e => by simp
+  Hom.ext rfl (fun _ _ => heq_of_eq <| by simp) fun _ => heq_of_eq <| by simp
 
 /-- Composition of morphisms of graphs of groups is associative. -/
 theorem comp_assoc (Ω : Hom ℂ 𝔻) (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) :
     (Ω.comp Ψ).comp Φ = Ω.comp (Ψ.comp Φ) :=
-  Hom.ext rfl (heq_of_eq <| funext fun _ => MonoidHom.comp_assoc _ _ _)
-    (heq_of_eq <| funext fun _ => MonoidHom.comp_assoc _ _ _) <| heq_of_eq <| funext fun e => by
+  Hom.ext rfl (fun _ _ => heq_of_eq <| by simp) fun _ => heq_of_eq <| by
     simp only [MonoidHom.comp_apply, map_mul, vertexHom_cast, mul_assoc]
     simp only [MulEquiv.cast_apply, cast_cast]
 
@@ -284,11 +305,11 @@ private theorem of_twist_congr {e e' : Γ.E} (h : e = e') :
 /-- The images of the darts satisfy the defining relation `e ω_e(c) e⁻¹ = α_e(c)` of the
 fundamental group, read through the vertex group homomorphisms. -/
 theorem edgeImage_mul_of_ω_mul_edgeImage_inv (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
-    Φ.edgeImage T' e * π₁Tree.of T' _ (Φ.vertexHom (Γ.src (Γ.rev e)) (𝔸.ω e c)) *
+    Φ.edgeImage T' e * π₁Tree.of T' _ (Φ.vertexHom (Γ.tgt e) (𝔸.ω e c)) *
         (Φ.edgeImage T' e)⁻¹ =
       π₁Tree.of T' _ (Φ.vertexHom (Γ.src e) (𝔸.α e c)) := by
-  simp only [Φ.vertexHom_ω, Φ.vertexHom_α, edgeImage_def, map_mul, map_inv]
-  rw [π₁Tree.of_cast, π₁Tree.of_cast, ← π₁Tree.edge_mul_of_ω_mul_edge_inv]
+  simp only [Φ.vertexHom_ω, Φ.vertexHom_α, edgeImage_def, map_mul, map_inv, π₁Tree.of_cast]
+  rw [← π₁Tree.edge_mul_of_ω_mul_edge_inv]
   group
 
 /-- A dart mapped into `T'` with trivial twisting elements at both ends has trivial image in
@@ -340,30 +361,43 @@ end map
   hom_ext (fun v => by rw [map_comp_of, Hom.id_vertexHom, MonoidHom.comp_id, MonoidHom.id_comp])
     fun e => by simp
 
-/-- The image of a dart under a composite morphism is the image under the second morphism of its
-image under the first. -/
-theorem _root_.TauCeti.GraphOfGroups.Hom.edgeImage_comp (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹)
+/-- Homomorphisms induced by equal morphisms are equal. -/
+theorem map_congr {Φ Ψ : Hom 𝔸 𝔹} (h : Φ = Ψ) (hΦ : ∀ e ∈ T, Φ.edgeImage T' e = 1)
+    (hΨ : ∀ e ∈ T, Ψ.edgeImage T' e = 1) : map Φ hΦ = map Ψ hΨ := by
+  subst h
+  rfl
+
+/-- The image under `Ψ` of the image of a dart under `Φ` is its image under the composite. -/
+@[simp] theorem map_edgeImage (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹)
     (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1) (e : Γ.E) :
-    (Ψ.comp Φ).edgeImage T'' e = map Ψ hΨ (Φ.edgeImage T' e) := by
+    map Ψ hΨ (Φ.edgeImage T' e) = (Ψ.comp Φ).edgeImage T'' e := by
   simp only [Hom.edgeImage_def, map_mul, map_inv, map_of, map_edge, of_cast,
     mul_inv_rev, mul_assoc, Hom.of_twist_congr Ψ T'' (Φ.graph.map_rev e)]
 
-/-- If the darts of `T` have trivial image under `Φ` and those of `T'` under `Ψ`, then the darts
-of `T` have trivial image under the composite `Ψ ∘ Φ`. -/
+/-- If the darts of `T'` have trivial image under `Ψ` and a dart `e` has trivial image under `Φ`,
+then `e` has trivial image under `Ψ.comp Φ`. -/
 theorem _root_.TauCeti.GraphOfGroups.Hom.edgeImage_comp_eq_one (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹)
     (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1) {e : Γ.E} (he : Φ.edgeImage T' e = 1) :
     (Ψ.comp Φ).edgeImage T'' e = 1 := by
-  rw [Hom.edgeImage_comp Ψ Φ hΨ, he, map_one]
+  rw [← map_edgeImage Ψ Φ hΨ, he, map_one]
 
 /-- The homomorphism induced by a composite morphism is the composite of the induced
 homomorphisms. -/
-theorem map_comp (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1)
+@[simp] theorem map_comp_map (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1)
     (hΦ : ∀ e ∈ T, Φ.edgeImage T' e = 1)
     (h : ∀ e ∈ T, (Ψ.comp Φ).edgeImage T'' e = 1 := fun _ he =>
       Hom.edgeImage_comp_eq_one Ψ Φ hΨ (hΦ _ he)) :
-    map (Ψ.comp Φ) h = (map Ψ hΨ).comp (map Φ hΦ) :=
+    (map Ψ hΨ).comp (map Φ hΦ) = map (Ψ.comp Φ) h :=
   hom_ext (fun v => MonoidHom.ext fun a => by simp only [MonoidHom.comp_apply, map_of])
-    fun e => by simp [Hom.edgeImage_comp Ψ Φ hΨ]
+    fun e => by simp
+
+/-- The image of an element under the homomorphism induced by a composite morphism. -/
+@[simp] theorem map_map (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1)
+    (hΦ : ∀ e ∈ T, Φ.edgeImage T' e = 1)
+    (h : ∀ e ∈ T, (Ψ.comp Φ).edgeImage T'' e = 1 := fun _ he =>
+      Hom.edgeImage_comp_eq_one Ψ Φ hΨ (hΦ _ he)) (x : π₁Tree 𝔸 T) :
+    map Ψ hΨ (map Φ hΦ x) = map (Ψ.comp Φ) h x :=
+  DFunLike.congr_fun (map_comp_map Ψ Φ hΨ hΦ h) x
 
 end π₁Tree
 
