@@ -20,10 +20,15 @@ holomorphy as a `ContMDiffConstSMul` instance, so each transformation is package
 generic instance `SetLike.contMDiffConstSMul`, which is the input needed to put complex charts on
 their free orbit quotients.
 
+Viewing `ℍ` as a real manifold, every element of `GL(2, ℝ)`, including the antiholomorphic ones of
+negative determinant, acts smoothly; this is also recorded as a `ContMDiffConstSMul` instance.
+
 ## Main declarations
 
 * `UpperHalfPlane.instContMDiffConstSMulPSL2`: the action of each element of `PSL(2, ℝ)` is
   holomorphic.
+* `UpperHalfPlane.instContMDiffConstSMulGL2Real`: the action of each element of `GL(2, ℝ)` is
+  smooth for the real manifold structure.
 -/
 
 public section
@@ -41,6 +46,21 @@ instance instContMDiffConstSMulPSL2 : ContMDiffConstSMul 𝓘(ℂ, ℂ) ∞ PSL(
     simpa only [pslMk_smul, Matrix.SpecialLinearGroup.toGL_smul] using
       UpperHalfPlane.contMDiff_smul (n := ∞)
         (g := Matrix.SpecialLinearGroup.toGL g) (by simp)
+
+/-- Every element of `GL(2, ℝ)` acts smoothly on the upper half-plane as a real manifold,
+including the elements of negative determinant, which act antiholomorphically. -/
+instance instContMDiffConstSMulGL2Real {n : WithTop ℕ∞} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n (GL (Fin 2) ℝ) ℍ where
+  contMDiff_const_smul g := by
+    refine ContMDiff.of_le ?_ le_top
+    refine ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe fun τ ↦ ?_
+    have hnum : ContDiff ℂ ω (num g) := by unfold num; fun_prop
+    have hden : ContDiff ℂ ω (denom g) := by unfold denom; fun_prop
+    have hF : ContDiffAt ℝ ω (fun w : ℂ ↦ σ g (num g w / denom g w)) τ :=
+      (σ g).toContinuousLinearEquiv.contDiff.contDiffAt.comp _
+        ((hnum.contDiffAt.div hden.contDiffAt (denom_ne_zero g τ)).restrict_scalars ℝ)
+    have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℍ → ℂ) τ := contMDiffAt_extChartAt
+    exact hF.contMDiffAt.comp τ hcoe
 
 end UpperHalfPlane
 
