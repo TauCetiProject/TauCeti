@@ -244,24 +244,26 @@ open SimplexCategory
 
 variable {C : Type*} [Category* C] (X : SimplicialObject C)
 
-/-- The faces of `joinVertex.op ⋙ X` are the faces of `X` avoiding the last vertex. -/
+/-- The faces of `joinVertex.op ⋙ X` are the faces of `X` omitting a vertex other than the last
+one, so containing the last vertex. -/
 theorem joinVertex_op_comp_δ {n : ℕ} (i : Fin (n + 2)) :
     δ (joinVertex.op ⋙ X) i = X.δ i.castSucc :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (joinVertex_map_δ i)
 
-/-- The degeneracies of `joinVertex.op ⋙ X` are the degeneracies of `X` fixing the last
-vertex. -/
+/-- The degeneracies of `joinVertex.op ⋙ X` are the degeneracies of `X` repeating a vertex other
+than the last one. -/
 theorem joinVertex_op_comp_σ {n : ℕ} (i : Fin (n + 1)) :
     σ (joinVertex.op ⋙ X) i = X.σ i.castSucc :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (joinVertex_map_σ i)
 
-/-- The faces of `vertexJoin.op ⋙ X` are the faces of `X` avoiding the first vertex. -/
+/-- The faces of `vertexJoin.op ⋙ X` are the faces of `X` omitting a vertex after the first one,
+so containing the first vertex. -/
 theorem vertexJoin_op_comp_δ {n : ℕ} (i : Fin (n + 2)) :
     δ (vertexJoin.op ⋙ X) i = X.δ i.succ :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (vertexJoin_map_δ i)
 
-/-- The degeneracies of `vertexJoin.op ⋙ X` are the degeneracies of `X` fixing the first
-vertex. -/
+/-- The degeneracies of `vertexJoin.op ⋙ X` are the degeneracies of `X` repeating a vertex after
+the first one. -/
 theorem vertexJoin_op_comp_σ {n : ℕ} (i : Fin (n + 1)) :
     σ (vertexJoin.op ⋙ X) i = X.σ i.succ :=
   congrArg (fun f ↦ X.map (Quiver.Hom.op f)) (vertexJoin_map_σ i)

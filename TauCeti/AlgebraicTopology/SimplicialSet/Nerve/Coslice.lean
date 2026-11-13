@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.CategoryTheory.ComposableArrows.Under
 
 /-!
@@ -69,21 +70,22 @@ lemma underEquiv_symm_map_coe {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : Composa
       (SimplexCategory.δ_zero_comp_vertexJoin_map f)).trans (h₂.trans (h₃.trans
         (ComposableArrows.precomp_δ₀ _ _).symm)))) ?_
   -- The first arrow of the reindexed string runs from the vertex 0 to the vertex f 0 + 1.
+  -- Rewriting the indices along `vertexJoin_map_zero` and `vertexJoin_map_succ` changes the
+  -- dependent proof of `0 ≤ f 0 + 1`, so `key` transports along them by `subst`.
   have key (i j : Fin (n + 2)) (hij : i ≤ j) (hi : i = 0) (hj : j = (f.toOrderHom 0).succ) :
       ((ComposableArrows.underEquiv x n).symm s).1.totalArrow i j hij =
         ((ComposableArrows.underEquiv x n).symm s).1.totalArrow 0 (f.toOrderHom 0).succ
           (Fin.zero_le _) := by
     subst hi hj
     rfl
-  refine (ComposableArrows.totalArrow_whiskerLeft _ _ _ _ _).trans
+  refine (nerve.totalArrow_map _ _ _ _ _).trans
     ((key _ _ _ (SimplexCategory.vertexJoin_map_zero f)
       (SimplexCategory.vertexJoin_map_succ f 0)).trans
-        ((ComposableArrows.totalArrow_precomp_zero_succ _ _ _).trans ?_))
-  -- The first structure arrow followed by the arrow to f 0 is the structure arrow of f 0.
-  exact (congrArg (fun a ↦ (⟨x, _, a⟩ : Quiver.Total C))
-    (Under.w (s.map (homOfLE (Fin.zero_le (f.toOrderHom 0)))))).trans
-      (ComposableArrows.totalArrow_def ((ComposableArrows.underEquiv x m).symm
-        ((nerve (Under x)).map f.op s)).1 0 1 (Fin.zero_le _)).symm
+        ((ComposableArrows.underEquiv_symm_apply_coe_totalArrow_zero_succ x s _).trans ?_))
+  -- Both first arrows are the structure arrow of the vertex f 0 of s.
+  exact (congrArg (fun a : Under x ↦ (⟨x, a.right, a.hom⟩ : Quiver.Total C))
+    (nerve.map_obj f s 0)).symm.trans
+      (ComposableArrows.underEquiv_symm_apply_coe_totalArrow_zero_succ x _ 0).symm
 
 /-- The cone `Δ[0] ⋆ Δ[n] ⟶ nerve C` on a string of arrows under x: the string of n + 1 arrows
 prepending the structure arrow of its first object, read through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
@@ -102,7 +104,8 @@ private lemma cone_inl (n : ℕ) (s : ComposableArrows (Under x) n) :
   rw [cone, join.inl_comp_coneIso_hom_assoc]
   -- The vertex 0 of the prepended string is x.
   exact (SSet.yonedaEquiv_symm_naturality_left _ _).trans
-    ((congrArg _ (ComposableArrows.ext₀ rfl)).trans (yonedaEquiv_symm_zero _))
+    ((congrArg _ ((nerve.map_const _ 0).trans (congrArg nerveEquiv.symm
+      ((ComposableArrows.underEquiv x n).symm s).2))).trans (yonedaEquiv_symm_zero _))
 
 private lemma cone_inr (n : ℕ) (s : ComposableArrows (Under x) n) :
     join.inr Δ[0] Δ[n] ≫ cone x n s =
@@ -127,9 +130,10 @@ private noncomputable def coneSimplex {n : ℕ}
     {t : ComposableArrows C (n + 1) // t.obj 0 = x} :=
   ⟨SSet.yonedaEquiv ((join.coneIso n).inv ≫ τ.1),
     -- The vertex 0 of the simplex is the cone point of τ.
-    (congrArg nerveEquiv (((SSet.yonedaEquiv_naturality _ _).trans (congrArg SSet.yonedaEquiv
-      ((join.const_zero_comp_coneIso_inv_assoc τ.1).trans τ.2))).trans
-        (SSet.yonedaEquiv_const _))).trans (Equiv.apply_symm_apply _ _)⟩
+    nerveEquiv.symm.injective ((nerve.map_const _ 0).symm.trans
+      (((SSet.yonedaEquiv_naturality _ _).trans (congrArg SSet.yonedaEquiv
+        ((join.const_zero_comp_coneIso_inv_assoc τ.1).trans τ.2))).trans
+          (SSet.yonedaEquiv_const _)))⟩
 
 private lemma cone_coneSimplex {n : ℕ}
     (τ : {τ : join Δ[0] Δ[n] ⟶ nerve C // join.inl _ _ ≫ τ = const (nerveEquiv.symm x)}) :
@@ -144,11 +148,22 @@ private lemma coneSimplex_cone {n : ℕ} (s : ComposableArrows (Under x) n) :
   Subtype.ext ((congrArg SSet.yonedaEquiv (Iso.inv_hom_id_assoc _ _)).trans
     (Equiv.apply_symm_apply _ _))
 
-/-- The comparison map, sending a string of arrows under x to its cone. -/
-private noncomputable def toCoslice :
-    nerve (Under x) ⟶ coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) where
-  app n := ↾fun s ↦ coslice.objEquiv.symm ⟨cone x n.unop.len s, cone_inl x _ s⟩
-  naturality n m f := by
+/-- Strings of arrows under x correspond to cones with cone point x, by taking a string to its
+cone and a cone to the string under x of its simplex. -/
+private noncomputable def coneEquiv (n : SimplexCategoryᵒᵖ) :
+    (nerve (Under x)).obj n ≃ (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj n where
+  toFun s := coslice.objEquiv.symm ⟨cone x n.unop.len s, cone_inl x _ s⟩
+  invFun τ := ComposableArrows.underEquiv x _ (coneSimplex x (coslice.objEquiv τ))
+  left_inv s := (congrArg (fun τ ↦ ComposableArrows.underEquiv x _ (coneSimplex x τ))
+    (coslice.objEquiv.apply_symm_apply _)).trans
+      ((congrArg _ (coneSimplex_cone x s)).trans (Equiv.apply_symm_apply _ _))
+  right_inv τ := coslice.objEquiv.symm_apply_eq.mpr
+    (Subtype.ext (cone_coneSimplex x (coslice.objEquiv τ)))
+
+/-- The nerve of the under category of x is the coslice of the nerve under x. -/
+noncomputable def cosliceIso :
+    nerve (Under x) ≅ coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) :=
+  NatIso.ofComponents (fun n ↦ (coneEquiv x n).toIso) fun f ↦ by
     ext s
     refine coslice.objEquiv.injective (Subtype.ext ?_)
     exact ((congrArg Subtype.val (Equiv.apply_symm_apply _ _)).trans
@@ -157,36 +172,13 @@ private noncomputable def toCoslice :
           (congrArg Subtype.val (Equiv.apply_symm_apply _ _))).symm.trans
             (coslice.objEquiv_map_coe _ _).symm)
 
-/-- Evaluating the comparison map gives the cone on a string of arrows under x. -/
-private lemma objEquiv_toCoslice_app (n : SimplexCategoryᵒᵖ) (s : (nerve (Under x)).obj n) :
-    coslice.objEquiv ((toCoslice x).app n s) = ⟨cone x n.unop.len s, cone_inl x _ s⟩ :=
-  Equiv.apply_symm_apply _ _
-
-private instance isIso_toCoslice : IsIso (toCoslice x) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro n
-  rw [isIso_iff_bijective]
-  refine Function.bijective_iff_has_inverse.mpr
-    ⟨fun τ ↦ ComposableArrows.underEquiv x _ (coneSimplex x (coslice.objEquiv τ)), fun s ↦ ?_,
-      fun τ ↦ ?_⟩
-  · exact (congrArg (fun τ ↦ ComposableArrows.underEquiv x _ (coneSimplex x τ))
-      (objEquiv_toCoslice_app x n s)).trans
-        ((congrArg _ (coneSimplex_cone x s)).trans (Equiv.apply_symm_apply _ _))
-  · exact coslice.objEquiv.injective (Subtype.ext ((congrArg Subtype.val
-      (objEquiv_toCoslice_app x n _)).trans (cone_coneSimplex x (coslice.objEquiv τ))))
-
-/-- The nerve of the under category of x is the coslice of the nerve under x. -/
-noncomputable def cosliceIso :
-    nerve (Under x) ≅ coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) :=
-  asIso (toCoslice x)
-
 /-- The coslice simplex of a string of n arrows under x is the string of n + 1 arrows prepending
 its first structure arrow, read through `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
 lemma objEquiv_cosliceIso_hom_app_coe {n : ℕ} (s : ComposableArrows (Under x) n) :
     (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋n⦌) s)).1 =
       (join.coneIso n).hom ≫
         SSet.yonedaEquiv.symm ((ComposableArrows.underEquiv x n).symm s).1 :=
-  congrArg Subtype.val (objEquiv_toCoslice_app x (op ⦋n⦌) s)
+  congrArg Subtype.val (coslice.objEquiv.apply_symm_apply _)
 
 /-- The string of n + 1 arrows starting at x underlying the inverse image of a coslice simplex
 `τ : Δ[0] ⋆ Δ[n] ⟶ nerve C` is τ read through `Δ[n + 1] ≅ Δ[0] ⋆ Δ[n]`. -/
@@ -194,10 +186,7 @@ lemma underEquiv_symm_cosliceIso_inv_app_coe {n : ℕ}
     (τ : (coslice (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C)).obj (op ⦋n⦌)) :
     ((ComposableArrows.underEquiv x n).symm ((cosliceIso x).inv.app (op ⦋n⦌) τ)).1 =
       SSet.yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv τ).1) :=
-  (SSet.yonedaEquiv.apply_symm_apply _).symm.trans (congrArg SSet.yonedaEquiv
-    ((Iso.inv_hom_id_assoc _ _).symm.trans (congrArg _
-      ((objEquiv_cosliceIso_hom_app_coe x _).symm.trans (congrArg (fun σ ↦ (coslice.objEquiv σ).1)
-        (Iso.inv_hom_id_apply ((cosliceIso x).app (op ⦋n⦌)) τ))))))
+  congrArg Subtype.val ((ComposableArrows.underEquiv x n).symm_apply_apply _)
 
 /-- Restricting `(cosliceIso x).hom.app n s` to the base simplex along `join.inr` forgets the
 structure arrows of `s`. This is the `SSet.coslice.π_app` normal form of its projection. -/
@@ -206,7 +195,8 @@ lemma yonedaEquiv_inr_comp_objEquiv_cosliceIso_hom_app_coe (n : SimplexCategory�
     (s : (nerve (Under x)).obj n) :
     SSet.yonedaEquiv (join.inr Δ[0] (stdSimplex.obj n.unop) ≫
       (coslice.objEquiv ((cosliceIso x).hom.app n s)).1) = s ⋙ Under.forget x :=
-  (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.1)) (objEquiv_toCoslice_app x n s)).trans
+  (congrArg (fun τ ↦ SSet.yonedaEquiv (join.inr _ _ ≫ τ.1))
+    (coslice.objEquiv.apply_symm_apply ⟨cone x n.unop.len s, cone_inl x _ s⟩)).trans
     ((congrArg SSet.yonedaEquiv (cone_inr x _ s)).trans (Equiv.apply_symm_apply _ _))
 
 /-- Restricting the comparison along `join.inr` forgets the structure arrows of `s`. This is the
@@ -237,9 +227,9 @@ lemma objEquiv_cosliceIso_hom_app_nerveEquiv_symm_coe (a : Under x) :
     (coslice.objEquiv ((cosliceIso x).hom.app (op ⦋0⦌)
       (nerveEquiv.symm a))).1 =
         (join.coneIso 0).hom ≫ SSet.yonedaEquiv.symm (ComposableArrows.mk₁ a.hom) :=
-  (objEquiv_cosliceIso_hom_app_coe x _).trans (congrArg _ (congrArg _
-    -- The structure arrow of the vertex is a.hom, between identities of its endpoints.
-    (ComposableArrows.ext₁ rfl rfl ((Category.id_comp _).trans (Category.comp_id a.hom)).symm)))
+  -- `nerveEquiv.symm a` is `ComposableArrows.mk₀ a` by definition of `nerveEquiv`.
+  (objEquiv_cosliceIso_hom_app_coe x _).trans
+    (congrArg _ (congrArg _ (ComposableArrows.underEquiv_symm_mk₀_coe x a)))
 
 end CategoryTheory.nerve
 
