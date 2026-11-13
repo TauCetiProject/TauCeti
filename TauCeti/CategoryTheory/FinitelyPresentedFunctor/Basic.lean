@@ -38,6 +38,12 @@ presented functors are also closed under binary biproducts. So when `C` is nonem
 biproducts (for example, additive), `mod C` contains zero (which only needs `C` nonempty) and is
 closed under isomorphisms, cokernels and finite products and coproducts in the functor category.
 
+For a property `P` of objects of `C`, the restriction `(-, X)|_P` of a representable functor to the
+full subcategory of `P` is finitely generated exactly when `X` has a right `P`-approximation: a
+morphism `u : Y ⟶ X` from an object of `P` through which every morphism from an object of `P` to
+`X` factors. By the Yoneda lemma, an epimorphism `(-, Y) ⟶ (-, X)|_P` is postcomposition with
+such a `u`.
+
 ## Main declarations
 
 * `TauCeti.IsFinitelyGeneratedFunctor`, `TauCeti.IsFinitelyPresentedFunctor`: the two finiteness
@@ -54,6 +60,9 @@ closed under isomorphisms, cokernels and finite products and coproducts in the f
 * `TauCeti.IsFinitelyPresentedFunctor.of_isColimit_cokernelCofork`: closure under cokernels of
   morphisms out of finitely generated functors.
 * `TauCeti.IsFinitelyPresentedFunctor.biprod`: closure under binary biproducts.
+* `CategoryTheory.ObjectProperty.isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff`:
+  the restriction `(-, X)|_P` is finitely generated exactly when `X` has a right
+  `P`-approximation.
 
 ## References
 
@@ -268,3 +277,46 @@ instance [Nonempty C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteProduc
 end Biproducts
 
 end TauCeti
+
+namespace CategoryTheory.ObjectProperty
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] (P : ObjectProperty C)
+
+/-- **Finite generation of a restricted representable functor.** For a property `P` of objects
+of `C`, the restriction `(-, X)|_P` of `(-, X)` to the full subcategory of `P` is finitely generated
+exactly when some morphism `u : Y ⟶ X` out of an object of `P` is a right `P`-approximation of `X`:
+every morphism to `X` from an object of `P` factors through `u`. -/
+theorem isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff (X : C) :
+    IsFinitelyGeneratedFunctor (P.restrictedPreadditiveYoneda.obj X) ↔
+      ∃ (Y : C) (_ : P Y) (u : Y ⟶ X), ∀ Z, P Z → ∀ g : Z ⟶ X, ∃ h : Z ⟶ Y, h ≫ u = g := by
+  constructor
+  · rintro ⟨Y, p, hp⟩
+    refine ⟨Y.obj, Y.property, p.app (op Y) (𝟙 Y), fun Z hZ g ↦ ?_⟩
+    rw [NatTrans.epi_iff_epi_app] at hp
+    obtain ⟨h, rfl⟩ := (AddCommGrpCat.epi_iff_surjective _).1 (hp (op ⟨Z, hZ⟩)) g
+    refine ⟨h.hom, ?_⟩
+    have := NatTrans.naturality_apply p h.op (𝟙 Y)
+    simp only [preadditiveYoneda_obj_map_apply, Category.comp_id] at this
+    exact this.symm
+  · rintro ⟨Y, hY, u, hu⟩
+    have : Epi (P.restrictedPreadditiveYoneda.map u) := by
+      rw [NatTrans.epi_iff_epi_app]
+      intro Q
+      rw [AddCommGrpCat.epi_iff_surjective]
+      intro (g : Q.unop.obj ⟶ X)
+      obtain ⟨h, rfl⟩ := hu _ Q.unop.property g
+      exact ⟨h, P.restrictedPreadditiveYoneda_map_app_apply u Q h⟩
+    exact IsFinitelyGeneratedFunctor.of_epi
+      ⟨⟨Y, hY⟩, P.preadditiveYonedaIsoRestricted.hom.app ⟨Y, hY⟩, inferInstance⟩
+      (P.restrictedPreadditiveYoneda.map u)
+
+/-- The restriction `(-, X)|_P` of a representable functor to the full subcategory of `P` is
+finitely generated when `X` itself satisfies `P`. -/
+theorem isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj {X : C} (hX : P X) :
+    IsFinitelyGeneratedFunctor (P.restrictedPreadditiveYoneda.obj X) :=
+  (P.isFinitelyGeneratedFunctor_restrictedPreadditiveYoneda_obj_iff X).2
+    ⟨X, hX, 𝟙 X, fun _ _ g ↦ ⟨g, Category.comp_id g⟩⟩
+
+end CategoryTheory.ObjectProperty
