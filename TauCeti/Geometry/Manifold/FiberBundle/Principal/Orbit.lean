@@ -127,7 +127,7 @@ theorem orbitDiffeomorph_smul (p : P b) (a g : G) :
 
 /-- Applying the group coordinate of an arbitrary regular-fibre point recovers that point. -/
 @[simp]
-theorem op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π₀ x = b}) :
+theorem totalSpaceMk_op_orbitDiffeomorph_symm_smul (p : P b) (x : {x : T // π₀ x = b}) :
     letI := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b
     ι ⟨b, op ((orbitDiffeomorph G IB IG hn p).symm x) • p⟩ = x.1 := by
   let := ManifoldTotalSpace.fiberChartedSpace G P IB IG hn b

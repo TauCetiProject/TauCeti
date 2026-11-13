@@ -28,7 +28,7 @@ Smooth descent along the projection, which needs no submersion theory, is in
 * `TauCeti.ManifoldTotalSpace.isSubmersionOfComplement_proj` and `isSubmersion_proj`: the projection
   of a `C^n` fibre bundle is a `C^n` submersion.
 * `TauCeti.ManifoldTotalSpace.isRegularValue_proj`: every base point is a regular value
-  of the projection when `1 ≤ n`.
+  of the projection, without smoothness assumptions on the bundle's coordinate changes.
 
 ## References
 
@@ -76,14 +76,31 @@ theorem isSubmersion_proj :
       fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
   (isSubmersionOfComplement_proj n F E IB IF).isSubmersion
 
-/-- Every base point is a regular value of a smooth bundle projection, including when its
-fibre is empty. -/
-theorem isRegularValue_proj (hn : 1 ≤ n) (b : B) :
+omit [IsManifold IB n B] [IsManifold IF n F] [ContMDiffFiberBundle n F E IB IF] in
+/-- Every base point is a regular value of the bundle projection, including when its fibre is
+empty. Smoothness of the bundle's coordinate changes is not needed. -/
+theorem isRegularValue_proj (b : B) :
     TauCeti.IsRegularValue (IB.prod IF) IB
       (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) b := by
   rw [TauCeti.isRegularValue_iff]
-  exact fun x _ ↦ TauCeti.isRegularPoint_iff.2
-    ((isSubmersion_proj n F E IB IF).surjective_mfderiv
-      (ne_of_gt (zero_lt_one.trans_le hn)) x)
+  intro x _
+  obtain ⟨x, rfl⟩ := (homeomorph F E).surjective x
+  let e := trivializationAt F E x.proj
+  let s := fun b ↦ homeomorph F E (e.toOpenPartialHomeomorph.symm (b, (e x).2))
+  have hx : x.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E x.proj
+  have hsx : s x.proj = homeomorph F E x :=
+    congrArg (homeomorph F E) (e.symm_apply_mk_proj (e.mem_source.2 hx))
+  have hps : (fun b ↦ ((homeomorph F E).symm (s b)).proj) =ᶠ[𝓝 x.proj] id := by
+    filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
+    simpa [s] using e.proj_symm_apply' hb
+  have hs : ContMDiffAt IB (IB.prod IF) 1 s x.proj :=
+    contMDiffAt_trivializationAt_symm x.proj (e x).2
+  have hid := (hasMFDerivAt_id (I := IB) x.proj).congr_of_eventuallyEq_abuse hps
+  have hd := mfderiv_comp x.proj
+    ((contMDiff_proj 1 F E IB IF).mdifferentiableAt one_ne_zero)
+    (hs.mdifferentiableAt one_ne_zero)
+  rw [Function.comp_def, hid.mfderiv, hsx] at hd
+  refine TauCeti.isRegularPoint_iff.2 fun v ↦ ⟨mfderiv IB (IB.prod IF) s x.proj v, ?_⟩
+  exact (DFunLike.congr_fun hd v).symm
 
 end TauCeti.ManifoldTotalSpace
