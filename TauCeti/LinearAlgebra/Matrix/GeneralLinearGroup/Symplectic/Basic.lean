@@ -11,10 +11,11 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
 -- matrix coercion.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
+
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -38,7 +39,8 @@ transported across `Matrix.coe_units_inv`.
 
 Everything works over an arbitrary commutative ring and an arbitrary finite index type, including
 the empty index type and the zero ring; there is no nontriviality, rank, or characteristic
-hypothesis. The index type is `l ⊕ l` throughout, matching `Matrix.J`.
+hypothesis. The index type is `l ⊕ l` up to `GLSymplectic.map`, matching `Matrix.J`; from `JFin`
+on it is `Fin (m + m)`.
 
 The final sections construct the elementary one-parameter subgroups belonging to the long roots
 `±2eᵢ` and the short roots `eᵢ-eⱼ`, `eᵢ+eⱼ`, and `-eᵢ-eⱼ` in `Fin (m+m)` coordinates. The
@@ -65,7 +67,6 @@ symplectic coordinate Hopf algebra and group scheme live in
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
 * `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
-
 * `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
@@ -315,16 +316,9 @@ theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
 
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by
-  have hJ : JFin 2 R =
-      (Matrix.J (Fin 2) R).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := rfl
-  have e0 : finSumFinEquiv.symm (0 : Fin (2 + 2)) = Sum.inl 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e1 : finSumFinEquiv.symm (1 : Fin (2 + 2)) = Sum.inl 1 := by rw [Equiv.symm_apply_eq]; rfl
-  have e2 : finSumFinEquiv.symm (2 : Fin (2 + 2)) = Sum.inr 0 := by rw [Equiv.symm_apply_eq]; rfl
-  have e3 : finSumFinEquiv.symm (3 : Fin (2 + 2)) = Sum.inr 1 := by rw [Equiv.symm_apply_eq]; rfl
-  rw [hJ]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
+    simp [JFin, Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
 
 /-- The transported alternating form squares to `-1`, which is Mathlib's `Matrix.J_squared` read
 through the reindexing. -/
@@ -784,11 +778,8 @@ private theorem differenceShortRoot_mem {i j : Fin m} (hij : i ≠ j) (c : R) :
   rw [hfirst, hsecond, GLSymplectic.mem_iff_mem_symplecticGroup]
   rw [coe_differenceShortRootTransvectionUnits hij c]
   apply SymplecticGroup.fromBlocks_diagonal_mem
-  simp only [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_one,
-    Matrix.transpose_single, Matrix.mul_add, Matrix.add_mul, Matrix.one_mul, Matrix.mul_one]
-  rw [Matrix.single_mul_single_of_ne _ _ _ _ hij]
-  rw [add_zero, add_assoc, ← Matrix.single_add]
-  simp
+  simpa [Matrix.transvection] using
+    Matrix.transvection_mul_transvection_same j i hij.symm c (-c)
 
 private theorem positiveSumShortRoot_mem {i j : Fin m} (c : R) :
     transvectionUnit (finSumFinEquiv_inl_ne_inr i j) c *
