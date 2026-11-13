@@ -17,6 +17,9 @@ nonzero morphisms between them gives an idempotent endomorphism of the regular m
 with every endomorphism, that is, right multiplication by a central idempotent. Over a connected
 ring such a splitting is therefore trivial (`TauCeti.forall_or_forall_of_forall_hom_eq_zero`).
 
+Every nonzero module receives a nonzero morphism from one of the summands of such a biproduct
+decomposition of the regular module (`TauCeti.exists_hom_ne_zero_of_iso_biproduct`).
+
 This is the connectedness step in Auslander's theorem on classes of bounded length closed under
 irreducible maps, `TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/Component.lean`.
 -/
@@ -30,6 +33,26 @@ universe v w
 namespace TauCeti
 
 variable {A : Type v} [Ring A]
+
+/-- **Every nonzero module receives a nonzero morphism from a summand of the regular module.**
+If the regular module of `A` is a biproduct of modules `P j`, then every nonzero module `M` admits
+a nonzero morphism `P j ⟶ M` for some `j`. -/
+theorem exists_hom_ne_zero_of_iso_biproduct {J : Type*} {P : J → ModuleCat.{max v w} A}
+    [HasBiproduct P] (e : ModuleCat.of A (ULift.{w} A) ≅ ⨁ P) {M : ModuleCat.{max v w} A}
+    (hM : ¬ IsZero M) : ∃ (j : J) (f : P j ⟶ M), f ≠ 0 := by
+  have : Nontrivial M :=
+    not_subsingleton_iff_nontrivial.mp fun h ↦ hM (ModuleCat.isZero_iff_subsingleton.mpr h)
+  obtain ⟨x, hx⟩ := exists_ne (0 : M)
+  -- The morphism out of the regular module sending `1` to `x`.
+  let t : ModuleCat.of A (ULift.{w} A) ⟶ M := ModuleCat.ofHom
+    (LinearMap.toSpanSingleton A M x ∘ₗ (ULift.moduleEquiv (R := A) (M := A)).toLinearMap)
+  have ht : e.inv ≫ t ≠ 0 := fun h ↦ hx <| by
+    have h₀ : t = 0 := by simpa using congrArg (e.hom ≫ ·) h
+    simpa [t] using ConcreteCategory.congr_hom h₀ (ULift.up 1 : ULift.{w} A)
+  obtain ⟨j, hj⟩ : ∃ j, biproduct.ι P j ≫ e.inv ≫ t ≠ 0 := by
+    by_contra! hzero
+    exact ht (biproduct.hom_ext' _ _ fun j ↦ by rw [hzero j, comp_zero])
+  exact ⟨j, _, hj⟩
 
 /-- **Connected rings admit no Hom-orthogonal splitting of the regular module.** Let the regular
 module of a ring `A` without central idempotents other than `0` and `1` be a finite biproduct of

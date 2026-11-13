@@ -32,10 +32,10 @@ indecomposable summands of the ring.
 The same iteration, without the finiteness bookkeeping, shows that the target of a nonzero
 morphism out of an object of `T` is isomorphic to an object of `T`, as soon as morphisms out of
 objects of `T` can be pushed along non-isomorphisms that stay inside `T`
-(`TauCeti.exists_nonempty_iso_target_of_ne_zero`); dually for the source of a nonzero morphism into
-an object of `T`, with descending chains (`TauCeti.exists_nonempty_iso_source_of_ne_zero`). This is
-the argument behind Auslander's theorem on classes of modules of bounded length closed under
-irreducible maps.
+(`CategoryTheory.ObjectProperty.exists_nonempty_iso_target_of_ne_zero`); dually for the source of
+a nonzero morphism into an object of `T`, with descending chains
+(`CategoryTheory.ObjectProperty.exists_nonempty_iso_source_of_ne_zero`). This is the argument
+behind Auslander's theorem on classes of modules of bounded length closed under irreducible maps.
 
 ## References
 
@@ -168,7 +168,8 @@ non-isomorphism `g : X ⟶ Y`, there are a non-isomorphism `ι : X ⟶ E` with `
 `t : E ⟶ Y` with `c ≫ ι ≫ t ≠ 0`. If the composite of the first `N` links of any sequence of
 non-isomorphisms between objects of `T` vanishes, then the target of a nonzero morphism out of a
 member of `T` is isomorphic to a member of `T`. -/
-theorem exists_nonempty_iso_target_of_ne_zero (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
+theorem _root_.CategoryTheory.ObjectProperty.exists_nonempty_iso_target_of_ne_zero
+    (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
     (hstep : ∀ X, T X → ∀ (c : W ⟶ X) (g : X ⟶ Y), ¬ IsIso g → c ≫ g ≠ 0 →
       ∃ E, T E ∧ ∃ (ι : X ⟶ E) (t : E ⟶ Y), ¬ IsIso ι ∧ c ≫ ι ≫ t ≠ 0)
     (N : ℕ) (hN : ∀ (X : ℕ → C) (f : ∀ n, X n ⟶ X (n + 1)), (∀ n, T (X n)) →
@@ -186,16 +187,17 @@ theorem exists_nonempty_iso_target_of_ne_zero (hT : ∀ X, T X → ¬ IsZero X) 
     exact hQ
 
 /-- **A nonzero morphism into a class starts at a member of the class**, the dual of
-`TauCeti.exists_nonempty_iso_target_of_ne_zero`: morphisms are pulled back along
-non-isomorphisms inside the class, and the chains descend. -/
-theorem exists_nonempty_iso_source_of_ne_zero (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
+`CategoryTheory.ObjectProperty.exists_nonempty_iso_target_of_ne_zero`: morphisms are pulled back
+along non-isomorphisms inside the class, and the chains descend. -/
+theorem _root_.CategoryTheory.ObjectProperty.exists_nonempty_iso_source_of_ne_zero
+    (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
     (hstep : ∀ X, T X → ∀ (c : X ⟶ W) (g : Y ⟶ X), ¬ IsIso g → g ≫ c ≠ 0 →
       ∃ E, T E ∧ ∃ (ι : E ⟶ X) (t : Y ⟶ E), ¬ IsIso ι ∧ t ≫ ι ≫ c ≠ 0)
     (N : ℕ) (hN : ∀ (X : ℕ → C) (f : ∀ n, X (n + 1) ⟶ X n), (∀ n, T (X n)) →
       (∀ n, ¬ IsIso (f n)) → (Functor.ofOpSequence f).map (homOfLE (Nat.zero_le N)).op = 0)
     (hW : T W) {f : Y ⟶ W} (hf : f ≠ 0) : ∃ Q, T Q ∧ Nonempty (Y ≅ Q) := by
-  obtain ⟨Q, hQ, ⟨e⟩⟩ := exists_nonempty_iso_target_of_ne_zero (C := Cᵒᵖ) (fun X ↦ T X.unop)
-    (fun X hX hz ↦ hT _ hX hz.unop) (W := Opposite.op W) (Y := Opposite.op Y)
+  obtain ⟨Q, hQ, ⟨e⟩⟩ := ObjectProperty.exists_nonempty_iso_target_of_ne_zero (C := Cᵒᵖ)
+    (fun X ↦ T X.unop) (fun X hX hz ↦ hT _ hX hz.unop) (W := Opposite.op W) (Y := Opposite.op Y)
     (fun X hX c g hg hc ↦ by
       obtain ⟨E, hE, ι, t, hι, ht⟩ := hstep X.unop hX c.unop g.unop
         (fun h ↦ hg ((isIso_unop_iff g).mp h)) (fun h ↦ hc (Quiver.Hom.unop_inj (by simpa using h)))
