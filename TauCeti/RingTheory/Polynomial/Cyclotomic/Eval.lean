@@ -19,11 +19,11 @@ the two-variable forms of Mathlib's bounds `(q - 1) ^ φ(n) < Φ_n(q) < (q + 1) 
 `q > 1`, obtained from `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)`; they are also stated for integer bases.
 For a prime `p` and bases `a, b ≥ 1`, the geometric sum
 `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `p`, and exceeds `p` once `a > 1`; the
-same holds for `Φ_{p ^ k}(a, b) = Φ_p(a ^ p ^ (k - 1), b ^ p ^ (k - 1))`.
+same holds for `Φ_{p ^ k}(a, b) = Φ_p(a ^ p ^ (k - 1), b ^ p ^ (k - 1))` when `k ≠ 0`.
 
 The lower bounds show that `Φ_n(a, b)` is large compared with the prime divisors of `n`, which is
 how the Bang–Zsigmondy theorem rules out cyclotomic values made only of nonprimitive prime
-divisors. For integers `0 < b` with `a - b ≥ 2`, every prime factor `p` of `n ≠ 0` satisfies
+divisors. For real `0 < b` with `a - b ≥ 2`, every prime factor `p` of `n ≠ 0` satisfies
 `p < Φ_n(a, b)`, because `p ≤ 2 ^ φ(n) ≤ (a - b) ^ φ(n)`.
 
 ## Main results
@@ -42,15 +42,17 @@ divisors. For integers `0 < b` with `a - b ≥ 2`, every prime factor `p` of `n 
 * `TauCeti.natCast_le_homogeneousCyclotomic_prime_pow`,
   `TauCeti.natCast_lt_homogeneousCyclotomic_prime_pow`: the same bounds for `Φ_{p ^ k}(a, b)`,
   `k ≠ 0`.
-* `Int.natCast_lt_homogeneousCyclotomic_of_dvd`: `p < Φ_n(a, b)` for every prime `p ∣ n ≠ 0` and
-  integers `0 < b` with `a - b ≥ 2`.
+* `TauCeti.natCast_lt_homogeneousCyclotomic_of_prime_of_dvd`,
+  `Int.natCast_lt_homogeneousCyclotomic_of_prime_of_dvd`: `p < Φ_n(a, b)` for every prime
+  `p ∣ n ≠ 0` and real or integer bases `0 < b` with `a - b ≥ 2`.
 
 ## References
 
 * [Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023)], Corollary 2.8.
 * [G. D. Birkhoff and H. S. Vandiver, *On the integral divisors of `a ^ n - b ^ n`*,
-  Ann. of Math. (2) 5 (1904), 173–180], pp. 178–179.
-* [M. Roitman, *On Zsigmondy primes*, Proc. Amer. Math. Soc. 125 (1997), 1913–1919], Lemma 1.
+  Ann. of Math. (2) 5 (1904), 173–180], proof of Theorem V, pp. 178–179.
+* [M. Roitman, *On Zsigmondy primes*, Proc. Amer. Math. Soc. 125 (1997), 1913–1919], Lemma 1
+  and the proof of Theorem 3.
 -/
 
 public section
@@ -102,9 +104,28 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℝ} (hb : 0 �
         (cyclotomic_eval_le_add_one_pow_totient ((one_lt_div hb).2 hba) n) (pow_nonneg hb.le _)
     _ = (a + b) ^ n.totient := by rw [← mul_pow, add_one_mul, div_mul_cancel₀ a hb.ne']
 
+/-- For real `0 < b` with `2 ≤ a - b`, every prime factor `p` of `n ≠ 0` satisfies
+`p < Φ_n(a, b)`. The hypothesis `2 ≤ a - b` is needed: `Φ_6(2, 1) = 3`. -/
+theorem natCast_lt_homogeneousCyclotomic_of_prime_of_dvd {n p : ℕ} (hn : n ≠ 0) (hp : p.Prime)
+    (hpn : p ∣ n) {a b : ℝ} (hb : 0 < b) (hab : 2 ≤ a - b) :
+    (p : ℝ) < homogeneousCyclotomic n a b := by
+  have htot : p - 1 ≤ n.totient := by
+    rw [← Nat.totient_prime hp]
+    exact Nat.le_of_dvd (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn)) (Nat.totient_dvd_of_dvd hpn)
+  have hp2 : p ≤ 2 ^ n.totient := by
+    have := (p - 1).lt_two_pow_self
+    have := Nat.pow_le_pow_right two_pos htot
+    have := hp.pos
+    omega
+  calc (p : ℝ) ≤ 2 ^ n.totient := by exact_mod_cast hp2
+    _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ zero_le_two hab _
+    _ < homogeneousCyclotomic n a b :=
+        sub_pow_totient_lt_homogeneousCyclotomic
+          (hp.two_le.trans (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hpn)) hb (by linarith)
+
 /-! ### Prime and prime-power indices -/
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
 
 /-- For a prime `p` and `a, b ≥ 1` in an ordered commutative ring, `p ≤ Φ_p(a, b)`: each of the
 `p` terms of `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `1`. -/
@@ -177,22 +198,11 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℤ} (hb : 0 �
     (by exact_mod_cast hb) (by exact_mod_cast hba)
 
 /-- For integers `0 < b` with `2 ≤ a - b`, every prime factor `p` of `n ≠ 0` satisfies
-`p < Φ_n(a, b)`. The hypothesis `2 ≤ a - b` is needed: `Φ_6(2, 1) = 3`. -/
-theorem natCast_lt_homogeneousCyclotomic_of_dvd {n p : ℕ} (hn : n ≠ 0) (hp : p.Prime)
+`p < Φ_n(a, b)`. -/
+theorem natCast_lt_homogeneousCyclotomic_of_prime_of_dvd {n p : ℕ} (hn : n ≠ 0) (hp : p.Prime)
     (hpn : p ∣ n) {a b : ℤ} (hb : 0 < b) (hab : 2 ≤ a - b) :
     (p : ℤ) < homogeneousCyclotomic n a b := by
-  have htot : p - 1 ≤ n.totient := by
-    rw [← Nat.totient_prime hp]
-    exact Nat.le_of_dvd (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn)) (Nat.totient_dvd_of_dvd hpn)
-  have hp2 : p ≤ 2 ^ n.totient := by
-    have := (p - 1).lt_two_pow_self
-    have := Nat.pow_le_pow_right two_pos htot
-    have := hp.pos
-    omega
-  calc (p : ℤ) ≤ 2 ^ n.totient := by exact_mod_cast hp2
-    _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ zero_le_two hab _
-    _ < homogeneousCyclotomic n a b :=
-        sub_pow_totient_lt_homogeneousCyclotomic
-          (hp.two_le.trans (Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hpn)) hb (by omega)
+  exact_mod_cast TauCeti.natCast_lt_homogeneousCyclotomic_of_prime_of_dvd hn hp hpn (a := a)
+    (b := b) (by exact_mod_cast hb) (by exact_mod_cast hab)
 
 end Int
