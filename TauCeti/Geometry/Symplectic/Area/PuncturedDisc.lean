@@ -139,7 +139,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
   have hsub {r : ℝ} (hr : 0 < r) : A r ⊆ D := fun z hz ↦ ⟨hr.trans_le hz.1, hz.2⟩
   have harea : IntegrableOn area D :=
-    ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq henergy
+    ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq 1 I henergy
   obtain ⟨r, hr, hrlim, hactionlim⟩ := ω.exists_tendsto_integral_apply_circleMap_nhds_zero
     z₀ hb (fun z hz ↦ (hu z hz).of_le one_le_two) henergy
   -- Dominated convergence exhausts the punctured disc even though the radii need not be monotone.

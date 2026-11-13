@@ -86,9 +86,9 @@ because that is what Mathlib's versions of them ask for.
   `TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul` and
   `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul` — the change of variables formula for a
   holomorphic injection, in Lebesgue, integrability and Bochner form.
-* `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — under the inversion `w = z⁻¹`, the
-  squared norm of the derivative of a map is integrable near infinity exactly when that of the
-  inverted map is integrable near zero.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — inversion preserves finite energy: on any
+  measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable on `s`
+  exactly when that of `u` is integrable on `s⁻¹`.
 
 ## References
 
@@ -279,10 +279,10 @@ theorem integral_image_eq_integral_norm_deriv_sq_smul (hf : ∀ z ∈ s, Differe
 
 /-! ### Inversion -/
 
-/-- **The energy of a map near infinity is the energy near zero of the inverted map.** On a
-measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable exactly when
-that of `u` is integrable on the image of `s` under inversion: the area distortion `‖w‖⁻⁴` of the
-inversion is the square of the factor `‖w‖⁻²` by which it scales derivatives. -/
+/-- **Inversion preserves finite energy.** On a measurable set `s`, the squared norm of the
+derivative of `w ↦ u w⁻¹` is integrable on `s` exactly when that of `u` is integrable on the image
+`s⁻¹` of `s` under inversion: the area distortion `‖w‖⁻⁴` of the inversion is the square of the
+factor `‖w‖⁻²` by which it scales derivatives. -/
 theorem integrableOn_norm_fderiv_comp_inv_sq_iff {u : ℂ → E} (hs : MeasurableSet s) :
     IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) s ↔
       IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) ((·⁻¹) '' s) := by

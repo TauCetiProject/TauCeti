@@ -8,13 +8,12 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PointwiseDecay
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Inv
+import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 import TauCeti.LinearAlgebra.Complex.Module
-import Mathlib.MeasureTheory.Function.Jacobian
-import Mathlib.RingTheory.Complex
 
 /-!
 # Continuous removal of finite-energy punctures
@@ -115,8 +114,9 @@ theorem exists_continuousOn_update_of_finite_energy
 /-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
 for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
 map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
-integrable energy density outside the disc of radius `R`. The Jacobian `‖w‖⁻⁴` of the inversion
-cancels the square of its conformal factor `‖w‖⁻²`. -/
+integrable energy density outside the disc of radius `R`. The Cauchy--Riemann equation bounds
+`‖du‖` by `(1 + M) ‖∂ₛu‖`, and inversion preserves finite energy
+(`TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff`). -/
 private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
     (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
@@ -127,35 +127,24 @@ private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
   set D : Set ℂ := ball 0 R⁻¹ \ {0}
   have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
   have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
-  -- The change of variables `z = w⁻¹`, whose real Jacobian is `‖w‖⁻⁴ = ‖-(w ^ 2)⁻¹‖ ^ 2`.
-  set f' : ℂ → ℂ →L[ℝ] ℂ := fun w ↦
-    (ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (-(w ^ 2)⁻¹)).restrictScalars ℝ
-  have hdet (w : ℂ) : |(f' w).det| = ‖-(w ^ 2)⁻¹‖ ^ 2 := by
-    have : (f' w : ℂ →ₗ[ℝ] ℂ) = Algebra.lmul ℝ ℂ (-(w ^ 2)⁻¹) := by
-      ext h
-      simp [f', mul_comm]
-    rw [ContinuousLinearMap.det, this, ← Algebra.norm_apply, Algebra.norm_complex_apply,
-      Complex.normSq_eq_norm_sq, abs_of_nonneg (sq_nonneg _)]
-  have hchange := (integrableOn_image_iff_integrableOn_abs_det_fderiv_smul (f' := f') volume hDm
-    (fun w hw ↦ ((hasDerivAt_inv hw.2).hasFDerivAt.restrictScalars ℝ).hasFDerivWithinAt)
-    inv_injective.injOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)).1
-    (henergy.mono_set hDE.image_subset)
-  -- Pointwise, `‖∂ₛ(u ∘ inv)‖ ≤ (1 + M) ‖w‖⁻² ‖∂ₛu‖` by the Cauchy--Riemann equation.
-  have hbound (w : ℂ) (hw : w ∈ D) : ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2 ≤
-      (1 + M) ^ 2 * (|(f' w).det| * ‖fderiv ℝ u w⁻¹ 1‖ ^ 2) := by
-    have hle := ContinuousLinearMap.norm_apply_le_of_apply_I_eq (hCR _ (hDE hw)) (hM _ (hDE hw))
-      (-(w ^ 2)⁻¹)
-    rw [fderiv_comp_inv_apply hw.2, mul_one, hdet]
-    calc _ ≤ ((1 + M) * ‖fderiv ℝ u w⁻¹ 1‖ * ‖-(w ^ 2)⁻¹‖) ^ 2 :=
-          pow_le_pow_left₀ (norm_nonneg _) hle 2
-      _ = _ := by ring
-  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
-    refine Integrable.mono' (hchange.const_mul ((1 + M) ^ 2))
-      ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable ?_
-    refine (ae_restrict_iff' hDm).2 (Eventually.of_forall fun w hw ↦ ?_)
-    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-    simpa only [smul_eq_mul] using hbound w hw
-  exact hD.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
+  -- By the Cauchy--Riemann equation, `‖du‖ ≤ (1 + M) ‖∂ₛu‖` outside the disc of radius `R`.
+  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (closedBall 0 R)ᶜ := by
+    refine (henergy.const_mul ((1 + M) ^ 2)).mono'
+      ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+      (ae_restrict_of_forall_mem isClosed_closedBall.isOpen_compl.measurableSet fun z hz ↦ ?_)
+    rw [norm_pow, norm_norm, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM z hz) le_rfl) 2
+  -- Inversion preserves finite energy.
+  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) D :=
+    (integrableOn_norm_fderiv_comp_inv_sq_iff hDm).2 (hfull.mono_set hDE.image_subset)
+  have hD1 : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
+    refine hD.mono' ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable
+      (ae_of_all _ fun w ↦ ?_)
+    rw [norm_pow, norm_norm]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      (by simpa using (fderiv ℝ (fun w ↦ u w⁻¹) w).le_opNorm (1 : ℂ)) 2
+  exact hD1.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
 
 /-- **A finite-energy plane has a limit at infinity.** A `C³` pseudoholomorphic curve on the
 exterior `‖z‖ > R` of a disc, with compact image, uniformly positive taming constant, `C²` target

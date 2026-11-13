@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.Conformal.Area
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
@@ -108,7 +108,7 @@ theorem integral_fderiv_apply_eq_zero (ω : SymplecticForm V) {u : ℂ → V} (h
     simpa only [integral_apply_deriv_comp_inv_circleMap, neg_neg, neg_zero] using hlim.neg
   -- The areas of the discs these circles bound converge to the total area.
   have harea : Integrable fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I) :=
-    integrableOn_univ.1 (ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
+    integrableOn_univ.1 (ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq 1 I
       henergy.integrableOn)
   have hdisc (n : ℕ) : ∫ z in closedBall (0 : ℂ) (r n)⁻¹, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
       (1 / 2 : ℝ) * action (r n)⁻¹ :=
@@ -123,15 +123,13 @@ integral of `ω(∂ₛu, ∂ₜu)` over the plane is zero. -/
 theorem integral_fderiv_stdComplexLine_eq_zero (ω : SymplecticForm V) {u : ℝ × ℝ → V}
     (hu : ContDiff ℝ 2 u) (henergy : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) :
     ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
+  -- `equivRealProdCLM` and `measurableEquivRealProd` are the same map `z ↦ (z.re, z.im)`.
   have h := ω.integral_fderiv_apply_eq_zero (hu.comp equivRealProdCLM.contDiff)
-    ((integrable_norm_fderiv_comp_sq_iff equivRealProdCLM measurePreserving_equivRealProdCLM).2
+    ((integrable_norm_fderiv_comp_sq_iff equivRealProdCLM volume_preserving_equiv_real_prod).2
       henergy)
   simp only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I] at h
-  have hemb : MeasurableEmbedding (equivRealProdCLM : ℂ → ℝ × ℝ) := by
-    simpa only [ContinuousLinearEquiv.coe_toHomeomorph] using
-      equivRealProdCLM.toHomeomorph.measurableEmbedding
-  rwa [measurePreserving_equivRealProdCLM.integral_comp hemb fun z ↦
-    ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)] at h
+  rwa [← volume_preserving_equiv_real_prod.integral_comp' fun z ↦
+    ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)]
 
 end SymplecticForm
 

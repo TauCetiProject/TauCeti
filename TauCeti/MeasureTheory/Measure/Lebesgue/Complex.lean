@@ -24,8 +24,6 @@ imaginary part integrable on a rectangle of positive width is integrable on the 
 and a function of the real or imaginary part integrates by Fubini as the length of the other
 side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`,
 `Complex.setLIntegral_reProdIm_comp_im`).
-The real-linear identification `Complex.equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` preserves area
-(`Complex.measurePreserving_equivRealProdCLM`).
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
@@ -127,15 +125,6 @@ theorem measurePreserving_coordinateSwapCLE :
   rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
-
-/-- The real-linear identification `ℂ ≃ ℝ × ℝ` preserves planar area. -/
-theorem measurePreserving_equivRealProdCLM :
-    MeasurePreserving equivRealProdCLM (volume : Measure ℂ) volume := by
-  have heq : (equivRealProdCLM : ℂ → ℝ × ℝ) = measurableEquivRealProd := by
-    funext z
-    rw [equivRealProdCLM_apply, measurableEquivRealProd_apply]
-  rw [heq]
-  exact volume_preserving_equiv_real_prod
 
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
