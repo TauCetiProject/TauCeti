@@ -92,19 +92,19 @@ theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ
   have hGint : Integrable (G : ℝ → ℂ) := G.integrable
   have hsum := hGint.norm.hasSum_intervalIntegral_comp_add_int
   have hmeas (ℓ : ℤ) : Measurable fun x : ℝ ↦ ‖G (x + ℓ)‖ₑ :=
-    (G.continuous.comp (continuous_id.add continuous_const)).enorm.measurable
+    (G.continuous.comp (continuous_id.add continuous_const)).eNorm.measurable
   have hlint : ∫⁻ t : UnitAddCircle, ‖∑' n : ℤ, η (n / R) * fourier n t‖ₑ ≤
       ENNReal.ofReal (∫ y, ‖G y‖) := by
     rw [← UnitAddCircle.lintegral_preimage 0]
     calc ∫⁻ x in Ioc (0 : ℝ) (0 + 1), ‖∑' n : ℤ, η (n / R) * fourier n (x : UnitAddCircle)‖ₑ
         ≤ ∫⁻ x in Ioc (0 : ℝ) (0 + 1), ∑' ℓ : ℤ, ‖G (x + ℓ)‖ₑ :=
-          lintegral_mono fun x ↦ (hpoisson x).symm ▸ enorm_tsum_le_tsum_enorm
+          lintegral_mono fun x ↦ (hpoisson x).symm ▸ eNorm_tsum_le_tsum_eNorm
       _ = ∑' ℓ : ℤ, ∫⁻ x in Ioc (0 : ℝ) (0 + 1), ‖G (x + ℓ)‖ₑ :=
           lintegral_tsum fun ℓ ↦ (hmeas ℓ).aemeasurable
       _ = ∑' ℓ : ℤ, ENNReal.ofReal (∫ x in (0 : ℝ)..1, ‖G (x + ℓ)‖) := by
           congr 1 with ℓ
           rw [intervalIntegral.integral_of_le zero_le_one, zero_add,
-            ofReal_integral_norm_eq_lintegral_enorm]
+            ofReal_integral_norm_eq_lintegral_eNorm]
           exact ((G.continuous.comp (continuous_id.add continuous_const)).integrableOn_Icc).mono_set
             Ioc_subset_Icc_self
       _ = ENNReal.ofReal (∫ y, ‖G y‖) := by
@@ -112,7 +112,7 @@ theorem integral_norm_tsum_mul_fourier_le {η : ℝ → ℂ} (hη : ContDiff ℝ
             zero_le_one fun x _ ↦ norm_nonneg _) hsum.summable, hsum.tsum_eq]
   calc ∫ t : UnitAddCircle, ‖∑' n : ℤ, η (n / R) * fourier n t‖
       ≤ ∫ y, ‖G y‖ := by
-        rw [integral_norm_eq_lintegral_enorm
+        rw [integral_norm_eq_lintegral_eNorm
           (continuous_tsum_mul_fourier hc hR).aestronglyMeasurable]
         exact ENNReal.toReal_le_of_le_ofReal (integral_nonneg fun _ ↦ norm_nonneg _) hlint
     _ = ∫ y, ‖𝓕⁻ η y‖ := by

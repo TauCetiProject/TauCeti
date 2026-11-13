@@ -251,15 +251,15 @@ private theorem eLpNorm_tensorKernel_cutoff_le {R : ℝ} (hR : 1 ≤ R) {r : ℝ
   have hK : Continuous K := continuous_tensorKernel (fun _ ↦ hasCompactSupport_cutoff) hR0
   -- The two endpoint bounds.
   have h1 : eLpNorm K 1 volume ≤ ENNReal.ofReal (A ^ k) := by
-    rw [eLpNorm_one_eq_lintegral_enorm hK.aestronglyMeasurable,
-      ← ofReal_integral_norm_eq_lintegral_enorm
+    rw [eLpNorm_one_eq_lintegral_eNorm hK.aestronglyMeasurable,
+      ← ofReal_integral_norm_eq_lintegral_eNorm
         (hK.integrable_of_hasCompactSupport (.of_compactSpace _))]
     refine ENNReal.ofReal_le_ofReal ((integral_norm_tensorKernel_le
       (fun _ ↦ contDiff_cutoff) (fun _ ↦ hasCompactSupport_cutoff) hR0).trans_eq ?_)
     rw [Finset.prod_const, Finset.card_univ]
   have hinf : eLpNorm K ⊤ volume ≤ ENNReal.ofReal ((7 * R) ^ k) := by
     rw [eLpNorm_exponent_top hK.aestronglyMeasurable]
-    refine eLpNormEssSup_le_of_ae_enorm_bound (ae_of_all _ fun x ↦ ?_)
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun x ↦ ?_)
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (norm_tensorKernel_cutoff_le hR x)
   -- Interpolation between them, with `θ = 1 - 1/r`.
@@ -364,8 +364,8 @@ private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ}
   have hKint : Integrable (derivKernel v R) := by
     rw [hK]
     exact integrable_finsetSum _ fun i _ ↦ (hint i).const_mul _
-  rw [eLpNorm_one_eq_lintegral_enorm hKint.aestronglyMeasurable,
-    ← ofReal_integral_norm_eq_lintegral_enorm hKint]
+  rw [eLpNorm_one_eq_lintegral_eNorm hKint.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hKint]
   refine ENNReal.ofReal_le_ofReal ?_
   calc ∫ x, ‖derivKernel v R x‖
       ≤ ∫ x, ∑ i, 2 * Real.pi * R * ‖v‖ * ‖T i x‖ := by
@@ -422,7 +422,7 @@ private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : 
   · rw [hfg, hspec n (not_le.1 hn), smul_zero, smul_zero, smul_zero]
 
 omit [CompleteSpace E] in
-private theorem enorm_lsmul_le : ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ ≤ 1 := by
+private theorem eNorm_lsmul_le : ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ ≤ 1 := by
   rw [← ofReal_norm, ← ENNReal.ofReal_one]
   exact ENNReal.ofReal_le_ofReal ContinuousLinearMap.opNorm_lsmul_le
 
@@ -468,7 +468,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero {p q : ℝ≥0∞} (hp : 1 �
           7 ^ Fintype.card d * R ^ ((Fintype.card d : ℝ) * (1 - r⁻¹.toReal))) *
           eLpNorm f p volume := by
         gcongr
-        · exact enorm_lsmul_le
+        · exact eNorm_lsmul_le
         · exact eLpNorm_tensorKernel_cutoff_le hR hr
     _ = _ := by rw [one_mul, hrexp]
 
@@ -501,7 +501,7 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul {p : ℝ�
           max (∫ y, ‖𝓕⁻ cutoff y‖) (∫ y, ‖𝓕⁻ derivCutoff y‖) ^ Fintype.card d * R * ‖v‖) *
           eLpNorm f p volume := by
         gcongr
-        · exact enorm_lsmul_le
+        · exact eNorm_lsmul_le
         · exact eLpNorm_derivKernel_le v hR
     _ = _ := by rw [one_mul]
 
