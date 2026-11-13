@@ -44,8 +44,9 @@ characteristic zero.
 
 ## Main results
 
-* `TauCeti.SurfaceGroup.isEmpty_nonorientable_mulEquiv_orientable`: the closed nonorientable
-  surface group `S⁻(g + 1, 0)` is not isomorphic to any closed orientable surface group `S⁺(h, 0)`.
+* `TauCeti.SurfaceGroup.isEmpty_nonorientable_succ_zero_mulEquiv_orientable_zero`: the closed
+  nonorientable surface group `S⁻(g + 1, 0)` is not isomorphic to any closed orientable surface
+  group `S⁺(h, 0)`.
 
 ## References
 
@@ -91,14 +92,14 @@ theorem closedAbelianizationEquiv_of_b {g : ℕ} (i : Fin g) :
   simp [closedAbelianizationEquiv]
 
 @[simp]
-theorem closedAbelianizationEquiv_symm_ofAdd_single_inl {g : ℕ} (i : Fin g) :
-    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single (.inl i) 1)) = .of (a g 0 i) := by
-  rw [MulEquiv.symm_apply_eq, closedAbelianizationEquiv_of_a]
+theorem closedAbelianizationEquiv_symm_ofAdd_single_inl {g : ℕ} (i : Fin g) (n : ℤ) :
+    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single (.inl i) n)) = .of (a g 0 i) ^ n := by
+  simp [MulEquiv.symm_apply_eq, ← ofAdd_zsmul, ← Pi.single_mul_right]
 
 @[simp]
-theorem closedAbelianizationEquiv_symm_ofAdd_single_inr {g : ℕ} (i : Fin g) :
-    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single (.inr i) 1)) = .of (b g 0 i) := by
-  rw [MulEquiv.symm_apply_eq, closedAbelianizationEquiv_of_b]
+theorem closedAbelianizationEquiv_symm_ofAdd_single_inr {g : ℕ} (i : Fin g) (n : ℤ) :
+    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single (.inr i) n)) = .of (b g 0 i) ^ n := by
+  simp [MulEquiv.symm_apply_eq, ← ofAdd_zsmul, ← Pi.single_mul_right]
 
 end Orientable
 
@@ -193,10 +194,10 @@ theorem closedAbelianizationEquiv_of_c_last (g : ℕ) :
   simp [closedAbelianizationEquiv]
 
 @[simp]
-theorem closedAbelianizationEquiv_symm_ofAdd_single_zero {g : ℕ} (i : Fin g) :
-    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single i 1, 0)) =
-      .of (c (g + 1) 0 i.castSucc) := by
-  rw [MulEquiv.symm_apply_eq, closedAbelianizationEquiv_of_c_castSucc]
+theorem closedAbelianizationEquiv_symm_ofAdd_single_zero {g : ℕ} (i : Fin g) (n : ℤ) :
+    (closedAbelianizationEquiv g).symm (.ofAdd (Pi.single i n, 0)) =
+      .of (c (g + 1) 0 i.castSucc) ^ n := by
+  simp [MulEquiv.symm_apply_eq, ← ofAdd_zsmul, ← Pi.single_mul_right]
 
 /-- The torsion element `(0, 1)` of `ℤ ^ g × ℤ / 2` is the class of the product of the
 crosscaps. -/
@@ -213,7 +214,7 @@ nonorientable surface group `S⁻(g + 1, 0)` is isomorphic to a closed orientabl
 `S⁺(h, 0)`: the abelianization `ℤ ^ g × ℤ / 2` of the former has an element of order two, while the
 abelianization `ℤ ^ (2 h)` of the latter has none. For `g = h = 1` the Klein bottle group `S⁻(2, 0)`
 is not the torus group `S⁺(1, 0)`, although both surfaces have Euler characteristic zero. -/
-theorem isEmpty_nonorientable_mulEquiv_orientable (g h : ℕ) :
+theorem isEmpty_nonorientable_succ_zero_mulEquiv_orientable_zero (g h : ℕ) :
     IsEmpty (Nonorientable (g + 1) 0 ≃* Orientable h 0) :=
   ⟨fun e ↦ not_subsingleton (ZMod 2) <| subsingleton_of_mulEquiv isAddTorsion_of_finite <|
     ((Orientable.closedAbelianizationEquiv h).symm.trans e.symm.abelianizationCongr).trans
