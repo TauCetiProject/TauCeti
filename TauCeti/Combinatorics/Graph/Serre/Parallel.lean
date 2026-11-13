@@ -18,10 +18,11 @@ same ends, so this is the basic example of a graph with multiple edges; for a on
 is the segment, and for an empty type it consists of two isolated vertices.
 
 The graph is connected exactly when `α` is nonempty, and then its underlying multigraph has one
-component. For `a ≠ b` the closed path `parallelLoop a b`, which crosses the edge `a` and comes
-back along the edge `b`, is reduced and nonempty. Hence the graph is acyclic exactly when `α` has
-at most one element, and a tree exactly when `α` has exactly one element: multiple edges are
-detected by the tree predicate.
+component; when `α` is empty it has two. For `a ≠ b` the closed path `parallelLoop a b`, which
+crosses the edge `a` and comes back along the edge `b`, is reduced and nonempty. Hence the graph
+is acyclic exactly when `α` has at most one element, and a tree exactly when `α` has exactly one
+element: multiple edges are detected by the tree predicate. Traversed backwards,
+`parallelLoop a b` is `parallelLoop b a`.
 
 ## References
 
@@ -38,8 +39,10 @@ namespace TauCeti
 namespace SerreGraph
 
 /-- Two vertices joined by a family of parallel edges indexed by `α`. The dart `(a, b)` runs
-along the edge `a` from the vertex `b` to the vertex `!b`. -/
-@[expose] def parallelGraph (α : Type w) : SerreGraph.{0, w} where
+along the edge `a` from the vertex `b` to the vertex `!b`. The definition unfolds at instance
+transparency, so that a pair in `α × Bool` is accepted as a dart by rewriting and
+simplification. -/
+@[expose, instance_reducible] def parallelGraph (α : Type w) : SerreGraph.{0, w} where
   V := Bool
   E := α × Bool
   src := Prod.snd
@@ -59,16 +62,29 @@ variable {α : Type w}
 @[simp] theorem parallelGraph_tgt (e : (parallelGraph α).E) :
     (parallelGraph α).tgt e = !e.2 := rfl
 
+/-- A graph of parallel edges has two vertices. -/
+instance : Fintype (parallelGraph α).V := inferInstanceAs (Fintype Bool)
+
+/-- The two vertices of a graph of parallel edges have decidable equality. -/
+instance : DecidableEq (parallelGraph α).V := inferInstanceAs (DecidableEq Bool)
+
+/-- A graph of finitely many parallel edges has finitely many darts. -/
+instance [Finite α] : Finite (parallelGraph α).E := inferInstanceAs (Finite (α × Bool))
+
+/-- The darts of a graph of finitely many parallel edges, enumerated with the edges. -/
+instance [Fintype α] : Fintype (parallelGraph α).E := inferInstanceAs (Fintype (α × Bool))
+
 /-- The darts of a graph of parallel edges, being pairs of an edge and a direction, have
 decidable equality when the edges do. -/
 instance [DecidableEq α] : DecidableEq (parallelGraph α).E :=
   inferInstanceAs (DecidableEq (α × Bool))
 
+/-- A graph of parallel edges indexed by an empty type has no dart. -/
+instance [IsEmpty α] : IsEmpty (parallelGraph α).E := inferInstanceAs (IsEmpty (α × Bool))
+
 /-- The darts leaving the vertex `true` form an orientation of a graph of parallel edges. -/
 theorem parallelGraph_isOrientation : (parallelGraph α).IsOrientation {e | e.2 = true} :=
-  -- Membership is unfolded first: once `parallelGraph_rev` turns a dart into a pair `α × Bool`,
-  -- `Set.mem_ofPred_eq` no longer matches a set of darts.
-  (isOrientation_iff _ _).mpr fun e => by simp only [Set.mem_ofPred_eq]; simp
+  (isOrientation_iff _ _).mpr fun e => by simp
 
 /-- Two darts of a graph of parallel edges lie on the same undirected edge exactly when they
 have the same index: parallel edges remain distinct. -/
@@ -93,15 +109,13 @@ have the same index: parallel edges remain distinct. -/
   refine ⟨fun h => ?_, fun ⟨a⟩ => ?_⟩
   · by_contra hα
     rw [not_nonempty_iff] at hα
-    obtain ⟨p⟩ := (parallelGraph α).preconnected_iff.mp h false true
-    exact Bool.false_ne_true
-      ((parallelGraph α).eq_of_path_of_forall_src_eq_tgt (fun e => isEmptyElim e.1) p)
+    exact not_subsingleton Bool
+      (((parallelGraph α).preconnected_iff_of_forall_src_eq_tgt isEmptyElim).mp h)
   · refine (parallelGraph α).preconnected_of_forall_nonempty_path false fun b => ?_
     cases b
     · exact ⟨.nil⟩
-    · -- The dart `(a, false)` runs from `false` to `true` by `parallelGraph_src` and
-      -- `parallelGraph_tgt`, used through `rfl`: they cannot rewrite a literal pair, whose type
-      -- is `α × Bool` rather than `(parallelGraph α).E`.
+    · -- The dart `(a, false)` runs from `false` to `true`: its ends `(a, false).2` and
+      -- `!(a, false).2` reduce to these vertices.
       exact ⟨((parallelGraph α).dart (a, false)).toPath⟩
 
 /-- A graph of parallel edges is connected exactly when it has an edge. -/
@@ -116,6 +130,22 @@ def parallelLoop (a b : α) : (parallelGraph α).Path false false :=
     (⟨(a, false), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) false true)).cons
     ⟨(b, true), rfl, rfl⟩
 
+/-- The closed path `parallelLoop a b` is the dart `(a, false)` followed by the dart `(b, true)`,
+as arrows of the quiver of the graph. -/
+theorem parallelLoop_def (a b : α) : parallelLoop a b =
+    (Quiver.Hom.toPath
+      (⟨(a, false), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) false true)).cons
+      (⟨(b, true), rfl, rfl⟩ : Quiver.Hom (V := (parallelGraph α).V) true false) :=
+  (rfl)
+
+/-- Traversing the closed path `parallelLoop a b` backwards crosses the edge `b` and returns
+along the edge `a`. -/
+@[simp] theorem reverse_parallelLoop (a b : α) :
+    (parallelLoop a b).reverse = parallelLoop b a := by
+  simp only [parallelLoop_def, Quiver.Path.reverse, Quiver.Path.reverse_toPath,
+    Quiver.Path.comp_toPath_eq_cons]
+  congr 2 <;> exact Subtype.ext ((reverse_val _ _).trans (by simp))
+
 @[simp] theorem darts_parallelLoop (a b : α) :
     Path.darts (parallelGraph α) (parallelLoop a b) = [(a, false), (b, true)] :=
   (Path.darts_cons _ _ _).trans (congrArg (· ++ _) (Path.darts_toPath _ _))
@@ -127,11 +157,8 @@ def parallelLoop (a b : α) : (parallelGraph α).Path false false :=
 distinct. -/
 @[simp] theorem parallelLoop_isReduced_iff {a b : α} :
     Path.IsReduced (parallelGraph α) (parallelLoop a b) ↔ a ≠ b := by
-  refine (Path.isReduced_iff_isChain _ _).trans ?_
-  rw [darts_parallelLoop]
-  -- The reverse of the dart `(a, false)` is `(a, true)` by `parallelGraph_rev`, used through
-  -- `rfl`: the darts listed here are literal pairs, of type `α × Bool`.
-  exact List.isChain_pair.trans (not_congr ⟨fun h => (congrArg Prod.fst h).symm, fun h => h ▸ rfl⟩)
+  rw [Path.isReduced_iff_isChain, darts_parallelLoop, List.isChain_pair, parallelGraph_rev]
+  exact not_congr ⟨fun h => (congrArg Prod.fst h).symm, fun h => h ▸ rfl⟩
 
 /-- A graph with two distinct parallel edges is not acyclic. -/
 theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGraph α).IsAcyclic :=
@@ -168,6 +195,13 @@ theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGrap
 /-- Two vertices joined by two edges do not form a tree. -/
 theorem double_edge_not_tree : ¬(parallelGraph Bool).IsTree :=
   fun h => Bool.false_ne_true ((parallelGraph_isTree_iff.mp h).2.elim _ _)
+
+/-- The multigraph underlying a graph of parallel edges without an edge has two components,
+the two isolated vertices. -/
+@[simp] theorem componentCount_toGraph_parallelGraph_of_isEmpty [IsEmpty α] :
+    (parallelGraph α).toGraph.componentCount = 2 := by
+  rw [componentCount_toGraph_of_forall_src_eq_tgt _ isEmptyElim]
+  exact Nat.card_eq_fintype_card.trans Fintype.card_bool
 
 /-- The multigraph underlying a graph of parallel edges with at least one edge has one
 component. -/
