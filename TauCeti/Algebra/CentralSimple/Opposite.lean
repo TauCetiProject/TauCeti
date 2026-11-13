@@ -120,11 +120,8 @@ chooses.
 
 ## References
 
-This implements the fourth bullet of Layer 4 ("The opposite isomorphism") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-which also lists it among the Brauer-triviality prerequisites of Layer 6. See P. Gille,
-T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and R. S. Pierce,
-*Associative Algebras*, GTM 88, Chapter 12.
+See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.4, and
+R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 
 public section

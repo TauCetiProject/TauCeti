@@ -21,6 +21,9 @@ increasing on the whole real line. Every interior probability level therefore ha
 real cdf root, given by `Measure.quantile`. The quantile is continuous and strictly increasing
 on `(0, 1)`, tending to minus and plus infinity at the respective endpoints.
 
+From shape one onward these conclusions also hold at full skewness, because the stable density
+is then strictly positive on the whole real line.
+
 Strict increase of the quantile itself only needs absence of atoms, so that result also covers
 full skewness. Below shape one, the fully skewed laws have half-line support. Their interior
 quantiles are the unique cdf roots in the open support interior, vary continuously, and tend to
@@ -126,6 +129,48 @@ theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_abs_lt_one (hα : α ∈ Io
   let := isProbabilityMeasure_stableMeasure hα hβ.le s m
   exact Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
     (strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m)
+
+/-! ### Shapes from one onward -/
+
+/-- From shape one onward, a positive-scale stable quantile is characterized as the unique real
+root of its cdf equation at each interior probability level, including at full skewness. -/
+theorem quantile_stableMeasure_eq_iff_of_one_le (hα : α ∈ Icc 1 2) (hβ : |β| ≤ 1)
+    (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
+    (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
+    (ae_of_all _ mem_univ) (continuous_cdf_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ hs)
+    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _) hu
+
+/-- From shape one onward, positive-scale stable quantiles vary continuously with the interior
+probability level, including at full skewness. -/
+theorem continuousOn_quantile_stableMeasure_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    ContinuousOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.continuousOn_quantile_of_strictMonoOn _ ordConnected_univ
+    ((strictMono_cdf_stableMeasure_of_one_le hα hβ hs m).strictMonoOn _)
+    (mapsTo_univ _ _)
+
+/-- From shape one onward, positive-scale stable quantiles tend to minus infinity as the level
+decreases to zero, including at full skewness. -/
+theorem tendsto_quantile_stableMeasure_nhdsGT_zero_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β s m).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 ⊥) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _
+    (strictMono_cdf_stableMeasure_of_one_le hα hβ hs m)
+
+/-- From shape one onward, positive-scale stable quantiles tend to plus infinity as the level
+increases to one, including at full skewness. -/
+theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_one_le (hα : α ∈ Icc 1 2)
+    (hβ : |β| ≤ 1) (hs : 0 < s) (m : ℝ) :
+    Tendsto (fun u ↦ ((stableMeasure α β s m).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 ⊤) := by
+  let := isProbabilityMeasure_stableMeasure ⟨by linarith [hα.1], hα.2⟩ hβ s m
+  exact Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _
+    (strictMono_cdf_stableMeasure_of_one_le hα hβ hs m)
 
 /-! ### Full positive skewness below shape one -/
 
