@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.UniformLimit
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -21,7 +21,7 @@ Cauchy–Riemann equation of Hamiltonian Floer theory reads
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
 
 for a domain-dependent almost complex structure `J` and the Hamiltonian one-form `X`, as in
-`TauCeti.Geometry.Symplectic.Floer.Compactness`. The compactness theorem
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`. The compactness theorem
 `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` extracts from a
 sequence of solutions with bounded energy a subsequence that converges locally uniformly off a
 finite set of bubbling points, with derivatives bounded on compact subsets of the complement. It
