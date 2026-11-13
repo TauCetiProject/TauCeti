@@ -125,6 +125,7 @@ theorem integral_extDeriv_toLp_Icc_off_countable {a b : Fin (p + 1) → ℝ} (ha
       boxBoundarySum a b fun i x ↦
         (-1 : ℝ) ^ (i : ℕ) • ω (toLp 2 x) (i.removeNth fun j ↦ EuclideanSpace.single j 1) := by
   let L := (EuclideanSpace.equiv (Fin (p + 1)) ℝ).symm.toContinuousLinearMap
+  have hL : ⇑L = toLp 2 := by simp [L, PiLp.coe_symm_continuousLinearEquiv]
   let P := ContinuousAlternatingMap.compContinuousLinearMapCLM (F := F) (ι := Fin p) L
   let η := fun x ↦ P (ω (toLp 2 x))
   have hη : ∀ x ∈ (pi univ fun i ↦ Ioo (a i) (b i)) \ s, DifferentiableAt ℝ η x :=
@@ -133,8 +134,8 @@ theorem integral_extDeriv_toLp_Icc_off_countable {a b : Fin (p + 1) → ℝ} (ha
   have hdη : ∀ x ∈ (pi univ fun i ↦ Ioo (a i) (b i)) \ s,
       extDeriv η x (fun i ↦ Pi.single i 1) =
         extDeriv ω (toLp 2 x) (fun i ↦ EuclideanSpace.single i 1) := fun x hx ↦ by
-    have h := L.extDeriv_pullback (hd x hx)
-    simpa [η, P, L, Function.comp_def] using congrArg (fun A ↦ A (fun i ↦ Pi.single i 1)) h
+    have h := L.extDeriv_pullback (ω := ω) (x := x) (by rw [hL]; exact hd x hx)
+    simpa [η, P, hL, Function.comp_def] using congrArg (fun A ↦ A (fun i ↦ Pi.single i 1)) h
   have hae : (fun x ↦ extDeriv η x (fun i ↦ Pi.single i 1)) =ᵐ[volume.restrict (Icc a b)]
       fun x ↦ extDeriv ω (toLp 2 x) (fun i ↦ EuclideanSpace.single i 1) := by
     rw [volume_pi, ← Measure.restrict_congr_set Measure.univ_pi_Ioo_ae_eq_Icc]
@@ -145,7 +146,9 @@ theorem integral_extDeriv_toLp_Icc_off_countable {a b : Fin (p + 1) → ℝ} (ha
   have h := integral_extDeriv_Icc_off_countable (ω := η) hab
     (P.continuous.comp_continuousOn hc) hs hη (hi.congr hae.symm)
   rw [← integral_congr_ae hae, h]
-  congr 1
+  refine congrArg (boxBoundarySum a b) (funext₂ fun i x ↦ ?_)
+  unfold Fin.removeNth
+  simp [η, P, hL, Function.comp_def]
 
 /-- Stokes' theorem on a coordinate box for a form differentiable throughout the open box. -/
 theorem integral_extDeriv_toLp_Icc {a b : Fin (p + 1) → ℝ} (hab : a ≤ b)

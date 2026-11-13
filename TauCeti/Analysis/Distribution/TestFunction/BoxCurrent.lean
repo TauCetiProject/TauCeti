@@ -9,7 +9,9 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 public import TauCeti.Analysis.Distribution.Mass.Normal
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Order.Fin.Tuple
 import TauCeti.Analysis.Calculus.DifferentialForm.Box
+import TauCeti.Data.Fin.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -116,8 +118,13 @@ theorem contLinear_boxFaceMap_single (i : Fin (p + 1)) (t : ℝ) (k : Fin p) (r 
   simp [boxFaceMap]
 
 /-- Inserting a coordinate preserves distances. -/
-theorem isometry_boxFaceMap (i : Fin (p + 1)) (t : ℝ) : Isometry (boxFaceMap i t) :=
-  (isometry_add_right _).comp (LinearIsometry.piLpExtendByZero 2 ℝ ℝ i.succAboveEmb).isometry
+theorem isometry_boxFaceMap (i : Fin (p + 1)) (t : ℝ) : Isometry (boxFaceMap i t) := by
+  have h : ⇑(boxFaceMap i t) =
+      (· + EuclideanSpace.single i t) ∘ LinearIsometry.piLpExtendByZero 2 ℝ ℝ i.succAboveEmb := by
+    ext1 y
+    simp [boxFaceMap]
+  rw [h]
+  exact (isometry_add_right _).comp (LinearIsometry.piLpExtendByZero 2 ℝ ℝ i.succAboveEmb).isometry
 
 /-- The linear part of a face map has operator norm at most one, including in dimension zero. -/
 theorem norm_contLinear_boxFaceMap_le_one (i : Fin (p + 1)) (t : ℝ) :
@@ -140,30 +147,16 @@ theorem mapsTo_boxFaceMap (i : Fin (p + 1)) {a b : Fin (p + 1) → ℝ} {t : ℝ
     MapsTo (boxFaceMap i t) (ofLp ⁻¹' Icc (a ∘ i.succAbove) (b ∘ i.succAbove))
       (ofLp ⁻¹' Icc a b) := by
   intro y hy
-  rw [mem_preimage, boxFaceMap_apply]
-  constructor <;> intro j <;> refine i.succAboveCases ?_ (fun k ↦ ?_) j
-  · simpa using ht.1
-  · simpa using hy.1 k
-  · simpa using ht.2
-  · simpa using hy.2 k
+  rw [mem_preimage, boxFaceMap_apply, ofLp_toLp, Fin.insertNth_mem_Icc]
+  exact ⟨ht, hy⟩
 
 /-- Inserting two fixed coordinates commutes after adjusting their indices. -/
 theorem boxFaceMap_comp_boxFaceMap (i : Fin (p + 2)) (j : Fin (p + 1)) (t u : ℝ) :
     (boxFaceMap i t).comp (boxFaceMap j u) =
       (boxFaceMap (i.succAbove j) u).comp (boxFaceMap (j.predAbove i) t) := by
-  ext y k
-  simp only [ContinuousAffineMap.comp_apply, boxFaceMap_apply, ofLp_toLp]
-  refine i.succAboveCases ?_ (fun l ↦ ?_) k
-  · have h := congrArg
-      (fun q ↦ (i.succAbove j).insertNth u ((j.predAbove i).insertNth t (ofLp y)) q)
-      (Fin.succAbove_succAbove_predAbove i j)
-    simpa using h
-  · refine j.succAboveCases ?_ (fun m ↦ ?_) l
-    · simp
-    · have h := congrArg
-        (fun q ↦ (i.succAbove j).insertNth u ((j.predAbove i).insertNth t (ofLp y)) q)
-        (Fin.succAbove_succAbove_succAbove_predAbove i j m)
-      simpa using h
+  ext1 y
+  simp only [ContinuousAffineMap.comp_apply, boxFaceMap_apply]
+  rw [Fin.insertNth_insertNth]
 
 /-- Preimages of compact sets under `boxFaceMap i t` are compact, so it is proper from all of
 `ℝᵖ` and pulls test forms back to test forms. -/
@@ -280,16 +273,18 @@ theorem pullbackCLM_boxFaceMap_apply_single (i : Fin (p + 1)) (t : ℝ)
 
 /-- Pushforward along a face map does not increase the mass of a current. -/
 theorem mass_comp_pullbackCLM_boxFaceMap_le (i : Fin (p + 1)) (t : ℝ) {k : ℕ}
-    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {Ω : Opens (EuclideanSpace ℝ (Fin (p + 1)))}
-    {hp : ∀ K, IsCompact K → K ⊆ Ω →
-      IsCompact (((⊤ : Opens (EuclideanSpace ℝ (Fin p))) : Set _) ∩ boxFaceMap i t ⁻¹' K)}
-    (T : 𝓓(⊤, EuclideanSpace ℝ (Fin p) [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) :
-    mass (T ∘L pullbackCLM (boxFaceMap i t) (boxFaceMap i t).contDiff.contDiffOn hp) ≤ mass T := by
-  rw [ContinuousLinearMap.coe_comp]
-  simpa using (mass_comp_pullbackCLM_le T (L := 1) fun x _ ↦ by
-    rw [ContinuousAffineMap.fderiv]
-    exact norm_contLinear_boxFaceMap_le_one i t)
+    {V : Type*} [NormedAddCommGroup V]
+    {Ω : Opens (EuclideanSpace ℝ (Fin (p + 1)))} {Ω' : Opens (EuclideanSpace ℝ (Fin p))}
+    {hc : ContDiffOn ℝ (⊤ : ℕ∞) (boxFaceMap i t) Ω'}
+    {hp : ∀ K, IsCompact K → K ⊆ Ω → IsCompact ((Ω' : Set _) ∩ boxFaceMap i t ⁻¹' K)}
+    (T : 𝓓(Ω', EuclideanSpace ℝ (Fin p) [⋀^Fin k]→L[ℝ] F) → V) :
+    mass (T ∘ pullbackCLM (boxFaceMap i t) hc hp) ≤ mass T := by
+  refine mass_le_iff.2 fun ω hω ↦ enorm_le_mass (f := T) fun x ↦ ?_
+  refine (norm_pullbackCLM_apply_le ω x).trans ?_
+  rw [ContinuousAffineMap.fderiv]
+  simpa using mul_le_mul (hω _)
+    (pow_le_one₀ (norm_nonneg _) (norm_contLinear_boxFaceMap_le_one i t)) (by positivity)
+    zero_le_one
 
 end Pullback
 
