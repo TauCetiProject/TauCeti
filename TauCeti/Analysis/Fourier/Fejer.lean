@@ -84,7 +84,7 @@ theorem fejerKernel_mul_norm_sq (N : ℕ) (x : AddCircle T) :
       (N : ℝ)⁻¹ * ‖fourier (N : ℤ) x - 1‖ ^ 2 := by
   have hg := congrArg (fun z : ℂ ↦ ‖z‖ ^ 2) (geom_sum_mul (fourier 1 x) N)
   simp only [norm_mul, mul_pow] at hg
-  simp only [fejerKernel_def, fourier_one_pow_apply]
+  simp only [fejerKernel_def, ← fourier_one_pow_apply]
   rw [mul_assoc, hg]
 
 /-- Away from the identity, the Fejér kernels satisfy a bound of order `1 / N`. -/
