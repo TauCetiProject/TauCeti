@@ -328,11 +328,10 @@ theorem exists_forall_integral_norm_sq_le_mul_integral_norm_sq (hM : Continuous 
     (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       w d = ε • w 0 → ∫ t in 0..d, ‖w t‖ ^ 2 ≤ C * ∫ t in 0..d, ‖f t‖ ^ 2 := by
-  obtain ⟨B, hB, hle⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
+  obtain ⟨B, _, hle⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
   refine ⟨d ^ 2 * B ^ 2, by positivity, fun w f hf hw hwd ↦ ?_⟩
   have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
   set F := ∫ s in 0..d, ‖f s‖
-  have hF : 0 ≤ F := integral_nonneg hd fun _ _ ↦ norm_nonneg _
   -- Cauchy–Schwarz on `[0, d]`: `F² ≤ d ∫₀ᵈ ‖f‖²`.
   have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
     have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq

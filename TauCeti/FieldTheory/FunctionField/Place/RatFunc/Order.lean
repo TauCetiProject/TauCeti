@@ -304,7 +304,7 @@ This statement includes the zero rational function, whose reduced denominator is
 @[simp]
 theorem ord_adicOfIrreducible_neg_iff {q : k[X]} (hq : Irreducible q) {f : RatFunc k} :
     (adicOfIrreducible hq).ord f < 0 ↔ q ∣ f.denom := by
-  rcases eq_or_ne f 0 with rfl | hf
+  rcases eq_or_ne f 0 with rfl | _
   · simp only [ord_zero, lt_self_iff_false, RatFunc.denom_zero, false_iff]
     exact hq.not_dvd_one
   · rw [ord_adicOfIrreducible hq]

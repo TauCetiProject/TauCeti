@@ -81,7 +81,9 @@ and the subsequence can be chosen so that its parameters also converge in `C`. T
 compactness statement needed for the one-parameter families of Floer data `J_p`, `X_p`
 (continuation, associativity, comparison) whose boundary counts give chain homotopies. It reduces
 to the unparametrized statement by adjoining the parameter to the target as a constant coordinate,
-which leaves the energy density unchanged.
+which leaves the energy density unchanged. The same reduction gives the mean-value inequality with
+a threshold uniform over the window
+(`TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric`).
 
 The limit is only shown to be continuous; its regularity, the rescaled bubbles at the points of
 `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point), and breaking along
@@ -153,7 +155,7 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
     have hmono : ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ≤
         ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 :=
       setIntegral_mono_set hint (ae_restrict_of_forall_mem measurableSet_ball
-        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallyLE
+        fun _ _ ↦ sq_nonneg _) (ball_subset_ball hρr.le).eventuallySubset
     have hπ : π * ρ ^ 2 ≤ π * r ^ 2 := by gcongr
     have h := hmean (u := fun w ↦ WithLp.toLp 2 (w, u w)) hρ
       (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_id.prodMk (hu.mono
@@ -342,6 +344,74 @@ private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {
   unfold parameterX
   exact contDiffOn_const.clm_comp (contDiffOn_const.clm_comp hX')
 
+/-- The point `((p, 0), x)` of `(P × P) × V` adjoining the parameter `p` to the target point
+`x`. -/
+private noncomputable def parameterLift (a : P × V) : WithLp 2 (WithLp 2 (P × P) × V) :=
+  WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2)
+
+/-- The data adjoining the parameter satisfy the hypotheses of the theorems for a single datum,
+on `D` and the compact image of `C × K` under `parameterLift`. -/
+private theorem parameterData {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V}
+    {W : Set (P × (ℂ × V))} {C : Set P} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (uncurry J) W) (hX : ContDiffOn ℝ 2 (uncurry X) W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJsq : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ∀ v, J p (z, x) (J p (z, x) v) = -v) :
+    IsOpen (parameterPoint ⁻¹' W) ∧ ContDiffOn ℝ 2 (parameterJ J) (parameterPoint ⁻¹' W) ∧
+      ContDiffOn ℝ 2 (parameterX X) (parameterPoint ⁻¹' W) ∧
+      IsCompact (parameterLift '' (C ×ˢ K)) ∧
+      D ×ˢ (parameterLift '' (C ×ˢ K)) ⊆ parameterPoint ⁻¹' W ∧
+      ∀ z ∈ D, ∀ y ∈ parameterLift '' (C ×ˢ K), ∀ ζ,
+        parameterJ J (z, y) (parameterJ J (z, y) ζ) = -ζ := by
+  refine ⟨hW.preimage (parameterPoint (P := P) (V := V)).continuous, contDiffOn_parameterJ hJ,
+    contDiffOn_parameterX hX, (hC.prod hK).image (by unfold parameterLift; fun_prop), ?_, ?_⟩
+  · rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
+    exact hCDKW (by simpa [parameterLift] using ⟨ha, hz, hx⟩)
+  · rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
+    simp [parameterLift, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure,
+      hJsq a ha z hz x hx]
+
+/-- **The mean-value inequality over a compact parameter window.** Let `J_p` and `X_p` depend on
+a parameter `p` in a real inner product space `P`, jointly `C²` on an open set
+`W ⊆ P × (ℂ × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℂ` and `K ⊆ V`, with
+`J_p(z, x)² = -1` on `C × D × K`. There is a threshold `δ > 0` with the following property, for
+every parameter `p ∈ C`. Let `u` be `C³` on an open disc `B_r(z₀) ⊆ D`, with `∂ₛu` continuous up
+to the boundary, and on the disc let it solve `∂ₜu - X_p(z, u) i = J_p(z, u)(∂ₛu - X_p(z, u) 1)`
+with image in `K`. If `π r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`, then
+`π r² ‖∂ₛu(z₀)‖² ≤ 7 π r² + 8 ∫_{B_r(z₀)} ‖∂ₛu‖²`. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric
+    {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
+    {C : Set P} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (uncurry J) W) (hX : ContDiffOn ℝ 2 (uncurry X) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJsq : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ∀ v, J p (z, x) (J p (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃p : P⦄ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, p ∈ C → 0 ≤ r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) → ContinuousOn (fun y ↦ fderiv ℝ u y 1) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y I - X p (y, u y) I =
+        J p (y, u y) (fderiv ℝ u y 1 - X p (y, u y) 1)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      π * r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤
+        7 * π * r ^ 2 + 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+  -- Apply the mean-value inequality to the solution `z ↦ ((p, 0), u z)` with values in the
+  -- compact image of `C × K`.
+  obtain ⟨hW', hJ', hX', hK', hDKW', hJsq'⟩ := parameterData hW hJ hX hC hK hCDKW hJsq
+  obtain ⟨δ, hδ, hmean⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy hW' hJ' hX' hD hK' hDKW'
+      hJsq'
+  refine ⟨δ, hδ, fun p u z₀ r hp hr hrD hu hu' hCR huK hE ↦ ?_⟩
+  -- The constant parameter coordinate does not change the energy density.
+  have hint : ∫ y in ball z₀ r,
+      ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1‖ ^ 2 =
+      ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
+    simp only [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
+  have h := hmean (u := fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, 0), u w)) hr hrD
+    (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk hu))
+    (((WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V).comp_continuousOn
+      ((continuousOn_const (c := 0)).prodMk hu')).congr fun y _ ↦ by simp)
+    (fun y hy ↦ by simp [WithLp.ext_iff, hCR y hy])
+    (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by rwa [hint])
+  rwa [hint, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd] at h
+
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J_p` and `X_p` depend on a parameter `p` in a real inner product space `P`, jointly
 `C²` on an open set `W ⊆ P × (ℂ × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℂ` and
@@ -376,39 +446,25 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
   -- Apply the compactness theorem to the solutions `z ↦ ((p, 0), u z)` with values in the compact
-  -- image `K'` of `C × K`.
-  set ι : P × V → WithLp 2 (WithLp 2 (P × P) × V) :=
-    fun a ↦ WithLp.toLp 2 (WithLp.toLp 2 (a.1, 0), a.2) with hι
-  have hιc : Continuous ι := by fun_prop
-  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    (hW.preimage (parameterPoint (P := P) (V := V)).continuous) (contDiffOn_parameterJ hJ)
-    (contDiffOn_parameterX hX)
-    hD ((hC.prod hK).image hιc) (by
-      rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
-      exact hCDKW (by simpa [hι] using ⟨ha, hz, hx⟩))
-    (by
-      rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
-      simp [hι, WithLp.ext_iff, Prod.ext_iff, parameterStructure_parameterStructure,
-        hJsq a ha z hz x hx])
+  -- image of `C × K`.
+  obtain ⟨hW', hJ', hX', hK', hDKW', hJsq'⟩ := parameterData hW hJ hX hC hK hCDKW hJsq
+  obtain ⟨δ, hδ, hconv⟩ :=
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW' hJ' hX' hD hK' hDKW' hJsq'
   refine ⟨δ, hδ, fun Ω p u E hΩ hΩD hpC hu hCR huK hint hE ↦ ?_⟩
   obtain ⟨p₀, hp₀, ψ, hψ, hlim⟩ := hC.tendsto_subseq hpC
   set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
     fun k w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p (ψ k), 0), u (ψ k) w) with hg
-  have hdiff : ∀ k, ∀ y ∈ Ω, DifferentiableAt ℝ (u k) y := fun k y hy ↦
-    ((hu k).differentiableOn (by norm_num)).differentiableAt (hΩ.mem_nhds hy)
   -- The constant parameter coordinate does not change the energy density.
   have hnorm : ∀ k, ∀ y ∈ Ω,
-      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y hy ↦ by
-    rw [norm_fderiv_toLp_prodMk_apply_sq (differentiableAt_const _) (hdiff _ y hy)]
-    simp
+      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y _ ↦ by
+    simp [hg]
   have hint' : ∀ k, ∀ S ⊆ Ω, MeasurableSet S →
       ∫ y in S, ‖fderiv ℝ (g k) y 1‖ ^ 2 = ∫ y in S, ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 :=
     fun k S hSΩ hS ↦ setIntegral_congr_fun hS fun y hy ↦ hnorm k y (hSΩ hy)
   obtain ⟨φ, Z, w, hφ, hZΩ, hcard, hconc, hbd, hwcont, hwK, hwlim⟩ := hconv hΩ hΩD
     (u := g) (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
     (fun k y hy ↦ by
-      simp [hg, fderiv_toLp_prodMk_apply (differentiableAt_const _) (hdiff _ y hy),
-        WithLp.ext_iff, hCR (ψ k) y hy])
+      simp [hg, WithLp.ext_iff, hCR (ψ k) y hy])
     (fun k y hy ↦ ⟨(p (ψ k), u (ψ k) y), ⟨hpC _, huK _ hy⟩, rfl⟩)
     (fun k ↦ (hint (ψ k)).congr_fun (fun y hy ↦ (hnorm k y hy).symm) hΩ.measurableSet)
     (fun k ↦ (hint' k Ω subset_rfl hΩ.measurableSet).trans_le (hE (ψ k)))
@@ -420,7 +476,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right
       (differentiableAt_const _)).trans (hM n y hy)⟩
   · obtain ⟨⟨a, x⟩, ⟨-, hx⟩, hax⟩ := hwK hz
-    simpa [← hax, hι] using hx
+    simpa [← hax, parameterLift] using hx
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ _ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hwlim
 
@@ -602,7 +658,7 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of
     rw [← hint_eq]
     exact hn.trans (setIntegral_mono_set
       ((hint_iff _ _).2 ((hint (φ n)).mono_set inter_subset_right))
-      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallyLE)
+      (Eventually.of_forall fun _ ↦ by positivity) hsub.eventuallySubset)
   · obtain ⟨M', hM'⟩ := hbd' (e ⁻¹' C) (e.toHomeomorph.isCompact_preimage.2 hC)
       (hpreZ ▸ preimage_mono hCZ)
     refine ⟨M' * ‖(e.symm : ℝ × ℝ →L[ℝ] ℂ)‖, fun n y hy ↦ ?_⟩

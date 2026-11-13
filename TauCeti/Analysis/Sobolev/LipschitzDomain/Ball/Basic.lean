@@ -57,7 +57,7 @@ theorem isLipschitzDomainWith_ball (c : WithLp 2 (ℝ × E)) {r : ℝ} (hr : 0 <
     rw [← dist_eq_norm, dist_comm]
     exact frontier_ball_subset_sphere hx
   -- The first basis vector `u` and the inward unit normal `v` at `x`.
-  set u : WithLp 2 (ℝ × E) := WithLp.toLp 2 ((1 : ℝ), (0 : E)) with hu_def
+  set u : WithLp 2 (ℝ × E) := WithLp.toLp 2 ((1 : ℝ), (0 : E))
   set v : WithLp 2 (ℝ × E) := r⁻¹ • (c - x) with hv_def
   have hu : ‖u‖ = 1 := by simp [u]
   have hv : ‖v‖ = ‖u‖ := by

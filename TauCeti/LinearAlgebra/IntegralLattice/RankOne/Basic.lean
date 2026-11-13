@@ -120,7 +120,7 @@ theorem ofGramMatrix_singleton_eq_rankOne (a : ℤ) {c : ℤ} (hc : c = a)
     ofGramMatrix (Basis.singleton (Fin 1) ℚ) (Matrix.of fun _ _ ↦ c) h = rankOne a := by
   subst c
   have hmatrix : (Matrix.of fun (_ _ : Fin 1) ↦ a) = rankOneMatrix a := by
-    ext i j
+    ext _ _
     simp only [Matrix.of_apply, rankOneMatrix]
   simp only [rankOne, hmatrix]
 
