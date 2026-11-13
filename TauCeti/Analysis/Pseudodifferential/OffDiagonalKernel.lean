@@ -42,9 +42,9 @@ convergent kernel itself.
   the kernel is continuous, and indeed smooth, off the diagonal.
 * `TauCeti.Symbol.contDiffOn_quantizationKernel`: the absolutely convergent kernel of a symbol of
   order `m < -n` is smooth off the diagonal.
-* `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, a kernel continuous away
-  from `x` that represents `u ↦ Op(a) u (x)` on compactly supported Schwartz functions vanishing
-  near `x` is the off-diagonal kernel there.
+* `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, on an open set `U` not
+  containing `x`, a kernel continuous on `U` that represents `u ↦ Op(a) u (x)` on compactly
+  supported Schwartz functions supported in `U` is the off-diagonal kernel there.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
@@ -219,23 +219,26 @@ theorem contDiffOn_quantizationKernel (a : Symbol n V W m) (hm : m < -n) :
   (contDiffOn_offDiagonalKernel a).congr fun _ hp ↦
     (offDiagonalKernel_eq_quantizationKernel a hm hp).symm
 
-/-- **Uniqueness of the kernel off the diagonal.** A kernel `K`, continuous away from `x`, that
-represents `u ↦ Op(a) u (x)` on the compactly supported Schwartz functions vanishing near `x` is the
-off-diagonal kernel: `K y = offDiagonalKernel a x y` for every `y ≠ x`. -/
+/-- **Uniqueness of the kernel off the diagonal.** On an open set `U` not containing `x`, a kernel
+`K` continuous on `U` that represents `u ↦ Op(a) u (x)` on the compactly supported Schwartz
+functions supported in `U` is the off-diagonal kernel: `K y = offDiagonalKernel a x y` for every
+`y ∈ U`. -/
 theorem eqOn_offDiagonalKernel_of_forall [CompleteSpace V] [CompleteSpace W] (a : Symbol n V W m)
-    {x : CoordinateSpace n} {K : CoordinateSpace n → V →L[ℂ] W} (hK : ContinuousOn K {x}ᶜ)
-    (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u → x ∉ tsupport u →
+    {x : CoordinateSpace n} {U : Set (CoordinateSpace n)} (hU : IsOpen U) (hxU : x ∉ U)
+    {K : CoordinateSpace n → V →L[ℂ] W} (hK : ContinuousOn K U)
+    (h : ∀ u : 𝓢(CoordinateSpace n, V), HasCompactSupport u → tsupport u ⊆ U →
       quantizeSchwartzValue a.coefficient u x = ∫ y, K y (u y)) :
-    Set.EqOn K (offDiagonalKernel a x) {x}ᶜ := by
-  have hK₀ : ContinuousOn (offDiagonalKernel a x) {x}ᶜ := by
-    have hmaps : Set.MapsTo (fun y ↦ (x, y)) {x}ᶜ
-        {p : CoordinateSpace n × CoordinateSpace n | p.1 ≠ p.2} := fun y hy ↦ Ne.symm hy
+    Set.EqOn K (offDiagonalKernel a x) U := by
+  have hK₀ : ContinuousOn (offDiagonalKernel a x) U := by
+    have hmaps : Set.MapsTo (fun y ↦ (x, y)) U
+        {p : CoordinateSpace n × CoordinateSpace n | p.1 ≠ p.2} :=
+      fun y hy (hxy : x = y) ↦ hxU (hxy ▸ hy)
     exact ((continuousOn_offDiagonalKernel a).comp
       (continuous_const.prodMk continuous_id).continuousOn hmaps).congr
       fun y _ ↦ (Function.uncurry_apply_pair _ x y).symm
-  refine isOpen_compl_singleton.eqOn_of_integral_clm_apply_eq hK hK₀ fun u hu huU ↦ ?_
-  have hxu : x ∉ tsupport u := fun hx ↦ huU hx rfl
-  rw [← h u hu hxu, quantizeSchwartzValue_eq_integral_offDiagonalKernel a hu hxu]
+  refine hU.eqOn_of_integral_clm_apply_eq (μ := volume) hK hK₀ fun u hu huU ↦ ?_
+  rw [← h u hu huU,
+    quantizeSchwartzValue_eq_integral_offDiagonalKernel a hu fun hx ↦ hxU (huU hx)]
 
 /-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
 positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/
