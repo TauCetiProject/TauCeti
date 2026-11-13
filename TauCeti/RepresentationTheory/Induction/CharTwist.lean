@@ -77,7 +77,6 @@ theorem indCharTwistEquiv_mk (h : H) (a : A) :
 theorem indCharTwistEquiv_symm_mk (h : H) (a : A) :
     (indCharTwistEquiv φ χ ρ).symm (IndV.mk φ ρ h a) = ((χ h : kˣ) : k) • IndV.mk φ _ h a := by
   rw [← (indCharTwistEquiv φ χ ρ).symm_apply_apply (((χ h : kˣ) : k) • IndV.mk φ _ h a),
-    map_smul, indCharTwistEquiv_mk, smul_smul, ← Units.val_mul, ← map_mul, mul_inv_cancel,
-    map_one, Units.val_one, one_smul]
+    map_smul, indCharTwistEquiv_mk, smul_smul, map_inv, Units.mul_inv, one_smul]
 
 end TauCeti
