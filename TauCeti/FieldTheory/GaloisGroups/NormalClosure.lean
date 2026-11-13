@@ -56,6 +56,12 @@ noncomputable def galEquivNormalClosure {x : E} (hx : IsIntegral F x)
       (normalClosure F F⟮x⟯ E ≃ₐ[F] normalClosure F F⟮x⟯ E) :=
   (splittingFieldEquivNormalClosure hx hsplit).autCongr
 
+/-- `galEquivNormalClosure` is conjugation by `splittingFieldEquivNormalClosure`. -/
+theorem galEquivNormalClosure_def {x : E} (hx : IsIntegral F x)
+    (hsplit : ((minpoly F x).map (algebraMap F E)).Splits) :
+    galEquivNormalClosure hx hsplit = (splittingFieldEquivNormalClosure hx hsplit).autCongr :=
+  (rfl)
+
 /-- The group comparison intertwines evaluation with the field comparison. -/
 @[simp]
 theorem galEquivNormalClosure_apply {x : E} (hx : IsIntegral F x)
@@ -65,6 +71,19 @@ theorem galEquivNormalClosure_apply {x : E} (hx : IsIntegral F x)
       splittingFieldEquivNormalClosure hx hsplit (σ y) :=
   congrArg (fun z ↦ splittingFieldEquivNormalClosure hx hsplit (σ z))
     ((splittingFieldEquivNormalClosure hx hsplit).symm_apply_apply y)
+
+/-- The inverse group comparison conjugates an automorphism of the normal closure back to the
+splitting field. -/
+@[simp]
+theorem galEquivNormalClosure_symm_apply {x : E} (hx : IsIntegral F x)
+    (hsplit : ((minpoly F x).map (algebraMap F E)).Splits)
+    (τ : normalClosure F F⟮x⟯ E ≃ₐ[F] normalClosure F F⟮x⟯ E)
+    (y : (minpoly F x).SplittingField) :
+    (galEquivNormalClosure hx hsplit).symm τ y =
+      (splittingFieldEquivNormalClosure hx hsplit).symm
+        (τ (splittingFieldEquivNormalClosure hx hsplit y)) := by
+  apply (splittingFieldEquivNormalClosure hx hsplit).injective
+  rw [← galEquivNormalClosure_apply, MulEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
 
 /-- A point stabilizer corresponds to the subgroup fixing the simple field generated
 by the corresponding root in the normal closure. The action on the source is the
