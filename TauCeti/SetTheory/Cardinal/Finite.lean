@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.Basic.Denumerable
 
 /-!
-# Cardinalities of products with finitely many nontrivial factors and of ranges
+# Finite and extended cardinalities
 
 Mathlib's `Nat.card_pi` computes the cardinality of a product `∀ i, X i` over a finite index type.
 This file allows an arbitrary index type, provided that all factors outside a finite set `s` have
@@ -21,6 +22,9 @@ surjective and `e'` is injective on the range of `f`: `e'` maps the range of `f`
 the range of `f'`.
 For instance, two linear maps intertwined by linear equivalences on the source and on the target
 have ranges of the same cardinality; this is a counting step of exact-sequence arguments.
+
+For countable types, equality of extended natural cardinalities also gives an equivalence,
+including when both types are infinite.
 
 ## Main results
 
@@ -89,3 +93,23 @@ theorem card_range_eq_card_range_of_comp_eq {α β γ δ : Type*} {f : α → β
   rw [← he.range_comp f', ← h, Set.range_comp, Nat.card_image_of_injOn he']
 
 end Nat
+
+namespace TauCeti
+
+/-- Countable types with equal extended natural cardinalities admit an equivalence. -/
+theorem nonempty_equiv_of_enatCard_eq {α β : Type*} [Countable α] [Countable β]
+    (h : ENat.card α = ENat.card β) : Nonempty (α ≃ β) := by
+  classical
+  cases finite_or_infinite α with
+  | inl hfin =>
+    have := hfin
+    have : Finite β := ENat.card_lt_top.1 (by rw [← h]; exact ENat.card_lt_top.2 hfin)
+    let := Fintype.ofFinite α
+    let := Fintype.ofFinite β
+    exact Fintype.card_eq.1 (by simpa [ENat.card_eq_coe_fintype_card] using h)
+  | inr hinf =>
+    have := hinf
+    have : Infinite β := ENat.card_eq_top.1 (by rw [← h]; simp)
+    exact nonempty_equiv_of_countable
+
+end TauCeti

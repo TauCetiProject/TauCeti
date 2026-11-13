@@ -278,7 +278,7 @@ theorem ArtinGroup.toCoxeterGroup_gen (i : B) :
 surjective. -/
 theorem ArtinGroup.toCoxeterGroup_surjective :
     Function.Surjective (ArtinGroup.toCoxeterGroup cs) := by
-  rw [← MonoidHom.range_eq_top, eq_top_iff, ← cs.subgroup_closure_range_simple,
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← cs.subgroupClosure_range_simple,
     Subgroup.closure_le]
   rintro _ ⟨i, rfl⟩
   exact ⟨ArtinGroup.gen M i, ArtinGroup.toCoxeterGroup_gen cs i⟩
