@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
 # Smooth collars of a manifold with boundary
@@ -35,6 +36,7 @@ real interval `[0, 1)` (`TauCeti.SmoothCollar.isCollar`).
 
 * `TauCeti.SmoothCollar`: a `C^k` smooth collar of a manifold modeled on `EuclideanHalfSpace`.
 * `TauCeti.SmoothCollar.opensRange`: its image, an open neighbourhood of the boundary.
+* `TauCeti.SmoothCollar.diffeomorphOpensRange`: the collar as a diffeomorphism onto its image.
 * `TauCeti.SmoothCollar.reparam`: the collar precomposed with `id × ψ` for an injective local
   diffeomorphism `ψ` of `[0, 1)` fixing `0`.
 * `TauCeti.SmoothCollar.ofIsEmpty`: the empty collar of a manifold with empty boundary.
@@ -149,9 +151,39 @@ def opensRange : TopologicalSpace.Opens M := ⟨range c, c.isOpen_range⟩
 @[simp]
 theorem coe_opensRange : (c.opensRange : Set M) = range c := (rfl)
 
+/-- A point lies in the image of a smooth collar exactly when the collar reaches it. -/
+@[simp]
+theorem mem_opensRange {x : M} : x ∈ c.opensRange ↔ ∃ p, c p = x := (Iff.rfl)
+
+/-- Every value of a smooth collar lies in its image. -/
+theorem apply_mem_opensRange (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    c p ∈ c.opensRange :=
+  ⟨p, rfl⟩
+
 /-- The image of a smooth collar is a neighbourhood of the boundary. -/
 theorem opensRange_mem_nhdsSet : (c.opensRange : Set M) ∈ 𝓝ˢ ((𝓡∂ (n + 1)).boundary M) :=
   c.isOpen_range.mem_nhdsSet.2 c.boundary_subset_range
+
+/-- **A smooth collar is a diffeomorphism onto its image**, the open subset `c.opensRange` with
+the charts Mathlib restricts to it. -/
+def diffeomorphOpensRange :
+    (↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) ≃ₘ^k⟮(𝓡 n).prod (𝓡∂ 1), 𝓡∂ (n + 1)⟯
+      c.opensRange :=
+  c.isLocalDiffeomorph.diffeomorphOfInjective c.injective
+
+/-- The diffeomorphism onto the image of a smooth collar evaluates as the collar. -/
+@[simp]
+theorem coe_diffeomorphOpensRange_apply (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
+    (c.diffeomorphOpensRange p : M) = c p :=
+  c.isLocalDiffeomorph.coe_diffeomorphOfInjective_apply c.injective p
+
+/-- The inverse of the diffeomorphism onto the image of a smooth collar sends a boundary point
+to its zero slice. -/
+@[simp]
+theorem diffeomorphOpensRange_symm_apply_boundary (x : ↥((𝓡∂ (n + 1)).boundary M)) :
+    c.diffeomorphOpensRange.symm ⟨x, c.mem_opensRange.2 ⟨_, c.apply_zero x⟩⟩ =
+      (x, normalIioOpensZero one_pos) :=
+  c.diffeomorphOpensRange.symm_apply_eq.2 (Subtype.ext (by simp))
 
 /-- A point of `∂M × [0, 1)` is sent to the boundary exactly when its depth is zero. -/
 theorem apply_mem_boundary_iff (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1) :
@@ -169,9 +201,7 @@ theorem isCollar :
       (c ∘ Prod.map id (homeomorphNormalIioOpens 1).symm) :=
   ⟨c.isOpenEmbedding.comp
       (IsOpenEmbedding.id.prodMap (homeomorphNormalIioOpens 1).symm.isOpenEmbedding),
-    fun x ↦ by
-      rw [comp_apply, Prod.map_apply, id, homeomorphNormalIioOpens_symm_zero]
-      exact c.apply_zero x⟩
+    fun _ ↦ by simp⟩
 
 include c in
 /-- The boundary inclusion of a manifold with a smooth collar is topologically collared. -/

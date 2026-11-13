@@ -241,6 +241,11 @@ def homeomorphNormalIioOpens (ε : ℝ) : normalIioOpens ε ≃ₜ Ico (0 : ℝ)
 theorem coe_homeomorphNormalIioOpens {ε : ℝ} (t : normalIioOpens ε) :
     (homeomorphNormalIioOpens ε t : ℝ) = (t : EuclideanHalfSpace 1).1 0 := (rfl)
 
+/-- The inverse of the interval reading of the open initial segment is the normal ray. -/
+@[simp]
+theorem coe_homeomorphNormalIioOpens_symm {ε : ℝ} (r : Ico (0 : ℝ) ε) :
+    ((homeomorphNormalIioOpens ε).symm r : EuclideanHalfSpace 1) = normalRay r := (rfl)
+
 /-- The interval reading sends the origin of the open initial segment to the origin of `[0, ε)`. -/
 @[simp]
 theorem homeomorphNormalIioOpens_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
@@ -252,6 +257,14 @@ theorem homeomorphNormalIioOpens_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
 theorem homeomorphNormalIioOpens_symm_zero {ε : ℝ} (h : (0 : ℝ) ∈ Ico (0 : ℝ) ε) :
     (homeomorphNormalIioOpens ε).symm ⟨0, h⟩ = normalIioOpensZero (left_mem_Ico.1 h) :=
   (homeomorphNormalIioOpens ε).symm_apply_eq.2 (homeomorphNormalIioOpens_normalIioOpensZero _).symm
+
+/-- The origin of the unit interval `[0, 1)` corresponds to the origin of the open initial
+segment. This is the form `homeomorphNormalIioOpens_symm_zero` takes at height `1`, where
+`Set.Ico.mk_zero` rewrites the origin of `[0, 1)` to `0`. -/
+@[simp]
+theorem homeomorphNormalIioOpens_one_symm_zero :
+    (homeomorphNormalIioOpens 1).symm 0 = normalIioOpensZero one_pos :=
+  homeomorphNormalIioOpens_symm_zero _
 
 /-- The open embedding `t ↦ eᵗ` of the real line onto the open part `(0, ∞)` of the
 one-dimensional half-space. -/
