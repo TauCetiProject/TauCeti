@@ -41,9 +41,11 @@ which none of these variables occurs, are carried out at once by one elementary 
 which fixes the words in which none of them occurs
 (`GX.exists_mem_elementaryAut_forall_apply_inr_of`).
 
-These are the automorphisms by which a strictly quadratic word is normalized in [IFT], §2.7,
-Lemma 1: up to conjugation in `G[X]`, a product of elementary `G`-automorphisms brings it either
-to a coefficient or to a standard quadratic word.
+These are the automorphisms by which a strictly quadratic word is normalized: a product of
+elementary `G`-automorphisms followed by a conjugation in `G[X]` brings it either to a coefficient
+or to a standard quadratic word. This corrects [IFT], §2.7, Lemma 1 (and [VAR-I], §1, Lemma 6),
+which asserts a `G`-automorphism alone and has no coefficient case; a coefficient `g ≠ 1` is
+strictly quadratic and is not a standard quadratic word.
 
 ## References
 
