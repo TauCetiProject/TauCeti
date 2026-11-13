@@ -423,10 +423,7 @@ theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) {N : ModuleCat
         exact (congrArg (ModuleCat.Hom.hom (λ_ N).hom)
           (TauCeti.ModuleCat.tensorMk_apply (N := N) r v)).trans
             (ModuleCat.MonoidalCategory.leftUnitor_hom_apply r v))
-    ext i (c : ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{w} k))).X i ⟶ _)
-    -- both sides send a cochain `c` to `r • c`
-    simp [hr]
-    rfl
+    rw [hr, ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id]
   -- `r • 𝟙` on cohomology is `r • id`
   rw [hmap, HomologicalComplex.homologyMap_smul, homologyMap_id]
   rfl
