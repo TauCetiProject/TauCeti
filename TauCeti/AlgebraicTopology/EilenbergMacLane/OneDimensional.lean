@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.Comparison
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
@@ -26,9 +27,10 @@ circles indexed by `S` is a `K(F, 1)` for the free group `F` on `S`
 The proof passes to the universal cover `Y` of `X`, which exists because `X` is locally
 path-connected and semilocally simply connected. The CW structure of `X` lifts to `Y`, cell by
 cell (`TauCeti.cwComplexPreimage`), so `Y` is again a CW complex with no cells of dimension at
-least `2`. Its singular homology therefore vanishes in every degree at least `2`
-(`TauCeti.isZero_singularHomology_of_isEmpty_cell`), and since `Y` is simply
-connected, the Hurewicz theorem shows that all of its homotopy groups vanish
+least `2`. Its cellular chain groups, hence its singular homology
+(`TauCeti.cellularSingularHomologyIsoUniv`), therefore vanish in every degree at least `2`
+(`TauCeti.isZero_cellularChainGroup`), and since `Y` is simply connected, the Hurewicz theorem
+shows that all of its homotopy groups vanish
 (`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`). A covering map is an
 isomorphism on homotopy groups in dimensions at least `2`, so those of `X` vanish too. This is a
 homological form of the classical argument that the universal cover of a connected graph is a
@@ -72,24 +74,20 @@ theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2S
     [CWComplex (univ : Set X)] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (h : ∀ n, IsEmpty (cell (univ : Set X) (n + 2))) (x : X) : IsAspherical X x := by
   have hp := UniversalCover.isCoveringMap x
-  let := cwComplexPreimage (univ : Set X) hp
   have := hp.t2Space
-  -- The lifted CW structure on the universal cover has no cells of dimension at least `2`.
-  have hcell (n : ℕ) : IsEmpty (cell (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (n + 2)) :=
-    (cellPreimageEquiv (univ : Set X) hp (n + 2)).isEmpty
-  have : FiniteDimensional (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) :=
-    ⟨Filter.eventually_atTop.2 ⟨2, fun n hn ↦ by
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      exact hcell m⟩⟩
+  let : CWComplex (univ : Set (UniversalCover x)) := cwComplexPreimage (univ : Set X) hp
   have hH (n : ℕ) :
       IsZero (((singularChains ℤ).obj (TopCat.of (UniversalCover x))).homology (n + 2)) := by
-    -- The homology of the lifted CW complex vanishes in degree `n + 2`, and it is the homology
-    -- of the universal cover.
-    have hC := isZero_singularHomology_of_isEmpty_cell
-      (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (ModuleCat.of ℤ ℤ) (n + 2)
-    exact hC.of_iso (((AlgebraicTopology.singularHomologyFunctor _ (n + 2)).obj _).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-        (Homeomorph.Set.univ _)))).symm
+    -- The lifted CW structure on the universal cover has no cells of dimension `n + 2`, so its
+    -- cellular chain group vanishes there, and cellular homology is singular homology.
+    have : IsEmpty (cell (univ : Set (UniversalCover x)) (n + 2)) :=
+      (cellPreimageEquiv (univ : Set X) hp (n + 2)).isEmpty
+    have hC : IsZero
+        ((cellularChainComplex (univ : Set (UniversalCover x)) (ModuleCat.of ℤ ℤ)).X (n + 2)) := by
+      rw [cellularChainComplex_X]
+      exact isZero_cellularChainGroup _ _ _
+    exact (HomologicalComplex.ExactAt.of_isZero hC).isZero_homology.of_iso
+      (cellularSingularHomologyIsoUniv (ModuleCat.of ℤ ℤ) (n + 2)).symm
   have : Subsingleton (π_ 1 (UniversalCover x) (UniversalCover.basepointLift x)) :=
     HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.mpr inferInstance
   exact hp.isAspherical_of_subsingleton_homotopyGroup UniversalCover.proj_surjective
