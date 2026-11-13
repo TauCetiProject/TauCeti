@@ -50,7 +50,7 @@ omit [IsAlgClosed k] [Algebra.FiniteType k H] in
 /-- A smooth affine isogeny with étale kernel preserves and reflects ad-nilpotence,
 including in positive characteristic. -/
 theorem isNilpotent_ad_dualCotangentMap_iff_of_etaleKernel (hf : IsIsogeny f)
-    [Algebra.Smooth k H] [Algebra.Smooth k K]
+    [Algebra.Smooth k H]
     (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     IsNilpotent (LieAlgebra.ad k _ (dualCotangentMap f.hom x)) ↔
