@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.TraceForm
 public import TauCeti.Algebra.Lie.Dual
+import TauCeti.Algebra.Lie.SkewAdjoint
 
 /-!
 # Invariant bilinear forms on Lie modules
@@ -20,6 +21,11 @@ scalars.
 
 For a right-separating invariant form on a Lie algebra, the orthogonal complement of its
 derived ideal is its centre. This criterion needs no positivity or finite-dimensionality.
+
+On a Lie module, invariance moves the action of `x` from one argument to the other at the cost of
+a sign, so an invariant form pairs eigenspaces of `x` only with the opposite eigenspaces. On an
+irreducible module the kernels of an invariant form are Lie submodules, so a nonzero invariant
+form is nondegenerate.
 
 The irreducible-module uniqueness result follows from Schur's lemma. Invariance of `Φ` says
 exactly that `Φ`, read as a linear map
@@ -44,6 +50,12 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   invariance.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
+* `LinearMap.BilinForm.lieInvariant.apply_pow_toEnd`: moving `n` copies of the action of `x`
+  across an invariant form costs the sign `(-1) ^ n`.
+* `LinearMap.BilinForm.lieInvariant.apply_eq_zero_of_mem_eigenspace_of_add_ne_zero`: an invariant
+  form pairs the `c`-eigenspace of `x` only with its `-c`-eigenspace.
+* `LinearMap.BilinForm.lieInvariant.nondegenerate_of_isIrreducible`: a nonzero invariant form on
+  an irreducible module is nondegenerate.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -89,6 +101,67 @@ bracket and a third argument: `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. -/
 theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L) :
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
+
+/-! ### Invariant forms on a Lie module -/
+
+section Module
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [_root_.LieModule R L M] {Φ : LinearMap.BilinForm R M}
+
+/-- **Iterated invariance**: moving `n` copies of the action of `x` from one argument of an
+invariant form to the other costs the sign `(-1) ^ n`. -/
+theorem apply_pow_toEnd (hΦ : Φ.lieInvariant L) (x : L) (n : ℕ) (y z : M) :
+    Φ ((LieModule.toEnd R L M x ^ n) y) z = (-1) ^ n * Φ y ((LieModule.toEnd R L M x ^ n) z) := by
+  induction n generalizing y with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, mul_apply_eq_comp, ih, LieModule.toEnd_apply_apply, hΦ, ← pow_succ,
+      pow_succ' (LieModule.toEnd R L M x) n, mul_apply_eq_comp, LieModule.toEnd_apply_apply]
+    ring
+
+/-- **An invariant form pairs eigenspaces only with their opposites.** If `x` acts on `y` and `z`
+with eigenvalues `c` and `d` and `c + d ≠ 0`, then `Φ y z = 0`: invariance gives
+`(c + d) * Φ y z = 0`. -/
+theorem apply_eq_zero_of_mem_eigenspace_of_add_ne_zero [NoZeroDivisors R]
+    (hΦ : Φ.lieInvariant L) {x : L} {c d : R} {y z : M}
+    (hy : y ∈ (LieModule.toEnd R L M x).eigenspace c)
+    (hz : z ∈ (LieModule.toEnd R L M x).eigenspace d) (hcd : c + d ≠ 0) : Φ y z = 0 := by
+  have h := hΦ x y z
+  rw [← LieModule.toEnd_apply_apply (R := R) (x := x) (m := y),
+    ← LieModule.toEnd_apply_apply (R := R) (x := x) (m := z),
+    Module.End.mem_eigenspace_iff.mp hy, Module.End.mem_eigenspace_iff.mp hz] at h
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h
+  exact (mul_eq_zero.mp (by linear_combination h : (c + d) * Φ y z = 0)).resolve_left hcd
+
+omit [LieAlgebra R L] [_root_.LieModule R L M] in
+/-- **A nonzero invariant form on an irreducible Lie module is nondegenerate.** Its left kernel
+and its right kernel are Lie submodules, by invariance, and neither is everything since the form
+is nonzero; irreducibility makes both zero. -/
+theorem nondegenerate_of_isIrreducible [_root_.LieModule.IsIrreducible R L M]
+    (hΦ : Φ.lieInvariant L) (hΦ0 : Φ ≠ 0) : Φ.Nondegenerate := by
+  -- the left kernel of an invariant form is a Lie submodule, hence zero or everything
+  have hleft (Ψ : LinearMap.BilinForm R M) (hΨ : Ψ.lieInvariant L) (hΨ0 : Ψ ≠ 0) :
+      Ψ.SeparatingLeft := by
+    let N : LieSubmodule R L M :=
+      { LinearMap.ker Ψ with
+        lie_mem := fun {x y} hy ↦ by
+          ext z
+          simp [hΨ x y z, LinearMap.mem_ker.mp hy] }
+    have hmem {y : M} : y ∈ N ↔ ∀ z, Ψ y z = 0 := by
+      rw [← LieSubmodule.mem_toSubmodule]
+      simp [N, LinearMap.ext_iff]
+    rcases eq_bot_or_eq_top N with hN | hN
+    · intro y hy
+      simpa [hN] using hmem.mpr hy
+    · exact (hΨ0 (LinearMap.ext fun y ↦ LinearMap.ext fun z ↦
+        hmem.mp (hN ▸ LieSubmodule.mem_top y) z)).elim
+  refine ⟨hleft Φ hΦ hΦ0, LinearMap.flip_separatingLeft.mp
+    (hleft (LinearMap.flip Φ) (TauCeti.LieAlgebra.lieInvariant_flip hΦ) fun h ↦ ?_)⟩
+  exact hΦ0 (LinearMap.ext fun y ↦ LinearMap.ext fun z ↦ by
+    simpa using LinearMap.congr_fun₂ h z y)
+
+end Module
 
 end LinearMap.BilinForm.lieInvariant
 
