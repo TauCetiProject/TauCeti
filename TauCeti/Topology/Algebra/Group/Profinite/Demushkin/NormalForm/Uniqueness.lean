@@ -137,8 +137,6 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
     (hG' : IsDemushkin p (presentedProP p (Fin n) {r'}))
     (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hG').toMonoidHom.range) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n), e r = r' := by
-  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
-  have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
   by_cases hq : demushkinQ hG = 2
   swap
   · exact exists_continuousMulEquiv_apply_eq_of_demushkinQ_eq hG hG'
@@ -154,23 +152,14 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
     hA | ⟨f, hf, hA⟩ | ⟨f, u, hf, hu, hA⟩
   · exact exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one hn hG hG' hA
       (h.symm.trans hA)
-  · -- The image `{±1} × U^(f)` is not procyclic, so it does not occur at rank two, and `n ≥ 4`.
-    have hn3 : 3 < n := by
-      have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
-      have hrank : demushkinRank hG = n := by
-        simpa using demushkinRank_presentedProP (Set.singleton_subset_iff.2 hr) hG
-      by_contra hn3
-      obtain ⟨k, hk⟩ := hn
-      exact hG.range_demushkinCharacter_ne_unitsPlusMinus_of_demushkinRank_eq_two
-        (hrank.trans (by omega)) hA
-    obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr hG hn hn3 hf hA
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr' hG'
-      hn hn3 hf (h.symm.trans hA)
+  · obtain ⟨e, he⟩ :=
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hG hn hf hA
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hG' hn
+      hf (h.symm.trans hA)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
   · obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hr hG hn hf hu hA
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hr' hG' hn
+      exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hG hn hf hu hA
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq hG' hn
       hf hu (h.symm.trans hA)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
 
