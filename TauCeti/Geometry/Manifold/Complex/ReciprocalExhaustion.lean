@@ -36,6 +36,7 @@ variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [FiniteDimensional ℂ E] [TopologicalSpace M] [ChartedSpace E M]
   [IsManifold 𝓘(ℂ, E) 2 M] {f : M → ℝ} {x : M}
 
+omit [FiniteDimensional ℂ E] in
 /-- The reciprocal of one plus a strictly plurisubharmonic function has index at least the
 complex dimension at every nondegenerate critical point of the original function where the
 denominator is nonzero.

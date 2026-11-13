@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Sect
 import all TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Basic
 import all TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Sections
 import all TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Sections
-import all TauCeti.AlgebraicGeometry.Modules.TensorProduct
+import all TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 import all TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
 import all TauCeti.Algebra.Category.ModuleCat.Presheaf.SymmetricPower.Basic
 import all TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Mul

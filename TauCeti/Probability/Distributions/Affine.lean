@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
+public import TauCeti.MeasureTheory.Group.Convolution.Translation
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
@@ -17,6 +18,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Affine images of real laws
@@ -77,6 +79,10 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 * `TauCeti.Probability.mgf_id_neg`, `TauCeti.Probability.integrableExpSet_id_neg`,
   `TauCeti.Probability.cgf_id_neg` — the exponential transforms of the reflected law at `-t`;
 * `TauCeti.Probability.charFun_map_affine` — the characteristic function `exp (i a t) φ(b t)`.
+
+Affine images also commute with convolution when the translations are accumulated: offsets
+`a` and `c` give the offset `a + c`, and applying the same offset to each of `n` summands gives
+`n * a`. The corresponding finite independent-sum law includes the empty sum and zero slope.
 -/
 
 public section
@@ -528,3 +534,75 @@ theorem charFun_map_affine (t : ℝ) :
   ring_nf
 
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open scoped MeasureTheory
+
+/-- The convolution of two real affine images with common slope is the affine image of the
+convolution, with the two offsets added. The slope may be zero or negative. -/
+theorem conv_map_affine (μ ν : Measure ℝ) [SFinite ν] (a c b : ℝ) :
+    (μ.map (fun x ↦ a + b * x)) ∗ (ν.map (fun x ↦ c + b * x)) =
+      (μ ∗ ν).map (fun x ↦ a + c + b * x) := by
+  have hmap (ρ : Measure ℝ) (d : ℝ) :
+      ρ.map (fun x ↦ d + b * x) = (ρ.map (b * ·)).map (d + ·) := by
+    rw [map_map (measurable_const_add d) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)) ∗ (ν.map (b * ·)) = (μ ∗ ν).map (b * ·) := by
+    simpa [Pi.smul_def, smul_eq_mul] using (map_conv_continuousLinearMap (μ := μ) (ν := ν)
+      (b • ContinuousLinearMap.id ℝ ℝ)).symm
+  rw [hmap μ a, hmap ν c, conv_map_add, hscale,
+    map_map (by fun_prop) (by fun_prop)]
+  rfl
+
+/-- Applying the same real affine map to every summand accumulates the translation once per
+summand. This holds at every slope and for the empty sum. -/
+theorem convolutionPower_map_affine (μ : Measure ℝ) [SFinite μ] (a b : ℝ) (n : ℕ) :
+    (μ.map (fun x ↦ a + b * x)).convolutionPower n =
+      (μ.convolutionPower n).map (fun x ↦ (n : ℝ) * a + b * x) := by
+  have hmap : μ.map (fun x ↦ a + b * x) = (μ.map (b * ·)).map (a + ·) := by
+    rw [map_map (measurable_const_add a) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)).convolutionPower n =
+      (μ.convolutionPower n).map (b * ·) := by
+    let f : ℝ →+ ℝ := b • AddMonoidHom.id ℝ
+    have hf : (f : ℝ → ℝ) = (b * ·) := by
+      ext x
+      simp [f, smul_eq_mul]
+    have hfm : Measurable f := by rw [hf]; fun_prop
+    simpa only [hf] using (map_convolutionPower μ f hfm n).symm
+  rw [hmap, convolutionPower_map_add, hscale, map_map (by fun_prop) (by fun_prop)]
+  simp [nsmul_eq_mul, Function.comp_def]
+
+end MeasureTheory.Measure
+
+namespace ProbabilityTheory
+
+variable {Ω ι : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ : Measure ℝ}
+  {X : ι → Ω → ℝ}
+
+/-- The sum of two affine images of independent real variables, with the same slope, has the
+affine image of the convolution law, with the two offsets added. -/
+theorem IndepFun.hasLaw_add_affine {ν : Measure ℝ} [SigmaFinite μ] [SigmaFinite ν]
+    {Y Z : Ω → ℝ} (h : IndepFun Y Z P) (hY : HasLaw Y μ P) (hZ : HasLaw Z ν P)
+    (a c b : ℝ) :
+    HasLaw (fun ω ↦ (a + b * Y ω) + (c + b * Z ω))
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ a + c + b * x)
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) (μ ∗ ν) := hasLaw_map (by fun_prop)
+  apply (hmap.comp (h.hasLaw_fun_add hY hZ)).congr
+  exact ae_of_all _ fun ω ↦ by simp only [Function.comp_apply]; ring
+
+/-- The sum of affine images with a common slope of independent variables with common law
+`μ` is the affine image of the convolution power, with all offsets added. -/
+theorem iIndepFun.hasLaw_finset_sum_affine_convolutionPower (h : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) μ P) (s : Finset ι) (a : ι → ℝ) (b : ℝ) :
+    HasLaw (fun ω ↦ ∑ i ∈ s, (a i + b * X i ω))
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ (∑ i ∈ s, a i) + b * x)
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x))
+      (μ.convolutionPower s.card) := hasLaw_map (by fun_prop)
+  have hsum := hmap.comp (h.hasLaw_finset_sum_convolutionPower hX s)
+  simpa [Function.comp_def, Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_fn] using hsum
+
+end ProbabilityTheory
