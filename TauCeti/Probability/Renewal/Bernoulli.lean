@@ -75,7 +75,6 @@ theorem measure_renewalCountNat_le_of_bernoulliMeasure
       {ω | t < arrival T (n + 1) ω} := by
     filter_upwards [ae_tendsto_arrival_atTop_of_bernoulliMeasure hindep hlaw ha hq]
       with ω hω
-    apply propext
     rw [← not_le, ← le_renewalCountNat_iff hω]
     omega
   rw [measure_congr hae,

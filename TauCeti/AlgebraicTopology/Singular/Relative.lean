@@ -335,6 +335,16 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
 
 variable {P P'} in
+/-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to
+`eqToHom` of the corresponding equation of homologies. -/
+@[simp]
+lemma singularHomologyMap_eqToHom (h : P = P') (n : ℕ) :
+    P.singularHomologyMap (eqToHom h) R n =
+      eqToHom (congrArg (TopPair.singularHomology · R n) h) := by
+  subst h
+  simp
+
+variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
 subspace `A'` induces the zero map on relative singular homology. -/
 lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f)
@@ -532,6 +542,22 @@ lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : �
     P.singularHomologyδ R n m h ≫ SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m =
       TopPair.singularHomologyMap f R n ≫ P'.singularHomologyδ R n m h :=
   SSetPair.homologyδ_naturality (toSSetPair.map f) R n m h
+
+/-- On homology, the subspace component of the morphism of chain sequences induced by a map of
+pairs `f` is the singular homology map of `Hom.snd f`. -/
+lemma homologyMap_chainComplexShortComplexMap_τ₁ {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R).τ₁
+        n = ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map (Hom.snd f) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₁, toSSetPair_map_left]
+  rfl
+
+/-- On homology, the ambient component of the morphism of chain sequences induced by a map of
+pairs `f` is the singular homology map of `Hom.fst f`. -/
+lemma homologyMap_chainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R).τ₂
+        n = ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map (Hom.fst f) := by
+  rw [SSetPair.chainComplexShortComplexMap_τ₂, toSSetPair_map_right]
+  rfl
 
 /-- **The five lemma for relative singular homology.** A map of pairs `f : (X, A) ⟶ (X', A')`
 inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')`, and also `Hₘ(X) ≅ Hₘ(X')` and

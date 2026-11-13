@@ -36,6 +36,8 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
+* `WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero`, `WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero` —
+  a pair with one vanishing component has the norm of the other.
 * `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
   seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
@@ -68,6 +70,22 @@ universe u v
 namespace TauCeti
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {α β : Type*}
+
+/-- A pair whose second component vanishes has the norm of its first component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.snd = 0) : ‖x‖ = ‖x.fst‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_snd] at hx
+  subst hx
+  simp only [WithLp.toLp_fst, WithLp.norm_toLp_fst]
+
+/-- A pair whose first component vanishes has the norm of its second component. -/
+theorem _root_.WithLp.prod_norm_eq_norm_snd_of_fst_eq_zero [SeminormedAddCommGroup α]
+    [SeminormedAddCommGroup β] {x : WithLp p (α × β)} (hx : x.fst = 0) : ‖x‖ = ‖x.snd‖ := by
+  obtain ⟨a, b⟩ := x
+  simp only [WithLp.toLp_fst] at hx
+  subst hx
+  simp only [WithLp.toLp_snd, WithLp.norm_toLp_snd]
 
 /-- The `ℓ^p` norm of a pair is at most the sum of the norms of its two components. -/
 theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup α]

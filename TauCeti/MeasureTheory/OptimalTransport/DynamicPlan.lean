@@ -439,10 +439,10 @@ theorem eLpNorm_edist_map_eq {η : Measure C(I, X)} (hη : ∀ᵐ γ ∂η, γ �
   -- Pass to the real distance, which the geodesic condition scales by the constant `dist s t`.
   have hreal (u v : I) : eLpNorm ((fun z : X × X ↦ edist z.1 z.2) ∘ fun γ ↦ (γ u, γ v)) p η =
       eLpNorm (fun γ : C(I, X) ↦ dist (γ u) (γ v)) p η :=
-    eLpNorm_congr_enorm_ae (hd.comp ((hev u).prodMk (hev v))).aestronglyMeasurable
+    eLpNorm_congr_eNorm_ae (hd.comp ((hev u).prodMk (hev v))).aestronglyMeasurable
       ((hev u).dist (hev v)).aestronglyMeasurable
-      (.of_forall fun γ ↦ by simp [edist_dist, Real.enorm_of_nonneg])
-  rw [hreal, hreal, edist_dist, ← Real.enorm_of_nonneg dist_nonneg, ← eLpNorm_const_smul]
+      (.of_forall fun γ ↦ by simp [edist_dist, Real.eNorm_of_nonneg])
+  rw [hreal, hreal, edist_dist, ← Real.eNorm_of_nonneg dist_nonneg, ← eLpNorm_const_smul]
   refine eLpNorm_congr_ae ?_
   filter_upwards [hη] with γ hγ
   rw [Pi.smul_apply, smul_eq_mul, mem_geodesicPaths_iff.1 hγ s t, Subtype.dist_eq, Real.dist_eq]
