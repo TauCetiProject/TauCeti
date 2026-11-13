@@ -46,4 +46,24 @@ theorem card_filter_card_image_le {α β : Type*} [Fintype α] [Fintype β] [Non
         ⟨f a, mem_image_of_mem f (mem_univ a)⟩
   simpa using card_le_card_of_surjOn _ hsurj
 
+/-- At most `|β|^r * r^(|ι₁| + |ι₂|)` pairs of functions from `ι₁` and `ι₂` into a nonempty
+finite type `β` have combined range of size at most `r`. Either domain or `r` may be empty or
+zero. -/
+theorem card_filter_card_image_union_le {ι₁ ι₂ β : Type*} [Fintype ι₁] [Fintype ι₂]
+    [Fintype β] [Nonempty β] [DecidableEq ι₁] [DecidableEq ι₂] [DecidableEq β] (r : ℕ) :
+    #{p : (ι₁ → β) × (ι₂ → β) | #(univ.image p.1 ∪ univ.image p.2) ≤ r} ≤
+      Fintype.card β ^ r * r ^ (Fintype.card ι₁ + Fintype.card ι₂) := by
+  let e := (Equiv.sumArrowEquivProdArrow ι₁ ι₂ β).symm
+  have himage (p : (ι₁ → β) × (ι₂ → β)) :
+      univ.image (e p) = univ.image p.1 ∪ univ.image p.2 := by
+    rcases p with ⟨f, g⟩
+    ext x
+    simp [e, Sum.exists]
+  have hinj : #(filter (fun p : (ι₁ → β) × (ι₂ → β) ↦ #(univ.image p.1 ∪ univ.image p.2) ≤ r)
+      univ) ≤ #{f : ι₁ ⊕ ι₂ → β | #(univ.image f) ≤ r} :=
+    card_le_card_of_injOn e (fun p hp ↦ by
+      rw [mem_coe, mem_filter] at hp ⊢
+      exact ⟨mem_univ _, (himage p).symm ▸ hp.2⟩) e.injective.injOn
+  simpa only [Fintype.card_sum] using hinj.trans (card_filter_card_image_le r)
+
 end TauCeti
