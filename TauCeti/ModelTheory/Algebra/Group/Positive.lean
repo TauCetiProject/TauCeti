@@ -9,8 +9,8 @@ public import TauCeti.GroupTheory.MalcevEquation
 public import TauCeti.Logic.ForallExistsAlt
 public import TauCeti.ModelTheory.Algebra.Group.TermWord
 public import TauCeti.ModelTheory.Positive
+import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.CSA
-import TauCeti.GroupTheory.FreeGroup.EqIneqSystem
 import TauCeti.GroupTheory.FreeGroup.Vaught
 
 /-!
@@ -105,7 +105,7 @@ private theorem lift_map_quantSlot {G : Type*} [Group G] {k : ℕ} (v : X → G)
       (FreeGroup.map (Sum.map (quantSlot X n k z) id) w) =
     FreeGroup.lift (Sum.elim (Sum.elim (Sum.elim v
         (Fin.snoc xs (Sum.elim (Fin.cons x xs') (Fin.cons y ys') z))) (Sum.elim xs' ys')) c) w := by
-  rw [← EqIneqSystem.eval_eq_lift, EqIneqSystem.eval_map_sumMap, EqIneqSystem.eval_eq_lift]
+  rw [FreeGroup.lift_map, Sum.elim_comp_map, Function.comp_id]
   congr 3
   funext i
   rcases i with (i | i) | i | i
@@ -131,9 +131,8 @@ private theorem exists_word_realize_iff_forallExistsAlt_of_isPrenex
   · intro m θ hqf hθ
     obtain ⟨w, h⟩ := exists_word_realize_iff_of_isPositive_of_isQF hθ hqf a b
     refine ⟨0, FreeGroup.map (Sum.map Sum.inl id) w, fun G _ _ v c xs hV hG hab => ?_⟩
-    rw [h G v c xs hV hG hab, forallExistsAlt_zero]
-    simp only [← EqIneqSystem.eval_eq_lift, EqIneqSystem.eval_map_sumMap]
-    rfl
+    rw [h G v c xs hV hG hab, forallExistsAlt_zero, FreeGroup.lift_map, Sum.elim_comp_map,
+      Function.comp_id, Sum.elim_comp_inl]
   · rintro m θ ⟨k, w, h⟩
     refine ⟨k + 1, FreeGroup.map (Sum.map (quantSlot X m k (.inl 0)) id) w,
       fun G _ _ v c xs hV hG hab => ?_⟩
@@ -165,7 +164,7 @@ theorem exists_word_realize_iff_forallExistsAlt
         letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
         (φ.Realize v xs ↔ ForallExistsAlt k fun x y : Fin k → G =>
           FreeGroup.lift (Sum.elim (Sum.elim (Sum.elim v xs) (Sum.elim x y)) c) w = 1) := by
-  obtain ⟨ψ, hp, hψ, e⟩ := hφ.exists_isPrenex_iff
+  obtain ⟨ψ, hp, hψ, e⟩ := hφ.exists_isPrenex_and_isPositive_and_theoryIff
   obtain ⟨k, w, h⟩ := exists_word_realize_iff_forallExistsAlt_of_isPrenex hp hψ a b
   refine ⟨k, w, fun G _ _ v c xs hV hG hab => ?_⟩
   let : Language.group.Structure G := TauCeti.Group.structureOfGroup G
@@ -196,7 +195,7 @@ theorem exists_word_realize_sentence_iff_forallExistsAlt
     · exact i.elim
     · exact i.elim0
     · rfl
-  simp only [← EqIneqSystem.eval_eq_lift, EqIneqSystem.eval_map_sumMap, hcomp]
+  simp only [FreeGroup.lift_map, Sum.elim_comp_map, Function.comp_id, hcomp]
 
 /-- A free group on at least two letters, with the letters as coefficients, is a torsion-free CSA
 group satisfying Vaught's condition in which two distinct letters do not commute: every positive
