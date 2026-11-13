@@ -175,8 +175,9 @@ open scoped Classical in
 /-- The **sign of the trajectory** through `y` from `p` to `q`, for orientations `op` and `oq` of
 the unstable manifolds at `p` and `q`: `1` when the comparison map is an isomorphism carrying `op`
 to the standard orientation of `ℝ` followed by `oq`, `-1` when it is an isomorphism reversing these
-orientations, and `0` when it is not an isomorphism, which does not happen on trajectories from `p`
-to `q` under the Morse–Smale condition. -/
+orientations, and `0` when it is not an isomorphism. The last case does not happen on trajectories
+from `p` to `q` when `X` is linear in `φp` and `φq` and satisfies the Morse–Smale condition
+(`TauCeti.IsAdaptedPseudoGradient.bijective_trajectoryComparison`). -/
 noncomputable def trajectorySign
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)))
@@ -367,6 +368,11 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
   rw [trajectorySign_of_bijective hC, trajectorySign_of_bijective hC']
   set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hC
   set e' := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq (hX.flow t y)).toLinearMap hC'
+  have he (v : {i // φp.weight i < 0} → ℝ) : e v = hX.trajectoryComparison φp φq y v :=
+    LinearEquiv.ofBijective_apply _ v
+  have he' (v : {i // φp.weight i < 0} → ℝ) :
+      e' v = hX.trajectoryComparison φp φq (hX.flow t y) v :=
+    LinearEquiv.ofBijective_apply _ v
   obtain ⟨Tp, hTp⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
   obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hy.2).exists
   -- The unstable frame is rescaled by `e^{-t}` and the normal coordinates by `e^{t}`, so the
@@ -381,16 +387,16 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
       Real.exp_zero, one_smul, smul_eq_mul]
   -- So `e' = B ∘ e` for an endomorphism `B` of `ℝ × Vq` fixing the second component.
   set B := e.symm.trans e'
+  have hBe (w : ℝ × ({i // φq.weight i < 0} → ℝ)) : B w = e' (e.symm w) :=
+    LinearEquiv.trans_apply w
   have hB (w : ℝ × ({i // φq.weight i < 0} → ℝ)) : (B w).2 = w.2 := by
     obtain ⟨v, rfl⟩ := e.surjective w
-    rw [show B (e v) = e' v from congrArg e' (e.symm_apply_apply v)]
-    change (hX.trajectoryComparison φp φq (hX.flow t y) v).2 =
-      (hX.trajectoryComparison φp φq y v).2
-    rw [hcomp, trajectoryComparison_apply]
+    rw [hBe, e.symm_apply_apply, he', he, hcomp, trajectoryComparison_apply]
   -- `B` scales the axis `ℝ × 0`, the image of the velocity, by a positive factor, since `f`
   -- decreases along the flow at both points.
   have h1 : 0 < (B (1, 0)).1 := by
-    have hv : hX.trajectoryComparison φp φq y (e.symm (1, 0)) = (1, 0) := e.apply_symm_apply _
+    have hv : hX.trajectoryComparison φp φq y (e.symm (1, 0)) = (1, 0) :=
+      (he _).symm.trans (e.apply_symm_apply _)
     rw [trajectoryComparison_apply, Prod.mk.injEq] at hv
     obtain ⟨c, hc⟩ := exists_unstableFrame_eq_smul hφp hφq hMS hf hpq hy hv.2
     have h0 := hX.mvfderiv_apply_lt_zero y
@@ -400,14 +406,12 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
     have hv1 := hv.1
     rw [hc, map_smul, smul_eq_mul] at hv1
     have hcneg : c < 0 := by nlinarith
-    change 0 < (hX.trajectoryComparison φp φq (hX.flow t y) (e.symm (1, 0))).1
-    rw [hcomp, hc, map_smul, hX.mfderiv_flow_apply_self, map_smul, smul_eq_mul]
+    rw [hBe, he', hcomp, hc, map_smul, hX.mfderiv_flow_apply_self, map_smul, smul_eq_mul]
     exact mul_pos (Real.exp_pos _) (mul_pos_of_neg_of_neg hcneg h0')
   have hmap : Orientation.map _ e' op = Orientation.map _ B (Orientation.map _ e op) := by
-    have he : e' = e.trans B := LinearEquiv.ext fun v ↦ by
-      simp only [B, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
-    rw [he]
-    induction op using Module.Ray.ind with | h a ha => rfl
+    have hee : e' = e.trans B := LinearEquiv.ext fun v ↦ by
+      rw [LinearEquiv.trans_apply, hBe, e.symm_apply_apply]
+    rw [hee, Orientation.map_trans]
   have hcard : Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) =
       Module.finrank ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)) := by
     rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φq.finrank_negativeWeight_fun]

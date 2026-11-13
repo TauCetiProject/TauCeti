@@ -74,10 +74,11 @@ theorem det_eq_fst_of_snd_eq (B : K × V →ₗ[K] K × V) (hB : ∀ v, (B v).2 
   -- On the axis `W = K × 0`, `B` is multiplication by `(B (1, 0)).1`.
   have hR : B.restrict (p := W) (q := W) hW = (B (1, 0)).1 • LinearMap.id := by
     refine LinearMap.ext fun ⟨w, hw⟩ ↦ Subtype.ext ?_
-    have hw2 : w.2 = 0 := hw
+    have hw2 : w.2 = 0 := by simpa only [W, LinearMap.mem_ker, LinearMap.snd_apply] using hw
     have hw' : w = w.1 • ((1 : K), (0 : V)) := Prod.ext (by simp) (by simp [hw2])
     have hB1 : B (1, 0) = ((B (1, 0)).1, 0) := Prod.ext rfl (hB _)
-    change B w = (B (1, 0)).1 • w
+    rw [LinearMap.coe_restrict_apply, LinearMap.smul_apply, LinearMap.id_apply, Submodule.coe_smul,
+      Submodule.coe_mk]
     conv_lhs => rw [hw']
     rw [map_smul, hB1]
     exact Prod.ext (by simp [mul_comm]) (by simp [hw2])

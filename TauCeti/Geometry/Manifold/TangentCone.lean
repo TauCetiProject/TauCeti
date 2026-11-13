@@ -300,7 +300,8 @@ theorem IsSliceChart.span_mtangentConeAt_eq_comap (hn : n ≠ 0)
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
   have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
   rw [tangentConeAt_preimage_symm_eq hs hL hy hys] at himg
-  rw [mfderiv_eq_of_hasFDerivAt_chartAt_symm_trans hy hA, ← A.injective.preimage_image
+  rw [OpenPartialHomeomorph.coe_trans] at hA
+  rw [mfderiv_eq_of_hasFDerivAt_chartAt_symm hA, ← A.injective.preimage_image
     (mtangentConeAt 𝓘(𝕜, E) s y), himg]
   exact Submodule.span_eq (L.comap ((A : E →L[𝕜] E) : E →ₗ[𝕜] E))
 

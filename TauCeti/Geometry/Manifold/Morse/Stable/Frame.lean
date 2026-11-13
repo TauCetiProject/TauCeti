@@ -62,6 +62,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `eventually_mem_linearForwardTimes`, `eventually_mem_linearBackwardTimes`: points of the
   stable, respectively unstable, manifold have admissible times.
 * `stableNormal_apply`, `mfderiv_unstableFrame`: the two maps read at any admissible time.
+* `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
+  of the stable manifold is read off the derivative of `φ ∘ Φ_T`.
 * `stableNormal_eq_zero_iff`, `surjective_stableNormal`: the normal coordinates vanish exactly on
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
@@ -200,16 +202,13 @@ theorem coord_mfderiv_toChart_comp_flow_add {y : M} {T s : ℝ}
       φ.linearFlow s (φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y w)) := by
   have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ hs
   rw [φ.toChart_symm_coord_symm_coord hT] at hflow
-  have hsrc : hX.flow s (hX.flow T y) ∈ φ.toChart.source :=
-    hflow ▸ φ.toChart.map_target (hs s right_mem_uIcc)
-  have hd (t : ℝ) (z : M) : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) z :=
-    (hX.contMDiff_flow_apply t).mdifferentiable (by simp) z
-  have hcomp : φ.toChart ∘ hX.flow (s + T) = (φ.toChart ∘ hX.flow s) ∘ hX.flow T := by
-    funext z
-    simp [Flow.map_add]
-  rw [hcomp, mfderiv_comp_apply y ((φ.mdifferentiableAt_toChart hsrc).comp _ (hd s _)) (hd T y),
-    hX.coord_mfderiv_toChart_comp_flow φ hφ hT hs,
-    mfderiv_comp_apply y (φ.mdifferentiableAt_toChart hT) (hd T y)]
+  have hsrc : hX.flow (s + T) y ∈ φ.toChart.source := by
+    rw [Flow.map_add]
+    exact hflow ▸ φ.toChart.map_target (hs s right_mem_uIcc)
+  have hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow T) y :=
+    (hX.contMDiff_flow_apply T).mdifferentiable (by simp) y
+  rw [← mfderiv_toChart_comp_flow_mfderiv_flow hsrc, hX.coord_mfderiv_toChart_comp_flow φ hφ hT hs,
+    mfderiv_comp_apply y (φ.mdifferentiableAt_toChart hT) hd]
 
 /-- The times of linear forward flow are closed under waiting, and along the wait the coordinates
 of the orbit follow the linear flow. -/
@@ -304,16 +303,16 @@ theorem stableNormal_apply {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTimes �
   rw [sub_add_cancel] at h₀ h₁
   exact h₀.symm.trans h₁
 
-/-- **The normal coordinates vanish exactly on the tangent space of the stable manifold.** At a
-point `y` of `W^s(x)`, the normal coordinates of a tangent vector vanish exactly when it lies in
-the span of the tangent cone of `W^s(x)` at `y`. -/
-theorem stableNormal_eq_zero_iff {y : M}
-    (hy : y ∈ hX.flow.stableSet x) (v : TangentSpace 𝓘(ℝ, E) y) :
-    hX.stableNormal φ y v = 0 ↔
-      v ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet x) y) := by
+/-- **The tangent space of the stable manifold, read along the flow.** At a point `y` of `W^s(x)`,
+for all large times `T`, the span of the tangent cone of `W^s(x)` at `y` is the preimage of the
+stable subspace of `φ` under the derivative of `φ ∘ Φ_T` at `y`. -/
+theorem eventually_span_mtangentConeAt_stableSet_eq_comap {y : M}
+    (hy : y ∈ hX.flow.stableSet x) :
+    ∀ᶠ T in atTop, Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet x) y) =
+      φ.stableSubspace.comap (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y).toLinearMap := by
   obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
-  obtain ⟨T, hT, hTD⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
-    ((Flow.mem_stableSet.1 hy).eventually (hD.mem_nhds hxD))).exists
+  filter_upwards [(Flow.mem_stableSet.1 hy).eventually (hD.mem_nhds hxD)] with T hTD
+  -- `φ ∘ Φ_T`, restricted to the preimage of `D`, is a slice chart of `W^s(x)` at `y`.
   set q := (hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D)
   have hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
     (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
@@ -323,8 +322,18 @@ theorem stableNormal_eq_zero_iff {y : M}
     funext z
     simp [q]
   rw [(hslice T).span_mtangentConeAt_eq_comap (by simp) hq
-    φ.stableSubspace.isClosed_of_finiteDimensional hyq hy, hqf, stableNormal_apply hφ hT,
-    smul_eq_zero_iff_right (Real.exp_ne_zero _)]
+    φ.stableSubspace.isClosed_of_finiteDimensional hyq hy, hqf]
+
+/-- **The normal coordinates vanish exactly on the tangent space of the stable manifold.** At a
+point `y` of `W^s(x)`, the normal coordinates of a tangent vector vanish exactly when it lies in
+the span of the tangent cone of `W^s(x)` at `y`. -/
+theorem stableNormal_eq_zero_iff {y : M}
+    (hy : y ∈ hX.flow.stableSet x) (v : TangentSpace 𝓘(ℝ, E) y) :
+    hX.stableNormal φ y v = 0 ↔
+      v ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet x) y) := by
+  obtain ⟨T, hT, hspan⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
+    (eventually_span_mtangentConeAt_stableSet_eq_comap hφ hy)).exists
+  rw [hspan, stableNormal_apply hφ hT, smul_eq_zero_iff_right (Real.exp_ne_zero _)]
   -- Membership in the preimage `Submodule.comap` is membership of the image.
   exact φ.mem_stableSubspace_iff_negativeCoord_eq_zero.symm
 
@@ -363,12 +372,12 @@ theorem stableNormal_mfderiv_flow {y : M} {T : ℝ} (hT : T ∈ hX.linearForward
 omit hφ in
 /-- The times of linear forward flow of `-X` in the negated Morse chart are the times of linear
 backward flow of `X`. -/
-theorem linearForwardTimes_neg (hf : IsMorse 𝓘(ℝ, E) f)
+theorem neg_linearForwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
     (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (y : M) :
     (hX.neg hf).linearForwardTimes (φ.neg h) y = hX.linearBackwardTimes φ y := by
   ext T
   simp only [linearForwardTimes, linearBackwardTimes, mem_ofPred_eq, hX.neg_flow hf,
-    Flow.reverse_apply, MorseChart.neg_toChart, MorseChart.neg_coord, φ.linearFlow_neg h]
+    Flow.reverse_apply, MorseChart.neg_toChart, MorseChart.neg_coord, φ.neg_linearFlow h]
   refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
   simpa using h (-t) (by linarith)
 
@@ -379,7 +388,7 @@ theorem eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
   have h := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
     (hX.mfderiv_eq_zero_of_mem_unstableSet hy)
   rw [hX.unstableSet_eq_stableSet_neg hf] at hy
-  simpa only [linearForwardTimes_neg (hX := hX) hf h] using
+  simpa only [neg_linearForwardTimes (hX := hX) hf h] using
     (hX.neg hf).eventually_mem_linearForwardTimes (φ.coord_mfderiv_neg hφ h) hy
 
 /-- Waiting for a further time `s ≥ 0` backwards multiplies a vector of negative weight in the
@@ -469,23 +478,14 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     (hX.mfderiv_eq_zero_of_mem_unstableSet hy)
   have hφ' := φ.coord_mfderiv_neg hφ h
   rw [hX.unstableSet_eq_stableSet_neg hf] at hy ⊢
-  obtain ⟨D, hD, hxD, hDs, hslice⟩ :=
-    (hX.neg hf).exists_isSliceChart_stableSet_flow (φ.neg h) hφ'
   have hev := hX.eventually_mem_linearBackwardTimes hφ hf
     ((hX.unstableSet_eq_stableSet_neg hf x).symm ▸ hy)
-  obtain ⟨T, hT, hTD⟩ := (hev.and ((Flow.mem_stableSet.1 hy).eventually (hD.mem_nhds hxD))).exists
-  set q := ((hX.neg hf).flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
-    ((φ.neg h).toChart.restr D)
-  have hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    ((hX.neg hf).flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
-      (restr_mem_maximalAtlas _ (φ.neg h).mem_maximalAtlas hD)
-  have hTs : (hX.neg hf).flow T y ∈ φ.toChart.source := by simpa using hDs hTD
-  have hyq : y ∈ q.source := by simpa [q, hD.interior_eq] using ⟨hTs, hTD⟩
-  have hqf : (q : M → E) = φ.toChart ∘ hX.flow (-T) := by
+  obtain ⟨T, hT, hspan⟩ := (hev.and
+    (eventually_span_mtangentConeAt_stableSet_eq_comap (hX := hX.neg hf) hφ' hy)).exists
+  have hqf : ((φ.neg h).toChart ∘ (hX.neg hf).flow T : M → E) = φ.toChart ∘ hX.flow (-T) := by
     funext z
-    simp [q, hX.neg_flow hf]
-  rw [(hslice T).span_mtangentConeAt_eq_comap (by simp) hq
-    (φ.neg h).stableSubspace.isClosed_of_finiteDimensional hyq hy, hqf]
+    simp [hX.neg_flow hf]
+  rw [hspan, hqf]
   have hinv := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ) hT.1
   ext v
   rw [mem_range]
