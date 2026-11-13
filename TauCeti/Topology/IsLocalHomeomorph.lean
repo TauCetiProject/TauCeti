@@ -115,6 +115,20 @@ theorem localInverseAt_comp_eventuallyEq {p : E → B}
 
 section FiberSum
 
+/-- A local homeomorphism into any space has, around the points of a finite subset of a Hausdorff
+space, pairwise disjoint open neighbourhoods on which it is injective. -/
+private theorem exists_isOpen_injOn_pairwiseDisjoint [T2Space E] {p : E → B}
+    (hp : IsLocalHomeomorph p) {F : Set E} (hF : F.Finite) :
+    ∃ W : E → Set E, (∀ e, IsOpen (W e)) ∧ (∀ e, e ∈ W e) ∧ (∀ e, Set.InjOn p (W e)) ∧
+      F.PairwiseDisjoint W := by
+  obtain ⟨O, hO, hdisj⟩ := hF.t2_separation
+  have hW (e : E) : ∃ W : Set E, IsOpen W ∧ e ∈ W ∧ W ⊆ O e ∧ Set.InjOn p W := by
+    obtain ⟨U, hU, heU, hinj⟩ := hp.isLocallyInjective e
+    exact ⟨O e ∩ U, (hO e).2.inter hU, ⟨(hO e).1, heU⟩, Set.inter_subset_left,
+      hinj.mono Set.inter_subset_right⟩
+  choose W hWo hWe hWO hWinj using hW
+  exact ⟨W, hWo, hWe, hWinj, fun e he e' he' hne ↦ (hdisj he he' hne).mono (hWO e) (hWO e')⟩
+
 /-- **Sums over the fibers of a local homeomorphism are locally finite sums.** Let `p : E → B`
 be a local homeomorphism of Hausdorff spaces with weakly locally compact base, and let `f` be a
 function whose topological support meets the preimage of each compact set in a compact set. Let
@@ -134,12 +148,7 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
   -- by disjoint open sets `W e` on which `p` is injective.
   have hF :=
     hp.isLocallyInjective.finite_preimage_singleton_inter (hf (isCompact_singleton (x := b₀)))
-  obtain ⟨O, hO, hdisj⟩ := hF.t2_separation
-  have hW (e : E) : ∃ W : Set E, IsOpen W ∧ e ∈ W ∧ W ⊆ O e ∧ Set.InjOn p W := by
-    obtain ⟨U, hU, heU, hinj⟩ := hp.isLocallyInjective e
-    exact ⟨O e ∩ U, (hO e).2.inter hU, ⟨(hO e).1, heU⟩, Set.inter_subset_left,
-      hinj.mono Set.inter_subset_right⟩
-  choose W hWo hWe hWO hWinj using hW
+  obtain ⟨W, hWo, hWe, hWinj, hWdisj⟩ := exists_isOpen_injOn_pairwiseDisjoint hp hF
   -- Away from the image of the rest `L` of the support over a compact neighbourhood `K`, every
   -- point of a fiber in the support lies in some `W e`.
   set L := tsupport f \ ⋃ e ∈ hF.toFinset, W e
@@ -163,8 +172,8 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
   · -- Distinct points of `F` have sections in the disjoint sets `W e`.
     intro e he e' he' h
     by_contra hne
-    exact Set.disjoint_left.mp (hdisj (hF.mem_toFinset.1 he) (hF.mem_toFinset.1 he') hne)
-      (hWO e (hbσ e he).1) (by simpa only [h] using hWO e' (hbσ e' he').1)
+    exact Set.disjoint_left.mp (hWdisj (hF.mem_toFinset.1 he) (hF.mem_toFinset.1 he') hne)
+      (hbσ e he).1 (by simpa only [h] using (hbσ e' he').1)
   · ext e'
     simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff, Finset.coe_image,
       Set.mem_image, Finset.mem_coe, Function.mem_support]
