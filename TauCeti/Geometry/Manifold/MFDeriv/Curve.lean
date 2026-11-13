@@ -288,20 +288,9 @@ applied to `w`. -/
 theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
     (hf : MDifferentiableAt 𝓘(𝕜, F) I f (g t)) (hg : HasDerivAt g w t) :
     curveVelocity I (f ∘ g) t = mfderiv 𝓘(𝕜, F) I f (g t) w := by
-  have hcomp := hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt
-  have hwithin : curveVelocityWithin I (f ∘ g) Set.univ t =
-      mfderiv 𝓘(𝕜, F) I f (g t) w := by
-    apply curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (w := mfderiv 𝓘(𝕜, F) I f (g t) w) _ uniqueDiffWithinAt_univ
-    apply hcomp.hasMFDerivWithinAt.congr_mfderiv
-    apply ContinuousLinearMap.ext
-    intro z
-    -- The source model of a scalar curve is one-dimensional; exposing its scalar coordinate lets
-    -- linearity identify the derivative on `z` with its value on `1`.
-    change mfderiv 𝓘(𝕜, F) I f (g t) ((show 𝕜 from z) • w) =
-      (show 𝕜 from z) • mfderiv 𝓘(𝕜, F) I f (g t) w
-    exact map_smul _ _ _
-  simpa only [curveVelocityWithin_univ] using hwithin
+  rw [curveVelocity_apply, (hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt).mfderiv]
+  change mfderiv 𝓘(𝕜, F) I f (g t) ((1 : 𝕜) • w) = _
+  rw [one_smul]
 
 end MDifferentiableAt
 
@@ -646,16 +635,8 @@ theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : �
     tangentMapWithin 𝓘(𝕜, 𝕜) I γ u
         (TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
       curveVelocityLiftWithin I γ u t := by
-  have hunit : (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm (1 : 𝕜) =
-      (1 : 𝕜) := by
-    apply (NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).injective
-    rw [ContinuousLinearEquiv.apply_symm_apply]
-    rfl
-  apply TotalSpace.ext
-  · exact tangentMapWithin_proj
-  · rw [tangentMapWithin_snd, curveVelocityLiftWithin_snd, hunit,
-      curveVelocityWithin_apply]
-    rfl
+  rw [curveVelocityLiftWithin_apply, curveVelocityWithin_apply]
+  rfl
 
 /-- Tangent maps carry the velocity lift within a parameter set to the velocity lift of the
 image curve. This is the tangent-bundle form of the within-domain chain rule. -/
