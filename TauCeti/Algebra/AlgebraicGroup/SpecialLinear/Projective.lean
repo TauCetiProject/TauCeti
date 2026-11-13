@@ -12,10 +12,10 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 /-!
 # The projective special linear point functor
 
-For positive `n`, the represented center of `SLₙ` maps isomorphically onto the ordinary center
-of its group of points. Consequently, its pointwise center quotient is Mathlib's projective
-special linear group `PSL(Fin n, A)` over every commutative value algebra `A`. This file proves
-that identification and packages it naturally in `A`.
+The represented center of `SLₙ` maps isomorphically onto the ordinary center of its group of
+points. Consequently, its pointwise center quotient is Mathlib's projective special linear group
+`PSL(Fin n, A)` over every commutative value algebra `A`. This file proves that identification
+and packages it naturally in `A`.
 
 Over an algebraically closed field, Mathlib's canonical inclusion from `PSLₙ` to `PGLₙ` is
 bijective. Composing it with the pointwise quotient identification gives the expected
@@ -56,11 +56,13 @@ variable {k : Type u} [Field k]
 
 /-- Under the standard equivalence between `SLₙ`-points and determinant-one matrices, the
 represented center maps onto the ordinary group-theoretic center. -/
-theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (hn : 0 < n)
-    (A : CommAlgCat.{u} k) :
+theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (A : CommAlgCat.{u} k) :
     (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A).map
         (pointsMulEquiv (R := k) (A := A) n) =
       Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A) := by
+  -- In rank zero the group of determinant-one matrices is trivial.
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact Subsingleton.elim _ _
   apply le_antisymm
   · rintro _ ⟨q, hq, rfl⟩
     apply MulEquivClass.apply_mem_center
@@ -92,7 +94,7 @@ theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (hn : 0 < n)
 
 /-- The pointwise quotient of `SLₙ` by its represented center is the projective special linear
 group over the same value algebra. -/
-noncomputable def centerPointwiseQuotientIsoPSL (hn : 0 < n) (A : CommAlgCat.{u} k) :
+noncomputable def centerPointwiseQuotientIsoPSL (A : CommAlgCat.{u} k) :
     CommHopfAlgCat.centerPointwiseQuotient (coordinateHopfAlgebra k n) A ≅
       GrpCat.of (Matrix.ProjectiveSpecialLinearGroup (Fin n) A) := by
   let _ : Group (CommHopfAlgCat.centerPointwiseQuotient
@@ -108,14 +110,14 @@ noncomputable def centerPointwiseQuotientIsoPSL (hn : 0 < n) (A : CommAlgCat.{u}
     (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A)
     (Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A))
     (pointsMulEquiv (R := k) (A := A) n)
-    (map_centerPointsSubgroup_pointsMulEquiv_eq_center n hn A)).toGrpIso
+    (map_centerPointsSubgroup_pointsMulEquiv_eq_center n A)).toGrpIso
 
 /-- The quotient equivalence sends the class of an `SLₙ`-point to the class of its associated
 determinant-one matrix. -/
 @[simp]
-theorem centerPointwiseQuotientIsoPSL_hom_mk (hn : 0 < n) (A : CommAlgCat.{u} k)
+theorem centerPointwiseQuotientIsoPSL_hom_mk (A : CommAlgCat.{u} k)
     (q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) :
-    (centerPointwiseQuotientIsoPSL n hn A).hom
+    (centerPointwiseQuotientIsoPSL n A).hom
         (↑q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
           CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A) =
       QuotientGroup.mk (pointsMulEquiv (R := k) (A := A) n q) := by
@@ -129,18 +131,18 @@ theorem centerPointwiseQuotientIsoPSL_hom_mk (hn : 0 < n) (A : CommAlgCat.{u} k)
     (CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A)
     (Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A))
     (pointsMulEquiv (R := k) (A := A) n)
-    (map_centerPointsSubgroup_pointsMulEquiv_eq_center n hn A) q
+    (map_centerPointsSubgroup_pointsMulEquiv_eq_center n A) q
 
 /-- The inverse quotient equivalence sends the class of a determinant-one matrix to the class of
 its associated `SLₙ`-point. -/
 @[simp]
-theorem centerPointwiseQuotientIsoPSL_inv_mk (hn : 0 < n) (A : CommAlgCat.{u} k)
+theorem centerPointwiseQuotientIsoPSL_inv_mk (A : CommAlgCat.{u} k)
     (g : Matrix.SpecialLinearGroup (Fin n) A) :
-    (centerPointwiseQuotientIsoPSL n hn A).inv (QuotientGroup.mk g) =
+    (centerPointwiseQuotientIsoPSL n A).inv (QuotientGroup.mk g) =
       (↑((pointsMulEquiv (R := k) (A := A) n).symm g) :
         HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
           CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A) := by
-  have h := centerPointwiseQuotientIsoPSL_hom_mk n hn A
+  have h := centerPointwiseQuotientIsoPSL_hom_mk n A
     ((pointsMulEquiv (R := k) (A := A) n).symm g)
   rw [MulEquiv.apply_symm_apply] at h
   rw [← h, Iso.hom_inv_id_apply]
@@ -175,14 +177,14 @@ theorem pslPointsFunctor_map {R : Type u} [CommRing R]
   by unfold pslPointsFunctor; rfl
 
 /-- The quotient equivalence commutes with extension of scalars in the value algebra. -/
-theorem centerPointwiseQuotientIsoPSL_hom_naturality (hn : 0 < n)
+theorem centerPointwiseQuotientIsoPSL_hom_naturality
     {A B : CommAlgCat.{u} k} (φ : A ⟶ B) :
     CommHopfAlgCat.mapPointwiseQuotient
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
         (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) φ ≫
-      (centerPointwiseQuotientIsoPSL n hn B).hom =
-    (centerPointwiseQuotientIsoPSL n hn A).hom ≫
+      (centerPointwiseQuotientIsoPSL n B).hom =
+    (centerPointwiseQuotientIsoPSL n A).hom ≫
       GrpCat.ofHom (projectiveMap n φ.hom.toRingHom) := by
   let _ : Group (CommHopfAlgCat.centerPointwiseQuotient
       (coordinateHopfAlgebra k n) A) :=
@@ -201,12 +203,12 @@ theorem centerPointwiseQuotientIsoPSL_hom_naturality (hn : 0 < n)
     CommHopfAlgCat.centerPointwiseQuotientMk_apply]
   -- Normalize both projection applications to the quotient coercions used by the public API.
   change
-    (centerPointwiseQuotientIsoPSL n hn B).hom
+    (centerPointwiseQuotientIsoPSL n B).hom
         (↑(HopfAlgebra.mapPoints (H := coordinateHopfAlgebra k n) φ q) :
           HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) B ⧸
             CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) B) =
       projectiveMap n φ.hom.toRingHom
-        ((centerPointwiseQuotientIsoPSL n hn A).hom
+        ((centerPointwiseQuotientIsoPSL n A).hom
           (↑q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
             CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A))
   rw [centerPointwiseQuotientIsoPSL_hom_mk,
@@ -216,7 +218,7 @@ theorem centerPointwiseQuotientIsoPSL_hom_naturality (hn : 0 < n)
 
 /-- The pointwise center quotient of `SLₙ` is naturally isomorphic to the presheaf with values
 Mathlib's projective special linear groups. -/
-noncomputable def centerPointwiseQuotientNatIsoPSL (hn : 0 < n) :
+noncomputable def centerPointwiseQuotientNatIsoPSL :
     CommHopfAlgCat.pointwiseQuotientFunctor
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
@@ -228,7 +230,7 @@ noncomputable def centerPointwiseQuotientNatIsoPSL (hn : 0 < n) :
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
         (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) A) ≪≫
-      centerPointwiseQuotientIsoPSL n hn A ≪≫
+      centerPointwiseQuotientIsoPSL n A ≪≫
       eqToIso (pslPointsFunctor_obj n A).symm) (by
       intro A B φ
       have hprojective :
@@ -248,46 +250,43 @@ noncomputable def centerPointwiseQuotientNatIsoPSL (hn : 0 < n) :
             (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
             (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) A) ≫
               z ≫ eqToHom (pslPointsFunctor_obj n B).symm)
-          (centerPointwiseQuotientIsoPSL_hom_naturality n hn φ))
+          (centerPointwiseQuotientIsoPSL_hom_naturality n φ))
 
 /-- After transport to the concrete quotient groups, the hom component of the natural
 identification is the objectwise quotient isomorphism. -/
 @[simp]
-theorem centerPointwiseQuotientNatIsoPSL_hom_app (hn : 0 < n)
-    (A : CommAlgCat.{u} k) :
+theorem centerPointwiseQuotientNatIsoPSL_hom_app (A : CommAlgCat.{u} k) :
     eqToHom (CommHopfAlgCat.pointwiseQuotientFunctor_obj
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
         (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) A).symm ≫
-      (centerPointwiseQuotientNatIsoPSL n hn).hom.app A ≫
+      (centerPointwiseQuotientNatIsoPSL n).hom.app A ≫
         eqToHom (pslPointsFunctor_obj n A) =
-      (centerPointwiseQuotientIsoPSL n hn A).hom := by
+      (centerPointwiseQuotientIsoPSL n A).hom := by
   unfold centerPointwiseQuotientNatIsoPSL
   simp
 
 /-- After transport to the concrete quotient groups, the inverse component of the natural
 identification is the inverse objectwise quotient isomorphism. -/
 @[simp]
-theorem centerPointwiseQuotientNatIsoPSL_inv_app (hn : 0 < n)
-    (A : CommAlgCat.{u} k) :
+theorem centerPointwiseQuotientNatIsoPSL_inv_app (A : CommAlgCat.{u} k) :
     eqToHom (pslPointsFunctor_obj n A).symm ≫
-        (centerPointwiseQuotientNatIsoPSL n hn).inv.app A ≫
+        (centerPointwiseQuotientNatIsoPSL n).inv.app A ≫
       eqToHom (CommHopfAlgCat.pointwiseQuotientFunctor_obj
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
         (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) A) =
-    (centerPointwiseQuotientIsoPSL n hn A).inv := by
+    (centerPointwiseQuotientIsoPSL n A).inv := by
   unfold centerPointwiseQuotientNatIsoPSL
   simp
 
 /-- After transport to the concrete quotient groups, the hom component of the natural
 identification sends a quotient class to the class of its associated determinant-one matrix. -/
 @[simp]
-theorem centerPointwiseQuotientNatIsoPSL_hom_app_mk (hn : 0 < n)
-    (A : CommAlgCat.{u} k)
+theorem centerPointwiseQuotientNatIsoPSL_hom_app_mk (A : CommAlgCat.{u} k)
     (q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A) :
     eqToHom (pslPointsFunctor_obj n A)
-        ((centerPointwiseQuotientNatIsoPSL n hn).hom.app A
+        ((centerPointwiseQuotientNatIsoPSL n).hom.app A
           (eqToHom (CommHopfAlgCat.pointwiseQuotientFunctor_obj
               (coordinateHopfAlgebra k n)
               (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
@@ -298,26 +297,26 @@ theorem centerPointwiseQuotientNatIsoPSL_hom_app_mk (hn : 0 < n)
   have h := congrArg
     (fun f ↦ f (↑q : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
       CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A))
-    (centerPointwiseQuotientNatIsoPSL_hom_app n hn A)
+    (centerPointwiseQuotientNatIsoPSL_hom_app n A)
   simp only [GrpCat.hom_comp, MonoidHom.comp_apply] at h
   rw [h, centerPointwiseQuotientIsoPSL_hom_mk]
 
 /-- After transport to the concrete quotient groups, the inverse component of the natural
 identification sends the class of a determinant-one matrix to its associated quotient class. -/
 @[simp]
-theorem centerPointwiseQuotientNatIsoPSL_inv_app_mk (hn : 0 < n)
-    (A : CommAlgCat.{u} k) (g : Matrix.SpecialLinearGroup (Fin n) A) :
+theorem centerPointwiseQuotientNatIsoPSL_inv_app_mk (A : CommAlgCat.{u} k)
+    (g : Matrix.SpecialLinearGroup (Fin n) A) :
     eqToHom (CommHopfAlgCat.pointwiseQuotientFunctor_obj
         (coordinateHopfAlgebra k n)
         (CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n))
         (CommHopfAlgCat.isNormal_centerDefiningIdeal (coordinateHopfAlgebra k n)) A)
-      ((centerPointwiseQuotientNatIsoPSL n hn).inv.app A
+      ((centerPointwiseQuotientNatIsoPSL n).inv.app A
         (eqToHom (pslPointsFunctor_obj n A).symm (QuotientGroup.mk g))) =
       (↑((pointsMulEquiv (R := k) (A := A) n).symm g) :
         HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A ⧸
           CommHopfAlgCat.centerPointsSubgroup (coordinateHopfAlgebra k n) A) := by
   have h := congrArg (fun f ↦ f (QuotientGroup.mk g))
-    (centerPointwiseQuotientNatIsoPSL_inv_app n hn A)
+    (centerPointwiseQuotientNatIsoPSL_inv_app n A)
   simp only [GrpCat.hom_comp, MonoidHom.comp_apply] at h
   rw [h, centerPointwiseQuotientIsoPSL_inv_mk]
 
@@ -329,7 +328,7 @@ noncomputable def centerPointwiseQuotientIsoPGLOfAlgClosed (hn : 0 < n)
         (coordinateHopfAlgebra k n) (CommAlgCat.of k F) ≅
       GrpCat.of (Matrix.ProjGenLinGroup (Fin n) F) := by
   letI : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-  exact centerPointwiseQuotientIsoPSL n hn (CommAlgCat.of k F) ≪≫
+  exact centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F) ≪≫
     (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty
       (n := Fin n) (F := F)).symm.toGrpIso
 
@@ -352,7 +351,7 @@ theorem centerPointwiseQuotientIsoPGLOfAlgClosed_hom_mk (hn : 0 < n)
   unfold centerPointwiseQuotientIsoPGLOfAlgClosed
   -- The composite categorical isomorphism computes through Mathlib's underlying PSL-to-PGL map.
   change Matrix.ProjectiveSpecialLinearGroup.toPGL
-      ((centerPointwiseQuotientIsoPSL n hn (CommAlgCat.of k F)).hom (↑q)) = _
+      ((centerPointwiseQuotientIsoPSL n (CommAlgCat.of k F)).hom (↑q)) = _
   rw [centerPointwiseQuotientIsoPSL_hom_mk,
     Matrix.ProjectiveSpecialLinearGroup.toPGL_mk]
 
