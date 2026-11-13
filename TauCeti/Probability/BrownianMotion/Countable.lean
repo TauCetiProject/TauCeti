@@ -27,7 +27,7 @@ The finite-dimensional laws are indexed directly by finite sets of nonnegative r
 contained in the time set. Their single-coordinate Gaussian laws, increment laws, covariance
 and `IsGaussianProcess` property are available for arbitrary processes with these laws.
 
-The construction uses `Function.Embedding.exists_measurePreserving_finset_map_of_countable`
+The construction uses `Set.exists_measurePreserving_finset_of_countable`
 and `ProbabilityTheory.isKolmogorovProcess_of_hasLaw_sub_gaussianReal`.
 See Karatzas–Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
 Chapter 2, §2, for the Gaussian skeleton construction.
@@ -90,7 +90,9 @@ theorem isGaussianProcess_of_hasLaw_brownianRealProjectiveFamily : IsGaussianPro
   have hI : (↑(J.map e) : Set ℝ≥0) ⊆ S := J.map_subtype_subset
   let L : (J.map e → ℝ) →L[ℝ] (J → ℝ) :=
     ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.proj (R := ℝ) (J.equivMap e j)
-  exact (hX (J.map e) hI).hasGaussianLaw.map L
+  convert (hX (J.map e) hI).hasGaussianLaw.map L using 1
+  ext ω j
+  simp [L, e]
 
 end Laws
 
@@ -106,29 +108,11 @@ theorem exists_measurePreserving_brownianRealProjectiveFamily_isKolmogorovProces
           (BrownianReal.projectiveFamily I)) ∧
       ∀ ⦃n : ℕ⦄, n ≠ 0 →
         IsKolmogorovProcess (fun (t : S) (x : S → ℝ) ↦ x t) P (2 * n : ℕ) n (2 * n - 1)‼ := by
-  classical
-  let e := Function.Embedding.subtype (· ∈ S)
-  obtain ⟨P, hprob, hP⟩ := Function.Embedding.exists_measurePreserving_finset_map_of_countable
-    e BrownianReal.projectiveFamily BrownianReal.isProjectiveMeasureFamily_projectiveFamily
-  have hP' (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S) :
-      MeasurePreserving (fun (x : S → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
-        (BrownianReal.projectiveFamily I) := by
-    let J := I.subtype (· ∈ S)
-    have hmap : J.map e = I := Finset.subtype_map_of_mem (fun _ hi ↦ hI hi)
-    have hPJ (hJ : (↑(J.map e) : Set ℝ≥0) ⊆ S) : MeasurePreserving
-        (fun (x : S → ℝ) (i : J.map e) ↦ x ⟨i.1, hJ i.2⟩) P
-        (BrownianReal.projectiveFamily (J.map e)) := by
-      convert hP J using 1
-      funext x i
-      apply congrArg x
-      apply Subtype.ext
-      have h := congrArg Subtype.val ((J.equivMap e).apply_symm_apply i)
-      exact h.symm
-    rw [hmap] at hPJ
-    exact hPJ hI
-  refine ⟨P, hprob, hP', fun _ hn ↦ isKolmogorovProcess_of_hasLaw_sub_gaussianReal
+  obtain ⟨P, hprob, hP⟩ := S.exists_measurePreserving_finset_of_countable (X := fun _ ↦ ℝ)
+    BrownianReal.projectiveFamily BrownianReal.isProjectiveMeasureFamily_projectiveFamily
+  refine ⟨P, hprob, hP, fun _ hn ↦ isKolmogorovProcess_of_hasLaw_sub_gaussianReal
     (fun t ↦ measurable_pi_apply t) ?_ hn⟩
   exact hasLaw_sub_gaussianReal_of_hasLaw_brownianRealProjectiveFamily
-    (fun I hI ↦ (hP' I hI).hasLaw)
+    (fun I hI ↦ (hP I hI).hasLaw)
 
 end TauCeti
