@@ -25,6 +25,11 @@ A function continuous on the target that is constant on the target off a compact
 read through the open partial homeomorphism on its source and extended by that constant, is
 continuous on a Hausdorff domain (`OpenPartialHomeomorph.continuous_ite_source_of_eq_off_compact`).
 This transplants a compactly supported function on a chart to the whole space.
+
+For `u` continuous on `s` and a map `g` continuous on `t`, the coordinate expression
+`g ∘ u ∘ e.symm` is continuous on the part `e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)` of the target
+(`OpenPartialHomeomorph.continuousOn_comp_comp_symm`), which is open when `s` and `t` are
+(`OpenPartialHomeomorph.isOpen_inter_preimage_symm_inter_preimage`).
 -/
 
 public section
@@ -84,6 +89,23 @@ theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHome
     · simp only [hws, ↓reduceIte]
       exact (hgK _ (e.map_source hws) fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
     · simp [hws]
+
+/-- If `u` is continuous on an open set `s` and `t` is open, then the points of the target of `e`
+sent by `e.symm` into `s ∩ u ⁻¹' t` form an open set. -/
+theorem isOpen_inter_preimage_symm_inter_preimage (e : OpenPartialHomeomorph X Y) {Z : Type*}
+    [TopologicalSpace Z] {u : X → Z} {s : Set X} {t : Set Z} (hu : ContinuousOn u s)
+    (hs : IsOpen s) (ht : IsOpen t) : IsOpen (e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)) :=
+  e.isOpen_inter_preimage_symm (hu.isOpen_inter_preimage hs ht)
+
+/-- If `u` is continuous on `s` and `g` is continuous on `t`, then the coordinate expression
+`g ∘ u ∘ e.symm` is continuous on the points of the target of `e` sent by `e.symm` into
+`s ∩ u ⁻¹' t`. -/
+theorem continuousOn_comp_comp_symm (e : OpenPartialHomeomorph X Y) {Z W : Type*}
+    [TopologicalSpace Z] [TopologicalSpace W] {u : X → Z} {g : Z → W} {s : Set X} {t : Set Z}
+    (hg : ContinuousOn g t) (hu : ContinuousOn u s) :
+    ContinuousOn (g ∘ u ∘ e.symm) (e.target ∩ e.symm ⁻¹' (s ∩ u ⁻¹' t)) :=
+  hg.comp (hu.comp (e.continuousOn_symm.mono inter_subset_left) fun _ hz ↦ hz.2.1)
+    fun _ hz ↦ hz.2.2
 
 /-- If `f` is not eventually constant near `x`, then its chart representative `e' ∘ f ∘ e.symm`
 is not eventually constant near `e x`, provided `f ∘ e.symm` maps a neighbourhood of `e x` into
