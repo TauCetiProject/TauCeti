@@ -394,10 +394,10 @@ theorem exists_common_exitCapWindows_radius {γ : ℝ → ℂ} {s : ℂ} {T : Fi
 
 /-- **The Cauchy principal value on an exit-time window.**  Around an interior crossing of a
 piecewise-`C¹` immersion, there is an ambient radius `R` and nonzero one-sided tangent limits such
-that every smaller ambient window inside `(a, b]` has the following property; no window needs to
-be checked for other crossings, since the radius `R` already rules them out.  For each positive
-spatial exit radius reached on both sides, the Cauchy-kernel principal value on the generally
-asymmetric interval between the two first exits is
+that every smaller ambient window inside `(a, b]` has the following property; no crossing-uniqueness
+hypothesis on the window is required.  For each positive spatial exit radius reached on both sides,
+the Cauchy-kernel principal value on the generally asymmetric interval between the two first exits
+is
 
 `i * (arg (-L_L / (γ(lower) - s)) + arg ((γ(upper) - s) / L_R))`.
 

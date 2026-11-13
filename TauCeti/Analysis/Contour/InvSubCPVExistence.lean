@@ -79,12 +79,12 @@ private theorem exists_one_sided_tangents {γ : ℝ → ℂ} {a b t₀ : ℝ}
 there is a radius `R > 0` and the crossing's nonzero one-sided tangent limits `L_R`, `L_L` of
 `deriv γ` (from the right and left respectively — `hL_tend_R`, `hL_tend_L` pin them down, so a
 caller can compute with the value below rather than treat `L_R`, `L_L` as opaque), such that at
-every window `[l, u] ⊆ [t₀ - R, t₀ + R]` that lies inside `[a, b]`, the truncated window integral
-of the Cauchy kernel converges to that explicit log-norm-plus-argument value (the value
-`perWindow_truncated_integral_tendsto` supplies), rather than to a merely existentially-bound
-limit. No window needs to be checked for other crossings: the slit-plane radius `R` already rules
-them out. A consumer that only needs existence of the limit (not its value) can take the displayed
-value itself as the existential witness, so no separate existence-only wrapper is kept here. -/
+every window `[l, u] ⊆ [t₀ - R, t₀ + R]` with `l < t₀ < u`, `a < l` and `u ≤ b`, the truncated
+window integral of the Cauchy kernel converges to that explicit log-norm-plus-argument value (the
+value `perWindow_truncated_integral_tendsto` supplies), rather than to a merely existentially-bound
+limit. No crossing-uniqueness hypothesis on `[l, u]` is required. A consumer that only needs
+existence of the limit (not its value) can take the displayed value itself as the existential
+witness, so no separate existence-only wrapper is kept here. -/
 theorem exists_radius_perWindow_tendsto_log_norm_add_arg
     {γ : ℝ → ℂ} {a b t₀ : ℝ} {s : ℂ}
     (h_imm : IsPwC1ImmersionOn γ a b) (ht₀ : t₀ ∈ Ioo a b) (h_at : γ t₀ = s) :
