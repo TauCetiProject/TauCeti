@@ -88,9 +88,15 @@ theorem directSumLinearEquiv_apply (f : IntertwiningMap τ (directSum σ)) (i : 
 @[simp]
 theorem directSumLinearEquiv_symm_apply (f : ∀ i, IntertwiningMap τ (σ i)) (x : V) (i : ι) :
     (directSumLinearEquiv τ σ).symm f x i = f i x := by
-  classical
-  let := Fintype.ofFinite ι
-  exact congrFun ((DirectSum.linearEquivFunOnFintype k ι W).apply_symm_apply (fun j ↦ f j x)) i
+  rw [← directSumLinearEquiv_apply τ σ, LinearEquiv.apply_symm_apply]
+
+/-- Taking a component commutes with precomposition. -/
+@[simp]
+theorem directSumLinearEquiv_comp {V' : Type*} [AddCommMonoid V'] [Module k V']
+    {τ' : Representation k G V'} (f : IntertwiningMap τ (directSum σ)) (g : IntertwiningMap τ' τ)
+    (i : ι) : directSumLinearEquiv τ' σ (f.comp g) i = (directSumLinearEquiv τ σ f i).comp g := by
+  ext x
+  simp
 
 end Representation.IntertwiningMap
 

@@ -40,10 +40,11 @@ non-isomorphic.
 
 ## Main results
 
-* `Representation.characterPairing_ofCharacter_irreducibleRepresentation`: for finite-dimensional
-  `ρ`, the pairing of the character of `ρ` with the `i`-th irreducible character is
-  `(m_ρ(i) : k)`. The equality holds in `k`, so in characteristic `p` it determines `m_ρ(i)` only
-  modulo `p`; this is why the multiplicity is defined as a Hom dimension rather than as a pairing.
+* `Representation.characterPairing_ofCharacter_irreducibleRepresentation_eq_intrinsicMultiplicity`:
+  for finite-dimensional `ρ`, the pairing of the character of `ρ` with the `i`-th irreducible
+  character is `(m_ρ(i) : k)`. The equality holds in `k`, so in characteristic `p` it determines
+  `m_ρ(i)` only modulo `p`; this is why the multiplicity is defined as a Hom dimension rather
+  than as a pairing.
 * `FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom`: in `FDRep`, `m_V(i)` is the dimension of the
   space of morphisms `Zᵢ ⟶ V`.
 * `Representation.intrinsicMultiplicity_congr`: the multiplicities are invariant under
@@ -97,8 +98,8 @@ theorem intrinsicMultiplicity_def (i : Fin (Nat.card (ConjClasses G))) :
 `⟨χ_ρ, χᵢ⟩ = (m_ρ(i) : k)`.
 The equality holds in `k`, so in characteristic `p` the pairing determines `m_ρ(i)` only modulo
 `p`. -/
-theorem characterPairing_ofCharacter_irreducibleRepresentation [Fintype G]
-    [FiniteDimensional k V] (i : Fin (Nat.card (ConjClasses G))) :
+theorem characterPairing_ofCharacter_irreducibleRepresentation_eq_intrinsicMultiplicity
+    [Fintype G] [FiniteDimensional k V] (i : Fin (Nat.card (ConjClasses G))) :
     ClassFunction.characterPairing (ClassFunction.ofCharacter ρ)
         (ClassFunction.ofCharacter (irreducibleRepresentation k i)) =
       ρ.intrinsicMultiplicity i :=
