@@ -24,7 +24,10 @@ One direction needs no surjectivity. If `K` is separated by `H`, the equations v
 points `ψ ∘ p` of `H^X`, for a tuple `p : X → K` and `ψ` ranging over the homomorphisms `K → H`
 over `G`, are exactly those vanishing at `p` in `K`. Hence the kernel of any `G`-homomorphism
 `π : G[X] →* K` is its own radical over `H`, and if `K` is discriminated by `H`, the algebraic set
-of `ker π` is irreducible, its coordinate group embedding in `K`.
+of `ker π` is irreducible, its coordinate group embedding in `K`. Likewise the radical over `H` of
+any system `S` lies in its radical over `K`, so `S` and `Rad_H(S)` have the same solutions in `K`,
+and evaluation at a solution of `S` in `K` is a `G`-homomorphism from the coordinate group
+`G_{R(S)}` to `K`.
 
 Three special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
 `G_S = G[X] ⧸ ncl(S)` of a system is separated by `H` exactly when the radical of `S` is its
@@ -72,6 +75,10 @@ also cover systems without solutions, whose coordinate group is trivial.
   equations vanishing on the points `ψ ∘ p` are the kernel of the evaluation at `p`.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.Rad_ker_eq`: for `K` separated by `H`, the kernel of any
   homomorphism `G[X] →* K` over `G` is its own radical.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.V_Rad`: for `K` separated by `H`, a system and its radical
+  over `H` have the same solutions in `K`.
+* `TauCeti.GroupAlgGeom.CoordGroup.evalGHomOfIsSeparatedBy`: evaluation at a solution of `S` in
+  such a group `K`, as a `G`-homomorphism `G_{R(S)} → K`.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isIrreducible_V_ker`: for `K` discriminated by `H`, the
   algebraic set of that kernel is irreducible.
 * `TauCeti.GroupAlgGeom.CoordGroup.isSeparatedBy_coeff`: coordinate groups over `H` are separated
@@ -111,7 +118,7 @@ also cover systems without solutions, whose coordinate group is trivial.
 * C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
   (2005), §6.4, Proposition 6.8.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.6 (finitely generated `F`-groups `F`-discriminated by `F`).
+  (2005), §2.6 (finitely generated `F`-groups `F`-discriminated by `F`) and §6, Lemma 37.
 -/
 
 public section
@@ -175,6 +182,42 @@ theorem IsSeparatedBy.Rad_ker_eq (h : IsSeparatedBy κ ι) (π : GHom (inl : G �
     Rad ι ((π : GX G X →* K).ker : Set (GX G X)) = (π : GX G X →* K).ker := by
   -- `ker π` is the set of equations vanishing at the points `ψ ∘ π ∘ vars`.
   rw [← eval_eq_of_comp_inl π.comp_coeff, ← h.I_range_comp_eq_ker_eval, Rad_def, I_V_I]
+
+/-- If `K` is separated by `H` over `G`, an equation vanishing on the solutions of a system `S` in
+`H` vanishes on its solutions in `K`: the radical of `S` over `H` lies in its radical over `K`. -/
+theorem IsSeparatedBy.Rad_le (h : IsSeparatedBy κ ι) (S : Set (GX G X)) : Rad ι S ≤ Rad κ S :=
+  fun w hw => mem_Rad.2 fun p hp => by
+    -- The points `ψ ∘ p` are solutions of `S` in `H`, so `w` vanishes at all of them.
+    rw [Rad_def] at hw
+    rw [← MonoidHom.mem_ker, ← h.I_range_comp_eq_ker_eval]
+    exact I_antitone ι (Set.range_subset_iff.2 fun ψ : GHom κ ι => ψ.comp_mem_V hp) hw
+
+/-- If `K` is separated by `H` over `G`, a system `S` and its radical over `H` have the same
+solutions in `K`. -/
+theorem IsSeparatedBy.V_Rad (h : IsSeparatedBy κ ι) (S : Set (GX G X)) :
+    V κ (Rad ι S : Set (GX G X)) = V κ S :=
+  (V_antitone κ (subset_Rad (ι := ι) S)).antisymm <| by
+    simpa only [GroupAlgGeom.V_Rad] using V_antitone κ (SetLike.coe_subset_coe.2 (h.Rad_le S))
+
+/-- Evaluation at a solution `p` of a system `S` in a group `K` separated by `H` over `G`, as a
+`G`-homomorphism `G_{R(S)} → K` from the coordinate group of `S` over `H`. -/
+def CoordGroup.evalGHomOfIsSeparatedBy {S : Set (GX G X)} (h : IsSeparatedBy κ ι) (p : X → K)
+    (hp : p ∈ V κ S) : GHom (CoordGroup.coeff ι S) κ where
+  toMonoidHom := QuotientGroup.lift _ (eval κ p) fun w hw => mem_V.1 ((h.V_Rad S).ge hp) w hw
+  map_coeff' g := by rw [coeff_apply]; exact eval_inl κ p g
+
+@[simp]
+theorem CoordGroup.evalGHomOfIsSeparatedBy_mk {S : Set (GX G X)} (h : IsSeparatedBy κ ι)
+    {p : X → K} (hp : p ∈ V κ S) (w : GX G X) :
+    evalGHomOfIsSeparatedBy h p hp (w : CoordGroup ι S) = eval κ p w := (rfl)
+
+/-- Evaluation at a solution `p` in a group separated by `H` sends each coordinate of the generic
+point to that of `p`. -/
+@[simp]
+theorem CoordGroup.evalGHomOfIsSeparatedBy_genericPoint {S : Set (GX G X)}
+    (h : IsSeparatedBy κ ι) {p : X → K} (hp : p ∈ V κ S) (x : X) :
+    evalGHomOfIsSeparatedBy h p hp (genericPoint ι S x) = p x := by
+  rw [genericPoint_apply, evalGHomOfIsSeparatedBy_mk, eval_inr_of]
 
 /-- If `K` is discriminated by `H` over `G`, the algebraic set over `H` of the kernel of a
 homomorphism `G[X] →* K` over `G`, surjective or not, is irreducible. -/

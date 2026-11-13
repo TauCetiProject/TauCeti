@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.GroupAlgGeom.FreeVariables
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Basic
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
 
@@ -14,8 +14,9 @@ import TauCeti.GroupTheory.GroupAlgGeom.Separated
 
 Let `S ⊆ G[X]` and `T ⊆ G[X ⊔ Y]` be systems of equations over `G`, with solutions sought in a
 group `H` receiving the coefficients through `ι : G →* H`. The system `S ∪ T` in the variables
-`X ⊔ Y` is `jointSystem S T`, and the inclusion of the variables `X` induces a `G`-homomorphism
-`coordGroupMap ι S T : G_{R(S)} → G_{R(S ∪ T)}` of coordinate groups.
+`X ⊔ Y` is `jointSystem S T`, the union of `T` with `S` read in the variables `X ⊔ Y`. The
+inclusion of the variables `X` induces a `G`-homomorphism of coordinate groups
+`coordGroupMap ι S T : G_{R(S)} → G_{R(S ∪ T)}`.
 
 * `T` is compatible with `S` if and only if every `G`-homomorphism `G_{R(S)} → H` extends along
   `coordGroupMap` to `G_{R(S ∪ T)}`; the map `coordGroupMap` is then injective
@@ -72,30 +73,23 @@ variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G (X ⊕ Y)))
 /-- The system `S(X) = 1 ∧ T(X, Y) = 1` in the variables `X ⊔ Y`: the equations of `S`, read in
 `G[X ⊔ Y]`, together with those of `T`. -/
 def jointSystem : Set (GX G (X ⊕ Y)) :=
-  Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) '' S ∪ T
+  addFreeVars Y S ∪ T
 
-theorem jointSystem_def : jointSystem S T =
-    Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) '' S ∪ T := (rfl)
+theorem jointSystem_def : jointSystem S T = addFreeVars Y S ∪ T := (rfl)
 
 variable {ι S T} in
 /-- A point solves `S ∪ T` exactly when it solves `T` and its `X`-coordinates solve `S`. -/
 theorem mem_V_jointSystem {v : X ⊕ Y → H} : v ∈ V ι (jointSystem S T) ↔
     v ∘ Sum.inl ∈ V ι S ∧ v ∈ V ι T := by
-  simp [jointSystem]
-
-/-- The variables `X` map the solutions of `S ∪ T` to solutions of `S`. -/
-theorem mapsToWordMap_jointSystem : CoordGroup.MapsToWordMap ι (jointSystem S T) S
-    fun x => (inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y)) := by
-  refine (CoordGroup.mapsToWordMap_iff ι _ _ _).2 fun v hv => ?_
-  have h : wordMap ι (fun x => (inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y))) v =
-      v ∘ Sum.inl := funext fun x => by simp
-  rw [h]
-  exact (mem_V_jointSystem.1 hv).1
+  simp [jointSystem_def]
 
 /-- The canonical `G`-homomorphism `G_{R(S)} → G_{R(S ∪ T)}` of coordinate groups induced by the
-inclusion of the variables `X` into `X ⊔ Y`. -/
+inclusion of the variables `X` into `X ⊔ Y`: the embedding of `G_{R(S)}` into the coordinate group
+of `S` with the free variables `Y`, followed by the quotient map onto `G_{R(S ∪ T)}`. -/
 def coordGroupMap : GHom (CoordGroup.coeff ι S) (CoordGroup.coeff ι (jointSystem S T)) :=
-  CoordGroup.homOfMapsToWordMap ι (jointSystem S T) S _ (mapsToWordMap_jointSystem ι S T)
+  (CoordGroup.homOfVSubset <| by
+    rw [jointSystem_def]
+    exact V_antitone ι Set.subset_union_left).comp (CoordGroup.inclFreeVarsHom ι Y S)
 
 end Defs
 
@@ -105,12 +99,8 @@ variable {ι : G →* H} {S : Set (GX G X)} {T : Set (GX G (X ⊕ Y))}
 same word, read in the variables `X ⊔ Y`. -/
 @[simp]
 theorem coordGroupMap_mk (w : GX G X) : coordGroupMap ι S T (w : CoordGroup ι S) =
-    ((Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) w : GX G (X ⊕ Y)) :
-      CoordGroup ι (jointSystem S T)) := by
-  rw [coordGroupMap, CoordGroup.homOfMapsToWordMap_mk]
-  congr 1
-  exact DFunLike.congr_fun
-    (hom_ext (MonoidHom.ext fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp)) w
+    ((inclFreeVars G X Y w : GX G (X ⊕ Y)) : CoordGroup ι (jointSystem S T)) := by
+  simp [coordGroupMap]
 
 /-- The canonical map of coordinate groups sends the generic point of `S` to the `X`-coordinates
 of the generic point of `S ∪ T`. -/
@@ -156,28 +146,14 @@ theorem existsUnique_gHom_genericPoint_inr_eq_of_isSeparatedBy {K : Type*} [Grou
     (hw : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈ V κ T) :
     ∃! ρ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ, ρ.comp (coordGroupMap ι S T) = φ ∧
       ∀ y, ρ (CoordGroup.genericPoint ι (jointSystem S T) (Sum.inr y)) = w y := by
-  -- The point `(φ ∘ μ, w)` solves `S ∪ T` in `K`; as `K` is separated by `H`, every equation in
-  -- the radical of `S ∪ T` over `H` vanishes there too, so evaluation descends to `G_{R(S ∪ T)}`.
+  -- The point `(φ ∘ μ, w)` solves `S ∪ T` in `K`, so evaluation at it is defined on `G_{R(S ∪ T)}`.
   have hp : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈ V κ (jointSystem S T) :=
     mem_V_jointSystem.2 ⟨φ.comp_mem_V (CoordGroup.genericPoint_mem_V S), hw⟩
-  have hRad : Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w ∈
-      V κ (Rad ι (jointSystem S T) : Set (GX G (X ⊕ Y))) :=
-    mem_V.2 fun s hs => by
-      rw [SetLike.mem_coe, Rad_def] at hs
-      rw [← MonoidHom.mem_ker, ← hK.I_range_comp_eq_ker_eval]
-      exact I_antitone ι (Set.range_subset_iff.2 fun ψ : GHom κ ι => ψ.comp_mem_V hp) hs
-  obtain ⟨ρ₀, hρ₀⟩ : ∃ ρ₀ : GHom (CoordGroup.coeff ι (jointSystem S T)) κ,
-      ∀ u : GX G (X ⊕ Y), ρ₀ (u : CoordGroup ι (jointSystem S T)) =
-        eval κ (Sum.elim (φ ∘ CoordGroup.genericPoint ι S) w) u := by
-    -- `G_{R(S ∪ T)}` is the quotient of `G[X ⊔ Y]` by the radical, with its coefficient map.
-    rw [CoordGroup.coeff_def]
-    exact ⟨GX.quotientEvalGHom _ hRad, GX.quotientEvalGHom_mk _⟩
-  refine ⟨ρ₀, ⟨comp_coordGroupMap_eq_iff.2 fun x => ?_, fun y => ?_⟩,
+  refine ⟨CoordGroup.evalGHomOfIsSeparatedBy hK _ hp,
+    ⟨comp_coordGroupMap_eq_iff.2 fun x => by simp, fun y => by simp⟩,
     fun ρ ⟨hρ, hρw⟩ => CoordGroup.gHom_ext <| Sum.forall.2 ⟨fun x => ?_, fun y => ?_⟩⟩
-  · simp [CoordGroup.genericPoint_apply, hρ₀]
-  · simp [CoordGroup.genericPoint_apply, hρ₀]
-  · simpa [CoordGroup.genericPoint_apply, hρ₀] using comp_coordGroupMap_eq_iff.1 hρ x
-  · simpa [CoordGroup.genericPoint_apply, hρ₀] using hρw y
+  · simpa [CoordGroup.genericPoint_apply] using comp_coordGroupMap_eq_iff.1 hρ x
+  · simpa [CoordGroup.genericPoint_apply] using hρw y
 
 /-! ### Compatibility -/
 
