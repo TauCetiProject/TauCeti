@@ -11,13 +11,14 @@ public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
--- Private: ring involution identities, basis coordinate transport, orthogonal generator
--- identities, grading involutions, and real-form base change/positivity are used only inside
--- proofs and internal transport constructions.
+-- Private: ring involution identities, basis coordinate transport, orthogonal generator and
+-- even-bivector identities, grading involutions, and real-form base change/positivity are used only
+-- inside proofs and internal transport constructions.
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Basic.Complex.BigOperators
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
@@ -650,27 +651,16 @@ private theorem smul_I_majorana_anticommute {m : ℕ} {a b c d : Fin m}
       (Complex.I • (majorana m c * majorana m d)) *
         (Complex.I • (majorana m a * majorana m b)) = 0 := by
   subst hbc
-  have hleft : (majorana m a * majorana m b) * (majorana m b * majorana m d) =
-      majorana m a * majorana m d := by
-    calc
-      (majorana m a * majorana m b) * (majorana m b * majorana m d)
-          = majorana m a * (majorana m b * majorana m b) * majorana m d := by
-            simp only [mul_assoc]
-      _ = majorana m a * majorana m d := by simp
-  have hright : (majorana m b * majorana m d) * (majorana m a * majorana m b) =
-      -(majorana m a * majorana m d) :=
-    calc
-      (majorana m b * majorana m d) * (majorana m a * majorana m b)
-          = ((majorana m b * majorana m d) * majorana m a) * majorana m b :=
-            (mul_assoc _ _ _).symm
-      _ = majorana m a * (majorana m b * (majorana m d * majorana m b)) := by
-            rw [(commute_majorana_majorana_mul_majorana_of_ne hac had).symm.eq]
-            simp only [mul_assoc]
-      _ = -(majorana m a * ((majorana m b * majorana m b) * majorana m d)) := by
-            rw [majorana_mul_majorana_comm_of_ne hbd.symm]
-            simp only [mul_neg, mul_assoc]
-      _ = -(majorana m a * majorana m d) := by simp
-  rw [smul_mul_smul_comm, smul_mul_smul_comm, hleft, hright, ← smul_add, add_neg_cancel, smul_zero]
+  have hanti :
+      (majorana m a * majorana m b) * (majorana m b * majorana m d) =
+        -((majorana m b * majorana m d) * (majorana m a * majorana m b)) := by
+    have h := congrArg Subtype.val
+      (CliffordAlgebra.even_ι_bilin_comm_of_isOrtho
+        (isOrtho_cliffordForm_single hac.symm 1 1)
+        (isOrtho_cliffordForm_single hbd 1 1)
+        (isOrtho_cliffordForm_single had 1 1))
+    simpa [← majorana_def, majorana_mul_majorana_comm_of_ne hac.symm] using h.symm
+  rw [smul_mul_smul_comm, smul_mul_smul_comm, hanti, ← smul_add, neg_add_cancel, smul_zero]
 
 /-- Every Clifford projection is self-adjoint for `cliffordAdjoint m`. -/
 @[simp]
