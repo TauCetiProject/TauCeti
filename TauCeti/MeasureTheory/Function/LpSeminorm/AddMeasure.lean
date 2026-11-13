@@ -26,6 +26,8 @@ estimate on a set covered by finitely many pieces
 No measurability of the sets is needed. The same bound holds on any set covered by finitely many
 pieces (`MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`), so a function in `Lᵖ` on each
 piece is in `Lᵖ` on the covered set (`MeasureTheory.MemLp.restrict_of_subset_iUnion`).
+For a function in `Lᵖ` on each piece, the same subadditivity holds for the real-valued norm
+`lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
 `lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
@@ -41,6 +43,8 @@ For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
   `Lᵖ` on the covered set.
+* `MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`: subadditivity of `lpNorm` over a
+  finite cover.
 -/
 
 public section
@@ -131,6 +135,20 @@ theorem eLpNorm_restrict_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] (f : 
   refine (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)).trans ?_
   simpa only [Finset.mem_univ, Set.iUnion_true] using
     eLpNorm_restrict_biUnion_finset_le (μ := μ) f hp Finset.univ t
+
+/-- **Subadditivity of `lpNorm` over a finite cover.** For `1 ≤ p`, the `Lᵖ` norm of `f` on a set
+covered by the sets `s i`, `i ∈ t`, is at most the sum of its `Lᵖ` norms on the pieces, provided
+`f` is in `Lᵖ` on each piece. -/
+theorem lpNorm_restrict_le_sum_of_subset_biUnion {E ι : Type*} [NormedAddCommGroup E]
+    {f : α → E} (hp : 1 ≤ p) {u : Set α} {t : Finset ι} {s : ι → Set α}
+    (hu : u ⊆ ⋃ i ∈ t, s i) (hf : ∀ i ∈ t, MemLp f p (μ.restrict (s i))) :
+    lpNorm f p (μ.restrict u) ≤ ∑ i ∈ t, lpNorm f p (μ.restrict (s i)) := by
+  have hfin : ∀ i ∈ t, eLpNorm f p (μ.restrict (s i)) ≠ ∞ := fun i hi => (hf i hi).eLpNorm_ne_top
+  calc lpNorm f p (μ.restrict u) ≤ (∑ i ∈ t, eLpNorm f p (μ.restrict (s i))).toReal :=
+        ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin)
+          ((eLpNorm_mono_measure f (Measure.restrict_mono_set μ hu)).trans
+            (eLpNorm_restrict_biUnion_finset_le f hp t s))
+    _ = ∑ i ∈ t, lpNorm f p (μ.restrict (s i)) := ENNReal.toReal_sum hfin
 
 /-- A function in `Lᵖ` on each of finitely many sets is in `Lᵖ` on every set they cover. -/
 theorem MemLp.restrict_of_subset_iUnion {ι : Type*} [Finite ι] {f : α → ε} {s : Set α}
