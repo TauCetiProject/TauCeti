@@ -158,6 +158,12 @@ theorem pair_mem_toWords (S : EqIneqSystem X A) (y : X ⊕ Fin S.ineqs.length) :
     [(Sum.inl y, true), (Sum.inl y, false)] ∈ S.toWords :=
   mem_toWords.2 <| y.rec (fun x => .inr (.inr ⟨x, rfl⟩)) fun k => .inr (.inl ⟨k, .inr rfl⟩)
 
+/-- Every variable and every witness occurs at least twice in the words of a system. -/
+theorem duplicate_map_fst_flatten_toWords (S : EqIneqSystem X A) (y : X ⊕ Fin S.ineqs.length) :
+    (S.toWords.flatten.map Prod.fst).Duplicate (Sum.inl y) :=
+  (List.duplicate_cons_self_iff.2 (List.mem_singleton_self _)).mono_sublist
+    ((List.sublist_flatten_of_mem (S.pair_mem_toWords y)).map Prod.fst)
+
 /-- The empty system in no variables has no words. -/
 @[simp]
 theorem toWords_empty {X A : Type*} [IsEmpty X] [DecidableEq X] [DecidableEq A] :
@@ -177,16 +183,6 @@ theorem length_toWords (S : EqIneqSystem X A) :
     S.toWords.length = S.eqs.length + 2 * S.ineqs.length + Nat.card X := by
   simp [toWords, List.length_flatMap, mul_comm, add_assoc]
 
-omit [Finite X] [DecidableEq X] [DecidableEq A] in
-/-- Mapping a function over the indices of the inequations of a system is mapping it over the
-inequations. -/
-private theorem map_finRange_getElem_ineqs {β : Type*} (S : EqIneqSystem X A)
-    (f : FreeGroup (X ⊕ A) → β) :
-    (List.finRange S.ineqs.length).map (fun k => f S.ineqs[k]) = S.ineqs.map f := by
-  conv_rhs => rw [← List.map_getElem_finRange S.ineqs]
-  rw [List.map_map]
-  rfl
-
 /-- The total length of the words of a system: the lengths of the reduced words of its equations
 and inequations, three letters for each inequation and two for each variable. -/
 theorem sum_length_toWords (S : EqIneqSystem X A) :
@@ -195,7 +191,8 @@ theorem sum_length_toWords (S : EqIneqSystem X A) :
   simp only [toWords, List.map_append, List.sum_append, List.map_map, Function.comp_def,
     List.length_map, List.flatMap_def, List.map_flatten, List.sum_flatten, List.map_cons,
     List.map_nil, List.sum_cons, List.sum_nil, List.length_append, List.length_cons,
-    List.length_nil, List.sum_map_add, S.map_finRange_getElem_ineqs fun e => e.toWord.length,
+    List.length_nil, List.sum_map_add, Fin.getElem_fin,
+    List.ofFn_eq_map.symm.trans (S.ineqs.ofFn_getElem_eq_map fun e => e.toWord.length),
     List.map_const', List.length_finRange, List.sum_replicate, smul_eq_mul]
   lia
 
@@ -208,8 +205,9 @@ theorem systemSize_toWords (S : EqIneqSystem X A) :
   simp only [systemSize_def, toWords, List.map_append, List.sum_append, List.map_map,
     Function.comp_def, List.length_map, List.flatMap_def, List.map_flatten, List.sum_flatten,
     List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_append,
-    List.length_cons, List.length_nil, Nat.add_sub_cancel, List.sum_map_add,
-    S.map_finRange_getElem_ineqs fun e => e.toWord.length * (e.toWord.length + 1),
+    List.length_cons, List.length_nil, Nat.add_sub_cancel, List.sum_map_add, Fin.getElem_fin,
+    List.ofFn_eq_map.symm.trans
+      (S.ineqs.ofFn_getElem_eq_map fun e => e.toWord.length * (e.toWord.length + 1)),
     List.map_const', List.length_finRange, List.sum_replicate, smul_eq_mul]
   lia
 
@@ -308,36 +306,6 @@ noncomputable abbrev witnessWord (S : EqIneqSystem X A)
 
 variable {S : EqIneqSystem X A} {T : Occurrence S.toWords → List ((Z ⊕ A) × Bool)}
 
-/-- The word map of a variable or of a witness is read at an entry of it, and it has a second
-entry. -/
-private theorem exists_wordMap_eq_segment (y : X ⊕ Fin S.ineqs.length) :
-    ∃ p : Fin (tableEntries S.toWords T).length × Fin (tableEntries S.toWords T).length,
-      p.1 ≠ p.2 ∧ (tableEntries S.toWords T)[p.1].1.1 = Sum.inl y ∧
-      (tableEntries S.toWords T)[p.2].1.1 = Sum.inl y ∧
-      GenEq.wordMap (tableEntries S.toWords T) y =
-        (S.genEq T).segment (entryStart (tableEntries S.toWords T) p.1)
-          (entryStart (tableEntries S.toWords T) ((p.1 : ℕ) + 1))
-          (tableEntries S.toWords T)[p.1].1.2 := by
-  -- The two occurrences of `y` in the word `y y⁻¹`.
-  obtain ⟨o₁, ho₁⟩ := exists_occurrence_of_mem (S.pair_mem_toWords y) (j := 0) (by simp)
-  obtain ⟨o₂, ho₂⟩ := exists_occurrence_of_mem (S.pair_mem_toWords y) (j := 1) (by simp)
-  obtain ⟨i₁, hi₁⟩ := exists_getElem_tableEntries T o₁
-  obtain ⟨i₂, hi₂⟩ := exists_getElem_tableEntries T o₂
-  have h₁ : (tableEntries S.toWords T)[i₁].1 = (Sum.inl y, true) :=
-    (congrArg Prod.fst hi₁).trans ho₁
-  have h₂ : (tableEntries S.toWords T)[i₂].1 = (Sum.inl y, false) :=
-    (congrArg Prod.fst hi₂).trans ho₂
-  have h₁₂ : i₁ ≠ i₂ := by
-    rintro rfl
-    simpa using h₁.symm.trans h₂
-  obtain ⟨k₀, hk₀, hw₀⟩ := exists_wordMap_eq _ i₁ (by rw [h₁])
-  obtain ⟨k₁, hk₁, hne⟩ : ∃ k₁ : Fin (tableEntries S.toWords T).length,
-      (tableEntries S.toWords T)[k₁].1.1 = Sum.inl y ∧ k₀ ≠ k₁ := by
-    by_cases h : k₀ = i₁
-    · exact ⟨i₂, by rw [h₂], h ▸ h₁₂⟩
-    · exact ⟨i₁, by rw [h₁], h⟩
-  exact ⟨(k₀, k₁), hne, hk₀, hk₁, hw₀⟩
-
 /-- The word map of a variable, for a partition table of the words of a system, is no longer than
 the total length of these words. -/
 theorem length_wordMap_le (hT : IsPartitionTable S.toWords T) (x : X) :
@@ -391,36 +359,18 @@ theorem isCancellationScheme_iff_witnessWord_ne_nil :
     fun h => ⟨h.1, fun _ k ho => (witnessWord_eq_nil_iff h.1 ho).not.1 (h.2 k)⟩⟩
 
 /-- In a solution of the generalised equation of a partition table of the words of a system, the
-word of a variable or of a witness is reduced as written: it is empty, or it spans a base. -/
-private theorem isReduced_substituteVars_wordMap_tableEntries (hT : IsPartitionTable S.toWords T)
-    (U : (S.genEq T).Solution) (y : X ⊕ Fin S.ineqs.length) :
-    FreeGroup.IsReduced (substituteVars U.word (GenEq.wordMap (tableEntries S.toWords T) y)) := by
-  obtain ⟨p, hne, h₁, h₂, hw⟩ := exists_wordMap_eq_segment (T := T) y
-  by_cases h : (tableEntries S.toWords T)[p.1].2 = []
-  · rw [hw, List.eq_nil_of_length_eq_zero ((length_segment_entryStart _ p.1.isLt _).trans
-      (List.length_eq_zero_iff.2 h))]
-    exact FreeGroup.IsReduced.nil
-  -- The two entries of `y` have nonempty words, so they are joined by dual bases.
-  have hp : IsVarPair (tableEntries S.toWords T) p := (isVarPair_iff _).2 ⟨hne,
-    (congrArg Sum.isLeft h₁).trans rfl, h₁.trans h₂.symm, h,
-    (hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem p.1.isLt) (List.getElem_mem p.2.isLt)
-      (h₁.trans h₂.symm)).not.1 h⟩
-  rw [hw]
-  exact (U.isReduced_subst _ (mem_equations_ofEntries_of_isVarPair _ hp)).1
-
-/-- In a solution of the generalised equation of a partition table of the words of a system, the
 word of every variable is reduced as written: it is empty, or it spans a base. -/
 theorem isReduced_substituteVars_wordMap (hT : IsPartitionTable S.toWords T)
     (U : (S.genEq T).Solution) (x : X) :
     FreeGroup.IsReduced (substituteVars U.word (S.wordMap T x)) :=
-  isReduced_substituteVars_wordMap_tableEntries hT U (Sum.inl x)
+  hT.isReduced_substituteVars_wordMap U (S.duplicate_map_fst_flatten_toWords (Sum.inl x))
 
 /-- In a solution of the generalised equation of a partition table of the words of a system, the
 word of every witness is reduced as written: it is empty, or it spans a base. -/
 theorem isReduced_substituteVars_witnessWord (hT : IsPartitionTable S.toWords T)
     (U : (S.genEq T).Solution) (k : Fin S.ineqs.length) :
     FreeGroup.IsReduced (substituteVars U.word (S.witnessWord T k)) :=
-  isReduced_substituteVars_wordMap_tableEntries hT U (Sum.inr k)
+  hT.isReduced_substituteVars_wordMap U (S.duplicate_map_fst_flatten_toWords (Sum.inr k))
 
 /-- A solution of the generalised equation of a cancellation scheme gives every witness a
 nontrivial value: its word is nonempty and reduced as written. -/
@@ -513,15 +463,15 @@ theorem cancellationFamily_subset (S : EqIneqSystem X A) :
     S.cancellationFamily ⊆ GenEq.cancellationFamily S.toWords :=
   Finset.filter_subset _ _
 
-end Family
-
 /-- The cancellation family of a system over a finite alphabet `A` whose words have size
 `n = systemSize S.toWords` has at most `(2 (n + |A|) + 1) ^ n` members: there are at most that
 many cancellation schemes with letters `Z = Fin n`. -/
-theorem card_cancellationFamily_le [Fintype A] (S : EqIneqSystem X A) :
+theorem card_cancellationFamily_le (S : EqIneqSystem X A) :
     S.cancellationFamily.card ≤
-      (2 * (systemSize S.toWords + Fintype.card A) + 1) ^ systemSize S.toWords :=
+      (2 * (systemSize S.toWords + Nat.card A) + 1) ^ systemSize S.toWords :=
   (Finset.card_le_card (cancellationFamily_subset S)).trans (GenEq.card_cancellationFamily_le _)
+
+end Family
 
 /-! ### The empty system -/
 
@@ -623,7 +573,7 @@ example (x : X) (a : A) :
   have key : ∀ n, n = 2 → FreeGroup.mk ((List.finRange n).flatMap fun j : Fin n =>
       ([(Sum.inr a, decide ((j : ℕ) = 0))] : List ((Empty ⊕ A) × Bool))) = 1 := by
     rintro _ rfl
-    exact Quot.sound FreeGroup.Red.Step.cons_not
+    exact FreeGroup.Red.Step.cons_not.mk_eq.trans FreeGroup.one_eq_mk.symm
   exact ⟨⟨fun _ => .singleton,
     fun i => key _ (length_eq_two_of_mem_toWords_var_ne_one x (List.getElem_mem i.isLt)),
     fun o => by

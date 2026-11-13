@@ -10,12 +10,15 @@ import TauCeti.GroupTheory.FreeGroup.Basic
 import TauCeti.Algebra.Group.Bool
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Sigma
+public import Mathlib.Data.List.Duplicate
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Group.List.Lemmas
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sum
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Data.List.NodupEquivFin
 import Mathlib.Data.Set.Finite.List
 
 /-!
@@ -66,6 +69,8 @@ spanned by `V_{ij}` at an occurrence `r_{ij} = x ^ ε`.
 * `TauCeti.GenEq.Solution.substituteVars_segment_entryStart_eq_wordMap`: in a solution of `Ω_T`,
   the value `P_x(U)` does not depend on the occurrence of `x` at which it is read, when the words
   of the entries of `x` are empty together.
+* `TauCeti.GenEq.IsPartitionTable.isReduced_substituteVars_wordMap`: in a solution of `Ω_T`, the
+  word `P_x(U)` of a variable occurring at least twice in `S` is reduced as written.
 * `TauCeti.GenEq.IsPartitionTable.eval_eq_one_of_mem_V`: if `v` is a solution of the system
   `Ω_T*` in a group over `F(A)`, then `x ↦ P_x(v)` is a solution of `S` there (Lemma 14(4)).
 * `TauCeti.GenEq.IsPartitionTable.eval_substituteVars_eq_one`: a solution of `Ω_T` gives the
@@ -615,6 +620,39 @@ theorem IsPartitionTable.wordMap_eq_nil_iff (hT : IsPartitionTable r T) {x : X}
   exact hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem k.isLt) (mem_tableEntries.2 ⟨o, rfl⟩)
     (hk.trans ho.symm)
 
+variable (T) in
+/-- The letters of the entries of a table are the letters of the system, word by word. -/
+@[simp]
+theorem map_fst_tableEntries : (tableEntries r T).map Prod.fst = r.flatten := by
+  simp [tableEntries, Function.comp_def, List.map_getElem_finRange, List.flatMap_def]
+
+/-- In a solution of the generalised equation of a partition table, the word map of a variable
+occurring at least twice in the system is reduced as written: it is empty, or it spans a base. -/
+theorem IsPartitionTable.isReduced_substituteVars_wordMap (hT : IsPartitionTable r T)
+    (U : (ofEntries (tableEntries r T)).Solution) {x : X}
+    (hx : (r.flatten.map Prod.fst).Duplicate (Sum.inl x)) :
+    FreeGroup.IsReduced (substituteVars U.word (wordMap (tableEntries r T) x)) := by
+  rw [← map_fst_tableEntries T, List.map_map, List.duplicate_iff_exists_distinct_get] at hx
+  obtain ⟨n, m, hnm, hn, hm⟩ := hx
+  simp only [List.get_eq_getElem, List.getElem_map, Function.comp_apply] at hn hm
+  obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq _ (n.cast (List.length_map _)) hn.symm
+  -- A second entry of `x`, besides the one at which its word map is read.
+  obtain ⟨k₁, hk₁, hne⟩ : ∃ k₁ : Fin (tableEntries r T).length,
+      (tableEntries r T)[k₁].1.1 = Sum.inl x ∧ k₀ ≠ k₁ := by
+    by_cases h : k₀ = n.cast (List.length_map _)
+    · exact ⟨m.cast (List.length_map _), hm.symm, h ▸ (Fin.cast_injective _).ne hnm.ne⟩
+    · exact ⟨n.cast (List.length_map _), hn.symm, h⟩
+  rw [hw]
+  by_cases h : (tableEntries r T)[k₀].2 = []
+  · rw [List.eq_nil_of_length_eq_zero ((length_segment_entryStart _ k₀.isLt _).trans
+      (List.length_eq_zero_iff.2 h))]
+    exact .nil
+  have hp : IsVarPair (tableEntries r T) (k₀, k₁) := (isVarPair_iff _).2 ⟨hne,
+    (congrArg Sum.isLeft hk₀).trans rfl, hk₀.trans hk₁.symm, h,
+    (hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem k₀.isLt) (List.getElem_mem k₁.isLt)
+      (hk₀.trans hk₁.symm)).not.1 h⟩
+  exact (U.isReduced_subst _ (mem_equations_ofEntries_of_isVarPair _ hp)).1
+
 /-- The concatenated word of a table has length the sum of the lengths of its words. -/
 theorem length_flatMap_tableEntries :
     ((tableEntries r T).flatMap Prod.snd).length = ∑ o : Occurrence r, (T o).length := by
@@ -651,9 +689,11 @@ theorem mem_cancellationFamily [Finite A]
 variable (r) in
 /-- **Kharlampovich–Myasnikov, Lemma 13(1).** A system of size `|S|` over an alphabet `A` has at
 most `(2 (|S| + |A|) + 1) ^ |S|` partition tables. -/
-theorem card_cancellationFamily_le [Fintype A] :
-    (cancellationFamily r).card ≤ (2 * (systemSize r + Fintype.card A) + 1) ^ systemSize r := by
+theorem card_cancellationFamily_le [Finite A] :
+    (cancellationFamily r).card ≤ (2 * (systemSize r + Nat.card A) + 1) ^ systemSize r := by
   classical
+  cases nonempty_fintype A
+  rw [Nat.card_eq_fintype_card]
   let f (T : Occurrence r → List ((Fin (systemSize r) ⊕ A) × Bool)) (o : Occurrence r)
       (n : Fin (r[o.1].length - 1)) : Option ((Fin (systemSize r) ⊕ A) × Bool) :=
     (T o)[(n : ℕ)]?
