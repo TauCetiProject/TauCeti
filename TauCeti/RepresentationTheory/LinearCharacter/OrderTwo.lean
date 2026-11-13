@@ -37,8 +37,9 @@ theorem nonempty_equiv_trivial_or_ofLinearCharacter_of_forall_eq_one_or_eq
   classical
   let := hρ
   have := hρ.nontrivial
-  have hcases : ρ t = 1 ∨ ρ t = -1 := hρ.eq_one_or_eq_neg_one_of_commute
-    (fun g ↦ by rcases hG g with rfl | rfl <;> simp) (by rw [← map_mul, ht, map_one])
+  have hcases : ρ t = 1 ∨ ρ t = -1 :=
+    hρ.eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one
+      (fun g ↦ by rcases hG g with rfl | rfl <;> simp) (by rw [← map_mul, ht, map_one])
   obtain ⟨ψ, hψ, haction⟩ : ∃ ψ : G →* kˣ, (ψ = 1 ∨ ψ = χ) ∧
       ∀ g, ρ g = (ψ g : k) • (1 : Module.End k V) := by
     rcases hcases with hpos | hneg

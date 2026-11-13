@@ -185,7 +185,7 @@ theorem monomialGroup_apply_monomialGroupEpsilon_eq_one_or_eq_neg_one {R M I : T
     {W : Type*} [AddCommGroup W] [Module k W] (ρ : Representation k (monomialGroup Q v) W)
     [ρ.IsIrreducible] :
     ρ (monomialGroupEpsilon Q v) = 1 ∨ ρ (monomialGroupEpsilon Q v) = -1 :=
-  (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute
+  (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one
     (fun g ↦ by
       rw [← map_mul, ← map_mul, Subgroup.mem_center_iff.mp (monomialGroupEpsilon_mem_center v) g])
     (by rw [← map_mul, monomialGroupEpsilon_mul_self v, map_one])
@@ -215,7 +215,8 @@ private theorem apply_eq_one_or_eq_neg_one_of_apply_monomialGroupEpsilon_eq_one
         Subtype.ext (by simpa using hc.eq)
       rw [← map_mul, hgh, map_mul, hρ, one_mul, map_mul]
   -- Every signed monomial squares to `1` or `ε`, which both act trivially.
-  refine (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute hcomm ?_
+  refine (inferInstance : ρ.IsIrreducible).eq_one_or_eq_neg_one_of_commute_of_mul_self_eq_one
+    hcomm ?_
   rw [← map_mul]
   rcases (mem_monomialGroupSign_iff b).mp (mul_self_mem_monomialGroupSign b
       (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij)) hQ g) with h | h <;>
