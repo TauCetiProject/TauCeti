@@ -30,8 +30,8 @@ reindexing: on both sides the summands are indexed by a cut position together wi
 block, and a cut never splits a block nor the letter that replaced one.
 
 This is the encoding in which an `A∞` algebra is a square-zero coderivation of the bar coalgebra of
-a suspended graded module, and its Taylor components are the operations `m_n`; that use is
-downstream, in the `DGAInfinity` roadmap.
+a suspended graded module, and its Taylor components are the operations `m_n`
+(`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 
@@ -123,10 +123,15 @@ theorem coderivSummand_eq_zero (F : ReducedTensorWords R M →ₗ[R] M) {n p d :
 
 /-- On a pure tensor word, a Taylor summand is the splice of the value of `F` on the collapsed
 block. -/
-theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : ℕ} (hd : 0 < d)
-    (hpd : p + d ≤ n) (x : Fin n → M) :
+theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : ℕ}
+    (x : Fin n → M) :
     coderivSummand R F n p d (PiTensorProduct.tprod R x) =
       splice R x 0 n p d (F (subword R x p d)) := by
+  by_cases h : 0 < d ∧ p + d ≤ n
+  swap
+  · rw [coderivSummand_eq_zero R F h, LinearMap.zero_apply,
+      splice_eq_zero_of_not_fits R x _ h]
+  obtain ⟨hd, hpd⟩ := h
   rw [coderivSummand, dite_eq_left ⟨hd, hpd⟩]
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
     TensorPower.splitAt_tprod, LinearMap.lTensor_tmul, LinearMap.rTensor_tmul,
@@ -177,7 +182,7 @@ theorem coderivSummand_tprod_of_eq (F : ReducedTensorWords R M →ₗ[R] M) {n b
     coderivSummand R F b p d (PiTensorProduct.tprod R y) =
       splice R x a b p d (F (subword R x (a + p) d)) := by
   by_cases h : 0 < d ∧ p + d ≤ b
-  · rw [coderivSummand_tprod R F h.1 h.2,
+  · rw [coderivSummand_tprod R F,
       subword_congr R y x (a := p) (a' := a + p) (by omega) (by omega) fun j hj ↦ by
         rw [hy (p + j) (by omega)]
         exact congrArg x (by simp only [Fin.mk.injEq]; omega)]

@@ -86,9 +86,6 @@ additive group structure is inherited conditionally, when `A` happens to be a ri
 
 ## References
 
-This is the shared construction beneath the Layer 5 targets `skolemNoether` and
-`finrank_mul_finrank_centralizer` of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 

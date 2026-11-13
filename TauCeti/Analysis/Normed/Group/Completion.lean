@@ -39,7 +39,7 @@ theorem exists_hasSum_coe_of_norm_lt (u : Completion V) {c : ℝ} (hu : ‖u‖ 
     ∃ v : ℕ → V, HasSum (fun n ↦ (v n : Completion V)) u ∧ Summable (fun n ↦ ‖v n‖) ∧
       ∑' n, ‖v n‖ < c := by
   set ε := (c - ‖u‖) / 2 with hε_def
-  have hε : 0 < ε := by rw [hε_def]; linarith
+  have _ : 0 < ε := by rw [hε_def]; linarith
   -- Mathlib's successive approximation of `u` from the dense range of `V`, with geometric errors.
   have hmem : u ∈ closure ((toCompl : V →+ Completion V).range : Set (Completion V)) := by
     rw [AddMonoidHom.coe_range]

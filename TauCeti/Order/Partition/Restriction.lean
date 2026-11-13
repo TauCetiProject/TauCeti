@@ -102,7 +102,6 @@ theorem IsEquipartition.exists_partsEquiv_restrict (hP : P.IsEquipartition)
     Nat.div_pos (P.card_parts_le_card) (card_pos.2 (P.parts_nonempty hs.ne_empty))
   have hη₀ : 0 ≤ η := by
     have hpos : (0 : ℝ) < (#s / #P.parts : ℕ) := by exact_mod_cast havg
-    have hnonneg : (0 : ℝ) ≤ #(s \ t) := Nat.cast_nonneg _
     nlinarith
   have hsmall : #(s \ t) < #s / #P.parts := by
     have hpos : (0 : ℝ) < (#s / #P.parts : ℕ) := by exact_mod_cast havg
