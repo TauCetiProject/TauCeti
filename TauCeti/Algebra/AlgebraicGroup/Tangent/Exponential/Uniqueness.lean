@@ -18,7 +18,7 @@ coordinate algebra, without choosing a faithful matrix representation.
 
 Together with the matrix comparison for invariant-vector-field exponentials, uniqueness
 identifies polynomial exponential curves constructed in different faithful realizations.
-It applies to all affine monoids over a rational domain, without finite-type or smoothness
+It applies to all affine monoids over a rational ring, without finite-type or smoothness
 hypotheses, provided the indicated invariant derivations are locally nilpotent.
 
 ## References
@@ -31,7 +31,7 @@ public section
 
 open Polynomial WithConv TauCeti.Bialgebra
 
-variable {R H : Type*} [CommRing R] [IsDomain R]
+variable {R H : Type*} [CommRing R]
   [CommRing H] [_root_.Bialgebra R H] [Algebra ℚ H]
 
 namespace AlgHom
@@ -48,7 +48,7 @@ theorem eq_expPointPolynomial_of_aeval_one_comp_eq
     γ = expPointPolynomial d hd := by
   let : Algebra ℚ R :=
     ((_root_.Bialgebra.counitAlgHom R H).toRingHom.comp (algebraMap ℚ H)).toAlgebra
-  have : CharZero R := Algebra.charZero_of_charZero ℚ R
+  have := HasUniqueDiv.of_module_rat R
   apply γ.eq_of_aeval_one_comp_eq _ hγ
     (aeval_comp_expPointPolynomial_add d hd)
   exact h.trans (aeval_one_comp_expPointPolynomial d hd).symm
