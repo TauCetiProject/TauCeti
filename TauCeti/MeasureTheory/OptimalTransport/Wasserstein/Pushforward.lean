@@ -159,9 +159,9 @@ theorem exists_coe_eq_map_of_memLp {ν : ProbabilityMeasure X} {T : X → F}
   have hTm : AEMeasurable T (ν : Measure X) := hT.aestronglyMeasurable.aemeasurable
   have hm : HasFiniteMoment p ((ν : Measure X).map T) := by
     rw [hasFiniteMoment_map_iff_memLp_edist hTm 0]
-    exact (memLp_congr_enorm hT.aestronglyMeasurable
+    exact (memLp_congr_eNorm hT.aestronglyMeasurable
       (measurable_edist_left.comp_aemeasurable hTm).aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 hT
+      (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).1 hT
   refine ⟨.mk (ν.map T) (by rwa [ProbabilityMeasure.toMeasure_map]), ?_⟩
   rw [WassersteinSpace.coe_mk, ProbabilityMeasure.toMeasure_map]
 
@@ -196,7 +196,7 @@ theorem wassersteinEDist_map_le_mul_eLpNorm
         hdY.comp (hf.prodMap hf)
       apply eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul' hmeas.aestronglyMeasurable
       exact .of_forall fun z ↦ by
-        simpa only [enorm_eq_self, ENNReal.smul_def] using hLip.edist_le_mul z.1 z.2
+        simpa only [eNorm_eq_self, ENNReal.smul_def] using hLip.edist_le_mul z.1 z.2
 
 /-- A Lipschitz map contracts Wasserstein distance up to a nonzero Lipschitz constant, for
 arbitrary measures. Nothing is assumed about `μ` and `ν`: if they admit no coupling their distance
@@ -254,10 +254,10 @@ theorem HasFiniteMoment.map (hμ : HasFiniteMoment p μ)
   have hdist : AEStronglyMeasurable (fun y : Y ↦ edist (f x) y) (μ.map f) :=
     (hdY (f x)).aestronglyMeasurable
   rw [memLp_map_measure_iff hdist hf.aemeasurable]
-  apply hx.of_enorm_le_mul
+  apply hx.of_eNorm_le_mul
   · exact ((hdY (f x)).comp hf).aestronglyMeasurable
   · exact .of_forall fun y ↦ by
-      simpa only [Function.comp_apply, enorm_eq_self] using hLip.edist_le_mul x y
+      simpa only [Function.comp_apply, eNorm_eq_self] using hLip.edist_le_mul x y
 
 namespace WassersteinSpace
 
@@ -399,9 +399,9 @@ theorem wassersteinEDist_map_prod_le (hdX : Measurable fun z : X × X ↦ edist 
         wassersteinEDist_le (hπ.map_prod η hf hf) p
     _ ≤ eLpNorm (fun w : (X × X) × H ↦ edist w.1.1 w.1.2) p (π.prod η) := by
         rw [eLpNorm_map_measure hdY.aestronglyMeasurable hg.aemeasurable]
-        exact eLpNorm_mono_enorm
+        exact eLpNorm_mono_eNorm
           ((hdY.comp hg).aestronglyMeasurable (μ := π.prod η)) fun w ↦ by
-          simpa only [Function.comp_apply, enorm_eq_self, ENNReal.coe_one, one_mul] using
+          simpa only [Function.comp_apply, eNorm_eq_self, ENNReal.coe_one, one_mul] using
             (hfi w.2).edist_le_mul w.1.1 w.1.2
     _ = eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π :=
         eLpNorm_comp_measurePreserving (g := fun z : X × X ↦ edist z.1 z.2) (f := Prod.fst)

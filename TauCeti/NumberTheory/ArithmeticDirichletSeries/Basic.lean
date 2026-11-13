@@ -294,11 +294,10 @@ theorem zeroExtend_mul (f g : IdealArithmeticFunction K) :
   simpa [zeroExtend_eq_extend] using
     (Function.extend_mul (Subtype.val : (Ideal (𝓞 K))⁰ → Ideal (𝓞 K)) f g 0 0)
 
-/-- **Rejection test.** The everywhere-one function on *all* integral ideals is not the zero
-extension of any ideal arithmetic function, since its value at `⊥` is one rather than zero. This
-is the roadmap's zero-ideal rejection test. Compare
-`TauCeti.IdealArithmeticFunction.zeroExtend_one_apply`, which computes the zero extension of the
-constant function `1` on the *nonzero* ideals. -/
+/-- **The constant `1` on all ideals is not a zero extension.** The everywhere-one function on
+*all* integral ideals is not the zero extension of any ideal arithmetic function, since its value
+at `⊥` is one rather than zero. Compare `TauCeti.IdealArithmeticFunction.zeroExtend_one_apply`,
+which computes the zero extension of the constant function `1` on the *nonzero* ideals. -/
 theorem not_exists_zeroExtend_eq_one :
     ¬ ∃ f : IdealArithmeticFunction K, f.zeroExtend = (1 : Ideal (𝓞 K) → ℂ) := by
   rw [exists_zeroExtend_eq_iff]

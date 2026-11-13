@@ -71,11 +71,9 @@ the states have even `O`-Maslov grading (`GridDiagram.sum_negOnePow_maslovOℤ_e
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.4, "Euler
-characteristic = Alexander polynomial, via the grid determinant formula". The determinant formula
-is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.3; identifying the
-determinant with the Alexander polynomial of the link the diagram presents is the remaining half
-of that milestone.
+The determinant formula is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter
+3.3; identifying the determinant with the Alexander polynomial of the link the diagram presents is
+not done here.
 -/
 
 public section

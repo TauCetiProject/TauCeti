@@ -33,9 +33,10 @@ Writing `r_y = (m_y⁻¹).toReal` with `m_y = κ.meanReturnTime y`, the limit ho
 with no recurrence hypothesis: started at `y`, the occupation frequency of `y` converges almost
 surely to `r_y` (`ProbabilityTheory.Kernel.ae_tendsto_visitCount_div_markovChainLaw_dirac`), since
 at a transient state the visits are almost surely finite and `m_y = ∞`. The first-entrance
-transfer then gives the limit from any finite initial law
-(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and the limit of the mean
-occupation frequency (`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
+transfer then gives the almost-sure limit from any initial law
+(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and, from any finite initial
+law, the limit of the mean occupation frequency
+(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
 
 ## References
 
@@ -64,7 +65,7 @@ theorem integral_visitCount_succ_markovChainLaw_dirac (κ : Kernel α α) [IsMar
   rw [integral_visitCount (fun i (ω : ℕ → α) => ω (i + 1))
     (fun i => measurable_pi_apply (i + 1))]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   simp only [Measure.real, Measure.markovChainLaw_setOf_apply_eq_comp,
     Measure.dirac_bind (κ ^ (i + 1)).measurable]
 
@@ -186,7 +187,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
-/-- **Long-run occupation frequencies.** From any finite initial law, the
+omit [IsFiniteMeasure ν] in
+/-- **Long-run occupation frequencies.** From any initial law, the
 proportion `V_y(n) / n` of the times `1, …, n` spent at `y` converges almost surely to
 `r_y = (m_y⁻¹).toReal` on the event that the chain enters `y`, and to zero off that event. -/
 theorem ae_tendsto_visitCount_div_markovChainLaw (y : α) :

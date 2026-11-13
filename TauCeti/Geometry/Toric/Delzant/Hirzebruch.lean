@@ -250,7 +250,6 @@ private theorem exists_activeSet_hirzebruch_eq_singleton (hb : 0 < b) (ha : 0 < 
     ∃ x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
       (hirzebruchSupport a b), activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
         (hirzebruchNormal k)) (hirzebruchSupport a b) x = {j} := by
-  have hkq := intCast_mul_lt ha hab (half_pos hb).le (half_le_self hb.le)
   let pt (p q : ℝ) : StrongDual ℝ (Fin 2 → ℝ) :=
     p • ContinuousLinearMap.proj 0 + q • ContinuousLinearMap.proj 1
   have hp (p q : ℝ) : pt p q (Pi.single 0 1) = p := by simp [pt]

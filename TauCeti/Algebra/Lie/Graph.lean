@@ -61,28 +61,23 @@ theorem graph_eq_range_prod (f : L →ₗ⁅R⁆ L₂) :
   exact LinearMap.graph_eq_range_prod f.toLinearMap
 
 /-- A Lie algebra is naturally equivalent to the graph of any homomorphism out of it. -/
-noncomputable def graphEquiv (f : L →ₗ⁅R⁆ L₂) : L ≃ₗ⁅R⁆ f.graph :=
-  ((LieHom.prod LieHom.id f).equivRangeOfInjective (by
-      intro x y h
-      exact congrArg Prod.fst h)).trans
-    (LieEquiv.ofEq _ _
-      (congrArg (fun s : LieSubalgebra R (L × L₂) ↦ (s : Set (L × L₂)))
-        f.graph_eq_range_prod).symm)
+def graphEquiv (f : L →ₗ⁅R⁆ L₂) : L ≃ₗ⁅R⁆ f.graph where
+  toFun x := ⟨(x, f x), (f.mem_graph_iff _).2 rfl⟩
+  invFun x := x.1.1
+  map_add' x y := by ext <;> simp
+  map_smul' c x := by ext <;> simp
+  map_lie' {x y} := by ext <;> simp
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (Prod.ext rfl ((f.mem_graph_iff _).1 x.2).symm)
 
 /-- The canonical equivalence to the graph sends `x` to `(x, f x)`. -/
 @[simp]
 theorem coe_graphEquiv_apply (f : L →ₗ⁅R⁆ L₂) (x : L) :
-    (f.graphEquiv x : L × L₂) = (x, f x) := by
-  rw [graphEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply]
-  exact congrArg Subtype.val
-    (LieHom.equivRangeOfInjective_apply (LieHom.prod LieHom.id f) _ x)
+    (f.graphEquiv x : L × L₂) = (x, f x) := (rfl)
 
 /-- The inverse of the canonical equivalence to the graph is first-coordinate projection. -/
 @[simp]
 theorem graphEquiv_symm_apply (f : L →ₗ⁅R⁆ L₂) (x : f.graph) :
-    f.graphEquiv.symm x = x.1.1 := by
-  have h := congrArg (fun y : f.graph ↦ (y : L × L₂).1)
-    (f.graphEquiv.apply_symm_apply x)
-  simpa only [coe_graphEquiv_apply] using h
+    f.graphEquiv.symm x = x.1.1 := (rfl)
 
 end LieHom

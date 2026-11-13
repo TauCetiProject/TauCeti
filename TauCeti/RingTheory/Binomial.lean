@@ -725,6 +725,6 @@ theorem choose_mem_of_mem_span (S : G) {s : Set R}
   | zero => cases n <;> simp [_root_.Ring.choose_zero_succ]
   | add x y hx hy ihx ihy =>
     exact choose_add_mem S (hspan x hx y hy) (fun k _ ↦ ihx k) (fun k _ ↦ ihy k)
-  | smul z x hx ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
+  | smul z x _ ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
 
 end TauCeti.Ring

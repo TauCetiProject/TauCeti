@@ -42,8 +42,9 @@ such module is Gorenstein-projective over `R`
 
 No regularity hypothesis is used. When `S` has finite global dimension, every
 Gorenstein-projective `R`-module is a high syzygy and hence has projective dimension at most one
-over `S`; that step, which gives essential surjectivity of the cokernel functor onto the stable
-category of Gorenstein-projective `R`-modules, is not made here.
+over `S`; the resulting essential surjectivity of the cokernel functor onto the stable category
+of Gorenstein-projective `R`-modules is in
+`TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Equivalence`.
 
 ## Main definitions
 

@@ -20,6 +20,10 @@ uniform order statements:
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
+* `IsPreconnected.subsingleton_of_interior_eq_empty`: a preconnected subset of a linearly ordered
+  space with empty interior has at most one point.
+* `IsPreconnected.subsingleton_image_of_interior_eq_empty`: a continuous function on `s` with values
+  in a set with empty interior, for instance a null set of `ℝ`, is constant on `s`.
 
 A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
 `c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
@@ -96,3 +100,28 @@ theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
     hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
   exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
     ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
+
+/-- A preconnected subset with empty interior of a linearly ordered space has at most one
+point. -/
+theorem IsPreconnected.subsingleton_of_interior_eq_empty {t : Set α} (ht : IsPreconnected t)
+    (h : interior t = ∅) : t.Subsingleton := by
+  intro a ha b hb
+  by_contra hne
+  wlog hab : a < b generalizing a b
+  · exact this hb ha (Ne.symm hne) (lt_of_le_of_ne (not_lt.1 hab) (Ne.symm hne))
+  -- The open sets `Iio b` and `Ioi a` cover `t`, so `t` meets `Ioo a b`; then the nonempty open
+  -- interval `Ioo a b ⊆ Icc a b ⊆ t` lies in the interior of `t`.
+  obtain ⟨c, -, hcb, hac⟩ := ht (Iio b) (Ioi a) isOpen_Iio isOpen_Ioi
+    (fun x _ ↦ (lt_or_ge x b).imp id hab.trans_le) ⟨a, ha, hab⟩ ⟨b, hb, hab⟩
+  have hsub : Ioo a b ⊆ interior t :=
+    interior_maximal (Ioo_subset_Icc_self.trans (ht.Icc_subset ha hb)) isOpen_Ioo
+  rw [h] at hsub
+  exact hsub ⟨hac, hcb⟩
+
+/-- A continuous function on a preconnected set, with values in a subset `t` of a linearly ordered
+space whose interior is empty, is constant on the set. -/
+theorem IsPreconnected.subsingleton_image_of_interior_eq_empty (hs : IsPreconnected s) {f : X → α}
+    (hf : ContinuousOn f s) {t : Set α} (hft : MapsTo f s t) (ht : interior t = ∅) :
+    (f '' s).Subsingleton :=
+  (hs.image f hf).subsingleton_of_interior_eq_empty
+    (subset_empty_iff.1 (ht ▸ interior_mono (image_subset_iff.2 hft)))
