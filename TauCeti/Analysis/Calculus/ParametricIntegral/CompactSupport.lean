@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ParametricIntegral
-public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.Analysis.Calculus.FDeriv.Const
+public import TauCeti.Topology.Compactness.Normed
 
 /-!
 # Parametric integrals with a fixed compact support
 
 Let `X` be a topological space with a Borel measure finite on compact sets, and let `D t x`
 take values in a normed space over `𝕜 = ℝ` or `ℂ`. Suppose `D t` is continuous and vanishes
-outside a fixed compact set for parameters near `t₀`. A jointly continuous parameter
-derivative can then be integrated to compute the derivative of the integral.
+outside a fixed compact set for parameters in a normed space near `t₀`. A jointly continuous
+parameter derivative can then be integrated to compute the derivative of the integral.
 
 On an open parameter domain, the integral is `C¹` when the first parameter derivative is
 jointly continuous, and `C²` when both the first and second are jointly continuous. The
@@ -36,40 +36,46 @@ namespace TauCeti
 variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {𝕜 E : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
-  {U : Set 𝕜} {K : Set X} {D D₁ D₂ : 𝕜 → X → E}
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+  {U : Set H} {K : Set X} {D : H → X → E} {D₁ : H → X → H →L[𝕜] E}
+  {D₂ : H → X → H →L[𝕜] H →L[𝕜] E}
 
 /-- **Differentiation under the integral sign with a fixed compact support.** Suppose `D t`
 is continuous and vanishes outside a fixed compact set for parameters in a neighbourhood of
 `t₀`. If its parameter derivative `D₁` is jointly continuous there, then the integral has
 derivative equal to the integral of `D₁ t₀`. -/
-theorem hasDerivAt_integral_of_compact_support {t₀ : 𝕜} (hU : U ∈ 𝓝 t₀)
+theorem hasFDerivAt_integral_of_compact_support {t₀ : H} (hU : U ∈ 𝓝 t₀)
     (hK : IsCompact K) (hD : ∀ t ∈ U, Continuous (D t))
     (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ))
-    (hderiv : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hderiv : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
-    HasDerivAt (fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₁ t₀ x ∂μ) t₀ := by
+    HasFDerivAt (fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₁ t₀ x ∂μ) t₀ := by
   classical
-  obtain ⟨ε, hε, hεU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hU
   have ht₀ := mem_of_mem_nhds hU
-  have hzero (t : 𝕜) (ht : t ∈ ball t₀ ε) (x : X) (hx : x ∉ K) : D₁ t x = 0 := by
-    refine (hderiv t (hεU (ball_subset_closedBall ht)) x).unique
-      ((hasDerivAt_const t (0 : E)).congr_of_eventuallyEq ?_)
-    filter_upwards [isOpen_ball.mem_nhds ht] with s hs
-    exact hsupp s (hεU (ball_subset_closedBall hs)) x hx
+  have ht₀i : t₀ ∈ interior U := mem_interior_iff_mem_nhds.2 hU
+  have hUi : IsOpen (interior U ×ˢ (univ : Set X)) := isOpen_interior.prod isOpen_univ
+  have hD₁i := hD₁.mono (prod_mono interior_subset (Subset.refl univ))
+  obtain ⟨C, hC⟩ := hK.exists_eventually_norm_le hUi
+    (fun x _ ↦ hD₁i.continuousAt (hUi.mem_nhds ⟨ht₀i, mem_univ x⟩))
+    (fun x _ ↦ ⟨ht₀i, mem_univ x⟩)
+  have hS : {t | t ∈ interior U ∧ ∀ x ∈ K, ‖D₁ t x‖ ≤ C} ∈ 𝓝 t₀ := by
+    filter_upwards [interior_mem_nhds.2 hU, hC] with t ht hCt
+    exact ⟨ht, fun x hx ↦ (hCt x hx).2⟩
+  have hzero (t : H) (ht : t ∈ interior U) (x : X) (hx : x ∉ K) : D₁ t x = 0 :=
+    (hderiv t (interior_subset ht) x).eq_zero_of_forall_notMem
+      (isOpen_interior.mem_nhds ht) (fun s hs ↦ hsupp s (interior_subset hs)) hx
   have hmeas : ∀ t ∈ U, StronglyMeasurable (D t) := fun t ht ↦
     (hD t ht).stronglyMeasurable_of_support_subset_isCompact hK
       (support_subset_iff'.2 (hsupp t ht))
   have hD₁t : Continuous (D₁ t₀) := continuousOn_univ.1 (hD₁.uncurry_left t₀ ht₀)
-  obtain ⟨C, hC⟩ := ((isCompact_closedBall t₀ ε).prod hK).exists_bound_of_continuousOn
-    (hD₁.mono (prod_mono hεU (subset_univ K)))
   have hbound : Integrable ((toMeasurable μ K).indicator fun _ ↦ max C 0) μ := by
     refine (integrableOn_const ?_).integrable_indicator (measurableSet_toMeasurable μ K)
     simpa only [measure_toMeasurable] using hK.measure_ne_top
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (ball_mem_nhds t₀ hε)
+  refine hasFDerivAt_integral_of_dominated_of_fderiv_le hS
     ?_ ?_ (hD₁t.stronglyMeasurable_of_support_subset_isCompact hK
-      (support_subset_iff'.2 (hzero t₀ (mem_ball_self hε)))).aestronglyMeasurable
+      (support_subset_iff'.2 (hzero t₀ ht₀i))).aestronglyMeasurable
     (ae_of_all _ fun x t ht ↦ ?_) hbound
-    (ae_of_all _ fun x t ht ↦ hderiv t (hεU (ball_subset_closedBall ht)) x)).2
+    (ae_of_all _ fun x t ht ↦ hderiv t (interior_subset ht.1) x)
   · filter_upwards [hU] with t ht using (hmeas t ht).aestronglyMeasurable
   · exact ((hD t₀ ht₀).continuousOn.integrableOn_of_subset_isCompact hK
       (hmeas t₀ ht₀).measurableSet_support (support_subset_iff'.2 (hsupp t₀ ht₀))
@@ -78,8 +84,8 @@ theorem hasDerivAt_integral_of_compact_support {t₀ : 𝕜} (hU : U ∈ 𝓝 t�
       (fun x hx ↦ notMem_support.mp hx)
   · by_cases hx : x ∈ K
     · rw [indicator_of_mem (subset_toMeasurable μ K hx)]
-      exact (hC (t, x) ⟨ball_subset_closedBall ht, hx⟩).trans (le_max_left _ _)
-    · rw [hzero t ht x hx, norm_zero]
+      exact (ht.2 x hx).trans (le_max_left _ _)
+    · rw [hzero t ht.1 x hx, norm_zero]
       exact indicator_nonneg (fun _ _ ↦ le_max_right _ _) _
 
 /-- If the integral of the parameter derivative is `C^n`, then a family of continuous
@@ -88,50 +94,52 @@ functions with fixed compact support and jointly continuous parameter derivative
 theorem contDiffOn_succ_integral_of_compact_support {n : ℕ∞} (hU : IsOpen U)
     (hK : IsCompact K) (hD : ∀ t ∈ U, Continuous (D t))
     (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ))
-    (hderiv : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hderiv : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0)
     (hI₁ : ContDiffOn 𝕜 n (fun t ↦ ∫ x, D₁ t x ∂μ) U) :
     ContDiffOn 𝕜 ((n : ℕ∞ω) + 1) (fun t ↦ ∫ x, D t x ∂μ) U := by
-  have h₁ := fun (t : 𝕜) (ht : t ∈ U) ↦
-    hasDerivAt_integral_of_compact_support (μ := μ) (hU.mem_nhds ht) hK hD hD₁ hderiv hsupp
-  exact (contDiffOn_succ_iff_deriv_of_isOpen hU).2
+  have h₁ := fun (t : H) (ht : t ∈ U) ↦
+    hasFDerivAt_integral_of_compact_support (μ := μ) (hU.mem_nhds ht) hK hD hD₁ hderiv hsupp
+  exact (contDiffOn_succ_iff_fderiv_of_isOpen hU).2
     ⟨fun t ht ↦ (h₁ t ht).differentiableAt.differentiableWithinAt, by simp,
-      hI₁.congr fun t ht ↦ (h₁ t ht).deriv⟩
+      hI₁.congr fun t ht ↦ (h₁ t ht).fderiv⟩
 
 /-- A family of continuous functions with fixed compact support and jointly continuous
 parameter derivative has a `C¹` integral on its open parameter domain. -/
 theorem contDiffOn_one_integral_of_compact_support (hU : IsOpen U) (hK : IsCompact K)
     (hD : ∀ t ∈ U, Continuous (D t))
     (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ))
-    (hderiv : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hderiv : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
     ContDiffOn 𝕜 1 (fun t ↦ ∫ x, D t x ∂μ) U := by
   apply contDiffOn_succ_integral_of_compact_support (n := 0) hU hK hD hD₁ hderiv hsupp
   refine contDiffOn_zero.2 (continuousOn_integral_of_compact_support hK hD₁ ?_)
-  intro t x ht hx
-  refine (hderiv t ht x).unique ((hasDerivAt_const t (0 : E)).congr_of_eventuallyEq ?_)
-  filter_upwards [hU.mem_nhds ht] with s hs using hsupp s hs x hx
+  exact fun t x ht hx ↦
+    (hderiv t ht x).eq_zero_of_forall_notMem (hU.mem_nhds ht) hsupp hx
 
 /-- **Second differentiation under the integral sign with a fixed compact support.**
-For continuous `D t` with fixed compact support on an open parameter domain, jointly
-continuous first and second parameter derivatives can both be integrated to compute the
-derivative of the derivative of the integral. -/
-theorem hasDerivAt_deriv_integral_of_compact_support (hU : IsOpen U) (hK : IsCompact K)
-    (hD : ∀ t ∈ U, Continuous (D t))
+For continuous `D t` with fixed compact support near `t₀`, jointly continuous first and second
+parameter derivatives can both be integrated to compute the derivative of the Fréchet
+derivative of the integral. -/
+theorem hasFDerivAt_fderiv_integral_of_compact_support {t₀ : H} (hU : U ∈ 𝓝 t₀)
+    (hK : IsCompact K) (hD : ∀ t ∈ U, Continuous (D t))
     (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ)) (hD₂ : ContinuousOn (uncurry D₂) (U ×ˢ univ))
-    (hderiv₁ : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
-    (hderiv₂ : ∀ t ∈ U, ∀ x, HasDerivAt (D₁ · x) (D₂ t x) t)
-    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) {t₀ : 𝕜} (ht₀ : t₀ ∈ U) :
-    HasDerivAt (deriv fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₂ t₀ x ∂μ) t₀ := by
-  have hsupp₁ : ∀ t ∈ U, ∀ x ∉ K, D₁ t x = 0 := by
-    intro t ht x hx
-    refine (hderiv₁ t ht x).unique ((hasDerivAt_const t (0 : E)).congr_of_eventuallyEq ?_)
-    filter_upwards [hU.mem_nhds ht] with s hs using hsupp s hs x hx
-  have h₂ := hasDerivAt_integral_of_compact_support (μ := μ) (hU.mem_nhds ht₀) hK
-    (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t ht)) hD₂ hderiv₂ hsupp₁
+    (hderiv₁ : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
+    (hderiv₂ : ∀ t ∈ U, ∀ x, HasFDerivAt (D₁ · x) (D₂ t x) t)
+    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
+    HasFDerivAt (fderiv 𝕜 fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₂ t₀ x ∂μ) t₀ := by
+  have hUi : interior U ∈ 𝓝 t₀ := interior_mem_nhds.2 hU
+  have hsupp₁ : ∀ t ∈ interior U, ∀ x ∉ K, D₁ t x = 0 := fun t ht x hx ↦
+    (hderiv₁ t (interior_subset ht) x).eq_zero_of_forall_notMem
+      (isOpen_interior.mem_nhds ht) (fun s hs ↦ hsupp s (interior_subset hs)) hx
+  have h₂ := hasFDerivAt_integral_of_compact_support (μ := μ) hUi hK
+    (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t (interior_subset ht)))
+    (hD₂.mono (prod_mono interior_subset (Subset.refl univ)))
+    (fun t ht ↦ hderiv₂ t (interior_subset ht)) hsupp₁
   refine h₂.congr_of_eventuallyEq ?_
-  filter_upwards [hU.mem_nhds ht₀] with t ht
-  exact (hasDerivAt_integral_of_compact_support (hU.mem_nhds ht) hK hD hD₁ hderiv₁ hsupp).deriv
+  filter_upwards [hUi] with t ht
+  exact (hasFDerivAt_integral_of_compact_support
+    (mem_interior_iff_mem_nhds.1 ht) hK hD hD₁ hderiv₁ hsupp).fderiv
 
 /-- **`C²` parametric integrals with a fixed compact support.** A family of continuous
 functions with fixed compact support and jointly continuous first and second parameter
@@ -139,16 +147,58 @@ derivatives has a `C²` integral on its open parameter domain. -/
 theorem contDiffOn_two_integral_of_compact_support (hU : IsOpen U) (hK : IsCompact K)
     (hD : ∀ t ∈ U, Continuous (D t))
     (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ)) (hD₂ : ContinuousOn (uncurry D₂) (U ×ˢ univ))
-    (hderiv₁ : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
-    (hderiv₂ : ∀ t ∈ U, ∀ x, HasDerivAt (D₁ · x) (D₂ t x) t)
+    (hderiv₁ : ∀ t ∈ U, ∀ x, HasFDerivAt (D · x) (D₁ t x) t)
+    (hderiv₂ : ∀ t ∈ U, ∀ x, HasFDerivAt (D₁ · x) (D₂ t x) t)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
     ContDiffOn 𝕜 2 (fun t ↦ ∫ x, D t x ∂μ) U := by
-  have hsupp₁ : ∀ t ∈ U, ∀ x ∉ K, D₁ t x = 0 := by
-    intro t ht x hx
-    refine (hderiv₁ t ht x).unique ((hasDerivAt_const t (0 : E)).congr_of_eventuallyEq ?_)
-    filter_upwards [hU.mem_nhds ht] with s hs using hsupp s hs x hx
+  have hsupp₁ : ∀ t ∈ U, ∀ x ∉ K, D₁ t x = 0 := fun t ht x hx ↦
+    (hderiv₁ t ht x).eq_zero_of_forall_notMem (hU.mem_nhds ht) hsupp hx
   exact contDiffOn_succ_integral_of_compact_support (n := 1) hU hK hD hD₁ hderiv₁ hsupp
     (contDiffOn_one_integral_of_compact_support hU hK
       (fun t ht ↦ continuousOn_univ.1 (hD₁.uncurry_left t ht)) hD₂ hderiv₂ hsupp₁)
+
+section Scalar
+
+variable {U : Set 𝕜} {D D₁ D₂ : 𝕜 → X → E}
+
+/-- A scalar parameter derivative of a continuous family with fixed compact support and a
+jointly continuous parameter derivative can be integrated to differentiate the integral. -/
+theorem hasDerivAt_integral_of_compact_support {t₀ : 𝕜} (hU : U ∈ 𝓝 t₀)
+    (hK : IsCompact K) (hD : ∀ t ∈ U, Continuous (D t))
+    (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ))
+    (hderiv : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
+    HasDerivAt (fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₁ t₀ x ∂μ) t₀ := by
+  let e := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := E)
+  have h := hasFDerivAt_integral_of_compact_support (μ := μ)
+    (D₁ := fun t x ↦ e (D₁ t x)) hU hK hD
+    (e.continuous.comp_continuousOn hD₁) (fun t ht x ↦ (hderiv t ht x).hasFDerivAt) hsupp
+  rw [e.integral_comp_comm (D₁ t₀)] at h
+  exact hasDerivAt_iff_hasFDerivAt.2 h
+
+/-- With a scalar parameter, jointly continuous first and second derivatives of a continuous
+family with fixed compact support near `t₀` can both be integrated to compute the derivative
+of the derivative of the integral. -/
+theorem hasDerivAt_deriv_integral_of_compact_support {t₀ : 𝕜} (hU : U ∈ 𝓝 t₀)
+    (hK : IsCompact K) (hD : ∀ t ∈ U, Continuous (D t))
+    (hD₁ : ContinuousOn (uncurry D₁) (U ×ˢ univ)) (hD₂ : ContinuousOn (uncurry D₂) (U ×ˢ univ))
+    (hderiv₁ : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
+    (hderiv₂ : ∀ t ∈ U, ∀ x, HasDerivAt (D₁ · x) (D₂ t x) t)
+    (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) :
+    HasDerivAt (deriv fun t ↦ ∫ x, D t x ∂μ) (∫ x, D₂ t₀ x ∂μ) t₀ := by
+  let e := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := E)
+  let e₁ := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := 𝕜 →L[𝕜] E)
+  have h := hasFDerivAt_fderiv_integral_of_compact_support (μ := μ)
+    (D₁ := fun t x ↦ e (D₁ t x)) (D₂ := fun t x ↦ e₁ (e (D₂ t x))) hU hK hD
+    (e.continuous.comp_continuousOn hD₁)
+    (e₁.continuous.comp_continuousOn (e.continuous.comp_continuousOn hD₂))
+    (fun t ht x ↦ (hderiv₁ t ht x).hasFDerivAt)
+    (fun t ht x ↦ (e.hasFDerivAt.comp_hasDerivAt t (hderiv₂ t ht x)).hasFDerivAt) hsupp
+  rw [ContinuousLinearEquiv.integral_comp_comm (𝕜 := 𝕜) (E := 𝕜 →L[𝕜] E)
+    (F := 𝕜 →L[𝕜] 𝕜 →L[𝕜] E) e₁, e.integral_comp_comm] at h
+  have h' := (e.symm.hasFDerivAt.comp t₀ h).hasDerivAt
+  simpa [e, e₁, comp_def, fderiv_apply_one_eq_deriv] using h'
+
+end Scalar
 
 end TauCeti
