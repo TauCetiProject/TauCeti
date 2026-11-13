@@ -29,6 +29,9 @@ chooses one of its points.
 An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
 (`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
 
+A limiting value of a continuous image of a preconnected set lies in the closure of the component
+containing the image of any point of that set.
+
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
 (`IsCompact.isPreconnected_image_iff_of_injOn`).
@@ -48,6 +51,15 @@ public section
 open Filter Function Set Topology
 
 variable {α ι : Type*} [TopologicalSpace α]
+
+/-- A limiting value of a continuous image of a preconnected set lies in the
+closure of the component containing the image of any point of that set. -/
+theorem IsPreconnected.mem_closure_connectedComponentIn {β : Type*} [TopologicalSpace β]
+    {s : Set α} {u : Set β} {f : α → β} (hs : IsPreconnected s) (hf : ContinuousOn f s)
+    {x t : α} (hx : x ∈ s) (ht : t ∈ closure s) (hft : ContinuousWithinAt f s t)
+    (hu : MapsTo f s u) : f t ∈ closure (_root_.connectedComponentIn u (f x)) := by
+  exact hft.mem_closure ht (image_subset_iff.mp ((hs.image f hf).subset_connectedComponentIn
+    (mem_image_of_mem f hx) (image_subset_iff.mpr hu)))
 
 /-- A preconnected set covered by pairwise disjoint open sets `u i` lies in each `u i` that it
 meets. -/
