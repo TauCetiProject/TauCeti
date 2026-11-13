@@ -479,14 +479,13 @@ theorem comap_algAutCongr_lowerRamificationGroup_of_vle_iff
       map_mul' := fun x y ↦ Subtype.ext (map_mul eL x.1 y.1)
       map_add' := fun x y ↦ Subtype.ext (map_add eL x.1 y.1) }
   have hpow (n : ℕ) :
-      (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap fInt.toRingHom =
+      (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap (fInt : 𝒪[L] →+* 𝒪[L']) =
         IsLocalRing.maximalIdeal 𝒪[L] ^ n := by
-    change (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap fInt = _
-    rw [← Ideal.map_symm, Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
+    rw [Ideal.comap_coe, ← Ideal.map_symm, Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
   symm
   rw [lowerRamificationGroup_def, lowerRamificationGroup_def]
   refine TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow
-    (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) fInt.toRingHom
+    (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) (fInt : 𝒪[L] →+* 𝒪[L'])
     (fun σ x ↦ ?_) hpow (fun _ y ↦ ⟨fInt.symm y, ?_⟩) i
   · exact Subtype.ext (by simp [fInt])
   · simp

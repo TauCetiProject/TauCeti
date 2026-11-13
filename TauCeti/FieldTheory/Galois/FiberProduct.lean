@@ -23,7 +23,7 @@ For two finite Galois intermediate fields `K` and `L`, Mathlib's
 `K ⊔ L` into `Gal(K/F) × Gal(L/F)`. Its range consists of the pairs with equal restrictions to
 `K ⊓ L`, so `Gal(K ⊔ L / F)` is the fibre product `Gal(K/F) ×_{Gal(K ⊓ L / F)} Gal(L/F)`. More
 generally, inside any normal extension `E/F` (possibly infinite or inseparable), a pair of
-automorphisms of two Galois intermediate fields `K` and `L` lifts to `Gal(E/F)` if and only if its
+automorphisms of two normal intermediate fields `K` and `L` lifts to `Gal(E/F)` if and only if its
 restrictions to `K ⊓ L` agree.
 
 Those restriction maps to `K ⊓ L` are named with `AlgHom.restrictNormalHom` from
@@ -44,7 +44,7 @@ rather than in either of them, and the restriction maps to it are
 * `IntermediateField.mem_range_restrictNormalHomSupProd_iff`: the Galois group of a compositum of
   two finite Galois intermediate fields is the fibre product over their intersection.
 * `IntermediateField.mem_range_restrictNormalHom_prod_restrictNormalHom_iff`: inside any normal
-  extension `E/F`, a pair of automorphisms of two Galois intermediate fields `K` and `L` extends to
+  extension `E/F`, a pair of automorphisms of two normal intermediate fields `K` and `L` extends to
   `Gal(E/F)` iff its restrictions to `K ⊓ L` agree.
 
 ## References
@@ -225,14 +225,14 @@ section NormalAmbient
 
 open scoped Pointwise
 
-/-- **Joint restriction to two Galois intermediate fields of a normal extension.** For any normal
-extension `E/F` (possibly infinite or inseparable) and Galois intermediate fields `K` and `L`
-(possibly infinite-dimensional over `F`), a pair `(σ, τ) ∈ Gal(K/F) × Gal(L/F)` is the restriction
-of a single automorphism of `E/F` if and only if `σ` and `τ` have the same restriction to
-`K ⊓ L`. -/
+/-- **Joint restriction to two normal intermediate fields of a normal extension.** For any normal
+extension `E/F` (possibly infinite or inseparable) and normal intermediate fields `K` and `L`
+(possibly infinite-dimensional or inseparable over `F`), a pair `(σ, τ) ∈ Gal(K/F) × Gal(L/F)` is
+the restriction of a single automorphism of `E/F` if and only if `σ` and `τ` have the same
+restriction to `K ⊓ L`. -/
 theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
     {F E : Type*} [Field F] [Field E] [Algebra F E] [Normal F E]
-    (K L : IntermediateField F E) [IsGalois F K] [IsGalois F L]
+    (K L : IntermediateField F E) [Normal F K] [Normal F L]
     (σ : Gal(K/F)) (τ : Gal(L/F)) :
     (σ, τ) ∈ ((AlgEquiv.restrictNormalHom (K₁ := E) K).prod
         (AlgEquiv.restrictNormalHom (K₁ := E) L)).range ↔
@@ -254,19 +254,22 @@ theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
       exact ((fixingSubgroup_isClosed_of_isAlgebraic K).isCompact.mul
         (fixingSubgroup_isClosed_of_isAlgebraic L).isCompact).isClosed
     have hfix : (K ⊓ L).fixingSubgroup = K.fixingSubgroup ⊔ L.fixingSubgroup := by
-      rw [← TauCeti.fixingSubgroup_fixedField hcl, Subgroup.fixedField_sup,
-        ← fixingSubgroup_inf_separableClosure
-          (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup)]
       have hsep :
           (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E =
-            K ⊓ L := by
+            (K ⊓ L) ⊓ separableClosure F E := by
         calc (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup) ⊓ separableClosure F E
-          _ = (fixedField K.fixingSubgroup ⊓ separableClosure F E) ⊓
-                (fixedField L.fixingSubgroup ⊓ separableClosure F E) := by ac_rfl
-          _ = K ⊓ L := by
-                rw [fixedField_fixingSubgroup_inf_separableClosure (le_separableClosure F E K),
-                  fixedField_fixingSubgroup_inf_separableClosure (le_separableClosure F E L)]
-      rw [hsep]
+          _ = (fixedField (K ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) ⊓
+                (fixedField (L ⊓ separableClosure F E).fixingSubgroup ⊓ separableClosure F E) := by
+                rw [fixingSubgroup_inf_separableClosure K, fixingSubgroup_inf_separableClosure L]
+                ac_rfl
+          _ = (K ⊓ separableClosure F E) ⊓ (L ⊓ separableClosure F E) := by
+                rw [fixedField_fixingSubgroup_inf_separableClosure inf_le_right,
+                  fixedField_fixingSubgroup_inf_separableClosure inf_le_right]
+          _ = (K ⊓ L) ⊓ separableClosure F E := by ac_rfl
+      rw [← TauCeti.fixingSubgroup_fixedField hcl, Subgroup.fixedField_sup,
+        ← fixingSubgroup_inf_separableClosure
+          (fixedField K.fixingSubgroup ⊓ fixedField L.fixingSubgroup),
+        hsep, fixingSubgroup_inf_separableClosure]
     have hab : a⁻¹ * b ∈ K.fixingSubgroup ⊔ L.fixingSubgroup := by
       rw [← hfix, ← IntermediateField.restrictNormalHom_ker, MonoidHom.mem_ker, map_mul, map_inv,
         inv_mul_eq_one]

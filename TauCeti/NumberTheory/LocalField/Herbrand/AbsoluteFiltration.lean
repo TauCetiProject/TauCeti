@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.LocalField.WildInertia
 
 import TauCeti.FieldTheory.Galois.FiberProduct
 import TauCeti.NumberTheory.LocalField.Herbrand.Unramified
-import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.Topology.Algebra.Group.Profinite.Limit
 import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
@@ -39,7 +38,7 @@ holds for any compatible local-field structure on any finite Galois intermediate
 
 Compactness of the absolute Galois group turns Herbrand's finite-level surjectivity into
 surjectivity from the inverse limit: restriction to every finite Galois subextension `L/K` maps
-`G_K^v` onto `Gal(L/K)^v`. More generally, for every Galois intermediate field `E` of
+`G_K^v` onto `Gal(L/K)^v`. More generally, for every normal intermediate field `E` of
 `AlgebraicClosure K / K`, restriction maps `G_K^v` onto the subgroup of `Gal(E/K)` cut out by the
 upper ramification groups of the finite Galois intermediate fields of `E/K`.
 
@@ -80,7 +79,7 @@ for any bijective continuous `f : K →+* K'`) pulls `G_K^v` back to `G_{K'}^v`,
   `TauCeti.iInf_localAbsoluteUpperRamificationGroup`: the values at `-1` and `0`, the closure of
   the positive-depth union (wild inertia), and the trivial intersection of all depths.
 * `TauCeti.map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf`: restriction to
-  any Galois intermediate field `E/K` cuts out the inverse-limit upper filtration of `Gal(E/K)`.
+  any normal intermediate field `E/K` cuts out the inverse-limit upper filtration of `Gal(E/K)`.
 * `TauCeti.mem_localAbsoluteUpperRamificationGroup_iff_of_vle_iff`,
   `TauCeti.comap_absoluteGaloisGroup_mapOfAlgebra_localAbsoluteUpperRamificationGroup`,
   `TauCeti.comap_absoluteGaloisGroup_map_localAbsoluteUpperRamificationGroup`,
@@ -97,7 +96,7 @@ for any bijective continuous `f : K →+* K'`) pulls `G_K^v` back to `G_{K'}^v`,
 public section
 noncomputable section
 
-open ValuativeRel IntermediateField IsLocalRing Polynomial
+open ValuativeRel IntermediateField Polynomial
 
 namespace TauCeti
 
@@ -183,15 +182,9 @@ theorem mem_localAbsoluteUpperRamificationGroup_iff
 /-- **Every absolute upper ramification group is normal** in `Field.absoluteGaloisGroup K`. -/
 instance localAbsoluteUpperRamificationGroup_normal (v : RamificationIndexDomain) :
     (localAbsoluteUpperRamificationGroup K v).Normal := by
-  refine ⟨fun σ hσ τ ↦ mem_localAbsoluteUpperRamificationGroup_iff_forall_finiteGalois.2 fun M ↦ ?_⟩
-  have hσM := mem_localAbsoluteUpperRamificationGroup_iff_forall_finiteGalois.1 hσ M
-  let f : Field.absoluteGaloisGroup K →* (M ≃ₐ[K] M) := AlgEquiv.restrictNormalHom M
-  have hmap : AlgEquiv.restrictNormal (τ * σ * τ⁻¹) M =
-      AlgEquiv.restrictNormal τ M * AlgEquiv.restrictNormal σ M *
-        (AlgEquiv.restrictNormal τ M)⁻¹ :=
-    (map_mul f (τ * σ) τ⁻¹).trans (by rw [map_mul, map_inv]; rfl)
-  rw [hmap]
-  exact (instNormalFiniteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v).conj_mem _ hσM _
+  rw [localAbsoluteUpperRamificationGroup_def]
+  exact Subgroup.normal_iInf_normal fun M ↦
+    (instNormalFiniteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v).comap _
 
 /-- **Every absolute upper ramification group is closed** in the Krull topology on
 `Field.absoluteGaloisGroup K`. -/
@@ -237,42 +230,6 @@ section FiniteLevel
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
-/-- In a containment `L ≤ N` of finite Galois intermediate fields of `AlgebraicClosure K / K`,
-restricting from `N` to `L` maps `Gal(N/K)^v` onto `Gal(L/K)^v`, and commutes with restriction
-from `AlgebraicClosure K`. -/
-private theorem restrictNormal_tower_upperRamificationGroup
-    (L N : IntermediateField K (AlgebraicClosure K)) (hLN : L ≤ N)
-    [Module.Finite K L] [IsGalois K L] [ValuativeRel L] [TopologicalSpace L]
-    [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
-    [Module.Finite K N] [IsGalois K N] [ValuativeRel N] [TopologicalSpace N]
-    [IsNonarchimedeanLocalField N] [ValuativeExtension K N]
-    (v : RamificationIndexDomain) :
-    (∀ σ : Gal(AlgebraicClosure K/K),
-      AlgEquiv.restrictNormal σ N ∈ upperRamificationGroup K N v →
-        AlgEquiv.restrictNormal σ L ∈ upperRamificationGroup K L v) ∧
-      (∀ τ ∈ upperRamificationGroup K L v,
-        ∃ σ : Gal(AlgebraicClosure K/K),
-          AlgEquiv.restrictNormal σ N ∈ upperRamificationGroup K N v ∧
-            AlgEquiv.restrictNormal σ L = τ) := by
-  let ι : L →ₐ[K] N := inclusion hLN
-  let _ : Algebra L N := ι.toRingHom.toAlgebra
-  have : IsScalarTower K L N := .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
-  have : IsScalarTower L N (AlgebraicClosure K) := .of_algebraMap_eq fun _ ↦ rfl
-  have : ValuativeExtension L N := ι.valuativeExtension
-  have : Module.Finite L N := .of_restrictScalars_finite K L N
-  have hcomp (σ : Gal(AlgebraicClosure K/K)) :
-      AlgEquiv.restrictNormal σ L = AlgEquiv.restrictNormal (AlgEquiv.restrictNormal σ N) L :=
-    IsScalarTower.AlgEquiv.restrictNormalHom_comp_apply L N σ
-  refine ⟨fun σ hσN ↦ ?_, fun τ hτ ↦ ?_⟩
-  · rw [hcomp σ, ← map_restrictNormalHom_upperRamificationGroup K L N v]
-    exact ⟨AlgEquiv.restrictNormal σ N, hσN, rfl⟩
-  · rw [← map_restrictNormalHom_upperRamificationGroup K L N v] at hτ
-    obtain ⟨ρ, hρ, hρτ⟩ := hτ
-    obtain ⟨σ, hσρ⟩ := AlgEquiv.restrictNormalHom_surjective (AlgebraicClosure K) ρ
-    have hσρ' : AlgEquiv.restrictNormal σ N = ρ := hσρ
-    have hρτ' : AlgEquiv.restrictNormal ρ L = τ := hρτ
-    exact ⟨σ, hσρ'.symm ▸ hρ, (hcomp σ).trans (hσρ' ▸ hρτ')⟩
-
 /-- Compactness of `G_K` lifts any `τ ∈ Gal(E/K)` whose coset meets the preimage of `Gal(M/K)^v`
 at every finite Galois level `M` to an element of `localAbsoluteUpperRamificationGroup K v`. -/
 private theorem exists_mem_localAbsoluteUpperRamificationGroup_of_forall_finiteGalois
@@ -312,6 +269,31 @@ private theorem exists_mem_localAbsoluteUpperRamificationGroup_of_forall_finiteG
   exact ⟨σ, mem_localAbsoluteUpperRamificationGroup_iff_forall_finiteGalois.2 fun M ↦
     (Set.mem_iInter.1 hσ M).2, (Set.mem_iInter.1 hσ ⊥).1⟩
 
+/-- **Absolute upper ramification groups surject onto `finiteGaloisUpperRamificationGroup`.** -/
+@[simp]
+theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_finiteGalois
+    (M : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (v : RamificationIndexDomain) :
+    (localAbsoluteUpperRamificationGroup K v).map
+        (AlgEquiv.restrictNormalHom M.toIntermediateField) =
+      finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v := by
+  refine le_antisymm ?_ fun τ hτ ↦ ?_
+  · rintro _ ⟨σ, hσ, rfl⟩
+    exact mem_localAbsoluteUpperRamificationGroup_iff_forall_finiteGalois.1 hσ M
+  · refine exists_mem_localAbsoluteUpperRamificationGroup_of_forall_finiteGalois
+      M.toIntermediateField fun M' ↦ ?_
+    let N : FiniteGaloisIntermediateField K (AlgebraicClosure K) := M ⊔ M'
+    rw [← map_restrictNormalHom_finiteGaloisUpperRamificationGroup K (AlgebraicClosure K)
+      (le_sup_left : M ≤ N) v] at hτ
+    obtain ⟨ρ, hρN, hρM⟩ := hτ
+    obtain ⟨σ, hσN⟩ := AlgEquiv.restrictNormalHom_surjective (AlgebraicClosure K) ρ
+    refine ⟨σ, ?_, comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone
+      K (AlgebraicClosure K) v (le_sup_right : M' ≤ N)
+      (by rwa [Subgroup.mem_comap, hσN])⟩
+    rw [← hρM, ← hσN, ← IntermediateField.restrictNormalHom_val N.toIntermediateField,
+      ← IntermediateField.restrictNormalHom_val M.toIntermediateField,
+      AlgHom.restrictNormalHom_restrictNormalHom]
+    rfl
+
 /-- **Absolute upper ramification groups surject onto finite upper ramification groups.** For every
 compatible local-field structure on a finite Galois intermediate field `L` of
 `AlgebraicClosure K / K` and every `v ≥ -1`, restriction maps
@@ -323,42 +305,8 @@ theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup
     (v : RamificationIndexDomain) :
     (localAbsoluteUpperRamificationGroup K v).map (AlgEquiv.restrictNormalHom L) =
       upperRamificationGroup K L v := by
-  refine le_antisymm ?_ fun τ hτ ↦ ?_
-  · rintro _ ⟨σ, hσ, rfl⟩
-    exact restrictNormal_mem_upperRamificationGroup L hσ
-  · refine exists_mem_localAbsoluteUpperRamificationGroup_of_forall_finiteGalois L fun M ↦ ?_
-    let L₀ : FiniteGaloisIntermediateField K (AlgebraicClosure K) := ⟨L⟩
-    let N : FiniteGaloisIntermediateField K (AlgebraicClosure K) := L₀ ⊔ M
-    let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) N.toIntermediateField
-    let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) N.toIntermediateField
-    have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
-      N.toIntermediateField
-    have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K)
-      N.toIntermediateField
-    have hLN : L ≤ N.toIntermediateField :=
-      (FiniteGaloisIntermediateField.le_iff L₀ N).1 le_sup_left
-    obtain ⟨σ, hσN, hσL⟩ :=
-      (restrictNormal_tower_upperRamificationGroup L N.toIntermediateField hLN v).2 τ hτ
-    exact ⟨σ, hσL, comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone
-      K (AlgebraicClosure K) v le_sup_right
-      (by rwa [Subgroup.mem_comap, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply,
-        finiteGaloisUpperRamificationGroup_def])⟩
-
-/-- `FiniteGaloisIntermediateField` form of
-`map_restrictNormalHom_localAbsoluteUpperRamificationGroup`. -/
-@[simp]
-theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_finiteGalois
-    (M : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (v : RamificationIndexDomain) :
-    (localAbsoluteUpperRamificationGroup K v).map
-        (AlgEquiv.restrictNormalHom M.toIntermediateField) =
-      finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) M v := by
-  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) M.toIntermediateField
-  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) M.toIntermediateField
-  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
-    M.toIntermediateField
-  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) M.toIntermediateField
-  rw [finiteGaloisUpperRamificationGroup_def,
-    map_restrictNormalHom_localAbsoluteUpperRamificationGroup]
+  rw [← finiteGaloisUpperRamificationGroup_eq K (AlgebraicClosure K) L v]
+  exact map_restrictNormalHom_localAbsoluteUpperRamificationGroup_finiteGalois ⟨L⟩ v
 
 /-- Every element of a finite upper ramification group `Gal(L/K)^v` lifts to
 `localAbsoluteUpperRamificationGroup K v`. -/
@@ -597,9 +545,9 @@ theorem iInf_localAbsoluteUpperRamificationGroup :
 
 end SpecialValues
 
-/-! ### Restriction to infinite Galois intermediate extensions -/
+/-! ### Restriction to normal intermediate extensions -/
 
-section GaloisIntermediate
+section NormalIntermediate
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
@@ -640,7 +588,7 @@ private theorem restrictNormal_restrictNormal_mem_finiteGaloisUpperRamificationG
     AlgEquiv.restrictNormal_apply E σ (z : E)]
 
 private theorem exists_restrictNormal_eq_and_mem_finiteGaloisUpperRamificationGroup
-    (E : IntermediateField K (AlgebraicClosure K)) [IsGalois K E]
+    (E : IntermediateField K (AlgebraicClosure K)) [Normal K E]
     {v : RamificationIndexDomain} {τ : E ≃ₐ[K] E}
     (hτ : τ ∈ ⨅ M : FiniteGaloisIntermediateField K E,
       (finiteGaloisUpperRamificationGroup K E M v).comap (AlgEquiv.restrictNormalHom M))
@@ -650,6 +598,10 @@ private theorem exists_restrictNormal_eq_and_mem_finiteGaloisUpperRamificationGr
         AlgEquiv.restrictNormalHom N.toIntermediateField σ ∈
           finiteGaloisUpperRamificationGroup K (AlgebraicClosure K) N v := by
   obtain ⟨σ₀, hσ₀⟩ := AlgEquiv.restrictNormalHom_surjective (AlgebraicClosure K) τ
+  have : Algebra.IsSeparable K ↥(E ⊓ N.toIntermediateField) :=
+    (le_separableClosure_iff K _ _).1
+      (inf_le_right.trans (le_separableClosure K _ N.toIntermediateField))
+  have : IsGalois K ↥(E ⊓ N.toIntermediateField) := ⟨⟩
   let L₀ : FiniteGaloisIntermediateField K (AlgebraicClosure K) := ⟨E ⊓ N.toIntermediateField⟩
   let eM := IntermediateField.restrictAlgEquiv (inf_le_left : L₀.toIntermediateField ≤ E)
   have : FiniteDimensional K ↥(restrict (inf_le_left : L₀.toIntermediateField ≤ E)) :=
@@ -687,12 +639,12 @@ private theorem exists_restrictNormal_eq_and_mem_finiteGaloisUpperRamificationGr
   rw [MonoidHom.prod_apply, Prod.mk.injEq] at hσ
   exact ⟨σ, hσ.1, hσ.2.symm ▸ hρN⟩
 
-/-- **Quotient upper filtration on any Galois intermediate extension.** Let `E` be a Galois
-intermediate field of `AlgebraicClosure K / K` (possibly of infinite degree). Restriction from
+/-- **Quotient upper filtration on any normal intermediate extension.** Let `E` be a normal
+intermediate field of `AlgebraicClosure K / K` (possibly infinite or inseparable). Restriction from
 `G_K` to `Gal(E/K)` maps `localAbsoluteUpperRamificationGroup K v` onto the intersection of the
 preimages of `Gal(M/K)^v` as `M` ranges over the finite Galois intermediate fields of `E/K`. -/
 theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf
-    (E : IntermediateField K (AlgebraicClosure K)) [IsGalois K E]
+    (E : IntermediateField K (AlgebraicClosure K)) [Normal K E]
     (v : RamificationIndexDomain) :
     (localAbsoluteUpperRamificationGroup K v).map (AlgEquiv.restrictNormalHom E) =
       ⨅ M : FiniteGaloisIntermediateField K E,
@@ -711,7 +663,7 @@ theorem map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf
   exact (restrictNormal_restrictNormal_mem_finiteGaloisUpperRamificationGroup_iff E M L rfl σ).2
     (mem_localAbsoluteUpperRamificationGroup_iff_forall_finiteGalois.1 hσ L)
 
-end GaloisIntermediate
+end NormalIntermediate
 
 /-! ### Naturality in the local field -/
 

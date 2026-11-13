@@ -43,19 +43,19 @@ At `n = 0`, `U(K, 0) = 𝒪[K]ˣ` and `G_K^0 = inertiaSubgroup K`, recovering
 
 ## Main results
 
-* `normResidue_map_unitFiltration`: finite local reciprocity maps `U(K, n)` onto the image of
-  `Gal(L/K)^n` in `Gal(L/K)^ab` for any finite Galois extension `L/K`.
-* `comap_abelianization_of_normResidue_map_unitFiltration`: when `Gal(L/K)` is commutative,
-  pulling back along `Group.Abelianization.of` recovers `Gal(L/K)^n`.
-* `normResidue_mk_mem_map_upperRamificationGroup_iff`: the norm residue symbol of `x ∈ Kˣ` lies in
-  the image of `Gal(L/K)^n` exactly when `x ∈ U(K, n) ⊔ N_{L/K}(Lˣ)`.
-* `map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration`: in
-  `Gal(K^{ab}/K)`, the Artin image of `U(K, n)` is the intersection of the preimages of
+* `TauCeti.ClassFieldTheory.normResidue_map_unitFiltration`: finite local reciprocity maps `U(K, n)`
+  onto the image of `Gal(L/K)^n` in `Gal(L/K)^ab` for any finite Galois extension `L/K`.
+* `TauCeti.ClassFieldTheory.comap_abelianization_of_normResidue_map_unitFiltration`: when
+  `Gal(L/K)` is commutative, pulling back along `Group.Abelianization.of` recovers `Gal(L/K)^n`.
+* `TauCeti.ClassFieldTheory.normResidue_mk_mem_map_upperRamificationGroup_iff`: the norm residue
+  symbol of `x ∈ Kˣ` lies in the image of `Gal(L/K)^n` exactly when `x ∈ U(K, n) ⊔ N_{L/K}(Lˣ)`.
+* `map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration`:
+  in `Gal(K^{ab}/K)`, the Artin image of `U(K, n)` is the intersection of the preimages of
   `Gal(M/K)^n` over all finite Galois subextensions `M` of `K^{ab}/K`.
-* `map_artinMap_unitFiltration_eq_upper`: in `G_K^ab`, the Artin image of `U(K, n)` equals the
-  image of `localAbsoluteUpperRamificationGroup K n`.
-* `isClosed_map_artinMap_unitFiltration`: the Artin image of `U(K, n)` is a closed subgroup of
-  `G_K^ab`.
+* `TauCeti.ClassFieldTheory.map_artinMap_unitFiltration_eq_upper`: in `G_K^ab`, the Artin image of
+  `U(K, n)` equals the image of `localAbsoluteUpperRamificationGroup K n`.
+* `TauCeti.ClassFieldTheory.isClosed_map_artinMap_unitFiltration`: the Artin image of `U(K, n)` is a
+  closed subgroup of `G_K^ab`.
 
 ## References
 
@@ -264,9 +264,13 @@ theorem map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitF
     have hres_le {M N : FiniteGaloisIntermediateField K Kab} (hMN : M ≤ N) : T N ⊆ T M := by
       intro u hu
       have hle := (FiniteGaloisIntermediateField.le_iff M N).1 hMN
-      refine AlgEquiv.ext fun y ↦ Subtype.ext ?_
-      have hsup := congrArg (fun ρ ↦ (ρ ⟨y.1, hle y.2⟩ : Kab)) (Set.mem_singleton_iff.1 hu)
-      simpa only [AlgEquiv.restrictNormalHom_apply, AlgEquiv.restrictNormal_commutes] using hsup
+      have hval : N.toIntermediateField.val.comp (inclusion hle) = M.toIntermediateField.val :=
+        AlgHom.ext fun _ ↦ rfl
+      simpa only [T, Set.mem_preimage, Set.mem_singleton_iff,
+        ← IntermediateField.restrictNormalHom_val M.toIntermediateField, ← hval,
+        ← AlgHom.restrictNormalHom_restrictNormalHom,
+        IntermediateField.restrictNormalHom_val N.toIntermediateField] using
+        congrArg (inclusion hle).restrictNormalHom (Set.mem_singleton_iff.1 hu)
     have hdir : Directed (· ⊇ ·) T := fun M₁ M₂ ↦
       ⟨M₁ ⊔ M₂, hres_le le_sup_left, hres_le le_sup_right⟩
     obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed T hdir hne

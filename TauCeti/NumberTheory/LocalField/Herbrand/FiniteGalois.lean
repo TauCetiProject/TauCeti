@@ -34,8 +34,8 @@ numbering.
 * `TauCeti.LocalFieldsRamification.mem_finiteGaloisUpperRamificationGroup_iff`,
   `TauCeti.LocalFieldsRamification.finiteGaloisUpperRamificationGroup_eq`: the finite-level adapter
   agrees with `upperRamificationGroup K L v` for any compatible local-field structure on `L`.
-* `LocalFieldsRamification.map_restrictNormalHom_finiteGaloisUpperRamificationGroup`,
-  `LocalFieldsRamification.comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone`:
+* `TauCeti.LocalFieldsRamification.map_restrictNormalHom_finiteGaloisUpperRamificationGroup`,
+  `comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone`:
   transition surjectivity and pullback antitonicity along `M ≤ N` in
   `FiniteGaloisIntermediateField K Ω`.
 
@@ -177,20 +177,11 @@ theorem comap_restrictNormalHom_finiteGaloisUpperRamificationGroup_antitone
       (finiteGaloisUpperRamificationGroup K Ω M v).comap
         (AlgEquiv.restrictNormalHom (K₁ := Ω) M.toIntermediateField) := by
   intro M N hMN σ hσ
-  let ι : M.toIntermediateField →ₐ[K] N.toIntermediateField :=
-    inclusion ((FiniteGaloisIntermediateField.le_iff M N).1 hMN)
-  let _ : Algebra M.toIntermediateField N.toIntermediateField := ι.toRingHom.toAlgebra
-  have : IsScalarTower K M.toIntermediateField N.toIntermediateField :=
-    .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
-  have : IsScalarTower M.toIntermediateField N.toIntermediateField Ω :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have hι : inclusion ((FiniteGaloisIntermediateField.le_iff M N).1 hMN) =
-      IsScalarTower.toAlgHom K M.toIntermediateField N.toIntermediateField :=
-    AlgHom.ext fun _ ↦ rfl
-  rw [Subgroup.mem_comap, ← map_restrictNormalHom_finiteGaloisUpperRamificationGroup K Ω hMN v,
-    hι, AlgHom.restrictNormalHom_toAlgHom]
-  exact ⟨AlgEquiv.restrictNormalHom N.toIntermediateField σ, hσ,
-    (IsScalarTower.AlgEquiv.restrictNormalHom_comp_apply
-      M.toIntermediateField N.toIntermediateField σ).symm⟩
+  rw [Subgroup.mem_comap, ← map_restrictNormalHom_finiteGaloisUpperRamificationGroup K Ω hMN v]
+  refine ⟨AlgEquiv.restrictNormalHom N.toIntermediateField σ, hσ, ?_⟩
+  rw [← IntermediateField.restrictNormalHom_val N.toIntermediateField,
+    ← IntermediateField.restrictNormalHom_val M.toIntermediateField,
+    AlgHom.restrictNormalHom_restrictNormalHom]
+  rfl
 
 end TauCeti.LocalFieldsRamification
