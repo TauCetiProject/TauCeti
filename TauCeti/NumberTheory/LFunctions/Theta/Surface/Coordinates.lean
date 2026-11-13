@@ -156,15 +156,13 @@ theorem measurable_surfacePart : Measurable (surfacePart : realSpace K → realS
     ((continuous_archNorm.measurable.inv).pow_const _)
 
 /-- Scaling a parameter by `c > 0` does not change its surface part. -/
-theorem surfacePart_smul {c : ℝ} (hc : 0 < c) {y : realSpace K} :
+theorem surfacePart_smul {c : ℝ} (hc : 0 < c) (y : realSpace K) :
     surfacePart (c • y) = surfacePart y := by
-  have hn : (Module.finrank ℚ K : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (ne_of_gt (Module.finrank_pos (R := ℚ) (M := K)))
   have hcn : 0 < c ^ Module.finrank ℚ K := pow_pos hc _
   have hsmul : c • y = surfaceScale y (c ^ Module.finrank ℚ K) := by
     ext w
-    rw [surfaceScale_apply, ← Real.rpow_natCast, ← Real.rpow_mul hc.le, mul_one_div_cancel hn,
-      Real.rpow_one, Pi.smul_apply, smul_eq_mul, mul_comm]
+    rw [surfaceScale_apply, one_div, Real.pow_rpow_inv_natCast hc.le Module.finrank_pos.ne',
+      Pi.smul_apply, smul_eq_mul, mul_comm]
   rw [surfacePart_def, surfacePart_def, hsmul, surfaceScale_surfaceScale _ hcn.le,
     archNorm_surfaceScale _ hcn.le, mul_inv, mul_comm (archNorm y)⁻¹,
     ← mul_assoc, mul_inv_cancel₀ hcn.ne', one_mul]
