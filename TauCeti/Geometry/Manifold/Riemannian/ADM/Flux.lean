@@ -20,7 +20,9 @@ Euclidean outward normal and Euclidean surface measure, not the normal and area 
 of the metric being measured. Coefficients may be arbitrary functions: symmetry and
 positive definiteness are not needed. Both quantities are unchanged by constant shifts
 and commute with constant rescaling. Additivity assumes differentiable coefficients
-(and integrable flux densities for the sphere integral).
+(and integrable flux densities for the sphere integral). Continuous coefficient derivatives
+on a positive-radius sphere suffice for integrability. `normalizedCoordinateFlux_of_eqOn_const`
+evaluates any flux density constant on the sphere, without a conformal or radial hypothesis.
 
 `coordinateFluxIntegrand_scalar` reduces the integrand of `w δ` to
 `-(n - 1) dw_x(x) / r`, which is `-(n - 1)` times the radial derivative on `‖x‖ = r > 0`.
@@ -114,6 +116,84 @@ theorem normalizedCoordinateFlux_congr_of_eventuallyEq
     normalizedCoordinateFlux n g r = normalizedCoordinateFlux n h r :=
   normalizedCoordinateFlux_congr fun x hx => coordinateFluxIntegrand_congr (hgh x hx) r
 
+/-- Continuous coefficient derivatives give a continuous coordinate flux density. -/
+theorem continuousOn_coordinateFluxIntegrand
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
+    {s : Set (EuclideanSpace ℝ (Fin n))}
+    (hg : ∀ i j, ContinuousOn (fun x => fderiv ℝ (fun y => g y i j) x) s) (r : ℝ) :
+    ContinuousOn (coordinateFluxIntegrand n g r) s := by
+  unfold coordinateFluxIntegrand
+  fun_prop
+
+/-- Continuous coefficient derivatives on a positive-radius sphere give an integrable flux
+density for codimension-one Euclidean Hausdorff measure. -/
+theorem integrableOn_coordinateFluxIntegrand
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r : ℝ}
+    (hg : ∀ i j, ContinuousOn (fun x => fderiv ℝ (fun y => g y i j) x)
+      (Metric.sphere 0 r)) (hr : 0 < r) :
+    IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1)) := by
+  simpa only [finrank_euclideanSpace_fin] using
+    (continuousOn_coordinateFluxIntegrand hg r).integrableOn_sphere hr
+
+/-- A flux density constant on a positive-radius sphere is integrable there. -/
+theorem integrableOn_coordinateFluxIntegrand_of_eqOn_const
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ} (hr : 0 < r)
+    (hc : Set.EqOn (coordinateFluxIntegrand n g r) (fun _ => c) (Metric.sphere 0 r)) :
+    IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1)) := by
+  simpa only [finrank_euclideanSpace_fin] using
+    (continuousOn_const.congr hc).integrableOn_sphere hr
+
+/-- The normalization denominator is `2(n - 1)|Sⁿ⁻¹|` in positive dimension. -/
+theorem normalizedCoordinateFlux_eq_div_roundSphereVolume
+    (hn : 1 ≤ n) (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) (r : ℝ) :
+    normalizedCoordinateFlux n g r =
+      (∫ x in Metric.sphere 0 r, coordinateFluxIntegrand n g r x
+        ∂Measure.euclideanHausdorffMeasure (n - 1)) /
+        (2 * ((n : ℝ) - 1) * roundSphereVolume (n - 1)) := by
+  have hdim : Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) = (n - 1) + 1 := by
+    simp only [finrank_euclideanSpace_fin]
+    omega
+  rw [normalizedCoordinateFlux_def,
+    euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hdim,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos _).le]
+
+/-- A constant sphere flux density gives its value times the sphere measure, divided by
+the normalization denominator. No dimension or radius restriction is needed. -/
+theorem normalizedCoordinateFlux_eq_div_of_eqOn_const
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ}
+    (hc : Set.EqOn (coordinateFluxIntegrand n g r) (fun _ => c) (Metric.sphere 0 r)) :
+    normalizedCoordinateFlux n g r =
+      (c * (Measure.euclideanHausdorffMeasure (n - 1)
+        (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) r)).toReal) /
+        (2 * ((n : ℝ) - 1) * (Measure.euclideanHausdorffMeasure (n - 1)
+          (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).toReal) := by
+  rw [normalizedCoordinateFlux_def,
+    setIntegral_congr_fun Metric.isClosed_sphere.measurableSet hc, integral_const]
+  simp [Measure.real, mul_comm]
+
+/-- The normalized flux of any coefficient field with constant sphere flux density,
+with the sphere areas cancelled. -/
+theorem normalizedCoordinateFlux_of_eqOn_const
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {r c : ℝ}
+    (hn : 1 ≤ n) (hr : 0 < r)
+    (hc : Set.EqOn (coordinateFluxIntegrand n g r) (fun _ => c) (Metric.sphere 0 r)) :
+    normalizedCoordinateFlux n g r = c * r ^ (n - 1) / (2 * ((n : ℝ) - 1)) := by
+  have hdim : Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) = (n - 1) + 1 := by
+    simp only [finrank_euclideanSpace_fin]
+    omega
+  have hscale := setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one
+    (n - 1) (0 : EuclideanSpace ℝ (Fin n)) hr (fun _ => (1 : ℝ))
+  simp only [integral_const, smul_eq_mul, mul_one, Measure.real,
+    Measure.restrict_apply_univ] at hscale
+  rw [normalizedCoordinateFlux_eq_div_of_eqOn_const hc, hscale,
+    euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hdim,
+    ENNReal.toReal_ofReal (roundSphereVolume_pos _).le]
+  simpa only [mul_assoc] using
+    mul_div_mul_right (c * r ^ (n - 1)) (2 * ((n : ℝ) - 1))
+      (roundSphereVolume_pos (n - 1)).ne'
+
 /-- Constant coefficient matrices have zero coordinate flux density, including the flat metric. -/
 @[simp]
 theorem coordinateFluxIntegrand_const (a : Fin n → Fin n → ℝ) (r : ℝ)
@@ -142,6 +222,7 @@ theorem coordinateFluxIntegrand_add
   exact Finset.sum_add_distrib
 
 /-- Multiplication of coefficients by a constant rescales the flux integrand. -/
+@[simp]
 theorem coordinateFluxIntegrand_const_mul
     (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     (c r : ℝ) (x : EuclideanSpace ℝ (Fin n)) :
@@ -156,7 +237,7 @@ theorem coordinateFluxIntegrand_const_mul
 /-- Adding a constant matrix does not change the coordinate flux integrand. In particular,
 a metric and its perturbation from the Euclidean metric have the same flux density. -/
 @[simp]
-theorem coordinateFluxIntegrand_add_const
+theorem coordinateFluxIntegrand_fun_add_const
     (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     (a : Fin n → Fin n → ℝ) (r : ℝ) (x : EuclideanSpace ℝ (Fin n)) :
     coordinateFluxIntegrand n (fun y i j => g y i j + a i j) r x =
@@ -165,12 +246,12 @@ theorem coordinateFluxIntegrand_add_const
 
 /-- The normalized flux is unchanged by adding a constant matrix. -/
 @[simp]
-theorem normalizedCoordinateFlux_add_const
+theorem normalizedCoordinateFlux_fun_add_const
     (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     (a : Fin n → Fin n → ℝ) (r : ℝ) :
     normalizedCoordinateFlux n (fun y i j => g y i j + a i j) r =
       normalizedCoordinateFlux n g r := by
-  simp only [normalizedCoordinateFlux, coordinateFluxIntegrand_add_const]
+  simp only [normalizedCoordinateFlux, coordinateFluxIntegrand_fun_add_const]
 
 /-- The normalized flux is additive when the two flux densities are integrable on the
 coordinate sphere and all coefficients are differentiable there. -/
@@ -192,6 +273,7 @@ theorem normalizedCoordinateFlux_add
 /-- Constant rescaling of coefficients rescales the normalized flux.
 This is coefficientwise scaling in a fixed coordinate chart, not the geometric scaling
 law for the mass in rescaled asymptotically Euclidean coordinates. -/
+@[simp]
 theorem normalizedCoordinateFlux_const_mul
     (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) (c r : ℝ) :
     normalizedCoordinateFlux n (fun y i j => c * g y i j) r =
@@ -216,31 +298,31 @@ theorem normalizedCoordinateFlux_zero : normalizedCoordinateFlux n 0 r = 0 :=
 
 /-- Constant matrix shifts on the left preserve the flux density. -/
 @[simp]
-theorem coordinateFluxIntegrand_const_add :
+theorem coordinateFluxIntegrand_fun_const_add :
     coordinateFluxIntegrand n (fun y i j => a i j + g y i j) r x =
       coordinateFluxIntegrand n g r x := by
-  simpa only [add_comm] using coordinateFluxIntegrand_add_const g a r x
+  simpa only [add_comm] using coordinateFluxIntegrand_fun_add_const g a r x
 
 /-- Constant matrix shifts on the left preserve the normalized flux. -/
 @[simp]
-theorem normalizedCoordinateFlux_const_add :
+theorem normalizedCoordinateFlux_fun_const_add :
     normalizedCoordinateFlux n (fun y i j => a i j + g y i j) r =
       normalizedCoordinateFlux n g r := by
-  simpa only [add_comm] using normalizedCoordinateFlux_add_const g a r
+  simpa only [add_comm] using normalizedCoordinateFlux_fun_add_const g a r
 
 /-- Subtracting a constant matrix preserves the flux density. -/
 @[simp]
-theorem coordinateFluxIntegrand_sub_const :
+theorem coordinateFluxIntegrand_fun_sub_const :
     coordinateFluxIntegrand n (fun y i j => g y i j - a i j) r x =
       coordinateFluxIntegrand n g r x := by
-  simpa only [sub_eq_add_neg, Pi.neg_apply] using coordinateFluxIntegrand_add_const g (-a) r x
+  simpa only [sub_eq_add_neg, Pi.neg_apply] using coordinateFluxIntegrand_fun_add_const g (-a) r x
 
 /-- Subtracting a constant matrix preserves the normalized flux. -/
 @[simp]
-theorem normalizedCoordinateFlux_sub_const :
+theorem normalizedCoordinateFlux_fun_sub_const :
     normalizedCoordinateFlux n (fun y i j => g y i j - a i j) r =
       normalizedCoordinateFlux n g r := by
-  simpa only [sub_eq_add_neg, Pi.neg_apply] using normalizedCoordinateFlux_add_const g (-a) r
+  simpa only [sub_eq_add_neg, Pi.neg_apply] using normalizedCoordinateFlux_fun_add_const g (-a) r
 
 /-- Scalar multiplication of coefficient fields rescales the flux density. -/
 @[simp]
@@ -266,10 +348,87 @@ theorem normalizedCoordinateFlux_neg :
     normalizedCoordinateFlux n (-g) r = -normalizedCoordinateFlux n g r := by
   simpa [Pi.neg_def] using normalizedCoordinateFlux_const_mul g (-1) r
 
+/-- Pointwise negation of coefficients negates the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_fun_neg :
+    coordinateFluxIntegrand n (fun y i j => -g y i j) r x =
+      -coordinateFluxIntegrand n g r x :=
+  coordinateFluxIntegrand_neg g r x
+
+/-- Pointwise negation of coefficients negates the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_fun_neg :
+    normalizedCoordinateFlux n (fun y i j => -g y i j) r =
+      -normalizedCoordinateFlux n g r :=
+  normalizedCoordinateFlux_neg g r
+
+/-- Subtracting coefficients from a constant matrix negates the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_fun_const_sub :
+    coordinateFluxIntegrand n (fun y i j => a i j - g y i j) r x =
+      -coordinateFluxIntegrand n g r x := by
+  simp only [sub_eq_add_neg, coordinateFluxIntegrand_fun_const_add,
+    coordinateFluxIntegrand_fun_neg]
+
+/-- Subtracting coefficients from a constant matrix negates the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_fun_const_sub :
+    normalizedCoordinateFlux n (fun y i j => a i j - g y i j) r =
+      -normalizedCoordinateFlux n g r := by
+  simp only [sub_eq_add_neg, normalizedCoordinateFlux_fun_const_add,
+    normalizedCoordinateFlux_fun_neg]
+
+/-- Adding a constant coefficient field preserves the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_add_const :
+    coordinateFluxIntegrand n (g + fun _ => a) r x = coordinateFluxIntegrand n g r x :=
+  coordinateFluxIntegrand_fun_add_const g a r x
+
+/-- Adding a constant coefficient field preserves the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_add_const :
+    normalizedCoordinateFlux n (g + fun _ => a) r = normalizedCoordinateFlux n g r :=
+  normalizedCoordinateFlux_fun_add_const g a r
+
+/-- Adding coefficients to a constant field preserves the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_const_add :
+    coordinateFluxIntegrand n ((fun _ => a) + g) r x = coordinateFluxIntegrand n g r x :=
+  coordinateFluxIntegrand_fun_const_add g a r x
+
+/-- Adding coefficients to a constant field preserves the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_const_add :
+    normalizedCoordinateFlux n ((fun _ => a) + g) r = normalizedCoordinateFlux n g r :=
+  normalizedCoordinateFlux_fun_const_add g a r
+
+/-- Subtracting a constant coefficient field preserves the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_sub_const :
+    coordinateFluxIntegrand n (g - fun _ => a) r x = coordinateFluxIntegrand n g r x :=
+  coordinateFluxIntegrand_fun_sub_const g a r x
+
+/-- Subtracting a constant coefficient field preserves the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_sub_const :
+    normalizedCoordinateFlux n (g - fun _ => a) r = normalizedCoordinateFlux n g r :=
+  normalizedCoordinateFlux_fun_sub_const g a r
+
+/-- Subtracting coefficients from a constant field negates the flux density. -/
+@[simp]
+theorem coordinateFluxIntegrand_const_sub :
+    coordinateFluxIntegrand n ((fun _ => a) - g) r x = -coordinateFluxIntegrand n g r x :=
+  coordinateFluxIntegrand_fun_const_sub g a r x
+
+/-- Subtracting coefficients from a constant field negates the normalized flux. -/
+@[simp]
+theorem normalizedCoordinateFlux_const_sub :
+    normalizedCoordinateFlux n ((fun _ => a) - g) r = -normalizedCoordinateFlux n g r :=
+  normalizedCoordinateFlux_fun_const_sub g a r
+
 end Operations
 
-/-- The flux density is subtractive on differentiable coefficients. The Pi subtraction
-also elaborates the pointwise form `fun y i j => g y i j - h y i j`. -/
+/-- The flux density is subtractive on differentiable coefficients. -/
 theorem coordinateFluxIntegrand_sub
     {g h : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
     {x : EuclideanSpace ℝ (Fin n)}
@@ -302,6 +461,55 @@ theorem normalizedCoordinateFlux_sub
   simpa only [sub_eq_add_neg, normalizedCoordinateFlux_neg] using
     normalizedCoordinateFlux_add (g := g) (h := -h) hg
       (fun x hx i j => by simpa only [Pi.neg_def] using (hh x hx i j).neg) hgi hni
+
+section Pointwise
+
+variable {g h : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
+  {x : EuclideanSpace ℝ (Fin n)} {r : ℝ}
+
+/-- Pointwise addition of differentiable coefficients adds the flux densities. -/
+theorem coordinateFluxIntegrand_fun_add
+    (hg : ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
+    (hh : ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x) :
+    coordinateFluxIntegrand n (fun y i j => g y i j + h y i j) r x =
+      coordinateFluxIntegrand n g r x + coordinateFluxIntegrand n h r x :=
+  coordinateFluxIntegrand_add hg hh r
+
+/-- Pointwise subtraction of differentiable coefficients subtracts the flux densities. -/
+theorem coordinateFluxIntegrand_fun_sub
+    (hg : ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
+    (hh : ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x) :
+    coordinateFluxIntegrand n (fun y i j => g y i j - h y i j) r x =
+      coordinateFluxIntegrand n g r x - coordinateFluxIntegrand n h r x :=
+  coordinateFluxIntegrand_sub hg hh r
+
+/-- Pointwise addition adds normalized fluxes when the coefficients are differentiable and
+their flux densities are integrable on the sphere. -/
+theorem normalizedCoordinateFlux_fun_add
+    (hg : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
+    (hh : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x)
+    (hgi : IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1)))
+    (hhi : IntegrableOn (coordinateFluxIntegrand n h r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1))) :
+    normalizedCoordinateFlux n (fun y i j => g y i j + h y i j) r =
+      normalizedCoordinateFlux n g r + normalizedCoordinateFlux n h r :=
+  normalizedCoordinateFlux_add hg hh hgi hhi
+
+/-- Pointwise subtraction subtracts normalized fluxes when the coefficients are differentiable
+and their flux densities are integrable on the sphere. -/
+theorem normalizedCoordinateFlux_fun_sub
+    (hg : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => g y i j) x)
+    (hh : ∀ x ∈ Metric.sphere 0 r, ∀ i j, DifferentiableAt ℝ (fun y => h y i j) x)
+    (hgi : IntegrableOn (coordinateFluxIntegrand n g r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1)))
+    (hhi : IntegrableOn (coordinateFluxIntegrand n h r) (Metric.sphere 0 r)
+      (Measure.euclideanHausdorffMeasure (n - 1))) :
+    normalizedCoordinateFlux n (fun y i j => g y i j - h y i j) r =
+      normalizedCoordinateFlux n g r - normalizedCoordinateFlux n h r :=
+  normalizedCoordinateFlux_sub hg hh hgi hhi
+
+end Pointwise
 
 /-- For the conformally Euclidean coefficient matrix `w δ`, the coordinate flux integrand is
 `-(n - 1) dw_x(x) / r`. This identity does not require `w` to be radial or positive. -/
@@ -347,22 +555,13 @@ theorem coordinateFluxIntegrand_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
     hn.fderiv_norm_self, hxr]
   field_simp
 
-/-- The normalized flux of a radial conformally Euclidean matrix, expressed using the
-areas of the radius-`r` and unit spheres. No mass limit or area-scaling formula is assumed. -/
-theorem normalizedCoordinateFlux_scalar_radial_eq_area_ratio {f : ℝ → ℝ} {f' r : ℝ}
+/-- Radial scalar coefficients have an integrable flux density on every positive-radius sphere. -/
+theorem integrableOn_coordinateFluxIntegrand_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
     (hf : HasDerivAt f f' r) (hr : 0 < r) :
-    normalizedCoordinateFlux n (fun y i j => if i = j then f ‖y‖ else 0) r =
-      (-((n : ℝ) - 1) * f' *
-        (Measure.euclideanHausdorffMeasure (n - 1)
-          (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) r)).toReal) /
-      (2 * ((n : ℝ) - 1) *
-        (Measure.euclideanHausdorffMeasure (n - 1)
-          (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).toReal) := by
-  unfold normalizedCoordinateFlux
-  congr 1
-  rw [setIntegral_congr_fun Metric.isClosed_sphere.measurableSet
-    (fun x hx => coordinateFluxIntegrand_scalar_radial hf hr hx), integral_const]
-  simp [Measure.real, mul_comm]
+    IntegrableOn (coordinateFluxIntegrand n (fun y i j => if i = j then f ‖y‖ else 0) r)
+      (Metric.sphere 0 r) (Measure.euclideanHausdorffMeasure (n - 1)) :=
+  integrableOn_coordinateFluxIntegrand_of_eqOn_const hr
+    (fun _ hx => coordinateFluxIntegrand_scalar_radial hf hr hx)
 
 /-- The normalized flux of a radial conformally Euclidean matrix in dimension at least two,
 with the sphere areas and dimension factors cancelled. -/
@@ -370,19 +569,11 @@ theorem normalizedCoordinateFlux_scalar_radial {f : ℝ → ℝ} {f' r : ℝ}
     (hn : 2 ≤ n) (hf : HasDerivAt f f' r) (hr : 0 < r) :
     normalizedCoordinateFlux n (fun y i j => if i = j then f ‖y‖ else 0) r =
       -f' * r ^ (n - 1) / 2 := by
-  have hdim : Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) = (n - 1) + 1 := by
-    simp only [finrank_euclideanSpace_fin]
-    omega
-  have harea := euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hdim
-  have hscale := setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one
-    (n - 1) (0 : EuclideanSpace ℝ (Fin n)) hr (fun _ => (1 : ℝ))
-  simp only [integral_const, smul_eq_mul, mul_one, Measure.real,
-    Measure.restrict_apply_univ] at hscale
-  rw [normalizedCoordinateFlux_scalar_radial_eq_area_ratio hf hr, hscale,
-    harea, ENNReal.toReal_ofReal (roundSphereVolume_pos _).le]
+  rw [normalizedCoordinateFlux_of_eqOn_const (by omega) hr
+    (fun x hx => coordinateFluxIntegrand_scalar_radial hf hr hx)]
   have hn' : (n : ℝ) - 1 ≠ 0 := by
     have : (2 : ℝ) ≤ n := by exact_mod_cast hn
     linarith
-  field_simp [hn', (roundSphereVolume_pos (n - 1)).ne']
+  field_simp [hn']
 
 end TauCeti
