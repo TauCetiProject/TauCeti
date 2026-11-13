@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Pullback
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Inner
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -29,7 +30,9 @@ This action is the symmetry behind the conservation of angular momentum:
   and preserves the angular momentum and every
   central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` (`TauCeti.angularMomentum_circle_smul`,
   `TauCeti.centralForceHamiltonian_circle_smul`);
-* the rotation `t ↦ exp (t i) • x` by the angle `t` is the integral curve of the Hamiltonian
+* the Hamiltonian vector field of `L` at `(q, p)` is `(i q, i p)`
+  (`TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I`), so
+  the rotation `t ↦ exp (t i) • x` by the angle `t` is the integral curve of the Hamiltonian
   vector field of `L` through `x`
   (`TauCeti.hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum`): the Hamiltonian
   flow of the angular momentum is the rotation of the plane, with period `2π`;
@@ -53,6 +56,8 @@ The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 * `TauCeti.stdSymplecticForm_circle_smul`: rotations are symplectic.
 * `TauCeti.angularMomentum_circle_smul`, `TauCeti.centralForceHamiltonian_circle_smul`:
   rotations preserve `L` and `H`.
+* `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I`: the Hamiltonian
+  vector field of `L` is `(q, p) ↦ (i q, i p)`.
 * `TauCeti.hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum`: the Hamiltonian
   flow of `L` is the rotation of the plane.
 * `TauCeti.isEquivariantMomentMap_angularMomentum`,
@@ -119,10 +124,13 @@ theorem centralForceHamiltonian_circle_smul {V : Type*} [NormedAddCommGroup V] [
   simp only [Circle.smul_def, Prod.smul_mk, centralForceHamiltonian_apply, norm_smul,
     Circle.norm_coe, one_mul]
 
-/-- The infinitesimal rotation `z ↦ ⟪z, 1⟫ i - ⟪z, i⟫` of the plane `ℂ` is multiplication by `i`. -/
-private theorem inner_one_smul_I_sub_inner_I_smul_one (z : ℂ) :
-    ⟪z, 1⟫_ℝ • I - ⟪z, I⟫_ℝ • (1 : ℂ) = I * z := by
-  apply Complex.ext <;> simp [Complex.inner]
+/-- **The planar angular momentum generates the rotations.** With the plane identified with `ℂ`,
+the Hamiltonian vector field of `L(q, p) = q₁ p₂ - q₂ p₁` at `(q, p)` is `(i q, i p)`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I (x : ℂ × ℂ) :
+    (stdSymplecticForm (V := ℂ)).hamiltonianVectorField (angularMomentum 1 I) x =
+      (I * x.1, I * x.2) := by
+  rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum,
+    inner_one_smul_I_sub_inner_I_smul_one, inner_one_smul_I_sub_inner_I_smul_one]
 
 /-- **The Hamiltonian flow of the angular momentum is the rotation of the plane.** The rotation
 `t ↦ exp (t i) • x` of a point of phase space by the angle `t` is the integral curve through `x` of
@@ -131,8 +139,7 @@ theorem hasDerivAt_circleExp_smul_hamiltonianVectorField_angularMomentum (x : �
     HasDerivAt (fun s ↦ Circle.exp s • x)
       ((stdSymplecticForm (V := ℂ)).hamiltonianVectorField (angularMomentum 1 I)
         (Circle.exp t • x)) t := by
-  rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum,
-    inner_one_smul_I_sub_inner_I_smul_one, inner_one_smul_I_sub_inner_I_smul_one]
+  rw [stdSymplecticForm_hamiltonianVectorField_angularMomentum_one_I]
   -- The scalar action of the circle is the action of the complex number `exp (t i)`.
   refine ((hasDerivAt_coe_circleExp t).smul_const x).congr_deriv ?_
   obtain ⟨q, p⟩ := x
