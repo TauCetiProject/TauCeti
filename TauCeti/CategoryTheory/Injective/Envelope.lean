@@ -136,4 +136,10 @@ theorem exists_comp_eq_and_isSplitMono {M I : C} [Injective I] {ι : M ⟶ I}
 
 end IsEssentialMono
 
+/-- Precomposing with an isomorphism does not change essentiality. -/
+theorem isEssentialMono_iso_comp_iff {M M' I : C} (e : M ≅ M') (f : M' ⟶ I) :
+    IsEssentialMono (e.hom ≫ f) ↔ IsEssentialMono f :=
+  ⟨fun h ↦ by simpa using (isEssentialMono_of_isIso e.inv).comp h,
+    fun h ↦ (isEssentialMono_of_isIso e.hom).comp h⟩
+
 end TauCeti
