@@ -8,15 +8,19 @@ module
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Distributions.Gaussian.Real
+import TauCeti.Probability.Process.FiniteGrid
 
 /-!
 # Standardized Brownian increments
 
 This file defines `TauCeti.normalizedBrownianIncrements`, the increments on a finite time grid
 divided by the square roots of their interval lengths. It proves measurability when the
-observations are measurable and, for a strictly increasing grid and a pre-Brownian process,
-the product standard Gaussian law. No path regularity or filtration is required. Empty grids
-and positive initial dates are allowed; the vector does not include the initial observation.
+grid observations are measurable and, for a strictly increasing grid and a pre-Brownian process,
+the product standard Gaussian law. No path regularity or filtration is required. Empty increment
+vectors and positive initial dates are allowed; the vector does not include the initial observation.
+On a strictly increasing grid starting at zero, real claims measurable up to null sets from the
+increments are exactly those measurable from the observations. This specializes the finite-grid
+information dictionary `TauCeti.exists_measurable_comp_increments_ae`.
 
 For Hermite expansions of increment-dependent claims, import
 `TauCeti/Probability/Distributions/Gaussian/Hermite/Pi/Pullback.lean` as well. Apply its
@@ -53,11 +57,20 @@ theorem normalizedBrownianIncrements_apply (ω : Ω) (i : Fin n) :
       (B (t i.succ) ω - B (t i.castSucc) ω) /
         Real.sqrt ((t i.succ : ℝ) - t i.castSucc) := (rfl)
 
-/-- Standardized increments are measurable when the process observations are measurable. -/
+/-- Standardized increments are measurable when the observations on the grid are measurable. -/
 @[fun_prop]
 theorem measurable_normalizedBrownianIncrements [MeasurableSpace Ω]
     (hB : ∀ i, Measurable (B (t i))) : Measurable (normalizedBrownianIncrements B t) := by
   exact Measurable.of_eval fun i => ((hB _).sub (hB _)).div_const _
+
+/-- Standardized increments carry no more information than the observations on the grid. -/
+theorem comap_normalizedBrownianIncrements_le :
+    MeasurableSpace.comap (normalizedBrownianIncrements B t) inferInstance ≤
+      MeasurableSpace.comap (fun ω i ↦ B (t i) ω) inferInstance := by
+  let Y : Ω → Fin (n + 1) → ℝ := fun ω i ↦ B (t i) ω
+  let : MeasurableSpace Ω := MeasurableSpace.comap Y inferInstance
+  exact (measurable_normalizedBrownianIncrements fun i ↦
+    (measurable_pi_apply i).comp (comap_measurable Y)).comap_le
 
 end TauCeti
 
@@ -90,5 +103,25 @@ theorem hasLaw_normalizedBrownianIncrements (hB : IsPreBrownianReal B P) (ht : S
   convert! gaussianReal_div_const (hB.hasLaw_sub (t i.succ) (t i.castSucc))
     (Real.sqrt ((t i.succ : ℝ) - t i.castSucc)) using 1
   exact congrArg₂ gaussianReal (zero_div _).symm hvar.symm
+
+/-- On a strictly increasing grid starting at zero, a real claim is measurable up to null
+sets from the standardized increments exactly when it is so from the grid observations. -/
+theorem aestronglyMeasurable_comap_normalizedBrownianIncrements_iff
+    (hB : IsPreBrownianReal B P) (ht : StrictMono t) (ht₀ : t 0 = 0) {u : Ω → ℝ} :
+    AEStronglyMeasurable[MeasurableSpace.comap
+      (normalizedBrownianIncrements B t) inferInstance] u P ↔
+      AEStronglyMeasurable[MeasurableSpace.comap (fun ω i ↦ B (t i) ω) inferInstance] u P := by
+  constructor
+  · exact fun hu ↦ hu.mono comap_normalizedBrownianIncrements_le
+  · intro hu
+    have ha (i : Fin n) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
+      ne_of_gt (Real.sqrt_pos.2 (sub_pos.2 (NNReal.coe_lt_coe.2 (ht Fin.castSucc_lt_succ))))
+    obtain ⟨g, hg, hgu⟩ := exists_measurable_comp_increments_ae
+      (fun ω i ↦ B (t i) ω) (fun i ↦ Real.sqrt ((t i.succ : ℝ) - t i.castSucc)) ha 0
+      (by simpa only [ht₀] using hB.eval_zero_ae_eq_zero) hu.stronglyMeasurable_mk.measurable
+    refine ⟨g ∘ normalizedBrownianIncrements B t, ?_, ?_⟩
+    · exact hg.stronglyMeasurable.comp_measurable (comap_measurable _)
+    · simpa only [Function.comp_def, ← normalizedBrownianIncrements_apply] using
+        hu.ae_eq_mk.trans hgu
 
 end ProbabilityTheory.IsPreBrownianReal
