@@ -53,19 +53,6 @@ private theorem a2_character_parity :
 private theorem a2_character_primitive : χ₋₃.IsPrimitive :=
   conductor_kroneckerChar_eq_natAbs_of_prime _ _ (by decide)
 
-private theorem a2_character_bernoulli : χ₋₃.generalizedBernoulli 1 = -1 / 3 := by
-  have hU : (Finset.univ : Finset (ZMod (-3 : ℤ).natAbs)) = {0, 1, 2} := by decide
-  rw [DirichletCharacter.generalizedBernoulli_one, hU]
-  have h1 : (1 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
-  have h01 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 1 := by decide
-  have h02 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
-  simp only [Finset.sum_insert, Finset.sum_singleton, Finset.mem_insert, Finset.mem_singleton,
-    h1, h01, h02, or_self, not_false_eq_true]
-  have hv1 : (1 : ZMod (-3 : ℤ).natAbs).val = 1 := by decide
-  have hv2 : (2 : ZMod (-3 : ℤ).natAbs).val = 2 := by decide
-  have h8 : ZMod.χ₈ (-3 : ZMod 8) = -1 := by decide
-  norm_num [kroneckerChar_apply, h01.symm, h02.symm, hv1, hv2, kroneckerSym_two_right, h8]
-
 private def a2ThetaForm :
     ModularForm ((CongruenceSubgroup.Gamma1 3).map (Matrix.SpecialLinearGroup.mapGL ℝ)) 1 :=
   (ZLattice.thetaFormOfLevel
@@ -83,7 +70,8 @@ private theorem a2_eisenstein_constant :
       (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide))).coeff 0 = 1 / 6 := by
   rw [EisensteinSeries.qExpansion_normalizedCharE1MF_coeff_zero _ _ _
     a2_character_parity a2_character_primitive]
-  norm_num [a2_character_bernoulli]
+  rw [DirichletCharacter.generalizedBernoulli_one_kroneckerChar_neg_three]
+  norm_num
 
 private theorem a2_eisenstein_coeff {m : ℕ} (hm : m ≠ 0) :
     (qExpansion 1 (EisensteinSeries.normalizedCharE1MF

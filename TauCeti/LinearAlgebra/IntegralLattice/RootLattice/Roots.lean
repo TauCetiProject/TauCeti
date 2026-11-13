@@ -51,8 +51,8 @@ the reflection of its negative in itself.
   `t.numRoots` vectors of norm `2`.
 * `TauCeti.IntegralLattice.representationNumber_typeARootLattice_two`: the type `Aₙ` lattice
   has exactly `n(n+1)` vectors of norm `2`.
-* `TauCeti.IntegralLattice.kissingNumber_typeARootLattice`: for `n ≥ 1`, the type `Aₙ` lattice
-  has kissing number `n(n+1)`.
+* `TauCeti.IntegralLattice.kissingNumber_typeARootLattice`: the type `Aₙ` lattice has kissing
+  number `n(n+1)`, including rank zero.
 
 ## References
 
@@ -212,11 +212,13 @@ theorem representationNumber_typeARootLattice_two (n : ℕ) :
   erw [DynkinType.rootLattice_A, DynkinType.numRoots_A] at h
   exact h
 
-/-- For `n ≥ 1`, the kissing number of the type `Aₙ` root lattice is `n(n+1)`: its minimum
-is two, so its minimal vectors are exactly its roots. -/
+/-- The kissing number of the type `Aₙ` root lattice is `n(n+1)`, including rank zero.
+For `n ≥ 1`, its minimum is two, so its minimal vectors are exactly its roots. -/
 @[simp]
-theorem kissingNumber_typeARootLattice (n : ℕ) (hn : n ≠ 0) :
+theorem kissingNumber_typeARootLattice (n : ℕ) :
     (typeARootLattice n).kissingNumber = n * (n + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [kissingNumber_eq_zero_of_subsingleton, Nat.zero_mul]
   rw [kissingNumber_eq_representationNumber (by simp [minimum_typeARootLattice n hn]),
     minimum_typeARootLattice n hn]
   exact representationNumber_typeARootLattice_two n
