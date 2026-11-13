@@ -59,7 +59,7 @@ so its discriminant group and every quotient `L^∨ ⧸ (L^∨ ∩ a L^∨ ∩ L
   `D_L = (-1) ^ ⌊n / 2⌋ det L ≠ 0`, and `D_L = 1` for every even unimodular lattice.
 * `ZLattice.IsIntegral.signedDiscr_sqrt_smul`,
   `ZLattice.IsIntegral.mul_signedDiscr_sqrt_level_smul_dual`: `D_{√m • L} = mⁿ D_L` and
-  `D_L * D_{√N • L^∨} = Nⁿ`.
+  `D_L * D_{√N • L^∨} = Nⁿ`, the latter in a finite-dimensional space of dimension `n`.
 * `ZLattice.IsIntegral.signedDiscr_rationalFormClass_ratModel`,
   `TauCeti.IntegralLattice.signedDiscr_realModel`: comparisons with the rational and real models.
 * `ZLattice.isCoprime_signedDiscr_of_isCoprime_level`,
@@ -221,8 +221,7 @@ by `4` (`ZLattice.IsEven.four_dvd_finrank_of_level_dvd_two`). -/
 theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodular L) :
     signedDiscr L = 1 := by
   obtain ⟨m, hm⟩ := h.four_dvd_finrank_of_level_dvd_two
-    ((level_dvd_iff.mpr fun x hx ↦ by simpa using isEven_iff.mp h x (hU.dual_eq ▸ hx)).trans
-      (one_dvd 2))
+    (dvd_of_eq (h.level_eq_one_of_isUnimodular hU) |>.trans (one_dvd 2))
   rw [hU.signedDiscr_eq_neg_one_pow, show finrank ℝ E / 2 = 2 * m by omega, pow_mul, neg_one_sq,
     one_pow]
 
@@ -257,9 +256,9 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
     Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- **Fricke partner product identity.** For an integral lattice `L` in a space of dimension `n`
-and level `N`, the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply
-to `Nⁿ`. -/
+/-- **Fricke partner product identity.** For an integral lattice `L` in a finite-dimensional space
+of dimension `n` and level `N`, the signed discriminants of `L` and of its Fricke partner
+`√N • L^∨` multiply to `Nⁿ`. -/
 theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
     signedDiscr L * signedDiscr (√(level L : ℝ) • dual L) = (level L : ℤ) ^ finrank ℝ E := by
   have hsign : ((-1 : ℤ) ^ (finrank ℝ E / 2)) * (-1) ^ (finrank ℝ E / 2) = 1 := by
@@ -274,8 +273,8 @@ theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
         rw [hsign, one_mul, h.mul_card_discriminantGroup_sqrt_level_smul_dual, Nat.cast_pow]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- In even ambient dimension, the product of the signed discriminants of an integral lattice
-and of its Fricke partner is an integer square. -/
+/-- In a finite-dimensional space of even dimension, the product of the signed discriminants of an
+integral lattice and of its Fricke partner is an integer square. -/
 theorem IsIntegral.isSquare_mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L)
     (hE : Even (finrank ℝ E)) :
     IsSquare (signedDiscr L * signedDiscr (√(level L : ℝ) • dual L)) := by

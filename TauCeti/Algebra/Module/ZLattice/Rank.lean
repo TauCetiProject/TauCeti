@@ -74,7 +74,9 @@ theorem _root_.Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_s
   let L' : Submodule ℤ F := ZLattice.comap ℝ L F.subtype
   have : DiscreteTopology L' :=
     ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
-  have e : L' ≃ₗ[ℤ] L :=
+  -- `ZLattice.comap` is the pullback of `L` along the subtype map, viewed `ℤ`-linearly.
+  have hL' : L' = L.comap (F.restrictScalars ℤ).subtype := rfl
+  have e : L' ≃ₗ[ℤ] L := hL' ▸
     Submodule.comapSubtypeEquivOfLe (p := L) (q := F.restrictScalars ℤ) Submodule.subset_span
   exact Module.Finite.equiv e
 

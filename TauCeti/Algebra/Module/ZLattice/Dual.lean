@@ -68,7 +68,8 @@ defined from it.
 * `ZLattice.dual_dual`: the dual of the dual of a discrete lattice in a finite-dimensional space is
   the lattice itself.
 * `ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`: a lattice in a
-  finite-dimensional space with finite quotient `L^∨ / cL`, for some real `c`, spans the space.
+  finite-dimensional space with finite quotient `L^∨ ⧸ (cL ∩ L^∨)`, for some real `c`, spans the
+  space.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
   equivalence `e` is the pullback of the dual along the adjoint of `e⁻¹`.
@@ -325,9 +326,10 @@ open scoped Pointwise
 
 variable {L : Submodule ℤ E}
 
-/-- A lattice in a finite-dimensional space with finite quotient `L^∨ / cL`, for some real `c`,
-spans: the orthogonal complement of its span lies in `L^∨` and meets `cL` only in `0`, so it would
-inject into the quotient. For `c = 1` the quotient is the discriminant group `L^∨ / L`. -/
+/-- A lattice in a finite-dimensional space with finite quotient `L^∨ ⧸ (cL ∩ L^∨)` (the quotient
+by `cL` is taken through `submoduleOf`), for some real `c`, spans: the orthogonal complement of its
+span lies in `L^∨` and meets `cL` only in `0`, so it would inject into the quotient. For `c = 1` the
+quotient is the discriminant group `L^∨ ⧸ (L ∩ L^∨)`. -/
 theorem span_eq_top_of_finite_quotient_smul_submoduleOf_dual [FiniteDimensional ℝ E] (c : ℝ)
     [Finite (dual L ⧸ (c • L).submoduleOf (dual L))] : span ℝ (L : Set E) = ⊤ := by
   by_contra h

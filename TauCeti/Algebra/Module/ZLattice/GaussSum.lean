@@ -93,7 +93,8 @@ multiple `t` of the level prime to `a`.
   `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the discriminant group.
 * `ZLattice.conj_dualGaussSum`: complex conjugation negates the coefficient of the Gauss sum over
   `L^∨ / cL`.
-* `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
+* `ZLattice.dualGaussSum_level_mul`: for an even lattice of level `N` in a finite-dimensional space
+  with `L^∨ / cL` finite,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 * `ZLattice.dualGaussSum_eq_pow_mul_card_of_dvd`: for an even full lattice of rank `n` and level
   `N`, if `a N ∣ t` then `∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = aⁿ |L^∨ / L|`.
@@ -576,8 +577,8 @@ private theorem dualGaussSum_level_mul_aux (b : ℤ) (c : ℕ)
     AddMonoidHom.sum_comp_of_surjective f.toAddMonoidHom hf, hker, nsmul_eq_mul]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- **Descent to the Fricke partner.** Let `L` be an even lattice of level `N` with `L^∨ / cL`
-finite, which forces `L` to span `E`
+/-- **Descent to the Fricke partner.** Let `L` be an even lattice of level `N` in a
+finite-dimensional space `E`, with `L^∨ / cL` finite, which forces `L` to span `E`
 (`ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`), so that `L` is an even full
 lattice. For a coefficient `N b` divisible by the level, the Gauss sum over `L^∨ / cL` is
 `|L^∨ / L|` times the Gauss sum of the Fricke partner `√N • L^∨`:
@@ -703,11 +704,11 @@ theorem IsEven.gaussSum_eq_jacobiSym {k : ℕ} (hk : finrank ℝ E = 2 * k) {a :
     TauCeti.jacobiSym_mul_pow_two_mul_mul_of_isCoprime hu]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- **The dual Gauss sum at an odd modulus.** Let `L` be an even lattice of level `N` in a space of
-even dimension `finrank ℝ E = 2k`, with `L^∨ / aL` finite, which forces `L` to span `E`
-(`ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`), so that `L` is an even full
-lattice of rank `2k`. Let `a` be an odd modulus and `t` a multiple of `N` prime to `a`. With the
-Jacobi symbol `(· / a)` and the signed discriminant `D_L = (-1)^k det L`, where
+/-- **The dual Gauss sum at an odd modulus.** Let `L` be an even lattice of level `N` in a
+finite-dimensional space of even dimension `finrank ℝ E = 2k`, with `L^∨ / aL` finite, which forces
+`L` to span `E` (`ZLattice.span_eq_top_of_finite_quotient_smul_submoduleOf_dual`), so that `L` is an
+even full lattice of rank `2k`. Let `a` be an odd modulus and `t` a multiple of `N` prime to `a`.
+With the Jacobi symbol `(· / a)` and the signed discriminant `D_L = (-1)^k det L`, where
 `det L = |L^∨ / L|`, `∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = det L · (D_L / a) · a^k`.
 At `t = -c`, for a multiple `c` of the level prime to `a`, this evaluates the side over
 `L^∨ / aL` of the reciprocity law for the Gauss sums `G_L(a, c)`. -/
