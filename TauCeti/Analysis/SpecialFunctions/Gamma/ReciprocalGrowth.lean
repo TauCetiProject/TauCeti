@@ -60,9 +60,9 @@ namespace Complex
 
 /-- One factor of Euler's product: `s + k = k E₁(-s/k) e^{s/k}` for `k = j + 1`. -/
 theorem add_natCast_succ_eq_mul_weierstrassFactorOne (s : ℂ) (j : ℕ) :
-    s + (j + 1 : ℕ) = (j + 1 : ℕ) * weierstrassFactorOne (-s / (j + 1)) * exp (s / (j + 1)) := by
+    s + (j + 1 : ℕ) = (j + 1 : ℕ) * weierstrassFactor 1 (-s / (j + 1)) * exp (s / (j + 1)) := by
   have hj : (j + 1 : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
-  rw [weierstrassFactorOne_def, mul_assoc, mul_assoc, ← exp_add, neg_div, neg_add_cancel,
+  rw [weierstrassFactor_one_left, mul_assoc, mul_assoc, ← exp_add, neg_div, neg_add_cancel,
     exp_zero, mul_one]
   push_cast
   field_simp
@@ -71,12 +71,12 @@ theorem add_natCast_succ_eq_mul_weierstrassFactorOne (s : ℂ) (j : ℕ) :
 /-- Euler's finite product for the reciprocal of `GammaSeq`, written with the genus-one
 elementary factors `E₁(-s/k)`, `1 ≤ k ≤ n`, and the harmonic number `H_n`. -/
 theorem inv_GammaSeq_eq (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
-    (GammaSeq s n)⁻¹ = s * (∏ j ∈ range n, weierstrassFactorOne (-s / (j + 1))) *
+    (GammaSeq s n)⁻¹ = s * (∏ j ∈ range n, weierstrassFactor 1 (-s / (j + 1))) *
       exp (s * ((harmonic n : ℂ) - Real.log n)) := by
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hfac : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
   have hprod : ∏ j ∈ range (n + 1), (s + j) =
-      s * (n.factorial : ℂ) * (∏ j ∈ range n, weierstrassFactorOne (-s / (j + 1))) *
+      s * (n.factorial : ℂ) * (∏ j ∈ range n, weierstrassFactor 1 (-s / (j + 1))) *
         exp (s * harmonic n) := by
     rw [prod_range_succ', Nat.cast_zero, add_zero]
     simp_rw [add_natCast_succ_eq_mul_weierstrassFactorOne, prod_mul_distrib, ← exp_sum,
@@ -113,7 +113,7 @@ theorem norm_inv_GammaSeq_le (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
   have hNr : r < N := by rw [hN_def]; push_cast; exact Nat.lt_floor_add_one r
   have hN_le : (N : ℝ) ≤ r + 1 := by rw [hN_def]; push_cast; linarith [Nat.floor_le hr]
   let c : ℕ → ℝ := fun j ↦ if j + 1 ≤ N then 2 * (r / (j + 1)) else 3 * (r / (j + 1)) ^ 2
-  have hfac (j : ℕ) : ‖weierstrassFactorOne (-s / (j + 1))‖ ≤ Real.exp (c j) := by
+  have hfac (j : ℕ) : ‖weierstrassFactor 1 (-s / (j + 1))‖ ≤ Real.exp (c j) := by
     have hnorm : ‖-s / (j + 1)‖ = r / (j + 1) := by
       rw [norm_div, norm_neg, ← hr_def]
       congr 1
@@ -121,9 +121,9 @@ theorem norm_inv_GammaSeq_le (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
     simp only [c]
     split_ifs with hj
     · rw [← hnorm]
-      exact norm_weierstrassFactorOne_le_exp _
+      exact norm_weierstrassFactor_one_le_exp _
     · rw [← hnorm]
-      refine norm_weierstrassFactorOne_le_exp_sq ?_
+      refine norm_weierstrassFactor_one_le_exp_sq ?_
       rw [hnorm, div_le_one (by positivity)]
       have : (N : ℝ) ≤ j := by exact_mod_cast (by omega : N ≤ j)
       linarith
@@ -163,7 +163,7 @@ theorem norm_inv_GammaSeq_le (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
         rw [mul_div_assoc', div_le_iff₀ (by positivity)]
         -- `6 r² ≤ 6 r (N + 1)` since `r < N`.
         nlinarith
-  have hprod : ‖∏ j ∈ range n, weierstrassFactorOne (-s / (j + 1))‖ ≤
+  have hprod : ‖∏ j ∈ range n, weierstrassFactor 1 (-s / (j + 1))‖ ≤
       Real.exp (2 * r * (1 + Real.log (1 + r)) + 6 * r) := by
     rw [norm_prod]
     calc
