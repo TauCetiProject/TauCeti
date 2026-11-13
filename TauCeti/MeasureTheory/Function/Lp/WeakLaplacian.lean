@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Lp
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
@@ -178,9 +179,9 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
   have hvl : LocallyIntegrable v volume := hv.locallyIntegrable Fact.out
   -- Mollify with the reflected test function `ρ = φ(-·)`.
   set ρ : E → ℝ := fun z ↦ φ (-z) with hρ_def
-  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ := φ.contDiff.comp contDiff_neg
+  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ := φ.contDiff_comp_neg
   have hρ2 : ContDiff ℝ 2 ρ := hρ.of_le (WithTop.coe_le_coe.2 le_top)
-  have hρc : HasCompactSupport ρ := φ.hasCompactSupport.comp_homeomorph (Homeomorph.neg E)
+  have hρc : HasCompactSupport ρ := φ.hasCompactSupport_comp_neg
   set u : E → ℝ := ρ ⋆[lsmul ℝ ℝ, volume] v with hu_def
   have hu : ContDiff ℝ 2 u :=
     hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ2 hvl

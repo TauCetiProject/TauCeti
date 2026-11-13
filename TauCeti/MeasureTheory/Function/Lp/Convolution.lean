@@ -46,7 +46,8 @@ convolution semigroup rests:
   between two convolution operators by the `L¹` distance of their kernels.
 * `TauCeti.convolutionLp_comp_comm`: convolution operators with integrable kernels commute.
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
-  classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`.
+  classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`;
+  `TauCeti.convolutionLp_ae_eq_convolution_coeFn` is the same for an element of `Lᵖ`.
 * `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
   convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an `L¹` kernel and an `Lᵖ` function is
   integrable, which justifies local Fubini arguments.
@@ -273,5 +274,12 @@ theorem convolutionLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞) {k : 
     _ = ∫ x in s, (k ⋆[lsmul ℝ ℝ, μ] f) x ∂μ := by
         rw [← integral_integral_swap (integrable_convolution_integrand_restrict hk hf hμs)]
         simp only [convolution_lsmul]
+
+/-- The pointwise representative of `convolutionLp` applied to an element `f` of `Lᵖ`: the class
+`convolutionLp hp k μ f` is represented almost everywhere by `k ⋆ f`, for integrable `k`. -/
+theorem convolutionLp_ae_eq_convolution_coeFn [CompleteSpace F] (hp : p ≠ ∞) {k : E → ℝ}
+    (hk : Integrable k μ) (f : Lp F p μ) :
+    convolutionLp hp k μ f =ᵐ[μ] k ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by
+  simpa only [Lp.toLp_coeFn] using convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
 
 end TauCeti

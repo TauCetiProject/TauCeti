@@ -27,6 +27,8 @@ invariance of weak derivatives and distributional variation.
 * `TauCeti.lineDeriv_translateTestFunction`: directional derivatives commute with translation.
 * `TauCeti.exists_testFunction_eq_intervalIntegral`: segment averages of a test function are test
   functions.
+* `TestFunction.contDiff_comp_neg`, `TestFunction.hasCompactSupport_comp_neg`: the reflection
+  `x ↦ φ (-x)` of a test function is smooth and compactly supported, as needed to mollify with it.
 -/
 
 public section
@@ -116,5 +118,15 @@ theorem exists_testFunction_eq_intervalIntegral
     exact hy (hΦC y hyC)
   exact ⟨⟨Φ, hΦs, HasCompactSupport.intro hCc hΦC,
     (closure_minimal hsupp hCc.isClosed).trans hCO⟩, fun _ => rfl⟩
+
+/-- The reflection `x ↦ φ (-x)` of a test function is smooth of the same order. -/
+theorem _root_.TestFunction.contDiff_comp_neg {n : ℕ∞} (phi : 𝓓^{n}(V, F)) :
+    ContDiff ℝ n fun x => phi (-x) :=
+  phi.contDiff.comp contDiff_neg
+
+/-- The reflection `x ↦ φ (-x)` of a test function has compact support. -/
+theorem _root_.TestFunction.hasCompactSupport_comp_neg {n : ℕ∞} (phi : 𝓓^{n}(V, F)) :
+    HasCompactSupport fun x => phi (-x) :=
+  phi.hasCompactSupport.comp_homeomorph (Homeomorph.neg E)
 
 end TauCeti
