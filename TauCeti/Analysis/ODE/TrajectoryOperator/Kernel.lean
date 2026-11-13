@@ -161,57 +161,51 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
     gcongr
     exact hm ⟨s, rfl⟩
 
-/-- **Square-integrable solutions of a block-diagonal equation split coordinatewise.** If
-`A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)` acts as `(A₁ s, A₂ s)` on the two factors of an
-`Lᵖ` product, then a pair `(x, y)` is the initial value of a square-integrable solution of
-`v' + A v = 0` if and only if `x` and `y` are initial values of square-integrable solutions of
-`v₁' + A₁ v₁ = 0` and `v₂' + A₂ v₂ = 0`. -/
-theorem mem_squareIntegrableSolutions_withLp_iff {E G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {A₁ : ℝ → E →L[ℝ] E} {A₂ : ℝ → G →L[ℝ] G}
-    {A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)}
-    (hA : ∀ s z, A s z = WithLp.toLp p (A₁ s z.fst, A₂ s z.snd))
-    {z : WithLp p (E × G)} :
+section WithLp
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)] {A₁ : ℝ → E →L[ℝ] E} {A₂ : ℝ → G →L[ℝ] G}
+  {A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)}
+
+/-- **Square-integrable solutions of a block-diagonal equation split coordinatewise.** If `A` acts
+as `(A₁ s, A₂ s)` on `WithLp p (E × G)`, then `(x, y)` lies in `squareIntegrableSolutions A` iff
+`x ∈ squareIntegrableSolutions A₁` and `y ∈ squareIntegrableSolutions A₂`. -/
+theorem mem_squareIntegrableSolutions_withLp_iff
+    (hA : ∀ s z, A s z = WithLp.toLp p (A₁ s z.fst, A₂ s z.snd)) {z : WithLp p (E × G)} :
     z ∈ squareIntegrableSolutions A ↔
       z.fst ∈ squareIntegrableSolutions A₁ ∧ z.snd ∈ squareIntegrableSolutions A₂ := by
-  constructor
+  refine ⟨?_, ?_⟩
   · rintro ⟨v, rfl, hv, hv2⟩
     refine ⟨⟨fun s ↦ (v s).fst, rfl, fun s ↦ ?_,
         hv2.continuousLinearMap_comp (WithLp.fstL p ℝ E G)⟩,
-      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_,
-        hv2.continuousLinearMap_comp (WithLp.sndL p ℝ E G)⟩⟩
+      ⟨fun s ↦ (v s).snd, rfl, fun s ↦ ?_, hv2.continuousLinearMap_comp (WithLp.sndL p ℝ E G)⟩⟩
     · simpa [Function.comp_def, hA] using (WithLp.fstL p ℝ E G).hasFDerivAt.comp_hasDerivAt s (hv s)
     · simpa [Function.comp_def, hA] using (WithLp.sndL p ℝ E G).hasFDerivAt.comp_hasDerivAt s (hv s)
   · rintro ⟨⟨v₁, hx, hv₁, hv₁2⟩, ⟨v₂, hy, hv₂, hv₂2⟩⟩
     let e := (WithLp.prodContinuousLinearEquiv p ℝ E G).symm
     let i₁ : E →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inl ℝ E G)
     let i₂ : G →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inr ℝ E G)
-    have hfun : ((fun s ↦ i₁ (v₁ s)) + fun s ↦ i₂ (v₂ s)) =
-        fun s ↦ WithLp.toLp p (v₁ s, v₂ s) :=
+    have hfun : ((fun s ↦ i₁ (v₁ s)) + fun s ↦ i₂ (v₂ s)) = fun s ↦ WithLp.toLp p (v₁ s, v₂ s) :=
       (toLp_prodMk_eq_add (p := p) (𝕜 := ℝ) v₁ v₂).symm
-    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), WithLp.prod_ext hx hy, fun s ↦ ?_, ?_⟩
-    · have h := (i₁.hasFDerivAt.comp_hasDerivAt s (hv₁ s)).add
-        (i₂.hasFDerivAt.comp_hasDerivAt s (hv₂ s))
-      rw [Function.comp_def, Function.comp_def, hfun] at h
-      exact h.congr_deriv
-        (WithLp.prod_ext (by simp [i₁, i₂, e, hA]) (by simp [i₁, i₂, e, hA]))
-    · exact hfun ▸ (hv₁2.continuousLinearMap_comp i₁).add (hv₂2.continuousLinearMap_comp i₂)
+    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), WithLp.prod_ext hx hy, fun s ↦ ?_,
+      hfun ▸ (hv₁2.continuousLinearMap_comp i₁).add (hv₂2.continuousLinearMap_comp i₂)⟩
+    have h := (i₁.hasFDerivAt.comp_hasDerivAt s (hv₁ s)).add
+      (i₂.hasFDerivAt.comp_hasDerivAt s (hv₂ s))
+    rw [Function.comp_def, Function.comp_def, hfun] at h
+    exact h.congr_deriv (WithLp.prod_ext (by simp [i₁, i₂, e, hA]) (by simp [i₁, i₂, e, hA]))
 
 /-- If both diagonal blocks of `A` on `WithLp p (E × G)` have no nonzero square-integrable
 solutions, neither does `A`. -/
-theorem squareIntegrableSolutions_eq_bot_of_withLp {E G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {A₁ : ℝ → E →L[ℝ] E} {A₂ : ℝ → G →L[ℝ] G}
-    {A : ℝ → WithLp p (E × G) →L[ℝ] WithLp p (E × G)}
+theorem squareIntegrableSolutions_eq_bot_of_withLp
     (hA : ∀ s z, A s z = WithLp.toLp p (A₁ s z.fst, A₂ s z.snd))
     (h₁ : squareIntegrableSolutions A₁ = ⊥) (h₂ : squareIntegrableSolutions A₂ = ⊥) :
     squareIntegrableSolutions A = ⊥ := by
-  rw [eq_bot_iff]
-  intro z hz
+  refine eq_bot_iff.2 fun z hz ↦ (Submodule.mem_bot ℝ).2 ?_
   rw [mem_squareIntegrableSolutions_withLp_iff hA, h₁, h₂, Submodule.mem_bot, Submodule.mem_bot]
     at hz
-  rw [Submodule.mem_bot]
   exact WithLp.prod_ext hz.1 hz.2
+
+end WithLp
 
 end TauCeti
 

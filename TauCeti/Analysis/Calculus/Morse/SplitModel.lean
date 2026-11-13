@@ -42,26 +42,21 @@ and Hessian determine the corresponding linearized gradient flow and its contrac
 ## Main declarations
 
 * `TauCeti.splitQuadratic`, `TauCeti.continuous_splitQuadratic`,
-  `TauCeti.differentiable_splitQuadratic`, and `TauCeti.contDiff_splitQuadratic`: the standard
-  split quadratic function and its regularity.
+  `TauCeti.differentiable_splitQuadratic`, `TauCeti.contDiff_splitQuadratic`: the standard split
+  quadratic function and its regularity.
 * `TauCeti.fderiv_splitQuadratic`, `TauCeti.fderiv_splitQuadratic_eq_zero_iff`,
-  `TauCeti.gradient_splitQuadratic`, and `TauCeti.hessianOperator_splitQuadratic_apply`: its
-  Fréchet derivative, unique critical point at `0`, gradient, and Hessian operator `(x, -y)`.
-* `TauCeti.hessianQuadraticForm_splitQuadratic_apply` and `TauCeti.morseIndex_splitQuadratic`:
-  its Hessian quadratic form is `‖x‖² - ‖y‖²`, and in finite dimensions its Morse index is
-  `dim Eᵤ`.
-* `TauCeti.lipschitzWith_gradient_splitQuadratic`: its gradient is globally `1`-Lipschitz.
-* `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_zero`,
-  `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_iff`, and
-  `TauCeti.hasNondegenerateCriticalPointsOn_splitQuadratic`: `0` is the unique critical point and is
-  nondegenerate.
-* `TauCeti.splitQuadraticFlow`: its explicit negative-gradient flow.
-* `Flow.isNegativeGradient_splitQuadraticFlow`: the flow solves the negative-gradient equation.
-* `TauCeti.negativeGradientFlow_splitQuadratic`,
-  `TauCeti.eq_splitQuadraticFlow_of_isIntegralCurve`, and
-  `TauCeti.eq_zero_of_isIntegralCurve_splitQuadratic`: the general construction of the negative
-  gradient flow returns this explicit flow, every negative-gradient trajectory is one of its flow
-  lines, and the constant zero curve is the only trajectory with finite limits at both ends.
+  `TauCeti.gradient_splitQuadratic`, `TauCeti.hessianOperator_splitQuadratic_apply`,
+  `TauCeti.hessianQuadraticForm_splitQuadratic_apply`, `TauCeti.morseIndex_splitQuadratic`: its
+  derivatives, unique critical point `0`, Hessian `(x, -y)`, and Morse index `dim Eᵤ`.
+* `TauCeti.lipschitzWith_gradient_splitQuadratic`,
+  `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_zero`,
+  `TauCeti.isNondegenerateCriticalPoint_splitQuadratic_iff`,
+  `TauCeti.hasNondegenerateCriticalPointsOn_splitQuadratic`: global `1`-Lipschitz gradient and
+  nondegeneracy at `0`.
+* `TauCeti.splitQuadraticFlow`, `Flow.isNegativeGradient_splitQuadraticFlow`,
+  `TauCeti.negativeGradientFlow_splitQuadratic`, `TauCeti.eq_splitQuadraticFlow_of_isIntegralCurve`,
+  `TauCeti.eq_zero_of_isIntegralCurve_splitQuadratic`: explicit negative-gradient flow and global
+  trajectory classification.
 * `Flow.stableSet_splitQuadraticFlow_zero`: the stable set is the first coordinate plane.
 * `Flow.unstableSet_splitQuadraticFlow_zero`: the unstable set is the second coordinate plane.
 
@@ -103,17 +98,14 @@ theorem continuous_splitQuadratic : Continuous (splitQuadratic (Eₛ := Eₛ) (E
   (((continuous_fst.comp (WithLp.prod_continuous_ofLp 2 Eₛ Eᵤ)).norm.pow 2).sub
     ((continuous_snd.comp (WithLp.prod_continuous_ofLp 2 Eₛ Eᵤ)).norm.pow 2)).div_const 2
 
-/-- The Fréchet derivative of the split quadratic function at `z` is the inner product against
-`(z.fst, -z.snd)`. -/
+/-- The Fréchet derivative of `splitQuadratic` at `z` is `innerSL ℝ (z.fst, -z.snd)`. -/
 theorem hasFDerivAt_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
     (z : WithLp 2 (Eₛ × Eᵤ)) :
     HasFDerivAt (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
       (innerSL ℝ (WithLp.toLp 2 (z.fst, -z.snd))) z := by
-  convert
-    ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).hasFDerivAt (x := z)).norm_sq.sub
-      (((WithLp.sndL 2 ℝ Eₛ Eᵤ).hasFDerivAt (x := z)).norm_sq)).const_mul (2 : ℝ)⁻¹) using 1 <;>
-    ext w <;>
-    simp [splitQuadratic, WithLp.prod_inner_apply] <;> ring
+  convert ((((WithLp.fstL 2 ℝ Eₛ Eᵤ).hasFDerivAt (x := z)).norm_sq.sub
+    (((WithLp.sndL 2 ℝ Eₛ Eᵤ).hasFDerivAt (x := z)).norm_sq)).const_mul (2 : ℝ)⁻¹) using 1 <;>
+    ext w <;> simp [splitQuadratic, WithLp.prod_inner_apply] <;> ring
 
 /-- Formula for the Fréchet derivative of the split quadratic function. -/
 @[simp]
@@ -129,16 +121,13 @@ theorem differentiable_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProduct
     Differentiable ℝ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) :=
   fun z ↦ (hasFDerivAt_splitQuadratic z).differentiableAt
 
-/-- The origin is the unique critical point of the split quadratic function on any product of real
-inner product spaces. -/
+/-- The origin is the unique critical point of `splitQuadratic` on real inner product spaces. -/
 theorem fderiv_splitQuadratic_eq_zero_iff [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
     (z : WithLp 2 (Eₛ × Eᵤ)) :
     fderiv ℝ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z = 0 ↔ z = 0 := by
   rw [fderiv_splitQuadratic, ← map_zero (innerSL ℝ), innerSL_inj]
-  refine ⟨fun h ↦ WithLp.prod_ext (by simpa using congrArg WithLp.fst h)
-    (by simpa using congrArg WithLp.snd h), ?_⟩
-  rintro rfl
-  simp
+  exact ⟨fun h ↦ WithLp.prod_ext (by simpa using congrArg WithLp.fst h)
+    (by simpa using congrArg WithLp.snd h), fun h ↦ by simp [h]⟩
 
 /-- The gradient of the split quadratic function is the identity on the first factor and minus
 the identity on the second. -/
@@ -211,60 +200,46 @@ theorem isNondegenerateCriticalPoint_splitQuadratic_zero
 /-- The origin is the unique nondegenerate critical point of the split quadratic function. -/
 @[simp]
 theorem isNondegenerateCriticalPoint_splitQuadratic_iff
-    [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
-    [CompleteSpace Eₛ] [CompleteSpace Eᵤ] {z : WithLp 2 (Eₛ × Eᵤ)} :
-    IsNondegenerateCriticalPoint (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z ↔ z = 0 := by
-  refine ⟨fun hz ↦ (fderiv_splitQuadratic_eq_zero_iff z).1 hz.fderiv_eq_zero, ?_⟩
-  rintro rfl
-  exact isNondegenerateCriticalPoint_splitQuadratic_zero
+    [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ]
+    {z : WithLp 2 (Eₛ × Eᵤ)} :
+    IsNondegenerateCriticalPoint (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z ↔ z = 0 :=
+  ⟨fun hz ↦ (fderiv_splitQuadratic_eq_zero_iff z).1 hz.fderiv_eq_zero,
+    by rintro rfl; exact isNondegenerateCriticalPoint_splitQuadratic_zero⟩
 
-/-- Every critical point of the split quadratic function on a product of real Hilbert spaces is
-nondegenerate. -/
+/-- Every critical point of `splitQuadratic` on real Hilbert spaces is nondegenerate. -/
 theorem hasNondegenerateCriticalPointsOn_splitQuadratic
-    [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
-    [CompleteSpace Eₛ] [CompleteSpace Eᵤ] :
+    [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ] :
     HasNondegenerateCriticalPointsOn (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) univ :=
   hasNondegenerateCriticalPointsOn_iff.2 fun z _ hz ↦
-    isNondegenerateCriticalPoint_splitQuadratic_iff.2
-      ((fderiv_splitQuadratic_eq_zero_iff z).1 hz)
+    isNondegenerateCriticalPoint_splitQuadratic_iff.2 ((fderiv_splitQuadratic_eq_zero_iff z).1 hz)
 
 /-- The split quadratic function is smooth on any product of real inner product spaces. -/
 @[fun_prop]
-theorem contDiff_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
-    {n : WithTop ℕ∞} :
+theorem contDiff_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ] {n : WithTop ℕ∞} :
     ContDiff ℝ n (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) :=
   (((contDiff_norm_sq ℝ).comp (WithLp.fstL 2 ℝ Eₛ Eᵤ).contDiff).sub
     ((contDiff_norm_sq ℝ).comp (WithLp.sndL 2 ℝ Eₛ Eᵤ).contDiff)).div_const 2
 
-/-- The Hessian operator of the split quadratic function is the involution `(x, y) ↦ (x, -y)` at
-every point. -/
+/-- The Hessian operator of `splitQuadratic` is `(x, y) ↦ (x, -y)` at every point. -/
 @[simp]
 theorem hessianOperator_splitQuadratic_apply [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
     [CompleteSpace Eₛ] [CompleteSpace Eᵤ] (z v : WithLp 2 (Eₛ × Eᵤ)) :
-    hessianOperator (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z v =
-      WithLp.toLp 2 (v.fst, -v.snd) := by
+    hessianOperator (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z v = WithLp.toLp 2 (v.fst, -v.snd) := by
   let L : WithLp 2 (Eₛ × Eᵤ) →L[ℝ] WithLp 2 (Eₛ × Eᵤ) :=
-    ((WithLp.prodContinuousLinearEquiv 2 ℝ Eₛ Eᵤ).symm :
-      Eₛ × Eᵤ →L[ℝ] WithLp 2 (Eₛ × Eᵤ)).comp
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ Eₛ Eᵤ).symm : Eₛ × Eᵤ →L[ℝ] WithLp 2 (Eₛ × Eᵤ)).comp
       ((WithLp.fstL 2 ℝ Eₛ Eᵤ).prod (-WithLp.sndL 2 ℝ Eₛ Eᵤ))
-  have hgrad : ∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) = L := by
-    funext w
-    simp [L]
-  rw [← fderiv_gradient, hgrad, L.fderiv]
-  simp [L]
+  have hgrad : ∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) = L := by funext w; simp [L]
+  rw [← fderiv_gradient, hgrad, L.fderiv]; simp [L]
 
 /-- `splitQuadratic` is half the separated sum of `‖·‖²` and `-‖·‖²`. -/
 theorem splitQuadratic_eq_smul_separatedSum :
     (splitQuadratic : WithLp 2 (Eₛ × Eᵤ) → ℝ) =
       (2 : ℝ)⁻¹ • separatedSum (fun x : Eₛ ↦ ‖x‖ ^ 2) (-(fun y : Eᵤ ↦ ‖y‖ ^ 2)) := by
-  funext w
-  simp [splitQuadratic]
-  ring
+  funext w; simp [splitQuadratic]; ring
 
-/-- The Hessian quadratic form of the split quadratic function is `‖v.fst‖² - ‖v.snd‖²` at every
-point. -/
-theorem hessianQuadraticForm_splitQuadratic_apply [InnerProductSpace ℝ Eₛ]
-    [InnerProductSpace ℝ Eᵤ] (z v : WithLp 2 (Eₛ × Eᵤ)) :
+/-- The Hessian quadratic form of `splitQuadratic` is `‖v.fst‖² - ‖v.snd‖²` at every point. -/
+theorem hessianQuadraticForm_splitQuadratic_apply [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    (z v : WithLp 2 (Eₛ × Eᵤ)) :
     hessianQuadraticForm (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z v =
       ‖v.fst‖ ^ 2 - ‖v.snd‖ ^ 2 := by
   rw [splitQuadratic_eq_smul_separatedSum, hessianQuadraticForm_smul, smul_apply,
@@ -274,8 +249,7 @@ theorem hessianQuadraticForm_splitQuadratic_apply [InnerProductSpace ℝ Eₛ]
     smul_eq_mul]
   ring
 
-/-- On finite-dimensional inner product spaces, the Morse index of the split quadratic function at
-every point is the dimension of the negative factor `Eᵤ`. -/
+/-- On finite-dimensional inner product spaces, `morseIndex splitQuadratic z = dim Eᵤ`. -/
 @[simp]
 theorem morseIndex_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
     [FiniteDimensional ℝ Eₛ] [FiniteDimensional ℝ Eᵤ] (z : WithLp 2 (Eₛ × Eᵤ)) :
@@ -284,8 +258,7 @@ theorem morseIndex_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpac
     QuadraticForm.sigNeg_smul_of_pos _ (by positivity), ← morseIndex_def,
     morseIndex_separatedSum (g := -(fun y : Eᵤ ↦ ‖y‖ ^ 2))
       (contDiff_norm_sq ℝ).contDiffAt (contDiff_norm_sq ℝ).contDiffAt.neg,
-    morseIndex_norm_sq, zero_add,
-    ← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+    morseIndex_norm_sq, zero_add, ← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro u hu
   rw [neg_apply, hessianQuadraticForm_neg, neg_apply, neg_neg, hessianQuadraticForm_norm_sq]
   exact mul_pos two_pos (pow_pos (norm_pos_iff.2 hu) 2)
@@ -368,39 +341,31 @@ theorem negativeGradientFlow_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerP
   rw [h0] at h
   exact h.symm
 
-/-- Every negative-gradient trajectory of `splitQuadratic` is a flow line of
-`splitQuadraticFlow`. -/
-theorem eq_splitQuadraticFlow_of_isIntegralCurve [InnerProductSpace ℝ Eₛ]
-    [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ]
-    {γ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
+/-- Every negative-gradient trajectory of `splitQuadratic` is a flow line of `splitQuadraticFlow`.
+-/
+theorem eq_splitQuadraticFlow_of_isIntegralCurve [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    [CompleteSpace Eₛ] [CompleteSpace Eᵤ] {γ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
     (hγ : IsIntegralCurve γ fun _ z ↦ -∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) z) :
-    γ = fun t ↦ splitQuadraticFlow t (γ 0) := by
-  funext t
-  have h := eq_negativeGradientFlow (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
-    lipschitzWith_gradient_splitQuadratic hγ t
-  rwa [negativeGradientFlow_splitQuadratic] at h
+    γ = fun t ↦ splitQuadraticFlow t (γ 0) :=
+  funext fun t ↦ negativeGradientFlow_splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ) ▸
+    eq_negativeGradientFlow _ lipschitzWith_gradient_splitQuadratic hγ t
 
 /-- Any global negative-gradient trajectory of `splitQuadratic` with finite limits at `-∞` and `+∞`
 is identically zero, with both limits equal to `0`. -/
-theorem eq_zero_of_isIntegralCurve_splitQuadratic [InnerProductSpace ℝ Eₛ]
-    [InnerProductSpace ℝ Eᵤ] [CompleteSpace Eₛ] [CompleteSpace Eᵤ]
-    {ζ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
+theorem eq_zero_of_isIntegralCurve_splitQuadratic [InnerProductSpace ℝ Eₛ] [InnerProductSpace ℝ Eᵤ]
+    [CompleteSpace Eₛ] [CompleteSpace Eᵤ] {ζ : ℝ → WithLp 2 (Eₛ × Eᵤ)}
     (hζ : IsIntegralCurve ζ (fun _ w ↦ -∇ (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) w))
     {p q : WithLp 2 (Eₛ × Eᵤ)} (hbot : Tendsto ζ atBot (𝓝 p)) (htop : Tendsto ζ atTop (𝓝 q)) :
     p = 0 ∧ q = 0 ∧ ζ = 0 := by
   have hflow := eq_splitQuadraticFlow_of_isIntegralCurve hζ
-  have hp : p = 0 := by
-    rw [hflow] at hbot
-    have hfix := Flow.fixed_of_mem_unstableSet (Flow.mem_unstableSet.2 hbot)
-    rw [← negativeGradientFlow_splitQuadratic] at hfix
-    exact (gradient_splitQuadratic_eq_zero_iff p).1
-      ((forall_negativeGradientFlow_eq_self_iff _ lipschitzWith_gradient_splitQuadratic p).1 hfix)
-  have hq : q = 0 := by
-    rw [hflow] at htop
-    have hfix := Flow.fixed_of_mem_stableSet (Flow.mem_stableSet.2 htop)
-    rw [← negativeGradientFlow_splitQuadratic] at hfix
-    exact (gradient_splitQuadratic_eq_zero_iff q).1
-      ((forall_negativeGradientFlow_eq_self_iff _ lipschitzWith_gradient_splitQuadratic q).1 hfix)
+  have hp : p = 0 := (gradient_splitQuadratic_eq_zero_iff p).1
+    ((forall_negativeGradientFlow_eq_self_iff _ lipschitzWith_gradient_splitQuadratic p).1
+      (negativeGradientFlow_splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ) ▸
+        Flow.fixed_of_mem_unstableSet (Flow.mem_unstableSet.2 (hflow ▸ hbot))))
+  have hq : q = 0 := (gradient_splitQuadratic_eq_zero_iff q).1
+    ((forall_negativeGradientFlow_eq_self_iff _ lipschitzWith_gradient_splitQuadratic q).1
+      (negativeGradientFlow_splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ) ▸
+        Flow.fixed_of_mem_stableSet (Flow.mem_stableSet.2 (hflow ▸ htop))))
   subst hp hq
   exact ⟨rfl, rfl, hζ.eq_const_of_tendsto (fun t ↦ differentiable_splitQuadratic (ζ t))
     continuous_splitQuadratic.continuousAt hbot htop⟩

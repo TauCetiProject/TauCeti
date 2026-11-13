@@ -33,78 +33,62 @@ single negative gradient trajectory. This file computes this local model.
 
 **The cubic.** The potential `x ↦ x³ / 3 - s x` (`TauCeti.birthDeathPotential s`) on the line has
 derivative `x² - s`, second derivative `2 x` and third derivative `2`, and the parameter derivative
-of its derivative is `-1`. Varying `s` across `0` gives the complete critical-point and global
-negative-gradient trajectory trichotomy for `x' = s - x²`:
+of its derivative is `-1`. So:
 
-* **Before the birth (`s < 0`):** `birthDeathPotential s` has no critical point, and solutions of
-  `x' = s - x² = -((√(-s))² + x²)` blow up in finite time `< π / √(-s)`, so no negative gradient
-  trajectory exists on any half-line `[t₀, ∞)` or `(-∞, t₀]`, nor on all of `ℝ`
-  (`TauCeti.not_isIntegralCurveOn_Ici_birthDeathPotential_of_neg`,
-  `TauCeti.not_isIntegralCurveOn_Iic_birthDeathPotential_of_neg`,
-  `TauCeti.not_isIntegralCurve_birthDeathPotential_of_neg`).
-* **At the birth–death instant (`s = 0`):** the origin is the unique critical point and is
-  degenerate (`TauCeti.not_isNondegenerateCriticalPoint_birthDeathPotential_zero`), although the
-  third derivative there and the parameter derivative of the derivative are nonzero, and the
-  constant zero curve is unconditionally the unique global negative gradient trajectory on `ℝ`
-  (`TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`).
-* **After the birth (`s > 0`):** there are two critical points, both nondegenerate: a local maximum
-  at `-√s` of Morse index `1`, and a local minimum at `√s` of Morse index `0`, whose critical values
-  differ by `4 s √s / 3`. Thus `birthDeathPotential s` has nondegenerate critical points on `ℝ` if
-  and only if `s ≠ 0` (`TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`).
+* for `s < 0` it has no critical point, and solutions of `x' = s - x²` blow up in time
+  `< π / √(-s)` so no trajectory exists on `[t₀, ∞)`, `(-∞, t₀]`, or `ℝ`
+  (`TauCeti.not_isIntegralCurve_birthDeathPotential_of_neg`);
+* for `s = 0` it has a unique, degenerate critical point `0`
+  (`TauCeti.not_isNondegenerateCriticalPoint_birthDeathPotential_zero`) and a unique global
+  trajectory `0` on `ℝ` (`TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`), although
+  the third derivative there and the parameter derivative of the derivative are nonzero: these are
+  the conditions defining a birth–death point;
+* for `s > 0` it has exactly two, both nondegenerate: a local maximum at `-√s`, of Morse index `1`,
+  and a local minimum at `√s`, of Morse index `0`. The difference of the critical values is
+  `4 s √s / 3`.
 
-For `s > 0`, the open interval `(-√s, √s)` is parametrized by the inverse-hyperbolic time coordinate
-`x ↦ (√s)⁻¹ * artanh (x / √s)` (`TauCeti.birthDeathTimeCoordinate s`), inverse to the connecting
-orbit `t ↦ √s tanh (√s t)` (`TauCeti.birthDeathOrbit s`). Every negative gradient trajectory from
-`-√s` to `√s` stays inside `(-√s, √s)` and is a unique time translate
-`t ↦ birthDeathOrbit s (t + τ)` (`TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`), given
-explicitly by `τ = birthDeathTimeCoordinate s (γ 0)`
-(`TauCeti.eq_birthDeathOrbit_add_birthDeathTimeCoordinate_of_isIntegralCurve`), while no negative
-gradient trajectory runs from `√s` to `-√s`
-(`TauCeti.not_isIntegralCurve_birthDeathPotential_of_tendsto_atBot_sqrt_of_tendsto_atTop_neg_sqrt`).
+The negative gradient field is `s - x²`. For `s > 0`, the curve
+`t ↦ √s tanh (√s t)` (`TauCeti.birthDeathOrbit s`) with inverse time coordinate
+`x ↦ (√s)⁻¹ * artanh (x / √s)` (`TauCeti.birthDeathTimeCoordinate s`) is a negative gradient
+trajectory from the maximum to the minimum, every negative gradient trajectory from `-√s` to `√s` is
+a unique time translate (`TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`), and none runs from
+`√s` to `-√s`.
 
 **The model in higher dimensions.** Adding a function `g` with a nondegenerate critical point `y`
 of Morse index `k` in transverse directions gives the separated sum
-`(x, y) ↦ x³ / 3 - s x + g y`. For `s < 0` no global trajectory exists on `ℝ`
-(`TauCeti.not_isIntegralCurve_separatedSum_birthDeathPotential_of_neg`); for `s > 0` the
-points `(-√s, y)` and `(√s, y)` are nondegenerate critical points of Morse indices `k + 1` and `k`,
-every negative gradient trajectory from `(-√s, y)` to `(√s, y)` is a unique time translate
-`t ↦ (√s tanh (√s (t + τ)), y)` (`TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`), and no
-trajectory runs from `(√s, y₁)` to `(-√s, y₂)`
-(`TauCeti.not_isIntegralCurve_separatedSum_birthDeathPotential_of_tendsto_atBot_of_tendsto_atTop`).
-The explicit multi-dimensional Cerf normal form obtained by taking `g = splitQuadratic` lives in
-`TauCeti.Analysis.Calculus.Morse.BirthDeath.NormalForm`, and the `W^{1,2} → L²` Fredholm regularity
-of the linearized trajectory operators lives in
-`TauCeti.Analysis.Calculus.Morse.BirthDeath.Fredholm`.
+`(x, y) ↦ x³ / 3 - s x + g y`. For `s > 0` the points `(-√s, y)` and `(√s, y)` are nondegenerate
+critical points of Morse indices `k + 1` and `k`, and every negative gradient trajectory from the
+first to the second is `t ↦ (√s tanh (√s (t + τ)), y)` for a unique `τ`
+(`TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`): its transverse component stays at `y`,
+because a negative gradient trajectory with the same limit at both ends is constant. When `g` is the
+quadratic form `-x₂² / 2 - ⋯ + ⋯`, this is Cerf's normal form (see
+`TauCeti.Analysis.Calculus.Morse.BirthDeath.NormalForm` and
+`TauCeti.Analysis.Calculus.Morse.BirthDeath.Fredholm`). It is the local picture behind the
+change of the Morse complex at a birth or a death: two generators of adjacent degrees appear or
+disappear, and they are joined by a single trajectory.
 
 ## Main declarations
 
 * `TauCeti.birthDeathPotential`: the cubic `x³ / 3 - s x`.
-* `TauCeti.fderiv_birthDeathPotential_eq_zero_iff`,
-  `TauCeti.isNondegenerateCriticalPoint_birthDeathPotential_iff`,
-  `TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`: critical-point and Morse
-  characterization across `s`.
+* `TauCeti.fderiv_birthDeathPotential_eq_zero_iff`: its critical points are the solutions of
+  `x² = s`.
+* `TauCeti.isNondegenerateCriticalPoint_birthDeathPotential_iff`,
+  `TauCeti.hasNondegenerateCriticalPointsOn_birthDeathPotential_iff`: they are nondegenerate exactly
+  when `s ≠ 0`, that is, away from the birth–death parameter.
 * `TauCeti.morseIndex_birthDeathPotential_neg_sqrt`, `TauCeti.morseIndex_birthDeathPotential_sqrt`:
   for `s > 0`, the two critical points have Morse indices `1` and `0`.
-* `TauCeti.eq_of_isIntegralCurve_birthDeathPotential`,
-  `TauCeti.not_isIntegralCurveOn_Ici_birthDeathPotential_of_neg`,
-  `TauCeti.not_isIntegralCurveOn_Iic_birthDeathPotential_of_neg`,
-  `TauCeti.not_isIntegralCurve_birthDeathPotential_of_neg`,
-  `TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`: global ODE uniqueness and the
-  pre-birth (`s < 0`) and birth–death (`s = 0`) trajectory regimes.
+* `TauCeti.not_isIntegralCurve_birthDeathPotential_of_neg`,
+  `TauCeti.eq_zero_of_isIntegralCurve_birthDeathPotential_zero`: global blow-up for `s < 0` and
+  uniqueness of `0` at `s = 0`.
 * `TauCeti.birthDeathOrbit`, `TauCeti.birthDeathTimeCoordinate`,
   `TauCeti.isIntegralCurve_birthDeathOrbit`: the connecting trajectory `t ↦ √s tanh (√s t)` and its
-  inverse `artanh` time coordinate on `(-√s, √s)`.
-* `TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`,
-  `TauCeti.eq_birthDeathOrbit_add_birthDeathTimeCoordinate_of_isIntegralCurve`, and
-  `TauCeti.not_isIntegralCurve_birthDeathPotential_of_tendsto_atBot_sqrt_of_tendsto_atTop_neg_sqrt`
-  — unique time-shift classification of forward connecting orbits and nonexistence of reverse
-  orbits.
+  inverse time coordinate on `(-√s, √s)`.
+* `TauCeti.existsUnique_eq_birthDeathOrbit_comp_add`: it is the unique trajectory from `-√s` to
+  `√s`, up to a unique translation of time.
 * `TauCeti.morseIndex_separatedSum_birthDeathPotential_neg_sqrt`,
   `TauCeti.morseIndex_separatedSum_birthDeathPotential_sqrt`,
-  `TauCeti.not_isIntegralCurve_separatedSum_birthDeathPotential_of_neg`,
-  `TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`, and
-  `TauCeti.not_isIntegralCurve_separatedSum_birthDeathPotential_of_tendsto_atBot_of_tendsto_atTop`
-  — the corresponding statements in the model with transverse directions.
+  `TauCeti.existsUnique_eq_birthDeathOrbit_separatedSum`: the same statements in the model with
+  transverse directions.
 
 ## References
 
@@ -354,30 +338,24 @@ theorem not_isIntegralCurveOn_Ici_birthDeathPotential_of_neg (hs : s < 0) (t₀ 
     ¬IsIntegralCurveOn γ (fun _ x ↦ -∇ (birthDeathPotential s) x) (Ici t₀) := fun hγ ↦ by
   set a := √(-s)
   have ha : 0 < a := Real.sqrt_pos.2 (neg_pos.2 hs)
+  have ha0 : a ≠ 0 := ha.ne'
   have hasq : a ^ 2 = -s := Real.sq_sqrt (neg_pos.2 hs).le
   have hd : ∀ t ∈ Ici t₀,
       HasDerivWithinAt (fun u ↦ Real.arctan (γ u / a) + a * u) 0 (Ici t₀) t := fun t ht ↦ by
-    have h₁ : HasDerivWithinAt γ (s - γ t ^ 2) (Ici t₀) t :=
-      (hγ t ht).congr_deriv (by simp [gradient_birthDeathPotential])
+    have h₁ : HasDerivWithinAt γ (s - γ t ^ 2) (Ici t₀) t := (hγ t ht).congr_deriv (by simp)
     refine (((h₁.div_const a).arctan).add
       ((hasDerivWithinAt_id t (Ici t₀)).const_mul a)).congr_deriv ?_
-    have ha0 : a ≠ 0 := ha.ne'
     rw [show s = -a ^ 2 by linarith [hasq]]
     field_simp
     ring
   have hant : AntitoneOn (fun u ↦ Real.arctan (γ u / a) + a * u) (Ici t₀) :=
     antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici t₀)
       (fun t ht ↦ (hd t ht).continuousWithinAt)
-      (fun t ht ↦ (hd t (interior_subset ht)).mono interior_subset)
-      fun _ _ ↦ le_rfl
+      (fun t ht ↦ (hd t (interior_subset ht)).mono interior_subset) fun _ _ ↦ le_rfl
   set t₁ := t₀ + Real.pi / a
   have ht₁ : t₀ ≤ t₁ := le_add_of_nonneg_right (div_nonneg Real.pi_pos.le ha.le)
-  have hle : Real.arctan (γ t₁ / a) + a * t₁ ≤ Real.arctan (γ t₀ / a) + a * t₀ :=
-    hant self_mem_Ici ht₁ ht₁
-  have hmul : a * t₁ = a * t₀ + Real.pi := by
-    have ha0 : a ≠ 0 := ha.ne'
-    dsimp [t₁]
-    field_simp
+  have hle := hant self_mem_Ici ht₁ ht₁
+  have hmul : a * t₁ = a * t₀ + Real.pi := by dsimp [t₁]; field_simp
   linarith [Real.neg_pi_div_two_lt_arctan (γ t₁ / a), Real.arctan_lt_pi_div_two (γ t₀ / a)]
 
 /-- **Before the birth (`s < 0`), no backward half-line trajectory exists.** -/
@@ -405,29 +383,18 @@ theorem eq_zero_of_isIntegralCurve_birthDeathPotential_zero {γ : ℝ → ℝ}
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential 0) x)) : γ = 0 := by
   by_contra hne
   obtain ⟨t₀, ht₀⟩ := Function.ne_iff.1 hne
-  have h0 : IsIntegralCurve (fun _ : ℝ ↦ (0 : ℝ))
-      (fun _ x ↦ -∇ (birthDeathPotential 0) x) :=
-    isIntegralCurve_const_neg_gradient_iff.2 (by simp)
-  have hne_all : ∀ t, γ t ≠ 0 := fun t ht ↦
-    ht₀ (congrFun (eq_of_isIntegralCurve_birthDeathPotential hγ h0 (t₀ := t) ht) t₀)
+  have hne_all : ∀ t, γ t ≠ 0 := fun t ht ↦ ht₀ <| congrFun
+    (eq_of_isIntegralCurve_birthDeathPotential hγ
+      (isIntegralCurve_const_neg_gradient_iff.2 (by simp)) (t₀ := t) ht) t₀
   have hd : ∀ t, HasDerivAt (fun u ↦ (γ u)⁻¹ - u) 0 t := fun t ↦ by
     have hdγ : HasDerivAt γ (-(γ t ^ 2)) t := (hγ t).congr_deriv (by simp)
     have ht0 : γ t ≠ 0 := hne_all t
-    have hdinv : HasDerivAt (fun u ↦ (γ u)⁻¹) 1 t :=
-      (hdγ.inv ht0).congr_deriv (by rw [neg_neg, div_self (pow_ne_zero 2 ht0)])
-    exact (hdinv.sub (hasDerivAt_id' t)).congr_deriv (sub_self 1)
-  have hant₁ : Antitone fun u ↦ (γ u)⁻¹ - u :=
-    antitone_of_hasDerivAt_nonpos hd fun _ ↦ le_rfl
-  have hant₂ : Antitone fun u ↦ -((γ u)⁻¹ - u) :=
-    antitone_of_hasDerivAt_nonpos (fun t ↦ (hd t).neg.congr_deriv neg_zero) fun _ ↦ le_rfl
-  have hconst : ∀ t, (γ t)⁻¹ - t = (γ t₀)⁻¹ - t₀ := fun t ↦ by
-    rcases le_total t t₀ with hle | hle
-    · linarith [hant₁ hle, hant₂ hle]
-    · linarith [hant₁ hle, hant₂ hle]
-  set t₁ := t₀ - (γ t₀)⁻¹
-  have hval := hconst t₁
-  have hinv0 : (γ t₁)⁻¹ = 0 := by dsimp [t₁] at hval; linarith
-  exact inv_ne_zero (hne_all t₁) hinv0
+    exact (((hdγ.inv ht0).congr_deriv
+      (by rw [neg_neg, div_self (pow_ne_zero 2 ht0)])).sub (hasDerivAt_id' t)).congr_deriv
+      (sub_self 1)
+  have hval := is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv)
+    (t₀ - (γ t₀)⁻¹) t₀
+  exact inv_ne_zero (hne_all (t₀ - (γ t₀)⁻¹)) (by linarith)
 
 /-! ### The connecting trajectory and its inverse time coordinate -/
 
@@ -540,13 +507,15 @@ theorem birthDeathTimeCoordinate_birthDeathOrbit (hs : 0 < s) (t : ℝ) :
   rw [birthDeathTimeCoordinate_apply, birthDeathOrbit_apply, mul_div_cancel_left₀ _ ha,
     Real.artanh_tanh, inv_mul_cancel_left₀ ha]
 
+private theorem div_sqrt_mem_Ioo {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
+    0 < √s ∧ x / √s ∈ Ioo (-1 : ℝ) 1 := by
+  have ha : 0 < √s := by linarith [hx.1, hx.2]
+  exact ⟨ha, (lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
+
 @[simp]
-theorem birthDeathOrbit_birthDeathTimeCoordinate (hs : 0 < s) {x : ℝ}
-    (hx : x ∈ Ioo (-√s) √s) :
+theorem birthDeathOrbit_birthDeathTimeCoordinate {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
     birthDeathOrbit s (birthDeathTimeCoordinate s x) = x := by
-  have ha : 0 < √s := Real.sqrt_pos.2 hs
-  have hx' : x / √s ∈ Ioo (-1 : ℝ) 1 :=
-    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
+  obtain ⟨ha, hx'⟩ := div_sqrt_mem_Ioo hx
   rw [birthDeathOrbit_apply, birthDeathTimeCoordinate_apply, mul_inv_cancel_left₀ ha.ne',
     Real.tanh_artanh hx', mul_div_cancel₀ _ ha.ne']
 
@@ -556,52 +525,44 @@ theorem bijOn_birthDeathTimeCoordinate (hs : 0 < s) :
   refine ⟨mapsTo_univ _ _, fun x hx y hy hxy ↦ ?_,
     fun t _ ↦ ⟨birthDeathOrbit s t, birthDeathOrbit_mem_Ioo hs t,
       birthDeathTimeCoordinate_birthDeathOrbit hs t⟩⟩
-  rw [← birthDeathOrbit_birthDeathTimeCoordinate hs hx,
-    ← birthDeathOrbit_birthDeathTimeCoordinate hs hy, hxy]
+  rw [← birthDeathOrbit_birthDeathTimeCoordinate hx,
+    ← birthDeathOrbit_birthDeathTimeCoordinate hy, hxy]
 
-/-- For `s > 0`, `birthDeathTimeCoordinate s` is strictly increasing on `(-√s, √s)`. -/
-theorem strictMonoOn_birthDeathTimeCoordinate (hs : 0 < s) :
-    StrictMonoOn (birthDeathTimeCoordinate s) (Ioo (-√s) √s) := by
-  have ha : 0 < √s := Real.sqrt_pos.2 hs
-  intro x hx y hy hxy
-  have hx' : x / √s ∈ Ioo (-1 : ℝ) 1 :=
-    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
-  have hy' : y / √s ∈ Ioo (-1 : ℝ) 1 :=
-    ⟨(lt_div_iff₀ ha).2 (by linarith [hy.1]), (div_lt_iff₀ ha).2 (by linarith [hy.2])⟩
+/-- `birthDeathTimeCoordinate s` is strictly increasing on `(-√s, √s)`. -/
+theorem strictMonoOn_birthDeathTimeCoordinate (s : ℝ) :
+    StrictMonoOn (birthDeathTimeCoordinate s) (Ioo (-√s) √s) := fun _ hx _ hy hxy ↦ by
+  obtain ⟨ha, hx'⟩ := div_sqrt_mem_Ioo hx
+  obtain ⟨_, hy'⟩ := div_sqrt_mem_Ioo hy
   exact mul_lt_mul_of_pos_left
     (Real.strictMonoOn_artanh hx' hy' ((div_lt_div_iff_of_pos_right ha).2 hxy)) (inv_pos.2 ha)
 
-/-- On `(-√s, √s)` (`s > 0`), `birthDeathTimeCoordinate s` has derivative `(s - x²)⁻¹`, reciprocal
-to the negative-gradient speed `s - x²`. -/
-theorem hasDerivAt_birthDeathTimeCoordinate (hs : 0 < s) {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
+/-- On `(-√s, √s)`, `birthDeathTimeCoordinate s` has derivative `(s - x²)⁻¹`, reciprocal to the
+negative-gradient speed `s - x²`. -/
+theorem hasDerivAt_birthDeathTimeCoordinate {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
     HasDerivAt (birthDeathTimeCoordinate s) ((s - x ^ 2)⁻¹) x := by
+  obtain ⟨ha, hx'⟩ := div_sqrt_mem_Ioo hx
   set a := √s
-  have ha : 0 < a := Real.sqrt_pos.2 hs
-  have hasq : a ^ 2 = s := Real.sq_sqrt hs.le
-  have hx' : x / a ∈ Ioo (-1 : ℝ) 1 :=
-    ⟨(lt_div_iff₀ ha).2 (by linarith [hx.1]), (div_lt_iff₀ ha).2 (by linarith [hx.2])⟩
-  have hd := (((hasDerivAt_id' x).div_const a).artanh hx').const_mul a⁻¹
-  refine hd.congr_deriv ?_
+  have hasq : a ^ 2 = s := Real.sq_sqrt (Real.sqrt_pos.1 ha).le
+  refine ((((hasDerivAt_id' x).div_const a).artanh hx').const_mul a⁻¹).congr_deriv ?_
   have ha0 : a ≠ 0 := ha.ne'
   have hsub : a ^ 2 - x ^ 2 ≠ 0 := sub_ne_zero.2 (by nlinarith [hx.1, hx.2])
-  have h1 : 1 - (x / a) ^ 2 = (a ^ 2 - x ^ 2) / a ^ 2 := by field_simp
-  rw [h1, ← hasq]
+  rw [show 1 - (x / a) ^ 2 = (a ^ 2 - x ^ 2) / a ^ 2 by field_simp, ← hasq]
   field_simp
 
-/-- For `s > 0`, `birthDeathTimeCoordinate s` is differentiable on `(-√s, √s)`. -/
-theorem differentiableOn_birthDeathTimeCoordinate (hs : 0 < s) :
+/-- `birthDeathTimeCoordinate s` is differentiable on `(-√s, √s)`. -/
+theorem differentiableOn_birthDeathTimeCoordinate (s : ℝ) :
     DifferentiableOn ℝ (birthDeathTimeCoordinate s) (Ioo (-√s) √s) :=
-  fun _ hx ↦ (hasDerivAt_birthDeathTimeCoordinate hs hx).differentiableAt.differentiableWithinAt
+  fun _ hx ↦ (hasDerivAt_birthDeathTimeCoordinate hx).differentiableAt.differentiableWithinAt
 
-/-- For `s > 0`, `birthDeathTimeCoordinate s` is continuous on `(-√s, √s)`. -/
-theorem continuousOn_birthDeathTimeCoordinate (hs : 0 < s) :
+/-- `birthDeathTimeCoordinate s` is continuous on `(-√s, √s)`. -/
+theorem continuousOn_birthDeathTimeCoordinate (s : ℝ) :
     ContinuousOn (birthDeathTimeCoordinate s) (Ioo (-√s) √s) :=
-  (differentiableOn_birthDeathTimeCoordinate hs).continuousOn
+  (differentiableOn_birthDeathTimeCoordinate s).continuousOn
 
-/-- On `(-√s, √s)` (`s > 0`), the derivative of `birthDeathTimeCoordinate s` is `(s - x²)⁻¹`. -/
-theorem deriv_birthDeathTimeCoordinate (hs : 0 < s) {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
+/-- On `(-√s, √s)`, the derivative of `birthDeathTimeCoordinate s` is `(s - x²)⁻¹`. -/
+theorem deriv_birthDeathTimeCoordinate {x : ℝ} (hx : x ∈ Ioo (-√s) √s) :
     deriv (birthDeathTimeCoordinate s) x = (s - x ^ 2)⁻¹ :=
-  (hasDerivAt_birthDeathTimeCoordinate hs hx).deriv
+  (hasDerivAt_birthDeathTimeCoordinate hx).deriv
 
 /-- **Unique time-shift classification of the connecting trajectory.** For `s > 0`, every negative
 gradient trajectory of `birthDeathPotential s` from `-√s` to `√s` is `t ↦ birthDeathOrbit s (t + τ)`
@@ -612,7 +573,6 @@ theorem existsUnique_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
     (hbot : Tendsto γ atBot (𝓝 (-√s))) (htop : Tendsto γ atTop (𝓝 √s)) :
     ∃! τ, γ = fun t ↦ birthDeathOrbit s (t + τ) := by
   have hsq := Real.sqrt_pos.2 hs
-  -- The trajectory crosses `0`, by the intermediate value theorem.
   obtain ⟨a, ha⟩ := (hbot.eventually (gt_mem_nhds (neg_lt_zero.2 hsq))).exists
   obtain ⟨b, hb⟩ := (htop.eventually (lt_mem_nhds hsq)).exists
   obtain ⟨t₀, ht₀⟩ := intermediate_value_univ a b
@@ -620,12 +580,10 @@ theorem existsUnique_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
   have hδ : IsIntegralCurve (fun t ↦ birthDeathOrbit s (t + -t₀))
       (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦
     (isIntegralCurve_birthDeathOrbit hs.le (t + -t₀)).comp_add_const t (-t₀)
-  refine ⟨-t₀, eq_of_isIntegralCurve_birthDeathPotential hγ hδ (t₀ := t₀) (by simp [ht₀]),
-    fun τ hτ ↦ ?_⟩
+  have heq := eq_of_isIntegralCurve_birthDeathPotential hγ hδ (t₀ := t₀) (by simp [ht₀])
+  refine ⟨-t₀, heq, fun τ hτ ↦ ?_⟩
   have hval := congrArg (birthDeathTimeCoordinate s) (congrFun hτ (-t₀))
-  have hval0 : γ (-t₀) = birthDeathOrbit s (-t₀ + -t₀) :=
-    congrFun (eq_of_isIntegralCurve_birthDeathPotential hγ hδ (t₀ := t₀) (by simp [ht₀])) (-t₀)
-  rw [hval0, birthDeathTimeCoordinate_birthDeathOrbit hs,
+  rw [congrFun heq (-t₀), birthDeathTimeCoordinate_birthDeathOrbit hs,
     birthDeathTimeCoordinate_birthDeathOrbit hs] at hval
   linarith
 
@@ -656,20 +614,12 @@ theorem not_isIntegralCurve_birthDeathPotential_of_tendsto_atBot_sqrt_of_tendsto
     (hs : 0 < s) {γ : ℝ → ℝ}
     (hbot : Tendsto γ atBot (𝓝 √s)) (htop : Tendsto γ atTop (𝓝 (-√s))) :
     ¬IsIntegralCurve γ (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun hγ ↦ by
-  have hant : Antitone (birthDeathPotential s ∘ γ) :=
-    hγ.antitone_comp_neg_gradient fun t ↦ differentiable_birthDeathPotential s (γ t)
-  have hfbot : Tendsto (birthDeathPotential s ∘ γ) atBot (𝓝 (birthDeathPotential s √s)) :=
-    ((continuous_birthDeathPotential s).tendsto √s).comp hbot
-  have hftop : Tendsto (birthDeathPotential s ∘ γ) atTop (𝓝 (birthDeathPotential s (-√s))) :=
-    ((continuous_birthDeathPotential s).tendsto (-√s)).comp htop
-  have hle0 : birthDeathPotential s (γ 0) ≤ birthDeathPotential s √s :=
-    hant.ge_of_tendsto hfbot 0
-  have hge0 : birthDeathPotential s (-√s) ≤ birthDeathPotential s (γ 0) :=
-    hant.le_of_tendsto hftop 0
-  have hineq : birthDeathPotential s (-√s) ≤ birthDeathPotential s √s := hge0.trans hle0
+  have hant := hγ.antitone_comp_neg_gradient fun t ↦ differentiable_birthDeathPotential s (γ t)
+  have hineq : birthDeathPotential s (-√s) ≤ birthDeathPotential s √s :=
+    (hant.le_of_tendsto (((continuous_birthDeathPotential s).tendsto (-√s)).comp htop) 0).trans
+      (hant.ge_of_tendsto (((continuous_birthDeathPotential s).tendsto √s).comp hbot) 0)
   rw [birthDeathPotential_neg_sqrt, birthDeathPotential_sqrt] at hineq
-  have hmul : 0 < s * √s := mul_pos hs (Real.sqrt_pos.2 hs)
-  linarith
+  linarith [mul_pos hs (Real.sqrt_pos.2 hs)]
 
 /-! ### The model with transverse directions -/
 
@@ -697,39 +647,39 @@ theorem morseIndex_separatedSum_birthDeathPotential_sqrt [FiniteDimensional ℝ 
     WithLp.toLp_fst, WithLp.toLp_snd, morseIndex_birthDeathPotential_sqrt hs, zero_add]
 
 /-- Before the birth (`s < 0`), `separatedSum (birthDeathPotential s) g` admits no global negative
-gradient trajectory on `ℝ`, because the fold coordinate blows up in finite time. -/
+gradient trajectory `z` on `ℝ` when `g` is differentiable along `z.snd`. -/
 theorem not_isIntegralCurve_separatedSum_birthDeathPotential_of_neg
-    [CompleteSpace F] (hs : s < 0) (hg : Differentiable ℝ g) (z : ℝ → WithLp 2 (ℝ × F)) :
+    [CompleteSpace F] (hs : s < 0) {z : ℝ → WithLp 2 (ℝ × F)}
+    (hg : ∀ t, DifferentiableAt ℝ g (z t).snd) :
     ¬IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w) := fun hz ↦
   not_isIntegralCurve_birthDeathPotential_of_neg hs (fun t ↦ (z t).fst)
     ((isIntegralCurve_separatedSum_iff
-      (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz).1
+      (fun _ ↦ differentiable_birthDeathPotential s _) hg).1 hz).1
 
-/-- **Unique time-shift classification in the model with transverse directions.** Let `g` be
-differentiable. For `s > 0`, every negative gradient trajectory of
-`(x, y) ↦ x³ / 3 - s x + g y` from `(-√s, y)` to `(√s, y)` is
+/-- **Unique time-shift classification in the model with transverse directions.** For `s > 0`,
+every negative gradient trajectory `z` of `(x, y) ↦ x³ / 3 - s x + g y` from `(-√s, y)` to
+`(√s, y)` (with `g` differentiable along `z.snd` and continuous at `y`) is
 `t ↦ (√s tanh (√s (t + τ)), y)` for a *unique* time shift `τ`. -/
 theorem existsUnique_eq_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 < s)
-    (hg : Differentiable ℝ g) {z : ℝ → WithLp 2 (ℝ × F)}
+    {z : ℝ → WithLp 2 (ℝ × F)} (hg : ∀ t, DifferentiableAt ℝ g (z t).snd)
+    (hgy : ContinuousAt g y)
     (hz : IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w))
     (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (-√s, y))))
     (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (√s, y)))) :
     ∃! τ, z = fun t ↦ WithLp.toLp 2 (birthDeathOrbit s (t + τ), y) := by
   obtain ⟨h₁, h₂⟩ := (isIntegralCurve_separatedSum_iff
-    (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz
+    (fun _ ↦ differentiable_birthDeathPotential s _) hg).1 hz
   have hfst := (WithLp.fstL 2 ℝ ℝ F).continuous.tendsto
   have hsnd := (WithLp.sndL 2 ℝ ℝ F).continuous.tendsto
-  have hy := h₂.eq_const_of_tendsto (fun _ ↦ hg _) (hg y).continuousAt
+  have hy := h₂.eq_const_of_tendsto hg hgy
     (by simpa [Function.comp_def] using (hsnd _).comp hbot)
     (by simpa [Function.comp_def] using (hsnd _).comp htop)
   obtain ⟨τ, hτ, huniq⟩ := existsUnique_eq_birthDeathOrbit_comp_add hs h₁
     (by simpa [Function.comp_def] using (hfst _).comp hbot)
     (by simpa [Function.comp_def] using (hfst _).comp htop)
-  refine ⟨τ, funext fun t ↦ WithLp.prod_ext ?_ ?_, fun τ' hτ' ↦ huniq τ' ?_⟩
-  · simpa using congrFun hτ t
-  · simpa using congrFun hy t
-  · funext t
-    simpa using congrArg WithLp.fst (congrFun hτ' t)
+  refine ⟨τ, funext fun t ↦ WithLp.prod_ext (congrFun hτ t) (congrFun hy t),
+    fun τ' hτ' ↦ huniq τ' (funext fun t ↦ ?_)⟩
+  simpa using congrArg WithLp.fst (congrFun hτ' t)
 
 /-- Conversely, above a critical point `y` of a transverse function `g` differentiable at `y`, the
 curve `t ↦ (√s tanh (√s t), y)` is a negative gradient trajectory of the birth–death model. -/
@@ -740,11 +690,11 @@ theorem isIntegralCurve_birthDeathOrbit_separatedSum [CompleteSpace F] (hs : 0 �
   (isIntegralCurve_birthDeathOrbit hs).separatedSum (isIntegralCurve_const_neg_gradient_iff.2 hy)
     (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg
 
-/-- For `s > 0` and differentiable `g`, no negative gradient trajectory of
-`separatedSum (birthDeathPotential s) g` runs from `(√s, y₁)` at `-∞` to `(-√s, y₂)` at `+∞`. -/
+/-- For `s > 0`, no negative gradient trajectory `z` of `separatedSum (birthDeathPotential s) g`
+(with `g` differentiable along `z.snd`) runs from `(√s, y₁)` at `-∞` to `(-√s, y₂)` at `+∞`. -/
 theorem not_isIntegralCurve_separatedSum_birthDeathPotential_of_tendsto_atBot_of_tendsto_atTop
-    [CompleteSpace F] (hs : 0 < s) (hg : Differentiable ℝ g) {y₁ y₂ : F}
-    {z : ℝ → WithLp 2 (ℝ × F)}
+    [CompleteSpace F] (hs : 0 < s) {y₁ y₂ : F} {z : ℝ → WithLp 2 (ℝ × F)}
+    (hg : ∀ t, DifferentiableAt ℝ g (z t).snd)
     (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (√s, y₁))))
     (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (-√s, y₂)))) :
     ¬IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum (birthDeathPotential s) g) w) := fun hz ↦ by
@@ -753,7 +703,7 @@ theorem not_isIntegralCurve_separatedSum_birthDeathPotential_of_tendsto_atBot_of
     (by simpa [Function.comp_def] using (hfst _).comp hbot)
     (by simpa [Function.comp_def] using (hfst _).comp htop)
     ((isIntegralCurve_separatedSum_iff
-      (fun _ ↦ differentiable_birthDeathPotential s _) fun _ ↦ hg _).1 hz).1
+      (fun _ ↦ differentiable_birthDeathPotential s _) hg).1 hz).1
 
 end SeparatedSum
 

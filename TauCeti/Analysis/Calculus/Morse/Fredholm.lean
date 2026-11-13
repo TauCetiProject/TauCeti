@@ -68,11 +68,10 @@ linearized operator is then surjective exactly when the Morse index drops by one
 * `IsIntegralCurve.exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero`,
   `IsIntegralCurve.exists_ker_trajectoryOperator_hessianOperator_eq_span_of_finrank_eq_one`, and
   `IsIntegralCurve.finrank_ker_trajectoryOperator_hessianOperator_pos`: for `p ≠ q` this kernel
-  element, and hence the kernel, is nonzero, and spans the kernel whenever its dimension is one.
+  element is nonzero, and spans the kernel whenever its dimension is one.
 * `IsIntegralCurve.ker_trajectoryOperator_neg_hessianOperator_eq_bot_iff` and
-  `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_ker_neg_eq_bot`: injectivity
-  of the formal adjoint via square-integrable solutions, and surjectivity of the linearized
-  operator via injectivity of the formal adjoint.
+  `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_ker_neg_eq_bot`: triviality of
+  `ker D_{-Hess}` via square-integrable solutions and its equivalence with surjectivity of `D_γ`.
 * `IsIntegralCurve.finrank_ker_trajectoryOperator_hessianOperator_eq_one` and
   `IsIntegralCurve.exists_ker_trajectoryOperator_hessianOperator_eq_span`: in dimension one the
   kernel is the line spanned by the velocity.
@@ -86,9 +85,9 @@ linearized operator is then surjective exactly when the Morse index drops by one
   `morseIndex f p`, and those decaying at `+∞` one of dimension `dim E - morseIndex f q`.
 * `IsIntegralCurve.surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top`: the linearized
   operator is surjective exactly when these two spaces span `E`.
-* `TauCeti.squareIntegrableSolutions_neg_hessianOperator_const_eq_bot` and
-  `TauCeti.IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator`: at a
-  nondegenerate critical point on a Hilbert space the formal-adjoint ODE has trivial `L²` space,
+* `TauCeti.IsNondegenerateCriticalPoint.squareIntegrableSolutions_neg_hessianOperator_const_eq_bot`
+  and `TauCeti.IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator`: at a
+  nondegenerate critical point on a Hilbert space `w' - Hess f(p) w = 0` has trivial `L²` space,
   and in finite dimensions the constant-trajectory operator is bijective.
 
 ## References
@@ -185,10 +184,7 @@ theorem exists_ne_zero_trajectoryOperator_hessianOperator_eq_zero
     continuous_const).1 hae
   exact congrFun hzero t
 
-/-- **When the kernel along a nonconstant trajectory is a line, it is spanned by the velocity.**
-On any real Hilbert space, for a `C²` function `f` and a negative gradient trajectory `γ` from `p`
-to `q ≠ p`, if `ξ ↦ ξ' + Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` has one-dimensional kernel, then its
-kernel is spanned by the element whose value is `deriv γ`. -/
+/-- **When the kernel along a nonconstant trajectory is a line, it is spanned by the velocity.** -/
 theorem exists_ker_trajectoryOperator_hessianOperator_eq_span_of_finrank_eq_one
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
@@ -210,10 +206,9 @@ theorem exists_ker_trajectoryOperator_hessianOperator_eq_span_of_finrank_eq_one
   filter_upwards [hux, Lp.coeFn_neg (prev _ u)] with s hs hneg
   rw [hprev, hneg, Pi.neg_apply, hs, (hγ s).deriv]
 
-/-- **Injectivity of the formal adjoint via square-integrable solutions.** On any real Hilbert
-space, for a `C²` function `f` and a negative gradient trajectory `γ`, the formal adjoint
-`ξ ↦ ξ' - Hess f(γ) ξ` on `W^{1,2}(ℝ, E)` has trivial kernel if and only if the ODE
-`w' - Hess f(γ) w = 0` has no nonzero solution in `L²(ℝ, E)`. -/
+/-- **Injectivity of minus the formal adjoint via square-integrable solutions.** On any real Hilbert
+space, `ξ ↦ ξ' - Hess f(γ) ξ` (minus the formal adjoint `-d/ds + Hess f(γ)`) on `W^{1,2}(ℝ, E)` has
+trivial kernel iff `w' - Hess f(γ) w = 0` has no nonzero solution in `L²(ℝ, E)`. -/
 theorem ker_trajectoryOperator_neg_hessianOperator_eq_bot_iff
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -228,11 +223,11 @@ theorem ker_trajectoryOperator_neg_hessianOperator_eq_bot_iff
 
 end IsIntegralCurve
 
-namespace TauCeti
+namespace TauCeti.IsNondegenerateCriticalPoint
 
 /-- **Triviality of square-integrable formal-adjoint solutions at a nondegenerate critical point.**
 On any real Hilbert space, if `p` is a nondegenerate critical point of `f`, then the autonomous
-formal-adjoint equation `w' - Hess f(p) w = 0` has no nonzero solution in `L²(ℝ, E)`. -/
+equation `w' - Hess f(p) w = 0` has no nonzero solution in `L²(ℝ, E)`. -/
 theorem squareIntegrableSolutions_neg_hessianOperator_const_eq_bot
     (hp : IsNondegenerateCriticalPoint f p) :
     squareIntegrableSolutions (fun _ : ℝ ↦ -hessianOperator f p) = ⊥ := by
@@ -242,10 +237,8 @@ theorem squareIntegrableSolutions_neg_hessianOperator_const_eq_bot
       LinearMap.IsSymmetric.zero.sub hp.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
   obtain ⟨α, hα, hgap⟩ := hp.exists_pos_mul_norm_le_hessianOperator
   have hBα : ∀ v, α * ‖v‖ ≤ ‖B v‖ := fun v ↦ by simpa [B] using hgap v
-  have hAB : ∀ (T s : ℝ), T ≤ s → ‖B - B‖ ≤ α / 2 := fun _ _ _ ↦ by
-    simpa using (half_pos hα).le
-  rw [eq_bot_iff]
-  intro x hx
+  have hAB : ∀ (T s : ℝ), T ≤ s → ‖B - B‖ ≤ α / 2 := fun _ _ _ ↦ by simpa using (half_pos hα).le
+  refine eq_bot_iff.2 fun x hx ↦ ?_
   obtain ⟨w, rfl, hw, hw2⟩ := mem_squareIntegrableSolutions.1 hx
   obtain ⟨T₁, hT₁, hpos₁⟩ := ((eventually_le_atBot (-1 : ℝ)).and
     (eventually_not_memLp_restrict_Iic_of_inner_pos (A := fun _ ↦ B) tendsto_const_nhds
@@ -253,36 +246,28 @@ theorem squareIntegrableSolutions_neg_hessianOperator_const_eq_bot
   obtain ⟨T₂, hT₂, hneg₂⟩ := ((eventually_ge_atTop (1 : ℝ)).and
     (eventually_not_memLp_restrict_Ici_of_inner_neg (A := fun _ ↦ B) tendsto_const_nhds
       hBsym hα hBα 0)).exists
-  have hw₁ : ⟪w T₁, B (w T₁)⟫_ℝ ≤ 0 :=
-    le_of_not_gt fun h ↦ hpos₁ w hw h (hw2.restrict (Iic 0))
-  have hw₂ : 0 ≤ ⟪w T₂, B (w T₂)⟫_ℝ :=
-    le_of_not_gt fun h ↦ hneg₂ w hw h (hw2.restrict (Ici 0))
-  have hzero : ∀ s ∈ Icc T₁ T₂, ⟪w s, B (w s)⟫_ℝ = 0 := fun s hs ↦ by
+  have hw₁ : ⟪w T₁, B (w T₁)⟫_ℝ ≤ 0 := le_of_not_gt fun h ↦ hpos₁ w hw h (hw2.restrict (Iic 0))
+  have hw₂ : 0 ≤ ⟪w T₂, B (w T₂)⟫_ℝ := le_of_not_gt fun h ↦ hneg₂ w hw h (hw2.restrict (Ici 0))
+  have hev : (fun s ↦ ⟪w s, B (w s)⟫_ℝ) =ᶠ[𝓝 0] 0 := by
+    filter_upwards [Icc_mem_nhds (by linarith : T₁ < 0) (by linarith : 0 < T₂)] with s hs
     have h₁ := inner_apply_add_integral_le (A := fun _ ↦ B) hBsym hBα (hAB T₁) hw hs.1
     have h₂ := inner_apply_add_integral_le (A := fun _ ↦ B) hBsym hBα (hAB s) hw hs.2
-    have hi₁ : 0 ≤ ∫ τ in T₁..s, ‖w τ‖ ^ 2 :=
-      intervalIntegral.integral_nonneg hs.1 fun _ _ ↦ sq_nonneg _
-    have hi₂ : 0 ≤ ∫ τ in s..T₂, ‖w τ‖ ^ 2 :=
-      intervalIntegral.integral_nonneg hs.2 fun _ _ ↦ sq_nonneg _
-    nlinarith
+    simp only [Pi.zero_apply]
+    nlinarith [intervalIntegral.integral_nonneg (μ := volume) hs.1 fun τ _ ↦ sq_nonneg ‖w τ‖,
+      intervalIntegral.integral_nonneg (μ := volume) hs.2 fun τ _ ↦ sq_nonneg ‖w τ‖]
   have hd : HasDerivAt (fun s ↦ ⟪w s, B (w s)⟫_ℝ)
       (⟪w 0, B (-B (w 0))⟫_ℝ + ⟪-B (w 0), B (w 0)⟫_ℝ) 0 :=
     (hw 0).inner ℝ (B.hasFDerivAt.comp_hasDerivAt 0 (hw 0))
-  have hev : (fun s ↦ ⟪w s, B (w s)⟫_ℝ) =ᶠ[𝓝 0] 0 := by
-    filter_upwards [Icc_mem_nhds (by linarith : T₁ < 0) (by linarith : 0 < T₂)] with s hs
-    exact hzero s hs
-  have hderiv0 : ⟪w 0, B (-B (w 0))⟫_ℝ + ⟪-B (w 0), B (w 0)⟫_ℝ = 0 := by
+  have hd0 : ⟪w 0, B (-B (w 0))⟫_ℝ + ⟪-B (w 0), B (w 0)⟫_ℝ = 0 := by
     simpa using (hd.congr_of_eventuallyEq hev.symm).unique (hasDerivAt_const 0 (0 : ℝ))
-  have hsym0 : ⟪w 0, B (-B (w 0))⟫_ℝ = -‖B (w 0)‖ ^ 2 := by
-    rw [map_neg, inner_neg_right, real_inner_comm,
-      show ⟪B (B (w 0)), w 0⟫_ℝ = ⟪B (w 0), B (w 0)⟫_ℝ from hBsym (B (w 0)) (w 0),
-      real_inner_self_eq_norm_sq]
-  rw [hsym0, inner_neg_left, real_inner_self_eq_norm_sq] at hderiv0
-  have hBw0 : ‖B (w 0)‖ = 0 := by nlinarith [norm_nonneg (B (w 0))]
+  rw [map_neg, inner_neg_right, real_inner_comm,
+    show ⟪B (B (w 0)), w 0⟫_ℝ = ⟪B (w 0), B (w 0)⟫_ℝ from hBsym (B (w 0)) (w 0),
+    inner_neg_left, real_inner_self_eq_norm_sq] at hd0
+  have hBw0 : ‖B (w 0)‖ = 0 := sq_eq_zero_iff.1 (by linarith)
   rw [Submodule.mem_bot, ← norm_eq_zero]
   nlinarith [hBα (w 0), norm_nonneg (w 0)]
 
-end TauCeti
+end TauCeti.IsNondegenerateCriticalPoint
 
 end Hilbert
 
@@ -414,10 +399,9 @@ theorem index_trajectoryOperator_hessianOperator
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace,
     hq.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
-/-- **Surjectivity of the linearized operator via the formal adjoint.** Let `f` be a `C²` function
-on a finite-dimensional real inner product space and `γ` a negative gradient trajectory between
-nondegenerate critical points `p` and `q`. Then `ξ ↦ ξ' + Hess f(γ) ξ` is surjective if and only if
-the formal adjoint `ξ ↦ ξ' - Hess f(γ) ξ` has trivial kernel. -/
+/-- **Surjectivity of the linearized operator via the formal adjoint.** Along a negative gradient
+trajectory `γ` between nondegenerate critical points `p` and `q`, `ξ ↦ ξ' + Hess f(γ) ξ` is
+surjective iff minus its formal adjoint (`ξ ↦ ξ' - Hess f(γ) ξ`) has trivial kernel. -/
 theorem surjective_trajectoryOperator_hessianOperator_iff_ker_neg_eq_bot
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
@@ -426,14 +410,10 @@ theorem surjective_trajectoryOperator_hessianOperator_iff_ker_neg_eq_bot
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
     Function.Surjective (trajectoryOperator (p := 2) AL) ↔
       (trajectoryOperator (p := 2) (-AL)).ker = ⊥ := by
-  have hclosed := (isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop
-    hAL).isClosed_range
-  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL s = ContinuousLinearMap.adjoint (AL s) := by
-    filter_upwards [hAL] with s hs
-    rw [hs]
-    exact hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
-  exact surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed
+  refine surjective_trajectoryOperator_iff_ker_neg_eq_bot ?_
+    (isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL).isClosed_range
+  filter_upwards [hAL] with s hs
+  exact hs ▸ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
 
 /-- **In dimension one the linearized operator is onto exactly when the index drops by one.** On a
 one-dimensional space, let `f` be a `C²` function and `γ` a negative gradient trajectory from a
