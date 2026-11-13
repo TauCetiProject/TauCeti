@@ -923,7 +923,7 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete (ω : SymplecticFor
       (fun n ↦ (hu _).mono (hsub n)) (fun n z hz ↦ hfl _ z (hsub n hz))
       (fun n ↦ (huK _).mono_left (hsub n)) (fun n ↦ (hint _).mono_set (hsub n))
       (fun n ↦ (setIntegral_mono_set (hint _)
-        (ae_restrict_of_forall_mem (hU _).measurableSet (hf0 _)) (hsub n).eventuallyLE).trans
+        (ae_restrict_of_forall_mem (hU _).measurableSet (hf0 _)) (hsub n).eventuallySubset).trans
           (hE _))
     refine ⟨fun n ↦ φ n + N, fun a b hab ↦ Nat.add_lt_add_right (hφ hab) N, Z, v, hconc,
       fun C hC hCZ ↦ ?_, hvc, hvK, hlim⟩
@@ -966,7 +966,7 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete (ω : SymplecticFor
       inter_subset_inter_right _ ((hOD _).trans hDU)
     exact hn.trans (setIntegral_mono_set ((hint _).mono_set inter_subset_right)
       (ae_restrict_of_forall_mem (measurableSet_ball.inter (hU _).measurableSet)
-        fun y hy ↦ hf0 _ y hy.2) hsub.eventuallyLE)
+        fun y hy ↦ hf0 _ y hy.2) hsub.eventuallySubset)
   · -- Bounds on closed balls about the points of `C`, from their windows, cover `C`.
     refine hC.induction_on (p := fun s ↦ ∃ M, ∀ᶠ n in atTop, ∀ y ∈ s,
         ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ⟨0, by simp⟩
