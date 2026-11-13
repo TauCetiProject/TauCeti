@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Vertex.Axioms
 public import TauCeti.Algebra.Vertex.ResidueProduct
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Data.Nat.Choose.Sum
 
 /-!
 # Dong's lemma for nonnegative residue products
@@ -137,15 +138,6 @@ private theorem shift₃_pow_apply (k : ℕ) (d : ℤ → ℤ → ℤ → M) (a 
     push_cast
     ring
 
-/-- The binomial expansion of `(u - v)ᴺ` for commuting operators. -/
-private theorem sub_pow_apply {u v : Op M} (h : Commute u v) (N : ℕ)
-    (d : ℤ → ℤ → ℤ → M) :
-    ((u - v) ^ N) d =
-      ∑ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 • (u ^ ij.1) ((v ^ ij.2) d) := by
-  rw [sub_eq_add_neg, ← neg_one_zsmul, (h.smul_right (-1 : ℤ)).add_pow' N, LinearMap.sum_apply]
-  refine sum_congr rfl fun ij _ ↦ ?_
-  rw [smul_pow, mul_smul_comm, LinearMap.smul_apply, LinearMap.smul_apply, mul_apply_eq_comp]
-
 /-- The combinatorial core of Dong's lemma. Let `d = d₁ + d₂` be three-variable distributions in
 `x, w, z` such that `(x - w)^N_AB` kills `d`, `(x - z)^N_AC` kills `d₂` and `(w - z)^N_BC` kills
 `d₁`. Then `(w - z)^(N_AB + N_AC + N_BC)` kills `d`. -/
@@ -215,7 +207,8 @@ theorem IsLocalOfOrder.nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
     noncomm_ring
   have hab : ((shift₁ - shift₂ : Op (Module.End R V)) ^ Nab) d = 0 := by
     funext a b c
-    simp only [sub_pow_apply commute_shift₁_shift₂, Finset.sum_apply, Pi.smul_apply,
+    simp only [(commute_shift₁_shift₂ (M := Module.End R V)).sub_pow',
+      LinearMap.sum_apply, Finset.sum_apply, LinearMap.smul_apply, Pi.smul_apply, mul_apply_eq_comp,
       shift₁_pow_apply, shift₂_pow_apply, d, Pi.zero_apply]
     -- Take the commutator with `C[[c]]` of a locality relation between the other two fields.
     have h := congr_arg (AddMonoidHom.mulRight (C[[c]]) - AddMonoidHom.mulLeft (C[[c]]))
@@ -224,7 +217,8 @@ theorem IsLocalOfOrder.nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
       AddMonoidHom.mulRight_apply, AddMonoidHom.coe_mulLeft] using h
   have hac : ((shift₁ - shift₃ : Op (Module.End R V)) ^ Nac) d₂ = 0 := by
     funext a b c
-    simp only [sub_pow_apply commute_shift₁_shift₃, Finset.sum_apply, Pi.smul_apply,
+    simp only [(commute_shift₁_shift₃ (M := Module.End R V)).sub_pow',
+      LinearMap.sum_apply, Finset.sum_apply, LinearMap.smul_apply, Pi.smul_apply, mul_apply_eq_comp,
       shift₁_pow_apply, shift₃_pow_apply, d₂, Pi.zero_apply]
     -- Take the commutator with `B[[b]]` of a locality relation between the other two fields.
     have h := congr_arg (AddMonoidHom.mulRight (B[[b]]) - AddMonoidHom.mulLeft (B[[b]]))
@@ -233,7 +227,8 @@ theorem IsLocalOfOrder.nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
       AddMonoidHom.mulRight_apply, AddMonoidHom.coe_mulLeft] using h
   have hbc : ((shift₂ - shift₃ : Op (Module.End R V)) ^ Nbc) d₁ = 0 := by
     funext a b c
-    simp only [sub_pow_apply commute_shift₂_shift₃, Finset.sum_apply, Pi.smul_apply,
+    simp only [(commute_shift₂_shift₃ (M := Module.End R V)).sub_pow',
+    LinearMap.sum_apply, Finset.sum_apply, LinearMap.smul_apply, Pi.smul_apply, mul_apply_eq_comp,
       shift₂_pow_apply, shift₃_pow_apply, d₁, Pi.zero_apply]
     -- Take the commutator of `A[[a]]` with a locality relation between `B` and `C`.
     have h := congr_arg (AddMonoidHom.mulLeft (A[[a]]) - AddMonoidHom.mulRight (A[[a]]))
@@ -250,7 +245,8 @@ theorem IsLocalOfOrder.nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
   rw [sum_comm]
   refine sum_eq_zero fun kl _ ↦ ?_
   have hk := congr_fun (congr_fun (congr_fun key kl.1) (p + kl.2)) q
-  simp only [sub_pow_apply commute_shift₂_shift₃, Finset.sum_apply, Pi.smul_apply,
+  simp only [(commute_shift₂_shift₃ (M := Module.End R V)).sub_pow',
+    LinearMap.sum_apply, Finset.sum_apply, LinearMap.smul_apply, Pi.smul_apply, mul_apply_eq_comp,
     shift₂_pow_apply, shift₃_pow_apply, d, Pi.zero_apply] at hk
   rw [← smul_zero (n.choose kl.1), ← smul_zero ((-1 : ℤ) ^ kl.2), ← hk, smul_sum, smul_sum]
   refine sum_congr rfl fun ij _ ↦ ?_
