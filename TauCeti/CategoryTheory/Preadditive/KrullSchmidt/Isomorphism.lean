@@ -27,9 +27,10 @@ invertibility of maps `X ⟶ Y`; if it is also surjective on maps `X ⟶ Y`, the
 
 ## Main results
 
-* `CategoryTheory.Functor.mem_jacobsonRadical_of_map_eq_zero`: an endomorphism killed by `F` is
-  radical.
-* `CategoryTheory.Functor.isIso_of_map_eq_id`: an endomorphism sent to the identity is invertible.
+* `CategoryTheory.Functor.mem_jacobsonRadical_of_map_eq_zero_of_reflects_isZero_retract`: an
+  endomorphism killed by `F` is radical.
+* `CategoryTheory.Functor.isIso_of_map_eq_id_of_reflects_isZero_retract`: an endomorphism sent to
+  the identity is invertible.
 * `CategoryTheory.Functor.isIso_map_iff_of_reflects_isZero_retract`: `F` detects invertibility.
 * `CategoryTheory.Functor.nonempty_iso_obj_iff_of_reflects_isZero_retract`: `F` detects
   isomorphism classes.
@@ -56,7 +57,7 @@ variable [HasZeroMorphisms D] (F : C ⥤ D)
 /-- **An endomorphism killed by a functor reflecting zero retracts is radical.** In a Krull-Schmidt
 category, if `F` sends no nonzero retract of `X` to zero, every endomorphism `e` of `X` with
 `F e = 0` lies in the radical of `End X`. -/
-theorem mem_jacobsonRadical_of_map_eq_zero {X : C}
+theorem mem_jacobsonRadical_of_map_eq_zero_of_reflects_isZero_retract {X : C}
     (hZ : ∀ {K : C}, Retract K X → IsZero (F.obj K) → IsZero K) {e : X ⟶ X}
     (he : F.map e = 0) : e ∈ jacobsonRadical X X := by
   obtain ⟨n, P, hP, ⟨φ⟩⟩ := IsKrullSchmidt.exists_iso_biproduct X
@@ -83,9 +84,10 @@ variable [Preadditive D] (F : C ⥤ D) [F.Additive]
 /-- **An endomorphism sent to the identity is invertible**, for an additive functor out of a
 Krull-Schmidt category that reflects zero retracts of `X`: `𝟙 X - u` is killed by `F`, hence
 radical. -/
-theorem isIso_of_map_eq_id {X : C} (hZ : ∀ {K : C}, Retract K X → IsZero (F.obj K) → IsZero K)
+theorem isIso_of_map_eq_id_of_reflects_isZero_retract {X : C}
+    (hZ : ∀ {K : C}, Retract K X → IsZero (F.obj K) → IsZero K)
     {u : X ⟶ X} (hu : F.map u = 𝟙 (F.obj X)) : IsIso u := by
-  have h := F.mem_jacobsonRadical_of_map_eq_zero hZ (e := 𝟙 X - u)
+  have h := F.mem_jacobsonRadical_of_map_eq_zero_of_reflects_isZero_retract hZ (e := 𝟙 X - u)
     (by rw [F.map_sub, F.map_id, hu, sub_self])
   simpa using mem_jacobsonRadical_iff_isIso_id_sub_comp_right.mp h (𝟙 X)
 
@@ -99,8 +101,8 @@ theorem isIso_map_iff_of_reflects_isZero_retract {X Y : C} (f : X ⟶ Y)
     IsIso (F.map f) ↔ IsIso f := by
   refine ⟨fun hf ↦ ?_, fun _ ↦ inferInstance⟩
   obtain ⟨g, hg⟩ := hF (CategoryTheory.inv (F.map f))
-  have := F.isIso_of_map_eq_id hZX (u := f ≫ g) (by simp [hg])
-  have := F.isIso_of_map_eq_id hZY (u := g ≫ f) (by simp [hg])
+  have := F.isIso_of_map_eq_id_of_reflects_isZero_retract hZX (u := f ≫ g) (by simp [hg])
+  have := F.isIso_of_map_eq_id_of_reflects_isZero_retract hZY (u := g ≫ f) (by simp [hg])
   have : IsSplitMono f :=
     .mk' ⟨g ≫ CategoryTheory.inv (f ≫ g), by rw [← Category.assoc, IsIso.hom_inv_id]⟩
   have : IsSplitEpi f :=

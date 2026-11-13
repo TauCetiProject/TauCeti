@@ -19,12 +19,14 @@ on maps `N ⟶ M`, it detects invertibility of maps `M ⟶ N`; if it is also sur
 
 These are the statements of `TauCeti/CategoryTheory/Preadditive/KrullSchmidt/Isomorphism.lean`
 for the restriction of `F` to the modules of finite length, which form a Krull-Schmidt category
-(`ModuleCat.isKrullSchmidt_isFiniteLength`).
+(`TauCeti.isKrullSchmidt_isFiniteLength`).
 
 ## Main results
 
-* `ModuleCat.isIso_map_iff_of_reflects_isZero_retract`: `F` detects invertibility.
-* `ModuleCat.nonempty_iso_obj_iff_of_reflects_isZero_retract`: `F` detects isomorphism classes.
+* `CategoryTheory.Functor.isIso_map_iff_of_isFiniteLength_of_reflects_isZero_retract`: `F` detects
+  invertibility.
+* `CategoryTheory.Functor.nonempty_iso_obj_iff_of_isFiniteLength_of_reflects_isZero_retract`: `F`
+  detects isomorphism classes.
 
 ## References
 
@@ -34,9 +36,9 @@ for the restriction of `F` to the modules of finite length, which form a Krull-S
 
 public section
 
-namespace ModuleCat
+namespace CategoryTheory.Functor
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory.Limits ModuleCat
 
 universe u v
 
@@ -55,7 +57,8 @@ private theorem isZero_of_retract_of_isZero_map {M : ModuleCat.{v} A}
 /-- **Detecting invertibility between finite-length modules**: if an additive functor `F` sends
 no nonzero retract of `M` or of `N` to zero and is surjective on maps `N ⟶ M`, a map `M ⟶ N` is
 invertible exactly when its image under `F` is. -/
-theorem isIso_map_iff_of_reflects_isZero_retract {M N : ModuleCat.{v} A} (f : M ⟶ N)
+theorem isIso_map_iff_of_isFiniteLength_of_reflects_isZero_retract {M N : ModuleCat.{v} A}
+    (f : M ⟶ N)
     (hF : Function.Surjective (F.map : (N ⟶ M) → (F.obj N ⟶ F.obj M)))
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hZM : ∀ {K : ModuleCat.{v} A}, Retract K M → IsZero (F.obj K) → IsZero K)
@@ -73,7 +76,7 @@ theorem isIso_map_iff_of_reflects_isZero_retract {M N : ModuleCat.{v} A} (f : M 
 /-- **Detecting isomorphism classes of finite-length modules**: if an additive functor `F` sends
 no nonzero retract of `M` or of `N` to zero and is surjective on maps `M ⟶ N` and `N ⟶ M`, then
 `F M ≅ F N` exactly when `M ≅ N`. -/
-theorem nonempty_iso_obj_iff_of_reflects_isZero_retract (M N : ModuleCat.{v} A)
+theorem nonempty_iso_obj_iff_of_isFiniteLength_of_reflects_isZero_retract (M N : ModuleCat.{v} A)
     (hF : Function.Surjective (F.map : (M ⟶ N) → (F.obj M ⟶ F.obj N)))
     (hF' : Function.Surjective (F.map : (N ⟶ M) → (F.obj N ⟶ F.obj M)))
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
@@ -83,7 +86,7 @@ theorem nonempty_iso_obj_iff_of_reflects_isZero_retract (M N : ModuleCat.{v} A)
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨F.mapIso e⟩⟩
   obtain ⟨f, hf⟩ := hF e.hom
   have : IsIso (F.map f) := hf.symm ▸ e.isIso_hom
-  have := (isIso_map_iff_of_reflects_isZero_retract F f hF' hM hN hZM hZN).1 this
+  have := (F.isIso_map_iff_of_isFiniteLength_of_reflects_isZero_retract f hF' hM hN hZM hZN).1 this
   exact ⟨asIso f⟩
 
-end ModuleCat
+end CategoryTheory.Functor
