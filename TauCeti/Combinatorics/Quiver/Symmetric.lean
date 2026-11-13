@@ -11,8 +11,8 @@ public import Mathlib.Combinatorics.Quiver.Symmetric
 # Reversed quiver paths
 
 Reversing every arrow leaves the number of arrows unchanged. This allows path reversal to
-preserve the path-length grading of a path algebra. A prefunctor that preserves reversal of
-arrows also preserves reversal of paths.
+preserve the path-length grading of a path algebra. A prefunctor commuting with the reversal of
+arrows also commutes with the reversal of paths.
 -/
 
 public section
@@ -34,15 +34,18 @@ end Quiver.Path
 
 namespace Prefunctor
 
-variable {U V : Type*} [Quiver U] [Quiver V] [Quiver.HasReverse U] [Quiver.HasReverse V]
+universe u₁ v₁ u₂ v₂
 
-/-- A prefunctor that preserves reversal of arrows maps the reverse of a path to the reverse of
-its image. -/
+variable {U : Type u₁} [Quiver.{v₁} U] [Quiver.HasReverse U]
+  {W : Type u₂} [Quiver.{v₂} W] [Quiver.HasReverse W]
+
+/-- A prefunctor commuting with the reversal of arrows maps a reversed path to the reverse of the
+image path. -/
 @[simp]
-theorem mapPath_reverse (φ : U ⥤q V) [φ.MapReverse] {a b : U} (p : Quiver.Path a b) :
+theorem mapPath_reverse (φ : U ⥤q W) [φ.MapReverse] {a b : U} (p : Quiver.Path a b) :
     φ.mapPath p.reverse = (φ.mapPath p).reverse := by
   induction p with
   | nil => rfl
-  | cons p e ih => simp [ih]
+  | cons p e ih => simp [ih, φ.map_reverse]
 
 end Prefunctor
