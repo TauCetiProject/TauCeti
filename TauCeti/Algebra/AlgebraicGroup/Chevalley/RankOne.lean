@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Bruhat
 
