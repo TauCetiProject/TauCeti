@@ -199,19 +199,9 @@ private theorem signlessArrow_e_eq_zero {i j : ℕ} (h : ¬(i < n ∧ j < n ∧ 
 /-- The relation at a node `v`, summed over a set `S` of numbers containing its neighbours. -/
 private theorem sum_e_relation (v : ℕ) (hv : v < n) (S : Finset ℕ)
     (hnbr : ∀ w < n, EAdj v w → w ∈ S) :
-    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
-  classical
-  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
-  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
-  calc ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w
-      = ∑ w ∈ S ∪ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine Finset.sum_subset Finset.subset_union_left fun w hw hwS => ?_
-        have hw' : w < n := by simp at hw; tauto
-        rw [signlessArrow_e_eq_zero k (j := w) fun h => hwS (hnbr w hw' h.2.2), mul_zero]
-    _ = ∑ w ∈ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
-        refine (Finset.sum_subset Finset.subset_union_right fun w _ hw => ?_).symm
-        rw [signlessArrow_e_eq_zero k (by simp at hw; omega), zero_mul]
-    _ = 0 := h
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
+  sum_signlessArrow_mul_signlessArrow_of_subset k G hv S fun w hw hadj =>
+    hnbr w hw ((diagramGraph_E_adj _ _).1 hadj)
 
 variable (hn : 4 ≤ n)
 include hn
@@ -299,13 +289,6 @@ private def ENormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra k (
 
 variable {n} (hn : 4 ≤ n)
 include hn
-
-omit hn in
-/-- A sign in the algebra is the integer sign acting by `zsmul`. -/
-private theorem neg_one_pow_mul_eq_zsmul (r : ℕ)
-    (z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
-    (-1) ^ r * z = ((-1 : ℤ) ^ r) • z := by
-  simp [zsmul_eq_mul]
 
 omit hn in
 /-- The empty word in the backtracks at the branch node. -/

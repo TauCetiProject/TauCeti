@@ -78,6 +78,11 @@ theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] 
 
 /-! ### Arrow classes of a graph on `Fin n` -/
 
+/-- A sign in a ring is the integer sign acting by `zsmul`. -/
+theorem neg_one_pow_mul_eq_zsmul {A : Type*} [Ring A] (r : ℕ) (a : A) :
+    (-1) ^ r * a = ((-1 : ℤ) ^ r) • a := by
+  simp [zsmul_eq_mul]
+
 section FinArrow
 
 open DoubledQuiver
@@ -206,6 +211,24 @@ theorem signlessArrow_relation_of_consecutive
   simp only [F]
   rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
     zero_mul]
+
+variable (G) in
+/-- **The signless relation at a vertex `v`, summed over a finite set `S`** of numbers containing
+every neighbour of `v`. -/
+theorem sum_signlessArrow_mul_signlessArrow_of_subset {v : ℕ} (hv : v < n) (S : Finset ℕ)
+    (hS : ∀ w (hw : w < n), G.Adj ⟨v, hv⟩ ⟨w, hw⟩ → w ∈ S) :
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
+  classical
+  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
+  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
+  calc ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w
+      = ∑ w ∈ S ∪ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
+        refine Finset.sum_subset Finset.subset_union_left fun w _ hwS => ?_
+        rw [signlessArrow_eq_zero k (j := w) fun _ hw'' hadj => hwS (hS w hw'' hadj), mul_zero]
+    _ = ∑ w ∈ Finset.range n, signlessArrow k G w v * signlessArrow k G v w := by
+        refine (Finset.sum_subset Finset.subset_union_right fun w _ hw => ?_).symm
+        rw [signlessArrow_eq_zero k (by simp at hw; omega), zero_mul]
+    _ = 0 := h
 
 /-! ### Classes of walks given by their vertices -/
 
