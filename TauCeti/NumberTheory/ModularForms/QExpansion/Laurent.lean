@@ -53,7 +53,11 @@ expansion here of the function read in the scaling coordinate of the cusp.
   exponent making the twisted cusp function analytic, and
   `TauCeti.UpperHalfPlane.laurentQExpansion_of_analyticAt` at analytic points.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_add`, `TauCeti.UpperHalfPlane.laurentQExpansion_mul`,
-  `TauCeti.UpperHalfPlane.laurentQExpansion_inv` and their companions: the field operations.
+  `TauCeti.UpperHalfPlane.laurentQExpansion_inv`,
+  `TauCeti.UpperHalfPlane.laurentQExpansion_zpow`,
+  `TauCeti.UpperHalfPlane.laurentQExpansion_prod`, and
+  `TauCeti.UpperHalfPlane.laurentQExpansion_qParam_zpow`: the field operations, finite products,
+  and integer powers of `q`.
 * `TauCeti.UpperHalfPlane.orderTop_laurentQExpansion`: the order at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_zero_iff`: uniqueness of the expansion.
 * `TauCeti.UpperHalfPlane.hasSum_laurentQExpansion`: convergence near `i∞`.
@@ -402,6 +406,19 @@ theorem laurentQExpansion_pow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℕ
   | succ n ih =>
     rw [pow_succ, laurentQExpansion_mul (meromorphicAt_cuspFunction_pow hf n) hf, ih, pow_succ]
 
+/-- The Laurent `q`-expansion commutes with finite products. -/
+theorem laurentQExpansion_prod {ι : Type*} (s : Finset ι) {f : ι → ℍ → ℂ}
+    (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
+    laurentQExpansion h (∏ i ∈ s, f i) = ∏ i ∈ s, laurentQExpansion h (f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi,
+      laurentQExpansion_mul (hf i (Finset.mem_insert_self i s))
+        (meromorphicAt_cuspFunction_prod s fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+
 /-- The Laurent `q`-expansion commutes with inverses. This includes the case where the cusp
 function vanishes near `q = 0`, where both sides are `0`. -/
 theorem laurentQExpansion_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -423,6 +440,24 @@ theorem laurentQExpansion_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
     rw [cuspFunction_of_ne_zero hq] at hq'
     rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq, Pi.mul_apply, Pi.inv_apply,
       mul_inv_cancel₀ hq', Pi.one_apply]
+
+/-- The Laurent `q`-expansion commutes with integer powers. -/
+theorem laurentQExpansion_zpow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℤ) :
+    laurentQExpansion h (f ^ n) = laurentQExpansion h f ^ n := by
+  rcases Int.eq_nat_or_neg n with ⟨m, rfl | rfl⟩
+  · simpa only [zpow_natCast] using laurentQExpansion_pow hf m
+  · have hinv : f ^ (-(m : ℤ)) = (f ^ m)⁻¹ := by funext τ; simp [zpow_neg]
+    rw [hinv, zpow_neg, zpow_natCast, laurentQExpansion_inv (meromorphicAt_cuspFunction_pow hf m),
+      laurentQExpansion_pow hf m]
+
+/-- The Laurent `q`-expansion of an integer power of the `q`-parameter is `X ^ k`. -/
+@[simp]
+theorem laurentQExpansion_qParam_zpow (hh : 0 < h) (k : ℤ) :
+    laurentQExpansion h (fun τ : ℍ ↦ 𝕢 h τ ^ k) = HahnSeries.single k 1 := by
+  have hfun : (fun τ : ℍ ↦ 𝕢 h τ ^ k) = (fun τ : ℍ ↦ 𝕢 h τ) ^ k := rfl
+  rw [hfun, laurentQExpansion_zpow (analyticAt_cuspFunction_qParam h).meromorphicAt k,
+    laurentQExpansion_of_analyticAt (analyticAt_cuspFunction_qParam h), qExpansion_qParam hh,
+    HahnSeries.ofPowerSeries_X, ← RatFunc.single_zpow]
 
 /-- The Laurent `q`-expansion commutes with quotients. -/
 theorem laurentQExpansion_div (hf : MeromorphicAt (cuspFunction h f) 0)

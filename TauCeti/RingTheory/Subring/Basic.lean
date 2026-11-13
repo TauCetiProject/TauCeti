@@ -54,4 +54,17 @@ theorem prod_pow_mul_prod_zpow_mem {K ι : Type*} [Field K] (A : Subring K) {s :
   rw [← Finset.prod_mul_distrib]
   exact prod_mem fun j hj ↦ A.pow_mul_zpow_mem (ha j hj) (hx j hj) (hx' j hj) (hn j hj)
 
+/-- If `x` lies in a subring `A` of a division ring and `x ^ n = 1` for some `n ≠ 0`, then every
+integer power `x ^ k` lies in `A`. -/
+theorem zpow_mem_of_pow_eq_one {K : Type*} [DivisionRing K] (A : Subring K) {x : K}
+    (hx : x ∈ A) {n : ℕ} (hn : n ≠ 0) (hpow : x ^ n = 1) (k : ℤ) : x ^ k ∈ A := by
+  have hinv : x⁻¹ ∈ A := by
+    have heq : x⁻¹ = x ^ (n - 1) := inv_eq_of_mul_eq_one_right (by
+      rw [← pow_succ', Nat.sub_add_cancel (Nat.pos_of_ne_zero hn), hpow])
+    rw [heq]
+    exact pow_mem hx _
+  rcases Int.eq_nat_or_neg k with ⟨m, rfl | rfl⟩
+  · simpa using pow_mem hx m
+  · simpa [zpow_neg, inv_pow] using pow_mem hinv m
+
 end Subring

@@ -68,12 +68,14 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
   `TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq` and
   `TauCeti.UpperHalfPlane.qExpansion_congr`: cusp functions off `q = 0`.
-* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul` and its companions: meromorphy at `0`
-  of cusp functions under the field operations.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul` and its companions (including
+  `meromorphicAt_cuspFunction_zpow` and `meromorphicAt_cuspFunction_prod`): meromorphy at `0`
+  of cusp functions under the field operations and finite products.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
-* `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
-  the `q`-expansions of `q` and of its powers are `X` and its powers.
+* `TauCeti.UpperHalfPlane.qExpansion_qParam`, `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`, and
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow`: the `q`-expansions and cusp
+  meromorphy of `q` and of its powers.
 * `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
   `f` when the constant coefficient vanishes.
 
@@ -310,6 +312,26 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
 
+/-- The cusp function of an integer power is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_zpow (hf : MeromorphicAt (cuspFunction h f) 0)
+    (n : ℤ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
+  (hf.zpow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
+
+/-- The cusp function of a finite product is meromorphic at `0` when each factor's cusp function
+is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} (s : Finset ι)
+    {f : ι → ℍ → ℂ} (hf : ∀ i ∈ s, MeromorphicAt (cuspFunction h (f i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, f i)) 0 := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+    simp only [Finset.prod_empty]
+    exact UpperHalfPlane.meromorphicAt_cuspFunction_const 1
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact UpperHalfPlane.meromorphicAt_cuspFunction_mul (hf i (Finset.mem_insert_self i s))
+      (ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj))
+
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -355,6 +377,14 @@ theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
     qExpansion_pow (analyticAt_cuspFunction_qParam h) m, qExpansion_qParam hh]
+
+/-- The cusp function of an integer power of the `q`-parameter is meromorphic at `0`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_qParam_zpow (h : ℝ) (k : ℤ) :
+    MeromorphicAt (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k) 0 := by
+  have hfun : (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k) =
+      (fun τ : ℍ ↦ Function.Periodic.qParam h τ) ^ k := rfl
+  rw [hfun]
+  exact meromorphicAt_cuspFunction_zpow (analyticAt_cuspFunction_qParam h).meromorphicAt k
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/

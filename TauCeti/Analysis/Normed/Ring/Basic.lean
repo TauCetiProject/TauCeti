@@ -112,6 +112,18 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
   rintro rfl
   simp at hz
 
+/-- For elements `u, v` of a seminormed ring,
+`‖(1 - u) * (1 - v) - 1‖ ≤ ‖u‖ + ‖v‖ + ‖u‖ * ‖v‖`. -/
+theorem norm_one_sub_mul_one_sub_sub_one_le {R : Type*} [SeminormedRing R] (u v : R) :
+    ‖(1 - u) * (1 - v) - 1‖ ≤ ‖u‖ + ‖v‖ + ‖u‖ * ‖v‖ := by
+  have hid : (1 - u) * (1 - v) - 1 = (-u - v) + u * v := by
+    simp only [sub_mul, mul_sub, one_mul, mul_one]
+    abel
+  rw [hid]
+  calc ‖(-u - v) + u * v‖ ≤ ‖-u - v‖ + ‖u * v‖ := norm_add_le _ _
+    _ ≤ (‖-u‖ + ‖v‖) + ‖u‖ * ‖v‖ := add_le_add (norm_sub_le _ _) (norm_mul_le _ _)
+    _ = ‖u‖ + ‖v‖ + ‖u‖ * ‖v‖ := by rw [norm_neg]
+
 end TauCeti
 
 end

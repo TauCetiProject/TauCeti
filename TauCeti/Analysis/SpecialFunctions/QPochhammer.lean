@@ -59,9 +59,9 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
 * `TauCeti.qTheta_mul_left`: its quasi-periodicity `θ_q(q w) = -w⁻¹ θ_q(w)` for
   `0 < ‖q‖ < 1` and `w ≠ 0`.
-* `TauCeti.qTheta_one`, `TauCeti.differentiableOn_qTheta`, `TauCeti.hasDerivAt_qTheta_one`:
-  `θ_q(1) = 0`, and for `‖q‖ < 1` the theta product is holomorphic on `ℂ \ {0}` with derivative
-  `-(∏_{n ≥ 1} (1 - qⁿ))²` at `w = 1`.
+* `TauCeti.qTheta_one`, `TauCeti.qTheta_inv`, `TauCeti.differentiableOn_qTheta`,
+  `TauCeti.hasDerivAt_qTheta_one`: `θ_q(1) = 0`, `θ_q(w⁻¹) = -w⁻¹ θ_q(w)`, and for `‖q‖ < 1` the
+  theta product is holomorphic on `ℂ \ {0}` with derivative `-(∏_{n ≥ 1} (1 - qⁿ))²` at `w = 1`.
 * `TauCeti.qTheta_eq_mul_tprod_mul_tprod`: `θ_q(w)` is `1 - w` times its two half products.
 * `TauCeti.differentiable_qTheta_exp`, `TauCeti.hasDerivAt_qTheta_exp_zero`: for `‖q‖ < 1`,
   `z ↦ θ_q(e^{2π i z})` is entire, with derivative `-2π i (∏_{n ≥ 1} (1 - qⁿ))²` at `z = 0`.
@@ -161,6 +161,18 @@ theorem qTheta_def (q w : 𝕜) :
 @[simp]
 theorem qTheta_one (q : 𝕜) : qTheta q 1 = 0 := by
   simp [qTheta_def]
+
+/-- Inverting the argument of the theta product: `θ_q(w⁻¹) = -w⁻¹ θ_q(w)` for `w ≠ 0`. -/
+theorem qTheta_inv {q w : 𝕜} (hw : w ≠ 0) : qTheta q w⁻¹ = -w⁻¹ * qTheta q w := by
+  rw [qTheta_def, qTheta_def, inv_inv]
+  have hswap : ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹) * (1 - q ^ (n + 1) * w) =
+      ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
+    tprod_congr fun n ↦ mul_comm _ _
+  rw [hswap]
+  have hmul : 1 - w⁻¹ = -w⁻¹ * (1 - w) := by
+    field_simp
+    ring
+  rw [hmul, mul_assoc]
 
 variable [CompleteSpace 𝕜]
 

@@ -299,6 +299,7 @@ private theorem siegelFunction_add_intCast_zero (r : Fin 2 → ℝ) (m : ℤ) {�
       siegelFunction (r + ![-(k : ℝ), 0]) τ * h₂
 
 /-- **Negating the parameter**: `g_{-r}(τ) = -g_r(τ)` for every `r ∈ ℝ²` and `τ ∈ ℂ`. -/
+@[simp]
 theorem siegelFunction_neg (r : Fin 2 → ℝ) (τ : ℂ) :
     siegelFunction (-r) τ = -siegelFunction r τ := by
   set q := cexp (2 * π * I * τ)
@@ -308,17 +309,6 @@ theorem siegelFunction_neg (r : Fin 2 → ℝ) (τ : ℂ) :
     congr 1
     simp only [Pi.neg_apply, ofReal_neg]
     ring
-  have htheta : qTheta q w⁻¹ = -w⁻¹ * qTheta q w := by
-    rw [qTheta_def, qTheta_def, inv_inv]
-    have hswap : ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹) * (1 - q ^ (n + 1) * w) =
-        ∏' n : ℕ, (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
-      tprod_congr fun n ↦ mul_comm _ _
-    rw [hswap]
-    have hmul : 1 - w⁻¹ = -w⁻¹ * (1 - w) := by
-      have hw₀ : w ≠ 0 := Complex.exp_ne_zero _
-      field_simp
-      ring
-    rw [hmul, mul_assoc]
   have hexp : cexp (π * I * bernoulliFun 2 ((-r) 0) * τ) *
       cexp (π * I * ((-r) 1) * ((-r) 0 - 1)) * w⁻¹ =
       cexp (π * I * bernoulliFun 2 (r 0) * τ) * cexp (π * I * r 1 * (r 0 - 1)) := by
@@ -326,7 +316,7 @@ theorem siegelFunction_neg (r : Fin 2 → ℝ) (τ : ℂ) :
     congr 1
     simp only [bernoulliFun_two, Pi.neg_apply, ofReal_neg, ofReal_add, ofReal_sub, ofReal_pow]
     ring
-  rw [siegelFunction_eq_qTheta, siegelFunction_eq_qTheta, hw, htheta]
+  rw [siegelFunction_eq_qTheta, siegelFunction_eq_qTheta, hw, qTheta_inv (Complex.exp_ne_zero _)]
   linear_combination qTheta q w * hexp
 
 /-- **Translating `r` by an integral vector.** For `s = (s₁, s₂) ∈ ℤ²`,
