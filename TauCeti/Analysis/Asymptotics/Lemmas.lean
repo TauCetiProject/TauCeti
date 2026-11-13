@@ -75,6 +75,8 @@ evaluations of elliptic integrals.
   `F (c x) = O(x ^ r)` for `c > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
+* `Asymptotics.eq_zero_of_smul_isLittleO`: if `ψ` is frequently nonzero and `ψ • c = o(ψ)`, then
+  `c = 0`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
@@ -204,6 +206,18 @@ theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ →
         rw [div_mul_eq_mul_div, le_div_iff₀ hc]
         exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
       _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
+
+/-- **A constant multiple of `ψ` that is `o(ψ)` vanishes.** If `ψ` is frequently nonzero along `l`
+and `ψ • c = o(ψ)` along `l`, then `c = 0`. -/
+theorem eq_zero_of_smul_isLittleO {α 𝕜 E : Type*} [NormedAddCommGroup 𝕜] [NormedAddCommGroup E]
+    [SMul 𝕜 E] [NormSMulClass 𝕜 E] {l : Filter α} {ψ : α → 𝕜} {c : E} (hψ : ∃ᶠ x in l, ψ x ≠ 0)
+    (h : (fun x => ψ x • c) =o[l] ψ) : c = 0 := by
+  by_contra hc
+  have hcpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  obtain ⟨x, hx, hψx⟩ := (hψ.and_eventually (h.def (half_pos hcpos))).exists
+  rw [norm_smul] at hψx
+  have hψpos : 0 < ‖ψ x‖ := norm_pos_iff.mpr hx
+  nlinarith
 
 end Asymptotics
 
