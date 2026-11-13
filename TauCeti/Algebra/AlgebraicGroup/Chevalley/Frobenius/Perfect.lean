@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Equiv
 public import Mathlib.FieldTheory.Perfect
 
 /-!
@@ -47,8 +46,14 @@ variable (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p] [PerfectRing A p]
 def frobeniusEquiv : D.points A ≃* D.points A :=
   (D.pointsPresentation A).mapEquiv (D.pointsPresentation A) (iterateFrobeniusEquiv A p k)
 
+/-- The Frobenius automorphism is induced by the coefficient-ring Frobenius equivalence. -/
+theorem frobeniusEquiv_def :
+    D.frobeniusEquiv p k A =
+      (D.pointsPresentation A).mapEquiv (D.pointsPresentation A) (iterateFrobeniusEquiv A p k) :=
+  (rfl)
+
 /-- The forward map of the Frobenius automorphism is the Frobenius endomorphism. -/
-@[simp]
+@[simp↓]
 theorem frobeniusEquiv_apply (g : D.points A) :
     D.frobeniusEquiv p k A g = D.frobenius p k A g := by
   rw [frobeniusEquiv, GeneralLinear.IntegralPointsPresentation.mapEquiv_apply, frobenius_def]
@@ -56,6 +61,18 @@ theorem frobeniusEquiv_apply (g : D.points A) :
     (D.pointsPresentation A).map (D.pointsPresentation A) f g)
   ext x
   simp
+
+/-- The underlying homomorphism of the Frobenius automorphism is Frobenius. -/
+@[simp]
+theorem toMonoidHom_frobeniusEquiv :
+    (D.frobeniusEquiv p k A : D.points A →* D.points A) = D.frobenius p k A :=
+  MonoidHom.ext (D.frobeniusEquiv_apply p k A)
+
+/-- The underlying function of the Frobenius automorphism is Frobenius. -/
+@[simp]
+theorem coe_frobeniusEquiv :
+    ⇑(D.frobeniusEquiv p k A) = ⇑(D.frobenius p k A) :=
+  funext (D.frobeniusEquiv_apply p k A)
 
 /-- Inverse Frobenius is induced by the inverse Frobenius of the coefficient ring. -/
 theorem frobeniusEquiv_symm_apply (g : D.points A) :
@@ -73,6 +90,12 @@ theorem frobenius_bijective : Function.Bijective (D.frobenius p k A) := by
   exact (D.frobeniusEquiv p k A).bijective
 
 -- Cancel before the root and torus parameter formulas rewrite the inner point.
+/-- Inverse Frobenius cancels the forward automorphism on every point. -/
+@[simp↓]
+theorem frobeniusEquiv_symm_frobeniusEquiv (g : D.points A) :
+    (D.frobeniusEquiv p k A).symm (D.frobeniusEquiv p k A g) = g :=
+  (D.frobeniusEquiv p k A).symm_apply_apply g
+
 /-- Frobenius cancels its inverse on every point. -/
 @[simp↓]
 theorem frobenius_frobeniusEquiv_symm (g : D.points A) :
@@ -122,6 +145,15 @@ theorem frobeniusEquiv_add (m : ℕ) :
       (D.frobeniusEquiv p m A).trans (D.frobeniusEquiv p k A) := by
   ext g
   simp [frobenius_add]
+
+/-- Taking powers of the Frobenius automorphism multiplies its iteration index. -/
+theorem frobeniusEquiv_pow (m : ℕ) :
+    D.frobeniusEquiv p k A ^ m = D.frobeniusEquiv p (k * m) A := by
+  induction m with
+  | zero => ext g; simp
+  | succ m ih =>
+    rw [pow_succ, ih, Nat.mul_succ, frobeniusEquiv_add]
+    rfl
 
 /-- Inverse Frobenius commutes with any homomorphism between perfect value rings of the same
 exponential characteristic, including noninjective maps and maps between different universes. -/
