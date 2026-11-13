@@ -18,7 +18,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
 Let `f : M → N` preserve the Riemannian distances of two boundaryless Riemannian manifolds, with
 `N` complete. The theorem of Myers and Steenrod states that `f` is smooth and that its
 differential preserves the Riemannian metric; no regularity of `f` is assumed. Consequently a
-distance-preserving bijection between complete Riemannian manifolds is a smooth Riemannian
+distance-preserving bijection onto a complete Riemannian manifold is a smooth Riemannian
 isometry. Conversely a smooth Riemannian isometry preserves distances (the `IsometryClass`
 instance on `TauCeti.RiemannianIsometry`), so on complete Riemannian manifolds the two notions of
 isometry agree.
@@ -37,8 +37,8 @@ shows that `A` preserves distances on a ball. Hence `A` agrees there with a line
   normal ball, for a linear isometry `L : T_p M →ₗᵢ[ℝ] T_{f p} N`.
 * `Isometry.contMDiff`: a distance-preserving map into a complete manifold is smooth.
 * `Isometry.inner_mfderiv`: its differential preserves inner products.
-* `IsometryEquiv.toRiemannianIsometry`: a distance-preserving bijection between complete
-  Riemannian manifolds as a smooth Riemannian isometry.
+* `IsometryEquiv.toRiemannianIsometry`: a distance-preserving bijection onto a complete
+  Riemannian manifold as a smooth Riemannian isometry.
 
 ## References
 
@@ -55,40 +55,6 @@ open Bundle Filter Manifold Metric Set TauCeti.Manifold
 open scoped ContDiff Manifold NNReal Topology
 
 noncomputable section
-
-/-- A map between normed spaces which scales along rays on a ball, and which near the origin
-changes distances by at most any factor `c > 1` in either direction, preserves distances on that
-ball. -/
-private theorem dist_eq_of_forall_norm_sub_bounds {V W : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] {A : V → W} {ρ : ℝ}
-    (hsmul : ∀ v ∈ ball (0 : V) ρ, ∀ t ∈ Icc (0 : ℝ) 1, A (t • v) = t • A v)
-    (hbound : ∀ c : ℝ, 1 < c → ∃ s > 0, ∀ v ∈ ball (0 : V) s, ∀ w ∈ ball (0 : V) s,
-      ‖A v - A w‖ ≤ c * ‖v - w‖ ∧ ‖v - w‖ ≤ c * ‖A v - A w‖)
-    {v w : V} (hv : v ∈ ball (0 : V) ρ) (hw : w ∈ ball (0 : V) ρ) :
-    dist (A v) (A w) = dist v w := by
-  -- Rescaling `v` and `w` into the small ball transfers the bounds to them.
-  have key (c : ℝ) (hc : 1 < c) :
-      ‖A v - A w‖ ≤ c * ‖v - w‖ ∧ ‖v - w‖ ≤ c * ‖A v - A w‖ := by
-    obtain ⟨s, hs, hb⟩ := hbound c hc
-    have hsmall (u : V) : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • u ∈ ball (0 : V) s := by
-      have h : Tendsto (fun t : ℝ ↦ t • u) (𝓝 0) (𝓝 0) := by
-        simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const u
-      exact (h.mono_left nhdsWithin_le_nhds).eventually (isOpen_ball.mem_nhds (mem_ball_self hs))
-    have hI : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioc (0 : ℝ) 1 := Ioc_mem_nhdsGT zero_lt_one
-    obtain ⟨t, ⟨ht0, ht1⟩, htv, htw⟩ := (hI.and ((hsmall v).and (hsmall w))).exists
-    have h := hb _ htv _ htw
-    rw [hsmul v hv t ⟨ht0.le, ht1⟩, hsmul w hw t ⟨ht0.le, ht1⟩, ← smul_sub, ← smul_sub,
-      norm_smul, norm_smul, Real.norm_of_nonneg ht0.le] at h
-    exact ⟨le_of_mul_le_mul_left (by linarith [h.1]) ht0,
-      le_of_mul_le_mul_left (by linarith [h.2]) ht0⟩
-  -- Letting `c` tend to `1` gives both inequalities without a factor.
-  have hlim {a b : ℝ} (h : ∀ c : ℝ, 1 < c → a ≤ c * b) : a ≤ b := by
-    have hb : Tendsto (fun c : ℝ ↦ c * b) (𝓝[>] 1) (𝓝 b) := by
-      simpa using ((tendsto_id (x := 𝓝 (1 : ℝ))).mul_const b).mono_left
-        (nhdsWithin_le_nhds (s := Ioi (1 : ℝ)))
-    exact ge_of_tendsto hb (eventually_nhdsWithin_of_forall fun c hc ↦ h c hc)
-  rw [dist_eq_norm, dist_eq_norm]
-  exact le_antisymm (hlim fun c hc ↦ (key c hc).1) (hlim fun c hc ↦ (key c hc).2)
 
 section
 
@@ -107,30 +73,6 @@ variable
 namespace Isometry
 
 variable {f : M → N}
-
-/-- On a small normal ball the exponential map changes distances by at most a factor `c > 1` in
-either direction. -/
-private theorem exists_isNormalDomain_ball_dist_riemannianExp_bounds (p : M) {c : ℝ≥0}
-    (hc : 1 < c) :
-    ∃ r > 0, IsNormalDomain I M p (ball 0 r) ∧ ∀ v ∈ ball (0 : TangentSpace I p) r,
-      ∀ w ∈ ball (0 : TangentSpace I p) r,
-        ‖v - w‖ ≤ c * dist (riemannianExp I M p v) (riemannianExp I M p w) ∧
-          dist (riemannianExp I M p v) (riemannianExp I M p w) ≤ c * ‖v - w‖ := by
-  obtain ⟨r₁, hr₁, hn₁, hexp⟩ :=
-    exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (I := I) (M := M) p hc
-  obtain ⟨r₂, hr₂, hn₂, hlog⟩ :=
-    exists_isNormalDomain_ball_lipschitzOnWith_riemannianLog (I := I) (M := M) p hc
-  have hr := lt_min hr₁ hr₂
-  refine ⟨min r₁ r₂, hr, hn₁.ball (ball_subset_ball (min_le_left _ _)) hr,
-    fun v hv w hw ↦ ⟨?_, ?_⟩⟩
-  · have hv₂ := ball_subset_ball (min_le_right r₁ r₂) hv
-    have hw₂ := ball_subset_ball (min_le_right r₁ r₂) hw
-    have h := hlog.dist_le_mul _ (mem_image_of_mem _ hv₂) _ (mem_image_of_mem _ hw₂)
-    rwa [hn₂.riemannianLog_riemannianExp hv₂, hn₂.riemannianLog_riemannianExp hw₂,
-      dist_eq_norm] at h
-  · rw [← dist_eq_norm]
-    exact hexp.dist_le_mul _ (ball_subset_ball (min_le_left r₁ r₂) hv) _
-      (ball_subset_ball (min_le_left r₁ r₂) hw)
 
 /-- Let `A` be a norm-preserving map between tangent spaces of `M` at `p` and `N` at `f p` with
 `f ∘ exp_p = exp_{f p} ∘ A` on a ball. If `f` preserves distances, then near the origin `A`
@@ -211,7 +153,7 @@ theorem exists_linearIsometry_apply_riemannianExp_eq (hf : Isometry f) (p : M) :
   have hA0 : A 0 = 0 := by simp [hA, hn₁.riemannianLog_self]
   have hdist (v : TangentSpace I p) (hv : v ∈ ball 0 (min r₁ r₂)) (w : TangentSpace I p)
       (hw : w ∈ ball 0 (min r₁ r₂)) : dist (A v) (A w) = dist v w :=
-    dist_eq_of_forall_norm_sub_bounds
+    TauCeti.dist_eq_of_forall_norm_sub_bounds
       (fun v hv t ht ↦ hf.riemannianLog_apply_riemannianExp_smul hn₁ subset_rfl (hmin v hv)
         (hlt v hv) ht)
       (fun c hc ↦ hf.exists_pos_norm_sub_bounds hρ hexp
@@ -287,15 +229,16 @@ end Isometry
 
 namespace IsometryEquiv
 
-variable [CompleteSpace M] [CompleteSpace N]
+variable [CompleteSpace N]
 
 variable (I J) in
-/-- **A distance-preserving bijection is a Riemannian isometry.** A bijection between complete
-Riemannian manifolds which preserves their Riemannian distances is a smooth Riemannian isometry. -/
+/-- **A distance-preserving bijection is a Riemannian isometry.** A bijection between Riemannian
+manifolds which preserves their Riemannian distances, onto a complete manifold, is a smooth
+Riemannian isometry. -/
 def toRiemannianIsometry (e : M ≃ᵢ N) : TauCeti.RiemannianIsometry I J M N where
   toEquiv := e.toEquiv
   contMDiff_toFun := e.isometry.contMDiff
-  contMDiff_invFun := e.symm.isometry.contMDiff
+  contMDiff_invFun := haveI := e.completeSpace; e.symm.isometry.contMDiff
   inner_mfderiv' := e.isometry.inner_mfderiv
 
 /-- The Riemannian isometry of `e` is `e` as a map. -/
@@ -310,12 +253,21 @@ theorem toIsometryEquiv_toRiemannianIsometry (e : M ≃ᵢ N) :
   ext x
   simp
 
+/-- The inverse of the Riemannian isometry of `e` is the Riemannian isometry of `e.symm`. -/
+@[simp]
+theorem symm_toRiemannianIsometry [CompleteSpace M] (e : M ≃ᵢ N) :
+    (e.toRiemannianIsometry I J).symm = e.symm.toRiemannianIsometry J I := by
+  ext x
+  apply e.injective
+  rw [← coe_toRiemannianIsometry (I := I) (J := J) e, TauCeti.RiemannianIsometry.apply_symm_apply,
+    coe_toRiemannianIsometry, coe_toRiemannianIsometry, apply_symm_apply]
+
 end IsometryEquiv
 
 /-- The Riemannian isometry of the metric equivalence of a Riemannian isometry `Φ` is `Φ`. -/
 @[simp]
-theorem TauCeti.RiemannianIsometry.toRiemannianIsometry_toIsometryEquiv [CompleteSpace M]
-    [CompleteSpace N] (Φ : TauCeti.RiemannianIsometry I J M N) :
+theorem TauCeti.RiemannianIsometry.toRiemannianIsometry_toIsometryEquiv [CompleteSpace N]
+    (Φ : TauCeti.RiemannianIsometry I J M N) :
     (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ := by
   ext x
   simp

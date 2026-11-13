@@ -249,4 +249,37 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianLog (p : M) {c : �
 
 end EMetric
 
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsRiemannianManifold I M]
+
+/-- On a sufficiently small normal ball the exponential map changes distances by at most any
+prescribed factor `c > 1` in either direction. Distances on the target are its intrinsic
+Riemannian distances. -/
+theorem exists_isNormalDomain_ball_dist_riemannianExp_bounds (p : M) {c : ℝ≥0} (hc : 1 < c) :
+    ∃ r > 0, IsNormalDomain I M p (Metric.ball 0 r) ∧
+      ∀ v ∈ Metric.ball (0 : TangentSpace I p) r, ∀ w ∈ Metric.ball (0 : TangentSpace I p) r,
+        ‖v - w‖ ≤ c * dist (riemannianExp I M p v) (riemannianExp I M p w) ∧
+          dist (riemannianExp I M p v) (riemannianExp I M p w) ≤ c * ‖v - w‖ := by
+  obtain ⟨r₁, hr₁, hn₁, hexp⟩ :=
+    exists_isNormalDomain_ball_lipschitzOnWith_riemannianExp (I := I) (M := M) p hc
+  obtain ⟨r₂, hr₂, hn₂, hlog⟩ :=
+    exists_isNormalDomain_ball_lipschitzOnWith_riemannianLog (I := I) (M := M) p hc
+  have hr := lt_min hr₁ hr₂
+  refine ⟨min r₁ r₂, hr, hn₁.ball (Metric.ball_subset_ball (min_le_left _ _)) hr,
+    fun v hv w hw ↦ ⟨?_, ?_⟩⟩
+  · have hv₂ := Metric.ball_subset_ball (min_le_right r₁ r₂) hv
+    have hw₂ := Metric.ball_subset_ball (min_le_right r₁ r₂) hw
+    have h := hlog.dist_le_mul _ (mem_image_of_mem _ hv₂) _ (mem_image_of_mem _ hw₂)
+    rwa [hn₂.riemannianLog_riemannianExp hv₂, hn₂.riemannianLog_riemannianExp hw₂,
+      dist_eq_norm] at h
+  · rw [← dist_eq_norm]
+    exact hexp.dist_le_mul _ (Metric.ball_subset_ball (min_le_left r₁ r₂) hv) _
+      (Metric.ball_subset_ball (min_le_left r₁ r₂) hw)
+
+end Metric
+
 end TauCeti.Manifold

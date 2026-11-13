@@ -24,22 +24,68 @@ This is the local form of the fact that an isometry into a strictly convex space
 and it is an isometry of all of `V`, to which the global theorem applies.
 
 It applies to a map defined only near the origin, such as a map between tangent spaces obtained
-from a distance-preserving map of Riemannian manifolds through normal coordinates.
+from a distance-preserving map of Riemannian manifolds through normal coordinates. Such a map is
+first shown to preserve distances on a ball: one which scales along rays there and changes
+distances near the origin by factors arbitrarily close to one preserves them on the whole ball
+(`TauCeti.dist_eq_of_forall_norm_sub_bounds`, which needs no strict convexity).
+
+## Main results
+
+* `TauCeti.dist_eq_of_forall_norm_sub_bounds`: a map scaling along rays with distortion
+  arbitrarily close to one near the origin preserves distances on the ball.
+* `TauCeti.apply_smul_of_forall_dist_eq`: a map fixing the origin and preserving distances on a
+  ball scales along rays, when the target is strictly convex.
+* `TauCeti.exists_linearIsometry_eqOn_ball`: such a map agrees on the ball with a linear isometry.
 -/
 
 public section
 
-open Metric Set
+open Filter Metric Set
+open scoped Topology
 
 namespace TauCeti
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W] [StrictConvexSpace ℝ W]
-  {A : V → W} {ρ : ℝ}
+  [NormedAddCommGroup W] [NormedSpace ℝ W] {A : V → W} {ρ : ℝ}
+
+/-- A map between normed spaces which scales along rays on a ball, and which near the origin
+changes distances by at most any factor `c > 1` in either direction, preserves distances on that
+ball. -/
+theorem dist_eq_of_forall_norm_sub_bounds
+    (hsmul : ∀ v ∈ ball (0 : V) ρ, ∀ t ∈ Icc (0 : ℝ) 1, A (t • v) = t • A v)
+    (hbound : ∀ c : ℝ, 1 < c → ∃ s > 0, ∀ v ∈ ball (0 : V) s, ∀ w ∈ ball (0 : V) s,
+      ‖A v - A w‖ ≤ c * ‖v - w‖ ∧ ‖v - w‖ ≤ c * ‖A v - A w‖)
+    {v w : V} (hv : v ∈ ball (0 : V) ρ) (hw : w ∈ ball (0 : V) ρ) :
+    dist (A v) (A w) = dist v w := by
+  -- Rescaling `v` and `w` into the small ball transfers the bounds to them.
+  have key (c : ℝ) (hc : 1 < c) :
+      ‖A v - A w‖ ≤ c * ‖v - w‖ ∧ ‖v - w‖ ≤ c * ‖A v - A w‖ := by
+    obtain ⟨s, hs, hb⟩ := hbound c hc
+    have hsmall (u : V) : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • u ∈ ball (0 : V) s := by
+      have h : Tendsto (fun t : ℝ ↦ t • u) (𝓝 0) (𝓝 0) := by
+        simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const u
+      exact (h.mono_left nhdsWithin_le_nhds).eventually (isOpen_ball.mem_nhds (mem_ball_self hs))
+    have hI : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioc (0 : ℝ) 1 := Ioc_mem_nhdsGT zero_lt_one
+    obtain ⟨t, ⟨ht0, ht1⟩, htv, htw⟩ := (hI.and ((hsmall v).and (hsmall w))).exists
+    have h := hb _ htv _ htw
+    rw [hsmul v hv t ⟨ht0.le, ht1⟩, hsmul w hw t ⟨ht0.le, ht1⟩, ← smul_sub, ← smul_sub,
+      norm_smul, norm_smul, Real.norm_of_nonneg ht0.le] at h
+    exact ⟨le_of_mul_le_mul_left (by linarith [h.1]) ht0,
+      le_of_mul_le_mul_left (by linarith [h.2]) ht0⟩
+  -- Letting `c` tend to `1` gives both inequalities without a factor.
+  have hlim {a b : ℝ} (h : ∀ c : ℝ, 1 < c → a ≤ c * b) : a ≤ b := by
+    have hb : Tendsto (fun c : ℝ ↦ c * b) (𝓝[>] 1) (𝓝 b) := by
+      simpa using ((tendsto_id (x := 𝓝 (1 : ℝ))).mul_const b).mono_left
+        (nhdsWithin_le_nhds (s := Ioi (1 : ℝ)))
+    exact ge_of_tendsto hb (eventually_nhdsWithin_of_forall fun c hc ↦ h c hc)
+  rw [dist_eq_norm, dist_eq_norm]
+  exact le_antisymm (hlim fun c hc ↦ (key c hc).1) (hlim fun c hc ↦ (key c hc).2)
+
+variable [StrictConvexSpace ℝ W]
 
 /-- A map fixing the origin and preserving distances on a ball about it scales along rays: in a
 strictly convex space, `A (t • v)` is the point between `0` and `A v` at the right distances. -/
-private theorem apply_smul_of_forall_dist_eq (h0 : A 0 = 0)
+theorem apply_smul_of_forall_dist_eq (h0 : A 0 = 0)
     (hA : ∀ x ∈ ball (0 : V) ρ, ∀ y ∈ ball (0 : V) ρ,
       dist (A x) (A y) = dist x y) {v : V} (hv : v ∈ ball (0 : V) ρ) {t : ℝ}
     (ht : t ∈ Icc (0 : ℝ) 1) : A (t • v) = t • A v := by
