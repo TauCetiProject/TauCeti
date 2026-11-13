@@ -43,7 +43,7 @@ theorem heisenbergGroup_toSpecialLinear_mem_fixedSubgroup_galoisFieldTwistedFrob
         (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
           d.characteristic d.fieldExponent) := by
   rw [fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup,
-    typeAGraphConjugator_two, Matrix.mem_specialIsometryGroup_iff,
+    coe_typeAGraphConjugator_two, Matrix.mem_specialIsometryGroup_iff,
     HeisenbergGroup.coe_toSpecialLinear,
     ← HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq]
 
@@ -82,26 +82,19 @@ theorem rankTwoUpperUnitaryRootHom_injective :
 root embedding exactly when its matrix is upper unitriangular. -/
 theorem mem_range_rankTwoUpperUnitaryRootHom_iff
     (g : fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) :
-    g ∈ d.rankTwoUpperUnitaryRootHom.range ↔ ∃ a : HeisenbergGroup
-        (GaloisField d.characteristic (d.fieldExponent * 2)),
+    g ∈ d.rankTwoUpperUnitaryRootHom.range ↔
       ((g : SpecialLinearGroup (Fin 3)
         (GaloisField d.characteristic (d.fieldExponent * 2))) : Matrix (Fin 3) (Fin 3)
-          (GaloisField d.characteristic (d.fieldExponent * 2))) =
-        HeisenbergGroup.toMatrix a := by
+          (GaloisField d.characteristic (d.fieldExponent * 2))).IsUpperUnitriangular := by
+  rw [← HeisenbergGroup.mem_range_toSpecialLinear_iff]
   constructor
   · rintro ⟨a, rfl⟩
-    exact ⟨a, by simp⟩
-  · rintro ⟨a, ha⟩
-    have hga : HeisenbergGroup.toSpecialLinear a = g.val :=
-      Subtype.ext (by simpa using ha.symm)
+    exact ⟨a, rfl⟩
+  · rintro ⟨a, hga⟩
     have ha' :=
       (d.heisenbergGroup_toSpecialLinear_mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff a).mp
         (hga.symm ▸ g.property)
-    refine ⟨⟨a, ha'⟩, ?_⟩
-    apply Subtype.ext
-    apply Subtype.ext
-    simpa only [coe_rankTwoUpperUnitaryRootHom, HeisenbergGroup.coe_toSpecialLinear] using
-      ha.symm
+    exact ⟨⟨a, ha'⟩, Subtype.ext hga⟩
 
 end TauCeti.ValidLieTypeIndex
 
@@ -148,10 +141,9 @@ theorem carrierEquivSpecialLinear_rankTwoUpperUnitaryRootHom (q : PrimePower)
         (ofTwistedA 2 q hv).1.fieldExponent)) :
     (ofTwistedA 2 q hv).carrierEquivSpecialLinear
         (rankTwoUpperUnitaryRootHom q hv a : (ofTwistedA 2 q hv).AmbientGroup) =
-      SpecialLinearGroup.map
-        ((ofTwistedA 2 q hv).1.extensionGaloisFieldEmbedding 2 two_ne_zero)
-        (HeisenbergGroup.toSpecialLinear a) := by
-  rw [rankTwoUpperUnitaryRootHom_apply]
+      HeisenbergGroup.toSpecialLinear (HeisenbergGroup.map
+        ((ofTwistedA 2 q hv).1.extensionGaloisFieldEmbedding 2 two_ne_zero) a) := by
+  rw [← HeisenbergGroup.map_toSpecialLinear, rankTwoUpperUnitaryRootHom_apply]
   apply Subtype.ext
   have h := coe_specialUnitaryEquivFixedPoints 2 q hv
     ((ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom a)

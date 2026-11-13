@@ -106,7 +106,7 @@ theorem typeAGraphConjugator_apply (r : ℕ) (i j : Fin (r + 1)) :
   simp only [Fin.revPerm_apply, diagGL_apply, coe_typeAGraphSign, h]
 
 /-- The signed reversal form in dimension three. -/
-theorem typeAGraphConjugator_two :
+theorem coe_typeAGraphConjugator_two :
     (typeAGraphConjugator 2 A : Matrix (Fin 3) (Fin 3) A) =
       !![0, 0, 1; 0, -1, 0; 1, 0, 0] := by
   ext i j
