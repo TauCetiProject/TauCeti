@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
@@ -32,8 +33,9 @@ This file supplies restriction to arbitrary subsets, linearity, continuous-linea
 pairing of fields of continuous linear maps into product maps,
 multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
 supported in the domain), composition of local `Lᵖ` operator families with continuous ones,
-pairing, decreasing the integrability exponent, and decreasing the derivative order. On an open
-set, local `Lᵖ` membership is detected on the open subsets with compact closure inside it.
+pairing, pointwise product maps of operator fields, decreasing the integrability exponent, and
+decreasing the derivative order. On an open set, local `Lᵖ` membership is detected on the open
+subsets with compact closure inside it.
 Smoothness on an open neighbourhood gives membership, without requiring a global smooth extension.
 Conversely, if `g` is `Cᵏ` on an open set `Ω` and agrees almost everywhere there with
 `u ∈ MemWkpLoc p Ω (k + m)`, then `fderiv ℝ g` is a weak derivative of `u`
@@ -48,7 +50,8 @@ extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`
 domains, local `L¹` membership is identified with local integrability, supplying the native
 weak-derivative hypotheses.
 There, with `1 ≤ p`, a locally `Lᵖ` function agrees almost everywhere with its precise
-representative, and every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ`.
+representative, and every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in
+`MemWkpLoc p Ω k`; at order one, it is locally `Lᵖ`.
 `TauCeti.WeakDerivChainLe` compares the `Lᵖ` norms of two maps and, recursively, of every pair of
 their weak derivatives through a given order.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
@@ -344,13 +347,6 @@ theorem MemWkpLoc.exists_weakFDeriv_of_isOpen (hf : MemWkpLoc p Ω (k + 1) f) :
     ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D :=
   (memWkpLoc_succ_iff_of_isOpen.mp hf).2
 
-/-- Every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ` on `Ω`, not only the
-one supplied by the definition: weak derivatives are unique almost everywhere. -/
-theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn (hf : MemWkpLoc p Ω 1 f)
-    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) : MemLpLoc p Ω D := by
-  obtain ⟨D', hD', hD'p⟩ := hf.exists_weakFDeriv_of_isOpen
-  exact (memWkpLoc_zero_iff.1 hD'p).congr_ae (hD'.ae_eq hD)
-
 /-- Positive-order membership retains the completeness required by weak derivatives. -/
 theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p U (k + 1) f) : CompleteSpace F := by
   obtain ⟨D, hD, _⟩ := hf.exists_weakFDeriv
@@ -379,6 +375,19 @@ theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
 theorem MemWkpLoc.congr_fun (hf : MemWkpLoc p U k f) (hfg : Set.EqOn f g U)
     (hU : MeasurableSet U) : MemWkpLoc p U k g :=
   hf.congr_ae ((ae_restrict_mem hU).mono hfg)
+
+/-- Every weak derivative of a member of `MemWkpLoc p Ω (k + 1)` is in `MemWkpLoc p Ω k`, not only
+the one supplied by the definition: weak derivatives are unique almost everywhere. -/
+theorem MemWkpLoc.memWkpLoc_of_hasWeakFDerivOn (hf : MemWkpLoc p Ω (k + 1) f)
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) : MemWkpLoc p Ω k D := by
+  obtain ⟨D', hD', hD'k⟩ := hf.exists_weakFDeriv_of_isOpen
+  exact hD'k.congr_ae (hD'.ae_eq hD)
+
+/-- Every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ` on `Ω`, not only the
+one supplied by the definition: weak derivatives are unique almost everywhere. -/
+theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn (hf : MemWkpLoc p Ω 1 f)
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) : MemLpLoc p Ω D :=
+  memWkpLoc_zero_iff.1 (hf.memWkpLoc_of_hasWeakFDerivOn hD)
 
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
 theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :
@@ -461,6 +470,15 @@ theorem MemWkpLoc.prodMk [CompleteSpace F] [CompleteSpace G] {g : ℂ → G}
     (hg.clm_comp (ContinuousLinearMap.inr ℝ F G))
   convert h using 1
   ext z <;> simp
+
+/-- **Products of operator fields.** If two fields of continuous linear maps are in the local
+Sobolev class of order `k`, so is their pointwise product map `(A z).prodMap (B z)`. -/
+theorem MemWkpLoc.prodMap {E₁ E₂ E₃ E₄ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [CompleteSpace E₂] [NormedAddCommGroup E₃]
+    [NormedSpace ℝ E₃] [NormedAddCommGroup E₄] [NormedSpace ℝ E₄] [CompleteSpace E₄]
+    {A : ℂ → E₁ →L[ℝ] E₂} {B : ℂ → E₃ →L[ℝ] E₄} (hA : MemWkpLoc p U k A)
+    (hB : MemWkpLoc p U k B) : MemWkpLoc p U k (fun z => (A z).prodMap (B z)) := by
+  simpa using (hA.prodMk hB).clm_comp (ContinuousLinearMap.prodMapL ℝ E₁ E₂ E₃ E₄)
 
 /-- A continuous linear change of codomain preserves and reflects every local weak
 Sobolev order. -/

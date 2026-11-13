@@ -317,6 +317,13 @@ theorem exists_bound_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace
   obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
   exact ⟨C, hC0, hC x rfl⟩
 
+/-- A symbol of order `m` with estimates uniform in the position is bounded by `C ⟨ξ⟩ ^ m` at every
+position. -/
+theorem IsUniform.exists_bound_coefficient {a : Symbol n V W m} (ha : a.IsUniform) :
+    ∃ C, 0 ≤ C ∧ ∀ x ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha [] []
+  exact ⟨C, hC0, fun x ξ ↦ by simpa [mixedDeriv_nil_nil] using hC x ξ⟩
+
 section Module
 
 instance : Zero (Symbol n V W m) where
