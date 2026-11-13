@@ -11,7 +11,7 @@ import TauCeti.Algebra.Module.FinitePresentation
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.RingTheory.Coherent.MvPolynomial
 import TauCeti.RingTheory.MvPolynomial.Evaluation.Single
-import TauCeti.RingTheory.MvPolynomial.Noetherian
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Checks and counterexamples for coherent modules and coherent rings
@@ -47,7 +47,7 @@ example (R : Type*) [Ring R] :
 /-- *coherent_test_infinitePolynomial*: `ℤ[X_0, X_1, …]` (`MvPolynomial ℕ ℤ`) is a coherent ring
 that is not Noetherian. -/
 example : IsCoherentRing (MvPolynomial ℕ ℤ) ∧ ¬ IsNoetherianRing (MvPolynomial ℕ ℤ) :=
-  ⟨inferInstance, MvPolynomial.not_isNoetherianRing⟩
+  ⟨inferInstance, MvPolynomial.not_isNoetherianRing ℕ ℤ⟩
 
 /-- Localization preserves ring coherence for any localization carrier, not just
 `Localization T`. -/

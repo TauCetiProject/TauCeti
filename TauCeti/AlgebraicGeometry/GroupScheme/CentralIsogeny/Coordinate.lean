@@ -39,8 +39,7 @@ kernel of the scheme-valued point map with the points cut out by `kernelHopfIdea
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 2 and 10.
 
 The relative global-sections comparison uses Mathlib's `algΓAlgSpecAdjunction` and
-`AlgebraicGeometry.Spec.mapMulEquiv`. This synchronizes the Hopf-algebra and group-scheme
-formulations of central isogenies required in Layer 6 of the ReductiveGroups roadmap.
+`AlgebraicGeometry.Spec.mapMulEquiv`.
 -/
 
 public section

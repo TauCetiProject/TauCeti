@@ -76,12 +76,16 @@ theorem isSimplyConnected_Ioo_prod_Ioo : IsSimplyConnected (Ioo (0 : I) 1 ×ˢ I
     ⟨(1 / 2, 1 / 2), by norm_num, by norm_num⟩
   exact SimplyConnectedSpace.ofContractible _
 
-/-- **The open unit square with one point removed is path connected.** In `ℝ × ℝ` it is a
-convex set punctured at `p`, which deforms onto a small sphere about `p`
+/-- **The open unit square with one point removed is path connected.** If `p` is not in the
+square, removing it changes nothing and the square is simply connected. Otherwise, in `ℝ × ℝ` it is
+a convex set punctured at `p`, which deforms onto a small sphere about `p`
 (`StarConvex.sphereHomotopyEquiv`), and that sphere is path connected. -/
-theorem isPathConnected_Ioo_prod_Ioo_diff_singleton {p : I × I}
-    (hp : p ∈ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) :
+theorem isPathConnected_Ioo_prod_Ioo_diff_singleton (p : I × I) :
     IsPathConnected (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1 \ {p}) := by
+  by_cases hp : p ∈ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1
+  swap
+  · rw [sdiff_singleton_eq_self hp]
+    exact isSimplyConnected_Ioo_prod_Ioo.isPathConnected
   rw [(IsInducing.subtypeVal.prodMap IsInducing.subtypeVal).isPathConnected_iff,
     image_sdiff (Subtype.val_injective.prodMap Subtype.val_injective), image_singleton,
     image_prodMap_val_Ioo_prod_Ioo]

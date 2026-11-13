@@ -30,6 +30,11 @@ Splitting at a single coordinate `e` averages it out: if `G` does not see the va
 sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 (`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
 use this to discard every term containing a coordinate that occurs only once.
+
+Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
+summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
+on `Fin (n + 1)` splits as a sum over their first `n` values and their last value
+(`Fintype.sum_fin_snoc`).
 -/
 
 public section
@@ -165,5 +170,33 @@ theorem sum_apply_mul_eq_zero {ι α R : Type*} [Fintype ι] [DecidableEq ι] [F
       = ∑ v, a v * G ((Equiv.funSplitAt e α).symm (w, r)) :=
         Finset.sum_congr rfl fun v _ ↦ by rw [hsplit v, hG, Function.update_self]
     _ = 0 := by rw [← sum_mul, ha, zero_mul]
+
+/-- A product over all maps of the factors at the maps that agree with `f` away from `i`, the
+other factors being `1`, is a product over the value at `i`. -/
+@[to_additive /-- A sum over all maps of the terms at the maps that agree with `f` away from `i`,
+the other terms being `0`, is a sum over the value at `i`. -/]
+theorem prod_ite_eq_update {ι α M : Type*} [Fintype ι] [DecidableEq ι] [Fintype α]
+    [DecidableEq α] [CommMonoid M] (f : ι → α) (i : ι) (g : (ι → α) → M) :
+    ∏ h, (if h = Function.update f i (h i) then g h else 1) = ∏ x, g (Function.update f i x) := by
+  rw [← prod_filter]
+  have himage : ({h | h = Function.update f i (h i)} : Finset (ι → α)) =
+      univ.image (Function.update f i) := by
+    ext h
+    simp only [mem_filter, mem_univ, true_and, mem_image]
+    constructor
+    · exact fun hh ↦ ⟨h i, hh.symm⟩
+    · rintro ⟨x, rfl⟩
+      simp
+  rw [himage, prod_image fun x _ y _ h ↦ Function.update_injective f i h]
+
+/-- A product over the maps on `Fin (n + 1)` splits as a product over their restrictions to the
+first `n` coordinates and over their last values, glued back together with `Fin.snoc`. -/
+@[to_additive /-- A sum over the maps on `Fin (n + 1)` splits as a sum over their restrictions to
+the first `n` coordinates and over their last values, glued back together with `Fin.snoc`. -/]
+theorem prod_fin_snoc {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Fintype (α i)] {M : Type*}
+    [CommMonoid M] (f : (∀ i, α i) → M) :
+    ∏ s, f s = ∏ t : ∀ i : Fin n, α i.castSucc, ∏ y : α (Fin.last n), f (Fin.snoc t y) := by
+  rw [← (Fin.snocEquiv α).prod_comp, Fintype.prod_prod_type, prod_comm]
+  simp only [Fin.snocEquiv_apply]
 
 end Fintype

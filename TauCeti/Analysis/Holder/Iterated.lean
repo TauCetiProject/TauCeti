@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.JetBounds
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -372,6 +373,21 @@ theorem nnHolderNorm_iteratedFDeriv_le (f : CkHolderSpace k α E F) :
     (nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) : ℝ) ≤ ‖f‖ := by
   rw [norm_eq]
   exact le_add_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
+
+/-- Every derivative field through order `k` is globally `α`-Hölder when `α ≤ 1`. Lower
+fields are controlled by their supremum norm and the bound on their next derivative. -/
+theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α ≤ 1)
+    {j : ℕ} (hj : j ≤ k) :
+    HolderWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j f) := by
+  rcases hj.eq_or_lt with rfl | hj
+  · exact f.memHolder_iteratedFDeriv.holderWith.mono (by
+      exact_mod_cast (f.nnHolderNorm_iteratedFDeriv_le.trans
+        (by nlinarith [norm_nonneg f] : ‖f‖ ≤ 3 * ‖f‖)))
+  · have h := holderOnWith_univ.mp
+      (f.contDiff.contDiffOn.holderOnWith_iteratedFDeriv_of_lt isOpen_univ (convex_univ)
+        (M := ‖f‖₊) (L := ‖f‖₊) hj hα (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj.le x)
+        (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
+    convert h using 1; ring
 
 /-- The values of a bounded `C^{k,α}` map are controlled by the supremum norm of its order-zero
 field. -/
