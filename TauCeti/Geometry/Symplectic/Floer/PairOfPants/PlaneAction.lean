@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Algebra.Ring.Periodic
-import TauCeti.Geometry.Manifold.ContMDiff.Pi
+import TauCeti.Analysis.Calculus.ContDiff.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -144,7 +144,7 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
       Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
     linarith
   have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (hH.pi_single inf)
-    (fun q ↦ contMDiff_iff_contDiff.1 ((contMDiff_iff_contDiff.2 hHs).uncurry_pi_single inf q))
+    (hHs.uncurry_pi_single inf)
     ⟨hw₀, hw₁⟩ hs x
   rwa [pairOfPantsPerturbation_single_inf] at h
 

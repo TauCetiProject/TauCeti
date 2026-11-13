@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Maps of the complex plane in real coordinates
@@ -26,7 +28,9 @@ that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Compl
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and the
 real chart maps the real coordinates of a set onto those of its image
 (`TauCeti.Complex.image_realChart_preimage`); for instance an affine map `w ↦ c + a w` maps closed
-annuli about `0` onto closed annuli about `c` (`TauCeti.Complex.image_realChart_affine_annulus`).
+and open discs about `w`, and closed annuli about `w`, onto those about `c + a w`
+(`TauCeti.Complex.image_realChart_affine_closedBall`, `TauCeti.Complex.image_realChart_affine_ball`,
+`TauCeti.Complex.image_realChart_affine_annulus`).
 -/
 
 public section
@@ -102,37 +106,40 @@ theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
 theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
     realChart f '' (Complex.equivRealProdCLM.symm ⁻¹' s) =
       Complex.equivRealProdCLM.symm ⁻¹' (f '' s) := by
-  ext z
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨_, hy, (equivRealProdCLM_symm_realChart f y).symm⟩
-  · rintro ⟨w, hw, hwz⟩
-    refine ⟨Complex.equivRealProdCLM w,
-      by rwa [Set.mem_preimage, ContinuousLinearEquiv.symm_apply_apply], ?_⟩
-    rw [realChart_equivRealProdCLM, hwz, ContinuousLinearEquiv.apply_symm_apply]
+  rw [realChart, Set.image_comp, Set.image_comp,
+    Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
+    Complex.equivRealProdCLM.image_eq_preimage_symm]
+
+/-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the closed disc about `w`
+of radius `r` onto the closed disc about `c + a w` of radius `‖a‖ r`. -/
+theorem image_realChart_affine_closedBall {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r : ℝ) :
+    realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall w r) =
+      Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall (c + a * w) (‖a‖ * r) := by
+  have h : (c + a * ·) = (c +ᵥ ·) ∘ (a • ·) := rfl
+  rw [image_realChart_preimage, h, Set.image_comp, Set.image_smul, smul_closedBall' ha,
+    Set.image_vadd, Metric.vadd_closedBall]
+  rfl
+
+/-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the open disc about `w`
+of radius `r` onto the open disc about `c + a w` of radius `‖a‖ r`. -/
+theorem image_realChart_affine_ball {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r : ℝ) :
+    realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹' Metric.ball w r) =
+      Complex.equivRealProdCLM.symm ⁻¹' Metric.ball (c + a * w) (‖a‖ * r) := by
+  have h : (c + a * ·) = (c +ᵥ ·) ∘ (a • ·) := rfl
+  rw [image_realChart_preimage, h, Set.image_comp, Set.image_smul, smul_ball ha, Set.image_vadd,
+    Metric.vadd_ball]
+  rfl
 
 /-- In real coordinates, the affine map `w ↦ c + a w`, for `a ≠ 0`, maps the closed annulus about
-`0` with radii `r₁` and `r₂` onto the closed annulus about `c` with radii `‖a‖ r₁` and `‖a‖ r₂`. -/
-theorem image_realChart_affine_annulus {c a : ℂ} (ha : a ≠ 0) (r₁ r₂ : ℝ) :
+`w` with radii `r₁` and `r₂` onto the closed annulus about `c + a w` with radii `‖a‖ r₁` and
+`‖a‖ r₂`. -/
+theorem image_realChart_affine_annulus {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (r₁ r₂ : ℝ) :
     realChart (c + a * ·) '' (Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall 0 r₂ \ Metric.ball 0 r₁)) =
+        (Metric.closedBall w r₂ \ Metric.ball w r₁)) =
       Complex.equivRealProdCLM.symm ⁻¹'
-        (Metric.closedBall c (‖a‖ * r₂) \ Metric.ball c (‖a‖ * r₁)) := by
-  have ha' : 0 < ‖a‖ := norm_pos_iff.2 ha
-  rw [image_realChart_preimage]
-  congr 1
-  ext w
-  simp only [Set.mem_image, Set.mem_sdiff, Metric.mem_closedBall, Metric.mem_ball, dist_eq_norm,
-    not_lt, sub_zero]
-  constructor
-  · rintro ⟨y, ⟨h₂, h₁⟩, rfl⟩
-    rw [add_sub_cancel_left, norm_mul]
-    exact ⟨by gcongr, by gcongr⟩
-  · rintro ⟨h₂, h₁⟩
-    refine ⟨(w - c) / a, ⟨?_, ?_⟩, by rw [mul_div_cancel₀ _ ha, add_sub_cancel]⟩
-    · rw [norm_div, div_le_iff₀ ha']
-      linarith
-    · rw [norm_div, le_div_iff₀ ha']
-      linarith
+        (Metric.closedBall (c + a * w) (‖a‖ * r₂) \ Metric.ball (c + a * w) (‖a‖ * r₁)) := by
+  rw [Set.preimage_sdiff, Set.image_sdiff (realChart_injective fun _ _ h ↦
+      mul_left_cancel₀ ha (add_left_cancel h)),
+    image_realChart_affine_closedBall ha, image_realChart_affine_ball ha, Set.preimage_sdiff]
 
 end TauCeti.Complex

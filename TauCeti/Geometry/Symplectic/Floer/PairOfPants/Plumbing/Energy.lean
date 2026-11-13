@@ -124,7 +124,7 @@ private theorem setIntegral_plumbedTruncation_of_integrableOn (hq : q ≠ inf) {
           truncation (L / 2)), f z := by
   have hA := (isCompact_preimage_truncation (L / 2)).image
     (contDiff_realChart_plumbingMap q L (n := 0)).continuous
-  rw [preimage_union, preimage_image_plumbingMap]
+  rw [preimage_union, ← TauCeti.Complex.image_realChart_preimage]
   exact setIntegral_union₀ (aedisjoint_truncation_image hq)
     hA.isClosed.measurableSet.nullMeasurableSet hfT hfA
 
@@ -1022,7 +1022,7 @@ theorem
               (r.cylindricalEndLift (↑(r.endSign * (L / 2)) + ↑t * Complex.I))))) := by
   have hDm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹'
       (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2))) := by
-    rw [preimage_union, preimage_image_plumbingMap]
+    rw [preimage_union, ← TauCeti.Complex.image_realChart_preimage]
     have hT := isCompact_preimage_truncation (L / 2)
     exact (hT.union (hT.image
       (contDiff_realChart_plumbingMap q L (n := 0)).continuous)).isClosed.measurableSet

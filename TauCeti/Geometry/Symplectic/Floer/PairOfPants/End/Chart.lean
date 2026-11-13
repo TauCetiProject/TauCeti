@@ -76,6 +76,11 @@ apply to all three ends.
   `TauCeti.Floer.image_endChart_Icc_prod_Ico`: the end chart maps the part `a₁ ≤ s ≤ b₁` of the
   end, over one period of the angular coordinate, onto the closed annulus about the center of the
   end with radii `‖b_q‖ exp (-2π b₁)` and `‖b_q‖ exp (-2π a₁)`.
+* `TauCeti.Floer.endPiece q R`: the end piece `1 ≤ ±s ≤ R`, `t ∈ [-1/2, 1/2)` of the end `q`;
+  `TauCeti.Floer.endChart_mem_image_endChart_endPiece` and
+  `TauCeti.Floer.measurableSet_image_endChart_endPiece` locate and measure its image, which for the
+  ends `0` and `∞` is a closed annulus about `0` (`TauCeti.Floer.image_endChart_zero_endPiece`,
+  `TauCeti.Floer.image_endChart_inf_endPiece`).
 * `TauCeti.Floer.preimage_truncation_inter_eq_image_endChart`: the part `±s > c` of the end `q`
   in the truncation `S_R` is the image under the end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
@@ -514,6 +519,94 @@ theorem image_endChart_Icc_prod_Ico (q : Puncture) (a₁ b₁ : ℝ) :
   · simpa using q.im_endCoord_mem_Ico w
   · rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply, q.cylindricalEndLift_endCoord hw,
       ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The part `a ≤ ±s ≤ b` of the longitudinal coordinate of the end `q` is compact. -/
+theorem isCompact_setOf_endSign_mul_mem_Icc (q : Puncture) (a b : ℝ) :
+    IsCompact {s : ℝ | q.endSign * s ∈ Icc a b} :=
+  (Homeomorph.mulLeft₀ q.endSign q.endSign_ne_zero).isCompact_preimage.2 isCompact_Icc
+
+/-- The part `1 ≤ ±s ≤ R`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates: the
+collar and the cylindrical part of the end inside the truncation `S_R`, over one period. -/
+noncomputable def endPiece (q : Puncture) (R : ℝ) : Set (ℝ × ℝ) :=
+  {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2)
+
+theorem endPiece_def (q : Puncture) (R : ℝ) :
+    endPiece q R = {s | 1 ≤ q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico (-1 / 2) (1 / 2) :=
+  (rfl)
+
+/-- A point lies in the end piece `1 ≤ ±s ≤ R` when its signed longitudinal coordinate lies in
+`[1, R]` and its angular coordinate lies in `[-1/2, 1/2)`. -/
+@[simp]
+theorem mem_endPiece {q : Puncture} {R : ℝ} {z : ℝ × ℝ} :
+    z ∈ endPiece q R ↔
+      (1 ≤ q.endSign * z.1 ∧ q.endSign * z.1 ≤ R) ∧ z.2 ∈ Ico (-1 / 2) (1 / 2) :=
+  Iff.rfl
+
+/-- On an input end, where `±s = s`, the end piece is the rectangle `[1, R] × [-1/2, 1/2)`. -/
+theorem endPiece_of_endSign_eq_one {q : Puncture} (hq : q.endSign = 1) (R : ℝ) :
+    endPiece q R = Icc 1 R ×ˢ Ico (-1 / 2) (1 / 2) := by
+  ext ⟨s, t⟩
+  simp [hq]
+
+/-- On the output end, where `±s = -s`, the end piece is the rectangle
+`[-R, -1] × [-1/2, 1/2)`. -/
+theorem endPiece_of_endSign_eq_neg_one {q : Puncture} (hq : q.endSign = -1) (R : ℝ) :
+    endPiece q R = Icc (-R) (-1) ×ˢ Ico (-1 / 2) (1 / 2) := by
+  ext ⟨s, t⟩
+  simp only [mem_endPiece, hq, neg_one_mul, mem_prod, mem_Icc]
+  constructor <;> rintro ⟨⟨h₁, h₂⟩, h₃⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h₃⟩
+
+/-- An end piece is measurable. -/
+theorem measurableSet_endPiece (q : Puncture) (R : ℝ) : MeasurableSet (endPiece q R) :=
+  (isCompact_setOf_endSign_mul_mem_Icc q 1 R).isClosed.measurableSet.prod measurableSet_Ico
+
+/-- The end chart maps every point of the part `1 ≤ ±s ≤ R` of the end `q`, at every angle, into
+the image of the end piece, by periodicity in `t`. -/
+theorem endChart_mem_image_endChart_endPiece {q : Puncture} {R : ℝ} {z : ℝ × ℝ}
+    (h₁ : 1 ≤ q.endSign * z.1) (h₂ : q.endSign * z.1 ≤ R) :
+    endChart q z ∈ endChart q '' endPiece q R := by
+  rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at h₁ h₂
+  · rw [endPiece_of_endSign_eq_one h, image_endChart_Icc_prod_Ico]
+    exact endChart_mem_preimage_closedBall_sdiff_ball q ⟨by linarith, by linarith⟩
+  · rw [endPiece_of_endSign_eq_neg_one h, image_endChart_Icc_prod_Ico]
+    exact endChart_mem_preimage_closedBall_sdiff_ball q ⟨by linarith, by linarith⟩
+
+/-- The image of an end piece under the end chart is measurable: it is a closed annulus about the
+center of the end. -/
+theorem measurableSet_image_endChart_endPiece (q : Puncture) (R : ℝ) :
+    MeasurableSet (endChart q '' endPiece q R) := by
+  have hA (a₁ b₁ : ℝ) : MeasurableSet (endChart q '' (Icc a₁ b₁ ×ˢ Ico (-1 / 2) (1 / 2))) := by
+    rw [image_endChart_Icc_prod_Ico]
+    exact ((Metric.isClosed_closedBall.sdiff Metric.isOpen_ball).preimage
+      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  rcases endSign_eq_one_or_eq_neg_one q with h | h
+  · rw [endPiece_of_endSign_eq_one h]
+    exact hA _ _
+  · rw [endPiece_of_endSign_eq_neg_one h]
+    exact hA _ _
+
+/-- The end chart of `0` maps the end piece `1 ≤ s ≤ R` onto the closed annulus about `0` with
+radii `exp (-2πR) / 2` and `exp (-2π) / 2`. -/
+theorem image_endChart_zero_endPiece (R : ℝ) :
+    endChart zero '' endPiece zero R =
+      Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 (Real.exp (-(2 * π)) / 2) \
+          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) := by
+  rw [endPiece_of_endSign_eq_one endSign_zero, image_endChart_Icc_prod_Ico, endCenter_zero,
+    endScale_zero]
+  norm_num
+  ring_nf
+
+/-- The end chart of `∞` maps the end piece `-R ≤ s ≤ -1` onto the closed annulus about `0` with
+radii `2 exp (2π)` and `2 exp (2πR)`. -/
+theorem image_endChart_inf_endPiece (R : ℝ) :
+    endChart inf '' endPiece inf R =
+      Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+          Metric.ball 0 (2 * Real.exp (2 * π))) := by
+  rw [endPiece_of_endSign_eq_neg_one endSign_inf, image_endChart_Icc_prod_Ico, endCenter_inf,
+    endScale_inf]
+  norm_num
 
 /-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
 end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
