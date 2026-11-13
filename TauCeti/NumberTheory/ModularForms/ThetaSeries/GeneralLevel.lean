@@ -26,7 +26,9 @@ The reduction to matrices with positive lower-left and positive odd upper-left e
 translation invariance and the character parity `χ(-1) = (-1)^k`. Holomorphy and boundedness
 at all rational cusps are supplied by the analytic theory of theta series. The coefficients
 are the representation numbers of `L`; when `L` is unimodular this construction agrees with
-the level-one theta form, viewed on the smaller subgroup.
+the level-one theta form, viewed on the smaller subgroup. Because its constant term at `∞` is
+`1`, the theta form is never a cusp form, and every diamond operator `⟨d⟩` acts on it by the
+scalar `χ_L(d)`.
 
 ## References
 
@@ -112,6 +114,39 @@ theorem thetaFormOfLevel_ne_zero (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
   thetaSeries_ne_zero_of_re_eq_zero L UpperHalfPlane.I_re (by
     rw [← coe_thetaFormOfLevel hL hk, h, FunLike.coe_zero]
     rfl)
+
+/-- The general-level theta form is not a cusp form: its constant term at `∞` is `1`. -/
+@[simp]
+theorem not_isCuspForm_thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    ¬ ModularForm.IsCuspForm (thetaFormOfLevel hL hk) := by
+  have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
+  exact not_isCuspForm_of_coe_eq_thetaSeries L (coe_thetaFormOfLevel hL hk)
+
+/-- Every diamond operator `⟨d⟩` acts on the general-level theta form by the eigenvalue
+`χ_L(d)`, where `χ_L` is the quadratic theta character of `L`. -/
+@[simp]
+theorem diamondOp_thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
+    (d : (ZMod (level L))ˣ) :
+    TauCeti.diamondOp (k : ℤ) d (thetaFormOfLevel hL hk) =
+      (hL.thetaCharacter ⟨k, by omega⟩ (d : ZMod (level L)) : ℂ) •
+        thetaFormOfLevel hL hk := by
+  simpa only [MulChar.coe_equivToUnitHom] using
+    TauCeti.diamondOp_apply_of_mem_modFormCharSpace (k : ℤ)
+      (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩)) d
+      (thetaFormOfLevel_mem_modFormCharSpace hL hk)
+
+/-- Every natural-number diamond operator `⟨n⟩` acts on the general-level theta form by the
+eigenvalue `χ_L(n)` (which is `0` when `n` is not coprime to `level L`). -/
+@[simp]
+theorem diamondOpNat_thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k) (n : ℕ) :
+    TauCeti.diamondOpNat (N := level L) (k : ℤ) n (thetaFormOfLevel hL hk) =
+      (hL.thetaCharacter ⟨k, by omega⟩ (n : ZMod (level L)) : ℂ) •
+        thetaFormOfLevel hL hk := by
+  by_cases hn : Nat.Coprime n (level L)
+  · rw [TauCeti.diamondOpNat_of_coprime _ hn, diamondOp_thetaFormOfLevel, ZMod.coe_unitOfCoprime]
+  · have hnu : ¬ IsUnit (n : ZMod (level L)) := by rwa [ZMod.isUnit_iff_coprime]
+    rw [TauCeti.diamondOpNat_of_not_coprime _ hn, MulChar.map_nonunit _ hnu, zero_smul,
+      LinearMap.zero_apply]
 
 /-- For an even unimodular lattice, the general-level construction is the restriction of the
 level-one theta form. In this case `level L = 1` by `ZLattice.IsEven.level_eq_one_iff`. -/
