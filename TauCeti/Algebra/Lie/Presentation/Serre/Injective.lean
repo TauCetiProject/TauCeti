@@ -34,6 +34,8 @@ with its Serre presentation.
 ## Main definitions
 
 * `TauCeti.serreLiftEquiv`: the Serre presentation `Matrix.ToLieAlgebra K b.cartanMatrixᵀ ≃ₗ⁅K⁆ L`.
+* `LieAlgebra.Basis.serreLiftEquiv`: the presentation numbered by a Lie algebra basis, allowing
+  its transposed matrix to be identified with a specified matrix.
 
 ## Main results
 
@@ -168,5 +170,45 @@ theorem serreLift_injective (b : LieAlgebra.Basis ι H) :
   rw [hfac, LieHom.coe_comp]
   exact (serreLift_injective_of_base hS hspan).comp
     (Function.LeftInverse.injective (g := serreLift hβ) fun x ↦ DFunLike.congr_fun hβα x)
+
+/-- Serre's theorem for a Lie algebra basis after identifying its transposed Cartan matrix
+with the matrix of a given Serre system. -/
+theorem serreLift_injective_of_A_transpose_eq (b : LieAlgebra.Basis ι H)
+    {CM : Matrix ι ι ℤ} (hCM : b.Aᵀ = CM) (hS : IsSerreSystem K CM b.h b.e b.f) :
+    Function.Injective (serreLift hS) := by
+  subst CM
+  exact b.serreLift_injective
+
+variable (b : LieAlgebra.Basis ι H) {CM : Matrix ι ι ℤ}
+  (hCM : b.Aᵀ = CM) (hS : IsSerreSystem K CM b.h b.e b.f)
+
+/-- The Serre presentation isomorphism of a Lie algebra basis, with its transposed Cartan
+matrix identified with `CM`. It sends the numbered Serre generators to the basis generators. -/
+noncomputable def serreLiftEquiv : Matrix.ToLieAlgebra K CM ≃ₗ⁅K⁆ L :=
+  LieEquiv.ofBijective (serreLift hS)
+    ⟨b.serreLift_injective_of_A_transpose_eq hCM hS, serreLift_surjective hS b.span_ef⟩
+
+/-- The presentation isomorphism of a Lie algebra basis is the Serre lift. -/
+@[simp]
+theorem coe_serreLiftEquiv : ⇑(b.serreLiftEquiv hCM hS) = serreLift hS :=
+  (rfl)
+
+/-- The inverse presentation sends a basis Cartan generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_h (i : ι) :
+    (b.serreLiftEquiv hCM hS).symm (b.h i) = serreH K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreH]
+
+/-- The inverse presentation sends a basis raising generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_e (i : ι) :
+    (b.serreLiftEquiv hCM hS).symm (b.e i) = serreE K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreE]
+
+/-- The inverse presentation sends a basis lowering generator to the numbered Serre generator. -/
+@[simp]
+theorem serreLiftEquiv_symm_f (i : ι) :
+    (b.serreLiftEquiv hCM hS).symm (b.f i) = serreF K CM i := by
+  rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreF]
 
 end LieAlgebra.Basis
