@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.RingTheory.QuotSMulTop
@@ -12,8 +13,8 @@ public import TauCeti.RingTheory.QuotSMulTop
 /-!
 # Minimal-vector pairs modulo twice a lattice
 
-Two vectors of minimum positive norm in an integral lattice have the same residue modulo
-`2L` exactly when they differ by sign. Indeed, if `x - y = 2z`, then `z` and `y + z`
+Two vectors of minimum positive norm in a positive definite integral lattice have the same
+residue modulo `2L` exactly when they differ by sign. Indeed, if `x - y = 2z`, then `z` and `y + z`
 belong to the lattice and their norms sum to the minimum. They cannot both be nonzero.
 Thus antipodal pairs of minimal vectors identify with the residue classes represented by
 minimal vectors. This identification intertwines lattice isometries and reduction modulo two.
@@ -52,11 +53,14 @@ theorem mk_mem_normClassesModTwo {n : ℚ} {x : L} (hx : x ∈ L.vectorsOfNorm n
     (Submodule.Quotient.mk x : QuotSMulTop (2 : ℤ) L) ∈ L.normClassesModTwo n :=
   L.mem_normClassesModTwo.mpr ⟨x, hx, rfl⟩
 
-/-- A finite norm shell has finitely many represented mod-two classes. -/
-theorem finite_normClassesModTwo {n : ℚ} (h : (L.vectorsOfNorm n).Finite) :
-    (L.normClassesModTwo n).Finite := by
-  rw [L.normClassesModTwo_def]
-  exact h.image _
+/-- The classes represented on any norm shell form a finite type. -/
+instance instFiniteNormClassesModTwo (n : ℚ) : Finite (L.normClassesModTwo n) := by
+  have : Finite (QuotSMulTop (2 : ℤ) L) := finite_quotSMulTop_int 2 L
+  infer_instance
+
+/-- Every norm shell has finitely many represented mod-two classes. -/
+theorem finite_normClassesModTwo (n : ℚ) : (L.normClassesModTwo n).Finite :=
+  Set.toFinite _
 
 /-- Reduction of an isometry preserves membership in every represented norm shell. -/
 @[simp]

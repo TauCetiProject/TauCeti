@@ -66,11 +66,6 @@ theorem leechAntipodalPairsEquivModTwo_symm_mk (x : leechLattice)
   apply leechAntipodalPairsEquivModTwo.symm_apply_eq.mpr
   exact Subtype.ext (coe_leechAntipodalPairsEquivModTwo_mk x _).symm
 
-/-- There are finitely many type-2 classes in the Leech mod-two module. -/
-instance instFiniteNormClassesModTwoFourLeechLattice :
-    Finite (leechLattice.normClassesModTwo 4) :=
-  Finite.of_equiv _ leechAntipodalPairsEquivModTwo
-
 /-- There are exactly 98280 type-2 classes in the Leech mod-two module. -/
 theorem ncard_normClassesModTwo_four_leechLattice :
     (leechLattice.normClassesModTwo 4).ncard = 98280 :=
