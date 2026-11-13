@@ -12,7 +12,6 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.RCLike.TangentCone
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
-import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # The pre-Schwarzian derivative along a straight boundary arc
@@ -59,9 +58,10 @@ obtained. The concrete ones are about the explicit witness
 `TauCeti.lineSchwarzReflection 0 1 q b f` of the reflection principle across the real axis with an
 arbitrary target line; its holomorphy and its agreement with `f` on the closed upper half-plane are
 `TauCeti.differentiableOn_lineSchwarzReflection_of_symmetric` and
-`TauCeti.lineSchwarzReflection_of_coord_im_nonneg`. The statements about its derivatives need no
-hypothesis on `f`: off the real axis the witness satisfies the reflection identity whatever `f` is,
-and at a real point the identity passes to the derivatives from the upper half-plane.
+`TauCeti.lineSchwarzReflection_of_coord_im_nonneg`. The symmetry and real-axis statements about
+its derivatives need no hypothesis on `f`: off the real axis the witness satisfies the reflection
+identity whatever `f` is, and at a real point the identity passes to the derivatives from the upper
+half-plane.
 
 ## Main results
 
@@ -69,13 +69,15 @@ and at a real point the identity passes to the derivatives from the upper half-p
   `TauCeti.deriv_deriv_conj_eq_mul_conj_deriv_deriv` -- the first and second derivatives of a
   function intertwining conjugation with an affine reflection satisfy the same intertwining
   relation, with the additive constant gone.
-* `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv` -- the pre-Schwarzian derivative
-  intertwines conjugation with conjugation.
+* `TauCeti.logDeriv_conj_eq_conj_logDeriv` -- the logarithmic derivative of a function
+  intertwining conjugation with `w ↦ u * conj w` intertwines conjugation with conjugation.
+* `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv` -- applied to the first derivative: the
+  pre-Schwarzian derivative intertwines conjugation with conjugation.
 * `TauCeti.im_logDeriv_deriv_eq_zero` -- so it is real on the real axis.
-* `TauCeti.deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero` and
-  `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_forall_im_ne_zero` -- a reflection
-  identity holding at every non-real point gives these identities at every point, the real axis
-  included.
+* `TauCeti.deriv_conj_eq_mul_conj_deriv_of_im_ne_zero` and
+  `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero` -- a reflection identity
+  holding at the non-real points of an open set gives these identities at every point of the set,
+  real points included; the `_of_forall_im_ne_zero` forms are the case of the whole plane.
 * `TauCeti.im_div_deriv_lineSchwarzReflection_eq_zero` -- on the real axis the derivative of the
   reflected extension is a real multiple of the direction of the target line.
 * `TauCeti.logDeriv_deriv_lineSchwarzReflection_conj` -- the pre-Schwarzian derivative of the
@@ -107,8 +109,8 @@ variable {Ω : Set ℂ} {F f : ℂ → ℂ} {c u q b : ℂ}
 carries conjugation to the affine reflection `w ↦ c + u * conj w` on an open set, then `deriv F`
 carries conjugation to `w ↦ u * conj w`. No differentiability is assumed: the identity also holds,
 with both sides `0`, wherever `F` fails to be differentiable. The set need not be
-conjugation-symmetric: the identity at the points `conj z` for `z ∈ Ω` only involves the open set
-of those points. -/
+conjugation-symmetric: `hrefl` expresses `F` on the open neighbourhood `{w | conj w ∈ Ω}` of
+`conj z` through the values of `F` on `Ω`. -/
 theorem deriv_conj_eq_mul_conj_deriv (hΩopen : IsOpen Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) :
@@ -146,36 +148,59 @@ theorem deriv_deriv_conj_eq_mul_conj_deriv_deriv (hΩopen : IsOpen Ω)
   deriv_conj_eq_mul_conj_deriv (c := 0) hΩopen
     (fun w hw => by simpa using deriv_conj_eq_mul_conj_deriv hΩopen hrefl hw) hz
 
+/-- **The logarithmic derivative of a reflection-symmetric function is conjugation-symmetric, for a
+nondegenerate multiplier.** If `F` carries conjugation to `w ↦ u * conj w` on an open set and
+`u ≠ 0`, then `deriv F` carries conjugation to the same map, the factor `u` cancels between
+`deriv F` and `F`, and `logDeriv F = deriv F / F` intertwines conjugation with conjugation. No
+symmetry of `Ω` is needed. -/
+theorem logDeriv_conj_eq_conj_logDeriv_of_ne_zero (hu : u ≠ 0) (hΩopen : IsOpen Ω)
+    (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (F z))
+    {z : ℂ} (hz : z ∈ Ω) :
+    logDeriv F ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv F z) := by
+  rw [logDeriv_apply, logDeriv_apply,
+    deriv_conj_eq_mul_conj_deriv (c := 0) hΩopen (fun w hw => by simpa using hrefl w hw) hz,
+    hrefl z hz, mul_div_mul_left _ _ hu]
+  exact (map_div₀ _ _ _).symm
+
+/-- **The logarithmic derivative of a reflection-symmetric function is conjugation-symmetric.** If
+`F` carries conjugation to `w ↦ u * conj w` on an open set, then `logDeriv F` intertwines
+conjugation with conjugation at every point `z` of the set whose conjugate also lies in it. The
+degenerate factor `u = 0` is allowed: then `F` vanishes at `z` and at `conj z`, and both sides are
+`0`; this is the only place where `conj z ∈ Ω` is used. -/
+theorem logDeriv_conj_eq_conj_logDeriv (hΩopen : IsOpen Ω)
+    (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (F z))
+    {z : ℂ} (hz : z ∈ Ω) (hz' : (starRingEnd ℂ) z ∈ Ω) :
+    logDeriv F ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv F z) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · have h1 : F ((starRingEnd ℂ) z) = 0 := by simpa using hrefl z hz
+    have h2 : F z = 0 := by simpa using hrefl _ hz'
+    simp [logDeriv_apply, h1, h2]
+  · exact logDeriv_conj_eq_conj_logDeriv_of_ne_zero hu hΩopen hrefl hz
+
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is conjugation-symmetric,
-for a nondegenerate multiplier.** The factor `u` of the target reflection cancels between the
-second derivative and the first, so `logDeriv (deriv F) = deriv (deriv F) / deriv F` intertwines
-conjugation with conjugation, whatever the target line was. No symmetry of `Ω` is needed. -/
+for a nondegenerate multiplier.** Differentiating the affine reflection identity of `F` removes its
+constant, and `logDeriv_conj_eq_conj_logDeriv_of_ne_zero` applies to `deriv F`: the factor `u`
+cancels, so `logDeriv (deriv F) = deriv (deriv F) / deriv F` intertwines conjugation with
+conjugation, whatever the target line was. No symmetry of `Ω` is needed. -/
 theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_ne_zero (hu : u ≠ 0) (hΩopen : IsOpen Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) :
-    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) := by
-  rw [logDeriv_apply, logDeriv_apply, deriv_deriv_conj_eq_mul_conj_deriv_deriv hΩopen hrefl hz,
-    deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz, mul_div_mul_left _ _ hu]
-  exact (map_div₀ _ _ _).symm
+    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
+  logDeriv_conj_eq_conj_logDeriv_of_ne_zero hu hΩopen
+    (fun _ hw => deriv_conj_eq_mul_conj_deriv hΩopen hrefl hw) hz
 
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is conjugation-symmetric.**
-The factor `u` of the target reflection cancels between the second derivative and the first, so
-`logDeriv (deriv F) = deriv (deriv F) / deriv F` intertwines conjugation with conjugation, whatever
-the target line was. The degenerate factor `u = 0` is allowed: there `F` is constant on the open
-set of points whose conjugate lies in `Ω`, which contains `z` and `conj z`, and both sides vanish;
-this is the only place where `conj z ∈ Ω` is used. -/
+Differentiating the affine reflection identity of `F` removes its constant, and
+`logDeriv_conj_eq_conj_logDeriv` applies to `deriv F`: `logDeriv (deriv F)` intertwines
+conjugation with conjugation, whatever the target line was. The degenerate factor `u = 0` is
+allowed: there `deriv F` vanishes at `z` and at `conj z`, and both sides are `0`; this is the only
+place where `conj z ∈ Ω` is used. -/
 theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv (hΩopen : IsOpen Ω)
     (hrefl : ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
     {z : ℂ} (hz : z ∈ Ω) (hz' : (starRingEnd ℂ) z ∈ Ω) :
-    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) := by
-  rcases eq_or_ne u 0 with rfl | hu
-  · -- `deriv F` vanishes at `z` and at `conj z`, so both pre-Schwarzian values are `_ / 0 = 0`.
-    have h1 : deriv F ((starRingEnd ℂ) z) = 0 := by
-      simpa using deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz
-    have h2 : deriv F z = 0 := by
-      simpa using deriv_conj_eq_mul_conj_deriv hΩopen hrefl hz'
-    simp [logDeriv_apply, h1, h2]
-  · exact logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_ne_zero hu hΩopen hrefl hz
+    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
+  logDeriv_conj_eq_conj_logDeriv hΩopen
+    (fun _ hw => deriv_conj_eq_mul_conj_deriv hΩopen hrefl hw) hz hz'
 
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is real on the real axis.**
 -/
@@ -188,27 +213,28 @@ theorem im_logDeriv_deriv_eq_zero (hΩopen : IsOpen Ω)
   rw [hxc] at h
   exact Complex.conj_eq_iff_im.mp h.symm
 
-/-- **A reflection identity off the real axis passes to the derivative everywhere.** If `F`
-carries conjugation to the affine reflection `w ↦ c + u * conj w` at every non-real point, then
-`deriv F` carries conjugation to `w ↦ u * conj w` at every point, the real axis included. Neither
-differentiability nor continuity of `F` is assumed: where `F` is not differentiable both sides
-are `0`. -/
-theorem deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero
-    (hrefl : ∀ z : ℂ, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z)) (z : ℂ) :
+/-- **A reflection identity off the real axis passes to the derivative, real points included.** If
+`F` carries conjugation to the affine reflection `w ↦ c + u * conj w` at every non-real point of an
+open set `Ω`, then `deriv F` carries conjugation to `w ↦ u * conj w` at every point of `Ω`, the real
+points included. Neither differentiability nor continuity of `F` is assumed: where `F` is not
+differentiable both sides are `0`. At a real point the identity is read off from the upper
+half-plane, which accumulates there. -/
+theorem deriv_conj_eq_mul_conj_deriv_of_im_ne_zero (hΩopen : IsOpen Ω)
+    (hrefl : ∀ z ∈ Ω, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
+    {z : ℂ} (hz : z ∈ Ω) :
     deriv F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (deriv F z) := by
-  rcases ne_or_eq z.im 0 with hz | hz
-  · exact deriv_conj_eq_mul_conj_deriv (isOpen_ne_fun Complex.continuous_im continuous_const)
-      hrefl hz
-  have hzc : (starRingEnd ℂ) z = z := Complex.conj_eq_iff_im.mpr hz
+  rcases ne_or_eq z.im 0 with hz0 | hz0
+  · exact deriv_conj_eq_mul_conj_deriv
+      (hΩopen.inter (isOpen_ne_fun Complex.continuous_im continuous_const))
+      (fun w hw => hrefl w hw.1 hw.2) ⟨hz, hz0⟩
+  have hzc : (starRingEnd ℂ) z = z := Complex.conj_eq_iff_im.mpr hz0
   rw [hzc]
   by_cases hd : DifferentiableAt ℂ F z
   swap
   · simp [deriv_zero_of_not_differentiableAt hd]
-  -- Off the axis `F` agrees with `H w = c + u * conj (F (conj w))`, which is differentiable at `z`
-  -- with derivative `u * conj (deriv F z)`.
+  -- Near `z` and off the axis `F` agrees with `H w = c + u * conj (F (conj w))`, which is
+  -- differentiable at `z` with derivative `u * conj (deriv F z)`.
   set H : ℂ → ℂ := fun w => c + u * (starRingEnd ℂ) (F ((starRingEnd ℂ) w)) with hH
-  have hEq : ∀ w : ℂ, w.im ≠ 0 → H w = F w := fun w hw => by
-    simpa [hH] using (hrefl ((starRingEnd ℂ) w) (by simpa using hw)).symm
   have hHd : HasDerivAt H (u * (starRingEnd ℂ) (deriv F z)) z := by
     have h := hd.hasDerivAt.conj_conj
     rw [hzc] at h
@@ -216,37 +242,54 @@ theorem deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero
   -- The upper half-plane `U` accumulates at the real point `z`, so the two continuous functions
   -- agree at `z`, and `U` is a set of unique differentiability at `z`.
   set U : Set ℂ := {w : ℂ | 0 < w.im}
-  have hzU : z ∈ closure U := by
-    have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [hz])
-    rw [← hzre]
-    exact mem_closure_iff_nhdsWithin_neBot.mpr (Real.nhdsWithin_upperHalfPlaneSet_neBot z.re)
+  have hzU : z ∈ closure U := by simp [U, hz0]
   have : (𝓝[U] z).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hzU
+  have hEq : H =ᶠ[𝓝[U] z] F := by
+    have hΩ' : {w : ℂ | (starRingEnd ℂ) w ∈ Ω} ∈ 𝓝 z :=
+      (hΩopen.preimage Complex.continuous_conj).mem_nhds (by simpa [hzc] using hz)
+    filter_upwards [nhdsWithin_le_nhds hΩ', self_mem_nhdsWithin] with w hw hwU
+    simpa [hH] using (hrefl ((starRingEnd ℂ) w) hw (by simpa using ne_of_gt hwU)).symm
   have hHz : H z = F z := tendsto_nhds_unique
-    ((hHd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr'
-      (eventually_nhdsWithin_of_forall (s := U) fun w hw => hEq w (ne_of_gt hw)))
+    ((hHd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' hEq)
     (hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
   have hU : UniqueDiffWithinAt ℂ U z :=
     uniqueDiffWithinAt_convex_of_isRCLikeNormedField (convex_halfSpace_im_gt 0)
       ⟨I, by rw [(isOpen_lt continuous_const Complex.continuous_im).interior_eq]; simp⟩ hzU
   exact hU.eq_deriv U hd.hasDerivAt.hasDerivWithinAt
-    (hHd.hasDerivWithinAt.congr (fun w hw => (hEq w (ne_of_gt hw)).symm) hHz.symm)
+    (hHd.hasDerivWithinAt.congr_of_eventuallyEq hEq.symm hHz.symm)
+
+/-- **A reflection identity off the real axis passes to the derivative everywhere.** This is
+`deriv_conj_eq_mul_conj_deriv_of_im_ne_zero` on the whole plane: if `F` carries conjugation to
+`w ↦ c + u * conj w` at every non-real point, then `deriv F` carries conjugation to
+`w ↦ u * conj w` at every point, the real axis included. -/
+theorem deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero
+    (hrefl : ∀ z : ℂ, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z)) (z : ℂ) :
+    deriv F ((starRingEnd ℂ) z) = u * (starRingEnd ℂ) (deriv F z) :=
+  deriv_conj_eq_mul_conj_deriv_of_im_ne_zero isOpen_univ (fun w _ => hrefl w) (mem_univ z)
+
+/-- **The pre-Schwarzian derivative is conjugation-symmetric when a reflection identity holds off
+the real axis.** If `F` carries conjugation to the affine reflection `w ↦ c + u * conj w` at every
+non-real point of an open set `Ω`, then `logDeriv (deriv F)` intertwines conjugation with
+conjugation at every point `z` of `Ω` whose conjugate also lies in `Ω`, real points included. The
+degenerate factor `u = 0` is allowed: then `deriv F` vanishes at `z` and at `conj z`, and both sides
+are `0`. -/
+theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero (hΩopen : IsOpen Ω)
+    (hrefl : ∀ z ∈ Ω, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z))
+    {z : ℂ} (hz : z ∈ Ω) (hz' : (starRingEnd ℂ) z ∈ Ω) :
+    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
+  logDeriv_conj_eq_conj_logDeriv hΩopen
+    (fun _ hw => deriv_conj_eq_mul_conj_deriv_of_im_ne_zero hΩopen hrefl hw) hz hz'
 
 /-- **The pre-Schwarzian derivative is conjugation-symmetric everywhere when a reflection
-identity holds off the real axis.** If `F` carries conjugation to the affine reflection
-`w ↦ c + u * conj w` at every non-real point, then `logDeriv (deriv F)` intertwines conjugation
-with conjugation at every point, the real axis included. The degenerate factor `u = 0` is allowed:
-then `deriv F` vanishes identically and both sides are `0`. -/
+identity holds off the real axis.** This is
+`logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero` on the whole plane: if `F` carries
+conjugation to `w ↦ c + u * conj w` at every non-real point, then `logDeriv (deriv F)` intertwines
+conjugation with conjugation at every point, the real axis included. -/
 theorem logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_forall_im_ne_zero
     (hrefl : ∀ z : ℂ, z.im ≠ 0 → F ((starRingEnd ℂ) z) = c + u * (starRingEnd ℂ) (F z)) (z : ℂ) :
-    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) := by
-  have h1 := deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero hrefl
-  rcases eq_or_ne u 0 with rfl | hu
-  · have h0 : ∀ w, deriv F w = 0 := fun w => by simpa using h1 ((starRingEnd ℂ) w)
-    simp [logDeriv_apply, h0]
-  have h2 := deriv_conj_eq_mul_conj_deriv_of_forall_im_ne_zero (c := 0)
-    (fun w _ => by simpa using h1 w) z
-  rw [logDeriv_apply, logDeriv_apply, h2, h1, mul_div_mul_left _ _ hu]
-  exact (map_div₀ _ _ _).symm
+    logDeriv (deriv F) ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv (deriv F) z) :=
+  logDeriv_deriv_conj_eq_conj_logDeriv_deriv_of_im_ne_zero isOpen_univ (fun w _ => hrefl w)
+    (mem_univ z) (mem_univ _)
 
 section LineReflection
 
@@ -394,9 +437,8 @@ private theorem differentiableAt_schwarzReflection_logDeriv_deriv {x : ℝ}
       have hlim : Tendsto ψ (𝓝[{w : ℂ | 0 < w.im}] z) (𝓝 (G z)) :=
         ((hG.continuousOn.continuousAt (Metric.isOpen_ball.mem_nhds hz)).tendsto.mono_left
           nhdsWithin_le_nhds).congr' (eventually_nhdsWithin_of_forall fun w hw => hGψ hw)
-      have hzre : ((z.re : ℂ)) = z := Complex.ext (by simp) (by simp [h])
-      have : (𝓝[{w : ℂ | 0 < w.im}] z).NeBot := by
-        simpa [hzre] using Real.nhdsWithin_upperHalfPlaneSet_neBot z.re
+      have : (𝓝[{w : ℂ | 0 < w.im}] z).NeBot :=
+        mem_closure_iff_nhdsWithin_neBot.mp (by simp [h])
       have hGre : ((G z).re : ℂ) = G z := Complex.conj_eq_iff_re.mp <| by
         simpa [Complex.conj_eq_iff_im.mpr h] using (hGconj z).symm
       simp only [φ, schwarzReflection_of_im_zero h, ψu, h, lt_irrefl, ↓reduceIte]

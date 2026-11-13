@@ -200,10 +200,10 @@ theorem differentiableOn_lineSchwarzReflection_of_symmetric {Ω : Set ℂ} {p a 
     fun z _ => lineSchwarzReflection_def p a q b f z
 
 /-- Affine-line Schwarz reflection intertwines reflection in the source line with reflection in
-the target line. For `b ≠ 0` the boundary hypothesis says precisely that the original function
-takes the source line into the target line, and the target map is a genuine reflection. For
-`b = 0` the extension is the constant `q`, the hypothesis `hline` holds automatically, and the
-statement degenerates to `q = q`. -/
+the target line at the point `z`. For `b ≠ 0` the target map is a genuine reflection, and the
+pointwise hypothesis `hline` requires `f z` to lie on the target line when `z` lies on the source
+line; it holds vacuously when `z` is off the source line. For `b = 0` the extension is the
+constant `q`, `hline` holds automatically, and the statement degenerates to `q = q`. -/
 theorem lineSchwarzReflection_sourceReflection {p a q b : ℂ} {f : ℂ → ℂ}
     (ha : a ≠ 0) {z : ℂ} (hline : ((z - p) / a).im = 0 → ((f z - q) / b).im = 0) :
     lineSchwarzReflection p a q b f
