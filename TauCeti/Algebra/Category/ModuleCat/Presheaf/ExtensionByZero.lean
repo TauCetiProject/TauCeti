@@ -38,7 +38,7 @@ variable {P : Type u} [Preorder P] (R : Pᵒᵖ ⥤ RingCat.{w}) (U : P)
 namespace ExtensionByZero
 
 /-- Restriction map of `F` along a morphism in `Pᵒᵖ` below `U`, viewed over `(R.map f).hom`. -/
-private def overMapF (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V W : Pᵒᵖ}
+private def overMap (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V W : Pᵒᵖ}
     (f : V ⟶ W) (hV : V.unop ≤ U) :
     F.obj (op (Over.mk (homOfLE hV))) ⟶
       (ModuleCat.restrictScalars (R.map f).hom).obj
@@ -47,24 +47,24 @@ private def overMapF (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V W
     (V := Over.mk (homOfLE hV)) f.unop).op
 
 @[simp]
-private lemma overMapF_id (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V : Pᵒᵖ}
+private lemma overMap_id (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V : Pᵒᵖ}
     (hV : V.unop ≤ U) :
-    overMapF R U F (𝟙 V) hV =
+    overMap R U F (𝟙 V) hV =
       (ModuleCat.restrictScalarsId'App (R.map (𝟙 V)).hom
         (congrArg RingCat.Hom.hom (R.map_id V)) _).inv := by
   have hi : (Over.homMk (U := Over.mk (homOfLE hV))
       (V := Over.mk (homOfLE hV)) (𝟙 V).unop).op = 𝟙 _ :=
     Quiver.Hom.unop_inj (Over.OverMorphism.ext rfl)
   ext x
-  simpa [overMapF] using F.congr_map_apply hi x
+  simpa [overMap] using F.congr_map_apply hi x
 
 @[simp]
-private lemma overMapF_comp (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R))
+private lemma overMap_comp (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R))
     {V W Z : Pᵒᵖ} (f : V ⟶ W) (g : W ⟶ Z) (hV : V.unop ≤ U) :
-    overMapF R U F (f ≫ g) hV =
-      overMapF R U F f hV ≫
+    overMap R U F (f ≫ g) hV =
+      overMap R U F f hV ≫
         (ModuleCat.restrictScalars (R.map f).hom).map
-          (overMapF R U F g ((leOfHom f.unop).trans hV)) ≫
+          (overMap R U F g ((leOfHom f.unop).trans hV)) ≫
         (ModuleCat.restrictScalarsComp'App (R.map f).hom (R.map g).hom (R.map (f ≫ g)).hom
           (congrArg RingCat.Hom.hom (R.map_comp f g)) _).inv := by
   have hc : (Over.homMk (U := Over.mk (homOfLE ((leOfHom (f ≫ g).unop).trans hV)))
@@ -79,12 +79,12 @@ private lemma overMapF_comp (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R
   exact (F.congr_map_apply hc x).trans (F.map_comp_apply _ _ x)
 
 @[reassoc]
-private lemma overMapF_naturality {F G : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
+private lemma overMap_naturality {F G : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
     (α : F ⟶ G) {V W : Pᵒᵖ} (f : V ⟶ W) (hV : V.unop ≤ U) :
-    overMapF R U F f hV ≫
+    overMap R U F f hV ≫
         (ModuleCat.restrictScalars (R.map f).hom).map
           (α.app (op (Over.mk (homOfLE ((leOfHom f.unop).trans hV))))) =
-      α.app (op (Over.mk (homOfLE hV))) ≫ overMapF R U G f hV := by
+      α.app (op (Over.mk (homOfLE hV))) ≫ overMap R U G f hV := by
   ext x
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.restrictScalars.map_apply]
   exact PresheafOfModules.naturality_apply α _ x
@@ -100,11 +100,6 @@ private def objIso (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V : P
     (h : V.unop ≤ U) : obj R U F V ≅ F.obj (op (Over.mk (homOfLE h))) :=
   eqToIso (dite_eq_left h)
 
-private lemma objIso_inv_hom_apply (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R))
-    {V : Pᵒᵖ} (h : V.unop ≤ U) (x : F.obj (op (Over.mk (homOfLE h)))) :
-    (objIso R U F h).hom.hom ((objIso R U F h).inv.hom x) = x :=
-  congr(($((objIso R U F h).inv_hom_id)).hom x)
-
 private lemma isZero_obj (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V : Pᵒᵖ}
     (h : ¬ V.unop ≤ U) : IsZero (obj R U F V) := by
   rw [obj, dite_eq_right h]
@@ -114,7 +109,7 @@ open Classical in
 private def map (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) {V W : Pᵒᵖ} (f : V ⟶ W) :
     obj R U F V ⟶ (ModuleCat.restrictScalars (R.map f).hom).obj (obj R U F W) :=
   if hV : V.unop ≤ U then
-    (objIso R U F hV).hom ≫ overMapF R U F f hV ≫
+    (objIso R U F hV).hom ≫ overMap R U F f hV ≫
       (ModuleCat.restrictScalars (R.map f).hom).map
         (objIso R U F ((leOfHom f.unop).trans hV)).inv
   else 0
@@ -123,7 +118,7 @@ private lemma map_hom_apply (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R
     (f : V ⟶ W) (hV : V.unop ≤ U) (x : obj R U F V) :
     (map R U F f).hom x =
       (objIso R U F ((leOfHom f.unop).trans hV)).inv.hom
-        ((overMapF R U F f hV).hom ((objIso R U F hV).hom.hom x)) := by
+        ((overMap R U F f hV).hom ((objIso R U F hV).hom.hom x)) := by
   rw [map, dite_eq_left hV]
   rfl
 
@@ -134,13 +129,13 @@ private def presheaf (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) :
   map := map R U F
   map_id V := by
     by_cases h : V.unop ≤ U
-    · simp only [map, dite_eq_left h, overMapF_id, ModuleCat.restrictScalarsId'_inv_app]
+    · simp only [map, dite_eq_left h, overMap_id, ModuleCat.restrictScalarsId'_inv_app]
       rw [← ModuleCat.restrictScalarsId'App_inv_naturality, Iso.hom_inv_id_assoc]
     · exact (isZero_obj R U F h).eq_of_src _ _
   map_comp {V W Z} f g := by
     by_cases h : V.unop ≤ U
     · have hW := (leOfHom f.unop).trans h
-      simp only [map, dite_eq_left h, dite_eq_left hW, overMapF_comp, Functor.map_comp,
+      simp only [map, dite_eq_left h, dite_eq_left hW, overMap_comp, Functor.map_comp,
         Category.assoc, Iso.inv_hom_id_map_assoc, ModuleCat.restrictScalarsComp'_inv_app]
       rw [← ModuleCat.restrictScalarsComp'App_inv_naturality]
     · simp [map, h]
@@ -172,7 +167,7 @@ private def functor : PresheafOfModules.{v} ((Over.forget U).op ⋙ R) ⥤ Presh
         · simp only [presheaf_obj, presheaf_map, map, mapApp, dite_eq_left hV,
             dite_eq_left ((leOfHom f.unop).trans hV), Functor.map_comp, Category.assoc,
             Iso.inv_hom_id_map_assoc, Iso.inv_hom_id_assoc]
-          rw [reassoc_of% overMapF_naturality]
+          rw [reassoc_of% overMap_naturality]
         · simp [map, mapApp, hV] }
   map_id F := by
     refine PresheafOfModules.hom_ext fun V ↦ ?_
@@ -188,11 +183,8 @@ presheaf. -/
 private def evaluationIso {V : P} (h : V ≤ U) :
     functor R U ⋙ PresheafOfModules.evaluation R (op V) ≅
       PresheafOfModules.evaluation ((Over.forget U).op ⋙ R) (op (Over.mk (homOfLE h))) :=
-  NatIso.ofComponents (fun F ↦ objIso R U F h) fun {F G} α ↦ by
-    have hα : mapApp R U α (op V) ≫ (objIso R U G h).hom =
-        (objIso R U F h).hom ≫ α.app (op (Over.mk (homOfLE h))) := by
-      simp [mapApp, h]
-    exact hα
+  NatIso.ofComponents (fun F ↦ objIso R U F h) fun {_ G} _ ↦
+    (Iso.eq_comp_inv (objIso R U G h)).mp ((dite_eq_left h).trans (Category.assoc _ _ _).symm)
 
 private def restrictObjIso (F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)) (V : (Over U)ᵒᵖ) :
     obj R U F (op V.unop.left) ≅ F.obj V :=
@@ -209,13 +201,13 @@ private def restrictHom {F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
       ((restrictObjIso R U F V).inv.hom x)
     have hv : (objIso R U F (V := op V.unop.left) (leOfHom V.unop.hom)).hom.hom
         ((restrictObjIso R U F V).inv.hom x) = x :=
-      congr(($((restrictObjIso R U F V).inv_hom_id)).hom x)
+      ModuleCat.hom_inv_apply (restrictObjIso R U F V) x
     have h2 : (map R U F ((Over.forget U).op.map f)).hom
         ((restrictObjIso R U F V).inv.hom x) =
         (restrictObjIso R U F W).inv.hom ((F.map f).hom x) := by
       rw [map_hom_apply R U F _ (leOfHom V.unop.hom)]
       exact congrArg (restrictObjIso R U F W).inv.hom
-        ((congrArg (overMapF R U F _ _).hom hv).trans
+        ((congrArg (overMap R U F _ _).hom hv).trans
           (F.congr_map_apply (Quiver.Hom.unop_inj (Over.OverMorphism.ext rfl)) x))
     exact (congrArg (α.app (op W.unop.left)).hom h2).symm.trans h1
 
@@ -246,14 +238,14 @@ private def extendHom {F : PresheafOfModules.{v} ((Over.forget U).op ⋙ R)}
   naturality {V W} f := by
     by_cases hV : V.unop ≤ U
     · refine ModuleCat.hom_ext (LinearMap.ext fun (x : obj R U F V) ↦ ?_)
-      have h1 : (extendApp R U α W).hom ((map R U F f).hom x) =
-          (G.map f).hom ((extendApp R U α V).hom x) := by
-        rw [map_hom_apply R U F f hV,
-          extendApp_hom_apply R U α ((leOfHom f.unop).trans hV),
-          extendApp_hom_apply R U α hV]
-        exact (congrArg (α.app _).hom (objIso_inv_hom_apply R U F _ _)).trans
-          (PresheafOfModules.naturality_apply α _ _)
-      exact h1
+      have hW := (leOfHom f.unop).trans hV
+      have hinv := ModuleCat.hom_inv_apply (objIso R U F hW)
+        ((overMap R U F f hV).hom ((objIso R U F hV).hom.hom x))
+      exact (congrArg (extendApp R U α W).hom (map_hom_apply R U F f hV x)).trans
+        ((extendApp_hom_apply R U α hW _).trans
+          ((congrArg (α.app _).hom hinv).trans
+            ((PresheafOfModules.naturality_apply α _ _).trans
+              (congrArg (G.map f).hom (extendApp_hom_apply R U α hV x).symm))))
     · simp [map, extendApp, hV]
 
 /-- Extension by zero is left adjoint to restriction to the lower interval. -/
@@ -273,12 +265,14 @@ private def adjunction : functor R U ⊣
               ((restrictObjIso R U F V).inv_hom_id_assoc (α.app V)) }
       homEquiv_naturality_left_symm {F F' G} α β := PresheafOfModules.hom_ext fun V ↦ by
         by_cases h : V.unop ≤ U
-        · have hv : extendApp R U (α ≫ β) V = mapApp R U α V ≫ extendApp R U β V := by
-            simp only [extendApp, mapApp, dite_eq_left h, PresheafOfModules.comp_app,
-              Category.assoc]
-            exact congrArg ((objIso R U F h).hom ≫ α.app _ ≫ ·)
-              ((objIso R U F' h).inv_hom_id_assoc _).symm
-          exact hv
+        · exact (dite_eq_left h).trans <|
+            (congrArg ((objIso R U F h).hom ≫ α.app _ ≫ ·)
+              ((objIso R U F' h).inv_hom_id_assoc _).symm).trans <|
+              (Category.assoc _ _ _).symm.trans <|
+                (Category.assoc _ _ _).symm.trans <|
+                  congrArg₂ (· ≫ ·)
+                    (dite_eq_left h : mapApp R U α V = _).symm
+                    (dite_eq_left h : extendApp R U β V = _).symm
         · exact (isZero_obj R U F h).eq_of_src _ _
       homEquiv_naturality_right α β :=
         PresheafOfModules.hom_ext fun _ ↦ (Category.assoc _ _ _).symm }
