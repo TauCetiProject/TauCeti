@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.SymmetricPower.Lift
 
 /-!
@@ -41,6 +42,8 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 * `LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq` and
   `LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq`: every symmetric, respectively
   alternating, form is the form of a functional on the corresponding square.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a finite free module every alternating form
+  is `B - B.flip` for some form `B`, in every characteristic.
 
 ## Implementation notes
 
@@ -165,6 +168,23 @@ theorem _root_.LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq
     ext x y
     simp only [ofExteriorSquareDual_apply, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
     exact LinearMap.IsAlt.toAlternatingMap_apply hB ![x, y]⟩
+
+/-- **Every alternating form on a finite free module is `B - B.flip` for some form `B`**: in a
+basis, take for `B` the strictly upper triangular part of the matrix of the alternating form. -/
+theorem _root_.LinearMap.BilinForm.IsAlt.exists_sub_flip_eq [Module.Free k V] [Module.Finite k V]
+    {A : BilinForm k V} (hA : A.IsAlt) : ∃ B : BilinForm k V, B - B.flip = A := by
+  let b := (Module.Free.chooseBasis k V).reindex (Fintype.equivFin _)
+  let M : Matrix (Fin (Fintype.card (Module.Free.ChooseBasisIndex k V)))
+      (Fin (Fintype.card (Module.Free.ChooseBasisIndex k V))) k :=
+    Matrix.of fun i j => if i < j then A (b i) (b j) else 0
+  have key (i j) : Matrix.toBilin b M (b i) (b j) = M i j := by
+    rw [← LinearMap.BilinForm.toMatrix_apply b, LinearMap.BilinForm.toMatrix_toBilin]
+  refine ⟨Matrix.toBilin b M, LinearMap.BilinForm.ext_basis b fun i j => ?_⟩
+  simp only [LinearMap.sub_apply, LinearMap.BilinForm.flip_apply, key]
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [M, h, h.not_gt]
+  · simp [M, hA.self_eq_zero]
+  · simp [M, h, h.not_gt, hA.neg_eq (b j) (b i)]
 
 end CommRing
 

@@ -40,32 +40,27 @@ count of invariant forms:
 
 On an **irreducible** representation over an algebraically closed field the invariant forms are at
 most a line, and `TauCeti.Representation.IsInvariantForm.isSymm_or_isAlt` says a nonzero one is
-symmetric or alternating.  Away from characteristic two no nonzero form is both, so the two counts
-are `1, 0` or `0, 1` or `0, 0`, which is the **trichotomy**: `ν₂(ρ)` is `1` when `ρ` carries a
+symmetric or alternating.  The two counts add up to the count of all invariant forms (see below), so
+they are `1, 0` or `0, 1` or `0, 0`, which is the **trichotomy**: `ν₂(ρ)` is `1` when `ρ` carries a
 nonzero invariant symmetric form (the orthogonal case), `-1` when it carries a nonzero invariant
 alternating form (the symplectic, or quaternionic, case), and `0` when it carries no nonzero
 invariant form at all (the complex case).  The nonzero invariant form of the first two cases is
-automatically nondegenerate, by
-`TauCeti.Representation.IsInvariantForm.nondegenerate`.  That the indicator takes only these three
-values needs no hypothesis on the characteristic: each of the two counts is at most the count `0`
-or `1` of all invariant forms, and when `(|G| : k) = 0` the indicator is `0` by the convention
-`0⁻¹ = 0`.
+automatically nondegenerate, by `TauCeti.Representation.IsInvariantForm.nondegenerate`.  That the
+indicator takes only these three values needs no hypothesis on the characteristic: each of the two
+counts is at most the count `0` or `1` of all invariant forms, and when `(|G| : k) = 0` the
+indicator is `0` by the convention `0⁻¹ = 0`.
 
-Currying identifies the invariant forms with the invariant functionals on the tensor square
-`V ⊗ V` (`Representation.map_lcurry_eq_invariantForms`), so over a field in which `|G|` is
-invertible `Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self` says that the
-invariant forms and the invariants of `V ⊗ V` have the same `finrank`: the same dimension when
-finite-dimensional, and `0` on both sides, by convention, otherwise.  Both lemmas are in
-`TauCeti/RepresentationTheory/InvariantForm.lean`.
-
-Characteristic zero does three jobs, and nothing else: it moves the splitting of that count over
-the two squares from an equation in `k` to an equation of natural numbers, it keeps a form from
-being symmetric and alternating at once, and it supplies `Invertible (Nat.card G : k)` in the
-statements that do not assume it.  Averaging characters produces identities in `k` and nothing
-more, so for a finite-dimensional `V` over a field `k` in which `|G|` is invertible the splitting is
-stated first in that form (`TauCeti.Representation.finrank_invariantForms_cast`); in characteristic
-`p` it is an identity of residues, and it is the injectivity of `ℕ → k` that turns it into an
-equality of dimensions, for a finite group.
+Nothing is asked of the characteristic beyond the invertibility of `|G|`.  The map `B ↦ B - B.flip`
+carries the invariant forms onto the invariant alternating forms, with the invariant symmetric forms
+as kernel: in finite dimensions an alternating form is `B₀ - B₀.flip` for some form `B₀`
+(`LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`), and averaging `B₀` over `G` makes it invariant
+(`Representation.exists_mem_invariantForms_sub_flip_eq`).  So the invariant forms are as many as the
+invariant symmetric and the invariant alternating forms together, as natural numbers, even in
+characteristic two, where the two kinds of form overlap; with the two counts above this is
+`TauCeti.Representation.finrank_invariantForms`.  Characteristic two matters only for
+`TauCeti.Representation.frobeniusSchurIndicator_eq_neg_one_iff`, which assumes `2 ≠ 0`: when `2 = 0`
+we have `-1 = 1`, and the trivial one-dimensional representation has indicator `1 = -1` but no
+nonzero alternating form.
 
 Three ingredients come from earlier modules and are only applied here.  The invariant forms
 themselves and the symmetric and the alternating ones among them are in
@@ -73,24 +68,24 @@ themselves and the symmetric and the alternating ones among them are in
 square into a form is `TauCeti.BilinForm.ofSymmetricSquareDual` and
 `TauCeti.BilinForm.ofExteriorSquareDual`, in `TauCeti/LinearAlgebra/BilinearForm/Squares.lean`; and
 the fact that the dictionary carries the invariant functionals onto the invariant forms, with the
-two counts that follow, is in `TauCeti/RepresentationTheory/InvariantForm/Squares.lean`.  What this
-file adds is the count of all invariant forms, the indicator as a signed count, and the
-trichotomy.
+two counts that follow and the count of all invariant forms by the symmetric and the alternating
+ones, is in `TauCeti/RepresentationTheory/InvariantForm/Squares.lean`.  What this file adds is the
+count of all invariant forms by the invariants of the two squares, the indicator as a signed count,
+and the trichotomy.
 
 ## Main results
 
 * `TauCeti.Representation.finrank_invariantForms`: **the invariant forms are as many as the
-  invariants of the two squares together**, for a finite-dimensional representation of a finite
-  group over a field of characteristic zero, as natural numbers; for a finite-dimensional `V` over a
-  field in which `|G|` is invertible it holds as an identity in `k`
-  (`TauCeti.Representation.finrank_invariantForms_cast`).
+  invariants of the two squares together**, as natural numbers, for a finite-dimensional
+  representation over a field in which `|G|` is invertible, in every characteristic; its image in
+  `k` is `TauCeti.Representation.finrank_invariantForms_cast`.
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_sub_finrank_invariantForms`: **the indicator is
   the signed count of invariant forms**, `ν₂(ρ) = dim {symmetric} - dim {alternating}`.
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_one_iff`,
   `TauCeti.Representation.frobeniusSchurIndicator_eq_neg_one_iff` and
   `TauCeti.Representation.frobeniusSchurIndicator_eq_zero_iff`: **the trichotomy**, each value of
   the indicator characterized by the invariant forms, for an irreducible representation over an
-  algebraically closed field of characteristic zero.
+  algebraically closed field in which `|G|` is invertible (and `2 ≠ 0`, for the value `-1`).
 * `TauCeti.Representation.frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one`: the indicator
   of an irreducible representation over an algebraically closed field takes only the values `1`,
   `0` and `-1`, in every characteristic.
@@ -98,18 +93,16 @@ trichotomy.
 ## Implementation notes
 
 The identifications of the invariant symmetric and alternating forms with the invariant
-functionals on the two squares (`TauCeti/RepresentationTheory/InvariantForm/Squares.lean`), and the
-one for the tensor square (`TauCeti/RepresentationTheory/InvariantForm.lean`), hold over any
-commutative ring, with no finiteness assumption.  The dimension counts read off them need `k` to be
-a field in which `|G|` is invertible; they equate `finrank`s, so on an infinite-dimensional
-invariant space both sides are `0` by convention.  The results of this file take the field in
-`Type`, as `TauCeti.Representation.frobeniusSchurIndicator` does.
+functionals on the two squares (`TauCeti/RepresentationTheory/InvariantForm/Squares.lean`) hold
+over any commutative ring, with no finiteness assumption.  The dimension counts read off them need
+`k` to be a field in which `|G|` is invertible; they equate `finrank`s, so on an
+infinite-dimensional invariant space both sides are `0` by convention.  The results of this file
+take the field in `Type`, as `TauCeti.Representation.frobeniusSchurIndicator` does.
 
-What connects the submodule of invariant forms to the character machinery is currying:
-`Representation.map_lcurry_eq_invariantForms` identifies it with the invariant functionals on
-`V ⊗ V`, `TauCeti.Representation.finrank_invariants_dual` counts those as the invariants of
-`V ⊗ V`, and Mathlib's `Representation.card_inv_mul_sum_char_eq_finrank` counts the invariants of
-`V ⊗ V` by characters.
+What connects the invariant forms to the character machinery is
+`TauCeti.Representation.frobeniusSchurIndicator_eq_sub_finrank_invariants`, which computes the
+indicator from the invariants of the two squares; the two square counts then turn those invariants
+into invariant forms.
 
 The dimension lemmas used below are stated for an abstract module and applied with that module
 supplied explicitly.  The reason is mechanical: the `AddCommMonoid` structure on a space of
@@ -142,43 +135,29 @@ open _root_.LinearMap (BilinForm)
 
 section Counting
 
-variable [Field k] [Group G] [AddCommGroup V] [Module k V]
-variable [FiniteDimensional k V] [Finite G]
+variable [Field k] [Group G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+  [Invertible (Nat.card G : k)]
 
-section Invertible
+/-- **The invariant forms are as many as the invariants of the two squares together**, for a
+finite-dimensional `V` over a field in which `|G|` is invertible, in every characteristic.  The
+invariant symmetric and alternating forms together are as many as the invariant forms, and they
+are as many as the invariants of the symmetric, respectively exterior, square; see
+`Representation.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible`
+with `Representation.finrank_symmetricInvariantForms` and
+`Representation.finrank_alternatingInvariantForms`. -/
+theorem finrank_invariantForms (ρ : Representation k G V) :
+    finrank k (invariantForms ρ) =
+      finrank k (ρ.symmetricPower 2).invariants + finrank k (ρ.exteriorPower 2).invariants := by
+  rw [← ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible,
+    ρ.finrank_symmetricInvariantForms, ρ.finrank_alternatingInvariantForms]
 
-variable [Invertible (Nat.card G : k)]
-
-omit [Finite G] in
 /-- **The invariant forms are as many as the invariants of the two squares together**, as an
-identity in `k`, for a finite-dimensional `V` over a field in which `|G|` is invertible: the
-invariant forms have the `finrank` of the invariants of the tensor square
-(`Representation.finrank_invariantForms_eq_finrank_invariants_tprod_self`), and
-`TauCeti.Representation.finrank_invariants_tprod_self_cast` splits that count in two.
-
-In characteristic `p` this is an identity of residues only; see
-`TauCeti.Representation.finrank_invariantForms` for the characteristic-zero form. -/
+identity in `k`: the image in `k` of `TauCeti.Representation.finrank_invariantForms`. -/
 theorem finrank_invariantForms_cast (ρ : Representation k G V) :
     (finrank k (invariantForms ρ) : k) =
       (finrank k (ρ.symmetricPower 2).invariants : k) +
         (finrank k (ρ.exteriorPower 2).invariants : k) := by
-  rw [ρ.finrank_invariantForms_eq_finrank_invariants_tprod_self,
-    finrank_invariants_tprod_self_cast]
-
-end Invertible
-
-variable [CharZero k]
-
-/-- **The invariant forms are as many as the invariants of the two squares together**, as natural
-numbers, for a finite-dimensional representation of a finite group over a field of characteristic
-zero.  Characteristic zero is what lifts `TauCeti.Representation.finrank_invariantForms_cast` from
-an identity in `k`. -/
-theorem finrank_invariantForms (ρ : Representation k G V) :
-    finrank k (invariantForms ρ) =
-      finrank k (ρ.symmetricPower 2).invariants + finrank k (ρ.exteriorPower 2).invariants := by
-  have : Invertible (Nat.card G : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
-  exact_mod_cast finrank_invariantForms_cast ρ
+  rw [finrank_invariantForms ρ, Nat.cast_add]
 
 end Counting
 
@@ -204,10 +183,10 @@ end Indicator
 
 section Trichotomy
 
-variable [Field k] [CharZero k] [IsAlgClosed k] [Group G] [Fintype G] [AddCommGroup V] [Module k V]
-  (ρ : Representation k G V) [ρ.IsIrreducible] {B : BilinForm k V}
+variable [Field k] [IsAlgClosed k] [Group G] [Fintype G] [Invertible (Nat.card G : k)]
+  [AddCommGroup V] [Module k V] (ρ : Representation k G V) [ρ.IsIrreducible] {B : BilinForm k V}
 
-omit [CharZero k] [IsAlgClosed k] [ρ.IsIrreducible] in
+omit [IsAlgClosed k] [Invertible (Nat.card G : k)] [ρ.IsIrreducible] in
 /-- **The complex case.** A representation with no nonzero invariant form has Frobenius-Schur
 indicator `0`.  For a finite-dimensional representation over a field in which `|G|` is invertible
 this is the count `ν₂(ρ) = 0 - 0`; when `(|G| : k) = 0` or `V` is infinite-dimensional,
@@ -234,8 +213,6 @@ form has Frobenius-Schur indicator `1`.  Such a form is automatically nondegener
 `TauCeti.Representation.IsInvariantForm.nondegenerate`. -/
 theorem frobeniusSchurIndicator_eq_one_of_isSymm (hB : IsInvariantForm ρ B) (hB0 : B ≠ 0)
     (hsymm : B.IsSymm) : frobeniusSchurIndicator ρ = 1 := by
-  have : Invertible (Nat.card G : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   have hone : finrank k (invariantForms ρ) = 1 := by
     rw [hB.invariantForms_eq_span hB0]
@@ -243,7 +220,7 @@ theorem frobeniusSchurIndicator_eq_one_of_isSymm (hB : IsInvariantForm ρ B) (hB
   have hle : 1 ≤ finrank k (symmetricInvariantForms ρ) :=
     Submodule.one_le_finrank_iff (R := k) (M := BilinForm k V) |>.mpr
       ((Submodule.ne_bot_iff _).mpr ⟨B, mem_symmetricInvariantForms.mpr ⟨hB, hsymm⟩, hB0⟩)
-  have hadd := ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
+  have hadd := ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible
   have hs : finrank k (symmetricInvariantForms ρ) = 1 := by omega
   have ha : finrank k (alternatingInvariantForms ρ) = 0 := by omega
   rw [frobeniusSchurIndicator_eq_sub_finrank_invariantForms, hs, ha]
@@ -254,8 +231,6 @@ form has Frobenius-Schur indicator `-1`.  Such a form is automatically nondegene
 `TauCeti.Representation.IsInvariantForm.nondegenerate`. -/
 theorem frobeniusSchurIndicator_eq_neg_one_of_isAlt (hB : IsInvariantForm ρ B) (hB0 : B ≠ 0)
     (halt : B.IsAlt) : frobeniusSchurIndicator ρ = -1 := by
-  have : Invertible (Nat.card G : k) :=
-    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
   have hone : finrank k (invariantForms ρ) = 1 := by
     rw [hB.invariantForms_eq_span hB0]
@@ -263,13 +238,13 @@ theorem frobeniusSchurIndicator_eq_neg_one_of_isAlt (hB : IsInvariantForm ρ B) 
   have hle : 1 ≤ finrank k (alternatingInvariantForms ρ) :=
     Submodule.one_le_finrank_iff (R := k) (M := BilinForm k V) |>.mpr
       ((Submodule.ne_bot_iff _).mpr ⟨B, mem_alternatingInvariantForms.mpr ⟨hB, halt⟩, hB0⟩)
-  have hadd := ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
+  have hadd := ρ.finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms_of_invertible
   have hs : finrank k (symmetricInvariantForms ρ) = 0 := by omega
   have ha : finrank k (alternatingInvariantForms ρ) = 1 := by omega
   rw [frobeniusSchurIndicator_eq_sub_finrank_invariantForms, hs, ha]
   simp
 
-omit [CharZero k] in
+omit [Invertible (Nat.card G : k)] in
 /-- **The Frobenius-Schur trichotomy.** The indicator of an irreducible representation over an
 algebraically closed field takes only the values `1`, `0` and `-1`, in every characteristic.  The
 invariant forms span at most a line, so when `|G|` is invertible in `k` the indicator, the signed
@@ -296,7 +271,8 @@ theorem frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one :
 
 /-- **The indicator is `1` exactly in the orthogonal case**, that is, exactly when the
 representation carries a nondegenerate invariant symmetric form.  Nondegeneracy is nonvanishing
-here, by `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`. -/
+here, by `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`.  This holds in every
+characteristic not dividing `|G|`; in characteristic two an alternating form is symmetric. -/
 theorem frobeniusSchurIndicator_eq_one_iff :
     frobeniusSchurIndicator ρ = 1 ↔
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsSymm ∧ B.Nondegenerate := by
@@ -304,17 +280,21 @@ theorem frobeniusSchurIndicator_eq_one_iff :
   refine ⟨fun h => ?_, fun ⟨_, hB, hsymm, hnd⟩ =>
     frobeniusSchurIndicator_eq_one_of_isSymm ρ hB (hB.nondegenerate_iff_ne_zero.mp hnd) hsymm⟩
   rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
-    ⟨C, hC, hC0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
+    ⟨C, hC, hC0, hsymm⟩ | ⟨C, hC, hC0, halt⟩ | hbot
   · exact ⟨C, hC, hsymm, hC.nondegenerate hC0⟩
-  · rw [frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt] at h
-    exact absurd h (by norm_num)
+  · -- `-1 = 1` happens only in characteristic two, where an alternating form is symmetric
+    rw [frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hC hC0 halt] at h
+    refine ⟨C, hC, ⟨fun x y => ?_⟩, hC.nondegenerate hC0⟩
+    rw [← halt.neg_eq y x, ← neg_one_mul, h, one_mul]
   · rw [frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ hbot] at h
     exact absurd h.symm one_ne_zero
 
 /-- **The indicator is `-1` exactly in the symplectic case**, that is, exactly when the
 representation carries a nondegenerate invariant alternating form.  Nondegeneracy is nonvanishing
-here, by `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`. -/
-theorem frobeniusSchurIndicator_eq_neg_one_iff :
+here, by `TauCeti.Representation.IsInvariantForm.nondegenerate_iff_ne_zero`.  The hypothesis
+`2 ≠ 0` cannot be dropped: in characteristic two `-1 = 1`, and the trivial one-dimensional
+representation has indicator `1` but no nonzero alternating form. -/
+theorem frobeniusSchurIndicator_eq_neg_one_iff [NeZero (2 : k)] :
     frobeniusSchurIndicator ρ = -1 ↔
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsAlt ∧ B.Nondegenerate := by
   have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
@@ -323,7 +303,7 @@ theorem frobeniusSchurIndicator_eq_neg_one_iff :
   rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨C, hC, hC0, halt⟩ | hbot
   · rw [frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm] at h
-    exact absurd h (by norm_num)
+    exact absurd (by linear_combination h : (2 : k) = 0) two_ne_zero
   · exact ⟨C, hC, halt, hC.nondegenerate hC0⟩
   · rw [frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ hbot] at h
     exact absurd h (by norm_num)
