@@ -98,7 +98,7 @@ abbrev SchottkyDouble : Type _ :=
 
 namespace SchottkyDouble
 
-variable {M}
+variable {M} {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 ℂ]
 
 /-! ### The doubled chart -/
 
@@ -386,8 +386,8 @@ theorem chartAt_swap (z : SchottkyDouble M) :
 /-- In the chart of the double at `z` and the chart at its image under the sheet swap, the swap is
 `z ↦ conj z` near the image of `z`. -/
 theorem writtenInExtChartAt_swap_eventuallyEq_conj (z : SchottkyDouble M) :
-    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) z (DoubleAlong.swap (borderedInterior M : Set M)ᶜ)
-      =ᶠ[𝓝 (extChartAt 𝓘(ℂ) z z)] fun w ↦ conj w := by
+    writtenInExtChartAt 𝓘(𝕜, ℂ) 𝓘(𝕜, ℂ) z (DoubleAlong.swap (borderedInterior M : Set M)ᶜ)
+      =ᶠ[𝓝 (extChartAt 𝓘(𝕜, ℂ) z z)] fun w ↦ conj w := by
   simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp, chartAt_swap]
   filter_upwards [(chartAt ℂ z).eventually_right_inverse (mem_chart_target ℂ z),
@@ -411,13 +411,14 @@ private theorem doubleChart_symm_trans_mem_contDiffGroupoid
     (doubleChart_symm_trans_eqOnSource he he' hpr)
 
 /-- The doubled chart of a chart of the bordered holomorphic maximal atlas of `M` is a chart of
-the holomorphic maximal atlas of the double. -/
-theorem doubleChart_mem_maximalAtlas {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+the `C^n` maximal atlas of the double for every `n`, the holomorphic one included. -/
+theorem doubleChart_mem_maximalAtlas {n : ℕ∞ω} {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
     (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
     doubleChart e (StructureGroupoid.maximalAtlas_mono
         (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
           (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
-      IsManifold.maximalAtlas 𝓘(ℂ) ω (SchottkyDouble M) := by
+      IsManifold.maximalAtlas 𝓘(ℂ) n (SchottkyDouble M) := by
+  refine IsManifold.maximalAtlas_subset_of_le le_top ?_
   rintro _ ⟨e', he', rfl⟩
   exact ⟨doubleChart_symm_trans_mem_contDiffGroupoid _ _ (he e' he').1,
     doubleChart_symm_trans_mem_contDiffGroupoid _ _ (he e' he').2⟩
@@ -480,7 +481,8 @@ theorem isOpenEmbedding_interiorInl : IsOpenEmbedding (interiorInl M) :=
 /-- In the chart of the interior at `x` and the chart of the double at its image, the inclusion of
 the interior in the first copy is the identity near the image of `x`. -/
 theorem writtenInExtChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M) :
-    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x (interiorInl M) =ᶠ[𝓝 (extChartAt 𝓘(ℂ) x x)] id := by
+    writtenInExtChartAt 𝓘(𝕜, ℂ) 𝓘(𝕜, ℂ) x (interiorInl M)
+      =ᶠ[𝓝 (extChartAt 𝓘(𝕜, ℂ) x x)] id := by
   simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
   filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x)] with w hw
@@ -488,8 +490,10 @@ theorem writtenInExtChartAt_interiorInl_eventuallyEq_id (x : borderedInterior M)
   rw [chartAt_inl, doubleChart_inl, ← chartAt_borderedInterior_apply x, hw]
 
 /-- **The first copy of the interior is holomorphic.** The inclusion of the interior of `M`, with
-its complex structure, in the first copy of the Schottky double is holomorphic. -/
-theorem contMDiff_interiorInl {n : ℕ∞ω} : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (interiorInl M) := by
+its complex structure, in the first copy of the Schottky double is `C^n` over every scalar field
+`𝕜` acting on `ℂ`: holomorphic for `𝕜 = ℂ` and real smooth for `𝕜 = ℝ`. -/
+theorem contMDiff_interiorInl {n : ℕ∞ω} :
+    ContMDiff 𝓘(𝕜, ℂ) 𝓘(𝕜, ℂ) n (interiorInl M) := by
   intro x
   refine contMDiffAt_iff.2 ⟨isOpenEmbedding_interiorInl.continuous.continuousAt, ?_⟩
   rw [modelWithCornersSelf_coe, range_id, contDiffWithinAt_univ]
@@ -517,8 +521,8 @@ theorem isOpenEmbedding_interiorInr : IsOpenEmbedding (interiorInr M) :=
 second copy, the inclusion of the interior in the second copy is `z ↦ conj z` near the image of
 `x`. -/
 theorem writtenInExtChartAt_interiorInr_eventuallyEq_conj (x : borderedInterior M) :
-    writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x (interiorInr M) =ᶠ[𝓝 (extChartAt 𝓘(ℂ) x x)]
-      fun w ↦ conj w := by
+    writtenInExtChartAt 𝓘(𝕜, ℂ) 𝓘(𝕜, ℂ) x (interiorInr M)
+      =ᶠ[𝓝 (extChartAt 𝓘(𝕜, ℂ) x x)] fun w ↦ conj w := by
   simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp]
   filter_upwards [(chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x),
