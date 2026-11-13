@@ -85,6 +85,25 @@ theorem floerOperator_eq (ω : SmoothTwoForm I M)
     curveVelocity_eq_mfderiv_snd (f := fun s t ↦ u (s, t)) hu']
   simp only [stdComplexLineReal_eq, stdComplexLineImag_eq]
 
+/-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
+domain-dependent endomorphism fields, the intrinsic Floer operator is affine in `q`, with
+derivative `Y(u)(∂t u - X_Kt)` in the tangent fibre at `u z`. -/
+theorem hasDerivAt_floerOperator_add_smul (ω : SmoothTwoForm I M)
+    (J Y : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ) (q : ℝ) :
+    HasDerivAt (fun q : ℝ ↦ (ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z : E))
+      (Y z (u z) (curveVelocity I (fun t ↦ u (z.1, t)) z.2 -
+        ω.hamiltonianVectorField (Kt z) (u z)) : E) q := by
+  set ξ := curveVelocity I (fun t ↦ u (z.1, t)) z.2 - ω.hamiltonianVectorField (Kt z) (u z)
+  have h (q : ℝ) : ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z =
+      ω.floerOperator J Ks Kt u z + q • Y z (u z) ξ := by
+    simp only [floerOperator_def, _root_.add_apply, _root_.smul_apply, ξ]
+    abel
+  have hd := ((hasDerivAt_id q).smul_const (F := E) (Y z (u z) ξ : E)).const_add (F := E)
+    (ω.floerOperator J Ks Kt u z : E)
+  exact (hd.congr_deriv (one_smul ℝ (Y z (u z) ξ : E))).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun q ↦ h q)
+
 variable [FiniteDimensional ℝ E]
 
 /-- For almost complex coefficients, the zero equation is complex linearity of `du - X_K`. -/

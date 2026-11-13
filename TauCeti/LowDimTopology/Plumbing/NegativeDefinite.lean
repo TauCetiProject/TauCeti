@@ -27,8 +27,7 @@ transport that statement through `Matrix.toBilin'` to the bilinear form
 `PlumbingGraph.intersectionForm`, obtaining the self-pairing sign, the resulting vanishing
 criterion and nondegeneracy. The injectivity of multiplication by the intersection matrix, like
 the nonvanishing of its determinant below, follows directly from positive definiteness of the
-negated matrix (`PlumbingGraph.isNegativeDefinite_iff`). As a self-validating example the `A₂`
-plumbing (two `-2`-framed spheres joined by an edge) is shown to be negative definite.
+negated matrix (`PlumbingGraph.isNegativeDefinite_iff`).
 
 Three further results are the quantitative half of the same hypothesis: nonvanishing of `det A`,
 Cauchy--Schwarz, and finiteness of the superlevel sets of the self-pairing. Cauchy--Schwarz for
@@ -59,7 +58,6 @@ computations.
 * `TauCeti.PlumbingGraph.sq_intersectionForm_le`: Cauchy--Schwarz for the intersection form.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.finite_setOfPred_le_intersectionForm_self`: only
   finitely many lattice points have self-pairing above a fixed bound.
-* `TauCeti.a2Plumbing_isNegativeDefinite`: the `A₂` plumbing is negative definite.
 
 ## References
 
@@ -211,30 +209,5 @@ theorem IsNegativeDefinite.finite_setOfPred_le_intersectionForm_self (h : P.IsNe
     _ ≤ N := hbound
 
 end PlumbingGraph
-
-/-- The `A₂` plumbing is negative definite: its negated intersection matrix is the `A₂` Cartan
-matrix `!![2, -1; -1, 2]`, whose quadratic form `2x₀² - 2x₀x₁ + 2x₁² = (x₀ - x₁)² + x₀² + x₁²` is
-positive on every nonzero integer vector. A self-validating instance of the negative-definite
-hypothesis of lattice homology. -/
-theorem a2Plumbing_isNegativeDefinite : a2Plumbing.IsNegativeDefinite := by
-  rw [PlumbingGraph.isNegativeDefinite_iff_forall_intersectionForm_self_neg]
-  intro x hx
-  have hIF : a2Plumbing.intersectionForm x x
-      = -2 * x 0 ^ 2 + 2 * (x 0 * x 1) - 2 * x 1 ^ 2 := by
-    rw [a2Plumbing.intersectionForm_apply, a2Plumbing_intersectionMatrix]
-    simp [Fin.sum_univ_two]
-    ring
-  rw [hIF]
-  have hx2 : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
-    by_contra hcon
-    rw [not_or, not_not, not_not] at hcon
-    exact hx (funext_iff.mpr (Fin.forall_fin_two.mpr ⟨hcon.1, hcon.2⟩))
-  have hsum : 0 < x 0 ^ 2 + x 1 ^ 2 := by
-    rcases hx2 with hne | hne
-    · have := (sq_nonneg (x 0)).lt_of_ne (Ne.symm (pow_ne_zero 2 hne))
-      nlinarith [sq_nonneg (x 1)]
-    · have := (sq_nonneg (x 1)).lt_of_ne (Ne.symm (pow_ne_zero 2 hne))
-      nlinarith [sq_nonneg (x 0)]
-  nlinarith [sq_nonneg (x 0 - x 1), hsum]
 
 end TauCeti

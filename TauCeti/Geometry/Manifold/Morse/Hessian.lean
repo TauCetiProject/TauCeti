@@ -54,6 +54,7 @@ Morse index is the negative index of inertia of the critical Hessian.
   `C²` map between boundaryless manifolds.
 * `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
   second derivative of `q` on the second components.
+  Its kernel is described by `TauCeti.criticalHessian_comp_snd_apply_eq_zero_iff`.
 * `TauCeti.criticalHessian_mfderiv_eq_zero` and `TauCeti.range_mfderiv_le_radical_criticalHessian`:
   tangent vectors to a family of critical points lie in the kernel of the critical Hessian, which is
   the radical of its quadratic form (`TauCeti.radical_toQuadraticMap_toBilinForm_criticalHessian`).
@@ -419,6 +420,16 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   simp only [fderiv_snd, hd, hsnd, ContinuousLinearMap.coe_snd', Pi.zero_apply]
   exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
     (add_zero _)
+
+/-- A tangent vector at `(x, y)` lies in the kernel of the critical Hessian of `q ∘ Prod.snd`
+exactly when its second component lies in the kernel of the second derivative of `q` at `y`. -/
+theorem criticalHessian_comp_snd_apply_eq_zero_iff {q : V → ℝ} {y : V} (hq : ContDiffAt ℝ 2 q y)
+    (x : M) (v : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)) :
+    criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, y) v = 0 ↔
+      fderiv ℝ (fderiv ℝ q) y v.2 = 0 := by
+  refine ⟨fun hv ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun hv ↦ ContinuousLinearMap.ext fun u ↦ ?_⟩
+  · exact (criticalHessian_comp_snd_apply hq x v ((0 : E), w)).symm.trans congr($hv (0, w))
+  · exact (criticalHessian_comp_snd_apply hq x v u).trans congr($hv u.2)
 
 end Prod
 
