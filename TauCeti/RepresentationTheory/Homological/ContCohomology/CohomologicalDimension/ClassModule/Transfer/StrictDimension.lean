@@ -132,7 +132,7 @@ private theorem map_charClass {H : Type u} [Group H] [TopologicalSpace H] [IsTop
   rw [H1EquivOfSmulEqSelf_symm_apply, H1EquivOfSmulEqSelf_symm_apply, explicitMap1_mk]
   congr 1
   ext h
-  simp [cocyclesMap1_coe, cochainsMap1_apply]
+  simp [coe_cocyclesMap1, cochainsMap1_apply]
 
 variable [CompactSpace G] [TotallyDisconnectedSpace G]
 

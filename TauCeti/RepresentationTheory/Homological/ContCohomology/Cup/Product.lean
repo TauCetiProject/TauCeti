@@ -257,7 +257,7 @@ noncomputable def explicitCup01 : H0 G M →+ H1 G N →+ H1 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z1 G P => (z : H1 G P))
-          (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+          (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 /-- The `(0,1)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup01_apply (m : H0 G M) :
@@ -273,7 +273,7 @@ theorem explicitCup01_mk (m : H0 G M) (b : Z1 G N) :
         Z1 G P) : H1 G P) := by
   rw [explicitCup01_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
-    (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+    (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 end CupZeroOne
 
@@ -315,7 +315,7 @@ noncomputable def explicitCup10 : H1 G M →+ H0 G N →+ H1 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z1 G P => (z : H1 G P))
-          (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+          (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 /-- The `(1,0)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup10_apply (a : H1 G M) (n : H0 G N) :
@@ -332,7 +332,7 @@ theorem explicitCup10_mk (a : Z1 G M) (n : H0 G N) :
   have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
   rw [explicitCup10_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
-    (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe, hn g]))
+    (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1, hn g]))
 
 end CupOneZero
 
@@ -371,7 +371,7 @@ noncomputable def explicitCup02 : H0 G M →+ H2 G N →+ H2 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff2_mk, explicitCoeff2_mk, explicitCoeff2_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z2 G P => (z : H2 G P))
-          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 /-- The `(0,2)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup02_apply (m : H0 G M) :
@@ -387,7 +387,7 @@ theorem explicitCup02_mk (m : H0 G M) (b : Z2 G N) :
         cup02_mem_Z2 G M N P μ hμ hequiv m b.2⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup02_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
-    (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+    (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 end CupZeroTwo
 
@@ -428,7 +428,7 @@ noncomputable def explicitCup20 : H2 G M →+ H0 G N →+ H2 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff2_mk, explicitCoeff2_mk, explicitCoeff2_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z2 G P => (z : H2 G P))
-          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 /-- The `(2,0)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup20_apply (a : H2 G M) (n : H0 G N) :
@@ -446,7 +446,7 @@ theorem explicitCup20_mk (a : Z2 G M) (n : H0 G N) :
   rw [explicitCup20_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
     (Subtype.ext (funext fun q => by
-      obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe, hn (g * h)]))
+      obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2, hn (g * h)]))
 
 end CupTwoZero
 
