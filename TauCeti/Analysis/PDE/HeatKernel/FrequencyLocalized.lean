@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
+public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
+public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
 import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Bochner.Fourier.Nonneg
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
@@ -48,6 +52,13 @@ Plancherel bound for kernels of band-limited symbols then gives
   `exp(-π² r² ν² t / 4)` in `Lᵖ`.
 * `TauCeti.exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_le`:
   the heat estimate for the Littlewood–Paley blocks `Δⱼ`, `j ≥ 1`.
+* `TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le`: the same estimate for
+  the heat semigroup on tempered distributions (`TemperedDistribution.heatSemigroup`), applied to
+  a block `Δⱼ u`, `j ≥ 1`, of a tempered distribution that is an `Lᵖ` function, for every
+  `1 ≤ p ≤ ∞`, including `p = ∞`.
+* `TemperedDistribution.littlewoodPaleyBlock_heatSemigroup_comm`: `Δⱼ e^{tΔ} = e^{tΔ} Δⱼ`.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le`: the heat
+  estimate `‖Δⱼ e^{tΔ} u‖_p ≤ C exp(-c (4^j - 1) t) ‖Δⱼ u‖_p` for every block, `j = 0` included.
 
 ## References
 
@@ -414,6 +425,121 @@ theorem exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlew
   rw [mem_ball_zero_iff, not_lt]
   exact h₁
 
+/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`,
+`E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
+distribution `u` whose block `Δ_{j+1} u`, with frequencies of size `2^j`, is an `Lᵖ` function `f`,
+the heat flow `e^{tΔ} Δ_{j+1} u` is an `Lᵖ` function `g` with
+
+`‖g‖_p ≤ C exp(-π² φ.rIn² 4^j t / 4) ‖f‖_p`. -/
+theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
+    (φ : ContDiffBump (0 : E)) :
+    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)),
+      TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u = f →
+      ∃ g : Lp F p (volume : Measure E), TemperedDistribution.heatSemigroup E F t
+          (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) = g ∧
+          ‖g‖ ≤ C * rexp (-(π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t))) * ‖f‖ := by
+  obtain ⟨χ, hχ, hχc, hχ0, -, hχ1⟩ := exists_contDiff_cutoff_annulus (E := E) φ.rIn_pos
+    (2 * φ.rOut)
+  obtain ⟨C, hC⟩ := exists_integral_norm_fourierInv_mul_exp_le hχ hχc (half_pos φ.rIn_pos) hχ0
+  refine ⟨C, fun {p} _ j t u f hf ↦ ?_⟩
+  have hν : (0 : ℝ) < 2 ^ j := by positivity
+  set σ : 𝓢(E, ℂ) := cutoffHeatSymbol hχ hχc hν.ne' t
+  set ψ : E → ℂ := fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)
+  have hψ : ψ.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley _
+  -- On the support of `ψ_{j+1}` the cutoff `χ (2^{-j} ·)` is one, so `σ` is the heat symbol there.
+  have hσψ : ψ * ⇑σ = ψ * fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) := by
+    funext ξ
+    simp only [Pi.mul_apply, σ, cutoffHeatSymbol_apply]
+    by_cases h : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0
+    · simp only [ψ, h, Complex.ofReal_zero, zero_mul]
+    obtain ⟨h₁, h₂⟩ := φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j (subset_tsupport _ h)
+    have hn : ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ = ((2 : ℝ) ^ j)⁻¹ * ‖ξ‖ := by
+      rw [norm_smul, norm_inv, norm_of_nonneg hν.le]
+    rw [hχ1 _ (by rw [hn]; exact (le_inv_mul_iff₀ hν).2 h₁)
+      (by rw [hn, inv_mul_le_iff₀ hν]; exact h₂.trans_eq (by ring)), one_mul]
+  -- So on the block `Δ_{j+1} u = ψ_{j+1}(D) u` the heat semigroup is the multiplier by `σ`.
+  have heq : TemperedDistribution.heatSemigroup E F t
+      (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) =
+      TemperedDistribution.fourierMultiplierCLM F ⇑σ
+        (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) := by
+    rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
+      TemperedDistribution.littlewoodPaleyBlock_apply,
+      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
+        (by exact Complex.hasTemperateGrowth_ofReal.comp
+              (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))),
+      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
+        σ.hasTemperateGrowth, hσψ]
+  obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
+  refine ⟨g, by rw [heq, hf, hg], hgn.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
+  have hσ : ⇑σ = fun ξ : E ↦ ((χ (((2 : ℝ) ^ j)⁻¹ • ξ) *
+      rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) :=
+    funext (cutoffHeatSymbol_apply hχ hχc hν.ne' t)
+  have h4 : ((2 : ℝ) ^ j) ^ 2 = 4 ^ j := by
+    rw [← pow_mul, mul_comm, pow_mul]
+    norm_num
+  have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
+  refine (hσ ▸ hC _ hν t t.2).trans_eq ?_
+  rw [h4, div_pow, h22]
+  ring_nf
+
 end HeatFlow
 
 end TauCeti
+
+/-! ### The heat flow of every Littlewood–Paley block of a tempered distribution -/
+
+namespace TemperedDistribution
+
+open MeasureTheory Real TauCeti
+open scoped NNReal ENNReal SchwartzMap
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  (φ : ContDiffBump (0 : E))
+
+/-- The Littlewood–Paley blocks commute with the heat semigroup. -/
+theorem littlewoodPaleyBlock_heatSemigroup_comm (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (heatSemigroup E F t u) =
+      heatSemigroup E F t (littlewoodPaleyBlock F φ j u) := by
+  rw [heatSemigroup_eq_fourierMultiplierCLM]
+  exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
+    (by exact Complex.hasTemperateGrowth_ofReal.comp
+          (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))) j u
+
+variable [CompleteSpace F]
+
+/-- **The heat flow of every Littlewood–Paley block.** There are constants `C ≥ 1` and `c > 0`,
+depending only on `φ`, `E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every `t ≥ 0`
+and every tempered distribution `u` whose block `Δⱼ u` is an `Lᵖ` function `f`, the block
+`Δⱼ e^{tΔ} u` is an `Lᵖ` function `g` with `‖g‖_p ≤ C exp(-c (4^j - 1) t) ‖f‖_p`. The factor
+`exp(-c (4^j - 1) t)` is `1` for the low-frequency block `j = 0`. -/
+theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le :
+    ∃ C c, 1 ≤ C ∧ 0 < c ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
+      ∃ g : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (heatSemigroup E F t u) = g ∧
+          ‖g‖ ≤ C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖ := by
+  obtain ⟨C, hC⟩ := TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le (F := F) φ
+  have hc : 0 < π ^ 2 * φ.rIn ^ 2 / 16 := by have := φ.rIn_pos; positivity
+  refine ⟨max C 1, π ^ 2 * φ.rIn ^ 2 / 16, le_max_right _ _, hc,
+    fun {p} _ j t u f hf ↦ ?_⟩
+  rw [littlewoodPaleyBlock_heatSemigroup_comm]
+  cases j with
+  | zero =>
+    obtain ⟨g, hg, hgn⟩ := exists_heatSemigroup_eq_and_norm_le t f
+    refine ⟨g, hf ▸ hg, hgn.trans ?_⟩
+    simp only [pow_zero, sub_self, zero_mul, mul_zero, neg_zero, Real.exp_zero, mul_one]
+    exact le_mul_of_one_le_left (norm_nonneg _) (le_max_right _ _)
+  | succ j =>
+    obtain ⟨g, hg, hgn⟩ := hC j t u f hf
+    refine ⟨g, hg, hgn.trans (mul_le_mul_of_nonneg_right
+      (mul_le_mul (le_max_left _ _) (exp_le_exp.2 ?_) (exp_pos _).le
+        ((le_max_right _ _).trans' zero_le_one)) (norm_nonneg _))⟩
+    -- `(4^{j+1} - 1) / 16 ≤ 4^j / 4`.
+    have h : π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t) =
+        π ^ 2 * φ.rIn ^ 2 / 16 * ((4 ^ (j + 1) - 1) * t) + π ^ 2 * φ.rIn ^ 2 / 16 * t := by
+      ring
+    linarith [mul_nonneg hc.le t.coe_nonneg]
+
+end TemperedDistribution

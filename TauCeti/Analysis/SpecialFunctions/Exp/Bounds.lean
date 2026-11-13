@@ -16,7 +16,8 @@ the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers
 weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
-with the rescaled level `exp (-(t / ε))`.
+with the rescaled level `exp (-(t / ε))`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
+is bounded on `x ≥ 0`.
 
 ## Main results
 
@@ -24,6 +25,8 @@ with the rescaled level `exp (-(t / ε))`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
+  `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
@@ -65,6 +68,18 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
+to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/
+theorem exists_rpow_mul_exp_neg_mul_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
+    ∃ M, 0 ≤ M ∧ ∀ x, 0 ≤ x → x ^ σ * exp (-(c * x)) ≤ M := by
+  obtain ⟨X, hX⟩ := eventually_atTop.1 ((tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero σ c
+    hc).eventually (ge_mem_nhds zero_lt_one))
+  refine ⟨max 1 (max X 0 ^ σ), zero_le_one.trans (le_max_left _ _), fun x hx ↦ ?_⟩
+  rcases le_total X x with h | h
+  · exact (neg_mul c x ▸ hX x h).trans (le_max_left _ _)
+  · exact (mul_le_of_le_one_right (by positivity) (exp_le_one_iff.2 (by nlinarith))).trans
+      ((rpow_le_rpow hx (h.trans (le_max_left _ _)) hσ).trans (le_max_right _ _))
 
 /-- `|exp t - 1| ≤ |t| exp |t|` for every real `t`, a global form of the mean value inequality for
 the exponential. -/
