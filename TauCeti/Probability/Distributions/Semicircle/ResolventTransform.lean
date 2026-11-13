@@ -178,7 +178,7 @@ theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
   have hm : (v : ℂ) * (m * m) + (z - a) * m + 1 = 0 :=
     resolventTransform_semicircleReal_quadratic_eq_zero hzU
   have hmim : 0 < m.im := im_resolventTransform_pos (IsProbabilityMeasure.ne_zero _) hz
-  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨hwim, hw⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ h ▸ ⟨hmim, hm⟩, fun ⟨_, hw⟩ ↦ ?_⟩
   by_contra hne
   -- The other root `w` satisfies `w * (v * m) = 1`, so its imaginary part is not positive.
   have hprod : w * ((v : ℂ) * m) = 1 := by

@@ -94,8 +94,6 @@ private theorem mul_cosh_mul_sinh_le {t b : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t �
     (fun x _ ↦ (hd x).continuousAt.continuousWithinAt) (fun x _ ↦ (hd x).hasDerivWithinAt)
     fun x hx ↦ by
       rw [interior_Ici, mem_Ioi] at hx
-      have h₁ := sinh_nonneg_iff.2 (mul_nonneg ht₀ hx.le)
-      have h₂ := sinh_nonneg_iff.2 hx.le
       have h₃ : 0 ≤ 1 - t ^ 2 := by nlinarith
       positivity
   simpa using hmono (mem_Ici.2 le_rfl) (mem_Ici.2 hb) hb

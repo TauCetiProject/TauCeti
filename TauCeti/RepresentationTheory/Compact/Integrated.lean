@@ -266,10 +266,11 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopo
   [FiniteDimensional 𝕜 V]
 
 /-- Completeness of `V` is not an extra hypothesis on the results below: a finite-dimensional
-normed space over an `RCLike` field is already complete. Mathlib keeps `FiniteDimensional.complete`
+normed space over an `RCLike` field is already complete. Mathlib keeps
+`FiniteDimensional.completeSpace`
 out of the global instance set, so it is installed here as a local instance instead. -/
 local instance instCompleteSpaceIntegrated : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 

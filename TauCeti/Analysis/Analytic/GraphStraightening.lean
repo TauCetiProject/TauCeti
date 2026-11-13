@@ -273,8 +273,7 @@ private theorem dist_snd_le_three_mul_dist_fst_straightening {h : ℝ → ℝ} (
     (D := Δ) (a := a) (k := K) (L := (K + 1)⁻¹) hSa hSΔ ?_ hhΔ.2 (fun t ht ↦ ?_) ?_
   · rintro _ ⟨u, hu, rfl⟩ _ ⟨v, hv, rfl⟩
     exact haL.dist_le_mul u (ball_subset_closedBall hu) v (ball_subset_closedBall hv)
-  · have hK : (0 : ℝ) ≤ K := K.coe_nonneg
-    have : 0 ≤ 2 * (|(ν : ℝ)| + 1) / a := by positivity
+  · have : 0 ≤ 2 * (|(ν : ℝ)| + 1) / a := by positivity
     rw [abs_of_pos (hpos t)]
     linarith [hhΔ.1 t ht]
   · have hL : (((K + 1)⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by

@@ -128,6 +128,69 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
   ring
 
 open scoped Classical in
+/-- On a bounded surface set, the theta series is uniformly bounded for radial parameters
+above any fixed positive lower radius. -/
+theorem exists_norm_latticeTheta_surfaceScale_le {D : Set (realSpace K)}
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
+    {t₀ : ℝ} (ht₀ : 0 < t₀) :
+    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
+      ‖latticeTheta L (surfaceScale (x : realSpace K) t)‖ ≤ B := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let δ := C⁻¹ * t₀ ^ (1 / (Module.finrank ℚ K : ℝ))
+  have hδ : 0 < δ := by positivity
+  refine ⟨‖latticeTheta L fun _ ↦ δ‖, fun t ht x hx ↦ ?_⟩
+  refine norm_latticeTheta_le L (fun _ ↦ hδ) fun w ↦ ?_
+  rw [surfaceScale_apply]
+  exact mul_le_mul (hC x hx x.property w).1
+    (Real.rpow_le_rpow ht₀.le ht (by positivity)) (by positivity)
+    ((mem_normOneSurface.mp x.property).1 w).le
+
+open scoped Classical in
+/-- For a bounded measurable surface set, the theta series at a positive radial parameter is
+integrable over that set. Boundedness on the norm-one surface bounds every coordinate away from
+zero, so a single Gaussian theta value dominates it. -/
+theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
+    {t : ℝ} (ht : 0 < t) :
+    IntegrableOn (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
+      (Subtype.val ⁻¹' D) (surfaceHaar K) := by
+  obtain ⟨B, hB⟩ := exists_norm_latticeTheta_surfaceScale_le hD L ht
+  have hmeas : AEStronglyMeasurable
+      (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
+      ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
+    apply Continuous.aestronglyMeasurable
+    rw [continuous_iff_continuousAt]
+    intro x
+    exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
+      (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht))
+        (continuous_surfaceScale.comp
+          (continuous_subtype_val.prodMk continuous_const)).continuousAt
+  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
+  refine (integrable_const B).mono' hmeas ?_
+  filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+  exact hB t le_rfl x hx
+
+open scoped Classical in
+/-- Subtracting the constant term of the kernel subtracts `1` from the theta series before
+averaging. The constant is the surface mass times `2^r₂ / w`. -/
+theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
+    (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L]
+    {u : ℝ} (hu : 0 < u) :
+    mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        (surfaceHaar K).real (Subtype.val ⁻¹' D) =
+      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        ∫ x in Subtype.val ⁻¹' D,
+          (latticeTheta L (surfaceScale (x : realSpace K)
+            (u / ZLattice.covolume L ^ 2)) - 1) ∂surfaceHaar K := by
+  have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
+  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
+  rw [integral_sub (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity))
+    (integrable_const _), integral_const, measureReal_restrict_apply_univ, ← Complex.coe_smul,
+    smul_eq_mul, mul_one, mellinKernel_def]
+  ring
+
+open scoped Classical in
 /-- **The Mellin kernel is continuous on `(0, ∞)`** for a bounded measurable set `D` of
 parameters, such as a unit fundamental domain. -/
 theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D)
@@ -140,30 +203,18 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   have hV : 0 < V := ZLattice.covolume_pos L
   set F : ℝ → normOneSurface K → ℂ := fun u x ↦
     latticeTheta L (surfaceScale (x : realSpace K) (u / V ^ 2))
-  have hscale (u : ℝ) : Continuous fun x : normOneSurface K ↦
-      surfaceScale (x : realSpace K) (u / V ^ 2) :=
-    continuous_surfaceScale.comp (continuous_subtype_val.prodMk continuous_const)
-  -- on `S ∩ D` the coordinates are bounded below by `C⁻¹ > 0`
-  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
-  set δ := C⁻¹ * (u₀ / 2 / V ^ 2) ^ (1 / (Module.finrank ℚ K : ℝ))
-  have hδ : 0 < δ := by positivity
+  have ht₀ : 0 < u₀ / 2 / V ^ 2 := by positivity
+  obtain ⟨B, hB⟩ := exists_norm_latticeTheta_surfaceScale_le hD L ht₀
   have hmeas : ∀ᶠ u in nhds u₀, AEStronglyMeasurable (F u)
       ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
     filter_upwards [Ioi_mem_nhds hu₀] with u (hu : 0 < u)
-    refine (continuous_iff_continuousAt.mpr fun x : normOneSurface K ↦ ?_).aestronglyMeasurable
-    exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
-      (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity)))
-        (hscale u).continuousAt
+    exact (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity)).aestronglyMeasurable
   have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
-      ‖F u x‖ ≤ ‖latticeTheta L fun _ ↦ δ‖ := by
+      ‖F u x‖ ≤ B := by
     filter_upwards [Ioi_mem_nhds (half_lt_self hu₀)] with u (hu : u₀ / 2 < u)
     filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
-    refine norm_latticeTheta_le L (fun _ ↦ hδ) fun w ↦ ?_
-    rw [surfaceScale_apply]
-    exact mul_le_mul (hC x hx x.property w).1 (Real.rpow_le_rpow (by positivity)
-      (div_le_div_of_nonneg_right hu.le (sq_nonneg V)) (by positivity))
-      (by positivity) ((mem_normOneSurface.mp x.property).1 w).le
-  have hint : Integrable (fun _ ↦ ‖latticeTheta L fun _ ↦ δ‖)
+    exact hB (u / V ^ 2) (div_le_div_of_nonneg_right hu.le (sq_nonneg V)) x hx
+  have hint : Integrable (fun _ ↦ B)
       ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
     have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
     exact integrable_const _

@@ -95,8 +95,8 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log (P : WeakFEPair E)
   obtain ⟨B, hB, hG⟩ := exists_norm_integral_cpow_smul_le_exp_mul_log hC₂ hc₂ hα₂ hg
   let M := ‖(P.k : ℂ)‖ + 3
   let K := A + B * M * (2 * M + 1)
-  have hM : 0 < M := by dsimp [M]; positivity
-  have hK : 0 < K := by dsimp [K]; positivity
+  have _ : 0 < M := by dsimp [M]; positivity
+  have _ : 0 < K := by dsimp [K]; positivity
   let D := 1 + ‖P.ε‖
   have hD : 0 < D := by dsimp [D]; positivity
   refine ⟨K + 2 * D, by positivity, fun s ↦ ?_⟩
