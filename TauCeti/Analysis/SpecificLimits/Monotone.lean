@@ -15,7 +15,9 @@ For a monotone real-valued function on the nonnegative half-line, convergence of
 ratio to time along the natural numbers implies convergence along all times. The
 integer floor and its successor bracket each observation time. This allows laws of
 large numbers for nondecreasing processes to be transferred through countably many
-coordinates, without imposing continuity of their paths.
+coordinates, without imposing continuity of their paths. For a monotone natural-valued
+sequence, the average of its successive differences has the same limit as its ratio
+to the index, regardless of its initial value.
 -/
 
 public section
@@ -24,6 +26,23 @@ open Filter Topology
 open scoped NNReal
 
 namespace Monotone
+
+/-- The average of the successive differences of a monotone natural-valued sequence
+converges to the same limit as its ratio to the index, with no restriction on its initial value. -/
+theorem tendsto_sum_range_sub_div_iff {f : ℕ → ℕ} (hf : Monotone f) {a : ℝ} :
+    Tendsto (fun n : ℕ ↦ ((∑ i ∈ Finset.range n, (f (i + 1) - f i) : ℕ) : ℝ) / n)
+      atTop (𝓝 a) ↔ Tendsto (fun n : ℕ ↦ (f n : ℝ) / n) atTop (𝓝 a) := by
+  have htel (n : ℕ) :
+      ((∑ i ∈ Finset.range n, (f (i + 1) - f i) : ℕ) : ℝ) / n =
+        (f n : ℝ) / n - (f 0 : ℝ) / n := by
+    rw [Finset.sum_range_tsub hf, Nat.cast_sub (hf (Nat.zero_le n)), sub_div]
+  simp_rw [htel]
+  have hzero := tendsto_const_div_atTop_nhds_zero_nat (f 0 : ℝ)
+  constructor
+  · intro h
+    simpa only [sub_add_cancel, add_zero] using h.add hzero
+  · intro h
+    simpa only [sub_zero] using h.sub hzero
 
 /-- A monotone function with linear asymptotics at integer times has the same asymptotics
 along the entire nonnegative real half-line. No sign assumption on the function is needed. -/

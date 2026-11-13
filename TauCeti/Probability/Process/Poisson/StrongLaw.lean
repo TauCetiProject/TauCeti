@@ -60,7 +60,6 @@ private theorem ae_tendsto_natCast_div_of_pos (hN : HasIndepIncrements N P)
     apply (hcoord n).congr
     filter_upwards [ae_pos_of_hasLaw_expMeasure (hcoord n)] with ω hω
     exact Real.coe_toNNReal _ hω.le
-  let C := renewalCountNat T
   have hid := IdentDistrib.pi (fun n : ℕ ↦ by
     have h := hasLaw_renewalCountNat_sub_poissonMeasure hT hi hTL (n : ℝ≥0) 1
     have h' := hlaw (n : ℝ≥0) (n + 1) (le_self_add)
@@ -76,32 +75,15 @@ private theorem ae_tendsto_natCast_div_of_pos (hN : HasIndepIncrements N P)
       Tendsto (fun n : ℕ ↦ ((∑ i ∈ Finset.range n, w i : ℕ) : ℝ) / n)
         atTop (𝓝 (r : ℝ)))
       (measurableSet_tendsto (𝓝 (r : ℝ)) (fun n ↦ by fun_prop))
-    have h0 : ∀ᵐ ω ∂Q, C 0 ω = 0 := by
-      have h := hasLaw_renewalCountNat_poissonMeasure hT hi hTL 0
-      simp only [mul_zero, poissonMeasure_zero] at h
-      exact h.ae_eq_of_dirac
     filter_upwards [ae_tendsto_renewalCountNat_div_of_expMeasure
-      (fun _ _ h ↦ hi.indepFun h) hTL, h0] with ω hω hω0
-    have htel (n : ℕ) : ∑ i ∈ Finset.range n, (C ↑(i + 1) ω - C i ω) = C n ω := by
-      simpa only [Function.comp_apply, Nat.cast_zero,
-        show renewalCountNat T 0 ω = 0 from hω0, Nat.sub_zero] using
-        Finset.sum_range_tsub
-          ((monotone_renewalCountNat T ω).comp (Nat.mono_cast (α := ℝ≥0))) n
-    simpa only [Function.comp_def, htel, C, NNReal.coe_natCast] using
+      (fun _ _ h ↦ hi.indepFun h) hTL] with ω hω
+    apply (Monotone.tendsto_sum_range_sub_div_iff
+      ((monotone_renewalCountNat T ω).comp (Nat.mono_cast (α := ℝ≥0)))).mpr
+    simpa only [Function.comp_def, NNReal.coe_natCast] using
       hω.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
   filter_upwards [hsum, hmono] with ω hω hmω
-  have htel (n : ℕ) : (∑ i ∈ Finset.range n, (N ↑(i + 1) ω - N i ω)) + N 0 ω = N n ω := by
-    calc
-      _ = (N n ω - N 0 ω) + N 0 ω := by
-        congr 1
-        simpa only [Function.comp_def, Nat.cast_zero] using
-          Finset.sum_range_tsub (hmω.comp (Nat.mono_cast (α := ℝ≥0))) n
-      _ = N n ω := Nat.sub_add_cancel (hmω bot_le)
-  have h := hω.add (tendsto_const_div_atTop_nhds_zero_nat (N 0 ω : ℝ))
-  simp only [add_zero] at h
-  convert h using 1
-  ext n
-  rw [← add_div, ← Nat.cast_add, htel]
+  exact (Monotone.tendsto_sum_range_sub_div_iff
+    (hmω.comp (Nat.mono_cast (α := ℝ≥0)))).mp hω
 
 /-- **Strong law for Poisson counts.** Stationary independent rate-`r` Poisson increments
 and almost-sure monotonicity imply `N t / t → r` on one full-measure event along all
