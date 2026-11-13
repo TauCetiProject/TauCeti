@@ -416,6 +416,18 @@ def twistedSkeletonBasePairIsoAdd (n : ℕ) : (j : ℕ) →
       haveI := isIso_twistedSkeletonBasePairToSucc C L (n := n + 1 + j) (k := n) (by lia)
       asIso (twistedSkeletonBasePairToSucc C L (n + 1 + j) n)
 
+@[simp]
+lemma twistedSkeletonBasePairIsoAdd_zero_hom (n : ℕ) :
+    (twistedSkeletonBasePairIsoAdd C L n 0).hom = 𝟙 _ :=
+  (rfl)
+
+@[simp]
+lemma twistedSkeletonBasePairIsoAdd_succ_hom (n j : ℕ) :
+    (twistedSkeletonBasePairIsoAdd C L n (j + 1)).hom =
+      (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
+        twistedSkeletonBasePairToSucc C L (n + 1 + j) n :=
+  (rfl)
+
 /-- The restriction of a local coefficient system on `X` to the relative CW complex `C`. -/
 abbrev complexSystem : LocalCoefficientSystem.{u, w, max w v} R (complexBasePair C).fst :=
   (LocalCoefficientSystem.pullback (⟨Subtype.val, continuous_subtype_val⟩ :
@@ -437,6 +449,12 @@ def twistedSkeletonBasePairToComplex (m k : ℕ) :
       (complexBasePair C).twistedHomology (complexSystem C L) k :=
   (skeletonBasePair C m).twistedHomologyCoefficientMap (skeletonComplexSystemIso C L m).hom k ≫
     TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) (complexSystem C L) k
+
+lemma twistedSkeletonBasePairToComplex_def (m k : ℕ) :
+    twistedSkeletonBasePairToComplex C L m k =
+      (skeletonBasePair C m).twistedHomologyCoefficientMap (skeletonComplexSystemIso C L m).hom k ≫
+        TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) (complexSystem C L) k :=
+  (rfl)
 
 /-- If the `m`-skeleton is the whole complex, `Hₖ(Xᵐ, X⁻¹; L) ⟶ Hₖ(C, X⁻¹; L)` is an
 isomorphism. -/
@@ -462,6 +480,27 @@ def twistedCellularSingularHomologyIsoOfEq (n j : ℕ)
   twistedCellularHomologyIso C L n ≪≫ twistedSkeletonBasePairIsoAdd C L n j ≪≫
     haveI := isIso_twistedSkeletonBasePairToComplex_of_eq C L hj n
     asIso (twistedSkeletonBasePairToComplex C L (n + 1 + j) n)
+
+lemma twistedCellularSingularHomologyIsoOfEq_hom (n j : ℕ)
+    (hj : (skeletonLT C ((n + 1 + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
+    (twistedCellularSingularHomologyIsoOfEq C L n j hj).hom =
+      (twistedCellularHomologyIso C L n).hom ≫ (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
+        twistedSkeletonBasePairToComplex C L (n + 1 + j) n :=
+  (rfl)
+
+/-- On a cellular cycle, the comparison `TauCeti.twistedCellularSingularHomologyIsoOfEq` is the
+map induced by the inclusion `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹⁺ʲ, X⁻¹)` followed by the inclusion of the
+`(n + 1 + j)`-skeleton into the complex. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_twistedCellularSingularHomologyIsoOfEq_hom (n j : ℕ)
+    (hj : (skeletonLT C ((n + 1 + j + 1 : ℕ) : ℕ∞) : Set X) = C) :
+    (twistedCellularChainComplex C L).homologyπ n ≫
+        (twistedCellularSingularHomologyIsoOfEq C L n j hj).hom =
+      (twistedCellularCyclesIso C L n).hom ≫ twistedSkeletonBasePairToSucc C L n n ≫
+        (twistedSkeletonBasePairIsoAdd C L n j).hom ≫
+          twistedSkeletonBasePairToComplex C L (n + 1 + j) n := by
+  rw [twistedCellularSingularHomologyIsoOfEq_hom,
+    homologyπ_comp_twistedCellularHomologyIso_hom_assoc]
 
 /-- For a finite-dimensional relative CW complex, the homology of the cellular chain complex with
 local coefficients is the twisted relative singular homology of the complex. -/
