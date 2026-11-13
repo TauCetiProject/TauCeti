@@ -140,7 +140,8 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin r) (A : Type v) [CommRin
       (lie_cartanGenerator_rootGenerator_inr r i) (isCartanWeightVector_latticeBasis r) A s)
   apply Subtype.ext
   simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_simpleWeylPoint, coe_weightTorusPoints,
-    coe_kostantToralWeylPoint, coe_kostantToralWeightTorusPoints] using hconj
+    coe_kostantToralWeylPoint, coe_kostantToralWeightTorusPoints,
+    kostantTorusMatrix_apply] using hconj
 
 /-- The Weyl representative at `i` normalizes the weight torus. -/
 theorem simpleWeylPoint_mem_normalizer (i : Fin r) (A : Type v) [CommRing A] :
@@ -241,7 +242,7 @@ theorem simpleWeylPoint_sq (i : Fin r) (A : Type v) [CommRing A] :
   intro a b
   rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val, pow_two, Matrix.mul_apply,
     Finset.sum_eq_single (Equiv.swap i.castSucc i.succ b)]
-  · simp only [coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_apply,
+  · simp only [coe_weightTorusPoints, diagGL_apply,
       torusCharacter_mulSingle, weight_def]
     by_cases hab : a = b
     · subst hab
@@ -328,7 +329,7 @@ theorem simpleWeylPoint_notMem_range (i : Fin r) (A : Type v) [CommRing A] [Nont
   have hentry := congrArg
     (fun g : points r A ↦ ((g : Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
       Matrix (Fin (r + 1)) (Fin (r + 1)) A) i.castSucc i.succ) hs
-  simp only [coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_apply,
+  simp only [coe_weightTorusPoints, diagGL_apply,
     coe_simpleWeylPoint_apply] at hentry
   simp [hne, hne.symm] at hentry
 

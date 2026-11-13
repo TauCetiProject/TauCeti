@@ -658,9 +658,8 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n k).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n k).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
@@ -668,6 +667,7 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n k).hom.hom := by
+  conv_lhs => rw [AdditiveGroup.schemePointsMulEquiv_symm_apply]
   have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
       (isCartanWeightVector_latticeBasis n) (isNilpotent_rep_rootGenerator n) A
       (lie_coroot_rootGenerator n k) s u =≫
@@ -744,9 +744,8 @@ theorem weightTorus_conj_rootSubgroup_root_simpleIndex
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n (.inl i)).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n (.inl i)).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
@@ -767,9 +766,8 @@ theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n (.inr i)).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n (.inr i)).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
