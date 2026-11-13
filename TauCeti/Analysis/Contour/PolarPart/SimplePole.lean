@@ -16,10 +16,9 @@ parts
 
 `∑ s ∈ S, residue f s / (z - s)`.
 
-This is the simple-pole decomposition from Layer 2 of the contour-integration roadmap. The general
-canonical Laurent decomposition is already provided by `PolarPartDecomposition.ofMeromorphic`.
-Here the order bound collapses every finite Laurent tail to its order-`(-1)` coefficient, which is
-the residue.
+This is the simple-pole case of the polar-part decomposition. The general canonical Laurent
+decomposition is already provided by `PolarPartDecomposition.ofMeromorphic`. Here the order bound
+collapses every finite Laurent tail to its order-`(-1)` coefficient, which is the residue.
 
 ## Main results
 

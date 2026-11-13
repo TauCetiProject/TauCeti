@@ -5,224 +5,289 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
-public import TauCeti.Combinatorics.Graph.Connectivity.Ear.Basic
-public import TauCeti.Combinatorics.Graph.Orientation.StronglyConnected
-import Mathlib.Tactic.FinCases
+import TauCeti.Combinatorics.Graph.Connectivity.Ear.Characterization
+import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
+import TauCeti.Combinatorics.Graph.Orientation.Walk
+import Mathlib.Combinatorics.Quiver.ConnectedComponent
 
 /-!
-# Ears and strong orientations of two parallel edges and of a loop
+# Multigraph ear-decomposition and `2`-edge-connectivity examples
 
-Multigraph ear decompositions retain edge identities, so two parallel edges form a cycle of length
-two and a loop forms a cycle of length one. This file works out both cases.
+These examples illustrate how ear decompositions and `2`-edge-connectivity retain loop and
+parallel-edge identities on multigraphs:
 
-Two vertices `0` and `1` joined by two parallel edges have edge connectivity two. The two edges
-form a cycle, which is a closed ear over the vertex `0`, and orienting them in opposite directions
-gives a strongly connected orientation. Keeping only one of the edges leaves the same underlying
-simple graph, but that edge is a bridge, the edge connectivity drops to one, and no orientation is
-strongly connected.
-
-A single loop is a cycle of length one and a closed ear over its vertex. It is not a bridge, and
-it crosses no edge cut, so it contributes nothing to the capacity of any cut.
+1. **Two vertices joined by two parallel edges (`banana 0 1 {0, 1}`), compared with its
+   single-edge simplification.** The multigraph has edge connectivity `2`, an explicit two-edge
+   cycle and two-edge closed ear over `{0}` assembling into a length-`1` vertex-started ear
+   decomposition, and an explicit strongly connected orientation sending the two parallel edges in
+   opposite directions. By contrast, its underlying simple graph `(banana 0 1 {0, 1}).toSimpleGraph`
+   collapses the parallel pair into a single bridge, drops to edge connectivity `1`, and admits
+   neither an ear decomposition nor a strongly connected orientation (illustrated on the
+   single-edge multigraph `banana 0 1 {0}`).
+2. **A loop on one vertex (`bouquet 0 {0}`).** The loop traces a one-edge cycle and a one-edge
+   closed ear over `noEdge {0} ℕ`, giving a length-`1` vertex-started ear decomposition; the graph
+   has no bridge, edge connectivity `⊤`, and empty edge cut along every vertex set.
 -/
 
-public section
+open Graph Set
 
-open Set
-open scoped Graph
+/-! ### Two parallel edges versus the single-edge simplification -/
 
-namespace TauCeti.Examples.MultigraphEars
+-- Two distinct vertices joined by two parallel edges have edge connectivity `2` and are
+-- `2`-edge-connected.
+example :
+    let G : Graph ℕ ℕ := banana 0 1 {0, 1}
+    G.edgeConnectivity = 2 ∧ G.IsEdgeConnected 2 := by
+  intro G
+  have hconn : G.edgeConnectivity = 2 := by
+    dsimp only [G]
+    rw [edgeConnectivity_banana (by decide), Set.encard_pair (by decide)]
+  exact ⟨hconn, (isEdgeConnected_iff_le_edgeConnectivity 2).mpr (by simp [hconn])⟩
 
-open Graph
-
-/-! ### Two parallel edges -/
-
-/-- Two vertices `0` and `1` joined by the two parallel edges `0` and `1`. -/
-abbrev parallel : Graph (Fin 2) (Fin 2) := banana 0 1 univ
-
-/-- The edge `0` joins `0` to `1`. -/
-theorem parallel_isLink_zero : parallel.IsLink 0 0 1 := by simp
-
-/-- The edge `1` joins `1` to `0`. -/
-theorem parallel_isLink_one : parallel.IsLink 1 1 0 := by simp
-
-/-- The two parallel edges have edge connectivity two. -/
-theorem edgeConnectivity_parallel : parallel.edgeConnectivity = 2 := by
-  rw [edgeConnectivity_banana (by decide), encard_univ]
-  simp
-
-/-- Neither of the two parallel edges is a bridge. -/
-theorem parallel_not_isBridge (e : Fin 2) : ¬ parallel.IsBridge e := by
-  fin_cases e
+-- Neither parallel edge is a bridge, since the other edge still joins the two vertices.
+example :
+    let G : Graph (Fin 2) (Fin 2) := banana 0 1 univ
+    ∀ e, ¬ G.IsBridge e := by
+  intro G e
+  have he : e = 0 ∨ e = 1 := by omega
+  rcases he with rfl | rfl
   · exact not_isBridge_banana (f := 1) (mem_univ _) (by decide)
   · exact not_isBridge_banana (f := 0) (mem_univ _) (by decide)
 
-/-- The closed walk from `0` to `1` along the edge `0` and back along the edge `1`. -/
-def parallelCycle : parallel.Walk 0 0 :=
-  .cons 0 parallel_isLink_zero (.cons 1 parallel_isLink_one .nil)
+-- The two parallel edges `0` and `1` form a two-edge cycle and a two-edge closed ear over `{0}`,
+-- giving an explicit vertex-started ear decomposition of length `1`.
+example :
+    let G : Graph ℕ ℕ := banana 0 1 {0, 1}
+    ∃ (c : G.Walk 0 0) (d : G.EarDecomposition G) (hlen : d.length = 1),
+      c.IsCycle ∧ c.edges = [0, 1] ∧ d.IsVertexStart ∧ d.kindAt ⟨0, by omega⟩ = .closed := by
+  intro G
+  have h01 : G.IsLink 0 0 1 := by simp [G]
+  have h10 : G.IsLink 1 1 0 := by simp [G]
+  let c : G.Walk 0 0 := .cons 0 h01 h10.toWalk
+  have hc : c.IsCycle := by
+    refine (Walk.cons_isCycle_iff 0 h01 h10.toWalk).mpr
+      ⟨h10.isPath_toWalk_iff.mpr (by decide), ?_⟩
+    simp [IsLink.edges_toWalk]
+  let ear : G.Ear (Graph.noEdge {0} ℕ) := Ear.ofIsCycle c hc
+  have hadd : ear.add = G := by
+    refine (Compatible.of_le_le ear.add_le le_rfl).ext ?_ ?_
+    · ext x
+      simp only [ear, Ear.add_noEdge_singleton, Ear.toGraph_ofIsCycle, Walk.vertexSet_walkGraph, c,
+        G, Walk.support_cons, IsLink.support_toWalk, vertexSet_banana, mem_insert_iff,
+        mem_singleton_iff, mem_ofPred_eq, List.mem_cons, List.not_mem_nil, or_false]
+      omega
+    · ext e
+      simp [ear, c, G, IsLink.edges_toWalk]
+  let d : G.EarDecomposition G := (EarDecomposition.ofEar ear).copy hadd
+  refine ⟨c, d, by simp [d], hc, by simp [c, IsLink.edges_toWalk], by simp [d], ?_⟩
+  dsimp only [d]
+  rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_ofEar]
+  simp [ear]
 
-/-- The two parallel edges form a cycle of length two. -/
-theorem parallelCycle_isCycle : parallelCycle.IsCycle := by
-  simp [parallelCycle]
-
-/-- The cycle through both parallel edges has length two. -/
-theorem length_parallelCycle : parallelCycle.length = 2 := by
-  simp [parallelCycle]
-
-/-- The cycle through both parallel edges traces the whole graph. -/
-theorem walkGraph_parallelCycle : parallel.walkGraph parallelCycle = parallel := by
-  refine (Compatible.of_le (parallelCycle.walkGraph_le (by simp))).ext ?_ ?_
-  · ext x
-    fin_cases x <;> simp [parallelCycle]
-  · ext e
-    fin_cases e <;> simp [parallelCycle]
-
-/-- The two-edge cycle is a closed ear over the vertex `0`. -/
-def parallelEar : parallel.Ear (noEdge {0} (Fin 2)) :=
-  .closed (noEdge_le_iff.mpr (by simp)) parallelCycle parallelCycle_isCycle
-    (mem_singleton 0)
-    (by simp [parallelCycle]) (by simp)
-
-/-- The two-edge ear is closed. -/
-theorem kind_parallelEar : parallelEar.kind = .closed :=
-  Ear.kind_closed ..
-
-/-- The two-edge ear traces the whole graph. -/
-theorem toGraph_parallelEar : parallelEar.toGraph = parallel :=
-  (Ear.toGraph_closed ..).trans walkGraph_parallelCycle
-
-/-- Adjoining the closed ear to the vertex `0` gives the whole graph. -/
-theorem add_parallelEar : parallelEar.add = parallel :=
-  (Compatible.of_le parallelEar.add_le).ext
-    (by rw [Ear.vertexSet_add, toGraph_parallelEar]; simp)
-    (by rw [Ear.edgeSet_add, toGraph_parallelEar]; simp)
-
-/-- Starting from the vertex `0`, the two parallel edges form one closed ear. -/
-theorem exists_closed_earDecomposition_parallel :
-    ∃ d : parallel.EarDecomposition parallel,
-      d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed :=
-  EarDecomposition.exists_closed_earDecomposition_of_add_eq ⟨0, by simp⟩ parallelEar
-    kind_parallelEar add_parallelEar
-
-/-- The orientation sending the edge `0` from `0` to `1` and the edge `1` back from `1` to `0`. -/
-def parallelOrientation : parallel.Orientation where
-  tail e := if e.1 = 0 then ⟨0, by simp⟩ else ⟨1, by simp⟩
-  head e := if e.1 = 0 then ⟨1, by simp⟩ else ⟨0, by simp⟩
-  isLink e := by
-    obtain ⟨e, -⟩ := e
-    fin_cases e <;> simp
-
-/-- Orienting the two parallel edges in opposite directions is strongly connected. -/
-theorem parallelOrientation_isStronglyConnected :
-    @Quiver.IsStronglyConnected V(parallel) ⟨parallelOrientation.Hom⟩ := by
-  let : Quiver V(parallel) := ⟨parallelOrientation.Hom⟩
-  have forward : (⟨0, by simp⟩ : V(parallel)) ⟶ ⟨1, by simp⟩ :=
-    ⟨⟨0, by simp⟩, by simp [parallelOrientation], by simp [parallelOrientation]⟩
-  have backward : (⟨1, by simp⟩ : V(parallel)) ⟶ ⟨0, by simp⟩ :=
-    ⟨⟨1, by simp⟩, by simp [parallelOrientation], by simp [parallelOrientation]⟩
-  rintro ⟨x, hx⟩ ⟨y, hy⟩
-  simp only [vertexSet_banana, mem_insert_iff, mem_singleton_iff] at hx hy
+-- Orienting edge `0` from `0` to `1` and edge `1` from `1` to `0` makes `banana 0 1 {0, 1}`
+-- strongly connected.
+example :
+    let G : Graph ℕ ℕ := banana 0 1 {0, 1}
+    ∃ o : G.Orientation,
+      @Quiver.IsStronglyConnected V(G) ⟨o.Hom⟩ := by
+  intro G
+  let v0 : V(G) := ⟨0, by simp [G]⟩
+  let v1 : V(G) := ⟨1, by simp [G]⟩
+  let o : G.Orientation :=
+    { tail e := if e.1 = 0 then v0 else v1
+      head e := if e.1 = 0 then v1 else v0
+      isLink e := by
+        have he : e.1 = 0 ∨ e.1 = 1 := by simpa [G] using e.2
+        rcases he with h | h <;> simp [h, v0, v1, G] }
+  refine ⟨o, (@Quiver.isStronglyConnected_iff V(G) ⟨o.Hom⟩).mpr fun x y ↦ ?_⟩
+  rw [o.nonempty_arrowWalk_iff]
+  have hx : x = v0 ∨ x = v1 := by
+    rcases (by simpa [G] using x.2 : x.1 = 0 ∨ x.1 = 1) with h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Subtype.ext h)
+  have hy : y = v0 ∨ y = v1 := by
+    rcases (by simpa [G] using y.2 : y.1 = 0 ∨ y.1 = 1) with h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Subtype.ext h)
+  have h01 : G.IsLink 0 0 1 := by simp [G]
+  have h10 : G.IsLink 1 1 0 := by simp [G]
   rcases hx with rfl | rfl <;> rcases hy with rfl | rfl
-  · exact ⟨.nil⟩
-  · exact ⟨forward.toPath⟩
-  · exact ⟨backward.toPath⟩
-  · exact ⟨.nil⟩
+  · exact ⟨.nil, by simp⟩
+  · exact ⟨h01.toWalk, by simp [o, v0, v1]⟩
+  · exact ⟨h10.toWalk, by simp [o, v0, v1]⟩
+  · exact ⟨.nil, by simp⟩
 
-/-! ### The single-edge simplification -/
+-- Simplifying `banana 0 1 {0, 1}` to its underlying simple graph collapses the two parallel edges
+-- into a single bridge, dropping edge connectivity to `1` and eliminating ear decompositions.
+example :
+    let G : Graph ℕ ℕ := banana 0 1 {0, 1}
+    let H := G.toSimpleGraph
+    let v0 : V(G) := ⟨0, by simp [G]⟩
+    let v1 : V(G) := ⟨1, by simp [G]⟩
+    H.Adj v0 v1 ∧ H.IsBridge s(v0, v1) ∧ H.edgeConnectivity = 1 ∧
+      ¬ Nonempty ((Graph.ofSimpleGraph H).EarDecomposition (Graph.ofSimpleGraph H)) := by
+  intro G H v0 v1
+  have hv01 : v0 ≠ v1 := fun h ↦ by simpa [v0, v1] using congrArg Subtype.val h
+  have hV : ∀ u : V(G), u = v0 ∨ u = v1 := fun u ↦ by
+    rcases (by simpa [G] using u.2 : u.1 = 0 ∨ u.1 = 1) with h | h
+    · exact Or.inl (Subtype.ext h)
+    · exact Or.inr (Subtype.ext h)
+  have hadj01 : H.Adj v0 v1 := by
+    rw [Graph.toSimpleGraph_adj]
+    exact ⟨hv01, 0, by simp [G, v0, v1]⟩
+  have hbridge : H.IsBridge s(v0, v1) := by
+    rw [SimpleGraph.isBridge_iff_forall_walk_mem_edges]
+    intro p
+    generalize hv1 : v1 = x at p
+    cases p with
+    | nil => exact (hv01 hv1.symm).elim
+    | @cons _ w _ hadj _ =>
+        rcases hV w with rfl | rfl
+        · exact (hadj.ne rfl).elim
+        · simp [hv1]
+  have hnot2 : ¬ H.IsEdgeConnected 2 := fun h2 ↦
+    (SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge.mp h2) s(v0, v1) hbridge
+  have : Finite V(G) := by
+    have : V(G) = {0, 1} := by simp [G]
+    rw [this]
+    infer_instance
+  have : Nonempty V(G) := ⟨v0⟩
+  have hnoEar :
+      ¬ Nonempty ((Graph.ofSimpleGraph H).EarDecomposition (Graph.ofSimpleGraph H)) := by
+    rwa [← H.isEdgeConnected_two_iff_nonempty_earDecomposition_ofSimpleGraph]
+  have h1 : H.IsEdgeConnected 1 := by
+    rw [← Nat.cast_one, ← isEdgeConnected_ofSimpleGraph_iff, isEdgeConnected_one]
+    intro x _ y _
+    have h01' : (Graph.ofSimpleGraph H).IsLink s(v0, v1) v0 v1 := by
+      simp [hadj01]
+    rcases hV x with rfl | rfl <;> rcases hV y with rfl | rfl
+    · exact .refl trivial
+    · exact h01'.reachable
+    · exact h01'.symm.reachable
+    · exact .refl trivial
+  have hconn : H.edgeConnectivity = 1 := by
+    apply le_antisymm
+    · by_contra! hlt
+      have h2le : (2 : ℕ∞) ≤ H.edgeConnectivity := Order.succ_le_of_lt hlt
+      exact hnot2 (SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity.mpr h2le)
+    · exact SimpleGraph.isEdgeConnected_iff_le_edgeConnectivity.mp h1
+  exact ⟨hadj01, hbridge, hconn, hnoEar⟩
 
-/-- The vertices `0` and `1` joined by the edge `0` alone. -/
-abbrev single : Graph (Fin 2) (Fin 2) := banana 0 1 {0}
+-- The parallel-edge and single-edge multigraphs have the same complete underlying simple graph.
+example :
+    let G : Graph (Fin 2) (Fin 2) := banana 0 1 univ
+    let H : Graph (Fin 2) (Fin 2) := banana 0 1 {0}
+    G.toSimpleGraph = ⊤ ∧ H.toSimpleGraph = ⊤ := by
+  intro G H
+  constructor <;> ext ⟨x, hx⟩ ⟨y, hy⟩ <;>
+    simp only [G, H, vertexSet_banana, mem_insert_iff, mem_singleton_iff] at hx hy <;>
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp [G, H]
 
-/-- The underlying simple graph of the two parallel edges is the complete graph on their ends. -/
-theorem toSimpleGraph_parallel : parallel.toSimpleGraph = ⊤ := by
-  ext ⟨x, hx⟩ ⟨y, hy⟩
-  simp only [vertexSet_banana, mem_insert_iff, mem_singleton_iff] at hx hy
-  rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp
+-- Likewise, the single-edge multigraph `banana 0 1 {0}` has edge `0` as a bridge, edge
+-- connectivity `1`, no ear decomposition, and no strongly connected orientation.
+example :
+    let G : Graph ℕ ℕ := banana 0 1 {0}
+    G.IsBridge 0 ∧ G.edgeConnectivity = 1 ∧ ¬ Nonempty (G.EarDecomposition G) ∧
+      ∀ o : G.Orientation, ¬ @Quiver.IsStronglyConnected V(G) ⟨o.Hom⟩ := by
+  intro G
+  have h01 : G.IsLink 0 0 1 := by simp [G]
+  have hbridge : G.IsBridge 0 := by
+    rw [h01.isBridge_iff_not_reachable_deleteEdges]
+    have hdel : G.deleteEdges {0} = banana 0 1 ∅ := by simp [G, banana_deleteEdges]
+    rw [hdel, reachable_banana_iff (by decide)]
+    simp
+  have hconn : G.edgeConnectivity = 1 := by
+    dsimp only [G]
+    rw [edgeConnectivity_banana (by decide), Set.encard_singleton]
+  have : Finite E(G) := by
+    have : E(G) = {0} := by simp [G]
+    rw [this]
+    infer_instance
+  have : Nonempty V(G) := ⟨⟨0, by simp [G]⟩⟩
+  have hnoEar : ¬ Nonempty (G.EarDecomposition G) := by
+    rw [← G.isEdgeConnected_two_iff_nonempty_earDecomposition,
+      isEdgeConnected_iff_le_edgeConnectivity, hconn]
+    decide
+  refine ⟨hbridge, hconn, hnoEar, fun o hsc ↦ ?_⟩
+  let v0 : V(G) := ⟨0, by simp [G]⟩
+  let v1 : V(G) := ⟨1, by simp [G]⟩
+  let e0 : E(G) := ⟨0, by simp [G]⟩
+  have hsc' := (@Quiver.isStronglyConnected_iff V(G) ⟨o.Hom⟩).mp hsc
+  obtain ⟨p01, hp01⟩ := (o.nonempty_arrowWalk_iff v0 v1).mp (hsc' v0 v1)
+  obtain ⟨p10, hp10⟩ := (o.nonempty_arrowWalk_iff v1 v0).mp (hsc' v1 v0)
+  cases p01 with
+  | @cons _ w _ f hf q =>
+      have hf0 : f = 0 := by simpa [G] using hf.edge_mem
+      subst hf0
+      have hw1 : w = 1 := by simpa [G, v0] using hf
+      subst hw1
+      have hhead : (o.head e0 : ℕ) = 1 := (Walk.followsOrientation_cons hf q |>.mp hp01).2.1
+      cases p10 with
+      | @cons _ _ _ g hg r =>
+          have hg0 : g = 0 := by simpa [G] using hg.edge_mem
+          subst hg0
+          have htail : (o.tail e0 : ℕ) = 1 := (Walk.followsOrientation_cons hg r |>.mp hp10).1
+          have hloop : G.IsLink 0 1 1 := by
+            simpa [e0, htail, hhead] using o.isLink e0
+          simp [G] at hloop
 
-/-- Keeping only one of the two parallel edges leaves the same underlying simple graph. -/
-theorem toSimpleGraph_single : single.toSimpleGraph = ⊤ := by
-  ext ⟨x, hx⟩ ⟨y, hy⟩
-  simp only [vertexSet_banana, mem_insert_iff, mem_singleton_iff] at hx hy
-  rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp
+/-! ### A loop on one vertex -/
 
-/-- The single edge is a bridge. -/
-theorem single_isBridge : single.IsBridge 0 :=
-  isBridge_banana_singleton (by decide) 0
+-- A single loop on one vertex forms a one-edge cycle and a one-edge closed ear over `noEdge {0} ℕ`,
+-- has no bridge, has edge connectivity `⊤`, and contributes nothing to any edge cut.
+example :
+    let G : Graph ℕ ℕ := bouquet 0 {0}
+    (∃ (c : G.Walk 0 0) (d : G.EarDecomposition G) (hlen : d.length = 1),
+        c.IsCycle ∧ c.edges = [0] ∧ d.IsVertexStart ∧ d.kindAt ⟨0, by omega⟩ = .closed) ∧
+      (∀ e, ¬ G.IsBridge e) ∧
+      G.IsEdgeConnected 2 ∧
+      G.edgeConnectivity = ⊤ ∧
+      ∀ S : Set ℕ, G.edgeCut S = ∅ := by
+  intro G
+  have hloop : G.IsLoopAt 0 0 := by simp [G]
+  have hl : G.IsLink 0 0 0 := isLink_self_iff.mpr hloop
+  have hle : Graph.noEdge ({0} : Set ℕ) ℕ ≤ G :=
+    Graph.noEdge_le_iff.mpr (by simp [G])
+  let ear : G.Ear (Graph.noEdge {0} ℕ) :=
+    Ear.ofIsLoopAt hle hloop (by simp) (by simp)
+  have hadd : ear.add = G := by
+    refine (Compatible.of_le_le ear.add_le le_rfl).ext ?_ ?_
+    · ext x
+      dsimp only [ear, G]
+      rw [Ear.vertexSet_add, Ear.vertexSet_toGraph, Ear.toWalk_ofIsLoopAt]
+      simp
+    · ext e
+      dsimp only [ear, G]
+      rw [Ear.edgeSet_add, Ear.edgeSet_toGraph, Ear.toWalk_ofIsLoopAt]
+      simp [IsLink.edges_toWalk]
+  let d : G.EarDecomposition G := (EarDecomposition.ofEar ear).copy hadd
+  refine ⟨⟨hl.toWalk, d, by simp [d], hl.isCycle_toWalk, by simp [IsLink.edges_toWalk],
+    by simp [d], ?_⟩, ?_, d.isEdgeConnected_two, ?_, fun S ↦ ?_⟩
+  · dsimp only [d]
+    rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_ofEar]
+    simp [ear]
+  · intro e he
+    have he0 : e = 0 := by simpa [G] using he.mem_edgeSet
+    subst he0
+    exact hloop.not_isBridge he
+  · exact edgeConnectivity_eq_top_of_subsingleton (by simp [G, Set.subsingleton_singleton])
+  · ext e
+    simp only [mem_empty_iff_false, iff_false]
+    intro he
+    have he0 : e = 0 := by
+      obtain ⟨x, y, hxy, -, -⟩ := mem_edgeCut_iff.mp he
+      simpa [G] using hxy.edge_mem
+    subst he0
+    exact hloop.notMem_edgeCut he
 
-/-- The single edge has edge connectivity one. -/
-theorem edgeConnectivity_single : single.edgeConnectivity = 1 := by
-  rw [edgeConnectivity_banana (by decide), encard_singleton]
-
-/-- No orientation of the single edge is strongly connected, since a strongly connected orientation
-forces `2`-edge-connectivity. -/
-theorem not_exists_stronglyConnected_orientation_single :
-    ¬ ∃ o : single.Orientation, @Quiver.IsStronglyConnected V(single) ⟨o.Hom⟩ := fun h ↦ by
-  have := (isEdgeConnected_banana_iff (k := 2) (by decide)).mp
-    (isEdgeConnected_two_of_exists_stronglyConnected_orientation h)
-  simp at this
-
-/-! ### A loop -/
-
-/-- One vertex carrying one loop. -/
-abbrev loop : Graph Unit Unit := bouquet () univ
-
-/-- The loop joins its vertex to itself. -/
-theorem loop_isLink : loop.IsLink () () () := by simp
-
-/-- The loop traversed once. -/
-def loopCycle : loop.Walk () () := loop_isLink.toWalk
-
-/-- A loop is a cycle of length one. -/
-theorem loopCycle_isCycle : loopCycle.IsCycle :=
-  loop_isLink.isCycle_toWalk
-
-/-- The loop traversed once has length one. -/
-theorem length_loopCycle : loopCycle.length = 1 := by
-  simp [loopCycle]
-
-/-- The loop is a closed ear over its vertex. -/
-def loopEar : loop.Ear (noEdge {()} Unit) :=
-  .closed (noEdge_le_iff.mpr (by simp)) loopCycle loopCycle_isCycle
-    (mem_singleton ())
-    (by simp [loopCycle]) (by simp)
-
-/-- The loop ear is closed. -/
-theorem kind_loopEar : loopEar.kind = .closed :=
-  Ear.kind_closed ..
-
-/-- The loop ear traces the graph of its walk. -/
-theorem toGraph_loopEar : loopEar.toGraph = loop.walkGraph loopCycle :=
-  Ear.toGraph_closed ..
-
-/-- Adjoining the loop to its vertex gives the whole graph. -/
-theorem add_loopEar : loopEar.add = loop :=
-  (Compatible.of_le loopEar.add_le).ext
-    (by ext; simp)
-    (by rw [Ear.edgeSet_add, toGraph_loopEar, Walk.edgeSet_walkGraph]; ext; simp [loopCycle])
-
-/-- Starting from its vertex, the loop forms one closed ear. -/
-theorem exists_closed_earDecomposition_loop :
-    ∃ d : loop.EarDecomposition loop,
-      d.IsVertexStart ∧ d.length = 1 ∧ ∀ i, d.kindAt i = .closed :=
-  EarDecomposition.exists_closed_earDecomposition_of_add_eq ⟨(), by simp⟩ loopEar kind_loopEar
-    add_loopEar
-
-/-- A loop is not a bridge. -/
-theorem loop_not_isBridge : ¬ loop.IsBridge () :=
-  IsLoopAt.not_isBridge (x := ()) (by simp)
-
-/-- A loop crosses no edge cut. -/
-theorem edgeCut_loop (S : Set Unit) : loop.edgeCut S = ∅ :=
-  eq_empty_of_forall_notMem fun _ ↦ IsLoopAt.notMem_edgeCut (x := ()) (by simp)
-
-/-- The edge set of `loop` is finite, so cut capacities are defined. -/
-noncomputable local instance : Fintype E(loop) := Fintype.ofFinite _
-
-/-- Whatever capacity the loop carries, every cut has capacity zero. -/
-theorem edgeCutCapacity_loop {K : Type*} [AddCommMonoid K] (c : E(loop) → K)
-    (S : Finset V(loop)) : loop.edgeCutCapacity c S = 0 := by
+-- Whatever capacity the loop carries, every cut has capacity zero.
+example {K : Type*} [AddCommMonoid K]
+    [Fintype E((bouquet () univ : Graph Unit Unit))]
+    (c : E((bouquet () univ : Graph Unit Unit)) → K)
+    (S : Finset V((bouquet () univ : Graph Unit Unit))) :
+    (bouquet () univ : Graph Unit Unit).edgeCutCapacity c S = 0 := by
   classical
+  have hcut (T : Set Unit) : (bouquet () univ : Graph Unit Unit).edgeCut T = ∅ :=
+    eq_empty_of_forall_notMem fun _ ↦ IsLoopAt.notMem_edgeCut (x := ()) (by simp)
   rw [edgeCutCapacity_def]
-  simp [edgeCut_loop]
-
-end TauCeti.Examples.MultigraphEars
+  simp [hcut]

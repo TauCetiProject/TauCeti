@@ -235,14 +235,14 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
     (heγ : e - γ ∈ J.map (algebraMap S C')) (hse : ∀ x : C', ∃ σ : S, σ • e = e * x) (c : C) :
     ∃ σ : S, σ • (e : C) = e * c := by
   classical
-  obtain ⟨m, hm1, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
+  obtain ⟨m, _, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
     ((eventually_ge_atTop 1).and ((eventually_all_finset s).mpr fun r hr ↦ hZ r hr c)).exists
   -- The `m`-th powers of `s` together with `1 - e` generate the unit ideal of `C'`.
   have h1 : (1 : C') ∈ Ideal.span ((· ^ m) '' {x : C' | (x : C) ∈ s}) ⊔ Ideal.span {1 - e} := by
     by_contra hne
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ ((Ideal.ne_top_iff_one _).mpr hne)
     have hJM : J.map (algebraMap S C') ≤ M :=
-      (Ideal.map_le_jacobson_bot_of_isIntegral hJ).trans (sInf_le ⟨bot_le, hM⟩)
+      (Ideal.map_le_jacobson_of_isIntegral bot_le hJ).trans (sInf_le ⟨bot_le, hM⟩)
     have hsM : Ideal.span {x : C' | (x : C) ∈ s} ≤ M := Ideal.span_le.mpr fun x hx ↦
       hM.isPrime.mem_of_pow_mem m (hle (Ideal.mem_sup_left (Ideal.subset_span ⟨x, hx, rfl⟩)))
     have heM : e ∈ M := by simpa using M.add_mem (hJM heγ) (hsM hγ)

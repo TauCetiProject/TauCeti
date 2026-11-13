@@ -37,6 +37,10 @@ This file develops the basic properties of the measure that need no reduction th
   changes of moment map: shifting `μ` by a constant translates the measure
   (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_add_const`), and restricting the action to a
   subtorus `𝔰 ⊆ 𝔱` replaces `μ` by its composition with the restriction `𝔱* → 𝔰*`.
+* **Rescaling and restriction.** Replacing `σ` by `r • σ` multiplies the measure by `|r|ⁿ`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_smul`), and restricting `σ` and `μ` to an open
+  subset `U` gives the pushforward of the Liouville measure restricted to `U`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_mpullback_subtypeVal`).
 * **Support.** For a nondegenerate form and a continuous map, the support of the measure is the
   closure of the image of `μ` (`TauCeti.SmoothTwoForm.support_duistermaatHeckmanMeasure`).
 * **Invariance.** A differentiable homeomorphism `Φ : M → N` with `Φ^* τ = σ`, intertwining the
@@ -110,6 +114,25 @@ theorem duistermaatHeckmanMeasure_add_const [Add F] [MeasurableAdd F] (hμ : Mea
     σ.duistermaatHeckmanMeasure n (fun x ↦ μ x + c) =
       (σ.duistermaatHeckmanMeasure n μ).map (· + c) :=
   duistermaatHeckmanMeasure_comp (measurable_add_const c) hμ
+
+/-- **Rescaling the form.** Replacing `σ` by `r • σ` multiplies the Duistermaat–Heckman measure by
+`|r|ⁿ`. -/
+@[simp]
+theorem duistermaatHeckmanMeasure_smul (hμ : Measurable μ) (r : ℝ) :
+    (r • σ).duistermaatHeckmanMeasure n μ =
+      ENNReal.ofReal (|r| ^ n) • σ.duistermaatHeckmanMeasure n μ := by
+  rw [duistermaatHeckmanMeasure_def, duistermaatHeckmanMeasure_def, liouvilleMeasure_smul,
+    Measure.map_smul _ hμ.aemeasurable]
+
+/-- **Restriction to an open subset.** The Duistermaat–Heckman measure of the restrictions of `σ`
+and of a measurable map `μ` to an open subset `U` is the pushforward along `μ` of the restriction
+to `U` of the Liouville measure of `σ`. -/
+theorem duistermaatHeckmanMeasure_mpullback_subtypeVal (U : TopologicalSpace.Opens M)
+    [LindelofSpace U] (hμ : Measurable μ) :
+    duistermaatHeckmanMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (μ ∘ Subtype.val) = ((σ.liouvilleMeasure n).restrict U).map μ := by
+  rw [duistermaatHeckmanMeasure_def, ← Measure.map_map hμ measurable_subtype_coe,
+    map_liouvilleMeasure_mpullback_subtypeVal]
 
 /-- On a compact manifold the Duistermaat–Heckman measure is finite. -/
 instance isFiniteMeasure_duistermaatHeckmanMeasure [CompactSpace M] :

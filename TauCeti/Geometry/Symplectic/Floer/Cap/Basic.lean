@@ -140,7 +140,7 @@ theorem eq_iff_action_eq_and_index_eq {a : C → ℝ} {m : C → ℤ}
     (ha : ∀ (γ : PeriodGroup ω c) (D : C), a (γ +ᵥ D) = PeriodGroup.area ω c γ + a D)
     (hm : ∀ (γ : PeriodGroup ω c) (D : C), m (γ +ᵥ D) = 2 * PeriodGroup.chern ω c γ + m D)
     {D D' : C} : D = D' ↔ a D = a D' ∧ m D = m D' := by
-  refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨haD, hmD⟩ => ?_⟩
+  refine ⟨fun h => h ▸ ⟨rfl, rfl⟩, fun ⟨_, _⟩ => ?_⟩
   have harea := ha (D -ᵥ D') D'
   have hchern := hm (D -ᵥ D') D'
   rw [vsub_vadd] at harea hchern
