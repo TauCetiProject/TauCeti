@@ -347,7 +347,7 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
 omit [FiniteDimensional ℝ V] in
 private lemma botIso_hom_naturality (hf : f ≫ p' = p) :
     (botIso p).hom ≫ subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊥ =
-      TopPair.ofSubsetMap f (TopCat.Hom.mapsTo_preimage_of_comp_eq hf _) ≫ (botIso p').hom := by
+      TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _) ≫ (botIso p').hom := by
   rw [subspaceComplPairMap_eq_ofSubsetMap f (proj_apply_of_comp_eq hf) ⊥ fun e he ↦ by
     rwa [mem_preimage, proj_apply_of_comp_eq hf]]
   simp only [botIso, TopPair.ofSubsetIso_hom]
@@ -370,7 +370,7 @@ theorem singularHomologyPreimageNeZeroIso_hom_naturality {p' : E' ⟶ _root_.Top
     (g : _root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0}) ⟶
       _root_.TopCat.of (p' ⁻¹' {x : K | (x : V) = 0}))
     (hg : ∀ x, (g x : E') = f x) (n m : ℕ) (h : n + finrank ℝ V = m) :
-    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (TopCat.Hom.mapsTo_preimage_of_comp_eq hf _))
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _))
         (ModuleCat.of R R) m ≫ (singularHomologyPreimageNeZeroIso R hp' hK hK₀ n m h).hom =
       (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
@@ -395,23 +395,23 @@ theorem singularHomologyPreimageSphereIso_hom_naturality (hp : serreFibrations p
     (hp' : serreFibrations p') (hf : f ≫ p' = p)
     (g : _root_.TopCat.of (p ⁻¹' {x | (x : V) = 0}) ⟶ _root_.TopCat.of (p' ⁻¹' {x | (x : V) = 0}))
     (hg : ∀ x, (g x : E') = f x) (n m : ℕ) (h : n + finrank ℝ V = m) :
-    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (TopCat.Hom.mapsTo_preimage_of_comp_eq hf _))
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _))
         (ModuleCat.of R R) m ≫
         (singularHomologyPreimageSphereIso R hp' n m h).hom =
       (singularHomologyPreimageSphereIso R hp n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
           (ModuleCat.of R R)).map g := by
   -- The inclusion `(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` commutes with the maps induced by `f`.
-  have hpair : TopPair.ofSubsetMap f (TopCat.Hom.mapsTo_preimage_of_comp_eq hf unitSphere) ≫
+  have hpair : TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf unitSphere) ≫
         TopTriple.totalToOuter.app (TopTriple.ofSubset
           (preimage_mono (f := p') (unitSphere_subset_puncturedBall (V := V)))) =
       TopTriple.totalToOuter.app (TopTriple.ofSubset
           (preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V)))) ≫
-        TopPair.ofSubsetMap f (TopCat.Hom.mapsTo_preimage_of_comp_eq hf puncturedBall) :=
+        TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf puncturedBall) :=
     TopPair.hom_ext_of_fst _ (by
       ext x
       exact (TopPair.ofSubsetMap_fst_apply f _ x).trans (TopPair.ofSubsetMap_fst_apply f
-        (TopCat.Hom.mapsTo_preimage_of_comp_eq hf puncturedBall) x).symm)
+        (f.mapsTo_preimage_of_comp_eq hf puncturedBall) x).symm)
   have hι := (TopPair.singularHomologyMap_comp _ _ _ _).symm.trans
     ((congrArg (TopPair.singularHomologyMap · (ModuleCat.of R R) m) hpair).trans
       (TopPair.singularHomologyMap_comp _ _ _ _))

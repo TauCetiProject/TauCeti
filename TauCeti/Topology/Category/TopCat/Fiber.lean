@@ -54,21 +54,21 @@ lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b :=
 
 /-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
 into the part of `E'` over it. -/
-lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
+lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
     (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
   exact he
 
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
 parts over a subset `S` of `B`. -/
-def preimageMap {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
+def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
     (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
-  TopCat.ofHom ⟨(mapsTo_preimage_of_comp_eq hf S).restrict,
-    f.hom.continuous.restrict (mapsTo_preimage_of_comp_eq hf S)⟩
+  TopCat.ofHom ⟨(f.mapsTo_preimage_of_comp_eq hf S).restrict,
+    f.hom.continuous.restrict (f.mapsTo_preimage_of_comp_eq hf S)⟩
 
 @[simp]
-lemma coe_preimageMap_apply {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
-    (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (preimageMap hf S x : E') = f x :=
+lemma coe_preimageMap_apply {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
+    (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (f.preimageMap hf S x : E') = f x :=
   (rfl)
 
 /-- The composite of two maps with finite fibres has finite fibres. -/

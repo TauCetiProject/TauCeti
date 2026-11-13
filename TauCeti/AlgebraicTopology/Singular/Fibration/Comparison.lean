@@ -91,14 +91,14 @@ variable (hf : f ≫ p' = p)
 private def preimagePairMap {S T : Set B} (hST : S ⊆ T) :
     TopPair.ofInclusion (X := E) (preimage_mono (f := p) hST) ⟶
       TopPair.ofInclusion (X := E') (preimage_mono (f := p') hST) :=
-  TopPair.ofHom (TopCat.Hom.preimageMap hf T) (TopCat.Hom.preimageMap hf S) (by
+  TopPair.ofHom (f.preimageMap hf T) (f.preimageMap hf S) (by
     ext x
     -- Both sides send a point `x` of `p⁻¹(S)` to `f x`.
-    exact Subtype.ext ((TopCat.Hom.coe_preimageMap_apply hf S x).trans
-      (TopCat.Hom.coe_preimageMap_apply hf T (Set.inclusion (preimage_mono hST) x)).symm))
+    exact Subtype.ext ((f.coe_preimageMap_apply hf S x).trans
+      (f.coe_preimageMap_apply hf T (Set.inclusion (preimage_mono hST) x)).symm))
 
 private lemma preimagePairMap_fst {S T : Set B} (hST : S ⊆ T) :
-    TopPair.Hom.fst (preimagePairMap hf hST) = TopCat.Hom.preimageMap hf T :=
+    TopPair.Hom.fst (preimagePairMap hf hST) = f.preimageMap hf T :=
   rfl
 
 end Preimage
@@ -114,7 +114,7 @@ the `n`-cell `j` induced by a map `f` over `B`. -/
 private def cellDiskPullbackPairHom (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ cellDiskPullbackPair p' C n j :=
   TopPair.ofSubsetMap (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf)
-    (TopCat.Hom.mapsTo_preimage_of_comp_eq
+    (TopCat.Hom.mapsTo_preimage_of_comp_eq _
       (_root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf) _)
 
 /-- The map of pairs `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ⟶ (p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹))` induced by a map `f` over
@@ -129,9 +129,9 @@ private lemma cellDiskPullbackPairMap_comp_preimagePairMap (n : ℕ) (j : cell C
     rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, preimagePairMap_fst, cellDiskPullbackPairHom,
       TopPair.ofSubsetMap_fst]
     -- Both sides send a point `x` of `Pⱼ` to `f x.1.2`.
-    calc ((TopCat.Hom.preimageMap hf _ (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x) : E'))
+    calc ((f.preimageMap hf _ (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x) : E'))
         = f (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).1 :=
-          TopCat.Hom.coe_preimageMap_apply hf _ _
+          f.coe_preimageMap_apply hf _ _
       _ = f x.1.2 := congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x)
       _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x).1.2 :=
           congrArg Prod.snd (_root_.TopCat.coe_pullbackMapOfCompEq_apply _ hf x).symm
@@ -162,7 +162,7 @@ private lemma isIso_singularHomologyMap_cellDiskPullbackPairHom (sq : CommSq f p
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
   have hfP := _root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf
   -- The map of fibres over the centre of the disk.
-  let g := TopCat.Hom.preimageMap hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
+  let g := TopCat.Hom.preimageMap _ hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
   -- Through the identifications of the fibres over the centres, `g` is the fibre map of `f`.
   let e := _root_.TopCat.isoOfHomeo (X := _root_.TopCat.of
       (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹' {x | (x : ULift.{u} (Fin n → ℝ)) = 0}))
@@ -187,7 +187,7 @@ private lemma isIso_singularHomologyMap_cellDiskPullbackPairHom (sq : CommSq f p
     rw [← isIso_comp_right_iff _ (H.map e'.hom), ← H.map_comp, hge, H.map_comp]
     infer_instance
   have nat := singularHomologyPreimageSphereIso_hom_naturality R hP hP' hfP g
-    (TopCat.Hom.coe_preimageMap_apply hfP _) q (q + n) (by simp)
+    (TopCat.Hom.coe_preimageMap_apply _ hfP _) q (q + n) (by simp)
   have : TopPair.singularHomologyMap (cellDiskPullbackPairHom hf n j) (ModuleCat.of R R) (q + n) =
       (singularHomologyPreimageSphereIso R hP q (q + n) (by simp)).hom ≫ H.map g ≫
         (singularHomologyPreimageSphereIso R hP' q (q + n) (by simp)).inv := by
@@ -238,7 +238,7 @@ skeleton. -/
 private lemma isIso_singularHomologyMap_preimageMap_skeletonLT
     (hfib : ∀ b ∈ C, ∀ q, IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
       q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) :
-    ∀ (n k : ℕ), IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (TopCat.Hom.preimageMap
+    ∀ (n k : ℕ), IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map (f.preimageMap
       (sq.w.trans (Category.comp_id p)) (skeletonLT C n : Set B))) (ModuleCat.of R R) k)
   | 0, k => by
     -- Over the empty `(-1)`-skeleton both spaces are empty.
@@ -249,7 +249,7 @@ private lemma isIso_singularHomologyMap_preimageMap_skeletonLT
     have h₀' : IsEmpty (p' ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) := by
       rw [hD, preimage_empty]
       infer_instance
-    have : IsIso (TopCat.Hom.preimageMap (sq.w.trans (Category.comp_id p))
+    have : IsIso (f.preimageMap (sq.w.trans (Category.comp_id p))
         (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B)) :=
       (_root_.TopCat.isIso_iff_isHomeomorph _).2
         ⟨by fun_prop, fun _ _ ↦ by simp [Set.eq_empty_of_isEmpty],
@@ -281,14 +281,14 @@ private theorem isIso_singularHomologyMap_preimage_of_commSq
     (hfib : ∀ b ∈ C, ∀ q, IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
       q).obj (ModuleCat.of R R)).map (sq.fiberMap b))) (k : ℕ) :
     IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-      (TopCat.Hom.preimageMap (sq.w.trans (Category.comp_id p)) C)) (ModuleCat.of R R) k) := by
+      (f.preimageMap (sq.w.trans (Category.comp_id p)) C)) (ModuleCat.of R R) k) := by
   have hf : f ≫ p' = p := sq.w.trans (Category.comp_id p)
   -- `Hₖ(p⁻¹(Xᵏ⁺¹)) ⟶ Hₖ(p⁻¹(C))` is an isomorphism, since `Hₘ(p⁻¹(C), p⁻¹(Xᵏ⁺¹)) = 0` for
   -- `m ≤ k + 1`, and likewise for `p'`.
   have hS := isIso_singularHomologyMap_preimageMap_skeletonLT hp hp' R sq hfib (k + 1 + 1) k
   rw [Nat.cast_succ (k + 1)] at hS
   have : IsIso (SSet.homologyMap (_root_.TopCat.toSSet.map
-      (TopCat.Hom.preimageMap hf (skeletonLT C ⊤ : Set B))) (ModuleCat.of R R) k) :=
+      (f.preimageMap hf (skeletonLT C ⊤ : Set B))) (ModuleCat.of R R) k) :=
     TopPair.isIso_homologyMap_fst_of_isZero (ModuleCat.of R R)
       (preimagePairMap hf (skeletonLT_mono (C := C) (le_top : ((k + 1 : ℕ) : ℕ∞) + 1 ≤ ⊤)))
       (isZero_singularHomology_preimage_skeletonLT hp R le_top (by lia))
@@ -322,9 +322,9 @@ private theorem isIso_singularHomologyMap_of_commSq_of_cwComplex (sq : CommSq f 
   -- The parts of the total spaces over the whole base are the total spaces.
   let ι (X : _root_.TopCat.{u}) (q : X ⟶ B) : _root_.TopCat.of (q ⁻¹' univ) ≅ X :=
     _root_.TopCat.isoOfHomeo (Homeomorph.Set.univ X)
-  have hcomm : TopCat.Hom.preimageMap hf univ ≫ (ι E' p').hom = (ι E p).hom ≫ f := by
+  have hcomm : f.preimageMap hf univ ≫ (ι E' p').hom = (ι E p).hom ≫ f := by
     ext x
-    exact TopCat.Hom.coe_preimageMap_apply hf univ x
+    exact f.coe_preimageMap_apply hf univ x
   rw [← isIso_comp_left_iff (H.map (ι E p).hom), ← H.map_comp, ← hcomm, H.map_comp]
   exact IsIso.comp_isIso' h inferInstance
 
