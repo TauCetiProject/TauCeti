@@ -66,16 +66,14 @@ theorem torusFamilyBaseChangeCommSq_fiberMap_fiberHomeomorph [ContinuousAdd E]
       torusFamilyFiberHomeomorph P (f z) hcont x := by
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
-  induction x using Quotient.inductionOn with | h v =>
   apply Subtype.ext
   refine ((torusFamilyBaseChangeCommSq P f).fiberMap_apply_coe z _).trans ?_
   -- Align `Subtype.val` on `(TopCat.ofHom _).fiber _` with `{w | torusFamilyProjection _ w = _}`.
   change torusFamilyBaseChangeMap P f
-      (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous)
-        (Quotient.mk _ v)).1 =
-    (torusFamilyFiberHomeomorph P (f z) hcont (Quotient.mk _ v)).1
+      (torusFamilyFiberHomeomorph (P ∘ f) z (fun l ↦ (hcont l).comp f.continuous) x).1 =
+    (torusFamilyFiberHomeomorph P (f z) hcont x).1
   rw [coe_torusFamilyFiberHomeomorph, coe_torusFamilyFiberHomeomorph,
-    torusFamilyFiberMap_mk, torusFamilyFiberMap_mk, torusFamilyBaseChangeMap_mk]
+    torusFamilyBaseChangeMap_fiberMap]
 
 /-- Read through `TauCeti.torusFamilyFiberHomeomorph`, the fiber map of
 `torusFamilyBaseChangeCommSq` over `z` is the identity map of `E / range (P (f z))`. -/

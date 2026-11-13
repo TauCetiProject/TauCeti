@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Coordinates
 
 /-!
@@ -118,11 +119,12 @@ section Field
 
 variable {K : Type*} [Field K] [DecidableEq K] {A B N D : K}
 
-/-- **Correctness of Montgomery doubling on native points.** For nonzero `B` and `D` and
-`4N = (A + 2)D`, the output is nonzero and has vanishing cross difference with the coordinate
-pair of `P + P`. No ellipticity assumption is needed. In characteristic two, the scaled
-relation and `D ≠ 0` force `A = 0`, so only that degenerate model is covered. -/
-theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
+/-- **Correctness of Montgomery doubling on native points.** For nonzero `D` and `4N = (A + 2)D`,
+the output is nonzero and has vanishing cross difference with the coordinate pair of `P + P`. No
+ellipticity assumption is needed, nor `B ≠ 0`: for `B = 0` the model is the cusp `y² = x³`. In
+characteristic two, the scaled relation and `D ≠ 0` force `A = 0`, so only that degenerate model
+is covered. -/
+theorem double_coordinates (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) (P : (model A B).toAffine.Point) :
     double N D (coordinates A B P) ≠ 0 ∧
       (double N D (coordinates A B P)).cross (coordinates A B (P + P)) = 0 := by
@@ -130,8 +132,12 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
   · simp [← Affine.Point.zero_def, Pair.eq_zero_iff, Pair.cross_def, hD]
   · rw [coordinates_some, double_some_eq h]
     constructor
-    · have hn := Affine.den_duplication_ne_zero_or_num_duplication_ne_zero hP
-      simpa [Pair.ne_zero_iff, hD, hB, or_comm] using hn
+    · by_cases hB : B = 0
+      · subst hB
+        have hx := Affine.ne_zero_of_isSingular_zero (by simp) hP
+        simp [Pair.ne_zero_iff, hD, hx, model_b₄, model_b₆, model_b₈]
+      · have hn := Affine.den_duplication_ne_zero_or_num_duplication_ne_zero hP
+        simpa [Pair.ne_zero_iff, hD, hB, or_comm] using hn
     · by_cases hy : y = (model A B).toAffine.negY x y
       · have hd := (Affine.den_duplication_eq_zero_iff hP.1).mpr hy
         rw [Affine.Point.add_self_of_Y_eq hy, coordinates_zero, Pair.cross_def, hd]
@@ -148,17 +154,18 @@ theorem double_coordinates (hB : B ≠ 0) (hD : D ≠ 0)
 
 /-- Doubling any nonzero representative of a native point gives a nonzero representative
 of its double. This is the representative-independent form used by `x`-only scalar arithmetic. -/
-theorem double_coordinates_of_cross_eq_zero (hB : B ≠ 0) (hD : D ≠ 0)
+theorem double_coordinates_of_cross_eq_zero (hD : D ≠ 0)
     (h : 4 * N = (A + 2) * D) {P : (model A B).toAffine.Point} {S : Pair K}
     (hS : S ≠ 0) (hSP : S.cross (coordinates A B P) = 0) :
     double N D S ≠ 0 ∧
       (double N D S).cross (coordinates A B (P + P)) = 0 := by
-  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero hB P)).mp hSP
+  obtain ⟨c, rfl⟩ :=
+    (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero_of_nontrivial P)).mp hSP
   have hc : c ≠ 0 := by
     intro hc
     apply hS
     ext <;> simp [hc]
-  obtain ⟨hn, hx⟩ := double_coordinates hB hD h P
+  obtain ⟨hn, hx⟩ := double_coordinates hD h P
   rw [double_smul]
   constructor
   · rw [Pair.ne_zero_iff] at hn ⊢
