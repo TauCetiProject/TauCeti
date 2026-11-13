@@ -65,11 +65,11 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-variable [FiniteDimensional ℝ V] {Ω : Opens ℂ} {k : ℕ}
+variable {Ω : Opens ℂ} {k : ℕ}
 
 /-- **The partial derivatives of a `W^{k+1,q}_loc` map.** For a weak derivative `Dξ` of
 `ξ ∈ W^{k+1,q}_loc`, the pair `Ξ = (∂_s ξ, ∂_t ξ) = (Dξ(·) 1, Dξ(·) I)` is in `W^{k,q}_loc`. -/
-theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn {q : ℝ≥0∞} {ξ : ℂ → V}
+theorem MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn [CompleteSpace V] {q : ℝ≥0∞} {ξ : ℂ → V}
     {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : MemWkpLoc q Ω (k + 1) ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ) :
     MemWkpLoc q Ω k (fun z => (Dξ z 1, Dξ z I)) := by
   have h := hξ.memWkpLoc_of_hasWeakFDerivOn hDξ
@@ -83,7 +83,8 @@ derivative `DΞ` of `Ξ = (∂_s ξ, ∂_t ξ)` satisfies, almost everywhere on 
 `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)`,
 with `J₂ = diag(J, J)` and `S₂ = TauCeti.differentiatedCRCoefficient S DJ`.
 Such a `DΞ` exists by `TauCeti.MemWkpLoc.memWkpLoc_partials_of_hasWeakFDerivOn`. -/
-theorem ae_differentiated_cauchyRiemann {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
+theorem ae_differentiated_cauchyRiemann [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p)
     {J S : ℂ → V →L[ℝ] V} {DJ DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
     {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DΞ : ℂ → ℂ →L[ℝ] V × V}
     (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
@@ -148,7 +149,7 @@ theorem ae_differentiated_cauchyRiemann {p q : ℝ≥0} (hp : 2 < p) (hq : 1 < q
 derivative `DJ`, then `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` is in `W^{k,p}_loc(Ω)`. For
 `S ∈ W^{m,p}_loc` and `J ∈ W^{ℓ,p}_loc` this gives `S₂ ∈ W^{min(m, ℓ - 1),p}_loc` after lowering the
 orders with `TauCeti.MemWkpLoc.of_le`. -/
-theorem MemWkpLoc.differentiatedCRCoefficient {p : ℝ≥0∞} {J S : ℂ → V →L[ℝ] V}
+theorem MemWkpLoc.differentiatedCRCoefficient [CompleteSpace V] {p : ℝ≥0∞} {J S : ℂ → V →L[ℝ] V}
     {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} (hS : MemWkpLoc p Ω k S) (hJ : MemWkpLoc p Ω (k + 1) J)
     (hDJ : HasWeakFDerivOn volume Ω J DJ) :
     MemWkpLoc p Ω k (fun z => TauCeti.differentiatedCRCoefficient (S z) (DJ z)) := by
@@ -158,7 +159,8 @@ theorem MemWkpLoc.differentiatedCRCoefficient {p : ℝ≥0∞} {J S : ℂ → V 
 /-- **The right side of the differentiated system is locally `L^q`.** For `p > 2`, `1 ≤ q ≤ p`,
 `S ∈ W^{1,p}_loc(Ω)` with weak derivative `DS` and `ξ, η ∈ W^{1,q}_loc(Ω)` with `η` having weak
 derivative `Dη`, the map `(∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` is in `L^q_loc(Ω)`. -/
-theorem memLpLoc_differentiatedCR_rightSide {p q : ℝ≥0} (hp : 2 < p) (hq : 1 ≤ q) (hqp : q ≤ p)
+theorem memLpLoc_differentiatedCR_rightSide [FiniteDimensional ℝ V] {p q : ℝ≥0} (hp : 2 < p)
+    (hq : 1 ≤ q) (hqp : q ≤ p)
     {S : ℂ → V →L[ℝ] V} {DS : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V} {Dη : ℂ → ℂ →L[ℝ] V}
     (hS : MemWkpLoc p Ω 1 S) (hDS : HasWeakFDerivOn volume Ω S DS) (hξ : MemWkpLoc q Ω 1 ξ)
     (hη : MemWkpLoc q Ω 1 η) (hDη : HasWeakFDerivOn volume Ω η Dη) :
@@ -177,8 +179,8 @@ theorem memLpLoc_differentiatedCR_rightSide {p q : ℝ≥0} (hp : 2 < p) (hq : 1
 system is the original operator `∂_s + A ∂_t` applied to each component of `Ξ = (∂_s ξ, ∂_t ξ)`:
 every weak derivative `DΞ` of `Ξ` satisfies `∂_s Ξ + diag(A, A) ∂_t Ξ = (∂_s η, ∂_t η)` almost
 everywhere on `Ω`. -/
-theorem ae_differentiated_cauchyRiemann_const {q : ℝ≥0} (hq : 1 < q) (A : V →L[ℝ] V)
-    {ξ η : ℂ → V} {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DΞ : ℂ → ℂ →L[ℝ] V × V}
+theorem ae_differentiated_cauchyRiemann_const [FiniteDimensional ℝ V] {q : ℝ≥0} (hq : 1 < q)
+    (A : V →L[ℝ] V) {ξ η : ℂ → V} {Dξ Dη : ℂ → ℂ →L[ℝ] V} {DΞ : ℂ → ℂ →L[ℝ] V × V}
     (hξ : MemWkpLoc q Ω 2 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
     (hDη : HasWeakFDerivOn volume Ω η Dη)
     (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + A (Dξ z I) = η z)
