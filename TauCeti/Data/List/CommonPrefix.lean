@@ -96,6 +96,20 @@ theorem take_commonPrefixLength_eq (l₁ l₂ : List α) :
     l₁.take (commonPrefixLength l₁ l₂) = l₂.take (commonPrefixLength l₁ l₂) :=
   (le_commonPrefixLength_iff.1 le_rfl).2.2
 
+/-- The common prefix length of `l₁.take n` and `l₂` is the minimum of `n` and the common prefix
+length of `l₁` and `l₂`. -/
+theorem commonPrefixLength_take_left (n : ℕ) (l₁ l₂ : List α) :
+    commonPrefixLength (l₁.take n) l₂ = min n (commonPrefixLength l₁ l₂) := by
+  refine eq_of_forall_le_iff fun k => ?_
+  simp only [le_commonPrefixLength_iff, le_min_iff, length_take, take_take]
+  by_cases hkn : k ≤ n <;> simp [hkn]
+
+/-- The common prefix length of `l₁` and `l₂.take n` is the minimum of `n` and the common prefix
+length of `l₁` and `l₂`. -/
+theorem commonPrefixLength_take_right (n : ℕ) (l₁ l₂ : List α) :
+    commonPrefixLength l₁ (l₂.take n) = min n (commonPrefixLength l₁ l₂) := by
+  rw [commonPrefixLength_comm, commonPrefixLength_take_left, commonPrefixLength_comm]
+
 /-- The ultrametric inequality for common prefix lengths. -/
 theorem min_commonPrefixLength_le (l₁ l₂ l₃ : List α) :
     min (commonPrefixLength l₁ l₂) (commonPrefixLength l₂ l₃) ≤ commonPrefixLength l₁ l₃ := by
