@@ -950,10 +950,9 @@ the standing hypothesis are implicit because they are read off the carrier's own
 
 **On diamonds.** Mathlib does register a topology on `MvPowerSeries σ R`, but as a *scoped*
 instance in `MvPowerSeries.WithPiTopology` (`Mathlib/RingTheory/MvPowerSeries/PiTopology.lean`).
-It is therefore invisible here, and no file that uses `weightedRestrictedSubring` opens that scope
-(other files of this repository do, for formal groups). A downstream file that opened the scope
-would not be asked which topology is meant: instance search silently returns `weightedTopology`
-(not defeq to the induced subtype topology on the carrier). -/
+It is therefore invisible here. A downstream file that opened the scope would not be asked which
+topology is meant: instance search silently returns `weightedTopology` (not defeq to the induced
+subtype topology on the carrier). -/
 noncomputable instance weightedTopology [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} : TopologicalSpace (weightedRestrictedSubring T hT) :=
   (weightedNhd_subgroups_basis hT).topology
