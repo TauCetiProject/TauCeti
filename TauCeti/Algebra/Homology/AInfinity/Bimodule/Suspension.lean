@@ -41,23 +41,23 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM} {N : Type uN}
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- Two-sided unsuspension twists each input by the number of inputs to its right. -/
-noncomputable def unsuspend (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) (i j : ℕ)
+noncomputable def unsuspend (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) (i j : ℕ)
     (F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin i ↦ A)
-      (MultilinearMap R (fun _ : Fin j ↦ B) N) :=
+    M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin i ↦ A)
+      (MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) N) :=
   let T := F ∘ₗ TensorProduct.map
     (TensorProduct.map
       (PiTensorProduct.map fun k : Fin i ↦ GA.koszulTwist ((i : ℤ) + j - k))
       (GM.koszulTwist j))
     (PiTensorProduct.map fun k : Fin j ↦ GB.koszulTwist ((j : ℤ) - 1 - k))
-  let H : (TensorPower R i A ⊗[R] M) →ₗ[R] MultilinearMap R (fun _ : Fin j ↦ B) N :=
+  let H : (TensorPower R i A ⊗[R] M) →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin j ↦ B) N :=
     PiTensorProduct.lift.symm.toLinearMap ∘ₗ TensorProduct.curry T
   PiTensorProduct.lift.symm.toLinearMap ∘ₗ (TensorProduct.curry H).flip
 
 /-- Unsuspension evaluates a linear map on its Koszul-twisted inputs. -/
-theorem unsuspend_apply (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) (i j : ℕ)
+theorem unsuspend_apply (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) (i j : ℕ)
     (F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N)
     (x : M) (a : Fin i → A) (b : Fin j → B) :
     unsuspend GA GM GB i j F x a b = F
@@ -67,8 +67,8 @@ theorem unsuspend_apply (GA : InternalGrading R A) (GM : InternalGrading R M)
   simp [unsuspend]
 
 /-- Applying the involutive twists again recovers the original map. -/
-theorem apply_tmul_tprod_eq_unsuspend (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) (i j : ℕ)
+theorem apply_tmul_tprod_eq_unsuspend (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) (i j : ℕ)
     (F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N)
     (x : M) (a : Fin i → A) (b : Fin j → B) :
     F ((PiTensorProduct.tprod R a ⊗ₜ x) ⊗ₜ PiTensorProduct.tprod R b) =
@@ -78,8 +78,8 @@ theorem apply_tmul_tprod_eq_unsuspend (GA : InternalGrading R A) (GM : InternalG
   simp only [unsuspend_apply, InternalGrading.koszulTwist_koszulTwist]
 
 /-- Two-sided unsuspension determines the original linear map. -/
-theorem unsuspend_injective (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) (i j : ℕ) :
+theorem unsuspend_injective (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) (i j : ℕ) :
     Function.Injective (unsuspend (N := N) GA GM GB i j) := by
   intro F H h
   apply TensorProduct.ext_threefold
@@ -95,8 +95,8 @@ theorem unsuspend_injective (GA : InternalGrading R A) (GM : InternalGrading R M
   | add v w hv hw => simp only [TensorProduct.add_tmul, map_add, hv, hw]
 
 /-- On homogeneous inputs, a map is its unsuspension multiplied by the suspension sign. -/
-theorem apply_tmul_tprod_of_mem (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) (i j : ℕ)
+theorem apply_tmul_tprod_of_mem (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) (i j : ℕ)
     (F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N)
     {x : M} {p : ℤ} (hx : x ∈ GM.piece p)
     (a : Fin i → A) (d : Fin i → ℤ) (ha : ∀ k, a k ∈ GA.piece (d k))
@@ -114,15 +114,15 @@ theorem apply_tmul_tprod_of_mem (GA : InternalGrading R A) (GM : InternalGrading
     rw [GB.koszulTwist_apply_of_mem (hb k), negOnePowCast_eq_intCast]
   rw [apply_tmul_tprod_eq_unsuspend, ha', hb', GM.koszulTwist_apply_of_mem hx,
     ← negOnePowCast_eq_intCast, map_smul]
-  simp only [smul_apply, MultilinearMap.map_smul_univ, smul_smul,
+  simp only [smul_apply, MultilinearMap.map_smul_univ, RingHom.id_apply, smul_smul,
     negOnePowCast_sum, negOnePowCast_add]
   congr 1
   ring
 
 /-- If a map raises the total shifted input degree by `q`, its two-sided unsuspension
 subtracts the number `i + j + 1` of inputs from that degree, in the unshifted source gradings. -/
-theorem unsuspend_mem_piece (GA : InternalGrading R A) (GM : InternalGrading R M)
-    (GB : InternalGrading R B) {GN : InternalGrading R N} (i j : ℕ)
+theorem unsuspend_mem_piece (GA : InternalGrading R A ℤ) (GM : InternalGrading R M ℤ)
+    (GB : InternalGrading R B ℤ) {GN : InternalGrading R N ℤ} (i j : ℕ)
     {F : (TensorPower R i A ⊗[R] M) ⊗[R] TensorPower R j B →ₗ[R] N} (q : ℤ)
     (hF : ∀ {x : M} {p : ℤ}, x ∈ (GM.shift 1).piece p →
       ∀ (a : Fin i → A) (d : Fin i → ℤ), (∀ k, a k ∈ (GA.shift 1).piece (d k)) →

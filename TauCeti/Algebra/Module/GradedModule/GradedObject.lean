@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 /-!
 # Internal gradings and graded objects
 
-This file compares the two presentations of a graded module used by the `DGAInfinity` roadmap.
+This file compares two presentations of a graded module.
 An `InternalGrading R M ι` presents all degrees inside one total module `M`, while a
 `CategoryTheory.GradedObject ι (ModuleCat R)` presents the homogeneous modules separately.
 
@@ -40,11 +40,11 @@ open scoped DirectSum
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 namespace InternalGrading
 
-variable {ι : Type} [DecidableEq ι]
+variable {ι : Type w} [DecidableEq ι]
 
 section ToGradedObject
 
@@ -55,7 +55,10 @@ abbrev toGradedObject (G : InternalGrading R M ι) :
     GradedObject ι (ModuleCat.{v} R) :=
   fun p ↦ ModuleCat.of R (G.piece p)
 
-/-- The categorical total of the graded-object presentation is the original total module. -/
+variable {M : Type (max v w)} [AddCommGroup M] [Module R M]
+
+/-- The categorical total of the graded-object presentation is the original total module.
+The module universe contains the index universe, as required for the categorical direct sum. -/
 noncomputable def totalIso (G : InternalGrading R M ι) :
     ∐ G.toGradedObject ≅ ModuleCat.of R M :=
   ModuleCat.coprodIsoDirectSum G.toGradedObject ≪≫
@@ -135,6 +138,8 @@ noncomputable def ofGradedObject : InternalGrading R (⨁ p : ι, X p) ι where
 theorem ofGradedObject_piece (p : ι) :
     (ofGradedObject R X).piece p = gradedObjectPiece R X p :=
   (rfl)
+
+variable (X : GradedObject ι (ModuleCat.{max v w} R))
 
 /-- Recovering the graded-object presentation of the canonical internal grading returns the
 original graded object degreewise. -/

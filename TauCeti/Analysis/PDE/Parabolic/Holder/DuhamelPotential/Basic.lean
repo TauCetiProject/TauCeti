@@ -92,7 +92,7 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
   holderWith_heatDuhamelPotential
     (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (fun s _ x => by
-      simpa only [coe_nnnorm] using norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
+      simpa only [coe_nnNorm] using norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
     (fun s _ => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
@@ -456,7 +456,7 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
     calc _ ≤ C₂ * ‖f‖₊ * (t : ℝ) ^ ((α : ℝ) / 2) :=
           hC₂ (stronglyMeasurable_forcing f) hfM hH ht x
       _ ≤ C₂.toNNReal * ‖f‖ * (T : ℝ) ^ ((α : ℝ) / 2) := by
-          rw [coe_nnnorm]
+          rw [coe_nnNorm]
           gcongr
           · exact le_coe_toNNReal C₂
           · exact t.2.2
@@ -627,7 +627,6 @@ private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
   set L := ‖traceL (E := E) (F := F)‖
   have hCg : 0 ≤ Cg := gradientConstant_nonneg
   have hCh : 0 ≤ Ch := NNReal.coe_nonneg _
-  have hL : 0 ≤ L := norm_nonneg _
   have hf : 0 ≤ ‖f‖ := norm_nonneg _
   have hT0 : (0 : ℝ) ≤ T := T.coe_nonneg
   -- The four fields of the potential.

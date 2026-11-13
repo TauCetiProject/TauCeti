@@ -10,10 +10,11 @@ public import Mathlib.AlgebraicTopology.RelativeCellComplex.AttachCells
 /-!
 # Attaching no cells
 
-An isomorphism `f : X₁ ⟶ X₂` is obtained by attaching an empty family of cells
-(`HomotopicalAlgebra.AttachCells.ofIsIso`): the pushout of the identity of an initial object along
-any morphism is an isomorphism. This fills the stages of a relative cell complex at which nothing
-is attached, for instance when all cells are attached at a single stage.
+In a category with an initial object, an isomorphism `f : X₁ ⟶ X₂` is obtained by attaching an
+empty family of cells (`HomotopicalAlgebra.AttachCells.ofIsIso`): both empty coproducts are the
+initial object, and the square formed by its identity and `f` is a pushout because both vertical
+maps are isomorphisms. This fills the stages of a relative cell complex at which nothing is
+attached, for instance when all cells are attached at a single stage.
 
 ## References
 
@@ -29,26 +30,23 @@ universe w v u
 
 namespace HomotopicalAlgebra.AttachCells
 
-variable {C : Type u} [Category.{v} C] [HasColimitsOfShape (Discrete PEmpty.{w + 1}) C]
+variable {C : Type u} [Category.{v} C] [HasInitial C]
   {α : Type*} {A B : α → C} (g : ∀ a, A a ⟶ B a) {X₁ X₂ : C} (f : X₁ ⟶ X₂) [IsIso f]
 
 /-- An isomorphism is obtained by attaching no cells. -/
 noncomputable def ofIsIso : AttachCells.{w} g f where
   ι := PEmpty.{w + 1}
   π := PEmpty.elim
-  cofan₁ := Cofan.mk _ (Sigma.ι fun i : PEmpty.{w + 1} ↦ A i.elim)
-  cofan₂ := Cofan.mk _ (Sigma.ι fun i : PEmpty.{w + 1} ↦ B i.elim)
-  isColimit₁ := coproductIsCoproduct _
-  isColimit₂ := coproductIsCoproduct _
-  m := Sigma.desc fun i ↦ i.elim
+  cofan₁ := Cofan.mk (⊥_ C) fun i ↦ i.elim
+  cofan₂ := Cofan.mk (⊥_ C) fun i ↦ i.elim
+  isColimit₁ := isColimitChangeEmptyCocone C initialIsInitial _ (Iso.refl _)
+  isColimit₂ := isColimitChangeEmptyCocone C initialIsInitial _ (Iso.refl _)
+  m := 𝟙 _
   hm i := i.elim
-  g₁ := Sigma.desc fun i ↦ i.elim
-  g₂ := Sigma.desc fun i ↦ i.elim
-  isPushout := by
-    -- Both coproducts are empty, so the left vertical map is an isomorphism, as is `f`.
-    refine @IsPushout.of_vert_isIso _ _ _ _ _ _ _ _ _ _ ?_ _ ⟨Sigma.hom_ext _ _ fun i ↦ i.elim⟩
-    exact ⟨Sigma.desc fun i ↦ i.elim, Sigma.hom_ext _ _ fun i ↦ i.elim,
-      Sigma.hom_ext _ _ fun i ↦ i.elim⟩
+  g₁ := initial.to X₁
+  g₂ := initial.to X₂
+  -- Both vertical maps, `𝟙 (⊥_ C)` and `f`, are isomorphisms.
+  isPushout := IsPushout.of_vert_isIso ⟨initial.hom_ext _ _⟩
 
 /-- No cells are attached in `AttachCells.ofIsIso`. -/
 instance : IsEmpty (ofIsIso.{w} g f).ι :=

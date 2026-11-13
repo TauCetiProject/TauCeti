@@ -20,7 +20,8 @@ forming a coproduct of copies of `R` preserves colimits; hence so does `X ↦ X.
 
 The case of a coproduct is chain-level additivity: the chain complex of a disjoint union of
 simplicial sets is the coproduct of the chain complexes of the summands.
-The chain map induced by a monomorphism of simplicial sets is also a monomorphism.
+The chain map induced by a monomorphism of simplicial sets is also a monomorphism, in each degree
+and as a chain map.
 
 ## Sources
 
@@ -66,10 +67,10 @@ namespace SSet
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   {X Y : SSet.{w}} (f : X ⟶ Y) (R : C)
 
-/-- In each degree, the chain map induced by a monomorphism of simplicial sets is a
-monomorphism: it is the coproduct map induced by an injective map of simplices. -/
+/-- The chain map induced by a monomorphism of simplicial sets is a monomorphism in each degree:
+it is the coproduct map induced by an injective map of simplices. -/
 instance mono_chainComplexMap_f [Mono f] (n : ℕ) : Mono ((chainComplexMap f R).f n) :=
-  inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
+  inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app (Opposite.op ⦋n⦌))))
 
 /-- The chain map induced by a monomorphism of simplicial sets is a monomorphism. -/
 instance mono_chainComplexMap [Mono f] : Mono (chainComplexMap f R) :=

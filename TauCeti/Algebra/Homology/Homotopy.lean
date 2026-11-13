@@ -66,9 +66,6 @@ maps agree after passing to a stable category that kills that term.
 
 `Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
 acyclic.
-
-`Homotopy.exists_comp_f_eq_comp_f` says that if a chain map and the components of a homotopy from
-it restrict along a pair of chain maps, then so does the other endpoint of the homotopy.
 -/
 
 @[expose] public section
@@ -127,28 +124,6 @@ lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
   rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
   simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
     h.homologyMap_eq i
-
-/-- Restriction of the endpoint of a homotopy. Let `h` be a chain homotopy between chain maps
-`e e' : Q ⟶ Q'`, and let `φ : P ⟶ Q` and `φ' : P' ⟶ Q'` be chain maps. If `e` and the components of
-`h` restrict along `φ` and `φ'`, in the sense that their precompositions with `φ` factor through
-`φ'`, then so does `e'`, because `e' = e - ∂h - h∂` and `φ`, `φ'` commute with the differentials. -/
-theorem exists_comp_f_eq_comp_f {C : Type u} [Category.{v} C] [Preadditive C]
-    {ι : Type*} {c : ComplexShape ι} {P Q P' Q' : HomologicalComplex C c} {e e' : Q ⟶ Q'}
-    (h : Homotopy e e') (φ : P ⟶ Q) (φ' : P' ⟶ Q')
-    (he : ∀ i, ∃ g, g ≫ φ'.f i = φ.f i ≫ e.f i)
-    (hh : ∀ i j, c.Rel j i → ∃ g, g ≫ φ'.f j = φ.f i ≫ h.hom i j) (i : ι) :
-    ∃ g, g ≫ φ'.f i = φ.f i ≫ e'.f i := by
-  have hh' (i j : ι) : ∃ g, g ≫ φ'.f j = φ.f i ≫ h.hom i j := by
-    by_cases hij : c.Rel j i
-    · exact hh i j hij
-    · exact ⟨0, by rw [h.zero i j hij, zero_comp, comp_zero]⟩
-  choose g hg using hh'
-  obtain ⟨ge, hge⟩ := he i
-  refine ⟨ge - (dNext i g + prevD i g), ?_⟩
-  have hgφ : (fun i j ↦ g i j ≫ φ'.f j) = fun i j ↦ φ.f i ≫ h.hom i j := funext₂ hg
-  rw [Preadditive.sub_comp, Preadditive.add_comp, ← dNext_comp_right, ← prevD_comp_right, hgφ,
-    dNext_comp_left, prevD_comp_left, hge, ← Preadditive.comp_add, ← Preadditive.comp_sub, h.comm i,
-    add_sub_cancel_left]
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}

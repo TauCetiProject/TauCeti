@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.ChainRetraction
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.DeformationRetract
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 
 /-!
@@ -14,33 +14,32 @@ public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 
 For an open cover `U` of a space `X`, the singular chains subordinate to `U` — those supported on
 simplices whose image lies in a single member of `U` — include into all singular chains by a chain
-homotopy equivalence. This is the small-chain theorem, the analytic heart of excision: it lets
+homotopy equivalence.  This is the small-chain theorem, the analytic heart of excision: it lets
 every singular chain be replaced, without changing its homology class, by one assembled from
 simplices small enough to be seen inside a single member of the cover.
 
-Both results here are instances of the abstract chain retraction
-`TauCeti.chainRangeHomotopyEquiv`, applied to barycentric subdivision and its prism operator.
-Subdivision is chain homotopic to the identity through the prism operator, both operators
-preserve the chains subordinate to `U`, and every singular simplex becomes subordinate to an open
-cover after enough subdivisions. The homotopy inverse is a strict retraction, but the number of
-subdivisions it uses depends on the simplex, so it is not natural in the space. The inclusion
-itself is natural, hence so is the induced isomorphism `smallSingularHomologyIso` on homology.
+The construction is Hatcher's.  It is carried out in
+`TauCeti.AlgebraicTopology.SimplicialSet.Homology.DeformationRetract` for an arbitrary
+monomorphism of simplicial sets together with a subdivision-like chain endomorphism and a chain
+homotopy from the identity to it (`TauCeti.chainComplexMapHomotopyEquivOfSubdivision`).  Here it
+is applied to the singular chains of `X` and the chains subordinate to `U`, with `s` barycentric
+subdivision and `h` its prism operator.  The same operators restrict to every affinely stable
+subcomplex of the singular simplicial set, such as the smooth singular simplices of a manifold;
+that case is `TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex`.
 
-The same argument runs inside any affinely stable subcomplex `S` of the singular simplicial set,
-because subdivision and the prism operator restrict to the chains of `S`: the chains of
-`S ⊓ X.smallSingularSubcomplex U` are a deformation retract of the chains of `S`
-(`TauCeti.subcomplexSmallChainHomotopyEquiv`). For the smooth singular simplices of a manifold,
-`TauCeti.smoothSingularSubcomplex`, this is the small-chain theorem for smooth chains.
+The number of iterations depends on the simplex, so the resulting retraction is not natural in
+the space.  The inclusion itself is natural, hence so is the induced isomorphism
+`smallSingularHomologyIso` on homology.
 
 ## Main definitions and results
 
+* `TauCeti.comp_singularSubdivisionX_mem_chainRange`,
+  `TauCeti.comp_singularPrismX_mem_chainRange`: barycentric subdivision and its prism operator
+  preserve the chains of every affinely stable subcomplex.
 * `TauCeti.smallSingularChainHomotopyEquiv`: the small-chain inclusion is a chain homotopy
   equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology. Its
   homotopy inverse is a strict retraction
   (`TauCeti.chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv`).
-* `TauCeti.subcomplexSmallChainHomotopyEquiv`: the same for the chains of an affinely stable
-  subcomplex (`TauCeti.chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv`), and
-  `TauCeti.subcomplexSmallHomologyIso` the induced isomorphism on homology.
 
 ## References
 
@@ -57,12 +56,33 @@ universe w v u
 
 namespace TauCeti
 
+/-! ### Chains subordinate to an open cover -/
+
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
   {X : TopCat.{w}} {ι : Type*} (U : ι → Set X)
 
-section Singular
+variable {R} in
+/-- Barycentric subdivision preserves the chains of an affinely stable subcomplex, such as the
+chains subordinate to an open cover. -/
+lemma comp_singularSubdivisionX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] {n : ℕ} {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
+    (hf : f ∈ chainRange R T.ι n) :
+    f ≫ singularSubdivisionX R X n ∈ chainRange R T.ι n := by
+  obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
+  exact (mem_chainRange_iff _).2 ⟨g ≫ subcomplexSubdivisionX R T n, by simp⟩
+
+variable {R} in
+/-- The prism operator of barycentric subdivision preserves the chains of an affinely stable
+subcomplex, such as the chains subordinate to an open cover. -/
+lemma comp_singularPrismX_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
+    [T.IsAffineStable] {n : ℕ} {f : R ⟶ ((TopCat.toSSet.obj X).chainComplex R).X n}
+    (hf : f ∈ chainRange R T.ι n) :
+    f ≫ singularPrismX R X n ∈ chainRange R T.ι (n + 1) := by
+  obtain ⟨g, rfl⟩ := (mem_chainRange_iff _).1 hf
+  exact (mem_chainRange_iff _).2 ⟨g ≫ subcomplexPrismX R T n, by simp⟩
 
 variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
+
 include hU hcov
 
 /-- **Chains subordinate to an open cover are a deformation retract of all singular chains.**
@@ -71,12 +91,15 @@ chain homotopy equivalence, whose homotopy inverse is even a strict retraction. 
 def smallSingularChainHomotopyEquiv :
     HomotopyEquiv ((X.smallSingularSubcomplex U : SSet).chainComplex R)
       ((TopCat.toSSet.obj X).chainComplex R) :=
-  chainRangeHomotopyEquiv (i := (X.smallSingularSubcomplex U).ι)
+  chainComplexMapHomotopyEquivOfSubdivision (R := R) (i := (X.smallSingularSubcomplex U).ι)
     (h := singularSubdivisionHomotopy R X)
-    (fun n ↦ ⟨subcomplexPrismX R _ n, by simp⟩)
-    fun _ σ ↦ by
-      obtain ⟨n₀, hn₀⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
-      exact ⟨n₀, (mem_chainRange_iff _).2 (hn₀ n₀ le_rfl)⟩
+    (fun _ _ hf ↦ by
+      simpa only [singularSubdivisionChainMap_f] using comp_singularSubdivisionX_mem_chainRange hf)
+    (fun _ _ hf ↦ by
+      simpa only [singularSubdivisionHomotopy_hom] using comp_singularPrismX_mem_chainRange hf)
+    (fun _ σ ↦ by
+      obtain ⟨m, hm⟩ := exists_iterate_singularSubdivision_factor_small R U hU hcov σ
+      exact ⟨m, (mem_chainRange_iff _).2 (hm m le_rfl)⟩)
 
 /-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
 subordinate to the cover. -/
@@ -84,7 +107,7 @@ subordinate to the cover. -/
 lemma smallSingularChainHomotopyEquiv_hom :
     (smallSingularChainHomotopyEquiv R U hU hcov).hom =
       SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
-  chainRangeHomotopyEquiv_hom ..
+  chainComplexMapHomotopyEquivOfSubdivision_hom _ _ _
 
 /-- The homotopy inverse of the small-chain homotopy equivalence is a strict retraction of the
 inclusion of the chains subordinate to the cover. -/
@@ -92,8 +115,8 @@ inclusion of the chains subordinate to the cover. -/
 lemma chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv :
     SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫
       (smallSingularChainHomotopyEquiv R U hU hcov).inv = 𝟙 _ := by
-  rw [smallSingularChainHomotopyEquiv, chainRangeHomotopyEquiv_inv,
-    chainComplexMap_comp_chainRangeRetraction]
+  rw [smallSingularChainHomotopyEquiv, chainComplexMapHomotopyEquivOfSubdivision_inv,
+    chainComplexMap_comp_subdivisionRetraction]
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
@@ -106,8 +129,9 @@ def smallSingularHomologyIso [CategoryWithHomology C] (n : ℕ) :
 @[simp]
 lemma smallSingularHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
     (smallSingularHomologyIso R U hU hcov n).hom = HomologicalComplex.homologyMap
-      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n :=
-  congrArg (HomologicalComplex.homologyMap · n) (smallSingularChainHomotopyEquiv_hom R U hU hcov)
+      (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n := by
+  rw [← smallSingularChainHomotopyEquiv_hom R U hU hcov]
+  rfl
 
 /-- The small-chain homology isomorphism is natural under maps carrying members of one cover
 into members of another. -/
@@ -140,134 +164,5 @@ theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι [CategoryWithHomolog
   intro n
   rw [quasiIsoAt_iff_isIso_homologyMap]
   exact isIso_homologyMap_smallSingularChainι R U hU hcov n
-
-end Singular
-
-/-! ### Affinely stable subcomplexes -/
-
-section Subcomplex
-
-open AffineChain SSet.Subcomplex
-
-variable (S : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable]
-
-/-- Pushing forward an affine chain along a simplex of an affinely stable subcomplex `S` gives a
-chain of a smaller subcomplex `T` as soon as every simplex in its support lies in `T`. -/
-lemma AffineChain.subcomplexChain_mem_chainRange {T : (TopCat.toSSet.obj X).Subcomplex}
-    (hT : T ≤ S) {m k : ℕ} (σ : (S : SSet) _⦋m⦌)
-    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ)
-    (hc : ∀ v ∈ c.support, (X.toSSetObjEquiv _).symm
-      ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)) ∈
-        T.obj (Opposite.op ⦋k⦌)) :
-    subcomplexChain R S σ k c ∈ chainRange R (homOfLE hT) k := by
-  rw [← c.sum_single, map_finsuppSum, Finsupp.sum]
-  refine AddSubgroup.sum_mem _ fun v hv ↦ ?_
-  have hσ : (SSet.Subcomplex.homOfLE hT).app _ ⟨_, hc v hv⟩ =
-      ⟨_, IsAffineStable.comp_affineMapMk_mem σ.property v⟩ :=
-    Subtype.ext (SSet.Subcomplex.homOfLE_app_val hT _ _)
-  rw [subcomplexChain_single, ← hσ]
-  exact AddSubgroup.zsmul_mem _ (ιChainComplex_app_mem_chainRange _) _
-
-variable (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
-include hU hcov
-
-/-- For an open cover, a sufficiently fine iterated subdivision of every simplex of an affinely
-stable subcomplex `S` is a chain of the simplices of `S` subordinate to the cover. -/
-theorem exists_ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_mem_chainRange {k : ℕ}
-    (σ : (S : SSet) _⦋k⦌) :
-    ∃ n, (S : SSet).ιChainComplex σ ≫
-        (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k ∈
-      chainRange R (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) k := by
-  obtain ⟨n₀, hn₀⟩ := ContinuousMap.exists_forall_mem_support_subdivision_iterate_range_subset
-    (X.toSSetObjEquiv _ σ.val) hU hcov k
-  refine ⟨n₀, ?_⟩
-  rw [← subcomplexChain_simplex, ← subcomplexChain_subdivision_iterate]
-  exact subcomplexChain_mem_chainRange R S _ σ _ fun v hv ↦
-    ⟨IsAffineStable.comp_affineMapMk_mem σ.property v,
-      (TopCat.mem_smallSingularSubcomplex_iff X U _).2 (hn₀ n₀ le_rfl _ v hv)⟩
-
-/-- **The small-chain theorem inside an affinely stable subcomplex.** For an affinely stable
-subcomplex `S` of the singular simplicial set and an open cover `U`, the inclusion of the chains
-of the simplices of `S` subordinate to `U` into the chains of `S` is a chain homotopy equivalence,
-whose homotopy inverse is a strict retraction. For the smooth singular simplices of a manifold,
-`TauCeti.smoothSingularSubcomplex`, this is the small-chain theorem for smooth chains. -/
-def subcomplexSmallChainHomotopyEquiv :
-    HomotopyEquiv (((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) :
-      SSet).chainComplex R) ((S : SSet).chainComplex R) :=
-  chainRangeHomotopyEquiv (i := homOfLE inf_le_left) (h := subcomplexSubdivisionHomotopy R S)
-    (fun n ↦ ⟨subcomplexPrismX R _ n, by
-      rw [subcomplexSubdivisionHomotopy_hom]
-      exact (subcomplexPrismX_naturality R _ S (𝟙 X) (homOfLE inf_le_left) (by simp) n).symm⟩)
-    fun _ σ ↦ exists_ιChainComplex_comp_subcomplexSubdivisionChainMap_pow_mem_chainRange R U S hU
-      hcov σ
-
-/-- The forward map of the small-chain homotopy equivalence of an affinely stable subcomplex is
-the inclusion of the chains subordinate to the cover. -/
-@[simp]
-lemma subcomplexSmallChainHomotopyEquiv_hom :
-    (subcomplexSmallChainHomotopyEquiv R U S hU hcov).hom =
-      SSet.chainComplexMap (homOfLE inf_le_left) R :=
-  chainRangeHomotopyEquiv_hom ..
-
-/-- The homotopy inverse of the small-chain homotopy equivalence of an affinely stable subcomplex
-is a strict retraction of the inclusion of the chains subordinate to the cover. -/
-@[reassoc (attr := simp)]
-lemma chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv :
-    SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R ≫
-      (subcomplexSmallChainHomotopyEquiv R U S hU hcov).inv = 𝟙 _ := by
-  rw [subcomplexSmallChainHomotopyEquiv, chainRangeHomotopyEquiv_inv,
-    chainComplexMap_comp_chainRangeRetraction]
-
-/-- The isomorphism on homology induced by the inclusion of the chains of an affinely stable
-subcomplex subordinate to an open cover. -/
-def subcomplexSmallHomologyIso [CategoryWithHomology C] (n : ℕ) :
-    (((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) :
-      SSet).chainComplex R).homology n ≅ ((S : SSet).chainComplex R).homology n :=
-  (subcomplexSmallChainHomotopyEquiv R U S hU hcov).toHomologyIso n
-
-@[simp]
-lemma subcomplexSmallHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
-    (subcomplexSmallHomologyIso R U S hU hcov n).hom = HomologicalComplex.homologyMap
-      (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) n :=
-  congrArg (HomologicalComplex.homologyMap · n)
-    (subcomplexSmallChainHomotopyEquiv_hom R U S hU hcov)
-
-/-- The small-chain homology isomorphism of an affinely stable subcomplex is natural under maps of
-simplicial sets compatible with the inclusions of the chains subordinate to the covers. -/
-lemma subcomplexSmallHomologyIso_naturality [CategoryWithHomology C]
-    {κ : Type*} {Y : TopCat.{w}} (V : κ → Set Y) (S' : (TopCat.toSSet.obj Y).Subcomplex)
-    [S'.IsAffineStable] (hV : ∀ j, IsOpen (V j)) (hcovV : ⋃ j, V j = Set.univ)
-    (f : ((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) : SSet) ⟶
-      ((S' ⊓ Y.smallSingularSubcomplex V : (TopCat.toSSet.obj Y).Subcomplex) : SSet))
-    (g : (S : SSet) ⟶ (S' : SSet))
-    (hfg : f ≫ homOfLE inf_le_left = homOfLE inf_le_left ≫ g) (n : ℕ) :
-    (subcomplexSmallHomologyIso R U S hU hcov n).hom ≫
-        HomologicalComplex.homologyMap (SSet.chainComplexMap g R) n =
-      HomologicalComplex.homologyMap (SSet.chainComplexMap f R) n ≫
-        (subcomplexSmallHomologyIso R V S' hV hcovV n).hom := by
-  rw [subcomplexSmallHomologyIso_hom, subcomplexSmallHomologyIso_hom,
-    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
-    ← Functor.map_comp, ← Functor.map_comp, hfg]
-
-/-- The inclusion of the chains of an affinely stable subcomplex subordinate to an open cover
-induces an isomorphism on homology in every degree. -/
-theorem isIso_homologyMap_subcomplexSmallChainι [CategoryWithHomology C] (n : ℕ) :
-    IsIso (HomologicalComplex.homologyMap
-      (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R)
-        n) := by
-  rw [← subcomplexSmallHomologyIso_hom R U S hU hcov n]
-  infer_instance
-
-/-- The inclusion of the chains of an affinely stable subcomplex subordinate to an open cover is a
-quasi-isomorphism. -/
-theorem quasiIso_chainComplexMap_subcomplexSmall_homOfLE [CategoryWithHomology C] :
-    QuasiIso (SSet.chainComplexMap
-      (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) := by
-  rw [quasiIso_iff]
-  intro n
-  rw [quasiIsoAt_iff_isIso_homologyMap]
-  exact isIso_homologyMap_subcomplexSmallChainι R U S hU hcov n
-
-end Subcomplex
 
 end TauCeti

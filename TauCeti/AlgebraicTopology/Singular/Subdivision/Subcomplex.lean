@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
+public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Homotopy
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 import TauCeti.Algebra.Homology.Homotopy
 
 /-!
@@ -30,17 +31,17 @@ same operators on smooth chains.
 ## Main definitions and results
 
 * `SSet.Subcomplex.IsAffineStable`: the subcomplex is closed under precomposition with affine
-  maps of standard simplices.
+  maps of standard simplices. Intersections of affinely stable subcomplexes are affinely stable.
 * `TauCeti.AffineChain.subcomplexChain`: push affine chains of `Δᵐ` forward along a simplex of an
   affinely stable subcomplex, with values in the chains of the subcomplex.
 * `TauCeti.subcomplexSubdivisionChainMap`: barycentric subdivision as a chain endomorphism of the
   chains of an affinely stable subcomplex, compatible with the inclusion into singular chains.
+* `TauCeti.subcomplexSubdivisionChainMap_pow_f_ι`: iterated subdivision is compatible with the
+  inclusion into singular chains.
 * `TauCeti.subcomplexSubdivisionHomotopy`: the prism operator as a chain homotopy from the identity
   to subdivision on those chains.
 * `TauCeti.homologyMap_subcomplexSubdivisionChainMap`: subdivision induces the identity on their
   homology.
-* `TauCeti.AffineChain.subcomplexChain_subdivision_iterate`: pushing affine chains forward along a
-  simplex of the subcomplex commutes with iterated subdivision.
 * `TauCeti.subcomplexSubdivisionChainMap_naturality`, `TauCeti.subcomplexPrismX_naturality`: both
   operators commute with maps of subcomplexes lying over continuous maps.
 
@@ -175,35 +176,17 @@ lemma subcomplexSubdivisionChainMap_ι :
 
 /-- Iterated restricted subdivision commutes with the inclusion into singular chains. -/
 @[reassoc]
-lemma subcomplexSubdivisionChainMap_pow_f_ι (n k : ℕ) :
-    (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k ≫
-        (SSet.chainComplexMap S.ι R).f k =
-      (SSet.chainComplexMap S.ι R).f k ≫
-        (End.of (singularSubdivisionChainMap R X) ^ n).asHom.f k := by
-  induction n with
+lemma subcomplexSubdivisionChainMap_pow_f_ι (m n : ℕ) :
+    (End.of (subcomplexSubdivisionChainMap R S) ^ m).asHom.f n ≫
+        (SSet.chainComplexMap S.ι R).f n =
+      (SSet.chainComplexMap S.ι R).f n ≫
+        (End.of (singularSubdivisionChainMap R X) ^ m).asHom.f n := by
+  induction m with
   | zero => simp
-  | succ n ih =>
+  | succ m ih =>
     rw [HomologicalComplex.pow_f_succ, HomologicalComplex.pow_f_succ, Category.assoc,
       subcomplexSubdivisionChainMap_f, subcomplexSubdivisionX_ι, reassoc_of% ih,
       singularSubdivisionChainMap_f]
-
-/-- Pushing the standard simplex forward along a simplex of an affinely stable subcomplex gives
-the summand of that simplex. -/
-@[simp]
-lemma AffineChain.subcomplexChain_simplex {n : ℕ} (σ : (S : SSet) _⦋n⦌) :
-    subcomplexChain R S σ n (simplex n) = (S : SSet).ιChainComplex σ := by
-  apply (cancel_mono ((SSet.chainComplexMap S.ι R).f n)).1
-  simp [singularChain_simplex]
-
-/-- Pushing an iterated barycentric subdivision of an affine chain forward along a simplex of an
-affinely stable subcomplex is the corresponding iterate of the restricted subdivision. -/
-lemma AffineChain.subcomplexChain_subdivision_iterate {m k n : ℕ} (σ : (S : SSet) _⦋m⦌)
-    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
-    subcomplexChain R S σ k ((subdivision _ k)^[n] c) =
-      subcomplexChain R S σ k c ≫ (End.of (subcomplexSubdivisionChainMap R S) ^ n).asHom.f k := by
-  apply (cancel_mono ((SSet.chainComplexMap S.ι R).f k)).1
-  rw [subcomplexChain_ι, Category.assoc, subcomplexSubdivisionChainMap_pow_f_ι,
-    subcomplexChain_ι_assoc, singularChain_subdivision_iterate]
 
 /-- The prism operator of barycentric subdivision restricted to the chains of an affinely stable
 subcomplex. -/
@@ -276,7 +259,6 @@ lemma subcomplexSubdivisionChainMap_naturality :
   have hι : SSet.chainComplexMap g R ≫ SSet.chainComplexMap T.ι R =
       SSet.chainComplexMap S.ι R ≫ SSet.chainComplexMap (TopCat.toSSet.map f) R := by
     simp only [← Functor.map_comp, hg]
-  have : Mono (SSet.chainComplexMap T.ι R) := HomologicalComplex.mono_of_mono_f _ inferInstance
   apply (cancel_mono (SSet.chainComplexMap T.ι R)).1
   simp only [Category.assoc, subcomplexSubdivisionChainMap_ι, hι, reassoc_of% hι,
     subcomplexSubdivisionChainMap_ι_assoc]

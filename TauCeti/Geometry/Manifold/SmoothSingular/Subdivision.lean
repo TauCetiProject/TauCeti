@@ -28,10 +28,11 @@ chain homotopic to the identity through the prism operator
 with `TauCeti.smoothSingularSubcomplexMap_ι` as the compatibility hypothesis).
 
 These operators are the input to the small-chain theorem for smooth chains, in which a smooth chain
-is replaced by a fine subdivision of it without leaving the smooth chains: for an open cover, the
-smooth chains subordinate to the cover are a deformation retract of all smooth chains. It is the
-case `S = smoothSingularSubcomplex I M` of `TauCeti.subcomplexSmallChainHomotopyEquiv`, a step in
-comparing smooth with continuous singular homology.
+is replaced by a fine subdivision of it without leaving the smooth chains: for an open cover of
+`M`, the smooth singular simplices subordinate to the cover include into all smooth singular
+chains by a chain homotopy equivalence (`TauCeti.subcomplexSmallChainHomotopyEquiv`, which applies
+to every affinely stable subcomplex). That theorem is a step in comparing smooth with continuous
+singular homology.
 
 ## References
 
