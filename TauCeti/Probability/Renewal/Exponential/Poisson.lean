@@ -24,11 +24,12 @@ It holds on arbitrary measurable sample spaces and retains the existing arrival-
 representative on exceptional explosive paths. No points are placed at the artificial
 initial arrival at zero.
 
-The comparison uses `identDistrib_renewalCountNat_of_hasLaw_poissonMeasure` for count paths
-and `identDistrib_measure_iff_Iic` to recover the measure-valued law. Almost-sure local
-finiteness and integer-valuedness justify recovering masses from natural counts
-simultaneously at every time, rather than intersecting uncountably many null events.
-The sampling law `Measure.poissonLaw` supplies the comparison realization.
+These results connect renewal arrivals to the `Measure.poissonLaw` and
+`IsPoissonRandomMeasure` interfaces, including independent counts on disjoint measurable
+sets and Laplace functionals. Waiting times take values in `ℝ≥0`; their coercions to `ℝ`
+have law `expMeasure r`, and the arrival-measure intensity is `r • nnvolume`.
+The count-path counterpart is `identDistrib_renewalCountNat_of_hasLaw_poissonMeasure`;
+`identDistrib_measure_iff_Iic` supplies the corresponding cumulative-measure uniqueness.
 
 ## References
 
@@ -60,22 +61,15 @@ private theorem identDistrib_renewalArrivalMeasure_of_expMeasure
     have hz := hM.hasLaw (A := {0}) (measurableSet_singleton 0) (by simp)
     have hz' : HasLaw (fun ω ↦ M ω {0}) (Measure.dirac 0) Q := by simpa using hz
     exact hz'.ae_eq_of_dirac
-  have hfinite : ∀ᵐ ω ∂Q, ∀ t, M ω (Iic t) ≠ ∞ := by
-    filter_upwards [hM.ae_isLocallyFiniteMeasure] with ω hω
-    intro t
-    have hc : IsCompact (Iic t) := by
-      simpa only [← bot_eq_zero, Icc_bot] using (isCompact_Icc (a := (0 : ℝ≥0)) (b := t))
-    exact hc.measure_lt_top.ne
+  have hfinite : ∀ᵐ ω ∂Q, ∀ t, M ω (Iic t) ≠ ∞ :=
+    hM.ae_isLocallyFiniteMeasure.mono fun _ _ _ ↦ measure_Iic_lt_top.ne
   -- Recover every cumulative mass on one event, using integer-valued realizations.
   have hcounts : (fun ω t ↦ (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞)) =ᵐ[Q]
       (fun ω t ↦ M ω (Iic t)) := by
     filter_upwards [hM.ae_isIntegerValued, hfinite, hzero] with ω hint hfin hz
     funext t
-    have heq : Ioc 0 t = Iic t \ {0} := by
-      ext x
-      simp [pos_iff_ne_zero, and_comm]
     have hmass : M ω (Ioc 0 t) = M ω (Iic t) := by
-      rw [heq, measure_sdiff_null hz]
+      rw [← Icc_sdiff_left, measure_sdiff_null hz, ← bot_eq_zero, Icc_bot]
     obtain ⟨n, hn⟩ := hint.exists_eq_natCast measurableSet_Iic (lt_top_iff_ne_top.2 (hfin t))
     simp [hmass, hn]
   have hrenew : (fun ω t ↦ renewalArrivalMeasure T ω (Iic t)) =ᵐ[P]
@@ -99,19 +93,22 @@ private theorem identDistrib_renewalArrivalMeasure_of_expMeasure
   · filter_upwards [hrenew] with ω hω
     exact fun t ↦ by rw [congrFun hω t]; exact ENNReal.natCast_ne_top _
 
+private theorem isPoissonRandomMeasure_poissonLaw_smul_nnvolume :
+    IsPoissonRandomMeasure (r • nnvolume).poissonLaw id ((r : ℝ≥0∞) • nnvolume) := by
+  rw [Measure.coe_nnreal_smul]
+  exact isPoissonRandomMeasure_of_laplaceFunctional measurable_id
+    (fun _ hf ↦ Measure.laplaceFunctional_poissonLaw (r • nnvolume) hf)
+
 /-- The entire arrival measure of independent exponential waiting times has the
 homogeneous Poisson sampling law. The artificial arrival at zero is excluded.
-The law hypotheses already force the rate to be positive, since `expMeasure 0 = 0`. -/
+Independence forces `P` to be a probability measure; together with the law hypotheses,
+this forces the rate to be positive, since `expMeasure 0 = 0`. -/
 theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) (r • nnvolume).poissonLaw P := by
-  have hcanonical : IsPoissonRandomMeasure (r • nnvolume).poissonLaw id
-      ((r : ℝ≥0∞) • nnvolume) :=
-    isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-      (fun _ hf ↦ Measure.laplaceFunctional_poissonLaw _ hf)
-  exact (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw hcanonical).symm.hasLaw
-    HasLaw.id
+  exact (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
+    isPoissonRandomMeasure_poissonLaw_smul_nnvolume).symm.hasLaw HasLaw.id
 
 /-- Independent exponential waiting times generate a homogeneous Poisson random measure.
 In particular, counts on arbitrary disjoint measurable sets are independent, not only counts
@@ -120,12 +117,9 @@ theorem isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     IsPoissonRandomMeasure P (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume) := by
-  have hcanonical : IsPoissonRandomMeasure (r • nnvolume).poissonLaw id
-      ((r : ℝ≥0∞) • nnvolume) :=
-    isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-      (fun _ hf ↦ Measure.laplaceFunctional_poissonLaw _ hf)
-  have h := hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure hT hindep hlaw
-  exact hcanonical.of_identDistrib (measurable_renewalArrivalMeasure hT)
-    (HasLaw.id.identDistrib h)
+  exact isPoissonRandomMeasure_poissonLaw_smul_nnvolume.of_identDistrib
+    (measurable_renewalArrivalMeasure hT)
+    (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
+      isPoissonRandomMeasure_poissonLaw_smul_nnvolume).symm
 
 end TauCeti.Probability
