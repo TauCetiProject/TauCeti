@@ -149,24 +149,16 @@ theorem IsPrimaryGaussian.stickelbergerPhi_span_singleton_four_eq {π : 𝓞 K}
     {F : Type*} [FunLike F (𝓞 K) (𝓞 K)] [RingHomClass F (𝓞 K) (𝓞 K)] {σ : F}
     (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) :
     stickelbergerPhi (span {π}) 4 = π * σ π ^ 3 := by
-  obtain ⟨s, hs, rfl⟩ := hπ.exists_multiset_prod_eq
-  induction s using Multiset.induction_on with
-  | empty =>
-    rw [Multiset.prod_zero, span_singleton_one, stickelbergerPhi_top, map_one, one_pow, mul_one]
-  | cons p s ih =>
-    have hp := hs p (Multiset.mem_cons_self p s)
-    have hs' : ∀ q ∈ s, Prime q ∧ IsPrimaryGaussian q := fun q hq ↦
-      hs q (Multiset.mem_cons_of_mem hq)
-    have hs_prim : IsPrimaryGaussian s.prod :=
-      hp.2.mul_left_iff.mp (by rwa [Multiset.prod_cons] at hπ)
+  induction hπ using IsPrimaryGaussian.induction_on_prime with
+  | one =>
+    rw [span_singleton_one, stickelbergerPhi_top, map_one, one_pow, mul_one]
+  | mul p y hp hp_prim hy ih =>
     have hpmax : (span {p}).IsMaximal :=
-      ((span_singleton_prime hp.1.ne_zero).mpr hp.1).isMaximal (by simpa using hp.1.ne_zero)
-    have hp0 : span {p} ≠ ⊥ := by simpa using hp.1.ne_zero
-    have hs0 : span {s.prod} ≠ ⊥ := by
-      rw [Ne, span_singleton_eq_bot]
-      exact fun h ↦ absurd (h ▸ hs_prim.odd_norm) (by simp)
-    rw [Multiset.prod_cons, ← span_singleton_mul_span_singleton, stickelbergerPhi_mul hp0 hs0,
-      stickelbergerPhi_four_eq_of_isMaximal rfl hp.2 hσ, ih hs' hs_prim, map_mul, mul_pow]
+      ((span_singleton_prime hp.ne_zero).mpr hp).isMaximal (by simpa using hp.ne_zero)
+    have hp0 : span {p} ≠ ⊥ := by simpa using hp.ne_zero
+    have hy0 : span {y} ≠ ⊥ := by simpa using hy.ne_zero
+    rw [← span_singleton_mul_span_singleton, stickelbergerPhi_mul hp0 hy0,
+      stickelbergerPhi_four_eq_of_isMaximal rfl hp_prim hσ, ih, map_mul, mul_pow]
     ring
 
 end TauCeti

@@ -17,7 +17,7 @@ Let `K = ℚ(i)`, given as a number field with `IsCyclotomicExtension {4} ℚ K`
 `-1` at the ideal `λ 𝓞 K` are
 
 * `(i / λ)_4 = i ^ (-((a - 1) / 2))`, and
-* `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`.
+* `(-1 / λ)_4 = (-1) ^ ((N(λ) - 1) / 4) = (-1) ^ ((a - 1) / 2)`.
 
 In particular, for a rational integer `m ≡ 1 (mod 4)`, `(i / m)_4 = (-1) ^ ((m - 1) / 4)`, and
 `(-1 / m)_4 = 1` for every odd rational integer `m`. These are the supplementary laws that
@@ -34,8 +34,9 @@ are read in `K`, where the integer powers of `i` and `-1` live.
 
 * `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_toInteger`:
   `(i / λ)_4 = i ^ (-((a - 1) / 2))`.
-* `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one`:
-  `(-1 / λ)_4 = (-1) ^ ((a - 1) / 2)`.
+* `TauCeti.IsPrimaryGaussian.coe_powerResidueSymbolIdeal_mk_neg_one`,
+  `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one`:
+  `(-1 / λ)_4 = (-1) ^ ((N(λ) - 1) / 4) = (-1) ^ ((a - 1) / 2)`.
 * `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger`,
   `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd`:
   `(i / m)_4 = (-1) ^ ((m - 1) / 4)` for a rational integer `m ≡ 1 (mod 4)`, and
@@ -56,6 +57,18 @@ open NumberField Ideal
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- **The supplementary law for `-1`, in terms of the norm.** If `x` is primary in `𝓞 K = ℤ[i]`,
+then `(-1 / x)_4 = (-1) ^ ((N(x) - 1) / 4)`, the symbol being taken at the ideal `x 𝓞 K` and read
+in `K` with `N = Algebra.norm ℤ`. -/
+theorem IsPrimaryGaussian.coe_powerResidueSymbolIdeal_mk_neg_one {x : 𝓞 K}
+    (hx : IsPrimaryGaussian x) :
+    ((powerResidueSymbolIdeal (span {x}) 4 (Ideal.Quotient.mk _ (-1)) : 𝓞 K) : K) =
+      (-1) ^ ((Algebra.norm ℤ x - 1) / 4) := by
+  rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hx.absNorm_span_singleton_coprime_four
+      (by norm_num)]
+  push_cast
+  rw [← zpow_natCast, hx.natCast_absNorm_sub_one_div_four]
 
 variable {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
 
@@ -78,10 +91,7 @@ theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_neg_one
     (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
     ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
       (Ideal.Quotient.mk _ (-1)) : 𝓞 K) : K) = (-1) ^ ((a - 1) / 2) := by
-  rw [powerResidueSymbolIdeal_mk_of_pow_eq_one hx.absNorm_span_singleton_coprime_four
-      (by norm_num)]
-  push_cast
-  rw [← zpow_natCast, hx.natCast_absNorm_sub_one_div_four]
+  rw [hx.coe_powerResidueSymbolIdeal_mk_neg_one]
   exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num) hx.norm_sub_one_div_four
 
 /-- **The supplementary law for `i` at a rational integer.** If `m ≡ 1 (mod 4)`, then

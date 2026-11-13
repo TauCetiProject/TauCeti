@@ -38,8 +38,9 @@ without a nonunit hypothesis.
   leaving a primary quotient with coprime coordinates.
 * `TauCeti.IsPrimaryGaussian.map`: the image of a primary element under a ring endomorphism of
   `𝓞 K`, such as complex conjugation, is primary.
-* `TauCeti.IsPrimaryGaussian.odd_norm`, `TauCeti.IsPrimaryGaussian.eq_one_of_isUnit`: a primary
-  element has odd norm, and the only primary unit is `1`.
+* `TauCeti.IsPrimaryGaussian.odd_norm`, `TauCeti.IsPrimaryGaussian.ne_zero`,
+  `TauCeti.IsPrimaryGaussian.eq_one_of_isUnit`: a primary element has odd norm (hence is nonzero),
+  and the only primary unit is `1`.
 * `TauCeti.existsUnique_unit_mul_isPrimaryGaussian`: an element of odd norm has exactly one
   primary multiple by a unit.
 * `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four`: for primary `a + b i`,
@@ -49,8 +50,9 @@ without a nonunit hypothesis.
 * `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
   an ideal of norm prime to `4`, and `TauCeti.IsPrimaryGaussian.natCast_absNorm_sub_one_div_four`
   identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(λ) - 1) / 4`.
-* `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`: a primary element is a product of primary
-  primes.
+* `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`,
+  `TauCeti.IsPrimaryGaussian.induction_on_prime`: a primary element is a product of primary
+  primes, giving an induction principle on primary prime factorisations.
 
 ## References
 
@@ -152,6 +154,10 @@ theorem IsPrimaryGaussian.odd_norm (hx : IsPrimaryGaussian x) : Odd (Algebra.nor
   rw [hζ.odd_norm_intCast_add_intCast_mul_toInteger_iff_of_four, Int.odd_iff]
   simp only [Int.ModEq] at hx
   omega
+
+/-- A primary element of `𝓞 K = ℤ[i]` is nonzero. -/
+theorem IsPrimaryGaussian.ne_zero (hx : IsPrimaryGaussian x) : x ≠ 0 :=
+  fun h ↦ absurd (h ▸ hx.odd_norm) (by simp)
 
 /-- **The norm congruence of a primary Gaussian integer.** For primary `a + b i`, the quotient
 `(N(a + b i) - 1) / 4` has the parity of `(a - 1) / 2`. This is the exponent comparison used in
@@ -372,6 +378,31 @@ theorem IsPrimaryGaussian.exists_multiset_prod_eq (hx : IsPrimaryGaussian x) :
     · rw [Multiset.prod_cons, hprod]
       push_cast
       linear_combination ((v : 𝓞 K) * p * y) * u.mul_inv
+
+/-- **Prime-factorisation induction for primary Gaussian integers.** To prove a property of a
+primary element of `𝓞 K = ℤ[i]`, it suffices to prove it for `1` and for `p * y` where `p` is a
+primary prime and `y` is a primary element satisfying the property. -/
+@[elab_as_elim]
+theorem IsPrimaryGaussian.induction_on_prime
+    {motive : (x : 𝓞 K) → IsPrimaryGaussian x → Prop} {x : 𝓞 K} (hx : IsPrimaryGaussian x)
+    (one : motive 1 isPrimaryGaussian_one)
+    (mul : ∀ p y, Prime p → (hp : IsPrimaryGaussian p) → (hy : IsPrimaryGaussian y) →
+      motive y hy → motive (p * y) (hp.mul hy)) :
+    motive x hx := by
+  obtain ⟨s, hs, hprod⟩ := hx.exists_multiset_prod_eq
+  induction s using Multiset.induction_on generalizing x with
+  | empty =>
+    rw [Multiset.prod_zero] at hprod
+    subst hprod
+    exact one
+  | cons p s ih =>
+    rw [Multiset.prod_cons] at hprod
+    subst hprod
+    obtain ⟨hp, hp_prim⟩ := hs p (Multiset.mem_cons_self p s)
+    have hs' : ∀ q ∈ s, Prime q ∧ IsPrimaryGaussian q := fun q hq ↦
+      hs q (Multiset.mem_cons_of_mem hq)
+    have hs_prim : IsPrimaryGaussian s.prod := hp_prim.mul_left_iff.mp hx
+    exact mul p s.prod hp hp_prim hs_prim (ih hs_prim hs' rfl)
 
 section Examples
 

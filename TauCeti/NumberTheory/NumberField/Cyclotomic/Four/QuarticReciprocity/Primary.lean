@@ -339,7 +339,7 @@ private theorem powerResidueSymbolIdeal_span_intCast_mul_mk_intCast_mul {m n : �
   have hm0 : span {(m : 𝓞 K)} ≠ ⊥ := by
     have hm_ne : m ≠ 0 := by simp only [Int.ModEq] at hm; omega
     simpa using hm_ne
-  have hα₁_0 : span {α₁} ≠ ⊥ := by simpa using fun h ↦ absurd (h ▸ hα₁.odd_norm) (by simp)
+  have hα₁_0 : span {α₁} ≠ ⊥ := by simpa using hα₁.ne_zero
   rw [← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hm0 hα₁_0,
     map_mul, map_mul, map_mul, map_mul, map_intCast,
     powerResidueSymbolIdeal_intCast_four hmn, one_mul,

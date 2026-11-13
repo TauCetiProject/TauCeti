@@ -452,10 +452,6 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
   let χ := (powerResidueSymbol P m)⁻¹.ringHomComp f
   let π := Quotient.mk I
   let g := gaussSum χ ψ
-  have hg : π g = gaussSum (χ.ringHomComp π) (π.toMonoidHom.compAddChar ψ) := by
-    simp only [g, gaussSum, map_sum, map_mul, MulChar.ringHomComp_apply,
-      MonoidHom.coe_compAddChar, Function.comp_apply, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass]
   -- `gbar ≠ 0`, because `g g(χ⁻¹, ψ⁻¹) = N P` and `N P` is prime to `p`.
   have hg₀ : π g ≠ 0 := quotientMk_gaussSum_ne_zero P P' hP hPP' hm hf hψ I hI
   -- The Frobenius: `gbar ^ q = (q / P)_m gbar`, so `gbar ^ (q - 1) = (q / P)_m` in `S`.
@@ -468,7 +464,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
       MulChar.ringHomComp_apply, map_natCast, ← Nat.cast_pow, ← hqn]
   have hfrob := TauCeti.gaussSum_pow_char_pow hχq (π.toMonoidHom.compAddChar ψ)
     (by rw [← Nat.cast_pow, ← hqn, ← map_natCast (Quotient.mk P)]; exact hq.isUnit)
-  rw [hval, ← hg, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
+  rw [hval, MulChar.gaussSum_ringHomComp, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
   have hgq := mul_right_cancel₀ hg₀ hfrob
   -- `f (Φ(P)) = g ^ m`, so `Φ(P) ∉ P'` and `ρ ((Φ(P) / P')_m) = gbar ^ (q - 1)`.
   have hΦ : f (stickelbergerPhi P m) = g ^ m := stickelbergerPhi_prime P hP hm hf hψ
