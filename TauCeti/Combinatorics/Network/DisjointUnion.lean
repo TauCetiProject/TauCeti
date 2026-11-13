@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Shift
+public import Mathlib.Data.Finset.Sum
 
 /-!
 # Disjoint unions of bounded excess assignments
@@ -171,6 +172,46 @@ theorem restrictRight_zero [Zero K] :
   (rfl)
 
 @[simp]
+theorem restrictLeft_add [Add K] (f g : Assignment (DisjointUnionHom Q R) K) :
+    (f + g).restrictLeft = f.restrictLeft + g.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_add [Add K] (f g : Assignment (DisjointUnionHom Q R) K) :
+    (f + g).restrictRight = f.restrictRight + g.restrictRight :=
+  (rfl)
+
+@[simp]
+theorem restrictLeft_neg [Neg K] (f : Assignment (DisjointUnionHom Q R) K) :
+    (-f).restrictLeft = -f.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_neg [Neg K] (f : Assignment (DisjointUnionHom Q R) K) :
+    (-f).restrictRight = -f.restrictRight :=
+  (rfl)
+
+@[simp]
+theorem restrictLeft_sub [Sub K] (f g : Assignment (DisjointUnionHom Q R) K) :
+    (f - g).restrictLeft = f.restrictLeft - g.restrictLeft :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_sub [Sub K] (f g : Assignment (DisjointUnionHom Q R) K) :
+    (f - g).restrictRight = f.restrictRight - g.restrictRight :=
+  (rfl)
+
+@[simp]
+theorem restrictLeft_map {L : Type*} (f : Assignment (DisjointUnionHom Q R) K) (φ : K → L) :
+    (f.map φ).restrictLeft = f.restrictLeft.map φ :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_map {L : Type*} (f : Assignment (DisjointUnionHom Q R) K) (φ : K → L) :
+    (f.map φ).restrictRight = f.restrictRight.map φ :=
+  (rfl)
+
+@[simp]
 theorem disjointUnion_inl (f : Assignment Q K) (g : Assignment R K) {x y : V} (e : Q x y) :
     f.disjointUnion g (DisjointUnionHom.inl e) = f e :=
   (rfl)
@@ -201,6 +242,41 @@ theorem disjointUnion_restrictLeft_restrictRight
   · exact e.elim
   · exact e.elim
   · rfl
+
+/-- Assignments on a disjoint union are equal exactly when both restrictions are equal. -/
+theorem eq_iff_restrictLeft_restrictRight
+    {f g : Assignment (DisjointUnionHom Q R) K} :
+    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight := by
+  constructor
+  · rintro rfl
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨hl, hr⟩
+    rw [← f.disjointUnion_restrictLeft_restrictRight,
+      ← g.disjointUnion_restrictLeft_restrictRight, hl, hr]
+
+@[simp]
+theorem map_disjointUnion {L : Type*} (f : Assignment Q K) (g : Assignment R K) (φ : K → L) :
+    (f.disjointUnion g).map φ = (f.map φ).disjointUnion (g.map φ) := by
+  apply eq_iff_restrictLeft_restrictRight.2
+  exact ⟨rfl, rfl⟩
+
+@[simp]
+theorem disjointUnion_add [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+    (f + f').disjointUnion (g + g') = f.disjointUnion g + f'.disjointUnion g' := by
+  apply eq_iff_restrictLeft_restrictRight.2
+  exact ⟨rfl, rfl⟩
+
+@[simp]
+theorem disjointUnion_neg [Neg K] (f : Assignment Q K) (g : Assignment R K) :
+    (-f).disjointUnion (-g) = -(f.disjointUnion g) := by
+  apply eq_iff_restrictLeft_restrictRight.2
+  exact ⟨rfl, rfl⟩
+
+@[simp]
+theorem disjointUnion_sub [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
+    (f - f').disjointUnion (g - g') = f.disjointUnion g - f'.disjointUnion g' := by
+  apply eq_iff_restrictLeft_restrictRight.2
+  exact ⟨rfl, rfl⟩
 
 @[simp]
 theorem disjointUnion_zero [Zero K] :
@@ -233,6 +309,12 @@ theorem le_iff_restrictLeft_restrictRight [LE K]
     f ≤ g ↔ f.restrictLeft ≤ g.restrictLeft ∧ f.restrictRight ≤ g.restrictRight := by
   simp only [Pi.le_def, DisjointUnionHom.forall_iff, restrictLeft_apply,
     restrictRight_apply]
+
+@[simp]
+theorem disjointUnion_inj {f f' : Assignment Q K} {g g' : Assignment R K} :
+    f.disjointUnion g = f'.disjointUnion g' ↔ f = f' ∧ g = g' := by
+  simp only [eq_iff_restrictLeft_restrictRight, restrictLeft_disjointUnion,
+    restrictRight_disjointUnion]
 
 /-- Disjoint-union assignments built from two pairs are ordered componentwise. -/
 @[simp]
@@ -277,6 +359,26 @@ theorem DisjointUnionHom.sum_inr {x y : W}
     ∑ e, g e = ∑ e : R x y, g (DisjointUnionHom.inr e) :=
   (Fintype.sum_equiv DisjointUnionHom.inrEquiv _ _ fun _ ↦ rfl).symm
 
+/-- An arrow sum on a disjoint union is the sum of its two restricted arrow sums. -/
+theorem arrowSum_eq_add_restrictLeft_restrictRight
+    (f : Assignment (DisjointUnionHom Q R) K) (S T : Finset (V ⊕ W)) :
+    arrowSum f S T =
+      arrowSum f.restrictLeft S.toLeft T.toLeft +
+        arrowSum f.restrictRight S.toRight T.toRight := by
+  rw [← Finset.toLeft_disjSum_toRight (u := S),
+    ← Finset.toLeft_disjSum_toRight (u := T)]
+  simp [arrowSum_def, DisjointUnionHom.sum_inl, DisjointUnionHom.sum_inr]
+
+@[simp]
+theorem arrowSum_disjointUnion (f : Assignment Q K) (g : Assignment R K)
+    (S T : Finset V) (S' T' : Finset W) :
+    arrowSum (f.disjointUnion g) (S.disjSum S') (T.disjSum T') =
+      arrowSum f S T + arrowSum g S' T' := by
+  simpa only [Finset.toLeft_disjSum, Finset.toRight_disjSum,
+    Assignment.restrictLeft_disjointUnion, Assignment.restrictRight_disjointUnion] using
+    arrowSum_eq_add_restrictLeft_restrictRight (f.disjointUnion g)
+      (S.disjSum S') (T.disjSum T')
+
 end Sums
 
 section Excess
@@ -295,6 +397,14 @@ theorem excessAt_disjointUnion_inr (f : Assignment Q K) (g : Assignment R K) (x 
     excessAt (f.disjointUnion g) (.inr x) = excessAt g x := by
   simp only [excessAt_def, Fintype.sum_sum_type, DisjointUnionHom.sum_inr,
     Fintype.sum_empty, Finset.sum_const_zero, Assignment.disjointUnion_inr, zero_add]
+
+/-- Excess on a disjoint union is the function assembled from excess on its two summands. -/
+theorem excessAt_disjointUnion (f : Assignment Q K) (g : Assignment R K) :
+    excessAt (f.disjointUnion g) = Sum.elim (excessAt f) (excessAt g) := by
+  funext x
+  rcases x with x | x
+  · exact excessAt_disjointUnion_inl f g x
+  · exact excessAt_disjointUnion_inr f g x
 
 @[simp]
 theorem excessAt_restrictLeft (f : Assignment (DisjointUnionHom Q R) K) (x : V) :
@@ -326,6 +436,18 @@ theorem excessAt_mem_Icc_iff_restrictLeft_restrictRight
         excessAt f.restrictRight ∈ Set.Icc (a ∘ Sum.inr) (b ∘ Sum.inr) := by
   simp only [Set.mem_Icc, Pi.le_def, Sum.forall, excessAt_restrictLeft,
     excessAt_restrictRight, Function.comp_apply, and_and_and_comm]
+
+/-- An assignment on a disjoint union is a circulation exactly when both restrictions are. -/
+theorem isCirculation_iff_restrictLeft_restrictRight
+    (f : Assignment (DisjointUnionHom Q R) K) :
+    IsCirculation f ↔ IsCirculation f.restrictLeft ∧ IsCirculation f.restrictRight := by
+  simp only [isCirculation_iff, Sum.forall, excessAt_restrictLeft, excessAt_restrictRight]
+
+@[simp]
+theorem isCirculation_disjointUnion_iff (f : Assignment Q K) (g : Assignment R K) :
+    IsCirculation (f.disjointUnion g) ↔ IsCirculation f ∧ IsCirculation g := by
+  simpa only [Assignment.restrictLeft_disjointUnion, Assignment.restrictRight_disjointUnion] using
+    isCirculation_iff_restrictLeft_restrictRight (f.disjointUnion g)
 
 end Excess
 
@@ -452,6 +574,20 @@ theorem restrictRight_val {lo hi : Assignment (DisjointUnionHom Q R) K} {b : V �
     (f : ExcessFlow lo hi b) : f.restrictRight.val = f.val.restrictRight :=
   (rfl)
 
+/-- Exact-excess assignments on a disjoint union are equal exactly when both restrictions are. -/
+theorem eq_iff_restrictLeft_restrictRight
+    {lo hi : Assignment (DisjointUnionHom Q R) K} {b : V ⊕ W → K}
+    {f g : ExcessFlow lo hi b} :
+    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight := by
+  constructor
+  · rintro rfl
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨hl, hr⟩
+    apply Subtype.ext
+    apply Assignment.eq_iff_restrictLeft_restrictRight.2
+    simpa only [restrictLeft_val, restrictRight_val] using ⟨congrArg Subtype.val hl,
+      congrArg Subtype.val hr⟩
+
 @[simp]
 theorem restrictLeft_disjointUnion (f : ExcessFlow lo hi b) (g : ExcessFlow lo' hi' b') :
     (f.disjointUnion g).restrictLeft = f :=
@@ -467,6 +603,13 @@ theorem disjointUnion_restrictLeft_restrictRight
     (f : ExcessFlow (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim b b')) :
     f.restrictLeft.disjointUnion f.restrictRight = f :=
   restrictEquiv_symm_restrictLeft_restrictRight f
+
+@[simp]
+theorem disjointUnion_inj {f f' : ExcessFlow lo hi b} {g g' : ExcessFlow lo' hi' b'} :
+    f.disjointUnion g = f'.disjointUnion g' ↔ f = f' ∧ g = g' := by
+  simp only [eq_iff_restrictLeft_restrictRight, restrictLeft_disjointUnion,
+    restrictRight_disjointUnion]
+  rfl
 
 /-- Exact-excess assignments on a disjoint union are equivalent to pairs of exact-excess
 assignments on its summands. -/
@@ -585,6 +728,21 @@ theorem restrictRight_val {lo hi : Assignment (DisjointUnionHom Q R) K}
     f.restrictRight.val = f.val.restrictRight :=
   (rfl)
 
+/-- Interval-excess assignments on a disjoint union are equal exactly when both restrictions
+are equal. -/
+theorem eq_iff_restrictLeft_restrictRight
+    {lo hi : Assignment (DisjointUnionHom Q R) K} {a b : V ⊕ W → K}
+    {f g : ExcessIntervalFlow lo hi a b} :
+    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight := by
+  constructor
+  · rintro rfl
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨hl, hr⟩
+    apply Subtype.ext
+    apply Assignment.eq_iff_restrictLeft_restrictRight.2
+    simpa only [restrictLeft_val, restrictRight_val] using ⟨congrArg Subtype.val hl,
+      congrArg Subtype.val hr⟩
+
 @[simp]
 theorem restrictLeft_disjointUnion (f : ExcessIntervalFlow lo hi a b)
     (g : ExcessIntervalFlow lo' hi' a' b') :
@@ -603,6 +761,14 @@ theorem disjointUnion_restrictLeft_restrictRight
       (Sum.elim a a') (Sum.elim b b')) :
     f.restrictLeft.disjointUnion f.restrictRight = f :=
   restrictEquiv_symm_restrictLeft_restrictRight f
+
+@[simp]
+theorem disjointUnion_inj
+    {f f' : ExcessIntervalFlow lo hi a b} {g g' : ExcessIntervalFlow lo' hi' a' b'} :
+    f.disjointUnion g = f'.disjointUnion g' ↔ f = f' ∧ g = g' := by
+  simp only [eq_iff_restrictLeft_restrictRight, restrictLeft_disjointUnion,
+    restrictRight_disjointUnion]
+  rfl
 
 /-- Interval-excess assignments on a disjoint union are equivalent to pairs of interval-excess
 assignments on its summands. -/
