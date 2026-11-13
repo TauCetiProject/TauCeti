@@ -101,18 +101,6 @@ open scoped ContDiff Laplacian Topology
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-! ### Variations of the section alone -/
-
-/-- Where `E` is complex differentiable, its logarithmic variation varies the section alone,
-by `α E`: the connection variation `2 i ∂bar E` vanishes. -/
-private theorem logVariation_eq_sectionVariation {E : ℂ → ℂ} {z : ℂ}
-    (hE : DifferentiableAt ℂ E z) :
-    logVariation x E z = sectionVariation (fun w ↦ sectionValue x w * E w) z := by
-  refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
-  · simpa using logVariation_apply_zero_eq_zero_of_differentiableAt x hE
-  · simpa using logVariation_apply_one_eq_zero_of_differentiableAt x hE
-  · rw [sectionValue_logVariation, sectionValue_sectionVariation]
-
 /-! ### The cut-off meromorphic part
 
 Throughout, `f = e^(-ν) α` is entire (`differentiable_exp_neg_mul_sectionValue`), `H` is entire,
@@ -197,7 +185,7 @@ private theorem logVariation_cutoff_of_notMem_tsupport
       sectionVariation (fun w ↦ exp (ν w) * H w) z := by
   have hα := sectionValue_ne_zero_of_notMem_tsupport hρR hR hz
   rw [logVariation_congr_nhds x (cutoff_eventuallyEq hz),
-    logVariation_eq_sectionVariation (analyticAt_div hf hH hα).differentiableAt]
+    logVariation_eq_of_differentiableAt x (analyticAt_div hf hH hα).differentiableAt]
   exact apply_eq_of_sectionValue_eq (by simp) (by simp) (by simp [sectionValue_mul_div hα])
 
 end Cutoff
@@ -245,7 +233,7 @@ private theorem gaugeFixedOperator_logVariation_add_sectionVariation_eq_zero {ν
     filter_upwards [hU.mem_nhds hw] with v hv
     have hEv := (analyticAt_div hf hH hv).differentiableAt
     rw [logVariation_add_apply x (hG.differentiable (by simp) v) (hEv.restrictScalars ℝ),
-      logVariation_eq_sectionVariation hEv, Pi.add_apply]
+      logVariation_eq_of_differentiableAt x hEv, Pi.add_apply]
     congr 1
     exact apply_eq_of_sectionValue_eq (by simp) (by simp) (by simp [sectionValue_mul_div hv])
   have hE := analyticAt_div hf hH hw

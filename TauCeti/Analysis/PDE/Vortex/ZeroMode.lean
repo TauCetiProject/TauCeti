@@ -436,23 +436,11 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
   have hαu (z : ℂ) (hz : z ≠ a) : sectionValue x z * u z = c * ψ z :=
     sectionValue_mul_div_sub_pow hαψ c hz
   -- The smooth continuation `Y₀` of `logVariation x u` across `a`.
-  set Y₀ : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
-    !₂[0, 0, (c * ψ w / 2).re, (c * ψ w / 2).im] with hY₀def
+  set Y₀ : ℂ → EuclideanSpace ℝ (Fin 4) := sectionVariation fun w ↦ c * ψ w
   have hY₀u (z : ℂ) (hz : z ≠ a) : logVariation x u z = Y₀ z := by
-    rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt, mul_div_assoc,
-      ← mul_div_assoc, hαu z hz]
-  have hY₀s : ContDiff ℝ ∞ Y₀ := by
-    have hcψ : ContDiff ℝ ∞ (fun w ↦ c * ψ w / 2) := (contDiff_const.mul hψ).div_const 2
-    refine contDiff_euclidean.mpr fun i ↦ ?_
-    fin_cases i
-    · simpa [hY₀def] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
-    · simpa [hY₀def] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
-    · convert reCLM.contDiff.comp hcψ using 1
-      funext w
-      simp [hY₀def]
-    · convert imCLM.contDiff.comp hcψ using 1
-      funext w
-      simp [hY₀def]
+    rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt]
+    exact apply_eq_of_sectionValue_eq (by simp [Y₀]) (by simp [Y₀]) (by simp [Y₀, hαu z hz])
+  have hY₀s : ContDiff ℝ ∞ Y₀ := contDiff_sectionVariation (contDiff_const.mul hψ)
   refine ⟨fun w ↦ Y₀ w - logVariation x v w,
     hY₀s.sub (contDiff_logVariation hx (hv.of_le (by simp))), ?_, fun z hz ↦ ?_⟩
   · refine hρc.mono' fun w hw ↦ ?_

@@ -41,8 +41,8 @@ equation `Δη = P η`.
   section components.
 * `memLp_logVariation_of_mem_realSobolevFunctions`: square integrability for a `C¹` function
   `η ∈ H²(ℂ; ℂ)` along a field with bounded section.
-* `logVariation_eq_of_differentiableAt`: where `η` is holomorphic, the logarithmic variation has
-  no connection part.
+* `logVariation_eq_of_differentiableAt`: where `η` is holomorphic, the logarithmic variation is
+  the variation of the section alone by `α η`.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -211,22 +211,15 @@ theorem logVariation_apply_one_eq_zero_of_differentiableAt (x : ℂ → Euclidea
     {η : ℂ → ℂ} {z : ℂ} (hη : DifferentiableAt ℂ η z) : logVariation x η z 1 = 0 := by
   simpa using congrArg im (logVariation_zero_add_one_mul_I_eq_zero x hη)
 
-/-- Where `η` is holomorphic, its logarithmic variation is the pure section variation
-`δα = α η`, with no connection part. -/
+/-- Where `η` is holomorphic, its logarithmic variation is the variation of the section alone
+by `α η`, with no connection part. -/
 theorem logVariation_eq_of_differentiableAt (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → ℂ}
     {z : ℂ} (hη : DifferentiableAt ℂ η z) :
-    logVariation x η z =
-      !₂[0, 0, (sectionValue x z * η z / 2).re, (sectionValue x z * η z / 2).im] := by
-  have h := logVariation_zero_add_one_mul_I x (hη.restrictScalars ℝ)
-  rw [hη.conjWirtingerDeriv_eq_zero] at h
-  ext i
-  fin_cases i
-  · simpa using congrArg re h
-  · simpa using congrArg im h
-  · simp [sectionValue_apply]
-    ring
-  · simp [sectionValue_apply]
-    ring
+    logVariation x η z = sectionVariation (fun w ↦ sectionValue x w * η w) z := by
+  refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
+  · simpa using logVariation_apply_zero_eq_zero_of_differentiableAt x hη
+  · simpa using logVariation_apply_one_eq_zero_of_differentiableAt x hη
+  · rw [sectionValue_logVariation, sectionValue_sectionVariation]
 
 /-- The logarithmic variation of a `C¹` function `η ∈ H²(ℂ; ℂ)` along a field with bounded section
 is square integrable: its connection part consists of first derivatives of `η`, and its section
