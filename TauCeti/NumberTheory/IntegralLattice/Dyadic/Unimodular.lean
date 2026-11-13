@@ -14,8 +14,6 @@ import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Characteristic
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Lattices unimodular at `2`
@@ -36,16 +34,12 @@ be dropped: the lattices `⟨1, 1⟩` and `⟨3, 3⟩` are odd, with the same ra
 but only the first represents `1` over `ℤ_[2]`. Nor can the type: the hyperbolic plane and
 `⟨1, -1⟩` have rank two, determinant `-1` and oddity `0`, but only the second is odd.
 
-An even lattice unimodular at `2` has even rank. Any lattice of rank at least two that is
-unimodular at `2` splits off a rank-two perfect summand orthogonally after localization.
+An even lattice unimodular at `2` has even rank.
 
 ## Main results
 
 * `TauCeti.IntegralLattice.IsEven.even_finrank_of_isUnit_determinant`: an even lattice of odd
   determinant has even rank.
-* `TauCeti.IntegralLattice.exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm`: a
-  lattice of rank at least two unimodular at `2` splits off a perfect binary summand after
-  localization.
 * `TauCeti.IntegralLattice.localIntegralForm_two_equivalent_iff`: lattices with determinants that
   are units at `2` have isometric dyadic localizations exactly when their ranks, types,
   determinant square classes and oddities agree;
@@ -77,49 +71,6 @@ theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven
     fun x hx ↦ PadicInt.not_isUnit_two
       (isUnit_of_dvd_unit (heven.two_dvd_localIntegralForm_apply_self x) hx)
   rwa [Module.finrank_baseChange] at h
-
-/-- **A lattice unimodular at `2` splits off a perfect binary summand.** If the rank is at least
-two, the dyadic localization has a rank-two submodule carrying a perfect restriction of the local
-integral form and complementary to its orthogonal complement. The lattice need not be even. -/
-theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm
-    (L : IntegralLattice V) (hrank : 2 ≤ finrank ℤ L)
-    (hdet : IsUnit (L.determinant : ℤ_[2])) :
-    ∃ S : Submodule ℤ_[2] (L.LocalCarrier 2),
-      finrank ℤ_[2] S = 2 ∧ ((L.localIntegralForm 2).restrict S).IsPerfPair ∧
-        IsCompl S ((L.localIntegralForm 2).orthogonal S) := by
-  -- Among the first two basis vectors, either one has nonunit self-pairing, or their sum does.
-  have hrank' : finrank ℤ L = (finrank ℤ L - 2) + 2 := (Nat.sub_add_cancel hrank).symm
-  let c := (Module.finBasis ℤ L).reindex (finCongr hrank')
-  let b := c.baseChange ℤ_[2]
-  have := L.isPerfPair_localIntegralForm_of_isUnit_determinant 2 hdet
-  have hB := L.isSymm_localIntegralForm 2
-  obtain ⟨S, ⟨e⟩, hS, hc⟩ : ∃ S : Submodule ℤ_[2] (L.LocalCarrier 2),
-      Nonempty (Basis (Fin 2) ℤ_[2] S) ∧ ((L.localIntegralForm 2).restrict S).IsPerfPair ∧
-        IsCompl S ((L.localIntegralForm 2).orthogonal S) := by
-    by_cases h0 : IsUnit (L.localIntegralForm 2 (b 0) (b 0))
-    · by_cases h1 : IsUnit (L.localIntegralForm 2 (b 1) (b 1))
-      · refine hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 0 + b 1)
-          ?_ (b.coord 0) (by simp)
-        have hres : Nat.card (IsLocalRing.ResidueField ℤ_[2]) = 2 := PadicInt.card_residueField 2
-        -- Units are congruent to `1` modulo `2`, so the sum of two units lies in the maximal ideal.
-        have hab : L.localIntegralForm 2 (b 0) (b 0) + L.localIntegralForm 2 (b 1) (b 1) ∈
-            IsLocalRing.maximalIdeal ℤ_[2] := by
-          have := Ideal.sub_mem _
-            (IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two hres h0)
-            (IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two hres h1.neg)
-          rwa [show L.localIntegralForm 2 (b 0) (b 0) - 1 -
-            (-L.localIntegralForm 2 (b 1) (b 1) - 1) = L.localIntegralForm 2 (b 0) (b 0) +
-              L.localIntegralForm 2 (b 1) (b 1) by ring] at this
-        rw [hB.apply_add_self (b 0) (b 1)]
-        exact fun hu ↦ IsLocalRing.notMem_maximalIdeal.mpr hu (Ideal.add_mem _ hab
-          (Ideal.mul_mem_right _ _
-            (IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two hres)))
-      · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 1) h1
-          (b.coord 1) (by simp)
-    · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 0) h0
-        (b.coord 0) (by simp)
-  refine ⟨S, ?_, hS, hc⟩
-  simpa using Module.finrank_eq_card_basis e
 
 /-- **Classification of localizations unimodular at `2`.** Let `L` and `M` be lattices whose
 determinants are units at `2`, and let `w` and `w'` be characteristic vectors of their dyadic
