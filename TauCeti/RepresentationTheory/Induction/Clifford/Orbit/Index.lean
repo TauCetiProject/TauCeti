@@ -27,6 +27,10 @@ The construction combines the single-orbit theorem from
 `ρ` represents the conjugate abstract `N`-representation carried by `σ`, and the module of a
 subrepresentation is canonically equivalent to its associated `k[N]`-submodule.
 
+This is the orbit-indexing step of Clifford's theorem. The decomposition of the restriction as
+equal-multiplicity copies of the conjugates indexed by these cosets is `FDRep.clifford_restrict_iso`
+in `TauCeti/RepresentationTheory/Induction/Clifford/Equivalence.lean`.
+
 ## Main definitions
 
 * `Representation.fdRepIsoConjSubrep`: the finite-dimensional representation carried by a
@@ -58,11 +62,6 @@ choosing a simple representative. Isomorphism of subrepresentations is expressed
 `Skeleton (FDRep k N)` is `TauCeti.toSkeleton_fdRepOf_toRepresentation_eq_iff`.
 
 ## References
-
-This is the orbit-indexing step in Clifford's theorem from Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`. It prepares the remaining
-packaged decomposition of the restriction as equal-multiplicity copies of the conjugates indexed
-by an inertia-group transversal.
 
 The mathematics is the classical orbit-stabilizer argument in C. W. Curtis and I. Reiner,
 *Representation Theory of Finite Groups and Associative Algebras*, §49.

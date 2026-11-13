@@ -67,7 +67,7 @@ modulo `𝔪`, and a unit at every finite place, is the norm of an idele of `L`.
 theorem exists_ideleCongruenceSubgroup_le_range_ideleNormMap :
     ∃ 𝔪 : Modulus K, ideleCongruenceSubgroup 𝔪 ≤ (ideleNormMap K L).toMonoidHom.range := by
   classical
-  set n := Module.finrank K L with hn_def
+  set n := Module.finrank K L
   have hn : n ≠ 0 := Module.finrank_pos.ne'
   -- The finite set `S` of finite places of `K` ramified in `L`.
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)), ∀ v ∉ S,
