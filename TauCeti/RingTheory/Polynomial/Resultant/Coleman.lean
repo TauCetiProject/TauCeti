@@ -455,7 +455,7 @@ theorem coeff_colemanDBounded_congr {P' : R[X]} {k : ℕ}
   rw [colemanDBounded_def, colemanDBounded_def, resultant, resultant, Matrix.det_apply,
     Matrix.det_apply, finsetSum_coeff, finsetSum_coeff]
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
-  rw [coeff_smul, coeff_smul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, AddMonoidAlgebra.coeff_smul_apply]
   congr 1
   by_cases hband : ∀ x : Fin (n + m), ((x : ℕ) < n → (x : ℕ) ≤ σ x ∧ (σ x : ℕ) ≤ x + m) ∧
       (n ≤ (x : ℕ) → (x : ℕ) ≤ σ x + n ∧ (σ x : ℕ) ≤ x)
