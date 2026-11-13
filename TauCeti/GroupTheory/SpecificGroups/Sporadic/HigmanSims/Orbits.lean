@@ -998,9 +998,10 @@ private theorem fixed_of_rank (g : Equiv.Perm (Fin 100))
     (hseed : ∀ x : Fin 100, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
   apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
-    (rel := fun z x ↦ (decide (x = z), related z x)) rigidAnchors_rank ?_ ?_ n hseed
-  · intro x hx
-    exact rigidAnchors_unique x (by omega)
+    (rel := fun z x ↦ (decide (x = z), related z x)) ?_ n hseed
+  · intro x _ hx y hy
+    apply rigidAnchors_unique x (by omega) y
+    exact List.map_congr_left fun z hz ↦ hy z (rigidAnchors_rank x z hz)
   · intro x y
     exact Prod.ext (Bool.decide_congr g.injective.eq_iff) (hg x y)
 

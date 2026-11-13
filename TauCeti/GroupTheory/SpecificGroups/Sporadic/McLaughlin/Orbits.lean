@@ -901,9 +901,10 @@ private theorem fixed_of_rank {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (n : �
     (hseed : ∀ x : Fin 275, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
   apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
-    rigidAnchors_rank ?_ (related_apply hg) n hseed
-  intro x hx
-  exact rigidAnchors_unique x (by omega)
+    (related_apply hg) n hseed
+  intro x _ hx y hy
+  apply rigidAnchors_unique x (by omega) y
+  exact List.map_congr_left fun z hz ↦ hy z (rigidAnchors_rank x z hz)
 
 private theorem image_five {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
     (hfix : ∀ x : Fin 275, x.val < 5 → g x = x) : g 5 = 5 ∨ g 5 = 215 := by
