@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Probability.Moments.SubGaussian
-import TauCeti.Probability.McDiarmid
+import TauCeti.Probability.McDiarmid.Basic
 
 /-!
 # Colorings with small discrepancy on every test set
@@ -100,7 +100,8 @@ theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
   -- Recoloring one point changes the count by at most one, and only for points of `T`.
   have hbd (i : ι) (x x' : ι → κ) (hxx' : ∀ l, l ≠ i → x l = x' l) :
       |f x - f x'| ≤ if i ∈ T then 1 else 0 := abs_sum_ite_sub_sum_ite_le T c i x x' hxx'
-  have hsub := Probability.hasSubgaussianMGF_of_bounded_differences q.toMeasure f hfm _ hbd
+  have hsub := Probability.hasSubgaussianMGF_of_bounded_differences
+    (fun _ => q.toMeasure) f hfm _ hbd
   -- The mean of the count is `q c * #T`, and the variance proxy is `#T / 4`.
   have hmean : ∫ x, f x ∂μ = (q c).toReal * #T := by
     rw [hf, integral_finsetSum _ fun e _ ↦ by

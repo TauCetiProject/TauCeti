@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Exposure
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.FiniteGraph.Basic
 import Mathlib.Probability.ProductMeasure
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-import TauCeti.Probability.McDiarmid
+import TauCeti.Probability.McDiarmid.Basic
 
 /-!
 # Bernoulli edge rounding of a sampled graph
@@ -223,7 +223,7 @@ private theorem coinLaw_le_abs_rectEdgeCount_sub_le (W : Graphon Ω μ) (y : Fin
   have hf : Measurable f :=
     (measurable_of_finite (rectEdgeCount S T)).comp (measurable_coinSample W y)
   have hsub := Probability.hasSubgaussianMGF_of_bounded_differences
-    (Probability.uniformMeasure 0 1) f hf (fun _ => 2)
+    (fun _ => Probability.uniformMeasure 0 1) f hf (fun _ => 2)
     fun p u u' h => abs_rectEdgeCount_sub_le W y S T p u u' h
   have hmean : ∫ u, f u ∂coinLaw n = rectWeight W S T y := integral_rectEdgeCount W y S T
   rw [hmean] at hsub

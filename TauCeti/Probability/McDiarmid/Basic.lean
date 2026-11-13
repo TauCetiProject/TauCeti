@@ -16,18 +16,23 @@ import TauCeti.Algebra.Order.BigOperators.BoundedDifferences
 # McDiarmid's bounded-differences inequality
 
 This file proves the moment-generating-function form of McDiarmid's inequality for a measurable
-real-valued function on a finite product of identical probability spaces. If changing coordinate
-`i` changes the function by at most `c i`, then the centered function is sub-Gaussian with variance
-proxy `∑ i, (c i / 2) ^ 2`.
+real-valued function on a finite product of probability spaces, with possibly different coordinate
+spaces and laws. If changing coordinate `i` changes the function by at most `c i`, then the
+centered function is sub-Gaussian with variance proxy `∑ i, (c i / 2) ^ 2`.
 
-The proof peels off one coordinate at a time. Hoeffding's lemma controls the peeled coordinate,
-and the induction hypothesis controls the function obtained by averaging over it.
+For identical coordinate laws, the proof peels off one coordinate at a time using Hoeffding's
+lemma. The general case follows by taking independent copies of the entire product and reading
+the `i`-th coordinate from the `i`-th copy. This diagonal projection preserves the product law
+and the coordinate bounds.
 
 ## Main results
 
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences` gives the result for an arbitrary
   finite index type;
-* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`;
+* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`
+  with a uniform oscillation bound;
+* `TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` handles zero
+  total oscillation, even without independence;
 * `TauCeti.Probability.neg_sq_div_two_mul_variance_proxy` computes the exponent of the resulting
   two-sided tail bound for bounded differences `q / n`.
 
@@ -300,15 +305,8 @@ theorem coe_sum_toNNReal_sq_div_four {ι : Type*} [Fintype ι] {c : ι → ℝ} 
   intro i _
   ring
 
-/-- **McDiarmid's bounded-differences inequality at MGF level.** Let `f` be a measurable
-real-valued function on a finite i.i.d. product. If two inputs that differ only at coordinate `i`
-have outputs differing by at most `c i`, then the centered `f` is sub-Gaussian with variance proxy
-`∑ i, (c i)² / 4`.
-
-The result is stated using Mathlib's `ProbabilityTheory.HasSubgaussianMGF`; its
-`measure_ge_le` theorem gives the one-sided Chernoff tail, and applying `neg` gives the other side.
--/
-theorem hasSubgaussianMGF_of_bounded_differences
+/-- McDiarmid's MGF estimate for identical coordinate laws, used through diagonal projection. -/
+private theorem hasSubgaussianMGF_of_bounded_differences_identical
     {ι : Type*} [Fintype ι] {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν]
     (f : (ι → β) → ℝ) (hf : Measurable f) (c : ι → ℝ)
@@ -332,18 +330,68 @@ theorem hasSubgaussianMGF_of_bounded_differences
   rw [ProbabilityTheory.mgf, coe_sum_toNNReal_sq_div_four hc]
   exact hkey
 
+/-- **McDiarmid's bounded-differences inequality at MGF level.** For a measurable function on a
+finite product of probability spaces, if changing coordinate `i` changes the output by at most
+`c i`, the centered function is sub-Gaussian with variance proxy `∑ i, (c i)² / 4`.
+
+The coordinate spaces and laws may differ. No integrability assumption on `f` is needed:
+bounded differences bound its range on the whole product. -/
+theorem hasSubgaussianMGF_of_bounded_differences
+    {ι : Type*} [Fintype ι] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
+    (ν : ∀ i, Measure (β i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (f : (∀ i, β i) → ℝ) (hf : Measurable f) (c : ι → ℝ)
+    (hbd : ∀ (i : ι) (x x' : ∀ i, β i),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i) :
+    ProbabilityTheory.HasSubgaussianMGF
+      (fun x => f x - ∫ y, f y ∂Measure.pi ν)
+      (∑ i, (c i).toNNReal ^ 2 / 4) (Measure.pi ν) := by
+  let d : (ι → ∀ j, β j) → ∀ i, β i := fun x i => x i i
+  have hd : MeasurePreserving d (Measure.pi fun _ : ι => Measure.pi ν) (Measure.pi ν) :=
+    measurePreserving_pi _ _ (fun i => measurePreserving_eval ν i)
+  have hbd' (i : ι) (x x' : ι → ∀ j, β j) (h : ∀ l, l ≠ i → x l = x' l) :
+      |f (d x) - f (d x')| ≤ c i :=
+    hbd i _ _ fun l hl => congrFun (h l hl) l
+  have h := hasSubgaussianMGF_of_bounded_differences_identical (Measure.pi ν)
+    (fun x => f (d x)) (hf.comp hd.measurable) c hbd'
+  have hmean := hd.hasLaw.integral_comp hf.aestronglyMeasurable
+  simp only [Function.comp_def] at hmean
+  rw [hmean] at h
+  exact h.congr_identDistrib
+    ((hd.hasLaw.identDistrib ProbabilityTheory.HasLaw.id).comp (hf.sub_const _))
+
+/-- With zero total squared coordinate oscillation, a bounded-differences function equals its
+mean at every point under any probability measure on the product. In particular, no independence,
+measurability, or moment assumptions are needed for this degenerate case. -/
+theorem eq_integral_of_bounded_differences_of_sum_sq_eq_zero
+    {ι : Type*} [Fintype ι] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
+    {μ : Measure (∀ i, β i)} [IsProbabilityMeasure μ]
+    (f : (∀ i, β i) → ℝ) (c : ι → ℝ)
+    (hbd : ∀ (i : ι) (x x' : ∀ i, β i),
+      (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
+    (hc : ∑ i, c i ^ 2 = 0) (x : ∀ i, β i) : f x = ∫ y, f y ∂μ := by
+  have hzero (i : ι) : c i = 0 := by
+    have hi := (Finset.sum_eq_zero_iff_of_nonneg (fun j _ => sq_nonneg (c j))).mp hc
+    exact sq_eq_zero_iff.mp (hi i (Finset.mem_univ i))
+  have hconst : f = fun _ => f x := by
+    funext y
+    have hle := abs_sub_le_of_bounded_differences c f hbd y x
+    simpa only [hzero, Finset.sum_const_zero, abs_nonpos_iff, sub_eq_zero] using hle
+  rw [hconst]
+  simp
+
 /-- McDiarmid's bounded-differences inequality for a product indexed by `Fin n`, stated in the
 convenient form where one coordinate is updated explicitly. -/
 theorem hasSubgaussianMGF_of_bounded_differences_fin
-    {n : ℕ} {β : Type*} [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν]
-    (f : (Fin n → β) → ℝ) (hf : Measurable f) (c : ℝ)
-    (hosc : ∀ (x : Fin n → β) (i : Fin n) (b : β),
+    {n : ℕ} {β : Fin n → Type*} [∀ i, MeasurableSpace (β i)]
+    (ν : ∀ i, Measure (β i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (f : (∀ i, β i) → ℝ) (hf : Measurable f) (c : ℝ)
+    (hosc : ∀ (x : ∀ i, β i) (i : Fin n) (b : β i),
       |f (Function.update x i b) - f x| ≤ c) :
     ProbabilityTheory.HasSubgaussianMGF
-      (fun x => f x - ∫ y, f y ∂Measure.pi (fun _ : Fin n => ν))
+      (fun x => f x - ∫ y, f y ∂Measure.pi ν)
       ((n : ℝ≥0) * (c.toNNReal / 2) ^ 2)
-      (Measure.pi fun _ : Fin n => ν) := by
-  have hbd : ∀ (i : Fin n) (x x' : Fin n → β),
+      (Measure.pi ν) := by
+  have hbd : ∀ (i : Fin n) (x x' : ∀ i, β i),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c := by
     intro i x x' hxx'
     have hx' : x' = Function.update x i (x' i) := by
