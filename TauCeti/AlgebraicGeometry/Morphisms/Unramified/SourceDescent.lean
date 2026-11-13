@@ -11,13 +11,13 @@ public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 /-!
 # Descent of unramifiedness along flat source covers
 
-Let `g : X' ⟶ X` be flat and surjective and suppose `f : X ⟶ Y` and `g ≫ f` are locally of
-finite type. If `g ≫ f` is formally unramified, then `f` is formally unramified. In particular,
-if the composite is unramified and `f` is locally of finite type, then `f` is unramified.
-No quasi-compactness assumption on `g` is needed.
+Let `g : X' ⟶ X` be flat and surjective and let `f : X ⟶ Y` be locally of finite type. If
+`g ≫ f` is unramified, then `f` is unramified. No quasi-compactness assumption on `g` is
+needed.
 
-The descent takes place on the source, rather than after base change on the target. On stalks,
-the local flat map induced by `g` is faithfully flat, and formal unramifiedness descends by
+The descent takes place on the source, rather than after base change on the target. It is
+`AlgebraicGeometry.FormallyUnramified.of_comp_surjective`, which works on stalks: the local flat
+map induced by `g` is faithfully flat, and formal unramifiedness descends by
 `Scheme.Hom.formallyUnramified_stalkMap_of_comp`. This applies in particular to the map on
 singular subschemes induced by an étale surjection of relative curves.
 
@@ -32,23 +32,6 @@ public section
 open CategoryTheory AlgebraicGeometry
 
 universe u
-
-namespace AlgebraicGeometry
-
-variable {X' X Y : Scheme.{u}}
-
-/-- Formal unramifiedness of a morphism locally of finite type descends along a flat
-surjection of its source. The composite is also assumed locally of finite type. -/
-theorem FormallyUnramified.of_comp_surjective (g : X' ⟶ X) (f : X ⟶ Y)
-    [Flat g] [Surjective g] [LocallyOfFiniteType f] [LocallyOfFiniteType (g ≫ f)]
-    [FormallyUnramified (g ≫ f)] : FormallyUnramified f := by
-  apply HasRingHomProperty.of_stalkMap RingHom.FormallyUnramified.ofLocalizationPrime
-  intro x
-  obtain ⟨x', rfl⟩ := g.surjective x
-  exact g.formallyUnramified_stalkMap_of_comp f x' (Flat.stalkMap g x')
-    (FormallyUnramified.stalkMap (g ≫ f) x')
-
-end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
