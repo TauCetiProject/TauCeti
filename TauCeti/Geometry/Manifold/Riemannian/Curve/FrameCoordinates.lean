@@ -120,17 +120,16 @@ section Continuous
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (TangentSpace I : M → Type _)]
 
-/-- For a local frame on an open set and a continuous metric, the frame coordinates of the
-velocity of a `C¹` curve in that set are continuous. -/
-theorem continuous_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x}
-    {u : Set M} (hs : IsLocalFrameOn I E n s u) (hu : IsOpen u) {γ : ℝ → M}
+/-- For continuous tangent fields on a set and a continuous metric, the frame coordinates of
+the velocity of a `C¹` curve in that set are continuous. -/
+theorem continuous_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
+    {u : Set M} (hs : ∀ i, ContinuousOn (fun x ↦ TotalSpace.mk' E x (s i x)) u) {γ : ℝ → M}
     (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u) :
     Continuous (frameVelocityCoordinates s γ) := by
   have hv : Continuous (fun t ↦ TotalSpace.mk' E (γ t) (curveVelocity I γ t)) :=
     (ContMDiff.continuous_curveVelocityLift hγ).congr fun t ↦ curveVelocityLift_apply γ t
   have hframe (i : Fin 2) : Continuous (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) :=
-    continuous_iff_continuousAt.mpr fun t ↦
-      (hs.contMDiffAt hu (hγu t) i).continuousAt.comp hγ.continuous.continuousAt
+    (hs i).comp_continuous hγ.continuous hγu
   have hi (i : Fin 2) : Continuous (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) :=
     Continuous.inner_bundle (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
       (v := fun t ↦ s i (γ t)) (w := fun t ↦ curveVelocity I γ t) (hframe i) hv
@@ -144,17 +143,18 @@ theorem continuous_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x :
   exact (Complex.re_add_im (frameVelocityCoordinates s γ t)).symm
 
 /-- **The unit tangent loop in an orthonormal frame.** For a regular `1`-periodic `C¹` curve `γ`
-in the open domain `u` of a local frame orthonormal along `γ`, the normalized frame coordinates
+in the domain `u` of a local frame orthonormal along `γ`, the normalized frame coordinates
 `z / ‖z‖` of the velocity form a loop in the unit circle. -/
 theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
     {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M} (hs : IsLocalFrameOn I E n s u)
-    (hu : IsOpen u) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u)
+    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u)
     (ho : ∀ t, Orthonormal ℝ (fun i ↦ s i (γ t))) (hp : Function.Periodic γ 1)
     (hne : ∀ t, curveVelocity I γ t ≠ 0) :
     ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval,
       (p t : ℂ) = frameVelocityCoordinates s γ t / (‖frameVelocityCoordinates s γ t‖ : ℂ) := by
   let z := frameVelocityCoordinates s γ
-  have hz : Continuous z := continuous_frameVelocityCoordinates hs hu hγ hγu
+  have hz : Continuous z :=
+    continuous_frameVelocityCoordinates (fun i ↦ (hs.contMDiffOn i).continuousOn) hγ hγu
   have hz0 (t : ℝ) : z t ≠ 0 :=
     frameVelocityCoordinates_ne_zero hs (hγu t) (ho t) (hne t)
   let U (t : ℝ) : Circle := ⟨z t / (‖z t‖ : ℂ), by
@@ -175,10 +175,11 @@ end Continuous
 
 variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (TangentSpace I : M → Type _)]
 
-/-- For a `C¹` local frame on an open set and a `C¹` metric, the frame coordinates of the
+/-- For `C¹` tangent fields on an open set and a `C¹` metric, the frame coordinates of the
 velocity of a `C²` curve in that set are `C¹`. -/
-theorem contDiff_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x}
-    {u : Set M} (hs : IsLocalFrameOn I E n s u) (hn : 1 ≤ n) (hu : IsOpen u) {γ : ℝ → M}
+theorem contDiff_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
+    {u : Set M} (hs : ∀ i, ContMDiffOn I I.tangent 1 (fun x ↦ TotalSpace.mk' E x (s i x)) u)
+    (hu : IsOpen u) {γ : ℝ → M}
     (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (hγu : ∀ t, γ t ∈ u) :
     ContDiff ℝ 1 (frameVelocityCoordinates s γ) := by
   have hw := ContMDiffOn.contMDiffOn_curveVelocityLiftWithin hγ.contMDiffOn
@@ -189,7 +190,7 @@ theorem contDiff_frameVelocityCoordinates {n : ℕ∞ω} {s : Fin 2 → Π x : M
     (contMDiffOn_univ.mp hw).congr fun t ↦ (curveVelocityLift_apply γ t).symm
   have hframe (i : Fin 2) : ContMDiff 𝓘(ℝ) I.tangent 1
       (fun t ↦ TotalSpace.mk' E (γ t) (s i (γ t))) := fun t ↦
-    (((hs.contMDiffAt hu (hγu t) i).of_le hn)).comp t ((hγ.of_le one_le_two) t)
+    ((hs i).contMDiffAt (hu.mem_nhds (hγu t))).comp t ((hγ.of_le one_le_two) t)
   have hi (i : Fin 2) : ContDiff ℝ 1 (fun t ↦ inner ℝ (s i (γ t)) (curveVelocity I γ t)) := by
     have hh := @ContMDiff.inner_bundle E _ _ H _ I 1 M _ _ E _ _
       (fun x : M ↦ TangentSpace I x) _
