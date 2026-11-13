@@ -102,6 +102,24 @@ theorem coe_stableSymmetricProj_stablePsum {n : ℕ} (hn : n ≠ 0) (d : ℕ) :
     (stableSymmetricProj R n d (stablePsum R hn) : MvPolynomial (Fin d) R) = psum (Fin d) R n := by
   rw [stablePsum, stableSymmetricProj_mk]
 
+/-- **The power-sum product symmetric function** `p_μ = p_(μ₁) p_(μ₂) ⋯` of a partition `μ` of
+`n`: the compatible family of the power-sum products `MvPolynomial.psumPart`. Unlike the zeroth
+power sum it is stable for every partition, since the parts of a partition are positive. -/
+noncomputable def stablePsumPart {n : ℕ} (μ : n.Partition) : stableSymmetricSubmodule R n :=
+  ⟨fun d => ⟨psumPart (Fin d) R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩,
+    mem_stableSymmetricSubmodule.mpr fun d => by
+      simp only [psumPart, map_multiset_prod, Multiset.map_map]
+      exact congrArg _ (Multiset.map_congr rfl fun i hi =>
+        aeval_snoc_zero_psum d (μ.parts_pos hi).ne')⟩
+
+/-- The power-sum product symmetric function `p_μ`, read in `d` variables, is the power-sum product
+polynomial. -/
+@[simp]
+theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d : ℕ) :
+    (stableSymmetricProj R n d (stablePsumPart R μ) : MvPolynomial (Fin d) R) =
+      psumPart (Fin d) R μ := by
+  rw [stablePsumPart, stableSymmetricProj_mk]
+
 namespace SymmetricFunction
 
 /-- The algebra homomorphism from polynomials in countably many variables to the symmetric functions
