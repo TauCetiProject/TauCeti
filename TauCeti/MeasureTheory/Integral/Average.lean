@@ -130,6 +130,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   moves inside it as `(f / λ)²`.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
   nonnegative function and `r ≥ 1`.
+* `TauCeti.sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq`: Jensen's inequality
+  `(⨍_s ‖h‖ₑ)² ≤ ofReal (⨍_s ‖h‖²)` between a lower average and a Bochner average.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
   `TauCeti.setLAverage_smul_measure`, `TauCeti.setAverage_smul_measure`: averages are unchanged
   when the measure is multiplied by a positive finite scalar.
@@ -541,6 +543,18 @@ theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} {r : ℝ}
       rw [ENNReal.rpow_sub _ _ h0 htop, ENNReal.rpow_one, ENNReal.div_eq_inv_mul,
         ENNReal.div_eq_inv_mul]
       ring
+
+/-- **Jensen's inequality for the square of a mean, in `ℝ≥0∞`.** If `‖h‖²` is integrable on `s`,
+the square of the mean of `‖h‖ₑ` over `s` is at most the mean of `‖h‖²`. No finiteness of the
+measure of `s` is assumed. -/
+theorem sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s : Set X} {h : X → E} (hi : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
+    (⨍⁻ x in s, ‖h x‖ₑ ∂μ) ^ 2 ≤ ENNReal.ofReal (⨍ x in s, ‖h x‖ ^ 2 ∂μ) := by
+  have h2 := ofReal_setAverage_norm_rpow zero_le_two (by simpa only [Real.rpow_two] using hi)
+  simp only [Real.rpow_two, ENNReal.rpow_two] at h2
+  rw [h2]
+  simpa only [ENNReal.rpow_two] using
+    rpow_laverage_le_laverage_rpow (μ := μ.restrict s) (u := fun x => ‖h x‖ₑ) one_le_two
 
 end Jensen
 

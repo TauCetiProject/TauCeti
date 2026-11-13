@@ -493,7 +493,11 @@ section StrongType
 noncomputable def maximalFunctionConst (n : ℕ) (p : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ n
 
+theorem maximalFunctionConst_def (n : ℕ) (p : ℝ) :
+    maximalFunctionConst n p = ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ n := (rfl)
+
 /-- The constant `TauCeti.maximalFunctionConst n p` is finite. -/
+@[simp, aesop (rule_sets := [finiteness]) safe apply]
 theorem maximalFunctionConst_ne_top (n : ℕ) (p : ℝ) : maximalFunctionConst n p ≠ ∞ :=
   ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)
 
@@ -508,7 +512,7 @@ theorem lintegral_rpow_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
     (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {p : ℝ} (hp : 1 < p) :
     ∫⁻ x, maximalFunction μ f x ^ p ∂μ ≤
       maximalFunctionConst (finrank ℝ E) p * ∫⁻ x, ‖f x‖ₑ ^ p ∂μ := by
-  rw [maximalFunctionConst, ← ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul,
+  rw [maximalFunctionConst_def, ← ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul,
     ← maximalFunction_enorm μ f]
   simpa only [inv_inv, ENNReal.ofReal_ofNat, eNorm_eq_self] using
     lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup
@@ -535,8 +539,7 @@ is recorded by
 theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsAddHaarMeasure]
     {f : E → F} (hf : AEMeasurable (fun x => ‖f x‖ₑ) μ) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
     eLpNorm (maximalFunction μ f) p μ ≤
-      (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
-        4 ^ finrank ℝ E) ^ (1 / p.toReal) * eLpNorm f p μ := by
+      maximalFunctionConst (finrank ℝ E) p.toReal ^ (1 / p.toReal) * eLpNorm f p μ := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
@@ -548,21 +551,22 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
     (measurable_maximalFunction μ f).aestronglyMeasurable]
   calc (∫⁻ x, ‖maximalFunction μ f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
-          4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+      ≤ (maximalFunctionConst (finrank ℝ E) p.toReal * ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^
+          (1 / p.toReal) := by
         refine ENNReal.rpow_le_rpow ?_ (by positivity)
-        simpa only [eNorm_eq_self, maximalFunctionConst] using
-          lintegral_rpow_maximalFunction_le μ hf hpr
-    _ = (ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
-          4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+        simpa only [eNorm_eq_self] using lintegral_rpow_maximalFunction_le μ hf hpr
+    _ = maximalFunctionConst (finrank ℝ E) p.toReal ^ (1 / p.toReal) *
+          (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
 
-/-- Integrating a pointwise bound of `g²` by three maximal functions: if
-`g² ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/q)` and `2q < s`, then the strong-type maximal inequality
-with the exponents `s / 2` and `s / (2q)` bounds `∫ g^s` by the integrals of `h₁^(s/2)`, `h₂^(s/2)`
-and `h₃^(s/(2q))`. This is the integration step of Krylov's sharp function method; it follows the
-corresponding helper of https://github.com/TauCetiProject/TauCeti/pull/33788. -/
+/- The integration step below follows the corresponding helper of
+https://github.com/TauCetiProject/TauCeti/pull/33788. -/
+/-- Integrating a pointwise bound of `g²` by three maximal functions, the integration step of
+Krylov's sharp function method. If `1 < q`, `2q < s` and
+`g² ≤ α₁ M h₁ + α₂ M h₂ + α₃ (M h₃)^(1/q)` everywhere, then `∫ g^s` is at most a combination of
+`∫ h₁^(s/2)` and `∫ h₂^(s/2)`, with the constant `maximalFunctionConst n (s / 2)`, and of
+`∫ h₃^(s/(2q))`, with the constant `maximalFunctionConst n (s / (2q))`. -/
 theorem lintegral_rpow_le_of_sq_le_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
     {g h₁ h₂ h₃ : E → ℝ≥0∞} (h₁m : AEMeasurable h₁ μ) (h₂m : AEMeasurable h₂ μ)
     (h₃m : AEMeasurable h₃ μ) {α₁ α₂ α₃ : ℝ≥0∞} {q s : ℝ} (hq : 1 < q) (hqs : 2 * q < s)
@@ -904,7 +908,7 @@ private theorem lintegral_rpow_le_of_le_tsum_maximalFunction_rpow {f : ι → E 
     have := lintegral_rpow_maximalFunction_le μ (f := ψ)
       (by simpa only [eNorm_eq_self] using hψ.aemeasurable) hqs.symm.lt
     simpa only [hψ_def, eNorm_eq_self, ← ENNReal.rpow_mul, hqs.sub_one_mul_conj,
-      maximalFunctionConst] using this
+      maximalFunctionConst_def] using this
   -- Hölder's inequality, then cancel the finite factor `(∫⁻ φ ^ q) ^ (1 / s)`.
   have hs0 : 0 ≤ 1 / s := hqs.symm.one_div_pos.le
   have h3 : ∫⁻ x, φ x ^ q ∂μ ≤ cw * cM ^ (1 / s) * (∫⁻ x, G x ^ q ∂μ) ^ (1 / q) *

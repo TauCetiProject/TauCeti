@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.MeanOscillation
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
@@ -53,15 +53,14 @@ gradient in `TauCeti.Analysis.PDE.Regularity.MeanOscillation`.
   `κ⁻² ⨍_{B_r} ‖∇u‖² + κ^(n + 1) (⨍_{B_r} ‖G‖² + δ^(1/q') (⨍_{B_r} ‖∇u‖^(2q))^(1/q))`, up to
   constants, for Hölder conjugate exponents `q, q'`.
 * **The sharp function.** Every average over `B_r ∋ x` is at most `2^(n + 1)` times the centred
-  maximal function at `x` (`TauCeti.setLAverage_le_uncenteredMaximalFunction` and
-  `TauCeti.uncenteredMaximalFunction_le_two_pow_mul_maximalFunction`). Taking the supremum over the
+  maximal function at `x` (`TauCeti.ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction`).
+  Taking the supremum over the
   balls containing `x`, the square of the sharp maximal function of `∇u` is bounded pointwise by
   `κ⁻² M(‖∇u‖²) + κ^(n + 1) M(‖G‖²) + κ^(n + 1) δ^(1/q') M(‖∇u‖^(2q))^(1/q)`.
 * **Absorption.** The Fefferman–Stein inequality for Euclidean balls
   (`TauCeti.exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow`) and the strong
   maximal inequality with the exponents `p / 2` and `p / (2q)`, where `1 < q < p / 2`
-  (`TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`, whose integration step follows
-  https://github.com/TauCetiProject/TauCeti/pull/33788), turn this into
+  (`TauCeti.lintegral_rpow_le_of_sq_le_maximalFunction`) turn this into
   `∫ ‖∇u‖^p ≤ (c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖∇u‖^p + c₂ ∫ ‖G‖^p`. Choosing first `κ` large and
   then `δ` small, the first term is absorbed, since `∫ ‖∇u‖^p` is finite.
 
@@ -190,9 +189,8 @@ private theorem setAverage_norm_gradient_sub_sq_le
     rw [mul_left_comm]
     gcongr
     simpa [setAverage_eq] using setIntegral_norm_sub_setAverage_sq_le measure_ball_lt_top.ne
-      (hg2.integrable one_le_two) (c := 0)
-      (by simpa using show IntegrableOn (fun y => ‖g y‖ ^ 2) (ball c r) volume from
-        hg2.integrable_norm_pow two_ne_zero)
+      (hg2.integrableOn_of_subset one_le_two subset_rfl measure_ball_lt_top.ne)
+      (hg2.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne 0)
   · exact Real.rpow_nonneg (average_nonneg fun y => by positivity) _
   · exact mul_nonneg (Real.rpow_nonneg (by linarith) _)
       (average_nonneg fun y => norm_nonneg (matrixBilinearForm (a y) - matrixBilinearForm A))
@@ -229,58 +227,34 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
   have h1 := setAverage_norm_gradient_sub_sq_le ha hbd hu h2p hgp hGp hq hqp hρ hκ hA hδ
   set g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set r := κ * ρ
-  set M₁ := maximalFunction volume (fun y => ‖g y‖ₑ ^ 2) x
-  set M₂ := maximalFunction volume (fun y => ‖G y‖ₑ ^ 2) x
-  set M₃ := maximalFunction volume (fun y => ‖g y‖ₑ ^ (2 * q)) x
   have hκ0 : 0 < κ := zero_lt_one.trans_le hκ
   have hxr : x ∈ ball c r := ball_subset_ball (le_mul_of_one_le_left hρ.le hκ) hx
   have hq1 : 0 ≤ q⁻¹ := inv_nonneg.2 hq.pos.le
-  have : IsFiniteMeasure (volume.restrict (ball c r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  -- Every average over `B_r ∋ x` is at most `2^(n + 1)` times the centred maximal function at `x`.
+  have hM : ∀ (h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) {k : ℝ},
+      0 ≤ k → ENNReal.ofReal (⨍ y in ball c r, ‖h y‖ ^ k) ≤
+        ENNReal.ofReal (2 ^ (n + 1)) * maximalFunction volume (fun y => ‖h y‖ₑ ^ k) x :=
+    fun h k hk => by
+      simpa only [finrank_euclideanSpace, Fintype.card_fin, ENNReal.ofReal_pow zero_le_two,
+        ENNReal.ofReal_ofNat] using
+        ofReal_setAverage_norm_rpow_le_two_pow_mul_maximalFunction volume hk hxr
+  have hE1 := hM g zero_le_two
+  have hE2 := hM G zero_le_two
+  simp only [Real.rpow_two, ENNReal.rpow_two] at hE1 hE2
+  have hE3 : ENNReal.ofReal ((⨍ y in ball c r, ‖g y‖ ^ (2 * q)) ^ q⁻¹) ≤
+      ENNReal.ofReal ((2 ^ (n + 1)) ^ q⁻¹) *
+        maximalFunction volume (fun y => ‖g y‖ₑ ^ (2 * q)) x ^ q⁻¹ := by
+    rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun y => by positivity) hq1,
+      ← ENNReal.ofReal_rpow_of_nonneg (by positivity) hq1, ← ENNReal.mul_rpow_of_nonneg _ _ hq1]
+    gcongr
+    exact hM g (by linarith [hq.pos])
+  -- Jensen's inequality on `B_ρ`.
   have : IsFiniteMeasure (volume.restrict (ball c ρ)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  -- Every average over `B_r ∋ x` is at most `2^(n + 1)` times the centred maximal function at `x`.
-  have hM : ∀ f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ≥0∞,
-      ⨍⁻ y in ball c r, f y ≤ 2 ^ (n + 1) * maximalFunction volume f x := fun f => by
-    simpa only [eNorm_eq_self, finrank_euclideanSpace, Fintype.card_fin] using
-      (setLAverage_le_uncenteredMaximalFunction volume f hxr).trans
-        (uncenteredMaximalFunction_le_two_pow_mul_maximalFunction volume f x)
-  have hsq : ∀ (h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) (t : ℝ),
-      MemLp h 2 (volume.restrict (ball c t)) →
-        ENNReal.ofReal (⨍ y in ball c t, ‖h y‖ ^ 2) = ⨍⁻ y in ball c t, ‖h y‖ₑ ^ 2 :=
-    fun h t hh => by
-      simpa only [Real.rpow_two, ENNReal.rpow_two] using ofReal_setAverage_norm_rpow zero_le_two
-        (by simpa only [Real.rpow_two] using
-          show IntegrableOn (fun y => ‖h y‖ ^ 2) (ball c t) volume from
-            hh.integrable_norm_pow two_ne_zero)
-  -- The averages over `B_r` in `ℝ≥0∞`, bounded by the maximal functions.
-  have hE1 : ENNReal.ofReal (⨍ y in ball c r, ‖g y‖ ^ 2) ≤ 2 ^ (n + 1) * M₁ := by
-    rw [hsq g r ((hgp.restrict _).mono_exponent h2p)]
-    exact hM _
-  have hE2 : ENNReal.ofReal (⨍ y in ball c r, ‖G y‖ ^ 2) ≤ 2 ^ (n + 1) * M₂ := by
-    rw [hsq G r ((hGp.restrict _).mono_exponent h2p)]
-    exact hM _
-  have hE3 : ENNReal.ofReal ((⨍ y in ball c r, ‖g y‖ ^ (2 * q)) ^ q⁻¹) ≤
-      (2 ^ (n + 1) * M₃) ^ q⁻¹ := by
-    have hi : IntegrableOn (fun y => ‖g y‖ ^ (2 * q)) (ball c r) := by
-      have := ((hgp.restrict (ball c r)).mono_exponent hqp).integrable_norm_rpow
-        (ENNReal.ofReal_pos.2 (by linarith [hq.pos])).ne' ENNReal.ofReal_ne_top
-      rwa [ENNReal.toReal_ofReal (by linarith [hq.pos] : (0 : ℝ) ≤ 2 * q)] at this
-    rw [← ENNReal.ofReal_rpow_of_nonneg (average_nonneg fun y => by positivity) hq1,
-      ofReal_setAverage_norm_rpow (by linarith [hq.pos]) hi]
-    gcongr
-    exact hM _
-  -- Jensen's inequality on `B_ρ`.
-  have hjensen : (⨍⁻ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ₑ) ^ 2 ≤
-      ENNReal.ofReal (⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ 2) := by
-    rw [hsq (fun y => g y - ⨍ z in ball c ρ, g z) ρ
-      (((hgp.restrict (ball c ρ)).mono_exponent h2p).sub (memLp_const _))]
-    simpa only [ENNReal.rpow_two] using rpow_laverage_le_laverage_rpow
-      (μ := volume.restrict (ball c ρ)) (u := fun y => ‖g y - ⨍ z in ball c ρ, g z‖ₑ) one_le_two
-  have hI₁ : 0 ≤ ⨍ y in ball c r, ‖g y‖ ^ 2 := average_nonneg fun y => by positivity
-  have hI₂ : 0 ≤ ⨍ y in ball c r, ‖G y‖ ^ 2 := average_nonneg fun y => by positivity
-  have hI₃ : 0 ≤ (⨍ y in ball c r, ‖g y‖ ^ (2 * q)) ^ q⁻¹ :=
-    Real.rpow_nonneg (average_nonneg fun y => by positivity) _
+  have hjensen := sq_setLAverage_enorm_le_ofReal_setAverage_norm_sq
+    (h := fun y => g y - ⨍ z in ball c ρ, g z)
+    (((hgp.restrict (ball c ρ)).mono_exponent h2p).integrableOn_norm_sub_sq_of_subset subset_rfl
+      measure_ball_lt_top.ne _)
   have hX : 0 ≤ ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹ := by
     have hLam : 0 ≤ Lam := (norm_nonneg (matrixBilinearForm (a c))).trans (hbd c)
     exact Real.rpow_nonneg (mul_nonneg (by positivity)
@@ -289,33 +263,15 @@ private theorem sq_setLAverage_enorm_gradient_sub_le
   have hd : 0 ≤ decayConst n lam Lam / κ ^ 2 := by unfold decayConst oscConst; positivity
   have hF : 0 ≤ forcingConst n lam Lam * κ ^ (n + 1) :=
     mul_nonneg (by unfold forcingConst oscConst; positivity) (pow_nonneg hκ0.le _)
+  -- Each term of the real bound `h1`, multiplied by its coefficient, passes to `ℝ≥0∞`.
+  have hmul : ∀ {e K I : ℝ} {M : ℝ≥0∞}, 0 ≤ e → ENNReal.ofReal I ≤ ENNReal.ofReal K * M →
+      ENNReal.ofReal (e * I) ≤ ENNReal.ofReal (e * K) * M := fun he h => by
+    rw [ENNReal.ofReal_mul he, ENNReal.ofReal_mul he, mul_assoc]
+    gcongr
   unfold decayCoeff forcingCoeff deviationCoeff
-  generalize (⨍ y in ball c r, ‖g y‖ ^ 2) = I₁ at hI₁ h1 hE1
-  generalize (⨍ y in ball c r, ‖G y‖ ^ 2) = I₂ at hI₂ h1 hE2
-  generalize (⨍ y in ball c r, ‖g y‖ ^ (2 * q)) ^ q⁻¹ = I₃ at hI₃ h1 hE3
-  generalize ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹ = X at hX h1 ⊢
-  generalize decayConst n lam Lam / κ ^ 2 = d at hd h1 ⊢
-  generalize forcingConst n lam Lam * κ ^ (n + 1) = F at hF h1 ⊢
-  have h2 : ENNReal.ofReal (2 ^ (n + 1)) = (2 : ℝ≥0∞) ^ (n + 1) := by
-    rw [ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-  calc (⨍⁻ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ₑ) ^ 2
-      ≤ ENNReal.ofReal (d * I₁ + F * (I₂ + X * I₃)) :=
-        hjensen.trans (ENNReal.ofReal_le_ofReal h1)
-    _ = ENNReal.ofReal d * ENNReal.ofReal I₁ + ENNReal.ofReal F * ENNReal.ofReal I₂ +
-          ENNReal.ofReal F * ENNReal.ofReal X * ENNReal.ofReal I₃ := by
-        rw [ENNReal.ofReal_add (mul_nonneg hd hI₁)
-            (mul_nonneg hF (add_nonneg hI₂ (mul_nonneg hX hI₃))),
-          ENNReal.ofReal_mul hd, ENNReal.ofReal_mul hF,
-          ENNReal.ofReal_add hI₂ (mul_nonneg hX hI₃), ENNReal.ofReal_mul hX]
-        ring
-    _ ≤ ENNReal.ofReal d * (2 ^ (n + 1) * M₁) + ENNReal.ofReal F * (2 ^ (n + 1) * M₂) +
-          ENNReal.ofReal F * ENNReal.ofReal X * (2 ^ (n + 1) * M₃) ^ q⁻¹ := by
-        gcongr
-    _ = _ := by
-        rw [ENNReal.ofReal_mul hd, ENNReal.ofReal_mul (mul_nonneg hF hX), ENNReal.ofReal_mul hF,
-          ENNReal.ofReal_mul hF, ← ENNReal.ofReal_rpow_of_nonneg (by positivity) hq1, h2,
-          ENNReal.mul_rpow_of_nonneg _ _ hq1]
-        ring
+  refine hjensen.trans ((ENNReal.ofReal_le_ofReal (h1.trans_eq (by ring))).trans
+    (ENNReal.ofReal_add_le.trans (add_le_add (ENNReal.ofReal_add_le.trans
+      (add_le_add (hmul hd hE1) (hmul hF hE2))) (hmul (mul_nonneg hF hX) hE3))))
 
 /-- **Krylov's pointwise estimate for the sharp maximal function of the gradient.** Under the
 hypotheses of the main theorem, for every `κ ≥ 1` the square of the sharp maximal function of
@@ -417,8 +373,11 @@ private theorem exists_one_le_and_pos_of_ne_top (lam Lam : ℝ) {q q' s : ℝ} (
     tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
   have h0 := h1.mul_const ((2 : ℝ) ^ (n + 1))
   rw [zero_mul] at h0
+  have h0' : Tendsto (fun κ : ℝ => ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)))
+      atTop (𝓝 0) := by
+    simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal h0
   obtain ⟨κ, hκ, hκ1⟩ := ((eventually_ge_atTop 1).and
-    ((ENNReal.tendsto_const_mul_ofReal_rpow_nhds_zero h0 hK₁ hs2).eventually
+    (((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK₁ hs2).comp h0').eventually
       (gt_mem_nhds hquarter))).exists
   refine ⟨κ, hκ, hκ1.le, ?_⟩
   have hq'' : 0 < q'⁻¹ := inv_pos.2 hq'
@@ -431,8 +390,10 @@ private theorem exists_one_le_and_pos_of_ne_top (lam Lam : ℝ) {q q' s : ℝ} (
     have h := hc.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 0))
     have hc0 : c₃ 0 = 0 := by simp [c₃, Real.zero_rpow hq''.ne']
     rwa [hc0] at h
-  obtain ⟨δ, hδ1, hδ⟩ := (((ENNReal.tendsto_const_mul_ofReal_rpow_nhds_zero hc0' hK₃ hs2).eventually
-    (gt_mem_nhds hquarter)).and self_mem_nhdsWithin).exists
+  have hc0'' : Tendsto (fun δ => ENNReal.ofReal (c₃ δ)) (𝓝[>] 0) (𝓝 0) := by
+    simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hc0'
+  obtain ⟨δ, hδ1, hδ⟩ := ((((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK₃ hs2).comp
+    hc0'').eventually (gt_mem_nhds hquarter)).and self_mem_nhdsWithin).exists
   exact ⟨δ, hδ, hδ1.le⟩
 
 /-- The estimate for fixed parameters `κ` and `δ` small enough for the absorption. -/
@@ -540,7 +501,7 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
   obtain ⟨q', hqq⟩ : ∃ q' : ℝ, q.HolderConjugate q' :=
     ⟨_, Real.HolderConjugate.conjExponent hq⟩
   obtain ⟨CFS, hFS⟩ := exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow
-    (ι := Fin (n + 1)) (F := EuclideanSpace ℝ (Fin (n + 1))) (show 1 < s by linarith)
+    (ι := Fin (n + 1)) (show 1 < s by linarith)
   have hcM := maximalFunctionConst_ne_top (n + 1)
   have h2 : (2 : ℝ≥0∞) ^ (s / 2 - 1) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (by linarith) ENNReal.ofNat_ne_top
