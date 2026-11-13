@@ -14,7 +14,6 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
-import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Topology.Discrete
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
 import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic

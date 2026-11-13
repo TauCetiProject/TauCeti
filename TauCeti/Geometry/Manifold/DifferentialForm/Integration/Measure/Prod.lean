@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Bas
 public import Mathlib.MeasureTheory.Measure.Prod
 
 import TauCeti.MeasureTheory.Integral.Bochner.Alternating
-import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # The measure of a product of top forms
@@ -28,11 +27,13 @@ Liouville measures.
 
 In the preferred chart of `M × N`, the product of the preferred charts of `M` and `N`, the
 coefficient of `φ` in the product of coordinate bases is the product of the coefficients of `φ₁`
-and `φ₂` (`TauCeti.RoughForm.inChartAt_apply_reindex_prod_eq_mul`). Since the coordinate measure
+and `φ₂` (`TauCeti.RoughForm.inChartAt_prod_apply_sumElim`). Since the coordinate measure
 of `TauCeti.RoughForm.measure` does not depend on the basis used to normalize it, and the Haar
 measure of a product basis is the product of the Haar measures, the two measures agree on products
-of measurable subsets of chart sources. Both measures are `σ`-finite, so they agree on each product
-chart source, and these sources cover `M × N`.
+of measurable subsets of chart sources (`Module.Basis.setLIntegral_ofReal_abs_apply_prod`).
+Continuity of `φ₁` and `φ₂` and second countability of `M` and `N` make the factor measures
+`|φ₁|` and `|φ₂|` `σ`-finite, so `|φ|` and `|φ₁| ⊗ |φ₂|` agree on each product chart source by
+`MeasureTheory.Measure.prod_eq`, and these sources cover `M × N`.
 
 ## Main results
 
@@ -49,7 +50,7 @@ public section
 noncomputable section
 
 open Module MeasureTheory Set
-open scoped ENNReal Manifold
+open scoped Manifold
 
 namespace TauCeti
 
@@ -62,28 +63,6 @@ variable {E H M F H' N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topo
   {φ : RoughForm (I.prod J) (M × N) ℝ p} {φ₁ : RoughForm I M ℝ k} {φ₂ : RoughForm J N ℝ l}
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
-
-omit [FiniteDimensional ℝ E] in
-/-- A top-form coefficient integral over a product set whose integrand factors in the product
-basis is the product of the factor integrals. The Borel structure on `E × F` is arbitrary, so this
-applies to the chart measurable structure of `TauCeti.RoughForm.measure`. -/
-private theorem setLIntegral_prod_addHaar [MeasurableSpace E] [BorelSpace E]
-    [MeasurableSpace F] [BorelSpace F] [mEF : MeasurableSpace (E × F)] [BorelSpace (E × F)]
-    (hp : k + l = p) (b₀ : Basis (Fin p) ℝ (E × F)) (b₁ : Basis (Fin k) ℝ E)
-    (b₂ : Basis (Fin l) ℝ F) {A₁ : Set E} {A₂ : Set F} (hA₁ : MeasurableSet A₁)
-    (hA₂ : MeasurableSet A₂) (ψ : E × F → (E × F) [⋀^Fin p]→L[ℝ] ℝ) {f : E → ℝ≥0∞}
-    {g : F → ℝ≥0∞} (hf : AEMeasurable f (b₁.addHaar.restrict A₁))
-    (hg : AEMeasurable g (b₂.addHaar.restrict A₂))
-    (hψ : ∀ z ∈ A₁ ×ˢ A₂, ENNReal.ofReal
-      |ψ z ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp)))| = f z.1 * g z.2) :
-    ∫⁻ z in A₁ ×ˢ A₂, ENNReal.ofReal |ψ z b₀| ∂b₀.addHaar =
-      (∫⁻ y in A₁, f y ∂b₁.addHaar) * ∫⁻ z in A₂, g z ∂b₂.addHaar := by
-  obtain rfl : mEF = Prod.instMeasurableSpace :=
-    BorelSpace.measurable_eq.trans (Prod.borelSpace (α := E) (β := F)).measurable_eq.symm
-  rw [Basis.setLIntegral_ofReal_abs_apply_basis_change
-      ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp))),
-    setLIntegral_congr_fun (hA₁.prod hA₂) hψ, Basis.addHaar_reindex, Basis.prod_addHaar,
-    ← Measure.prod_restrict, lintegral_prod_mul hf hg]
 
 variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [SecondCountableTopology M] [SecondCountableTopology N] [hk : Fact (finrank ℝ E = k)]
@@ -117,12 +96,19 @@ private theorem measure_prod_of_subset (hp : k + l = p) (hφ₁ : IsSmoothForm I
     φ₂.measure_apply_of_subset ht htβ, himage]
   -- The chart measurable structure on `E × F` is supplied explicitly: elaborating it by instance
   -- search would find the product structure and force an expensive unification.
-  refine setLIntegral_prod_addHaar (mEF := TauCeti.extChartAtMeasurableSpaceE) hp _ b₁ b₂
-    (hs.image_extChartAt α hsα) (ht.image_extChartAt β htβ) _
+  refine Basis.setLIntegral_ofReal_abs_apply_prod (mEF := TauCeti.extChartAtMeasurableSpaceE) hp
+    _ b₁ b₂ (hs.image_extChartAt α hsα) (ht.image_extChartAt β htβ) _
     (aemeasurable_ofReal_abs_inChartAt hφ₁ b₁ hs hsα)
     (aemeasurable_ofReal_abs_inChartAt hφ₂ b₂ ht htβ) fun z hz ↦ ?_
-  rw [inChartAt_apply_reindex_prod_eq_mul hp h α β (hA₁ hz.1) (hA₂ hz.2), abs_mul,
-    ENNReal.ofReal_mul (abs_nonneg _)]
+  have hb : ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp)) : Fin p → E × F) =
+      fun r ↦ Sum.elim (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
+        (finSumFinEquiv.symm (Fin.cast hp.symm r)) := by
+    funext r
+    simp only [Basis.reindex_apply, Basis.prod_apply, Equiv.symm_trans_apply, finCongr_symm,
+      finCongr_apply]
+    rcases finSumFinEquiv.symm (Fin.cast hp.symm r) with i | j <;> simp
+  rw [hb, inChartAt_prod_apply_sumElim φ hp α β (hA₁ hz.1) (hA₂ hz.2), h, ← inChartAt_apply,
+    ← inChartAt_apply, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
 
 /-- **The measure of a product of top forms is the product measure.** Let `φ₁` and `φ₂` be
 continuous top forms on second countable manifolds `M` and `N` of dimensions `k` and `l`, and let

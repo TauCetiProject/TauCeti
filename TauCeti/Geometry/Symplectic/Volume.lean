@@ -232,12 +232,17 @@ theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_app
   have hpull : Φ.compContinuousLinearMap (E₀.subtypeL.prodMap F₀.subtypeL) =
       (ω₁.compContinuousLinearMap E₀.subtypeL).compContinuousLinearMap (.fst ℝ E₀ F₀) +
         (ω₂.compContinuousLinearMap F₀.subtypeL).compContinuousLinearMap (.snd ℝ E₀ F₀) := by
+    -- On a pair `x` both sides are `ω₁ (fun r ↦ ↑(x r).1) + ω₂ (fun r ↦ ↑(x r).2)` by unfolding
+    -- `add_apply`, `compContinuousLinearMap_apply` and `prodMap`: `fst ∘ prodMap` and
+    -- `snd ∘ prodMap` are `subtypeL ∘ fst` and `subtypeL ∘ snd` by definition.
     ext
     rfl
   rw [← hpull, ← wedgePow_compContinuousLinearMap, compContinuousLinearMap_apply]
   congr 1
   funext r
   simp only [u, Function.comp_apply]
+  -- `(v i, 0)` is `prodMap subtypeL subtypeL (⟨v i, _⟩, 0)` because the coercion of `0 : F₀` is
+  -- `0 : F` by definition of the submodule's zero, and symmetrically for `(0, w j)`.
   rcases finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r) with i | j <;> rfl
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
