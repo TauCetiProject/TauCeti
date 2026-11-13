@@ -19,8 +19,12 @@ and is larger than `n`.
 
 The integer criterion needs no ordering of the bases. Its natural-number version assumes
 `b ≤ a`, so that subtraction does not truncate. Only the denominator must be nonzero
-modulo the prime for the criterion itself; nonvanishing of both bases is needed for the
-positive-order conclusion. Both divisibility criteria include exponent zero.
+modulo the prime for the criterion itself; the ratio has positive order modulo `p` iff neither
+base vanishes modulo `p`. Both divisibility criteria include exponent zero. At an even exponent
+`2 * n` (`0 < n`), `a ^ (2 * n) - b ^ (2 * n) = (a ^ n + b ^ n) * (a ^ n - b ^ n)` identifies
+primitive prime divisors of `a ^ (2 * n) - b ^ (2 * n)` with primes dividing `a ^ n + b ^ n` and
+no `a ^ k - b ^ k` for `0 < k < 2 * n`, and for `b ≤ a` (without coprimality) with primes not
+dividing `a * b` at which `a / b` has order `2 * n`.
 
 ## References
 
@@ -85,6 +89,17 @@ theorem orderOf_ratio_pos {p : ℕ} (hp : p.Prime)
   Nat.pos_of_dvd_of_pos (hp.orderOf_ratio_dvd_sub_one hab)
     (Nat.sub_pos_of_lt hp.one_lt)
 
+/-- Modulo a prime `p`, the ratio `a / b` has positive order iff `p` divides neither base. The
+hypothesis `p.Prime` is sharp: `p = 0`, `p = 1` and `p = 10` (at `a = 1`, `b = 4`) each fail one
+direction. -/
+theorem orderOf_ratio_pos_iff {p : ℕ} (hp : p.Prime) {a b : ℕ} :
+    0 < orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) ↔ ¬ p ∣ a * b := by
+  refine ⟨fun hpos hmul => hpos.ne' ?_, hp.orderOf_ratio_pos⟩
+  let : Fact p.Prime := ⟨hp⟩
+  rcases hp.dvd_mul.1 hmul with ha | hb
+  · rw [(ZMod.natCast_eq_zero_iff a p).2 ha, zero_mul, orderOf_zero]
+  · rw [(ZMod.natCast_eq_zero_iff b p).2 hb, inv_zero, mul_zero, orderOf_zero]
+
 /-- If a prime not dividing `b` is primitive at positive exponent `n`, then the ratio of
 bases has order `n` modulo that prime. The inequality prevents truncated subtraction. -/
 theorem orderOf_ratio_eq_of_primitive {p : ℕ} (hp : p.Prime)
@@ -120,24 +135,42 @@ theorem primitive_divisor_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
       (hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mp hdiv
     exact (not_le_of_gt hkn) (Nat.le_of_dvd hk hnk)
 
+/-- For bases `b ≤ a` and `2 ≤ n` (without coprimality), a prime `p` is primitive for
+`a ^ n - b ^ n` iff `p` divides neither base and `a / b` has order `n` modulo `p`. At `n = 1`
+coprimality is needed: `3` divides `6 - 3` and `6 * 3`. -/
+theorem primitive_divisor_iff_orderOf_eq_of_two_le {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hn : 2 ≤ n) :
+    (p ∣ a ^ n - b ^ n ∧ ∀ k, 0 < k → k < n → ¬ p ∣ a ^ k - b ^ k) ↔
+      ¬ p ∣ a * b ∧ orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = n := by
+  constructor
+  · rintro ⟨hdiv, hprev⟩
+    have hprod : ¬ p ∣ a * b := by
+      intro hmul
+      have hg := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba (by omega) hdiv hmul
+      have h1 : ¬ p ∣ a - b := by simpa using hprev 1 Nat.one_pos (by omega)
+      exact h1 (Nat.dvd_sub (hg.trans (Nat.gcd_dvd_left a b))
+        (hg.trans (Nat.gcd_dvd_right a b)))
+    exact ⟨hprod, hp.orderOf_ratio_eq_of_primitive hba
+      (fun hb => hprod (dvd_mul_of_dvd_right hb a)) (by omega) hdiv hprev⟩
+  · rintro ⟨hprod, horder⟩
+    have hb : ¬ p ∣ b := fun hb => hprod (dvd_mul_of_dvd_right hb a)
+    refine ⟨(hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mpr (horder ▸ dvd_rfl), ?_⟩
+    intro k hk hkn hdiv
+    exact (not_le_of_gt hkn) (Nat.le_of_dvd hk
+      (horder ▸ (hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mp hdiv))
+
 /-- The exponent of a primitive prime divisor divides one less than that prime. -/
 theorem dvd_sub_one_of_primitive {p : ℕ} (hp : p.Prime)
     {a b n : ℕ} (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n)
     (hprev : ∀ k, 0 < k → k < n → ¬ p ∣ a ^ k - b ^ k) : n ∣ p - 1 := by
   by_cases hn1 : n = 1
   · simp [hn1]
-  have h1 : ¬ p ∣ a - b := by
-    simpa using hprev 1 (by omega) (by omega)
   have hba : b ≤ a := by
     by_contra h
+    have h1 : ¬ p ∣ a - b := by simpa using hprev 1 (by omega) (by omega)
     exact h1 (by simp [Nat.sub_eq_zero_of_le (by omega : a ≤ b)])
-  have hprod : ¬ p ∣ a * b := by
-    intro hmul
-    have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
-    exact h1 (Nat.dvd_sub (h.trans (Nat.gcd_dvd_left a b))
-      (h.trans (Nat.gcd_dvd_right a b)))
-  have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
-  have horder := hp.orderOf_ratio_eq_of_primitive hba hb hn hdiv hprev
+  obtain ⟨hprod, horder⟩ :=
+    (hp.primitive_divisor_iff_orderOf_eq_of_two_le hba (by omega)).1 ⟨hdiv, hprev⟩
   simpa only [horder] using hp.orderOf_ratio_dvd_sub_one hprod
 
 /-- A primitive prime divisor is strictly larger than its exponent. -/
@@ -149,5 +182,29 @@ theorem exponent_lt_of_primitive {p : ℕ} (hp : p.Prime)
   have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
     (hp.dvd_sub_one_of_primitive hn hdiv hprev)
   omega
+
+/-- For a prime `p` and positive `n`, dividing `a ^ n + b ^ n` and no `a ^ k - b ^ k` with
+`0 < k < 2 * n` is equivalent to being a primitive prime divisor of `a ^ (2 * n) - b ^ (2 * n)`.
+At `n = 0` this fails: `2 ∣ a ^ 0 + b ^ 0 = 2`, while `a ^ 0 - b ^ 0 = 0` is divisible by every
+prime. -/
+theorem dvd_pow_add_pow_and_not_dvd_iff {p : ℕ} (hp : p.Prime) {a b n : ℕ} (hn : 0 < n) :
+    (p ∣ a ^ n + b ^ n ∧ ∀ k, 0 < k → k < 2 * n → ¬ p ∣ a ^ k - b ^ k) ↔
+      (p ∣ a ^ (2 * n) - b ^ (2 * n) ∧ ∀ k, 0 < k → k < 2 * n → ¬ p ∣ a ^ k - b ^ k) := by
+  have hsq : a ^ (2 * n) - b ^ (2 * n) = (a ^ n + b ^ n) * (a ^ n - b ^ n) := by
+    rw [mul_comm 2 n, pow_mul, pow_mul, Nat.pow_two_sub_pow_two]
+  refine ⟨fun ⟨hadd, hprev⟩ => ⟨hsq ▸ dvd_mul_of_dvd_left hadd _, hprev⟩,
+    fun ⟨hsub, hprev⟩ => ⟨?_, hprev⟩⟩
+  exact (hp.dvd_mul.1 (hsq ▸ hsub)).resolve_right (hprev n hn (by omega))
+
+/-- For natural bases `b ≤ a` and `0 < n` (without coprimality), a prime `p` divides `a ^ n + b ^ n`
+and no `a ^ k - b ^ k` with `0 < k < 2 * n` iff `p` divides neither base and `a / b` has order
+`2 * n` modulo `p`. Divisibility of `a ^ n + b ^ n` alone does not force order `2 * n`:
+`3 ∣ 2 ^ 3 + 1`, while `2` has order `2` modulo `3`. -/
+theorem dvd_pow_add_pow_and_not_dvd_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hn : 0 < n) :
+    (p ∣ a ^ n + b ^ n ∧ ∀ k, 0 < k → k < 2 * n → ¬ p ∣ a ^ k - b ^ k) ↔
+      ¬ p ∣ a * b ∧ orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = 2 * n :=
+  (hp.dvd_pow_add_pow_and_not_dvd_iff hn).trans
+    (hp.primitive_divisor_iff_orderOf_eq_of_two_le hba (by omega))
 
 end Nat.Prime
