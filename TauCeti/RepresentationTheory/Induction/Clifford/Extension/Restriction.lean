@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction
+public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basis
 public import TauCeti.RepresentationTheory.Finsupp
 public import TauCeti.RepresentationTheory.Simple.Basic
