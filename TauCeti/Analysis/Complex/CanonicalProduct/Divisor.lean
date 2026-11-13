@@ -26,6 +26,9 @@ with `f 0 ≠ 0`; for an entire `f` with `f 0 ≠ 0` the latter condition is
 the product and logarithmic-derivative ingredients of Hadamard factorization; it does not
 assume an enumeration of the zeros or choose a representative for the divisor.
 
+A function with zero divisor, such as `exp (c s)`, has product `1`, and the product of `1 - s` is
+the single factor `E₁(s)`.
+
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 11.
@@ -101,14 +104,44 @@ theorem divisorProductOne_eq_tprod (f : ℂ → ℂ) (z : ℂ) :
 theorem divisorProductOne_zero (f : ℂ → ℂ) : divisorProductOne f 0 = 1 := by
   simp [divisorProductOne_def]
 
+/-- A point where an entire function does not vanish is off its whole-plane divisor support. -/
+theorem notMem_divisor_support_of_ne_zero {f : ℂ → ℂ} (hf : Differentiable ℂ f) {z : ℂ}
+    (hz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f Set.univ).support :=
+  Function.notMem_support.mpr ((hf.analyticAt z).divisor_apply_eq_zero hz)
+
+/-- The genus-one product of a function with zero whole-plane divisor is `1`. -/
+theorem divisorProductOne_eq_one_of_divisor_eq_zero {f : ℂ → ℂ}
+    (hf : MeromorphicOn.divisor f Set.univ = 0) : divisorProductOne f = fun _ ↦ 1 := by
+  funext z
+  rw [divisorProductOne_eq_tprod]
+  exact (tprod_congr fun ρ ↦ by simp [hf]).trans tprod_one
+
+/-- The genus-one product of the zero-free function `exp (c s)` is `1`. -/
+theorem divisorProductOne_cexp_mul (c : ℂ) :
+    divisorProductOne (fun s ↦ exp (c * s)) = fun _ ↦ 1 := by
+  refine divisorProductOne_eq_one_of_divisor_eq_zero ?_
+  ext ρ
+  exact AnalyticAt.divisor_apply_eq_zero (f := fun s ↦ exp (c * s)) (by fun_prop) (exp_ne_zero _)
+
+/-- The genus-one product of `1 - s` is the single factor `E₁(s)`. -/
+theorem divisorProductOne_one_sub :
+    divisorProductOne (fun s ↦ 1 - s) = weierstrassFactorOne := by
+  funext s
+  have ha : AnalyticOnNhd ℂ (fun s : ℂ ↦ 1 - s) Set.univ := fun _ _ ↦ by fun_prop
+  have h1 : MeromorphicOn.divisor (fun s : ℂ ↦ 1 - s) Set.univ 1 = 1 := by
+    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt ha.meromorphicOn (ha 1 trivial)
+      (Set.mem_univ 1), analyticOrderNatAt,
+      (ha 1 trivial).analyticOrderAt_eq_one_of_zero_deriv_ne_zero (by simp) (by
+        rw [deriv_const_sub, deriv_id'']; norm_num)]
+    rfl
+  rw [divisorProductOne_eq_tprod, tprod_eq_mulSingle 1 fun ρ hρ ↦ ?_, h1]
+  · simp
+  · rw [AnalyticAt.divisor_apply_eq_zero (ha ρ trivial) (sub_ne_zero.mpr (Ne.symm hρ))]
+    simp
+
 variable {f : ℂ → ℂ} (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
   (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
-
-include hf hf0 in
-private theorem zero_notMem_divisor_support :
-    (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
-  Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0)
 
 include hsum in
 /-- Weighted inverse-square summability makes the native divisor product entire. -/
@@ -151,8 +184,8 @@ theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ 
   constructor
   · intro hz
     by_contra hn
-    exact divisorProductOne_ne_zero hsum (zero_notMem_divisor_support hf hf0)
-      (Function.notMem_support.mpr ((hf.analyticAt z).divisor_apply_eq_zero hn)) hz
+    exact divisorProductOne_ne_zero hsum (notMem_divisor_support_of_ne_zero hf hf0)
+      (notMem_divisor_support_of_ne_zero hf hn) hz
   · rw [divisorProductOne_def, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum]
     intro hz
     have hz0 : z ≠ 0 := by rintro rfl; exact hf0 hz
@@ -177,7 +210,7 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
-  have h0 := zero_notMem_divisor_support hf hf0
+  have h0 := notMem_divisor_support_of_ne_zero hf hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
