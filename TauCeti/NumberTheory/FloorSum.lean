@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BigOperators.Field
+public import Mathlib.Algebra.Field.Basic
 public import TauCeti.Algebra.BigOperators.ModEq
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.Data.Finset.Range
 import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Data.Rat.BigOperators
-import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -43,15 +42,14 @@ theorem Nat.Coprime.sum_range_div_mul_two {h c : ℕ} (hhc : h.Coprime c) :
   · simp
   rcases c.eq_zero_or_pos with rfl | hc
   · simp
-  have hperm := hhc.sum_range_mul_mod (fun r ↦ (r : ℚ))
-  simp only [Nat.cast_mod_eq_sub_mul_div, Nat.cast_mul, sum_sub_distrib, ← mul_sum,
-    sum_range_natCast] at hperm
-  have heq : (∑ r ∈ range c, ((h * r / c : ℕ) : ℚ)) * 2 =
-      ((h : ℚ) - 1) * (c - 1) := by
-    apply mul_left_cancel₀ (show (c : ℚ) ≠ 0 by positivity)
-    linear_combination -2 * hperm
-  have heq' : (((∑ r ∈ range c, h * r / c) * 2 : ℕ) : ℚ) =
-      (((h - 1) * (c - 1) : ℕ) : ℚ) := by
+  have hperm := hhc.sum_range_mul_mod (fun r ↦ (r : ℤ))
+  simp only [Nat.cast_mod_eq_sub_mul_div, Nat.cast_mul, sum_sub_distrib, ← mul_sum] at hperm
+  have heq : (∑ r ∈ range c, ((h * r / c : ℕ) : ℤ)) * 2 =
+      ((h : ℤ) - 1) * (c - 1) := by
+    apply mul_left_cancel₀ (show (c : ℤ) ≠ 0 by positivity)
+    linear_combination -2 * hperm + ((h : ℤ) - 1) * sum_range_natCast_mul_two (R := ℤ) c
+  have heq' : (((∑ r ∈ range c, h * r / c) * 2 : ℕ) : ℤ) =
+      (((h - 1) * (c - 1) : ℕ) : ℤ) := by
     push_cast [Nat.cast_sub hh, Nat.cast_sub hc]
     exact heq
   exact_mod_cast heq'
@@ -78,26 +76,6 @@ theorem Nat.Coprime.sum_range_natCast_div {K : Type*} [DivisionRing K] [NeZero (
   push_cast [Nat.cast_sub hh, Nat.cast_sub hc] at heq
   exact (eq_div_iff two_ne_zero).2 heq
 
-/-- The second-moment identity `Nat.Coprime.mul_sum_range_natCast_div_sq` over `ℚ`, from which
-the version `Nat.Coprime.mul_sum_range_div_sq_mul_six_add` in `ℕ` follows. -/
-private theorem Nat.Coprime.mul_sum_range_natCast_div_sq_rat {h c : ℕ} (hhc : h.Coprime c) :
-    (c : ℚ) * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) ^ 2 =
-      2 * h * ∑ r ∈ range c, (r : ℚ) * ((h * r / c : ℕ) : ℚ) +
-        (1 - h ^ 2) * ((c - 1) * (2 * c - 1) / 6) := by
-  rcases c.eq_zero_or_pos with rfl | hc
-  · obtain rfl : h = 1 := by simpa using hhc
-    simp
-  have hperm := Nat.Coprime.sum_range_mul_mod hhc (fun r ↦ (r : ℚ) ^ 2)
-  have hterm (r : ℕ) : (((h * r % c : ℕ) : ℚ)) ^ 2 = h ^ 2 * (r : ℚ) ^ 2 -
-      2 * h * c * ((r * (h * r / c) : ℕ) : ℚ) + c ^ 2 * ((h * r / c : ℕ) : ℚ) ^ 2 := by
-    rw [Nat.cast_mod_eq_sub_mul_div]
-    push_cast
-    ring
-  simp only [hterm, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_range_natCast_sq] at hperm
-  push_cast at hperm
-  apply mul_left_cancel₀ (show (c : ℚ) ≠ 0 by positivity)
-  linear_combination hperm
-
 /-- For coprime `h` and `c`, the second moment of `⌊h r / c⌋` in `ℕ`:
 `6 c ∑_{r < c} ⌊h r / c⌋² + (h² - 1)(c - 1)(2c - 1) = 12 h ∑_{r < c} r ⌊h r / c⌋`. -/
 theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprime c) :
@@ -108,13 +86,21 @@ theorem Nat.Coprime.mul_sum_range_div_sq_mul_six_add {h c : ℕ} (hhc : h.Coprim
     simp
   rcases c.eq_zero_or_pos with rfl | hc
   · simp
-  have hq := hhc.mul_sum_range_natCast_div_sq_rat
+  have hperm := hhc.sum_range_mul_mod (fun r ↦ (r : ℤ) ^ 2)
+  have hterm (r : ℕ) : (((h * r % c : ℕ) : ℤ)) ^ 2 = h ^ 2 * (r : ℤ) ^ 2 -
+      2 * h * c * ((r * (h * r / c) : ℕ) : ℤ) + c ^ 2 * ((h * r / c : ℕ) : ℤ) ^ 2 := by
+    rw [Nat.cast_mod_eq_sub_mul_div]
+    push_cast
+    ring
+  simp only [hterm, sum_add_distrib, sum_sub_distrib, ← mul_sum] at hperm
+  push_cast at hperm
   have heq : (((c * (∑ r ∈ range c, (h * r / c) ^ 2) * 6 +
-      (h ^ 2 - 1) * (c - 1) * (2 * c - 1) : ℕ)) : ℚ) =
-      ((12 * h * ∑ r ∈ range c, r * (h * r / c) : ℕ) : ℚ) := by
+      (h ^ 2 - 1) * (c - 1) * (2 * c - 1) : ℕ)) : ℤ) =
+      ((12 * h * ∑ r ∈ range c, r * (h * r / c) : ℕ) : ℤ) := by
     push_cast [Nat.cast_sub (Nat.one_le_pow _ _ hh), Nat.cast_sub hc,
       Nat.cast_sub (by omega : 1 ≤ 2 * c)]
-    linear_combination 6 * hq
+    apply mul_left_cancel₀ (show (c : ℤ) ≠ 0 by positivity)
+    linear_combination 6 * hperm - ((h : ℤ) ^ 2 - 1) * sum_range_natCast_sq_mul_six (R := ℤ) c
   exact_mod_cast heq
 
 /-- For coprime `h` and `c` in a division ring where `2 ≠ 0` and `3 ≠ 0`,

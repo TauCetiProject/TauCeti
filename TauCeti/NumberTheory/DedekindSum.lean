@@ -12,6 +12,8 @@ public import Mathlib.Data.Int.ModEq
 public import Mathlib.Data.Rat.Floor
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.NumberTheory.FloorSum
 import TauCeti.Data.Nat.Cast.Basic
 import Mathlib.RingTheory.Coprime.Lemmas
@@ -271,25 +273,19 @@ theorem dedekindSum_two_right (d : ℤ) : dedekindSum d 2 = 0 :=
 private theorem dedekindSum_natCast {h c : ℕ} (hhc : h.Coprime c) :
     dedekindSum h c = ∑ r ∈ range c, ((r : ℚ) / c) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) := by
   rw [(Nat.isCoprime_iff_coprime.mpr hhc).dedekindSum_eq,
-    ← sum_subset (s₁ := Ioo 0 c) (fun r hr ↦ mem_range.2 (mem_Ioo.1 hr).2)]
-  · refine sum_nbij' Int.toNat Nat.cast (fun r hr ↦ ?_) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
-      (fun r _ ↦ ?_) (fun r hr ↦ ?_)
-    · simp only [mem_Ioo] at hr ⊢; omega
-    · simp only [mem_Ioo] at hr ⊢; omega
-    · simp only [mem_Ioo] at hr ⊢; omega
-    · simp
-    · simp only [mem_Ioo] at hr
-      lift r to ℕ using hr.1.le
-      simp only [Int.toNat_natCast, Int.cast_natCast]
-      rw [← Int.fract_div_natCast_eq_div_natCast_mod]
-      push_cast
-      rfl
-  · intro r hrc hr
-    obtain rfl : r = 0 := by
-      rw [mem_Ioo] at hr
-      rw [mem_range] at hrc
-      omega
-    simp
+    ← sum_Ioo_eq_sum_range c _ (by simp)]
+  refine sum_nbij' Int.toNat Nat.cast (fun r hr ↦ ?_) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
+    (fun r _ ↦ ?_) (fun r hr ↦ ?_)
+  · simp only [mem_Ioo] at hr ⊢; omega
+  · simp only [mem_Ioo] at hr ⊢; omega
+  · simp only [mem_Ioo] at hr ⊢; omega
+  · simp
+  · simp only [mem_Ioo] at hr
+    lift r to ℕ using hr.1.le
+    simp only [Int.toNat_natCast, Int.cast_natCast]
+    rw [← Int.fract_div_natCast_eq_div_natCast_mod]
+    push_cast
+    rfl
 
 /-- The Dedekind sum through the floor sum `∑_{r < c} r ⌊h r / c⌋`:
 `s(h, c) = h (c - 1)(2c - 1) / (6c) - (∑_{r < c} r ⌊h r / c⌋) / c - (c - 1) / 4`. -/
