@@ -105,6 +105,30 @@ theorem substAlgHom_coe (f : K⟦X⟧) :
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.comp_apply,
     IsScalarTower.coe_toAlgHom', coe_substAlgHom, _root_.LaurentSeries.coe_algebraMap]
 
+/-- Substitution `f ↦ f (q)` of a nonzero multivariate power series `q : MvPowerSeries σ K` of zero
+constant coefficient into Laurent series, valued in a fraction field `KK` of `MvPowerSeries σ K`. -/
+noncomputable def mvSubstAlgHom {σ : Type*} (KK : Type*) [Field KK] [Algebra K KK]
+    [Algebra (MvPowerSeries σ K) KK] [IsScalarTower K (MvPowerSeries σ K) KK]
+    [IsFractionRing (MvPowerSeries σ K) KK] {q : MvPowerSeries σ K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) : K⸨X⸩ →ₐ[K] KK :=
+  have hinj : Function.Injective ((IsScalarTower.toAlgHom K (MvPowerSeries σ K) KK).comp
+      (PowerSeries.substAlgHom (R := K) (HasSubst.of_constantCoeff_zero hq))) := by
+    rw [AlgHom.coe_comp]
+    exact (IsFractionRing.injective (MvPowerSeries σ K) KK).comp
+      (substAlgHom_mvPowerSeries_injective hq hq₀)
+  IsFractionRing.liftAlgHom hinj
+
+/-- On power series, `mvSubstAlgHom` evaluates `PowerSeries.subst q` inside `KK`. -/
+@[simp]
+theorem mvSubstAlgHom_coe {σ : Type*} (KK : Type*) [Field KK] [Algebra K KK]
+    [Algebra (MvPowerSeries σ K) KK] [IsScalarTower K (MvPowerSeries σ K) KK]
+    [IsFractionRing (MvPowerSeries σ K) KK] {q : MvPowerSeries σ K}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) (f : K⟦X⟧) :
+    mvSubstAlgHom KK hq hq₀ (f : K⸨X⸩) = algebraMap (MvPowerSeries σ K) KK (f.subst q) := by
+  rw [mvSubstAlgHom, IsFractionRing.coe_liftAlgHom, ← _root_.LaurentSeries.coe_algebraMap,
+    IsFractionRing.lift_algebraMap]
+  simp [coe_substAlgHom]
+
 /-- Substitution sends the variable `X = single 1 1` to `φ`. -/
 theorem substAlgHom_single_one : substAlgHom hφ hφ₀ (single 1 1) = (φ : K⸨X⸩) := by
   rw [← PowerSeries.coe_X, substAlgHom_coe, subst_X (.of_constantCoeff_zero' hφ)]

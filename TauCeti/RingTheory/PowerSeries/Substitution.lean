@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.PowerSeries.Trunc
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -255,6 +256,32 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
+
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into `R⟦X⟧`
+sends only `0` to `0`. -/
+theorem mvPowerSeries_subst_eq_zero_iff {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) {f : R⟦X⟧} :
+    f.subst q = 0 ↔ f = 0 := by
+  have hs : HasSubst q := .of_constantCoeff_zero hq
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by simp [hf]⟩
+  by_contra hf₀
+  nth_rw 1 [← f.X_pow_order_mul_divXPowOrder] at hf
+  rw [subst_mul hs, subst_pow hs, subst_X hs] at hf
+  rcases mul_eq_zero.mp hf with hpow | hg
+  · exact pow_ne_zero _ hq₀ hpow
+  · have hc := congrArg MvPowerSeries.constantCoeff hg
+    rw [map_zero, constantCoeff_subst_of_constantCoeff_zero hq,
+      Algebra.algebraMap_self_apply] at hc
+    exact (constantCoeff_divXPowOrder_eq_zero_iff.not.mpr hf₀) hc
+
+/-- Substituting a nonzero multivariate power series `q` of zero constant coefficient into `R⟦X⟧`
+is injective. -/
+theorem substAlgHom_mvPowerSeries_injective {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : MvPowerSeries.constantCoeff q = 0) (hq₀ : q ≠ 0) :
+    Function.Injective (substAlgHom (R := R) (.of_constantCoeff_zero hq)) :=
+  (injective_iff_map_eq_zero _).mpr fun f hf ↦ by
+    rw [coe_substAlgHom] at hf
+    exact (mvPowerSeries_subst_eq_zero_iff hq hq₀).mp hf
 
 /-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
 coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/
