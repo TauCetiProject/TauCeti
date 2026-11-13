@@ -215,6 +215,11 @@ theorem alternatingFormInner_self_eq_zero {k : ℕ} {α : V [⋀^Fin k]→L[ℝ]
     alternatingFormInner V k α α = 0 ↔ α = 0 := by
   rw [alternatingFormInner_apply, inner_self_eq_zero, LinearEquiv.map_eq_zero_iff]
 
+/-- The Hilbert norm `√⟨α, α⟩` of a form is the norm of the element of `⋀ᵏ V` representing it. -/
+theorem sqrt_alternatingFormInner_self {k : ℕ} (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    √(alternatingFormInner V k α α) = ‖(alternatingFormEquiv V k).symm α‖ := by
+  rw [alternatingFormInner_apply, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
+
 /-- **The inner product of forms in an orthonormal basis**: if `(eᵢ)` is an orthonormal basis of
 `V` indexed by a linear order, then `⟨α, β⟩ = ∑ α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, the sum
 running over the increasing `k`-tuples `i₁ < ⋯ < iₖ`. Equivalently, the increasing wedges of the
