@@ -147,15 +147,12 @@ theorem not_isFreePair_dunceHat (σ τ : Finset (Fin 8)) :
 theorem not_collapsible_dunceHat :
     ¬ PreAbstractSimplicialComplex.Collapsible dunceHat.toPreAbstractSimplicialComplex := by
   intro hcol
-  obtain ⟨v, hv⟩ := collapsible_iff.mp hcol
-  rcases hv.eq_or_exists_head with h | ⟨P, hP, -⟩
-  · have hmem : ({0, 1} : Finset (Fin 8)) ∈ dunceHat.toPreAbstractSimplicialComplex :=
-      mem_dunceHat.mpr ⟨by decide, {0, 1, 3}, by decide, by decide⟩
-    rw [h, mem_point] at hmem
-    have := congrArg Finset.card hmem
-    simp at this
-  · obtain ⟨σ, τ, hfree, -⟩ := hP.exists_pair
-    exact not_isFreePair_dunceHat σ τ hfree
+  obtain ⟨v, h⟩ := hcol.exists_eq_point_of_forall_not_isFreePair not_isFreePair_dunceHat
+  have hmem : ({0, 1} : Finset (Fin 8)) ∈ dunceHat.toPreAbstractSimplicialComplex :=
+    mem_dunceHat.mpr ⟨by decide, {0, 1, 3}, by decide, by decide⟩
+  rw [h, mem_point] at hmem
+  have := congrArg Finset.card hmem
+  simp at this
 
 /-- Bit masks of the fifty-one staircase tetrahedra of the ordered cylinder on the dunce hat, with
 the vertex `(v, i)` encoded as bit `i + 2 * v`. -/

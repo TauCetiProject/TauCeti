@@ -222,6 +222,16 @@ theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K 
   obtain ⟨v, hv⟩ := h
   exact ⟨v, point_le_iff.mp hv.le⟩
 
+/-- A collapsible complex without free pairs is a one-vertex complex: a nonempty collapse
+sequence starts by deleting a free pair. -/
+theorem exists_eq_point_of_forall_not_isFreePair (h : Collapsible K)
+    (hK : ∀ σ τ, ¬ IsFreePair K σ τ) : ∃ v : ι, K = PreAbstractSimplicialComplex.point v := by
+  obtain ⟨v, hv⟩ := h
+  rcases hv.eq_or_exists_head with hKv | ⟨P, hP, -⟩
+  · exact ⟨v, hKv⟩
+  · obtain ⟨σ, τ, hfree, -⟩ := hP.exists_pair
+    exact (hK σ τ hfree).elim
+
 /-- A collapsible complex has finitely many faces. -/
 theorem finite_faces (h : Collapsible K) : K.faces.Finite := by
   obtain ⟨v, hv⟩ := h
