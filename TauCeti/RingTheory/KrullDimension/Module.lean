@@ -52,13 +52,12 @@ theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
     (hsurj : Function.Surjective (algebraMap R S)) : supportDim R M = supportDim S M := by
   have hmem (q : PrimeSpectrum S) :
       q.comap (algebraMap R S) ∈ support R M ↔ q ∈ support S M := by
+    refine ⟨?_, fun h ↦ support_subset_preimage_comap (R := R) (A := S) h⟩
     simp only [mem_support_iff']
-    refine exists_congr fun m ↦ ⟨?_, ?_⟩
-    · intro h s hs
-      obtain ⟨r, rfl⟩ := hsurj s
-      simpa only [algebraMap_smul] using h r hs
-    · intro h r hr
-      simpa only [algebraMap_smul] using h _ hr
+    rintro ⟨m, h⟩
+    refine ⟨m, fun s hs ↦ ?_⟩
+    obtain ⟨r, rfl⟩ := hsurj s
+    simpa only [algebraMap_smul] using h r hs
   let e : support S M ↪o support R M :=
     { toFun := fun q ↦ ⟨q.val.comap (algebraMap R S), (hmem q.val).2 q.property⟩
       inj' := fun _ _ h ↦ Subtype.ext <|
@@ -66,14 +65,11 @@ theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
       map_rel_iff' := Ideal.comap_le_comap_iff_of_surjective _ hsurj _ _ }
   refine (Order.krullDim_eq_of_orderIso (OrderIso.ofSurjective e ?_)).symm
   intro p
-  have hp : RingHom.ker (algebraMap R S) ≤ p.val.asIdeal := by
-    refine le_trans ?_ (annihilator_le_of_mem_support p.property)
-    intro r hr
-    rw [mem_annihilator]
-    intro m
-    rw [← algebraMap_smul S r m, RingHom.mem_ker.mp hr, zero_smul]
-  have hp : p.val ∈ PrimeSpectrum.zeroLocus (RingHom.ker (algebraMap R S) : Set R) := hp
-  rw [← range_comap_of_surjective S (algebraMap R S) hsurj] at hp
+  have hp : p.val ∈ Set.range (PrimeSpectrum.comap (algebraMap R S)) := by
+    rw [range_comap_of_surjective S (algebraMap R S) hsurj,
+      PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe]
+    exact ((Ideal.ker_le_comap (algebraMap R S)).trans_eq Module.comap_annihilator).trans
+      (annihilator_le_of_mem_support p.property)
   obtain ⟨q, hq⟩ := hp
   exact ⟨⟨q, (hmem q).1 (hq ▸ p.property)⟩, Subtype.ext hq⟩
 

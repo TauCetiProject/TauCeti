@@ -18,6 +18,8 @@ import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.Algebra.Homology.Ext.Equivalence
 import TauCeti.Data.ENat.Basic
 import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.KrullDimension.Regular
@@ -31,8 +33,9 @@ vanishing of `Ext (R ⧸ 𝔪) M`, and identifies it, for a finite nonzero modul
 ring, with the supremum of the lengths of `M`-regular sequences in `𝔪`. This file relates depth
 to dimension, quotients by regular sequences, short exact sequences and modules of linear maps,
 and, after localization, to associated primes. The short exact sequence bounds hold for
-`Ideal.depth I` over any commutative ring; the other results are for Noetherian local rings
-or, after localization, Noetherian rings.
+`Ideal.depth I` over any commutative ring. Invariance under ring isomorphisms and localization
+presentations needs no finiteness hypotheses; the dimension and regular-sequence results are for
+Noetherian local rings or, after localization, Noetherian rings.
 The regular-sequence transfer lemmas for linear maps live in
 `TauCeti.RingTheory.Regular.LinearMap`.
 
@@ -73,7 +76,9 @@ The regular-sequence transfer lemmas for linear maps live in
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
 * `IsLocalRing.depth_eq_depth_of_surjective`: along a surjective homomorphism of local rings
   `R → T`, a finite `T`-module has the same depth over `R` as over `T`.
-* `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
+* `IsLocalRing.depth_eq_depth_of_bijective`: restriction along an isomorphism of local rings
+  preserves depth, without finiteness or Noetherian hypotheses.
+* `RingEquiv.depth_self_eq`: isomorphic local rings have the same depth over
   themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
@@ -592,6 +597,39 @@ theorem depth_eq_depth_of_surjective [IsNoetherianRing R] {T : Type*} [CommRing 
     obtain ⟨h, hm⟩ := (key rs).1 ⟨h, hm⟩
     exact ⟨rs, h, hm, by rw [← hn, List.length_map]⟩
 
+/-- Restriction of scalars along a bijective homomorphism of local rings preserves depth,
+without finiteness or Noetherian hypotheses. -/
+theorem depth_eq_depth_of_bijective {T : Type*} [CommRing T] [IsLocalRing T] [Algebra R T]
+    [Small.{v} T] [Module T M] [IsScalarTower R T M]
+    (hbij : Function.Bijective (algebraMap R T)) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of T M) := by
+  let e := RingEquiv.ofBijective (algebraMap R T) hbij
+  let E : ModuleCat.{v} T ≌ ModuleCat.{v} R :=
+    ModuleCat.restrictScalarsEquivalenceOfRingEquiv e
+  have h (X Y : ModuleCat.{v} T) : X.depth Y = (E.functor.obj X).depth (E.functor.obj Y) := by
+    simp only [ModuleCat.depth]
+    congr 1
+    ext n
+    exact forall₂_congr fun i _ ↦ (E.extAddEquiv X Y i).toEquiv.subsingleton_congr
+  let eR : R ≃ₐ[R] T := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  let k := (Ideal.quotientEquivAlg (maximalIdeal R) (maximalIdeal T) eR
+    (map_ringEquiv_maximalIdeal e).symm).toLinearEquiv
+  -- Transfer the quotient's scalar tower to the small model used in the definition of depth.
+  have : IsScalarTower R T (Shrink.{v} (T ⧸ maximalIdeal T)) :=
+    (equivShrink (T ⧸ maximalIdeal T)).symm.isScalarTower R T
+  unfold depth Ideal.depth
+  refine ((h _ _).trans ?_).symm
+  have he : e.toRingHom = algebraMap R T := by ext; rfl
+  dsimp only [E, ModuleCat.restrictScalarsEquivalenceOfRingEquiv]
+  rw [he, ModuleCat.depth_eq_of_iso_left _
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := T) (Shrink.{v} (T ⧸ maximalIdeal T))),
+    ModuleCat.depth_eq_of_iso_right _
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := T) M)]
+  exact ModuleCat.depth_eq_of_linearEquiv
+    ((Shrink.linearEquiv.{v} R (T ⧸ maximalIdeal T)).trans
+      (k.symm.trans (Shrink.linearEquiv.{v} R (R ⧸ maximalIdeal R)).symm))
+    (LinearEquiv.refl R M)
+
 /-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
 prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
 theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
@@ -680,30 +718,7 @@ theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R]
   have : IsScalarTower R A B := .of_algHom e.toAlgHom
   have : IsScalarTower R A N := .to₁₂₄ R A B N
   have : Small.{w} A := small_map e.toEquiv
-  -- Restriction along the ring isomorphism preserves Ext without finiteness hypotheses.
-  have hdepth : depth (ModuleCat.of B N) = depth (ModuleCat.of A N) := by
-    let F := ModuleCat.restrictScalars.{w} e.toRingEquiv.toRingHom
-    have : F.IsEquivalence := ModuleCat.restrictScalars_isEquivalence_of_ringEquiv e.toRingEquiv
-    -- Use the equivalence's adjoints, which do not impose relations on the ring universes.
-    have : F.IsLeftAdjoint := F.asEquivalence.isLeftAdjoint_functor
-    have : F.IsRightAdjoint := F.asEquivalence.symm.isRightAdjoint_inverse
-    have h (X Y : ModuleCat.{w} B) : X.depth Y = (F.obj X).depth (F.obj Y) := by
-      simp only [ModuleCat.depth]
-      congr 1
-      ext n
-      exact forall₂_congr fun i _ ↦ (Equiv.ofBijective _
-        (F.mapExt_bijective_of_preservesProjectiveObjects X Y i)).subsingleton_congr
-    let eA : A ≃ₐ[A] B := { __ := e.toRingEquiv, commutes' := fun _ ↦ rfl }
-    let k := (ResidueField.mapAlgEquiv eA).toLinearEquiv
-    have : Small.{w} (ResidueField B) := inferInstanceAs (Small.{w} (B ⧸ maximalIdeal B))
-    have : Small.{w} (ResidueField A) := inferInstanceAs (Small.{w} (A ⧸ maximalIdeal A))
-    unfold depth Ideal.depth
-    refine (h _ _).trans ?_
-    exact ModuleCat.depth_eq_of_linearEquiv
-      ((Shrink.linearEquiv.{w} A (ResidueField B)).trans
-        (k.symm.trans (Shrink.linearEquiv.{w} A (ResidueField A)).symm))
-      (LinearEquiv.refl A N)
-  rw [hdepth]
+  rw [← depth_eq_depth_of_bijective (R := A) e.bijective]
   exact (depth_eq_of_linearEquiv
     ((IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A)).symm
 
@@ -713,25 +728,18 @@ namespace RingEquiv
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
 
-/-- A ring isomorphism carries regular sequences in the maximal ideal to regular sequences in the
-maximal ideal, so it can only increase the depth of a Noetherian local ring over itself. -/
-private theorem depth_self_le [IsNoetherianRing R] [IsNoetherianRing S] (e : R ≃+* S) :
-    depth (ModuleCat.of R R) ≤ depth (ModuleCat.of S S) := by
-  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
-  refine sSup_le_sSup ?_
-  rintro _ ⟨rs, reg, mem, rfl⟩
-  have := RingHomInvPair.of_ringEquiv e
-  have := RingHomInvPair.of_ringEquiv_symm e
-  refine ⟨rs.map e, (e.toSemilinearEquiv.isRegular_congr' rs).1 reg, ?_, by simp⟩
-  simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-  intro r hr
-  simpa [mem_maximalIdeal, mem_nonunits_iff] using mem r hr
-
-/-- Isomorphic Noetherian local rings have the same depth over themselves. -/
-theorem depth_self_eq [IsNoetherianRing R] (e : R ≃+* S) :
-    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) :=
-  have : IsNoetherianRing S := isNoetherianRing_of_ringEquiv R e
-  le_antisymm (depth_self_le e) (depth_self_le e.symm)
+/-- Isomorphic local rings have the same depth over themselves. -/
+theorem depth_self_eq (e : R ≃+* S) :
+    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) := by
+  let : Algebra R S := e.toRingHom.toAlgebra
+  let eR : R ≃ₐ[R] S := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  -- Lift the regular module to a universe containing both scalar rings.
+  let N := ULift.{u} S
+  calc
+    depth (ModuleCat.of R R) = depth (ModuleCat.of R N) :=
+      depth_eq_of_linearEquiv (eR.toLinearEquiv.trans ULift.moduleEquiv.symm)
+    _ = depth (ModuleCat.of S N) := depth_eq_depth_of_bijective e.bijective
+    _ = depth (ModuleCat.of S S) := depth_eq_of_linearEquiv ULift.moduleEquiv
 
 end RingEquiv
 
