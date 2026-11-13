@@ -68,6 +68,38 @@ theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed
 
 end Support
 
+section Pairing
+
+variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Fibrewise continuous linear map evaluation does not enlarge the support of a
+`C^n` section. -/
+theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[𝕜] G) :
+    _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
+  apply closure_minimal _ s.isClosed_tsupport
+  exact Function.support_subset_iff'.2 fun x hx ↦ by
+    simp [s.eq_zero_of_notMem_tsupport hx]
+
+/-- A field of continuous linear maps evaluates continuously on a `C^n` section on its
+continuity domain. -/
+theorem continuousOn_clm_apply (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M}
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U)) :
+    ContinuousOn (fun x ↦ η x (s x)) U :=
+  hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
+
+/-- Evaluating a field of continuous linear maps on a `C^n` section supported in an open
+continuity domain gives a continuous `G`-valued function on the whole base. -/
+theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M} (hU : IsOpen U)
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
+    (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
+  exact (s.continuousOn_clm_apply hη).continuous_of_tsupport_subset hU
+    ((s.tsupport_clm_apply_subset η).trans hsU)
+
+end Pairing
+
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
 @[simp]
