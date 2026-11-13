@@ -21,8 +21,7 @@ This file proves the **critical Sobolev embedding in the `p < n` regime** on
 `‖u‖_{p⋆} ≤ C ‖∇u‖_p` for every `u ∈ W^{1,p}_0(Ω)`,
 
 and it bundles the resulting map `u ↦ u` as a continuous linear map
-`W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`. This is the `p < n` half of Lane A.4 of
-`TauCetiRoadmap/PDE/README.md`; the Morrey regime `p > n` and the borderline `p = n` are not
+`W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`. The Morrey regime `p > n` and the borderline `p = n` are not
 proved here.
 
 ## Consuming Gagliardo--Nirenberg--Sobolev
@@ -77,9 +76,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 
 ## References
 
-The `p < n` half of Lane A.4 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans, *Partial
-Differential Equations*, Section 5.6.1; H. Brezis, *Functional Analysis, Sobolev Spaces and
-Partial Differential Equations*, Corollary 9.9.
+L. C. Evans, *Partial Differential Equations*, Section 5.6.1; H. Brezis, *Functional Analysis,
+Sobolev Spaces and Partial Differential Equations*, Corollary 9.9.
 -/
 
 public section
@@ -95,7 +93,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-! ### Sobolev estimates on a measurable support -/
+/-! ### Sobolev estimates on a set of finite measure -/
 
 /-- For `q ≥ 2`, the Hölder exponent `1 - 2/q` is nonnegative (it is `1` at `q = ∞`). -/
 theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
@@ -113,12 +111,32 @@ which `v` vanishes, bounds `∫_Ω v²` by `S² ‖∇v‖₂² μ(Ω ∩ A)^{1 
 theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
     {v : W1p mu Omega 2}
     (hS : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
-    {A : Set E} (hA : MeasurableSet A)
+    {A : Set E}
     (hAfin : mu ((Omega : Set E) ∩ A) ≠ (∞ : ℝ≥0∞))
     (hvA : ∀ᵐ x ∂mu.restrict Omega, x ∉ A → W1p.value v x = 0) :
     ∫ x in Omega, W1p.value v x ^ 2 ∂mu ≤
       S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
         mu.real ((Omega : Set E) ∩ A) ^ (1 - 2 / q.toReal) := by
+  suffices key : ∀ B : Set E, MeasurableSet B → mu ((Omega : Set E) ∩ B) ≠ (∞ : ℝ≥0∞) →
+      (∀ᵐ x ∂mu.restrict Omega, x ∉ B → W1p.value v x = 0) →
+      ∫ x in Omega, W1p.value v x ^ 2 ∂mu ≤
+        S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
+          mu.real ((Omega : Set E) ∩ B) ^ (1 - 2 / q.toReal) by
+    -- Replace `A` by a measurable hull of `Ω ∩ A`, which has the same intersection measure.
+    obtain ⟨A', hA', hAA', hmeas⟩ : ∃ A' : Set E, MeasurableSet A' ∧
+        (Omega : Set E) ∩ A ⊆ A' ∧ mu A' = mu ((Omega : Set E) ∩ A) :=
+      ⟨toMeasurable mu ((Omega : Set E) ∩ A), measurableSet_toMeasurable _ _,
+        subset_toMeasurable _ _, measure_toMeasurable _⟩
+    have hinter : mu ((Omega : Set E) ∩ A') = mu ((Omega : Set E) ∩ A) :=
+      le_antisymm ((measure_mono inter_subset_right).trans hmeas.le)
+        (measure_mono (subset_inter inter_subset_left hAA'))
+    have hvA' : ∀ᵐ x ∂mu.restrict Omega, x ∉ A' → W1p.value v x = 0 := by
+      filter_upwards [hvA, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ hxA'
+      exact hx fun hxA => hxA' (hAA' ⟨hxΩ, hxA⟩)
+    rw [show mu.real ((Omega : Set E) ∩ A) = mu.real ((Omega : Set E) ∩ A') by
+      rw [measureReal_def, measureReal_def, hinter]]
+    exact key A' hA' (hinter ▸ hAfin) hvA'
+  intro A hA hAfin hvA
   set β : ℝ := 1 / (2 : ℝ≥0∞).toReal - 1 / q.toReal
   have hβ : 0 ≤ β := by
     have := one_sub_two_div_toReal_nonneg hq
@@ -149,7 +167,7 @@ theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {
       mu ((Omega : Set E) ∩ A) ^ β ≠ (∞ : ℝ≥0∞) :=
     ENNReal.mul_ne_top (by finiteness) (ENNReal.rpow_ne_top_of_nonneg hβ hAfin)
   have hreal := ENNReal.toReal_mono hfin hle
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_enorm,
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_eNorm,
     ENNReal.coe_toReal, ← measureReal_def] at hreal
   rw [W1p.integral_value_sq_eq_norm_value_sq, Lp.norm_def]
   calc (eLpNorm (W1p.value v) 2 (mu.restrict Omega)).toReal ^ 2
@@ -186,7 +204,7 @@ theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
       ((map_continuous (W1p.gradientL (mu := mu) (Omega := Omega) (p := p))).tendsto u).comp hvu
   have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
       (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
+    ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto _).comp hgradient)
       (Or.inr ENNReal.coe_ne_top)
   obtain ⟨ns, hns, hae⟩ :=
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
@@ -338,7 +356,7 @@ theorem norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp (hpstar : pstar �
     (W1p.ofTestFunctionₗ_mem_w1p0Submodule (mu := mu) (p := p) phi)
   rw [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
     eLpNorm_congr_ae (testFunctionLp_apply_ae p phi)] at h
-  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_enorm]
+  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_eNorm]
   simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-! ### Subcritical exponents on a bounded domain -/

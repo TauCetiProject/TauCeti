@@ -123,7 +123,7 @@ theorem integral_id_halfStudentTMeasure (hν : 1 < ν) (hs : 0 < s) :
 @[simp]
 theorem integral_sq_halfStudentTMeasure (hν : 2 < ν) (hs : 0 < s) :
     ∫ x, x ^ 2 ∂halfStudentTMeasure ν s = s ^ 2 * ν / (ν - 2) := by
-  rw [halfStudentTMeasure_of_pos (zero_lt_two.trans hν) hs,
+  rw [halfStudentTMeasure_of_pos hs,
     integral_map (by fun_prop) (by fun_prop)]
   simp only [mul_pow, sq_abs]
   rw [integral_const_mul, integral_sq_studentTMeasure hν, mul_div_assoc]

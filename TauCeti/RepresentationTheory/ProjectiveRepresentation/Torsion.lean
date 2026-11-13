@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Finite
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.RootsOfUnity
 import Mathlib.Algebra.CharP.Reduced
+import Mathlib.GroupTheory.FiniteAbelian.Basic
 
 /-!
 # The characteristic does not divide the order of a factor-set class
@@ -20,6 +22,8 @@ This permits finite cyclic summands of second cohomology to be realized by roots
 of their exact orders, including in positive characteristic. These kernels are used to
 construct finite central stem extensions with bijective character transgression.
 No finiteness assumption on the group is needed for the torsion statements.
+For a finite group, `TauCeti.exists_cyclic_generators_schurMultiplier` decomposes second
+cohomology into cyclic summands whose orders are nonzero in the field.
 
 ## References
 
@@ -70,5 +74,44 @@ theorem schurMultiplier_natCast_addOrderOf_ne_zero (x : schurMultiplier k G)
       (Nat.div_lt_self (Nat.pos_of_ne_zero hx) hp.one_lt))
         (addOrderOf_dvd_of_nsmul_eq_zero hsmall)
   · exact hx (zero_dvd_iff.mp (hp ▸ hdiv))
+
+variable (k G) [Finite G] in
+/-- The second cohomology `H²(G, kˣ)` of a finite group has cyclic generators `x i` whose orders
+`n i` are nonzero in `k`, and its cardinality is the product of the orders. -/
+theorem exists_cyclic_generators_schurMultiplier :
+    ∃ (ι : Type) (_ : Fintype ι) (n : ι → ℕ)
+      (x : ι → groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)),
+      (∀ i, (n i : k) ≠ 0) ∧ (∀ i, n i • x i = 0) ∧
+      (∀ y, ∃ c : ι → ℕ, y = ∑ i, c i • x i) ∧
+      Nat.card (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) = ∏ i, n i := by
+  classical
+  -- Choose cyclic generators of second cohomology, each with its own annihilating order.
+  let : Finite (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) :=
+    inferInstanceAs (Finite (schurMultiplier k G))
+  obtain ⟨ι, hι, n, hn, ⟨e₀⟩⟩ :=
+    AddCommGroup.equiv_directSum_zmod_of_finite'
+      (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ))
+  let e := e₀.trans (DirectSum.addEquivProd (fun i ↦ ZMod (n i)))
+  let x (i : ι) : groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ) := e.symm (Pi.single i 1)
+  have hne : ∀ i, NeZero (n i) := fun i ↦ ⟨by have := hn i; omega⟩
+  have horder (i : ι) : addOrderOf (x i) = n i := by
+    dsimp only [x]
+    rw [e.symm.addOrderOf_eq]
+    simpa only [AddMonoidHom.single_apply, ZMod.addOrderOf_one] using
+      addOrderOf_injective (AddMonoidHom.single (fun j ↦ ZMod (n j)) i)
+        (by simpa only [AddMonoidHom.coe_single] using
+          Pi.single_injective (M := fun j ↦ ZMod (n j)) i) (1 : ZMod (n i))
+  have hx (i : ι) : n i • x i = 0 := horder i ▸ addOrderOf_nsmul_eq_zero (x i)
+  refine ⟨ι, hι, n, x, fun i ↦ ?_, hx, fun y ↦ ⟨fun i ↦ (e y i).val, ?_⟩, ?_⟩
+  · rw [← horder i]
+    exact schurMultiplier_natCast_addOrderOf_ne_zero (x i) (horder i ▸ (hne i).out)
+  · apply e.injective
+    simp only [x]
+    rw [map_sum e]
+    simp_rw [map_nsmul e, AddEquiv.apply_symm_apply]
+    simp only [← Pi.single_smul, nsmul_eq_mul, mul_one, ZMod.natCast_zmod_val]
+    exact (Finset.univ_sum_single (e y)).symm
+  · rw [Nat.card_congr e.toEquiv, Nat.card_pi]
+    simp only [Nat.card_zmod]
 
 end TauCeti

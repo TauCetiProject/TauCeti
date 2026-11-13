@@ -69,6 +69,13 @@ surjective exactly when `G_x` is discrete
 particular every point with trivial stabilizer is a regular point of `μ`: for a symplectic form and
 a free action, every value of `μ` is a regular value.
 
+For a group-level moment map the differential is itself equivariant,
+`dμ_{g • x} ∘ d(g •)_x = Ad*_g ∘ dμ_x`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_smul_mfderiv`), so the regular points
+of `μ` form a `G`-invariant set. Hence if `c` is a regular value, `μ` is a submersion at every
+point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap σ μ`: `μ` is a coadjoint-equivariant moment map
@@ -107,6 +114,10 @@ a free action, every value of `μ` is a regular value.
   case of a trivial stabilizer.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: conversely, the cocycle of
   a group-level moment map vanishes at every point.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_smul_iff`: `dμ_{g • x}` is
+  surjective exactly when `dμ_x` is, and
+  `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`: a group-level
+  moment map is a submersion over the coadjoint orbit of a regular value.
 
 ## References
 
@@ -178,10 +189,10 @@ end Defect
 
 namespace SmoothTwoForm
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
-  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
@@ -191,6 +202,10 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
 local instance lieGroupOne : LieGroup I 1 G :=
   LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
     ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+
+section Complete
+
+variable [CompleteSpace E] [CompleteSpace E']
 
 variable (σ) in
 /-- `μ : M → 𝔤*` is a **group-level moment map** of the smooth action of `G` on `(M, σ)` when it
@@ -336,11 +351,17 @@ theorem isEquivariantMomentMap_iff_exists_eq_add [PreconnectedSpace M]
 
 end IsEquivariantMomentMap
 
+end Complete
+
 /-! ### The infinitesimal defect -/
 
 namespace IsMomentMap
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
+section CompleteSpace
+
+variable [CompleteSpace E']
 
 /-- Each component `g ↦ θ(g, x)(ξ)` of the defect of a moment map is smooth. -/
 private theorem contMDiff_momentDefect_apply
@@ -437,6 +458,8 @@ theorem isEquivariantMomentMap_of_momentCocycle_eq_zero [PreconnectedSpace G]
     h.momentDefect_eq_zero_of_mem_connectedComponent_one hσ hc
       (by simp [PreconnectedSpace.connectedComponent_eq_univ])⟩)
 
+end CompleteSpace
+
 /-! ### Locally free points are regular -/
 
 variable [T2Space M] [BoundarylessManifold I' M] [FiniteDimensional ℝ E']
@@ -468,7 +491,7 @@ end IsMomentMap
 
 namespace IsEquivariantMomentMap
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+variable [FiniteDimensional ℝ E] [CompleteSpace E'] [LieGroup I ∞ G]
 
 /-- **A group-level moment map is infinitesimally equivariant**: its cocycle vanishes at every
 point, `σ(ξ_M, η_M) = μ_{⁅ξ, η⁆}`. The defect of an equivariant moment map vanishes identically,
@@ -484,11 +507,62 @@ theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
 
 end IsEquivariantMomentMap
 
+/-! ### Regular points along coadjoint orbits -/
+
+namespace IsEquivariantMomentMap
+
+variable [CompleteSpace E] [CompleteSpace E']
+
+/-- **The differential of a group-level moment map is equivariant**:
+`dμ_{g • x} (d(g •)_x v) = Ad*_g (dμ_x v)`. -/
+theorem differential_smul_mfderiv (h : σ.IsEquivariantMomentMap μ) (g : G) (x : M)
+    (v : TangentSpace I' x) :
+    h.toIsMomentMap.differential (g • x) (mfderiv I' I' (fun y : M ↦ g • y) x v) =
+      Lie.coadjointRepresentation ℝ I G g (h.toIsMomentMap.differential x v) := by
+  ext ξ
+  rw [IsMomentMap.differential_apply, Lie.coadjointRepresentation_apply,
+    IsMomentMap.differential_apply, ← mvfderiv_comp_apply x
+      (h.toIsMomentMap.mdifferentiableAt ξ (g • x))
+      ((ContMDiffSMul.contMDiff_const_smul (I := I) (n := ∞) g).mdifferentiableAt (by simp)) v]
+  -- The component `μ_ξ ∘ (g • ·)` is the component `μ_{Ad_{g⁻¹} ξ}`, by equivariance.
+  congr 2
+  funext y
+  rw [Function.comp_apply, h.apply_smul, Lie.coadjointRepresentation_apply]
+
+/-- **Regular points of a group-level moment map form invariant sets**: `dμ_{g • x}` is surjective
+exactly when `dμ_x` is. -/
+theorem differential_surjective_smul_iff (h : σ.IsEquivariantMomentMap μ) (g : G) (x : M) :
+    Function.Surjective (h.toIsMomentMap.differential (g • x)) ↔
+      Function.Surjective (h.toIsMomentMap.differential x) := by
+  -- If `dμ_x` is surjective, so is `dμ_{g • x}`, since it hits `Ad*_g (dμ_x v)` for every `v`.
+  have key : ∀ (g : G) (x : M), Function.Surjective (h.toIsMomentMap.differential x) →
+      Function.Surjective (h.toIsMomentMap.differential (g • x)) := fun g x hx ν ↦ by
+    obtain ⟨v, hv⟩ := hx (Lie.coadjointRepresentation ℝ I G g⁻¹ ν)
+    exact ⟨_, by rw [h.differential_smul_mfderiv, hv, Representation.self_inv_apply]⟩
+  refine ⟨fun hx ↦ ?_, key g x⟩
+  have hy := key g⁻¹ (g • x) hx
+  rwa [inv_smul_smul] at hy
+
+/-- **A group-level moment map is a submersion over the coadjoint orbit of a regular value.** If
+`dμ` is surjective at every point of the level `μ⁻¹(c)`, it is surjective at every point `x` with
+`μ x = Ad*_g c`, that is, at every point of `μ⁻¹(G · c)`. -/
+theorem differential_surjective_of_apply_eq (h : σ.IsEquivariantMomentMap μ)
+    {c : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hreg : ∀ y, μ y = c → Function.Surjective (h.toIsMomentMap.differential y)) {g : G} {x : M}
+    (hx : μ x = Lie.coadjointRepresentation ℝ I G g c) :
+    Function.Surjective (h.toIsMomentMap.differential x) := by
+  have hy : μ (g⁻¹ • x) = c := by
+    rw [h.apply_smul, hx, Representation.inv_self_apply]
+  have hx' := (h.differential_surjective_smul_iff g (g⁻¹ • x)).2 (hreg _ hy)
+  rwa [smul_inv_smul] at hx'
+
+end IsEquivariantMomentMap
+
 /-! ### Disconnected groups -/
 
 namespace IsMomentMap
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+variable [FiniteDimensional ℝ E] [CompleteSpace E'] [LieGroup I ∞ G]
 
 /-- **Equivariance over a disconnected group.** Let `G` act by symplectomorphisms of a
 preconnected manifold, and let `S ⊆ G` meet every connected component of `G`. A moment map of the

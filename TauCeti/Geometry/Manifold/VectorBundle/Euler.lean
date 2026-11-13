@@ -139,13 +139,19 @@ theorem mfderiv_vectorBundleEulerField_of_linear {E' H' B' F' : Type*} [NormedAd
     rw [Function.comp_apply, hfφ, hfφ z, map_smul]
   rw [mfderiv_vectorBundleEulerField hf, hline, vectorBundleEulerField]
 
+omit [VectorBundle 𝕜 F V] in
 /-- The Euler vector field vanishes along the zero section. -/
 @[simp]
 theorem vectorBundleEulerField_zero (b : B) :
     vectorBundleEulerField I (⟨b, 0⟩ : TotalSpace F V) = 0 := by
-  rw [vectorBundleEulerField_eq_trivializationAt]
-  exact Prod.ext rfl (((trivializationAt F V b).linear 𝕜
-    (FiberBundle.mem_baseSet_trivializationAt F V b)).map_zero)
+  -- The line `t ↦ t • 0` is the constant curve at the zero of the fibre.
+  have hline : (fun t : 𝕜 ↦ (⟨(⟨b, 0⟩ : TotalSpace F V).proj, t • (⟨b, 0⟩ : TotalSpace F V).2⟩ :
+      TotalSpace F V)) = fun _ ↦ ⟨b, 0⟩ :=
+    funext fun t ↦ by simp
+  rw [vectorBundleEulerField, hline, mfderiv_const]
+  -- The goal `(0 : TangentSpace _ 1 →L[𝕜] TangentSpace _ _) 1 = 0` holds by definition:
+  -- `TangentSpace` is a type synonym, so the generic `zero_apply` instance does not fire.
+  rfl
 
 /-- The Euler vector field is **vertical**: the derivative of the bundle projection kills it. -/
 @[simp]
@@ -224,11 +230,9 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
 
 /-- **The Euler vector field is complete**: through every vector `z` of a real vector bundle, the
 fibre dilation `t ↦ e^t • z` is an integral curve defined for all time. -/
-theorem isCompleteVectorField_vectorBundleEulerField [T2Space (TotalSpace F V)]
-    [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
-    [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] :
+theorem isCompleteVectorField_vectorBundleEulerField :
     IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) :=
-  (isCompleteVectorField_iff_exists_isMIntegralCurve contMDiff_vectorBundleEulerField).2 fun z ↦
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun z ↦
     ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
 
 end Real

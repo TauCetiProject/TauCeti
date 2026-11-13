@@ -63,7 +63,7 @@ theorem signedArea_eq_jordanSign_mul_volume_real (hab : a < b)
     (hinj : InjOn γ (Ico a b)) :
     TauCeti.signedArea γ a b = (TauCeti.Contour.jordanSign γ a b : ℝ) *
       volume.real (TauCeti.filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)) :=
-  TauCeti.signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq hab hγ hclosed _
+  TauCeti.signedArea_eq_intCast_mul_volume_real_of_windingNumber_eq hγ hclosed _
     fun _ hz ↦ hγ.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hab hclosed hinj hz
 
 /-- **The signed area of a simple closed absolutely continuous curve is the enclosed area up to

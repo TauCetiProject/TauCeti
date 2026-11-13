@@ -50,7 +50,6 @@ theorem ContDiff.sub_eq_integral_fderiv_rotation {f : E → F} (hf : ContDiff �
         (ContinuousLinearMap.rotation θ p).2) θ := by
     have hγ := ((hasDerivAt_cos θ).smul_const p.1).add ((hasDerivAt_sin θ).smul_const p.2)
     exact (hf.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt θ hγ
-  have hcont : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun θ _ ↦ hd θ)]
   · simp
   · refine Continuous.intervalIntegrable ?_ _ _

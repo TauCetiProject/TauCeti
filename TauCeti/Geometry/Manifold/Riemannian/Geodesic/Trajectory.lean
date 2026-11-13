@@ -53,8 +53,6 @@ to define the Riemannian exponential map by evaluation at time one.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 5.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle CovariantDerivative Function Manifold Set

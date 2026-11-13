@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.Matrix.Submatrix
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 

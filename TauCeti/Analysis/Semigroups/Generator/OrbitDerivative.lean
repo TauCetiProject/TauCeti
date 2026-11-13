@@ -212,12 +212,18 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
   rw [S.realOperator_generator_map x]
   exact hg.congr (fun s hs => horbit s hs) (horbit t ht.le)
 
-/-- The orbit of a generator-domain vector is right-differentiable at every nonnegative time. -/
+/-- The orbit of a generator-domain vector is right-differentiable at every time. -/
 theorem realOperator_differentiableWithinAt (S : StronglyContinuousSemigroup X)
-    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
-    DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t :=
-  (S.realOperator_hasDerivWithinAt ht
-    (S.realOperator_mem_domain x.property)).differentiableWithinAt
+    (x : S.domain) (t : ℝ) :
+    DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact (S.realOperator_hasDerivWithinAt ht
+      (S.realOperator_mem_domain x.property)).differentiableWithinAt
+  · -- before time `0` the orbit is constant
+    refine (differentiableWithinAt_const (x : X)).congr_of_eventuallyEq ?_
+      (S.realOperator_of_nonpos_apply ht.le _)
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (Iio_mem_nhds ht)] with s hs
+    exact S.realOperator_of_nonpos_apply hs.le _
 
 /-- The right derivative of an orbit at a nonnegative time is the generator evaluated on the
 evolved vector, provided that vector belongs to the generator domain. -/

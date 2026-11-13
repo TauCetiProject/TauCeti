@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PointwiseDecay
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 import TauCeti.LinearAlgebra.Complex.Module
@@ -165,7 +165,7 @@ exterior `‖z‖ > R` of a disc, with compact image, uniformly positive taming 
 structure near its image and integrable energy density, converges as `z → ∞` to a point of the
 compact set `K` containing its image. -/
 theorem exists_tendsto_cocompact_of_finite_energy
-    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
     (hu : ContDiffOn ℝ 3 u (closedBall 0 R)ᶜ)
@@ -174,6 +174,12 @@ theorem exists_tendsto_cocompact_of_finite_energy
     (htame : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
     (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
     ∃ q ∈ K, Tendsto u (cocompact ℂ) (𝓝 q) := by
+  -- A radius `R ≤ 0` is replaced by `1`: the exterior of the unit disc is smaller.
+  wlog hR : 0 < R generalizing R
+  · have hS : (closedBall (0 : ℂ) 1)ᶜ ⊆ (closedBall (0 : ℂ) R)ᶜ :=
+      compl_subset_compl.2 (closedBall_subset_closedBall (by linarith [not_lt.1 hR]))
+    exact this (hu.mono hS) (fun z hz ↦ hCR z (hS hz)) (huK.mono_left hS)
+      (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
   have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
   have hdu : DifferentiableOn ℝ u (closedBall 0 R)ᶜ := hu.differentiableOn (by norm_num)
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
@@ -206,7 +212,7 @@ theorem exists_continuous_onePoint_elim_of_finite_energy
     (htame : ∀ z v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
     (henergy : Integrable (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)) :
     ∃ q ∈ K, Continuous (fun x : OnePoint ℂ ↦ x.elim q u) := by
-  obtain ⟨q, hqK, hlim⟩ := ω.exists_tendsto_cocompact_of_finite_energy hg hc one_pos hW hJ hK
+  obtain ⟨q, hqK, hlim⟩ := ω.exists_tendsto_cocompact_of_finite_energy (R := 1) hg hc hW hJ hK
     hKW hJsq hu.contDiffOn (fun z _ ↦ hCR z) (fun z _ ↦ huK z) (fun z _ ↦ htame z)
     henergy.integrableOn
   refine ⟨q, hqK, (OnePoint.continuous_iff _).2 ⟨?_, hu.continuous⟩⟩
