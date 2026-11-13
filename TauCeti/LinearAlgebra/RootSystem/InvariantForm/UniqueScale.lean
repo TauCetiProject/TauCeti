@@ -31,8 +31,6 @@ metrics of a general root system by one positive scale per component.
 
 ## Main results
 
-* `RootPairing.InvariantForm.ext`: an invariant form is determined by its bilinear form, and the
-  unit multiples `c • B` of an invariant form are invariant forms.
 * `RootPairing.InvariantForm.form_eq_smul_of_apply_root_root_eq`: an invariant form is determined by
   its value on one root.
 * `RootPairing.InvariantForm.existsUnique_form_eq_smul`: over a field, two invariant forms differ by
@@ -58,25 +56,6 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
   [Module R N] {P : RootPairing ι R M N}
 
 namespace InvariantForm
-
-/-- An invariant form is determined by its underlying bilinear form. -/
-@[ext]
-theorem ext {B C : P.InvariantForm} (h : B.form = C.form) : B = C := by
-  cases B
-  cases C
-  congr
-
-/-- A unit multiple of an invariant form is again an invariant form. -/
-instance instSMulUnits : SMul Rˣ P.InvariantForm where
-  smul c B :=
-    { form := (c : R) • B.form
-      symm := ⟨fun x y ↦ by simpa using congrArg ((c : R) * ·) (B.symm.eq x y)⟩
-      ne_zero i := by simpa using B.ne_zero i
-      isOrthogonal_reflection i x y := by simp [B.isOrthogonal_reflection i x y] }
-
-@[simp]
-theorem smul_form (c : Rˣ) (B : P.InvariantForm) : (c • B).form = (c : R) • B.form :=
-  (rfl)
 
 /-- **An invariant form on an irreducible root pairing is determined by its value on one root.**
 If `C (α, α) = c * B (α, α)` for one root `α`, then `C = c • B`. -/
