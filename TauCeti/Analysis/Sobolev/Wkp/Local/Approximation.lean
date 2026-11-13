@@ -25,11 +25,15 @@ then multiplies the smooth representative by a fixed test function equal to one 
 smaller domain. Interior derivative identities identify all its derivatives with mollified
 weak derivative fields.
 
-The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to
-zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a map `A` continuous on `Ω` whose weak
+The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to zero
+(`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a map `A` continuous on `Ω` whose weak
 derivative is `Lᵖ` on compact subsets, they converge uniformly on every compact `K ⊆ Ω`, with
 derivatives converging in `Lᵖ(K)`
-(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn`).
+(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn`). For a `W^{2,p}(Ω)` function
+with a continuous representative `ū`, a single mollification is then a smooth function close to `ū`
+uniformly on a given compact subset `K` of `Ω` and with Hessian close to the weak Hessian in `Lᵖ(K)`
+(`TauCeti.Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le`). This is how estimates
+for classical solutions of second-order equations pass to strong solutions.
 
 ## References
 
@@ -326,5 +330,57 @@ theorem _root_.TauCeti.HasWeakFDerivOn.exists_contDiff_tendsto_of_continuousOn {
           (φ n) x (hn x hxK)
     rw [eLpNorm_congr_ae hae]
     exact eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)
+
+/-- **Smooth approximation of a `W^{2,p}` function on a compact set.** Let `u ∈ W^{2,p}(Ω)`,
+`p < ∞`, have a representative `ū` continuous on `Ω`, and let `K ⊆ Ω` be compact. For every
+`η > 0` there is a smooth function `v` on the whole space with `|v - ū| ≤ η` on `K` whose Hessian
+`D²v` is within `η` of the weak Hessian of `u` in `Lᵖ(K)`. -/
+theorem exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le (hp : p ≠ ∞)
+    (u : Wkp mu Omega p 2) {ū : E → ℝ} (hcont : ContinuousOn ū Omega)
+    (hū : (value 2 u : E → ℝ) =ᵐ[mu.restrict Omega] ū) {K : Set E} (hK : IsCompact K)
+    (hKΩ : K ⊆ Omega) {η : ℝ} (hη : 0 < η) :
+    ∃ v : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) v ∧ (∀ y ∈ K, |v y - ū y| ≤ η) ∧
+      eLpNorm (fun y => fderiv ℝ (∇ v) y - iteratedGradient 1 u y) p (mu.restrict K) ≤
+        ENNReal.ofReal η := by
+  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
+  obtain ⟨ρ, hρ, hucont⟩ := Metric.uniformContinuousOn_iff.1
+    ((hK.cthickening (r := δ)).uniformContinuousOn_of_continuous (hcont.mono hδΩ)) η hη
+  -- Mollifiers of radius `min δ ρ / (j + 2) < min δ ρ`.
+  set r : ℕ → ℝ := fun j => min δ ρ / ((j : ℝ) + 2)
+  have hr (j : ℕ) : 0 < r j := by have := lt_min hδ hρ; positivity
+  have hrlt (j : ℕ) : r j < min δ ρ :=
+    div_lt_self (lt_min hδ hρ) (by linarith [Nat.cast_nonneg (α := ℝ) j])
+  let phi : ℕ → ContDiffBump (0 : E) := fun j => ⟨r j / 2, r j, half_pos (hr j),
+    half_lt_self (hr j)⟩
+  have hphi : Tendsto (fun j => (phi j).rOut) atTop (𝓝 0) :=
+    (tendsto_const_nhds (x := min δ ρ)).div_atTop
+      (tendsto_atTop_add_const_right _ 2 tendsto_natCast_atTop_atTop)
+  -- Near each point of `K`, the bump balls stay in `Ω`.
+  have hball (j : ℕ) {y : E} (hy : y ∈ K) {z : E} (hz : z ∈ Metric.ball y (δ - r j)) :
+      Metric.closedBall z (phi j).rOut ⊆ Omega := by
+    refine Subset.trans ?_ ((Metric.closedBall_subset_cthickening hy δ).trans hδΩ)
+    refine Metric.closedBall_subset_closedBall' ?_
+    have hzy := Metric.mem_ball.1 hz
+    have hrj : (phi j).rOut = r j := rfl
+    rw [hrj]
+    linarith
+  have hrδ (j : ℕ) : 0 < δ - r j := sub_pos.2 ((hrlt j).trans_le (min_le_left _ _))
+  obtain ⟨j, hj⟩ := ((tendsto_eLpNorm_smoothField_sub hp hphi (iteratedGradient 1 u)).eventually
+    (ge_mem_nhds (ENNReal.ofReal_pos.2 hη))).exists
+  refine ⟨smoothField (phi j) (value 2 u), contDiff_smoothField _ _, fun y hy => ?_, ?_⟩
+  · -- The mollification at `y` averages `ū` over a ball of radius less than `ρ`.
+    rw [← Real.dist_eq]
+    refine dist_smoothField_le (phi j) hū
+      (Metric.ball_subset_closedBall.trans (hball j hy (Metric.mem_ball_self (hrδ j))))
+      fun z hz => (hucont z ?_ y (Metric.self_subset_cthickening K hy) ?_).le
+    · exact Metric.mem_cthickening_of_dist_le z y δ K hy
+        ((Metric.mem_ball.1 hz).le.trans ((hrlt j).le.trans (min_le_left _ _)))
+    · exact (Metric.mem_ball.1 hz).trans ((hrlt j).trans_le (min_le_right _ _))
+  · -- On `K` the Hessian of the mollification is the mollified weak Hessian.
+    refine le_trans (le_of_eq (eLpNorm_congr_ae ?_))
+      ((eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ le_rfl)).trans hj)
+    filter_upwards [ae_restrict_mem hK.measurableSet] with y hy
+    rw [Pi.sub_apply, fderiv_gradient_smoothField_value u (phi j)
+      (Filter.eventually_of_mem (Metric.ball_mem_nhds y (hrδ j)) fun z hz => hball j hy hz)]
 
 end TauCeti.Wkp
