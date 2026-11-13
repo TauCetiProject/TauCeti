@@ -58,6 +58,7 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k]
   [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
 
+omit [IsAlgClosed k] in
 /-- A Borel candidate lies in a conjugate of `D` as soon as every reduced connected closed
 subgroup with solvable rational points does. -/
 theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}

@@ -221,7 +221,7 @@ theorem spatialDeriv_inverse (v : X) :
     (a.inverse ha).spatialDeriv v =
       -((a.inverse ha).comp ((a.spatialDeriv v).comp (a.inverse ha))).castDegree (by ring) :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp [coefficient_spatialDeriv_eq_fderiv _ _ hξ,
+    simp [coefficient_spatialDeriv_eq_fderiv _ _,
       fderiv_coefficient_inverse a ha (p := (x, ξ)) hξ]
 
 /-- The frequency derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂_ξa ∘ a⁻¹)`; its

@@ -74,4 +74,18 @@ theorem commute_iff_exists_common_zpow (x y : G) :
   · rintro ⟨r, m, n, rfl, rfl⟩
     exact (Commute.refl r).zpow_zpow m n
 
+/-- For commuting elements `x` and `y` of a free group, one of `x`, `y` and `x * y` is a
+square. -/
+theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
+    ∃ z : G, x = z ^ 2 ∨ y = z ^ 2 ∨ x * y = z ^ 2 := by
+  obtain ⟨r, m, n, rfl, rfl⟩ := (commute_iff_exists_common_zpow x y).1 h
+  obtain ⟨k, rfl⟩ | ⟨k, rfl⟩ := Int.even_or_odd m
+  · exact ⟨r ^ k, .inl (by rw [pow_two, ← zpow_add])⟩
+  obtain ⟨l, rfl⟩ | ⟨l, rfl⟩ := Int.even_or_odd n
+  · exact ⟨r ^ l, .inr (.inl (by rw [pow_two, ← zpow_add]))⟩
+  · refine ⟨r ^ (k + l + 1), .inr (.inr ?_)⟩
+    rw [pow_two, ← zpow_add, ← zpow_add]
+    congr 1
+    omega
+
 end IsFreeGroup
