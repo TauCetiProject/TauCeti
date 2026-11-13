@@ -22,6 +22,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
@@ -130,7 +131,9 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
-  `C^(n+1)` functions is `C^n`.
+  `C^(n+1)` functions is `C^n`, and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket_uncurry`: the Poisson bracket
+  of two jointly `C^(n+1)` families of functions is jointly `C^n`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a linear map `D`
   with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` whose range contains `X_g(y)` carries `X_f(x)`
   to `X_g(y)`.
@@ -766,6 +769,22 @@ theorem contMDiff_poissonBracket {n : WithTop ℕ∞} (hn : n ≤ ∞) {f g : M 
     ContMDiff I 𝓘(ℝ) n (σ.poissonBracket f g) := by
   rw [funext (h.poissonBracket_eq_mvfderiv f g)]
   exact (hf.contMDiff_mvfderiv_apply le_rfl).comp (h.contMDiff_hamiltonianVectorField hn hg)
+
+/-- **Joint regularity of the Poisson bracket of a family.** For a nondegenerate two-form on a
+finite-dimensional manifold and two families of functions `f g : N → M → ℝ` which are jointly
+`C^(n+1)` on `N × M`, the Poisson bracket `(p, x) ↦ {f p, g p}(x)` is jointly `C^n`, for
+`n ≤ ∞`. -/
+theorem contMDiff_poissonBracket_uncurry {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J 1 N] {n : WithTop ℕ∞} (hn : n ≤ ∞) {f g : N → M → ℝ}
+    (hf : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry f))
+    (hg : ContMDiff (J.prod I) 𝓘(ℝ) (n + 1) (Function.uncurry g)) :
+    ContMDiff (J.prod I) 𝓘(ℝ) n (fun q : N × M ↦ σ.poissonBracket (f q.1) (g q.1) q.2) := by
+  -- Pair the jointly `C^n` differential of `f` with the jointly `C^n` field `X_g`, in the
+  -- trivial line bundle, and read off the fibre component.
+  have hc := ContMDiff.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ)
+    hf.contMDiff_totalSpaceMk_mvfderiv_uncurry (h.contMDiff_hamiltonianVectorField_uncurry hn hg)
+  exact (Bundle.Trivial.contMDiff_mk_iff.1 hc).2.congr fun _ ↦ h.poissonBracket_eq_mvfderiv _ _ _
 
 end IsNondegenerate
 
