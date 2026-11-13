@@ -25,8 +25,9 @@ For a Frobenius exact structure this is the Keller–Vossieck comparison functor
 ## Main definitions
 
 * `TauCeti.ExactStructure.singleToSingularity`: the functor `C ⥤ D_sg(E)` placing an object in
-  degree zero, with its defining comparison `singleToSingularityIso`.
-* `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`.
+  degree zero, with its defining equation `singleToSingularity_eq`.
+* `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`, with
+  the factorization `projectiveStableFunctor_comp_stableToSingularity`.
 
 ## References
 
@@ -52,10 +53,10 @@ noncomputable def singleToSingularity : C ⥤ E.SingularityCategory :=
 
 /-- The functor `C ⥤ D_sg(E)` places an object in degree zero of `Kᵇ(C)` and passes to the
 quotients `Dᵇ(E)` and `D_sg(E)`. -/
-noncomputable def singleToSingularityIso : E.singleToSingularity ≅
+theorem singleToSingularity_eq : E.singleToSingularity =
     HomotopyCategory.Bounded.singleFunctor C 0 ⋙ BoundedDerivedCategory.Q E ⋙
       SingularityCategory.Q E :=
-  Iso.refl _
+  (rfl)
 
 instance : E.singleToSingularity.Additive := by
   dsimp only [singleToSingularity]
@@ -65,7 +66,7 @@ instance : E.singleToSingularity.Additive := by
 theorem isZero_singleToSingularity_obj {P : C} (hP : E.isProjective P) :
     IsZero (E.singleToSingularity.obj P) :=
   ObjectProperty.TrWLocalization.isZero_obj E.boundedProjective (SingularityCategory.Q E)
-    (E.boundedProjective_Q_obj_singleFunctor_obj hP)
+    (E.boundedProjective_Q_obj_singleFunctor_obj 0 hP)
 
 /-- A morphism factoring through a projective object vanishes in the singularity category. -/
 theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
@@ -78,32 +79,31 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
 /-- The functor `stable(E) ⥤ D_sg(E)` induced by placing objects in degree zero. -/
 noncomputable def stableToSingularity :
     E.ProjectiveStableCategory ⥤ E.SingularityCategory :=
-  CategoryTheory.Quotient.lift _ E.singleToSingularity fun _ _ f g h ↦ by
-    rw [← sub_eq_zero, ← Functor.map_sub]
-    exact E.singleToSingularity_map_eq_zero ((MorphismIdeal.rel_iff _).1 h)
+  E.projectiveStableIdeal.lift E.singleToSingularity fun _ _ _ hf ↦
+    (Functor.mem_kerIdeal_hom _).2 (E.singleToSingularity_map_eq_zero hf)
+
+instance : E.stableToSingularity.Additive := by
+  dsimp only [stableToSingularity]
+  infer_instance
 
 /-- The functor `stable(E) ⥤ D_sg(E)` restricts to `singleToSingularity` along the quotient. -/
-noncomputable def projectiveStableFunctorCompStableToSingularityIso :
-    E.projectiveStableFunctor ⋙ E.stableToSingularity ≅ E.singleToSingularity :=
-  CategoryTheory.Quotient.lift.isLift _ _ _
+theorem projectiveStableFunctor_comp_stableToSingularity :
+    E.projectiveStableFunctor ⋙ E.stableToSingularity = E.singleToSingularity := by
+  dsimp only [stableToSingularity]
+  exact CategoryTheory.Quotient.lift_spec _ _ _
 
 @[simp]
 theorem stableToSingularity_obj_projectiveStableFunctor_obj (X : C) :
     E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) = E.singleToSingularity.obj X :=
   (rfl)
 
-/-- On the image of a morphism of `C`, `stableToSingularity` is `singleToSingularity`, conjugated
-by the comparison `projectiveStableFunctorCompStableToSingularityIso`. -/
+/-- On the image of a morphism of `C`, `stableToSingularity` is `singleToSingularity`. -/
+@[simp]
 theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     E.stableToSingularity.map (E.projectiveStableFunctor.map f) =
-      E.projectiveStableFunctorCompStableToSingularityIso.hom.app X ≫
+      eqToHom (E.stableToSingularity_obj_projectiveStableFunctor_obj X) ≫
         E.singleToSingularity.map f ≫
-          E.projectiveStableFunctorCompStableToSingularityIso.inv.app Y := by
-  rw [← Category.assoc, ← E.projectiveStableFunctorCompStableToSingularityIso.hom.naturality f,
-    Category.assoc, Iso.hom_inv_id_app, Category.comp_id, Functor.comp_map]
-
-instance : E.stableToSingularity.Additive :=
-  have := Functor.additive_of_iso E.projectiveStableFunctorCompStableToSingularityIso.symm
-  Functor.additive_of_full_essSurj_comp E.projectiveStableFunctor _
+          eqToHom (E.stableToSingularity_obj_projectiveStableFunctor_obj Y).symm :=
+  Functor.congr_hom E.projectiveStableFunctor_comp_stableToSingularity f
 
 end TauCeti.ExactStructure

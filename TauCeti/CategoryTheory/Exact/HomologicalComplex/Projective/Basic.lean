@@ -16,7 +16,11 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 
 Let `E` be an exact structure. A map `φ : P ⟶ A` from a bounded above complex of `E`-projective
 objects to an `E`-acyclic complex is null-homotopic (Bühler, Corollary 12.5). This is the dual of
-`TauCeti.ExactStructure.AcyclicData.homotopyZero`.
+`TauCeti.ExactStructure.AcyclicData.homotopyZero`. So bounded above complexes of projectives are
+left orthogonal to the acyclic complexes in the homotopy category, which is how maps out of them
+are computed in the derived and singularity categories. The terms of the mapping cone of a map
+between complexes of projectives are again projective (`isProjective_mappingCone_X`), so these
+complexes are closed under cones.
 
 The null-homotopy `hⁿ : Pⁿ⁺¹ ⟶ Aⁿ` is built downwards from the upper bound of `P`. Write the
 differentials of `A` as `Aⁿ ↠ Zⁿ⁺¹ ↣ Aⁿ⁺¹`. If `φⁿ⁺¹ - d ≫ hⁿ⁺¹` vanishes after `Aⁿ⁺¹ ↠ Zⁿ⁺²`, it
@@ -33,6 +37,8 @@ monomorphism.
 
 ## Main results
 
+* `TauCeti.ExactStructure.isProjective_mappingCone_X`: the degree `n` term of a mapping cone is
+  projective when the source in degree `n + 1` and the target in degree `n` are.
 * `TauCeti.ExactStructure.AcyclicData.quotient_map_eq_zero_of_projective`: a map from a bounded
   above complex of projectives to an acyclic complex vanishes in the homotopy category.
 
@@ -53,12 +59,13 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C}
 
-/-- The terms of the mapping cone of a map between complexes of projectives are projective. -/
-theorem isProjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L)
-    (hK : ∀ n, E.isProjective (K.X n)) (hL : ∀ n, E.isProjective (L.X n)) (n : ℤ) :
+/-- The degree `n` term of the mapping cone of `f : K ⟶ L` is projective when `Kⁿ⁺¹` and `Lⁿ`
+are. -/
+theorem isProjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L) {n : ℤ}
+    (hK : E.isProjective (K.X (n + 1))) (hL : E.isProjective (L.X n)) :
     E.isProjective ((CochainComplex.mappingCone f).X n) :=
   E.isProjective.prop_of_iso (HomologicalComplex.homotopyCofiber.XIsoBiprod f n (n + 1) rfl).symm
-    (isProjective_biprod (hK _) (hL _))
+    (isProjective_biprod hK hL)
 
 namespace AcyclicData
 
@@ -161,7 +168,7 @@ omit [P.IsStrictlyLE 0]
 
 include hA hP in
 /-- **Maps from bounded above complexes of projectives to acyclic complexes vanish in the
-homotopy category** (Bühler, Corollary 12.5). The bound is moved to `0` by shifting. -/
+homotopy category** (Bühler, Corollary 12.5). -/
 theorem quotient_map_eq_zero_of_projective (n : ℤ) [P.IsStrictlyLE n] :
     (HomotopyCategory.quotient C (.up ℤ)).map φ = 0 := by
   have : (P⟦n⟧).IsStrictlyLE 0 := P.isStrictlyLE_shift n n 0 (by simp)

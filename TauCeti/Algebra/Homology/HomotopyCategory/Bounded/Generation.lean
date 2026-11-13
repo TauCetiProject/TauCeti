@@ -29,7 +29,7 @@ group. Both results now use `CochainComplex.bounded_induction` and
 
 * `CochainComplex.bounded_induction`: induction on bounded complexes, from zero complexes and by
   passing from the brutal truncation below the top degree to the complex.
-* `TauCeti.HomotopyCategory.nonempty_iso_quotient_obj_mappingCone_ιTop`: the mapping cone of the
+* `CochainComplex.nonempty_iso_quotient_obj_mappingCone_ιTop`: the mapping cone of the
   inclusion of the top term is the brutal truncation below it, in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded.ιTop`: the inclusion of the top term as a morphism of
   `Kᵇ(C)`.
@@ -84,21 +84,18 @@ theorem bounded_induction {motive : CochainComplex C ℤ → Prop}
 
 end CochainComplex
 
-namespace TauCeti
-
-namespace HomotopyCategory
+namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C] [HasZeroObject C]
 
 /-- **The cone of the top term**: for a complex `K` vanishing above degree `b + 1`, the mapping cone
 of the inclusion `K.ιTop (b + 1)` of the top term is isomorphic in the homotopy category to the
-brutal truncation of `K` in degrees `≤ b`, through the degreewise split sequence splitting off the
-top term. -/
+brutal truncation of `K` in degrees `≤ b`. -/
 theorem nonempty_iso_quotient_obj_mappingCone_ιTop (K : CochainComplex C ℤ) (b : ℤ)
     [K.IsStrictlyLE (b + 1)] :
-    Nonempty ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
+    Nonempty ((HomotopyCategory.quotient C (.up ℤ)).obj
       (CochainComplex.mappingCone (K.ιTop (b + 1))) ≅
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).obj
+        (HomotopyCategory.quotient C (.up ℤ)).obj
           (K.stupidTrunc (ComplexShape.embeddingUpIntLE b))) := by
   -- Generalize the split short complex, so that the triangle of its splitting can be compared
   -- with the mapping cone triangle of its first map.
@@ -106,18 +103,21 @@ theorem nonempty_iso_quotient_obj_mappingCone_ιTop (K : CochainComplex C ℤ) (
       (_ : S = ShortComplex.mk (K.ιTop (b + 1))
         (K.πStupidTrunc (ComplexShape.embeddingUpIntLE b)) (K.ιTop_comp_πStupidTruncLE b))
       (_ : ∀ n, (S.map (HomologicalComplex.eval C _ n)).Splitting),
-      Nonempty ((_root_.HomotopyCategory.quotient C (.up ℤ)).obj
+      Nonempty ((HomotopyCategory.quotient C (.up ℤ)).obj
         (CochainComplex.mappingCone (K.ιTop (b + 1))) ≅
-          (_root_.HomotopyCategory.quotient C (.up ℤ)).obj
+          (HomotopyCategory.quotient C (.up ℤ)).obj
             (K.stupidTrunc (ComplexShape.embeddingUpIntLE b))) := by
     rintro S rfl σ
     exact ⟨Triangle.π₃.mapIso (isoTriangleOfIso₁₂ _ _
-      (_root_.HomotopyCategory.mappingCone_triangleh_distinguished _)
+      (HomotopyCategory.mappingCone_triangleh_distinguished _)
       (CochainComplex.trianglehOfDegreewiseSplit_distinguished _ σ) (Iso.refl _) (Iso.refl _)
       ((Category.comp_id _).trans (Category.id_comp _).symm))⟩
   exact key _ (K.topShortComplex_eq b) (K.topShortComplexSplitting b)
 
-end HomotopyCategory
+end CochainComplex
+
+namespace TauCeti
+
 
 namespace HomotopyCategory.Bounded
 
