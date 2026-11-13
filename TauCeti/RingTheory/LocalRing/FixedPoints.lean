@@ -59,12 +59,9 @@ fixed-point subring. -/
 @[simp]
 theorem isUnit_coe_fixedPoints_subring_iff {x : FixedPoints.subring B G} :
     IsUnit (x : B) ↔ IsUnit x := by
-  refine ⟨?_, fun hx ↦ hx.map (FixedPoints.subring B G).subtype⟩
-  rintro ⟨u, hu⟩
-  have hfix : ∀ g : G, g • (u : B) = u := fun g ↦ by rw [hu, x.2 g]
-  refine ⟨⟨x, ⟨↑u⁻¹, smul_val_inv_eq_of_smul_eq hfix⟩, ?_, ?_⟩, rfl⟩
-  · exact Subtype.ext (by simp [← hu])
-  · exact Subtype.ext (by simp [← hu])
+  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun hx ↦ hx.map (FixedPoints.subring B G).subtype⟩
+  exact ⟨⟨x, ⟨↑u⁻¹, smul_val_inv_eq_of_smul_eq fun g ↦ by rw [hu, x.2 g]⟩,
+    Subtype.ext (by simp [← hu]), Subtype.ext (by simp [← hu])⟩, rfl⟩
 
 /-- The inclusion `FixedPoints.subring B G →+* B` is a local ring homomorphism. -/
 instance instIsLocalHomSubtypeFixedPointsSubring :
@@ -77,12 +74,9 @@ the fixed-point subalgebra. -/
 theorem isUnit_coe_fixedPoints_subalgebra_iff [SMulCommClass G A B]
     {x : FixedPoints.subalgebra A B G} :
     IsUnit (x : B) ↔ IsUnit x := by
-  refine ⟨?_, fun hx ↦ hx.map (algebraMap (FixedPoints.subalgebra A B G) B)⟩
-  rintro ⟨u, hu⟩
-  have hfix : ∀ g : G, g • (u : B) = u := fun g ↦ by rw [hu, x.2 g]
-  refine ⟨⟨x, ⟨↑u⁻¹, smul_val_inv_eq_of_smul_eq hfix⟩, ?_, ?_⟩, rfl⟩
-  · exact Subtype.ext (by simp [← hu])
-  · exact Subtype.ext (by simp [← hu])
+  refine ⟨fun ⟨u, hu⟩ ↦ ?_, fun hx ↦ hx.map (algebraMap (FixedPoints.subalgebra A B G) B)⟩
+  exact ⟨⟨x, ⟨↑u⁻¹, smul_val_inv_eq_of_smul_eq fun g ↦ by rw [hu, x.2 g]⟩,
+    Subtype.ext (by simp [← hu]), Subtype.ext (by simp [← hu])⟩, rfl⟩
 
 /-- The structure map `FixedPoints.subalgebra A B G →+* B` is a local ring homomorphism. -/
 instance instIsLocalHomAlgebraMapFixedPointsSubalgebra [SMulCommClass G A B] :

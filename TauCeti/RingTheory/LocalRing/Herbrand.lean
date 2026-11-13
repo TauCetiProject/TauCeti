@@ -93,27 +93,22 @@ variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemi
 meaning. -/
 def herbrandFun (u : ℝ) : ℝ :=
   ∫ t in (0 : ℝ)..u,
-    (Nat.card (ramificationGroupReal G S t) : ℝ) /
-      Nat.card (ramificationGroup G S 0)
+    (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0)
 
 /-- Defining integral formula for `herbrandFun`. -/
 theorem herbrandFun_def (u : ℝ) :
-    herbrandFun G S u =
-      ∫ t in (0 : ℝ)..u,
-        (Nat.card (ramificationGroupReal G S t) : ℝ) /
-          Nat.card (ramificationGroup G S 0) :=
+    herbrandFun G S u = ∫ t in (0 : ℝ)..u,
+      (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) :=
   (rfl)
 
 /-- The **inverse Herbrand function** `ψ(v)`, defined as the greatest lower bound of
 `{u : ℝ | v ≤ φ(u)}`. When `G` is finite, `φ` is a continuous strictly increasing bijection of `ℝ`,
 so `ψ` is the two-sided inverse of `φ`. -/
-def inverseHerbrandFun (v : ℝ) : ℝ :=
-  sInf {u : ℝ | v ≤ herbrandFun G S u}
+def inverseHerbrandFun (v : ℝ) : ℝ := sInf {u : ℝ | v ≤ herbrandFun G S u}
 
 /-- Defining infimum formula for `inverseHerbrandFun`. -/
 theorem inverseHerbrandFun_def (v : ℝ) :
-    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} :=
-  (rfl)
+    inverseHerbrandFun G S v = sInf {u : ℝ | v ≤ herbrandFun G S u} := (rfl)
 
 /-- The **upper-numbering ramification group** `G^v = G_{ψ(v)}` of a group `G` acting on a local
 ring `S`. -/
@@ -122,8 +117,7 @@ def upperRamificationGroup (v : ℝ) : Subgroup G :=
 
 /-- Defining formula `G^v = G_{ψ(v)}` for the upper ramification filtration. -/
 theorem upperRamificationGroup_def (v : ℝ) :
-    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) :=
-  (rfl)
+    upperRamificationGroup G S v = ramificationGroupReal G S (inverseHerbrandFun G S v) := (rfl)
 
 variable {G S} in
 /-- Membership in `upperRamificationGroup G S v` is membership in `G_{ψ(v)}`. -/
@@ -134,13 +128,11 @@ theorem mem_upperRamificationGroup_iff {v : ℝ} {σ : G} :
 
 /-- Every upper ramification group is normal in `G`. -/
 instance instNormalUpperRamificationGroup (v : ℝ) : (upperRamificationGroup G S v).Normal := by
-  rw [upperRamificationGroup_def]
-  infer_instance
+  rw [upperRamificationGroup_def]; infer_instance
 
 /-- `herbrandFun` vanishes at `0`. -/
 @[simp]
-theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by
-  rw [herbrandFun_def, integral_same]
+theorem herbrandFun_zero : herbrandFun G S 0 = 0 := by rw [herbrandFun_def, integral_same]
 
 /-- A **lower break** of the ramification filtration: an index `u` at which `G_u` strictly contains
 `G_v` for every `v > u`. -/
@@ -150,8 +142,7 @@ def LowerJump (u : ℝ) : Prop :=
 /-- Defining criterion for `LowerJump`. -/
 theorem lowerJump_iff (u : ℝ) :
     LowerJump G S u ↔ ∀ v : ℝ, u < v →
-      ramificationGroupReal G S v < ramificationGroupReal G S u :=
-  Iff.rfl
+      ramificationGroupReal G S v < ramificationGroupReal G S u := Iff.rfl
 
 /-- An **upper break** of the ramification filtration: an index `u` at which `G^u` strictly
 contains `G^v` for every `v > u`. -/
@@ -161,46 +152,38 @@ def UpperJump (u : ℝ) : Prop :=
 /-- Defining criterion for `UpperJump`. -/
 theorem upperJump_iff (u : ℝ) :
     UpperJump G S u ↔ ∀ v : ℝ, u < v →
-      upperRamificationGroup G S v < upperRamificationGroup G S u :=
-  Iff.rfl
+      upperRamificationGroup G S v < upperRamificationGroup G S u := Iff.rfl
 
 variable {G S} in
 /-- Every lower break is at least `-1`. -/
 theorem LowerJump.neg_one_le {u : ℝ} (hu : LowerJump G S u) : -1 ≤ u := by
   by_contra! hlt
   have hdrop := hu (-1) hlt
-  have htop₁ : ramificationGroupReal G S (-1) = ⊤ := by
-    rw [show (-1 : ℝ) = ((-1 : ℤ) : ℝ) by norm_num, ramificationGroupReal_intCast]
-    exact ramificationGroup_eq_top_of_le_neg_one G S le_rfl
-  have htop₂ : ramificationGroupReal G S u = ⊤ := by
-    rw [ramificationGroupReal_def]
-    exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by push_cast; exact hlt.le))
-  rw [htop₁, htop₂] at hdrop
+  rw [show (-1 : ℝ) = ((-1 : ℤ) : ℝ) by norm_num, ramificationGroupReal_intCast,
+    ramificationGroup_eq_top_of_le_neg_one G S le_rfl, ramificationGroupReal_def,
+    ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by push_cast; exact hlt.le))]
+    at hdrop
   exact hdrop.false
 
 variable {G S} in
 /-- Every lower break is an integer `i ≥ -1`. -/
-theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) :
-    ∃ i : ℤ, -1 ≤ i ∧ u = i := by
+theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 ≤ i ∧ u = i := by
   refine ⟨⌈u⌉, Int.le_ceil_iff.2 (by push_cast; linarith [hu.neg_one_le]), ?_⟩
-  rcases eq_or_lt_of_le (Int.le_ceil u) with heq | hlt
-  · exact heq
-  · have hstrict := hu ⌈u⌉ hlt
-    rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at hstrict
-    exact False.elim hstrict.false
+  refine (eq_or_lt_of_le (Int.le_ceil u)).resolve_right fun hlt ↦ ?_
+  have hstrict := hu ⌈u⌉ hlt
+  rw [ramificationGroupReal_intCast, ← ramificationGroupReal_def] at hstrict
+  exact hstrict.false
 
 /-- An integer `i` is a lower break if and only if `G_{i+1} < G_i`. -/
 @[simp]
 theorem lowerJump_intCast_iff (i : ℤ) :
-    LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i := by
-  constructor
-  · intro h
-    have hlt := h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith)
-    rwa [ramificationGroupReal_intCast, ramificationGroupReal_intCast] at hlt
-  · intro h v hv
-    have hceil : i + 1 ≤ ⌈v⌉ := Int.add_one_le_iff.2 (Int.lt_ceil.2 hv)
-    rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
-    exact (ramificationGroup_antitone G S hceil).trans_lt h
+    LowerJump G S i ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i :=
+  ⟨fun h ↦ by
+      simpa only [ramificationGroupReal_intCast] using
+        h ((i + 1 : ℤ) : ℝ) (by push_cast; linarith),
+    fun h _ hv ↦ by
+      rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
+      exact (ramificationGroup_antitone G S (Int.add_one_le_iff.2 (Int.lt_ceil.2 hv))).trans_lt h⟩
 
 end Defs
 
@@ -434,27 +417,18 @@ theorem herbrandFun_intCast_of_nonneg {m : ℤ} (hm : 0 ≤ m) :
 theorem herbrandFun_surjective : Function.Surjective (herbrandFun G S) := fun y ↦ by
   set g : ℝ := (Nat.card (ramificationGroup G S 0) : ℝ)
   have hg : 0 < g := Nat.cast_pos.2 Nat.card_pos
-  set a := -(|y| * g)
-  set b := |y| * g
-  have ha0 : a ≤ 0 := neg_nonpos.2 (mul_nonneg (abs_nonneg y) hg.le)
-  have hb0 : 0 ≤ b := mul_nonneg (abs_nonneg y) hg.le
-  have hφa : herbrandFun G S a ≤ y := by
+  have ha0 : -(|y| * g) ≤ 0 := neg_nonpos.2 (mul_nonneg (abs_nonneg y) hg.le)
+  have hb0 : 0 ≤ |y| * g := mul_nonneg (abs_nonneg y) hg.le
+  have hφa : herbrandFun G S (-(|y| * g)) ≤ y := by
     have h := div_sub_le_herbrandFun_sub G S ha0
-    have ha_div : (0 - a) / g = |y| := by
-      dsimp [a]
-      rw [sub_neg_eq_add, zero_add, mul_div_cancel_right₀ _ hg.ne']
-    rw [herbrandFun_zero, ha_div] at h
+    rw [herbrandFun_zero, sub_neg_eq_add, zero_add, mul_div_cancel_right₀ _ hg.ne'] at h
     linarith [neg_abs_le y]
-  have hφb : y ≤ herbrandFun G S b := by
+  have hφb : y ≤ herbrandFun G S (|y| * g) := by
     have h := div_sub_le_herbrandFun_sub G S hb0
-    have hb_div : (b - 0) / g = |y| := by
-      dsimp [b]
-      rw [sub_zero, mul_div_cancel_right₀ _ hg.ne']
-    rw [herbrandFun_zero, hb_div] at h
+    rw [herbrandFun_zero, sub_zero, mul_div_cancel_right₀ _ hg.ne'] at h
     linarith [le_abs_self y]
-  obtain ⟨x, _, hx⟩ :=
-    intermediate_value_Icc (ha0.trans hb0) (continuous_herbrandFun G S).continuousOn ⟨hφa, hφb⟩
-  exact ⟨x, hx⟩
+  exact (intermediate_value_Icc (ha0.trans hb0) (continuous_herbrandFun G S).continuousOn
+    ⟨hφa, hφb⟩).imp fun _ hx ↦ hx.2
 
 /-- `herbrandFun` packaged as an order isomorphism of `ℝ` onto itself. -/
 private def herbrandRealOrderIso : ℝ ≃o ℝ :=
@@ -463,24 +437,21 @@ private def herbrandRealOrderIso : ℝ ≃o ℝ :=
 
 private theorem inverseHerbrandFun_eq_symm (v : ℝ) :
     inverseHerbrandFun G S v = (herbrandRealOrderIso G S).symm v := by
-  have hset : {u : ℝ | v ≤ herbrandFun G S u} = Ici ((herbrandRealOrderIso G S).symm v) := by
-    ext u
-    exact (herbrandRealOrderIso G S).symm_apply_le.symm
+  have hset : {u : ℝ | v ≤ herbrandFun G S u} = Ici ((herbrandRealOrderIso G S).symm v) :=
+    Set.ext fun _ ↦ (herbrandRealOrderIso G S).symm_apply_le.symm
   rw [inverseHerbrandFun_def, hset, csInf_Ici]
 
 /-- `φ(ψ(v)) = v` for every real `v`. -/
 @[simp]
 theorem herbrandFun_inverseHerbrandFun (v : ℝ) :
     herbrandFun G S (inverseHerbrandFun G S v) = v := by
-  rw [inverseHerbrandFun_eq_symm]
-  exact (herbrandRealOrderIso G S).apply_symm_apply v
+  rw [inverseHerbrandFun_eq_symm]; exact (herbrandRealOrderIso G S).apply_symm_apply v
 
 /-- `ψ(φ(u)) = u` for every real `u`. -/
 @[simp]
 theorem inverseHerbrandFun_herbrandFun (u : ℝ) :
     inverseHerbrandFun G S (herbrandFun G S u) = u := by
-  rw [inverseHerbrandFun_eq_symm]
-  exact (herbrandRealOrderIso G S).symm_apply_apply u
+  rw [inverseHerbrandFun_eq_symm]; exact (herbrandRealOrderIso G S).symm_apply_apply u
 
 /-- `inverseHerbrandFun` is strictly increasing on `ℝ`. -/
 theorem inverseHerbrandFun_strictMono : StrictMono (inverseHerbrandFun G S) := by
@@ -545,14 +516,12 @@ def herbrandOrderIso : Ici (-1 : ℝ) ≃o Ici (-1 : ℝ) where
 /-- Forward coercion of `herbrandOrderIso` is `herbrandFun`. -/
 @[simp]
 theorem coe_herbrandOrderIso_apply (u : Ici (-1 : ℝ)) :
-    (herbrandOrderIso G S u : ℝ) = herbrandFun G S u :=
-  (rfl)
+    (herbrandOrderIso G S u : ℝ) = herbrandFun G S u := (rfl)
 
 /-- Inverse coercion of `herbrandOrderIso` is `inverseHerbrandFun`. -/
 @[simp]
 theorem coe_herbrandOrderIso_symm_apply (v : Ici (-1 : ℝ)) :
-    ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v :=
-  (rfl)
+    ((herbrandOrderIso G S).symm v : ℝ) = inverseHerbrandFun G S v := (rfl)
 
 /-! ### Unramified and trivial-group boundary cases -/
 

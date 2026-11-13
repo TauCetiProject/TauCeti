@@ -339,25 +339,21 @@ acting on `FixedPoints.subalgebra A B H` at `φ_H(u)` is the image of `G_u` unde
 theorem ramificationGroupReal_quotient_herbrandFun (H : Subgroup G) [H.Normal] (u : ℝ) :
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =
       (ramificationGroupReal G B u).map (QuotientGroup.mk' H) := by
+  have hmk : ∀ (g : G) (h : H), QuotientGroup.mk' H (g * h) = QuotientGroup.mk' H g := fun g h ↦ by
+    rw [map_mul, QuotientGroup.mk'_apply H (h : G), (QuotientGroup.eq_one_iff _).2 h.2, mul_one]
   ext q
   rw [Subgroup.mem_map]
   constructor
   · intro hq
     obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective H q
     obtain ⟨h₀, hh₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H g
-    have hmk : QuotientGroup.mk' H (g * h₀) = QuotientGroup.mk' H g := by
-      rw [map_mul, QuotientGroup.mk'_apply H (h₀ : G), (QuotientGroup.eq_one_iff _).2 h₀.2, mul_one]
-    refine ⟨g * h₀, ?_, hmk⟩
+    refine ⟨g * h₀, ?_, hmk g h₀⟩
     rwa [← quotient_mk_mem_ramificationGroupReal_herbrandFun_iff (A := A) H (g * h₀) hh₀, hmk]
   · rintro ⟨g, hg, rfl⟩
     obtain ⟨h₀, hh₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H g
-    have hmk : QuotientGroup.mk' H (g * h₀) = QuotientGroup.mk' H g := by
-      rw [map_mul, QuotientGroup.mk'_apply H (h₀ : G), (QuotientGroup.eq_one_iff _).2 h₀.2, mul_one]
-    rw [← hmk, quotient_mk_mem_ramificationGroupReal_herbrandFun_iff (A := A) H (g * h₀) hh₀]
-    have hle : lowerIndex B g ≤ lowerIndex B (g * h₀) := by
-      simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹
+    rw [← hmk g h₀, quotient_mk_mem_ramificationGroupReal_herbrandFun_iff (A := A) H (g * h₀) hh₀]
     rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hg ⊢
-    exact hg.trans hle
+    exact hg.trans (by simpa [mul_inv_cancel_right] using hh₀ h₀⁻¹)
 
 /-- Herbrand's lemma read at `v = φ_H(u)`: `(G ⧸ H)_v = (G_{ψ_H(v)}).map (QuotientGroup.mk' H)`. -/
 theorem ramificationGroupReal_quotient_eq_map_inverseHerbrandFun
@@ -453,13 +449,9 @@ private theorem herbrandFun_tower_of_mem_Icc (H : Subgroup G) [H.Normal] (m : �
       herbrandFun G B u =
         herbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) := by
   induction m with
-  | zero =>
-    intro u h₁ h₂
-    refine herbrandFun_tower_step (A := A) H 0 h₁ h₂ ?_
-    simp
+  | zero => exact fun h₁ h₂ ↦ herbrandFun_tower_step (A := A) H 0 h₁ h₂ (by simp)
   | succ k ih =>
-    intro u h₁ h₂
-    exact herbrandFun_tower_step (A := A) H (k + 1) h₁ h₂
+    exact fun h₁ h₂ ↦ herbrandFun_tower_step (A := A) H (k + 1) h₁ h₂
       (ih (by push_cast; linarith) (by push_cast; linarith))
 
 /-- **Transitivity of the Herbrand function** for a normal subgroup `H ≤ G`:
