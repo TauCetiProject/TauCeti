@@ -116,8 +116,7 @@ theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ} (h : t 
   Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
 
 /-- The weight `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)` is positive. -/
-theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
-    0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
+theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) : 0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
 /-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
@@ -390,13 +389,11 @@ theorem coefficient_sub (a b : Symbol n V W m) :
   (sub_eq_add_neg _ _).symm
 
 @[simp]
-theorem coefficient_nsmul (k : ℕ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient :=
+theorem coefficient_nsmul (k : ℕ) (a : Symbol n V W m) : (k • a).coefficient = k • a.coefficient :=
   Nat.cast_smul_eq_nsmul ℂ k a.coefficient
 
 @[simp]
-theorem coefficient_zsmul (k : ℤ) (a : Symbol n V W m) :
-    (k • a).coefficient = k • a.coefficient :=
+theorem coefficient_zsmul (k : ℤ) (a : Symbol n V W m) : (k • a).coefficient = k • a.coefficient :=
   Int.cast_smul_eq_zsmul ℂ k a.coefficient
 
 instance : AddCommGroup (Symbol n V W m) :=
@@ -404,8 +401,7 @@ instance : AddCommGroup (Symbol n V W m) :=
     coefficient_sub (fun a k => coefficient_nsmul k a) (fun a k => coefficient_zsmul k a)
 
 instance : Module ℂ (Symbol n V W m) :=
-  coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
-    coefficient_smul
+  coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ coefficient_smul
 
 /-- A finite sum of coefficients of symbols, possibly of different orders, is smooth. -/
 theorem contDiff_sum_coefficient {ι : Type*} (s : Finset ι) {d : ι → ℝ}
