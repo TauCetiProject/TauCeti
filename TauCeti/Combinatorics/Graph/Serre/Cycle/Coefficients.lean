@@ -19,7 +19,8 @@ two with the binary cycle space, not merely with an abstract vector space of the
 Spanning-forest bases prove the comparison is bijective. The coordinate formula shows that
 it is independent of the forest and carries integral fundamental cycles to the fundamental
 cycles over the new coefficient ring. No finiteness, connectedness or orientation assumption
-is needed; loops and parallel edges are retained.
+is needed; loops and parallel edges are retained. On a loop, the integral unit cycle reduces
+to the binary unit cycle on the same loop.
 
 ## References
 
@@ -97,5 +98,16 @@ noncomputable def cycleLatticeModTwoEquiv (Γ : SerreGraph) (O : Set Γ.E) :
 @[simp] theorem cycleLatticeModTwoEquiv_tmul (r : ZMod 2) (c : Γ.cycleLattice O) (e : O) :
     (Γ.cycleLatticeModTwoEquiv O (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : ZMod 2) := by
   simp [cycleLatticeModTwoEquiv]
+
+/-- The integral unit cycle on a dart reduces to the binary unit cycle on the same dart. The
+unit chain on a dart is an integral cycle exactly when the dart is a loop
+(`single_mem_cycleLattice_iff`). -/
+@[simp] theorem cycleLatticeModTwoEquiv_one_tmul_single (e : O)
+    (hc : Finsupp.single e 1 ∈ Γ.cycleLattice O) :
+    (Γ.cycleLatticeModTwoEquiv O (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, hc⟩)).val =
+      Finsupp.single e 1 := by
+  classical
+  ext f
+  simp [Finsupp.single_apply]
 
 end TauCeti.SerreGraph

@@ -42,8 +42,8 @@ variable (𝕜 : Type u) [RCLike 𝕜]
 /-- The operator-ideal family whose gauge is the extended operator norm. -/
 def opNorm : OperatorIdealFamily.{u, v, w} 𝕜 where
   gauge A := ‖A‖ₑ
-  gauge_add_le A B := enorm_add_le A B
-  gauge_smul c A := enorm_smul c A
+  gauge_add_le A B := eNorm_add_le A B
+  gauge_smul c A := eNorm_smul c A
   enorm_le_gauge _ := le_rfl
   gauge_comp_le L A R := by
     calc ‖L ∘L A ∘L R‖ₑ ≤ ‖L‖ₑ * ‖A ∘L R‖ₑ := ContinuousLinearMap.opENorm_comp_le _ _
@@ -67,7 +67,7 @@ theorem finiteSubmodule_opNorm : ((opNorm.{u, v, w} 𝕜).operatorGauge E F).fin
 /-- The operator-norm family is complete. -/
 instance opNorm_isComplete : (opNorm.{u, v, w} 𝕜).IsComplete :=
   isComplete_of_lowerSemicontinuous fun _ _ _ _ _ _ _ _ ↦ by
-    simpa using continuous_enorm.lowerSemicontinuous
+    simpa using continuous_eNorm.lowerSemicontinuous
 
 end OperatorIdealFamily
 
@@ -76,7 +76,7 @@ namespace SymmetricOperatorIdealFamily
 /-- The adjoint-invariant diagonal-universe operator-norm family. -/
 def opNorm (𝕜 : Type u) [RCLike 𝕜] : SymmetricOperatorIdealFamily.{u, v} 𝕜 where
   toOperatorIdealFamily := OperatorIdealFamily.opNorm.{u, v, v} 𝕜
-  gauge_adjoint A := ContinuousLinearMap.adjoint.enorm_map A
+  gauge_adjoint A := ContinuousLinearMap.adjoint.eNorm_map A
 
 /-- The underlying rectangular family of the symmetric operator-norm family. -/
 @[simp]

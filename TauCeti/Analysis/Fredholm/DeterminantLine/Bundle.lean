@@ -172,7 +172,7 @@ omit [FiniteDimensional 𝕜 G] in
 form an open set. -/
 theorem isOpen_setOf_isInvertible_prod_coprod :
     IsOpen {T : {T : E →L[𝕜] F // T.IsFredholm} | ((T.1.coprod D₂).prod q).IsInvertible} := by
-  have : CompleteSpace Λ := FiniteDimensional.complete 𝕜 Λ
+  have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.1.coprod D₂).prod q :=
     (prodL (E := E × Λ) (F := F) (G := G) 𝕜).continuous.comp
       ((continuous_subtype_val.continuousLinearMapCoprod continuous_const).prodMk
