@@ -58,7 +58,7 @@ theorem ae_mem_chart_affineRange_logisticNormalMeasure (r : ι)
       (logisticNormalChart_injective r)
     rw [logisticNormalMeasure_def]
     exact (ae_map_iff he.measurable.aemeasurable
-      (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet)).2 <|
+      (he.measurableSet_image' (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet)).2 <|
         (ae_mem_affineRange_multivariateGaussian hS m).mono fun _ hx ↦ mem_image_of_mem _ hx
   · rw [logisticNormalMeasure_of_not_posSemidef r m hS, ae_dirac_eq,
       Filter.eventually_pure]
@@ -190,7 +190,7 @@ theorem ae_mem_chart_affineRange_logisticNormalMeasure
   have he := (continuous_logisticNormalChart r).measurableEmbedding
     (logisticNormalChart_injective r)
   exact (hX.ae_iff (measurableSet_setOfPred.mp
-    (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet))).2
+    (he.measurableSet_image' (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet))).2
       (TauCeti.Probability.ae_mem_chart_affineRange_logisticNormalMeasure r m)
 
 end ProbabilityTheory.HasLaw

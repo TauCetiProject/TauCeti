@@ -13,7 +13,10 @@ public import Mathlib.LinearAlgebra.Prod
 # Exact sequences of linear maps
 
 This file records elementary constructions and consequences for exact pairs of linear maps,
-including the left exactness of `Hom` over a noncommutative ring
+including the exactness of `U' → V → B × A` built from two exact stages `U' → U → B` and
+`U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
+exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
+`Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
@@ -74,6 +77,63 @@ theorem _root_.Function.Exact.prodMap
     exact ⟨(y₁, y₂), by ext <;> assumption⟩
   · rintro ⟨y, rfl⟩
     exact Prod.ext ((h₁ _).2 ⟨y.1, rfl⟩) ((h₂ _).2 ⟨y.2, rfl⟩)
+
+/-- **Composing two exact stages.** If `U' → U → B` and `U → V → A` are exact, and `h : V → B`
+extends `g' : U → B` along `f`, then `U' → V → B × A`, with the map `v ↦ (h v, g v)`, is exact. -/
+theorem _root_.Function.Exact.comp_prod {R U' U V B A : Type*} [Semiring R] [AddCommMonoid U']
+    [AddCommMonoid U] [AddCommMonoid V] [AddCommMonoid B] [AddCommMonoid A] [Module R U']
+    [Module R U] [Module R V] [Module R B] [Module R A] {f' : U' →ₗ[R] U} {g' : U →ₗ[R] B}
+    {f : U →ₗ[R] V} {g : V →ₗ[R] A} {h : V →ₗ[R] B} (hfg' : Function.Exact f' g')
+    (hfg : Function.Exact f g) (hhf : h ∘ₗ f = g') :
+    Function.Exact (f ∘ₗ f') (h.prod g) := by
+  have hhf' (u : U) : h (f u) = g' u := LinearMap.congr_fun hhf u
+  intro v
+  rw [LinearMap.prod_apply, Function.prod, Prod.mk_eq_zero]
+  constructor
+  · rintro ⟨hv₁, hv₂⟩
+    obtain ⟨u, rfl⟩ := (hfg v).1 hv₂
+    obtain ⟨u', rfl⟩ := (hfg' u).1 (by rw [← hhf']; exact hv₁)
+    exact ⟨u', rfl⟩
+  · rintro ⟨u', rfl⟩
+    exact ⟨by simp [hhf', hfg'.apply_apply_eq_zero], hfg.apply_apply_eq_zero _⟩
+
+/-- If `g ∘ f = 0` for `f : U → V` and `g : V → A` with `g` onto, and `h : V → B` restricts along
+`f` to a surjection `h ∘ f : U → B`, then `v ↦ (h v, g v)` maps `V` onto `B × A`. -/
+theorem _root_.LinearMap.surjective_prod_of_comp_eq_zero {R U V B A : Type*} [Semiring R]
+    [AddCommMonoid U] [AddCommMonoid V] [AddCommGroup B] [AddCommMonoid A] [Module R U]
+    [Module R V] [Module R B] [Module R A] {f : U →ₗ[R] V} {g : V →ₗ[R] A} {h : V →ₗ[R] B}
+    (hgf : g ∘ₗ f = 0) (hhf : Function.Surjective (h ∘ₗ f)) (hg : Function.Surjective g) :
+    Function.Surjective (h.prod g) := by
+  rintro ⟨x, y⟩
+  obtain ⟨v, rfl⟩ := hg y
+  obtain ⟨u, hu⟩ := hhf (x - h v)
+  refine ⟨v + f u, ?_⟩
+  rw [LinearMap.prod_apply, Function.prod, map_add, map_add, ← LinearMap.comp_apply g,
+    hgf, LinearMap.zero_apply, add_zero, ← LinearMap.comp_apply h, hu, add_sub_cancel]
+
+/-- If `U → V → W` is exact, then so is `U × Z → V × Z → W`, with maps `f × id` and `g ∘ fst`. -/
+theorem _root_.Function.Exact.prodMap_id_comp_fst {R U V W Z : Type*} [Semiring R]
+    [AddCommMonoid U] [AddCommMonoid V] [AddCommMonoid W] [AddCommMonoid Z] [Module R U]
+    [Module R V] [Module R W] [Module R Z] {f : U →ₗ[R] V} {g : V →ₗ[R] W}
+    (hfg : Function.Exact f g) :
+    Function.Exact (f.prodMap (LinearMap.id : Z →ₗ[R] Z)) (g ∘ₗ LinearMap.fst R V Z) := by
+  rintro ⟨v, w⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.fst_apply, Set.mem_range,
+    LinearMap.prodMap_apply, LinearMap.id_coe, id_eq, Prod.mk.injEq, Prod.exists]
+  rw [hfg v]
+  exact ⟨fun ⟨u, hu⟩ ↦ ⟨u, w, hu, rfl⟩, fun ⟨u, _, hu, _⟩ ↦ ⟨u, hu⟩⟩
+
+/-- If `U → V → W` is exact, then so is `Z × U → Z × V → W`, with maps `id × f` and `g ∘ snd`. -/
+theorem _root_.Function.Exact.id_prodMap_comp_snd {R U V W Z : Type*} [Semiring R]
+    [AddCommMonoid U] [AddCommMonoid V] [AddCommMonoid W] [AddCommMonoid Z] [Module R U]
+    [Module R V] [Module R W] [Module R Z] {f : U →ₗ[R] V} {g : V →ₗ[R] W}
+    (hfg : Function.Exact f g) :
+    Function.Exact ((LinearMap.id : Z →ₗ[R] Z).prodMap f) (g ∘ₗ LinearMap.snd R Z V) := by
+  rintro ⟨w, v⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.snd_apply, Set.mem_range,
+    LinearMap.prodMap_apply, LinearMap.id_coe, id_eq, Prod.mk.injEq, Prod.exists]
+  rw [hfg v]
+  exact ⟨fun ⟨u, hu⟩ ↦ ⟨w, u, rfl, hu⟩, fun ⟨_, u, _, hu⟩ ↦ ⟨u, hu⟩⟩
 
 /-- If `M --f--> N --g--> P` is exact at `N`, then so is `M --f--> N --g--> range g`, with `g`
 corestricted to its range. When `f` is injective, `0 → M → N → range g → 0` is then a short exact
