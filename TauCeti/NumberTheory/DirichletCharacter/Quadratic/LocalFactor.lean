@@ -33,9 +33,6 @@ monoid with zero, and specialised to quadratic characters with values in a commu
 
 ## Main results
 
-* `DirichletCharacter.primitiveCharacter_sq_eq_one`, `MulChar.IsQuadratic.primitiveCharacter`:
-  the primitive character of a character of order dividing two, or of a quadratic character, is
-  again one.
 * `DirichletCharacter.conductor_localFactor_eq_one_or_eq_prime_of_sq_eq_one`,
   `MulChar.IsQuadratic.conductor_localFactor_eq_one_or_eq_prime`: at an odd prime `p`, the
   local conductor is `1` or `p`.
@@ -61,13 +58,6 @@ namespace DirichletCharacter
 section SqEqOne
 
 variable {R : Type*} [CommMonoidWithZero R] {N : ℕ} {χ : DirichletCharacter R N}
-
-/-- The primitive character of a character of order dividing two at a nonzero level has order
-dividing two. -/
-theorem primitiveCharacter_sq_eq_one [NeZero N] (hχ : χ ^ 2 = 1) :
-    χ.primitiveCharacter ^ 2 = 1 := by
-  apply changeLevel_injective χ.conductor_dvd_level
-  rw [map_pow, changeLevel_primitiveCharacter, map_one, hχ]
 
 /-- The local factors of a character of order dividing two have order dividing two. -/
 theorem localFactor_sq_eq_one (hχ : χ ^ 2 = 1) (p : ℕ) : localFactor p χ ^ 2 = 1 := by
@@ -124,13 +114,6 @@ namespace MulChar.IsQuadratic
 open DirichletCharacter
 
 variable {R : Type*} [CommRing R] {N : ℕ} {χ : DirichletCharacter R N}
-
-/-- The primitive character of a quadratic Dirichlet character at a nonzero level is quadratic:
-its values at units are values of `χ` at units lifting them. -/
-theorem primitiveCharacter [NeZero N] (hχ : χ.IsQuadratic) :
-    χ.primitiveCharacter.IsQuadratic := by
-  rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, changeLevel_primitiveCharacter]
-  exact hχ
 
 /-- **The local conductor of a quadratic character at an odd prime** is `1` or `p`. -/
 theorem conductor_localFactor_eq_one_or_eq_prime (hχ : χ.IsQuadratic) {p : ℕ} (hp : p.Prime)
