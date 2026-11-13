@@ -41,14 +41,14 @@ equation with `f = g = 0`, and has positive `W^{1,r}` norm on every disc
 ## The argument
 
 Coordinates in a basis reduce to `V = ℝ`. Cover the closure of `U` by finitely many discs
-`B(c, ρ)` whose concentric closed discs `D = B̄(c, R)`, `ρ < R`, lie in `Ω`. On each, with
+`B(c, ρ)` whose concentric closed discs `D = closedBall c R`, `ρ < R`, lie in `Ω`. On each, with
 `h = 1_D (f + I g)`, the particular solution `ξ₀ = ½ Re T h` solves `Δξ₀ = ∂ₛf + ∂ₜg` on `B(c, R)`
 (`TauCeti.weaklyHarmonicOn_sub_half_re_cauchyTransform`), and the boundedness of the Cauchy and
 Beurling transforms bounds `‖ξ₀‖_{W^{1,r}(D)}` by a multiple of `‖h‖_{Lʳ}`
 (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`). The remainder
 `ξ - ξ₀` is weakly harmonic on `B(c, R)`, so by Weyl's lemma and the mean value property it agrees
-almost everywhere with a harmonic `v` whose value and derivative are bounded on `B̄(c, ρ)` by a
-multiple of `‖ξ - ξ₀‖_{L¹(B(c, R))}`
+almost everywhere with a harmonic `v` whose value and derivative are bounded on `closedBall c ρ`
+by a multiple of `‖ξ - ξ₀‖_{L¹(B(c, R))}`
 (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm`),
 which Hölder's inequality on `D` bounds by `‖ξ‖_{L^q(D)}` and `‖ξ₀‖_{Lʳ(D)}`. Summing over the
 discs gives the estimate.
@@ -89,7 +89,7 @@ private theorem holder_exponent_nonneg {s : ℝ≥0∞} (hs : 1 ≤ s) :
 section Scalar
 
 /-- The scalar estimate on one disc: the `W^{1,r}` norm of `ξ` on `B(c, ρ)` is bounded in terms of
-the data on `Ω ⊇ B̄(c, R)`. -/
+the data on `Ω ⊇ closedBall c R`. -/
 private theorem exists_eLpNormWkp_one_ball_le_real (hr : 1 < r) (hr_top : r ≠ ⊤) (hq : 1 ≤ q)
     (c : ℂ) {ρ : ℝ} {R : ℝ≥0} (hρR : ρ < R) (hRΩ : closedBall c R ⊆ Ω) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ ξ f g : ℂ → ℝ, LocallyIntegrableOn ξ Ω volume → MemLpLoc r Ω f →
@@ -293,8 +293,8 @@ private theorem exists_eLpNorm_add_eLpNorm_le_of_hasWeakFDerivOn {V : Type*}
         eLpNorm ξ r (volume.restrict U) + eLpNorm D r (volume.restrict U) ≤
           C * (eLpNorm f r (volume.restrict Ω) + eLpNorm g r (volume.restrict Ω) +
             eLpNorm ξ q (volume.restrict Ω)) := by
-  -- Radii `R x` with `B̄(x, R x) ⊆ Ω`, and a finite cover of `closure U` by the discs of half
-  -- that radius.
+  -- Radii `R x` with `closedBall x (R x) ⊆ Ω`, and a finite cover of `closure U` by the discs of
+  -- half that radius.
   have hrad (x : ℂ) : ∃ R : ℝ≥0, x ∈ Ω → 0 < R ∧ closedBall x R ⊆ Ω := by
     by_cases hx : x ∈ Ω
     · obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hx
