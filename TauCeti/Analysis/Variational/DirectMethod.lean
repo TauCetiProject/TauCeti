@@ -13,10 +13,10 @@ public import Mathlib.Topology.Semicontinuity.Basic
 /-!
 # The direct method in the weak topology
 
-A weakly lower semicontinuous ordered-valued energy on a nonempty weakly closed admissible set
-attains its minimum if its sublevels are norm bounded and the canonical bidual map is
-surjective. No lower bound on the energy is assumed: compactness of one nonempty sublevel
-provides it. Every sublevel and the entire set of minimizers are weakly compact.
+A weakly lower semicontinuous energy taking values in a linear order on a nonempty weakly
+closed admissible set attains its minimum if its sublevels are norm bounded and the canonical
+bidual map is surjective. No lower bound on the energy is assumed: compactness of one nonempty
+sublevel provides it. Every sublevel and the entire set of minimizers are weakly compact.
 
 The reflexivity hypothesis is surjectivity of the continuous bidual inclusion, not
 algebraic reflexivity. Completeness is not needed as a separate hypothesis. The proofs
@@ -90,8 +90,8 @@ theorem exists_isMinOn_of_weak_closed
   exact exists_isMinOn_of_weak_closed_of_isBounded_sublevel hV hS hE
     ⟨v, hv, le_rfl⟩ (hb.isBounded_sublevel (E v))
 
-/-- A bounded set of minimizers of a weakly lower semicontinuous energy on a weakly
-closed set in a reflexive space is weakly compact. -/
+/-- If the full set of minimizers of a weakly lower semicontinuous energy on a weakly
+closed set in a reflexive space is bounded, then that set of minimizers is weakly compact. -/
 theorem isCompact_toWeakSpace_minimizers_of_isBounded
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
     (hS : IsClosed (toWeakSpace 𝕜 V '' S))
@@ -104,7 +104,9 @@ theorem isCompact_toWeakSpace_minimizers_of_isBounded
   · rw [hmin.minimizers_eq_sublevel hu] at hb ⊢
     exact isCompact_toWeakSpace_sublevel hV hS hE (E u) hb
 
-/-- The full set of minimizers is weakly compact, including when the admissible set is empty. -/
+/-- For a weakly lower semicontinuous energy with bounded sublevels on a weakly closed set
+in a reflexive space, the set of minimizers is weakly compact, including when the admissible
+set is empty. -/
 theorem isCompact_toWeakSpace_minimizers
     (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
     (hS : IsClosed (toWeakSpace 𝕜 V '' S))
