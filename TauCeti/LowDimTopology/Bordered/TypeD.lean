@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+public import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
 
@@ -61,7 +62,10 @@ on matrices entrywise.
   power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
   structure map and `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`. A type `D` structure is bounded when `δᵏ = 0` for
   large `k` (`TauCeti.TypeDStructure.IsBounded`), for instance when its coefficients strictly
-  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). The tensor power over
+  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). A finite set of
+  generators does not suffice: a generator whose only coefficient is a nonzero coefficient of
+  itself gives nonzero iterates of every length over a field
+  (`TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`). The tensor power over
   the ring of idempotents is a quotient of the one over `R`, so this boundedness implies the
   vanishing of the iterates over the idempotents. The iterates enter the box tensor product with
   type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA`.
@@ -101,6 +105,10 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
+* `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero` and
+  `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`: a generator whose only
+  coefficient is a coefficient of itself, with nonzero tensor powers, makes a type `D` structure
+  unbounded.
 
 ## References
 
@@ -632,6 +640,41 @@ theorem isBounded_iff :
 /-- A type `D` structure whose coefficients strictly increase a height function is bounded. -/
 theorem isBounded_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) : N.IsBounded :=
   ⟨Finset.univ.sup h + 1, fun _ hk => N.iteratedCoeff_eq_zero_of_lt h hh hk⟩
+
+/-- If the only coefficient out of the generator `x` is the coefficient `coeff x x` of `x` itself,
+the only path from `x` stays at `x`, and `δᵏ x` has the `k`-th tensor power of `coeff x x` as its
+coefficient of `x`. -/
+theorem iteratedCoeff_self_of_coeff_eq_zero {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (k : ℕ) :
+    N.iteratedCoeff k x x = PiTensorProduct.tprod R fun _ => N.coeff x x := by
+  rw [iteratedCoeff_def, Finset.sum_eq_single_of_mem (fun _ => x) (by simp)]
+  intro r hr' hr
+  have hr₀ := (Finset.mem_filter.1 hr').2.1
+  by_contra hne
+  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+    hne (MultilinearMap.map_coord_zero _ t h0)
+  -- Along a path of nonzero coefficients from `x`, every step stays at `x`.
+  have hrx (i : Fin (k + 1)) : r i = x := by
+    induction i using Fin.induction with
+    | zero => exact hr₀
+    | succ t ih => exact not_not.1 fun h => hnz t (by rw [ih]; exact hx _ h)
+  exact hr (funext hrx)
+
+/-- **A loop with no exits makes a type `D` structure unbounded.** If the only coefficient out of
+the generator `x` is its own coefficient `coeff x x`, and every tensor power of `coeff x x` is
+nonzero, then the iterates `δᵏ x` never vanish. A finite set of generators therefore does not make
+a type `D` structure bounded. -/
+theorem not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero {x : X}
+    (hx : ∀ y, y ≠ x → N.coeff x y = 0)
+    (hxx : ∀ k, (PiTensorProduct.tprod R fun _ : Fin k => N.coeff x x) ≠ 0) : ¬N.IsBounded :=
+  fun ⟨K, hK⟩ => hxx K (N.iteratedCoeff_self_of_coeff_eq_zero hx K ▸ hK K le_rfl x x)
+
+/-- Over an integral domain, with `A` projective over `R` (for instance over a field), a generator
+`x` whose only coefficient is a nonzero coefficient `coeff x x` of `x` itself makes a type `D`
+structure unbounded: `δᵏ x = (coeff x x)^{⊗ k} ⊗ x ≠ 0` for every `k`. -/
+theorem not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero [IsDomain R] [Module.Projective R A]
+    {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (hxx : N.coeff x x ≠ 0) : ¬N.IsBounded :=
+  N.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero hx fun _ =>
+    PiTensorProduct.tprod_ne_zero fun _ => hxx
 
 end Iterates
 
