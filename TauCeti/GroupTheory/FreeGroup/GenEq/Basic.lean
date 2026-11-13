@@ -706,6 +706,18 @@ theorem length_substituteVars_segment_eq_sub (s : Bool) (i j : ℕ) :
     have := U.prefixLength_mono hji
     omega
 
+/-- The basic equation of a base `μ` of a generalised equation with a solution, as an identity
+between prefix lengths: the words of the dual bases `μ` and `Δ(μ)` have the same length. -/
+theorem prefixLength_right_add_prefixLength_left_dual (μ : Fin Ω.numBases) :
+    U.prefixLength (Ω.right μ) + U.prefixLength (Ω.left (Ω.dual μ)) =
+      U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ) := by
+  have e := congrArg List.length (U.subst_eq _ (Ω.basicEquation_mem_equations μ))
+  have l₁ := U.length_substituteVars_segment_add_prefixLength (Ω.sign μ) (Ω.left_lt_right μ).le
+  have l₂ := U.length_substituteVars_segment_add_prefixLength (Ω.sign (Ω.dual μ))
+    (Ω.left_lt_right (Ω.dual μ)).le
+  rw [basicEquation_fst, basicEquation_snd] at e
+  omega
+
 /-- Distinct boundaries have distinct prefix lengths. -/
 theorem prefixLength_injOn : Set.InjOn U.prefixLength (Set.Iic Ω.numItems) := by
   intro i hi j hj h
@@ -950,9 +962,7 @@ theorem substituteVars_boundaryEquation_eq_iff (hp : p ≤ Ω.right μ) :
   have h₁ : substituteVars U.word (Ω.segment (Ω.left μ) p true) <+:
       substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) :=
     (Ω.segment_prefix_segment hp).flatMap _
-  have e := congrArg List.length (U.subst_eq _ (Ω.basicEquation_mem_equations μ))
-  rw [basicEquation_fst, basicEquation_snd, U.length_substituteVars_segment_eq_sub,
-    U.length_substituteVars_segment_eq_sub] at e
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
   have l₁ := U.length_substituteVars_segment_eq_sub true (Ω.left μ) p
   have lμ := U.length_substituteVars_segment_eq_sub true (Ω.left μ) (Ω.right μ)
   have hΔ := U.prefixLength_mono (Ω.left_lt_right (Ω.dual μ)).le
@@ -998,9 +1008,7 @@ theorem substituteVars_boundaryEquation_dual_eq_iff (hp₁ : Ω.left μ ≤ p) (
       substituteVars U.word (Ω.boundaryEquation (p, μ, q)).1 =
         substituteVars U.word (Ω.boundaryEquation (p, μ, q)).2 := by
   rw [U.substituteVars_boundaryEquation_eq_iff hq₂, U.substituteVars_boundaryEquation_eq_iff hp₂]
-  have e := congrArg List.length (U.subst_eq _ (Ω.basicEquation_mem_equations μ))
-  rw [basicEquation_fst, basicEquation_snd, U.length_substituteVars_segment_eq_sub,
-    U.length_substituteVars_segment_eq_sub] at e
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
   have m₁ := U.prefixLength_mono hp₁
   have m₂ := U.prefixLength_mono hp₂
   have m₃ := U.prefixLength_mono hq₁
