@@ -355,22 +355,6 @@ end Continuous
 
 section HomotopyOperator
 
-/-- At an interior time, the derivative of the map `(s, t) ↦ (γ s, t)` from the plane to the
-cylinder `M × [0, 1]` is the product of the derivatives of `γ` and of the projection of the real
-line onto the interval. -/
-theorem hasMFDerivAt_prodMk_projIcc {γ : ℝ → M} {s t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ s)
-    (ht : t ∈ Ioo (0 : ℝ) 1) :
-    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (I.prod (𝓡∂ 1)) (fun p ↦ (γ p.1, projIcc 0 1 zero_le_one p.2))
-      (s, t) (((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)).prod
-        ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ))) := by
-  have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) (s, t)
-      ((mfderiv 𝓘(ℝ) I γ s).comp (.fst ℝ ℝ ℝ)) :=
-    hγ.hasMFDerivAt.comp (s, t) hasFDerivAt_fst.hasMFDerivAt
-  have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one ∘ Prod.snd) (s, t)
-      ((mfderiv 𝓘(ℝ) (𝓡∂ 1) (projIcc 0 1 zero_le_one) t).comp (.snd ℝ ℝ ℝ)) :=
-    (mdifferentiableAt_projIcc ht).hasMFDerivAt.comp (s, t) hasFDerivAt_snd.hasMFDerivAt
-  exact h₁.prodMk h₂
-
 variable [IsManifold I 1 M]
 
 /-- **The homotopy operator integrated along a curve.** For a continuous two-form `β` on the
