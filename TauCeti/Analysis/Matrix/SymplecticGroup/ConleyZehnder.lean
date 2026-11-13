@@ -90,6 +90,16 @@ private theorem ofReal_sqrt_two_ne_zero : (Real.sqrt 2 : ℂ) ≠ 0 := by
 private theorem ofReal_sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
   exact_mod_cast Real.sq_sqrt zero_le_two
 
+/-- The `√2` normalization of the graph frame squares to `1 / 2`. -/
+private theorem inv_ofReal_sqrt_two_mul_inv :
+    (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
+  rw [← mul_inv, ← sq, ofReal_sqrt_two_sq]
+
+/-- The `√2` normalization in a Gram matrix `(c N)ᴴ (c N)`: `star c * c = 1 / 2`. -/
+private theorem star_inv_ofReal_sqrt_two_mul_inv :
+    star (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
+  rw [star_inv₀, Complex.star_def, Complex.conj_ofReal, inv_ofReal_sqrt_two_mul_inv]
+
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -144,16 +154,13 @@ carried to `ℝ^(n ⊕ n)`. -/
 @[simp]
 theorem symplecticGraphFrame_one :
     symplecticGraphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (Real.sqrt 2 : ℂ) • 1 := by
-  have h2 := ofReal_sqrt_two_ne_zero
   ext i j
   rcases eq_or_ne i j with rfl | hij
   · simp only [symplecticGraphFrame, sub_self, Matrix.mul_zero, Matrix.smul_apply,
       Matrix.add_apply, Matrix.map_apply, Matrix.one_apply_eq, Matrix.zero_apply,
       Complex.ofReal_zero, smul_eq_mul, mul_one]
-    field_simp
-    rw [ofReal_sqrt_two_sq]
-    push_cast
-    ring
+    rw [mul_zero, add_zero, Complex.ofReal_add, Complex.ofReal_one, one_add_one_eq_two,
+      ← ofReal_sqrt_two_sq, sq, inv_mul_cancel_left₀ ofReal_sqrt_two_ne_zero]
   · simp [symplecticGraphFrame, Matrix.one_apply_ne hij]
 
 /-- **The graph of a symplectic matrix is Lagrangian.** The Gram matrix of the graph frame of a
@@ -175,16 +182,9 @@ theorem conjTranspose_symplecticGraphFrame_mul_self {A : Matrix (n ⊕ n) (n ⊕
         (J n ℝ - Aᵀ * J n ℝ * A) + (J n ℝ - Aᵀ * J n ℝ * A) := by noncomm_ring
     rw [e, h, sub_self, add_zero]
   rw [symplecticGraphFrame, conjTranspose_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
-    conjTranspose_mul_self_map_ofReal_add_I_smul, hre, him]
-  have h2 := ofReal_sqrt_two_ne_zero
+    conjTranspose_mul_self_map_ofReal_add_I_smul, hre, him, star_inv_ofReal_sqrt_two_mul_inv]
   ext i j
-  simp only [Matrix.smul_apply, Matrix.add_apply, Matrix.map_apply, Matrix.zero_apply,
-    Complex.ofReal_zero, smul_eq_mul, Complex.ofReal_mul, star_inv₀, Complex.star_def,
-    Complex.conj_ofReal]
-  field_simp
-  rw [ofReal_sqrt_two_sq]
-  push_cast
-  ring
+  simp [← mul_add]
 
 /-- The graph frame of a symplectic matrix is invertible. -/
 theorem isUnit_symplecticGraphFrame {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
@@ -224,8 +224,6 @@ theorem symplecticGraphFrame_realify_diagonal_mul_transpose (e : n → ℂ) :
   have hdiag (z : ℂ) :
       (1 + z) * (1 + z) + Complex.I * (z - 1) * (Complex.I * (z - 1)) = 4 * z := by
     linear_combination (z - 1) ^ 2 * Complex.I_mul_I
-  have hinv : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-    rw [← mul_inv, ← sq, ofReal_sqrt_two_sq]
   rw [symplecticGraphFrame_realify_diagonal, transpose_smul, Matrix.smul_mul, Matrix.mul_smul,
     smul_smul, fromBlocks_transpose, fromBlocks_multiply]
   simp only [diagonal_transpose, diagonal_mul_diagonal, diagonal_add]
@@ -234,11 +232,11 @@ theorem symplecticGraphFrame_realify_diagonal_mul_transpose (e : n → ℂ) :
     simp only [Matrix.smul_apply, fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
       fromBlocks_apply₂₂, diagonal_apply, hij, ite_true, ite_false, Matrix.zero_apply, smul_eq_mul,
       mul_zero]
-  · rw [hinv]
+  · rw [inv_ofReal_sqrt_two_mul_inv]
     linear_combination 2⁻¹ * hdiag (e j)
   · ring
   · ring
-  · rw [hinv]
+  · rw [inv_ofReal_sqrt_two_mul_inv]
     linear_combination 2⁻¹ * hdiag (e j)
 
 end Matrix
@@ -312,26 +310,24 @@ theorem coe_graphFrame_of_transpose_mul_self {A : GLSymplectic n ℝ}
       ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1) :
     (graphFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
       (Real.sqrt 2 : ℂ)⁻¹ • symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ) := by
-  have h2 := ofReal_sqrt_two_ne_zero
   have hv : (Real.sqrt 2 : ℂ)⁻¹ • symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ) ∈
       unitaryGroup (n ⊕ n) ℂ := by
     rw [mem_unitaryGroup_iff', star_smul, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
       star_eq_conjTranspose,
-      conjTranspose_symplecticGraphFrame_mul_self (mem_iff_mem_symplecticGroup.1 A.2), hA]
+      conjTranspose_symplecticGraphFrame_mul_self (mem_iff_mem_symplecticGroup.1 A.2), hA,
+      star_inv_ofReal_sqrt_two_mul_inv]
     ext i j
     rcases eq_or_ne i j with rfl | hij
     · simp only [Matrix.smul_apply, Matrix.map_apply, Matrix.add_apply, Matrix.one_apply_eq,
-        smul_eq_mul, star_inv₀, Complex.star_def, Complex.conj_ofReal]
-      field_simp
-      rw [ofReal_sqrt_two_sq]
-      norm_num
+        smul_eq_mul]
+      rw [Complex.ofReal_add, Complex.ofReal_one, one_add_one_eq_two, inv_mul_cancel₀ two_ne_zero]
     · simp [Matrix.one_apply_ne hij]
   have hmul : (⟨_, hv⟩ : unitaryGroup (n ⊕ n) ℂ) *
       ((Real.sqrt 2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℂ)) = graphFrameUnit A := by
     rw [coe_graphFrameUnit, Matrix.mul_smul, Matrix.mul_one]
     ext i j
     simp only [Matrix.smul_apply, smul_eq_mul, Complex.real_smul]
-    field_simp
+    exact mul_inv_cancel_left₀ ofReal_sqrt_two_ne_zero _
   have hq : 0 ≤ (Real.sqrt 2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℂ) :=
     smul_nonneg (Real.sqrt_nonneg 2) zero_le_one
   exact congrArg Subtype.val (Units.polarUnitary_eq_of_mul_eq' _ hq hmul)
@@ -426,8 +422,7 @@ theorem coe_souriau_graphFrame_of_realify_diagonal {A : GLSymplectic n ℝ} {e :
     Matrix.smul_mul, Matrix.mul_smul, smul_smul, hA,
     symplecticGraphFrame_realify_diagonal_mul_transpose, smul_smul]
   convert one_smul ℂ _
-  field_simp [ofReal_sqrt_two_ne_zero]
-  rw [ofReal_sqrt_two_sq]
+  rw [inv_ofReal_sqrt_two_mul_inv, inv_mul_cancel₀ two_ne_zero]
 
 /-- **Paths of rotations.** If `γ t` is the realification of the diagonal unitary matrix
 `diag (e^{iθ_j(t)})` with continuous angles `θ_j`, the graph Maslov index of `γ` is
