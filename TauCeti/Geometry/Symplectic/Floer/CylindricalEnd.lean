@@ -333,7 +333,7 @@ private theorem exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_subs
       (fun y hy ↦ by rw [hUe y (hsub' hy)])] at h
     refine h.trans (mul_le_mul_of_nonneg_left (setIntegral_mono_set hint
       (ae_restrict_of_forall_mem measurableSet_ball fun _ _ ↦ sq_nonneg _)
-      (ball_subset_ball hρr.le).eventuallyLE) (by norm_num))
+      (ball_subset_ball hρr.le).eventuallySubset) (by norm_num))
   refine le_of_tendsto (((by fun_prop : Continuous fun ρ : ℝ ↦
     π * ρ ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2).tendsto r).mono_left (nhdsWithin_le_nhds (s := Iio r))) ?_
   filter_upwards [Ioo_mem_nhdsLT hr] with ρ hρr using hsmallρ ρ hρr.1.le hρr.2
