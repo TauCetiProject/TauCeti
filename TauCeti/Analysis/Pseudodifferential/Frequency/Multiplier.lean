@@ -28,10 +28,10 @@ quantization with Mathlib's Bessel potential `J^s`, the Fourier multiplier
 `(1 + ‖ζ‖²) ^ (s / 2)` in Mathlib's frequency `ζ`, multiplies its symbol by the Bessel weight
 `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ = 2πζ`. Composition on the left is not
 exact: for a symbol `a` with compact spatial support, `b(D) ∘ Op(a)` is the quantization of the
-composition symbol `b # a` (`TauCeti.Symbol.sharp`). That symbol has no compact spatial support,
-but its estimates hold uniformly in the position (`TauCeti.Symbol.IsUniform.sharp`). So composing
-such a quantization on either side with the Bessel potential `J^s` stays in the calculus of uniform
-symbols.
+composition symbol `b # a` (`TauCeti.Symbol.sharp`). That symbol need not have compact spatial
+support, but its estimates hold uniformly in the position (`TauCeti.Symbol.IsUniform.sharp`). So
+composing such a quantization on either side with the Bessel potential `J^s` stays in the calculus
+of uniform symbols.
 
 On `ℝⁿ`, a smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order
 `m` with estimates uniform in the position (`TauCeti.Symbol.ofFrequency`), and its quantization

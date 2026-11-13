@@ -864,7 +864,7 @@ theorem HasCompactSpatialSupport.sharp (ha : a.HasCompactSpatialSupport)
 the position, then so do those of `a # b`, for every symbol `b` with compact spatial support. For
 instance, composing the quantization of `b` on the left with a Fourier multiplier of order `m'`
 (`Symbol.ofFrequency`), such as the Bessel potential (`Symbol.besselPotential`), gives the
-quantization of a uniform symbol of order `m' + m`, although it has no compact spatial support. -/
+quantization of a uniform symbol of order `m' + m`, which need not have compact spatial support. -/
 theorem IsUniform.sharp (ha : a.IsUniform) (hb : b.HasCompactSpatialSupport) :
     (a.sharp b hb).IsUniform := isUniform_iff.2 fun α β ↦ by
   obtain ⟨C, hC0, hC⟩ := exists_bound_compCoeff IsUniform (fun ha j ↦ ha.spatialDeriv j)
