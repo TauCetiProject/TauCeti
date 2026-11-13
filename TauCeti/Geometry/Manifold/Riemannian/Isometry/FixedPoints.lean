@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
 
+import TauCeti.RepresentationTheory.Continuous.Basic
+
 /-!
 # Common fixed points of Riemannian isometries
 
@@ -46,7 +48,8 @@ of `exp_p` at `v` conjugates the differentials of the `Φ_i` at `p` to those at 
 carries the fixed tangent subspace at `p` onto the one at `exp_p v`
 (`TauCeti.RiemannianIsometry.coe_fixedTangentSubspace_riemannianExp`). Hence, for each dimension,
 the fixed points whose fixed tangent subspace has that dimension form a smooth manifold whose
-inclusion into `M` is a smooth embedding
+inclusion into `M` is a smooth embedding, and the differential of the inclusion carries its tangent
+space onto the fixed tangent subspace
 (`TauCeti.RiemannianIsometry.exists_isManifold_iInter_fixedPoints_finrank`).
 
 Finally, the common fixed set is totally geodesic: the maximal geodesic through a fixed point with
@@ -64,6 +67,8 @@ it to the maximal geodesic with the same initial data.
 * `TauCeti.RiemannianIsometry.fixedTangentSubspace_stabilizer_eq_invariants`: for a group action,
   the fixed tangent subspace of the stabilizer is the space of invariants of the isotropy
   representation.
+* `TauCeti.RiemannianIsometry.fixedTangentSubspace_eq_invariants`: at a point fixed by the whole
+  group, the fixed tangent subspace is the space of invariants of the isotropy representation.
 * `TauCeti.RiemannianIsometry.isClosed_iInter_fixedPoints`: the common fixed set is closed.
 * `TauCeti.RiemannianIsometry.maximalGeodesic_mem_iInter_fixedPoints`: it is totally geodesic.
 * `TauCeti.RiemannianIsometry.riemannianExp_mem_iInter_fixedPoints_iff`: on a normal ball at a
@@ -74,7 +79,8 @@ it to the maximal geodesic with the same initial data.
   `TauCeti.RiemannianIsometry.finrank_fixedTangentSubspace_riemannianExp`: the differential of
   the exponential map carries the fixed tangent subspace at `p` onto those at nearby fixed points.
 * `TauCeti.RiemannianIsometry.exists_isManifold_iInter_fixedPoints_finrank`: the fixed points
-  with fixed tangent subspace of a given dimension form an embedded submanifold.
+  with fixed tangent subspace of a given dimension form an embedded submanifold, whose tangent
+  space at each point is the fixed tangent subspace there.
 
 ## References
 
@@ -137,11 +143,22 @@ theorem fixedTangentSubspace_stabilizer_eq_invariants {G : Type*} [Group G] [Mul
     fixedTangentSubspace (fun g : MulAction.stabilizer G p ↦ Ψ g) p =
       (tangentRepresentation hd).toRepresentation.invariants := by
   ext v
-  refine forall_congr' fun g ↦ ?_
-  -- The representation acts through its underlying monoid homomorphism.
-  change _ ↔ (tangentRepresentation hd).toMonoidHom g v = v
-  rw [ContRepresentation.toMonoidHom_apply, tangentRepresentation_apply, funext (hΨ g)]
-  rfl
+  simp only [mem_fixedTangentSubspace, Representation.mem_invariants,
+    ContRepresentation.toRepresentation_apply, tangentRepresentation_apply]
+  -- The isometry indexed by `g` is the action of `g`.
+  exact forall_congr' fun g ↦ by rw [funext (hΨ g)]; exact Iff.rfl
+
+/-- For a group acting by Riemannian isometries with a common fixed point `p`, the fixed tangent
+subspace at `p` is the space of invariants of the tangent representation on `T_p M`. -/
+theorem fixedTangentSubspace_eq_invariants {G : Type*} [Group G] [MulAction G M]
+    (Ψ : G → RiemannianIsometry I I M M) (hΨ : ∀ g y, Ψ g y = g • y) {p : M}
+    (hp : p ∈ MulAction.fixedPoints G M)
+    (hd : ∀ g ∈ MulAction.stabilizer G p, MDifferentiableAt I I (fun y : M ↦ g • y) p) :
+    fixedTangentSubspace Ψ p = (tangentRepresentation hd).toRepresentation.invariants := by
+  rw [← fixedTangentSubspace_stabilizer_eq_invariants Ψ hΨ p hd]
+  ext v
+  simp only [mem_fixedTangentSubspace, Subtype.forall]
+  exact ⟨fun h g _ ↦ h g, fun h g ↦ h g (MulAction.mem_stabilizer_iff.2 (hp g))⟩
 
 /-- The common fixed set of a family of isometries of a Hausdorff manifold is closed. -/
 theorem isClosed_iInter_fixedPoints [T2Space M] : IsClosed (⋂ i, fixedPoints (Φ i)) :=
@@ -259,10 +276,16 @@ theorem finrank_fixedTangentSubspace_riemannianExp {p : M} (hp : p ∈ ⋂ i, fi
   let D : TangentSpace I p ≃ₗ[ℝ] TangentSpace I (riemannianExp I M p v) :=
     ((NormedSpace.fromTangentSpace v).symm.trans
       ((hU.isLocalDiffeomorphOn ⟨v, hv⟩).mfderivToContinuousLinearEquiv (by simp))).toLinearEquiv
+  have hD : ⇑D.toLinearMap = mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v := by
+    ext w
+    simp only [D, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.trans_apply, NormedSpace.fromTangentSpace_symm_apply]
+    rw [← ContinuousLinearEquiv.coe_coe, IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_coe]
   have hmap : fixedTangentSubspace Φ (riemannianExp I M p v) =
-      (fixedTangentSubspace Φ p).map D.toLinearMap :=
-    SetLike.coe_injective ((coe_fixedTangentSubspace_riemannianExp hp hU hv hvf).trans
-      (Submodule.map_coe D.toLinearMap _).symm)
+      (fixedTangentSubspace Φ p).map D.toLinearMap := by
+    refine SetLike.coe_injective ?_
+    rw [Submodule.map_coe, hD]
+    exact coe_fixedTangentSubspace_riemannianExp hp hU hv hvf
   rw [hmap, LinearEquiv.finrank_map_eq]
 
 /-! ### The fixed set as a manifold -/
@@ -270,16 +293,37 @@ theorem finrank_fixedTangentSubspace_riemannianExp {p : M} (hp : p ∈ ⋂ i, fi
 variable (Φ) in
 /-- **Each dimension stratum of the common fixed set is an embedded submanifold.** For a subspace
 `L` of the model space, the common fixed points whose fixed tangent subspace has the dimension of
-`L` form a smooth manifold modelled on `L`, and their inclusion into `M` is a smooth embedding. -/
+`L` form a smooth manifold modelled on `L`, their inclusion into `M` is a smooth embedding, and the
+differential of the inclusion at each point `x` has image the fixed tangent subspace at `x`. -/
 theorem exists_isManifold_iInter_fixedPoints_finrank (L : Submodule ℝ E) :
     ∃ C : ChartedSpace L {x : M | x ∈ ⋂ i, fixedPoints (Φ i) ∧
         finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L}, letI := C
       IsManifold 𝓘(ℝ, L) ∞ {x : M | x ∈ ⋂ i, fixedPoints (Φ i) ∧
         finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L} ∧
       IsSmoothEmbedding 𝓘(ℝ, L) I ∞ (Subtype.val : {x : M | x ∈ ⋂ i, fixedPoints (Φ i) ∧
-        finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L} → M) := by
+        finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L} → M) ∧
+      ∀ x : {x : M | x ∈ ⋂ i, fixedPoints (Φ i) ∧
+          finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L},
+        (mfderiv 𝓘(ℝ, L) I Subtype.val x).range = fixedTangentSubspace Φ x.1 := by
   -- Normal coordinates at the points of the stratum are slice charts for it.
-  refine exists_isManifold_isSmoothEmbedding_of_finrankSubspaceCharts fun p ⟨hp, hdim⟩ ↦ ?_
+  refine (exists_isManifold_isSmoothEmbedding_of_finrankSubspaceCharts ?_).imp
+    fun C ⟨hC, hemb⟩ ↦ ⟨hC, hemb, fun x ↦ ?_⟩
+  swap
+  · -- Each `Φ_i` fixes the stratum pointwise, so its differential fixes the image of the
+    -- differential of the inclusion; both subspaces have the dimension of `L`.
+    let := C
+    refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
+    · rintro _ ⟨w, rfl⟩ i
+      have hval : Φ i ∘ Subtype.val = (Subtype.val : {x : M | x ∈ ⋂ i, fixedPoints (Φ i) ∧
+          finrank ℝ (fixedTangentSubspace Φ x) = finrank ℝ L} → M) :=
+        funext fun y ↦ (mem_iInter.1 y.2.1 i).eq
+      have h := mfderiv_comp x ((Φ i).mdifferentiableAt _)
+        ((hemb.contMDiff x).mdifferentiableAt (by simp))
+      rw [hval] at h
+      exact (congrArg (fun T ↦ T w) h).symm
+    · rw [LinearMap.finrank_range_of_inj (hemb.isImmersion.mfderiv_injective (by simp) x), x.2.2]
+      rfl
+  intro p ⟨hp, hdim⟩
   obtain ⟨r, -, hr⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   -- Normal coordinates are read in the model space `E` through the fibre of the tangent bundle's
   -- trivialization at `p`.

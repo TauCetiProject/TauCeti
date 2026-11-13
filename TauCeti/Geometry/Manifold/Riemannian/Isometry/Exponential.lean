@@ -50,6 +50,8 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `IsLocalRiemannianIsometry.maximalGeodesic_mfderiv`,
   `IsLocalRiemannianIsometry.riemannianExp_mfderiv`: with completeness at `p`, a local isometry
   intertwines the maximal geodesics and the exponential maps.
+* `IsLocalRiemannianIsometry.mfderiv_apply_mfderiv_riemannianExp`: on the natural domain, a local
+  isometry intertwines the differentials of the exponential maps.
 
 ## References
 
@@ -61,7 +63,7 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 public section
 
 open Bundle Manifold Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -160,6 +162,27 @@ theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space N]
   hf.riemannianExp_mfderiv_of_mem
     (mem_expDomain_iff.2 (hp.geodesicInterval_eq_univ v ▸ mem_univ 1))
 
+/-- **Naturality of the differential of the exponential map under a local isometry.** At a
+vector `v` of the natural domain of `exp_p`, a local Riemannian isometry intertwines the
+differentials of the exponential maps:
+`df_(exp_p v) (d(exp_p)_v w) = d(exp_(f p))_(df_p v) (df_p w)`. -/
+theorem mfderiv_apply_mfderiv_riemannianExp [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    [T2Space N] (hf : IsLocalRiemannianIsometry I J f) (hv : v ∈ expDomain I M p)
+    (w : TangentSpace I p) :
+    mfderiv I J f (riemannianExp I M p v)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w) =
+      mfderiv 𝓘(ℝ, TangentSpace J (f p)) J (riemannianExp J N (f p)) (mfderiv I J f p v)
+        (mfderiv I J f p w) := by
+  -- Near `v`, both sides are derivatives of the same map `f ∘ exp_p = exp_(f p) ∘ df_p`.
+  have hfun : f ∘ riemannianExp I M p =ᶠ[𝓝 v] riemannianExp J N (f p) ∘ mfderiv I J f p := by
+    filter_upwards [(isOpen_expDomain p).mem_nhds hv] with u hu
+    exact (hf.riemannianExp_mfderiv_of_mem hu).symm
+  have hleft := ((hf.contMDiff _).mdifferentiableAt (by simp)).hasMFDerivAt.comp v
+    ((contMDiffAt_riemannianExp hv).mdifferentiableAt (by simp)).hasMFDerivAt
+  have hright := ((contMDiffAt_riemannianExp (hf.mfderiv_mem_expDomain hv)).mdifferentiableAt
+    (by simp)).hasMFDerivAt.comp v (mfderiv I J f p).hasMFDerivAt
+  exact congrArg (fun L ↦ L w) (hasMFDerivAt_unique hleft (hright.congr_of_eventuallyEq hfun))
+
 end IsLocalRiemannianIsometry
 
 namespace RiemannianIsometry
@@ -226,21 +249,13 @@ theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless] [T2Space M]
 domain of `exp_p`, a smooth Riemannian isometry intertwines the differentials of the exponential
 maps: `dΦ_(exp_p v) (d(exp_p)_v w) = d(exp_(Φ p))_(dΦ_p v) (dΦ_p w)`. -/
 theorem mfderiv_apply_mfderiv_riemannianExp [I.Boundaryless] [J.Boundaryless] [T2Space M]
-    [T2Space N] (Φ : RiemannianIsometry I J M N) {p : M} {v : TangentSpace I p}
-    (hv : v ∈ expDomain I M p) (w : TangentSpace I p) :
+    (Φ : RiemannianIsometry I J M N) (hv : v ∈ expDomain I M p) (w : TangentSpace I p) :
     mfderiv I J Φ (riemannianExp I M p v)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w) =
       mfderiv 𝓘(ℝ, TangentSpace J (Φ p)) J (riemannianExp J N (Φ p)) (mfderiv I J Φ p v)
         (mfderiv I J Φ p w) := by
-  -- Both sides are derivatives at `v` of the same map `Φ ∘ exp_p = exp_(Φ p) ∘ dΦ_p`.
-  have hfun : Φ ∘ riemannianExp I M p = riemannianExp J N (Φ p) ∘ mfderiv I J Φ p :=
-    funext fun u ↦ (Φ.riemannianExp_mfderiv p u).symm
-  have hleft := (Φ.mdifferentiableAt _).hasMFDerivAt.comp v
-    ((contMDiffAt_riemannianExp hv).mdifferentiableAt (by simp)).hasMFDerivAt
-  have hright := ((contMDiffAt_riemannianExp (Φ.mfderiv_mem_expDomain_iff.2 hv)).mdifferentiableAt
-    (by simp)).hasMFDerivAt.comp v (mfderiv I J Φ p).hasMFDerivAt
-  rw [hfun] at hleft
-  exact congrArg (fun L ↦ L w) (hasMFDerivAt_unique hleft hright)
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
+  exact Φ.isLocalRiemannianIsometry.mfderiv_apply_mfderiv_riemannianExp hv w
 
 end RiemannianIsometry
 
