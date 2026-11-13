@@ -9,16 +9,16 @@ public import TauCeti.Analysis.Normed.Affine.Generic
 public import TauCeti.Topology.Algebra.Affine.Germ
 
 /-!
-# Generic incoming affine germs
+# Generic one-sided affine germs
 
-For finitely many velocities and normal functionals, one arbitrarily small common
-perturbation preserves every nonzero normal sign and makes all the velocities
+For finitely many velocities and continuous linear functionals, one arbitrarily small
+common perturbation preserves every nonzero evaluation sign and makes all the velocities
 transverse to the nonempty members of a finite exceptional arrangement. From every
-base point, the resulting incoming germs eventually avoid the arrangement,
+base point, the resulting one-sided affine germs eventually avoid the arrangement,
 simultaneously for all the velocities. The base point itself may be exceptional.
 Applying the result to a union of arrangements allows further finite refinements.
 
-Empty exceptions impose no constraint, and zero normal evaluations are
+Empty exceptions impose no constraint, and zero functional evaluations are
 left unconstrained. No finite-dimensionality assumption is required.
 The general fixed-direction germ results are available from
 `TauCeti.Topology.Algebra.Affine.Germ`.
@@ -26,7 +26,8 @@ The general fixed-direction germ results are available from
 Adapted from `Mei/Geometry/Affine/IncomingGerm.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
-Affine point spaces and their vector spaces are independent.
+The point space `P` is a separate `AddTorsor V P` type carrying no topology, metric,
+or chosen origin.
 -/
 
 public section
@@ -38,11 +39,11 @@ namespace TauCeti.ExceptionalArrangement
 variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [AddTorsor V P]
 
-/-- A single arbitrarily small perturbation preserves the nonzero normal signs
-of finitely many velocities and makes their incoming germs generic from every
-base point. The eventual bound is simultaneous in the velocities; it may depend
-on the base point. Nonempty exceptions are also transverse to every perturbed
-velocity. -/
+/-- A single arbitrarily small perturbation preserves every nonzero evaluation sign
+under finitely many continuous linear functionals `m` and makes the one-sided germs
+`t ↦ t • (v i + r) +ᵥ x` eventually generic on `𝓝[>] 0` from every base point.
+The eventual bound is simultaneous in the velocities and may depend on the base
+point. Every perturbed velocity is transverse to each nonempty exception. -/
 theorem exists_norm_lt_forall_eventually_isGeneric
     (E : ExceptionalArrangement ℝ P) {ι κ : Type*} [Finite ι] [Finite κ]
     (v : ι → V) (m : κ → V →L[ℝ] ℝ) {ε : ℝ} (hε : 0 < ε) :
@@ -83,14 +84,6 @@ theorem exists_norm_lt_forall_eventually_isGeneric
   refine ⟨r, by simpa using hrU.1, ?_, htrans, ?_⟩
   · intro i j hne
     exact mem_iInter.mp hrU.2 ⟨(i, j), hne⟩
-  · intro x
-    apply eventually_all.mpr
-    intro i
-    simp_rw [isGeneric_iff]
-    apply E.exceptions.eventually_all.mpr
-    intro S hS
-    by_cases hne : (S : Set P).Nonempty
-    · exact S.eventually_smul_vadd_notMem (htrans i S hS hne) x
-    · exact Filter.Eventually.of_forall fun t ht => hne ⟨_, ht⟩
+  · exact fun x => eventually_all.mpr fun i => E.eventually_isGeneric_smul_vadd (htrans i) x
 
 end TauCeti.ExceptionalArrangement
