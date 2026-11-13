@@ -54,9 +54,10 @@ theorem ExteriorAlgebra.baseChangeEquiv_symm_map_exteriorPower (n : ℕ) :
 
 namespace TauCeti.exteriorPower
 
+omit [CommRing A] [Algebra R A] in
 /-- Scalar extension of the inclusion of a homogeneous exterior power into the exterior algebra
 remains injective, because the grading splits the inclusion. -/
-theorem baseChange_subtype_injective (n : ℕ) :
+theorem baseChange_subtype_injective [CommSemiring A] [Algebra R A] (n : ℕ) :
     Function.Injective ((⋀[R]^n M).subtype.baseChange A) := by
   intro x y h
   exact DirectSum.toBaseChange_injective (S := A) (fun i ↦ ⋀[R]^i M) n

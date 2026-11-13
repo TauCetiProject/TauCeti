@@ -825,13 +825,22 @@ theorem Isometry.map_mem_orthogonalComplement_of_forall_mem {B : FiniteBilinearM
     A.orthogonalComplement_anti (fun y hy ↦ h y hy) hx
   rwa [f.comap_orthogonalComplement, AddSubgroup.mem_comap] at hx'
 
+/-- A morphism whose image of `H` contains `K` carries every element of `H^⊥` into `K^⊥`. -/
+theorem Hom.map_mem_orthogonalComplement_of_le_map {B : FiniteBilinearModule}
+    (f : Hom A B) {H : AddSubgroup A} {K : AddSubgroup B}
+    (h : K ≤ H.map f.toAddMonoidHom) {x : A} (hx : x ∈ A.orthogonalComplement H) :
+    f x ∈ B.orthogonalComplement K := by
+  rw [B.mem_orthogonalComplement_iff]
+  intro y hy
+  obtain ⟨z, hz, rfl⟩ := h hy
+  exact (f.map_pairing x z).trans ((A.mem_orthogonalComplement_iff H x).mp hx z hz)
+
 /-- An isometry carrying `H` onto `K` carries every element of `H^⊥` into `K^⊥`. -/
 theorem Isometry.map_mem_orthogonalComplement_of_map_eq {B : FiniteBilinearModule}
     (f : Isometry A B) {H : AddSubgroup A} {K : AddSubgroup B}
     (h : H.map f.toAddEquiv = K) {x : A} (hx : x ∈ A.orthogonalComplement H) :
-    f x ∈ B.orthogonalComplement K := by
-  rw [← h, ← f.map_orthogonalComplement (H := H)]
-  exact AddSubgroup.mem_map_of_mem _ hx
+    f x ∈ B.orthogonalComplement K :=
+  Hom.map_mem_orthogonalComplement_of_le_map A f.toHom h.ge hx
 
 /-- The image of a subgroup under a morphism of finite bilinear modules is isotropic exactly
 when the subgroup is. -/
