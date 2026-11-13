@@ -19,11 +19,19 @@ pseudo-metric space converge to `u` locally uniformly on `s`, then for every com
 every `ε > 0`, eventually `dist (F k x) (u x) < ε` for all `x ∈ K`. For real-valued functions,
 `Real.dist_eq` turns this into the bound `|F k x - u x| < ε`.
 
+On a product, locally uniform convergence on `U` gives uniform convergence of the slices
+`t ↦ F k (a, t)` on every compact set `K` with `{a} × K ⊆ U`
+(`TendstoLocallyUniformlyOn.tendstoUniformlyOn_slice_right`).
+
 Conversely, if the values of `F m` at one point of `s` have norms tending to infinity, then no
 subsequence of `F` converges locally uniformly on `s`
 (`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`), while dividing a fixed
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
+
+On an open set on which the limit is continuous, locally uniform convergence is the same as
+continuous convergence at every point of the set
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
 
 A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
 uniformly in its first argument as the second tends to `q`
@@ -40,7 +48,22 @@ limits on the windows of an exhaustion.
 
 public section
 
-open Filter Set Topology
+open Filter Set Topology Uniformity
+
+/-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
+set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
+`i → l` and `y → x` jointly, for every `x` in the set. -/
+theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι α β : Type*}
+    [TopologicalSpace α] [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι}
+    {s : Set α} (hs : IsOpen s) (hf : ContinuousOn f s) :
+    TendstoLocallyUniformlyOn F f l s ↔
+      ∀ x ∈ s, Tendsto (fun p : ι × α ↦ F p.1 p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) := by
+  rw [hs.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+  refine forall₂_congr fun x hx ↦ ?_
+  have hfx : Tendsto (fun p : ι × α ↦ f p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) :=
+    ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
+  refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
+  exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
@@ -55,6 +78,16 @@ theorem TendstoLocallyUniformlyOn.eventually_forall_dist_lt
     with k hk x hx
   rw [dist_comm]
   exact hk x hx
+
+/-- If functions `F k` on a product converge to `u` locally uniformly on `U`, then their slices
+`t ↦ F k (a, t)` converge uniformly on every compact set `K` with `{a} × K ⊆ U`. -/
+theorem TendstoLocallyUniformlyOn.tendstoUniformlyOn_slice_right {δ γ : Type*}
+    [TopologicalSpace δ] [UniformSpace γ] {F : ι → α × δ → γ} {u : α × δ → γ}
+    {U : Set (α × δ)} (hFu : TendstoLocallyUniformlyOn F u l U) {a : α} {K : Set δ}
+    (hK : IsCompact K) (hKU : ∀ t ∈ K, (a, t) ∈ U) :
+    TendstoUniformlyOn (fun k t ↦ F k (a, t)) (fun t ↦ u (a, t)) l K :=
+  (tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
+    (hFu.comp (fun t ↦ (a, t)) hKU (by fun_prop))
 
 namespace TauCeti
 
