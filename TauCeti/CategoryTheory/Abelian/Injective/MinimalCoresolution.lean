@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ExactSequence
 public import Mathlib.CategoryTheory.ObjectProperty.Basic
 public import TauCeti.CategoryTheory.Abelian.Injective.Envelope
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # Coresolutions with `n` terms and minimal injective coresolutions
@@ -446,6 +447,11 @@ def HasCoresolution (P : ObjectProperty C) (X : C) (n : ℕ) : Prop :=
 
 variable {P : ObjectProperty C}
 
+theorem hasCoresolution_iff {X : C} {n : ℕ} :
+    HasCoresolution P X n ↔ ∃ S : ComposableArrows C (n + 1), S.IsCoresolution ∧
+      Nonempty (S.obj' 1 ≅ X) ∧ ∀ (i : ℕ) (hi : i < n), P (S.obj' (i + 2)) :=
+  Iff.rfl
+
 /-- Every object has a coresolution with no terms, `0 → X`. -/
 theorem hasCoresolution_zero (X : C) : HasCoresolution P X 0 :=
   ⟨mk₁ (0 : 0 ⟶ X), ⟨(mk₁ (0 : 0 ⟶ X)).exact₁, isZero_zero C⟩, ⟨Iso.refl _⟩,
@@ -489,6 +495,21 @@ theorem HasCoresolution.of_le {X : C} {m n : ℕ} (h : HasCoresolution P X n) (h
   induction hmn with
   | refl => exact h
   | step _ ih => exact ih h.of_succ
+
+/-- **Coresolutions add up.** If `P` is closed under binary biproducts, then coresolutions with
+`n` terms satisfying `P` of `X` and of `Y` give one of `X ⊞ Y`. -/
+theorem HasCoresolution.biprod (hP : ∀ A B : C, P A → P B → P (A ⊞ B)) {n : ℕ} :
+    ∀ {X Y : C}, HasCoresolution P X n → HasCoresolution P Y n → HasCoresolution P (X ⊞ Y) n := by
+  induction n with
+  | zero => exact fun _ _ ↦ hasCoresolution_zero _
+  | succ n ih =>
+    intro X Y hX hY
+    obtain ⟨I, ι, hι, hI, hX'⟩ := hasCoresolution_succ_iff.1 hX
+    obtain ⟨J, κ, hκ, hJ, hY'⟩ := hasCoresolution_succ_iff.1 hY
+    refine hasCoresolution_succ_iff.2 ⟨I ⊞ J, biprod.map ι κ, inferInstance, hP _ _ hI hJ, ?_⟩
+    exact (ih hX' hY').of_iso (IsColimit.coconePointUniqueUpToIso
+      (CokernelCofork.isColimitBiprod (cokernelIsCokernel ι) (cokernelIsCokernel κ))
+      (colimit.isColimit _))
 
 namespace ComposableArrows
 
