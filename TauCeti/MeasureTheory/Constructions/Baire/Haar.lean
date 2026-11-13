@@ -12,7 +12,7 @@ public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.MeasureTheory.Constructions.Baire.Regular
 import Mathlib.Topology.CompactOpen
 import Mathlib.Topology.Metrizable.ContinuousMap
-import TauCeti.MeasureTheory.Group.ModularCharacter
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 import TauCeti.Topology.Algebra.Group.LocallyConstant
@@ -48,7 +48,7 @@ constructed as follows:
    continuous injection from `G ⧸ N` into the metrizable space `ℕ → C(G, ℝ)`.
 3. The saturated open set `W = π ⁻¹' (π '' U)` (`π : G → G ⧸ N`) has σ-compact complement image in
    `ℕ → C(G, ℝ)`, so `W` is Baire measurable; inner regularity and right quasi-invariance of `μ`
-   force `μ (W \ V) = 0`, hence `W =ᵐ[μ] U`.
+   force `μ (W \ V) = 0` (`IsOpen.measure_mul_sdiff_eq_zero`), hence `W =ᵐ[μ] U`.
 
 On an arbitrary (not necessarily σ-compact) locally compact Hausdorff group, every set `s` with
 `[SigmaFinite (μ.restrict s)]`—in particular every finite-measure open set and every `μ`-null
@@ -84,7 +84,7 @@ Baire hulls, Baire null envelopes, and Baire representatives without ambient σ-
 public section
 
 open Filter Function MeasureTheory Set Topology
-open scoped ENNReal symmDiff
+open scoped ENNReal Pointwise symmDiff
 
 section SigmaCompactSaturation
 
@@ -134,33 +134,6 @@ private theorem measurableSet_baire_saturation (f : ℕ → C(G, ℝ)) {U : Set 
   let _ : MeasurableSpace G := TauCeti.baire G
   exact MeasurableSet.of_compl (hWc ▸ hΨ_cont.measurable_baire hΨF_baire)
 
-omit [T2Space G] in
-/-- If `U` is open, `V` is measurable and right-`N`-invariant, and `μ (U \ V) = 0` for a regular
-Haar measure `μ`, then the right-`N`-saturation `W = π ⁻¹' (π '' U)` also satisfies
-`μ (W \ V) = 0`. -/
-private theorem measure_saturation_diff_eq_zero (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular]
-    (N : Subgroup G) {U V : Set G} (hU : IsOpen U) (hV : MeasurableSet V)
-    (hVN : ∀ ⦃x n : G⦄, n ∈ N → (x * n ∈ V ↔ x ∈ V)) (hUV : μ (U \ V) = 0) :
-    μ ((QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U) \ V) = 0 := by
-  set W : Set G := (QuotientGroup.mk : G → G ⧸ N) ⁻¹' (QuotientGroup.mk '' U)
-  have hW_open : IsOpen W :=
-    (QuotientGroup.isOpenMap_coe (N := N) U hU).preimage QuotientGroup.continuous_mk
-  by_contra hne
-  obtain ⟨K, hKWV, hK, hKpos⟩ :=
-    (hW_open.measurableSet.diff hV).exists_lt_isCompact (pos_iff_ne_zero.2 hne)
-  have hKcov : K ⊆ ⋃ n : N, (· * (n : G)) ⁻¹' U :=
-    hKWV.trans (sdiff_subset.trans (QuotientGroup.preimage_image_mk N U).subset)
-  obtain ⟨s, hsK⟩ := hK.elim_finite_subcover (fun n : N => (· * (n : G)) ⁻¹' U)
-    (fun n => hU.preimage (continuous_mul_const _)) hKcov
-  have hKsub : K ⊆ ⋃ n : s, (· * ((n : N) : G)) ⁻¹' (U \ V) := by
-    intro x hx
-    obtain ⟨n, hn, hxnU⟩ := mem_iUnion₂.1 (hsK hx)
-    exact mem_iUnion.2 ⟨⟨n, hn⟩, hxnU, fun hxnV => (hKWV hx).2 ((hVN n.2).1 hxnV)⟩
-  have hKzero : μ K = 0 :=
-    measure_mono_null hKsub (measure_iUnion_null fun n : s =>
-      (Measure.measure_mul_right_null_of_regular μ ((n : N) : G)).2 hUV)
-  exact hKpos.ne' hKzero
-
 private theorem exists_isOpen_baire_superset_ae_eq_of_sigmaCompact {U : Set G} (hU : IsOpen U)
     (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] :
     ∃ W : Set G, U ⊆ W ∧ IsOpen W ∧ MeasurableSet[TauCeti.baire G] W ∧ W =ᵐ[μ] U := by
@@ -168,15 +141,18 @@ private theorem exists_isOpen_baire_superset_ae_eq_of_sigmaCompact {U : Set G} (
   obtain ⟨f, t, -, hVt⟩ := TauCeti.measurableSet_baire_iff_exists_continuousMap.1 hV_baire
   let N : Subgroup G := ⨅ k, TauCeti.rightTranslationStabilizer (f k)
   let π : G → G ⧸ N := QuotientGroup.mk
-  have hVN {x n : G} (hn : n ∈ N) : x * n ∈ V ↔ x ∈ V := by
-    simp [hVt, fun k => TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_iInf.1 hn k) x]
+  have hVN : V * (N : Set G) ⊆ V := by
+    rintro _ ⟨x, hx, n, hn, rfl⟩
+    simpa [hVt, fun k => TauCeti.mem_rightTranslationStabilizer.1 (Subgroup.mem_iInf.1 hn k) x]
+      using hx
   have hW_open : IsOpen (π ⁻¹' (π '' U)) :=
     (QuotientGroup.isOpenMap_coe (N := N) U hU).preimage QuotientGroup.continuous_mk
   have hW_baire : MeasurableSet[TauCeti.baire G] (π ⁻¹' (π '' U)) :=
     measurableSet_baire_saturation f hU
   have hUW : U ⊆ π ⁻¹' (π '' U) := subset_preimage_image π U
-  have hW_diff_V : μ (π ⁻¹' (π '' U) \ V) = 0 :=
-    measure_saturation_diff_eq_zero μ N hU (TauCeti.baire_le V hV_baire) (fun _ _ => hVN)
+  have hW_diff_V : μ (π ⁻¹' (π '' U) \ V) = 0 := by
+    rw [QuotientGroup.preimage_image_mk_eq_mul]
+    exact hU.measure_mul_sdiff_eq_zero (TauCeti.baire_le V hV_baire).nullMeasurableSet hVN
       (ae_eq_set.1 hVU).2
   exact ⟨π ⁻¹' (π '' U), hUW, hW_open, hW_baire,
     ((ae_subset.2 hW_diff_V).trans hVU.subset).antisymm (Eventually.of_forall fun _ h => hUW h)⟩
