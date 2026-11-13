@@ -35,8 +35,14 @@ concrete p-adic norm and valuation APIs.
 * `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
   `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
   on `ℚ_[p]` with Mathlib's norm.
-* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
-  `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
+* `Padic.integerRing_eq_subring` identifies the ring of integers of `ℚ_[p]` with Mathlib's subring
+  `PadicInt.subring p`, and `Padic.integerRingEquiv` with `ℤ_[p]`; the simp lemmas
+  `Padic.coe_integerRingEquiv_apply` and `Padic.coe_integerRingEquiv_symm_apply` say that it is the
+  identity on the underlying `p`-adic numbers, and `Padic.coe_two_integerRing` that the inclusion
+  sends `2` to `2`. `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit
+  of the ring of integers.
+* `Padic.normalizedValuationWithZero_eq_inv_mulValuation`: the zero-preserving normalized valuation
+  on `ℚ_[p]` is the inverse of `Padic.mulValuation`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
