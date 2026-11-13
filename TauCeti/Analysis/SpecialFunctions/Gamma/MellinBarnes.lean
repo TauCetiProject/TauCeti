@@ -19,10 +19,11 @@ second kind (DLMF 5.12.3),
 `∫₀^∞ t^{s - 1} (1 + t)^{-a} dt = Γ(s) Γ(a - s) / Γ(a)`,
 
 obtained from the Beta integral over `[0, 1]` by the substitution `t = u / (1 - u)`. This adapts
-the real-variable proof of `TauCeti.integral_rpow_mul_one_add_rpow` to complex parameters. On a
-vertical line `Re s = σ` with `0 < σ < Re a` the product `Γ(s) Γ(a - s)` is integrable, since
-`Γ(σ + i y)` decays faster than every power of `|y|` while `‖Γ(a - σ - i y)‖ ≤ Γ(Re a - σ)`.
-Mellin inversion then gives the Mellin–Barnes integral of the binomial,
+the real-variable proof of `TauCeti.integral_rpow_mul_one_add_rpow` to complex parameters. On
+every vertical line `Re s = σ` avoiding the poles of both factors the product `Γ(s) Γ(a - s)` is
+integrable, since `Γ(σ + i y)` decays faster than every power of `|y|` while `Γ(a - σ - i y)` is
+bounded. For `0 < σ < Re a`, Mellin inversion then gives the Mellin–Barnes integral of the
+binomial,
 
 `Γ(a) (1 + u)^{-a} = (1 / 2π) ∫ Γ(σ + i y) Γ(a - σ - i y) u^{-σ - i y} dy`   for `u > 0`.
 
@@ -35,9 +36,9 @@ Barnes's first lemma.
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
-  vertical line `Re s = σ` with `0 < σ < Re a`.
-* `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on such a line is
-  `Γ(a) (1 + u)^{-a}`.
+  vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
+* `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
+  `Re s = σ` with `0 < σ < Re a` is `Γ(a) (1 + u)^{-a}`.
 * `Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub`: the same formula as the unnormalised
   vertical integral `∫ u^{-(σ + i y)} Γ(σ + i y) Γ(a - σ - i y) dy = 2π Γ(a) (1 + u)^{-a}`.
 
@@ -119,19 +120,19 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 
-/-- On a vertical line `Re s = σ` with `0 < σ < Re a`, the product `Γ(s) Γ(a - s)` is integrable:
-`Γ(σ + i y)` decays like `(1 + y²)⁻¹` and `‖Γ(a - σ - i y)‖ ≤ Γ(Re a - σ)`. -/
-theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 < σ) (hσa : σ < a.re) :
+/-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
+product `Γ(s) Γ(a - s)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
     VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ := by
-  have hre (y : ℝ) : (a - (σ + y * I)).re = a.re - σ := by simp
-  refine (verticalIntegrable_Gamma fun n h ↦ ?_).mul_bdd (c := Real.Gamma (a.re - σ)) ?_
-    (Eventually.of_forall fun y ↦ ?_)
-  · linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
-  · refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-    refine (differentiableAt_Gamma _ fun m h ↦ ?_).continuousAt.comp (by fun_prop)
-    have : a.re - σ = -m := by simpa using congrArg re h
-    linarith [show (0 : ℝ) ≤ m from m.cast_nonneg]
-  · simpa [hre] using norm_Gamma_le_Gamma_re (s := a - (σ + y * I)) (by rw [hre]; linarith)
+  have hsub (y : ℝ) : a - (σ + y * I) = ↑(a.re - σ) + ↑(a.im - y) * I := by
+    apply Complex.ext <;> simp
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
+  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
+    (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
+  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
+  refine (differentiableAt_Gamma _ fun m h ↦ haσ m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re h
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
@@ -146,7 +147,8 @@ theorem mellinInv_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 < σ) (hσa 
     rw [mellin_const_smul, (hasMellin_one_add_cpow_neg (by simpa using hσ)
       (by simpa using hσa)).2, smul_eq_mul, mul_div_cancel₀ _ hΓa]
   have hint : VerticalIntegrable (mellin fun t : ℝ ↦ Gamma a • (1 + (t : ℂ)) ^ (-a)) σ :=
-    (verticalIntegrable_Gamma_mul_Gamma_sub hσ hσa).congr (Eventually.of_forall hline)
+    (verticalIntegrable_Gamma_mul_Gamma_sub (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])
+      (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])).congr (Eventually.of_forall hline)
   have hconv := (hasMellin_one_add_cpow_neg (s := σ) (a := a) (by simpa using hσ)
     (by simpa using hσa)).1.const_smul (Gamma a)
   have hcont : ContinuousAt (fun t : ℝ ↦ Gamma a • (1 + (t : ℂ)) ^ (-a)) u := by
