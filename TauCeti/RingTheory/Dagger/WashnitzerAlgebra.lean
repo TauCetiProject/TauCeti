@@ -49,7 +49,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 ## Main results
 
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_norm_coeff_le`: for finitely many variables,
-  `f ∈ W` iff `‖aᵥ‖ ≤ C ρ^{-|ν|}` for some `ρ > 1` and `C`.
+  `f ∈ W` iff `‖aᵥ‖ ≤ C ρ^{-|ν|}` for some `ρ > 1` and `C`; such bounds follow from the
+  geometric decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` with `0 < q < 1`
+  (`TauCeti.Dagger.exists_norm_coeff_le_mul_inv_pow_of_le_pow`).
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_pow_eq_norm`: over a nontrivially normed
   field the radii may be taken in the divisible hull `√|K^×|` of the value group.
 * `TauCeti.Dagger.washnitzerAlgebra.denseRange_toTate`: `W` is dense in the Tate algebra;
@@ -103,6 +105,29 @@ private theorem isRestricted_min_of_one_lt {f g : MvPowerSeries σ R} {ρ ρ' : 
   have h0 (_ : σ) : 0 ≤ min ρ ρ' := zero_le_one.trans (le_min hρ.le hρ'.le)
   exact ⟨isRestricted_of_le hf h0 fun _ ↦ min_le_left _ _,
     isRestricted_of_le hg h0 fun _ ↦ min_le_right _ _⟩
+
+/-- **Geometric decay gives a radius.** The decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` of the coefficients of a
+series, for `0 < q < 1` and `c > 0`, gives a radius `ρ > 1` and a constant `C` with
+`‖aᵥ‖ ≤ C ρ^{-|ν|}`. -/
+theorem exists_norm_coeff_le_mul_inv_pow_of_le_pow {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1)
+    {c : ℕ} (hc : 0 < c) {f : MvPowerSeries σ R} (h : ∀ t, ‖coeff t f‖ ≤ q ^ (t.degree / c)) :
+    ∃ ρ : ℝ, 1 < ρ ∧ ∃ C : ℝ, ∀ t, ‖coeff t f‖ ≤ C * (ρ ^ t.degree)⁻¹ := by
+  -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
+  have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
+  set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
+  have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
+  have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
+  refine ⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩
+  rw [le_mul_inv_iff₀ (by positivity)]
+  calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
+        rw [← pow_mul]
+        gcongr
+        · exact h t
+        · exact hρ.le
+        · exact (Nat.lt_mul_div_succ _ hc).le
+    _ = q⁻¹ := by
+        rw [hρc, inv_pow, pow_succ]
+        field_simp
 
 end ConstantRadius
 

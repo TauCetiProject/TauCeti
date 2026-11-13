@@ -49,6 +49,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow_swap`: for a weakly
   `M`-regular sequence `a, b`, the power `aʲ` is regular on `M ⧸ bⁿ M`.
+* `TauCeti.isRegular_cons_iff_isRegular_quotient`: `x :: rs` is `R`-regular exactly
+  when `x` is a non-zero-divisor and the images of `rs` are regular on `R ⧸ (x)`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
   `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
   and also after multiplication by a power of `b`, already lies in `R`.
@@ -155,6 +157,21 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotient_pow_smul_top 
     IsSMulRegular (M ⧸ (Ideal.span {b} ^ n • ⊤ : Submodule R M)) a := by
   rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
   simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
+
+/-- A sequence `x :: rs` is `R`-regular exactly when `x` is a non-zero-divisor and the images of
+`rs` form a regular sequence on the ring `R ⧸ (x)`. -/
+theorem TauCeti.isRegular_cons_iff_isRegular_quotient (x : R) (rs : List R) :
+    IsRegular R (x :: rs) ↔ IsSMulRegular R x ∧
+      IsRegular (R ⧸ Ideal.span {x}) (rs.map (Ideal.Quotient.mk (Ideal.span {x}))) := by
+  -- `R ⧸ x R` and `R ⧸ (x)` agree as modules over `R ⧸ (x)`.
+  let e : QuotSMulTop x R ≃ₗ[R] R ⧸ Ideal.span {x} :=
+    (Ideal.quotientEquivAlgOfEq R
+      (by simp [← Submodule.ideal_span_singleton_smul])).toLinearEquiv
+  rw [isRegular_cons_iff']
+  refine and_congr_right' (e.toAddEquiv.isRegular_congr (List.forall₂_same.2 fun r _ q ↦ ?_))
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
+  rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul, algebraMap_smul]
+  exact e.map_smul a q
 
 end Pow
 

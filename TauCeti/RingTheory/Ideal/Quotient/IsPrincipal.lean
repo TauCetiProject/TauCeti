@@ -21,6 +21,8 @@ and Nakayama's lemma gives `𝔮 = (f)`.
 * `Ideal.IsPrime.isPrincipal_of_isPrincipal_map_quotient_span_singleton`: a finitely generated
   prime `𝔮` not containing an element `x` of the Jacobson radical is principal as soon as its image
   in `R ⧸ (x)` is.
+* `Ideal.IsPrime.eq_bot_of_le_span_singleton`: a finitely generated prime `𝔮` not containing an
+  element `x` of the Jacobson radical is zero as soon as it lies in `(x)`.
 -/
 
 public section
@@ -57,3 +59,15 @@ theorem Ideal.IsPrime.isPrincipal_of_isPrincipal_map_quotient_span_singleton {q 
   rw [hab, Submodule.mem_sup]
   exact ⟨r * f, mem_span_singleton'.mpr ⟨r, rfl⟩, -(x * b),
     Submodule.neg_mem _ (Submodule.smul_mem_smul (mem_span_singleton_self x) hbq), rfl⟩
+
+/-- **A prime inside a principal radical ideal is zero.** Let `x` be an element of the Jacobson
+radical of `R` and `𝔮 ⊆ (x)` a finitely generated prime ideal not containing `x`. Then `𝔮 = x 𝔮`,
+so `𝔮 = 0` by Nakayama's lemma. -/
+theorem Ideal.IsPrime.eq_bot_of_le_span_singleton {q : Ideal R} (hq : q.IsPrime) (hfg : q.FG)
+    {x : R} (hx : x ∈ (⊥ : Ideal R).jacobson) (hxq : x ∉ q) (hle : q ≤ span {x}) : q = ⊥ := by
+  refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) q hfg (fun y hy ↦ ?_)
+    ((span_singleton_le_iff_mem _).mpr (by simpa only [Ideal.jacobson_bot] using hx))
+  obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hle hy)
+  have hz : z ∈ q := (hq.mem_or_mem hy).resolve_right hxq
+  rw [mul_comm, ← smul_eq_mul]
+  exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
