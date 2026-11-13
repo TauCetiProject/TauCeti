@@ -101,21 +101,19 @@ theorem of_eq_add_of_linearEquiv_prod {X P Q : (finiteProjectiveModules R).FullS
 
 /-- **Additivity on finite products.** The class of a finitely generated projective module
 isomorphic to a finite product is the sum of the classes of the factors. -/
-theorem of_eq_sum_of_linearEquiv_pi {ι : Type} [Fintype ι]
+theorem of_eq_sum_of_linearEquiv_pi {ι : Type*} [Fintype ι]
     {X : (finiteProjectiveModules R).FullSubcategory}
     (P : ι → (finiteProjectiveModules R).FullSubcategory)
     (e : X.obj ≃ₗ[R] (i : ι) → (P i).obj) : of.{u} X = ∑ i, of.{u} (P i) := by
-  have := hasFiniteProducts_of_has_binary_and_terminal
+  obtain ⟨n, ⟨f⟩⟩ := Finite.exists_equiv_fin ι
+  rw [← Equiv.sum_comp f.symm (fun i ↦ of.{u} (P i))]
+  have := hasFiniteBiproducts_of_hasBinaryBiproducts
     (C := (finiteProjectiveModules R).FullSubcategory)
-  have := HasFiniteBiproducts.of_hasFiniteProducts
-    (C := (finiteProjectiveModules R).FullSubcategory)
-  have := PreservesFiniteProducts.of_preserves_binary_and_terminal (finiteProjectiveModules R).ι
-  have : PreservesBiproduct P (finiteProjectiveModules R).ι :=
-    preservesBiproduct_of_preservesProduct _
-  rw [← of_biproduct.{u} P]
+  rw [← of_biproduct.{u} (fun i ↦ P (f.symm i))]
   exact of_congr ((finiteProjectiveModules R).fullyFaithfulι.preimageIso
-    (e.toModuleIso ≪≫ (ModuleCat.biproductIsoPi fun i ↦ (P i).obj).symm ≪≫
-      ((finiteProjectiveModules R).ι.mapBiproduct P).symm))
+    ((e.trans (LinearEquiv.piCongrLeft' R (fun i ↦ (P i).obj) f)).toModuleIso ≪≫
+      (ModuleCat.biproductIsoPi fun i ↦ (P (f.symm i)).obj).symm ≪≫
+      ((finiteProjectiveModules R).ι.mapBiproduct (fun i ↦ P (f.symm i))).symm))
 
 /-- The class of a finitely generated projective module isomorphic to `Rⁿ` is `n` times the class
 of `R`. -/
@@ -220,6 +218,15 @@ theorem classOf_prod (n m : ℕ) : classOf Λ (M × N) (n + m) = classOf Λ M n 
   rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := obj Λ (M × N))
     (P := obj Λ M) (Q := obj Λ N) (.refl _ _), add_nsmul]
   abel
+
+/-- A module isomorphic to a finite product has the sum of the reduced classes of its factors,
+with the ranks adding. -/
+theorem classOf_eq_sum_of_linearEquiv_pi {ι : Type*} [Fintype ι] (P : ι → Type u)
+    [∀ i, AddCommGroup (P i)] [∀ i, Module Λ (P i)] [∀ i, Module.Finite Λ (P i)]
+    [∀ i, Module.Projective Λ (P i)] (e : M ≃ₗ[Λ] (i : ι) → P i) (n : ι → ℕ) :
+    classOf Λ M (∑ i, n i) = ∑ i, classOf Λ (P i) (n i) := by
+  simp only [classOf_def, SplitK0.of_eq_sum_of_linearEquiv_pi (X := obj Λ M)
+    (fun i ↦ obj Λ (P i)) e, Finset.sum_sub_distrib, Finset.sum_smul]
 
 variable (Λ) in
 /-- The class of the free module `Λⁿ` in rank `n` vanishes. -/

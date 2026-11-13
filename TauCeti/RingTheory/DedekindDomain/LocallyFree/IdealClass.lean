@@ -41,9 +41,12 @@ namespace TauCeti
 universe u
 
 variable {A : Type u} [CommRing A]
-  {K : Type u} [Field K] [Algebra A K] [IsFractionRing A K]
 
 namespace FiniteProjectiveModules
+
+section SameUniverse
+
+variable {K : Type u} [Field K] [Algebra A K] [IsFractionRing A K]
 
 section FractionalIdeal
 
@@ -98,6 +101,10 @@ private noncomputable def fractionalIdealClassHom :
     exact congrArg Multiplicative.ofAdd ((classOf_congr e 1).trans (by simp [classOf_def]))
   map_mul' I J := congrArg Multiplicative.ofAdd (classOf_mul I J)
 
+end SameUniverse
+
+variable [IsDedekindDomain A]
+
 variable (A) in
 /-- The homomorphism `[I] ↦ [I] - [A]` from the ideal class group to projective `K₀(A)`. -/
 noncomputable def idealClassHom :
@@ -124,44 +131,35 @@ theorem idealClassHom_mk0 (I : (Ideal A)⁰) [Module.Projective A (I : Ideal A)]
   rw [← ClassGroup.mk_mk0 (FractionRing A), idealClassHom_mk]
   exact classOf_congr (FractionalIdeal.coeIdealEquiv (I : Ideal A)) 1
 
-variable (K) in
+variable {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
+
+variable (A K) in
 /-- Every reduced class of a finite projective module over a Dedekind domain comes from an
 ideal class. The reduction uses the dimension over the fraction field. -/
 theorem exists_idealClassHom_eq_classOf (M : Type u) [AddCommGroup M] [Module A M]
     [Module.Finite A M] [Module.Projective A M] :
     ∃ c : Additive (ClassGroup A), idealClassHom A c =
       classOf A M (Module.finrank K (K ⊗[A] M)) := by
-  classical
   obtain ⟨J, hJ, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_ideal A K M
-  let I i : (FractionalIdeal A⁰ (FractionRing A))ˣ :=
-    Units.mk0 (J i : FractionalIdeal A⁰ (FractionRing A))
-      (FractionalIdeal.coeIdeal_ne_zero.mpr (hJ i))
   have hP i : Module.Projective A (J i) := by
+    let I : (FractionalIdeal A⁰ (FractionRing A))ˣ :=
+      Units.mk0 (J i : FractionalIdeal A⁰ (FractionRing A))
+        (FractionalIdeal.coeIdeal_ne_zero.mpr (hJ i))
     let : Module.Projective A (J i : FractionalIdeal A⁰ (FractionRing A)) :=
-      inferInstanceAs (Module.Projective A (I i : FractionalIdeal A⁰ (FractionRing A)))
+      inferInstanceAs (Module.Projective A (I : FractionalIdeal A⁰ (FractionRing A)))
     exact Module.Projective.of_equiv
       (FractionalIdeal.coeIdealEquiv (P := FractionRing A) (S := A⁰) (J i))
   have : ∀ i, Module.Projective A (J i) := hP
-  let Q i : (finiteProjectiveModules A).FullSubcategory :=
-    ⟨ModuleCat.of A (J i), finiteProjectiveModules_iff.mpr ⟨inferInstance, hP i⟩⟩
-  have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi
-    (X := ⟨ModuleCat.of A M, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩) Q e
-  refine ⟨∑ i, Additive.ofMul (ClassGroup.mk (FractionRing A) (I i)), ?_⟩
-  rw [map_sum, classOf_def, hsum]
-  simp only [idealClassHom_mk, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, one_smul]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro i _
-  exact SplitK0.of_congr (CategoryTheory.ObjectProperty.isoMk _
-    (FractionalIdeal.coeIdealEquiv (J i) :
-      (I i : FractionalIdeal A⁰ (FractionRing A)) ≃ₗ[A] J i).toModuleIso)
+  refine ⟨∑ i, Additive.ofMul (ClassGroup.mk0 ⟨J i, mem_nonZeroDivisors_of_ne_zero (hJ i)⟩), ?_⟩
+  rw [map_sum]
+  simp only [idealClassHom_mk0]
+  simpa using (classOf_eq_sum_of_linearEquiv_pi (fun i ↦ J i) e (fun _ ↦ 1)).symm
 
 end FiniteProjectiveModules
 
 namespace LocallyFree
 
-variable [IsDedekindDomain A]
+variable [IsDedekindDomain A] {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
 
 open FiniteProjectiveModules
 
@@ -205,7 +203,7 @@ theorem ofIdealClass_surjective (hA : ¬IsField A) : Function.Surjective (ofIdea
     have hn : Module.finrank K (K ⊗[A] M) = n := by
       simpa only [(TensorProduct.AlgebraTensorModule.rid A K K).finrank_eq,
         Module.finrank_self, mul_one] using h.finrank hA
-    obtain ⟨c, hc⟩ := exists_idealClassHom_eq_classOf (A := A) K M
+    obtain ⟨c, hc⟩ := exists_idealClassHom_eq_classOf A K M
     exact ⟨c, hn ▸ hc⟩
   intro x
   obtain ⟨c, hc⟩ := hle x.property
