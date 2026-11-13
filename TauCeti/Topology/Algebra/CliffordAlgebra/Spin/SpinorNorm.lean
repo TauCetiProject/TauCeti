@@ -73,7 +73,7 @@ namespace CliffordAlgebra
 
 open TauCeti
 
-variable {K V : Type*} [NontriviallyNormedField K] [LocallyCompactSpace K]
+variable {K V : Type*} [NontriviallyNormedField K] [WeaklyLocallyCompactSpace K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   (Q : QuadraticForm K V)
 
