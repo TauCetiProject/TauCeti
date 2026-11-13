@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
+import Mathlib.Algebra.Polynomial.RingDivision
+import Mathlib.RingTheory.Ideal.Quotient.Basic
 
 /-!
 # The polynomial `(1 + X) ^ n - 1`
@@ -39,6 +41,8 @@ polynomials at `I` are closed under finite products, including the empty product
   distinguished at every ideal containing `p`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
+* `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a prime
+  ideal is distinguished at that ideal.
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
@@ -133,5 +137,20 @@ theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
     rw [pow_mul]
     exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
   rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
+
+/-- A monic divisor of a polynomial distinguished at a prime ideal is distinguished at that
+ideal. -/
+theorem of_dvd {P : Ideal O} [P.IsPrime] {f g : O[X]} (hg : g.IsDistinguishedAt P)
+    (hf : f.Monic) (hfg : f ∣ g) : f.IsDistinguishedAt P := by
+  refine ⟨⟨fun {i} hi ↦ ?_⟩, hf⟩
+  let π := Ideal.Quotient.mk P
+  obtain ⟨j, -, hj⟩ := (dvd_prime_pow (prime_X (R := O ⧸ P)) _).mp
+    (hg.map_eq_X_pow ▸ map_dvd π hfg)
+  have hmap : f.map π = X ^ j :=
+    eq_of_monic_of_associated (hf.map π) (monic_X_pow j) hj
+  have hdeg : f.natDegree = j := by
+    simpa [hf.natDegree_map] using congrArg natDegree hmap
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, hmap]
+  simp [coeff_X_pow, (hdeg ▸ hi).ne]
 
 end Polynomial.IsDistinguishedAt
