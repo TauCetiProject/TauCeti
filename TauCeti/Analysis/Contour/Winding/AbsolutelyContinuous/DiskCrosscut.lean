@@ -140,14 +140,11 @@ theorem integral_arcLoop_circle (f : ℂ → ℂ) :
     simp only [g, hθ, deriv_circleMap]
     rw [deriv_arcLoop_of_gt hs.1, arcLoop_of_lt hs.1, Complex.real_smul]
     ring
-  rw [intervalIntegral.integral_congr_uIoo hcongr, intervalIntegral.integral_const_mul]
-  rcases eq_or_ne β α with rfl | hd
-  · simp
-  rw [intervalIntegral.integral_comp_mul_add (f := g) (sub_ne_zero.mpr hd)]
+  rw [intervalIntegral.integral_congr_uIoo hcongr, intervalIntegral.integral_const_mul,
+    ← Complex.real_smul, intervalIntegral.smul_integral_comp_mul_add]
   have h1 : (β - α) * b + (α - b * (β - α)) = α := by ring
   have h2 : (β - α) * (b + 1) + (α - b * (β - α)) = β := by ring
-  rw [h1, h2, Complex.real_smul, ← mul_assoc, Complex.ofReal_inv,
-    mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr (sub_ne_zero.mpr hd)), one_mul]
+  rw [h1, h2]
 
 /-- The loop closed by a circle arc ending at the point where `c` starts is closed. -/
 theorem arcLoop_eq_arcLoop_add_one (hab : a ≤ b) (ha : c a = circleMap z₀ r β) :
