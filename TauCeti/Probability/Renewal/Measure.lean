@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -210,7 +211,6 @@ time `t` is the renewal function of the increment law. -/
 theorem integral_renewalCountNat (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t : ℝ≥0) :
     ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = ((P.map (T 0)).renewalFunction t).toReal := by
-  have hm := measurable_renewalCountNat hT t
   rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun ω ↦ by positivity)
     (by fun_prop), ← lintegral_renewalCount hindep hid t]
   congr 1
@@ -258,12 +258,8 @@ theorem continuousWithinAt_renewalFunction_Ici (t : ℝ≥0) :
   by_cases hμ : μ {0} < 1
   swap
   · -- the point mass at zero has infinite renewal function, which is constant
-    have h1 : μ {0} = 1 := le_antisymm prob_le_one (not_lt.1 hμ)
-    have hae : ∀ᵐ x ∂μ, x ∈ ({0} : Set ℝ≥0) :=
-      (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 h1
-    have hdirac : μ = dirac 0 := by
-      calc μ = μ.restrict {0} := (restrict_eq_self_of_ae_mem hae).symm
-        _ = dirac 0 := by rw [restrict_singleton, h1, one_smul]
+    have hdirac : μ = dirac 0 :=
+      eq_dirac_of_measure_singleton_eq_one (le_antisymm prob_le_one (not_lt.1 hμ))
     have hinf : μ.renewalFunction = fun _ ↦ ∞ := by
       funext u
       simp [renewalFunction_eq_tsum, hdirac]

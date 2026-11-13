@@ -238,18 +238,8 @@ coefficients, in every degree. -/
 theorem isIso_singularHomologyMap_discSpherePairMap
     (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
     {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (discSpherePairMap F E) R n) := by
-  have hfst (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.fst (discSpherePairMap F E))) R m) := by
-    have := ((discBundleHomotopyEquiv F E hnorm).singularHomologyIso R m).isIso_hom
-    rwa [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom,
-      ← discSpherePairMap_fst F E hnorm] at this
-  have hsnd (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.snd (discSpherePairMap F E))) R m) := by
-    have := ((sphereBundleHomotopyEquiv F E hnorm).singularHomologyIso R m).isIso_hom
-    rwa [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom,
-      ← discSpherePairMap_snd F E hnorm] at this
-  exact TopPair.isIso_singularHomologyMap_of_isIso R _ n (hfst n) (hsnd n) (fun m _ ↦ hfst m)
-    fun m _ ↦ hsnd m
+    IsIso (TopPair.singularHomologyMap (discSpherePairMap F E) R n) :=
+  TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ _ _ (discSpherePairMap_fst F E hnorm)
+    (discSpherePairMap_snd F E hnorm) R n
 
 end TauCeti

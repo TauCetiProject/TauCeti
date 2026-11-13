@@ -224,7 +224,7 @@ theorem ordConnected_minkowskiSum (hh : {n | h n ≠ ⊤}.OrdConnected)
   obtain ⟨htl, htr⟩ := ht
   refine minkowskiSum_ne_top_iff.mpr ?_
   -- Move from the split `(i, j)` to the split `(i', j')` one coordinate at a time.
-  rcases le_total i i' with hii' | hii'
+  rcases le_total i i' with _ | hii'
   · by_cases hti : t ≤ i' + j
     · exact ⟨t - j, j, by omega, hh.out hi hi' ⟨by omega, by omega⟩, hj⟩
     · exact ⟨i', t - i', by omega, hi', hg.out hj hj' ⟨by omega, by omega⟩⟩

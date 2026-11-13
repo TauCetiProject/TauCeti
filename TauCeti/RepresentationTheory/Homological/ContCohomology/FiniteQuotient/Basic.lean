@@ -83,12 +83,10 @@ sealed: the left-hand side lives in `F.obj A ⟶ F.obj B` and the right-hand sid
 `obj` field reduces to, so without the body the characteristic lemma cannot even be written
 down.
 
-This implements the six milestones of the "The system" bullet of Layer 4 of the human-authored
-roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, together with the functoriality of the
-whole system in the coefficients that the same bullet asks for. The colimit theorem of that same
-layer is separate, and stays out: it is stated on the explicit low-degree complex and compared
-with the canonical object, so it consumes the roadmap's Layers 2 and 3, neither of which the
-system built here uses — every ingredient below is Mathlib's.
+The colimit theorems are separate (`FiniteQuotient/Colimit.lean` for the explicit low-degree
+complex, `FiniteQuotient/AllDegreeColimit.lean` for the canonical object in every degree); the
+system built here uses neither the explicit complex nor its comparison with the canonical object,
+and every ingredient below is Mathlib's.
 
 ## References
 
