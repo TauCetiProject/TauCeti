@@ -42,7 +42,7 @@ theorem exists_topologicalClosure_zpowers_eq_iff_of_isClosed
       by_contra hbot
       have hA' : A ≠ ⊥ := by
         intro h
-        exact PadicInt.units_neg_one_ne_one (Subgroup.mem_bot.mp (h ▸ hneg))
+        exact (neg_units_ne_self 1) (Subgroup.mem_bot.mp (h ▸ hneg))
       rcases closedSubgroup_units_two_classification hA hA' with
         ⟨f, hf, h⟩ | ⟨f, -, h⟩ | h | ⟨f, v, hf, hv, h⟩
       · rw [h] at hneg
