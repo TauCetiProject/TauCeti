@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -15,7 +17,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 # Basic Spin-group carrier facts
 
 This file records the carrier-level criterion that a product of evenly many Clifford vectors whose
-norms multiply to one belongs to the Spin group, identifies membership in the range of
+norms multiply to one belongs to the Spin group, and its special case for even basis monomials
+of an orthogonal basis, identifies membership in the range of
 `spinGroup.toUnits` with membership of the underlying Clifford value, shows that Spin elements
 are Clifford units, includes the Spin group in the even Clifford subalgebra, writes every Spin
 element as a product of an even number of vectors of invertible norm when `2` is invertible, and
@@ -124,5 +127,16 @@ instance instSubsingletonSpinGroup [Subsingleton M] : Subsingleton (spinGroup Q)
     rw [SetLike.mem_coe, Subgroup.mem_toSubmonoid, lipschitzGroup_eq_bot, Subgroup.mem_bot] at hw
     simp [← hwz, hw]
   rw [h x, h y]
+
+/-- **An even basis monomial of an orthogonal basis is a Spin element** when the norms of its
+generators multiply to one: `e_s = ι Q (b i₁) * ⋯ * ι Q (b iₖ)`, for `s = {i₁ < ⋯ < iₖ}` of even
+cardinality with `Q (b i₁) * ⋯ * Q (b iₖ) = 1`, lies in `spinGroup Q`. -/
+theorem basis_mem_spinGroup [Invertible (2 : R)] {I : Type*} [LinearOrder I]
+    {b : Module.Basis I R M} (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s : Finset I}
+    (hs : Even s.card) (hQ : ∏ i ∈ s, Q (b i) = 1) : basis Q b s ∈ spinGroup Q := by
+  rw [basis_eq_prod_map_sort hb]
+  refine prod_map_ι_mem_spinGroup (by simpa using hs) ?_
+  rw [List.map_map, ← hQ, ← Finset.prod_map_toList]
+  exact ((Finset.sort_perm_toList s _).map _).prod_eq
 
 end CliffordAlgebra
