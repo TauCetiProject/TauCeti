@@ -79,10 +79,11 @@ namespace IsNonUnitalDGAlgebra
 /-- The `A∞` operations of a differential `d` on an algebra: `m₁ = d`, `m₂` is the product, and all
 other operations vanish. -/
 private noncomputable def operation (d : A →ₗ[R] A) :
-    ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
+    ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
   | 0 => 0
-  | 1 => MultilinearMap.ofSubsingleton R A A 0 d
-  | 2 => (MultilinearMap.ofSubsingletonₗ R R A A (0 : Fin 1) ∘ₗ LinearMap.mul R A).uncurryLeft
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 d
+  | 2 => (MultilinearMap.ofSubsingletonₗ R (RingHom.id R) A A (0 : Fin 1) ∘ₗ LinearMap.mul R
+      A).uncurryLeft
   | _ + 3 => 0
 
 private theorem operation_zero (d : A →ₗ[R] A) : operation d 0 = 0 := (rfl)

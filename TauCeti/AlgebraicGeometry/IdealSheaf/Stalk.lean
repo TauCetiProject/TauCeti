@@ -278,7 +278,7 @@ theorem one_le_stalkOrder_iff (I : X.IdealSheafData) (x : X) :
   obtain ⟨U, hU, hxU, _⟩ := exists_isAffineOpen_mem_and_subset (X := X) (Opens.mem_top x)
   rw [I.stalkOrder_eq_orderAt ⟨U, hU⟩ x hxU, Ideal.one_le_orderAt_iff,
     I.mem_support_iff_of_mem (U := ⟨U, hU⟩) hxU, Scheme.mem_zeroLocus_iff]
-  simp only [hU.mem_basicOpen_iff_notMem_primeIdealOf hxU, not_not,
+  simp only [hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hxU⟩, not_not,
     IsConcreteLE.le_iff, SetLike.mem_coe]
 
 /-- A point lies in the support exactly when its stalk ideal is proper. -/

@@ -10,6 +10,9 @@ public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
 public import TauCeti.Probability.ConditionalProbability
 public import TauCeti.Probability.Distributions.Truncation
+import TauCeti.MeasureTheory.Measure.Dirac
+import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Quantile.Discrete
 
 /-!
 # Zero truncation of laws on the natural numbers
@@ -29,11 +32,15 @@ of `ℕ` and the real cast:
 * the natural moments `E[X ^ n] / (1 - p₀)` for `n ≠ 0` of the real cast, and its variance;
 * the exponential-integrability domain of the real cast, which truncation leaves unchanged;
 * the cdf of the real cast, and its quantile at level `u`, which is the quantile of `ν` at the
-  rescaled level `p₀ + u * (1 - p₀)`.
+  rescaled level `p₀ + u * (1 - p₀)`;
+* the lower quantile endpoint one when `ν {1} ≠ 0`, and preservation of finite or infinite
+  upper quantile endpoints under truncation.
 
 When `ν` is the point mass at zero, truncation removes all mass and the truncated law is zero, as
 `ProbabilityTheory.cond_compl_singleton_eq_zero_iff` records. The cumulative-mass, moment and
-variance formulas hold in that boundary case as well, with the convention `1 / 0 = 0`.
+variance formulas hold in that boundary case as well, with the convention `1 / 0 = 0`, and so does
+the quantile-rescaling formula, since the zero measure has quantile `0` at every level, as does the
+point mass at zero at level `1`. The cdf formulas assume that `ν` is not the point mass at zero.
 
 ## References
 
@@ -45,7 +52,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Real Set
+open Filter MeasureTheory ProbabilityTheory Real Set Topology
 
 namespace MeasureTheory.Measure
 
@@ -144,10 +151,13 @@ theorem cdf_map_natCast_cond_compl_zero_of_lt_one (h : ν {0} ≠ 1) {x : ℝ} (
 
 /-- At an interior level `u`, the quantile of the real cast of a zero-truncated law is the
 quantile of the original law at the rescaled level `ν.real {0} + u * (1 - ν.real {0})`. -/
-theorem quantile_map_natCast_cond_compl_zero (h : ν {0} ≠ 1) {u : ℝ}
-    (hu : u ∈ Ioo (0 : ℝ) 1) :
+theorem quantile_map_natCast_cond_compl_zero {u : ℝ} (hu : u ∈ Ioo (0 : ℝ) 1) :
     ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
       (ν.map (Nat.cast : ℕ → ℝ)).quantile (ν.real {0} + u * (1 - ν.real {0})) := by
+  by_cases h : ν {0} = 1
+  · -- `ν` is the point mass at zero: both sides are the quantile of zero or of a point mass.
+    rw [cond_compl_singleton_eq_zero_iff.2 h, eq_dirac_of_measure_singleton_eq_one h]
+    simp [Measure.quantile_dirac]
   have hIic : (ν.map (Nat.cast : ℕ → ℝ)).real (Iic 0) = ν.real {0} := by
     rw [map_measureReal_apply (by fun_prop) measurableSet_Iic]
     congr 1
@@ -161,5 +171,71 @@ theorem quantile_map_natCast_cond_compl_zero (h : ν {0} ≠ 1) {u : ℝ}
   have hq := (ν.map (Nat.cast : ℕ → ℝ)).quantile_cond_sdiff (IsLowerSet.Iic 0) isLowerSet_univ
     (by simpa [hIic] using hlt) hu
   rwa [hset, hIic, probReal_univ, ← map_natCast_cond_compl_zero] at hq
+
+/-- If count one has positive mass, zero-truncated quantiles tend to one as the level tends
+to zero from above. No assumption on the other positive counts is needed. -/
+theorem tendsto_quantile_map_natCast_cond_compl_zero_nhdsGT_zero (h₁ : ν {1} ≠ 0) :
+    Tendsto (fun u ↦ (((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[>] 0) (𝓝 1) := by
+  have h₀ : ν {0} ≠ 1 := fun h ↦
+    h₁ (measure_mono_null (by simp) ((prob_compl_eq_zero_iff (measurableSet_singleton 0)).2 h))
+  have := isProbabilityMeasure_cond_compl_singleton h₀
+  have hmass : (ν[|{0}ᶜ]) {1} ≠ 0 := by
+    rw [cond_compl_singleton_apply_singleton one_ne_zero]
+    exact mul_ne_zero
+      (ENNReal.inv_ne_zero.2 (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)) h₁
+  have hpos : 0 < (ν[|{0}ᶜ]).real (Iic 1) :=
+    (ENNReal.toReal_pos hmass (measure_ne_top _ _)).trans_le
+      (measureReal_mono (singleton_subset_iff.2 (mem_Iic.2 le_rfl)))
+  have hzero : (ν[|{0}ᶜ]).real (Iic 0) = 0 := by
+    rw [← Nat.bot_eq_zero, Iic_bot]
+    simp [measureReal_def]
+  apply tendsto_const_nhds.congr'
+  filter_upwards [Ioo_mem_nhdsGT hpos, Ioo_mem_nhdsGT zero_lt_one] with u hu hu'
+  have hq : ((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u = (1 : ℕ) := by
+    rw [quantile_map_natCast_eq_succ_iff _ hu' 0]
+    exact ⟨by simpa [hzero] using hu.1, hu.2.le⟩
+  exact_mod_cast hq.symm
+
+/-- Zero truncation preserves any finite or infinite upper quantile endpoint. When it removes
+all mass, both the original Dirac law and the resulting zero measure have quantile limit zero. -/
+theorem tendsto_quantile_map_natCast_cond_compl_zero_nhdsLT_one
+    {c : EReal}
+    (hc : Tendsto (fun u ↦ ((ν.map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 c)) :
+    Tendsto (fun u ↦ (((ν[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+      (𝓝[<] 1) (𝓝 c) := by
+  by_cases h₀ : ν {0} = 1
+  · have hae : ∀ᵐ n ∂ν, n = 0 :=
+      (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 h₀
+    have hmap : ν.map (Nat.cast : ℕ → ℝ) = Measure.dirac 0 := by
+      calc
+        _ = ν.map (fun _ : ℕ ↦ (0 : ℝ)) :=
+          Measure.map_congr (hae.mono fun n hn ↦ by simp [hn])
+        _ = _ := by simp
+    have hlimzero : Tendsto (fun u ↦ ((ν.map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
+        (𝓝[<] 1) (𝓝 0) := by
+      simp [hmap]
+    rw [tendsto_nhds_unique hc hlimzero, cond_compl_singleton_eq_zero_iff.2 h₀]
+    simp
+  have hlt : ν.real {0} < 1 :=
+    lt_of_le_of_ne measureReal_le_one fun h ↦ h₀ (by
+      rwa [measureReal_def, ENNReal.toReal_eq_one_iff] at h)
+  have hcontinuous : Continuous (fun u : ℝ ↦ ν.real {0} + u * (1 - ν.real {0})) := by
+    fun_prop
+  have hlim : Tendsto (fun u : ℝ ↦ ν.real {0} + u * (1 - ν.real {0}))
+      (𝓝[<] 1) (𝓝[<] 1) := by
+    apply tendsto_nhdsWithin_iff.2
+    constructor
+    · simpa using (hcontinuous.tendsto 1).mono_left
+        (nhdsWithin_le_nhds (s := Iio (1 : ℝ)))
+    · filter_upwards [self_mem_nhdsWithin] with u hu
+      have hprod := mul_pos (sub_pos.2 (hu : u < 1)) (sub_pos.2 hlt)
+      simp only [mem_Iio]
+      nlinarith
+  apply (hc.comp hlim).congr'
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  exact congrArg (fun x : ℝ ↦ (x : EReal))
+    (quantile_map_natCast_cond_compl_zero ν hu).symm
 
 end MeasureTheory.Measure
