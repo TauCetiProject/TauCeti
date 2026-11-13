@@ -269,12 +269,9 @@ theorem continuous_intervalDirichletSolution {X : Type*} [TopologicalSpace X] [S
   rw [Function.comp_apply, ContinuousMap.sub_apply, intervalDirichletSolution_apply,
     intervalDirichletSolution_apply, add_sub_add_left_eq_sub,
     ← intervalIntegral.integral_sub ((hs (vn n)).intervalIntegrable_of_mem_Icc x₀'.2 y.2)
-      ((hs v).intervalIntegrable_of_mem_Icc x₀'.2 y.2),
-    Real.norm_eq_abs, intervalIntegral.integral_of_le y.2.1, ← integral_Icc_eq_integral_Ioo]
-  refine abs_integral_le_integral_abs.trans (setIntegral_mono_set ?_
-    (ae_of_all _ fun _ => abs_nonneg _)
-    (Ioc_subset_Icc_self.trans (Icc_subset_Icc_right y.2.2)).eventuallySubset)
-  exact ((integrableOn_Icc_iff_integrableOn_Ioo (μ := volume)).2 ((hs _).sub (hs _))).abs
+      ((hs v).intervalIntegrable_of_mem_Icc x₀'.2 y.2)]
+  simpa only [Real.norm_eq_abs, Pi.sub_apply] using
+    intervalIntegral.norm_integral_le_setIntegral_norm ((hs (vn n)).sub (hs v)) x₀'.2 y.2
 
 /-- **Compactness of the frozen-solution map.** Let `a i`, for `i ∈ ι`, be coefficients with
 uniform bounds `λ ≤ a i ≤ M`. The solutions of the linear problems with coefficients `a i` form a
