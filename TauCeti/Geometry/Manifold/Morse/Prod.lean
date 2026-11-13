@@ -9,8 +9,10 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Morse functions on a product manifold
@@ -20,6 +22,10 @@ If `f` is a Morse function on `M` and `g` is a Morse function on `N`, the separa
 points are the pairs `(x, y)` of critical points of `f` and `g`, and its Morse index at such a pair
 is the sum of the two indices. This is the classical construction of the standard Morse function
 on a product, for instance on a torus `S¹ × S¹` as the sum of two height functions.
+
+A function `g ∘ Prod.snd` of the second factor alone is the separated sum with `f = 0`. Its
+critical set is `M × crit(g)`, and at a point `(x, y)` its Morse index is that of `g` at `y`. These
+are the critical submanifolds `M × {y}` of the model Morse–Bott functions.
 
 The product chart at `(x, y)` is the product of the preferred charts at `x` and `y`, so all the
 statements reduce to the calculus of separated sums on the model space `E × E'`. The two model
@@ -44,6 +50,9 @@ of the set.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
+* `TauCeti.criticalPoints_comp_snd`: the critical set of a function of the second factor.
+* `TauCeti.manifoldMorseIndex_comp_snd`: its Morse index is that of the function on the second
+  factor.
 
 ## References
 
@@ -177,6 +186,39 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_com
   TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt
+
+/-! ### Functions of the second factor -/
+
+/-- **The critical points of a function of the second factor.** The point `(x, y)` of `M × N` is a
+critical point of `g ∘ Prod.snd` exactly when `y` is a critical point of `g`, so the critical set
+is `M × crit(g)`. No regularity of `g` is needed: the differential of `g ∘ Prod.snd` is that of
+`g` on the second component of a tangent vector. -/
+theorem criticalPoints_comp_snd :
+    criticalPoints (I.prod I') (g ∘ Prod.snd : M × N → ℝ) = univ ×ˢ criticalPoints I' g := by
+  ext p
+  simp only [mem_criticalPoints, mem_prod, mem_univ, true_and]
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · -- The vector `(0, w)` is read as a tangent vector of the product at `p`.
+    have hw := mvfderiv_comp_snd_apply (I := I) (J := I') g p
+      (((0 : E), w) : TangentSpace (I.prod I') p)
+    rw [h] at hw
+    exact hw.symm
+  · rw [mvfderiv_comp_snd_apply, h]
+    -- Both sides are values of zero maps.
+    rfl
+
+/-- **The Morse index of a function of the second factor.** When the coordinate expression of `g`
+at `y` is twice continuously differentiable, the index of `g ∘ Prod.snd` at `(x, y)` is the index
+of `g` at `y`: the first factor contributes only null directions of the Hessian. This is not a
+`simp` lemma, for the reason given at `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd`. -/
+theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (hg : ContDiffAt ℝ 2 (g ∘ (extChartAt I' y).symm) (extChartAt I' y y)) :
+    manifoldMorseIndex (I.prod I') (g ∘ Prod.snd) (x, y) = manifoldMorseIndex I' g y := by
+  have hsum : g ∘ Prod.snd = (fun _ : M ↦ (0 : ℝ)) ∘ Prod.fst + g ∘ Prod.snd := by
+    ext
+    simp
+  rw [hsum, manifoldMorseIndex_comp_fst_add_comp_snd contDiffAt_const hg, manifoldMorseIndex_def]
+  simp only [Function.comp_def, morseIndex_const, zero_add]
 
 end TauCeti
 

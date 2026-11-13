@@ -117,7 +117,7 @@ private theorem normCoeff_one_apply_prime_pow_of_split (hK : finrank ℚ K = 2) 
           (hP.trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔭).symm)))
       · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr (HeightOneSpectrum.ext
           ((Set.mem_singleton_iff.mp hP).trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔮).symm)))),
-    Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out hN𝔭 hN𝔮, h]
+    Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hN𝔭 hN𝔮, h]
   simp
 
 /-- The local Euler factor at a prime `p` that is inert in a quadratic field: a single prime above
