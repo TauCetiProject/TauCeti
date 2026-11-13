@@ -32,12 +32,18 @@ base-changed ideal is identified with the base change of the original quotient, 
 geometric unipotence follows from the universal coefficient-matrix argument.
 
 Triviality of the radical after a field extension descends to the ground field by faithful-flat
-reflection of equality of Hopf ideals.
+reflection of equality of Hopf ideals. The same reflection descends the triviality of all normal
+smooth unipotent closed subgroups, which is how the generated Chevalley subgroups over a field are
+reduced to an algebraic closure.
 
 Equality requires descent of an arbitrary radical candidate over `K` and is not asserted here.
 
 ## Main declarations
 
+* `TauCeti.smoothUnipotentCommHopfAlgProperty.quotient_baseChangeHopfIdeal`: scalar extension
+  preserves smooth unipotence of the quotient by a Hopf ideal.
+* `TauCeti.HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_baseChange`: triviality of
+  normal smooth unipotent closed subgroups descends from a field extension to the ground field.
 * `TauCeti.HopfIdeal.IsUnipotentRadicalCandidate.baseChange`: scalar extension preserves
   unipotent-radical candidates.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_le`: the
@@ -60,6 +66,54 @@ universe u
 
 noncomputable section
 
+namespace smoothUnipotentCommHopfAlgProperty
+
+variable {k K : Type u} [Field k] [Field K] [Algebra k K]
+variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} {I : HopfIdeal k H}
+
+/-- Base change of a closed subgroup with smooth unipotent quotient again has smooth unipotent
+quotient: the quotient by the base-changed Hopf ideal is the base change of the original
+quotient. -/
+theorem quotient_baseChangeHopfIdeal
+    (hI : smoothUnipotentCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.quotient H I)) :
+    smoothUnipotentCommHopfAlgProperty K
+      (FiniteTypeCommHopfAlgCat.quotient (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)
+        (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I)) :=
+  (smoothUnipotentCommHopfAlgProperty K).prop_of_iso
+    (CategoryTheory.ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty K)
+      (CommHopfAlgCat.quotientBaseChangeIso (K := K) I).symm)
+    (baseChange (K := K) (FiniteTypeCommHopfAlgCat.quotient H I) hI)
+
+end smoothUnipotentCommHopfAlgProperty
+
+namespace HopfIdeal
+
+variable {k : Type u} [Field k] (K : Type u) [Field K] [Algebra k K]
+variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+
+/-- **Triviality of normal smooth unipotent closed subgroups descends along a field extension.**
+If every normal smooth unipotent closed subgroup of the base change of `H` to `K` is trivial, then
+so is every normal smooth unipotent closed subgroup of `H`. Base change preserves normality and
+smooth unipotence of the quotient, and faithfully flat base change reflects equality of Hopf
+ideals.
+
+The conclusion is stated contravariantly: the subgroup's defining Hopf ideal is the augmentation
+ideal. -/
+theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_baseChange
+    (h : ∀ J : HopfIdeal K (FiniteTypeCommHopfAlgCat.baseChange (K := K) H), J.IsNormal →
+      smoothUnipotentCommHopfAlgProperty K
+        (FiniteTypeCommHopfAlgCat.quotient (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) J) →
+      J = augmentation K (FiniteTypeCommHopfAlgCat.baseChange (K := K) H))
+    (I : HopfIdeal k H) (hI : I.IsNormal)
+    (hU : smoothUnipotentCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.quotient H I)) :
+    I = augmentation k H := by
+  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
+  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
+  exact h _ (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI)
+    (smoothUnipotentCommHopfAlgProperty.quotient_baseChangeHopfIdeal hU)
+
+end HopfIdeal
+
 namespace HopfIdeal.IsUnipotentRadicalCandidate
 
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
@@ -70,15 +124,12 @@ theorem baseChange (hI : IsUnipotentRadicalCandidate H I) :
     IsUnipotentRadicalCandidate
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)
       (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I) := by
-  let qIso := CommHopfAlgCat.quotientBaseChangeIso (K := K) I
   refine IsUnipotentRadicalCandidate.mk
-    (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI.isNormal) ?_ ?_
-  · apply (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso qIso.symm
-    exact geometricallyConnectedCommHopfAlgProperty.baseChange k K _ hI.geometricallyConnected
-  · have hbase := smoothUnipotentCommHopfAlgProperty.baseChange (K := K)
-      (FiniteTypeCommHopfAlgCat.quotient H I) hI.smoothUnipotent
-    exact (smoothUnipotentCommHopfAlgProperty K).prop_of_iso
-      (CategoryTheory.ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty K) qIso.symm) hbase
+    (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI.isNormal) ?_
+    hI.smoothUnipotent.quotient_baseChangeHopfIdeal
+  apply (geometricallyConnectedCommHopfAlgProperty K).prop_of_iso
+    (CommHopfAlgCat.quotientBaseChangeIso (K := K) I).symm
+  exact geometricallyConnectedCommHopfAlgProperty.baseChange k K _ hI.geometricallyConnected
 
 end HopfIdeal.IsUnipotentRadicalCandidate
 

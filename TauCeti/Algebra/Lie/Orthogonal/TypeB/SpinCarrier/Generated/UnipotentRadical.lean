@@ -8,8 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Faithful
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 
 /-!
 # Normal smooth unipotent subgroups of the generated type-Bₙ₊₁ spin subgroup
@@ -41,7 +40,8 @@ subgroup schemes is needed to transfer it to that carrier.
 
 The argument follows the generated type-`E₆` minuscule subgroup in
 `TauCeti.Algebra.Lie.E6.Minuscule.Generated.UnipotentRadical`, using the generic
-faithful-comodule elimination theorem.
+faithful-comodule elimination theorem and the generic descent along field extensions in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange`.
 -/
 
 public section
@@ -69,20 +69,14 @@ theorem eq_augmentation_generated_of_isNormal_of_smoothUnipotent
     I = HopfIdeal.augmentation k (generatedCoordinateHopfAlgebra n k) := by
   let K := AlgebraicClosure k
   let _ := isReduced_generatedCoordinateHopfAlgebra n K
-  apply CommHopfAlgCat.baseChangeHopfIdeal_injective (K := K)
-  rw [CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
-  have hbase := smoothUnipotentCommHopfAlgProperty.baseChange (K := K)
-    (FiniteTypeCommHopfAlgCat.quotient
-      (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k)) I) hU
+  refine HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_baseChange K
+    (H := FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k))
+    (fun J hJ hUJ ↦ ?_) I hI hU
   exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso K
     (FiniteTypeCommHopfAlgCat.of K (generatedCoordinateHopfAlgebra n K)) (Fin (dimension n) → K)
-    ((FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra n k)).baseChange (K := K))
-    (generatedCoordinateHopfAlgebraBaseChangeIso n k K).symm
+    _ (generatedCoordinateHopfAlgebraBaseChangeIso n k K).symm
     Comodule.isCompletelyReducible_of_isSimpleOrder (isFaithful_generatedStandardComodule n K)
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I) (CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI)
-    ((smoothUnipotentCommHopfAlgProperty K).prop_of_iso
-      (CategoryTheory.ObjectProperty.isoMk (finiteTypeCommHopfAlgProperty K)
-        (CommHopfAlgCat.quotientBaseChangeIso (K := K) I).symm) hbase)
+    J hJ hUJ
 
 end
 
