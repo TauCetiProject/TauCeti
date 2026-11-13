@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
+public import Mathlib.RingTheory.Bialgebra.Primitive
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.Algebra.BigOperators.NatAntidiagonal
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
@@ -43,7 +44,9 @@ sums are primitive.
 * `TauCeti.SymmetricFunction.ext_splitSpecialization`: the split specializations to `Fin d ⊕ Fin d`
   determine an element of `Λ_R ⊗ Λ_R`.
 * `TauCeti.SymmetricFunction.comul_of_stableHsymm`: `Δ(h_n) = ∑_{i + j = n} h_i ⊗ h_j`.
-* `TauCeti.SymmetricFunction.comul_of_stablePsum`: `Δ(p_n) = p_n ⊗ 1 + 1 ⊗ p_n`.
+* `TauCeti.SymmetricFunction.comul_of_stablePsum`,
+  `TauCeti.SymmetricFunction.isPrimitiveElem_of_stablePsum`: `Δ(p_n) = p_n ⊗ 1 + 1 ⊗ p_n`, so the
+  power sums are primitive.
 
 ## References
 
@@ -288,6 +291,13 @@ theorem comul_of_stablePsum {n : ℕ} (hn : n ≠ 0) :
       DirectSum.of _ n (stablePsum R hn) ⊗ₜ[R] 1 + 1 ⊗ₜ[R] DirectSum.of _ n (stablePsum R hn) :=
   ext_splitSpecialization R fun d => by
     simp [splitSpecialization_comul, rename_psum, psum_sum_type]
+
+/-- **The power sums are primitive elements** of the bialgebra of symmetric functions, for
+`n ≠ 0`. -/
+theorem isPrimitiveElem_of_stablePsum {n : ℕ} (hn : n ≠ 0) :
+    Bialgebra.IsPrimitiveElem R (DirectSum.of _ n (stablePsum R hn) : SymmetricFunction R) :=
+  Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr <| by
+    rw [comul_of_stablePsum, add_comm]
 
 end SymmetricFunction
 
