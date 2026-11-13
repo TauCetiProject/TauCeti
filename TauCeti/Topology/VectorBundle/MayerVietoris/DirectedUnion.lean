@@ -189,6 +189,24 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
         rw [hfst s] at h
         exact h⟩⟩)
 
+/-- Each leg of the homology cocone of finite trivializing unions is, up to the identifications
+`TopPair.singularHomologyFunctor_obj`, the map induced by the restriction from the union to the
+whole Thom pair. -/
+@[reassoc]
+theorem singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
+    (R : C) (n : ℕ) (s : Finset B) :
+    ((TopPair.singularHomologyFunctor R n).mapCocone
+        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).ι.app s ≫
+        eqToHom (by simp : ((TopPair.singularHomologyFunctor R n).mapCocone
+          (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+            (thomPair F E).singularHomology R n) =
+      eqToHom (by simp) ≫
+        TopPair.singularHomologyMap (thomPairOverMap F E
+          (subset_univ (⋃ b ∈ s, (trivializationAt F E b).baseSet)) ≫
+            (thomPairOverUnivIso F E).hom) R n := by
+  simp [TopPair.singularHomologyMap_comp]
+
 end DirectedUnion
 
 section ArbitraryCover
@@ -441,35 +459,15 @@ theorem singularHomology_thomPair_hom_ext
     (h : ∀ b, TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g =
       TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g') : g = g' := by
   -- The homology of the Thom pair is the colimit of its homology over finite unions of
-  -- trivializing sets, over each of which `g` and `g'` are determined on the fibres. The colimit
-  -- is stated for `TopPair.singularHomologyFunctor`, whose values are the homology groups only up
-  -- to the equations `TopPair.singularHomologyFunctor_obj`, so the comparison carries `eqToHom`s.
-  have hobj : ((TopPair.singularHomologyFunctor R (finrank ℝ F)).mapCocone
-      (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
-        (thomPair F E).singularHomology R (finrank ℝ F) :=
-    TopPair.singularHomologyFunctor_obj (thomPair F E) R (finrank ℝ F)
-  have hH {P P' : TopPair.{w}} (e : P = P') : TopPair.singularHomologyMap (eqToHom e) R
-      (finrank ℝ F) = eqToHom (congrArg (TopPair.singularHomology · R (finrank ℝ F)) e) := by
-    subst e
-    simp
-  -- Each leg of the colimit is the restriction from the whole Thom pair to a finite union.
-  have hι (s : Finset B) : ∃ e, ((TopPair.singularHomologyFunctor R (finrank ℝ F)).mapCocone
-      (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).ι.app s ≫ eqToHom hobj =
-        eqToHom e ≫ TopPair.singularHomologyMap (thomPairOverMap F E
-          (subset_univ (⋃ b ∈ s, (trivializationAt F E b).baseSet)) ≫
-            (thomPairOverUnivIso F E).hom) R _ := by
-    refine ⟨TopPair.singularHomologyFunctor_obj (thomPairFiniteTrivializingUnionDiagram.obj s) R _,
-      ?_⟩
-    rw [Functor.mapCocone_ι_app, TopPair.singularHomologyFunctor_map,
-      thomPairFiniteTrivializingUnionCocone_ι_app, TopPair.singularHomologyMap_comp,
-      TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_comp, hH, hH]
-    simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl,
-      Category.comp_id, TopPair.singularHomologyMap_comp]
-  refine (cancel_epi (eqToHom hobj)).1
+  -- trivializing sets, over each of which `g` and `g'` are determined on the fibres.
+  refine (cancel_epi (eqToHom (by simp : ((TopPair.singularHomologyFunctor R _).mapCocone
+    (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+      (thomPair F E).singularHomology R (finrank ℝ F)))).1
     ((isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
       (F := F) (E := E) R (finrank ℝ F)).hom_ext fun s ↦ ?_)
-  obtain ⟨e, he⟩ := hι s
-  rw [reassoc_of% he, reassoc_of% he, cancel_epi]
+  rw [singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    cancel_epi]
   exact singularHomology_thomPairOver_biUnion_hom_ext s
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) fun b _ ↦ by

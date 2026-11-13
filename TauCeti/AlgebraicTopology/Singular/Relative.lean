@@ -326,6 +326,16 @@ lemma singularHomologyMap_id (n : ℕ) : P.singularHomologyMap (𝟙 P) R n = �
   rw [TopPair.singularHomologyMap, CategoryTheory.Functor.map_id, SSetPair.homologyMap_id]
 
 variable {P P'} in
+/-- Relative singular homology sends the identification of equal pairs to the identification of
+their homology. -/
+@[simp]
+lemma singularHomologyMap_eqToHom (e : P = P') (n : ℕ) :
+    P.singularHomologyMap (eqToHom e) R n =
+      eqToHom (congrArg (TopPair.singularHomology · R n) e) := by
+  subst e
+  simp
+
+variable {P P'} in
 /-- Relative singular homology sends a composite of maps of pairs to the composite of the induced
 maps. -/
 @[reassoc]

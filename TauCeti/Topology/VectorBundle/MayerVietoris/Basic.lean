@@ -585,9 +585,8 @@ theorem singularHomology_thomPair_hom_ext_of_compactSpace [CompactSpace B] [Vect
       R (finrank ℝ F) ≫ TopPair.singularHomologyMap
         (thomPairOverMap F E (subset_univ _) ≫ (thomPairOverUnivIso F E).hom) R (finrank ℝ F) =
       𝟙 _ := by
-    rw [← TopPair.singularHomologyMap_comp, Category.assoc,
-      thomPairOverMap_comp_thomPairOverMap_assoc, thomPairOverMap_self, Category.id_comp,
-      Iso.inv_hom_id, TopPair.singularHomologyMap_id]
+    rw [← TopPair.singularHomologyMap_comp]
+    simp
   have hW := singularHomology_thomPairOver_biUnion_hom_ext t
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩)
