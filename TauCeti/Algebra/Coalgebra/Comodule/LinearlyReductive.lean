@@ -568,7 +568,9 @@ weight. -/
 private noncomputable def projectedWeightSum (p : V →ₗ[k] V) : (G →₀ V) →ₗ[k] V :=
   Finsupp.lsum k fun g ↦ weightProj k G V g ∘ₗ p
 
-/-- The endomorphism obtained by applying `p` separately to each weight component. -/
+/-- The weight-diagonal part of `p`: the endomorphism `v ↦ Σ_g π_g (p v_g)`, where `v_g` is the
+weight-`g` component of `v` and `π_g` projects onto the weight space of `g`. If `p` maps into a
+subcomodule `N` and fixes it pointwise, so does this endomorphism. -/
 private noncomputable def equivariantProjection (p : V →ₗ[k] V) : V →ₗ[k] V :=
   (projectedWeightSum k G V p).comp (weightDecomposition k G V)
 
