@@ -125,7 +125,7 @@ theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
       (γ • z).pointedWeierstrassCurve N := by
   rw [PeriodPair.smul_mk_weierstrassPoint (lattice_periodPair_smul γ z),
     pointedWeierstrassCurve_def, Units.val_inv_eq_inv_val, Units.val_mk0, inv_mul_eq_div,
-    div_div_cancel_left' (denom_ne_zero γ z), one_div]
+    div_div_cancel_left₀ (denom_ne_zero γ z), one_div]
 
 /-- If the point of `(m τ + n) / N` on `E_τ` has exact order `N`, then `gcd(m, n)` is prime to `N`:
 for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period `(m / d) τ + n / d`. -/
