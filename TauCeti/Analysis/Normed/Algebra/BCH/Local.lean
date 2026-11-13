@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Normed.Algebra.Logarithm.Inverse
 public import TauCeti.Analysis.Normed.Algebra.Logarithm.Naturality
@@ -19,8 +18,9 @@ that this expression is a local logarithm; its values away from the origin
 have no mathematical role.
 
 The exponential of this germ is the product of the two exponentials. Its
-restrictions to either coordinate axis are the identity germ, and over any
-normed field its chosen representative is analytic at the origin.
+restrictions to either coordinate axis are the identity germ, and over a
+characteristic-zero nontrivially normed field with continuous `ℚ`-scalar multiplication
+(for instance `ℝ` or `ℂ`) its chosen representative is analytic at the origin.
 
 ## Main declarations
 
@@ -69,27 +69,15 @@ theorem localBCH_value [NormedAlgebra ℚ A] [CompleteSpace A] : (localBCH A).va
 
 section Analytic
 
-variable (𝕂 : Type*) [NontriviallyNormedField 𝕂] [ContinuousSMul ℚ 𝕂]
+variable (𝕂 : Type*) [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
   [NormedAlgebra 𝕂 A] [CompleteSpace A]
 
 /-- The representative defining `localBCH` is analytic at the origin. -/
 theorem analyticAt_localBCH_representative :
     AnalyticAt 𝕂 (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
-  by_cases hK : CharZero 𝕂
-  · simpa [Function.comp_def] using (analyticAt_log_one 𝕂 A).comp_of_eq
-      (((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_fst).mul
-        ((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
-  · -- In positive characteristic a nontrivial `𝕂`-algebra has no `ℚ`-algebra structure, so the
-    -- logarithm is the junk value `0` (and every function into a trivial algebra is constant).
-    by_cases hA : Subsingleton A
-    · exact (analyticAt_const (v := (0 : A))).congr (.of_forall fun _ ↦ Subsingleton.elim _ _)
-    · have : Nontrivial A := not_subsingleton_iff_nontrivial.1 hA
-      have : IsEmpty (Algebra ℚ A) := ⟨fun _ ↦ hK
-        (((algebraMap 𝕂 A).charZero_iff (algebraMap 𝕂 A).injective).2
-          (charZero_of_injective_algebraMap (algebraMap ℚ A).injective))⟩
-      rw [show (fun p : A × A ↦ log (exp p.1 * exp p.2)) = fun _ ↦ 0 from
-        funext fun _ ↦ log_of_isEmpty_algebra_rat _]
-      exact analyticAt_const
+  simpa [Function.comp_def] using (analyticAt_log_one 𝕂 A).comp_of_eq
+    (((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_fst).mul
+      ((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
 
 end Analytic
 

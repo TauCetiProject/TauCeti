@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Normed.Field.NatCast
 
 /-!
@@ -15,9 +17,11 @@ import TauCeti.Analysis.Normed.Field.NatCast
 
 Mathlib defines the logarithm `NormedSpace.log x = ∑ n ≥ 1, (-1)^(n+1) / n • (x - 1)^n` as the
 sum of `NormedSpace.logSeries` at `x - 1`. This file establishes the convergence and analyticity
-of `NormedSpace.logSeries` and `NormedSpace.log`: in a Banach algebra over a characteristic-zero
-normed field, the radius of convergence of `NormedSpace.logSeries` is at least one, so
-`NormedSpace.log` is analytic at one.
+of `NormedSpace.logSeries` and `NormedSpace.log`: over any nontrivially normed field the radius
+of convergence of `NormedSpace.logSeries` is at least one. Over a characteristic-zero field the
+series represents `NormedSpace.log` on the unit ball about one, so `NormedSpace.log` is analytic
+at one; in other characteristics `NormedSpace.log` is Mathlib's junk value `0` on a nontrivial
+algebra, so it is analytic there too.
 It supplies the local logarithm needed to define the Baker–Campbell–Hausdorff map near the
 origin.
 
@@ -28,6 +32,7 @@ origin.
 * `NormedSpace.one_le_logSeries_radius`: the radius of convergence is at least one.
 * `NormedSpace.log_hasFPowerSeriesOnBall`: the series represents `NormedSpace.log` on the
   unit ball about one.
+* `NormedSpace.analyticAt_log_one`: `NormedSpace.log` is analytic at one.
 * `NormedSpace.isBigO_log_one_add_sub_quadratic`: `log (1 + u) - (u - 2⁻¹ • u ^ 2)` is
   `O(‖u‖ ^ 3)` at the origin.
 -/
@@ -102,9 +107,18 @@ theorem log_hasFPowerSeriesOnBall :
   rw [log_eq_logSeries_sum 𝕂]
   simpa only [zero_add] using h.comp_sub 1
 
-/-- `log` is analytic at one. -/
-theorem analyticAt_log_one : AnalyticAt 𝕂 (log : A → A) 1 :=
-  log_hasFPowerSeriesOnBall 𝕂 A |>.analyticAt
+omit [CharZero 𝕂] in
+/-- `log` is analytic at one. Outside characteristic zero a nontrivial `𝕂`-algebra admits no
+`ℚ`-algebra structure, so `log` is the junk value `0` there. -/
+theorem analyticAt_log_one : AnalyticAt 𝕂 (log : A → A) 1 := by
+  by_cases hK : CharZero 𝕂
+  · exact log_hasFPowerSeriesOnBall 𝕂 A |>.analyticAt
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · exact (analyticAt_const (v := (0 : A))).congr (.of_forall fun _ ↦ Subsingleton.elim _ _)
+  have : IsEmpty (Algebra ℚ A) :=
+    ⟨fun _ ↦ hK (have := algebraRat.charZero A; (algebraMap 𝕂 A).charZero)⟩
+  exact (analyticAt_const (v := (0 : A))).congr
+    (.of_forall fun x ↦ (log_of_isEmpty_algebra_rat x).symm)
 
 /-- **The quadratic Taylor estimate for the Banach algebra logarithm.**  The difference
 `log (1 + u) - (u - 2⁻¹ • u ^ 2)` is `O(‖u‖ ^ 3)` as `u → 0`. -/
