@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic
 
 /-!

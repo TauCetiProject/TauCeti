@@ -87,8 +87,8 @@ theorem coordinates (h : LadderRel N D S n U V) (h₂ : (2 : K) ≠ 0) (hB : B �
       (by simpa only [hsub] using hSP)
     have hne := (diffAdd_ne_zero_iff_of_cross_eq_zero h₂ hB hV hU hS hVP hUP
       (by simpa only [hsub] using hSP)).mpr (by simpa only [hsub] using And.intro hP hPT)
-    have hdoubleU := double_coordinates_of_cross_eq_zero hB hD hND hU hUP
-    have hdoubleV := double_coordinates_of_cross_eq_zero hB hD hND hV hVP
+    have hdoubleU := double_coordinates_of_cross_eq_zero hD hND hU hUP
+    have hdoubleV := double_coordinates_of_cross_eq_zero hD hND hV hVP
     rw [hsum] at hdiff
     cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true,
       ↓reduceIte, Nat.add_zero]

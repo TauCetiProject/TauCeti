@@ -417,8 +417,7 @@ theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g
   have hc : trivialF2Map c n = 𝟙 _ := by
     rw [trivialF2Map_def]
     exact ContinuousCohomology.map_eq_id_of_inner g⁻¹ c (fun x => by simp [c]) _
-      (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq])
-      (isSmoothDiscrete_trivialF2 G) n
+      (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq]) n
   rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
 
 /-- **Restriction to a subgroup of index one is injective**: corestricting the identity of `G` to
