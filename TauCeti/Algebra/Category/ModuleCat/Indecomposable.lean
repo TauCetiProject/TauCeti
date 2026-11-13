@@ -39,14 +39,6 @@ idempotents to split, which holds because `ModuleCat A` is abelian
 because `ModuleCat.Hom.hom` is a ring isomorphism `End M ≃+* Module.End A M`
 (`ModuleCat.endRingEquiv`), and the remaining halves match because a module object is a zero object
 exactly when its carrier is subsingleton (`ModuleCat.isZero_iff_subsingleton`).
-
-## References
-
-This supplies the categorical reading of Layer 2 ("the Krull-Schmidt theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose uniqueness bullet asks
-for the module-level theory to be transported "to `QuiverRep k Q` and to categorical biproducts";
-`QuiverRep k Q` is identified with `ModuleCat (pathAlgebra k Q)` there, so this equivalence is the
-step that carries indecomposability across.
 -/
 
 public section

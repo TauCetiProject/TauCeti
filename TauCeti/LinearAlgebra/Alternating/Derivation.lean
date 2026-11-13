@@ -61,7 +61,7 @@ private theorem sum_map_update_eq_zero (f : M →ₗ[R] M) (ω : M [⋀^ι]→�
 
 /-- The multilinear map obtained by applying `f` to the `i`-th argument. -/
 private def compSlot (f : M →ₗ[R] M) (ω : M [⋀^ι]→ₗ[R] N) (i : ι) :
-    MultilinearMap R (fun _ : ι ↦ M) N :=
+    MultilinearMap (RingHom.id R) (fun _ : ι ↦ M) N :=
   ω.toMultilinearMap.compLinearMap (update (fun _ ↦ .id) i f)
 
 omit [Fintype ι] in
