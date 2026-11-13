@@ -102,11 +102,6 @@ theorem sq_eq_zero [Invertible (2 : R)] {p : ℤ} {a : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hp : Odd p) : a ^ 2 = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg G ha hp)
 
-/-- The canonical generator map preserves parity. -/
-theorem generator_mem_parityGrading {k : ZMod 2} {x : V} (hx : x ∈ parityGrading G.piece k) :
-    generator G x ∈ parityGrading (signedSymPiece G) k := by
-  simpa only [add_zero] using (isHomogeneous_signedSymGenerator G).parityGrading_zero.map_mem hx
-
 /-- Elements of pure parity supercommute with the sign determined by their parities, even when
 they combine multiple integer degrees. -/
 theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedSym G}

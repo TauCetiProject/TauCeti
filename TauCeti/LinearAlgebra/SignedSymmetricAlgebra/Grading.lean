@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.Algebra.RingQuot
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Basic
 public import TauCeti.LinearAlgebra.TensorAlgebra.Grading
@@ -16,8 +17,9 @@ public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 The images of the input-degree pieces of the tensor algebra form an internal integer grading
 of `TauCeti.SignedSym G`. Equivalently, its degree-`p` piece is spanned by words of homogeneous
 generators whose degrees sum to `p`. Homogeneous induction retains this total input degree.
-Multiplication adds degrees, and a degree-preserving linear map satisfying the Koszul relations
-extends to a graded algebra map.
+Multiplication adds degrees, generators preserve parity, and a degree-preserving (or
+coarsened-degree-compatible) linear map satisfying the Koszul relations extends homogeneously, in
+particular to a graded algebra map.
 
 The construction of the free supercommutative algebra follows J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1). Grading descent uses
@@ -186,6 +188,11 @@ theorem decompose_signedSymGenerator (x : V) (p : ℤ) :
 
 namespace SignedSym
 
+/-- The canonical generator map preserves parity. -/
+theorem generator_mem_parityGrading {k : ZMod 2} {x : V} (hx : x ∈ parityGrading G.piece k) :
+    generator G x ∈ parityGrading (signedSymPiece G) k := by
+  simpa only [add_zero] using (isHomogeneous_signedSymGenerator G).parityGrading_zero.map_mem hx
+
 variable {A : Type w} [Ring A] [Algebra R A]
 variable (𝒜 : ℤ → Submodule R A)
 
@@ -199,6 +206,31 @@ theorem isHomogeneous_lift [SetLike.GradedMonoid 𝒜] (f : V →ₗ[R] A)
   obtain ⟨x, hx, rfl⟩ := (mem_signedSymPiece_iff G).mp ha
   simpa only [AlgHom.toLinearMap_apply, lift_quotient] using
     (isHomogeneous_tensorAlgebraLift G 𝒜 hf).map_mem hx
+
+/-- The universal extension is homogeneous of degree zero for a grading `ℬ` along an additive
+homomorphism `φ : ℤ →+ κ` when each degree-`p` generator maps into `ℬ (φ p)`. -/
+theorem isHomogeneous_lift_coarsenGrading {κ : Type*} [AddMonoid κ]
+    (φ : ℤ →+ κ) (ℬ : κ → Submodule R A) [SetLike.GradedMonoid ℬ] (f : V →ₗ[R] A)
+    (hr : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x))
+    (hf : ∀ (p : ℤ) {x : V}, x ∈ G.piece p → f x ∈ ℬ (φ p)) :
+    LinearMap.IsHomogeneous (lift G f hr).toLinearMap
+      (coarsenGrading (signedSymPiece G) φ) ℬ 0 := by
+  have : SetLike.GradedOne (ℬ ∘ φ) :=
+    ⟨by simpa only [Function.comp_apply, map_zero] using SetLike.one_mem_graded ℬ⟩
+  have : SetLike.GradedMul (ℬ ∘ φ) :=
+    ⟨fun i j _ _ (ha : _ ∈ ℬ (φ i)) (hb : _ ∈ ℬ (φ j)) => by
+      simpa only [Function.comp_apply, map_add] using SetLike.mul_mem_graded ha hb⟩
+  have : SetLike.GradedMonoid (ℬ ∘ φ) := {}
+  have hlift := isHomogeneous_lift G (ℬ ∘ φ) f hr
+    (LinearMap.isHomogeneous_def.2 fun p _ hx => by
+      simpa only [Function.comp_apply, add_zero] using hf p hx)
+  refine LinearMap.isHomogeneous_def.2 fun k a ha => ?_
+  have hle : coarsenGrading (signedSymPiece G) φ k ≤
+      (ℬ (k + 0)).comap (lift G f hr).toLinearMap :=
+    coarsenGrading_le_iff.2 fun p hp _ hb => by
+      simpa only [Submodule.mem_comap, Function.comp_apply, add_zero, hp] using hlift.map_mem hb
+  exact hle ha
 
 variable [GradedAlgebra 𝒜]
 

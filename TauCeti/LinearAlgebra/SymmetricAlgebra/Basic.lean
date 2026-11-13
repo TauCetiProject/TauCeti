@@ -138,7 +138,7 @@ theorem liftOfCommute_comp_ι {A : Type*} [Semiring A] [Algebra R A] (f : M →�
 
 /-- The inverse of `SymmetricAlgebra.liftOfCommute` restricts an algebra morphism to generators. -/
 @[simp]
-theorem liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
+theorem coe_liftOfCommute_symm_apply {A : Type*} [Semiring A] [Algebra R A]
     (F : SymmetricAlgebra R M →ₐ[R] A) :
     (liftOfCommute.symm F : M →ₗ[R] A) = F.toLinearMap.comp (ι R M) :=
   (rfl)
