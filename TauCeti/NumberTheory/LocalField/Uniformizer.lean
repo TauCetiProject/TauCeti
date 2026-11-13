@@ -46,8 +46,8 @@ theorem irreducible_of_valuation_eq {ϖ c : 𝒪[K]} (hϖ : Irreducible ϖ)
   have hv := Valuation.integer.integers (valuation K)
   (associated_of_dvd_dvd (hv.dvd_iff_le.2 h.le) (hv.dvd_iff_le.2 h.ge)).irreducible hϖ
 
-/-- For a uniformizer `ϖ`, the image in `K` of the power `𝓂[K] ^ k` of the maximal ideal is the
-scaled copy `ϖ ^ k • 𝒪[K]`. -/
+/-- For an irreducible element `ϖ` of `𝒪[K]`, the image in `K` of the power `𝓂[K] ^ k` of the
+maximal ideal is the scaled copy `ϖ ^ k • 𝒪[K]`. -/
 theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
     ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
   rw [hϖ.maximalIdeal_eq_of_valuationRing,
