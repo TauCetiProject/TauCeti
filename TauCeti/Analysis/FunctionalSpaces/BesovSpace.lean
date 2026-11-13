@@ -49,9 +49,11 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
-  `TauCeti.BesovSpace.norm_eq_tsum_rpow` (`q < ∞`) and `TauCeti.BesovSpace.norm_eq_ciSup`
-  (`q = ∞`) expressing the norm through the blocks, and the single-block bound
-  `TauCeti.BesovSpace.rpow_mul_norm_block_le`.
+  `TauCeti.BesovSpace.norm_eq_tsum_rpow` and `TauCeti.BesovSpace.hasSum_norm` (`q < ∞`) and
+  `TauCeti.BesovSpace.norm_eq_ciSup` (`q = ∞`) expressing the norm through the blocks, and the
+  single-block bound `TauCeti.BesovSpace.rpow_mul_norm_block_le`; conversely
+  `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq` bounds the norm of a
+  distribution by any `ℓ^q` majorant of its weighted block norms.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -77,6 +79,10 @@ both its tempered distribution and this `Lᵖ` data.
   `2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖` when
   `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block that is a sum of boundedly many pieces of nearby index is
   controlled by the weighted pieces.
+* `TauCeti.two_rpow_mul_norm_tsum_le`: the weighted estimate
+  `2^{ks} ‖∑ⱼ gⱼ‖ ≤ K 2^{|s| N} ∑_{k - N ≤ j < k + N} aⱼ + K ∑_{d ≥ 0} (2^{-s})^d a_{d + k}` when
+  `gⱼ = 0` for `j + N ≤ k`, `‖gⱼ‖ ≤ K xⱼ` and `2^{js} xⱼ ≤ aⱼ`, by which a block meeting all pieces
+  of higher index is controlled by a window sum and a geometric tail sum.
 
 ## References
 
@@ -112,6 +118,60 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
         · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
         · exact (hg j).trans (by gcongr; exact le_max_left C 0)
     _ = _ := by ring
+
+/-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`
+and `2^{js} xⱼ ≤ aⱼ`. Splitting `∑ⱼ gⱼ` at `j = k`, the contributing terms below `k` lie within
+`N` of `k`, and each term above `k` carries the weight `2^{(k - j)s} = (2^{-s})^{j - k}`, so
+`2^{ks} ‖∑ⱼ gⱼ‖ ≤ K 2^{|s| N} ∑_{k - N ≤ j < k + N} aⱼ + K ∑_{d ≥ 0} (2^{-s})^d a_{d + k}`. -/
+theorem TauCeti.two_rpow_mul_norm_tsum_le {G : Type*} [NormedAddCommGroup G] [CompleteSpace G]
+    {s K T : ℝ} (hK : 0 ≤ K) {k N : ℕ} {g : ℕ → G} {x a : ℕ → ℝ}
+    (hg0 : ∀ j, j + N ≤ k → g j = 0) (hgx : ∀ j, ‖g j‖ ≤ K * x j)
+    (hx0 : ∀ j, 0 ≤ x j) (hxa : ∀ j : ℕ, 2 ^ (s * j) * x j ≤ a j)
+    (hsum : Summable fun j ↦ ‖g j‖)
+    (hT : HasSum (fun d ↦ ((2 : ℝ) ^ (-s)) ^ d • a (d + k)) T) :
+    2 ^ (s * k) * ‖∑' j, g j‖ ≤
+      K * 2 ^ (|s| * N) * ∑ j ∈ Finset.Ico (k - N) (k + N), a j + K * T := by
+  -- The terms below `k`, a window sum around `k`.
+  have hlow : 2 ^ (s * k) * ‖∑ j ∈ Finset.range k, g j‖ ≤
+      K * 2 ^ (|s| * N) * ∑ j ∈ Finset.Ico (k - N) (k + N), a j := by
+    have hwin : ∑ j ∈ Finset.range k, g j =
+        ∑ j ∈ Finset.Ico (k - N) (k + N), if j < k then g j else 0 := by
+      rw [← Finset.sum_filter]
+      refine (Finset.sum_subset (fun j hj ↦ ?_) fun j hj hj' ↦ hg0 j ?_).symm
+      · simp only [Finset.mem_filter, Finset.mem_Ico] at hj
+        exact Finset.mem_range.2 hj.2
+      · simp only [Finset.mem_range, Finset.mem_filter, Finset.mem_Ico] at hj hj'
+        omega
+    have hg' (j : ℕ) : ‖if j < k then g j else 0‖ ≤ K * ‖x j‖ := by
+      rw [Real.norm_of_nonneg (hx0 j)]
+      split_ifs
+      · exact hgx j
+      · rw [norm_zero]
+        exact mul_nonneg hK (hx0 j)
+    rw [hwin]
+    refine (TauCeti.two_rpow_mul_norm_sum_Ico_le s hg' k N).trans ?_
+    rw [max_eq_left hK]
+    gcongr with j
+    rw [Real.norm_of_nonneg (hx0 j)]
+    exact hxa j
+  -- The terms above `k`.
+  have hhigh : 2 ^ (s * k) * ‖∑' d, g (d + k)‖ ≤ K * T := by
+    have hsum' : Summable fun d ↦ ‖g (d + k)‖ := (summable_nat_add_iff k).2 hsum
+    refine (mul_le_mul_of_nonneg_left (norm_tsum_le_tsum_norm hsum') (by positivity)).trans ?_
+    refine hasSum_le (fun d ↦ ?_) (hsum'.hasSum.mul_left _) (hT.mul_left K)
+    calc 2 ^ (s * k) * ‖g (d + k)‖
+        ≤ ((2 : ℝ) ^ (-s)) ^ d * 2 ^ (s * (d + k : ℕ)) * (K * x (d + k)) := by
+          rw [Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos]
+          exact mul_le_mul_of_nonneg_left (hgx _) (by positivity)
+      _ = K * (((2 : ℝ) ^ (-s)) ^ d * (2 ^ (s * (d + k : ℕ)) * x (d + k))) := by ring
+      _ ≤ K * (((2 : ℝ) ^ (-s)) ^ d • a (d + k)) := by rw [smul_eq_mul]; gcongr; exact hxa _
+  calc 2 ^ (s * k) * ‖∑' j, g j‖
+      = 2 ^ (s * k) * ‖∑ j ∈ Finset.range k, g j + ∑' d, g (d + k)‖ := by
+        rw [hsum.of_norm.sum_add_tsum_nat_add k]
+    _ ≤ 2 ^ (s * k) * ‖∑ j ∈ Finset.range k, g j‖ + 2 ^ (s * k) * ‖∑' d, g (d + k)‖ := by
+        rw [← mul_add]
+        exact mul_le_mul_of_nonneg_left (norm_add_le _ _) (by positivity)
+    _ ≤ _ := add_le_add hlow hhigh
 
 namespace TemperedDistribution
 
@@ -480,11 +540,42 @@ theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
     lp.norm_eq_tsum_rpow (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
   simp_rw [norm_weightedBlocks_apply]
 
+/-- For `q < ∞` the `q`-th power of the Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)^q`. -/
+theorem hasSum_norm (hq : q ≠ ∞) (u : BesovSpace F φ s p q) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal) (‖u‖ ^ q.toReal) := by
+  have h := lp.hasSum_norm (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)
+    u.weightedBlocks
+  simpa only [norm_weightedBlocks_apply, norm_weightedBlocks] using h
+
+/-- For `q = 2` the squared Besov norm is the sum `∑ⱼ (2^{js} ‖Δⱼ u‖_p)²`. -/
+theorem hasSum_norm_sq (u : BesovSpace F φ s p 2) :
+    HasSum (fun j : ℕ ↦ (2 ^ (s * j) * ‖u.block j‖) ^ 2) (‖u‖ ^ 2) := by
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using hasSum_norm (by simp) u
+
 /-- For `q = ∞` the Besov norm is `supⱼ 2^{js} ‖Δⱼ u‖_p`. -/
 theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
     ‖u‖ = ⨆ j : ℕ, 2 ^ (s * j) * ‖u.block j‖ := by
   rw [← norm_weightedBlocks, lp.norm_eq_ciSup]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- **Membership from a bound on the blocks.** If the blocks `Δⱼ u` of a tempered distribution
+are `Lᵖ` functions `gⱼ` with `2^{js} ‖gⱼ‖_p ≤ bⱼ` for a sequence `b ∈ ℓ^q`, then `u` is an element
+of `B^s_{p,q}` of norm at most `‖b‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq {u : 𝓢'(E, F)}
+    (g : ℕ → Lp F p (volume : Measure E)) (b : lp (fun _ : ℕ ↦ ℝ) q)
+    (hg : ∀ j, littlewoodPaleyBlock F φ j u = g j) (hb : ∀ j : ℕ, 2 ^ (s * j) * ‖g j‖ ≤ b j) :
+    ∃ v : BesovSpace F φ s p q, v.toDistr = u ∧ ‖v‖ ≤ ‖b‖ := by
+  have hu : u.MemBesov φ s p q := memBesov_iff.2 ⟨g, hg, (lp.memℓp b).mono fun j ↦
+    (Real.norm_of_nonneg (by positivity)).trans_le (hb j)⟩
+  refine ⟨hu.toBesovSpace, hu.toDistr_toBesovSpace, ?_⟩
+  rw [← norm_weightedBlocks]
+  refine lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+  have hj : hu.toBesovSpace.block j = g j :=
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
+        MemBesov.toDistr_toBesovSpace, hg j]
+  rw [norm_weightedBlocks_apply, hj]
+  exact (hb j).trans (Real.le_norm_self _)
 
 end Normed
 
@@ -827,10 +918,6 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
   refine ⟨K * (2 * L), fun u ↦ ?_⟩
   obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
-  have hv (j : ℕ) : (u.memBesov_toDistr.of_bump φ').toBesovSpace.block j = f' j :=
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
-        MemBesov.toDistr_toBesovSpace, hf' j]
   -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
   set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
   set w : lp (fun _ : ℕ ↦ ℝ) q :=
@@ -843,12 +930,12 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   have hb : ‖b‖ ≤ ‖u‖ := by
     rw [← norm_weightedBlocks]
     exact lp.norm_mono hp fun k ↦ (norm_norm _).le
-  calc ‖(u.memBesov_toDistr.of_bump φ').toBesovSpace‖ ≤ ‖K • w‖ := by
-        rw [← norm_weightedBlocks]
-        refine lp.norm_mono hp fun j ↦ ?_
-        rw [norm_weightedBlocks_apply, hv, lp.coeFn_smul, Pi.smul_apply, norm_smul,
-          Real.norm_of_nonneg hK, hw, Real.norm_of_nonneg (by positivity)]
-        simpa only [norm_weightedBlocks_apply] using hle j
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f' (K • w) hf'
+    fun j ↦ by
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
+      simpa only [norm_weightedBlocks_apply] using hle j
+  rw [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
+  calc ‖v‖ ≤ ‖K • w‖ := hvn
     _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
     _ ≤ K * (2 * L * ‖b‖) := by
         gcongr
