@@ -111,7 +111,7 @@ theorem jointlyMono₂ (h : EtaleEquivRel s t) : JointlyMono₂ t s :=
 with `t` and with `s` agree. -/
 theorem hom_ext (h : EtaleEquivRel s t) {T : Scheme.{u}} {f g : T ⟶ R} (ht : f ≫ t = g ≫ t)
     (hs : f ≫ s = g ≫ s) : f = g :=
-  h.jointlyMono₂.right_cancellation f g ht hs
+  h.isEquivalenceRelation.hom_ext ht hs
 
 /-- Exchanging `s` and `t` in an étale equivalence relation gives an étale equivalence relation. -/
 theorem swap (h : EtaleEquivRel s t) : EtaleEquivRel t s :=
@@ -125,8 +125,13 @@ theorem symm_symm (h : EtaleEquivRel s t) : h.symm ≫ h.symm = 𝟙 R :=
 theorem refl_symm (h : EtaleEquivRel s t) : h.refl ≫ h.symm = h.refl :=
   h.isEquivalenceRelation.refl_symm
 
-theorem isIso_symm (h : EtaleEquivRel s t) : IsIso h.symm :=
+/-- The symmetry morphism of an étale equivalence relation is an isomorphism. -/
+instance isIso_symm (h : EtaleEquivRel s t) : IsIso h.symm :=
   h.isEquivalenceRelation.isIso_symm
+
+@[simp]
+theorem inv_symm (h : EtaleEquivRel s t) : inv h.symm = h.symm :=
+  h.isEquivalenceRelation.inv_symm
 
 /-- Composing a point with the reflexivity at its `s` is the point itself. -/
 @[reassoc (attr := simp)]
@@ -146,14 +151,20 @@ theorem lift_id_symm_trans (h : EtaleEquivRel s t) :
     pullback.lift (𝟙 R) h.symm (by simp) ≫ h.trans = t ≫ h.refl :=
   h.isEquivalenceRelation.lift_id_symm_trans
 
+/-- Composing the inverse of a point with the point gives the reflexivity at its `s`. -/
+@[reassoc (attr := simp)]
+theorem lift_symm_id_trans (h : EtaleEquivRel s t) :
+    pullback.lift h.symm (𝟙 R) (by simp) ≫ h.trans = s ≫ h.refl :=
+  h.isEquivalenceRelation.lift_symm_id_trans
+
 /-- The reflexivity morphism of an étale equivalence relation is étale. -/
-theorem etale_refl (h : EtaleEquivRel s t) : Etale h.refl :=
+instance etale_refl (h : EtaleEquivRel s t) : Etale h.refl :=
   have := h.etale_s
   have : Etale (h.refl ≫ s) := by rw [refl_s]; infer_instance
   Etale.of_comp h.refl s
 
 /-- The transitivity morphism of an étale equivalence relation is étale. -/
-theorem etale_trans (h : EtaleEquivRel s t) : Etale h.trans :=
+instance etale_trans (h : EtaleEquivRel s t) : Etale h.trans :=
   have := h.etale_s
   have : Etale (h.trans ≫ s) := by rw [trans_s]; infer_instance
   Etale.of_comp h.trans s
@@ -169,24 +180,24 @@ theorem of_isKernelPair {X : Scheme.{u}} {f : U ⟶ X} [Etale f] (hk : IsKernelP
 /-- On the kernel pair `t, s` of `f`, the reflexivity morphism is the diagonal `U ⟶ U ×_X U`. -/
 theorem refl_eq_lift (h : EtaleEquivRel s t) {X : Scheme.{u}} {f : U ⟶ X}
     (hk : IsKernelPair f t s) : h.refl = hk.lift (𝟙 U) (𝟙 U) rfl :=
-  hk.hom_ext (by simp) (by simp)
+  h.isEquivalenceRelation.refl_eq_lift hk
 
 /-- On the kernel pair `t, s` of `f`, the symmetry morphism exchanges the two factors. -/
 theorem symm_eq_lift (h : EtaleEquivRel s t) {X : Scheme.{u}} {f : U ⟶ X}
     (hk : IsKernelPair f t s) : h.symm = hk.lift s t hk.w.symm :=
-  hk.hom_ext (by simp) (by simp)
+  h.isEquivalenceRelation.symm_eq_lift hk
 
 /-- The diagonal `U ⟶ U × U` is an étale equivalence relation on `U`. -/
 theorem id (U : Scheme.{u}) : EtaleEquivRel (𝟙 U) (𝟙 U) :=
   of_isKernelPair (IsKernelPair.id_of_mono (𝟙 U))
 
 @[simp]
-theorem id_refl (U : Scheme.{u}) : (id U).refl = 𝟙 U :=
-  (id U).hom_ext (by rw [refl_t, Category.id_comp]) (by rw [refl_s, Category.id_comp])
+theorem id_refl (h : EtaleEquivRel (𝟙 U) (𝟙 U)) : h.refl = 𝟙 U :=
+  h.isEquivalenceRelation.id_refl
 
 @[simp]
-theorem id_symm (U : Scheme.{u}) : (id U).symm = 𝟙 U :=
-  (id U).hom_ext (by rw [symm_t, Category.id_comp]) (by rw [symm_s, Category.id_comp])
+theorem id_symm (h : EtaleEquivRel (𝟙 U) (𝟙 U)) : h.symm = 𝟙 U :=
+  h.isEquivalenceRelation.id_symm
 
 end EtaleEquivRel
 
