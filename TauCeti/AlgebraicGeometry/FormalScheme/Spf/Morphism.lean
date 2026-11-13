@@ -8,10 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Functoriality
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
 
-import all TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
-import all TauCeti.AlgebraicGeometry.FormalScheme.Spf.StructureSheaf
-import all TauCeti.AlgebraicGeometry.FormalScheme.Spf.Quotient
-
 /-!
 # Morphisms of formal spectra
 
@@ -64,10 +60,19 @@ private theorem specQuotientMap_c_app (hK : IsAdic K) (hL : IsAdic L)
         (op ((Opens.map (quotientInclusion hK)).obj U)) ≫
       (Spec.locallyRingedSpaceObj (CommRingCat.of (A ⧸ L))).presheaf.map i.op =
         (quotientMap φ hφ hK hL hKL).hom.app (op U) := by
-  dsimp only [Spec.locallyRingedSpaceMap, Spec.sheafedSpaceMap]
-  erw [Spec.locallyRingedSpaceObj_presheaf_map, quotientMap_hom_app]
-  exact CommRingCat.hom_ext (StructureSheaf.map_comp_comap (Ideal.quotientMap L φ hKL)
-    ((Opens.map (quotientInclusion hK)).obj U) _ i)
+  refine CommRingCat.hom_ext ?_
+  rw [CommRingCat.hom_comp]
+  have hc : ((Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.quotientMap L φ hKL))).c.app
+      (op ((Opens.map (quotientInclusion hK)).obj U))).hom =
+      StructureSheaf.comap (Ideal.quotientMap L φ hKL)
+        ((Opens.map (quotientInclusion hK)).obj U) _ fun _ ↦ id :=
+    rfl
+  have hmap := congrArg CommRingCat.Hom.hom
+    (Spec.locallyRingedSpaceObj_presheaf_map (CommRingCat.of (A ⧸ L)) i.op)
+  have hquot := congrArg CommRingCat.Hom.hom (quotientMap_hom_app φ hφ hK hL hKL (op U))
+  exact (congrArg₂ RingHom.comp hmap hc).trans
+    ((StructureSheaf.map_comp_comap (Ideal.quotientMap L φ hKL)
+      ((Opens.map (quotientInclusion hK)).obj U) _ i).trans hquot.symm)
 
 /-- On every compatible pair of thickenings the constructed map is the ordinary spectrum map. -/
 private theorem fromSpecQuotient_comp_mapPresheafedSpace (hK : IsAdic K) (hL : IsAdic L)
@@ -75,21 +80,38 @@ private theorem fromSpecQuotient_comp_mapPresheafedSpace (hK : IsAdic K) (hL : I
     (fromSpecQuotient hL).toHom ≫ mapPresheafedSpace φ hφ =
       (Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.quotientMap L φ hKL)) ≫
         fromSpecQuotient hK).toHom := by
-  rw [LocallyRingedSpace.comp_toHom]
-  symm
-  refine PresheafedSpace.Hom.ext _ _ ?_ ?_
-  · apply ConcreteCategory.hom_ext
+  let f₁ := (Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.quotientMap L φ hKL))).toHom
+  let g₁ : (Spec.locallyRingedSpaceObj (CommRingCat.of (B ⧸ K))).toPresheafedSpace ⟶
+      (Spf B).toPresheafedSpace :=
+    { base := quotientInclusion hK
+      c := (toQuotientSheaf (IsAdicRing.ideal_spec B).2.1 hK).hom }
+  let f₂ : (Spec.locallyRingedSpaceObj (CommRingCat.of (A ⧸ L))).toPresheafedSpace ⟶
+      (Spf A).toPresheafedSpace :=
+    { base := quotientInclusion hL
+      c := (toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 hL).hom }
+  have hbase : (f₁ ≫ g₁).base = (f₂ ≫ mapPresheafedSpace φ hφ).base := by
+    apply ConcreteCategory.hom_ext
     intro q
     exact (comap_quotientInclusion φ hφ hK hL hKL q).symm
-  · apply NatTrans.ext
-    funext U
-    -- The spectrum and formal-spectrum wrappers require `erw` for component transport.
-    erw [NatTrans.comp_app, Functor.whiskerRight_app, PresheafedSpace.comp_c_app,
-      PresheafedSpace.comp_c_app, Category.assoc]
-    erw [specQuotientMap_c_app φ hφ hK hL hKL]
-    exact congrArg (fun η ↦ η.hom.app U)
-      (structureSheafMap_comp_toQuotientSheaf φ hφ (IsAdicRing.ideal_spec B).2.1
-        (IsAdicRing.ideal_spec A).2.1 hK hL hKL).symm
+  rw [LocallyRingedSpace.comp_toHom, fromSpecQuotient_toHom hK, fromSpecQuotient_toHom hL]
+  symm
+  refine PresheafedSpace.Hom.ext _ _ hbase ?_
+  ext U : 1
+  refine CommRingCat.hom_ext ?_
+  rw [NatTrans.comp_app, Functor.whiskerRight_app, CommRingCat.hom_comp]
+  have hcomp₁ := (congrArg CommRingCat.Hom.hom
+    (PresheafedSpace.comp_c_app f₁ g₁ (op U))).trans (CommRingCat.hom_comp _ _)
+  have hcomp₂ := (congrArg CommRingCat.Hom.hom
+    (PresheafedSpace.comp_c_app f₂ (mapPresheafedSpace φ hφ) (op U))).trans
+      (CommRingCat.hom_comp _ _)
+  have hspec := congrArg CommRingCat.Hom.hom (specQuotientMap_c_app φ hφ hK hL hKL U
+    (eqToHom (congrArg (fun f ↦ (Opens.map f).obj U) hbase.symm)))
+  have hsheaf := congrArg (fun η ↦ (η.hom.app (op U)).hom)
+    (structureSheafMap_comp_toQuotientSheaf φ hφ (IsAdicRing.ideal_spec B).2.1
+      (IsAdicRing.ideal_spec A).2.1 hK hL hKL).symm
+  exact (congrArg (RingHom.comp _) hcomp₁).trans <| (RingHom.comp_assoc _ _ _).symm.trans <|
+    (congrArg₂ RingHom.comp ((CommRingCat.hom_comp _ _).symm.trans hspec) rfl).trans <|
+      hsheaf.trans hcomp₂.symm
 
 /-- Locality can be checked after passing to a quotient thickening through every point. -/
 private theorem mapPresheafedSpace_isLocalHom (p : carrier A) :
@@ -110,10 +132,18 @@ private theorem mapPresheafedSpace_isLocalHom (p : carrier A) :
     exact LocallyRingedSpace.isLocalHomStalkMap'
       (Spec.locallyRingedSpaceMap (CommRingCat.ofHom (Ideal.quotientMap L φ hn)) ≫
         fromSpecQuotient hK) q
-  erw [PresheafedSpace.stalkMap.comp] at hlocal
-  have := @isLocalHom_of_comp _ _ _ _ _ _
+  have hcomp : (((fromSpecQuotient hL).toHom ≫ mapPresheafedSpace φ hφ).stalkMap q).hom =
+      ((fromSpecQuotient hL).stalkMap q).hom.comp
+        ((mapPresheafedSpace φ hφ).stalkMap ((fromSpecQuotient hL).base q)).hom :=
+    (congrArg CommRingCat.Hom.hom
+      (PresheafedSpace.stalkMap.comp (fromSpecQuotient hL).toHom (mapPresheafedSpace φ hφ) q)).trans
+      (CommRingCat.hom_comp _ _)
+  have : IsLocalHom (((fromSpecQuotient hL).stalkMap q).hom.comp
+      ((mapPresheafedSpace φ hφ).stalkMap ((fromSpecQuotient hL).base q)).hom) :=
+    hcomp ▸ hlocal
+  have := isLocalHom_of_comp
     ((mapPresheafedSpace φ hφ).stalkMap ((fromSpecQuotient hL).base q)).hom
-    ((fromSpecQuotient hL).stalkMap q).hom hlocal
+    ((fromSpecQuotient hL).stalkMap q).hom
   rwa [hp] at this
 
 /-- The morphism of locally ringed spaces induced contravariantly by a continuous ring
@@ -169,16 +199,36 @@ theorem map_injective {φ ψ : B →+* A} {hφ : Continuous φ} {hψ : Continuou
   have hmaps := (cancel_epi (globalSectionsIso (IsAdicRing.ideal_spec B).2.1).hom).mp hglobal
   exact congrArg CommRingCat.Hom.hom hmaps
 
+private theorem eqToHom_hom_comp_whiskerRight_of_eq_id {X : TopCat.{u}} {f : X ⟶ X}
+    (hf : f = 𝟙 X) {D : Type*} [Category* D] (F : X.Sheaf D)
+    (hobj : F = (TopCat.Sheaf.pushforward D f).obj F)
+    (hop : (Opens.map f).op = 𝟭 (Opens X)ᵒᵖ) :
+    (eqToHom hobj).hom ≫ Functor.whiskerRight (eqToHom hop) F.obj = 𝟙 F.obj := by
+  subst hf
+  ext U : 2
+  exact (Category.id_comp _).trans (F.obj.map_id U)
+
+private theorem eqToHom_hom_eq_whiskerRight_of_eq_comp {X Y Z : TopCat.{u}}
+    {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z} (hfg : h = f ≫ g)
+    {D : Type*} [Category* D] (F : X.Sheaf D)
+    (hobj : (TopCat.Sheaf.pushforward D h).obj F =
+      (TopCat.Sheaf.pushforward D g).obj ((TopCat.Sheaf.pushforward D f).obj F))
+    (hop : (Opens.map h).op = (Opens.map g).op ⋙ (Opens.map f).op) :
+    (eqToHom hobj).hom = Functor.whiskerRight (eqToHom hop) F.obj := by
+  subst hfg
+  ext U : 2
+  exact (F.obj.map_id _).symm
+
 /-- The identity homomorphism induces the identity morphism of formal spectra. -/
 @[simp]
 theorem map_id : map (RingHom.id A) continuous_id = 𝟙 (Spf A) := by
+  have hid : TopCat.ofHom (comap (RingHom.id A) continuous_id) = 𝟙 (TopCat.of (carrier A)) := by
+    simp
   apply LocallyRingedSpace.Hom.ext'
   rw [map_toHom, LocallyRingedSpace.id_toHom]
-  -- `hext` compares the sheaf maps directly, without componentwise transport along the base.
-  refine PresheafedSpace.hext _ _ rfl (heq_of_eq ?_)
-  have h := structureSheafMap_id (IsAdicRing.ideal_spec A).2.1
-  erw [eqToHom_refl] at h
-  exact congrArg (fun η ↦ η.hom) h
+  refine PresheafedSpace.Hom.ext _ _ hid ?_
+  rw [structureSheafMap_id]
+  exact eqToHom_hom_comp_whiskerRight_of_eq_id hid _ _ _
 
 variable {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
   [IsAdicRing C] (ψ : C →+* B) (hψ : Continuous ψ)
@@ -186,13 +236,16 @@ variable {C : Type u} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
 /-- Composition of continuous homomorphisms induces composition in the opposite order. -/
 @[reassoc]
 theorem map_comp : map (φ.comp ψ) (hφ.comp hψ) = map φ hφ ≫ map ψ hψ := by
+  have hfg : TopCat.ofHom (comap (φ.comp ψ) (hφ.comp hψ)) =
+      TopCat.ofHom (comap φ hφ) ≫ TopCat.ofHom (comap ψ hψ) := by
+    rw [comap_comp, TopCat.ofHom_comp]
   apply LocallyRingedSpace.Hom.ext'
   rw [LocallyRingedSpace.comp_toHom, map_toHom, map_toHom, map_toHom]
-  -- As for the identity, `hext` avoids transporting every component separately.
-  refine PresheafedSpace.hext _ _ rfl (heq_of_eq ?_)
-  have h := structureSheafMap_comp φ hφ ψ hψ (IsAdicRing.ideal_spec C).2.1
-    (IsAdicRing.ideal_spec B).2.1 (IsAdicRing.ideal_spec A).2.1
-  erw [eqToHom_refl, Category.comp_id] at h
-  exact congrArg (fun η ↦ η.hom) h.symm
+  refine PresheafedSpace.Hom.ext _ _ hfg ?_
+  have h := congrArg InducedCategory.Hom.hom (structureSheafMap_comp φ hφ ψ hψ
+    (IsAdicRing.ideal_spec C).2.1 (IsAdicRing.ideal_spec B).2.1 (IsAdicRing.ideal_spec A).2.1).symm
+  rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom,
+    TopCat.Sheaf.pushforward_map, eqToHom_hom_eq_whiskerRight_of_eq_comp hfg _ _ _] at h
+  exact h
 
 end TauCeti.FormalScheme.Spf
