@@ -190,7 +190,7 @@ theorem mem_weightSubcomodule {x : X} {v : V} :
 /-- With its inherited coaction, the `x`-weight subcomodule has pure weight `x`. -/
 theorem mem_weightSpace_weightSubcomodule (x : X) (n : weightSubcomodule V π hπ x) :
     n ∈ weightSpace (weightSubcomodule V π hπ x) π x :=
-  mem_weightSpace_of_mem_weightSpace_subcomodule _ n n.2
+  mem_weightSpace_subcomodule.mpr n.2
 
 end TauCeti.DiagonalizableGroup
 
@@ -200,28 +200,6 @@ open TauCeti.DiagonalizableGroup
 
 variable {k H X : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [CommGroup X]
 
-/-- The finite-dimensional case of
-`exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot`. -/
-private theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot_of_finite
-    (π : H →ₐc[k] MonoidAlgebra k X) (hπ : centralizerHopfIdeal π = ⊥)
-    {V : Type*} [AddCommMonoid V] [Module k V] [Comodule k H V] [Module.Finite k V] {x : X}
-    (hx : weightSpace V π.toCoalgHom x ≠ ⊥) :
-    ∃ n, 0 < n ∧ ∃ g : GroupLike k H, π g = MonoidAlgebra.single (x ^ n) 1 := by
-  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let N := weightSubcomodule V π.toCoalgHom
-    (map_comul_eq_comm_map_comul_of_centralizerHopfIdeal_eq_bot π hπ) x
-  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
-  have : Module.Finite k N :=
-    Module.Finite.of_injective (SMulMemClass.subtype N) Subtype.val_injective
-  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).mp hx
-  let b := Module.finBasis k N
-  refine ⟨Module.finrank k N, Module.finrank_pos_iff_exists_ne_zero.mpr
-      ⟨(⟨v, hv⟩ : N), fun h ↦ hv0 (congrArg Subtype.val h)⟩,
-    ⟨(Comodule.coefficientMatrix (C := H) b).det,
-      Comodule.isGroupLikeElem_det_coefficientMatrix b⟩, ?_⟩
-  simpa using map_det_coefficientMatrix_of_forall_mem_weightSpace π
-    (mem_weightSpace_weightSubcomodule x) b
-
 /-- **A weight of a central diagonalizable subgroup has a power extending to a character.** If
 `D(X)` is central in `G` and `x` occurs as a weight of a representation `V`, then some positive
 power `x ^ n` is the restriction to `D(X)` of a character of `G`. -/
@@ -230,13 +208,21 @@ theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
     {V : Type*} [AddCommMonoid V] [Module k V] [Comodule k H V] {x : X}
     (hx : weightSpace V π.toCoalgHom x ≠ ⊥) :
     ∃ n, 0 < n ∧ ∃ g : GroupLike k H, π g = MonoidAlgebra.single (x ^ n) 1 := by
+  -- the weight subcomodule is built from a difference of coactions, so `V` is made a group
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).mp hx
-  obtain ⟨N, hN, hvN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) v
+  obtain ⟨N, hNQ, hN, hvN⟩ := Subcomodule.exists_finite_le_of_mem (R := k) (C := H)
+    (Q := weightSubcomodule V π.toCoalgHom
+      (map_comul_eq_comm_map_comul_of_centralizerHopfIdeal_eq_bot π hπ) x)
+    (mem_weightSubcomodule.mpr hv)
   have : Module.Finite k N := hN
-  refine exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot_of_finite π hπ (V := N) ?_
-  exact (Submodule.ne_bot_iff _).mpr ⟨⟨v, hvN⟩,
-    mem_weightSpace_of_mem_weightSpace_subcomodule N _ hv, fun h ↦ hv0 (congrArg Subtype.val h)⟩
+  let b := Module.finBasis k N
+  refine ⟨Module.finrank k N, Module.finrank_pos_iff_exists_ne_zero.mpr
+      ⟨(⟨v, hvN⟩ : N), fun h ↦ hv0 (congrArg Subtype.val h)⟩,
+    ⟨(Comodule.coefficientMatrix (C := H) b).det,
+      Comodule.isGroupLikeElem_det_coefficientMatrix b⟩, ?_⟩
+  simpa using map_det_coefficientMatrix_of_forall_mem_weightSpace π
+    (fun n ↦ mem_weightSpace_subcomodule.mpr (mem_weightSubcomodule.mp (hNQ n.2))) b
 
 /-- **A central diagonalizable subgroup meets the derived subgroup in a finite subgroup**, given
 a finite-dimensional representation whose matrix coefficients generate the coordinate algebra.
