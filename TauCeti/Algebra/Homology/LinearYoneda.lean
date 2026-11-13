@@ -51,6 +51,10 @@ singular cohomology is obtained from the one of chain complexes.
   cochain complexes of `k`-modules.
 * `TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor`: `Hom(-, Y)` preserves short
   exactness of degreewise split sequences.
+* `TauCeti.ChainComplex.mono_linearYonedaFunctor_map_op_of_epi_f`: `Hom(-, Y)` takes a degreewise
+  epimorphism to a monomorphism, and
+  `TauCeti.ChainComplex.mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f` does the same for a
+  degreewise epimorphism `X₂ ⊞ X₃ ⟶ X₄` and the map `Hom(X₄, Y) ⟶ Hom(X₂, Y) ⊞ Hom(X₃, Y)`.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
 * `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
   equivalence to a cochain homotopy equivalence in the opposite direction.
@@ -161,6 +165,31 @@ lemma _root_.HomotopyEquiv.linearYonedaFunctorMap_inv
     (h.linearYonedaFunctorMap k Y).inv =
       (linearYonedaFunctor k Y).map h.inv.op := (rfl)
 
+/-- `Hom(-, Y)` takes a chain map that is an epimorphism in every degree to a monomorphism. -/
+lemma mono_linearYonedaFunctor_map_op_of_epi_f {X X' : ChainComplex C α} (φ : X ⟶ X')
+    (h : ∀ i, Epi (φ.f i)) : Mono ((linearYonedaFunctor k Y).map φ.op) := by
+  refine HomologicalComplex.mono_of_mono_f _ fun i ↦ ?_
+  rw [ModuleCat.mono_iff_injective]
+  -- The component in degree `i` is precomposition with `φ.f i`, by definition.
+  exact fun a a' he ↦ (cancel_epi (φ.f i)).1 he
+
+/-- `Hom(-, Y)` takes two chain maps `f : X₂ ⟶ X₄` and `g : X₃ ⟶ X₄` whose descent
+`X₂ ⊞ X₃ ⟶ X₄` is an epimorphism in every degree to a monomorphism
+`Hom(X₄, Y) ⟶ Hom(X₂, Y) ⊞ Hom(X₃, Y)`. -/
+lemma mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f {X₂ X₃ X₄ : ChainComplex C α}
+    [HasBinaryBiproduct X₂ X₃] (f : X₂ ⟶ X₄) (g : X₃ ⟶ X₄)
+    (h : ∀ i, Epi ((biprod.desc f g).f i)) :
+    Mono (biprod.lift ((linearYonedaFunctor k Y).map f.op)
+      ((linearYonedaFunctor k Y).map g.op)) := by
+  have := mono_linearYonedaFunctor_map_op_of_epi_f k Y _ h
+  have fac : biprod.lift ((linearYonedaFunctor k Y).map f.op) ((linearYonedaFunctor k Y).map g.op) ≫
+      biprod.desc ((linearYonedaFunctor k Y).map biprod.fst.op)
+        ((linearYonedaFunctor k Y).map biprod.snd.op) =
+      (linearYonedaFunctor k Y).map (biprod.desc f g).op := by
+    rw [biprod.lift_desc, ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_add, ← op_comp,
+      ← op_comp, ← op_add, biprod.desc_eq]
+  exact mono_of_mono_fac fac
+
 /-- The functor `Hom(-, Y)` takes a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of chain
 complexes which is split in each degree to a short exact sequence
 `0 ⟶ Hom(X₃, Y) ⟶ Hom(X₂, Y) ⟶ Hom(X₁, Y) ⟶ 0` of cochain complexes. -/
@@ -245,6 +274,16 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
   -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
   ext i (a : X.X i ⟶ Y)
   exact (Category.assoc a g h).symm
+
+/-- Coefficient maps on cochain complexes are linear in the coefficient morphism: the coefficient
+map of `r • g` is `r` times the coefficient map of `g`. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_smul {S : Type*} [CommRing S] [Linear S C]
+    (X : ChainComplex C α) {Y Z : C} (r : S) (g : Y ⟶ Z) :
+    X.linearYonedaObjMap S (r • g) = r • X.linearYonedaObjMap S g := by
+  -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
+  ext i (a : X.X i ⟶ Y)
+  exact Linear.comp_smul _ _ _ a r g
 
 /-- Coefficient maps commute with the maps induced by chain maps: postcomposing with `g : Y ⟶ Z`
 and precomposing with `β : X ⟶ X'` can be done in either order. -/
