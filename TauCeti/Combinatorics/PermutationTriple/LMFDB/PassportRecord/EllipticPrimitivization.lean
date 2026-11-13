@@ -253,7 +253,8 @@ theorem isValidFor_cyclicThreeBelyiRecord {P : PassportSpec 3}
 theorem isPrimitivizationOf_cyclicThreePassportRecord :
     cyclicThreeBelyiRecord.IsPrimitivizationOf cyclicThreePassportRecord
       ⟨cyclicThreeStoredTriple.toTriple, isConnected_toTriple_cyclicThreeStoredTriple⟩ :=
-  .of_card_primitivizationBlock_eq_one (Finset.card_singleton _) rfl
+  .of_card_primitivizationBlock_eq_one
+    (isValidAt_cyclicThreePassportRecord.card_primitivizationBlock_eq_one_iff.mpr rfl) rfl
     (ConnectedTriple.hasPassport_passportOf _)
     (isValidFor_cyclicThreeBelyiRecord (ConnectedTriple.hasPassport_passportOf _))
 

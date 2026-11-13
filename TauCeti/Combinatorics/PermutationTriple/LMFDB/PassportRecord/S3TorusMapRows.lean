@@ -11,9 +11,10 @@ public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Examp
 /-!
 # The map rows `3T2-3_2.1_2.1-a` and `4T1-4_4_2.2-a`
 
-This file carries the map rows of the LMFDB table of Belyi maps belonging to the passport rows
+This file certifies the frozen LMFDB map row `3T2-3_2.1_2.1-a` and a reconstruction of
+`4T1-4_4_2.2-a`, belonging respectively to the passport rows
 `TauCeti.PermutationTriple.LMFDB.s3PassportRecord` and
-`TauCeti.PermutationTriple.LMFDB.torusPassportRecord` through the map-row certificates. Each row is
+`TauCeti.PermutationTriple.LMFDB.torusPassportRecord`. Each row is
 valid for its passport (`TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsValidFor`), its stored map
 label extends its passport label and agrees with its stored partitions, it computes the
 aggregations `num_orbits = 1` and `maxdegbf = 1` of its passport row, and its stored triple
@@ -26,8 +27,11 @@ The genus-zero row `3T2-3_2.1_2.1-a` stores the triple `(1,2,3)`, `(2,3)`, `(1,2
 `σinf * σ1 * σ0 = 1`, the relation of a `TauCeti.PermutationTriple`
 (`TauCeti.PermutationTriple.LMFDB.mul_mul_ne_one_s3StoredTriple`). So the stored data is read
 correctly only through the translation `TauCeti.PermutationTriple.LMFDB.StoredTriple.toTriple`,
-which relabels it to `TauCeti.PermutationTriple.s3Triple`. The passport row `3T2-3_2.1_2.1` is
-primitive and stores this map row as its own primitivization, and the row certifies it
+which inverts each component. The resulting triple is isomorphic to
+`TauCeti.PermutationTriple.s3Triple` under the sheet relabeling `swap 0 2`
+(`TauCeti.PermutationTriple.LMFDB.equivalent_toTriple_s3StoredTriple`).
+The passport row `3T2-3_2.1_2.1` is primitive and stores this map row as its own primitivization,
+and the row certifies it
 (`TauCeti.PermutationTriple.LMFDB.isPrimitivizationOf_s3PassportRecord`).
 
 The genus-one row `4T1-4_4_2.2-a` is the superelliptic curve `y⁴ = t (t - 1)` with `β = t`. Its
@@ -51,7 +55,8 @@ carry.
 * `TauCeti.PermutationTriple.LMFDB.equivalent_toTriple_s3StoredTriple`: its translation is
   isomorphic to `s3Triple`.
 * `TauCeti.PermutationTriple.LMFDB.isValidFor_s3BelyiRecord` and
-  `TauCeti.PermutationTriple.LMFDB.isValidFor_torusBelyiRecord`: the two map rows are valid.
+  `TauCeti.PermutationTriple.LMFDB.isValidFor_torusBelyiRecord`: the frozen genus-zero row and the
+  reconstructed genus-one row are valid.
 * `TauCeti.PermutationTriple.LMFDB.mapRowClasses_s3PassportRecord` and
   `TauCeti.PermutationTriple.LMFDB.mapRowClasses_torusPassportRecord`: each map row represents
   exactly the classes of its passport.
@@ -251,7 +256,8 @@ theorem mapRowClasses_s3PassportRecord :
 which is primitive. -/
 theorem isPrimitivizationOf_s3PassportRecord :
     s3BelyiRecord.IsPrimitivizationOf s3PassportRecord ⟨s3Triple, isConnected_s3Triple⟩ :=
-  .of_card_primitivizationBlock_eq_one (Finset.card_singleton _) rfl
+  .of_card_primitivizationBlock_eq_one
+    (isValidAt_s3PassportRecord.card_primitivizationBlock_eq_one_iff.mpr rfl) rfl
     (ConnectedTriple.hasPassport_passportOf _)
     (isValidFor_s3BelyiRecord (ConnectedTriple.hasPassport_passportOf _))
 

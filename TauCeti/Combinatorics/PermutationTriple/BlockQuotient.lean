@@ -70,7 +70,7 @@ primitive exactly when no block lies strictly between `B` and the set of all she
   intertwines the components of `t` with those of the quotient.
 * `TauCeti.PermutationTriple.ncard_mul_eq_of_isBlock`: the size of the block times the degree of
   the quotient is the degree of `t`.
-* `TauCeti.PermutationTriple.equivalent_self_blockQuotient`: a quotient with as many sheets as `t`
+* `TauCeti.PermutationTriple.equivalent_blockQuotient_self`: a quotient with as many sheets as `t`
   is isomorphic to `t`.
 * `TauCeti.PermutationTriple.isBlock_preimage_blockIndex_iff`: a set of sheets of the quotient is a
   block exactly when its preimage is one.
@@ -277,10 +277,13 @@ theorem ncard_mul_eq_of_isBlock (e : orbit t.monodromyGroup B ≃ Fin m) : B.nca
 include ht hB hBne in
 /-- For a triple with transitive monodromy, a quotient by a nonempty block with as many sheets as
 the triple is isomorphic to the triple: the quotient map is then a relabeling of the sheets. -/
-theorem equivalent_self_blockQuotient (e : orbit t.monodromyGroup B ≃ Fin n) :
-    Equivalent t (t.blockQuotient B e) := by
+theorem equivalent_blockQuotient_self (e : orbit t.monodromyGroup B ≃ Fin n) :
+    Equivalent (t.blockQuotient B e) t := by
   have hbij := Finite.surjective_iff_bijective.mp (blockIndex_surjective e ht hB hBne)
-  refine equivalent_iff_exists_smul_eq.2 ⟨Equiv.ofBijective _ hbij, ext_of_two ?_ ?_⟩
+  refine equivalent_iff_exists_smul_eq.2 ⟨(Equiv.ofBijective _ hbij)⁻¹, ?_⟩
+  apply inv_smul_eq_iff.mpr
+  symm
+  refine ext_of_two ?_ ?_
   · rw [smul_σ0, mul_inv_eq_iff_eq_mul]
     exact Equiv.ext fun x ↦ blockIndex_σ0 e ht hB hBne x
   · rw [smul_σ1, mul_inv_eq_iff_eq_mul]

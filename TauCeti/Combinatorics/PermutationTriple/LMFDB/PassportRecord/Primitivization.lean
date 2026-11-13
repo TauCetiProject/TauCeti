@@ -51,8 +51,12 @@ its own primitivization in degree.
   genus at most that of the passport.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf.isPrimitive_eq_true_iff`: the
   stored primitivity flag is set exactly when the primitivization has the same degree.
-* `BelyiRecord.IsPrimitivizationOf.of_card_primitivizationBlock_eq_one`: a passport
-  row whose primitivization block is a single sheet is its own primitivization.
+* [of_card_primitivizationBlock_eq_one][one-sheet]:
+  when a passport row has a one-sheet primitivization block, a map row of the same degree carrying
+  its primitivization label and valid for a passport of `t` certifies its primitivization at `t`.
+
+[one-sheet]:
+#TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf.of_card_primitivizationBlock_eq_one
 
 ## References
 
@@ -68,6 +72,34 @@ public section
 namespace TauCeti
 namespace PermutationTriple
 namespace LMFDB
+
+namespace PassportRecord.IsValidAt
+
+/-- A valid passport row has a one-sheet primitivization block exactly when its stored
+primitivity flag is set. -/
+theorem card_primitivizationBlock_eq_one_iff {n : ℕ} {r : PassportRecord n}
+    {t : ConnectedTriple n} (hr : r.IsValidAt t) :
+    r.primitivizationBlock.card = 1 ↔ r.isPrimitive = true := by
+  have := t.2.isPretransitive
+  rw [hr.isPrimitive_eq_true_iff, isPrimitive_iff]
+  constructor
+  · intro hcard
+    obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hcard
+    refine IsPreprimitive.of_isTrivialBlock_base x fun {C} hxC hC ↦ ?_
+    rcases hr.eq_or_eq_univ_of_primitivizationBlock_subset C hC
+      (by simpa [hx] using hxC) with h | h
+    · exact Or.inl (h ▸ by simp [hx])
+    · exact Or.inr h
+  · intro hprim
+    rcases hprim.isTrivialBlock_of_isBlock hr.isBlock_primitivizationBlock with hsub | huniv
+    · obtain ⟨x, hx⟩ := hr.primitivizationBlock_nonempty
+      rw [Finset.card_eq_one]
+      exact ⟨x, Finset.coe_injective (by simpa using hsub.eq_singleton_of_mem hx)⟩
+    · have huniv : r.primitivizationBlock = Finset.univ := Finset.coe_eq_univ.mp huniv
+      rw [huniv, Finset.card_univ, Fintype.card_fin]
+      exact hr.deg_eq_one_of_primitivizationBlock_eq_univ huniv
+
+end PassportRecord.IsValidAt
 
 namespace BelyiRecord
 
@@ -123,33 +155,16 @@ theorem g_le (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) : q.g ≤ r.g 
 has the same degree, that is, when the primitivization block is a single sheet. -/
 theorem isPrimitive_eq_true_iff (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) :
     r.isPrimitive = true ↔ q.deg = r.deg := by
-  have := t.2.isPretransitive
   have hmul := h.card_mul_deg hr
   have hn : r.deg ≠ 0 := by
     rw [hr.deg_eq]
     exact t.2.ne_zero
-  have hB := hr.isBlock_primitivizationBlock
-  have hmax := hr.eq_or_eq_univ_of_primitivizationBlock_subset
-  rw [hr.isPrimitive_eq_true_iff, isPrimitive_iff]
+  rw [← hr.card_primitivizationBlock_eq_one_iff]
   constructor
-  · -- A maximal proper block of a primitive action is a single sheet, unless there is only one.
-    intro hprim
-    suffices r.primitivizationBlock.card = 1 by rwa [this, one_mul] at hmul
-    rcases hprim.isTrivialBlock_of_isBlock hB with hsub | huniv
-    · obtain ⟨x, hx⟩ := hr.primitivizationBlock_nonempty
-      rw [Finset.card_eq_one]
-      exact ⟨x, Finset.coe_injective (by simpa using hsub.eq_singleton_of_mem hx)⟩
-    · have huniv : r.primitivizationBlock = Finset.univ := Finset.coe_eq_univ.mp huniv
-      rw [huniv, Finset.card_univ, Fintype.card_fin]
-      exact hr.deg_eq_one_of_primitivizationBlock_eq_univ huniv
-  · -- A single sheet that is a maximal block shows that every block through it is trivial.
-    intro hdeg
-    rw [hdeg, Nat.mul_eq_right hn, Finset.card_eq_one] at hmul
-    obtain ⟨x, hx⟩ := hmul
-    refine IsPreprimitive.of_isTrivialBlock_base x fun {C} hxC hC ↦ ?_
-    rcases hmax C hC (by simpa [hx] using hxC) with h | h
-    · exact Or.inl (h ▸ by simp [hx])
-    · exact Or.inr h
+  · intro hcard
+    simpa [hcard] using hmul
+  · intro hdeg
+    rwa [hdeg, Nat.mul_eq_right hn] at hmul
 
 /-- **A one-sheet primitivization block.** If the primitivization block of the passport row `r` is
 a single sheet, as it is for every valid primitive row, then a map row of the same degree carrying
@@ -174,9 +189,9 @@ theorem of_card_primitivizationBlock_eq_one {q : BelyiRecord n} {P : PassportSpe
   let e := Finite.equivFinOfCardEq hcard
   refine ⟨hlabel, e, hq.of_hasPassport hP ?_⟩
   refine (PassportSpec.hasPassport_iff_of_equivalent (ConnectedIsoClass.mk_eq_mk_iff.mp
-    (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mpr ?_)) _).mpr
+    (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mpr ?_)) _).mp
     (ConnectedTriple.hasPassport_passportOf _)
-  exact equivalent_self_blockQuotient ht hblock hne e
+  exact equivalent_blockQuotient_self ht hblock hne e
 
 end IsPrimitivizationOf
 
