@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Torsion.Galois
-import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.FieldTheory.IsAlgClosed.Units
+public import TauCeti.RingTheory.Perfection
 
 /-!
 # Compatible division points of a Tate curve
@@ -36,25 +37,46 @@ open scoped AddSubgroup Pointwise
 variable {K : Type*} [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
   {L : Type*} [NormedField L] [NormedAlgebra K L] [CompleteSpace L]
   [IsUltrametricDist L] [DecidableEq L] (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-  (ℓ : ℕ) (u : ℕ → Lˣ)
-  (hu : ∀ k, u k ^ (ℓ ^ k) = Units.map (algebraMap K L : K →* L) q)
-  (hcompat : ∀ k, u (k + 1) ^ ℓ = u k)
+  (ℓ : ℕ)
 
-include hcompat in
-/-- Compatible roots of the Tate parameter give compatible division points. -/
-theorem tateModuleTransition_tateDivisionPoint (k : ℕ) :
+/-- Raising a root of the Tate parameter to the `ℓ`-th power gives the preceding
+level's division point under the Tate-module transition. -/
+@[simp]
+theorem tateModuleTransition_tateDivisionPoint (k : ℕ) (v : Lˣ)
+    (hv : v ^ (ℓ ^ (k + 1)) = Units.map (algebraMap K L : K →* L) q) :
     tateModuleTransition ℓ (((tateCurveAt q hq)⁄L).toAffine.Point) k
-        (tateDivisionPoint q hq (ℓ ^ (k + 1)) (u (k + 1)) (hu (k + 1))) =
-      tateDivisionPoint q hq (ℓ ^ k) (u k) (hu k) := by
+        (tateDivisionPoint q hq (ℓ ^ (k + 1)) v hv) =
+      tateDivisionPoint q hq (ℓ ^ k) (v ^ ℓ) (by rw [← pow_mul, ← pow_succ', hv]) := by
   apply Subtype.ext
   simp only [tateModuleTransition_apply, coe_tateDivisionPoint]
-  rw [← map_nsmul, ← ofMul_pow, hcompat]
+  rw [← map_nsmul, ← ofMul_pow]
+
+/-- A Tate-module point with level-one exponent one is not an `ℓ`-multiple when `ℓ ≠ 1`. -/
+theorem ne_nsmul_of_tateTorsionExponent_proj_one_eq_one (hℓ : ℓ ≠ 1)
+    {x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)}
+    (hx : tateTorsionExponent L q hq (ℓ ^ 1) (TateModule.proj 1 x) = 1)
+    (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) : x ≠ ℓ • y := by
+  intro h
+  have hy : ℓ • TateModule.proj 1 y = 0 := by
+    simpa using AddSubgroup.torsionBy.nsmul (TateModule.proj 1 y)
+  have he := congrArg (fun z ↦ tateTorsionExponent L q hq (ℓ ^ 1) (TateModule.proj 1 z)) h
+  rw [hx, map_nsmul, hy, map_zero, pow_one] at he
+  have hm : (1 : ℤ) ∈ (ℓ : ℤ) • (⊤ : Submodule ℤ ℤ) := by
+    rw [← Submodule.Quotient.mk_eq_zero, Ideal.Quotient.mk_eq_mk, map_one]
+    exact he
+  obtain ⟨a, -, ha⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hm
+  have hd : (ℓ : ℤ) ∣ 1 := ⟨a, ha.symm⟩
+  exact hℓ (Nat.dvd_one.mp (by exact_mod_cast hd))
+
+variable (u : ℕ → Lˣ)
+  (hu : ∀ k, u k ^ (ℓ ^ k) = Units.map (algebraMap K L : K →* L) q)
+  (hcompat : ∀ k, u (k + 1) ^ ℓ = u k)
 
 /-- The Tate-module point determined by a compatible tower of roots of the parameter.
 Its finite-level exponent is one, rather than zero as in the roots-of-unity direction. -/
 def tateDivisionTower : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point) :=
   TateModule.mk (fun k ↦ tateDivisionPoint q hq (ℓ ^ k) (u k) (hu k))
-    (tateModuleTransition_tateDivisionPoint q hq ℓ u hu hcompat)
+    (fun k ↦ by simp only [tateModuleTransition_tateDivisionPoint, hcompat])
 
 /-- The components of the compatible division point are the prescribed division points. -/
 @[simp]
@@ -65,22 +87,11 @@ theorem proj_tateDivisionTower (k : ℕ) :
 
 /-- The compatible division point is primitive: it is not an `ℓ`-multiple in the Tate
 module. Thus it supplies an integral, not merely rational, Kummer direction. -/
-theorem tateDivisionTower_ne_nsmul [Fact ℓ.Prime]
+theorem tateDivisionTower_ne_nsmul (hℓ : ℓ ≠ 1)
     (y : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point)) :
     tateDivisionTower q hq ℓ u hu hcompat ≠ ℓ • y := by
-  intro h
-  have hy : ℓ • TateModule.proj 1 y = 0 := by
-    simpa using AddSubgroup.torsionBy.nsmul (TateModule.proj 1 y)
-  have he := congrArg (fun x ↦ tateTorsionExponent L q hq (ℓ ^ 1) (TateModule.proj 1 x)) h
-  rw [proj_tateDivisionTower, tateTorsionExponent_tateDivisionPoint,
-    map_nsmul, hy, map_zero] at he
-  rw [pow_one] at he
-  have hm : (1 : ℤ) ∈ (ℓ : ℤ) • (⊤ : Submodule ℤ ℤ) := by
-    rw [← Submodule.Quotient.mk_eq_zero, Ideal.Quotient.mk_eq_mk, map_one]
-    exact he
-  obtain ⟨a, -, ha⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hm
-  have hd : (ℓ : ℤ) ∣ 1 := ⟨a, ha.symm⟩
-  exact (Fact.out : ℓ.Prime).not_dvd_one (by exact_mod_cast hd)
+  apply ne_nsmul_of_tateTorsionExponent_proj_one_eq_one q hq ℓ hℓ
+  rw [proj_tateDivisionTower, tateTorsionExponent_tateDivisionPoint]
 
 section Galois
 
@@ -129,30 +140,21 @@ theorem tateModuleGaloisRepresentation_tateDivisionTower_eq_self_iff :
 
 end Galois
 
+variable (L)
+
 /-- Over an algebraically closed complete ultrametric extension there is a single Tate-module
 point whose exponent is one at every level. In particular, the levelwise surjectivity of the
 exponent maps is realized by compatible preimages of one. -/
-theorem exists_tateModulePoint_exponent_eq_one [IsAlgClosed L] [Fact ℓ.Prime] :
+theorem exists_forall_tateTorsionExponent_proj_eq_one [IsAlgClosed L] [NeZero ℓ] :
     ∃ x : TateModule ℓ (((tateCurveAt q hq)⁄L).toAffine.Point), ∀ k,
       tateTorsionExponent L q hq (ℓ ^ k) (TateModule.proj k x) =
         (1 : QuotSMulTop ((ℓ ^ k : ℕ) : ℤ) ℤ) := by
-  have hpow : Surjective (fun v : Lˣ ↦ v ^ ℓ) := by
-    intro v
-    obtain ⟨a, ha⟩ := IsAlgClosed.exists_pow_nat_eq (v : L) (Fact.out : ℓ.Prime).pos
-    have ha0 : a ≠ 0 := by
-      intro h
-      exact v.ne_zero (by simpa [h, (Fact.out : ℓ.Prime).ne_zero] using ha.symm)
-    exact ⟨Units.mk0 a ha0, Units.ext ha⟩
-  let u : ℕ → Lˣ := fun k ↦ (surjInv hpow)^[k] (Units.map (algebraMap K L : K →* L) q)
-  have hcompat (k : ℕ) : u (k + 1) ^ ℓ = u k := by
-    dsimp only [u]
-    rw [iterate_succ_apply']
-    exact surjInv_eq hpow _
-  have hu (k : ℕ) : u k ^ (ℓ ^ k) = Units.map (algebraMap K L : K →* L) q := by
-    induction k with
-    | zero => simp [u]
-    | succ k ih => rw [pow_succ', pow_mul, hcompat, ih]
-  refine ⟨tateDivisionTower q hq ℓ u hu hcompat, ?_⟩
+  obtain ⟨u, hu₀⟩ := Perfection.coeffMonoidHom_surjective
+    (RootableBy.surjective_pow Lˣ ℕ (NeZero.ne ℓ)) 0
+    (Units.map (algebraMap K L : K →* L) q)
+  refine ⟨tateDivisionTower q hq ℓ (fun k ↦ Perfection.coeffMonoidHom Lˣ ℓ k u)
+    (fun k ↦ (Perfection.coeffMonoidHom_pow_p_pow_self u k).trans hu₀)
+    (Perfection.coeffMonoidHom_pow_p' u), ?_⟩
   intro k
   rw [proj_tateDivisionTower, tateTorsionExponent_tateDivisionPoint]
 
