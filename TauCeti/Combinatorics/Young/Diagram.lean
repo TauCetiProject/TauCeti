@@ -112,7 +112,7 @@ theorem getD_rowLens (μ : YoungDiagram) (i : ℕ) : μ.rowLens.getD i 0 = μ.ro
 decreasing. This is stated for `List.mergeSort` in the shape `simp` produces from
 `Multiset.sort` on a coerced list (via `Multiset.coe_sort` and `ge_iff_le`), making it the
 `simp` normal form for sorted row-length expressions; the public statement is
-`TauCeti.YoungDiagram.sort_coe_rowLens`. -/
+`YoungDiagram.sort_coe_rowLens`. -/
 @[simp]
 private theorem mergeSort_rowLens (μ : YoungDiagram) :
     μ.rowLens.mergeSort (fun a b => decide (b ≤ a)) = μ.rowLens :=
