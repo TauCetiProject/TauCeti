@@ -21,7 +21,10 @@ allowed throughout, and no finiteness is assumed. A rose has exactly one spannin
 darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
-tree path `T.path a b`; a dart weight that is trivial on `T` is trivial along tree paths. The
+tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
+trivial on `T` is trivial along them; for a group-valued weight compatible with reversal, the
+weights of the tree paths from `a` to the two ends of a dart of `T` differ by the weight of that
+dart (`weight_path_tgt`). The
 tree paths from a base vertex `v` give a free basis of the fundamental group of a graph: choose
 one dart `e` from each reversal pair outside `T`; the basis consists of the loops
 `T.path v (src e) · e · T.path (tgt e) v`.
@@ -360,19 +363,41 @@ tree to the tree paths of the tree. -/
 
 end Restrict
 
-/-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
-path. -/
-theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M}
-    (hwt : ∀ e ∈ T.darts, wt e = 1) (a b : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+/-- Two dart weights that agree on the darts of a spanning tree agree along every tree path. -/
+theorem weight_path_congr {M : Type*} [Monoid M] {wt wt' : Γ.E → M}
+    (hwt : ∀ e ∈ T.darts, wt e = wt' e) (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.1) := by
   have key {a b : Γ.V} (p : Γ.Path a b) (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
-      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+        p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.1) := by
     induction p with
     | nil => simp
     | cons p e ih =>
       simp only [Path.darts_cons, List.mem_append, List.mem_singleton] at hp
       simp [ih fun d hd => hp d (Or.inl hd), hwt e.1 (hp e.1 (Or.inr rfl))]
   exact key _ fun _ => T.mem_of_mem_darts_path
+
+/-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
+path. -/
+theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M} (hwt : ∀ e ∈ T.darts, wt e = 1)
+    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 := by
+  rw [T.weight_path_congr (wt' := fun _ => 1) hwt]
+  generalize T.path a b = p
+  induction p <;> simp [*]
+
+/-- For a dart weight compatible with reversal, the weight of the tree path from `a` to the target
+of a tree dart `e` is the weight of the tree path from `a` to its source times the weight of
+`e`. -/
+theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹)
+    (a : Γ.V) {e : Γ.E} (he : e ∈ T.darts) :
+    (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
+      (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) * wt e := by
+  have h := Path.Homotopic.weight_eq Γ wt hwt
+    (T.homotopic_path ((T.path a (Γ.src e)).cons (Γ.dart e)) fun d hd => by
+      rw [Path.darts_cons, List.mem_append, List.mem_singleton, dart_val] at hd
+      exact hd.elim T.mem_of_mem_darts_path fun hd => hd ▸ he)
+  simpa using h.symm
 
 end SpanningTree
 
