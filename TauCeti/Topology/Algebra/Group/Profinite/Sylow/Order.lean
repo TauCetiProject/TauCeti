@@ -50,13 +50,13 @@ theorem IsProPSylow.profiniteOrder_eq {q : Nat.Primes} (hP : IsProPSylow q P) :
     profiniteOrder P = Supernatural.primaryPart q (profiniteOrder G) := by
   have : Fact (q : ℕ).Prime := ⟨q.prop⟩
   have : CompactSpace P := isCompact_iff_compactSpace.mp hP.isClosed.isCompact
-  obtain ⟨hclosed, hpro, hindex⟩ :=
+  obtain ⟨-, hpro, hindex⟩ :=
     (isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex q).mp hP
   ext ℓ
   by_cases hℓ : ℓ = q
   · subst hℓ
     rw [Supernatural.coe_prime_dvd_iff, not_not] at hindex
-    rw [Supernatural.primaryPart_apply_self, P.profiniteOrder_apply_eq_add_profiniteIndex hclosed,
+    rw [Supernatural.primaryPart_apply_self, P.profiniteOrder_apply_eq_add_profiniteIndex,
       hindex, add_zero]
   · rw [Supernatural.primaryPart_apply_of_ne hℓ]
     exact isProP_iff_profiniteOrder_apply_eq_zero.mp hpro ℓ fun h ↦ hℓ (Subtype.ext h)
@@ -83,7 +83,7 @@ theorem isProPSylow_bot_iff (q : Nat.Primes) :
   refine (isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex q).mpr
     ⟨hclosed, IsPGroup.of_bot.isProP, ?_⟩
   rw [Supernatural.coe_prime_dvd_iff, not_not]
-  have hlagrange := (⊥ : Subgroup G).profiniteOrder_apply_eq_add_profiniteIndex hclosed q
+  have hlagrange := (⊥ : Subgroup G).profiniteOrder_apply_eq_add_profiniteIndex q
   rw [h] at hlagrange
   exact (add_eq_zero.mp hlagrange.symm).2
 

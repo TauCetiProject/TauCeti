@@ -15,6 +15,8 @@ In a continuous Riemannian vector bundle, a positive continuous radius gives the
 fibre discs as the closure of the open fibre discs. Over a compact base with finite-dimensional
 model fibre, the closed discs are compact. Consequently a partial homeomorphism defined on
 these closed discs takes the sphere bundle precisely onto the frontier of the open disc image.
+The fibre spheres are compact as well, which makes, for instance, the unit tangent bundle of a
+compact Riemannian manifold compact.
 This gives the topological boundary calculation for closed tubular neighbourhoods.
 
 ## References
@@ -64,6 +66,15 @@ theorem isCompact_setOf_norm_le_bundle [CompactSpace B] [FiniteDimensional ℝ F
       (hr.comp (FiberBundle.continuous_proj F V)))
   exact fun p hp => ⟨mem_univ _, hp.trans (hR (mem_range_self p.proj))⟩
 
+/-- Fibre spheres of continuous radius are compact over a compact base when the model fibre is
+finite-dimensional. In particular the unit sphere bundle is compact. -/
+theorem isCompact_setOf_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F]
+    {r : B → ℝ} (hr : Continuous r) :
+    IsCompact {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
+  (isCompact_setOf_norm_le_bundle hr).of_isClosed_subset
+    (isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V)))
+    fun _ hp => le_of_eq hp
+
 end TauCeti
 
 namespace OpenPartialHomeomorph
@@ -87,12 +98,8 @@ theorem isClosedEmbedding_domRestrict_norm_eq_bundle [CompactSpace B] [FiniteDim
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
     (hsource : {p : TotalSpace F V | ‖p.2‖ = r p.proj} ⊆ e.source) :
     IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ = r p.proj}.domRestrict e) := by
-  have hclosed : IsClosed {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
-    isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V))
   let : CompactSpace {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
-    isCompact_iff_compactSpace.mp
-      ((TauCeti.isCompact_setOf_norm_le_bundle hr).of_isClosed_subset hclosed
-        fun p hp => le_of_eq hp)
+    isCompact_iff_compactSpace.mp (TauCeti.isCompact_setOf_norm_eq_bundle hr)
   exact ((e.continuousOn.mono hsource).domRestrict).isClosedEmbedding
     (fun p q hpq => Subtype.ext (e.injOn (hsource p.property) (hsource q.property) hpq))
 
