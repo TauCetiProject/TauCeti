@@ -114,6 +114,22 @@ theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω
   rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
     ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
 
+/-- The identity from a larger predictable sigma-algebra to a smaller one preserves
+finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
+isometrically into the larger one. No finiteness assumption on the sample measure is needed. -/
+theorem measurePreserving_id_predictableMeasure {ℱ 𝒢 : Filtration ℝ≥0 m}
+    (h : ℱ ≤ 𝒢) (P : Measure Ω) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable
+      id (𝒢.predictableMeasure P T) (ℱ.predictableMeasure P T) := by
+  have hm : @Measurable (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable id :=
+    measurable_id'' (predictable_mono h)
+  refine @MeasurePreserving.mk _ _ 𝒢.predictable ℱ.predictable _ _ _ hm ?_
+  apply @Measure.ext _ ℱ.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, Set.preimage_id,
+    𝒢.predictableMeasure_apply P T (predictable_mono h _ hA),
+    ℱ.predictableMeasure_apply P T hA]
+
 section Dictionary
 
 variable (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
