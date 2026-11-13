@@ -336,6 +336,13 @@ theorem shiftIso_hom_eq_comp (X : D) {m₁ m₂ m i j k : ℤ} (h₁ : n * i = m
   congr 1
   simp [ShiftedHom.comp]
 
+/-- The shift isomorphism of degree `0` is the projection of the shift isomorphism `X⟦n * 0⟧ ≅ X`
+of `D`. -/
+theorem shiftIso_mul_zero_hom (X : D) :
+    (shiftIso (n := n) X (n * 0) 0 rfl).hom =
+      projection.map ((shiftFunctorZero' D (n * 0) (mul_zero n)).hom.app X) := by
+  simp [ShiftedHom.mk₀]
+
 /-- Induction principle for morphisms of the orbit category: a property of morphisms that holds
 for `0` and for every homogeneous piece, and is closed under addition, holds for every
 morphism. -/
@@ -481,10 +488,8 @@ private theorem conjShiftNatIso_eq
     conjShiftNatIso F e = φ.periodicityZPow := by
   apply Iso.periodicityZPow_unique
   · ext X
-    have h₀ : (shiftIso X (n * 0) 0 rfl).hom =
-        projection.map ((shiftFunctorZero' D (n * 0) (mul_zero n)).hom.app X) := by
-      simp [ShiftedHom.mk₀]
-    rw [conjShiftNatIso_hom_app, h₀, ← Functor.comp_map, ← e.inv.naturality_assoc]
+    rw [conjShiftNatIso_hom_app, shiftIso_mul_zero_hom, ← Functor.comp_map,
+      ← e.inv.naturality_assoc]
     simp
   · rintro i _ rfl
     ext X
@@ -630,12 +635,10 @@ private theorem mapPeriodicity_periodicityZPow_hom_app (i : ℤ) (X : D) :
         Functor.isoWhiskerLeft F (shiftNatIso (n * i) i rfl))
     (by
       ext X
-      have h₀ : (shiftIso (n := n) (F.obj X) (n * 0) 0 rfl).hom =
-          projection.map ((shiftFunctorZero' D' (n * 0) (mul_zero n)).hom.app (F.obj X)) := by
-        simp [ShiftedHom.mk₀]
       simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.associator_inv_app,
         Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.associator_hom_app,
-        Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, shiftNatIso_hom_app, h₀,
+        Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, shiftNatIso_hom_app,
+        shiftIso_mul_zero_hom,
         Functor.leftUnitor_hom_app, Category.id_comp, Functor.comp_map,
         F.commShiftIso_zero' ℤ (n * 0) (mul_zero n), Functor.CommShift.isoZero'_hom_app]
       rw [homOf_comp_homOf_eq (add_zero 0), ShiftedHom.mk₀_comp_mk₀, Category.assoc,
