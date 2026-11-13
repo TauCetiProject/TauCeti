@@ -187,7 +187,7 @@ private theorem IsNormalDomain.edist_le_pathELength_of_not_mapsTo {p : M} {R : �
     exact (ENNReal.ofReal_lt_ofReal_iff hr).2 (mem_ball_zero_iff.1 hv)
   -- The normal coordinates of the endpoints are at most `2 R / 3` apart.
   have hvw : edist v w ≤ ENNReal.ofReal (2 * (R / 3)) := by
-    rw [edist_eq_enorm_sub, ← ofReal_norm, two_mul]
+    rw [eDist_eq_eNorm_sub, ← ofReal_norm, two_mul]
     exact ENNReal.ofReal_le_ofReal ((norm_sub_le v w).trans
       (add_le_add (mem_ball_zero_iff.1 hv).le (mem_ball_zero_iff.1 hw).le))
   have hR3 : ENNReal.ofReal R = ENNReal.ofReal (R / 3) + ENNReal.ofReal (2 * (R / 3)) := by
@@ -242,7 +242,7 @@ theorem exists_isNormalDomain_ball_lipschitzOnWith_riemannianLog (p : M) {c : �
           ← ENNReal.ofReal_mul (by positivity)]
         exact ENNReal.ofReal_le_ofReal hb
     rwa [hγ0, hγ1, hn.riemannianLog_riemannianExp (hsub hv),
-      hn.riemannianLog_riemannianExp (hsub hw), ← edist_eq_enorm_sub, edist_comm] at h
+      hn.riemannianLog_riemannianExp (hsub hw), ← eDist_eq_eNorm_sub, edist_comm] at h
   · -- A curve leaving the larger normal ball is longer than the endpoints' coordinates differ.
     exact (hn.edist_le_pathELength_of_not_mapsTo hv hw hγ hγ0 hmaps).trans
       (le_mul_of_one_le_left' (by exact_mod_cast hc.le))
