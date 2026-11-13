@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalExp
 public import TauCeti.Geometry.Manifold.Morse.Bott.VectorBundle
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
@@ -37,9 +36,10 @@ The map `Θ` is the normal exponential of an auxiliary Riemannian metric
 of the fibre-preserving coordinate change given by the parametric Morse lemma on a vector bundle
 (`TauCeti.exists_parametric_morse_partialDiffeomorph`). Its hypotheses hold because the restriction
 of `f ∘ exp` to a fibre has a critical point at `0` whose Hessian is the normal Hessian
-(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.fderiv_fderiv_comp_normalExp_fiber_zero_apply`).
-Fibrewise derivatives are taken for the quotient norm of the normal spaces, whose topology is
-their quotient topology; neither this norm nor the metric appears in the statement.
+(`TauCeti.SmoothEmbedding.IsCriticalSubmanifold.fderiv_fderiv_comp_normalExp_mk_zero_apply`).
+Fibrewise derivatives are taken for the quotient norm of the normal spaces
+(`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`), whose topology is their quotient
+topology; neither this norm nor the metric appears in the statement.
 
 ## Main results
 
@@ -66,108 +66,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {E' H' S P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
-  {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
-
-section QuotientNorm
-
-variable [RiemannianBundle (fun y : M ↦ TangentSpace I y)] (i) (hn : (∞ : ℕ∞ω) ≠ 0) (s : S)
-
-/-- The quotient norm on the normal space at `s`. Its topology is by definition the quotient
-topology of the normal space, and its group structure that of the normal space. -/
-private abbrev normalSpaceNormedAddCommGroup : NormedAddCommGroup (i.NormalSpace s hn) :=
-  haveI : IsClosed (i.tangentRange s hn : Set (TangentSpace I (i s))) :=
-    i.isClosed_tangentRange s hn
-  let N := Submodule.Quotient.normedAddCommGroup (i.tangentRange s hn)
-  -- Restate the group and the uniform structure with the quotient group and the quotient topology
-  -- of the normal space as literal fields, so that instances built on them are found for the
-  -- normed structure.
-  { N with
-    toAddCommGroup := inferInstance
-    toUniformSpace := { N.toUniformSpace with toTopologicalSpace := inferInstance } }
-
-/-- The normed space structure of the quotient norm on the normal space at `s`. -/
-private abbrev normalSpaceNormedSpace :
-    letI := normalSpaceNormedAddCommGroup i hn s
-    NormedSpace ℝ (i.NormalSpace s hn) :=
-  letI := normalSpaceNormedAddCommGroup i hn s
-  { Submodule.Quotient.normedSpace (i.tangentRange s hn) ℝ with toModule := inferInstance }
-
-end QuotientNorm
-
-variable [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
-  [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)] (hn : (∞ : ℕ∞ω) ≠ 0) (s : S)
-
-namespace IsCriticalSubmanifold
-
-omit [I.Boundaryless] [T2Space M] in
-/-- The normal slice through the normal exponential, read on the intrinsic normal space, is the
-normal slice on the orthogonal normal space precomposed with the orthogonal-representative
-equivalence. -/
-private theorem comp_normalExp_mk_eq_comp :
-    (fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) =
-      (fun w : (i.tangentRange s hn)ᗮ ↦
-        f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn w⟩)) ∘
-        i.normalSpaceOrthogonalComplementEquiv s hn := by
-  ext v
-  rw [comp_apply, ← normalSpaceOrthogonalComplementEquiv_symm_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
-
-variable (h : i.IsCriticalSubmanifold f)
-include h
-
-/-- The restriction of `f ∘ exp` to the normal fibre over `s` is critical at `0`. -/
-private theorem fderiv_comp_normalExp_mk_zero :
-    letI := normalSpaceNormedAddCommGroup i hn s
-    letI := normalSpaceNormedSpace i hn s
-    fderiv ℝ (fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) 0 = 0 := by
-  let := normalSpaceNormedAddCommGroup i hn s
-  let := normalSpaceNormedSpace i hn s
-  rw [comp_normalExp_mk_eq_comp, ContinuousLinearEquiv.comp_right_fderiv, map_zero,
-    h.fderiv_comp_normalExp_fiber_zero hn s, ContinuousLinearMap.zero_comp]
-
-/-- The Hessian at `0` of the restriction of `f ∘ exp` to the normal fibre over `s` is the normal
-Hessian. -/
-private theorem fderiv_fderiv_comp_normalExp_mk_zero_apply (u w : i.NormalSpace s hn) :
-    letI := normalSpaceNormedAddCommGroup i hn s
-    letI := normalSpaceNormedSpace i hn s
-    fderiv ℝ (fderiv ℝ fun v : i.NormalSpace s hn ↦ f (i.normalExp (P := P) hn ⟨s, v⟩)) 0 u w =
-      h.normalHessian hn s u w := by
-  let := normalSpaceNormedAddCommGroup i hn s
-  let := normalSpaceNormedSpace i hn s
-  rw [comp_normalExp_mk_eq_comp, ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply,
-    map_zero, h.fderiv_fderiv_comp_normalExp_fiber_zero_apply hn s,
-    ← normalSpaceOrthogonalComplementEquiv_symm_apply,
-    ← normalSpaceOrthogonalComplementEquiv_symm_apply, ContinuousLinearEquiv.symm_apply_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
-
-end IsCriticalSubmanifold
+  {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  (hn : (∞ : ℕ∞ω) ≠ 0)
 
 namespace IsNondegenerateCriticalSubmanifold
 
 variable (h : i.IsNondegenerateCriticalSubmanifold f)
 include h
 
-/-- For a Morse–Bott submanifold, the Hessian at `0` of the restriction of `f ∘ exp` to a normal
-fibre is invertible. -/
-private theorem isInvertible_fderiv_fderiv_comp_normalExp_mk_zero :
-    letI := normalSpaceNormedAddCommGroup i hn s
-    letI := normalSpaceNormedSpace i hn s
-    (fderiv ℝ (fderiv ℝ fun v : i.NormalSpace s hn ↦
-      f (i.normalExp (P := P) hn ⟨s, v⟩)) 0).IsInvertible := by
-  let := normalSpaceNormedAddCommGroup i hn s
-  let := normalSpaceNormedSpace i hn s
-  refine ContinuousLinearMap.isInvertible_of_injective (𝕜 := ℝ) (E := i.NormalSpace s hn) ?_
-  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
-  -- A vector killed by the Hessian lies in the kernel of the normal Hessian, which is trivial.
-  have hu' : h.normalHessian hn s u = 0 := LinearMap.ext fun w ↦ by
-    rw [← h.toIsCriticalSubmanifold.fderiv_fderiv_comp_normalExp_mk_zero_apply (P := P) hn s u w,
-      hu]
-    rfl
-  simpa [h.ker_normalHessian hn s] using (LinearMap.mem_ker.2 hu' : u ∈ LinearMap.ker _)
-
-omit [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)] in
 /-- **The Morse–Bott lemma on the normal bundle.** Let `i : S → M` be a nondegenerate critical
 submanifold of `f`, for a smooth embedding of a nonempty manifold into a Hausdorff,
 second-countable, finite-dimensional, boundaryless manifold, and let `f` be `C^{k+2}`,
@@ -216,8 +122,8 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
     exact hf.comp (Φ₀.contMDiffOn.of_le hk2) fun x hx ↦ hΦ₀O (Φ₀.map_source hx)
   -- Step 2: the parametric Morse lemma puts `f ∘ Φ₀` in fibrewise normal form through a
   -- fibre-preserving `Φ x = ⟨x.proj, ψ x⟩` which fixes the zero section.
-  let := fun s ↦ normalSpaceNormedAddCommGroup i hn s
-  let := fun s ↦ normalSpaceNormedSpace i hn s
+  let := fun s ↦ i.normalSpaceNormedAddCommGroup s hn
+  let := fun s ↦ i.normalSpaceNormedSpace s hn
   obtain ⟨ψ, Φ, hΦzero, -, hΦ, -, hψ, hnf⟩ := exists_parametric_morse_partialDiffeomorph
     (IB := J) (F := P) (E := fun s ↦ i.NormalSpace s hn) (n := k) Φ₀.open_source hΦ₀zero hg
     (fun s ↦ h.toIsCriticalSubmanifold.fderiv_comp_normalExp_mk_zero (P := P) hn s)
