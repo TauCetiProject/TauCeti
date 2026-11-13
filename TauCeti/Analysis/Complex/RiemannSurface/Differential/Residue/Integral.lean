@@ -17,7 +17,9 @@ such that `ω` is holomorphic at every other point over that disc. Writing `ω =
 chart, the residue of `ω` at `x` is computed by integrals of `f` in the chart:
 
 * `∮_{|z - c| = R} f dz = 2πi · Res_x ω`
-  (`TauCeti.RiemannSurface.OneForm.circleIntegral_coeff_eq_residue`);
+  (`TauCeti.RiemannSurface.OneForm.circleIntegral_coeff_eq_residue`); this only needs `ω` to be
+  meromorphic over the disc with nonnegative order away from `x`
+  (`TauCeti.RiemannSurface.OneForm.circleIntegral_coeff_eq_residue_of_order_nonneg`);
 * for a real cutoff `χ`, `C¹` at every point of the closed disc, equal to `1` near `e x` and
   vanishing on the boundary circle,
   `∫_{|z - c| ≤ R} d((1 - χ) f dz) = 2πi · Res_x ω`
@@ -70,17 +72,38 @@ private theorem coeff_hypotheses (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x
     (hhol _ (e.map_target hzt) (by rwa [e.right_inv hzt]) fun h ↦ hzx ?_)
   rw [← e.right_inv hzt, h]
 
-/-- **The residue as a circle integral in a chart.** If `ω` is meromorphic at `x` and holomorphic
-at every other point over the closed disc of radius `R` about `c`, contained in the target of a
-chart `e` of the maximal atlas and containing `e x` in its interior, then the circle integral of
-the coefficient of `ω` in `e` is `2πi · Res_x ω`. -/
+/-- **The residue as a circle integral in a chart.** If `ω` is meromorphic at every point over the
+closed disc of radius `R` about `c`, contained in the target of a chart `e` of the maximal atlas and
+containing `e x` in its interior, and has nonnegative order at every such point other than `x`,
+then the circle integral of the coefficient of `ω` in `e` is `2πi · Res_x ω`. -/
+theorem circleIntegral_coeff_eq_residue_of_order_nonneg (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X)
+    (hx : x ∈ e.source) (hc : e x ∈ ball c R) (hsub : closedBall c R ⊆ e.target)
+    (hω : ∀ y ∈ e.source, e y ∈ closedBall c R → ω.MeromorphicAt y)
+    (hord : ∀ y ∈ e.source, e y ∈ closedBall c R → y ≠ x → 0 ≤ ω.order y) :
+    circleIntegral (ω.coeff e) c R = 2 * π * I * ω.residue x := by
+  rw [residue_eq_of_mem_maximalAtlas he hx]
+  refine Contour.circleIntegral_eq_residue_of_meromorphicOrderAt_nonneg hc (fun z hz ↦ ?_)
+    fun z hz hzx ↦ ?_ <;> have hzt := hsub hz
+  · have h := hω _ (e.map_target hzt) (by rwa [e.right_inv hzt])
+    rwa [meromorphicAt_iff_of_mem_maximalAtlas he (e.map_target hzt), e.right_inv hzt] at h
+  · have h := hord _ (e.map_target hzt) (by rwa [e.right_inv hzt]) fun h ↦ hzx (by
+      rw [← e.right_inv hzt, h])
+    rwa [order_eq_of_mem_maximalAtlas he (e.map_target hzt), e.right_inv hzt] at h
+
+/-- **The residue as a circle integral in a chart**, holomorphic form. If `ω` is meromorphic at `x`
+and holomorphic at every other point over the closed disc of radius `R` about `c`, contained in the
+target of a chart `e` of the maximal atlas and containing `e x` in its interior, then the circle
+integral of the coefficient of `ω` in `e` is `2πi · Res_x ω`. -/
 theorem circleIntegral_coeff_eq_residue (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source)
     (hc : e x ∈ ball c R) (hsub : closedBall c R ⊆ e.target) (hω : ω.MeromorphicAt x)
     (hhol : ∀ y ∈ e.source, e y ∈ closedBall c R → y ≠ x → ω.HolomorphicAt y) :
-    circleIntegral (ω.coeff e) c R = 2 * π * I * ω.residue x := by
-  obtain ⟨hf, hfa⟩ := coeff_hypotheses he hx hsub hω hhol
-  rw [residue_eq_of_mem_maximalAtlas he hx]
-  exact Contour.circleIntegral_eq_residue hc hf hfa
+    circleIntegral (ω.coeff e) c R = 2 * π * I * ω.residue x :=
+  circleIntegral_coeff_eq_residue_of_order_nonneg he hx hc hsub
+    (fun y hy hyc ↦ by
+      by_cases hyx : y = x
+      · exact hyx ▸ hω
+      · exact (hhol y hy hyc hyx).meromorphicAt)
+    fun y hy hyc hyx ↦ (hhol y hy hyc hyx).order_nonneg
 
 variable {χ : ℂ → ℝ}
 
