@@ -137,6 +137,29 @@ theorem barycentricSubdivision_dart_cases {motive : Γ.barycentricSubdivision.E 
     Γ.barycentricSubdivision.tgt (Γ.barycentricDart e false) = Γ.barycentricVertex (Γ.src e) :=
   (rfl)
 
+/-! ### Counting darts -/
+
+/-- A Serre graph has twice as many darts as geometric edges, finitely many or not: each geometric
+edge consists of two darts. -/
+theorem card_E_eq_two_mul_card_geomEdge : Nat.card Γ.E = 2 * Nat.card Γ.GeomEdge := by
+  classical
+  obtain ⟨O, hO⟩ := Γ.exists_isOrientation
+  -- A dart is its geometric edge together with whether it lies in the orientation `O`.
+  have hbij : Function.Bijective fun e => (Γ.toGeomEdge e, decide (e ∈ O)) := by
+    refine ⟨fun e e' h => ?_, fun ⟨g, b⟩ => ?_⟩
+    · simp only [Prod.mk.injEq, decide_eq_decide] at h
+      rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 h.1 with he | he
+      · exact he.symm
+      · rw [he, hO.mem_rev_iff] at h
+        exact absurd h.2 iff_not_self
+    · obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective g
+      by_cases he : decide (e ∈ O) = b
+      · exact ⟨e, by simp [he]⟩
+      · refine ⟨Γ.rev e, ?_⟩
+        cases b <;> simp_all [hO.mem_rev_iff]
+  rw [Nat.card_congr (Equiv.ofBijective _ hbij), Nat.card_prod,
+    Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, mul_comm]
+
 /-! ### Induced automorphisms -/
 
 namespace Aut
