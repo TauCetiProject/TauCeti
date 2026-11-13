@@ -56,6 +56,10 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
+  algebraic extension, computed at an arbitrary chosen place above `P` and zero when there is
+  none. Without the Galois hypothesis the places above `P` need not share one ramification
+  index; in a Galois extension they do (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`).
 
 ## Main results
 
@@ -98,9 +102,6 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finiteDimensional_residueField_restrict`: the relative degree is finite, so it
   is not the junk value of `Module.finrank`; `TauCeti.Place.one_le_relativeDegree` and
   `TauCeti.Place.ramificationIdx_pos` are the matching lower bounds.
-* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place of the base in an algebraic
-  extension, computed at an arbitrary chosen place above it and zero when there is none; it is
-  shared by all places above only in a Galois extension (see `Extension.Galois`).
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
