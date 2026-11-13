@@ -28,7 +28,7 @@ The two curves meet transversally in the `p` points `x_j = (j / p, 0)`, `j ∈ Z
 `α` the point after `x_j` is `x_{j+1}`; going along `β` it is `x_{j+q}`. Cutting the torus along
 `α` leaves an annulus that the `p` arcs of `β` cut into `p` parallelograms; the region `R_j` is
 the one whose bottom edge is the `α`-arc from `x_j` to `x_{j+1}`, its top edge is the `α`-arc from
-`x_{j-q}` to `x_{j-q+1}`, and its two sides are the `β`-arcs starting at `x_j` and `x_{j+1}`.
+`x_{j+q}` to `x_{j+q+1}`, and its two sides are the `β`-arcs starting at `x_j` and `x_{j+1}`.
 
 `TauCeti.HeegaardRegionSystem.lensSpace p q r` records this incidence data, with points and
 regions both indexed by `ZMod p` and the basepoint in the region `R_r`. Each point is a generator
