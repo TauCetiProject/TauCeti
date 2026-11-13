@@ -196,7 +196,7 @@ variable [Invertible (2 : A)]
 theorem isUnit_typeAOrthogonalDiagonal : IsUnit (typeAOrthogonalDiagonal k A) := by
   rw [typeAOrthogonalDiagonal_def, Matrix.isUnit_diagonal, Pi.isUnit_iff]
   intro a
-  rcases a with u | (i | i)
+  rcases a with _ | (_ | _)
   · exact isUnit_of_invertible (2 : A)
   · exact isUnit_one
   · exact (isUnit_of_invertible (2 : A)).mul (isUnit_neg_one.pow _)

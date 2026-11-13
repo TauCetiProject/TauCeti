@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.OptionalStopping
+public import TauCeti.Probability.Martingale.Basic
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
@@ -30,7 +31,8 @@ Under the same right-continuity hypothesis the running maximum `sup_{t ≤ T} f_
 everywhere measurable (`MeasureTheory.aemeasurable_iSup_le_ofReal`).
 
 A weak-type bound of this kind controls the running maximum in every `Lᵖ` with `p < 1`. The file
-records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. Applied to `f = g²`, it
+records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ μ(Ω) + 4 E[f_T]`, as a bound on the extended
+integral that is informative for a finite measure. Applied to `f = g²` over a probability space, it
 bounds the expected running maximum of a nonnegative process `g` whose square is a submartingale;
 this is how the running maximum of an exponential martingale is shown to be integrable.
 
@@ -95,10 +97,8 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
   have hmem (j : ℕ) : τ j ∈ F := F.orderEmbOfFin_mem hcard _
   have hτn : τ n = F.max' hne := by
     simpa [τ, e] using Finset.orderEmbOfFin_last hcard (Nat.succ_pos n)
-  let 𝒢 : Filtration ℕ m0 := ⟨fun j ↦ ℱ (τ j), fun _ _ hij ↦ ℱ.mono (hτ hij), fun _ ↦ ℱ.le _⟩
-  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ :=
-    ⟨fun j ↦ hf.stronglyAdapted (τ j), fun _ _ hij ↦ hf.ae_le_condExp (hτ hij),
-      fun j ↦ hf.integrable (τ j)⟩
+  let 𝒢 : Filtration ℕ m0 := ℱ.comp hτ
+  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ := hf.comp hτ
   have hset : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} = {ω | (ε : ℝ) ≤
       (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω} := by
     ext ω
@@ -109,7 +109,7 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
         rw [Finset.range_orderEmbOfFin]
         exact ht
       exact ⟨i, Finset.mem_range.2 i.2, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
-    · rintro ⟨j, hj, hεj⟩
+    · rintro ⟨j, _, hεj⟩
       exact ⟨τ j, hmem j, hεj⟩
   have hmeas : MeasurableSet[ℱ (τ n)] {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} := by
     simp only [← exists_prop, ofPred_exists]
@@ -212,7 +212,7 @@ theorem mul_measure_exists_le_lt_le_setIntegral [IsFiniteMeasure μ]
   have heq : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} =ᵐ[μ]
       {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
     filter_upwards [hcont] with ω hω
-    exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+    exact ⟨fun ⟨t, ht, h⟩ ↦ by
       obtain ⟨s, hs, hεs⟩ := hS hω ht h
       exact ⟨s, hs, hεs⟩,
       fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩
@@ -231,15 +231,21 @@ theorem mul_measure_exists_le_lt_le [IsFiniteMeasure μ] (hf : Submartingale f �
     (ENNReal.ofReal_le_ofReal
       (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
 
-/-- **The running maximum of the square root of a submartingale is integrable.** For a
-nonnegative submartingale `f` whose paths are almost surely right-continuous before `T`,
-`E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. The integrand is almost everywhere measurable by
+/-- **The running maximum of the square root of a submartingale, in `L¹`.** For a nonnegative
+submartingale `f` whose paths are almost surely right-continuous before `T`, the extended integral
+satisfies `∫⁻ sup_{t ≤ T} √f_t ≤ μ(Ω) + 4 E[f_T]`. For a finite measure the right-hand side is
+finite, so the running maximum is integrable; for an infinite measure it is `∞` and the bound is
+vacuous. The integrand is almost everywhere measurable by
 `MeasureTheory.aemeasurable_iSup_le_ofReal`. -/
-theorem lintegral_iSup_sqrt_le [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)
+theorem lintegral_iSup_sqrt_le (hf : Submartingale f ℱ μ)
     (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) :
     ∫⁻ ω, ⨆ t ≤ T, ENNReal.ofReal √(f t ω) ∂μ ≤
       μ univ + 4 * ENNReal.ofReal (∫ ω, f T ω ∂μ) := by
+  -- for an infinite measure the right-hand side is `∞`
+  by_cases hμ : μ univ = ∞
+  · simp [hμ]
+  have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.2 hμ⟩
   set Y : Ω → ℝ≥0∞ := fun ω ↦ ⨆ t ≤ T, ENNReal.ofReal √(f t ω)
   set E := ENNReal.ofReal (∫ ω, f T ω ∂μ)
   -- The level sets `{2^k < Y} = {∃ t ≤ T, 4^k < f_t}` have measure at most `E / 4^k`.
@@ -323,12 +329,42 @@ theorem mul_measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
     (hcont.mono fun ω hω t ht ↦ (hω t ht).norm) ε
 
 /-- A terminal L¹ bound of `ε * δ` bounds by `δ` the outer probability that a martingale's
-norm exceeds the positive threshold `ε` before `T`. Apply this to a difference of martingales
+norm exceeds the threshold `ε` before `T`. Apply this to a difference of martingales
 to control their uniform path error. -/
 theorem measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ M u ω) (Ioi t) t)
-    {ε δ : ℝ≥0} (hε : 0 < ε) (hterminal : ∫ ω, ‖M T ω‖ ∂μ ≤ (ε : ℝ) * δ) :
+    {ε δ : ℝ≥0} (hterminal : ∫ ω, ‖M T ω‖ ∂μ ≤ (ε : ℝ) * δ) :
     μ {ω | ∃ t ≤ T, (ε : ℝ) < ‖M t ω‖} ≤ (δ : ℝ≥0∞) := by
+  rcases eq_or_ne ε 0 with rfl | hε0
+  · -- for `ε = 0` the terminal bound forces `M T = 0` a.e., hence `M t = 0` a.e. for `t ≤ T`
+    have hMT : M T =ᵐ[μ] 0 := by
+      have h0 : ∫ ω, ‖M T ω‖ ∂μ = 0 :=
+        le_antisymm (by simpa using hterminal) (integral_nonneg fun _ ↦ norm_nonneg _)
+      filter_upwards [(integral_eq_zero_iff_of_nonneg (fun _ ↦ norm_nonneg _)
+        (hM.integrable T).norm).mp h0] with ω h
+      simpa using h
+    have hzero (t : ι) (ht : t ≤ T) : M t =ᵐ[μ] 0 :=
+      (hM.condExp_ae_eq ht).symm.trans ((condExp_congr_ae hMT).trans (by rw [condExp_zero]))
+    obtain ⟨S, hSc, hST, hS⟩ :=
+      TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
+    have heq : {ω | ∃ t ≤ T, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} =ᵐ[μ]
+        {ω | ∃ t ∈ S, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} := by
+      filter_upwards [hcont] with ω hω
+      exact ⟨fun ⟨t, ht, h⟩ ↦ by
+        obtain ⟨s, hs, hεs⟩ := hS (fun t ht ↦ (hω t ht).norm) ht h
+        exact ⟨s, hs, hεs⟩,
+        fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩
+    rw [measure_congr heq]
+    have hnull : μ {ω | ∃ t ∈ S, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} = 0 := by
+      have hU : {ω | ∃ t ∈ S, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} =
+          ⋃ t ∈ S, {ω | M t ω ≠ 0} := by
+        ext ω
+        simp
+      rw [hU, measure_biUnion_null_iff hSc]
+      exact fun t ht ↦ ae_iff.mp (hzero t (hST ht))
+    rw [hnull]
+    exact zero_le
+  have hε : 0 < ε := pos_iff_ne_zero.2 hε0
   have hmax := hM.mul_measure_exists_le_norm_lt_le hcont ε
   have hbound : ENNReal.ofReal (∫ ω, ‖M T ω‖ ∂μ) ≤
       (ε : ℝ≥0∞) * (δ : ℝ≥0∞) := by
@@ -356,8 +392,8 @@ theorem tendsto_measure_exists_le_norm_sub_lt {α : Type*} {Y : ι → Ω → E}
     have h := ((hM n).sub hY).mul_measure_exists_le_norm_lt_le (T := T) (by
       filter_upwards [hMcont n, hYcont] with ω h₁ h₂ t ht
       exact (h₁ t ht).sub (h₂ t ht)) ε
-    rw [ofReal_integral_norm_eq_lintegral_enorm (((hM n).sub hY).integrable T)] at h
-    simpa only [mul_comm, Pi.sub_apply, eLpNorm_one_eq_lintegral_enorm
+    rw [ofReal_integral_norm_eq_lintegral_eNorm (((hM n).sub hY).integrable T)] at h
+    simpa only [mul_comm, Pi.sub_apply, eLpNorm_one_eq_lintegral_eNorm
       (((hM n).integrable T).sub (hY.integrable T)).aestronglyMeasurable] using h
   have hdiv := ENNReal.Tendsto.div_const hlim (.inr hε0)
   simp only [ENNReal.zero_div] at hdiv

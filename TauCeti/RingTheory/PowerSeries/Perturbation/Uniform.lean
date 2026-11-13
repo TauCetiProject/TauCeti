@@ -116,7 +116,7 @@ theorem exists_nat_exists_pos_gaussNorm_sub_lt_of_coeff_le_of_tail_le
     exact gaussNorm_sub_lt_of_coeff_le_of_tail_le hr.le (half_lt_self hpos)
       hcoeff (fun n hn => (hN n (hM.trans hn)).le) hg
   · refine ⟨0, 1, zero_lt_one, ?_⟩
-    intro M hM g hcoeff hg t ht
+    intro M _ g _ _ t ht
     exact (hrs (ht.1.trans ht.2)).elim
 
 /-- Every sufficiently long polynomial truncation is a Gauss-small perturbation throughout

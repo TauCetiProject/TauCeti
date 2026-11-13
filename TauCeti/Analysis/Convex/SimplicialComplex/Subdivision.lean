@@ -272,8 +272,6 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       exact ⟨hLi i, fun k hk => hB i k hi.ge hk⟩)
     (fun i j hij x ⟨hxi, hxj⟩ => by
       have hij : i.1 ≠ j.1 := fun h => hij (Subtype.ext h)
-      have hi := i.2
-      have hj := j.2
       rw [hKs]
       rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hri hfr hxi with
         h | h | ⟨k, hk, -, hxk⟩

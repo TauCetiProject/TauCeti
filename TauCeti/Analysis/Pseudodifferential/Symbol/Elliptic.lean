@@ -203,7 +203,7 @@ variable [CompleteSpace V] (a : Symbol n V W m) (χ : FrequencyCutoff (Coordinat
 theorem coefficient_cutoffInverse_of_norm_le (x : CoordinateSpace n) {ξ : CoordinateSpace n}
     (hξ : ‖ξ‖ ≤ |t|) : (a.cutoffInverse χ t hinv hbound).coefficient (x, ξ) = 0 := by
   have h : ‖t⁻¹ • ξ‖ ≤ 1 := by
-    rcases eq_or_ne t 0 with rfl | ht
+    rcases eq_or_ne t 0 with rfl | _
     · simp
     · rw [norm_smul, norm_inv, Real.norm_eq_abs]
       exact inv_mul_le_one_of_le₀ hξ (abs_nonneg t)

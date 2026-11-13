@@ -419,7 +419,7 @@ theorem tendsto_tsum_term_mul_fourier_schwartz_atTop (ha : 0 ≤ a)
     (hFu (2, 0) (ε / 2) (half_pos hε)))).exists
   simp only [SchwartzMap.schwartzSeminormFamily_apply] at h0 h2
   refine ⟨u R, (u R).smooth ⊤, SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul
-    b.contDiff b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
+    b.hasCompactSupport hR.ne' g, fun v ↦ ?_, ?_⟩
   · -- The weighted sup norm of `𝓕 g - 𝓕 (u R)` is at most two seminorms of it.
     have hv0 := SchwartzMap.norm_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) v
     have hv2 := SchwartzMap.norm_pow_mul_le_seminorm ℝ (𝓕 (u R) - 𝓕 g) 2 v

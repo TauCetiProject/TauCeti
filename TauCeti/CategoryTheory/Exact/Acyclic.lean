@@ -341,7 +341,6 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
   open CochainComplex.mappingCone in
   obtain ⟨A⟩ := hK
   obtain ⟨B⟩ := hL
-  have hA (n : ℤ) := E.isKernelCokernelPair _ (A.conflation n)
   have hB (n : ℤ) := E.isKernelCokernelPair _ (B.conflation n)
   -- The chain map restricts to the cycles.
   have hz (n : ℤ) : (A.i n ≫ φ.f n) ≫ B.p n = 0 := by

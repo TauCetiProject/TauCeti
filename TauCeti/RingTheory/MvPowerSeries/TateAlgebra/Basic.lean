@@ -17,6 +17,8 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Data.Finsupp.MonomialOrder.Basic
+import TauCeti.Topology.Order.OrderClosed
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -59,9 +61,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `MvPowerSeries.IsRestricted.norm_coeff_mul_norm_coeff_lt`: the product of the coefficients at
   such exponents of two series dominates every other summand of the product coefficient;
   `MvPowerSeries.IsRestricted.exists_norm_coeff_mul_norm_coeff_lt` chooses such exponents.
-* `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
-  restricted series attains its norm, and its smaller weighted coefficient norms stay below a
-  constant smaller than its norm.
+* `MvPowerSeries.IsRestricted.exists_achievesGaussNorm` and
+  `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a restricted series attains its norm, and its
+  smaller weighted coefficient norms stay below a constant smaller than its norm.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
@@ -160,45 +162,57 @@ theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
 
 omit [IsUltrametricDist R] hc in
-/-- A coefficientwise convergent sequence of families that is uniformly Cauchy in the weighted
-coefficient norms `‖A k t‖ * w t` converges to its coefficientwise limit uniformly in these
-weighted norms. No decay or boundedness hypothesis is needed. -/
+/-- A sequence of families that is uniformly Cauchy in the weighted coefficient norms
+`‖A k t‖ * w t` has a family `a` approximating it uniformly in these weighted norms; at indices
+with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
+hypothesis on the weights is needed. -/
 theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*}
     [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
-    (hcoeff : ∀ t, CauchySeq fun k ↦ A k t)
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
     ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
+  have hlim : ∀ t, ∃ a : E, 0 < w t → Tendsto (fun k ↦ A k t) atTop (𝓝 a) := fun t ↦ by
+    by_cases ht : 0 < w t
+    · refine (cauchySeq_tendsto_of_complete ?_).imp fun a ha _ ↦ ha
+      refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
+      obtain ⟨N, hN⟩ := hC (ε * w t) (mul_pos hε ht)
+      exact ⟨N, fun k hk l hl ↦ by
+        rw [dist_eq_norm]
+        exact lt_of_mul_lt_mul_right (hN k hk l hl t) ht.le⟩
+    · exact ⟨0, fun h ↦ absurd h ht⟩
+  choose a ha using hlim
   refine ⟨a, fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hC ε hε
-  exact ⟨N, fun k hk t ↦ le_of_tendsto (((tendsto_const_nhds.sub (ha t)).norm).mul_const (w t))
-    (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)⟩
+  refine ⟨N, fun k hk t ↦ ?_⟩
+  by_cases ht : 0 < w t
+  · exact le_of_tendsto (((tendsto_const_nhds.sub (ha t ht)).norm).mul_const (w t))
+      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)
+  · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (not_lt.mp ht)).trans hε.le
 
-/-- A coefficientwise Cauchy sequence of restricted families that is uniformly Cauchy in the
+/-- A sequence of restricted families that is uniformly Cauchy in the
 weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
 This is the common limit construction for scalar and module-valued Gauss completeness. -/
 theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : Type*}
-    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} (hc : ∀ i, 0 ≤ c i)
     (A : ℕ → (σ →₀ ℕ) → E)
-    (hcoeff : ∀ t, CauchySeq fun k ↦ A k t)
     (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0))
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
       ‖A k t - A l t‖ * t.prod (c · ^ ·) < ε) :
     ∃ a : (σ →₀ ℕ) → E,
       Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-  obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hcoeff hC
+  obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hC
   refine ⟨a, ?_, hunif⟩
+  have hw (t : σ →₀ ℕ) : 0 ≤ t.prod (c · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _
   -- A uniform weighted limit again vanishes at infinity.
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
+    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
   calc
     ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
         ‖A N t - a t‖ * t.prod (c · ^ ·) := by
       rw [← add_mul]
-      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (prod_pow_pos t).le
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
     _ = ε := add_halves ε
 
@@ -260,10 +274,11 @@ theorem continuous_coeff_isRestrictedSubring (t : σ →₀ ℕ) :
     Continuous fun f : IsRestricted.subring (R := R) c ↦ coeff t (f : MvPowerSeries σ R) :=
   (uniformContinuous_coeff_isRestrictedSubring t).continuous
 
-/-- A nonnegative bound on the norm is exactly a bound on every weighted coefficient norm. -/
-theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
-    (hr : 0 ≤ r) : ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
+/-- A bound on the norm is exactly a bound on every weighted coefficient norm. -/
+theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
+    ‖f‖ ≤ r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans h, fun h ↦ ?_⟩
+  have hr : 0 ≤ r := (mul_nonneg (norm_nonneg _) (prod_pow_pos (c := c) 0).le).trans (h 0)
   rw [norm_eq_gaussNorm, gaussNorm]
   exact Real.iSup_le (by simpa using h) hr
 
@@ -274,7 +289,7 @@ theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
     (h : ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
       ‖constantCoeff (f : MvPowerSeries σ R)‖) :
     ‖f‖ = ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
-  refine le_antisymm ((norm_le_iff (norm_nonneg _)).2 fun t ↦ ?_) ?_
+  refine le_antisymm (norm_le_iff.2 fun t ↦ ?_) ?_
   · rcases eq_or_ne t 0 with rfl | ht
     · simp [coeff_zero_eq_constantCoeff_apply]
     · exact h t ht
@@ -304,23 +319,22 @@ theorem exists_norm_coeff_mul_prod_gap (f : IsRestricted.subring (R := R) c) (hf
     · exact le_max_of_le_right (hmax t (Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, ht⟩))
     · exact le_max_of_le_left (le_of_not_ge h)
 
-/-- A restricted series attains its Gauss norm at some exponent. -/
-theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
-    ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · exact ⟨0, by simp [AchievesGaussNorm, gaussNorm_zero]⟩
-  obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
-  by_contra! h
-  have hM : ‖f‖ ≤ ε := (norm_le_iff hε0).mpr fun t ↦
-    hε t ((norm_coeff_mul_prod_le f t).lt_of_ne (h t))
-  exact hM.not_gt hεM
+omit [IsUltrametricDist R] hc in
+/-- A restricted series attains its Gauss norm at some exponent, at any polyradius. -/
+theorem IsRestricted.exists_achievesGaussNorm {f : MvPowerSeries σ R} (hf : IsRestricted c f) :
+    ∃ t, AchievesGaussNorm norm c f t := by
+  set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t f‖ * t.prod (c · ^ ·)
+  obtain ⟨t, ht⟩ := Filter.Tendsto.exists_forall_le_of_le (v := v) (a := 0) hf (by simp [v])
+  refine ⟨t, ?_⟩
+  rw [AchievesGaussNorm, gaussNorm]
+  exact le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)
 
 /-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
 since the norm is attained. -/
 theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
     ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
-  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
 
@@ -332,7 +346,7 @@ theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)
 /-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
 theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
-  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
   exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
@@ -342,7 +356,7 @@ theorem norm_monomial (t : σ →₀ ℕ) (a : R) :
       IsRestricted.subring (R := R) c)‖ = ‖a‖ * t.prod (c · ^ ·) := by
   classical
   apply le_antisymm
-  · rw [norm_le_iff (mul_nonneg (norm_nonneg a) (prod_pow_pos t).le)]
+  · rw [norm_le_iff]
     intro s
     by_cases h : s = t <;>
       simp [coeff_monomial, h, mul_nonneg (norm_nonneg a) (prod_pow_pos t).le]
@@ -407,7 +421,7 @@ theorem dense_closure_monomial {s : Set R} (hs : Dense s) :
   refine ⟨q, ?_, AddSubgroup.sum_mem _ fun t _ ↦
     AddSubgroup.subset_closure ⟨(t, a t), ⟨trivial, has t⟩, rfl⟩⟩
   rw [Metric.mem_ball, dist_comm, dist_eq_norm]
-  refine ((norm_le_iff (half_pos hε).le).mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
+  refine (norm_le_iff.mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
   have hq : coeff t (q : MvPowerSeries σ R) = if t ∈ hF.toFinset then a t else 0 := by
     simp [q, coeff_monomial]
   rw [AddSubgroupClass.coe_sub, map_sub, hq]
@@ -434,10 +448,8 @@ instance [NormOneClass R] : NormOneClass
 instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) :=
-    (uniformContinuous_coeff_isRestrictedSubring t).comp_cauchySeq hF
   obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
-    (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) hcoeff (fun k ↦ (F k).2)
+    (fun i ↦ (hc i).out.le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).2)
     (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
@@ -448,7 +460,7 @@ instance [CompleteSpace R] : CompleteSpace
   refine ⟨⟨a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff (half_pos hε).le]
+  rw [dist_eq_norm, norm_le_iff]
   intro t
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_apply (a : MvPowerSeries σ R) t]
   exact hN k hk t
@@ -469,13 +481,8 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     have h := hf.eventually (gt_mem_nhds hi_pos)
     simpa only [eventually_cofinite, not_lt] using h
   let S := hfinite.toFinset
-  have hi_mem : i ∈ S := by simp [S]
-  obtain ⟨j, hj, hmax⟩ := S.exists_max_image a ⟨i, hi_mem⟩
-  have hbound (t) : a t ≤ a j := by
-    by_cases ht : t ∈ S
-    · exact hmax t ht
-    · have ht' : a t < a i := by simpa [S] using ht
-      exact ht'.le.trans (hmax i hi_mem)
+  obtain ⟨j, hbound⟩ := Filter.Tendsto.exists_forall_le_of_le (v := a) hf hi_pos.le
+  have hj : j ∈ S := by simpa [S] using hbound i
   have heq : a j = gaussNorm norm c f := by
     rw [gaussNorm]
     exact (ciSup_eq_of_forall_le_of_forall_lt_exists_gt hbound fun _ h ↦ ⟨j, h⟩).symm
@@ -488,7 +495,7 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
   refine lt_of_le_of_ne (hbound t) fun h ↦ ?_
   have ht_mem : t ∈ T := by
     simp only [T, Finset.mem_filter]
-    exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
+    exact ⟨by simpa [S] using (hbound i).trans_eq h.symm, h⟩
   exact (not_le_of_gt ht) (hnmax t ht_mem)
 
 omit [IsUltrametricDist R] in
@@ -511,18 +518,30 @@ theorem IsRestricted.coeff_ne_zero_of_achievesGaussNorm {f : MvPowerSeries σ R}
 
 omit [IsUltrametricDist R] in
 /-- **The dominant product summand.** Let `i` and `j` be the largest exponents, for a monomial
-order `m`, at which nonzero restricted series `f` and `g` attain their Gauss norms. Every other
+order `m`, at which restricted series `f` and `g` attain their Gauss norms. Every other
 summand `coeff p.1 f * coeff p.2 g` of the coefficient of `f * g` at `i + j` has a strictly
 smaller product of coefficient norms than `coeff i f * coeff j g`. -/
 theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : MonomialOrder σ)
-    {f g : MvPowerSeries σ R} (hf : IsRestricted c f) (hg : IsRestricted c g) (hf0 : f ≠ 0)
-    (hg0 : g ≠ 0) {i j : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i)
+    {f g : MvPowerSeries σ R} (hf : IsRestricted c f) (hg : IsRestricted c g)
+    {i j : σ →₀ ℕ} (hi : AchievesGaussNorm norm c f i)
     (himax : ∀ t, m.toSyn i < m.toSyn t → ‖coeff t f‖ * t.prod (c · ^ ·) < gaussNorm norm c f)
     (hj : AchievesGaussNorm norm c g j)
     (hjmax : ∀ t, m.toSyn j < m.toSyn t → ‖coeff t g‖ * t.prod (c · ^ ·) < gaussNorm norm c g)
     {p : (σ →₀ ℕ) × (σ →₀ ℕ)} (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
     ‖coeff p.1 f‖ * ‖coeff p.2 g‖ < ‖coeff i f‖ * ‖coeff j g‖ := by
   have hp' : p.1 + p.2 = i + j := Finset.mem_antidiagonal.mp hp
+  -- A series with a strictly larger exponent than `k` in the monomial order has positive Gauss
+  -- norm, because the proper multiple `k + single s 1` has nonnegative weighted norm below it.
+  have hpos {x : MvPowerSeries σ R} {k k' : σ →₀ ℕ} (hk : m.toSyn k' < m.toSyn k)
+      (hmax : ∀ t, m.toSyn k < m.toSyn t → ‖coeff t x‖ * t.prod (c · ^ ·) < gaussNorm norm c x) :
+      0 < gaussNorm norm c x := by
+    have hk0 : k ≠ 0 := fun h0 ↦ by
+      simp only [h0, map_zero] at hk
+      exact absurd hk (not_lt_of_ge (m.zero_le _))
+    obtain ⟨s, -⟩ := Finsupp.ne_iff.mp hk0
+    exact (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
+      (hmax (k + Finsupp.single s 1)
+        (m.toSyn_lt_toSyn_add k (Finsupp.single_ne_zero.mpr one_ne_zero)))
   -- Every summand at this exponent has the same positive weight.
   have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
       i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
@@ -537,12 +556,12 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
     · have hp2 : m.toSyn j < m.toSyn p.2 :=
         lt_of_add_lt_add_left (hsyn ▸ add_lt_add_left h (m.toSyn p.2))
       exact mul_lt_mul' (le_gaussNorm norm c f hf.hasGaussNorm p.1)
-        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hf.gaussNorm_pos hf0)
+        (hjmax p.2 hp2) (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hpos h himax)
     · have hp1 : m.toSyn i < m.toSyn p.1 :=
         lt_of_add_lt_add_right (hsyn ▸ add_lt_add_right h (m.toSyn p.1))
       simpa only [mul_comm] using
         mul_lt_mul' (le_gaussNorm norm c g hg.hasGaussNorm p.2) (himax p.1 hp1)
-          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hg.gaussNorm_pos hg0)
+          (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le) (hpos h hjmax)
   rw [← hi, ← hj] at hlt
   -- Cancel the common positive weight.
   apply (mul_lt_mul_iff_of_pos_right
@@ -573,13 +592,9 @@ theorem IsRestricted.exists_norm_coeff_mul_norm_coeff_lt [DecidableEq σ] {f g :
   let m : MonomialOrder σ := MonomialOrder.lex
   obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max m hf0
   obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max m hg0
-  -- A proper multiple is larger in every monomial order.
-  have hlt (k s : σ →₀ ℕ) (hs : s ≠ 0) : m.toSyn k < m.toSyn (k + s) := by
-    rw [map_add]
-    exact lt_add_of_pos_right _
-      (m.toSyn_lt_iff_ne_zero.mpr ((m.toSyn_eq_zero_iff s).not.mpr hs))
-  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (hlt i s hs), fun s hs ↦ hjmax _ (hlt j s hs),
-    fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hf0 hg0 hi himax hj hjmax hp hne⟩
+  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (m.toSyn_lt_toSyn_add i hs),
+    fun s hs ↦ hjmax _ (m.toSyn_lt_toSyn_add j hs),
+    fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hi himax hj hjmax hp hne⟩
 
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when
 the coefficient norm is multiplicative. Positive polyradii are arbitrary. -/
@@ -942,7 +957,7 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
     NormedAlgebra K (IsRestricted.subring (R := R) c) where
   toAlgebra := instAlgebraIsRestrictedSubring
   norm_smul_le r f := by
-    refine (norm_le_iff (by positivity)).mpr fun t ↦ ?_
+    refine norm_le_iff.mpr fun t ↦ ?_
     rw [coe_smul_isRestrictedSubring]
     calc ‖r • coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
         ≤ ‖r‖ * (‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)) := by
@@ -963,7 +978,7 @@ theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
     (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
     ‖f‖ ≤ K * ‖g‖ := by
   rcases le_or_gt 0 K with hK | hK
-  · refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+  · refine norm_le_iff.mpr fun t ↦ ?_
     calc
       ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
           K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
@@ -977,8 +992,8 @@ theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
         norm_nonneg (coeff t (g : MvPowerSeries σ S))]
     have hf t : ‖coeff t (f : MvPowerSeries σ R)‖ = 0 :=
       le_antisymm (by simpa [hg t] using h t) (norm_nonneg _)
-    have hf0 : ‖f‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hf t]
-    have hg0 : ‖g‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hg t]
+    have hf0 : ‖f‖ ≤ 0 := norm_le_iff.mpr fun t ↦ by simp [hf t]
+    have hg0 : ‖g‖ ≤ 0 := norm_le_iff.mpr fun t ↦ by simp [hg t]
     rw [le_antisymm hg0 (norm_nonneg g), mul_zero]
     exact hf0
 

@@ -70,19 +70,15 @@ theorem abs_sub_le_of_flat_fderiv {φ : (Fin p → ℝ) → (Fin n → ℝ)} {κ
       ∀ a ∈ closedBall (0 : Fin p → ℝ) 1, ∀ b ∈ closedBall (0 : Fin p → ℝ) 1,
         φ a ∈ S → φ b ∈ S → ‖φ a - φ b‖ < δ → ∀ s ∈ Icc (0 : ℝ) 1,
           |f (φ (a + s • (b - a))) - f (φ a)| ≤ ε * ‖φ a - φ (a + s • (b - a))‖ ^ (k + 1) := by
-  obtain ⟨hφ1, hκ0, hanti⟩ := hφ
+  obtain ⟨hφ1, _, hanti⟩ := hφ
   have hφd : Differentiable ℝ φ := hφ1.differentiable (by simp)
   -- a uniform bound for the differential of `φ` on the closed unit ball
   obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : Fin p → ℝ) 1).exists_bound_of_continuousOn
     (hφ1.continuous_fderiv (by simp)).continuousOn
-  set C' : ℝ := max C 1 with hC'def
-  have hC'1 : (1 : ℝ) ≤ C' := le_max_right _ _
-  have hC'0 : (0 : ℝ) < C' := lt_of_lt_of_le one_pos hC'1
+  set C' : ℝ := max C 1
   have hCC' : ∀ x ∈ closedBall (0 : Fin p → ℝ) 1, ‖fderiv ℝ φ x‖ ≤ C' :=
     fun x hx => (hC x hx).trans (le_max_left _ _)
-  set κ' : ℝ := max κ 1 with hκ'def
-  have hκ'1 : (1 : ℝ) ≤ κ' := le_max_right _ _
-  have hκ'0 : (0 : ℝ) < κ' := lt_of_lt_of_le one_pos hκ'1
+  set κ' : ℝ := max κ 1
   have hanti' : ∀ a ∈ closedBall (0 : Fin p → ℝ) 1, ∀ b ∈ closedBall (0 : Fin p → ℝ) 1,
       ‖a - b‖ ≤ κ' * ‖φ a - φ b‖ := fun a ha b hb =>
     (hanti a ha b hb).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
@@ -100,7 +96,7 @@ theorem abs_sub_le_of_flat_fderiv {φ : (Fin p → ℝ) → (Fin n → ℝ)} {κ
         fun j ↦ Finset.inf'_le _ (Finset.mem_univ j)⟩
   refine ⟨δ, hδ, ?_⟩
   intro a ha b hb haS hbS hab s hs
-  set ρ : ℝ := ‖φ a - φ (a + s • (b - a))‖ with hρdef
+  set ρ : ℝ := ‖φ a - φ (a + s • (b - a))‖
   have hnear : ∀ t ∈ Icc (0 : ℝ) s, ‖φ a - φ (a + t • (b - a))‖ ≤ C' * κ' * ρ :=
     fun _ ht ↦ hφd.norm_sub_le_mul_of_segment hCC' hanti' ha hb hs ht
   -- Flatness controls each coordinate derivative along the chord.

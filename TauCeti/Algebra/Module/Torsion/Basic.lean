@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.RingTheory.PrincipalIdealDomain
 
 /-!
 # Torsion subgroups, products, and maps
@@ -64,6 +65,8 @@ of the torsion submodules.
   multiples in `N` have a common nonzero multiplier into `N`.
 * `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
   containing a nonzerodivisor is a torsion module.
+* `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
+  `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
 -/
 
 public section
@@ -338,5 +341,20 @@ nonzerodivisor `a`. -/
 theorem isTorsion_quotient_of_mem {R : Type*} [CommRing R] {I : Ideal R} {a : R}
     (haI : a ∈ I) (ha : a ∈ R⁰) : Module.IsTorsion R (R ⧸ I) := fun x ↦
   ⟨⟨a, ha⟩, (Module.isTorsionBy_quotient_iff I a).2 (fun y ↦ I.mul_mem_right y haI) (x := x)⟩
+
+/-- Over a principal ideal domain, if `p ^ m` kills `t` but `p ^ (m - 1)` does not, for a prime
+`p`, the annihilator of `t` is `(p ^ m)`. -/
+theorem torsionOf_eq_span_pow_of_prime {R M : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] [AddCommMonoid M] [Module R M] {p : R} (hp : Prime p) {m : ℕ} {t : M}
+    (hm : p ^ m • t = 0) (ht : p ^ (m - 1) • t ≠ 0) : torsionOf R M t = span {p ^ m} := by
+  obtain ⟨g, hg⟩ := (IsPrincipalIdealRing.principal (torsionOf R M t)).principal
+  have hmem (n : ℕ) : p ^ n ∈ torsionOf R M t ↔ g ∣ p ^ n := by
+    rw [hg, Ideal.submodule_span_eq, Ideal.mem_span_singleton]
+  obtain ⟨i, him, hgi⟩ := (dvd_prime_pow hp m).mp ((hmem m).mp ((mem_torsionOf_iff _ _).mpr hm))
+  have him' : i = m := by
+    by_contra hne
+    refine ht ((mem_torsionOf_iff _ _).mp ((hmem (m - 1)).mpr ?_))
+    exact hgi.dvd.trans (pow_dvd_pow p (by omega))
+  rw [hg, Ideal.submodule_span_eq, span_singleton_eq_span_singleton.mpr hgi, him']
 
 end Ideal

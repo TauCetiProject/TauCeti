@@ -21,9 +21,8 @@ the divided powers also give a canonical integral basis of their `ℤ`-span.
 
 This isolates the root-vector factor in the integral PBW argument for the Kostant form. For a
 Chevalley root vector, rational PBW supplies independence of the ordinary powers; the results here
-then turn its divided powers into the integral basis used in the Chevalley--Demazure construction
-of Layer 9 of the ReductiveGroups roadmap. The Cartan factor is instead built from the binomial
-polynomials `(X choose n)`.
+then turn its divided powers into the integral basis used in the Chevalley--Demazure
+construction. The Cartan factor is instead built from the binomial polynomials `(X choose n)`.
 
 ## Main declarations
 
