@@ -63,6 +63,10 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   cut out by a projective cover of `M` is independent of the cover.
 * `TauCeti.IsProjectiveCover.comp`: composing a projective cover with a surjection that itself
   has superfluous kernel again gives a projective cover.
+* `TauCeti.IsProjectiveCover.exists_isProjectiveCover_comp_subtype`: a projective cover sits inside
+  every surjection from a projective module, as a direct summand of its source.
+* `TauCeti.IsProjectiveCover.le_ker_of_ne_top`: for a cover of a simple module, every proper
+  submodule of the source lies in the kernel.
 * `TauCeti.IsProjectiveCover.ker_le_jacobson`: the kernel of a projective cover lies in the radical
   of the covering module.
 * `TauCeti.isProjectiveCover_mkQ_iff`: the concrete family of covers, `P ↠ P ⧸ N` is a projective
@@ -215,12 +219,48 @@ theorem IsProjectiveCover.comp {N : Type*} [AddCommMonoid N] [Module R N] {f : P
     rw [LinearMap.ker_comp]
     exact hgker.comap hf.surjective hf.isSuperfluous_ker
 
+/-- **A projective cover sits inside every projective presentation.** If `f : P → M` is a
+projective cover and `g : Q → M` a surjection from a projective module, then `g` restricted to a
+direct summand of `Q` is a projective cover of `M`. This moves a cover into the universe of `Q`. -/
+theorem IsProjectiveCover.exists_isProjectiveCover_comp_subtype {Q' : Type*} [AddCommGroup Q']
+    [Module R Q'] [Module.Projective R Q'] {f : P →ₗ[R] M} (hf : IsProjectiveCover f)
+    {g : Q' →ₗ[R] M} (hg : Function.Surjective g) :
+    ∃ Q₀ : Submodule R Q', IsProjectiveCover (g ∘ₗ Q₀.subtype) := by
+  obtain ⟨h, hh, hsurj⟩ := hf.exists_surjective hg
+  have := hf.projective
+  -- A section `s` of `h` embeds `P` into `Q'`, and `g ∘ s = f`.
+  obtain ⟨s, hs⟩ := Module.projective_lifting_property h LinearMap.id hsurj
+  have hinj : Function.Injective s :=
+    Function.LeftInverse.injective fun x ↦ LinearMap.congr_fun hs x
+  let e : P ≃ₗ[R] LinearMap.range s := LinearEquiv.ofInjective s hinj
+  have hge : g ∘ₗ (LinearMap.range s).subtype = f ∘ₗ e.symm.toLinearMap := by
+    ext y
+    obtain ⟨x, rfl⟩ := e.surjective y
+    have hx : h (s x) = x := LinearMap.congr_fun hs x
+    simp [e, ← hh, hx]
+  refine ⟨LinearMap.range s, ?_⟩
+  rw [hge]
+  refine ⟨Module.Projective.of_equiv e, hf.surjective.comp e.symm.surjective, ?_⟩
+  rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+  exact (isSuperfluous_map_equiv_iff e).mpr hf.isSuperfluous_ker
+
 end AddCommGroup
 
 section Ring
 
 variable {R : Type u} {M : Type v} {P : Type w}
   [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup P] [Module R P]
+
+/-- **A cover of a simple module is local**: every proper submodule of the source of a projective
+cover of a simple module lies in the kernel. Its image is `0` or the simple module, and in the
+second case it is everything, because the kernel is superfluous. -/
+theorem IsProjectiveCover.le_ker_of_ne_top {S : Type*} [AddCommGroup S] [Module R S]
+    [IsSimpleModule R S] {p : P →ₗ[R] S} (hp : IsProjectiveCover p) {U : Submodule R P}
+    (hU : U ≠ ⊤) : U ≤ LinearMap.ker p := by
+  rcases IsSimpleOrder.eq_bot_or_eq_top (U.map p) with h | h
+  · exact LinearMap.le_ker_iff_map.2 h
+  · refine absurd (hp.isSuperfluous_ker.eq_top_of_sup_eq_top ?_) hU
+    rw [sup_comm, ← Submodule.comap_map_eq, h, Submodule.comap_top]
 
 /-- The kernel of a projective cover lies in the radical of the covering module, being
 superfluous. -/
