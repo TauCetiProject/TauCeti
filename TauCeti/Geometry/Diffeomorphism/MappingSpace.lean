@@ -16,8 +16,8 @@ Let `M` be a compact connected boundaryless `C^m` manifold modelled on a finite-
 space, `1 ≤ m`, and let `(B, b₀)` be any pointed space. The group `Diff(M)` of
 `C^m` self-diffeomorphisms acts transitively on `M`, and evaluation `Diff(M) → M` at a point
 `x₀` has continuous local sections around every point
-(`TauCeti.exists_trivialization_diffeomorph_apply`). Translating maps by these local sections
-trivializes evaluation
+(`TauCeti.exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit`). Translating maps by these
+local sections trivializes evaluation
 
 `Map_*(B, M) → Map(B, M) → M`
 
@@ -28,8 +28,10 @@ at `b₀` around every point of `M`, with fibre the based mapping space of maps 
 restriction fibrations of `TauCeti.Topology.MappingSpace.Fibration`, this needs neither local
 compactness of `B` nor that `b₀` be a cofibrant point.
 
-In these charts the action map `Diff(M) × Map_*(B, M) → Map(B, M)`, `(φ, u) ↦ φ ∘ u`
-(`TauCeti.BasedMap.actionMap`), is the action of the stabilizer of `x₀` on the fibre
+In the charts `TauCeti.mappingSpaceEvalTrivialization` built from such a local section `s`, the
+action map `Diff(M) × Map_*(B, M) → Map(B, M)`, `(φ, u) ↦ φ ∘ u` (`TauCeti.BasedMap.actionMap`),
+is the action of the stabilizer of `x₀` on the fibre, read in the chart
+`TauCeti.orbitMapTrivialization` of `Diff(M) → M` given by `s`
 (`TauCeti.mappingSpaceEvalTrivialization_actionMap`). For `B = S²` this is the map of
 fibrations along which classes of `Diff(M)` are compared with classes of `Map(S², M)`.
 
@@ -62,18 +64,6 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [T2Space M] [BoundarylessManifold I M] {m : ℕ∞} [CompactSpace M] [IsManifold I m M]
   [PreconnectedSpace M]
 
-variable (I m) in
-/-- On a compact connected boundaryless manifold, evaluation `Diff(M) → M` at `x₀` has a section
-continuous on an open neighbourhood of every point. -/
-private theorem exists_localSection_diffeomorph (hm : 1 ≤ m) (x₀ z : M) :
-    ∃ U : Set M, IsOpen U ∧ z ∈ U ∧ ∃ s : M → M ≃ₘ^m⟮I, I⟯ M, ContinuousOn s U ∧
-      ∀ y ∈ U, s y • x₀ = y := by
-  have hz : z ∈ orbit (M ≃ₘ^m⟮I, I⟯ M) x₀ := by
-    rw [orbit_diffeomorph_eq_univ hm]
-    exact mem_univ z
-  obtain ⟨σ, e, hze, hσ, hσx, -⟩ := exists_trivialization_diffeomorph_apply hm hz
-  exact ⟨e.baseSet, e.open_baseSet, hze, σ, hσ, hσx⟩
-
 variable (I) in
 include I in
 /-- **Evaluation on maps into a closed connected manifold is locally trivial.** Let `M` be a
@@ -85,7 +75,10 @@ theorem exists_trivialization_mappingSpaceEval_of_preconnectedSpace (hm : 1 ≤ 
     [TopologicalSpace B] (b₀ : B) (x₀ z : M) :
     ∃ e : Bundle.Trivialization (BasedMap B M b₀ x₀) (mappingSpaceEval (X := M) b₀),
       z ∈ e.baseSet :=
-  exists_trivialization_mappingSpaceEval b₀ x₀ (exists_localSection_diffeomorph I m hm x₀) z
+  -- Evaluation `φ ↦ φ x₀` is the orbit map `φ ↦ φ • x₀` by definition (`Diffeomorph.smul_def`).
+  exists_trivialization_mappingSpaceEval b₀ x₀ (fun y ↦
+    exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit (I := I) hm
+      (by rw [orbit_diffeomorph_eq_univ hm]; exact mem_univ y)) z
 
 variable (I) in
 include I in
@@ -97,7 +90,9 @@ theorem mappingSpaceEval_mem_serreFibrations_of_preconnectedSpace [Nonempty M] (
     TopCat.serreFibrations
       (_root_.TopCat.ofHom (mappingSpaceEval b₀) :
         _root_.TopCat.of C(B, M) ⟶ _root_.TopCat.of M) :=
-  mappingSpaceEval_mem_serreFibrations b₀ (Classical.arbitrary M)
-    (exists_localSection_diffeomorph I m hm (Classical.arbitrary M))
+  -- Evaluation `φ ↦ φ x₀` is the orbit map `φ ↦ φ • x₀` by definition (`Diffeomorph.smul_def`).
+  mappingSpaceEval_mem_serreFibrations b₀ (Classical.arbitrary M) fun y ↦
+    exists_continuousOn_diffeomorph_apply_eq_of_mem_orbit (I := I) hm
+      (by rw [orbit_diffeomorph_eq_univ hm]; exact mem_univ y)
 
 end TauCeti

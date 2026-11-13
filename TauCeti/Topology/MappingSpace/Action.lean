@@ -28,15 +28,16 @@ The action restricted to `G × Map_*(B, X)` (`TauCeti.BasedMap.actionMap`) lies 
 (`TauCeti.mappingSpaceEval_actionMap`), a commuting square. On the fibre over `x` of the orbit map,
 the stabilizer, it is the action of the stabilizer on the based mapping space: `actionMap` is
 `(g, γ) ↦ g • γ` (`TauCeti.BasedMap.actionMap_apply`), which for `g` in the stabilizer is the
-stabilizer action (`TauCeti.BasedMap.coe_stabilizer_smul`). It identifies `Map(B, X)` over the
-orbit of `x` with the balanced product `G ×_H Map_*(B, X)` for the stabilizer `H`: it is
-`H`-balanced (`TauCeti.BasedMap.actionMap_mul_stabilizer`), two pairs have the same image exactly
-when they differ by an element of `H` (`TauCeti.BasedMap.actionMap_eq_actionMap_iff`), and its
-image consists of the maps sending `b₀` into the orbit of `x`
-(`TauCeti.BasedMap.mem_range_actionMap_iff`). For a homogeneous space `X = G ⧸ H`
-and `B = S²` these are the actions `Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and
-`Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of Barraud–Damian–Humilière–Oancea, Proposition 6.36: the
-stabilizer of the coset `eH` is `H` (`MulAction.stabilizer_quotient`).
+stabilizer action (`TauCeti.BasedMap.coe_stabilizer_smul`). As a map of sets, it induces a
+bijection from the balanced product `G ×_H Map_*(B, X)`, the quotient of `G × Map_*(B, X)` by the
+stabilizer `H`, onto the maps sending `b₀` into the orbit of `x`: it is `H`-balanced
+(`TauCeti.BasedMap.actionMap_mul_stabilizer`), two pairs have the same image exactly when they
+differ by an element of `H` (`TauCeti.BasedMap.actionMap_eq_actionMap_iff`), and its image consists
+of the maps sending `b₀` into the orbit of `x` (`TauCeti.BasedMap.mem_range_actionMap_iff`). For
+a homogeneous space `X = G ⧸ H` and `B = S²` these are the actions
+`Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and `Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of
+Barraud–Damian–Humilière–Oancea, Proposition 6.36: the stabilizer of the coset `eH` is `H`
+(`MulAction.stabilizer_quotient`).
 
 A continuous local section `s` of the orbit map over an open set `U`, `s y • x = y` for `y ∈ U`,
 translates every map with `f(b₀) ∈ U` to a based map: `f ↦ (f(b₀), s(f(b₀))⁻¹ • f)` is a local
