@@ -87,7 +87,7 @@ theorem minpoly_rootIntegralPrimitiveElement :
 of a root of `minpoly ℚ θ` in its own field. -/
 theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
     (hsq : Squarefree ((minpoly ℤ θ).map (Int.castRingHom (ZMod p)))) :
-    ¬ p ∣ RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1 := fun h =>
+    ¬ p ∣ NumberField.RingOfIntegers.exponent (rootIntegralPrimitiveElement hβ).1 := fun h =>
   (rootIntegralPrimitiveElement hβ).not_dvd_index_of_squarefree_map
     (by rwa [minpoly_rootIntegralPrimitiveElement])
     (h.trans (rootIntegralPrimitiveElement hβ).exponent_dvd_index)
@@ -95,9 +95,9 @@ theorem not_dvd_exponent_rootIntegralPrimitiveElement {p : ℕ} [Fact p.Prime]
 /-- The monic irreducible factors modulo `p` of the minimal polynomial of a root are those of
 `minpoly ℤ θ`. -/
 theorem monicFactorsMod_rootIntegralPrimitiveElement (p : ℕ) [Fact p.Prime] :
-    RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
-      RingOfIntegers.monicFactorsMod θ p := by
-  simp only [RingOfIntegers.monicFactorsMod, minpoly_rootIntegralPrimitiveElement]
+    NumberField.RingOfIntegers.monicFactorsMod (rootIntegralPrimitiveElement hβ).1 p =
+      NumberField.RingOfIntegers.monicFactorsMod θ p := by
+  simp only [NumberField.RingOfIntegers.monicFactorsMod, minpoly_rootIntegralPrimitiveElement]
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -115,7 +115,7 @@ theorem ramificationIdx_eq_one_of_liesOver_span
   have h := NumberField.Ideal.ramificationIdx_primesOverSpanEquivMonicFactorsMod_symm_apply' hexp hφ
   rw [hφ'] at h
   rw [h, minpoly_rootIntegralPrimitiveElement]
-  rw [monicFactorsMod_rootIntegralPrimitiveElement, RingOfIntegers.monicFactorsMod,
+  rw [monicFactorsMod_rootIntegralPrimitiveElement, NumberField.RingOfIntegers.monicFactorsMod,
     Multiset.mem_toFinset] at hφ
   have hf0 : (minpoly ℤ θ).map (Int.castRingHom (ZMod p)) ≠ 0 :=
     ((minpoly.monic θ.isIntegral).map _).ne_zero
