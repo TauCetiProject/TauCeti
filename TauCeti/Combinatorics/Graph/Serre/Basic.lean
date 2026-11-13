@@ -118,6 +118,21 @@ def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e
     (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
   (rfl)
 
+/-- A bijection of darts commuting with reversal induces a bijection of geometric edges. -/
+def GeomEdge.congr {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) : Γ.GeomEdge ≃ Δ.GeomEdge :=
+  Quot.congr f fun e e' => by rw [← hf, f.apply_eq_iff_eq]
+
+@[simp] theorem GeomEdge.congr_toGeomEdge {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Γ.E) :
+    GeomEdge.congr Γ f hf (Γ.toGeomEdge e) = Δ.toGeomEdge (f e) :=
+  Quot.congr_mk ..
+
+@[simp] theorem GeomEdge.congr_symm_toGeomEdge {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Δ.E) :
+    (GeomEdge.congr Γ f hf).symm (Δ.toGeomEdge e) = Γ.toGeomEdge (f.symm e) := by
+  rw [Equiv.symm_apply_eq, GeomEdge.congr_toGeomEdge, Equiv.apply_symm_apply]
+
 /-- An orientation chooses one dart from each reverse pair. -/
 def IsOrientation (O : Set Γ.E) : Prop := ∀ e, e ∈ O ↔ Γ.rev e ∉ O
 
