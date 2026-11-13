@@ -241,6 +241,15 @@ attribute [simp] Hom.map_src Hom.map_rev
     Δ.tgt (f.mapE e) = f.mapV (Γ.tgt e) := by
   simp only [tgt, ← f.map_rev, f.map_src]
 
+/-- A morphism of Serre graphs sends darts with the same geometric edge to darts with the same
+geometric edge. -/
+theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e e' : Γ.E} (h : Γ.toGeomEdge e = Γ.toGeomEdge e') :
+    Δ.toGeomEdge (f.mapE e) = Δ.toGeomEdge (f.mapE e') := by
+  obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h
+  · rfl
+  · rw [f.map_rev, Δ.toGeomEdge_rev]
+
 /-- The quiver prefunctor underlying a Serre-graph morphism. -/
 @[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) : Γ.V ⥤q Δ.V where
