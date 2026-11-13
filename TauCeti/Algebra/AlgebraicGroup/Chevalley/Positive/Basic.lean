@@ -70,6 +70,16 @@ theorem positiveSubgroup_eq_closure (A : CommAlgCat.{v} ℤ) :
     kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
 
+/-- The positive subgroup is the supremum of the ranges of all positive root subgroups. -/
+theorem positiveSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
+    D.positiveSubgroup A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ A).range := by
+  simp only [positiveSubgroup, kostantSubsystemSubgroup_eq_iSup,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
+
 /-- A subgroup contains the positive subgroup exactly when it contains each positive root
 subgroup. -/
 theorem positiveSubgroup_le_iff {A : CommAlgCat.{v} ℤ}

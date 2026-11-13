@@ -124,14 +124,7 @@ theorem mem_positiveSubgroup_iff_exists_prod_of_isSimplyLaced (hs : t.IsSimplyLa
     exact D.commutator_range_root_le_iSup_height hs A i j
       ((mem_posRootsFinset _ _ i).mp hi) ((mem_posRootsFinset _ _ j).mp hj)
   have hwhole : D.positiveSubgroup A = ⨆ γ ∈ S, (X γ).range := by
-    have hjoin : (⨆ γ ∈ S, (X γ).range) =
-        Subgroup.closure (⋃ γ ∈ S, Set.range (X γ)) := by
-      simp only [← MonoidHom.coe_range, Subgroup.closure_iUnion, Subgroup.closure_eq]
-    rw [hjoin, D.positiveSubgroup_eq_closure]
-    congr 1
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_range, S, mem_posRootsFinset, X,
-      exists_prop]
+    simpa only [S, mem_posRootsFinset, X] using D.positiveSubgroup_eq_iSup A
   have hlS : ∀ γ, γ ∈ l ↔ γ ∈ S := by simpa only [S, mem_posRootsFinset] using hcover
   rw [hwhole, TauCeti.mem_biSup_iff_exists_list_prod_map hcomm hl hlS]
   constructor
