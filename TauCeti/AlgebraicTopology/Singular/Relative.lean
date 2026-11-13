@@ -130,6 +130,35 @@ lemma mono_toSSetPair_map_ofInclusionMap_inclusion_right :
 
 end ofInclusionMap
 
+section ofInclusionMapRestrict
+
+variable {X Y : TopCat.{w}} (f : X ⟶ Y) {A₁ C₁ : Set X} {A₂ C₂ : Set Y} (h₁ : C₁ ⊆ A₁)
+  (h₂ : C₂ ⊆ A₂) (hfA : Set.MapsTo f A₁ A₂) (hfC : Set.MapsTo f C₁ C₂)
+
+/-- On the singular simplicial sets of the subspaces, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)`
+induced by the restriction of `f` is the map induced by the restriction of `f` to `C₁`. -/
+lemma toSSetPair_map_ofInclusionMap_restrict_left :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩
+        fun _ hx ↦ hfC hx)).left =
+      TopCat.toSSet.map (TopCat.ofHom ⟨hfC.restrict, f.hom.continuous.restrict hfC⟩) := by
+  rw [toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (ofInclusionMap_snd_apply _ _ x)
+
+/-- On the ambient singular simplicial sets, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
+the restriction of `f` is the map induced by that restriction. -/
+lemma toSSetPair_map_ofInclusionMap_restrict_right :
+    (toSSetPair.map (ofInclusionMap h₁ h₂ ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩
+        fun _ hx ↦ hfC hx)).right =
+      TopCat.toSSet.map (TopCat.ofHom ⟨hfA.restrict, f.hom.continuous.restrict hfA⟩) := by
+  rw [toSSetPair_map_right]
+  congr 1
+  ext x
+  exact ofInclusionMap_fst_apply _ _ x
+
+end ofInclusionMapRestrict
+
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
 /-- The relative singular chain complex functor on topological pairs. -/
@@ -197,14 +226,14 @@ noncomputable abbrev singularChainComplexπ :
 @[simp, reassoc]
 lemma singularChainComplexπ_pair_naturality
     {P Q : TopPair.{w}} (f : P ⟶ Q) (M : C) :
-    SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) M ≫
+    SSet.chainComplexMap (TopCat.toSSet.map (Hom.fst f)) M ≫
         Q.singularChainComplexπ M =
-      P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
-  have h : SSet.chainComplexMap (TopPair.toSSetPair.map f).right M ≫
+      P.singularChainComplexπ M ≫ singularChainComplexMap f M := by
+  have h : SSet.chainComplexMap (toSSetPair.map f).right M ≫
       Q.singularChainComplexπ M =
-        P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M :=
-    ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
-  rwa [TopPair.toSSetPair_map_right] at h
+        P.singularChainComplexπ M ≫ singularChainComplexMap f M :=
+    ((SSetPair.chainComplexFunctorπ C).app M).naturality (toSSetPair.map f)
+  rwa [toSSetPair_map_right] at h
 
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
@@ -214,14 +243,14 @@ lemma singularChainComplexπ_coefficient_naturality
     ((AlgebraicTopology.singularChainComplexFunctor C).map φ).app P.fst ≫
         P.singularChainComplexπ N =
       P.singularChainComplexπ M ≫
-        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) := by
+        ((SSetPair.chainComplexFunctor C).map φ).app (toSSetPair.obj P) := by
   rw [TauCeti.singularChainComplexFunctor_map_app]
-  have h : ((SSet.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P).right ≫
+  have h : ((SSet.chainComplexFunctor C).map φ).app (toSSetPair.obj P).right ≫
       P.singularChainComplexπ N = P.singularChainComplexπ M ≫
-        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) :=
-    congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
+        ((SSetPair.chainComplexFunctor C).map φ).app (toSSetPair.obj P) :=
+    congrArg (fun η ↦ η.app (toSSetPair.obj P))
       ((SSetPair.chainComplexFunctorπ C).naturality φ)
-  simp only [TopPair.toSSetPair_obj_right] at h
+  simp only [toSSetPair_obj_right] at h
   exact h
 
 @[simp]
@@ -304,6 +333,16 @@ lemma singularHomologyMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') (n : ℕ) :
     P.singularHomologyMap (f ≫ g) R n =
       P.singularHomologyMap f R n ≫ P'.singularHomologyMap g R n := by
   rw [TopPair.singularHomologyMap, Functor.map_comp, SSetPair.homologyMap_comp]
+
+variable {P P'} in
+/-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to
+`eqToHom` of the corresponding equation of homologies. -/
+@[simp]
+lemma singularHomologyMap_eqToHom (h : P = P') (n : ℕ) :
+    P.singularHomologyMap (eqToHom h) R n =
+      eqToHom (congrArg (TopPair.singularHomology · R n) h) := by
+  subst h
+  simp
 
 variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the

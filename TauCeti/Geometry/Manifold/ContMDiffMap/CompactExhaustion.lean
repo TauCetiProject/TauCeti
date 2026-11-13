@@ -103,7 +103,7 @@ theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
     _ ≤ q (F (N + 1 + 1) - F 0) + q (g - F (N + 2)) := map_add_le_add _ _ _
     _ < t := by
       rw [hzero, add_zero]
-      exact TauCeti.lt_of_forall_sub_lt_mul q (map_zero _).le (map_add_le_add _) ht hwsum F (N + 1)
+      exact TauCeti.lt_of_forall_sub_lt_mul q (map_add_le_add _) ht hwsum F (N + 1)
         hterm
 
 /-- The limit `g` of stages which each change a point `x` by less than `ε x * w r` (and only
@@ -125,7 +125,7 @@ theorem abs_sub_lt_of_stages (L : CompactExhaustion M) {ε : M → ℝ} (hε₀ 
       rw [h0, abs_zero]
       exact mul_pos (hε₀ x) (hw r)
   rw [hgF N hN]
-  exact TauCeti.lt_of_forall_sub_lt_mul (fun y : ℝ ↦ |y|) abs_zero.le abs_add_le (hε₀ x)
+  exact TauCeti.lt_of_forall_sub_lt_mul (fun y : ℝ ↦ |y|) abs_add_le (hε₀ x)
     hwsum (fun r ↦ F r x) N hterm
 
 end CompactExhaustion

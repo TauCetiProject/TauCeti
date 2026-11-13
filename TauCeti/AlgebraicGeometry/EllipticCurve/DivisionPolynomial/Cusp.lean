@@ -43,21 +43,16 @@ is worth recording separately since a future bump could move any one of them:
 `C_ofNat` appears in two of the proofs because the `Ψ₂Sq` and `ψ₂` normal forms end with a
 constant polynomial `C 4` / `C 2` that must be matched against the numeral in the statement.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md:99` — "**`[n]` is division polynomials**", which names
-`ZSMul.lean` and mathlib #13782 as "the mathlib-track anchor Layer 1 consumes". Three of these
-four are that file's cusp specialisation, used to evaluate the universal division polynomials at
-`(1, 1)`; `cusp_Ψ₂Sq` completes the family. The onward consumer is Layer 6's "**The torsion
-subgroup and Nagell–Lutz**" (`README.md:821`), whose stated route is division polynomials.
+Three of these four are the cusp specialisation of the source's `ZSMul.lean` (see Provenance),
+used to evaluate the universal division polynomials at `(1, 1)`; `cusp_Ψ₂Sq` completes the
+family. They feed the division-polynomial proof of the Nagell–Lutz theorem.
 
 ## Provenance
 
 Adapted from `LutzNagell/ZSMul.lean` in AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at
-`dev/modular-curves @ 9fec8eba7652` — the revision `TauCetiRoadmap/EllipticCurves/README.md` pins
-for the NagellLutz project. Declarations `cusp_ψ₂`, `cusp_Ψ₃`, `cusp_preΨ₄`. That file's header
-reads `Authors: David Kurniadi Angdinata, Junyan Xu`; following this repository's convention for
-adapted material the upstream authorship is credited here rather than in the copyright header.
+`dev/modular-curves @ 9fec8eba7652`. Declarations `cusp_ψ₂`, `cusp_Ψ₃`, `cusp_preΨ₄`. That file's
+header reads `Authors: David Kurniadi Angdinata, Junyan Xu`; following this repository's convention
+for adapted material the upstream authorship is credited here rather than in the copyright header.
 
 Three changes from the source. The statements are generalised from `cusp ℤ` to `cusp R` over any
 `CommRing R` — nothing in them is specific to `ℤ`. The source unfolds `cusp` directly

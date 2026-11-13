@@ -113,8 +113,8 @@ theorem metrizableSpace_frameExhaustion [Countable ι] [∀ i, Countable (κ i)]
   let _ := hp.isTopologicalAddGroup
   let _ := hp.firstCountableTopology
   let _ := t2Space_frameTopology (I := I) (n := n) e U hU hcover
-  let _ : UniformSpace Cₛ^n⟮I; F, V⟯ := IsTopologicalAddGroup.rightUniformSpace _
-  let _ : IsUniformAddGroup Cₛ^n⟮I; F, V⟯ := isUniformAddGroup_of_addCommGroup
+  let _ := frameUniformSpace (I := I) (n := n) e U hU
+  let _ := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
   let _ : (uniformity Cₛ^n⟮I; F, V⟯).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   exact UniformSpace.metrizableSpace

@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DSlope
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Elementary facts about `dslope`
 
-Divided-slope facts that need no differentiability. Away from its base point `dslope` is the plain
-difference quotient, so these are statements about a normed field and its norm, with no calculus
-in them.
+Elementary divided-slope facts. Away from its base point `dslope` is the plain difference quotient,
+so most of these are statements about a normed field and its norm; only the product rule and the
+germ congruence also involve the value `deriv f a` of `dslope f a` at its base point.
 
 ## Main results
 
@@ -27,6 +28,9 @@ in them.
   remainder, `f b = Σ_{j<n} (b - a)^j • c_j + (b - a)^n • q_n b`, where `c_j` is the value at `a`
   of the `j`-th iterated divided difference `(swap dslope a)^[j] f` and `q_n` is the `n`-th one.
   For an analytic `f` the `c_j` are its Taylor coefficients at `a` and `q_n` is analytic.
+* `TauCeti.dslope_mul`: the product rule for divided differences.
+* `Filter.EventuallyEq.dslope`: divided differences at `a` of functions with the same germ at `a`
+  have the same germ at `a`.
 -/
 
 public section
@@ -68,5 +72,27 @@ theorem sum_add_pow_sub_smul_iterate_dslope {𝕜 E : Type*} [NontriviallyNormed
       ← Finset.smul_sum, pow_zero, one_smul, Function.iterate_zero_apply]
     rw [add_right_comm, ← smul_add, ih]
     exact eq_sub_iff_add_eq.1 (sub_smul_dslope f a b)
+
+/-- **Product rule for divided differences.** If `f` and `g` are differentiable at `a`, then
+`dslope (f * g) a b = f a * dslope g a b + dslope f a b * g b` for every `b`. -/
+theorem dslope_mul {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+    {f g : 𝕜 → A} {a : 𝕜} (hf : DifferentiableAt 𝕜 f a) (hg : DifferentiableAt 𝕜 g a) (b : 𝕜) :
+    dslope (f * g) a b = f a * dslope g a b + dslope f a b * g b := by
+  rcases eq_or_ne b a with rfl | hb
+  · rw [dslope_same, dslope_same, dslope_same, deriv_mul hf hg, add_comm]
+  · simp only [dslope_of_ne _ hb, slope_def_module, Pi.mul_apply, mul_smul_comm, smul_mul_assoc,
+      ← smul_add]
+    congr 1
+    noncomm_ring
+
+/-- Divided differences at `a` of functions with the same germ at `a` have the same germ at `a`. -/
+theorem _root_.Filter.EventuallyEq.dslope {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : 𝕜 → E} {a : 𝕜} (h : f =ᶠ[nhds a] g) :
+    dslope f a =ᶠ[nhds a] dslope g a := by
+  filter_upwards [h] with b hb
+  rcases eq_or_ne b a with rfl | hba
+  · rw [dslope_same, dslope_same, h.deriv_eq]
+  · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
+      h.eq_of_nhds]
 
 end TauCeti

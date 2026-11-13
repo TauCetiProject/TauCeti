@@ -210,6 +210,17 @@ theorem measurable_empiricalFiniteMeasure :
   simp_rw [← empiricalFiniteMeasure_toMeasure, empiricalFiniteMeasure_apply hs]
   fun_prop
 
+/-- Empirical finite measures depend continuously on the family for the weak topology. Colliding
+values retain their multiplicities. -/
+@[fun_prop]
+theorem continuous_empiricalFiniteMeasure [TopologicalSpace α] [OpensMeasurableSpace α] :
+    Continuous (empiricalFiniteMeasure : (κ → α) → FiniteMeasure α) := by
+  apply FiniteMeasure.continuous_iff_forall_continuous_integral.mpr
+  intro f
+  simp_rw [integral_empiricalFiniteMeasure f.continuous.stronglyMeasurable]
+  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
+    ((Fintype.card κ : ℝ)⁻¹)
+
 end FiniteFamily
 
 section FinitePopulation
@@ -317,18 +328,18 @@ theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace �
 theorem lintegral_empiricalMeasureOfFintype {x : κ → α} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasureOfFintype x : Measure α) =
       ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (x i) := by
-  simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
+  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype, lintegral_empiricalFiniteMeasure hf]
 
 /-- Finite empirical probability measures depend continuously on the population for the weak
 topology. Colliding values retain their multiplicities. -/
 @[fun_prop]
 theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasurableSpace α] :
     Continuous (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) := by
-  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.mpr
-  intro f
-  simp_rw [integral_empiricalMeasureOfFintype f.continuous.stronglyMeasurable]
-  exact (continuous_finsetSum _ fun i _ => f.continuous.comp (continuous_apply i)).const_smul
-    ((Fintype.card κ : ℝ)⁻¹)
+  -- The weak topology on probability measures is induced from the one on finite measures.
+  refine (ProbabilityMeasure.toFiniteMeasure_isEmbedding α).continuous_iff.mpr ?_
+  simpa only [Function.comp_def, toFiniteMeasure_empiricalMeasureOfFintype] using
+    continuous_empiricalFiniteMeasure
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
@@ -373,9 +384,8 @@ theorem exists_finset_ae_mem_empiricalMeasure [MeasurableSingletonClass α]
 theorem empiricalMeasure_apply {x : ℕ → α} {n : ℕ} {s : Set α} (hs : MeasurableSet s) :
     (empiricalMeasure x n : Measure α) s = ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ *
         ∑ i ∈ Finset.range (n + 1), s.indicator (1 : α → ℝ≥0∞) (x i) := by
-  rw [empiricalMeasure_toMeasure]
-  simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
-    smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
+  rw [empiricalMeasure, empiricalMeasureOfFintype_apply hs, Fintype.card_fin,
+    Fin.sum_univ_eq_sum_range (fun i => s.indicator (1 : α → ℝ≥0∞) (x i))]
 
 /-- The real-valued form of `empiricalMeasure_apply`. -/
 theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (hs : MeasurableSet s) :
@@ -407,33 +417,23 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
     {x : ℕ → α} {n : ℕ} {f : α → E} (hf : StronglyMeasurable f) :
     ∫ y, f y ∂(empiricalMeasure x n : Measure α) =
       ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ Finset.range (n + 1), f (x i) := by
-  rw [empiricalMeasure_toMeasure, integral_finsetSum_measure]
-  · simp_rw [integral_smul_measure, integral_dirac' f _ hf]
-    rw [← Finset.smul_sum]
-    congr 1
-    rw [ENNReal.toReal_inv]
-    norm_cast
-  · intro i _
-    exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
+  rw [empiricalMeasure, integral_empiricalMeasureOfFintype hf, Fintype.card_fin,
+    Fin.sum_univ_eq_sum_range (fun i => f (x i))]
 
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
 theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasure x n : Measure α) =
       ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
-  simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
+  rw [empiricalMeasure, lintegral_empiricalMeasureOfFintype hf, Fintype.card_fin,
+    Fin.sum_univ_eq_sum_range (fun i => f (x i))]
 
 /-- Empirical measures depend measurably on a sequence of measurable observations. -/
 theorem measurable_empiricalMeasure {X : ℕ → Ω → α}
     (n : ℕ) (hX : ∀ i ∈ Finset.range (n + 1), Measurable (X i)) :
     Measurable fun ω => empiricalMeasure (fun i => X i ω) n := by
-  have hmeasure : Measurable fun ω =>
-      (empiricalMeasure (fun i => X i ω) n : Measure α) := by
-    simp_rw [empiricalMeasure_toMeasure]
-    exact Finset.measurable_fun_sum _ fun i hi =>
-      Measure.measurable_of_measurable_coe _ fun s hs => by
-        simp only [_root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
-        exact measurable_const.mul (measurable_one.indicator (hX i hi hs))
-  exact hmeasure.subtype_mk
+  simp only [empiricalMeasure]
+  exact measurable_empiricalMeasureOfFintype.comp <|
+    .of_eval fun i : Fin (n + 1) => hX i (Finset.mem_range.2 i.isLt)
 
 end Probability
 

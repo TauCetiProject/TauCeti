@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+import Mathlib.Topology.ShrinkingLemma
 
 /-!
 # Locally finite families
@@ -24,6 +25,10 @@ has a neighbourhood meeting only finitely many members of a locally finite famil
 compact fibres, such as a proper map, again form a locally finite family
 (`LocallyFinite.image_of_isClosedMap`). The topological support of a locally finite sum of
 functions lies in the union of their topological supports (`LocallyFinite.tsupport_finsum_subset`).
+
+An open cover of a paracompact normal space has a locally finite refinement by closed sets with
+the same index set (`TauCeti.precise_closed_refinement`), obtained by shrinking Mathlib's
+`precise_refinement`.
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -158,6 +163,18 @@ end LocallyFinite
 namespace TauCeti
 
 open Metric Set
+
+/-- **Closed precise refinement.** An open cover of a paracompact normal space has a locally finite
+refinement by closed sets, indexed by the same type, whose `i`-th member lies in the `i`-th open
+set. -/
+theorem precise_closed_refinement {X ι : Type*} [TopologicalSpace X] [ParacompactSpace X]
+    [NormalSpace X] (u : ι → Set X) (uo : ∀ i, IsOpen (u i)) (uc : ⋃ i, u i = univ) :
+    ∃ K : ι → Set X, (∀ i, IsClosed (K i)) ∧ ⋃ i, K i = univ ∧ LocallyFinite K ∧
+      ∀ i, K i ⊆ u i := by
+  obtain ⟨v, hvo, hvc, hvlf, hvu⟩ := precise_refinement u uo uc
+  obtain ⟨K, hKc, hKcl, hKv⟩ :=
+    exists_iUnion_eq_closed_subset hvo (fun x ↦ hvlf.point_finite x) hvc
+  exact ⟨K, hKcl, hKc, hvlf.subset hKv, fun i ↦ (hKv i).trans (hvu i)⟩
 
 /-- Around each point there is a ball such that every member of a locally finite family of closed
 sets that meets the ball contains the centre. -/

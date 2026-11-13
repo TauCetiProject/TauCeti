@@ -31,6 +31,8 @@ for the fibre sums over the range holds for the fibre sum over every value of th
 
 * `TauCeti.prod_eq_prod_image_fiber`, `TauCeti.sum_eq_sum_image_fiber`: `∏ i, F i` is the
   product, over the values `g` takes, of the products of `F` over the fibres of `g`.
+* `Equiv.prod_fiber_eq`, `Equiv.sum_fiber_eq`: taking a product or sum over a fibre of an
+  equivalence selects its unique term.
 * `TauCeti.prod_pow_card_filter_eq_prod_comp`, `TauCeti.sum_card_filter_nsmul_eq_sum_comp`: for
   `g` mapping `s` into `t`, `∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the
   size of the fibre of `g` over `j`.
@@ -51,6 +53,17 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- Taking a product over a fibre of an equivalence selects the unique term in that fibre. -/
+@[to_additive (attr := simp)
+  /-- Taking a sum over a fibre of an equivalence selects the unique term in that fibre. -/]
+theorem _root_.Equiv.prod_fiber_eq {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [CommMonoid M] (e : ι ≃ κ) (b : ι → M) (j : κ) :
+    ∏ i with e i = j, b i = b (e.symm j) := by
+  classical
+  simp only [← e.eq_symm_apply]
+  rw [filter_eq' univ (e.symm j)]
+  simp
 
 /-- **A finite product is the product over the values actually taken of the products over their
 fibres.** Multiplying `F` over all of `ι` is multiplying, over each `k` in the image of `g`, the

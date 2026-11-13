@@ -36,11 +36,6 @@ algebras, such as Whitehead's lemmas, therefore need no separate finiteness hypo
 * `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial Killing Lie algebra over a field the
   Killing form does not vanish on all brackets.
 
-## Roadmap
-
-This supports `TauCeti/Algebra/Lie/Killing/BaseChange.lean`, a prerequisite for Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, the Chevalley--Demazure construction.
-
 ## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §5.1, for the Killing

@@ -48,10 +48,13 @@ private theorem studentT_betaArgument_sqrt (hν : 0 < ν) {b : ℝ} (hb : b ∈ 
   field_simp [hb.1.ne', hν.ne']
   ring
 
-/-- The median quantile of a positive-degree Student t law is zero. -/
+/-- The median quantile of a Student t law is zero (for `ν ≤ 0` the law is the zero measure). -/
 @[simp]
-theorem quantile_studentTMeasure_half (hν : 0 < ν) :
+theorem quantile_studentTMeasure_half :
     (studentTMeasure ν).quantile (2⁻¹) = 0 := by
+  by_cases hν : 0 < ν
+  swap
+  · rw [studentTMeasure_of_nonpos (not_lt.1 hν), Measure.quantile_zero]
   have hF : cdf (studentTMeasure ν) 0 = 2⁻¹ := by
     have harg : ν / (ν + (0 : ℝ) ^ 2) = 1 := by simp [hν.ne']
     rw [cdf_studentTMeasure_eq hν, ite_eq_right (by norm_num), harg,
@@ -67,7 +70,7 @@ theorem quantile_studentTMeasure_pos (hν : 0 < ν) (hu : u ∈ Ioo 2⁻¹ 1) :
   have h := Measure.strictMonoOn_quantile _ (continuous_cdf_studentTMeasure hν)
     (by norm_num : (2⁻¹ : ℝ) ∈ Ioo 0 1)
     (by constructor <;> linarith [hu.1, hu.2] : u ∈ Ioo 0 1) hu.1
-  simpa only [quantile_studentTMeasure_half hν] using h
+  simpa only [quantile_studentTMeasure_half] using h
 
 private theorem quantile_studentTMeasure_of_lt_half (hν : 0 < ν) (hu0 : 0 < u)
     (huHalf : u < 1 / 2) :
@@ -116,7 +119,7 @@ theorem quantile_studentTMeasure (hν : 0 < ν) (hu : u ∈ Ioo 0 1) :
         sqrt (ν * (1 / inverseRegularizedIncompleteBeta (ν / 2) (1 / 2) (2 * (1 - u)) - 1)) := by
   split_ifs with hlt heq
   · exact quantile_studentTMeasure_of_lt_half hν hu.1 hlt
-  · rw [heq, one_div, quantile_studentTMeasure_half hν]
+  · rw [heq, one_div, quantile_studentTMeasure_half]
   · exact quantile_studentTMeasure_of_half_lt hν hu.2 (lt_of_le_of_ne (not_lt.1 hlt) (Ne.symm heq))
 
 /-- Student t quantiles tend to minus infinity as the probability level tends to zero from above. -/

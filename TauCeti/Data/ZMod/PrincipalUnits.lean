@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Artinian.Module
 -- Supplies completeness of Artinian local rings, needed by the Henselian instance.
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod.LocalRing
+import TauCeti.Data.ZMod.ExactDivisor
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.RingTheory.Henselian.Basic
 
@@ -41,6 +42,8 @@ reduction differ by a principal unit whose `n`-th power is `1`.
   modulo `p` has a unique `n`-th root among the units congruent to one modulo `p`.
 * `ZMod.isSquare_of_unitsMap_eq_one`: for an odd prime `p`, a unit of `ZMod (p ^ (k + 1))`
   congruent to one modulo `p` is a square.
+* `ZMod.isSquare_of_unitsMap_div_eq_one`: for an odd prime `p` with `p ^ 2 ∣ N`, every unit
+  modulo `N` that is `1` modulo `N / p` is a square.
 * `ZMod.natCard_nthRoots_prime_pow_eq_natCard_nthRoots`: for `n` coprime to `p`, a unit `a` has
   as many `n`-th roots modulo `p ^ k` as modulo `p`.
 
@@ -50,6 +53,8 @@ reduction differ by a principal unit whose `n`-th power is `1`.
 -/
 
 public section
+
+open scoped TauCeti.ExactDivisor
 
 namespace ZMod
 
@@ -92,6 +97,30 @@ theorem isSquare_of_unitsMap_eq_one {p k : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
   have hn : Nat.Coprime 2 p := (Nat.coprime_primes Nat.prime_two hp).2 hp2.symm
   obtain ⟨v, ⟨-, hv⟩, -⟩ := existsUnique_pow_eq_of_unitsMap_eq_one hp hn hu
   exact ⟨v, by rw [← hv, sq]⟩
+
+/-- **Units that are `1` modulo `N / p` are squares, for an odd prime `p` with `p ^ 2 ∣ N`.**
+Modulo the exact power `p ^ k` of `p` in `N` such a unit is `1` modulo `p`, so it is a square
+there (`ZMod.isSquare_of_unitsMap_eq_one`); modulo the prime-to-`p` part it is `1`. The Chinese
+remainder theorem glues the two square roots. -/
+theorem isSquare_of_unitsMap_div_eq_one {N p : ℕ} [NeZero N] (hp : p.Prime) (hp2 : p ≠ 2)
+    (hN : p ^ 2 ∣ N) {h : N / p ∣ N} {u : (ZMod N)ˣ} (hu : unitsMap h u = 1) : IsSquare u := by
+  have hN0 : N ≠ 0 := NeZero.ne N
+  have hk : 2 ≤ N.factorization p := (hp.pow_dvd_iff_le_factorization hN0).mp hN
+  obtain ⟨k, hk'⟩ : ∃ k, N.factorization p = k + 1 := ⟨N.factorization p - 1, by omega⟩
+  have hQ : p ^ (k + 1) ∥ N := hk' ▸ TauCeti.Nat.isExactDivisor_primePow
+  -- Both `p` and the prime-to-`p` part `N / p ^ (k + 1)` divide `N / p`.
+  have hpN : p ∣ N := (dvd_pow_self p two_ne_zero).trans hN
+  have hpNp : p ∣ N / p := (Nat.dvd_div_iff_mul_dvd hpN).mpr (by rwa [← sq])
+  have hp1 : p ∣ p ^ (k + 1) := dvd_pow_self p k.succ_ne_zero
+  have hcomp : N / p ^ (k + 1) ∣ N / p := Nat.div_dvd_div_left hQ.dvd hp1
+  have h1 : unitsMap hp1 (hQ.unitsEquivProd u).1 = 1 := by
+    rw [hQ.unitsEquivProd_apply_fst, ← MonoidHom.comp_apply, unitsMap_comp,
+      ← unitsMap_comp hpNp h, MonoidHom.comp_apply, hu, map_one]
+  have h2 : (hQ.unitsEquivProd u).2 = 1 := by
+    rw [hQ.unitsEquivProd_apply_snd, ← unitsMap_comp hcomp h, MonoidHom.comp_apply, hu, map_one]
+  obtain ⟨v, hv⟩ := isSquare_of_unitsMap_eq_one hp hp2 h1
+  refine ⟨hQ.unitsEquivProd.symm (v, 1), hQ.unitsEquivProd.injective ?_⟩
+  rw [map_mul, MulEquiv.apply_symm_apply, Prod.mk_mul_mk, mul_one, ← hv, ← h2]
 
 /-- **Hensel's lemma for `n`-th roots, as a count.** For `n` coprime to the prime `p`, an integer
 `a` prime to `p` and `k ≠ 0`, reduction modulo `p` is a bijection from the `n`-th roots of `a`

@@ -61,7 +61,7 @@ theorem radialCore_mono {U W : Set (TotalSpace F E)} (h : U ⊆ W) :
   constructor
   · intro hx
     exact radialCore_subset U hx
-  · intro hx t ht
+  · intro hx t _
     have ht0 : t • (0 : E x) = 0 := smul_zero t
     exact (congrArg (fun v : E x => (⟨x, v⟩ : TotalSpace F E) ∈ U) ht0).mpr hx
 

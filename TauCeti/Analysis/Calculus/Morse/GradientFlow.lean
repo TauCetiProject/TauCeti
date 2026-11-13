@@ -61,6 +61,8 @@ route to Morse homology.
   consists entirely of critical points and is constant.
 * `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
   not stationary.
+* `IsIntegralCurve.eq_const_of_tendsto`: a trajectory with the same limit at both ends is
+  constant.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.
 * `Flow.IsNegativeGradient.isIntegralCurve`: the orbit curve through a point, as an integral
@@ -197,10 +199,11 @@ theorem antitone_comp_neg_gradient
 /-- If a global negative gradient trajectory contains no critical point, then the value of `f` is
 strictly decreasing along it. -/
 theorem strictAnti_comp_neg_gradient
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
-    (hcrit : ∀ t, ∇ f (γ t) ≠ 0) :
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hcrit : ∀ t, ∇ f (γ t) ≠ 0) :
     StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg (fun t ↦ hasDerivAt_comp_neg_gradient hγ (hf t))
+  strictAnti_of_hasDerivAt_neg
+    (fun t ↦ hasDerivAt_comp_neg_gradient hγ
+      (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
@@ -213,9 +216,11 @@ theorem integral_norm_gradient_sq_eq_sub
 /-- If the value of `f` is eventually constant along a global negative gradient trajectory, then
 the gradient of `f` vanishes at the corresponding point. -/
 theorem gradient_eq_zero_of_eventually_const_value
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : DifferentiableAt ℝ f (γ t))
-    {c : ℝ} (hval : ∀ᶠ u in 𝓝 t, f (γ u) = c) :
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {c : ℝ} (hval : ∀ᶠ u in 𝓝 t, f (γ u) = c) :
     ∇ f (γ t) = 0 := by
+  by_cases hf : DifferentiableAt ℝ f (γ t)
+  swap
+  · exact gradient_eq_zero_of_not_differentiableAt hf
   have hzero : deriv (f ∘ γ) t = 0 := by
     have heq : (f ∘ γ) =ᶠ[𝓝 t] fun _ ↦ c := hval
     rw [heq.deriv_eq, deriv_const]
@@ -229,7 +234,7 @@ theorem gradient_eq_zero_of_periodic
     {T : ℝ} (hT : 0 < T) (hper : Periodic γ T) (t : ℝ) :
     ∇ f (γ t) = 0 := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  refine gradient_eq_zero_of_eventually_const_value hγ (hf t) (c := f (γ t)) ?_
+  refine gradient_eq_zero_of_eventually_const_value hγ (c := f (γ t)) ?_
   filter_upwards [Icc_mem_nhds (sub_lt_self t hT) (lt_add_of_pos_right t hT)] with u hu
   apply le_antisymm
   · simpa only [Function.comp_apply, hper.sub_eq] using hanti hu.1
@@ -257,6 +262,24 @@ theorem exists_gradient_ne_zero (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)
   rw [hconst] at hbot htop
   exact hpq ((tendsto_nhds_unique tendsto_const_nhds hbot).symm.trans
     (tendsto_nhds_unique tendsto_const_nhds htop))
+
+/-- **A negative gradient trajectory with the same limit at both ends is constant.** If `f` is
+differentiable along the trajectory and continuous at the common limit `p`, then `f` takes the
+value `f p` all along it, so its gradient vanishes there and the trajectory stays at `p`. -/
+theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p := by
+  have hanti := antitone_comp_neg_gradient hγ hf
+  have hval : ∀ t, f (γ t) = f p := fun t ↦
+    le_antisymm (hanti.ge_of_tendsto (hfp.tendsto.comp hbot) t)
+      (hanti.le_of_tendsto (hfp.tendsto.comp htop) t)
+  have hconst : ∀ t, γ t = γ 0 := fun t ↦
+    is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt) (fun u ↦ by
+      simp only [(hγ u).deriv, gradient_eq_zero_of_eventually_const_value hγ
+        (Eventually.of_forall fun r ↦ hval r), neg_zero]) t 0
+  funext t
+  rw [hconst t]
+  exact tendsto_nhds_unique tendsto_const_nhds (htop.congr hconst)
 
 end IsIntegralCurve
 

@@ -28,7 +28,7 @@ on:
         type: boolean
         default: false
       pr-head:
-        description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
+        description: Immutable PR head carried by the caller; PR fleet placement uses the shared pool
         type: string
         default: ""
       pr-number:
@@ -51,7 +51,7 @@ on:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
-        description: "Destination key: github, fleet, namespace, or a named machine preference; valid only for the matching attempt"
+        description: "Destination key: github, fleet, or a named machine preference; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
@@ -74,8 +74,7 @@ jobs:
     if: ${{ !inputs.control_smoke }}
     # Every picker must reach the fleet without first waiting for a GitHub build slot.
     # Keep control work small, high priority, and isolated to this workflow run.
-    # An operator can recover selection during a Namespace outage without a PR.
-    runs-on: ${{ inputs.fleet-staging && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || (vars.PICKER_GITHUB_FALLBACK == 'true' && 'ubuntu-24.04' || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id))) }}
+    runs-on: ${{ inputs.fleet-staging && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -109,10 +108,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ffc3b00f51a0c0ca0ab90730cd298d38413632ca
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ffc3b00f51a0c0ca0ab90730cd298d38413632ca
+          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
           project-directory: .
       - name: Read the allowlist using the existing organization App
         id: team-token

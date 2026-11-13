@@ -189,7 +189,6 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
         x ∉ tsupport ψ ∩ {x | l < W1p.value u x} → W1p.value z x = 0 := by
   set T := tsupport ψ
   set I := ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ T, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   -- The truncation at the higher level is dominated by the one at the lower level.
   have hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega) :=
     W1p.memLp_posPartAbove_of_le u hkl.le hwLp
@@ -207,7 +206,7 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
   replace hcacc : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤ A * J + B * I := hcacc
   -- `∇ψ` vanishes off the support of `ψ`, where `(u - l)⁺ ≤ (u - k)⁺`.
   have hJ : J ≤ G ^ 2 * I := by
-    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG hT
+    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG (S := T)
       (by simp [T]) hwLp.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl.le hwl)
     simpa only [J, I] using hbound
   refine ⟨z, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM'
@@ -272,11 +271,9 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
     exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli hkl hwLp hψ hcpt hts hG hA hcacc
   -- `z` vanishes off `A' = supp ψ ∩ {u > l}`, whose measure Chebyshev's inequality controls.
   set A' := T ∩ {x | l < W1p.value u x}
-  have hA' : MeasurableSet A' :=
-    hT.inter (measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable)
   have hAfin : mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≠ (∞ : ℝ≥0∞) :=
     ne_top_of_le_ne_top hTfin (measure_mono (inter_subset_right.trans inter_subset_left))
-  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hA' hAfin hvA
+  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hAfin hvA
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
@@ -439,14 +436,14 @@ zeroth-order term of the Caccioppoli inequality at the level `l`. -/
 private theorem setIntegral_sq_mul_posPart_sq_le {u : W1p mu Omega 2} {k l : ℝ} (hkl : k ≤ l)
     (hwk : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
     (hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψc : Continuous ψ) (hψ01 : range ψ ⊆ Icc 0 1) :
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ01 : range ψ ⊆ Icc 0 1) :
     ∫ x in Omega, ψ x ^ 2 *
       W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hwl) x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
         max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-  W1p.setIntegral_sq_mul_value_sq_le _ hψc.aestronglyMeasurable (fun x => by
+  W1p.setIntegral_sq_mul_value_sq_le _ (fun x => by
     obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
-    exact pow_le_one₀ h0 h1) (isClosed_tsupport ψ).measurableSet subset_rfl
+    exact pow_le_one₀ h0 h1) subset_rfl
     hwk.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl hwl)
 
 /-- One step of De Giorgi's iteration on balls. Suppose that the truncations `(u - l)⁺` at every
@@ -497,7 +494,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
     (B := B)
     ((hcacc.setIntegral_sq_mul_norm_gradient_sq_le (hk0.trans hkl.le) hwl hψ hcpt hts).trans
       (add_le_add le_rfl (mul_le_mul_of_nonneg_left
-        (setIntegral_sq_mul_posPart_sq_le hkl.le hwk hwl hψ.continuous hψ01) hB)))
+        (setIntegral_sq_mul_posPart_sq_le hkl.le hwk hwl hψ01) hB)))
   -- Integrability of the truncations on `Ω`, and nonnegativity.
   have hint : ∀ m : ℝ, k₀ ≤ m →
       IntegrableOn (fun x => max (W1p.value u x - m) 0 ^ 2) (Omega : Set _) mu :=
@@ -520,7 +517,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
     setIntegral_mono_set ((hint k hk0).mono_set
       ((Metric.ball_subset_ball hr₀R).trans hball))
       (Eventually.of_forall fun x => hnn k x)
-      ((inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallyLE)
+      (inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallySubset
   -- The cutoff and zeroth-order terms are both at most a multiple of `4ʲ R⁻²`.
   have hG := one_add_mul_div_div_two_pow_sq_add_le (A := A) (c := c) hB hR j
   refine hlhs.trans (hstep.trans ?_)
@@ -550,7 +547,6 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
     (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) {K : ℝ} (hK : 0 < K)
     {α : ℝ} (hα : α = 1 - 2 / q.toReal) (hα0 : 0 < α) {E : ℝ}
     (hE : 2 * (64 * c ^ 2 * (1 + A) + B * R ^ 2) * S ^ 2 ≤ E)
-    (hC : 0 < E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α))
     (hY0 : ∫ x in Metric.ball x₀ R, max (W1p.value u x - k₀) 0 ^ 2 ∂mu ≤
       (E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * (4 * 4 ^ α) ^ (-(α ^ 2)⁻¹)) :
     ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤ k₀ + K := by
@@ -573,10 +569,9 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
       (E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) * (4 * 4 ^ α) ^ j * Y j ^ (1 + α) := fun j => by
     refine (setIntegral_ball_max_sub_sq_succ_le hq hS hwLp hA hB hcacc hc hR hball hK hα
       j).trans ?_
-    have hYj : 0 ≤ Y j := integral_nonneg (hnn _)
     gcongr
   have hlim := tendsto_atTop_zero_of_le_mul_pow_mul_rpow (Y := Y)
-    (fun j => integral_nonneg (hnn _)) hC hb hα0 (hY0'.trans_le hY0) hrec
+    (fun j => integral_nonneg (hnn _)) hb hα0 (hY0'.trans_le hY0) hrec
   -- The truncation at level `k₀ + K` on the half ball is below every term of the sequence.
   have hhalf : Metric.ball x₀ (R / 2) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (Metric.ball_subset_ball (by linarith)).trans hball
@@ -598,7 +593,7 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
                 le_rfl) 2
       _ ≤ Y j := setIntegral_mono_set ((hint _ (hlev j)).mono_set
             ((Metric.ball_subset_ball hr).trans hball))
-          (Eventually.of_forall (hnn _)) hsub.eventuallyLE
+          (Eventually.of_forall (hnn _)) hsub.eventuallySubset
   have hZ0 : ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu = 0 :=
     le_antisymm (ge_of_tendsto' hlim hZ) (integral_nonneg (hnn _))
   exact MeasureTheory.ae_le_of_setIntegral_max_sub_sq_eq_zero
@@ -706,7 +701,6 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   have hE₁ : E₁ = F * M * (S : ℝ) ^ 2 := by
     simp only [E₁, E, F]
     ring
-  have hE₁0 : 0 < E₁ := hE₁ ▸ by positivity
   set Y₀ := ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hY₀ : 0 ≤ Y₀ := integral_nonneg fun x => by positivity
   rcases hY₀.eq_or_lt with hzero | hpos
@@ -720,7 +714,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   · set K := √(F ^ α⁻¹ * b ^ (α ^ 2)⁻¹) * M ^ (2 * α)⁻¹ * (S : ℝ) ^ α⁻¹ * R ^ (-α⁻¹) * √Y₀
     have hK : 0 < K := by positivity
     refine ae_value_le_of_setIntegral_le hq.le hS hwLp hA hB hcacc hc' hR hball hK hα hα0 hE
-      (mul_pos (mul_pos hE₁0 (by positivity)) (by positivity)) (le_of_eq ?_)
+      (le_of_eq ?_)
     -- `K` was chosen to make `Y₀` exactly the threshold. The `change` only folds the recursion
     -- constant back into the abbreviations `E₁` and `b`, which `set` does not do for new goals.
     change Y₀ = (E₁ * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)
@@ -1108,7 +1102,7 @@ private theorem ae_le_mul_sub_rpow_mul_sqrt_setIntegral {w : EuclideanSpace ℝ 
   -- The `L²` norm over the smaller ball is at most that over `B(x₀, ρ)`.
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (setIntegral_mono_set
     (hint.mono_set (Metric.ball_subset_ball hρR)) (Eventually.of_forall fun x => sq_nonneg (w x))
-    hsub.eventuallyLE)) (mul_nonneg hD (Real.rpow_nonneg (sub_pos.2 hrρ).le e))
+    hsub.eventuallySubset)) (mul_nonneg hD (Real.rpow_nonneg (sub_pos.2 hrρ).le e))
 
 /-- In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, for `w ≥ 0` and `r < ρ ≤ R`,
 the essential supremum of `w` on `B(x₀, r)` is a real number at most
@@ -1132,7 +1126,7 @@ private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι →
       hρR).mono fun x hx => by rwa [Real.norm_of_nonneg (hw0 x)])
   refine ⟨ENNReal.toReal_le_of_le_ofReal hb h1, ?_⟩
   filter_upwards [ae_le_eLpNormEssSup (f := w) (μ := mu.restrict (Metric.ball x₀ r))] with x hx
-  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_enorm, Real.norm_of_nonneg (hw0 x)]
+  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_eNorm, Real.norm_of_nonneg (hw0 x)]
     _ ≤ _ := ENNReal.toReal_mono (ne_top_of_le_ne_top ENNReal.ofReal_ne_top h1) hx
 
 /-- **The absorption step.** In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, let
@@ -1197,11 +1191,55 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   rw [← hZY]
   nlinarith
 
+/-- **A positive power of the radius forces vanishing.** If `w ≥ 0` is `L²` on `B(x₀, R)` and
+`w ≤ D s^e ‖w‖_{L²(B(y, s))}` a.e. on `B(y, s/2)` for all `B(y, s) ⊆ B(x₀, R)`, `0 < e`, then
+`w = 0` a.e. on `B(x₀, R/2)`. -/
+private theorem ae_eq_zero_of_forall_ball_le_mul_rpow {e : ℝ} (he : 0 < e) (D : ℝ)
+    {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+    (hw0 : ∀ x, 0 ≤ w x) (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
+    (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
+      ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
+        w x ≤ D * s ^ e * √(∫ x in Metric.ball y s, w x ^ 2 ∂mu)) :
+    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), w x = 0 := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+  set L := √(∫ x in Metric.ball x₀ R, w x ^ 2 ∂mu)
+  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1))
+  have hs0 : ∀ k, 0 < s k := fun k => by positivity
+  have hsR : ∀ k, s k ≤ R / 2 := fun k =>
+    div_le_div_of_nonneg_left hR.le two_pos (by linarith [Nat.cast_nonneg (α := ℝ) k])
+  have hk (k : ℕ) : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), w x ≤ max D 0 * s k ^ e * L := by
+    obtain ⟨t, hts, htc, hcov⟩ := countable_cover_nhdsWithin
+      (s := Metric.ball x₀ (R / 2)) (f := fun y => Metric.ball y (s k / 2))
+      fun y _ => nhdsWithin_le_nhds (Metric.ball_mem_nhds y (by linarith [hs0 k]))
+    refine ae_restrict_of_ae_restrict_of_subset hcov
+      ((ae_restrict_biUnion_iff _ htc _).2 fun y hy => ?_)
+    have hsub : Metric.ball y (s k) ⊆ Metric.ball x₀ R := fun z hz => by
+      rw [Metric.mem_ball] at hz ⊢
+      have := Metric.mem_ball.1 (hts hy)
+      linarith [dist_triangle z y x₀, hsR k]
+    filter_upwards [H y (s k) (hs0 k) hsub] with x hx
+    refine hx.trans ?_
+    have hI := Real.sqrt_le_sqrt (setIntegral_mono_set hint
+      (Eventually.of_forall fun x => by positivity) (Eventually.of_forall hsub))
+    exact mul_le_mul (mul_le_mul_of_nonneg_right (le_max_left _ _)
+      (Real.rpow_nonneg (hs0 k).le _)) hI (Real.sqrt_nonneg _)
+      (mul_nonneg (le_max_right _ _) (Real.rpow_nonneg (hs0 k).le _))
+  have hs : Tendsto s atTop (𝓝 0) := tendsto_const_nhds.div_atTop
+    ((tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop).const_mul_atTop two_pos)
+  have hpow : Tendsto (fun k => s k ^ e) atTop (𝓝 0) := by
+    simpa [Function.comp_def, Real.zero_rpow he.ne'] using
+      (Real.continuousAt_rpow_const 0 e (Or.inr he.le)).tendsto.comp hs
+  have htend : Tendsto (fun k => max D 0 * s k ^ e * L) atTop (𝓝 0) := by
+    simpa using (hpow.const_mul (max D 0)).mul_const L
+  filter_upwards [ae_all_iff.2 hk] with x hx
+  exact le_antisymm (ge_of_tendsto' htend hx) (hw0 x)
+
 section L2ToLp
 
 variable [IsFiniteMeasureOnCompacts mu]
 
-/-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e ≤ 0`, `D` and `0 < p ≤ 2`. There is
+/-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e`, `D` and `0 < p ≤ 2`. There is
 `C > 0`, depending only on these, such that the following holds. Let `w ≥ 0` be square
 integrable on `B(x₀, R)` and suppose that on every ball `B(y, s) ⊆ B(x₀, R)`,
 
@@ -1212,7 +1250,7 @@ Then `w ≤ C R^{2e/p} ‖w‖_{Lᵖ(B(x₀, R))}` almost everywhere on `B(x₀,
 This is how local boundedness of subsolutions, proved by De Giorgi's or Moser's iteration with
 the `L²` norm on the right, is upgraded to every `Lᵖ` norm with `0 < p < 2`: the scaling
 exponent `e = -n/2` of the `L²` bound becomes `-n/p`. -/
-theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he : e ≤ 0) (D : ℝ)
+theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ) (D : ℝ)
     {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ C : ℝ, 0 < C ∧ ∀ {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       (∀ x, 0 ≤ w x) → MemLp w 2 (mu.restrict (Metric.ball x₀ R)) →
@@ -1221,6 +1259,14 @@ theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he 
           w x ≤ D * s ^ e * √(∫ x in Metric.ball y s, w x ^ 2 ∂mu)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         w x ≤ C * R ^ (2 * e / p) * (∫ x in Metric.ball x₀ R, w x ^ p ∂mu) ^ p⁻¹ := by
+  refine (le_or_gt e 0).symm.elim (fun he => ⟨1, one_pos, fun {w x₀ R} hw0 hw2 H => ?_⟩)
+    fun he => ?_
+  · rcases le_or_gt R 0 with hR | hR
+    · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+    filter_upwards [ae_eq_zero_of_forall_ball_le_mul_rpow he D hw0
+      hw2.integrable_sq H] with x hx
+    exact hx.le.trans (mul_nonneg (by positivity)
+      (Real.rpow_nonneg (integral_nonneg fun x => Real.rpow_nonneg (hw0 x) p) _))
   obtain ⟨C₀, hC₀, habs⟩ := exists_le_mul_mul_rpow_add_of_le_mul_add (θ := 1 / 2) (by norm_num)
     (by norm_num) (-(2 * e / p))
   set D' := max D 1
@@ -1278,8 +1324,8 @@ variable [mu.IsAddHaarMeasure]
 /-- Transfer of an `L²` local bound for `u` above the level `k` to every `Lᵖ` norm with
 `0 < p ≤ 2`, through `exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
 `(u - k)⁺`. -/
-private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ}
-    (he : e ≤ 0) (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
+private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ)
+    (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
@@ -1291,7 +1337,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_b
         W1p.value u x ≤ k + C * R ^ (2 * e / p) *
           (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he D hp hp2
+    exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) e D hp hp2
   refine ⟨C, hC, fun {Omega u k x₀ R} hball hu => ?_⟩
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -1337,12 +1383,11 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_eLpNorm_le (mu := mu)
       (lam := lam) (Lam := Lam) hq
-  have he : -(1 - 2 / q.toReal)⁻¹ ≤ 0 :=
-    neg_nonpos.2 (inv_nonneg.2 (one_sub_two_div_toReal_nonneg hq.le))
   -- Enlarge `S` to the positive constant `S + 1`.
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he
-      (D * ((S + 1 : ℝ≥0) : ℝ) ^ (1 - 2 / q.toReal)⁻¹) (by positivity) hp hp2
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
+      (-(1 - 2 / q.toReal)⁻¹) (D * ((S + 1 : ℝ≥0) : ℝ) ^ (1 - 2 / q.toReal)⁻¹)
+      (by positivity) hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hS hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub =>
     hbound (S := S + 1) (by positivity) h ha hu hs hsub fun v hv =>
@@ -1375,12 +1420,9 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
           (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
-  have he : -(Fintype.card ι : ℝ) / 2 ≤ 0 := by
-    have := Nat.cast_nonneg (α := ℝ) (Fintype.card ι)
-    linarith
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he D hD.le
-      hp hp2
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
+      (-(Fintype.card ι : ℝ) / 2) D hD.le hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs hsub
   rwa [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] at this

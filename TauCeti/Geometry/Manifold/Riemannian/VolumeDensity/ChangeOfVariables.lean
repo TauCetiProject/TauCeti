@@ -38,6 +38,8 @@ orientation is used, and `M` may have boundary or corners.
 
 ## Main results
 
+* `TauCeti.riemannianJacobian_unique`: for a basis consisting of a single vector, the Jacobian is
+  the norm of the image of that vector under the differential.
 * `TauCeti.riemannianJacobian_changeBasis`: a change of basis multiplies the Jacobian by the
   absolute value of its determinant.
 * `TauCeti.riemannianJacobian_eq_normDet`: for an orthonormal basis, the Jacobian is the norm
@@ -100,6 +102,13 @@ theorem riemannianJacobian_reindex (b : Module.Basis ι ℝ F) (e : ι ≃ ι') 
     ext i j
     simp only [Matrix.gram_apply, Matrix.submatrix_apply, Module.Basis.reindex_apply]
   rw [hm, Matrix.det_submatrix_equiv_self]
+
+/-- With respect to a basis consisting of a single vector, the Riemannian Jacobian is the norm of
+the image of that vector under the differential. -/
+theorem riemannianJacobian_unique [Unique ι] (b : Module.Basis ι ℝ F) (f : F → M) (x : F) :
+    riemannianJacobian (I := I) b f x = ‖mfderiv 𝓘(ℝ, F) I f x (b default)‖ := by
+  rw [riemannianJacobian_eq_sqrt_det_gram, Matrix.det_unique, Matrix.gram_apply]
+  exact (norm_eq_sqrt_real_inner _).symm
 
 /-- A change of basis multiplies the Riemannian Jacobian by the absolute value of the
 determinant of the change of basis. -/

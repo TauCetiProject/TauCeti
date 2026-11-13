@@ -70,8 +70,12 @@ changes the sign of the attaching map in reduced homology
   map of pairs `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
 * `OpenPartialHomeomorph.isClosedEmbedding_morseCharacteristicMap`: the characteristic map is a
   closed embedding.
+* `OpenPartialHomeomorph.disjoint_range_morseCharacteristicMap`: the cells of two charts with
+  disjoint sources are disjoint.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
+* `TauCeti.continuousOn_morseCellMap_family`: for a family of charts whose inverses are jointly
+  continuous, the cells depend continuously on the parameter.
 * `TauCeti.mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le`,
   `TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`: for `0 < ε`, a
   self-map `h` of the disc such that `χ ∘ h` sends the boundary sphere into the lower sublevel, for
@@ -327,13 +331,17 @@ theorem morseAttachingMap_comp_sublevelInclusion (hk : k ≤ n) (hε : 0 ≤ ε)
   exact congrArg (morseCellMap ψ hk ε)
     (TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down k w).symm
 
+/-- The characteristic map of the cell is injective. -/
+theorem morseCharacteristicMap_injective (hk : k ≤ n) (hε : 0 < ε) :
+    Injective (morseCharacteristicMap ψ hk hε.le hball hf) := fun v w hvw ↦
+  ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.2 w.down.2 congr(($hvw : M))
+
 /-- The characteristic map of the cell is a closed embedding of the unit disc into the sublevel
 `M_{c+ε}`, when `M` is Hausdorff. -/
 theorem isClosedEmbedding_morseCharacteristicMap [T2Space M] (hk : k ≤ n) (hε : 0 < ε) :
     IsClosedEmbedding (morseCharacteristicMap ψ hk hε.le hball hf) :=
-  (morseCharacteristicMap ψ hk hε.le hball hf).hom.continuous.isClosedEmbedding fun v w hvw ↦
-    ULift.ext <| Subtype.ext <| injOn_morseCellMap hball hk hε v.down.2 w.down.2
-      congr(($hvw : M))
+  (morseCharacteristicMap ψ hk hε.le hball hf).hom.continuous.isClosedEmbedding
+    (morseCharacteristicMap_injective hball hf hk hε)
 
 /-- A point of the disc is sent by the characteristic map into the lower sublevel `M_{c-ε}`
 exactly when it lies on the boundary sphere: the characteristic map is a map of pairs
@@ -345,6 +353,30 @@ theorem preimage_morseCharacteristicMap_sublevel (hk : k ≤ n) (hε : 0 < ε) :
   rw [mem_range_diskBoundaryInclusion_iff, ← mem_sphere_zero_iff_norm,
     ← closedBall_inter_preimage_morseCellMap_sublevel hball hf hk hε]
   exact ⟨fun h ↦ ⟨w.down.2, h⟩, fun h ↦ h.2⟩
+
+/-- A point of the disc carried by the characteristic map into the lower sublevel `M_{c-ε}`,
+viewed inside `M_{c+ε}`, lies on the boundary sphere. -/
+theorem mem_range_diskBoundaryInclusion_of_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε)
+    (v : TopCat.disk.{u} k)
+    (hv : morseCharacteristicMap ψ hk hε.le hball hf v ∈
+      range (TopCat.ofHom (sublevelInclusion f (c - ε) (c + ε) (by linarith)))) :
+    v ∈ range (TopCat.diskBoundaryInclusion.{u} k) := by
+  obtain ⟨x, hx⟩ := hv
+  rw [← preimage_morseCharacteristicMap_sublevel hball hf hk hε, mem_preimage, mem_ofPred_eq, ← hx]
+  exact (congrArg f (coe_sublevelInclusion_apply f _ x)).trans_le x.2
+
+/-- The cells of two charts with disjoint sources are disjoint. -/
+theorem disjoint_range_morseCharacteristicMap {k' : ℕ}
+    {ψ' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hψ : Disjoint ψ.source ψ'.source)
+    (hball' : closedBall 0 √ε ⊆ ψ'.target)
+    (hf' : ∀ y ∈ ψ'.source, f y = c + ∑ j, (if j.val < k' then -1 else 1) * ψ' y j ^ 2)
+    (hk : k ≤ n) (hk' : k' ≤ n) (hε : 0 ≤ ε) :
+    Disjoint (range (morseCharacteristicMap ψ hk hε hball hf))
+      (range (morseCharacteristicMap ψ' hk' hε hball' hf')) :=
+  disjoint_left.2 fun _ ⟨v, hv⟩ ⟨w, hw⟩ ↦ hψ.ne_of_mem
+    (morseCellMap_mem_source hball hk (mem_closedBall_zero_iff.1 v.down.2))
+    (morseCellMap_mem_source hball' hk' (mem_closedBall_zero_iff.1 w.down.2))
+    congr(($(hv.trans hw.symm) : M))
 
 /-- The image of the characteristic map is the cell `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}` of the
 chart, viewed in the sublevel `M_{c+ε}`. -/
@@ -362,6 +394,30 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
 end OpenPartialHomeomorph
 
 namespace TauCeti
+
+section Family
+
+variable {M : Type u} [TopologicalSpace M] {n k : ℕ} {ε : ℝ} {P : Type*} [TopologicalSpace P]
+
+/-- The cells `(p, w) ↦ (ψ p)⁻¹(√ε • (w, 0))` of a family of charts whose inverses are jointly
+continuous on the closed ball of radius `√ε` depend continuously on the parameter and the point of
+the unit disc. -/
+theorem continuousOn_morseCellMap_family
+    {ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : k ≤ n)
+    (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε)) :
+    ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin k) ↦ (ψ q.1).morseCellMap hk ε q.2)
+      (univ ×ˢ closedBall 0 1) :=
+  (hs.comp (s := univ ×ˢ closedBall 0 1) (Continuous.continuousOn
+      (f := fun q : P × EuclideanSpace ℝ (Fin k) ↦
+        (q.1, √ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) q.2)) (by fun_prop))
+    fun q hq ↦ ⟨mem_univ _, by
+      rw [mem_closedBall_zero_iff, norm_smul, LinearIsometry.norm_map,
+        Real.norm_of_nonneg (Real.sqrt_nonneg ε)]
+      exact mul_le_of_le_one_right (Real.sqrt_nonneg ε) (mem_closedBall_zero_iff.1 hq.2)⟩).congr
+    fun q _ ↦ OpenPartialHomeomorph.morseCellMap_def hk q.2
+
+end Family
 
 section Boundary
 

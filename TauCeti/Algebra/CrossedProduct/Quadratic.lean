@@ -189,10 +189,13 @@ theorem cohomologous_quadratic_iff (a b : Kˣ) :
     (quadratic h a).Cohomologous (quadratic h b) ↔ a / b ∈ normGroup K L := by
   simp
 
+omit [FiniteDimensional K L] in
 /-- **Every `2`-cocycle of a quadratic Galois extension is cohomologous to a quadratic cocycle.**
 -/
 theorem exists_cohomologous_quadratic (z : TwoCocycle K L) :
     ∃ b : Kˣ, z.Cohomologous (quadratic h b) := by
+  have : Finite (L ≃ₐ[K] L) := Nat.finite_of_card_ne_zero (by omega)
+  have := IsGalois.finiteDimensional_of_finite K L
   obtain ⟨σ, hσ⟩ := exists_forall_mem_zpowers h
   obtain ⟨b, hb⟩ := cyclicClass_surjective hσ z.cohomologyClass
   exact ⟨b.toMul, by rw [cohomologous_iff_cohomologyClass_eq, cohomologyClass_quadratic h hσ,

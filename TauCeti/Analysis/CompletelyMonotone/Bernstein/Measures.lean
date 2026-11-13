@@ -62,8 +62,6 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
-
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
 -/
@@ -531,7 +529,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF_deriv : ∀ t ∈ Ioo 0 T, HasDerivAt F
       (chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t) t := fun t ht => by
     have hg : HasDerivAt g (iteratedDerivWithin (m + 2) f (Ici 0) t) t :=
-      hf.hasDerivAt_iteratedDerivWithin (mod_cast (m + 1).lt_succ_self) (uniqueDiffOn_Ici 0)
+      hf.hasDerivAt_iteratedDerivWithin (mod_cast (m + 1).lt_succ_self)
         (Ici_mem_nhds ht.1)
     exact (chafaiDensity_succ_succ_sub_succ f m t).symm ▸
       (hasDerivAt_pow (m + 1) t).mul (hg.const_mul _)

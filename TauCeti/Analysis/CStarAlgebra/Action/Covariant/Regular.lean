@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
-public import TauCeti.RepresentationTheory.Continuous.LeftRegular
+public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Group.Convolution.Support
@@ -176,7 +176,6 @@ private theorem tendsto_regular_coefficient_indicatorConstLp [PartialOrder A] {l
       (𝓝 (indicatorConstLp 2 ht hμt (ρ b w))) := by
   set ξ := indicatorConstLp 2 ht hμt (ρ b w)
   set C := μ.real t ^ (1 / (2 : ℝ≥0∞).toReal) * ‖w‖
-  have hC : 0 ≤ C := by positivity
   have hunif := Metric.tendstoUniformlyOn_iff.1 <|
     hl.tendstoUniformlyOn_mul_right (htc.image (α.continuous_orbit b))
   refine Metric.tendsto_nhds.2 fun ε hε => ?_
