@@ -15,10 +15,9 @@ public import Mathlib.Data.Finsupp.Order
 /-!
 # Tropical coefficient semifields
 
-`CoefficientSemifield.ofInf` turns a lattice-ordered additive commutative group into a
-coefficient semifield on its multiplicative type tag. Auxiliary addition is infimum,
-and multiplication is addition of exponents. Applying the construction to the order dual
-gives supremum as auxiliary addition.
+`InfTropical A` is the tropicalization of a lattice-ordered additive commutative group.
+Auxiliary addition is infimum, and multiplication is addition of exponents. Taking the
+order dual of the exponent group gives supremum as auxiliary addition.
 
 The tropical coefficient semifield `Trop J` is the free abelian group on `J`, with auxiliary
 addition given by the componentwise minimum of exponents. Its generators encode the frozen
@@ -43,56 +42,80 @@ public section
 
 namespace TauCeti
 
-/-- The coefficient semifield of a lattice-ordered additive commutative group, with
-infimum as auxiliary addition. Use the order dual for supremum. -/
-@[expose, instance_reducible]
-def CoefficientSemifield.ofInf (A : Type*) [AddCommGroup A] [Lattice A]
-    [IsOrderedAddMonoid A] : CoefficientSemifield (Multiplicative A) where
-  toCommGroup := inferInstance
+/-- The type of min-tropical exponents. Its coefficient semifield structure uses
+infimum as auxiliary addition and the original addition as multiplication. -/
+@[expose]
+def InfTropical (A : Type*) := Multiplicative A
+
+namespace InfTropical
+
+variable {A : Type*}
+
+/-- Interpret an exponent as a min-tropical element. -/
+@[expose]
+def ofAdd (a : A) : InfTropical A := Multiplicative.ofAdd a
+
+instance [Unique A] : Unique (InfTropical A) := inferInstanceAs (Unique (Multiplicative A))
+
+/-- Infimum distributes over translations in a lattice-ordered additive commutative group. -/
+instance instCoefficientSemifield [AddCommGroup A] [Lattice A] [IsOrderedAddMonoid A] :
+    CoefficientSemifield (InfTropical A) where
+  toCommGroup := inferInstanceAs (CommGroup (Multiplicative A))
   add a b := Multiplicative.ofAdd (a.toAdd ⊓ b.toAdd)
   add_assoc a b c := congrArg Multiplicative.ofAdd (inf_assoc a.toAdd b.toAdd c.toAdd)
   add_comm a b := congrArg Multiplicative.ofAdd (inf_comm a.toAdd b.toAdd)
   left_distrib a b c := congrArg Multiplicative.ofAdd (add_inf b.toAdd c.toAdd a.toAdd)
   right_distrib a b c := congrArg Multiplicative.ofAdd (inf_add a.toAdd b.toAdd c.toAdd)
 
-/-- Finitely supported exponents form a tropical coefficient semifield with pointwise
-infimum as auxiliary addition. -/
-noncomputable instance CoefficientSemifield.instFinsupp {J A : Type*} [AddCommGroup A]
-    [Lattice A] [IsOrderedAddMonoid A] : CoefficientSemifield (Multiplicative (J →₀ A)) :=
-  CoefficientSemifield.ofInf (J →₀ A)
+variable [AddCommGroup A] [Lattice A] [IsOrderedAddMonoid A]
+
+@[simp]
+theorem toAdd_one :
+    (1 : InfTropical A).toAdd = (0 : A) :=
+  (rfl)
+
+@[simp]
+theorem toAdd_inv (a : InfTropical A) :
+    a⁻¹.toAdd = -a.toAdd :=
+  (rfl)
+
+@[simp]
+theorem toAdd_mul (a b : InfTropical A) :
+    (a * b).toAdd = a.toAdd + b.toAdd :=
+  (rfl)
+
+@[simp]
+theorem toAdd_zpow (a : InfTropical A) (n : ℤ) :
+    (a ^ n).toAdd = n • a.toAdd :=
+  (rfl)
+
+@[simp]
+theorem toAdd_add (a b : InfTropical A) :
+    (a + b).toAdd = a.toAdd ⊓ b.toAdd :=
+  (rfl)
+
+@[simp]
+theorem ofAdd_inf (a b : A) : ofAdd (a ⊓ b) = ofAdd a + ofAdd b :=
+  (rfl)
+
+/-- Tropical addition is idempotent. -/
+@[simp]
+theorem add_self (a : InfTropical A) : a + a = a := by
+  apply Multiplicative.toAdd.injective
+  simp
+
+end InfTropical
 
 /-- The tropical coefficient semifield on `J`: finitely supported integer exponents,
 with multiplication adding exponents and auxiliary addition taking their minimum. -/
-abbrev Trop (J : Type*) := Multiplicative (J →₀ ℤ)
+abbrev Trop (J : Type*) := InfTropical (J →₀ ℤ)
 
 namespace Trop
 
 variable {J J' J'' : Type*}
 
-section OrderedExponents
-
-variable {A : Type*} [AddCommGroup A] [Lattice A] [IsOrderedAddMonoid A]
-
-@[simp]
-theorem toAdd_add (a b : Multiplicative (J →₀ A)) :
-    (a + b).toAdd = a.toAdd ⊓ b.toAdd :=
-  (rfl)
-
-@[simp]
-theorem ofAdd_inf (a b : J →₀ A) :
-    Multiplicative.ofAdd (a ⊓ b) = Multiplicative.ofAdd a + Multiplicative.ofAdd b :=
-  (rfl)
-
-/-- Tropical addition is idempotent. -/
-@[simp]
-theorem add_self (a : Multiplicative (J →₀ A)) : a + a = a := by
-  apply Multiplicative.toAdd.injective
-  simp
-
-end OrderedExponents
-
 /-- The tropical generator with exponent one at `j` and zero elsewhere. -/
-noncomputable def generator (j : J) : Trop J := Multiplicative.ofAdd (Finsupp.single j 1)
+noncomputable def generator (j : J) : Trop J := InfTropical.ofAdd (Finsupp.single j 1)
 
 @[simp]
 theorem toAdd_generator (j : J) : (generator j).toAdd = Finsupp.single j 1 :=
@@ -102,7 +125,7 @@ theorem toAdd_generator (j : J) : (generator j).toAdd = Finsupp.single j 1 :=
 @[simp]
 theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
     freeAbelianCharEquiv.symm q (generator j) = q j := by
-  simpa only [generator] using freeAbelianCharEquiv_symm_apply_ofAdd_single q j
+  exact freeAbelianCharEquiv_symm_apply_ofAdd_single q j
 
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
@@ -126,37 +149,44 @@ variable {A : Type*} [AddCommGroup A] [Lattice A] [IsOrderedAddMonoid A]
 
 /-- Relabelling the exponent indices is an isomorphism of coefficient semifields. -/
 noncomputable def reindex (e : J ≃ J') :
-    Multiplicative (J →₀ A) ≃+* Multiplicative (J' →₀ A) where
+    InfTropical (J →₀ A) ≃+* InfTropical (J' →₀ A) where
   toEquiv := Multiplicative.toAdd.trans ((Finsupp.equivCongrLeft e).trans Multiplicative.ofAdd)
   map_mul' a b := by
     apply Multiplicative.toAdd.injective
     ext j
-    simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_apply]
+    change a.toAdd (e.symm j) + b.toAdd (e.symm j) = _
+    rfl
   map_add' a b := by
     apply Multiplicative.toAdd.injective
     ext j
-    simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_apply]
+    change (a.toAdd ⊓ b.toAdd) (e.symm j) =
+      (Finsupp.equivMapDomain e a.toAdd ⊓ Finsupp.equivMapDomain e b.toAdd) j
+    simp
 
 @[simp]
 theorem reindex_ofAdd (e : J ≃ J') (a : J →₀ A) :
-    reindex e (Multiplicative.ofAdd a) = Multiplicative.ofAdd (Finsupp.equivMapDomain e a) :=
+    reindex e (InfTropical.ofAdd a) = InfTropical.ofAdd (Finsupp.equivMapDomain e a) :=
   (rfl)
 
 @[simp]
-theorem toAdd_reindex (e : J ≃ J') (a : Multiplicative (J →₀ A)) (j : J') :
+theorem toAdd_reindex (e : J ≃ J') (a : InfTropical (J →₀ A)) (j : J') :
     (reindex e a).toAdd j = a.toAdd (e.symm j) :=
   (rfl)
 
 @[simp]
-theorem reindex_refl : reindex (Equiv.refl J) = RingEquiv.refl (Multiplicative (J →₀ A)) := by
-  ext a j
+theorem reindex_refl : reindex (Equiv.refl J) = RingEquiv.refl (InfTropical (J →₀ A)) := by
+  ext a
+  apply Multiplicative.toAdd.injective
+  ext j
   simp
 
 /-- Relabellings compose in the same order as equivalences of the index sets. -/
 @[simp]
 theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
     reindex (A := A) (e.trans e') = (reindex e).trans (reindex e') := by
-  ext a j
+  ext a
+  apply Multiplicative.toAdd.injective
+  ext j
   simp
 
 @[simp]
@@ -176,7 +206,10 @@ homomorphism, with no assertion that it preserves auxiliary addition. -/
 theorem eval_reindex {Q : Type*} [CommGroup Q] (q : J' → Q) (e : J ≃ J') (a : Trop J) :
     freeAbelianCharEquiv.symm q (reindex e a) =
       freeAbelianCharEquiv.symm (q ∘ e) a := by
-  induction a using Multiplicative.rec
+  change freeAbelianCharEquiv.symm q (reindex e (InfTropical.ofAdd a.toAdd)) =
+    freeAbelianCharEquiv.symm (q ∘ e) (Multiplicative.ofAdd a.toAdd)
+  rw [reindex_ofAdd]
+  change freeAbelianCharEquiv.symm q (Multiplicative.ofAdd (Finsupp.equivMapDomain e a.toAdd)) = _
   simp [Finsupp.prod_equivMapDomain]
 
 end Trop
@@ -201,20 +234,21 @@ variable {J A : Type*} [AddCommGroup A] [LinearOrder A] [IsOrderedAddMonoid A]
 /-- For finite `J`, a tropical monomial is equivalently an arbitrary tuple of
 exponents, regarded as one-dimensional tropical numbers. Both operations are componentwise. -/
 noncomputable def equivFun [Finite J] :
-    Multiplicative (J →₀ A) ≃+* (J → MinTropical A) where
+    InfTropical (J →₀ A) ≃+* (J → MinTropical A) where
   toEquiv := Multiplicative.toAdd.trans
     (Finsupp.equivFunOnFinite.trans (Equiv.piCongrRight fun _ => MinTropical.tropEquiv))
   map_mul' a b := by
     funext j
     apply MinTropical.untrop_injective
-    simp
+    rfl
   map_add' a b := by
     funext j
     apply MinTropical.untrop_injective
+    change (a.toAdd ⊓ b.toAdd) j = min (a.toAdd j) (b.toAdd j)
     simp
 
 @[simp]
-theorem equivFun_apply [Finite J] (a : Multiplicative (J →₀ A)) (j : J) :
+theorem equivFun_apply [Finite J] (a : InfTropical (J →₀ A)) (j : J) :
     equivFun a j = MinTropical.trop (a.toAdd j) :=
   (rfl)
 
@@ -232,7 +266,11 @@ example [IsEmpty J] : Unique (Trop J) := inferInstance
 example {Q : Type*} [CommGroup Q] (q : Fin 2 → Q) :
     freeAbelianCharEquiv.symm q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
       (q 0)⁻¹ * q 1 ^ (2 : ℤ) := by
-  simp
+  let z₀ : Multiplicative (Fin 2 →₀ ℤ) := generator 0
+  let z₁ : Multiplicative (Fin 2 →₀ ℤ) := generator 1
+  change freeAbelianCharEquiv.symm q (z₀⁻¹ * z₁ ^ (2 : ℤ)) = _
+  simpa only [map_mul, map_inv, map_zpow] using
+    congrArg₂ (fun x y : Q ↦ x⁻¹ * y ^ (2 : ℤ)) (eval_generator q 0) (eval_generator q 1)
 
 /-- Transposing two generators exchanges their exponents. -/
 example : reindex (Equiv.swap (0 : Fin 2) 1)
