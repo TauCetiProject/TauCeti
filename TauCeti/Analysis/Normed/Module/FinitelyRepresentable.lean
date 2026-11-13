@@ -214,14 +214,13 @@ theorem finitelyRepresentable_completion_iff :
 
 end Completion
 
-section DenselyNormedField
+section NontriviallyNormedField
 
-variable {𝕜 E F : Type*} [DenselyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Over a densely normed field, a finitely representable space has, for every `ε > 0`, every
-finite-dimensional subspace isomorphic to a subspace of the ambient space at Banach–Mazur
-distance less than `1 + ε`. -/
+/-- If `E` is finitely representable in `F`, then for every `ε > 0` every finite-dimensional
+subspace of `E` is isomorphic to a subspace of `F` at Banach–Mazur distance less than `1 + ε`. -/
 theorem FinitelyRepresentable.exists_banachMazurDist_lt (h : FinitelyRepresentable 𝕜 E F)
     (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] {ε : ℝ} (hε : 0 < ε) :
     ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε := by
@@ -258,9 +257,16 @@ theorem FinitelyRepresentable.exists_banachMazurDist_lt (h : FinitelyRepresentab
       rw [← div_eq_mul_inv, div_lt_iff₀ hδ1]
       nlinarith
 
+end NontriviallyNormedField
 
-/-- A space whose finite-dimensional subspaces are, for every `ε > 0`, isomorphic to subspaces of
-`F` at Banach–Mazur distance less than `1 + ε`, is finitely representable in `F`. -/
+section DenselyNormedField
+
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over a densely normed field, if for every `ε > 0` every finite-dimensional subspace of `E` is
+isomorphic to a subspace of `F` at Banach–Mazur distance less than `1 + ε`, then `E` is finitely
+representable in `F`. -/
 theorem finitelyRepresentable_of_forall_exists_banachMazurDist_lt
     (h : ∀ S : Submodule 𝕜 E, FiniteDimensional 𝕜 S → ∀ ε : ℝ, 0 < ε →
       ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε) :
@@ -294,7 +300,6 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
         ∃ G : Submodule 𝕜 F, Nonempty (S ≃L[𝕜] G) ∧ banachMazurDist 𝕜 S G < 1 + ε :=
   ⟨fun h S _ _ hε ↦ h.exists_banachMazurDist_lt S hε,
     finitelyRepresentable_of_forall_exists_banachMazurDist_lt⟩
-
 
 end DenselyNormedField
 

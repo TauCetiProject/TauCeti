@@ -557,8 +557,8 @@ theorem mem_absolutelySummingOperators_one_iff {T : E →L[𝕜] F} :
   have : Denumerable ((Σ k, Fin (n k)) ⊕ (Σ k, Fin (n k))) := (nonempty_denumerable _).some
   let e := (Denumerable.eqv ((Σ k, Fin (n k)) ⊕ (Σ k, Fin (n k)))).symm
   have hTw : Summable fun j ↦ ‖T (w j)‖ := e.summable_iff.1 (h _ (e.summable_iff.2 hw.summable))
-  have hTz := hTw.comp_injective Sum.inl_injective
-  change Summable fun j : (Σ k, Fin (n k)) ↦ ‖T (y j.1 j.2)‖ at hTz
+  have hTz : Summable fun j : (Σ k, Fin (n k)) ↦ ‖T (y j.1 j.2)‖ :=
+    hTw.comp_injective Sum.inl_injective
   rw [summable_sigma_of_nonneg fun _ ↦ norm_nonneg _] at hTz
   simp only [hsum, summable_const_iff] at hTz
   exact one_ne_zero hTz.2

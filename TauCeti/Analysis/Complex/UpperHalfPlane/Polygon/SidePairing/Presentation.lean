@@ -262,22 +262,6 @@ private theorem of_eq_inv_mk_partialCycleWord {i j : Fin n} {z : ℍ} (hj : P.ve
 
 variable {Γ : Subgroup PSL(2, ℝ)}
 
-/-- If a translate `g • P` by a nontrivial element `g` of `Γ` contains the geodesic segment between
-two distinct finite vertices, then these vertices lie on a common side, since the translate misses
-the interior of `P`. -/
-private theorem exists_mem_side_of_geodesicSegment_subset_smul_carrier
-    (hdisj : ∀ γ : Γ, γ ≠ 1 →
-      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {g : PSL(2, ℝ)} (hg : g ∈ Γ) (hg1 : g ≠ 1) {j j' : Fin n} {z z' : ℍ}
-    (hj : P.vertex j = .inl z) (hj' : P.vertex j' = .inl z') (hzz' : z ≠ z')
-    (hseg : geodesicSegment z z' ⊆ g • P.carrier) :
-    ∃ k, z ∈ P.side k ∧ z' ∈ P.side k := by
-  by_contra! hside
-  obtain ⟨v, hvseg, hvint⟩ := P.geodesicSegment_inter_interior_carrier_nonempty
-    (P.vertex_mem_carrier hj) (P.vertex_mem_carrier hj') hzz' hside
-  exact hg1 (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj Γ.one_mem
-    hg ⟨v, by simpa using hvint, hseg hvseg⟩).symm
-
 /-- Two inverse partial cycle products at finite vertices which give the same element of `Γ`
 have the same word in the relator quotient. If the vertices differ, the common translate
 contains both, so they are the endpoints of one side and the translate is its side neighbour. -/
@@ -305,8 +289,12 @@ private theorem mk_partialCycleWord_eq_of_partialCycleMap_eq (hmap : ∀ i, σ.m
     exact geodesicSegment_subset_carrier _ (by rw [carrier_smul]; exact hmem hj m)
       (by rw [carrier_smul, h]; exact hmem hj' m')
   -- the two vertices lie on a common side, since the translate misses the interior of `P`
-  obtain ⟨k, hzk, hz'k⟩ := exists_mem_side_of_geodesicSegment_subset_smul_carrier hdisj hgΓ
-    (inv_ne_one.2 h1) hj hj' hzz' hseg
+  obtain ⟨k, hzk, hz'k⟩ : ∃ k, z ∈ P.side k ∧ z' ∈ P.side k := by
+    by_contra! hside
+    obtain ⟨v, hvseg, hvint⟩ := P.geodesicSegment_inter_interior_carrier_nonempty
+      (P.vertex_mem_carrier hj) (P.vertex_mem_carrier hj') hzz' hside
+    exact h1 (inv_eq_one.1 (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj Γ.one_mem
+      hgΓ ⟨v, by simpa using hvint, hseg hvseg⟩).symm)
   have hsidek : P.side k ⊆ (σ.partialCycleMap j m)⁻¹ • P.carrier := by
     rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hj hzk with rfl | rfl <;>
       rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hj' hz'k with rfl | rfl

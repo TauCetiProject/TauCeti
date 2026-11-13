@@ -89,25 +89,6 @@ end Seminormed
 
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- A linear functional vanishing on the kernel of a linear functional `H` is a scalar multiple
-of `H`. -/
-theorem LinearMap.exists_eq_smul_of_ker_le_ker {R M : Type*} [Field R] [AddCommGroup M]
-    [Module R M] {H G : M →ₗ[R] R} (h : LinearMap.ker H ≤ LinearMap.ker G) :
-    ∃ c : R, G = c • H := by
-  have hle : ⨅ _ : Unit, LinearMap.ker H ≤ LinearMap.ker G := by rwa [iInf_const]
-  have hmem := mem_span_of_iInf_ker_le_ker (L := fun _ : Unit ↦ H) hle
-  rw [range_const, Submodule.mem_span_singleton] at hmem
-  obtain ⟨c, hc⟩ := hmem
-  exact ⟨c, hc.symm⟩
-
-/-- A real functional which is the real part of a functional `g` has the norm of `g`. -/
-theorem StrongDual.norm_eq_of_re_apply_eq [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
-    {g : StrongDual 𝕜 E} {G : StrongDual ℝ E} (h : ∀ x, re (g x) = G x) : ‖G‖ = ‖g‖ := by
-  have : (StrongDual.extendRCLikeₗᵢ (𝕜 := 𝕜) (F := E)).symm g = G := by
-    ext x
-    simp [StrongDual.extendRCLikeₗᵢ_symm_apply, h]
-  rw [← this, LinearIsometryEquiv.norm_map]
-
 namespace StrongDual
 
 /-- **The Bishop–Phelps lemma.** Let `0 ≤ k < 1` and `f ≠ 0`. If the real part of `h` is positive
@@ -144,10 +125,15 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
     simpa [Real.norm_eq_abs] using hker y y.2
   -- `F - F₁` vanishes on `ker H`, so it is a real multiple of `H`.
   obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ x, F x - F₁ x = c * H x := by
-    refine (LinearMap.exists_eq_smul_of_ker_le_ker (H := (H : E →ₗ[ℝ] ℝ))
-      (G := ((F - F₁ : StrongDual ℝ E) : E →ₗ[ℝ] ℝ)) fun y hy ↦ ?_).imp fun c hc x ↦ ?_
-    · simpa [sub_eq_zero] using (hF₁ ⟨y, hy⟩).symm
-    · simpa using LinearMap.congr_fun hc x
+    have hle : ⨅ _ : Unit, LinearMap.ker (H : E →ₗ[ℝ] ℝ) ≤
+        LinearMap.ker ((F - F₁ : StrongDual ℝ E) : E →ₗ[ℝ] ℝ) := by
+      rw [iInf_const]
+      intro y hy
+      simpa [sub_eq_zero] using (hF₁ ⟨y, hy⟩).symm
+    have hmem := mem_span_of_iInf_ker_le_ker hle
+    rw [range_const, Submodule.mem_span_singleton] at hmem
+    obtain ⟨c, hc⟩ := hmem
+    exact ⟨c, fun x ↦ by simpa using (LinearMap.congr_fun hc x).symm⟩
   -- Testing at a point of the open cone shows `c > 0`.
   obtain ⟨x₀, hx₀⟩ := f.exists_mul_norm_lt_re_apply hkf (by nlinarith [norm_pos_iff.2 hf])
   have hc₀ : 0 < c := by
@@ -157,12 +143,15 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
     exact (pos_iff_pos_of_mul_pos h₂).2 (hpos x₀ hx₀)
   refine ⟨c, hc₀, ?_⟩
   -- The real part of `f - c • h` is `F₁`; real-part restriction preserves the dual norm.
-  have heq : ‖F₁‖ = ‖f - (c : 𝕜) • h‖ := norm_eq_of_re_apply_eq fun x ↦ by
+  have heq : (extendRCLikeₗᵢ (𝕜 := 𝕜) (F := E)).symm (f - (c : 𝕜) • h) = F₁ := by
+    ext x
+    simp only [extendRCLikeₗᵢ_symm_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_restrictScalars', reCLM_apply, sub_apply, smul_apply, smul_eq_mul,
+      map_sub, re_ofReal_mul]
     have hcx := hc x
     rw [hF, hH] at hcx
-    simp only [sub_apply, smul_apply, smul_eq_mul, map_sub, re_ofReal_mul]
     linarith only [hcx]
-  rwa [← heq]
+  rwa [← (extendRCLikeₗᵢ (𝕜 := 𝕜) (F := E)).symm.norm_map, heq]
 
 /-- A point at which the real part of a nonzero functional attains its maximum on `C` lies on the
 boundary of `C`. -/
@@ -187,47 +176,6 @@ end StrongDual
 section RealModule
 
 variable [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] {C : Set E}
-
-/-- **Supporting functional from a separated cone.** Let `f` be a nonzero functional and
-`0 < k < 1`. If a functional `g` is below `u` on the open cone with vertex `x ∈ C` and direction
-`{w | k * ‖f‖ * ‖w‖ < re (f w)}`, and at least `u` on `C`, then `-g` is a nonzero support functional
-of `C` at `x`, with real part positive on the cone. -/
-theorem StrongDual.exists_isMaxOn_re_of_re_lt_of_le_re {C : Set E} {x : E} (f : StrongDual 𝕜 E)
-    (hf : f ≠ 0) {k : ℝ} (hk₀ : 0 < k) (hk₁ : k < 1) (hx : x ∈ C) {g : StrongDual 𝕜 E} {u : ℝ}
-    (hgs : ∀ y, k * ‖f‖ * ‖y - x‖ < re (f (y - x)) → re (g y) < u)
-    (hgC : ∀ b ∈ C, u ≤ re (g b)) :
-    ∃ h : StrongDual 𝕜 E, h ≠ 0 ∧ IsMaxOn (fun y ↦ re (h y)) C x ∧
-      ∀ w, k * ‖f‖ * ‖w‖ < re (f w) → 0 < re (h w) := by
-  have hkf : 0 < k * ‖f‖ := mul_pos hk₀ (norm_pos_iff.2 hf)
-  -- `x + w` lies in `s` for every `w` in the open cone.
-  have hcone (w : E) (hw : k * ‖f‖ * ‖w‖ < re (f w)) :
-      k * ‖f‖ * ‖x + w - x‖ < re (f (x + w - x)) := by
-    simpa using hw
-  have hneg (w : E) (hw : k * ‖f‖ * ‖w‖ < re (f w)) : re (g w) < 0 := by
-    have := hgs _ (hcone w hw)
-    rw [map_add, map_add] at this
-    linarith [hgC x hx]
-  -- Approaching `x` along a cone direction shows that `re ∘ g` is at most `u` at `x`.
-  obtain ⟨w₀, hw₀⟩ := f.exists_mul_norm_lt_re_apply hkf.le (by nlinarith [norm_pos_iff.2 hf])
-  have hgx : re (g x) ≤ u := by
-    have hlim : Tendsto (fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀))) (𝓝[>] 0) (𝓝 (re (g x))) := by
-      have : Continuous fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀)) :=
-        continuous_re.comp (g.continuous.comp
-          (continuous_const.add (continuous_ofReal.smul continuous_const)))
-      simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
-    refine le_of_tendsto hlim (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
-    refine (hgs _ (hcone _ ?_)).le
-    rw [norm_smul, norm_ofReal, abs_of_pos ht, map_smul, smul_eq_mul, re_ofReal_mul]
-    nlinarith
-  refine ⟨-g, fun h0 ↦ ?_, fun y hy ↦ ?_, fun w hw ↦ ?_⟩
-  · have := hneg w₀ hw₀
-    rw [neg_eq_zero.1 h0] at this
-    simp at this
-  · simp only [mem_ofPred_eq, FunLike.coe_neg, Pi.neg_apply, map_neg,
-      neg_le_neg_iff]
-    exact hgx.trans (hgC y hy)
-  · simpa using hneg w hw
-
 
 /-- **Bishop–Phelps support lemma.** Let `C` be a complete convex subset of a normed space, let `f`
 be a nonzero functional whose real part is bounded above on `C`, and let `0 < k < 1`. From every
@@ -265,7 +213,33 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
       simp only [map_sub] at hys
       linarith
   obtain ⟨g, u, hgs, hgC⟩ := RCLike.geometric_hahn_banach_open (𝕜 := 𝕜) hs_conv hs_open hconv hdisj
-  exact f.exists_isMaxOn_re_of_re_lt_of_le_re hf hk₀ hk₁ hx hgs hgC
+  -- `x + w` lies in `s` for every `w` in the open cone.
+  have hcone (w : E) (hw : k * ‖f‖ * ‖w‖ < re (f w)) : x + w ∈ s := by
+    simpa [hs] using hw
+  have hneg (w : E) (hw : k * ‖f‖ * ‖w‖ < re (f w)) : re (g w) < 0 := by
+    have := hgs _ (hcone w hw)
+    rw [map_add, map_add] at this
+    linarith [hgC x hx]
+  -- Approaching `x` along a cone direction shows that `re ∘ g` is at most `u` at `x`.
+  obtain ⟨w₀, hw₀⟩ := f.exists_mul_norm_lt_re_apply hkf.le (by nlinarith [norm_pos_iff.2 hf])
+  have hgx : re (g x) ≤ u := by
+    have hlim : Tendsto (fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀))) (𝓝[>] 0) (𝓝 (re (g x))) := by
+      have : Continuous fun t : ℝ ↦ re (g (x + (t : 𝕜) • w₀)) :=
+        continuous_re.comp (g.continuous.comp
+          (continuous_const.add (continuous_ofReal.smul continuous_const)))
+      simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+    refine le_of_tendsto hlim (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
+    refine (hgs _ (hcone _ ?_)).le
+    rw [norm_smul, norm_ofReal, abs_of_pos ht, map_smul, smul_eq_mul, re_ofReal_mul]
+    nlinarith
+  refine ⟨-g, fun h0 ↦ ?_, fun y hy ↦ ?_, fun w hw ↦ ?_⟩
+  · have := hneg w₀ hw₀
+    rw [neg_eq_zero.1 h0] at this
+    simp at this
+  · simp only [mem_ofPred_eq, FunLike.coe_neg, Pi.neg_apply, map_neg,
+      neg_le_neg_iff]
+    exact hgx.trans (hgC y hy)
+  · simpa using hneg w hw
 
 /-- **The Bishop–Phelps theorem for support functionals**, in Phelps' general form. Let `C` be a
 nonempty complete convex subset of a normed space. Every nonzero functional whose real part is

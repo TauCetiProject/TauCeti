@@ -44,11 +44,11 @@ def diskEvaluation : HardySpace →L[ℂ] ℂ :=
   LinearMap.mkContinuous
     { toFun := fun x => x.diskFunction w
       map_add' := fun x y => x.diskFunction_add y
-        (mem_ball_zero_iff.1 w.2)
+        (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
       map_smul' := fun c x => x.diskFunction_smul c }
     (√(1 - ‖(w : ℂ)‖ ^ 2))⁻¹ fun x => by
       simpa only [LinearMap.coe_mk, AddHom.coe_mk, div_eq_mul_inv, mul_comm] using
-        x.norm_diskFunction_le (mem_ball_zero_iff.1 w.2)
+        x.norm_diskFunction_le (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
 
 /-- The bounded evaluation map agrees with the disk function. -/
 @[simp]
@@ -96,7 +96,7 @@ theorem diskFunction_reproducingKernel_of_norm_conj_mul_lt_one {z : ℂ}
 @[simp↓]
 theorem diskFunction_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
     (reproducingKernel w).diskFunction z = (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
-  have hw : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.2
+  have hw : ‖(w : ℂ)‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using w.property
   refine diskFunction_reproducingKernel_of_norm_conj_mul_lt_one w ?_
   rw [norm_mul, Complex.norm_conj]
   nlinarith [norm_nonneg (w : ℂ), norm_nonneg z]
@@ -104,7 +104,8 @@ theorem diskFunction_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
 /-- The squared norm of the Szegő kernel. -/
 theorem norm_reproducingKernel_sq :
     ‖reproducingKernel w‖ ^ 2 = (1 - ‖(w : ℂ)‖ ^ 2)⁻¹ := by
-  have hw : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.2
+  have hw : ‖(w : ℂ)‖ < 1 := by
+    simpa only [Metric.mem_ball, dist_zero_right] using w.property
   have hpos : 0 < 1 - ‖(w : ℂ)‖ ^ 2 := by nlinarith [norm_nonneg (w : ℂ)]
   calc
     ‖reproducingKernel w‖ ^ 2 = ‖⟪reproducingKernel w, reproducingKernel w⟫_ℂ‖ :=
@@ -129,7 +130,7 @@ theorem norm_diskEvaluation :
 /-- The Szegő kernel is nonzero. -/
 @[simp]
 theorem reproducingKernel_ne_zero : reproducingKernel w ≠ 0 := by
-  have hw : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.2
+  have hw : ‖(w : ℂ)‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using w.property
   have hpos : 0 < 1 - ‖(w : ℂ)‖ ^ 2 := by nlinarith [norm_nonneg (w : ℂ)]
   rw [← norm_pos_iff, norm_reproducingKernel]
   exact inv_pos.mpr (Real.sqrt_pos.mpr hpos)
