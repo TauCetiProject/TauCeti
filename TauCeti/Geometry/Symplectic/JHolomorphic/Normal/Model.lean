@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Prod.Skew
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Symplectic.JHolomorphic.Prod.Skew
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
@@ -162,9 +163,6 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
     IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
         (fun z ↦ (z, s z)) z ↔
       conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z) = 0 := by
-  have hgraph : HasFDerivAt (fun z ↦ (z, s z))
-      ((ContinuousLinearMap.id ℝ ℂ).prod (fderiv ℝ s z)) z :=
-    (hasFDerivAt_id z).prodMk hs.hasFDerivAt
   -- complex linearity of the graph derivative reduces to one complex identity in `ξ`
   have key : ∀ ξ : ℂ, (fderiv ℝ s z (I * ξ) =
       I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ) ↔
@@ -175,26 +173,20 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
     simp only [smul_eq_mul, map_mul, conj_I]
     constructor <;> intro h <;> linear_combination (-1 : ℂ) * h
   have hlin : IsComplexLinearMap (AlmostComplexStructure.ofComplexModule ℂ)
-        (normalModelStructure ν μ (z, s z))
-        ((ContinuousLinearMap.id ℝ ℂ).prod (fderiv ℝ s z) : ℂ →L[ℝ] ℂ × ℂ).toLinearMap ↔
+        (AlmostComplexStructure.ofComplexModule ℂ)
+        ((fderiv ℝ s z : ℂ →ₗ[ℝ] ℂ) - normalModelShear (ν z * s z + μ z * conj (s z))) ↔
       ∀ ξ : ℂ, fderiv ℝ s z (I * ξ) =
         I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ := by
-    rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, normalModelStructure,
-      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, isComplexLinearMap_iff_apply]
-    simp only [normalModelShear, AlmostComplexStructure.ofComplexModule_apply]
+    rw [isComplexLinearMap_iff_apply]
     refine forall_congr' fun ξ ↦ ?_
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, AlgEquiv.toLinearMap_apply,
-      Complex.conjAe_coe, smul_eq_mul, map_mul, conj_I]
+    simp only [normalModelShear, AlmostComplexStructure.ofComplexModule_apply,
+      LinearMap.sub_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
+      AlgEquiv.toLinearMap_apply, Complex.conjAe_coe, smul_eq_mul, map_mul, conj_I]
     constructor <;> intro h <;> linear_combination h
-  constructor
-  · rw [isJHolomorphicAt_iff]
-    rintro ⟨f', hf', hc⟩
-    rw [hf'.unique hgraph] at hc
-    have h1 := (key 1).1 (hlin.1 hc 1)
-    simpa using h1
-  · intro h
-    refine isJHolomorphicAt_of_hasFDerivAt hgraph (hlin.2 fun ξ ↦ (key ξ).2 ?_)
-    rw [h, mul_zero]
+  refine ((AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).trans
+    ((and_iff_right hs).trans hlin)).trans ⟨fun h ↦ ?_, fun h ξ ↦ (key ξ).2 ?_⟩
+  · simpa using (key 1).1 (h 1)
+  · rw [h, mul_zero]
 
 /-- **`J_N`-holomorphic sections are the solutions of the normal operator.** The graph of `s` is
 `J_N`-holomorphic exactly when `s` is differentiable and solves `∂bar s + ν s + μ conj s = 0`
@@ -207,8 +199,7 @@ theorem isJHolomorphic_graph_normalModelStructure_iff {s : ℂ → ℂ} :
   constructor
   · intro h
     have hd : Differentiable ℝ s := fun z ↦
-      (differentiableAt_snd (𝕜 := ℝ) (p := (z, s z))).comp (f := fun z ↦ (z, s z)) z
-        (h z).hasFDerivAt.differentiableAt
+      ((AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).1 (h z)).1
     exact ⟨hd, fun z ↦ (isJHolomorphicAt_graph_normalModelStructure_iff (hd z)).1 (h z)⟩
   · rintro ⟨hd, h⟩ z
     exact (isJHolomorphicAt_graph_normalModelStructure_iff (hd z)).2 (h z)

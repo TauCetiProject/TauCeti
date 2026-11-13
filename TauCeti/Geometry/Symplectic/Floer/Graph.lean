@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Geometry.Symplectic.JHolomorphic.Prod.Skew
 
 /-!
 # Gromov's graph construction for the inhomogeneous Floer equation
@@ -134,25 +135,8 @@ theorem isJHolomorphicAt_graph_floerGraphAlmostComplex_iff {u : ℝ × ℝ → V
       DifferentiableAt ℝ u z ∧
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
           (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
-  have hgraph (hu : DifferentiableAt ℝ u z) :
-      HasFDerivAt (fun w ↦ (w, u w)) ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod (fderiv ℝ u z)) z :=
-    (hasFDerivAt_id z).prodMk hu.hasFDerivAt
-  have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        (ω.floerGraphAlmostComplex J Ks Kt (z, u z))
-        ((ContinuousLinearMap.id ℝ (ℝ × ℝ)).prod (fderiv ℝ u z) : ℝ × ℝ →ₗ[ℝ] (ℝ × ℝ) × V) ↔
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
-        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
-    rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, floerGraphAlmostComplex_def,
-      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, perturbedFDeriv_eq_sub,
-      ContinuousLinearMap.toLinearMap_sub]
-  rw [isJHolomorphicAt_iff]
-  constructor
-  · rintro ⟨f', hf', hf'lin⟩
-    have hu : DifferentiableAt ℝ u z := hf'.differentiableAt.snd
-    rw [hf'.unique (hgraph hu)] at hf'lin
-    exact ⟨hu, hlin.mp hf'lin⟩
-  · rintro ⟨hu, hulin⟩
-    exact ⟨_, hgraph hu, hlin.mpr hulin⟩
+  rw [perturbedFDeriv_eq_sub, ContinuousLinearMap.toLinearMap_sub]
+  exact AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)
 
 /-- **Gromov's graph construction, globally.** A map `u` solves the Floer equation everywhere
 exactly when its graph is `J_K`-holomorphic. -/
