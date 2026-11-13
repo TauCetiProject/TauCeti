@@ -204,7 +204,7 @@ lemma div_denom_mem_lattice_periodPair_smul_iff (γ : SL(2, ℤ)) (z : ℍ) (x :
     have h' := intCast_mul_smul_add_intCast γ z ![m, n]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, periodPair_ω₁, periodPair_ω₂,
       mul_one] at h' hmn
-    rw [hmn, div_left_inj' hD] at h'
+    rw [hmn, div_left_inj₀ hD] at h'
     rw [h']
     exact intCast_mul_add_intCast_mem_lattice_periodPair z _ _
   · intro h
