@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Alternating.Conormal
+public import TauCeti.LinearAlgebra.Alternating.Curry
 public import Mathlib.LinearAlgebra.Alternating.Uncurry.Fin
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
@@ -33,25 +34,10 @@ open Module
 
 namespace AlternatingMap
 
-section CommSemiring
-
-variable {R M E : Type*} [CommSemiring R] [AddCommMonoid M] [AddCommGroup E]
-  [Module R M] [Module R E] {k : ℕ}
-
-/-- Inserting two vectors in the first two slots anticommutes. -/
-theorem curryLeft_curryLeft (α : M [⋀^Fin (k + 2)]→ₗ[R] E) (n m : M) :
-    (α.curryLeft n).curryLeft m = -((α.curryLeft m).curryLeft n) := by
-  have he := curryLeft_same α (n + m)
-  simp only [map_add, curryLeft_add, LinearMap.add_apply, curryLeft_same,
-    zero_add, add_zero] at he
-  exact eq_neg_of_add_eq_zero_right he
-
-end CommSemiring
-
 variable {R M : Type*} [Field R] [AddCommGroup M] [Module R M] {k : ℕ}
 
 /-- Contraction of a nonzero top-degree form is injective in the contracting vector. -/
-theorem curryLeft_injective (α : M [⋀^Fin (k + 1)]→ₗ[R] R)
+theorem curryLeft_injective_of_ne_zero (α : M [⋀^Fin (k + 1)]→ₗ[R] R)
     (b : Basis (Fin (k + 1)) R M) (hα : α ≠ 0) :
     Function.Injective α.curryLeft := by
   classical
@@ -118,7 +104,7 @@ theorem conormalForms_curryLeft_eq_zero_iff
     exact hα0 hβ.symm
   have hi := AlternatingMap.compLinearMap_inj W.mkQ W.mkQ_surjective (β.curryLeft (W.mkQ n)) 0
   rw [AlternatingMap.zero_compLinearMap] at hi
-  have hinj := β.curryLeft_injective (Module.finBasisOfFinrankEq R _ hk) hβ0
+  have hinj := β.curryLeft_injective_of_ne_zero (Module.finBasisOfFinrankEq R _ hk) hβ0
   rw [← hβ, AlternatingMap.curryLeft_compLinearMap, hi,
     ← (β.curryLeft).map_zero,
     hinj.eq_iff,
@@ -259,6 +245,6 @@ theorem contract_contract (o : Module.Ray R (M [⋀^Fin (k + 2)]→ₗ[R] R))
   | h α hα =>
     simp only [contract_rayOfNeZero, neg_rayOfNeZero]
     congr 1
-    exact α.curryLeft_curryLeft n m
+    exact AlternatingMap.curryLeft_curryLeft_eq_neg α n m
 
 end Module.Ray
