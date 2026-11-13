@@ -41,8 +41,8 @@ relabellings the table of `G × H` is the Kronecker product of the two tables.
   degrees multiply.
 * `TauCeti.irreducibleCharacter_irreducibleIndexProdEquiv_symm_eq_one_iff`: the trivial character
   of `G × H` is the row of the pair of trivial rows.
-* `TauCeti.reindex_characterTable_prod`: the character table of `G × H` is the Kronecker product
-  of the tables of `G` and `H`.
+* `TauCeti.submatrix_characterTable_prod` and `TauCeti.reindex_characterTable_prod`: the
+  character table of `G × H` is the Kronecker product of the tables of `G` and `H`.
 
 ## References
 
@@ -311,11 +311,11 @@ theorem irreducibleIndexProdEquiv_eq_iff (p : Fin (Nat.card (ConjClasses (G × H
 /-- **The representation in the row of the pair `(i, j)` is the external tensor product** of the
 representations in the rows `i` and `j`, up to equivalence. -/
 theorem nonempty_equiv_irreducibleRepresentation_irreducibleIndexProdEquiv_symm
-    (i : Fin (Nat.card (ConjClasses G))) (j : Fin (Nat.card (ConjClasses H))) :
-    Nonempty ((irreducibleRepresentation k ((irreducibleIndexProdEquiv k G H).symm (i, j))).Equiv
-      ((irreducibleRepresentation k i).externalTensor (irreducibleRepresentation k j))) := by
-  have := Representation.isIrreducible_externalTensor (irreducibleRepresentation k i)
-    (irreducibleRepresentation k j) inferInstance inferInstance
+    (q : Fin (Nat.card (ConjClasses G)) × Fin (Nat.card (ConjClasses H))) :
+    Nonempty ((irreducibleRepresentation k ((irreducibleIndexProdEquiv k G H).symm q)).Equiv
+      ((irreducibleRepresentation k q.1).externalTensor (irreducibleRepresentation k q.2))) := by
+  have := Representation.isIrreducible_externalTensor (irreducibleRepresentation k q.1)
+    (irreducibleRepresentation k q.2) inferInstance inferInstance
   refine Representation.nonempty_equiv_of_character_eq_of_isIrreducible _ _ (funext fun x => ?_)
   simp
 
@@ -329,9 +329,17 @@ theorem irreducibleIndexProdEquiv_eq_iff_nonempty_equiv
         ((irreducibleRepresentation k q.1).externalTensor (irreducibleRepresentation k q.2))) := by
   refine ⟨fun h => ?_, fun ⟨e⟩ => (irreducibleIndexProdEquiv_eq_iff k p q).2 ?_⟩
   · rw [← (irreducibleIndexProdEquiv k G H).symm_apply_apply p, h]
-    exact nonempty_equiv_irreducibleRepresentation_irreducibleIndexProdEquiv_symm k q.1 q.2
+    exact nonempty_equiv_irreducibleRepresentation_irreducibleIndexProdEquiv_symm k q
   · rw [← character_irreducibleRepresentation, Representation.char_iso e]
     exact funext fun x => by simp
+
+/-- Every representation in a row of the character table of `G × H` is equivalent to the external
+tensor product of the representations of `G` and `H` in the rows of its pair of indices. -/
+theorem nonempty_equiv_irreducibleRepresentation_prod (p : Fin (Nat.card (ConjClasses (G × H)))) :
+    Nonempty ((irreducibleRepresentation k p).Equiv
+      ((irreducibleRepresentation k (irreducibleIndexProdEquiv k G H p).1).externalTensor
+        (irreducibleRepresentation k (irreducibleIndexProdEquiv k G H p).2))) :=
+  (irreducibleIndexProdEquiv_eq_iff_nonempty_equiv k p _).1 rfl
 
 /-- **Degrees multiply**: the degree in the row of the pair `(i, j)` is the product of the degrees
 in the rows `i` and `j`. -/
@@ -340,7 +348,7 @@ theorem characterDegree_irreducibleIndexProdEquiv_symm
     (q : Fin (Nat.card (ConjClasses G)) × Fin (Nat.card (ConjClasses H))) :
     characterDegree k ((irreducibleIndexProdEquiv k G H).symm q) =
       characterDegree k q.1 * characterDegree k q.2 := by
-  obtain ⟨e⟩ := nonempty_equiv_irreducibleRepresentation_irreducibleIndexProdEquiv_symm k q.1 q.2
+  obtain ⟨e⟩ := nonempty_equiv_irreducibleRepresentation_irreducibleIndexProdEquiv_symm k q
   simpa using e.toLinearEquiv.finrank_eq
 
 /-- Every degree of `G × H` is the product of the degrees of `G` and `H` in the rows of its pair
@@ -370,6 +378,14 @@ theorem irreducibleCharacter_irreducibleIndexProdEquiv_symm_eq_one_iff
   · rintro ⟨hi, hj⟩
     exact funext fun x => by simp [hi, hj]
 
+/-- A row of the character table of `G × H` is the trivial character exactly when the rows of
+its pair of indices are. -/
+theorem irreducibleCharacter_prod_eq_one_iff (p : Fin (Nat.card (ConjClasses (G × H)))) :
+    irreducibleCharacter k p = (fun _ => 1) ↔
+      irreducibleCharacter k (irreducibleIndexProdEquiv k G H p).1 = (fun _ => 1) ∧
+        irreducibleCharacter k (irreducibleIndexProdEquiv k G H p).2 = (fun _ => 1) := by
+  rw [← irreducibleCharacter_irreducibleIndexProdEquiv_symm_eq_one_iff, Equiv.symm_apply_apply]
+
 /-- The entry of the character table of `G × H` in the row of the pair `(i, j)` and the column of
 the pair of classes `(C, D)` is the product of the corresponding entries of the two tables. -/
 @[simp]
@@ -384,6 +400,29 @@ theorem characterTable_irreducibleIndexProdEquiv_symm_prodEquiv_symm
   obtain ⟨h, rfl⟩ := ConjClasses.mk_surjective D
   simp
 
+/-- Every entry of the character table of `G × H` is the product of the entries of the tables of
+`G` and `H` in the rows of its pair of indices and the columns of its pair of classes. -/
+theorem characterTable_prod_apply (p : Fin (Nat.card (ConjClasses (G × H))))
+    (C : ConjClasses (G × H)) :
+    characterTable k (G × H) p C =
+      characterTable k G (irreducibleIndexProdEquiv k G H p).1 (ConjClasses.prodEquiv G H C).1 *
+        characterTable k H (irreducibleIndexProdEquiv k G H p).2
+          (ConjClasses.prodEquiv G H C).2 := by
+  rw [← characterTable_irreducibleIndexProdEquiv_symm_prodEquiv_symm, Equiv.symm_apply_apply,
+    Equiv.symm_apply_apply]
+
+variable (G H)
+
+/-- The character table of `G × H`, with its rows and columns relabelled by pairs of rows and
+pairs of conjugacy classes, is the Kronecker product of the tables of `G` and `H`. -/
+@[simp]
+theorem submatrix_characterTable_prod :
+    (characterTable k (G × H)).submatrix (irreducibleIndexProdEquiv k G H).symm
+        (ConjClasses.prodEquiv G H).symm =
+      characterTable k G ⊗ₖ characterTable k H := by
+  ext ⟨i, j⟩ ⟨C, D⟩
+  simp
+
 /-- **The character table of `G × H` is the Kronecker product of the tables of `G` and `H`**,
 once its rows are indexed by pairs of rows (`TauCeti.irreducibleIndexProdEquiv`) and its columns
 by pairs of conjugacy classes (`ConjClasses.prodEquiv`). -/
@@ -391,7 +430,6 @@ theorem reindex_characterTable_prod :
     Matrix.reindex (irreducibleIndexProdEquiv k G H) (ConjClasses.prodEquiv G H)
         (characterTable k (G × H)) =
       characterTable k G ⊗ₖ characterTable k H := by
-  ext ⟨i, j⟩ ⟨C, D⟩
   simp
 
 end ProductTable
