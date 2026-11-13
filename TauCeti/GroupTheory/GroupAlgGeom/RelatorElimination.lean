@@ -40,21 +40,6 @@ open Monoid.Coprod Subgroup
 
 variable {G X : Type*} [Group G] [DecidableEq X]
 
-/-- Substituting `c` for `x` in the values of a homomorphism `f` on the variables does not change
-the value of `f` on a word in which `x` does not occur. -/
-private theorem eval_update_eq_of_mem_avoiding {K : Type*} [Group K] (f : GX G X →* K) {x : X}
-    (c : K) {a : GX G X} (ha : a ∈ GX.avoiding x) :
-    eval (f.comp inl) (Function.update (fun y => f (inr (FreeGroup.of y))) x c) a = f a := by
-  rw [GX.eval_update_of_mem_avoiding _ ha, ← eq_eval]
-
-/-- Two homomorphisms out of `G[X]` agreeing on the words in which `x` does not occur and on `x`
-are equal. -/
-private theorem hom_ext_of_avoiding {K : Type*} [Group K] {x : X} {φ ψ : GX G X →* K}
-    (h : ∀ a ∈ GX.avoiding x, φ a = ψ a)
-    (hx : φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
-  hom_ext (MonoidHom.ext fun g => h _ (GX.inl_mem_avoiding x g)) <| FreeGroup.ext_hom _ _ fun y =>
-    if hy : y = x then hy ▸ hx else h _ (GX.inr_of_mem_avoiding hy)
-
 namespace SystemGroup
 
 section Elimination
@@ -83,16 +68,18 @@ private def retract (S : Set (GX G X)) : GX G X →* SystemGroup G S :=
 variable {τ x}
 
 private theorem toCoprod_of_mem_avoiding (T : Set (GX G X)) {a : GX G X} (ha : a ∈ GX.avoiding x) :
-    toCoprod τ x T a = inl (τ.symm a : SystemGroup G T) :=
-  eval_update_eq_of_mem_avoiding (inlSymmMk τ T) _ ha
+    toCoprod τ x T a = inl (τ.symm a : SystemGroup G T) := by
+  rw [toCoprod, GX.eval_update_of_mem_avoiding _ ha, ← eq_eval]
+  rfl
 
 private theorem toCoprod_inr_self (T : Set (GX G X)) :
     toCoprod τ x T (inr (FreeGroup.of x)) = inr (FreeGroup.of ()) := by
   simp [toCoprod]
 
 private theorem retract_of_mem_avoiding (S : Set (GX G X)) {a : GX G X} (ha : a ∈ GX.avoiding x) :
-    retract τ x S a = (τ.symm a : SystemGroup G S) :=
-  eval_update_eq_of_mem_avoiding (symmMk τ S) _ ha
+    retract τ x S a = (τ.symm a : SystemGroup G S) := by
+  rw [retract, GX.eval_update_of_mem_avoiding _ ha, ← eq_eval]
+  rfl
 
 private theorem retract_inr_self (S : Set (GX G X)) : retract τ x S (inr (FreeGroup.of x)) = 1 := by
   simp [retract]
@@ -105,7 +92,7 @@ private theorem lift_comp_toCoprod (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     {φ : SystemGroup G T →* SystemGroup G S} (hφ : ∀ w : GX G X, φ w = retract τ x S (τ w)) :
     (lift φ (FreeGroup.lift fun _ => (s : SystemGroup G S))).comp (toCoprod τ x T) =
       symmMk τ S :=
-  hom_ext_of_avoiding (x := x)
+  GX.hom_ext_of_avoiding (x := x)
     (fun a ha => by simp [hφ, toCoprod_of_mem_avoiding T ha, retract_of_mem_avoiding S ha])
     (by simp [toCoprod_inr_self, hσx])
 
@@ -114,7 +101,7 @@ the class map of `τ⁻¹` into `G_T`, provided `s` is trivial in `G_T`. -/
 private theorem comp_retract (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     (hsT : (s : SystemGroup G T) = 1) {ψ : SystemGroup G S →* GX (SystemGroup G T) Unit}
     (hψ : ∀ w : GX G X, ψ w = toCoprod τ x T (τ w)) : ψ.comp (retract τ x S) = inlSymmMk τ T :=
-  hom_ext_of_avoiding (x := x)
+  GX.hom_ext_of_avoiding (x := x)
     (fun a ha => by simp [hψ, toCoprod_of_mem_avoiding T ha, retract_of_mem_avoiding S ha])
     (by simp [retract_inr_self, hσx, hsT])
 
@@ -123,7 +110,7 @@ private theorem comp_retract (hσx : τ.symm (inr (FreeGroup.of x)) = s)
 private theorem eval_comp_toCoprod (hσx : τ.symm (inr (FreeGroup.of x)) = s)
     (hsT : (s : SystemGroup G T) = 1) :
     (eval (MonoidHom.id (SystemGroup G T)) fun _ => 1).comp (toCoprod τ x T) = symmMk τ T :=
-  hom_ext_of_avoiding (x := x) (fun a ha => by simp [toCoprod_of_mem_avoiding T ha])
+  GX.hom_ext_of_avoiding (x := x) (fun a ha => by simp [toCoprod_of_mem_avoiding T ha])
     (by simp [toCoprod_inr_self, hσx, hsT])
 
 /-- The case `τ s = x` of `exists_bijective_of_normalClosure_eq_insert`. -/

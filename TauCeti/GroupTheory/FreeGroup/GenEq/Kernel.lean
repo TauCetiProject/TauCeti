@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Section
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Surgery
-import Mathlib.Algebra.Group.Submonoid.BigOperators
 import Mathlib.Data.Fin.VecNotation
 import TauCeti.GroupTheory.GroupAlgGeom.RelatorElimination
 
@@ -87,75 +86,7 @@ theorem isEliminable_iff {μ : Fin Ω.numBases} : Ω.IsEliminable μ ↔
         ∀ b ∈ Ω.constBases, (b.1 : ℕ) ≠ i ∧ (b.1 : ℕ) + 1 ≠ i) :=
   Iff.rfl
 
-/-! ### Words in the items avoiding an item -/
-
-/-- The image in `F(A)[h]` of a word in the items and the letters is the product of the images of
-its letters. -/
-private theorem toGX_eq_lift (n : ℕ) :
-    EqIneqSystem.toGX (Fin n) (FreeGroup.of : A → FreeGroup A) =
-      FreeGroup.lift (Sum.elim (fun j => inr (FreeGroup.of j)) fun a => inl (FreeGroup.of a)) :=
-  FreeGroup.ext_hom _ _ fun p => by cases p <;> simp
-
-/-- A word in which the item `hₖ` does not occur avoids the variable `k`. -/
-private theorem toGX_mk_mem_avoiding {n : ℕ} {w : List ((Fin n ⊕ A) × Bool)} {k : Fin n}
-    (h : ∀ p ∈ w, p.1 ≠ Sum.inl k) :
-    EqIneqSystem.toGX (Fin n) FreeGroup.of (FreeGroup.mk w) ∈ GX.avoiding k := by
-  rw [toGX_eq_lift, FreeGroup.lift_mk]
-  refine list_prod_mem fun y hy => ?_
-  obtain ⟨⟨p | a, b⟩, hp, rfl⟩ := List.mem_map.1 hy
-  · have hpk : p ≠ k := fun hpk => h _ hp (by simp [hpk])
-    cases b <;> simp [hpk]
-  · cases b <;> simp
-
-/-- The word `h[i, j]⁻¹` is the inverse of `h[i, j]` in `F(A)[h]`. -/
-private theorem toGX_segment_false (i j : ℕ) :
-    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j false)) =
-      (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j true)))⁻¹ := by
-  rw [segment_false, ← FreeGroup.inv_mk, map_inv]
-
-/-- The word `h[i, j] ^ ±1` avoids the items outside the section `[i, j]`. -/
-private theorem toGX_segment_mem_avoiding {i j : ℕ} (s : Bool) {k : Fin Ω.numItems}
-    (hk : (k : ℕ) < i ∨ j ≤ k) :
-    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j s)) ∈ GX.avoiding k := by
-  have htrue :
-      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j true)) ∈ GX.avoiding k := by
-    refine toGX_mk_mem_avoiding fun p hp => ?_
-    rw [segment_true] at hp
-    obtain ⟨k', hk', rfl⟩ := List.mem_map.1 hp
-    obtain ⟨m, hm, rfl⟩ := List.mem_iff_getElem.1 hk'
-    simp only [List.length_drop, List.length_take, List.length_finRange] at hm
-    simp only [List.getElem_drop, List.getElem_take, List.getElem_finRange, ne_eq, Sum.inl.injEq,
-      Fin.ext_iff, Fin.val_cast]
-    omega
-  cases s
-  · rw [toGX_segment_false]
-    exact inv_mem htrue
-  · exact htrue
-
-/-- `h[l, r] = h[l, k] hₖ h[k + 1, r]` for `l ≤ k < r`. -/
-private theorem toGX_segment_eq_mul {l k r : ℕ} (hlk : l ≤ k) (hkr : k < r) (hr : r ≤ Ω.numItems) :
-    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l r true)) =
-      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l k true)) *
-        inr (FreeGroup.of ⟨k, by omega⟩) *
-          EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (k + 1) r true)) := by
-  have hseg : Ω.segment l r true = Ω.segment l k true ++ [(Sum.inl ⟨k, by omega⟩, true)] ++
-      Ω.segment (k + 1) r true := by
-    rw [← Ω.segment_succ ⟨k, by omega⟩, Ω.segment_append hlk (by simp) (by simp; omega),
-      Ω.segment_append (by simp; omega) (by simp; omega) hr]
-  rw [hseg, ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, map_mul, map_mul]
-  simp [toGX_eq_lift, FreeGroup.lift_mk]
-
-/-- `h[l, r] = h[l, p] (h_p h_{p+1}) h[p + 2, r]` for `l ≤ p` and `p + 2 ≤ r`. -/
-private theorem toGX_segment_eq_mul_pair {l p r : ℕ} (hlp : l ≤ p) (hpr : p + 2 ≤ r)
-    (hr : r ≤ Ω.numItems) :
-    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l r true)) =
-      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l p true)) *
-        (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, by omega⟩)) *
-          EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (p + 2) r true)) := by
-  have hnil : Ω.segment (p + 1) (p + 1) true = [] := List.eq_nil_of_length_eq_zero (by simp)
-  rw [Ω.toGX_segment_eq_mul hlp (by omega) hr,
-    Ω.toGX_segment_eq_mul (l := p + 1) (k := p + 1) le_rfl (by omega) hr, hnil]
-  simp [← FreeGroup.one_eq_mk, mul_assoc]
+/-! ### Separating an item of an eliminable base -/
 
 /-- Let `χ` send the words avoiding `h_p` and `h_{p+1}` and the word `h_p h_{p+1}` to words
 avoiding `hₖ`. Then it sends the word of every base which does not have `p + 1` as an end-point
@@ -176,8 +107,6 @@ private theorem mem_avoiding_of_not_touches {χ : MulAut (GX (FreeGroup A) (Fin 
   · rw [Ω.toGX_segment_eq_mul_pair (p := p) (by omega) (by omega) hrn, map_mul, map_mul]
     refine mul_mem (mul_mem (hfix _ ?_ ?_) hpair) (hfix _ ?_ ?_) <;>
       exact Ω.toGX_segment_mem_avoiding _ (by simp only; omega)
-
-/-! ### Separating an item of an eliminable base -/
 
 /-- After the coefficient-fixing automorphism `χ` of `F(A)[h]`, the word `h[α(μ), β(μ)]` is
 unchanged, while the item `hₖ` of `μ` occurs neither in the image of the word of another base nor
@@ -306,43 +235,13 @@ private theorem Separates.mem_avoiding_toSystem {μ : Fin Ω.numBases}
       exact ⟨h.mem_avoiding_segment' hν.1 _, h.mem_avoiding_segment'
         (fun h' => hν.2 ((Ω.dual_involutive _).symm.trans (congrArg Ω.dual h'))) _⟩
     · obtain ⟨j, a, s⟩ := b
-      refine ⟨by simpa [toGX_eq_lift, FreeGroup.lift_mk] using h.mem_avoiding_const _ hb, ?_⟩
-      cases s <;> simp [toGX_eq_lift, FreeGroup.lift_mk, h.map_inl]
+      refine ⟨by simpa [EqIneqSystem.toGX_eq_lift, FreeGroup.lift_mk] using
+        h.mem_avoiding_const _ hb, ?_⟩
+      cases s <;> simp [EqIneqSystem.toGX_eq_lift, FreeGroup.lift_mk, h.map_inl]
     · exact absurd ((mem_connections_removeBases _).1 hc') (by simp [hc])
   obtain ⟨e, he, rfl⟩ := (mem_toSystem_iff _).1 ht
   rw [map_mul, map_inv, map_mul, map_inv]
   exact mul_mem (key e he).1 (inv_mem (key e he).2)
-
-/-- Without boundary connections, `Ω*` presents the same group as the system of `Ω` with `μ, Δ(μ)`
-removed together with the basic equation of `μ`, or with that of `Δ(μ)`. -/
-private theorem normalClosure_toSystem_eq (hc : Ω.connections = ∅) (μ : Fin Ω.numBases)
-    {ν : Fin Ω.numBases} (hν : ν = μ ∨ ν = Ω.dual μ) :
-    Subgroup.normalClosure Ω.toSystem = Subgroup.normalClosure (insert
-      (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
-        (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹)) (Ω.removePair μ).toSystem) := by
-  refine le_antisymm (Subgroup.normalClosure_le_normal fun t ht => ?_)
-    (Subgroup.normalClosure_mono (Set.insert_subset ((mem_toSystem_iff _).2
-      ⟨_, Ω.basicEquation_mem_equations ν, rfl⟩) (toSystem_removeBases_subset _)))
-  obtain ⟨e, he, rfl⟩ := (mem_toSystem_iff _).1 ht
-  rcases equations_subset_union_removeBases (Ω.dual_mem_pair μ) he with
-    he | ⟨ν', hν', rfl⟩ | ⟨c, ⟨hc', -⟩, rfl⟩
-  · exact Subgroup.subset_normalClosure
-      (Set.mem_insert_of_mem _ ((mem_toSystem_iff _).2 ⟨e, he, rfl⟩))
-  · have hν'' : ν' = ν ∨ ν' = Ω.dual ν := by
-      simp only [Finset.coe_insert, Finset.coe_singleton, Set.mem_insert_iff,
-        Set.mem_singleton_iff] at hν'
-      rcases hν with rfl | rfl <;> rcases hν' with rfl | rfl <;> simp [Ω.dual_involutive _]
-    rcases hν'' with rfl | rfl
-    · exact Subgroup.subset_normalClosure (Set.mem_insert _ _)
-    · have hinv : EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).1 *
-          (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).2)⁻¹) =
-          (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
-            (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹))⁻¹ := by
-        simp only [basicEquation_fst, basicEquation_snd, Ω.dual_involutive ν, map_mul, map_inv,
-          mul_inv_rev, inv_inv]
-      rw [hinv]
-      exact inv_mem (Subgroup.subset_normalClosure (Set.mem_insert _ _))
-  · simp [hc] at hc'
 
 /-- **Elimination of a base on presented groups.** If `Ω` has no boundary connections and `μ` is
 eliminable, the group presented by the system of `Ω` with the pair `μ, Δ(μ)` removed is the free
@@ -373,6 +272,7 @@ theorem exists_bijective_systemGroup_removePair (hc : Ω.connections = ∅) {μ 
     (Or.inl (Nat.lt_succ_self _))
   have hR := h.mem_avoiding_segment' hd (Ω.sign (Ω.dual μ))
   have hS (t) (ht : t ∈ (Ω.removePair μ).toSystem) := h.mem_avoiding_toSystem hc ht
+  have hc' : ∀ c ∈ Ω.connections, c.2.1 ≠ μ := by simp [hc]
   cases hs : Ω.sign μ
   · -- `ε(μ) = -1`: the equation of `Δ(μ)` is `R (P hₖ Q)` with `R` the word of `Δ(μ)`.
     obtain ⟨e, he, hw, -⟩ := SystemGroup.exists_bijective_of_normalClosure_eq_insert χ h.map_inl
@@ -380,14 +280,14 @@ theorem exists_bijective_systemGroup_removePair (hc : Ω.connections = ∅) {μ 
         rw [basicEquation_fst, basicEquation_snd, Ω.dual_involutive μ, hs, map_mul, map_inv,
           toGX_segment_false, inv_inv, map_mul χ, h.map_segment, hL]
         simp only [mul_assoc]) hS
-      (Ω.normalClosure_toSystem_eq hc μ (Or.inr rfl))
+      (normalClosure_toSystem_eq_insert_removePair hc' (Or.inr rfl))
     exact ⟨e, he, hw⟩
   · obtain ⟨e, he, hw, -⟩ := SystemGroup.exists_bijective_of_normalClosure_eq_insert χ h.map_inl
       hP (mul_mem hQ (inv_mem hR)) (by
         rw [basicEquation_fst, basicEquation_snd, hs, map_mul, map_inv, map_mul χ, map_inv χ,
           h.map_segment, hL]
         simp only [mul_assoc]) hS
-      (Ω.normalClosure_toSystem_eq hc μ (Or.inl rfl))
+      (normalClosure_toSystem_eq_insert_removePair hc' (Or.inl rfl))
     exact ⟨e, he, hw⟩
 
 /-! ### Examples -/

@@ -8,7 +8,8 @@ module
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Data.List.ProdSigma
-public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # Finite systems of equations and inequations over a free group
@@ -19,7 +20,9 @@ then evaluates each word by `FreeGroup.lift`. Keeping the two finite lists separ
 their conjunction available to normal forms for quantifier-free group formulas.
 Read through a coefficient map `c : A → G`, such a word is an equation of algebraic geometry
 over `G`, an element of `G[X]` (`TauCeti.EqIneqSystem.toGX`); every element of `G[X]` arises
-this way when the coefficients generate `G` (`TauCeti.EqIneqSystem.toGX_surjective`).
+this way when the coefficients generate `G` (`TauCeti.EqIneqSystem.toGX_surjective`), and a word
+in which a variable does not occur becomes an element of `G[X]` in which it does not occur
+(`TauCeti.EqIneqSystem.toGX_mk_mem_avoiding`).
 
 A system is presented as finite syntax by two lists of possibly unreduced words
 (`TauCeti.EqIneqSystem.ofWords`); whether an assignment solves it depends only on the variables
@@ -78,6 +81,12 @@ def toGX (c : A → G) : FreeGroup (X ⊕ A) →* GroupAlgGeom.GX G X :=
   FreeGroup.lift (Sum.elim (fun x => Monoid.Coprod.inr (FreeGroup.of x))
     (fun a => Monoid.Coprod.inl (c a)))
 
+/-- The image of a word in `G[X]` is the product of the images of its letters. -/
+theorem toGX_eq_lift (c : A → G) :
+    toGX X c = FreeGroup.lift (Sum.elim (fun x => Monoid.Coprod.inr (FreeGroup.of x))
+      (fun a => Monoid.Coprod.inl (c a))) := by
+  rfl
+
 /-- A variable is sent to the corresponding generator of `F(X)`. -/
 @[simp]
 theorem toGX_of_inl (c : A → G) (x : X) :
@@ -112,6 +121,18 @@ theorem toGX_surjective {c : A → G} (hc : Subgroup.closure (Set.range c) = ⊤
       Subgroup.closure_le]
     rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
     exact ⟨FreeGroup.of (Sum.inl x), by simp⟩
+
+/-- The image in `G[X]` of a word in which the variable `x` does not occur is a word in which `x`
+does not occur. -/
+theorem toGX_mk_mem_avoiding [DecidableEq X] {c : A → G} {w : List ((X ⊕ A) × Bool)} {x : X}
+    (h : ∀ p ∈ w, p.1 ≠ Sum.inl x) :
+    toGX X c (FreeGroup.mk w) ∈ GroupAlgGeom.GX.avoiding x := by
+  rw [toGX_eq_lift, FreeGroup.lift_mk]
+  refine list_prod_mem fun y hy => ?_
+  obtain ⟨⟨y | a, b⟩, hp, rfl⟩ := List.mem_map.1 hy
+  · have hyx : y ≠ x := fun hyx => h _ hp (by simp [hyx])
+    cases b <;> simp [hyx]
+  · cases b <;> simp
 
 /-- A variable assignment solves a system when all equations vanish and all inequations
 remain nontrivial after evaluation. -/

@@ -32,7 +32,10 @@ Consequently:
   identity on the items then induces an isomorphism of coordinate groups
   (`TauCeti.GroupAlgGeom.CoordGroup.homOfVSubset`);
 * removing bases preserves formal consistency
-  (`TauCeti.GenEq.IsFormallyConsistent.removeBases`).
+  (`TauCeti.GenEq.IsFormallyConsistent.removeBases`);
+* if no boundary connection passes through `μ`, the system `Ω*` and the system of the result
+  together with the basic equation of `μ` present the same group
+  (`TauCeti.GenEq.normalClosure_toSystem_eq_insert_removePair`).
 
 ## Main definitions
 
@@ -279,6 +282,41 @@ abbrev removePair (μ : Fin Ω.numBases) : GenEq A :=
 theorem numBases_removePair {μ : Fin Ω.numBases} (h : μ ≠ Ω.dual μ) :
     (Ω.removePair μ).numBases = Ω.numBases - 2 := by
   rw [numBases_removeBases, Finset.card_pair h]
+
+/-- If no boundary connection passes through `μ`, then `Ω*` presents the same group as the system
+of `Ω` with `μ, Δ(μ)` removed together with the basic equation of `μ`, or with that of `Δ(μ)`. -/
+theorem normalClosure_toSystem_eq_insert_removePair {μ : Fin Ω.numBases}
+    (hc : ∀ c ∈ Ω.connections, c.2.1 ≠ μ) {ν : Fin Ω.numBases} (hν : ν = μ ∨ ν = Ω.dual μ) :
+    Subgroup.normalClosure Ω.toSystem = Subgroup.normalClosure (insert
+      (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
+        (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹)) (Ω.removePair μ).toSystem) := by
+  refine le_antisymm (Subgroup.normalClosure_le_normal fun t ht => ?_)
+    (Subgroup.normalClosure_mono (Set.insert_subset ((mem_toSystem_iff _).2
+      ⟨_, Ω.basicEquation_mem_equations ν, rfl⟩) (toSystem_removeBases_subset _)))
+  obtain ⟨e, he, rfl⟩ := (mem_toSystem_iff _).1 ht
+  rcases equations_subset_union_removeBases (Ω.dual_mem_pair μ) he with
+    he | ⟨ν', hν', rfl⟩ | ⟨c, ⟨hc', hcμ⟩, rfl⟩
+  · exact Subgroup.subset_normalClosure
+      (Set.mem_insert_of_mem _ ((mem_toSystem_iff _).2 ⟨e, he, rfl⟩))
+  · have hν'' : ν' = ν ∨ ν' = Ω.dual ν := by
+      simp only [Finset.coe_insert, Finset.coe_singleton, Set.mem_insert_iff,
+        Set.mem_singleton_iff] at hν'
+      rcases hν with rfl | rfl <;> rcases hν' with rfl | rfl <;> simp [Ω.dual_involutive _]
+    rcases hν'' with rfl | rfl
+    · exact Subgroup.subset_normalClosure (Set.mem_insert _ _)
+    · have hinv : EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).1 *
+          (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).2)⁻¹) =
+          (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
+            (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹))⁻¹ := by
+        simp only [basicEquation_fst, basicEquation_snd, Ω.dual_involutive ν, map_mul, map_inv,
+          mul_inv_rev, inv_inv]
+      rw [hinv]
+      exact inv_mem (Subgroup.subset_normalClosure (Set.mem_insert _ _))
+  · -- A connection through `Δ(μ)` has a dual connection through `μ`.
+    rcases Finset.mem_insert.1 hcμ with hcμ | hcμ
+    · exact absurd hcμ (hc c hc')
+    · exact absurd (by rw [Finset.mem_singleton.1 hcμ, Ω.dual_involutive])
+        (hc _ (Ω.dual_mem_connections c hc'))
 
 /-- A solution of `Ω` as a solution of `Ω` with a pair of dual bases `μ, Δ(μ)` removed, with the
 same words. -/
