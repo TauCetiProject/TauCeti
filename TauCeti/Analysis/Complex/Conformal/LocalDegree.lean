@@ -45,8 +45,8 @@ converse is Mathlib's inverse function theorem
 * `TauCeti.localDegree_card` — the distinct-and-simple form.
 * `TauCeti.exists_localDegree` — the textbook form: for `f` analytic at `z₀`, suitable radii
   exist; the degree count is meaningful when `z₀` is an isolated solution of `f z = f z₀`.
-* `TauCeti.eventually_closedBall_isolated` — every small enough closed disc about such a `z₀`
-  satisfies the hypotheses of `TauCeti.localDegree_card`.
+* `AnalyticAt.eventually_analyticOnNhd_closedBall_and_ne_and_deriv_ne_zero` — every small enough
+  closed disc about such a `z₀` satisfies the hypotheses of `TauCeti.localDegree_card`.
 * `TauCeti.not_injOn_of_deriv_eq_zero` — a critical point destroys injectivity on *every*
   neighbourhood of `z₀`.
 * `TauCeti.exists_injOn_nhds_iff_deriv_ne_zero` — the local injectivity criterion.
@@ -297,8 +297,9 @@ private theorem eventually_deriv_ne_zero_of_eventually_ne {f : ℂ → ℂ} {z�
 /-- **A disc adapted to the degree count.** If `f` is analytic at `z₀` and `z₀` is an isolated
 solution of `f z = f z₀`, then for every small enough radius `r > 0`, `f` is analytic on
 `closedBall z₀ r`, `z₀` is the only solution of `f z = f z₀` there, and `f'` vanishes nowhere on
-`ball z₀ r` except possibly at `z₀`. These are the hypotheses of `localDegree_card`. -/
-theorem eventually_closedBall_isolated {f : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀)
+`ball z₀ r` except possibly at `z₀`. These are the hypotheses of `TauCeti.localDegree_card`. -/
+theorem _root_.AnalyticAt.eventually_analyticOnNhd_closedBall_and_ne_and_deriv_ne_zero
+    {f : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀)
     (hne : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ f z₀) :
     ∀ᶠ r in 𝓝[>] (0 : ℝ), AnalyticOnNhd ℂ f (closedBall z₀ r) ∧
       (∀ z ∈ closedBall z₀ r, z ≠ z₀ → f z ≠ f z₀) ∧
@@ -339,7 +340,8 @@ theorem not_injOn_of_deriv_eq_zero {f : ℂ → ℂ} {z₀ : ℂ}
   · -- `f` is non-constant near `z₀`; find a disc inside `V` where the degree argument applies
     obtain ⟨r, hrV, ⟨hfr, hisolr, hderivr⟩, hr⟩ :=
       (((eventually_closedBall_subset hV).filter_mono nhdsWithin_le_nhds).and
-        ((eventually_closedBall_isolated hf (hisol.mono fun _ h => sub_ne_zero.mp h)).and
+        ((hf.eventually_analyticOnNhd_closedBall_and_ne_and_deriv_ne_zero
+          (hisol.mono fun _ h => sub_ne_zero.mp h)).and
           self_mem_nhdsWithin)).exists
     exact not_injOn_ball_of_deriv_eq_zero hr hfr hisolr hderivr hd₀
       (hinj.mono (ball_subset_closedBall.trans hrV))

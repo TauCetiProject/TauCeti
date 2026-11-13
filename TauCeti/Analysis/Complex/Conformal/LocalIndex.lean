@@ -36,6 +36,12 @@ with invertible derivative: complex conjugation has local index `-1`
 (`TauCeti.HomologicalOrientation.localIndex_conj`), so the statements here depend on `f` being
 holomorphic, not only on the orientation being the same on both sides.
 
+The same statements hold for a map `f : U → V` between open subsets of `ℂ`, oriented by restricting
+`o`, which agrees on `U` with a map `φ : ℂ → ℂ`, such as a holomorphic function on a domain read in
+local coordinates (`TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt`): the
+local index is computed for a map of `ℂ` agreeing with `φ` near the point
+(`TauCeti.HomologicalOrientation.exists_localIndex_comap_eq`).
+
 The proof of the general statement counts preimages. Choose a closed disc `D` around `z₀` on which
 `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'` vanishes nowhere except
 possibly at `z₀`. Extend `f|_D` radially to a proper map `g : ℂ → ℂ` whose values outside the open
@@ -56,6 +62,10 @@ also `m`.
   `f` is not constant near `z₀`.
 * `TauCeti.HomologicalOrientation.localIndex_pow_zero`: `z ↦ z ^ m` has local index `m` at `0`.
 * `TauCeti.HomologicalOrientation.localIndex_conj`: complex conjugation has local index `-1`.
+* `TauCeti.HomologicalOrientation.localIndex_comap_eq_one_of_hasDerivAt`,
+  `TauCeti.HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt`,
+  `TauCeti.HomologicalOrientation.localIndex_comap_pos_iff_of_analyticAt`: the same for maps
+  between open subsets of `ℂ`.
 
 ## References
 
@@ -182,7 +192,8 @@ theorem localIndex_eq_analyticOrderNatAt {f : C(ℂ, ℂ)} {z₀ : ℂ} (hf : An
   -- A closed disc on which `f` is analytic, `z₀` is the only solution of `f z = f z₀`, and `f'`
   -- vanishes nowhere except possibly at `z₀`.
   obtain ⟨r, ⟨hfr, hisolr, hderivr⟩, hr⟩ :=
-    ((eventually_closedBall_isolated hf hisol).and self_mem_nhdsWithin).exists
+    ((hf.eventually_analyticOnNhd_closedBall_and_ne_and_deriv_ne_zero hisol).and
+      self_mem_nhdsWithin).exists
   exact localIndex_eq_analyticOrderNatAt_of_closedBall o hr hfr hisolr hderivr
 
 /-- **Positivity of the local index of a holomorphic map.** If `f` is analytic at `z₀`, its local
@@ -203,6 +214,44 @@ theorem localIndex_pow_zero (m : ℕ) : o.localIndex o ⟨(· ^ m), continuous_p
   · simp [analyticOrderNatAt]
   · simp only [ContinuousMap.coe_mk]
     rw [analyticOrderNatAt, analyticOrderAt_pow_sub_zero_pow hm, ENat.toNat_natCast]
+
+/-! ### Maps between open subsets of `ℂ` -/
+
+/-- **Local index at a point with nonzero complex derivative, between open subsets.** Let `U` and
+`V` be open subsets of `ℂ`, oriented by restricting `o`, and let `f : U → V` agree on `U` with a
+map `φ : ℂ → ℂ` which is complex differentiable at `x` with nonzero derivative. Then the local index
+of `f` at `x` is `1`. -/
+theorem localIndex_comap_eq_one_of_hasDerivAt {U V : TopologicalSpace.Opens ℂ} {f : C(U, V)}
+    {φ : ℂ → ℂ} (hφ : ∀ z : U, φ z = f z) {c : ℂ} {x : U} (hd : HasDerivAt φ c x) (hc : c ≠ 0) :
+    (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x = 1 := by
+  obtain ⟨G, hGφ, h⟩ := o.exists_localIndex_comap_eq finrank_real_complex hφ x
+  rw [h, o.localIndex_eq_one_of_hasDerivAt (hd.congr_of_eventuallyEq hGφ) hc]
+
+/-- **The local index of a holomorphic map between open subsets is its order of vanishing.** Let
+`U` and `V` be open subsets of `ℂ`, oriented by restricting `o`, and let `f : U → V` agree on `U`
+with a map `φ : ℂ → ℂ` which is analytic at `x`. Then the local index of `f` at `x` is the order of
+vanishing of `φ - φ x` at `x`. -/
+theorem localIndex_comap_eq_analyticOrderNatAt {U V : TopologicalSpace.Opens ℂ} {f : C(U, V)}
+    {φ : ℂ → ℂ} (hφ : ∀ z : U, φ z = f z) {x : U} (hd : AnalyticAt ℂ φ x) :
+    (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x =
+      analyticOrderNatAt (fun z ↦ φ z - φ x) x := by
+  obtain ⟨G, hGφ, h⟩ := o.exists_localIndex_comap_eq finrank_real_complex hφ x
+  have hsub : (fun z ↦ G z - G x) =ᶠ[𝓝 (x : ℂ)] fun z ↦ φ z - φ x := by
+    filter_upwards [hGφ] with z hz
+    rw [hz, hGφ.eq_of_nhds]
+  rw [h, o.localIndex_eq_analyticOrderNatAt (hd.congr hGφ.symm), analyticOrderNatAt,
+    analyticOrderNatAt, analyticOrderAt_congr hsub]
+
+/-- **Positivity of the local index of a holomorphic map between open subsets.** Let `U` and `V` be
+open subsets of `ℂ`, oriented by restricting `o`, and let `f : U → V` agree on `U` with a map
+`φ : ℂ → ℂ` which is analytic at `x`. Then the local index of `f` at `x` is positive if and only if
+`φ` is not constant near `x`. -/
+theorem localIndex_comap_pos_iff_of_analyticAt {U V : TopologicalSpace.Opens ℂ} {f : C(U, V)}
+    {φ : ℂ → ℂ} (hφ : ∀ z : U, φ z = f z) {x : U} (hd : AnalyticAt ℂ φ x) :
+    0 < (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x ↔
+      ¬ EventuallyConst φ (𝓝 (x : ℂ)) := by
+  obtain ⟨G, hGφ, h⟩ := o.exists_localIndex_comap_eq finrank_real_complex hφ x
+  rw [h, o.localIndex_pos_iff_of_analyticAt (hd.congr hGφ.symm), hGφ.eventuallyConst_iff]
 
 end HomologicalOrientation
 

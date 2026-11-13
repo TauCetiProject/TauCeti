@@ -39,7 +39,8 @@ The same holds for a map `f : U → V` between open subsets of `E`, oriented by 
 (`TauCeti.HomologicalOrientation.comap`), which agrees on `U` with a map `φ : E → E`, such as a
 self-map of an open disc. The local index is local, so by its naturality under open embeddings
 (`TauCeti.HomologicalOrientation.localIndex_comap`) it can be computed for a map of `E` agreeing
-with `φ` near the point, obtained from Tietze's extension theorem. At a point where `φ` has
+with `φ` near the point, obtained from Tietze's extension theorem
+(`TauCeti.HomologicalOrientation.exists_localIndex_comap_eq`). At a point where `φ` has
 invertible derivative it is again the sign of the Jacobian
 (`TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`), and the degree of a proper map
 onto a preconnected open set is the signed count of the preimages of a regular value
@@ -52,6 +53,8 @@ onto a preconnected open set is the signed count of the preimages of a regular v
   the sign of the Jacobian determinant.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_sign_det`: the degree of a proper map is the signed
   count of the preimages of a regular value.
+* `TauCeti.HomologicalOrientation.exists_localIndex_comap_eq`: the local index of a map between
+  open subsets of `E` is that of a map of `E` agreeing with it near the point.
 * `TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`,
   `TauCeti.HomologicalOrientation.degree_comap_eq_sum_sign_det`: the same for maps between open
   subsets of `E`.
@@ -110,15 +113,15 @@ theorem localIndex_eq_sign_det {f : C(E, E)} {f' : E →L[ℝ] E} {x : E} (hf : 
   exact congrArg ((SignType.sign f'.det : ℤ) • ·) (hτ.trans (one_smul _ _))
 
 include hE in
-/-- **The local index at a regular point of a map between open subsets.** Let `U` and `V` be open
-subsets of `E`, oriented by restricting `o`, and let `f : U → V` agree on `U` with a map
-`φ : E → E` which is differentiable at `x` with derivative `f'` of nonzero determinant. Then the
-local index of `f` at `x` is `sign (det f')`. -/
-theorem localIndex_comap_eq_sign_det {U V : TopologicalSpace.Opens E} {f : C(U, V)} {φ : E → E}
-    (hφ : ∀ z : U, φ z = f z) {f' : E →L[ℝ] E} {x : U} (hd : HasFDerivAt φ f' x)
-    (hdet : f'.det ≠ 0) :
-    (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x =
-      SignType.sign f'.det := by
+/-- **The local index of a map between open subsets is that of a global map.** Let `U` and `V` be
+open subsets of `E`, oriented by restricting `o`, and let `f : U → V` agree on `U` with a map
+`φ : E → E`. Then there is a continuous map `G : E → E` agreeing with `φ` near `x` whose local
+index at `x` is the local index of `f` at `x`. -/
+theorem exists_localIndex_comap_eq {U V : TopologicalSpace.Opens E} {f : C(U, V)} {φ : E → E}
+    (hφ : ∀ z : U, φ z = f z) (x : U) :
+    ∃ G : C(E, E), G =ᶠ[𝓝 (x : E)] φ ∧
+      (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x =
+        o.localIndex o G x := by
   -- Extend `φ` from a closed ball about `x` inside `U` to a continuous map `G` of `E`, by Tietze's
   -- theorem; `G` agrees with `φ` near `x`, and so with `f` there.
   have hφc : ContinuousOn φ U := by
@@ -132,9 +135,21 @@ theorem localIndex_comap_eq_sign_det {U V : TopologicalSpace.Opens E} {f : C(U, 
   have hGφ : G =ᶠ[𝓝 (x : E)] φ :=
     Filter.eventually_of_mem (Metric.closedBall_mem_nhds _ (half_pos hε)) fun z hz ↦
       congrArg (· ⟨z, hz⟩) hG
-  rw [localIndex_comap hE o o U.isOpenEmbedding' V.isOpenEmbedding' (g := G)
-      (((continuous_subtype_val.tendsto x).eventually hGφ).mono fun z hz ↦ hz.trans (hφ z)),
-    o.localIndex_eq_sign_det hE (hd.congr_of_eventuallyEq hGφ) hdet]
+  exact ⟨G, hGφ, localIndex_comap hE o o U.isOpenEmbedding' V.isOpenEmbedding'
+    (((continuous_subtype_val.tendsto x).eventually hGφ).mono fun z hz ↦ hz.trans (hφ z))⟩
+
+include hE in
+/-- **The local index at a regular point of a map between open subsets.** Let `U` and `V` be open
+subsets of `E`, oriented by restricting `o`, and let `f : U → V` agree on `U` with a map
+`φ : E → E` which is differentiable at `x` with derivative `f'` of nonzero determinant. Then the
+local index of `f` at `x` is `sign (det f')`. -/
+theorem localIndex_comap_eq_sign_det {U V : TopologicalSpace.Opens E} {f : C(U, V)} {φ : E → E}
+    (hφ : ∀ z : U, φ z = f z) {f' : E →L[ℝ] E} {x : U} (hd : HasFDerivAt φ f' x)
+    (hdet : f'.det ≠ 0) :
+    (o.comap U.isOpenEmbedding').localIndex (o.comap V.isOpenEmbedding') f x =
+      SignType.sign f'.det := by
+  obtain ⟨G, hGφ, h⟩ := o.exists_localIndex_comap_eq hE hφ x
+  rw [h, o.localIndex_eq_sign_det hE (hd.congr_of_eventuallyEq hGφ) hdet]
 
 include hE in
 /-- **The degree of a map between open subsets is the sum of the Jacobian signs over a regular
