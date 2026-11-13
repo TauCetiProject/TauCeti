@@ -493,6 +493,17 @@ theorem Gamma0Map_toHomUnits_surjective :
   have h11 : ((g 1 1 : ℤ) : ZMod N) = u := by rw [hentry]; simp
   exact ⟨⟨g, Gamma0_mem.mpr h10⟩, Units.ext (by simpa [Gamma0Map] using h11)⟩
 
+/-- The index of `Γ₁(N)` is the index of `Γ₀(N)` multiplied by the number of units modulo
+`N`. This includes level zero, using the natural-cardinality convention for infinite indices. -/
+theorem Gamma1_index (N : ℕ) :
+    (Gamma1 N).index = Nat.card (ZMod N)ˣ * (Gamma0 N).index := by
+  have hker : (Gamma1 N).subgroupOf (Gamma0 N) = (Gamma0Map N).toHomUnits.ker := by
+    ext g
+    exact mem_Gamma1_iff_toHomUnits_eq_one g
+  rw [← Subgroup.relIndex_mul_index (Gamma1_in_Gamma0 N), Subgroup.relIndex, hker,
+    Subgroup.index_ker, MonoidHom.range_eq_top_of_surjective _
+      Gamma0Map_toHomUnits_surjective, Nat.card_congr Subgroup.topEquiv.toEquiv]
+
 /-- A Bézout matrix with bottom row `(N, p)`, for `p` coprime to `N`. -/
 noncomputable def gamma0Twist (N p : ℕ) (h : Nat.Coprime p N) : SL(2, ℤ) :=
   ((Nat.isCoprime_iff_coprime.mpr h.symm : IsCoprime (N : ℤ) (p : ℤ)).exists_SL2_row 1).choose
