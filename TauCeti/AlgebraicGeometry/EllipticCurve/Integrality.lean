@@ -54,13 +54,10 @@ All three are stated for an arbitrary point: no torsion, ellipticity or minimali
 the Nagell–Lutz argument the polynomial `f` is a division polynomial, whose leading coefficient is
 the order of the torsion point, and `ψ₂` vanishes exactly at the points of order two.
 
-This advances the Nagell–Lutz integrality milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz".
-
 ## Provenance
 
-Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), pinned by
-that roadmap at `dev/modular-curves @ 9fec8eba7652`:
+Ported from the AINTLIB `NagellLutz` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), at
+`dev/modular-curves @ 9fec8eba7652`:
 `LutzNagell/LutzNagellTheorem/PIDPrimeOrder.lean`, declarations
 `isInteger_of_root_squarefree_leading_coeff` and `y_isInteger_of_x_isInteger_on_curve`. The latter
 is generalised here from the fraction field to an arbitrary `R`-algebra.

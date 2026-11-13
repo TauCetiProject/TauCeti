@@ -187,7 +187,6 @@ theorem PenalizedConvex.eq_of_mem_moreauYosidaResolvent (h : PenalizedConvex m �
   rw [← heq] at hvi
   lift φ y to ℝ using ⟨htop, hbot⟩ with a
   rw [← EReal.coe_add, ← EReal.coe_add, EReal.coe_le_coe_iff] at hvi
-  have hτ' : (0 : ℝ) < τ := hτ
   -- The discrete variational inequality at `v = y'` leaves `(1 + m τ) / (2τ) d(y, y')² ≤ 0`.
   have hd : (1 + m * τ) / (2 * τ) * dist y y' ^ 2 ≤ 0 := by
     have : (1 + m * τ) / (2 * τ) * dist y y' ^ 2 =
@@ -303,7 +302,6 @@ theorem PenalizedConvex.apply_le (h : PenalizedConvex m τ φ) (hτ : 0 < τ) (h
     | coe w =>
       have hS : 0 < ∑ n ∈ range (k + 1), (1 + m * τ) ^ n :=
         sum_pos' (fun n _ ↦ pow_nonneg hmτ n) ⟨0, by simp⟩
-      have hτ' : (0 : ℝ) < τ := hτ
       have hint := h.pow_mul_dist_sq_sub_le hτ hmτ hU hv (hp ▸ EReal.coe_ne_bot p)
         (c := w - p) (by rw [hp, hw, EReal.coe_sub])
       rw [← EReal.coe_add, EReal.coe_le_coe_iff, ← sub_le_iff_le_add',

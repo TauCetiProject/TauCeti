@@ -90,10 +90,8 @@ along `h ↦ 1 ⊗ h`.
 
 ## References
 
-This supplies the Hopf-ideal infrastructure for the Layer 9 milestone "base change along `ℤ → k`
-for any commutative ring `k`" of `TauCetiRoadmap/ReductiveGroups/README.md`, transporting a
-Chevalley--Demazure carrier presented as a Hopf-ideal quotient. See J. S. Milne, *Algebraic Groups*
-(2017), §§1.d, 2.a, and W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.
+* J. S. Milne, *Algebraic Groups* (2017), §§1.d, 2.a.
+* W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.
 -/
 
 public section

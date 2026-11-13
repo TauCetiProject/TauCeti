@@ -50,7 +50,7 @@ def setBitField (w M i v : ℕ) : ℕ :=
   if v < 2 ^ w then M ^^^ ((bitField w M i ^^^ v) * 2 ^ (w * i)) else M
 
 theorem bitField_lt (w M i : ℕ) : bitField w M i < 2 ^ w :=
-  Nat.mod_lt _ (Nat.two_pow_pos w)
+  mod_lt _ (Nat.two_pow_pos w)
 
 @[simp]
 theorem bitField_zero (w i : ℕ) : bitField w 0 i = 0 := by
@@ -59,7 +59,7 @@ theorem bitField_zero (w i : ℕ) : bitField w 0 i = 0 := by
 /-- The bits of a field: bit `k` of field `i` is bit `w * i + k` of `M`, for `k < w`. -/
 theorem testBit_bitField (w M i k : ℕ) :
     (bitField w M i).testBit k = (decide (k < w) && M.testBit (w * i + k)) := by
-  rw [bitField, testBit_mod_two_pow, testBit_div_two_pow, Nat.add_comm k]
+  rw [bitField, testBit_mod_two_pow, testBit_div_two_pow, add_comm k]
 
 /-- **Reading after writing.** Field `j` of `setBitField w M i v` is `v` if `j = i` and `v` fits
 in `w` bits, and is field `j` of `M` otherwise. -/
@@ -78,9 +78,9 @@ theorem bitField_setBitField (w M i v j : ℕ) :
     by_cases hp : p < w
     · simp [hp]
     · simp only [hp, decide_false, Bool.false_and]
-      exact testBit_lt_two_pow (Nat.lt_of_lt_of_le (xor_lt_two_pow (bitField_lt w M i) hv)
+      exact testBit_lt_two_pow (lt_of_lt_of_le (xor_lt_two_pow (bitField_lt w M i) hv)
         (Nat.pow_le_pow_right Nat.two_pos (by omega)))
-  apply Nat.eq_of_testBit_eq
+  apply eq_of_testBit_eq
   intro k
   rw [testBit_bitField, testBit_xor, testBit_mul_two_pow, hD]
   by_cases hij : i = j
@@ -88,19 +88,19 @@ theorem bitField_setBitField (w M i v j : ℕ) :
     by_cases hk : k < w
     · simp [hk, testBit_bitField]
     · simp only [hk, decide_false, Bool.false_and, and_self, ↓reduceIte]
-      exact (testBit_lt_two_pow (Nat.lt_of_lt_of_le hv (Nat.pow_le_pow_right Nat.two_pos
+      exact (testBit_lt_two_pow (lt_of_lt_of_le hv (Nat.pow_le_pow_right Nat.two_pos
         (by omega)))).symm
   · simp only [hij, false_and, ↓reduceIte]
     rw [testBit_bitField]
     by_cases hk : k < w
-    · rcases Nat.lt_or_gt_of_ne hij with h | h
+    · rcases lt_or_gt_of_ne hij with h | h
       · -- Field `j` lies above field `i`.
-        have : w * (i + 1) ≤ w * j := Nat.mul_le_mul_left w h
-        have : ¬ w * j + k - w * i < w := by rw [Nat.mul_add, Nat.mul_one] at this; omega
+        have : w * (i + 1) ≤ w * j := mul_le_mul_left w h
+        have : ¬ w * j + k - w * i < w := by rw [mul_add, mul_one] at this; omega
         simp [this]
       · -- Field `j` lies below field `i`.
-        have : w * (j + 1) ≤ w * i := Nat.mul_le_mul_left w h
-        have : ¬ w * i ≤ w * j + k := by rw [Nat.mul_add, Nat.mul_one] at this; omega
+        have : w * (j + 1) ≤ w * i := mul_le_mul_left w h
+        have : ¬ w * i ≤ w * j + k := by rw [mul_add, mul_one] at this; omega
         simp [this]
     · simp [hk]
 

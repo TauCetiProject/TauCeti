@@ -65,8 +65,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 ## Provenance
 
 This module is a port of AINTLIB's `projects/AdicSpaces/Adic spaces/RestrictedPowerSeries.lean`,
-the roadmap's designated prior formalisation of this material. Three groups, because the port and
-this PR did different things to different declarations.
+a prior formalisation of this material. The declarations fall into groups according to how much
+of each is AINTLIB's.
 
 **AINTLIB's in definition, statement and proof.** `restrictedMvPowerSeriesSubring`,
 `restrictedMvPowerSeriesSubring.instAlgebra`, `IsRestricted.finite_coeff_notMem`, the private
@@ -131,19 +131,19 @@ arbitrary topological modules with strictness hypothesised, so none of that bund
 source works at ring coefficients through its own `restrictedModule` and lifts with
 `restrictedModule_map_surjective`; both come from this file's module-coefficient functor here.
 And the continuity of the action on `↥(range u)`, which the source establishes inline, is
-`Submodule.continuousConstSMul`.
+Mathlib's `ContinuousConstSMul` instance on subobjects.
 
 The name `isRestricted_iff` needs care: the port introduced it for the `coeff`-form unfolding
 lemma, which is now `isRestricted_iff_coeff`. The statement the name carries here — unfolding
 through `Filter.ZeroAtFilter` at coefficients asking only for a `0` and a topology — is new.
 
-That originality claim was checked against **both** AINTLIB sources the roadmap designates for
-this material, not only `RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`,
-`TateAlgebraTopology.lean` and `TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
+That originality claim holds against AINTLIB's other development of this material too, not only
+`RestrictedPowerSeries.lean`. AINTLIB's `TateAlgebra.lean`, `TateAlgebraTopology.lean` and
+`TateAlgebraWedhorn.lean` build `TateAlgebra A` for a *ring* `A`
 (`[CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]`) throughout; their `Submodule`
 occurrences are ideals of that ring viewed as submodules, not coefficients in a module. There is
-no `M⟨X⟩` there, and §0.5's "restricted series with coefficients in a complete topological module"
-has no AINTLIB counterpart to credit.
+no `M⟨X⟩` there, so restricted series with coefficients in a topological module have no AINTLIB
+counterpart to credit.
 
 The port additionally moves the declarations into the `TauCeti.Huber` namespace, opts into the
 Lean module system with the definition bodies unexposed — hence the added `isRestricted_iff_coeff`,
@@ -172,8 +172,8 @@ This is the canonical concrete definition. `M⟨T₁, …, Tₖ⟩` is cut out o
 coefficient function — see `isRestricted_iff`, which is `Iff.rfl`. The closure
 lemmas delegate to `zero_zeroAtFilter` and `ZeroAtFilter.add`/`.neg`/`.smul`, and
 `restrictedMvPowerSeriesSubmodule` *is* `Filter.zeroAtFilterSubmodule` at that filter rather than
-a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object the
-roadmap names, but no closure property is proved here that Mathlib already has.
+a reconstruction of it. The Huber-specific names are kept because `M⟨T₁, …, Tₖ⟩` is the object
+Huber theory works with, but no closure property is proved here that Mathlib already has.
 
 `isRestricted_iff` unfolds the predicate through `Filter.ZeroAtFilter`, which is the form the
 delegations use and what module coefficients admit; `isRestricted_iff_coeff` unfolds it through

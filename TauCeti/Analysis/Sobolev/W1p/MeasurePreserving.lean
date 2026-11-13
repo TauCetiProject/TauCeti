@@ -48,8 +48,10 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   `Φ` and every exponent, without mollification.
 * `TauCeti.W1p.compAffineIsometryEquivL`: precomposition with an affine isometry `g`, the rigid
   change of coordinates of a boundary chart. Its weak gradient at `x` is the inverse of the linear
-  part of `g` applied to `∇u (g x)`, and it does not increase the norm. It preserves and reflects
-  zero boundary values (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+  part of `g` applied to `∇u (g x)`, so the `Lᵖ` norm of the gradient is unchanged
+  (`TauCeti.W1p.norm_gradient_compAffineIsometryEquivL`), and it does not increase the norm. It
+  preserves and reflects zero boundary values
+  (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates, and the `L²` pairing `⟪∇u, ∇v⟫` of two Sobolev functions is invariant under an
@@ -332,6 +334,18 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
   simpa using W1p.norm_compMeasurePreservingL_le (p := p) (M := 1) g.measurePreserving hUV
     g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
     fun x _ => g.norm_fderiv_le x
+
+/-- Precomposition with an affine isometry preserves the `Lᵖ` norm of the weak gradient. -/
+@[simp] theorem W1p.norm_gradient_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) :
+    ‖W1p.gradient (W1p.compAffineIsometryEquivL g hUV u)‖ = ‖W1p.gradient u‖ := by
+  have hmp := measurePreserving_restrict g.measurePreserving hUV
+  have hm : AEStronglyMeasurable (fun x => W1p.gradient u (g x)) (volume.restrict (U : Set F)) :=
+    (Lp.aestronglyMeasurable _).comp_measurePreserving hmp
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm
+    ((W1p.gradient_compAffineIsometryEquivL_ae g hUV u).mono fun x hx => by
+      rw [hx, LinearIsometryEquiv.norm_map])]
+  exact congrArg ENNReal.toReal (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp)
 
 /-- Rigid changes of coordinates preserve zero Sobolev boundary values. -/
 theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule

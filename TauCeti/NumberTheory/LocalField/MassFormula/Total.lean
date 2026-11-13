@@ -94,7 +94,7 @@ theorem hasSum_integral_rootCount
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
       ∫ a in eisensteinSet K n, (L.1.rootCount a : ℝ) ∂μ)
       ((n : ℝ) * (μ (eisensteinSet K n)).toReal) := by
-  rcases n.eq_zero_or_pos with rfl | hn
+  rcases n.eq_zero_or_pos with rfl | _
   · simp
   have htotal : ∑' L : totallyRamifiedOfDegree K n,
       ∫⁻ a in eisensteinSet K n, (L.1.rootCount a : ℝ≥0∞) ∂μ ≠ ∞ := by
