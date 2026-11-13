@@ -14,10 +14,12 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -51,7 +53,9 @@ values of `f`, into critical bands.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
-components. In dimension zero every point is critical.
+components. On a compact boundaryless manifold of positive dimension every component carries at
+least two critical points of a continuous function, so a continuous function with fewer than four
+critical points lives on a preconnected manifold. In dimension zero every point is critical.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -63,7 +67,10 @@ polynomial in the Morse inequalities.
 
 * `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
-  and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
+  on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`, and on the real line
+  `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
+* `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
+  is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
@@ -115,6 +122,10 @@ polynomial in the Morse inequalities.
   counts in the connected components, when there are finitely many.
 * `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
   additivity of the total count over finite open partitions and over connected components.
+* `TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount` and
+  `TauCeti.preconnectedSpace_of_totalCriticalCount_lt_four`: on a compact boundaryless manifold of
+  positive dimension each component carries at least two critical points of a continuous function,
+  so fewer than four critical points force the manifold to be preconnected.
 * `TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum`,
   `TauCeti.toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount` and
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg`: the signed count
@@ -163,6 +174,19 @@ theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
   rw [mem_criticalPoints, mvfderiv_eq_fderiv]
   -- `NormedSpace.fromTangentSpace x` is the identity of `E`, read on the tangent space.
   exact Iff.rfl
+
+/-- On the real line, a point is critical exactly when the derivative vanishes there. -/
+theorem mem_criticalPoints_iff_deriv_eq_zero {f : ℝ → ℝ} {x : ℝ} :
+    x ∈ criticalPoints 𝓘(ℝ, ℝ) f ↔ deriv f x = 0 := by
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, ← toSpanSingleton_deriv,
+    ← ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.toSpanSingleton_inj]
+
+/-- On the real line, the only critical point of `y ↦ y ^ m` with `m ≥ 2` is `0`. -/
+theorem criticalPoints_pow {m : ℕ} (hm : 2 ≤ m) :
+    criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ m) = {0} := by
+  ext y
+  rw [mem_criticalPoints_iff_deriv_eq_zero, deriv_pow_field, mem_singleton_iff]
+  simp [show m ≠ 0 by omega, show m - 1 ≠ 0 by omega]
 
 /-- The critical set is the zero locus of the manifold derivative `mfderiv I 𝓘(ℝ) f`. -/
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
@@ -944,6 +968,45 @@ theorem two_le_totalCriticalCount [I.Boundaryless] [CompactSpace M] [Nontrivial 
       IsLocalMax.mem_criticalPoints (.of_forall fun y ↦ (hp y).trans (hq x))
     obtain ⟨x, y, hxy⟩ := exists_pair_ne M
     exact hpair hxy (hcrit x) (hcrit y)
+
+/-- On a compact boundaryless manifold of positive dimension, every continuous function has at
+least two critical points on each connected component, so its critical count is at least twice the
+number of components. -/
+theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] [CompactSpace M]
+    [Nontrivial E] (hf : Continuous f) :
+    2 * ENat.card (ConnectedComponents M) ≤ totalCriticalCount I f := by
+  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
+  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
+  have : PerfectSpace H := perfectSpace_iff_forall_not_isolated.2 fun x ↦ by
+    simpa using (PerfectSpace.not_isolated (I.toHomeomorph x)).map I.toHomeomorph.symm
+  have := Fintype.ofFinite (ConnectedComponents M)
+  rw [totalCriticalCount_eq_sum_connectedComponents, ENat.card_eq_coe_fintype_card, mul_comm,
+    ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
+  refine Finset.sum_le_sum fun C _ ↦ ?_
+  -- Each component is a nonempty compact boundaryless manifold with no isolated points.
+  obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
+  have : Nonempty (ConnectedComponents.mk x).opens := ⟨⟨x, ConnectedComponents.mem_opens.2 rfl⟩⟩
+  have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
+  have : CompactSpace (ConnectedComponents.mk x).opens :=
+    isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
+  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
+
+/-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
+than four critical points is preconnected, hence connected when nonempty: each connected component
+carries at least two of the critical points. -/
+theorem preconnectedSpace_of_totalCriticalCount_lt_four [I.Boundaryless] [CompactSpace M]
+    [Nontrivial E] (hf : Continuous f) (h4 : totalCriticalCount I f < 4) : PreconnectedSpace M := by
+  have hle := two_mul_card_connectedComponents_le_totalCriticalCount (I := I) hf
+  have : Subsingleton (ConnectedComponents M) := by
+    rw [← ENat.card_le_one_iff_subsingleton]
+    by_contra! h
+    have : (4 : ℕ∞) ≤ 2 * ENat.card (ConnectedComponents M) :=
+      calc (4 : ℕ∞) = 2 * 2 := by norm_num
+        _ ≤ 2 * ENat.card (ConnectedComponents M) := by
+          gcongr; simpa [one_add_one_eq_two] using Order.add_one_le_of_lt h
+    exact (this.trans hle).not_gt h4
+  exact preconnectedSpace_iff_connectedComponent.2 fun x ↦ eq_univ_of_forall fun _ ↦
+    ConnectedComponents.coe_eq_coe'.1 (Subsingleton.elim _ _)
 
 /-- A continuous function on a compact boundaryless manifold with exactly two critical points
 attains its minimum at one of them, `x₀`, and its maximum at the other, `x₁`. Either
