@@ -40,11 +40,13 @@ nontrivial, and the CSA property is witnessed by pairs of elements. Consequently
 fully residually free group is a domain in the sense of algebraic geometry over groups.
 Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ`, is
 discriminated by `ℤ` through integer linear forms, hence fully residually free.
-Residual freeness passes to products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is residually
-free; it is not commutative transitive, hence not fully residually free. Thus the two notions
-differ. Fully residually free groups also inherit the big powers property from free groups,
-since one homomorphism to a free group can keep every entry of a tuple and every commutator of
-consecutive entries nontrivial.
+Residual freeness passes to arbitrary products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is
+residually free; like every product of a nonabelian group and a nontrivial group it is not
+commutative transitive, hence not fully residually free. Thus the two notions differ. For the
+same reason `FreeGroup (Fin 2) × FreeGroup (Fin 2)`, a product of two fully residually free
+groups, is residually free but not fully residually free. Fully residually free groups also
+inherit the big powers property from free groups, since one homomorphism to a free group can keep
+every entry of a tuple and every commutator of consecutive entries nontrivial.
 
 ## Main definitions
 
@@ -59,6 +61,8 @@ consecutive entries nontrivial.
   groups are fully residually free.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.of_isDiscriminatedBy`: a group discriminated by a fully
   residually free group is fully residually free.
+* `TauCeti.LimitGroup.IsResiduallyFree.pi`: products of residually free groups are residually
+  free.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
@@ -79,6 +83,8 @@ consecutive entries nontrivial.
   particular `ℤⁿ`, is fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
+* `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`: `F₂ × F₂` is
+  residually free but not fully residually free.
 
 ## References
 
@@ -232,6 +238,16 @@ theorem IsResiduallyFree.prod (hG : IsResiduallyFree G) (hH : IsResiduallyFree H
   · obtain ⟨φ, hφ⟩ := hG g hg
     exact ⟨φ.comp (MonoidHom.fst G H), hφ⟩
 
+/-- A product of any family of residually free groups is residually free, through the
+projections. -/
+theorem IsResiduallyFree.pi {κ : Type*} {K : κ → Type*} [∀ i, Group (K i)]
+    (h : ∀ i, IsResiduallyFree (K i)) : IsResiduallyFree (∀ i, K i) := by
+  rw [isResiduallyFree_iff_fin_two]
+  intro g hg
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hg
+  obtain ⟨φ, hφ⟩ := isResiduallyFree_iff_fin_two.1 (h i) (g i) hi
+  exact ⟨φ.comp (Pi.evalMonoidHom K i), hφ⟩
+
 /-- A residually free group has unique roots: if `x ^ n = y ^ n` with `n ≠ 0` and `x ≠ y`, then
 `x * y⁻¹ ≠ 1` survives in some free group, where roots are unique. -/
 theorem IsResiduallyFree.hasUniqueRoots (h : IsResiduallyFree G) : HasUniqueRoots G where
@@ -316,6 +332,12 @@ theorem isFullyResiduallyFree_multiplicative_pi_int (ι : Type*) :
   isFullyResiduallyFree_multiplicative_int.of_isDiscriminatedBy
     (isDiscriminatedBy_multiplicative_pi_int ι)
 
+/-- The product of a nonabelian group and a nontrivial group is not fully residually free, since
+it is not commutative transitive. -/
+theorem not_isFullyResiduallyFree_prod_of_nontrivial [Nontrivial H] (hG : ¬IsMulCommutative G) :
+    ¬IsFullyResiduallyFree (G × H) := fun h =>
+  not_isCommTransitive_prod_of_nontrivial hG h.isCommTransitive
+
 /-- `F₂ × ℤ` is residually free, through its projections to the factors. -/
 theorem isResiduallyFree_freeGroup_prod_int :
     IsResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) :=
@@ -325,9 +347,21 @@ theorem isResiduallyFree_freeGroup_prod_int :
 /-- `F₂ × ℤ` is not fully residually free, since it is not commutative transitive. Together with
 `isResiduallyFree_freeGroup_prod_int` this separates the two notions. -/
 theorem not_isFullyResiduallyFree_freeGroup_prod_int :
-    ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) := fun h =>
-  not_isCommTransitive_prod_of_nontrivial
-    (fun hcomm => not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm))
-    h.isCommTransitive
+    ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) :=
+  not_isFullyResiduallyFree_prod_of_nontrivial fun hcomm =>
+    not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm)
+
+/-- `F₂ × F₂` is residually free, through its projections to the factors. -/
+theorem isResiduallyFree_freeGroup_prod_freeGroup :
+    IsResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
+  isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree.prod
+    isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree
+
+/-- `F₂ × F₂` is not fully residually free, although both factors are: a product of two fully
+residually free groups need not be fully residually free. -/
+theorem not_isFullyResiduallyFree_freeGroup_prod_freeGroup :
+    ¬IsFullyResiduallyFree (FreeGroup (Fin 2) × FreeGroup (Fin 2)) :=
+  not_isFullyResiduallyFree_prod_of_nontrivial fun hcomm =>
+    not_subsingleton (Fin 2) (FreeGroup.isMulCommutative_iff_subsingleton.mp hcomm)
 
 end TauCeti.LimitGroup
