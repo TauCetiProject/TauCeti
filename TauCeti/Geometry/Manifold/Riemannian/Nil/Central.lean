@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Curvature
--- The private coordinate calculation uses Nil's model-space implementation.
-import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Topology.Connected.TotallyDisconnected
 
@@ -45,22 +43,6 @@ namespace TauCeti.Nil
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private theorem fderiv_coordinates_apply (f : Nil → Nil) (p : Nil)
-    (u : TangentSpace J p) :
-    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p) (tangentSpaceCastModel J p u) =
-      tangentSpaceCastModel J (f p) (mfderiv J J f p u) := by
-  -- Nil has the inherited model-space charts. In those charts both tangent casts
-  -- are identities, and the coordinate map is the same function as the original map.
-  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
-    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
-
-private theorem contDiff_coordinates (Φ : Isom J Nil) :
-    ContDiff ℝ ∞ (toProd ∘ Φ ∘ toProd.symm) := by
-  simpa only [Diffeomorph.coe_trans, coe_toProdDiffeomorph,
-    coe_toProdDiffeomorph_symm, RiemannianIsometry.coe_toDiffeomorph,
-    Function.comp_assoc] using
-    (toProdDiffeomorph.symm.trans (Φ.toDiffeomorph.trans toProdDiffeomorph)).contMDiff.contDiff
-
 private theorem central_derivative (Φ : Isom J Nil) (p : P) :
     let v := fderiv ℝ (toProd ∘ Φ ∘ toProd.symm) p (0, 0, 1)
     v.1 = 0 ∧ v.2.1 = 0 ∧ (v.2.2 = 1 ∨ v.2.2 = -1) := by
@@ -68,8 +50,8 @@ private theorem central_derivative (Φ : Isom J Nil) (p : P) :
   let u := (tangentSpaceCastModel J q).symm (0, 0, 1)
   have hxy := (mfderiv_central_iff Φ q u).2 (by simp [u])
   have hn := Φ.inner_mfderiv q u u
-  simp only [inner_def, ← fderiv_coordinates_apply] at hn
-  simp only [← fderiv_coordinates_apply] at hxy
+  simp only [inner_def, ← fderiv_toProd_conj_apply] at hn
+  simp only [← fderiv_toProd_conj_apply] at hxy
   simp only [q, u, ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] at hn hxy
   rcases hxy with ⟨hx, hy⟩
   simp only [hx, hy, mul_zero, sub_zero, zero_add] at hn
@@ -85,7 +67,7 @@ theorem exists_mfderiv_central_eq (Φ : Isom J Nil) :
           (0, 0, ε) := by
   let a : P → ℝ := fun p => (fderiv ℝ (toProd ∘ Φ ∘ toProd.symm) p (0, 0, 1)).2.2
   have ha : Continuous a :=
-    (((contDiff_coordinates Φ).continuous_fderiv_apply (by simp)).comp
+    (((contDiff_toProd_isometry Φ).continuous_fderiv_apply (by simp)).comp
       (continuous_id.prodMk continuous_const)).snd.snd
   have hmaps : MapsTo a univ ({1, -1} : Set ℝ) := fun p _ => by
     simpa only [mem_insert_iff, mem_singleton_iff] using (central_derivative Φ p).2.2
@@ -93,7 +75,7 @@ theorem exists_mfderiv_central_eq (Φ : Isom J Nil) :
     isPreconnected_univ.constant_of_mapsTo (by simp : ({1, -1} : Set ℝ).Finite).isDiscrete
       ha.continuousOn hmaps (mem_univ p) (mem_univ 0)
   refine ⟨a 0, (central_derivative Φ 0).2.2, fun p => ?_⟩
-  rw [← fderiv_coordinates_apply]
+  rw [← fderiv_toProd_conj_apply]
   simp only [ContinuousLinearEquiv.apply_symm_apply]
   exact Prod.ext (central_derivative Φ (toProd p)).1
     (Prod.ext (central_derivative Φ (toProd p)).2.1 (hconst (toProd p)))
@@ -107,10 +89,10 @@ theorem exists_central_eq (Φ : Isom J Nil) :
   refine ⟨ε, hε, fun p t => toProd.injective ?_⟩
   have hder (q : P) : fderiv ℝ (toProd ∘ Φ ∘ toProd.symm) q (0, 0, 1) = (0, 0, ε) := by
     have h := hd (toProd.symm q)
-    rw [← fderiv_coordinates_apply] at h
+    rw [← fderiv_toProd_conj_apply] at h
     simpa only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] using h
   have h := apply_add_smul_eq_of_fderiv_apply_eq
-    ((contDiff_coordinates Φ).differentiable (by simp)) hder (toProd p) t
+    ((contDiff_toProd_isometry Φ).differentiable (by simp)) hder (toProd p) t
   have hq : toProd.symm (toProd p + t • ((0, 0, 1) : P)) = mk p.x p.y (p.z + t) := by
     rw [Equiv.symm_apply_eq, toProd_mk]
     ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd]
