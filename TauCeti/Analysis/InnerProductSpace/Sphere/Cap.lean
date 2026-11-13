@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Caps of a unit sphere
@@ -15,7 +16,8 @@ unit sphere around `a` at height `r` is the set of unit vectors `x` with `⟪x, 
 `r > 0` it is the closed ball around `a` of angular radius `arccos r`. This file records two
 criteria, stated through inner products only, for caps to be disjoint and for a cap to lie in an
 open hemisphere. They are what keeps knotted arcs confined to small caps apart when the caps are
-slid along a great circle.
+slid along a great circle. In finite dimension, finitely many caps at any height below one cover
+the unit sphere.
 
 ## Main results
 
@@ -23,6 +25,8 @@ slid along a great circle.
   `⟪a, b⟫ < 2 r² - 1`.
 * `TauCeti.inner_pos_of_le_inner`: a cap at height `r` around `a` lies in the open hemisphere
   around `u` when `⟪a, u⟫ ≥ 0` and `1 - ⟪a, u⟫² < r²`.
+* `TauCeti.exists_finset_forall_exists_le_inner`: for `κ < 1`, finitely many caps at height `κ`
+  cover the unit sphere of a finite-dimensional space.
 -/
 
 public section
@@ -64,6 +68,30 @@ theorem inner_pos_of_le_inner (hx : ‖x‖ = 1) (ha : ‖a‖ = 1) (hu : ‖u�
   have h := real_inner_mul_inner_self_le x (a - ⟪a, u⟫ • u)
   rw [hd, hxx, inner_sub_right, real_inner_smul_right] at h
   have h₂ : r ≤ ⟪x, a⟫ - ⟪a, u⟫ * ⟪x, u⟫ := by nlinarith
+  nlinarith
+
+/-- **Finitely many caps cover the sphere.** In a finite-dimensional real inner product space, for
+`κ < 1` there are finitely many unit vectors `θ` such that every unit vector `v` satisfies
+`κ ≤ ⟪θ, v⟫` for one of them: take a `δ`-net of the unit sphere, since
+`⟪θ, v⟫ = 1 - ‖v - θ‖² / 2` for unit vectors. -/
+theorem exists_finset_forall_exists_le_inner [FiniteDimensional ℝ F] {κ : ℝ} (hκ : κ < 1) :
+    ∃ S : Finset F, (∀ θ ∈ S, ‖θ‖ = 1) ∧ ∀ v : F, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫ := by
+  classical
+  set δ := min 1 (1 - κ)
+  have hδ : 0 < δ := lt_min one_pos (by linarith)
+  obtain ⟨t, hts, htf, hcov⟩ := Metric.finite_approx_of_totallyBounded
+    (isCompact_sphere (0 : F) 1).totallyBounded δ hδ
+  refine ⟨htf.toFinset, fun θ hθ ↦ by simpa using hts (htf.mem_toFinset.1 hθ), fun v hv ↦ ?_⟩
+  obtain ⟨θ, hθt, hvθ⟩ := Set.mem_iUnion₂.1 (hcov (by simpa using hv))
+  refine ⟨θ, htf.mem_toFinset.2 hθt, ?_⟩
+  have hθ : ‖θ‖ = 1 := by simpa using hts hθt
+  have hd : ‖v - θ‖ < δ := by simpa [dist_eq_norm] using hvθ
+  have h1 : ‖v - θ‖ ^ 2 ≤ δ := by
+    have : ‖v - θ‖ ≤ 1 := hd.le.trans (min_le_left _ _)
+    nlinarith [norm_nonneg (v - θ)]
+  have h2 : δ ≤ 1 - κ := min_le_right _ _
+  have hsq := norm_sub_sq_real v θ
+  rw [hv, hθ, real_inner_comm] at hsq
   nlinarith
 
 end TauCeti

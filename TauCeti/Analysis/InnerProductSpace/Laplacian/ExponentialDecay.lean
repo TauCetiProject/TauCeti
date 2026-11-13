@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
@@ -30,8 +31,8 @@ comparison principle for `-Δ + c²` on the compact annuli `R ≤ ‖x‖ ≤ R'
 (`TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`) and the limit at infinity, which controls the
 outer sphere as `R' → ∞`, then give the bound.
 
-**Inside a ball.** If `u` is defined on the closed ball of radius `R` about `x` and `u ≤ M` on its
-boundary sphere, then for every `κ < 1`
+**Inside a ball.** If `u` is defined on the closed ball of radius `R` about `x`, is a subsolution
+at the points where `u > 0`, and `u ≤ M` on its boundary sphere, then for every `κ < 1`
 
 `u x ≤ N M exp (-κ c R)`,
 
@@ -197,33 +198,9 @@ private theorem laplacian_cosh_mul_inner_sub (c : ℝ) {θ : E} (hθ : ‖θ‖ 
     funext t
     rw [hd, ((((hasDerivAt_id' t).const_mul c).sinh).const_mul c).deriv]
     ring
-  rw [ContDiffAt.laplacian_comp_inner_sub (F := fun t ↦ Real.cosh (c * t))
+  rw [ContDiffAt.laplacian_comp_inner_sub (g := fun t ↦ Real.cosh (c * t))
     (Real.contDiff_cosh.comp (contDiff_const.mul contDiff_id)).contDiffAt, hdd, hθ, one_pow,
-    one_mul]
-
-/-- For `κ < 1`, finitely many unit vectors `θ` suffice for every unit vector `v` to satisfy
-`κ ≤ ⟪θ, v⟫` for one of them: take a `δ`-net of the unit sphere, since
-`⟪θ, v⟫ = 1 - ‖v - θ‖² / 2` for unit vectors. These are the directions of the plane waves in the
-barrier for interior decay. -/
-private theorem exists_finset_forall_exists_le_inner {κ : ℝ} (hκ : κ < 1) :
-    ∃ S : Finset E, (∀ θ ∈ S, ‖θ‖ = 1) ∧ ∀ v : E, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫_ℝ := by
-  classical
-  set δ := min 1 (1 - κ)
-  have hδ : 0 < δ := lt_min one_pos (by linarith)
-  obtain ⟨t, hts, htf, hcov⟩ :=
-    finite_approx_of_totallyBounded (isCompact_sphere (0 : E) 1).totallyBounded δ hδ
-  refine ⟨htf.toFinset, fun θ hθ ↦ by simpa using hts (htf.mem_toFinset.1 hθ), fun v hv ↦ ?_⟩
-  obtain ⟨θ, hθt, hvθ⟩ := mem_iUnion₂.1 (hcov (by simpa using hv))
-  refine ⟨θ, htf.mem_toFinset.2 hθt, ?_⟩
-  have hθ : ‖θ‖ = 1 := by simpa using hts hθt
-  have hd : ‖v - θ‖ < δ := by simpa [dist_eq_norm] using hvθ
-  have h1 : ‖v - θ‖ ^ 2 ≤ δ := by
-    have : ‖v - θ‖ ≤ 1 := hd.le.trans (min_le_left _ _)
-    nlinarith [norm_nonneg (v - θ)]
-  have h2 : δ ≤ 1 - κ := min_le_right _ _
-  have hsq := norm_sub_sq_real v θ
-  rw [hv, hθ, real_inner_comm] at hsq
-  nlinarith
+    one_smul]
 
 omit [FiniteDimensional ℝ E] in
 /-- On the sphere `‖y - x‖ = R`, the sum of the plane waves `cosh (c ⟪θ, y - x⟫)` over directions
@@ -250,21 +227,23 @@ variable [Nontrivial E]
 
 /-- **Exponential decay inside a ball of subsolutions of `-Δ + V` with `V ≥ c²`.** For every
 `κ < 1` there is a constant `N`, depending only on `E` and `κ`, with the following property. Let
-`u` be continuous on the closed ball of radius `R ≥ 0` about `x`, `C²` on the open ball, with
-`V u ≤ Δ u` there for a potential `V ≥ c²`, `c ≥ 0`. If `u ≤ M` on the boundary sphere, with
-`M ≥ 0`, then at the centre
+`u` be continuous on the closed ball of radius `R ≥ 0` about `x` and, at the points of the open
+ball where `u > 0`, `C²` with `V u ≤ Δ u` for a potential `V ≥ c²`, `c ≥ 0`. If `u ≤ M` on the
+boundary sphere, with `M ≥ 0`, then at the centre
 
 `u x ≤ N M exp (-κ c R)`.
 
 The constant does not depend on `c`, `R`, `x`, `u` or `V`, so the bound is uniform as the
 screening rate `c` grows. -/
 theorem exists_forall_le_mul_mul_exp_of_mul_le_laplacian {κ : ℝ} (hκ : κ < 1) :
-    ∃ N : ℝ, ∀ ⦃u V : E → ℝ⦄ ⦃x : E⦄ ⦃R c M : ℝ⦄, 0 ≤ R → 0 ≤ c → 0 ≤ M →
-      ContinuousOn u (closedBall x R) → (∀ y ∈ ball x R, ContDiffAt ℝ 2 u y) →
-      (∀ y ∈ ball x R, c ^ 2 ≤ V y) → (∀ y ∈ ball x R, V y * u y ≤ Δ u y) →
+    ∃ N : ℝ, 0 < N ∧ ∀ ⦃u V : E → ℝ⦄ ⦃x : E⦄ ⦃R c M : ℝ⦄, 0 ≤ R → 0 ≤ c → 0 ≤ M →
+      ContinuousOn u (closedBall x R) → (∀ y ∈ ball x R, 0 < u y → ContDiffAt ℝ 2 u y) →
+      (∀ y ∈ ball x R, 0 < u y → c ^ 2 ≤ V y) →
+      (∀ y ∈ ball x R, 0 < u y → V y * u y ≤ Δ u y) →
       (∀ y ∈ sphere x R, u y ≤ M) → u x ≤ N * M * Real.exp (-(κ * c * R)) := by
-  obtain ⟨S, hSunit, hS⟩ := exists_finset_forall_exists_le_inner (E := E) (max_lt hκ one_pos)
-  refine ⟨2 * (S.card + 1), fun u V x R c M hR hc hM hcont hcd hV hsub hbdry ↦ ?_⟩
+  obtain ⟨S, hSunit, hS⟩ := exists_finset_forall_exists_le_inner (F := E) (max_lt hκ one_pos)
+  refine ⟨2 * (S.card + 1), by positivity,
+    fun u V x R c M hR hc hM hcont hcd hV hsub hbdry ↦ ?_⟩
   rcases hR.eq_or_lt with rfl | hR
   · have := hbdry x (by simp)
     rw [mul_zero, neg_zero, Real.exp_zero, mul_one]
@@ -286,16 +265,27 @@ theorem exists_forall_le_mul_mul_exp_of_mul_le_laplacian {κ : ℝ} (hκ : κ < 
     rw [laplacian_cosh_mul_inner_sub c (hSunit θ hθ)]
     ring
   have hint : interior (closedBall x R) = ball x R := interior_closedBall x hR.ne'
-  have hle := le_of_mul_le_laplacian_le_of_le_frontier (c := V) (g := A • w)
-    (isCompact_closedBall x R) hcont
-    (fun y _ ↦ ((hwcd y).const_smul A).continuousAt.continuousWithinAt)
-    (fun y hy ↦ hcd y (hint ▸ hy)) (fun y _ ↦ (hwcd y).const_smul A)
-    (fun y hy ↦ (sq_nonneg c).trans (hV y (hint ▸ hy))) (fun y hy ↦ hsub y (hint ▸ hy))
-    (fun y hy ↦ by
-      rw [hlap]
-      exact mul_le_mul_of_nonneg_right (hV y (hint ▸ hy)) (smul_nonneg hA0 (hw0 y)))
+  -- The maximum principle above `0` for `u - A • w`, which is positive only where `u` is.
+  have hpos {y : E} (hy : 0 < (u - A • w) y) : 0 < u y := by
+    rw [Pi.sub_apply, Pi.smul_apply, smul_eq_mul] at hy
+    linarith [mul_nonneg hA0 (hw0 y)]
+  have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := u - A • w) (m := 0)
+    (isCompact_closedBall x R)
+    (hcont.sub fun y _ ↦ ((hwcd y).const_smul A).continuousAt.continuousWithinAt)
+    (fun y hy hy0 ↦ (hcd y (hint ▸ hy) (hpos hy0)).sub ((hwcd y).const_smul A))
+    (fun y hy hy0 ↦ by
+      have hy' : y ∈ ball x R := hint ▸ hy
+      have hVy := hV y hy' (hpos hy0)
+      have h1 : c ^ 2 * (A • w) y ≤ V y * (A • w) y :=
+        mul_le_mul_of_nonneg_right hVy (smul_nonneg hA0 (hw0 y))
+      have h2 := mul_nonneg ((sq_nonneg c).trans hVy) hy0.le
+      rw [Pi.sub_apply, mul_sub] at h2
+      have hAw : ContDiffAt ℝ 2 (A • w) y := (hwcd y).const_smul A
+      rw [(hcd y hy' (hpos hy0)).laplacian_sub hAw, hlap]
+      linarith [hsub y hy' (hpos hy0)])
     (fun y hy ↦ by
       rw [frontier_closedBall x hR.ne'] at hy
+      rw [Pi.sub_apply, sub_nonpos]
       have hexp : Real.exp (-(κ * c * R)) * Real.exp (κ * c * R) = 1 := by
         rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
       calc u y ≤ M := hbdry y hy
@@ -307,43 +297,47 @@ theorem exists_forall_le_mul_mul_exp_of_mul_le_laplacian {κ : ℝ} (hκ : κ < 
     (mem_closedBall_self hR.le)
   -- At the centre every plane wave equals one.
   have hwx : w x = S.card := by simp [hw]
-  rw [Pi.smul_apply, smul_eq_mul, hwx, hA] at hle
+  rw [Pi.sub_apply, sub_nonpos, Pi.smul_apply, smul_eq_mul, hwx, hA] at hle
   have : 0 ≤ M * Real.exp (-(κ * c * R)) := by positivity
   nlinarith
 
 /-- **Exponential decay inside a ball of subsolutions of `-Δ + V` with a source.** For every
 `κ < 1` there is a constant `N`, depending only on `E` and `κ`, with the following property. Let
-`u` be continuous on the closed ball of radius `R ≥ 0` about `x`, `C²` on the open ball, with
-`V u ≤ Δ u + K` there for a constant `K ≥ 0` and a potential `V ≥ c²`, `c > 0`. If `u ≤ M` on the
-boundary sphere, with `M ≥ 0`, then at the centre
+`u` be continuous on the closed ball of radius `R ≥ 0` about `x` and, at the points of the open
+ball where `u > K / c²`, `C²` with `V u ≤ Δ u + K` for a constant `K ≥ 0` and a potential
+`V ≥ c²`, `c > 0`. If `u ≤ M` on the boundary sphere, with `M ≥ 0`, then at the centre
 
 `u x ≤ K / c² + N M exp (-κ c R)`.
 
 This is the form in which the bound is used for large-parameter equations, where `c` is of order
 `√r`: the first term is of order `K / r` and the second decays exponentially in `√r R`. -/
 theorem exists_forall_le_div_sq_add_mul_mul_exp_of_mul_le_laplacian_add {κ : ℝ} (hκ : κ < 1) :
-    ∃ N : ℝ, ∀ ⦃u V : E → ℝ⦄ ⦃x : E⦄ ⦃R c M K : ℝ⦄, 0 ≤ R → 0 < c → 0 ≤ M → 0 ≤ K →
-      ContinuousOn u (closedBall x R) → (∀ y ∈ ball x R, ContDiffAt ℝ 2 u y) →
-      (∀ y ∈ ball x R, c ^ 2 ≤ V y) → (∀ y ∈ ball x R, V y * u y ≤ Δ u y + K) →
+    ∃ N : ℝ, 0 < N ∧ ∀ ⦃u V : E → ℝ⦄ ⦃x : E⦄ ⦃R c M K : ℝ⦄, 0 ≤ R → 0 < c → 0 ≤ M → 0 ≤ K →
+      ContinuousOn u (closedBall x R) →
+      (∀ y ∈ ball x R, K / c ^ 2 < u y → ContDiffAt ℝ 2 u y) →
+      (∀ y ∈ ball x R, K / c ^ 2 < u y → c ^ 2 ≤ V y) →
+      (∀ y ∈ ball x R, K / c ^ 2 < u y → V y * u y ≤ Δ u y + K) →
       (∀ y ∈ sphere x R, u y ≤ M) → u x ≤ K / c ^ 2 + N * M * Real.exp (-(κ * c * R)) := by
-  obtain ⟨N, hN⟩ := exists_forall_le_mul_mul_exp_of_mul_le_laplacian (E := E) hκ
-  refine ⟨N, fun u V x R c M K hR hc hM hK hcont hcd hV hsub hbdry ↦ ?_⟩
+  obtain ⟨N, hN0, hN⟩ := exists_forall_le_mul_mul_exp_of_mul_le_laplacian (E := E) hκ
+  refine ⟨N, hN0, fun u V x R c M K hR hc hM hK hcont hcd hV hsub hbdry ↦ ?_⟩
   have hc2 : 0 < c ^ 2 := by positivity
   have hKc : 0 ≤ K / c ^ 2 := by positivity
   -- The shifted function `v = u - K / c²` is a subsolution of `-Δ + V`.
   set v : E → ℝ := fun y ↦ u y - K / c ^ 2 with hv
-  have hvsub (y : E) (hy : y ∈ ball x R) : V y * v y ≤ Δ v y := by
+  have hvu {y : E} (hy : 0 < v y) : K / c ^ 2 < u y := sub_pos.1 hy
+  have hvsub (y : E) (hy : y ∈ ball x R) (hvy : 0 < v y) : V y * v y ≤ Δ v y := by
     have hΔ : Δ v y = Δ u y := by
-      have hvu : v = u - fun _ ↦ K / c ^ 2 := by ext; simp [hv]
-      rw [hvu, (hcd y hy).laplacian_sub contDiffAt_const, laplacian_const, Pi.zero_apply,
-        sub_zero]
+      have hvu' : v = u - fun _ ↦ K / c ^ 2 := by ext; simp [hv]
+      rw [hvu', (hcd y hy (hvu hvy)).laplacian_sub contDiffAt_const, laplacian_const,
+        Pi.zero_apply, sub_zero]
     have h1 : K ≤ V y * (K / c ^ 2) := by
       rw [mul_div_assoc', le_div_iff₀ hc2, mul_comm (V y)]
-      exact mul_le_mul_of_nonneg_left (hV y hy) hK
+      exact mul_le_mul_of_nonneg_left (hV y hy (hvu hvy)) hK
     rw [hΔ, hv, mul_sub]
-    linarith [hsub y hy]
+    linarith [hsub y hy (hvu hvy)]
   have h := hN (u := v) hR hc.le hM (hcont.sub continuousOn_const)
-    (fun y hy ↦ (hcd y hy).sub contDiffAt_const) hV hvsub
+    (fun y hy hvy ↦ (hcd y hy (hvu hvy)).sub contDiffAt_const)
+    (fun y hy hvy ↦ hV y hy (hvu hvy)) hvsub
     (fun y hy ↦ (sub_le_self _ hKc).trans (hbdry y hy))
   rw [hv] at h
   linarith
