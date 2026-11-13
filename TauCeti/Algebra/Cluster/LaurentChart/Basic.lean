@@ -84,6 +84,11 @@ theorem coordinate_def (c : LaurentChart R K F) (i : K) :
 theorem apply_X (c : LaurentChart R K F) (i : K) : c (LaurentRing.X i) = c.coordinate i :=
   (rfl)
 
+/-- The coordinate of a chart constructor is evaluation at the Laurent variable. -/
+@[simp]
+theorem coordinate_mk (f : LaurentRing R K →ₐ[R] F) (hf : Function.Injective f) (i : K) :
+    (LaurentChart.mk f hf).coordinate i = f (LaurentRing.X i) := (rfl)
+
 /-- A chart is determined by its values on the Laurent variables. -/
 @[ext]
 theorem ext {c d : LaurentChart R K F} (h : ∀ i, c.coordinate i = d.coordinate i) : c = d := by
@@ -94,6 +99,14 @@ theorem ext {c d : LaurentChart R K F} (h : ∀ i, c.coordinate i = d.coordinate
 /-- Coordinates of a Laurent chart are units, including when the chart is not generating. -/
 noncomputable def coordinateUnit (c : LaurentChart R K F) : K → Fˣ :=
   LaurentRing.aevalEquiv.symm c.toAlgHom
+
+/-- Coordinate units are recovered from the chart's Laurent evaluation homomorphism. -/
+theorem coordinateUnit_def (c : LaurentChart R K F) :
+    c.coordinateUnit = LaurentRing.aevalEquiv.symm c.toAlgHom := (rfl)
+
+@[simp]
+theorem coordinateUnit_mk (f : LaurentRing R K →ₐ[R] F) (hf : Function.Injective f) :
+    (LaurentChart.mk f hf).coordinateUnit = LaurentRing.aevalEquiv.symm f := (rfl)
 
 @[simp]
 theorem val_coordinateUnit (c : LaurentChart R K F) (i : K) :
@@ -327,6 +340,7 @@ theorem range_reindex (c : LaurentChart R K F) (e : K ≃ K') :
         simp
       _ = Set.range c := EquivLike.range_comp c (LaurentRing.renameEquiv R e.symm)
 
+@[simp↓]
 theorem range_toAlgHom_reindex (c : LaurentChart R K F) (e : K ≃ K') :
     (c.reindex e).toAlgHom.range = c.toAlgHom.range := by
   exact SetLike.coe_injective (c.range_reindex e)
@@ -426,6 +440,44 @@ theorem laurentExpansion_inv_coordinate (c : LaurentChart R K F) (i : K)
   simpa only [Finsupp.prod_single_index, zpow_zero, one_smul, zpow_neg_one] using
     c.apply_single (Finsupp.single i (-1)) 1
 
+/-- Expand a unit coordinate in the normal form of the coordinate-family constructor. -/
+@[simp↓]
+theorem laurentExpansion_ofCoordinates_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K)
+    (h : (x i : F) ∈ (ofCoordinates x hx).toAlgHom.range) :
+    (ofCoordinates x hx).laurentExpansion ⟨(x i : F), h⟩ = LaurentRing.X i := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).laurentExpansion_coordinate i
+      (by simpa only [coordinate_ofCoordinates] using h)
+
+/-- Expand an inverse unit coordinate in the coordinate-family constructor. -/
+@[simp↓]
+theorem laurentExpansion_ofCoordinates_inv_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K)
+    (h : (x i : F)⁻¹ ∈ (ofCoordinates x hx).toAlgHom.range) :
+    (ofCoordinates x hx).laurentExpansion ⟨(x i : F)⁻¹, h⟩ =
+      AddMonoidAlgebra.single (Finsupp.single i (-1)) 1 := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).laurentExpansion_inv_coordinate i
+      (by simpa only [coordinate_ofCoordinates] using h)
+
+/-- Expand a retained coordinate in the normal form of a restricted chart. -/
+@[simp↓]
+theorem laurentExpansion_restrict_coordinate (c : LaurentChart R K F) (f : K' ↪ K) (i : K')
+    (h : c.coordinate (f i) ∈ (c.restrict f).toAlgHom.range) :
+    (c.restrict f).laurentExpansion ⟨c.coordinate (f i), h⟩ = LaurentRing.X i := by
+  simpa only [coordinate_restrict] using (c.restrict f).laurentExpansion_coordinate i
+    (by simpa only [coordinate_restrict] using h)
+
+/-- Expand the inverse of a retained coordinate in a restricted chart. -/
+@[simp↓]
+theorem laurentExpansion_restrict_inv_coordinate (c : LaurentChart R K F) (f : K' ↪ K) (i : K')
+    (h : (c.coordinate (f i))⁻¹ ∈ (c.restrict f).toAlgHom.range) :
+    (c.restrict f).laurentExpansion ⟨(c.coordinate (f i))⁻¹, h⟩ =
+      AddMonoidAlgebra.single (Finsupp.single i (-1)) 1 := by
+  simpa only [coordinate_restrict] using (c.restrict f).laurentExpansion_inv_coordinate i
+    (by simpa only [coordinate_restrict] using h)
+
 /-- Expansion can be recognized by equality after faithful chart evaluation. -/
 theorem laurentExpansion_eq_iff (c : LaurentChart R K F) (x : c.toAlgHom.range)
     (p : LaurentRing R K) : c.laurentExpansion x = p ↔ (x : F) = c p := by
@@ -468,6 +520,55 @@ theorem coeff_inv_coordinate (c : LaurentChart R K F) (i : K)
 @[simp]
 theorem coeff_one (c : LaurentChart R K F) : c.coeff 1 = Finsupp.single 0 1 := by
   rw [coeff_def, map_one, AddMonoidAlgebra.one_def, AddMonoidAlgebra.coeff_single]
+
+/-- Coefficients at a unit coordinate in the coordinate-family constructor. -/
+@[simp↓]
+theorem coeff_ofCoordinates_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K)
+    (h : (x i : F) ∈ (ofCoordinates x hx).toAlgHom.range) :
+    (ofCoordinates x hx).coeff ⟨(x i : F), h⟩ = Finsupp.single (Finsupp.single i 1) 1 := by
+  rw [coeff_def, laurentExpansion_ofCoordinates_coordinate, LaurentRing.X_def,
+    AddMonoidAlgebra.coeff_single]
+
+/-- Coefficients at an inverse unit coordinate in the coordinate-family constructor. -/
+@[simp↓]
+theorem coeff_ofCoordinates_inv_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (i : K)
+    (h : (x i : F)⁻¹ ∈ (ofCoordinates x hx).toAlgHom.range) :
+    (ofCoordinates x hx).coeff ⟨(x i : F)⁻¹, h⟩ = Finsupp.single (Finsupp.single i (-1)) 1 := by
+  rw [coeff_def, laurentExpansion_ofCoordinates_inv_coordinate, AddMonoidAlgebra.coeff_single]
+
+/-- Coefficients at a retained coordinate of a restricted chart. -/
+@[simp↓]
+theorem coeff_restrict_coordinate (c : LaurentChart R K F) (f : K' ↪ K) (i : K')
+    (h : c.coordinate (f i) ∈ (c.restrict f).toAlgHom.range) :
+    (c.restrict f).coeff ⟨c.coordinate (f i), h⟩ = Finsupp.single (Finsupp.single i 1) 1 := by
+  rw [coeff_def, laurentExpansion_restrict_coordinate, LaurentRing.X_def,
+    AddMonoidAlgebra.coeff_single]
+
+/-- Coefficients at the inverse of a retained coordinate in a restricted chart. -/
+@[simp↓]
+theorem coeff_restrict_inv_coordinate (c : LaurentChart R K F) (f : K' ↪ K) (i : K')
+    (h : (c.coordinate (f i))⁻¹ ∈ (c.restrict f).toAlgHom.range) :
+    (c.restrict f).coeff ⟨(c.coordinate (f i))⁻¹, h⟩ =
+      Finsupp.single (Finsupp.single i (-1)) 1 := by
+  rw [coeff_def, laurentExpansion_restrict_inv_coordinate, AddMonoidAlgebra.coeff_single]
+
+/-- Inverting the coefficient equivalence reconstructs the Laurent polynomial with that data. -/
+@[simp]
+theorem laurentExpansion_coeff_symm_apply (c : LaurentChart R K F) (g : (K →₀ ℤ) →₀ R) :
+    c.laurentExpansion (c.coeff.symm g) = AddMonoidAlgebra.ofCoeff g := by
+  apply AddMonoidAlgebra.coeff_injective
+  rw [← coeff_def, LinearEquiv.apply_symm_apply, AddMonoidAlgebra.coeff_ofCoeff]
+
+/-- The inverse coefficient equivalence evaluates the finite sum of its Laurent monomials. -/
+@[simp]
+theorem coe_coeff_symm_apply (c : LaurentChart R K F) (g : (K →₀ ℤ) →₀ R) :
+    ((c.coeff.symm g : c.toAlgHom.range) : F) =
+      g.sum (fun m r ↦ c (AddMonoidAlgebra.single m r)) := by
+  rw [← c.apply_laurentExpansion (c.coeff.symm g), laurentExpansion_coeff_symm_apply]
+  conv_lhs => rw [← AddMonoidAlgebra.sum_coeff_single (AddMonoidAlgebra.ofCoeff g)]
+  simp only [Finsupp.sum, map_sum]
 
 /-- The finite Laurent expansion reconstructs the element being expanded. -/
 theorem sum_apply_single_coeff (c : LaurentChart R K F) (x : c.toAlgHom.range) :

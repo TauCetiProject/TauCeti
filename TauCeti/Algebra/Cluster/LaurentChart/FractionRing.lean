@@ -356,6 +356,140 @@ noncomputable def fractionRingTransition {K' : Type*} (c : LaurentChart R K F)
     FractionRing (LaurentRing R K) ≃ₐ[R] FractionRing (LaurentRing R K') :=
   (c.fractionRingEquiv hc).trans (d.fractionRingEquiv hd).symm
 
+/-- The fraction-field transition is the composite through the common ambient field. -/
+theorem fractionRingTransition_def {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) :
+    c.fractionRingTransition d hc hd = (c.fractionRingEquiv hc).trans
+      (d.fractionRingEquiv hd).symm := (rfl)
+
+/-- Evaluate change of fraction-field chart on any fraction, without an overlap hypothesis. -/
+theorem fractionRingTransition_apply {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates)
+    (x : FractionRing (LaurentRing R K)) :
+    c.fractionRingTransition d hc hd x =
+      (d.fractionRingEquiv hd).symm (c.fractionRingEquiv hc x) := (rfl)
+
+/-- On a Laurent polynomial class, transition is inverse evaluation in the target chart. -/
+@[simp↓]
+theorem fractionRingTransition_algebraMap {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) (p : LaurentRing R K) :
+    c.fractionRingTransition d hc hd (algebraMap _ (FractionRing (LaurentRing R K)) p) =
+      (d.fractionRingEquiv hd).symm (c p) := by
+  rw [fractionRingTransition_apply, fractionRingEquiv_algebraMap]
+
+@[simp]
+theorem fractionRingTransition_self (c : LaurentChart R K F) (hc : c.Generates) :
+    c.fractionRingTransition c hc hc = AlgEquiv.refl := by
+  ext x
+  simp [fractionRingTransition]
+
+@[simp]
+theorem fractionRingTransition_symm {K' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (hc : c.Generates) (hd : d.Generates) :
+    (c.fractionRingTransition d hc hd).symm = d.fractionRingTransition c hd hc := by
+  ext x
+  rfl
+
+@[simp]
+theorem fractionRingTransition_trans {K' K'' : Type*} (c : LaurentChart R K F)
+    (d : LaurentChart R K' F) (e : LaurentChart R K'' F)
+    (hc : c.Generates) (hd : d.Generates) (he : e.Generates) :
+    (c.fractionRingTransition d hc hd).trans (d.fractionRingTransition e hd he) =
+      c.fractionRingTransition e hc he := by
+  ext x
+  simp [fractionRingTransition]
+
+/-- Ambient algebra equivalences transport the canonical Laurent fraction-field equivalence. -/
+@[simp]
+theorem fractionRingEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
+    (h : (c.map e.toAlgHom).Generates) :
+    (c.map e.toAlgHom).fractionRingEquiv h =
+      (c.fractionRingEquiv ((c.generates_map_algEquiv_iff e).mp h)).trans e := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply IsLocalization.algHom_ext (nonZeroDivisors (LaurentRing R K))
+  apply LaurentRing.algHom_ext
+  intro i
+  simp [Algebra.algHom]
+
+/-- Ambient algebra equivalences transport the canonical polynomial fraction-field model. -/
+@[simp]
+theorem fractionRingMvPolynomialEquiv_map (c : LaurentChart R K F) (e : F ≃ₐ[R] G)
+    (h : (c.map e.toAlgHom).Generates) :
+    (c.map e.toAlgHom).fractionRingMvPolynomialEquiv h =
+      (c.fractionRingMvPolynomialEquiv ((c.generates_map_algEquiv_iff e).mp h)).trans e := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply IsLocalization.algHom_ext (nonZeroDivisors (MvPolynomial K R))
+  apply MvPolynomial.algHom_ext
+  intro i
+  simp [Algebra.algHom]
+
+/-- Reindex the canonical Laurent fraction model using the existing localization equivalence. -/
+@[simp]
+theorem fractionRingEquiv_reindex {K' : Type*} (c : LaurentChart R K F) (σ : K ≃ K')
+    (h : (c.reindex σ).Generates) :
+    (c.reindex σ).fractionRingEquiv h =
+      (IsFractionRing.algEquivOfAlgEquiv (K := FractionRing (LaurentRing R K'))
+        (L := FractionRing (LaurentRing R K)) (LaurentRing.renameEquiv R σ.symm)).trans
+          (c.fractionRingEquiv ((c.generates_reindex_iff σ).mp h)) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply IsLocalization.algHom_ext (nonZeroDivisors (LaurentRing R K'))
+  apply LaurentRing.algHom_ext
+  intro i
+  simp [Algebra.algHom, LaurentRing.renameEquiv_apply]
+
+/-- Reindex the polynomial fraction model by the existing fraction-field functor. -/
+@[simp]
+theorem fractionRingMvPolynomialEquiv_reindex {K' : Type*}
+    (c : LaurentChart R K F) (σ : K ≃ K') (h : (c.reindex σ).Generates) :
+    (c.reindex σ).fractionRingMvPolynomialEquiv h =
+      (IsFractionRing.algEquivOfAlgEquiv (K := FractionRing (MvPolynomial K' R))
+        (L := FractionRing (MvPolynomial K R)) (MvPolynomial.renameEquiv R σ.symm)).trans
+          (c.fractionRingMvPolynomialEquiv ((c.generates_reindex_iff σ).mp h)) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply IsLocalization.algHom_ext (nonZeroDivisors (MvPolynomial K' R))
+  apply MvPolynomial.algHom_ext
+  intro i
+  simp [Algebra.algHom, MvPolynomial.renameEquiv_apply]
+
+/-- Inverse Laurent fraction evaluation at a unit-family coordinate in constructor normal form. -/
+@[simp↓]
+theorem fractionRingEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
+    ((ofCoordinates x hx).fractionRingEquiv h).symm (x i : F) =
+      algebraMap _ (FractionRing (LaurentRing R K)) (LaurentRing.X (R := R) i) := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).fractionRingEquiv_symm_apply_coordinate h i
+
+/-- Inverse Laurent fraction evaluation at an inverse unit-family coordinate. -/
+@[simp↓]
+theorem fractionRingEquiv_ofCoordinates_symm_inv_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
+    ((ofCoordinates x hx).fractionRingEquiv h).symm ((x i : F)⁻¹) =
+      algebraMap _ (FractionRing (LaurentRing R K))
+        (AddMonoidAlgebra.single (Finsupp.single i (-1)) 1 : LaurentRing R K) := by
+  apply ((ofCoordinates x hx).fractionRingEquiv h).injective
+  simp only [fractionRingEquiv_algebraMap, AlgEquiv.apply_symm_apply, apply_single,
+    coordinate_ofCoordinates, Finsupp.prod_single_index, zpow_zero, one_smul, zpow_neg_one]
+
+/-- Inverse polynomial fraction evaluation at a unit-family coordinate. -/
+@[simp↓]
+theorem fractionRingMvPolynomialEquiv_ofCoordinates_symm_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
+    ((ofCoordinates x hx).fractionRingMvPolynomialEquiv h).symm (x i : F) =
+      algebraMap _ (FractionRing (MvPolynomial K R)) (MvPolynomial.X (R := R) i) := by
+  simpa only [coordinate_ofCoordinates] using
+    (ofCoordinates x hx).fractionRingMvPolynomialEquiv_symm_apply_coordinate h i
+
+/-- Inverse polynomial fraction evaluation at an inverse unit-family coordinate. -/
+@[simp↓]
+theorem fractionRingMvPolynomialEquiv_ofCoordinates_symm_inv_coordinate (x : K → Fˣ)
+    (hx : AlgebraicIndependent R fun i ↦ (x i : F)) (h : (ofCoordinates x hx).Generates) (i : K) :
+    letI : IsDomain R := (ofCoordinates x hx).isDomain
+    ((ofCoordinates x hx).fractionRingMvPolynomialEquiv h).symm ((x i : F)⁻¹) =
+      (algebraMap _ (FractionRing (MvPolynomial K R)) (MvPolynomial.X (R := R) i))⁻¹ := by
+  have : IsDomain R := (ofCoordinates x hx).isDomain
+  simp
+
 /-- On the overlap of two chart ranges, change of fraction-field chart sends the first Laurent
 expansion to the second Laurent expansion of the same ambient element. -/
 theorem fractionRingTransition_algebraMap_laurentExpansion {K' : Type*}
@@ -366,7 +500,7 @@ theorem fractionRingTransition_algebraMap_laurentExpansion {K' : Type*}
         (algebraMap _ (FractionRing (LaurentRing R K)) (c.laurentExpansion ⟨z, hz.1⟩)) =
       algebraMap _ (FractionRing (LaurentRing R K')) (d.laurentExpansion ⟨z, hz.2⟩) := by
   apply (d.fractionRingEquiv hd).injective
-  simp [fractionRingTransition]
+  simp
 
 /-- Generating charts correspond to field-generating transcendence bases. -/
 noncomputable def generatingCoordinatesEquiv :
@@ -465,6 +599,24 @@ theorem coeff_standard_algebraMap (p : P)
 theorem generates_standard : (standard R K).Generates := by
   rw [generates_iff, ← closure_range_comp_toLaurent, standard_comp_toLaurent]
   exact IsFractionRing.closure_range_algebraMap P Q
+
+/-- In the standard polynomial model the canonical fraction-field equivalence is the identity. -/
+@[simp]
+theorem fractionRingMvPolynomialEquiv_standard :
+    (standard R K).fractionRingMvPolynomialEquiv generates_standard = AlgEquiv.refl := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply IsLocalization.algHom_ext (nonZeroDivisors P)
+  apply MvPolynomial.algHom_ext
+  intro i
+  simp [Algebra.algHom]
+
+/-- Inverse Laurent fraction evaluation on a standard polynomial value is its Laurent class. -/
+@[simp↓]
+theorem fractionRingEquiv_standard_symm_algebraMap (p : P) :
+    ((standard R K).fractionRingEquiv generates_standard).symm (algebraMap P Q p) =
+      algebraMap _ (FractionRing (LaurentRing R K)) (MvPolynomial.toLaurent p) := by
+  simpa only [standard_toLaurent] using
+    (standard R K).fractionRingEquiv_symm_apply generates_standard (MvPolynomial.toLaurent p)
 
 end Standard
 
