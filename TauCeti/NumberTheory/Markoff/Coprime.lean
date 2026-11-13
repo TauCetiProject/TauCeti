@@ -76,6 +76,7 @@ theorem pairwise_isCoprime_markoffVieta (h : Pairwise fun j k => IsCoprime (x j)
     exact h hjk
 
 /-- A Vieta move preserves and reflects pairwise coprimality of the coordinates. -/
+@[simp]
 theorem pairwise_isCoprime_markoffVieta_iff :
     (Pairwise fun j k => IsCoprime (markoffVieta i x j) (markoffVieta i x k)) ↔
       Pairwise fun j k => IsCoprime (x j) (x k) := by
