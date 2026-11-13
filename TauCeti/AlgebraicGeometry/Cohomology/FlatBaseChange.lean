@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -32,6 +32,9 @@ which computes both sides by Čech complexes of a chosen cover, the isomorphism 
 on any choice, and it is compatible with the maps induced by morphisms of sheaves and with the
 connecting maps of short exact sequences. Over a field `k` and a field extension `K / k` it shows
 that the dimension of `Hⁿ(X, M)` does not change when `k` is extended to `K`.
+The dimension, finite-dimensionality and Euler-characteristic corollaries hold for every
+quasi-compact quasi-separated scheme: the open-set equivalence below, applied at the whole
+space, supplies the needed linear equivalence.
 
 The proof is by dimension shifting, simultaneously for all quasi-coherent sheaves. In degree zero
 the map is the flat base change of global sections
@@ -593,6 +596,33 @@ lemma cohomologyOnBaseChangeLinearEquiv_apply [Module.Flat R R'] [M.IsQuasicoher
 
 end Opens
 
+include H in
+/-- Global cohomology of a quasi-coherent sheaf on a quasi-compact quasi-separated scheme
+commutes with flat base change, as an existence statement for a linear equivalence. -/
+theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparated
+    [Module.Flat R R'] [CompactSpace X] [QuasiSeparatedSpace X]
+    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Nonempty (R' ⊗[R] Cohomology M n ≃ₗ[R']
+      Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
+  let eX : cohomologyOn M n ⊤ ≃ₗ[R] Cohomology M n :=
+    { __ := (cohomologyOnTopLinearEquiv M n).toAddEquiv
+      map_smul' r x := by
+        rw [base_smul_cohomologyOn, base_smul_cohomology]
+        exact (cohomologyOnTopLinearEquiv M n).map_smul _ _ }
+  let N := (Scheme.Modules.pullback g).obj M
+  let eY : cohomologyOn N n ⊤ ≃ₗ[R'] Cohomology N n :=
+    { __ := (cohomologyOnTopLinearEquiv N n).toAddEquiv
+      map_smul' r x := by
+        rw [base_smul_cohomologyOn, base_smul_cohomology]
+        exact (cohomologyOnTopLinearEquiv N n).map_smul _ _ }
+  -- The top open coerces to the universal set; the explicit types fix the open argument
+  -- of the base-change equivalence while using the global compactness instances.
+  let e := cohomologyOnBaseChangeLinearEquiv H M
+    (show IsCompact ((⊤ : X.Opens) : Set X) from isCompact_univ)
+    (show IsQuasiSeparated ((⊤ : X.Opens) : Set X) from isQuasiSeparated_univ) n
+  exact ⟨(TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl R' R') eX.symm) ≪≫ₗ
+    e ≪≫ₗ eY⟩
+
 end FlatBaseChange
 
 section Field
@@ -604,30 +634,32 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 
 include H in
 /-- The dimension of `Hⁿ(X, M)` does not change under extension of the base field, for a
-quasi-coherent sheaf `M` on a quasi-compact scheme over a field with affine diagonal, for instance a
-separated scheme of finite type. The coefficients after base change are the canonical pullback
+quasi-coherent sheaf `M` on a quasi-compact quasi-separated scheme over a field.
+The coefficients after base change are the canonical pullback
 sheaf. -/
 theorem finrank_cohomology_pullback_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
     Module.finrank K (Cohomology ((Scheme.Modules.pullback g).obj M) n) =
       Module.finrank k (Cohomology M n) := by
-  rw [← (cohomologyBaseChangeLinearEquiv H M n).finrank_eq, Module.finrank_baseChange]
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparated H M n
+  rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
 /-- The cohomology `Hⁿ(X, M)` of a quasi-coherent sheaf stays finite-dimensional under extension of
-the base field, on a quasi-compact scheme over a field with affine diagonal. -/
+the base field, on a quasi-compact quasi-separated scheme over a field. -/
 theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
-    FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
-  Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+    FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_quasiSeparated H M n
+  exact Module.Finite.equiv e
 
 include H in
 /-- The dimension of `Hⁿ(X, 𝒪_X)` does not change under extension of the base field, on a
-quasi-compact scheme over a field with affine diagonal, for instance a proper one. -/
+quasi-compact quasi-separated scheme over a field, for instance a proper one. -/
 theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ) :
+    [QuasiSeparatedSpace X] (n : ℕ) :
     Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
       Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
@@ -638,9 +670,9 @@ theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
 
 include H in
 /-- `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the base field, on a quasi-compact
-scheme over a field with affine diagonal, for instance a proper one. -/
+quasi-separated scheme over a field, for instance a proper one. -/
 theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ)
+    [QuasiSeparatedSpace X] (n : ℕ)
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
   let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
@@ -658,17 +690,16 @@ theorem finiteDimensional_cohomology_trivial_of_isPullback_of_isProper
     [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
     FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
   have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
-  have : IsSeparated (terminal.from X) := by
-    rw [← terminal.comp_from (X ↘ Spec (.of k))]
-    infer_instance
+  have : QuasiSeparatedSpace X :=
+    quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
   exact finiteDimensional_cohomology_trivial_of_isPullback H n
 
 include H in
 /-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf
-does not change under extension of the base field, on a quasi-compact scheme over a field with
-affine diagonal. -/
+does not change under extension of the base field, on a quasi-compact quasi-separated scheme
+over a field. -/
 theorem eulerCharBelow_pullback_eq_of_isPullback [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
     eulerCharBelow K Y ((Scheme.Modules.pullback g).obj M) n = eulerCharBelow k X M n := by
   induction n with
