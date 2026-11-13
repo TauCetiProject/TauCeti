@@ -84,11 +84,15 @@ instance : Trans (SameJetAt 𝕜 n x (F := F)) (SameJetAt 𝕜 n x) (SameJetAt �
 theorem equivalence : Equivalence (SameJetAt 𝕜 n x (F := F)) :=
   ⟨fun f ↦ refl f x, symm, trans⟩
 
-variable (𝕜) in
+variable (𝕜 F) in
 /-- The setoid identifying maps with the same finite jet at a fixed point. -/
 def setoid (n : ℕ) (x : E) : Setoid (E → F) where
   r := SameJetAt 𝕜 n x
   iseqv := equivalence
+
+/-- The finite-jet setoid relates precisely maps with equal finite jets. -/
+@[simp]
+theorem setoid_apply : setoid 𝕜 F n x f f' ↔ SameJetAt 𝕜 n x f f' := (Iff.rfl)
 
 /-- Truncation preserves equality of jets. -/
 theorem of_le (h : SameJetAt 𝕜 n x f f') (hmn : m ≤ n) : SameJetAt 𝕜 m x f f' :=
@@ -120,31 +124,33 @@ theorem fderiv (h : SameJetAt 𝕜 (n + 1) x f f') :
   simpa only [iteratedFDeriv_succ_eq_comp_right, Function.comp_apply] using
     h.iteratedFDeriv_eq (Nat.succ_le_succ hi)
 
+/-- Post-composition by a continuous linear equivalence preserves equality of jets,
+without differentiability assumptions. -/
+theorem continuousLinearEquiv_comp (h : SameJetAt 𝕜 n x f f') (e : F ≃L[𝕜] G) :
+    SameJetAt 𝕜 n x (e ∘ f) (e ∘ f') := by
+  intro i hi
+  simp only [ContinuousLinearEquiv.iteratedFDeriv_comp_left, h.iteratedFDeriv_eq hi]
+
+/-- Post-composition by a linear isometry equivalence preserves equality of jets,
+without differentiability assumptions. -/
+theorem linearIsometryEquiv_comp (h : SameJetAt 𝕜 n x f f') (e : F ≃ₗᵢ[𝕜] G) :
+    SameJetAt 𝕜 n x (e ∘ f) (e ∘ f') := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    h.continuousLinearEquiv_comp e.toContinuousLinearEquiv
+
 /-- Taking `m` derivatives lowers the order of equal jets by `m`.
 No differentiability assumption is needed. -/
 theorem iteratedFDeriv (h : SameJetAt 𝕜 (n + m) x f f') :
     SameJetAt 𝕜 n x (iteratedFDeriv 𝕜 m f) (iteratedFDeriv 𝕜 m f') := by
   induction m generalizing n with
   | zero =>
-    intro i hi
     rw [iteratedFDeriv_zero_eq_comp, iteratedFDeriv_zero_eq_comp]
-    let e := (continuousMultilinearCurryFin0 𝕜 E F).symm.toContinuousLinearEquiv
-    -- Replace the isometry coercion by the linear-equiv coercion required by the chain rule.
-    change iteratedFDeriv 𝕜 i (e ∘ f) x = iteratedFDeriv 𝕜 i (e ∘ f') x
-    simp only [ContinuousLinearEquiv.iteratedFDeriv_comp_left,
-      h.iteratedFDeriv_eq (by simpa using hi)]
+    exact h.linearIsometryEquiv_comp (continuousMultilinearCurryFin0 𝕜 E F).symm
   | succ m ih =>
     have hd := (ih (n := n + 1) (by simpa only [Nat.add_right_comm, Nat.add_assoc] using h)).fderiv
-    intro i hi
     rw [iteratedFDeriv_succ_eq_comp_left, iteratedFDeriv_succ_eq_comp_left]
-    let e := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (m + 1) ↦ E) F).symm
-      |>.toContinuousLinearEquiv
-    -- Again expose the linear-equiv coercion to apply the unconditional composition lemma.
-    change iteratedFDeriv 𝕜 i (e ∘ _root_.fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x =
-      iteratedFDeriv 𝕜 i (e ∘ _root_.fderiv 𝕜 (iteratedFDeriv 𝕜 m f')) x
-    rw [e.iteratedFDeriv_comp_left (𝕜 := 𝕜) (f := _root_.fderiv 𝕜 (iteratedFDeriv 𝕜 m f)),
-      e.iteratedFDeriv_comp_left (𝕜 := 𝕜) (f := _root_.fderiv 𝕜 (iteratedFDeriv 𝕜 m f')),
-      hd.iteratedFDeriv_eq hi]
+    exact hd.linearIsometryEquiv_comp
+      (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (m + 1) ↦ E) F).symm
 
 /-- The jet depends only on the germ of a local section. -/
 theorem _root_.Filter.EventuallyEq.sameJetAt (h : f =ᶠ[𝓝 x] f') : SameJetAt 𝕜 n x f f' :=
@@ -172,6 +178,20 @@ theorem comp (hf : SameJetAt 𝕜 n x f f') (hg : SameJetAt 𝕜 n (f x) g g')
   funext j
   exact hf (c.partSize j) ((c.partSize_le j).trans hi)
 
+/-- Projection to the first component preserves equality of finite jets. -/
+theorem fst {a a' : E → F × G} (h : SameJetAt 𝕜 n x a a')
+    (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
+    SameJetAt 𝕜 n x (fun y ↦ (a y).1) (fun y ↦ (a' y).1) := by
+  simpa only [Function.comp_def] using
+    h.comp (refl Prod.fst _) hca hca' contDiffAt_fst contDiffAt_fst
+
+/-- Projection to the second component preserves equality of finite jets. -/
+theorem snd {a a' : E → F × G} (h : SameJetAt 𝕜 n x a a')
+    (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
+    SameJetAt 𝕜 n x (fun y ↦ (a y).2) (fun y ↦ (a' y).2) := by
+  simpa only [Function.comp_def] using
+    h.comp (refl Prod.snd _) hca hca' contDiffAt_snd contDiffAt_snd
+
 /-- Pairing sections preserves equality of finite jets. -/
 theorem prodMk {a a' : E → G} (hf : SameJetAt 𝕜 n x f f')
     (ha : SameJetAt 𝕜 n x a a')
@@ -197,6 +217,19 @@ theorem coordChange {h : E' → E} {a : E' × F → G} {y : E'}
     (by simpa only [hf.apply_eq, Function.comp_apply, id_eq] using ha)
 
 end SameJetAt
+
+/-- Jets of product-valued maps agree exactly when their component jets agree. -/
+@[simp]
+theorem sameJetAt_prod_iff {n : ℕ} {a a' : E → F × G} {x : E}
+    (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
+    SameJetAt 𝕜 n x a a' ↔
+      SameJetAt 𝕜 n x (fun y ↦ (a y).1) (fun y ↦ (a' y).1) ∧
+      SameJetAt 𝕜 n x (fun y ↦ (a y).2) (fun y ↦ (a' y).2) := by
+  constructor
+  · intro h
+    exact ⟨h.fst hca hca', h.snd hca hca'⟩
+  · rintro ⟨hf, hg⟩
+    exact hf.prodMk hg hca.fst hca'.fst hca.snd hca'.snd
 
 /-- Equality of finite jets is unchanged by exchanging the two maps. -/
 theorem sameJetAt_comm {n : ℕ} {f g : E → F} {x : E} :
