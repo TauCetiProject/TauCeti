@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-public import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.WeightedApproximateIdentity
 
@@ -34,7 +34,7 @@ level of the dyadic partial sums:
   `2^{jn} 𝓕⁻ φ (2^j ·)` of the Schwartz kernel `𝓕⁻ φ`, whose integral is `φ 0 = 1`
   (`ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq`). So `S_{j+1} f → f`
   in `L¹` against every integrable weight
-  (`MeasureTheory.tendsto_lintegral_enorm_mul_enorm_integral_smul_comp_sub_smul_sub`), and the
+  (`MeasureTheory.tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub`), and the
   truncations are bounded in `L^∞` uniformly in `j`
   (`exists_littlewoodPaleyLowPass_eq_and_norm_le`). Writing
   `Sⱼ f · Sⱼ g - f g = (Sⱼ f - f) · Sⱼ g + f · (Sⱼ g - g)` and pairing with a Schwartz function
@@ -43,16 +43,10 @@ level of the dyadic partial sums:
   **Bony's decomposition**. Since `S_N f · S_N g = ∑_{k, j < N} Δₖ f · Δⱼ g`, sorting the pairs
   `(k, j)` into the three classes writes `S_N f · S_N g` as the sum of the partial sums of
   `T_f g`, `T_g f` and `R(f, g)` up to `N`, and this sum converges to `f g`.
-* The **spectral localization of the paraproduct pieces**,
-`TemperedDistribution.isVanishingOn_fourier_smul_of_littlewoodPaleyLowPass_of_littlewoodPaleyBlock`.
-  The Fourier transform of
-  `S_{j+1} f · Δ_{j+2} g` vanishes outside the annulus
-  `2^j (2 φ.rIn - φ.rOut) ≤ ‖ξ‖ ≤ 5 · 2^j φ.rOut`, by the spectrum of a product
-  (`MeasureTheory.Lp.isVanishingOn_fourier_smul`). This is a genuine annulus when
-  `φ.rOut < 2 φ.rIn`. Localization in dyadic annuli is what puts the paraproduct `T_f g` of
-  `f ∈ L^∞` and `g ∈ 𝒞^β = B^β_{∞,∞}` in `𝒞^β` for every real `β`. The pieces
-  `Δₖ f · Δⱼ g` of the resonant term have spectra in balls of radius
-  `(2^k + 2^j) φ.rOut` by `MeasureTheory.Lp.isVanishingOn_fourier_smul_closedBall`.
+
+The spectral localization of the terms, and the corresponding finite decomposition of
+`S_M u · S_M v` for elements of Besov spaces, are in
+`TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct`.
 
 The blocks and truncations of an `L^∞` function are `L^∞` functions
 (`exists_littlewoodPaleyBlock_eq_and_norm_le`,
@@ -84,32 +78,32 @@ omit [CompleteSpace F] in
 /-- Against a Schwartz function `ψ`, the products `a · b` and `f · g` of bounded functions differ by
 at most `‖b‖_∞ ∫ |ψ| |a - f| + ‖f‖_∞ ∫ |ψ| ‖b - g‖`, from
 `a · b - f · g = (a - f) · b + f · (b - g)`. -/
-private theorem enorm_integral_smul_sub_integral_smul_le (ψ : 𝓢(E, ℂ))
+private theorem eNorm_integral_smul_sub_integral_smul_le (ψ : 𝓢(E, ℂ))
     (a f : Lp ℂ ∞ (volume : Measure E)) (b g : Lp F ∞ (volume : Measure E)) :
     ‖(∫ x, ψ x • (a • b : Lp F ∞ volume) x) - ∫ x, ψ x • (f • g : Lp F ∞ volume) x‖ₑ ≤
       ‖b‖ₑ * (∫⁻ x, ‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * ∫⁻ x, ‖ψ x‖ₑ * ‖b x - g x‖ₑ := by
   have hint : ∀ u : Lp F ∞ (volume : Measure E), Integrable (fun x ↦ ψ x • u x) :=
     fun u ↦ ψ.integrable.smul_of_top_left (Lp.memLp u)
   have hm : AEMeasurable (fun x ↦ ‖ψ x‖ₑ * ‖a x - f x‖ₑ) :=
-    ψ.continuous.enorm.aemeasurable.mul
-      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).enorm
-  rw [← integral_sub (hint _) (hint _), ← lintegral_const_mul' _ _ enorm_ne_top,
-    ← lintegral_const_mul' _ _ enorm_ne_top, ← lintegral_add_left' (hm.const_mul _)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono_ae ?_)
+    ψ.continuous.eNorm.aemeasurable.mul
+      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).eNorm
+  rw [← integral_sub (hint _) (hint _), ← lintegral_const_mul' _ _ eNorm_ne_top,
+    ← lintegral_const_mul' _ _ eNorm_ne_top, ← lintegral_add_left' (hm.const_mul _)]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
   filter_upwards [Lp.coeFn_lpSMul (r := ∞) a b, Lp.coeFn_lpSMul (r := ∞) f g,
     Lp.ae_norm_le_norm_top b, Lp.ae_norm_le_norm_top f] with x hab hfg hb hf
-  rw [← smul_sub, enorm_smul, hab, hfg, Pi.smul_apply', Pi.smul_apply']
+  rw [← smul_sub, eNorm_smul, hab, hfg, Pi.smul_apply', Pi.smul_apply']
   have hsplit : a x • b x - f x • g x = (a x - f x) • b x + f x • (b x - g x) := by
     rw [sub_smul, smul_sub]
     abel
-  have hb' : ‖b x‖ₑ ≤ ‖b‖ₑ := enorm_le_iff_norm_le.2 hb
-  have hf' : ‖f x‖ₑ ≤ ‖f‖ₑ := enorm_le_iff_norm_le.2 hf
+  have hb' : ‖b x‖ₑ ≤ ‖b‖ₑ := eNorm_le_iff_norm_le.2 hb
+  have hf' : ‖f x‖ₑ ≤ ‖f‖ₑ := eNorm_le_iff_norm_le.2 hf
   calc ‖ψ x‖ₑ * ‖a x • b x - f x • g x‖ₑ
       ≤ ‖ψ x‖ₑ * (‖a x - f x‖ₑ * ‖b‖ₑ + ‖f‖ₑ * ‖b x - g x‖ₑ) := by
         rw [hsplit]
         gcongr
-        refine (enorm_add_le _ _).trans ?_
-        rw [enorm_smul, enorm_smul]
+        refine (eNorm_add_le _ _).trans ?_
+        rw [eNorm_smul, eNorm_smul]
         gcongr
     _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
 
@@ -140,15 +134,15 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
   refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun ψ ↦ ?_
   simp only [Lp.toTemperedDistribution_apply]
   rw [← tendsto_add_atTop_iff_nat 1, tendsto_iff_edist_tendsto_0]
-  have hf := (tendsto_lintegral_enorm_mul_enorm_integral_smul_comp_sub_smul_sub
+  have hf := (tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
     φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable f)
     (Lp.ae_norm_le_norm_top f)).comp hc
-  have hg := (tendsto_lintegral_enorm_mul_enorm_integral_smul_comp_sub_smul_sub
+  have hg := (tendsto_lintegral_eNorm_mul_eNorm_integral_smul_comp_sub_smul_sub
     φ.integrable_fourierInv φ.integral_fourierInv ψ.integrable (Lp.aestronglyMeasurable g)
     (Lp.ae_norm_le_norm_top g)).comp hc
   have hlim := (ENNReal.Tendsto.const_mul (a := ENNReal.ofReal (C * ‖g‖)) hf
     (Or.inr ENNReal.ofReal_ne_top)).add
-    (ENNReal.Tendsto.const_mul (a := ‖f‖ₑ) hg (Or.inr enorm_ne_top))
+    (ENNReal.Tendsto.const_mul (a := ‖f‖ₑ) hg (Or.inr eNorm_ne_top))
   simp only [mul_zero, add_zero] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
     fun j ↦ ?_
@@ -161,8 +155,8 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
     lintegral_congr_ae <| (ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq φ j (hb (j + 1))).mono
       fun x hx ↦ by dsimp only at hx ⊢; rw [hx]
   dsimp only [Function.comp_apply]
-  rw [hIa, hIg, edist_eq_enorm_sub]
-  refine (enorm_integral_smul_sub_integral_smul_le ψ _ f _ g).trans ?_
+  rw [hIa, hIg, eDist_eq_eNorm_sub]
+  refine (eNorm_integral_smul_sub_integral_smul_le ψ _ f _ g).trans ?_
   gcongr
   exact hbC _
 
@@ -226,39 +220,5 @@ theorem tendsto_toTemperedDistribution_paraproduct_add_paraproduct_add_resonant
   congr 1
   rw [Lp.sum_smul, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, sum_range_sum_range_eq,
     sum_congr rfl fun j _ ↦ Lp.sum_smul _ _ _, sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _]
-
-open Distribution in
-/-- **The spectrum of a paraproduct piece.** Let `u ∈ Lᵖ` and `v ∈ L^q` be the truncation
-`S_{j+1} a` and the block `Δ_{j+2} b` of two tempered distributions, and `1/r = 1/p + 1/q`. Then
-the Fourier transform of `u · v ∈ Lʳ` vanishes outside the annulus
-`2^j (2 φ.rIn - φ.rOut) ≤ ‖ξ‖ ≤ 5 · 2^j φ.rOut`. This annulus does not reach the origin when
-`φ.rOut < 2 φ.rIn`. -/
-theorem isVanishingOn_fourier_smul_of_littlewoodPaleyLowPass_of_littlewoodPaleyBlock
-    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] [p.HolderTriple q r] (j : ℕ)
-    {u : Lp ℂ p (volume : Measure E)} {v : Lp F q (volume : Measure E)} {a : 𝓢'(E, ℂ)}
-    {b : 𝓢'(E, F)} (hu : littlewoodPaleyLowPass ℂ φ (j + 1) a = u)
-    (hv : littlewoodPaleyBlock F φ (j + 2) b = v) :
-    IsVanishingOn (𝓕 ((u • v : Lp F r (volume : Measure E)) : 𝓢'(E, F)) : 𝓢'(E, F))
-      {ξ | 2 ^ j * (2 * φ.rIn - φ.rOut) ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 5 * 2 ^ j * φ.rOut}ᶜ := by
-  set A : Set E := {ξ | 2 ^ (j + 1) * φ.rIn ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2 ^ (j + 2) * φ.rOut}
-  have hA : IsCompact A := Metric.isCompact_of_isClosed_isBounded
-    ((isClosed_le continuous_const continuous_norm).inter
-      (isClosed_le continuous_norm continuous_const))
-    ((Metric.isBounded_closedBall (x := (0 : E)) (r := 2 ^ (j + 2) * φ.rOut)).subset
-      fun ξ hξ ↦ mem_closedBall_zero_iff.2 hξ.2)
-  have hh := Lp.isVanishingOn_fourier_smul (r := r) (isCompact_closedBall 0 (2 ^ j * φ.rOut)) hA
-    (hu ▸ isVanishingOn_fourier_littlewoodPaleyLowPass_succ φ j a)
-    (hv ▸ isVanishingOn_fourier_littlewoodPaleyBlock_succ φ (j + 1) b)
-  refine hh.mono (compl_subset_compl.2 ?_)
-  rintro _ ⟨η, hη, ζ, ⟨hζ₁, hζ₂⟩, rfl⟩
-  rw [mem_closedBall_zero_iff] at hη
-  refine ⟨?_, ?_⟩
-  · have := norm_sub_le (η + ζ) η
-    rw [add_sub_cancel_left] at this
-    calc 2 ^ j * (2 * φ.rIn - φ.rOut) = 2 ^ (j + 1) * φ.rIn - 2 ^ j * φ.rOut := by ring
-      _ ≤ ‖η + ζ‖ := by linarith
-  · calc ‖η + ζ‖ ≤ ‖η‖ + ‖ζ‖ := norm_add_le η ζ
-      _ ≤ 2 ^ j * φ.rOut + 2 ^ (j + 2) * φ.rOut := add_le_add hη hζ₂
-      _ = 5 * 2 ^ j * φ.rOut := by ring
 
 end TemperedDistribution

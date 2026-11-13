@@ -62,11 +62,15 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
-  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`, and for `j ≥ 1` outside the annulus
-  `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut` (`isVanishingOn_fourier_littlewoodPaleyBlock_succ`).
+  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`, and for `j ≥ 1` also inside the ball of
+  radius `2^{j-1} φ.rIn` (`isVanishingOn_fourier_littlewoodPaleyBlock_succ`); the Fourier transform
+  of a sum of blocks of index at most `n` vanishes outside the ball of radius `2^n φ.rOut`
+  (`isVanishingOn_fourier_sum_littlewoodPaleyBlock`).
+* `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
+  `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
+  derivatives.
 * `TemperedDistribution.littlewoodPaleyLowPass`: the low-frequency truncation `Sⱼ = ∑_{k < j} Δₖ`,
-  the Fourier multiplier by `φ (2^{1-j} ·)` for `j ≥ 1`, with its spectrum
-  (`isVanishingOn_fourier_littlewoodPaleyLowPass_succ`), its uniform `Lᵖ` bound
+  the Fourier multiplier by `φ (2^{1-j} ·)` for `j ≥ 1`, with its uniform `Lᵖ` bound
   (`exists_littlewoodPaleyLowPass_eq_and_norm_le`) and its expression as an average against the
   dilates of the kernel `𝓕⁻ φ` (`ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq`), whose
   integral is `1` (`ContDiffBump.integral_fourierInv`).
@@ -105,7 +109,7 @@ public section
 
 open Filter Topology
 open FourierTransform
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -220,6 +224,52 @@ theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
   rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
     (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
 
+open Distribution in
+/-- **The spectrum of a dyadic block.** The Fourier transform of `Δ_{j+1} u` vanishes outside the
+annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`, which carries the piece `ψ_{j+1}`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock_succ (j : ℕ) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ (j + 1) u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ (j + 1) * φ.rOut) \ Metric.ball 0 (2 ^ j * φ.rIn))ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
+  simp only [Set.mem_compl_iff, Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff,
+    not_and_or, not_le, not_not] at hξ
+  rcases hξ with hξ | hξ
+  · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hξ.le, Complex.ofReal_zero]
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ.le, Complex.ofReal_zero]
+
+open Distribution in
+/-- **The spectrum of a sum of blocks.** If every index in `s` is at most `n`, the Fourier
+transform of `∑_{k ∈ s} Δₖ u` vanishes outside the closed ball of radius `2^n φ.rOut`. -/
+theorem isVanishingOn_fourier_sum_littlewoodPaleyBlock {s : Finset ℕ} {n : ℕ}
+    (hs : ∀ k ∈ s, k ≤ n) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (∑ k ∈ s, littlewoodPaleyBlock F φ k u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ n * φ.rOut))ᶜ := by
+  simp_rw [littlewoodPaleyBlock_apply, ← _root_.sum_apply,
+    ← fourierMultiplierCLM_sum F fun k _ ↦
+      φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ Finset.sum_eq_zero fun k hk ↦ ?_) u
+  rw [Set.mem_compl_iff, mem_closedBall_zero_iff, not_le] at hξ
+  have hkn : (2 : ℝ) ^ k * φ.rOut ≤ 2 ^ n * φ.rOut :=
+    mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (hs k hk)) φ.rOut_pos.le
+  simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm (hkn.trans hξ.le)]
+
+/-- The Littlewood–Paley blocks commute with directional derivatives. -/
+theorem littlewoodPaleyBlock_lineDerivOp (j : ℕ) (m : E) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂_{m} u) = ∂_{m} (littlewoodPaleyBlock F φ j u) := by
+  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, lineDerivOp_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- The Littlewood–Paley blocks commute with iterated directional derivatives. -/
+theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k → E)
+    (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂^{m} u) = ∂^{m} (littlewoodPaleyBlock F φ j u) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
+      littlewoodPaleyBlock_lineDerivOp, ih]
+
 variable (F) in
 /-- The **low-frequency truncation** `Sⱼ = ∑_{k < j} Δₖ`, the sum of the Littlewood–Paley blocks of
 index below `j`. For `j ≥ 1` it is the Fourier multiplier by `φ (2^{1-j} ·)`
@@ -254,32 +304,6 @@ theorem tendsto_littlewoodPaleyLowPass (u : 𝓢'(E, F)) :
   simpa only [littlewoodPaleyLowPass_def, _root_.sum_apply] using
     tendsto_sum_littlewoodPaleyBlock φ u
 
-open Distribution in
-/-- **The spectrum of a low-frequency truncation.** The Fourier transform of `S_{j+1} u` vanishes
-outside the closed ball of radius `2^j φ.rOut`. -/
-theorem isVanishingOn_fourier_littlewoodPaleyLowPass_succ (j : ℕ) (u : 𝓢'(E, F)) :
-    IsVanishingOn (𝓕 (littlewoodPaleyLowPass F φ (j + 1) u) : 𝓢'(E, F))
-      (Metric.closedBall 0 (2 ^ j * φ.rOut))ᶜ := by
-  rw [littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
-  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
-  have hξ' : 2 ^ j * φ.rOut < ‖ξ‖ := by simpa using hξ
-  rw [φ.zero_of_le_dist ?_, Complex.ofReal_zero]
-  rw [dist_zero_right, norm_smul, norm_inv, norm_pow, Real.norm_two,
-    le_inv_mul_iff₀ (by positivity)]
-  exact hξ'.le
-
-open Distribution in
-/-- **The spectrum of a dyadic block.** For `j ≥ 0` the Fourier transform of `Δ_{j+1} u` vanishes
-outside the closed annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`, which carries `ψ_{j+1}`. -/
-theorem isVanishingOn_fourier_littlewoodPaleyBlock_succ (j : ℕ) (u : 𝓢'(E, F)) :
-    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ (j + 1) u) : 𝓢'(E, F))
-      {ξ | 2 ^ j * φ.rIn ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rOut}ᶜ := by
-  rw [littlewoodPaleyBlock_apply]
-  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
-  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_and_or, not_le] at hξ
-  rcases hξ with hξ | hξ
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ.le, Complex.ofReal_zero]
-  · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hξ.le, Complex.ofReal_zero]
 /-- A tempered distribution whose blocks vanish outside a finite set of indices is the sum of
 its blocks over that set. -/
 theorem sum_littlewoodPaleyBlock_eq_self {u : 𝓢'(E, F)} (s : Finset ℕ)

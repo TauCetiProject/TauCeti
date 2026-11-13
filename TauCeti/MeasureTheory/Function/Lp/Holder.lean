@@ -109,29 +109,3 @@ theorem tendsto_setLIntegral_enorm_bilin_sub {E F G H ι : Type*} [MeasurableSpa
   · exact B.holderL_ae_eq_of_measure_le Measure.restrict_le_self A₀ C₀ ha₀ hc₀
 
 end TauCeti
-
-namespace MeasureTheory.Lp
-
-variable {α 𝕜 E : Type*} {m : MeasurableSpace α} {μ : Measure α} {p q r : ENNReal}
-  [ENNReal.HolderTriple p q r] [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
-  [IsBoundedSMul 𝕜 E]
-
-/-- The heterogeneous scalar multiplication of `Lp` classes distributes over finite sums in the
-scalar factor. -/
-theorem sum_smul {ι : Type*} (s : Finset ι) (f : ι → Lp 𝕜 p μ) (g : Lp E q μ) :
-    ((∑ i ∈ s, f i) • g : Lp E r μ) = ∑ i ∈ s, (f i • g : Lp E r μ) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.smul_add, ih]
-
-/-- The heterogeneous scalar multiplication of `Lp` classes distributes over finite sums in the
-vector factor. -/
-theorem smul_sum {ι : Type*} (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q μ) :
-    (f • ∑ i ∈ s, g i : Lp E r μ) = ∑ i ∈ s, (f • g i : Lp E r μ) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
-
-end MeasureTheory.Lp
