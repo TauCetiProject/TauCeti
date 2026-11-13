@@ -638,6 +638,17 @@ theorem shapiroCocycles2_coindCocycle2 (hccoc : groupCohomology.IsCocycle₂ c) 
     hwu (u₁ * u₂), homogeneous2_one_left]
   simp
 
+omit [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul U A] in
+/-- A family of coinduced elements whose value at `y` is a locally constant function `N` along
+`(y, y * g)` is locally constant in `g`, since `N` is uniformly locally constant on a compact
+group. -/
+theorem isLocallyConstant_of_translate₂ {N : G × G → A} (hN : IsLocallyConstant N)
+    (F : G → DiscreteCoind G U A) (hF : ∀ g y, F g y = N (y, y * g)) : IsLocallyConstant F := by
+  refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
+  obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
+  exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => by
+    rw [hF, hF]; exact hV g hg y⟩
+
 /-- The inverse Shapiro cochain of a `2`-coboundary of `U` is a `2`-coboundary of `G`, with the
 primitive `y ↦ homogeneous1 α (w y) (w (y * g))` built from a primitive `α` of `c`. This is what
 makes the inverse construction descend to cohomology. -/
@@ -656,9 +667,7 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
       rw [h1, hwmul u y, hwmul u (y * g)]
       exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
   · rw [← IsLocallyConstant.iff_continuous]
-    refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
-    obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
-    exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
+    exact isLocallyConstant_of_translate₂ hN _ fun _ _ => rfl
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
     refine DiscreteCoind.ext fun y => ?_
@@ -692,9 +701,7 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
       exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
     ?_, ?_⟩
   · rw [← IsLocallyConstant.iff_continuous]
-    refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
-    obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
-    exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
+    exact isLocallyConstant_of_translate₂ hN _ fun _ _ => rfl
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
     refine DiscreteCoind.ext fun y => ?_
