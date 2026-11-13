@@ -47,8 +47,8 @@ ring has positive characteristic.
 * `TauCeti.baseChangeExp_add`: its one-parameter group law.
 * `TauCeti.baseChangeExpLinearEquiv`: the resulting linear automorphism.
 * `TauCeti.baseChangeExpHom`: the additive one-parameter subgroup over `R`.
-* `TauCeti.baseChangeExp_zsmul`, `TauCeti.baseChangeExpHom_zsmul`, and
-  `TauCeti.inv_baseChangeExpHom_eq_zsmul`: integer rescaling of `baseChangeExp`/`baseChangeExpHom`.
+* `TauCeti.baseChangeExp_zsmul` and `TauCeti.baseChangeExpHom_zsmul`: integer rescaling of
+  `baseChangeExp` and `baseChangeExpHom`.
 * `TauCeti.integralUnitRestrict`: a unit of `A` preserving `M` restricted to an integral
   automorphism of `M`.
 * `TauCeti.baseChangeExp_intCast`: at an integer parameter the exponential is the base change of a
@@ -579,18 +579,6 @@ theorem baseChangeExpHom_zsmul (c : ℤ) {x : A} (M : S)
   LinearEquiv.toLinearMap_inj.mp <| by
     rw [baseChangeExpHom_toLinearMap, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
     exact baseChangeExp_zsmul c M hM hcM hx (Multiplicative.toAdd t)
-
-/-- Inverting `baseChangeExpHom x M hM hx t` when `-toAdd t = c * s` rewrites it as the
-one-parameter subgroup of `c • x` at `ofAdd s`. -/
-theorem inv_baseChangeExpHom_eq_zsmul (c : ℤ) {x : A} (M : S)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hcM : ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M)
-    (hx : IsNilpotent x) {t : Multiplicative R} {s : R}
-    (hts : -Multiplicative.toAdd t = (c : R) * s) :
-    (baseChangeExpHom x M hM hx t)⁻¹ =
-      baseChangeExpHom (c • x) M hcM (hx.smul c) (Multiplicative.ofAdd s) := by
-  rw [← map_inv, baseChangeExpHom_zsmul c M hM hcM hx (hx.smul c), toAdd_ofAdd, ← hts,
-    ← toAdd_inv, ofAdd_toAdd]
 
 /-! ## Conjugating the exponential by an integral unit -/
 

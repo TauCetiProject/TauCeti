@@ -105,7 +105,7 @@ theorem kostantRootSubgroupPoints_val (f : WithConv (SymmetricAlgebra ℤ ℤ �
 /-- Under `LinearMap.GeneralLinearGroup.generalLinearEquiv`, a Kostant root-subgroup point is the
 base-changed divided-power one-parameter subgroup `TauCeti.baseChangeExpHom` evaluated at its
 `𝔾ₐ`-parameter. -/
-theorem generalLinearEquiv_kostantRootSubgroupPoints
+@[simp] theorem generalLinearEquiv_kostantRootSubgroupPoints
     (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     LinearMap.GeneralLinearGroup.generalLinearEquiv A (A ⊗[ℤ] M)
         (kostantRootSubgroupPoints e h ρ M hM i hnil f) =

@@ -31,7 +31,9 @@ Chevalley--Demazure construction.
 * `TauCeti.UniversalEnvelopingAlgebra.
   commutatorElement_kostantRootSubgroupToToral_of_lie_eq`: the class-two Chevalley relation.
 * `TauCeti.UniversalEnvelopingAlgebra.
-  commutatorElement_kostantRootSubgroupToToral_of_lie_lie_eq`: the multiply-laced relation.
+  commutatorElement_kostantRootSubgroupToToral_of_lie_lie_eq` and
+  `commutatorElement_kostantRootSubgroupToToral_of_lie_lie_rev_eq`: the multiply-laced relations in
+  both root orders.
 * `TauCeti.UniversalEnvelopingAlgebra.
   kostantRootSubgroupToToral_mul_of_lie_eq_three_nsmul`: the type-`G₂` relation.
 
@@ -135,6 +137,36 @@ theorem commutatorElement_kostantRootSubgroupToToral_of_lie_lie_eq
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ))))
     (commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
       e h ρ M hM b hnil A hij hiij hil hjk p q r s hr hs)
+  simpa only [map_commutatorElement, map_mul, IsMonHom.monoidHom_apply, Category.assoc,
+    ← Grp.comp_hom_hom,
+    kostantRootSubgroupToGenerated_comp_kostantGeneratedToToral] using hrel
+
+/-- **Steinberg's reversed multiply-laced Chevalley commutator relation inside the toral Kostant
+group scheme.** The indices `i, j, k, l` correspond to `α, β, α + β, α + 2β`. If `r` and `s` have
+parameters `c t u` and `-d t u²`, then the commutator of the factored input points is the product of
+the two factored output points. -/
+theorem commutatorElement_kostantRootSubgroupToToral_of_lie_lie_rev_eq
+    {i j k l : I} {c d : ℤ}
+    (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
+    (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
+    (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X)
+    (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
+      (c : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))
+    (hs : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A s) =
+      (-d : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) ^ 2)) :
+    ⁅p ≫ (kostantRootSubgroupToToral e h ρ M hM hnil b wt i).hom.hom,
+      q ≫ (kostantRootSubgroupToToral e h ρ M hM hnil b wt j).hom.hom⁆ =
+      (r ≫ (kostantRootSubgroupToToral e h ρ M hM hnil b wt k).hom.hom) *
+        (s ≫ (kostantRootSubgroupToToral e h ρ M hM hnil b wt l).hom.hom) := by
+  have hrel := congrArg
+    (IsMonHom.monoidHom
+      (kostantGeneratedToToral e h ρ M hM hnil b wt).hom.hom
+      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ))))
+    (commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_rev_eq
+      e h ρ M hM b hnil A hij hjji hjl hik p q r s hr hs)
   simpa only [map_commutatorElement, map_mul, IsMonHom.monoidHom_apply, Category.assoc,
     ← Grp.comp_hom_hom,
     kostantRootSubgroupToGenerated_comp_kostantGeneratedToToral] using hrel

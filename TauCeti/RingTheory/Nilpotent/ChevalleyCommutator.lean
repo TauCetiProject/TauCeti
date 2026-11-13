@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.RingTheory.DividedPowers.NormalOrdering
 public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 import TauCeti.Algebra.BigOperators.Finset.Range
@@ -30,12 +29,11 @@ E_x(t) E_y(u) = E_y(u) E_z(t * u) E_x(t).
 
 Equivalently `E_x(t) E_y(u) E_x(t)⁻¹ = E_y(u) E_z(t * u)`: conjugating the one-parameter subgroup
 of `y` by the one-parameter subgroup of `x` multiplies it by the one-parameter subgroup of the
-commutator, at the product parameter. Reading these actions as bundled one-parameter subgroups
-`TauCeti.baseChangeExpHom` in `(R ⊗[ℤ] M ≃ₗ[R] R ⊗[ℤ] M)` yields the group-commutator identity
-`⁅E_x(t), E_y(u)⁆ = E_z(t * u)`. This is the class-two case of the Chevalley commutator formula,
-the case in which the only root of the form `i α + j β` besides `α` and `β` is `α + β`; in a
-simply-laced root system every pair of non-proportional roots falls under it or under the commuting
-case `TauCeti.commute_baseChangeExp` from `TauCeti.RingTheory.Nilpotent.BaseChangeAction`.
+commutator, at the product parameter. This is the class-two case of the Chevalley commutator
+formula, the case in which the only root of the form `i α + j β` besides `α` and `β` is `α + β`;
+in a simply-laced root system every pair of non-proportional roots falls under it or under the
+commuting case `TauCeti.commute_baseChangeExp` from
+`TauCeti.RingTheory.Nilpotent.BaseChangeAction`.
 
 Nothing here divides by a factorial in `R`, so the relation holds over a ring of arbitrary
 characteristic. The whole point is the coefficient-one normal-ordering rule
@@ -50,14 +48,9 @@ its generating-function form.
 * `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
   `TauCeti.baseChangeExp_conj_of_commutator_eq`: the Chevalley commutator relation and its
   conjugation form.
-* `TauCeti.baseChangeExpHom_mul_of_commutator_eq`,
-  `TauCeti.baseChangeExpHom_mul_of_commutator_eq_zsmul`, and
-  `TauCeti.commutatorElement_baseChangeExpHom_of_commutator_eq`: multiplication and
-  element-commutator laws for `baseChangeExpHom`.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§26--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4 and Theorem 5.2.2.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
@@ -67,8 +60,7 @@ public section
 
 namespace TauCeti
 
-open Finset Multiplicative TensorProduct
-open scoped commutatorElement
+open Finset TensorProduct
 
 universe u v
 
@@ -173,58 +165,6 @@ theorem baseChangeExp_conj_of_commutator_eq
   rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy hxz hyz hx hy hMx hMy hMz t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,
     baseChangeExp_zero x M hMx hx, mul_one]
-
-/-- **Class-two multiplication law for `baseChangeExpHom`.** If `x * y = y * x + z` with `z`
-commuting with both `x` and `y`, then `E_x(t) E_y(u) = E_y(u) E_z(t * u) E_x(t)`. -/
-theorem baseChangeExpHom_mul_of_commutator_eq {x y z : A} (M : S)
-    (hxy : x * y = y * x + z) (hxz : Commute x z) (hyz : Commute y z)
-    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
-    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R) :
-    baseChangeExpHom x M hMx hx t * baseChangeExpHom y M hMy hy u =
-      baseChangeExpHom y M hMy hy u * baseChangeExpHom z M hMz hz (ofAdd (toAdd t * toAdd u)) *
-        baseChangeExpHom x M hMx hx t :=
-  LinearEquiv.toLinearMap_inj.mp <| by
-    simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy hxz hyz hx hy hMx hMy hMz
-      (toAdd t) (toAdd u)
-
-/-- **Scaled class-two multiplication law for `baseChangeExpHom`.** If
-`x * y = y * x + (k * r) • z` with `(k * r) • z` commuting with both `x` and `y`, then
-`E_x(t) E_y(u) = E_y(u) E_{r • z}(s) E_x(t)` whenever `k * (t * u) = s`. -/
-theorem baseChangeExpHom_mul_of_commutator_eq_zsmul {x y z : A} (M : S) (k r : ℤ)
-    (hxy : x * y = y * x + (k * r) • z) (hxz : Commute x ((k * r) • z))
-    (hyz : Commute y ((k * r) • z)) (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
-    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
-    (hMrz : ∀ n, ∀ v ∈ M, Associative.dividedPower n (r • z) • v ∈ M)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R)
-    {s : R} (hs : (k : R) * (toAdd t * toAdd u) = s) :
-    baseChangeExpHom x M hMx hx t * baseChangeExpHom y M hMy hy u =
-      baseChangeExpHom y M hMy hy u * baseChangeExpHom (r • z) M hMrz (hz.smul r) (ofAdd s) *
-        baseChangeExpHom x M hMx hx t := by
-  have hMkrz := fun n => Associative.dividedPower_zsmul_smul_mem (k * r) z M (hMz n)
-  rw [baseChangeExpHom_mul_of_commutator_eq M hxy hxz hyz hMx hMy hMkrz
-      hx hy (hz.smul (k * r)) t u,
-    baseChangeExpHom_zsmul (k * r) M hMz hMkrz hz (hz.smul (k * r)),
-    baseChangeExpHom_zsmul r M hMz hMrz hz (hz.smul r), toAdd_ofAdd, toAdd_ofAdd]
-  congr 4; rw [← hs, Int.cast_mul]; ring
-
-/-- **Class-two element-commutator relation for `baseChangeExpHom`.** If `x * y = y * x + z` with
-`z` commuting with both `x` and `y`, then `⁅E_x(t), E_y(u)⁆ = E_z(t * u)`. -/
-theorem commutatorElement_baseChangeExpHom_of_commutator_eq {x y z : A} (M : S)
-    (hxy : x * y = y * x + z) (hxz : Commute x z) (hyz : Commute y z)
-    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
-    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R) :
-    ⁅baseChangeExpHom x M hMx hx t, baseChangeExpHom y M hMy hy u⁆ =
-      baseChangeExpHom z M hMz hz (ofAdd (toAdd t * toAdd u)) := by
-  rw [commutatorElement_def,
-    baseChangeExpHom_mul_of_commutator_eq M hxy hxz hyz hMx hMy hMz hx hy hz t u,
-    mul_inv_cancel_right, (commute_baseChangeExpHom M hyz hMy hMz hy hz u _).eq,
-    mul_inv_cancel_right]
 
 end Commutator
 

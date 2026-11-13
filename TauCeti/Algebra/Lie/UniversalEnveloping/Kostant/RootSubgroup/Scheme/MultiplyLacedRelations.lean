@@ -11,29 +11,33 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 /-!
 # Multiply-laced Chevalley relations for Kostant root-subgroup scheme morphisms
 
-This file transports a conditional multiply-laced Chevalley commutator relation to scheme-valued
-points of the represented root-subgroup morphisms `xᵢ : 𝔾ₐ → GLₙ`. Under the stated bracket and
-nilpotence hypotheses for the chain `β`, `α + β`, `2α + β`, the relation is
+This file transports conditional multiply-laced Chevalley commutator relations in both root orders
+to scheme-valued points of the represented root-subgroup morphisms `xᵢ : 𝔾ₐ → GLₙ`. Under the stated
+bracket and nilpotence hypotheses for `{α + β, 2α + β}` and `{α + β, α + 2β}`, the relations are
 
 ```text
-⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{2α+β}(d t² u).
+⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{2α+β}(d t² u),
+⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{α+2β}(-d t u²).
 ```
 
-It transports the matrix relation from `RootSubgroup/MultiplyLacedRelations.lean` through the
-point-comparison theorem for the actual affine group-scheme morphisms. Thus the equation is stated
-at the same interface used by the generated Chevalley--Demazure carrier.
+It transports the matrix relations from `RootSubgroup/MultiplyLacedRelations.lean` through the
+point-comparison theorem for the affine group-scheme morphisms, stating the equations at the
+interface used by the generated Chevalley--Demazure carrier.
 
 ## Main declarations
 
 * `TauCeti.UniversalEnvelopingAlgebra.
-  commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq`: the multiply-laced
-  relation for scheme-valued points.
+  commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq` and
+  `commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq'`: the multiply-laced
+  relation for `{α + β, 2α + β}` on scheme-valued points.
 * `TauCeti.UniversalEnvelopingAlgebra.
-  commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq'`: the same relation
-  with both output points written out.
+  commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq` and
+  `commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq'`: the reversed
+  multiply-laced relation for `{α + β, α + 2β}` on scheme-valued points.
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
@@ -130,6 +134,76 @@ theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
             (kostantRootSubgroup e h ρ M hM l hl b).hom.hom) :=
   commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
     e h ρ M hM b A hij hiij hil hjk hi hj hk hl p q _ _
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+
+/-- **Steinberg's reversed multiply-laced Chevalley commutator relation on scheme-valued points.**
+Suppose `e i, e j, e k, e l` correspond to `α, β, α + β, α + 2β` with `⁅e i, e j⁆ = c • e k`,
+`⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l`, and `⁅e j, e l⁆ = ⁅e i, e k⁆ = 0`, and let `r` and `s` carry
+parameters `c t u` and `-d t u²`. Then the commutator of the represented `i`- and `j`-root values is
+the product of the represented `k`- and `l`-root values. -/
+theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq
+    {i j k l : I} {c d : ℤ}
+    (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
+    (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
+    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X)
+    (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
+      (c : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))
+    (hs : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A s) =
+      (-d : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) ^ 2)) :
+    ⁅GeneralLinear.schemePointsMulEquiv n A
+        (p ≫ (kostantRootSubgroup e h ρ M hM i hi b).hom.hom),
+      GeneralLinear.schemePointsMulEquiv n A
+        (q ≫ (kostantRootSubgroup e h ρ M hM j hj b).hom.hom)⁆ =
+      GeneralLinear.schemePointsMulEquiv n A
+          (r ≫ (kostantRootSubgroup e h ρ M hM k hk b).hom.hom) *
+        GeneralLinear.schemePointsMulEquiv n A
+          (s ≫ (kostantRootSubgroup e h ρ M hM l hl b).hom.hom) := by
+  repeat rw [schemePointsMulEquiv_kostantRootSubgroup]
+  apply commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_rev_eq
+    e h ρ M hM b hij hjji hjl hik hi hj hk hl
+  · simpa only [AdditiveGroup.schemePointsMulEquiv_apply] using hr
+  · simpa only [AdditiveGroup.schemePointsMulEquiv_apply] using hs
+
+/-- The reversed multiply-laced Chevalley commutator relation on scheme-valued points with both
+output points written out at parameters `c t u` and `-d t u²`. -/
+theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq'
+    {i j k l : I} {c d : ℤ}
+    (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
+    (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
+    (hl : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))))
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    ⁅GeneralLinear.schemePointsMulEquiv n A
+        (p ≫ (kostantRootSubgroup e h ρ M hM i hi b).hom.hom),
+      GeneralLinear.schemePointsMulEquiv n A
+        (q ≫ (kostantRootSubgroup e h ρ M hM j hj b).hom.hom)⁆ =
+      GeneralLinear.schemePointsMulEquiv n A
+          ((AdditiveGroup.schemePointsMulEquiv A).symm
+              (Multiplicative.ofAdd ((c : A) *
+                (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+                  Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))) ≫
+            (kostantRootSubgroup e h ρ M hM k hk b).hom.hom) *
+        GeneralLinear.schemePointsMulEquiv n A
+          ((AdditiveGroup.schemePointsMulEquiv A).symm
+              (Multiplicative.ofAdd ((-d : A) *
+                (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+                  Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) ^ 2))) ≫
+            (kostantRootSubgroup e h ρ M hM l hl b).hom.hom) :=
+  commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq
+    e h ρ M hM b A hij hjji hjl hik hi hj hk hl p q _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
       (congrArg Multiplicative.toAdd

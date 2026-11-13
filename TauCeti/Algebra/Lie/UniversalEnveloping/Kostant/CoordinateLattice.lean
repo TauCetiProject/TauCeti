@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.LinearAlgebra.CoordinateLattice
 
 /-!
@@ -18,16 +17,14 @@ that stability once, from the two properties every such representation supplies:
 root operator is square-zero and preserves the coordinate lattice, and each standard coordinate
 vector is a Cartan weight vector with integral weights. A root operator that cubes rather than
 squares to zero is covered by the second criterion below, where the divided square is the one
-further operator whose integrality has to be checked; in particular this applies to any family of
-cube-zero integral matrices whose squares are even integral matrices.
+further operator whose integrality has to be checked.
 
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.ringChoose_apply_mem_coordinateLattice`: the Cartan
   binomial operators preserve the coordinate lattice.
-* `TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice` and
-  `TauCeti.UniversalEnvelopingAlgebra.kostantForm_integralMatrix_mem_coordinateLattice`: the whole
-  Kostant form preserves the coordinate lattice, including for cube-zero integral matrix families.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice`: the whole Kostant
+  form preserves the coordinate lattice.
 
 ## References
 
@@ -103,32 +100,5 @@ theorem kostantForm_apply_mem_coordinateLattice (e : ν → L) (h : κ → L)
       · simpa using hv
       · simpa using hstab k v hv)
     hwt hu hv
-
-section IntegralMatrix
-open TauCeti (coordinateLattice matrixIntCastLieHom)
-attribute [local instance 100] LieRing.ofAssociativeRing LieAlgebra.ofAssociativeAlgebra
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- The standard coordinate lattice is preserved by the Kostant `ℤ`-form of any family of cube-zero
-integral matrices whose squares are even integral matrices. -/
-theorem kostantForm_integralMatrix_mem_coordinateLattice {I : Type*}
-    (E D : I → Matrix n n ℤ) (hsq : ∀ i, E i * E i = 2 • D i) (hcube : ∀ i, E i ^ 3 = 0) :
-    ∀ u ∈ kostantForm (fun i => matrixIntCastLieHom ℚ (E i)) Empty.elim,
-      ∀ v ∈ (coordinateLattice n).toAddSubgroup,
-        representation ℚ (Matrix n n ℚ) (n → ℚ) u v ∈ (coordinateLattice n).toAddSubgroup := by
-  intro u hu v hv
-  refine kostantForm_apply_mem_coordinateLattice_of_pow_eq_zero
-    (fun i => matrixIntCastLieHom ℚ (E i)) Empty.elim (representation ℚ (Matrix n n ℚ) (n → ℚ))
-    (wt := fun _ => Empty.elim) 3 (fun i => pow_three_representation_matrix_eq_zero (hcube i))
-    (fun i m hm w hw => ?_) (fun a => (isCartanWeightVector_iff Empty.elim _).mpr Empty.rec) hu hv
-  obtain rfl | rfl | rfl : m = 0 ∨ m = 1 ∨ m = 2 := by omega
-  · simpa using hw
-  · rw [Associative.dividedPower_one, representation_ι_apply, Matrix.lie_apply]
-    exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (E i) hw
-  · rw [dividedPower_two_representation_matrix_apply
-      (by rw [← TauCeti.matrixIntCastLieHom_mul, hsq i, map_nsmul])]
-    exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (D i) hw
-
-end IntegralMatrix
 
 end TauCeti.UniversalEnvelopingAlgebra

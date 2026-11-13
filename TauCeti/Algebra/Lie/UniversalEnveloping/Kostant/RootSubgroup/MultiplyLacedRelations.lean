@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.ChevalleyCommutator
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.DoublyLaced
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRelations
 
 /-!
@@ -16,11 +16,11 @@ the displayed bracket and nilpotence hypotheses, Steinberg's element-commutator 
 root orders: `⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{2α+β}(d t² u)` for `{α + β, 2α + β}`, and
 `⁅x_α(t), x_β(u)⁆ = x_{α+β}(c t u) x_{α+2β}(-d t u²)` for `{α + β, α + 2β}`.
 
-`TauCeti.Algebra.Lie.UniversalEnveloping.ChevalleyCommutator` proves the underlying divided-power
+`TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.DoublyLaced` proves the underlying divided-power
 one-parameter subgroup commutator identities (eliminating the redundant vanishing-bracket assumption
 on `⁅e_β, e_{2α+β}⁆` via the Jacobi identity). This file transports those relations to Kostant
 root-subgroup points and through any finite integral basis to the represented general linear group;
-for the `{α + β, 2α + β}` scheme relation see `RootSubgroup/Scheme/MultiplyLacedRelations.lean`.
+for the corresponding scheme relations see `RootSubgroup/Scheme/MultiplyLacedRelations.lean`.
 
 ## Main declarations
 
