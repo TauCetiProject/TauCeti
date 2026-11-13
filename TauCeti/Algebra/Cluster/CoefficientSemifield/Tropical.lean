@@ -25,8 +25,8 @@ columns of a geometric cluster seed. The index type may be infinite: every eleme
 finite support. Relabelling the generators preserves both operations, and for finite `J` the
 exponent presentation agrees with the product of one-dimensional tropical groups.
 
-Group evaluation is supplied by `TauCeti.freeAbelianCharEquiv`: its inverse extends any
-family `J → Q` in a commutative group to a homomorphism `Trop J →* Q`. Such evaluations
+Group evaluation `Trop.eval` extends any family `J → Q` in a commutative group to a
+homomorphism `Trop J →* Q` using `TauCeti.freeAbelianCharEquiv`. Such evaluations
 need not preserve tropical addition, so they are deliberately not coefficient-semifield
 homomorphisms. In contrast, `Trop.reindex` is an isomorphism for both operations.
 
@@ -121,11 +121,22 @@ noncomputable def generator (j : J) : Trop J := InfTropical.ofAdd (Finsupp.singl
 theorem toAdd_generator (j : J) : (generator j).toAdd = Finsupp.single j 1 :=
   (rfl)
 
+/-- Evaluate tropical monomials in a commutative group at the given values of the generators. -/
+noncomputable def eval {Q : Type*} [CommGroup Q] (q : J → Q) : Trop J →* Q :=
+  freeAbelianCharEquiv.symm q
+
+/-- Evaluation of a finitely supported exponent vector is the product of the corresponding
+powers of the chosen coordinates. -/
+@[simp]
+theorem eval_ofAdd {Q : Type*} [CommGroup Q] (q : J → Q) (a : J →₀ ℤ) :
+    eval q (InfTropical.ofAdd a) = a.prod (fun j n ↦ q j ^ n) :=
+  freeAbelianCharEquiv_symm_apply_ofAdd q a
+
 /-- Group evaluation sends each tropical generator to its chosen coordinate. -/
 @[simp]
 theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
-    freeAbelianCharEquiv.symm q (generator j) = q j := by
-  exact freeAbelianCharEquiv_symm_apply_ofAdd_single q j
+    eval q (generator j) = q j :=
+  freeAbelianCharEquiv_symm_apply_ofAdd_single q j
 
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
@@ -204,12 +215,9 @@ theorem reindex_generator (e : J ≃ J') (j : J) :
 /-- Group evaluation is compatible with relabelling the generators. The evaluation is a group
 homomorphism, with no assertion that it preserves auxiliary addition. -/
 theorem eval_reindex {Q : Type*} [CommGroup Q] (q : J' → Q) (e : J ≃ J') (a : Trop J) :
-    freeAbelianCharEquiv.symm q (reindex e a) =
-      freeAbelianCharEquiv.symm (q ∘ e) a := by
-  change freeAbelianCharEquiv.symm q (reindex e (InfTropical.ofAdd a.toAdd)) =
-    freeAbelianCharEquiv.symm (q ∘ e) (Multiplicative.ofAdd a.toAdd)
-  rw [reindex_ofAdd]
-  change freeAbelianCharEquiv.symm q (Multiplicative.ofAdd (Finsupp.equivMapDomain e a.toAdd)) = _
+    eval q (reindex e a) = eval (q ∘ e) a := by
+  change eval q (reindex e (InfTropical.ofAdd a.toAdd)) =
+    eval (q ∘ e) (InfTropical.ofAdd a.toAdd)
   simp [Finsupp.prod_equivMapDomain]
 
 end Trop
@@ -264,13 +272,9 @@ example [IsEmpty J] : Unique (Trop J) := inferInstance
 
 /-- Evaluating a Laurent monomial in any commutative group uses integer powers. -/
 example {Q : Type*} [CommGroup Q] (q : Fin 2 → Q) :
-    freeAbelianCharEquiv.symm q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
+    eval q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
       (q 0)⁻¹ * q 1 ^ (2 : ℤ) := by
-  let z₀ : Multiplicative (Fin 2 →₀ ℤ) := generator 0
-  let z₁ : Multiplicative (Fin 2 →₀ ℤ) := generator 1
-  change freeAbelianCharEquiv.symm q (z₀⁻¹ * z₁ ^ (2 : ℤ)) = _
-  simpa only [map_mul, map_inv, map_zpow] using
-    congrArg₂ (fun x y : Q ↦ x⁻¹ * y ^ (2 : ℤ)) (eval_generator q 0) (eval_generator q 1)
+  simp
 
 /-- Transposing two generators exchanges their exponents. -/
 example : reindex (Equiv.swap (0 : Fin 2) 1)
