@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The flux of a diffeotopy
@@ -44,8 +43,8 @@ map `G : (M × [0, 1]) × [0, 1] → M` joins the motions of two diffeotopies an
 `G (x, 0, s) = x` and `G (x, 1, s) = φ₁ x` for every `s`, their flux forms differ by an exact form
 (`TauCeti.Diffeotopy.fluxForm_sub_fluxForm_mem_exactForms`). This holds for every closed `σ`,
 without assuming that the maps of the homotopy are diffeomorphisms or preserve `σ`; it is the
-double-cylinder identity `TauCeti.homotopyOperator_mpullback_one_sub_mpullback_zero` applied to
-`G^* σ`.
+double-cylinder identity `TauCeti.mextDeriv_homotopyOperator_homotopyOperator` applied to `G^* σ`,
+whose terms at the time ends vanish because `G` is stationary in `s` there.
 
 ## Main definitions
 
@@ -439,30 +438,23 @@ theorem fluxForm_sub_fluxForm_mem_exactForms {σ : SmoothForm J M ℝ 2}
       (SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).1 := by
     rw [SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hslice 1) hG',
       show G ∘ (fun p ↦ (p, 1)) = Ψ.cylinderMap from funext hG₁, SmoothForm.coe_mpullback]
-  -- Where `G` is stationary in `s`, its derivative kills `∂ₛ`, so `τ` vanishes on `∂ₛ` there.
-  have hvan {p : M × unitInterval} (hc : ∀ s, G (p, s) = G (p, 0)) (s : unitInterval)
-      (v : Fin 1 → (E × EuclideanSpace ℝ (Fin 1)) × EuclideanSpace ℝ (Fin 1)) :
-      τ.1 (p, s) (Matrix.vecCons ((0 : E × EuclideanSpace ℝ (Fin 1)),
-        (1 : TangentSpace (𝓡∂ 1) s)) v) = 0 := by
-    rw [SmoothForm.coe_mpullback, mpullback_apply]
-    exact (σ.1 (G (p, s))).map_coord_zero 0
-      (mfderiv_inr_eq_zero_of_forall_apply_eq (fun s' ↦ (hc s').trans (hc s).symm) _)
-  -- Over both ends of the inner cylinder `G` is stationary in `s`, so the homotopy operators of
-  -- the two slices of `τ` differ by `-d (h (h τ))`.
-  have key := homotopyOperator_mpullback_one_sub_mpullback_zero (I := J) (k := 0)
+  -- Over both ends of the inner cylinder `G` is stationary in `s`, so `h_s τ` vanishes there.
+  have hend {c : unitInterval} {g : M → M} (hc : ∀ x s, G ((x, c), s) = g x) :
+      mpullback J (J.prod (𝓡∂ 1)) (fun x ↦ (x, c)) (homotopyOperator τ.1) = 0 :=
+    funext fun x ↦ mpullback_apply_eq_zero <| by
+      rw [SmoothForm.coe_mpullback]
+      exact homotopyOperator_mpullback_apply_eq_zero (hc x) σ.1
+  -- So the homotopy operators of the two slices of `τ` differ by `-d (h (h τ))`.
+  have key := mextDeriv_homotopyOperator_homotopyOperator (I := J) (k := 0)
     (τ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def _).mp (hσ.mpullback G hG))
-    (fun x ↦ hvan fun s ↦ by rw [h₀, h₀]) (fun x ↦ hvan fun s ↦ by rw [h₁, h₁])
-  rw [hτ₀, hτ₁] at key
+  rw [hτ₀, hτ₁, hend h₀, hend h₁, sub_self, zero_sub] at key
   rw [exactForms_succ]
   refine ⟨-⟨homotopyOperator (homotopyOperator τ.1), (IsSmoothForm.homotopyOperator
     (IsSmoothForm.homotopyOperator τ.isSmoothForm)).mem_smoothBundleForms⟩,
     Subtype.ext ?_⟩
-  -- The flux forms are `h (Ψ^* σ)` and `h (Φ^* σ)`, and `h` commutes with their difference.
-  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_sub, coe_fluxForm, coe_fluxForm,
-    ← homotopyOperator_sub
-      ((SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ).isSmoothForm.of_le (by simp))
-      ((SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le (by simp)),
-    key]
+  -- The flux forms are `h (Ψ^* σ)` and `h (Φ^* σ)`.
+  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_sub, coe_fluxForm, coe_fluxForm]
+  exact neg_eq_iff_eq_neg.mpr key
 
 /-- **Homotopy invariance of the flux.** Diffeotopies whose motions are joined by a smooth homotopy
 fixing both time ends have the same flux with respect to every closed two-form preserved by their

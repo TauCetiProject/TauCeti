@@ -33,8 +33,8 @@ diffeotopies are arbitrary, and `σ` need not be nondegenerate.
 The motion of `Φ.trans Ψ` is the motion of `Ψ` after the level-preserving motion
 `F (x, t) = (φ_t x, t)` of the cylinder `M × [0, 1]`. The homotopy
 `G ((x, t), s) = (φ_{s t} x, t)` joins the identity of the cylinder to `F`. For the closed form
-`τ = ψ^* σ` on the cylinder, the cochain-homotopy identity in `s` gives `F^* τ - τ = d L` with
-`L = h_s (G^* τ)`, and the cochain-homotopy identity in `t` then gives
+`τ = ψ^* σ` on the cylinder and `L = h_s (G^* τ)`, the iterated homotopy-operator identity on the
+double cylinder (`TauCeti.mextDeriv_homotopyOperator_homotopyOperator`) gives
 
 `h_t (F^* τ) - h_t τ = ι₁^* L - ι₀^* L - d (h_t L)`.
 
@@ -134,24 +134,6 @@ private theorem mpullback_homotopyOperator_mpullback_cylinderRescale (τ : Smoot
     TauCeti.mpullback_comp (Θ.contMDiff_cylinderMap.mdifferentiable (by simp)) hslice,
     coe_fluxForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
 
-/-- For a closed form `τ` on the cylinder, the homotopy operator in `s` of `G^* τ` is a primitive
-of `F^* τ - τ`, where `F (x, t) = (φ_t x, t)` is the level-preserving motion of `Φ`. -/
-private theorem mextDeriv_homotopyOperator_mpullback_cylinderRescale
-    {τ : SmoothForm (J.prod (𝓡∂ 1)) (M × unitInterval) ℝ 2} (hτ : SmoothForm.IsClosed τ) :
-    mextDeriv (homotopyOperator
-        (SmoothForm.mpullback Φ.cylinderRescale Φ.contMDiff_cylinderRescale τ).1) =
-      mpullback (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun p ↦ (Φ.cylinderMap p, p.2)) τ.1 - τ.1 := by
-  have : IsManifold (J.prod (𝓡∂ 1)) 2 (M × unitInterval) := IsManifold.of_le (n := ∞) (by simp)
-  have hres (c : unitInterval) : MDifferentiable (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1))
-      fun p : M × unitInterval ↦ (p, c) :=
-    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
-  have hG := Φ.contMDiff_cylinderRescale.mdifferentiable (n := ∞) (by simp)
-  funext p
-  rw [mextDeriv_homotopyOperator ((SmoothForm.mpullback _ _ τ).isSmoothForm.of_le (by simp))
-    ((SmoothForm.isClosed_def _).mp (hτ.mpullback _ _)) p, SmoothForm.coe_mpullback,
-    ← TauCeti.mpullback_comp (hres 1) hG, ← TauCeti.mpullback_comp (hres 0) hG,
-    cylinderRescale_comp_one, cylinderRescale_comp_zero, TauCeti.mpullback_id, Pi.sub_apply]
-
 /-- **The flux form of a pointwise composite.** For a closed two-form `σ` and diffeotopies `φ`
 and `ψ`, the flux form of the composite `ψ_t ∘ φ_t` differs by an exact form from the sum of the
 flux form of `ψ` and the flux form of `φ` with respect to `ψ₁^* σ`. No diffeomorphism involved
@@ -163,21 +145,20 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
   have : IsManifold J ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold (J.prod (𝓡∂ 1)) ((⊤ : ℕ∞) + 1 : WithTop ℕ∞) (M × unitInterval) :=
     IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold J 2 M := IsManifold.of_le (n := ∞) (by simp)
   have hcyl : MDifferentiable (J.prod (𝓡∂ 1)) J Ψ.cylinderMap :=
     Ψ.contMDiff_cylinderMap.mdifferentiable (by simp)
+  have hres (c : unitInterval) : MDifferentiable (J.prod (𝓡∂ 1)) ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1))
+      fun p : M × unitInterval ↦ (p, c) :=
+    (contMDiff_id.prodMk contMDiff_const).mdifferentiable (n := 1) one_ne_zero
+  have hG := Φ.contMDiff_cylinderRescale.mdifferentiable (n := ∞) (by simp)
   -- `τ = ψ^* σ` on the cylinder and `η = G^* τ` on the double cylinder are closed.
   set τ := SmoothForm.mpullback Ψ.cylinderMap Ψ.contMDiff_cylinderMap σ
   set η := SmoothForm.mpullback Φ.cylinderRescale Φ.contMDiff_cylinderRescale τ
   have hτ : SmoothForm.IsClosed τ := hσ.mpullback _ _
-  -- `L = h_s η` satisfies `d L = F^* τ - τ`, where `F^* τ` is the pullback of `σ` along the
-  -- motion of the composite.
-  set L := homotopyOperator η.1
-  have hdL : mextDeriv L = (SmoothForm.mpullback (Φ.trans Ψ).cylinderMap
-      (Φ.trans Ψ).contMDiff_cylinderMap σ).1 - τ.1 := by
-    rw [Φ.mextDeriv_homotopyOperator_mpullback_cylinderRescale hτ, SmoothForm.coe_mpullback,
-      SmoothForm.coe_mpullback, cylinderMap_trans,
-      TauCeti.mpullback_comp ((Φ.contMDiff_cylinderMap.prodMk contMDiff_snd).mdifferentiable
-        (by simp)) hcyl]
+  -- The iterated homotopy-operator identity on the double cylinder for `η`, with `L = h_s η`.
+  have key := mextDeriv_homotopyOperator_homotopyOperator (η.isSmoothForm.of_le (by simp))
+    ((SmoothForm.isClosed_def _).mp (hτ.mpullback _ _))
   -- The ends of `L` are the flux form of `φ` for `ψ₁^* σ` and the flux form of the constant
   -- diffeotopy, which vanishes.
   have hL₁ := mpullback_homotopyOperator_mpullback_cylinderRescale Φ τ 1 Φ
@@ -187,20 +168,24 @@ theorem fluxForm_trans_sub_sub_mem_exactForms {σ : SmoothForm J M ℝ 2}
   -- The slices of `τ` at the two ends are `ψ₁^* σ` and `σ`.
   rw [Ψ.mpullback_slice_one_mpullback_cylinderMap] at hL₁
   rw [Ψ.mpullback_slice_zero_mpullback_cylinderMap, fluxForm_refl, Submodule.coe_zero] at hL₀
-  -- The cochain-homotopy identity in `t` for `L` concludes.
-  have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ L := IsSmoothForm.homotopyOperator η.isSmoothForm
+  -- The slices of `η` in `s` are `F^* τ`, the pullback of `σ` along the motion of the composite,
+  -- and `τ`.
+  have hF : mpullback (J.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1)) (fun p ↦ (Φ.cylinderMap p, p.2)) τ.1 =
+      (SmoothForm.mpullback (Φ.trans Ψ).cylinderMap (Φ.trans Ψ).contMDiff_cylinderMap σ).1 := by
+    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, cylinderMap_trans,
+      TauCeti.mpullback_comp ((Φ.contMDiff_cylinderMap.prodMk contMDiff_snd).mdifferentiable
+        (by simp)) hcyl]
+  rw [hL₁, hL₀, SmoothForm.coe_mpullback, ← TauCeti.mpullback_comp (hres 1) hG,
+    ← TauCeti.mpullback_comp (hres 0) hG, cylinderRescale_comp_one, cylinderRescale_comp_zero,
+    TauCeti.mpullback_id, hF] at key
+  -- The primitive is `-h_t L`.
+  have hLs : IsSmoothForm (J.prod (𝓡∂ 1)) ∞ (homotopyOperator η.1) :=
+    IsSmoothForm.homotopyOperator η.isSmoothForm
   rw [exactForms_succ]
-  refine ⟨-⟨homotopyOperator L, (IsSmoothForm.homotopyOperator hLs).mem_smoothBundleForms⟩,
-    Subtype.ext (funext fun x ↦ ?_)⟩
-  have key := mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv (hLs.of_le (by simp)) x
-  -- The homotopy operator in `t` is additive on the continuous forms `F^* τ - τ` and `τ`.
-  have hadd := homotopyOperator_add
-    ((SmoothForm.mpullback (Φ.trans Ψ).cylinderMap (Φ.trans Ψ).contMDiff_cylinderMap σ -
-      τ).isSmoothForm.of_le (by simp)) (τ.isSmoothForm.of_le (by simp))
-  rw [Submodule.coe_sub, sub_add_cancel] at hadd
-  rw [hdL, hL₁, hL₀, Pi.zero_apply, sub_zero] at key
-  rw [map_neg, Submodule.coe_neg, Pi.neg_apply, mextDerivₗ_apply, Submodule.coe_sub, Pi.sub_apply,
-    Submodule.coe_sub, Pi.sub_apply, coe_fluxForm, coe_fluxForm, hadd, Pi.add_apply, ← key]
+  refine ⟨-⟨homotopyOperator (homotopyOperator η.1),
+    (IsSmoothForm.homotopyOperator hLs).mem_smoothBundleForms⟩, Subtype.ext ?_⟩
+  rw [map_neg, Submodule.coe_neg, mextDerivₗ_apply, Submodule.coe_mk, SmoothForm.coe_mpullback,
+    key, Submodule.coe_sub, Submodule.coe_sub, coe_fluxForm, coe_fluxForm, coe_fluxForm]
   abel
 
 /-- **The flux homomorphism.** For a closed two-form `σ` preserved by the final diffeomorphisms
