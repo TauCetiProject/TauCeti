@@ -292,44 +292,6 @@ theorem pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball {z₀ : �
     (by simpa [measureReal_def, NNReal.coe_real_pi] using hsmall)
   simpa [measureReal_def, hr, mul_comm, mul_left_comm, mul_assoc] using h
 
-/-- The partial maps `J p` of a family of structures that is jointly `C²` on an open set `W`
-containing `C × K` are `C²` at every point of `K` for `p ∈ C`, and the norms of `J p`, of its
-derivative and of its second derivative are bounded there, uniformly in `p`, by those of the family
-on the compact set `C × K`. -/
-private theorem exists_nonneg_forall_norm_le_of_contDiffOn_uncurry {P : Type*}
-    [NormedAddCommGroup P] [NormedSpace ℝ P] {J : P → V → V →L[ℝ] V} {W : Set (P × V)}
-    {C : Set P} {K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 (Function.uncurry J) W)
-    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) :
-    ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt ℝ 2 (J p) x ∧ ‖J p x‖ ≤ A ∧
-      ‖fderiv ℝ (J p) x‖ ≤ A ∧ ‖iteratedFDeriv ℝ 2 (J p) x‖ ≤ 2 * A := by
-  obtain ⟨A, hA0, hA⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW
-    (hC.prod hK) hCKW
-  refine ⟨A, hA0, fun p hp x hx ↦ ?_⟩
-  have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
-  have hJpx : ContDiffAt ℝ 2 (Function.uncurry J) (p, x) := hJ.contDiffAt (hW.mem_nhds (hCKW hpx))
-  -- `J p` is the composite of the family with the affine map `y ↦ (p, y)`, whose derivative is
-  -- `inr`, of norm at most one, and whose second derivative vanishes.
-  have hf : ContDiffAt ℝ 2 (fun y : V ↦ (p, y)) x := contDiffAt_const.prodMk contDiffAt_id
-  have hDf : fderiv ℝ (fun y : V ↦ (p, y)) = fun _ ↦ ContinuousLinearMap.inr ℝ P V := by
-    funext y
-    exact ((hasFDerivAt_const p y).prodMk (hasFDerivAt_id y)).fderiv
-  have hD : ∀ j, 1 ≤ j → j ≤ 2 → ‖iteratedFDeriv ℝ j (fun y : V ↦ (p, y)) x‖ ≤ 1 ^ j := by
-    intro j hj1 hj2
-    interval_cases j
-    · rw [norm_iteratedFDeriv_one, hDf, one_pow]
-      exact ContinuousLinearMap.norm_inr_le_one ℝ P V
-    · rw [iteratedFDeriv_succ_eq_comp_right, hDf, iteratedFDeriv_const_of_ne one_ne_zero]
-      simp [LinearIsometryEquiv.map_zero]
-  have hcomp (n : ℕ) (hn : n ≤ 2) : ‖iteratedFDeriv ℝ n (J p) x‖ ≤ n.factorial * A := by
-    have h := norm_iteratedFDeriv_comp_le_of_contDiffAt (n := n) (hJpx.of_le (by exact_mod_cast hn))
-      (hf.of_le (by exact_mod_cast hn)) (fun j hj ↦ hA j (hj.trans hn) _ hpx)
-      (fun j hj1 hj ↦ hD j hj1 (hj.trans hn))
-    rwa [one_pow, mul_one] at h
-  refine ⟨hJpx.comp x hf, ?_, ?_, ?_⟩
-  · simpa using hcomp 0 (by norm_num)
-  · simpa [norm_iteratedFDeriv_one] using hcomp 1 (by norm_num)
-  · simpa using hcomp 2 le_rfl
-
 /-- **The mean-value inequality for a compact family of structures.** Let `J p` be structures
 depending on a parameter `p` in a normed space, jointly `C²` in `(p, x)` on an open set `W`
 containing `C × K` for compact sets `C` and `K`, with `J p (x)² = -1` on `C × K`. There is one
@@ -352,14 +314,16 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
       π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
   -- One nonnegative bound for `J p` and its first two derivatives on `K`, uniform in `p ∈ C`.
-  obtain ⟨A, hA0, hA⟩ := exists_nonneg_forall_norm_le_of_contDiffOn_uncurry hW hJ hC hK hCKW
-  set B := 4 * A * (2 * A) + 2 * A ^ 2 + 8 * A ^ 2 * A ^ 2
+  obtain ⟨A, hA0, hA⟩ :=
+    hJ.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen (n := 2) hW hC hK hCKW
+  set B := 4 * A * A + 2 * A ^ 2 + 8 * A ^ 2 * A ^ 2
   refine ⟨π / (8 * (B + 1)), by positivity, fun p hp u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
   have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
   refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
     (fun y hy ↦ (hA p hp _ (huK y hy)).1) (fun y hy ↦ hJsq p hp _ (huK y hy))
-    (fun y hy ↦ (hA p hp _ (huK y hy)).2.1) (fun y hy ↦ (hA p hp _ (huK y hy)).2.2.1)
-    (fun y hy ↦ (hA p hp _ (huK y hy)).2.2.2) ?_
+    (fun y hy ↦ by simpa using (hA p hp _ (huK y hy)).2 0 (by norm_num))
+    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using (hA p hp _ (huK y hy)).2 1 (by norm_num))
+    (fun y hy ↦ (hA p hp _ (huK y hy)).2 2 le_rfl) ?_
   rw [lt_div_iff₀ (by positivity)] at hE
   nlinarith
 

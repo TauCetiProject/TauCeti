@@ -39,6 +39,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
+  `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
+  bounded on a compact set by one constant, uniformly for `p` in a compact set.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
   of a compactly supported `C^n` map are bounded by one constant.
 * `ContDiffAt.exists_ball_bound_iteratedFDeriv`: on some ball around a point where a map is
@@ -299,3 +302,38 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
     exact hD j hj₁ hj
 
 end TauCeti
+
+/-- Let `f p` be maps depending on a parameter `p`, jointly `C^n` in `(p, x)` on an open set `W`
+containing `C ×ˢ K` for compact sets `C` and `K`. For `p ∈ C` the partial map `f p` is `C^n` at
+every point of `K`, and its derivatives there of order at most `n` are bounded by a single
+nonnegative constant, uniformly in `p`. -/
+theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace 𝕜 P] {f : P → E → F} {W : Set (P × E)} {C : Set P}
+    {K : Set E} {n : ℕ} (hf : ContDiffOn 𝕜 n (Function.uncurry f) W) (hW : IsOpen W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) :
+    ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt 𝕜 n (f p) x ∧
+      ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i (f p) x‖ ≤ A := by
+  obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_bound_iteratedFDeriv_of_isOpen hW (hC.prod hK) hCKW
+  refine ⟨n.factorial * A, by positivity, fun p hp x hx ↦ ?_⟩
+  have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
+  have hfpx : ContDiffAt 𝕜 n (Function.uncurry f) (p, x) :=
+    hf.contDiffAt (hW.mem_nhds (hCKW hpx))
+  -- `f p` is the composite of `uncurry f` with the affine map `y ↦ (p, y)`, whose derivative is
+  -- `inr`, of norm at most one, and whose higher derivatives vanish.
+  have hg : ContDiffAt 𝕜 n (fun y : E ↦ (p, y)) x := contDiffAt_const.prodMk contDiffAt_id
+  have hDg : fderiv 𝕜 (fun y : E ↦ (p, y)) = fun _ ↦ ContinuousLinearMap.inr 𝕜 P E := by
+    funext y
+    exact ((hasFDerivAt_const p y).prodMk (hasFDerivAt_id y)).fderiv
+  have hD : ∀ j, 1 ≤ j → ‖iteratedFDeriv 𝕜 j (fun y : E ↦ (p, y)) x‖ ≤ 1 ^ j
+    | 1, _ => by
+      rw [norm_iteratedFDeriv_one, hDg, one_pow]
+      exact ContinuousLinearMap.norm_inr_le_one 𝕜 P E
+    | j + 2, _ => by
+      rw [iteratedFDeriv_succ_eq_comp_right, hDg, iteratedFDeriv_const_of_ne (by omega)]
+      simp [LinearIsometryEquiv.map_zero]
+  refine ⟨hfpx.comp x hg, fun i hi ↦ ?_⟩
+  have h := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (n := i)
+    (hfpx.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))
+    (fun j hj ↦ hA j (hj.trans hi) _ hpx) fun j hj1 _ ↦ hD j hj1
+  rw [one_pow, mul_one] at h
+  exact h.trans (by gcongr)
