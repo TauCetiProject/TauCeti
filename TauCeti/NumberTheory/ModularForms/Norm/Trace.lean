@@ -380,7 +380,8 @@ public lemma qExpansion_one_norm_order_eq :
         + (qExpansion 1 (normRest f)).order := by
   have hn_pos : 0 < Subgroup.integerCuspWidth 𝒢 := Subgroup.integerCuspWidth_pos
   have hf_bdd : IsBoundedAtImInfty f := OnePoint.isBoundedAt_infty_iff.mp <|
-    ModularFormClass.bdd_at_cusps f Subgroup.isCusp_infty_of_finiteRelIndex
+    ModularFormClass.bdd_at_cusps f
+      (isCusp_SL2Z_iff.mpr ⟨OnePoint.infty, rfl⟩).of_isFiniteRelIndex
   have hf_n_per : Function.Periodic (⇑f ∘ ofComplex)
       ((Subgroup.integerCuspWidth 𝒢 : ℕ) : ℝ) :=
     SlashInvariantFormClass.periodic_comp_ofComplex f
@@ -415,7 +416,7 @@ public lemma qExpansion_order_le_qExpansion_norm_order [DiscreteTopology 𝒢.st
     Subgroup.strictWidthInfty_pos_of_finiteRelIndex
     hm'_pos hf_w_per (OnePoint.isBoundedAt_infty_iff.mp
       (ModularFormClass.bdd_at_cusps f
-        Subgroup.isCusp_infty_of_finiteRelIndex)) (ModularFormClass.holo f)
+        (isCusp_SL2Z_iff.mpr ⟨OnePoint.infty, rfl⟩).of_isFiniteRelIndex)) (ModularFormClass.holo f)
 
 /-- The `q`-expansion of `normRest f` is a nonzero power series whenever `f` is nonzero.
 
