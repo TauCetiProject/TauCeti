@@ -84,7 +84,7 @@ variable {A : Type*} (Ω : GenEq A)
 def sectionItems (i j : ℕ) : Finset (Fin Ω.numItems) :=
   {k | i ≤ k ∧ (k : ℕ) < j}
 
-@[simp]
+@[simp, grind =]
 theorem mem_sectionItems {i j : ℕ} {k : Fin Ω.numItems} :
     k ∈ Ω.sectionItems i j ↔ i ≤ k ∧ (k : ℕ) < j := by
   simp [sectionItems]
@@ -111,7 +111,11 @@ theorem left_lt_numItems (μ : Fin Ω.numBases) : (Ω.left μ : ℕ) < Ω.numIte
 def baseItems (μ : Fin Ω.numBases) : Finset (Fin Ω.numItems) :=
   Ω.sectionItems (Ω.left μ) (Ω.right μ)
 
-@[simp]
+theorem baseItems_def (μ : Fin Ω.numBases) :
+    Ω.baseItems μ = Ω.sectionItems (Ω.left μ) (Ω.right μ) :=
+  (rfl)
+
+@[simp, grind =]
 theorem mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems} :
     k ∈ Ω.baseItems μ ↔ (Ω.left μ : ℕ) ≤ k ∧ (k : ℕ) < Ω.right μ :=
   Ω.mem_sectionItems
@@ -125,7 +129,7 @@ theorem left_mem_baseItems (μ : Fin Ω.numBases) :
 `α(ν) ≤ α(μ) < β(μ) ≤ β(ν)`. -/
 theorem baseItems_subset_baseItems_iff {μ ν : Fin Ω.numBases} :
     Ω.baseItems μ ⊆ Ω.baseItems ν ↔ Ω.left ν ≤ Ω.left μ ∧ Ω.right μ ≤ Ω.right ν := by
-  rw [baseItems, baseItems,
+  rw [baseItems_def, baseItems_def,
     Ω.sectionItems_subset_sectionItems_iff (Ω.left_lt_right μ) (Ω.right μ).is_le, Fin.le_def,
     Fin.le_def]
 
@@ -164,6 +168,7 @@ theorem degree_def (k : Fin Ω.numItems) :
   (rfl)
 
 /-- An item is free exactly when its degree is zero. -/
+@[simp]
 theorem degree_eq_zero_iff {k : Fin Ω.numItems} : Ω.degree k = 0 ↔ Ω.IsFreeItem k := by
   simp only [degree, Nat.add_eq_zero_iff, card_eq_zero, filter_eq_empty_iff, mem_univ,
     true_implies, isFreeItem_iff, isConstantItem_iff, not_exists, not_and]
@@ -175,6 +180,7 @@ base spans a single item, so no boundary crosses it. -/
 def Crosses (i : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) : Prop :=
   Ω.left μ < i ∧ i < Ω.right μ
 
+@[grind =]
 theorem crosses_iff {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} :
     Ω.Crosses i μ ↔ Ω.left μ < i ∧ i < Ω.right μ :=
   Iff.rfl
@@ -182,12 +188,25 @@ theorem crosses_iff {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} :
 instance (i : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) : Decidable (Ω.Crosses i μ) :=
   decidable_of_iff _ Ω.crosses_iff.symm
 
+/-- The first boundary `p` of a boundary connection `(p, μ, q)` crosses `μ`. -/
+theorem crosses_fst_of_mem_connections
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)} (hc : c ∈ Ω.connections) :
+    Ω.Crosses c.1 c.2.1 :=
+  ⟨(Ω.bounds_of_mem_connections c hc).1, (Ω.bounds_of_mem_connections c hc).2.1⟩
+
+/-- The last boundary `q` of a boundary connection `(p, μ, q)` crosses the dual base `Δ(μ)`. -/
+theorem crosses_snd_of_mem_connections
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)} (hc : c ∈ Ω.connections) :
+    Ω.Crosses c.2.2 (Ω.dual c.2.1) :=
+  ⟨(Ω.bounds_of_mem_connections c hc).2.2.1, (Ω.bounds_of_mem_connections c hc).2.2.2⟩
+
 /-- A boundary `i` touches the variable base `μ`, or is an end-point of `μ`, when `i = α(μ)` or
 `i = β(μ)`. The end-points of a constant base on the item `hₖ` are the boundaries `k` and
 `k + 1`. -/
 def Touches (i : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) : Prop :=
   i = Ω.left μ ∨ i = Ω.right μ
 
+@[grind =]
 theorem touches_iff {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} :
     Ω.Touches i μ ↔ i = Ω.left μ ∨ i = Ω.right μ :=
   Iff.rfl
@@ -204,7 +223,7 @@ theorem Crosses.not_touches {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} (
 /-- The boundaries crossing or touching a base `μ` are those from `α(μ)` to `β(μ)`. -/
 theorem crosses_or_touches_iff {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} :
     Ω.Crosses i μ ∨ Ω.Touches i μ ↔ Ω.left μ ≤ i ∧ i ≤ Ω.right μ := by
-  grind [crosses_iff, touches_iff, Ω.left_lt_right μ]
+  grind [Ω.left_lt_right μ]
 
 /-- A boundary is open when it crosses at least one base. -/
 def IsOpenBoundary (i : Fin (Ω.numItems + 1)) : Prop :=
@@ -221,12 +240,12 @@ theorem isClosedBoundary_iff {i : Fin (Ω.numItems + 1)} :
     Ω.IsClosedBoundary i ↔ ∀ μ, ¬ Ω.Crosses i μ :=
   not_exists
 
-@[simp]
+@[simp, grind =]
 theorem not_isOpenBoundary {i : Fin (Ω.numItems + 1)} :
     ¬ Ω.IsOpenBoundary i ↔ Ω.IsClosedBoundary i :=
   Iff.rfl
 
-@[simp]
+@[simp, grind =]
 theorem not_isClosedBoundary {i : Fin (Ω.numItems + 1)} :
     ¬ Ω.IsClosedBoundary i ↔ Ω.IsOpenBoundary i :=
   not_not
@@ -243,12 +262,24 @@ theorem Crosses.isOpenBoundary {i : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases
   ⟨μ, h⟩
 
 /-- The first boundary is closed. -/
+@[simp]
 theorem isClosedBoundary_zero : Ω.IsClosedBoundary 0 :=
   Ω.isClosedBoundary_iff.2 fun _ h ↦ Fin.not_lt_zero _ h.1
 
 /-- The last boundary is closed. -/
+@[simp]
 theorem isClosedBoundary_last : Ω.IsClosedBoundary (Fin.last Ω.numItems) :=
   Ω.isClosedBoundary_iff.2 fun _ h ↦ absurd h.2 (not_lt.2 (Fin.le_last _))
+
+/-- The first boundary is not open. -/
+@[simp]
+theorem not_isOpenBoundary_zero : ¬ Ω.IsOpenBoundary 0 :=
+  Ω.isClosedBoundary_zero
+
+/-- The last boundary is not open. -/
+@[simp]
+theorem not_isOpenBoundary_last : ¬ Ω.IsOpenBoundary (Fin.last Ω.numItems) :=
+  Ω.isClosedBoundary_last
 
 /-! ### Closed sections -/
 
@@ -281,7 +312,7 @@ theorem IsClosedSection.left_lt_numItems {i j : Fin (Ω.numItems + 1)} (h : Ω.I
 def closedSections : Finset (Fin (Ω.numItems + 1) × Fin (Ω.numItems + 1)) :=
   {s | Ω.IsClosedSection s.1 s.2}
 
-@[simp]
+@[simp, grind =]
 theorem mem_closedSections {s : Fin (Ω.numItems + 1) × Fin (Ω.numItems + 1)} :
     s ∈ Ω.closedSections ↔ Ω.IsClosedSection s.1 s.2 := by
   simp [closedSections]
@@ -297,27 +328,51 @@ def closedSectionOfItem (k : Fin Ω.numItems) : Fin (Ω.numItems + 1) × Fin (Ω
 private theorem closedSectionOfItem_fst_mem (k : Fin Ω.numItems) :
     Ω.IsClosedBoundary (Ω.closedSectionOfItem k).1 ∧ (Ω.closedSectionOfItem k).1 ≤ k.castSucc :=
   (mem_filter.1 (max'_mem ({i | Ω.IsClosedBoundary i ∧ i ≤ k.castSucc} : Finset _)
-    ⟨0, by simp [Ω.isClosedBoundary_zero]⟩)).2
-
-private theorem le_closedSectionOfItem_fst {k : Fin Ω.numItems} {i : Fin (Ω.numItems + 1)}
-    (hi : Ω.IsClosedBoundary i) (hik : i ≤ k.castSucc) : i ≤ (Ω.closedSectionOfItem k).1 :=
-  le_max' _ _ (by simp [hi, hik])
+    ⟨0, by simp⟩)).2
 
 private theorem closedSectionOfItem_snd_mem (k : Fin Ω.numItems) :
     Ω.IsClosedBoundary (Ω.closedSectionOfItem k).2 ∧ k.succ ≤ (Ω.closedSectionOfItem k).2 :=
   (mem_filter.1 (min'_mem ({j | Ω.IsClosedBoundary j ∧ k.succ ≤ j} : Finset _)
-    ⟨Fin.last _, by simp [Ω.isClosedBoundary_last, Fin.le_last]⟩)).2
+    ⟨Fin.last _, by simp [Fin.le_last]⟩)).2
 
-private theorem closedSectionOfItem_snd_le {k : Fin Ω.numItems} {j : Fin (Ω.numItems + 1)}
+/-- The closed section of `hₖ` starts at a closed boundary. -/
+theorem isClosedBoundary_closedSectionOfItem_fst (k : Fin Ω.numItems) :
+    Ω.IsClosedBoundary (Ω.closedSectionOfItem k).1 :=
+  (Ω.closedSectionOfItem_fst_mem k).1
+
+/-- The closed section of `hₖ` starts at or before the boundary `k`. -/
+theorem closedSectionOfItem_fst_le (k : Fin Ω.numItems) :
+    (Ω.closedSectionOfItem k).1 ≤ k.castSucc :=
+  (Ω.closedSectionOfItem_fst_mem k).2
+
+/-- The closed section of `hₖ` starts at the last closed boundary at or before `k`. -/
+theorem le_closedSectionOfItem_fst {k : Fin Ω.numItems} {i : Fin (Ω.numItems + 1)}
+    (hi : Ω.IsClosedBoundary i) (hik : i ≤ k.castSucc) : i ≤ (Ω.closedSectionOfItem k).1 :=
+  le_max' _ _ (by simp [hi, hik])
+
+/-- The closed section of `hₖ` ends at a closed boundary. -/
+theorem isClosedBoundary_closedSectionOfItem_snd (k : Fin Ω.numItems) :
+    Ω.IsClosedBoundary (Ω.closedSectionOfItem k).2 :=
+  (Ω.closedSectionOfItem_snd_mem k).1
+
+/-- The closed section of `hₖ` ends at or after the boundary `k + 1`. -/
+theorem succ_le_closedSectionOfItem_snd (k : Fin Ω.numItems) :
+    k.succ ≤ (Ω.closedSectionOfItem k).2 :=
+  (Ω.closedSectionOfItem_snd_mem k).2
+
+/-- The closed section of `hₖ` ends at the first closed boundary at or after `k + 1`. -/
+theorem closedSectionOfItem_snd_le {k : Fin Ω.numItems} {j : Fin (Ω.numItems + 1)}
     (hj : Ω.IsClosedBoundary j) (hkj : k.succ ≤ j) : (Ω.closedSectionOfItem k).2 ≤ j :=
   min'_le _ _ (by simp [hj, hkj])
 
 /-- The closed section of an item is a closed section. -/
-theorem closedSectionOfItem_mem_closedSections (k : Fin Ω.numItems) :
-    Ω.closedSectionOfItem k ∈ Ω.closedSections := by
-  obtain ⟨h₁, h₂⟩ := Ω.closedSectionOfItem_fst_mem k
-  obtain ⟨h₃, h₄⟩ := Ω.closedSectionOfItem_snd_mem k
-  refine Ω.mem_closedSections.2 ⟨by grind, h₁, h₃, fun l hl₁ hl₂ ↦ ?_⟩
+@[simp]
+theorem isClosedSection_closedSectionOfItem (k : Fin Ω.numItems) :
+    Ω.IsClosedSection (Ω.closedSectionOfItem k).1 (Ω.closedSectionOfItem k).2 := by
+  have h₂ := Ω.closedSectionOfItem_fst_le k
+  have h₄ := Ω.succ_le_closedSectionOfItem_snd k
+  refine ⟨by grind, Ω.isClosedBoundary_closedSectionOfItem_fst k,
+    Ω.isClosedBoundary_closedSectionOfItem_snd k, fun l hl₁ hl₂ ↦ ?_⟩
   -- A closed boundary strictly inside would be a nearer closed boundary on one side of `hₖ`.
   by_contra hl
   rw [not_isOpenBoundary] at hl
@@ -326,11 +381,16 @@ theorem closedSectionOfItem_mem_closedSections (k : Fin Ω.numItems) :
   · exact absurd (Ω.closedSectionOfItem_snd_le hl (Fin.castSucc_lt_iff_succ_le.1 h))
       (not_le.2 hl₂)
 
+/-- The closed section of an item belongs to `Σ_Ω`. -/
+theorem closedSectionOfItem_mem_closedSections (k : Fin Ω.numItems) :
+    Ω.closedSectionOfItem k ∈ Ω.closedSections :=
+  Ω.mem_closedSections.2 (Ω.isClosedSection_closedSectionOfItem k)
+
 /-- An item lies in its closed section. -/
 theorem mem_sectionItems_closedSectionOfItem (k : Fin Ω.numItems) :
     k ∈ Ω.sectionItems (Ω.closedSectionOfItem k).1 (Ω.closedSectionOfItem k).2 := by
-  have h₂ := (Ω.closedSectionOfItem_fst_mem k).2
-  have h₄ := (Ω.closedSectionOfItem_snd_mem k).2
+  have h₂ := Ω.closedSectionOfItem_fst_le k
+  have h₄ := Ω.succ_le_closedSectionOfItem_snd k
   rw [mem_sectionItems]
   grind
 
@@ -396,6 +456,12 @@ theorem closedSectionOfItem_eq_closedSectionOfBase {μ : Fin Ω.numBases} {k : F
     fun l hl₁ hl₂ ↦ Crosses.isOpenBoundary Ω (μ := μ) ⟨by grind, by grind⟩).symm
 
 /-- The closed section of a base is a closed section. -/
+@[simp]
+theorem isClosedSection_closedSectionOfBase (μ : Fin Ω.numBases) :
+    Ω.IsClosedSection (Ω.closedSectionOfBase μ).1 (Ω.closedSectionOfBase μ).2 :=
+  Ω.isClosedSection_closedSectionOfItem _
+
+/-- The closed section of a variable base belongs to `Σ_Ω`. -/
 theorem closedSectionOfBase_mem_closedSections (μ : Fin Ω.numBases) :
     Ω.closedSectionOfBase μ ∈ Ω.closedSections :=
   Ω.closedSectionOfItem_mem_closedSections _
@@ -405,6 +471,18 @@ theorem baseItems_subset_closedSectionOfBase (μ : Fin Ω.numBases) :
     Ω.baseItems μ ⊆ Ω.sectionItems (Ω.closedSectionOfBase μ).1 (Ω.closedSectionOfBase μ).2 :=
   fun k hk ↦ Ω.closedSectionOfItem_eq_closedSectionOfBase hk ▸
     Ω.mem_sectionItems_closedSectionOfItem k
+
+/-- The closed section of a variable base `μ` starts at or before `α(μ)`. -/
+theorem closedSectionOfBase_fst_le (μ : Fin Ω.numBases) :
+    (Ω.closedSectionOfBase μ).1 ≤ Ω.left μ := by
+  have := Ω.baseItems_subset_closedSectionOfBase μ
+  grind [baseItems_def, sectionItems_subset_sectionItems_iff, left_lt_right]
+
+/-- The closed section of a variable base `μ` ends at or after `β(μ)`. -/
+theorem right_le_closedSectionOfBase_snd (μ : Fin Ω.numBases) :
+    Ω.right μ ≤ (Ω.closedSectionOfBase μ).2 := by
+  have := Ω.baseItems_subset_closedSectionOfBase μ
+  grind [baseItems_def, sectionItems_subset_sectionItems_iff, left_lt_right]
 
 /-- The closed section of a variable base is the unique closed section containing it. -/
 theorem closedSectionOfBase_eq_iff {μ : Fin Ω.numBases}

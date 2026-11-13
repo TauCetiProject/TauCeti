@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Section
+public import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Fin.VecNotation
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Order.UpperLower.Basic
 
 /-!
@@ -49,7 +51,7 @@ without active sections, can be brought to a standard form.
   into the four kinds, with the kinds `itemKind`, `sectionKind` and `baseKind` of items, closed
   sections and variable bases.
 * `TauCeti.GenEq.sectionPartitionEquiv`: section partitions are the assignments of kinds to closed
-  sections.
+  sections; in particular there are finitely many of them.
 * `TauCeti.GenEq.SectionPartition.IsStandardForm`: the standard form of Definition 12, decidable.
 
 ## Main results
@@ -58,8 +60,12 @@ without active sections, can be brought to a standard form.
   kind.
 * `TauCeti.GenEq.SectionPartition.itemKind_eq_baseKind`: the items of a variable base have its
   kind.
-* `TauCeti.GenEq.SectionPartition.monotone_itemKind_iff`: the first condition of the standard
-  form in the form of the source, with the numbers `ρ_A ≤ ρ_NA ≤ ρ_P`.
+* `TauCeti.GenEq.SectionKind.monotone_iff`: a sequence of kinds increases exactly when it is
+  cut by numbers `ρ_A ≤ ρ_NA ≤ ρ_P` into active, non-active, parametric and constant parts.
+  Applied to the kinds of the items, this is the first condition of the standard form in the
+  form of the source.
+* `TauCeti.GenEq.card_sectionPartition`: a generalised equation with `n` closed sections has
+  `4 ^ n` section partitions.
 
 ## References
 
@@ -88,18 +94,21 @@ inductive SectionKind
   | parametric
   /-- A constant section. -/
   | constant
-  deriving DecidableEq
 
 namespace SectionKind
 
+-- Exposed so that comparisons of kinds, and the standard form, can be decided by evaluation in
+-- other files.
 /-- The position of a kind in the order `active, nonActive, parametric, constant` in which the
 sections of a standard form occur. -/
+@[expose]
 def toFin : SectionKind → Fin 4
   | active => 0
   | nonActive => 1
   | parametric => 2
   | constant => 3
 
+@[grind inj]
 theorem toFin_injective : Function.Injective toFin := by
   intro a b h
   cases a <;> cases b <;> first | rfl | exact absurd h (by decide)
@@ -109,16 +118,71 @@ constant. -/
 instance : LinearOrder SectionKind :=
   LinearOrder.lift' toFin toFin_injective
 
-@[simp] theorem toFin_active : toFin active = 0 := (rfl)
+instance : Fintype SectionKind :=
+  Fintype.ofList [active, nonActive, parametric, constant] fun a ↦ by cases a <;> simp
 
-@[simp] theorem toFin_nonActive : toFin nonActive = 1 := (rfl)
+@[simp, grind =] theorem toFin_active : toFin active = 0 := (rfl)
 
-@[simp] theorem toFin_parametric : toFin parametric = 2 := (rfl)
+@[simp, grind =] theorem toFin_nonActive : toFin nonActive = 1 := (rfl)
 
-@[simp] theorem toFin_constant : toFin constant = 3 := (rfl)
+@[simp, grind =] theorem toFin_parametric : toFin parametric = 2 := (rfl)
 
+@[simp, grind =] theorem toFin_constant : toFin constant = 3 := (rfl)
+
+@[grind =]
 theorem le_iff_toFin_le {a b : SectionKind} : a ≤ b ↔ a.toFin ≤ b.toFin :=
   Iff.rfl
+
+@[grind =]
+theorem lt_iff_toFin_lt {a b : SectionKind} : a < b ↔ a.toFin < b.toFin :=
+  Iff.rfl
+
+/-- The active kind is the least kind and the constant kind the greatest. -/
+instance : BoundedOrder SectionKind where
+  bot := active
+  bot_le a := by cases a <;> decide
+  top := constant
+  le_top a := by cases a <;> decide
+
+@[simp] theorem bot_eq_active : (⊥ : SectionKind) = active := (rfl)
+
+@[simp] theorem top_eq_constant : (⊤ : SectionKind) = constant := (rfl)
+
+@[simp] theorem active_le (a : SectionKind) : active ≤ a := bot_le
+
+@[simp] theorem le_constant (a : SectionKind) : a ≤ constant := le_top
+
+/-- A sequence `f₀, …, f_{n-1}` of kinds increases exactly when there are `ρ_A ≤ ρ_NA ≤ ρ_P ≤ n`
+such that `fₖ` is active for `k < ρ_A`, non-active for `ρ_A ≤ k < ρ_NA`, parametric for
+`ρ_NA ≤ k < ρ_P` and constant for `ρ_P ≤ k`. -/
+theorem monotone_iff {n : ℕ} {f : Fin n → SectionKind} : Monotone f ↔
+    ∃ ρA ρNA ρP : ℕ, ρA ≤ ρNA ∧ ρNA ≤ ρP ∧ ρP ≤ n ∧ ∀ k : Fin n,
+      f k = if (k : ℕ) < ρA then active else if (k : ℕ) < ρNA then nonActive
+        else if (k : ℕ) < ρP then parametric else constant := by
+  refine ⟨fun hf ↦ ?_, fun ⟨_, _, _, _, _, _, _⟩ _ _ _ ↦ by grind⟩
+  · -- The indices of kind at most `t` form an initial segment `[0, m)`.
+    have key (t : SectionKind) : ∃ m ≤ n, ∀ k : Fin n, f k ≤ t ↔ (k : ℕ) < m := by
+      have hS : IsLowerSet {k | f k ≤ t} := fun a b hba ha ↦ (hf hba).trans ha
+      rcases hS.eq_univ_or_Iio with hS | ⟨a, hS⟩
+      · exact ⟨n, le_rfl, fun k ↦ by simpa using Set.ext_iff.1 hS k⟩
+      · exact ⟨a, a.is_le', fun k ↦ (Set.ext_iff.1 hS k).trans Fin.lt_def⟩
+    -- The thresholds of two kinds `t ≤ t'` are in the same order.
+    have mono {t t' : SectionKind} {m m' : ℕ} (htt' : t ≤ t') (hm : m ≤ n)
+        (h : ∀ k : Fin n, f k ≤ t ↔ (k : ℕ) < m) (h' : ∀ k : Fin n, f k ≤ t' ↔ (k : ℕ) < m') :
+        m ≤ m' := by
+      by_contra hlt
+      exact lt_irrefl _
+        ((h' ⟨m', by omega⟩).1 (((h ⟨m', by omega⟩).2 (by dsimp; omega)).trans htt'))
+    obtain ⟨ρA, hρA, hA⟩ := key active
+    obtain ⟨ρNA, hρNA, hNA⟩ := key nonActive
+    obtain ⟨ρP, hρP, hPa⟩ := key parametric
+    refine ⟨ρA, ρNA, ρP, mono (by decide) hρA hA hNA, mono (by decide) hρNA hNA hPa, hρP,
+      fun k ↦ ?_⟩
+    have h₁ := hA k
+    have h₂ := hNA k
+    have h₃ := hPa k
+    generalize f k = t at h₁ h₂ h₃ ⊢
+    cases t <;> simp +decide at h₁ h₂ h₃ <;> split_ifs <;> first | rfl | omega
 
 end SectionKind
 
@@ -169,10 +233,14 @@ theorem itemKind_eq_of_closedSectionOfItem_eq {k k' : Fin Ω.numItems}
 def sectionKind (s : Ω.closedSections) : SectionKind :=
   P.itemKind ⟨s.1.1, (Ω.mem_closedSections.1 s.2).left_lt_numItems⟩
 
+theorem sectionKind_def (s : Ω.closedSections) :
+    P.sectionKind s = P.itemKind ⟨s.1.1, (Ω.mem_closedSections.1 s.2).left_lt_numItems⟩ :=
+  (rfl)
+
 /-- Every item of a closed section has the kind of that section. -/
 theorem itemKind_eq_sectionKind {s : Ω.closedSections} {k : Fin Ω.numItems}
     (hk : k ∈ Ω.sectionItems s.1.1 s.1.2) : P.itemKind k = P.sectionKind s := by
-  rw [sectionKind]
+  rw [sectionKind_def]
   refine P.itemKind_eq_of_closedSectionOfItem_eq ?_
   rw [Ω.closedSectionOfItem_eq_of_mem s.2 hk, Ω.closedSectionOfItem_eq_of_mem s.2]
   exact Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.2).lt⟩
@@ -187,6 +255,10 @@ theorem sectionKind_closedSectionOfItem (k : Fin Ω.numItems) :
 /-- The kind of a variable base: the kind of the closed section containing it. -/
 def baseKind (μ : Fin Ω.numBases) : SectionKind :=
   P.itemKind ⟨Ω.left μ, Ω.left_lt_numItems μ⟩
+
+theorem baseKind_def (μ : Fin Ω.numBases) :
+    P.baseKind μ = P.itemKind ⟨Ω.left μ, Ω.left_lt_numItems μ⟩ :=
+  (rfl)
 
 /-- Every item of a variable base has the kind of that base. -/
 theorem itemKind_eq_baseKind {μ : Fin Ω.numBases} {k : Fin Ω.numItems} (hk : k ∈ Ω.baseItems μ) :
@@ -238,6 +310,28 @@ theorem sectionKind_sectionPartitionEquiv_symm_apply (f : Ω.closedSections → 
     (s : Ω.closedSections) : (Ω.sectionPartitionEquiv.symm f).sectionKind s = f s :=
   congrFun (Ω.sectionPartitionEquiv.apply_symm_apply f) s
 
+/-- The kind of a variable base in the section partition with prescribed section kinds is the
+prescribed kind of its closed section. -/
+@[simp]
+theorem baseKind_sectionPartitionEquiv_symm_apply (f : Ω.closedSections → SectionKind)
+    (μ : Fin Ω.numBases) : (Ω.sectionPartitionEquiv.symm f).baseKind μ =
+      f ⟨Ω.closedSectionOfBase μ, Ω.closedSectionOfBase_mem_closedSections μ⟩ := by
+  rw [← SectionPartition.sectionKind_closedSectionOfBase,
+    sectionKind_sectionPartitionEquiv_symm_apply]
+
+instance : DecidableEq Ω.SectionPartition :=
+  fun _ _ ↦ decidable_of_iff _ SectionPartition.ext_iff.symm
+
+/-- A generalised equation has finitely many section partitions. -/
+instance : Fintype Ω.SectionPartition :=
+  Fintype.ofEquiv _ Ω.sectionPartitionEquiv.symm
+
+/-- A generalised equation with `n` closed sections has `4 ^ n` section partitions. -/
+theorem card_sectionPartition : Fintype.card Ω.SectionPartition = 4 ^ #Ω.closedSections := by
+  rw [Fintype.card_congr Ω.sectionPartitionEquiv, Fintype.card_fun, Fintype.card_coe]
+  -- There are four kinds.
+  rfl
+
 /-! ### Standard form -/
 
 namespace SectionPartition
@@ -273,42 +367,12 @@ theorem isStandardForm_iff : P.IsStandardForm ↔
 instance [DecidableEq A] : Decidable P.IsStandardForm :=
   decidable_of_iff _ P.isStandardForm_iff.symm
 
-/-- The first condition of the standard form as stated by Kharlampovich–Myasnikov: the kind of the
-items increases from left to right exactly when there are `ρ_A ≤ ρ_NA ≤ ρ_P ≤ ρ` such that the
-active, non-active, parametric and constant items are those of the sections `[0, ρ_A]`,
-`[ρ_A, ρ_NA]`, `[ρ_NA, ρ_P]` and `[ρ_P, ρ]`. -/
-theorem monotone_itemKind_iff : Monotone P.itemKind ↔
-    ∃ ρA ρNA ρP : ℕ, ρA ≤ ρNA ∧ ρNA ≤ ρP ∧ ρP ≤ Ω.numItems ∧ ∀ k : Fin Ω.numItems,
-      P.itemKind k = if (k : ℕ) < ρA then active else if (k : ℕ) < ρNA then nonActive
-        else if (k : ℕ) < ρP then parametric else constant := by
-  refine ⟨fun hP ↦ ?_, fun ⟨ρA, ρNA, ρP, h₁, h₂, _, h⟩ k k' hkk' ↦ ?_⟩
-  · -- The items of kind at most `t` form an initial segment `[0, m]`.
-    have key (t : SectionKind) : ∃ m ≤ Ω.numItems, ∀ k : Fin Ω.numItems,
-        P.itemKind k ≤ t ↔ (k : ℕ) < m := by
-      have hS : IsLowerSet {k | P.itemKind k ≤ t} := fun a b hba ha ↦ (hP hba).trans ha
-      rcases hS.eq_univ_or_Iio with hS | ⟨a, hS⟩
-      · exact ⟨Ω.numItems, le_rfl, fun k ↦ by simpa using Set.ext_iff.1 hS k⟩
-      · exact ⟨a, a.is_le', fun k ↦ (Set.ext_iff.1 hS k).trans Fin.lt_def⟩
-    -- The thresholds of two kinds `t ≤ t'` are in the same order.
-    have mono {t t' : SectionKind} {m m' : ℕ} (htt' : t ≤ t') (hm : m ≤ Ω.numItems)
-        (h : ∀ k : Fin Ω.numItems, P.itemKind k ≤ t ↔ (k : ℕ) < m)
-        (h' : ∀ k : Fin Ω.numItems, P.itemKind k ≤ t' ↔ (k : ℕ) < m') : m ≤ m' := by
-      by_contra hlt
-      exact lt_irrefl _
-        ((h' ⟨m', by omega⟩).1 (((h ⟨m', by omega⟩).2 (by dsimp; omega)).trans htt'))
-    obtain ⟨ρA, hρA, hA⟩ := key active
-    obtain ⟨ρNA, hρNA, hNA⟩ := key nonActive
-    obtain ⟨ρP, hρP, hPa⟩ := key parametric
-    refine ⟨ρA, ρNA, ρP, mono (by decide) hρA hA hNA, mono (by decide) hρNA hNA hPa, hρP,
-      fun k ↦ ?_⟩
-    have h₁ := hA k
-    have h₂ := hNA k
-    have h₃ := hPa k
-    generalize P.itemKind k = t at h₁ h₂ h₃ ⊢
-    cases t <;> simp +decide at h₁ h₂ h₃ <;> split_ifs <;> first | rfl | omega
-  · rw [h, h]
-    rw [Fin.le_def] at hkk'
-    split_ifs <;> first | decide | omega
+variable {P} in
+/-- In a standard form every constant item lies in a constant section. -/
+theorem IsStandardForm.itemKind_eq_constant_of_isConstantItem (hP : P.IsStandardForm)
+    {k : Fin Ω.numItems} (hk : Ω.IsConstantItem k) : P.itemKind k = constant := by
+  obtain ⟨b, hb, rfl⟩ := Ω.isConstantItem_iff.1 hk
+  exact hP.itemKind_eq_constant_of_mem_constBases b hb
 
 end SectionPartition
 
