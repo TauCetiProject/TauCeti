@@ -61,6 +61,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
   once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.zpowers_fromPath_expLoop`, `Circle.not_isOfFinOrder_fromPath_expLoop`: the class of
+  `Circle.expLoop` generates `π₁(Circle, 1)` and has infinite order.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
 * `Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one`: given `π₁(X, x) ≃* ℤ`, a loop
@@ -424,6 +426,23 @@ theorem fundamentalGroupMulEquiv_expLoop :
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
   rw [fundamentalGroupMulEquiv_fromPath, degree_expLoop]
+
+/-- **The counterclockwise loop generates `π₁(S¹)`.** Every class in `π₁(Circle, 1)` is a power
+of the class of `t ↦ exp(2πit)`. -/
+theorem zpowers_fromPath_expLoop :
+    Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) = ⊤ := by
+  refine (Subgroup.eq_top_iff' _).mpr fun g ↦
+    ⟨(fundamentalGroupMulEquiv 1 g).toAdd, (fundamentalGroupMulEquiv 1).injective ?_⟩
+  rw [map_zpow, fundamentalGroupMulEquiv_expLoop, ← ofAdd_zsmul, zsmul_one, Int.cast_id,
+    ofAdd_toAdd]
+
+/-- **The counterclockwise loop has infinite order in `π₁(S¹)`.** -/
+theorem not_isOfFinOrder_fromPath_expLoop :
+    ¬IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) := by
+  rw [← (fundamentalGroupMulEquiv 1).injective.isOfFinOrder_iff
+    (f := (fundamentalGroupMulEquiv 1).toMonoidHom)]
+  refine not_isOfFinOrder_of_isMulTorsionFree ?_
+  simp
 
 /-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
 counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
