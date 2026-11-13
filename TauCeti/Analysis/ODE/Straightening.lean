@@ -35,10 +35,10 @@ Choose continuous linear functionals `ℓ i` with `ℓ i (w j a) = δ i j` and c
 `ψ z = Φ i₁ (ℓ i₁ z) (⋯ (Φ iₖ (ℓ iₖ z) (a + (z - ∑ i, ℓ i z • w i a))))`.
 
 The brackets of the `g i` vanish near `a`, so their flows commute for short times near `a`
-(`TauCeti.flowOfLipschitz_comm_of_lieBracket_eq_zero_on`). Each flow can therefore be moved to the
-outside of the composite, so that `ψ (z + s • w i a) = Φ i s (ψ z)`, and differentiating in `s`
-shows that `dψ z` sends `w i a` to `g i (ψ z)` for `z` near `0`. At `z = 0` the derivative of `ψ`
-is the identity, so by the inverse function theorem with `C^n` inverse
+(`TauCeti.eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero`). Each flow can
+therefore be moved to the outside of the composite, so that `ψ (z + s • w i a) = Φ i s (ψ z)`, and
+differentiating in `s` shows that `dψ z` sends `w i a` to `g i (ψ z)` for `z` near `0`. At `z = 0`
+the derivative of `ψ` is the identity, so by the inverse function theorem with `C^n` inverse
 (`ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`) `ψ` is a local diffeomorphism
 near `0` whose inverse sends each `g i` to `w i a`; restricted to where `g i = w i`, that inverse
 is the required `φ`.
@@ -293,7 +293,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
     simpa [hΦ] using ODE.contDiff_globalSolution (g i) (hgK i) (hg i)
   have hcomm (i j : ι) (hji : j ≠ i) : ∀ᶠ q : ℝ × ℝ × E in 𝓝 (0, 0, a),
       Φ j q.1 (Φ i q.2.1 q.2.2) = Φ i q.2.1 (Φ j q.1 q.2.2) :=
-    eventually_flowOfLipschitz_comm (hgK j) (hg1 j) (hgK i)
+    eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero (hgK j) (hg1 j) (hgK i)
       (.of_forall ((hg i).differentiable (by simp)))
       (((hgw j).lieBracket_vectorField (hgw i)).trans (hbr hji))
   -- Functionals `P` dual to the `u i`, and the flow-box coordinates `ψ`.
@@ -317,7 +317,7 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eq_zero {n : 
   obtain ⟨U, hU, hUo, h0U⟩ := eventually_nhds_iff.1 hψu
   obtain ⟨Θ, hΘ, h0Θ, -, hΘs, hΘw⟩ :=
     ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq hψs.contDiffOn
-      (hUo.inter (hSo.preimage hψs.continuous)) ⟨h0U, show ψ 0 ∈ S from hψ0 ▸ haS⟩
+      (hUo.inter (hSo.preimage hψs.continuous)) ⟨h0U, mem_preimage.2 (by rwa [hψ0])⟩
       (by exact_mod_cast hn) (e := ContinuousLinearEquiv.refl ℝ E)
       (by rw [ContinuousLinearEquiv.coe_refl, hD]) (v := w) (u := u)
       fun z hz i ↦ by rw [hU z hz.1 i, hSg _ hz.2 i]

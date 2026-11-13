@@ -25,8 +25,8 @@ Both consequences are local along orbits. If `[v, w]` vanishes along the orbit s
 points `Φ_σ (Ψ_τ x)` with `σ ∈ [[0, s]]` and `τ ∈ [[0, t]]`, where `Ψ` is the flow of `w`, then
 `Φ_s (Ψ_t x) = Ψ_t (Φ_s x)` (`TauCeti.flowOfLipschitz_comm_of_lieBracket_eq_zero_on`). So if
 `[v, w]` vanishes near a point `a`, the flows commute for short times near `a`
-(`TauCeti.eventually_flowOfLipschitz_comm`). This is what the straightening of commuting vector
-fields needs after cutting them off to globally Lipschitz fields.
+(`TauCeti.eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero`). This is what the
+straightening of commuting vector fields needs after cutting them off to globally Lipschitz fields.
 
 These statements use the existing `flowOfLipschitz`, not a separate choice of solutions.
 The variational equation gives the derivative of the spatial Jacobian; differentiation of its
@@ -151,8 +151,8 @@ theorem flowOfLipschitz_comm_of_lieBracket_eq_zero_on (hw : LipschitzWith L w) {
 the flows of `v` and of a globally Lipschitz field `w`. If `w` is differentiable and `[v, w]`
 vanishes on a neighbourhood of `a`, then `Φ_s (Ψ_t y) = Ψ_t (Φ_s y)` for all `(s, t, y)` near
 `(0, 0, a)`. -/
-theorem eventually_flowOfLipschitz_comm (hw : LipschitzWith L w) {a : E}
-    (hwd : ∀ᶠ y in 𝓝 a, DifferentiableAt ℝ w y) (hvw : lieBracket ℝ v w =ᶠ[𝓝 a] 0) :
+theorem eventually_flowOfLipschitz_comm_of_lieBracket_eventuallyEq_zero (hw : LipschitzWith L w)
+    {a : E} (hwd : ∀ᶠ y in 𝓝 a, DifferentiableAt ℝ w y) (hvw : lieBracket ℝ v w =ᶠ[𝓝 a] 0) :
     ∀ᶠ q : ℝ × ℝ × E in 𝓝 (0, 0, a),
       flowOfLipschitz v hv q.1 (flowOfLipschitz w hw q.2.1 q.2.2) =
         flowOfLipschitz w hw q.2.1 (flowOfLipschitz v hv q.1 q.2.2) := by

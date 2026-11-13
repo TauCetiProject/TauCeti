@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -36,9 +37,12 @@ The chart argument follows the pullback idiom used for the manifold bracket in
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
   bracket of the coordinate expressions of two fields is their manifold bracket.
-* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero`: if the manifold bracket of
-  two fields vanishes near a point, the flat bracket of their coordinate expressions vanishes near
-  its chart image.
+* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq`: near the chart image of an
+  interior point, the flat bracket of the coordinate expressions of two fields differentiable near
+  that point is the coordinate expression of their manifold bracket.
+* `VectorField.lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_mlieBracket_eq_zero`: if
+  the manifold bracket of two such fields vanishes near an interior point, the flat bracket of
+  their coordinate expressions vanishes near its chart image.
 * `VectorField.lieBracketWithin_neg_right` and `VectorField.mlieBracket_neg_right`: the flat and
   manifold brackets are odd in their second argument.
 * `VectorField.mlieBracket_neg_left`: the manifold bracket is odd in its first argument.
@@ -258,12 +262,34 @@ end TauCeti
 
 namespace VectorField
 
-/-- If two vector fields are differentiable near `x` and their manifold Lie bracket vanishes near
-`x`, then the flat Lie bracket of their pullbacks along the inverse extended chart at `x` vanishes
-near the chart image of `x`. This is naturality of the bracket (`VectorField.mpullback_mlieBracket`)
-under the inverse chart. -/
-theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero [I.Boundaryless]
-    {V W : ∀ y : M, TangentSpace I y} {x : M}
+/-- **Naturality of the bracket under the inverse chart.** If two vector fields are differentiable
+near an interior point `x`, then near the chart image of `x` the flat Lie bracket of their pullbacks
+along the inverse extended chart at `x` is the pullback of their manifold Lie bracket. This is
+`VectorField.mpullback_mlieBracket` at the points of the interior of the chart target. -/
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq
+    {V W : ∀ y : M, TangentSpace I y} {x : M} (hx : I.IsInteriorPoint x)
+    (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
+    (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y) :
+    lieBracket 𝕜 (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
+      (mpullback 𝓘(𝕜, E) I (extChartAt I x).symm W) =ᶠ[𝓝 (extChartAt I x x)]
+      mpullback 𝓘(𝕜, E) I (extChartAt I x).symm (mlieBracket I V W) := by
+  have hc : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
+    have h := continuousAt_extChartAt_symm (I := I) x
+    rwa [ContinuousAt, extChartAt_to_inv] at h
+  -- At an interior point the model range is a neighbourhood, so the chart target is one too.
+  have ht : (extChartAt I x).target ∈ 𝓝 (extChartAt I x x) := by
+    rw [← nhdsWithin_eq_nhds.2 (mem_interior_iff_mem_nhds.1 hx)]
+    exact extChartAt_target_mem_nhdsWithin x
+  filter_upwards [hc.eventually hV, hc.eventually hW, interior_mem_nhds.2 ht] with z hzV hzW hzt
+  have hf : ContMDiffAt 𝓘(𝕜, E) I (minSmoothness 𝕜 2) (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt (mem_interior_iff_mem_nhds.1 hzt)
+  rw [mpullback_mlieBracket hzV hzW hf le_rfl, mlieBracket_eq_lieBracket]
+
+/-- If two vector fields are differentiable near an interior point `x` and their manifold Lie
+bracket vanishes near `x`, then the flat Lie bracket of their pullbacks along the inverse extended
+chart at `x` vanishes near the chart image of `x`. -/
+theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero_of_mlieBracket_eq_zero
+    {V W : ∀ y : M, TangentSpace I y} {x : M} (hx : I.IsInteriorPoint x)
     (hV : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) y)
     (hW : ∀ᶠ y in 𝓝 x, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, W y⟩ : TangentBundle I M)) y)
     (hVW : ∀ᶠ y in 𝓝 x, mlieBracket I V W y = 0) :
@@ -272,14 +298,11 @@ theorem lieBracket_mpullback_extChartAt_symm_eventuallyEq_zero [I.Boundaryless]
   have hc : Tendsto (extChartAt I x).symm (𝓝 (extChartAt I x x)) (𝓝 x) := by
     have h := continuousAt_extChartAt_symm (I := I) x
     rwa [ContinuousAt, extChartAt_to_inv] at h
-  filter_upwards [hc.eventually hV, hc.eventually hW, hc.eventually hVW,
-    (isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)] with z hzV hzW hz0 hzt
-  have hf : ContMDiffAt 𝓘(𝕜, E) I (minSmoothness 𝕜 2) (extChartAt I x).symm z :=
-    ((contMDiffOn_extChartAt_symm x) z hzt).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hzt)
-  have h := mpullback_mlieBracket hzV hzW hf le_rfl
-  rw [mpullback_apply, hz0, map_zero, ← mlieBracketWithin_univ,
-    mlieBracketWithin_eq_lieBracketWithin] at h
-  exact (congrFun lieBracketWithin_univ z).symm.trans h.symm
+  filter_upwards [lieBracket_mpullback_extChartAt_symm_eventuallyEq hx hV hW,
+    hc.eventually hVW] with z hz hz0
+  rw [hz, mpullback_apply, hz0, map_zero]
+  -- The zero of a tangent space of `E` is the zero of `E` by definition.
+  rfl
 
 end VectorField
 

@@ -49,10 +49,11 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq`: a vector
   field with constant coordinates in the tangent-bundle trivialization at `x` pulls back to a
   constant field near the chart centre.
-* `VectorField.mpullback_extChartAt_symm_apply_eq_mfderiv`: on a boundaryless model, the
-  inverse-chart pullback is the image of the field under the differential of the chart.
-* `ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`: on a boundaryless model, the inverse-chart
-  pullback of a `C^m` vector field is `C^m` on the chart target, when `m + 1 ≤ n`.
+* `VectorField.mpullback_extChartAt_symm_apply_eq_mfderiv`: where the model range is a
+  neighbourhood, the inverse-chart pullback is the image of the field under the differential of
+  the chart.
+* `ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`: the inverse-chart pullback of a `C^m` vector
+  field is `C^m` on the interior of the chart target, when `m + 1 ≤ n`.
 * `VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm`: near the
   chart centre, these pullbacks are the coordinates in the tangent-bundle trivialization.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
@@ -356,17 +357,20 @@ theorem mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq (x : 
   rw [(extChartAt I x).right_inv hz] at h
   rw [h, Trivialization.apply_mk_symm _ hy']
 
-/-- On a boundaryless model, the pullback of a vector field along an inverse extended chart, at
-the image of a point `y` of the chart source, is the image of `V y` under the differential of the
-extended chart at `y`. -/
-theorem mpullback_extChartAt_symm_apply_eq_mfderiv [I.Boundaryless]
-    (V : (x : M) → TangentSpace I x) {y : M} (hy : y ∈ (extChartAt I x).source) :
+open scoped Topology in
+/-- The pullback of a vector field along an inverse extended chart, at the image of a point `y` of
+the chart source near whose image the model range is a neighbourhood, is the image of `V y` under
+the differential of the extended chart at `y`. On a boundaryless model the range hypothesis holds
+at every point. -/
+theorem mpullback_extChartAt_symm_apply_eq_mfderiv
+    (V : (x : M) → TangentSpace I x) {y : M} (hy : y ∈ (extChartAt I x).source)
+    (hr : range I ∈ 𝓝 (extChartAt I x y)) :
     mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V (extChartAt I x y) =
       mfderiv I 𝓘(𝕜, E) (extChartAt I x) y (V y) := by
   have hinv := isInvertible_mfderivWithin_extChartAt_symm ((extChartAt I x).map_source hy)
-  rw [I.range_eq_univ, mfderivWithin_univ] at hinv
+  rw [mfderivWithin_of_mem_nhds hr] at hinv
   have hcomp := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) hy
-  rw [I.range_eq_univ, mfderivWithin_univ] at hcomp
+  rw [mfderivWithin_of_mem_nhds hr] at hcomp
   rw [mpullback_apply, hinv.inverse_apply_eq, (extChartAt I x).left_inv hy]
   exact (DFunLike.congr_fun hcomp (V y)).symm
 
@@ -377,19 +381,21 @@ open scoped Topology
 
 variable {V : (x : M) → TangentSpace I x} {s : Set M} {x : M}
 
-/-- On a boundaryless model of a `C^n` manifold, the pullback along an inverse extended chart of a
-vector field which is `C^m` on a set `U`, with `m + 1 ≤ n`, is `C^m` on the part of the
-chart target which the inverse chart maps into `U`. -/
-theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [I.Boundaryless]
+/-- On a `C^n` manifold, the pullback along an inverse extended chart of a vector field which is
+`C^m` on a set `U`, with `m + 1 ≤ n`, is `C^m` on the part of the interior of the chart target
+which the inverse chart maps into `U`. On a boundaryless model the chart target is open, so this
+is the part of the whole chart target mapped into `U`. -/
+theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm
     [IsManifold I n M] {U : Set M}
     (hV : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) U)
     (hmn : m + 1 ≤ n) :
     ContDiffOn 𝕜 m (VectorField.mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
-      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) := fun z hz ↦ by
+      (interior (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) := fun z hz ↦ by
   have : IsManifold I (m + 1) M := IsManifold.of_le hmn
   have := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
+  have hz₁ : z ∈ (extChartAt I x).target := interior_subset hz.1
   have hy : (extChartAt I x).symm z ∈ (chartAt H x).source := by
-    simpa only [extChartAt_source] using (extChartAt I x).map_target hz.1
+    simpa only [extChartAt_source] using (extChartAt I x).map_target hz₁
   have hmem : (⟨(extChartAt I x).symm z, V ((extChartAt I x).symm z)⟩ : TangentBundle I M) ∈
       (trivializationAt E (TangentSpace I) x).source := by
     simpa using hy
@@ -398,19 +404,23 @@ theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [I.Boundaryless]
     (f := fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) hmem).mp (hV _ hz.2)).2
   have hf : ContMDiffAt 𝓘(𝕜, E) I m (extChartAt I x).symm z :=
     ((contMDiffOn_extChartAt_symm x).contMDiffAt
-      ((isOpen_extChartAt_target x).mem_nhds hz.1)).of_le ((le_self_add).trans hmn)
+      (mem_interior_iff_mem_nhds.1 hz.1)).of_le ((le_self_add).trans hmn)
   have hmaps : MapsTo (extChartAt I x).symm
-      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) U := fun w hw ↦ hw.2
+      (interior (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) U := fun w hw ↦ hw.2
   have h2 := h1.comp z hf.contMDiffWithinAt hmaps
-  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 h2).congr (fun w hw ↦ ?_) ?_
-  · have hw' := VectorField.mpullbackWithin_extChartAt_symm_apply V
-      ((extChartAt I x).map_target hw.1)
-    rw [(extChartAt I x).right_inv hw.1, I.range_eq_univ, VectorField.mpullbackWithin_univ] at hw'
-    exact hw'
-  · have hw' := VectorField.mpullbackWithin_extChartAt_symm_apply V
-      ((extChartAt I x).map_target hz.1)
-    rw [(extChartAt I x).right_inv hz.1, I.range_eq_univ, VectorField.mpullbackWithin_univ] at hw'
-    exact hw'
+  -- On the interior of the chart target, the model range is a neighbourhood, so the pullback
+  -- within the range is the pullback.
+  have hpb {w : E} (hw : w ∈ interior (extChartAt I x).target) :
+      (trivializationAt E (TangentSpace I) x (V ((extChartAt I x).symm w))).2 =
+        VectorField.mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V w := by
+    have hw' := VectorField.mpullbackWithin_extChartAt_symm_apply V
+      ((extChartAt I x).map_target (interior_subset hw))
+    rw [(extChartAt I x).right_inv (interior_subset hw), VectorField.mpullbackWithin_apply,
+      mfderivWithin_of_mem_nhds (mem_interior_iff_mem_nhds.1
+        (interior_mono (extChartAt_target_subset_range x) hw))] at hw'
+    exact hw'.symm
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 h2).congr (fun w hw ↦ (hpb hw.1).symm)
+    (hpb hz.1).symm
 
 /-- Near the chart image of `x`, within the model range, the inverse-chart pullback of a vector
 field is its coordinate expression in the tangent-bundle trivialization at `x`. -/
