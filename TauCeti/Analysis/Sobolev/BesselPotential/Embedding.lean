@@ -156,7 +156,7 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
         fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
         Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
       simp only [Complex.coe_smul]
-  rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
+  rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
 /-- If the Fourier transform of `f ∈ H^s` is an `L¹` function `v`, then
@@ -165,7 +165,7 @@ theorem MemSobolev.memLp_one_add_norm_sq_rpow_smul {s : ℝ} {f : 𝓢'(E, F)}
     (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     MemLp (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 :=
   memLp_iff.2
-    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ enorm_lt_top)
+    (hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv ▸ eNorm_lt_top)
 
 /-- **The `L¹` norm on the Fourier side.** If the Fourier transform of `f ∈ H^s` is an `L¹`
 function `v`, then `‖v‖₁ ≤ ‖(1 + ‖ξ‖ ^ 2) ^ (-s / 2)‖₂ ‖f‖_{H^s}`, by Cauchy–Schwarz. The first
@@ -195,10 +195,10 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
   have hL1 : ∫ ξ, ‖v ξ‖ ≤ K.toReal * ‖hu.toBesselPotentialSpace‖ := by
     have h : eLpNorm v 1 volume ≤ K * ‖hu.toBesselPotentialSpace‖ₑ :=
       hu.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace hv
-    rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
+    rw [eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
       ← ofReal_norm, ← ENNReal.ofReal_toReal hK,
       ← ENNReal.ofReal_mul ENNReal.toReal_nonneg] at h
-    rw [integral_norm_eq_lintegral_enorm hi.aestronglyMeasurable]
+    rw [integral_norm_eq_lintegral_eNorm hi.aestronglyMeasurable]
     exact ENNReal.toReal_le_of_le_ofReal (by positivity) h
   filter_upwards [Lp.ae_eq_fourierInv_of_fourier_eq hv] with x hx
   rw [hx, Real.fourierInv_eq_fourier_comp_neg]

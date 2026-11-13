@@ -178,11 +178,11 @@ theorem contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
   have he : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F₁ E₁ x₀
   have hs (i : Fin 2) : ContMDiffAt IB (IB.prod 𝓘(𝕜, F₁)) n
       (fun y ↦ TotalSpace.mk' F₁ y (e.symm y (v i))) x₀ := by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     refine (contMDiffAt_const (c := v i)).congr_of_eventuallyEq ?_
     filter_upwards [e.open_baseSet.mem_nhds he] with y hy
     exact congr(Prod.snd $(e.apply_mk_symm hy (v i)))
-  have hc := (contMDiffAt_totalSpace.1 ((hβ.clm_bundle_apply (hs 0)).clm_bundle_apply (hs 1))).2
+  have hc := (contMDiffAt_totalSpace_iff.1 ((hβ.clm_bundle_apply (hs 0)).clm_bundle_apply (hs 1))).2
   refine hc.congr_of_eventuallyEq ?_
   let e' := FiberBundle.trivializationAt F₂ E₂ x₀
   have he' : x₀ ∈ e'.baseSet := FiberBundle.mem_baseSet_trivializationAt F₂ E₂ x₀
