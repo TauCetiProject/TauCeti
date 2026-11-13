@@ -11,15 +11,19 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 # Pairing maps in the manifold weak Whitney topology
 
 Pairing `C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯ → C^n⟮I, M; J.prod J', N × N'⟯`, `(f, g) ↦ (f, g)`,
-is continuous for the weak Whitney topologies when the source model is locally compact.
+is continuous for the weak Whitney topologies. No local compactness is needed.
 
 A chart of `N × N'` at a pair of points is the product of the charts of the factors, and a
 coordinate derivative of a pair is the pair of the coordinate derivatives
-(`iteratedFDerivWithin_prodMk`). Each of these depends continuously on the map and the chart point
-jointly (`ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt`), so a compactness argument over
-the compact set of a derivative test gives continuity. Together with
-`ContMDiffMap.continuous_comp_manifoldWeakWhitney`, this makes the pointwise application of a
-fixed smooth map of several variables continuous.
+(`ContMDiffMap.iteratedFDerivWithin_extChartAt_prodMk`). On the compact set of a derivative test,
+the coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`
+(`ContMDiffMap.tendstoUniformlyOn_iteratedFDerivWithin_extChartAt`), and the pair of derivatives
+of `f₀` and `g₀` stays in a compact subset of the open set of the test, which gives continuity.
+Together with composition (`ContMDiffMap.continuous_comp_manifoldWeakWhitney`, when the models
+of the source and of all the variables are locally compact, or
+`ContMDiffMap.continuous_comp_left_manifoldWeakWhitney`, when the outer map is fixed and the
+source model is locally compact), this makes the pointwise application of a fixed smooth map of
+several variables continuous.
 -/
 
 public section
@@ -33,74 +37,108 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {n : WithTop ℕ∞}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J n N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
-  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N'] [IsManifold J' n N']
-  [LocallyCompactSpace E]
+  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
 
-/-- The local form of continuity of pairing: a coordinate derivative test passed by the pair of
-`f₀` and `g₀` at a chart point is passed near that point by the pair of `f` and `g`, for all `f`
-near `f₀` and `g` near `g₀`. -/
-private theorem eventually_prodMk_mem_source_and_iteratedFDerivWithin_mem
-    {f₀ : C^n⟮I, M; J, N⟯} {g₀ : C^n⟮I, M; J', N'⟯} {x : M} {y : N × N'} {w₀ : E}
-    (hw₀ : w₀ ∈ (extChartAt I x).target)
-    (h₀ : f₀.prodMk g₀ ((extChartAt I x).symm w₀) ∈ (extChartAt (J.prod J') y).source)
-    {m : ℕ} (hm : m ≤ n) {V : Set (E [×m]→L[𝕜] (F × F'))}
-    (hV : V ∈ 𝓝 (iteratedFDerivWithin 𝕜 m
-      (extChartAt (J.prod J') y ∘ f₀.prodMk g₀ ∘ (extChartAt I x).symm)
-      (extChartAt I x).target w₀)) :
-    ∀ᶠ q : (C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯) × E in
-        𝓝 (f₀, g₀) ×ˢ 𝓝[(extChartAt I x).target] w₀,
-      q.1.1.prodMk q.1.2 ((extChartAt I x).symm q.2) ∈ (extChartAt (J.prod J') y).source ∧
-        iteratedFDerivWithin 𝕜 m
-          (extChartAt (J.prod J') y ∘ q.1.1.prodMk q.1.2 ∘ (extChartAt I x).symm)
-          (extChartAt I x).target q.2 ∈ V := by
-  set φ := extChartAt I x
-  rw [extChartAt_prod] at h₀ hV ⊢
-  set ψ₁ := extChartAt J y.1
-  set ψ₂ := extChartAt J' y.2
-  have h₁ : f₀ (φ.symm w₀) ∈ ψ₁.source := h₀.1
-  have h₂ : g₀ (φ.symm w₀) ∈ ψ₂.source := h₀.2
-  -- A coordinate derivative of a pair is the pair of the coordinate derivatives.
-  have key (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯) (w : E) (hw : w ∈ φ.target)
-      (hf : f (φ.symm w) ∈ ψ₁.source) (hg : g (φ.symm w) ∈ ψ₂.source) :
-      iteratedFDerivWithin 𝕜 m (ψ₁.prod ψ₂ ∘ f.prodMk g ∘ φ.symm) φ.target w =
-        (iteratedFDerivWithin 𝕜 m (ψ₁ ∘ f ∘ φ.symm) φ.target w).prod
-          (iteratedFDerivWithin 𝕜 m (ψ₂ ∘ g ∘ φ.symm) φ.target w) :=
-    iteratedFDerivWithin_prodMk (f.contDiffWithinAt_extChartAt hw hf)
-      (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm
-  rw [key f₀ g₀ w₀ hw₀ h₁ h₂] at hV
-  set l := 𝓝 (f₀, g₀) ×ˢ 𝓝[φ.target] w₀
-  have hl₁ : Tendsto (fun q : (C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯) × E ↦ (q.1.1, q.2)) l
-      (𝓝 f₀ ×ˢ 𝓝[φ.target] w₀) :=
-    ((continuous_fst.tendsto _).comp tendsto_fst).prodMk tendsto_snd
-  have hl₂ : Tendsto (fun q : (C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯) × E ↦ (q.1.2, q.2)) l
-      (𝓝 g₀ ×ˢ 𝓝[φ.target] w₀) :=
-    ((continuous_snd.tendsto _).comp tendsto_fst).prodMk tendsto_snd
-  have hD := ((ContinuousMultilinearMap.prodL 𝕜 (fun _ : Fin m ↦ E) F F').continuous.tendsto
-    _).comp (((tendsto_iteratedFDerivWithin_extChartAt hw₀ h₁ hm).comp hl₁).prodMk_nhds
-      ((tendsto_iteratedFDerivWithin_extChartAt hw₀ h₂ hm).comp hl₂))
-  filter_upwards [hl₁.eventually (eventually_mem_extChartAt_source hw₀ h₁),
-    hl₂.eventually (eventually_mem_extChartAt_source hw₀ h₂),
-    tendsto_snd.eventually self_mem_nhdsWithin, hD.eventually_mem hV] with q hq₁ hq₂ hq hqV
-  exact ⟨⟨hq₁, hq₂⟩, (key q.1.1 q.1.2 q.2 hq hq₁ hq₂).symm ▸ hqV⟩
+/-- The pair of two `C^n` maps evaluates to the pair of their values. -/
+@[simp]
+theorem prodMk_apply (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯) (x : M) :
+    f.prodMk g x = (f x, g x) := rfl
 
-/-- Pairing of `C^n` maps is jointly continuous for the manifold weak Whitney topologies,
-provided the source model is locally compact. -/
+variable [IsManifold I n M] [IsManifold J n N] [IsManifold J' n N']
+
+/-- A coordinate derivative of a pair of maps, read in a product chart, is the pair of the
+coordinate derivatives of the two maps. -/
+theorem iteratedFDerivWithin_extChartAt_prodMk (f : C^n⟮I, M; J, N⟯) (g : C^n⟮I, M; J', N'⟯)
+    {x : M} {y : N × N'} {w : E} (hw : w ∈ (extChartAt I x).target)
+    (hf : f ((extChartAt I x).symm w) ∈ (extChartAt J y.1).source)
+    (hg : g ((extChartAt I x).symm w) ∈ (extChartAt J' y.2).source) {m : ℕ} (hm : m ≤ n) :
+    iteratedFDerivWithin 𝕜 m (extChartAt (J.prod J') y ∘ f.prodMk g ∘ (extChartAt I x).symm)
+        (extChartAt I x).target w =
+      (iteratedFDerivWithin 𝕜 m (extChartAt J y.1 ∘ f ∘ (extChartAt I x).symm)
+          (extChartAt I x).target w).prod
+        (iteratedFDerivWithin 𝕜 m (extChartAt J' y.2 ∘ g ∘ (extChartAt I x).symm)
+          (extChartAt I x).target w) := by
+  have h : extChartAt (J.prod J') y ∘ f.prodMk g ∘ (extChartAt I x).symm =
+      fun v ↦ ((extChartAt J y.1 ∘ f ∘ (extChartAt I x).symm) v,
+        (extChartAt J' y.2 ∘ g ∘ (extChartAt I x).symm) v) := by
+    funext v
+    simp only [extChartAt_prod, Function.comp_apply, PartialEquiv.prod_coe, prodMk_apply]
+  rw [h]
+  exact iteratedFDerivWithin_prodMk (f.contDiffWithinAt_extChartAt hw hf)
+    (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm
+
+/-- Pairing of `C^n` maps is jointly continuous for the manifold weak Whitney topologies. -/
 theorem continuous_prodMk_manifoldWeakWhitney :
     Continuous (fun p : C^n⟮I, M; J, N⟯ × C^n⟮I, M; J', N'⟯ ↦ p.1.prodMk p.2) := by
   refine continuous_iff_continuousAt.mpr fun ⟨f₀, g₀⟩ ↦ ?_
   refine tendsto_manifoldWeakWhitney_iff.mpr fun x y m hm K hK V hV h₀ ↦ ?_
-  simp only [mem_chartJetSet]
-  -- A compactness argument over `K` reduces the test to a neighbourhood of each of its points.
-  refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
-  have h := eventually_prodMk_mem_source_and_iteratedFDerivWithin_mem w.2
-    ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
+  set ψ₁ := extChartAt J y.1
+  set ψ₂ := extChartAt J' y.2
+  have hsrc (w : (extChartAt I x).target) (hw : w ∈ K) :
+      f₀ ((extChartAt I x).symm w) ∈ ψ₁.source ∧ g₀ ((extChartAt I x).symm w) ∈ ψ₂.source := by
+    have h := ((mem_chartJetSet.mp h₀) w hw).1
+    simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using h
+  set C : Set E := Subtype.val '' K
+  have hC : IsCompact C := hK.image continuous_subtype_val
+  have hCx : C ⊆ (extChartAt I x).target := image_subset_iff.mpr fun w _ ↦ w.2
+  have hCy₁ : ∀ w ∈ C, f₀ ((extChartAt I x).symm w) ∈ ψ₁.source := by
+    rintro _ ⟨w, hw, rfl⟩
+    exact (hsrc w hw).1
+  have hCy₂ : ∀ w ∈ C, g₀ ((extChartAt I x).symm w) ∈ ψ₂.source := by
+    rintro _ ⟨w, hw, rfl⟩
+    exact (hsrc w hw).2
+  let D₁ : C^n⟮I, M; J, N⟯ → E → E [×m]→L[𝕜] F := fun f w ↦
+    iteratedFDerivWithin 𝕜 m (ψ₁ ∘ f ∘ (extChartAt I x).symm) (extChartAt I x).target w
+  let D₂ : C^n⟮I, M; J', N'⟯ → E → E [×m]→L[𝕜] F' := fun g w ↦
+    iteratedFDerivWithin 𝕜 m (ψ₂ ∘ g ∘ (extChartAt I x).symm) (extChartAt I x).target w
+  -- On `C`, the pair of the coordinate derivatives of `f₀` and `g₀` stays in a compact subset of
+  -- the open set of the test, so a uniform neighbourhood of it stays in that open set.
+  let L := ContinuousMultilinearMap.prodL 𝕜 (fun _ : Fin m ↦ E) F F'
+  have hS : IsCompact ((fun w ↦ (D₁ f₀ w, D₂ g₀ w)) '' C) := by
+    refine hC.image_of_continuousOn (ContinuousOn.prodMk (fun w hw ↦ ?_) (fun w hw ↦ ?_))
+    · exact ((f₀.contDiffWithinAt_extChartAt (hCx hw) (hCy₁ w hw)
+        ).continuousWithinAt_iteratedFDerivWithin (uniqueDiffOn_extChartAt_target x) hm
+          (hCx hw)).mono hCx
+    · exact ((g₀.contDiffWithinAt_extChartAt (hCx hw) (hCy₂ w hw)
+        ).continuousWithinAt_iteratedFDerivWithin (uniqueDiffOn_extChartAt_target x) hm
+          (hCx hw)).mono hCx
+  have hSV : (fun w ↦ (D₁ f₀ w, D₂ g₀ w)) '' C ⊆ L ⁻¹' V := by
+    rintro _ ⟨_, ⟨w, hw, rfl⟩, rfl⟩
+    have h := ((mem_chartJetSet.mp h₀) w hw).2
+    rw [iteratedFDerivWithin_extChartAt_prodMk f₀ g₀ w.2 (hsrc w hw).1 (hsrc w hw).2 hm] at h
+    exact h
+  obtain ⟨δ, hδ, hδV⟩ := hS.exists_thickening_subset_open (hV.preimage L.continuous) hSV
+  -- Nearby maps stay visible in the factor charts on `K` and have nearby coordinate derivatives.
+  have hT₁ : ∀ᶠ f in 𝓝 f₀, f ∈ chartJetSet (J := J) (n := n) x y.1 0 K univ :=
+    (isOpen_chartJetSet x y.1 0 (by simp) hK isOpen_univ).mem_nhds
+      (mem_chartJetSet.mpr fun w hw ↦ ⟨(hsrc w hw).1, mem_univ _⟩)
+  have hT₂ : ∀ᶠ g in 𝓝 g₀, g ∈ chartJetSet (J := J') (n := n) x y.2 0 K univ :=
+    (isOpen_chartJetSet x y.2 0 (by simp) hK isOpen_univ).mem_nhds
+      (mem_chartJetSet.mpr fun w hw ↦ ⟨(hsrc w hw).2, mem_univ _⟩)
+  have hU₁ := Metric.tendstoUniformlyOn_iff.mp
+    (tendstoUniformlyOn_iteratedFDerivWithin_extChartAt hC hCx hCy₁ hm) δ hδ
+  have hU₂ := Metric.tendstoUniformlyOn_iff.mp
+    (tendstoUniformlyOn_iteratedFDerivWithin_extChartAt hC hCx hCy₂ hm) δ hδ
   rw [nhds_prod_eq]
-  exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h
+  filter_upwards [(hT₁.and hU₁).prod_mk (hT₂.and hU₂)] with ⟨f, g⟩ ⟨⟨hf, hf'⟩, hg, hg'⟩
+  refine mem_chartJetSet.mpr fun w hw ↦ ?_
+  have h₁ := ((mem_chartJetSet.mp hf) w hw).1
+  have h₂ := ((mem_chartJetSet.mp hg) w hw).1
+  have hwC : (w : E) ∈ C := mem_image_of_mem _ hw
+  refine ⟨?_, ?_⟩
+  · simpa only [extChartAt_prod, PartialEquiv.prod_source, prodMk_apply, mem_prod] using
+      And.intro h₁ h₂
+  · rw [iteratedFDerivWithin_extChartAt_prodMk f g w.2 h₁ h₂ hm]
+    have hfg : (D₁ f w, D₂ g w) ∈ Metric.thickening δ ((fun w ↦ (D₁ f₀ w, D₂ g₀ w)) '' C) :=
+      Metric.mem_thickening_iff.mpr ⟨_, mem_image_of_mem _ hwC, by
+        rw [Prod.dist_eq, max_lt_iff, dist_comm (D₁ f w), dist_comm (D₂ g w)]
+        exact ⟨hf' w hwC, hg' w hwC⟩⟩
+    exact hδV hfg
 
 end ContMDiffMap

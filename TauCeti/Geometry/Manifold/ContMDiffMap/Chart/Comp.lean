@@ -14,7 +14,9 @@ import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 
 Composition `C^n⟮J, N; I', P⟯ × C^n⟮I, M; J, N⟯ → C^n⟮I, M; I', P⟯` is continuous for the weak
 Whitney topologies, provided the models of the source and of the middle manifold are locally
-compact. No compactness of the manifolds themselves is needed.
+compact. No compactness of the manifolds themselves is needed. Postcomposition with a fixed map
+is continuous as soon as the source model is locally compact: the coordinate derivatives of the
+fixed outer map are continuous in the chart point alone.
 
 The proof is local in the source. Reading `g ∘ f` in charts through a chart of `N` at the image
 point, the Faà di Bruno formula `iteratedFDerivWithin_comp_of_eventually_mem` expresses each
@@ -29,6 +31,8 @@ compactness argument over the compact set of a derivative test then gives contin
 * `ContMDiffMap.iteratedFDerivWithin_extChartAt_comp`: the Faà di Bruno formula for coordinate
   derivatives of a composite, through any chart of the middle manifold.
 * `ContMDiffMap.continuous_comp_manifoldWeakWhitney`: composition is jointly continuous.
+* `ContMDiffMap.continuous_postcomp_manifoldWeakWhitney`: postcomposition with a fixed map is
+  continuous, without local compactness of the model of the middle manifold.
 
 The weak topology and the continuity properties of composition are treated in M. Hirsch,
 *Differential Topology*, GTM 33, Chapter 2; the coordinate computation is Mathlib's Faà di Bruno
@@ -155,6 +159,76 @@ theorem continuous_comp_manifoldWeakWhitney :
   -- A compactness argument over `K` reduces the test to a neighbourhood of each of its points.
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
   have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem w.2
+    ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
+  rw [nhds_prod_eq]
+  exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h
+
+
+omit [LocallyCompactSpace F] in
+/-- The local form of continuity of postcomposition with a fixed map: a coordinate derivative test
+passed by `g ∘ f₀` at a chart point is passed near that point by `g ∘ f` for all `f` near `f₀`. -/
+private theorem eventually_comp_left_mem_source_and_iteratedFDerivWithin_mem
+    (g : C^n⟮J, N; I', P⟯) {f₀ : C^n⟮I, M; J, N⟯} {x : M} {z : P} {w₀ : E}
+    (hw₀ : w₀ ∈ (extChartAt I x).target)
+    (h₀ : g.comp f₀ ((extChartAt I x).symm w₀) ∈ (extChartAt I' z).source) {m : ℕ} (hm : m ≤ n)
+    {V : Set (E [×m]→L[𝕜] E')}
+    (hV : V ∈ 𝓝 (iteratedFDerivWithin 𝕜 m (extChartAt I' z ∘ g.comp f₀ ∘ (extChartAt I x).symm)
+      (extChartAt I x).target w₀)) :
+    ∀ᶠ q : C^n⟮I, M; J, N⟯ × E in 𝓝 f₀ ×ˢ 𝓝[(extChartAt I x).target] w₀,
+      g.comp q.1 ((extChartAt I x).symm q.2) ∈ (extChartAt I' z).source ∧
+        iteratedFDerivWithin 𝕜 m (extChartAt I' z ∘ g.comp q.1 ∘ (extChartAt I x).symm)
+          (extChartAt I x).target q.2 ∈ V := by
+  set φ := extChartAt I x
+  set χ := extChartAt I' z
+  -- Read the middle manifold in the chart at the image point `f₀ (φ.symm w₀)`.
+  set ψ := extChartAt J (f₀ (φ.symm w₀))
+  have hf₀ : f₀ (φ.symm w₀) ∈ ψ.source := mem_extChartAt_source _
+  have hu₀ : ψ (f₀ (φ.symm w₀)) ∈ ψ.target := mem_extChartAt_target _
+  have hg₀ : g (ψ.symm (ψ (f₀ (φ.symm w₀)))) ∈ χ.source := by
+    rw [ψ.left_inv hf₀]
+    exact h₀
+  set l := 𝓝 f₀ ×ˢ 𝓝[φ.target] w₀
+  -- The inner map, its coordinate derivatives, and its value in the chart `ψ`.
+  have hsrc : ∀ᶠ q in l, q.1 (φ.symm q.2) ∈ ψ.source := eventually_mem_extChartAt_source hw₀ hf₀
+  have hjf (k : ℕ) (hk : k ≤ m) :=
+    tendsto_iteratedFDerivWithin_extChartAt hw₀ hf₀ ((Nat.cast_le.mpr hk).trans hm)
+  have hu : Tendsto (fun q : C^n⟮I, M; J, N⟯ × E ↦ ψ (q.1 (φ.symm q.2))) l
+      (𝓝[ψ.target] ψ (f₀ (φ.symm w₀))) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, hsrc.mono fun _ h ↦ ψ.map_source h⟩
+    have h := ((continuous_eval_const (0 : Fin 0 → E)).tendsto _).comp (hjf 0 (Nat.zero_le m))
+    simpa only [Function.comp_def, iteratedFDerivWithin_zero_apply] using h
+  -- The outer map is fixed, so its coordinate derivatives are continuous at the moving point.
+  have hjg (k : ℕ) (hk : k ≤ m) :=
+    ((g.contDiffWithinAt_extChartAt hu₀ hg₀).continuousWithinAt_iteratedFDerivWithin
+      (uniqueDiffOn_extChartAt_target _) ((Nat.cast_le.mpr hk).trans hm) hu₀).tendsto.comp hu
+  have hcsrc : ∀ᶠ q in l, g.comp q.1 (φ.symm q.2) ∈ χ.source := by
+    have hg := (map_continuous g).continuousAt.eventually_mem_extChartAt_source hu₀ hg₀
+    filter_upwards [hsrc, hu.eventually hg] with q h₁ h₂
+    rwa [ψ.left_inv h₁] at h₂
+  -- Along `l`, the derivative of the composite is the Taylor composition of these derivatives,
+  -- which converges to that of `g` and `f₀`.
+  have hfdb : ∀ᶠ q in l, (ftaylorSeriesWithin 𝕜 (χ ∘ g ∘ ψ.symm) ψ.target
+        (ψ (q.1 (φ.symm q.2)))).taylorComp (ftaylorSeriesWithin 𝕜 (ψ ∘ q.1 ∘ φ.symm)
+          φ.target q.2) m =
+      iteratedFDerivWithin 𝕜 m (χ ∘ g.comp q.1 ∘ φ.symm) φ.target q.2 := by
+    filter_upwards [hsrc, hcsrc, tendsto_snd.eventually self_mem_nhdsWithin] with q h₁ h₂ h₃
+    exact (iteratedFDerivWithin_extChartAt_comp g q.1 h₃ h₁ h₂ hm).symm
+  have hlim := (Filter.Tendsto.taylorComp hjg fun k _ hk ↦ hjf k hk).congr' hfdb
+  rw [iteratedFDerivWithin_extChartAt_comp g f₀ hw₀ hf₀ h₀ hm] at hV
+  exact hcsrc.and (hlim.eventually_mem hV)
+
+omit [LocallyCompactSpace F] in
+/-- Postcomposition with a fixed `C^n` map is continuous for the manifold weak Whitney
+topologies, provided the source model is locally compact. Unlike joint continuity of composition,
+this needs no local compactness of the model of the middle manifold. -/
+theorem continuous_postcomp_manifoldWeakWhitney (g : C^n⟮J, N; I', P⟯) :
+    Continuous (fun f : C^n⟮I, M; J, N⟯ ↦ g.comp f) := by
+  refine continuous_iff_continuousAt.mpr fun f₀ ↦ ?_
+  refine tendsto_manifoldWeakWhitney_iff.mpr fun x z m hm K hK V hV h₀ ↦ ?_
+  simp only [mem_chartJetSet]
+  -- A compactness argument over `K` reduces the test to a neighbourhood of each of its points.
+  refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
+  have h := eventually_comp_left_mem_source_and_iteratedFDerivWithin_mem g w.2
     ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
   rw [nhds_prod_eq]
   exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h

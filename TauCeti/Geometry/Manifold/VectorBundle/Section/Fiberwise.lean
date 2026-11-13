@@ -5,29 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Topology
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Continuity of smooth fibrewise operations on sections
 
 A family of fibre maps `ϕ x : V x → W x` over the identity of the base, smooth as a map of
-total spaces, acts on smooth sections by `s ↦ (x ↦ ϕ x (s x))`
-(`ContMDiffSection.fiberwiseMap`). The fibre maps need not be linear: pointwise nonlinear
-operations on sections of endomorphism bundles, such as `J ↦ -J` or `J ↦ J ∘ J₀ ∘ J`, are of this
-form.
+total spaces, acts on smooth sections by `s ↦ (x ↦ ϕ x (s x))` (`ContMDiffSection.map`). The
+fibre maps need not be linear: pointwise polynomial operations on sections of endomorphism
+bundles, such as `J ↦ J ∘ J` or `J ↦ J ∘ J₀ ∘ J`, are of this form.
 
 This action is continuous for the compact derivative topologies on sections
-(`ContMDiffSection.continuous_fiberwiseMap`), for any covering frame system of the source bundle
-and any frame system of the target bundle. The fibre model of the source bundle and the source
-model of the base are locally compact, as for finite-rank bundles over finite-dimensional
-manifolds.
+(`ContMDiffSection.continuous_map_frameTopology`), for any covering frame system of the source
+bundle and any frame system of the target bundle. The source model of the base is locally
+compact, as for finite-dimensional manifolds; the fibres may be infinite-dimensional.
 
 On the overlap of a source frame domain with a target frame domain, the target coefficients of
 the image section are a fixed smooth map of the base point and the source coefficients. Pairing
-(`ContMDiffMap.continuous_prodMk_manifoldWeakWhitney`) and composition
-(`ContMDiffMap.continuous_comp_manifoldWeakWhitney`) are continuous in the weak Whitney
+(`ContMDiffMap.continuous_prodMk_manifoldWeakWhitney`), composition
+(`ContMDiffMap.continuous_comp_manifoldWeakWhitney`) and postcomposition with a fixed map
+(`ContMDiffMap.continuous_postcomp_manifoldWeakWhitney`) are continuous in the weak Whitney
 topology, and continuity is local on the target frame domain
 (`ContMDiffMap.continuous_of_forall_continuous_restrict`).
 
@@ -61,18 +62,18 @@ variable (ϕ : ∀ x, V x → W x)
 
 /-- Postcomposition of sections with a smooth family of fibre maps over the identity. The fibre
 maps need not be linear. -/
-def fiberwiseMap (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
+protected def map (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
   ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
 
 /-- A fibrewise map evaluates by the given fibre map, without a change of base point. -/
 @[simp]
-theorem fiberwiseMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
-    fiberwiseMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+theorem map_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    ContMDiffSection.map ϕ hϕ s x = ϕ x (s x) := (rfl)
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [VectorBundle 𝕜 G W]
   [ContMDiffVectorBundle n F V I] [ContMDiffVectorBundle n G W I] [IsManifold I n M]
-  [LocallyCompactSpace E] [LocallyCompactSpace F]
+  [LocallyCompactSpace E]
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   {κ : Type*} (e' : κ → Trivialization G (π G W)) [∀ j, MemTrivializationAtlas (e' j)]
@@ -81,10 +82,10 @@ variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle �
 /-- A smooth family of fibre maps acts continuously on sections for the compact derivative
 topologies, given a covering frame system of the source bundle and any frame system of the
 target bundle. -/
-theorem continuous_fiberwiseMap (hcover : ∀ x : M, ∃ i, x ∈ U i) :
+theorem continuous_map_frameTopology (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     let _ := frameTopology (I := I) (n := n) e U hU
     let _ := frameTopology (I := I) (n := n) e' U' hU'
-    Continuous (fiberwiseMap ϕ hϕ) := by
+    Continuous (ContMDiffSection.map ϕ hϕ) := by
   let _ := frameTopology (I := I) (n := n) e U hU
   let _ := frameTopology (I := I) (n := n) e' U' hU'
   apply (continuous_frameTopology_iff_frameCoordinates e' U' hU').mpr
@@ -112,19 +113,18 @@ theorem continuous_fiberwiseMap (hcover : ∀ x : M, ∃ i, x ∈ U i) :
         ((hϕ.comp hσ) p)).2⟩
   have hc : Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       g.comp (ContMDiffMap.id.prodMk (((e i).frameCoordinates (hU i) s).comp incl))) :=
-    ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
+    (ContMDiffMap.continuous_postcomp_manifoldWeakWhitney g).comp
       (ContMDiffMap.continuous_prodMk_manifoldWeakWhitney.comp (continuous_const.prodMk
         (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
-          ((continuous_frameCoordinates e U hU i).prodMk continuous_const)))))
+          ((continuous_frameCoordinates e U hU i).prodMk continuous_const))))
+  -- The bundled maps evaluate by their defining formulas.
+  have hg (p : D i × F) : g p = ((e' j) ⟨((p.1 : U' j) : M), ϕ _ ((e i).symm _ p.2)⟩).2 := rfl
+  have hincl (x : D i) : incl x = ⟨((x : U' j) : M), x.2⟩ := rfl
+  have hid (x : D i) : (ContMDiffMap.id : C^n⟮I, D i; I, D i⟯) x = x := rfl
   refine hc.congr fun s ↦ ?_
   ext x
-  simp only [ContMDiffMap.restrict_apply, ContMDiffMap.comp_apply,
-    Bundle.Trivialization.frameCoordinates_apply, fiberwiseMap_apply]
-  -- Unfold the bundled pair and coefficient maps to their defining fibre formulas.
-  change g (x, (e i).frameCoordinates (hU i) s (incl x)) = _
-  rw [Bundle.Trivialization.frameCoordinates_apply]
-  change ((e' j) ⟨((x : U' j) : M), ϕ _ ((e i).symm ((x : U' j) : M)
-    ((e i) ⟨((x : U' j) : M), s ((x : U' j) : M)⟩).2)⟩).2 = _
+  simp only [ContMDiffMap.restrict_apply, ContMDiffMap.comp_apply, ContMDiffMap.prodMk_apply,
+    Bundle.Trivialization.frameCoordinates_apply, map_apply, hg, hincl, hid]
   have hx : ((x : U' j) : M) ∈ (e i).baseSet := hU i x.2
   rw [(e i).symm_apply_apply_mk hx]
 
