@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -32,7 +33,6 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
-* `TauCeti.Real.hasDerivAt_div_log_pow` — the derivative of `x / log x ^ n` for `x > 1`.
 * `TauCeti.Real.integral_inv_log_pow_eq_sub_add` — integration by parts for every reciprocal
   logarithm power, with either orientation of the interval.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
@@ -61,7 +61,7 @@ summation there.
 * H. Davenport, *Multiplicative Number Theory*, Chapter 1.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter I.
 
-The generic reciprocal-log-power derivative and integration-by-parts recurrence are adapted
+The integration-by-parts recurrence is adapted
 from the Ramanujan estimates in the [PrimeNumberTheoremAnd project](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/dc6e36e/PrimeNumberTheoremAnd/IEANTN/Ramanujan/Ramanujan.lean).
 
 Mathlib's `Mathlib/NumberTheory/Chebyshev.lean` carries out this estimate for the rational
@@ -165,24 +165,6 @@ theorem le_logIntegral {x : ℝ} (hx : 2 ≤ x) : (x - 2) / Real.log x ≤ logIn
 
 /-! ### The asymptotic `Li x ~ x / log x` -/
 
-/-- The derivative of `t ↦ t / log t ^ n` to the right of `1`, for every natural exponent. -/
-theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : 1 < t) :
-    HasDerivAt (fun u : ℝ ↦ u / Real.log u ^ n)
-      ((Real.log t ^ n)⁻¹ - (n : ℝ) * (Real.log t ^ (n + 1))⁻¹) t := by
-  have ht₀ : t ≠ 0 := (zero_lt_one.trans ht).ne'
-  have hlt : Real.log t ≠ 0 := (Real.log_pos ht).ne'
-  cases n with
-  | zero =>
-      simpa only [pow_zero, inv_one, Nat.cast_zero, zero_mul, sub_zero, div_one] using
-        hasDerivAt_id' t
-  | succ n =>
-      have hd := (hasDerivAt_id' t).div ((Real.hasDerivAt_log ht₀).pow (n + 1))
-        (pow_ne_zero _ hlt)
-      apply hd.congr_deriv
-      simp only [Pi.pow_apply, Nat.add_one_sub_one, one_mul]
-      field_simp [pow_succ, hlt, ht₀]
-      ring
-
 /-- Integration by parts for reciprocal powers of the logarithm. Both endpoints lie to the
 right of `1`; the signed interval integral allows either order of the endpoints. -/
 theorem integral_inv_log_pow_eq_sub_add (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
@@ -191,10 +173,10 @@ theorem integral_inv_log_pow_eq_sub_add (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb :
   have hi := intervalIntegrable_inv_log_pow n ha hb
   have hi1 := intervalIntegrable_inv_log_pow (n + 1) ha hb
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht ↦ hasDerivAt_div_log_pow n (by
+    (fun t ht ↦ hasDerivAt_div_log_pow n (Real.log_pos (by
       rcases mem_uIcc.mp ht with ht | ht
       · exact ha.trans_le ht.1
-      · exact hb.trans_le ht.1)) (hi.sub (hi1.const_mul n))
+      · exact hb.trans_le ht.1)).ne') (hi.sub (hi1.const_mul n))
   rw [intervalIntegral.integral_sub hi (hi1.const_mul n),
     intervalIntegral.integral_const_mul] at hFTC
   exact sub_eq_iff_eq_add.mp hFTC
