@@ -87,11 +87,12 @@ form they recover the vector-space definitions.
   perturbation adds its exterior derivative to the curvature, and changes neither the Floer
   equation nor the energy density.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
-* `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
+* `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_eq_symplecticFormAt`,
+  `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
-  `K = K_t dt`, nonnegativity of the energy density on solutions, and continuity of the curvature
-  and of the energy density.
+  `K = K_t dt`, the energy density `ω(η, J η)` of a solution, with `η = ∂_t u - X_{K_t}(u)`, its
+  nonnegativity, and continuity of the curvature and of the energy density.
 * `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.continuousOn_floerEnergyDensity`:
   convergence of perturbed derivatives in the tangent bundle, and continuity of the energy density
   of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
@@ -117,7 +118,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.eval₂_mfderiv_comp_stdComplexLine`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
   derivative, and the energy density, the area density and the curvature as two-forms on the
-  domain.
+  domain. Consequently holomorphic changes of coordinates preserve the Floer equation
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
   `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
@@ -412,6 +414,29 @@ theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u
     ContinuousLinearMap.coe_coe] using
       h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
 
+/-- For a solution of the Floer equation `∂_s u + J η = 0` with `η = ∂_t u - X_{K_t}(u)`, for a
+perturbation `K = K_t dt` without `ds` component, the energy density at `z` is `ω(η, J η)`. -/
+theorem IsNondegenerate.floerEnergyDensity_zero_left_eq_symplecticFormAt
+    (hω : ω.IsNondegenerate) {J : AlmostComplexStructure (TangentSpace I (u z))}
+    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (Kt z) (u z)) = 0) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z =
+      hω.symplecticFormAt (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))
+        (J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+          ω.hamiltonianVectorField (Kt z) (u z))) := by
+  set η := mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)
+  have hs : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal = -J η :=
+    eq_neg_of_add_eq_zero_left hfloer
+  have hρ : ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z =
+      hω.symplecticFormAt (u z) (-J η) η := by
+    rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineImag,
+      perturbedMFDeriv_apply_stdComplexLineReal, hs, hamiltonianVectorField_const, Pi.zero_apply,
+      sub_zero, IsNondegenerate.symplecticFormAt_apply]
+  rw [hρ, ← (hω.symplecticFormAt (u z)).neg_eq (J η)]
+  simp
+
 /-- A solution of the Floer equation `∂_s u + J (∂_t u - X_{K_t}(u)) = 0` for a perturbation
 `K = K_t dt` without `ds` component has nonnegative energy density at `z` when `J` is tamed by `ω`
 at `u z`. -/
@@ -667,6 +692,24 @@ theorem perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
     Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, add_smul, smul_add,
     mul_smul]
   abel
+
+/-- **Holomorphic changes of coordinates preserve the Floer equation.** If `dφ` is complex linear
+at `w` and `u` solves `(du - X_K)^{0,1} = 0` at `φ w` for an almost complex structure `J` on
+`T_(u (φ w)) M`, then `u ∘ φ` solves the Floer equation for the pulled-back datum `φ^*K` at `w`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
+    {J : AlmostComplexStructure (TangentSpace I (u (φ w)))} (hφ : DifferentiableAt ℝ φ w)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w))
+    (hKs : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w)))
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv Ks Kt u (φ w)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w).toLinearMap := by
+  rw [ω.perturbedMFDeriv_perturbationPullback hφ hu hKs hKt, ContinuousLinearMap.toLinearMap_comp]
+  exact h.comp hφJ
 
 /-- **The energy density is a two-form.** The Floer energy density of `u ∘ φ` for the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the energy density of `u` for
