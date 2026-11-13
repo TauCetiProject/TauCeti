@@ -22,6 +22,6 @@ namespace Real
 
 /-- The squared extended norm of a real number is its square embedded in `ℝ≥0∞`. -/
 theorem enorm_sq_eq_ofReal_sq (x : ℝ) : ‖x‖ₑ ^ 2 = ENNReal.ofReal (x ^ 2) := by
-  rw [enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg x), sq_abs]
+  rw [eNorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg x), sq_abs]
 
 end Real

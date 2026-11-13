@@ -255,8 +255,8 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : 
   refine ⟨C, fun {Omega a lam Lam F u x₀ R} h hK ha hF hu hball => ?_⟩
   have hball' : mu.restrict (ball x₀ R) ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
   exact hC (f := fun x => ‖W1p.gradient u x‖ₑ) (φ := fun x => ‖F x‖ₑ / ENNReal.ofReal lam)
-    ((Lp.aestronglyMeasurable (W1p.gradient u)).enorm.mono_measure hball')
-    ((hF.aestronglyMeasurable.enorm.div_const _).mono_measure hball')
+    ((Lp.aestronglyMeasurable (W1p.gradient u)).eNorm.mono_measure hball')
+    ((hF.aestronglyMeasurable.eNorm.div_const _).mono_measure hball')
     fun y ρ hρ hsub => hb h hK ha hF hu hρ (hsub.trans hball)
 
 /-- **Meyers' theorem: higher integrability of the gradient.** Let `n ≥ 1` be the dimension and
@@ -293,18 +293,18 @@ theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
     Measure.restrict_mono ((ball_subset_ball (by linarith)).trans hball) le_rfl
   have hm : AEStronglyMeasurable (W1p.gradient u) (mu.restrict (ball x₀ (R / 2))) :=
     (Lp.aestronglyMeasurable _).mono_measure hsub
-  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 ENNReal.ofReal_ne_top hm, hpR,
+  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 ENNReal.ofReal_ne_top hm, hpR,
     ← measure_mul_setLAverage _ measure_ball_lt_top.ne]
   refine ENNReal.mul_lt_top measure_ball_lt_top ((hC h hK ha hF hu hball).trans_lt ?_)
   refine ENNReal.mul_lt_top ENNReal.coe_lt_top (ENNReal.add_lt_top.2 ⟨?_, ?_⟩)
   · -- `∇u` is square integrable on `Ω`.
-    have hL2 := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
+    have hL2 := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
       (Lp.memLp (W1p.gradient u)).eLpNorm_lt_top
     rw [ENNReal.toReal_ofNat] at hL2
     refine ENNReal.rpow_lt_top_of_nonneg (by linarith) (laverage_lt_top ?_).ne
     exact (lt_of_le_of_lt (lintegral_mono' (Measure.restrict_mono hball le_rfl) le_rfl) hL2).ne
   · -- `F / λ` is `(2 + ε)`-integrable on `B(x₀, R)`.
-    have hF' := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp0 ENNReal.ofReal_ne_top
+    have hF' := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 ENNReal.ofReal_ne_top
       hFp.eLpNorm_lt_top
     rw [hpR] at hF'
     have hlam : (ENNReal.ofReal lam)⁻¹ ^ (2 + ε) ≠ ∞ :=

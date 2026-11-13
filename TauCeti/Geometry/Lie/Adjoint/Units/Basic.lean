@@ -106,7 +106,7 @@ section FiniteDimensional
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
 local instance finiteDimensionalCompleteSpaceAdjointUnits : CompleteSpace R :=
-  FiniteDimensional.complete ℝ R
+  FiniteDimensional.completeSpace ℝ R
 
 /-- The Lie bracket on the tangent Lie algebra of algebra units is the associative commutator. -/
 @[simp]
