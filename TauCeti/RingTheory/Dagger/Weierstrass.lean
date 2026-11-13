@@ -242,6 +242,18 @@ theorem exists_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
   refine ⟨q, r.trunc s, PowerSeries.degree_trunc_lt _ _, ?_⟩
   rwa [PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero hr]
 
+/-- **Overconvergent Weierstrass division in `K⟨X, Y⟩†` itself.** The division of
+`exists_mul_add_eq_of_isDistinguished`, stated as `f = q * g + r(Y)` in `K⟨X, Y⟩†`. -/
+theorem exists_mul_add_polynomialToOption_eq_of_isDistinguished {g : W'} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    (hu : IsUnit (PowerSeries.coeff s
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) (f : W') :
+    ∃ (q : W') (r : Polynomial W), r.degree < (s : WithBot ℕ) ∧
+      q * g + washnitzerAlgebra.polynomialToOption r = f := by
+  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
+  exact ⟨q, r, hr, washnitzerAlgebra.optionSeries_injective (by simpa using hqr)⟩
+
 /-- **Norm bounds in overconvergent Weierstrass division.** Under the hypotheses of
 `exists_mul_add_eq_of_isDistinguished`, the division `f = q * g + r` satisfies `‖q‖ ‖g‖ ≤ ‖f‖`,
 and every coefficient of the remainder `r` has Gauss norm at most `‖f‖`. -/
@@ -253,9 +265,7 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
     ∃ (q : W') (r : Polynomial W), r.degree < (s : WithBot ℕ) ∧
       f = q * g + washnitzerAlgebra.polynomialToOption r ∧ ‖q‖ * ‖g‖ ≤ ‖f‖ ∧
       ∀ i, ‖r.coeff i‖ ≤ ‖f‖ := by
-  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-  have hf : f = q * g + washnitzerAlgebra.polynomialToOption r :=
-    washnitzerAlgebra.optionSeries_injective (by simpa using hqr.symm)
+  obtain ⟨q, r, hr, hf⟩ := exists_mul_add_polynomialToOption_eq_of_isDistinguished hg hu f
   -- Map the division into the Tate algebra and apply the norm identity there.
   set φ := (toTate σ K : W →+* Tate)
   have hrφ : ∀ m, s ≤ m → ((r.map φ : Polynomial Tate) : PowerSeries Tate).coeff m = 0 :=
@@ -264,7 +274,7 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
         Polynomial.coeff_eq_zero_of_degree_lt (hr.trans_le (by exact_mod_cast hm)), map_zero]
   have hmap : PowerSeries.map φ (optionSeries f) =
       PowerSeries.map φ (optionSeries q) * PowerSeries.map φ (optionSeries g) + r.map φ := by
-    rw [hf]
+    rw [← hf]
     simp [Polynomial.polynomial_map_coe]
   have hnorm := hg.gaussNorm_mul_add_eq_max one_pos (fun x ↦ norm_mul _ _)
     (restrictedOptionEquiv (toTate _ K q)).2 hrφ
@@ -272,7 +282,7 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
     ← hmap, ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries,
     ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries,
     ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries] at hnorm
-  refine ⟨q, r, hr, hf, (le_max_left _ _).trans hnorm.ge, fun i ↦ ?_⟩
+  refine ⟨q, r, hr, hf.symm, (le_max_left _ _).trans hnorm.ge, fun i ↦ ?_⟩
   have hle := PowerSeries.le_gaussNorm norm 1 _
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
       (TauCeti.PowerSeries.isRestricted_of_forall_coeff_eq_zero hrφ)) i
@@ -314,8 +324,7 @@ theorem exists_mul_add_polynomialToOption_eq
       (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate)) := by
     simp [restrictedOptionEquiv_toTate_polynomialToOption, Polynomial.coeff_coe,
       ← hm.natDegree_eq, hm.monic.coeff_natDegree]
-  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-  exact ⟨q, r, hr, optionSeries_injective (by simpa using hqr)⟩
+  exact exists_mul_add_polynomialToOption_eq_of_isDistinguished hg hu f
 
 omit [CompleteSpace K] in
 /-- Evaluating a polynomial at `Y` and passing to a quotient of `K⟨X, Y⟩†` is evaluation at the
@@ -505,13 +514,10 @@ private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) 
       exact S.mul_mem (hC a) (S.pow_mem hY n)
   intro x
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨q, r, -, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-  have hf : f = q * polynomialToOption ω + polynomialToOption r :=
-    optionSeries_injective (by
-      rw [map_add, map_mul, optionSeries_polynomialToOption r]
-      exact hqr.symm)
+  obtain ⟨q, r, -, hf⟩ :=
+    exists_mul_add_polynomialToOption_eq_of_isDistinguished hg hu f
   have hfr : Ideal.Quotient.mk I f = ψ r := by
-    rw [hf, (Ideal.Quotient.mk I).map_add, (Ideal.Quotient.mk I).map_mul,
+    rw [← hf, (Ideal.Quotient.mk I).map_add, (Ideal.Quotient.mk I).map_mul,
       Ideal.Quotient.eq_zero_iff_mem.mpr hωI, mul_zero, zero_add]
     rfl
   exact hfr ▸ (AlgHom.mem_range _).mp (hr r)
