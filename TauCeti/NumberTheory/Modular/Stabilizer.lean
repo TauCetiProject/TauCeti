@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Modular.Orbits
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
+import Mathlib.NumberTheory.ModularForms.ProperlyDiscontinuous
 
 /-!
 # Orders of the point stabilisers of the modular group
@@ -106,32 +107,16 @@ theorem trace_sq_lt_four_of_smul_eq_self_of_not_mem_center {γ : SL(2, ℤ)}
       exact hfix w
     exact hγ ((QuotientGroup.eq_one_iff γ).mp hq)
 
-private theorem finite_stabilizer_of_subset (s : Finset SL(2, ℤ))
-    (hs : ∀ g : SL(2, ℤ), g • w = w → g ∈ s) : Finite (stabilizer SL(2, ℤ) w) :=
-  (s.finite_toSet.subset fun g hg ↦ hs g hg).to_subtype
-
-private theorem finite_stabilizer_of_smul (g : SL(2, ℤ))
-    (_ : Finite (stabilizer SL(2, ℤ) (g • z))) : Finite (stabilizer SL(2, ℤ) z) :=
-  Finite.of_equiv _ (stabilizerEquivStabilizerOfOrbitRel
-    (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit z g))).toEquiv
-
 /-- **Every point stabiliser is finite**, so the elliptic order `e_P` is defined at every point
-of `ℍ` and not only inside the fundamental domain. -/
-instance finite_stabilizer (z : ℍ) : Finite (stabilizer SL(2, ℤ) z) := by
-  obtain ⟨g, hg⟩ := exists_smul_mem_fd z
-  refine finite_stabilizer_of_smul g ?_
-  by_cases hI : g • z = I
-  · exact hI ▸ finite_stabilizer_of_subset {1, -1, S, -S} fun _ h ↦ stabilizer_I.mp h
-  by_cases hρ : g • z = ρ
-  · exact hρ ▸ finite_stabilizer_of_subset _ fun _ h ↦ stabilizer_ρ.mp h
-  by_cases hρ' : g • z = (1 : ℝ) +ᵥ ρ
-  · -- `ρ + 1` is `T • ρ`, so its stabiliser is conjugate to the one at `ρ`
-    rw [hρ', ← modular_T_smul]
-    refine finite_stabilizer_of_smul T⁻¹ ?_
-    rw [← mul_smul, inv_mul_cancel, one_smul]
-    exact finite_stabilizer_of_subset _ fun _ h ↦ stabilizer_ρ.mp h
-  · exact finite_stabilizer_of_subset {1, -1} fun _ h ↦ by
-      rcases stabilizer_of_ne hg h hI hρ hρ' with rfl | rfl <;> simp
+of `ℍ` and not only inside the fundamental domain. `SL(2, ℤ)` acts on `ℍ` through the injective
+`mapGL ℝ`, so its stabiliser is the preimage of the stabiliser in Mathlib's image group `𝒮ℒ`,
+which acts properly discontinuously. -/
+instance finite_stabilizer (z : ℍ) : Finite (stabilizer SL(2, ℤ) z) :=
+  Set.Finite.to_subtype (s := (stabilizer SL(2, ℤ) z : Set SL(2, ℤ))) <|
+    ((ProperlyDiscontinuousSMul.finite_stabilizer' 𝒮ℒ z).preimage
+      (f := (Matrix.SpecialLinearGroup.mapGL ℝ : SL(2, ℤ) →* GL (Fin 2) ℝ).rangeRestrict)
+      (MonoidHom.rangeRestrict_injective_iff.2
+        (Matrix.SpecialLinearGroup.mapGL_injective (R := ℤ) (S := ℝ))).injOn).subset fun _ hg ↦ hg
 
 private theorem card_stabilizer_of_coe_eq {s : Finset SL(2, ℤ)}
     (h : (stabilizer SL(2, ℤ) w : Set SL(2, ℤ)) = ↑s) :
