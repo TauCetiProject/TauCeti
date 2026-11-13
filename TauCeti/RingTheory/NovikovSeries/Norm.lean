@@ -37,7 +37,14 @@ of a principal unit into the trace of its logarithm
 
 `log (Norm u) = Tr (log u)`.
 
-Equivalently, `Norm (exp a) = exp (Tr a)` for `a` in the positive ideal
+At an exponent in `K`, this multiplies the logarithmic coefficient by `K.index`
+(`TauCeti.NovikovSeries.coeff_log_normNonnegSubring`). Thus a norm congruent to `1`
+below a cutoff forces the original logarithmic coefficients at subgroup exponents
+below that cutoff to vanish
+(`TauCeti.NovikovSeries.coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration`).
+
+The exponential form of the trace-log identity is `Norm (exp a) = exp (Tr a)` for `a` in the
+positive ideal
 (`TauCeti.NovikovSeries.algebraNorm_exp`). This is the identity that compares the dynamical zeta
 functions of the two coverings. The proof
 differentiates both sides along the degree derivations `f ∘ N` of
@@ -232,6 +239,41 @@ theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
     coe_normNonnegSubring, ← hU, Derivation.leibniz_norm (degreeDerivation (ℓ.comp K.subtype))
       (degreeDerivation ℓ) (degreeDerivation_algebraMap_addSubgroup ℓ), htrace,
     hU, ← mul_degreeDerivation_log ℓ hu, ← hU, ← mul_assoc, Units.inv_mul, one_mul, sub_self]
+
+/-- At an exponent in a finite-index subgroup, the logarithm of the subgroup norm
+has coefficient equal to the subgroup index times the original logarithmic coefficient. -/
+theorem coeff_log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
+    (hu : u - 1 ∈ posIdeal R N) (x : K) :
+    ((NormedSpace.log (normNonnegSubring K u) : nonnegSubring R (N.comp K.subtype)) :
+      NovikovSeries R K (N.comp K.subtype)).coeff x =
+        K.index • (NormedSpace.log u : nonnegSubring R N).val.coeff x := by
+  rw [log_normNonnegSubring K hu,
+    trace_eq_index_smul_comap (exists_period_rescale_subtype _) (by simp),
+    coeff_smul, coeff_comap, AddSubgroup.subtype_apply]
+
+/-- If the norm over a finite-index subgroup is congruent to `1` below `C`,
+the original logarithm has zero coefficient at every subgroup exponent of period below `C`.
+The coefficient ring may be any commutative `ℚ`-algebra, including one with zero divisors. -/
+theorem coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration [Algebra ℚ R]
+    {u : nonnegSubring R N} (hu : u - 1 ∈ posIdeal R N) {g : H} (hg : g ∈ K)
+    {C : ℝ} (hC : N g < C)
+    (hcut : Algebra.norm (NovikovSeries R K (N.comp K.subtype))
+      (u : NovikovSeries R H N) - 1 ∈ periodFiltration R (N.comp K.subtype) C) :
+    (NormedSpace.log u : nonnegSubring R N).val.coeff g = 0 := by
+  have hv : normNonnegSubring K u - 1 ∈ posIdeal R (N.comp K.subtype) := by
+    simpa using normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
+  have hlogcut : (NormedSpace.log (normNonnegSubring K u) :
+      nonnegSubring R (N.comp K.subtype)) ∈ periodIdeal R (N.comp K.subtype) C :=
+    (isTopologicallyNilpotent_of_mem_posIdeal' hv).log_mem
+      (I := periodIdeal R (N.comp K.subtype) C)
+        (mem_periodIdeal.2 (by
+          rw [sub_eq_add_neg, Subring.coe_add, Subring.coe_neg, Subring.coe_one]
+          simpa only [coe_normNonnegSubring, sub_eq_add_neg] using hcut))
+  have hz := mem_periodFiltration.1 (mem_periodIdeal.1 hlogcut) ⟨g, hg⟩ hC
+  rw [coeff_log_normNonnegSubring K hu] at hz
+  -- Multiplication by a nonzero index is injective over a rational algebra.
+  let : HasUniqueDiv R := HasUniqueDiv.of_module_rat R
+  exact (nsmul_right_injective K.index_ne_zero) (by simpa using hz)
 
 /-- **The norm of the exponential is the exponential of the trace.** Over a `ℚ`-algebra, for a
 series `a` of the positive ideal of `Nov(R, H, N)`, the norm over the Novikov series on a

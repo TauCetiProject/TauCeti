@@ -11,18 +11,20 @@ public import TauCeti.RingTheory.NovikovSeries.Norm
 /-!
 # Logarithmic norm elimination for self-slides
 
-For a positive-period slide class `h` and a surjective integral coordinate `f` with
-`f h = d > 0`, reduction of `f` modulo `d * k` defines a cover of degree `d * k`.
-The logarithm of the norm of a principal unit has coefficient at `k • h` equal to
-`(d * k) • (log u).coeff (k • h)`. Thus vanishing below twice the period of `k • h`
-eliminates its `k`-th logarithmic coefficient over any commutative `ℚ`-algebra.
+For `k > 0`, reduction of an integral coordinate `f` modulo `d * k`, where `f h = d > 0`,
+retains the multiple `k • h`. For a principal unit `u`, congruence of the norm over
+this kernel to `1` below a cutoff strictly above `N (k • h)` kills the coefficient
+of `log u` at `k • h`. When `f` is surjective, the norm's logarithmic coefficient
+is exactly `d * k` times the original coefficient; elimination itself does not
+require surjectivity.
 
-Applying this separately for every `k ≥ 2`, together with the vanishing leading
-coefficient, eliminates a logarithmic series supported on the positive multiples of
-`h`. Its exponential is consequently `1`. This is the algebraic elimination step;
-the geometric source of the cover cutoffs and of the leading coefficient is separate.
-The factor `d` is retained, so the class need not be primitive, and the ambient
-exponent group may have torsion.
+Applying this for every `k ≥ 2`, together with vanishing of the `h`-coefficient,
+eliminates a positive logarithmic series supported on the integer multiples of
+`h`. In particular, a principal unit with such a logarithm is `1`. The cutoffs are
+`2 * N (k • h)` when `N h > 0`. This is the algebraic elimination step;
+the geometric source of the cover cutoffs and of the `h`-coefficient is separate.
+The class need not be primitive, the ambient exponent group may have torsion,
+and the commutative `ℚ`-algebra of coefficients may have zero divisors.
 
 ## References
 
@@ -37,90 +39,83 @@ noncomputable section
 namespace TauCeti.NovikovSeries
 
 variable {R H : Type*} [CommRing R] [Algebra ℚ R] [AddCommGroup H]
-  {N : H →+ ℝ} {f : H →+ ℤ} {d k : ℕ} [NeZero d] [NeZero k]
-  {h : H}
+  {N : H →+ ℝ} {f : H →+ ℤ} {d : ℕ} [NeZero d] {h : H}
 
-/-- The logarithmic norm in the degree `d * k` cyclic cover detects the coefficient
-at `k • h` with the full cover degree, including the divisibility `d`. -/
-theorem coeff_log_normNonnegSubring_castZMod
-    (hf : Function.Surjective f) (hh : f h = d) {u : nonnegSubring R N}
-    (hu : u - 1 ∈ posIdeal R N) :
-    ((NormedSpace.log (normNonnegSubring (f.castZMod (d * k)).ker u) :
-      nonnegSubring R (N.comp (f.castZMod (d * k)).ker.subtype)) :
-      NovikovSeries R (f.castZMod (d * k)).ker
-        (N.comp (f.castZMod (d * k)).ker.subtype)).coeff
-      ⟨k • h, (f.nsmul_mem_ker_castZMod_iff hh (NeZero.ne d) k).2 (dvd_refl k)⟩ =
-        (d * k) • (NormedSpace.log u : nonnegSubring R N).val.coeff (k • h) := by
-  rw [log_normNonnegSubring _ hu,
-    trace_eq_index_smul_comap (exists_period_rescale_subtype _) (by simp),
-    coeff_smul, coeff_comap, f.index_ker_castZMod _ hf, AddSubgroup.subtype_apply]
+/-- For a surjective integral coordinate, the norm over its reduction kernel modulo `n`
+multiplies each logarithmic coefficient at a kernel exponent by the cover degree `n`. -/
+theorem coeff_log_normNonnegSubring_ker_castZMod {n : ℕ} [NeZero n]
+    (hf : Function.Surjective f) {u : nonnegSubring R N}
+    (hu : u - 1 ∈ posIdeal R N) (x : (f.castZMod n).ker) :
+    ((NormedSpace.log (normNonnegSubring (f.castZMod n).ker u) :
+      nonnegSubring R (N.comp (f.castZMod n).ker.subtype)) :
+      NovikovSeries R (f.castZMod n).ker (N.comp (f.castZMod n).ker.subtype)).coeff x =
+        n • (NormedSpace.log u : nonnegSubring R N).val.coeff x := by
+  rw [coeff_log_normNonnegSubring _ hu, f.index_ker_castZMod _ hf]
 
-/-- If the norm of a principal unit is `1` below a cutoff strictly above the
-period of `k • h`, its `k`-th logarithmic coefficient vanishes. Rational scalars
-make multiplication by the cover degree injective even with zero divisors. -/
-theorem coeff_log_eq_zero_of_norm_sub_one_mem_periodFiltration
-    (hf : Function.Surjective f) (hh : f h = d) {u : nonnegSubring R N}
-    (hu : u - 1 ∈ posIdeal R N) {C : ℝ} (hC : N (k • h) < C)
-    (hcut : (normNonnegSubring (f.castZMod (d * k)).ker u :
-      NovikovSeries R (f.castZMod (d * k)).ker
-        (N.comp (f.castZMod (d * k)).ker.subtype)) - 1 ∈
-      periodFiltration R (N.comp (f.castZMod (d * k)).ker.subtype) C) :
-    (NormedSpace.log u : nonnegSubring R N).val.coeff (k • h) = 0 := by
-  let K := (f.castZMod (d * k)).ker
-  have hv : normNonnegSubring K u - 1 ∈ posIdeal R (N.comp K.subtype) := by
-    simpa using normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
-  have hlogcut : (NormedSpace.log (normNonnegSubring K u) :
-      nonnegSubring R (N.comp K.subtype)) ∈ periodIdeal R (N.comp K.subtype) C :=
-    (isTopologicallyNilpotent_of_mem_posIdeal' hv).log_mem
-      (I := periodIdeal R (N.comp K.subtype) C)
-        (mem_periodIdeal.2 (by
-          rw [sub_eq_add_neg, Subring.coe_add, Subring.coe_neg, Subring.coe_one]
-          simpa only [sub_eq_add_neg] using hcut))
-  have hz := mem_periodFiltration.1 (mem_periodIdeal.1 hlogcut)
-    ⟨k • h, (f.nsmul_mem_ker_castZMod_iff hh (NeZero.ne d) k).2 (dvd_refl k)⟩ hC
-  rw [coeff_log_normNonnegSubring_castZMod (f := f) hf hh hu] at hz
-  let : HasUniqueDiv R := HasUniqueDiv.of_module_rat R
-  exact (nsmul_right_injective (NeZero.ne (d * k))) (by simpa using hz)
-
-omit [NeZero k] in
-/-- All-order logarithmic norm elimination. A series supported on the nonnegative
-multiples of `h`, in the positive ideal and with zero leading coefficient, has
-exponential `1` if every elimination-cover norm is `1` below twice the period of
-its first retained multiple. No integral-domain assumption on coefficients or
-torsion-freeness assumption on exponents is needed. -/
-theorem exp_eq_one_of_forall_norm_exp_sub_one_mem_twice_period
-    (hf : Function.Surjective f) (hh : f h = d) (hpos : 0 < N h)
-    (a : posIdeal R N)
-    (hsupp : (a : NovikovSeries R H N).support ⊆ Set.range (fun n : ℕ => n • h))
+/-- A positive series supported on the integer multiples of a positive-period class `h`
+vanishes if its `h`-coefficient is zero and, for every `k ≥ 2`, the norm of its exponential
+in `(f.castZMod (d * k)).ker` agrees with `1` below `2 * N (k • h)`. -/
+theorem eq_zero_of_forall_algebraNorm_exp_sub_one_mem_periodFiltration
+    (hh : f h = d) (hpos : 0 < N h) {a : nonnegSubring R N} (ha : a ∈ posIdeal R N)
+    (hsupp : (a : NovikovSeries R H N).support ⊆ (AddSubgroup.zmultiples h : Set H))
     (hfirst : (a : NovikovSeries R H N).coeff h = 0)
     (hcut : ∀ (k : ℕ) [NeZero k], 2 ≤ k →
-      (normNonnegSubring (f.castZMod (d * k)).ker
-        (NormedSpace.exp (a : nonnegSubring R N)) :
-        NovikovSeries R (f.castZMod (d * k)).ker
-          (N.comp (f.castZMod (d * k)).ker.subtype)) - 1 ∈
-        periodFiltration R (N.comp (f.castZMod (d * k)).ker.subtype)
-          (2 * N (k • h))) :
-    NormedSpace.exp (a : NovikovSeries R H N) = 1 := by
-  have hnil := isTopologicallyNilpotent_of_mem_posIdeal' a.2
-  have hu : NormedSpace.exp (a : nonnegSubring R N) - 1 ∈ posIdeal R N :=
-    hnil.exp_sub_one_mem a.2
-  have ha : (a : NovikovSeries R H N) = 0 := by
-    ext g
-    rw [coeff_zero]
-    by_contra hg
-    obtain ⟨n, rfl⟩ := hsupp (mem_support.2 hg)
-    rcases n with _ | n
-    · exact hg (by simpa using mem_posIdeal.1 a.2 0 (by simp))
-    · rcases n with _ | n
-      · exact hg (by simpa using hfirst)
-      · let : NeZero (n + 1 + 1) := ⟨by omega⟩
-        have hperiod : 0 < N ((n + 1 + 1) • h) := by
-          rw [map_nsmul, nsmul_eq_mul]
-          exact mul_pos (by positivity) hpos
-        have hz := coeff_log_eq_zero_of_norm_sub_one_mem_periodFiltration
-          (f := f) hf hh hu (by linarith : N ((n + 1 + 1) • h) <
-            2 * N ((n + 1 + 1) • h)) (hcut (n + 1 + 1) (by omega))
-        exact hg (by simpa only [hnil.log_exp] using hz)
-  rw [ha, NormedSpace.exp_zero]
+      Algebra.norm (NovikovSeries R (f.castZMod (d * k)).ker
+        (N.comp (f.castZMod (d * k)).ker.subtype))
+        (NormedSpace.exp (a : NovikovSeries R H N)) - 1 ∈
+          periodFiltration R (N.comp (f.castZMod (d * k)).ker.subtype)
+            (2 * N (k • h))) :
+    a = 0 := by
+  have hnil := isTopologicallyNilpotent_of_mem_posIdeal' ha
+  have hu : NormedSpace.exp a - 1 ∈ posIdeal R N := hnil.exp_sub_one_mem ha
+  apply Subtype.ext
+  ext g
+  rw [Subring.coe_zero, coeff_zero]
+  by_contra hg
+  obtain ⟨z, rfl⟩ := AddSubgroup.mem_zmultiples_iff.mp (hsupp (mem_support.2 hg))
+  have hzpos : 0 < z := by
+    by_contra hz
+    apply hg
+    apply mem_posIdeal.1 ha
+    rw [map_zsmul, zsmul_eq_mul]
+    exact mul_nonpos_of_nonpos_of_nonneg (by exact_mod_cast (not_lt.1 hz)) hpos.le
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hzpos.le
+  simp only [natCast_zsmul] at hg ⊢
+  rcases n with _ | n
+  · simp at hzpos
+  · rcases n with _ | n
+    · exact hg (by simpa using hfirst)
+    · let : NeZero (n + 1 + 1) := ⟨by omega⟩
+      have hperiod : 0 < N ((n + 1 + 1) • h) := by
+        rw [map_nsmul, nsmul_eq_mul]
+        exact mul_pos (by positivity) hpos
+      have hz := coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration
+        (f.castZMod (d * (n + 1 + 1))).ker hu
+        ((f.nsmul_mem_ker_castZMod_iff hh (NeZero.ne d) (n + 1 + 1)).2 (dvd_refl _))
+        (by linarith : N ((n + 1 + 1) • h) < 2 * N ((n + 1 + 1) • h))
+        (by simpa only [coe_exp_nonnegSubring] using hcut (n + 1 + 1) (by omega))
+      exact hg (by simpa only [hnil.log_exp] using hz)
+
+/-- A principal unit is `1` if its logarithm is supported on the integer multiples of
+`h`, has zero `h`-coefficient, and for every `k ≥ 2` its norm over
+`(f.castZMod (d * k)).ker` agrees with `1` below `2 * N (k • h)`. -/
+theorem eq_one_of_forall_algebraNorm_sub_one_mem_periodFiltration
+    (hh : f h = d) (hpos : 0 < N h) {u : nonnegSubring R N}
+    (hu : u - 1 ∈ posIdeal R N)
+    (hsupp : ((NormedSpace.log u : nonnegSubring R N) : NovikovSeries R H N).support ⊆
+      (AddSubgroup.zmultiples h : Set H))
+    (hfirst : (NormedSpace.log u : nonnegSubring R N).val.coeff h = 0)
+    (hcut : ∀ (k : ℕ) [NeZero k], 2 ≤ k →
+      Algebra.norm (NovikovSeries R (f.castZMod (d * k)).ker
+        (N.comp (f.castZMod (d * k)).ker.subtype)) (u : NovikovSeries R H N) - 1 ∈
+          periodFiltration R (N.comp (f.castZMod (d * k)).ker.subtype)
+            (2 * N (k • h))) :
+    u = 1 := by
+  have hnil := isTopologicallyNilpotent_of_mem_posIdeal' hu
+  have hlog := eq_zero_of_forall_algebraNorm_exp_sub_one_mem_periodFiltration hh hpos
+    (hnil.log_mem hu) hsupp hfirst (by
+      intro k _ hk
+      simpa only [← coe_exp_nonnegSubring, hnil.exp_log] using hcut k hk)
+  rw [← hnil.exp_log, hlog, NormedSpace.exp_zero]
 
 end TauCeti.NovikovSeries
