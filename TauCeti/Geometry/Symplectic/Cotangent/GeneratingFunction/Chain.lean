@@ -155,11 +155,12 @@ theorem mvfderiv_cyclicAction_eq_zero_iff {S : ZMod N → Q × Q → ℝ} {q : Z
       rw [Fintype.sum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]] at hi
       simpa using hi
     intro h
-    exact hsingle fun v ↦ (mvfderiv_cyclicAction_apply hS v).symm.trans (by rw [h]; rfl)
+    exact hsingle fun v ↦ (mvfderiv_cyclicAction_apply hS v).symm.trans
+      (by rw [h]; exact zero_apply v)
   · intro h
     refine ContinuousLinearMap.ext fun v : ZMod N → E ↦ ?_
     rw [mvfderiv_cyclicAction_apply hS]
-    refine (Finset.sum_eq_zero fun i _ ↦ ?_).trans rfl
+    refine (Finset.sum_eq_zero fun i _ ↦ ?_).trans (zero_apply v).symm
     -- Evaluate the matching equation at vertex `i` on the component `v_i`.
     exact (add_apply (mvfderiv I (fun x ↦ S i (x, q (i + 1))) (q i))
       (mvfderiv I (fun x ↦ S (i - 1) (q (i - 1), x)) (q i)) (v i)).symm.trans
@@ -239,8 +240,6 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
         ∀ q, (e.symm q : CotangentBundle I Q) = generatingSource I S (q.1, q.1) := by
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_generating (N := 1) (S := fun _ ↦ S)
     (W := fun _ ↦ W) (D := fun _ ↦ D) (φ := fun _ ↦ φ) (fun _ ↦ hS) (fun _ ↦ hD) (fun _ ↦ hW)
-  -- On `ℤ/1` every index is `0`; in particular `0 + 1 = 0`.
-  have h1 : (0 : ZMod 1) + 1 = 0 := Subsingleton.elim _ _
   -- A constant configuration is critical for the cyclic action exactly when its value is
   -- critical for `ψ`: both say that the target and source points over `(q, q)` agree.
   have hcrit (q : Q) (hq : (q, q) ∈ W) :
@@ -250,24 +249,22 @@ theorem exists_equiv_fixedPoints_of_generating {S : Q × Q → ℝ} {W : Set (Q 
         fun _ ↦ hS _ hq, mvfderiv_diag_eq_add (hS _ hq),
       add_comm, ← neg_eq_iff_add_eq_zero]
     simp only [generatingTarget_eq_generatingSource_iff, forall_const]
-  let e₁ : {z : CotangentBundle I Q // z ∈ D ∧ φ z = z} ≃
-      {z : ZMod 1 → CotangentBundle I Q // ∀ i, z i ∈ D ∧ φ (z i) = z (i + 1)} :=
-    { toFun := fun z ↦ ⟨fun _ ↦ z.1, fun _ ↦ z.2⟩
-      invFun := fun z ↦ ⟨z.1 0, by simpa only [h1] using z.2 0⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun z ↦ Subtype.ext <| funext fun i ↦ congrArg z.1 (Subsingleton.elim 0 i) }
+  -- On `ℤ/1` every index is the default one, so a function on `ℤ/1` is its value there and the
+  -- successor of every index is itself.
+  have h1 (i : ZMod 1) : i + 1 = i := Subsingleton.elim _ _
+  let e₁ : {z : ZMod 1 → CotangentBundle I Q // ∀ i, z i ∈ D ∧ φ (z i) = z (i + 1)} ≃
+      {z : CotangentBundle I Q // z ∈ D ∧ φ z = z} :=
+    (Equiv.funUnique (ZMod 1) _).subtypeEquiv fun z ↦ by
+      simp only [Equiv.funUnique_apply, Unique.forall_iff, h1]
   let e₂ : {q : ZMod 1 → Q // (∀ i, (q i, q (i + 1)) ∈ W) ∧
         mvfderiv (ModelWithCorners.pi fun _ : ZMod 1 ↦ I) (cyclicAction (N := 1) fun _ ↦ S) q = 0} ≃
       {q : Q // (q, q) ∈ W ∧ mvfderiv I (fun x ↦ S (x, x)) q = 0} :=
-    { toFun := fun q ↦ ⟨q.1 0, by simpa only [h1] using q.2.1 0, by
-        have hq : (q.1 0, q.1 0) ∈ W := by simpa only [h1] using q.2.1 0
-        have hq' : (fun _ ↦ q.1 0) = q.1 := funext fun i ↦ congrArg q.1 (Subsingleton.elim 0 i)
-        rw [← hcrit _ hq, hq']
-        exact q.2.2⟩
-      invFun := fun q ↦ ⟨fun _ ↦ q.1, fun _ ↦ q.2.1, (hcrit _ q.2.1).2 q.2.2⟩
-      left_inv := fun q ↦ Subtype.ext <| funext fun i ↦ congrArg q.1 (Subsingleton.elim 0 i)
-      right_inv := fun _ ↦ rfl }
-  exact ⟨e₁.trans (e.trans e₂), fun z ↦ he _ 0, fun q ↦ he' _ 0⟩
+    (Equiv.funUnique (ZMod 1) _).subtypeEquiv fun q ↦ by
+      obtain ⟨x, rfl⟩ : ∃ x, q = fun _ ↦ x :=
+        ⟨q default, funext fun i ↦ congrArg q (Unique.eq_default i)⟩
+      simp only [Equiv.funUnique_apply, forall_const]
+      exact and_congr_right (hcrit x)
+  exact ⟨e₁.symm.trans (e.trans e₂), fun z ↦ he _ 0, fun q ↦ he' _ 0⟩
 
 end CotangentBundle
 
