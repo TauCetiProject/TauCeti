@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Algebra.Order.ToIntervalMod
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Order.Interval.Set.Union
 
 /-!
@@ -55,9 +54,8 @@ theorem mdifferentiableAt_of_mdifferentiableOn (hγ : Periodic γ T) (hT : 0 < T
   have hi : i < n := Finset.mem_range.mp hi
   have hsi' : s - k * T ∈ Ioo (t i) (t (i + 1)) :=
     ⟨hsi.1.lt_of_ne fun h ↦ hs i hi k (by linarith), hsi.2⟩
-  have hc := ((hd i hi).mdifferentiableAt (isOpen_Ioo.mem_nhds hsi')).comp_of_eq (x := s)
-    (differentiableAt_id.sub_const (k * T)).mdifferentiableAt rfl
-  rwa [show (γ ∘ fun u ↦ id u - k * T) = γ from funext fun u ↦ hγ.sub_int_mul_eq k] at hc
+  have hd' := (hd i hi).mdifferentiableAt (isOpen_Ioo.mem_nhds hsi')
+  simpa only [sub_add_cancel] using ((hγ.int_mul k).mdifferentiableAt_add).mpr hd'
 
 /-- A `T`-periodic curve which is differentiable on the open intervals `(t i, t (i + 1))` of a
 subdivision `t 0, …, t n = t 0 + T` of a period is differentiable at almost every parameter. -/
