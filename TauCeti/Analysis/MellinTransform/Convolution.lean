@@ -27,6 +27,8 @@ formula come from `MeasureTheory.Integrable.integrable_convolution` and
 
 ## Main results
 
+* `TauCeti.integral_mul_div_comm`: the multiplicative convolution is commutative at positive
+  arguments, without integrability hypotheses.
 * `TauCeti.hasMellin_integral_mul_div`: the Mellin transform of `∫₀^∞ f(y) g(x/y) dy/y` is
   `𝓜f(s) 𝓜g(s)`, with absolute convergence.
 * `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `∫₀^∞ f(t) h(xt) dt` is
@@ -48,6 +50,28 @@ open MeasureTheory Complex Set Filter
 open scoped Topology
 
 namespace TauCeti
+
+/-- Multiplicative convolution is commutative at every positive argument. The change of
+variables `y ↦ x / y` preserves the measure `dy / y`, so no integrability assumptions are
+needed, including for the totalized Bochner integral. This applies to both real and complex
+functions. -/
+theorem integral_mul_div_comm {𝕜 : Type*} [RCLike 𝕜] (f g : ℝ → 𝕜) {x : ℝ}
+    (hx : 0 < x) :
+    (∫ y in Ioi 0, f y * g (x / y) / y) = ∫ y in Ioi 0, g y * f (x / y) / y := by
+  have hlog (f g : ℝ → 𝕜) :
+      (∫ y in Ioi 0, f y * g (x / y) / y) =
+        ∫ u : ℝ, f (Real.exp u) * g (x / Real.exp u) := by
+    rw [← integral_comp_exp (fun y ↦ f y * g (x / y) / y)]
+    apply integral_congr_ae
+    filter_upwards with u
+    rw [RCLike.real_smul_eq_coe_mul]
+    field_simp
+  rw [hlog, hlog]
+  rw [← integral_sub_left_eq_self
+    (fun u : ℝ ↦ f (Real.exp u) * g (x / Real.exp u)) volume (Real.log x)]
+  apply integral_congr_ae
+  filter_upwards with u
+  rw [Real.exp_sub, Real.exp_log hx, div_div_cancel₀ hx.ne', mul_comm]
 
 /-- In logarithmic coordinates the multiplicative convolution becomes an ordinary
 convolution. -/
