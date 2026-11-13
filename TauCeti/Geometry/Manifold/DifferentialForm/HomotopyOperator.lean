@@ -545,7 +545,7 @@ theorem mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv [IsManifold I 
       eventually_of_mem self_mem_nhdsWithin fun y hy ↦ inChartAt_homotopyOperator x₀ hsub hsu φ hy
     have hset : s =ᶠ[𝓝 (extChartAt I x₀ x₀)] range I := by
       filter_upwards [mem_nhdsWithin_iff_eventually.1 hsn] with y hy
-      exact propext ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
+      exact ⟨fun h ↦ extChartAt_target_subset_range x₀ (hsub h), hy⟩
     rw [mextDeriv_def, ← extDerivWithin_congr_set hset]
     exact heq.extDerivWithin_eq (heq.self_of_nhdsWithin hxs)
   -- `h (d φ)` at `x₀` is the cylinder homotopy operator of the flat exterior derivative of `η`.
