@@ -435,13 +435,15 @@ private theorem cyclicAmalgamRelatorToInt_of_true :
   PresentedGroup.toGroup.of _
 
 private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
-    Function.Bijective (Abelianization.lift (cyclicAmalgamRelatorToInt m n)) := by
+    Function.Bijective (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)) := by
   obtain ⟨u, v, huv⟩ := hmn
-  set x := Abelianization.of (PresentedGroup.of false : PresentedGroup {cyclicAmalgamRelator m n})
-  set y := Abelianization.of (PresentedGroup.of true : PresentedGroup {cyclicAmalgamRelator m n})
+  set x :=
+    Group.Abelianization.of (PresentedGroup.of false : PresentedGroup {cyclicAmalgamRelator m n})
+  set y :=
+    Group.Abelianization.of (PresentedGroup.of true : PresentedGroup {cyclicAmalgamRelator m n})
   have hxy : x ^ m = y ^ n := by
     simpa only [x, y, map_zpow] using
-      congrArg Abelianization.of (cyclicAmalgamRelator_relation m n)
+      congrArg Group.Abelianization.of (cyclicAmalgamRelator_relation m n)
   -- The inverse sends the generator `1` to `x ^ v y ^ u`, whose `n`-th power is `x` and whose
   -- `m`-th power is `y`, because `x ^ m = y ^ n` and `u m + v n = 1`.
   have hx : (x ^ v * y ^ u) ^ n = x := by
@@ -455,12 +457,14 @@ private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
     conv_rhs => rw [← zpow_one y, ← huv]
     ac_rfl
   let ψ := zpowersHom _ (x ^ v * y ^ u)
-  have hleft : ψ.comp (Abelianization.lift (cyclicAmalgamRelatorToInt m n)) = MonoidHom.id _ := by
-    refine Abelianization.hom_ext _ _ (PresentedGroup.ext fun b => ?_)
+  have hleft :
+      ψ.comp (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)) = MonoidHom.id _ := by
+    refine Group.Abelianization.hom_ext _ _ (PresentedGroup.ext fun b => ?_)
     cases b
     · simpa [ψ, cyclicAmalgamRelatorToInt_of_false] using hx
     · simpa [ψ, cyclicAmalgamRelatorToInt_of_true] using hy
-  have hright : (Abelianization.lift (cyclicAmalgamRelatorToInt m n)).comp ψ = MonoidHom.id _ := by
+  have hright :
+      (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)).comp ψ = MonoidHom.id _ := by
     refine MonoidHom.ext_mint (toAdd.injective ?_)
     simpa [ψ, x, y, cyclicAmalgamRelatorToInt_of_false, cyclicAmalgamRelatorToInt_of_true,
       add_comm] using huv
@@ -471,19 +475,19 @@ private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
 the class of `x` corresponds to `n` and the class of `y` to `m`. For `m = 2` and `n = 3` this is
 the abelianization `ℤ` of the trefoil knot group `⟨x, y ∣ x² = y³⟩`. -/
 noncomputable def cyclicAmalgamRelatorAbelianizationEquiv (hmn : IsCoprime m n) :
-    Abelianization (PresentedGroup {cyclicAmalgamRelator m n}) ≃* Multiplicative ℤ :=
-  MulEquiv.ofBijective (Abelianization.lift (cyclicAmalgamRelatorToInt m n))
+    Group.Abelianization (PresentedGroup {cyclicAmalgamRelator m n}) ≃* Multiplicative ℤ :=
+  MulEquiv.ofBijective (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n))
     (bijective_lift_cyclicAmalgamRelatorToInt m n hmn)
 
 @[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_false (hmn : IsCoprime m n) :
     cyclicAmalgamRelatorAbelianizationEquiv m n hmn
-      (Abelianization.of (PresentedGroup.of false)) = ofAdd n :=
-  (Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_false m n)
+      (Group.Abelianization.of (PresentedGroup.of false)) = ofAdd n :=
+  (Group.Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_false m n)
 
 @[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_true (hmn : IsCoprime m n) :
     cyclicAmalgamRelatorAbelianizationEquiv m n hmn
-      (Abelianization.of (PresentedGroup.of true)) = ofAdd m :=
-  (Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_true m n)
+      (Group.Abelianization.of (PresentedGroup.of true)) = ofAdd m :=
+  (Group.Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_true m n)
 
 namespace π₁Tree
 
@@ -495,27 +499,27 @@ maximal tree), has infinite cyclic abelianization: the vertex group at `false` m
 and the vertex group at `true` by `(· ^ m)`. For `m = 2` and `n = 3` the fundamental group is the
 trefoil knot group `⟨x, y ∣ x² = y³⟩`, with abelianization `ℤ`. -/
 noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) (hT : T.Nonempty) :
-    Abelianization (π₁Tree (cyclicAmalgam m n hm hn) T) ≃* Multiplicative ℤ :=
+    Group.Abelianization (π₁Tree (cyclicAmalgam m n hm hn) T) ≃* Multiplicative ℤ :=
   (cyclicAmalgamEquiv m n hm hn hT).abelianizationCongr.trans
     (cyclicAmalgamRelatorAbelianizationEquiv m n hmn)
 
 @[simp] theorem cyclicAmalgamAbelianizationEquiv_of_false (hmn : IsCoprime m n)
     (hT : T.Nonempty) (c : Multiplicative ℤ) :
-    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (of T false c)) =
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (of T false c)) =
       c ^ n := by
   apply toAdd.injective
   simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
 
 @[simp] theorem cyclicAmalgamAbelianizationEquiv_of_true (hmn : IsCoprime m n)
     (hT : T.Nonempty) (c : Multiplicative ℤ) :
-    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (of T true c)) =
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (of T true c)) =
       c ^ m := by
   apply toAdd.injective
   simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
 
 @[simp] theorem cyclicAmalgamAbelianizationEquiv_edge (hmn : IsCoprime m n)
     (hT : T.Nonempty) (e : SerreGraph.segment.E) :
-    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Abelianization.of (edge T e)) = 1 := by
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (edge T e)) = 1 := by
   simp [cyclicAmalgamAbelianizationEquiv]
 
 end π₁Tree
