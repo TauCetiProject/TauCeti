@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Prod
-public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
+public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure.Basic
 
 /-!
 # The Liouville measure of a product
@@ -18,8 +18,9 @@ is the product of the Liouville measures of the factors:
 `|(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!| = |σⁿ / n!| ⊗ |τᵐ / m!|`
 
 (`TauCeti.SmoothTwoForm.liouvilleMeasure_prod`). The volume form of `σ ⊕ τ` takes the value
-`(σⁿ / n!)(v) (τᵐ / m!)(w)` on product frames (`TauCeti.SmoothTwoForm.volumeForm_prod_apply`), and
-the measure of such a top form is the product measure (`TauCeti.RoughForm.measure_eq_prod`). The
+`(σⁿ / n!)(v) (τᵐ / m!)(w)` on product frames
+(`TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`), and the measure of such a top form is the
+product measure (`TauCeti.RoughForm.measure_eq_prod`). The
 normalization `ωⁿ / n!` is what makes this multiplicative. Neither nondegeneracy nor closedness of
 the forms is needed.
 
@@ -65,7 +66,7 @@ theorem liouvilleMeasure_prod (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) 
   rw [liouvilleMeasure_def, liouvilleMeasure_def, liouvilleMeasure_def]
   exact RoughForm.measure_eq_prod (mul_add 2 n m).symm
     ((σ.volumeForm n).isSmoothForm.of_le bot_le) ((τ.volumeForm m).isSmoothForm.of_le bot_le)
-    (volumeForm_prod_apply σ τ)
+    (volumeForm_prod_apply_sumElim σ τ)
 
 end SmoothTwoForm
 

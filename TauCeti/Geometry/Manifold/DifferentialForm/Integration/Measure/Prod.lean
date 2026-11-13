@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 
@@ -17,15 +16,15 @@ import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 
 Let `φ₁` and `φ₂` be top forms on manifolds `M` and `N` of dimensions `k` and `l`, and let `φ` be a
 top form on `M × N` which factors on product frames: for tangent vectors `v₁, …, vₖ` at `x` and
-`w₁, …, wₗ` at `y`,
+`w₁, …, wₗ` at `y`, read in the tangent space at `(x, y)` through `Manifold.tangentSpaceProdEquiv`,
 
 `φ_(x, y)((v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)) = φ₁_x(v₁, …, vₖ) φ₂_y(w₁, …, wₗ)`.
 
 Then the measure `|φ|` of `TauCeti.RoughForm.measure` is the product measure `|φ₁| ⊗ |φ₂|`
 (`TauCeti.RoughForm.measure_eq_prod`), provided `φ₁` and `φ₂` are continuous and `M`, `N` are
 second countable. The symplectic volume form of a product form factors in this way
-(`TauCeti.SmoothTwoForm.volumeForm_prod_apply`), which gives the product formula for Liouville
-measures.
+(`TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`), which gives the product formula for
+Liouville measures.
 
 In the preferred chart of `M × N`, the product of the preferred charts of `M` and `N`, the
 coefficient of `φ` in the product of coordinate bases is the product of the coefficients of `φ₁`
@@ -37,8 +36,6 @@ chart source, and these sources cover `M × N`.
 
 ## Main results
 
-* `TauCeti.RoughForm.inChartAt_apply_reindex_prod_eq_mul`: the coefficient of a factoring top
-  form in a product chart, on a product basis.
 * `TauCeti.RoughForm.measure_eq_prod`: the measure of a factoring top form is the product measure.
 
 ## References
@@ -63,33 +60,6 @@ variable {E H M F H' N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topo
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {k l p : ℕ}
   {φ : RoughForm (I.prod J) (M × N) ℝ p} {φ₁ : RoughForm I M ℝ k} {φ₂ : RoughForm J N ℝ l}
-
-/-- **The coefficient of a factoring top form in a product chart.** If a top form `φ` on `M × N`
-takes the value `φ₁_x(v) φ₂_y(w)` on the family `(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)`, then
-in the preferred chart at `(α, β)` its coefficient in the product of bases `b₁` and `b₂` is the
-product of the coefficients of `φ₁` in `b₁` and of `φ₂` in `b₂`. -/
-theorem inChartAt_apply_reindex_prod_eq_mul (hp : k + l = p)
-    (h : ∀ (x : M) (y : N) (v : Fin k → TangentSpace I x) (w : Fin l → TangentSpace J y),
-      φ (x, y) (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × F)) (fun j ↦ (0, w j))
-        (finSumFinEquiv.symm (Fin.cast hp.symm r))) = φ₁ x v * φ₂ y w)
-    (α : M) (β : N) {y : E} {z : F} (hy : y ∈ (extChartAt I α).target)
-    (hz : z ∈ (extChartAt J β).target) (b₁ : Basis (Fin k) ℝ E) (b₂ : Basis (Fin l) ℝ F) :
-    φ.inChartAt (α, β) (y, z) ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp))) =
-      φ₁.inChartAt α y b₁ * φ₂.inChartAt β z b₂ := by
-  have hyz : (y, z) ∈ (extChartAt (I.prod J) (α, β)).target := by
-    rw [extChartAt_prod]
-    exact ⟨hy, hz⟩
-  rw [inChartAt_apply, inChartAt_apply, inChartAt_apply, mfderivWithin_extChartAt_prod_symm _ hyz,
-    ← h, extChartAt_prod]
-  congr 1
-  funext r
-  simp only [Basis.reindex_apply, Basis.prod_apply, Equiv.symm_trans_apply, finCongr_symm,
-    finCongr_apply]
-  -- The product derivative acts on `(b₁ i, 0)` and `(0, b₂ j)` componentwise; the first
-  -- component of the first and the second component of the second hold by unfolding `prodMap`.
-  rcases finSumFinEquiv.symm (Fin.cast hp.symm r) with i | j
-  · exact Prod.ext rfl (map_zero (mfderivWithin 𝓘(ℝ, F) J (extChartAt J β).symm (range J) z))
-  · exact Prod.ext (map_zero (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y)) rfl
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
@@ -126,8 +96,8 @@ product of the measures. -/
 private theorem measure_prod_of_subset (hp : k + l = p) (hφ₁ : IsSmoothForm I 0 φ₁)
     (hφ₂ : IsSmoothForm J 0 φ₂)
     (h : ∀ (x : M) (y : N) (v : Fin k → TangentSpace I x) (w : Fin l → TangentSpace J y),
-      φ (x, y) (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × F)) (fun j ↦ (0, w j))
-        (finSumFinEquiv.symm (Fin.cast hp.symm r))) = φ₁ x v * φ₂ y w)
+      φ (x, y) (fun r ↦ (Manifold.tangentSpaceProdEquiv (x, y)).symm (Sum.elim (fun i ↦ (v i, 0))
+        (fun j ↦ (0, w j)) (finSumFinEquiv.symm (Fin.cast hp.symm r)))) = φ₁ x v * φ₂ y w)
     {α : M} {β : N} {s : Set M} {t : Set N} (hs : MeasurableSet s) (ht : MeasurableSet t)
     (hsα : s ⊆ (extChartAt I α).source) (htβ : t ⊆ (extChartAt J β).source) :
     φ.measure (s ×ˢ t) = φ₁.measure s * φ₂.measure t := by
@@ -161,8 +131,8 @@ continuous top forms on second countable manifolds `M` and `N` of dimensions `k`
 `|φ| = |φ₁| ⊗ |φ₂|`. -/
 theorem measure_eq_prod (hp : k + l = p) (hφ₁ : IsSmoothForm I 0 φ₁) (hφ₂ : IsSmoothForm J 0 φ₂)
     (h : ∀ (x : M) (y : N) (v : Fin k → TangentSpace I x) (w : Fin l → TangentSpace J y),
-      φ (x, y) (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × F)) (fun j ↦ (0, w j))
-        (finSumFinEquiv.symm (Fin.cast hp.symm r))) = φ₁ x v * φ₂ y w) :
+      φ (x, y) (fun r ↦ (Manifold.tangentSpaceProdEquiv (x, y)).symm (Sum.elim (fun i ↦ (v i, 0))
+        (fun j ↦ (0, w j)) (finSumFinEquiv.symm (Fin.cast hp.symm r)))) = φ₁ x v * φ₂ y w) :
     φ.measure = φ₁.measure.prod φ₂.measure := by
   have := isLocallyFiniteMeasure_measure hφ₁
   have := isLocallyFiniteMeasure_measure hφ₂

@@ -9,7 +9,10 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.UniqueDifferential
+public import Mathlib.LinearAlgebra.Basis.Prod
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Change of chart for rough differential forms
@@ -21,6 +24,11 @@ interior at the point. Consequently, reading `mextDerivWithin` in any preferred 
 flat exterior derivative of the coordinate expression. These identities allow naturality and
 iteration of the exterior derivative to be checked in a fixed chart, including at boundary and
 corner points. The unrestricted results are the specializations to the whole manifold.
+
+On a product `M × N`, the preferred chart is the product of the preferred charts. A top form on
+`M × N` whose values on product frames are products of values of top forms on `M` and `N` has, in
+this chart and in a product basis, the product of their coefficients
+(`TauCeti.RoughForm.inChartAt_apply_reindex_prod_eq_mul`).
 
 The transport uses Mathlib's `extDerivWithin_pullback`, localized to the chart overlap.
 
@@ -293,6 +301,45 @@ theorem inChartAt_apply_basis_eq_det_mul [IsManifold I 1 M] (φ : RoughForm I M 
         φ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) b := by
   rw [φ.inChartAt_eq_compContinuousLinearMap hz hx,
     ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
+
+section Prod
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] {l p : ℕ}
+
+/-- **The coefficient of a factoring top form in a product chart.** If a top form `φ` on `M × N`
+takes the value `φ₁_x(v) φ₂_y(w)` on the family `(v₁, 0), …, (vₖ, 0), (0, w₁), …, (0, wₗ)` of
+tangent vectors at `(x, y)`, then in the preferred chart at `(α, β)` its coefficient in the product
+of bases `b₁` and `b₂` is the product of the coefficients of `φ₁` in `b₁` and of `φ₂` in `b₂`. -/
+theorem inChartAt_apply_reindex_prod_eq_mul [IsManifold I 1 M] [IsManifold J 1 N]
+    {φ : RoughForm (I.prod J) (M × N) ℝ p} {φ₁ : RoughForm I M ℝ k} {φ₂ : RoughForm J N ℝ l}
+    (hp : k + l = p)
+    (h : ∀ (x : M) (y : N) (v : Fin k → TangentSpace I x) (w : Fin l → TangentSpace J y),
+      φ (x, y) (fun r ↦ (Manifold.tangentSpaceProdEquiv (x, y)).symm (Sum.elim (fun i ↦ (v i, 0))
+        (fun j ↦ (0, w j)) (finSumFinEquiv.symm (Fin.cast hp.symm r)))) = φ₁ x v * φ₂ y w)
+    (α : M) (β : N) {y : E} {z : E'} (hy : y ∈ (extChartAt I α).target)
+    (hz : z ∈ (extChartAt J β).target) (b₁ : Module.Basis (Fin k) ℝ E)
+    (b₂ : Module.Basis (Fin l) ℝ E') :
+    φ.inChartAt (α, β) (y, z) ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr hp))) =
+      φ₁.inChartAt α y b₁ * φ₂.inChartAt β z b₂ := by
+  have hyz : (y, z) ∈ (extChartAt (I.prod J) (α, β)).target := by
+    rw [extChartAt_prod]
+    exact ⟨hy, hz⟩
+  rw [inChartAt_apply, inChartAt_apply, inChartAt_apply, mfderivWithin_extChartAt_prod_symm _ hyz,
+    ← h, extChartAt_prod]
+  congr 1
+  funext r
+  simp only [Module.Basis.reindex_apply, Module.Basis.prod_apply, Equiv.symm_trans_apply,
+    finCongr_symm, finCongr_apply]
+  -- The product derivative acts on `(b₁ i, 0)` and `(0, b₂ j)` componentwise; the first
+  -- component of the first and the second component of the second hold by unfolding `prodMap`.
+  rcases finSumFinEquiv.symm (Fin.cast hp.symm r) with i | j
+  · rw [Sum.elim_inl, Sum.elim_inl, Manifold.tangentSpaceProdEquiv_symm_apply]
+    exact Prod.ext rfl (map_zero (mfderivWithin 𝓘(ℝ, E') J (extChartAt J β).symm (range J) z))
+  · rw [Sum.elim_inr, Sum.elim_inr, Manifold.tangentSpaceProdEquiv_symm_apply]
+    exact Prod.ext (map_zero (mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y)) rfl
+
+end Prod
 
 end RoughForm
 

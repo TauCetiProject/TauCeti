@@ -32,10 +32,11 @@ manifold, and the step from the symplectic to the contact volume criterion.
 
 The power `(ω₁ ⊕ ω₂)ⁿ⁺ᵐ` of a direct sum on `E × F` takes the value `C(n + m, n) ω₁ⁿ(v) ω₂ᵐ(w)`
 on a family `(vᵢ, 0)`, `i < 2 n`, followed by `(0, wⱼ)`, `j < 2 m`
-(`wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply` in the namespace
-`ContinuousAlternatingMap`).
+(`wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim` in the
+namespace `ContinuousAlternatingMap`).
 Equivalently the normalized volume forms satisfy `(ω₁ ⊕ ω₂)ⁿ⁺ᵐ / (n + m)! = ω₁ⁿ / n! · ω₂ᵐ / m!`
-on such families: the symplectic volume of a product is the product of the symplectic volumes.
+on such families: the symplectic volume of a product is the product of the symplectic volumes
+(`inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_sumElim`).
 If `v` or `w` is linearly dependent, both sides vanish; otherwise the forms restrict to the spans
 of `v` and `w`, of dimensions `2 n` and `2 m`. There, if both forms are nondegenerate, Darboux
 bases of the summands concatenate to a Darboux basis of the sum; otherwise both sides vanish.
@@ -137,10 +138,10 @@ private theorem det_reindex_prod_sumElim (b : Basis (Fin n × Fin 2) ℝ E)
   funext p
   rcases p with i | j <;> simp
 
-/-- `wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply` on spaces of
-dimensions `2 n` and `2 m`, where Darboux bases of nondegenerate summands are available. -/
+/-- `wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim` on spaces
+of dimensions `2 n` and `2 m`, where Darboux bases of nondegenerate summands are available. -/
 private theorem
-    wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_of_finrank
+    wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim_of_finrank
     (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2 * m) (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ)
     (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin (2 * n) → E) (w : Fin (2 * m) → F) :
     (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)).wedgePow
@@ -181,7 +182,7 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **The top power of a direct sum of two-forms.** For two-forms `ω₁` on `E` and `ω₂` on `F`,
 the `(n + m)`-th power of their direct sum `ω₁ ⊕ ω₂ = ω₁ ∘ pr₁ + ω₂ ∘ pr₂` on `E × F` takes the
 value `C(n + m, n) ω₁ⁿ(v) ω₂ᵐ(w)` on the family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`. -/
-theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply
+theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim
     (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ) (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin (2 * n) → E)
     (w : Fin (2 * m) → F) :
     (ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)).wedgePow
@@ -205,14 +206,11 @@ theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_app
   set Φ := ω₁.compContinuousLinearMap (.fst ℝ E F) + ω₂.compContinuousLinearMap (.snd ℝ E F)
   by_cases hvw : LinearIndependent ℝ v ∧ LinearIndependent ℝ w
   swap
-  · rw [show Φ.wedgePow (n + m) u = 0 from
-      AlternatingMap.map_linearDependent (Φ.wedgePow (n + m)).toAlternatingMap u (mt hu hvw)]
+  · rw [map_linearDependent _ u (mt hu hvw)]
     rcases not_and_or.1 hvw with hv | hw
-    · rw [show ω₁.wedgePow n v = 0 from
-        AlternatingMap.map_linearDependent (ω₁.wedgePow n).toAlternatingMap v hv]
+    · rw [map_linearDependent _ v hv]
       simp
-    · rw [show ω₂.wedgePow m w = 0 from
-        AlternatingMap.map_linearDependent (ω₂.wedgePow m).toAlternatingMap w hw]
+    · rw [map_linearDependent _ w hw]
       simp
   -- Otherwise restrict the forms to the spans `E₀` of `v` and `F₀` of `w`, of dimensions `2 n`
   -- and `2 m`.
@@ -223,9 +221,11 @@ theorem wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_app
   have : FiniteDimensional ℝ F₀ := FiniteDimensional.span_of_finite ℝ (Set.finite_range w)
   have hE₀ : finrank ℝ E₀ = 2 * n := by rw [finrank_span_eq_card hv, Fintype.card_fin]
   have hF₀ : finrank ℝ F₀ = 2 * m := by rw [finrank_span_eq_card hw, Fintype.card_fin]
-  have h := wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_of_finrank
-    hE₀ hF₀ (ω₁.compContinuousLinearMap E₀.subtypeL) (ω₂.compContinuousLinearMap F₀.subtypeL)
-    (fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩) (fun j ↦ ⟨w j, Submodule.subset_span ⟨j, rfl⟩⟩)
+  have h :=
+    wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim_of_finrank
+      hE₀ hF₀ (ω₁.compContinuousLinearMap E₀.subtypeL) (ω₂.compContinuousLinearMap F₀.subtypeL)
+      (fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩)
+      (fun j ↦ ⟨w j, Submodule.subset_span ⟨j, rfl⟩⟩)
   rw [← wedgePow_compContinuousLinearMap, ← wedgePow_compContinuousLinearMap] at h
   refine Eq.trans ?_ h
   -- The direct sum of the restrictions is the pullback of the direct sum to `E₀ × F₀`.
@@ -245,7 +245,7 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 `F`, the normalized power `(ω₁ ⊕ ω₂)ⁿ⁺ᵐ / (n + m)!` of their direct sum takes the value
 `(ω₁ⁿ / n!)(v) (ω₂ᵐ / m!)(w)` on the family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`. -/
 theorem
-    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply
+    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_sumElim
     (ω₁ : E [⋀^Fin 2]→L[ℝ] ℝ) (ω₂ : F [⋀^Fin 2]→L[ℝ] ℝ) (v : Fin (2 * n) → E)
     (w : Fin (2 * m) → F) :
     ((((n + m).factorial : ℝ)⁻¹) •
@@ -254,7 +254,7 @@ theorem
           (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
       (((n.factorial : ℝ)⁻¹) • ω₁.wedgePow n) v * (((m.factorial : ℝ)⁻¹) • ω₂.wedgePow m) w := by
   rw [smul_apply, smul_apply, smul_apply, smul_eq_mul, smul_eq_mul, smul_eq_mul,
-    wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply,
+    wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply_sumElim,
     ← Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right n m), Nat.add_sub_cancel_left]
   have hc : ((n + m).choose n : ℝ) ≠ 0 :=
     Nat.cast_ne_zero.2 (Nat.choose_pos (Nat.le_add_right n m)).ne'

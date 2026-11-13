@@ -52,7 +52,7 @@ this construction gives the Liouville measure of a symplectic manifold.
 * `TauCeti.RoughForm.isLocallyFiniteMeasure_measure`: the measure of a continuous form is locally
   finite.
 * `TauCeti.RoughForm.aemeasurable_ofReal_abs_inChartAt`: the coordinate density of a continuous
-  form is a.e.-measurable on chart images.
+  form is a.e.-measurable on chart images, for any measure on the model space.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
@@ -257,18 +257,18 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
   · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
 omit [FiniteDimensional ℝ E] hk [LindelofSpace M] in
-/-- The coordinate density `|φ(b)|` of a continuous top form in the chart at `α` is
-a.e.-measurable on the coordinate image of a measurable subset of the chart source. -/
-theorem aemeasurable_ofReal_abs_inChartAt {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ)
-    (b : Basis (Fin k) ℝ E) {α : M} {s : Set M} (hs : MeasurableSet s)
-    (hsα : s ⊆ (extChartAt I α).source) :
-    AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt α y b|)
-      (b.addHaar.restrict (extChartAt I α '' s)) :=
+/-- The coordinate density `|φ(v)|` of a continuous top form in the chart at `α` is
+a.e.-measurable, for any measure on `E`, on the coordinate image of a measurable subset of the
+chart source. -/
+theorem aemeasurable_ofReal_abs_inChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
+    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (v : Fin k → E) {α : M} {s : Set M}
+    (hs : MeasurableSet s) (hsα : s ⊆ (extChartAt I α).source) {μ : Measure E} :
+    AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt α y v|) (μ.restrict (extChartAt I α '' s)) :=
   (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-    ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
+    ((continuous_eval_const v).comp_continuousOn
       ((hφ.continuousOn_inChartAt α).mono
         ((image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset))))).aemeasurable
-    (hs.image_extChartAt α hsα)
+    (OpensMeasurableSpace.borel_le _ (hs.image_extChartAt α hsα))
 
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart
@@ -295,7 +295,7 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
         (subset_closure (mem_interior_iff_mem_nhds.mpr (hV.mem_nhds ⟨hx, mem_extChartAt_source x⟩)))
         (mem_extChartAt_source x))
   -- The coordinate density is measurable and vanishes nowhere on that image.
-  have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub
+  have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub (μ := b.addHaar)
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
     rintro _ ⟨z, hz, rfl⟩
     have hz0 : φ.inChartAt x (e z) ≠ 0 := by
@@ -326,16 +326,10 @@ theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
   set b₀ := finBasisOfFinrankEq ℝ E hk.out
   refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
   -- In the identity chart, the coefficient of `φ` is `φ` itself.
-  have hchart (y : E) : φ.inChartAt α y b = φ y b := by
-    -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
-    rw [inChartAt_apply, extChartAt_model_space_eq_id]
-    simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
-      mfderivWithin_univ, mfderiv_id]
-    -- The identity derivative leaves the basis vectors unchanged.
-    rfl
   rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
-    Basis.setLIntegral_ofReal_abs_apply_basis_change b b₀ (φ.inChartAt α)]
-  simp only [hchart]
+    Basis.setLIntegral_ofReal_abs_apply_basis_change b b₀ (φ.inChartAt α), inChartAt_modelSpace]
+  -- The two sides differ only in typing `φ y` on `TangentSpace 𝓘(ℝ, E) y`, which is `E`.
+  rfl
 
 /-- **The measure of a constant top form on the model space.** If a top form `φ` on `E` takes the
 same value `c` on a basis `b` at every point, then `|φ|` is `|c|` times the Haar measure

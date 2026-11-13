@@ -32,9 +32,13 @@ form a complex vector space, and these operations are complex-linear or conjugat
   vanishes exactly when it vanishes on every vector.
 * `ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap`: pulling back along
   `A` and then along `B` is pulling back along `A.comp B`.
+* `ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two`: the pullback of a map of
+  two vectors along `L`, evaluated on `(u, w)`, is the map evaluated on `(L u, L w)`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply`:
   the sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of pullbacks of maps of two vectors to `E × F` evaluates
   componentwise.
+* `ContinuousAlternatingMap.map_linearDependent`: an alternating map vanishes on linearly
+  dependent families.
 -/
 
 public section
@@ -101,6 +105,18 @@ theorem compContinuousLinearMap_compContinuousLinearMap (a : M'' [⋀^ι]→L[R]
 
 end CompComp
 
+/-- The pullback of a two-form along a continuous linear map, evaluated on `(u, w)`, is the form
+evaluated on `(L u, L w)`. -/
+theorem compContinuousLinearMap_apply_vecCons_two {R M M' N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [AddCommMonoid M'] [Module R M']
+    [TopologicalSpace M'] [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+    (a : M [⋀^Fin 2]→L[R] N) (L : M' →L[R] M) (u w : M') :
+    a.compContinuousLinearMap L ![u, w] = a ![L u, L w] := by
+  rw [compContinuousLinearMap_apply]
+  congr 1
+  funext i
+  match i with | 0 | 1 => rfl
+
 /-- The sum `ω₁ ∘ pr₁ + ω₂ ∘ pr₂` of the pullbacks of alternating maps of two vectors on `E` and
 `F` to `E × F` evaluates componentwise. -/
 theorem compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply {R E F G : Type*}
@@ -109,8 +125,16 @@ theorem compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply {R E F
     [ContinuousAdd G] (ω₁ : E [⋀^Fin 2]→L[R] G) (ω₂ : F [⋀^Fin 2]→L[R] G) (x y : E × F) :
     (ω₁.compContinuousLinearMap (.fst R E F) + ω₂.compContinuousLinearMap (.snd R E F)) ![x, y] =
       ω₁ ![x.1, y.1] + ω₂ ![x.2, y.2] := by
-  simp only [add_apply, compContinuousLinearMap_apply]
-  congr 2 <;> funext i <;> match i with | 0 | 1 => rfl
+  simp only [add_apply, compContinuousLinearMap_apply_vecCons_two, ContinuousLinearMap.coe_fst',
+    ContinuousLinearMap.coe_snd']
+
+/-- A continuous alternating map vanishes on a linearly dependent family. -/
+theorem map_linearDependent {R M N ι : Type*} [Ring R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [Module.IsTorsionFree R N] (f : M [⋀^ι]→L[R] N) (v : ι → M) (h : ¬LinearIndependent R v) :
+    f v = 0 := by
+  rw [← coe_toAlternatingMap]
+  exact f.toAlternatingMap.map_linearDependent v h
 
 end ContinuousAlternatingMap
 

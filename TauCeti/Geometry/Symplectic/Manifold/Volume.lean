@@ -36,7 +36,8 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 The volume form of a product form `σ ⊕ τ` on `M × N` factors on product frames:
 `(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` takes the value `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family
-`(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` (`TauCeti.SmoothTwoForm.volumeForm_prod_apply`).
+`(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`
+(`TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`).
 
 ## Main definitions
 
@@ -58,8 +59,8 @@ The volume form of a product form `σ ⊕ τ` on `M × N` factors on product fra
   on it.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`: the symplectic
   orientation of each tangent space is the linear symplectic orientation of the value of the form.
-* `TauCeti.SmoothTwoForm.volumeForm_prod_apply`: the volume form of a product form on product
-  frames.
+* `TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`: the volume form of a product form on
+  product frames.
 
 ## References
 
@@ -190,20 +191,23 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
 `τ` on `N`, the volume form `(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` of the product form takes the value
 `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` of tangent
 vectors at `(x, y)`. -/
-theorem volumeForm_prod_apply {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-    [IsManifold J ∞ N] {m : ℕ} (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (x : M) (y : N)
-    (v : Fin (2 * n) → TangentSpace I x) (w : Fin (2 * m) → TangentSpace J y) :
+theorem volumeForm_prod_apply_sumElim {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J ∞ N] {m : ℕ} (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
+    (x : M) (y : N) (v : Fin (2 * n) → TangentSpace I x) (w : Fin (2 * m) → TangentSpace J y) :
     ((σ.prod τ).volumeForm (n + m)).1 (x, y)
-        (fun r ↦ Sum.elim (fun i ↦ ((v i, 0) : E × E')) (fun j ↦ (0, w j))
-          (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r))) =
+        (fun r ↦ (Manifold.tangentSpaceProdEquiv (x, y)).symm (Sum.elim (fun i ↦ (v i, 0))
+          (fun j ↦ (0, w j)) (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r)))) =
       (σ.volumeForm n).1 x v * (τ.volumeForm m).1 y w := by
-  rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, prod_toRoughForm_apply]
-  -- The tangent spaces carry their instances through `TangentSpace`, so the linear identity is
-  -- applied up to unfolding rather than by rewriting.
+  rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, prod_toRoughForm_apply,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ← ContinuousAlternatingMap.smul_apply]
+  simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
   open _root_.ContinuousAlternatingMap in
   exact
-    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_apply
+    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_sumElim
       (σ.1 x) (τ.1 y) v w
 
 end SmoothTwoForm
