@@ -274,9 +274,8 @@ where the section does not vanish. -/
 private theorem laplacian_log_normSq_eq {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : ContDiff ℝ 2 u)
     (hsol : ∀ z, equation u z = 0) {z : ℂ} (hz : sectionValue u z ≠ 0) :
     Δ (fun w ↦ Real.log (4 * (u w 2 ^ 2 + u w 3 ^ 2))) z = (‖sectionValue u z‖ ^ 2 - 1) / 4 := by
-  rw [laplacian_log_normSq_of_equation_eq_zero (differentiable_apply hu 0 z)
-    (differentiable_apply hu 1 z) (contDiff_apply hu 2).contDiffAt (contDiff_apply hu 3).contDiffAt
-    (by rwa [Ne, ← sectionValue_eq_zero_iff])
+  rw [laplacian_log_normSq_of_equation_eq_zero (contDiff_apply hu 2).contDiffAt
+    (contDiff_apply hu 3).contDiffAt (by rwa [Ne, ← sectionValue_eq_zero_iff])
     (.of_forall hsol), sq_norm_sectionValue]
 
 /-- **The scalar equation of the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
@@ -320,8 +319,7 @@ private theorem norm_sectionValue_sq_le_one {u : ℂ → EuclideanSpace ℝ (Fin
     (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
     ‖sectionValue u z‖ ^ 2 ≤ 1 := by
   rw [sq_norm_sectionValue]
-  exact normSq_le_one_of_tendsto (differentiable_apply hu 0) (differentiable_apply hu 1)
-    (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim z
+  exact normSq_le_one_of_tendsto (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim z
 
 /-- **The maximum principle for the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
 with `|α| → 1` at infinity and a nowhere-vanishing `C²` factor `h`, and the zeros of
@@ -495,8 +493,7 @@ private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSp
     (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦ 1 - ‖sectionValue u z‖ ^ 2 := by
   simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq (μ := volume)
-    (differentiable_apply hu 0) (differentiable_apply hu 1) (contDiff_apply hu 2)
-    (contDiff_apply hu 3) hsol hlim
+    (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim
 
 /-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of two vortex defects is integrable. -/
 private theorem integrable_one_sub_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
