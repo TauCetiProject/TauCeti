@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!

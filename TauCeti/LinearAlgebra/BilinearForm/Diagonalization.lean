@@ -173,64 +173,11 @@ open Module
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
-/-- Pulling back a bilinear form along a linear map multiplies its Gram determinant by the
-square of the coordinate-map determinant. The source and target bases use the same arbitrary
-finite index type; no symmetry or nondegeneracy is required. -/
-theorem det_toMatrix_comp {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] (b : Basis ι R M) (c : Basis ι R N)
-    (C : BilinForm R N) (f : M →ₗ[R] N) :
-    ((C.comp f f).toMatrix b).det =
-      (LinearMap.toMatrix b c f).det ^ 2 * (C.toMatrix c).det := by
-  rw [toMatrix_comp c b, Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose]
-  ring
-
-/-- A change of basis multiplies the Gram determinant by the square of the basis-change
-matrix determinant. -/
-theorem det_toMatrix_eq_det_sq_mul_det {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b c : Basis ι R M) (B : BilinForm R M) :
-    (B.toMatrix c).det = (b.toMatrix c).det ^ 2 * (B.toMatrix b).det := by
-  simpa only [comp_id_id, LinearMap.toMatrix_id_eq_basis_toMatrix] using
-    det_toMatrix_comp c b B LinearMap.id
-
 /-- Reindexing a basis reindexes the Gram matrix along the same equivalence. -/
 theorem toMatrix_reindex {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
     (b : Basis ι R M) (e : ι ≃ κ) (B : BilinForm R M) :
     B.toMatrix (b.reindex e) = Matrix.reindex e e (B.toMatrix b) := by
   ext i j
-  simp [toMatrix_apply]
-
-/-- The Gram determinants of equivalent bilinear forms differ by the square of a unit. This
-holds over any commutative ring, including for singular and nonsymmetric forms, in any
-caller-provided finite bases with the same index type. -/
-theorem Equivalent.exists_det_eq_unit_sq_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
-    (b : Basis ι R M) (c : Basis ι R N) :
-    ∃ u : Rˣ, (B.toMatrix b).det = (u : R) ^ 2 * (C.toMatrix c).det := by
-  obtain ⟨e⟩ := h
-  have hform : B = C.comp e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap := by
-    ext x y
-    exact (e.map_app y x).symm
-  refine ⟨(e.toLinearEquiv.isUnit_det b c).unit, ?_⟩
-  conv_lhs => rw [hform]
-  rw [det_toMatrix_comp b c, IsUnit.unit_spec]
-
-/-- The product of Gram determinants of equivalent bilinear forms is a square. This holds over
-any commutative ring, including for singular and nonsymmetric forms, in any caller-provided
-finite bases with the same index type. -/
-theorem Equivalent.isSquare_det_mul_det {N ι : Type*} [AddCommGroup N] [Module R N]
-    [Fintype ι] [DecidableEq ι] {C : BilinForm R N} (h : B.Equivalent C)
-    (b : Basis ι R M) (c : Basis ι R N) :
-    IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) := by
-  obtain ⟨u, hu⟩ := h.exists_det_eq_unit_sq_mul_det b c
-  exact ⟨u * (C.toMatrix c).det, by rw [hu]; ring⟩
-
-/-- Reindexing a basis does not change the Gram determinant. -/
-theorem det_toMatrix_reindex {ι ι' : Type*} [Fintype ι] [DecidableEq ι] [Fintype ι']
-    [DecidableEq ι'] (b : Basis ι R M) (e : ι ≃ ι') (B : BilinForm R M) :
-    (B.toMatrix (b.reindex e)).det = (B.toMatrix b).det := by
-  rw [← Matrix.det_reindex_self e]
-  congr 1
-  ext
   simp [toMatrix_apply]
 
 /-- **Gram determinants under approximate isometries.** Let `B` and `C` be symmetric, and let `b₀`
@@ -273,23 +220,6 @@ theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub {N : Type*}
   refine ⟨(LinearMap.toMatrix b₀ (b.reindex e) φ).det * (b₀.toMatrix (b'.reindex e)).det, t, ?_⟩
   rw [← det_toMatrix_reindex b' e, det_toMatrix_eq_det_sq_mul_det b₀ (b'.reindex e)]
   linear_combination (b₀.toMatrix (b'.reindex e)).det ^ 2 * ht
-
-/-- When `2` is invertible, symmetric bilinear forms are equivalent exactly when their
-associated quadratic forms are equivalent. The underlying modules need not be finite or free. -/
-theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
-    {N : Type*} [AddCommGroup N] [Module R N] [Invertible (2 : R)]
-    {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm) :
-    B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
-  refine ⟨Equivalent.toQuadraticMap, ?_⟩
-  rintro ⟨f⟩
-  have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
-    ext x
-    exact (f.map_app x).symm
-  have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
-  rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
-    QuadraticMap.associated_left_inverse R hC.eq] at hassoc
-  exact ⟨{ toLinearEquiv := f.toLinearEquiv
-           map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
 /-- Along an orthogonal basis, a common divisor of the diagonal values of a bilinear form divides
 every value of the form. -/

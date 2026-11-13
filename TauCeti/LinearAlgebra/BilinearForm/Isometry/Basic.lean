@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
 
@@ -151,5 +152,24 @@ theorem Equivalent.toQuadraticMap {R M₁ M₂ : Type*} [CommSemiring R] [AddCom
     [AddCommMonoid M₂] [Module R M₁] [Module R M₂] {B₁ : BilinForm R M₁} {B₂ : BilinForm R M₂}
     (h : B₁.Equivalent B₂) : B₁.toQuadraticMap.Equivalent B₂.toQuadraticMap :=
   h.map fun f ↦ { f.toLinearEquiv with map_app' := fun x ↦ by simp }
+
+
+/-- When `2` is invertible, symmetric bilinear forms are equivalent exactly when their
+associated quadratic forms are equivalent. The underlying modules need not be finite or free. -/
+theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
+    {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    [Invertible (2 : R)] {B : BilinForm R M} {C : BilinForm R N} (hB : B.IsSymm)
+    (hC : C.IsSymm) :
+    B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  have hform : B.toQuadraticMap = C.toQuadraticMap.comp f.toLinearEquiv.toLinearMap := by
+    ext x
+    exact (f.map_app x).symm
+  have hassoc := congrArg (QuadraticMap.associated (R := R)) hform
+  rw [QuadraticMap.associated_comp, QuadraticMap.associated_left_inverse R hB.eq,
+    QuadraticMap.associated_left_inverse R hC.eq] at hassoc
+  exact ⟨{ toLinearEquiv := f.toLinearEquiv
+           map_app' := fun x y ↦ (LinearMap.congr_fun (LinearMap.congr_fun hassoc x) y).symm }⟩
 
 end LinearMap.BilinForm
