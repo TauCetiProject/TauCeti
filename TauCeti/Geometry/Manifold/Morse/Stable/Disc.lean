@@ -53,7 +53,7 @@ variable (hX : IsAdaptedPseudoGradient f X)
 /-- **The stable manifold is an embedded open disc.** For a critical point `x` of index `k` on a
 manifold of dimension `n`, the stable manifold `W^s(x)` of the flow of an adapted pseudo-gradient is
 the image of a smooth embedding of the open unit disc of `ℝⁿ⁻ᵏ`, sending the centre to `x`. -/
-theorem exists_isSmoothEmbedding_unitBall_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_isSmoothEmbedding_unitBall_stableSet
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ ι : unitBallOpens
         (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - manifoldMorseIndex 𝓘(ℝ, E) f x))) → M,
@@ -61,7 +61,7 @@ theorem exists_isSmoothEmbedding_unitBall_stableSet (hf : MDifferentiable 𝓘(�
         𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E - manifoldMorseIndex 𝓘(ℝ, E) f x)))
         𝓘(ℝ, E) ∞ ι ∧
       range ι = hX.flow.stableSet x ∧ ι ⟨0, zero_mem_unitBallOpens _⟩ = x := by
-  obtain ⟨L, hL, ι, hι, hrange, hι0, -⟩ := hX.exists_isSmoothEmbedding_stableSet hf hx
+  obtain ⟨L, hL, ι, hι, hrange, hι0, -⟩ := hX.exists_isSmoothEmbedding_stableSet hx
   obtain ⟨ι', hι', hrange', hι'0⟩ := exists_isSmoothEmbedding_unitBall (Nat.eq_sub_of_add_eq hL) hι
   exact ⟨ι', hι', hrange'.trans hrange, hι'0.trans hι0⟩
 

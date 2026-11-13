@@ -128,8 +128,8 @@ variable {V : Type u} {G : SimpleGraph V}
 /-- A directed walk of the adjacency arrow family of `G`, as a walk of `G` visiting the same
 vertices in the same order. -/
 def toWalk {u : V} : {v : V} → ArrowWalk G.AdjHom u v → G.Walk u v
-  | _, @Quiver.Path.nil _ .(_) _ => .nil
-  | _, @Quiver.Path.cons _ .(_) _ _ _ q e => (toWalk q).concat e.down
+  | _, @Quiver.Path.nil _ .(_) .(u) => .nil
+  | _, @Quiver.Path.cons _ .(_) .(u) _ _ q e => (toWalk q).concat e.down
 
 variable {u v w : V}
 

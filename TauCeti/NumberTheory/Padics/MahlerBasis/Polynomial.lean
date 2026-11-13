@@ -57,7 +57,7 @@ theorem pow_smul_eq_sum_mahlerTerm (k : ℕ) (a : E) :
       ∑ n ∈ Finset.range (k + 1), mahlerTerm ((n.factorial * k.stirlingSecond n) • a) n := by
   rw [TauCeti.id_pow_eq_sum_stirlingSecond_smul_mahler, Finset.sum_smul]
   apply Finset.sum_congr rfl
-  intro n hn
+  intro n _
   apply ContinuousMap.ext
   intro x
   simp only [ContinuousMap.smul_apply', ContinuousMap.smul_apply, ContinuousMap.const_apply,
@@ -123,7 +123,7 @@ theorem nnnorm_toContinuousMap_eq_sup_stirlingSecond (P : ℤ_[p][X]) :
     · simp [hn]
     · simp [hn, mahlerEquiv_toContinuousMap_eq_zero_of_natDegree_lt P (by omega :
         P.natDegree < n)]
-  rw [← (PadicInt.mahlerEquiv ℤ_[p]).nnnorm_map P.toContinuousMap, hfinite,
+  rw [← (PadicInt.mahlerEquiv ℤ_[p]).nnNorm_map P.toContinuousMap, hfinite,
     nnnorm_sum_single]
   simp only [mahlerEquiv_toContinuousMap_apply]
 

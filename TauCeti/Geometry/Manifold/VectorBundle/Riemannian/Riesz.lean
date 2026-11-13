@@ -75,7 +75,7 @@ search on `TangentSpace I x`. -/
 def rieszDual (x : M) : (TangentSpace I x →L[ℝ] ℝ) ≃ₗᵢ[ℝ] TangentSpace I x := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  let _ := FiniteDimensional.complete ℝ (TangentSpace I x)
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
   exact (InnerProductSpace.toDual ℝ (TangentSpace I x)).symm
 
 /-- The Riesz dual represents its functional by the fibre inner product. -/
@@ -84,7 +84,7 @@ theorem inner_rieszDual {x : M} (φ : TangentSpace I x →L[ℝ] ℝ)
     (v : TangentSpace I x) : inner ℝ (rieszDual (I := I) x φ) v = φ v := by
   let _ : FiniteDimensional ℝ (TangentSpace I x) :=
     VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
-  let _ := FiniteDimensional.complete ℝ (TangentSpace I x)
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
   exact InnerProductSpace.toDual_symm_apply
 
 /-- A tangent vector is the Riesz dual of `φ` exactly when its inner product against every

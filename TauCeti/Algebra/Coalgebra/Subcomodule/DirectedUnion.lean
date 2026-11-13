@@ -15,9 +15,9 @@ This file specializes the universal property of a directed union of submodules t
 subcomodules of a comodule. A compatible family of linear maps on the finite subcomodules glues to
 a linear map on the whole comodule as soon as every element lies in a finite subcomodule.
 
-This is a prerequisite for the Tannakian reconstruction step in the `ReductiveGroups` roadmap:
-the components of a tensor automorphism on the finite subcomodules of the regular comodule must be
-assembled into one linear functional on the coordinate Hopf algebra.
+In Tannakian reconstruction, `TauCeti.Tannaka.globalFunctional` uses this to glue the
+functionals that a tensor automorphism induces on the finite subcomodules of the regular comodule
+into one linear map on the Hopf algebra.
 
 ## Main declarations
 
