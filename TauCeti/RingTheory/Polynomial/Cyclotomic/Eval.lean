@@ -39,8 +39,9 @@ values made only of nonprimitive prime divisors.
 * `Int.sub_pow_totient_lt_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_lt_add_pow_totient`,
   `Int.sub_pow_totient_le_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_le_add_pow_totient`:
   the power bounds for integer bases.
-* `Int.one_lt_homogeneousCyclotomic`, `Int.natCast_prime_lt_homogeneousCyclotomic_of_two_le_sub`,
-  `Int.natCast_prime_lt_homogeneousCyclotomic_prime_pow_mul`: for integer bases `0 < b < a`,
+* `TauCeti.one_lt_homogeneousCyclotomic`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_of_two_le_sub`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow_mul`: for integer bases `0 < b < a`,
   `1 < Φ_n(a, b)` when `n ≥ 2`, and `p < Φ_n(a, b)` for every prime `p ∣ n ≠ 0` when `2 ≤ a - b`
   or when `p ^ 2 ∣ n`.
 * `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
@@ -188,18 +189,28 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℤ} (hb : 0 �
   exact_mod_cast TauCeti.homogeneousCyclotomic_le_add_pow_totient n (a := a) (b := b)
     (by exact_mod_cast hb) (by exact_mod_cast hba)
 
+end Int
+
+namespace TauCeti
+
 /-- For `n ≥ 2` and integers `0 < b < a`, `1 < Φ_n(a, b)`. All three hypotheses are sharp:
 `Φ_1(2, 1) = 1`, `Φ_2(1, 0) = 1` and `Φ_6(1, 1) = 1`. -/
 theorem one_lt_homogeneousCyclotomic {n : ℕ} (hn : 2 ≤ n) {a b : ℤ} (hb : 0 < b) (hba : b < a) :
     1 < homogeneousCyclotomic n a b :=
   (one_le_pow₀ (by omega : 1 ≤ a - b)).trans_lt
-    (sub_pow_totient_lt_homogeneousCyclotomic hn hb hba)
+    (Int.sub_pow_totient_lt_homogeneousCyclotomic hn hb hba)
+
+end TauCeti
+
+namespace Nat.Prime
+
+open TauCeti
 
 /-- For a prime `p` dividing `n ≠ 0` and integers `0 < b` with `2 ≤ a - b`, `p < Φ_n(a, b)`
 (Birkhoff–Vandiver 1904, p. 178). At `a - b = 1` this fails for `(a, b, n, p) = (2, 1, 6, 3)`,
 where `Φ_6(2, 1) = 3`; at `b = 0` it fails for `(a, b, n, p) = (2, 0, 2, 2)`, where
 `Φ_2(2, 0) = 2`. -/
-theorem natCast_prime_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p.Prime)
+theorem natCast_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p.Prime)
     (hpn : p ∣ n) (hn : n ≠ 0) {a b : ℤ} (hb : 0 < b) (hab : 2 ≤ a - b) :
     (p : ℤ) < homogeneousCyclotomic n a b := by
   -- Use `p ≤ 2 ^ (p - 1) ≤ 2 ^ φ(n) ≤ (a - b) ^ φ(n) < Φ_n(a, b)`.
@@ -217,13 +228,13 @@ theorem natCast_prime_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p
     _ ≤ (2 : ℤ) ^ n.totient := pow_le_pow_right₀ (by decide) hφ
     _ ≤ (a - b) ^ n.totient := pow_le_pow_left₀ (by decide) hab _
     _ < homogeneousCyclotomic n a b :=
-      sub_pow_totient_lt_homogeneousCyclotomic hn2 hb (by omega)
+      Int.sub_pow_totient_lt_homogeneousCyclotomic hn2 hb (by omega)
 
 /-- For a prime `p`, `e ≠ 0`, `m ≠ 0` and integers `0 < b < a`, `p < Φ_{p ^ (e + 1) m}(a, b)`
 (Birkhoff–Vandiver 1904, pp. 178–179). Every hypothesis is sharp: `e = 0` fails at
 `(a, b, p, m) = (2, 1, 3, 2)`, `m = 0` gives `Φ_0 = 1`, `b = 0` at `a = 1` gives `1`, and
 `a = b = 1` at `m = 1` gives `p`. -/
-theorem natCast_prime_lt_homogeneousCyclotomic_prime_pow_mul {p e m : ℕ} (hp : p.Prime)
+theorem natCast_lt_homogeneousCyclotomic_prime_pow_mul {p e m : ℕ} (hp : p.Prime)
     (he : e ≠ 0) (hm : m ≠ 0) {a b : ℤ} (hb : 0 < b) (hba : b < a) :
     (p : ℤ) < homogeneousCyclotomic (p ^ (e + 1) * m) a b := by
   -- Write `Φ_{p ^ (e + 1) m}(a, b) = Φ_{p m}(a ^ K, b ^ K)` with `K = p ^ e ≥ 2`;
@@ -238,7 +249,7 @@ theorem natCast_prime_lt_homogeneousCyclotomic_prime_pow_mul {p e m : ℕ} (hp :
   have hstep2 : b ^ (K - 1) * a < a ^ K := by
     conv_rhs => rw [← hK_eq, pow_succ]
     exact mul_lt_mul_of_pos_right (pow_lt_pow_left₀ hba hb.le (by omega)) (by omega)
-  exact natCast_prime_lt_homogeneousCyclotomic_of_two_le_sub hp (dvd_mul_right p m)
+  exact hp.natCast_lt_homogeneousCyclotomic_of_two_le_sub (dvd_mul_right p m)
     (mul_ne_zero hp.ne_zero hm) (pow_pos hb K) (by omega)
 
-end Int
+end Nat.Prime

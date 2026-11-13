@@ -32,10 +32,12 @@ would equal `1` or the largest prime factor `p` of `n`. The size estimates rule 
 `Φ_{p m}(a, b) > ((a ^ p - b ^ p) / (a + b)) ^ φ(m) > p` except at `(a, b, p) = (2, 1, 3)`, which
 forces `m = 2` and `n = 6`).
 
-Conversely, a primitive prime divisor `q` of the reduced difference of powers exceeds `n` and
-divides `Φ_n`, so for arbitrary positive natural bases `b < a` (without coprimality) and `n ≥ 2`,
-`n < Φ_n(a, b)` fails only at `(a, b, n) = (2, 1, 6)`, and for a prime `p ∣ n ≠ 0`,
-`p < Φ_n(a, b)` fails only at `(a, b, n, p) = (2, 1, 6, 3)`.
+Conversely, for integers `0 < b < a` (without coprimality) and `n ≥ 2`, `n < Φ_n(a, b)` fails only
+at `(a, b, n) = (2, 1, 6)`, and for a prime `p ∣ n ≠ 0`, `p < Φ_n(a, b)` fails only at
+`(a, b, n, p) = (2, 1, 6, 3)`: `n = 2` (`Φ_2(a, b) = a + b`) and non-coprime multiples
+`(2 * g, g, 6)` (`Φ_6(2 * g, g) = 3 * g ^ 2`, `g ≥ 2`) hold directly, while in every other `n ≥ 3`
+case a primitive prime divisor `q` of the reduced difference of powers exceeds `n` and divides
+`Φ_n`.
 
 Translating primitivity into the multiplicative order of `a / b` in `ZMod p` yields primes at which
 `a / b` (or `a` at `b = 1`, and in particular `2` for `n ≠ 1, 6` or any `a ≥ 3` for `n ≥ 3`) has
@@ -47,8 +49,9 @@ prescribed order `n`, and applying the theorem at exponent `2 * n` yields primes
 * `TauCeti.exists_prime_dvd_pow_sub_pow`, `TauCeti.exists_prime_dvd_pow_sub_pow_iff`: the
   Bang–Zsigmondy theorem and exact characterization for `a ^ n - b ^ n`.
 * `TauCeti.natCast_lt_homogeneousCyclotomic_iff`,
-  `Nat.Prime.natCast_lt_homogeneousCyclotomic_iff`: for `0 < b < a`, `n < Φ_n(a, b)` (`n ≥ 2`) and
-  `p < Φ_n(a, b)` (`p ∣ n ≠ 0`), with the sole exceptions `(2, 1, 6)` and `(2, 1, 6, 3)`.
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_iff`: for integers `0 < b < a`, `n < Φ_n(a, b)`
+  (`n ≥ 2`) and `p < Φ_n(a, b)` (`p ∣ n ≠ 0`), with the sole exceptions `(2, 1, 6)` and
+  `(2, 1, 6, 3)`.
 * `TauCeti.exists_prime_orderOf_div_eq`, `TauCeti.exists_prime_orderOf_div_eq_iff`: existence and
   characterization of a prime `p ∤ a * b` with `orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = n`.
 * `TauCeti.exists_prime_orderOf_eq_iff`, `TauCeti.exists_prime_orderOf_eq`,
@@ -89,7 +92,7 @@ theorem exists_prime_dvd_pow_sub_pow {a b n : ℕ}
   have hbaZ : (b : ℤ) < a := by exact_mod_cast hba
   rcases hab.homogeneousCyclotomic_eq_one_or_eq_prime_of_not_exists_prime_dvd_pow_sub_pow hba
       (by omega) hnot with h1 | ⟨p, hp, hpn, -, hΦ⟩
-  · exact (Int.one_lt_homogeneousCyclotomic hn hbZ hbaZ).ne' h1
+  · exact (one_lt_homogeneousCyclotomic hn hbZ hbaZ).ne' h1
   -- Write `n = p ^ (e + 1) * m` with `p ∤ m`; since `p ∣ Φ_n(a, b)`, `m` divides `p - 1`.
   have hn0 : n ≠ 0 := by omega
   have hpΦ : (p : ℤ) ∣ homogeneousCyclotomic n (a : ℤ) b := dvd_of_eq hΦ.symm
@@ -130,7 +133,7 @@ theorem exists_prime_dvd_pow_sub_pow {a b n : ℕ}
             (by positivity) (by exact_mod_cast hba))
       rw [← Int.cast_lt (R := ℝ)]
       simpa using hreal
-  · exact Int.natCast_prime_lt_homogeneousCyclotomic_prime_pow_mul hp he hm_pos.ne' hbZ hbaZ
+  · exact hp.natCast_lt_homogeneousCyclotomic_prime_pow_mul he hm_pos.ne' hbZ hbaZ
 
 /-- **Exact characterization of primitive prime divisors.** For coprime natural numbers
 `a > b > 0` and `n ≥ 2`, `a ^ n - b ^ n` has a primitive prime divisor if and only if neither
@@ -154,13 +157,13 @@ theorem exists_prime_dvd_pow_sub_pow_iff {a b n : ℕ}
     by_contra! h
     exact h₆ ⟨h.1, h.2, hn6⟩
 
-/-- **Index lower bound for homogeneous cyclotomic values.** For natural numbers `0 < b < a` and
+/-- **Index lower bound for homogeneous cyclotomic values.** For integers `0 < b < a` and
 `n ≥ 2` (without assuming `a` and `b` coprime), `n < Φ_n(a, b)` except at `(a, b, n) = (2, 1, 6)`,
 where `Φ_6(2, 1) = 3`. At `n = 1` this fails for `(a, b) = (2, 1)`, and at `b = 0` for
 `a = 1`. -/
-theorem natCast_lt_homogeneousCyclotomic_iff {a b n : ℕ} (hb : 0 < b) (hba : b < a)
+theorem natCast_lt_homogeneousCyclotomic_iff {a b : ℤ} {n : ℕ} (hb : 0 < b) (hba : b < a)
     (hn : 2 ≤ n) :
-    (n : ℤ) < homogeneousCyclotomic n (a : ℤ) b ↔ ¬(a = 2 ∧ b = 1 ∧ n = 6) := by
+    (n : ℤ) < homogeneousCyclotomic n a b ↔ ¬(a = 2 ∧ b = 1 ∧ n = 6) := by
   constructor
   · rintro h ⟨rfl, rfl, rfl⟩
     simp only [homogeneousCyclotomic_six] at h
@@ -169,10 +172,14 @@ theorem natCast_lt_homogeneousCyclotomic_iff {a b n : ℕ} (hb : 0 < b) (hba : b
     rcases hn.eq_or_lt with rfl | hn3
     · simp only [homogeneousCyclotomic_two]
       omega
+    lift a to ℕ using by omega
+    lift b to ℕ using hb.le
+    have hb0 : 0 < b := by omega
+    have hba0 : b < a := by omega
     -- Factor out `g = gcd(a, b)`: `Φ_n(a, b) = g ^ φ(n) * Φ_n(a', b')` with `a', b'` coprime.
-    obtain ⟨g, a', b', hg, hab', rfl, rfl⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right a hb)
-    have hb' : 0 < b' := Nat.pos_of_ne_zero (left_ne_zero_of_mul hb.ne')
-    have hba' : b' < a' := (Nat.mul_lt_mul_right hg).1 hba
+    obtain ⟨g, a', b', hg, hab', rfl, rfl⟩ := Nat.exists_coprime' (Nat.gcd_pos_of_pos_right a hb0)
+    have hb' : 0 < b' := Nat.pos_of_ne_zero (left_ne_zero_of_mul hb0.ne')
+    have hba' : b' < a' := (Nat.mul_lt_mul_right hg).1 hba0
     have hhom : homogeneousCyclotomic n ((a' * g : ℕ) : ℤ) (b' * g : ℕ) =
         (g : ℤ) ^ n.totient * homogeneousCyclotomic n (a' : ℤ) b' := by
       push_cast
@@ -180,6 +187,7 @@ theorem natCast_lt_homogeneousCyclotomic_iff {a b n : ℕ} (hb : 0 < b) (hba : b
     rw [hhom]
     by_cases hex' : a' = 2 ∧ b' = 1 ∧ n = 6
     · rcases hex' with ⟨rfl, rfl, rfl⟩
+      have hg1 : g ≠ 1 := fun h => hex (by subst h; simp)
       have hg2 : 2 ≤ g := by omega
       have htot : Nat.totient 6 = 2 := by decide
       rw [htot]
@@ -209,12 +217,12 @@ end TauCeti
 namespace Nat.Prime
 
 /-- **Prime-divisor lower bound for homogeneous cyclotomic values.** For a prime `p` dividing
-`n ≠ 0` and natural numbers `0 < b < a`, `p < Φ_n(a, b)` except at `(a, b, n, p) = (2, 1, 6, 3)`,
+`n ≠ 0` and integers `0 < b < a`, `p < Φ_n(a, b)` except at `(a, b, n, p) = (2, 1, 6, 3)`,
 where `Φ_6(2, 1) = 3` equals the largest prime factor of `6` (while `2 < Φ_6(2, 1)` still holds).
 No coprimality assumption on `a` and `b` is needed. -/
-theorem natCast_lt_homogeneousCyclotomic_iff {p : ℕ} (hp : p.Prime) {a b n : ℕ}
+theorem natCast_lt_homogeneousCyclotomic_iff {p : ℕ} (hp : p.Prime) {a b : ℤ} {n : ℕ}
     (hpn : p ∣ n) (hn : n ≠ 0) (hb : 0 < b) (hba : b < a) :
-    (p : ℤ) < TauCeti.homogeneousCyclotomic n (a : ℤ) b ↔
+    (p : ℤ) < TauCeti.homogeneousCyclotomic n a b ↔
       ¬(a = 2 ∧ b = 1 ∧ n = 6 ∧ p = 3) := by
   constructor
   · rintro h ⟨rfl, rfl, rfl, rfl⟩
@@ -295,7 +303,7 @@ theorem exists_prime_orderOf_eq {a n : ℕ} (ha : 3 ≤ a) (hn : 3 ≤ n) :
   (exists_prime_orderOf_eq_iff (by omega) (by omega)).2 ⟨by omega, by omega⟩
 
 /-- Modulo some prime `p`, the residue `2 : ZMod p` achieves multiplicative order `n` iff `n ≠ 1`
-and `n ≠ 6`: order `0` is realized at the ramified prime `p = 2` (where `(2 : ZMod 2) = 0`), order
+and `n ≠ 6`: order `0` is realized at `p = 2` (where `(2 : ZMod 2) = 0`), order
 `1` would force `p ∣ 2 - 1`, and order `6` fails because `2 ^ 6 - 1 = 63 = 3 ^ 2 * 7`. -/
 theorem exists_prime_orderOf_two_eq_iff {n : ℕ} :
     (∃ p : ℕ, p.Prime ∧ orderOf (2 : ZMod p) = n) ↔ n ≠ 1 ∧ n ≠ 6 := by
