@@ -30,6 +30,20 @@ class ControlBatches(unittest.TestCase):
         for step in job["steps"]:
             self.assertNotIn("sleep ", step.get("run", ""))
 
+    def test_pr_status_reconciles_labels_without_zulip_credentials(self):
+        doc = workflow("pr-status.yml")
+        steps = doc["jobs"]["reconcile"]["steps"]
+        reconcile = next(s for s in steps if "scripts/pr_status/batch.py" in s.get("run", ""))
+        self.assertFalse(any(k.startswith("ZULIP_") for k in reconcile["env"]))
+        self.assertNotIn("--labels-only", reconcile["run"])
+        for name in ("zulip-healthcheck.yml", "zulip-pr-backfill.yml"):
+            self.assertFalse((ROOT / ".github/workflows" / name).exists())
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "scripts/pr_status/zulip.py"],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        self.assertNotEqual(tracked.returncode, 0, "the PR-posting entrypoint must not be tracked")
+
     def test_admission_has_no_actions_execution_or_sweep_wake(self):
         for name in ("auto-merge.yml", "merge-sweep.yml", "queue-release.yml"):
             self.assertFalse((ROOT / ".github/workflows" / name).exists())
