@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.StarAlgHom
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -28,7 +29,9 @@ centralizers.
 
 A star-linear (conjugate-linear) equivalence `V ≃ₗ⋆[S] W` is linear over any scalars `R` acting on
 `S` with trivial star (`LinearEquiv.restrictScalarsₛₗ`). For example, a conjugate-linear
-equivalence of complex vector spaces is real-linear.
+equivalence of complex vector spaces is real-linear. Likewise, any non-unital `⋆`-algebra
+homomorphism between unital `R`-algebras that maps `1` to `1` commutes with `algebraMap R` via
+`r • 1`, promoting to a unital `⋆`-algebra homomorphism (`StarAlgHom.ofNonUnitalStarAlgHom`).
 
 ## Main results
 
@@ -44,6 +47,8 @@ equivalence of complex vector spaces is real-linear.
   there.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
+* `StarAlgHom.ofNonUnitalStarAlgHom`: promote a non-unital `⋆`-algebra homomorphism preserving `1`
+  to a unital `⋆`-algebra homomorphism.
 -/
 
 public section
@@ -138,3 +143,32 @@ theorem restrictScalarsₛₗ_symm (f : V ≃ₗ⋆[S] W) :
   (rfl)
 
 end LinearEquiv
+
+namespace StarAlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Star A]
+  [Semiring B] [Algebra R B] [Star B]
+
+/-- Promote a non-unital `⋆`-algebra homomorphism preserving `1` to a unital `⋆`-algebra
+homomorphism. -/
+def ofNonUnitalStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 = 1) : A →⋆ₐ[R] B where
+  toFun := f
+  map_one' := hf
+  map_mul' := map_mul f
+  map_zero' := map_zero f
+  map_add' := map_add f
+  commutes' r := by
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hf, ← Algebra.algebraMap_eq_smul_one]
+  map_star' := map_star f
+
+@[simp]
+theorem coe_ofNonUnitalStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 = 1) :
+    ⇑(ofNonUnitalStarAlgHom f hf) = f :=
+  (rfl)
+
+@[simp]
+theorem toNonUnitalStarAlgHom_ofNonUnitalStarAlgHom (f : A →⋆ₙₐ[R] B) (hf : f 1 = 1) :
+    (ofNonUnitalStarAlgHom f hf).toNonUnitalStarAlgHom = f :=
+  (rfl)
+
+end StarAlgHom

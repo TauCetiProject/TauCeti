@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import TauCeti.Algebra.Star.Basic
+public import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
 # Approximate unitary equivalence in a unital target
@@ -15,7 +17,9 @@ Two possibly nonunital star homomorphisms into a unital C⋆-algebra are approxi
 unitarily equivalent when conjugation by target unitaries approximates one by the other
 on every finite set. This file proves the equivalence-relation laws and compatibility
 with composition. Postcomposition is by a unital map, so implementing unitaries remain
-unitaries. The relation preserves pointwise norms, hence injectivity.
+unitaries. The relation preserves pointwise norms, injectivity, and unitality; in
+particular, if `ψ.comp φ` is approximately unitarily equivalent to the identity on a unital
+C⋆-algebra, then `ψ` must preserve `1`.
 
 The convention is that of Kirchberg–Phillips, *Embedding of exact C*-algebras in the
 Cuntz algebra O₂*, Definition 0.5, extended to possibly nonunital source maps.
@@ -75,6 +79,12 @@ theorem symm (h : ApproximatelyUnitarilyEquivalent φ ψ) :
       Unitary.conjStarAlgAut_apply, norm_sub_rev] using hn
   simpa only [Unitary.coe_star, star_star] using heq.trans_lt (hu a ha)
 
+/-- Conjugating a map by a target unitary gives an approximately unitarily equivalent map. -/
+theorem conjStarAlgAut_comp (u : unitary B) (φ : A →⋆ₙₐ[ℂ] B) :
+    ApproximatelyUnitarilyEquivalent
+      ((Unitary.conjStarAlgAut ℂ B u).toNonUnitalStarAlgHom.comp φ) φ :=
+  (of_unitary u fun a ↦ by simp [Unitary.conjStarAlgAut_apply]).symm
+
 /-- Approximate unitary equivalence is transitive. -/
 @[trans]
 theorem trans (h₁ : ApproximatelyUnitarilyEquivalent φ ψ)
@@ -126,6 +136,13 @@ theorem postcomp [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
     (NonUnitalStarAlgHom.norm_apply_le ρ
       ((u : B) * φ a * star (u : B) - ψ a)).trans_lt (hu a ha)
 
+/-- Postcomposition by a non-unital `⋆`-homomorphism preserving `1` preserves approximate unitary
+equivalence. -/
+theorem postcomp_of_map_one [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
+    (ρ : B →⋆ₙₐ[ℂ] C) (hρ : ρ 1 = 1) :
+    ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
+  simpa using h.postcomp (StarAlgHom.ofNonUnitalStarAlgHom ρ hρ)
+
 /-- Approximately unitarily equivalent maps have the same pointwise norm. -/
 theorem norm_eq (h : ApproximatelyUnitarilyEquivalent φ ψ) (a : A) : ‖φ a‖ = ‖ψ a‖ := by
   have hle {φ ψ : A →⋆ₙₐ[ℂ] B} (h : ApproximatelyUnitarilyEquivalent φ ψ) :
@@ -146,6 +163,51 @@ theorem injective_iff (h : ApproximatelyUnitarilyEquivalent φ ψ) :
   rw [injective_iff_map_eq_zero φ, injective_iff_map_eq_zero ψ]
   exact forall_congr' fun a ↦ by rw [← norm_eq_zero (a := φ a),
     ← norm_eq_zero (a := ψ a), h.norm_eq]
+
+section UnitalSource
+
+/-- Between unital C⋆-algebras, approximate unitary equivalence preserves unitality (`φ 1 = 1`). -/
+theorem map_one_eq_one_iff {A : Type*} [CStarAlgebra A] {φ ψ : A →⋆ₙₐ[ℂ] B}
+    (h : ApproximatelyUnitarilyEquivalent φ ψ) : φ 1 = 1 ↔ ψ 1 = 1 := by
+  suffices ∀ {φ ψ : A →⋆ₙₐ[ℂ] B}, ApproximatelyUnitarilyEquivalent φ ψ → ψ 1 = 1 → φ 1 = 1 from
+    ⟨fun hφ ↦ this h.symm hφ, this h⟩
+  intro φ ψ h hψ
+  obtain ⟨u, hu⟩ := h {1} 1 zero_lt_one
+  let e := Unitary.conjStarAlgAut ℂ B u
+  have hproj : IsStarProjection (e (φ 1)) := ((IsStarProjection.one A).map φ).map e
+  have hlt : ‖e (φ 1) - 1‖ < 1 := by
+    simpa only [e, Unitary.conjStarAlgAut_apply, hψ] using hu 1 (Finset.mem_singleton_self 1)
+  exact e.injective <| (hproj.eq_one_of_norm_sub_one_lt_one hlt).trans (map_one e).symm
+
+/-- If `ψ.comp φ` is approximately unitarily equivalent to the identity on a unital C⋆-algebra `A`,
+then `ψ` preserves `1`. -/
+theorem map_one_of_comp_id {A : Type*} [CStarAlgebra A] {φ : A →⋆ₙₐ[ℂ] B} {ψ : B →⋆ₙₐ[ℂ] A}
+    (h : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (.id ℂ A)) : ψ 1 = 1 := by
+  have h1 : ψ (φ 1) = 1 := h.map_one_eq_one_iff.mpr rfl
+  calc
+    ψ 1 = ψ (φ 1) * ψ 1 := by rw [h1, one_mul]
+    _ = ψ (φ 1 * 1) := (map_mul ψ _ _).symm
+    _ = ψ (φ 1) := by rw [mul_one]
+    _ = 1 := h1
+
+/-- If `ψ.comp φ` is approximately unitarily equivalent to `.id ℂ A` and a `⋆`-isomorphism
+`θ : A ≃⋆ₐ[ℂ] B` is approximately unitarily equivalent to `φ`, then `θ.symm` is approximately
+unitarily equivalent to `ψ`. -/
+theorem symm_of_comp_id {A : Type*} [CStarAlgebra A] {φ : A →⋆ₙₐ[ℂ] B} {ψ : B →⋆ₙₐ[ℂ] A}
+    {θ : A ≃⋆ₐ[ℂ] B}
+    (hψφ : ApproximatelyUnitarilyEquivalent (ψ.comp φ) (.id ℂ A))
+    (hθ : ApproximatelyUnitarilyEquivalent θ.toNonUnitalStarAlgHom φ) :
+    ApproximatelyUnitarilyEquivalent θ.symm.toNonUnitalStarAlgHom ψ := by
+  have h1 : ApproximatelyUnitarilyEquivalent (ψ.comp θ.toNonUnitalStarAlgHom) (.id ℂ A) :=
+    (hθ.postcomp_of_map_one ψ hψφ.map_one_of_comp_id).trans hψφ
+  have h2 := h1.precomp θ.symm.toNonUnitalStarAlgHom
+  have hcomp : (ψ.comp θ.toNonUnitalStarAlgHom).comp θ.symm.toNonUnitalStarAlgHom = ψ := by
+    ext b
+    simp
+  rw [hcomp, NonUnitalStarAlgHom.id_comp] at h2
+  exact h2.symm
+
+end UnitalSource
 
 end ApproximatelyUnitarilyEquivalent
 
