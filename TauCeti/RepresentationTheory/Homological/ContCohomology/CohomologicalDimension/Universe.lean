@@ -19,7 +19,7 @@ selects the universe parameter of Mathlib's continuous cohomology
 same coefficient universe, such as `v = u` and `v = 0`, are not definitionally equal.
 
 This file shows that they are equal: `v` matters only through `max u v`. The cohomology objects
-at the parameters `v` and `max u v` coincide (`TopRep.continuousCohomology_universe_eq`), so the
+at the parameters `v` and `max u v` coincide (`TauCeti.continuousCohomology_universe_eq`), so the
 vanishing predicates agree degree by degree. In particular the invariants at `v = u` and at
 `v = 0` agree, so theorems proved at either instantiation apply at the other.
 
@@ -48,10 +48,10 @@ theorem cohomologicalDimensionLE_universe_iff {n : ℕ} :
   rw [cohomologicalDimensionLE_iff, cohomologicalDimensionLE_iff]
   constructor
   · intro h M _ _ _ _ _ hM i hi
-    rw [TopRep.continuousCohomology_universe_eq.{0, u, v}]
+    rw [TauCeti.continuousCohomology_universe_eq.{0, u, v}]
     exact h M hM i hi
   · intro h M _ _ _ _ _ hM i hi
-    rw [← TopRep.continuousCohomology_universe_eq.{0, u, v}]
+    rw [← TauCeti.continuousCohomology_universe_eq.{0, u, v}]
     exact h M hM i hi
 
 /-- The strict vanishing predicate at the extra universe `max u v` agrees with the one at `v`:
@@ -61,10 +61,10 @@ theorem strictCohomologicalDimensionLE_universe_iff {n : ℕ} :
   rw [strictCohomologicalDimensionLE_iff, strictCohomologicalDimensionLE_iff]
   constructor
   · intro h M _ _ _ _ _ i hi
-    rw [TopRep.continuousCohomology_universe_eq.{0, u, v}]
+    rw [TauCeti.continuousCohomology_universe_eq.{0, u, v}]
     exact h M i hi
   · intro h M _ _ _ _ _ i hi
-    rw [← TopRep.continuousCohomology_universe_eq.{0, u, v}]
+    rw [← TauCeti.continuousCohomology_universe_eq.{0, u, v}]
     exact h M i hi
 
 variable (p G)
