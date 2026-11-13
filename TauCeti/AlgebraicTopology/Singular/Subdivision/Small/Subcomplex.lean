@@ -38,6 +38,7 @@ comparing smooth with continuous singular homology.
   cover.
 * `TauCeti.subcomplexSmallChainHomotopyEquiv`: the inclusion of the chains of `S` subordinate to
   an open cover into the chains of `S` is a chain homotopy equivalence.
+* `TauCeti.subcomplexSmallHomologyIso`: the induced isomorphism on homology.
 * `TauCeti.quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex`: that inclusion is a
   quasi-isomorphism.
 
@@ -169,6 +170,20 @@ lemma subcomplexSmallChainHomotopyEquiv_hom :
     (subcomplexSmallChainHomotopyEquiv R S U hU hcov).hom =
       SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R :=
   chainComplexMapHomotopyEquivOfSubdivision_hom _ _ _
+
+/-- The isomorphism on homology induced by the inclusion of the chains of an affinely stable
+subcomplex subordinate to an open cover into all of its chains. -/
+def subcomplexSmallHomologyIso [CategoryWithHomology C] (n : ℕ) :
+    (((S ⊓ X.smallSingularSubcomplex U : (TopCat.toSSet.obj X).Subcomplex) : SSet).chainComplex
+        R).homology n ≅ ((S : SSet).chainComplex R).homology n :=
+  (subcomplexSmallChainHomotopyEquiv R S U hU hcov).toHomologyIso n
+
+@[simp]
+lemma subcomplexSmallHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
+    (subcomplexSmallHomologyIso R S U hU hcov n).hom = HomologicalComplex.homologyMap
+      (SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R) n :=
+  congrArg (HomologicalComplex.homologyMap · n)
+    (subcomplexSmallChainHomotopyEquiv_hom R S U hU hcov)
 
 /-- The inclusion of the chains of an affinely stable subcomplex subordinate to an open cover into
 all of its chains is a quasi-isomorphism. -/
