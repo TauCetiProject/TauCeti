@@ -71,6 +71,12 @@ private theorem pinnedRep_ι (x : (DynkinType.D 4).lieAlgebra (by decide)) :
     pinnedRep (ι ℚ x) = pinnedAction x :=
   lift_ι_apply _ _ _
 
+private theorem toLinAlgEquiv'_eq_toLin' (M : Matrix (Fin 24) (Fin 24) ℚ) :
+    Matrix.toLinAlgEquiv' M = Matrix.toLin' M := by
+  apply LinearMap.ext
+  intro v
+  simp only [Matrix.toLinAlgEquiv'_apply, Matrix.toLin'_apply]
+
 /-- A numbered Cartan generator acts by its existing diagonal weight matrix. -/
 @[simp↓]
 theorem pinnedRep_h (i : Fin (DynkinType.D 4).rank) :
@@ -79,9 +85,7 @@ theorem pinnedRep_h (i : Fin (DynkinType.D 4).rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_h, TauCeti.serreLift_serreH, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply]
-  -- Both coordinate linear maps have matrix-vector multiplication as their defining action.
-  rfl
+    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
 
 /-- A numbered raising generator acts by the existing tripled raising matrix. -/
 @[simp↓]
@@ -91,9 +95,7 @@ theorem pinnedRep_e (i : Fin (DynkinType.D 4).rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_e, TauCeti.serreLift_serreE, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply]
-  -- Both coordinate linear maps have matrix-vector multiplication as their defining action.
-  rfl
+    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
 
 /-- A numbered lowering generator acts by the existing tripled lowering matrix. -/
 @[simp↓]
@@ -103,9 +105,7 @@ theorem pinnedRep_f (i : Fin (DynkinType.D 4).rank) :
   rw [pinnedRep_ι]
   simp only [pinnedAction, LieHom.comp_apply, LieEquiv.coe_toLieHom,
     serreLiftEquiv_symm_lieBasis_f, TauCeti.serreLift_serreF, AlgHom.toLieHom_apply,
-    AlgEquiv.toAlgHom_apply]
-  -- Both coordinate linear maps have matrix-vector multiplication as their defining action.
-  rfl
+    AlgEquiv.toAlgHom_apply, toLinAlgEquiv'_eq_toLin']
 
 private theorem pinnedRep_root (k : Fin (DynkinType.D 4).rank ⊕ Fin (DynkinType.D 4).rank) :
     pinnedRep (ι ℚ (((DynkinType.D 4).lieBasis (by decide)).rootGenerator k)) =
@@ -162,41 +162,46 @@ private theorem pinnedRep_cartan_single
     (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp (pinnedRep_weight a),
     Finset.sum_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one, b]
 
+-- The weights span ℤ⁴, so vanishing on all weight vectors detects every Cartan coordinate.
+private theorem pinnedAction_cartan_isFaithful :
+    let pinnedLieRingModule := LieRingModule.compLieHom (Fin 24 → ℚ) pinnedAction
+    let pinnedLieModule := LieModule.compLieHom (Fin 24 → ℚ) pinnedAction
+    LieModule.IsFaithful ℚ ((DynkinType.D 4).cartanSubalgebra (by decide))
+      (Fin 24 → ℚ) := by
+  rw [LieModule.isFaithful_iff']
+  intro x hx
+  let c : Fin 4 → ℚ := fun i =>
+    ((DynkinType.D 4).cartanBasis (valid_D.mpr le_rfl)).repr x
+      (Fin.cast (rank_D 4).symm i)
+  have heval (a : Fin 24) : ∑ i, c i * (d4TripledWeight a i : ℚ) = 0 := by
+    have h := hx (Pi.single a 1)
+    have hact : pinnedRep (ι ℚ (x : (DynkinType.D 4).lieAlgebra (by decide)))
+        (Pi.single a 1) = 0 := by
+      rw [pinnedRep_ι]
+      exact h
+    have hscalar := congrFun hact a
+    rw [pinnedRep_cartan_single] at hscalar
+    exact hscalar
+  let f : (Fin 4 → ℤ) →ₗ[ℤ] ℚ :=
+    ∑ i, (c i) • ((Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj i))
+  have hf (μ : Fin 4 → ℤ) : f μ = ∑ i, c i * (μ i : ℚ) := by
+    simp [f]
+  have hzero : ∀ μ ∈ Submodule.span ℤ (Set.range d4TripledWeight), f μ = 0 :=
+    LinearMap.eqOn_span (f := f) (g := 0) (by rintro _ ⟨a, rfl⟩; simpa [hf] using heval a)
+  have hc (i : Fin 4) : c i = 0 := by
+    have h := hzero (Pi.single i 1) (by rw [span_range_d4TripledWeight_eq_top]; trivial)
+    simpa [hf, Pi.single_apply, Finset.mem_univ] using h
+  apply ((DynkinType.D 4).cartanBasis (by decide)).repr.injective
+  ext i
+  have h := hc (Fin.cast (rank_D 4) i)
+  simp only [c, Fin.cast_cast, Fin.cast_eq_self] at h
+  simpa only [map_zero, Finsupp.zero_apply] using h
+
 private theorem pinnedRep_injective :
     Function.Injective fun x : (DynkinType.D 4).lieAlgebra (by decide) => pinnedRep (ι ℚ x) := by
-  let := LieRingModule.compLieHom (Fin 24 → ℚ) pinnedAction
-  let := LieModule.compLieHom (Fin 24 → ℚ) pinnedAction
-  have hCartan : LieModule.IsFaithful ℚ ((DynkinType.D 4).cartanSubalgebra (by decide))
-      (Fin 24 → ℚ) := by
-    rw [LieModule.isFaithful_iff']
-    intro x hx
-    let c : Fin 4 → ℚ := fun i =>
-      ((DynkinType.D 4).cartanBasis (valid_D.mpr le_rfl)).repr x
-        (Fin.cast (rank_D 4).symm i)
-    have heval (a : Fin 24) : ∑ i, c i * (d4TripledWeight a i : ℚ) = 0 := by
-      have h := hx (Pi.single a 1)
-      have hact : pinnedRep (ι ℚ (x : (DynkinType.D 4).lieAlgebra (by decide)))
-          (Pi.single a 1) = 0 := by
-        rw [pinnedRep_ι]
-        exact h
-      have hscalar := congrFun hact a
-      rw [pinnedRep_cartan_single] at hscalar
-      exact hscalar
-    let f : (Fin 4 → ℤ) →ₗ[ℤ] ℚ :=
-      ∑ i, (c i) • ((Int.castAddHom ℚ).toIntLinearMap.comp (LinearMap.proj i))
-    have hf (μ : Fin 4 → ℤ) : f μ = ∑ i, c i * (μ i : ℚ) := by
-      simp [f]
-    have hzero : ∀ μ ∈ Submodule.span ℤ (Set.range d4TripledWeight), f μ = 0 :=
-      LinearMap.eqOn_span (f := f) (g := 0) (by rintro _ ⟨a, rfl⟩; simpa [hf] using heval a)
-    have hc (i : Fin 4) : c i = 0 := by
-      have h := hzero (Pi.single i 1) (by rw [span_range_d4TripledWeight_eq_top]; trivial)
-      simpa [hf, Pi.single_apply, Finset.mem_univ] using h
-    apply ((DynkinType.D 4).cartanBasis (by decide)).repr.injective
-    ext i
-    have h := hc (Fin.cast (rank_D 4) i)
-    simp only [c, Fin.cast_cast, Fin.cast_eq_self] at h
-    simpa only [map_zero, Finsupp.zero_apply] using h
-  let := hCartan
+  let pinnedLieRingModule := LieRingModule.compLieHom (Fin 24 → ℚ) pinnedAction
+  let pinnedLieModule := LieModule.compLieHom (Fin 24 → ℚ) pinnedAction
+  have hCartan := pinnedAction_cartan_isFaithful
   have hFaithful : LieModule.IsFaithful ℚ ((DynkinType.D 4).lieAlgebra (valid_D.mpr le_rfl))
       (Fin 24 → ℚ) :=
     isFaithful_of_isFaithful_cartanSubalgebra
@@ -281,14 +286,19 @@ Its character basis is the standard basis of fundamental weights. -/
 /-- The torus coordinates of the tripled datum are its original fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
     chevalleyDatum.coordinateWeight = fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i) := by
-  -- Normalize the datum's dependent carrier and rank before introducing its basis index.
-  dsimp only [chevalleyDatum, DynkinType.rank]
-  funext j
-  rw [ChevalleyDatum.coordinateWeight_def]
-  -- The lattice in the basis has the eta-reduced weight family; match that dependent type.
-  erw [Module.Basis.map_repr, LinearEquiv.trans_apply]
-  funext i
-  exact Pi.basisFun_repr ℤ (Fin 4) _ i
+  ext j i
+  have h := congrFun (chevalleyDatum.sum_coordinateWeight_smul j) i
+  simpa only [coe_chevalleyDatum_weightLatticeBasis, ← Pi.single_smul', smul_eq_mul,
+    mul_one, Finset.univ_sum_single, chevalleyDatum_weight] using h
+
+/-- The coordinate roots are the original roots in fundamental-weight coordinates. -/
+@[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin (DynkinType.D 4).numRoots) :
+    chevalleyDatum.coordinateRoot γ =
+      ((DynkinType.D 4).simplyConnectedRootDatum (by decide)).root γ := by
+  ext i
+  have h := congrFun (chevalleyDatum.sum_coordinateRoot_smul γ) i
+  simpa only [coe_chevalleyDatum_weightLatticeBasis, ← Pi.single_smul', smul_eq_mul,
+    mul_one, Finset.univ_sum_single] using h
 
 end
 
