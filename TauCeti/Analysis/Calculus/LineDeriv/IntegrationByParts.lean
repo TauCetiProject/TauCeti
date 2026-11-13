@@ -222,28 +222,28 @@ theorem integrable_fderiv_apply_of_hasCompactSupport (hu : ContDiff ℝ 1 u)
   ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
     (hsupp.fderiv_apply (𝕜 := ℝ) v)
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- A continuous weight times the square of a continuous linear functional of a compactly
 supported continuous map is integrable. -/
-theorem integrable_mul_sq_of_hasCompactSupport (L : V →L[ℝ] ℝ) {g : E → ℝ} (hg : Continuous g)
-    (hu : Continuous u) (hsupp : HasCompactSupport u) :
+theorem integrable_mul_sq_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ] (L : V →L[ℝ] ℝ)
+    {g : E → ℝ} (hg : Continuous g) (hu : Continuous u) (hsupp : HasCompactSupport u) :
     Integrable (fun x ↦ g x * L (u x) ^ 2) μ :=
   (hg.mul ((L.continuous.comp hu).pow 2)).integrable_of_hasCompactSupport <|
     hsupp.mono_of_eq_zero fun x hx ↦ by simp [hx]
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- The square of a continuous linear functional of a compactly supported continuous map is
 integrable. -/
-theorem integrable_sq_of_hasCompactSupport (L : V →L[ℝ] ℝ) (hu : Continuous u)
-    (hsupp : HasCompactSupport u) : Integrable (fun x ↦ L (u x) ^ 2) μ := by
+theorem integrable_sq_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ] (L : V →L[ℝ] ℝ)
+    (hu : Continuous u) (hsupp : HasCompactSupport u) : Integrable (fun x ↦ L (u x) ^ 2) μ := by
   simpa using integrable_mul_sq_of_hasCompactSupport (μ := μ) L continuous_const hu hsupp
     (g := fun _ ↦ 1)
 
-omit [FiniteDimensional ℝ E] in
+omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- For a compactly supported `C²` map `u` and a continuous linear functional `L`, the pairing
 `-L (∂_w ∂_v u) * L u` is integrable. -/
-theorem integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport (L : V →L[ℝ] ℝ)
-    (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
+theorem integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ]
+    (L : V →L[ℝ] ℝ) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
     Integrable (fun x ↦ -L (fderiv ℝ (fderiv ℝ u) x w v) * L (u x)) μ :=
   ((L.continuous.comp ((((hu.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
     one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)).neg.mul
@@ -289,11 +289,12 @@ theorem integral_sum_neg_fderiv_fderiv_apply_mul_eq_integral_sum_sq {κ : Type*}
 
 section Uncertainty
 
-omit [FiniteDimensional ℝ E] in
+omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- For a continuous bilinear form `B`, a continuous linear functional `ℓ` and a compactly
 supported `C¹` map `u`, the pairing `ℓ · B(u, ∂_v u)` is integrable. -/
-theorem integrable_mul_bilinear_fderiv_apply_of_hasCompactSupport (B : V →L[ℝ] V →L[ℝ] ℝ)
-    (ℓ : E →L[ℝ] ℝ) (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u) (v : E) :
+theorem integrable_mul_bilinear_fderiv_apply_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ]
+    (B : V →L[ℝ] V →L[ℝ] ℝ) (ℓ : E →L[ℝ] ℝ) (hu : ContDiff ℝ 1 u) (hsupp : HasCompactSupport u)
+    (v : E) :
     Integrable (fun x ↦ ℓ x * B (u x) (fderiv ℝ u x v)) μ :=
   Continuous.integrable_of_hasCompactSupport (ℓ.continuous.mul
     ((B.continuous.comp hu.continuous).clm_apply

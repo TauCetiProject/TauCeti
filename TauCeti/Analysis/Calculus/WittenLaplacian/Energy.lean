@@ -43,10 +43,12 @@ oscillator below by its ground state energy `|t aᵢ| ≥ t |aᵢ|`, so for ever
 `⟨Δ_t φ, φ⟩ ≥ ∑ s, μ(0, s) ∫ φ_s²`
 
 (`TauCeti.sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul`), where
-`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)` is the eigenvalue of the Gaussian ground state in degree `s`
-(`TauCeti.diagonalQuadraticWittenEigenvalue`). It vanishes in the degree `s₀ = {i | aᵢ < 0}` of
-the Morse index and is at least `2 t c` in every other degree when `c ≤ |aᵢ|` for all `i`, so the
-part of `φ` outside degree `s₀` costs energy at least `2 t c` times its squared norm
+`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)` (`TauCeti.diagonalQuadraticWittenEigenvalue`). For `t > 0` and every
+`aᵢ ≠ 0` it is the eigenvalue of the Gaussian ground state in degree `s`; otherwise it is only the
+coefficient of the bound, which can be negative for `t < 0`. It vanishes in the degree
+`s₀ = {i | aᵢ < 0}` of the Morse index and, for `t ≥ 0`, is at least `2 t c` in every other degree
+when `c ≤ |aᵢ|` for all `i`, so the part of `φ` outside degree `s₀` costs energy at least `2 t c`
+times its squared norm
 (`TauCeti.two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul`):
 the linear-in-`t` gap of the model. These are statements about the quadratic form on compactly
 supported smooth forms, not about the spectrum of a self-adjoint realization of `Δ_t`, and the
@@ -114,27 +116,6 @@ private theorem integrable_sum_hessian_lie_apply_mul (hf : ContDiff ℝ 2 f)
     |>.integrable_of_hasCompactSupport <| hφc.mono' <| Function.support_subset_iff'.2
       fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
 
-/-- Witten's frame formula, paired pointwise with the form itself. -/
-private theorem sum_euclideanWittenLaplacian_apply_mul (hf : ContDiff ℝ 2 f)
-    (hφ : ContDiff ℝ 2 φ) (t : ℝ) (x : ι → ℝ) :
-    ∑ s, euclideanWittenLaplacian f t φ x s * φ x s =
-      ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s +
-        t ^ 2 * ((∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2) +
-        t * ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
-          ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆
-            (φ x)) s * φ x s := by
-  rw [euclideanWittenLaplacian_apply hf.contDiffAt hφ.contDiffAt]
-  simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.neg_apply, add_mul,
-    Finset.sum_add_distrib, Finset.sum_mul, Finset.mul_sum]
-  congr 1
-  · congr 1
-    · exact Finset.sum_comm
-    · refine Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-      ring
-  · refine Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦
-      Finset.sum_congr rfl fun j _ ↦ ?_
-    ring
-
 /-- **The energy identity for the Witten Laplacian.** For a `C²` function `f` and a compactly
 supported `C²` form `φ` on `ℝ^ι`, integration by parts in Witten's frame formula gives
 
@@ -159,7 +140,7 @@ theorem integral_sum_euclideanWittenLaplacian_mul (hf : ContDiff ℝ 2 f) (hφ :
       (hφc.fderiv_apply (𝕜 := ℝ) (Pi.single i 1))
   have hG := integrable_sum_fderiv_sq_mul_sum_sq (μ := μ) hf hφ hφc
   have hK := integrable_sum_hessian_lie_apply_mul (μ := μ) hf hφ hφc
-  simp only [sum_euclideanWittenLaplacian_apply_mul hf hφ]
+  simp only [sum_euclideanWittenLaplacian_apply_mul hf.contDiffAt hφ.contDiffAt]
   have hAsum : Integrable (fun x ↦ ∑ i, ∑ s,
       -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s) μ :=
     integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun s _ ↦ hA i s
@@ -201,8 +182,9 @@ private theorem sum_euclideanWittenLaplacian_diagonalQuadratic_apply_mul (hφ : 
 /-- **The harmonic-oscillator lower bound.** For the diagonal quadratic function
 `f = ∑ᵢ aᵢ xᵢ² / 2`, a real `t` and a compactly supported `C²` form `φ`, the quadratic form of the
 Witten Laplacian is at least `∑ s, μ(0, s) ∫ φ_s²`, where `φ_s` is the coefficient of `dx^s` and
-`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)` is the eigenvalue of the Gaussian ground state in degree `s`. The
-bound is informative for `t ≥ 0`, where every `μ(0, s)` is nonnegative. -/
+`μ(0, s) = t ∑ᵢ (|aᵢ| ± aᵢ)`. For `t > 0` and every `aᵢ ≠ 0`, `μ(0, s)` is the eigenvalue of the
+Gaussian ground state in degree `s`; for other parameters it is only the coefficient of the bound.
+The bound is informative for `t ≥ 0`, where every `μ(0, s)` is nonnegative. -/
 theorem sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul
     (a : ι → ℝ) (t : ℝ) (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∑ s, diagonalQuadraticWittenEigenvalue a t 0 s * ∫ x, φ x s ^ 2 ∂μ ≤
@@ -249,8 +231,9 @@ theorem sum_mul_integral_le_integral_sum_euclideanWittenLaplacian_diagonalQuadra
   linarith
 
 /-- The quadratic form of the Witten Laplacian of a diagonal quadratic function is nonnegative
-on compactly supported `C²` forms, for every real `t`. For `t ≥ 0` every ground-state eigenvalue
-`μ(0, s)` is nonnegative; for `t ≤ 0` the quadratic form is that of `-a` with parameter `-t`. -/
+on compactly supported `C²` forms, for every real `t`. For `t ≥ 0` every coefficient `μ(0, s)` of
+the harmonic-oscillator lower bound is nonnegative; for `t ≤ 0` the quadratic form is that of
+`-a` with parameter `-t`. -/
 theorem integral_sum_euclideanWittenLaplacian_diagonalQuadratic_mul_nonneg (a : ι → ℝ) (t : ℝ)
     (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     0 ≤ ∫ x, ∑ s, euclideanWittenLaplacian (diagonalQuadratic a) t φ x s * φ x s ∂μ := by
