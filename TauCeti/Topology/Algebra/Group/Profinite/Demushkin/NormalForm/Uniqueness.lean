@@ -113,16 +113,16 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n), e r = r' := by
   have hr := hG.mem_proPFrattini_of_presentedProP_singleton
   have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
-  rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hr hG with
-    hrange | ⟨hn₃, f, hf, hrange⟩
+  rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hG with
+    hrange | ⟨-, f, hf, hrange⟩
   · obtain ⟨e, he⟩ :=
       exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr hG hrange
     obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr'
       hG' (h.symm.trans hrange)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
   · obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃ hr hG hf hrange
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hr hG hf hrange
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn
       hr' hG' hf (h.symm.trans hrange)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
 
