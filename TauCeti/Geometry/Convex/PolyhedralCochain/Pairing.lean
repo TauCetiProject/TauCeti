@@ -76,6 +76,15 @@ theorem isWeaklyTransverse_of_disjoint (σ : OrientedCell h k) {v : Fin (k + 1) 
   ⟨hv.mono_right (intrinsicFrontier_subset σ.rational.isClosed),
     fun ⟨_, hx, hy⟩ => (Set.disjoint_left.mp hv hx hy).elim⟩
 
+/-- A test whose vector span complements the cell direction is affinely independent. -/
+theorem affineIndependent_of_isCompl (σ : OrientedCell h k) {v : Fin (k + 1) → V}
+    (hc : IsCompl (affineSpan ℝ σ.carrier).direction (vectorSpan ℝ (range v))) :
+    AffineIndependent ℝ v := by
+  have := h.finiteDimensional
+  exact (affineIndependent_iff_finrank_vectorSpan_eq ℝ v (Fintype.card_fin (k + 1))).mpr
+    (((affineSpan ℝ σ.carrier).direction.quotientEquivOfIsCompl _ hc).symm.finrank_eq.trans
+      σ.finrank_quotient_direction)
+
 /-- A test whose vector span complements the cell direction is weakly transverse if it avoids
 the cell's relative frontier. -/
 theorem isWeaklyTransverse_of_isCompl (σ : OrientedCell h k) {v : Fin (k + 1) → V}
@@ -83,12 +92,7 @@ theorem isWeaklyTransverse_of_isCompl (σ : OrientedCell h k) {v : Fin (k + 1) �
     (hf : Disjoint (convexHull ℝ (range v)) (intrinsicFrontier ℝ σ.carrier)) :
     σ.IsWeaklyTransverse v := by
   have := h.finiteDimensional
-  have hdim := Submodule.finrank_add_eq_of_isCompl hc
-  rw [← Submodule.finrank_quotient_add_finrank (affineSpan ℝ σ.carrier).direction,
-    σ.finrank_quotient_direction] at hdim
-  have hi : AffineIndependent ℝ v :=
-    (affineIndependent_iff_finrank_vectorSpan_eq ℝ v (Fintype.card_fin (k + 1))).mpr (by omega)
-  let s : Affine.Simplex ℝ V k := ⟨v, hi⟩
+  let s : Affine.Simplex ℝ V k := ⟨v, σ.affineIndependent_of_isCompl hc⟩
   refine ⟨hf, fun _ => ?_⟩
   apply (σ.isConormal.evalSign_ne_zero_iff
     (σ.finrank_quotient_direction.trans (Fintype.card_fin k).symm) _).mp
@@ -99,7 +103,7 @@ theorem isWeaklyTransverse_of_isCompl (σ : OrientedCell h k) {v : Fin (k + 1) �
   exact s.conormal_apply_ne_zero hc
     (Module.Ray.isConormal_iff.mp σ.isConormal) σ.orientation.someVector_ne_zero
 
-/-- The affine span of a weakly transverse test meeting a cell complements the cell's
+/-- The vector span of a weakly transverse test meeting a cell complements the cell's
 direction. -/
 theorem IsWeaklyTransverse.isCompl {σ : OrientedCell h k} {v : Fin (k + 1) → V}
     (hv : σ.IsWeaklyTransverse v)
@@ -132,12 +136,21 @@ theorem IsWeaklyTransverse.isCompl {σ : OrientedCell h k} {v : Fin (k + 1) → 
 theorem IsWeaklyTransverse.affineIndependent {σ : OrientedCell h k} {v : Fin (k + 1) → V}
     (hv : σ.IsWeaklyTransverse v)
     (hmeet : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty) :
-    AffineIndependent ℝ v := by
-  have := h.finiteDimensional
-  have hdim := Submodule.finrank_add_eq_of_isCompl (hv.isCompl hmeet)
-  rw [← Submodule.finrank_quotient_add_finrank (affineSpan ℝ σ.carrier).direction,
-    σ.finrank_quotient_direction] at hdim
-  exact (affineIndependent_iff_finrank_vectorSpan_eq ℝ v (Fintype.card_fin (k + 1))).mpr (by omega)
+    AffineIndependent ℝ v :=
+  σ.affineIndependent_of_isCompl (hv.isCompl hmeet)
+
+/-- A test is weakly transverse exactly when it avoids the cell's relative frontier and its
+vector span complements the cell's direction whenever the test meets the cell. -/
+theorem isWeaklyTransverse_iff_isCompl (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
+    σ.IsWeaklyTransverse v ↔
+      Disjoint (convexHull ℝ (range v)) (intrinsicFrontier ℝ σ.carrier) ∧
+        ((convexHull ℝ (range v) ∩ σ.carrier).Nonempty →
+          IsCompl (affineSpan ℝ σ.carrier).direction (vectorSpan ℝ (range v))) := by
+  refine ⟨fun hv => ⟨hv.disjoint_intrinsicFrontier, hv.isCompl⟩, fun ⟨hf, hc⟩ => ?_⟩
+  by_cases hmeet : (convexHull ℝ (range v) ∩ σ.carrier).Nonempty
+  · exact σ.isWeaklyTransverse_of_isCompl (hc hmeet) hf
+  · exact σ.isWeaklyTransverse_of_disjoint
+      (disjoint_iff_inter_eq_empty.mpr (not_nonempty_iff_eq_empty.mp hmeet))
 
 /-- Weak transversality is preserved by re-indexing the vertices. -/
 theorem IsWeaklyTransverse.comp_equiv (hv : σ.IsWeaklyTransverse v)
@@ -153,6 +166,7 @@ theorem IsWeaklyTransverse.comp_equiv (hv : σ.IsWeaklyTransverse v)
     exact disjoint_iff_inter_eq_empty.mpr (not_nonempty_iff_eq_empty.mp hmeet)
 
 /-- Weak transversality is independent of the vertex ordering. -/
+@[simp]
 theorem isWeaklyTransverse_comp_equiv_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     (e : Fin (k + 1) ≃ Fin (k + 1)) :
     σ.IsWeaklyTransverse (v ∘ e) ↔ σ.IsWeaklyTransverse v := by
@@ -173,6 +187,7 @@ theorem isWeaklyTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) 
     exact hv.linearIndependent
 
 /-- A point test is weakly transverse exactly when it avoids the cell's relative frontier. -/
+@[simp]
 theorem isWeaklyTransverse_singleton_iff (σ : OrientedCell h 0) (x : V) :
     σ.IsWeaklyTransverse ![x] ↔ x ∉ intrinsicFrontier ℝ σ.carrier := by
   constructor
@@ -184,12 +199,13 @@ theorem isWeaklyTransverse_singleton_iff (σ : OrientedCell h 0) (x : V) :
     simpa [Matrix.range_cons, Set.disjoint_singleton_left] using hx
 
 /-- Weak transversality of a segment means avoiding the cell's relative frontier and having
-a nonzero edge vector in the normal quotient when the segment meets the cell. -/
+its edge vector outside the cell's direction when the segment meets the cell. -/
 theorem isWeaklyTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
     σ.IsWeaklyTransverse ![a, b] ↔
       Disjoint (segment ℝ a b) (intrinsicFrontier ℝ σ.carrier) ∧
         ((segment ℝ a b ∩ σ.carrier).Nonempty →
-          (affineSpan ℝ σ.carrier).direction.mkQ (b - a) ≠ 0) := by
+          b - a ∉ (affineSpan ℝ σ.carrier).direction) := by
+  rw [← (affineSpan ℝ σ.carrier).direction.ker_mkQ, LinearMap.mem_ker]
   have hhull : convexHull ℝ (range ![a, b]) = segment ℝ a b := by
     rw [Matrix.range_cons_cons_empty, convexHull_pair]
   constructor
@@ -214,11 +230,31 @@ theorem isWeaklyTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
 /-- Reversing a segment preserves weak transversality. -/
 theorem isWeaklyTransverse_pair_swap_iff (σ : OrientedCell h 1) (a b : V) :
     σ.IsWeaklyTransverse ![b, a] ↔ σ.IsWeaklyTransverse ![a, b] := by
-  have hswap : (![a, b] : Fin 2 → V) ∘ Equiv.swap (0 : Fin 2) 1 = ![b, a] := by
-    funext j
-    fin_cases j <;> rfl
-  simpa only [hswap] using
-    (isWeaklyTransverse_comp_equiv_iff σ ![a, b] (Equiv.swap (0 : Fin 2) 1))
+  simpa only [Matrix.cons_cons_comp_swap_zero_one] using
+    σ.isWeaklyTransverse_comp_equiv_iff ![a, b] (Equiv.swap 0 1)
+
+/-- An affinely independent subsimplex of a weakly transverse test is weakly transverse.
+Affine independence is needed only when the subsimplex meets the cell. -/
+theorem IsWeaklyTransverse.of_subset_convexHull {σ : OrientedCell h k}
+    {v w : Fin (k + 1) → V} (hv : σ.IsWeaklyTransverse v)
+    (hw : convexHull ℝ (range w) ⊆ convexHull ℝ (range v))
+    (hi : (convexHull ℝ (range w) ∩ σ.carrier).Nonempty → AffineIndependent ℝ w) :
+    σ.IsWeaklyTransverse w := by
+  refine (σ.isWeaklyTransverse_iff_isCompl w).mpr
+    ⟨hv.disjoint_intrinsicFrontier.mono_left hw, fun hm => ?_⟩
+  have hc := hv.isCompl (hm.mono (inter_subset_inter_left _ hw))
+  have hle : vectorSpan ℝ (range w) ≤ vectorSpan ℝ (range v) := by
+    have hle' := AffineSubspace.direction_le (affineSpan_mono ℝ hw)
+    rw [affineSpan_convexHull, direction_affineSpan,
+      affineSpan_convexHull, direction_affineSpan] at hle'
+    exact hle'
+  have hdim : Module.finrank ℝ (vectorSpan ℝ (range w)) =
+      Module.finrank ℝ (vectorSpan ℝ (range v)) := by
+    rw [(hi hm).finrank_vectorSpan (Fintype.card_fin (k + 1)),
+      (σ.affineIndependent_of_isCompl hc).finrank_vectorSpan (Fintype.card_fin (k + 1))]
+  have heq := Submodule.eq_of_le_of_finrank_le hle hdim.ge
+  rw [heq]
+  exact hc
 
 /-- Restricting a weakly transverse segment to a nontrivial parameter interval preserves
 weak transversality, including when a new endpoint lies on the cell. The parameters
@@ -228,35 +264,28 @@ theorem IsWeaklyTransverse.subsegment {σ : OrientedCell h 1} {x y a b : V}
     (hs : s ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) (hsu : s ≠ u)
     (ha : a = AffineMap.lineMap x y s) (hb : b = AffineMap.lineMap x y u) :
     σ.IsWeaklyTransverse ![a, b] := by
-  have hseg : segment ℝ a b ⊆ segment ℝ x y := by
-    apply (convex_segment x y).segment_subset
-    · rw [ha, segment_eq_image_lineMap]
-      exact ⟨s, hs, rfl⟩
-    · rw [hb, segment_eq_image_lineMap]
-      exact ⟨u, hu, rfl⟩
-  have hhull : convexHull ℝ (range ![a, b]) ⊆ convexHull ℝ (range ![x, y]) := by
-    simpa only [Matrix.range_cons_cons_empty, convexHull_pair] using hseg
+  have hseg : segment ℝ a b ⊆ segment ℝ x y :=
+    (convex_segment x y).segment_subset (ha ▸ lineMap_mem_segment ℝ x y hs)
+      (hb ▸ lineMap_mem_segment ℝ x y hu)
   have hdiff : b - a = (u - s) • (y - x) := by
     rw [ha, hb, AffineMap.lineMap_apply_module', AffineMap.lineMap_apply_module']
     module
-  refine ⟨hv.disjoint_intrinsicFrontier.mono_left hhull, fun hm => ?_⟩
-  have hlin := hv.linearIndependent (hm.mono (inter_subset_inter_left _ hhull))
-  rw [linearIndependent_unique_iff] at hlin ⊢
-  simp only [Function.comp_apply, Fin.default_eq_zero, Fin.succ_zero_eq_one,
-    Matrix.cons_val_one, Matrix.cons_val_zero] at hlin ⊢
-  rw [hdiff, map_smul, smul_ne_zero_iff]
-  exact ⟨sub_ne_zero.mpr hsu.symm, hlin⟩
+  rw [σ.isWeaklyTransverse_pair_iff] at hv ⊢
+  refine ⟨hv.1.mono_left hseg, fun hm => ?_⟩
+  intro hmem
+  have hscaled : (u - s) • (y - x) ∈ (affineSpan ℝ σ.carrier).direction := hdiff ▸ hmem
+  exact hv.2 (hm.mono (inter_subset_inter_left _ hseg))
+    ((Submodule.smul_mem_iff _ (sub_ne_zero.mpr hsu.symm)).mp hscaled)
 
 /-- Any nondegenerate subsegment of a weakly transverse segment is weakly transverse. -/
 theorem IsWeaklyTransverse.of_mem_segment {σ : OrientedCell h 1} {x y a b : V}
     (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y)
     (hb : b ∈ segment ℝ x y) (hab : a ≠ b) : σ.IsWeaklyTransverse ![a, b] := by
-  rw [segment_eq_image_lineMap] at ha hb
-  obtain ⟨s, hs, rfl⟩ := ha
-  obtain ⟨u, hu, rfl⟩ := hb
-  apply hv.subsegment hs hu (fun hsu => ?_) rfl rfl
-  subst u
-  exact hab rfl
+  apply hv.of_subset_convexHull
+  · rw [Matrix.range_cons_cons_empty, Matrix.range_cons_cons_empty,
+      convexHull_pair, convexHull_pair]
+    exact (convex_segment x y).segment_subset ha hb
+  · exact fun _ => affineIndependent_of_ne ℝ hab
 
 /-- A weakly transverse test whose proper parameter faces all avoid the cell. -/
 structure IsTransverse (σ : OrientedCell h k) (v : Fin (k + 1) → V) : Prop
@@ -281,9 +310,24 @@ theorem isTransverse_of_isCompl (σ : OrientedCell h k) {v : Fin (k + 1) → V}
     σ.IsTransverse v :=
   ⟨σ.isWeaklyTransverse_of_isCompl hc hf, hb⟩
 
-/-- Every vertex of a transverse test avoids the cell. -/
-theorem IsTransverse.notMem_carrier {σ : OrientedCell h (k + 1)} {v : Fin (k + 2) → V}
-    (hv : σ.IsTransverse v) (j : Fin (k + 2)) : v j ∉ σ.carrier := by
+/-- A test is transverse exactly when it avoids the cell's relative frontier, its vector span
+complements the cell's direction whenever it meets the cell, and its proper faces avoid the cell. -/
+theorem isTransverse_iff_isCompl (σ : OrientedCell h k) (v : Fin (k + 1) → V) :
+    σ.IsTransverse v ↔
+      Disjoint (convexHull ℝ (range v)) (intrinsicFrontier ℝ σ.carrier) ∧
+      ((convexHull ℝ (range v) ∩ σ.carrier).Nonempty →
+        IsCompl (affineSpan ℝ σ.carrier).direction (vectorSpan ℝ (range v))) ∧
+      ∀ j : Fin (k + 1), Disjoint (convexHull ℝ (range (v ∘ j.succAbove))) σ.carrier := by
+  constructor
+  · intro hv
+    have hw := (σ.isWeaklyTransverse_iff_isCompl v).mp hv.toIsWeaklyTransverse
+    exact ⟨hw.1, hw.2, hv.disjoint_faces⟩
+  · rintro ⟨hf, hc, hb⟩
+    exact ⟨(σ.isWeaklyTransverse_iff_isCompl v).mpr ⟨hf, hc⟩, hb⟩
+
+/-- Every vertex of a positive-dimensional transverse test avoids the cell. -/
+theorem IsTransverse.notMem_carrier [NeZero k] {σ : OrientedCell h k} {v : Fin (k + 1) → V}
+    (hv : σ.IsTransverse v) (j : Fin (k + 1)) : v j ∉ σ.carrier := by
   obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq (x := j) (y := j.succAbove 0)
     (Fin.succAbove_ne j 0).symm
   apply (hv.disjoint_faces (j.succAbove 0)).notMem_of_mem_left
@@ -294,29 +338,12 @@ theorem IsTransverse.notMem_carrier {σ : OrientedCell h (k + 1)} {v : Fin (k + 
 theorem IsTransverse.comp_equiv (hv : σ.IsTransverse v)
     (e : Fin (k + 1) ≃ Fin (k + 1)) : σ.IsTransverse (v ∘ e) := by
   refine ⟨hv.toIsWeaklyTransverse.comp_equiv e, fun j => ?_⟩
-  have hface : range ((v ∘ e) ∘ j.succAbove) = range (v ∘ (e j).succAbove) := by
-    ext x
-    constructor
-    · rintro ⟨l, rfl⟩
-      have hn : e (j.succAbove l) ≠ e j := e.injective.ne (Fin.succAbove_ne j l)
-      obtain ⟨l', hl'⟩ := Fin.exists_succAbove_eq hn
-      refine ⟨l', ?_⟩
-      simp only [Function.comp_apply] at hl' ⊢
-      exact congrArg v hl'
-    · rintro ⟨l, rfl⟩
-      have hn : e.symm ((e j).succAbove l) ≠ j := by
-        intro hn
-        have hi := congrArg e hn
-        simp only [Equiv.apply_symm_apply] at hi
-        exact Fin.succAbove_ne (e j) l hi
-      obtain ⟨l', hl'⟩ := Fin.exists_succAbove_eq hn
-      refine ⟨l', ?_⟩
-      simp only [Function.comp_apply] at hl' ⊢
-      rw [hl', Equiv.apply_symm_apply]
-  rw [hface]
+  rw [Set.range_comp, Set.image_comp, Fin.range_succAbove, e.image_compl, Set.image_singleton,
+    ← Fin.range_succAbove, ← Set.range_comp]
   exact hv.disjoint_faces (e j)
 
 /-- Transversality is independent of the vertex ordering. -/
+@[simp]
 theorem isTransverse_comp_equiv_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     (e : Fin (k + 1) ≃ Fin (k + 1)) :
     σ.IsTransverse (v ∘ e) ↔ σ.IsTransverse v := by
@@ -325,6 +352,7 @@ theorem isTransverse_comp_equiv_iff (σ : OrientedCell h k) (v : Fin (k + 1) →
     hv.comp_equiv e.symm
 
 /-- A point test is transverse exactly when it avoids the cell's relative frontier. -/
+@[simp]
 theorem isTransverse_singleton_iff (σ : OrientedCell h 0) (x : V) :
     σ.IsTransverse ![x] ↔ x ∉ intrinsicFrontier ℝ σ.carrier := by
   rw [← isWeaklyTransverse_singleton_iff]
@@ -339,8 +367,8 @@ theorem isTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
   constructor
   · intro hv
     refine ⟨hv.toIsWeaklyTransverse, ?_, ?_⟩
-    · simpa using hv.notMem_carrier (k := 0) (σ := σ) (0 : Fin 2)
-    · simpa using hv.notMem_carrier (k := 0) (σ := σ) (1 : Fin 2)
+    · simpa using hv.notMem_carrier 0
+    · simpa using hv.notMem_carrier 1
   · rintro ⟨hv, ha, hb⟩
     refine ⟨hv, fun j => ?_⟩
     rw [Set.range_unique, convexHull_singleton, Set.disjoint_singleton_left]
@@ -351,11 +379,8 @@ theorem isTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
 /-- Reversing a segment preserves transversality. -/
 theorem isTransverse_pair_swap_iff (σ : OrientedCell h 1) (a b : V) :
     σ.IsTransverse ![b, a] ↔ σ.IsTransverse ![a, b] := by
-  have hswap : (![a, b] : Fin 2 → V) ∘ Equiv.swap (0 : Fin 2) 1 = ![b, a] := by
-    funext j
-    fin_cases j <;> rfl
-  simpa only [hswap] using
-    (isTransverse_comp_equiv_iff σ ![a, b] (Equiv.swap (0 : Fin 2) 1))
+  simpa only [Matrix.cons_cons_comp_swap_zero_one] using
+    σ.isTransverse_comp_equiv_iff ![a, b] (Equiv.swap 0 1)
 
 /-- Reversing a cell's orientation preserves transversality of an affine test simplex. -/
 @[simp]
@@ -369,24 +394,26 @@ theorem isTransverse_reverse_iff (σ : OrientedCell h k) (v : Fin (k + 1) → V)
     exact ⟨(σ.isWeaklyTransverse_reverse_iff v).mpr hv.toIsWeaklyTransverse,
       by simpa only [reverse_carrier] using hv.disjoint_faces⟩
 
+/-- An affinely independent subtest of a transverse test is transverse when its proper
+parameter faces avoid the cell. -/
+theorem IsTransverse.of_subset_convexHull {σ : OrientedCell h k}
+    {v w : Fin (k + 1) → V} (hv : σ.IsTransverse v)
+    (hw : convexHull ℝ (range w) ⊆ convexHull ℝ (range v))
+    (hi : (convexHull ℝ (range w) ∩ σ.carrier).Nonempty → AffineIndependent ℝ w)
+    (hb : ∀ j : Fin (k + 1), Disjoint (convexHull ℝ (range (w ∘ j.succAbove))) σ.carrier) :
+    σ.IsTransverse w :=
+  ⟨hv.toIsWeaklyTransverse.of_subset_convexHull hw hi, hb⟩
+
 /-- Restricting a weakly transverse segment to a segment whose endpoints avoid the cell
 gives a transverse segment. The new segment may be stationary. -/
 theorem IsWeaklyTransverse.isTransverse_of_mem_segment {σ : OrientedCell h 1} {x y a b : V}
     (hv : σ.IsWeaklyTransverse ![x, y]) (ha : a ∈ segment ℝ x y) (hb : b ∈ segment ℝ x y)
     (haσ : a ∉ σ.carrier) (hbσ : b ∉ σ.carrier) :
     σ.IsTransverse ![a, b] := by
-  rw [segment_eq_image_lineMap] at ha hb
-  obtain ⟨s, hs, rfl⟩ := ha
-  obtain ⟨u, hu, rfl⟩ := hb
-  by_cases hsu : s = u
-  · subst u
-    exact σ.isTransverse_of_disjoint (by
+  rcases eq_or_ne a b with rfl | hab
+  · exact σ.isTransverse_of_disjoint (by
       simpa [Matrix.range_cons_cons_empty, Set.disjoint_singleton_left] using haσ)
-  · refine ⟨hv.subsegment hs hu hsu rfl rfl, fun j => ?_⟩
-    rw [Set.range_unique, convexHull_singleton, Set.disjoint_singleton_left]
-    fin_cases j
-    · simpa using hbσ
-    · simpa using haσ
+  · exact (σ.isTransverse_pair_iff a b).mpr ⟨hv.of_mem_segment ha hb hab, haσ, hbσ⟩
 
 /-- A weakly transverse test meets the affine span in at most one point if it meets
 the cell. -/
