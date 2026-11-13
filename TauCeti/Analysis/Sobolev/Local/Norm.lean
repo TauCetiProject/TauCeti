@@ -25,8 +25,9 @@ supplies its unfolding, its value through a given weak derivative on an open set
 `W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
-zero norm, monotonicity in the set, invariance under almost-everywhere change, the triangle
-inequality and the operator-norm bound under a continuous linear map of the codomain.
+zero norm, monotonicity in the set and in the derivative order, invariance under
+almost-everywhere change, the triangle inequality and the operator-norm bound under a continuous
+linear map of the codomain.
 
 ## References
 
@@ -97,6 +98,17 @@ theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp 
     gcongr ?_ + ?_
     · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
     · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
+
+/-- The `W^{k,p}(U)` norm increases with the derivative order. -/
+theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
+    eLpNormWkp p U l f ≤ eLpNormWkp p U k f := by
+  induction l generalizing k F with
+  | zero => exact eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm
+  | succ l ih =>
+    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    rw [eLpNormWkp_succ, eLpNormWkp_succ]
+    gcongr
+    exact ih (by omega)
 
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
