@@ -36,7 +36,14 @@ set to the manifold chart is stated separately, so that the converging families 
 
 ## Main declarations
 
-* `TauCeti.IsAdaptedChart`: the properties of an adapted chart listed above.
+* `TauCeti.IsAdaptedChart`: the properties of an adapted chart listed above, for the image
+  `ι (N)` or any other subset of `M`.
+* `TauCeti.IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective`,
+  `TauCeti.IsMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt`: the
+  hypotheses of the model construction, read in the extended charts.
+* `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt` and
+  `Topology.IsInducing.exists_isOpen_extChartAt_zero_mem`: the coordinate domain of `ι` read in
+  charts, and the open set cutting the source of a chart down along an embedding.
 * `TauCeti.exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension`: the adapted chart built
   from a model adapted extension.
 * `TauCeti.IsTotallyRealEmbedding.exists_adaptedChart`: the adapted chart.
@@ -64,27 +71,27 @@ variable {E H M F H' N : Type*}
   {I' : ModelWithCorners ℝ F H'} [I'.Boundaryless] [TopologicalSpace N] [ChartedSpace H' N]
   {ℓ : ℕ∞} {k : ℕ∞ω} {J : ContMDiffAlmostComplexStructure I ℓ M} {ι : N → M}
 
-variable (J ι) in
-/-- **Adapted charts along a map.** A chart `ψ` of `M` with values in `F × F` is adapted to
-`ι : N → M` and the `C^ℓ` almost complex structure `J` when
+variable (J) in
+/-- **Adapted charts along a subset.** A chart `ψ` of `M` with values in `F × F` is adapted to
+a subset `s ⊆ M`, typically the image of a totally real embedding, and to the `C^ℓ` almost
+complex structure `J` when
 
 * `ψ` is `C^ℓ` with `C^ℓ` inverse;
-* `ψ` flattens `ι`: a point of the source of `ψ` lies on `ι (N)` exactly when its image lies on
+* `ψ` flattens `s`: a point of the source of `ψ` lies in `s` exactly when its image lies on
   the zero section `F × {0}`;
-* at points of `ι (N)` the derivative of `ψ` intertwines `J` with the standard structure
+* at points of `s` the derivative of `ψ` intertwines `J` with the standard structure
   `(v, w) ↦ (-w, v)`;
 * the pushed-forward structure `ψ_* J = dψ ∘ J ∘ dψ⁻¹` is `C^(ℓ-1)` on the target of `ψ` and
   standard on its zero section. -/
-structure IsAdaptedChart (ψ : OpenPartialHomeomorph M (F × F)) : Prop where
+structure IsAdaptedChart (s : Set M) (ψ : OpenPartialHomeomorph M (F × F)) : Prop where
   /-- The chart is `C^ℓ` on its source. -/
   contMDiffOn : ContMDiffOn I 𝓘(ℝ, F × F) ℓ ψ ψ.source
   /-- The inverse chart is `C^ℓ` on its target. -/
   contMDiffOn_symm : ContMDiffOn 𝓘(ℝ, F × F) I ℓ ψ.symm ψ.target
-  /-- The chart flattens the image of `ι` onto the zero section. -/
-  isImage : ψ.IsImage (range ι) {p | p.2 = 0}
-  /-- Along the image of `ι` the derivative of the chart turns `J` into the standard
-  structure. -/
-  mfderiv_comp_toEndomorphism : ∀ x ∈ ψ.source ∩ range ι,
+  /-- The chart flattens `s` onto the zero section. -/
+  isImage : ψ.IsImage s {p | p.2 = 0}
+  /-- Along `s` the derivative of the chart turns `J` into the standard structure. -/
+  mfderiv_comp_toEndomorphism : ∀ x ∈ ψ.source ∩ s,
     (mfderiv I 𝓘(ℝ, F × F) ψ x).comp (J.toEndomorphism x) =
       ((-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F)).comp
         (mfderiv I 𝓘(ℝ, F × F) ψ x)
@@ -95,56 +102,80 @@ structure IsAdaptedChart (ψ : OpenPartialHomeomorph M (F × F)) : Prop where
   chartPushforward_of_snd_eq_zero : ∀ p ∈ ψ.target, p.2 = 0 →
     J.chartPushforward ψ p = (-ContinuousLinearMap.snd ℝ F F).prod (ContinuousLinearMap.fst ℝ F F)
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ F] in
-/-- Read in the extended charts at `x₀` and `ι x₀`, the derivative at `x₀` of a map that is
-differentiable at `x₀` is its manifold derivative. -/
-private theorem fderiv_writtenInExtChartAt_eq_mfderiv {x₀ : N}
-    (hι : MDifferentiableAt I' I ι x₀) :
-    fderiv ℝ (writtenInExtChartAt I' I x₀ ι) (extChartAt I' x₀ x₀) = mfderiv I' I ι x₀ :=
-  (hι.mfderiv_eq_fderiv_extChartAt_conj rfl).symm
-
-omit [I.Boundaryless] in
-/-- Read in the extended charts at `x₀` and `ι x₀`, the derivative at `x₀` of a `C^k` totally
-real embedding, `1 ≤ k`, is injective. -/
-theorem IsTotallyRealEmbedding.injective_fderiv_writtenInExtChartAt [IsManifold I' k N]
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] in
+/-- Read in the extended charts at `x₀` and `ι x₀`, the derivative at `x₀` of a maximal totally
+real map of half the ambient dimension, differentiable at `x₀`, is injective. -/
+theorem IsMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective
     {A : ∀ y : M, AlmostComplexStructure (TangentSpace I y)}
-    (h : IsTotallyRealEmbedding I' I k A ι) (hk : 1 ≤ k) (x₀ : N) :
+    (h : IsMaximalTotallyRealMap I' I A ι) (hdim : 2 * Module.finrank ℝ F = Module.finrank ℝ E)
+    {x₀ : N} (hι : MDifferentiableAt I' I ι x₀) :
     Function.Injective (fderiv ℝ (writtenInExtChartAt I' I x₀ ι) (extChartAt I' x₀ x₀)) := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
-  have : IsManifold I' 1 N := IsManifold.of_le hk
-  rw [fderiv_writtenInExtChartAt_eq_mfderiv
-    ((h.isSmoothEmbedding.contMDiff.of_le hk x₀).mdifferentiableAt one_ne_zero)]
-  exact h.mfderiv_injective x₀
+  rw [writtenInExtChartAt, ← hι.mfderiv_eq_fderiv_extChartAt_conj rfl]
+  exact h.mfderiv_injective hdim x₀
 
-omit [I.Boundaryless] in
-/-- Read in the extended charts at `x₀` and `ι x₀`, the tangent image at `x₀` of a `C^k`
-totally real embedding for `J`, `1 ≤ k`, is maximal totally real for `J` read in the chart at
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ F] in
+/-- Read in the extended charts at `x₀` and `ι x₀`, the tangent image at `x₀` of a maximal totally
+real map for `J`, differentiable at `x₀`, is maximal totally real for `J` read in the chart at
 `ι x₀`. -/
-theorem IsTotallyRealEmbedding.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt
-    [IsManifold I' k N] (h : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι)
-    (hk : 1 ≤ k) (x₀ : N) :
+theorem IsMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt
+    (h : IsMaximalTotallyRealMap I' I J.almostComplexStructureAt ι) {x₀ : N}
+    (hι : MDifferentiableAt I' I ι x₀) :
     IsMaximalTotallyReal
       (J.inChart (ι x₀) (writtenInExtChartAt I' I x₀ ι (extChartAt I' x₀ x₀))).toLinearMap
       (fderiv ℝ (writtenInExtChartAt I' I x₀ ι) (extChartAt I' x₀ x₀)).range := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
-  have : IsManifold I' 1 N := IsManifold.of_le hk
-  have hγx₀ : writtenInExtChartAt I' I x₀ ι (extChartAt I' x₀ x₀) = extChartAt I (ι x₀) (ι x₀) := by
-    simp only [writtenInExtChartAt, Function.comp_apply,
-      (extChartAt I' x₀).left_inv (mem_extChartAt_source x₀)]
-  rw [fderiv_writtenInExtChartAt_eq_mfderiv
-    ((h.isSmoothEmbedding.contMDiff.of_le hk x₀).mdifferentiableAt one_ne_zero), hγx₀,
-    J.inChart_extChartAt_self]
-  have := isMaximalTotallyRealMap_iff.1 h.isMaximalTotallyRealMap x₀
+  rw [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x₀), J.inChart_extChartAt_self,
+    writtenInExtChartAt, ← hι.mfderiv_eq_fderiv_extChartAt_conj rfl]
+  have := isMaximalTotallyRealMap_iff.1 h x₀
   rwa [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap] at this
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ F] in
+/-- **The coordinate domain of a map read in charts.** For a `C^n` map `ι` and the extended charts
+`φ` at `x₀` and `χ` at `ι x₀`, the chart points `z` with `φ⁻¹ z ∈ ι⁻¹ (χ.source)` form an open
+neighbourhood of `φ x₀` on which `χ ∘ ι ∘ φ⁻¹` is `C^n` with values in the target of `χ`. -/
+theorem isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt {n : ℕ∞ω} [IsManifold I n M]
+    [IsManifold I' n N] (hι : ContMDiff I' I n ι) (x₀ : N) :
+    IsOpen ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
+      extChartAt I' x₀ x₀ ∈ (extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source) ∧
+      ContDiffOn ℝ n (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ∧
+      MapsTo (writtenInExtChartAt I' I x₀ ι) ((extChartAt I' x₀).target ∩
+        (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source))
+        (extChartAt I (ι x₀)).target := by
+  refine ⟨(continuousOn_extChartAt_symm x₀).isOpen_inter_preimage (isOpen_extChartAt_target x₀)
+      ((isOpen_extChartAt_source (ι x₀)).preimage hι.continuous),
+    ⟨mem_extChartAt_target x₀, ?_⟩, (contMDiff_iff.1 hι).2 x₀ (ι x₀), writtenInExtChartAt_mapsTo⟩
+  rw [mem_preimage, mem_preimage, (extChartAt I' x₀).left_inv (mem_extChartAt_source x₀)]
+  exact mem_extChartAt_source (ι x₀)
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
+  [I'.Boundaryless] in
+/-- **Shrinking along an embedding.** For an inducing map `ι` and an open set `V ⊆ F × F`
+containing `(φ x₀, 0)`, with `φ` the extended chart at `x₀`, there is an open `O ∋ ι x₀` such
+that a point `z` with `ι z ∈ O` lies in the source of `φ` with `(φ z, 0) ∈ V`. -/
+theorem _root_.Topology.IsInducing.exists_isOpen_extChartAt_zero_mem (hι : Topology.IsInducing ι)
+    {V : Set (F × F)} (hV : IsOpen V) {x₀ : N} (hx₀ : (extChartAt I' x₀ x₀, (0 : F)) ∈ V) :
+    ∃ O : Set M, IsOpen O ∧ ι x₀ ∈ O ∧
+      ∀ z, ι z ∈ O → z ∈ (extChartAt I' x₀).source ∧ (extChartAt I' x₀ z, (0 : F)) ∈ V := by
+  have hS : IsOpen ((extChartAt I' x₀).source ∩ (fun z ↦ (extChartAt I' x₀ z, (0 : F))) ⁻¹' V) :=
+    ((continuousOn_extChartAt x₀).prodMk continuousOn_const).isOpen_inter_preimage
+      (isOpen_extChartAt_source x₀) hV
+  obtain ⟨O, hO, hOS⟩ := hι.isOpen_iff.mp hS
+  refine ⟨O, hO, ?_, fun z hz ↦ ?_⟩
+  · rw [← mem_preimage, hOS]
+    exact ⟨mem_extChartAt_source x₀, hx₀⟩
+  · rw [← mem_preimage, hOS] at hz
+    exact hz
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **Adapted charts from adapted extensions.** Let `ι` be a `C^k` map, `J` a `C^ℓ` almost
 complex structure, with `1 ≤ ℓ` and `ℓ + 1 ≤ k`, and write `φ` and `χ` for the extended charts
-at `x₀` and `ι x₀`. Let `e` be a partial homeomorphism, `C^ℓ` with `C^ℓ` inverse,
+at `x₀` and `ι x₀`. Let `e` be a partial homeomorphism with `C^ℓ` inverse,
 whose underlying map is the adapted normal extension of `ι` and `J` read in `φ` and `χ`, with
 source over the parameters `z` with `φ⁻¹ z ∈ ι⁻¹ (χ.source)`. Let `O ∋ ι x₀` be open in `M` such
 that a point `z` of `N` with `ι z ∈ O` lies in the source of `φ` with `(φ z, 0)` in the source
-of `e`. Then `x ↦ e⁻¹ (χ x)`, restricted to `O`, is an adapted chart for `ι` and `J`, sending
+of `e`. Then `x ↦ e⁻¹ (χ x)`, restricted to `O`, is an adapted chart for `ι (N)` and `J`, sending
 `ι x₀` to `(φ x₀, 0)`.
 
 Several extensions with one source, as produced by `TauCeti.exists_adaptedChart_family`, can share
@@ -153,7 +184,7 @@ theorem exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension
     [IsManifold I' k N] (hι : ContMDiff I' I k ι) (hℓ : 1 ≤ ℓ) (hk : (ℓ : ℕ∞ω) + 1 ≤ k)
     {x₀ : N} {e : OpenPartialHomeomorph (F × F) E}
     (he : ⇑e = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι) (J.inChart (ι x₀)))
-    (hec : ContDiffOn ℝ ℓ e e.source) (hesc : ContDiffOn ℝ ℓ e.symm e.target)
+    (hesc : ContDiffOn ℝ ℓ e.symm e.target)
     (heU : e.source ⊆ ((extChartAt I' x₀).target ∩
       (extChartAt I' x₀).symm ⁻¹' (ι ⁻¹' (extChartAt I (ι x₀)).source)) ×ˢ univ)
     {O : Set M} (hO : IsOpen O) (hx₀O : ι x₀ ∈ O)
@@ -166,7 +197,7 @@ theorem exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension
       (∀ p, p ∈ ψ.target ↔
         p ∈ e.source ∧ e p ∈ (extChartAt I (ι x₀)).target ∧
           (extChartAt I (ι x₀)).symm (e p) ∈ O) ∧
-      ι x₀ ∈ ψ.source ∧ ψ (ι x₀) = (extChartAt I' x₀ x₀, 0) ∧ IsAdaptedChart J ι ψ := by
+      ι x₀ ∈ ψ.source ∧ ψ (ι x₀) = (extChartAt I' x₀ x₀, 0) ∧ IsAdaptedChart J (range ι) ψ := by
   -- Regularity bookkeeping: everything happens at order `ℓ + 1`.
   have hkM : ((ℓ : ℕ∞ω) + 1) ≤ ∞ := by exact_mod_cast le_top
   have : IsManifold I' ((ℓ : ℕ∞ω) + 1) N := IsManifold.of_le hk
@@ -180,19 +211,14 @@ theorem exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension
   set Jχ := J.inChart y
   have hγapp (z : F) : γ z = χ (ι (φ.symm z)) := rfl
   set U := φ.target ∩ φ.symm ⁻¹' (ι ⁻¹' χ.source)
-  have hU : IsOpen U := (continuousOn_extChartAt_symm x₀).isOpen_inter_preimage
-    (isOpen_extChartAt_target x₀) ((isOpen_extChartAt_source y).preimage hι.continuous)
+  obtain ⟨hU, -, hγ, hγΩ⟩ := isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt hι x₀
   have hΩ : IsOpen χ.target := isOpen_extChartAt_target y
-  have hγΩ : MapsTo γ U χ.target := fun z hz ↦ χ.map_source hz.2
-  have hγ : ContDiffOn ℝ ((ℓ : ℕ∞ω) + 1) γ U := by
-    have := (contMDiffOn_iff_of_subset_source' (x := x₀) (y := y)
-      (s := φ.source ∩ ι ⁻¹' χ.source) inter_subset_left (fun z hz ↦ hz.2)).1 hι.contMDiffOn
-    rwa [PartialEquiv.image_source_inter_eq'] at this
   have hJ : ContDiffOn ℝ (ℓ : ℕ∞ω) Jχ χ.target := J.contDiffOn_inChart y
+  have hec : ContDiffOn ℝ ℓ e e.source :=
+    he ▸ (contDiffOn_adaptedNormalExtension hU hγ hJ hγΩ).mono heU
   have hγe (q : F) : e (q, 0) = γ q := by rw [he, adaptedNormalExtension_zero]
   have he₀ : (φ x₀, (0 : F)) ∈ e.source := (hOe x₀ hx₀O).2
-  have hγx₀ : γ (φ x₀) = χ y := by
-    rw [hγapp, φ.left_inv (mem_extChartAt_source x₀)]
+  have hγx₀ : γ (φ x₀) = χ y := writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x₀)
   -- The extended chart at `y` as an open partial homeomorphism, then `e⁻¹`, restricted to `O`.
   let ψ := (((chartAt H y).extendTrans I (Homeomorph.refl E)).trans e.symm).restrOpen O hO
   have hψcoe (x : M) : ψ x = e.symm (χ x) := by
@@ -245,25 +271,11 @@ theorem exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension
     · rintro ⟨z, rfl⟩
       obtain ⟨hzφ, hze⟩ := hOe z ((hψsrc _).1 hx).2.2
       rw [hψcoe, ← φ.left_inv hzφ, ← hγapp, ← hγe, e.left_inv hze]
-  -- The restriction of `e` to the points it sends into the chart target.
-  let e' := e.restrOpen (e.source ∩ e ⁻¹' χ.target) (e.isOpen_inter_preimage hΩ)
-  have he'src : e'.source = e.source ∩ e ⁻¹' χ.target := by
-    simp [e']
-  have he'tgt {z : E} (hz : z ∈ e'.target) : e.symm z ∈ e.source ∩ e ⁻¹' χ.target := by
-    rw [← he'src]
-    exact e'.map_target hz
-  have he'Ω : e'.target ⊆ χ.target := fun z hz ↦ by
-    rw [← e'.right_inv hz]
-    exact (he'tgt hz).2
-  have htgt' : ψ.target ⊆ e'.source := fun p hp ↦
-    he'src ▸ ⟨((hψtgt p).1 hp).1, ((hψtgt p).1 hp).2.1⟩
   -- The pushed-forward structure is the model pullback by `e`.
   have hK : ∀ p ∈ ψ.target, J.chartPushforward ψ p = e.pullbackEnd Jχ p := fun p hp ↦
     J.chartPushforward_eq_pullbackEnd_inChart y ψ e ((hψtgt p).1 hp).2.1
       (Eventually.of_forall hψcoe) (Eventually.of_forall hψsymm) (hed (htgt hp))
       (hesd (e.map_source (htgt hp)))
-  have hK' : ∀ p ∈ ψ.target, J.chartPushforward ψ p = e'.pullbackEnd Jχ p :=
-    fun p hp ↦ (hK p hp).trans (ContinuousLinearMap.ext fun v ↦ by simp [e'])
   -- On the zero section it is the standard structure.
   have hstd : ∀ p ∈ ψ.target, p.2 = 0 →
       J.chartPushforward ψ p =
@@ -287,19 +299,16 @@ theorem exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension
       isImage := hImage
       mfderiv_comp_toEndomorphism := ?_
       contDiffOn_chartPushforward :=
-        ((e'.contDiffOn_pullbackEnd (hec.mono (he'src ▸ inter_subset_left)) (hesc.mono ?_)
-          ((hJ.mono he'Ω).of_le (le_self_add.trans hn)) hn).mono htgt').congr hK'
+        (e.contDiffOn_pullbackEnd_of_mapsTo htgt hec hesc (hJ.of_le (le_self_add.trans hn))
+          (fun p hp ↦ ((hψtgt p).1 hp).2.1) hn).congr hK
       chartPushforward_of_snd_eq_zero := hstd }⟩
-  · -- Intertwining along `ι (N)`: `dψ` turns `J` into `ψ_* J`, which is standard there.
-    rintro x ⟨hx, hxι⟩
-    have hpx := ψ.map_source hx
-    rw [J.mfderiv_comp_toEndomorphism ψ hx
-        ((hcont.contMDiffAt (ψ.open_source.mem_nhds hx)).mdifferentiableAt hℓ0)
-        ((hcont_symm.contMDiffAt (ψ.open_target.mem_nhds hpx)).mdifferentiableAt hℓ0),
-      hstd _ hpx ((hImage hx).2 hxι)]
-  · intro z hz
-    rw [← e'.right_inv hz]
-    exact e.map_source (he'tgt hz).1
+  -- Intertwining along `ι (N)`: `dψ` turns `J` into `ψ_* J`, which is standard there.
+  rintro x ⟨hx, hxι⟩
+  have hpx := ψ.map_source hx
+  rw [J.mfderiv_comp_toEndomorphism ψ hx
+      ((hcont.contMDiffAt (ψ.open_source.mem_nhds hx)).mdifferentiableAt hℓ0)
+      ((hcont_symm.contMDiffAt (ψ.open_target.mem_nhds hpx)).mdifferentiableAt hℓ0),
+    hstd _ hpx ((hImage hx).2 hxι)]
 
 /-- **Adapted charts along a totally real embedding.** Let `ι` be a `C^k` totally real embedding
 for a `C^ℓ` almost complex structure `J`, with `1 ≤ ℓ` and `ℓ + 1 ≤ k`. Near `ι x₀` there is an
@@ -319,49 +328,25 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart [IsManifold I' k N]
     ∃ (ψ : OpenPartialHomeomorph M (F × F)) (e : OpenPartialHomeomorph (F × F) E),
       ⇑e = adaptedNormalExtension (writtenInExtChartAt I' I x₀ ι) (J.inChart (ι x₀)) ∧
       ψ.target ⊆ e.source ∧ (∀ p ∈ ψ.target, ψ.symm p = (extChartAt I (ι x₀)).symm (e p)) ∧
-      ι x₀ ∈ ψ.source ∧ ψ.source ⊆ (extChartAt I (ι x₀)).source ∧ IsAdaptedChart J ι ψ := by
-  have hk1 : 1 ≤ k := le_add_self.trans hk
+      ι x₀ ∈ ψ.source ∧ ψ.source ⊆ (extChartAt I (ι x₀)).source ∧
+      IsAdaptedChart J (range ι) ψ := by
   have : IsManifold I' ((ℓ : ℕ∞ω) + 1) N := IsManifold.of_le hk
   have : IsManifold I ((ℓ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have hℓ' : (1 : ℕ∞ω) ≤ ℓ := by exact_mod_cast hℓ
   have hι : ContMDiff I' I ((ℓ : ℕ∞ω) + 1) ι := h.isSmoothEmbedding.contMDiff.of_le hk
-  set y := ι x₀
-  set χ := extChartAt I y
-  set φ := extChartAt I' x₀
-  set γ := writtenInExtChartAt I' I x₀ ι
-  set U := φ.target ∩ φ.symm ⁻¹' (ι ⁻¹' χ.source)
-  have hU : IsOpen U := (continuousOn_extChartAt_symm x₀).isOpen_inter_preimage
-    (isOpen_extChartAt_target x₀) ((isOpen_extChartAt_source y).preimage hι.continuous)
-  have hx₀U : φ x₀ ∈ U := by
-    refine ⟨mem_extChartAt_target x₀, ?_⟩
-    rw [mem_preimage, mem_preimage, φ.left_inv (mem_extChartAt_source x₀)]
-    exact mem_extChartAt_source y
-  have hγ : ContDiffOn ℝ ((ℓ : ℕ∞ω) + 1) γ U := by
-    have := (contMDiffOn_iff_of_subset_source' (x := x₀) (y := y)
-      (s := φ.source ∩ ι ⁻¹' χ.source) inter_subset_left (fun z hz ↦ hz.2)).1 hι.contMDiffOn
-    rwa [PartialEquiv.image_source_inter_eq'] at this
-  obtain ⟨e, he, he₀, heU, -, hec, hesc⟩ :=
-    TauCeti.exists_adaptedChart hU (isOpen_extChartAt_target y) hx₀U hℓ' hγ
-      (J.contDiffOn_inChart y) (fun z hz ↦ χ.map_source hz.2)
-      (J.inChart_inChart y (χ.map_source hx₀U.2)) (h.injective_fderiv_writtenInExtChartAt hk1 x₀)
-      (h.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hk1 x₀)
+  have hιd : MDifferentiableAt I' I ι x₀ := (hι x₀).mdifferentiableAt (by simp)
+  obtain ⟨hU, hx₀U, hγ, hγΩ⟩ := isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt hι x₀
+  obtain ⟨e, he, he₀, heU, -, -, hesc⟩ :=
+    TauCeti.exists_adaptedChart hU (isOpen_extChartAt_target (ι x₀)) hx₀U hℓ' hγ
+      (J.contDiffOn_inChart (ι x₀)) hγΩ (J.inChart_inChart (ι x₀) (hγΩ hx₀U))
+      (h.isMaximalTotallyRealMap.fderiv_writtenInExtChartAt_injective h.two_mul_finrank hιd)
+      (h.isMaximalTotallyRealMap.isMaximalTotallyReal_range_fderiv_writtenInExtChartAt hιd)
   -- The parameters whose zero-section point lies in the source of `e` are cut out by an open `O`.
-  set S : Set N := (φ.source ∩ ι ⁻¹' χ.source) ∩ (fun z ↦ (φ z, (0 : F))) ⁻¹' e.source
-  have hS : IsOpen S :=
-    (((continuousOn_extChartAt x₀).mono inter_subset_left).prodMk
-      continuousOn_const).isOpen_inter_preimage
-      ((isOpen_extChartAt_source x₀).inter ((isOpen_extChartAt_source y).preimage hι.continuous))
-      e.open_source
-  obtain ⟨O, hO, hOS⟩ := h.isSmoothEmbedding.isEmbedding.isInducing.isOpen_iff.mp hS
-  have hOe (z : N) (hz : ι z ∈ O) : z ∈ φ.source ∧ (φ z, (0 : F)) ∈ e.source := by
-    have hzS : z ∈ S := hOS ▸ hz
-    exact ⟨hzS.1.1, hzS.2⟩
-  have hx₀O : y ∈ O := by
-    rw [← mem_preimage, hOS]
-    exact ⟨⟨mem_extChartAt_source x₀, mem_extChartAt_source y⟩, he₀⟩
+  obtain ⟨O, hO, hx₀O, hOe⟩ :=
+    h.isSmoothEmbedding.isEmbedding.isInducing.exists_isOpen_extChartAt_zero_mem e.open_source he₀
   obtain ⟨ψ, -, hψsymm, hψsrc, hψtgt, hx₀ψ, -, hψ⟩ :=
     exists_isAdaptedChart_of_coe_eq_adaptedNormalExtension h.isSmoothEmbedding.contMDiff hℓ hk he
-      hec hesc heU hO hx₀O hOe
+      hesc heU hO hx₀O hOe
   exact ⟨ψ, e, he, fun p hp ↦ ((hψtgt p).1 hp).1, fun p _ ↦ hψsymm p, hx₀ψ,
     fun x hx ↦ ((hψsrc x).1 hx).1, hψ⟩
 
