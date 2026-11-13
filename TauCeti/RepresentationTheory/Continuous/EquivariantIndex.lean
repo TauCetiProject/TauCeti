@@ -108,6 +108,7 @@ theorem equivariantIndex_def [FiniteDimensional 𝕜 T.toContinuousLinearMap.ker
 /-- **The character of the equivariant index** is the character of the kernel representation minus
 the character of the cokernel representation: at `g`, the trace of `g` on `ker T` minus its trace
 on `coker T`. -/
+@[simp]
 theorem repRingCharacter_equivariantIndex (g : G) :
     repRingCharacter 𝕜 G (contRepRingToRepRing 𝕜 G (T.equivariantIndex hT hπ hρ)) g =
       T.kerRepresentation.toRepresentation.character g -
@@ -165,14 +166,17 @@ same equivariant index as `T`: `e` maps the kernel of `T ∘ e` equivariantly on
 and both operators have the same range. -/
 theorem equivariantIndex_comp_equiv (T : ρ →ⁱL σ) (e : π.Equiv ρ)
     (hT : T.toContinuousLinearMap.IsFredholm)
-    (hTe : (T.comp e.toContIntertwiningMap).toContinuousLinearMap.IsFredholm)
     (hπ : ∀ v, Continuous fun g ↦ π g v) (hρ : ∀ v, Continuous fun g ↦ ρ g v)
     (hσ : ∀ w, Continuous fun g ↦ σ g w) :
-    (T.comp e.toContIntertwiningMap).equivariantIndex hTe hπ hσ =
+    (T.comp e.toContIntertwiningMap).equivariantIndex
+        (hT.comp_equiv e.toContinuousLinearEquiv) hπ hσ =
       T.equivariantIndex hT hρ hσ := by
   have := hT.finite_ker
   have := hT.isClosed_range
   have := hT.finite_coker
+  have hTe : (T.comp e.toContIntertwiningMap).toContinuousLinearMap.IsFredholm :=
+    hT.comp_equiv e.toContinuousLinearEquiv
+  change (T.comp e.toContIntertwiningMap).equivariantIndex hTe hπ hσ = _
   have := hTe.finite_ker
   have := hTe.isClosed_range
   have := hTe.finite_coker
@@ -203,14 +207,17 @@ same equivariant index as `T`: both operators have the same kernel, and `e` maps
 equivariantly onto the cokernel of `e ∘ T`. -/
 theorem equivariantIndex_equiv_comp (T : π →ⁱL ρ) (e : ρ.Equiv σ)
     (hT : T.toContinuousLinearMap.IsFredholm)
-    (heT : (e.toContIntertwiningMap.comp T).toContinuousLinearMap.IsFredholm)
     (hπ : ∀ v, Continuous fun g ↦ π g v) (hρ : ∀ v, Continuous fun g ↦ ρ g v)
     (hσ : ∀ w, Continuous fun g ↦ σ g w) :
-    (e.toContIntertwiningMap.comp T).equivariantIndex heT hπ hσ =
+    (e.toContIntertwiningMap.comp T).equivariantIndex
+        (hT.equiv_comp e.toContinuousLinearEquiv) hπ hσ =
       T.equivariantIndex hT hπ hρ := by
   have := hT.finite_ker
   have := hT.isClosed_range
   have := hT.finite_coker
+  have heT : (e.toContIntertwiningMap.comp T).toContinuousLinearMap.IsFredholm :=
+    hT.equiv_comp e.toContinuousLinearEquiv
+  change (e.toContIntertwiningMap.comp T).equivariantIndex heT hπ hσ = _
   have := heT.finite_ker
   have := heT.isClosed_range
   have := heT.finite_coker
@@ -272,8 +279,12 @@ theorem equivariantIndex_eq_sub_ker_adjoint [FiniteDimensional 𝕜 T.toContinuo
 /-- **Taking the adjoint negates the equivariant index**: `ind_G T† = - ind_G T` for an
 equivariant Fredholm operator between unitary representations on Hilbert spaces. This refines
 `ContinuousLinearMap.index_adjoint`. -/
-theorem equivariantIndex_adjoint (hT' : (T.adjoint hπu hρu).toContinuousLinearMap.IsFredholm) :
-    (T.adjoint hπu hρu).equivariantIndex hT' hρ hπ = -T.equivariantIndex hT hπ hρ := by
+theorem equivariantIndex_adjoint :
+    (T.adjoint hπu hρu).equivariantIndex
+        (T.toContinuousLinearMap_adjoint hπu hρu ▸ hT.adjoint) hρ hπ =
+      -T.equivariantIndex hT hπ hρ := by
+  have hT' : (T.adjoint hπu hρu).toContinuousLinearMap.IsFredholm :=
+    T.toContinuousLinearMap_adjoint hπu hρu ▸ hT.adjoint
   have := hT.finite_ker
   have := hT'.finite_ker
   have : FiniteDimensional 𝕜
