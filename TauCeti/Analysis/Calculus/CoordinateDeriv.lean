@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -56,8 +57,6 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
-* `ContinuousMultilinearMap.norm_le_sum_basis`: a multilinear map is bounded by its values on
-  tuples of basis vectors, for a basis whose coordinates are bounded by the norm.
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
@@ -183,24 +182,6 @@ theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (r : Fin k → Fin n)
   rintro l rfl hl
   congr 1 with i
   rw [hl, Fin.cast_eq_self]
-
-/-- A continuous multilinear map on a real normed space with a basis whose coordinates are bounded
-by the norm has norm at most the sum of the norms of its values on tuples of basis vectors. -/
-theorem _root_.ContinuousMultilinearMap.norm_le_sum_basis {E ι : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Fintype ι] {k : ℕ} (b : Module.Basis ι ℝ E)
-    (hb : ∀ v i, ‖b.repr v i‖ ≤ ‖v‖) (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => E) A) :
-    ‖M‖ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ := by
-  classical
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
-  calc ‖M v‖ = ‖M fun i => ∑ l, b.repr (v i) l • b l‖ := by simp only [b.sum_repr]
-    _ = ‖∑ r : Fin k → ι, M fun i => b.repr (v i) (r i) • b (r i)‖ := by rw [M.map_sum]
-    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b.repr (v i) (r i) • b (r i)‖ := norm_sum_le _ _
-    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ * ∏ i, ‖v i‖ := by
-        refine Finset.sum_le_sum fun r _ => ?_
-        rw [M.map_smul_univ, norm_smul, norm_prod, mul_comm]
-        gcongr with i
-        exact hb _ _
-    _ = _ := by rw [Finset.sum_mul]
 
 /-- A continuous multilinear map on `ℝⁿ` has norm at most the sum of the norms of its values on
 tuples of standard basis vectors. -/
