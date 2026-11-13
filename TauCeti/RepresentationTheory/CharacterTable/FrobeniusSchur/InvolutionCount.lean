@@ -216,9 +216,8 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
   simp
 
 variable {G} in
-/-- **The row indicator takes only the values `1`, `0` and `-1`**, by the Frobenius-Schur
-trichotomy applied to a simple representation affording the row.  The categorical trichotomy needs
-only that `|G|` is invertible, so this holds in every such characteristic. -/
+/-- **The row indicator takes only the values `1`, `0` and `-1`** for a finite group over an
+algebraically closed field in which `|G|` is invertible, without assuming characteristic zero. -/
 theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one
     (i : Fin (Nat.card (ConjClasses G))) :
     frobeniusSchurIndicatorRow k i = 1 ∨ frobeniusSchurIndicatorRow k i = 0 ∨

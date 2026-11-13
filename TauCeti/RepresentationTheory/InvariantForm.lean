@@ -543,7 +543,7 @@ variable {k G V : Type*} [CommRing k] [Invertible (2 : k)] [Monoid G] [AddCommGr
   [Module k V]
 
 /-- **Every invariant form is the sum of a symmetric and an alternating invariant form** when `2` is
-invertible: `B = ⅟2 • (B + B.flip) + ⅟2 • (B - B.flip)`, and both parts are invariant. -/
+invertible. -/
 theorem symmetricInvariantForms_sup_alternatingInvariantForms (ρ : Representation k G V) :
     symmetricInvariantForms ρ ⊔ alternatingInvariantForms ρ = invariantForms ρ := by
   refine le_antisymm (sup_le (symmetricInvariantForms_le ρ) (alternatingInvariantForms_le ρ))
@@ -569,8 +569,7 @@ variable {k G V : Type*} [Field k] [NeZero (2 : k)] [Monoid G] [AddCommGroup V] 
   [FiniteDimensional k V]
 
 /-- **The two invariant form counts add to the number of invariant forms**, away from
-characteristic two and in finite dimensions: every invariant form is the sum of its symmetric and
-its alternating parts, and the two kinds of form meet only in `0`. -/
+characteristic two and in finite dimensions. -/
 theorem finrank_symmetricInvariantForms_add_finrank_alternatingInvariantForms
     (ρ : Representation k G V) :
     finrank k (symmetricInvariantForms ρ) + finrank k (alternatingInvariantForms ρ) =

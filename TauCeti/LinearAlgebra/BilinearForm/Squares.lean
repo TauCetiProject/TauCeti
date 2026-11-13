@@ -38,8 +38,8 @@ semiring, the exterior side over a commutative ring, which is where Mathlib's ex
 * `TauCeti.BilinForm.ofSymmetricSquareDual_injective` and
   `TauCeti.BilinForm.ofExteriorSquareDual_injective`: a functional on either square is determined
   by the form it gives.
-* `TauCeti.BilinForm.exists_ofSymmetricSquareDual_eq_of_isSymm` and
-  `TauCeti.BilinForm.exists_ofExteriorSquareDual_eq_of_isAlt`: every symmetric, respectively
+* `LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq` and
+  `LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq`: every symmetric, respectively
   alternating, form is the form of a functional on the corresponding square.
 
 ## Implementation notes
@@ -108,10 +108,9 @@ theorem ofSymmetricSquareDual_injective :
   rintro _ ⟨f, rfl⟩
   simpa using DFunLike.congr_fun h f
 
-/-- **Every symmetric form comes from a functional on the symmetric square.** The form is a
-permutation-invariant multilinear map on `Fin 2 → V`, and the universal property of the symmetric
-power, `SymmetricPower.lift`, turns it into the functional. -/
-theorem exists_ofSymmetricSquareDual_eq_of_isSymm {B : BilinForm k V} (hB : B.IsSymm) :
+/-- **Every symmetric form comes from a functional on the symmetric square.** -/
+theorem _root_.LinearMap.BilinForm.IsSymm.exists_ofSymmetricSquareDual_eq
+    {B : BilinForm k V} (hB : B.IsSymm) :
     ∃ ψ : Module.Dual k (Sym[k]^2V), ofSymmetricSquareDual ψ = B := by
   let f : (Fin 2 → V) →ₘₗ[k] k :=
     { toFun v := B (v 0) (v 1)
@@ -158,9 +157,9 @@ theorem ofExteriorSquareDual_injective :
   exteriorPower.alternatingMapLinearEquiv.symm.injective
     (AlternatingMap.coe_multilinearMap_injective (MultilinearMap.toBilinMap_injective hψφ))
 
-/-- **Every alternating form comes from a functional on the exterior square.** The universal
-property of the exterior power turns the form, as an alternating map, into the functional. -/
-theorem exists_ofExteriorSquareDual_eq_of_isAlt {B : BilinForm k V} (hB : B.IsAlt) :
+/-- **Every alternating form comes from a functional on the exterior square.** -/
+theorem _root_.LinearMap.BilinForm.IsAlt.exists_ofExteriorSquareDual_eq
+    {B : BilinForm k V} (hB : B.IsAlt) :
     ∃ ψ : Module.Dual k (⋀[k]^2 V), ofExteriorSquareDual ψ = B :=
   ⟨exteriorPower.alternatingMapLinearEquiv (LinearMap.IsAlt.toAlternatingMap hB), by
     ext x y
