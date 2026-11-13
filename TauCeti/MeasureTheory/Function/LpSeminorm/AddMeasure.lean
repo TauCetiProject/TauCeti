@@ -30,11 +30,14 @@ For a function in `Lᵖ` on each piece, the same subadditivity holds for the rea
 `lpNorm` (`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
 For the real-valued norm `lpNorm`, monotonicity in the measure needs `f ∈ Lᵖ(μ)`, since
-`lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`).
+`lpNorm` is `0` off `Lᵖ` (`MeasureTheory.lpNorm_mono_measure`). In particular, if `ψ = 1` on `t`,
+the `Lᵖ` norm of `f` on `s ∩ t` is at most that of `ψ • f` on `s`
+(`MeasureTheory.lpNorm_restrict_inter_le_lpNorm_smul`).
 
 ## Main declarations
 
 * `MeasureTheory.lpNorm_mono_measure`: monotonicity of `lpNorm` in the measure.
+* `MeasureTheory.lpNorm_restrict_inter_le_lpNorm_smul`: comparing `lpNorm` across a cutoff.
 * `MeasureTheory.eLpNorm_add_measure_le`: subadditivity in the measure.
 * `MeasureTheory.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm is
   subadditive in the measure, at every `p : ℝ≥0∞` (a pseudometrizable codomain with an extended
@@ -85,6 +88,19 @@ theorem lpNorm_mono_measure {E : Type*} [NormedAddCommGroup E] {f : α → E} (h
     (hνμ : ν ≤ μ) :
     lpNorm f p ν ≤ lpNorm f p μ :=
   ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure f hνμ)
+
+/-- **Comparing `lpNorm` across a cutoff.** If `ψ = 1` on a measurable set `t` and
+`ψ • f ∈ Lᵖ(μ|s)`, then the `Lᵖ` norm of `f` on `s ∩ t` is at most that of `ψ • f` on `s`. -/
+theorem lpNorm_restrict_inter_le_lpNorm_smul {R E : Type*} [Monoid R] [NormedAddCommGroup E]
+    [MulAction R E] {s t : Set α} (ht : MeasurableSet t) {ψ : α → R} (hψ : ∀ x ∈ t, ψ x = 1)
+    {f : α → E} (hf : MemLp (fun x => ψ x • f x) p (μ.restrict s)) :
+    lpNorm f p (μ.restrict (s ∩ t)) ≤ lpNorm (fun x => ψ x • f x) p (μ.restrict s) := by
+  have h : f =ᵐ[μ.restrict (s ∩ t)] fun x => ψ x • f x := by
+    filter_upwards [ae_mono (Measure.restrict_mono Set.inter_subset_right le_rfl)
+      (ae_restrict_mem ht)] with x hx
+    rw [hψ x hx, one_smul]
+  exact ENNReal.toReal_mono hf.eLpNorm_ne_top ((eLpNorm_congr_ae h).trans_le
+    (eLpNorm_mono_measure _ (Measure.restrict_mono Set.inter_subset_left le_rfl)))
 
 /-- **Subadditivity of `eLpNorm` in the measure.** For `1 ≤ p`,
 `eLpNorm f p (μ + ν) ≤ eLpNorm f p μ + eLpNorm f p ν`. -/

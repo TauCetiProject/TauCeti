@@ -122,61 +122,6 @@ private theorem le_mul_add_add_of_le {L a β γ K m₁ m₂ F G V : ℝ} (ha : 0
     positivity
   linarith
 
-/-- **Moving the lower-order terms to the right-hand side.** If `P + ⟪b, G⟫ + c V = f` almost
-everywhere, where `f`, `G` and `V` lie in `Lᵖ(μ)` and `‖b‖ ≤ β`, `|c| ≤ γ` almost everywhere, then
-`P` agrees almost everywhere with some `g ∈ Lᵖ(μ)` with `‖g‖ ≤ ‖f‖ + β ‖G‖ + γ ‖V‖`. -/
-private theorem exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq {α F : Type*}
-    [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {P : α → ℝ} {b : α → F} {c : α → ℝ} {β γ : ℝ} (hβ : 0 ≤ β) (hγ : 0 ≤ γ)
-    (hb : AEStronglyMeasurable b μ) (hbβ : ∀ᵐ y ∂μ, ‖b y‖ ≤ β) (hc : AEStronglyMeasurable c μ)
-    (hcγ : ∀ᵐ y ∂μ, |c y| ≤ γ) (G : Lp F p μ) (V : Lp ℝ p μ) (f : Lp ℝ p μ)
-    (heq : ∀ᵐ y ∂μ, P y + ⟪b y, G y⟫_ℝ + c y * V y = f y) :
-    ∃ g : Lp ℝ p μ, P =ᵐ[μ] g ∧ ‖g‖ ≤ ‖f‖ + β * ‖G‖ + γ * ‖V‖ := by
-  have hLle : ∀ᵐ y ∂μ, ‖⟪b y, G y⟫_ℝ + c y * V y‖ ≤ β * ‖G y‖ + γ * ‖V y‖ := by
-    filter_upwards [hbβ, hcγ] with y hby hcy
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · rw [Real.norm_eq_abs]
-      exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right hby (norm_nonneg _))
-    · rw [norm_mul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right hcy (norm_nonneg _)
-  have hL : MemLp (fun y => ⟪b y, G y⟫_ℝ + c y * V y) p μ := by
-    refine MemLp.of_le (((Lp.memLp G).norm.const_mul β).add ((Lp.memLp V).norm.const_mul γ))
-      ((hb.inner (Lp.aestronglyMeasurable G)).add (hc.mul (Lp.aestronglyMeasurable V)))
-      (hLle.mono fun y hy => hy.trans (le_of_eq ?_))
-    exact (Real.norm_of_nonneg (by positivity)).symm
-  have hLnorm : ‖hL.toLp _‖ ≤ β * ‖G‖ + γ * ‖V‖ :=
-    Lp.norm_le_add_of_ae_norm_le hβ hγ (by
-      filter_upwards [hL.coeFn_toLp, hLle] with y h1 h2
-      rwa [h1])
-  refine ⟨f - hL.toLp _, ?_, by linarith [norm_sub_le f (hL.toLp _)]⟩
-  filter_upwards [heq, Lp.coeFn_sub f (hL.toLp _), hL.coeFn_toLp] with y hy h1 h2
-  rw [h1, Pi.sub_apply, h2, ← hy]
-  ring
-
-omit [Fact (1 ≤ p)] in
-/-- **Comparing `Lᵖ` norms across a cutoff.** If `ψ = 1` on `t` and `ψ • f ∈ Lᵖ(μ|s)`, then the
-`Lᵖ` norm of `f` on `s ∩ t` is at most that of `ψ • f` on `s`. -/
-private theorem lpNorm_restrict_inter_le_lpNorm_smul {α F : Type*} [MeasurableSpace α]
-    {μ : Measure α} [NormedAddCommGroup F] [NormedSpace ℝ F] {s t : Set α} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) {ψ : α → ℝ} (hψ : ∀ y ∈ t, ψ y = 1) {f : α → F}
-    (hf : MemLp (fun y => ψ y • f y) p (μ.restrict s)) :
-    lpNorm f p (μ.restrict (s ∩ t)) ≤ lpNorm (fun y => ψ y • f y) p (μ.restrict s) := by
-  rw [lpNorm_congr_ae (g := fun y => ψ y • f y)]
-  · exact lpNorm_mono_measure hf (Measure.restrict_mono inter_subset_left le_rfl)
-  · filter_upwards [ae_restrict_mem (hs.inter ht)] with y hy
-    rw [hψ y hy.2, one_smul]
-
-omit [Fact (1 ≤ p)] in
-/-- Multiplying by a measurable function bounded by one does not increase the `Lᵖ` norm. -/
-private theorem lpNorm_mul_le_norm {α : Type*} [MeasurableSpace α] {μ : Measure α} {ψ : α → ℝ}
-    (hψm : AEStronglyMeasurable ψ μ) (hψ : ∀ y, ‖ψ y‖ ≤ 1) (g : Lp ℝ p μ) :
-    lpNorm (fun y => ψ y * g y) p μ ≤ ‖g‖ := by
-  refine (lpNorm_le_mul_lpNorm_of_ae_le_mul (c := 1) (hψm.mul (Lp.aestronglyMeasurable g))
-    (Lp.memLp g) (Filter.Eventually.of_forall fun y => ?_)).trans_eq ?_
-  · rw [Pi.mul_apply, norm_mul]
-    exact mul_le_mul_of_nonneg_right (hψ y) (norm_nonneg _)
-  · rw [one_mul, Lp.norm_eq_lpNorm_of_ae_eq (f := g) Filter.EventuallyEq.rfl]
-
 /-- **The estimate on one ball.** Let `Ω ∩ U = H ∩ U`, let `B(x, 3 r) ⊆ U`, and let the
 coefficients satisfy `‖A y - A₀‖ ≤ δ λ` on `Ω ∩ B(x, 3 r)` for an operator `A₀` with
 `λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫` and `0 < λ`, where `δ` is the threshold of the localized half-space estimate.
@@ -236,7 +181,7 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
   obtain ⟨V, hV⟩ : ∃ V, Wkp.value 2 u = V := ⟨_, rfl⟩
   rw [hG, hV] at heq ⊢
   obtain ⟨g, hgeq, hgnorm⟩ :=
-    exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq hβ hγ hb hbβ hc hcγ G V f heq
+    Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq hb hbβ hc hcγ G V f heq
   -- The hypotheses of the localized estimate on the support of `ψ`.
   have hoscψ : ∀ᵐ y ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), y ∈ tsupport ψ →
       ‖A y - A₀‖ ≤ δ * lam := by
@@ -249,7 +194,7 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
     (by positivity) hAΛ u g (hu0 ψ hψ hcpt (hψB.trans hrU)) hgeq
   rw [hG, hV] at key
   -- Compare both sides of the localized estimate with the norms in the statement.
-  have hlow := lpNorm_restrict_inter_le_lpNorm_smul hΩm measurableSet_ball
+  have hlow := lpNorm_restrict_inter_le_lpNorm_smul measurableSet_ball
     (fun y hy => hψ1 (ball_subset_closedBall hy))
     ((hψ.continuous.memLp_top_of_hasCompactSupport hcpt _).smul (r := p)
       (Lp.memLp (Wkp.iteratedGradient 1 u)))
@@ -261,7 +206,8 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
         (C₀ / lam * Module.finrank ℝ (WithLp 2 (ℝ × E)) * (‖A₀‖ + δ * lam) + 1) *
           (2 * (c₀ / r) * ‖G‖ + c₀ / r ^ 2 * ‖V‖) := by
         gcongr
-        exact (lpNorm_mul_le_norm hψ.continuous.aestronglyMeasurable hψabs g).trans hgnorm
+        exact (lpNorm_mul_le_of_ae_norm_le_one hψ.continuous.aestronglyMeasurable (Lp.memLp g)
+          (.of_forall hψabs)).trans ((Lp.norm_eq_lpNorm_of_ae_eq .rfl).ge.trans hgnorm)
     _ = _ := by ring
 
 /-- **The Calderón–Zygmund estimate near a flat boundary for continuous coefficients.** Let

@@ -203,43 +203,6 @@ private theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ 
   rw [← Matrix.contraction_apply, Real.norm_eq_abs]
   exact Matrix.abs_contraction_le hx _
 
-/-- **The lower-order terms lie in `Lᵖ`.** On a measurable `S ⊆ Ω` where `‖b‖ ≤ β` and
-`|c| ≤ γ` almost everywhere, the lower-order part `⟪b, ∇u⟫ + c u` of the operator applied to
-`u ∈ W^{2,p}(Ω)` lies in `Lᵖ(S)`, with norm at most `β ‖∇u‖_{Lᵖ(S)} + γ ‖u‖_{Lᵖ(S)}`. -/
-private theorem memLp_inner_add_mul_and_lpNorm_le {Omega : Opens (EuclideanSpace ℝ (Fin n))}
-    {S : Set (EuclideanSpace ℝ (Fin n))} (hS : S ⊆ Omega)
-    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2)
-    {b : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)} {c : EuclideanSpace ℝ (Fin n) → ℝ}
-    {β γ : ℝ} (hb : AEStronglyMeasurable b (volume.restrict S))
-    (hbβ : ∀ᵐ x ∂(volume.restrict S), ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c (volume.restrict S))
-    (hcγ : ∀ᵐ x ∂(volume.restrict S), |c x| ≤ γ) :
-    MemLp (fun x => ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ +
-        c x * Wkp.value 2 u x) p (volume.restrict S) ∧
-      lpNorm (fun x => ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ +
-          c x * Wkp.value 2 u x) p (volume.restrict S) ≤
-        β * lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (volume.restrict S) +
-          γ * lpNorm (Wkp.value 2 u) p (volume.restrict S) := by
-  set G := Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)
-  set V := Wkp.value 2 u
-  have hG : MemLp G p (volume.restrict S) :=
-    (Lp.memLp G).mono_measure (Measure.restrict_mono hS le_rfl)
-  have hV : MemLp V p (volume.restrict S) :=
-    (Lp.memLp V).mono_measure (Measure.restrict_mono hS le_rfl)
-  have hdm : AEStronglyMeasurable (fun x => ⟪b x, G x⟫_ℝ) (volume.restrict S) :=
-    hb.inner hG.aestronglyMeasurable
-  have hzm : AEStronglyMeasurable (fun x => c x * V x) (volume.restrict S) :=
-    hc.mul hV.aestronglyMeasurable
-  have hdle : ∀ᵐ x ∂(volume.restrict S), ‖⟪b x, G x⟫_ℝ‖ ≤ β * ‖G x‖ := hbβ.mono fun x hx => by
-    rw [Real.norm_eq_abs]
-    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
-  have hzle : ∀ᵐ x ∂(volume.restrict S), ‖c x * V x‖ ≤ γ * ‖V x‖ := hcγ.mono fun x hx => by
-    rw [norm_mul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right hx (norm_nonneg _)
-  have hd : MemLp (fun x => ⟪b x, G x⟫_ℝ) p (volume.restrict S) := hG.of_le_mul hdm hdle
-  refine ⟨hd.add (hV.of_le_mul hzm hzle), (lpNorm_add_le hd Fact.out).trans ?_⟩
-  exact add_le_add (lpNorm_le_mul_lpNorm_of_ae_le_mul hdm hG hdle)
-    (lpNorm_le_mul_lpNorm_of_ae_le_mul hzm hV hzle)
-
 /-- **The interior Calderón–Zygmund estimate on balls for coefficients of small oscillation.**
 Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
 with the following property. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `Ω` be
@@ -332,8 +295,11 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
         ∀ᵐ x ∂(volume.restrict (ball x₀ σ)), P x := fun hP =>
       ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hσ)
         ((ae_restrict_iff' measurableSet_ball).2 hP)
-    exact memLp_inner_add_mul_and_lpNorm_le ((ball_subset_ball hσ).trans hR) u
-      (hb.mono_measure hres) (hsub hbβ) (hc.mono_measure hres) (hsub hcγ)
+    have hΩ : volume.restrict (ball x₀ σ) ≤ volume.restrict (Omega : Set _) :=
+      Measure.restrict_mono ((ball_subset_ball hσ).trans hR) le_rfl
+    exact memLp_inner_add_mul_and_lpNorm_le Fact.out (hb.mono_measure hres) (hsub hbβ)
+      (hc.mono_measure hres) (hsub hcγ) ((Lp.memLp G).mono_measure hΩ)
+      ((Lp.memLp V).mono_measure hΩ)
   set g : EuclideanSpace ℝ (Fin n) → ℝ := fun x => f x - (⟪b x, G x⟫_ℝ + c x * V x) with hg
   have heq' : ∀ᵐ x ∂(volume.restrict (ball x₀ R)),
       ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
