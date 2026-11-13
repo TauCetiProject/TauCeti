@@ -131,8 +131,13 @@ theorem abs_fderiv_apply_le_of_abs_laplacian_le {u : E → ℝ} {x₀ e : E} {d 
       one_pow, mul_one]
     module
   -- The Laplacian of `u ∘ σ` is `(Δ u) ∘ σ`.
-  have hΔσ : ∀ x, Δ (fun y ↦ u (σ y)) x = Δ u (σ x) :=
-    congrFun (laplacian_comp_linearIsometryEquiv_sub_add u R x₀)
+  have hΔσ : ∀ x, Δ (fun y ↦ u (σ y)) x = Δ u (σ x) := by
+    let ρ : E ≃ᵃⁱ[ℝ] E := ((AffineIsometryEquiv.vaddConst ℝ x₀).symm.trans
+      R.toAffineIsometryEquiv).trans (AffineIsometryEquiv.vaddConst ℝ x₀)
+    have hρ : ⇑ρ = σ := by
+      funext y
+      simp [ρ, hσ]
+    exact congrFun (hρ ▸ laplacian_comp_affineIsometryEquiv_right ρ u)
   -- The odd part `ψ` and the barrier `φ`.
   set ψ : E → ℝ := fun x ↦ (1 / 2 : ℝ) * (u x - u (σ x)) with hψ
   set g : ℝ → ℝ := fun s ↦ A * s - B * s ^ 2 with hg
