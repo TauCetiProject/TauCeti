@@ -85,22 +85,20 @@ private theorem mem_largeOrbit : ∀ x : Fin 100,
   simp only [orbit_stabilizerChain_one]
   decide +kernel
 
-/-- The other nontrivial orbit of the stabilizer of `0` in the canonical Higman--Sims model. -/
-theorem orbit_stabilizerChain_one_four :
-    orbit S (4 : Fin 100) =
-      (↑({4, 8, 9, 10, 11, 12, 26, 28, 32, 38, 39, 40, 44, 47, 49, 50, 52, 66, 67, 70,
-        71, 91} : Finset (Fin 100)) : Set (Fin 100)) := by
+private theorem mem_stabilizerChain_one_iff {g : Equiv.Perm (Fin 100)} :
+    g ∈ S ↔ g ∈ HS ∧ g 0 = 0 := by
+  simp [Subgroup.stabilizerChain_succ, pointSequence_apply]
+
+private theorem orbit_stabilizerChain_one_four_eq :
+    orbit S (4 : Fin 100) = (↑smallOrbit : Set (Fin 100)) := by
   ext x
+  rw [Finset.mem_coe]
   constructor
   · intro hx
     have hx0 : x ≠ 0 := by
       intro h
       obtain ⟨g, hg⟩ := mem_orbit_symm.mp (h ▸ hx)
-      have hg0 : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
-        have := g.property
-        simp only [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero,
-          Subgroup.mem_inf] at this
-        simpa [pointSequence_apply] using mem_stabilizer_iff.mp this.2
+      have hg0 := (mem_stabilizerChain_one_iff.mp g.property).2
       exact (by decide : (0 : Fin 100) ≠ 4) (hg0.symm.trans hg)
     by_contra hn
     have hx1 := (mem_largeOrbit x).mpr ⟨hx0, hn⟩
@@ -111,9 +109,14 @@ theorem orbit_stabilizerChain_one_four :
     obtain ⟨h0, h4⟩ := orbitWords_apply i
     apply mem_orbit_iff.mpr
     refine ⟨⟨((orbitWords i).prod : Equiv.Perm (Fin 100)), ?_⟩, h4⟩
-    rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero]
-    exact ⟨(orbitWords i).prod.property,
-      mem_stabilizer_iff.mpr (by simpa [pointSequence_apply] using h0)⟩
+    exact mem_stabilizerChain_one_iff.mpr ⟨(orbitWords i).prod.property, h0⟩
+
+/-- The other nontrivial orbit of the stabilizer of `0` in the canonical Higman--Sims model. -/
+theorem orbit_stabilizerChain_one_four :
+    orbit S (4 : Fin 100) =
+      (↑({4, 8, 9, 10, 11, 12, 26, 28, 32, 38, 39, 40, 44, 47, 49, 50, 52, 66, 67, 70,
+        71, 91} : Finset (Fin 100)) : Set (Fin 100)) := by
+  simpa only [smallOrbit] using orbit_stabilizerChain_one_four_eq
 
 /-- The stabilizer of `0` has a 22-point orbit containing `4`. -/
 @[simp]
@@ -122,42 +125,43 @@ theorem ncard_orbit_stabilizerChain_one_four :
   rw [orbit_stabilizerChain_one_four, Set.ncard_coe_finset]
   decide +kernel
 
+-- A block through zero is invariant under its point stabilizer.
+private theorem orbit_subset_block (B : Set (Fin 100)) (h0 : 0 ∈ B) (hB : IsBlock HS B)
+    {x : Fin 100} (hx : x ∈ B) : orbit S x ⊆ B := by
+  rintro _ ⟨g, rfl⟩
+  have hg := mem_stabilizerChain_one_iff.mp g.property
+  let g' : HS := ⟨g, hg.1⟩
+  have hg' : g' ∈ stabilizer HS (0 : Fin 100) := mem_stabilizer_iff.mpr hg.2
+  have hfix := hB.stabilizer_le h0 hg'
+  exact hfix ▸ (Set.smul_mem_smul_set hx : g' • x ∈ g' • B)
+
+-- Membership is constant on each of the two nontrivial stabilizer orbits.
+private theorem mem_block_iff (B : Set (Fin 100)) (h0 : 0 ∈ B) (hB : IsBlock HS B)
+    (x : Fin 100) :
+    x ∈ B ↔ x = 0 ∨ (x ∈ orbit S (1 : Fin 100) ∧ 1 ∈ B) ∨
+      (x ∈ smallOrbit ∧ 4 ∈ B) := by
+  constructor
+  · intro hx
+    by_cases hx0 : x = 0
+    · exact Or.inl hx0
+    by_cases hxs : x ∈ smallOrbit
+    · have hx4 : x ∈ orbit S (4 : Fin 100) := by
+        rw [orbit_stabilizerChain_one_four_eq, Finset.mem_coe]
+        exact hxs
+      exact Or.inr (Or.inr ⟨hxs, orbit_subset_block B h0 hB hx (mem_orbit_symm.mp hx4)⟩)
+    · have hx1 := (mem_largeOrbit x).mpr ⟨hx0, hxs⟩
+      exact Or.inr (Or.inl ⟨hx1, orbit_subset_block B h0 hB hx (mem_orbit_symm.mp hx1)⟩)
+  · rintro (rfl | ⟨hx1, h1⟩ | ⟨hxs, h4⟩)
+    · exact h0
+    · exact orbit_subset_block B h0 hB h1 hx1
+    · apply orbit_subset_block B h0 hB h4
+      rw [orbit_stabilizerChain_one_four_eq, Finset.mem_coe]
+      exact hxs
+
 /-- The canonical 100-point action of the Higman--Sims model is primitive. -/
 instance isPreprimitive : IsPreprimitive HS (Fin 100) := by
   apply IsPreprimitive.of_isTrivialBlock_base (0 : Fin 100)
   intro B h0 hB
-  -- A block through zero is invariant under its point stabilizer.
-  have hclosed {x : Fin 100} (hx : x ∈ B) : orbit S x ⊆ B := by
-    rintro _ ⟨g, rfl⟩
-    have hg := g.property
-    simp only [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero,
-      Subgroup.mem_inf] at hg
-    let g' : HS := ⟨g, hg.1⟩
-    have hg' : g' ∈ stabilizer HS (0 : Fin 100) :=
-      mem_stabilizer_iff.mpr (by simpa [g', pointSequence_apply] using mem_stabilizer_iff.mp hg.2)
-    have hfix := hB.stabilizer_le h0 hg'
-    exact hfix ▸ (Set.smul_mem_smul_set hx : g' • x ∈ g' • B)
-  -- Membership is constant on each of the two nontrivial stabilizer orbits.
-  have hmem (x : Fin 100) :
-      x ∈ B ↔ x = 0 ∨ (x ∈ orbit S (1 : Fin 100) ∧ 1 ∈ B) ∨
-        (x ∈ smallOrbit ∧ 4 ∈ B) := by
-    constructor
-    · intro hx
-      by_cases hx0 : x = 0
-      · exact Or.inl hx0
-      by_cases hxs : x ∈ smallOrbit
-      · have hx4 : x ∈ orbit S (4 : Fin 100) := by
-          rw [orbit_stabilizerChain_one_four]
-          exact hxs
-        exact Or.inr (Or.inr ⟨hxs, hclosed hx (mem_orbit_symm.mp hx4)⟩)
-      · have hx1 := (mem_largeOrbit x).mpr ⟨hx0, hxs⟩
-        exact Or.inr (Or.inl ⟨hx1, hclosed hx (mem_orbit_symm.mp hx1)⟩)
-    · rintro (rfl | ⟨hx1, h1⟩ | ⟨hxs, h4⟩)
-      · exact h0
-      · exact hclosed h1 hx1
-      · apply hclosed h4
-        rw [orbit_stabilizerChain_one_four]
-        exact hxs
   -- The two intermediate unions have sizes 78 and 23, neither dividing the degree.
   have hdvd : B.ncard ∣ 100 := by
     simpa using hB.ncard_dvd_card ⟨0, h0⟩
@@ -165,11 +169,11 @@ instance isPreprimitive : IsPreprimitive HS (Fin 100) := by
   · right
     apply Set.eq_univ_of_forall
     intro x
-    rw [hmem, mem_largeOrbit]
+    rw [mem_block_iff B h0 hB, mem_largeOrbit]
     tauto
   · have hEq : B = (↑(Finset.univ \ smallOrbit) : Set (Fin 100)) := by
       ext x
-      rw [hmem]
+      rw [mem_block_iff B h0 hB]
       simp only [mem_largeOrbit, h1, h4, and_true, and_false, or_false,
         Finset.mem_coe, Finset.mem_sdiff, Finset.mem_univ, true_and]
       have : (0 : Fin 100) ∉ smallOrbit := by decide +kernel
@@ -180,7 +184,7 @@ instance isPreprimitive : IsPreprimitive HS (Fin 100) := by
     norm_num [hcard] at hdvd
   · have hEq : B = (↑(insert 0 smallOrbit) : Set (Fin 100)) := by
       ext x
-      rw [hmem]
+      rw [mem_block_iff B h0 hB]
       simp [h1, h4]
     have hcard : B.ncard = 23 := by
       rw [hEq, Set.ncard_coe_finset]
@@ -189,7 +193,7 @@ instance isPreprimitive : IsPreprimitive HS (Fin 100) := by
   · left
     have hEq : B = {0} := by
       ext x
-      rw [hmem]
+      rw [mem_block_iff B h0 hB]
       simp [h1, h4]
     rw [hEq]
     exact Set.subsingleton_singleton
