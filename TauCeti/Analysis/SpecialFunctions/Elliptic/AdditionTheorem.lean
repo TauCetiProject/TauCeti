@@ -433,6 +433,18 @@ lemma ker_weierstrassPointHom : L.weierstrassPointHom.ker = L.lattice.toAddSubgr
   ext z
   simp
 
+/-- Two points of `ℂ` have the same image under the point map exactly when they differ by a
+period. -/
+lemma weierstrassPoint_eq_weierstrassPoint_iff {z w : ℂ} :
+    L.weierstrassPoint z = L.weierstrassPoint w ↔ z - w ∈ L.lattice := by
+  rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply, ← map_sub,
+    L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
+
+/-- The point map commutes with multiplication by a natural number. -/
+lemma nsmul_weierstrassPoint (n : ℕ) (z : ℂ) :
+    n • L.weierstrassPoint z = L.weierstrassPoint (n * z) := by
+  rw [← L.weierstrassPointHom_apply, ← map_nsmul, nsmul_eq_mul, L.weierstrassPointHom_apply]
+
 /-- Away from the period lattice, the Weierstrass function identifies exactly the pairs of
 points that differ by a period or whose sum is a period. -/
 theorem weierstrassP_eq_weierstrassP_iff {z w : ℂ} (hz : z ∉ L.lattice)
@@ -443,14 +455,11 @@ theorem weierstrassP_eq_weierstrassP_iff {z w : ℂ} (hz : z ∉ L.lattice)
     rw [L.weierstrassPoint_of_notMem hz, L.weierstrassPoint_of_notMem hw]
     simp
   rw [hx, WeierstrassCurve.Affine.Point.xRep_eq_xRep_iff]
-  have hsub : L.weierstrassPoint z = L.weierstrassPoint w ↔ z - w ∈ L.lattice := by
-    rw [← sub_eq_zero, ← L.weierstrassPointHom_apply, ← L.weierstrassPointHom_apply,
-      ← map_sub, L.weierstrassPointHom_apply, L.weierstrassPoint_eq_zero_iff]
   have hadd : L.weierstrassPoint z = -L.weierstrassPoint w ↔ z + w ∈ L.lattice := by
     rw [← add_eq_zero_iff_eq_neg, ← L.weierstrassPointHom_apply,
       ← L.weierstrassPointHom_apply, ← map_add, L.weierstrassPointHom_apply,
       L.weierstrassPoint_eq_zero_iff]
-  rw [hsub, hadd]
+  rw [L.weierstrassPoint_eq_weierstrassPoint_iff, hadd]
 
 /-- **The complex uniformization** `ℂ / Λ ≃+ E_Λ(ℂ)`, induced by the point map
 `z ↦ (℘(z), ℘'(z) / 2)` (`PeriodPair.weierstrassPoint`), which is a surjective group homomorphism
