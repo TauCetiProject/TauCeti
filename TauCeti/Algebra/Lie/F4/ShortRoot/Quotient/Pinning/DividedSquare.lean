@@ -127,9 +127,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       f4ShortRootIdealDividedSquareColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) := by
   let β := f4SpecialIsogenyIndexEquiv i
-  have hβ : f4Length β = 2 := by
-    dsimp only [β]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -151,7 +148,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
-      k β hk hβ hβne
+      k β hk hβne
   have htargetNe : i ≠
       f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
     intro h
@@ -350,7 +347,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_of_specialMap_add
-      k β γ hk hγ hadd
+      k β γ hk hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
         f4ShortRootLieIdealBasis b :=
@@ -432,9 +429,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_shor
       f4ShortRootIdealFirstColumn (isogenyReverse k)
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) := by
   let β := f4SpecialIsogenyIndexEquiv i
-  have hβ : f4Length β = 2 := by
-    dsimp only [β]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -454,7 +448,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_shor
     simp only [f4ShortRootQuotientDividedSquareColumn_eq]
     rw [hlift]
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_no_specialMap_edge
-      k β hk hβ (by
+      k β hk (by
         intro δ hδ hδeq
         apply hedge
         refine ⟨δ, hδ, ?_⟩
