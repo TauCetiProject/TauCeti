@@ -261,24 +261,28 @@ theorem disjointUnion_mem_Icc [Preorder K]
 
 end Assignment
 
-section Excess
+section Sums
 
-variable [Fintype V] [Fintype W] [∀ x y, Fintype (Q x y)]
-variable [∀ x y, Fintype (R x y)] [AddCommGroup K]
+variable [∀ x y, Fintype (Q x y)] [∀ x y, Fintype (R x y)] [AddCommMonoid K]
 
-omit [Fintype V] [Fintype W] in
 /-- A sum over the arrows between two left-summand vertices is a sum over the original arrows. -/
 theorem DisjointUnionHom.sum_inl {x y : V}
     (g : DisjointUnionHom Q R (.inl x) (.inl y) → K) :
     ∑ e, g e = ∑ e : Q x y, g (DisjointUnionHom.inl e) :=
   (Fintype.sum_equiv DisjointUnionHom.inlEquiv _ _ fun _ ↦ rfl).symm
 
-omit [Fintype V] [Fintype W] in
 /-- A sum over the arrows between two right-summand vertices is a sum over the original arrows. -/
 theorem DisjointUnionHom.sum_inr {x y : W}
     (g : DisjointUnionHom Q R (.inr x) (.inr y) → K) :
     ∑ e, g e = ∑ e : R x y, g (DisjointUnionHom.inr e) :=
   (Fintype.sum_equiv DisjointUnionHom.inrEquiv _ _ fun _ ↦ rfl).symm
+
+end Sums
+
+section Excess
+
+variable [Fintype V] [Fintype W] [∀ x y, Fintype (Q x y)]
+variable [∀ x y, Fintype (R x y)] [AddCommGroup K]
 
 @[simp]
 theorem excessAt_disjointUnion_inl (f : Assignment Q K) (g : Assignment R K) (x : V) :
