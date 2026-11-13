@@ -326,23 +326,29 @@ extension, the form in which it appears in the matrix entries of morphisms out o
 extension; `simp` does not see through this projection to the entry lemmas of
 `TauCeti.DGTwistedObject.extensionTwist`. -/
 
+/-- The `(inl, inl)` entry of the twist of an extension is the corresponding entry of the twist of
+`P`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inl_inl (i j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inl j) =
       matrixEquiv R _ _ 1 P.twist i j :=
   dgHomEquiv_extensionTwist_inl_inl R P Q g i j
 
+/-- The `(inl, inr)` entry of the twist of an extension vanishes. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inl_inr (i : P.obj.ι) (j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inl i) (.inr j) = 0 :=
   dgHomEquiv_extensionTwist_inl_inr R P Q g i j
 
+/-- The `(inr, inl)` entry of the twist of an extension is the corresponding entry of `g`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inr_inl (i : Q.obj.ι) (j : P.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inl j) =
       matrixEquiv R _ _ 1 (dgHomEquiv R Q P 1 g) i j :=
   dgHomEquiv_extensionTwist_inr_inl R P Q g i j
 
+/-- The `(inr, inr)` entry of the twist of an extension is the corresponding entry of the twist of
+`Q`. -/
 @[simp↓]
 theorem dgHomEquiv_twist_extension_inr_inr (i j : Q.obj.ι) :
     matrixEquiv R _ _ 1 (extension P Q g hg).twist (.inr i) (.inr j) =
@@ -715,6 +721,7 @@ noncomputable def extensionHomOfHomotopy (k : DGHom R 0 Q P) :
     dgComp R (extensionSnd R hg) (extensionInr R hg') (add_zero 0) +
     dgComp R (extensionSnd R hg) (dgComp R k (extensionInl R hg') (add_zero 0)) (add_zero 0)
 
+/-- The definition of `extensionHomOfHomotopy`, as an equation. -/
 theorem extensionHomOfHomotopy_def (k : DGHom R 0 Q P) :
     extensionHomOfHomotopy R hg hg' k =
       dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
@@ -815,6 +822,7 @@ noncomputable def extensionIsoOfHomotopy {k : DGHom R 0 Q P}
     simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, h, DGHomotopyCategory.homOf_dgId]
 
 variable {hg hg'} in
+/-- The forward morphism of `extensionIsoOfHomotopy` is the class of `extensionHomOfHomotopy`. -/
 @[simp]
 theorem extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
     (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).hom =
@@ -823,6 +831,8 @@ theorem extensionIsoOfHomotopy_hom {k : DGHom R 0 Q P} (hk : dgDifferential R 0 
   (rfl)
 
 variable {hg hg'} in
+/-- The inverse morphism of `extensionIsoOfHomotopy` is the class of `extensionHomOfHomotopy`
+for `-k`. -/
 @[simp]
 theorem extensionIsoOfHomotopy_inv {k : DGHom R 0 Q P} (hk : dgDifferential R 0 k = g - g') :
     (extensionIsoOfHomotopy R (hg := hg) (hg' := hg') hk).inv =
@@ -875,6 +885,7 @@ noncomputable def extensionMap (φ : DGHom R 0 Q Q') :
   dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
     dgComp R (extensionSnd R hg) (dgComp R φ (extensionInr R hg') (add_zero 0)) (add_zero 0)
 
+/-- The definition of `extensionMap`, as an equation. -/
 theorem extensionMap_def (φ : DGHom R 0 Q Q') :
     extensionMap R hg hg' φ =
       dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
@@ -1023,6 +1034,7 @@ noncomputable def extensionIsoOfIso {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
       extensionMap_dgId, DGHomotopyCategory.homOf_dgId]
 
 variable {hg hg'} in
+/-- The forward morphism of `extensionIsoOfIso` is the class of `extensionMap` for `φ`. -/
 @[simp]
 theorem extensionIsoOfIso_hom {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
     (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
@@ -1033,6 +1045,7 @@ theorem extensionIsoOfIso_hom {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
   (rfl)
 
 variable {hg hg'} in
+/-- The inverse morphism of `extensionIsoOfIso` is the class of `extensionMap` for `ψ`. -/
 @[simp]
 theorem extensionIsoOfIso_inv {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
     (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
@@ -1129,7 +1142,6 @@ theorem dgDifferential_mapExtensionHom : dgDifferential R 0 (mapExtensionHom G h
   simp only [dgDifferential_extensionInl, dgDifferential_extensionInr, neg_dgComp, zero_dgComp,
     dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
   exact neg_add_eq_zero.2 (dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) rfl)
-
 
 /-- The image of the inclusion of `P` followed by the comparison is the inclusion of `G P`. -/
 @[simp↓]
@@ -1229,12 +1241,14 @@ noncomputable def mapExtensionIso :
   inv_hom_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
     (dgComp_mapExtensionInv_mapExtensionHom G hg)
 
+/-- The forward morphism of `mapExtensionIso` is the class of `mapExtensionHom`. -/
 @[simp]
 theorem mapExtensionIso_hom :
     (mapExtensionIso G hg).hom = DGHomotopyCategory.homOf R (mapExtensionHom G hg)
       ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg)) :=
   (rfl)
 
+/-- The inverse morphism of `mapExtensionIso` is the class of `mapExtensionInv`. -/
 @[simp]
 theorem mapExtensionIso_inv :
     (mapExtensionIso G hg).inv = DGHomotopyCategory.homOf R (mapExtensionInv G hg)
