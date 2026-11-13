@@ -141,50 +141,42 @@ namespace Subgroup
 variable {G : Type*} [Group G]
 
 /-- **The double cosets partition the group**: the sizes of the double cosets `HgK` add up to the
-order of `G`. For infinite `G` both sides are `0`: a finite double coset forces `H` and `K` to be
-finite, and then `G`, a finite union of finite double cosets, would be finite. -/
+order of `G`. If `H` or `K` is infinite, every double coset is infinite and `G` is infinite, so
+both sides are `0`; otherwise every double coset is finite. -/
 theorem sum_card_quotToDoubleCoset (H K : Subgroup G)
     [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] :
     ∑ q, Nat.card (DoubleCoset.quotToDoubleCoset H K q) = Nat.card G := by
-  by_cases hG : Finite G
-  · rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
+  by_cases hHK : Finite H ∧ Finite K
+  · -- every double coset is finite, so the sizes of the fibres of `DoubleCoset.mk H K` add up
+    obtain ⟨hH, hK⟩ := hHK
+    have hfin (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+        (DoubleCoset.quotToDoubleCoset H K q).Finite :=
+      ((Set.toFinite (H : Set G)).mul (Set.toFinite {q.out})).mul (Set.toFinite (K : Set G))
+    have (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
+        Finite {a // DoubleCoset.mk H K a = q} := by
+      have := (hfin q).to_subtype
+      exact Finite.of_equiv _
+        (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
+    rw [← Nat.card_congr (Equiv.sigmaFiberEquiv (DoubleCoset.mk H K)), Nat.card_sigma]
     exact Fintype.sum_congr _ _ fun q =>
       Nat.card_congr (Equiv.subtypeEquivRight fun a => DoubleCoset.mem_quotToDoubleCoset_iff q a)
-  have hGi : Infinite G := not_finite_iff_infinite.1 hG
-  rw [Nat.card_eq_zero_of_infinite]
-  -- the double coset of `q` consists of the products `h * a * k`, for any representative `a`
-  have hmem (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-      ∃ a : G, ∀ x : G, x ∈ DoubleCoset.quotToDoubleCoset H K q ↔
-        ∃ h ∈ H, ∃ k ∈ K, x = h * a * k := by
-    obtain ⟨a, rfl⟩ : ∃ a, DoubleCoset.mk H K a = q := ⟨q.out, DoubleCoset.out_eq' q⟩
-    refine ⟨a, fun x ↦ ?_⟩
-    rw [DoubleCoset.mem_quotToDoubleCoset_iff, eq_comm, DoubleCoset.eq]
-  by_cases hHK : Finite H ∧ Finite K
-  · -- every double coset is finite, so `G`, their union, would be finite
-    obtain ⟨hH, hK⟩ := hHK
-    refine absurd ?_ hG
-    have hfin (q : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-        (DoubleCoset.quotToDoubleCoset H K q).Finite := by
-      obtain ⟨a, ha⟩ := hmem q
-      refine (Set.finite_range fun p : H × K ↦ (p.1 : G) * a * p.2).subset fun x hx ↦ ?_
-      obtain ⟨h, hh, k, hk, rfl⟩ := (ha x).1 hx
-      exact ⟨(⟨h, hh⟩, ⟨k, hk⟩), rfl⟩
-    have hall : (Set.univ : Set G).Finite := by
-      rw [← DoubleCoset.iUnion_quotToDoubleCoset H K]
-      exact Set.finite_iUnion hfin
-    exact Set.finite_univ_iff.1 hall
-  · -- some factor is infinite, and each double coset contains a translate of it
-    refine Finset.sum_eq_zero fun q _ ↦ ?_
-    obtain ⟨a, ha⟩ := hmem q
-    rw [not_and_or, not_finite_iff_infinite, not_finite_iff_infinite] at hHK
-    have : Infinite (DoubleCoset.quotToDoubleCoset H K q) := by
+  · -- some factor is infinite, hence so is `G` and every double coset
+    have hGi : Infinite G := by
+      rw [not_and_or, not_finite_iff_infinite, not_finite_iff_infinite] at hHK
       rcases hHK with hH | hK
-      · exact Infinite.of_injective (fun h : H ↦ (⟨(h : G) * a,
-          (ha _).2 ⟨h, h.2, 1, K.one_mem, by simp⟩⟩ : DoubleCoset.quotToDoubleCoset H K q))
-          fun h h' hh ↦ Subtype.ext (mul_right_cancel (congrArg Subtype.val hh))
-      · exact Infinite.of_injective (fun k : K ↦ (⟨a * k,
-          (ha _).2 ⟨1, H.one_mem, k, k.2, by simp⟩⟩ : DoubleCoset.quotToDoubleCoset H K q))
-          fun k k' hk ↦ Subtype.ext (mul_left_cancel (congrArg Subtype.val hk))
+      · exact Infinite.of_injective ((↑) : H → G) Subtype.val_injective
+      · exact Infinite.of_injective ((↑) : K → G) Subtype.val_injective
+    rw [Nat.card_eq_zero_of_infinite]
+    refine Finset.sum_eq_zero fun q _ ↦ ?_
+    have : (DoubleCoset.quotToDoubleCoset H K q).Infinite := by
+      rw [DoubleCoset.quotToDoubleCoset, DoubleCoset.doubleCoset]
+      rcases not_and_or.1 hHK with hH | hK
+      · exact Set.infinite_mul.2 (Or.inl ⟨Set.infinite_mul.2 (Or.inl
+          ⟨Set.infinite_coe_iff.1 (not_finite_iff_infinite.1 hH), Set.singleton_nonempty _⟩),
+          ⟨1, K.one_mem⟩⟩)
+      · exact Set.infinite_mul.2 (Or.inr ⟨Set.infinite_coe_iff.1 (not_finite_iff_infinite.1 hK),
+          Set.Nonempty.mul ⟨1, H.one_mem⟩ (Set.singleton_nonempty _)⟩)
+    have := this.to_subtype
     exact Nat.card_eq_zero_of_infinite
 
 /-- **The double cosets count the right cosets**: each double coset `HsK` of a finite group is a
