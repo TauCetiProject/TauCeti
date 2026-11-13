@@ -169,7 +169,7 @@ open scoped Topology ENNReal symmDiff
 /-- Cutting a fixed `Lᵖ` function off to sets converging in symmetric-difference measure
 converges in `Lᵖ`, for `1 ≤ p < ∞`. Neither the ambient measure nor the sets need have
 finite measure. -/
-theorem tendsto_toLp_indicator {α E ι : Type*} [MeasurableSpace α]
+theorem tendsto_toLp_indicator {α E ι : Type*} {_ : MeasurableSpace α}
     [NormedAddCommGroup E] {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {f : α → E} (hf : MemLp f p μ) (hp : p ≠ ∞)
     {l : Filter ι} {s : ι → Set α} {t : Set α}
