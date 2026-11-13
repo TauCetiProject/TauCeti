@@ -73,6 +73,8 @@ of translations of the extended affine Weyl group `P∨ ⋊ W`.
 More generally, `RootPairing.dualLattice` pulls back `Submodule.dualLattice` along the pairing:
 it consists of the coweights pairing integrally with a specified additive subgroup of weights.
 The dual of the root lattice is the coweight lattice (`RootPairing.dualLattice_rootSpan`).
+The reflection in a root lying in a lattice preserves that lattice when the coroot lies in its dual
+(`RootPairing.reflection_smul_eq_of_mem_dualLattice`).
 Every automorphism preserves the root and weight lattices
 (`RootPairing.Equiv.smul_rootSpan` and `RootPairing.Equiv.smul_coweightLattice_flip`).
 
@@ -376,6 +378,21 @@ theorem autFlip_smul_dualLattice_of_smul_eq {X₀ : Submodule ℤ M} {g : P.Aut}
     exact hy _ ((hmem x).mpr hx)
   · rw [← smul_inv_smul g x, hpair]
     exact hy _ ((hmem (g⁻¹ • x)).mp (by simpa using hx))
+
+open Pointwise Set in
+/-- The reflection in a root `αᵢ` of `X₀` whose coroot pairs integrally with `X₀` preserves `X₀`:
+it moves `x` by the integer multiple `⟨x, αᵢ^∨⟩ αᵢ`. -/
+theorem reflection_smul_eq_of_mem_dualLattice {X₀ : Submodule ℤ M} {i : ι}
+    (hroot : P.root i ∈ X₀) (hcoroot : P.coroot i ∈ P.dualLattice X₀) :
+    Equiv.reflection P i • (X₀ : Set M) = X₀ := by
+  have h : ∀ x ∈ X₀, Equiv.reflection P i • x ∈ X₀ := fun x hx ↦ by
+    obtain ⟨n, hn⟩ := mem_dualLattice.mp hcoroot x hx
+    rw [Equiv.reflection_smul, reflection_apply, coroot', LinearMap.flip_apply, hn,
+      Int.cast_smul_eq_zsmul]
+    exact X₀.sub_mem hx (zsmul_mem hroot n)
+  refine (smul_set_subset_iff.mpr h).antisymm (subset_smul_set_iff.mpr ?_)
+  rw [Equiv.reflection_inv]
+  exact smul_set_subset_iff.mpr h
 
 open Pointwise Set in
 /-- Every automorphism maps the root lattice onto itself, since it permutes the roots. -/

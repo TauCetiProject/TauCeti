@@ -124,20 +124,6 @@ theorem autFlip_smul_eq_of_mem_latticeAut (hg : g ∈ P.latticeAut X₀ Y₀) :
     Equiv.autFlip P g • (Y₀ : Set N) = Y₀ :=
   hg.2
 
-/-- The reflection in a root `αᵢ` of `X₀` whose coroot pairs integrally with `X₀` preserves `X₀`:
-it moves `x` by the integer multiple `⟨x, αᵢ^∨⟩ αᵢ`. -/
-theorem reflection_smul_eq_of_mem_dualLattice {i : ι} (hroot : P.root i ∈ X₀)
-    (hcoroot : P.coroot i ∈ P.dualLattice X₀) :
-    Equiv.reflection P i • (X₀ : Set M) = X₀ := by
-  have h : ∀ x ∈ X₀, Equiv.reflection P i • x ∈ X₀ := fun x hx ↦ by
-    obtain ⟨n, hn⟩ := mem_dualLattice.mp hcoroot x hx
-    rw [Equiv.reflection_smul, reflection_apply, coroot', LinearMap.flip_apply, hn,
-      Int.cast_smul_eq_zsmul]
-    exact X₀.sub_mem hx (zsmul_mem hroot n)
-  refine (smul_set_subset_iff.mpr h).antisymm (subset_smul_set_iff.mpr ?_)
-  rw [Equiv.reflection_inv]
-  exact smul_set_subset_iff.mpr h
-
 /-- The reflection in a root `αᵢ` preserves lattices containing `αᵢ` and `αᵢ^∨` and pairing
 integrally. On coweights it is the reflection of the flipped pairing in `αᵢ^∨`
 (`RootPairing.Equiv.autFlip_reflection`). -/
