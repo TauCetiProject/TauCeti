@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 
 /-!
@@ -72,19 +73,6 @@ section FourierAlgHom
 variable {k : Type u} {G : Type v} [CommSemiring k] [Monoid G] {ι : Type*} {V : ι → Type w}
   [∀ i, AddCommMonoid (V i)] [∀ i, Module k (V i)] (ρ : ∀ i, Representation k G (V i))
 
-/-- **An equivalence of representations conjugates the action of `k[G]`**: if `e : V ≃ W` is
-equivariant, the action of `f` on `W` is `e ∘ ρ(f) ∘ e⁻¹`. -/
-theorem _root_.Representation.Equiv.conjAlgEquiv_asAlgebraHom {V W : Type*} [AddCommMonoid V]
-    [Module k V] [AddCommMonoid W] [Module k W] {ρ : Representation k G V}
-    {σ : Representation k G W} (e : ρ.Equiv σ) (f : k[G]) :
-    e.toLinearEquiv.conjAlgEquiv k (ρ.asAlgebraHom f) = σ.asAlgebraHom f := by
-  refine LinearMap.ext fun w => ?_
-  obtain ⟨v, rfl⟩ := e.toLinearEquiv.surjective w
-  simp only [LinearEquiv.conjAlgEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply]
-  rw [Representation.Equiv.toLinearEquiv_apply]
-  exact e.toIntertwiningMap.apply_asAlgebraHom f v
-
 /-- **The Fourier transform** of the monoid algebra `k[G]` along a family of representations
 `ρᵢ` of `G`: it sends `f = ∑_g f(g) e_g` to the family of operators `(∑_g f(g) ρᵢ(g))ᵢ`, the
 action of `f` in each representation. -/
@@ -110,13 +98,8 @@ theorem fourierAlgHom_of (g : G) : fourierAlgHom ρ (MonoidAlgebra.of k G g) = f
 
 /-- The `i`-th block of the Fourier transform of `f` is `∑_g f(g) ρᵢ(g)`. -/
 theorem fourierAlgHom_apply_eq_sum [Fintype G] (f : k[G]) (i : ι) :
-    fourierAlgHom ρ f i = ∑ g, f.coeff g • ρ i g := by
-  classical
-  induction f using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add f₁ f₂ h₁ h₂ => simp only [map_add, Pi.add_apply, h₁, h₂, MonoidAlgebra.coeff_add,
-      Finsupp.add_apply, add_smul, Finset.sum_add_distrib]
-  | single h c => simp [MonoidAlgebra.coeff_single, Finsupp.single_apply, ite_smul]
+    fourierAlgHom ρ f i = ∑ g, f.coeff g • ρ i g :=
+  (ρ i).asAlgebraHom_eq_sum f
 
 /-- **The Fourier transform is equivariant for the two-sided actions of `G`**: multiplying by
 `e_a` on the left and by `e_b` on the right multiplies each block by `ρᵢ(a)` on the left and by
@@ -171,7 +154,7 @@ theorem coeff_fourierInv [Fintype ι] (T : Π i, Module.End k (V i)) (g : G) :
 
 /-- The inversion formula on a single block: the coefficient at `g` of the inverse transform of
 the family concentrated on the operator `A` at `i` is `|G|⁻¹ dim(Vᵢ) trace(ρᵢ(g⁻¹) A)`. -/
-@[simp]
+@[simp high]
 theorem coeff_fourierInv_single [Finite ι] [DecidableEq ι] (i : ι) (A : Module.End k (V i))
     (g : G) :
     (fourierInv ρ (Pi.single i A)).coeff g =
@@ -270,6 +253,11 @@ theorem fourierAlgEquiv_apply (f : k[G]) :
     fourierAlgEquiv ρ hind hcard f = fourierAlgHom ρ f :=
   (rfl)
 
+@[simp]
+theorem toAlgHom_fourierAlgEquiv :
+    (fourierAlgEquiv ρ hind hcard).toAlgHom = fourierAlgHom ρ :=
+  (rfl)
+
 /-- **Fourier inversion**, in the other direction: every family of operators is the Fourier
 transform of the element of `k[G]` given by the inversion formula. -/
 theorem fourierAlgHom_fourierInv [Finite ι] (T : Π i, Module.End k (V i)) :
@@ -278,6 +266,15 @@ theorem fourierAlgHom_fourierInv [Finite ι] (T : Π i, Module.End k (V i)) :
   rw [fourierInv_fourierAlgHom ρ hind hcard]
 
 @[simp]
+theorem fourierAlgEquiv_symm_fourierAlgHom (f : k[G]) :
+    (fourierAlgEquiv ρ hind hcard).symm (fourierAlgHom ρ f) = f :=
+  (fourierAlgEquiv ρ hind hcard).symm_apply_apply f
+
+@[simp]
+theorem fourierAlgHom_fourierAlgEquiv_symm (T : Π i, Module.End k (V i)) :
+    fourierAlgHom ρ ((fourierAlgEquiv ρ hind hcard).symm T) = T :=
+  (fourierAlgEquiv ρ hind hcard).apply_symm_apply T
+
 theorem fourierAlgEquiv_symm_apply [Finite ι] (T : Π i, Module.End k (V i)) :
     (fourierAlgEquiv ρ hind hcard).symm T = fourierInv ρ T :=
   (fourierAlgEquiv ρ hind hcard).symm_apply_eq.2 (fourierAlgHom_fourierInv ρ hind hcard T).symm
