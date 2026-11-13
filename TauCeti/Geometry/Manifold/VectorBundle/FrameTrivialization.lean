@@ -203,7 +203,7 @@ private theorem continuousAt_inverse_frameOperator (hU : IsOpen U) (hx : x ∈ U
     (hx' : x ∈ e'.baseSet) :
     ContinuousAt (fun y ↦ (frameOperator s b e' y).inverse) x := by
   have : FiniteDimensional 𝕜 F := .of_basis b
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   exact ((isInvertible_frameOperator b e' hs hx hx').contDiffAt_map_inverse
     (n := 0)).continuousAt.comp ((continuousOn_frameOperator b e' hs).continuousAt
     ((hU.inter e'.open_baseSet).mem_nhds ⟨hx, hx'⟩))
@@ -329,7 +329,7 @@ theorem trivialization_mem_maximalAtlas [ContMDiffVectorBundle n F V IB] :
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F V) := by
   let := Fintype.ofFinite ι
   have : FiniteDimensional 𝕜 F := .of_basis b
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   refine (Trivialization.mem_maximalAtlas_contMDiffFiberwiseLinear_iff IB n _).2 fun e' _ ↦ ?_
   -- Read in `e'`, the frame is a `C^n` family of operators, its coordinates in `e'` being `C^n`.
   have hframe : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (frameOperator s b e') (U ∩ e'.baseSet) := by

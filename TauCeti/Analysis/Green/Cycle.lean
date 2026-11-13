@@ -108,7 +108,8 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
       γ.source_eq_target
   obtain ⟨_, hi, heq⟩ := green_ac_winding_sum (s := FreeAbelianGroup.support C)
     (γ := η) (a := fun _ ↦ 0) (b := fun _ ↦ 1) (w := fun γ ↦ FreeAbelianGroup.coeff γ C)
-    (fun _ _ ↦ zero_lt_one) (fun γ _ ↦ (hac γ).comp_lineMap) (fun γ _ ↦ hcl γ)
+    (fun _ _ ↦ zero_lt_one) (fun γ _ ↦ absolutelyContinuousOnInterval_comp_lineMap_iff.2 (hac γ))
+    (fun γ _ ↦ hcl γ)
     hU (fun γ hγ ↦ by rw [himage]; exact htr γ hγ) hP hQ hidx
   have haeU : (fun z ↦ ∑ γ ∈ FreeAbelianGroup.support C,
       (FreeAbelianGroup.coeff γ C : ℝ) * windingWeight (η γ) 0 1 z) =ᵐ[volume.restrict U]

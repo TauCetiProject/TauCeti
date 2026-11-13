@@ -93,15 +93,13 @@ namespace PlumbingGraph
 
 private noncomputable def chainCoefficientEquiv :
     PlumbingChain V ≃ₗ[ZMod 2] (PlumbingCube V × ℕ →₀ ZMod 2) :=
-  (Finsupp.mapRange.linearEquiv
-    ((Polynomial.toFinsuppIsoLinear (ZMod 2)).trans
-      (AddMonoidAlgebra.coeffLinearEquiv (ZMod 2)))).trans
+  (Finsupp.mapRange.linearEquiv (AddMonoidAlgebra.coeffLinearEquiv (ZMod 2))).trans
     (Finsupp.curryLinearEquiv (ZMod 2)).symm
 
 omit [DecidableEq V] [Fintype V] in
 private theorem chainCoefficientEquiv_apply (c : PlumbingChain V) (C : PlumbingCube V)
     (j : ℕ) : chainCoefficientEquiv c (C, j) = (c C).coeff j := by
-  simp [chainCoefficientEquiv, Polynomial.toFinsuppIsoLinear, Polynomial.toFinsupp_apply]
+  simp [chainCoefficientEquiv]
 
 /-- The internal relative Maslov grading of plumbing chains over the coefficient field.
 The monomial `U ^ j C` lies in degree `C.dimension - 2 * w(C) - 2 * j`. -/
@@ -131,7 +129,7 @@ theorem single_monomial_mem_latticeChainMaslovGrading_piece (P : PlumbingGraph V
   intro B n hn
   by_cases hBC : B = C
   · subst B
-    simp only [Finsupp.single_eq_same, Polynomial.coeff_monomial] at hn
+    simp only [Finsupp.single_eq_same, Polynomial.coeff_monomial_apply] at hn
     split_ifs at hn with hnj
     · subst n
       rfl

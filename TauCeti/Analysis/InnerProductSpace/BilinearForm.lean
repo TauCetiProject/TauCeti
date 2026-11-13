@@ -63,11 +63,8 @@ tensor square with the flip of a form.
 
 ## References
 
-This is the linear-algebra half of the invariant-form dictionary that Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md)
-needs for its `frobeniusSchurIndicator_eq_one_iff` and `frobeniusSchurIndicator_eq_neg_one_iff`
-targets. The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2,
-and T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
+T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
 Chapter II.
 -/
 
@@ -139,7 +136,7 @@ identifies such a functional with a bilinear form. -/
 noncomputable def ofTensorEquiv [FiniteDimensional 𝕜 V] :
     V ⊗[𝕜] V ≃ₛₗ[starRingEnd 𝕜] BilinForm 𝕜 V :=
   have : FiniteDimensional 𝕜 (V ⊗[𝕜] V) := Module.Finite.tensorProduct 𝕜 V V
-  have : CompleteSpace (V ⊗[𝕜] V) := FiniteDimensional.complete 𝕜 _
+  have : CompleteSpace (V ⊗[𝕜] V) := FiniteDimensional.completeSpace 𝕜 _
   (InnerProductSpace.toDual 𝕜 (V ⊗[𝕜] V)).toLinearEquiv.trans
     (LinearMap.toContinuousLinearMap.symm.trans
       (TensorProduct.lift.equiv (RingHom.id 𝕜) V V 𝕜).symm)
