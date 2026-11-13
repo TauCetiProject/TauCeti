@@ -36,8 +36,13 @@ The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δ
 `φ` and `φ'`, and so, applying `Δ'ⱼ` to the reconstruction of `u`, each block of `φ'` is a sum of
 boundedly many blocks of `φ` composed with it: `Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u`. This
 is how a dyadic description of a function space is shown not to depend on the bump function.
-Being Fourier multipliers, the blocks commute with every Fourier multiplier of temperate growth,
-in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
+Blocks far from the spectrum of `u` vanish: if `𝓕 u` vanishes outside the closed ball of radius
+`2^j R`, then `Δₖ u = 0` for `k ≥ j + L`, and if it vanishes on the open ball of radius
+`2^j a`, `a > 0`, then `Δₖ u = 0` for `k + L ≤ j`, with `L` depending only on `φ` and `R`,
+respectively `a`. So a distribution whose spectrum lies in the dyadic annulus
+`2^j a ≤ ‖ξ‖ ≤ 2^j R` is the sum of its boundedly many blocks of index near `j`. Being Fourier
+multipliers, the blocks commute with every Fourier multiplier of temperate growth, in particular
+with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
 
 The blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`: there is `C`, depending only
 on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `f ∈ Lᵖ`. The kernel `𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz
@@ -57,7 +62,21 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
-  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`.
+  `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`, and for `j ≥ 1` also inside the ball of
+  radius `2^{j-1} φ.rIn` (`isVanishingOn_fourier_littlewoodPaleyBlock_succ`); the Fourier transform
+  of a sum of blocks of index at most `n` vanishes outside the ball of radius `2^n φ.rOut`
+  (`isVanishingOn_fourier_sum_littlewoodPaleyBlock`).
+* `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
+  `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
+  derivatives.
+* `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_annulus`: the blocks
+  away from the spectrum vanish, and `TemperedDistribution.sum_littlewoodPaleyBlock_eq_self`: a
+  distribution with finitely many nonzero blocks is their sum.
+* `TemperedDistribution.littlewoodPaleyBlock_eq_sum_Ico_of_hasSum`: the block `Δₖ` of a series
+  whose terms have `Δₖ uⱼ = 0` unless `k - L ≤ j < k + L` is the finite sum over that window.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
   between the blocks of two bump functions.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
@@ -85,7 +104,7 @@ public section
 
 open Filter Topology
 open FourierTransform
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -169,6 +188,143 @@ theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
   refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
   rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm
     (not_le.1 (mt mem_closedBall_zero_iff.2 hξ)).le, Complex.ofReal_zero]
+
+open Distribution in
+/-- **The spectrum of a dyadic block.** The Fourier transform of `Δ_{j+1} u` vanishes outside the
+annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`, which carries the piece `ψ_{j+1}`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock_succ (j : ℕ) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ (j + 1) u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ (j + 1) * φ.rOut) \ Metric.ball 0 (2 ^ j * φ.rIn))ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ ?_) u
+  simp only [Set.mem_compl_iff, Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff,
+    not_and_or, not_le, not_not] at hξ
+  rcases hξ with hξ | hξ
+  · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hξ.le, Complex.ofReal_zero]
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ.le, Complex.ofReal_zero]
+
+open Distribution in
+/-- **The spectrum of a sum of blocks.** If every index in `s` is at most `n`, the Fourier
+transform of `∑_{k ∈ s} Δₖ u` vanishes outside the closed ball of radius `2^n φ.rOut`. -/
+theorem isVanishingOn_fourier_sum_littlewoodPaleyBlock {s : Finset ℕ} {n : ℕ}
+    (hs : ∀ k ∈ s, k ≤ n) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (∑ k ∈ s, littlewoodPaleyBlock F φ k u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ n * φ.rOut))ᶜ := by
+  simp_rw [littlewoodPaleyBlock_apply, ← _root_.sum_apply,
+    ← fourierMultiplierCLM_sum F fun k _ ↦
+      φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k]
+  refine isVanishingOn_fourier_fourierMultiplierCLM (fun ξ hξ ↦ Finset.sum_eq_zero fun k hk ↦ ?_) u
+  rw [Set.mem_compl_iff, mem_closedBall_zero_iff, not_le] at hξ
+  have hkn : (2 : ℝ) ^ k * φ.rOut ≤ 2 ^ n * φ.rOut :=
+    mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (hs k hk)) φ.rOut_pos.le
+  simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm (hkn.trans hξ.le)]
+
+/-- The Littlewood–Paley blocks commute with directional derivatives. -/
+theorem littlewoodPaleyBlock_lineDerivOp (j : ℕ) (m : E) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂_{m} u) = ∂_{m} (littlewoodPaleyBlock F φ j u) := by
+  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply, lineDerivOp_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- The Littlewood–Paley blocks commute with iterated directional derivatives. -/
+theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k → E)
+    (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ j (∂^{m} u) = ∂^{m} (littlewoodPaleyBlock F φ j u) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
+      littlewoodPaleyBlock_lineDerivOp, ih]
+
+/-- A tempered distribution whose blocks vanish outside a finite set of indices is the sum of
+its blocks over that set. -/
+theorem sum_littlewoodPaleyBlock_eq_self {u : 𝓢'(E, F)} (s : Finset ℕ)
+    (hs : ∀ k ∉ s, littlewoodPaleyBlock F φ k u = 0) :
+    ∑ k ∈ s, littlewoodPaleyBlock F φ k u = u := by
+  refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) (tendsto_sum_littlewoodPaleyBlock φ u)
+  filter_upwards [eventually_ge_atTop (s.sup id + 1)] with N hN
+  refine Finset.sum_subset (fun k hk ↦ Finset.mem_range.2 ?_) fun k _ hk ↦ hs k hk
+  exact (Nat.lt_succ_of_le (Finset.le_sup (f := id) hk)).trans_le hN
+
+/-- The block `Δₖ` of a series of tempered distributions `uⱼ` with `Δₖ uⱼ = 0` unless
+`k - L ≤ j < k + L` is the finite sum of the `Δₖ uⱼ` over that window. -/
+theorem littlewoodPaleyBlock_eq_sum_Ico_of_hasSum {u : ℕ → 𝓢'(E, F)} {U : 𝓢'(E, F)}
+    (hU : HasSum u U) {L : ℕ}
+    (hL : ∀ j k, k + L ≤ j ∨ j + L ≤ k → littlewoodPaleyBlock F φ k (u j) = 0) (k : ℕ) :
+    littlewoodPaleyBlock F φ k U =
+      ∑ j ∈ Finset.Ico (k - L) (k + L), littlewoodPaleyBlock F φ k (u j) := by
+  refine (hU.map (littlewoodPaleyBlock F φ k) (map_continuous _)).unique
+    (hasSum_sum_of_ne_finset_zero fun j hj ↦ hL j k ?_)
+  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hj
+  omega
+
+open Distribution in
+/-- **Blocks off the spectrum vanish.** If the Fourier transform of `u` vanishes on a set
+containing the support of the piece `ψₖ`, then `Δₖ u = 0`. -/
+theorem littlewoodPaleyBlock_eq_zero_of_isVanishingOn {u : 𝓢'(E, F)} {s : Set E}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) s) {k : ℕ}
+    (hk : tsupport (φ.inhomogeneousLittlewoodPaley k) ⊆ s) : littlewoodPaleyBlock F φ k u = 0 :=
+  fourierMultiplierCLM_eq_zero_of_isVanishingOn hu <|
+    (tsupport_comp_subset Complex.ofReal_zero _).trans hk
+
+open Distribution in
+/-- **Blocks far above the spectrum vanish.** For every `R` there is `L`, depending only on `φ`
+and `R`, such that if the Fourier transform of `u` vanishes outside the closed ball of radius
+`2^j R`, then `Δₖ u = 0` for every `k ≥ j + L`. -/
+theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall (R : ℝ) :
+    ∃ L : ℕ, ∀ (j k : ℕ) (u : 𝓢'(E, F)),
+      IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.closedBall 0 (2 ^ j * R))ᶜ →
+        j + L ≤ k → littlewoodPaleyBlock F φ k u = 0 := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (R / φ.rIn) one_lt_two
+  rw [div_lt_iff₀ φ.rIn_pos] at hN
+  refine ⟨N + 1, fun j k u hu hjk ↦ ?_⟩
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+  -- The piece `ψ_{k+1}` lives where `2^k φ.rIn ≤ ‖ξ‖`, beyond the radius `2^j R`.
+  refine littlewoodPaleyBlock_eq_zero_of_isVanishingOn φ hu <|
+    (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset k).trans fun ξ hξ ↦ ?_
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le]
+  calc 2 ^ j * R < 2 ^ j * (2 ^ N * φ.rIn) := by gcongr
+    _ = 2 ^ (j + N) * φ.rIn := by ring
+    _ ≤ 2 ^ k * φ.rIn :=
+        mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
+    _ ≤ ‖ξ‖ := hξ.1
+
+open Distribution in
+/-- **Blocks far below the spectrum vanish.** For every `a > 0` there is `L`, depending only on
+`φ` and `a`, such that if the Fourier transform of `u` vanishes on the open ball of radius
+`2^j a`, then `Δₖ u = 0` for every `k` with `k + L ≤ j`. -/
+theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball {a : ℝ} (ha : 0 < a) :
+    ∃ L : ℕ, ∀ (j k : ℕ) (u : 𝓢'(E, F)),
+      IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.ball 0 (2 ^ j * a)) →
+        k + L ≤ j → littlewoodPaleyBlock F φ k u = 0 := by
+  obtain ⟨L, hL⟩ := pow_unbounded_of_one_lt (φ.rOut / a) one_lt_two
+  rw [div_lt_iff₀ ha] at hL
+  refine ⟨L, fun j k u hu hkj ↦ ?_⟩
+  -- The piece `ψₖ` lives in the closed ball of radius `2^k φ.rOut`, inside the radius `2^j a`.
+  refine littlewoodPaleyBlock_eq_zero_of_isVanishingOn φ hu <|
+    (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall k).trans
+      (Metric.closedBall_subset_ball ?_)
+  calc 2 ^ k * φ.rOut < 2 ^ k * (2 ^ L * a) := by gcongr
+    _ = 2 ^ (k + L) * a := by ring
+    _ ≤ 2 ^ j * a := mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hkj) ha.le
+
+open Distribution in
+/-- **Blocks away from a dyadic annulus vanish.** For `a > 0` and every `b` there is `L`, depending
+only on `φ`, `a` and `b`, with the following property. If the Fourier transform of `u` vanishes
+outside the closed ball of radius `2^j b` and, when `j > 0`, on the open ball of radius `2^j a`,
+then `Δₖ u = 0` whenever `k + L ≤ j` or `j + L ≤ k`. -/
+theorem exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_annulus {a : ℝ} (ha : 0 < a)
+    (b : ℝ) :
+    ∃ L : ℕ, ∀ (j k : ℕ) (u : 𝓢'(E, F)),
+      IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.closedBall 0 (2 ^ j * b))ᶜ →
+        (0 < j → IsVanishingOn (𝓕 u : 𝓢'(E, F)) (Metric.ball 0 (2 ^ j * a))) →
+          k + L ≤ j ∨ j + L ≤ k → littlewoodPaleyBlock F φ k u = 0 := by
+  obtain ⟨L₁, hL₁⟩ := exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball (F := F) φ ha
+  obtain ⟨L₂, hL₂⟩ :=
+    exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall (F := F) φ b
+  refine ⟨max L₁ L₂ + 1, fun j k u hb ha hjk ↦ ?_⟩
+  rcases hjk with hjk | hjk
+  · exact hL₁ j k u (ha (by omega)) (by omega)
+  · exact hL₂ j k u hb (by omega)
 
 /-- The composition of the Littlewood–Paley blocks of two bump functions is the Fourier
 multiplier by the product of the two pieces. -/

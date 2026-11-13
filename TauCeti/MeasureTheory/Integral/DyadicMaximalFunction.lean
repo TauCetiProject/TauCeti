@@ -154,8 +154,7 @@ theorem mul_volume_lt_dyadicMaximalFunction_le (f : (ι → ℝ) → F) (t : ℝ
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- In dimension zero every dyadic cube is the whole space, of volume `1`, so `M_d f` is the
     -- constant `‖f‖₁`.
-    have hQ (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
-      eq_univ_of_forall fun y => mem_dyadicCube.2 (Subsingleton.elim _ _)
+    have hQ (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ := dyadicCube_eq_univ k m
     have hvol : volume (univ : Set (ι → ℝ)) = 1 := by
       rw [← hQ 0 0, volume_dyadicCube, Fintype.card_eq_zero, pow_zero, ENNReal.ofReal_one]
     have hM (x : ι → ℝ) : dyadicMaximalFunction f x = ∫⁻ y, ‖f y‖ₑ := by
