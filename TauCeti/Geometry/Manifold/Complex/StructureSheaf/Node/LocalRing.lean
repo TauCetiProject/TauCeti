@@ -268,6 +268,78 @@ instance isLocalHom_snd : IsLocalHom (snd I J p q) where
     rw [isUnit_iff, ← eval_snd, ← isUnit_stalk_iff]
     exact hf
 
+section Ideals
+
+local notation "N" => nodeLocalRing I J p q
+local notation "A" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf I X)) p
+local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf J Y)) q
+local notation "π₁" => fst I J p q
+local notation "π₂" => snd I J p q
+
+/-- Germs supported on the first branch restrict onto its whole maximal ideal. -/
+@[simp]
+theorem map_fst_ker_snd : (RingHom.ker π₂).map π₁ = maximalIdeal A := by
+  ext a
+  rw [Ideal.mem_map_iff_of_surjective _ fst_surjective]
+  constructor
+  · rintro ⟨s, hs, rfl⟩
+    exact (maximalIdeal_comap π₁).ge (le_maximalIdeal (RingHom.ker_ne_top π₂) hs)
+  · intro ha
+    have ha₀ : holomorphicStructureSheaf.eval I X p a = 0 := by
+      simpa only [maximalIdeal_stalk, RingHom.mem_ker] using ha
+    exact ⟨mk a 0 (by simpa using ha₀), by simp, by simp⟩
+
+/-- Germs supported on the second branch restrict onto its whole maximal ideal. -/
+@[simp]
+theorem map_snd_ker_fst : (RingHom.ker π₁).map π₂ = maximalIdeal B := by
+  ext b
+  rw [Ideal.mem_map_iff_of_surjective _ snd_surjective]
+  constructor
+  · rintro ⟨s, hs, rfl⟩
+    exact (maximalIdeal_comap π₂).ge (le_maximalIdeal (RingHom.ker_ne_top π₁) hs)
+  · intro hb
+    have hb₀ : holomorphicStructureSheaf.eval J Y q b = 0 := by
+      simpa only [maximalIdeal_stalk, RingHom.mem_ker] using hb
+    exact ⟨mk 0 b (by simpa using hb₀.symm), by simp, by simp⟩
+
+/-- Membership in a power of the node maximal ideal is detected on both branches. -/
+theorem mem_maximalIdeal_pow_iff (s : N) (n : ℕ) :
+    s ∈ maximalIdeal N ^ n ↔
+      π₁ s ∈ maximalIdeal A ^ n ∧ π₂ s ∈ maximalIdeal B ^ n := by
+  by_cases hn : n = 0
+  · simp [hn]
+  constructor
+  · intro hs
+    exact ⟨Ideal.le_comap_pow π₁ n
+        (Ideal.pow_right_mono (maximalIdeal_comap π₁).ge n hs),
+      Ideal.le_comap_pow π₂ n
+        (Ideal.pow_right_mono (maximalIdeal_comap π₂).ge n hs)⟩
+  · rintro ⟨ha, hb⟩
+    -- Lift each branch power to a power supported only on that branch, then add the lifts.
+    rw [← map_fst_ker_snd (I := I) (J := J) (p := p) (q := q), ← Ideal.map_pow,
+      Ideal.mem_map_iff_of_surjective _ fst_surjective] at ha
+    rw [← map_snd_ker_fst (I := I) (J := J) (p := p) (q := q), ← Ideal.map_pow,
+      Ideal.mem_map_iff_of_surjective _ snd_surjective] at hb
+    obtain ⟨u, hu, hua⟩ := ha
+    obtain ⟨v, hv, hvb⟩ := hb
+    have hu₀ : π₂ u = 0 := RingHom.mem_ker.mp ((Ideal.pow_le_self hn) hu)
+    have hv₀ : π₁ v = 0 := RingHom.mem_ker.mp ((Ideal.pow_le_self hn) hv)
+    have hsum : u + v = s := ext (by simp [hua, hv₀]) (by simp [hvb, hu₀])
+    rw [← hsum]
+    exact Ideal.add_mem _
+      (Ideal.pow_right_mono (le_maximalIdeal (RingHom.ker_ne_top π₂)) n hu)
+      (Ideal.pow_right_mono (le_maximalIdeal (RingHom.ker_ne_top π₁)) n hv)
+
+/-- A node germ vanishes to second order exactly when each of its two branch germs does. -/
+theorem mem_maximalIdeal_sq_iff (s : N) :
+    s ∈ maximalIdeal N ^ 2 ↔
+      π₁ s ∈ maximalIdeal A ^ 2 ∧ π₂ s ∈ maximalIdeal B ^ 2 :=
+  mem_maximalIdeal_pow_iff s 2
+
+end Ideals
+
 variable (I J p q) in
 /-- Evaluation identifies the residue field of the node ring with `ℂ`. -/
 def residueFieldEquiv : ResidueField (nodeLocalRing I J p q) ≃+* ℂ :=

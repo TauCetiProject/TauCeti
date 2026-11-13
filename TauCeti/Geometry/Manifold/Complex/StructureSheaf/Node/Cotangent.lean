@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.LocalRing
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Cotangent
+import TauCeti.LinearAlgebra.Basis.Semilinear
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The cotangent space of an analytic node
@@ -22,10 +24,9 @@ between the branches, even though the product of their vanishing germs is zero. 
 the two cotangent directions used in the local deformation theory of an ordinary node,
 without choosing a hypersurface presentation.
 
-The derivative and square-vanishing criterion are supplied by
-`OpenPartialHomeomorph.holomorphicStalkFDeriv_eq_zero_iff`. The descent through the native
-cotangent quotient and residue-field comparison follows the construction of
-`OpenPartialHomeomorph.holomorphicCotangentEquiv`.
+The branch comparisons reuse `OpenPartialHomeomorph.holomorphicCotangentEquiv`, composed
+with Mathlib's `Ideal.mapCotangent` on the branch restrictions. The squared-ideal criterion
+from `Node.LocalRing` gives injectivity of their product.
 
 ## References
 
@@ -39,7 +40,7 @@ open scoped ContDiff Manifold
 
 namespace TauCeti.holomorphicStructureSheaf.nodeLocalRing
 
-variable {E F : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
   {X Y : Type} [TopologicalSpace X] [ChartedSpace E X]
   [TopologicalSpace Y] [ChartedSpace F Y]
@@ -53,125 +54,64 @@ local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
 local notation "π₁" => fst 𝓘(ℂ, E) 𝓘(ℂ, F) p q
 local notation "π₂" => snd 𝓘(ℂ, E) 𝓘(ℂ, F) p q
 
-/-- Germs supported on the first branch restrict onto its whole maximal ideal. -/
-@[simp]
-theorem map_ker_snd : (RingHom.ker π₂).map π₁ = maximalIdeal A := by
-  ext a
-  rw [Ideal.mem_map_iff_of_surjective _ fst_surjective, maximalIdeal_stalk,
-    RingHom.mem_ker]
-  constructor
-  · rintro ⟨s, hs, rfl⟩
-    rw [eval_fst, ← eval_snd, RingHom.mem_ker.mp hs, map_zero]
-  · intro ha
-    exact ⟨mk a 0 (by simpa using ha), by simp, by simp⟩
-
-/-- Germs supported on the second branch restrict onto its whole maximal ideal. -/
-@[simp]
-theorem map_ker_fst : (RingHom.ker π₁).map π₂ = maximalIdeal B := by
-  ext b
-  rw [Ideal.mem_map_iff_of_surjective _ snd_surjective, maximalIdeal_stalk,
-    RingHom.mem_ker]
-  constructor
-  · rintro ⟨s, hs, rfl⟩
-    rw [eval_snd, ← eval_fst, RingHom.mem_ker.mp hs, map_zero]
-  · intro hb
-    exact ⟨mk 0 b (by simpa using hb.symm), by simp, by simp⟩
-
-/-- A node germ vanishes to second order exactly when each of its two branch germs does. -/
-theorem mem_maximalIdeal_sq_iff (s : N) :
-    s ∈ maximalIdeal N ^ 2 ↔
-      π₁ s ∈ maximalIdeal A ^ 2 ∧ π₂ s ∈ maximalIdeal B ^ 2 := by
-  have h₁ : maximalIdeal N ≤ (maximalIdeal A).comap π₁ := by
-    intro t ht
-    simpa only [Ideal.mem_comap, maximalIdeal_stalk, RingHom.mem_ker,
-      eval_fst, maximalIdeal_eq_ker_eval] using ht
-  have h₂ : maximalIdeal N ≤ (maximalIdeal B).comap π₂ := by
-    intro t ht
-    simpa only [Ideal.mem_comap, maximalIdeal_stalk, RingHom.mem_ker,
-      eval_snd, maximalIdeal_eq_ker_eval] using ht
-  constructor
-  · intro hs
-    exact ⟨Ideal.le_comap_pow π₁ 2 (Ideal.pow_right_mono h₁ 2 hs),
-      Ideal.le_comap_pow π₂ 2 (Ideal.pow_right_mono h₂ 2 hs)⟩
-  · rintro ⟨ha, hb⟩
-    -- Lift each branch square to a square supported only on that branch, then add the lifts.
-    rw [← map_ker_snd (E := E) (F := F) (p := p) (q := q), ← Ideal.map_pow,
-      Ideal.mem_map_iff_of_surjective _ fst_surjective] at ha
-    rw [← map_ker_fst (E := E) (F := F) (p := p) (q := q), ← Ideal.map_pow,
-      Ideal.mem_map_iff_of_surjective _ snd_surjective] at hb
-    obtain ⟨u, hu, hua⟩ := ha
-    obtain ⟨v, hv, hvb⟩ := hb
-    have hu₀ : π₂ u = 0 := RingHom.mem_ker.mp ((Ideal.pow_le_self two_ne_zero) hu)
-    have hv₀ : π₁ v = 0 := RingHom.mem_ker.mp ((Ideal.pow_le_self two_ne_zero) hv)
-    have hsum : u + v = s := ext (by simp [hua, hv₀]) (by simp [hvb, hu₀])
-    rw [← hsum]
-    have hk₁ : RingHom.ker π₁ ≤ maximalIdeal N := by
-      intro t ht
-      rw [maximalIdeal_eq_ker_eval, RingHom.mem_ker, ← eval_fst,
-        RingHom.mem_ker.mp ht, map_zero]
-    have hk₂ : RingHom.ker π₂ ≤ maximalIdeal N := by
-      intro t ht
-      rw [maximalIdeal_eq_ker_eval, RingHom.mem_ker, ← eval_snd,
-        RingHom.mem_ker.mp ht, map_zero]
-    exact Ideal.add_mem _ (Ideal.pow_right_mono hk₂ 2 hu) (Ideal.pow_right_mono hk₁ 2 hv)
-
 variable {e : OpenPartialHomeomorph X E} {e' : OpenPartialHomeomorph Y F}
   (hp : p ∈ e.source) (hq : q ∈ e'.source)
   (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X) (he' : e' ∈ maximalAtlas 𝓘(ℂ, F) ω Y)
+  [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
 
-/-- The derivatives of the two branches of a vanishing node germ. -/
-private def maximalIdealFDeriv : maximalIdeal N →ₛₗ[eval 𝓘(ℂ, E) 𝓘(ℂ, F) p q]
-    (StrongDual ℂ E × StrongDual ℂ F) where
-  toFun s := (e.holomorphicStalkFDeriv p hp (π₁ s),
-    e'.holomorphicStalkFDeriv q hq (π₂ s))
-  map_add' s t := by
-    simp only [Submodule.coe_add, map_add,
-      e.holomorphicStalkFDeriv_add p hp he, e'.holomorphicStalkFDeriv_add q hq he']
-    rfl
-  map_smul' a s := by
-    have hs : eval 𝓘(ℂ, E) 𝓘(ℂ, F) p q s = 0 := by
-      simpa only [maximalIdeal_eq_ker_eval, RingHom.mem_ker] using s.property
-    ext v <;>
-      simp [smul_eq_mul, map_mul,
-        e.holomorphicStalkFDeriv_mul p hp he,
-        e'.holomorphicStalkFDeriv_mul q hq he', hs]
+/-- Restriction to the branches followed by their existing cotangent comparisons. -/
+private def cotangentMap : CotangentSpace N →+ (StrongDual ℂ E × StrongDual ℂ F) :=
+  ((e.holomorphicCotangentEquiv p hp he).toAddMonoidHom.comp
+    (Ideal.mapCotangent (maximalIdeal N) (maximalIdeal A) (π₁).toIntAlgHom
+      (maximalIdeal_comap π₁).ge).toAddMonoidHom).prod
+    ((e'.holomorphicCotangentEquiv q hq he').toAddMonoidHom.comp
+      (Ideal.mapCotangent (maximalIdeal N) (maximalIdeal B) (π₂).toIntAlgHom
+        (maximalIdeal_comap π₂).ge).toAddMonoidHom)
 
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
-
-include he he' in
-private theorem maximalIdealFDeriv_eq_zero_iff (s : maximalIdeal N) :
-    maximalIdealFDeriv hp hq he he' s = 0 ↔ (s : N) ∈ maximalIdeal N ^ 2 := by
-  have hs₁ : π₁ s ∈ maximalIdeal A := by
-    simpa only [maximalIdeal_stalk, RingHom.mem_ker, eval_fst,
-      maximalIdeal_eq_ker_eval] using s.property
-  have hs₂ : π₂ s ∈ maximalIdeal B := by
-    simpa only [maximalIdeal_stalk, RingHom.mem_ker, eval_snd,
-      maximalIdeal_eq_ker_eval] using s.property
-  rw [mem_maximalIdeal_sq_iff]
-  constructor
-  · intro h
-    exact ⟨(e.holomorphicStalkFDeriv_eq_zero_iff p hp he ⟨π₁ s, hs₁⟩).1
-      (congrArg Prod.fst h),
-      (e'.holomorphicStalkFDeriv_eq_zero_iff q hq he' ⟨π₂ s, hs₂⟩).1
-        (congrArg Prod.snd h)⟩
-  · rintro ⟨ha, hb⟩
-    exact Prod.ext
-      ((e.holomorphicStalkFDeriv_eq_zero_iff p hp he ⟨π₁ s, hs₁⟩).2 ha)
-      ((e'.holomorphicStalkFDeriv_eq_zero_iff q hq he' ⟨π₂ s, hs₂⟩).2 hb)
-
-private def cotangentMap : CotangentSpace N →ₛₗ[eval 𝓘(ℂ, E) 𝓘(ℂ, F) p q]
-    (StrongDual ℂ E × StrongDual ℂ F) :=
-  Submodule.liftQ _ (maximalIdealFDeriv hp hq he he') fun s hs ↦
-    (maximalIdealFDeriv_eq_zero_iff hp hq he he' s).2
-      ((Ideal.mem_toCotangent_ker _).1 (by
-        rw [Ideal.toCotangent, Submodule.ker_mkQ]
-        exact hs))
+private theorem cotangentMap_toBranchCotangent (s : maximalIdeal N) :
+    cotangentMap hp hq he he' (Ideal.toCotangent _ s) =
+      (e.holomorphicCotangentEquiv p hp he
+        (Ideal.toCotangent _ ⟨π₁ s, (maximalIdeal_comap π₁).ge s.property⟩),
+      e'.holomorphicCotangentEquiv q hq he'
+        (Ideal.toCotangent _ ⟨π₂ s, (maximalIdeal_comap π₂).ge s.property⟩)) := (rfl)
 
 @[simp]
 private theorem cotangentMap_toCotangent (s : maximalIdeal N) :
     cotangentMap hp hq he he' (Ideal.toCotangent _ s) =
       (e.holomorphicStalkFDeriv p hp (π₁ s),
-        e'.holomorphicStalkFDeriv q hq (π₂ s)) := (rfl)
+        e'.holomorphicStalkFDeriv q hq (π₂ s)) := by
+  simp [cotangentMap_toBranchCotangent]
+
+private theorem cotangentMap_smul (c : ResidueField N) (v : CotangentSpace N) :
+    cotangentMap hp hq he he' (c • v) =
+      (RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q)) c •
+        cotangentMap hp hq he he' v := by
+  obtain ⟨a, rfl⟩ := residue_surjective c
+  rw [RingHom.coe_coe, residueFieldEquiv_residue, ← IsLocalRing.ResidueField.algebraMap_eq,
+    IsScalarTower.algebraMap_smul]
+  obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
+  rw [← map_smul, cotangentMap_toBranchCotangent, cotangentMap_toBranchCotangent]
+  have h₁ : (⟨π₁ ((a • s : maximalIdeal N) : N),
+      (maximalIdeal_comap π₁).ge (a • s).property⟩ : maximalIdeal A) =
+      π₁ a • ⟨π₁ s, (maximalIdeal_comap π₁).ge s.property⟩ := by
+    ext
+    simp only [Submodule.coe_smul, smul_eq_mul, map_mul]
+  have h₂ : (⟨π₂ ((a • s : maximalIdeal N) : N),
+      (maximalIdeal_comap π₂).ge (a • s).property⟩ : maximalIdeal B) =
+      π₂ a • ⟨π₂ s, (maximalIdeal_comap π₂).ge s.property⟩ := by
+    ext
+    simp only [Submodule.coe_smul, smul_eq_mul, map_mul]
+  rw [h₁, h₂, (Ideal.toCotangent (maximalIdeal A)).map_smul,
+    (Ideal.toCotangent (maximalIdeal B)).map_smul]
+  apply Prod.ext
+  · rw [← IsScalarTower.algebraMap_smul (ResidueField A) (π₁ a)
+      (Ideal.toCotangent _ ⟨π₁ s, (maximalIdeal_comap π₁).ge s.property⟩),
+      LinearEquiv.map_smulₛₗ]
+    simp [IsLocalRing.ResidueField.algebraMap_eq]
+  · rw [← IsScalarTower.algebraMap_smul (ResidueField B) (π₂ a)
+      (Ideal.toCotangent _ ⟨π₂ s, (maximalIdeal_comap π₂).ge s.property⟩),
+      LinearEquiv.map_smulₛₗ]
+    simp [IsLocalRing.ResidueField.algebraMap_eq]
 
 attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
 
@@ -185,21 +125,26 @@ def cotangentEquiv :
     (σ₂₁ := RingHomClass.toRingHom (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q).symm)
     { toFun := cotangentMap hp hq he he'
       map_add' := map_add _
-      map_smul' := fun c v ↦ by
-        obtain ⟨a, rfl⟩ := residue_surjective c
-        rw [RingHom.coe_coe, residueFieldEquiv_residue,
-          ← IsLocalRing.ResidueField.algebraMap_eq, IsScalarTower.algebraMap_smul]
-        exact (cotangentMap hp hq he he').map_smulₛₗ a v }
+      map_smul' := cotangentMap_smul hp hq he he' }
     ⟨by
       rw [injective_iff_map_eq_zero]
       intro v hv
       obtain ⟨s, rfl⟩ := Ideal.toCotangent_surjective _ v
-      exact (Ideal.toCotangent_eq_zero _ s).2
-        ((maximalIdealFDeriv_eq_zero_iff hp hq he he' s).1 hv),
+      apply (Ideal.toCotangent_eq_zero _ s).2
+      rw [mem_maximalIdeal_sq_iff]
+      simp only [LinearMap.coe_mk, AddHom.coe_mk] at hv
+      rw [cotangentMap_toBranchCotangent] at hv
+      have h₁ := (e.holomorphicCotangentEquiv p hp he).map_eq_zero_iff.mp
+        (congrArg Prod.fst hv)
+      have h₂ := (e'.holomorphicCotangentEquiv q hq he').map_eq_zero_iff.mp
+        (congrArg Prod.snd hv)
+      exact ⟨(Ideal.toCotangent_eq_zero _ _).1 h₁,
+        (Ideal.toCotangent_eq_zero _ _).1 h₂⟩,
       fun ℓ ↦ ⟨Ideal.toCotangent _ ⟨mk
         (e.holomorphicLinearCoordinateGerm he p ℓ.1 hp)
         (e'.holomorphicLinearCoordinateGerm he' q ℓ.2 hq) (by simp), by
           simp [maximalIdeal_eq_ker_eval, ← eval_fst]⟩, by
+            simp only [LinearMap.coe_mk, AddHom.coe_mk]
             simp⟩⟩
 
 /-- On a vanishing germ the cotangent comparison is differentiation of its branch germs. -/
@@ -207,7 +152,8 @@ def cotangentEquiv :
 theorem cotangentEquiv_toCotangent (s : maximalIdeal N) :
     cotangentEquiv hp hq he he' (Ideal.toCotangent _ s) =
       (e.holomorphicStalkFDeriv p hp (π₁ s),
-        e'.holomorphicStalkFDeriv q hq (π₂ s)) := (rfl)
+        e'.holomorphicStalkFDeriv q hq (π₂ s)) :=
+  cotangentMap_toCotangent hp hq he he' s
 
 /-- The inverse comparison glues the two centered linear coordinate germs. -/
 @[simp]
@@ -225,29 +171,36 @@ branches. In particular, two curve branches give embedding dimension two. -/
 theorem finrank_cotangentSpace :
     Module.finrank (ResidueField N) (CotangentSpace N) =
       Module.finrank ℂ E + Module.finrank ℂ F := by
-  let c := cotangentEquiv hp hq he he'
-  have h := lift_rank_eq_of_equiv_equiv
-    (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q) c.toAddEquiv
-    (residueFieldEquiv 𝓘(ℂ, E) 𝓘(ℂ, F) p q).bijective c.map_smulₛₗ
-  have hr : Module.finrank (ResidueField N) (CotangentSpace N) =
-      Module.finrank ℂ (StrongDual ℂ E × StrongDual ℂ F) := by
-    simpa only [Cardinal.toNat_lift, Module.finrank] using congrArg Cardinal.toNat h
-  simpa only [Module.finrank_prod, ← LinearMap.toContinuousLinearMap.finrank_eq,
-    Subspace.dual_finrank_eq] using hr
+  rw [(cotangentEquiv hp hq he he').finrank_eqₛₗ, Module.finrank_prod,
+    ContinuousLinearMap.dual_finrank_eq, ContinuousLinearMap.dual_finrank_eq]
+
+section Manifolds
+
+variable [IsManifold 𝓘(ℂ, E) 1 X] [IsManifold 𝓘(ℂ, F) 1 Y]
+
+/-- The embedding dimension at a node of complex manifolds is the sum of their dimensions. -/
+@[simp]
+theorem finrank_cotangentSpace_nodeLocalRing :
+    Module.finrank (ResidueField N) (CotangentSpace N) =
+      Module.finrank ℂ E + Module.finrank ℂ F := by
+  let : IsManifold 𝓘(ℂ, E) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  let : IsManifold 𝓘(ℂ, F) ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact finrank_cotangentSpace (mem_chart_source E p) (mem_chart_source F q)
+    (chart_mem_maximalAtlas p (I := 𝓘(ℂ, E)) (n := ω))
+    (chart_mem_maximalAtlas q (I := 𝓘(ℂ, F)) (n := ω))
+
+end Manifolds
 
 section Curves
 
-variable {C D : Type} [TopologicalSpace C] [ChartedSpace ℂ C] [IsManifold 𝓘(ℂ) ω C]
-  [TopologicalSpace D] [ChartedSpace ℂ D] [IsManifold 𝓘(ℂ) ω D]
+variable {C D : Type} [TopologicalSpace C] [ChartedSpace ℂ C] [IsManifold 𝓘(ℂ) 1 C]
+  [TopologicalSpace D] [ChartedSpace ℂ D] [IsManifold 𝓘(ℂ) 1 D]
 
 /-- An ordinary analytic node has two independent cotangent directions over its residue field. -/
-@[simp]
 theorem finrank_cotangentSpace_eq_two (p : C) (q : D) :
     Module.finrank (ResidueField (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q))
       (CotangentSpace (nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q)) = 2 := by
-  simpa using finrank_cotangentSpace (mem_chart_source ℂ p) (mem_chart_source ℂ q)
-    (chart_mem_maximalAtlas p (I := 𝓘(ℂ)) (n := ω))
-    (chart_mem_maximalAtlas q (I := 𝓘(ℂ)) (n := ω))
+  simp
 
 end Curves
 
