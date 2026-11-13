@@ -251,9 +251,7 @@ theorem two_mul_index_map_mk'_of_neg_one_notMem
     2 * (Γ.map (QuotientGroup.mk' (center (SpecialLinearGroup (Fin 2) R)))).index =
       Γ.index := by
   rw [index_map_mk'_eq_index_sup, ← withCenter_def,
-    index_eq_two_mul_index_withCenter
-      (SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
-      fun _ hc ↦ SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc]
+    SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem h]
 
 /-- The image in `PSL(2, R)` of a subgroup of `SL(2, R)` has finite index exactly when the
 subgroup does. -/
