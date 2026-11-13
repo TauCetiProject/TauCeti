@@ -333,16 +333,8 @@ private theorem pullbackAlongActionAssocComparison_act (D : DescentDatum p X) :
         pullback.lift (pullback.fst p (pullback.fst p (X.hom ≫ p) ≫ p))
           (pullback.snd p (pullback.fst p (X.hom ≫ p) ≫ p) ≫ D.act)
           (by rw [Category.assoc, reassoc_of% D.act_hom]; exact pullback.condition) := by
-  apply pullback.hom_ext
-  · simp [pullbackAlongActionAssocComparison, pullbackAlongActionComparison, pullbackAlongObj]
-  · simp only [Category.assoc]
-    dsimp only [pullbackAlongActionAssocComparison]
-    slice_lhs 2 3 => rw [pullbackAlongActionComparison_snd]
-    slice_lhs 1 2 => rw [pullback.lift_snd]
-    slice_lhs 2 3 => rw [pullback.lift_fst]
-    slice_rhs 2 3 => rw [pullback.lift_snd]
-    slice_rhs 1 2 => rw [pullback.lift_snd]
-    exact (Category.assoc _ _ _).symm
+  apply pullback.hom_ext <;>
+    simp [pullbackAlongActionAssocComparison, pullbackAlongActionComparison, pullbackAlongObj]
 
 private theorem pullbackAlongActionAssocComparison_snd (X : Over S') :
     pullback.lift (pullback.fst _ _)
@@ -359,21 +351,8 @@ private theorem pullbackAlongActionAssocComparison_snd (X : Over S') :
           (by
             rw [Category.assoc, ← pullback.condition (f := p) (g := X.hom ≫ p)]
             exact pullback.condition) := by
-  apply pullback.hom_ext
-  · simp only [Category.assoc]
-    dsimp only [pullbackAlongActionAssocComparison]
-    slice_lhs 2 3 => rw [pullbackAlongActionComparison_fst]
-    slice_lhs 1 2 => rw [pullback.lift_fst]
-    slice_rhs 2 3 => rw [pullback.lift_fst]
-    slice_rhs 1 2 => rw [pullback.lift_fst]
-  · simp only [Category.assoc]
-    dsimp only [pullbackAlongActionAssocComparison]
-    slice_lhs 2 3 => rw [pullbackAlongActionComparison_snd]
-    slice_lhs 1 2 => rw [pullback.lift_snd]
-    slice_rhs 2 3 => rw [pullback.lift_snd]
-    slice_rhs 1 2 => rw [pullback.lift_snd]
-    slice_rhs 2 3 => rw [pullbackAlongActionComparison_snd]
-    exact Category.assoc _ _ _
+  apply pullback.hom_ext <;>
+    simp [pullbackAlongActionAssocComparison, pullbackAlongActionComparison, pullbackAlongObj]
 
 private theorem pullbackAlongActionComparison_naturality (f : X ⟶ Y) :
     pullback.map (pullback.fst q p) _ (pullback.fst q p) _ (𝟙 _)
