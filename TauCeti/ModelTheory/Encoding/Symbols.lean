@@ -53,6 +53,6 @@ instance [L.PrimrecFunctionArity] : L[[A]].PrimrecFunctionArity where
     have h : Primrec fun s : (Σ n, L.Functions n) ⊕ A => Sum.elim Sigma.fst (fun _ => 0) s :=
       (Primrec.sumCasesOn .id (PrimrecFunctionArity.primrec_fst.comp .snd).to₂
         (Primrec.const 0).to₂).of_eq fun s => by cases s <;> rfl
-    exact (h.comp Primrec.of_equiv).of_eq (elim_fst_sigmaFunctionsWithConstantsEquiv A)
+    exact (h.comp Primrec.of_equiv).of_eq (sumElim_fst_sigmaFunctionsWithConstantsEquiv A)
 
 end FirstOrder.Language

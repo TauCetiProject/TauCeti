@@ -230,7 +230,7 @@ theorem sigmaFunctionsWithConstantsEquiv_symm_inr (a : A) :
 
 /-- The arity of a function symbol of `L[[A]]`, read off its description as a function symbol
 of `L` or a constant from `A`. -/
-theorem elim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions n) :
+theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions n) :
     Sum.elim Sigma.fst (fun _ => 0) (sigmaFunctionsWithConstantsEquiv A s) = s.1 := by
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
