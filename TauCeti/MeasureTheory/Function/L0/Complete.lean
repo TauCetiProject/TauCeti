@@ -10,10 +10,11 @@ import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Completeness of real convergence in measure
+# Completeness of convergence in measure
 
-The bounded integral metric on `TauCeti.L0 μ` is complete for every finite measure `μ`.
-Thus Cauchy sequences of real random variables have limits without integrability assumptions
+For a complete pseudometric target `E`, the bounded integral pseudometric on
+`TauCeti.L0 E μ` is complete for every finite measure `μ`.
+Thus Cauchy sequences of random variables have limits without integrability assumptions
 on the random variables themselves.
 -/
 
@@ -26,10 +27,11 @@ open scoped ENNReal Topology
 
 namespace TauCeti.L0
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+variable {E Ω : Type*} [PseudoMetricSpace E] [CompleteSpace E]
+  [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
 
-/-- Real random variables over a finite measure space are complete for convergence in measure. -/
-instance instCompleteSpace : CompleteSpace (L0 μ) := by
+/-- Random variables over a finite measure space are complete for convergence in measure. -/
+instance instCompleteSpace : CompleteSpace (L0 E μ) := by
   let a : ℕ → ℝ := fun n ↦ (1 / 2) ^ n
   have ha : ∀ n, 0 < a n := fun n ↦ by dsimp [a]; positivity
   have hsum : Summable a := summable_geometric_two
@@ -44,14 +46,12 @@ instance instCompleteSpace : CompleteSpace (L0 μ) := by
     have hcontrol := (hf n n (n + 1) le_rfl (Nat.le_succ n)).le
     have hcancel : (1 + a n) / a n * (a n / (1 + a n) * a n) = a n := by
       field_simp [ne_of_gt han, ne_of_gt (by positivity : 0 < 1 + a n)]
-    have hr : μ.real {x | a n ≤ |f n x - f (n + 1) x|} ≤ a n :=
+    have hr : μ.real {x | a n ≤ dist (f n x) (f (n + 1) x)} ≤ a n :=
       hmarkov.trans ((mul_le_mul_of_nonneg_left hcontrol (by positivity)).trans_eq hcancel)
     have hcast := ENNReal.ofReal_le_ofReal hr
     rw [ofReal_measureReal (measure_ne_top μ _)] at hcast
     refine (measure_mono fun x hx ↦ ?_).trans hcast
-    have hx' : a n < |f n x - f (n + 1) x| := by
-      simpa only [Set.mem_ofPred_eq, Real.dist_eq] using hx
-    exact hx'.le
+    exact (show a n < dist (f n x) (f (n + 1) x) from hx).le
   have hsum' : (∑' n, ENNReal.ofReal (a n)) ≠ ∞ := by
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ (ha n).le) hsum]
     exact ENNReal.ofReal_ne_top

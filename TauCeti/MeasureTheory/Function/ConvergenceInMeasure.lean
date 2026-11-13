@@ -25,8 +25,8 @@ Convergence in mean square also implies convergence in measure, with integrabili
 squared deviations required only eventually along the filter.
 
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
-On finite measure spaces, continuous transformations preserve convergence along countably
-generated filters whenever the transformed functions are eventually almost everywhere strongly
+On finite measure spaces, continuous transformations preserve convergence along arbitrary
+filters whenever the transformed functions are eventually almost everywhere strongly
 measurable.
 
 ## Main results
@@ -45,7 +45,7 @@ measurable.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
-  finite measure spaces along countably generated filters.
+  finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
   theorem, obtained by pairing and unary composition.
 
@@ -129,7 +129,7 @@ end TauCeti
 namespace MeasureTheory.TendstoInMeasure
 
 open Filter
-open scoped Topology
+open scoped Topology ENNReal
 
 /-- Pairing functions preserves convergence in measure, without measurability or finiteness
 assumptions on the measure, and along an arbitrary filter. -/
@@ -147,37 +147,49 @@ theorem prodMk {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
     measure_union_le {x | ε ≤ edist (f₁ i x) (g₁ x)} {x | ε ≤ edist (f₂ i x) (g₂ x)}
 
 /-- A continuous transformation preserves convergence in measure on a finite measure space
-along a countably generated filter, provided the transformed functions are eventually almost
-everywhere strongly measurable. The transformation need not be uniformly continuous or bounded. -/
+along an arbitrary filter, provided the transformed functions are eventually almost everywhere
+strongly measurable. The transformation need not be uniformly continuous or bounded. -/
 theorem continuous_comp {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
     [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
-    {l : Filter ι} [l.IsCountablyGenerated] {f : ι → α → E₁} {g : α → E₁}
+    {l : Filter ι} {f : ι → α → E₁} {g : α → E₁}
     (h : TendstoInMeasure μ f l g) {φ : E₁ → E₂} (hφ : Continuous φ)
     (hf : ∀ᶠ i in l, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ) :
     TendstoInMeasure μ (fun i x ↦ φ (f i x)) l (fun x ↦ φ (g x)) := by
+  classical
+  rw [tendstoInMeasure_iff_tendsto_toNNReal]
   intro ε hε
-  apply tendsto_of_seq_tendsto
-  intro ns hns
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hns.eventually hf)
-  apply (tendsto_add_atTop_iff_nat N).1
-  have hmeas (n : ℕ) : AEStronglyMeasurable (fun x ↦ φ (f (ns (n + N)) x)) μ :=
-    hN _ (Nat.le_add_left N n)
-  suffices hcomp : TendstoInMeasure μ (fun n x ↦ φ (f (ns (n + N)) x)) atTop
-      (fun x ↦ φ (g x)) from hcomp ε hε
-  apply (exists_seq_tendstoInMeasure_atTop_iff hmeas).2
-  intro ms hms
-  obtain ⟨ks, hks, hlim⟩ :=
-    (h.comp (hns.comp ((tendsto_add_atTop_nat N).comp hms.tendsto_atTop))).exists_seq_tendsto_ae
-  refine ⟨ks, hks, ?_⟩
-  filter_upwards [hlim] with x hx
-  exact (hφ.tendsto (g x)).comp hx
+  by_contra hbad
+  obtain ⟨s, hs, hfreq⟩ := not_tendsto_iff_exists_frequently_notMem.1 hbad
+  obtain ⟨δ, hδ, hsub⟩ := NNReal.nhds_zero_basis.mem_iff.1 hs
+  let r : ℕ → ℝ≥0∞ := fun n ↦ (2⁻¹ : ℝ≥0∞) ^ n
+  have hr : Tendsto r atTop (𝓝 0) :=
+    ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num)
+  have hselect (n : ℕ) : ∃ i, AEStronglyMeasurable (fun x ↦ φ (f i x)) μ ∧
+      μ {x | r n ≤ edist (f i x) (g x)} ≤ r n ∧
+      δ ≤ (μ {x | ε ≤ edist (φ (f i x)) (φ (g x))}).toNNReal := by
+    have hrpos : 0 < r n := ENNReal.pow_pos (by norm_num) _
+    have hevent := (h (r n) hrpos).eventually (gt_mem_nhds hrpos)
+    obtain ⟨i, hi, hfi, hri⟩ := (hfreq.and_eventually (hf.and hevent)).exists
+    exact ⟨i, hfi, hri.le, Set.notMem_Iio.1 (Set.notMem_subset hsub hi)⟩
+  choose ns hmeas hbound hbadbound using hselect
+  have hseq : TendstoInMeasure μ (fun n ↦ f (ns n)) atTop g := by
+    apply TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist hr
+    apply tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hr (fun _ ↦ zero_le)
+    intro n
+    exact (measure_mono (s := {x | r n < edist (f (ns n) x) (g x)})
+      (fun x hx ↦ show r n ≤ edist (f (ns n) x) (g x) from le_of_lt hx)).trans (hbound n)
+  obtain ⟨ks, _, hlim⟩ := hseq.exists_seq_tendsto_ae
+  have hcomp := tendstoInMeasure_of_tendsto_ae (fun n ↦ hmeas (ks n))
+    (hlim.mono fun x hx ↦ (hφ.tendsto (g x)).comp hx)
+  have hzero := tendstoInMeasure_iff_tendsto_toNNReal.mp hcomp ε hε
+  exact (not_lt_of_ge (ge_of_tendsto' hzero (fun n ↦ hbadbound (ks n)))) hδ
 
 /-- A continuous binary transformation preserves convergence in measure on a finite measure
-space along a countably generated filter, provided the transformed functions are eventually
+space along an arbitrary filter, provided the transformed functions are eventually
 almost everywhere strongly measurable. -/
 theorem continuous_comp₂ {α ι E₁ E₂ E₃ : Type*} [MeasurableSpace α] {μ : Measure α}
     [IsFiniteMeasure μ] [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂]
-    [PseudoEMetricSpace E₃] {l : Filter ι} [l.IsCountablyGenerated]
+    [PseudoEMetricSpace E₃] {l : Filter ι}
     {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
     (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂)
     {φ : E₁ → E₂ → E₃} (hφ : Continuous (Function.uncurry φ))
