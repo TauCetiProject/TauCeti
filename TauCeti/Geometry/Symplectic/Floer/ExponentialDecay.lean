@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
