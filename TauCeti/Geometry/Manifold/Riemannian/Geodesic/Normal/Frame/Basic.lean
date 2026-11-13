@@ -178,10 +178,11 @@ theorem normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
 theorem leviCivitaConnection_normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
     leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) p = 0 := by
-  exact (isMetricCompatible_leviCivitaConnection I).apply_gramSchmidtNormed_eq_zero
-    (fun j ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
-    (h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent h.self_mem_image)
-    (fun j ↦ h.leviCivitaConnection_normalCoordinateField_self (b j)) i
+  exact (isMetricCompatible_leviCivitaConnection I).apply_gramSchmidtNormed_eq_zero i
+    (fun j _ ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
+    ((h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent
+      h.self_mem_image).linearIndepOn _)
+    (fun j _ ↦ h.leviCivitaConnection_normalCoordinateField_self (b j))
 
 /-- At the centre, frame reconstruction is the identity. -/
 @[simp]

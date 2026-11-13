@@ -16,12 +16,11 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 An element `x` of a number field `K` is **totally positive** when it is strictly positive under
 every real embedding `K →+* ℝ` — equivalently, at every real infinite place. This is the archimedean
-positivity condition underlying the *narrow* class group of the multiquadratic roadmap (Layer 3):
-the narrow class group `Cl⁺(K)` is the quotient of the fractional ideals by the principal ideals
-admitting a totally positive generator. It surjects onto the ordinary class group `Cl(K)`
-(forgetting the positivity condition), and the `2`-rank of `Cl⁺(K)` is what the genus-theory
-`t - 1` formula (with `t` the number of ramified primes) computes for a **real quadratic** field
-in the multiquadratic roadmap.
+positivity condition underlying the *narrow* class group: the narrow class group `Cl⁺(K)` is the
+quotient of the fractional ideals by the principal ideals admitting a totally positive generator.
+It surjects onto the ordinary class group `Cl(K)` (forgetting the positivity condition), and the
+`2`-rank of `Cl⁺(K)` is what the genus-theory `t - 1` formula (with `t` the number of ramified
+primes) computes for a **real quadratic** field.
 
 This file introduces the predicate and its multiplicative structure. The totally positive elements
 are closed under multiplication and inversion and contain every nonzero square, so the totally

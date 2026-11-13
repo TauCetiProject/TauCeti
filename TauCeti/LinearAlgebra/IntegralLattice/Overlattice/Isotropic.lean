@@ -63,9 +63,6 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   Proposition 1.4.1. The quadratic statement here is that proposition in the half-norm `ℚ/ℤ`
   convention; the bilinear statement is its elementary intermediate-lattice analogue.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 4.
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean` (`integralOverlatticeEquivIsotropicSubgroup`,
-  `evenOverlatticeEquivIsotropicSubgroup`).
 -/
 
 public section
