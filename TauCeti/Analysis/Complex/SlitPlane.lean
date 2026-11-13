@@ -291,6 +291,10 @@ end TauCeti
 
 namespace Complex
 
+/-- A point off the slit plane is real. -/
+theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
+  by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
+
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
     {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - z * t ∈ slitPlane := by
