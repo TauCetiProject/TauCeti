@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.Decomposition
+import Mathlib.Algebra.BigOperators.Pi
 
 /-!
 # Residual cycle adjustments
