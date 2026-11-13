@@ -135,7 +135,7 @@ def loopSubOneCocycle (ℓ : MooreLoopSpace B b) :
     fin_cases x <;> dsimp only [Fin.zero_eta, Fin.mk_one]
     · simp
     · rw [Matrix.cons_val_one, Matrix.cons_val_zero, mapRange.linearMap_apply, mapRange_single,
-        cubicalChainDifferential_eq_zero_of_mem_zero _ _ (loopPointChain_sub_one_mem ℓ),
+        cubicalChainDifferential_eq_zero_of_nonneg _ _ le_rfl (loopPointChain_sub_one_mem ℓ),
         single_zero, sum_single_index (by simp)]
       simp
 
@@ -356,11 +356,11 @@ private theorem exists_loopSubOneDifferential_eq_of_mem
   -- The difference `r' - q (ℓ - 1)` is a boundary of the loop chain algebra.
   obtain ⟨w, hw⟩ := exists_cubicalChainDifferential_eq_of_loopChainToGroupAlgebra_eq_zero R hB
     (z := r' - q * c)
-    (by rw [map_sub, hdr', cubicalChainDifferential_eq_zero_of_mem_zero _ _ hqc0, sub_zero])
+    (by rw [map_sub, hdr', cubicalChainDifferential_eq_zero_of_nonneg _ _ le_rfl hqc0, sub_zero])
     (by rw [map_sub, map_mul, hφq, hφc, ha, sub_self])
   have hDq : loopSubOneDifferential R ℓ (single 1 q) = single 0 (q * c) := by
     rw [loopSubOneDifferential_single_one ℓ hq0,
-      cubicalChainDifferential_eq_zero_of_mem_zero _ _ hq0, single_zero, zero_add,
+      cubicalChainDifferential_eq_zero_of_nonneg _ _ le_rfl hq0, single_zero, zero_add,
       Int.negOnePow_zero, one_smul]
   refine ⟨single 0 w + single 1 q + single 1 u', ?_⟩
   rw [map_add, map_add, loopSubOneDifferential_single_zero, hw, hDq, ← single_add, sub_add_cancel,

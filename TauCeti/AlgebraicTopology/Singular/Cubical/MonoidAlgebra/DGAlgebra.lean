@@ -182,14 +182,6 @@ theorem cubicalChainDifferential_lof_zero (y : NormalizedCubicalChain G R 0) :
   rw [cubicalChainDifferential_lof]
   rfl
 
-/-- The differential vanishes in cohomological degree zero, which consists of the `0`-chains. -/
-theorem cubicalChainDifferential_eq_zero_of_mem_zero {x : normalizedCubicalChainAlgebra G R}
-    (hx : x ∈ cubicalChainGrading G R 0) : cubicalChainDifferential G R x = 0 := by
-  rcases (mem_cubicalChainGrading_iff G R).1 hx with rfl | ⟨n, y, hn, rfl⟩
-  · exact map_zero _
-  · obtain rfl : n = 0 := by omega
-    exact cubicalChainDifferential_lof_zero G R y
-
 /-- The differential on `(k + 1)`-chains is the boundary. -/
 @[simp]
 theorem cubicalChainDifferential_lof_succ (k : ℕ) (y : NormalizedCubicalChain G R (k + 1)) :
