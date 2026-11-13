@@ -73,6 +73,9 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.schurPolyBasis` and `TauCeti.coe_schurPolyBasis`: **the Schur polynomials of the
   partitions of `n` with at most `Fintype.card σ` parts are a basis of the symmetric homogeneous
   polynomials of degree `n`.**
+* `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
+  partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
+  in at least `n` letters and smaller in fewer.
 
 ## References
 
@@ -305,6 +308,30 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   have h : schurPolyBasis σ R n μ = schurPolyElem σ R n μ := Module.Basis.mk_apply _ _ μ
   rw [h]
   rfl
+
+/-! ### The dimension -/
+
+variable (σ R n) in
+/-- **The dimension of the symmetric polynomials of degree `n`** in the alphabet `σ` is the number
+of partitions of `n` with at most `Fintype.card σ` parts, the index set of the monomial and Schur
+bases. -/
+theorem finrank_symmetricHomogeneousSubmodule [Nontrivial R] :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) =
+      Fintype.card {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
+  Module.finrank_eq_card_basis (msymmBasis σ R n)
+
+/-- **In at least `n` letters the dimension in degree `n` is the number of partitions of `n`.** -/
+theorem finrank_symmetricHomogeneousSubmodule_of_le [Nontrivial R] (h : n ≤ Fintype.card σ) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) = Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule, Fintype.card_congr (partitionEquivSchurIndex σ n h)]
+
+/-- **In fewer than `n` letters the dimension in degree `n` is less than the number of partitions
+of `n`**, the partition `1ⁿ` having more parts than the alphabet has letters. -/
+theorem finrank_symmetricHomogeneousSubmodule_lt [Nontrivial R] (h : Fintype.card σ < n) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) < Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule]
+  refine Fintype.card_subtype_lt (x := Nat.Partition.ones n) ?_
+  simpa [Nat.Partition.ones_parts] using h
 
 /-- **The coordinates of a Schur expansion**: if a symmetric homogeneous polynomial is a combination
 `∑_λ c_λ s_λ` of the Schur polynomials of *all* partitions of `n`, its coordinate in the Schur
