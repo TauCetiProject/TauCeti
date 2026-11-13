@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.AmbientGroup
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.GraphSteinberg
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.Graph.Steinberg
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
-import all TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.AmbientGroup
-import all TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
-import all TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
 # Graph-twisted Steinberg maps on the canonical ambient group
@@ -24,8 +20,9 @@ comparison with a represented family model.
 
 The positive and negative simple-root equations use the canonical root maps, and the character
 pullback uses `ValidLieTypeIndex.canonicalTorus` in fundamental-weight coordinates. The native
-twist-order iterate is the datum's field Frobenius. Thus the independently constructed map is
-available on the same carrier as the canonical pinning, without assuming point generation.
+twist-order iterate is the datum's `q^r`-Frobenius, namely `ChevalleyDatum.frobenius` at
+`fieldExponent * twistOrder`. Thus the independently constructed map is available on the same
+carrier as the canonical pinning, without assuming point generation.
 
 ## References
 
@@ -69,13 +66,49 @@ private theorem pointEquiv_canonicalSteinberg (g : d.1.CanonicalAmbientGroup) :
     MulEquiv.subgroupCongr_apply]
   rfl
 
+private theorem coe_pointEquiv (g : d.1.CanonicalAmbientGroup) :
+    (d.pointEquiv g : Matrix.GeneralLinearGroup
+      (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) =
+      (g : Matrix.GeneralLinearGroup
+        (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) :=
+  MulEquiv.subgroupCongr_apply _ g
+
+/-- On every canonical point, the Steinberg map is integral lattice conjugation after
+entrywise Frobenius, without a point-generation hypothesis. -/
+@[simp]
+theorem coe_canonicalSteinberg (g : d.1.CanonicalAmbientGroup) :
+    (d.canonicalSteinberg g : Matrix.GeneralLinearGroup
+      (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) =
+      kostantNumberedSymmetryMatrix
+          (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+          (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+          (d.1.dynkinType.scModuleDiagramEquiv d.1.dynkinType_valid
+            d.diagramPerm_mem_diagramSymmetry)
+          (fun _ => d.1.dynkinType.scModuleDiagramEquiv_mem_scLattice_iff
+            d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) d.1.Closure *
+        Matrix.GeneralLinearGroup.map
+          (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent) g *
+      (kostantNumberedSymmetryMatrix
+          (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+          (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+          (d.1.dynkinType.scModuleDiagramEquiv d.1.dynkinType_valid
+            d.diagramPerm_mem_diagramSymmetry)
+          (fun _ => d.1.dynkinType.scModuleDiagramEquiv_mem_scLattice_iff
+            d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) d.1.Closure)⁻¹ := by
+  have h := congrArg Subtype.val (d.pointEquiv_canonicalSteinberg g)
+  simpa only [coe_pointEquiv, coe_scSteinberg] using h
+
 private theorem pointEquiv_root (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.pointEquiv
       (d.1.canonicalRootSubgroup (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) u) =
       kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _ (.inl i) d.1.Closure u := by
   apply Subtype.ext
-  exact ChevalleyDatum.coe_rootSubgroupPoints_simpleIndex
-    (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid) i d.1.Closure u
+  refine (d.coe_pointEquiv _).trans
+    ((congrArg (fun f : Multiplicative d.1.Closure →* d.1.CanonicalAmbientGroup => (f u).val)
+      (d.1.canonicalRootSubgroup_def _)).trans
+      ((ChevalleyDatum.coe_rootSubgroupPoints_simpleIndex
+        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid) i d.1.Closure u).trans ?_))
+  exact (coe_kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _ _ d.1.Closure u).symm
 
 private theorem pointEquiv_negativeRoot (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.pointEquiv
@@ -85,15 +118,12 @@ private theorem pointEquiv_negativeRoot (i : Fin d.1.rank) (u : Multiplicative d
           (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) u) =
       kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _ (.inr i) d.1.Closure u := by
   apply Subtype.ext
-  exact ChevalleyDatum.coe_rootSubgroupPoints_reflectionPerm_simpleIndex
-    (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid) i d.1.Closure u
-
-private theorem coe_pointEquiv (g : d.1.CanonicalAmbientGroup) :
-    (d.pointEquiv g : Matrix.GeneralLinearGroup
-      (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) =
-      (g : Matrix.GeneralLinearGroup
-        (Fin (d.1.dynkinType.scWeightBasisCard d.1.dynkinType_valid)) d.1.Closure) :=
-  MulEquiv.subgroupCongr_apply _ g
+  refine (d.coe_pointEquiv _).trans
+    ((congrArg (fun f : Multiplicative d.1.Closure →* d.1.CanonicalAmbientGroup => (f u).val)
+      (d.1.canonicalRootSubgroup_def _)).trans
+      ((ChevalleyDatum.coe_rootSubgroupPoints_reflectionPerm_simpleIndex
+        (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid) i d.1.Closure u).trans ?_))
+  exact (coe_kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _ _ d.1.Closure u).symm
 
 private theorem pointEquiv_torus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.pointEquiv (d.1.canonicalTorus s) =
@@ -119,43 +149,46 @@ private theorem pointEquiv_torus (s : Fin d.1.rank → d.1.Closureˣ) :
 /-- On a positive simple root, the canonical Steinberg map applies the selected diagram
 permutation and raises the additive parameter to the small-field order. -/
 @[simp]
-theorem canonicalSteinberg_simpleRoot (i : Fin d.1.rank) (u : d.1.Closure) :
+theorem canonicalSteinberg_canonicalRootSubgroup_simpleIndex (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
     d.canonicalSteinberg
       (d.1.canonicalRootSubgroup (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)
-        (Multiplicative.ofAdd u)) =
+        u) =
       d.1.canonicalRootSubgroup
         (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.diagramPerm i))
-        (Multiplicative.ofAdd (u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   apply d.pointEquiv.injective
-  have hroot := d.scSteinberg_rootSubgroup d.1.Closure (.inl i) (Multiplicative.ofAdd u)
+  have hroot := d.scSteinberg_rootSubgroup d.1.Closure (.inl i) u
   simp only [diagramRootGeneratorPerm_apply_inl] at hroot
   exact (d.pointEquiv_canonicalSteinberg _).trans
-    ((congrArg (d.scSteinberg d.1.Closure) (d.pointEquiv_root i (Multiplicative.ofAdd u))).trans
+    ((congrArg (d.scSteinberg d.1.Closure) (d.pointEquiv_root i u)).trans
       (hroot.trans
-        (d.pointEquiv_root (d.diagramPerm i) (Multiplicative.ofAdd (u ^ d.1.fieldOrder))).symm))
+        (d.pointEquiv_root (d.diagramPerm i)
+          (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder))).symm))
 
-/-- The same source-node permutation and field exponent act on negative simple roots. -/
+/-- On a negative simple root, the canonical Steinberg map applies `d.diagramPerm` and
+raises the additive parameter to the small-field order `d.1.fieldOrder`. -/
 @[simp]
-theorem canonicalSteinberg_negativeSimpleRoot (i : Fin d.1.rank) (u : d.1.Closure) :
+theorem canonicalSteinberg_canonicalRootSubgroup_reflectionPerm_simpleIndex
+    (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.canonicalSteinberg
       (d.1.canonicalRootSubgroup
         ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
           (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)
-          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) (Multiplicative.ofAdd u)) =
+          (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i)) u) =
       d.1.canonicalRootSubgroup
         ((d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).reflectionPerm
           (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.diagramPerm i))
           (d.1.dynkinType.simpleIndex d.1.dynkinType_valid (d.diagramPerm i)))
-        (Multiplicative.ofAdd (u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   apply d.pointEquiv.injective
-  have hroot := d.scSteinberg_rootSubgroup d.1.Closure (.inr i) (Multiplicative.ofAdd u)
+  have hroot := d.scSteinberg_rootSubgroup d.1.Closure (.inr i) u
   simp only [diagramRootGeneratorPerm_apply_inr] at hroot
   exact (d.pointEquiv_canonicalSteinberg _).trans
-    ((congrArg (d.scSteinberg d.1.Closure)
-      (d.pointEquiv_negativeRoot i (Multiplicative.ofAdd u))).trans
+    ((congrArg (d.scSteinberg d.1.Closure) (d.pointEquiv_negativeRoot i u)).trans
       (hroot.trans
         (d.pointEquiv_negativeRoot (d.diagramPerm i)
-          (Multiplicative.ofAdd (u ^ d.1.fieldOrder))).symm))
+          (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder))).symm))
 
 /-- The character pullback on the canonical torus is the native datum Steinberg weight map,
 including the inverse diagram action. -/
@@ -173,7 +206,7 @@ theorem isCharacterMap_canonicalSteinberg :
 /-- In fundamental-weight coordinates, the canonical map raises to `q` and relabels by the
 inverse diagram permutation. -/
 @[simp]
-theorem canonicalSteinberg_torus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem canonicalSteinberg_canonicalTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.canonicalSteinberg (d.1.canonicalTorus s) =
       d.1.canonicalTorus (fun j => s (d.diagramPerm⁻¹ j) ^ d.1.fieldOrder) := by
   apply d.pointEquiv.injective
@@ -183,6 +216,7 @@ theorem canonicalSteinberg_torus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 /-- The native twist-order iterate on canonical points is `q^r`-Frobenius. The field
 Frobenius iteration index is the product of the field exponent and the twist order. -/
+-- Select composition, rather than pointwise operations on bundled homomorphisms.
 theorem canonicalSteinberg_pow_twistOrder :
     (show _root_.Monoid.End _ from d.canonicalSteinberg) ^ d.twistOrder =
       (d.1.dynkinType.scChevalleyDatum d.1.dynkinType_valid).frobenius
@@ -192,9 +226,11 @@ theorem canonicalSteinberg_pow_twistOrder :
   apply MonoidHom.ext
   intro g
   apply Subtype.ext
-  have hp : d.pointEquiv (((show _root_.Monoid.End _ from d.canonicalSteinberg) ^ d.twistOrder) g) =
-      ((show _root_.Monoid.End _ from d.scSteinberg d.1.Closure) ^ d.twistOrder)
-        (d.pointEquiv g) := h.iterate_right d.twistOrder g
+  have hp := (congrArg d.pointEquiv
+    (congrFun (_root_.Monoid.End.coe_pow _ d.canonicalSteinberg d.twistOrder) g)).trans
+      ((h.iterate_right d.twistOrder g).trans
+        (congrFun (_root_.Monoid.End.coe_pow _ (d.scSteinberg d.1.Closure) d.twistOrder)
+          (d.pointEquiv g)).symm)
   have hF := congrArg (fun F : _root_.Monoid.End _ => F (d.pointEquiv g))
     (d.scSteinberg_pow_twistOrder d.1.Closure)
   refine (d.coe_pointEquiv _).symm.trans ((congrArg Subtype.val (hp.trans hF)).trans ?_)
