@@ -60,6 +60,14 @@ arbitrary trivializing covers, and the Thom classes it produces, are in
 `TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion` and
 `TauCeti.Topology.VectorBundle.Orientation.ThomClass`.
 
+In homology, the Mayer–Vietoris sequence of the Thom pairs over open sets `U` and `V` is exact at
+`Hₙ(E|_U, E₀|_U) ⊞ Hₙ(E|_V, E₀|_V)` (`TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`),
+and its map to `Hₙ(E|_{U ∪ V}, E₀|_{U ∪ V})` is an epimorphism when
+`Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (`TauCeti.epi_singularHomology_thomPairOver_union`). In
+the rank degree, where the homology below vanishes, this computes `Hᵣ(E|_{U ∪ V}, E₀|_{U ∪ V})`
+from the pairs over `U`, `V` and `U ∩ V`; this is used in
+`TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology`.
+
 ## Main results
 
 * `TauCeti.isZero_singularHomology_thomPairOver_union`: the Mayer–Vietoris step from open sets
@@ -77,6 +85,9 @@ arbitrary trivializing covers, and the Thom classes it produces, are in
   sets, a class in the top degree is determined on the fibres.
 * `TauCeti.exists_singularCohomology_thomPairOver_biUnion`: classes over finitely many
   trivializing open sets agreeing on the fibres glue to a class over their union.
+* `TauCeti.singularHomology_thomPairOver_mayerVietoris_exact`,
+  `TauCeti.epi_singularHomology_thomPairOver_union`: the Mayer–Vietoris sequence of the Thom pairs
+  over two open sets in homology.
 
 ## References
 
@@ -124,7 +135,7 @@ variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, Zero (E b)]
   [TopologicalSpace (TotalSpace F E)]
 
 /-- The relative homology of the Thom pair over the empty set vanishes. -/
-private theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
+theorem isZero_singularHomology_thomPairOver_empty (n : ℕ) :
     IsZero ((thomPairOver F E ∅).singularHomology R n) := by
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
@@ -401,6 +412,103 @@ theorem exists_singularCohomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpe
     simp [z, ← ConcreteCategory.comp_apply]
 
 end Gluing
+
+section HomologyGluing
+
+/-! ### The Mayer–Vietoris sequence of Thom pairs in homology
+
+The Mayer–Vietoris sequence of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` in homology
+(`TopCat.pairMayerVietoris_exact₂` and `TopCat.pairMayerVietoris_exact₃`), read on the Thom pairs
+over `U ∩ V`, `U`, `V` and `U ∪ V`. -/
+
+variable {B : Type w} {F : Type*} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, Zero (E b)] {U V : Set B}
+
+/-- The first two maps of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in
+homology compose to zero: both composites are the restriction from `U ∩ V` to `U ∪ V`. -/
+theorem singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (n : ℕ) :
+    biprod.lift (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left) R n)
+        (-TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_right) R n) ≫
+      biprod.desc
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
+      0 := by
+  simp [← TopPair.singularHomologyMap_comp]
+
+/-- The second map of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` in homology is
+that of the pairs `(E|_U, E₀|_U)` and `(E|_V, E₀|_V)` of subspaces of `E`, followed by the
+identification of their union pair with the Thom pair over `U ∪ V`. -/
+private theorem biprod_desc_singularHomologyMap_thomPairOverMap (n : ℕ) :
+    biprod.desc
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+        (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R n) =
+      TopCat.pairMayerVietorisFromBiprod R (X := TopCat.of (TotalSpace F E))
+          (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+          (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n ≫
+        TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).hom R n := by
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · simp only [biprod.inl_desc, TopCat.inl_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_thomPairOverUnionIso_hom_left (F := F) (E := E) (U := U) (V := V)).symm
+  · simp only [biprod.inr_desc, TopCat.inr_pairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularHomologyMap_comp]
+    exact congrArg (TopPair.singularHomologyMap · R n)
+      (ofInclusionMap_comp_thomPairOverUnionIso_hom_right (F := F) (E := E) (U := U)
+        (V := V)).symm
+
+variable [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+/-- **Exactness of the Mayer–Vietoris sequence of Thom pairs in homology** at
+`Hₙ(E|_U, E₀|_U) ⊞ Hₙ(E|_V, E₀|_V)`, for open sets `U` and `V` of the base: the first map has
+components the restriction from `U ∩ V` to `U` and minus the restriction to `V`, and the second map
+is the sum of the restrictions to `U ∪ V`. -/
+theorem singularHomology_thomPairOver_mayerVietoris_exact (hU : IsOpen U) (hV : IsOpen V)
+    (n : ℕ) :
+    (ShortComplex.mk _ _ (singularHomology_thomPairOver_mayerVietoris_comp_eq_zero (F := F)
+      (E := E) (U := U) (V := V) R n)).Exact := by
+  obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
+  refine (ShortComplex.exact_iff_of_iso ?_).2 (TopCat.pairMayerVietoris_exact₂ R
+    (X := TopCat.of (TotalSpace F E)) inter_subset_left inter_subset_left hA hB hC hD n)
+  refine ShortComplex.isoMk (asIso (TopPair.singularHomologyMap
+      (thomPairOverInterIso F E U V).hom R n)) (Iso.refl _)
+    (asIso (TopPair.singularHomologyMap (thomPairOverUnionIso F E U V).inv R n)) ?_ ?_
+  · refine biprod.hom_ext _ _ ?_ ?_
+    · simp only [Category.assoc, TopCat.pairMayerVietorisToBiprod_fst, Iso.refl_hom,
+        Category.id_comp, biprod.lift_fst, ← TopPair.singularHomologyMap_comp, asIso_hom]
+      exact congrArg (TopPair.singularHomologyMap · R n)
+        (thomPairOverInterIso_hom_comp_ofInclusionMap_left (F := F) (E := E) (U := U) (V := V))
+    · simp only [Category.assoc, TopCat.pairMayerVietorisToBiprod_snd, Iso.refl_hom,
+        Category.id_comp, biprod.lift_snd, Preadditive.comp_neg,
+        ← TopPair.singularHomologyMap_comp, asIso_hom]
+      exact congrArg (fun f ↦ -TopPair.singularHomologyMap f R n)
+        (thomPairOverInterIso_hom_comp_ofInclusionMap_right (F := F) (E := E) (U := U) (V := V))
+  · simp only [Iso.refl_hom, Category.id_comp, asIso_hom,
+      biprod_desc_singularHomologyMap_thomPairOverMap, Category.assoc,
+      ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id, TopPair.singularHomologyMap_id,
+      Category.comp_id]
+
+/-- **The end of the Mayer–Vietoris sequence of Thom pairs in homology**: for open sets `U` and `V`
+of the base, if `Hₙ₋₁(E|_{U ∩ V}, E₀|_{U ∩ V})` vanishes (or `n = 0`), every class over `U ∪ V` is
+a sum of restrictions of classes over `U` and over `V`. -/
+theorem epi_singularHomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpen V) {n : ℕ}
+    (hUV : ∀ m, m + 1 = n → IsZero ((thomPairOver F E (U ∩ V)).singularHomology R m)) :
+    Epi (biprod.desc
+      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_left : U ⊆ U ∪ V)) R n)
+      (TopPair.singularHomologyMap (thomPairOverMap F E (subset_union_right : V ⊆ U ∪ V)) R
+        n)) := by
+  obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
+  rw [biprod_desc_singularHomologyMap_thomPairOverMap]
+  refine epi_comp' ?_ inferInstance
+  cases n with
+  | zero => exact TopCat.epi_pairMayerVietorisFromBiprod_zero R _ _ hA hB hC hD
+  | succ m =>
+    refine (TopCat.pairMayerVietoris_exact₃ R _ _ hA hB hC hD (m + 1) m).epi_f
+      (IsZero.eq_of_tgt ?_ _ _)
+    exact (hUV m rfl).of_iso
+      (asIso (TopPair.singularHomologyMap (thomPairOverInterIso F E U V).inv R m))
+
+end HomologyGluing
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
