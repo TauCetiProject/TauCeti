@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
+import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -47,6 +48,15 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
+/-- A point of the open upper part lies in the closed upper part, and is not the corner. -/
+private theorem mem_closed_and_ne_of_mem_upper {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ}
+    (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0) {z : ℂ}
+    (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) :
+    z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} ∧ f z - w ≠ 0 := by
+  have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
+    ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
+  exact ⟨hzclosed, hq_ne z hzclosed fun h => by simpa [h] using hz.2⟩
+
 /-- **Power-map straightening of a conformal corner.**  Let `f` be continuous and injective on
 the closed upper part of a conjugation-symmetric neighbourhood `Ω`, holomorphic on its open upper
 part, and send a real point `x` to the corner `w`.  Assume the translated interior values lie
@@ -72,122 +82,62 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
       EqOn f (fun z => w + h z ^ (β : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im}) := by
   let g : ℂ → ℂ := fun z => I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)
   have hxclosed : (x : ℂ) ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} := ⟨hxΩ, by simp⟩
-  have hq_ne {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) (hzx : z ≠ (x : ℂ)) :
-      f z - w ≠ 0 := by
-    rw [sub_ne_zero]
-    intro hzw
-    exact hzx (hfinj hz hxclosed (hzw.trans hfx.symm))
-  have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi := by
-    constructor
-    · exact div_nonneg (mul_nonneg Real.pi_pos.le hβ.1.le) (by norm_num)
-    · nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
-  have hsector_closed {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-      (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
-    have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
-      apply hΩopen.inter_closure
-      exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩
-    have hqcont : ContinuousWithinAt (fun y => f y - w) (Ω ∩ {y : ℂ | 0 < y.im}) z :=
-      ((hfcont z hz).sub continuousWithinAt_const).mono fun y hy =>
-        ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
-    have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} :=
-      isClosed_le (continuous_norm.mul continuous_const) Complex.continuous_re
-    apply (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).2
-    have hmem : f z - w ∈ closure {q : ℂ |
-        ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} := by
-      apply hqcont.mem_closure hzclosure
-      intro y hy
-      exact (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).1
-        (Ioo_subset_Icc_self (hsector_open y hy))
-    simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
-  have hsector_upper_lt_pi : Real.pi * β / 2 < Real.pi := by
-    nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
-  have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := by
-    refine cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed hz)) <;>
-      linarith [mul_pos Real.pi_pos hβ.1]
-  have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-    intro z hz
-    have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
-      rcases eq_or_ne z (x : ℂ) with rfl | hzx
-      · simp [hfx]
-      · have hslit : f z - w ∈ slitPlane := Complex.mem_slitPlane_iff_arg.mpr
-          ⟨ne_of_lt ((hsector_closed hz).2.trans_lt hsector_upper_lt_pi), hq_ne hz hzx⟩
-        exact (Complex.mem_slitPlane_iff.mp hslit).imp le_of_lt id
-    have hqcont : ContinuousWithinAt (fun y => f y - w)
-        (Ω ∩ {z : ℂ | 0 ≤ z.im}) z := (hfcont z hz).sub continuousWithinAt_const
-    have hpowcont : ContinuousAt (fun q : ℂ => q ^ ((β⁻¹ : ℝ) : ℂ)) (f z - w) :=
-      Complex.continuousAt_cpow_const_of_re_pos hbase (by
-        simpa only [ofReal_re] using inv_pos.mpr hβ.1)
-    have hroot : ContinuousWithinAt (fun y => (f y - w) ^ ((β⁻¹ : ℝ) : ℂ))
-        (Ω ∩ {z : ℂ | 0 ≤ z.im}) z :=
-      hpowcont.comp_continuousWithinAt (f := fun y => f y - w) hqcont
-    exact continuousWithinAt_const.mul hroot
-  have hgd : DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) := by
-    intro z hz
-    have hzx : z ≠ (x : ℂ) := fun h => by simpa [h] using hz.2
-    have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
-      ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
-    have hslit : f z - w ∈ slitPlane := Complex.mem_slitPlane_iff_arg.mpr
-      ⟨ne_of_lt ((hsector_open z hz).2.trans hsector_upper_lt_pi), hq_ne hzclosed hzx⟩
-    exact ((hfd z hz).sub_const w).cpow_const hslit |>.const_mul I
-  have hgupper : MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} := by
-    intro z hz
-    have hzx : z ≠ (x : ℂ) := fun h => by simpa [h] using hz.2
-    have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
-      ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
-    have hpos := cpow_inv_re_pos_of_arg_mem_sector hβ.1
-      (hq_ne hzclosed hzx) (hsector_open z hz)
-    simpa only [mem_ofPred_eq, g, mul_im, I_re, I_im, zero_mul, one_mul, zero_add] using hpos
-  have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-    intro z hz y hy hzy
-    have hroot : (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) =
-        (f y - w) ^ ((β⁻¹ : ℝ) : ℂ) := by
-      have hzy' : I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) =
-          I * (f y - w) ^ ((β⁻¹ : ℝ) : ℂ) := by
-        simpa only [g] using hzy
-      exact mul_left_cancel₀ I_ne_zero hzy'
-    have hpow := congrArg (fun q : ℂ => q ^ (β : ℂ)) hroot
-    rw [hrecover hz, hrecover hy] at hpow
-    exact hfinj hz hy (sub_left_inj.mp hpow)
-  let G : ℂ → ℂ := schwarzReflection g
-  have hG_eq_g {z : ℂ} (hz : 0 ≤ z.im) : G z = g z := by
-    simpa only [G] using schwarzReflection_of_im_nonneg (f := g) hz
-  have hGd : DifferentiableOn ℂ G Ω := by
-    simpa only [G] using
-      differentiableOn_schwarzReflection_of_symmetric hΩopen hΩconj hgcont hgd hreal
-  have hGx : G x = 0 := by
+  have hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0 := fun z hz hzx h =>
+    hzx (hfinj hz hxclosed ((sub_eq_zero.mp h).trans hfx.symm))
+  have hsector_open' : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
+      (f z - w).arg ∈ Ioo (-(β * Real.pi / 2)) (β * Real.pi / 2) := by
+    simpa only [mul_comm] using hsector_open
+  have hangle := pi_mul_div_two_lt_pi hβ.2
+  have hsector_closed := fun z (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) =>
+    arg_mem_Icc_of_arg_mem_sector (f := fun z => f z - w) hΩopen
+      ⟨div_nonneg (mul_nonneg hβ.1.le Real.pi_pos.le) (by norm_num), hangle.le⟩
+      (hfcont.sub continuousOn_const)
+      (fun y hy => Ioo_subset_Icc_self (hsector_open' y hy)) hz
+  have hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
+      ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz => by
+    refine cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed z hz)) <;>
+      linarith [mul_pos Real.pi_pos hβ.1, hangle]
+  -- The shared straightening of a corner, applied to the translated map `f - w`.
+  obtain ⟨hgcont, hgd, hgupper⟩ := straighten_sector (f := fun z => f z - w) hβ
+    (hfcont.sub continuousOn_const) (hfd.sub_const w)
+    (fun z hz hzim => (mem_closed_and_ne_of_mem_upper hq_ne ⟨hz, hzim⟩).2)
+    (fun z hz hzim => by
+      have := hsector_open' z ⟨hz, hzim⟩
+      rw [abs_lt]
+      constructor <;> linarith [this.1, this.2])
+    (fun z hz => by
+      have := hsector_closed z hz
+      rw [abs_le]
+      constructor <;> linarith [this.1, this.2])
+  have hginj := injOn_I_mul_cpow_inv (f := fun z => f z - w)
+    (fun z hz y hy hzy => hfinj hz hy (sub_left_inj.mp hzy)) hrecover
+  have hGd := differentiableOn_schwarzReflection_of_symmetric hΩopen hΩconj hgcont hgd hreal
+  have hG_eq_g {z : ℂ} (hz : 0 ≤ z.im) : schwarzReflection g z = g z :=
+    schwarzReflection_of_im_nonneg (f := g) hz
+  have hGx : schwarzReflection g x = 0 := by
     rw [hG_eq_g (by simp)]
     simp [g, hfx, hβ.1.ne']
-  have hGderiv : deriv G x ≠ 0 := by
-    simpa only [G] using
-      deriv_schwarzReflection_ne_zero hΩopen hΩconj hgcont hgd hreal hgupper hginj hxΩ
-  let h : ℂ → ℂ := fun z => -I * G z
-  have hhd : DifferentiableOn ℂ h Ω := fun z hz => by
-    simpa only [h] using (hGd z hz).const_mul (-I)
-  have hhx : h x = 0 := by simp [h, hGx]
+  have hGderiv := deriv_schwarzReflection_ne_zero hΩopen hΩconj hgcont hgd hreal hgupper hginj hxΩ
+  let h : ℂ → ℂ := fun z => -I * schwarzReflection g z
+  have hhd : DifferentiableOn ℂ h Ω := hGd.const_mul (-I)
+  have hhx : h x = 0 := by
+    dsimp only [h]
+    rw [hGx, mul_zero]
   have hdh : deriv h x ≠ 0 := by
-    have hderiv : deriv h x = -I * deriv G x := by
-      simpa only [h] using
-        ((hGd.differentiableAt (hΩopen.mem_nhds hxΩ)).hasDerivAt.const_mul (-I)).deriv
-    rw [hderiv]
-    exact mul_ne_zero (by simp) hGderiv
+    dsimp only [h]
+    rw [deriv_const_mul_field]
+    exact mul_ne_zero (neg_ne_zero.mpr I_ne_zero) hGderiv
   have hhroot {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 < z.im}) :
       h z = (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) := by
     dsimp only [h]
     rw [hG_eq_g hz.2.le]
     simp [g, ← mul_assoc]
-  refine ⟨h, hhd, hhx, hdh, ?_, ?_⟩
-  · intro z hz
-    have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
-      ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
-    rw [hhroot hz, mem_slitPlane_iff]
+  refine ⟨h, hhd, hhx, hdh, fun z hz => ?_, fun z hz => ?_⟩
+  · rw [hhroot hz, mem_slitPlane_iff]
     exact Or.inl (cpow_inv_re_pos_of_arg_mem_sector hβ.1
-      (hq_ne hzclosed (fun h => by simpa [h] using hz.2)) (hsector_open z hz))
-  · intro z hz
-    have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
-      ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
-    dsimp only
-    rw [hhroot hz, hrecover hzclosed]
+      (mem_closed_and_ne_of_mem_upper hq_ne hz).2 (hsector_open z hz))
+  · dsimp only
+    rw [hhroot hz, hrecover z (mem_closed_and_ne_of_mem_upper hq_ne hz).1]
     ring
 
 /-- **The pre-Schwarzian residue after sector straightening.**  Under the hypotheses of

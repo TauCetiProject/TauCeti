@@ -47,6 +47,9 @@ one on a finite `S'`-scheme descends to a finite `S`-scheme.
 * `AlgebraicGeometry.IsClosedImmersion.descendsAlong_surjective_inf_flat_inf_quasiCompact` and
   `AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact`: closed
   immersions and finite morphisms satisfy fpqc descent.
+* `TauCeti.DescentDatum.Hom.mem_of_descendsAlong`: for `p` surjective, flat and quasi-compact,
+  if a descent datum on `X` is isomorphic to the canonical descent datum on `X₀ ×_S S'`, then
+  `X₀ ⟶ S` has every property of `X ⟶ S'` satisfying fpqc descent.
 * `TauCeti.DescentDatum.descended_hom_mem`: for `p` affine, flat and surjective, the descended
   scheme of a descent datum on `X` affine over `S'` has every property of `X ⟶ S'` satisfying
   fpqc descent; for instance it is a closed subscheme of `S` if `X` is one of `S'`
@@ -184,6 +187,21 @@ end AlgebraicGeometry
 namespace TauCeti.DescentDatum
 
 universe u
+
+/-- **Properties of an effective descent.** Let `p : S' ⟶ S` be surjective, flat and quasi-compact,
+and `f` an isomorphism from the canonical descent datum on `X₀ ×_S S'` to a descent datum on
+`X ⟶ S'`. Every property of `X ⟶ S'` satisfying fpqc descent holds for `X₀ ⟶ S`. -/
+theorem Hom.mem_of_descendsAlong {S S' : Scheme.{u}} {p : S' ⟶ S} [Surjective p] [Flat p]
+    [QuasiCompact p] {X : Over S'} {D : DescentDatum p X} {X₀ : Over S}
+    (f : Hom (baseChange p X₀) D) [IsIso f.hom] {P : MorphismProperty Scheme.{u}}
+    [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] (hX : P X.hom) : P X₀.hom := by
+  have : IsIso f.hom.left := (CategoryTheory.Over.forget _).map_isIso f.hom
+  -- `X` is the base change of `X₀` along `p`, through the isomorphism `f`.
+  have hpb : IsPullback X.hom (CategoryTheory.inv f.hom.left ≫ pullback.fst X₀.hom p) p X₀.hom :=
+    (IsPullback.of_hasPullback X₀.hom p).flip.of_iso (asIso f.hom.left) (Iso.refl _)
+      (Iso.refl _) (Iso.refl _) (by simp [Over.w f.hom]) (by simp) (by simp) (by simp)
+  exact of_isPullback_of_descendsAlong (Q := @Surjective ⊓ @Flat ⊓ @QuasiCompact) hpb
+    ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩ hX
 
 variable {S S' : Scheme.{u}} {p : S' ⟶ S} [IsAffineHom p] [Flat p] [Surjective p] {X : Over S'}
   (D : DescentDatum p X)

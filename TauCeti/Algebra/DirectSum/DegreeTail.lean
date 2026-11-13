@@ -79,7 +79,7 @@ theorem mem_degreeTail_iff {n : ℕ} {x : M} :
     classical
     rw [← sum_support_decompose ℳ x]
     apply Submodule.sum_mem
-    intro i hi
+    intro i _
     by_cases hd : (n : ℤ) ≤ d i
     · exact le_degreeTail ℳ d hd (decompose ℳ x i).property
     · rw [hx i (lt_of_not_ge hd)]

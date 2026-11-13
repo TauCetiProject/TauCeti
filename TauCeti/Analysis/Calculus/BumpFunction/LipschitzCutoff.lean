@@ -20,12 +20,14 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 # Radial cutoffs with almost optimal Lipschitz constant
 
-When `E` is nontrivial, a function equal to one on `closedBall x₀ r` and vanishing off
-`ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial profile
-attains this bound but is not smooth. This file shows that every larger constant is attained by a
-smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for nontrivial `E`
-the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs. For shells
-of width `h` this gives cutoffs with constant `t / h` for every `t > 1`
+When `E` is nontrivial and `0 ≤ r < R`, a function equal to one on `closedBall x₀ r` and vanishing
+off `ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial
+profile attains this bound but is not smooth. This file shows that every larger constant is
+attained by a smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for
+nontrivial `E` and `0 ≤ r < R` the bound `1 / (R - r)` is the infimum of the Lipschitz constants of
+smooth cutoffs. For `r < 0` the closed ball is empty, the zero function is a cutoff, and no positive
+lower bound holds; the existence statement is still true there. For shells of width `h` this gives
+cutoffs with constant `t / h` for every `t > 1`
 (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`).
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
@@ -55,26 +57,33 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- **Smooth radial cutoffs with almost optimal Lipschitz constant.** For radii `0 ≤ r < R` and
+/-- **Smooth radial cutoffs with almost optimal Lipschitz constant.** For radii `r < R` and
 every constant `K > 1 / (R - r)`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on
-`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. When `E` is nontrivial, the
-bound `1 / (R - r)` is the optimal Lipschitz constant of such a function. -/
-theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (hr : 0 ≤ r)
+`closedBall x₀ r`, vanishing off `ball x₀ R`, and `K`-Lipschitz. When `0 ≤ r` and `E` is
+nontrivial, the bound `1 / (R - r)` is the optimal Lipschitz constant of such a function. For
+`r < 0` the closed ball is empty and the zero function is a cutoff. -/
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ}
     (hrR : r < R) {K : ℝ≥0} (hK : (R - r)⁻¹ < K) :
     ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
       support ψ ⊆ ball x₀ R ∧ LipschitzWith K ψ := by
+  rcases lt_or_ge r 0 with hr | hr
+  · refine ⟨0, contDiff_const, ?_, ?_, ?_, (LipschitzWith.const' 0).weaken zero_le⟩
+    · rintro _ ⟨x, rfl⟩
+      exact ⟨le_rfl, zero_le_one⟩
+    · simp [closedBall_eq_empty.2 hr]
+    · simp
   have hκ : 0 < (K : ℝ) := (inv_pos.2 (sub_pos.2 hrR)).trans hK
   have hKinv : (K : ℝ)⁻¹ < R - r := (inv_lt_comm₀ (sub_pos.2 hrR) hκ).1 hK
   -- The bump lives on `(a, R)`, where `r < a`, and equals one on an interval of length `1 / K`.
   set a := r + (R - r - (K : ℝ)⁻¹) / 2 with ha_def
   have hra : r < a := by rw [ha_def]; linarith
-  have hKa : (K : ℝ)⁻¹ < R - a := by rw [ha_def]; linarith
+  have _ : (K : ℝ)⁻¹ < R - a := by rw [ha_def]; linarith
   let f : ContDiffBump ((a + R) / 2) :=
     { rIn := (2 * K)⁻¹
       rOut := (R - a) / 2
       rIn_pos := by positivity
       rIn_lt_rOut := by rw [mul_inv]; linarith }
-  set ρ := f.normed MeasureTheory.volume with hρ_def
+  set ρ := f.normed MeasureTheory.volume
   have hρs : ContDiff ℝ ∞ ρ := f.contDiff_normed (n := ⊤)
   have hρc : Continuous ρ := hρs.continuous
   have hρ_supp : support ρ ⊆ Ioo a R := by
@@ -105,8 +114,8 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     simp only [hG_def]
     rw [intervalIntegral.integral_eq_integral_of_support_subset
       (hρ_supp.trans (Ioo_subset_Ioc_self.trans (Ioc_subset_Ioc_right hs))), f.integral_normed]
-  have hGlip : LipschitzWith K G := lipschitzWith_of_nnnorm_deriv_le hGd fun s => by
-    rw [hGderiv, ← NNReal.coe_le_coe, coe_nnnorm, Real.norm_of_nonneg (f.nonneg_normed s)]
+  have hGlip : LipschitzWith K G := lipschitzWith_of_nnNorm_deriv_le hGd fun s => by
+    rw [hGderiv, ← NNReal.coe_le_coe, coe_nnNorm, Real.norm_of_nonneg (f.nonneg_normed s)]
     exact hρ_le s
   refine ⟨fun x => 1 - G ‖x - x₀‖, ?_, ?_, ?_, ?_, ?_⟩
   · refine contDiff_iff_contDiffAt.2 fun x => ?_
@@ -138,15 +147,15 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     rw [dist_sub_left]
     simpa only [comp_apply, dist_eq_norm] using h.dist_le_mul x y
 
-/-- **Smooth cutoffs on thin shells.** For a radius `r ≥ 0`, a width `h > 0` and a factor
+/-- **Smooth cutoffs on thin shells.** For a radius `r`, a width `h > 0` and a factor
 `t > 1`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on `closedBall x₀ r`,
 vanishing off `ball x₀ (r + h)`, and `t / h`-Lipschitz. This is the form of
 `TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith` used when the width `h` tends to zero. -/
-theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ} (hr : 0 ≤ r)
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ}
     (hh : 0 < h) {t : ℝ≥0} (ht : 1 < t) :
     ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
       support ψ ⊆ ball x₀ (r + h) ∧ LipschitzWith (t * h.toNNReal⁻¹) ψ := by
-  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ hr (by linarith) ?_
+  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ (by linarith) ?_
   rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
   exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
 
@@ -182,11 +191,11 @@ theorem enorm_fderiv_mul_indicator_le_indicator {F : Type*} [NormedAddCommGroup 
   swap
   · simp [hys]
   by_cases hyA : y ∈ ball x₀ R \ ball x₀ r
-  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, enorm_one,
+  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, eNorm_one,
       mul_one, ← ofReal_norm]
     exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
       ENNReal.ofReal_coe_nnreal
   simp [notMem_support.1 fun h => hyA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
-    enorm_eq_nnnorm]
+    eNorm_eq_nnNorm]
 
 end TauCeti

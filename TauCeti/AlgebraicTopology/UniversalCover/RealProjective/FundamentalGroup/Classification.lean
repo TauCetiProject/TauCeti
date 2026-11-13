@@ -18,22 +18,17 @@ The fundamental group of real projective space has three dimension ranges:
 * `RP¹` is a circle, so its fundamental group is infinite cyclic;
 * `RPⁿ` has a two-element fundamental group for `2 ≤ n`.
 
-The three group isomorphisms are constructed in the imported dimension-specific modules. This file
-records their common cardinality consequence. Recall that `Nat.card` is zero on an infinite type,
-so the value zero in dimension one expresses infinitude, not an empty fundamental group.
+The three group isomorphisms are constructed in the imported dimension-specific modules:
+`TauCeti.RealProjectiveSpace.Zero.fundamentalGroupMulEquiv` in dimension zero,
+`TauCeti.RealProjectiveSpace.Line.fundamentalGroupMulEquiv` in dimension one, and
+`TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv` for `2 ≤ n`. This file records their
+common cardinality consequence. Recall that `Nat.card` is zero on an infinite type, so the value
+zero in dimension one expresses infinitude, not an empty fundamental group.
 
 ## Main result
 
 * `TauCeti.RealProjectiveSpace.card_fundamentalGroup`: the cardinality trichotomy
   `1, 0, 2` in dimensions `0, 1, ≥ 2`, respectively.
-
-## Roadmap
-
-This assembles the `π₁(RPⁿ)` application in Stage 4, item 13 of
-`TauCetiRoadmap/UniversalCovers/README.md`. The dimension-zero input is
-`TauCeti.RealProjectiveSpace.Zero.fundamentalGroupMulEquiv`; the circle case is
-`TauCeti.RealProjectiveSpace.Line.fundamentalGroupMulEquiv`; and the higher-dimensional input is
-`TauCeti.RealProjectiveSpace.fundamentalGroupMulEquiv`.
 
 ## References
 

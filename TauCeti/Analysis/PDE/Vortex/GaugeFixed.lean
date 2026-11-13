@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -49,6 +50,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   `3 |φ|² / 2 - 1 / 8` and `K` is multiplication by `i conj (∇₁ α)`. Unlike `L_x L_x*`, this
   operator is not a sum of nonnegative Schrödinger operators, since the coupling `K` has no
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
+* `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
+  subspace.
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
@@ -607,6 +610,24 @@ theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]
 
+/-- The gauge-fixed operator preserves compact support, with no regularity assumption on the
+field. -/
+theorem hasCompactSupport_gaugeFixedOperator (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedOperator x y) := by
+  apply hy.mono'
+  intro z hz
+  by_contra hn
+  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
+    fderiv_of_notMem_tsupport ℝ fun h ↦
+      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
+  apply hz
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one,
+      gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three, gaugeAdjoint_def,
+      linearizedEquation_apply_zero, linearizedEquation_apply_one, linearizedEquation_apply_two,
+      hd, image_eq_zero_of_notMem_tsupport hn]
+
 /-- `L_x y` is continuous for a continuous field and a `C¹` argument. -/
 theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
     Continuous (gaugeFixedOperator x y) :=
@@ -710,5 +731,35 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
   exact hmain.add (hint V₁ hV₁ hV₁c 1)
 
 end Adjoint
+
+/-! ### The kernel -/
+
+section Kernel
+
+variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- The kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁` on `C²` square-integrable
+variations. -/
+def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
+  carrier := {y | ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0}
+  add_mem' := by
+    rintro y v ⟨hy, hy₂, hyk⟩ ⟨hv, hv₂, hvk⟩
+    refine ⟨hy.add hv, hy₂.add hv₂, fun z ↦ ?_⟩
+    rw [gaugeFixedOperator_add x (hy.differentiable (by simp) z) (hv.differentiable (by simp) z),
+      hyk, hvk, add_zero]
+  zero_mem' := ⟨contDiff_zero_fun, MemLp.zero, fun z ↦ by simp⟩
+  smul_mem' := by
+    rintro t y ⟨hy, hy₂, hyk⟩
+    exact ⟨hy.const_smul t, hy₂.const_smul t, fun z ↦ by
+      rw [gaugeFixedOperator_smul, hyk, smul_zero]⟩
+
+@[simp]
+theorem mem_gaugeFixedKernel :
+    y ∈ gaugeFixedKernel x ↔
+      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
+  Iff.rfl
+
+end Kernel
 
 end TauCeti.Vortex

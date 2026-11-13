@@ -178,7 +178,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     {hxy : W.Nonsingular x y} (hP : Point.some _ _ hxy ∉ W.nonsingularReduction v) :
     2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
   obtain ⟨⟨A₁, hA₁⟩, ⟨A₂, hA₂⟩, ⟨A₃, h₃⟩, ⟨A₄, hA₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
-  obtain ⟨-, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
+  obtain ⟨-, m₃, _, _⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   obtain ⟨hp, hb⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆
   obtain ⟨X, Y, rfl, rfl, hY⟩ :=
