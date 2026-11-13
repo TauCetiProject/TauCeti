@@ -238,6 +238,13 @@ theorem renewalFunction_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalFunc
   rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hindep hid t]
   simpa using TauCeti.Probability.lintegral_renewalCount_pow_lt_top hT hindep hid hzero t 1
 
+/-- The real-valued renewal function is nondecreasing for a probability law not concentrated
+at zero. -/
+theorem monotone_toReal_renewalFunction (hμ : μ {0} < 1) :
+    Monotone (fun t ↦ (μ.renewalFunction t).toReal) :=
+  fun _ t h ↦ ENNReal.toReal_mono (μ.renewalFunction_lt_top hμ t).ne
+    (μ.monotone_renewalFunction h)
+
 /-- The renewal measure of a probability measure on `ℝ≥0` other than the point mass at zero is
 finite on every bounded interval `[0, t]`. -/
 theorem renewalMeasure_Iic_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalMeasure (Iic t) < ∞ := by
