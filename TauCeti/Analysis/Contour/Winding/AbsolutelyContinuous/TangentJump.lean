@@ -552,6 +552,6 @@ theorem eventually_windingNumber_add_I_mul_eq_add_one
       windingNumber γ a b (γ t₀ + h • (I * v)) =
         windingNumber γ a b (γ t₀ - h • (I * v)) + 1 :=
   hγ.eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq hab hclosed ht₀ hd hv
-    fun _ ht heq ↦ hinj.eq_of_mem_Icc_of_mem_Ioo hclosed ht₀ ht heq
+    fun _ ht heq ↦ hinj.eq_of_mem_Ioo_of_mem_Icc hclosed ht₀ ht heq
 
 end AbsolutelyContinuousOnInterval

@@ -20,7 +20,7 @@ of `Ioo a b` is attained nowhere else on `Icc a b`.
 
 ## Main results
 
-* `Set.InjOn.eq_of_mem_Icc_of_mem_Ioo`: uniqueness of values at points of an open interval.
+* `Set.InjOn.eq_of_mem_Ioo_of_mem_Icc`: uniqueness of values at points of an open interval.
 * `TauCeti.injective_of_injOn_Iic_Icc_Ici`: injectivity from the three injective pieces.
 -/
 
@@ -30,7 +30,7 @@ open Set
 
 /-- If `γ` is injective on `Ico a b` and `γ a = γ b`, then any `t ∈ Icc a b` with
 `γ t = γ t₀` for `t₀ ∈ Ioo a b` equals `t₀`. -/
-theorem Set.InjOn.eq_of_mem_Icc_of_mem_Ioo {ι α : Type*} [PartialOrder ι]
+theorem Set.InjOn.eq_of_mem_Ioo_of_mem_Icc {ι α : Type*} [PartialOrder ι]
     {γ : ι → α} {a b t₀ t : ι}
     (hinj : InjOn γ (Ico a b)) (hclosed : γ a = γ b) (ht₀ : t₀ ∈ Ioo a b) (ht : t ∈ Icc a b)
     (heq : γ t = γ t₀) : t = t₀ := by

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
 public import TauCeti.Analysis.Normed.Module.FilledHull
-public import TauCeti.Topology.JordanCurve.Basic
 public import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
@@ -17,6 +16,7 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
 import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.NonzeroDeriv
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.Topology.JordanCurve.Path
@@ -218,15 +218,6 @@ theorem jordanSign_same (γ : ℝ → ℂ) (a : ℝ) : jordanSign γ a a = 0 :=
 @[simp]
 theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 0 :=
   jordanSign_eq_zero_of_windingNumber_eq_zero (windingNumber_const c a b)
-
-/-- The trace of a simple closed absolutely continuous curve on `[a, b]` (`a < b`, `γ a = γ b`,
-`InjOn γ (Ico a b)`) is a Jordan curve. -/
-theorem _root_.AbsolutelyContinuousOnInterval.isJordanCurve_image_uIcc
-    {X : Type*} [PseudoMetricSpace X] [T2Space X] {γ : ℝ → X} {a b : ℝ}
-    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hinj : InjOn γ (Ico a b)) : TauCeti.IsJordanCurve (γ '' uIcc a b) := by
-  rw [uIcc_of_le hab.le]
-  exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn') hclosed hinj
 
 /-- Pointwise form of the dichotomy: if two points `p`, `q` off the trace of a simple closed AC
 curve have winding numbers differing by `1`, then the winding number is `1` on all of

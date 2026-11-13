@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Deriv.TraceNearTangent
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
 import TauCeti.Order.Interval.Set.Injective
 
 /-!
@@ -32,9 +33,9 @@ oriented curve and the unbounded outside of a negatively oriented one.
   a regular point on the side selected by `jordanSign γ a b` enters the bounded inside.
 * `AbsolutelyContinuousOnInterval.eventually_notMem_filledHull_of_hasDerivAt`: a curve leaving a
   regular point on the other side enters the unbounded outside.
-* `AbsolutelyContinuousOnInterval.mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff`:
+* `jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff`:
   a transverse curve enters the inside exactly when its direction agrees with the orientation.
-* `AbsolutelyContinuousOnInterval.mul_im_conj_mul_neg_iff_eventually_notMem_filledHull`:
+* `jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull`:
   a transverse curve enters the outside exactly when its direction opposes the orientation.
 -/
 
@@ -65,13 +66,13 @@ private theorem eventually_segment_subset_compl_of_hasDerivAt {σ : ℝ} (hab : 
   have hw' : 0 < (conj (σ • v) * w).im := by
     simpa [Complex.real_smul, mul_assoc] using hw
   have huniq : ∀ t ∈ uIcc a b, γ t = γ t₀ → t = t₀ := fun t ht ↦
-    hinj.eq_of_mem_Icc_of_mem_Ioo hclosed ht₀ (uIcc_of_le hab.le ▸ ht)
+    hinj.eq_of_mem_Ioo_of_mem_Icc hclosed ht₀ (uIcc_of_le hab.le ▸ ht)
   refine ⟨hv, ?_⟩
   simp only [← mul_smul_comm σ I v]
-  refine hp.eventually_segment_subset_compl_of_tangent_cone (fun η hη ↦ ?_) hp0 hw'
+  refine hp.eventually_segment_subset_compl_of_abs_im_conj_mul_sub_le (fun η hη ↦ ?_) hp0 hw'
   obtain ⟨ρ, hρ, h⟩ := isCompact_uIcc.exists_pos_forall_abs_im_conj_mul_sub_le hγ.continuousOn
     huniq hd.hasDerivWithinAt hη
-  refine ⟨ρ, hρ, fun s hs hsρ ↦ ?_⟩
+  refine ⟨ρ, hρ, forall_mem_image.2 (fun s hs hsρ ↦ ?_)⟩
   rcases hu with hu | hu <;> simpa only [hu, map_neg, neg_mul, neg_im, abs_neg] using h s hs hsρ
 
 /-- **A transverse curve enters the inside on the side selected by the orientation.** Let `γ` be
@@ -124,7 +125,7 @@ theorem eventually_notMem_filledHull_of_hasDerivAt (hab : a < b)
 
 /-- A transverse curve enters the bounded inside at all small positive times if and only if
 its right derivative lies on the side selected by the orientation sign. -/
-theorem mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
+theorem jordanSign_mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
     (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
@@ -143,7 +144,7 @@ theorem mul_im_conj_mul_pos_iff_eventually_mem_filledHull_sdiff (hab : a < b)
 
 /-- A transverse curve enters the unbounded outside at all small positive times if and only if
 its right derivative lies on the side opposite to the orientation sign. -/
-theorem mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a < b)
+theorem jordanSign_mul_im_conj_mul_neg_iff_eventually_notMem_filledHull (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hp0 : p 0 = γ t₀)
     (hp : HasDerivWithinAt p w (Ici 0) 0) (hw : (conj v * w).im ≠ 0) :
