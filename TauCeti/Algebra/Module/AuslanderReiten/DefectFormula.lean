@@ -27,10 +27,11 @@ defect** at `Y` are the cokernels
 
 We follow Krause's short proof. For a module `N`, let `H(N)` be the cokernel of
 `Hom_A(P₀, N) → Hom_A(P₁, N)`. The presentation gives exact rows
-`0 → Hom_A(X, N) → Hom_A(P₀, N) → Hom_A(P₁, N) → H(N) → 0`, and `δ` gives exact columns, since
-`P₀` and `P₁` are projective. The snake lemma identifies `δ^*(X)` with the kernel of
-`H(φ) : H(M₁) → H(M₂)`. As `E` is injective, `D` turns this kernel into the cokernel of
-`D H(φ)` (`LinearMap.cokernelEquivDualKer`). Finally `D H(N) ≅ Hom_A(N, D Tr X)` naturally in `N`
+`0 → Hom_A(X, N) → Hom_A(P₀, N) → Hom_A(P₁, N) → H(N) → 0`, and `δ` gives left exact columns,
+right exact at `P₀` since `P₀` is projective. The snake lemma identifies `δ^*(X)` with the kernel
+of `H(φ) : H(M₁) → H(M₂)` (`LinearMap.homCokernelMap`); only projectivity of `P₀` is used here.
+As `E` is injective, `D` turns this kernel into the cokernel of `D H(φ)`
+(`LinearMap.cokernelEquivDualKer`). Finally `D H(N) ≅ Hom_A(N, D Tr X)` naturally in `N`
 (`LinearMap.auslanderReitenHomCokernelDualEquiv`), so the cokernel of `D H(φ)` is `δ_*(D Tr X)`.
 
 No finiteness of `k` or `A`, and no minimality of the presentation, is needed. The snake lemma is
@@ -39,8 +40,6 @@ Mathlib's `SnakeLemma.δ'`, in its module form.
 ## Main definitions
 
 * `LinearMap.contravariantDefect` and `LinearMap.covariantDefect`: the two defects.
-* `LinearMap.homCokernelMap`: the map `H(φ)` on the cokernels of `Hom_A(P₀, -) → Hom_A(P₁, -)`,
-  with `homCokernelMap_mk`, `homCokernelMap_id` and `homCokernelMap_comp`.
 * `LinearMap.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
 * `LinearMap.defectFormula`: **Auslander's defect formula** `D δ^*(X) ≅ δ_*(D Tr X)`.
 
@@ -90,36 +89,10 @@ variable {k A : Type*} [CommRing k] [Ring A] [Algebra k A]
   [AddCommGroup M₂] [Module A M₂] [Module k M₂] [IsScalarTower k A M₂]
   [AddCommGroup M₃] [Module A M₃] [Module k M₃] [IsScalarTower k A M₃]
 
-variable (k) in
-/-- The map `H(φ) : H(M₁) → H(M₂)` induced by `φ` on the cokernels of
-`Hom_A(P₀, -) → Hom_A(P₁, -)`. -/
-noncomputable def homCokernelMap (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] M₂) :
-    ((P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) →ₗ[k] ((P₁ →ₗ[A] M₂) ⧸ range (f.lcomp k M₂)) :=
-  (range (f.lcomp k M₁)).mapQ (range (f.lcomp k M₂)) (φ.compRight k) (by
-    rintro _ ⟨F, rfl⟩
-    exact ⟨φ.comp F, rfl⟩)
+variable [Module.Projective A P₀]
 
-@[simp]
-theorem homCokernelMap_mk (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] M₂) (g : P₁ →ₗ[A] M₁) :
-    homCokernelMap k f φ (Submodule.Quotient.mk g) = Submodule.Quotient.mk (φ.comp g) := by
-  simp [homCokernelMap]
-
-@[simp]
-theorem homCokernelMap_id (f : P₁ →ₗ[A] P₀) :
-    homCokernelMap k f (LinearMap.id : M₁ →ₗ[A] M₁) = LinearMap.id := by
-  ext g
-  simp
-
-theorem homCokernelMap_comp (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] M₂) (ψ : M₂ →ₗ[A] M₃) :
-    homCokernelMap k f (ψ.comp φ) = (homCokernelMap k f ψ).comp (homCokernelMap k f φ) := by
-  ext g
-  simp [LinearMap.comp_assoc]
-
-variable [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁]
-  [Module.Projective A P₁]
-
-/-- **The snake lemma for the defect.** For a cokernel presentation `P₁ → P₀ → X → 0` by
-projectives and an exact sequence `0 → M₁ → M₂ → M₃ → 0`, the contravariant defect `δ^*(X)` is
+/-- **The snake lemma for the defect.** For a cokernel presentation `P₁ → P₀ → X → 0` with `P₀`
+projective and an exact sequence `0 → M₁ → M₂ → M₃ → 0`, the contravariant defect `δ^*(X)` is
 the kernel of `H(φ) : H(M₁) → H(M₂)`. -/
 noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
     (hfp : Exact f p) (hp : Surjective p) {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃}
@@ -138,11 +111,12 @@ noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P�
       (lcomp_injective_of_surjective p hp)
   have h₂ : Exact δ (homCokernelMap k f φ) :=
     SnakeLemma.exact_δ'_left _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ (range (f.lcomp k M₂)).mkQ
-      (exact_map_mkQ_range _) _ _ _ rfl (Submodule.mkQ_surjective _)
+      (exact_map_mkQ_range _) _ _ _ (homCokernelMap_comp_mkQ k f φ) (Submodule.mkQ_surjective _)
   Submodule.quotEquivOfEq _ _ h₁.linearMap_ker_eq.symm ≪≫ₗ δ.quotKerEquivRange ≪≫ₗ
     LinearEquiv.ofEq _ _ h₂.linearMap_ker_eq.symm
 
-variable {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
+variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
+  {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
 
 /-- **Auslander's defect formula.** Let `A` be a `k`-algebra, `E` an injective `k`-module and
 `D = Hom_k(-, E)`. For an exact sequence `0 → M₁ → M₂ → M₃ → 0` of `A`-modules and a module `X`
