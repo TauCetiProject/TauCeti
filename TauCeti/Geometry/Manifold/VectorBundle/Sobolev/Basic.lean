@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
 
@@ -43,7 +44,7 @@ A finite bundle atlas `A : TauCeti.FiniteBundleAtlas E M F V` gives chart data
 diffeomorphisms between open sets, carry null sets to null sets
 (`TauCeti.SectionChartData.aeTransition_of_differentiableOn`). The space `W^{k,p}(V)` is
 `TauCeti.SobolevSection A μ p k`; the analogue for bases with boundary is built from the same
-construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
+construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 
 ## Main definitions
 
@@ -57,6 +58,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 * `TauCeti.SectionChartData.lowerOrderL`: the continuous inclusion of order `k + 1` into order `k`.
 * `TauCeti.SectionChartData.ofComponents`: the linear map into the Sobolev sections from a space of
   sections with chartwise Sobolev components.
+* `TauCeti.SectionChartData.fiberMap`, `TauCeti.SectionChartData.fiberMapData`: a constant linear
+  map between model fibres acting on the components of a tuple of scalar Sobolev functions,
+  followed by restriction to smaller open subsets.
 * `TauCeti.FiniteBundleAtlas.sectionChartData`: the chart data of a finite bundle atlas.
 * `TauCeti.SobolevSection A μ p k`: the Banach space `W^{k,p}(V)`.
 
@@ -72,10 +76,14 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   norms.
 * `TauCeti.SectionChartData.eq_of_ae_eq_coord`: an element of the Sobolev sections is determined by
   the section whose readings its chart data are.
+* `TauCeti.SectionChartData.chartValueL_ae_of_eq_fiberMap`: components related by a constant fibre
+  map `L` have chart data related by `L`.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
+  tuple by a scalar function multiplies its chart data by that function.
 
 ## References
 
@@ -301,6 +309,18 @@ theorem chartValueL_ae_eq_coord_iff {w : C.SobolevData μ p k} {s : S} {i : Fin 
   filter_upwards [C.chartValueL_apply_ae μ p k i w, h] with y hy hy'
   rw [← hy', hy, Basis.coord_apply, (finBasis ℝ F).repr_sum_self]
 
+/-- If the chart-`i` components of `w'` are those of `w` multiplied by a function `ψ` on the image
+of chart `i`, almost everywhere, then so are the chart data in chart `i`. -/
+theorem chartValueL_ae_eq_smul {w w' : C.SobolevData μ p k} {i : Fin C.n} {ψ : E → ℝ}
+    (h : ∀ j, (Wkp.value k (w' i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ ψ y * Wkp.value k (w i j) y) :
+    C.chartValueL μ p k i w' =ᵐ[μ.restrict (C.image i)]
+      fun y ↦ ψ y • C.chartValueL μ p k i w y := by
+  filter_upwards [C.chartValueL_apply_ae μ p k i w', C.chartValueL_apply_ae μ p k i w,
+    ae_all_iff.2 h] with y hy' hy hj
+  rw [hy', hy, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hj j, mul_smul]
+
 variable {C μ p k} in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
 entries: if the chart data in chart `i` agree with the reading of a section `s`, then the `j`th
@@ -456,6 +476,14 @@ theorem eq_of_ae_eq_coord {w w' : C.sobolevSections μ p k} {s : S}
   C.sobolevSections_ext μ p k fun i j ↦ Lp.ext <|
     (value_ae_eq_repr_coord (hw i) j).trans (value_ae_eq_repr_coord (hw' i) j).symm
 
+variable {C μ p k} in
+/-- Two elements of the Sobolev sections with almost everywhere equal chart data are equal. -/
+theorem eq_of_chartValueL_ae_eq {w w' : C.sobolevSections μ p k}
+    (h : ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w') :
+    w = w' := by
+  obtain ⟨s, hs⟩ := C.exists_section μ p k w'
+  exact eq_of_ae_eq_coord (fun i ↦ (h i).trans (hs i)) hs
+
 /-- The norm of an element of the Sobolev sections, the maximum of its component norms, is at most
 any sum of bounds for the component norms. -/
 theorem norm_le_sum_of_norm_le {w : C.sobolevSections μ p k}
@@ -487,6 +515,14 @@ theorem lowerOrderL_apply (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n)
       Wkp.lowerOrder k ((w : C.SobolevData μ p (k + 1)) i j) := by
   rw [← Wkp.lowerOrderL_apply]
   rfl
+
+/-- Forgetting the highest derivative does not change the chart data. -/
+@[simp]
+theorem chartValueL_coe_lowerOrderL (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrderL μ p k w) = C.chartValueL μ p (k + 1) i w := by
+  rw [← C.chartValueL_lowerOrderL μ p k i w]
+  refine congrArg (C.chartValueL μ p k i) (funext fun i' ↦ funext fun j ↦ ?_)
+  rw [lowerOrderL_apply, Wkp.lowerOrderL_apply]
 
 section Components
 
@@ -540,6 +576,88 @@ theorem coord_ae_eq_zero_of_ofComponents_eq_zero {t : T} (ht : C.ofComponents μ
   exact (C.chartValueL_ofComponents_ae μ p k ι h t i).symm.trans hz
 
 end Components
+
+section FiberMap
+
+variable {G₁ : Type*} [NormedAddCommGroup G₁] [NormedSpace ℝ G₁] [FiniteDimensional ℝ G₁]
+  {G₂ : Type*} [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
+
+/-- The constant fibre map `L : G₁ →L[ℝ] G₂` on the components of a tuple of scalar Sobolev
+functions, followed by restriction to an open subset. -/
+def fiberMap (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U) :
+    (Fin (finrank ℝ G₁) → Wkp μ U p k) →L[ℝ] (Fin (finrank ℝ G₂) → Wkp μ U' p k) :=
+  ContinuousLinearMap.pi fun c ↦ ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+    L.toLinearMap c a • (Wkp.restrictL hU k).comp (ContinuousLinearMap.proj a)
+
+/-- Component `c` of the image of `w` under the constant fibre map `L` is the combination of the
+restricted components of `w` with the coefficients of row `c` of the matrix of `L` in the bases
+`Module.finBasis ℝ G₁` and `Module.finBasis ℝ G₂`. -/
+@[simp]
+theorem fiberMap_apply (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
+    (w : Fin (finrank ℝ G₁) → Wkp μ U p k) (c : Fin (finrank ℝ G₂)) :
+    fiberMap μ p k L hU w c = ∑ a, LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂)
+      L.toLinearMap c a • Wkp.restrictL hU k (w a) := by
+  simp [fiberMap]
+
+/-- Almost everywhere on `U'`, the values of the components of the image of `w` under the constant
+fibre map `L` are the matrix of `L` applied to the values of the components of `w`. -/
+theorem value_fiberMap_ae (L : G₁ →L[ℝ] G₂) {U U' : Opens E} (hU : U' ≤ U)
+    (w : Fin (finrank ℝ G₁) → Wkp μ U p k) :
+    ∀ᵐ y ∂μ.restrict U', ∀ c, Wkp.value k (fiberMap μ p k L hU w c) y =
+      (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap).mulVec
+        (fun a ↦ Wkp.value k (w a) y) c := by
+  refine ae_all_iff.2 fun c ↦ ?_
+  have hsmul (a : Fin (finrank ℝ G₁)) :=
+    Lp.coeFn_smul (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a)
+      (Wkp.value k (Wkp.restrictL hU k (w a)))
+  have hres (a : Fin (finrank ℝ G₁)) := Wkp.value_restrictL_ae hU k (w a)
+  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ fun a ↦
+      LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap c a •
+        Wkp.restrictL hU k (w a),
+    ae_all_iff.2 hsmul, ae_all_iff.2 hres] with y hy hs hr
+  rw [fiberMap_apply, hy, Matrix.mulVec, dotProduct]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [Wkp.value_smul, hs a, Pi.smul_apply, hr a, smul_eq_mul]
+
+/-- The constant fibre map `L` on the components of a tuple, in every chart. -/
+def fiberMapData (L : G₁ →L[ℝ] G₂) {n : ℕ} {U U' : Fin n → Opens E}
+    (hU : ∀ i, U' i ≤ U i) :
+    (∀ (i : Fin n) (_ : Fin (finrank ℝ G₁)), Wkp μ (U i) p k) →L[ℝ]
+      (∀ (i : Fin n) (_ : Fin (finrank ℝ G₂)), Wkp μ (U' i) p k) :=
+  ContinuousLinearMap.piMap fun i ↦ fiberMap μ p k L (hU i)
+
+/-- In chart `i`, the constant fibre map on tuples acts as `fiberMap` on the chart-`i` components.
+-/
+@[simp]
+theorem fiberMapData_apply (L : G₁ →L[ℝ] G₂) {n : ℕ} {U U' : Fin n → Opens E}
+    (hU : ∀ i, U' i ≤ U i) (w : ∀ (i : Fin n) (_ : Fin (finrank ℝ G₁)), Wkp μ (U i) p k)
+    (i : Fin n) : fiberMapData μ p k L hU w i = fiberMap μ p k L (hU i) (w i) := by
+  simp [fiberMapData]
+
+variable {S₁ : Type*} [AddCommGroup S₁] [Module ℝ S₁] {S₂ : Type*} [AddCommGroup S₂]
+  [Module ℝ S₂]
+
+/-- If the chart-`i₂` components of `w₂` are obtained from the chart-`i₁` components of `w₁` by
+the constant fibre map `L`, then the chart data of `w₂` are `L` applied to those of `w₁`. -/
+theorem chartValueL_ae_of_eq_fiberMap {C₁ : SectionChartData E G₁ S₁}
+    {C₂ : SectionChartData E G₂ S₂} (L : G₁ →L[ℝ] G₂) {i₁ : Fin C₁.n} {i₂ : Fin C₂.n}
+    (hU : C₂.image i₂ ≤ C₁.image i₁) {w₁ : C₁.SobolevData μ p k} {w₂ : C₂.SobolevData μ p k}
+    (hw : w₂ i₂ = fiberMap μ p k L hU (w₁ i₁)) :
+    C₂.chartValueL μ p k i₂ w₂ =ᵐ[μ.restrict (C₂.image i₂)]
+      fun y ↦ L (C₁.chartValueL μ p k i₁ w₁ y) := by
+  filter_upwards [C₂.chartValueL_apply_ae μ p k i₂ w₂,
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (C₁.chartValueL_apply_ae μ p k i₁ w₁),
+    value_fiberMap_ae μ p k L hU (w₁ i₁)] with y h₂ h₁ hv
+  rw [h₂, h₁, hw]
+  simp_rw [hv]
+  have hL := Matrix.toLin_apply (finBasis ℝ G₁) (finBasis ℝ G₂)
+    (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap)
+    (∑ a, Wkp.value k (w₁ i₁ a) y • finBasis ℝ G₁ a)
+  rw [Matrix.toLin_toMatrix, (finBasis ℝ G₁).repr_sum_self] at hL
+  exact hL.symm
+
+end FiberMap
 
 end Sobolev
 
@@ -609,6 +727,15 @@ is read off from the function of any chart containing the point. -/
       A.coord_eq_coordChange _ hov, A.transition_chart hx, A.coord_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
+
+@[simp]
+theorem sectionChartData_image (i : Fin A.n) : A.sectionChartData.image i = A.image i :=
+  rfl
+
+@[simp]
+theorem sectionChartData_overlap (i i' : Fin A.n) :
+    A.sectionChartData.overlap i i' = A.overlap i i' :=
+  rfl
 
 theorem sectionChartData_transition_of_mem {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
     A.sectionChartData.transition i i' y = A.transition i i' y := by
