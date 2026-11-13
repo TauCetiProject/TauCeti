@@ -230,10 +230,7 @@ private theorem eigenspace_intCast_le_range_toEnd_sup_ker_toEnd_f (t : IsSl2Trip
   by_cases hh : toEnd K L M h = 0
   · -- If `h` acts by zero then so does `f`, and `N` is everything.
     have hf : toEnd K L M f = 0 := by
-      have := congrArg (toEnd K L M) t.lie_h_f_nsmul
-      rw [LieHom.map_lie, hh, zero_lie, map_neg, map_nsmul, two_nsmul] at this
-      exact (smul_eq_zero.1 (show (2 : K) • toEnd K L M f = 0 by
-        rw [two_smul]; exact neg_eq_zero.1 this.symm)).resolve_left two_ne_zero
+      simpa [hh] using congrArg (toEnd K L M) (t.lie_lie_smul_f K).symm
     intro y _
     exact Submodule.mem_sup_right (by simp [hf])
   -- `toEnd (x - e)` is a sum of operators commuting with `f` whose commutator with `h` is `-n`.
@@ -269,15 +266,10 @@ private theorem eigenspace_intCast_le_range_toEnd_sup_ker_toEnd_f (t : IsSl2Trip
         rw [LinearMap.add_apply]
         exact N.add_mem h₁ h₂
     refine ih (k - 2 - n) (by omega) ?_
-    have h1 := LinearMap.congr_fun (Module.End.mem_eigenspace_iff.1 hu.2) w
-    rw [ad_apply, LieRing.of_associative_ring_bracket] at h1
-    have hw' := Module.End.mem_eigenspace_iff.1 hw
-    rw [Module.End.mem_eigenspace_iff]
-    simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply] at h1
-    rw [hw', map_smul] at h1
-    rw [sub_eq_iff_eq_add.1 h1]
-    push_cast
-    module
+    rw [show ((k - 2 - n : ℤ) : K) = -(n : K) + ((k - 2 : ℤ) : K) by push_cast; ring]
+    simpa using TauCeti.lie_mem_eigenspace_toEnd_add (M := M) hu.2
+      (show w ∈ (toEnd K (Module.End K M) M (toEnd K L M h)).eigenspace ((k - 2 : ℤ) : K) by
+        simpa using hw)
   have key (m : ℕ) : ∀ j : ℤ, j < B + m → (toEnd K L M h).eigenspace (j : K) ≤ N := by
     induction m with
     | zero => exact fun j hj ↦ by simp [hB j (by simpa using hj)]
