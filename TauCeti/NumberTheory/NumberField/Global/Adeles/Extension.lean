@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.LiesOverInstances
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
@@ -15,7 +14,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 # The adele ring along a field extension
 
 For an extension `L / K`, every infinite place `w` of `L` lies over its restriction
-`w.comap (algebraMap K L)` to `K`, and Mathlib's `NumberField.LiesOver.completionMap` is the
+`w.comap (algebraMap K L)` to `K`, and Mathlib's `AbsoluteValue.Completion.map` is the
 continuous extension `K_{w.comap (algebraMap K L)} → L_w` of `K → L`. Placewise, these maps
 assemble into a ring homomorphism `K_∞ → L_∞` of infinite adele rings. Together with the finite
 part `IsDedekindDomain.finiteAdeleExtension`, they give the extension map `𝔸_K → 𝔸_L` of adele
@@ -65,20 +64,21 @@ of `L` is the image of the component at `w.comap (algebraMap K L)` under the com
 `K_{w.comap (algebraMap K L)} → L_w`. -/
 noncomputable def infiniteAdeleExtension : InfiniteAdeleRing K →+* InfiniteAdeleRing L :=
   RingHom.pi fun w ↦
-    (LiesOver.completionMap _ w).comp (Pi.evalRingHom _ (w.comap (algebraMap K L)))
+    (AbsoluteValue.Completion.map _ w.1).comp (Pi.evalRingHom _ (w.comap (algebraMap K L)))
 
 variable {K L} in
 /-- The component of `infiniteAdeleExtension K L x` at `w` is the image of the component of `x` at
 `w.comap (algebraMap K L)`. -/
 @[simp]
 theorem infiniteAdeleExtension_apply (x : InfiniteAdeleRing K) (w : InfinitePlace L) :
-    infiniteAdeleExtension K L x w = LiesOver.completionMap _ w (x (w.comap (algebraMap K L))) :=
+    infiniteAdeleExtension K L x w =
+      AbsoluteValue.Completion.map _ w.1 (x (w.comap (algebraMap K L))) :=
   (rfl)
 
 /-- The extension map of infinite adele rings is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_infiniteAdeleExtension : Continuous (infiniteAdeleExtension K L) :=
-  continuous_pi fun w ↦ (LiesOver.continuous_completionMap _ w).comp (continuous_apply _)
+  continuous_pi fun w ↦ (AbsoluteValue.Completion.continuous_map _ w.1).comp (continuous_apply _)
 
 /-- The extension map of infinite adele rings extends `K → L` along the diagonal embeddings. -/
 @[simp]
@@ -87,9 +87,9 @@ theorem infiniteAdeleExtension_algebraMap (x : K) :
       algebraMap L (InfiniteAdeleRing L) (algebraMap K L x) := by
   funext w
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply,
-    InfiniteAdeleRing.algebraMap_apply, LiesOver.completionMap_coe]
-  -- These `WithAbs` lemmas identify the underlying type synonyms on the two sides.
-  simp only [WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply]
+    InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.map_coe]
+  -- `WithAbs.map_apply` identifies the underlying type synonyms on the two sides.
+  simp only [WithAbs.map_apply]
 
 /-- For a number field `K`, `infiniteAdeleExtension` is the only continuous ring homomorphism of
 infinite adele rings extending `K → L` along the diagonal embeddings: `K` is dense in `K_∞`, and
@@ -116,18 +116,18 @@ theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
     rw [← InfinitePlace.comap_comp, ← IsScalarTower.algebraMap_eq K L M]
   let hwo : w.LiesOver v := hv.symm ▸ inferInstance
   have h :
-      (LiesOver.completionMap (w.comap (algebraMap L M)) w).comp
-        (LiesOver.completionMap v (w.comap (algebraMap L M))) =
-        @LiesOver.completionMap K M _ _ _ v w hwo := by
-    exact LiesOver.completionMap_comp
+      (AbsoluteValue.Completion.map (w.comap (algebraMap L M)).1 w.1).comp
+        (AbsoluteValue.Completion.map v.1 (w.comap (algebraMap L M)).1) =
+        @AbsoluteValue.Completion.map K M _ _ _ v.1 w.1 hwo := by
+    exact AbsoluteValue.Completion.map_comp_map v.1 (w.comap (algebraMap L M)).1 w.1
   calc
-    _ = (@LiesOver.completionMap K M _ _ _ v w hwo) (x v) :=
+    _ = (@AbsoluteValue.Completion.map K M _ _ _ v.1 w.1 hwo) (x v) :=
       RingHom.congr_fun h (x v)
     _ = _ := by
       have htransport (p q : InfinitePlace K) (hp : w.LiesOver p) (hq : w.LiesOver q)
           (heq : p = q) :
-          (@LiesOver.completionMap K M _ _ _ p w hp) (x p) =
-            (@LiesOver.completionMap K M _ _ _ q w hq) (x q) := by
+          (@AbsoluteValue.Completion.map K M _ _ _ p.1 w.1 hp) (x p) =
+            (@AbsoluteValue.Completion.map K M _ _ _ q.1 w.1 hq) (x q) := by
         cases heq
         rfl
       exact htransport v (w.comap (algebraMap K M)) hwo inferInstance hv
@@ -141,13 +141,12 @@ theorem infiniteAdeleExtension_self :
   simp only [infiniteAdeleExtension_apply, RingHom.id_apply, Algebra.algebraMap_self,
     InfinitePlace.comap_id]
   have hwo : w.LiesOver w := ⟨rfl⟩
-  have h : LiesOver.completionMap w w = RingHom.id _ := by
+  have h : AbsoluteValue.Completion.map w.1 w.1 = RingHom.id _ := by
     apply DFunLike.coe_injective
-    apply (InfinitePlace.Completion.denseRange_coe w).equalizer
-      (LiesOver.continuous_completionMap w w) continuous_id
+    apply (AbsoluteValue.Completion.denseRange_coe w.1).equalizer
+      (AbsoluteValue.Completion.continuous_map w.1 w.1) continuous_id
     funext y
-    simp [Function.comp_apply, LiesOver.completionMap_coe,
-      WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply]
+    simp [Function.comp_apply, AbsoluteValue.Completion.map_coe]
   exact RingHom.congr_fun h (x w)
 
 /-- The algebra structure on infinite adeles induced by `infiniteAdeleExtension`, available in

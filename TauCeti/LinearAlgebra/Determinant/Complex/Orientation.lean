@@ -43,7 +43,10 @@ complex vector spaces and complex-linear maps:
 * for an exact sequence `0 → A → B → C → D → 0`, the isomorphism
   `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` (`TauCeti.detLineFourTermEquiv`) maps complex positive
   elements to complex positive elements
-  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`).
+  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv`), also when the sequence is
+  isomorphic to the real restriction of a complex one through real isomorphisms of the first,
+  second and fourth terms and the identity of the third
+  (`TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr`).
 
 No sign corrections enter, because complex vector spaces have even real dimension. The second
 statement is the form needed for Fredholm operators. A stabilization `D₂ : Λ → F` of a
@@ -718,6 +721,42 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   refine IsComplexPositive.isComplexPositiveTMulDual_tmul (IsComplexPositive.smul ?_
     (mul_pos hc (hφ γ hγpos))) (hδpos.isComplexPositiveDual_of_apply_eq_one hξ)
   exact isComplexPositive_ιMulti_complexToRealFamily bA hA₂
+
+/-- **Four-term exact sequences isomorphic to complex ones respect complex orientations.** Let
+`0 → A' → B' → C → D' → 0` be an exact sequence of real vector spaces, isomorphic through real
+isomorphisms `eA`, `eB` and `eD`, and the identity of `C`, to the real restriction of an exact
+sequence `0 → A → B → C → D → 0` of complex vector spaces and complex-linear maps. Then the
+identification `det B' ⊗ (det C)^* ≃ det A' ⊗ (det D')^*` (`TauCeti.detLineFourTermEquiv`) sends
+the image of a complex positive element of `det B ⊗ (det C)^*` to the image of a complex positive
+element of `det A ⊗ (det D)^*`. This is how complex orientations pass to sequences, such as the
+kernel sequence of a stabilized Fredholm operator, whose terms are formed with real scalars. -/
+theorem isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr
+    (hf : Function.Injective (f.restrictScalars ℝ))
+    (hfg : Function.Exact (f.restrictScalars ℝ) (g.restrictScalars ℝ))
+    (hgh : Function.Exact (g.restrictScalars ℝ) (h.restrictScalars ℝ))
+    (hh : Function.Surjective (h.restrictScalars ℝ))
+    {A' B' D' : Type*} [AddCommGroup A'] [Module ℝ A'] [AddCommGroup B'] [Module ℝ B']
+    [AddCommGroup D'] [Module ℝ D'] [FiniteDimensional ℝ A'] {f' : A' →ₗ[ℝ] B'}
+    {g' : B' →ₗ[ℝ] C} {h' : C →ₗ[ℝ] D'} (hf' : Function.Injective f')
+    (hfg' : Function.Exact f' g') (hgh' : Function.Exact g' h') (hh' : Function.Surjective h')
+    (eA : A ≃ₗ[ℝ] A') (eB : B ≃ₗ[ℝ] B') (eD : D ≃ₗ[ℝ] D')
+    (hfA : f' ∘ₗ eA.toLinearMap = eB.toLinearMap ∘ₗ f.restrictScalars ℝ)
+    (hgB : g' ∘ₗ eB.toLinearMap = g.restrictScalars ℝ)
+    (hhD : h' = eD.toLinearMap ∘ₗ h.restrictScalars ℝ)
+    {t : detLine ℝ B ⊗[ℝ] Dual ℝ (detLine ℝ C)} (ht : IsComplexPositiveTMulDual t) :
+    IsComplexPositiveTMulDual (TensorProduct.congr eA.symm.detLineCongr eD.detLineCongr.dualMap
+      (detLineFourTermEquiv hf' hfg' hgh' hh' (LinearEquiv.rTensor _ eB.detLineCongr t))) := by
+  have key := detLineFourTermEquiv_congr hf hfg hgh hh hf' hfg' hgh' hh' eA eB
+    (LinearEquiv.refl ℝ C) eD hfA (by rw [hgB, LinearEquiv.refl_toLinearMap, LinearMap.id_comp])
+    (by rw [hhD, LinearEquiv.refl_toLinearMap, LinearMap.comp_id]) t
+  have hX : LinearEquiv.rTensor _ eB.detLineCongr = TensorProduct.congr eB.detLineCongr
+      (LinearEquiv.refl ℝ C).detLineCongr.symm.dualMap := by
+    rw [LinearEquiv.detLineCongr_refl, LinearEquiv.refl_symm, LinearEquiv.dualMap_refl,
+      LinearEquiv.rTensor]
+  rw [hX, key, TensorProduct.congr_congr, ← LinearEquiv.detLineCongr_symm,
+    ← LinearEquiv.dualMap_symm, LinearEquiv.self_trans_symm, LinearEquiv.symm_trans_self,
+    TensorProduct.congr_refl_refl, LinearEquiv.refl_apply]
+  exact isComplexPositiveTMulDual_detLineFourTermEquiv hf hfg hgh hh ht
 
 end FourTerm
 
