@@ -258,7 +258,8 @@ section FiniteImage
 
 variable [W.IsElliptic]
 
-/-- **Good reduction over a finite extension from an unramified Tate module.** Let `M` be a finite
+/-- **Good reduction over a finite extension from an unramified Tate module.** Let `W` be an
+elliptic curve over a nonarchimedean local field `K`, let `M` be a finite
 extension of `K` inside `K^{alg}`, and let `ℓ` be a prime different from the residue characteristic
 of `K`. If every element of the inertia subgroup of `Gal(K^{alg}/K)` fixing `M` acts trivially on
 the `ℓ`-adic Tate module of `W`, then `W` has potential good reduction. -/
@@ -318,11 +319,11 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   rw [Affine.Point.map_eq_self_iff]
   exact ⟨φ.injective ((hσ _).trans hQ.1), φ.injective ((hσ _).trans hQ.2)⟩
 
-/-- **A finite inertia image is trivial on the inertia of a finite extension.** Let `ℓ` be a prime
-invertible in `K`. If the image of the inertia subgroup of
-`Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate module of `W` is finite, then there is a
-finite extension `M` of `K` inside `K^{alg}` such that every element of the inertia subgroup fixing
-`M` acts trivially on the Tate module. -/
+/-- **A finite inertia image is trivial on the inertia of a finite extension.** Let `W` be an
+elliptic curve over a nonarchimedean local field `K`, and let `ℓ` be a prime invertible in `K`. If
+the image of the inertia subgroup of `Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate
+module of `W` is finite, then there is a finite extension `M` of `K` inside `K^{alg}` such that
+every element of the inertia subgroup fixing `M` acts trivially on the Tate module. -/
 theorem exists_tateModuleGaloisRepresentation_eq_one_of_finite_image
     [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0)
     (h : (W.tateModuleGaloisRepresentation ℓ ''
