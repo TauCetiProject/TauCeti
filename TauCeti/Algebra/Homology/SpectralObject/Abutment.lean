@@ -22,7 +22,10 @@ of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact
 
 The filtration is bounded below and exhaustive in degree `n` as soon as `H^n(⊥ ≤ q)` vanishes for
 small `q` (`isZero_abutmentFiltration`) and `H^n(q ≤ ⊤)` vanishes for large `q`
-(`isIso_abutmentFiltrationι`).
+(`isIso_abutmentFiltrationι`). If `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the
+abutment itself vanishes (`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
+`isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable morphisms in any index
+category.
 
 ## Main definitions
 
@@ -37,6 +40,29 @@ public section
 namespace CategoryTheory.Abelian.SpectralObject
 
 open ComposableArrows Limits
+
+section
+
+variable {C ι : Type*} [Category* C] [Abelian C] [Category* ι] (X : SpectralObject C ι)
+
+/-- For three composable morphisms `f₁`, `f₂`, `f₃`, if `H^n(f₁ ≫ f₂)` and `H^n(f₂ ≫ f₃)` vanish
+then so does `H^n(f₁ ≫ f₂ ≫ f₃)`: the map `H^n(f₁) ⟶ H^n(f₁ ≫ f₂ ≫ f₃)` is epi by exactness,
+since `H^n(f₂ ≫ f₃) = 0`, and it factors through `H^n(f₁ ≫ f₂) = 0`. -/
+lemma isZero_H_obj_mk₁_of_isZero_of_isZero {i₀ i₁ i₂ i₃ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂)
+    (f₃ : i₂ ⟶ i₃) (f₁₂ : i₀ ⟶ i₂) (f₂₃ : i₁ ⟶ i₃) (f₁₂₃ : i₀ ⟶ i₃) (h₁₂ : f₁ ≫ f₂ = f₁₂)
+    (h₂₃ : f₂ ≫ f₃ = f₂₃) (h₁₂₃ : f₁ ≫ f₂₃ = f₁₂₃) (n : ℤ)
+    (h₁₂_zero : IsZero ((X.H n).obj (mk₁ f₁₂))) (h₂₃_zero : IsZero ((X.H n).obj (mk₁ f₂₃))) :
+    IsZero ((X.H n).obj (mk₁ f₁₂₃)) := by
+  have h₁₂₃' : f₁₂ ≫ f₃ = f₁₂₃ := by rw [← h₁₂, Category.assoc, h₂₃, h₁₂₃]
+  have hepi : Epi ((X.H n).map (twoδ₂Toδ₁ f₁ f₂₃ f₁₂₃ h₁₂₃)) :=
+    (X.exact₂ f₁ f₂₃ f₁₂₃ h₁₂₃ n).epi_f (h₂₃_zero.eq_of_tgt _ _)
+  refine IsZero.of_epi_eq_zero ((X.H n).map (twoδ₂Toδ₁ f₁ f₂₃ f₁₂₃ h₁₂₃)) ?_
+  have hfac : twoδ₂Toδ₁ f₁ f₂₃ f₁₂₃ h₁₂₃ =
+      twoδ₂Toδ₁ f₁ f₂ f₁₂ h₁₂ ≫ twoδ₂Toδ₁ f₁₂ f₃ f₁₂₃ h₁₂₃' := by
+    ext <;> simp [h₂₃]
+  rw [hfac, Functor.map_comp, h₁₂_zero.eq_of_tgt ((X.H n).map _) 0, zero_comp]
+
+end
 
 variable {C : Type*} [Category* C] [Abelian C] (X : SpectralObject C EInt)
 
@@ -129,5 +155,15 @@ lemma isIso_abutmentFiltrationι {q n : ℤ}
   have : Epi (X.abutmentFiltrationι q n) :=
     @epi_of_epi_fac _ _ _ _ _ _ _ _ hepi (X.p_fromOpcycles _ _ _ (Subsingleton.elim _ _) n)
   exact isIso_of_mono_of_epi _
+
+/-- The abutment in degree `n` vanishes when `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some
+`b ≤ a`: the filtration then starts above where it ends. -/
+lemma isZero_abutment_of_le {a b n : ℤ} (hba : b ≤ a)
+    (ha : IsZero ((X.H n).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ a)))))
+    (hb : IsZero ((X.H n).obj (mk₁ (homOfLE (le_top : (b : EInt) ≤ ⊤))))) :
+    IsZero (X.abutment n) :=
+  X.isZero_H_obj_mk₁_of_isZero_of_isZero (homOfLE (bot_le : (⊥ : EInt) ≤ b))
+    (homOfLE (WithBotTop.coe_le_coe.mpr hba)) (homOfLE (le_top : (a : EInt) ≤ ⊤)) _ _ _
+    (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) n ha hb
 
 end CategoryTheory.Abelian.SpectralObject
