@@ -23,6 +23,7 @@ projective objects is dualized to one about injective objects.
 
 * `TauCeti.additiveClosure_iff_exists_sum_comp_eq_id`: `X ∈ add M` exactly when `𝟙 X` is a finite
   sum of composites `X ⟶ M ⟶ X`.
+* `TauCeti.additiveClosure_le_of_retract`: `add M ≤ add N` when `M` is a direct summand of `N`.
 * `TauCeti.additiveClosure_functor_obj_op_iff`: an additive duality `Cᵒᵖ ≌ D` preserves and reflects
   membership in additive closures.
 -/
@@ -52,6 +53,12 @@ theorem additiveClosure_iff_exists_sum_comp_eq_id {M X : C} :
         h.r := by
     simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
   rw [hs, biproduct.total, Category.id_comp, h.retract]
+
+/-- **Additive closures grow along retracts**: if `M` is a direct summand of `N`, then
+`add M ≤ add N`. -/
+theorem additiveClosure_le_of_retract {M N : C} (h : Retract M N) :
+    additiveClosure M ≤ additiveClosure N :=
+  additiveClosure_le_iff.2 ((additiveClosure N).prop_of_retract h (additiveClosure_self N))
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasFiniteBiproducts D]
 
