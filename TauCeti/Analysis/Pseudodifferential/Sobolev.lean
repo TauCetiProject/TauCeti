@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -100,6 +101,12 @@ families of operators.
 * `TauCeti.Symbol.quantizeSobolev_add`, `TauCeti.Symbol.quantizeSobolev_smul`,
   `TauCeti.Symbol.quantizeSobolev_sub`, `TauCeti.Symbol.toDistr_quantizeSobolev_sub_apply`:
   linearity of `Op(a)` in the symbol.
+* `TauCeti.Symbol.quantizeSobolev_inclusion`, `TauCeti.Symbol.quantizeSobolev_comp_inclusion`:
+  compatibility with the inclusions of symbol classes and of Bessel-potential spaces, so that the
+  tempered distribution `Op(a) u` depends neither on the order of the symbol nor on the space in
+  which `u` is considered (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`).
+* `TauCeti.Symbol.quantizeSobolev_ofSpatial_smul`: the symbol `ψ(x)` quantizes to the
+  multiplication by `ψ`.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
@@ -999,6 +1006,50 @@ theorem IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq (hsm :
     fun huv ↦ ?_⟩
   rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
   exact toDistr_quantizeSobolev_congr hb.symm ha hbK huv
+
+/-- **Changing the order of the symbol.** Viewing a symbol of order `m` as a symbol of order
+`m' ≥ m` gives the operator `H^s → H^{s - m}` followed by the inclusion `H^{s - m} ⊆ H^{s - m'}`. -/
+theorem quantizeSobolev_inclusion {m' : ℝ} (h : m ≤ m') (ha : a.HasCompactSpatialSupport)
+    (ha' : (inclusion h a).HasCompactSpatialSupport) (s : ℝ) :
+    (inclusion h a).quantizeSobolev ha' s =
+      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeSobolev ha s := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  ext φ
+  simp [coefficient_inclusion]
+
+/-- **Changing the Sobolev order.** The operators `Op(a) : H^s → H^{s - m}` for the different
+orders `s` are compatible with the inclusions `H^s ⊆ H^r`. -/
+theorem quantizeSobolev_comp_inclusion (ha : a.HasCompactSpatialSupport) {r s : ℝ} (h : r ≤ s) :
+    a.quantizeSobolev ha r ∘L BesselPotentialSpace.inclusion h =
+      BesselPotentialSpace.inclusion (by linarith) ∘L a.quantizeSobolev ha s := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  ext φ
+  simp
+
+/-- **Multiplication operators.** The symbol `ψ(x)` of multiplication by a compactly supported
+Schwartz function `ψ` quantizes to the multiplication operator `u ↦ ψ u` on `H^s`. -/
+theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : ContDiff ℝ ∞
+      fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
+    (h : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).HasCompactSpatialSupport)
+    (s : ℝ) :
+    (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).quantizeSobolev h s =
+      BesselPotentialSpace.inclusion (by simp) ∘L BesselPotentialSpace.smulLeftCLM s ψ := by
+  refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
+    BesselPotentialSpace.ext ?_
+  have hc : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).coefficient =
+      fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
+    funext (coefficient_ofSpatial _ hψ)
+  have hq (x : CoordinateSpace n) :
+      quantizeSchwartzValue (fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V) u x = ψ x • u x := by
+    simpa using quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V) u x
+  ext φ
+  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc, hq,
+    ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+    BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+    smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
+    SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
 
 end Sobolev
 

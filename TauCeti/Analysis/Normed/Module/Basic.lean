@@ -25,6 +25,8 @@ normed spaces:
   `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
+* `TauCeti.norm_smul_le_mul_norm_of_support_subset`: a multiplier bounded by `K` on a set
+  containing the support of `f` gives `‖g • f‖ ≤ K ‖f‖` everywhere.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
 -/
@@ -78,6 +80,17 @@ theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddC
   rw [← sq_abs a] at hR
   nlinarith [mul_le_mul_of_nonneg_left ha (abs_nonneg a),
     mul_nonneg (abs_nonneg a) (norm_nonneg v)]
+
+/-- A multiplier bounded by `K` on a set containing the support of `f` gives `‖g • f‖ ≤ K ‖f‖`
+everywhere. -/
+theorem norm_smul_le_mul_norm_of_support_subset {α A E : Type*} [SeminormedAddGroup A]
+    [SeminormedAddCommGroup E] [SMulZeroClass A E] [IsBoundedSMul A E] {f : α → E} {g : α → A}
+    {s : Set α} {K : ℝ} (hsupp : Function.support f ⊆ s) (hK : ∀ x ∈ s, ‖g x‖ ≤ K) (x : α) :
+    ‖g x • f x‖ ≤ K * ‖f x‖ := by
+  by_cases hx : f x = 0
+  · simp [hx]
+  · exact (norm_smul_le _ _).trans
+      (mul_le_mul_of_nonneg_right (hK x (hsupp hx)) (norm_nonneg _))
 
 end TauCeti
 
