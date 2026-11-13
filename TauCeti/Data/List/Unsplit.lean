@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.List.Infix
+public import Mathlib.Data.List.Basic
 
 /-!
 # Occurrences of a list that are not split by a factorisation
@@ -37,7 +37,23 @@ theorem isUnsplit_iff : l.IsUnsplit L ↔ ∀ s t L₁ L₂, s ++ l ++ t = L.fla
     L₁.flatten.length ≤ s.length ∨ s.length + l.length ≤ L₁.flatten.length :=
   Iff.rfl
 
+/-- The empty factorisation splits nothing. -/
+@[simp, grind .]
+theorem isUnsplit_nil (l : List α) : l.IsUnsplit [] := fun _ _ _ _ _ hL ↦ by
+  simp [(append_eq_nil_iff.1 hL.symm).1]
+
+/-- No factorisation splits an occurrence of the empty list. -/
+@[simp, grind .]
+theorem nil_isUnsplit (L : List (List α)) : ([] : List α).IsUnsplit L := fun _ _ _ _ _ _ ↦ by
+  simp only [length_nil, Nat.add_zero]
+  omega
+
+/-- A factorisation splits no occurrence of a list that does not occur in its concatenation. -/
+theorem isUnsplit_of_not_isInfix (h : ¬ l <:+: L.flatten) : l.IsUnsplit L :=
+  fun s t _ _ hs _ ↦ absurd ⟨s, t, hs⟩ h
+
 /-- A factorisation with a single member splits nothing. -/
+@[simp, grind .]
 theorem isUnsplit_singleton (l u : List α) : l.IsUnsplit [u] := by
   rw [isUnsplit_iff]
   intro s t L₁ L₂ h hL
@@ -50,12 +66,14 @@ theorem isUnsplit_singleton (l u : List α) : l.IsUnsplit [u] := by
     omega
 
 /-- If `L₁ ++ L₂` splits no occurrence of `l`, neither does `L₁`. -/
+@[grind →]
 theorem IsUnsplit.of_append_left (h : l.IsUnsplit (L₁ ++ L₂)) : l.IsUnsplit L₁ := by
   rw [isUnsplit_iff] at h ⊢
   intro s t M₁ M₂ hs hM
   exact h s (t ++ L₂.flatten) M₁ (M₂ ++ L₂) (by simp [← hs]) (by simp [hM])
 
 /-- If `L₁ ++ L₂` splits no occurrence of `l`, neither does `L₂`. -/
+@[grind →]
 theorem IsUnsplit.of_append_right (h : l.IsUnsplit (L₁ ++ L₂)) : l.IsUnsplit L₂ := by
   rw [isUnsplit_iff] at h ⊢
   intro s t M₁ M₂ hs hM
@@ -85,6 +103,55 @@ theorem isUnsplit_pair_iff {u v : List α} : l.IsUnsplit [u, v] ↔
 theorem IsUnsplit.pair_flatten (h : l.IsUnsplit (L₁ ++ L₂)) :
     l.IsUnsplit [L₁.flatten, L₂.flatten] :=
   isUnsplit_pair_iff.2 fun s t hs ↦ isUnsplit_iff.1 h s t L₁ L₂ (by simpa using hs) rfl
+
+/-- The factorisation `L₁ ++ L₂` splits no occurrence of `l` exactly when neither `L₁` nor `L₂`
+does and the cut point between the concatenation of `L₁` and that of `L₂` lies inside no
+occurrence of `l`. -/
+theorem isUnsplit_append : l.IsUnsplit (L₁ ++ L₂) ↔
+    l.IsUnsplit L₁ ∧ l.IsUnsplit L₂ ∧ l.IsUnsplit [L₁.flatten, L₂.flatten] := by
+  refine ⟨fun h ↦ ⟨h.of_append_left, h.of_append_right, h.pair_flatten⟩,
+    fun ⟨h₁, h₂, h₃⟩ s t M₁ M₂ hs hM ↦ ?_⟩
+  rw [flatten_append] at hs
+  have hlen := congrArg length hs
+  simp only [length_append] at hlen
+  rcases isUnsplit_pair_iff.1 h₃ s t hs with hle | hle <;>
+    rcases append_eq_append_iff.1 hM with ⟨N, rfl, rfl⟩ | ⟨N, rfl, rfl⟩ <;>
+    simp only [flatten_append, length_append] at hle ⊢
+  · obtain ⟨s', rfl⟩ : L₁.flatten <+: s := prefix_of_prefix_length_le
+      (prefix_append _ _) ⟨l ++ t, by simpa using hs⟩ hle
+    have := isUnsplit_iff.1 h₂ s' t N M₂ (by simpa using hs) rfl
+    simp only [length_append] at this ⊢
+    omega
+  · omega
+  · omega
+  · obtain ⟨t', ht'⟩ : s ++ l <+: (M₁ ++ N).flatten := prefix_of_prefix_length_le
+      ⟨t, hs⟩ (prefix_append _ _) (by simpa using hle)
+    exact isUnsplit_iff.1 h₁ s t' M₁ N ht' rfl
+
+/-- The factorisation `u :: L` splits no occurrence of `l` exactly when `L` does not and the cut
+point after `u` lies inside no occurrence of `l`. -/
+theorem isUnsplit_cons {u : List α} :
+    l.IsUnsplit (u :: L) ↔ l.IsUnsplit [u, L.flatten] ∧ l.IsUnsplit L := by
+  simpa [and_comm] using isUnsplit_append (l := l) (L₁ := [u]) (L₂ := L)
+
+/-- If `L` splits no occurrence of a nonempty list `l` and `l` occurs in the concatenation of `L`,
+then `l` occurs in a member of `L`. -/
+theorem IsUnsplit.exists_isInfix_of_isInfix_flatten (h : l.IsUnsplit L) (hl : l ≠ [])
+    (h' : l <:+: L.flatten) : ∃ u ∈ L, l <:+: u := by
+  induction L with
+  | nil => exact absurd (eq_nil_of_infix_nil h') hl
+  | cons u L ih =>
+    obtain ⟨hu, hL⟩ := isUnsplit_cons.1 h
+    obtain ⟨s, t, hs⟩ := h'
+    rw [flatten_cons] at hs
+    rcases isUnsplit_pair_iff.1 hu s t hs with hle | hle
+    · obtain ⟨s', rfl⟩ : u <+: s := prefix_of_prefix_length_le
+        (prefix_append _ _) ⟨l ++ t, by simpa using hs⟩ hle
+      obtain ⟨v, hv, hlv⟩ := ih hL ⟨s', t, by simpa using hs⟩
+      exact ⟨v, mem_cons_of_mem _ hv, hlv⟩
+    · obtain ⟨t', ht'⟩ : s ++ l <+: u :=
+        prefix_of_prefix_length_le ⟨t, hs⟩ (prefix_append _ _) (by simpa using hle)
+      exact ⟨u, mem_cons_self, s, t', ht'⟩
 
 /-- The factorisation `[0, 1] ++ [0]` splits the occurrence of `[0, 1, 0]` in its
 concatenation. -/

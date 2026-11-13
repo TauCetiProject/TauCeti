@@ -12,9 +12,12 @@ public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Word
 # Inserting a letter into the blocks of a word
 
 For letters `a`, `b`, `x` and an exponent `m`, `FreeGroup.blockInsert a b x m w` is the word
-obtained from `w` by replacing every occurrence of the block `b a^m b` by `b a^m x b`, and every
-occurrence of its formal inverse `b⁻¹ a^{-m} b⁻¹` by `b⁻¹ x⁻¹ a^{-m} b⁻¹`. This is the
-replacement used in the proof of Merzljakov's theorem to turn a solution of an equation in a
+obtained from `w` by inserting the letter `x` before the last letter of every occurrence of the
+block `b a^m b`, and the letter `x⁻¹` after the first letter of every occurrence of its formal
+inverse `b⁻¹ a^{-m} b⁻¹`. When `a ≠ b`, two occurrences of the block share at most one letter, at
+their ends, and so do two occurrences of its inverse; then `blockInsert` replaces every occurrence
+of `b a^m b` by `b a^m x b` and every occurrence of `b⁻¹ a^{-m} b⁻¹` by `b⁻¹ x⁻¹ a^{-m} b⁻¹`. This
+is the replacement used in the proof of Merzljakov's theorem to turn a solution of an equation in a
 free group, whose values at the universally quantified variables are Merzljakov words, into a
 solution over the free group with new generators.
 
@@ -27,12 +30,16 @@ Here a word is a list of signed letters `α × Bool` and a subword is an infix, 
 
 ## Main results
 
+* `FreeGroup.mem_blockInsert_iff`: the letters of the new word are those of the old word, `x` if
+  the block occurs, and `x⁻¹` if its formal inverse occurs.
+* `FreeGroup.blockInsert_eq_self_iff`: the word is left unchanged exactly when neither the block
+  nor its formal inverse occurs in it.
 * `FreeGroup.blockInsert_invRev`: the replacement commutes with formal inverses.
-* `FreeGroup.blockInsert_flatten`: the replacement commutes with a concatenation that does not
-  split a block or an inverse block.
+* `FreeGroup.blockInsert_append`, `FreeGroup.blockInsert_flatten`: the replacement commutes with
+  a concatenation that does not split a block or an inverse block.
 * `FreeGroup.blockInsert_merzljakovWord`: the value on a Merzljakov word in which the exponent
   `m` occurs once.
-* `FreeGroup.IsReduced.blockInsert`: the replacement keeps a word reduced.
+* `FreeGroup.isReduced_blockInsert`: the new word is reduced exactly when the old word is.
 * `FreeGroup.map_mk_blockInsert`: a homomorphism killing `x` does not see the replacement.
 * `FreeGroup.isInfix_of_isInfix_blockInsert`: the replacement creates no occurrence of a word
   in which the letter `x` does not appear.
@@ -63,6 +70,16 @@ variable {α : Type*} {a b x : α} {m k k' : ℕ} {l u u₀ v w t t₀ : List (�
 the first `k` letters of the occurrence. -/
 private def OccursAt (l : List (α × Bool)) (k : ℕ) (u v : List (α × Bool)) : Prop :=
   ∃ s t, s ++ l ++ t = u ++ v ∧ s.length + k = u.length
+
+private theorem exists_occursAt_of_isInfix (h : l <:+: w) (hk : k ≤ l.length) :
+    ∃ u v, u ++ v = w ∧ OccursAt l k u v := by
+  obtain ⟨s, t, rfl⟩ := h
+  have e : s ++ l.take k ++ (l.drop k ++ t) = s ++ l ++ t := by
+    simp only [append_assoc, append_cancel_left_eq]
+    rw [← append_assoc, take_append_drop]
+  refine ⟨s ++ l.take k, l.drop k ++ t, e, s, t, e.symm, ?_⟩
+  simp only [length_append, length_take]
+  omega
 
 private theorem OccursAt.invRev (h : OccursAt l k u v) (hk : k + k' = l.length) :
     OccursAt (invRev l) k' (invRev v) (invRev u) := by
@@ -256,12 +273,27 @@ private theorem gapInsert_eq_nil_or (a b x : α) (m : ℕ) (u v : List (α × Bo
         ⟨s, b, hs⟩, d, v', hv⟩
     · exact .inl (by simp only [gapInsert, ite_eq_right hp, ite_eq_right hn, append_nil])
 
+private theorem of_mem_gapInsert {c : α × Bool} (hc : c ∈ gapInsert a b x m u v) :
+    (c = (x, true) ∧ merzljakovBlock a b m <:+: u ++ v) ∨
+      (c = (x, false) ∧ invRev (merzljakovBlock a b m) <:+: u ++ v) := by
+  rcases mem_append.1 hc with hc | hc <;> split_ifs at hc with h <;>
+    simp only [mem_singleton, not_mem_nil] at hc
+  · obtain ⟨s, t, hst, -⟩ := suffix_and_head?_iff.1 h
+    exact .inl ⟨hc, s, t, hst⟩
+  · obtain ⟨s, t, hst, -⟩ := getLast?_and_prefix_iff.1 h
+    exact .inr ⟨hc, s, t, hst⟩
+
 private theorem fst_eq_of_mem_gapInsert {c : α × Bool} (hc : c ∈ gapInsert a b x m u v) :
     c.1 = x := by
-  obtain h | ⟨e, h, -⟩ := gapInsert_eq_nil_or a b x m u v
-  · simp [h] at hc
-  · rw [h, mem_singleton] at hc
-    rw [hc]
+  rcases of_mem_gapInsert hc with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> rfl
+
+private theorem mem_gapInsert_of_occursAt (h : OccursAt (merzljakovBlock a b m) (m + 1) u v) :
+    (x, true) ∈ gapInsert a b x m u v := by
+  simp [gapInsert, suffix_and_head?_iff.2 h]
+
+private theorem mem_gapInsert_of_occursAt_invRev
+    (h : OccursAt (invRev (merzljakovBlock a b m)) 1 u v) : (x, false) ∈ gapInsert a b x m u v := by
+  simp [gapInsert, getLast?_and_prefix_iff.2 h]
 
 /-! ### The insertions inside a word with a context -/
 
@@ -281,6 +313,13 @@ private theorem insertAux_append (u v₁ v₂ t : List (α × Bool)) :
   induction v₁ generalizing u with
   | nil => simp
   | cons c v₁ ih => simp [insertAux_cons, ih]
+
+private theorem sublist_insertAux (u v t : List (α × Bool)) : v <+ insertAux a b x m u v t := by
+  induction v generalizing u with
+  | nil => simp
+  | cons c v ih =>
+    rw [insertAux_cons]
+    exact ((ih (u ++ [c])).cons_cons c).trans (sublist_append_right _ _)
 
 private theorem insertAux_congr {u' t' : List (α × Bool)}
     (h : ∀ v₁ c v₂, v = v₁ ++ c :: v₂ → gapInsert a b x m (u ++ v₁) (c :: v₂ ++ t) =
@@ -319,7 +358,7 @@ private theorem insertAux_right (h : (merzljakovBlock a b m).IsUnsplit [u ++ v, 
 
 /-- The replacement commutes with a concatenation of two words whose gap is strictly inside no
 occurrence of the block or of its formal inverse. -/
-private theorem blockInsert_append (h : (merzljakovBlock a b m).IsUnsplit [u, v])
+theorem blockInsert_append (h : (merzljakovBlock a b m).IsUnsplit [u, v])
     (h' : (invRev (merzljakovBlock a b m)).IsUnsplit [u, v]) :
     blockInsert a b x m (u ++ v) = blockInsert a b x m u ++ blockInsert a b x m v := by
   simp only [blockInsert_eq_insertAux, insertAux_append, append_nil, nil_append]
@@ -342,12 +381,73 @@ private theorem insertAux_invRev (a b x : α) (m : ℕ) (u v t : List (α × Boo
       cons_append, nil_append, ← gapInsert_invRev]
     rw [← append_assoc, h, append_assoc]
 
+private theorem of_mem_insertAux {c : α × Bool} (hc : c ∈ insertAux a b x m u v t) : c ∈ v ∨
+    (c = (x, true) ∧ merzljakovBlock a b m <:+: u ++ v ++ t) ∨
+      (c = (x, false) ∧ invRev (merzljakovBlock a b m) <:+: u ++ v ++ t) := by
+  induction v generalizing u with
+  | nil => simp at hc
+  | cons d v ih =>
+    rw [insertAux_cons, mem_append, mem_cons] at hc
+    rcases hc with hc | rfl | hc
+    · exact .inr (by simpa using of_mem_gapInsert hc)
+    · exact .inl mem_cons_self
+    · simpa [or_assoc] using (ih hc).imp_left (mem_cons_of_mem d)
+
 /-! ### Properties of the replacement -/
 
 /-- Nothing is inserted into the empty word. -/
 @[simp]
 theorem blockInsert_nil (a b x : α) (m : ℕ) : blockInsert a b x m [] = [] := by
   simp [blockInsert]
+
+/-- The new word contains the old word as a sublist. -/
+theorem sublist_blockInsert (a b x : α) (m : ℕ) (w : List (α × Bool)) :
+    w <+ blockInsert a b x m w :=
+  blockInsert_eq_insertAux a b x m w ▸ sublist_insertAux [] w []
+
+private theorem gapInsert_infix_blockInsert (u v : List (α × Bool)) :
+    gapInsert a b x m u v <:+: blockInsert a b x m (u ++ v) := by
+  rcases v with _ | ⟨c, v⟩
+  · simp
+  · rw [blockInsert_eq_insertAux, insertAux_append, insertAux_cons]
+    exact ⟨insertAux a b x m [] u (c :: v), c :: insertAux a b x m (u ++ [c]) v [], by simp⟩
+
+private theorem length_add_length_gapInsert_le (u v : List (α × Bool)) :
+    (u ++ v).length + (gapInsert a b x m u v).length ≤ (blockInsert a b x m (u ++ v)).length := by
+  rcases v with _ | ⟨c, v⟩
+  · simpa using (sublist_blockInsert a b x m u).length_le
+  · have h₁ := (sublist_insertAux (a := a) (b := b) (x := x) (m := m) [] u (c :: v)).length_le
+    have h₂ := (sublist_insertAux (a := a) (b := b) (x := x) (m := m) (u ++ [c]) v []).length_le
+    rw [blockInsert_eq_insertAux, insertAux_append, insertAux_cons]
+    simp only [length_append, length_cons, nil_append, append_nil] at h₁ h₂ ⊢
+    omega
+
+/-- The new word is empty exactly when the old word is. -/
+@[simp, grind =]
+theorem blockInsert_eq_nil_iff : blockInsert a b x m w = [] ↔ w = [] :=
+  ⟨fun h ↦ eq_nil_of_sublist_nil (h ▸ sublist_blockInsert a b x m w),
+    fun h ↦ h ▸ blockInsert_nil a b x m⟩
+
+/-- A letter belongs to the new word exactly when it belongs to the old word, or it is `x` and
+the block occurs in the old word, or it is `x⁻¹` and the formal inverse of the block occurs in the
+old word. -/
+theorem mem_blockInsert_iff {c : α × Bool} : c ∈ blockInsert a b x m w ↔ c ∈ w ∨
+    (c = (x, true) ∧ merzljakovBlock a b m <:+: w) ∨
+      (c = (x, false) ∧ invRev (merzljakovBlock a b m) <:+: w) := by
+  refine ⟨fun hc ↦ ?_, ?_⟩
+  · rw [blockInsert_eq_insertAux] at hc
+    simpa using of_mem_insertAux (u := []) (t := []) hc
+  · rintro (hc | ⟨rfl, hw⟩ | ⟨rfl, hw⟩)
+    · exact (sublist_blockInsert a b x m w).subset hc
+    · obtain ⟨u, v, rfl, h⟩ := exists_occursAt_of_isInfix hw (k := m + 1) (by simp)
+      exact (gapInsert_infix_blockInsert u v).subset (mem_gapInsert_of_occursAt h)
+    · obtain ⟨u, v, rfl, h⟩ := exists_occursAt_of_isInfix hw (k := 1) (by simp)
+      exact (gapInsert_infix_blockInsert u v).subset (mem_gapInsert_of_occursAt_invRev h)
+
+/-- Every signed letter of the new word is `x`, `x⁻¹` or a signed letter of the old word. -/
+theorem fst_eq_or_mem_of_mem_blockInsert {c : α × Bool} (hc : c ∈ blockInsert a b x m w) :
+    c.1 = x ∨ c ∈ w := by
+  rcases mem_blockInsert_iff.1 hc with hc | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> simp [hc]
 
 /-- The replacement commutes with formal inverses. -/
 theorem blockInsert_invRev (a b x : α) (m : ℕ) (w : List (α × Bool)) :
@@ -377,6 +477,30 @@ theorem blockInsert_eq_self (h : ¬ merzljakovBlock a b m <:+: w)
   · rintro ⟨s, t, hst, -⟩
     exact h' ⟨s, t, by simpa [hv] using hst⟩
 
+/-- The replacement leaves a word unchanged exactly when neither the block nor its formal inverse
+occurs in it. -/
+theorem blockInsert_eq_self_iff : blockInsert a b x m w = w ↔
+    ¬ merzljakovBlock a b m <:+: w ∧ ¬ invRev (merzljakovBlock a b m) <:+: w := by
+  refine ⟨fun hw ↦ ?_, fun h ↦ blockInsert_eq_self h.1 h.2⟩
+  have key (u v : List (α × Bool)) (huv : u ++ v = w) (c : α × Bool)
+      (hc : c ∈ gapInsert a b x m u v) : False := by
+    have := length_add_length_gapInsert_le (a := a) (b := b) (x := x) (m := m) u v
+    rw [huv, hw] at this
+    have := length_pos_of_mem hc
+    omega
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨u, v, huv, h⟩ := exists_occursAt_of_isInfix h (k := m + 1) (by simp)
+    exact key u v huv _ (mem_gapInsert_of_occursAt h)
+  · obtain ⟨u, v, huv, h⟩ := exists_occursAt_of_isInfix h (k := 1) (by simp)
+    exact key u v huv _ (mem_gapInsert_of_occursAt_invRev h)
+
+/-- A word with one letter is left unchanged. -/
+@[simp, grind =]
+theorem blockInsert_singleton (a b x : α) (m : ℕ) (c : α × Bool) :
+    blockInsert a b x m [c] = [c] :=
+  blockInsert_eq_self (fun h ↦ by simpa using h.length_le)
+    (fun h ↦ by simpa [invRev_length] using h.length_le)
+
 omit [DecidableEq α] in
 private theorem exists_merzljakovWord_eq (hab : a ≠ b) {ms₁ ms₂ : List ℕ} (h₁ : m ∉ ms₁)
     (h₂ : m ∉ ms₂) :
@@ -396,6 +520,48 @@ private theorem exists_merzljakovWord_eq (hab : a ≠ b) {ms₁ ms₂ : List ℕ
   refine ⟨s, t, hs.symm, ht.symm, fun s' t' h' ↦ ?_⟩
   simpa using congrArg length ((key s' t' h').1.trans hs.symm)
 
+private theorem blockInsert_append_cons_of_unique {p t : List (α × Bool)}
+    (hp : (b, true) :: replicate m (a, true) <:+ p)
+    (huniq : ∀ s' t', s' ++ merzljakovBlock a b m ++ t' = p ++ (b, true) :: t →
+      s'.length + (m + 1) = p.length)
+    (hinv : ¬ invRev (merzljakovBlock a b m) <:+: p ++ (b, true) :: t) :
+    blockInsert a b x m (p ++ (b, true) :: t) = p ++ (x, true) :: (b, true) :: t := by
+  have hinv' (u v : List (α × Bool)) (huv : u ++ v = p ++ (b, true) :: t) :
+      ¬ OccursAt (invRev (merzljakovBlock a b m)) 1 u v := fun ⟨s', t', h', _⟩ ↦
+    hinv ⟨s', t', h'.trans huv⟩
+  have hocc (u v : List (α × Bool)) (huv : u ++ v = p ++ (b, true) :: t)
+      (h : OccursAt (merzljakovBlock a b m) (m + 1) u v) : u.length = p.length := by
+    obtain ⟨s', t', h', hl⟩ := h
+    rw [← hl, huniq s' t' (h'.trans huv)]
+  have e₁ : insertAux a b x m [] p ((b, true) :: t ++ []) = p :=
+    insertAux_eq_self fun v₁ c v₂ hv ↦ gapInsert_eq_nil
+      (fun h ↦ by simpa [hv] using hocc _ _ (by simp [hv]) h) (hinv' _ _ (by simp [hv]))
+  have e₂ : gapInsert a b x m p ((b, true) :: t ++ []) = [(x, true)] := by
+    rw [gapInsert, ite_eq_left ⟨hp, rfl⟩,
+      ite_eq_right (mt getLast?_and_prefix_iff.1 (hinv' _ _ (by simp))), append_nil]
+  have e₃ : insertAux a b x m (p ++ [(b, true)]) t [] = t :=
+    insertAux_eq_self fun v₁ c v₂ hv ↦ gapInsert_eq_nil
+      (fun h ↦ by simpa using hocc _ _ (by simp [hv]) h) (hinv' _ _ (by simp [hv]))
+  rw [blockInsert_eq_insertAux, insertAux_append, nil_append, insertAux_cons, e₁, e₂, e₃]
+  simp
+
+/-- The replacement inserts `x` once into the block itself, before its last letter. -/
+@[simp, grind =]
+theorem blockInsert_merzljakovBlock (a b x : α) (m : ℕ) :
+    blockInsert a b x m (merzljakovBlock a b m) =
+      (b, true) :: (replicate m (a, true) ++ [(x, true), (b, true)]) := by
+  have hw : merzljakovBlock a b m = ((b, true) :: replicate m (a, true)) ++ [(b, true)] := by
+    simp [merzljakovBlock_eq]
+  have hinv : ¬ invRev (merzljakovBlock a b m) <:+: (b, true) :: replicate m (a, true) ++
+      [(b, true)] := fun h ↦ not_invRev_merzljakovBlock_isInfix_merzljakovWord a b m [m]
+    (h.trans (by simp [merzljakovWord_singleton, merzljakovBlock_eq]))
+  rw [hw, blockInsert_append_cons_of_unique suffix_rfl (fun s' t' h ↦ ?_) hinv]
+  · simp
+  · have := congrArg length h
+    simp only [length_append, length_merzljakovBlock, length_cons, length_replicate,
+      length_nil] at this ⊢
+    omega
+
 /-- In a Merzljakov word over distinct letters `a ≠ b` in which the exponent `m` occurs once, the
 replacement inserts `x` once, after `a^m`. -/
 theorem blockInsert_merzljakovWord (hab : a ≠ b) {ms₁ ms₂ : List ℕ} (h₁ : m ∉ ms₁)
@@ -403,28 +569,14 @@ theorem blockInsert_merzljakovWord (hab : a ≠ b) {ms₁ ms₂ : List ℕ} (h�
     blockInsert a b x m (merzljakovWord a b (ms₁ ++ m :: ms₂)) =
       merzljakovWord a b ms₁ ++ (replicate m (a, true) ++ (x, true) :: merzljakovWord a b ms₂) := by
   obtain ⟨s, t, hs, ht, huniq⟩ := exists_merzljakovWord_eq hab h₁ h₂
-  generalize hp : s ++ (b, true) :: replicate m (a, true) = p
-  have hw : merzljakovWord a b (ms₁ ++ m :: ms₂) = p ++ (b, true) :: t := by
-    simp [merzljakovWord_append_cons, hs, ht, ← hp]
-  have hinv (u v : List (α × Bool)) (huv : u ++ v = p ++ (b, true) :: t) :
-      ¬ OccursAt (invRev (merzljakovBlock a b m)) 1 u v := fun ⟨s', t', h', _⟩ ↦
-    not_invRev_merzljakovBlock_isInfix_merzljakovWord a b m _ ⟨s', t', h'.trans (huv.trans hw.symm)⟩
-  have hocc (u v : List (α × Bool)) (huv : u ++ v = p ++ (b, true) :: t)
-      (h : OccursAt (merzljakovBlock a b m) (m + 1) u v) : u.length = p.length := by
-    obtain ⟨s', t', h', hl⟩ := h
-    rw [← hl, huniq s' t' (h'.trans (huv.trans hw.symm)), ← hp]
-    simp
-  have e₁ : insertAux a b x m [] p ((b, true) :: t ++ []) = p :=
-    insertAux_eq_self fun v₁ c v₂ hv ↦ gapInsert_eq_nil
-      (fun h ↦ by simpa [hv] using hocc _ _ (by simp [hv]) h) (hinv _ _ (by simp [hv]))
-  have e₂ : gapInsert a b x m p ((b, true) :: t ++ []) = [(x, true)] := by
-    rw [gapInsert, ite_eq_left ⟨hp ▸ suffix_append _ _, rfl⟩,
-      ite_eq_right (mt getLast?_and_prefix_iff.1 (hinv _ _ (by simp))), append_nil]
-  have e₃ : insertAux a b x m (p ++ [(b, true)]) t [] = t :=
-    insertAux_eq_self fun v₁ c v₂ hv ↦ gapInsert_eq_nil
-      (fun h ↦ by simpa using hocc _ _ (by simp [hv]) h) (hinv _ _ (by simp [hv]))
-  rw [blockInsert_eq_insertAux, hw, insertAux_append, nil_append, insertAux_cons, e₁, e₂, e₃]
-  simp [← hp, hs, ht]
+  have hw : merzljakovWord a b (ms₁ ++ m :: ms₂) =
+      (s ++ (b, true) :: replicate m (a, true)) ++ (b, true) :: t := by
+    simp [merzljakovWord_append_cons, hs, ht]
+  have hinv := not_invRev_merzljakovBlock_isInfix_merzljakovWord a b m (ms₁ ++ m :: ms₂)
+  rw [hw] at hinv huniq
+  rw [hw, blockInsert_append_cons_of_unique (suffix_append _ _)
+    (fun s' t' h ↦ by simp [huniq s' t' h]) hinv]
+  simp [hs, ht]
 
 private theorem map_mk_gapInsert {G : Type*} [Monoid G] (φ : FreeGroup α →* G)
     (hφ : φ (of x) = 1) (a b : α) (m : ℕ) (u v : List (α × Bool)) :
@@ -454,44 +606,36 @@ theorem map_mk_blockInsert {G : Type*} [Monoid G] (φ : FreeGroup α →* G) (h�
     (a b : α) (m : ℕ) (w : List (α × Bool)) : φ (mk (blockInsert a b x m w)) = φ (mk w) := by
   rw [blockInsert_eq_insertAux, map_mk_insertAux φ hφ]
 
-private theorem isReduced_insertAux (h : IsReduced (u.getLast?.toList ++ v)) :
-    IsReduced (u.getLast?.toList ++ insertAux a b x m u v t) := by
+private theorem isReduced_insertAux_iff :
+    IsReduced (u.getLast?.toList ++ insertAux a b x m u v t) ↔
+      IsReduced (u.getLast?.toList ++ v) := by
   induction v generalizing u with
-  | nil => simpa using h
+  | nil => simp
   | cons c v ih =>
-    have hA : IsReduced (c :: insertAux a b x m (u ++ [c]) v t) := by
-      simpa using ih (u := u ++ [c]) (by simpa using h.infix ⟨u.getLast?.toList, [], by simp⟩)
+    have hA : IsReduced (c :: insertAux a b x m (u ++ [c]) v t) ↔ IsReduced (c :: v) := by
+      simpa using ih (u := u ++ [c])
     rw [insertAux_cons]
     obtain hg | ⟨e, hg, ⟨u', d, rfl⟩, d', v', hv⟩ := gapInsert_eq_nil_or a b x m u (c :: v ++ t)
     · rw [hg, nil_append]
       rcases eq_nil_or_concat' u with rfl | ⟨u', d, rfl⟩
       · simpa using hA
-      · simp only [getLast?_concat, Option.toList_some, singleton_append] at h ⊢
-        exact isReduced_cons_cons.2 ⟨(isReduced_cons_cons.1 h).1, hA⟩
+      · simp only [getLast?_concat, Option.toList_some, singleton_append, isReduced_cons_cons]
+        exact and_congr_right fun _ ↦ hA
     · obtain rfl : c = (d', e) := by simpa using congrArg head? hv
       rw [hg]
       simpa [isReduced_cons_cons] using hA
 
+/-- The new word is reduced exactly when the old word is: an inserted letter stands between two
+letters of its own sign, and no letter is inserted between two letters of opposite signs. -/
+@[simp, grind =]
+theorem isReduced_blockInsert : IsReduced (blockInsert a b x m w) ↔ IsReduced w := by
+  simpa [blockInsert_eq_insertAux] using
+    isReduced_insertAux_iff (a := a) (b := b) (x := x) (m := m) (u := []) (v := w) (t := [])
+
 /-- The replacement keeps a word reduced. -/
 theorem IsReduced.blockInsert (hw : IsReduced w) (a b x : α) (m : ℕ) :
-    IsReduced (blockInsert a b x m w) := by
-  simpa [blockInsert_eq_insertAux] using
-    isReduced_insertAux (a := a) (b := b) (x := x) (m := m) (u := []) (t := []) (by simpa using hw)
-
-private theorem mem_insertAux {c : α × Bool} (hc : c ∈ insertAux a b x m u v t) :
-    c.1 = x ∨ c ∈ v := by
-  induction v generalizing u with
-  | nil => simp at hc
-  | cons d v ih =>
-    rw [insertAux_cons, mem_append, mem_cons] at hc
-    rcases hc with hc | rfl | hc
-    · exact .inl (fst_eq_of_mem_gapInsert hc)
-    · exact .inr mem_cons_self
-    · exact (ih hc).imp_right (mem_cons_of_mem _)
-
-/-- A letter of the new word is `x` or a letter of the old word. -/
-theorem mem_blockInsert {c : α × Bool} (hc : c ∈ blockInsert a b x m w) : c.1 = x ∨ c ∈ w :=
-  mem_insertAux (blockInsert_eq_insertAux a b x m w ▸ hc)
+    IsReduced (blockInsert a b x m w) :=
+  isReduced_blockInsert.2 hw
 
 private theorem prefix_of_prefix_insertAux {u₁ : List (α × Bool)} (hu : ∀ c ∈ u₁, c.1 ≠ x)
     (h : u₁ <+: insertAux a b x m u v t) : u₁ <+: v := by
@@ -509,18 +653,6 @@ private theorem prefix_of_prefix_insertAux {u₁ : List (α × Bool)} (hu : ∀ 
         (v := c :: v ++ t) (by rw [hg]; exact mem_cons_self)
       exact absurd (h.1 ▸ he') (hu e mem_cons_self)
 
-omit [DecidableEq α] in
-private theorem isInfix_of_isInfix_append {u₁ I l : List (α × Bool)} (hI : ∀ c ∈ I, c.1 = x)
-    (hu : ∀ c ∈ u₁, c.1 ≠ x) (h : u₁ <:+: I ++ l) : u₁ <:+: l := by
-  induction I with
-  | nil => simpa using h
-  | cons e I ih =>
-    rcases infix_cons_iff.1 h with h | h
-    · rcases u₁ with _ | ⟨e', u₁⟩
-      · exact nil_infix
-      · exact absurd ((cons_prefix_cons.1 h).1 ▸ hI e mem_cons_self) (hu e' mem_cons_self)
-    · exact ih (fun c hc ↦ hI c (mem_cons_of_mem _ hc)) h
-
 private theorem isInfix_of_isInfix_insertAux {u₁ : List (α × Bool)} (hu : ∀ c ∈ u₁, c.1 ≠ x)
     (h : u₁ <:+: insertAux a b x m u v t) : u₁ <:+: v := by
   induction v generalizing u with
@@ -528,7 +660,8 @@ private theorem isInfix_of_isInfix_insertAux {u₁ : List (α × Bool)} (hu : �
   | cons c v ih =>
     rw [insertAux_cons] at h
     rcases infix_cons_iff.1
-      (isInfix_of_isInfix_append (fun _ ↦ fst_eq_of_mem_gapInsert) hu h) with h | h
+      (IsInfix.of_infix_append_right (fun c hc hc' ↦ hu c hc (fst_eq_of_mem_gapInsert hc')) h)
+      with h | h
     · rcases u₁ with _ | ⟨e, u₁⟩
       · exact nil_infix
       · rw [cons_prefix_cons] at h
