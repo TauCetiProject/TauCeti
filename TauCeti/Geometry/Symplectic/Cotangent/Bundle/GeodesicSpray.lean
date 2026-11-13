@@ -7,12 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Christoffel
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Cogeodesic
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Metric
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LagrangianVectorField
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The geodesic spray is the Lagrangian vector field of the kinetic energy
@@ -46,7 +45,9 @@ connection is Mathlib's `CovariantDerivative.leviCivitaConnection`, so the Lagra
 of `½ ‖v‖²` is the geodesic spray `TauCeti.Manifold.geodesicSpray`
 (`TauCeti.hamiltonianVectorField_lagrangianEnergy_eq_geodesicSpray`). The Hamiltonian of this
 hyperregular Lagrangian is the kinetic energy `‖p‖² / 2` of covectors
-(`TauCeti.IsHyperregularLagrangian.hamiltonian_eq_kineticEnergy`), so the Legendre map carries the
+(`TauCeti.IsHyperregularLagrangian.hamiltonian_eq_kineticEnergy`, in
+`TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Metric` with the hyperregularity and the
+Riesz identities of the Legendre map), so the Legendre map carries the
 geodesic spray to the cogeodesic field, the Hamiltonian vector field of the kinetic energy for the
 canonical symplectic form (`TauCeti.mfderiv_legendreMap_geodesicSpray`). Hence the metric geodesic
 flow is the kinetic Hamiltonian flow: a `C²` curve `γ` is a geodesic exactly when the Legendre
@@ -66,8 +67,6 @@ assumed.
 
 In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 
-* `isHyperregularLagrangian_mechanicalLagrangian`: the mechanical Lagrangian of a nondegenerate
-  metric is hyperregular.
 * `IsLeviCivitaConnection.hamiltonianVectorField_lagrangianEnergy_mechanicalLagrangian_zero`: the
   Lagrangian vector field of the kinetic Lagrangian is the spray `(v, -Γ(v, v))`.
 
@@ -111,19 +110,6 @@ namespace TauCeti
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
-
-/-- A mechanical Lagrangian has the regularity of its potential, since the metric is smooth. -/
-theorem Manifold.ContMDiffNondegenerateMetric.contMDiff_mechanicalLagrangian
-    (g : Manifold.ContMDiffNondegenerateMetric (I := I) (M := M))
-    {n : WithTop ℕ∞} {V : M → ℝ} (hn : n ≤ ∞) (hV : ContMDiff I 𝓘(ℝ) n V) :
-    ContMDiff I.tangent 𝓘(ℝ) n (mechanicalLagrangian g V) :=
-  TauCeti.contMDiff_mechanicalLagrangian (g.contMDiff.of_le hn) hV
-
-/-- The kinetic Lagrangian is smooth because the metric is smooth and the potential is zero. -/
-theorem Manifold.ContMDiffNondegenerateMetric.contMDiff_mechanicalLagrangian_zero
-    (g : Manifold.ContMDiffNondegenerateMetric (I := I) (M := M)) :
-    ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian g 0) :=
-  g.contMDiff_mechanicalLagrangian le_rfl contMDiff_const
 
 /-! ### Chart formulas -/
 
@@ -201,24 +187,6 @@ private theorem energyChartDeriv_apply (x : M) (u : E) (w : E × E) :
     ContinuousLinearMap.flip_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
 
-/-- **Manifold derivatives on `TM` from chart derivatives.** If the chart expression at `z` of a
-map `f` out of `TM`, continuous at `z`, agrees on the chart target with a map `φ` that has
-derivative `f'` within that target at the chart image `p` of `z`, then `f'` is the manifold
-derivative of `f` at `z`, since the chart target is a neighbourhood of `p` within the range of the
-model. Here `f'` is a linear map between the model spaces `E × E` and `F`, which are the tangent
-spaces of `TM` at `z` and of `N` at `f z` by definition. -/
-private theorem hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target
-    {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
-    {J : ModelWithCorners ℝ F G} {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
-    {f : TangentBundle I M → N} {z : TangentBundle I M} {φ : E × E → F} {f' : E × E →L[ℝ] F}
-    {p : E × E} (hp : extChartAt I.tangent z z = p) (hf : ContinuousAt f z)
-    (hφ : HasFDerivWithinAt φ f' (extChartAt I.tangent z).target p)
-    (heq : EqOn (writtenInExtChartAt I.tangent J z f) φ (extChartAt I.tangent z).target) :
-    HasMFDerivAt I.tangent J f z f' := by
-  subst hp
-  exact ⟨hf, (hasFDerivWithinAt_inter' (extChartAt_target_mem_nhdsWithin z)).1
-    ((hφ.mono inter_subset_right).congr (fun _ hw ↦ heq hw.2) (heq (mem_extChartAt_target z)))⟩
-
 /-- The Legendre map of the kinetic Lagrangian has derivative `legendreChartDeriv` in charts. -/
 private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian_zero (z : TangentBundle I M) :
     HasMFDerivAt I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap (mechanicalLagrangian g 0)) z
@@ -228,7 +196,8 @@ private theorem hasMFDerivAt_legendreMap_mechanicalLagrangian_zero (z : TangentB
     (p := ((extChartAt I z.proj z.proj : E), (z.2 : E)))
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
       (by simp)).hasFDerivWithinAt (fun _ ↦ fst_mem_extChartAt_target z)
-  exact hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target (TangentBundle.extChartAt_self z)
+  exact Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target
+    (TangentBundle.extChartAt_self z)
     (contMDiff_legendreMap (m := 0) g.contMDiff_mechanicalLagrangian_zero (by simp) z).continuousAt
     hΦ fun _ hw ↦ writtenInExtChartAt_legendreMap_mechanicalLagrangian g 0 z hw
 
@@ -242,7 +211,8 @@ private theorem hasMFDerivAt_lagrangianEnergy_mechanicalLagrangian_zero (z : Tan
     ((g.contDiffOn_chartMetric z.proj _ (mem_extChartAt_target z.proj)).differentiableWithinAt
       (by simp)).hasFDerivWithinAt (fun _ ↦ fst_mem_extChartAt_target z)).const_smul
     (2⁻¹ : ℝ)
-  refine hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target (TangentBundle.extChartAt_self z)
+  refine Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target
+    (TangentBundle.extChartAt_self z)
     (contMDiff_lagrangianEnergy (m := 0)
       g.contMDiff_mechanicalLagrangian_zero (by norm_num) z).continuousAt hΦ fun w hw ↦ ?_
   rw [writtenInExtChartAt_lagrangianEnergy_mechanicalLagrangian_zero g z hw, Pi.smul_apply,
@@ -254,15 +224,8 @@ end Chart
 
 namespace Manifold.ContMDiffNondegenerateMetric
 
-variable [FiniteDimensional ℝ E] (g : ContMDiffNondegenerateMetric (I := I) (M := M))
-
-/-- **The mechanical Lagrangian of a nondegenerate metric is hyperregular**: its Legendre map
-`v ↦ g(v, ·)` is a bijection `TM → T*M`, for every potential `V`. -/
-theorem isHyperregularLagrangian_mechanicalLagrangian (V : M → ℝ) :
-    IsHyperregularLagrangian (mechanicalLagrangian g V) :=
-  (isHyperregularLagrangian_mechanicalLagrangian_iff g.apply_comm V).2 g.isInvertible
-
-variable {g} {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+variable [FiniteDimensional ℝ E] {g : ContMDiffNondegenerateMetric (I := I) (M := M)}
+  {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
 
 open Module in
 /-- **The spray of the Levi-Civita connection solves the Lagrangian equation of the kinetic
@@ -362,63 +325,6 @@ open _root_.TauCeti.Manifold
 
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- **The Legendre map of a Riemannian mechanical Lagrangian inverts the Riesz isomorphism:** it
-sends the Riesz dual of a covector `p` back to `p`. -/
-@[simp]
-theorem legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual (V : M → ℝ)
-    (p : CotangentBundle I M) :
-    legendreMap (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V)
-        (TotalSpace.mk' E p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2)) = p := by
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  -- The metric lowers the index of the Riesz dual of `p` back to `p`.
-  have hR : g p.proj (Riemannian.Tensor.rieszDual (I := I) p.proj p.2) = p.2 := by
-    ext w
-    rw [ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, Riemannian.Tensor.inner_rieszDual]
-  rw [legendreMap_mechanicalLagrangian g.apply_comm]
-  exact TotalSpace.ext rfl (heq_of_eq hR)
-
-/-- **The Legendre map of a Riemannian mechanical Lagrangian is isometric on fibres:** the
-covector `⟪v, ·⟫` has the norm of `v`. -/
-@[simp]
-theorem norm_legendreMap_mechanicalLagrangian_ofRiemannianBundle_snd (V : M → ℝ)
-    (v : TangentBundle I M) :
-    ‖(legendreMap
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V) v).2‖ =
-      ‖v.2‖ := by
-  let g := ContMDiffNondegenerateMetric.ofRiemannianBundle I M
-  -- `v` is the Riesz dual of `⟪v, ·⟫`, and the Riesz isomorphism is isometric.
-  have hv : v.2 = Riemannian.Tensor.rieszDual (I := I) v.proj (g v.proj v.2) :=
-    Riemannian.Tensor.eq_rieszDual_iff_inner_eq.2 fun w ↦
-      (ContMDiffNondegenerateMetric.ofRiemannianBundle_apply I M v.proj _ w).symm
-  rw [legendreMap_mechanicalLagrangian g.apply_comm]
-  conv_rhs => rw [hv]
-  exact ((Riemannian.Tensor.rieszDual (I := I) v.proj).norm_map _).symm
-
-/-- The Hamiltonian of a Riemannian mechanical Lagrangian is covector kinetic energy plus
-its potential. -/
-theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian_ofRiemannianBundle
-    {V : M → ℝ} (h : IsHyperregularLagrangian
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) V))
-    (p : CotangentBundle I M) :
-    h.hamiltonian p = CotangentBundle.kineticEnergy I M p + V p.proj := by
-  have hp := legendreMap_mechanicalLagrangian_ofRiemannianBundle_rieszDual V p
-  conv_lhs => rw [← hp]
-  rw [h.hamiltonian_legendreMap, lagrangianEnergy_mechanicalLagrangian,
-    ContMDiffNondegenerateMetric.ofRiemannianBundle_apply, CotangentBundle.kineticEnergy_apply,
-    Riemannian.Tensor.norm_sq_eq_apply_rieszDual, Riemannian.Tensor.inner_rieszDual]
-  ring
-
-/-- **The Hamiltonian of the kinetic Lagrangian is the kinetic energy of covectors.** For the
-Lagrangian `½ ‖v‖²` of a Riemannian metric, the Hamiltonian `E_L ∘ FL⁻¹` is `‖p‖² / 2`, for the
-norm of covectors induced by the metric. -/
-@[simp]
-theorem IsHyperregularLagrangian.hamiltonian_eq_kineticEnergy
-    (h : IsHyperregularLagrangian
-      (mechanicalLagrangian (ContMDiffNondegenerateMetric.ofRiemannianBundle I M) 0)) :
-    h.hamiltonian = CotangentBundle.kineticEnergy I M := by
-  funext p
-  simpa using h.hamiltonian_mechanicalLagrangian_ofRiemannianBundle p
 
 section BoundarylessTangentBundle
 
