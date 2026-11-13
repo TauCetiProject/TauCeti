@@ -90,9 +90,9 @@ Michael Stoll's `EllipticCurves` project (`github.com/MichaelStollBayreuth/Ellip
 Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`. There the reduction step the first one uses is a separate
 lemma; here that step is `AdjoinRoot.mk_modByMonic`. The source proves the second from a
-named helper `eq_zero_of_monic_dvd_of_degree_lt`; that helper is a one-line composition of
-Mathlib's `Polynomial.modByMonic_eq_self_iff` and `Polynomial.modByMonic_eq_zero_iff_dvd`, so it is
-inlined here rather than re-declared. They are harvested here rather than in the file that consumes
+named helper `eq_zero_of_monic_dvd_of_degree_lt`; here it follows directly from Mathlib's
+`AdjoinRoot.mk_ne_zero_of_degree_lt`, so the helper is not re-declared, and `R` need not be
+nontrivial. They are harvested here rather than in the file that consumes
 them because nothing about elliptic curves enters either statement.
 -/
 

@@ -992,7 +992,7 @@ theorem HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection {a : ℝ}
   -- The odd reflection is twice the extension by zero minus the even reflection.
   have hz := (hw.hasWeakLineDerivOn d).top_of_normalHalfSpace hd hwl (hGl.inner_const d) hw0
     fun x hx => by simp [hG0 x hx]
-  have h := (hz.const_smul (2 : ℝ)).sub
+  have h := (hz.const_smul 2).sub
     ((hw.add_comp_normalReflection hwl hGl hw0 hG0).hasWeakLineDerivOn d)
   convert h using 1
   · funext x
