@@ -251,13 +251,9 @@ theorem differential_surjective_of_stabilizer_levelSubMulAction_eq_bot
     (h : σ.IsEquivariantMomentMap μ)
     {z : h.levelSubMulAction c} (hσ : (σ.bilinFormAt (z : M)).Nondegenerate)
     (hz : MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z = ⊥) :
-    Function.Surjective (h.differential (z : M)) := by
-  have : Subsingleton
-      (MulAction.stabilizer ((Lie.coadjointRepresentation ℝ I G).stabilizer c) z) := by
-    rw [hz]
-    infer_instance
-  exact (h.differential_surjective_iff_discreteTopology_stabilizer_levelSubMulAction hσ).2
-    inferInstance
+    Function.Surjective (h.differential (z : M)) :=
+  h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot hσ
+    ((h.stabilizer_levelSubMulAction_eq_bot_iff z).1 hz)
 
 end IsEquivariantMomentMap
 

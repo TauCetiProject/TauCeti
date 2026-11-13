@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Proper actions: compact groups and invariant subspaces
@@ -71,22 +72,19 @@ theorem Topology.IsEmbedding.properSMul_of_monoidHom {G H X Y : Type*} [Group G]
     [TopologicalSpace H] [MulAction H Y] [TopologicalSpace Y] {f : Y → X} (hf : IsEmbedding f)
     {φ : H →* G} (hφ : IsEmbedding φ) (hsmul : ∀ (h : H) (y : Y), f (h • y) = φ h • f y)
     (hrange : ∀ (g : G) (y y' : Y), g • f y = f y' → ∃ h : H, φ h = g) :
-    ProperSMul H Y := by
-  have : ContinuousSMul H Y := hf.isInducing.continuousSMul hφ.continuous (hsmul _ _)
-  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 y₁ y₂ h𝒰 ↦ ?_⟩
-  have hcomp : (Prod.map f f ∘ fun p : H × Y ↦ (p.1 • p.2, p.2)) =
-      (fun p : G × X ↦ (p.1 • p.2, p.2)) ∘ Prod.map φ f :=
-    funext fun p ↦ by simp [hsmul]
-  have hX : Tendsto (fun p : G × X ↦ (p.1 • p.2, p.2)) (𝒰.map (Prod.map φ f))
-      (𝓝 (f y₁, f y₂)) := by
-    rw [Ultrafilter.coe_map, tendsto_map'_iff, ← hcomp]
-    exact (hf.continuous.prodMap hf.continuous).continuousAt.tendsto.comp h𝒰
-  obtain ⟨g, hg, hg𝒰⟩ :=
-    (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹ProperSMul G X›).2 _ _ _ hX
-  obtain ⟨h, rfl⟩ := hrange g y₂ y₁ hg
-  refine ⟨h, hf.injective (by rw [hsmul, hg]), ?_⟩
-  rw [hφ.isInducing.tendsto_nhds_iff]
-  rwa [Ultrafilter.coe_map, tendsto_map'_iff] at hg𝒰
+    ProperSMul H Y where
+  isProperMap_smul_pair := by
+    refine ProperSMul.isProperMap_smul_pair.of_isEmbedding_of_range_eq (hφ.prodMap hf)
+      (hf.prodMap hf) (funext fun p ↦ by simp [hsmul]) (Set.ext fun ⟨g, x⟩ ↦ ⟨?_, ?_⟩)
+    · rintro ⟨⟨h, y⟩, hp⟩
+      simp only [Prod.map_apply, Prod.mk.injEq] at hp
+      obtain ⟨rfl, rfl⟩ := hp
+      exact ⟨(h • y, y), by simp [hsmul]⟩
+    · rintro ⟨⟨y', y⟩, hp⟩
+      simp only [Prod.map_apply, Prod.mk.injEq] at hp
+      obtain ⟨hy', rfl⟩ := hp
+      obtain ⟨h, rfl⟩ := hrange g y y' (by rw [hy'])
+      exact ⟨(h, y), rfl⟩
 
 open Topology in
 /-- **Proper actions restrict to invariant subspaces.** If a topological embedding `f : Y → X`
