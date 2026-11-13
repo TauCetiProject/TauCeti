@@ -16,9 +16,11 @@ For a spanning tree and an orientation of a Serre graph, the positive non-tree d
 index a free basis of the reduced closed-path group. This group is finitely generated
 exactly when there are finitely many such darts, and then its rank is their cardinality.
 The graph itself need not be finite: an infinite tree with finitely many extra edges is
-included. For the presentation with trivial vertex groups, and for the presentation of the
-fundamental group of a graph by its darts, only reversal closure of the killed dart set is
-required; it need not be a tree.
+included. The same holds, with the positive darts outside `T`, for the tree presentation of a
+graph of groups with trivial vertex groups and for the presentation of a graph by its darts,
+both killing a dart set `T` that need only be closed under reversal, not a tree. These
+presentations give the fundamental group of the graph when `T` is the set of darts of a spanning
+tree.
 
 These statements use the minimum number of group generators, not merely the size of a
 particular generating family. Loops and parallel edges remain distinct basis indices.
@@ -136,15 +138,13 @@ variable {Γ : SerreGraph.{u, w}} {O T : Set Γ.E} (hO : Γ.IsOrientation O)
 
 include hO hT
 
-/-- Relative to a reversal-closed set `T` of darts, the fundamental group of a graph is
-finitely generated exactly when finitely many positive darts lie outside `T`. In particular a
-graph with finitely many darts has finitely generated fundamental group, which also follows
-from the presentation having finitely many generators. -/
+/-- The presentation of a graph by its darts killing a reversal-closed dart set `T` is finitely
+generated exactly when finitely many positive darts lie outside `T`. -/
 theorem fg_iff_finite : Group.FG (Γ.GraphPresentation T) ↔ Finite ↥(O \ T) :=
   (FreeGroupBasis.ofRepr (equivFreeGroup hO hT)).fg_iff_finite
 
-/-- Relative to a reversal-closed set `T` of darts, the rank of the fundamental group of a
-graph is the number of positive darts outside `T`. -/
+/-- The rank of the presentation of a graph by its darts killing a reversal-closed dart set `T`
+is the number of positive darts outside `T`. -/
 theorem rank_eq_nat_card [Group.FG (Γ.GraphPresentation T)] :
     Group.rank (Γ.GraphPresentation T) = Nat.card ↥(O \ T) :=
   (FreeGroupBasis.ofRepr (equivFreeGroup hO hT)).rank_eq_nat_card

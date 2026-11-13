@@ -36,7 +36,8 @@ generators.
 * `TauCeti.SerreGraph.GraphPresentation.equivTreePresentation`: the isomorphism with the tree
   presentation `GraphOfGroups.π₁Tree` of a graph of groups with trivial vertex groups.
 * `TauCeti.SerreGraph.GraphPresentation.equivFreeGroup`: the isomorphism with the free group on
-  the positive darts outside `T`.
+  the positive darts outside `T`, sending a dart generator to its signed coordinate
+  `GraphOfGroups.π₁Tree.dartWord`.
 * `TauCeti.SerreGraph.SpanningTree.pathGroupEquivGraphPresentation`: the isomorphism from the
   reduced path group.
 
@@ -47,8 +48,8 @@ generators.
   path.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
-* `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: an acyclic graph has trivial
-  fundamental group.
+* `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: relative to any spanning tree,
+  the presentation of an acyclic graph is trivial.
 
 ## References
 
@@ -65,8 +66,9 @@ universe u w x y
 
 variable (Γ : SerreGraph.{u, w})
 
-/-- The relators of the fundamental group of a graph relative to a set `T` of darts:
-`e * rev e` for every dart `e`, and `e` for every dart `e ∈ T`. -/
+/-- The relators of the presentation of a Serre graph by its darts killing a set `T` of darts:
+`e * rev e` for every dart `e`, and `e` for every dart `e ∈ T`. For the darts of a spanning tree
+they present the fundamental group of the graph. -/
 def graphRelators (T : Set Γ.E) : Set (FreeGroup Γ.E) :=
   Set.range (fun e => FreeGroup.of e * FreeGroup.of (Γ.rev e)) ∪ FreeGroup.of '' T
 
@@ -76,10 +78,10 @@ theorem mem_graphRelators_iff {T : Set Γ.E} {r : FreeGroup Γ.E} :
       (∃ e, FreeGroup.of e * FreeGroup.of (Γ.rev e) = r) ∨ ∃ e ∈ T, FreeGroup.of e = r :=
   Iff.rfl
 
-/-- The fundamental group of a Serre graph relative to a set `T` of darts, as a presented group:
-the generators are the darts, a dart and its reverse are mutually inverse, and the darts of `T`
-are trivial. For the darts of a spanning tree of a connected graph this is the group of reduced
-closed paths at a vertex. -/
+/-- The group presented by the darts of a Serre graph killing a set `T` of darts: the
+generators are the darts, a dart and its reverse are mutually inverse, and the darts of `T` are
+trivial. For the darts of a spanning tree this is the fundamental group of the graph, the group
+of reduced closed paths at a vertex. -/
 abbrev GraphPresentation (T : Set Γ.E) : Type w :=
   PresentedGroup (Γ.graphRelators T)
 
@@ -151,17 +153,22 @@ section free
 
 variable {O : Set Γ.E} (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T)
 
-/-- Relative to a set `T` of darts closed under reversal, the fundamental group of a graph is
-free on the darts of `O \ T` for any orientation `O`; the generator of a dart of `O \ T`
-corresponds to the free generator. For the darts of a spanning tree these are the positive
-edges outside the tree. -/
+/-- For a set `T` of darts closed under reversal and an orientation `O`, the presentation by
+darts killing `T` is free on the darts of `O \ T`; the generator of a dart of `O \ T`
+corresponds to the free generator. For the darts of a spanning tree this is the fundamental
+group of the graph, free on the positive edges outside the tree. -/
 noncomputable def equivFreeGroup : Γ.GraphPresentation T ≃* FreeGroup ↥(O \ T) :=
   (equivTreePresentation T (GraphOfGroups.trivial Γ)).trans
     (GraphOfGroups.π₁Tree.equivFreeGroup _ hO hT)
 
+/-- The free coordinate of a dart generator is the signed coordinate of the dart. -/
+theorem equivFreeGroup_of_eq_dartWord (e : Γ.E) :
+    equivFreeGroup hO hT (PresentedGroup.of e) = GraphOfGroups.π₁Tree.dartWord O T e := by
+  simp [equivFreeGroup, GraphOfGroups.π₁Tree.equivFreeGroup_edge_eq_dartWord]
+
 @[simp] theorem equivFreeGroup_of {e : Γ.E} (he : e ∈ O \ T) :
     equivFreeGroup hO hT (PresentedGroup.of e) = FreeGroup.of ⟨e, he⟩ := by
-  simp [equivFreeGroup, he]
+  rw [equivFreeGroup_of_eq_dartWord, GraphOfGroups.π₁Tree.dartWord_of_mem he]
 
 @[simp] theorem equivFreeGroup_symm_of (e : ↥(O \ T)) :
     (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.1 := by
