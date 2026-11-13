@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
+import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # Fundamental domains for subgroups by coset tiling
@@ -49,6 +50,11 @@ only along a null frontier, is itself a fundamental domain.
   as a fundamental polygon, becomes a measurable fundamental domain.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_disjoint_smul`: a set disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.hasSum_setIntegral_of_ac`,
+  `MeasureTheory.IsFundamentalDomain.hasSum_setIntegral`,
+  `MeasureTheory.IsFundamentalDomain.hasSum_setIntegral_smul`: `HasSum` decomposition of Bochner
+  integrals over the translates of a fundamental domain, upgrading Mathlib's `integral_eq_tsum`
+  family.
 * `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul`,
   `MeasureTheory.covolume_eq_card_mul_covolume`: for an invariant measure the covolume is
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
@@ -411,5 +417,49 @@ theorem covolume_eq_index_mul_covolume {G α : Type*} [Group G] [MulAction G α]
     covolume Δ α μ = (Δ.subgroupOf Γ).index * covolume Γ α μ := by
   rw [covolume_eq_card_mul_covolume h, ENat.card_eq_coe_natCard, ENat.toENNReal_coe,
     Subgroup.index]
+
+/-- For `ν ≪ μ` and a `ν`-integrable function `f`, the set integrals of `f` over the translates
+`g • s` of a fundamental domain `s` have sum `∫ x, f x ∂ν`. This upgrades
+`MeasureTheory.IsFundamentalDomain.integral_eq_tsum_of_ac` from `tsum` equality to `HasSum`. -/
+@[to_additive /-- For `ν ≪ μ` and a `ν`-integrable function `f`, the set integrals of `f` over the
+translates `g +ᵥ s` of an additive fundamental domain `s` have sum `∫ x, f x ∂ν`. This upgrades
+`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum_of_ac` from `tsum` equality to `HasSum`. -/]
+theorem IsFundamentalDomain.hasSum_setIntegral_of_ac {G α E : Type*} [Group G] [Countable G]
+    [MulAction G α] [MeasurableSpace α] [MeasurableConstSMul G α] {μ ν : Measure α}
+    [SMulInvariantMeasure G α μ] [NormedAddCommGroup E] [NormedSpace ℝ E] {s : Set α}
+    (h : IsFundamentalDomain G s μ) (hν : ν ≪ μ) {f : α → E} (hf : Integrable f ν) :
+    HasSum (fun g : G ↦ ∫ x in g • s, f x ∂ν) (∫ x, f x ∂ν) := by
+  have hsum := hasSum_integral_measure (μ := fun g : G ↦ ν.restrict (g • s))
+    (by rwa [h.sum_restrict_of_ac hν])
+  rwa [h.sum_restrict_of_ac hν] at hsum
+
+/-- For a `μ`-integrable function `f`, the set integrals of `f` over the translates `g • s` of a
+fundamental domain `s` have sum `∫ x, f x ∂μ`. This upgrades
+`MeasureTheory.IsFundamentalDomain.integral_eq_tsum` from `tsum` equality to `HasSum`. -/
+@[to_additive /-- For a `μ`-integrable function `f`, the set integrals of `f` over the translates
+`g +ᵥ s` of an additive fundamental domain `s` have sum `∫ x, f x ∂μ`. This upgrades
+`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum` from `tsum` equality to `HasSum`. -/]
+theorem IsFundamentalDomain.hasSum_setIntegral {G α E : Type*} [Group G] [Countable G]
+    [MulAction G α] [MeasurableSpace α] [MeasurableConstSMul G α] {μ : Measure α}
+    [SMulInvariantMeasure G α μ] [NormedAddCommGroup E] [NormedSpace ℝ E] {s : Set α}
+    (h : IsFundamentalDomain G s μ) {f : α → E} (hf : Integrable f μ) :
+    HasSum (fun g : G ↦ ∫ x in g • s, f x ∂μ) (∫ x, f x ∂μ) :=
+  h.hasSum_setIntegral_of_ac Measure.AbsolutelyContinuous.rfl hf
+
+/-- For a `μ`-integrable function `f`, the set integrals `∫ x in s, f (g • x) ∂μ` over a
+fundamental domain `s` have sum `∫ x, f x ∂μ`. This upgrades
+`MeasureTheory.IsFundamentalDomain.integral_eq_tsum''` from `tsum` equality to `HasSum`. -/
+@[to_additive /-- For a `μ`-integrable function `f`, the set integrals `∫ x in s, f (g +ᵥ x) ∂μ`
+over an additive fundamental domain `s` have sum `∫ x, f x ∂μ`. This upgrades
+`MeasureTheory.IsAddFundamentalDomain.integral_eq_tsum''` from `tsum` equality to `HasSum`. -/]
+theorem IsFundamentalDomain.hasSum_setIntegral_smul {G α E : Type*} [Group G] [Countable G]
+    [MulAction G α] [MeasurableSpace α] [MeasurableConstSMul G α] {μ : Measure α}
+    [SMulInvariantMeasure G α μ] [NormedAddCommGroup E] [NormedSpace ℝ E] {s : Set α}
+    (h : IsFundamentalDomain G s μ) {f : α → E} (hf : Integrable f μ) :
+    HasSum (fun g : G ↦ ∫ x in s, f (g • x) ∂μ) (∫ x, f x ∂μ) := by
+  refine (h.hasSum_setIntegral hf).congr_fun fun g ↦ ?_
+  rw [← Set.image_smul]
+  exact ((measurePreserving_smul g μ).setIntegral_image_emb
+    (measurableEmbedding_const_smul g) f s).symm
 
 end MeasureTheory

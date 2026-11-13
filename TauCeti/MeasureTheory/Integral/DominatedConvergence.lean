@@ -47,6 +47,8 @@ on the whole space.
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
+* `TauCeti.integrable_tsum_of_summable_integral_norm`: a countable series of integrable functions
+  into a complete normed group with summable `L¹` norms has integrable pointwise `tsum`.
 -/
 
 public section
@@ -260,6 +262,29 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
+
+/-- **Integrability of a series with summable `L¹` norms.** If a countable family `F` of integrable
+functions into a complete normed group has `Summable fun i ↦ ∫ a, ‖F i a‖ ∂μ`, then its pointwise
+`tsum` is integrable. This complements `MeasureTheory.hasSum_integral_of_summable_integral_norm`,
+from whose proof the `eNorm` finiteness step is adapted. -/
+theorem integrable_tsum_of_summable_integral_norm {ι E : Type*} [Countable ι]
+    [NormedAddCommGroup E] [CompleteSpace E] {F : ι → α → E}
+    (hF_int : ∀ i, Integrable (F i) μ) (hF_sum : Summable fun i ↦ ∫ a, ‖F i a‖ ∂μ) :
+    Integrable (fun a ↦ ∑' i, F i a) μ := by
+  have hmeas : AEStronglyMeasurable (fun a ↦ ∑' i, F i a) μ := by
+    have h := fun i ↦ (hF_int i).aestronglyMeasurable
+    fun_prop
+  refine ⟨hmeas, ?_⟩
+  have henorm (i : ι) : ∫⁻ a, ‖F i a‖ₑ ∂μ = ‖∫ a, ‖F i a‖ ∂μ‖ₑ := by
+    dsimp [eNorm]
+    rw [lintegral_coe_eq_integral _ (hF_int i).norm, ENNReal.coe_nnreal_eq, coe_nnNorm,
+      Real.norm_of_nonneg (integral_nonneg fun a ↦ norm_nonneg (F i a))]
+    simp only [coe_nnNorm]
+  have htop : ∑' i, ∫⁻ a, ‖F i a‖ₑ ∂μ < ⊤ := by
+    rw [funext henorm, lt_top_iff_ne_top]
+    exact ENNReal.tsum_coe_ne_top_iff_summable.2 <| NNReal.summable_coe.1 hF_sum.abs
+  refine (lintegral_mono fun a ↦ eNorm_tsum_le_tsum_eNorm).trans_lt ?_
+  rwa [lintegral_tsum fun i ↦ (hF_int i).aestronglyMeasurable.eNorm]
 
 end TauCeti
 
