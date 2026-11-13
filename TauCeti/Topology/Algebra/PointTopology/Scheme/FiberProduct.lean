@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.CategoryTheory.CommSq
 public import TauCeti.Topology.Algebra.PointTopology.FiberProduct
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Functoriality
 
@@ -53,19 +54,12 @@ variable {k R : Type u} [CommRing k] [CommRing R] [Algebra k R]
   {p₁ : P ⟶ X} {p₂ : P ⟶ Y}
   (hP : IsPullback p₁ p₂ g₁ g₂) (hp₁ : p₁ ≫ fX = fP) (hg₁ : g₁ ≫ fZ = fX) (hg₂ : g₂ ≫ fZ = fY)
 
-include hg₁ hg₂ in
-/-- In a commutative square over `X ⟶ Z ⟵ Y`, the second projection is a morphism over the base
-whenever the first one is. -/
-theorem snd_comp_eq_of_commSq (h : CommSq p₁ p₂ g₁ g₂) (hp₁ : p₁ ≫ fX = fP) :
-    p₂ ≫ fY = fP := by
-  rw [← hp₁, ← hg₁, ← hg₂, h.w_assoc]
-
 /-- **Points of a fibre product.** The `R`-points of a fibre product `P` of `X ⟶ Z ⟵ Y` are the
 pairs of `R`-points of `X` and `Y` with the same image in `Z`, through the two projections. -/
 noncomputable def pointsEquivOfIsPullback :
     Points (R := R) fP ≃
       {p : Points (R := R) fX × Points (R := R) fY // map g₁ hg₁ p.1 = map g₂ hg₂ p.2} where
-  toFun x := ⟨(map p₁ hp₁ x, map p₂ (snd_comp_eq_of_commSq hg₁ hg₂ hP.toCommSq hp₁) x),
+  toFun x := ⟨(map p₁ hp₁ x, map p₂ (hP.toCommSq.snd_comp_eq_of_fst_comp_eq hg₁ hg₂ hp₁) x),
     Subtype.ext (by simp [hP.w])⟩
   invFun p := ⟨hP.lift p.1.1.val p.1.2.val (by simpa using congrArg Subtype.val p.2), by
     rw [← hp₁, IsPullback.lift_fst_assoc, p.1.1.property]⟩
@@ -76,7 +70,7 @@ noncomputable def pointsEquivOfIsPullback :
 @[simp]
 theorem pointsEquivOfIsPullback_apply_coe (x : Points (R := R) fP) :
     (pointsEquivOfIsPullback hP hp₁ hg₁ hg₂ x).1 =
-      (map p₁ hp₁ x, map p₂ (snd_comp_eq_of_commSq hg₁ hg₂ hP.toCommSq hp₁) x) :=
+      (map p₁ hp₁ x, map p₂ (hP.toCommSq.snd_comp_eq_of_fst_comp_eq hg₁ hg₂ hp₁) x) :=
   (rfl)
 
 /-- The inverse fibre-product comparison is the morphism into the fibre product given by the
@@ -347,8 +341,8 @@ noncomputable def pointsProdEquivOfIsPullback :
 @[simp]
 theorem pointsProdEquivOfIsPullback_apply (x : Points (R := R) fP) :
     pointsProdEquivOfIsPullback hp₁ hXY x = (map p₁ hp₁ x,
-      map p₂ (snd_comp_eq_of_commSq (Category.comp_id fX) (Category.comp_id fY) hXY.toCommSq hp₁)
-        x) :=
+      map p₂ (hXY.toCommSq.snd_comp_eq_of_fst_comp_eq (Category.comp_id fX)
+        (Category.comp_id fY) hp₁) x) :=
   (rfl)
 
 /-- The first projection of the inverse product comparison is the first point of the pair. -/
@@ -388,8 +382,8 @@ theorem pointsProdHomeomorphOfIsPullback_toEquiv :
 @[simp]
 theorem pointsProdHomeomorphOfIsPullback_apply (x : Points (R := R) fP) :
     pointsProdHomeomorphOfIsPullback hp₁ hXY x = (map p₁ hp₁ x,
-      map p₂ (snd_comp_eq_of_commSq (Category.comp_id fX) (Category.comp_id fY) hXY.toCommSq hp₁)
-        x) :=
+      map p₂ (hXY.toCommSq.snd_comp_eq_of_fst_comp_eq (Category.comp_id fX)
+        (Category.comp_id fY) hp₁) x) :=
   (rfl)
 
 /-- The first projection of the inverse product homeomorphism is the first point of the pair. -/
