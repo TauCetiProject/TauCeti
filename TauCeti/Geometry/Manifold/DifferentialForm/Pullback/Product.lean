@@ -53,9 +53,9 @@ is pulled back from `Y`. The energy identity itself is not proved here.
   closed form with `ι_{∂ₛ} α = 0` is the pullback along `pr₂` of its restriction to any slice.
 * `TauCeti.SmoothForm.mpullback_snd_mpullback_prodMk_of_interior_eq_zero`: the same for smooth
   forms on `AddCircle p × M`.
-* `TauCeti.SmoothForm.exists_mpullback_snd_eq_iff_interior_eq_zero`: a smooth closed form on
-  `AddCircle p × M` is pulled back from a closed form on `M` exactly when `ι_{∂ₛ} α = 0`. That
-  form is unique, since pullback along `pr₂` is injective
+* `TauCeti.SmoothForm.exists_isClosed_and_mpullback_snd_eq_iff_interior_eq_zero`: a smooth
+  closed form on `AddCircle p × M` is pulled back from a closed form on `M` exactly when
+  `ι_{∂ₛ} α = 0`. That form is unique, since pullback along `pr₂` is injective
   (`TauCeti.SmoothForm.mpullback_snd_injective`).
 
 ## References
@@ -226,7 +226,7 @@ theorem mpullback_snd_mpullback_prodMk_of_interior_eq_zero
 along the second projection exactly when its contraction with `∂ₛ = (1, 0)` vanishes. By
 `TauCeti.SmoothForm.mpullback_snd_injective`, that form is the only smooth form on `M`, closed or
 not, whose pullback is `α`. -/
-theorem exists_mpullback_snd_eq_iff_interior_eq_zero
+theorem exists_isClosed_and_mpullback_snd_eq_iff_interior_eq_zero
     {α : SmoothForm (𝓘(ℝ).prod I) (AddCircle p × M) F (k + 1)} (hα : α.IsClosed) :
     (∃ β : SmoothForm I M F (k + 1), β.IsClosed ∧ mpullback Prod.snd contMDiff_snd β = α) ↔
       RoughForm.interior (I := 𝓘(ℝ).prod I) (M := AddCircle p × M) (F := F)
