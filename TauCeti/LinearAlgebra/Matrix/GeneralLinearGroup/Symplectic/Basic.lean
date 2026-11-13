@@ -37,10 +37,11 @@ general linear group, which is what makes the two carriers agree, and closure un
 inverse is Mathlib's computation `M⁻¹ = (-J) Mᵀ J` (`SymplecticGroup.inv_eq_symplectic_inv`)
 transported across `Matrix.coe_units_inv`.
 
-Everything works over an arbitrary commutative ring and an arbitrary finite index type, including
-the empty index type and the zero ring; there is no nontriviality, rank, or characteristic
-hypothesis. The index type is `l ⊕ l` up to `GLSymplectic.map`, matching `Matrix.J`; from `JFin`
-on it is `Fin (m + m)`.
+Everything works over an arbitrary commutative ring, including the zero ring; there is no
+nontriviality, rank, or characteristic hypothesis. `TauCeti.GLSymplectic` is indexed by `l ⊕ l`
+for an arbitrary finite type `l` (possibly empty), matching `Matrix.J`; `TauCeti.JFin`,
+`TauCeti.GLSymplecticFin` and the root subgroups are indexed by `Fin (m + m)` for an arbitrary
+`m : ℕ`.
 
 The final sections construct the elementary one-parameter subgroups belonging to the long roots
 `±2eᵢ` and the short roots `eᵢ-eⱼ`, `eᵢ+eⱼ`, and `-eᵢ-eⱼ` in `Fin (m+m)` coordinates. The
