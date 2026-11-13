@@ -32,9 +32,9 @@ basis `1, I` as `L 1 • re ⊗ w + L I • im ⊗ w`
 
 Two complex numbers `ω₁`, `ω₂` are linearly independent over `ℝ` exactly when the oriented area
 `Im (conj ω₁ ω₂)` of the parallelogram they span is nonzero, and `2 i Im (conj ω₁ ω₂)` is
-`ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`). In that case the lattice
-coordinates `p ↦ p₀ ω₁ + p₁ ω₂` are a real-linear equivalence `TauCeti.latticeEquiv` of
-`Fin 2 → ℝ` with `ℂ`.
+`ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`). In that case the real
+coordinates `p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` are a real-linear equivalence
+`TauCeti.periodCoordEquiv` of `Fin 2 → ℝ` with `ℂ`.
 -/
 
 public section
@@ -141,7 +141,7 @@ theorem mul_sub_mul_I_sub_mul_div_im (hv : v ≠ 0) (h : ℝ) :
 
 end LineThrough
 
-section LatticeCoordinates
+section PeriodCoordinates
 
 open Complex ComplexConjugate
 
@@ -154,9 +154,9 @@ theorem two_mul_I_mul_im_conj_mul :
   simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
   linear_combination -h
 
-/-- The lattice coordinates `p ↦ p₀ ω₁ + p₁ ω₂`, a real-linear equivalence when `ω₁` and `ω₂` are
-linearly independent. -/
-noncomputable def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
+/-- The real coordinates `p ↦ p₀ ω₁ + p₁ ω₂` in the basis `ω₁`, `ω₂` of `ℂ` over `ℝ`, a
+real-linear equivalence when `ω₁` and `ω₂` are linearly independent. -/
+noncomputable def periodCoordEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
   (LinearMap.linearEquivOfInjective
     ((LinearMap.proj 0).smulRight ω₁ + (LinearMap.proj 1).smulRight ω₂ :
       (Fin 2 → ℝ) →ₗ[ℝ] ℂ)
@@ -182,25 +182,25 @@ noncomputable def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 �
       · simpa [hω] using h1)
     (by rw [Complex.finrank_real_complex]; simp)).toContinuousLinearEquiv
 
-/-- The lattice coordinates send `p` to `p₀ ω₁ + p₁ ω₂`. -/
+/-- The coordinates in the basis `ω₁`, `ω₂` send `p` to `p₀ ω₁ + p₁ ω₂`. -/
 @[simp]
-theorem latticeEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0) (p : Fin 2 → ℝ) :
-    latticeEquiv hω p = p 0 * ω₁ + p 1 * ω₂ := by
-  simp [latticeEquiv, real_smul]
+theorem periodCoordEquiv_apply (hω : (conj ω₁ * ω₂).im ≠ 0) (p : Fin 2 → ℝ) :
+    periodCoordEquiv hω p = p 0 * ω₁ + p 1 * ω₂ := by
+  simp [periodCoordEquiv, real_smul]
 
-/-- The lattice coordinates of `ω₁` are `(1, 0)`. -/
+/-- The coordinates of `ω₁` in the basis `ω₁`, `ω₂` are `(1, 0)`. -/
 @[simp]
-theorem latticeEquiv_symm_apply_fst (hω : (conj ω₁ * ω₂).im ≠ 0) :
-    (latticeEquiv hω).symm ω₁ = Pi.single 0 1 :=
-  (latticeEquiv hω).symm_apply_eq.2 (by simp)
+theorem periodCoordEquiv_symm_apply_ω₁ (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (periodCoordEquiv hω).symm ω₁ = Pi.single 0 1 :=
+  (periodCoordEquiv hω).symm_apply_eq.2 (by simp)
 
-/-- The lattice coordinates of `ω₂` are `(0, 1)`. -/
+/-- The coordinates of `ω₂` in the basis `ω₁`, `ω₂` are `(0, 1)`. -/
 @[simp]
-theorem latticeEquiv_symm_apply_snd (hω : (conj ω₁ * ω₂).im ≠ 0) :
-    (latticeEquiv hω).symm ω₂ = Pi.single 1 1 :=
-  (latticeEquiv hω).symm_apply_eq.2 (by simp)
+theorem periodCoordEquiv_symm_apply_ω₂ (hω : (conj ω₁ * ω₂).im ≠ 0) :
+    (periodCoordEquiv hω).symm ω₂ = Pi.single 1 1 :=
+  (periodCoordEquiv hω).symm_apply_eq.2 (by simp)
 
-end LatticeCoordinates
+end PeriodCoordinates
 
 end TauCeti
 

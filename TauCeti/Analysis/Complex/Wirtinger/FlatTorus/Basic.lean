@@ -125,8 +125,12 @@ theorem mem_flatLineSections :
 theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
     (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ :=
   ⟨contDiff_iff_contDiffAt.2 fun z ↦ hu.1.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
-    fun z ↦ by beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.1]; rfl,
-    fun z ↦ by beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.2]; rfl⟩
+    fun z ↦ by
+      beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.1, smul_apply,
+        smul_eq_mul],
+    fun z ↦ by
+      beta_reduce; rw [conjWirtingerDeriv_add_eq_smul hu.2.2, smul_apply,
+        smul_eq_mul]⟩
 
 /-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
 line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/

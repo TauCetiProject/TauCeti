@@ -34,8 +34,8 @@ line is flat with nontrivial holonomy. By the coercivity estimate of
 `TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic` it is bounded in `L²` over a fundamental
 domain, with norm at most `(π² / 2 · (‖θ₁‖ℤ² / |ω₁|² + ‖θ₂‖ℤ² / |ω₂|²))^(-1/2)`
 (`TauCeti.mul_setIntegral_norm_sq_flatLineConjWirtingerDerivEquiv_symm_apply_le`). If the holonomy
-has infinite image, the same holds on every power of the line pulled back to every finite cover
-of the torus (`TauCeti.bijective_flatLineConjWirtingerDerivₗ_of_irrational`).
+has infinite image, the same holds on every nonzero power of the line pulled back to every finite
+cover of the torus (`TauCeti.bijective_flatLineConjWirtingerDerivₗ_of_irrational`).
 
 ## Proof
 
@@ -123,76 +123,73 @@ private theorem mFourierCoeff_torusOp (hω : (conj ω₁ * ω₂).im ≠ 0)
   field_simp
   ring
 
+/-- The norm of the torus multiplier is `π ‖ω₂ (n₀ + θ₁) - ω₁ (n₁ + θ₂)‖ / |Im (conj ω₁ ω₂)|`. -/
+private theorem norm_torusMultiplier (n : Fin 2 → ℤ) : ‖torusMultiplier ω₁ ω₂ θ₁ θ₂ n‖ =
+    π * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ / |(conj ω₁ * ω₂).im| := by
+  rw [torusMultiplier, norm_div, norm_mul, norm_real, Real.norm_of_nonneg Real.pi_pos.le,
+    norm_real, Real.norm_eq_abs, ofReal_add, ofReal_add, ofReal_intCast, ofReal_intCast]
+
+/-- If pairing `ω₂ (n₀ + θ₁) - ω₁ (n₁ + θ₂)` with `conj w` isolates a coordinate `x` with
+`‖θ‖ℤ ≤ |x|`, then the torus multiplier has norm at least `π ‖θ‖ℤ / |w|`. -/
+private theorem le_norm_torusMultiplier (hω : (conj ω₁ * ω₂).im ≠ 0) {w : ℂ} (hw : w ≠ 0)
+    {θ x : ℝ} (hle : |θ - round θ| ≤ |x|) {n : Fin 2 → ℤ}
+    (hc : (conj w * (ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ))).im =
+      x * (conj ω₁ * ω₂).im) :
+    π * |θ - round θ| / ‖w‖ ≤ ‖torusMultiplier ω₁ ω₂ θ₁ θ₂ n‖ := by
+  have hpos : 0 < |(conj ω₁ * ω₂).im| := abs_pos.2 hω
+  have hcs : |x| * |(conj ω₁ * ω₂).im| ≤
+      ‖w‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ := by
+    rw [← abs_mul, ← hc, ← norm_conj w, ← norm_mul]
+    exact abs_im_le_norm _
+  rw [norm_torusMultiplier, div_le_div_iff₀ (norm_pos_iff.2 hw) hpos]
+  calc π * |θ - round θ| * |(conj ω₁ * ω₂).im|
+      = π * (|θ - round θ| * |(conj ω₁ * ω₂).im|) := by ring
+    _ ≤ π * (‖w‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖) :=
+        mul_le_mul_of_nonneg_left ((mul_le_mul_of_nonneg_right hle hpos.le).trans hcs)
+          Real.pi_pos.le
+    _ = _ := by ring
+
 /-- The torus multiplier is bounded away from zero when the holonomy is nontrivial. -/
 private theorem exists_pos_le_norm_multiplier (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) :
     ∃ c > 0, ∀ n : Fin 2 → ℤ, c ≤ ‖torusMultiplier ω₁ ω₂ θ₁ θ₂ n‖ := by
   have hω₁ : ω₁ ≠ 0 := by rintro rfl; simp at hω
   have hω₂ : ω₂ ≠ 0 := by rintro rfl; simp at hω
-  -- The norm of the multiplier is `π ‖ω₂ a - ω₁ b‖ / |D|`.
-  have hnorm (n : Fin 2 → ℤ) : ‖torusMultiplier ω₁ ω₂ θ₁ θ₂ n‖ =
-      π * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ / |(conj ω₁ * ω₂).im| := by
-    rw [torusMultiplier, norm_div, norm_mul, norm_real, Real.norm_of_nonneg Real.pi_pos.le,
-      norm_real, Real.norm_eq_abs]
-    push_cast
-    rfl
   -- Pairing with `conj ω₁` and `conj ω₂` isolates the two coordinates.
   have him (a b : ℝ) :
       (conj ω₁ * (ω₂ * a - ω₁ * b)).im = a * (conj ω₁ * ω₂).im ∧
         (conj ω₂ * (ω₂ * a - ω₁ * b)).im = b * (conj ω₁ * ω₂).im := by
     constructor <;> simp only [mul_sub, sub_im, mul_im, mul_re, conj_re, conj_im, ofReal_re,
       ofReal_im] <;> ring
-  have hpos : 0 < |(conj ω₁ * ω₂).im| := abs_pos.2 hω
   have hround {x : ℝ} (hx : x ∉ range ((↑) : ℤ → ℝ)) : 0 < |x - round x| :=
     abs_pos.2 (sub_ne_zero.2 fun h ↦ hx ⟨round x, h.symm⟩)
   rcases hθ with h | h
-  · refine ⟨π * |θ₁ - round θ₁| / ‖ω₁‖, by have := hround h; positivity, fun n ↦ ?_⟩
-    have hle : |θ₁ - round θ₁| ≤ |(n 0 : ℝ) + θ₁| := by
-      simpa [add_comm, sub_eq_add_neg] using round_le θ₁ (-n 0)
-    have hc := (him (n 0 + θ₁) (n 1 + θ₂)).1
-    have hcs : |(n 0 + θ₁ : ℝ)| * |(conj ω₁ * ω₂).im| ≤
-        ‖ω₁‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ := by
-      rw [← abs_mul, ← hc, ← norm_conj ω₁, ← norm_mul]
-      exact abs_im_le_norm _
-    rw [hnorm, div_le_div_iff₀ (norm_pos_iff.2 hω₁) hpos]
-    calc π * |θ₁ - round θ₁| * |(conj ω₁ * ω₂).im|
-        = π * (|θ₁ - round θ₁| * |(conj ω₁ * ω₂).im|) := by ring
-      _ ≤ π * (‖ω₁‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖) := by
-          exact mul_le_mul_of_nonneg_left
-            ((mul_le_mul_of_nonneg_right hle hpos.le).trans hcs) Real.pi_pos.le
-      _ = _ := by ring
-  · refine ⟨π * |θ₂ - round θ₂| / ‖ω₂‖, by have := hround h; positivity, fun n ↦ ?_⟩
-    have hle : |θ₂ - round θ₂| ≤ |(n 1 : ℝ) + θ₂| := by
-      simpa [add_comm, sub_eq_add_neg] using round_le θ₂ (-n 1)
-    have hc := (him (n 0 + θ₁) (n 1 + θ₂)).2
-    have hcs : |(n 1 + θ₂ : ℝ)| * |(conj ω₁ * ω₂).im| ≤
-        ‖ω₂‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖ := by
-      rw [← abs_mul, ← hc, ← norm_conj ω₂, ← norm_mul]
-      exact abs_im_le_norm _
-    rw [hnorm, div_le_div_iff₀ (norm_pos_iff.2 hω₂) hpos]
-    calc π * |θ₂ - round θ₂| * |(conj ω₁ * ω₂).im|
-        = π * (|θ₂ - round θ₂| * |(conj ω₁ * ω₂).im|) := by ring
-      _ ≤ π * (‖ω₂‖ * ‖ω₂ * ((n 0 + θ₁ : ℝ) : ℂ) - ω₁ * ((n 1 + θ₂ : ℝ) : ℂ)‖) := by
-          exact mul_le_mul_of_nonneg_left
-            ((mul_le_mul_of_nonneg_right hle hpos.le).trans hcs) Real.pi_pos.le
-      _ = _ := by ring
+  · refine ⟨π * |θ₁ - round θ₁| / ‖ω₁‖, by have := hround h; positivity, fun n ↦
+      le_norm_torusMultiplier hω hω₁ ?_ (him _ _).1⟩
+    simpa [add_comm, sub_eq_add_neg] using round_le θ₁ (-n 0)
+  · refine ⟨π * |θ₂ - round θ₂| / ‖ω₂‖, by have := hround h; positivity, fun n ↦
+      le_norm_torusMultiplier hω hω₂ ?_ (him _ _).2⟩
+    simpa [add_comm, sub_eq_add_neg] using round_le θ₂ (-n 1)
+
+/-- For nontrivial holonomy the torus multiplier never vanishes. -/
+private theorem torusMultiplier_ne_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) (n : Fin 2 → ℤ) :
+    torusMultiplier ω₁ ω₂ θ₁ θ₂ n ≠ 0 := by
+  obtain ⟨c, hc, hle⟩ := exists_pos_le_norm_multiplier hω hθ
+  exact norm_pos_iff.1 (hc.trans_le (hle n))
 
 /-- For nontrivial holonomy the torus operator is injective on smooth functions. -/
 private theorem eq_zero_of_torusOp_eq_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ))
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2))
     (h : torusOp ω₁ ω₂ θ₁ θ₂ g = 0) : g = 0 := by
-  obtain ⟨c, hc, hle⟩ := exists_pos_le_norm_multiplier hω hθ
   refine eq_of_mFourierCoeff_eq hg (Submodule.zero_mem _) fun n ↦ ?_
   have h0 : mFourierCoeff (0 : UnitAddTorus (Fin 2) → ℂ) n = 0 := by
     simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus (Fin 2) → ℂ) n
   have hm := mFourierCoeff_torusOp (θ₁ := θ₁) (θ₂ := θ₂) hω hg n
   rw [h, h0, eq_comm, mul_eq_zero] at hm
   rw [h0]
-  refine hm.resolve_left fun h' ↦ ?_
-  have := hle n
-  rw [h', norm_zero] at this
-  linarith
+  exact hm.resolve_left (torusMultiplier_ne_zero hω hθ n)
 
 /-- For nontrivial holonomy every smooth function on the torus is the image of a smooth function
 under the torus operator. -/
@@ -201,10 +198,6 @@ private theorem exists_torusOp_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2)) :
     ∃ h ∈ smoothFunctions (Fin 2), torusOp ω₁ ω₂ θ₁ θ₂ h = g := by
   obtain ⟨c₀, hc₀, hle⟩ := exists_pos_le_norm_multiplier hω hθ
-  have hm (n : Fin 2 → ℤ) : torusMultiplier ω₁ ω₂ θ₁ θ₂ n ≠ 0 := fun h ↦ by
-    have := hle n
-    rw [h, norm_zero] at this
-    linarith
   -- Divide the coefficients of `g` by the multiplier.
   set c : (Fin 2 → ℤ) → ℂ := fun n ↦ mFourierCoeff g n / torusMultiplier ω₁ ω₂ θ₁ θ₂ n
   have hcle (n : Fin 2 → ℤ) : ‖c n‖ ≤ c₀⁻¹ * ‖mFourierCoeff g n‖ := by
@@ -222,7 +215,7 @@ private theorem exists_torusOp_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
   refine ⟨fun z ↦ ∑' n, c n • mFourier n z, hmem, ?_⟩
   refine eq_of_mFourierCoeff_eq (torusOp_mem hmem) hg fun n ↦ ?_
   rw [mFourierCoeff_torusOp hω hmem, mFourierCoeff_tsum_smul_mFourier hc1]
-  exact mul_div_cancel₀ _ (hm n)
+  exact mul_div_cancel₀ _ (torusMultiplier_ne_zero hω hθ n)
 
 end Torus
 
@@ -255,31 +248,32 @@ private theorem exp_phaseCLM_add_single (p : Fin 2 → ℝ) :
 private def ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0) (θ₁ θ₂ : ℝ) (g : UnitAddTorus (Fin 2) → ℂ) :
     ℂ → ℂ :=
   (fun p : Fin 2 → ℝ ↦ exp (phaseCLM θ₁ θ₂ p) * g fun i ↦ (p i : UnitAddCircle)) ∘
-    (latticeEquiv hω).symm
+    (periodCoordEquiv hω).symm
 
-private theorem ofTorus_latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
+private theorem ofTorus_periodCoordEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (g : UnitAddTorus (Fin 2) → ℂ) (p : Fin 2 → ℝ) :
-    ofTorus hω θ₁ θ₂ g (latticeEquiv hω p) =
+    ofTorus hω θ₁ θ₂ g (periodCoordEquiv hω p) =
       exp (phaseCLM θ₁ θ₂ p) * g fun i ↦ (p i : UnitAddCircle) := by
   rw [ofTorus, Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTorus (Fin 2) → ℂ}
     (hg : g ∈ smoothFunctions (Fin 2)) : ofTorus hω θ₁ θ₂ g ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ := by
   refine mem_flatLineSections.2 ⟨((contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff).mul
-    (mem_smoothFunctions.1 hg)).comp (latticeEquiv hω).symm.contDiff, fun z ↦ ?_, fun z ↦ ?_⟩ <;>
-    obtain ⟨p, rfl⟩ := (latticeEquiv hω).surjective z
-  · have hz : latticeEquiv hω p + ω₁ = latticeEquiv hω (p + Pi.single 0 1) := by
-      simp only [latticeEquiv_apply, Pi.add_apply]
+    (mem_smoothFunctions.1 hg)).comp (periodCoordEquiv hω).symm.contDiff, fun z ↦ ?_,
+    fun z ↦ ?_⟩ <;>
+    obtain ⟨p, rfl⟩ := (periodCoordEquiv hω).surjective z
+  · have hz : periodCoordEquiv hω p + ω₁ = periodCoordEquiv hω (p + Pi.single 0 1) := by
+      simp only [periodCoordEquiv_apply, Pi.add_apply]
       simp
       ring
-    rw [hz, ofTorus_latticeEquiv, ofTorus_latticeEquiv, (exp_phaseCLM_add_single _).1,
+    rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).1,
       coe_add_single]
     ring
-  · have hz : latticeEquiv hω p + ω₂ = latticeEquiv hω (p + Pi.single 1 1) := by
-      simp only [latticeEquiv_apply, Pi.add_apply]
+  · have hz : periodCoordEquiv hω p + ω₂ = periodCoordEquiv hω (p + Pi.single 1 1) := by
+      simp only [periodCoordEquiv_apply, Pi.add_apply]
       simp
       ring
-    rw [hz, ofTorus_latticeEquiv, ofTorus_latticeEquiv, (exp_phaseCLM_add_single _).2,
+    rw [hz, ofTorus_periodCoordEquiv, ofTorus_periodCoordEquiv, (exp_phaseCLM_add_single _).2,
       coe_add_single]
     ring
 
@@ -288,7 +282,7 @@ operator applied to that function. -/
 private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
     {g : UnitAddTorus (Fin 2) → ℂ} (hg : g ∈ smoothFunctions (Fin 2)) (z : ℂ) :
     conjWirtingerDeriv (ofTorus hω θ₁ θ₂ g) z 1 = ofTorus hω θ₁ θ₂ (torusOp ω₁ ω₂ θ₁ θ₂ g) z := by
-  set L := latticeEquiv hω
+  set L := periodCoordEquiv hω
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ g fun i ↦ (p i : UnitAddCircle)
   have hG := mem_smoothFunctions.1 hg
   obtain ⟨p, rfl⟩ := L.surjective z
@@ -305,8 +299,8 @@ private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
   have hline (i : Fin 2) : fderiv ℝ G p (Pi.single i 1) =
       lineDeriv g (Pi.single i 1) fun j ↦ (p j : UnitAddCircle) :=
     (lineDeriv_coe p _ ((hG.differentiable (by simp)) p)).symm
-  rw [conjWirtingerDeriv_apply_one_eq_inv_smul_sub hω, hD, hD, latticeEquiv_symm_apply_fst,
-    latticeEquiv_symm_apply_snd, hline, hline, ofTorus_latticeEquiv]
+  rw [conjWirtingerDeriv_apply_one_eq_inv_smul_sub hω, hD, hD, periodCoordEquiv_symm_apply_ω₁,
+    periodCoordEquiv_symm_apply_ω₂, hline, hline, ofTorus_periodCoordEquiv]
   simp only [torusOp, Pi.smul_apply, Pi.add_apply, smul_eq_mul, G, phaseCLM_apply]
   simp only [Pi.single_apply, Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one,
     ofReal_zero, mul_one, mul_zero, add_zero, zero_add]
@@ -317,13 +311,13 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
     ∃ g ∈ smoothFunctions (Fin 2), ofTorus hω θ₁ θ₂ g = u := by
   obtain ⟨hu, hu₁, hu₂⟩ := mem_flatLineSections.1 hu
-  set L := latticeEquiv hω
+  set L := periodCoordEquiv hω
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ exp (-phaseCLM θ₁ θ₂ p) * u (L p)
   have hGc : ContDiff ℝ ∞ G :=
     (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hu.comp L.contDiff)
   have hper (m : Fin 2 → ℤ) : Function.Periodic G fun i ↦ (m i : ℝ) := fun p ↦ by
     have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 : ℂ) * ω₁ + (m 1 : ℂ) * ω₂ := by
-      rw [map_add, latticeEquiv_apply, latticeEquiv_apply]
+      rw [map_add, periodCoordEquiv_apply, periodCoordEquiv_apply]
       push_cast
       ring
     have hexp : exp (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)) =
@@ -341,7 +335,7 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
   have hlift : (fun x : Fin 2 → ℝ ↦ g fun i ↦ (x i : UnitAddCircle)) = G := funext hgG
   refine ⟨g, mem_smoothFunctions.2 (hlift ▸ hGc), funext fun z ↦ ?_⟩
   obtain ⟨p, rfl⟩ := L.surjective z
-  rw [ofTorus_latticeEquiv, hgG, ← mul_assoc, ← Complex.exp_add, add_neg_cancel, exp_zero,
+  rw [ofTorus_periodCoordEquiv, hgG, ← mul_assoc, ← Complex.exp_add, add_neg_cancel, exp_zero,
     one_mul]
 
 /-- A function on the torus whose section vanishes is zero. -/
@@ -349,8 +343,8 @@ private theorem eq_zero_of_ofTorus_eq_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
     {g : UnitAddTorus (Fin 2) → ℂ} (h : ofTorus hω θ₁ θ₂ g = 0) : g = 0 := by
   funext x
   obtain ⟨p, rfl⟩ := TauCeti.UnitAddTorus.surjective_coe x
-  have := congrFun h (latticeEquiv hω p)
-  rw [ofTorus_latticeEquiv, Pi.zero_apply, mul_eq_zero] at this
+  have := congrFun h (periodCoordEquiv hω p)
+  rw [ofTorus_periodCoordEquiv, Pi.zero_apply, mul_eq_zero] at this
   exact this.resolve_left (exp_ne_zero _)
 
 end Correspondence
@@ -384,9 +378,10 @@ theorem bijective_flatLineConjWirtingerDerivₗ (hω : (conj ω₁ * ω₂).im �
     refine ⟨⟨ofTorus hω θ₁ θ₂ h, ofTorus_mem hω hh⟩, Subtype.ext (funext fun z ↦ ?_)⟩
     simp [conjWirtingerDeriv_ofTorus hω hh, hgf]
 
-/-- **The leading complex inverse.** For linearly independent `ω₁, ω₂` and nontrivial holonomy,
-`∂bar` as a complex-linear automorphism of the smooth sections of the flat line; its inverse
-`(flatLineConjWirtingerDerivEquiv hω hθ).symm` solves `∂bar u = f`. -/
+/-- **`∂bar` as an automorphism of the smooth sections.** For linearly independent `ω₁, ω₂` and
+nontrivial holonomy, `∂bar` is a complex-linear automorphism of the smooth sections of the flat
+line. Its inverse `(flatLineConjWirtingerDerivEquiv hω hθ).symm` is the leading complex inverse,
+solving `∂bar u = f`. -/
 def flatLineConjWirtingerDerivEquiv (hω : (conj ω₁ * ω₂).im ≠ 0)
     (hθ : θ₁ ∉ range ((↑) : ℤ → ℝ) ∨ θ₂ ∉ range ((↑) : ℤ → ℝ)) :
     flatLineSections ω₁ ω₂ θ₁ θ₂ ≃ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ :=
