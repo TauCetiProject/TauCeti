@@ -102,7 +102,7 @@ private theorem adjoin_mem_and_wildExponent_of_sq_eq_one_sub_padicTwo {c : 𝒪[
   have h2 : (2 : 𝒪[ℚ_[2]]) ∈ 𝓂[ℚ_[2]] :=
     (IsLocalRing.mem_maximalIdeal _).2 irreducible_two_padicTwo.not_isUnit
   have hmem := adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub h2 hc hx
-  have h := natCast_discriminantExponent_adjoin_of_sq_eq_one_sub_of_irreducible h2 hc hx
+  have h := natCast_discriminantExponent_adjoin_of_sq_eq_one_sub_of_irreducible hc hx
   rw [addVal_uniformizer irreducible_two_padicTwo] at h
   have hd : (ℚ_[2]⟮x⟯).discriminantExponent = 2 := by exact_mod_cast h
   refine ⟨hmem, ?_⟩

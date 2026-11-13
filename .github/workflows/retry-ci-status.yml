@@ -39,9 +39,7 @@ jobs:
     concurrency:
       group: ci-status-retry-${{ inputs.source_run_id || github.event.workflow_run.id }}-${{ inputs.source_run_id && inputs.source_attempt || github.event.workflow_run.run_attempt }}
       cancel-in-progress: false
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
       CI_STATUS_MERGE_BACKEND: ${{ vars.MERGE_BACKEND || 'queue' }}
@@ -178,9 +176,7 @@ jobs:
     concurrency:
       group: ci-missing-build-recovery
       cancel-in-progress: false
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Check out pinned recovery tools

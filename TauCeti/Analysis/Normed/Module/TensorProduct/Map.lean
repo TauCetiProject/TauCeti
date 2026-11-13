@@ -28,7 +28,8 @@ On the dual of `E'`, the operator induced by `map f g u` is
 ## Main definitions
 
 * `TauCeti.ProjectiveTensor.mapL` and `TauCeti.InjectiveTensor.mapL`: the operators induced by a
-  pair of bounded operators.
+  pair of bounded operators, with `ProjectiveTensor.mapL` bundled bilinearly as
+  `TauCeti.ProjectiveTensor.mapLBilinear`.
 
 ## Main results
 
@@ -156,6 +157,39 @@ induced by `(x, y) ↦ B (f x) (g y)`. -/
 theorem liftIsometry_comp_mapL (B : E' →L[𝕜] F' →L[𝕜] G) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
     liftIsometry 𝕜 E' F' G B ∘L mapL f g = liftIsometry 𝕜 E F G (B.bilinearComp f g) :=
   continuousLinearMap_ext fun x y ↦ by simp
+
+theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
+  continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.add_tmul]
+
+theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
+  continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_add]
+
+theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (a • f) g = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by simp [← TensorProduct.smul_tmul']
+
+theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f (a • g) = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by simp [TensorProduct.tmul_smul]
+
+@[simp] theorem mapL_zero_left (g : F →L[𝕜] F') : mapL (0 : E →L[𝕜] E') g = 0 :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+@[simp] theorem mapL_zero_right (f : E →L[𝕜] E') : mapL f (0 : F →L[𝕜] F') = 0 :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+variable (𝕜 E E' F F') in
+/-- Bundled continuous bilinear operator sending `(f, g)` to `ProjectiveTensor.mapL f g`. -/
+noncomputable def mapLBilinear :
+    (E →L[𝕜] E') →L[𝕜] (F →L[𝕜] F') →L[𝕜] ProjectiveTensor 𝕜 E F →L[𝕜] ProjectiveTensor 𝕜 E' F' :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ 𝕜 mapL mapL_add_left mapL_smul_left mapL_add_right mapL_smul_right)
+    1 fun f g ↦ by simpa using norm_mapL_le f g
+
+@[simp] theorem mapLBilinear_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapLBilinear 𝕜 E E' F F' f g = mapL f g := (rfl)
 
 end ProjectiveTensor
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Constructions.DoubleAlong.Basic
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Complex.ClosedAnnulus
-public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Topology.Order.ProjIcc
 
 /-!
@@ -63,22 +62,17 @@ variable {r₁ r₂ : ℝ}
 
 /-! ### The coordinates of the torus model -/
 
-/-- A point of the annulus, as a nonzero complex number. -/
-private def toNonzero (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : ({0}ᶜ : Set ℂ) :=
-  ⟨z, norm_pos_iff.1 (h₀.trans_le (closedAnnulus.le_norm_coe z))⟩
-
 /-- The direction `z / ‖z‖` of a point of the annulus, its first polar coordinate. -/
 private noncomputable def direction (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) : Circle :=
-  Circle.homeomorphSphere.symm (homeomorphUnitSphereProd ℂ (toNonzero h₀ z)).1
+  (closedAnnulusHomeomorph h₀ z).1
 
 private theorem coe_direction (h₀ : 0 < r₁) (z : closedAnnulus r₁ r₂) :
     (direction h₀ z : ℂ) = (z : ℂ) / (‖(z : ℂ)‖ : ℂ) := by
-  simp [direction, toNonzero, div_eq_inv_mul, ← ofReal_inv, ← real_smul]
+  simp [direction, div_eq_inv_mul, ← ofReal_inv, ← real_smul]
 
 private theorem continuous_direction (h₀ : 0 < r₁) :
     Continuous (direction (r₂ := r₂) h₀) :=
-  Circle.homeomorphSphere.symm.continuous.comp (continuous_fst.comp
-    ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtype_val.subtype_mk _)))
+  continuous_fst.comp (closedAnnulusHomeomorph h₀).continuous
 
 /-- The radial parameter `1 - 2 (‖z‖ - r₁) / (r₂ - r₁)`, running from `1` to `-1`. -/
 private noncomputable def height (z : closedAnnulus r₁ r₂) : Icc (-1 : ℝ) 1 :=
@@ -152,11 +146,9 @@ private theorem annulusDoubleMap_inr (h₀ : 0 < r₁) (h : r₁ < r₂) (z : cl
 /-- Points with the same direction and the same radial parameter coincide. -/
 private theorem eq_of_direction_eq_of_height_eq (h₀ : 0 < r₁) (h : r₁ < r₂)
     {z w : closedAnnulus r₁ r₂} (hd : direction h₀ z = direction h₀ w) (hh : height z = height w) :
-    z = w := by
-  have := (homeomorphUnitSphereProd ℂ).injective (a₁ := toNonzero h₀ z) (a₂ := toNonzero h₀ w)
-    (Prod.ext (Circle.homeomorphSphere.symm.injective hd)
-      (Subtype.ext (by simpa [toNonzero] using norm_eq_of_height_eq h hh)))
-  exact Subtype.ext (congrArg (fun p : ({0}ᶜ : Set ℂ) ↦ (p : ℂ)) this)
+    z = w :=
+  (closedAnnulusHomeomorph h₀).injective
+    (Prod.ext hd (Subtype.ext (by simpa using norm_eq_of_height_eq h hh)))
 
 private theorem annulusDoubleMap_injective (h₀ : 0 < r₁) (h : r₁ < r₂) :
     Injective (annulusDoubleMap h₀ h) := by
@@ -195,21 +187,14 @@ private theorem exists_direction_eq_and_height_eq (h₀ : 0 < r₁) (h : r₁ < 
     have : (1 - (x : ℝ)) / 2 * (r₂ - r₁) ≤ r₂ - r₁ :=
       mul_le_of_le_one_left (by linarith) (by linarith [x.2.1])
     linarith
-  set q := (homeomorphUnitSphereProd ℂ).symm
-    (Circle.homeomorphSphere u, ⟨r, mem_Ioi.2 (h₀.trans_le hr₁)⟩) with hq
-  have hpolar := (homeomorphUnitSphereProd ℂ).apply_symm_apply
-    (Circle.homeomorphSphere u, ⟨r, mem_Ioi.2 (h₀.trans_le hr₁)⟩)
-  rw [← hq] at hpolar
-  have hnorm : ‖(q : ℂ)‖ = r := by
-    simpa using congrArg (fun p : sphere (0 : ℂ) 1 × Ioi (0 : ℝ) ↦ (p.2 : ℝ)) hpolar
-  refine ⟨⟨q, by rw [mem_closedAnnulus, hnorm]; exact ⟨hr₁, hr₂⟩⟩, ?_, ?_⟩
-  · rw [direction, toNonzero, ← Circle.homeomorphSphere.symm_apply_apply u]
-    exact congrArg (fun p : sphere (0 : ℂ) 1 × Ioi (0 : ℝ) ↦ Circle.homeomorphSphere.symm p.1)
-      hpolar
-  · apply Subtype.ext
-    rw [coe_height h, Subtype.coe_mk, hnorm, hr]
-    field_simp [(sub_pos.2 h).ne']
-    ring
+  have hpolar := (closedAnnulusHomeomorph h₀).apply_symm_apply (u, ⟨r, hr₁, hr₂⟩)
+  refine ⟨(closedAnnulusHomeomorph h₀).symm (u, ⟨r, hr₁, hr₂⟩), congrArg Prod.fst hpolar, ?_⟩
+  have hnorm : ‖((closedAnnulusHomeomorph h₀).symm (u, ⟨r, hr₁, hr₂⟩) : ℂ)‖ = r := by
+    rw [← coe_closedAnnulusHomeomorph_apply_snd h₀, hpolar]
+  apply Subtype.ext
+  rw [coe_height h, hnorm, hr]
+  field_simp [(sub_pos.2 h).ne']
+  ring
 
 private theorem annulusDoubleMap_surjective (h₀ : 0 < r₁) (h : r₁ < r₂) :
     Surjective (annulusDoubleMap h₀ h) := by
