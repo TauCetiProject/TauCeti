@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
