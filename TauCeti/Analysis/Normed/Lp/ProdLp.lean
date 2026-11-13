@@ -44,6 +44,7 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   `c * ‖x‖ ≤ d * ‖y‖`.
 * `TauCeti.snd_lt_one` — a unit vector in `E × ℝ` other than `(0, 1)` has last coordinate
   strictly less than `1`.
+* `WithLp.prod_ext` — two pairs in `WithLp p (α × β)` are equal when their components agree.
 * `WithLp.fst_indicator`, `WithLp.snd_indicator` — a component of an indicator is the indicator
   of the component.
 * `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
@@ -160,6 +161,17 @@ theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGr
         (x := y) (y := x) (by linarith) (by linarith)
       linarith
 
+section Ext
+
+variable {p : ℝ≥0∞} {α β : Type*}
+
+/-- Two pairs in `WithLp p (α × β)` are equal when their first and second components agree. -/
+theorem _root_.WithLp.prod_ext {x y : WithLp p (α × β)} (h₁ : x.fst = y.fst)
+    (h₂ : x.snd = y.snd) : x = y :=
+  (WithLp.ext_iff p).2 (Prod.ext h₁ h₂)
+
+end Ext
+
 section Real
 
 variable {E : Type*} [NormedAddCommGroup E]
@@ -168,7 +180,7 @@ variable {E : Type*} [NormedAddCommGroup E]
 theorem snd_lt_one {u : WithLp 2 (E × ℝ)} (hnorm : ‖u‖ = 1)
     (hu : u ≠ WithLp.toLp 2 (0, 1)) : u.snd < 1 := by
   have hle : u.snd ≤ 1 := (le_abs_self _).trans ((WithLp.norm_snd_le (x := u)).trans hnorm.le)
-  refine hle.lt_of_ne fun h ↦ hu ((WithLp.ext_iff 2).2 (Prod.ext ?_ (by simpa using h)))
+  refine hle.lt_of_ne fun h ↦ hu (WithLp.prod_ext ?_ (by simpa using h))
   have hsq := WithLp.prod_norm_sq_eq_of_L2 u
   rw [hnorm, h] at hsq
   simpa using hsq

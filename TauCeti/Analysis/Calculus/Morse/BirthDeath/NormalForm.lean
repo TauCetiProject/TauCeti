@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.BirthDeath
+public import TauCeti.Analysis.Calculus.Morse.BirthDeath.Basic
 public import TauCeti.Analysis.Calculus.Morse.SplitModel
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # The multi-dimensional Cerf birth–death (`A₂`) normal form
@@ -32,18 +36,21 @@ At the birth–death point `(s, z) = (0, 0)` on a Hilbert space (`[CompleteSpace
    one-dimensional line `ℝ ∙ birthDeathKernelVector` spanned by `(1, 0)`
    (`TauCeti.ker_hessianOperator_birthDeathNormalForm_zero`,
    `TauCeti.finrank_ker_hessianOperator_birthDeathNormalForm_zero`).
-2. **Nonvanishing cubic invariant along the kernel:** the third directional derivative of
-   `birthDeathNormalForm 0` at `0` along `birthDeathKernelVector` equals `2 ≠ 0`
-   (`TauCeti.iteratedDeriv_three_birthDeathNormalForm_kernelVector`).
+2. **Nonvanishing cubic invariant along the kernel:** the third Fréchet derivative of
+   `birthDeathNormalForm s` at `z` evaluated three times at `birthDeathKernelVector` equals `2 ≠ 0`
+   (`TauCeti.fderiv_fderiv_fderiv_birthDeathNormalForm_apply_kernelVector`,
+   `TauCeti.iteratedDeriv_three_birthDeathNormalForm_kernelVector`).
 3. **Parameter transversality along the kernel:** differentiating
-   `s ↦ fderiv ℝ (birthDeathNormalForm s) 0 birthDeathKernelVector` yields `-1 ≠ 0`
-   (`TauCeti.hasDerivAt_fderiv_birthDeathNormalForm_kernelVector`).
+   `s ↦ fderiv ℝ (birthDeathNormalForm s) z birthDeathKernelVector` yields `-1 ≠ 0`
+   (`TauCeti.hasDerivAt_fderiv_birthDeathNormalForm_apply_kernelVector`).
 
 Varying `s` across `0` yields the complete multi-dimensional bifurcation trichotomy across the whole
 ambient space:
 
-* **Before the birth (`s < 0`):** `F_s` has no critical points and no global negative gradient
-  trajectory converges at either `+∞` or `-∞`.
+* **Before the birth (`s < 0`):** `F_s` has no critical points
+  (`TauCeti.fderiv_birthDeathNormalForm_ne_zero`) and admits no global negative gradient trajectory
+  on `ℝ` because the fold coordinate blows up in finite time
+  (`TauCeti.not_isIntegralCurve_birthDeathNormalForm_of_neg`).
 * **At the birth–death instant (`s = 0`):** the origin is the unique critical point (degenerate
   along `birthDeathKernelVector`), and the constant zero trajectory is the unique global negative
   gradient trajectory with finite limits at both ends
@@ -54,24 +61,28 @@ ambient space:
   (`TauCeti.hasNondegenerateCriticalPointsOn_birthDeathNormalForm_iff`). Every global trajectory
   from `birthDeathUpper s` to `birthDeathLower s` is a unique time translate of
   `birthDeathNormalFormOrbit s` (`TauCeti.existsUnique_eq_birthDeathNormalFormOrbit_comp_add`), and
-  no reverse trajectory runs from `birthDeathLower s` to `birthDeathUpper s`
-  (`TauCeti.not_isIntegralCurve_birthDeathNormalForm_lower_to_upper`). When `Eₛ` and `Eᵤ` are finite
-  dimensional, `birthDeathUpper s` and `birthDeathLower s` have Morse indices `dim Eᵤ + 1` and
-  `dim Eᵤ`.
+  no reverse trajectory runs from `birthDeathLower s` to `birthDeathUpper s` — see
+  `TauCeti.not_isIntegralCurve_birthDeathNormalForm_of_tendsto_atBot_lower_of_tendsto_atTop_upper`.
+  When `Eₛ` and `Eᵤ` are finite dimensional, `birthDeathUpper s` and `birthDeathLower s` have Morse
+  indices `dim Eᵤ + 1` and `dim Eᵤ`.
 
 ## Main declarations
 
 * `TauCeti.birthDeathNormalForm`, `TauCeti.birthDeathUpper`, `TauCeti.birthDeathLower`,
   `TauCeti.birthDeathNormalFormOrbit`, `TauCeti.birthDeathKernelVector`,
   `TauCeti.birthDeathTransverseRescale`.
-* `TauCeti.ker_hessianOperator_birthDeathNormalForm_zero`,
+* `TauCeti.fderiv_birthDeathNormalForm_eq_zero_iff`,
+  `TauCeti.isNondegenerateCriticalPoint_birthDeathNormalForm_iff`,
+  `TauCeti.ker_hessianOperator_birthDeathNormalForm_zero`,
   `TauCeti.finrank_ker_hessianOperator_birthDeathNormalForm_zero`,
+  `TauCeti.fderiv_fderiv_fderiv_birthDeathNormalForm_apply_kernelVector`,
   `TauCeti.iteratedDeriv_three_birthDeathNormalForm_kernelVector`,
-  `TauCeti.hasDerivAt_fderiv_birthDeathNormalForm_kernelVector`,
+  `TauCeti.hasDerivAt_fderiv_birthDeathNormalForm_apply_kernelVector`,
   `TauCeti.hasNondegenerateCriticalPointsOn_birthDeathNormalForm_iff`.
-* `TauCeti.eq_zero_of_isIntegralCurve_birthDeathNormalForm_zero`,
+* `TauCeti.not_isIntegralCurve_birthDeathNormalForm_of_neg`,
+  `TauCeti.eq_zero_of_isIntegralCurve_birthDeathNormalForm_zero`,
   `TauCeti.existsUnique_eq_birthDeathNormalFormOrbit_comp_add`,
-  `TauCeti.not_isIntegralCurve_birthDeathNormalForm_lower_to_upper`,
+  `TauCeti.not_isIntegralCurve_birthDeathNormalForm_of_tendsto_atBot_lower_of_tendsto_atTop_upper`,
   `TauCeti.morseIndex_birthDeathNormalForm_upper`,
   `TauCeti.morseIndex_birthDeathNormalForm_lower`.
 
@@ -89,10 +100,6 @@ open scoped Gradient Topology
 
 namespace TauCeti
 
-private theorem withLp_prod_ext {α β : Type*} {x y : WithLp 2 (α × β)}
-    (h₁ : x.fst = y.fst) (h₂ : x.snd = y.snd) : x = y :=
-  WithLp.ofLp_injective 2 (Prod.ext h₁ h₂)
-
 /-! ### Definitions and coordinate normal forms -/
 
 section Defs
@@ -107,9 +114,10 @@ noncomputable def birthDeathNormalForm (s : ℝ) :
     WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) → ℝ :=
   separatedSum (birthDeathPotential s) (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ))
 
-theorem birthDeathNormalForm_eq (s : ℝ) :
+theorem birthDeathNormalForm_def (s : ℝ) :
     birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) s =
-      separatedSum (birthDeathPotential s) (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) := by rfl
+      separatedSum (birthDeathPotential s) (splitQuadratic (Eₛ := Eₛ) (Eᵤ := Eᵤ)) :=
+  (rfl)
 
 theorem birthDeathNormalForm_apply (s : ℝ) (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
     birthDeathNormalForm s z =
@@ -126,16 +134,18 @@ index `dim Eᵤ + 1` when `Eₛ` and `Eᵤ` are finite dimensional. -/
 noncomputable def birthDeathUpper (s : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
   WithLp.toLp 2 (-√s, 0)
 
-theorem birthDeathUpper_eq (s : ℝ) :
-    birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s = WithLp.toLp 2 (-√s, 0) := by rfl
+theorem birthDeathUpper_def (s : ℝ) :
+    birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s = WithLp.toLp 2 (-√s, 0) :=
+  (rfl)
 
 /-- The lower newborn critical point `(√s, 0)` of `birthDeathNormalForm s` (`s > 0`), of Morse
 index `dim Eᵤ` when `Eₛ` and `Eᵤ` are finite dimensional. -/
 noncomputable def birthDeathLower (s : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
   WithLp.toLp 2 (√s, 0)
 
-theorem birthDeathLower_eq (s : ℝ) :
-    birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) s = WithLp.toLp 2 (√s, 0) := by rfl
+theorem birthDeathLower_def (s : ℝ) :
+    birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) s = WithLp.toLp 2 (√s, 0) :=
+  (rfl)
 
 @[simp] theorem birthDeathUpper_fst (s : ℝ) :
     (birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s).fst = -√s := by simp [birthDeathUpper]
@@ -149,6 +159,16 @@ theorem birthDeathLower_eq (s : ℝ) :
 @[simp] theorem birthDeathLower_snd (s : ℝ) :
     (birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) s).snd = 0 := by simp [birthDeathLower]
 
+@[simp]
+theorem birthDeathUpper_zero :
+    birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0 = 0 :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathLower_zero :
+    birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0 = 0 :=
+  WithLp.prod_ext (by simp) (by simp)
+
 theorem birthDeathUpper_ne_birthDeathLower {s : ℝ} (hs : 0 < s) :
     birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s ≠ birthDeathLower s := by
   intro h
@@ -161,19 +181,24 @@ theorem birthDeathNormalForm_upper (s : ℝ) :
     birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) s (birthDeathUpper s) =
       2 * s * √s / 3 := by
   rw [birthDeathNormalForm_apply]
-  simp [birthDeathPotential_neg_sqrt]
+  simp
 
 @[simp]
 theorem birthDeathNormalForm_lower (s : ℝ) :
     birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) s (birthDeathLower s) =
       -(2 * s * √s / 3) := by
   rw [birthDeathNormalForm_apply]
-  simp [birthDeathPotential_sqrt]
+  simp
 
 /-- The reference connecting trajectory `t ↦ (√s * tanh (√s * t), 0)` of
 `birthDeathNormalForm s`. -/
 noncomputable def birthDeathNormalFormOrbit (s t : ℝ) : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
   WithLp.toLp 2 (birthDeathOrbit s t, 0)
+
+theorem birthDeathNormalFormOrbit_def (s t : ℝ) :
+    birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s t =
+      WithLp.toLp 2 (birthDeathOrbit s t, 0) :=
+  (rfl)
 
 @[simp] theorem birthDeathNormalFormOrbit_fst (s t : ℝ) :
     (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s t).fst = birthDeathOrbit s t := by
@@ -183,10 +208,25 @@ noncomputable def birthDeathNormalFormOrbit (s t : ℝ) : WithLp 2 (ℝ × WithL
     (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s t).snd = 0 := by
   simp [birthDeathNormalFormOrbit]
 
+@[simp]
+theorem birthDeathNormalFormOrbit_zero (s : ℝ) :
+    birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s 0 = 0 :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathNormalFormOrbit_neg (s t : ℝ) :
+    birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s (-t) =
+      -birthDeathNormalFormOrbit s t :=
+  WithLp.prod_ext (by simp) (by simp)
+
 /-- The unit vector `(1, 0)` spanning the one-dimensional kernel of the Hessian of
 `birthDeathNormalForm 0` at the origin. -/
 noncomputable def birthDeathKernelVector : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) :=
   WithLp.toLp 2 (1, 0)
+
+theorem birthDeathKernelVector_def :
+    birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ) = WithLp.toLp 2 (1, 0) :=
+  (rfl)
 
 @[simp] theorem birthDeathKernelVector_fst :
     (birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)).fst = 1 := by simp [birthDeathKernelVector]
@@ -212,6 +252,40 @@ section Rescale
 
 variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ]
   [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
+
+/-- For each parameter `s`, `birthDeathNormalFormOrbit s` is smooth. -/
+@[fun_prop]
+theorem contDiff_birthDeathNormalFormOrbit (s : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) :=
+  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).symm.contDiff.comp
+    ((contDiff_birthDeathOrbit s).prodMk contDiff_const)
+
+@[fun_prop]
+theorem continuous_birthDeathNormalFormOrbit (s : ℝ) :
+    Continuous (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) :=
+  (contDiff_birthDeathNormalFormOrbit (n := 0) s).continuous
+
+@[fun_prop]
+theorem differentiable_birthDeathNormalFormOrbit (s : ℝ) :
+    Differentiable ℝ (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) :=
+  (contDiff_birthDeathNormalFormOrbit (n := 1) s).differentiable one_ne_zero
+
+/-- For `s ≥ 0`, `birthDeathNormalFormOrbit s` has velocity `(s - (birthDeathOrbit s t)², 0)` at
+`t`. -/
+theorem hasDerivAt_birthDeathNormalFormOrbit {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
+    HasDerivAt (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s)
+      (WithLp.toLp 2 (s - birthDeathOrbit s t ^ 2, 0)) t := by
+  rw [funext (birthDeathNormalFormOrbit_def s)]
+  simpa [Function.comp_def] using
+    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).symm.hasFDerivAt.comp_hasDerivAt
+      t ((hasDerivAt_birthDeathOrbit hs t).prodMk (hasDerivAt_const t (0 : WithLp 2 (Eₛ × Eᵤ))))
+
+/-- For `s ≥ 0`, the derivative of `birthDeathNormalFormOrbit s` at `t` is
+`WithLp.toLp 2 (s - birthDeathOrbit s t ^ 2, 0)`. -/
+theorem deriv_birthDeathNormalFormOrbit {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
+    deriv (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) t =
+      WithLp.toLp 2 (s - birthDeathOrbit s t ^ 2, 0) :=
+  (hasDerivAt_birthDeathNormalFormOrbit hs t).deriv
 
 /-- `birthDeathNormalFormOrbit s` tends to `birthDeathUpper s` at `-∞`. -/
 theorem tendsto_birthDeathNormalFormOrbit_atBot (s : ℝ) :
@@ -257,6 +331,52 @@ theorem birthDeathTransverseRescale_symm_snd (z : WithLp 2 (ℝ × WithLp 2 (E�
   rw [birthDeathTransverseRescale_snd] at h
   rw [← h, inv_smul_smul₀ (Real.sqrt_pos.2 two_pos).ne']
 
+@[simp]
+theorem birthDeathTransverseRescale_birthDeathUpper (s : ℝ) :
+    birthDeathTransverseRescale (birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) = birthDeathUpper s :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_birthDeathLower (s : ℝ) :
+    birthDeathTransverseRescale (birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) = birthDeathLower s :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_birthDeathNormalFormOrbit (s t : ℝ) :
+    birthDeathTransverseRescale (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s t) =
+      birthDeathNormalFormOrbit s t :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_birthDeathKernelVector :
+    birthDeathTransverseRescale (birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)) =
+      birthDeathKernelVector :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_symm_birthDeathUpper (s : ℝ) :
+    birthDeathTransverseRescale.symm (birthDeathUpper (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) =
+      birthDeathUpper s :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_symm_birthDeathLower (s : ℝ) :
+    birthDeathTransverseRescale.symm (birthDeathLower (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) =
+      birthDeathLower s :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_symm_birthDeathNormalFormOrbit (s t : ℝ) :
+    birthDeathTransverseRescale.symm (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s t) =
+      birthDeathNormalFormOrbit s t :=
+  WithLp.prod_ext (by simp) (by simp)
+
+@[simp]
+theorem birthDeathTransverseRescale_symm_birthDeathKernelVector :
+    birthDeathTransverseRescale.symm (birthDeathKernelVector (Eₛ := Eₛ) (Eᵤ := Eᵤ)) =
+      birthDeathKernelVector :=
+  WithLp.prod_ext (by simp) (by simp)
+
 /-- Pulling `birthDeathNormalForm s` back along `birthDeathTransverseRescale` produces the unhalved
 normal form `x³ / 3 - s x + (‖zₛ‖² - ‖zᵤ‖²)`. -/
 theorem birthDeathNormalForm_birthDeathTransverseRescale (s : ℝ)
@@ -270,7 +390,7 @@ theorem birthDeathNormalForm_birthDeathTransverseRescale (s : ℝ)
 
 end Rescale
 
-/-! ### Smoothness and `A₂` invariants on inner product spaces -/
+/-! ### Smoothness, critical points, and `A₂` invariants on inner product spaces -/
 
 section InnerProduct
 
@@ -331,64 +451,105 @@ theorem birthDeathNormalForm_smul_kernelVector (s t : ℝ) :
     birthDeathKernelVector_snd, smul_eq_mul, mul_one, smul_zero]
   simp
 
-/-- **Cubic `A₂` invariant in arbitrary dimension.** Restricting `birthDeathNormalForm 0` to the
-Hessian-kernel line `t ↦ t • birthDeathKernelVector` has third derivative `2 ≠ 0` at `t = 0`. -/
-theorem iteratedDeriv_three_birthDeathNormalForm_kernelVector :
+/-- **Cubic `A₂` invariant along the Hessian-kernel line.** Restricting `birthDeathNormalForm s` to
+`t ↦ t • birthDeathKernelVector` has third derivative `2 ≠ 0` at every `t₀ : ℝ`. -/
+theorem iteratedDeriv_three_birthDeathNormalForm_kernelVector (s t₀ : ℝ) :
     iteratedDeriv 3
-      (fun t : ℝ ↦ birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) 0 (t • birthDeathKernelVector))
-      (0 : ℝ) = 2 := by
+      (fun t : ℝ ↦ birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) s (t • birthDeathKernelVector))
+      t₀ = 2 := by
   simp only [birthDeathNormalForm_smul_kernelVector, iteratedDeriv_three_birthDeathPotential]
 
 /-- The directional derivative of `birthDeathNormalForm s` at `z` along `birthDeathKernelVector` is
 `z.fst ^ 2 - s`. -/
-theorem fderiv_birthDeathNormalForm_kernelVector (s : ℝ)
+@[simp]
+theorem fderiv_birthDeathNormalForm_apply_kernelVector (s : ℝ)
     (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
     fderiv ℝ (birthDeathNormalForm s) z birthDeathKernelVector = z.fst ^ 2 - s := by
-  have hlin : HasDerivAt (fun t : ℝ ↦ z + t • birthDeathKernelVector) birthDeathKernelVector 0 :=
-    (((hasDerivAt_id' (0 : ℝ)).smul_const birthDeathKernelVector).const_add z).congr_deriv
-      (one_smul _ _)
-  have hf : HasFDerivAt (birthDeathNormalForm s) (fderiv ℝ (birthDeathNormalForm s) z)
-      (z + (0 : ℝ) • birthDeathKernelVector) := by
-    simpa using (differentiable_birthDeathNormalForm s z).hasFDerivAt
-  have hd : HasDerivAt (fun t : ℝ ↦ birthDeathNormalForm s (z + t • birthDeathKernelVector))
-      (fderiv ℝ (birthDeathNormalForm s) z birthDeathKernelVector) 0 :=
-    hf.comp_hasDerivAt 0 hlin
-  have heq : (fun t : ℝ ↦ birthDeathNormalForm s (z + t • birthDeathKernelVector)) =
-      fun t ↦ birthDeathPotential s (z.fst + t) + splitQuadratic z.snd := by
-    funext t
-    simp [birthDeathNormalForm, separatedSum_apply]
-  rw [heq] at hd
-  have hd' : HasDerivAt (fun t : ℝ ↦ birthDeathPotential s (z.fst + t) + splitQuadratic z.snd)
-      (z.fst ^ 2 - s) 0 :=
-    (((hasDerivAt_birthDeathPotential s (z.fst + 0)).comp (0 : ℝ)
-      ((hasDerivAt_id' (0 : ℝ)).const_add z.fst)).add_const
-        (splitQuadratic z.snd)).congr_deriv (by ring)
-  exact hd.unique hd'
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))
+  have hez : e z = (z.fst, z.snd) := by ext <;> simp [e]
+  have hev : e birthDeathKernelVector = (1, 0) := by ext <;> simp [e]
+  rw [birthDeathNormalForm_def, separatedSum_eq_comp, e.comp_right_fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hez, hev,
+    fderiv_comp_fst_add_comp_snd (differentiable_birthDeathPotential s z.fst)
+      (differentiable_splitQuadratic z.snd)]
+  simp [← toSpanSingleton_deriv]
+
+/-- **Ambient cubic `A₂` invariant in arbitrary dimension.** The third Fréchet derivative of
+`birthDeathNormalForm s` at `z`, evaluated three times at `birthDeathKernelVector`, equals
+`2 ≠ 0`. -/
+@[simp]
+theorem fderiv_fderiv_fderiv_birthDeathNormalForm_apply_kernelVector (s : ℝ)
+    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
+    fderiv ℝ (fderiv ℝ (fderiv ℝ (birthDeathNormalForm s))) z
+      birthDeathKernelVector birthDeathKernelVector birthDeathKernelVector = 2 := by
+  let L := WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))
+  rw [← fderiv_fderiv_fderiv_apply (contDiff_birthDeathNormalForm (n := 3) s).contDiffAt,
+    funext (fderiv_birthDeathNormalForm_apply_kernelVector s)]
+  have hfirst : fderiv ℝ (fun y : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ↦ y.fst ^ 2 - s) =
+      L.smulRight ((2 : ℝ) • L) := by
+    ext y w
+    have hd : HasFDerivAt (fun q : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ)) ↦ (L q) ^ 2 - s)
+        (L.smulRight ((2 : ℝ) • L) y) y := by
+      refine (((L.hasFDerivAt (x := y)).pow 2).sub_const s).congr_fderiv ?_
+      ext u
+      simp [L]
+      ring
+    exact DFunLike.congr_fun hd.fderiv w
+  rw [hfirst, ContinuousLinearMap.fderiv]
+  simp [L]
 
 /-- **Parameter transversality of the `A₂` normal form.** Differentiating the directional
-derivative of `birthDeathNormalForm ν` at `0` along `birthDeathKernelVector` with respect to `ν`
+derivative of `birthDeathNormalForm ν` at `z` along `birthDeathKernelVector` with respect to `ν`
 gives `-1 ≠ 0`. -/
-theorem hasDerivAt_fderiv_birthDeathNormalForm_kernelVector (s : ℝ) :
+theorem hasDerivAt_fderiv_birthDeathNormalForm_apply_kernelVector (s : ℝ)
+    (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
     HasDerivAt
-      (fun ν ↦ fderiv ℝ (birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) ν) 0 birthDeathKernelVector)
+      (fun ν ↦ fderiv ℝ (birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) ν) z birthDeathKernelVector)
       (-1) s := by
-  have heq : (fun ν ↦
-      fderiv ℝ (birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) ν) 0 birthDeathKernelVector) =
-      fun ν ↦ -ν := by
-    funext ν
-    simp [fderiv_birthDeathNormalForm_kernelVector]
-  rw [heq]
-  exact (hasDerivAt_id' s).neg
+  simp only [fderiv_birthDeathNormalForm_apply_kernelVector]
+  simpa using (hasDerivAt_id' s).const_sub (z.fst ^ 2)
+
+/-- **Critical points of `birthDeathNormalForm s` on any inner product space.** A point `z` is
+critical for `birthDeathNormalForm s` if and only if `z.fst ^ 2 = s` and `z.snd = 0`. -/
+theorem fderiv_birthDeathNormalForm_eq_zero_iff {s : ℝ}
+    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
+    fderiv ℝ (birthDeathNormalForm s) z = 0 ↔ z.fst ^ 2 = s ∧ z.snd = 0 := by
+  rw [birthDeathNormalForm_def,
+    fderiv_separatedSum_eq_zero_iff (differentiable_birthDeathPotential s z.fst)
+      (differentiable_splitQuadratic z.snd),
+    fderiv_birthDeathPotential_eq_zero_iff, fderiv_splitQuadratic_eq_zero_iff]
 
 /-- Before the birth (`s < 0`), `birthDeathNormalForm s` has no critical points on any inner product
-space: its directional derivative along `birthDeathKernelVector` is at least `-s > 0` everywhere. -/
+space. -/
 theorem fderiv_birthDeathNormalForm_ne_zero {s : ℝ} (hs : s < 0)
     (z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
     fderiv ℝ (birthDeathNormalForm s) z ≠ 0 := by
-  intro h
-  have hval := congrArg (· birthDeathKernelVector) h
-  rw [fderiv_birthDeathNormalForm_kernelVector, zero_apply] at hval
+  rw [ne_eq, fderiv_birthDeathNormalForm_eq_zero_iff]
+  rintro ⟨h, -⟩
   nlinarith [sq_nonneg z.fst]
+
+/-- At `s = 0`, the origin is the unique critical point of `birthDeathNormalForm 0` on any inner
+product space. -/
+@[simp]
+theorem fderiv_birthDeathNormalForm_zero_eq_zero_iff
+    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
+    fderiv ℝ (birthDeathNormalForm 0) z = 0 ↔ z = 0 := by
+  rw [fderiv_birthDeathNormalForm_eq_zero_iff, sq_eq_zero_iff]
+  exact ⟨fun ⟨h₁, h₂⟩ ↦ WithLp.prod_ext h₁ h₂, fun h ↦ by simp [h]⟩
+
+/-- For `s > 0`, the critical points of `birthDeathNormalForm s` on any inner product space are
+`birthDeathUpper s` and `birthDeathLower s`. -/
+theorem fderiv_birthDeathNormalForm_eq_zero_iff_of_pos {s : ℝ} (hs : 0 < s)
+    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
+    fderiv ℝ (birthDeathNormalForm s) z = 0 ↔
+      z = birthDeathUpper s ∨ z = birthDeathLower s := by
+  rw [fderiv_birthDeathNormalForm_eq_zero_iff]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 (h₁.trans (Real.sq_sqrt hs.le).symm) with hfst | hfst
+    · exact .inr (WithLp.prod_ext hfst h₂)
+    · exact .inl (WithLp.prod_ext hfst h₂)
+  · rintro (rfl | rfl) <;> simp [Real.sq_sqrt hs.le]
 
 /-- At `s = 0`, no point is a nondegenerate critical point of `birthDeathNormalForm 0`. -/
 theorem not_isNondegenerateCriticalPoint_birthDeathNormalForm_zero
@@ -414,8 +575,7 @@ theorem gradient_birthDeathNormalForm (s : ℝ) (z : WithLp 2 (ℝ × WithLp 2 (
     ∇ (birthDeathNormalForm s) z =
       WithLp.toLp 2 (z.fst ^ 2 - s, WithLp.toLp 2 (z.snd.fst, -z.snd.snd)) := by
   rw [birthDeathNormalForm, gradient_separatedSum
-      (differentiable_birthDeathPotential s z.fst)
-      ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero z.snd),
+      (differentiable_birthDeathPotential s z.fst) (differentiable_splitQuadratic z.snd),
     gradient_birthDeathPotential, gradient_splitQuadratic]
 
 /-- The Hessian operator of `birthDeathNormalForm s` at `(x, (zₛ, zᵤ))` sends `(v₁, (vₛ, vᵤ))` to
@@ -442,11 +602,11 @@ theorem ker_hessianOperator_birthDeathNormalForm_zero :
     rw [hessianOperator_birthDeathNormalForm_apply] at hv
     have hs : v.snd.fst = 0 := by simpa using congrArg (fun w ↦ w.snd.fst) hv
     have hu : -v.snd.snd = 0 := by simpa using congrArg (fun w ↦ w.snd.snd) hv
-    exact ⟨v.fst, withLp_prod_ext (by simp)
-      (withLp_prod_ext (by simp [hs]) (by simp [neg_eq_zero.1 hu]))⟩
+    exact ⟨v.fst, WithLp.prod_ext (by simp)
+      (WithLp.prod_ext (by simp [hs]) (by simp [neg_eq_zero.1 hu]))⟩
   · rintro ⟨c, rfl⟩
     rw [hessianOperator_birthDeathNormalForm_apply]
-    exact withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp))
+    exact WithLp.prod_ext (by simp) (WithLp.prod_ext (by simp) (by simp))
 
 /-- **The Hessian kernel at the birth–death point has dimension `1`**, even on infinite-dimensional
 Hilbert spaces `Eₛ` and `Eᵤ`. -/
@@ -457,38 +617,16 @@ theorem finrank_ker_hessianOperator_birthDeathNormalForm_zero :
   rw [ker_hessianOperator_birthDeathNormalForm_zero,
     finrank_span_singleton birthDeathKernelVector_ne_zero]
 
-/-- At `s = 0`, the origin is the unique critical point of `birthDeathNormalForm 0`. -/
-@[simp]
-theorem fderiv_birthDeathNormalForm_zero_eq_zero_iff
+/-- **Nondegenerate critical points of `birthDeathNormalForm s` on a Hilbert space.** A point `z`
+is a nondegenerate critical point of `birthDeathNormalForm s` if and only if `z.fst ^ 2 = s`,
+`z.fst ≠ 0`, and `z.snd = 0`. -/
+theorem isNondegenerateCriticalPoint_birthDeathNormalForm_iff {s : ℝ}
     {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    fderiv ℝ (birthDeathNormalForm 0) z = 0 ↔ z = 0 := by
-  rw [← TauCeti.gradient_eq_zero_iff, gradient_birthDeathNormalForm]
-  constructor
-  · intro h
-    have h1 : z.fst ^ 2 - 0 = 0 := congrArg WithLp.fst h
-    have h2 : z.snd.fst = 0 := congrArg (fun w ↦ w.snd.fst) h
-    have h3 : -z.snd.snd = 0 := congrArg (fun w ↦ w.snd.snd) h
-    exact withLp_prod_ext (sq_eq_zero_iff.1 (by linarith)) (withLp_prod_ext h2 (neg_eq_zero.1 h3))
-  · rintro rfl
-    exact withLp_prod_ext (by simp) (withLp_prod_ext (by simp) (by simp))
-
-/-- For `s > 0`, the critical points of `birthDeathNormalForm s` on the whole space are
-`birthDeathUpper s` and `birthDeathLower s`. -/
-theorem fderiv_birthDeathNormalForm_eq_zero_iff_of_pos {s : ℝ} (hs : 0 < s)
-    {z : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))} :
-    fderiv ℝ (birthDeathNormalForm s) z = 0 ↔
-      z = birthDeathUpper s ∨ z = birthDeathLower s := by
-  rw [← TauCeti.gradient_eq_zero_iff, gradient_birthDeathNormalForm]
-  constructor
-  · intro h
-    have h1 : z.fst ^ 2 = s := sub_eq_zero.1 (congrArg WithLp.fst h)
-    have h2 : z.snd.fst = 0 := congrArg (fun w ↦ w.snd.fst) h
-    have h3 : z.snd.snd = 0 := neg_eq_zero.1 (congrArg (fun w ↦ w.snd.snd) h)
-    rcases (sq_eq_sq_iff_eq_or_eq_neg.1 (h1.trans (Real.sq_sqrt hs.le).symm)) with hfst | hfst
-    · exact .inr (withLp_prod_ext hfst (withLp_prod_ext h2 h3))
-    · exact .inl (withLp_prod_ext hfst (withLp_prod_ext h2 h3))
-  · rintro (rfl | rfl) <;>
-      exact withLp_prod_ext (by simp [Real.sq_sqrt hs.le]) (withLp_prod_ext (by simp) (by simp))
+    IsNondegenerateCriticalPoint (birthDeathNormalForm s) z ↔
+      z.fst ^ 2 = s ∧ z.fst ≠ 0 ∧ z.snd = 0 := by
+  rw [birthDeathNormalForm_def, isNondegenerateCriticalPoint_separatedSum_iff,
+    isNondegenerateCriticalPoint_birthDeathPotential_iff,
+    isNondegenerateCriticalPoint_splitQuadratic_iff, and_assoc]
 
 /-- For `s > 0`, `birthDeathUpper s = (-√s, 0)` is a nondegenerate critical point of
 `birthDeathNormalForm s`. -/
@@ -523,16 +661,14 @@ theorem isNondegenerateCriticalPoint_birthDeathNormalForm_iff_of_pos {s : ℝ} (
 theorem hasNondegenerateCriticalPointsOn_birthDeathNormalForm_iff {s : ℝ} :
     HasNondegenerateCriticalPointsOn
       (birthDeathNormalForm (Eₛ := Eₛ) (Eᵤ := Eᵤ) s) univ ↔ s ≠ 0 := by
-  refine ⟨fun h hs0 ↦ ?_, fun hs ↦ hasNondegenerateCriticalPointsOn_iff.2 fun z _ hz ↦ ?_⟩
+  refine ⟨fun h hs0 ↦ ?_, fun hs ↦ ?_⟩
   · subst hs0
     exact not_isNondegenerateCriticalPoint_birthDeathNormalForm_zero 0
       (hasNondegenerateCriticalPointsOn_iff.1 h (mem_univ 0)
         (fderiv_birthDeathNormalForm_zero_eq_zero_iff.2 rfl))
-  · rcases lt_trichotomy s 0 with hneg | rfl | hpos
-    · exact absurd hz (fderiv_birthDeathNormalForm_ne_zero hneg z)
-    · exact absurd rfl hs
-    · exact (isNondegenerateCriticalPoint_birthDeathNormalForm_iff_of_pos hpos).2
-        ((fderiv_birthDeathNormalForm_eq_zero_iff_of_pos hpos).1 hz)
+  · rw [birthDeathNormalForm_def]
+    exact (hasNondegenerateCriticalPointsOn_birthDeathPotential_iff.2 hs).separatedSum
+      hasNondegenerateCriticalPointsOn_splitQuadratic
 
 /-- A curve `γ` is a negative gradient trajectory of `birthDeathNormalForm s` if and only if its
 fold component solves `x' = -∇ (birthDeathPotential s) x` and its transverse component solves
@@ -544,7 +680,7 @@ theorem isIntegralCurve_birthDeathNormalForm_iff {s : ℝ}
         IsIntegralCurve (fun t ↦ (γ t).snd) (fun _ w ↦ -∇ splitQuadratic w) :=
   isIntegralCurve_separatedSum_iff
     (fun t ↦ differentiable_birthDeathPotential s (γ t).fst)
-    (fun t ↦ (contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero (γ t).snd)
+    (fun t ↦ differentiable_splitQuadratic (γ t).snd)
 
 /-- For `s ≥ 0`, `birthDeathNormalFormOrbit s` solves the negative gradient equation of
 `birthDeathNormalForm s`. -/
@@ -552,28 +688,15 @@ theorem isIntegralCurve_birthDeathNormalFormOrbit {s : ℝ} (hs : 0 ≤ s) :
     IsIntegralCurve (birthDeathNormalFormOrbit (Eₛ := Eₛ) (Eᵤ := Eᵤ) s)
       (fun _ z ↦ -∇ (birthDeathNormalForm s) z) :=
   isIntegralCurve_birthDeathOrbit_separatedSum hs
-    ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero 0)
+    (differentiable_splitQuadratic 0)
     (by simp [gradient_splitQuadratic])
 
-/-- **Before the birth (`s < 0`), no negative gradient trajectory of `birthDeathNormalForm s`
-converges at `+∞`.** -/
-theorem not_tendsto_atTop_nhds_of_isIntegralCurve_birthDeathNormalForm_of_neg {s : ℝ} (hs : s < 0)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathNormalForm s) z))
-    (q : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ¬Tendsto γ atTop (𝓝 q) :=
-  not_tendsto_atTop_nhds_of_isIntegralCurve_separatedSum_birthDeathPotential_of_neg hs
-    ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero) hγ q
-
-/-- **Before the birth (`s < 0`), no negative gradient trajectory of `birthDeathNormalForm s`
-converges at `-∞`.** -/
-theorem not_tendsto_atBot_nhds_of_isIntegralCurve_birthDeathNormalForm_of_neg {s : ℝ} (hs : s < 0)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathNormalForm s) z))
-    (p : WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
-    ¬Tendsto γ atBot (𝓝 p) :=
-  not_tendsto_atBot_nhds_of_isIntegralCurve_separatedSum_birthDeathPotential_of_neg hs
-    ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero) hγ p
+/-- **Before the birth (`s < 0`), `birthDeathNormalForm s` admits no global negative gradient
+trajectory on `ℝ`**, because the fold coordinate blows up in finite time. -/
+theorem not_isIntegralCurve_birthDeathNormalForm_of_neg {s : ℝ} (hs : s < 0)
+    (γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))) :
+    ¬IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathNormalForm s) z) :=
+  not_isIntegralCurve_separatedSum_birthDeathPotential_of_neg hs differentiable_splitQuadratic γ
 
 /-- **At the birth–death instant `s = 0`, the constant zero trajectory is the unique global
 connecting trajectory.** -/
@@ -584,14 +707,22 @@ theorem eq_zero_of_isIntegralCurve_birthDeathNormalForm_zero
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) :
     p = 0 ∧ q = 0 ∧ γ = 0 := by
   obtain ⟨h₁, h₂⟩ := isIntegralCurve_birthDeathNormalForm_iff.1 hγ
-  obtain ⟨hp₁, hq₁, hγ₁⟩ := eq_zero_of_isIntegralCurve_birthDeathPotential_zero h₁
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hbot)
-    (((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp htop)
+  have hγ₁ : (fun t ↦ (γ t).fst) = 0 := eq_zero_of_isIntegralCurve_birthDeathPotential_zero h₁
+  have hp₁ : p.fst = 0 := by
+    have hlim := ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hbot
+    rw [show (⇑(WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))) ∘ γ) = 0 from
+      funext fun t ↦ congrFun hγ₁ t] at hlim
+    exact tendsto_nhds_unique hlim tendsto_const_nhds
+  have hq₁ : q.fst = 0 := by
+    have hlim := ((WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp htop
+    rw [show (⇑(WithLp.fstL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))) ∘ γ) = 0 from
+      funext fun t ↦ congrFun hγ₁ t] at hlim
+    exact tendsto_nhds_unique hlim tendsto_const_nhds
   obtain ⟨hp₂, hq₂, hγ₂⟩ := eq_zero_of_isIntegralCurve_splitQuadratic h₂
     (((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto p).comp hbot)
     (((WithLp.sndL 2 ℝ ℝ (WithLp 2 (Eₛ × Eᵤ))).continuous.tendsto q).comp htop)
-  exact ⟨withLp_prod_ext hp₁ hp₂, withLp_prod_ext hq₁ hq₂,
-    funext fun t ↦ withLp_prod_ext (congrFun hγ₁ t) (congrFun hγ₂ t)⟩
+  exact ⟨WithLp.prod_ext hp₁ hp₂, WithLp.prod_ext hq₁ hq₂,
+    funext fun t ↦ WithLp.prod_ext (congrFun hγ₁ t) (congrFun hγ₂ t)⟩
 
 /-- **Classification of the newborn connecting trajectory in arbitrary dimension.** For `s > 0`,
 every global negative gradient trajectory of `birthDeathNormalForm s` from `birthDeathUpper s` at
@@ -603,19 +734,18 @@ theorem existsUnique_eq_birthDeathNormalFormOrbit_comp_add {s : ℝ} (hs : 0 < s
     (hbot : Tendsto γ atBot (𝓝 (birthDeathUpper s)))
     (htop : Tendsto γ atTop (𝓝 (birthDeathLower s))) :
     ∃! τ : ℝ, γ = fun t ↦ birthDeathNormalFormOrbit s (t + τ) :=
-  existsUnique_eq_birthDeathOrbit_separatedSum hs
-    ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero) hγ hbot htop
+  existsUnique_eq_birthDeathOrbit_separatedSum hs differentiable_splitQuadratic hγ hbot htop
 
 /-- **No reverse connecting trajectory exists in arbitrary dimension.** For `s > 0`, no negative
 gradient trajectory of `birthDeathNormalForm s` runs from `birthDeathLower s` at `-∞` to
 `birthDeathUpper s` at `+∞`. -/
-theorem not_isIntegralCurve_birthDeathNormalForm_lower_to_upper {s : ℝ} (hs : 0 < s)
-    {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
-    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathNormalForm s) z))
+theorem not_isIntegralCurve_birthDeathNormalForm_of_tendsto_atBot_lower_of_tendsto_atTop_upper
+    {s : ℝ} (hs : 0 < s) {γ : ℝ → WithLp 2 (ℝ × WithLp 2 (Eₛ × Eᵤ))}
     (hbot : Tendsto γ atBot (𝓝 (birthDeathLower s)))
-    (htop : Tendsto γ atTop (𝓝 (birthDeathUpper s))) : False :=
-  not_isIntegralCurve_separatedSum_birthDeathPotential_sqrt_to_neg_sqrt hs
-    ((contDiff_splitQuadratic (n := 1)).differentiable one_ne_zero) hγ hbot htop
+    (htop : Tendsto γ atTop (𝓝 (birthDeathUpper s))) :
+    ¬IsIntegralCurve γ (fun _ z ↦ -∇ (birthDeathNormalForm s) z) :=
+  not_isIntegralCurve_separatedSum_birthDeathPotential_of_tendsto_atBot_of_tendsto_atTop
+    hs differentiable_splitQuadratic hbot htop
 
 end Hilbert
 

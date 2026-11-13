@@ -257,7 +257,7 @@ theorem hessianOperator_separatedSum_apply {z : WithLp 2 (E × F)} (hf : ContDif
     ((hf.hasFDerivAt_gradient.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt).prodMk
       (hg.hasFDerivAt_gradient.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt))
   rw [← fderiv_gradient, (hF.congr_of_eventuallyEq hev).fderiv]
-  rfl
+  simp
 
 end Gradient
 
@@ -269,14 +269,10 @@ theorem hessianQuadraticForm_separatedSum_apply {z v : WithLp 2 (E × F)}
     hessianQuadraticForm (separatedSum f g) z v =
       hessianQuadraticForm f z.fst v.fst + hessianQuadraticForm g z.snd v.snd := by
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
-    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
-  have hH := (e : WithLp 2 (E × F) →L[ℝ] E × F).hessianQuadraticForm_comp hsum
-  simp only [ContinuousLinearEquiv.coe_coe] at hH
-  have hez : e z = (z.fst, z.snd) := rfl
-  rw [separatedSum_eq_comp, hH, QuadraticMap.comp_apply, hez,
+  have hez : e z = (z.fst, z.snd) := by ext <;> simp [e]
+  rw [separatedSum_eq_comp, e.hessianQuadraticForm_comp, QuadraticMap.comp_apply, hez,
     hessianQuadraticForm_comp_fst_add_comp_snd hf hg]
-  rfl
+  simp [e, QuadraticMap.prod_apply]
 
 /-- **Nondegenerate critical points of a separated sum** are the pairs of nondegenerate critical
 points of the summands. -/
@@ -331,14 +327,11 @@ theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ
     {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
     morseIndex (separatedSum f g) z = morseIndex f z.fst + morseIndex g z.snd := by
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
-    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
+  have hez : e z = (z.fst, z.snd) := by ext <;> simp [e]
   -- The change of coordinates is linear, so the Hessian pulls back without a criticality
   -- hypothesis.
-  have hH := (e : WithLp 2 (E × F) →L[ℝ] E × F).hessianQuadraticForm_comp hsum
-  simp only [ContinuousLinearEquiv.coe_coe] at hH
-  rw [separatedSum_eq_comp, morseIndex_def, hH, ← morseIndex_comp_fst_add_comp_snd hf hg,
-    morseIndex_def]
+  rw [separatedSum_eq_comp, morseIndex_def, e.hessianQuadraticForm_comp, hez,
+    ← morseIndex_comp_fst_add_comp_snd hf hg, morseIndex_def]
   exact (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv _ e.toLinearEquiv⟩).symm
 

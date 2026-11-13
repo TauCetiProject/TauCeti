@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -186,19 +187,14 @@ theorem mem_squareIntegrableSolutions_withLp_iff {E G : Type*} [NormedAddCommGro
     let i₁ : E →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inl ℝ E G)
     let i₂ : G →L[ℝ] WithLp p (E × G) := e.toContinuousLinearMap.comp (.inr ℝ E G)
     have hfun : ((fun s ↦ i₁ (v₁ s)) + fun s ↦ i₂ (v₂ s)) =
-        fun s ↦ WithLp.toLp p (v₁ s, v₂ s) := by
-      funext s
-      apply WithLp.ofLp_injective p
-      ext <;> simp [i₁, i₂, e]
-    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), ?_, fun s ↦ ?_, ?_⟩
-    · apply WithLp.ofLp_injective p
-      exact Prod.ext hx hy
+        fun s ↦ WithLp.toLp p (v₁ s, v₂ s) :=
+      (toLp_prodMk_eq_add (p := p) (𝕜 := ℝ) v₁ v₂).symm
+    refine ⟨fun s ↦ WithLp.toLp p (v₁ s, v₂ s), WithLp.prod_ext hx hy, fun s ↦ ?_, ?_⟩
     · have h := (i₁.hasFDerivAt.comp_hasDerivAt s (hv₁ s)).add
         (i₂.hasFDerivAt.comp_hasDerivAt s (hv₂ s))
       rw [Function.comp_def, Function.comp_def, hfun] at h
-      refine h.congr_deriv ?_
-      apply WithLp.ofLp_injective p
-      ext <;> simp [i₁, i₂, e, hA]
+      exact h.congr_deriv
+        (WithLp.prod_ext (by simp [i₁, i₂, e, hA]) (by simp [i₁, i₂, e, hA]))
     · exact hfun ▸ (hv₁2.continuousLinearMap_comp i₁).add (hv₂2.continuousLinearMap_comp i₂)
 
 /-- If both diagonal blocks of `A` on `WithLp p (E × G)` have no nonzero square-integrable
@@ -215,8 +211,7 @@ theorem squareIntegrableSolutions_eq_bot_of_withLp {E G : Type*} [NormedAddCommG
   rw [mem_squareIntegrableSolutions_withLp_iff hA, h₁, h₂, Submodule.mem_bot, Submodule.mem_bot]
     at hz
   rw [Submodule.mem_bot]
-  apply WithLp.ofLp_injective p
-  exact Prod.ext hz.1 hz.2
+  exact WithLp.prod_ext hz.1 hz.2
 
 end TauCeti
 
