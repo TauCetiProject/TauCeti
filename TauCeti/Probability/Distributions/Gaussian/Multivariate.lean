@@ -28,6 +28,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
+  Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
   random variable with a multivariate Gaussian law.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
@@ -73,6 +75,18 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- A Gaussian measure on a finite-dimensional Euclidean space is the multivariate Gaussian with
+its own mean and covariance matrix. No nondegeneracy is required. -/
+theorem eq_multivariateGaussian_covMatrix [Fintype ι] [DecidableEq ι]
+    (ν : Measure (EuclideanSpace ℝ ι)) [IsGaussian ν] :
+    ν = multivariateGaussian (∫ x, x ∂ν) (covMatrix ν) := by
+  apply IsGaussian.ext
+  · simp
+  · ext x y
+    rw [covarianceBilin_multivariateGaussian (posSemidef_covMatrix ν IsGaussian.memLp_two_id),
+      covarianceBilin_eq_covMatrix ν IsGaussian.memLp_two_id]
+    simp [PiLp.inner_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, mul_comm]
 
 /-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
 mean parameter. No hypothesis on the covariance parameter is needed. -/
