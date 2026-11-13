@@ -1248,6 +1248,13 @@ theorem isSmoothing_iff_forall_exists_bound {a : Symbol n V W m} :
   obtain ⟨b, hb⟩ := h m'
   exact hb ▸ b.exists_bound K hK α β
 
+/-- A symbol is smoothing iff for every `N` its coefficient is that of a symbol of order `m - N`. -/
+theorem isSmoothing_iff_forall_nat {a : Symbol n V W m} :
+    a.IsSmoothing ↔ ∀ N : ℕ, ∃ b : Symbol n V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => ?_⟩
+  obtain ⟨b, hb⟩ := h ⌈m - m'⌉₊
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
+
 @[simp]
 theorem isSmoothing_zero : (0 : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨0, rfl⟩
