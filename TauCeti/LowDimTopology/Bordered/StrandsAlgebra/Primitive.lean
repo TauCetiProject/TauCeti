@@ -51,6 +51,13 @@ identity diagram of `e`, the vanishing summand is zero. This applies to `e = I(S
 primitive orthogonal idempotents of `A(n)`
 (`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_idem`).
 
+This splitting argument is adapted from the proof that the vertex idempotents of a path algebra
+are primitive (`TauCeti.isPrimitiveIdempotent_vertexIdempotent`). The identity diagrams `idOn S`
+take the place of the trivial paths: the multiplicative coordinate on a trivial path becomes the
+coordinate on an identity diagram, and the arrow ideal, which contains no nonzero idempotent,
+becomes the elements with no coefficient on any identity diagram, whose idempotents vanish
+because they are nilpotent.
+
 For the matched subalgebra of a matching `M`, the idempotent `I(s)` is the sum of the `I(S)` over
 the sets `S` containing exactly one point over each element of `s`. An element of the matched
 subalgebra has the same coefficient on all of these `I(S)`, because any two such sets are related
