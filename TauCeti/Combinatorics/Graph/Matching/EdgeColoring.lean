@@ -19,7 +19,8 @@ common end. The cases `k = 0`, an empty graph, and isolated vertices are include
 The proof embeds the graph in a finite `k`-regular bipartite multigraph, decomposes the completion
 into `k` perfect matchings, colours by the matching indices, and restricts the colouring back to
 the original graph. The matching-partition and chromatic-number formulations are included as
-equivalent interfaces.
+equivalent interfaces. Consequently the least number of colours is the largest number of edges at
+a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
 
 ## References
 
@@ -80,6 +81,26 @@ theorem chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le [Finite E(G)]
       ∀ x ∈ V(G), G.incidenceCount x ≤ k := by
   rw [SimpleGraph.chromaticNumber_le_iff_colorable]
   exact hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le
+
+/-- In a finite bipartite multigraph, the chromatic number of the line graph is the largest
+incidence count of an actual vertex. The supremum over the empty vertex type is zero. -/
+theorem chromaticNumber_lineGraph_eq_sup_incidenceCount [Finite E(G)]
+    (hLR : G.IsBipartition L R) :
+    G.lineGraph.chromaticNumber =
+      (L.sup (fun x : V(G) ↦ G.incidenceCount x) ⊔ R.sup (fun x : V(G) ↦ G.incidenceCount x) :
+        ℕ) := by
+  refine le_antisymm (hLR.chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le.2
+    fun x hx ↦ ?_) ?_
+  · rcases hLR.mem_or_mem ⟨x, hx⟩ with hxL | hxR
+    · exact (Finset.le_sup (f := fun y : V(G) ↦ G.incidenceCount y) hxL).trans le_sup_left
+    · exact (Finset.le_sup (f := fun y : V(G) ↦ G.incidenceCount y) hxR).trans le_sup_right
+  · have hcast (S : Finset V(G)) :
+        ((S.sup fun x : V(G) ↦ G.incidenceCount x : ℕ) : ℕ∞) =
+          S.sup fun x : V(G) ↦ (G.incidenceCount x : ℕ∞) :=
+      Finset.apply_sup_eq_sup_comp _ (fun _ _ ↦ Nat.mono_cast.map_max) (by simp)
+    rw [Nat.mono_cast.map_max, hcast, hcast]
+    exact max_le (Finset.sup_le fun x _ ↦ G.incidenceCount_le_chromaticNumber_lineGraph x)
+      (Finset.sup_le fun x _ ↦ G.incidenceCount_le_chromaticNumber_lineGraph x)
 
 end IsBipartition
 
