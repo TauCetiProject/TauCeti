@@ -394,10 +394,10 @@ private theorem specialLinear_map_extensionGaloisFieldEmbedding_comp (r : ℕ) :
   refine MonoidHom.ext fun g ↦ ?_
   simp only [MonoidHom.comp_apply, galoisFieldTwistedFrobenius_apply, MonoidHom.coe_ofClass,
     SpecialLinearGroup.map_typeAGraphAutomorphism]
-  rw [← MonoidHom.comp_apply (SpecialLinearGroup.map _), SpecialLinearGroup.map_comp,
+  rw [← MonoidHom.comp_apply (SpecialLinearGroup.map _), SpecialLinearGroup.map_comp_map,
     (d.extensionGaloisFieldEmbedding 2 two_ne_zero).iterateFrobenius_comm d.characteristic
       d.fieldExponent,
-    ← SpecialLinearGroup.map_comp, MonoidHom.comp_apply]
+    ← SpecialLinearGroup.map_comp_map, MonoidHom.comp_apply]
 
 /-- A special linear matrix over the closure fixed by the graph-twisted Frobenius is fixed by its
 square, the entrywise `q²`-power map, so it has coordinates in the field with `q²` elements. -/
