@@ -27,6 +27,10 @@ This is the scheme form of `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorPro
 through `TauCeti.FiniteEtaleScheme.spec` and Mathlib's affine pullback comparison. Two finite étale
 schemes split over a common finite Galois extension, one splitting their disjoint union.
 
+A splitting persists under every base change of the field
+(`AlgebraicGeometry.Scheme.Hom.exists_split_of_isPullback`), since
+`F ⊗[L] (Fin n → L) ≃ Fin n → F`.
+
 Once a finite étale scheme `S` and an `S`-scheme `E` of constant rank `d` are both
 split over the base field, `E` is `d` copies of `S`
 (`AlgebraicGeometry.Scheme.Hom.exists_split_of_finrank_eq`): the rational points of `E` above
@@ -105,6 +109,24 @@ theorem exists_split_of_isFinite_of_etale₂ {K : Type u} [Field K] {X Y : Schem
       TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K A.obj L (Fin n → L) a⟩,
     ⟨((Over.pullback (Spec.algebraMap K L)).mapIso eB).symm ≪≫
       TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K B.obj L (Fin m → L) b⟩⟩
+
+/-- **A split scheme stays split after base change.** If `s : S ⟶ Spec L` is identified with
+`Spec (Fin n → L) ⟶ Spec L`, then every base change `s' : S' ⟶ Spec F` of `s` along
+`Spec F ⟶ Spec L` is identified with `Spec (Fin n → F) ⟶ Spec F`. -/
+theorem exists_split_of_isPullback {L F : Type u} [CommRing L] [CommRing F] [Algebra L F] {n : ℕ}
+    {S S' : Scheme.{u}} {s : S ⟶ Spec (.of L)} {s' : S' ⟶ Spec (.of F)} {p : S' ⟶ S}
+    (H : IsPullback p s' s (Spec.algebraMap L F)) (e : S ≅ Spec (.of (Fin n → L)))
+    (he : e.hom ≫ Spec.algebraMap L (Fin n → L) = s) :
+    ∃ e' : S' ≅ Spec (.of (Fin n → F)), e'.hom ≫ Spec.algebraMap F (Fin n → F) = s' := by
+  have H' : IsPullback (p ≫ e.hom) s' (Spec.algebraMap L (Fin n → L)) (Spec.algebraMap L F) := by
+    simpa using H.paste_horiz (IsPullback.of_horiz_isIso (snd := s)
+      (f := Spec.algebraMap L (Fin n → L)) (g := 𝟙 _) ⟨by rw [he, Category.comp_id]⟩)
+  let eP := TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv L (Fin n → L) F (Fin n → F)
+    (Algebra.TensorProduct.piScalarRight L F F (Fin n))
+  refine ⟨H'.isoPullback ≪≫ (Over.forget _).mapIso eP, ?_⟩
+  have := Over.w eP.hom
+  simp only [Over.mk_hom] at this
+  simp [this]
 
 /-- **A morphism of constant rank between split schemes over a field is a trivial cover.**
 Let `p : E ⟶ S` have rank `d` at every point, where `S` and `E` are identified with
