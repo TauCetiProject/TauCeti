@@ -48,7 +48,7 @@ theorem halfFrobenius_negativeSimpleRootSubgroup (i : Fin d.1.rank)
     F4ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints, negativeSimpleRootSubgroup_def,
     finCongr_lengthPerm, ← isogenyExponent_inl_finCongr]
   simp only [F4ShortRoot.isogenyReverse, Sum.map_inr,
-    F4ShortRoot.isogenyExponent, Sum.elim_inr, Sum.elim_inl]
+    F4ShortRoot.isogenyExponent_inr]
 
 /-- The Ree Steinberg map has parameter exponent `p^m * aᵢ` on each negative simple root,
 where `aᵢ` is the exceptional exponent at the source node. -/
