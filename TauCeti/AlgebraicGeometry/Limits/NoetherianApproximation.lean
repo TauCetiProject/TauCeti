@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AffineTransitionLimit
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.Algebra.Category.Ring.AdjoinFinset
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
 # Noetherian approximation of affine schemes
@@ -20,10 +21,7 @@ with affine transition maps. This is the affine case of absolute Noetherian appr
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.locallyOfFinitePresentation_terminal_from_Spec_iff`: `Spec R` is
-  locally of finite presentation over the terminal scheme `Spec ℤ` if and only if `R` is of
-  finite presentation over `ℤ`.
-* `TauCeti.AlgebraicGeometry.Scheme.exists_isLimit_finitePresentation_of_isAffine`: every
+* `AlgebraicGeometry.Scheme.exists_isLimit_finitePresentation_of_isAffine`: every
   affine scheme is a cofiltered limit, with affine transition maps, of affine schemes of finite
   presentation over `ℤ`.
 -/
@@ -34,32 +32,7 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
-
-/-- The spectrum of a ring `R` is locally of finite presentation over the terminal scheme
-`Spec ℤ` if and only if `R` is of finite presentation over `ℤ`. -/
-lemma locallyOfFinitePresentation_terminal_from_Spec_iff (R : CommRingCat.{u}) :
-    LocallyOfFinitePresentation (terminal.from (Spec R)) ↔ Algebra.FinitePresentation ℤ R := by
-  let e : ⊤_ Scheme.{u} ≅ Spec (.of (ULift.{u} ℤ)) :=
-    terminalIsTerminal.uniqueUpToIso specULiftZIsTerminal
-  let g : CommRingCat.of (ULift.{u} ℤ) ⟶ R :=
-    CommRingCat.ofHom ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom)
-  have he : LocallyOfFinitePresentation (Spec.map g ≫ e.inv) ↔
-      LocallyOfFinitePresentation (Spec.map g) :=
-    ⟨fun _ ↦ by
-      have : LocallyOfFinitePresentation ((Spec.map g ≫ e.inv) ≫ e.hom) := inferInstance
-      rwa [Category.assoc, e.inv_hom_id, Category.comp_id] at this, fun _ ↦ inferInstance⟩
-  rw [terminal.hom_ext (terminal.from (Spec R)) (Spec.map g ≫ e.inv), he,
-    LocallyOfFinitePresentation.SpecMap_iff, ← RingHom.finitePresentation_algebraMap]
-  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (.of_bijective ULift.ringEquiv.bijective)⟩
-  have : algebraMap ℤ R = g.hom.comp ULift.ringEquiv.symm.toRingHom := by
-    ext; simp [g]
-  rw [this]
-  exact h.comp (.of_bijective ULift.ringEquiv.symm.bijective)
-
-instance (R : CommRingCat.{u}) [Algebra.FinitePresentation ℤ R] :
-    LocallyOfFinitePresentation (terminal.from (Spec R)) :=
-  (locallyOfFinitePresentation_terminal_from_Spec_iff R).mpr ‹_›
+namespace AlgebraicGeometry
 
 /-- Every affine scheme `X` is a cofiltered limit, with affine transition maps, of affine schemes
 of finite presentation over `ℤ`. This is the affine case of absolute Noetherian approximation.
@@ -70,13 +43,16 @@ theorem Scheme.exists_isLimit_finitePresentation_of_isAffine (X : Scheme.{u}) [I
       (∀ ⦃i j : I⦄ (f : i ⟶ j), IsAffineHom (D.map f)) ∧
       ∀ i, IsAffine (D.obj i) ∧ LocallyOfFinitePresentation (terminal.from (D.obj i)) := by
   let A := Γ(X, ⊤)
-  have : PreservesLimits Scheme.Spec.{u} := ΓSpec.adjunction.rightAdjoint_preservesLimits
-  let c := Scheme.Spec.mapCone (CommRingCat.adjoinFinsetCocone ℤ A).op
+  let c := Scheme.Spec.mapCone (TauCeti.CommRingCat.adjoinFinsetCocone ℤ A).op
   have hc : IsLimit c := isLimitOfPreserves Scheme.Spec
-    (CommRingCat.isColimitAdjoinFinsetCocone ℤ A).op
+    (TauCeti.CommRingCat.isColimitAdjoinFinsetCocone ℤ A).op
   refine ⟨(Finset A)ᵒᵖ, inferInstance, inferInstance,
-    (CommRingCat.adjoinFinsetDiagram ℤ A).op ⋙ Scheme.Spec, (c.extend X.isoSpec.hom).π,
-    ⟨hc.ofIsoLimit (c.extendIso X.isoSpec.symm)⟩, fun _ _ _ ↦ ?_, fun _ ↦ ⟨?_, ?_⟩⟩ <;>
+    (TauCeti.CommRingCat.adjoinFinsetDiagram ℤ A).op ⋙ Scheme.Spec, (c.extend X.isoSpec.hom).π,
+    ⟨hc.ofIsoLimit (c.extendIso X.isoSpec.symm)⟩, fun _ _ _ ↦ ?_, fun _ ↦ ⟨?_, ?_⟩⟩
   · dsimp; infer_instance
+  · dsimp; infer_instance
+  · dsimp
+    rw [TauCeti.CommRingCat.adjoinFinsetDiagram_obj]
+    infer_instance
 
-end TauCeti.AlgebraicGeometry
+end AlgebraicGeometry
