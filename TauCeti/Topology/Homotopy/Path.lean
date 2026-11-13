@@ -47,7 +47,7 @@ A path in the space of paths from `a` to `b` is a map of the square with prescri
 `Path.ofContinuousSquare` builds the path of paths `s ↦ K (s, ·)` from such a map `K`, and
 `Path.homotopic_of_continuous_cube` is the analogue of `Path.homotopic_of_continuous_square` one
 dimension up, for paths of paths. They are used by the smoothing of paths of loops in
-`Geometry/Symplectic/Hamiltonian/ContractibleAction/Smooth.lean`.
+`Geometry/Manifold/SmoothApprox/PeriodicLoop.lean`.
 
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
