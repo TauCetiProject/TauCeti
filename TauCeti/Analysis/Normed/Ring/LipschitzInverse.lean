@@ -19,7 +19,7 @@ derivative, as needed for coefficients transformed by a change of variables.
 
 ## Main results
 
-* `NormedRing.lipschitzOnWith_inverse`: if `f` is `K`-Lipschitz on `s` with unit values whose
+* `LipschitzOnWith.inverse`: if `f` is `K`-Lipschitz on `s` with unit values whose
   inverses have norm at most `M`, then `x ↦ (f x)⁻¹` is `M² K`-Lipschitz on `s`.
 -/
 
@@ -27,13 +27,13 @@ public section
 
 open scoped NNReal
 
-namespace NormedRing
+namespace LipschitzOnWith
 
 variable {R : Type*} [NormedRing R]
 
 /-- If `f` is `K`-Lipschitz on `s` with unit values whose inverses have norm at most `M`, then
 `x ↦ (f x)⁻¹` is `M² K`-Lipschitz on `s`. -/
-theorem lipschitzOnWith_inverse {X : Type*} [PseudoMetricSpace X] {f : X → R} {s : Set X}
+theorem inverse {X : Type*} [PseudoMetricSpace X] {f : X → R} {s : Set X}
     {K M : ℝ≥0} (hf : LipschitzOnWith K f s) (hunit : ∀ x ∈ s, IsUnit (f x))
     (hM : ∀ x ∈ s, ‖Ring.inverse (f x)‖ ≤ M) :
     LipschitzOnWith (M ^ 2 * K) (fun x ↦ Ring.inverse (f x)) s := by
@@ -48,4 +48,4 @@ theorem lipschitzOnWith_inverse {X : Type*} [PseudoMetricSpace X] {f : X → R} 
         exacts [hM x hx, hM y hy]
     _ = (M ^ 2 * K : ℝ≥0) * dist x y := by push_cast; ring
 
-end NormedRing
+end LipschitzOnWith

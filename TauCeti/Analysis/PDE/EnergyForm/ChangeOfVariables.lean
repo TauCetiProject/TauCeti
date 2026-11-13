@@ -75,7 +75,7 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`: uniform ellipticity and boundedness are
   preserved, with explicit constants.
 * `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_apply`: the bilinear form of `a'(x)` through
-  that of `a(Φ x)` and the inverse Jacobian matrix.
+  that of `a(Φ x)` and the adjoint of `Ring.inverse (DΦ(x))`.
 * `TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`: if `Φ` and `DΦ` are
   Lipschitz, a bounded Lipschitz principal coefficient stays Lipschitz.
 * `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
@@ -161,32 +161,31 @@ private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ �
   rw [← hMD, StarAlgEquiv.symm_apply_apply,
     toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply hx]
 
-/-- Where `DΦ(x)` is invertible, the adjoint of the map of the inverse Jacobian matrix is a left
-inverse of `DΦ(x)*`. -/
-private theorem adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply
+omit [DecidableEq ι] in
+/-- Where `DΦ(x)` is invertible, the adjoint of `DΦ(x)⁻¹` is a left inverse of `DΦ(x)*`. -/
+private theorem adjoint_ringInverse_adjoint_fderiv_apply
     {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
     (hx : (fderiv ℝ Φ x).det ≠ 0) (v : EuclideanSpace ℝ ι) :
-    (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint
-      ((fderiv ℝ Φ x).adjoint v) = v := by
+    (Ring.inverse (fderiv ℝ Φ x)).adjoint ((fderiv ℝ Φ x).adjoint v) = v := by
+  classical
   refine ext_inner_right ℝ fun w => ?_
-  rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_left,
-    fderiv_apply_toEuclideanCLM_inv_apply hx]
+  have hw := fderiv_apply_toEuclideanCLM_inv_apply hx w
+  rw [nonsing_inv_eq_ringInverse, map_ringInverse, StarAlgEquiv.apply_symm_apply] at hw
+  rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_left, hw]
 
 /-- **The transformed principal coefficient on arbitrary covectors.** The bilinear form of `a'(x)`
-at `η, ξ` is `|det DΦ(x)|` times that of `a(Φ x)` at `M(x)⁻ᵀ η, M(x)⁻ᵀ ξ`, where `M(x)⁻ᵀ` acts
-as the adjoint of the map of the inverse Jacobian matrix. This holds whether or not `DΦ(x)` is
-invertible. -/
+at `η, ξ` is `|det DΦ(x)|` times that of `a(Φ x)` at `DΦ(x)⁻* η, DΦ(x)⁻* ξ`, where `DΦ(x)⁻*` is
+the adjoint of `Ring.inverse (DΦ(x))`. This holds whether or not `DΦ(x)` is invertible. -/
 theorem matrixBilinearForm_pullbackPrincipal_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (x η ξ : EuclideanSpace ℝ ι) :
     matrixBilinearForm (pullbackPrincipal Φ a x) η ξ =
       |(fderiv ℝ Φ x).det| * matrixBilinearForm (a (Φ x))
-        ((toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint η)
-        ((toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint
-          ξ) := by
+        ((Ring.inverse (fderiv ℝ Φ x)).adjoint η) ((Ring.inverse (fderiv ℝ Φ x)).adjoint ξ) := by
   rw [pullbackPrincipal_apply, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
     matrixBilinearForm_apply, ← inner_toEuclideanCLM, ← inner_toEuclideanCLM,
     ← conjTranspose_eq_transpose_of_trivial, inner_toEuclideanCLM_mul_mul_conjTranspose,
-    ← adjoint_toEuclideanCLM]
+    ← adjoint_toEuclideanCLM, nonsing_inv_eq_ringInverse, map_ringInverse,
+    StarAlgEquiv.apply_symm_apply]
 
 /-- **The transformed principal coefficient on pulled-back covectors.** Where `DΦ(x)` is
 invertible, the bilinear form of `a'(x)` evaluated on `DΦ(x)* η` and `DΦ(x)* ξ` is
@@ -197,9 +196,8 @@ theorem matrixBilinearForm_pullbackPrincipal {Φ : EuclideanSpace ℝ ι → Euc
     matrixBilinearForm (pullbackPrincipal Φ a x) ((fderiv ℝ Φ x).adjoint η)
         ((fderiv ℝ Φ x).adjoint ξ) =
       |(fderiv ℝ Φ x).det| * matrixBilinearForm (a (Φ x)) η ξ := by
-  rw [matrixBilinearForm_pullbackPrincipal_apply,
-    adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx,
-    adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx]
+  rw [matrixBilinearForm_pullbackPrincipal_apply, adjoint_ringInverse_adjoint_fderiv_apply hx,
+    adjoint_ringInverse_adjoint_fderiv_apply hx]
 
 /-- **The transformed drift on pulled-back covectors.** Where `DΦ(x)` is invertible,
 `⟪b'(x), DΦ(x)* ξ⟫ = |det DΦ(x)| ⟪b(Φ x), ξ⟫`. -/
@@ -351,9 +349,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Φ : EuclideanSpace ℝ ι 
 bounded on `t` and Lipschitz there in the operator norm of its bilinear forms, then the transformed
 principal coefficient `a'(x) = J(x) M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` is Lipschitz on `s` in that norm. So a
 Lipschitz change of variables with Lipschitz derivative keeps bounded Lipschitz coefficients
-Lipschitz. The derivative is Lipschitz for a `C²` map with bounded second derivative on a convex
-set, in particular for a change of variables `TauCeti.Wkp.IsChangeOfVariables` of order two
-(`TauCeti.Wkp.IsChangeOfVariables.lipschitzOnWith_fderiv`). -/
+Lipschitz. For a `C²` map on an open set, `Φ` and `DΦ` are Lipschitz on every compact subset. -/
 theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {KΦ KD Ka : ℝ≥0} {L M : ℝ} (hmaps : MapsTo Φ s t)
     (hΦ : LipschitzOnWith KΦ Φ s) (hDΦ : LipschitzOnWith KD (fderiv ℝ Φ) s)
@@ -362,14 +358,11 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
     (hM : ∀ y ∈ t, ‖matrixBilinearForm (a y)‖ ≤ M) :
     ∃ K, LipschitzOnWith K (fun x => matrixBilinearForm (pullbackPrincipal Φ a x)) s := by
   -- By `matrixBilinearForm_pullbackPrincipal_apply`, `a'(x)(η, ξ) = J(x) B(x)(S(x) η, S(x) ξ)`
-  -- with `J = |det DΦ|`, `B = a ∘ Φ` and `S` the adjoint of the inverse Jacobian map. Each factor
+  -- with `J = |det DΦ|`, `B = a ∘ Φ` and `S` the adjoint of `DΦ⁻¹`. Each factor
   -- is bounded and Lipschitz on `s`, and the product of such factors is Lipschitz.
   set L₁ := max L' 0
   have hL₁0 : 0 ≤ L₁ := le_max_right _ _
-  -- The map of the inverse Jacobian matrix is the inverse of `DΦ(x)`, of norm at most `L₁`.
-  have hT : ∀ x, toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ =
-      Ring.inverse (fderiv ℝ Φ x) := fun x => by
-    rw [nonsing_inv_eq_ringInverse, map_ringInverse, StarAlgEquiv.apply_symm_apply]
+  -- `DΦ(x)` is invertible, and its inverse has norm at most `L₁`.
   have hunit : ∀ x ∈ s, IsUnit (fderiv ℝ Φ x) := fun x hx =>
     ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2 ((LinearMap.isUnit_iff_ker_eq_bot _).2
       (LinearMap.ker_eq_bot.2 (ContinuousLinearMap.injective_of_forall_norm_le (hL' x hx))))
@@ -377,14 +370,14 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
     ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le hL₁0 fun v =>
       (hL' x hx v).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
   have hTL : LipschitzOnWith (L₁.toNNReal ^ 2 * KD) (fun x => Ring.inverse (fderiv ℝ Φ x)) s :=
-    NormedRing.lipschitzOnWith_inverse hDΦ hunit fun x hx => by
+    hDΦ.inverse hunit fun x hx => by
       rw [Real.coe_toNNReal _ hL₁0]
       exact hTb x hx
   set S := fun x => (Ring.inverse (fderiv ℝ Φ x)).adjoint with hS
   have hSb : ∀ x ∈ s, ‖S x‖ ≤ L₁ := fun x hx => by
     rw [hS, LinearIsometryEquiv.norm_map]
     exact hTb x hx
-  -- The adjoint is an isometry, so `S` has the Lipschitz constant of the inverse Jacobian map.
+  -- The adjoint is an isometry, so `S` has the Lipschitz constant of `x ↦ DΦ(x)⁻¹`.
   have hSL : LipschitzOnWith (1 * (L₁.toNNReal ^ 2 * KD)) S s :=
     (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := EuclideanSpace ℝ ι)
       (F := EuclideanSpace ℝ ι)).lipschitzWith.comp_lipschitzOnWith hTL
@@ -396,7 +389,7 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
   set J := fun x => |(fderiv ℝ Φ x).det|
   set Jb := max L 0 ^ Module.finrank ℝ (EuclideanSpace ℝ ι)
   obtain ⟨Kdet, hKdet⟩ := ContinuousLinearMap.exists_lipschitzOnWith_det_of_isBounded
-    (E := EuclideanSpace ℝ ι) (Metric.isBounded_closedBall (x := 0) (r := L))
+    (𝕜 := ℝ) (E := EuclideanSpace ℝ ι) (Metric.isBounded_closedBall (x := 0) (r := L))
   have hJL : LipschitzOnWith (1 * (Kdet * KD)) J s := by
     have h := (lipschitzWith_one_norm (E := ℝ)).comp_lipschitzOnWith
       (hKdet.comp hDΦ fun x hx => mem_closedBall_zero_iff.2 (hL x hx))
@@ -421,7 +414,7 @@ theorem exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal {t : Set (Eu
       matrixBilinearForm (pullbackPrincipal Φ a y)) η ξ =
       (J x - J y) * B x (S x η) (S x ξ) + J y * (B x - B y) (S x η) (S x ξ) +
         J y * B y ((S x - S y) η) (S x ξ) + J y * B y (S y η) ((S x - S y) ξ) := by
-    simp only [sub_apply, matrixBilinearForm_pullbackPrincipal_apply, hT, J, B, S, map_sub]
+    simp only [sub_apply, matrixBilinearForm_pullbackPrincipal_apply, J, B, S, map_sub]
     ring
   have hSη : ‖S x η‖ ≤ L₁ * ‖η‖ := ((S x).le_opNorm η).trans (by gcongr; exact hSb x hx)
   have hSξ : ‖S x ξ‖ ≤ L₁ * ‖ξ‖ := ((S x).le_opNorm ξ).trans (by gcongr; exact hSb x hx)

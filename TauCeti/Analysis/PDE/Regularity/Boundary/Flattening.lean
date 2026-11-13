@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 # Local `H²` regularity near a boundary portion that can be flattened
 
 Let `Ω` and `U` be open subsets of `ℝⁿ`, and let `Φ` be a `C²` change of variables from an open
-convex set `U'` onto `U`, with inverse `Ψ`, that maps the flat piece `H ∩ U'` of a half-space `H`
+set `U'` onto `U`, with inverse `Ψ`, that maps the flat piece `H ∩ U'` of a half-space `H`
 onto `Ω ∩ U`. Thus `∂Ω ∩ U` is the image of a piece of the hyperplane `∂H`, as it is near every
 boundary point of a domain of class `C²`. Let `a` be uniformly elliptic on `Ω ∩ U` and Lipschitz
 there, up to the boundary, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
@@ -39,9 +39,9 @@ solution on `H ∩ U'` of an equation of the same form
 (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`), whose principal coefficient
 `a'(x) = |det DΦ(x)| DΦ(x)⁻¹ a(Φ x) DΦ(x)⁻ᵀ` is uniformly elliptic
 (`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`) and Lipschitz
-(`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`). Here `DΦ` is Lipschitz
-on `U'` because `U'` is convex and `Wkp.IsChangeOfVariables 2` bounds the second derivative of `Φ`
-by `L` (`TauCeti.Wkp.IsChangeOfVariables.lipschitzOnWith_fderiv`). The transformed equation has
+(`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`) once `U'` is shrunk to
+an open neighbourhood of the compact set `Ψ(closure V)` with compact closure in `U'`, on which the
+`C²` map `Φ` and its derivative are Lipschitz. The transformed equation has
 bounded lower-order coefficients and right-hand side in `L²`. The function `u ∘ Φ` vanishes on
 the flat boundary portion: for a smooth `ψ` supported in `U'`, take a smooth `χ` supported in `U`
 and equal to one on `Φ(supp ψ)`; then `χ u ∈ H¹₀(Ω)`, its restriction lies in `H¹₀(Ω ∩ U)`,
@@ -73,25 +73,13 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega H U U' V : Opens (EuclideanSpace ℝ ι)}
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' c₀ c₁ : ℝ}
 
-/-- **Local `H²` regularity near a boundary portion flattened by a `C²` change of variables.** Let
-`ν ≠ 0`, and let `H` be an open set mapped into itself by every translation orthogonal to `ν`, as
-a half-space `{x | c₀ < ⟪x, ν⟫}` is. Let `Φ` be a change of variables of order two from an open
-convex set `U'` into `U`, with inverse `Ψ` a change of variables of order two from `U` into `U'`,
-such that `Φ` maps `H ∩ U'` into `Ω` and `Ψ` maps `Ω ∩ U` into `H`; so `Φ` maps `H ∩ U'` onto
-`Ω ∩ U`. Let `a` be uniformly elliptic on `Ω ∩ U`, with `x ↦ a(x)` Lipschitz on `Ω ∩ U` in the
-operator norm of its bilinear forms, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
-
-such that `ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in `U`: `u` vanishes on
-`∂Ω ∩ U`. Then on every open `V` whose closure is compact and contained in `U`, the restriction
-of `u` to `Ω ∩ V` is the first-order part of an element of `W^{2,2}(Ω ∩ V)`. -/
-theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariables
+/-- The flattening argument when `Φ` and `DΦ` are Lipschitz on `U'`. -/
+private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables_of_lipschitzOnWith
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0)
-    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
-    (hU' : Convex ℝ (U' : Set (EuclideanSpace ℝ ι)))
+    {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ} {K KΦ KD : ℝ≥0} {ν : EuclideanSpace ℝ ι}
+    (hν : ν ≠ 0) (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
     (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L c₀) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' c₁)
+    (hΦL : LipschitzOnWith KΦ Φ U') (hDΦL : LipschitzOnWith KD (fderiv ℝ Φ) U')
     (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U)
     (hΦH : MapsTo Φ ((H : Set (EuclideanSpace ℝ ι)) ∩ U') Omega)
     (hΨΩ : MapsTo Ψ ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) H)
@@ -162,11 +150,11 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariable
         exact hx.elim⟩⟩
     · exact ⟨_, _, ha.pullbackPrincipal hΦ₁.mapsTo hne hΦ₁.norm_fderiv_le hinv hΦ₁.pos
         hΦ₁.le_abs_det⟩
-  -- It is Lipschitz, since `Φ` and `DΦ` are Lipschitz on the convex set `U'`.
+  -- It is Lipschitz, since `Φ` and `DΦ` are Lipschitz on `U'`.
   have hsub : (Ω₁' : Set (EuclideanSpace ℝ ι)) ∩ U' ⊆ U' := inter_subset_right
   obtain ⟨K', hK'⟩ := exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal
     (t := (Omega : Set (EuclideanSpace ℝ ι)) ∩ U) (hΦ₁.mapsTo.mono_left inter_subset_left)
-    ((hΦ.lipschitzOnWith hU').mono hsub) ((hΦ.lipschitzOnWith_fderiv hU').mono hsub)
+    (hΦL.mono hsub) (hDΦL.mono hsub)
     (fun x hx => hΦ.norm_fderiv_le x hx.2) (fun x hx => hinv x hx.1) hK
     (fun y hy => ha.opNorm_matrixBilinearForm_le hy)
   -- The transformed lower-order coefficients stay bounded.
@@ -214,6 +202,79 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariable
     W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
     ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with y h1 h2 h3 h4 h5 hy
   rw [h1, h2, h3, hΦΨ₁ (hΩV hy), h4, h5]
+
+/-- **Local `H²` regularity near a boundary portion flattened by a `C²` change of variables.** Let
+`ν ≠ 0`, and let `H` be an open set mapped into itself by every translation orthogonal to `ν`, as
+a half-space `{x | c₀ < ⟪x, ν⟫}` is. Let `Φ` be a change of variables of order two from an open
+set `U'` into `U`, with inverse `Ψ` a change of variables of order two from `U` into `U'`,
+such that `Φ` maps `H ∩ U'` into `Ω` and `Ψ` maps `Ω ∩ U` into `H`; so `Φ` maps `H ∩ U'` onto
+`Ω ∩ U`. Let `a` be uniformly elliptic on `Ω ∩ U`, with `x ↦ a(x)` Lipschitz on `Ω ∩ U` in the
+operator norm of its bilinear forms, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`,
+
+such that `ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in `U`: `u` vanishes on
+`∂Ω ∩ U`. Then on every open `V` whose closure is compact and contained in `U`, the restriction
+of `u` to `Ω ∩ V` is the first-order part of an element of `W^{2,2}(Ω ∩ V)`. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_isChangeOfVariables
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0)
+    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L c₀) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' c₁)
+    (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U)
+    (hΦH : MapsTo Φ ((H : Set (EuclideanSpace ℝ ι)) ∩ U') Omega)
+    (hΨΩ : MapsTo Ψ ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) H)
+    (ha : UniformlyEllipticOn ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x))
+      ((Omega : Set (EuclideanSpace ℝ ι)) ∩ U))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
+        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
+    (hV : IsCompact (closure (V : Set (EuclideanSpace ℝ ι))))
+    (hVU : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ U) :
+    ∃ W : Wkp mu (Omega ⊓ V) 2 2,
+      Wkp.lowerOrder 1 W = W1p.restrictL (inf_le_left : Omega ⊓ V ≤ Omega) u := by
+  -- Shrink `U'` to an open neighbourhood `W` of the compact set `Ψ(closure V)` with compact closure
+  -- in `U'`, and `U` to its image `U ∩ Ψ⁻¹(W)`. The `C²` map `Φ` and its derivative are locally
+  -- Lipschitz on `U'`, hence Lipschitz on the compact set `closure W`.
+  have hKV : IsCompact (Ψ '' closure (V : Set (EuclideanSpace ℝ ι))) :=
+    hV.image_of_continuousOn (hΨ.differentiableOn.continuousOn.mono hVU)
+  obtain ⟨W, hWo, hKW, hWU', hWc⟩ := exists_open_between_and_isCompact_closure hKV U'.isOpen
+    (hΨ.mapsTo.mono_left hVU).image_subset
+  have hW : W ⊆ U' := subset_closure.trans hWU'
+  obtain ⟨KΦ, hΦL⟩ := LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hWc (f := Φ) <| by
+    intro x hx
+    obtain ⟨K, t, ht, h⟩ := ((hΦ.contDiffOn.contDiffAt (U'.isOpen.mem_nhds (hWU' hx))).of_le
+      one_le_two).exists_lipschitzOnWith
+    exact ⟨K, t, mem_nhdsWithin_of_mem_nhds ht, h⟩
+  have hD : ContDiffOn ℝ 1 (fderiv ℝ Φ) U' := hΦ.contDiffOn.fderiv_of_isOpen U'.isOpen (by norm_num)
+  obtain ⟨KD, hDΦL⟩ := LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hWc
+      (f := fderiv ℝ Φ) <| by
+    intro x hx
+    obtain ⟨K, t, ht, h⟩ :=
+      (hD.contDiffAt (U'.isOpen.mem_nhds (hWU' hx))).exists_lipschitzOnWith
+    exact ⟨K, t, mem_nhdsWithin_of_mem_nhds ht, h⟩
+  set W' : Opens (EuclideanSpace ℝ ι) := ⟨W, hWo⟩
+  set U₀ : Opens (EuclideanSpace ℝ ι) :=
+    ⟨(U : Set (EuclideanSpace ℝ ι)) ∩ Ψ ⁻¹' W,
+      hΨ.differentiableOn.continuousOn.isOpen_inter_preimage U.isOpen hWo⟩
+  have hU₀ : (U₀ : Set (EuclideanSpace ℝ ι)) ⊆ U := inter_subset_left
+  refine exists_lowerOrder_eq_restrictL_of_isChangeOfVariables_of_lipschitzOnWith (U' := W')
+    (U := U₀) hν hH
+    (hΦ.restrict (fun x hx => hW hx) fun x hx => ⟨hΦ.mapsTo (hW hx), by
+      rw [mem_preimage, hΨΦ (hW hx)]
+      exact hx⟩)
+    (hΨ.restrict (fun y hy => hU₀ hy) fun y hy => hy.2)
+    (hΦL.mono subset_closure) (hDΦL.mono subset_closure) (hΨΦ.mono hW) (hΦΨ.mono hU₀)
+    (hΦH.mono_left (inter_subset_inter_right _ hW))
+    (hΨΩ.mono_left (inter_subset_inter_right _ hU₀))
+    (ha.mono_set (inter_subset_inter_right _ hU₀)) (hK.mono (inter_subset_inter_right _ hU₀))
+    hb hc hu (fun ψ hψ hψc hψU => hu0 ψ hψ hψc (hψU.trans hU₀)) hV
+    fun y hy => ⟨hVU hy, hKW (mem_image_of_mem Ψ hy)⟩
 
 end PDE
 
