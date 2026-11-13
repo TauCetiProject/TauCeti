@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -22,7 +23,8 @@ The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p =
 For bounded data the transform is moreover continuous on the whole plane
 (`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
 kernel continuously in `L¹` on the support disc. On supercritical data supported in discs the
-transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
+transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`) and continuous
+(`TauCeti.continuous_cauchyTransform_of_memLp`), by uniform approximation with bounded data.
 
 The normalization is `T f = π⁻¹ ∫ (w - z)⁻¹ • f z`, inverting
 `bar∂ = (∂ₛ + i ∂ₜ)/2`.
@@ -36,7 +38,7 @@ The normalization is `T f = π⁻¹ ∫ (w - z)⁻¹ • f z`, inverting
 public noncomputable section
 
 open MeasureTheory Metric Set Function Filter Topology
-open scoped ENNReal Convolution
+open scoped ENNReal Convolution BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -152,5 +154,70 @@ theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volum
     (tendsto_id (x := 𝓝 w)) c r).const_mul M |>.const_mul Real.pi⁻¹
   simp only [mul_zero] at hlim
   exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun w' ↦ hbound w w') hlim
+
+/-- **Continuity of the Cauchy transform of supercritical data.** For a Hölder conjugate pair with
+`q < 2`, that is `p > 2`, the Cauchy transform of `Lᵖ` data supported in a closed disc is
+continuous on the whole plane. For `p < ∞` the data are approximated in `Lᵖ` by bounded data on
+the disc, whose transforms are continuous, and the pointwise bound
+`TauCeti.norm_cauchyTransform_le` makes the approximation uniform on every disc. -/
+theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
+    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
+    Continuous (cauchyTransform f) := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · refine continuous_cauchyTransform_of_norm_le hf.aestronglyMeasurable hs
+      (M := (eLpNormEssSup f volume).toReal) ?_
+    filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := volume)] with z hz
+    rw [← toReal_eNorm]
+    exact ENNReal.toReal_mono
+      (by rw [← eLpNorm_exponent_top hf.aestronglyMeasurable]; exact hf.eLpNorm_ne_top) hz
+  -- bounded continuous approximations, cut off to the disc
+  have happrox (n : ℕ) : ∃ g : ℂ →ᵇ F,
+      eLpNorm (f - ⇑g) p volume ≤ ENNReal.ofReal (1 / (n + 1)) ∧ MemLp g p volume :=
+    hf.exists_boundedContinuous_eLpNorm_sub_le hp
+      (by rw [ne_eq, ENNReal.ofReal_eq_zero, not_le]; positivity)
+  choose g hgf hgp using happrox
+  set h : ℕ → ℂ → F := fun n ↦ (closedBall c r).indicator (g n)
+  have hhs (n : ℕ) : support (h n) ⊆ closedBall c r := support_indicator_subset
+  have hhp (n : ℕ) : MemLp (h n) p volume :=
+    (hgp n).indicator measurableSet_closedBall.nullMeasurableSet
+  have hhc (n : ℕ) : Continuous (cauchyTransform (h n)) :=
+    continuous_cauchyTransform_of_norm_le ((hgp n).aestronglyMeasurable.indicator
+      measurableSet_closedBall) (hhs n) (ae_of_all volume fun z : ℂ ↦
+        (norm_indicator_le_norm_self (g n) z).trans ((g n).norm_coe_le_norm z))
+  have hfh (n : ℕ) : eLpNorm (f - h n) p volume ≤ ENNReal.ofReal (1 / (n + 1)) := by
+    have : f - h n = (closedBall c r).indicator (f - ⇑(g n)) := by
+      ext z
+      by_cases hz : z ∈ closedBall c r
+      · simp [h, hz]
+      · simp [h, hz, notMem_support.1 fun h' ↦ hz (hs h')]
+    rw [this]
+    exact (eLpNorm_indicator_le _ measurableSet_closedBall.nullMeasurableSet).trans (hgf n)
+  -- the approximations converge uniformly on every disc about `c`
+  have hunif (R : ℝ) : TendstoUniformlyOn (fun n ↦ cauchyTransform (h n))
+      (cauchyTransform f) atTop (closedBall c R) := by
+    set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + R)) q volume).toReal
+    refine Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ ?_
+    obtain ⟨N, hN⟩ := exists_nat_gt (K / ε)
+    refine eventually_atTop.2 ⟨N, fun n hn w hw ↦ ?_⟩
+    have hsub : cauchyTransform f w - cauchyTransform (h n) w = cauchyTransform (f - h n) w := by
+      rw [cauchyTransform_sub_of_memLp hq hf hs (hhp n) (hhs n), Pi.sub_apply]
+    have hn1 : (0 : ℝ) < n + 1 := by positivity
+    rw [dist_eq_norm, hsub]
+    calc ‖cauchyTransform (f - h n) w‖
+        ≤ K * (eLpNorm (f - h n) p volume).toReal :=
+          norm_cauchyTransform_le hq (hf.sub (hhp n))
+            ((support_sub _ _).trans (union_subset hs (hhs n))) hw
+      _ ≤ K * (1 / (n + 1)) := by
+          gcongr
+          exact ENNReal.toReal_le_of_le_ofReal (by positivity) (hfh n)
+      _ < ε := by
+          rw [mul_one_div, div_lt_iff₀ hn1]
+          have : K / ε < n + 1 := hN.trans_le (by exact_mod_cast hn.trans (Nat.le_succ n))
+          rwa [div_lt_iff₀ hε, mul_comm] at this
+  refine continuous_iff_continuousAt.2 fun w ↦ ?_
+  have hw : closedBall c (dist w c + 1) ∈ 𝓝 w :=
+    closedBall_mem_nhds_of_mem (by rw [mem_ball]; linarith)
+  exact ((hunif _).continuousOn (Frequently.of_forall fun n ↦ (hhc n).continuousOn))
+    |>.continuousAt hw
 
 end TauCeti
