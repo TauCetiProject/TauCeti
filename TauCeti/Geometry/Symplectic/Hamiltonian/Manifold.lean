@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
@@ -599,8 +600,7 @@ theorem contMDiff_poissonBracket_uncurry {E' H' N : Type*} [NormedAddCommGroup E
   -- trivial line bundle, and read off the fibre component.
   have hc := ContMDiff.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ)
     hf.contMDiff_totalSpaceMk_mvfderiv_uncurry (h.contMDiff_hamiltonianVectorField_uncurry hn hg)
-  exact fun q ↦ ((Bundle.contMDiffAt_totalSpace_iff.1 (hc q)).2).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun _ ↦ h.poissonBracket_eq_mvfderiv _ _ _)
+  exact (Bundle.Trivial.contMDiff_mk_iff.1 hc).2.congr fun _ ↦ h.poissonBracket_eq_mvfderiv _ _ _
 
 end IsNondegenerate
 
