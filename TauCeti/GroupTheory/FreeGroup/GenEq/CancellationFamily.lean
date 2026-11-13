@@ -6,21 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.PartitionTable
+public import Mathlib.SetTheory.Cardinal.NatCard
 import TauCeti.GroupTheory.FreeGroup.Basic
 
 /-!
 # Cancellation schemes of a system of equations and inequations
 
 Let `S` be a finite system of equations `s = 1` and inequations `t ≠ 1` over the free group
-`F(A)`, in the variables `X`. An inequation `t ≠ 1` holds exactly when `t = z` for some `z ≠ 1`,
-so `S` is equivalent to a system of equations in the variables `X` and one new *witness* `z_t` for
-each inequation, together with the conditions `z_t ≠ 1`. This file defines the finite family of
-*cancellation schemes* of `S` and proves its soundness: solutions of the generalised equations of
-the schemes give solutions of `S`. The cancellation schemes of `S` are the partition tables of the
-system of words
+`F(A)`, in the variables of a finite type `X`. An inequation `t ≠ 1` holds exactly when `t = z`
+for some `z ≠ 1`, so `S` is equivalent to a system of equations in the variables `X` and one new
+*witness* `z_t` for each inequation, together with the conditions `z_t ≠ 1`. This file defines
+the finite family of *cancellation schemes* of `S` and proves its soundness: solutions of the
+generalised equations of the schemes give solutions of `S`. The cancellation schemes of `S` are
+the partition tables of the system of words
 
 * `s`, for each equation `s = 1`;
-* `t z_t⁻¹` and `z_t z_t⁻¹`, for each inequation `t ≠ 1`,
+* `t z_t⁻¹` and `z_t z_t⁻¹`, for each inequation `t ≠ 1`;
+* `x x⁻¹`, for each variable `x` of `X`,
 
 in which the words of the occurrences of the witnesses are nonempty. A solution `U` of the
 generalised equation `Ω_T` of a scheme gives the solution `x ↦ P_x(U)` of `S`, inequations
@@ -30,7 +32,8 @@ nontrivial.
 
 ## Main definitions
 
-* `TauCeti.EqIneqSystem.toWords`: the words of the equations and of the witnessed inequations.
+* `TauCeti.EqIneqSystem.toWords`: the words of the equations, of the witnessed inequations and of
+  the variables.
 * `TauCeti.EqIneqSystem.IsCancellationScheme`: partition tables of `toWords` with nonempty
   witnesses.
 * `TauCeti.EqIneqSystem.genEq`, `TauCeti.EqIneqSystem.wordMap`,
@@ -50,8 +53,10 @@ nontrivial.
   partition table, are at most `N ^ 2`.
 * `TauCeti.EqIneqSystem.isCancellationScheme_iff_witnessWord_ne_nil`: the cancellation schemes are
   the partition tables in which the word map of every witness is nonempty.
-* `TauCeti.EqIneqSystem.isReduced_substituteVars_witnessWord`: in a solution of the generalised
-  equation of a partition table, the word of every witness is reduced as written.
+* `TauCeti.EqIneqSystem.isReduced_substituteVars_wordMap`,
+  `TauCeti.EqIneqSystem.isReduced_substituteVars_witnessWord`: in a solution of the generalised
+  equation of a partition table, the word of every variable and of every witness is reduced as
+  written.
 * `TauCeti.EqIneqSystem.IsCancellationScheme.mk_substituteVars_witnessWord_ne_one`: in a solution
   of the generalised equation of a scheme, every witness is nontrivial.
 * `TauCeti.EqIneqSystem.eval_eq_one_of_mem_V`, `TauCeti.EqIneqSystem.eval_getElem_ineqs_of_mem_V`:
@@ -65,8 +70,8 @@ nontrivial.
 * `TauCeti.EqIneqSystem.card_cancellationFamily_le`: the cancellation family has at most
   `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
 * `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: the
-  cancellation family of the empty system has one member, the empty table, and its generalised
-  equation is empty.
+  cancellation family of the empty system in no variables has one member, the empty table, and its
+  generalised equation is empty.
 
 ## Implementation notes
 
@@ -78,8 +83,15 @@ solve the generalised equation of the table `(z₁, z₂, z₂⁻¹ z₁⁻¹)` 
 occurrence, the word of `z_t` carries a base, hence is nonempty and reduced in every solution, so
 `z_t ≠ 1`.
 
-A variable of `X` which occurs neither in an equation nor in an inequation has the empty word
-map.
+The word `x x⁻¹` of a variable is a trivial equation as well, and is there for two reasons. A
+variable which occurs neither in an equation nor in an inequation may take any value in a
+solution of `S`; without a word of its own it would have the empty word map in every table, and
+the solutions of `S` would not all be of the form `x ↦ P_x(U)`. With it, the tables `(V, V⁻¹)` of
+`x x⁻¹` give the variable every value. Moreover every variable now has two occurrences, so its
+word carries a base whenever it is nonempty, and `P_x(U)` is reduced as written in every solution
+`U`. This is why the type `X` of variables is finite: the words are listed along
+`Finite.equivFin X`, and a system in infinitely many variables has to be restricted to finitely
+many of them first.
 
 ## References
 
@@ -99,53 +111,71 @@ namespace EqIneqSystem
 open GenEq GroupAlgGeom
 open FreeGroup (substituteVars)
 
-variable {X Z A : Type*} [DecidableEq X] [DecidableEq A]
+variable {X Z A : Type*} [Finite X] [DecidableEq X] [DecidableEq A]
 
-/-- The words of a system of equations and inequations, in the variables of the system and one
-new *witness* variable `z_k` for each inequation: the reduced word of each equation, and for the
-`k`-th inequation `t ≠ 1` the words `t z_k⁻¹` and `z_k z_k⁻¹`. -/
-def toWords (S : EqIneqSystem X A) : List (List (((X ⊕ Fin S.ineqs.length) ⊕ A) × Bool)) :=
+/-- The words of a system of equations and inequations in finitely many variables, in these
+variables and one new *witness* variable `z_k` for each inequation: the reduced word of each
+equation, for the `k`-th inequation `t ≠ 1` the words `t z_k⁻¹` and `z_k z_k⁻¹`, and the word
+`x x⁻¹` for each variable `x`. -/
+noncomputable def toWords (S : EqIneqSystem X A) :
+    List (List (((X ⊕ Fin S.ineqs.length) ⊕ A) × Bool)) :=
   S.eqs.map (fun e => e.toWord.map (Prod.map (Sum.map Sum.inl id) id)) ++
-    (List.finRange S.ineqs.length).flatMap fun k =>
+    ((List.finRange S.ineqs.length).flatMap fun k =>
       [S.ineqs[k].toWord.map (Prod.map (Sum.map Sum.inl id) id) ++ [(Sum.inl (Sum.inr k), false)],
-        [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)]]
+        [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)]]) ++
+    (List.finRange (Nat.card X)).map fun i =>
+      [(Sum.inl (Sum.inl ((Finite.equivFin X).symm i)), true),
+        (Sum.inl (Sum.inl ((Finite.equivFin X).symm i)), false)]
 
-/-- The words of a system are, in order, the reduced words of its equations and, for each
-inequation `t ≠ 1` in turn, the words `t z_k⁻¹` and `z_k z_k⁻¹`. -/
+/-- The words of a system are, in order, the reduced words of its equations, for each
+inequation `t ≠ 1` in turn the words `t z_k⁻¹` and `z_k z_k⁻¹`, and the words `x x⁻¹` of the
+variables. -/
 theorem toWords_def (S : EqIneqSystem X A) :
     S.toWords = S.eqs.map (fun e => e.toWord.map (Prod.map (Sum.map Sum.inl id) id)) ++
-      (List.finRange S.ineqs.length).flatMap fun k =>
+      ((List.finRange S.ineqs.length).flatMap fun k =>
         [S.ineqs[k].toWord.map (Prod.map (Sum.map Sum.inl id) id) ++
             [(Sum.inl (Sum.inr k), false)],
-          [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)]] := (rfl)
+          [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)]]) ++
+      (List.finRange (Nat.card X)).map fun i =>
+        [(Sum.inl (Sum.inl ((Finite.equivFin X).symm i)), true),
+          (Sum.inl (Sum.inl ((Finite.equivFin X).symm i)), false)] := (rfl)
 
-/-- The words of a system are the reduced words of its equations and, for the `k`-th inequation
-`t ≠ 1`, the words `t z_k⁻¹` and `z_k z_k⁻¹`. -/
+/-- The words of a system are the reduced words of its equations, for the `k`-th inequation
+`t ≠ 1` the words `t z_k⁻¹` and `z_k z_k⁻¹`, and the word `x x⁻¹` for each variable `x`. -/
 theorem mem_toWords {S : EqIneqSystem X A} {w : List (((X ⊕ Fin S.ineqs.length) ⊕ A) × Bool)} :
     w ∈ S.toWords ↔ (∃ e ∈ S.eqs, e.toWord.map (Prod.map (Sum.map Sum.inl id) id) = w) ∨
-      ∃ k : Fin S.ineqs.length, S.ineqs[k].toWord.map (Prod.map (Sum.map Sum.inl id) id) ++
+      (∃ k : Fin S.ineqs.length, S.ineqs[k].toWord.map (Prod.map (Sum.map Sum.inl id) id) ++
           [(Sum.inl (Sum.inr k), false)] = w ∨
-        [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)] = w := by
+        [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)] = w) ∨
+      ∃ x : X, [(Sum.inl (Sum.inl x), true), (Sum.inl (Sum.inl x), false)] = w := by
   simp only [toWords, List.mem_append, List.mem_map, List.mem_flatMap, List.mem_finRange, true_and,
-    List.mem_cons, List.not_mem_nil, or_false, eq_comm (a := w)]
+    List.mem_cons, List.not_mem_nil, or_false, eq_comm (a := w), or_assoc,
+    (Finite.equivFin X).exists_congr_left]
 
-/-- The empty system has no words. -/
+/-- Every variable and every witness `y` of a system has the word `y y⁻¹` among the words of the
+system. -/
+theorem pair_mem_toWords (S : EqIneqSystem X A) (y : X ⊕ Fin S.ineqs.length) :
+    [(Sum.inl y, true), (Sum.inl y, false)] ∈ S.toWords :=
+  mem_toWords.2 <| y.rec (fun x => .inr (.inr ⟨x, rfl⟩)) fun k => .inr (.inl ⟨k, .inr rfl⟩)
+
+/-- The empty system in no variables has no words. -/
 @[simp]
-theorem toWords_empty : (empty X A).toWords = [] := by
+theorem toWords_empty [IsEmpty X] : (empty X A).toWords = [] := by
   simp [toWords]
 
-/-- The empty system has no words, so no occurrences of letters. -/
-instance : IsEmpty (Fin (empty X A).toWords.length) := by
+/-- The empty system in no variables has no words, so no occurrences of letters. -/
+instance [IsEmpty X] : IsEmpty (Fin (empty X A).toWords.length) := by
   rw [toWords_empty, List.length_nil]
   infer_instance
 
-/-- A system has one word for each equation and two for each inequation. -/
+/-- A system has one word for each equation, two for each inequation and one for each
+variable. -/
 @[simp]
 theorem length_toWords (S : EqIneqSystem X A) :
-    S.toWords.length = S.eqs.length + 2 * S.ineqs.length := by
-  simp [toWords, List.length_flatMap, mul_comm]
+    S.toWords.length = S.eqs.length + 2 * S.ineqs.length + Nat.card X := by
+  simp [toWords, List.length_flatMap, mul_comm, add_assoc]
 
-omit [DecidableEq X] [DecidableEq A] in
+omit [Finite X] [DecidableEq X] [DecidableEq A] in
 /-- Mapping a function over the indices of the inequations of a system is mapping it over the
 inequations. -/
 private theorem map_finRange_getElem_ineqs {β : Type*} (S : EqIneqSystem X A)
@@ -156,10 +186,10 @@ private theorem map_finRange_getElem_ineqs {β : Type*} (S : EqIneqSystem X A)
   rfl
 
 /-- The total length of the words of a system: the lengths of the reduced words of its equations
-and inequations, and three letters for each inequation. -/
+and inequations, three letters for each inequation and two for each variable. -/
 theorem sum_length_toWords (S : EqIneqSystem X A) :
     (S.toWords.map List.length).sum = (S.eqs.map fun e => e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length := by
+      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length + 2 * Nat.card X := by
   simp only [toWords, List.map_append, List.sum_append, List.map_map, Function.comp_def,
     List.length_map, List.flatMap_def, List.map_flatten, List.sum_flatten, List.map_cons,
     List.map_nil, List.sum_cons, List.sum_nil, List.length_append, List.length_cons,
@@ -167,11 +197,12 @@ theorem sum_length_toWords (S : EqIneqSystem X A) :
     List.map_const', List.length_finRange, List.sum_replicate, smul_eq_mul]
   lia
 
-/-- The size of the words of a system: `(l - 1) l` for each equation of length `l`, and
-`l (l + 1) + 2` for each inequation of length `l`. -/
+/-- The size of the words of a system: `(l - 1) l` for each equation of length `l`,
+`l (l + 1) + 2` for each inequation of length `l`, and `2` for each variable. -/
 theorem systemSize_toWords (S : EqIneqSystem X A) :
     systemSize S.toWords = (S.eqs.map fun e => (e.toWord.length - 1) * e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length * (e.toWord.length + 1)).sum + 2 * S.ineqs.length := by
+      (S.ineqs.map fun e => e.toWord.length * (e.toWord.length + 1)).sum + 2 * S.ineqs.length +
+      2 * Nat.card X := by
   simp only [systemSize_def, toWords, List.map_append, List.sum_append, List.map_map,
     Function.comp_def, List.length_map, List.flatMap_def, List.map_flatten, List.sum_flatten,
     List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_append,
@@ -184,7 +215,7 @@ theorem systemSize_toWords (S : EqIneqSystem X A) :
 words. -/
 theorem systemSize_toWords_le (S : EqIneqSystem X A) :
     systemSize S.toWords ≤ ((S.eqs.map fun e => e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length) ^ 2 := by
+      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length + 2 * Nat.card X) ^ 2 := by
   rw [← sum_length_toWords, sq]
   exact (systemSize_le _).trans (Nat.mul_le_mul_right _ (Nat.sub_le _ _))
 
@@ -211,8 +242,8 @@ theorem forall_mem_toWords_eval_eq_one_iff (S : EqIneqSystem X A) (v : X ⊕ Fin
     rw [← FreeGroup.mul_mk, map_mul, hmk, eval_map_sumMap, eval_eq_lift v,
       FreeGroup.lift_mk_singleton]
     rfl
-  have h₂ (k : Fin S.ineqs.length) :
-      eval v c (FreeGroup.mk [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)]) = 1 := by
+  have h₂ (y : X ⊕ Fin S.ineqs.length) :
+      eval v c (FreeGroup.mk [(Sum.inl y, true), (Sum.inl y, false)]) = 1 := by
     simp [eval_eq_lift, FreeGroup.lift_mk]
   simp only [toWords, List.forall_mem_append, List.forall_mem_map, List.forall_mem_flatMap,
     List.mem_finRange, List.forall_mem_cons, h₁, h₂, hmk, eval_map_sumMap, mul_inv_eq_one]
@@ -275,42 +306,31 @@ noncomputable abbrev witnessWord (S : EqIneqSystem X A)
 
 variable {S : EqIneqSystem X A} {T : Occurrence S.toWords → List ((Z ⊕ A) × Bool)}
 
-/-- In a cancellation scheme, the entries of the witnesses have nonempty words. -/
-private theorem IsCancellationScheme.getElem_tableEntries_ne_nil (hT : S.IsCancellationScheme T)
-    {k : Fin S.ineqs.length} (i : Fin (tableEntries S.toWords T).length)
-    (hi : (tableEntries S.toWords T)[i].1.1 = Sum.inl (Sum.inr k)) :
-    (tableEntries S.toWords T)[i].2 ≠ [] := by
-  obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem i.isLt)
-  simp only [Fin.getElem_fin] at hi ⊢
-  rw [← ho] at hi ⊢
-  exact hT.ne_nil o k hi
-
-/-- The word map of a witness is read at an entry of the witness, and the witness has a second
+/-- The word map of a variable or of a witness is read at an entry of it, and it has a second
 entry. -/
-private theorem exists_witnessWord_eq (k : Fin S.ineqs.length) :
+private theorem exists_wordMap_eq_segment (y : X ⊕ Fin S.ineqs.length) :
     ∃ p : Fin (tableEntries S.toWords T).length × Fin (tableEntries S.toWords T).length,
-      p.1 ≠ p.2 ∧ (tableEntries S.toWords T)[p.1].1.1 = Sum.inl (Sum.inr k) ∧
-      (tableEntries S.toWords T)[p.2].1.1 = Sum.inl (Sum.inr k) ∧
-      S.witnessWord T k = (S.genEq T).segment (entryStart (tableEntries S.toWords T) p.1)
-        (entryStart (tableEntries S.toWords T) ((p.1 : ℕ) + 1))
-        (tableEntries S.toWords T)[p.1].1.2 := by
-  -- The two occurrences of the witness in the word `z_k z_k⁻¹`.
-  have hw : [(Sum.inl (Sum.inr k), true), (Sum.inl (Sum.inr k), false)] ∈ S.toWords :=
-    mem_toWords.2 (Or.inr ⟨k, Or.inr rfl⟩)
-  obtain ⟨o₁, ho₁⟩ := exists_occurrence_of_mem hw (j := 0) (by simp)
-  obtain ⟨o₂, ho₂⟩ := exists_occurrence_of_mem hw (j := 1) (by simp)
+      p.1 ≠ p.2 ∧ (tableEntries S.toWords T)[p.1].1.1 = Sum.inl y ∧
+      (tableEntries S.toWords T)[p.2].1.1 = Sum.inl y ∧
+      GenEq.wordMap (tableEntries S.toWords T) y =
+        (S.genEq T).segment (entryStart (tableEntries S.toWords T) p.1)
+          (entryStart (tableEntries S.toWords T) ((p.1 : ℕ) + 1))
+          (tableEntries S.toWords T)[p.1].1.2 := by
+  -- The two occurrences of `y` in the word `y y⁻¹`.
+  obtain ⟨o₁, ho₁⟩ := exists_occurrence_of_mem (S.pair_mem_toWords y) (j := 0) (by simp)
+  obtain ⟨o₂, ho₂⟩ := exists_occurrence_of_mem (S.pair_mem_toWords y) (j := 1) (by simp)
   obtain ⟨i₁, hi₁⟩ := exists_getElem_tableEntries T o₁
   obtain ⟨i₂, hi₂⟩ := exists_getElem_tableEntries T o₂
-  have h₁ : (tableEntries S.toWords T)[i₁].1 = (Sum.inl (Sum.inr k), true) :=
+  have h₁ : (tableEntries S.toWords T)[i₁].1 = (Sum.inl y, true) :=
     (congrArg Prod.fst hi₁).trans ho₁
-  have h₂ : (tableEntries S.toWords T)[i₂].1 = (Sum.inl (Sum.inr k), false) :=
+  have h₂ : (tableEntries S.toWords T)[i₂].1 = (Sum.inl y, false) :=
     (congrArg Prod.fst hi₂).trans ho₂
   have h₁₂ : i₁ ≠ i₂ := by
     rintro rfl
     simpa using h₁.symm.trans h₂
   obtain ⟨k₀, hk₀, hw₀⟩ := exists_wordMap_eq _ i₁ (by rw [h₁])
   obtain ⟨k₁, hk₁, hne⟩ : ∃ k₁ : Fin (tableEntries S.toWords T).length,
-      (tableEntries S.toWords T)[k₁].1.1 = Sum.inl (Sum.inr k) ∧ k₀ ≠ k₁ := by
+      (tableEntries S.toWords T)[k₁].1.1 = Sum.inl y ∧ k₀ ≠ k₁ := by
     by_cases h : k₀ = i₁
     · exact ⟨i₂, by rw [h₂], h ▸ h₁₂⟩
     · exact ⟨i₁, by rw [h₁], h⟩
@@ -320,43 +340,46 @@ private theorem exists_witnessWord_eq (k : Fin S.ineqs.length) :
 the total length of these words. -/
 theorem length_wordMap_le (hT : IsPartitionTable S.toWords T) (x : X) :
     (S.wordMap T x).length ≤ (S.eqs.map fun e => e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length :=
+      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length + 2 * Nat.card X :=
   (hT.length_wordMap_le_sum (Sum.inl x)).trans (sum_length_toWords S).le
 
 /-- The word map of a witness, for a partition table of the words of a system, is no longer than
 the total length of these words. -/
 theorem length_witnessWord_le (hT : IsPartitionTable S.toWords T) (k : Fin S.ineqs.length) :
     (S.witnessWord T k).length ≤ (S.eqs.map fun e => e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length :=
+      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length + 2 * Nat.card X :=
   (hT.length_wordMap_le_sum (Sum.inr k)).trans (sum_length_toWords S).le
 
 /-- The generalised equation of a partition table of the words of a system has at most `N ^ 2`
 items, for the total length `N` of these words. -/
 theorem numItems_genEq_le (hT : IsPartitionTable S.toWords T) :
     (S.genEq T).numItems ≤ ((S.eqs.map fun e => e.toWord.length).sum +
-      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length) ^ 2 :=
+      (S.ineqs.map fun e => e.toWord.length).sum + 3 * S.ineqs.length + 2 * Nat.card X) ^ 2 :=
   hT.numItems_ofEntries_le.trans (systemSize_toWords_le S)
 
 /-! ### Solutions of `Ω_T` give solutions of the system -/
 
-/-- In a cancellation scheme the word map of a witness is nonempty: a witness is never assigned
-zero items. -/
-theorem IsCancellationScheme.witnessWord_ne_nil (hT : S.IsCancellationScheme T)
-    (k : Fin S.ineqs.length) : S.witnessWord T k ≠ [] := by
-  obtain ⟨p, -, hp, -, hw⟩ := exists_witnessWord_eq (T := T) k
-  rw [hw, ← List.length_pos_iff, length_segment_entryStart _ p.1.isLt]
-  exact List.length_pos_iff.2 (hT.getElem_tableEntries_ne_nil p.1 hp)
+/-- In a partition table of the words of a system, the word map of a variable is empty exactly
+when the word of an occurrence of the variable is empty. -/
+theorem wordMap_eq_nil_iff (hT : IsPartitionTable S.toWords T) {x : X}
+    {o : Occurrence S.toWords} (ho : S.toWords[o.1][o.2].1 = Sum.inl (Sum.inl x)) :
+    S.wordMap T x = [] ↔ T o = [] :=
+  hT.wordMap_eq_nil_iff ho
 
 /-- In a partition table of the words of a system, the word map of a witness is empty exactly when
 the word of an occurrence of the witness is empty. -/
 theorem witnessWord_eq_nil_iff (hT : IsPartitionTable S.toWords T) {k : Fin S.ineqs.length}
     {o : Occurrence S.toWords} (ho : S.toWords[o.1][o.2].1 = Sum.inl (Sum.inr k)) :
-    S.witnessWord T k = [] ↔ T o = [] := by
-  obtain ⟨p, -, hp, -, hw⟩ := exists_witnessWord_eq (T := T) k
-  rw [hw, ← List.length_eq_zero_iff, length_segment_entryStart _ p.1.isLt,
-    List.length_eq_zero_iff]
-  exact hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem p.1.isLt)
-    (mem_tableEntries.2 ⟨o, rfl⟩) (hp.trans ho.symm)
+    S.witnessWord T k = [] ↔ T o = [] :=
+  hT.wordMap_eq_nil_iff ho
+
+/-- In a cancellation scheme the word map of a witness is nonempty: a witness is never assigned
+zero items. -/
+theorem IsCancellationScheme.witnessWord_ne_nil (hT : S.IsCancellationScheme T)
+    (k : Fin S.ineqs.length) : S.witnessWord T k ≠ [] := by
+  obtain ⟨o, ho⟩ := exists_occurrence_of_mem (S.pair_mem_toWords (Sum.inr k)) (j := 0) (by simp)
+  have ho' : S.toWords[o.1][o.2].1 = Sum.inl (Sum.inr k) := congrArg Prod.fst ho
+  exact (witnessWord_eq_nil_iff hT.isPartitionTable ho').not.2 (hT.ne_nil o k ho')
 
 /-- A cancellation scheme is a partition table of the words of the system in which the word map of
 every witness is nonempty. -/
@@ -366,22 +389,36 @@ theorem isCancellationScheme_iff_witnessWord_ne_nil :
     fun h => ⟨h.1, fun _ k ho => (witnessWord_eq_nil_iff h.1 ho).not.1 (h.2 k)⟩⟩
 
 /-- In a solution of the generalised equation of a partition table of the words of a system, the
-word of every witness is reduced as written: it is empty, or it spans a base. -/
-theorem isReduced_substituteVars_witnessWord (hT : IsPartitionTable S.toWords T)
-    (U : (S.genEq T).Solution) (k : Fin S.ineqs.length) :
-    FreeGroup.IsReduced (substituteVars U.word (S.witnessWord T k)) := by
-  obtain ⟨p, hne, h₁, h₂, hw⟩ := exists_witnessWord_eq (T := T) k
+word of a variable or of a witness is reduced as written: it is empty, or it spans a base. -/
+private theorem isReduced_substituteVars_wordMap_tableEntries (hT : IsPartitionTable S.toWords T)
+    (U : (S.genEq T).Solution) (y : X ⊕ Fin S.ineqs.length) :
+    FreeGroup.IsReduced (substituteVars U.word (GenEq.wordMap (tableEntries S.toWords T) y)) := by
+  obtain ⟨p, hne, h₁, h₂, hw⟩ := exists_wordMap_eq_segment (T := T) y
   by_cases h : (tableEntries S.toWords T)[p.1].2 = []
   · rw [hw, List.eq_nil_of_length_eq_zero ((length_segment_entryStart _ p.1.isLt _).trans
       (List.length_eq_zero_iff.2 h))]
     exact FreeGroup.IsReduced.nil
-  -- The two entries of the witness have nonempty words, so they are joined by dual bases.
+  -- The two entries of `y` have nonempty words, so they are joined by dual bases.
   have hp : IsVarPair (tableEntries S.toWords T) p := (isVarPair_iff _).2 ⟨hne,
     (congrArg Sum.isLeft h₁).trans rfl, h₁.trans h₂.symm, h,
     (hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem p.1.isLt) (List.getElem_mem p.2.isLt)
       (h₁.trans h₂.symm)).not.1 h⟩
   rw [hw]
   exact (U.isReduced_subst _ (mem_equations_ofEntries_of_isVarPair _ hp)).1
+
+/-- In a solution of the generalised equation of a partition table of the words of a system, the
+word of every variable is reduced as written: it is empty, or it spans a base. -/
+theorem isReduced_substituteVars_wordMap (hT : IsPartitionTable S.toWords T)
+    (U : (S.genEq T).Solution) (x : X) :
+    FreeGroup.IsReduced (substituteVars U.word (S.wordMap T x)) :=
+  isReduced_substituteVars_wordMap_tableEntries hT U (Sum.inl x)
+
+/-- In a solution of the generalised equation of a partition table of the words of a system, the
+word of every witness is reduced as written: it is empty, or it spans a base. -/
+theorem isReduced_substituteVars_witnessWord (hT : IsPartitionTable S.toWords T)
+    (U : (S.genEq T).Solution) (k : Fin S.ineqs.length) :
+    FreeGroup.IsReduced (substituteVars U.word (S.witnessWord T k)) :=
+  isReduced_substituteVars_wordMap_tableEntries hT U (Sum.inr k)
 
 /-- A solution of the generalised equation of a cancellation scheme gives every witness a
 nontrivial value: its word is nonempty and reduced as written. -/
@@ -488,25 +525,21 @@ theorem card_cancellationFamily_le [Fintype A] (S : EqIneqSystem X A) :
 
 section Empty
 
-variable (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool))
+variable [IsEmpty X] (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × Bool))
 
-/-- Every table of the words of the empty system is a cancellation scheme. -/
+/-- Every table of the words of the empty system in no variables is a cancellation scheme. -/
 @[simp]
 theorem isCancellationScheme_empty : (empty X A).IsCancellationScheme T :=
   ⟨⟨isEmptyElim, isEmptyElim, isEmptyElim, fun o => isEmptyElim o, fun o => isEmptyElim o⟩,
     fun o => isEmptyElim o⟩
 
-/-- The generalised equation of a table of the empty system is the empty generalised equation. -/
+/-- The generalised equation of a table of the empty system in no variables is the empty
+generalised equation. -/
 theorem genEq_empty : (empty X A).genEq T = GenEq.empty :=
   eq_empty_of_numItems_eq_zero (by rw [numItems_ofEntries, length_flatMap_tableEntries]; simp)
 
-/-- The word maps of a table of the empty system are empty. -/
-@[simp]
-theorem wordMap_empty (x : X) : (empty X A).wordMap T x = [] :=
-  wordMap_eq_nil _ fun k => (mem_tableEntries.1 (List.getElem_mem k.isLt)).elim fun o _ =>
-    isEmptyElim o
-
-/-- The cancellation family of the empty system has exactly one member, the empty table. -/
+/-- The cancellation family of the empty system in no variables has exactly one member, the empty
+table. -/
 @[simp]
 theorem cancellationFamily_empty [Finite A] :
     (empty X A).cancellationFamily = {fun o => isEmptyElim o} :=
@@ -519,62 +552,80 @@ end Empty
 
 section Examples
 
-/-- For the empty system the empty generalised equation supplies the trivial cancellation
-scheme. -/
-example {X A : Type*} [DecidableEq X] [DecidableEq A] [Finite A] :
+/-- For the empty system with no variables the empty generalised equation supplies the trivial
+cancellation scheme. -/
+example {X A : Type*} [IsEmpty X] [DecidableEq X] [DecidableEq A] [Finite A] :
     ∃ T ∈ (empty X A).cancellationFamily, (empty X A).genEq T = GenEq.empty :=
   ⟨fun o => isEmptyElim o, by simp, genEq_empty _⟩
 
+/-- The words of the inequation `x ≠ 1` are `x z⁻¹`, `z z⁻¹` and `y y⁻¹` for the variables `y`:
+each is a variable or a witness followed by the inverse of one. -/
+private theorem exists_eq_of_mem_toWords_var_ne_one (x : X)
+    {w : List (((X ⊕ Fin (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).ineqs.length) ⊕ A) ×
+      Bool)} (hw : w ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords) :
+    ∃ y y', w = [(Sum.inl y, true), (Sum.inl y', false)] := by
+  obtain ⟨e, he, -⟩ | ⟨k, rfl | rfl⟩ | ⟨y, rfl⟩ := mem_toWords.1 hw
+  · simp at he
+  · exact ⟨Sum.inl x, Sum.inr k, by simp⟩
+  · exact ⟨_, _, rfl⟩
+  · exact ⟨_, _, rfl⟩
+
+/-- The words of the inequation `x ≠ 1` have two letters. -/
+private theorem length_eq_two_of_mem_toWords_var_ne_one (x : X)
+    {w : List (((X ⊕ Fin (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).ineqs.length) ⊕ A) ×
+      Bool)} (hw : w ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords) :
+    w.length = 2 := by
+  obtain ⟨y, y', rfl⟩ := exists_eq_of_mem_toWords_var_ne_one x hw
+  rfl
+
+/-- No letter of the words of the inequation `x ≠ 1` is a constant. -/
+private theorem ne_inr_of_mem_toWords_var_ne_one (x : X)
+    {w : List (((X ⊕ Fin (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).ineqs.length) ⊕ A) ×
+      Bool)} (hw : w ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords)
+    {l : ((X ⊕ Fin (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).ineqs.length) ⊕ A) × Bool}
+    (hl : l ∈ w) (a : A) : l.1 ≠ Sum.inr a := by
+  obtain ⟨y, y', rfl⟩ := exists_eq_of_mem_toWords_var_ne_one x hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with rfl | rfl <;> simp
+
 /-- For the inequation `x ≠ 1`, the table with empty words is a partition table of the words
-`x z⁻¹`, `z z⁻¹` of the system. -/
-example {X A : Type*} [DecidableEq X] [DecidableEq A] (x : X) :
-    IsPartitionTable (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords
-      (fun _ => ([] : List ((Empty ⊕ A) × Bool))) := by
-  refine ⟨fun _ => .nil, fun _ => by
+`x z⁻¹`, `z z⁻¹` and `y y⁻¹` of the system. -/
+example (x : X) : IsPartitionTable (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords
+    (fun _ => ([] : List ((Empty ⊕ A) × Bool))) :=
+  ⟨fun _ => .nil, fun _ => by
     rw [List.flatMap_eq_nil_iff.2 fun _ _ => rfl]
     exact FreeGroup.one_eq_mk.symm, fun _ => by simp,
-    fun o a h => ?_, fun _ _ _ => Iff.rfl⟩
-  -- Every letter of the words of `x ≠ 1` is a variable or a witness.
-  have hl : ∀ w ∈ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords, ∀ l ∈ w,
-      l.1.isLeft := by
-    intro w hw l hl
-    obtain ⟨e, he, -⟩ | ⟨k, rfl | rfl⟩ := mem_toWords.1 hw
-    · simp at he
-    · simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Fin.getElem_fin,
-        Fin.val_eq_zero, List.getElem_cons_zero, FreeGroup.toWord_of, List.map_cons,
-        Prod.map_apply, Sum.map_inl, id_eq, List.map_nil, List.cons_append, List.nil_append,
-        List.mem_cons, List.not_mem_nil, or_false] at hl
-      rcases hl with rfl | rfl <;> rfl
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
-      rcases hl with rfl | rfl <;> rfl
-  simp only [Fin.getElem_fin] at h
-  simpa [h] using hl _ (List.getElem_mem o.1.isLt) _ (List.getElem_mem o.2.isLt)
+    fun o a h => absurd h (ne_inr_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)
+      (List.getElem_mem o.2.isLt) a), fun _ _ _ => Iff.rfl⟩
 
 /-- For the inequation `x ≠ 1`, the table with empty words is not a cancellation scheme: it
 assigns the witness zero items. -/
-example {X A : Type*} [DecidableEq X] [DecidableEq A] (x : X) :
-    ¬ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).IsCancellationScheme
-      (fun _ => ([] : List ((Empty ⊕ A) × Bool))) := by
+example (x : X) : ¬ (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).IsCancellationScheme
+    (fun _ => ([] : List ((Empty ⊕ A) × Bool))) := by
   intro h
   -- The first letter of the word `z z⁻¹` of the witness.
   obtain ⟨o, ho⟩ := exists_occurrence_of_mem
-    ((mem_toWords (S := (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A))).2
-      (Or.inr ⟨⟨0, Nat.zero_lt_one⟩, Or.inr rfl⟩)) (j := 0) (by simp)
-  exact h.ne_nil o ⟨0, Nat.zero_lt_one⟩ (by rw [ho]; rfl) rfl
+    ((⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).pair_mem_toWords
+      (Sum.inr ⟨0, Nat.zero_lt_one⟩)) (j := 0) (by simp)
+  exact h.ne_nil o ⟨0, Nat.zero_lt_one⟩ (congrArg Prod.fst ho) rfl
 
-/-- The table `(a | a⁻¹; a | a⁻¹)` of the words `x z⁻¹`, `z z⁻¹` of `x ≠ 1` over `F(a)`. -/
-private def xNeOneTable (o : Occurrence (⟨[], [FreeGroup.of (Sum.inl 0)]⟩ :
-    EqIneqSystem (Fin 1) (Fin 1)).toWords) :
-    List ((Fin (systemSize (⟨[], [FreeGroup.of (Sum.inl 0)]⟩ :
-      EqIneqSystem (Fin 1) (Fin 1)).toWords) ⊕ Fin 1) × Bool) :=
-  [(Sum.inr 0, decide ((o.2 : ℕ) = 0))]
-
-/-- The inequation `x ≠ 1` over `F(a)` has a cancellation scheme, assigning `a` to `x` and to the
+/-- The inequation `x ≠ 1` has a cancellation scheme for each letter `a`: the table `(a | a⁻¹)` of
+each of the words `x z⁻¹`, `z z⁻¹` and `y y⁻¹`, assigning `a` to the variables and to the
 witness. -/
-example : xNeOneTable ∈ (⟨[], [FreeGroup.of (Sum.inl 0)]⟩ :
-    EqIneqSystem (Fin 1) (Fin 1)).cancellationFamily :=
-  mem_cancellationFamily.2 ⟨⟨fun _ => .singleton, by decide, by decide, by decide, by decide⟩,
-    by decide⟩
+example (x : X) (a : A) :
+    (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).IsCancellationScheme
+      (fun o => ([(Sum.inr a, decide ((o.2 : ℕ) = 0))] : List ((Empty ⊕ A) × Bool))) := by
+  -- The product `a a⁻¹` of the words of a table row of two letters.
+  have key : ∀ n, n = 2 → FreeGroup.mk ((List.finRange n).flatMap fun j : Fin n =>
+      ([(Sum.inr a, decide ((j : ℕ) = 0))] : List ((Empty ⊕ A) × Bool))) = 1 := by
+    rintro _ rfl
+    exact Quot.sound FreeGroup.Red.Step.cons_not
+  exact ⟨⟨fun _ => .singleton,
+    fun i => key _ (length_eq_two_of_mem_toWords_var_ne_one x (List.getElem_mem i.isLt)),
+    fun o => by
+      simp [length_eq_two_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)],
+    fun o b h => absurd h (ne_inr_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)
+      (List.getElem_mem o.2.isLt) b), fun _ _ _ => by simp⟩, fun _ _ _ => by simp⟩
 
 end Examples
 

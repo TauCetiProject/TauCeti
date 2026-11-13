@@ -604,6 +604,17 @@ theorem IsPartitionTable.eq_nil_iff_of_mem_tableEntries (hT : IsPartitionTable r
   obtain ⟨o', rfl⟩ := mem_tableEntries.1 he'
   exact hT.eq_nil_iff o o' h
 
+/-- In a partition table, the word map of a variable is empty exactly when the word of an
+occurrence of the variable is empty. -/
+theorem IsPartitionTable.wordMap_eq_nil_iff (hT : IsPartitionTable r T) {x : X}
+    {o : Occurrence r} (ho : r[o.1][o.2].1 = Sum.inl x) :
+    wordMap (tableEntries r T) x = [] ↔ T o = [] := by
+  obtain ⟨i, hi⟩ := exists_getElem_tableEntries T o
+  obtain ⟨k, hk, hw⟩ := exists_wordMap_eq _ i ((congrArg (·.1.1) hi).trans ho)
+  rw [hw, ← List.length_eq_zero_iff, length_segment_entryStart _ k.isLt, List.length_eq_zero_iff]
+  exact hT.eq_nil_iff_of_mem_tableEntries (List.getElem_mem k.isLt) (mem_tableEntries.2 ⟨o, rfl⟩)
+    (hk.trans ho.symm)
+
 /-- The concatenated word of a table has length the sum of the lengths of its words. -/
 theorem length_flatMap_tableEntries :
     ((tableEntries r T).flatMap Prod.snd).length = ∑ o : Occurrence r, (T o).length := by
