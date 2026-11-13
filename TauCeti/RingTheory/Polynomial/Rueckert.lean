@@ -36,8 +36,9 @@ to a quotient of some `A[X] ⧸ (w)`, which is finite over `A` because `w` is mo
 * `RingHom.IsRueckert.isNoetherianRing`: if `A` is noetherian, so is `B`;
 * `RingHom.IsRueckert.uniqueFactorizationMonoid`: if `A` is a unique factorisation domain and `B`
   is a domain, then `B` is a unique factorisation domain. Each `φ w` is a product of primes,
-  because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and an
-  irreducible `w ∈ W` generates a prime ideal whose quotient is identified with `B ⧸ (φ w)`;
+  because a monic factorisation of `w` in the factorial ring `A[X]` stays in `W`, and a member
+  `w ∈ W` is prime or irreducible in `A[X]` if and only if `φ w` is so in `B`
+  (`RingHom.IsRueckert.prime_apply_iff`, `RingHom.IsRueckert.irreducible_apply_iff`);
 * `RingHom.IsRueckert.isJacobsonRing`: if `A` is a Jacobson ring and the Jacobson radical of `B`
   is zero, then `B` is a Jacobson ring. Indeed every nonzero radical ideal of `B` is the
   intersection of the maximal ideals containing it (`RingHom.IsRueckert.jacobson_eq_self`): it
@@ -157,13 +158,27 @@ theorem isNoetherianRing [IsNoetherianRing A] : IsNoetherianRing B := by
   rw [Ideal.mk_ker, inf_eq_right.mpr ((Ideal.span_singleton_le_iff_mem _).mpr hbI)]
   exact Submodule.fg_span_singleton b
 
+/-- A member of `W` generates a prime ideal after applying `φ` if and only if it generates a prime
+ideal in `A[X]`. -/
+theorem isPrime_span_apply_iff {w : A[X]} (hw : w ∈ W) :
+    (Ideal.span {φ w}).IsPrime ↔ (Ideal.span {w}).IsPrime := by
+  rw [← Ideal.Quotient.isDomain_iff_prime, ← Ideal.Quotient.isDomain_iff_prime]
+  exact (MulEquiv.isDomain_iff (h.quotientEquiv hw).toMulEquiv).symm
+
+/-- A member of `W` has prime image under `φ` if and only if it is prime in `A[X]`. -/
+theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) : Prime (φ w) ↔ Prime w := by
+  rcases subsingleton_or_nontrivial B with _ | _
+  · have : Subsingleton A[X] := h.injective.subsingleton
+    simp [Subsingleton.elim w 0]
+  have : Nontrivial A := (φ.comp C).domain_nontrivial
+  have hw0 : w ≠ 0 := (h.monic hw).ne_zero
+  have hφw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hw0
+  rw [← Ideal.span_singleton_prime hw0, ← Ideal.span_singleton_prime hφw0,
+    h.isPrime_span_apply_iff hw]
+
 /-- The image of a prime member of `W` is prime. -/
-theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) := by
-  have hw0 : φ w ≠ 0 := (map_ne_zero_iff φ h.injective).mpr hp.ne_zero
-  have : IsDomain (A[X] ⧸ Ideal.span {w}) :=
-    (Ideal.Quotient.isDomain_iff_prime _).mpr ((Ideal.span_singleton_prime hp.ne_zero).mpr hp)
-  rw [← Ideal.span_singleton_prime hw0, ← Ideal.Quotient.isDomain_iff_prime]
-  exact (h.quotientEquiv hw).symm.toMulEquiv.isDomain _
+theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) :=
+  (h.prime_apply_iff hw).mpr hp
 
 /-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
 product of primes. -/
@@ -203,6 +218,14 @@ theorem uniqueFactorizationMonoid [IsDomain A] [UniqueFactorizationMonoid A] [Is
     refine (hfw.map α.symm).trans ?_
     rw [← hu, map_mul, RingEquiv.symm_apply_apply]
     exact associated_unit_mul_left b _ (u.isUnit.map α.symm)
+
+/-- Over a unique factorisation domain `A` with a domain codomain `B`, a member of `W` has
+irreducible image under `φ` if and only if it is irreducible in `A[X]`. -/
+theorem irreducible_apply_iff [IsDomain A] [UniqueFactorizationMonoid A] [IsDomain B]
+    {w : A[X]} (hw : w ∈ W) : Irreducible (φ w) ↔ Irreducible w := by
+  have := h.uniqueFactorizationMonoid
+  rw [UniqueFactorizationMonoid.irreducible_iff_prime,
+    UniqueFactorizationMonoid.irreducible_iff_prime, h.prime_apply_iff hw]
 
 /-- Over a Jacobson ring `A`, every nonzero radical ideal of `B` is the intersection of the
 maximal ideals containing it. -/
