@@ -68,7 +68,7 @@ section LeadingCoeff
 
 open AddMonoidAlgebra
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- Shifting an ordinary polynomial by any Laurent monomial preserves its leading coefficient. -/
 theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
@@ -90,7 +90,7 @@ theorem leadingCoeff_toLaurent_mul_T (p : Polynomial R) (n : ℤ) :
       exact Polynomial.leadingCoeff_ne_zero.mpr hp
     · intro a ha
       have hcoef := Finsupp.mem_support_iff.1 ha
-      rw [mul_comm p.toLaurent (T n), coeff_T_mul] at hcoef
+      rw [← LaurentPolynomial.T_mul, coeff_T_mul] at hcoef
       have hm : a - n ∈ p.support.map Nat.castEmbedding := by
         rw [← support_coeff_toLaurent]
         exact Finsupp.mem_support_iff.2 hcoef
