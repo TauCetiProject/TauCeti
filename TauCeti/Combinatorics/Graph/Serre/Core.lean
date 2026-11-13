@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
+public import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Based cores of Serre graphs
@@ -13,7 +14,8 @@ public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 The core at a vertex consists of the darts occurring in reduced loops at that vertex,
 together with their endpoints and the base vertex itself. It retains the stem from a base
 vertex to a circuit. Every reduced based loop lifts to the core, and every core vertex is
-reachable from the base within the core. Finite graphs have finite cores.
+reachable from the base within the core. Finite graphs have finite cores, and a core with
+finitely many darts has finitely many vertices, whatever the number of vertices of the graph.
 
 ## References
 
@@ -44,6 +46,13 @@ theorem mem_coreDarts_iff (e : Γ.E) :
   rintro e ⟨p, hp, he⟩
   exact ⟨p.reverse, (Path.isReduced_reverse Γ p).mpr hp,
     by simpa using List.mem_map_of_mem (f := Γ.rev) (List.mem_reverse.mpr he)⟩
+
+/-- The darts of a closed list of consecutive darts at `v`, none of which is followed by its
+reverse, belong to the core at `v`. -/
+theorem mem_coreDarts_of_isChain {l : List Γ.E} (h : v :: l.map Γ.tgt = l.map Γ.src ++ [v])
+    (hl : l.IsChain fun e f => f ≠ Γ.rev e) {e : Γ.E} (he : e ∈ l) : e ∈ Γ.coreDarts v := by
+  obtain ⟨p, rfl⟩ := Γ.exists_path_darts_eq l h
+  exact ⟨p, (Path.isReduced_iff_isChain Γ p).mpr hl, he⟩
 
 /-- The vertices of the based core, including an isolated base vertex. -/
 def coreVertices : Set Γ.V :=
@@ -103,6 +112,15 @@ mapped by the inclusion have the corresponding ambient endpoints. -/
 
 instance [Finite Γ.V] : Finite (Γ.core v).V := inferInstanceAs (Finite (Γ.coreVertices v))
 instance [Finite Γ.E] : Finite (Γ.core v).E := inferInstanceAs (Finite (Γ.coreDarts v))
+
+/-- A core with finitely many darts has finitely many vertices, even if the ambient graph has
+infinitely many: every core vertex other than the base is the source of a core dart. -/
+instance [Finite (Γ.core v).E] : Finite (Γ.core v).V :=
+  Set.Finite.to_subtype <| ((Set.finite_range fun e : (Γ.core v).E => Γ.src e.1).insert v).subset
+    fun a ha => by
+      rcases ha with rfl | ⟨e, he, rfl⟩
+      · exact Set.mem_insert _ _
+      · exact Set.mem_insert_of_mem _ ⟨⟨e, he⟩, rfl⟩
 
 /-- A path all of whose darts belong to the core lifts through its inclusion. -/
 theorem exists_core_path {a b : Γ.V} (p : Γ.Path a b)

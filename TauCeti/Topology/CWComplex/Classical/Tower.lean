@@ -171,7 +171,7 @@ def relCWComplexTowerUnion (hι : ∀ k n i, map n (ι k n i) = map n i)
   mapsTo n i := by
     classical
     obtain ⟨I, hI⟩ := RelCWComplex.mapsTo n (i.2 : cell (W i.1) n)
-    choose b hbk c hc hb using fun m (j : cell (W i.1) m) ↦ exists_mem_towerNewCells_map_eq hι j
+    choose b _ c hc hb using fun m (j : cell (W i.1) m) ↦ exists_mem_towerNewCells_map_eq hι j
     refine ⟨fun m ↦ (I m).image fun j ↦ ⟨b m j, c m j, hc m j⟩,
       hI.mono_right (union_subset_union_right _ ?_)⟩
     refine iUnion₂_mono fun m _ ↦ iUnion₂_subset fun j hj ↦ ?_

@@ -555,7 +555,7 @@ theorem exists_morseCellAttachment_deformation [Finite ι] (hfs : ContMDiff I �
   set φ := fun i ↦ (ψ i).toOpenPartialHomeomorph
   set Φ := morseCellComparison φ k hk hε.le hball' hf
   obtain ⟨r, hr, ⟨G⟩⟩ :=
-    exists_sublevel_union_cells_deformation hfs ψ hψ k hε hball hf hcompact hcrit
+    exists_sublevel_union_cells_deformation hfs ψ hψ k hball hf hcompact hcrit
   have hΦ := isClosedEmbedding_morseCellComparison φ k hk hball' hf hfs.continuous hψ hε
   have hrange := range_morseCellComparison φ k hk hball' hf hε
   -- The retraction `r` lands in the image of `Φ`, which `Φ` identifies with the attachment.

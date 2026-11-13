@@ -170,7 +170,7 @@ theorem distanceCrossExponent_shift (P : DyadicJordanProfile) :
   rw [distanceCrossExponent_def, distanceCrossExponent_def, shift_support_map]
   rw [Finset.sum_map]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [shift_support_filter_lt, Finset.sum_map]
   simp [succEmbedding]
 
@@ -186,11 +186,11 @@ theorem upperCrossExponent_shift (P : DyadicJordanProfile) :
   simp only [succEmbedding_apply, shift_ranks_succ]
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr
   · rfl
-  · intro j hj
+  · intro j _
     rw [Nat.succ_mul, Nat.add_mul]
 
 /-- Shifting every scale adds the triangular rank sum to the diagonal term. -/
@@ -200,7 +200,7 @@ theorem diagonalExponent_shift (P : DyadicJordanProfile) :
   rw [diagonalExponent_def, diagonalExponent_def, shift_support_map]
   rw [Finset.sum_map, ← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [succEmbedding_apply, shift_ranks_succ]
   exact Nat.succ_mul i (P.ranks i * (P.ranks i + 1) / 2)
 

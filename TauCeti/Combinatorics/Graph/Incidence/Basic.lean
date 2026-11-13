@@ -267,7 +267,7 @@ theorem mem_map_internalEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset 
   simp only [Finset.mem_map, mem_internalEdges, Finset.mem_subtype,
     Function.Embedding.subtype_apply]
   constructor
-  · rintro ⟨⟨e, he⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
+  · rintro ⟨⟨e, _⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
     exact ⟨x, hx, y, hy, hxy⟩
   · rintro ⟨x, hx, y, hy, hxy⟩
     exact ⟨⟨e, hxy.edge_mem⟩,
@@ -282,7 +282,7 @@ theorem mem_map_incidentEdges_subtype [DecidablePred (· ∈ V(G))] (S : Finset 
   simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_subtype,
     Function.Embedding.subtype_apply]
   constructor
-  · rintro ⟨⟨e, he⟩, ⟨x, hx, hex⟩, rfl⟩
+  · rintro ⟨⟨e, _⟩, ⟨x, hx, hex⟩, rfl⟩
     exact ⟨x, hx, hex⟩
   · rintro ⟨x, hx, hex⟩
     exact ⟨⟨e, hex.edge_mem⟩, ⟨⟨x, hex.vertex_mem⟩, hx, hex⟩, rfl⟩
@@ -318,7 +318,7 @@ theorem internalEdges_subset_incidentEdges (S : Finset G.vertexSet) :
     G.internalEdges S ⊆ G.incidentEdges S := by
   intro e
   simp only [mem_internalEdges, mem_incidentEdges]
-  rintro ⟨x, hx, y, hy, hxy⟩
+  rintro ⟨x, hx, y, _, hxy⟩
   exact ⟨x, hx, hxy.inc_left⟩
 
 /-- Enlarging a vertex set enlarges its set of internal edges. -/

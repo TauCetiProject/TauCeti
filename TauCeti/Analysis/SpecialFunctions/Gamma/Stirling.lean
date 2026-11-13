@@ -113,7 +113,6 @@ private theorem norm_stirlingError_real_mul_sub_le {s : ℂ} {δ : ℝ} (hδ : 0
     ‖stirlingError (l * s) - stirlingError s‖ ≤ 2 / (1 - Real.cos δ) ^ 3 / ‖s‖ := by
   set K := 2 / (1 - Real.cos δ) ^ 3
   have hK : 0 ≤ K := stirlingConst_nonneg hδ hδπ
-  have hsn : 0 < ‖s‖ := norm_pos_iff.mpr hs0
   have hmem {x : ℝ} (hx : 0 < x) : (x : ℂ) * s ∈ slitPlane := by
     refine mem_slitPlane_of_abs_arg_le hδ ?_ (mul_ne_zero (ofReal_ne_zero.mpr hx.ne') hs0)
     rwa [arg_real_mul s hx]

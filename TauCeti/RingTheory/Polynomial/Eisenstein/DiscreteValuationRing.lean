@@ -92,7 +92,7 @@ theorem exists_eq_X_pow_add_C_coeff_zero_mul {f : R[X]} (hf : f.IsEisensteinAt (
     · simp [coeff_X_pow, hi.ne', coeff_eq_zero_of_natDegree_lt hi]
   obtain ⟨g, hg⟩ := hdvd
   refine ⟨g, ?_, by rw [← hg]; ring⟩
-  have := congrArg (coeff · 0) hg
+  have := congrArg (AddMonoidAlgebra.coeff · 0) hg
   simp only [coeff_sub, coeff_X_pow, hdeg.ne, ite_false, sub_zero, coeff_C_mul] at this
   exact (mul_eq_left₀ hirr.ne_zero).mp this.symm
 
@@ -105,7 +105,7 @@ theorem exists_pow_natDegree_eq (hf : f.IsEisensteinAt (maximalIdeal R))
     ∃ g : R[X], g.coeff 0 = 1 ∧
       x ^ f.natDegree = -(algebraMap R S (f.coeff 0) * aeval x g) := by
   obtain hS | _ := subsingleton_or_nontrivial S
-  · exact ⟨1, coeff_one_zero, Subsingleton.elim _ _⟩
+  · exact ⟨1, AddMonoidAlgebra.coeff_one_zero, Subsingleton.elim _ _⟩
   obtain ⟨g, hg0, hg⟩ := hf.exists_eq_X_pow_add_C_coeff_zero_mul hmo
     (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
   refine ⟨g, hg0, eq_neg_of_add_eq_zero_left ?_⟩

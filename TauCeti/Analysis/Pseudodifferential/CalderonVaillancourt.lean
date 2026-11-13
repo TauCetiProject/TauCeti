@@ -144,7 +144,6 @@ private theorem inv_one_add_norm_pow_le {n : ℕ} {x y : EuclideanSpace ℝ (Fin
     rw [latticeWeight, ← prod_pow, ← prod_inv_distrib]
     refine prod_congr rfl fun i _ ↦ ?_
     rw [inv_pow, ← pow_mul]
-  have hpos : 0 < ∏ i, (1 + |(d i : ℝ)|) ^ 4 := prod_pos fun _ _ ↦ by positivity
   rw [hw]
   calc ((1 + ‖x - y‖) ^ (4 * n))⁻¹
       = (1 + 2 * √n) ^ (4 * n) * (((1 + 2 * √n) * (1 + ‖x - y‖)) ^ (4 * n))⁻¹ := by
@@ -181,10 +180,10 @@ private theorem ae_lintegral_enorm_le_of_cell {n : ℕ} {Y Z : Type*} [NormedAdd
       (fun _ ↦ (closedBall (latticePoint k) √n).indicator (fun _ ↦ (c : ℝ≥0∞)) y) x := by
     intro x y
     by_cases hK : K x y = 0
-    · rw [hK, enorm_eq_nnnorm, nnnorm_zero, ENNReal.coe_zero]
+    · rw [hK, eNorm_eq_nnNorm, nnNorm_zero, ENNReal.coe_zero]
       exact zero_le
     obtain ⟨hx, hy⟩ := hsupp x y hK
-    simpa [hx, hy, enorm_le_coe, ← NNReal.coe_le_coe] using hc x y
+    simpa [hx, hy, eNorm_le_coe, ← NNReal.coe_le_coe] using hc x y
   refine ⟨.of_forall fun x ↦ ?_, .of_forall fun y ↦ ?_⟩
   · refine (lintegral_enorm_row_le_of_le_indicator measurableSet_closedBall h x).trans_eq ?_
     rw [volume_closedBall_eq_cellVolume, ENNReal.coe_mul]

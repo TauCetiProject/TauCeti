@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Basic
+public import Mathlib.Data.Set.Card
 
 /-!
 # Isomorphisms of multigraphs
@@ -213,6 +214,18 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
     simpa only [Subtype.coe_eta] using h
   · intro h
     exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
+
+/-- Transport preserves the extended cardinality of a set of actual edges. -/
+@[simp]
+theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
+    (f.mapEdgeSet F).encard = F.encard := by
+  apply Set.encard_congr
+  exact
+    { toFun := fun e ↦ ⟨(f.edgeEquiv.symm ⟨e, f.mapEdgeSet_subset_edgeSet F e.2⟩ : β),
+        (f.mem_mapEdgeSet_iff F ⟨e, f.mapEdgeSet_subset_edgeSet F e.2⟩).mp e.2⟩
+      invFun := fun e ↦ ⟨(f.edgeEquiv ⟨e, hF e.2⟩ : β'), by simp⟩
+      left_inv := fun e ↦ by simp
+      right_inv := fun e ↦ by simp }
 
 /-- Transporting a vertex set along the identity isomorphism intersects it with the actual
 vertex set. -/
