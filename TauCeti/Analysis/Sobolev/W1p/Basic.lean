@@ -499,6 +499,16 @@ theorem W1p.norm_value_le (u : W1p mu Omega p) : ‖W1p.value u‖ ≤ ‖u‖ :
 theorem W1p.norm_gradient_le (u : W1p mu Omega p) : ‖W1p.gradient u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_gradient_le u.1
 
+/-- Almost everywhere on `Ω`, the difference of the weak gradients is bounded by the
+`W^{1,∞}` distance. -/
+theorem W1p.ae_norm_gradient_sub_le_dist (u v : W1p mu Omega ⊤) :
+    ∀ᵐ x ∂mu.restrict Omega, ‖W1p.gradient u x - W1p.gradient v x‖ ≤ dist u v := by
+  filter_upwards [Lp.ae_norm_le_norm_top (W1p.gradient u - W1p.gradient v),
+    Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)] with x hx hcoe
+  have hn : ‖W1p.gradient u - W1p.gradient v‖ ≤ dist u v := by
+    simpa only [dist_eq_norm, W1p.gradient_sub] using W1p.norm_gradient_le (u - v)
+  simpa only [hcoe, Pi.sub_apply] using hx.trans hn
+
 /-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
 theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
     (ht : t ⊆ (Omega : Set E)) :
