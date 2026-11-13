@@ -38,7 +38,7 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 section Left
 
 variable {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
-  [IsScalarTower R A N] (H : InternalGrading R N) [SetLike.GradedSMul 𝒜 H.piece]
+  [IsScalarTower R A N] (H : InternalGrading R N ℤ) [SetLike.GradedSMul 𝒜 H.piece]
 
 local instance unitGradedRight :
     SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
@@ -68,7 +68,7 @@ end Left
 section Right
 
 variable {M : Type*} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
-  [IsScalarTower R Aᵐᵒᵖ M] (G : InternalGrading R M)
+  [IsScalarTower R Aᵐᵒᵖ M] (G : InternalGrading R M ℤ)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G.piece]
 
 local instance unitGradedLeft : SetLike.GradedSMul 𝒜
