@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Connection
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -18,7 +20,9 @@ Functions `M → F` are the sections of the trivial bundle `M × F`, and their `
 `∂bar σ = (dσ)^{0,1}`, is the `(0,1)`-part of the canonical connection of the trivial bundle. So
 it is a complex linear real Cauchy–Riemann operator: `∂bar (g σ) = g ∂bar σ + (∂bar g) ⊗ σ` for
 real valued `g`. The complementary operator `∂ σ = dσ - ∂bar σ = (dσ)^{1,0}` is also defined here;
-its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator.
+its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator. On a complex normed
+space with multiplication by `i` as its almost complex structure, `∂bar` and `∂` are the conjugate
+Wirtinger derivative and the Wirtinger derivative.
 
 ## Main declarations
 
@@ -29,13 +33,19 @@ its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator.
   linear real Cauchy–Riemann operator on the trivial bundle.
 * `TauCeti.SmoothAlmostComplexStructure.dbarFunction_const_smul`: it commutes with multiplication
   by a complex constant, with no differentiability hypothesis.
+* `TauCeti.SmoothAlmostComplexStructure.dbarFunction_smul`: the Leibniz rule
+  `∂bar (f σ) = f ∂bar σ + (∂bar f) ⊗ σ` for a complex valued function `f`.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction`: the operator `σ ↦ (dσ)^{1,0}` on
   `F`-valued functions.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction_add_dbarFunction`,
   `TauCeti.SmoothAlmostComplexStructure.delFunction_apply_almostComplex`: `dσ = ∂ σ + ∂bar σ`, and
   `∂ σ` is a `(1,0)`-form.
+* `TauCeti.SmoothAlmostComplexStructure.delFunction_smul`: the Leibniz rule for `∂`.
 * `TauCeti.SmoothAlmostComplexStructure.not_isRealCauchyRiemannOperator_delFunction`: `∂` is not a
   real Cauchy–Riemann operator on a nonempty manifold of positive dimension with nonzero target.
+* `TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply`: on a complex
+  normed space with multiplication by `i`, `∂bar` and `∂` are the Wirtinger derivatives.
 
 ## References
 
@@ -46,7 +56,7 @@ its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold TauCeti.ComplexManifold
 
 noncomputable section
 
@@ -67,7 +77,12 @@ canonical connection `CovariantDerivative.trivial` of the trivial bundle. -/
 def dbarFunction (σ : M → F) (x : M) : TangentSpace I x →L[ℝ] F :=
   j.zeroOnePart (V := Bundle.Trivial M F) (mvfderiv I σ x)
 
-theorem dbarFunction_apply (σ : M → F) (x : M) (v : E) :
+/-- `∂bar σ` is the `(0,1)`-part of the differential `dσ`. -/
+theorem dbarFunction_eq_zeroOnePart (σ : M → F) (x : M) :
+    j.dbarFunction σ x = j.zeroOnePart (V := Bundle.Trivial M F) (mvfderiv I σ x) := by
+  rw [dbarFunction]
+
+theorem dbarFunction_apply (σ : M → F) (x : M) (v : TangentSpace I x) :
     j.dbarFunction σ x v =
       (2⁻¹ : ℝ) • (mvfderiv I σ x v + Complex.I • mvfderiv I σ x (j x v)) :=
   j.zeroOnePart_apply (V := Bundle.Trivial M F) _ v
@@ -75,47 +90,41 @@ theorem dbarFunction_apply (σ : M → F) (x : M) (v : E) :
 /-- `∂bar σ` is a `(0,1)`-form: `∂bar σ (j v) = -(i • ∂bar σ (v))`. -/
 @[simp]
 theorem dbarFunction_apply_almostComplex (σ : M → F) (x : M) (v : TangentSpace I x) :
-    j.dbarFunction σ x (j x v) = -(Complex.I • j.dbarFunction σ x v) := by
-  rw [dbarFunction, zeroOnePart_apply, zeroOnePart_apply, apply_apply, map_neg]
-  simp only [smul_add, smul_neg, smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I,
-    Complex.I_mul_I, neg_one_smul]
-  module
+    j.dbarFunction σ x (j x v) = -(Complex.I • j.dbarFunction σ x v) :=
+  isZeroOneForm_iff.1 (j.isZeroOneForm_zeroOnePart (V := Bundle.Trivial M F) (mvfderiv I σ x)) v
 
 /-- `∂bar` vanishes on constant functions. -/
 @[simp]
 theorem dbarFunction_const (c : F) (x : M) : j.dbarFunction (fun _ ↦ c) x = 0 := by
-  rw [dbarFunction, mvfderiv_const]
-  ext v
-  simp
+  rw [dbarFunction, mvfderiv_const, zeroOnePart_zero]
+
+/-- `∂bar` vanishes on the zero function. -/
+@[simp]
+theorem dbarFunction_zero (x : M) : j.dbarFunction (0 : M → F) x = 0 :=
+  j.dbarFunction_const 0 x
 
 /-- `∂bar` on functions is additive on functions differentiable at the point. -/
 theorem dbarFunction_add {σ τ : M → F} {x : M} (hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x)
     (hτ : MDifferentiableAt I 𝓘(ℝ, F) τ x) :
     j.dbarFunction (σ + τ) x = j.dbarFunction σ x + j.dbarFunction τ x := by
-  ext v
-  simp only [dbarFunction, zeroOnePart_apply, add_apply, mvfderiv_add hσ hτ]
-  module
+  rw [dbarFunction, mvfderiv_add hσ hτ, zeroOnePart_add, dbarFunction, dbarFunction]
 
 /-- `∂bar` on functions commutes with multiplication by a complex constant. -/
 @[simp]
 theorem dbarFunction_const_smul (c : ℂ) (σ : M → F) (x : M) :
     j.dbarFunction (c • σ) x = c • j.dbarFunction σ x := by
-  -- The derivative commutes with `c •`: both sides vanish if `σ` is not differentiable at `x`.
-  have hd : mvfderiv I (c • σ) x = c • mvfderiv I σ x := by
-    by_cases hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x
-    · exact mvfderiv_const_smul hσ c
-    rcases eq_or_ne c 0 with rfl | hc
-    · simp only [zero_smul]
-      exact mvfderiv_zero
-    have hcσ : ¬MDifferentiableAt I 𝓘(ℝ, F) (c • σ) x := fun hcσ ↦ hσ (by
-      simpa [Function.comp_def, smul_smul, inv_mul_cancel₀ hc] using
-        ((c⁻¹ • ContinuousLinearMap.id ℝ F).mdifferentiableAt (x := (c • σ) x)).comp x hcσ)
-    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hσ,
-      mfderiv_zero_of_not_mdifferentiableAt hcσ]
+  rw [dbarFunction, dbarFunction, mvfderiv_const_smul_field, zeroOnePart_complex_smul]
+
+/-- The Leibniz rule for `∂bar` on functions: `∂bar (f σ) = f ∂bar σ + (∂bar f) ⊗ σ` for a complex
+valued function `f`, at a point where `f` and `σ` are differentiable. -/
+theorem dbarFunction_smul {f : M → ℂ} {σ : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℂ) f x) (hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x) :
+    j.dbarFunction (f • σ) x =
+      f x • j.dbarFunction σ x + (j.dbarFunction f x).smulRight (σ x) := by
+  rw [dbarFunction, dbarFunction, dbarFunction, mvfderiv_smul_algebra hf hσ, zeroOnePart_add,
+    zeroOnePart_complex_smul, add_right_inj]
   ext v
-  rw [smul_apply, dbarFunction, dbarFunction, zeroOnePart_apply, zeroOnePart_apply, hd,
-    smul_apply, smul_apply, smul_comm Complex.I c,
-    ← smul_add, smul_comm (2⁻¹ : ℝ) c]
+  simp only [zeroOnePart_apply, ContinuousLinearMap.smulRight_apply, add_smul, smul_assoc]
 
 /-- `∂bar` on functions is the `(0,1)`-part of the canonical connection of the trivial bundle. -/
 theorem dbarFunction_eq_zeroOnePart_trivial :
@@ -150,7 +159,12 @@ space: `∂ σ (v) = ½ (dσ (v) - i • dσ (j v))`
 def delFunction (σ : M → F) (x : M) : TangentSpace I x →L[ℝ] F :=
   mvfderiv I σ x - j.dbarFunction σ x
 
-theorem delFunction_apply (σ : M → F) (x : M) (v : E) :
+/-- `∂ σ` is the differential `dσ` minus `∂bar σ`. -/
+theorem delFunction_eq_sub (σ : M → F) (x : M) :
+    j.delFunction σ x = mvfderiv I σ x - j.dbarFunction σ x := by
+  rw [delFunction]
+
+theorem delFunction_apply (σ : M → F) (x : M) (v : TangentSpace I x) :
     j.delFunction σ x v =
       (2⁻¹ : ℝ) • (mvfderiv I σ x v - Complex.I • mvfderiv I σ x (j x v)) :=
   ((sub_apply _ _ v).trans (congrArg (mvfderiv I σ x v - ·) (j.dbarFunction_apply σ x v))).trans
@@ -166,6 +180,36 @@ theorem delFunction_add_dbarFunction (σ : M → F) (x : M) :
 @[simp]
 theorem delFunction_const (c : F) (x : M) : j.delFunction (fun _ ↦ c) x = 0 := by
   rw [delFunction, dbarFunction_const, mvfderiv_const, sub_zero]
+
+/-- `∂` vanishes on the zero function. -/
+@[simp]
+theorem delFunction_zero (x : M) : j.delFunction (0 : M → F) x = 0 :=
+  j.delFunction_const 0 x
+
+/-- `∂` on functions is additive on functions differentiable at the point. -/
+theorem delFunction_add {σ τ : M → F} {x : M} (hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x)
+    (hτ : MDifferentiableAt I 𝓘(ℝ, F) τ x) :
+    j.delFunction (σ + τ) x = j.delFunction σ x + j.delFunction τ x := by
+  rw [delFunction, mvfderiv_add hσ hτ, dbarFunction_add j hσ hτ, delFunction, delFunction,
+    add_sub_add_comm]
+
+/-- `∂` on functions commutes with multiplication by a complex constant. -/
+@[simp]
+theorem delFunction_const_smul (c : ℂ) (σ : M → F) (x : M) :
+    j.delFunction (c • σ) x = c • j.delFunction σ x := by
+  rw [delFunction, delFunction, mvfderiv_const_smul_field, dbarFunction_const_smul, smul_sub]
+
+/-- The Leibniz rule for `∂` on functions: `∂ (f σ) = f ∂ σ + (∂ f) ⊗ σ` for a complex valued
+function `f`, at a point where `f` and `σ` are differentiable. -/
+theorem delFunction_smul {f : M → ℂ} {σ : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℂ) f x) (hσ : MDifferentiableAt I 𝓘(ℝ, F) σ x) :
+    j.delFunction (f • σ) x =
+      f x • j.delFunction σ x + (j.delFunction f x).smulRight (σ x) := by
+  ext v
+  rw [delFunction, sub_apply, mvfderiv_smul_algebra hf hσ, dbarFunction_smul j hf hσ]
+  simp only [delFunction, add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
+    smul_sub, sub_smul]
+  abel
 
 /-- `∂ σ` is a `(1,0)`-form: it is complex linear, `∂ σ (j v) = i • ∂ σ (v)`. -/
 @[simp]
@@ -215,5 +259,42 @@ theorem not_isRealCauchyRiemannOperator_delFunction [Nontrivial E] [Nontrivial F
   exact hv h₄
 
 end SmoothAlmostComplexStructure
+
+/-! ### Functions on a complex normed space -/
+
+open SmoothAlmostComplexStructure
+
+section ComplexNormedSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
+
+/-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
+`∂bar` on functions is the conjugate Wirtinger derivative. -/
+@[simp]
+theorem SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply (σ : E → F)
+    (x v : E) :
+    (ofComplexManifold E E).dbarFunction σ x v = conjWirtingerDeriv σ x v := by
+  refine ((ofComplexManifold E E).dbarFunction_apply σ x v).trans ?_
+  rw [ofComplexManifold_apply, conjWirtingerDeriv_apply, mvfderiv_eq_fderiv,
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
+  -- `mvfderiv_eq_fderiv_apply` cannot rewrite here: its vector lives in the type synonym
+  -- `TangentSpace 𝓘(ℝ, E) x` of `E`, and composing with `fromTangentSpace`, the identity of `E`,
+  -- is the identity.
+  rfl
+
+/-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
+`∂` on functions is the Wirtinger derivative. -/
+@[simp]
+theorem SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply (σ : E → F)
+    (x v : E) :
+    (ofComplexManifold E E).delFunction σ x v = wirtingerDeriv σ x v := by
+  refine ((ofComplexManifold E E).delFunction_apply σ x v).trans ?_
+  rw [ofComplexManifold_apply, wirtingerDeriv_apply, mvfderiv_eq_fderiv,
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
+  -- As for `dbarFunction_ofComplexManifold_self_apply`, `fromTangentSpace` is the identity of `E`.
+  rfl
+
+end ComplexNormedSpace
 
 end TauCeti

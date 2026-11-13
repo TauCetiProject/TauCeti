@@ -5,32 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# The operators `∂bar`, `∂` and `∂bar + ξbar dzbar` on functions over a planar domain
-
-On a complex normed space with multiplication by `i` as its almost complex structure, the
-operators `∂bar` and `∂` on functions (`TauCeti.SmoothAlmostComplexStructure.dbarFunction` and
-`TauCeti.SmoothAlmostComplexStructure.delFunction`) are the conjugate Wirtinger derivative and the
-Wirtinger derivative.
+# The operator `∂bar + ξbar dzbar` on functions over a planar domain
 
 On an open subset `U` of `ℂ`, such as the plane or the unit disc, with the coordinate `z` given by
 the inclusion, every tangent space is `ℂ` and the `(0,1)`-form `dzbar` is `v ↦ conj v`. The operator
 `ξ ↦ ∂bar ξ + ξbar dzbar` is a real Cauchy–Riemann operator on the trivial line bundle. On a
 nonempty `U` it is not complex linear: its antilinear zeroth-order part in the decomposition of
-McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar` and its complex linear part is `∂bar`. That
-`∂` is not a real Cauchy–Riemann operator is
-`TauCeti.SmoothAlmostComplexStructure.not_isRealCauchyRiemannOperator_delFunction`.
+McDuff–Salamon, Exercise C.1.7, is `ξ ↦ ξbar dzbar` and its complex linear part is `∂bar`
+(`TauCeti.SmoothAlmostComplexStructure.dbarFunction`). That `∂` is not a real Cauchy–Riemann
+operator is `TauCeti.SmoothAlmostComplexStructure.not_isRealCauchyRiemannOperator_delFunction`.
 
 ## Main declarations
 
-* `TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply`,
-  `TauCeti.SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply`: on a complex
-  normed space with multiplication by `i`, `∂bar` and `∂` are the Wirtinger derivatives.
 * `TauCeti.conjSMulDzbar`: the zeroth-order term `ξ ↦ ξbar dzbar` on an open subset of `ℂ`.
 * `TauCeti.isRealCauchyRiemannOperator_dbarFunction_add_conjSMulDzbar`: `∂bar + ξbar dzbar` is a
   real Cauchy–Riemann operator,
@@ -56,37 +46,6 @@ noncomputable section
 namespace TauCeti
 
 open SmoothAlmostComplexStructure
-
-section ComplexNormedSpace
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedAddCommGroup F]
-  [NormedSpace ℂ F]
-
-/-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
-`∂bar` on functions is the conjugate Wirtinger derivative. -/
-@[simp]
-theorem SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_self_apply (σ : E → F)
-    (x v : E) :
-    (ofComplexManifold E E).dbarFunction σ x v = conjWirtingerDeriv σ x v := by
-  rw [dbarFunction_apply, ofComplexManifold_apply, conjWirtingerDeriv_apply, mvfderiv_eq_fderiv,
-    ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
-  -- `mvfderiv_eq_fderiv_apply` cannot rewrite here: its vector lives in the type synonym
-  -- `TangentSpace 𝓘(ℝ, E) x` of `E`, and composing with `fromTangentSpace`, the identity of `E`,
-  -- is the identity.
-  rfl
-
-/-- On a complex normed space `E`, with multiplication by `i` as its almost complex structure,
-`∂` on functions is the Wirtinger derivative. -/
-@[simp]
-theorem SmoothAlmostComplexStructure.delFunction_ofComplexManifold_self_apply (σ : E → F)
-    (x v : E) :
-    (ofComplexManifold E E).delFunction σ x v = wirtingerDeriv σ x v := by
-  rw [delFunction_apply, ofComplexManifold_apply, wirtingerDeriv_apply, mvfderiv_eq_fderiv,
-    ← Complex.ofReal_ofNat, ← Complex.ofReal_inv, Complex.coe_smul]
-  -- As for `dbarFunction_ofComplexManifold_self_apply`, `fromTangentSpace` is the identity of `E`.
-  rfl
-
-end ComplexNormedSpace
 
 /-! ### The operator `∂bar + ξbar dzbar` on an open subset of `ℂ` -/
 
