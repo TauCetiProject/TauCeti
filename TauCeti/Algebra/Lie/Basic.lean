@@ -27,6 +27,9 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
+* `Submodule.lieStabilizer`: the Lie subalgebra of endomorphisms preserving a submodule `p`.
+* `Submodule.lieStabilizerLieSubmodule`: a submodule `p`, as a Lie submodule over its stabilizer.
+* `Submodule.lieStabilizerQuotientAction`: the action of the stabilizer of `p` on `M ⧸ p`.
 
 ## Main results
 
@@ -166,6 +169,7 @@ theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup 
   fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
 
 /-- The commutator of two endomorphisms, evaluated at a vector. -/
+@[simp]
 theorem Module.End.lie_apply_apply {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
     (X Y : Module.End R M) (v : M) : ⁅X, Y⁆ v = X (Y v) - Y (X v) := by
   rw [LieRing.of_associative_ring_bracket, LinearMap.sub_apply, mul_apply_eq_comp,
@@ -176,6 +180,54 @@ theorem Module.End.apply_apply_eq_apply_apply_add_lie {R M : Type*} [Semiring R]
     [Module R M] (X Y : Module.End R M) (v : M) : X (Y v) = Y (X v) + ⁅X, Y⁆ v := by
   rw [Module.End.lie_apply_apply]
   abel
+
+section Stabilizer
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (p : Submodule R M)
+
+/-- The endomorphisms preserving a submodule `p` form a Lie subalgebra of `𝔤𝔩(M)`, whose
+underlying submodule is `p.compatibleMaps p`. -/
+@[expose] def Submodule.lieStabilizer : LieSubalgebra R (Module.End R M) where
+  __ := p.compatibleMaps p
+  lie_mem' {X Y} hX hY v hv := by
+    rw [Submodule.mem_comap, Module.End.lie_apply_apply]
+    exact sub_mem (hX (hY hv)) (hY (hX hv))
+
+/-- The submodule underlying `p.lieStabilizer` is `p.compatibleMaps p`. -/
+@[simp]
+theorem Submodule.toSubmodule_lieStabilizer :
+    p.lieStabilizer.toSubmodule = p.compatibleMaps p :=
+  rfl
+
+/-- An endomorphism lies in the stabilizer of `p` exactly when it maps `p` into itself. -/
+@[simp]
+theorem Submodule.mem_lieStabilizer {X : Module.End R M} :
+    X ∈ p.lieStabilizer ↔ ∀ v ∈ p, X v ∈ p :=
+  Iff.rfl
+
+/-- A submodule `p`, as a Lie submodule over its stabilizer `p.lieStabilizer`. -/
+@[expose] def Submodule.lieStabilizerLieSubmodule : LieSubmodule R p.lieStabilizer M where
+  __ := p
+  lie_mem {X _} hv := X.2 hv
+
+/-- The submodule underlying `p.lieStabilizerLieSubmodule` is `p`. -/
+@[simp]
+theorem Submodule.toSubmodule_lieStabilizerLieSubmodule :
+    p.lieStabilizerLieSubmodule.toSubmodule = p :=
+  rfl
+
+/-- The action of the stabilizer of a submodule `p` on the quotient `M ⧸ p`. -/
+@[expose] def Submodule.lieStabilizerQuotientAction : p.lieStabilizer →ₗ⁅R⁆ Module.End R (M ⧸ p) :=
+  LieSubmodule.Quotient.actionAsEndoMap p.lieStabilizerLieSubmodule
+
+/-- An element of the stabilizer acts on the class of `v` in `M ⧸ p` through its action on `v`. -/
+@[simp]
+theorem Submodule.lieStabilizerQuotientAction_mk (X : p.lieStabilizer) (v : M) :
+    p.lieStabilizerQuotientAction X (Submodule.Quotient.mk v) =
+      Submodule.Quotient.mk ((X : Module.End R M) v) :=
+  rfl
+
+end Stabilizer
 
 end EndSubalgebra
 
