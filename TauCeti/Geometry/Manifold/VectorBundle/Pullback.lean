@@ -87,7 +87,7 @@ theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)}
       ContMDiffAt IX I' n (fun y => (q y).proj) x ∧
         ContMDiffAt IX (I.prod 𝓘(𝕜, F)) n
           (fun y => Pullback.lift f (q y)) x := by
-  simp only [Bundle.contMDiffAt_totalSpace, trivializationAt,
+  simp only [Bundle.contMDiffAt_totalSpace_iff, trivializationAt,
     FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
   exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp x hq, hcoord⟩,
     fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
@@ -173,10 +173,10 @@ def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) 
   right_inv _ := rfl
   -- Both total spaces are charted at `p` by the trivialization of `E` at `g (f p.proj)`, so in
   -- these coordinates the map is the identity, whatever the regularity of `f` and `g`.
-  contMDiff_toFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
-  contMDiff_invFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_toFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_invFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
 
 @[simp]
 theorem compDiffeomorph_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
