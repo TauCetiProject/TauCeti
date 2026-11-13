@@ -121,7 +121,9 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
   measure sends the lower integrals `∫⁻_s ‖f i - g‖ₑ` to `0`, which is `L¹` convergence on that set
   when the differences are almost everywhere strongly measurable.
 * `TendstoUniformly.tendsto_integral_smul_of_integrable`: integrals against a fixed integrable
-  weight, with bounded scalar multipliers converging uniformly along any filter, converge.
+  weight `w` converge along any filter when scalar multipliers, in a space acting boundedly on the
+  codomain of `w`, converge uniformly to `f`, with `f • w` integrable and the products `fs i • w`
+  eventually almost everywhere strongly measurable.
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a continuous weight with
   compact support in an open set `Ω` pass to limits of maps continuous on `Ω` that converge
   uniformly on the support of the weight.
@@ -639,9 +641,10 @@ theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [Topologica
     (Eventually.of_forall fun i ↦ hint (hf i)) (hint hg).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
 
-/-- If functions `fᵢ` with values in a space of bounded scalars converge uniformly to `f` along any
-filter, then `∫ fᵢ w → ∫ f w` for every integrable `w` such that `f w` is integrable and each `fᵢ w`
-is eventually almost everywhere strongly measurable. -/
+/-- If functions `fᵢ` with values in a space `𝕜` acting boundedly on the codomain `G` of `w`
+converge uniformly to `f` along any filter, then `∫ fᵢ w → ∫ f w` for every integrable `w` such
+that `f w` is integrable and `fun x => fᵢ x • w x` is eventually almost everywhere strongly
+measurable along the filter. -/
 theorem _root_.TendstoUniformly.tendsto_integral_smul_of_integrable {α ι 𝕜 G : Type*}
     [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [PseudoMetricSpace 𝕜] [Zero 𝕜] [SMul 𝕜 G] [IsBoundedSMul 𝕜 G] {l : Filter ι}

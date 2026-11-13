@@ -21,9 +21,9 @@ centred at `0`. The derivative in a direction `v` of the mollification `ρ.norme
 mollification of the directional derivative `∂_v ψ`, which exists almost everywhere by
 Rademacher's theorem and is the weak derivative of `ψ`. Hence these derivatives are bounded by
 `K ‖v‖`. When the radii shrink to zero with a bounded ratio of outer to inner radius, they converge
-to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. Integrals against their
-directional derivatives converge to the integral against `∂_v ψ` by dominated convergence along
-countably generated filters.
+to `∂_v ψ` almost everywhere, by the Lebesgue differentiation theorem. Integrals against the
+directional derivatives of the mollifications converge to the integral against `∂_v ψ` by
+dominated convergence along countably generated filters.
 
 These are the estimates that pass an identity proved for smooth factors to Lipschitz ones by
 dominated convergence, as in the Leibniz rule `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul`.
