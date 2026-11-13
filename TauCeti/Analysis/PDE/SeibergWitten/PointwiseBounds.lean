@@ -53,8 +53,8 @@ The same statements hold at a local maximum on any boundaryless Riemannian manif
 `TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax`). The sections `α`,
 `β` and their covariant derivatives `∇_a α`, `∇β` are arbitrary families of elements of normed
 groups over the manifold satisfying the displayed inequalities; only the squared norms `|α|²` and
-`|β|²` need to be `C²`. Deriving the scalar inequalities from the Seiberg–Witten equations is not
-done here.
+`|β|²` need to be `C²`, and for the local statements only at the maximum. Deriving the scalar
+inequalities from the Seiberg–Witten equations is not done here.
 
 ## Main results
 
@@ -156,7 +156,7 @@ private theorem comparison_of_weitzenbock {a b da db ga gb c r k : ℝ} (hr : 0 
   linarith
 
 /-- The right-hand side of `comparison_of_weitzenbock` is `O(1 / r)` once `|α|² + |β|² ≤ 2` and
-`|α|² ≥ 1 - (c² + 8 c) / r`. -/
+`|α|² ≤ 1 + (c² + 8 c) / r`. -/
 private theorem comparison_rhs_le {a b c r k : ℝ} (hc : 0 ≤ c) (hr1 : 1 ≤ r)
     (hk_def : k = 4 * c ^ 2 / r) (ha2 : a ^ 2 ≤ 2) (hab1 : a * b ≤ 1)
     (hw : -(1 - a ^ 2) ≤ (c ^ 2 + 8 * c) / r) :
@@ -238,7 +238,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 `|α|² + |β|²`, the projected Weitzenböck inequalities at `x₀` give
 `|α(x₀)|² + |β(x₀)|² ≤ 1 + (c² + 8 c) / r`. Here `Dα` and `Dβ` stand for `∇_a α` and `∇β`. -/
 theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ c) (hr : 0 < r)
-    (hα₂ : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖α x‖ ^ 2) (hβ₂ : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖β x‖ ^ 2)
+    (hα₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖α x‖ ^ 2) x₀)
+    (hβ₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2) x₀)
     (hmax : IsLocalMax (fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2) x₀)
     (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα x₀‖ ^ 2 +
       r / 4 * (‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 - 1) * ‖α x₀‖ ^ 2 ≤
@@ -249,8 +250,8 @@ theorem norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax {x₀ : M} (hc : 0 ≤ 
     ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r := by
   -- The function `fun x ↦ ‖α x‖ ^ 2 + ‖β x‖ ^ 2` is the pointwise sum of the two squared norms.
   have hlap : laplaceBeltrami I ((fun x ↦ ‖α x‖ ^ 2) + fun x ↦ ‖β x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂).contMDiffAt hmax
-  rw [laplaceBeltrami_add I hα₂ hβ₂] at hlap
+    laplaceBeltrami_nonpos_of_isLocalMax (hα₂.add hβ₂) hmax
+  rw [hα₂.laplaceBeltrami_add hβ₂] at hlap
   exact sq_add_sq_le_of_weitzenbock hc hr hWα hWβ hlap
 
 /-- **Taubes's bound `|β|² ≤ (4 c² / r) (1 - |α|²) + O(r⁻²)` at a local maximum.** At a local
@@ -260,7 +261,8 @@ Weitzenböck inequalities at `x₀` give
 `r ≥ 1`, `r ≥ 32 c` and `r ≥ c² + 8 c`. -/
 theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 ≤ c) (hr1 : 1 ≤ r)
     (hr32 : 32 * c ≤ r) (hrK : c ^ 2 + 8 * c ≤ r)
-    (hα₂ : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖α x‖ ^ 2) (hβ₂ : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖β x‖ ^ 2)
+    (hα₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖α x‖ ^ 2) x₀)
+    (hβ₂ : ContMDiffAt I 𝓘(ℝ) 2 (fun x ↦ ‖β x‖ ^ 2) x₀)
     (hmax : IsLocalMax (fun x ↦ ‖β x‖ ^ 2 + 4 * c ^ 2 / r * ‖α x‖ ^ 2) x₀)
     (hs : ‖α x₀‖ ^ 2 + ‖β x₀‖ ^ 2 ≤ 1 + (c ^ 2 + 8 * c) / r)
     (hWα : -laplaceBeltrami I (fun x ↦ ‖α x‖ ^ 2) x₀ / 2 + ‖Dα x₀‖ ^ 2 +
@@ -272,12 +274,12 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax {x₀ : M} (hc : 0 �
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (1 - ‖α x₀‖ ^ 2) +
       (128 * c ^ 2 + 128 * c ^ 3 + 4 * c ^ 4 + 64 * c ^ 6) / r ^ 2 := by
   -- The comparison function is `fun x ↦ ‖β x‖ ^ 2 + k * ‖α x‖ ^ 2`, that is `g + k • f`.
-  have hkα : ContMDiff I 𝓘(ℝ) 2 ((4 * c ^ 2 / r) • fun x ↦ ‖α x‖ ^ 2) :=
-    contMDiff_const.mul hα₂
+  have hkα : ContMDiffAt I 𝓘(ℝ) 2 ((4 * c ^ 2 / r) • fun x ↦ ‖α x‖ ^ 2) x₀ :=
+    contMDiffAt_const.mul hα₂
   have hlap : laplaceBeltrami I
       ((fun x ↦ ‖β x‖ ^ 2) + (4 * c ^ 2 / r) • fun x ↦ ‖α x‖ ^ 2) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα).contMDiffAt hmax
-  rw [laplaceBeltrami_add I hβ₂ hkα, laplaceBeltrami_smul I _ hα₂] at hlap
+    laplaceBeltrami_nonpos_of_isLocalMax (hβ₂.add hkα) hmax
+  rw [hβ₂.laplaceBeltrami_add hkα, hα₂.laplaceBeltrami_smul] at hlap
   exact sq_le_of_weitzenbock hc hr1 hr32 hrK hs hWα hWβ hlap
 
 /-! ### The global bounds on a closed manifold -/
@@ -297,7 +299,7 @@ theorem norm_sq_add_norm_sq_le_one_add_div (hc : 0 ≤ c) (hr : 0 < r)
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn ⟨x, Set.mem_univ x⟩
     (hα₂.continuous.add hβ₂.continuous).continuousOn
   exact (hx₀ (Set.mem_univ x)).trans <| norm_sq_add_norm_sq_le_one_add_div_of_isLocalMax hc hr
-    hα₂ hβ₂ (hx₀.isLocalMax Filter.univ_mem) (hWα x₀) (hWβ x₀)
+    (hα₂ x₀) (hβ₂ x₀) (hx₀.isLocalMax Filter.univ_mem) (hWα x₀) (hWβ x₀)
 
 /-- **Taubes's bound `|β|² ≤ (4 c² / r) (1 - |α|²) + O(r⁻²)`.** On a closed Riemannian manifold,
 if the projected Weitzenböck inequalities hold everywhere, then
@@ -315,7 +317,7 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq (hc : 0 ≤ c) (hr1 : 1 ≤ r) (hr
   have hr : 0 < r := by linarith
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn ⟨x, Set.mem_univ x⟩
     (hβ₂.continuous.add (continuous_const.mul hα₂.continuous)).continuousOn
-  have h₀ := norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax hc hr1 hr32 hrK hα₂ hβ₂
+  have h₀ := norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax hc hr1 hr32 hrK (hα₂ x₀) (hβ₂ x₀)
     (hx₀.isLocalMax Filter.univ_mem) (norm_sq_add_norm_sq_le_one_add_div hc hr hα₂ hβ₂ hWα hWβ x₀)
     (hWα x₀) (hWβ x₀)
   have hx : ‖β x‖ ^ 2 + 4 * c ^ 2 / r * ‖α x‖ ^ 2 ≤ ‖β x₀‖ ^ 2 + 4 * c ^ 2 / r * ‖α x₀‖ ^ 2 :=
