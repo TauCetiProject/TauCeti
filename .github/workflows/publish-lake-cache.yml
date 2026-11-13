@@ -83,10 +83,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1bf9f4c05329ad5e707ca52cbed602de1f93a9db
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          tools-ref: 1bf9f4c05329ad5e707ca52cbed602de1f93a9db
           project-directory: publisher-tools
 
       - name: Download the staged oleans
