@@ -16,6 +16,8 @@ import Mathlib.RingTheory.Multiplicity
 A tower of modules `A₀ ← A₁ ← A₂ ← ⋯` is pro-zero (`CategoryTheory.Functor.IsProZero`) when every
 term `Aₙ` is killed by some composite transition `Aₘ → Aₙ`. This file shows that a pro-zero tower
 has `lim A = 0` and `lim¹ A = 0`, so pro-zero error terms are invisible to `lim` and `lim¹`.
+A levelwise injective comparison that is exact with a pro-zero obstruction tower is therefore
+bijective on inverse limits; the obstruction maps need not be surjective.
 
 The basic family of examples is the tower `R ← R ← ⋯` whose transitions are right multiplication
 by an element `a`: it is pro-zero exactly when `a` is nilpotent. In particular, for a prime `p` the
@@ -40,6 +42,12 @@ one power of the scalar annihilates the whole module.
 * `TauCeti.ModuleTower.isProZero_multiplicationTower_iff`: it is pro-zero exactly when `a` is
   nilpotent; `TauCeti.ModuleTower.isProZero_multiplicationTower_iff_eq_zero` is the case of a
   reduced ring.
+* `TauCeti.ModuleTower.isProZero_smulTower_iff`: a scalar-multiplication tower is pro-zero
+  exactly when a uniform power of the scalar annihilates its module.
+* `TauCeti.ModuleTower.limMap_bijective_of_isProZero`: a levelwise injective comparison with
+  exact pro-zero obstructions is bijective on limits.
+* `TauCeti.ModuleTower.limMap_bijective_of_pow_smul_eq_zero`: the comparison for levelwise
+  obstruction maps with scalar transitions and a uniform annihilating power.
 
 ## References
 
@@ -249,12 +257,15 @@ theorem isProZero_smulTower_iff (f : R) :
 maps form an exact sequence into a scalar-multiplication tower annihilated by a uniform
 power of the scalar. The obstruction maps need not be surjective. -/
 theorem limMap_bijective_of_pow_smul_eq_zero
-    {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R) (δ : G ⟶ smulTower Q f)
+    {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R)
+    (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
     (hi : ∀ n, Function.Injective (i.app (op n)).hom)
-    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ n))
+    (hδ : ∀ n x, δ n (G.transition n x) = f • δ (n + 1) x)
     (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
     Function.Bijective (limMap i) :=
-  limMap_bijective_of_isProZero i δ hi hex ((isProZero_smulTower_iff f).2 hQ)
+  limMap_bijective_of_isProZero i (toSmulTower f δ hδ) hi
+    (fun n ↦ (exact_toSmulTower_iff i f δ hδ n).2 (hex n)) ((isProZero_smulTower_iff f).2 hQ)
 
 end SMulTower
 

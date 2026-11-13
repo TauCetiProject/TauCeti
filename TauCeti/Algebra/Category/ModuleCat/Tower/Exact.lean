@@ -45,6 +45,8 @@ exact sequences of derived limits of towers.
   the short exact sequence of a tower of complexes.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
+* `TauCeti.ModuleTower.limMap_bijective_of_lim_eq_bot`: a levelwise injective comparison
+  `A → B` exact with an obstruction tower `C` is bijective on limits when `lim C = 0`.
 
 ## References
 

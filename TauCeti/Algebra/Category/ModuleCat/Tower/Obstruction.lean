@@ -9,28 +9,29 @@ public import TauCeti.Algebra.Category.ModuleCat.Tower.ProZero
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Reduction
 
 /-!
-# Inverse limits with pro-zero obstructions
+# Comparing adically complete modules with inverse limits
 
-A levelwise injective comparison `F → G` that is exact at `G` with obstruction tower `H`
-induces a bijection on inverse limits whenever `H` has vanishing limit, in particular when
-`H` is pro-zero. For an `I`-adically complete module, this identifies the module itself with
-the limit of any such comparison out of its reduction tower.
+Let `M` be an `I`-adically complete module. A levelwise injective comparison
+`reduction I M → G` that is exact at `G` with obstruction tower `H` induces a bijection
+`M → lim G` whenever `H.lim = ⊥`, in particular when `H` is pro-zero. The reduction tower
+has terms `M / Iⁿ⁺¹ M`. These comparisons specialize
+`TauCeti.ModuleTower.limMap_bijective_of_lim_eq_bot` from `Tower.Exact` and
+`TauCeti.ModuleTower.limMap_bijective_of_isProZero` from `Tower.ProZero`.
 
-In the scalar case, suppose `Fₙ → Gₙ → Q` is exact, the first map is injective, and the maps to
-`Q` commute with the transitions on `G` and multiplication by `f` on `Q`. If a fixed power of `f`
-annihilates `Q`, then `lim F → lim G` is bijective. Surjectivity of `Gₙ → Q` is not
-required: an obstruction in a compatible family is divisible, compatibly, by arbitrarily
-large powers of `f`, and hence vanishes.
+In the scalar case `I = (f)`, the levelwise obstruction maps take values in a module `Q`
+and commute with the transitions on `G` and multiplication by `f` on `Q`. If a fixed power
+`f ^ k` annihilates `Q`, every compatible obstruction family satisfies
+`qₙ = f ^ k • qₙ₊ₖ = 0`. Surjectivity of the obstruction maps is not required. The resulting
+bijection `M → lim G` is the complete-source form of
+`TauCeti.ModuleTower.limMap_bijective_of_pow_smul_eq_zero` from `Tower.ProZero`.
 
-For `Fₙ = M / fⁿ⁺¹ M`, this identifies the completion of `M` with `lim G`. If `M` is
-already complete, it identifies `M` itself with that limit. These are the algebraic
-inverse-limit comparisons used for sections on infinitesimal neighbourhoods: the obstruction
-lies in a cohomology module, and the connecting maps between successive obstructions are
-multiplication by the defining equation. The geometric exact sequences are separate inputs.
+These are the algebraic inverse-limit comparisons used for sections on infinitesimal
+neighbourhoods: the obstruction lies in a cohomology module, and the connecting maps between
+successive obstructions are multiplication by the defining equation. The geometric exact
+sequences are separate inputs.
 
-The argument follows the bounded-cohomology-obstruction step in the proof of Stacks,
-Lemma 52.12.7 (0EII). It reuses the exactness of inverse limits and the vanishing of limits
-of pro-zero towers, rather than constructing limits of representatives.
+The mathematical reference is the bounded-cohomology-obstruction step in the proof of Stacks,
+Lemma 52.12.7 (0EII).
 -/
 
 public section
@@ -77,12 +78,13 @@ module form of the bounded-obstruction comparison for sections of thickenings. -
 theorem limMap_comp_toLimReduction_bijective_of_pow_smul_eq_zero
     {M : Type v} [AddCommGroup M] [Module R M] (f : R)
     [IsAdicComplete (Ideal.span {f}) M] {G : ModuleTower.{v} R}
-    (i : reduction (Ideal.span {f}) M ⟶ G) (δ : G ⟶ smulTower Q f)
+    (i : reduction (Ideal.span {f}) M ⟶ G) (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
     (hi : ∀ n, Function.Injective (i.app (op n)).hom)
-    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ n))
+    (hδ : ∀ n x, δ n (G.transition n x) = f • δ (n + 1) x)
     (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
     Function.Bijective (limMap i ∘ₗ toLimReduction (Ideal.span {f}) M) :=
-  limMap_comp_toLimReduction_bijective_of_isProZero (Ideal.span {f}) i δ hi hex
-    ((isProZero_smulTower_iff f).2 hQ)
+  (limMap_bijective_of_pow_smul_eq_zero i f δ hi hex hδ hQ).comp
+    (toLimReduction_bijective (Ideal.span {f}) M)
 
 end TauCeti.ModuleTower

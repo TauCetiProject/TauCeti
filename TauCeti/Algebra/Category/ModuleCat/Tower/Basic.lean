@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.Limits.IsLimit
@@ -60,6 +61,8 @@ noncommutative ring are allowed.
   have vanishing `lim¹`.
 * `TauCeti.ModuleTower.smulTower`: the tower `M ←f M ←f ⋯` of a module over a commutative ring,
   whose transitions are multiplication by `f`.
+* `TauCeti.ModuleTower.toSmulTower`: construct a morphism to `smulTower` from compatible
+  levelwise linear maps.
 
 ## References
 
@@ -626,6 +629,47 @@ theorem smulTower_transitionOfLE (f : R) {n m : ℕ} (h : n ≤ m) :
     rw [← transitionOfLE_comp_transitionOfLE _ h (Nat.le_succ m), ih,
       transitionOfLE_succ, smulTower_transition]
     exact key
+
+/-- A composite transition in the scalar-multiplication tower acts by the corresponding
+power of the scalar. -/
+theorem smulTower_transitionOfLE_apply (f : R) {n m : ℕ} (h : n ≤ m) (x : M) :
+    (smulTower M f).transitionOfLE h x = f ^ (m - n) • x := by
+  rw [smulTower_transitionOfLE]
+  rfl
+
+/-- Construct a morphism to the scalar-multiplication tower from levelwise linear maps
+that commute with the source transitions and multiplication by the scalar. -/
+def toSmulTower {F : ModuleTower.{v} R} (f : R)
+    (d : ∀ n, F.obj (op n) →ₗ[R] M)
+    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x) : F ⟶ smulTower M f :=
+  NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (d n)) fun n ↦ by
+    apply ModuleCat.hom_ext
+    -- Express categorical composition on the source's carriers using the transition API.
+    change d n ∘ₗ F.transition n = (smulTower M f).transition n ∘ₗ d (n + 1)
+    rw [smulTower_transition]
+    -- State the identity on `M`, rather than on the carrier of a tower term.
+    have key : d n ∘ₗ F.transition n = (f • LinearMap.id : M →ₗ[R] M) ∘ₗ d (n + 1) := by
+      ext x
+      exact hd n x
+    exact key
+
+/-- The components of the morphism to a scalar-multiplication tower are the supplied maps. -/
+@[simp]
+theorem toSmulTower_app_apply {F : ModuleTower.{v} R} (f : R)
+    (d : ∀ n, F.obj (op n) →ₗ[R] M)
+    (hd : ∀ n x, d n (F.transition n x) = f • d (n + 1) x)
+    (n : ℕ) (x : F.obj (op n)) :
+    ((toSmulTower f d hd).app (op n)).hom x = d n x :=
+  (rfl)
+
+/-- Exactness with a component of `toSmulTower` is exactness with the supplied linear map. -/
+@[simp]
+theorem exact_toSmulTower_iff {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R)
+    (d : ∀ n, G.obj (op n) →ₗ[R] M)
+    (hd : ∀ n x, d n (G.transition n x) = f • d (n + 1) x) (n : ℕ) :
+    Function.Exact (i.app (op n)).hom ((toSmulTower f d hd).app (op n)).hom ↔
+      Function.Exact (i.app (op n)).hom (d n) :=
+  (Iff.rfl)
 
 end SMulTower
 
