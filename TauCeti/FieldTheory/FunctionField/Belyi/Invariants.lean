@@ -39,9 +39,11 @@ without determining it.
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.genus_conj`, `TauCeti.AlgebraicBelyiPair.localData_conj` and
-  `TauCeti.AlgebraicBelyiPair.parts_weightedRamificationPartition_conj`: conjugating a pair keeps
-  its genus, and its local data and weighted ramification partition over each marked place.
+* `TauCeti.AlgebraicBelyiPair.genus_conj`,
+  `TauCeti.AlgebraicBelyiPair.localData_markedPlace_conj` and
+  `TauCeti.AlgebraicBelyiPair.parts_weightedRamificationPartition_markedPlace_conj`: conjugating a
+  pair keeps its genus, and its local data and weighted ramification partition over each marked
+  place.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.parts_weightedRamificationPartition_of_isAlgClosed`: over
   an algebraically closed field, the weighted ramification partition of a class consists of the
   ramification indices, one for each place above the marked place.
@@ -76,8 +78,8 @@ theorem genus_conj : genus k' (X.conj σ) = genus k X :=
 /-- **Conjugation preserves the local data** of an algebraic Belyi pair: the pairs `(e, f)` of
 ramification indices and relative degrees at the places over the marked place numbered `i` are
 the same for the pair and for its conjugate. -/
-@[simp]
-theorem localData_conj (i : Fin 3) :
+@[simp↓]
+theorem localData_markedPlace_conj (i : Fin 3) :
     Place.localData (k' := k') (F' := X.conj σ) k' (RatFunc k') (Place.markedPlace k' i) =
       Place.localData (k' := k) (F' := X) k (RatFunc k) (Place.markedPlace k i) :=
   Place.localData_markedPlace_of_mapRingEquiv σ (conjRingEquiv σ X)
@@ -86,14 +88,14 @@ theorem localData_conj (i : Fin 3) :
 /-- **Conjugation preserves the weighted ramification partitions** of an algebraic Belyi pair. The
 two partitions are of the same number, by `TauCeti.AlgebraicBelyiPair.finrank_conj`, and have the
 same parts. -/
-@[simp]
-theorem parts_weightedRamificationPartition_conj (i : Fin 3) :
+@[simp↓]
+theorem parts_weightedRamificationPartition_markedPlace_conj (i : Fin 3) :
     (Place.weightedRamificationPartition (k' := k') (F' := X.conj σ) k' (RatFunc k')
         (IsFunctionField.ratFunc k') (Place.markedPlace k' i)).parts =
       (Place.weightedRamificationPartition (k' := k) (F' := X) k (RatFunc k)
         (IsFunctionField.ratFunc k) (Place.markedPlace k i)).parts := by
   rw [Place.parts_weightedRamificationPartition, Place.parts_weightedRamificationPartition,
-    localData_conj]
+    localData_markedPlace_conj]
 
 namespace IsoClass
 
