@@ -207,7 +207,7 @@ private theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff_of_measurable
       · rw [Set.indicator_of_notMem hs,
           Set.indicator_of_notMem (fun hq ↦ hs ((hmem_Ico a s).mp hq))]
     rw [hfun, lintegral_indicator_one measurableSet_Ico, Real.volume_Ico, max_sub_min_eq_abs,
-      abs_sub_comm, Real.enorm_eq_ofReal_abs]
+      abs_sub_comm, Real.eNorm_eq_ofReal_abs]
   have hsection : ∀ s : ℝ,
       (∫⁻ a, F.indicator 1 (a, s) ∂m) = m ({a | f a ≤ s} ∆ {a | g a ≤ s}) := by
     intro s
@@ -321,11 +321,11 @@ theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ}
     m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
   refine (measure_mono ?_).trans
     (meas_ge_le_lintegral_div
-      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm
+      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).eNorm
       (ne_of_gt (ENNReal.ofReal_pos.mpr hδ)) ENNReal.ofReal_ne_top)
   intro x hx
   rw [mem_symmDiff] at hx
-  rw [mem_ofPred_eq, Pi.sub_apply, Real.enorm_eq_ofReal_abs]
+  rw [mem_ofPred_eq, Pi.sub_apply, Real.eNorm_eq_ofReal_abs]
   apply ENNReal.ofReal_le_ofReal
   rcases hx with ⟨hx, hxs⟩ | ⟨hxs, hx⟩
   · rw [indicator_of_notMem hxs, sub_zero]
@@ -361,19 +361,32 @@ theorem measurable_measure_symmDiff_setOf_lt (m : Measure α) [SFinite m] {f g :
     (hf.measurable_mk.comp measurable_fst)).symmDiff
     (measurableSet_lt measurable_snd (hg.measurable_mk.comp measurable_fst)))
 
-/-- **A superlevel set with small boundary.** Let `p` be an almost everywhere nonnegative function
-and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p` is less
-than `ε` times the integral of `p`. Then at some level `t > 0` the superlevel set `{p > t}` has
-total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})` less than `ε` times its measure. -/
+/-- **A superlevel set with small boundary.** Let `p` be an almost everywhere measurable real
+function and let `q i`, for `i ∈ K`, be finitely many functions whose total `L¹` distance to `p`
+is less than `ε` times the extended nonnegative integral of the positive part of `p`. Then at some
+level `t > 0` the superlevel set `{p > t}` has total boundary `∑ i ∈ K, m ({q i > t} ∆ {p > t})`
+less than `ε` times its measure. -/
 theorem exists_pos_sum_measure_symmDiff_lt_mul_measure (m : Measure α) [SFinite m] {ι : Type*}
     (K : Finset ι) {p : α → ℝ} {q : ι → α → ℝ} (hp : AEMeasurable p m)
-    (hq : ∀ i ∈ K, AEMeasurable (q i) m) (hp₀ : 0 ≤ᵐ[m] p) {ε : ℝ≥0∞}
+    (hq : ∀ i ∈ K, AEMeasurable (q i) m) {ε : ℝ≥0∞}
     (h : ∑ i ∈ K, ∫⁻ x, ‖q i x - p x‖ₑ ∂m < ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m) :
     ∃ t > 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) < ε * m {x | t < p x} := by
   by_contra! hle
   refine h.not_ge ?_
+  have hlay : ∫⁻ x, ENNReal.ofReal (p x) ∂m = ∫⁻ t in Ioi 0, m {x | t < p x} := by
+    have h1 := lintegral_eq_lintegral_meas_lt (f := fun x ↦ max (p x) 0) m
+      (ae_of_all _ fun x ↦ le_max_right _ _) (hp.max aemeasurable_const)
+    have h2 (x : α) : ENNReal.ofReal (max (p x) 0) = ENNReal.ofReal (p x) := by
+      simp [ENNReal.ofReal_max]
+    simp only [h2] at h1
+    rw [h1]
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    have ht' : 0 < t := ht
+    congr 1
+    ext x
+    simp [lt_max_iff, ht'.not_gt]
   calc ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m = ε * ∫⁻ t in Ioi 0, m {x | t < p x} := by
-        rw [lintegral_eq_lintegral_meas_lt m hp₀ hp]
+        rw [hlay]
     _ ≤ ∫⁻ t in Ioi 0, ε * m {x | t < p x} := lintegral_const_mul_le _ _
     _ ≤ ∫⁻ t in Ioi 0, ∑ i ∈ K, m ({x | t < q i x} ∆ {x | t < p x}) :=
         setLIntegral_mono' measurableSet_Ioi hle
@@ -681,7 +694,7 @@ theorem integrable_rpow_iff_integrableOn_weighted_tail
     lintegral_rpow_eq_lintegral_meas_lt_mul μ hfn hf hp]
   have heq : (∫⁻ t in Ioi (0 : ℝ), μ {x | t < f x} * ENNReal.ofReal (t ^ (p - 1))) =
       ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (μ.real {x | t < f x} * t ^ (p - 1)) := by
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
     rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
       ENNReal.ofReal_toReal (measure_ne_top μ _)]
   rw [heq, ENNReal.mul_lt_top_iff]

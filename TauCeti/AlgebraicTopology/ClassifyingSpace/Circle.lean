@@ -80,24 +80,8 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpac
     (γ : FundamentalGroup Circle 1) :
     classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)
         (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one γ) =
-      Circle.fundamentalGroupMulEquiv 1 γ := by
-  -- Both sides are homomorphisms out of `π₁(S¹) ≅ ℤ`, so it suffices to compare them on the
-  -- counterclockwise loop, which the circle identification sends to the generator.
-  suffices h : ((classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)).toMonoidHom.comp
-        (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one)).comp
-          (Circle.fundamentalGroupMulEquiv 1).symm.toMonoidHom = MonoidHom.id _ by
-    simpa using congrArg (· (Circle.fundamentalGroupMulEquiv 1 γ)) h
-  refine MonoidHom.ext_mint ?_
-  have hgen : (Circle.fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1) =
-      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop) := by
-    rw [MulEquiv.symm_apply_eq, Circle.fundamentalGroupMulEquiv_expLoop]
-  simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply, hgen,
-    MonoidHom.id_apply]
-  -- The loop wrapped around is a representative of the class sent to the generator.
-  refine (congrArg (classifyingSpaceFundamentalGroupMulEquiv _)
-    ((Circle.mapOfEq_toCircle_expLoop _).trans
-      (FundamentalGroup.fromPath_mk_out _))).trans ?_
-  exact MulEquiv.apply_symm_apply _ _
+      Circle.fundamentalGroupMulEquiv 1 γ :=
+  Circle.apply_mapOfEq_toCircle_out_symm_ofAdd_one _ γ
 
 /-- **The map from the circle to the classifying space of `ℤ` is a weak homotopy equivalence.**
 Both spaces are aspherical and the map induces an isomorphism of fundamental groups. -/
@@ -105,15 +89,8 @@ theorem isWeakHomotopyEquivalence_circleToClassifyingSpace :
     circleToClassifyingSpace.IsWeakHomotopyEquivalence := by
   refine ((IsAspherical.mk inferInstance fun _ ↦ inferInstance).isWeakHomotopyEquivalence_iff
     (isEilenbergMacLaneSpaceOne_classifyingSpace (Multiplicative ℤ)).isAspherical
-    circleToClassifyingSpace_one).2 ?_
-  have h : ⇑(FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one) =
-      (classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)).symm ∘
-        Circle.fundamentalGroupMulEquiv 1 := by
-    funext γ
-    rw [Function.comp_apply, MulEquiv.eq_symm_apply,
-      classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
-  rw [h]
-  exact (MulEquiv.bijective _).comp (MulEquiv.bijective _)
+    circleToClassifyingSpace_one).2
+    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one _)
 
 /-- **The circle is homotopy equivalent to the classifying space of `ℤ`**, by Whitehead's
 theorem applied to `circleToClassifyingSpace`. Its forward map induces the identity of `ℤ` on

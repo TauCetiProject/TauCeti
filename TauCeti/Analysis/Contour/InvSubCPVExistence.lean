@@ -148,7 +148,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
       MeasureTheory.volume a b :=
-    fun _ hε => intervalIntegrable_inv_sub_truncated h_imm.continuousOn
+    fun _ hε => intervalIntegrable_inv_sub_truncated
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   choose! R hR_pos _ _ _ _ _ _ h_spec using
     fun t₀ (ht₀ : t₀ ∈ T) =>
@@ -158,7 +158,7 @@ theorem IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub {γ : ℝ → ℂ} {a b : ℝ
   -- window hypothesis below is a `∀` over `T`
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ :=
     exists_common_window_radius_le h_Ioo R hR_pos
-  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T (fun _ => hρ_pos.le)
+  exact cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint hab.le T
     (fun t ht => by linarith [(h_endpts t ht).1])
     (fun t ht => by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne => (h_pair t ht t' ht' hne).le)

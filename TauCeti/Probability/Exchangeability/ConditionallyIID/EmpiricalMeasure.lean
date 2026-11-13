@@ -16,10 +16,9 @@ of the empirical probability measure.  For every measurable set, evaluation of t
 measure converges in `L² μ` to evaluation of the directing measure, with the exact finite-sample
 error and its `1 / (n + 1)` bound.  At a probability measure this is mean-square convergence.
 
-These results are the setwise input to the empirical-measure form of de Finetti's theorem in Layer 6
-of the `Exchangeability` roadmap.  They reuse the conditional moment identities already proved in
-`ConditionallyIID.Moments`; the new content is the connection to the process-level
-`empiricalMeasure` object.
+These results are the setwise input to the empirical-measure form of de Finetti's theorem.  They
+reuse the conditional moment identities already proved in `ConditionallyIID.Moments`; the new
+content is the connection to the process-level `empiricalMeasure` object.
 -/
 
 public section

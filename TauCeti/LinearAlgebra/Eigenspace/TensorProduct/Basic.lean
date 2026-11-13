@@ -66,7 +66,7 @@ theorem LinearMap.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange {K N : Typ
 
 namespace TauCeti
 
-variable {A : Type*} [Ring A] [Algebra k A] [Module A S] [IsScalarTower k A S]
+variable {A : Type*} [Semiring A] [Algebra k A] [Module A S] [IsScalarTower k A S]
 
 /-- `(a - μ) ⊗ id` acts on `S ⊗[k] X` as `a - μ` for the action of `A` on the left factor. -/
 theorem rTensor_lsmul_sub_smul_apply (X : Type*) [AddCommGroup X] [Module k X] (a : A)

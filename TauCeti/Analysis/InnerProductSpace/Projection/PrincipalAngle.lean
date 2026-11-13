@@ -269,11 +269,23 @@ theorem sinTwoAngleOperator_eq_zero_iff :
       (isOrtho_orthogonal_left U).starProjection_comp_starProjection,
       ContinuousLinearMap.zero_comp, smul_zero]
 
+end Submodule
+
 /-! ### Principal cosines, sines and angles -/
+
+namespace Submodule
+
+open Module Module.End
+open scoped InnerProductSpace
 
 section FiniteDimensional
 
-variable [FiniteDimensional 𝕜 E]
+/-! In a finite-dimensional space every submodule has an orthogonal projection
+(`Submodule.HasOrthogonalProjection.ofCompleteSpace`), so the principal cosines, sines and angles
+take their two subspaces without that hypothesis. -/
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (U V : Submodule 𝕜 E)
 
 /-- The principal cosines of `U` and `V`: the singular values of the cosine map `P_V P_U`, in
 nonincreasing order and padded with zeros. -/
@@ -345,7 +357,7 @@ theorem sin_principalAngles (i : ℕ) : Real.sin (U.principalAngles V i) = U.pri
 /-- The largest principal sine from `U` to `V` is the directed gap `‖P_{Vᗮ} P_U‖`. -/
 theorem principalSines_zero : U.principalSines V 0 = U.directedProjectionGap V := by
   rw [principalSines_def, ← ContinuousLinearMap.singularValue_eq_linearMap_singularValues,
-    ContinuousLinearMap.singularValue_zero, coe_nnnorm, norm_sinThetaMap]
+    ContinuousLinearMap.singularValue_zero, coe_nnNorm, norm_sinThetaMap]
 
 /-- All principal sines from `U` to `V` are below `c` exactly when the largest one, the directed
 gap `‖P_{Vᗮ} P_U‖`, is. -/
@@ -568,8 +580,8 @@ end Submodule
 section Isometry
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F] {X : F →L[𝕜] E}
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {X : F →L[𝕜] E}
 
 namespace Submodule
 
@@ -590,16 +602,34 @@ theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthog
           rw [sinThetaMap_def, comp_assoc, starProjection_range_comp]
       _ ≤ ‖X.range.sinThetaMap V‖ :=
           (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hXn)
-  · -- `P_{Vᗮ} P_Z = (P_{Vᗮ} X) X†` and `X†` is a contraction.
-    calc ‖X.range.sinThetaMap V‖ = ‖(Vᗮ.starProjection ∘L X) ∘L adjoint X‖ := by
-          rw [sinThetaMap_def, ← comp_adjoint_eq_starProjection_range hX, comp_assoc]
-      _ ≤ ‖Vᗮ.starProjection ∘L X‖ :=
-          (opNorm_comp_le _ _).trans <| mul_le_of_le_one_right (norm_nonneg _) <| by
-            rwa [LinearIsometryEquiv.norm_map]
+  · -- `P_Z y = X x` for some `x` with `‖x‖ = ‖P_Z y‖ ≤ ‖y‖`, since `X` is an isometry.
+    refine opNorm_le_bound _ (norm_nonneg _) fun y ↦ ?_
+    obtain ⟨x, hx⟩ := LinearMap.mem_range.1 (X.range.starProjection_apply_mem y)
+    rw [ContinuousLinearMap.coe_coe] at hx
+    have hxy : ‖x‖ ≤ ‖y‖ := by
+      rw [← (AddMonoidHomClass.isometry_iff_norm _).1 hX x, hx]
+      exact X.range.norm_starProjection_apply_le y
+    calc ‖X.range.sinThetaMap V y‖ = ‖(Vᗮ.starProjection ∘L X) x‖ := by
+          rw [sinThetaMap_def, comp_apply, comp_apply, hx]
+      _ ≤ ‖Vᗮ.starProjection ∘L X‖ * ‖x‖ := le_opNorm _ _
+      _ ≤ ‖Vᗮ.starProjection ∘L X‖ * ‖y‖ := by gcongr
 
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+end Submodule
 
-omit [CompleteSpace E] [CompleteSpace F] in
+end Isometry
+
+section IsometryFiniteDimensional
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] {X : F →L[𝕜] E}
+
+namespace Submodule
+
+open ContinuousLinearMap
+
+variable (V : Submodule 𝕜 E)
+
 /-- The principal cosines of the range of an isometry `X` and of `V` are the singular values of
 the cosine embedding `P_V X`. -/
 theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
@@ -607,7 +637,6 @@ theorem principalCosines_range_eq_singularValues (hX : Isometry X) :
       ((V.starProjection ∘L X : F →L[𝕜] E) : F →ₗ[𝕜] E).singularValues := by
   rw [principalCosines_def, cosThetaMap_def, singularValues_comp_starProjection_range hX]
 
-omit [CompleteSpace E] [CompleteSpace F] in
 /-- The principal sines of the range of an isometry `X` and of `V` are the singular values of the
 sine embedding `P_{Vᗮ} X`. -/
 theorem principalSines_range_eq_singularValues (hX : Isometry X) :
@@ -617,36 +646,39 @@ theorem principalSines_range_eq_singularValues (hX : Isometry X) :
 
 end Submodule
 
-end Isometry
+end IsometryFiniteDimensional
 
 /-! ### Directed sine embedding of a subspace -/
 
 namespace Submodule
 
-open Module
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  (Z U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
 
-variable {𝕜 E : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  (Z U : Submodule 𝕜 E) [Z.HasOrthogonalProjection] [U.HasOrthogonalProjection]
-
-omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
 /-- The directed sine embedding from `Z` to `U`: orthogonally project `Z` onto `Uᗮ`,
 viewed as a map into the ambient space. -/
 def sinThetaEmbedding : Z →L[𝕜] E :=
   Uᗮ.starProjection ∘L Z.subtypeL
 
-omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
 /-- The directed sine embedding is orthogonal projection onto `Uᗮ`
 composed with the inclusion of `Z` into `E`. -/
 theorem sinThetaEmbedding_def :
     Z.sinThetaEmbedding U = Uᗮ.starProjection ∘L Z.subtypeL := (rfl)
 
-omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
 /-- The directed sine embedding acts by projection onto `Uᗮ`. -/
 @[simp]
 theorem sinThetaEmbedding_apply (x : Z) :
     Z.sinThetaEmbedding U x = Uᗮ.starProjection (x : E) := by
   simp only [sinThetaEmbedding, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
+
+end Submodule
+
+namespace Submodule
+
+open Module
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (Z U : Submodule 𝕜 E)
 
 /-- The singular values of the directed sine embedding are the principal sines
 from `Z` to `U`, including the zero tail. No equality of subspace ranks is required. -/
@@ -674,8 +706,7 @@ Adapted from the Kitware DKPS formalization,
 `DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
 Apache-2.0). -/
 theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
+    (U : Submodule 𝕜 E) (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
     X.adjoint
         (LinearMap.leftSingularVector ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) =
       (((((Uᗮ.starProjection.toLinearMap ∘ₗ X)).singularValues i : ℝ) : 𝕜) •
@@ -702,5 +733,79 @@ theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
       rfl
     _ = ⟪((S.singularValues i : ℝ) : 𝕜) •
           LinearMap.rightSingularBasis S i, z⟫_𝕜 := by rw [hSadj]
+
+/-- Each Ritz vector `X vᵢ` is orthogonal to the unnormalized residual direction
+`y_j - σ_j • X v_j`. -/
+@[simp] theorem inner_map_sub_leftSingularVector_eq_zero
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    (i j : Fin (finrank 𝕜 F)) :
+    ⟪X (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = 0 := by
+  simp only [← LinearIsometry.coe_toLinearMap]
+  have hadj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = _ := X.inner_map_map _ _
+  rw [inner_sub_right, inner_smul_right, hXX, ← LinearMap.adjoint_inner_right, hadj,
+    inner_smul_right, sub_self]
+
+/-- For nonzero sines, the unnormalized residual directions `yᵢ - σᵢ • X vᵢ` are pairwise
+orthogonal, with squared norm `1 - σᵢ²`. -/
+theorem inner_sub_leftSingularVector_eq_ite
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i j : Fin (finrank 𝕜 F)}
+    (hi : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i ≠ 0)
+    (hj : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j ≠ 0) :
+    ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 =
+      if i = j then
+        (((1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2 : ℝ)) : 𝕜)
+      else 0 := by
+  classical
+  have hadji := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := i)
+  have hadjj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hvv := (LinearMap.rightSingularBasis
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
+  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
+  have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
+      if i = j then 1 else 0 := by
+    simpa using orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
+      ⟨i, hi⟩ ⟨j, hj⟩
+  have hyX : ⟪LinearMap.leftSingularVector S i,
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ((S.singularValues i : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_left, hadji, inner_smul_left, RCLike.conj_ofReal]
+  have hXy : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      LinearMap.leftSingularVector S j⟫_𝕜 =
+      ((S.singularValues j : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_right, hadjj, inner_smul_right]
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ⟪LinearMap.rightSingularBasis S i, LinearMap.rightSingularBasis S j⟫_𝕜 :=
+    X.inner_map_map _ _
+  simp only [inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right,
+    RCLike.conj_ofReal, hyy, hyX, hXy, hXX, hvv]
+  by_cases hij : i = j
+  · subst hij
+    simp only [ite_true]
+    push_cast
+    ring
+  · simp [hij]
 
 end Submodule

@@ -15,19 +15,16 @@ public import TauCeti.Analysis.PositiveDefinite.Pullback
 # Fourier-convention characteristic functions
 
 Mathlib's characteristic function of a finite measure is
-`t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while the Fourier side of the Bochner roadmap uses the
-`2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
-normalizations and then reuses the existing characteristic-function API to show that the
-Fourier-convention transform of a finite measure is continuous and positive definite.
+`t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while Bochner's theorem in `BochnerTheorem.lean` is stated in
+the `2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
+normalizations, shows continuity of the Fourier-convention transform of a finite measure directly
+by dominated convergence, and transports positive definiteness from the existing
+characteristic-function API.
 
 The file also bridges Mathlib's Fourier transform `𝓕` to the Fourier atom, and it carries the
 measure-uniqueness theorem — the uniqueness half of Bochner's theorem — consumed by
 `BochnerTheorem.lean`. The convention-free continuity of `𝓕` and `𝓕⁻` lives in
 `TauCeti.Analysis.Fourier.Continuous`.
-
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-function API item asking for "a stated Fourier-convention conversion lemma between Mathlib's
-`2π` form and the characteristic-function form" before Bochner's theorem.
 
 ## Main declarations
 
@@ -146,16 +143,12 @@ theorem posSemidef_charFun_neg_two_pi_smul_sub :
 
 /-- The Fourier-convention transform of a finite measure is continuous. -/
 theorem continuous_fourierConventionCharFun :
-    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
-  -- Dominated convergence: the integrand is a unit-norm Fourier atom, continuous in the
-  -- frequency.
-  have hcont (q : W) : Continuous fun a : W => fourierAtom a q := by
-    simp only [fourierAtom_eq_fourierChar]
-    fun_prop
-  exact continuous_of_dominated (bound := fun _ => 1)
-    (fun a => (continuous_fourierAtom a).aestronglyMeasurable)
-    (fun a => .of_forall fun q => (norm_fourierAtom a q).le) (integrable_const _)
-    (.of_forall hcont)
+    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν :=
+  continuous_of_dominated (bound := fun _ ↦ 1)
+    (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
+    (fun a ↦ ae_of_all _ fun q ↦ (norm_fourierAtom a q).le)
+    (integrable_const _)
+    (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
 
 section Convolution
 

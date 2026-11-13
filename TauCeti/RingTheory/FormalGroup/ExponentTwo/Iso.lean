@@ -98,7 +98,7 @@ theorem subst_exponentTwoLog_exponentTwoExp :
 noncomputable def exponentTwoLogHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
   toPowerSeries := F.exponentTwoLog hF
   zero_constantCoeff := F.constantCoeff_exponentTwoLog hF
-  hom := (TauCeti.FormalGroupHom.hom_additive_iff (F.constantCoeff_exponentTwoLog hF)).mpr
+  hom := TauCeti.FormalGroupHom.hom_additive_iff.mpr
     (F.subst_toPowerSeries_exponentTwoLog hF)
 
 @[simp]
@@ -151,8 +151,8 @@ theorem eq_exponentTwoLogIso_iff (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R)
   · rintro ⟨hf, hp⟩
     refine TauCeti.FormalGroupIso.ext (TauCeti.FormalGroupHom.ext ?_)
     simpa only [exponentTwoLogIso_toHom, exponentTwoLogHom_toPowerSeries] using
-      F.eq_exponentTwoLog hF f.toHom.zero_constantCoeff hf.coeff_one hp
-        ((TauCeti.FormalGroupHom.hom_additive_iff f.toHom.zero_constantCoeff).mp f.toHom.hom)
+      F.eq_exponentTwoLog hF hf.coeff_one hp
+        (TauCeti.FormalGroupHom.hom_additive_iff.mp f.toHom.hom)
 
 /-- **The normalised logarithm commutes with base change**: applying a ring homomorphism
 `f : R →+* S` to the coefficients of the normalised logarithm of `F` gives the normalised logarithm
@@ -161,10 +161,8 @@ of `F.map f`. -/
 theorem map_exponentTwoLog (f : R →+* S) :
     (F.exponentTwoLog hF).map f =
       (F.map f).exponentTwoLog (by rw [← F.map_nsmulSeries, hF, map_zero]) := by
-  refine (F.map f).eq_exponentTwoLog _ ?_ (by simp) (fun k hk ↦ ?_)
+  refine (F.map f).eq_exponentTwoLog _ (by simp) (fun k hk ↦ ?_)
     (F.subst_map_toPowerSeries_map f (F.subst_toPowerSeries_exponentTwoLog hF))
-  · rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, F.constantCoeff_exponentTwoLog hF, map_zero]
   · rw [PowerSeries.coeff_map, F.coeff_two_pow_exponentTwoLog hF hk, map_zero]
 
 /-- **The normalised exponential commutes with base change**: applying a ring homomorphism
@@ -174,8 +172,7 @@ exponential of `F.map f`. -/
 theorem map_exponentTwoExp (f : R →+* S) :
     (F.exponentTwoExp hF).map f =
       (F.map f).exponentTwoExp (by rw [← F.map_nsmulSeries, hF, map_zero]) := by
-  rw [exponentTwoExp, PowerSeries.map_substInvOfIsUnit f (F.constantCoeff_exponentTwoLog hF),
-    exponentTwoExp]
+  rw [exponentTwoExp, PowerSeries.map_substInvOfIsUnit f, exponentTwoExp]
   congr 1
   exact F.map_exponentTwoLog hF f
 

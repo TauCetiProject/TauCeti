@@ -15,17 +15,19 @@ import Mathlib.Tactic.Ring
 
 A linear fractional transformation `t ↦ (a * t + b) / (c * t + d)` over a field `𝕜` is
 determined by its coefficient matrix `!![a, b; c, d]`, and the determinant `a * d - b * c`
-controls how it separates points. This file records the algebraic identity behind that: if the
-transformation fixes `w`, then it scales the displacement `t - w` by
-`(a * d - b * c) / ((c * t + d) * (c * w + d))`.
+controls how it separates points. This file records the algebraic identity behind that: the
+transformation carries the displacement `t - w` to the displacement of the images scaled by
+`(a * d - b * c) / ((c * t + d) * (c * w + d))`, and in particular, if it fixes `w`, it scales
+the displacement `t - w` by that factor.
 
 This is the computation that linearizes a linear fractional transformation at a fixed point.
-Over `ℂ` it is what turns a Möbius transformation of the upper half-plane fixing a point into a
-rotation of the disc coordinate centred there, in
+Over `ℂ` it is what turns a Möbius transformation of the upper half-plane into a rotation between
+the disc coordinates centred at a point and at its image, in
 `TauCeti/Analysis/Complex/UpperHalfPlane/DiscCoordinate.lean`.
 
 ## Main results
 
+* `TauCeti.moebius_sub_moebius`: the difference formula for a linear fractional transformation.
 * `TauCeti.moebius_sub_of_fixed`: the difference formula for a linear fractional
   transformation at a fixed point.
 * `TauCeti.crossRatio_comp_eq_of_sub_eq_div`: maps with factorized differences preserve
@@ -45,6 +47,16 @@ public section
 
 namespace TauCeti
 
+/-- **The Möbius difference formula**: if both denominators are nonzero, then
+`(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
+(a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d))`. -/
+theorem moebius_sub_moebius {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜} (hj : c * w + d ≠ 0)
+    (hjt : c * t + d ≠ 0) :
+    (a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
+      (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d)) := by
+  rw [div_sub_div _ _ hjt hj]
+  ring
+
 /-- The Möbius difference formula at a fixed point: if `w` is fixed, in the cleared form
 `a * w + b = w * (c * w + d)`, and both denominators are nonzero, then
 `(a * t + b) / (c * t + d) - w = (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d))`. -/
@@ -52,8 +64,7 @@ theorem moebius_sub_of_fixed {𝕜 : Type*} [Field 𝕜] {a b c d w t : 𝕜}
     (hw : a * w + b = w * (c * w + d)) (hj : c * w + d ≠ 0) (hjt : c * t + d ≠ 0) :
     (a * t + b) / (c * t + d) - w =
       (a * d - b * c) * (t - w) / ((c * t + d) * (c * w + d)) := by
-  rw [div_sub' hjt, div_eq_div_iff hjt (mul_ne_zero hjt hj)]
-  linear_combination (c * t + d) ^ 2 * hw
+  rw [← moebius_sub_moebius hj hjt, (div_eq_iff hj).mpr hw]
 
 /-- **Maps with factorized difference quotients preserve cross-ratios.** If
 `φ s - φ t = κ * (s - t) / (d s * d t)` for all `s` and `t` in `S`, with `κ` and the values of `d`

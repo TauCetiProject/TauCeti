@@ -42,9 +42,6 @@ which compares a submodule of `M^μ` with the orthogonal complement of the Spech
 
 * G. D. James, *The Representation Theory of the Symmetric Groups*, Chapter 1, where the form is
   introduced by declaring the tabloids orthonormal, and Chapter 4 for the submodule theorem.
-* [Schur-Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, "The submodule theorem (James)", which asks for the tabloid bilinear form as an API in
-  its own right.
 -/
 
 public section
@@ -53,7 +50,7 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R]
 
-open LinearMap (BilinForm)
+open _root_.LinearMap (BilinForm)
 
 variable {n : ℕ} (μ : n.Partition)
 

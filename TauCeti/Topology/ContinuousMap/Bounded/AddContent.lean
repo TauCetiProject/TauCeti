@@ -100,7 +100,7 @@ def toAddContent (m : (X →ᵇ ℝ) →ₗ[ℝ] ℝ) : AddContent ℝ (univ : S
   isSetRing_univ.addContent_of_union
     (fun s => m (BoundedContinuousFunction.indicator s (isClopen_discrete s)))
     (by simp) (by
-      intro s _ t _ hst
+      intro s _ _ _ hst
       rw [BoundedContinuousFunction.indicator_union _ _ hst, map_add])
 
 @[simp 900] -- Prefer normalization at the whole space to expanding the content.

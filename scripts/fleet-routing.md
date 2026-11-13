@@ -5,29 +5,39 @@ The policy is in `[services.fleet]` in `tauceti.toml`:
 
 | Build class | Preference order |
 | --- | --- |
-| PR | GitHub → Chris → tauchonki (ineligible) → Namespace |
-| Bors staging | tauchonki → Chris → Namespace → GitHub |
+| PR | GitHub → fleet → Namespace |
+| Bors staging | tauchonki2; otherwise wait for tauchonki2 |
 
-Chris advertises two shared jobs, each with 16 vCPU and 32 GiB RAM. Any mix of PR
-and staging builds may occupy those two slots. Tauchonki advertises one staging
-job with 32 vCPU and 64 GiB RAM. Each host enforces its slot count; the enrollment
-service also limits the job classes and maximum slots its credential may register.
-Changing a host's classes or resource shape requires draining all its guests.
+`fleet` is a live pool of eligible runners in the configured GitHub runner group,
+not a list of machines in this repository. Adding or replacing a host requires
+no `tauceti.toml` machine-ID entry. Each host controls its concurrency and resource
+limits; its credential controls which CI classes it may register. Registration,
+resizing and retirement update the capacity seen by subsequent pickers.
 
-The picker requires an idle online runner with the requested class, permanent
-machine identity, and unique guest-instance labels. It targets that exact guest
-in the `TauCetiFleet` group. Chris's enrollment name resolves to one permanent
-machine identity; an absent or ambiguous identity disables that machine's choice.
-Queued jobs already targeting a guest count against observed machine capacity.
-A simultaneous picker can still select the same guest; startup recovery handles
-jobs that fail to acquire it.
+The picker reads idle online runners in the trusted group, requiring the
+requested class and unambiguous host and instance identities. `FLEET_CI_ENABLED`,
+`FLEET_READ_TOKEN` and `FLEET_RUNNER_GROUP_ID` govern that inventory. Labels on
+runners outside the approved group grant no eligibility.
+
+When the PR fleet tier is selected, dispatch uses the `TauCetiFleet` group and
+`self-hosted`, `linux`, `x64`, `tauceti-fleet-pr` labels. GitHub assigns the next
+matching runner. A runner being replaced, or two pickers seeing the same idle
+runner, can cause ordinary pool waiting without pinning a job to a vanished
+instance. Staging-only runners cannot match PR work. No reservation service or
+PR startup cancellation/rerun loop is involved. Named PR machine tiers, if
+configured, retain the permanent host label but omit the disposable instance.
+
+Staging retains exact guest selection, preferring reserved staging runners. This
+project restricts staging to tauchonki2; when selection is unavailable it
+waits for the permanent tauchonki2 staging label. PRs cannot consume those
+staging-only runners.
 
 Namespace has an approximate cap of **20 queued or running build jobs**, shared
 across PR and staging. Picker, recovery, publisher, and finalizer jobs are excluded.
 The variable `NAMESPACE_BUILD_CAP` overrides the default in the configuration.
 Concurrent picker decisions can admit jobs above this snapshot-based cap. When Namespace is
-full, staging falls through to GitHub; if all eligible destinations are full or
-unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
+full, ordinary PRs fall through to GitHub; if all eligible PR destinations are
+full or unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
 GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
 including other GitHub-hosted control jobs. All runner pickers run on Namespace
 and do not count toward that budget. Set it below the provider's total job limit
@@ -39,11 +49,10 @@ and be at most 150 seconds old. This retains the two-minute shared-cache allowan
 Capacity scans use the repository workflow token, preserving the reserve set by
 `PICKER_REPOSITORY_API_RESERVE` (default 250 requests). Incomplete scans cannot
 authorize spare cloud capacity. Fleet placement uses complete online/idle runner
-inventory, class labels and machine limits, retaining any observed queued guest
-reservations even when global queue coverage is incomplete. Concurrent or unseen
-reservations can still collide; the acquisition watcher below recovers those runs.
-Staging tries dedicated machines first. If no machine is eligible,
-staging uses the existing bounded cloud discovery and fallback.
+inventory and class labels, retaining any observed queued guest
+reservations even when global queue coverage is incomplete. Concurrent PR
+selections wait in the shared pool. Staging tries its dedicated machine
+first and retains the local staging fallback.
 The existing shared state service coalesces cloud and queued-target discovery;
 older snapshots can still answer the first GitHub preference. Every picker runs
 on the existing Namespace 2x4 priority-zero control profile with a run-specific
@@ -54,14 +63,12 @@ During a Namespace outage, set repository variable `PICKER_GITHUB_FALLBACK=true`
 to run fresh picker attempts on GitHub. Clear it to restore Namespace control
 capacity. This switches the picker only; build placement and merge gates still apply.
 
-The existing `fleet-recovery.yml` watcher waits for placement and allows two
-minutes for a dedicated guest to acquire the build. It cancels an unacquired
-attempt, confirms it is terminal, and reruns the **same workflow run ID**. The next
-picker excludes previously failed machine placements. Bors run identity stays
-intact; PR retries additionally require the immutable head in the run title to
-remain current. Manual PR dispatches without an immutable head and native merge
-groups use cloud pools. A failed-jobs-only rerun that reuses old picker outputs
-queues on GitHub instead of targeting a retired guest.
+The existing `fleet-recovery.yml` watcher applies only to Bors staging. It waits
+for placement, allows two minutes for the selected guest to acquire the build,
+and preserves the same workflow run ID through recovery. PR jobs wait normally
+in their selected pool. A rerun that reuses stale picker outputs retains the
+existing GitHub fallback; it cannot target a retired guest from an older attempt.
+Manual PR dispatches and native merge groups use cloud pools.
 
 The initial Namespace limit was chosen from the archived CI database at
 [the TauCetiCI db release](https://github.com/TauCetiProject/TauCetiCI/releases/tag/db),
@@ -72,14 +79,19 @@ peak of 32 and p99 of 19; concurrency exceeded 20 for about 2.18 hours. These ar
 actual execution intervals, excluding control jobs; queued builds are included
 in the dispatcher's admission count as an additional precaution.
 
-Routing policy and host configuration are managed separately. Follow the
+Pool priority and live host configuration are managed separately. The repository
+sets the preference between GitHub, fleet and Namespace; operator changes to fleet
+membership or concurrency do not require a project commit. Follow the
 [Fleet enrollment instructions](https://github.com/TauCetiProject/TauCetiFleet/blob/main/services/ci-broker/README.md)
 to issue a machine's invitation with its allowed CI classes and shared slot limit.
 Run `enroll HOST` and `prepare HOST`, then explicitly activate CI with `enable HOST`,
 choosing `--ci pr`, `--ci staging`, or `--ci both`, `--max-jobs`, and the per-job
 `--ci-vcpus` and `--ci-memory-gib` settings.
 
-Before updating a host's installed Fleet release or changing its CI classes,
-slot limit, or guest shape, run `drain HOST` and wait for every guest to finish.
-Drain pauses new worker and CI admissions. After maintenance, explicitly
-re-enable every previously enabled role.
+Prefer Fleet's live-update path for routine software updates, keeping normal
+worker and CI admissions enabled. Use a drain when explicitly retiring a host or
+when a specific change cannot be applied safely to live guests. A drain stops new
+admissions while active work finishes; it is not required merely because another
+host joins the fleet. CI classes and guest shape must continue to match the
+credential and sandbox policy. After maintenance, explicitly re-enable the roles
+that should resume.

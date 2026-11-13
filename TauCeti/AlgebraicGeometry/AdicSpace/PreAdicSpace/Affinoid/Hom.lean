@@ -137,6 +137,49 @@ theorem ker_presentationLimitAppTop_le_comp {W : PreAdicSpace.{u}} (h : W ⟶ X)
   rw [presentationLimitAppTop_comp_apply, ha]
   exact map_zero _
 
+/-- Taking the germ of the global pullback of a coefficient is the same as pulling back its
+coefficient germ along the stalk map. This holds for an arbitrary pre-adic source. -/
+theorem presentationLimitAppTop_comp_germ
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) :
+    (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom.comp
+        (presentationLimitAppTop P Aplus hAplus hP f) =
+      (f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)) := by
+  rw [presentationLimitAppTop_def, ← topIso_inv_comp_germ P Aplus hAplus hP (f.base x),
+    PreAdicSpace.Hom.stalkMap_def]
+  have hg := PresheafedSpace.stalkMap_germ (PreAdicSpace.toRingPresheafedSpaceHom f.toHom)
+    ⊤ x (Opens.mem_top _)
+  exact congrArg CommRingCat.Hom.hom
+    ((Category.assoc _ _ _).trans (congrArg
+      (fun k ↦ (forget₂ _root_.TopCommRingCat CommRingCat).map
+        (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k) hg.symm))
+
+/-- The image of a point under a morphism into an affinoid spectrum is obtained by pulling its
+stalk valuation back along the global-sections map followed by the germ map. -/
+theorem base_eq_comap_presentationLimitAppTop
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) :
+    (f.base x : spa Aplus).1 =
+      comap (presentationLimitAppTop P Aplus hAplus hP f)
+        (comap (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
+          (X.stalkValuation x)) := by
+  calc
+    (f.base x : spa Aplus).1 =
+        comap (presentationLimitGlobalGerm P Aplus (f.base x))
+          ((presentationLimitPreAdicSpace P Aplus hAplus hP).stalkValuation (f.base x)) :=
+      ((congrArg (comap (presentationLimitGlobalGerm P Aplus (f.base x)))
+        (presentationLimitPreAdicSpace_stalkValuation P Aplus hAplus hP (f.base x))).trans
+          (comap_presentationLimitGlobalGerm P Aplus hAplus hP (f.base x))).symm
+    _ = comap ((f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)))
+        (X.stalkValuation x) := by
+      rw [f.stalkValuation_eq_comap]
+      exact (congrFun (comap_comp (presentationLimitGlobalGerm P Aplus (f.base x))
+        (f.stalkMap x).hom) (X.stalkValuation x)).symm
+    _ = comap (presentationLimitAppTop P Aplus hAplus hP f)
+        (comap (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
+          (X.stalkValuation x)) := by
+      rw [← presentationLimitAppTop_comp_germ]
+      exact congrFun (comap_comp (presentationLimitAppTop P Aplus hAplus hP f)
+        (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom) (X.stalkValuation x)
+
 end AppTop
 
 variable {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
@@ -216,34 +259,18 @@ private theorem globalSectionsPullback_comp_germ
     (presentationLimitGlobalGerm P' Bplus x).comp
         (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f) =
       (f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)) := by
-  let F := forget₂ _root_.TopCommRingCat CommRingCat
-  have hc : F.map (globalSectionsPullback P Aplus hAplus hP P' Bplus hBplus hP' f) ≫
-      F.map (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv =
-      F.map (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
-        F.map (TopCommRingCat.isCompleteSeparated.ι.map (PresheafedSpace.Γ.map
-          (PreAdicSpace.forgetToPresheafedSpace.map f).op)) := by
-    have hc' : globalSectionsPullback P Aplus hAplus hP P' Bplus hBplus hP' f ≫
-        (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv =
-        (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
-          TopCommRingCat.isCompleteSeparated.ι.map (PresheafedSpace.Γ.map
-            (PreAdicSpace.forgetToPresheafedSpace.map f).op) := by
-      exact (Iso.comp_inv_eq (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP')).mpr
-        (Category.assoc (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv
-          (TopCommRingCat.isCompleteSeparated.ι.map (PresheafedSpace.Γ.map
-            (PreAdicSpace.forgetToPresheafedSpace.map f).op))
-          (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom).symm
-    exact (Functor.map_comp F _ _).symm.trans
-      ((congrArg F.map hc').trans (Functor.map_comp F _ _))
-  have hg := PresheafedSpace.stalkMap_germ (PreAdicSpace.toRingPresheafedSpaceHom f.toHom)
-    ⊤ x (Opens.mem_top _)
-  have hcat := (congrArg (fun k ↦ k ≫
-    (presentationLimitPreAdicSpace P' Bplus hBplus hP').toRingPresheafedSpace.presheaf.germ
-      ⊤ x (Opens.mem_top x)) hc).trans
-    ((Category.assoc _ _ _).trans (congrArg
-      (fun k ↦ F.map (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k) hg.symm))
-  erw [← topIso_inv_comp_germ P Aplus hAplus hP (f.base x),
-    ← topIso_inv_comp_germ P' Bplus hBplus hP' x, PreAdicSpace.Hom.stalkMap_def]
-  exact congrArg CommRingCat.Hom.hom hcat
+  rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop,
+    ← topIso_inv_comp_germ P' Bplus hBplus hP' x,
+    ← presentationLimitAppTop_comp_germ]
+  ext a
+  -- The forgetful functor and ring-hom composition obscure the isomorphism cancellation
+  -- from `rw`; expose their pointwise application before using the categorical inverse law.
+  change (presentationLimitPreAdicSpace P' Bplus hBplus hP').toRingPresheafedSpace.presheaf.germ
+    ⊤ x (Opens.mem_top x) ((presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv
+    ((presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom
+      (presentationLimitAppTop P Aplus hAplus hP f a))) = _
+  rw [Iso.hom_inv_id_apply]
+  rfl
 
 /-- The map on points of an affinoid pre-adic morphism is pullback along its recovered ring
 homomorphism. Equality is in the valuation spectrum, so no representative value group is chosen. -/
@@ -257,26 +284,23 @@ theorem base_eq_comap_presentationLimitHomRingHom
         (x : spa Bplus).1 := by
   calc
     (f.base x : spa Aplus).1 =
-        comap (presentationLimitGlobalGerm P Aplus (f.base x))
-          ((presentationLimitPreAdicSpace P Aplus hAplus hP).stalkValuation (f.base x)) :=
-      ((congrArg (comap (presentationLimitGlobalGerm P Aplus (f.base x)))
-        (presentationLimitPreAdicSpace_stalkValuation P Aplus hAplus hP (f.base x))).trans
-          (comap_presentationLimitGlobalGerm P Aplus hAplus hP (f.base x))).symm
-    _ = comap ((f.stalkMap x).hom.comp (presentationLimitGlobalGerm P Aplus (f.base x)))
-        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) := by
-      rw [f.stalkValuation_eq_comap]
-      exact (congrFun (comap_comp (presentationLimitGlobalGerm P Aplus (f.base x))
-        (f.stalkMap x).hom)
-        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x)).symm
+        comap
+          (((presentationLimitPreAdicSpace P' Bplus hBplus hP').toRingPresheafedSpace.presheaf.germ
+            ⊤ x (Opens.mem_top x)).hom.comp (presentationLimitAppTop P Aplus hAplus hP f))
+          ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) :=
+      (base_eq_comap_presentationLimitAppTop P Aplus hAplus hP f x).trans
+        (congrFun (comap_comp (presentationLimitAppTop P Aplus hAplus hP f)
+          ((presentationLimitPreAdicSpace P' Bplus hBplus hP').toRingPresheafedSpace.presheaf.germ
+            ⊤ x (Opens.mem_top x)).hom)
+          ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x)).symm
     _ = comap ((presentationLimitGlobalGerm P' Bplus x).comp
         (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f))
-        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) :=
-      congrArg (fun g ↦ comap g
-        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x))
-        (globalSectionsPullback_comp_germ P Aplus hAplus hP P' Bplus hBplus hP' f x).symm
+        ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x) := by
+      rw [presentationLimitAppTop_comp_germ, globalSectionsPullback_comp_germ]
+      rfl
     _ = comap (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
-        (x : spa Bplus).1 := by
-      exact (congrFun (comap_comp
+        (x : spa Bplus).1 :=
+      (congrFun (comap_comp
         (presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f)
         (presentationLimitGlobalGerm P' Bplus x))
         ((presentationLimitPreAdicSpace P' Bplus hBplus hP').stalkValuation x)).trans
