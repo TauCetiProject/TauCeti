@@ -174,7 +174,6 @@ variable {hX}
 /-- Along a broken trajectory from `p` through `q` to `r`, the critical value `f q` lies between
 levels `c₂` and `c₁` separating the critical values of the intermediate index. -/
 theorem _root_.TauCeti.SeparatesIntermediateLevels.value_mem_Ioo_of_mem_unstableSet_inter_stableSet
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     {p q r y z : M} {c₁ c₂ : ℝ}
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂)
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
@@ -183,15 +182,15 @@ theorem _root_.TauCeti.SeparatesIntermediateLevels.value_mem_Ioo_of_mem_unstable
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hz : z ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
     f q ∈ Ioo c₂ c₁ := by
-  have hy' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf
+  have hy' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet
     (ne_of_manifoldMorseIndex_eq_add one_pos hpq) hy
-  have hz' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf
+  have hz' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet
     (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hz
   exact hsep.mem_Ioo hq hpq hqr (hz'.1.trans hz'.2) (hy'.1.trans hy'.2)
 
 /-- Along a broken trajectory from `p` through `q` to `r`, following the flow from the middle levels
 to the levels `c₁` and `c₂` is a bijection between the level slices of each component. -/
-private theorem bijOn_flow_levelCrossingTime_components (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+private theorem bijOn_flow_levelCrossingTime_components
     {p q r y z : M} {c₁ c₂ : ℝ} (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂)
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
@@ -205,10 +204,10 @@ private theorem bijOn_flow_levelCrossingTime_components (hf : MDifferentiable �
       BijOn (fun z ↦ hX.flow (Flow.levelCrossingTime hX.flow f c₂ z) z)
         ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = (f q + f r) / 2})
         ((hX.flow.unstableSet q ∩ hX.flow.stableSet r) ∩ {z | f z = c₂}) := by
-  have hcq := hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hf hq hpq hqr hy hz
-  exact ⟨hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hpq)
+  have hcq := hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hq hpq hqr hy hz
+  exact ⟨hX.bijOn_flow_levelCrossingTime_midpoint (ne_of_manifoldMorseIndex_eq_add one_pos hpq)
       hcq.2 hc₁,
-    hX.bijOn_flow_levelCrossingTime_midpoint hf (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂
+    hX.bijOn_flow_levelCrossingTime_midpoint (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hc₂
       hcq.1⟩
 
 /-- **Broken trajectories correspond to broken pairs.** Let the levels `c₂ > f r` and `c₁ < f p`
@@ -216,7 +215,7 @@ separate the critical values of the intermediate index strictly between `f r` an
 broken trajectory `(q, z₁, z₂)`, recorded by points on the middle levels, to the point of the orbit
 of `z₁` on the level `c₁` and the point of the orbit of `z₂` on the level `c₂` is a bijection onto
 the broken pairs. -/
-theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M} {c₁ c₂ : ℝ}
+theorem bijOn_brokenLevelPairs {p r : M} {c₁ c₂ : ℝ}
     (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     BijOn (fun x : criticalPoints 𝓘(ℝ, E) f × M × M ↦
@@ -229,7 +228,7 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
     simp only [mem_morseTrajectorySlice, ← and_assoc] at hz₁ hz₂
     have hq := mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2
     obtain ⟨hb₁, hb₂⟩ :=
-      bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep hq hpq hqr hz₁.1 hz₂.1
+      bijOn_flow_levelCrossingTime_components hc₁ hc₂ hsep hq hpq hqr hz₁.1 hz₂.1
     exact ⟨q, hq, hpq, hqr, hb₁.mapsTo hz₁, hb₂.mapsTo hz₂⟩
   · rintro ⟨q, z₁, z₂⟩ hx ⟨q', z₁', z₂'⟩ hx' heq
     obtain ⟨hpq, hqr, hz₁, hz₂⟩ := (mem_morseBrokenTrajectorySet hX).1 hx
@@ -246,7 +245,7 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
       rw [← heq.1] at h₂
       exact (Flow.disjoint_stableSet (Subtype.coe_ne_coe.2 hqq)).notMem_of_mem_left h₁ h₂
     subst hqq
-    obtain ⟨hb₁, hb₂⟩ := bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep
+    obtain ⟨hb₁, hb₂⟩ := bijOn_flow_levelCrossingTime_components hc₁ hc₂ hsep
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hpq hqr hz₁.1 hz₂.1
     obtain rfl := hb₁.injOn hz₁ hz₁' heq.1
     obtain rfl := hb₂.injOn hz₂ hz₂' heq.2
@@ -254,7 +253,7 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
   · rintro ⟨w₁, w₂⟩ ⟨q, hq, hpq, hqr, hw₁, hw₂⟩
     -- Follow each component of the broken pair back to its middle level.
     obtain ⟨hb₁, hb₂⟩ :=
-      bijOn_flow_levelCrossingTime_components hf hc₁ hc₂ hsep hq hpq hqr hw₁.1 hw₂.1
+      bijOn_flow_levelCrossingTime_components hc₁ hc₂ hsep hq hpq hqr hw₁.1 hw₂.1
     obtain ⟨z₁, hz₁, rfl⟩ := hb₁.surjOn hw₁
     obtain ⟨z₂, hz₂, rfl⟩ := hb₂.surjOn hw₂
     exact ⟨(⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq⟩, z₁, z₂),
@@ -265,11 +264,11 @@ theorem bijOn_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {
 /-- **Counting broken pairs.** Under the separation hypotheses of
 `TauCeti.IsAdaptedPseudoGradient.bijOn_brokenLevelPairs`, there are as many broken pairs as broken
 trajectories. -/
-theorem ncard_brokenLevelPairs (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p r : M} {c₁ c₂ : ℝ}
+theorem ncard_brokenLevelPairs {p r : M} {c₁ c₂ : ℝ}
     (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     (hX.brokenLevelPairs p r c₁ c₂).ncard = (hX.morseBrokenTrajectorySet p r).ncard :=
-  (bijOn_brokenLevelPairs hf hc₁ hc₂ hsep).ncard_eq.symm
+  (bijOn_brokenLevelPairs hc₁ hc₂ hsep).ncard_eq.symm
 
 namespace IsMorseSmale
 
@@ -280,7 +279,7 @@ theorem finite_brokenLevelPairs (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E)
     (p r : criticalPoints 𝓘(ℝ, E) f) {c₁ c₂ : ℝ} (hc₁ : c₁ < f p) (hc₂ : f r < c₂)
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
     (hX.brokenLevelPairs p r c₁ c₂).Finite :=
-  (bijOn_brokenLevelPairs (hf.contMDiff.mdifferentiable (by simp)) hc₁ hc₂
+  (bijOn_brokenLevelPairs hc₁ hc₂
     hsep).finite_iff_finite.1 (h.finite_morseBrokenTrajectorySet hf p r)
 
 /-- **Limits of unbroken pairs are unbroken or broken.** Let `p` and `r` be critical points with
@@ -297,7 +296,6 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
     closure (hX.trajectoryLevelPairs p r c₁ c₂) ⊆
       hX.trajectoryLevelPairs p r c₁ c₂ ∪ hX.brokenLevelPairs p r c₁ c₂ := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
-  have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hpr : p ≠ r := ne_of_manifoldMorseIndex_eq_add two_pos hind
   rintro ⟨y₁, y₂⟩ hy
   obtain ⟨w, hwT, hw⟩ := mem_closure_iff_seq_limit.1 hy
@@ -305,7 +303,7 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
   obtain ⟨hw₁lim, hw₂lim⟩ := (Prod.tendsto_iff _ _).1 hw
   -- The level `c₂` lies strictly between `f r` and `f p`, being crossed by a trajectory.
   have hc₂ : f r < c₂ ∧ c₂ < f p := by
-    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpr
+    have := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpr
       (hX.flow.isInvariant_unstableSet_inter_stableSet p r (s 0) (hw₁ 0))
     rwa [hs, hwc₂] at this
   obtain ⟨n, y, hn, hyc, hlim, hcase⟩ :=
@@ -319,15 +317,15 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
   rcases hcase with hyT | ⟨q, z, t, hq, hpq, hqr, hzlim, ⟨hyq, hzq, -⟩ | ⟨hyq, hzq, -⟩⟩
   · -- An unbroken limit: its point on the level `c₂` is the limit of the second points.
     obtain ⟨σ, hσ, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr hyT hc₂.1 hc₂.2
+      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr hyT hc₂.1 hc₂.2
     obtain rfl := tendsto_nhds_unique h₂
-      (hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hfd hpr hyT hσ hlim hsc)
+      (hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hpr hyT hσ hlim hsc)
     exact Or.inl ⟨hyT, hyc, hσ, σ, rfl⟩
   · -- A limit broken after the level `c₁`: the second points converge on the second component.
     have hqr' := ne_of_manifoldMorseIndex_eq_add one_pos hqr
-    obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq
-      hc₂.1 (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hq hpq hqr hyq hzq).1
-    have hlim₂ := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hfd hqr' hzq hσ
+    obtain ⟨σ, hσ, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hqr' hzq
+      hc₂.1 (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hq hpq hqr hyq hzq).1
+    have hlim₂ := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hqr' hzq hσ
       hzlim (s := fun k ↦ s (n k) - t k)
       fun k ↦ by rw [← Flow.map_add, sub_add_cancel, hsc]
     simp only [← Flow.map_add, sub_add_cancel] at hlim₂
@@ -335,9 +333,9 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
     exact Or.inr ⟨q, hq, hpq, hqr, ⟨hyq, hyc⟩,
       hX.flow.isInvariant_unstableSet_inter_stableSet q r σ hzq, hσ⟩
   · -- A limit broken before the level `c₁` would put `f q` both above and below `c₁`.
-    have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd
+    have hyq' := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet
       (ne_of_manifoldMorseIndex_eq_add one_pos hqr) hyq
-    exact absurd (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hq hpq hqr hzq hyq).2
+    exact absurd (hsep.value_mem_Ioo_of_mem_unstableSet_inter_stableSet hq hpq hqr hzq hyq).2
       (hyc ▸ hyq'.2).not_gt
 
 end IsMorseSmale

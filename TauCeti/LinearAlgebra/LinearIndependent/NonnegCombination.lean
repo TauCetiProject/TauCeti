@@ -55,7 +55,7 @@ theorem nsmul_notMem_closure_range_neg [AddCommGroup M] {v : ι → M}
     m • v i ∉ AddSubsemigroup.closure (Set.range (-v)) := by
   intro hmem
   obtain ⟨n, hn, hx⟩ :=
-    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hmem
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range ℤ hmem
   have hneg : Finsupp.linearCombination ℤ (-v) n = -Finsupp.linearCombination ℤ v n := by
     simp [Finsupp.linearCombination_apply]
   have hsum : Finsupp.linearCombination ℤ v (Finsupp.single i (m : ℤ) + n) = 0 := by

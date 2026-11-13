@@ -101,6 +101,8 @@ end Matrix
 
 namespace TauCeti
 
+section Normed
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The partial gradients of the real Gram determinant `G(q, p) = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a pair
@@ -116,6 +118,12 @@ theorem hasStrictFDerivAt_sq_sub_inner_sq (x : V × V) :
   simp [real_inner_comm]
   ring
 
+end Normed
+
+section Seminormed
+
+variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
+
 /-- Replacing a pair `(q, p)` by `(a q + b p, c q + d p)` multiplies its real Gram determinant
 `‖q‖² ‖p‖² - ⟪q, p⟫²` by the square of the determinant `a d - b c` of the change of basis. -/
 theorem sq_sub_inner_sq_smul_add_smul (a b c d : ℝ) (q p : V) :
@@ -124,5 +132,7 @@ theorem sq_sub_inner_sq_smul_add_smul (a b c d : ℝ) (q p : V) :
   simp only [← real_inner_self_eq_norm_sq, inner_add_left, inner_add_right, real_inner_smul_left,
     real_inner_smul_right, real_inner_comm q p]
   ring
+
+end Seminormed
 
 end TauCeti

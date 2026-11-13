@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Derivatives of maps that factor through a projection
@@ -29,11 +31,26 @@ fields on a product manifold.
   take the corresponding component of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
+  `f ∘ Prod.fst + g ∘ Prod.snd` sends `(u, w)` to `df(u) + dg(w)`.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff` and
+  `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the differential of a separated sum vanishes
+  at `p` exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. For
+  real-valued `f` and `g`: the critical points of the separated sum are the pairs of critical
+  points.
+* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd` and
+  `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd`: the same, read in the
+  product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`) for the model
+  `𝓘(𝕜, E × E')`.
+* `ContinuousLinearMap.mvfderiv_comp_fst_apply` and `ContinuousLinearMap.mvfderiv_comp_snd_apply`:
+  the derivative of a continuous linear map applied to a vector-valued function of one factor.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
   factor times a function of the second factor.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
+  differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
   `𝕜 × N`.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
@@ -159,6 +176,75 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- as these points are equal by definition.
   rfl
 
+/-- **The derivative of a separated sum.** When `f` is differentiable at `p.1` and `g` at `p.2`,
+the derivative of `f ∘ Prod.fst + g ∘ Prod.snd` sends a tangent vector `v` at `p` to
+`df(v.1) + dg(v.2)`. -/
+theorem mvfderiv_comp_fst_add_comp_snd_apply {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2)
+    (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p v =
+      mvfderiv I f p.1 v.1 + mvfderiv J g p.2 v.2 := by
+  rw [mvfderiv_add (hf.comp p mdifferentiableAt_fst) (hg.comp p mdifferentiableAt_snd), add_apply,
+    mvfderiv_comp_fst_apply, mvfderiv_comp_snd_apply]
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish.** When
+`f` is differentiable at `p.1` and `g` at `p.2`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
+vanishes at `p` exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
+@[simp]
+theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) :
+    mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mvfderiv I f p.1 = 0 ∧ mvfderiv J g p.2 = 0 := by
+  refine ⟨fun h0 ↦ ⟨ContinuousLinearMap.ext fun u ↦ ?_, ContinuousLinearMap.ext fun w ↦ ?_⟩,
+    fun ⟨h₁, h₂⟩ ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  -- Below, the zero maps are applied to vectors read in the model spaces `E × E'`, `E` and `E'`,
+  -- the tangent spaces at `p`, `p.1` and `p.2` by definition, where `zero_apply` does not match
+  -- syntactically; such applications are `0` by definition.
+  · calc mvfderiv I f p.1 u = mvfderiv I f p.1 u + mvfderiv J g p.2 0 := by
+          rw [map_zero, add_zero]
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p (u, 0) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply hf hg (u, 0)).symm
+      _ = 0 := by rw [h0]; rfl
+  · calc mvfderiv J g p.2 w = mvfderiv I f p.1 0 + mvfderiv J g p.2 w := by
+          rw [map_zero, zero_add]
+      _ = mvfderiv (I.prod J) (f ∘ Prod.fst + g ∘ Prod.snd) p (0, w) :=
+        (mvfderiv_comp_fst_add_comp_snd_apply hf hg (0, w)).symm
+      _ = 0 := by rw [h0]; rfl
+  · rw [mvfderiv_comp_fst_add_comp_snd_apply hf hg, h₁, h₂]
+    exact add_zero (0 : F)
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, for
+`mfderiv`. When `f` is differentiable at `p.1` and `g` at `p.2`, the differential of
+`f ∘ Prod.fst + g ∘ Prod.snd` vanishes at `p` exactly when the differentials of `f` at `p.1` and of
+`g` at `p.2` both vanish. -/
+@[simp]
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff {f : M → F} {g : N → F} {p : M × N}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f p.1) (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) :
+    mfderiv (I.prod J) 𝓘(𝕜, F) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mfderiv I 𝓘(𝕜, F) f p.1 = 0 ∧ mfderiv J 𝓘(𝕜, F) g p.2 = 0 := by
+  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+/-- The derivative of a continuous linear map applied to a vector-valued function of the first
+factor, read on a product: the derivative of `y ↦ L (g y.1)` is `L` applied to the derivative of
+`g` on the first component. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_fst_apply {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] (L : F →L[𝕜] F') {g : M → F} {p : M × N}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F) g p.1) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun y ↦ L (g y.1)) p v = L (mvfderiv I g p.1 v.1) := by
+  -- The map is `(L ∘ g) ∘ Prod.fst` by definition.
+  exact (TauCeti.mvfderiv_comp_fst_apply (L ∘ g) p v).trans (L.mvfderiv_comp_apply hg _)
+
+/-- The derivative of a continuous linear map applied to a vector-valued function of the second
+factor, read on a product: the derivative of `y ↦ L (g y.2)` is `L` applied to the derivative of
+`g` on the second component. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_snd_apply {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] (L : F →L[𝕜] F') {g : N → F} {p : M × N}
+    (hg : MDifferentiableAt J 𝓘(𝕜, F) g p.2) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun y ↦ L (g y.2)) p v = L (mvfderiv J g p.2 v.2) := by
+  -- The map is `(L ∘ g) ∘ Prod.snd` by definition.
+  exact (TauCeti.mvfderiv_comp_snd_apply (L ∘ g) p v).trans (L.mvfderiv_comp_apply hg _)
+
 /-- **Product rule on a product.** The derivative of `(x, y) ↦ g x * h y` sends a tangent vector
 `(u, w)` at `p` to `dg(u) * h p.2 + g p.1 * dh(w)`. -/
 theorem mvfderiv_comp_fst_mul_comp_snd_apply {g : M → 𝕜} {h : N → 𝕜} {p : M × N}
@@ -197,6 +283,24 @@ theorem mvfderiv_curry_right {f : M × N → F} (p : M) (x : N)
   -- The product tangent synonym and the product of tangent synonyms have the same vectors;
   -- their `inr` maps agree pointwise. Composing with `y ↦ (p, y)` is currying at `p`.
   exact hd.trans (by ext v; rfl)
+
+/-- A map on a product that is constant on the slice `{p} × N` through `(p, x)` has differential
+at `(p, x)` vanishing on the vectors `(0, v)` tangent to that slice. No differentiability is
+needed: the differential is zero where the map is not differentiable. -/
+theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x : N}
+    (hc : ∀ y, f (p, y) = f (p, x)) (v : TangentSpace J x) :
+    mfderiv (I.prod J) I'' f (p, x) ((0 : TangentSpace I p), v) = 0 := by
+  by_cases hf : MDifferentiableAt (I.prod J) I'' f (p, x)
+  · have hd := mfderiv_comp_of_eq hf
+      (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (rfl : (p, x) = (p, x))
+    dsimp only [id_eq] at hd
+    -- The composite with the slice inclusion `y ↦ (p, y)` is constant.
+    rw [show (f ∘ fun y : N ↦ (p, y)) = fun _ ↦ f (p, x) from funext hc, mfderiv_const,
+      mfderiv_prod_right] at hd
+    exact (DFunLike.congr_fun hd v).symm
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hf]
+    -- The zero map evaluates to zero; the product tangent space is the product of the factors.
+    rfl
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
@@ -386,3 +490,42 @@ theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp
 end Comp
 
 end Coordinates
+
+/-! ### Product charts with values in a product of normed spaces -/
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E E' F : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] {M N : Type*} [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N]
+  [ChartedSpace E' N] {f : M → F} {g : N → F}
+
+attribute [local instance low] chartedSpaceProd
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, in
+the product charts with values in `E × E'`. When `f` is differentiable at `p.1` and `g` at `p.2`,
+the differential of `f ∘ Prod.fst + g ∘ Prod.snd` for the model `𝓘(𝕜, E × E')` vanishes at `p`
+exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
+@[simp]
+theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd {p : M × N}
+    (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1)
+    (hg : MDifferentiableAt 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2) :
+    mvfderiv 𝓘(𝕜, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mvfderiv 𝓘(𝕜, E) f p.1 = 0 ∧ mvfderiv 𝓘(𝕜, E') g p.2 = 0 := by
+  rw [modelWithCornersSelf_prod]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+/-- **The differential of a separated sum vanishes exactly where both differentials vanish**, in
+the product charts with values in `E × E'`. When `f` is differentiable at `p.1` and `g` at `p.2`,
+the differential of `f ∘ Prod.fst + g ∘ Prod.snd` for the model `𝓘(𝕜, E × E')` vanishes at `p`
+exactly when the differentials of `f` at `p.1` and of `g` at `p.2` both vanish. -/
+@[simp]
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd {p : M × N}
+    (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1)
+    (hg : MDifferentiableAt 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2) :
+    mfderiv 𝓘(𝕜, E × E') 𝓘(𝕜, F) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f p.1 = 0 ∧ mfderiv 𝓘(𝕜, E') 𝓘(𝕜, F) g p.2 = 0 := by
+  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff_chartedSpaceProd hf hg
+
+end TauCeti

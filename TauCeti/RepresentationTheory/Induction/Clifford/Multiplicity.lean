@@ -51,6 +51,11 @@ dimension.  The same argument on the subspaces themselves, where the twist is in
 the `k`-action is retained, shows that all the constituents have the same **dimension** as well;
 there it is `TauCeti.Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
 
+The decomposition of the restriction itself, into `e` copies of each conjugate of one constituent
+indexed by the cosets of its inertia group, is not proved here: it is `FDRep.clifford_restrict_iso`
+in `Clifford/Equivalence.lean`, and its character form is `TauCeti.clifford_restrict_character` in
+`Clifford/Decomposition.lean`.
+
 ## Main definitions
 
 * `Representation.asModuleConjEquiv`: translation by `ρ g`, as a `k`-linear automorphism of the
@@ -96,12 +101,6 @@ an additive commutative monoid; a field enters only where the single-orbit theor
 `Orbit/Basic.lean` does.
 
 ## References
-
-This proves the multiplicity half of the **Clifford's theorem** milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "its irreducible
-`N`-constituents form a single `G`-orbit, all with the same multiplicity `e`".  The remaining part
-of that milestone, the packaged decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` indexed by a transversal
-of the inertia group, is not proved here.
 
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.

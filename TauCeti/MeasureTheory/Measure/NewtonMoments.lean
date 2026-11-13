@@ -198,7 +198,7 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
   have hP₀cont : Continuous fun w => ‖P₀.eval w‖ ^ 2 := (continuous_norm.comp P₀.continuous).pow 2
   have hPcont (i : ι) : Continuous fun w => ‖(P i).eval w‖ ^ 2 :=
     (continuous_norm.comp (P i).continuous).pow 2
-  obtain ⟨B₀, hB₀, hroots⟩ := exists_eventually_forall_mem_roots_norm_le hM m
+  obtain ⟨B₀, _, hroots⟩ := exists_eventually_forall_mem_roots_norm_le hM m
   set B := max B₀ R
   have hBK : IsCompact (closedBall (0 : ℂ) B) := isCompact_closedBall 0 B
   -- Step 3: by Prokhorov's theorem, the measures `μ i` and the root counting measures `τ i`
