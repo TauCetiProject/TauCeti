@@ -251,6 +251,12 @@ theorem wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : 
   simpa only [wedge, coe_wedgeWith, RoughForm.wedge_def] using
     RoughForm.wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) x v
 
+/-- Real-valued smooth forms of the same even degree commute. -/
+theorem wedge_comm_of_even (hk : Even k) (φ ψ : SmoothForm I M ℝ k) :
+    wedge φ ψ = wedge ψ φ := by
+  refine Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
+  rw [wedge_comm, (hk.mul_right k).neg_one_pow, one_smul, Fin.cast_refl, Function.comp_id]
+
 /-- Bundled graded commutativity of the smooth real-valued wedge: `φ ∧ ψ` equals `(-1) ^ (k * l)`
 times the degree transport of `ψ ∧ φ`. -/
 theorem wedge_eq_smul_cast_wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :

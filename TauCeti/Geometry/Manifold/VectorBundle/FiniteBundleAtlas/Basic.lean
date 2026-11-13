@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Finite atlases of bundle charts
@@ -58,7 +59,9 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
   vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
-  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`).
+  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`). More generally, the
+  expression of such a section in any chart of the maximal atlas and any trivialization of the
+  trivialization atlas is `Cᵏ` (`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`).
 -/
 
 public section
@@ -398,16 +401,16 @@ namespace FiniteBundleAtlas
 variable (A : FiniteBundleAtlas E M F V)
 
 /-- **The chart coordinates of a `Cᵏ` section are `Cᵏ`** on the open set of points of the chart
-target whose preimage lies in the base set of the bundle chart. -/
+target whose preimage lies in the base set of the bundle chart. This is
+`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff` for the charts and trivializations
+of `A`. -/
 theorem contDiffOn_coord {s : ∀ x, V x}
     (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
     (i : Fin A.n) :
     ContDiffOn ℝ k (A.coord i s)
-      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
-  rw [← contMDiffOn_iff_contDiffOn]
-  exact (((A.triv i).contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).comp
-    (contMDiffOn_chart_symm.mono inter_subset_left) fun _ hy ↦ hy.2).congr fun y _ ↦
-      A.coord_def i s y
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) :=
+  (contDiffOn_trivialization_comp_chart_symm_of_contMDiff hs
+    (IsManifold.chart_mem_maximalAtlas _) (A.triv i)).congr fun y _ ↦ A.coord_def i s y
 
 end FiniteBundleAtlas
 

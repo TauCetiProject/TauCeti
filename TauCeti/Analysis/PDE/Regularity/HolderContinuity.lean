@@ -120,7 +120,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
       √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) ≤ N := fun x hx =>
     mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (setIntegral_mono_set (s := ball x R)
       (Lp.memLp (W1p.value u)).integrable_sq (ae_of_all _ fun y => sq_nonneg _)
-      (hball x hx).eventuallyLE)) (by positivity)
+      (hball x hx).eventuallySubset)) (by positivity)
   have hf : ∀ x ∈ K, IntegrableAtFilter (W1p.value u) (𝓝 x) mu := fun x hx => by
     simpa [nhdsWithin_eq_nhds.2 (Omega.isOpen.mem_nhds (hKΩ hx))] using
       (W1p.hasWeakFDerivOn u).locallyIntegrableOn x (hKΩ hx)
