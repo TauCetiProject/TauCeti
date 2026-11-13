@@ -36,20 +36,29 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 * `TauCeti.RelationalConfiguration.modelsOf`: the configurations on `V` decoding to models of a
   sentence.
+* `TauCeti.RelationalConfiguration.modelsOfTheory`: the configurations on `V` decoding to models
+  of a first-order theory.
 
 ## Main results
 
 * `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_sup`, `modelsOf_iInf`,
   `modelsOf_iSup`, `modelsOf_not`, `modelsOf_imp`, `modelsOf_top` and `modelsOf_bot`: model
   classes turn the connectives into the Boolean set operations.
+* `TauCeti.RelationalConfiguration.modelsOfTheory_eq_biInter_modelsOf`, `modelsOfTheory_empty`,
+  `modelsOfTheory_singleton`, `modelsOfTheory_insert`, `modelsOfTheory_union`, and
+  `modelsOfTheory_iUnion`: model classes of first-order theories turn unions of theories into
+  intersections of model classes.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_realize`: on a countable carrier, the
   configurations realizing an infinitary formula with countable branching at a fixed valuation
   form a measurable set.
-* `TauCeti.RelationalConfiguration.measurableSet_modelsOf`: model classes of such sentences are
-  measurable, and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes them
+* `TauCeti.RelationalConfiguration.measurableSet_modelsOf` and
+  `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory_of_countable`: model classes of
+  such sentences and of countable first-order theories are measurable, and
+  `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes sentence model classes
   standard Borel.
-* `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
-  the decoded structures.
+* `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
+  `FirstOrder.Language.Equiv.mem_modelsOfTheory_iff`: model classes are invariant under
+  isomorphism of the decoded structures.
 -/
 
 public section
@@ -191,6 +200,84 @@ instance standardBorelSpace_modelsOf [∀ n, Countable (L.Relations n)] [Countab
     (φ : L.SentenceInf ι) : StandardBorelSpace (modelsOf (V := V) φ) :=
   (measurableSet_modelsOf φ).standardBorel
 
+/-! ### Model classes of first-order theories -/
+
+/-- The **model class** of a first-order theory: the configurations on `V` whose decoded structures
+are models of `T`. -/
+def modelsOfTheory (T : L.Theory) : Set (RelationalConfiguration L V) :=
+  {c | @Theory.Model L V c.toStructure T}
+
+/-- A configuration lies in the model class of `T` exactly when its decoded structure is a model of
+`T`. -/
+@[simp]
+theorem mem_modelsOfTheory {T : L.Theory} {c : RelationalConfiguration L V} :
+    c ∈ modelsOfTheory T ↔ @Theory.Model L V c.toStructure T :=
+  Iff.rfl
+
+/-- A configuration lies in the model class of `T` exactly when its decoded structure satisfies
+every sentence of `T`. -/
+theorem mem_modelsOfTheory_iff_forall {T : L.Theory} {c : RelationalConfiguration L V} :
+    c ∈ modelsOfTheory T ↔ ∀ φ ∈ T, @Sentence.Realize L V c.toStructure φ :=
+  @Theory.model_iff L V c.toStructure T
+
+/-- The model class of a first-order theory is the intersection of the model classes of its
+sentences embedded into `L_{ω₁ω}`. -/
+theorem modelsOfTheory_eq_biInter_modelsOf (T : L.Theory) :
+    modelsOfTheory (V := V) T = ⋂ φ ∈ T, modelsOf φ.toOmega := by
+  ext c
+  simp
+
+/-- Every configuration is a model of the empty theory. -/
+@[simp]
+theorem modelsOfTheory_empty : modelsOfTheory (V := V) (∅ : L.Theory) = Set.univ := by
+  ext c
+  simp
+
+/-- The model class of a singleton first-order theory is the model class of its sentence. -/
+@[simp]
+theorem modelsOfTheory_singleton (φ : L.Sentence) :
+    modelsOfTheory (V := V) ({φ} : L.Theory) = modelsOf φ.toOmega := by
+  ext c
+  simp
+
+/-- Adjoining a sentence to a first-order theory intersects its model class with that of the
+sentence. -/
+@[simp]
+theorem modelsOfTheory_insert (φ : L.Sentence) (T : L.Theory) :
+    modelsOfTheory (V := V) (insert φ T) = modelsOf φ.toOmega ∩ modelsOfTheory T := by
+  ext c
+  simp
+
+/-- The model class of a union of two first-order theories is the intersection of their model
+classes. -/
+@[simp]
+theorem modelsOfTheory_union (T₁ T₂ : L.Theory) :
+    modelsOfTheory (V := V) (T₁ ∪ T₂) = modelsOfTheory T₁ ∩ modelsOfTheory T₂ := by
+  ext c
+  simp
+
+/-- The model class of an indexed union of first-order theories is the intersection of their model
+classes. -/
+@[simp]
+theorem modelsOfTheory_iUnion {κ : Sort*} (Ts : κ → L.Theory) :
+    modelsOfTheory (V := V) (⋃ i, Ts i) = ⋂ i, modelsOfTheory (Ts i) := by
+  ext c
+  simp [@forall_comm κ]
+
+/-- Larger theories have smaller model classes. -/
+theorem modelsOfTheory_anti {T₁ T₂ : L.Theory} (h : T₁ ⊆ T₂) :
+    modelsOfTheory (V := V) T₂ ⊆ modelsOfTheory T₁ :=
+  fun _ hc => mem_modelsOfTheory_iff_forall.2 fun φ hφ =>
+    (mem_modelsOfTheory_iff_forall.1 hc) φ (h hφ)
+
+/-- On a countable carrier, the model class of a countable first-order theory is measurable.
+Neither the language nor its relation symbols need be countable. -/
+theorem measurableSet_modelsOfTheory_of_countable [Countable V] {T : L.Theory}
+    (hT : T.Countable) : MeasurableSet (modelsOfTheory (V := V) T) := by
+  have : Countable T := hT
+  rw [modelsOfTheory_eq_biInter_modelsOf, Set.biInter_eq_iInter]
+  exact .iInter fun φ => measurableSet_modelsOf φ.1.toOmega
+
 end TauCeti.RelationalConfiguration
 
 namespace FirstOrder.Language.Equiv
@@ -206,4 +293,30 @@ theorem mem_modelsOf_iff {c : RelationalConfiguration L V} {d : RelationalConfig
     c ∈ modelsOf φ ↔ d ∈ modelsOf φ :=
   @StrongHomClass.realize_sentenceInf L ι V W c.toStructure d.toStructure _ _ _ e φ
 
+/-- Model classes of first-order theories are invariant under isomorphism: configurations on
+possibly different carriers with isomorphic decoded structures satisfy the same first-order
+theories. -/
+theorem mem_modelsOfTheory_iff {c : RelationalConfiguration L V} {d : RelationalConfiguration L W}
+    (e : @Language.Equiv L V W c.toStructure d.toStructure) (T : L.Theory) :
+    c ∈ modelsOfTheory T ↔ d ∈ modelsOfTheory T := by
+  let := c.toStructure
+  let := d.toStructure
+  exact (StrongHomClass.elementarilyEquivalent e).theory_model_iff
+
 end FirstOrder.Language.Equiv
+
+namespace Equiv
+
+open TauCeti RelationalConfiguration
+
+variable {L : Language.{u, v}} [L.IsRelational] {M : Type w} [L.Structure M] {V : Type w'}
+
+/-- A structure encoded on a bijective carrier lies in the model class of a first-order theory
+if and only if the original structure is a model of the theory. -/
+theorem mem_modelsOfTheory_encodeVia_iff (e : M ≃ V) (T : L.Theory) :
+    e.encodeVia ∈ modelsOfTheory T ↔ M ⊨ T := by
+  rw [mem_modelsOfTheory, toStructure_encodeVia]
+  let := e.inducedStructure (L := L)
+  exact (StrongHomClass.elementarilyEquivalent e.inducedStructureEquiv).theory_model_iff.symm
+
+end Equiv
