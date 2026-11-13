@@ -18,6 +18,8 @@ subgroups, with stable letter `t`, so that `t * a * t⁻¹ = φ a` for `a ∈ A`
 of `G` that `t` conjugates back into `G`: `t * g * t⁻¹` lies in `G` exactly when `g ∈ A`, and
 `t⁻¹ * g * t` lies in `G` exactly when `g ∈ B`. Consequently `g ∈ G` commutes with `t` exactly when
 `g ∈ A` and `φ g = g`; for the HNN extension along the identity of `A`, exactly when `g ∈ A`.
+Since `G` and `t` generate the HNN extension, `g` is central in it exactly when it is moreover
+central in `G`.
 
 This controls commutation transitivity in an HNN extension along the identity of `A`. If `c ∈ A`
 is nontrivial then `t` commutes with `c`, so if commutation is transitive through `c` then every
@@ -35,6 +37,9 @@ for `A = zpowers u` whenever `u` is a nontrivial proper power, since a root of `
 * `HNNExtension.commute_of_t_iff`: `g` commutes with `t` iff `g ∈ A` and `φ g = g`.
 * `HNNExtension.commute_of_t_iff_mem`: along the identity of `A`, `g` commutes with `t` iff
   `g ∈ A`.
+* `HNNExtension.of_mem_center_iff`: `g` is central in the HNN extension iff it is central in `G`,
+  lies in `A` and is fixed by `φ`; for instance the generator of `⟨a, t | t a t⁻¹ = a⟩` is
+  central (`HNNExtension.of_ofAdd_one_mem_center`).
 * `HNNExtension.centralizer_le_of_isCommTransitive`: if the HNN extension along the identity of
   `A` is commutative transitive, then `A` contains the centralizer in `G` of each of its
   nontrivial elements.
@@ -112,6 +117,26 @@ the stable letter exactly when it lies in `A`. -/
 theorem commute_of_t_iff_mem {g : G} :
     Commute (of g : HNNExtension G A A (MulEquiv.refl A)) t ↔ g ∈ A := by
   simp [commute_of_t_iff]
+
+/-- An element of the base group is central in the HNN extension exactly when it is central in
+the base group, lies in `A` and is fixed by `φ`. -/
+theorem of_mem_center_iff {z : G} :
+    of z ∈ center (HNNExtension G A B φ) ↔ z ∈ center G ∧ ∃ hz : z ∈ A, (φ ⟨z, hz⟩ : G) = z := by
+  refine ⟨fun h => ⟨mem_center_iff.2 fun g => of_injective (φ := φ) ?_,
+    commute_of_t_iff.1 (mem_center_iff.1 h t).symm⟩, fun ⟨hz, hzt⟩ => mem_center_iff.2 fun x => ?_⟩
+  · simpa using mem_center_iff.1 h (of g)
+  · induction x using induction_on with
+    | of g => simpa using congrArg of (mem_center_iff.1 hz g)
+    | t => exact (commute_of_t_iff.2 hzt).symm
+    | mul x y hx hy => exact (Commute.mul_left hx hy).eq
+    | inv x hx => exact (Commute.inv_left hx).eq
+
+/-- In the HNN extension `⟨a, t | t a t⁻¹ = a⟩` of an infinite cyclic group `⟨a⟩` along the
+identity of `⟨a⟩`, the generator `a` is central. -/
+theorem of_ofAdd_one_mem_center :
+    of (Multiplicative.ofAdd (1 : ℤ)) ∈ center
+      (HNNExtension (Multiplicative ℤ) ⊤ ⊤ (MulEquiv.refl _)) :=
+  of_mem_center_iff.2 ⟨mem_center_iff.2 fun g => mul_comm g _, mem_top _, rfl⟩
 
 /-- If the HNN extension along the identity of `A` is commutative transitive, then `A` contains
 the centralizer in `G` of each of its nontrivial elements. -/

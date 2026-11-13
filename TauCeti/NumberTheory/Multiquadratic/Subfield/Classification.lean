@@ -43,8 +43,7 @@ constructions consume.
 ## Provenance
 
 The two ingredients this synthesises — the injective subset-product family and the hyperplane
-count of the quadratic subfields — are built, with the rest of the multiquadratic Layer 0, on the
-square-class machinery migrated from
+count of the quadratic subfields — are built on the square-class machinery migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 -/

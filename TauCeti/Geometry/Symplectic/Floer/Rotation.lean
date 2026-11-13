@@ -45,8 +45,6 @@ transversality is asserted.
 * `MDifferentiable.eq_zero_of_forall_mfderiv_apply_eq_zero_of_tendsto_atBot`: for a cylinder with
   a constant end which is not invariant under every time rotation, a direction in which the
   derivative vanishes everywhere is zero.
-* `TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`: the perturbed derivative of a
-  translate is the translate of the perturbed derivative, for the translated data.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_add_right`: translates of
   solutions are solutions where the data are invariant.
 * `TauCeti.SmoothTwoForm.isInvariant_translationFlow_setOf_autonomous`: the translation flows
@@ -100,24 +98,12 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M] (ω : SmoothTwoForm I M)
 
-/-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + c)` for
-the translated data `w ↦ K (w + c)` at `z` is the perturbed derivative of `u` for `K` at `z + c`. -/
-theorem perturbedMFDeriv_comp_add_right (Ks Kt : ℝ × ℝ → M → ℝ) {u : ℝ × ℝ → M} {z c : ℝ × ℝ}
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (z + c)) :
-    ω.perturbedMFDeriv (fun w ↦ Ks (w + c)) (fun w ↦ Kt (w + c)) (fun w ↦ u (w + c)) z =
-      ω.perturbedMFDeriv Ks Kt u (z + c) := by
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hu.mfderiv_comp_add_right]
-  -- The two sides differ only in how the tangent spaces at `u (z + c)` are written.
-  rfl
-
 /-- **Translations preserve Floer solutions.** If `u` solves the Floer equation at `z + c`, and the
 Hamiltonian one-form `K = Ks ds + Kt dt` takes the same value at `z + c` as at `z`, then the
 translate `w ↦ u (w + c)` solves the Floer equation at `z`, for the same almost complex structure
 on the tangent space at `u (z + c)`. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_add_right {Ks Kt : ℝ × ℝ → M → ℝ}
     {u : ℝ × ℝ → M} {z c : ℝ × ℝ} (hKs : Ks (z + c) = Ks z) (hKt : Kt (z + c) = Kt z)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (z + c))
     {J : AlmostComplexStructure (TangentSpace I (u (z + c)))}
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedMFDeriv Ks Kt u (z + c)).toLinearMap) :
@@ -128,7 +114,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_add_right {Ks Kt : ℝ × ℝ �
       ω.perturbedMFDeriv Ks Kt (fun w ↦ u (w + c)) z := by
     refine ContinuousLinearMap.ext fun v ↦ ?_
     rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hKs, hKt]
-  rwa [← ω.perturbedMFDeriv_comp_add_right Ks Kt hu, hK] at hF
+  rwa [← ω.perturbedMFDeriv_comp_add_right Ks Kt u c z, hK] at hF
 
 /-- **The translation flows preserve autonomous Floer cylinders.** For a Hamiltonian `H` on `M`
 and almost complex structures `J` depending only on the target point, the continuous maps
@@ -147,8 +133,7 @@ theorem isInvariant_translationFlow_setOf_autonomous (H : M → ℝ)
   rw [Set.mem_ofPred_eq, he]
   refine ⟨fun z ↦ (hu (z + t • v)).comp z
     (differentiableAt_id.add_const (t • v)).mdifferentiableAt, fun z ↦ ?_⟩
-  exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl rfl (hu (z + t • v))
-    (hF (z + t • v))
+  exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl rfl (hF (z + t • v))
 
 /-- **Time-independent autonomous Floer cylinders.** At a point where `∂_t u = 0`, for instance on
 a map fixed by all time rotations, the autonomous Floer equation

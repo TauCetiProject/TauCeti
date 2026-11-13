@@ -341,7 +341,7 @@ theorem localArtinMap_cyclotomic_padic_primePow (L : Type*) [Field L] [Algebra �
     [FiniteDimensional ℚ_[p] L] [IsGalois ℚ_[p] L] (ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p])
     {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ} (hx : (x : ℚ_[p]) = (p : ℚ_[p]) ^ k * (u : ℤ_[p]))
     {σ : Gal(L/ℚ_[p])}
-    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul x) = Additive.ofMul (Abelianization.of σ))
+    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul x) = Additive.ofMul (Group.Abelianization.of σ))
     {n : ℕ} {ζ : L} (hζ : ζ ^ p ^ n = 1) :
     σ ζ = ζ ^ (PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p])).val := by
   -- Instance search does not find `Normal ℚ_[p] L` within its budget, so it is supplied here.
@@ -372,7 +372,8 @@ with `ζ ^ pⁿ = 1`. -/
 theorem localArtinMap_cyclotomic_padic_neg_one (L : Type*) [Field L] [Algebra ℚ_[p] L]
     [FiniteDimensional ℚ_[p] L] [IsGalois ℚ_[p] L] (ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p])
     {σ : Gal(L/ℚ_[p])}
-    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul (-1)) = Additive.ofMul (Abelianization.of σ))
+    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul (-1)) = Additive.ofMul (Group.Abelianization.of
+        σ))
     {n : ℕ} {ζ : L} (hζ : ζ ^ p ^ n = 1) :
     σ ζ = ζ⁻¹ := by
   have : NeZero (p ^ n) := ⟨pow_ne_zero n (Fact.out : p.Prime).ne_zero⟩
@@ -392,7 +393,7 @@ theorem neg_one_notMem_normGroup_padic (L : Type*) [Field L] [Algebra ℚ_[p] L]
   have : Algebra.IsSeparable ℚ_[p] L := IsGalois.to_isSeparable
   let ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p] := IsSepClosed.lift
   have hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul (-1)) =
-      Additive.ofMul (Abelianization.of (1 : Gal(L/ℚ_[p]))) := by
+      Additive.ofMul (Group.Abelianization.of (1 : Gal(L/ℚ_[p]))) := by
     rw [(localArtinMap_eq_zero_iff ℚ_[p] L ι _).2 h, map_one, ofMul_one]
   have h1 := localArtinMap_cyclotomic_padic_neg_one p L ι hσ hζ
   rw [AlgEquiv.one_apply] at h1
@@ -412,7 +413,7 @@ theorem localArtinMap_Q2_neg_three (L : Type*) [Field L] [Algebra ℚ_[2] L]
     {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = -3) {σ : Gal(L/ℚ_[2])}
     (hσ : localArtinMap ℚ_[2] L ι
         (Additive.ofMul (Units.map (algebraMap ℤ_[2] ℚ_[2]).toMonoidHom u)) =
-      Additive.ofMul (Abelianization.of σ))
+      Additive.ofMul (Group.Abelianization.of σ))
     {ζ : L} (hζ : ζ ^ 16 = 1) :
     σ ζ = ζ ^ 5 := by
   rw [localArtinMap_cyclotomic_padic_primePow 2 L ι (n := 4) (k := 0) (u := u) (by simp) hσ hζ]

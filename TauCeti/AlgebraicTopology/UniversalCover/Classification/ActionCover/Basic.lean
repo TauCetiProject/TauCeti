@@ -51,9 +51,7 @@ prepends the *inverse* loop class, the inverse cancels against the exchange
 ## References
 
 This is the object half of the essential surjectivity of monodromy on *all* covering spaces,
-the disconnected case of `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8, which asks
-for covers to be classified by functors out of the fundamental groupoid. It consumes the
-based-path universal cover adapted from Kim Morrison's
+connected or not. It consumes the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's
 quotient-covering-map interface due to Junyan Xu.
 -/

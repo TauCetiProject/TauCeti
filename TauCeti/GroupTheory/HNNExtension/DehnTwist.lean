@@ -15,7 +15,14 @@ For an HNN extension with relation `t a t⁻¹ = φ(a)`, an element `z` centrali
 associated subgroup `A` defines an automorphism fixing the base group and sending `t` to
 `t * of z`. These twists compose in the same order as their parameters. The parameter is
 recovered from the image of `t`, so a twist is the identity exactly when its parameter is one.
-In particular, centrality of the parameter does not make an HNN twist trivial.
+In particular, centrality of the parameter does not make an HNN twist trivial: in
+`⟨a, t | t a t⁻¹ = a⟩` the generator `a` is central (`HNNExtension.of_ofAdd_one_mem_center`)
+and the twist `t ↦ t a` is not the identity (`HNNExtension.dehnTwist_ofAdd_one_ne_one`).
+
+The centralizer hypothesis is necessary: an endomorphism fixing the base group and sending `t`
+to `t * of z` exists exactly when `z` centralizes `A`
+(`HNNExtension.exists_map_t_eq_iff_mem_centralizer`), and any such endomorphism is the identity
+exactly when `z = 1` (`HNNExtension.eq_id_iff_of_map_t_eq`).
 
 These are the one-edge twists used in modular groups of splittings. The construction uses
 Mathlib's `HNNExtension.lift` and its injective base inclusion.
@@ -123,5 +130,51 @@ theorem dehnTwist_injective : Function.Injective (dehnTwist φ) := by
       K.map of := by
   rw [Subgroup.map_map]
   congr 1
+
+/-! ### Necessity of the centralizer hypothesis and uniqueness -/
+
+/-- An endomorphism of an HNN extension that fixes the base group and sends `t` to `t * of z`
+can only exist when `z` centralizes the source associated subgroup. -/
+theorem mem_centralizer_of_map_t_eq {z : G}
+    (f : HNNExtension G A B φ →* HNNExtension G A B φ) (hof : ∀ g, f (of g) = of g)
+    (ht : f t = t * of z) : z ∈ Subgroup.centralizer (A : Set G) := by
+  intro a ha
+  apply of_injective φ
+  have h := congrArg f (t_mul_of (φ := φ) ⟨a, ha⟩)
+  simp only [map_mul, hof, ht] at h
+  rw [← mul_assoc, ← t_mul_of, mul_assoc, mul_assoc, mul_left_cancel_iff] at h
+  simpa [map_mul] using h.symm
+
+/-- The rule fixing the base group and sending `t` to `t * of z` defines an endomorphism of an
+HNN extension exactly when `z` centralizes the source associated subgroup. -/
+theorem exists_map_t_eq_iff_mem_centralizer {z : G} :
+    (∃ f : HNNExtension G A B φ →* HNNExtension G A B φ,
+      (∀ g, f (of g) = of g) ∧ f t = t * of z) ↔ z ∈ Subgroup.centralizer (A : Set G) :=
+  ⟨fun ⟨f, hof, ht⟩ => mem_centralizer_of_map_t_eq φ f hof ht,
+    fun hz => ⟨dehnTwist φ ⟨z, hz⟩, dehnTwist_of φ _, dehnTwist_t φ _⟩⟩
+
+/-- An endomorphism of an HNN extension that fixes the base group and sends `t` to `t * of z`
+is the identity exactly when `z = 1`. No hypothesis on `z` is needed. -/
+theorem eq_id_iff_of_map_t_eq {z : G}
+    (f : HNNExtension G A B φ →* HNNExtension G A B φ) (hof : ∀ g, f (of g) = of g)
+    (ht : f t = t * of z) : f = MonoidHom.id _ ↔ z = 1 := by
+  refine ⟨fun h => of_injective φ ?_, fun h => hom_ext (MonoidHom.ext hof) (by simp [ht, h])⟩
+  simpa [h] using ht.symm
+
+/-- An automorphism of an HNN extension that fixes the base group and sends `t` to `t * of z`
+is the identity exactly when `z = 1`. -/
+theorem eq_one_iff_of_map_t_eq {z : G} (τ : MulAut (HNNExtension G A B φ))
+    (hof : ∀ g, τ (of g) = of g) (ht : τ t = t * of z) : τ = 1 ↔ z = 1 := by
+  rw [← eq_id_iff_of_map_t_eq φ τ.toMonoidHom hof ht]
+  exact MulEquiv.toMonoidHom_injective.eq_iff.symm
+
+/-! ### The identity HNN extension of an infinite cyclic group -/
+
+/-- In the HNN extension `⟨a, t | t a t⁻¹ = a⟩` of an infinite cyclic group `⟨a⟩` along the
+identity of `⟨a⟩`, the twist `t ↦ t a` by the central element `a` is not the identity. -/
+theorem dehnTwist_ofAdd_one_ne_one :
+    dehnTwist (MulEquiv.refl (⊤ : Subgroup (Multiplicative ℤ)))
+      ⟨Multiplicative.ofAdd 1, Subgroup.mem_centralizer_iff.mpr fun g _ => mul_comm g _⟩ ≠ 1 := by
+  simp [Subtype.ext_iff]
 
 end HNNExtension

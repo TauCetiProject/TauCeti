@@ -214,7 +214,7 @@ theorem integralTopForm_mpullback_curve_Icc {X : Type*} [NormedAddCommGroup X]
       ((uniqueDiffOn_Icc hab.out t ⟨ht.1.le, ht.2.le⟩).uniqueMDiffWithinAt) hd ω,
       mpullback_apply, mfderiv_eq_fderiv]
     apply congrArg (ω (γ t))
-    funext i
+    funext _
     -- Expose the model derivative conjugation and write the input unit in ℝ explicitly:
     -- the interval module's tangent-unit instance otherwise survives inside fderiv.
     change (NormedSpace.fromTangentSpace (𝕜 := ℝ) (γ t)).symm

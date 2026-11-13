@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.Topology.Category.TopCat.DisjointOpens
 public import TauCeti.Topology.Category.TopCat.OpenEmbedding
+import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 import TauCeti.Topology.TietzeExtension
 
 /-!
@@ -35,7 +36,8 @@ proves the two steps.
 * Sequential colimits. If `F : ℕ ⥤ TopCat` has closed embeddings as transition maps and every
   `F.obj n` is normal, its colimit is normal (`TauCeti.TopCat.normalSpace_of_isColimit`). A
   directed colimit of `T1` spaces along injective transition maps is `T1`
-  (`TauCeti.TopCat.t1Space_of_isColimit`).
+  (`TauCeti.TopCat.t1Space_of_isColimit`), so a sequential colimit of `T4` spaces along closed
+  embeddings is `T4` (`TauCeti.TopCat.t4Space_of_isColimit`).
 
 Both normality proofs separate two disjoint closed sets by a continuous real function, built from
 Urysohn functions by the Tietze extension theorem. For attaching, a Urysohn function `u` on `X`
@@ -191,6 +193,16 @@ theorem normalSpace_of_isColimit
     norm_num [hv, (hu n).1 hpS]
   · obtain ⟨n, x, rfl⟩ := hp p
     norm_num [hv, (hu n).2 hpT]
+
+/-- The colimit of a sequence of `T4` spaces in `TopCat` whose transition maps are closed
+embeddings is `T4`. -/
+theorem t4Space_of_isColimit
+    (hF : ∀ n : ℕ, IsClosedEmbedding (F.map (homOfLE (Nat.le_succ n)))) (hc : IsColimit c)
+    [∀ n, T4Space (F.obj n)] : T4Space c.pt :=
+  have := t1Space_of_isColimit (fun _ _ hij ↦
+    (isClosedEmbedding_map_of_isWellOrderContinuous F (fun n _ ↦ hF n) hij).injective) hc
+  have := normalSpace_of_isColimit hF hc
+  {}
 
 end Colimit
 

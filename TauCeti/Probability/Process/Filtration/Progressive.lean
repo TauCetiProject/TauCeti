@@ -131,7 +131,7 @@ theorem measurableSet_comap_progressive_iff [LinearOrder ι] [MeasurableInf ι]
         ((fun p : Iic t × Ω =>
           (⟨(p.1 : ι), mem_Iic.mpr ((mem_Iic.mp p.1.prop).trans ht)⟩, p.2)) ⁻¹' s) := by
   constructor
-  · rintro ⟨u, hu, rfl⟩ t ht
+  · rintro ⟨u, hu, rfl⟩ t _
     exact (F.measurableSet_progressive_iff.1 hu) t
   · intro h
     let cap : ι × Ω → Iic T × Ω := fun p => (⟨min p.1 T, min_le_right _ _⟩, p.2)

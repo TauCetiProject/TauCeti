@@ -71,6 +71,18 @@ theorem ker_squareClassHom : squareClassHom.ker = Subgroup.square Kˣ := by
   ext
   simp [squareClassHom_apply]
 
+/-- Every square maps to the trivial multiplicative square class. -/
+theorem squareClassHom_sq (u : Kˣ) : squareClassHom (u ^ 2) = 1 :=
+  (squareClassHom_eq_one_iff _).mpr ⟨u, sq u⟩
+
+/-- Multiplying on the left by a square leaves the multiplicative square class unchanged. -/
+theorem squareClassHom_sq_mul (u x : Kˣ) : squareClassHom (u ^ 2 * x) = squareClassHom x := by
+  rw [map_mul, squareClassHom_sq, one_mul]
+
+/-- Multiplying on the right by a square leaves the multiplicative square class unchanged. -/
+theorem squareClassHom_mul_sq (x u : Kˣ) : squareClassHom (x * u ^ 2) = squareClassHom x := by
+  rw [map_mul, squareClassHom_sq, mul_one]
+
 private theorem additiveSquareClassQuotient_surjective :
     Function.Surjective
       ((QuotientAddGroup.mk' (Subgroup.square Kˣ).toAddSubgroup).toMultiplicativeRight :
