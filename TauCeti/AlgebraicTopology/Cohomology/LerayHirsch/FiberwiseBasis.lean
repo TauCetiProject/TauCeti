@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Basis
-public import Mathlib.RingTheory.Nilpotent.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product
 public import TauCeti.AlgebraicTopology.Cohomology.Point
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.Topology.Category.TopCat.Monoidal
 
 /-!
@@ -400,20 +400,13 @@ private lemma isUnit_coeffMap (n : ℕ) (hs : ∀ p ≤ n, ∀ i, i ∈ s p)
   have hT (m : ℕ) : filt n (m + 1) ≤ (filt n m).comap T :=
     filt_le_iff.2 fun p q h i a hp ↦ diagMap_filt_le s n m B
       (filt_mono (by omega) (coeffMap_sub_diagMap_lof_mem s n hs γ p q h i a))
-  have hTpow (r : ℕ) : ∀ m, filt n (m + r) ≤ (filt n m).comap (T ^ r) := by
-    induction r with
-    | zero => intro m v hv; simpa using hv
-    | succ r ih =>
-      intro m v hv
-      rw [Submodule.mem_comap, pow_succ, Module.End.mul_eq_comp, LinearMap.comp_apply]
-      exact ih m (hT (m + r) (by rwa [← add_assoc] at hv))
-  have hnil : IsNilpotent T := ⟨n + 1, LinearMap.ext fun v ↦ by
-    have := hTpow (n + 1) 0 (x := v) (by rw [zero_add, filt_succ_self]; trivial)
-    rwa [Submodule.mem_comap, filt_zero, Submodule.mem_bot] at this⟩
+  have hU : IsUnit (1 + T) := (Module.End.isUnit_iff _).2 <|
+    Module.End.bijective_of_sub_mem_filtration (filt_zero n)
+      (fun _ ↦ ⟨n + 1, by rw [filt_succ_self]; trivial⟩) fun m v hv ↦ by simpa using hT m hv
   have hM : coeffMap n γ = diagMap s n A * (1 + T) := by
     rw [mul_add, mul_one, ← mul_assoc, hD, one_mul, add_sub_cancel]
   rw [hM]
-  exact (Units.mk _ _ hD (diagMap_mul_eq_one s n hs _ _ hAB)).isUnit.mul hnil.isUnit_one_add
+  exact (Units.mk _ _ hD (diagMap_mul_eq_one s n hs _ _ hAB)).isUnit.mul hU
 
 end Diagonal
 
@@ -452,8 +445,10 @@ theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses (x : X
   have hpos {q : ℕ} (hq : q ≠ 0) :
       TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
         (M := 𝟙_ (ModuleCat.{w} k)) (TopCat.const (X := F) x) q = 0 :=
-    singularCohomologyMap_eq_zero_of_nullhomotopic
-      (ContinuousMap.nullhomotopic_of_constant x) hq
+    singularCohomologyMap_eq_zero_of_nullhomotopic (by
+      rw [show (TopCat.const (X := F) x).hom = ContinuousMap.const F x from
+        ContinuousMap.ext fun _ ↦ TopCat.const_apply _ _]
+      exact ContinuousMap.nullhomotopic_of_constant x) hq
   have hlof (q' p' : ℕ) (h' : p' + q' = p) (i : ι p')
       (β : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q') :
       TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
