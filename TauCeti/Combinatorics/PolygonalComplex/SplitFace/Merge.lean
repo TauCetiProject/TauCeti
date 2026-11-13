@@ -257,7 +257,7 @@ def mergeFacesSide (h : C.IsMergeable g₁ g₂) (g : Option {g : C.Face // g �
 private theorem incoming_mk_zero (g : C.Face) :
     C.incoming ⟨g, ⟨0, C.sides_pos g⟩⟩ =
       C.side g ⟨C.sides g - 1, Nat.sub_lt (C.sides_pos g) Nat.one_pos⟩ :=
-  (C.incoming_mk_of_eq_zero rfl rfl).trans (C.outgoing_mk _ _)
+  (C.incoming_mk_of_eq_zero rfl rfl).trans (C.outgoing_def _)
 
 /-- The positions of `X` in the merged face are followed by the next side of `g₁`; the last
 position of `X` is followed by the start of `Y`, at the source of `d`. -/
@@ -270,22 +270,23 @@ private theorem tgt_outgoing_mergeFacesCornerOrigin_of_lt (h : C.IsMergeable g�
   have := C.sides_pos g₁
   have := C.sides_pos g₂
   have hd := h.outgoing_eq
-  rw [incoming_mk_zero, outgoing_mk] at hd
-  rw [mergeFacesCornerOrigin_none_of_lt hk, outgoing_mk]
+  rw [incoming_mk_zero, outgoing_def] at hd
+  rw [mergeFacesCornerOrigin_none_of_lt hk, outgoing_def]
   by_cases hk1 : (k : ℕ) + 1 < C.sides g₁ - 1
   · rw [mergeFacesCornerOrigin_none_of_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-      outgoing_mk]
+      outgoing_def]
     exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
-  rw [C.tgt_side_eq_src_side (j := ⟨C.sides g₁ - 1, by omega⟩) (by dsimp only; split_ifs <;> omega)]
+  rw [C.tgt_side_eq_src_side (f := g₁) (j := ⟨C.sides g₁ - 1, by omega⟩)
+    (by dsimp only; split_ifs <;> omega)]
   by_cases hY : (k : ℕ) + 1 = C.sides g₁ + C.sides g₂ - 2
   · -- `Y` is empty: `g₂ = d⁻¹` is a monogon, so `d` is a loop, and the next position is `0`.
     have h₂ : C.sides g₂ = 1 := by omega
     rw [mergeFacesCornerOrigin_none_of_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-      outgoing_mk, ← C.graph.tgt_rev, ← hd, C.tgt_side_eq_src_side_of_sides_eq_one h₂, hd,
+      outgoing_def, ← C.graph.tgt_rev, ← hd, C.tgt_side_eq_src_side_of_sides_eq_one h₂, hd,
       SerreGraph.src_rev]
     exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
   · rw [mergeFacesCornerOrigin_none_of_not_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-      outgoing_mk, ← C.graph.tgt_rev, ← hd]
+      outgoing_def, ← C.graph.tgt_rev, ← hd]
     exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
 
 /-- The positions of `Y` in the merged face are followed by the next side of `g₂`; the last one is
@@ -300,23 +301,23 @@ private theorem tgt_outgoing_mergeFacesCornerOrigin_of_not_lt (h : C.IsMergeable
   have := C.sides_pos g₂
   have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
   have hd := h.outgoing_eq
-  rw [incoming_mk_zero, outgoing_mk] at hd
-  rw [mergeFacesCornerOrigin_none_of_not_lt hk, outgoing_mk]
+  rw [incoming_mk_zero, outgoing_def] at hd
+  rw [mergeFacesCornerOrigin_none_of_not_lt hk, outgoing_def]
   by_cases hX : (k : ℕ) + 1 = C.sides g₁ + C.sides g₂ - 2
   · rw [C.tgt_side_eq_src_side (j := ⟨0, C.sides_pos g₂⟩) (by dsimp only; split_ifs <;> omega),
       hd, SerreGraph.src_rev]
     by_cases h₁ : 1 < C.sides g₁
     · -- the next position is the start of `X`
       rw [mergeFacesCornerOrigin_none_of_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-        outgoing_mk]
+        outgoing_def]
       exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
     · -- `X` is empty: `g₁ = d` is a monogon, so `d` is a loop
       rw [mergeFacesCornerOrigin_none_of_not_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-        outgoing_mk, C.tgt_side_eq_src_side_of_sides_eq_one (f := g₁) (by omega), ← C.graph.tgt_rev,
-        ← hd]
+        outgoing_def, C.tgt_side_eq_src_side_of_sides_eq_one (f := g₁) (by omega),
+        ← C.graph.tgt_rev, ← hd]
       exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
   · rw [mergeFacesCornerOrigin_none_of_not_lt (k := finRotate _ k) (by split_ifs at hr <;> omega),
-      outgoing_mk]
+      outgoing_def]
     exact C.tgt_side_eq_src_side (by dsimp only; split_ifs at hr ⊢ <;> omega)
 
 /-- The sides of the faces of the merged complex form closed dart sequences. -/
@@ -328,7 +329,7 @@ private theorem tgt_outgoing_mergeFacesCornerOrigin (h : C.IsMergeable g₁ g₂
   · by_cases hk : (k : ℕ) < C.sides g₁ - 1
     exacts [tgt_outgoing_mergeFacesCornerOrigin_of_lt h hk,
       tgt_outgoing_mergeFacesCornerOrigin_of_not_lt h hk]
-  · rw [mergeFacesCornerOrigin_some, mergeFacesCornerOrigin_some, outgoing_mk, outgoing_mk]
+  · rw [mergeFacesCornerOrigin_some, mergeFacesCornerOrigin_some, outgoing_def, outgoing_def]
     exact C.tgt_side g.1 k
 
 variable (C) in
@@ -641,7 +642,7 @@ noncomputable def splitFaceMergeFacesCornerEquiv :
 private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.sides g₂) :
     C.graph.src (C.side g₂ ⟨1, h₂⟩) = C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   rw [← C.tgt_side_eq_src_side (i := ⟨0, C.sides_pos g₂⟩) (by dsimp only; split_ifs <;> omega),
-    ← outgoing_mk, h.outgoing_eq, SerreGraph.tgt_rev]
+    ← outgoing_def _ ⟨_, _⟩, h.outgoing_eq, SerreGraph.tgt_rev]
 
 /-- The side of the merged face at the position where `Y` starts is the second side of `g₂`, which
 starts at the source of `d`. -/
@@ -650,8 +651,8 @@ private theorem src_mergeFacesSide_sides_sub_one :
       ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
         C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
-  rw [← outgoing_mk, coe_outgoing_mergeFaces,
-    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega), outgoing_mk,
+  rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces,
+    mergeFacesCornerOrigin_none_of_not_lt (by dsimp only; omega), outgoing_def,
     ← src_side_one_eq h h₂]
   exact congrArg (fun j => C.graph.src (C.side g₂ j)) (Fin.ext (by dsimp only; omega))
 
@@ -660,10 +661,10 @@ private theorem src_mergeFacesSide_zero :
     C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).1 =
       C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
-  rw [← outgoing_mk, coe_outgoing_mergeFaces]
+  rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces]
   by_cases h₁ : 1 < C.sides g₁
   · rw [mergeFacesCornerOrigin_none_of_lt (k := ⟨0, (C.mergeFaces h).sides_pos none⟩)
-        (by dsimp only; omega), outgoing_mk, incoming_mk_zero,
+        (by dsimp only; omega), outgoing_def, incoming_mk_zero,
       C.tgt_side_eq_src_side (i := ⟨C.sides g₁ - 1, by omega⟩) (j := ⟨0, C.sides_pos g₁⟩)
         (by dsimp only; split_ifs <;> omega)]
   · -- `X` is empty, so `g₁ = d` is a monogon and `d` is a loop
@@ -671,7 +672,7 @@ private theorem src_mergeFacesSide_zero :
       have := h.two_lt_sides_add_sides
       omega
     rw [mergeFacesCornerOrigin_none_of_not_lt (k := ⟨0, (C.mergeFaces h).sides_pos none⟩)
-        (by dsimp only; omega), outgoing_mk, incoming_mk_zero,
+        (by dsimp only; omega), outgoing_def, incoming_mk_zero,
       C.tgt_side_eq_src_side_of_sides_eq_one (f := g₁) (by omega), ← incoming_mk_zero,
       ← src_side_one_eq h h₂]
     exact congrArg (fun j => C.graph.src (C.side g₂ j)) (Fin.ext (by dsimp only; omega))
@@ -724,7 +725,7 @@ private theorem outgoing_splitFaceMergeFacesCornerEquiv_inr_true (k : Fin (C.sid
     refine congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext ?_)))
     rw [coe_splitFaceMergeFacesCornerEquiv_snd]
   · rw [splitFaceCornerOrigin_inr_true_of_not_lt hk, Sum.map_inr, id,
-      SerreGraph.deleteEdgeSumEquiv_inr, Bool.cond_true, incoming_mk_zero, ← outgoing_mk]
+      SerreGraph.deleteEdgeSumEquiv_inr, Bool.cond_true, incoming_mk_zero, ← outgoing_def _ ⟨_, _⟩]
     refine congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext ?_)))
     rw [coe_splitFaceMergeFacesCornerEquiv_snd]
     dsimp only

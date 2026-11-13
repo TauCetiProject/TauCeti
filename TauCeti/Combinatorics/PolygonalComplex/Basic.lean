@@ -176,9 +176,6 @@ theorem incoming_mk_of_eq_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : �
   rw [← h]
   exact C.incoming_nextCorner ⟨f, i⟩
 
-/-- The side occurrence `⟨f, i⟩` is attached along the `i`-th side of `f`. -/
-theorem outgoing_mk (f : C.Face) (i : Fin (C.sides f)) : C.outgoing ⟨f, i⟩ = C.side f i := (rfl)
-
 /-- The corner preceding the first corner of a face is its last corner. -/
 theorem prevCorner_mk_zero (f : C.Face) :
     C.prevCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ =
