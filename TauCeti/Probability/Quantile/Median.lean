@@ -27,9 +27,6 @@ greatest. None of these statements assumes the law to be atomless.
 
 ## Main statements
 
-* `MeasureTheory.Measure.mem_Icc_quantile_upperQuantile_iff` — the points between the lower and
-  upper quantile at a level `t` are those with mass at least `t` to their left and at least
-  `1 - t` to their right;
 * `MeasureTheory.Measure.setOf_isMedian_eq_Icc` — the medians form the closed interval between the
   lower and upper quantile at level `1 / 2`;
 * `MeasureTheory.Measure.isMedian_quantile_half` — the quantile at level `1 / 2` is a median;
@@ -44,20 +41,11 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace MeasureTheory.Measure
 
-variable {μ : Measure ℝ} {t x m : ℝ}
+variable {μ : Measure ℝ} {m : ℝ}
 
-/-- For a level strictly between `0` and `1`, a point lies between the lower and the upper
-quantile at that level exactly when the closed ray to its left carries mass at least the level and
-the closed ray to its right carries mass at least one minus the level. -/
-theorem mem_Icc_quantile_upperQuantile_iff [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1) :
-    x ∈ Icc (μ.quantile t) (μ.upperQuantile t) ↔
-      t ≤ μ.real (Iic x) ∧ 1 - t ≤ μ.real (Ici x) := by
-  rw [mem_Icc, quantile_le_iff μ h0 h1, le_upperQuantile_iff μ h0 h1, cdf_eq_real, ← compl_Iio,
-    probReal_compl_eq_one_sub measurableSet_Iio, sub_le_sub_iff_left]
-
-/-- A point `m` is a **median** of a measure `μ` on `ℝ` if each of the closed rays `Iic m` and
-`Ici m` carries at least half of the mass. The notion is intended for probability measures, where
-medians exist but need not be unique. -/
+/-- A point `m` is a **median** of a measure `μ` on `ℝ` if `2⁻¹ ≤ μ.real (Iic m)` and
+`2⁻¹ ≤ μ.real (Ici m)`. For a probability measure, this says that each closed ray carries at least
+half of the total mass. Medians then exist but need not be unique. -/
 def IsMedian (μ : Measure ℝ) (m : ℝ) : Prop :=
   2⁻¹ ≤ μ.real (Iic m) ∧ 2⁻¹ ≤ μ.real (Ici m)
 
