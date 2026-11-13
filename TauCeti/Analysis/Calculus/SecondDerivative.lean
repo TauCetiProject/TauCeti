@@ -27,7 +27,8 @@ The second derivative `fderiv 𝕜 (fderiv 𝕜 g) x` of a map between normed sp
 the derivative at `x` of the map `fderiv 𝕜 g`. Mathlib supplies the differentiability of
 `fderiv 𝕜 g` at a twice continuously differentiable point through `ContDiffAt.fderiv_right`; this
 file packages that into the single `HasFDerivAt` statement that second-order arguments use, so
-that the identification is made once rather than at each use.
+that the identification is made once rather than at each use, and records the continuity of the
+second derivative at such a point.
 
 An invertible second derivative therefore lets the differential avoid any prescribed value `c`
 on some punctured neighbourhood of the point, the neighbourhood being allowed to depend on `c`.
@@ -135,6 +136,12 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} 
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt
+
+/-- At a twice continuously differentiable point, the second derivative `fderiv 𝕜 (fderiv 𝕜 g)` is
+continuous. -/
+theorem _root_.ContDiffAt.continuousAt_fderiv_fderiv {n : WithTop ℕ∞} {g : E → F} {x : E}
+    (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) : ContinuousAt (fderiv 𝕜 (fderiv 𝕜 g)) x :=
+  (h.fderiv_right (m := 1) (by exact_mod_cast hn)).continuousAt_fderiv one_ne_zero
 
 /-- At a twice continuously differentiable point, the directional derivative `y ↦ Dg(y) v` is
 differentiable, with derivative `u ↦ D²g(x)(u, v)`. -/

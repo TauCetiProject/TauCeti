@@ -156,11 +156,13 @@ theorem sum_smul_euclideanWittenLaplacian_smul_apply {α : Type*} {A : Finset α
         ∑ i, (-2 * (J a x * fderiv ℝ (J a) x (Pi.single i 1))) • fderiv ℝ φ x (Pi.single i 1) +
           (-∑ i, J a x * fderiv ℝ (fderiv ℝ (J a)) x (Pi.single i 1) (Pi.single i 1)) • φ x := by
     intro a ha
-    rw [euclideanWittenLaplacian_smul_apply hf (hJ a ha) hφ]
-    simp only [smul_sub, smul_smul, Finset.smul_sum, neg_smul, Finset.sum_smul, sq]
-    rw [sub_sub, sub_eq_add_neg, neg_add, add_assoc, ← Finset.sum_neg_distrib]
-    congr 2
-    exact Finset.sum_congr rfl fun i _ ↦ by module
+    have hS : ∑ i, (-2 * (J a x * fderiv ℝ (J a) x (Pi.single i 1))) •
+        fderiv ℝ φ x (Pi.single i 1) = (-2 * J a x) •
+          ∑ i, fderiv ℝ (J a) x (Pi.single i 1) • fderiv ℝ φ x (Pi.single i 1) := by
+      rw [Finset.smul_sum]
+      exact Finset.sum_congr rfl fun i _ ↦ by module
+    rw [euclideanWittenLaplacian_smul_apply hf (hJ a ha) hφ, hS, ← Finset.mul_sum]
+    module
   -- The three groups of terms, summed over `a`.
   have hA : ∑ a ∈ A, J a x ^ 2 • euclideanWittenLaplacian f t φ x =
       euclideanWittenLaplacian f t φ x := by
@@ -172,14 +174,17 @@ theorem sum_smul_euclideanWittenLaplacian_smul_apply {α : Type*} {A : Finset α
       zero_smul]
   have hC : ∑ a ∈ A, (-∑ i, J a x * fderiv ℝ (fderiv ℝ (J a)) x (Pi.single i 1) (Pi.single i 1)) •
       φ x = (∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2) • φ x := by
-    rw [← Finset.sum_smul, Finset.sum_neg_distrib, Finset.sum_comm, ← Finset.sum_neg_distrib,
-      Finset.sum_comm (s := A)]
-    congr 1
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have h := h₂ i
-    rw [Finset.sum_add_distrib] at h
-    simp only [sq]
-    linarith
+    -- The scalar identity `∑ₐ -∑ᵢ Jₐ ∂ᵢ²Jₐ = ∑ₐ ∑ᵢ (∂ᵢJₐ)²`, summed from `h₂` over `i`.
+    have h : ∑ a ∈ A, -∑ i, J a x * fderiv ℝ (fderiv ℝ (J a)) x (Pi.single i 1) (Pi.single i 1) =
+        ∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2 := by
+      have h₂' : ∑ i, ∑ a ∈ A,
+          (J a x * fderiv ℝ (fderiv ℝ (J a)) x (Pi.single i 1) (Pi.single i 1) +
+            fderiv ℝ (J a) x (Pi.single i 1) * fderiv ℝ (J a) x (Pi.single i 1)) = 0 :=
+        Finset.sum_eq_zero fun i _ ↦ h₂ i
+      rw [Finset.sum_comm] at h₂'
+      simp only [Finset.sum_add_distrib, Finset.sum_neg_distrib, sq] at h₂' ⊢
+      linarith
+    rw [← Finset.sum_smul, h]
   rw [Finset.sum_congr rfl hterm, Finset.sum_add_distrib, Finset.sum_add_distrib, hA, hB, hC,
     add_zero]
 
@@ -237,8 +242,7 @@ theorem integral_sum_euclideanWittenLaplacian_mul_eq {α : Type*} {A : Finset α
     hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl fun x hx ↦
       ContinuousAt.continuousWithinAt <| tendsto_finsetSum _ fun a ha ↦
         tendsto_finsetSum _ fun i _ ↦
-          ((((hJ a ha x hx).fderiv_right (m := 1) (by norm_num)).continuousAt).clm_apply
-            continuousAt_const).pow 2
+          (((hJ a ha x hx).continuousAt_fderiv two_ne_zero).clm_apply continuousAt_const).pow 2
   rw [← integral_finsetSum A hint, integral_congr_ae (Eventually.of_forall hpt), integral_add hP hQ,
     add_sub_cancel_right]
 
@@ -251,9 +255,8 @@ private theorem continuousAt_mul_sum_fderiv_apply_sq_sub_mul_sum_sum_abs_fderiv_
     [DecidableEq ι] {f : (ι → ℝ) → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (t : ℝ) :
     ContinuousAt (fun y ↦ t ^ 2 * ∑ i, fderiv ℝ f y (Pi.single i 1) ^ 2 -
       |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) y (Pi.single i 1) (Pi.single j 1)|) x := by
-  have hf₁ : ContinuousAt (fderiv ℝ f) x := (hf.fderiv_right (m := 1) (by norm_num)).continuousAt
-  have hf₂ : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
-    ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
+  have hf₁ := hf.continuousAt_fderiv two_ne_zero
+  have hf₂ := hf.continuousAt_fderiv_fderiv le_rfl
   exact (continuousAt_const.mul (tendsto_finsetSum _ fun i _ ↦
     (hf₁.clm_apply continuousAt_const).pow 2)).sub
       (continuousAt_const.mul (tendsto_finsetSum _ fun i _ ↦ tendsto_finsetSum _ fun j _ ↦

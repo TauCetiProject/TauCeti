@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Coordinates
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # The Witten Laplacian on Euclidean space and its frame formula
@@ -424,11 +425,9 @@ continuous at `x`. -/
 theorem continuousAt_euclideanWittenLaplacian {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
     {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t : ℝ) :
     ContinuousAt (euclideanWittenLaplacian f t φ) x := by
-  have hφ₂ : ContinuousAt (fderiv ℝ (fderiv ℝ φ)) x :=
-    ((hφ.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
-  have hf₁ : ContinuousAt (fderiv ℝ f) x := (hf.fderiv_right (m := 1) (by norm_num)).continuousAt
-  have hf₂ : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
-    ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
+  have hφ₂ := hφ.continuousAt_fderiv_fderiv le_rfl
+  have hf₁ := hf.continuousAt_fderiv two_ne_zero
+  have hf₂ := hf.continuousAt_fderiv_fderiv le_rfl
   refine ContinuousAt.congr (f := fun y ↦
       ∑ i, (-fderiv ℝ (fderiv ℝ φ) y (Pi.single i 1) (Pi.single i 1) +
           (t ^ 2 * fderiv ℝ f y (Pi.single i 1) ^ 2) • φ y) +
