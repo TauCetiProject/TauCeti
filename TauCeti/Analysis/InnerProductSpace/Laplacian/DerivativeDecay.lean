@@ -33,9 +33,9 @@ Iterating this gives the regularity at infinity of the Liouville-type equation
 
 `Δ ℓ = κ (exp ℓ - 1)`,
 
-the scalar equation of the plane vortex: if `ℓ` is smooth near infinity, decays like
-`exp (-c ‖x‖)` with `c² < κ`, and has a bounded derivative, then every iterated derivative of `ℓ`
-and of `exp ℓ - 1` decays like `exp (-c ‖x‖)`
+the scalar equation of the plane vortex: if `ℓ` is `C^(n + 1)` near infinity, decays like
+`exp (-c ‖x‖)` with `c² < κ`, and has a bounded derivative, then the iterated derivatives of `ℓ`
+and of `exp ℓ - 1` of order `n` decay like `exp (-c ‖x‖)`
 (`TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`,
 `TauCeti.isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one`). The `n`-th derivative
 `Dⁿℓ` solves `Δ Dⁿℓ = κ exp ℓ • Dⁿℓ + κ Cₙ`, where the commutator `Cₙ = Dⁿ (exp ℓ) - exp ℓ • Dⁿℓ`
@@ -47,8 +47,8 @@ instance of the derivative estimate above. The rate is not lost along the induct
 
 * `TauCeti.isBigO_fderiv_of_laplacian_eq_smul_add`: exponential decay of the derivative of a
   decaying solution of `Δ g = V • g + Φ`.
-* `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`: exponential decay of all iterated
-  derivatives of a decaying solution of `Δ ℓ = κ (exp ℓ - 1)`.
+* `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`: exponential decay of the iterated
+  derivative of order `n` of a decaying `C^(n + 1)` solution of `Δ ℓ = κ (exp ℓ - 1)`.
 * `TauCeti.isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one`: the same for
   `exp ℓ - 1`.
 
@@ -67,7 +67,6 @@ noncomputable section
 namespace TauCeti
 
 open Asymptotics Filter Metric Set Topology InnerProductSpace Laplacian
-open scoped ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -227,25 +226,26 @@ theorem isBigO_fderiv_of_laplacian_eq_smul_add {g Φ : E → G} {V : E → ℝ} 
 
 /-! ### All derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)` -/
 
-/-- **The inductive step.** For a smooth solution of `Δ ℓ = κ (exp ℓ - 1)` near infinity with
+/-- **The inductive step.** For a `C^(n + 2)` solution of `Δ ℓ = κ (exp ℓ - 1)` near infinity with
 `exp ℓ → 1`, if the derivatives of `ℓ` of order at most `n ≥ 1` are `O(exp (-c ‖x‖))` and those of
 `exp ℓ` are bounded, then so is the derivative of order `n + 1`, provided `c < a` and `a² < κ`:
 `Dⁿℓ` solves `Δ Dⁿℓ = κ exp ℓ • Dⁿℓ + κ Cₙ` with the commutator `Cₙ = Dⁿ (exp ℓ) - exp ℓ • Dⁿℓ`. -/
 private theorem isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ}
-    {κ a c : ℝ} (hc : 0 < c) (hca : c < a) (hκa : a ^ 2 < κ) (hℓ : ContDiff ℝ ∞ ℓ)
-    (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
-    (helim : Tendsto (fun x ↦ Real.exp (ℓ x)) (cocompact E) (𝓝 1)) {n : ℕ} (hn : 1 ≤ n)
+    {κ a c : ℝ} {n : ℕ} (hc : 0 < c) (hca : c < a) (hκa : a ^ 2 < κ) (hn : 1 ≤ n)
+    (hℓ : ContDiff ℝ (n + 2) ℓ) (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
+    (helim : Tendsto (fun x ↦ Real.exp (ℓ x)) (cocompact E) (𝓝 1))
     (hℓn : ∀ i ≤ n, iteratedFDeriv ℝ i ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
     (hen : ∀ i ≤ n, iteratedFDeriv ℝ i (fun y ↦ Real.exp (ℓ y)) =O[cocompact E]
       fun _ ↦ (1 : ℝ)) :
     iteratedFDeriv ℝ (n + 1) ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
   set e : E → ℝ := fun y ↦ Real.exp (ℓ y) with he_def
-  have he : ContDiff ℝ ∞ e := Real.contDiff_exp.comp hℓ
+  have he : ContDiff ℝ (n + 2) e := Real.contDiff_exp.comp hℓ
   -- The commutator `Cₙ`.
   set C : E → E [×n]→L[ℝ] ℝ := fun x ↦ iteratedFDeriv ℝ n e x - e x • iteratedFDeriv ℝ n ℓ x
     with hC_def
-  have hC : ContDiff ℝ ∞ C :=
-    (he.iteratedFDeriv_right (by simp)).sub (he.smul (hℓ.iteratedFDeriv_right (by simp)))
+  have hC : ContDiff ℝ 1 C :=
+    (he.iteratedFDeriv_right (by norm_cast; omega)).sub ((he.of_le (by norm_cast; omega)).smul
+      (hℓ.iteratedFDeriv_right (by norm_cast; omega)))
   -- The equation for `Dⁿℓ` near infinity.
   have hDeq : ∀ᶠ x in cocompact E, Δ (iteratedFDeriv ℝ n ℓ) x =
       (κ * e x) • iteratedFDeriv ℝ n ℓ x + (κ • C) x := by
@@ -253,17 +253,18 @@ private theorem isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one {ℓ : E 
     have hloc : Δ ℓ =ᶠ[𝓝 x] κ • e - fun _ ↦ κ := hx.mono fun y hy ↦ by
       rw [hy]
       simp [e, mul_sub]
-    rw [(hℓ.of_le (by simp)).contDiffAt.laplacian_iteratedFDeriv,
-      (hloc.iteratedFDeriv ℝ n).eq_of_nhds,
-      iteratedFDeriv_sub_apply (f := κ • e) ((he.const_smul κ).contDiffAt.of_le (by simp))
-        contDiffAt_const, iteratedFDeriv_const_of_ne (by omega),
-      iteratedFDeriv_const_smul_apply (he.contDiffAt.of_le (by simp))]
+    rw [hℓ.contDiffAt.laplacian_iteratedFDeriv, (hloc.iteratedFDeriv ℝ n).eq_of_nhds,
+      iteratedFDeriv_sub_apply (f := κ • e)
+        ((he.const_smul κ).contDiffAt.of_le (by norm_cast; omega)) contDiffAt_const,
+      iteratedFDeriv_const_of_ne (by omega),
+      iteratedFDeriv_const_smul_apply (he.contDiffAt.of_le (by norm_cast; omega))]
     simp only [Pi.zero_apply, sub_zero, Pi.smul_apply, hC_def, he_def]
     rw [smul_sub, mul_smul]
     abel
   have hd := isBigO_fderiv_of_laplacian_eq_smul_add (g := iteratedFDeriv ℝ n ℓ)
     (V := fun x ↦ κ * e x) (Φ := κ • C) hc hca
-    (Eventually.of_forall fun x ↦ (hℓ.iteratedFDeriv_right (m := 2) (by simp)).contDiffAt)
+    (Eventually.of_forall fun x ↦
+      (hℓ.iteratedFDeriv_right (m := 2) (by norm_cast; omega)).contDiffAt)
     (Eventually.of_forall fun x ↦ (he.differentiable (by simp) x).const_mul κ)
     ((helim.const_mul κ).eventually_const_le (by simpa using hκa)) ?_
     (Eventually.of_forall fun x ↦ (hC.differentiable (by simp) x).const_smul κ) ?_ hDeq
@@ -276,23 +277,23 @@ private theorem isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one {ℓ : E 
       norm_iteratedFDeriv_one]
   · -- The forcing has an `O(exp (-c ‖x‖))` derivative.
     refine (isBigO_of_le' (c := |κ|) _ fun y ↦ le_of_eq ?_).trans
-      (isBigO_iteratedFDeriv_iteratedFDeriv_exp_sub_smul
-        (Eventually.of_forall fun _ ↦ (hℓ.of_le (by simp)).contDiffAt) hℓn hen hn (j := 1)
-        (by omega))
+      (isBigO_iteratedFDeriv_iteratedFDeriv_exp_sub_smul (j := 1) hn
+        (Eventually.of_forall fun _ ↦ (hℓ.of_le (by norm_cast; omega)).contDiffAt)
+        (fun i _ hi ↦ hℓn i (by omega)) fun i _ hi ↦ hen i (by omega))
     rw [fderiv_const_smul (hC.differentiable (by simp) y), norm_smul, Real.norm_eq_abs,
       norm_iteratedFDeriv_one]
 
-/-- **The first derivative of a globally smooth solution.** If `ℓ` is `O(exp (-c ‖x‖))` with a
+/-- **The first derivative of a global `C²` solution.** If `ℓ` is `O(exp (-c ‖x‖))` with a
 bounded derivative, then its derivative is `O(exp (-c ‖x‖))` too, provided `c < a` and `a² < κ`:
 `ℓ` solves `Δ ℓ = κ ℓ + κ (exp ℓ - 1 - ℓ)`, whose forcing has derivative `κ (exp ℓ - 1) Dℓ`. -/
 private theorem isBigO_fderiv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ a c : ℝ} (hc : 0 < c)
-    (hca : c < a) (hκa : a ^ 2 < κ) (hℓ : ContDiff ℝ ∞ ℓ)
+    (hca : c < a) (hκa : a ^ 2 < κ) (hℓ : ContDiff ℝ 2 ℓ)
     (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
     (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
     fderiv ℝ ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
   set e : E → ℝ := fun x ↦ Real.exp (ℓ x)
-  have he : ContDiff ℝ ∞ e := Real.contDiff_exp.comp hℓ
+  have he : ContDiff ℝ 2 e := Real.contDiff_exp.comp hℓ
   have he1 : (fun x ↦ e x - 1) =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) :=
     Real.isBigO_exp_comp_sub_one (hℓd.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)) hℓd
   have hΦ : fderiv ℝ (fun x ↦ κ * (e x - 1 - ℓ x)) =
@@ -306,7 +307,7 @@ private theorem isBigO_fderiv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ 
     module
   refine isBigO_fderiv_of_laplacian_eq_smul_add (V := fun _ ↦ κ)
     (Φ := fun x ↦ κ * (e x - 1 - ℓ x)) hc hca
-    (Eventually.of_forall fun x ↦ (hℓ.of_le (by simp)).contDiffAt)
+    (Eventually.of_forall fun x ↦ hℓ.contDiffAt)
     (Eventually.of_forall fun _ ↦ differentiableAt_const _)
     (Eventually.of_forall fun _ ↦ hκa.le) (by rw [fderiv_fun_const]; exact isBigO_zero _ _)
     (Eventually.of_forall fun x ↦ (((he.sub contDiff_const).sub hℓ).differentiable
@@ -317,19 +318,20 @@ private theorem isBigO_fderiv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ 
     rw [hx, smul_eq_mul]
     ring
 
-/-- **All derivatives of a globally smooth solution.** The derivatives of `ℓ` of every order are
-`O(exp (-c ‖x‖))`. -/
+/-- **The derivatives of a global `C^(n + 1)` solution.** The derivatives of `ℓ` of order at most
+`n` are `O(exp (-c ‖x‖))`. -/
 private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {ℓ : E → ℝ}
-    {κ c : ℝ} (hc : 0 < c) (hcκ : c ^ 2 < κ) (hℓ : ContDiff ℝ ∞ ℓ)
+    {κ c : ℝ} (hc : 0 < c) (hcκ : c ^ 2 < κ) (n : ℕ) (hℓ : ContDiff ℝ (n + 1) ℓ)
     (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
-    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) (n : ℕ) :
+    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
     ∀ i ≤ n, iteratedFDeriv ℝ i ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
   have hρ1 := (tendsto_exp_neg_mul_norm_cocompact (E := E) hc).isBigO_one (F := ℝ)
   have hℓ0 : Tendsto ℓ (cocompact E) (𝓝 0) :=
     hℓd.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)
   have helim : Tendsto (fun x ↦ Real.exp (ℓ x)) (cocompact E) (𝓝 1) := by
     simpa [Function.comp_def] using (Real.continuous_exp.tendsto 0).comp hℓ0
+  have he1 := helim.isBigO_one (F := ℝ)
   -- A rate `a` between `c` and `√κ`.
   set a := Real.sqrt ((c ^ 2 + κ) / 2)
   have ha2 : a ^ 2 = (c ^ 2 + κ) / 2 := Real.sq_sqrt (by nlinarith)
@@ -341,66 +343,68 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
     obtain rfl : i = 0 := by omega
     exact (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans hℓd
   | succ n ih =>
+    have ih := ih (hℓ.of_le (by norm_cast; omega))
     intro i hi
     rcases Nat.lt_or_eq_of_le hi with h | rfl
     · exact ih i (by omega)
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · exact (isBigO_of_le _ fun y ↦ (norm_iteratedFDeriv_one ℓ).le).trans
-        (isBigO_fderiv_of_laplacian_eq_exp_sub_one hc hca hκa hℓ heq hℓd hℓ')
-    · exact isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one hc hca hκa hℓ heq helim hn ih
-        fun i hi ↦ isBigO_iteratedFDeriv_exp
-          (Eventually.of_forall fun _ ↦ (hℓ.of_le (by simp)).contDiffAt) hℓ0 hρ1
-          fun j hj ↦ ih j (by omega)
+        (isBigO_fderiv_of_laplacian_eq_exp_sub_one hc hca hκa (by exact_mod_cast hℓ) heq hℓd hℓ')
+    · exact isBigO_iteratedFDeriv_succ_of_laplacian_eq_exp_sub_one hc hca hκa hn
+        (by exact_mod_cast hℓ) heq helim ih fun i hi ↦ isBigO_iteratedFDeriv_exp
+          (Eventually.of_forall fun _ ↦ (hℓ.of_le (by norm_cast; omega)).contDiffAt) he1
+          fun j _ hj ↦ (ih j (by omega)).trans hρ1
 
-/-- **Passing to a globally smooth solution.** A solution of `Δ ℓ = κ (exp ℓ - 1)` that is smooth
-outside a compact set agrees near every point outside a compact set with a globally smooth `ℓ'`,
+/-- **Passing to a global solution.** A solution of `Δ ℓ = κ (exp ℓ - 1)` that is `C^m` outside a
+compact set agrees near every point outside a compact set with a globally `C^m` function `ℓ'`,
 which solves the same equation there and inherits the decay of `ℓ` and the bound on its
 derivative. -/
-private theorem exists_contDiff_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ}
-    (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ ∞ ℓ x)
+private theorem exists_contDiff_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ} {m : ℕ}
+    (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ m ℓ x)
     (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
     (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
-    ∃ ℓ' : E → ℝ, ContDiff ℝ ∞ ℓ' ∧ (∀ᶠ x in cocompact E, ℓ' =ᶠ[𝓝 x] ℓ) ∧
+    ∃ ℓ' : E → ℝ, ContDiff ℝ m ℓ' ∧ (∀ᶠ x in cocompact E, ℓ' =ᶠ[𝓝 x] ℓ) ∧
       (∀ᶠ x in cocompact E, Δ ℓ' x = κ * (Real.exp (ℓ' x) - 1)) ∧
       (ℓ' =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖))) ∧
       fderiv ℝ ℓ' =O[cocompact E] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨ℓ', hℓ'c, hagree⟩ := exists_contDiff_eventually_eventuallyEq hℓ
+  obtain ⟨ℓ', hℓ'c, hagree⟩ := exists_contDiff_eventually_eventuallyEq (n := m) hℓ
   have hfar : ℓ' =ᶠ[cocompact E] ℓ := hagree.mono fun x hx ↦ hx.eq_of_nhds
   refine ⟨ℓ', hℓ'c, hagree, ?_, hℓd.congr' hfar.symm EventuallyEq.rfl,
     hℓ'.congr' (hagree.mono fun x hx ↦ hx.fderiv_eq.symm) EventuallyEq.rfl⟩
   filter_upwards [hagree, heq] with x hx hx'
   rw [(laplacian_congr_nhds hx).eq_of_nhds, hx', hx.eq_of_nhds]
 
-/-- **Exponential decay of all derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)`.** Let `ℓ` be
-smooth outside a compact set and solve `Δ ℓ = κ (exp ℓ - 1)` there. If `ℓ` is `O(exp (-c ‖x‖))`
-at infinity with `0 < c` and `c² < κ`, and its derivative is bounded at infinity, then every
-iterated derivative of `ℓ` is `O(exp (-c ‖x‖))`. -/
-theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ} (hc : 0 < c)
-    (hcκ : c ^ 2 < κ) (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ ∞ ℓ x)
+/-- **Exponential decay of the derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)`.** Let `ℓ` be
+`C^(n + 1)` outside a compact set and solve `Δ ℓ = κ (exp ℓ - 1)` there. If `ℓ` is
+`O(exp (-c ‖x‖))` at infinity with `0 < c` and `c² < κ`, and its derivative is bounded at
+infinity, then its iterated derivative of order `n` is `O(exp (-c ‖x‖))`. -/
+theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ} {n : ℕ}
+    (hc : 0 < c) (hcκ : c ^ 2 < κ) (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ (n + 1) ℓ x)
     (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
-    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) (n : ℕ) :
+    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
     iteratedFDeriv ℝ n ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)) := by
   obtain ⟨ℓ', hℓ'c, hagree, heq', hℓd', hℓ'd⟩ :=
-    exists_contDiff_of_laplacian_eq_exp_sub_one hℓ heq hℓd hℓ'
-  have h := isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ hℓ'c heq' hℓd'
-    hℓ'd n n le_rfl
+    exists_contDiff_of_laplacian_eq_exp_sub_one (m := n + 1) (by exact_mod_cast hℓ) heq hℓd hℓ'
+  have h := isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ n
+    (by exact_mod_cast hℓ'c) heq' hℓd' hℓ'd n le_rfl
   exact h.congr' (hagree.mono fun x hx ↦ (hx.iteratedFDeriv ℝ n).eq_of_nhds) EventuallyEq.rfl
 
-/-- **Exponential decay of all derivatives of `exp ℓ - 1`** for a solution of
+/-- **Exponential decay of the derivatives of `exp ℓ - 1`** for a solution of
 `Δ ℓ = κ (exp ℓ - 1)`, under the hypotheses of
 `TauCeti.isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one`. -/
 theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E → ℝ} {κ c : ℝ}
-    (hc : 0 < c) (hcκ : c ^ 2 < κ) (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ ∞ ℓ x)
+    {n : ℕ} (hc : 0 < c) (hcκ : c ^ 2 < κ) (hℓ : ∀ᶠ x in cocompact E, ContDiffAt ℝ (n + 1) ℓ x)
     (heq : ∀ᶠ x in cocompact E, Δ ℓ x = κ * (Real.exp (ℓ x) - 1))
     (hℓd : ℓ =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
-    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) (n : ℕ) :
+    (hℓ' : fderiv ℝ ℓ =O[cocompact E] fun _ ↦ (1 : ℝ)) :
     iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ x) - 1) =O[cocompact E]
       fun x ↦ Real.exp (-(c * ‖x‖)) :=
-  isBigO_iteratedFDeriv_exp_sub_one (hℓ.mono fun _ hx ↦ hx.of_le (by simp))
+  isBigO_iteratedFDeriv_exp_sub_one (hℓ.mono fun _ hx ↦ hx.of_le (by norm_cast; omega))
     (hℓd.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc))
-    ((tendsto_exp_neg_mul_norm_cocompact hc).isBigO_one (F := ℝ)) fun i _ ↦
-      isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc hcκ hℓ heq hℓd hℓ' i
+    ((tendsto_exp_neg_mul_norm_cocompact hc).isBigO_one (F := ℝ)) fun i hi ↦
+      isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one hc hcκ
+        (hℓ.mono fun _ hx ↦ hx.of_le (by norm_cast; omega)) heq hℓd hℓ'
 
 end TauCeti

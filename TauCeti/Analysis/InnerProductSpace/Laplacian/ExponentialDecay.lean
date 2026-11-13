@@ -241,10 +241,10 @@ theorem norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le {G : Type*
     (hx : R ≤ ‖x‖) :
     ‖u x‖ ≤ M * Real.exp (-(c * (‖x‖ - R))) + B / (a ^ 2 - c ^ 2) * Real.exp (-(c * ‖x‖)) := by
   obtain ⟨φ, hφ1, hφx⟩ := exists_dual_vector'' ℝ (u x)
-  have hφx' : φ (u x) = ‖u x‖ := hφx
+  rw [RCLike.ofReal_real_eq_id, id_eq] at hφx
   have hφle : ∀ v : G, φ v ≤ ‖v‖ := fun v ↦
     (le_abs_self _).trans ((φ.le_opNorm v).trans (mul_le_of_le_one_left (norm_nonneg v) hφ1))
-  rw [← hφx']
+  rw [← hφx]
   refine le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian (u := φ ∘ u) hR hc hca hM hB
     (φ.continuous.comp_continuousOn hcont) (fun y hy ↦ φ.contDiff.contDiffAt.comp y (hcd y hy)) hV
     (fun y hy ↦ ?_) (fun y hy ↦ (hφle _).trans (hbdry y hy))

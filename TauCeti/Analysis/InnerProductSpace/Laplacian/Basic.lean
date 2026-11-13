@@ -88,8 +88,9 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
   the orthonormal directions `1` and `I`.
-* `ContDiffAt.laplacian_fderiv`, `ContDiffAt.laplacian_iteratedFDeriv`,
-  `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and `Δ (Dⁿ f) = Dⁿ (Δ f)`.
+* `ContDiffAt.laplacian_fderiv`, `ContDiff.laplacian_fderiv`,
+  `ContDiffAt.laplacian_iteratedFDeriv`, `ContDiff.laplacian_iteratedFDeriv`:
+  `Δ (Df) = D (Δ f)` and `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -247,7 +248,7 @@ theorem _root_.ContDiffAt.laplacian_iteratedFDeriv {f : E → F} {x : E} {n : �
       hf.iteratedFDeriv_right (by norm_cast; omega)
     -- The order-`n` commutation holds near `x`.
     have hnear : Δ (iteratedFDeriv ℝ n f) =ᶠ[𝓝 x] iteratedFDeriv ℝ n (Δ f) :=
-      (hf.eventually (Ne.symm (ne_of_beq_false rfl))).mono fun y hy ↦
+      (hf.eventually (by exact_mod_cast ENat.natCast_ne_coe_top (n + 1 + 2))).mono fun y hy ↦
         ih (hy.of_le (by norm_cast; omega))
     rw [iteratedFDeriv_succ_eq_comp_left, iteratedFDeriv_succ_eq_comp_left]
     let Ψ := (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F).symm
@@ -263,6 +264,12 @@ theorem _root_.ContDiffAt.laplacian_iteratedFDeriv {f : E → F} {x : E} {n : �
 theorem _root_.ContDiff.laplacian_iteratedFDeriv {f : E → F} {n : ℕ}
     (hf : ContDiff ℝ (n + 2) f) : Δ (iteratedFDeriv ℝ n f) = iteratedFDeriv ℝ n (Δ f) :=
   funext fun _ ↦ hf.contDiffAt.laplacian_iteratedFDeriv
+
+/-- **The Laplacian commutes with the derivative.** For a map of class `C³`,
+`Δ (Df) = D (Δ f)`. -/
+theorem _root_.ContDiff.laplacian_fderiv {f : E → F} (hf : ContDiff ℝ 3 f) :
+    Δ (fderiv ℝ f) = fderiv ℝ (Δ f) :=
+  funext fun _ ↦ hf.contDiffAt.laplacian_fderiv
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/
