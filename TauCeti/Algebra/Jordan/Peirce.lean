@@ -250,9 +250,4 @@ theorem opCommute_eigen_one_zero {c x y : J} (hc : c * c = c) (hx : c * x = x)
     zero_mul, mul_zero, sub_self, zero_add, add_zero] at h
   exact (sub_eq_zero.mp h).symm
 
-omit [IsCommJordan J] in
-/-- Orthogonal idempotents add to an idempotent; this uses only distributivity. -/
-theorem add_idem_of_orthogonal {p q : J} (hp : p * p = p) (hq : q * q = q)
-    (hpq : p * q = 0) : (p + q) * (p + q) = p + q := by
-  simp [add_mul, mul_add, hp, hq, hpq, mul_comm q p]
 end TauCeti.Jordan
