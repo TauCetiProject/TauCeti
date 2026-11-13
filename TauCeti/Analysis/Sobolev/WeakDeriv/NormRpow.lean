@@ -7,10 +7,14 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
+import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -30,6 +34,13 @@ unbounded near the origin unless `s = 0`, the power is replaced by the smooth re
 `(‖x‖ ^ 2 + t) ^ (s / 2)`, whose values and derivatives are dominated by those at `t = 0`, and
 dominated convergence passes the integration by parts identity to the limit `t → 0⁺`.
 
+The same regularization gives the second derivatives. For `s > 2 - d` the classical Hessian of
+`‖x‖ ^ s` is the weak derivative of its gradient across the origin. For `s ≤ 2` the regularized
+gradients `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x` and their derivatives are dominated, uniformly in
+`t ≥ 0`, by multiples of `‖x‖ ^ (s - 1)` and `‖x‖ ^ (s - 2)`, which are locally integrable. So
+they converge in `L¹` on balls, and the weak derivative identity passes to the limit
+(`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`). For `s > 2` the power is `C²`.
+
 This adapts the regularization proof first given for the Newtonian kernel in Tau Ceti's
 `TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`
 (`TauCeti/Analysis/PDE/FundamentalSolution/Euclidean/DistributionalLaplacian.lean`), replacing the
@@ -38,13 +49,17 @@ exponent `2 - n` by an arbitrary exponent; that theorem is derived from the gene
 ## Main declarations
 
 * `TauCeti.regularizedNormRpowGradient`: the gradient `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x` of the
-  regularized power, continuous for `t > 0` and dominated by its value at `t = 0` for `s ≤ 2`.
+  regularized power, continuous for `t > 0` and, for `s ≤ 2`, dominated by its value at `t = 0`,
+  the gradient of `‖x‖ ^ s` (`TauCeti.gradient_norm_rpow_eq_regularizedNormRpowGradient`), and by
+  `|s| ‖x‖ ^ (s - 1)` (`TauCeti.norm_regularizedNormRpowGradient_le_mul_rpow`).
 * `TauCeti.locallyIntegrable_norm_rpow_smul_innerSL`: the classical derivative is locally
   integrable for `s > 1 - d`.
 * `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`: integration by parts against `‖x‖ ^ s` for
   `1 - d < s ≤ 0`.
-* `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
-  open set for `s > 1 - d`.
+* `TauCeti.hasWeakFDerivOn_norm_rpow`, `TauCeti.hasWeakFDerivOn_norm_rpow_innerSL_gradient`: the
+  classical derivative is a weak derivative on every open set for `s > 1 - d`.
+* `TauCeti.hasWeakFDerivOn_gradient_norm_rpow`: the classical Hessian is the weak derivative of
+  the gradient on every open set for `s > 2 - d`.
 -/
 
 public section
@@ -55,7 +70,7 @@ namespace TauCeti
 
 open Filter MeasureTheory Set Topology TopologicalSpace
 
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 
@@ -66,8 +81,33 @@ private def regPow (s t : ℝ) (x : E) : ℝ :=
 /-- The field `s (‖x‖ ^ 2 + t) ^ (s / 2 - 1) x`: for `t > 0` the gradient of the regularized norm
 power `(‖x‖ ^ 2 + t) ^ (s / 2)`, and for `t = 0` the gradient of `‖x‖ ^ s` away from the
 origin. -/
-@[expose] def regularizedNormRpowGradient (s t : ℝ) (x : E) : E :=
+def regularizedNormRpowGradient (s t : ℝ) (x : E) : E :=
   (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • x
+
+/-- Unfolding `TauCeti.regularizedNormRpowGradient`. -/
+theorem regularizedNormRpowGradient_apply (s t : ℝ) (x : E) :
+    regularizedNormRpowGradient s t x = (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • x :=
+  (rfl)
+
+/-- The regularized gradient vanishes at the origin. -/
+@[simp]
+theorem regularizedNormRpowGradient_zero (s t : ℝ) :
+    regularizedNormRpowGradient s t (0 : E) = 0 := by
+  rw [regularizedNormRpowGradient_apply, smul_zero]
+
+/-- The regularized gradient of the power `0` vanishes. -/
+@[simp]
+theorem regularizedNormRpowGradient_zero_left (t : ℝ) (x : E) :
+    regularizedNormRpowGradient 0 t x = 0 := by
+  rw [regularizedNormRpowGradient_apply, zero_mul, zero_smul]
+
+/-- Without regularization, the field is `s ‖x‖ ^ (s - 2) x`, the gradient of `‖x‖ ^ s` away from
+the origin (`TauCeti.gradient_norm_rpow_eq_regularizedNormRpowGradient`). -/
+@[simp]
+theorem regularizedNormRpowGradient_zero_right (s : ℝ) (x : E) :
+    regularizedNormRpowGradient s 0 x = (s * ‖x‖ ^ (s - 2)) • x := by
+  rw [regularizedNormRpowGradient_apply, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
+    Real.sq_rpow_div_two (norm_nonneg x)]
 
 /-- For `t > 0` the regularized gradient `TauCeti.regularizedNormRpowGradient s t` is
 continuous. -/
@@ -103,6 +143,124 @@ theorem norm_regularizedNormRpowGradient_le (hs : s ≤ 2) {t : ℝ} (ht : 0 ≤
   · rw [← h0]
     exact norm_nonneg _
   · exact le_of_mul_le_mul_right h h0
+
+/-- For `s ≤ 2` and `t ≥ 0`, away from the origin, the regularized gradient
+`TauCeti.regularizedNormRpowGradient s t` is bounded by `|s| ‖x‖ ^ (s - 1)`, the norm of the
+gradient of `‖x‖ ^ s`. -/
+theorem norm_regularizedNormRpowGradient_le_mul_rpow (hs : s ≤ 2) {t : ℝ} (ht : 0 ≤ t) {x : E}
+    (hx : x ≠ 0) : ‖regularizedNormRpowGradient s t x‖ ≤ |s| * ‖x‖ ^ (s - 1) := by
+  have hN := norm_pos_iff.2 hx
+  refine (norm_regularizedNormRpowGradient_le hs ht hx).trans_eq ?_
+  rw [regularizedNormRpowGradient_zero_right, norm_smul, Real.norm_eq_abs, abs_mul,
+    abs_of_pos (Real.rpow_pos_of_pos hN _), mul_assoc, ← Real.rpow_add_one hN.ne',
+    show s - 2 + 1 = s - 1 by ring]
+
+/-- Away from the origin, the regularized gradient `TauCeti.regularizedNormRpowGradient s t x`
+depends continuously on the regularization parameter `t` at `t = 0`. -/
+theorem continuousAt_regularizedNormRpowGradient {x : E} (hx : x ≠ 0) :
+    ContinuousAt (fun t : ℝ => regularizedNormRpowGradient s t x) 0 := by
+  have h : ContinuousAt (fun t : ℝ => ‖x‖ ^ 2 + t) 0 := by fun_prop
+  exact ((h.rpow_const (Or.inl (by simpa using hx))).const_mul s).smul continuousAt_const
+
+/-- Away from the origin, the gradient of `‖x‖ ^ s` is the unregularized field
+`TauCeti.regularizedNormRpowGradient s 0`. -/
+theorem gradient_norm_rpow_eq_regularizedNormRpowGradient [CompleteSpace E] {x : E}
+    (hx : x ≠ 0) : ∇ (fun y : E => ‖y‖ ^ s) x = regularizedNormRpowGradient s 0 x := by
+  rw [gradient_norm_rpow_of_ne hx, regularizedNormRpowGradient_zero_right]
+
+/-! ### The regularized Hessian -/
+
+/-- The derivative of `TauCeti.regularizedNormRpowGradient s t` at `x`. -/
+private def hessField (s t : ℝ) (x : E) : E →L[ℝ] E :=
+  (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • ContinuousLinearMap.id ℝ E +
+    (s * (s - 2) * (‖x‖ ^ 2 + t) ^ (s / 2 - 2)) • (innerSL ℝ x).smulRight x
+
+private theorem hessField_apply (s t : ℝ) (x v : E) :
+    hessField s t x v = (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1)) • v +
+      (s * (s - 2) * (‖x‖ ^ 2 + t) ^ (s / 2 - 2) * ⟪x, v⟫) • x := by
+  simp only [hessField, add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+    smul_smul]
+
+private theorem hasFDerivAt_regularizedNormRpowGradient (s t : ℝ) {x : E} (hx : ‖x‖ ^ 2 + t ≠ 0) :
+    HasFDerivAt (regularizedNormRpowGradient s t) (hessField s t x) x := by
+  have hs : HasFDerivAt (fun y : E => ‖y‖ ^ 2 + t) (2 • innerSL ℝ x) x :=
+    ((hasStrictFDerivAt_norm_sq x).hasFDerivAt).add_const t
+  have hc := ((hs.rpow_const (p := s / 2 - 1) (Or.inl hx)).const_mul s).smul
+    (hasFDerivAt_id x)
+  refine hc.congr_fderiv ?_
+  ext v
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, hessField_apply,
+    innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, id_eq]
+  rw [show s / 2 - 1 - 1 = s / 2 - 2 by ring, add_right_inj]
+  congr 1
+  ring
+
+private theorem hessField_zero_apply (s : ℝ) (x v : E) :
+    hessField s 0 x v = (s * ‖x‖ ^ (s - 2)) • v +
+      (s * (s - 2) * ‖x‖ ^ (s - 4) * ⟪x, v⟫) • x := by
+  rw [hessField_apply, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
+    show s / 2 - 2 = (s - 4) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x),
+    Real.sq_rpow_div_two (norm_nonneg x)]
+
+private theorem norm_hessField_le {x : E} (hx : x ≠ 0) {t : ℝ} (ht : 0 ≤ t) (hs : s ≤ 2) :
+    ‖hessField s t x‖ ≤ |s| * (3 - s) * ‖x‖ ^ (s - 2) := by
+  have hpos : 0 < ‖x‖ ^ 2 + t := by positivity
+  set q := ‖x‖ ^ 2 + t
+  -- `q ^ (s / 2 - 2) ‖x‖² ≤ q ^ (s / 2 - 1)`, since `‖x‖² ≤ q`.
+  have hpow : q ^ (s / 2 - 2) * ‖x‖ ^ 2 ≤ q ^ (s / 2 - 1) := by
+    calc q ^ (s / 2 - 2) * ‖x‖ ^ 2 ≤ q ^ (s / 2 - 2) * q := by
+          gcongr
+          exact le_add_of_nonneg_right ht
+      _ = q ^ (s / 2 - 1) := by
+          rw [← Real.rpow_add_one hpos.ne']
+          congr 1
+          ring
+  have hK : ‖(innerSL ℝ x).smulRight x‖ = ‖x‖ ^ 2 := by
+    rw [ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm, sq]
+  calc ‖hessField s t x‖
+      ≤ |s| * q ^ (s / 2 - 1) * ‖ContinuousLinearMap.id ℝ E‖ +
+          |s| * (2 - s) * q ^ (s / 2 - 2) * ‖(innerSL ℝ x).smulRight x‖ := by
+        refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+          rw [norm_smul, Real.norm_eq_abs, abs_mul]
+        · rw [abs_of_pos (Real.rpow_pos_of_pos hpos _)]
+        · rw [abs_mul, abs_of_nonpos (by linarith : s - 2 ≤ 0),
+            abs_of_pos (Real.rpow_pos_of_pos hpos _), neg_sub]
+    _ ≤ |s| * q ^ (s / 2 - 1) * 1 + |s| * (2 - s) * q ^ (s / 2 - 1) := by
+        rw [hK, mul_assoc (|s| * (2 - s))]
+        gcongr
+        exact ContinuousLinearMap.norm_id_le
+    _ = |s| * (3 - s) * q ^ (s / 2 - 1) := by ring
+    _ ≤ |s| * (3 - s) * ‖x‖ ^ (s - 2) := by
+        have : 0 ≤ |s| * (3 - s) := mul_nonneg (abs_nonneg s) (by linarith)
+        gcongr
+        refine (sq_add_rpow_le (e := s / 2 - 1) (norm_ne_zero_iff.2 hx) ht
+          (by linarith)).trans_eq ?_
+        rw [add_zero, show s / 2 - 1 = (s - 2) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
+
+private theorem continuous_hessField {t : ℝ} (ht : 0 < t) :
+    Continuous (hessField (E := E) s t) := by
+  have h : ∀ a : ℝ, Continuous fun x : E => (‖x‖ ^ 2 + t) ^ a := fun a =>
+    ((continuous_norm.pow 2).add continuous_const).rpow_const fun _ =>
+      Or.inl (add_pos_of_nonneg_of_pos (sq_nonneg _) ht).ne'
+  have hK : Continuous fun x : E => (innerSL ℝ x).smulRight x :=
+    (ContinuousLinearMap.smulRightL ℝ E E).continuous₂.comp
+      ((innerSL ℝ).continuous.prodMk continuous_id)
+  exact ((continuous_const.mul (h _)).smul continuous_const).add
+    ((continuous_const.mul (h _)).smul hK)
+
+private theorem continuousAt_hessField {x : E} (hx : x ≠ 0) :
+    ContinuousAt (fun t : ℝ => hessField s t x) 0 := by
+  have h : ContinuousAt (fun t : ℝ => ‖x‖ ^ 2 + t) 0 := by fun_prop
+  have hx' : ‖x‖ ^ 2 + 0 ≠ 0 := by simpa using hx
+  exact (((h.rpow_const (Or.inl hx')).const_mul s).smul continuousAt_const).add
+    (((h.rpow_const (Or.inl hx')).const_mul (s * (s - 2))).smul continuousAt_const)
+
+private theorem iteratedGradientChain_one_norm_rpow_eq_hessField [CompleteSpace E] {x : E}
+    (hx : x ≠ 0) : iteratedGradientChain (fun y : E => ‖y‖ ^ s) 1 x = hessField s 0 x := by
+  ext v
+  rw [iteratedGradientChain_one_norm_rpow_apply hx, hessField_zero_apply]
 
 /-- The derivative of the regularized norm power in the direction `v`. -/
 private def regPowDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
@@ -244,5 +402,119 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
       fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
+
+/-! ### The weak Hessian -/
+
+/-- The field `TauCeti.regularizedNormRpowGradient s t` is measurable. -/
+@[fun_prop]
+theorem measurable_regularizedNormRpowGradient (s t : ℝ) :
+    Measurable (regularizedNormRpowGradient (E := E) s t) := by
+  simp only [funext (regularizedNormRpowGradient_apply s t)]
+  fun_prop
+
+/-- On a ball centred at the origin, the derivative of the gradient field `s ‖x‖ ^ (s - 2) x`
+across the origin is its classical derivative. -/
+private theorem hasWeakFDerivOn_ball_regularizedNormRpowGradient [Nontrivial E] (hs : s ≤ 2)
+    (hn : 2 < Module.finrank ℝ E + s) (R : ℝ) :
+    HasWeakFDerivOn μ ⟨Metric.ball 0 R, Metric.isOpen_ball⟩ (regularizedNormRpowGradient s 0)
+      (hessField s 0) := by
+  have hs1 : -(Module.finrank ℝ E : ℝ) < s - 1 := by linarith
+  have hs2 : -(Module.finrank ℝ E : ℝ) < s - 2 := by linarith
+  have hae : ∀ᵐ x ∂μ.restrict (Metric.ball 0 R), x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
+  have htpos : ∀ k : ℕ, 0 < 1 / ((k : ℝ) + 1) := fun k => Nat.one_div_pos_of_nat
+  -- The limit fields are integrable on the ball.
+  have hG : IntegrableOn (regularizedNormRpowGradient s 0) (Metric.ball 0 R) μ :=
+    ((integrableOn_norm_rpow_ball (mu := μ) hs1).const_mul |s|).mono'
+      (measurable_regularizedNormRpowGradient s 0).aestronglyMeasurable
+      (hae.mono fun x hx => norm_regularizedNormRpowGradient_le_mul_rpow hs le_rfl hx)
+  have hH : ∀ v : E, IntegrableOn (fun x => hessField s 0 x v) (Metric.ball 0 R) μ := fun v => by
+    refine ((integrableOn_norm_rpow_ball (mu := μ) hs2).const_mul (|s| * (3 - s) * ‖v‖)).mono'
+      ?_ (hae.mono fun x hx => ?_)
+    · simp only [hessField_apply]
+      exact Measurable.aestronglyMeasurable (by fun_prop)
+    · calc ‖hessField s 0 x v‖ ≤ ‖hessField s 0 x‖ * ‖v‖ := (hessField s 0 x).le_opNorm v
+        _ ≤ |s| * (3 - s) * ‖x‖ ^ (s - 2) * ‖v‖ := by
+          gcongr
+          exact norm_hessField_le hx le_rfl hs
+        _ = |s| * (3 - s) * ‖v‖ * ‖x‖ ^ (s - 2) := by ring
+  refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
+    (u := fun k : ℕ => regularizedNormRpowGradient s (1 / (k + 1)))
+    (U := fun k : ℕ => hessField s (1 / (k + 1)))
+    hG.locallyIntegrableOn (fun v => (hH v).locallyIntegrableOn) (fun k => ?_) ?_ ?_
+  · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+      (continuous_regularizedNormRpowGradient s (htpos k)).continuousOn
+      ((continuous_hessField (htpos k)).locallyIntegrable.locallyIntegrableOn _)
+      fun x _ => hasFDerivAt_regularizedNormRpowGradient s _ (by positivity)
+  · exact tendsto_setLIntegral_enorm_sub_of_norm_le_mul_norm_rpow Metric.isBounded_ball hs1
+      (Eventually.of_forall fun k =>
+        (continuous_regularizedNormRpowGradient s (htpos k)).aestronglyMeasurable)
+      (Eventually.of_forall fun k => hae.mono fun x hx =>
+        norm_regularizedNormRpowGradient_le_mul_rpow hs (htpos k).le hx)
+      (hae.mono fun x hx =>
+        (continuousAt_regularizedNormRpowGradient hx).tendsto.comp
+          tendsto_one_div_add_atTop_nhds_zero_nat)
+  · exact tendsto_setLIntegral_enorm_sub_of_norm_le_mul_norm_rpow Metric.isBounded_ball hs2
+      (Eventually.of_forall fun k => (continuous_hessField (htpos k)).aestronglyMeasurable)
+      (Eventually.of_forall fun k => hae.mono fun x hx => norm_hessField_le hx (htpos k).le hs)
+      (hae.mono fun x hx =>
+        (continuousAt_hessField hx).tendsto.comp tendsto_one_div_add_atTop_nhds_zero_nat)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private theorem nontrivial_of_two_lt (hs : s ≤ 2) (hn : 2 < Module.finrank ℝ E + s) :
+    Nontrivial E :=
+  Module.nontrivial_of_finrank_pos (R := ℝ)
+    (by exact_mod_cast (by linarith : (0 : ℝ) < Module.finrank ℝ E))
+
+private theorem hasWeakFDerivOn_regularizedNormRpowGradient (hs : s ≤ 2)
+    (hn : 2 < Module.finrank ℝ E + s) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (regularizedNormRpowGradient s 0) (hessField s 0) :=
+  have := nontrivial_of_two_lt hs hn
+  hasWeakFDerivOn_iff_locally.2 fun x _ => ⟨⟨Metric.ball 0 (‖x‖ + 1), Metric.isOpen_ball⟩,
+    mem_ball_zero_iff.2 (lt_add_one _), hasWeakFDerivOn_ball_regularizedNormRpowGradient hs hn _⟩
+
+/-- For `s > 1 - dim E`, the classical gradient of `‖x‖ ^ s` is its weak gradient on every open
+set: `TauCeti.hasWeakFDerivOn_norm_rpow` with the derivative written through the gradient. -/
+theorem hasWeakFDerivOn_norm_rpow_innerSL_gradient (hs : 1 - (Module.finrank ℝ E : ℝ) < s)
+    (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun y : E => ‖y‖ ^ s)
+      (fun x => innerSL ℝ (∇ (fun y : E => ‖y‖ ^ s) x)) := by
+  refine (hasWeakFDerivOn_norm_rpow hs Ω).congr_ae_deriv ?_
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On the zero space both derivatives are the zero functional.
+    exact ae_of_all _ fun x => by
+      beta_reduce
+      rw [Subsingleton.elim x 0, Subsingleton.elim (∇ (fun y : E => ‖y‖ ^ s) 0) 0]
+      simp
+  filter_upwards [ae_restrict_of_ae (μ.ae_ne 0)] with x hx
+  rw [gradient_norm_rpow_of_ne hx, map_smul]
+
+/-- **The weak Hessian of a norm power.** Let `n + s > 2`, where `n` is the dimension. On every
+open set, the classical Hessian of `‖x‖ ^ s`, which exists away from the origin, is the weak
+derivative of its gradient across the origin. For `s > 2` the function is `C²`. For smaller `s`
+the Hessian, of size at most a multiple of `‖x‖ ^ (s - 2)`, may be unbounded near the origin, but
+it is locally integrable. -/
+theorem hasWeakFDerivOn_gradient_norm_rpow (hn : 2 < Module.finrank ℝ E + s) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (∇ fun y : E => ‖y‖ ^ s)
+      (iteratedGradientChain (fun y : E => ‖y‖ ^ s) 1) := by
+  rcases le_or_gt s 2 with hs | hs
+  · have := nontrivial_of_two_lt hs hn
+    have hae : ∀ᵐ x ∂μ.restrict Ω, x ≠ 0 := ae_restrict_of_ae (μ.ae_ne 0)
+    exact ((hasWeakFDerivOn_regularizedNormRpowGradient hs hn Ω).congr_ae
+      (hae.mono fun x hx =>
+        (gradient_norm_rpow_eq_regularizedNormRpowGradient hx).symm)).congr_ae_deriv
+      (hae.mono fun x hx => (iteratedGradientChain_one_norm_rpow_eq_hessField hx).symm)
+  · -- For `s > 2` the function is `C²`, so its gradient is `C¹` with continuous derivative.
+    have hC : ContDiff ℝ 2 (fun y : E => ‖y‖ ^ s) :=
+      contDiff_norm_rpow_of_lt (k := 2) (by exact_mod_cast hs)
+    have h1 : ∀ x, ContDiffAt ℝ 1 (iteratedGradientChain (fun y : E => ‖y‖ ^ s) 0) x :=
+      fun x => contDiffAt_iteratedGradientChain hC.contDiffAt 0 (by norm_num)
+    have h0 : Continuous (iteratedGradientChain (fun y : E => ‖y‖ ^ s) 1) :=
+      continuous_iff_continuousAt.2 fun x =>
+        (contDiffAt_iteratedGradientChain hC.contDiffAt 1 (m := 0) (by norm_num)).continuousAt
+    rw [← iteratedGradientChain_zero, iteratedGradientChain_succ]
+    exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+      (continuous_iff_continuousAt.2 fun x => (h1 x).continuousAt).continuousOn
+      (by simpa only [iteratedGradientChain_succ] using h0.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ => ((h1 x).differentiableAt (by norm_num)).hasFDerivAt
 
 end TauCeti

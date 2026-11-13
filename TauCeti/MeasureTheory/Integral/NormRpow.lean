@@ -45,7 +45,7 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
-* `TauCeti.tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow`,
+* `TauCeti.tendsto_setLIntegral_enorm_sub_of_norm_le_mul_norm_rpow`,
   `TauCeti.memLp_restrict_of_norm_le_mul_norm_rpow`: dominated convergence and `Lᵖ` membership for
   fields dominated by a multiple of the kernel.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
@@ -308,38 +308,47 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
         Real.rpow_one, div_one]
 
 open Filter Topology in
-/-- **Dominated convergence for fields dominated by the kernel.** On a ball centred at the origin
-of a nontrivial space, fields bounded away from the origin by a common multiple `C ‖x‖ ^ s` of the
-kernel, `s > -dim E`, and converging away from the origin, converge in `L¹`. -/
-theorem tendsto_setLIntegral_ball_enorm_sub_of_norm_le_mul_norm_rpow [Nontrivial E] {F : Type*}
-    [NormedAddCommGroup F] {f : ℕ → E → F} {g : E → F} {C s R : ℝ}
-    (hs : -(Module.finrank ℝ E : ℝ) < s)
-    (hf : ∀ k, AEStronglyMeasurable (f k) (mu.restrict (ball 0 R)))
-    (hbound : ∀ k, ∀ x : E, x ≠ 0 → ‖f k x‖ ≤ C * ‖x‖ ^ s)
-    (hlim : ∀ x : E, x ≠ 0 → Tendsto (fun k => f k x) atTop (𝓝 (g x))) :
-    Tendsto (fun k => ∫⁻ x in ball 0 R, ‖f k x - g x‖ₑ ∂mu) atTop (𝓝 0) := by
-  have hae : ∀ᵐ x ∂mu.restrict (ball 0 R), x ≠ 0 := ae_restrict_of_ae (mu.ae_ne 0)
-  simpa only [ofReal_norm] using tendsto_lintegral_norm_of_dominated_convergence hf
-    (((integrableOn_norm_rpow_ball (mu := mu) hs).const_mul C).hasFiniteIntegral)
-    (fun k => hae.mono fun x hx => hbound k x hx) (hae.mono hlim)
+/-- **Dominated convergence for fields dominated by the kernel.** On a bounded set, fields
+eventually bounded almost everywhere by a common multiple `C ‖x‖ ^ s` of the kernel, `s > -dim E`,
+and converging almost everywhere along a countably generated filter, converge in `L¹`. -/
+theorem tendsto_setLIntegral_enorm_sub_of_norm_le_mul_norm_rpow {ι F : Type*}
+    [NormedAddCommGroup F] {l : Filter ι} [l.IsCountablyGenerated] {f : ι → E → F} {g : E → F}
+    {C s : ℝ} {Ω : Set E} (hb : Bornology.IsBounded Ω) (hs : -(Module.finrank ℝ E : ℝ) < s)
+    (hf : ∀ᶠ i in l, AEStronglyMeasurable (f i) (mu.restrict Ω))
+    (hbound : ∀ᶠ i in l, ∀ᵐ x ∂mu.restrict Ω, ‖f i x‖ ≤ C * ‖x‖ ^ s)
+    (hlim : ∀ᵐ x ∂mu.restrict Ω, Tendsto (fun i => f i x) l (𝓝 (g x))) :
+    Tendsto (fun i => ∫⁻ x in Ω, ‖f i x - g x‖ₑ ∂mu) l (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hb.subset_ball 0
+  have hfin : HasFiniteIntegral (fun x : E => C * ‖x‖ ^ s) (mu.restrict Ω) :=
+    (((integrableOn_norm_rpow_ball (mu := mu) hs).mono_set hR).const_mul C).hasFiniteIntegral
+  -- Along every sequence tending to `l`, the bounds hold from some index on.
+  refine tendsto_iff_seq_tendsto.2 fun u hu => ?_
+  obtain ⟨k, hk⟩ := tendsto_atTop'.1 hu _ (hf.and hbound)
+  rw [← tendsto_add_atTop_iff_nat k]
+  simpa only [ofReal_norm, Function.comp_apply] using
+    tendsto_lintegral_norm_of_dominated_convergence (F := fun n => f (u (n + k)))
+    (fun n => (hk _ (Nat.le_add_left _ _)).1) hfin (fun n => (hk _ (Nat.le_add_left _ _)).2)
+    (hlim.mono fun x hx => hx.comp ((tendsto_add_atTop_iff_nat k).2 hu))
 
-/-- On a bounded set of a nontrivial space, a field bounded away from the origin by a multiple
-`C ‖x‖ ^ s` of the kernel is `p`-integrable when `s p > -dim E`. -/
-theorem memLp_restrict_of_norm_le_mul_norm_rpow [Nontrivial E] {F : Type*}
-    [NormedAddCommGroup F] {f : E → F} {C s : ℝ} {p : ENNReal} (hp0 : p ≠ 0) (hp : p ≠ ⊤)
-    {Ω : Set E} (hb : Bornology.IsBounded Ω) (hf : AEStronglyMeasurable f (mu.restrict Ω))
-    (hle : ∀ x : E, x ≠ 0 → ‖f x‖ ≤ C * ‖x‖ ^ s)
+/-- On a bounded set, a field bounded almost everywhere by a multiple `C ‖x‖ ^ s` of the kernel is
+`p`-integrable when `s p > -dim E`. -/
+theorem memLp_restrict_of_norm_le_mul_norm_rpow {F : Type*} [NormedAddCommGroup F] {f : E → F}
+    {C s : ℝ} {p : ENNReal} (hp : p ≠ ⊤) {Ω : Set E} (hb : Bornology.IsBounded Ω)
+    (hf : AEStronglyMeasurable f (mu.restrict Ω))
+    (hle : ∀ᵐ x ∂mu.restrict Ω, ‖f x‖ ≤ C * ‖x‖ ^ s)
     (hs : -(Module.finrank ℝ E : ℝ) < s * p.toReal) : MemLp f p (mu.restrict Ω) := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hf
   obtain ⟨R, hR⟩ := hb.subset_ball 0
   have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   refine (integrable_norm_rpow_iff hf hp0 hp).1 ?_
   refine (((integrableOn_norm_rpow_ball (mu := mu) hs).mono_set hR).const_mul
     (|C| ^ p.toReal)).mono' (hf.norm.aemeasurable.pow_const _).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_of_ae (mu.ae_ne 0)] with x hx
+  filter_upwards [hle] with x hx
   rw [Real.norm_of_nonneg (by positivity), Real.rpow_mul (norm_nonneg x),
     ← Real.mul_rpow (abs_nonneg C) (by positivity)]
   exact Real.rpow_le_rpow (norm_nonneg _)
-    ((hle x hx).trans (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))) hpr.le
+    (hx.trans (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))) hpr.le
 
 section Inverse
 
@@ -348,21 +357,12 @@ open scoped ENNReal
 /-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
 theorem _root_.IsCompact.memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞}
     (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
-  rcases eq_or_ne r 0 with rfl | hr0
-  · exact memLp_zero_iff_aestronglyMeasurable.2 (by fun_prop)
-  obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
   have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
-  refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
-  rw [← integrable_norm_rpow_iff (by fun_prop) hr0 hrtop]
-  have heq : (fun x : E => ‖‖x‖⁻¹‖ ^ r.toReal) = fun x => ‖x‖ ^ (-r.toReal) := by
-    funext x
-    rw [Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x)), Real.inv_rpow (norm_nonneg x),
-      Real.rpow_neg (norm_nonneg x)]
-  rw [heq]
-  refine integrableOn_norm_rpow_ball ?_
   have : r.toReal < Module.finrank ℝ E := by
     simpa using (ENNReal.toReal_lt_toReal hrtop (by simp)).2 hr
-  linarith
+  refine memLp_restrict_of_norm_le_mul_norm_rpow (C := 1) (s := -1) hrtop hK.isBounded
+    (by fun_prop) (ae_of_all _ fun x => ?_) (by linarith)
+  rw [one_mul, Real.rpow_neg_one, norm_inv, norm_norm]
 
 /-- On a nontrivial space, `‖x‖⁻¹` is not `Lʳ` on a closed ball of positive radius about the
 origin when `dim E ≤ r`. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.NormRpow
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
+import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
 # Without vanishing mean oscillation there is no `W^{2,p}` regularity for large `p`
@@ -23,11 +25,13 @@ For `b ≥ 0` let `a = TauCeti.PDE.radialCoefficient 1 b` be the coefficient fie
 
 with eigenvalue `1 + b` in the radial direction and `1` in the tangential directions. It is
 symmetric, measurable and uniformly elliptic with constants `1` and `1 + b`
-(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`), homogeneous of degree `0` and
-discontinuous at the origin. For `b ≠ 0` the diagonal entries of every radial coefficient
-`α I + b x̂ x̂ᵀ` do not have vanishing mean oscillation
-(`TauCeti.PDE.not_memVMO_radialCoefficient_apply`): on every ball centred at the origin their
-mean oscillation is at least `|b| / (10 · 8ⁿ)`.
+(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient_of_nonneg`), homogeneous of degree `0`
+(`TauCeti.PDE.radialCoefficient_smul`) and discontinuous at the origin
+(`TauCeti.PDE.not_continuousAt_radialCoefficient`). For `b ≠ 0` the diagonal entries of every
+radial coefficient `α I + b x̂ x̂ᵀ` do not have vanishing mean oscillation
+(`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`). The proof finds in every ball `B(0, r)` a
+ball of radius `r / 8` on which the entry stays `|b| / 10` away from its average over `B(0, r)`,
+so that the mean oscillation over `B(0, r)` is at least `|b| / (10 · 8ⁿ)`, however small `r` is.
 
 Away from the origin, for `u(x) = ‖x‖ ^ γ` and `a = TauCeti.PDE.radialCoefficient α b`,
 
@@ -47,8 +51,8 @@ to `n - 1`.
 
 ## Main declarations
 
-* `TauCeti.PDE.not_memVMO_radialCoefficient_apply`: the diagonal entries of a radial coefficient
-  are not in VMO.
+* `TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`: the diagonal entries of a radial
+  coefficient are not in VMO.
 * `TauCeti.PDE.sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow`: the operator applied
   to `‖x‖ ^ γ` away from the origin.
 * `TauCeti.PDE.ae_sum_radialCoefficient_mul_iteratedGradient_eq`: the same identity almost
@@ -130,10 +134,9 @@ private theorem exists_ball_le_abs_sq_div_norm_sq_sub [Nontrivial ι] (i : ι) (
     linarith
 
 /-- **The radial coefficient is not in VMO.** For `b ≠ 0` and `n ≥ 2`, each diagonal entry
-`α + b xᵢ² / ‖x‖²` of `TauCeti.PDE.radialCoefficient α b` has mean oscillation at least
-`|b| / (10 · 8ⁿ)` on every ball centred at the origin, however small, so it does not have
-vanishing mean oscillation. -/
-theorem not_memVMO_radialCoefficient_apply [Nontrivial ι] (hb : b ≠ 0) (i : ι) :
+`α + b xᵢ² / ‖x‖²` of `TauCeti.PDE.radialCoefficient α b` does not have vanishing mean
+oscillation. -/
+theorem not_memVMO_radialCoefficient_apply_self [Nontrivial ι] (hb : b ≠ 0) (i : ι) :
     ¬ MemVMO (fun x : EuclideanSpace ℝ ι => radialCoefficient α b x i i) volume := by
   intro h
   set δ := ENNReal.ofReal (|b| / 10 * (1 / 8) ^ finrank ℝ (EuclideanSpace ℝ ι))
@@ -161,35 +164,16 @@ theorem not_memVMO_radialCoefficient_apply [Nontrivial ι] (hb : b ≠ 0) (i : �
 
 /-! ### The equation for a norm power -/
 
-/-- Contracting the radial coefficient against a linear map `H` gives `α` times the trace of `H`
-plus `b` times its radial value: `aⁱʲ(x) Hᵢⱼ = α tr H + b ⟪H x, x⟫ / ‖x‖²`. -/
-private theorem sum_radialCoefficient_mul_apply_single (x : EuclideanSpace ℝ ι)
-    (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, radialCoefficient α b x i j * H (EuclideanSpace.single j 1) i =
-      α * ∑ i, ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single i 1⟫_ℝ +
-        b / ‖x‖ ^ 2 * ⟪H x, x⟫_ℝ := by
-  have hH : ∀ i, H x i = ∑ j, x j * H (EuclideanSpace.single j 1) i := fun i => by
-    conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).sum_repr x]
-    simp
-  have hin : ⟪H x, x⟫_ℝ = ∑ i, x i * H x i := by
-    simp [PiLp.inner_apply]
-  simp only [radialCoefficient_apply, add_mul, Finset.sum_add_distrib, ite_mul, one_mul, zero_mul,
-    Finset.sum_ite_eq, Finset.mem_univ, ite_true, EuclideanSpace.inner_single_right, conj_trivial,
-    hin, hH, Finset.mul_sum]
-  congr 1
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-
 /-- **The radial operator on a norm power.** Away from the origin, for
 `a = TauCeti.PDE.radialCoefficient α b` and `u(x) = ‖x‖ ^ γ`,
-`aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) (α (n + γ - 2) + b (γ - 1))`: the trace of the Hessian contributes
-`γ (n + γ - 2) ‖x‖ ^ (γ - 2)` and its radial value `γ (γ - 1) ‖x‖ ^ γ`. -/
+`aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) (α (n + γ - 2) + b (γ - 1))`. -/
 theorem sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow (γ : ℝ)
     {x : EuclideanSpace ℝ ι} (hx : x ≠ 0) :
     ∑ i, ∑ j, radialCoefficient α b x i j *
         iteratedGradientChain (fun y : EuclideanSpace ℝ ι => ‖y‖ ^ γ) 1 x
           (EuclideanSpace.single j 1) i =
       γ * ‖x‖ ^ (γ - 2) * (α * (Fintype.card ι + γ - 2) + b * (γ - 1)) := by
-  have htr := sum_inner_iteratedGradientChain_one_norm_rpow_apply (γ := γ) hx
+  have htr := sum_inner_iteratedGradientChain_one_norm_rpow_apply (p := γ) hx
     (EuclideanSpace.basisFun ι ℝ)
   simp only [EuclideanSpace.basisFun_apply, finrank_euclideanSpace] at htr
   rw [sum_radialCoefficient_mul_apply_single, htr,
@@ -197,23 +181,17 @@ theorem sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow (γ : ℝ)
   norm_cast
   field_simp
 
-/-- Every element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ`, for `n + γ > 2`, satisfies
+/-- Every element of `W^{2,p}(Ω)` equal to `‖x‖ ^ γ` satisfies
 `aⁱʲ ∂ᵢ∂ⱼu = γ ‖x‖ ^ (γ - 2) (α (n + γ - 2) + b (γ - 1))` almost everywhere with its weak Hessian,
 for `a = TauCeti.PDE.radialCoefficient α b`. -/
-theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq {γ : ℝ} (hn : 2 < Fintype.card ι + γ)
+theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq [Nonempty ι] {γ : ℝ}
     {Ω : Opens (EuclideanSpace ℝ ι)} {p : ℝ≥0∞} [Fact (1 ≤ p)] (w : Wkp volume Ω p 2)
     (hw : (Wkp.value 2 w : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict Ω] fun y => ‖y‖ ^ γ) :
     ∀ᵐ y ∂volume.restrict (Ω : Set (EuclideanSpace ℝ ι)),
       ∑ i, ∑ j, radialCoefficient α b y i j *
           Wkp.iteratedGradient 1 w y (EuclideanSpace.single j 1) i =
         γ * ‖y‖ ^ (γ - 2) * (α * (Fintype.card ι + γ - 2) + b * (γ - 1)) := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · -- On the zero space `γ > 2`, so both sides vanish.
-    have hγ : 2 < γ := by simpa using hn
-    exact ae_of_all _ fun y => by
-      simp [Subsingleton.elim y 0, Real.zero_rpow (by linarith : γ - 2 ≠ 0)]
-  have hn' : 2 < finrank ℝ (EuclideanSpace ℝ ι) + γ := by rwa [finrank_euclideanSpace]
-  filter_upwards [Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow hn' w hw,
+  filter_upwards [Wkp.iteratedGradient_one_ae_eq_iteratedGradientChain_norm_rpow w hw,
     ae_restrict_of_ae (volume.ae_ne 0)] with y hy h0
   rw [hy]
   exact sum_radialCoefficient_mul_iteratedGradientChain_norm_rpow γ h0
@@ -221,8 +199,8 @@ theorem ae_sum_radialCoefficient_mul_iteratedGradient_eq {γ : ℝ} (hn : 2 < Fi
 /-- **The VMO hypothesis is load-bearing for `W^{2,p}` regularity.** Let `n ≥ 2`, `0 < γ < 1`,
 and let `a = TauCeti.PDE.radialCoefficient 1 b` with `b = (n + γ - 2) / (1 - γ) > 0`: a symmetric,
 measurable coefficient field, uniformly elliptic with constants `1` and `1 + b`
-(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient`) and not in VMO
-(`TauCeti.PDE.not_memVMO_radialCoefficient_apply`). On a bounded open set `Ω` containing the
+(`TauCeti.PDE.uniformlyEllipticOn_radialCoefficient_of_nonneg`) and not in VMO
+(`TauCeti.PDE.not_memVMO_radialCoefficient_apply_self`). On a bounded open set `Ω` containing the
 origin, `‖x‖ ^ γ` is a `W^{2,p}(Ω)` strong solution of `aⁱʲ ∂ᵢ∂ⱼu = 0` exactly when
 `p < n / (2 - γ)`. Since `n / 2 < n / (2 - γ) < n`, it is a continuous `W^{2,p}` solution for some
 `p > n / 2`, but not a `W^{2,n}` solution. -/
@@ -250,7 +228,7 @@ theorem exists_wkp_two_value_ae_eq_norm_rpow_and_sum_radialCoefficient_eq_zero_i
     field_simp [(by linarith : (1 - γ) ≠ 0)]
     ring
   filter_upwards [ae_sum_radialCoefficient_mul_iteratedGradient_eq
-    (α := 1) (b := (Fintype.card ι + γ - 2) / (1 - γ)) (by linarith) w hw] with y hy
+    (α := 1) (b := (Fintype.card ι + γ - 2) / (1 - γ)) w hw] with y hy
   rw [hy, hzero, mul_zero]
 
 end PDE

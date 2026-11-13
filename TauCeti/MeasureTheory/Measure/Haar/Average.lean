@@ -22,6 +22,8 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`.
+* `TauCeti.ofReal_mul_div_pow_le_setLAverage_enorm_sub`: if `‖f - a‖ ≥ δ` on `B(z, ρ) ⊆ B(c, r)`,
+  the average of `‖f - a‖` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
 -/
 
 public section
@@ -49,5 +51,26 @@ theorem setLAverage_ball_le (g : E → ℝ≥0∞) {x x₀ : E} {ρ R : ℝ} (h�
     conv_lhs => rw [← div_mul_cancel₀ R hρ.ne']
     rw [Measure.addHaar_ball_mul_of_pos μ x₀ (div_pos hR hρ), Measure.addHaar_ball_center μ x]
   rw [hball, ENNReal.mul_div_cancel_right (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne]
+
+/-- **A lower bound from a sub-ball.** If `‖f - a‖ ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the
+mean of `‖f - a‖` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `a` the average of `f` over
+`B(c, r)`, this bounds the mean oscillation of `f` on `B(c, r)` from below. -/
+theorem ofReal_mul_div_pow_le_setLAverage_enorm_sub {F : Type*} [NormedAddCommGroup F]
+    {f : E → F} {a : F} {c z : E} {r ρ δ : ℝ} (hρ : 0 < ρ) (hsub : ball z ρ ⊆ ball c r)
+    (h : ∀ y ∈ ball z ρ, ENNReal.ofReal δ ≤ ‖f y - a‖ₑ) :
+    ENNReal.ofReal (δ * (ρ / r) ^ finrank ℝ E) ≤ ⨍⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := by
+  have hr : 0 < r := pos_of_mem_ball (hsub (mem_ball_self hρ))
+  have hpos : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
+  have htop : μ (ball c r) ≠ ∞ := measure_ball_lt_top.ne
+  have hball : μ (ball z ρ) = ENNReal.ofReal ((ρ / r) ^ finrank ℝ E) * μ (ball c r) := by
+    rw [μ.addHaar_ball_of_pos z hρ, μ.addHaar_ball_of_pos c hr, ← mul_assoc,
+      ← ENNReal.ofReal_mul (by positivity), div_pow, div_mul_cancel₀ _ (by positivity)]
+  rw [setLAverage_eq, ENNReal.le_div_iff_mul_le (Or.inl hpos) (Or.inl htop)]
+  calc ENNReal.ofReal (δ * (ρ / r) ^ finrank ℝ E) * μ (ball c r)
+      = ENNReal.ofReal δ * μ (ball z ρ) := by
+        rw [hball, ← mul_assoc, ← ENNReal.ofReal_mul' (by positivity)]
+    _ = ∫⁻ _ in ball z ρ, ENNReal.ofReal δ ∂μ := (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ y in ball z ρ, ‖f y - a‖ₑ ∂μ := setLIntegral_mono' measurableSet_ball h
+    _ ≤ ∫⁻ y in ball c r, ‖f y - a‖ₑ ∂μ := lintegral_mono_set hsub
 
 end TauCeti

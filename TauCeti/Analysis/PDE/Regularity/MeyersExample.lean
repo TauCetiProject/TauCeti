@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.Matrix.MeasurableSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Analysis.PDE.Ellipticity.RadialCoefficient
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -108,24 +107,18 @@ is undefined, it is `μ² I`. -/
 def meyersCoefficient (μ : ℝ) (x : EuclideanSpace ℝ (Fin 2)) : Matrix (Fin 2) (Fin 2) ℝ :=
   radialCoefficient (μ ^ 2) (1 - μ ^ 2) x
 
-/-- Unfolding `TauCeti.PDE.meyersCoefficient`. -/
-theorem meyersCoefficient_apply (x : EuclideanSpace ℝ (Fin 2)) :
-    meyersCoefficient μ x = μ ^ 2 • 1 + ((1 - μ ^ 2) / ‖x‖ ^ 2) • Matrix.vecMulVec x x := by
-  ext i j
-  simp [meyersCoefficient, radialCoefficient_apply, Matrix.one_apply, Matrix.vecMulVec_apply]
-
-/-- The bilinear form of Meyers' coefficient is bounded by `μ² + |1 - μ²|`. -/
-theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ (Fin 2)) :
-    |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ (μ ^ 2 + |1 - μ ^ 2|) * ‖η‖ * ‖ξ‖ := by
-  have h := abs_dotProduct_radialCoefficient_mulVec_le (α := μ ^ 2) (β := 1 - μ ^ 2) x η ξ
-  rwa [abs_of_nonneg (sq_nonneg μ)] at h
+/-- Meyers' coefficient is the radial coefficient
+`TauCeti.PDE.radialCoefficient (μ ^ 2) (1 - μ ^ 2)`, through which its API is derived. -/
+theorem meyersCoefficient_eq_radialCoefficient (x : EuclideanSpace ℝ (Fin 2)) :
+    meyersCoefficient μ x = radialCoefficient (μ ^ 2) (1 - μ ^ 2) x :=
+  (rfl)
 
 /-- For `0 < μ ≤ 1`, Meyers' coefficient is uniformly elliptic with constants `μ²` and `1`, so
 its ellipticity ratio is `1 / μ²`. -/
 theorem uniformlyEllipticOn_meyersCoefficient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     (Ω : Set (EuclideanSpace ℝ (Fin 2))) :
     UniformlyEllipticOn Ω (meyersCoefficient μ) (μ ^ 2) 1 := by
-  have h := uniformlyEllipticOn_radialCoefficient (by positivity : 0 < μ ^ 2)
+  have h := uniformlyEllipticOn_radialCoefficient_of_nonneg (by positivity : 0 < μ ^ 2)
     (by nlinarith : 0 ≤ 1 - μ ^ 2) Ω
   rwa [add_sub_cancel] at h
 
@@ -150,9 +143,8 @@ private theorem meyersCoefficient_smul_apply_zero_zero (c : ℝ) {t : ℝ} (ht :
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
     simp only [PiLp.smul_apply, Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
     ring
-  rw [meyersCoefficient_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.smul_apply, hn]
-  simp only [Matrix.one_apply_eq, smul_eq_mul, mul_one, Matrix.vecMulVec_apply,
-    PiLp.smul_apply, Matrix.cons_val_zero]
+  rw [meyersCoefficient_eq_radialCoefficient, radialCoefficient_apply, hn]
+  simp only [↓reduceIte, PiLp.smul_apply, Matrix.cons_val_zero, smul_eq_mul]
   have h1 : 1 + c ^ 2 ≠ 0 := by positivity
   field_simp
 
@@ -450,7 +442,8 @@ theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ)
   have hcoeff := memLp_energyIntegrand_of_bounds (Omega := Ω) (mu := volume)
     (b := 0) (c := 0) (beta := 0) (gamma := 0) (by positivity)
     stronglyMeasurable_meyersCoefficient.aestronglyMeasurable aestronglyMeasurable_const
-    aestronglyMeasurable_const (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le x η ξ)
+    aestronglyMeasurable_const
+    (fun x _ η ξ => abs_dotProduct_radialCoefficient_mulVec_le (α := μ ^ 2) x η ξ)
     (fun _ _ => by simp) (fun _ _ => by simp)
   have hclosed : IsClosed {w : W1p volume Ω 2 | energyFormH1L hcoeff u w = 0} :=
     isClosed_eq (energyFormH1L hcoeff u).continuous continuous_const
@@ -536,13 +529,13 @@ private theorem lt_two_of_memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ �
 /-- On a bounded open set, the gradient of Meyers' solution is `p`-integrable when
 `p (1 - μ) < 2`: it is bounded by `(1 + |μ - 1|) ‖x‖ ^ (μ - 1)`. -/
 private theorem memLp_radialCoordGradient {p : ℝ≥0∞}
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
+    (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin 2))))
     (h : p.toReal * (1 - μ) < 2) :
     MemLp (radialCoordGradient μ 0) p (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))) :=
-  memLp_restrict_of_norm_le_mul_norm_rpow hp0 hp hb
+  memLp_restrict_of_norm_le_mul_norm_rpow hp hb
     (measurable_radialCoordGradient 0).aestronglyMeasurable
-    (fun x hx => norm_radialCoordGradient_le 0 hx)
+    (ae_restrict_of_ae ((volume.ae_ne 0).mono fun x hx => norm_radialCoordGradient_le 0 hx))
     (by rw [finrank_euclideanSpace_fin]; push_cast; linarith)
 
 /-- On a bounded open set, Meyers' solution is bounded, hence `p`-integrable. -/
@@ -569,9 +562,8 @@ theorem exists_w1p_value_ae_eq_meyersSolution (hμ0 : 0 < μ) {p : ℝ≥0∞} [
     (h : p.toReal * (1 - μ) < 2) :
     ∃ u : W1p volume Ω p,
       W1p.value u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))] meyersSolution μ := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hu := memLp_meyersSolution (p := p) hμ0 hb
-  have hg := memLp_radialCoordGradient hp0 hp hb h
+  have hg := memLp_radialCoordGradient hp hb h
   refine ⟨W1p.mk hu.toLp hg.toLp
     (((hasWeakFDerivOn_radialCoord hμ0 0 Ω).congr_ae hu.coeFn_toLp.symm).congr_ae_deriv
       (hg.coeFn_toLp.mono fun x hx => by simp only [hx])), ?_⟩
