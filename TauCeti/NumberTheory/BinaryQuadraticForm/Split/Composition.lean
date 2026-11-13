@@ -119,6 +119,12 @@ theorem splitUnitToProperClass_surjective (s : ℕ) [NeZero s] :
     apply (splitProperClassMk_eq_iff s _ _ _ _).mpr
     simp only [Int.cast_natCast, ZMod.natCast_zmod_val, ZMod.coe_unitOfIsCoprime]
 
+/-- Every primitive split proper class is the class of a triangular form. -/
+theorem exists_eq_splitProperClassMk (s : ℕ) [NeZero s] (q : SplitProperClass s) :
+    ∃ (c : ℤ) (hc : IsCoprime (s : ℤ) c), q = splitProperClassMk s c hc := by
+  obtain ⟨u, rfl⟩ := splitUnitToProperClass_surjective s q
+  exact ⟨_, _, rfl⟩
+
 private def splitClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃ (ZMod s)ˣ :=
   (Equiv.ofBijective (splitUnitToProperClass s)
     ⟨splitUnitToProperClass_injective s, splitUnitToProperClass_surjective s⟩).symm
@@ -168,6 +174,40 @@ def splitProperClassEquivUnits (s : ℕ) [NeZero s] : SplitProperClass s ≃* (Z
   rw [splitProperClassEquivUnits_mk, map_one]
   apply Units.ext
   simp
+
+/-- Two triangular classes differ by a square exactly when the coefficient of the second is a
+square multiple of the coefficient of the first modulo the square root. -/
+theorem isSquare_inv_mul_splitProperClassMk_iff (s : ℕ) [NeZero s] (c d : ℤ)
+    (hc : IsCoprime (s : ℤ) c) (hd : IsCoprime (s : ℤ) d) :
+    IsSquare ((splitProperClassMk s c hc)⁻¹ * splitProperClassMk s d hd) ↔
+      ∃ z : ZMod s, (d : ZMod s) = c * z ^ 2 := by
+  let e := splitProperClassEquivUnits s
+  let u := ZMod.unitOfIsCoprime c hc.symm
+  let v := ZMod.unitOfIsCoprime d hd.symm
+  have he : IsSquare ((splitProperClassMk s c hc)⁻¹ * splitProperClassMk s d hd) ↔
+      IsSquare (u⁻¹ * v) := by
+    constructor
+    · intro h
+      simpa only [map_mul, map_inv, e, splitProperClassEquivUnits_mk] using h.map e
+    · intro h
+      have hu : e.symm u = splitProperClassMk s c hc :=
+        e.symm_apply_eq.mpr (splitProperClassEquivUnits_mk s c hc).symm
+      have hv : e.symm v = splitProperClassMk s d hd :=
+        e.symm_apply_eq.mpr (splitProperClassEquivUnits_mk s d hd).symm
+      simpa only [map_mul, map_inv, hu, hv] using h.map e.symm
+  rw [he]
+  constructor
+  · rintro ⟨w, hw⟩
+    refine ⟨w, ?_⟩
+    have h := congrArg Units.val (inv_mul_eq_iff_eq_mul.mp hw)
+    simpa only [Units.val_mul, v, u, ZMod.coe_unitOfIsCoprime, sq, mul_assoc] using h
+  · rintro ⟨z, hz⟩
+    have hdu : IsUnit (d : ZMod s) := by simpa only [v, ZMod.coe_unitOfIsCoprime] using v.isUnit
+    have hz2 : IsUnit (z ^ 2) := isUnit_of_mul_isUnit_right (hz ▸ hdu)
+    have hzu : IsUnit z := (isUnit_pow_iff two_ne_zero).mp hz2
+    refine ⟨hzu.unit, inv_mul_eq_iff_eq_mul.mpr (Units.ext ?_)⟩
+    simpa only [Units.val_mul, IsUnit.unit_spec, v, u, ZMod.coe_unitOfIsCoprime, sq,
+      mul_assoc] using hz
 
 private theorem splitModule_eq_of_cast_eq (s : ℕ) (c d : ℤ)
     (h : (c : ZMod s) = d) : splitModule s c = splitModule s d :=
