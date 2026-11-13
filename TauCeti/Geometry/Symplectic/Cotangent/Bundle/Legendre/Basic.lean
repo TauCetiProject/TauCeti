@@ -339,6 +339,48 @@ theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   rw [hπ, Bundle.mfderiv_proj, Bundle.mfderiv_proj] at hcomp
   exact hcomp.symm
 
+/-- Along a line through `a` in direction `w`, a map with derivative `D'` at `a` has derivative
+`D' w` at the origin of the line. -/
+private theorem hasDerivAt_comp_add_smul_zero {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {D : E → G} {D' : E →L[𝕜] G} {a : E} (w : E) (hD : HasFDerivAt D D' a) :
+    HasDerivAt (fun r : 𝕜 ↦ D (a + r • w)) (D' w) 0 := by
+  have h1 : HasDerivAt (fun r : 𝕜 ↦ a + r • w) w 0 := by
+    have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const w).const_add a
+    rwa [one_smul] at h
+  have h2 : HasFDerivAt D D' (a + (0 : 𝕜) • w) := by
+    rwa [zero_smul, add_zero]
+  exact h2.comp_hasDerivAt (0 : 𝕜) h1
+
+/-- The Legendre map sends a line in a fibre of the tangent bundle to a line of covectors: if the
+derivative of the restricted Lagrangian has derivative `Hs w` along the line through `v` in
+direction `w`, then the line of covectors has velocity `(0, Hs w)` in the bundle chart. -/
+private theorem hasMFDerivAt_legendreMap_comp_line (v : TangentBundle I M)
+    (w : TangentSpace I v.proj) {Hs : E →L[𝕜] E →L[𝕜] 𝕜}
+    (hline : HasDerivAt (fun r : 𝕜 ↦
+      fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u)) (v.2 + r • w)) (Hs w) 0) :
+    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+      (legendreMap L ∘ fun r : 𝕜 ↦ TotalSpace.mk' E v.proj (v.2 + r • w)) 0
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E),
+        (trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
+          ).continuousLinearMapAt 𝕜 v.proj (Hs w))) := by
+  set eC := trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
+  have hxC : v.proj ∈ eC.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
+  let B : (E →L[𝕜] 𝕜) →L[𝕜] (E →L[𝕜] 𝕜) := eC.continuousLinearMapAt 𝕜 v.proj
+  have hcoord : (fun r : 𝕜 ↦ (eC ((legendreMap L ∘ fun r : 𝕜 ↦
+      TotalSpace.mk' E v.proj (v.2 + r • w)) r)).2) =
+      fun r ↦ B (fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u)) (v.2 + r • w)) :=
+    funext fun r ↦ (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) eC hxC _).symm
+  -- The base point of the line of covectors is `v.proj` by definition.
+  have hproj : ((legendreMap L ∘ fun r : 𝕜 ↦
+      TotalSpace.mk' E v.proj (v.2 + r • w)) 0).proj = v.proj := rfl
+  rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
+  refine ⟨(FiberBundle.continuousAt_totalSpace _ _).2 ⟨continuousAt_const, ?_⟩,
+    hasDerivAt_const (0 : 𝕜) (extChartAt I v.proj v.proj), ?_⟩
+  · rw [hproj, hcoord]
+    exact B.continuous.continuousAt.comp hline.continuousAt
+  · rw [hproj, hcoord]
+    exact B.hasFDerivAt.comp_hasDerivAt (0 : 𝕜) hline
+
 /-- **The differential of the Legendre map on vertical vectors.** In bundle charts, the
 differential of the Legendre map at `v` sends the vertical vector with fibre coordinate `w` to the
 vertical covector with fibre coordinate the fibre Hessian `∂²L/∂v∂v` applied to `w`. It is stated
@@ -352,8 +394,6 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
         ).continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) := by
   have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
   set eC := trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
-  have hxC : v.proj ∈ eC.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
-  let B : (E →L[𝕜] 𝕜) →L[𝕜] (E →L[𝕜] 𝕜) := eC.continuousLinearMapAt 𝕜 v.proj
   -- The line through `v` in its fibre, in the direction `w`.
   let γ : 𝕜 → TangentBundle I M := fun r ↦ TotalSpace.mk' E v.proj (v.2 + r • w)
   have hγ : HasMFDerivAt 𝓘(𝕜) I.tangent γ 0 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
@@ -367,31 +407,10 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   have hD : HasFDerivAt D Hs (id v.2 : E) :=
     (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
       ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
-  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 := by
-    have h1 : HasDerivAt (fun r : 𝕜 ↦ (id v.2 : E) + r • (id w : E)) (id w : E) 0 := by
-      have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const (id w : E)).const_add (id v.2 : E)
-      rwa [one_smul] at h
-    have h2 : HasFDerivAt D Hs ((id v.2 : E) + (0 : 𝕜) • (id w : E)) := by
-      rwa [zero_smul, add_zero]
-    -- Elaborating the chain rule against the goal would look for a norm on `T_x M`; build it on
-    -- the model space `E` first, then match it with the goal through `T_x M = E`.
-    have h := h2.comp_hasDerivAt (0 : 𝕜) h1
-    exact h
+  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 :=
+    hasDerivAt_comp_add_smul_zero (id w : E) hD
   -- So the Legendre map sends the line to a line of covectors, with velocity `(0, B (Hs w))`.
-  have hFLγ : HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L ∘ γ) 0
-      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), B (Hs w))) := by
-    have hcoord : (fun r : 𝕜 ↦ (eC ((legendreMap L ∘ γ) r)).2) =
-        fun r ↦ B (D (v.2 + r • w)) :=
-      funext fun r ↦ (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) eC hxC _).symm
-    -- The base point of the line of covectors is `v.proj` by definition.
-    have hproj : ((legendreMap L ∘ γ) 0).proj = v.proj := rfl
-    rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
-    refine ⟨(FiberBundle.continuousAt_totalSpace _ _).2 ⟨continuousAt_const, ?_⟩,
-      hasDerivAt_const (0 : 𝕜) (extChartAt I v.proj v.proj), ?_⟩
-    · rw [hproj, hcoord]
-      exact B.continuous.continuousAt.comp hline.continuousAt
-    · rw [hproj, hcoord]
-      exact B.hasFDerivAt.comp_hasDerivAt (0 : 𝕜) hline
+  have hFLγ := hasMFDerivAt_legendreMap_comp_line (L := L) v w hline
   have hTγ : HasMFDerivAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) (γ 0) T := by
     rw [hγ0, ← hT]
     exact ((contMDiff_legendreMap (m := 1) hL hn1 v).mdifferentiableAt one_ne_zero).hasMFDerivAt
