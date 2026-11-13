@@ -54,16 +54,7 @@ theorem isRationalSemilinear_setOf_exists_pos_lt_affine_le {κ : Type*} [Finite 
         obtain ⟨q, hq⟩ := ha j.val
         rw [hq]
         have qm : (((q : ℝ) • T).toAffineMap.linear) = (q : ℝ) • T.toAffineMap.linear :=
-          calc
-            (((q : ℝ) • T).toAffineMap.linear) =
-                (((q : ℝ) • T).contLinear : V →ₗ[ℝ] ℝ) :=
-              (ContinuousAffineMap.coe_contLinear_eq_linear _).symm
-            _ = (((q : ℝ) • T.contLinear : V →L[ℝ] ℝ) : V →ₗ[ℝ] ℝ) :=
-              congrArg ContinuousLinearMap.toLinearMap (ContinuousAffineMap.smul_contLinear _ T)
-            _ = (q : ℝ) • (T.contLinear : V →ₗ[ℝ] ℝ) :=
-              ContinuousLinearMap.toLinearMap_smul _ _
-            _ = (q : ℝ) • T.toAffineMap.linear :=
-              congrArg ((q : ℝ) • ·) (ContinuousAffineMap.coe_contLinear_eq_linear T)
+          AffineMap.smul_linear (q : ℝ) T.toAffineMap
         rw [qm]
         exact hT.rat_smul q)))
   have hpair := IsRationalSemilinear.iInter
