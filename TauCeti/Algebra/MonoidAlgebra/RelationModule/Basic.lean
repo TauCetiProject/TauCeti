@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.FreeModule.PID
 
 For a family `g : ι → G` of elements of a group, indexed by a finite type, the left
 `R[G]`-linear map `R[G]^ι → R[G]`, `e_i ↦ g_i - 1`, lands in the augmentation ideal `I_G`, the
-kernel of `TauCeti.MonoidAlgebra.augmentation R G`. Its kernel is the **relation module** of the
+kernel of `MonoidAlgebra.augmentation R G`. Its kernel is the **relation module** of the
 family. When the `g_i` generate `G`, the map is onto `I_G`, giving Lyndon's exact sequence
 `0 → relationModule R G g → R[G]^ι → I_G → 0`.
 
