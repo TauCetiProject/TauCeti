@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Analysis.Real.OfDigits
 public import TauCeti.MeasureTheory.Measure.Lebesgue.CantorSet
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -278,10 +278,8 @@ instance : IsProbabilityMeasure cantorStieltjesFunction.measure :=
       (cantorFunction_of_one_le hx).symm))
 
 /-- The Cantor measure has no atoms, since the Cantor function is continuous. -/
-instance : NullSingletonClass cantorStieltjesFunction.measure where
-  measure_singleton x := by
-    rw [StieltjesFunction.measure_singleton, coe_cantorStieltjesFunction,
-      continuous_cantorFunction.continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+instance : NullSingletonClass cantorStieltjesFunction.measure :=
+  cantorStieltjesFunction.nullSingletonClass_measure_of_continuous continuous_cantorFunction
 
 /-- The Cantor measure is concentrated on the Cantor set. -/
 theorem cantorStieltjesFunction_measure_compl_cantorSet :

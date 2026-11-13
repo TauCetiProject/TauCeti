@@ -49,20 +49,6 @@ theorem measure_Iic_nnreal (f : StieltjesFunction ℝ≥0) (t : ℝ≥0) :
   rw [atBot_eq_pure_of_isBot (isBot_bot : IsBot (0 : ℝ≥0))]
   exact tendsto_pure_nhds _ _
 
-/-- Integration of a locally integrable Banach-valued function against a continuous
-Stieltjes function on the half-line has a continuous accumulated integral. No bound on
-the total mass or integrability beyond each finite horizon is required. -/
-theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (f : StieltjesFunction ℝ≥0) (hf : Continuous f) {H : ℝ≥0 → E} (a : ℝ≥0)
-    (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
-    Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
-  have : NullSingletonClass f.measure := ⟨fun t ↦ by
-    rw [f.measure_singleton, hf.continuousAt.continuousWithinAt.leftLim_eq, sub_self,
-      ENNReal.ofReal_zero]⟩
-  refine continuous_iff_continuousAt.2 fun t ↦ ?_
-  exact ((hH (t + 1)).continuousOn_integral_Ioc t (by simp)).continuousAt
-    (Iic_mem_nhds (lt_add_one t))
-
 end StieltjesFunction
 
 namespace MeasureTheory.Measure
@@ -102,6 +88,31 @@ namespace StieltjesFunction
 variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
   [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
   [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
+
+/-- The Stieltjes measure of a continuous Stieltjes function vanishes on singletons. -/
+theorem nullSingletonClass_measure_of_continuous (f : StieltjesFunction R)
+    (hf : Continuous f) : NullSingletonClass f.measure :=
+  ⟨fun t ↦ by
+    rw [f.measure_singleton, hf.continuousAt.continuousWithinAt.leftLim_eq, sub_self,
+      ENNReal.ofReal_zero]⟩
+
+/-- Integration of a locally integrable Banach-valued function against a continuous
+Stieltjes function has a continuous accumulated integral. No bound on the total mass or
+integrability beyond each finite horizon is required. -/
+theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : StieltjesFunction R) (hf : Continuous f) {H : R → E} (a : R)
+    (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
+    Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
+  have := f.nullSingletonClass_measure_of_continuous hf
+  refine continuous_iff_continuousAt.2 fun t ↦ ?_
+  by_cases ht : ∃ T, t < T
+  · obtain ⟨T, ht⟩ := ht
+    exact ((hH T).continuousOn_integral_Ioc t ht.le).continuousAt (Iic_mem_nhds ht)
+  · have htop : Iic t = univ := by
+      ext u
+      simp only [mem_Iic, mem_univ, iff_true]
+      exact le_of_not_gt (fun hu ↦ ht ⟨u, hu⟩)
+    exact ((hH t).continuousOn_integral_Ioc t le_rfl).continuousAt (by rw [htop]; exact univ_mem)
 
 /-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
 `[a,b]` are measurable. No uniform bound on the random interval mass is required. -/
