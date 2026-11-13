@@ -199,10 +199,40 @@ private theorem bijective_sub_disp (hκ : 2 < κ) (t : I) (x : X) :
   simp only [disp, weight, push_apply, vsub_eq_sub, sub_zero, vadd_eq_add, smul_neg, μ, ← ha_def]
   abel
 
+/-- The level-preserving total map of the straightening is a closed map. A point `q` is `G (F q, s)`
+for the map `G` moving back by `s • g x` and some `s ∈ [0, 1]`, so the image of a closed set is the
+projection, along the compact factor `[0, 1]`, of a closed set. -/
+private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
+    IsClosedMap fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
+  set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
+  have := continuous_disp g (κ := κ) (by linarith)
+  let G : (I × (X × W)) × I → I × (X × W) :=
+    fun p => (p.1.1, (p.1.2.1, p.1.2.2 + (p.2 : ℝ) • g p.1.2.1))
+  have hG : Continuous G := by fun_prop
+  have hFG : ∀ p, (F (G p)).1 = p.1.1 ∧ (F (G p)).2.1 = p.1.2.1 := fun _ => ⟨rfl, rfl⟩
+  change IsClosedMap F
+  intro C hC
+  have hR : IsClosed {p : (I × (X × W)) × I | (F (G p)).2.2 = p.1.2.2} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  have heq : F '' C = Prod.fst '' ({p | (F (G p)).2.2 = p.1.2.2} ∩ G ⁻¹' C) := by
+    ext y
+    constructor
+    · rintro ⟨q, hq, rfl⟩
+      have hs := coeff_mem_Icc g κ q
+      let s : I := ⟨_, hs.1, hs.2.trans q.1.2.2⟩
+      have hGF : G (F q, s) = q := by
+        simp only [G, F, s, disp, sub_add_cancel]
+      refine ⟨(F q, s), ⟨?_, ?_⟩, rfl⟩
+      · simp only [mem_ofPred_eq, hGF]
+      · simpa only [mem_preimage, hGF] using hq
+    · rintro ⟨p, ⟨hp, hpC⟩, rfl⟩
+      refine ⟨G p, hpC, ?_⟩
+      exact Prod.ext (hFG p).1 (Prod.ext (hFG p).2 hp)
+  rw [heq]
+  exact isClosedMap_fst_of_compactSpace _ (hR.inter (hC.preimage hG))
+
 /-- The level-preserving total map of the straightening is a homeomorphism of `I × (X × W)`. It
-is a continuous bijection, and a closed map: a point `q` is `G (F q, s)` for the map `G` moving
-back by `s • g x` and some `s ∈ [0, 1]`, so the image of a closed set is the projection, along the
-compact factor `[0, 1]`, of a closed set. -/
+is a continuous bijection and a closed map. -/
 private theorem isHomeomorph_straightenGraph_total (hκ : 2 < κ) :
     IsHomeomorph fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
   set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
@@ -219,30 +249,7 @@ private theorem isHomeomorph_straightenGraph_total (hκ : 2 < κ) :
     · obtain ⟨t, x, z⟩ := y
       obtain ⟨w, hw⟩ := (bijective_sub_disp g hκ t x).surjective z
       exact ⟨(t, (x, w)), by simpa [F] using hw⟩
-  let G : (I × (X × W)) × I → I × (X × W) :=
-    fun p => (p.1.1, (p.1.2.1, p.1.2.2 + (p.2 : ℝ) • g p.1.2.1))
-  have hG : Continuous G := by fun_prop
-  have hFG : ∀ p, (F (G p)).1 = p.1.1 ∧ (F (G p)).2.1 = p.1.2.1 := fun _ => ⟨rfl, rfl⟩
-  have hclosed : IsClosedMap F := by
-    intro C hC
-    have hR : IsClosed {p : (I × (X × W)) × I | (F (G p)).2.2 = p.1.2.2} :=
-      isClosed_eq (by fun_prop) (by fun_prop)
-    have heq : F '' C = Prod.fst '' ({p | (F (G p)).2.2 = p.1.2.2} ∩ G ⁻¹' C) := by
-      ext y
-      constructor
-      · rintro ⟨q, hq, rfl⟩
-        have hs := coeff_mem_Icc g κ q
-        let s : I := ⟨_, hs.1, hs.2.trans q.1.2.2⟩
-        have hGF : G (F q, s) = q := by
-          simp only [G, F, s, disp, sub_add_cancel]
-        refine ⟨(F q, s), ⟨?_, ?_⟩, rfl⟩
-        · simp only [mem_ofPred_eq, hGF]
-        · simpa only [mem_preimage, hGF] using hq
-      · rintro ⟨p, ⟨hp, hpC⟩, rfl⟩
-        refine ⟨G p, hpC, ?_⟩
-        exact Prod.ext (hFG p).1 (Prod.ext (hFG p).2 hp)
-    rw [heq]
-    exact isClosedMap_fst_of_compactSpace _ (hR.inter (hC.preimage hG))
+  have hclosed := isClosedMap_straightenGraph_total g hκ
   exact isHomeomorph_iff_continuous_isClosedMap_bijective.2 ⟨hF, hclosed, hbij⟩
 
 variable (κ) in
