@@ -46,11 +46,6 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
   `TauCeti.IsSmoothForm.continuous_apply_curveVelocity`: the integrand is continuous at every
   parameter where the curve is `C¹` and the form is continuous at the point of the curve, so for
   a continuous form along a `C¹` curve it is continuous.
-* `TauCeti.intervalIntegrable_apply_curveVelocity_of_contMDiffAt`: the integrand is interval
-  integrable on `a..b` as soon as, at every point of `[[a, b]]`, the curve is `C¹` and the form
-  is continuous at the point of the curve. Since `C¹` at a point is a condition on a neighbourhood
-  of that point, the curve has to be `C¹` near `[[a, b]]`, while the form only has to be
-  continuous at each point of the arc; both are arbitrary elsewhere.
 * `TauCeti.pathIntegral_mextDeriv_ofFunction` and `TauCeti.pathIntegral_mextDeriv`: the
   fundamental theorem of calculus for line integrals.
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
@@ -302,18 +297,6 @@ theorem IsSmoothForm.intervalIntegrable_apply_curveVelocity {φ : RoughForm I M 
     (hφ : IsSmoothForm I 0 φ) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (a b : ℝ) :
     IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
   (hφ.continuous_apply_curveVelocity hγ).intervalIntegrable a b
-
-/-- A `1`-form evaluated on the velocity of a curve is interval integrable on `a..b` when, at
-every point of `[[a, b]]`, the curve is `C¹` and the form is continuous at the point of the
-curve. -/
-theorem intervalIntegrable_apply_curveVelocity_of_contMDiffAt {φ : RoughForm I M F 1}
-    {γ : ℝ → M} {a b : ℝ}
-    (hφ : ∀ t ∈ uIcc a b, ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) 0
-      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) (γ t))
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
-    IntervalIntegrable (fun t ↦ φ (γ t) fun _ ↦ Manifold.curveVelocity I γ t) volume a b :=
-  ContinuousOn.intervalIntegrable fun t ht ↦
-    (continuousAt_apply_curveVelocity (hφ t ht) (hγ t ht)).continuousWithinAt
 
 /-- A form continuous at the points of a `C¹` arc is interval integrable along the arc.
 The curve only needs to be `C¹` within the closed interval, including at its endpoints. -/
