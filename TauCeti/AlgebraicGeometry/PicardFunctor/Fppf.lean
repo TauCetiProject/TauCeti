@@ -115,6 +115,39 @@ lemma relativePicardAddPresheafMk_mul (T : (Over S)ᵒᵖ)
   unfold relativePicardAddPresheafMk relativePicardAddPresheaf
   rfl
 
+/-- Dualizing a line-bundle class negates its represented section. -/
+@[simp]
+lemma relativePicardAddPresheafMk_inv (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardAddPresheafMk f T a⁻¹ = -relativePicardAddPresheafMk f T a := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  exact congrArg Additive.ofMul (map_inv (QuotientGroup.mk' _) a)
+
+/-- A quotient of line-bundle classes represents the difference of their sections. -/
+@[simp]
+lemma relativePicardAddPresheafMk_div (T : (Over S)ᵒᵖ)
+    (a b : LineBundleClass (pullback T.unop.hom f)) :
+    relativePicardAddPresheafMk f T (a / b) =
+      relativePicardAddPresheafMk f T a - relativePicardAddPresheafMk f T b := by
+  simp only [div_eq_mul_inv, relativePicardAddPresheafMk_mul,
+    relativePicardAddPresheafMk_inv, sub_eq_add_neg]
+
+/-- A natural tensor power represents a natural multiple of the represented section. -/
+@[simp]
+lemma relativePicardAddPresheafMk_pow (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) (n : ℕ) :
+    relativePicardAddPresheafMk f T (a ^ n) = n • relativePicardAddPresheafMk f T a := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  exact congrArg Additive.ofMul (map_pow (QuotientGroup.mk' _) a n)
+
+/-- An integer tensor power represents an integer multiple of the represented section. -/
+@[simp]
+lemma relativePicardAddPresheafMk_zpow (T : (Over S)ᵒᵖ)
+    (a : LineBundleClass (pullback T.unop.hom f)) (n : ℤ) :
+    relativePicardAddPresheafMk f T (a ^ n) = n • relativePicardAddPresheafMk f T a := by
+  unfold relativePicardAddPresheafMk relativePicardAddPresheaf
+  exact congrArg Additive.ofMul (map_zpow (QuotientGroup.mk' _) a n)
+
 /-- A line-bundle class on `X_T` represents the zero section of the additive relative Picard
 presheaf exactly when it is pulled back from `T`. -/
 lemma relativePicardAddPresheafMk_eq_zero_iff (T : (Over S)ᵒᵖ)
@@ -123,6 +156,15 @@ lemma relativePicardAddPresheafMk_eq_zero_iff (T : (Over S)ᵒᵖ)
       a ∈ (LineBundleClass.pullbackHom (pullback.fst T.unop.hom f)).range := by
   unfold relativePicardAddPresheafMk relativePicardAddPresheaf
   exact (ofMul_eq_zero (A := _ ⧸ _)).trans (QuotientGroup.eq_one_iff a)
+
+/-- A line-bundle class pulled back from the base represents zero in the relative Picard
+presheaf. -/
+@[simp]
+lemma relativePicardAddPresheafMk_pullback_fst (T : (Over S)ᵒᵖ)
+    (b : LineBundleClass T.unop.left) :
+    relativePicardAddPresheafMk f T
+      (LineBundleClass.pullback (pullback.fst T.unop.hom f) b) = 0 :=
+  (relativePicardAddPresheafMk_eq_zero_iff f T _).mpr ⟨b, LineBundleClass.pullbackHom_apply _ _⟩
 
 /-- The **relative Picard fppf sheaf** of `f : X ⟶ S`, obtained by sheafifying the presheaf
 `T ↦ Pic(X_T) / Pic(T)` on the fppf site of schemes over `S`.
@@ -167,6 +209,13 @@ theorem relativePicardToFppfSheaf_eq :
 agree fppf-locally. -/
 instance isLocallyInjective_relativePicardToFppfSheaf :
     Presheaf.IsLocallyInjective (Scheme.fppfTopology.over S) (relativePicardToFppfSheaf f) := by
+  rw [relativePicardToFppfSheaf_eq]
+  infer_instance
+
+/-- Every section of the relative Picard fppf sheaf is fppf-locally represented by a section
+of the relative Picard presheaf. -/
+instance isLocallySurjective_relativePicardToFppfSheaf :
+    Presheaf.IsLocallySurjective (Scheme.fppfTopology.over S) (relativePicardToFppfSheaf f) := by
   rw [relativePicardToFppfSheaf_eq]
   infer_instance
 
