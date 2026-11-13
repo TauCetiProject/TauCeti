@@ -58,13 +58,8 @@ open MulAction
 def basePoint (i : ℕ) : Fin 276 := Fin.ofNat 276 i
 
 /-- The stabilizer-chain base is the natural-number sequence reduced modulo 276. -/
+@[simp]
 theorem basePoint_def (i : ℕ) : basePoint i = Fin.ofNat 276 i := (rfl)
-
-private theorem basePoint_zero : basePoint 0 = 0 := (rfl)
-
-private theorem basePoint_one : basePoint 1 = 1 := (rfl)
-
-private theorem basePoint_two : basePoint 2 = 2 := (rfl)
 
 /-! ### Words in the generators -/
 
@@ -124,46 +119,35 @@ private theorem pairWord_spec : ∀ x : Fin 276, x ≠ 0 →
     word (pairWord x) 0 = 0 ∧ word (pairWord x) 1 = x := by
   decide +kernel
 
-/-- Any two distinct points are sent to `0` and `1` by some element of the model. -/
-private theorem exists_apply_eq_zero_one {x y : Fin 276} (hxy : x ≠ y) :
-    ∃ g ∈ Co3, g x = 0 ∧ g y = 1 := by
-  obtain ⟨g, hg⟩ := exists_smul_eq Co3 x 0
-  -- The action of the subgroup is evaluation of the underlying permutation.
-  rw [Subgroup.smul_def, Equiv.Perm.smul_def] at hg
-  have hz : (g : Equiv.Perm (Fin 276)) y ≠ 0 :=
-    hg ▸ (g : Equiv.Perm (Fin 276)).injective.ne hxy.symm
-  obtain ⟨h0, h1⟩ := pairWord_spec _ hz
-  refine ⟨(word (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
-    mul_mem (inv_mem (word_mem _)) g.2, ?_, ?_⟩
-  · rw [Equiv.Perm.mul_apply, hg, Equiv.Perm.inv_eq_iff_eq, h0]
-  · rw [Equiv.Perm.mul_apply, Equiv.Perm.inv_eq_iff_eq, h1]
-
-/-- The ATLAS model of `Co₃` is `2`-transitive on its 276 points. -/
+/-- The ATLAS model of `Co₃` is `2`-transitive on its 276 points: the model is transitive, and
+the stabilizer of `0` is transitive on the other points. -/
 instance instIsMultiplyPretransitive : IsMultiplyPretransitive Co3 (Fin 276) 2 := by
-  rw [is_two_pretransitive_iff]
-  intro x y z t hxy hzt
-  obtain ⟨g, hg, hgx, hgy⟩ := exists_apply_eq_zero_one hxy
-  obtain ⟨h, hh, hhz, hht⟩ := exists_apply_eq_zero_one hzt
-  refine ⟨⟨h⁻¹ * g, mul_mem (inv_mem hh) hg⟩, ?_, ?_⟩ <;>
-    simp only [Subgroup.mk_smul, Equiv.Perm.smul_def, Equiv.Perm.mul_apply,
-      Equiv.Perm.inv_eq_iff_eq, hgx, hgy, hhz, hht]
+  rw [SubMulAction.ofStabilizer.isMultiplyPretransitive (a := (0 : Fin 276)),
+    is_one_pretransitive_iff, isPretransitive_iff_base
+      (⟨1, (SubMulAction.mem_ofStabilizer_iff Co3 0).mpr (by decide)⟩ :
+        SubMulAction.ofStabilizer Co3 (0 : Fin 276))]
+  rintro ⟨x, hx⟩
+  obtain ⟨h0, h1⟩ := pairWord_spec x hx
+  exact ⟨⟨⟨word (pairWord x), word_mem _⟩, h0⟩, Subtype.ext h1⟩
 
-private theorem basePoint_injOn : Set.InjOn basePoint (Set.Iio 2) := by
-  intro i hi j hj hij
-  simp only [Set.mem_Iio] at hi hj
-  interval_cases i <;> interval_cases j <;> simp_all [basePoint_zero, basePoint_one]
+private theorem basePoint_injOn : Set.InjOn basePoint (Set.Iio 2) :=
+  Fin.ofNat_injOn_Iio (by decide)
 
 /-- The first basic orbit has length 276. -/
+@[simp]
 theorem ncard_orbit_stabilizerChain_zero :
     (orbit (Co3.stabilizerChain basePoint 0) (0 : Fin 276)).ncard = 276 := by
-  simpa [basePoint_zero] using Co3.ncard_orbit_stabilizerChain basePoint_injOn (i := 0) two_pos
+  simpa only [basePoint_def, Fin.reduceOfNat, Nat.card_eq_fintype_card, Fintype.card_fin,
+    Nat.reduceSub] using
+    Co3.ncard_orbit_stabilizerChain basePoint_injOn (i := 0) two_pos
 
 /-- The second basic orbit has length 275: the stabilizer of `0` is transitive on the other
 points. -/
 @[simp]
 theorem ncard_orbit_stabilizerChain_one :
     (orbit (Co3.stabilizerChain basePoint 1) (1 : Fin 276)).ncard = 275 := by
-  simpa [basePoint_one] using
+  simpa only [basePoint_def, Fin.reduceOfNat, Nat.card_eq_fintype_card, Fintype.card_fin,
+    Nat.reduceSub] using
     Co3.ncard_orbit_stabilizerChain basePoint_injOn (i := 1) one_lt_two
 
 /-! ### A two-graph bounds the third orbit -/
@@ -537,9 +521,9 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
   · rintro ⟨g, rfl⟩
     obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
     have h0 : (g : Equiv.Perm (Fin 276)) 0 = 0 := by
-      simpa only [basePoint_zero, Equiv.Perm.smul_def] using hfix 0 two_pos
+      simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 0 two_pos
     have h1 : (g : Equiv.Perm (Fin 276)) 1 = 1 := by
-      simpa only [basePoint_one, Equiv.Perm.smul_def] using hfix 1 one_lt_two
+      simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using hfix 1 one_lt_two
     have h := orbit_subset_triangleParity (mem_orbit_iff.mpr ⟨⟨g, hg⟩, rfl⟩)
     simpa only [Set.mem_ofPred_eq, Subgroup.mk_smul, Prod.smul_mk, Equiv.Perm.smul_def, h0, h1,
       Subgroup.smul_def] using h
@@ -548,8 +532,8 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
     have hmem : word (tripleWord x) ∈ Co3.stabilizerChain basePoint 2 := by
       refine (Subgroup.mem_stabilizerChain_iff _ _).mpr ⟨word_mem _, fun j hj ↦ ?_⟩
       interval_cases j
-      · simpa only [basePoint_zero, Equiv.Perm.smul_def] using h0
-      · simpa only [basePoint_one, Equiv.Perm.smul_def] using h1
+      · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using h0
+      · simpa only [basePoint_def, Fin.reduceOfNat, Equiv.Perm.smul_def] using h1
     refine mem_orbit_iff.mpr ⟨⟨_, hmem⟩, ?_⟩
     simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using h2
 
@@ -584,7 +568,7 @@ theorem card_eq_12295800_mul_card_stabilizerChain :
     Nat.card Co3 = 12295800 * Nat.card (Co3.stabilizerChain basePoint 3) := by
   have h := Co3.prod_ncard_orbit_mul_card_stabilizerChain basePoint 3
   simp only [Finset.prod_range_succ, Finset.prod_range_zero, one_mul] at h
-  rw [basePoint_zero, basePoint_one, basePoint_two, ncard_orbit_stabilizerChain_zero,
+  simp only [basePoint_def, Fin.reduceOfNat, ncard_orbit_stabilizerChain_zero,
     ncard_orbit_stabilizerChain_one, ncard_orbit_stabilizerChain_two] at h
   omega
 
