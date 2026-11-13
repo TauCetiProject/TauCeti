@@ -36,7 +36,8 @@ first `n` links.
   indecomposable modules of length at most `b`, the composite of at least `2 ^ n - 1` links has
   image of length at most `b - n`.
 * `TauCeti.map_eq_zero_of_length_le`: **the Harada–Sai lemma**, the case `n = b` of the bound.
-* `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms.
+* `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms,
+  and `TauCeti.ofOpSequence_map_eq_zero_of_length_le` for a descending one.
 
 ## Implementation notes
 
@@ -187,6 +188,49 @@ theorem ofSequence_map_eq_zero_of_length_le {M : ℕ → ModuleCat.{v} A}
     (hn : 2 ^ b - 1 ≤ n) : (Functor.ofSequence f).map (homOfLE (Nat.zero_le n)) = 0 :=
   map_eq_zero_of_length_le hM hlen
     (fun i ↦ by rw [Functor.ofSequence_map_homOfLE_succ]; exact hf i) _ (by omega)
+
+/-- **The Harada–Sai lemma for descending sequences**: for morphisms `f i : M (i + 1) ⟶ M i` that
+are not isomorphisms, between indecomposable modules of length at most `b`, the composite
+`M n ⟶ M 0` of the first `n` of them is zero once `n ≥ 2 ^ b - 1`. -/
+theorem ofOpSequence_map_eq_zero_of_length_le {M : ℕ → ModuleCat.{v} A}
+    (f : ∀ i, M (i + 1) ⟶ M i) (hM : ∀ i, Indecomposable (M i))
+    (hlen : ∀ i, Module.length A (M i) ≤ b) (hf : ∀ i, ¬ IsIso (f i)) {n : ℕ}
+    (hn : 2 ^ b - 1 ≤ n) : (Functor.ofOpSequence f).map (homOfLE (Nat.zero_le n)).op = 0 := by
+  classical
+  let G := Functor.ofOpSequence f
+  -- Read the first `n` links backwards, continued by zero morphisms. The objects of `G` are those
+  -- of `M` by definition of `Functor.ofOpSequence`.
+  let g (i : ℕ) : M (n - i) ⟶ M (n - (i + 1)) :=
+    if i < n then G.map (homOfLE (by omega : n - (i + 1) ≤ n - i)).op else 0
+  have hlink (k m : ℕ) (h : k ≤ m) (hm : m = k + 1) : ¬ IsIso (G.map (homOfLE h).op) := by
+    subst hm
+    rw [Functor.ofOpSequence_map_homOfLE_succ]
+    exact hf k
+  have hg (i : ℕ) : ¬ IsIso (g i) := by
+    by_cases hi : i < n
+    · simp only [g, hi, ↓reduceIte]
+      exact hlink (n - (i + 1)) (n - i) _ (by omega)
+    · simp only [g, hi, ↓reduceIte]
+      intro h
+      exact (hM (n - i)).1 ((Limits.IsZero.iff_id_eq_zero _).mpr
+        ((IsIso.hom_inv_id (0 : M (n - i) ⟶ M (n - (i + 1)))).symm.trans Limits.zero_comp))
+  have hcomp (j : ℕ) (hj : j ≤ n) : (Functor.ofSequence g).map (homOfLE (Nat.zero_le j)) =
+      G.map (homOfLE (by omega : n - j ≤ n)).op := by
+    induction j with
+    | zero => exact ((Functor.ofSequence g).map_id 0).trans (G.map_id _).symm
+    | succ j ih =>
+      have h : homOfLE (Nat.zero_le (j + 1)) = homOfLE (Nat.zero_le j) ≫ homOfLE (Nat.le_succ j) :=
+        rfl
+      rw [h, Functor.map_comp, ih (by omega), Functor.ofSequence_map_homOfLE_succ]
+      simp only [g, show j < n by omega, ↓reduceIte]
+      exact (G.map_comp _ _).symm
+  have h0 := ofSequence_map_eq_zero_of_length_le g (fun i ↦ hM _) (fun i ↦ hlen _) hg hn
+  rw [hcomp n le_rfl] at h0
+  have key (m : ℕ) (h : m ≤ n) (hm : m = 0) (h' : G.map (homOfLE h).op = 0) :
+      G.map (homOfLE (Nat.zero_le n)).op = 0 := by
+    subst hm
+    exact h'
+  exact key _ _ (by omega) h0
 
 end Chain
 

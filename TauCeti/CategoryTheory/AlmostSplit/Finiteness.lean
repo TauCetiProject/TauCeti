@@ -29,6 +29,14 @@ Brauer–Thrall conjecture, where `T` is the class of indecomposable modules of 
 vanishing of chains is the Harada–Sai lemma, and the finite collection consists of the
 indecomposable summands of the ring.
 
+The same iteration, without the finiteness bookkeeping, shows that the target of a nonzero
+morphism out of an object of `T` is isomorphic to an object of `T`, as soon as morphisms out of
+objects of `T` can be pushed along non-isomorphisms that stay inside `T`
+(`TauCeti.exists_nonempty_iso_target_of_ne_zero`); dually for the source of a nonzero morphism into
+an object of `T`, with descending chains (`TauCeti.exists_nonempty_iso_source_of_ne_zero`). This is
+the argument behind Auslander's theorem on classes of modules of bounded length closed under
+irreducible maps.
+
 ## References
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*,
@@ -63,6 +71,24 @@ theorem IsLeftAlmostSplit.exists_comp_π_comp_ne_zero {J : Type*} [Finite J] {X 
   simp only [Preadditive.comp_sum]
   exact Finset.sum_eq_zero fun j _ ↦ by simpa using hzero j (biproduct.ι F j ≫ t)
 
+/-- Let `p` be a right almost split map out of a finite biproduct, and `g ≫ c ≠ 0` with `g` not a
+split epimorphism. Then `g` can be replaced by a morphism into a summand followed by the component
+of `p` on that summand, keeping the composite with `c` nonzero. This is the dual of
+`TauCeti.IsLeftAlmostSplit.exists_comp_π_comp_ne_zero`. -/
+theorem IsRightAlmostSplit.exists_ι_comp_comp_ne_zero {J : Type*} [Finite J] {X Y W : C}
+    {F : J → C} [HasBiproduct F] {p : ⨁ F ⟶ X} (hp : IsRightAlmostSplit p) {c : X ⟶ W}
+    {g : Y ⟶ X} (hg : ¬ IsSplitEpi g) (hc : g ≫ c ≠ 0) :
+    ∃ (j : J) (h : Y ⟶ F j), h ≫ (biproduct.ι F j ≫ p) ≫ c ≠ 0 := by
+  cases nonempty_fintype J
+  obtain ⟨t, rfl⟩ := hp.factors Y g hg
+  by_contra! hzero
+  refine hc ?_
+  have ht : t = ∑ j, t ≫ biproduct.π F j ≫ biproduct.ι F j := by
+    simp only [← Preadditive.comp_sum, biproduct.total, Category.comp_id]
+  rw [ht]
+  simp only [Preadditive.sum_comp]
+  exact Finset.sum_eq_zero fun j _ ↦ by simpa using hzero j (t ≫ biproduct.π F j)
+
 section Chain
 
 /-- The objects reached from `S₀` in `m` steps along the relation `succ`. -/
@@ -87,7 +113,7 @@ variable (T : ObjectProperty C)
 /-- Starting from a nonzero morphism `f : W ⟶ Y`, keep replacing the morphism to `Y` through the
 steps provided by `hsucc`, as long as it is not an isomorphism. By the vanishing of composites of
 `N` non-isomorphisms, it becomes an isomorphism within `N` steps. -/
-private theorem exists_mem_chainLevel_iso (hlocal : ∀ X, T X → IsLocalRing (End X))
+private theorem exists_mem_chainLevel_iso (hT : ∀ X, T X → ¬ IsZero X)
     {W Y : C} (succ : C → Set C)
     (hsucc : ∀ X, T X → ∀ (c : W ⟶ X) (g : X ⟶ Y), ¬ IsIso g → c ≫ g ≠ 0 →
       ∃ E ∈ succ X, T E ∧ ∃ (ι : X ⟶ E) (t : E ⟶ Y), ¬ IsIso ι ∧ c ≫ ι ≫ t ≠ 0)
@@ -105,9 +131,8 @@ private theorem exists_mem_chainLevel_iso (hlocal : ∀ X, T X → IsLocalRing (
     by_cases h : s.fromBase ≫ s.toTarget ≠ 0 ∧ ¬ IsIso s.toTarget
     · obtain ⟨E, hE, hTE, ι, t, hι, ht⟩ := hsucc s.obj s.prop s.fromBase s.toTarget h.2 h.1
       exact ⟨⟨E, hTE, s.fromBase ≫ ι, t⟩, ι, hι, rfl, fun _ _ ↦ ⟨hE, by simpa using ht⟩⟩
-    · have := hlocal _ s.prop
-      refine ⟨⟨s.obj, s.prop, 0, 0⟩, 0, fun h₀ ↦ ?_, by simp, fun h₁ h₂ ↦ (h ⟨h₁, h₂⟩).elim⟩
-      exact one_ne_zero (α := End s.obj) (End.ext (isIsoZeroSelfEquiv s.obj h₀))
+    · refine ⟨⟨s.obj, s.prop, 0, 0⟩, 0, fun h₀ ↦ ?_, by simp, fun h₁ h₂ ↦ (h ⟨h₁, h₂⟩).elim⟩
+      exact hT _ s.prop ((IsZero.iff_id_eq_zero _).mpr (isIsoZeroSelfEquiv s.obj h₀))
   choose next ι hι hbase hnext using hstep
   -- The sequence of states, starting from `f`.
   let s : ℕ → ChainState T W Y := fun m ↦ Nat.rec ⟨W, hTW, 𝟙 W, f⟩ (fun _ x ↦ next x) m
@@ -135,6 +160,52 @@ private theorem exists_mem_chainLevel_iso (hlocal : ∀ X, T X → IsLocalRing (
     (Category.id_comp _).symm.trans
       (hmap.trans ((congrArg ((s 0).fromBase ≫ ·) hvanish).trans comp_zero))
   exact (hinv N le_rfl).2 (by rw [hc, zero_comp])
+
+/-- **A nonzero morphism out of a class ends at a member of the class**, provided morphisms can
+be pushed along non-isomorphisms inside the class and long chains vanish. Let `T` be a class of
+nonzero objects such that whenever `c ≫ g ≠ 0` for `c : W ⟶ X` with `X` in `T` and a
+non-isomorphism `g : X ⟶ Y`, there are a non-isomorphism `ι : X ⟶ E` with `E` in `T` and
+`t : E ⟶ Y` with `c ≫ ι ≫ t ≠ 0`. If the composite of the first `N` links of any sequence of
+non-isomorphisms between objects of `T` vanishes, then the target of a nonzero morphism out of a
+member of `T` is isomorphic to a member of `T`. -/
+theorem exists_nonempty_iso_target_of_ne_zero (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
+    (hstep : ∀ X, T X → ∀ (c : W ⟶ X) (g : X ⟶ Y), ¬ IsIso g → c ≫ g ≠ 0 →
+      ∃ E, T E ∧ ∃ (ι : X ⟶ E) (t : E ⟶ Y), ¬ IsIso ι ∧ c ≫ ι ≫ t ≠ 0)
+    (N : ℕ) (hN : ∀ (X : ℕ → C) (f : ∀ n, X n ⟶ X (n + 1)), (∀ n, T (X n)) →
+      (∀ n, ¬ IsIso (f n)) → (Functor.ofSequence f).map (homOfLE (Nat.zero_le N)) = 0)
+    (hW : T W) {f : W ⟶ Y} (hf : f ≠ 0) : ∃ Q, T Q ∧ Nonempty (Y ≅ Q) := by
+  obtain ⟨m, -, Q, hQ, he⟩ := exists_mem_chainLevel_iso T hT (fun _ ↦ Set.ofPred T)
+    (fun X hX c g hg hc ↦ by
+      obtain ⟨E, hE, ι, t, hι, ht⟩ := hstep X hX c g hg hc
+      exact ⟨E, hE, hE, ι, t, hι, ht⟩) N hN (Set.mem_singleton W) hW hf
+  refine ⟨Q, ?_, he⟩
+  cases m with
+  | zero => exact (Set.mem_singleton_iff.mp hQ) ▸ hW
+  | succ m =>
+    obtain ⟨_, _, hQ⟩ := Set.mem_iUnion₂.mp hQ
+    exact hQ
+
+/-- **A nonzero morphism into a class starts at a member of the class**, the dual of
+`TauCeti.exists_nonempty_iso_target_of_ne_zero`: morphisms are pulled back along
+non-isomorphisms inside the class, and the chains descend. -/
+theorem exists_nonempty_iso_source_of_ne_zero (hT : ∀ X, T X → ¬ IsZero X) {W Y : C}
+    (hstep : ∀ X, T X → ∀ (c : X ⟶ W) (g : Y ⟶ X), ¬ IsIso g → g ≫ c ≠ 0 →
+      ∃ E, T E ∧ ∃ (ι : E ⟶ X) (t : Y ⟶ E), ¬ IsIso ι ∧ t ≫ ι ≫ c ≠ 0)
+    (N : ℕ) (hN : ∀ (X : ℕ → C) (f : ∀ n, X (n + 1) ⟶ X n), (∀ n, T (X n)) →
+      (∀ n, ¬ IsIso (f n)) → (Functor.ofOpSequence f).map (homOfLE (Nat.zero_le N)).op = 0)
+    (hW : T W) {f : Y ⟶ W} (hf : f ≠ 0) : ∃ Q, T Q ∧ Nonempty (Y ≅ Q) := by
+  obtain ⟨Q, hQ, ⟨e⟩⟩ := exists_nonempty_iso_target_of_ne_zero (C := Cᵒᵖ) (fun X ↦ T X.unop)
+    (fun X hX hz ↦ hT _ hX hz.unop) (W := Opposite.op W) (Y := Opposite.op Y)
+    (fun X hX c g hg hc ↦ by
+      obtain ⟨E, hE, ι, t, hι, ht⟩ := hstep X.unop hX c.unop g.unop
+        (fun h ↦ hg ((isIso_unop_iff g).mp h)) (fun h ↦ hc (Quiver.Hom.unop_inj (by simpa using h)))
+      exact ⟨Opposite.op E, hE, ι.op, t.op, fun h ↦ hι (isIso_of_op ι),
+        fun h ↦ ht (Quiver.Hom.op_inj (by simpa using h))⟩)
+    -- `Functor.ofOpSequence` is defined as `Functor.leftOp` of `Functor.ofSequence` in `Cᵒᵖ`.
+    N (fun X f hX hf ↦ Quiver.Hom.unop_inj (hN (fun n ↦ (X n).unop) (fun n ↦ (f n).unop) hX
+        (fun n h ↦ hf n ((isIso_unop_iff (f n)).mp h))))
+    hW (f := f.op) (fun h ↦ hf (Quiver.Hom.op_inj (by simpa using h)))
+  exact ⟨Q.unop, hQ, ⟨e.unop.symm⟩⟩
 
 variable [HasFiniteBiproducts C]
 
@@ -182,7 +253,10 @@ theorem exists_finite_forall_iso_of_hom_ne_zero (hlocal : ∀ X, T X → IsLocal
       fun _ ↦ ?_, ht⟩
     have : IsSplitMono (i X hX) := isSplitMono_of_isSplitMono_comp _ (biproduct.π _ j)
     exact (hi X hX).not_isSplitMono this
-  obtain ⟨m, hm, Q, hQ, he⟩ := exists_mem_chainLevel_iso T hlocal succ hstep N hN hW (hT₀ W hW) hf
+  have hT (X : C) (hX : T X) : ¬ IsZero X := fun hz ↦ by
+    have := hlocal X hX
+    exact one_ne_zero (α := End X) (End.ext ((IsZero.iff_id_eq_zero X).mp hz))
+  obtain ⟨m, hm, Q, hQ, he⟩ := exists_mem_chainLevel_iso T hT succ hstep N hN hW (hT₀ W hW) hf
   exact ⟨Q, Set.mem_iUnion₂.mpr ⟨m, hm, hQ⟩, he⟩
 
 end Chain
