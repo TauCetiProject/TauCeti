@@ -51,8 +51,6 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
 
 In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
 
-* `Hom.factorsThrough_map`: the map of a prestable map is constant on the fibres of every
-  morphism of source curves out of it.
 * `hom_comp_descend_map`: the descended map factors the map of `F` through `c`.
 * `mk_eq_descend` and `descend_eq`: a prestable map with source `C'` whose map factors the map of
   `F` through `c`, for instance one receiving a morphism from `F` along `c`, is the descent of `F`.
@@ -87,12 +85,6 @@ universe u
 namespace PrestableMap
 
 variable {V W S T : Scheme.{u}} {q : V ⟶ S} {m n : ℕ}
-
-/-- The map of a prestable map is constant on the fibres of every morphism of source curves out
-of it: it factors through the morphism of total spaces. -/
-theorem Hom.factorsThrough_map {F G : PrestableMap q n} (f : F ⟶ G) :
-    Function.FactorsThrough F.map f.curve.hom := fun a b hab ↦ by
-  rw [← f.hom_comp_map, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hab]
 
 variable (F : PrestableMap q n) {Q : PointedPrestableFamily S n} (c : F.curve ⟶ Q)
   [hs : Surjective c.hom] (hc : ∀ U, IsIso (c.hom.app U)) (hF : Function.FactorsThrough F.map c.hom)
