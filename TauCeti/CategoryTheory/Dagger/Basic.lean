@@ -105,6 +105,23 @@ instance isIso_dagger (f : X ⟶ Y) [IsIso f] : IsIso (dagger f) where
   apply IsIso.eq_inv_of_hom_inv_id
   rw [← dagger_comp, IsIso.inv_hom_id, dagger_id]
 
+section ZeroMorphisms
+
+variable [Limits.HasZeroMorphisms C]
+
+/-- The dagger fixes the zero arrow. -/
+@[simp, grind =] theorem dagger_zero : dagger (0 : X ⟶ Y) = 0 := by
+  calc
+    dagger (0 : X ⟶ Y) = dagger ((0 : X ⟶ Y) ≫ dagger (0 : Y ⟶ Y)) := by
+      rw [Limits.zero_comp]
+    _ = 0 := by rw [dagger_comp, dagger_dagger, Limits.zero_comp]
+
+/-- An arrow has zero dagger precisely when it is zero. -/
+@[simp] theorem dagger_eq_zero (f : X ⟶ Y) : dagger f = 0 ↔ f = 0 := by
+  rw [← dagger_zero, dagger_inj]
+
+end ZeroMorphisms
+
 /-- Additive compatibility of the chosen dagger on a preadditive category. -/
 class DaggerPreadditive (C : Type u) [Category.{v} C] [DaggerCategory C]
     [Preadditive C] : Prop where
@@ -133,14 +150,6 @@ def daggerAddEquiv (X Y : C) : (X ⟶ Y) ≃+ (Y ⟶ X) where
 /-- Forgetting additivity recovers the dagger bijection. -/
 @[simp] theorem daggerAddEquiv_toEquiv :
     (daggerAddEquiv X Y : (X ⟶ Y) ≃ (Y ⟶ X)) = daggerEquiv X Y := (rfl)
-
-/-- The dagger fixes the zero arrow. -/
-@[simp, grind =] theorem dagger_zero : dagger (0 : X ⟶ Y) = 0 :=
-  (daggerAddEquiv X Y).map_zero
-
-/-- An arrow has zero dagger precisely when it is zero. -/
-@[simp] theorem dagger_eq_zero (f : X ⟶ Y) : dagger f = 0 ↔ f = 0 :=
-  (daggerAddEquiv X Y).map_eq_zero_iff
 
 /-- The dagger commutes with negation. -/
 @[simp, grind =] theorem dagger_neg (f : X ⟶ Y) : dagger (-f) = -dagger f :=
