@@ -68,7 +68,6 @@ theorem locally_martingale_discounted_geometricBrownianMotion_random_initial
     (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ) (μ σ : ℝ) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun (t : ℝ≥0) ω ↦
       exp (-(μ * t)) * geometricBrownianMotion (ξ ω) μ σ W t ω) P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have h := (Locally.of_prop (hW.martingale_exponentialMartingale σ)).martingale_smul_initial
     hξ.stronglyMeasurable
   convert h using 1
@@ -161,12 +160,7 @@ theorem martingale_exp_neg_mul_abs_rpow_geometricBrownianMotion_random_initial
       (hξ.mono (ℱ.mono (zero_le (a := t))) le_rfl)).stronglyMeasurable
   have hint : ∀ t, Integrable (fun ω ↦ |ξ ω| ^ q * exponentialMartingale (q * σ) W t ω) P :=
     fun t ↦ hW.integrable_initial_abs_rpow_mul_exponentialMartingale hξ hξq (q * σ) t
-  refine ⟨fun t ↦ (hmeas t).mul
-    ((hW.martingale_exponentialMartingale (q * σ)).stronglyMeasurable t), fun s t hst ↦ ?_⟩
-  exact (condExp_mul_of_stronglyMeasurable_left (hmeas s) (hint t)
-    (hW.integrable_exponentialMartingale (q * σ) t)).trans
-      ((Filter.EventuallyEq.refl _ _).mul
-        ((hW.martingale_exponentialMartingale (q * σ)).condExp_ae_eq hst))
+  exact (hW.martingale_exponentialMartingale (q * σ)).smul_of_stronglyMeasurable hmeas hint
 
 /-- Conditional absolute moments have the usual GBM growth factor even with a
 random initial value, assuming only its corresponding absolute moment. -/
