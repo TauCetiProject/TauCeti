@@ -486,14 +486,8 @@ be summed first over `c` and then over the interval of possible `b`. -/
 theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddCommMonoid M]
     (a : α) (f : α → α → M) :
     ∑ b ∈ univ.filter (a ≤ ·), ∑ c ∈ univ.filter (b ≤ ·), f b c =
-      ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c := by
-  calc _ = ∑ b, ∑ c, if a ≤ b ∧ b ≤ c then f b c else 0 := by
-        rw [sum_filter]
-        refine sum_congr rfl fun b _ => ?_
-        by_cases h : a ≤ b <;> simp [h, sum_filter]
-    _ = _ := by
-        rw [sum_comm]
-        exact sum_congr rfl fun c _ => (sum_filter _ _).symm
+      ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c :=
+  sum_comm' fun _ _ => by simp
 
 /-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
 position of `s` between two of them. -/
@@ -789,10 +783,8 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
 between their images. -/
 theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
     [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
-    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
-  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
-  have := mem_Ioo.1 (hS hs)
-  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) :=
+  image_subset_iff.2 fun _ hs ↦ by simpa using he.mapsTo_Ioo (by simpa using hS hs)
 
 /-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
 monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
