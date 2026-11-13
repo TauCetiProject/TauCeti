@@ -287,6 +287,26 @@ def interiorCoord {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) : EuclideanSp
   euclideanHalfSpaceBoundaryNormalEquiv n
     (((euclideanHalfSpaceBoundaryNormalEquiv n).symm w).1, Real.log (w 0))
 
+/-- The zeroth ambient inverse coordinate is the logarithm of the zeroth coordinate. -/
+@[simp]
+theorem interiorCoord_apply_zero {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) :
+    interiorCoord w 0 = Real.log (w 0) := by
+  rw [interiorCoord, euclideanHalfSpaceBoundaryNormalEquiv_apply_zero]
+
+/-- The other ambient inverse coordinates are unchanged. -/
+@[simp]
+theorem interiorCoord_apply_succ {n : ℕ} (w : EuclideanSpace ℝ (Fin (n + 1))) (i : Fin n) :
+    interiorCoord w i.succ = w i.succ := by
+  rw [interiorCoord, euclideanHalfSpaceBoundaryNormalEquiv_apply_succ,
+    euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_fst, euclideanHalfSpaceBoundaryProj_apply]
+
+/-- On the open half-space, `interiorEmbedding` undoes the ambient inverse coordinates, so the two
+maps are inverse to each other there. -/
+theorem coe_interiorEmbedding_interiorCoord {n : ℕ} {w : EuclideanSpace ℝ (Fin (n + 1))}
+    (hw : 0 < w 0) : (interiorEmbedding n (interiorCoord w)).1 = w := by
+  ext i
+  induction i using Fin.cases <;> simp [Real.exp_log hw]
+
 /-- The ambient inverse coordinates undo `interiorEmbedding`. -/
 @[simp]
 theorem interiorCoord_coe_interiorEmbedding {n : ℕ} (v : EuclideanSpace ℝ (Fin (n + 1))) :
