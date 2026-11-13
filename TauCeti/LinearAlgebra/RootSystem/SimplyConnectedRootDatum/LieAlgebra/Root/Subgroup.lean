@@ -254,8 +254,6 @@ theorem chevalleyRootSubgroup_mul_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ
   apply Units.ext
   simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
   exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)
