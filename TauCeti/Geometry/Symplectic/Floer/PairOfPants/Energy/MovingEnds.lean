@@ -49,8 +49,8 @@ In the namespace `TauCeti.SmoothTwoForm`:
 
 * `integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation`: the curvature is
   integrable over `Σ_R` along any map continuous on `Σ_R`.
-* `abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le`: the integrated curvature
-  over any set is bounded by `∑ i, B i + Bout`, uniformly in the configuration.
+* `IsNondegenerate.integrableOn_floerEnergyDensity_puncturedSpherePerturbation_truncation`: the
+  Floer energy density is integrable over `Σ_R` along any map `C¹` near `Σ_R`.
 * `IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation_truncation`: the energy
   identity on `Σ_R`.
 * `IsNondegenerate.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_truncation_sub_le`:
@@ -80,12 +80,6 @@ open TauCeti.Complex (realChart realChart_equivRealProdCLM equivRealProdCLM_symm
 section Pieces
 
 variable {ι : Type*} {c a : ι → ℂ} {R : ℝ}
-
-/-- The end lift `z ↦ c + a φ₀(z)` of an input end has complex derivative `a φ₀'(z)`. -/
-private theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
-    HasDerivAt (fun z ↦ c + a * zero.cylindricalEndLift z)
-      (a * deriv zero.cylindricalEndLift w) w :=
-  ((zero.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt.const_mul a).const_add c
 
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in `‖w‖ ≤ 2 exp (2π)`, the
 end lift of the input end `i`, in real coordinates, maps the strip `1 ≤ s ≤ R` into `Σ_R`. -/
@@ -233,25 +227,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
-omit [IsManifold I ⊤ M] in
-/-- Off the centers of the input ends, the components of the datum on a sphere with moving input
-ends are `C¹` jointly in the domain point, in real coordinates, and the target point. -/
-private theorem contMDiffAt_puncturedSpherePerturbation_real (hH : ∀ i, Periodic (H i) 1)
-    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
-    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
-    {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M) (v : ℂ) :
-    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦
-        puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x v) (z, x) := by
-  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I)
-      (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I)) 1
-      (fun p : (ℝ × ℝ) × M ↦ ((c, a), (Complex.equivRealProdCLM.symm p.1, p.2))) (z, x) :=
-    contMDiffAt_const.prodMk
-      ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _
-        contMDiffAt_fst).prodMk contMDiffAt_snd)
-  exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x).comp (z, x)
-    hφ).clm_apply contMDiffAt_const
-
 omit [TopologicalSpace M] in
 /-- On the part `s > 0` of the input end `i`, the datum of a sphere with moving input ends is the
 continuation datum `β(s - 1) H_i(t) dt` in the coordinates of the end lift
@@ -330,16 +305,6 @@ private theorem endChart_inf_ne {w : ℝ × ℝ}
   linarith [mul_nonneg (norm_nonneg (a j)) (Real.exp_pos (-(2 * π))).le]
 
 omit [TopologicalSpace M] in
-/-- At a point at distance more than `‖a i‖ exp (-2π) / 2` from every center `c i`, inside the open
-disc `‖w‖ < 2 exp (2π)`, the datum of a sphere with moving input ends vanishes. -/
-private theorem puncturedSpherePerturbation_eq_zero_of_lt {w : ℂ}
-    (hw : (∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 < ‖w - c i‖) ∧ ‖w‖ < 2 * Real.exp (2 * π)) :
-    puncturedSpherePerturbation c a H Hout w = fun _ ↦ 0 :=
-  funext fun x ↦ by
-    rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i ↦ (hw.1 i).le,
-      negativePlanePerturbation_eq_zero_of_norm_le hw.2.le]
-
-omit [TopologicalSpace M] in
 /-- For nonzero scales, the datum of a sphere with moving input ends vanishes near every point of
 the truncation `Σ_R` off the pieces of the ends. -/
 private theorem eventually_puncturedSpherePerturbation_eq_zero (ha : ∀ i, a i ≠ 0) {R : ℝ}
@@ -354,7 +319,7 @@ private theorem eventually_puncturedSpherePerturbation_eq_zero (ha : ∀ i, a i 
     exact (isOpen_iInter_of_finite fun i ↦ isOpen_lt continuous_const (by fun_prop)).inter
       (isOpen_lt (by fun_prop) continuous_const)
   exact eventually_of_mem (hO.mem_nhds (lt_norm_of_notMem_movingEndPiece ha hz hA)) fun _ hw ↦
-    puncturedSpherePerturbation_eq_zero_of_lt hw
+    puncturedSpherePerturbation_eq_zero_of_le_norm_sub_of_norm_le (fun i ↦ (hw.1 i).le) hw.2.le
 
 /-- For nonzero scales, the curvature of the datum of a sphere with moving input ends vanishes at
 the points of the truncation `Σ_R` off the pieces of the ends. -/
@@ -508,35 +473,6 @@ theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_truncation
     exact ω.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_inputPiece hH hHs hHout
       hHouts ha hsep hout hu i
 
-/-- **The integrated curvature on a sphere with moving input ends is bounded.** Let `K` be the
-datum `puncturedSpherePerturbation c a H Hout` of input ends with centers `c i`, nonzero scales
-`a i` and period-one `C¹` Hamiltonians `H i`, and of the output end at `∞` with the period-one
-`C¹` Hamiltonian `Hout`, and suppose the discs `‖w - c i‖ ≤ ‖a i‖ exp (-2π) / 2` supporting the
-input end data are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`. If `|H i| ≤ B i`
-and `|Hout| ≤ Bout`, then along any map `u` the integral of the curvature over any set is at most
-`∑ i, B i + Bout` in absolute value, uniformly in the configuration of the input ends. -/
-theorem abs_setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_le
-    (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
-    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
-    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
-    (hsep : Pairwise fun i j =>
-      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ}
-    {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
-    (u : ℝ × ℝ → M) (s : Set (ℝ × ℝ)) :
-    |∫ z in s, ω.hamiltonianCurvature
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) z (u z)| ≤ ∑ i, B i + Bout := by
-  have hB₀ (i : ι) : 0 ≤ B i := (abs_nonneg _).trans (hB i 0 (u 0))
-  have hBout₀ : 0 ≤ Bout := (abs_nonneg _).trans (hBout 0 (u 0))
-  have hsum₀ : 0 ≤ ∑ i, B i := Finset.sum_nonneg fun i _ ↦ hB₀ i
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg hsum₀ hBout₀), ← Real.eNorm_eq_ofReal_abs,
-    ENNReal.ofReal_add hsum₀ hBout₀, ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i]
-  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout hHouts ha
-      hsep hout hB hBout u))
-
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
 /-- The energy identity over the image of a rectangle `[a₁, b₁] × [-1/2, 1/2)` under a change of
@@ -685,7 +621,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePertu
 
 /-- For a map `u` which is `C¹` on an open set containing the truncation `Σ_R`, the Floer energy
 density of the datum of a sphere with moving input ends is integrable over `Σ_R`. -/
-private theorem
+theorem
     IsNondegenerate.integrableOn_floerEnergyDensity_puncturedSpherePerturbation_truncation
     (hω : ω.IsNondegenerate) (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)

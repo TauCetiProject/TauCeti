@@ -22,7 +22,7 @@ This file defines the truncation `Σ_R` of such a sphere, cut along the circle `
 end and the circle `s = -R` of the output end. It is the compact domain over which the Floer
 energy and curvature integrals of maps from a sphere with moving input ends are taken, and the
 sphere minus its punctures is the increasing union of the `Σ_R`, so integrals over it are limits
-as `R → ∞`. For `R = 0, 1` and scales `1, -1` it is the truncation `S_R` of the
+as `R → ∞`. For centers `0, 1` and scales `1, -1` it is the truncation `S_R` of the
 thrice-punctured sphere.
 
 The perturbation data on such a sphere are cut off by `β(±s - 1)` on the ends, so they vanish
@@ -41,12 +41,13 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
   (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
   sphere (`puncturedSphereTruncation_eq_truncation`).
+* `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
 * `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
-* `exists_add_mul_cylindricalEndLift_eq` and `exists_cylindricalEndLift_inf_eq`: their
-  converses.
+* `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
+  is `Puncture.exists_cylindricalEndLift_inf_eq`.
 * `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
 -/
 
@@ -147,6 +148,12 @@ theorem norm_add_mul_cylindricalEndLift_sub (c a z : ℂ) :
   norm_num
   ring
 
+/-- The end lift `z ↦ c + a φ₀(z)` of an input end has complex derivative `a φ₀'(z)`. -/
+theorem hasDerivAt_add_mul_cylindricalEndLift (c a w : ℂ) :
+    HasDerivAt (fun z ↦ c + a * zero.cylindricalEndLift z)
+      (a * deriv zero.cylindricalEndLift w) w :=
+  ((zero.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt.const_mul a).const_add c
+
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and lie in the disc
 `‖w‖ ≤ 2 exp (2π)`, then the part `1 ≤ s ≤ R` of every input end lies in the truncation `Σ_R`. -/
 theorem add_mul_cylindricalEndLift_mem_puncturedSphereTruncation
@@ -222,28 +229,6 @@ theorem exists_add_mul_cylindricalEndLift_eq {c a w : ℂ} (ha : a ≠ 0)
     rw [endCenter_zero, sub_zero, hζn, le_div_iff₀ hapos]
     linarith
   · rw [cylindricalEndLift_endCoord zero hζ, mul_div_cancel₀ _ ha, add_sub_cancel]
-
-/-- A point of the closed annulus `2 exp (2π) ≤ ‖w‖ ≤ 2 exp (2πR)` is the image of a point with
-`-R ≤ s ≤ -1` and `t ∈ [-1/2, 1/2)` on the output end. -/
-theorem exists_cylindricalEndLift_inf_eq {w : ℂ}
-    (h₁ : 2 * Real.exp (2 * π) ≤ ‖w‖) (h₂ : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) :
-    ∃ z : ℂ, z.re ∈ Icc (-R) (-1) ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2) ∧
-      inf.cylindricalEndLift z = w := by
-  -- The annulus is nonempty only for `R ≥ 1`.
-  have hR : 0 ≤ R := by
-    have h := Real.exp_le_exp.1 (by linarith : Real.exp (2 * π) ≤ Real.exp (2 * π * R))
-    nlinarith [Real.pi_pos]
-  have hw : w ≠ inf.endCenter := by
-    rw [endCenter_inf]
-    rintro rfl
-    rw [norm_zero] at h₁
-    linarith [Real.exp_pos (2 * π)]
-  refine ⟨inf.endCoord w, ⟨by linarith [neg_re_endCoord_inf_le hR h₂], ?_⟩,
-    inf.im_endCoord_mem_Ico w, inf.cylindricalEndLift_endCoord hw⟩
-  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
-    neg_div, neg_le_neg_iff, le_div_iff₀ Real.two_pi_pos, one_mul,
-    Real.le_log_iff_exp_le (by linarith [Real.exp_pos (2 * π)]), le_div_iff₀ two_pos]
-  linarith
 
 /-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint, then a point with `s > 0` on an
 input end with nonzero scale is not the center of any input end. -/
