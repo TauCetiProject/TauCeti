@@ -328,7 +328,7 @@ example : ¬ Injective (ordinaryHermiteJet ![(0 : ZMod 2)] ![3]) := by
     rw [ordinaryHermiteJet_apply, map_zero, Pi.zero_apply, Pi.zero_apply]
     fin_cases i
     fin_cases k <;> simp [CharTwo.add_self_eq_zero]
-  have := congrArg (coeff · 2) h0
+  have := congrArg (fun p : (ZMod 2)[X] => p.coeff 2) h0
   simp only [coeff_X_pow_self, coeff_zero] at this
   exact absurd this (by decide)
 
