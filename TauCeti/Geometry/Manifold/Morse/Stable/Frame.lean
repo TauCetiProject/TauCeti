@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
