@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.Topology.VectorBundle.ComplexSmulI
+import TauCeti.Topology.VectorBundle.Complex.SmulI
 import TauCeti.Topology.VectorBundle.RealForm
 
 /-!
