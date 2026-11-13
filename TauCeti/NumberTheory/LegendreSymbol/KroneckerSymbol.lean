@@ -63,6 +63,8 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   has value `sign D` at `-1`.
 * `TauCeti.conductor_kroneckerChar_dvd_iff`: the conductor of `kroneckerChar` divides `N`
   exactly when `(D / a) = 1` for the odd `a ≡ 1 (mod N)` prime to `D`.
+* `TauCeti.kroneckerChar_eq_one_iff_isSquare`: `(D / ·)` is the trivial character exactly when
+  `D` is a square.
 * `TauCeti.changeLevel_kroneckerChar_sq_mul`, `TauCeti.kroneckerChar_eq_one_of_isSquare`,
   `TauCeti.conductor_kroneckerChar_eq_of_isSquare_mul`,
   `TauCeti.conductor_kroneckerChar_eq_natAbs_of_prime`: `(m² D / ·)` is induced from
@@ -562,6 +564,30 @@ theorem kroneckerChar_eq_one_of_isSquare (hsq : IsSquare D) :
       (by rw [ZMod.natCast_zmod_val]; exact u.isUnit)).symm
   rw [kroneckerChar_apply, kroneckerSym_eq_one_of_isSquare hsq hcop, Int.cast_one,
     MulChar.one_apply u.isUnit]
+
+/-- **The Kronecker character is trivial exactly on squares**: for a coefficient ring with
+`2 ≠ 0`, the character `(D / ·)` is the trivial Dirichlet character modulo `|D|` if and only if
+the discriminant `D` is a square. For a nonsquare `D` some odd prime `p ∤ D` has `(D / p) = -1`. -/
+theorem kroneckerChar_eq_one_iff_isSquare [NeZero (2 : R)] :
+    kroneckerChar R D hD hD₀ = 1 ↔ IsSquare D := by
+  refine ⟨fun h ↦ ?_, kroneckerChar_eq_one_of_isSquare hD hD₀⟩
+  by_contra hsq
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  obtain ⟨p, hp, hp2, hJ⟩ := exists_prime_jacobiSym_eq_neg_one hsq
+  have : Fact p.Prime := ⟨hp⟩
+  -- `J(D | p) ≠ 0`, so `p` is prime to `D` and is a unit modulo `|D|`
+  have hu : IsUnit (p : ZMod D.natAbs) := by
+    rw [ZMod.isUnit_iff_coprime, Nat.coprime_comm, Nat.coprime_iff_gcd_eq_one,
+      ← Int.natAbs_natCast p, ← Int.gcd_eq_natAbs_gcd_natAbs]
+    by_contra h'
+    have h0 := jacobiSym.eq_zero_iff_not_coprime.mpr h'
+    rw [hJ] at h0
+    exact absurd h0 (by decide)
+  have hval := DFunLike.congr_fun h (p : ZMod D.natAbs)
+  simp only [kroneckerChar_natCast, kroneckerSym_eq_jacobiSym _ (hp.odd_of_ne_two hp2), hJ,
+    MulChar.one_apply hu, Int.cast_neg, Int.cast_one] at hval
+  rw [neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hval
+  exact two_ne_zero hval
 
 /-- For a nonzero square discriminant `D`, the Kronecker character `(D / ·)` has conductor `1`. -/
 theorem conductor_kroneckerChar_eq_one_of_isSquare (hsq : IsSquare D) :
