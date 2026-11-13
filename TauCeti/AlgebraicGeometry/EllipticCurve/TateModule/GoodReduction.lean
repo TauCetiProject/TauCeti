@@ -173,9 +173,7 @@ theorem hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one {ℓ : ℕ} [F
   -- Let `n = ℓ ^ k` with `k` the number of components of `s`, and `M = K(E[n])`.
   set k := s.componentCount
   set n := ℓ ^ k
-  have hℓK : (ℓ : K) ≠ 0 := fun h₀ ↦ hℓ <| by
-    have : (ℓ : 𝒪[K]) = 0 := Subtype.ext (by simpa using h₀)
-    rw [← map_natCast (residue 𝒪[K]), this, map_zero]
+  have hℓK : (ℓ : K) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hℓ
   have hnK : (n : K) ≠ 0 := by simpa [n] using pow_ne_zero k hℓK
   have : NeZero n := ⟨pow_ne_zero k (Fact.out : ℓ.Prime).ne_zero⟩
   set M := W.divisionField n
