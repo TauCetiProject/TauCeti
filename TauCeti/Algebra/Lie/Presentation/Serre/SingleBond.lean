@@ -56,7 +56,7 @@ theorem weylUnit_conj_E_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   have hne : j ≠ i := by intro h; subst j; omega
   exact ht.weylUnit_conj_of_lie_h_eq_neg hE hF hw
     (by rw [← lie_skew, hs.lie_E_F_of_ne j i hne, neg_zero])
-    (hs.lie_E_lie_E_E_of_eq_neg_one hij)
+    (hs.lie_E_lie_E_E_of_neg_one_le hij.ge)
 
 /-- At a directed Cartan entry minus one, the pinned Weyl unit sends the other lowering
 operator to the negative of the ordered lowering commutator. -/
@@ -71,7 +71,7 @@ theorem weylUnit_conj_F_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   have ht := hs.isSl2Triple hii hH
   have hne : i ≠ j := by intro h; subst j; omega
   exact ht.weylUnit_conj_of_lie_h_eq_self hE hF hw
-    (hs.lie_E_F_of_ne i j hne) (hs.lie_F_lie_F_F_of_eq_neg_one hij)
+    (hs.lie_E_F_of_ne i j hne) (hs.lie_F_lie_F_F_of_neg_one_le hij.ge)
 
 /-- At a single bond the pinned Weyl units satisfy the length-three braid relation in the
 unit group of the associative rational algebra. Only the four root operators at the two

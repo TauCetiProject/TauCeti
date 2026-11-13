@@ -63,9 +63,9 @@ one, which is not proved here (see the Applications section below).
   `TauCeti.serre_hom_ext`: `TauCeti.serreLift` sends the generators to the given Serre system, and
   is the unique homomorphism doing so; `TauCeti.serre_equiv_ext` is the same extensionality
   principle for equivalences out of the presented algebra.
-* `TauCeti.IsSerreSystem.lie_E_E_of_eq_zero` and `TauCeti.IsSerreSystem.lie_F_F_of_eq_zero`: in a
-  Serre system, two raising or two lowering elements commute at nodes `i`, `j` with `CMᵢⱼ = 0`;
-  `TauCeti.lie_serreE_serreE_of_eq_zero` and `TauCeti.lie_serreF_serreF_of_eq_zero` are the
+* `TauCeti.IsSerreSystem.lie_E_E_of_nonneg` and `TauCeti.IsSerreSystem.lie_F_F_of_nonneg`: in a
+  Serre system, two raising or two lowering elements commute at nodes `i`, `j` with `0 ≤ CMᵢⱼ`;
+  `TauCeti.lie_serreE_serreE_of_nonneg` and `TauCeti.lie_serreF_serreF_of_nonneg` are the
   same statements for the generators of the presented algebra.
 * `TauCeti.IsSerreSystem.changeScalars`: a Serre system over one base ring is one over any other
   base ring for which the same Lie ring has a Lie-algebra structure.
@@ -336,30 +336,33 @@ section Orthogonal
 variable {R CM} {H E F : B → L}
 
 omit [DecidableEq B] in
-/-- In a Serre system, the raising elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
-theorem IsSerreSystem.lie_E_E_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : CM i j = 0) : ⁅E i, E j⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_E_E i j
+/-- In a Serre system, the raising elements at `i` and `j` commute when `0 ≤ CMᵢⱼ`: the Serre
+exponent `(-CMᵢⱼ).toNat` is then zero. -/
+theorem IsSerreSystem.lie_E_E_of_nonneg (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : 0 ≤ CM i j) : ⁅E i, E j⁆ = 0 := by
+  have hn : (-CM i j).toNat = 0 := Int.toNat_eq_zero.mpr (by omega)
+  simpa [hn] using h.ad_pow_lie_E_E i j
 
 omit [DecidableEq B] in
-/-- In a Serre system, the lowering elements at `i` and `j` commute when `CMᵢⱼ = 0`. -/
-theorem IsSerreSystem.lie_F_F_of_eq_zero (h : IsSerreSystem R CM H E F) {i j : B}
-    (hij : CM i j = 0) : ⁅F i, F j⁆ = 0 := by
-  simpa [hij] using h.ad_pow_lie_F_F i j
+/-- In a Serre system, the lowering elements at `i` and `j` commute when `0 ≤ CMᵢⱼ`. -/
+theorem IsSerreSystem.lie_F_F_of_nonneg (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : 0 ≤ CM i j) : ⁅F i, F j⁆ = 0 := by
+  have hn : (-CM i j).toNat = 0 := Int.toNat_eq_zero.mpr (by omega)
+  simpa [hn] using h.ad_pow_lie_F_F i j
 
 variable (R CM)
 
-/-- The generators `Eᵢ` and `Eⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+/-- The generators `Eᵢ` and `Eⱼ` of the presented algebra commute when `0 ≤ CMᵢⱼ`. -/
 @[simp]
-theorem lie_serreE_serreE_of_eq_zero {i j : B} (hij : CM i j = 0) :
+theorem lie_serreE_serreE_of_nonneg {i j : B} (hij : 0 ≤ CM i j) :
     ⁅serreE R CM i, serreE R CM j⁆ = 0 :=
-  (isSerreSystem_serre R CM).lie_E_E_of_eq_zero hij
+  (isSerreSystem_serre R CM).lie_E_E_of_nonneg hij
 
-/-- The generators `Fᵢ` and `Fⱼ` of the presented algebra commute when `CMᵢⱼ = 0`. -/
+/-- The generators `Fᵢ` and `Fⱼ` of the presented algebra commute when `0 ≤ CMᵢⱼ`. -/
 @[simp]
-theorem lie_serreF_serreF_of_eq_zero {i j : B} (hij : CM i j = 0) :
+theorem lie_serreF_serreF_of_nonneg {i j : B} (hij : 0 ≤ CM i j) :
     ⁅serreF R CM i, serreF R CM j⁆ = 0 :=
-  (isSerreSystem_serre R CM).lie_F_F_of_eq_zero hij
+  (isSerreSystem_serre R CM).lie_F_F_of_nonneg hij
 
 end Orthogonal
 
@@ -492,30 +495,37 @@ section SingleBond
 variable {R CM} {H E F : B → L}
 
 omit [DecidableEq B] in
-/-- At a Cartan entry of minus one, the raising bracket commutes with its first generator. -/
-theorem IsSerreSystem.lie_E_lie_E_E_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hij : CM i j = -1) : ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
-  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_E_E i j
+/-- At a Cartan entry of at least minus one, the raising bracket commutes with its first
+generator: at minus one by the higher Serre relation, and above it because the bracket itself
+vanishes. -/
+theorem IsSerreSystem.lie_E_lie_E_E_of_neg_one_le (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : -1 ≤ CM i j) : ⁅E i, ⁅E i, E j⁆⁆ = 0 := by
+  rcases eq_or_lt_of_le hij with h1 | h1
+  · simpa only [← h1, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_E_E i j
+  · rw [h.lie_E_E_of_nonneg (by omega), lie_zero]
 
 omit [DecidableEq B] in
-/-- At the reversed Cartan entry of minus one, the raising bracket commutes with its
+/-- At a reversed Cartan entry of at least minus one, the raising bracket commutes with its
 second generator. -/
-theorem IsSerreSystem.lie_E_lie_E_E_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hji : CM j i = -1) : ⁅E j, ⁅E i, E j⁆⁆ = 0 := by
-  rw [← lie_skew (E i) (E j), lie_neg, h.lie_E_lie_E_E_of_eq_neg_one hji, neg_zero]
+theorem IsSerreSystem.lie_E_lie_E_E_swap_of_neg_one_le (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : -1 ≤ CM j i) : ⁅E j, ⁅E i, E j⁆⁆ = 0 := by
+  rw [← lie_skew (E i) (E j), lie_neg, h.lie_E_lie_E_E_of_neg_one_le hji, neg_zero]
 
 omit [DecidableEq B] in
-/-- At a Cartan entry of minus one, the lowering bracket commutes with its first generator. -/
-theorem IsSerreSystem.lie_F_lie_F_F_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hij : CM i j = -1) : ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
-  simpa only [hij, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_F_F i j
+/-- At a Cartan entry of at least minus one, the lowering bracket commutes with its first
+generator. -/
+theorem IsSerreSystem.lie_F_lie_F_F_of_neg_one_le (h : IsSerreSystem R CM H E F)
+    {i j : B} (hij : -1 ≤ CM i j) : ⁅F i, ⁅F i, F j⁆⁆ = 0 := by
+  rcases eq_or_lt_of_le hij with h1 | h1
+  · simpa only [← h1, neg_neg, Int.toNat_one, pow_one, ad_apply] using h.ad_pow_lie_F_F i j
+  · rw [h.lie_F_F_of_nonneg (by omega), lie_zero]
 
 omit [DecidableEq B] in
-/-- At the reversed Cartan entry of minus one, the lowering bracket commutes with its
+/-- At a reversed Cartan entry of at least minus one, the lowering bracket commutes with its
 second generator. -/
-theorem IsSerreSystem.lie_F_lie_F_F_swap_of_eq_neg_one (h : IsSerreSystem R CM H E F)
-    {i j : B} (hji : CM j i = -1) : ⁅F j, ⁅F i, F j⁆⁆ = 0 := by
-  rw [← lie_skew (F i) (F j), lie_neg, h.lie_F_lie_F_F_of_eq_neg_one hji, neg_zero]
+theorem IsSerreSystem.lie_F_lie_F_F_swap_of_neg_one_le (h : IsSerreSystem R CM H E F)
+    {i j : B} (hji : -1 ≤ CM j i) : ⁅F j, ⁅F i, F j⁆⁆ = 0 := by
+  rw [← lie_skew (F i) (F j), lie_neg, h.lie_F_lie_F_F_of_neg_one_le hji, neg_zero]
 
 end SingleBond
 

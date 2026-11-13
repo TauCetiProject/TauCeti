@@ -593,7 +593,7 @@ end GeneratingTriple
 
 section Perfect
 
-variable {K : Type*} [Field K] [NeZero (2 : K)] {L : Type*} [LieRing L] [LieAlgebra K L]
+variable {K : Type*} [CommRing K] [Invertible (2 : K)] {L : Type*} [LieRing L] [LieAlgebra K L]
   {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {h e f : L} {t : IsSl2Triple h e f}
 
@@ -608,12 +608,12 @@ theorem lie_eq_zero_of_lie_lie_eq_zero (htop : t.toLieSubalgebra K = ⊤)
   have hh : ⁅h, m⁆ = 0 := by rw [← t.lie_e_f, hbr]
   have he : ⁅e, m⁆ = 0 := by
     have h2 : (2 : K) • ⁅e, m⁆ = 0 := by rw [← smul_lie, ← t.lie_h_e_smul K, hbr]
-    exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+    simpa using congrArg ((⅟2 : K) • ·) h2
   have hf : ⁅f, m⁆ = 0 := by
     have h2 : (2 : K) • ⁅f, m⁆ = 0 := by
       have hbrf := hbr h f m
       rwa [t.lie_lie_smul_f K, neg_lie, smul_lie, neg_eq_zero] at hbrf
-    exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+    simpa using congrArg ((⅟2 : K) • ·) h2
   obtain ⟨c₁, c₂, c₃, rfl⟩ :=
     IsSl2Triple.mem_toLieSubalgebra_iff.1 (htop ▸ LieSubalgebra.mem_top x)
   rw [t.lie_e_f]
