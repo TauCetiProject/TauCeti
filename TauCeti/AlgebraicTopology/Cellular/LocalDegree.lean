@@ -162,7 +162,7 @@ lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplS
 /-- **Other cells vanish in the local homology at a point of an open cell.** On the summand of a
 cell `k ≠ i`, the map from the cellular chain group to the local homology at a point `x` of the
 open cell `i` is zero: the closed cell of `k` misses `x`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cellularChainGroupIso_inv_comp_singularHomologyMap_skeletonPairToComplSingleton_of_ne
     {i k : cell C n} (x : skeletonObj C (n + 1)) (hx : (x : X) ∈ openCell n i) (hk : k ≠ i) :
     Sigma.ι (fun _ : cell C n ↦ R) k ≫ (cellularChainGroupIso C R n).inv ≫
