@@ -201,6 +201,17 @@ def letterPath : ∀ {x y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.L
   rw [letterPath, B.cast_labelα_congr (B.graph.dart_val e) _ (B.typ.map_src e),
     B.cast_labelω_congr (B.graph.dart_val e) _ (B.typ.map_tgt _ e)]
 
+/-- The `𝔸`-path read along the dart letter of an arrow `f : a ⟶ b` of the underlying graph: the
+letters `f_α, [f], f_ω`, read through `o(f) = a` and `t(f) = b`. -/
+theorem letterPath_dart_arrow {a b : B.graph.V} (f : a ⟶ b) :
+    B.letterPath (Letter.dart (𝔸 := B.toGraphOfGroups) f) =
+      ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
+          ((B.typ.map_src f.1).trans (congrArg B.typ.mapV f.2.1)) (B.labelα f.1))).comp
+        (Path.ofDart (a := B.typ.mapV _) (b := B.typ.mapV _) (B.typ.toPrefunctor.map f))).comp
+        (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
+          ((B.typ.map_tgt _ f.1).trans (congrArg B.typ.mapV f.2.2)) (B.labelω f.1))) :=
+  (rfl)
+
 /-- The path map: the `𝔸`-path read along a `𝔹`-path, letter by letter. -/
 def pathMap {x : B.toGraphOfGroups.LetterVertex} :
     ∀ {y : B.toGraphOfGroups.LetterVertex}, B.toGraphOfGroups.Path x y →
