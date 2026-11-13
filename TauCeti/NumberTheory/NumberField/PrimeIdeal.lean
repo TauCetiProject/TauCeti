@@ -69,17 +69,6 @@ theorem mem_nonZeroDivisors_of_prime_of_liesOver {p : ℕ} (hp : p.Prime)
     (by rw [ne_eq, Ideal.span_singleton_eq_bot, Int.natCast_eq_zero]
         exact hp.pos.ne') 𝔭
 
-/-- **A maximal ideal of `𝓞 K` over `span {p}` forces `p` to be prime**, since `span {p}` is then a
-nonzero prime ideal of `ℤ`. -/
-theorem prime_of_isMaximal_of_liesOver {p : ℕ} (𝔭 : Ideal (𝓞 K)) [𝔭.IsMaximal]
-    [𝔭.LiesOver (span {(p : ℤ)})] : p.Prime := by
-  have hp0 : (p : ℤ) ≠ 0 := by
-    rw [Ne, ← Ideal.span_singleton_eq_bot, 𝔭.over_def (span {(p : ℤ)})]
-    exact Ideal.under_ne_bot ℤ (Ideal.IsMaximal.ne_bot_of_isIntegral_int 𝔭)
-  exact Nat.prime_iff_prime_int.2 ((Ideal.span_singleton_prime hp0).1 (by
-    rw [𝔭.over_def (span {(p : ℤ)})]
-    infer_instance))
-
 /-- A finite set of rational primes admits a family of prime ideals above it, packaged as
 non-zero-divisors so their classes can be taken with `ClassGroup.mk0`. Away from the specified
 finite set the family is filled with the unit ideal. -/

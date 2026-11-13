@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import TauCeti.NumberTheory.Cyclotomic.OddLevel
 import TauCeti.Data.Nat.Totient
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The splitting law in cyclotomic fields
@@ -166,10 +167,8 @@ theorem ncard_primesOver_eq_totient_iff (hn4 : n % 4 ≠ 2) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = n.totient ↔ (p : ZMod n) = 1 := by
   rcases eq_or_ne n 0 with rfl | hn0
   · -- both sides fail for `n = 0`: there is a prime above `p`, and `p ≠ 1`
-    have hpos : 0 < (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard :=
-      (Set.ncard_pos (IsDedekindDomain.primesOver_finite _ _)).2
-        ⟨_, (Ideal.nonempty_primesOver ..).some.2⟩
-    refine iff_of_false (by rw [Nat.totient_zero]; omega) fun h ↦ hp.out.ne_one ?_
+    refine iff_of_false (by simpa using IsDedekindDomain.primesOver_ncard_ne_zero _ _)
+      fun h ↦ hp.out.ne_one ?_
     exact_mod_cast h
   have : NeZero n := ⟨hn0⟩
   obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.out.ne_one
@@ -281,7 +280,7 @@ theorem sum_val_galEquivZMod_filter_inv_smul_eq_smul {m : ℕ} [NeZero m]
       ∑ i ∈ Finset.range (orderOf (p : ZMod m)),
         p ^ i * (galEquivZMod m K τ⁻¹ : ZMod m).val % m := by
   classical
-  have : Fact p.Prime := ⟨NumberField.prime_of_isMaximal_of_liesOver P⟩
+  have : Fact p.Prime := ⟨P.prime_of_isMaximal_of_liesOver⟩
   have hcop : p.Coprime m := (Nat.Prime.coprime_iff_not_dvd Fact.out).2 hpm
   set u := ZMod.unitOfCoprime p hcop
   set a := galEquivZMod m K τ⁻¹ with hadef
