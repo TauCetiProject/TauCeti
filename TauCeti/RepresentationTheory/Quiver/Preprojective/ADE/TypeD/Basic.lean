@@ -136,16 +136,12 @@ include hn hG
 
 omit hn in
 /-- The relation at a vertex `v`, summed over a set `S` of vertices containing its neighbours. -/
-private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ) (hS : ∀ w ∈ S, w < n)
+private theorem sum_fork_relation (v : ℕ) (hv : v < n) (S : Finset ℕ)
     (hnbr : ∀ w < n, w ∉ S → ¬(v + 1 = w ∧ w ≤ c ∨ w + 1 = v ∧ v ≤ c ∨ v = c ∧ c < w ∨
       w = c ∧ c < v)) :
-    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 := by
-  have h := sum_signlessArrow_mul_signlessArrow k G ⟨v, hv⟩
-  rw [Fin.sum_univ_eq_sum_range (fun w => signlessArrow k G w v * signlessArrow k G v w) n] at h
-  rw [← h]
-  refine Finset.sum_subset (fun w hw => Finset.mem_range.2 (hS w hw)) fun w hw hwS => ?_
-  rw [signlessArrow_eq_zero k fun _ _ hvw => hnbr w (Finset.mem_range.1 hw) hwS (hG _ _ hvw),
-    mul_zero]
+    ∑ w ∈ S, signlessArrow k G w v * signlessArrow k G v w = 0 :=
+  sum_signlessArrow_mul_signlessArrow_of_subset k G hv S fun w hw hadj =>
+    by_contra fun hwS => hnbr w hw hwS (hG _ _ hadj)
 
 omit hn in
 /-- An arrow vanishes between two vertices which are not adjacent. -/
@@ -168,7 +164,6 @@ private theorem forkDown_mul_forkUp_add (w : ℕ) :
   · -- The rung `w + 1` is the vertex `v = c - (w + 1)`, with neighbours `v - 1` and `v + 1`.
     obtain ⟨v, rfl⟩ : ∃ v, c = v + (w + 1) := ⟨c - (w + 1), by omega⟩
     have h := sum_fork_relation k hG v (by omega) {v - 1, v + 1}
-      (by simp only [Finset.mem_insert, Finset.mem_singleton]; omega)
       (fun u _ hu => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu; omega)
     rw [Finset.sum_pair (by omega)] at h
     have hrung : v + (w + 1) - (w + 1) = v := by omega
@@ -185,7 +180,7 @@ omit hn in
 /-- **The relation at a leaf**: the backtrack from a leaf `l` vanishes. -/
 private theorem signlessArrow_mul_signlessArrow_leaf {l : ℕ} (hl : c < l) (hln : l < n) :
     signlessArrow k G c l * signlessArrow k G l c = 0 := by
-  have h := sum_fork_relation k hG l hln {c} (by simp; omega)
+  have h := sum_fork_relation k hG l hln {c}
     (fun u _ hu => by simp only [Finset.mem_singleton] at hu; omega)
   rwa [Finset.sum_singleton] at h
 
@@ -194,7 +189,6 @@ the two leaves sum to zero. -/
 private theorem forkDown_mul_forkUp_add_forkTurn :
     forkDown k G c 0 * forkUp k G c 0 + (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) = 0 := by
   have h := sum_fork_relation k hG c (by omega) {c - 1, c + 1, c + 2}
-    (by simp only [Finset.mem_insert, Finset.mem_singleton]; omega)
     (fun u hu hu' => by simp only [Finset.mem_insert, Finset.mem_singleton] at hu'; omega)
   rwa [Finset.sum_insert (by simp; omega), Finset.sum_pair (by omega)] at h
 
@@ -250,13 +244,6 @@ private theorem forkSpan_pow_eq_bot {t : ℕ} (ht : c + 2 ≤ t) : forkSpan k G 
     (forkTurn_add_pow_eq_zero k hn hG), Submodule.bot_mul]
 
 /-! ### Normal forms of paths -/
-
-omit hn hG in
-/-- A sign in the algebra is the integer sign acting by `zsmul`. -/
-private theorem neg_one_pow_mul_eq_zsmul (r : ℕ)
-    (a : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
-    (-1) ^ r * a = ((-1 : ℤ) ^ r) • a := by
-  simp [zsmul_eq_mul]
 
 omit hn hG in
 /-- The empty word in the backtracks into the leaves. -/
