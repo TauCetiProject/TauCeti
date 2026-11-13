@@ -426,7 +426,7 @@ def coefficientCochainComplexHomotopy {Φ Ψ : (P →₀ M) →ₗ[R] (Q →₀ 
     Homotopy (coefficientCochainComplexHom hM Φ hΦ hcommΦ)
       (coefficientCochainComplexHom hM Ψ hΨ hcommΨ) :=
   gradedCochainComplexHomotopy hΦ hΨ (fun _ x ↦ LinearMap.congr_fun hcommΦ x)
-    (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH hΦΨ
+    (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH fun _ x ↦ LinearMap.congr_fun hΦΨ x
 
 /-- The components of the homotopy of a linear map `H` are `H`. -/
 theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_apply
@@ -446,7 +446,7 @@ theorem coefficientCochainComplexXEquiv_coefficientCochainComplexHomotopy_hom_ap
       H (m.coefficientCochainComplexXEquiv hM p x) :=
   gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply hΦ hΨ
     (fun _ x ↦ LinearMap.congr_fun hcommΦ x) (fun _ x ↦ LinearMap.congr_fun hcommΨ x) H hH
-    hΦΨ p q hpq x
+    (fun _ x ↦ LinearMap.congr_fun hΦΨ x) p q hpq x
 
 end RowFiniteTwistingCocycle
 

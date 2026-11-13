@@ -14,7 +14,6 @@ import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
-public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # The cochain complex of a family of submodules with a differential
@@ -43,7 +42,7 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 * `TauCeti.gradedCochainComplexHom`: the cochain map induced by a degree-preserving linear map
   commuting with the differentials, between carriers in one universe.
 * `TauCeti.gradedCochainComplexHomotopy`: the homotopy induced by a linear map `k` of degree `-1`
-  with `f = dN ∘ k + k ∘ dM + g`.
+  with `f = dN ∘ k + k ∘ dM + g` on homogeneous elements.
 * `TauCeti.gradedCochainComplexLift`: the same complex with its terms lifted to a larger
   module universe.
 * `TauCeti.gradedCochainComplexMap`: the induced map in a common module universe.
@@ -264,13 +263,14 @@ private theorem gradedCochainComplexCochain_v_apply (k : M →ₗ[R] N)
   -- restriction of `k`; rewriting with `Cochain.mk_v` would produce an ill-typed motive.
   (rfl)
 
-/-- A linear map `k` of degree `-1` with `f = dN ∘ k + k ∘ dM + g` is a homotopy between the
-cochain maps induced by `f` and `g`. -/
+/-- A linear map `k` of degree `-1` with `f = dN ∘ k + k ∘ dM + g` on homogeneous elements is a
+homotopy between the cochain maps induced by `f` and `g`. -/
 noncomputable def gradedCochainComplexHomotopy {f g : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
     (hcommf : ∀ p (x : ℳ p), dN (f x) = f (dM x)) (hcommg : ∀ p (x : ℳ p), dN (g x) = g (dM x))
     (k : M →ₗ[R] N)
-    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) :
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1))
+    (hfg : ∀ p (x : ℳ p), f x = dN (k x) + k (dM x) + g x) :
     Homotopy (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
       (hsqN := hsqN) f hf hcommf) (gradedCochainComplexHom g hg hcommg) :=
   (CochainComplex.HomComplex.Cochain.equivHomotopy _ _).symm
@@ -288,15 +288,15 @@ noncomputable def gradedCochainComplexHomotopy {f g : M →ₗ[R] N}
       rw [gradedCochainComplexXEquiv_d_of_add_one_eq (sub_add_cancel p 1),
         gradedCochainComplexCochain_v_apply, gradedCochainComplexCochain_v_apply,
         gradedCochainComplexXEquiv_d_of_add_one_eq rfl]
-      simpa only [LinearMap.add_apply, LinearMap.comp_apply, add_assoc] using
-        LinearMap.congr_fun hfg (gradedCochainComplexXEquiv p x)⟩
+      simpa only [add_assoc] using hfg p (gradedCochainComplexXEquiv p x)⟩
 
 /-- Under `gradedCochainComplexXEquiv`, the components of the homotopy induced by `k` are `k`. -/
 theorem gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply {f g : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
     (hcommf : ∀ p (x : ℳ p), dN (f x) = f (dM x)) (hcommg : ∀ p (x : ℳ p), dN (g x) = g (dM x))
     (k : M →ₗ[R] N)
-    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) (p q : ℤ)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1))
+    (hfg : ∀ p (x : ℳ p), f x = dN (k x) + k (dM x) + g x) (p q : ℤ)
     (hpq : p + -1 = q) (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
     (gradedCochainComplexXEquiv q
       (((gradedCochainComplexHomotopy (hdegN := hdegN) (hsqN := hsqN) hf hg hcommf hcommg k hk
@@ -309,7 +309,8 @@ theorem gradedCochainComplexHomotopy_hom_apply {f g : M →ₗ[R] N}
     (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
     (hcommf : ∀ p (x : ℳ p), dN (f x) = f (dM x)) (hcommg : ∀ p (x : ℳ p), dN (g x) = g (dM x))
     (k : M →ₗ[R] N)
-    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1)) (hfg : f = dN ∘ₗ k + k ∘ₗ dM + g) (p q : ℤ)
+    (hk : LinearMap.IsHomogeneous k ℳ 𝒩 (-1))
+    (hfg : ∀ p (x : ℳ p), f x = dN (k x) + k (dM x) + g x) (p q : ℤ)
     (hpq : p + -1 = q) (x : ℳ p) :
     (eqToHom (gradedCochainComplex_X (hdeg := hdegN) (hsq := hsqN) q)
       ((gradedCochainComplexHomotopy (hdeg := hdeg) (hsq := hsq) hf hg hcommf hcommg k hk

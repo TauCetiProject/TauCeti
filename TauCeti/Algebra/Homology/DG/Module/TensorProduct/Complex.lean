@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # The cochain complex of a balanced tensor product of DG modules
