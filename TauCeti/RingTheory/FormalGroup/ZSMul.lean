@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 `FormalGroup.zsmulSeries` extends the native natural-number multiplication series to all
 integers, using the group of substitutable power-series points. Negative indices use the
-formal inverse, not coefficientwise negation. Substitution into a point with nilpotent
-constant term computes integer multiplication on that point.
+formal inverse, not coefficientwise negation, and preserve the power-series order. Substitution
+into a point with nilpotent constant term computes integer multiplication on that point.
 
 The addition and composition identities hold without commutativity of the formal group.
 For a commutative formal group, integer multiplication is bundled as an endomorphism.
@@ -81,6 +81,16 @@ theorem coeff_one_zsmulSeries (n : ℤ) : PowerSeries.coeff 1 (F.zsmulSeries n) 
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · simp
   · simp [zsmulSeries_neg, PowerSeries.coeff_one_subst (F.constantCoeff_nsmulSeries k)]
+
+/-- Negating the index preserves the order of the integer multiplication series. -/
+@[simp]
+theorem order_zsmulSeries_neg (n : ℤ) :
+    (F.zsmulSeries (-n)).order = (F.zsmulSeries n).order := by
+  suffices h : ∀ m : ℤ, (F.zsmulSeries m).order ≤ (F.zsmulSeries (-m)).order from
+    le_antisymm ((h (-n)).trans_eq (by rw [neg_neg])) (h n)
+  intro m
+  rw [zsmulSeries_neg]
+  exact PowerSeries.le_order_subst_right' (F.constantCoeff_zsmulSeries m) F.constantCoeff_addInvX
 
 /-- Evaluating the integer multiplication series at a substitutable point computes its
 integer multiple, including points with nonzero nilpotent constant coefficient. -/

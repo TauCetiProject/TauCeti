@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 -- Proof-only: base change preserves the degree of an isogeny.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
@@ -41,6 +42,10 @@ and the identification of morphisms with their tautological points in `Isogeny.H
 * `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
   base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
   for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint` and
+  `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map_genericPoint`: the base change of `f` to `F(W₁)`
+  sends `W₁.genericPoint` to `f.tautologicalPoint`, and along `σ : F(W₁) →ₐ[F] M` sends
+  `Point.map σ W₁.genericPoint` to `Point.map σ f.tautologicalPoint`.
 
 ## References
 
@@ -297,6 +302,106 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
 end PointMap
+
+section GenericPoint
+
+/-- Along `ι : F → F(W₁)`, the function-field embedding `FunctionField.map W₁ ι` and the scalar
+embedding `algebraMap F(W₁) (F(W₁))(W₁)` agree to first order at the place of `W₁.genericPoint`. -/
+private theorem valuation_genericPointPlace_map_sub_algebraMap_lt_one
+    (W₁ : WeierstrassCurve.Affine F) [W₁.IsElliptic] (z : W₁.FunctionField) :
+    (Place.ofPrime W₁.FunctionField (W₁.map (algebraMap F W₁.FunctionField)).FunctionField
+      (CoordinateRing.pointPlace (W := W₁.map (algebraMap F W₁.FunctionField))
+        W₁.equation_genericX_genericY)).valuation
+        (FunctionField.map W₁ (algebraMap F W₁.FunctionField) z -
+          algebraMap W₁.FunctionField (W₁.map (algebraMap F W₁.FunctionField)).FunctionField z) <
+      1 := by
+  let E := W₁.FunctionField
+  let ι := algebraMap F E
+  let v := (Place.ofPrime E (W₁.map ι).FunctionField
+    (CoordinateRing.pointPlace (W := W₁.map ι) W₁.equation_genericX_genericY)).valuation
+  let μ : E →+* (W₁.map ι).FunctionField := FunctionField.map W₁ ι
+  let κ : E →+* (W₁.map ι).FunctionField := algebraMap E (W₁.map ι).FunctionField
+  have hμ_le (x : E) (hx : v (μ x - κ x) < 1) : v (μ x) ≤ 1 := by
+    have hκ : v (κ x) ≤ 1 := Valuation.IsTrivialOn.valuation_algebraMap_le_one v x
+    simpa only [sub_add_cancel] using (v.map_add (μ x - κ x) (κ x)).trans (max_le hx.le hκ)
+  -- Since `v` is trivial on `E` along `κ`, `{x ∈ E | v (μ x - κ x) < 1}` is an intermediate field
+  -- over `F` containing `x` and `y`, hence all of `E = F⟮x, y⟯`.
+  let S : IntermediateField F E :=
+    { carrier := {x : E | v (μ x - κ x) < 1}
+      algebraMap_mem' c := by
+        rw [Set.mem_ofPred_eq, FunctionField.map_algebraMap, sub_self, map_zero]
+        exact zero_lt_one
+      add_mem' {x y} hx hy := by
+        rw [Set.mem_ofPred_eq, _root_.map_add, _root_.map_add, add_sub_add_comm]
+        exact v.map_add_lt hx hy
+      mul_mem' {x y} hx hy := by
+        have hmul : μ x * μ y - κ x * κ y = (μ x - κ x) * κ y + μ x * (μ y - κ y) := by ring
+        rw [Set.mem_ofPred_eq, map_mul, map_mul, hmul]
+        refine v.map_add_lt ?_ ?_
+        · rw [map_mul]
+          exact mul_lt_one_of_lt_of_le hx (Valuation.IsTrivialOn.valuation_algebraMap_le_one v y)
+        · rw [map_mul]
+          exact mul_lt_of_le_one_of_lt (hμ_le x hx) hy
+      inv_mem' x hx := by
+        rcases eq_or_ne x 0 with rfl | hx0
+        · simp
+        have hx' : v (μ x - κ x) < 1 := hx
+        have hκx : v (κ x) = 1 := Valuation.IsTrivialOn.eq_one (v := v) x hx0
+        have hμx : v (μ x) = 1 := by
+          simpa only [sub_add_cancel, hκx] using
+            Valuation.map_add_eq_of_lt_right v (hx'.trans_eq hκx.symm)
+        have hμx0 : μ x ≠ 0 := (map_ne_zero_iff μ μ.injective).mpr hx0
+        have hκx0 : κ x ≠ 0 := (map_ne_zero_iff κ κ.injective).mpr hx0
+        rw [Set.mem_ofPred_eq, map_inv₀, map_inv₀, inv_sub_inv hμx0 hκx0, map_div₀, map_mul,
+          hμx, hκx, mul_one, div_one, ← neg_sub, Valuation.map_neg]
+        exact hx' }
+  -- Membership in `S` is definitionally membership in `S.carrier`.
+  have hX : W₁.genericX ∈ S := by
+    change v (μ W₁.genericX - κ W₁.genericX) < 1
+    rw [FunctionField.map_genericX]
+    exact valuation_pointPlace_genericX_sub_lt_one (W₁.map ι) W₁.equation_genericX_genericY
+  have hY : W₁.genericY ∈ S := by
+    change v (μ W₁.genericY - κ W₁.genericY) < 1
+    rw [FunctionField.map_genericY]
+    exact valuation_pointPlace_genericY_sub_lt_one (W₁.map ι) W₁.equation_genericX_genericY
+  have htop : S = ⊤ :=
+    top_unique (W₁.adjoin_genericX_genericY_eq_top ▸
+      IntermediateField.adjoin_le_iff.mpr (Set.pair_subset hX hY))
+  have hz : z ∈ S := htop ▸ IntermediateField.mem_top
+  exact hz
+
+variable [W₁.IsElliptic] [W₂.IsElliptic]
+
+/-- **The base change of a morphism to `F(W₁)` sends the generic point of `W₁` to the tautological
+point of the morphism.** -/
+theorem pointMap_map_algebraMap_genericPoint [DecidableEq W₁.FunctionField] (f : Hom W₁ W₂) :
+    (f.map (algebraMap F W₁.FunctionField)).pointMap W₁.genericPoint = f.tautologicalPoint := by
+  -- `erw` unfolds the `WeierstrassCurve.baseChange` spelling `(W⁄F(W₁)).toAffine` vs `W.map ι`.
+  rcases eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
+  · erw [zero_map, zero_pointMap, tautologicalPoint_zero]
+    rfl
+  set ι := algebraMap F W₁.FunctionField
+  erw [ofIsogeny_map, pointMap_eq_iff, tautologicalPoint_ofIsogeny, tautologicalPoint_ofIsogeny,
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero ((φ.map ι).pullback)),
+    ← Point.some_coords (CoordinatePullback.tautologicalPoint_ne_zero φ.pullback),
+    genericPoint_eq_some, coe_pointEquivDegreeOnePlace_some, Point.equivBaseChangeSelf_some,
+    some_sub_baseChange_mem_polePoints_iff]
+  simp only [CoordinatePullback.xCoord_tautologicalPoint,
+    CoordinatePullback.yCoord_tautologicalPoint, Isogeny.map_pullback,
+    CoordinatePullback.map_of_X, CoordinatePullback.map_root]
+  exact ⟨valuation_genericPointPlace_map_sub_algebraMap_lt_one W₁ _,
+    valuation_genericPointPlace_map_sub_algebraMap_lt_one W₁ _⟩
+
+/-- **Evaluating a base-changed morphism at an `F`-algebra image of the generic point pushes the
+tautological point forward along that `F`-algebra map.** -/
+theorem pointMap_map_algebraMap_map_genericPoint {M : Type*} [Field M] [Algebra F M]
+    [DecidableEq M] (f : Hom W₁ W₂) (σ : W₁.FunctionField →ₐ[F] M) :
+    (f.map (algebraMap F M)).pointMap (Point.map σ W₁.genericPoint) =
+      Point.map σ f.tautologicalPoint := by
+  classical
+  rw [pointMap_map_algebraMap_map, pointMap_map_algebraMap_genericPoint]
+
+end GenericPoint
 
 end TauCeti.Isogeny.Hom
 

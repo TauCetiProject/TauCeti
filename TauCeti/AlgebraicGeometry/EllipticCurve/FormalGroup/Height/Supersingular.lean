@@ -218,20 +218,8 @@ theorem order_nsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffi
 /-- **Isogenous elliptic curves have `[n]_Ê` series of equal order** (`n : ℤ`). -/
 theorem order_zsmulSeries_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (n : ℤ) :
     ((formalGroup W₁).zsmulSeries n).order = ((formalGroup W₂).zsmulSeries n).order := by
-  have : W₁.IsElliptic := φ.isElliptic
-  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
-  · simp [φ.order_nsmulSeries_formalGroup_eq k]
-  · have hinv (W : WeierstrassCurve K) : ((formalGroup W).addInvX).order = 1 := by
-      rw [← Nat.cast_one, PowerSeries.order_eq_nat]
-      refine ⟨by simp, fun i hi ↦ ?_⟩
-      rw [Nat.lt_one_iff.mp hi, PowerSeries.coeff_zero_eq_constantCoeff_apply]
-      exact (formalGroup W).constantCoeff_addInvX
-    rw [FormalGroup.zsmulSeries_neg, FormalGroup.zsmulSeries_neg, FormalGroup.zsmulSeries_natCast,
-      FormalGroup.zsmulSeries_natCast,
-      PowerSeries.order_subst ((formalGroup W₁).constantCoeff_nsmulSeries k),
-      PowerSeries.order_subst ((formalGroup W₂).constantCoeff_nsmulSeries k),
-      hinv W₁, hinv W₂, mul_one, mul_one]
-    exact φ.order_nsmulSeries_formalGroup_eq k
+  rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩ <;>
+    simp [φ.order_nsmulSeries_formalGroup_eq k]
 
 /-- **Isogenous elliptic curves have the same formal-group height.** -/
 theorem height_formalGroup_eq (φ : Isogeny W₁.toAffine W₂.toAffine) (p : ℕ) :
