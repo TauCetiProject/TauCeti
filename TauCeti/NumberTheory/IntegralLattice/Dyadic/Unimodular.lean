@@ -14,6 +14,8 @@ import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Characteristic
 import TauCeti.NumberTheory.Padics.BilinearForm.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Lattices unimodular at `2`
@@ -76,28 +78,16 @@ theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven
       (isUnit_of_dvd_unit (heven.two_dvd_localIntegralForm_apply_self x) hx)
   rwa [Module.finrank_baseChange] at h
 
-/-- Two units of `ℤ_[2]` add up to a nonunit: both reduce to `1` modulo `2`. -/
-private theorem add_mem_maximalIdeal_of_isUnit {u v : ℤ_[2]} (hu : IsUnit u) (hv : IsUnit v) :
-    u + v ∈ IsLocalRing.maximalIdeal ℤ_[2] := by
-  have key (w : ℤ_[2]) (hw : IsUnit w) : (PadicInt.toZMod w : ZMod 2) = 1 := by
-    have hne : (PadicInt.toZMod w : ZMod 2) ≠ 0 := fun h ↦
-      (IsLocalRing.mem_maximalIdeal _).mp (PadicInt.ker_toZMod (p := 2) ▸ h) hw
-    generalize (PadicInt.toZMod w : ZMod 2) = a at hne
-    revert a
-    decide
-  rw [← PadicInt.ker_toZMod (p := 2), RingHom.mem_ker, map_add, key u hu, key v hv]
-  decide
-
 /-- **A lattice unimodular at `2` splits off a perfect binary summand.** If the rank is at least
 two, the dyadic localization has a rank-two submodule carrying a perfect restriction of the local
-integral form and complementary to its orthogonal complement. The lattice need not be even: among
-the first two basis vectors, either one has nonunit self-pairing, or their sum does. -/
+integral form and complementary to its orthogonal complement. The lattice need not be even. -/
 theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm
     (L : IntegralLattice V) (hrank : 2 ≤ finrank ℤ L)
     (hdet : IsUnit (L.determinant : ℤ_[2])) :
     ∃ S : Submodule ℤ_[2] (L.LocalCarrier 2),
       finrank ℤ_[2] S = 2 ∧ ((L.localIntegralForm 2).restrict S).IsPerfPair ∧
         IsCompl S ((L.localIntegralForm 2).orthogonal S) := by
+  -- Among the first two basis vectors, either one has nonunit self-pairing, or their sum does.
   have hrank' : finrank ℤ L = (finrank ℤ L - 2) + 2 := (Nat.sub_add_cancel hrank).symm
   let c := (Module.finBasis ℤ L).reindex (finCongr hrank')
   let b := c.baseChange ℤ_[2]
@@ -110,16 +100,20 @@ theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm
     · by_cases h1 : IsUnit (L.localIntegralForm 2 (b 1) (b 1))
       · refine hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 0 + b 1)
           ?_ (b.coord 0) (by simp)
-        have hsum : L.localIntegralForm 2 (b 0 + b 1) (b 0 + b 1) =
-            (L.localIntegralForm 2 (b 0) (b 0) + L.localIntegralForm 2 (b 1) (b 1)) +
-              2 * L.localIntegralForm 2 (b 0) (b 1) := by
-          simp only [map_add, LinearMap.add_apply, hB.eq (b 1) (b 0)]
-          ring
-        have h2 : (2 : ℤ_[2]) ∈ IsLocalRing.maximalIdeal ℤ_[2] :=
-          (IsLocalRing.mem_maximalIdeal _).mpr PadicInt.p_nonunit
-        rw [hsum]
-        exact (IsLocalRing.mem_maximalIdeal _).mp
-          (Ideal.add_mem _ (add_mem_maximalIdeal_of_isUnit h0 h1) (Ideal.mul_mem_right _ _ h2))
+        have hres : Nat.card (IsLocalRing.ResidueField ℤ_[2]) = 2 := PadicInt.card_residueField 2
+        -- Units are congruent to `1` modulo `2`, so the sum of two units lies in the maximal ideal.
+        have hab : L.localIntegralForm 2 (b 0) (b 0) + L.localIntegralForm 2 (b 1) (b 1) ∈
+            IsLocalRing.maximalIdeal ℤ_[2] := by
+          have := Ideal.sub_mem _
+            (IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two hres h0)
+            (IsLocalRing.sub_one_mem_maximalIdeal_of_card_residueField_eq_two hres h1.neg)
+          rwa [show L.localIntegralForm 2 (b 0) (b 0) - 1 -
+            (-L.localIntegralForm 2 (b 1) (b 1) - 1) = L.localIntegralForm 2 (b 0) (b 0) +
+              L.localIntegralForm 2 (b 1) (b 1) by ring] at this
+        rw [hB.apply_add_self (b 0) (b 1)]
+        exact fun hu ↦ IsLocalRing.notMem_maximalIdeal.mpr hu (Ideal.add_mem _ hab
+          (Ideal.mul_mem_right _ _
+            (IsLocalRing.two_mem_maximalIdeal_of_card_residueField_eq_two hres)))
       · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 1) h1
           (b.coord 1) (by simp)
     · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one _ (b 0) h0
