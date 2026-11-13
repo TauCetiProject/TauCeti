@@ -19,6 +19,10 @@ used to describe associated tensor fields and, subsequently, their covariant der
 The fibre may be any space with a continuous group action; vector-space, finite-rank and
 nonempty-base assumptions are unnecessary.
 
+A continuous global section `s` of the principal bundle trivializes every associated bundle:
+`(b, v) ↦ [s b, v]` is a homeomorphism `B × F ≃ₜ P ×_G F`
+(`TauCeti.AssociatedBundle.prodHomeomorphOfSection`).
+
 ## References
 
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*,
@@ -195,5 +199,62 @@ theorem continuousSectionEquiv_symm_apply
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) {b : B} (p : P b) :
     (continuousSectionEquiv.symm u).1 b = mk G p (u.1 ⟨b, p⟩) :=
   sectionEquiv_symm_apply ⟨u.1, u.2⟩ p
+
+/-! ### Global sections of the principal bundle -/
+
+/-- **A global section of the principal bundle trivializes its associated bundles.** For a
+continuous section `s` of `P`, the map `(b, v) ↦ [s b, v]` is a homeomorphism from `B × F` onto
+the total space of the associated bundle. -/
+noncomputable def prodHomeomorphOfSection (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) :
+    B × F ≃ₜ TotalSpace F (AssociatedBundle G P F) where
+  toFun x := ⟨x.1, mk G (s x.1) x.2⟩
+  invFun y := (y.proj, (Equiv.ofBijective _ (mk_bijective (F := F) (s y.proj))).symm y.2)
+  left_inv x := Prod.ext rfl (Equiv.ofBijective_symm_apply_apply _ _ x.2)
+  right_inv y := congrArg (TotalSpace.mk y.proj) (Equiv.ofBijective_apply_symm_apply _ _ y.2)
+  continuous_toFun := (hs.comp continuous_fst).totalSpaceMk_associatedBundleMk continuous_snd
+  continuous_invFun := by
+    have hπ := FiberBundle.continuous_proj F (AssociatedBundle G P F)
+    refine hπ.prodMk (continuous_iff_continuousAt.2 fun y₀ ↦ ?_)
+    set e := trivializationAt G P y₀.proj
+    set eA := trivializationAt F (AssociatedBundle G P F) y₀.proj
+    have hb₀ := mem_baseSet_trivializationAt G P y₀.proj
+    -- Near `y₀`, the representative of `y` in the frame `s y.proj` is `g⁻¹ • (eA y).2`, where
+    -- `g` is the coordinate of `s y.proj` in the chart `e`.
+    have hg : ContinuousAt (fun y : TotalSpace F (AssociatedBundle G P F) ↦
+        (e ⟨y.proj, s y.proj⟩).2) y₀ :=
+      continuous_snd.continuousAt.comp
+        ((e.continuousAt (e.mem_source.2 hb₀)).comp (hs.comp hπ).continuousAt)
+    have hA : ContinuousAt (fun y ↦ (eA y).2) y₀ :=
+      continuous_snd.continuousAt.comp
+        (eA.continuousAt (eA.mem_source.2 (by simpa [eA] using hb₀)))
+    refine (hg.inv.smul hA).congr_of_eventuallyEq ?_
+    filter_upwards [hπ.continuousAt (e.open_baseSet.mem_nhds hb₀)] with y hy
+    obtain ⟨b, w⟩ := y
+    obtain ⟨v, rfl⟩ := (mk_bijective (F := F) (s b)).2 w
+    change (Equiv.ofBijective _ _).symm (mk G (s b) v) =
+      (e ⟨b, s b⟩).2⁻¹ • (eA ⟨b, mk G (s b) v⟩).2
+    rw [Equiv.ofBijective_symm_apply_apply, trivializationAt_mk_snd hy, inv_smul_smul]
+
+/-- The trivialization by a global section sends `(b, v)` to `[s b, v]`. -/
+@[simp]
+theorem prodHomeomorphOfSection_apply (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (x : B × F) :
+    prodHomeomorphOfSection s hs x = ⟨x.1, mk G (s x.1) x.2⟩ :=
+  (rfl)
+
+/-- The inverse of the trivialization by a global section sends `[s b, v]` to `(b, v)`. -/
+@[simp]
+theorem prodHomeomorphOfSection_symm_mk (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (b : B) (v : F) :
+    (prodHomeomorphOfSection s hs).symm ⟨b, mk G (s b) v⟩ = (b, v) :=
+  (prodHomeomorphOfSection s hs).symm_apply_apply (b, v)
+
+/-- The trivialization by a global section preserves the base point. -/
+@[simp]
+theorem fst_prodHomeomorphOfSection_symm (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (y : TotalSpace F (AssociatedBundle G P F)) :
+    ((prodHomeomorphOfSection s hs).symm y).1 = y.proj :=
+  (rfl)
 
 end TauCeti.AssociatedBundle

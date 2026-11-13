@@ -41,7 +41,9 @@ sends every other vector into a single line
 (`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
-point under an injective semilinear map is the image of its line.
+point under an injective semilinear map is the image of its line. A linear equivalence induces a
+bijection of projective spaces (`Projectivization.mapLinearEquiv`), and a vector lies on the line
+of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -198,5 +200,59 @@ theorem submodule_map {D E V W : Type*} [DivisionRing D] [DivisionRing E] [AddCo
     (map f hf x).submodule = x.submodule.map f := by
   induction x using ind with
   | h v hv => simp [map_mk, submodule_mk, Submodule.map_span]
+
+section LinearEquiv
+
+variable {K V W : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [AddCommGroup W]
+  [Module K W]
+
+/-- A linear equivalence `f : V ≃ₗ[K] W` induces a bijection of projective spaces, sending the
+line of `v` to the line of `f v`. -/
+def mapLinearEquiv (f : V ≃ₗ[K] W) : Projectivization K V ≃ Projectivization K W where
+  toFun := map (f : V →ₗ[K] W) f.injective
+  invFun := map (f.symm : W →ₗ[K] V) f.symm.injective
+  left_inv x := by
+    induction x using ind with | h v hv => simp [map_mk]
+  right_inv x := by
+    induction x using ind with | h v hv => simp [map_mk]
+
+/-- `mapLinearEquiv f` is `Projectivization.map f`. -/
+theorem mapLinearEquiv_apply (f : V ≃ₗ[K] W) (x : Projectivization K V) :
+    mapLinearEquiv f x = map (f : V →ₗ[K] W) f.injective x :=
+  (rfl)
+
+/-- `mapLinearEquiv f` sends the line of `v` to the line of `f v`. -/
+@[simp]
+theorem mapLinearEquiv_mk (f : V ≃ₗ[K] W) (v : V) (hv : v ≠ 0) :
+    mapLinearEquiv f (mk K v hv) = mk K (f v) (by simpa using hv) :=
+  (rfl)
+
+/-- The inverse of `mapLinearEquiv f` is induced by the inverse of `f`. -/
+@[simp]
+theorem mapLinearEquiv_symm (f : V ≃ₗ[K] W) : (mapLinearEquiv f).symm = mapLinearEquiv f.symm :=
+  (rfl)
+
+/-- The identity induces the identity of projective space. -/
+@[simp]
+theorem mapLinearEquiv_refl :
+    mapLinearEquiv (LinearEquiv.refl K V) = Equiv.refl (Projectivization K V) := by
+  ext x
+  induction x using ind with | h v hv => rfl
+
+/-- The line of the image of a point under `mapLinearEquiv f` is the image of its line. -/
+@[simp]
+theorem submodule_mapLinearEquiv (f : V ≃ₗ[K] W) (x : Projectivization K V) :
+    (mapLinearEquiv f x).submodule = x.submodule.map (f : V →ₗ[K] W) :=
+  submodule_map _ f.injective x
+
+/-- A vector lies on the line of a point exactly when it is zero or spans that point. -/
+theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
+    v ∈ x.submodule ↔ ∀ hv : v ≠ 0, mk K v hv = x := by
+  induction x using ind with | h w hw =>
+  by_cases hv : v = 0
+  · simp [hv]
+  · simp [hv, submodule_mk, mk_eq_mk_iff_mem_span hv hw]
+
+end LinearEquiv
 
 end Projectivization
