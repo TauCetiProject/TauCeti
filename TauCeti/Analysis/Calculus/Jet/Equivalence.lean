@@ -261,7 +261,7 @@ theorem sameJetAt_prodMk_iff {n : ℕ} {f f' : E → F} {a a' : E → G} {x : E}
   sameJetAt_prod_iff (hcf.prodMk hca) (hcf'.prodMk hca')
 
 /-- Constant sections have equal finite jets exactly when their values agree. -/
-@[to_fun (attr := simp)]
+@[to_fun (attr := simp) sameJetAt_fun_const_iff]
 theorem sameJetAt_const_iff {n : ℕ} {c d : F} {x : E} :
     SameJetAt 𝕜 n x (Function.const E c) (Function.const E d) ↔ c = d :=
   ⟨SameJetAt.apply_eq, fun h ↦ h ▸ SameJetAt.refl _ _⟩
