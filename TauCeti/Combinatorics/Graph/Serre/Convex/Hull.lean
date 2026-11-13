@@ -8,17 +8,18 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Aut
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.List
+public import Mathlib.Order.Closure
 
 /-!
 # Convex hulls of sets of vertices
 
 The convex hull of a set of vertices of a Serre graph is the smallest convex set containing it;
-each of its vertices is joined to the set by a path. In a tree, where the nonempty convex sets are
-the vertex sets of the subtrees, it is the subtree spanned by the set. The hull
-`Γ.convexHull {a, b}` of two vertices of an acyclic graph joined by a path is the geodesic
-segment `[a, b]`: the set of vertices of the reduced path from `a` to `b`. In an acyclic graph the
-hull of a set is the union of the hulls of its pairs of vertices, so the hull of a finite set is
-finite.
+it is a closure operator, whose closed sets are the convex sets, and each of its vertices is
+joined to the set by a path. In a tree, where the nonempty convex sets are the vertex sets of the
+subtrees, it is the subtree spanned by the set. The hull `Γ.convexHull {a, b}` of two vertices
+of an acyclic graph joined by a path is the geodesic segment `[a, b]`: the set of vertices of the
+reduced path from `a` to `b`. In an acyclic graph the hull of a set is the union of the hulls of
+its pairs of vertices, so the hull of a finite set is finite.
 
 Hulls in a tree are computed from segments through a base vertex: the hull of `{x} ∪ S` is the
 union of `{x}` and the segments `[x, s]` for `s ∈ S`, because subtrees through a common vertex
@@ -27,7 +28,7 @@ hulls.
 
 ## Main declarations
 
-* `TauCeti.SerreGraph.convexHull`: the convex hull of a set of vertices.
+* `TauCeti.SerreGraph.convexHull`: the convex hull of a set of vertices, as a closure operator.
 * `TauCeti.SerreGraph.IsAcyclic.convexHull_pair`: in an acyclic graph, the hull of two vertices is
   the set of vertices of a reduced path joining them.
 * `TauCeti.SerreGraph.IsAcyclic.convexHull_eq_biUnion_convexHull_pair`: in an acyclic graph, the
@@ -50,48 +51,50 @@ namespace SerreGraph
 
 variable (Γ : SerreGraph)
 
-/-- The convex hull of a set of vertices: the intersection of the convex sets containing it. -/
-def convexHull (S : Set Γ.V) : Set Γ.V :=
-  ⋂₀ {C | Γ.IsConvex C ∧ S ⊆ C}
+/-- The convex hull of a set of vertices: the smallest convex set containing it. It is the
+closure operator whose closed sets are the convex sets. -/
+def convexHull : ClosureOperator (Set Γ.V) :=
+  .ofCompletePred Γ.IsConvex fun _ => isConvex_sInter
+
+/-- The sets closed under the convex hull are the convex sets. -/
+@[simp] theorem convexHull_isClosed (S : Set Γ.V) : Γ.convexHull.IsClosed S ↔ Γ.IsConvex S :=
+  Iff.rfl
 
 variable {Γ} {S C : Set Γ.V}
 
-theorem mem_convexHull_iff {v : Γ.V} :
-    v ∈ Γ.convexHull S ↔ ∀ C : Set Γ.V, Γ.IsConvex C → S ⊆ C → v ∈ C := by
-  simp only [convexHull, Set.mem_sInter, Set.mem_ofPred_eq, and_imp]
-
 variable (S) in
 theorem subset_convexHull : S ⊆ Γ.convexHull S :=
-  fun _ hv => mem_convexHull_iff.mpr fun _ _ hSC => hSC hv
+  Γ.convexHull.le_closure S
 
 variable (S) in
 /-- The convex hull of a set is convex. -/
 theorem isConvex_convexHull : Γ.IsConvex (Γ.convexHull S) :=
-  isConvex_sInter fun _ hC => hC.1
+  (Γ.convexHull_isClosed _).mp (Γ.convexHull.isClosed_closure S)
 
 /-- The convex hull of a set is contained in every convex set containing it. -/
 theorem IsConvex.convexHull_subset (hC : Γ.IsConvex C) (hSC : S ⊆ C) : Γ.convexHull S ⊆ C :=
-  fun _ hv => mem_convexHull_iff.mp hv C hC hSC
+  Γ.convexHull.closure_min hSC ((Γ.convexHull_isClosed C).mpr hC)
+
+theorem mem_convexHull_iff {v : Γ.V} :
+    v ∈ Γ.convexHull S ↔ ∀ C : Set Γ.V, Γ.IsConvex C → S ⊆ C → v ∈ C :=
+  ⟨fun hv _ hC hSC => hC.convexHull_subset hSC hv,
+    fun h => h _ (isConvex_convexHull S) (subset_convexHull S)⟩
 
 theorem IsConvex.convexHull_subset_iff (hC : Γ.IsConvex C) : Γ.convexHull S ⊆ C ↔ S ⊆ C :=
-  ⟨(subset_convexHull S).trans, hC.convexHull_subset⟩
+  ((Γ.convexHull_isClosed C).mpr hC).closure_le_iff
 
 /-- A convex set is its own convex hull. -/
 theorem IsConvex.convexHull_eq (hC : Γ.IsConvex C) : Γ.convexHull C = C :=
-  (hC.convexHull_subset subset_rfl).antisymm (subset_convexHull C)
+  ((Γ.convexHull_isClosed C).mpr hC).closure_eq
 
 theorem convexHull_mono {S T : Set Γ.V} (h : S ⊆ T) : Γ.convexHull S ⊆ Γ.convexHull T :=
-  (isConvex_convexHull T).convexHull_subset (h.trans (subset_convexHull T))
-
-@[simp] theorem convexHull_convexHull (S : Set Γ.V) :
-    Γ.convexHull (Γ.convexHull S) = Γ.convexHull S :=
-  (isConvex_convexHull S).convexHull_eq
+  Γ.convexHull.monotone h
 
 @[simp] theorem convexHull_empty : Γ.convexHull ∅ = ∅ :=
   isConvex_empty.convexHull_eq
 
 @[simp] theorem convexHull_univ : Γ.convexHull Set.univ = Set.univ :=
-  isConvex_univ.convexHull_eq
+  Γ.convexHull.closure_top
 
 /-- In an acyclic graph, the convex hull of a vertex is that vertex. -/
 @[simp] theorem IsAcyclic.convexHull_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
