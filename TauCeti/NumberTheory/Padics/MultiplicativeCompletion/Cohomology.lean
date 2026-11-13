@@ -158,6 +158,7 @@ private theorem exists_restriction_generator {V : Subgroup (AbsoluteGaloisGroup 
   exact (congrArg AddSubgroup.zmultiples
     (explicitH2AddEquivGroupCohomology_explicitRes2 e ψ hψ T S eS heS c)).symm.trans h
 
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- Both statements on a subgroup `S`, through the pair `V ◁ W` with `W` the preimage of `S` in
 `G_K`. -/
 private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ[K] L)) :
@@ -169,6 +170,9 @@ private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ
           Nat.card (groupCohomology
             (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
             p ^ padicValNat p (Nat.card S) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let V := (galoisSubgroup K L ι).toSubgroup
   let e : AbsoluteGaloisGroup K ⧸ V ≃* (L ≃ₐ[K] L) :=
@@ -184,6 +188,7 @@ private theorem groupCohomology_res_padicCompletionUnits (S : Subgroup (L ≃ₐ
     (((MulEquiv.subgroupCongr hmap).trans (e.subgroupMap T)).trans (MulEquiv.subgroupCongr hTS))
     (classModuleAddEquiv p K L ι) fun t m ↦ classModuleAddEquiv_smul p K L ι t m
 
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H¹` of `A(L)` vanishes on every subgroup** (NSW (3.6.4), read through local reciprocity):
 `H¹(S, A(L)) = 0` for every subgroup `S` of `Gal(L/K)`. -/
 theorem isZero_groupCohomology_one_res_padicCompletionUnits (S : Subgroup (L ≃ₐ[K] L)) :
@@ -204,11 +209,9 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
         Nat.card (groupCohomology
           (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
           p ^ padicValNat p (Nat.card S) := by
-  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
-  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   exact (groupCohomology_res_padicCompletionUnits p K L S).2
 
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **One class of `A(L)` generates after every restriction** (NSW (3.6.4)). Unlike choosing
 separate generators for the subgroups, this supplies the compatible class required by the
 Tate splitting-module construction. The class is transported from the class module through
@@ -220,6 +223,9 @@ theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletion
           (groupCohomology.map S.subtype
             (𝟙 (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))))
             2 u) = ⊤ := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   exact exists_restriction_generator p K (galoisSubgroup K L ι).isOpen
     (quotientGaloisSubgroupEquiv K L ι).toMulEquiv (classModuleAddEquiv p K L ι)
@@ -240,6 +246,7 @@ theorem natCard_groupCohomology_two_res_padicCompletionUnits
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp hS
   rw [hcard, hn, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
 
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H²(Gal(L/K), A(L))` is cyclic of order the `p`-part of `[L : K]`** (NSW (3.6.4), read
 through local reciprocity): some class `u` generates `H²(Gal(L/K), A(L))`, and this group has
 order `p ^ v_p(#Gal(L/K))`. The generator is the image of the class `u_{G_K/V}(p)` of the class
@@ -249,6 +256,9 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_padicCompletionUnits :
       AddSubgroup.zmultiples u = ⊤ ∧
         Nat.card (groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2) =
           p ^ padicValNat p (Nat.card (L ≃ₐ[K] L)) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   let V := (galoisSubgroup K L ι).toSubgroup
   have hmap : (⊤ : Subgroup (AbsoluteGaloisGroup K)).map (QuotientGroup.mk' V) = ⊤ :=

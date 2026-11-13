@@ -27,10 +27,9 @@ with the univariate case on `ℝ` as a corollary. The two are genuinely differen
 analytic (the moment generating function is analytic on a strip), this one is
 approximation-theoretic (Stone–Weierstrass).
 
-It supplies the determinacy input consumed by `mixedIID_mixingLaw_unique`
-(`TauCetiRoadmap/Exchangeability/README.md`, *Layer 6 — directing measures and de Finetti
-representation*), where the mixed monomials arise as the finite-dimensional moments of a mixture of
-i.i.d. laws on a compact box.
+It supplies the determinacy input behind `mixedIID_mixingLaw_unique`, uniqueness of the mixing law
+in de Finetti's representation, where the mixed monomials arise as the finite-dimensional moments
+of a mixture of i.i.d. laws on a compact box.
 
 ## Main results
 
@@ -124,8 +123,8 @@ for `n ≠ 0` — on the left because `0 ^ n = 0`, on the right because the inte
 
 The strengthening that *is* available replaces `hν` by moment-integrability of `ν`, which compact
 support implies: with genuine moments, a Markov bound on `x i ^ (2 * m)` confines `ν` to the same
-box. That is left to a follow-up; the Layer 6 consumer already has both mixing laws on a common
-compact box. -/
+box. That strengthening is not formalised here; the callers in this library, such as
+`Measure.ext_of_bind_infinitePi_eq`, already have both measures on a common compact box. -/
 theorem Measure.ext_of_forall_integral_monomial_eq_of_support [Fintype ι] (hK : IsCompact K)
     {μ ν : Measure (ι → ℝ)} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : μ Kᶜ = 0) (hν : ν Kᶜ = 0)
     (hmom : ∀ n : ι → ℕ, ∫ x, ∏ i, x i ^ n i ∂μ = ∫ x, ∏ i, x i ^ n i ∂ν) :

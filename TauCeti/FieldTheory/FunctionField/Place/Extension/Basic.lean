@@ -521,7 +521,6 @@ theorem algebraMap_mem_filtration {r : F} {m : ℕ}
   rw [mem_filtration_iff_le_ord _ h0] at hr
   rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P']
   have he : (1 : ℤ) ≤ ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  have hm : (0 : ℤ) ≤ m := by positivity
   nlinarith
 
 end Restrict
@@ -599,8 +598,8 @@ instance isAlgebraic_residueField_restrict :
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
   refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
-  · have hc := congrArg (coeff · i₀) h
-    have hc' := congrArg (coeff · i₀) hq
+  · have hc := congrArg (fun r : (P'.restrict k F).ResidueField[X] ↦ r.coeff i₀) h
+    have hc' := congrArg (fun r : F[X] ↦ r.coeff i₀) hq
     simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
       IsLocalRing.residue_eq_zero_iff] at hc
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'
@@ -1092,7 +1091,7 @@ private theorem linearIndependent_of_ord_neg_of_restrict_eq_finite {ι : Type*} 
     (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
   -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
-  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
+  obtain ⟨j, hcj, _, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
       ∀ i, i ≠ j → c i ≠ 0 →
         (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
     by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)

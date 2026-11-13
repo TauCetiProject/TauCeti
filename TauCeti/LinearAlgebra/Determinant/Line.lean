@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Ray
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.LinearMap.Ker
@@ -60,6 +61,8 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
+* `LinearMap.instNegRayDetLine`, `LinearMap.instInvolutiveNegRayDetLine`: the opposite orientation
+  of the determinant line of `f`, as `Module.Ray`'s negation, found by instance search.
 
 ## Main results
 
@@ -491,6 +494,27 @@ theorem finrank_detLine (f : M →ₗ[K] N) [FiniteDimensional K (ker f)]
     TauCeti.finrank_detLine]
 
 end Field
+
+section Orientation
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] {M N : Type*}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- Negation of orientations of the determinant line of `f`, sending an orientation to the opposite
+one. This is `Module.Ray`'s negation; instance search does not find it unaided, since it reaches
+the additive group structure of the tensor product `f.detLine` only through nested
+unification. -/
+instance instNegRayDetLine (f : M →ₗ[R] N) : Neg (Module.Ray R f.detLine) :=
+  @instNegRay R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+/-- Negation of orientations of the determinant line of `f` is involutive. This is `Module.Ray`'s
+involutive negation, supplied for the same reason as `LinearMap.instNegRayDetLine`, so that
+`neg_neg` applies to orientations of determinant lines. -/
+instance instInvolutiveNegRayDetLine (f : M →ₗ[R] N) :
+    InvolutiveNeg (Module.Ray R f.detLine) :=
+  @Module.Ray.instInvolutiveNeg R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+end Orientation
 
 end LinearMap
 

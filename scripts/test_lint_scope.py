@@ -369,36 +369,36 @@ class LintScopeTest(unittest.TestCase):
                     env, {endpoint: compare, "repos/o/r/pulls/12": {"_error": "HTTP 503"}},
                     files=[f("added", "TauCeti/A.lean")]))
 
-    def test_maximum_batch_uses_four_policy_requests_and_complete_local_scope(self):
-        for count, expected in ((128, ["TauCeti.X"]), (129, None)):
+    def test_large_batches_keep_complete_local_scope_and_chunked_policy_requests(self):
+        # Include a real production batch size and a list beyond the old 2048-byte stdin limit.
+        for count in (128, 129, 157, 600):
             compare = {"total_commits": count, "commits": [
                 {"commit": {"message": f"change (#{n})"}} for n in range(1, count + 1)]}
             responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}
             responses.update({f"repos/o/r/pulls/{n}": pr() for n in range(1, count + 1)})
             self.assertEqual(self.run_scope(
                 {"EVENT": "repository_dispatch", "BASE": SHA_A, "HEAD": SHA_B},
-                responses, files=[f("added", "TauCeti/X.lean")]), expected)
+                responses, files=[f("added", "TauCeti/X.lean")]), ["TauCeti.X"])
             calls = [call for call in self.last_calls if call[1] == "graphql"]
-            self.assertEqual(len(calls), 4 if count == 128 else 0)
+            self.assertEqual(len(calls), (count + 31) // 32)
             for call in calls:
                 self.assertLessEqual(call[-1].count("pullRequest(number:"), 32)
             self.assertFalse(any("/pulls/" in call[1] for call in self.last_calls))
-            if count == 128:
-                self.assertIn("prs=128 requests=4 elapsed_seconds=", self.last_stderr)
+            self.assertIn(f"prs={count} requests={len(calls)} elapsed_seconds=", self.last_stderr)
 
     def test_mixed_batch_full_policy_in_later_chunk_and_missing_pr(self):
-        compare = {"total_commits": 65, "commits": [
-            {"commit": {"message": f"change (#{n})"}} for n in range(1, 66)]}
+        compare = {"total_commits": 157, "commits": [
+            {"commit": {"message": f"change (#{n})"}} for n in range(1, 158)]}
         for last in (pr(labels=["full-lint"]), pr(head_ref="lint-repair/main"), None):
             responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}
             # Attribution is sorted lexically; #9 is in the final chunk.
-            responses.update({f"repos/o/r/pulls/{n}": pr() for n in range(1, 66) if n != 9})
+            responses.update({f"repos/o/r/pulls/{n}": pr() for n in range(1, 158) if n != 9})
             if last is not None:
                 responses["repos/o/r/pulls/9"] = last
             self.assertIsNone(self.run_scope(
                 {"EVENT": "repository_dispatch", "BASE": SHA_A, "HEAD": SHA_B},
                 responses, files=[f("added", "TauCeti/X.lean")]))
-            self.assertIn("requests=3 elapsed_seconds=", self.last_stderr)
+            self.assertIn("requests=5 elapsed_seconds=", self.last_stderr)
 
     def test_invalid_graphql_response_selects_full_scope(self):
         for bad in (None, {}, {"data": {"repository": {"pr12": None}}},

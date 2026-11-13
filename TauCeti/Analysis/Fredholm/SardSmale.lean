@@ -203,7 +203,7 @@ private theorem eventually_mem_target_contDiffAt_normalForm
     ContinuousLinearMap.completeSpace_of_isInvertible
       (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
   set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set q := pkg.obstructionMap hT with hqdef
+  set q := pkg.obstructionMap hT
   set y₀ : pkg.decCodom.X₁ × pkg.decDom.X₀ := (pkg.decCodom.proj (f a), 0) with hy₀def
   have hy₀ : y₀ ∈ Φ.target := pkg.normalFormOpenPartialHomeomorph_self_mem_target hT
   have hsymy₀ : Φ.symm y₀ = a := by
@@ -258,7 +258,7 @@ private theorem interior_image_inter_not_surjective_eq_empty
   have hcoker : finrank ℝ pkg.decCodom.X₀ = finrank ℝ (F ⧸ T.range) := by
     rw [pkg.range_eq]
     exact (Submodule.quotientEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl).finrank_eq.symm
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
   have hNsymm : ∀ x ∈ N, Φ.symm (Φ x) = x := fun x hx ↦ Φ.left_inv hx.1
@@ -323,7 +323,7 @@ private theorem isOpen_inter_setOf_surjective_fderiv
       (ContinuousLinearMap.isInvertible_equiv (f := pkg.equiv.symm))
   have : FiniteDimensional ℝ pkg.decDom.X₀ := pkg.decDom.finite_X₀
   have : FiniteDimensional ℝ pkg.decCodom.X₀ := pkg.decCodom.finite_X₀
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   set ι := ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀ with hιdef
   set N : Set E := Φ.source ∩ Φ ⁻¹' V
@@ -436,7 +436,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
   have hT : HasStrictFDerivAt f T a := hf.hasStrictFDerivAt_fderiv hk0
   obtain ⟨pkg⟩ := hFred.nonempty_fredholmPackage
   set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦdef
-  set q := pkg.obstructionMap hT with hqdef
+  set q := pkg.obstructionMap hT
   have ha : a ∈ Φ.source := pkg.mem_normalFormOpenPartialHomeomorph_source hT
   have hΦa : Φ a = (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)) := by
     rw [hΦdef, pkg.normalFormOpenPartialHomeomorph_apply hT, pkg.normalFormMap_self]

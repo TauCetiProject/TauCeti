@@ -265,7 +265,7 @@ theorem PairOfDefinition.exists_continuous_coarsened_extension_of_valuation
         ∀ y : R, (v.toValuativeRel.vle y 1 ↔ w₀ y ≤ 1) := by
   classical
   set u : Γ₀ˣ := Units.mk0 (v₀ t₀) hne with hu
-  set H : ConvexSubgroup Γ₀ˣ := ConvexSubgroup.closure {u} with hH
+  set H : ConvexSubgroup Γ₀ˣ := ConvexSubgroup.closure {u}
   have humem : u ∈ H := ConvexSubgroup.subset_closure _ rfl
   have habs : ∀ a : P.ringOfDefinition, ∀ ha : v₀ a ≠ 0, 1 ≤ v₀ a →
       Units.mk0 (v₀ a) ha ∈ H := Valuation.mk0_mem_of_forall_le_one v₀ hA₀le H

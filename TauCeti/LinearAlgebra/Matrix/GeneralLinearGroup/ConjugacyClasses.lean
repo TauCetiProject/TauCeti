@@ -82,10 +82,6 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)": class representatives and the count
-  `q² - 1 = Nat.card (ConjClasses (GL (Fin 2) F))`, matching the number of irreducibles. The final
-  theorem carries the name `card_conjClasses_GL2` the roadmap gives it there.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §5.2.
 -/
@@ -355,8 +351,7 @@ ones, indexed by their trace and their determinant. This is the number of irredu
 representations of `GL₂(𝔽_q)`, whose four families have dimensions `1`, `q`, `q + 1` and
 `q - 1`.
 
-The name is the roadmap's; the statement is the roadmap's with `[Fintype F]` weakened to
-`[Finite F]`, nothing in the argument deciding equality. -/
+The field is assumed only `Finite`, not `Fintype`: nothing in the argument decides equality. -/
 theorem card_conjClasses_GL2 (F : Type*) [Field F] [Finite F] :
     Nat.card (ConjClasses (GL (Fin 2) F)) = Nat.card F ^ 2 - 1 := by
   rw [← Nat.card_congr (conjClassesGLFinTwoEquiv (F := F)), Nat.card_sum, Nat.card_prod,
