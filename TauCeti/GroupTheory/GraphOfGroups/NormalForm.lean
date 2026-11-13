@@ -334,7 +334,7 @@ theorem appendDart_of_not_cancels {b c : Γ.V} {p : 𝔸.AlternatingPath a b} {e
   dite_eq_right h
 
 /-- Appending a dart to an alternating path of length zero never creates a backtracking. -/
-@[simp] theorem single_appendDart {c : Γ.V} (g : 𝔸.vertexGroup a) (e : a ⟶ c) :
+@[simp] theorem appendDart_single {c : Γ.V} (g : 𝔸.vertexGroup a) (e : a ⟶ c) :
     (single g).appendDart d e = cons (single (d.rep e g)) e (𝔸.ωArrow e (d.edgePart e g)) :=
   appendDart_of_not_cancels d (not_cancels_single g e)
 
@@ -505,12 +505,12 @@ noncomputable def appendDart {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
   ext1
   simp
 
-@[simp] theorem single_mulLast (g h : 𝔸.vertexGroup a) :
+@[simp] theorem mulLast_single (g h : 𝔸.vertexGroup a) :
     (single d g).mulLast h = single d (g * h) :=
   (rfl)
 
-@[simp] theorem empty_mulLast (g : 𝔸.vertexGroup a) : (empty d a).mulLast g = single d g := by
-  rw [← single_one, single_mulLast, one_mul]
+@[simp] theorem mulLast_empty (g : 𝔸.vertexGroup a) : (empty d a).mulLast g = single d g := by
+  rw [← single_one, mulLast_single, one_mul]
 
 /-- Appending a dart and then its reverse to a normal word gives the word back. -/
 @[simp] theorem appendDart_appendDart_reverse {b c : Γ.V} (w : NormalWord d a b) (e : b ⟶ c) :
