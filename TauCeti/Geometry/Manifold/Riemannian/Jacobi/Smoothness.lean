@@ -70,7 +70,7 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
       (fun r ↦ TotalSpace.mk' E (γ r)
         (cov.curvatureTensor (γ r) (J r) (curveVelocityWithin I γ s r)
           (curveVelocityWithin I γ s r))) s := by
-    exact cov.contMDiffOn_curvatureTensor_alongMap hJ hvel' hvel' hn_le_infty
+    exact cov.contMDiffOn_curvatureTensor_apply hJ hvel' hvel' hn_le_infty
   refine (contMDiffOn_const (c := (-1 : ℝ))).smul_totalSpace hcurv |>.congr ?_
   intro r hr
   simp only [neg_one_smul]

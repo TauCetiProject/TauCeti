@@ -96,7 +96,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 /-- For a smooth connection on a finite-rank smooth vector bundle, evaluating curvature
 on tangent and bundle lifts of class `C^n` (`n ≤ ∞`) gives a bundle lift of class `C^n`
 within `s` at `p`. No fibre norms, metric compatibility, or torsion assumption are needed. -/
-theorem contMDiffWithinAt_curvatureTensor_alongMap
+theorem contMDiffWithinAt_curvatureTensor_apply
     (hX : ContMDiffWithinAt I' I.tangent n
       (fun q ↦ TotalSpace.mk' E (f q) (X q)) s p)
     (hY : ContMDiffWithinAt I' I.tangent n
@@ -116,7 +116,7 @@ theorem contMDiffWithinAt_curvatureTensor_alongMap
 
 /-- Evaluating the curvature of a smooth connection on tangent and bundle lifts of class
 `C^n` (`n ≤ ∞`) gives a bundle lift of class `C^n` at `p`. -/
-theorem contMDiffAt_curvatureTensor_alongMap
+theorem contMDiffAt_curvatureTensor_apply
     (hX : ContMDiffAt I' I.tangent n
       (fun q ↦ TotalSpace.mk' E (f q) (X q)) p)
     (hY : ContMDiffAt I' I.tangent n
@@ -126,11 +126,11 @@ theorem contMDiffAt_curvatureTensor_alongMap
     ContMDiffAt I' (I.prod 𝓘(ℝ, F)) n
       (fun q ↦ TotalSpace.mk' F (f q)
         (cov.curvatureTensor (f q) (X q) (Y q) (σ q))) p :=
-  cov.contMDiffWithinAt_curvatureTensor_alongMap hX hY hσ hn
+  cov.contMDiffWithinAt_curvatureTensor_apply hX hY hσ hn
 
 /-- Evaluating the curvature of a smooth connection on tangent and bundle lifts of class
 `C^n` (`n ≤ ∞`) gives a bundle lift of class `C^n` on `s`. -/
-theorem contMDiffOn_curvatureTensor_alongMap
+theorem contMDiffOn_curvatureTensor_apply
     (hX : ContMDiffOn I' I.tangent n
       (fun q ↦ TotalSpace.mk' E (f q) (X q)) s)
     (hY : ContMDiffOn I' I.tangent n
@@ -140,11 +140,11 @@ theorem contMDiffOn_curvatureTensor_alongMap
     ContMDiffOn I' (I.prod 𝓘(ℝ, F)) n
       (fun q ↦ TotalSpace.mk' F (f q)
         (cov.curvatureTensor (f q) (X q) (Y q) (σ q))) s :=
-  fun q hq ↦ cov.contMDiffWithinAt_curvatureTensor_alongMap (hX q hq) (hY q hq) (hσ q hq) hn
+  fun q hq ↦ cov.contMDiffWithinAt_curvatureTensor_apply (hX q hq) (hY q hq) (hσ q hq) hn
 
 /-- Evaluating the curvature of a smooth connection on tangent and bundle lifts of class
 `C^n` (`n ≤ ∞`) gives a bundle lift of class `C^n` everywhere. -/
-theorem contMDiff_curvatureTensor_alongMap
+theorem contMDiff_curvatureTensor_apply
     (hX : ContMDiff I' I.tangent n
       (fun q ↦ TotalSpace.mk' E (f q) (X q)))
     (hY : ContMDiff I' I.tangent n
@@ -154,6 +154,6 @@ theorem contMDiff_curvatureTensor_alongMap
     ContMDiff I' (I.prod 𝓘(ℝ, F)) n
       (fun q ↦ TotalSpace.mk' F (f q)
         (cov.curvatureTensor (f q) (X q) (Y q) (σ q))) :=
-  fun q ↦ cov.contMDiffAt_curvatureTensor_alongMap (hX q) (hY q) (hσ q) hn
+  fun q ↦ cov.contMDiffAt_curvatureTensor_apply (hX q) (hY q) (hσ q) hn
 
 end CovariantDerivative

@@ -53,18 +53,7 @@ theorem contMDiffWithinAt_sectionalCurvature
     (huv : LinearIndependent ℝ ![u p, v p]) :
     ContMDiffWithinAt J 𝓘(ℝ) n (fun q ↦ cov.sectionalCurvature hcov (f q) (u q) (v q))
       s p := by
-  -- Cache the operator-space instances before elaborating the iterated Hom bundle.
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E →L[ℝ] E) := inferInstance
-  have hf : ContMDiffWithinAt J I n f s p := (contMDiffWithinAt_totalSpace_iff.mp hu).1
-  have hR := ((cov.contMDiff_curvatureTensorCLM (V := fun x : M ↦ TangentSpace I x)).of_le
-    (by simp : (n : ℕ∞ω) ≤ ∞)).contMDiffAt
-      |>.comp_contMDiffWithinAt p hf
-  have hRuvv := ((hR.clm_bundle_apply hu).clm_bundle_apply hv).clm_bundle_apply hv
+  have hRuvv := cov.contMDiffWithinAt_curvatureTensor_apply hu hv hv (by simp)
   have hnum := ContMDiffWithinAt.inner_bundle (IB := I) (F := E)
     (E := fun x : M ↦ TangentSpace I x) hRuvv hu
   have huu := ContMDiffWithinAt.inner_bundle (IB := I) (F := E)
@@ -79,8 +68,7 @@ theorem contMDiffWithinAt_sectionalCurvature
     exact Matrix.det_gram_ne_zero_iff_linearIndependent.mpr huv
   convert hnum.div₀ hden hne using 1
   ext q
-  simp only [sectionalCurvature_apply, curvatureTensorCLM_apply,
-    Matrix.real_det_gram_fin_two, Pi.div_apply, Pi.mul_apply]
+  simp only [sectionalCurvature_apply, Matrix.real_det_gram_fin_two, Pi.div_apply, Pi.mul_apply]
 
 /-- Sectional curvature is `C^n` at an independent pair in a `C^n` family. -/
 theorem contMDiffAt_sectionalCurvature
