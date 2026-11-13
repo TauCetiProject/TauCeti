@@ -21,6 +21,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
+import TauCeti.LinearAlgebra.Pi
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
@@ -352,8 +353,7 @@ private noncomputable def realCliffordBaseChangeIsometry (m : ℕ) :
     (QuadraticForm.baseChange ℂ (QuadraticMap.weightedSumSquares ℝ (1 : Fin m → ℝ))).IsometryEquiv
       (cliffordForm m) :=
   (QuadraticForm.baseChangeWeightedSumSquares (A := ℂ) (1 : Fin m → ℝ)).trans
-    { toLinearEquiv := LinearEquiv.refl ℂ (Fin m → ℂ)
-      map_app' := fun v ↦ by simp [cliffordForm_apply, QuadraticMap.weightedSumSquares_apply] }
+    (QuadraticForm.weightedSumSquaresCongr (by ext; simp))
 
 private noncomputable def realCliffordEquiv (m : ℕ) :
     CliffordAlgebra
@@ -363,15 +363,16 @@ private noncomputable def realCliffordEquiv (m : ℕ) :
 
 private theorem realCliffordBaseChangeIsometry_one_tmul_single (m : ℕ) (j : Fin m) :
     realCliffordBaseChangeIsometry m (1 ⊗ₜ[ℝ] Pi.single j (1 : ℝ)) = Pi.single j (1 : ℂ) := by
-  ext k
-  simp only [realCliffordBaseChangeIsometry, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticForm.baseChangeWeightedSumSquares_apply,
-    ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, LinearEquiv.refl_apply,
-    TensorProduct.piScalarRightHom_tmul]
-  by_cases hkj : k = j
-  · subst hkj
-    simp
-  · simp [hkj]
+  -- Project to `LinearEquiv` before rewriting, since `weightedSumSquaresCongr` has codomain
+  -- `weightedSumSquares ℂ 1`, which matches `cliffordForm m` only at `default` transparency.
+  have hlin : (realCliffordBaseChangeIsometry m : (ℂ ⊗[ℝ] (Fin m → ℝ)) ≃ₗ[ℂ] (Fin m → ℂ)) =
+      (QuadraticForm.baseChangeWeightedSumSquares (A := ℂ) (1 : Fin m → ℝ) :
+        (ℂ ⊗[ℝ] (Fin m → ℝ)) ≃ₗ[ℂ] (Fin m → ℂ)).trans (LinearEquiv.refl ℂ (Fin m → ℂ)) := rfl
+  apply (TensorProduct.piScalarRight ℝ ℂ ℂ (Fin m)).symm.injective
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, hlin, LinearEquiv.trans_apply,
+    LinearEquiv.refl_apply, QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    QuadraticForm.baseChangeWeightedSumSquares_apply, ← TensorProduct.piScalarRight_apply,
+    LinearEquiv.symm_apply_apply, TensorProduct.piScalarRight_symm_single]
 
 private theorem realCliffordEquiv_ι_single (m : ℕ) (j : Fin m) :
     realCliffordEquiv m
@@ -881,21 +882,18 @@ theorem evenCliffordHom_surjective (m : ℕ) : Function.Surjective (evenClifford
 isometry `cliffordForm m →qᵢ cliffordForm (m + 1)`. -/
 noncomputable def cliffordExtendIsometry (m : ℕ) :
     cliffordForm m →qᵢ cliffordForm (m + 1) where
-  toFun v := Fin.snoc v 0
-  map_add' u v := by
-    ext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-  map_smul' z v := by
-    ext i
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
+  toLinearMap :=
+    (LinearEquiv.piFinSnoc ℂ fun _ : Fin (m + 1) ↦ ℂ).symm.toLinearMap.comp
+      (LinearMap.inl ℂ (Fin m → ℂ) ℂ)
   map_app' v := by
     simp [cliffordForm_apply, Fin.sum_univ_castSucc]
 
 /-- Evaluation of `cliffordExtendIsometry` as `Fin.snoc · 0`. -/
 @[simp]
 theorem cliffordExtendIsometry_apply (m : ℕ) (v : Fin m → ℂ) :
-    cliffordExtendIsometry m v = Fin.snoc v 0 :=
-  (rfl)
+    cliffordExtendIsometry m v = Fin.snoc v 0 := by
+  rw [← QuadraticMap.Isometry.coe_toLinearMap]
+  simp [cliffordExtendIsometry]
 
 /-- The algebra inclusion
 `CliffordAlgebra (cliffordForm m) →ₐ[ℂ] CliffordAlgebra (cliffordForm (m + 1))` induced by
