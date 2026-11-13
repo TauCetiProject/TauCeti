@@ -55,6 +55,7 @@ hypotheses; their values of `τ` are in `TorusLink/Tau.lean`.
   non-torsion Alexander degree when `GH⁻(G)` is not torsion, and an upper bound for the
   non-torsion degrees without that hypothesis.
 * `TauCeti.GridDiagram.IsKnot.tau_eq_zero_of_isTorsion`: `τ(G) = 0` when `GH⁻(G)` is torsion.
+* `TauCeti.GridDiagram.IsKnot.tau_eq_of_eq`: equal knot grids have the same `τ`.
 * `TauCeti.GridDiagram.IsKnot.tau_swapColumns_swapColumns`: exchanging the same two columns twice
   does not change `τ`.
 * `TauCeti.GridDiagram.IsKnot.UnblockedHomologyIsomorphic.tau_eq`: isomorphic Alexander-graded
@@ -117,13 +118,16 @@ theorem tau_eq_zero_of_isTorsion :
       (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp h hT,
     Int.csSup_empty, neg_zero]
 
+/-- Equal knot grids have the same `τ`, independently of their knot witnesses. -/
+theorem tau_eq_of_eq {G₁ : GridDiagram n} {hG₁ : G₁.IsKnot} (h : G₁ = G) :
+    hG₁.tau K = hG.tau K := by
+  subst h
+  rfl
+
 /-- Exchanging the same two columns twice returns the original knot grid, with the same `τ`. -/
 theorem tau_swapColumns_swapColumns (a b : Fin n) :
-    ((hG.swapColumns a b).swapColumns a b).tau K = hG.tau K := by
-  have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G → h₁.tau K = hG.tau K := by
-    rintro _ _ rfl
-    rfl
-  exact key _ (swapColumns_swapColumns ..)
+    ((hG.swapColumns a b).swapColumns a b).tau K = hG.tau K :=
+  hG.tau_eq_of_eq K (G.swapColumns_swapColumns a b)
 
 section Transfer
 

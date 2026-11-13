@@ -68,6 +68,8 @@ respects, such as the Alexander grading, descends to this quotient.
   grid.
 * `TauCeti.GridDiagram.IsKnot.isScalarTower_unblockedHomology`: the coefficient action agrees
   with the `R[U]`-module structure.
+* `TauCeti.GridDiagram.IsKnot.isTorsion_unblockedHomology_iff_of_eq`: equal knot grids have
+  unblocked homology modules that are torsion simultaneously.
 * `TauCeti.GridDiagram.IsKnot.isTorsion_unblockedHomology_swapColumns_swapColumns_iff`: exchanging
   the same two columns twice does not change whether `GH⁻` of a knot grid is torsion.
 
@@ -362,6 +364,18 @@ theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
   simpa only [MvPolynomial.aeval_C, hbase] using h
 
 variable (R) in
+/-- Equal knot grids have unblocked homology modules that are torsion simultaneously,
+independently of their knot witnesses. -/
+theorem isTorsion_unblockedHomology_iff_of_eq {G₁ : GridDiagram n} (hG : G.IsKnot)
+    {hG₁ : G₁.IsKnot} (h : G₁ = G) :
+    letI := hG.unblockedHomologyModule R
+    letI := hG₁.unblockedHomologyModule R
+    Module.IsTorsion (Polynomial R) (G₁.unblockedHomology R) ↔
+      Module.IsTorsion (Polynomial R) (G.unblockedHomology R) := by
+  subst h
+  exact Iff.rfl
+
+variable (R) in
 /-- Exchanging the same two columns twice returns the original knot grid, whose `GH⁻` is torsion
 exactly when it was before. -/
 theorem isTorsion_unblockedHomology_swapColumns_swapColumns_iff (hG : G.IsKnot) (a b : Fin n) :
@@ -369,15 +383,8 @@ theorem isTorsion_unblockedHomology_swapColumns_swapColumns_iff (hG : G.IsKnot) 
     letI := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule R
     Module.IsTorsion (Polynomial R)
         (((G.swapColumns a b).swapColumns a b).unblockedHomology R) ↔
-      Module.IsTorsion (Polynomial R) (G.unblockedHomology R) := by
-  have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G →
-      (letI := hG.unblockedHomologyModule R
-       letI := h₁.unblockedHomologyModule R
-       Module.IsTorsion (Polynomial R) (G₁.unblockedHomology R) ↔
-        Module.IsTorsion (Polynomial R) (G.unblockedHomology R)) := by
-    rintro _ _ rfl
-    exact Iff.rfl
-  exact key _ (swapColumns_swapColumns ..)
+      Module.IsTorsion (Polynomial R) (G.unblockedHomology R) :=
+  hG.isTorsion_unblockedHomology_iff_of_eq R (G.swapColumns_swapColumns a b)
 
 end IsKnot
 
