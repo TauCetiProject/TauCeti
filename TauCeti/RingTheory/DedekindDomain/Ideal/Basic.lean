@@ -35,6 +35,8 @@ The carrier `IsDedekindDomain.HeightOneSpectrum.primeIdealPow` represents prime 
 ideals over any integral domain, with injectivity in the exponent over a Dedekind domain.
 `Ideal.eventually_isPrimeTo_compl` records that a nonzero ideal is supported on every sufficiently
 large finite set of primes. These constructions use only ideal arithmetic, independently of norms.
+`Ideal.span_singleton_sup_eq` computes `(y) + I = Q` for an element `y` of order one at a prime
+`Q ⊇ I` that avoids the other primes containing the nonzero ideal `I`.
 
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
@@ -181,6 +183,43 @@ theorem isMaximal_of_mem_normalizedFactors {P I : Ideal B} (hP : P ∈ normalize
     P.IsMaximal :=
   have hPp := prime_of_normalized_factor P hP
   (isPrime_of_prime hPp).isMaximal (by simpa using hPp.ne_zero)
+
+open UniqueFactorizationMonoid in
+/-- In a Dedekind domain, let `I ≠ 0` be an ideal contained in a prime `Q`. An element `y` of order
+one at `Q`, and outside every other prime containing `I`, generates `Q` together with `I`:
+`(y) + I = Q`. -/
+theorem span_singleton_sup_eq {I Q : Ideal B} (hI : I ≠ ⊥) [hQ : Q.IsPrime]
+    {y : B} (hyQ : y ∈ Q) (hyQ2 : y ∉ Q ^ 2) (hIQ : I ≤ Q)
+    (hy : ∀ P : Ideal B, P.IsPrime → I ≤ P → P ≠ Q → y ∉ P) :
+    Ideal.span {y} ⊔ I = Q := by
+  classical
+  have hy0 : Ideal.span {y} ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]
+    rintro rfl
+    exact hyQ2 (zero_mem _)
+  have hQ0 : Q ≠ ⊥ := ne_bot_of_le_ne_bot hI hIQ
+  -- In a Dedekind domain the sup is the greatest common divisor, here `Q` with multiplicity one.
+  suffices normalizedFactors (Ideal.span {y}) ∩ normalizedFactors I = {Q} by
+    rw [Ideal.sup_eq_prod_inf_factors hy0 hI, this, Multiset.prod_singleton]
+  ext P
+  rw [Multiset.count_inter, Multiset.count_singleton]
+  by_cases hPQ : P = Q
+  · subst hPQ
+    have h1 : Multiset.count P (normalizedFactors (Ideal.span {y})) = 1 :=
+      UniqueFactorizationMonoid.count_normalizedFactors_eq (prime_of_isPrime hQ0 hQ).irreducible
+        (normalize_eq P) (by rwa [pow_one, Ideal.dvd_span_singleton])
+        (by rwa [Ideal.dvd_span_singleton])
+    have h2 : 1 ≤ Multiset.count P (normalizedFactors I) :=
+      Multiset.one_le_count_iff_mem.mpr ((Ideal.mem_normalizedFactors_iff hI).mpr ⟨hQ, hIQ⟩)
+    simp [h1, h2]
+  simp only [hPQ, ↓reduceIte]
+  by_cases hP : P ∈ normalizedFactors I
+  · obtain ⟨hPp, hle⟩ := (Ideal.mem_normalizedFactors_iff hI).mp hP
+    have : Multiset.count P (normalizedFactors (Ideal.span {y})) = 0 :=
+      Multiset.count_eq_zero.mpr fun h ↦ hy P hPp hle hPQ
+        (((Ideal.mem_normalizedFactors_iff hy0).mp h).2 (Ideal.mem_span_singleton_self y))
+    simp [this]
+  · simp [Multiset.count_eq_zero.mpr hP]
 
 end NormalizedFactors
 

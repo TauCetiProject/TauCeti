@@ -30,7 +30,7 @@ is separable, for instance when the residue fields of `A` are perfect, they are 
 (`TauCeti.fittingIdeal_kaehlerDifferential_eq_differentIdeal`).
 
 The proof is local. At `Q` there is `x : C` whose conductor is not contained in `Q`
-(`TauCeti.exists_not_conductor_le`), so the local ring of `C` at `Q` is a localization of the
+(`Ideal.exists_not_conductor_le`), so the local ring of `C` at `Q` is a localization of the
 monogenic ring `A[x] ≅ A[X] ⧸ (f)`, where `f` is the minimal polynomial of `x`. On the
 differential side, `Fitt₀(Ω[A[x]⁄A]) = (f'(x))` (`TauCeti.fittingIdeal_kaehlerDifferential_adjoin`)
 and Fitting ideals of differentials commute with localization. On the different side, Mathlib's
@@ -106,7 +106,7 @@ theorem fittingIdeal_kaehlerDifferential_map_eq_differentIdeal_map {p : Ideal A}
     (T : Type*) [CommRing T] [Algebra C T] [IsLocalization.AtPrime T Q] :
     (fittingIdeal C Ω[C⁄A] 0).map (algebraMap C T) =
       (differentIdeal A C).map (algebraMap C T) :=
-  have ⟨_, hx⟩ := exists_not_conductor_le (p := p) Q
+  have ⟨_, hx⟩ := Q.exists_not_conductor_le (p := p)
   fittingIdeal_kaehlerDifferential_map_eq_differentIdeal_map_of_not_conductor_le K L Q hx T
 
 include K L in
