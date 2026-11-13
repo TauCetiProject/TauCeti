@@ -45,7 +45,9 @@ both its tempered distribution and this `Lᵖ` data.
 ## Main declarations
 
 * `TemperedDistribution.MemBesov φ s p q u`: the unbundled predicate `u ∈ B^s_{p,q}`, and its
-  characterisation `TemperedDistribution.memBesov_iff` by `Lᵖ` blocks with weighted `ℓ^q` norms.
+  characterisation `TemperedDistribution.memBesov_iff` by `Lᵖ` blocks with weighted `ℓ^q` norms;
+  `TemperedDistribution.memBesov_iff_memℓp` is the same test for blocks already known to be `Lᵖ`
+  functions.
 * `TauCeti.BesovSpace F φ s p q`: the bundled space, a complex normed space whose elements carry
   their tempered distribution `toDistr` and weighted blocks `weightedBlocks`.
 * `TauCeti.BesovSpace.block`: the block `Δⱼ u` as an `Lᵖ` function, with
@@ -211,6 +213,19 @@ theorem memBesov_iff {u : 𝓢'(E, F)} :
       -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
       rw [hf j]
       exact Lp.toTemperedDistribution_smul _ (f j)
+
+/-- If the Littlewood–Paley blocks `Δⱼ u` are the `Lᵖ` functions `fⱼ`, then `u ∈ B^s_{p,q}` exactly
+when the sequence `2^{js} ‖fⱼ‖_p` lies in `ℓ^q`. -/
+theorem memBesov_iff_memℓp {u : 𝓢'(E, F)} {f : ℕ → Lp F p (volume : Measure E)}
+    (hf : ∀ j, littlewoodPaleyBlock F φ j u = f j) :
+    u.MemBesov φ s p q ↔ Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖f j‖) q := by
+  refine ⟨fun hu ↦ ?_, fun h ↦ memBesov_iff.2 ⟨f, hf, h⟩⟩
+  obtain ⟨g, hg, hmem⟩ := memBesov_iff.1 hu
+  -- An `Lᵖ` function is determined by its tempered distribution, so `g = f`.
+  have hgf : g = f := funext fun j ↦
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, ← hg, hf]
+  rwa [hgf] at hmem
 
 theorem MemBesov.zero : (0 : 𝓢'(E, F)).MemBesov φ s p q :=
   ⟨0, fun j ↦ by simp⟩
