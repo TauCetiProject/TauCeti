@@ -264,15 +264,13 @@ private def adjunction : functor R U ⊣
               (dite_eq_left (leOfHom V.unop.hom))).trans
               ((restrictObjIso R U F V).inv_hom_id_assoc (α.app V)) }
       homEquiv_naturality_left_symm {F F' G} α β := PresheafOfModules.hom_ext fun V ↦ by
+        change extendApp R U (α ≫ β) V = mapApp R U α V ≫ extendApp R U β V
         by_cases h : V.unop ≤ U
-        · exact (dite_eq_left h).trans <|
-            (congrArg ((objIso R U F h).hom ≫ α.app _ ≫ ·)
-              ((objIso R U F' h).inv_hom_id_assoc _).symm).trans <|
-              (Category.assoc _ _ _).symm.trans <|
-                (Category.assoc _ _ _).symm.trans <|
-                  congrArg₂ (· ≫ ·)
-                    (dite_eq_left h : mapApp R U α V = _).symm
-                    (dite_eq_left h : extendApp R U β V = _).symm
+        · let βV : _ ⟶ G.obj V := β.app (op (Over.mk (homOfLE h)))
+          have hαβ : extendApp R U (α ≫ β) V = (objIso R U F h).hom ≫ α.app _ ≫ βV :=
+            dite_eq_left h
+          have hβ : extendApp R U β V = (objIso R U F' h).hom ≫ βV := dite_eq_left h
+          simp [mapApp, h, hαβ, hβ]
         · exact (isZero_obj R U F h).eq_of_src _ _
       homEquiv_naturality_right α β :=
         PresheafOfModules.hom_ext fun _ ↦ (Category.assoc _ _ _).symm }
