@@ -11,8 +11,11 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Dilation
 
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+
 /-!
-# The derivative of the `PSL(2, ℝ)`-action on the upper half-plane
+# The derivative of the `PSL(2, ℝ)`- and `GL(2, ℝ)`-actions on the upper half-plane
 
 A Möbius transformation of the upper half-plane is holomorphic, with derivative
 `det g / denom g z ^ 2` at `z`, where `denom g z = c * z + d` is Mathlib's automorphy factor
@@ -25,6 +28,11 @@ projective action attaches to a point.
 By the chain rule the derivative is a cocycle for the action
 (`Matrix.ProjectiveSpecialLinearGroup.smulDeriv_mul`); restricted to the stabilizer of a point
 it therefore becomes a character, which is what governs the stabilizers of a discrete subgroup.
+
+Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphically when
+`det g < 0`, with real derivative Mathlib's `UpperHalfPlane.smulFDeriv g z`: multiplication by
+`det g/(cz + d)²`, followed by complex conjugation when `det g < 0`. It multiplies every length by
+`|det g|/|cz + d|²`, which is the ratio `Im(g • z)/Im z` by `UpperHalfPlane.im_smul_eq_div_normSq`.
 
 ## Main declarations
 
@@ -45,6 +53,12 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
   `g ∈ SL(2, ℝ)` the automorphy factor is unimodular, so its conjugate is its inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_dilation`: the dilation `z ↦ exp s * z` has
   derivative `exp s`.
+* `UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the differential of
+  the action of `g ∈ GL(2, ℝ)`, smooth by `UpperHalfPlane.instContMDiffConstSMulGL2Real`, is
+  `UpperHalfPlane.smulFDeriv`.
+* `UpperHalfPlane.norm_smulFDeriv_apply` and `UpperHalfPlane.inner_smulFDeriv_apply`:
+  `UpperHalfPlane.smulFDeriv g z` multiplies lengths by `Im(g • z)/Im z` and real inner products
+  by `(Im(g • z)/Im z)²`.
 
 ## References
 
@@ -237,3 +251,53 @@ theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z =
   ring
 
 end Matrix.ProjectiveSpecialLinearGroup
+
+namespace UpperHalfPlane
+
+open Manifold
+
+open scoped Manifold
+
+/-- In the model coordinates of the inclusion chart, the differential of the action of
+`g ∈ GL(2, ℝ)` on `ℍ` is Mathlib's real derivative `UpperHalfPlane.smulFDeriv g z`. -/
+theorem tangentSpaceCastModel_mfderiv_smul (g : GL (Fin 2) ℝ) (z : ℍ)
+    (v : TangentSpace 𝓘(ℝ, ℂ) z) :
+    tangentSpaceCastModel 𝓘(ℝ, ℂ) (g • z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z v) =
+      smulFDeriv g z (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
+  have hg : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ) z :=
+    (contMDiff_const_smul (n := 1) g).mdifferentiableAt one_ne_zero
+  rw [hg.tangentSpaceCastModel_mfderiv_apply]
+  have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • ·)
+      =ᶠ[nhds (z : ℂ)] fun w ↦ ↑(g • ofComplex w) := by
+    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
+    have hsymm : (extChartAt 𝓘(ℝ, ℂ) z).symm w = ofComplex w := by
+      rw [ofComplex_apply_of_im_pos hw]
+      exact (extChartAt 𝓘(ℝ, ℂ) z).left_inv (x := ⟨w, hw⟩) (by simp)
+    simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
+    simp
+  have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
+  rw [hchart, hlocal.fderiv_eq, (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv]
+
+/-- The real derivative of the action of `g ∈ GL(2, ℝ)` multiplies lengths by
+`Im(g • z)/Im z`. -/
+theorem norm_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v : ℂ) :
+    ‖smulFDeriv g z v‖ = (g • z).im / z.im * ‖v‖ := by
+  have hz := z.im_pos.ne'
+  have hd := denom_ne_zero g z
+  rw [im_smul_eq_div_normSq, Complex.normSq_eq_norm_sq]
+  simp only [smulFDeriv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+    ContinuousAlgEquiv.toContinuousLinearEquiv_apply, Function.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply, norm_σ,
+    norm_smul, norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs]
+  field_simp
+
+/-- The real derivative of the action of `g ∈ GL(2, ℝ)` multiplies real inner products by
+`(Im(g • z)/Im z)²`. -/
+theorem inner_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v w : ℂ) :
+    inner ℝ (smulFDeriv g z v) (smulFDeriv g z w) = ((g • z).im / z.im) ^ 2 * inner ℝ v w := by
+  rw [real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
+    real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two, ← map_add,
+    norm_smulFDeriv_apply, norm_smulFDeriv_apply, norm_smulFDeriv_apply]
+  ring
+
+end UpperHalfPlane

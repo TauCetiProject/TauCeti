@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
@@ -23,9 +24,10 @@ function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, 
 analytic at every point of the open upper half-plane, and a locally uniform limit of holomorphic
 functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
 a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
-exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
-are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
-whose roots `aᵢ` are holomorphic.
+exhibits; viewing `ℍ` as a real manifold, every element of `GL(2, ℝ)`, including the
+antiholomorphic ones of negative determinant, acts smoothly. Polynomial functions of the
+coordinate, such as `z ↦ P(z, 1)` for a binary form `P`, are holomorphic, and so are the
+coefficients of a product `∏ (X - aᵢ(τ))` of linear factors whose roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
@@ -38,6 +40,8 @@ whose roots `aᵢ` are holomorphic.
   `∏ (X - aᵢ(τ))` are holomorphic when every `aᵢ` is.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
+* `UpperHalfPlane.instContMDiffConstSMulGL2Real` — viewing `ℍ` as a real manifold, every element
+  of `GL(2, ℝ)`, including the antiholomorphic ones of negative determinant, acts smoothly.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
   `TauCeti.UpperHalfPlane.exists_isOpen_zeros_inter` — a subset's zeros isolate in an
   open neighbourhood.
@@ -175,5 +179,26 @@ lemma mdifferentiable_comp_smul_iff {g : GL (Fin 2) ℝ} (hg : 0 < (g.det : ℝ)
   exact hf.comp (mdifferentiable_smul hg')
 
 end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open scoped ContDiff
+
+/-- Every element of `GL(2, ℝ)` acts smoothly on the upper half-plane as a real manifold,
+including the elements of negative determinant, which act antiholomorphically. -/
+instance instContMDiffConstSMulGL2Real {n : WithTop ℕ∞} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n (GL (Fin 2) ℝ) ℍ where
+  contMDiff_const_smul g := by
+    refine ContMDiff.of_le ?_ le_top
+    refine ContMDiff.of_comp_isOpenEmbedding isOpenEmbedding_coe fun τ ↦ ?_
+    have hnum : ContDiff ℂ ω (num g) := by unfold num; fun_prop
+    have hden : ContDiff ℂ ω (denom g) := by unfold denom; fun_prop
+    have hF : ContDiffAt ℝ ω (fun w : ℂ ↦ σ g (num g w / denom g w)) τ :=
+      (σ g).toContinuousLinearEquiv.contDiff.contDiffAt.comp _
+        ((hnum.contDiffAt.div hden.contDiffAt (denom_ne_zero g τ)).restrict_scalars ℝ)
+    have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℍ → ℂ) τ := contMDiffAt_extChartAt
+    exact hF.contMDiffAt.comp τ hcoe
+
+end UpperHalfPlane
 
 end

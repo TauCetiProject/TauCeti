@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PoincareMetric
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Manifold
+public import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 -- supplies the `FaithfulSMul PGL(2, ℝ) ℍ` instance behind `pglIsom_injective`
 import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # `GL(2, ℝ)` acts on the upper half-plane by Riemannian isometries
@@ -21,19 +21,13 @@ Mathlib's action `UpperHalfPlane.glAction` lets `g = [[a, b], [c, d]]` act on `�
 metric `(Re v Re w + Im v Im w)/y²`, so that the action is a group homomorphism into the
 Riemannian isometry group `TauCeti.Isom 𝓘(ℝ, ℂ) ℍ`.
 
-The real derivative of `z ↦ g • z` is Mathlib's `UpperHalfPlane.smulFDeriv g z`: multiplication by
-`det g/(cz + d)²`, followed by complex conjugation when `det g < 0`. It multiplies every tangent
-vector's length by `|det g|/|cz + d|²`, which is the ratio `Im(g • z)/Im z` by
-`UpperHalfPlane.im_smul_eq_div_normSq`. The Poincaré tensor divides the Euclidean one by the
-squared height, so these two factors cancel.
+The differential of `z ↦ g • z` is Mathlib's real derivative `UpperHalfPlane.smulFDeriv g z`
+(`UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul`), which multiplies real inner products by
+`(Im(g • z)/Im z)²` (`UpperHalfPlane.inner_smulFDeriv_apply`). The Poincaré tensor divides the
+Euclidean one by the squared height, so these two factors cancel.
 
 ## Main declarations
 
-* `UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the differential of
-  the action of `g ∈ GL(2, ℝ)`, smooth by `UpperHalfPlane.instContMDiffConstSMulGL2Real`, is
-  `UpperHalfPlane.smulFDeriv`.
-* `UpperHalfPlane.inner_smulFDeriv_apply`: `UpperHalfPlane.smulFDeriv g z` multiplies real inner
-  products by `(Im(g • z)/Im z)²`.
 * `TauCeti.UpperHalfPlane.glIsom`: the action of `GL(2, ℝ)` on `ℍ` by Riemannian isometries of the
   Poincaré metric.
 * `TauCeti.UpperHalfPlane.pglIsom` and `TauCeti.UpperHalfPlane.pslIsom`: the induced injective
@@ -52,48 +46,6 @@ open UpperHalfPlane Manifold
 open scoped ContDiff MatrixGroups Manifold
 
 noncomputable section
-
-/-- In the model coordinates of the inclusion chart, the differential of the action of
-`g ∈ GL(2, ℝ)` on `ℍ` is Mathlib's real derivative `UpperHalfPlane.smulFDeriv g z`. -/
-theorem UpperHalfPlane.tangentSpaceCastModel_mfderiv_smul (g : GL (Fin 2) ℝ) (z : ℍ)
-    (v : TangentSpace 𝓘(ℝ, ℂ) z) :
-    tangentSpaceCastModel 𝓘(ℝ, ℂ) (g • z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • ·) z v) =
-      smulFDeriv g z (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) := by
-  have hg : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : ℍ → ℍ) z :=
-    (contMDiff_const_smul (n := 1) g).mdifferentiableAt one_ne_zero
-  rw [hg.tangentSpaceCastModel_mfderiv_apply]
-  have hlocal : writtenInExtChartAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) z (g • ·)
-      =ᶠ[nhds (z : ℂ)] fun w ↦ ↑(g • ofComplex w) := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds z.im_pos] with w hw
-    have hsymm : (extChartAt 𝓘(ℝ, ℂ) z).symm w = ofComplex w := by
-      rw [ofComplex_apply_of_im_pos hw]
-      exact (extChartAt 𝓘(ℝ, ℂ) z).left_inv (x := ⟨w, hw⟩) (by simp)
-    simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
-    simp
-  have hchart : extChartAt 𝓘(ℝ, ℂ) z z = (z : ℂ) := by simp
-  rw [hchart, hlocal.fderiv_eq, (hasStrictFDerivAt_smul g z).hasFDerivAt.fderiv]
-
-/-- The real derivative of the action of `g ∈ GL(2, ℝ)` multiplies lengths by
-`Im(g • z)/Im z`. -/
-theorem UpperHalfPlane.norm_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v : ℂ) :
-    ‖smulFDeriv g z v‖ = (g • z).im / z.im * ‖v‖ := by
-  have hz := z.im_pos.ne'
-  have hd := denom_ne_zero g z
-  rw [im_smul_eq_div_normSq, Complex.normSq_eq_norm_sq]
-  simp only [smulFDeriv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
-    ContinuousAlgEquiv.toContinuousLinearEquiv_apply, Function.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply, norm_σ,
-    norm_smul, norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs]
-  field_simp
-
-/-- The real derivative of the action of `g ∈ GL(2, ℝ)` multiplies real inner products by
-`(Im(g • z)/Im z)²`. -/
-theorem UpperHalfPlane.inner_smulFDeriv_apply (g : GL (Fin 2) ℝ) (z : ℍ) (v w : ℂ) :
-    inner ℝ (smulFDeriv g z v) (smulFDeriv g z w) = ((g • z).im / z.im) ^ 2 * inner ℝ v w := by
-  rw [real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
-    real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two, ← map_add,
-    norm_smulFDeriv_apply, norm_smulFDeriv_apply, norm_smulFDeriv_apply]
-  ring
 
 namespace TauCeti.UpperHalfPlane
 
