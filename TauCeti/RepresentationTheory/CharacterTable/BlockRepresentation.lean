@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.SetTheory.Cardinal.Finite
 public import TauCeti.RepresentationTheory.CharacterTable.Wedderburn
 public import TauCeti.RepresentationTheory.Irreducible
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -163,7 +164,7 @@ end Inequivalent
 
 section Existence
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [NeZero (Nat.card G : k)]
   [IsAlgClosed k]
 
 /-- **There are as many pairwise inequivalent irreducible representations of `G` as `G` has
@@ -177,6 +178,7 @@ theorem exists_irreducible_family_conjClasses :
     ∃ (d : ConjClasses G → ℕ) (ρ : ∀ C, Representation k G (Fin (d C) → k)),
       (∀ C, (ρ C).IsIrreducible) ∧ (Pairwise fun C D => IsEmpty ((ρ C).Equiv (ρ D))) ∧
         ∑ᶠ C, d C ^ 2 = Nat.card G := by
+  have : Finite G := TauCeti.finite_of_natCast_card_ne_zero (NeZero.ne (Nat.card G : k))
   obtain ⟨d, hd, hsum, ⟨e⟩⟩ := exists_algEquiv_pi_matrix_conjClasses k G
   have := hd
   exact ⟨d, blockRepresentation e, fun C => isIrreducible_blockRepresentation e C,
