@@ -153,4 +153,67 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
   rw [sq_sqrt zero_le_two] at hsq
   linarith
 
+/-- A quadratic expansion of the square root has a uniform cubic upper remainder
+when its argument is within half the positive central energy. -/
+theorem sqrt_le_quadratic_add_cubic
+    (y c : ℝ) (hc : 0 < c) (hy : 0 ≤ y)
+    (hδ : |y - c ^ 2| ≤ c ^ 2 / 2) :
+    Real.sqrt y ≤ c + (y - c ^ 2) / (2 * c) -
+      (y - c ^ 2) ^ 2 / (8 * c ^ 3) + |y - c ^ 2| ^ 3 / c ^ 5 := by
+  let δ : ℝ := y - c ^ 2
+  let h : ℝ := Real.sqrt y - c
+  have hs : 0 ≤ Real.sqrt y := Real.sqrt_nonneg y
+  have hs2 : (Real.sqrt y) ^ 2 = y := Real.sq_sqrt hy
+  have hδeq : δ = h * (Real.sqrt y + c) := by
+    dsimp [δ, h]
+    nlinarith only [hs2]
+  have hδeq' : δ = h * (2 * c + h) := by
+    dsimp [δ, h]
+    nlinarith only [hs2]
+  have hah : |h| ≤ |δ| / c := by
+    apply (le_div_iff₀ hc).mpr
+    calc
+      |h| * c ≤ |h| * (Real.sqrt y + c) := by
+        exact mul_le_mul_of_nonneg_left (le_add_of_nonneg_left hs) (abs_nonneg h)
+      _ = |δ| := by
+        rw [hδeq, abs_mul, abs_of_nonneg (add_nonneg hs hc.le)]
+  have hahc : |h| ≤ c / 2 := by
+    have hbound : |δ| / c ≤ c / 2 := by
+      apply (div_le_iff₀ hc).mpr
+      change |y - c ^ 2| ≤ c / 2 * c
+      nlinarith only [hδ]
+    exact hah.trans hbound
+  have hfactor : |4 * c + h| ≤ 8 * c := by
+    calc
+      |4 * c + h| ≤ |4 * c| + |h| := abs_add_le _ _
+      _ = 4 * c + |h| := by rw [abs_of_nonneg (by positivity)]
+      _ ≤ 8 * c := by linarith
+  have hid : h - δ / (2 * c) + δ ^ 2 / (8 * c ^ 3) =
+      h ^ 3 * (4 * c + h) / (8 * c ^ 3) := by
+    rw [hδeq']
+    field_simp [ne_of_gt hc]; ring
+  have hrem : h ^ 3 * (4 * c + h) / (8 * c ^ 3) ≤ |δ| ^ 3 / c ^ 5 := by
+    calc
+      h ^ 3 * (4 * c + h) / (8 * c ^ 3) ≤
+          |h ^ 3 * (4 * c + h) / (8 * c ^ 3)| := le_abs_self _
+      _ = |h| ^ 3 * |4 * c + h| / (8 * c ^ 3) := by
+        rw [abs_div, abs_mul, abs_pow,
+          abs_of_pos (show 0 < 8 * c ^ 3 by positivity)]
+      _ ≤ |h| ^ 3 * (8 * c) / (8 * c ^ 3) := by
+        exact div_le_div_of_nonneg_right
+          (mul_le_mul_of_nonneg_left hfactor (by positivity)) (by positivity)
+      _ = |h| ^ 3 / c ^ 2 := by
+        field_simp [ne_of_gt hc]
+      _ ≤ (|δ| / c) ^ 3 / c ^ 2 := by
+        exact div_le_div_of_nonneg_right
+          (pow_le_pow_left₀ (abs_nonneg h) hah 3) (by positivity)
+      _ = |δ| ^ 3 / c ^ 5 := by
+        field_simp [ne_of_gt hc]
+  change Real.sqrt y ≤ c + δ / (2 * c) - δ ^ 2 / (8 * c ^ 3) +
+    |δ| ^ 3 / c ^ 5
+  have hbound := hid.le.trans hrem
+  change Real.sqrt y - c - δ / (2 * c) + δ ^ 2 / (8 * c ^ 3) ≤
+    |δ| ^ 3 / c ^ 5 at hbound
+  linarith only [hbound]
+
 end Real
