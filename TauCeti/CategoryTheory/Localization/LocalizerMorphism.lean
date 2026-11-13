@@ -8,14 +8,11 @@ module
 public import Mathlib.CategoryTheory.Localization.LocalizerMorphism
 
 /-!
-# Localized equivalences via opposite categories and counits
+# Localized equivalences via opposite categories
 
 For a morphism of localizers `Φ : LocalizerMorphism W₁ W₂`, being a localized equivalence is
 equivalent to the opposite morphism `Φ.op` being a localized equivalence
-(`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`). Passing to opposite categories
-gives `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_counit_of_counit`, the counit dual
-of `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_unit_of_unit` from
-`Mathlib.CategoryTheory.Localization.LocalizerMorphism` (by Joël Riou).
+(`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`).
 
 ## References
 
@@ -44,22 +41,6 @@ lemma isLocalizedEquivalence_iff_op (Φ : LocalizerMorphism W₁ W₂) :
       (Functor.IsLocalization.op_iff (Φ.functor ⋙ W₂.Q) W₁).1
         (Functor.IsLocalization.of_iso W₁.op (Functor.opComp Φ.functor W₂.Q).symm)
     exact IsLocalizedEquivalence.of_isLocalization_of_isLocalization Φ W₂.Q
-
-/-- If morphisms of localizers `Φ : LocalizerMorphism W₁ W₂` and `Ψ : LocalizerMorphism W₂ W₁`
-are equipped with natural transformations `η₁ : Φ.functor ⋙ Ψ.functor ⟶ 𝟭 C₁` and
-`η₂ : Ψ.functor ⋙ Φ.functor ⟶ 𝟭 C₂` whose components lie in `W₁` and `W₂` respectively, then `Φ`
-is a localized equivalence. -/
-lemma isLocalizedEquivalence_of_counit_of_counit (Φ : LocalizerMorphism W₁ W₂)
-    (Ψ : LocalizerMorphism W₂ W₁)
-    (η₁ : Φ.functor ⋙ Ψ.functor ⟶ 𝟭 C₁) (η₂ : Ψ.functor ⋙ Φ.functor ⟶ 𝟭 C₂)
-    (hη₁ : ∀ X₁, W₁ (η₁.app X₁)) (hη₂ : ∀ X₂, W₂ (η₂.app X₂)) :
-    Φ.IsLocalizedEquivalence :=
-  (isLocalizedEquivalence_iff_op Φ).2 <|
-    Φ.op.isLocalizedEquivalence_of_unit_of_unit Ψ.op
-      ((Functor.opId C₁).inv ≫ NatTrans.op η₁ ≫ (Functor.opComp Φ.functor Ψ.functor).hom)
-      ((Functor.opId C₂).inv ≫ NatTrans.op η₂ ≫ (Functor.opComp Ψ.functor Φ.functor).hom)
-      (fun X₁ ↦ by simpa using hη₁ X₁.unop)
-      (fun X₂ ↦ by simpa using hη₂ X₂.unop)
 
 end LocalizerMorphism
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivedTensor
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 
 /-!
@@ -25,7 +26,10 @@ complex (`CochainComplex.quasiIso_tensorHom_id_of_isKFlat`,
 (`CochainComplex.quasiIso_tensorHom_of_isKFlat_left`,
 `CochainComplex.quasiIso_tensorHom_of_isKFlat_right`), and under termwise left or right tensoring
 by any object of `C` (`CochainComplex.quasiIso_mapHomologicalComplex_tensorLeft_of_isKFlat`,
-`CochainComplex.quasiIso_mapHomologicalComplex_tensorRight_of_isKFlat`).
+`CochainComplex.quasiIso_mapHomologicalComplex_tensorRight_of_isKFlat`). Consequently, when
+`HasDerivedCategory C` also holds, any quasi-isomorphism between K-flat complexes induces a natural
+isomorphism of derived tensor endofunctors `CochainComplex.kFlatTensor`
+(`CochainComplex.isIso_kFlatTensorMap`).
 
 ## References
 
@@ -89,10 +93,12 @@ instance quasiIso_tensorHom_id_of_isKFlat
     (f : K ⟶ L) [QuasiIso f] (A : CochainComplex C ℤ) :
     QuasiIso (tensorHom f (𝟙 A)) := by
   let res : (kFlatLocalizerMorphism C).LeftResolution A := Nonempty.some inferInstance
-  let p : res.X₁.obj ⟶ A := res.w
+  let p := res.w
+  have : IsKFlat ((kFlatLocalizerMorphism C).functor.obj res.X₁) := by
+    rw [kFlatLocalizerMorphism_functor]; exact res.X₁.property
   have : QuasiIso p := (mem_quasiIso_iff _).1 res.hw
   have h : tensorHom (𝟙 K) p ≫ tensorHom f (𝟙 A) =
-      tensorHom f (𝟙 res.X₁.obj) ≫ tensorHom (𝟙 L) p := by
+      tensorHom f (𝟙 _) ≫ tensorHom (𝟙 L) p := by
     simp only [HomologicalComplex.tensorHom, ← mapBifunctorMap_comp,
       Category.id_comp, Category.comp_id]
   apply (quasiIso_iff_comp_left (tensorHom (𝟙 K) p) _).1
@@ -178,6 +184,25 @@ instance quasiIso_mapHomologicalComplex_tensorRight_of_isKFlat (M : C)
     (((MonoidalCategory.tensorLeft M).mapHomologicalComplex (.up ℤ)).map g)
     (((MonoidalCategory.tensorRight M).mapHomologicalComplex (.up ℤ)).map g)
     (Arrow.isoMk (e.app P) (e.app Q) (e.hom.naturality g).symm)
+
+/-- A quasi-isomorphism between K-flat complexes induces an invertible natural transformation of
+their derived tensor endofunctors on the unbounded derived category. -/
+instance isIso_kFlatTensorMap [HasDerivedCategory C]
+    {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat]
+    (f : K ⟶ L) [QuasiIso f] : IsIso (kFlatTensorMap f) := by
+  have : IsIso (Functor.whiskerRight
+      ((CategoryTheory.MonoidalCategory.curriedTensor C).map₂CochainComplex.map f)
+      DerivedCategory.Q) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro A
+    simp only [whiskerRight_app, curriedTensor_map₂CochainComplex_map_app,
+      Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj]
+    infer_instance
+  rw [kFlatTensorMap_eq_liftNatTrans]
+  exact (Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))
+    _ _ K.kFlatTensor L.kFlatTensor (asIso (Functor.whiskerRight
+      ((CategoryTheory.MonoidalCategory.curriedTensor C).map₂CochainComplex.map f)
+      DerivedCategory.Q))).isIso_hom
 
 end HasLeftResolutions
 

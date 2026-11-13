@@ -84,8 +84,9 @@ theorem derives_tensor_left_of_inverts :
   have : QuasiIso f₂ := (mem_quasiIso_iff _).1 hf₂
   have : IsIso (F.map (f₁.hom ▷ L₁)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
   have : IsIso (F.map (P₂.obj ◁ f₂)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
-  dsimp [uncurry, LocalizerMorphism.prod, LocalizerMorphism.id,
-    CochainComplex.kFlatLocalizerMorphism]
+  dsimp [uncurry, LocalizerMorphism.prod, LocalizerMorphism.id]
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
+  simp only [ObjectProperty.ι_map, ObjectProperty.ι_obj]
   infer_instance
 
 include hF in
@@ -102,8 +103,9 @@ theorem derives_tensor_right_of_inverts :
   have : QuasiIso f₂.hom := (mem_quasiIso_iff _).1 hf₂
   have : IsIso (F.map (f₁ ▷ Q₁.obj)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
   have : IsIso (F.map (K₂ ◁ f₂.hom)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
-  dsimp [uncurry, LocalizerMorphism.prod, LocalizerMorphism.id,
-    CochainComplex.kFlatLocalizerMorphism]
+  dsimp [uncurry, LocalizerMorphism.prod, LocalizerMorphism.id]
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
+  simp only [ObjectProperty.ι_map, ObjectProperty.ι_obj]
   infer_instance
 
 include hF in
@@ -117,7 +119,9 @@ theorem derives_tensor_obj_of_inverts (K : CochainComplex C ℤ) :
   intro Q₁ Q₂ f hf
   have : QuasiIso f.hom := (mem_quasiIso_iff _).1 hf
   have : IsIso (F.map (K ◁ f.hom)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
-  dsimp [CochainComplex.kFlatLocalizerMorphism]
+  dsimp
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
+  simp only [ObjectProperty.ι_map]
   infer_instance
 
 include hF in
@@ -131,7 +135,9 @@ theorem derives_tensor_flip_obj_of_inverts (L : CochainComplex C ℤ) :
   intro P₁ P₂ f hf
   have : QuasiIso f.hom := (mem_quasiIso_iff _).1 hf
   have : IsIso (F.map (f.hom ▷ L)) := hF _ ((mem_quasiIso_iff _).2 inferInstance)
-  dsimp [CochainComplex.kFlatLocalizerMorphism]
+  dsimp
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
+  simp only [ObjectProperty.ι_map]
   infer_instance
 
 end HasLeftResolutions
@@ -170,7 +176,13 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_left :
         IsIso ((α.app P).app L) := by
   rw [Functor.IsLeftDerivedFunctor₂,
     (derives_tensor_left_of_inverts F hF).isLeftDerivedFunctor_iff_isIso]
-  exact ⟨fun h P hP L ↦ h (⟨P, hP⟩, L), fun h ⟨⟨P, hP⟩, L⟩ ↦ @h P hP L⟩
+  refine ⟨fun h P hP L ↦ ?_, fun h ⟨⟨P, hP⟩, L⟩ ↦ ?_⟩
+  · have h' := h (⟨P, hP⟩, L)
+    dsimp [whiskeringLeft₂HomEquiv, LocalizerMorphism.prod, LocalizerMorphism.id] at h'
+    rwa [CochainComplex.kFlatLocalizerMorphism_functor] at h'
+  · dsimp [whiskeringLeft₂HomEquiv, LocalizerMorphism.prod, LocalizerMorphism.id]
+    rw [CochainComplex.kFlatLocalizerMorphism_functor]
+    exact @h P hP L
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms, a bifunctor `(LF, α)` is a left derived bifunctor of
@@ -182,7 +194,13 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_right :
         IsIso ((α.app K).app Q) := by
   rw [Functor.IsLeftDerivedFunctor₂,
     (derives_tensor_right_of_inverts F hF).isLeftDerivedFunctor_iff_isIso]
-  exact ⟨fun h K Q hQ ↦ h (K, ⟨Q, hQ⟩), fun h ⟨K, ⟨Q, hQ⟩⟩ ↦ @h K Q hQ⟩
+  refine ⟨fun h K Q hQ ↦ ?_, fun h ⟨K, ⟨Q, hQ⟩⟩ ↦ ?_⟩
+  · have h' := h (K, ⟨Q, hQ⟩)
+    dsimp [whiskeringLeft₂HomEquiv, LocalizerMorphism.prod, LocalizerMorphism.id] at h'
+    rwa [CochainComplex.kFlatLocalizerMorphism_functor] at h'
+  · dsimp [whiskeringLeft₂HomEquiv, LocalizerMorphism.prod, LocalizerMorphism.id]
+    rw [CochainComplex.kFlatLocalizerMorphism_functor]
+    exact @h K Q hQ
 
 include hF in
 /-- When `F` inverts quasi-isomorphisms, any left derived bifunctor `(LF, α)` of
@@ -217,6 +235,7 @@ theorem isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tenso
   rw [(derives_tensor_obj_of_inverts F hF K).isLeftDerivedFunctor_iff_isIso]
   intro Q
   dsimp [Functor.bifunctorCounit₁]
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
   exact isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right F hF α K Q.obj
 
 include hF in
@@ -232,6 +251,7 @@ theorem isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tenso
   rw [(derives_tensor_flip_obj_of_inverts F hF L).isLeftDerivedFunctor_iff_isIso]
   intro P
   dsimp [Functor.bifunctorCounit₂]
+  rw [CochainComplex.kFlatLocalizerMorphism_functor]
   exact isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left F hF α P.obj L
 
 include hF in

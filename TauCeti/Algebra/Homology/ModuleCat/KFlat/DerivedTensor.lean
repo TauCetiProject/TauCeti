@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.LeftDerivedTensor
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
-public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
 
 /-!
 # The derived tensor product on unbounded module derived categories

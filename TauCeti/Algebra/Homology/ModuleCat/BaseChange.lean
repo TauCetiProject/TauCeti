@@ -46,10 +46,8 @@ degree `a` the term is the quotient `L.opcycles a` of `L.X a`, which is finitely
 flat because it is the bottom term of a quasi-isomorphism `P ⟶ K` between bounded complexes whose
 other terms are flat (`CochainComplex.flat_X_of_quasiIso`), hence projective.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.complexBaseChange`: ordinary termwise scalar extension of cochain complexes along a ring
-  homomorphism `f : R →+* S`.
 * `CategoryTheory.ShortComplex.ShortExact.map_extendScalars`: extension of scalars preserves
   short exact sequences whose third term is flat.
 * `CochainComplex.acyclic_mapHomologicalComplex_extendScalars`: extension of scalars preserves
@@ -74,15 +72,6 @@ public section
 open CategoryTheory Limits HomologicalComplex
 
 universe u v
-
-namespace TauCeti
-
-/-- Ordinary scalar extension applied to every term and differential of a cochain complex. -/
-noncomputable abbrev complexBaseChange {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S) :
-    CochainComplex (ModuleCat.{u} R) ℤ ⥤ CochainComplex (ModuleCat.{u} S) ℤ :=
-  (ModuleCat.extendScalars f).mapHomologicalComplex (ComplexShape.up ℤ)
-
-end TauCeti
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
 

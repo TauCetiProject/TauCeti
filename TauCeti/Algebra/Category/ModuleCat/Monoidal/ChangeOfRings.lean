@@ -110,27 +110,10 @@ theorem extendScalarsCompRestrictScalarsIso_hom_app_tmul (X : ModuleCat.{u} A) (
         (restrictScalars f).obj (of P P) ⊗ X) → _)
         ((extendScalarsCompRestrictScalarsIso f).hom.app X) (s ⊗ₜ[A, f] x) =
       TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) s x := by
-  let y : (restrictScalars f).obj ((extendScalars f).obj X) := s ⊗ₜ[A, f] x
-  let g₁ := (restrictScalars f).map (λ_ ((extendScalars f).obj X)).inv
-  let g₂ := (extendScalarsCompTensorLeftIso f (𝟙_ (ModuleCat.{u} P))).hom.app X
-  have happ : (extendScalarsCompRestrictScalarsIso f).hom.app X = g₁ ≫ g₂ := by
-    simp only [extendScalarsCompRestrictScalarsIso, Iso.trans_hom, Functor.isoWhiskerLeft_hom,
-      Functor.isoWhiskerRight_hom, Iso.symm_hom, NatTrans.comp_app, Functor.whiskerLeft_app,
-      Functor.whiskerRight_app, Functor.leftUnitor_inv_app, leftUnitorNatIso_inv_app,
-      Category.id_comp, g₁, g₂]
-  have hunit : Hom.hom g₁ y =
-      TensorProduct.tmul P (M := 𝟙_ (ModuleCat.{u} P)) (N := (extendScalars f).obj X)
-        (1 : 𝟙_ (ModuleCat.{u} P)) (s ⊗ₜ[A, f] x) :=
-    (restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv y).trans
-      (MonoidalCategory.leftUnitor_inv_apply (M := (extendScalars f).obj X) (s ⊗ₜ[A, f] x))
-  exact (congrArg (fun g ↦ Hom.hom g y) happ).trans <|
-    (ModuleCat.comp_apply g₁ g₂ y).trans <|
-      (congrArg (Hom.hom g₂) hunit).trans <|
-        (extendScalarsCompTensorLeftIso_hom_app_tmul f (𝟙_ (ModuleCat.{u} P)) X
-          (1 : 𝟙_ (ModuleCat.{u} P)) s x).trans <|
-          congrArg
-            (fun p : P ↦ TensorProduct.tmul A (M := (restrictScalars f).obj (of P P)) (N := X) p x)
-            (mul_one s)
+  simp [extendScalarsCompRestrictScalarsIso, Function.comp_def,
+    -Functor.OplaxMonoidal.left_unitality,
+    restrictScalars.map_apply f (λ_ ((extendScalars f).obj X)).inv (s ⊗ₜ[A, f] x),
+    MonoidalCategory.leftUnitor_inv_apply (M := (extendScalars f).obj X) (s ⊗ₜ[A, f] x)]
 
 /-- The inverse of `extendScalarsCompRestrictScalarsIso` sends `s ⊗ x` to `s ⊗ x`. -/
 @[simp]

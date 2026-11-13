@@ -265,10 +265,11 @@ lemma ι_functor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
 `kFlatResolution.functor E p ⟶ 𝟭 (CochainComplex C ℤ)`. -/
 def πNatTrans : functor E p ⟶ 𝟭 (CochainComplex C ℤ) where
   app K := π E.obj p.app K
-  naturality {K L} g := colimit.hom_ext (F := sequence E.obj p.app K) fun k ↦
-    (ι_functor_map_assoc E p g k (π E.obj p.app L)).trans <| (Category.assoc _ _ _).trans <|
-      (congrArg (stageMap E p g k ≫ ·) (ι_π E.obj p.app L k)).trans <|
-        (stageMap_comp_snd E p g k).trans (ι_π_assoc E.obj p.app K k g).symm
+  naturality {_ _} g := colimit.hom_ext fun k ↦ by
+    simp only [sequenceFunctor, NatTrans.ofSequence, Functor.id_obj, functor, Functor.comp_obj,
+      colim_obj, Functor.comp_map, colim_map, ι_colimMap_assoc, ι_π, toComplex, Functor.id_map,
+      ι_π_assoc]
+    exact stageMap_comp_snd E p g k
 
 /-- Each component of `πNatTrans E p` is `kFlatResolution.π E.obj p.app`. -/
 @[simp]
@@ -300,31 +301,29 @@ variable (C : Type*) [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
   [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
 /-- The object property on `CochainComplex C ℤ` selecting K-flat cochain complexes. -/
-abbrev isKFlat : ObjectProperty (CochainComplex C ℤ) := fun K ↦ K.IsKFlat
+abbrev kFlat : ObjectProperty (CochainComplex C ℤ) := fun K ↦ K.IsKFlat
 
-/-- A cochain complex belongs to `CochainComplex.isKFlat C` if and only if it is K-flat. -/
+/-- A cochain complex belongs to `CochainComplex.kFlat C` if and only if it is K-flat. -/
 @[simp]
-lemma mem_isKFlat_iff (K : CochainComplex C ℤ) : isKFlat C K ↔ K.IsKFlat := Iff.rfl
+lemma mem_kFlat_iff (K : CochainComplex C ℤ) : kFlat C K ↔ K.IsKFlat := Iff.rfl
 
-instance (P : (isKFlat C).FullSubcategory) : P.obj.IsKFlat := P.property
+instance (P : (kFlat C).FullSubcategory) : P.obj.IsKFlat := P.property
 
 /-- The localizer morphism given by the inclusion of the full subcategory of K-flat cochain
 complexes into `CochainComplex C ℤ`, with respect to quasi-isomorphisms. -/
--- Expose so `(kFlatLocalizerMorphism C).functor` computes to `(isKFlat C).ι` in derived APIs.
-@[expose]
 def kFlatLocalizerMorphism :
-    LocalizerMorphism ((quasiIso C (.up ℤ)).inverseImage (isKFlat C).ι) (quasiIso C (.up ℤ)) where
-  functor := (isKFlat C).ι
+    LocalizerMorphism ((quasiIso C (.up ℤ)).inverseImage (kFlat C).ι) (quasiIso C (.up ℤ)) where
+  functor := (kFlat C).ι
   map _ _ _ hf := hf
 
 /-- The underlying functor of `kFlatLocalizerMorphism C` is the full subcategory inclusion
-`(isKFlat C).ι`. -/
+`(kFlat C).ι`. -/
 @[simp]
-lemma kFlatLocalizerMorphism_functor : (kFlatLocalizerMorphism C).functor = (isKFlat C).ι := (rfl)
+lemma kFlatLocalizerMorphism_functor : (kFlatLocalizerMorphism C).functor = (kFlat C).ι := (rfl)
 
 instance : (kFlatLocalizerMorphism C).IsInduced where inverseImage_eq := (rfl)
-instance : (kFlatLocalizerMorphism C).functor.Full := inferInstanceAs (isKFlat C).ι.Full
-instance : (kFlatLocalizerMorphism C).functor.Faithful := inferInstanceAs (isKFlat C).ι.Faithful
+instance : (kFlatLocalizerMorphism C).functor.Full := inferInstanceAs (kFlat C).ι.Full
+instance : (kFlatLocalizerMorphism C).functor.Faithful := inferInstanceAs (kFlat C).ι.Faithful
 
 section WithCover
 
@@ -340,9 +339,9 @@ variable {C}
 /-- Lifting `kFlatResolution.functor E p` to the full subcategory of K-flat cochain complexes. -/
 -- Expose so `((liftFunctor E p).obj K).obj` computes to `kFlatResolution E.obj p.app K`.
 @[expose]
-def kFlatResolution.liftFunctor : CochainComplex C ℤ ⥤ (isKFlat C).FullSubcategory :=
-  (isKFlat C).lift (kFlatResolution.functor E p) fun K ↦ by
-    rw [mem_isKFlat_iff, kFlatResolution.functor_obj]; infer_instance
+def kFlatResolution.liftFunctor : CochainComplex C ℤ ⥤ (kFlat C).FullSubcategory :=
+  (kFlat C).lift (kFlatResolution.functor E p) fun K ↦ by
+    rw [mem_kFlat_iff, kFlatResolution.functor_obj]; infer_instance
 
 /-- On objects, `kFlatResolution.liftFunctor E p` has underlying complex
 `kFlatResolution E.obj p.app K`. -/
