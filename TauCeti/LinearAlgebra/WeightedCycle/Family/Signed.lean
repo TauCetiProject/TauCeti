@@ -208,14 +208,17 @@ theorem fixedBasisSignedFamily_equivFun :
       b.fixedEquivPositiveSignedFamily e ε hε f h := by
   simp [fixedBasisSignedFamily]
 
-include hε h in
+omit [Finite J] hε in
+include h in
 /-- A negative-cycle initial coefficient of an integral fixed vector is zero. -/
 theorem fixedSignedFamily_repr_neg (v : f.fixedSubmodule)
     (j : {j // (∏ i, ε j i) = -1}) :
     b.repr v.val (e ⟨j.val, 0⟩) = 0 := by
-  let : Subsingleton (Submodule.torsionBy ℤ ℤ 2) := TauCeti.subsingleton_torsionBy_int 2 ℤ
-  rw [← b.fixedEquivSignedFamily_apply_neg e ε hε f h v j]
-  exact congrArg Subtype.val (Subsingleton.elim _ 0)
+  have hm := ((mem_fixedSubmodule_iff_partialProd (ε j.val) _).mp
+    (b.repr_mem_fixedSubmodule e ε f h v j.val)).2
+  rw [j.property] at hm
+  simp only [smul_eq_mul] at hm
+  omega
 
 /-- The integral fixed basis vector has the prescribed prefix coefficients on positive cycles. -/
 @[simp]

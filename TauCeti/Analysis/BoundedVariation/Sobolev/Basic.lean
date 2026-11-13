@@ -92,7 +92,7 @@ theorem eLpNorm_le_totalVariationOn (hu : Integrable u μ)
   have hbound (n : ℕ) : eLpNorm (v n) p μ ≤ C * totalVariationOn μ ⊤ u := by
     refine (eLpNorm_le_eLpNorm_fderiv_one_of_integrable μ (hsmooth n)
       ((φ n).integrable_normed.integrable_convolution _ hu) hp).trans ?_
-    rw [eLpNorm_one_eq_lintegral_enorm
+    rw [eLpNorm_one_eq_lintegral_eNorm
       ((hsmooth n).continuous_fderiv one_ne_zero).aestronglyMeasurable]
     exact mul_le_mul_right (hvar n) _
   -- The mollifications converge to `u` in `L¹`; Fatou's lemma along an almost everywhere
