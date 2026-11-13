@@ -29,23 +29,18 @@ itself compatible, `J_t` is the compatible Cayley path
 Read with the time reversed, `(t, J) ↦ J_{1 - t}` deforms every tame structure onto `J₀` through
 tame structures, keeps compatible structures compatible and fixes `J₀`. This is the bundlewise
 assembly of the linear contraction `TauCeti.SymplecticForm.Compatible.cayleyContraction` of the
-tame complex structures on a symplectic vector space. Tameness and compatibility of `J₁` are kept
+tame complex structures on a symplectic vector space, and pointwise it is the linear tame Cayley
+path `TauCeti.SymplecticForm.Compatible.tameCayleyPath`. Tameness and compatibility of `J₁` are kept
 as distinct hypotheses throughout.
 
 The value of `J_t` at `x` is the rational expression `J₀ (1 + β C) (1 - β C)⁻¹` in `J₀ x` and
 `J₁ x`, where `C = -(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` is the Cayley coordinate of `J₁ x` and
 `β = smoothTransition t`. Both inverses exist because `J₀ x` is compatible and `J₁ x` is tame, so
-smoothness follows from `ContMDiffAt.cayleyPathFormula_hom_bundle`. No compactness of `M` and no
-closedness of `σ` is used.
+smoothness follows from `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPathFormula_family`.
+No compactness of `M` and no closedness of `σ` is used.
 
 ## Main definitions
 
-* `TauCeti.SymplecticForm.Compatible.tameCayleyPath h₀ h₁ t`: on a symplectic vector space, the
-  tame complex structure whose Cayley coordinate relative to the compatible `J₀` is
-  `smoothTransition t` times that of the tame `J₁`. It is tame
-  (`TauCeti.SymplecticForm.Compatible.tames_tameCayleyPath`), and in operator-norm coordinates it
-  is `TauCeti.cayleyPathFormula`
-  (`TauCeti.SymplecticForm.Compatible.toContinuousLinearMap_tameCayleyPath`).
 * `TauCeti.SmoothTwoForm.Compatible.tameCayleyPath h₀ h₁ t`: the smooth almost complex structure
   which at every point is the tame structure whose Cayley coordinate relative to `J₀` is
   `smoothTransition t` times that of `J₁`.
@@ -80,47 +75,6 @@ public section
 open Bundle Real
 
 noncomputable section
-
-namespace TauCeti.SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexStructure V}
-
-/-- The linear Cayley path from a compatible `J₀` to a tame `J₁`: the tame structure whose Cayley
-coordinate at `J₀` is `smoothTransition t` times that of `J₁`. -/
-def Compatible.tameCayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
-    AlmostComplexStructure V :=
-  (h₀.cayleyEquiv.symm
-    ⟨smoothTransition t • J₀.cayley J₁,
-      h₀.smul_cayley_mem_cayleyBall h₁ (smoothTransition.abs_le_one t)⟩).val
-
-/-- Every structure on the linear tame Cayley path is tamed by `ω`. -/
-theorem Compatible.tames_tameCayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
-    ω.Tames (h₀.tameCayleyPath h₁ t) :=
-  (h₀.cayleyEquiv.symm _).property
-
-/-- The Cayley coordinate of the linear tame Cayley path is the cutoff-scaled coordinate of its
-endpoint. -/
-@[simp]
-theorem Compatible.cayley_tameCayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Tames J₁) (t : ℝ) :
-    J₀.cayley (h₀.tameCayleyPath h₁ t) = smoothTransition t • J₀.cayley J₁ := by
-  rw [Compatible.tameCayleyPath]
-  simpa only [Compatible.cayleyEquiv_apply_coe] using
-    congrArg Subtype.val (h₀.cayleyEquiv.apply_symm_apply
-      ⟨smoothTransition t • J₀.cayley J₁,
-        h₀.smul_cayley_mem_cayleyBall h₁ (smoothTransition.abs_le_one t)⟩)
-
-/-- In operator-norm coordinates, the linear tame Cayley path at time `t` is
-`J₀ (1 + β C)(1 - β C)⁻¹`, where `C` is the Cayley coordinate of `J₁` and
-`β = smoothTransition t`. -/
-theorem Compatible.toContinuousLinearMap_tameCayleyPath (h₀ : ω.Compatible J₀)
-    (h₁ : ω.Tames J₁) (t : ℝ) {A B : V →L[ℝ] V} (hA : A.toLinearMap = J₀.toLinearMap)
-    (hB : B.toLinearMap = J₁.toLinearMap) :
-    LinearMap.toContinuousLinearMap (h₀.tameCayleyPath h₁ t).toLinearMap =
-      cayleyPathFormula (smoothTransition t) A B :=
-  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley h₁ (smoothTransition.abs_le_one t) hA hB
-
-end TauCeti.SymplecticForm
 
 open scoped Manifold ContDiff
 
@@ -160,63 +114,6 @@ private theorem toContinuousLinearMap_tameCayleyPathAt (t : ℝ) (x : M) :
     (J₀.almostComplexStructureAt_toLinearMap x).symm
     (J₁.almostComplexStructureAt_toLinearMap x).symm
 
-section Family
-
-variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
-  {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
-
-/-- For a compatible endpoint family `K₀ p`, a tame endpoint family `K₁ p`, both depending
-smoothly on a parameter `p`, and a smooth time `τ p`, the Cayley path expressions in `K₀ p x`
-and `K₁ p x` form a jointly smooth family of tangent endomorphisms over `P × M`. -/
-private theorem contMDiff_cayleyPathFormula_family
-    {K₀ K₁ : P → SmoothAlmostComplexStructure I M}
-    (hc₀ : ∀ p, σ.Compatible (K₀ p)) (hc₁ : ∀ p, σ.Tames (K₁ p))
-    (hs₀ : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
-        ((K₀ q.1).toEndomorphism q.2)))
-    (hs₁ : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
-        ((K₁ q.1).toEndomorphism q.2)))
-    {τ : P → ℝ} (hτ : ContMDiff IP 𝓘(ℝ) ∞ τ) :
-    ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
-        (cayleyPathFormula (smoothTransition (τ q.1)) ((K₀ q.1).toEndomorphism q.2)
-          ((K₁ q.1).toEndomorphism q.2))) := by
-  intro q₀
-  have ht : (hc₀ q₀.1).isNondegenerate.symplecticFormAt q₀.2 |>.Tames
-      ((K₁ q₀.1).almostComplexStructureAt q₀.2) :=
-    (hc₀ q₀.1).isNondegenerate.tames_iff.mp (hc₁ q₀.1) q₀.2
-  exact ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_snd
-    (smoothTransition.contDiff.contMDiff.comp (hτ.comp contMDiff_fst)).contMDiffAt
-    (hs₀ q₀) (hs₁ q₀)
-    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      ((hc₀ q₀.1).compatibleAt q₀.2).tames ht
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
-    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      ((hc₀ q₀.1).compatibleAt q₀.2) ht (smoothTransition.abs_le_one _)
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
-
-end Family
-
-include h₀ h₁ in
-/-- The Cayley path expressions in `J₀ x` and `J₁ x` at all times and points form a jointly
-smooth family of tangent endomorphisms over `ℝ × M`. -/
-private theorem contMDiff_cayleyPathFormula :
-    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
-      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
-        (cayleyPathFormula (smoothTransition p.1) (J₀.toEndomorphism p.2)
-          (J₁.toEndomorphism p.2))) :=
-  -- This is the case of constant endpoint families, with the time as parameter.
-  contMDiff_cayleyPathFormula_family (K₀ := fun _ : ℝ ↦ J₀) (K₁ := fun _ : ℝ ↦ J₁)
-    (fun _ ↦ h₀) (fun _ ↦ h₁) (J₀.toEndomorphism.contMDiff.comp contMDiff_snd)
-    (J₁.toEndomorphism.contMDiff.comp contMDiff_snd) contMDiff_id
-
 /-- The Cayley path from the compatible structure `J₀` to the tame structure `J₁` at time `t`,
 as a smooth almost complex structure on `M`: at each point `x` it is the tame structure whose
 Cayley coordinate relative to `J₀ x` is `smoothTransition t` times that of `J₁ x`. It is `J₀` for
@@ -224,7 +121,7 @@ Cayley coordinate relative to `J₀ x` is `smoothTransition t` times that of `J�
 def tameCayleyPath (t : ℝ) : SmoothAlmostComplexStructure I M where
   toEndomorphism := ⟨fun x ↦
       cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x),
-    (contMDiff_cayleyPathFormula h₀ h₁).comp (contMDiff_const.prodMk contMDiff_id)⟩
+    (h₀.contMDiff_cayleyPathFormula h₁).comp (contMDiff_const.prodMk contMDiff_id)⟩
   square_neg x := by
     ext v
     -- The value at `x` is the continuous version of the pointwise tame structure.
@@ -317,7 +214,7 @@ theorem contMDiff_tameCayleyPath :
       (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((h₀.tameCayleyPath h₁ p.1).toEndomorphism p.2)) :=
-  contMDiff_cayleyPathFormula h₀ h₁
+  h₀.contMDiff_cayleyPathFormula h₁
 
 /-- For a compatible endpoint family `K₀ p` and a tame endpoint family `K₁ p` depending smoothly
 on a parameter `p` in a manifold `P`, and a smooth time `τ p`, the paths

@@ -57,6 +57,9 @@ between the pulled-back structures, for the pulled-back form.
   `(t, x)`.
 * `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPath_family`: for endpoints and a time
   depending smoothly on a parameter, the paths depend smoothly on the parameter and the point.
+* `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPathFormula_family`,
+  `TauCeti.SmoothTwoForm.Compatible.contMDiff_cayleyPathFormula`: the same smoothness for the
+  Cayley path expression with a compatible initial and a tame final endpoint.
 * `TauCeti.SmoothTwoForm.Compatible.cayleyPath_congr`: the path depends only on its endpoints.
 * `TauCeti.SmoothTwoForm.Compatible.pullback_cayleyPath`: naturality under diffeomorphisms.
 * `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`: a family of tame structures
@@ -190,6 +193,42 @@ section Family
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
   {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
 
+/-- For a compatible endpoint family `K₀ p`, a tame endpoint family `K₁ p`, both depending
+smoothly on a parameter `p`, and a smooth time `τ p`, the Cayley path expressions in `K₀ p x`
+and `K₁ p x` form a jointly smooth family of tangent endomorphisms over `P × M`. -/
+theorem contMDiff_cayleyPathFormula_family
+    {K₀ K₁ : P → SmoothAlmostComplexStructure I M}
+    (hc₀ : ∀ p, σ.Compatible (K₀ p)) (hc₁ : ∀ p, σ.Tames (K₁ p))
+    (hs₀ : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((K₀ q.1).toEndomorphism q.2)))
+    (hs₁ : ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((K₁ q.1).toEndomorphism q.2)))
+    {τ : P → ℝ} (hτ : ContMDiff IP 𝓘(ℝ) ∞ τ) :
+    ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        (cayleyPathFormula (smoothTransition (τ q.1)) ((K₀ q.1).toEndomorphism q.2)
+          ((K₁ q.1).toEndomorphism q.2))) := by
+  intro q₀
+  have ht : (hc₀ q₀.1).isNondegenerate.symplecticFormAt q₀.2 |>.Tames
+      ((K₁ q₀.1).almostComplexStructureAt q₀.2) :=
+    (hc₀ q₀.1).isNondegenerate.tames_iff.mp (hc₁ q₀.1) q₀.2
+  exact ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_snd
+    (smoothTransition.contDiff.contMDiff.comp (hτ.comp contMDiff_fst)).contMDiffAt
+    (hs₀ q₀) (hs₁ q₀)
+    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
+      ((hc₀ q₀.1).compatibleAt q₀.2).tames ht
+      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
+      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
+    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
+      ((hc₀ q₀.1).compatibleAt q₀.2) ht (smoothTransition.abs_le_one _)
+      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
+      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
+
 /-- For endpoint families `K₀ p`, `K₁ p` depending smoothly on a parameter `p` and a smooth time
 `τ p`, the pointwise compatible Cayley paths `cayleyPathEnd (K₀ p) (K₁ p) (τ p) x` form a jointly
 smooth family of tangent endomorphisms over `P × M`. -/
@@ -208,22 +247,23 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
       (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         q.2 (cayleyPathEnd (hc₀ q.1) (hc₁ q.1) (τ q.1) q.2)) := by
-  intro q₀
   simp only [cayleyPathEnd_eq]
-  exact ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_snd
-    (smoothTransition.contDiff.contMDiff.comp (hτ.comp contMDiff_fst)).contMDiffAt
-    (hs₀ q₀) (hs₁ q₀)
-    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      ((hc₀ q₀.1).compatibleAt q₀.2).tames ((hc₁ q₀.1).compatibleAt q₀.2).tames
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
-    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      ((hc₀ q₀.1).compatibleAt q₀.2) ((hc₁ q₀.1).compatibleAt q₀.2).tames
-      (smoothTransition.abs_le_one _)
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
+  exact contMDiff_cayleyPathFormula_family hc₀ (fun p ↦ (hc₁ p).tames) hs₀ hs₁ hτ
 
 end Family
+
+/-- For a compatible `J₀` and a tame `J₁`, the Cayley path expressions in `J₀ x` and `J₁ x` at
+all times and points form a jointly smooth family of tangent endomorphisms over `ℝ × M`. -/
+theorem contMDiff_cayleyPathFormula (h₀ : σ.Compatible J₀) (h₁ : σ.Tames J₁) :
+    ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) p.2
+        (cayleyPathFormula (smoothTransition p.1) (J₀.toEndomorphism p.2)
+          (J₁.toEndomorphism p.2))) :=
+  -- This is the case of constant endpoint families, with the time as parameter.
+  contMDiff_cayleyPathFormula_family (K₀ := fun _ : ℝ ↦ J₀) (K₁ := fun _ : ℝ ↦ J₁)
+    (fun _ ↦ h₀) (fun _ ↦ h₁) (J₀.toEndomorphism.contMDiff.comp contMDiff_snd)
+    (J₁.toEndomorphism.contMDiff.comp contMDiff_snd) contMDiff_id
 
 include h₁ in
 /-- The pointwise compatible Cayley paths at all points form a jointly smooth family of tangent
@@ -232,11 +272,9 @@ private theorem contMDiff_cayleyPathEnd :
     ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        p.2 (cayleyPathEnd h₀ h₁ p.1 p.2)) :=
-  -- This is the case of constant endpoint families, with the time as parameter.
-  contMDiff_cayleyPathEnd_family (K₀ := fun _ : ℝ ↦ J₀) (K₁ := fun _ : ℝ ↦ J₁) (fun _ ↦ h₀)
-    (fun _ ↦ h₁) (J₀.toEndomorphism.contMDiff.comp contMDiff_snd)
-    (J₁.toEndomorphism.contMDiff.comp contMDiff_snd) contMDiff_id
+        p.2 (cayleyPathEnd h₀ h₁ p.1 p.2)) := by
+  simp only [cayleyPathEnd_eq]
+  exact h₀.contMDiff_cayleyPathFormula h₁.tames
 
 /-- The compatible Cayley path from `J₀` to `J₁` at time `t`, as a smooth almost complex structure
 on `M`: at each point `x` it is the compatible Cayley path from `J₀ x` to `J₁ x` at time `t`,
