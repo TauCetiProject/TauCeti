@@ -48,6 +48,7 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The logistic chart is smooth.** It is `C^n` for every `n`, including real-analytic. -/
+@[fun_prop]
 theorem contDiff_logisticNormalChart (r : ι) {n : WithTop ℕ∞} :
     ContDiff ℝ n (logisticNormalChart r) := by
   have hD : ∀ z : EuclideanSpace ℝ {i // i ≠ r}, 1 + ∑ j, Real.exp (z j) ≠ 0 :=
