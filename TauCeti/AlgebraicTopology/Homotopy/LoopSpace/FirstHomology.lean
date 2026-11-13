@@ -17,12 +17,13 @@ For a path-connected based loop space, degree-one Hurewicz and the loop-space sh
 its integral first homology with the second homotopy group of the original space. The
 abelianization disappears because higher homotopy groups are commutative.
 
-When `π₂(X, x)` vanishes, the double Moore loop space is path connected and
-`H₁(ΩᴹΩᴹX; ℤ) ≅ π₃(X, x)`. This is the low-degree homological input to detecting higher
-homotopy through double loop spaces. The Moore comparisons use the specified normalization
-homotopy equivalences; the final `doubleFirstCubicalHomologyAddEquiv` transports the result to
-normalized cubical homology through `singularCubicalHomologyIso`. No connectedness assumption
-on `X` is needed.
+When `π₂(X, x)` vanishes, the double loop space is path connected and
+`H₁(Ω²X; ℤ) ≅ π₃(X, x)` (`TauCeti.doubleLoopSpaceFirstHomologyAddEquiv`), and likewise
+`H₁(ΩᴹΩᴹX; ℤ) ≅ π₃(X, x)` for the double Moore loop space. This is the low-degree
+homological input to detecting higher homotopy through double loop spaces. The Moore
+comparisons use the specified normalization homotopy equivalences; the final
+`doubleFirstCubicalHomologyAddEquiv` transports the result to normalized cubical homology
+through `singularCubicalHomologyIso`. No connectedness assumption on `X` is needed.
 
 ## References
 
@@ -67,6 +68,15 @@ theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
     Group.abelianizationCongr_of, MulEquiv.symm_apply_apply]
   exact (HurewiczOne.hurewiczHomologyAddEquiv_ofMul_of_mk
     (X := TopCat.of (Ω X x)) γ).symm
+
+/-- When `π₂(X, x)` vanishes, the first integral homology of the double loop space `Ω²X` is the
+third homotopy group of `X`, through the loop-space shift and degree-one Hurewicz. -/
+def doubleLoopSpaceFirstHomologyAddEquiv (x : X) [Subsingleton (π_ 2 X x)] :
+    Additive (π_ 3 X x) ≃+
+      ((singularChains ℤ).obj (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology 1 :=
+  letI := (pathConnectedSpace_doubleLoopSpace_iff x).2 ‹_›
+  (pathLoopSpaceMulEquiv 1).symm.toAdditive.trans
+    (pathLoopSpaceFirstHomologyAddEquiv (Path.refl x))
 
 namespace MooreLoopSpace
 

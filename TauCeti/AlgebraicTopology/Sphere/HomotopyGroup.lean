@@ -25,8 +25,9 @@ The unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space is `(n - 1)
 `πₖ(Sⁿ, x)` is trivial for every `k < n`, in every degree including `π₀`
 (`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`). Consequently, by the Hurewicz theorem and
 the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homotopyGroupSphereAddEquiv`),
-the double Moore loop space of `S³` has first integral homology `ℤ`
-(`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
+the double loop space and the double Moore loop space of `S³` have first integral homology `ℤ`
+(`TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv`,
+`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
 space of `Sᵐ` has integral homology `ℤ` in degree `m - 2`
 (`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`). In particular `πₙ(Sⁿ, x)` is nontrivial
 for `n ≥ 2` (`TauCeti.nontrivial_homotopyGroup_sphere`). In degree zero, as `π₂(S²) ≅ ℤ`,
@@ -60,6 +61,7 @@ basis, so its sign depends on the orientation of that basis.
   `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
+* `TauCeti.doubleLoopSpaceFirstHomologySphereAddEquiv`: `H₁(Ω²S³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
 * `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`,
@@ -149,6 +151,18 @@ theorem homotopyGroupSphereAddEquiv_apply (b : OrthonormalBasis (Fin (n + 3)) �
         (((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) (n + 1)).inv.app _).hom
           (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hX a)) :=
   (rfl)
+
+/-- **The first homology of the double loop space of `S³` is `ℤ`.** For the unit sphere `S³` of
+a real inner product space with an orthonormal basis `b` indexed by `Fin 4`, the first integral
+homology of the double loop space `Ω²S³` is `π₃(S³) ≅ ℤ`, through degree-one Hurewicz
+(`TauCeti.doubleLoopSpaceFirstHomologyAddEquiv`) and `TauCeti.homotopyGroupSphereAddEquiv`. -/
+def doubleLoopSpaceFirstHomologySphereAddEquiv (b : OrthonormalBasis (Fin 4) ℝ E)
+    (x : sphere (0 : E) 1) :
+    ((singularChains ℤ).obj
+      (TopCat.of (Ω (Ω (sphere (0 : E) 1) x) (Path.refl x)))).homology 1 ≃+ ℤ :=
+  have : Subsingleton (π_ 2 (sphere (0 : E) 1) x) :=
+    subsingleton_homotopyGroup_sphere_of_basis b (by simp) x
+  (doubleLoopSpaceFirstHomologyAddEquiv x).symm.trans (homotopyGroupSphereAddEquiv (n := 1) b x)
 
 /-- **The first homology of the double loop space of `S³` is `ℤ`.** For the unit sphere `S³` of
 a real inner product space with an orthonormal basis `b` indexed by `Fin 4`, the first integral
