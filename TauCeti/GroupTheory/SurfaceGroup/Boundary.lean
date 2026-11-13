@@ -86,6 +86,7 @@ theorem not_isOfFinOrder_peripheral (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
 
 /-- A peripheral element of the orientable surface group `S⁺(g, m)` has finite order exactly
 when the surface is the disc `S⁺(0, 1)`, where `p₁ = 1`. -/
+@[simp]
 theorem isOfFinOrder_peripheral_iff (j : Fin m) :
     IsOfFinOrder (peripheral g m j) ↔ g = 0 ∧ m = 1 := by
   refine ⟨fun hj ↦ of_not_not fun h ↦ not_isOfFinOrder_peripheral (not_and_or.mp h) j hj, ?_⟩
@@ -132,6 +133,7 @@ theorem not_isOfFinOrder_peripheral (h : g ≠ 0 ∨ m ≠ 1) (j : Fin m) :
 
 /-- A peripheral element of `S⁻(g, m)` has finite order exactly when `g = 0` and `m = 1`, where
 the presentation is that of the disc and `p₁ = 1`. -/
+@[simp]
 theorem isOfFinOrder_peripheral_iff (j : Fin m) :
     IsOfFinOrder (peripheral g m j) ↔ g = 0 ∧ m = 1 := by
   refine ⟨fun hj ↦ of_not_not fun h ↦ not_isOfFinOrder_peripheral (not_and_or.mp h) j hj, ?_⟩
