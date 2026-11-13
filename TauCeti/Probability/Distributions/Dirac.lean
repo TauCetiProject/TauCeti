@@ -7,24 +7,20 @@ module
 
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
-public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Distributional formulas for Dirac measures
 
-This file records the cumulative mass of a Dirac measure on a preorder, the cumulative distribution
-and the lower and upper quantile functions of a real Dirac measure, and the probability-generating
-function, exponential-integrability domain and cumulant-generating function of a statistic under a
-Dirac measure. The moment-generating function is already available in
+This file records the cumulative distribution and the lower and upper quantile functions of a real
+Dirac measure, and the exponential-integrability domain and cumulant-generating function of a
+real-valued statistic under a Dirac measure. The moment-generating function is already available in
 Mathlib as `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
-* `TauCeti.Probability.dirac_real_Iic` — the cumulative mass of a Dirac measure on a preorder;
 * `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
-* `TauCeti.Probability.pgf_dirac` — the probability-generating function of a natural-number-valued
-  statistic under a Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
   lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
@@ -36,25 +32,12 @@ public section
 
 namespace TauCeti.Probability
 
-open MeasureTheory ProbabilityTheory Set
-
-/-- The cumulative mass of a Dirac measure is the indicator of the upper set of its atom. -/
-theorem dirac_real_Iic {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Preorder α]
-    (a b : α) [Decidable (a ≤ b)] :
-    (Measure.dirac a).real (Iic b) = if a ≤ b then 1 else 0 := by
-  by_cases h : a ≤ b <;> simp [Measure.dirac_real_apply, Set.indicator, h]
+open _root_.MeasureTheory ProbabilityTheory Set
 
 /-- The cumulative distribution function of a Dirac measure is a step function. -/
 @[simp]
 theorem cdf_dirac (a x : ℝ) : cdf (Measure.dirac a) x = if a ≤ x then 1 else 0 := by
   rw [cdf_eq_real, dirac_real_Iic]
-
-/-- The probability-generating function of a natural-number-valued statistic under a Dirac
-measure is a monomial. -/
-@[simp]
-theorem pgf_dirac {Ω : Type*} [MeasurableSpace Ω] [MeasurableSingletonClass Ω] (X : Ω → ℕ)
-    (ω : Ω) (z : ℝ) : pgf X (Measure.dirac ω) z = z ^ X ω := by
-  simp [pgf_def]
 
 /-- Every exponential moment of a Dirac measure exists. -/
 @[simp]

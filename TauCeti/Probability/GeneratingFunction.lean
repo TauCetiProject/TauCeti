@@ -32,6 +32,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
 ## Main declarations
 
 * `TauCeti.Probability.pgf` — the probability-generating function.
+* `TauCeti.Probability.pgf_dirac` — the probability-generating function of a natural-number-valued
+  statistic under a Dirac measure.
 * `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function, and
   `TauCeti.Probability.mgf_id_map_natCast` restates this for the real cast of a law on `ℕ`.
 * `TauCeti.Probability.integrable_pow_of_abs_le_one` — on `[-1, 1]` the integrand is
@@ -108,6 +110,13 @@ theorem pgf_one (X : Ω → ℕ) : pgf X μ 1 = μ.real Set.univ := by
 function. -/
 @[simp]
 theorem pgf_const (n : ℕ) (t : ℝ) : pgf (fun _ : Ω => n) μ t = μ.real Set.univ * t ^ n := by
+  simp [pgf_def]
+
+/-- The probability-generating function of a natural-number-valued statistic under a Dirac
+measure is a monomial. -/
+@[simp]
+theorem pgf_dirac [MeasurableSingletonClass Ω] (X : Ω → ℕ) (ω : Ω) (z : ℝ) :
+    pgf X (Measure.dirac ω) z = z ^ X ω := by
   simp [pgf_def]
 
 /-- The probability-generating function can be computed on the law of the random variable. -/
