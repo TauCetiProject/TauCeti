@@ -196,7 +196,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
     rw [← range_sublevelInclusion f (hmono k.lt_succ_self).le]
     exact hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue
       hf.contMDiff (hmono k.lt_succ_self) (hcompact k) (hreg k) (hmono k.lt_succ_self).le
-  obtain ⟨h, -⟩ := exists_homotopyEquiv_of_isColimit hF hιc hc
+  obtain ⟨h, -⟩ := exists_homotopyEquiv_of_isColimit_cwComplex hF hιc hc
     ((sublevel_mono f).comp hmono.monotone) (iUnion_sublevel_eq_univ_of_tendsto f htop)
     (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop) hBH
     (fun k ↦ (S k).h) fun k w ↦ by
