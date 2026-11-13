@@ -19,9 +19,11 @@ coefficients `c i` and iterated directional derivatives `∂^(m i)` of orders `k
 principal symbol of order `M`, in the geometric convention without factors of `i`, is the
 homogeneous polynomial
 
-`σ_M(P)(ξ) = ∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫`,
+`σ_M(P)(ξ) = ∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫`
 
-and its *characteristic set* consists of the covectors `ξ ≠ 0` with `σ_M(P)(ξ) = 0`. This file
+(`Distribution.constCoeffPrincipalSymbol`), and its *characteristic set*
+(`Distribution.constCoeffCharacteristicSet`) consists of the points `(x, ξ)` with `ξ ≠ 0` and
+`σ_M(P)(ξ) = 0`. This file
 proves **microlocal elliptic regularity**: at a noncharacteristic covector, `T` is as regular as
 `P T`,
 
@@ -31,7 +33,7 @@ proves **microlocal elliptic regularity**: at a noncharacteristic covector, `T` 
 microlocality `WF(P T) ⊆ WF(T)` of differential operators, an operator elliptic in the sense that
 `σ_M(P)` vanishes nowhere off zero satisfies `WF(P T) = WF(T)`, and hence has the same singular
 support: `P T` is smooth on an open set exactly when `T` is. The Laplacian is the basic example
-(`Distribution.waveFrontSet_sum_iteratedLineDerivOp_orthonormalBasis`).
+(`Distribution.waveFrontSet_laplacianCLM`).
 
 ## The argument
 
@@ -51,6 +53,11 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 `k` uniform over the cutoffs supported in a fixed compact set
 (`Distribution.exists_forall_norm_localFourier_le`), and gives rapid decay on `Γ`.
 
+## Main definitions
+
+* `Distribution.constCoeffPrincipalSymbol s c m M`: the principal symbol `σ_M(P)` of order `M`.
+* `Distribution.constCoeffCharacteristicSet s c m M`: the characteristic set `Char(P)`.
+
 ## Main results
 
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp`: if `P T` is
@@ -60,8 +67,8 @@ induction starts from the polynomial growth of the localized Fourier transform, 
 * `Distribution.waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`,
   `Distribution.singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero`: an elliptic
   constant-coefficient operator preserves the wave front set and the singular support.
-* `Distribution.waveFrontSet_sum_iteratedLineDerivOp_orthonormalBasis`: `WF(Δ T) = WF(T)` for the
-  Laplacian `Δ = ∑ ∂_{b i} ∂_{b i}` of an orthonormal basis `b`.
+* `Distribution.waveFrontSet_laplacianCLM`: `WF(Δ T) = WF(T)` for the Laplacian
+  `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`.
 
 ## References
 
@@ -80,6 +87,75 @@ open scoped Distributions Topology RealInnerProductSpace ContDiff
 namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
+
+/-! ### The principal symbol and the characteristic set -/
+
+/-- The **principal symbol** of order `M` of the constant-coefficient operator
+`P = ∑ i ∈ s, c i ∂^(m i)`, in the geometric convention without factors of `i`:
+`σ_M(P)(ξ) = ∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫`. Only the terms of order exactly `M`
+contribute. -/
+def constCoeffPrincipalSymbol {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (ξ : E) : ℂ :=
+  ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ)
+
+/-- The **characteristic set** of the constant-coefficient operator `P = ∑ i ∈ s, c i ∂^(m i)`
+of order `M`: the points `(x, ξ)` with `ξ ≠ 0` at which the principal symbol
+`constCoeffPrincipalSymbol s c m M` vanishes. -/
+def constCoeffCharacteristicSet {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) : Set (E × E) :=
+  {p | p.2 ≠ 0 ∧ constCoeffPrincipalSymbol s c m M p.2 = 0}
+
+@[simp]
+theorem mem_constCoeffCharacteristicSet_iff {ι : Type*} {s : Finset ι} {c : ι → ℂ} {k : ι → ℕ}
+    {m : ∀ i, Fin (k i) → E} {M : ℕ} {p : E × E} :
+    p ∈ constCoeffCharacteristicSet s c m M ↔
+      p.2 ≠ 0 ∧ constCoeffPrincipalSymbol s c m M p.2 = 0 :=
+  Iff.rfl
+
+/-- The principal symbol is homogeneous of degree `M`. -/
+theorem constCoeffPrincipalSymbol_smul {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
+    (m : ∀ i, Fin (k i) → E) (M : ℕ) (t : ℝ) (η : E) :
+    constCoeffPrincipalSymbol s c m M (t • η) =
+      (t : ℂ) ^ M * constCoeffPrincipalSymbol s c m M η := by
+  rw [constCoeffPrincipalSymbol, constCoeffPrincipalSymbol, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hki : k i = M := (Finset.mem_filter.1 hi).2
+  have hprod : ∏ l, (⟪m i l, t • η⟫ : ℂ) = (t : ℂ) ^ k i * ∏ l, (⟪m i l, η⟫ : ℂ) := by
+    simp only [inner_smul_right, ofReal_mul]
+    rw [← Finset.pow_card_mul_prod, Finset.card_univ, Fintype.card_fin]
+  have hpow : (t : ℂ) ^ k i = (t : ℂ) ^ M := by rw [hki]
+  rw [hprod, hpow]
+  ring
+
+/-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
+below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
+theorem exists_cone_le_norm_constCoeffPrincipalSymbol {ι : Type*} {s : Finset ι} {c : ι → ℂ}
+    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {ξ : E}
+    (hξ : constCoeffPrincipalSymbol s c m M ξ ≠ 0) :
+    ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s c m M η‖ := by
+  -- `‖ξ‖ ^ M ≠ 0`: otherwise `ξ = 0` and `M ≠ 0`, and every term of the principal symbol at `ξ`
+  -- has a factor `⟪_, 0⟫ = 0`.
+  have hξM : 0 < ‖ξ‖ ^ M := by
+    rcases eq_or_ne ξ 0 with rfl | hξ0
+    · rcases Nat.eq_zero_or_pos M with rfl | hM
+      · simp
+      · refine absurd (Finset.sum_eq_zero fun i hi ↦ ?_) hξ
+        have hki : k i = M := (Finset.mem_filter.1 hi).2
+        rw [Finset.prod_eq_zero (i := ⟨0, hki ▸ hM⟩) (Finset.mem_univ _) (by simp), mul_zero]
+    · exact pow_pos (norm_pos_iff.2 hξ0) M
+  have hσξ := norm_pos_iff.2 hξ
+  refine ⟨{η | ‖constCoeffPrincipalSymbol s c m M ξ‖ / (2 * ‖ξ‖ ^ M) * ‖η‖ ^ M <
+      ‖constCoeffPrincipalSymbol s c m M η‖}, isOpen_lt (by fun_prop)
+      (by unfold constCoeffPrincipalSymbol; fun_prop),
+    ?_, fun t ht η hη ↦ ?_, _, by positivity, fun η hη ↦ hη.le⟩
+  · simp only [mem_ofPred_eq]
+    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξM.ne']
+    linarith
+  · simp only [mem_ofPred_eq] at hη ⊢
+    rw [constCoeffPrincipalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
+      Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
+    exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
 
 /-! ### Polynomial bounds for the symbol -/
 
@@ -101,58 +177,13 @@ private theorem prod_two_pi_I_inner {r : ℕ} (m : Fin r → E) (η : E) :
     ∏ l, (2 * π * I * ⟪m l, η⟫ : ℂ) = (2 * π * I) ^ r * ∏ l, (⟪m l, η⟫ : ℂ) := by
   rw [← Finset.pow_card_mul_prod, Finset.card_univ, Fintype.card_fin]
 
-/-- The principal symbol is positively homogeneous of degree `M`. -/
-private theorem principalSymbol_smul {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ}
-    (m : ∀ i, Fin (k i) → E) (M : ℕ) (t : ℝ) (η : E) :
-    ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, t • η⟫ : ℂ) =
-      (t : ℂ) ^ M * ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, η⟫ : ℂ) := by
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hki : k i = M := (Finset.mem_filter.1 hi).2
-  have hprod : ∏ l, (⟪m i l, t • η⟫ : ℂ) = (t : ℂ) ^ k i * ∏ l, (⟪m i l, η⟫ : ℂ) := by
-    simp only [inner_smul_right, ofReal_mul]
-    rw [← Finset.pow_card_mul_prod, Finset.card_univ, Fintype.card_fin]
-  have hpow : (t : ℂ) ^ k i = (t : ℂ) ^ M := by rw [hki]
-  rw [hprod, hpow]
-  ring
-
-/-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
-below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
-private theorem exists_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι} {c : ι → ℂ}
-    {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} {ξ : E}
-    (hξ : ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ) ≠ 0) :
-    ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
-      ∃ c₀ : ℝ, 0 < c₀ ∧ ∀ η ∈ Γ,
-        c₀ * ‖η‖ ^ M ≤ ‖∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, η⟫ : ℂ)‖ := by
-  -- `‖ξ‖ ^ M ≠ 0`: otherwise `ξ = 0` and `M ≠ 0`, and every term of the principal symbol at `ξ`
-  -- has a factor `⟪_, 0⟫ = 0`.
-  have hξM : 0 < ‖ξ‖ ^ M := by
-    rcases eq_or_ne ξ 0 with rfl | hξ0
-    · rcases Nat.eq_zero_or_pos M with rfl | hM
-      · simp
-      · refine absurd (Finset.sum_eq_zero fun i hi ↦ ?_) hξ
-        have hki : k i = M := (Finset.mem_filter.1 hi).2
-        rw [Finset.prod_eq_zero (i := ⟨0, hki ▸ hM⟩) (Finset.mem_univ _) (by simp), mul_zero]
-    · exact pow_pos (norm_pos_iff.2 hξ0) M
-  have hσξ := norm_pos_iff.2 hξ
-  refine ⟨{η | ‖∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ)‖ / (2 * ‖ξ‖ ^ M) * ‖η‖ ^ M <
-      ‖∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, η⟫ : ℂ)‖}, isOpen_lt (by fun_prop) (by fun_prop),
-    ?_, fun t ht η hη ↦ ?_, _, by positivity, fun η hη ↦ hη.le⟩
-  · simp only [mem_ofPred_eq]
-    rw [div_mul_eq_mul_div, mul_div_mul_right _ _ hξM.ne']
-    linarith
-  · simp only [mem_ofPred_eq] at hη ⊢
-    rw [principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
-      Real.norm_of_nonneg ht.le, norm_smul, Real.norm_of_nonneg ht.le, mul_pow, mul_left_comm]
-    exact mul_lt_mul_of_pos_left hη (pow_pos ht M)
-
 /-- **The full symbol is elliptic at large frequencies.** If all orders are at most `M` and the
 principal symbol is bounded below by `c₀ ‖η‖ ^ M` on `Γ`, then the full symbol
 `∑ i ∈ s, c i ∏ₗ 2πi ⟪m i l, η⟫` is bounded below by a multiple of `(1 + ‖η‖) ^ M` on `Γ` outside a
 ball: the terms of lower order are smaller by a factor `‖η‖`. -/
 private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → ℂ} {k : ι → ℕ}
     {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {Γ : Set E} {c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hΓ : ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, η⟫ : ℂ)‖) :
+    (hΓ : ∀ η ∈ Γ, c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s c m M η‖) :
     ∃ R c' : ℝ, 0 < c' ∧ ∀ η ∈ Γ, R ≤ ‖η‖ →
       c' * (1 + ‖η‖) ^ M ≤ ‖∑ i ∈ s, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖ := by
   set A : ℝ := ∑ i ∈ s with k i ≠ M, ‖c i‖ * ((2 * π) ^ k i * ∏ l, ‖m i l‖)
@@ -201,7 +232,7 @@ private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {c : ι → �
     exact pow_le_pow_left₀ (by positivity) (by linarith) M
   have htop' : B * ‖η‖ ^ M ≤
       ‖∑ i ∈ s with k i = M, c i * ∏ l, (2 * π * I * ⟪m i l, η⟫ : ℂ)‖ := by
-    rw [htop, norm_mul, norm_pow, h2π]
+    rw [htop, norm_mul, norm_pow, h2π, ← constCoeffPrincipalSymbol]
     calc B * ‖η‖ ^ M = (2 * π) ^ M * (c₀ * ‖η‖ ^ M) := by simp only [B]; ring
       _ ≤ _ := mul_le_mul_of_nonneg_left (hΓ η hη) (by positivity)
   calc B / 2 ^ (M + 1) * (1 + ‖η‖) ^ M ≤ B / 2 ^ (M + 1) * (2 ^ M * ‖η‖ ^ M) := by gcongr
@@ -401,18 +432,18 @@ variable [FiniteDimensional ℝ E]
 
 /-- **Microlocal elliptic regularity for constant-coefficient operators** (Hörmander I,
 Theorem 8.3.1). Let `P = ∑ i ∈ s, c i ∂^(m i)` have orders `k i ≤ M`, and let `ξ` be
-noncharacteristic for `P`: the principal symbol `∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫` does not
-vanish. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. -/
+noncharacteristic for `P`: the principal symbol `constCoeffPrincipalSymbol s c m M` does not
+vanish at `ξ`. If `P T` is microlocally smooth at `(x, ξ)`, then so is `T`. -/
 theorem IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {s : Finset ι}
     {c : ι → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
     {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hP : (∑ i ∈ s, c i • ∂^{m i} T).IsMicrolocallySmoothAt x ξ)
-    (hξ : ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ) ≠ 0) :
+    (hξ : constCoeffPrincipalSymbol s c m M ξ ≠ 0) :
     T.IsMicrolocallySmoothAt x ξ := by
   have hx : x ∈ Ω := by
     obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 hP
     exact φ.tsupport_subset (subset_tsupport _ hφ)
   obtain ⟨U, hU, Γ₁, hΓ₁, hξ₁, hcone₁, hdecay⟩ := hP.exists_nhds_cone
-  obtain ⟨Γ₂, hΓ₂, hξ₂, hcone₂, c₀, hc₀, hell⟩ := exists_cone_le_norm_principalSymbol hξ
+  obtain ⟨Γ₂, hΓ₂, hξ₂, hcone₂, c₀, hc₀, hell⟩ := exists_cone_le_norm_constCoeffPrincipalSymbol hξ
   obtain ⟨R, c', hc', hp⟩ := exists_le_norm_symbol hk hc₀ hell
   -- A compact neighbourhood `K` of `x` on which `P T` is microlocally smooth along `Γ₁`.
   obtain ⟨K, hKx, hKsub, hKc⟩ := local_compact_nhds (inter_mem hU (Ω.isOpen.mem_nhds hx))
@@ -446,34 +477,34 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {s :
     _ = (1 + ‖η‖) ^ k₀ * C := mul_comm _ _
 
 /-- **Microlocal elliptic regularity for constant-coefficient operators**:
-`WF(T) ⊆ WF(P T) ∪ Char(P)` for `P = ∑ i ∈ s, c i ∂^(m i)` with orders `k i ≤ M`, where the
-characteristic set is the zero set of the principal symbol
-`∑ i ∈ s with k i = M, c i ∏ₗ ⟪m i l, ξ⟫`. -/
+`WF(T) ⊆ WF(P T) ∪ Char(P)` for `P = ∑ i ∈ s, c i ∂^(m i)` with orders `k i ≤ M`, where
+`Char(P) = constCoeffCharacteristicSet s c m M` is the set of `(x, ξ)` with `ξ ≠ 0` at which the
+principal symbol vanishes. -/
 theorem waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp {ι : Type*} (s : Finset ι)
     (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
     (T : 𝓓'(Ω, ℂ)) :
     T.waveFrontSet ⊆ (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet ∪
-      {p | ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, p.2⟫ : ℂ) = 0} := by
+      constCoeffCharacteristicSet s c m M := by
   rintro ⟨x, ξ⟩ hp
   obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
   by_contra h
-  rw [mem_union, not_or, mem_waveFrontSet_iff, mem_ofPred_eq] at h
+  rw [mem_union, not_or, mem_waveFrontSet_iff, mem_constCoeffCharacteristicSet_iff] at h
   exact hT (IsMicrolocallySmoothAt.of_sum_smul_iteratedLineDerivOp hk
-    (by simpa [hx, hξ] using h.1) h.2)
+    (by simpa [hx, hξ] using h.1) fun h0 ↦ h.2 ⟨hξ, h0⟩)
 
 /-- **An elliptic constant-coefficient operator preserves the wave front set.** If the principal
 symbol of `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then
 `WF(P T) = WF(T)`. -/
 theorem waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero {ι : Type*} (s : Finset ι)
     (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
-    (hσ : ∀ ξ : E, ξ ≠ 0 → ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ) ≠ 0)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet = T.waveFrontSet := by
   refine subset_antisymm ((waveFrontSet_sum_subset s _).trans <| iUnion₂_subset fun i _ ↦
     (waveFrontSet_smul_subset _ _).trans (waveFrontSet_iteratedLineDerivOp_subset T (m i)))
     fun p hp ↦ ?_
   refine ((waveFrontSet_subset_union_sum_smul_iteratedLineDerivOp s c m hk T hp).resolve_right ?_)
-  exact hσ p.2 (T.waveFrontSet_subset hp).2
+  exact fun h ↦ hσ p.2 h.1 h.2
 
 /-- **Elliptic regularity for constant-coefficient operators.** If the principal symbol of
 `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then `P T` and `T` have the same
@@ -481,28 +512,30 @@ singular support: `T` is a smooth function near every point near which `P T` is.
 theorem singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero [MeasurableSpace E]
     [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E)
     {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
-    (hσ : ∀ ξ : E, ξ ≠ 0 → ∑ i ∈ s with k i = M, c i * ∏ l, (⟪m i l, ξ⟫ : ℂ) ≠ 0)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ s, c i • ∂^{m i} T).singularSupport = T.singularSupport := by
   rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet,
     waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s c m hk hσ]
 
-/-- **The Laplacian preserves the wave front set.** For an orthonormal basis `b` of `E`, the
-Laplacian `Δ T = ∑ i, ∂_{b i} ∂_{b i} T` satisfies `WF(Δ T) = WF(T)`: its principal symbol
-`∑ i, ⟪b i, ξ⟫ ^ 2 = ‖ξ‖ ^ 2` vanishes only at `ξ = 0`. -/
-theorem waveFrontSet_sum_iteratedLineDerivOp_orthonormalBasis {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (T : 𝓓'(Ω, ℂ)) :
-    (∑ i, ∂^{![b i, b i]} T).waveFrontSet = T.waveFrontSet := by
+/-- **The Laplacian preserves the wave front set.** The Laplacian
+`Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`, which is `∑ i, ∂_{b i} ∂_{b i}` for any orthonormal
+basis `b`, satisfies `WF(Δ T) = WF(T)`: its principal symbol `∑ i, ⟪b i, ξ⟫ ^ 2 = ‖ξ‖ ^ 2`
+vanishes only at `ξ = 0`. -/
+theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
+    (laplacianCLM ℝ E 𝓓'(Ω, ℂ) T).waveFrontSet = T.waveFrontSet := by
+  set b := stdOrthonormalBasis ℝ E
   have h := waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero Finset.univ (fun _ ↦ 1)
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
-  · simpa using h
+  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
+      using h
   have hsum : ∑ i, ⟪b i, ξ⟫ * ⟪b i, ξ⟫ = ‖ξ‖ ^ 2 := by
     rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner ξ ξ]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm]
-  have hval : ∑ i ∈ Finset.univ with (2 : ℕ) = 2, (1 : ℂ) * ∏ l, (⟪![b i, b i] l, ξ⟫ : ℂ) =
+  have hval : constCoeffPrincipalSymbol Finset.univ (fun _ ↦ 1) (fun i ↦ ![b i, b i]) 2 ξ =
       ((‖ξ‖ ^ 2 : ℝ) : ℂ) := by
     rw [← hsum]
-    simp [Fin.prod_univ_two]
+    simp [constCoeffPrincipalSymbol, Fin.prod_univ_two]
   rw [hval]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
