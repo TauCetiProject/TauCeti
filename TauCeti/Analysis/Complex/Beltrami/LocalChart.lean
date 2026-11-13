@@ -14,34 +14,31 @@ import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 /-!
 # Planar isothermal charts without a smallness hypothesis
 
-Let `J` be a field of almost complex structures on the plane, tame at `c` and of class `C¹` near
-`c`. There is a local chart `e` of the plane around `c`, of class `C¹` with `C¹` inverse, whose
-differential carries `J` to multiplication by `i` at every point of its source
-(`TauCeti.Beltrami.exists_isothermalChart_of_contDiffAt`).
+Let `J` be a field of almost complex structures on the plane, of class `C¹` near `c`. There is a
+local chart `e` of the plane around `c`, of class `C¹` with `C¹` inverse, whose differential
+carries `J` to multiplication by `i` at every point of its source
+(`TauCeti.Beltrami.exists_isComplexLinear_chart_of_contDiffAt`).
 
 The planar Beltrami chart `TauCeti.Beltrami.exists_isComplexLinear_chart` needs a coefficient
-that is small in the Hölder norm. The coefficient `μ_J` of `J` is reduced to this case in three
-steps, following McDuff–Salamon, Appendix E.
+that is small in the Hölder norm. The coefficient of `J` is reduced to this case in two steps,
+following McDuff–Salamon, Appendix E.
 
-* *Normalization.* The real-linear map `A = linearEquiv μ_J(c)` carries `J c` to the standard
-  structure (`TauCeti.Beltrami.exists_transport_eq_std_and_contDiffAt`), so the coefficient `μ₁`
-  of the structure `J` read through `w ↦ A (w - c)` vanishes at `0`.
+* *Normalization.* A real-linear map `A` carries `J c` to the standard structure
+  (`TauCeti.Beltrami.exists_transport_eq_std_and_contDiffAt`), so the coefficient `μ₁` of the
+  structure `J` read through `w ↦ A (w - c)` vanishes at `0`.
 * *Rescaling and cutoff.* Rescaling by `ε` does not change the structures, and with a fixed cutoff
   `χ`, equal to `1` on the unit disc and vanishing off the disc of radius `2`, the coefficient
   `ν(z) = χ(z) μ₁(ε z)` is small in Hölder norm for `ε` small, because `μ₁` is Lipschitz near `0`
   and vanishes there (`TauCeti.eventually_exists_holderSpace_cutoff_rescale`).
-* *Inversion.* For `ε` small the Beltrami solution has real derivative within `C ‖ν‖ < 1` of the
-  identity on the disc, so the chart has an invertible derivative and a `C¹` inverse
-  (`TauCeti.Beltrami.exists_isComplexLinear_chart_contDiffAt_symm`).
 
 Restricting the chart of `ν` to the unit disc, where `ν` is the coefficient of the rescaled
 structure, and composing it with `w ↦ ε⁻¹ A (w - c)` gives the chart of `J`
-(`OpenPartialHomeomorph.exists_isComplexLinear_chart_comp_affine`).
+(`OpenPartialHomeomorph.isComplexLinear_chart_comp_affine`).
 
 ## Main results
 
-* `TauCeti.Beltrami.exists_isothermalChart_of_contDiffAt`: a `C¹` structure tame at `c` has a
-  `C¹` chart at `c`, with `C¹` inverse, in which it is the standard structure.
+* `TauCeti.Beltrami.exists_isComplexLinear_chart_of_contDiffAt`: a `C¹` structure has a `C¹`
+  chart at `c`, with `C¹` inverse, in which it is the standard structure.
 
 ## References
 
@@ -59,13 +56,12 @@ open scoped NNReal Manifold ContDiff BoundedContinuousFunction
 namespace TauCeti.Beltrami
 
 /-- **Planar isothermal charts.** Let `J` be a field of almost complex structures on the plane,
-tame at `c`, with `z ↦ J z` of class `C¹` at `c` in the operator norm. Then there is an open
+with `z ↦ J z` of class `C¹` at `c` in the operator norm. Then there is an open
 partial homeomorphism `e` of the plane with `c` in its source and `e c = 0`, of class `C¹` on its
 source with `C¹` inverse on its target, whose real differential carries `J z` to multiplication by
 `i` at every point `z` of its source. No smallness of the Beltrami coefficient of `J` is
 assumed. -/
-theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
-    (hJ : stdComplexSymplecticForm.Tames (J c))
+theorem exists_isComplexLinear_chart_of_contDiffAt {J : ℂ → AlmostComplexStructure ℂ} {c : ℂ}
     (hJs : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J z).toLinearMap) c) :
     ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧ e c = 0 ∧
       (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧ (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
@@ -74,7 +70,7 @@ theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure
   set J₀ := AlmostComplexStructure.ofComplexModule ℂ
   /- Step 1: normalize at `c`. Read `J` through `w ↦ A (w - c)`, where `A` carries `J c` to the
   standard structure; the coefficient `μ₁` of the new field `J₁` vanishes at `0`. -/
-  obtain ⟨A, hA, hJ₁s⟩ := exists_transport_eq_std_and_contDiffAt hJ hJs
+  obtain ⟨A, hA, hJ₁s⟩ := exists_transport_eq_std_and_contDiffAt hJs
   let J₁ : ℂ → AlmostComplexStructure ℂ := fun w ↦
     (J (c + A.symm w)).transport A.toLinearEquiv
   have hJ₁ : ∀ w v, J₁ w (A v) = A (J (c + A.symm w) v) := fun w v ↦ by
@@ -101,7 +97,7 @@ theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure
       (fun w hw ↦ by simpa using (hρ' w hw).2.1) (by norm_num)
   /- Step 3: the planar Beltrami chart with `C¹` inverse on the disc of radius `2`, applied to the
   rescaled cutoff coefficient `ν(z) = χ(z) μ₁(ε z)` for `ε` small. -/
-  obtain ⟨δ, hδ, hchart⟩ := exists_isComplexLinear_chart_contDiffAt_symm (α := 1 / 2)
+  obtain ⟨δ, hδ, C, hchart⟩ := exists_isComplexLinear_chart (α := 1 / 2)
     (by norm_num) (by norm_num) 0 (r := 2) two_pos
   let χ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
   obtain ⟨ε, ⟨hε, hερ⟩, ν, hνmem, hνapp, hνη⟩ := ((eventually_mem_nhdsWithin.and
@@ -117,8 +113,15 @@ theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure
     (coefficientEquiv.symm _).property
   have hJ''μ : ∀ z, ν z = (coefficientEquiv ⟨J'' z, hJ''t z⟩).val := fun z ↦ by
     simp [J'']
-  obtain ⟨e, hce, he0, -, heC, hesC, helin⟩ :=
+  obtain ⟨h, -, -, -, -, -, -, -, -, hφC1, -, -, hφlin, e, he, hce, hesub, hesC⟩ :=
     hchart J'' (fun z _ ↦ hJ''t z) ν hνmem (fun z _ ↦ hJ''μ z) (hνη.trans_le (min_le_left _ _))
+  have heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z := fun z hz ↦ by
+    rw [he]
+    exact hφC1.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by norm_num) (hesub hz)))
+  have helin : ∀ z ∈ e.source, IsComplexLinear (J'' z).toLinearMap J₀.toLinearMap
+      (fderiv ℝ e z).toLinearMap := fun z hz ↦ by
+    rw [he]
+    exact hφlin z (ball_subset_closedBall (hesub hz))
   -- On the unit disc, `J''` is the rescaled normalized structure.
   have hJ''J₁ : ∀ z ∈ ball (0 : ℂ) 1, J'' z = J₁ (ε • z) := by
     intro z hz
@@ -147,13 +150,12 @@ theorem exists_isothermalChart_of_contDiffAt {J : ℂ → AlmostComplexStructure
       have hzc : c + A.symm (A (z - c)) = z := by
         rw [ContinuousLinearEquiv.symm_apply_apply, add_sub_cancel]
       rw [hJ''J₁ _ ((he₁s _).1 hz).2, hεS, hB, hB, map_smul, hJ₁, hzc]
-  obtain ⟨e', he'src, he'app, he'C, he'sC, he'lin⟩ :=
-    e₁.exists_isComplexLinear_chart_comp_affine B c (fun z hz ↦ heC z ((he₁s z).1 hz).1)
-      (fun z hz ↦ hesC z hz.1) (fun z hz ↦ helin z ((he₁s z).1 hz).1) hBJ
-  refine ⟨e', (he'src c).2 ?_, ?_, he'C, he'sC, he'lin⟩
-  · rw [sub_self, map_zero, he₁s]
-    exact ⟨hce, mem_ball_self one_pos⟩
-  · rw [he'app, sub_self, map_zero]
-    exact he0
+  obtain ⟨he'C, he'sC, he'lin⟩ :=
+    e₁.isComplexLinear_chart_comp_affine B c (fun z hz ↦ heC z ((he₁s z).1 hz).1)
+      (fun z hz ↦ (hesC z hz.1).contDiffAt (e.open_target.mem_nhds hz.1))
+      (fun z hz ↦ helin z ((he₁s z).1 hz).1) hBJ
+  refine ⟨_, ?_, ?_, he'C, he'sC, he'lin⟩
+  · simpa [he₁s] using hce
+  · simp [e₁, he]
 
 end TauCeti.Beltrami

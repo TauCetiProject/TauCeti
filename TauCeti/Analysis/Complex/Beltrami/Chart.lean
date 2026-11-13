@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
@@ -35,17 +34,12 @@ The pointwise statements are `TauCeti.Beltrami.isComplexLinear_iff_conjWirtinger
 
 * `TauCeti.Beltrami.wirtingerDeriv_normalizedChart_self`: normalizing at `c` gives holomorphic
   derivative `1` at `c` whenever `∂ψ(c) ≠ 0`.
-* `TauCeti.Beltrami.isInvertible_fderiv_normalizedChart`: the normalized chart has invertible real
-  derivative wherever `ψ` does.
 * `TauCeti.Beltrami.exists_isComplexLinear_chart`: the normalized Beltrami solution is a
-  `C¹` local chart at `c`, `J`-holomorphic on its source, with value `0` and holomorphic derivative
-  `1` at `c`.
-* `TauCeti.Beltrami.exists_isComplexLinear_chart_contDiffAt_symm`: for coefficients small enough
-  that the Beltrami solution's derivative stays within distance `1` of the identity, the chart has
-  a `C¹` inverse on its target.
-* `OpenPartialHomeomorph.exists_isComplexLinear_chart_comp_affine`: precomposing a `Cⁿ` chart with
-  `Cⁿ` inverse, in which `J'` is standard, with an affine equivalence carrying `J` to `J'` gives
-  such a chart for `J`.
+  `C¹` local chart at `c` with `C¹` inverse, `J`-holomorphic on its source, with value `0` and
+  holomorphic derivative `1` at `c`.
+* `OpenPartialHomeomorph.isComplexLinear_chart_comp_affine`: precomposing a `Cⁿ` chart with `Cⁿ`
+  inverse, whose differential carries `J'` to `K`, with an affine equivalence carrying `J` to `J'`
+  gives such a chart for `J`.
 * `TauCeti.Beltrami.cauchySolution_zero`, `TauCeti.Beltrami.normalizedChart_id`: for `μ = 0` the
   source `h = 0` gives `ψ = z`, and its normalized chart at `0` is the identity.
 
@@ -137,16 +131,6 @@ theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : w
     wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
   rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
 
-/-- **Invertibility of the normalized differential.** If `∂ψ(c) ≠ 0` and the real derivative of
-`ψ` at `z` is invertible, then the normalized chart has invertible real derivative at `z`. -/
-theorem isInvertible_fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hc : wirtingerDeriv ψ c 1 ≠ 0)
-    (hψ : (fderiv ℝ ψ z).IsInvertible) :
-    (fderiv ℝ (normalizedChart ψ c) z).IsInvertible := by
-  obtain ⟨L, hL⟩ := hψ
-  refine ⟨L.trans (ContinuousLinearEquiv.smulLeft (Units.mk0 _ (inv_ne_zero hc))), ?_⟩
-  ext v
-  simp [fderiv_normalizedChart, Units.smul_def, ← hL]
-
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
 `closedBall c r`, and let `μ` be an `α`-Hölder function vanishing off that disc, equal there to the
@@ -161,7 +145,8 @@ with `‖h‖ ≤ 2 ‖μ‖`, such that `ψ = z + T h`
 
 and the normalized map `φ = (ψ - ψ(c)) / ∂ψ(c)` is `C¹` on `ball c (r + 1)`, has `φ(c) = 0` and
 `∂φ(c) = 1`, has a differential complex linear from `J` to `i` at every point of the disc, and is
-an open partial homeomorphism on a neighbourhood of `c` inside `ball c r`. -/
+an open partial homeomorphism on a neighbourhood of `c` inside `ball c r` with `C¹` inverse on its
+target. -/
 theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (hα1 : α < 1) (c : ℂ)
     (hr : 0 < r) :
     ∃ δ > 0, ∃ C : ℝ≥0, ∀ (J : ℂ → AlmostComplexStructure ℂ)
@@ -187,7 +172,7 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
           (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
           (fderiv ℝ (normalizedChart (cauchySolution h) c) z).toLinearMap) ∧
         ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = normalizedChart (cauchySolution h) c ∧
-          c ∈ e.source ∧ e.source ⊆ ball c r := by
+          c ∈ e.source ∧ e.source ⊆ ball c r ∧ ContDiffOn ℝ 1 e.symm e.target := by
   obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c hr.le
   refine ⟨δ, hδ, C, fun J hJ μ hμ hμJ hμδ => ?_⟩
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
@@ -215,8 +200,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     exact one_ne_zero (L.injective (hzero.trans L.map_zero.symm))
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c
-  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
-  · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
+  have hφC1 : ContDiffOn ℝ 1 φ (ball c (r + 1)) := (hC1.sub contDiffOn_const).const_smul a⁻¹
+  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, hφC1, normalizedChart_self ψ c, ?_, ?_, ?_⟩
   · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz
     rw [fderiv_normalizedChart]
@@ -227,67 +212,17 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     rw [this]
     simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul]
     ring
-  · -- The inverse function theorem at `c`, restricted to `ball c r`.
+  · -- The inverse function theorem at `c`, restricted to `ball c r`, with a `C¹` inverse.
     obtain ⟨L, hL⟩ := hinv c hc
     let M : ℂ ≃L[ℝ] ℂ := ContinuousLinearEquiv.smulLeft (Units.mk0 a⁻¹ (inv_ne_zero ha))
-    have hφs : HasStrictFDerivAt φ ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) c := by
+    have hφd : HasFDerivAt φ ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) c := by
       have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
         ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
       rw [hLM]
-      exact (hL.sub_const (ψ c)).const_smul a⁻¹
-    let e := hφs.toOpenPartialHomeomorph φ
-    refine ⟨e.restrOpen (ball c r) isOpen_ball, ?_, ?_, ?_⟩
-    · rw [OpenPartialHomeomorph.coe_restrOpen]
-      exact hφs.toOpenPartialHomeomorph_coe
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact ⟨hφs.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact Set.inter_subset_right
-
-/-- **The planar Beltrami chart with `C¹` inverse.** Let `0 < α < 1` and `0 < r`. There is
-`δ > 0` such that the following holds. Let `J` be a field of almost complex structures on the
-plane, tame on `closedBall c r`, and let `μ` be an `α`-Hölder function vanishing off that disc,
-equal there to the scalar coefficient `μ_J` and with `‖μ‖ < δ`. Then there is an open partial
-homeomorphism `e` with `c` in its source, `e c = 0` and source inside `ball c r`, of class `C¹` on
-its source with `C¹` inverse on its target, whose real differential carries `J z` to
-multiplication by `i` at every point `z` of its source. -/
-theorem exists_isComplexLinear_chart_contDiffAt_symm {α : ℝ≥0} {r : ℝ} (hα : 0 < α)
-    (hα1 : α < 1) (c : ℂ) (hr : 0 < r) :
-    ∃ δ > 0, ∀ (J : ℂ → AlmostComplexStructure ℂ)
-      (hJ : ∀ z ∈ closedBall c r, stdComplexSymplecticForm.Tames (J z)),
-      ∀ μ ∈ supportedHolderSubmodule (Y := ℂ) α (closedBall c r),
-      (∀ z (hz : z ∈ closedBall c r), μ z = (coefficientEquiv ⟨J z, hJ z hz⟩).val) →
-      ‖μ‖ < δ →
-      ∃ e : OpenPartialHomeomorph ℂ ℂ, c ∈ e.source ∧ e c = 0 ∧ e.source ⊆ ball c r ∧
-        (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧ (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
-        ∀ z ∈ e.source, IsComplexLinear (J z).toLinearMap
-          (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e z).toLinearMap := by
-  obtain ⟨δ, hδ, C, hchart⟩ := exists_isComplexLinear_chart hα hα1 c hr
-  refine ⟨min δ ((C : ℝ) + 1)⁻¹, lt_min hδ (by positivity), fun J hJ μ hμ hμJ hμδ ↦ ?_⟩
-  obtain ⟨h, -, -, -, -, hnear, -, -, ha, hφC1, hφc, -, hφlin, e, he, hce, hesub⟩ :=
-    hchart J hJ μ hμ hμJ (hμδ.trans_le (min_le_left _ _))
-  -- On the disc, `dψ` is within `C ‖μ‖ < 1` of the identity.
-  have hCμ : C * ‖μ‖ < 1 := by
-    calc (C : ℝ) * ‖μ‖ ≤ C * ((C : ℝ) + 1)⁻¹ := by gcongr; exact hμδ.le.trans (min_le_right _ _)
-      _ < 1 := by
-        rw [← div_eq_mul_inv, div_lt_one (by positivity)]
-        linarith
-  have hsub : ball c r ⊆ closedBall c r := ball_subset_closedBall
-  have heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z := fun z hz ↦ by
-    rw [he]
-    exact hφC1.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by linarith) (hesub hz)))
-  have hesC : ContDiffOn ℝ 1 e.symm e.target :=
-    e.contDiffOn_symm_of_isInvertible_fderiv (fun z hz ↦ (heC z hz).contDiffWithinAt)
-      fun z hz ↦ by
-        rw [he]
-        refine isInvertible_fderiv_normalizedChart ha
-          (ContinuousLinearMap.isInvertible_of_norm_sub_lt (ContinuousLinearEquiv.refl ℝ ℂ) ?_)
-        rw [← NNReal.coe_lt_coe]
-        simpa using (hnear z (hsub (hesub hz))).trans_lt hCμ
-  refine ⟨e, hce, by rw [he]; exact hφc, hesub, heC,
-    fun z hz ↦ (hesC z hz).contDiffAt (e.open_target.mem_nhds hz), fun z hz ↦ ?_⟩
-  rw [he]
-  exact hφlin z (hsub (hesub hz))
+      exact (hL.hasFDerivAt.sub_const (ψ c)).const_smul a⁻¹
+    exact TauCeti.ContDiffOn.exists_openPartialHomeomorph
+      (hφC1.mono (ball_subset_ball (by linarith))) isOpen_ball (mem_ball_self hr) le_rfl
+      hφd.fderiv.symm
 
 end TauCeti.Beltrami
 
@@ -295,45 +230,49 @@ namespace OpenPartialHomeomorph
 
 open TauCeti
 
+variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+
 /-- **Precomposing a chart with an affine equivalence.** Let `e` be an open partial homeomorphism
-of the plane, of class `Cⁿ` on its source with `Cⁿ` inverse on its target, whose real differential
-carries `J' z` to multiplication by `i` at every point `z` of its source. If the real-linear
-automorphism `B` carries `J z` to `J' (B (z - c))` whenever `B (z - c)` lies in the source of `e`,
-then `z ↦ e (B (z - c))` is an open partial homeomorphism with the same properties for `J`. -/
-theorem exists_isComplexLinear_chart_comp_affine {n : WithTop ℕ∞}
-    {J J' : ℂ → AlmostComplexStructure ℂ} (e : OpenPartialHomeomorph ℂ ℂ) (B : ℂ ≃L[ℝ] ℂ) (c : ℂ)
+from `E'` to `F`, of class `Cⁿ` on its source with `Cⁿ` inverse on its target, whose real
+differential carries `J' z` to `K` at every point `z` of its source. If the real-linear
+equivalence `B` carries `J z` to `J' (B (z - c))` whenever `B (z - c)` lies in the source of `e`,
+then the precomposition `z ↦ e (B (z - c))`, with inverse `y ↦ B⁻¹ (e⁻¹ y) + c` on the target of
+`e`, has the same properties for `J`. -/
+theorem isComplexLinear_chart_comp_affine {n : WithTop ℕ∞}
+    {J : E → AlmostComplexStructure E} {J' : E' → AlmostComplexStructure E'}
+    {K : AlmostComplexStructure F} (e : OpenPartialHomeomorph E' F) (B : E ≃L[ℝ] E') (c : E)
     (he : ∀ z ∈ e.source, ContDiffAt ℝ n e z) (hes : ∀ z ∈ e.target, ContDiffAt ℝ n e.symm z)
-    (hJ' : ∀ z ∈ e.source, IsComplexLinear (J' z).toLinearMap
-      (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e z).toLinearMap)
+    (hJ' : ∀ z ∈ e.source, IsComplexLinear (J' z).toLinearMap K.toLinearMap
+      (fderiv ℝ e z).toLinearMap)
     (hB : ∀ z, B (z - c) ∈ e.source → ∀ v, B (J z v) = J' (B (z - c)) (B v)) :
-    ∃ e' : OpenPartialHomeomorph ℂ ℂ, (∀ z, z ∈ e'.source ↔ B (z - c) ∈ e.source) ∧
-      (∀ z, e' z = e (B (z - c))) ∧
-      (∀ z ∈ e'.source, ContDiffAt ℝ n e' z) ∧ (∀ z ∈ e'.target, ContDiffAt ℝ n e'.symm z) ∧
-      ∀ z ∈ e'.source, IsComplexLinear (J z).toLinearMap
-        (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ e' z).toLinearMap := by
-  let S : OpenPartialHomeomorph ℂ ℂ :=
-    ((Homeomorph.subRight c).trans B.toHomeomorph).toOpenPartialHomeomorph
-  have hS : ⇑S = fun w ↦ B (w - c) := by
+    (∀ z ∈ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).source,
+      ContDiffAt ℝ n
+        (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e) z) ∧
+    (∀ z ∈ e.target, ContDiffAt ℝ n
+      (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).symm z) ∧
+    ∀ z ∈ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e).source,
+      IsComplexLinear (J z).toLinearMap K.toLinearMap
+        (fderiv ℝ (((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e)
+          z).toLinearMap := by
+  set e' := ((Homeomorph.subRight c).trans B.toHomeomorph).transOpenPartialHomeomorph e
+  have he' : ⇑e' = fun w ↦ e (B (w - c)) := by
     funext w
-    simp [S]
-  have hSs : ⇑S.symm = fun z ↦ B.symm z + c := by
-    funext z
-    simp [S]
-  have hSe : ∀ z, (S.trans e) z = e (B (z - c)) := fun z ↦ by
-    rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, hS]
-  have hsrc : ∀ z, z ∈ (S.trans e).source ↔ B (z - c) ∈ e.source := fun z ↦ by
-    rw [OpenPartialHomeomorph.trans_source, hS]
-    simp [S]
-  refine ⟨S.trans e, hsrc, hSe, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.coe_trans, hS]
+    simp [e']
+  have he's : ⇑e'.symm = fun y ↦ B.symm (e.symm y) + c := by
+    funext y
+    simp [e']
+  have hsrc : ∀ z, z ∈ e'.source ↔ B (z - c) ∈ e.source := fun z ↦ by
+    simp [e']
+  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [he']
     exact (he _ ((hsrc z).1 hz)).comp z
       (B.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffAt
-  · rw [OpenPartialHomeomorph.trans_target] at hz
-    rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.coe_trans, hSs]
-    exact (B.symm.contDiff.add contDiff_const).contDiffAt.comp z (hes z hz.1)
+  · rw [he's]
+    exact (B.symm.contDiff.add contDiff_const).contDiffAt.comp z (hes z hz)
   · -- `fderiv_comp_sub` differentiates a function written as `w ↦ g (w - c)`.
-    have hcomp : ⇑(S.trans e) = fun w ↦ (e ∘ B) (w - c) := funext hSe
-    have hd : fderiv ℝ (S.trans e) z = (fderiv ℝ e (B (z - c))).comp (B : ℂ →L[ℝ] ℂ) := by
+    have hcomp : ⇑e' = fun w ↦ (e ∘ B) (w - c) := he'
+    have hd : fderiv ℝ e' z = (fderiv ℝ e (B (z - c))).comp (B : E →L[ℝ] E') := by
       rw [hcomp, fderiv_comp_sub, B.comp_right_fderiv]
     rw [hd]
     refine isComplexLinear_of_apply fun v ↦ ?_
