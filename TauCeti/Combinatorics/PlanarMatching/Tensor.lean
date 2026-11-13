@@ -19,7 +19,8 @@ of the boundary points, the boundary of `f.tensor g` reads the bottom points of 
 points of `g`, the top points of `g` and then the top points of `f`. So the boundary of `g` is a
 block of consecutive points sitting inside the boundary of `f`, after its bottom points: the
 matching of `f.tensor g` is obtained by **nesting** the matching of `g` into the matching of `f`
-(`TauCeti.PlanarMatching.nest`). The circles of `f.tensor g` are those of `f` and of `g`.
+(`TauCeti.PlanarMatching.nest`, from `TauCeti.Combinatorics.PlanarMatching.Glue`). The circles of
+`f.tensor g` are those of `f` and of `g`.
 
 The main result is the interchange law `TauCeti.TLDiagram.tensor_comp_tensor`: stacking two
 juxtapositions is juxtaposing the two stacks, for the matchings and for the circle counts. This,
@@ -32,9 +33,6 @@ tensor product adds the numbers of boundary points.
 
 ## Main definitions
 
-* `TauCeti.PlanarMatching.nest x y`: the planar matching of `k + l + r` points obtained by
-  inserting a planar matching `y` of `l` points between the first `k` and the last `r` points of a
-  planar matching `x` of `k + r` points.
 * `TauCeti.TLDiagram.tensor f g`: the juxtaposition of `f` and `g`, with `g` to the right of `f`.
 
 ## Main results
@@ -64,202 +62,6 @@ public section
 namespace TauCeti
 
 namespace PlanarMatching
-
-/-! ### Nesting partner functions -/
-
-/-- The new number of an outer point `v` once a block of `L` points is inserted at position `c`. -/
-private def shiftFrom (c L v : ℕ) : ℕ := if v < c then v else v + L
-
-/-- The partner function obtained by inserting the partner function `ψ` of a block of `L` points
-at position `c` into the partner function `φ`. -/
-private def nestFn (c L : ℕ) (φ ψ : ℕ → ℕ) (q : ℕ) : ℕ :=
-  if q < c then shiftFrom c L (φ q) else if q < c + L then c + ψ (q - c)
-  else shiftFrom c L (φ (q - L))
-
-private theorem shiftFrom_of_lt {c L v : ℕ} (h : v < c) : shiftFrom c L v = v := by
-  simp [shiftFrom, h]
-
-private theorem shiftFrom_of_le {c L v : ℕ} (h : c ≤ v) : shiftFrom c L v = v + L := by
-  simp [shiftFrom, Nat.not_lt.mpr h]
-
-private theorem shiftFrom_lt_shiftFrom_iff {c L v w : ℕ} :
-    shiftFrom c L v < shiftFrom c L w ↔ v < w := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-private theorem shiftFrom_inj {c L v w : ℕ} : shiftFrom c L v = shiftFrom c L w ↔ v = w := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-private theorem shiftFrom_lt_or_le (c L v : ℕ) :
-    shiftFrom c L v < c ∨ c + L ≤ shiftFrom c L v := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-private theorem nestFn_shiftFrom (c L : ℕ) (φ ψ : ℕ → ℕ) (v : ℕ) :
-    nestFn c L φ ψ (shiftFrom c L v) = shiftFrom c L (φ v) := by
-  by_cases hv : v < c
-  · simp [nestFn, shiftFrom_of_lt hv, hv]
-  · rw [shiftFrom_of_le (by omega)]
-    simp [nestFn, show ¬ v + L < c by omega, show ¬ v + L < c + L by omega]
-
-private theorem nestFn_add (c : ℕ) {L j : ℕ} (φ ψ : ℕ → ℕ) (hj : j < L) :
-    nestFn c L φ ψ (c + j) = c + ψ j := by
-  simp [nestFn, hj]
-
-/-- Every number is an outer point or a point of the inserted block. -/
-private theorem exists_shiftFrom_or_add (c L q : ℕ) :
-    (∃ v, q = shiftFrom c L v) ∨ ∃ j < L, q = c + j := by
-  by_cases h₁ : q < c
-  · exact Or.inl ⟨q, (shiftFrom_of_lt h₁).symm⟩
-  by_cases h₂ : q < c + L
-  · exact Or.inr ⟨q - c, by omega, by omega⟩
-  · exact Or.inl ⟨q - L, by rw [shiftFrom_of_le (by omega)]; omega⟩
-
-/-! ### Nesting planar matchings -/
-
-section Nest
-
-variable {k l r : ℕ}
-
-private theorem shiftFrom_lt {v : ℕ} (hv : v < k + r) : shiftFrom k l v < k + l + r := by
-  unfold shiftFrom
-  split_ifs <;> omega
-
-private theorem lt_of_shiftFrom_lt {v : ℕ} (hv : shiftFrom k l v < k + l + r) : v < k + r := by
-  unfold shiftFrom at hv
-  split_ifs at hv <;> omega
-
-private theorem nestFn_lt (x : PlanarMatching (k + r)) (y : PlanarMatching l) {q : ℕ}
-    (hq : q < k + l + r) : nestFn k l (pv x) (pv y) q < k + l + r := by
-  rcases exists_shiftFrom_or_add k l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom]
-    exact shiftFrom_lt (pv_lt x (lt_of_shiftFrom_lt hq))
-  · rw [nestFn_add _ _ _ hj]
-    have := pv_lt y hj
-    omega
-
-private theorem nestFn_nestFn (x : PlanarMatching (k + r)) (y : PlanarMatching l) (q : ℕ) :
-    nestFn k l (pv x) (pv y) (nestFn k l (pv x) (pv y) q) = q := by
-  rcases exists_shiftFrom_or_add k l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom, nestFn_shiftFrom, pv_pv_eq]
-  · rw [nestFn_add _ _ _ hj, nestFn_add _ _ _ (pv_lt y hj), pv_pv y hj]
-
-private theorem nestFn_ne (x : PlanarMatching (k + r)) (y : PlanarMatching l) {q : ℕ}
-    (hq : q < k + l + r) : nestFn k l (pv x) (pv y) q ≠ q := by
-  rcases exists_shiftFrom_or_add k l q with ⟨v, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom, Ne, shiftFrom_inj]
-    exact pv_ne x (lt_of_shiftFrom_lt hq)
-  · rw [nestFn_add _ _ _ hj]
-    have := pv_ne y hj
-    omega
-
-private theorem nestFn_of_le (x : PlanarMatching (k + r)) (y : PlanarMatching l) {q : ℕ}
-    (hq : k + l + r ≤ q) : nestFn k l (pv x) (pv y) q = q := by
-  have e : q = shiftFrom k l (q - l) := by rw [shiftFrom_of_le (by omega)]; omega
-  rw [e, nestFn_shiftFrom, pv_of_le x (by omega)]
-
-/-- A planar matching cannot have two interleaving arcs, in terms of partner numbers. -/
-private theorem pv_not_lt_pv {K : ℕ} (x : PlanarMatching K) {a b : ℕ} (hab : a < b)
-    (hb : b < pv x a) (ha : a < K) : ¬ pv x a < pv x b := by
-  have hbK : b < K := lt_trans hb (pv_lt x ha)
-  have h := Equiv.Perm.isNoncrossingMatching_iff.mp x.2
-    (show (⟨a, ha⟩ : Fin K) < ⟨b, hbK⟩ from hab)
-    (show (⟨b, hbK⟩ : Fin K) < x.1.val ⟨a, ha⟩ by rw [Fin.lt_def, ← pv_of_lt x ha]; exact hb)
-  rwa [Fin.lt_def, ← pv_of_lt x ha, ← pv_of_lt x hbK] at h
-
-private theorem nestFn_not_lt (x : PlanarMatching (k + r)) (y : PlanarMatching l) {a b : ℕ}
-    (hab : a < b) (hb : b < nestFn k l (pv x) (pv y) a) (ha : a < k + l + r) :
-    ¬ nestFn k l (pv x) (pv y) a < nestFn k l (pv x) (pv y) b := by
-  rcases exists_shiftFrom_or_add k l a with ⟨v, rfl⟩ | ⟨i, hi, rfl⟩ <;>
-    rcases exists_shiftFrom_or_add k l b with ⟨w, rfl⟩ | ⟨j, hj, rfl⟩
-  · rw [nestFn_shiftFrom] at hb ⊢
-    rw [nestFn_shiftFrom, shiftFrom_lt_shiftFrom_iff]
-    rw [shiftFrom_lt_shiftFrom_iff] at hab hb
-    exact pv_not_lt_pv x hab hb (lt_of_shiftFrom_lt ha)
-  · rw [nestFn_shiftFrom] at hb ⊢
-    rw [nestFn_add _ _ _ hj]
-    have := pv_lt y hj
-    have := shiftFrom_lt_or_le k l v
-    have := shiftFrom_lt_or_le k l (pv x v)
-    omega
-  · rw [nestFn_add _ _ _ hi] at hb
-    have := pv_lt y hi
-    have := shiftFrom_lt_or_le k l w
-    omega
-  · rw [nestFn_add _ _ _ hi] at hb ⊢
-    rw [nestFn_add _ _ _ hj]
-    have := pv_not_lt_pv y (a := i) (b := j) (by omega) (by omega) hi
-    omega
-
-/-- The involution underlying `TauCeti.PlanarMatching.nest`. -/
-private def nestFun (x : PlanarMatching (k + r)) (y : PlanarMatching l) (i : Fin (k + l + r)) :
-    Fin (k + l + r) :=
-  ⟨nestFn k l (pv x) (pv y) i, nestFn_lt x y i.isLt⟩
-
-private theorem val_nestFun (x : PlanarMatching (k + r)) (y : PlanarMatching l)
-    (i : Fin (k + l + r)) : (nestFun x y i : ℕ) = nestFn k l (pv x) (pv y) i := (rfl)
-
-private theorem nestFun_involutive (x : PlanarMatching (k + r)) (y : PlanarMatching l) :
-    Function.Involutive (nestFun x y) :=
-  fun i => Fin.ext <| by rw [val_nestFun, val_nestFun, nestFn_nestFn]
-
-private theorem nestFun_ne (x : PlanarMatching (k + r)) (y : PlanarMatching l)
-    (i : Fin (k + l + r)) : nestFun x y i ≠ i :=
-  fun h => nestFn_ne x y i.isLt (by rw [← val_nestFun, h])
-
-private theorem isNoncrossingMatching_nestFun (x : PlanarMatching (k + r))
-    (y : PlanarMatching l) :
-    (PerfectMatching.ofInvolutive (nestFun_involutive x y)
-      (nestFun_ne x y)).val.IsNoncrossingMatching := by
-  refine Equiv.Perm.isNoncrossingMatching_iff.mpr fun a b hab hb => ?_
-  simp only [PerfectMatching.ofInvolutive_apply, Fin.lt_def, val_nestFun] at hab hb ⊢
-  exact nestFn_not_lt x y hab hb a.isLt
-
-/-- **Nesting** a planar matching `y` of `l` points into a planar matching `x` of `k + r` points:
-the arcs of `y` on the block of points `k, …, k + l - 1`, and the arcs of `x` on the first `k`
-and the last `r` points. It is planar because the inserted block is an interval of consecutive
-points, which no arc of `x` separates. -/
-def nest (x : PlanarMatching (k + r)) (y : PlanarMatching l) : PlanarMatching (k + l + r) :=
-  ⟨PerfectMatching.ofInvolutive (nestFun_involutive x y) (nestFun_ne x y),
-    isNoncrossingMatching_nestFun x y⟩
-
-private theorem pv_nest (x : PlanarMatching (k + r)) (y : PlanarMatching l) :
-    pv (x.nest y) = nestFn k l (pv x) (pv y) := by
-  funext q
-  by_cases hq : q < k + l + r
-  · rw [pv_of_lt _ hq, nest, PerfectMatching.ofInvolutive_apply, val_nestFun]
-  · rw [pv_of_le _ (by omega), nestFn_of_le x y (by omega)]
-
-/-- Nesting keeps the arcs of the inserted matching, on the block of points after the first
-`k`. -/
-@[simp]
-theorem nest_val_castAdd_natAdd (x : PlanarMatching (k + r)) (y : PlanarMatching l)
-    (j : Fin l) :
-    (x.nest y).1.val (Fin.castAdd r (Fin.natAdd k j)) =
-      Fin.castAdd r (Fin.natAdd k (y.1.val j)) := by
-  refine Fin.ext ?_
-  rw [← pv_coe, pv_nest, Fin.val_castAdd, Fin.val_natAdd, nestFn_add _ _ _ j.isLt, pv_coe,
-    Fin.val_castAdd, Fin.val_natAdd]
-
-/-- Nesting keeps the arcs of the outer matching: its first `k` points stay in place and its
-last `r` points move past the inserted block. -/
-theorem nest_val_append (x : PlanarMatching (k + r)) (y : PlanarMatching l) (i : Fin (k + r)) :
-    (x.nest y).1.val (Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l)) i) =
-      Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l)) (x.1.val i) := by
-  have e : ∀ i : Fin (k + r),
-      ((Fin.append (Fin.castAdd r ∘ Fin.castAdd l) (Fin.natAdd (k + l)) i : Fin (k + l + r)) :
-        ℕ) = shiftFrom k l i := by
-    intro i
-    refine Fin.addCases (fun a => ?_) (fun b => ?_) i
-    · rw [Fin.append_left, Function.comp_apply, Fin.val_castAdd, Fin.val_castAdd, Fin.val_castAdd,
-        shiftFrom_of_lt a.isLt]
-    · rw [Fin.append_right, Fin.val_natAdd, Fin.val_natAdd, shiftFrom_of_le (by omega)]
-      omega
-  refine Fin.ext ?_
-  rw [← pv_coe, pv_nest, e, nestFn_shiftFrom, pv_coe, e]
-
-end Nest
 
 /-! ### Contractions commute with nesting -/
 
@@ -585,12 +387,17 @@ theorem matching_tensor (f : TLDiagram n m) (g : TLDiagram n' m') :
 theorem circles_tensor (f : TLDiagram n m) (g : TLDiagram n' m') :
     (f.tensor g).circles = f.circles + g.circles := (rfl)
 
-/-- **The interchange law**: stacking two juxtapositions is juxtaposing the two stacks,
-`(f ⊗ f') ≫ (g ⊗ g') = (f ≫ g) ⊗ (f' ≫ g')`. Gluing the `m + m'` middle points closes the circles
-closed between `f` and `g` and those closed between `f'` and `g'`, and no others. -/
-theorem tensor_comp_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagram n' m')
+/-- Gluing the `m + m'` middle pairs of two stacked juxtapositions glues the `m` pairs between `f`
+and `g` and the `m'` pairs between `f'` and `g'`, nesting the second result into the first, and
+closes the circles closed in either middle. -/
+private theorem glue_append_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagram n' m')
     (g' : TLDiagram m' p') :
-    (f.tensor f').comp (g.tensor g') = (f.comp g).tensor (f'.comp g') := by
+    glueFn (n + n') (m + m') (pv ((f.tensor f').matching.append (g.tensor g').matching)) =
+        nestFn n (n' + p') (glueFn n m (pv (f.matching.append g.matching)))
+          (glueFn n' m' (pv (f'.matching.append g'.matching))) ∧
+      glueCircles (n + n') (m + m') (pv ((f.tensor f').matching.append (g.tensor g').matching)) =
+        glueCircles n m (pv (f.matching.append g.matching)) +
+          glueCircles n' m' (pv (f'.matching.append g'.matching)) := by
   -- The juxtaposition of `f ⊗ f'` and `g ⊗ g'` nests `f'` and `g'` into the juxtaposition `W` of
   -- `f` and `g`, on either side of the `m` middle pairs between `f` and `g`.
   obtain ⟨W, hW⟩ : ∃ W : PlanarMatching (n + m + m + p),
@@ -598,10 +405,9 @@ theorem tensor_comp_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagr
     ⟨PlanarMatching.cast (by omega) _, pv_cast_eq _ _⟩
   have hA : pv ((f.tensor f').matching.append (g.tensor g').matching) =
       nestFn n (n' + m') (pv (W.nest g'.matching)) (pv f'.matching) := by
-    rw [pv_nest, hW, pv_append_eq, pv_append_eq, matching_tensor, matching_tensor, pv_cast_eq,
-      pv_cast_eq, pv_nest, pv_nest, show n + n' + (m + m') = n + m + (n' + m') by omega,
-      appendFn_nestFn_left _ _ _ (by omega : n ≤ n + m),
-      show m + m' + (p + p') = m + p + (m' + p') by omega,
+    simp only [pv_append_eq, matching_tensor, pv_cast_eq, pv_nest, hW]
+    rw [Nat.add_add_add_comm n n' m m', appendFn_nestFn_left _ _ _ (by omega : n ≤ n + m),
+      Nat.add_add_add_comm m m' p p',
       appendFn_nestFn_right _ _ _ (by omega : m ≤ m + p) fun q hq => pv_lt _ hq]
   -- Glue the `m` pairs between `f` and `g` first, then the `m'` pairs between `f'` and `g'`.
   obtain ⟨hS₁, hS₂⟩ := glueFn_add (n + n') m' m
@@ -612,17 +418,25 @@ theorem tensor_comp_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagr
     (by omega)
   obtain ⟨hI₁, hI₂⟩ := glueFn_nestFn_add (c := n) (s := n') (glueFn n m (pv W)) m' _
     (f'.matching.append g'.matching) (by omega)
-  have e₁ : n + n' + m' = n + (n' + m') := by omega
   have e₂ : n + m + m - 2 * m = n := by omega
   have e₃ : n' + m' + (m' + p') - 2 * m' = n' + p' := by omega
+  rw [hS₁, hS₂, Nat.add_assoc n n' m', hA, hR₁, hR₂, pv_nest, hL₁, hL₂, e₂,
+    nestFn_nestFn_eq_nestFn_appendFn, ← pv_append_eq, hI₁, hI₂, e₃, hW]
+  exact ⟨rfl, Nat.add_comm _ _⟩
+
+/-- **The interchange law**: stacking two juxtapositions is juxtaposing the two stacks,
+`(f ⊗ f') ≫ (g ⊗ g') = (f ≫ g) ⊗ (f' ≫ g')`. Gluing the `m + m'` middle points closes the circles
+closed between `f` and `g` and those closed between `f'` and `g'`, and no others. -/
+theorem tensor_comp_tensor (f : TLDiagram n m) (g : TLDiagram m p) (f' : TLDiagram n' m')
+    (g' : TLDiagram m' p') :
+    (f.tensor f').comp (g.tensor g') = (f.comp g).tensor (f'.comp g') := by
+  obtain ⟨hM, hC⟩ := glue_append_tensor f g f' g'
   ext : 1
   · apply eq_of_pv_eq
-    rw [matching_comp, pv_glueMiddle, hS₁, e₁, hA, hR₁, pv_nest, hL₁, e₂,
-      nestFn_nestFn_eq_nestFn_appendFn, ← pv_append_eq, hI₁, e₃, hW, matching_tensor, pv_cast_eq,
-      pv_nest, matching_comp, matching_comp, pv_glueMiddle, pv_glueMiddle]
-  · rw [circles_comp, glueMiddleCircles_eq, hS₂, e₁, hA, hR₁, hR₂, pv_nest, hL₁, hL₂, e₂,
-      nestFn_nestFn_eq_nestFn_appendFn, ← pv_append_eq, hI₂, hW, circles_tensor, circles_tensor,
-      circles_tensor, circles_comp, circles_comp, glueMiddleCircles_eq, glueMiddleCircles_eq]
+    rw [matching_comp, pv_glueMiddle, hM]
+    simp only [matching_tensor, matching_comp, pv_cast_eq, pv_nest, pv_glueMiddle]
+  · rw [circles_comp, glueMiddleCircles_eq, hC]
+    simp only [circles_tensor, circles_comp, glueMiddleCircles_eq]
     omega
 
 /-- The juxtaposition of two identity diagrams is an identity diagram. -/

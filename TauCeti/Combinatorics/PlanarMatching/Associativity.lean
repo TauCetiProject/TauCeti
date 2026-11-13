@@ -344,14 +344,6 @@ private theorem circleInd_splice {φ : ℕ → ℕ} (hφ : ∀ z, φ (φ z) = z)
 
 /-! ### Partner functions of planar matchings -/
 
-private theorem pv_of_le {K : ℕ} (x : PlanarMatching K) {u : ℕ} (h : K ≤ u) : pv x u = u := by
-  simp [pv, Nat.not_lt.mpr h]
-
-private theorem pv_pv_eq {K : ℕ} (x : PlanarMatching K) (u : ℕ) : pv x (pv x u) = u := by
-  by_cases hu : u < K
-  · exact pv_pv x hu
-  · rw [pv_of_le x (u := u) (by omega), pv_of_le x (u := u) (by omega)]
-
 private theorem pv_cast_eq {K K' : ℕ} (h : K = K') (x : PlanarMatching K) :
     pv (cast h x) = pv x :=
   funext (pv_cast h x)
