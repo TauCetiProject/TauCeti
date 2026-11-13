@@ -7,9 +7,10 @@ module
 
 public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
 public import TauCeti.NumberTheory.Height.FundamentalInequality
+import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
 
 /-!
-# Height bounds above finite places
+# Height bounds above places
 
 Absolute values of a number field extension lying over distinct finite places of the base give
 local factors whose product is bounded by the relative height in the extension. The absolute
@@ -21,6 +22,9 @@ is bounded below by the reciprocal height. The single-place upper bound controls
 algebraic targets in local polynomial estimates, while the product bounds are the finite-place
 part of the fundamental inequality in an extension.
 
+Above an infinite place the single-place bounds hold as well, since an absolute value lying over
+an infinite place is an infinite place of the extension, `NumberField.isInfinitePlace_of_liesOver`.
+
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §§1.3 and 1.5.
@@ -31,6 +35,8 @@ public section
 open Height
 
 namespace NumberField
+
+section FinitePlace
 
 variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Algebra K F]
 
@@ -93,5 +99,29 @@ theorem FinitePlace.inv_mulHeight₁_le_min_one_apply_of_liesOver (v : FinitePla
     (mulHeight₁ x)⁻¹ ≤ min 1 (w x) := by
   simpa using inv_mulHeight₁_le_prod_min_one_apply_of_liesOver {v} (fun _ ↦ w)
     (by intro u hu; obtain rfl := Finset.mem_singleton.mp hu; infer_instance) hx
+
+end FinitePlace
+
+section InfinitePlace
+
+variable {K F : Type*} [Field K] [Field F] [NumberField F] [Algebra K F]
+
+/-- An absolute value lying over an infinite place of the base is bounded by the relative height
+in the extension. -/
+theorem InfinitePlace.max_apply_one_le_mulHeight₁_of_liesOver (v : InfinitePlace K)
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] (x : F) :
+    max (w x) 1 ≤ mulHeight₁ x := by
+  obtain ⟨w', rfl⟩ := (isInfinitePlace_iff w).mp (isInfinitePlace_of_liesOver v w)
+  exact w'.max_apply_one_le_mulHeight₁ x
+
+/-- At an absolute value above an infinite place, the lower truncated factor of a nonzero element
+is bounded below by its reciprocal relative height. -/
+theorem InfinitePlace.inv_mulHeight₁_le_min_one_apply_of_liesOver (v : InfinitePlace K)
+    (w : AbsoluteValue F ℝ) [w.LiesOver v.1] {x : F} (hx : x ≠ 0) :
+    (mulHeight₁ x)⁻¹ ≤ min 1 (w x) := by
+  obtain ⟨w', rfl⟩ := (isInfinitePlace_iff w).mp (isInfinitePlace_of_liesOver v w)
+  exact w'.inv_mulHeight₁_le_min_one_apply hx
+
+end InfinitePlace
 
 end NumberField
