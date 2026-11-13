@@ -498,7 +498,7 @@ private theorem exists_thomClass :
   have hω : e.mapOrientation (Fin (n + 1)) hb.2 (o b) = e.mapOrientation (Fin (n + 1)) hc (o c) :=
     ht b hb.1 hb.2
   rw [hu b hb, ← hω, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF hF
 
 /-- **The integral Thom class of an oriented vector bundle.** For an orientation `o` of a real
 vector bundle `E` over an arbitrary base, with model fibre `F` of dimension `n + 1`, this is the
@@ -523,7 +523,7 @@ theorem singularCohomologyMap_fiberThomPairMap_thomClass (e : Trivialization F (
         (n + 1) ((e.mapOrientation (Fin (n + 1)) hb (o b)).localCohomologyClass hF) :=
   ((exists_thomClass o hF).choose_spec b).trans <| by
     rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply]
-    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF
+    exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o b) _ _ hF hF
 
 /-- **Uniqueness of the Thom class.** A class of `Hⁿ⁺¹(E, E₀; ℤ)` is the Thom class of the oriented
 bundle exactly when it restricts on every fibre to the generator selected by the fibre
@@ -598,7 +598,7 @@ theorem singularCohomologyMap_pullbackThomPairMap_thomClass {B' : Type w} [Topol
   refine (o.singularCohomologyMap_fiberThomPairMap_thomClass hF (trivializationAt F E (f b'))
     (FiberBundle.mem_baseSet_trivializationAt' (f b'))).trans ?_
   rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply, pullback_apply]
-  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF
+  exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF hF
 
 /-- **Fibrewise negation in odd rank reverses the Thom class.** For an oriented bundle of odd rank
 `n + 1`, pulling the Thom class back along `v ↦ -v` gives the Thom class of the opposite

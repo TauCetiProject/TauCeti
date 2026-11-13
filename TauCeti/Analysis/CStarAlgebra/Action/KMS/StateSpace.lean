@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import TauCeti.Analysis.CStarAlgebra.StateSpace
+public import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
