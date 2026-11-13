@@ -97,6 +97,49 @@ theorem ext_of_mem {a b : LocalHomogeneousSymbol U V W m}
     · exact h x hx ξ hξ
   · rw [a.coefficient_of_notMem x hx ξ, b.coefficient_of_notMem x hx ξ]
 
+section mk'
+
+/-- The homogeneous symbol of degree `m` on `U` defined by a function `f` that is smooth on
+`U × (ℝⁿ \ {0})` and positively homogeneous of degree `m` there; its value at positions outside `U`
+and at the zero frequency is set to zero, whatever `f` does there. -/
+def mk' (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiffOn ℝ ∞ f ((U : Set (CoordinateSpace n)) ×ˢ {ξ | ξ ≠ 0}))
+    (hhom : ∀ x ∈ U, ∀ ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
+    LocalHomogeneousSymbol U V W m where
+  coefficient := ((U : Set (CoordinateSpace n)) ×ˢ {ξ | ξ ≠ 0}).indicator f
+  coefficient_of_notMem x hx ξ := indicator_of_notMem (by simp [hx]) _
+  zero_covector x := indicator_of_notMem (by simp) _
+  contDiffOn_coefficient := hf.congr fun _ hp => indicator_of_mem hp _
+  homogeneous x ξ t ht := by
+    by_cases hx : x ∈ U
+    · rcases eq_or_ne ξ 0 with rfl | hξ
+      · simp
+      · rw [indicator_of_mem (mk_mem_prod hx (smul_ne_zero ht.ne' hξ)),
+          indicator_of_mem (mk_mem_prod hx hξ), hhom x hx ξ hξ t ht]
+    · simp [hx]
+
+variable (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+  (hf : ContDiffOn ℝ ∞ f ((U : Set (CoordinateSpace n)) ×ˢ {ξ | ξ ≠ 0}))
+  (hhom : ∀ x ∈ U, ∀ ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ))
+
+@[simp]
+theorem coefficient_mk'_of_mem {x : CoordinateSpace n} (hx : x ∈ U) {ξ : CoordinateSpace n}
+    (hξ : ξ ≠ 0) : (mk' f hf hhom).coefficient (x, ξ) = f (x, ξ) :=
+  indicator_of_mem (mk_mem_prod hx hξ) _
+
+@[simp]
+theorem coefficient_mk'_of_notMem {x : CoordinateSpace n} (hx : x ∉ U) (ξ : CoordinateSpace n) :
+    (mk' f hf hhom).coefficient (x, ξ) = 0 :=
+  (mk' f hf hhom).coefficient_of_notMem x hx ξ
+
+/-- Rebuilding a homogeneous symbol on `U` from its own coefficient gives back the symbol. -/
+@[simp]
+theorem mk'_coefficient (a : LocalHomogeneousSymbol U V W m) :
+    mk' a.coefficient a.contDiffOn_coefficient (fun x _ ξ _ t ht => a.homogeneous x ξ t ht) = a :=
+  ext_of_mem fun _ hx _ hξ => coefficient_mk'_of_mem _ _ _ hx hξ
+
+end mk'
+
 section Module
 
 instance : Zero (LocalHomogeneousSymbol U V W m) where
@@ -462,6 +505,17 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalHomogeneousSymbol U V W m) :
     HomogeneousSymbol.restrict U' (extend ψ hψ hψU a) = restrict h a :=
   ext_of_mem fun x hx ξ _ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
+
+/-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
+extending the original homogeneous symbol. -/
+@[simp]
+theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U')
+    (a : LocalHomogeneousSymbol U V W m) :
+    extend ψ hψ hψU' (restrict h a) = extend ψ hψ (hψU'.trans h) a :=
+  HomogeneousSymbol.ext (funext fun ⟨x, ξ⟩ => by
+    by_cases hx : x ∈ U'
+    · simp [hx]
+    · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
 
 end Extend
 

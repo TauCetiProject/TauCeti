@@ -302,6 +302,49 @@ theorem term_sum {ι : Type*} (s : Finset ι) (a : ι → LocalClassicalSymbol U
   map_sum (AddMonoidHom.mk' (fun a : LocalClassicalSymbol U V W m => a.term j)
     fun a b => term_add a b j) a s
 
+variable (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ)
+
+@[simp]
+theorem remainder_zero : (0 : LocalClassicalSymbol U V W m).remainder χ N = 0 :=
+  LocalSymbol.ext (funext fun p => by simp)
+
+@[simp]
+theorem remainder_add : (a + b).remainder χ N = a.remainder χ N + b.remainder χ N :=
+  LocalSymbol.ext (funext fun p => by
+    simp only [coefficient_remainder, toLocalSymbol_add, LocalSymbol.coefficient_add,
+      Pi.add_apply, term_add, LocalHomogeneousSymbol.coefficient_add, smul_add,
+      Finset.sum_add_distrib]
+    abel)
+
+@[simp]
+theorem remainder_smul : (c • a).remainder χ N = c • a.remainder χ N :=
+  LocalSymbol.ext (funext fun p => by
+    simp only [coefficient_remainder, toLocalSymbol_smul, LocalSymbol.coefficient_smul,
+      Pi.smul_apply, term_smul, LocalHomogeneousSymbol.coefficient_smul, smul_sub, Finset.smul_sum,
+      smul_comm c])
+
+@[simp]
+theorem remainder_neg : (-a).remainder χ N = -a.remainder χ N := by
+  rw [← neg_one_smul ℂ a, remainder_smul, neg_one_smul]
+
+@[simp]
+theorem remainder_sub : (a - b).remainder χ N = a.remainder χ N - b.remainder χ N := by
+  rw [sub_eq_add_neg a b, remainder_add, remainder_neg, sub_eq_add_neg (a.remainder χ N)]
+
+@[simp]
+theorem remainder_nsmul (k : ℕ) : (k • a).remainder χ N = k • a.remainder χ N := by
+  rw [← Nat.cast_smul_eq_nsmul ℂ k a, remainder_smul, Nat.cast_smul_eq_nsmul]
+
+@[simp]
+theorem remainder_zsmul (k : ℤ) : (k • a).remainder χ N = k • a.remainder χ N := by
+  rw [← Int.cast_smul_eq_zsmul ℂ k a, remainder_smul, Int.cast_smul_eq_zsmul]
+
+@[simp]
+theorem remainder_sum {ι : Type*} (s : Finset ι) (a : ι → LocalClassicalSymbol U V W m) :
+    (∑ i ∈ s, a i).remainder χ N = ∑ i ∈ s, (a i).remainder χ N :=
+  map_sum (AddMonoidHom.mk' (fun a : LocalClassicalSymbol U V W m => a.remainder χ N)
+    fun a b => remainder_add a b χ N) a s
+
 end Module
 
 section Extend
@@ -499,6 +542,13 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalClassicalSymbol U V W m) :
     ClassicalSymbol.restrict U' (extend ψ hψ hψU a) = restrict h a :=
   ext (by simp [LocalSymbol.restrict_extend_of_eqOn_one hψ hψU h hψ1])
+
+/-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
+extending the original classical symbol. -/
+@[simp]
+theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalClassicalSymbol U V W m) :
+    extend ψ hψ hψU' (restrict h a) = extend ψ hψ (hψU'.trans h) a :=
+  ClassicalSymbol.ext (by simp)
 
 end LocalClassicalSymbol
 

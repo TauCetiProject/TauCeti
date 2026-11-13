@@ -543,6 +543,16 @@ theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
 
+/-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
+extending the original symbol. -/
+@[simp]
+theorem extend_restrict (h : U' ≤ U) (hψU' : tsupport ψ ⊆ U') (a : LocalSymbol U V W m) :
+    extend ψ hψ hψU' (restrict h a) = extend ψ hψ (hψU'.trans h) a :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ => by
+    by_cases hx : x ∈ U'
+    · simp [hx]
+    · simp [hx, image_eq_zero_of_notMem_tsupport fun hy => hx (hψU' hy)])
+
 end Extend
 
 end LocalSymbol
