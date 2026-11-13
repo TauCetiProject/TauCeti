@@ -13,7 +13,9 @@ public import Mathlib.Data.List.Basic
 For a list `l` and a list of lists `L`, an occurrence of `l` in the concatenation `L.flatten` is
 *split* by `L` when one of the cut points between consecutive members of `L` lies strictly inside
 it. `List.IsUnsplit l L` says that no occurrence of `l` in `L.flatten` is split. Then every
-occurrence of a nonempty `l` lies inside a single member of `L`.
+occurrence of a nonempty `l` lies inside a single member of `L`. The condition is unchanged when
+`l` and every member of `L` are reversed and the order of the members is reversed, and when an
+injective map is applied to their entries.
 
 This is the condition under which an operation on words that only looks at the occurrences of `l`
 commutes with the concatenation of the members of `L`.
@@ -47,6 +49,13 @@ theorem isUnsplit_nil (l : List α) : l.IsUnsplit [] := fun _ _ _ _ _ hL ↦ by
 theorem nil_isUnsplit (L : List (List α)) : ([] : List α).IsUnsplit L := fun _ _ _ _ _ _ ↦ by
   simp only [length_nil, Nat.add_zero]
   omega
+
+/-- No factorisation splits an occurrence of a list with one entry. -/
+@[simp, grind .]
+theorem singleton_isUnsplit (a : α) (L : List (List α)) : [a].IsUnsplit L :=
+  fun _ _ _ _ _ _ ↦ by
+    simp only [length_singleton]
+    omega
 
 /-- A factorisation splits no occurrence of a list that does not occur in its concatenation. -/
 theorem isUnsplit_of_not_isInfix (h : ¬ l <:+: L.flatten) : l.IsUnsplit L :=
@@ -152,6 +161,45 @@ theorem IsUnsplit.exists_isInfix_of_isInfix_flatten (h : l.IsUnsplit L) (hl : l 
     · obtain ⟨t', ht'⟩ : s ++ l <+: u :=
         prefix_of_prefix_length_le ⟨t, hs⟩ (prefix_append _ _) (by simpa using hle)
       exact ⟨u, mem_cons_self, s, t', ht'⟩
+
+/-- If the images under `f` of the members of `L` split no occurrence of the image of `l`, then
+`L` splits no occurrence of `l`. -/
+theorem IsUnsplit.of_map {β : Type*} {f : α → β} (h : (l.map f).IsUnsplit (L.map (map f))) :
+    l.IsUnsplit L := fun s t L₁ L₂ hs hL ↦ by
+  simpa [Function.comp_def] using h (s.map f) (t.map f) (L₁.map (map f)) (L₂.map (map f))
+    (by rw [← map_flatten, ← hs]; simp) (by simp [hL])
+
+/-- Under an injective map `f`, the images of the members of `L` split no occurrence of the image
+of `l` exactly when `L` splits no occurrence of `l`. -/
+theorem map_isUnsplit_iff {β : Type*} {f : α → β} (hf : Function.Injective f) :
+    (l.map f).IsUnsplit (L.map (map f)) ↔ l.IsUnsplit L := by
+  refine ⟨IsUnsplit.of_map, fun h s t M₁ M₂ hs hM ↦ ?_⟩
+  rw [← map_flatten, eq_comm, map_eq_append_iff] at hs
+  obtain ⟨u, t', e, hu, rfl⟩ := hs
+  obtain ⟨s', l', rfl, rfl, hl⟩ := map_eq_append_iff.1 hu
+  obtain rfl := hf.list_map hl
+  obtain ⟨L₁, L₂, rfl, rfl, rfl⟩ := map_eq_append_iff.1 hM
+  simpa [Function.comp_def] using h s' t' L₁ L₂ e.symm rfl
+
+/-- If `L` splits no occurrence of `l`, then the reversed members of `L`, in the reverse order,
+split no occurrence of the reverse of `l`. -/
+theorem IsUnsplit.reverse (h : l.IsUnsplit L) :
+    l.reverse.IsUnsplit (L.map List.reverse).reverse := by
+  intro s t M₁ M₂ hs hM
+  rw [← reverse_flatten] at hs
+  obtain ⟨L₁, L₂, rfl, -, h₂⟩ := map_eq_append_iff.1 (reverse_eq_append_iff.1 hM)
+  have := h t.reverse s.reverse L₁ L₂ (by simpa using congrArg List.reverse hs) rfl
+  have hM₁ : M₁.flatten.length = L₂.flatten.length := by
+    rw [← reverse_reverse M₁, ← h₂, ← reverse_flatten, length_reverse]
+  have hlen := congrArg length hs
+  simp only [length_reverse, length_append, flatten_append] at hlen this ⊢
+  omega
+
+/-- The reversed members of `L`, in the reverse order, split no occurrence of the reverse of `l`
+exactly when `L` splits no occurrence of `l`. -/
+@[simp]
+theorem reverse_isUnsplit : l.reverse.IsUnsplit (L.map reverse).reverse ↔ l.IsUnsplit L :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.reverse, IsUnsplit.reverse⟩
 
 /-- The factorisation `[0, 1] ++ [0]` splits the occurrence of `[0, 1, 0]` in its
 concatenation. -/

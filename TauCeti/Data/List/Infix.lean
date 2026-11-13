@@ -40,9 +40,8 @@ theorem replicate_prefix_of_append_cons_eq {x y : α} (hxy : x ≠ y) {l t r : L
       exact absurd (eq_of_mem_replicate (hc ▸ by simp : y ∈ replicate k x)).symm hxy
   · exact ⟨c, hc.symm⟩
 
-/-- A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`: none of its
-occurrences can begin inside `l₁`. This is the infix analogue of
-`List.Sublist.of_sublist_append_right`. -/
+/-- A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. This is the
+infix analogue of `List.Sublist.of_sublist_append_right`. -/
 theorem IsInfix.of_infix_append_right {l l₁ l₂ : List α} (w : ∀ a ∈ l, a ∉ l₁)
     (h : l <:+: l₁ ++ l₂) : l <:+: l₂ := by
   induction l₁ with

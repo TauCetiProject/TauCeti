@@ -119,6 +119,18 @@ private theorem occursAt_append_right_iff (h : l.IsUnsplit [u ++ v, t₀]) (hk :
     prefix_of_prefix_length_le ⟨t, hst⟩ (prefix_append (u ++ v) t₀) hle
   exact ⟨s, t', ht', hs⟩
 
+/-- The formal inverses of the members of `L`, in the reverse order, split no occurrence of the
+formal inverse of `l` exactly when `L` splits no occurrence of `l`. -/
+@[simp]
+theorem invRev_isUnsplit {L : List (List (α × Bool))} :
+    (invRev l).IsUnsplit (L.map invRev).reverse ↔ l.IsUnsplit L := by
+  have hf : Function.Injective fun c : α × Bool ↦ (c.1, !c.2) := fun c c' h ↦ by
+    simpa [Prod.ext_iff] using h
+  have e : L.map invRev = (L.map (List.map fun c : α × Bool ↦ (c.1, !c.2))).map reverse := by
+    simp [invRev, Function.comp_def]
+  rw [e]
+  exact reverse_isUnsplit.trans (map_isUnsplit_iff hf)
+
 section BlockInsert
 
 private theorem suffix_and_head?_iff :
@@ -167,6 +179,17 @@ def blockInsert (a b x : α) (m : ℕ) (w : List (α × Bool)) : List (α × Boo
     (if (w.take p).getLast? = some (b, false) ∧
         replicate m (a, false) ++ [(b, false)] <+: w.drop p
       then [(x, false)] else []) ++ w[p]?.toList
+
+/-- The defining formula of `FreeGroup.blockInsert`: at each position `p` of `w`, the letters
+inserted at the gap before position `p`, followed by the letter at position `p`. -/
+theorem blockInsert_def (a b x : α) (m : ℕ) (w : List (α × Bool)) :
+    blockInsert a b x m w = (range w.length).flatMap fun p ↦
+      (if (b, true) :: replicate m (a, true) <:+ w.take p ∧ w[p]? = some (b, true)
+        then [(x, true)] else []) ++
+      (if (w.take p).getLast? = some (b, false) ∧
+          replicate m (a, false) ++ [(b, false)] <+: w.drop p
+        then [(x, false)] else []) ++ w[p]?.toList :=
+  (rfl)
 
 /-- The word `v` with the insertions of `blockInsert` made in the word `u ++ v ++ t`, at the gaps
 before the letters of `v`. -/
@@ -396,7 +419,7 @@ private theorem of_mem_insertAux {c : α × Bool} (hc : c ∈ insertAux a b x m 
 /-! ### Properties of the replacement -/
 
 /-- Nothing is inserted into the empty word. -/
-@[simp]
+@[simp, grind =]
 theorem blockInsert_nil (a b x : α) (m : ℕ) : blockInsert a b x m [] = [] := by
   simp [blockInsert]
 
@@ -431,6 +454,7 @@ theorem blockInsert_eq_nil_iff : blockInsert a b x m w = [] ↔ w = [] :=
 /-- A letter belongs to the new word exactly when it belongs to the old word, or it is `x` and
 the block occurs in the old word, or it is `x⁻¹` and the formal inverse of the block occurs in the
 old word. -/
+@[simp, grind =]
 theorem mem_blockInsert_iff {c : α × Bool} : c ∈ blockInsert a b x m w ↔ c ∈ w ∨
     (c = (x, true) ∧ merzljakovBlock a b m <:+: w) ∨
       (c = (x, false) ∧ invRev (merzljakovBlock a b m) <:+: w) := by
@@ -479,6 +503,7 @@ theorem blockInsert_eq_self (h : ¬ merzljakovBlock a b m <:+: w)
 
 /-- The replacement leaves a word unchanged exactly when neither the block nor its formal inverse
 occurs in it. -/
+@[simp]
 theorem blockInsert_eq_self_iff : blockInsert a b x m w = w ↔
     ¬ merzljakovBlock a b m <:+: w ∧ ¬ invRev (merzljakovBlock a b m) <:+: w := by
   refine ⟨fun hw ↦ ?_, fun h ↦ blockInsert_eq_self h.1 h.2⟩
