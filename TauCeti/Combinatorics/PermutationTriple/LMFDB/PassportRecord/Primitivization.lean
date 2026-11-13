@@ -51,6 +51,8 @@ its own primitivization in degree.
   genus at most that of the passport.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf.isPrimitive_eq_true_iff`: the
   stored primitivity flag is set exactly when the primitivization has the same degree.
+* `BelyiRecord.IsPrimitivizationOf.of_card_primitivizationBlock_eq_one`: a passport
+  row whose primitivization block is a single sheet is its own primitivization.
 
 ## References
 
@@ -148,6 +150,33 @@ theorem isPrimitive_eq_true_iff (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf 
     rcases hmax C hC (by simpa [hx] using hxC) with h | h
     · exact Or.inl (h ▸ by simp [hx])
     · exact Or.inr h
+
+/-- **A one-sheet primitivization block.** If the primitivization block of the passport row `r` is
+a single sheet, as it is for every valid primitive row, then a map row of the same degree carrying
+the stored primitivization label certifies the primitivization of `r` at `t` as soon as it is valid
+for some passport of `t`: the quotient of `t` by the translates of a single sheet is isomorphic to
+`t`. -/
+theorem of_card_primitivizationBlock_eq_one {q : BelyiRecord n} {P : PassportSpec n}
+    (hB : r.primitivizationBlock.card = 1) (hlabel : q.label = r.primitivization)
+    (hP : PassportSpec.HasPassport t P) (hq : q.IsValidFor P) : q.IsPrimitivizationOf r t := by
+  have ht := t.2.isPretransitive
+  obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hB
+  have hBc : (r.primitivizationBlock : Set (Fin n)) = {x} := by simp [hx]
+  have hblock : IsBlock t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n)) :=
+    hBc ▸ IsBlock.of_subsingleton Set.subsingleton_singleton
+  have hne : (r.primitivizationBlock : Set (Fin n)).Nonempty := hBc ▸ Set.singleton_nonempty x
+  -- The translates of a single sheet are the single sheets, so there are `n` of them.
+  have hcard := ncard_mul_eq_of_isBlock ht hblock hne
+    (Finite.equivFin (orbit t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n))))
+  have hncard : (r.primitivizationBlock : Set (Fin n)).ncard = 1 := by
+    rw [hBc, Set.ncard_singleton]
+  rw [hncard, one_mul] at hcard
+  let e := Finite.equivFinOfCardEq hcard
+  refine ⟨hlabel, e, hq.of_hasPassport hP ?_⟩
+  refine (PassportSpec.hasPassport_iff_of_equivalent (ConnectedIsoClass.mk_eq_mk_iff.mp
+    (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mpr ?_)) _).mpr
+    (ConnectedTriple.hasPassport_passportOf _)
+  exact equivalent_self_blockQuotient ht hblock hne e
 
 end IsPrimitivizationOf
 

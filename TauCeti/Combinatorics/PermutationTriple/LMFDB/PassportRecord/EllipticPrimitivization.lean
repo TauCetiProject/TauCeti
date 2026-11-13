@@ -28,7 +28,8 @@ The passport `3T1-3_3_3` is the cyclic cover of degree three, totally ramified o
 geometry is Euclidean, the orders `(3, 3, 3)` having reciprocals summing to one; these invariants
 are read off the isomorphic cyclic triple `TauCeti.PermutationTriple.cyclicPowTriple 3 1`. The
 passport row and the map row `3T1-3_3_3-a` are valid, and their stored labels agree with their
-certified fields.
+certified fields. The passport is primitive, its degree being prime, and the map row certifies it
+as its own primitivization.
 
 The map row `6T6-6_6_3.3-a` has degree six, two six-cycles over `0` and `1`, and two three-cycles
 over `∞`, so its curve has genus two and its geometry is hyperbolic. Its triple here, and with it
@@ -61,6 +62,8 @@ they are left empty here rather than reproduced.
 * `TauCeti.PermutationTriple.LMFDB.isValidAt_cyclicThreePassportRecord` and
   `TauCeti.PermutationTriple.LMFDB.isValidFor_cyclicThreeBelyiRecord`: the rows of `3T1-3_3_3`
   are valid.
+* `TauCeti.PermutationTriple.LMFDB.isPrimitivizationOf_cyclicThreePassportRecord`: the map row
+  `3T1-3_3_3-a` certifies the primitivization of its own passport row.
 * `TauCeti.PermutationTriple.LMFDB.isValidFor_genusTwoBelyiRecord`: the map row `6T6-6_6_3.3-a`,
   with a representative triple of its passport, is valid for that passport, of genus two.
 * `TauCeti.PermutationTriple.LMFDB.automorphismGroup_toTriple_genusTwoStoredTriple`: the
@@ -244,6 +247,15 @@ theorem isValidFor_cyclicThreeBelyiRecord {P : PassportSpec 3}
     ⟨⟨by decide, by decide, by decide⟩, ⟨by decide, by decide, by decide⟩,
       ⟨by decide, by decide, by decide⟩⟩ _ hP cycleData_toTriple_cyclicThreeStoredTriple.symm
     genus_toTriple_cyclicThreeStoredTriple.symm
+
+/-- The map row `3T1-3_3_3-a` certifies the stored primitivization of its own passport row
+`3T1-3_3_3`, which is primitive. -/
+theorem isPrimitivizationOf_cyclicThreePassportRecord :
+    cyclicThreeBelyiRecord.IsPrimitivizationOf cyclicThreePassportRecord
+      ⟨cyclicThreeStoredTriple.toTriple, isConnected_toTriple_cyclicThreeStoredTriple⟩ :=
+  .of_card_primitivizationBlock_eq_one (Finset.card_singleton _) rfl
+    (ConnectedTriple.hasPassport_passportOf _)
+    (isValidFor_cyclicThreeBelyiRecord (ConnectedTriple.hasPassport_passportOf _))
 
 /-! ### The labels `3T1-3_3_3` and `3T1-3_3_3-a` -/
 
