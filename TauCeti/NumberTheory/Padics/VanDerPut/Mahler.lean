@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.VanDerPut.Basic
 public import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
 # Changing between Mahler and van der Put coordinates
