@@ -134,6 +134,30 @@ theorem crReflectedAdjointZeroth_apply (z : ℂ) :
       ContinuousLinearMap.adjoint (S (-conj z)) - ContinuousLinearMap.adjoint (DJ (-conj z) I) :=
   (rfl)
 
+/-- `J'` is `J` precomposed with the reflection and postcomposed with the negated adjoint. -/
+private theorem crReflectedAdjointCoeff_eq_comp (J : ℂ → V →L[ℝ] V) :
+    crReflectedAdjointCoeff J = fun z => -adjointCLE (J (negConj z)) := by
+  funext z
+  simp [crReflectedAdjointCoeff_apply, adjointCLE_apply, negConj_apply]
+
+/-- `DJ'` is `DJ` precomposed with the reflection in both arguments and postcomposed with the
+negated adjoint. -/
+private theorem crReflectedAdjointDeriv_eq_comp (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) :
+    crReflectedAdjointDeriv DJ = fun z =>
+      -(adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V).comp
+        ((DJ (negConj z)).comp (negConj : ℂ →L[ℝ] ℂ)) := by
+  funext z
+  ext v : 1
+  simp [crReflectedAdjointDeriv_apply, adjointCLE_apply, negConj_apply]
+
+/-- `S'` is assembled from `S` and `DJ` precomposed with the reflection and the adjoint. -/
+private theorem crReflectedAdjointZeroth_eq_comp (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V)
+    (S : ℂ → V →L[ℝ] V) :
+    crReflectedAdjointZeroth DJ S = fun z =>
+      adjointCLE (S (negConj z)) - adjointCLE (DJ (negConj z) I) := by
+  funext z
+  simp [crReflectedAdjointZeroth_apply, adjointCLE_apply, negConj_apply]
+
 @[simp]
 theorem crReflectedAdjointCoeff_zero : crReflectedAdjointCoeff (0 : ℂ → V →L[ℝ] V) = 0 := by
   funext z
@@ -182,12 +206,12 @@ theorem fderiv_crReflectedAdjointCoeff (J : ℂ → V →L[ℝ] V) :
     fderiv ℝ (crReflectedAdjointCoeff J) = crReflectedAdjointDeriv (fderiv ℝ J) := by
   have h : crReflectedAdjointCoeff J =
       (adjointCLE.trans (ContinuousLinearEquiv.neg ℝ)) ∘ (J ∘ negConj) := by
-    funext z
-    simp [crReflectedAdjointCoeff_apply, adjointCLE_apply, negConj_apply]
+    simp [crReflectedAdjointCoeff_eq_comp, Function.comp_def]
   funext z
-  rw [h, ContinuousLinearEquiv.comp_fderiv, ContinuousLinearEquiv.comp_right_fderiv]
+  rw [h, ContinuousLinearEquiv.comp_fderiv, ContinuousLinearEquiv.comp_right_fderiv,
+    crReflectedAdjointDeriv_eq_comp]
   ext v : 1
-  simp [crReflectedAdjointDeriv_apply, adjointCLE_apply, negConj_apply]
+  simp
 
 /-- **The reflected adjoint identity.** The formal adjoint of `∂_s + J' ∂_t + S'` applied to
 `φ ∘ ρ`, with `ρ z = -conj z`, is `(∂_s φ + J ∂_t φ + S φ) ∘ ρ`. This holds for every
@@ -224,10 +248,9 @@ theorem integral_inner_crFormalAdjoint_crReflectedAdjoint (φ η : ℂ → V) :
 theorem crReflectedAdjointCoeff_mul_self_eq_neg_one_iff (z : ℂ) :
     crReflectedAdjointCoeff J z * crReflectedAdjointCoeff J z = -1 ↔
       J (-conj z) * J (-conj z) = -1 := by
-  rw [crReflectedAdjointCoeff_apply, neg_mul_neg, ContinuousLinearMap.mul_def,
-    ← ContinuousLinearMap.adjoint_comp, ← ContinuousLinearMap.mul_def,
-    ← (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := V) (F := V)).injective.eq_iff, map_neg,
-    ContinuousLinearMap.adjoint_adjoint, ContinuousLinearMap.one_def,
+  rw [← (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := V) (F := V)).injective.eq_iff]
+  simp [crReflectedAdjointCoeff_apply, ContinuousLinearMap.mul_def,
+    ← ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.one_def,
     ContinuousLinearMap.adjoint_id]
 
 /-- For an orthogonal complex structure, `J' = J ∘ ρ`: if `J (-conj z)` squares to `-1` and is
@@ -250,14 +273,10 @@ of `J` on `Ω` and `ρ z = -conj z` maps `Ω'` into `Ω`, then `DJ'` is a weak d
 theorem HasWeakFDerivOn.crReflectedAdjoint (hJ : HasWeakFDerivOn volume Ω J DJ)
     (hΩ : MapsTo (fun z : ℂ => -conj z) Ω' Ω) :
     HasWeakFDerivOn volume Ω' (crReflectedAdjointCoeff J) (crReflectedAdjointDeriv DJ) := by
-  set adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V := (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
-  have hmaps : MapsTo (fun z => negConj z + 0) Ω' Ω := by simpa [negConj_apply] using hΩ
-  have h := (hJ.comp_continuousLinearEquiv_add negConj 0 hmaps).clm_comp (-adj)
-  convert h using 1
-  · funext z
-    simp [crReflectedAdjointCoeff_apply, adj, adjointCLE_apply, negConj_apply]
-  · funext z
-    simp [crReflectedAdjointDeriv, adj, negConj_apply]
+  rw [crReflectedAdjointCoeff_eq_comp, crReflectedAdjointDeriv_eq_comp]
+  simpa using (hJ.comp_continuousLinearEquiv_add negConj 0
+    (by simpa [negConj_apply] using hΩ)).clm_comp
+    (-(adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))
 
 /-- Local Sobolev classes of every order transfer to the reflected adjoint coefficient: if `J` lies
 in `MemWkpLoc p U k` and `ρ z = -conj z` maps `U'` into `U`, then `J'` lies in
@@ -265,41 +284,35 @@ in `MemWkpLoc p U k` and `ρ z = -conj z` maps `U'` into `U`, then `J'` lies in
 theorem MemWkpLoc.crReflectedAdjointCoeff {U U' : Set ℂ} {k : ℕ} (hJ : MemWkpLoc p U k J)
     (hU : MapsTo (fun z : ℂ => -conj z) U' U) :
     MemWkpLoc p U' k (TauCeti.crReflectedAdjointCoeff J) := by
-  set adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V := (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
-  have h := (hJ.comp_continuousLinearEquiv_add negConj 0
-    (by simpa [negConj_apply] using hU)).clm_comp (-adj)
-  convert h using 1
-  funext z
-  simp [crReflectedAdjointCoeff_apply, adj, adjointCLE_apply, negConj_apply]
+  rw [crReflectedAdjointCoeff_eq_comp]
+  simpa using (hJ.comp_continuousLinearEquiv_add negConj 0
+    (by simpa [negConj_apply] using hU)).clm_comp
+    (-(adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))
 
 /-- Local Sobolev classes of every order transfer to the reflected adjoint derivative, under the
 hypotheses of `TauCeti.MemWkpLoc.crReflectedAdjointCoeff`. -/
 theorem MemWkpLoc.crReflectedAdjointDeriv {U U' : Set ℂ} {k : ℕ} (hDJ : MemWkpLoc p U k DJ)
     (hU : MapsTo (fun z : ℂ => -conj z) U' U) :
     MemWkpLoc p U' k (TauCeti.crReflectedAdjointDeriv DJ) := by
-  set adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V := (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
-  have h₁ := MemWkpLoc.clm_comp (G := ℂ →L[ℝ] V →L[ℝ] V)
-    (hDJ.comp_continuousLinearEquiv_add negConj 0 (by simpa [negConj_apply] using hU))
-    ((ContinuousLinearMap.compL ℝ ℂ ℂ (V →L[ℝ] V)).flip (negConj : ℂ →L[ℝ] ℂ))
-  have h := (MemWkpLoc.clm_comp (G := ℂ →L[ℝ] V →L[ℝ] V) h₁
-    (ContinuousLinearMap.compL ℝ ℂ (V →L[ℝ] V) (V →L[ℝ] V) adj)).neg
-  convert h using 1
-  funext z
-  simp [TauCeti.crReflectedAdjointDeriv, adj, negConj_apply]
+  rw [crReflectedAdjointDeriv_eq_comp]
+  simpa using ((hDJ.comp_continuousLinearEquiv_add negConj 0
+    (by simpa [negConj_apply] using hU)).clm_comp (G := ℂ →L[ℝ] V →L[ℝ] V)
+      ((ContinuousLinearMap.compL ℝ ℂ ℂ (V →L[ℝ] V)).flip (negConj : ℂ →L[ℝ] ℂ))).clm_comp
+    (G := ℂ →L[ℝ] V →L[ℝ] V) (-ContinuousLinearMap.compL ℝ ℂ (V →L[ℝ] V) (V →L[ℝ] V)
+      (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))
 
 /-- Local Sobolev classes of every order transfer to the reflected zeroth-order coefficient, under
 the hypotheses of `TauCeti.MemWkpLoc.crReflectedAdjointCoeff` for `DJ` and `S`. -/
 theorem MemWkpLoc.crReflectedAdjointZeroth {U U' : Set ℂ} {k : ℕ} (hDJ : MemWkpLoc p U k DJ)
     (hS : MemWkpLoc p U k S) (hU : MapsTo (fun z : ℂ => -conj z) U' U) :
     MemWkpLoc p U' k (TauCeti.crReflectedAdjointZeroth DJ S) := by
-  set adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V := (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)
   have hU' : MapsTo (fun z => negConj z + 0) U' U := by simpa [negConj_apply] using hU
-  have h := ((hS.comp_continuousLinearEquiv_add negConj 0 hU').clm_comp adj).sub
+  rw [crReflectedAdjointZeroth_eq_comp]
+  simpa [Pi.sub_def] using ((hS.comp_continuousLinearEquiv_add negConj 0 hU').clm_comp
+    (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)).sub
     ((hDJ.comp_continuousLinearEquiv_add negConj 0 hU').clm_comp
-      (adj ∘L ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
-  convert h using 1
-  funext z
-  simp [crReflectedAdjointZeroth_apply, adj, adjointCLE_apply, negConj_apply]
+      ((adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V) ∘L
+        ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
 
 /-- Sobolev coefficients transfer to the reflected adjoint coefficients: if `(J, DJ, S)` are
 Sobolev coefficients on `Ω` and `ρ z = -conj z` maps `Ω'` into `Ω`, then
@@ -327,24 +340,19 @@ variable {n : WithTop ℕ∞} {s t : Set ℂ}
 theorem _root_.ContDiffOn.crReflectedAdjointCoeff (hJ : ContDiffOn ℝ n J s)
     (hst : MapsTo (fun z : ℂ => -conj z) t s) :
     ContDiffOn ℝ n (crReflectedAdjointCoeff J) t := by
-  have h := (adjointCLE.trans (ContinuousLinearEquiv.neg ℝ)).contDiff.comp_contDiffOn
-    (hJ.comp (n := n) negConj.contDiff.contDiffOn (by simpa [MapsTo, negConj_apply] using hst))
-  convert h using 1
-  funext z
-  simp [crReflectedAdjointCoeff_apply, adjointCLE_apply, negConj_apply]
+  rw [crReflectedAdjointCoeff_eq_comp]
+  exact ((hJ.comp (n := n) negConj.contDiff.contDiffOn
+    (by simpa [MapsTo, negConj_apply] using hst)).continuousLinearMap_comp
+    (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)).neg
 
 /-- Smoothness transfers to the reflected adjoint derivative, under the hypotheses of
 `ContDiffOn.crReflectedAdjointCoeff`. -/
 theorem _root_.ContDiffOn.crReflectedAdjointDeriv (hDJ : ContDiffOn ℝ n DJ s)
     (hst : MapsTo (fun z : ℂ => -conj z) t s) :
     ContDiffOn ℝ n (TauCeti.crReflectedAdjointDeriv DJ) t := by
-  have h := ((contDiffOn_const (c := (adjointCLE (V := V) : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V))).clm_comp
-    ((hDJ.comp (n := n) negConj.contDiff.contDiffOn
-      (by simpa [MapsTo, negConj_apply] using hst)).clm_comp
-      (contDiffOn_const (c := (negConj : ℂ →L[ℝ] ℂ))))).neg
-  convert h using 1
-  funext z
-  simp [TauCeti.crReflectedAdjointDeriv, negConj_apply]
+  rw [crReflectedAdjointDeriv_eq_comp]
+  exact (contDiffOn_const.clm_comp ((hDJ.comp (n := n) negConj.contDiff.contDiffOn
+    (by simpa [MapsTo, negConj_apply] using hst)).clm_comp contDiffOn_const)).neg
 
 /-- Smoothness transfers to the reflected zeroth-order coefficient, under the hypotheses of
 `ContDiffOn.crReflectedAdjointCoeff` for `DJ` and `S`. -/
@@ -352,13 +360,11 @@ theorem _root_.ContDiffOn.crReflectedAdjointZeroth (hDJ : ContDiffOn ℝ n DJ s)
     (hS : ContDiffOn ℝ n S s) (hst : MapsTo (fun z : ℂ => -conj z) t s) :
     ContDiffOn ℝ n (TauCeti.crReflectedAdjointZeroth DJ S) t := by
   have hst' : MapsTo negConj t s := by simpa [MapsTo, negConj_apply] using hst
-  have h := (adjointCLE.contDiff.comp_contDiffOn
+  rw [crReflectedAdjointZeroth_eq_comp]
+  exact (adjointCLE.contDiff.comp_contDiffOn
     (hS.comp (n := n) negConj.contDiff.contDiffOn hst')).sub
     ((adjointCLE.contDiff.comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I).contDiff).comp_contDiffOn
       (hDJ.comp (n := n) negConj.contDiff.contDiffOn hst'))
-  convert h using 1
-  funext z
-  simp [crReflectedAdjointZeroth_apply, adjointCLE_apply, negConj_apply]
 
 end ContDiffOn
 
