@@ -46,7 +46,12 @@ for instance in a braided category.
 
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
   braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.7
+* J. Barrett, B. Westbury, *Spherical categories*,
+  [arXiv:hep-th/9310164](https://arxiv.org/abs/hep-th/9310164), Definition 2.5
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.7. EGNO's
+  Definition 4.7.14 calls a pivotal structure spherical when `dim V = dim V*` for every object
+  `V`, which here is `leftDim_eq_rightDim` combined with `rightDim_rightDual`. The condition on
+  traces used in this file implies it; EGNO prove the converse for tensor categories over a field.
 * [leanprover-community/mathlib4#42191](https://github.com/leanprover-community/mathlib4/pull/42191),
   for the names `SphericalCategory`, `leftTrace_eq_rightTrace`, `trace`, `trace_eq_leftTrace`
   and `trace_eq_rightTrace`
