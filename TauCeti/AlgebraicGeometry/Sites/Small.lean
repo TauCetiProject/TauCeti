@@ -29,13 +29,12 @@ namespace AlgebraicGeometry.Scheme
 
 variable {S : Scheme.{u}}
 
-/-- On the small site of `S` defined by a morphism property `P`, for example the small étale
-site, an object with empty underlying space is covered by the empty sieve. -/
-theorem bot_mem_smallGrothendieckTopology {P : MorphismProperty Scheme.{u}}
-    [P.IsStableUnderBaseChange] [P.IsMultiplicative] (U : P.Over ⊤ S) [IsEmpty U.left] :
-    ⊥ ∈ S.smallGrothendieckTopology P U := by
-  rw [Functor.mem_restrictedTopology_iff, GrothendieckTopology.mem_over_iff,
-    Sieve.functorPushforward_bot, map_bot]
+/-- On the small site of `S` defined by morphism properties `P` and `Q`, for example the small
+étale site, an object with empty underlying space is covered by the empty sieve. -/
+theorem bot_mem_smallGrothendieckTopology {P Q : MorphismProperty Scheme.{u}} (U : Q.Over ⊤ S)
+    [IsEmpty U.left] : ⊥ ∈ S.smallGrothendieckTopology P U := by
+  apply Functor.mem_restrictedTopology_of_functorPushforward_mem
+  rw [GrothendieckTopology.mem_over_iff, Sieve.functorPushforward_bot, map_bot]
   exact bot_mem_grothendieckTopology (P := P) U.left
 
 end AlgebraicGeometry.Scheme

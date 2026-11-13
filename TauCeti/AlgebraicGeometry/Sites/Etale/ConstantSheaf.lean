@@ -53,6 +53,8 @@ example the sheaves of sections of split finite étale covers.
   an étale sheaf.
 * `AlgebraicGeometry.Scheme.toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom`: the
   comparison sends the class of `m` to the constant function `m`.
+* The sheaf of locally constant functions with values in `M` is a constant sheaf in the sense of
+  `CategoryTheory.Sheaf.IsConstant`.
 
 ## References
 
@@ -199,6 +201,18 @@ instance (M : Type u) : IsIso (constantSheafToEtaleLocallyConstantSheaf S M) := 
       ((presheafToSheaf _ _).map _)))) (Iso.isIso_inv _)
   exact isIso_of_reflects_iso _ (sheafToPresheaf _ _)
 
+/-- The constant function `m` is sent back to the class of `m` in the constant sheaf. -/
+@[simp, reassoc]
+theorem constToEtaleLocallyConstantPresheaf_app_comp_inv_hom (M : Type u) :
+    -- The ascription types the inverse as a morphism out of the underlying presheaf of the sheaf,
+    -- where instance search finds `IsIso`.
+    (constToEtaleLocallyConstantPresheaf S).app M ≫
+        (inv (constantSheafToEtaleLocallyConstantSheaf S M).hom :
+          ((etaleLocallyConstantSheaf S).obj M).obj ⟶ _) =
+      toSheafify (smallEtaleTopology S) ((Functor.const _).obj M) :=
+  (IsIso.comp_inv_eq (α := (constantSheafToEtaleLocallyConstantSheaf S M).hom)).2
+    (toSheafify_comp_constantSheafToEtaleLocallyConstantSheaf_hom S M).symm
+
 /-- **The constant étale sheaf is the sheaf of locally constant functions**: for every set `M`,
 the constant sheaf with value `M` on the small étale site of `S` is the sheaf
 `U ↦ LocallyConstant U M`, naturally in `M`. -/
@@ -209,11 +223,34 @@ noncomputable def constantSheafIsoEtaleLocallyConstantSheaf :
   NatIso.ofComponents (fun M ↦ (asIso (constantSheafToEtaleLocallyConstantSheaf S M) :))
     (constantSheafToEtaleLocallyConstantSheaf_naturality S)
 
-@[simp]
+/-- The components of the comparison isomorphism are the comparison maps. This and
+`constantSheafIsoEtaleLocallyConstantSheaf_inv_app` are not `simp` lemmas: their right-hand sides
+have source the sheafification of the constant presheaf rather than `constantSheaf`, so rewriting
+with them would stop `simp` from cancelling the components of the isomorphism. -/
 theorem constantSheafIsoEtaleLocallyConstantSheaf_hom_app (M : Type u) :
     (constantSheafIsoEtaleLocallyConstantSheaf S).hom.app M =
       constantSheafToEtaleLocallyConstantSheaf S M :=
   (rfl)
+
+/-- The components of the inverse of the comparison isomorphism are the inverses of the comparison
+maps. -/
+theorem constantSheafIsoEtaleLocallyConstantSheaf_inv_app (M : Type u) :
+    (constantSheafIsoEtaleLocallyConstantSheaf S).inv.app M =
+      inv (constantSheafToEtaleLocallyConstantSheaf S M) :=
+  (rfl)
+
+/-- The inverse of the comparison map is natural. -/
+@[reassoc (attr := simp)]
+theorem inv_constantSheafToEtaleLocallyConstantSheaf_naturality {M M' : Type u} (φ : M ⟶ M') :
+    (etaleLocallyConstantSheaf S).map φ ≫ inv (constantSheafToEtaleLocallyConstantSheaf S M') =
+      inv (constantSheafToEtaleLocallyConstantSheaf S M) ≫
+        (presheafToSheaf (smallEtaleTopology S) (Type u)).map ((Functor.const _).map φ) := by
+  rw [IsIso.eq_inv_comp, ← constantSheafToEtaleLocallyConstantSheaf_naturality_assoc,
+    IsIso.hom_inv_id, Category.comp_id]
+
+/-- The sheaf of locally constant functions with values in `M` is a constant étale sheaf. -/
+instance (M : Type u) : ((etaleLocallyConstantSheaf S).obj M).IsConstant (smallEtaleTopology S) :=
+  Sheaf.isConstant_of_iso _ ((constantSheafIsoEtaleLocallyConstantSheaf S).app M).symm
 
 /-- **Sections of the constant étale sheaf**: the sections over an étale `S`-scheme `U` of the
 constant sheaf with value `M` are the locally constant functions `U → M`. -/
@@ -259,5 +296,41 @@ theorem constantSheafSectionsEquiv_naturality {M M' : Type u} (φ : M ⟶ M') (U
       (((constantSheaf (smallEtaleTopology S) (Type u)).map φ).hom.app (op U) x) =
       (constantSheafSectionsEquiv S M U x).map φ :=
   congr($(constantSheafToEtaleLocallyConstantSheaf_naturality S φ).hom.app (op U) x)
+
+/-- The inverse of the sections equivalence is the component at `U` of the inverse of the
+comparison map. -/
+theorem constantSheafSectionsEquiv_symm_apply (M : Type u) (U : S.Etale)
+    (g : LocallyConstant U.left M) :
+    (constantSheafSectionsEquiv S M U).symm g =
+      (inv (constantSheafToEtaleLocallyConstantSheaf S M)).hom.app (op U) g :=
+  (rfl)
+
+/-- The constant function `m` corresponds to the class of `m` in the constant étale sheaf. -/
+@[simp]
+theorem constantSheafSectionsEquiv_symm_const (M : Type u) (U : S.Etale) (m : M) :
+    (constantSheafSectionsEquiv S M U).symm (LocallyConstant.const _ m) =
+      ConcreteCategory.hom (X := M)
+        ((toSheafify (smallEtaleTopology S) ((Functor.const _).obj M)).app (op U)) m :=
+  (Equiv.symm_apply_eq _).2 (constantSheafSectionsEquiv_toSheafify_app S M U m).symm
+
+/-- Restricting the section of the constant étale sheaf attached to a locally constant function
+along `f : V ⟶ U` corresponds to composing the function with `f`. -/
+@[simp]
+theorem constantSheafSectionsEquiv_symm_map (M : Type u) {U V : S.Etale} (f : V ⟶ U)
+    (g : LocallyConstant U.left M) :
+    ((constantSheaf (smallEtaleTopology S) (Type u)).obj M).obj.map f.op
+      ((constantSheafSectionsEquiv S M U).symm g) =
+      (constantSheafSectionsEquiv S M V).symm (g.comap f.left.base.hom) := by
+  rw [Equiv.eq_symm_apply, constantSheafSectionsEquiv_map, Equiv.apply_symm_apply]
+
+/-- The map of constant étale sheaves induced by `φ : M ⟶ M'` sends the section attached to a
+locally constant function `g` to the section attached to `g` composed with `φ`. -/
+@[simp]
+theorem constantSheafSectionsEquiv_symm_naturality {M M' : Type u} (φ : M ⟶ M') (U : S.Etale)
+    (g : LocallyConstant U.left M) :
+    ((constantSheaf (smallEtaleTopology S) (Type u)).map φ).hom.app (op U)
+      ((constantSheafSectionsEquiv S M U).symm g) =
+      (constantSheafSectionsEquiv S M' U).symm (g.map φ) := by
+  rw [Equiv.eq_symm_apply, constantSheafSectionsEquiv_naturality, Equiv.apply_symm_apply]
 
 end AlgebraicGeometry.Scheme
