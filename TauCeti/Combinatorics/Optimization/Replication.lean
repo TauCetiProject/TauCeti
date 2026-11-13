@@ -113,7 +113,7 @@ theorem ciInf_add_sum_eq_card_sq_mul_ciInf_sum [Fintype ι] [Nonempty A] (E : Fi
     exact hbound.trans (le_add_of_nonneg_left (hc β))
   obtain hι | hι := isEmpty_or_nonempty ι
   · have hF (β : V → ι → A) : F β = 0 := by
-      rw [Subsingleton.elim β fun v _ ↦ Classical.arbitrary A, hcopy]
+      rw [Subsingleton.elim β fun _ _ ↦ Classical.arbitrary A, hcopy]
       simp
     rw [Fintype.card_eq_zero, Nat.cast_zero, zero_pow two_ne_zero, zero_mul]
     exact (iInf_congr hF).trans ciInf_const
