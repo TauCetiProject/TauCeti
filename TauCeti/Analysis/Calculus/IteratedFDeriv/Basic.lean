@@ -20,7 +20,8 @@ two-variable currying isometry used to identify continuous multilinear second de
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and maps agreeing on
+an open set have the same iterated derivatives there (`TauCeti.iteratedFDeriv_eq_of_eqOn`).
 -/
 
 public section
@@ -125,5 +126,11 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     filter_upwards [hζ] with y hy
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- Maps agreeing on an open set have the same iterated derivatives there. -/
+theorem iteratedFDeriv_eq_of_eqOn {s : Set E} (hs : IsOpen s) {f g : E → F}
+    (hfg : Set.EqOn f g s) (i : ℕ) {x : E} (hx : x ∈ s) :
+    iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i g x :=
+  ((Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hfg).iteratedFDeriv 𝕜 i).eq_of_nhds
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.Inclusion
 import TauCeti.Topology.MetricSpace.Bounded
@@ -23,15 +24,19 @@ Fréchet derivatives through order `k` are bounded on `U`, and whose `k`-th iter
 
 where `[g]_{α, U} = sup_{x ≠ y ∈ U} ‖g x - g y‖ / ‖x - y‖^α` and the suprema use the operator norm
 of continuous multilinear maps. It is a Banach space when `F` is. These are the spaces in which
-the global Schauder theory of elliptic equations on a domain is posed; for bounded `U` they are the
-spaces written `C^{k,α}(Ū)` by Gilbarg and Trudinger, which consist of the `C^k` maps on `U` with
-uniformly bounded derivatives through order `k` and uniformly `α`-Hölder `k`-th derivatives on
-`U`.
+the global Schauder theory of elliptic equations on a domain is posed. The spaces written
+`C^{k,α}(Ū)` by Gilbarg and Trudinger also require the derivatives through order `k` to extend
+continuously to the closure `Ū`. For bounded convex `U`, `α > 0` and complete `F` this follows
+from the bounds here, since each derivative below order `k` is then Lipschitz on `U` and the `k`-th
+derivative is uniformly Hölder on `U`, so the two spaces agree. For a general bounded `U` the
+extension can fail: on a slit annulus in the plane, the angle function lies in `C^{1,α}(U)` but
+does not extend continuously across the slit.
 
 The Hölder seminorm is global on `U`: it compares the `k`-th derivative at any two points of `U`,
-not only at nearby ones. So on `U = (-1, 0) ∪ (0, 1)` the sign function, which is smooth on `U`
-with all derivatives zero, does not lie in `C^{0,α}(U)`. This is what distinguishes `C^{k,α}(U)`
-from the space of maps that are `C^{k,α}` on every compact subset of `U`.
+not only at nearby ones. So for `α > 0`, on `U = (-1, 0) ∪ (0, 1)` the sign function, which is
+smooth on `U` with all derivatives zero, does not lie in `C^{0,α}(U)`. For `α > 0` this is what
+distinguishes `C^{k,α}(U)` from the space of maps that are `C^{k,α}` on every compact subset of
+`U`.
 
 An element is coerced to the function `E → F` which is the map on `U` and zero off `U`. This keeps
 derivatives available as Mathlib's `iteratedFDeriv`, which agrees on the open set `U` with the
@@ -109,7 +114,7 @@ iterated Fréchet derivatives through order `k` bounded on `U` and `k`-th iterat
           (Function.extend Subtype.val (CkHolderJet.fieldL j.castSucc J : U → E [×j]→L[ℝ] F) 0)
           (CkHolderJet.curryLeftL E F j (CkHolderJet.fieldL j.succ J x)) x}
       zero_mem' := fun j x ↦ by
-        simp only [map_zero, FunLike.coe_zero, Function.extend_zero]
+        simp only [map_zero, FunLike.coe_zero, Pi.zero_apply, Function.extend_zero]
         exact hasFDerivAt_const (x := (x : E)) (c := (0 : E [×j]→L[ℝ] F))
       add_mem' := fun {J K} hJ hK j x ↦ by
         simp only [Set.mem_ofPred_eq, map_add, FunLike.coe_add,
@@ -526,10 +531,10 @@ private theorem isJetGraph_jetOf (f : E → F) (hf : ContDiffOn ℝ k f U)
   have hfx : ContDiffAt ℝ k f x := hf.contDiffAt (U.isOpen.mem_nhds x.2)
   have h := (hfx.differentiableAt_iteratedFDeriv (m := j) (by exact_mod_cast j.2)).hasFDerivAt
   rw [fderiv_iteratedFDeriv, Function.comp_apply] at h
-  rw [fieldL_jetOf]
+  rw [fieldL_jetOf, curryLeftL_apply]
   exact h.congr_of_eventuallyEq (eventuallyEq_of_mem (U.isOpen.mem_nhds x.2) fun y hy ↦
     (Function.extend_val_apply (SetLike.mem_coe.1 hy)).trans
-      (fieldL_jetOf f hf hbdd hholder _ ⟨y, hy⟩))
+      (fieldL_jetOf f hf hbdd hholder j.castSucc ⟨y, hy⟩))
 
 /-- Build a `C^{k,α}` map on `U` from a function that is `C^k` on `U`, whose iterated derivatives
 through order `k` are bounded on `U`, and whose `k`-th iterated derivative is `α`-Hölder on `U`.
@@ -587,12 +592,6 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpaceOn k 
   exact isClosed_isJetGraph.completeSpace_coe
 
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpaceOn
-
-/-- Maps agreeing on an open set have the same iterated derivatives there. -/
-private theorem iteratedFDeriv_eq_of_eqOn {s : Set E} (hs : IsOpen s) {f g : E → F}
-    (hfg : EqOn f g s) (i : ℕ) {x : E} (hx : x ∈ s) :
-    _root_.iteratedFDeriv ℝ i f x = _root_.iteratedFDeriv ℝ i g x :=
-  ((eventuallyEq_of_mem (hs.mem_nhds hx) hfg).iteratedFDeriv ℝ i).eq_of_nhds
 
 /-- The derivative fields of a map built by `CkHolderSpaceOn.ofContDiffOn` are the iterated
 derivatives of the given function on `U`. -/

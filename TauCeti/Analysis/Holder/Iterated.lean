@@ -110,7 +110,7 @@ bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm 
           Pi.add_apply] at hJ hK ⊢
         exact (hJ j x).add (hK j x)
       smul_mem' := fun c {J} hJ j x ↦ by
-        simp only [Set.mem_ofPred_eq, map_smul, FunLike.coe_smul] at hJ ⊢
+        simp only [Set.mem_ofPred_eq, map_smul, FunLike.coe_smul, Pi.smul_apply] at hJ ⊢
         exact (hJ j x).const_smul c }
   graph
 
@@ -511,7 +511,7 @@ private theorem isJetGraph_jetOf (f : E → F) (hf : ContDiff ℝ k f)
     funext (fieldL_jetOf f hf hbdd hholder j.castSucc)
   have h := (hf.differentiable_iteratedFDeriv (m := j) (by exact_mod_cast j.2) x).hasFDerivAt
   rw [fderiv_iteratedFDeriv, Function.comp_apply] at h
-  rw [hfun, fieldL_jetOf]
+  rw [hfun, fieldL_jetOf, curryLeftL_apply]
   exact h
 
 /-- Build a bounded `C^{k,α}` map from a `C^k` function whose iterated derivatives through order

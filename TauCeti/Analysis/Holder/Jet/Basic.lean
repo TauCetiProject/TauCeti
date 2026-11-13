@@ -68,7 +68,7 @@ namespace CkHolderJet
 variable {k α X E F}
 
 /-- The derivative field of order `i ≤ k` of a jet, as a bounded continuous field. -/
-@[expose] def fieldL (i : Fin (k + 1)) : CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)) :=
+def fieldL (i : Fin (k + 1)) : CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)) :=
   Fin.lastCases (motive := fun i : Fin (k + 1) ↦
       CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F)))
     (HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
@@ -90,7 +90,7 @@ theorem fieldL_last (J : CkHolderJet k α X E F) :
 
 variable (E F) in
 /-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-@[expose] def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
+def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
   (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
 
 theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
