@@ -64,6 +64,9 @@ the unit tangent vector at every time.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
+* `TauCeti.cylinderTime`, `TauCeti.cylinderTimeForm`: the time coordinate `t` of the cylinder and
+  its differential `dt`, which reads the time component of a tangent vector
+  (`TauCeti.cylinderTimeForm_apply`) and sends `∂ₜ` to `1` (`TauCeti.cylinderTimeForm_apply_time`).
 
 ## References
 
@@ -548,5 +551,54 @@ theorem mextDeriv_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
         mpullback I (I.prod (𝓡∂ 1)) (fun y ↦ (y, 0)) φ x := by
   rw [← mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv hφ x, hclosed,
     homotopyOperator_zero, Pi.zero_apply, add_zero]
+
+/-! ### The time coordinate of the cylinder -/
+
+section TimeCoordinate
+
+variable (I)
+
+/-- The time coordinate `(x, t) ↦ t` of the cylinder `M × [0, 1]`. -/
+def cylinderTime : C^∞⟮I.prod (𝓡∂ 1), M × Icc (0 : ℝ) 1; ℝ⟯ :=
+  ⟨fun p ↦ (p.2 : ℝ), contMDiff_subtypeVal_Icc.comp contMDiff_snd⟩
+
+/-- The time coordinate of the cylinder at `(x, t)` is `t`. -/
+@[simp]
+theorem cylinderTime_apply (p : M × Icc (0 : ℝ) 1) : cylinderTime I p = p.2 :=
+  (rfl)
+
+variable [IsManifold I 2 M]
+
+/-- The one-form `dt` of the time coordinate of the cylinder `M × [0, 1]`. -/
+def cylinderTimeForm : SmoothForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) ℝ 1 :=
+  mextDerivₗ (I.prod (𝓡∂ 1)) 0 (SmoothForm.ofFunction (cylinderTime I (M := M)))
+
+/-- The form `dt` is the exterior derivative of the time coordinate of the cylinder. -/
+theorem cylinderTimeForm_def :
+    cylinderTimeForm I (M := M) =
+      mextDerivₗ (I.prod (𝓡∂ 1)) 0 (SmoothForm.ofFunction (cylinderTime I (M := M))) :=
+  (rfl)
+
+variable {I}
+
+/-- The form `dt` only sees the time component of a tangent vector of the cylinder. -/
+theorem cylinderTimeForm_apply (p : M × Icc (0 : ℝ) 1)
+    (u : Fin 1 → TangentSpace (I.prod (𝓡∂ 1)) p) :
+    (cylinderTimeForm I (M := M)).1 p u =
+      mfderiv (𝓡∂ 1) 𝓘(ℝ, ℝ) (Subtype.val : Icc (0 : ℝ) 1 → ℝ) p.2 (u 0).2 := by
+  have hval : MDifferentiableAt (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc (0 : ℝ) 1 → ℝ) p.2 :=
+    (contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero
+  have hcomp : (cylinderTime I (M := M) : M × Icc (0 : ℝ) 1 → ℝ) = Subtype.val ∘ Prod.snd := rfl
+  rw [cylinderTimeForm_def, mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply, hcomp,
+    mfderiv_comp p hval mdifferentiableAt_snd, mfderiv_snd]
+  rfl
+
+/-- The form `dt` sends the unit time vector `∂ₜ = (0, 1)` to `1`. -/
+theorem cylinderTimeForm_apply_time (p : M × Icc (0 : ℝ) 1) :
+    (cylinderTimeForm I (M := M)).1 p ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2))] = 1 :=
+  (cylinderTimeForm_apply p _).trans (mfderiv_subtypeVal_Icc_one p.2)
+
+end TimeCoordinate
 
 end TauCeti

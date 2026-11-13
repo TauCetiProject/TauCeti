@@ -138,33 +138,6 @@ theorem isHamiltonian_refl (σ : SmoothTwoForm J M) : (refl J ∞ M).IsHamiltoni
 
 /-! ### The primitive of the flux form -/
 
-/-- The time coordinate `(x, t) ↦ t` of the cylinder `M × [0, 1]`. -/
-private def cylinderTime : C^∞⟮J.prod (𝓡∂ 1), M × unitInterval; ℝ⟯ :=
-  ⟨fun p ↦ (p.2 : ℝ), contMDiff_subtypeVal_Icc.comp contMDiff_snd⟩
-
-/-- The one-form `dt` of the time coordinate of the cylinder. -/
-private def cylinderTimeForm : SmoothForm (J.prod (𝓡∂ 1)) (M × unitInterval) ℝ 1 :=
-  mextDerivₗ (J.prod (𝓡∂ 1)) 0 (SmoothForm.ofFunction cylinderTime)
-
-/-- The form `dt` only sees the time component of a tangent vector of the cylinder. -/
-private theorem cylinderTimeForm_apply (p : M × unitInterval)
-    (u : Fin 1 → TangentSpace (J.prod (𝓡∂ 1)) p) :
-    (cylinderTimeForm (J := J) (M := M)).1 p u =
-      mfderiv (𝓡∂ 1) 𝓘(ℝ, ℝ) (Subtype.val : unitInterval → ℝ) p.2 (u 0).2 := by
-  have hval : MDifferentiableAt (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) p.2 :=
-    (contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero
-  have hcomp : (cylinderTime (J := J) (M := M) : M × unitInterval → ℝ) =
-      Subtype.val ∘ Prod.snd := rfl
-  rw [cylinderTimeForm, mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply, hcomp,
-    mfderiv_comp p hval mdifferentiableAt_snd, mfderiv_snd]
-  rfl
-
-/-- The form `dt` sends the unit time vector `∂ₜ` to `1`. -/
-private theorem cylinderTimeForm_apply_time (p : M × unitInterval) :
-    (cylinderTimeForm (J := J) (M := M)).1 p ![((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2))] = 1 :=
-  (cylinderTimeForm_apply p _).trans (mfderiv_subtypeVal_Icc_one p.2)
-
 variable (Φ)
 
 /-- The function `G(x, t) = H_t (φ_t x)` on the cylinder. -/
@@ -177,12 +150,12 @@ private def hamiltonianAlongMotion (H : C^∞⟮J.prod (𝓡∂ 1), M × unitInt
 form. -/
 private def hamiltonianTimeForm (H : C^∞⟮J.prod (𝓡∂ 1), M × unitInterval; ℝ⟯) :
     SmoothForm (J.prod (𝓡∂ 1)) (M × unitInterval) ℝ 1 :=
-  SmoothForm.funSMulₗ (Φ.hamiltonianAlongMotion H) cylinderTimeForm
+  SmoothForm.funSMulₗ (Φ.hamiltonianAlongMotion H) (cylinderTimeForm J (M := M))
 
 /-- The form `τ = G dt` is the pointwise product of `G` and `dt`. -/
 private theorem coe_hamiltonianTimeForm (H : C^∞⟮J.prod (𝓡∂ 1), M × unitInterval; ℝ⟯) :
     (Φ.hamiltonianTimeForm H).1 =
-      fun p ↦ Φ.hamiltonianAlongMotion H p • (cylinderTimeForm (J := J) (M := M)).1 p := by
+      fun p ↦ Φ.hamiltonianAlongMotion H p • (cylinderTimeForm J (M := M)).1 p := by
   rw [hamiltonianTimeForm, SmoothForm.coe_funSMulₗ]
 
 omit [IsManifold J ∞ M] in
@@ -223,12 +196,12 @@ cylinder on which `dt` is `1`, such as the unit time vector `∂ₜ`, and evalua
 private theorem mextDeriv_hamiltonianTimeForm_apply
     (H : C^∞⟮J.prod (𝓡∂ 1), M × unitInterval; ℝ⟯) (p : M × unitInterval)
     (T : TangentSpace (J.prod (𝓡∂ 1)) p) (w : Fin 1 → TangentSpace (J.prod (𝓡∂ 1)) p)
-    (hT : (cylinderTimeForm (J := J) (M := M)).1 p ![T] = 1) (hw : (w 0).2 = 0) :
+    (hT : (cylinderTimeForm J (M := M)).1 p ![T] = 1) (hw : (w 0).2 = 0) :
     mextDeriv (Φ.hamiltonianTimeForm H).1 p (Matrix.vecCons T w) =
       -mvfderiv J (fun y ↦ H (y, p.2)) (Φ.cylinderMap p)
         (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap p (w 0)) := by
-  have hdd : mextDeriv (cylinderTimeForm (J := J) (M := M)).1 p ![T, w 0] = 0 := by
-    rw [cylinderTimeForm, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
+  have hdd : mextDeriv (cylinderTimeForm J (M := M)).1 p ![T, w 0] = 0 := by
+    rw [cylinderTimeForm_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
     rfl
   have h0 : (mfderiv (𝓡∂ 1) 𝓘(ℝ, ℝ) (Subtype.val : unitInterval → ℝ) p.2 (w 0).2 : ℝ) = 0 := by
     rw [hw]
@@ -237,7 +210,7 @@ private theorem mextDeriv_hamiltonianTimeForm_apply
     (Φ.hamiltonianAlongMotion H).contMDiff.mdifferentiableAt (by simp)
   have hvec : Matrix.vecCons T w = ![T, w 0] := funext fun i ↦ by fin_cases i <;> rfl
   rw [hvec, coe_hamiltonianTimeForm,
-    mextDeriv_fun_smul_apply hG (cylinderTimeForm.mdifferentiableAt p), hdd, hT,
+    mextDeriv_fun_smul_apply hG ((cylinderTimeForm J (M := M)).mdifferentiableAt p), hdd, hT,
     cylinderTimeForm_apply, Matrix.cons_val_zero, h0,
     ← Φ.mvfderiv_hamiltonianAlongMotion_apply H p (w 0) hw]
   -- The values of `dt` and of `dG` are real numbers, read in the fibres of the trivial bundle.
