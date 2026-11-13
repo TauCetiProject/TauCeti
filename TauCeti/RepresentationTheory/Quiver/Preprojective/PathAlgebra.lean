@@ -68,7 +68,7 @@ universe u v w
 
 section Retraction
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- The algebra homomorphism `kQ →ₐ[k] Π_k(Q)` sending a path of `Q` to the class of the same path
@@ -147,7 +147,7 @@ end Retraction
 
 section Finiteness
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A quiver whose preprojective algebra is a finite module has no oriented cycle.** -/

@@ -6,18 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
-# Path grading for numerical graph words
+# Path grading for numerical graph words and graph isomorphisms
 
 For a finite simple graph with vertices labelled by natural numbers, every numerical
 `TauCeti.signlessArrow` is homogeneous of degree one. Consequently, a valley word made from
 these arrows is homogeneous in its word length. This packages the graph-word interface to the
 path grading of the signless preprojective algebra. For an arbitrary simple graph, a product of
-`n` backtracks at a common vertex has path degree `2 * n`.
+`n` backtracks at a common vertex has path degree `2 * n`, and any graph isomorphism preserves and
+reflects the path-length grading of the signless preprojective algebra.
 -/
 
 public section
@@ -85,5 +87,27 @@ theorem list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiv
   simpa [map_list_prod, Function.comp_def, mul_comm] using signlessPreprojectiveMk_mem_grade k _
     (SetLike.list_prod_map_mem_graded l (fun _ => 2) _ fun w _ =>
       backtrackElem_mem_grade_two k G w.2)
+
+/-- Graph relabelling preserves and reflects the path-length grading of the signless preprojective
+algebra. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff
+    {V W : Type*} [Finite V] [Finite W] {G : SimpleGraph V} {H : SimpleGraph W}
+    [∀ i, Fintype (G.neighborSet i)] [∀ j, Fintype (H.neighborSet j)]
+    (e : G ≃g H) {d : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    signlessPreprojectiveAlgebraEquiv k e x ∈ signlessPreprojectiveGrade k (DoubledQuiver H) d ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hxy⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver H)).mp hx
+    have h := congrArg (signlessPreprojectiveAlgebraEquiv k e).symm hxy
+    simp only [AlgEquiv.symm_apply_apply] at h
+    rw [signlessPreprojectiveAlgebraEquiv_symm,
+      signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk] at h
+    rw [← h]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e.symm).mpr hy)
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).mp hx
+    rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 end TauCeti
