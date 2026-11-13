@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
