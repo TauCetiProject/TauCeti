@@ -23,8 +23,9 @@ component `x ∈ K_vˣ` is the class of `σ` raised to the normalized valuation 
 (`globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt`). This combines the local–global
 compatibility `globalArtinMap_local` with the unramified local computation
 `localArtinAt_eq_of_isArithFrobAt`. In particular the Artin symbol of the prime idele class is
-the class of Frobenius, whichever uniformizer represents it
-(`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`).
+the class of Frobenius (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`). Taking `x` to be any
+uniformizer of `K_v` in the formula above gives the same symbol, so it does not depend on which
+uniformizer represents the class (the idele classes themselves do depend on it).
 
 For `L/K` abelian, `Gal(L/K)` is its own abelianization, so this pins the Artin symbol down as an
 automorphism: an automorphism whose class is the Artin symbol of the class of the idele with any
@@ -92,8 +93,10 @@ variable (K : Type) [Field K] [NumberField K]
 
 /-- **The prime idele class at a finite place** `v` of a number field `K`: the class in the idele
 class group of the idele whose component at `v` is a chosen uniformizer of `K_v` and whose other
-components are `1`. At a place unramified in a finite Galois extension its global Artin symbol does
-not depend on the choice (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`). -/
+components are `1`. At a place unramified in a finite Galois extension its global Artin symbol is
+the class of Frobenius (`globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt`), and the same holds
+for the class of any uniformizer at `v` (`globalArtinMap_ofAdicCompletion_eq_of_isArithFrobAt`), so
+the symbol does not depend on the choice. -/
 def primeIdeleClass (v : HeightOneSpectrum (𝓞 K)) : IdeleClassGroup (𝓞 K) K :=
   IdeleClassGroup.ofAdicCompletion (𝓞 K) K v (exists_isUniformizer (v.adicCompletion K)).choose
 

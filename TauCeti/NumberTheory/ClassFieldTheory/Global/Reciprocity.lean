@@ -33,8 +33,9 @@ are the abstract Artin equivalence and Artin map of the global class formation t
 these identifications, and nothing else (`globalArtinEquiv_mk`). In particular the kernel of the
 global Artin map is the idele-class norm group `N_{L/K}(C_L)` (`ker_globalArtinMap`), the map is
 surjective, and, being defined on `C_K = 𝕀_K / Kˣ`, it kills the classes of principal ideles
-(`globalArtinMap_principal`), which is the reciprocity law in idelic form. For an
-abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
+(`globalArtinMap_principal`); this is immediate from the definition of `globalArtinMap` on the
+quotient `C_K`, and the content of the idelic reciprocity law is carried by the class formation.
+For an abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
 (`card_ideleClassNormQuotient`), and the global Artin map, read in `Gal(L/K)` itself, is
 `ideleClassArtinMap K L : C_K →* Gal(L/K)`, surjective with kernel `N_{L/K}(C_L)`.
 
@@ -204,7 +205,9 @@ theorem surjective_globalArtinMap (ι : L →ₐ[K] SeparableClosure K) :
       IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range
 
 /-- **The global Artin map kills principal ideles**: the class in `C_K` of the principal idele of
-`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is the reciprocity law in idelic form. -/
+`x ∈ Kˣ` is trivial, so its Artin symbol vanishes. This is immediate from `globalArtinMap` being
+defined on the quotient `C_K = 𝕀_K / Kˣ`; the content of the idelic reciprocity law is in the
+class formation that defines `globalArtinMap`, not in this lemma. -/
 @[simp]
 theorem globalArtinMap_principal (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
     globalArtinMap K L ι
