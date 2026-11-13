@@ -46,7 +46,7 @@ theorem map_braiding_hom_comp_δ (adj : F ⊣ G)
 
 /-- A strong monoidal left adjoint of a lax braided right adjoint is braided, for compatible
 monoidal structures. Its monoidal structure is the given structure on `F`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def leftAdjointBraided (adj : F ⊣ G)
     [F.Monoidal] [G.LaxBraided] [adj.IsMonoidal] : F.Braided where
   toMonoidal := inferInstance

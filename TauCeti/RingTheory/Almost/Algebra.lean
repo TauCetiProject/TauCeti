@@ -44,6 +44,8 @@ the classical setup it is an isomorphism, and almostification of algebras is an 
 * `TauCeti.Almost.Algebra.counitIso`: the counit isomorphism `(A_*)^a ≅ A`.
 * `TauCeti.Almost.Algebra.homEquiv`: morphisms `A ⟶ B` of almost algebras are `V`-algebra maps
   `A_* →ₐ[V] B_*`.
+* `TauCeti.Almost.Algebra.classicalEquiv`: for the classical setup, almostification is an
+  equivalence `CommAlgCat V ≌ Algebra (BasicSetup.classical V)`.
 
 ## Main results
 
@@ -168,7 +170,6 @@ noncomputable def elements : Algebra S ⥤ CommAlgCat.{u} V :=
   (Module.elements S).mapCommMon ⋙ ModuleCat.CommMonModuleEquivalenceCommAlgebra.functor
 
 /-- The underlying type of the algebra `A_*` of almost elements is `Hom(V^a, A)`. -/
-@[simp]
 theorem elements_obj_carrier (A : Algebra S) :
     ((elements S).obj A : Type u) = ((Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) :=
   (rfl)
@@ -182,7 +183,6 @@ theorem elements_map_apply {A B : Algebra S} (f : A ⟶ B) (x : (elements S).obj
 
 /-- The unit of the algebra `A_*` is the almost element `V^a ≅ 𝟙_ → A` given by the unit of
 `A`. -/
-@[simp]
 theorem elements_one (A : Algebra S) :
     ((1 : (elements S).obj A) : (Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) =
       Functor.OplaxMonoidal.η (Module.toAlmost S) ≫ η[A.X] :=
@@ -190,7 +190,6 @@ theorem elements_one (A : Algebra S) :
 
 /-- The product of two almost elements `x, y : V^a → A` is the composite
 `V^a ≅ V^a ⊗ V^a → A ⊗ A → A` of `x ⊗ y` with the multiplication of `A`. -/
-@[simp]
 theorem elements_mul (A : Algebra S) (x y : (elements S).obj A) :
     ((x * y : (elements S).obj A) : (Module.toAlmost S).obj (ModuleCat.of V V) ⟶ A.X) =
       (λ_ ((Module.toAlmost S).obj (𝟙_ (ModuleCat.{u} V)))).inv ≫
@@ -259,12 +258,29 @@ noncomputable instance : Reflective (elements S) where
   L := toAlmost S
   adj := adj S
 
+instance : (toAlmost S).IsLeftAdjoint :=
+  (adj S).isLeftAdjoint
+
+/-- **Almost algebras form a complete category**, as a reflective subcategory of commutative
+`V`-algebras. -/
+instance hasLimits : HasLimits (Algebra S) :=
+  hasLimits_of_reflective (elements S)
+
+/-- **Almost algebras form a cocomplete category**, as a reflective subcategory of commutative
+`V`-algebras. -/
+instance hasColimits : HasColimits (Algebra S) :=
+  hasColimits_of_reflective (elements S)
+
 /-- The counit isomorphism `(A_*)^a ≅ A` of the adjunction `toAlmost S ⊣ elements S`. -/
 noncomputable def counitIso : elements S ⋙ toAlmost S ≅ 𝟭 (Algebra S) :=
   asIso (adj S).counit
 
 @[simp]
 theorem counitIso_hom : (counitIso S).hom = (adj S).counit :=
+  (rfl)
+
+@[simp]
+theorem counitIso_inv : (counitIso S).inv = inv (adj S).counit :=
   (rfl)
 
 /-- **Every almost algebra is the almostification of a `V`-algebra**, namely of its algebra of
@@ -294,6 +310,15 @@ theorem elements_map_homEquiv_symm_apply {A B : Algebra S}
   ext1
   rw [← homEquiv_apply, Equiv.apply_symm_apply, CommAlgCat.hom_ofHom]
 
+/-- The morphism of almost algebras corresponding to an algebra map `g : A_* →ₐ[V] B_*` is
+`A ≅ (A_*)^a → (B_*)^a ≅ B`. -/
+theorem homEquiv_symm_apply {A B : Algebra S}
+    (g : (elements S).obj A →ₐ[V] (elements S).obj B) :
+    (homEquiv S A B).symm g = inv ((adj S).counit.app A) ≫
+      (toAlmost S).map (ConcreteCategory.ofHom (C := CommAlgCat.{u} V) g) ≫
+        (adj S).counit.app B :=
+  (rfl)
+
 /-- For every commutative `V`-algebra `R`, the unit `R → (R^a)_*` is an almost isomorphism. -/
 theorem isAlmostIso_adj_unit_app (R : CommAlgCat.{u} V) :
     S.IsAlmostIso ((adj S).unit.app R).hom.toLinearMap := by
@@ -303,6 +328,16 @@ theorem isAlmostIso_adj_unit_app (R : CommAlgCat.{u} V) :
 /-- For the classical setup `(V, V)`, almostification of algebras is an equivalence of
 categories. -/
 instance isEquivalence_toAlmost_classical : (toAlmost (BasicSetup.classical V)).IsEquivalence where
+
+/-- For the classical setup `(V, V)`, almostification is an equivalence between commutative
+`V`-algebras and almost `V`-algebras. -/
+noncomputable def classicalEquiv : CommAlgCat.{u} V ≌ Algebra (BasicSetup.classical V) :=
+  (toAlmost (BasicSetup.classical V)).asEquivalence
+
+@[simp]
+theorem classicalEquiv_functor :
+    (classicalEquiv (V := V)).functor = toAlmost (BasicSetup.classical V) :=
+  (rfl)
 
 end Algebra
 
