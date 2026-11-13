@@ -444,9 +444,12 @@ theorem prefix_toSimpleGraph (d : (ofSimpleGraph G).EarDecomposition K) (h : H.t
   refine SimpleGraph.EarDecomposition.ext (d.length_prefix k) ?_ ?_ fun i ↦ ?_
   · apply SimpleGraph.Subgraph.toGraph_injective
     rw [toGraph_initial_toSimpleGraph, SimpleGraph.EarDecomposition.initial_prefix,
-      toGraph_initial_toSimpleGraph, initial_eq_graphAfter, initial_eq_graphAfter,
-      graphAfter_prefix_zero]
-  · exact EarStart.toSimpleGraph_heq_of_heq (d.graphAfter_prefix_zero k) (d.start_prefix_heq k) _ _
+      toGraph_initial_toSimpleGraph, initial_prefix]
+  · have h0 : (0 : Fin ((d.prefix k).length + 1)) =
+        Fin.cast (congrArg (· + 1) (d.length_prefix k).symm) 0 := Fin.ext (by simp)
+    have hzero : (d.prefix k).graphAfter 0 = d.graphAfter 0 := by
+      rw [h0, graphAfter_prefix, Fin.castLE_zero]
+    exact EarStart.toSimpleGraph_heq_of_heq hzero (d.heq_start_prefix k) _ _
   · refine (walkAt_toSimpleGraph _ _ i).trans (Eq.trans ?_
       ((SimpleGraph.EarDecomposition.walkAt_prefix _ k _).trans (walkAt_toSimpleGraph d h _)).symm)
     have hi := d.walkAt_prefix k (i.cast (d.length_prefix k))
@@ -459,10 +462,13 @@ private theorem toSimpleGraph_prefix_toGraph (d : G.EarDecomposition H) (k : Fin
   refine SimpleGraph.EarDecomposition.ext (d.toGraph.length_prefix k) ?_ ?_ fun i ↦ ?_
   · apply SimpleGraph.Subgraph.toGraph_injective
     rw [toGraph_initial_toSimpleGraph, SimpleGraph.EarDecomposition.initial_prefix,
-      initial_eq_graphAfter, graphAfter_prefix_zero, ← initial_eq_graphAfter,
-      SimpleGraph.EarDecomposition.initial_toGraph]
-  · exact (EarStart.toSimpleGraph_heq_of_heq (d.toGraph.graphAfter_prefix_zero k)
-      (d.toGraph.start_prefix_heq k) _ rfl).trans (EarStart.toSimpleGraph_toGraph_heq d.start _)
+      initial_prefix, SimpleGraph.EarDecomposition.initial_toGraph]
+  · have h0 : (0 : Fin ((d.toGraph.prefix k).length + 1)) =
+        Fin.cast (congrArg (· + 1) (d.toGraph.length_prefix k).symm) 0 := Fin.ext (by simp)
+    have hzero : (d.toGraph.prefix k).graphAfter 0 = d.toGraph.graphAfter 0 := by
+      rw [h0, graphAfter_prefix, Fin.castLE_zero]
+    exact (EarStart.toSimpleGraph_heq_of_heq hzero (d.toGraph.heq_start_prefix k) _ rfl).trans
+      (EarStart.toSimpleGraph_toGraph_heq d.start _)
   · refine (walkAt_toSimpleGraph _ _ i).trans
       (Eq.trans ?_ (SimpleGraph.EarDecomposition.walkAt_prefix d k _).symm)
     have hi := d.toGraph.walkAt_prefix k (i.cast (d.toGraph.length_prefix k))

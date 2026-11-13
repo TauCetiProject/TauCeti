@@ -54,7 +54,7 @@ theorem hom_ext {M : ModuleCat.{v} R} {N : ModuleCat.{max u v} R} {n : ℕ}
     f = g := by
   ext ⟨x, hx⟩
   have hspan := TauCeti.SymmetricAlgebra.homogeneousSubmodule_eq_span R M n
-  suffices ∀ y (hy : y ∈ Submodule.span R {p | ∃ l : List M, l.length = n ∧
+  suffices ∀ y (_ : y ∈ Submodule.span R {p | ∃ l : List M, l.length = n ∧
       (l.map (SymmetricAlgebra.ι R M)).prod = p})
       (hy' : y ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n),
       f ⟨y, hy'⟩ = g ⟨y, hy'⟩ from this x (hspan ▸ hx) hx

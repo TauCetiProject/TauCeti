@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 import TauCeti.NumberTheory.Padics.Factorial
 
 /-!
