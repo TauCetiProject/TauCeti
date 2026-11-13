@@ -30,6 +30,8 @@ subgroup order.
 * `TauCeti.character_ind` rewrites the coset sum as an average over the whole group when the
   subgroup order is invertible in the coefficient field; it is the specialization of
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum` to a character.
+* `TauCeti.character_indFDRep_mulEquiv`: induced characters are natural under a group isomorphism
+  carrying one finite-index subgroup onto another.
 
 ## References
 
@@ -246,27 +248,31 @@ theorem character_ind [Fintype G] (hS : IsUnit (Nat.card S : k)) (A : FDRep k S)
   exact Subgroup.indClassFun_eq_natCard_inv_mul_sum S hS
     (ClassFunction.mem_iff.mpr fun s t => A.char_conj s t) g
 
-/-- **Induced characters are natural under group isomorphisms.** If `φ : G ≃* G'` carries `S`
-onto `S'` and the characters of `A` and `A'` agree along `φ`, then so do the characters of the
-induced representations. The subgroup order must be invertible in the coefficient field, as in
-`TauCeti.character_ind`. -/
-theorem character_indFDRep_mulEquiv [Finite G] {G' : Type*} [Group G'] [Finite G']
-    {S' : Subgroup G'} (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (hS : IsUnit (Nat.card S : k))
-    (A : FDRep k S) (A' : FDRep k S')
+/-- **Induced characters are natural under group isomorphisms.** If `φ : G ≃* G'` carries the
+finite-index subgroup `S` onto `S'` and the characters of `A` and `A'` agree along `φ`, then so do
+the characters of the induced representations. The subgroup `S'` then has finite index too. -/
+theorem character_indFDRep_mulEquiv [S.FiniteIndex] {G' : Type*} [Group G'] {S' : Subgroup G'}
+    (φ : G ≃* G') (hφ : ∀ g, φ g ∈ S' ↔ g ∈ S) (A : FDRep k S) (A' : FDRep k S')
     (hA : ∀ s : S, A'.character ⟨φ s, (hφ s).2 s.2⟩ = A.character s) (g : G) :
+    haveI : S'.FiniteIndex := @Subgroup.finiteIndex_of_finite_quotient _ _ S'
+      (Finite.of_surjective _ (Subgroup.mk_mulEquiv_out_bijective φ hφ).surjective)
     (indFDRep (k := k) (G := G') A').character (φ g) =
       (indFDRep (k := k) (G := G) A).character g := by
   classical
-  let _ : Fintype G := Fintype.ofFinite G
-  let _ : Fintype G' := Fintype.ofFinite G'
-  have hcard : Nat.card S' = Nat.card S :=
-    (Nat.card_congr (φ.toEquiv.subtypeEquiv fun y => (hφ y).symm)).symm
-  -- Both sides are averages over the group; reindex the sum over `G'` along `φ`.
-  rw [character_ind (hcard ▸ hS) A', character_ind hS A, hcard, ← φ.toEquiv.sum_comp]
-  congr 1
-  refine Finset.sum_congr rfl fun x _ => ?_
-  have hconj : (φ x)⁻¹ * φ g * φ x = φ (x⁻¹ * g * x) := by simp
-  simp only [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, hconj, hφ]
+  have hb := Subgroup.mk_mulEquiv_out_bijective φ hφ
+  have : S'.FiniteIndex :=
+    @Subgroup.finiteIndex_of_finite_quotient _ _ S' (Finite.of_surjective _ hb.surjective)
+  let := Fintype.ofFinite (G ⧸ S)
+  let := Fintype.ofFinite (G' ⧸ S')
+  rw [character_indFDRep_sum_quotient, character_indFDRep_sum_quotient]
+  simp only [← Function.indTerm_apply]
+  -- Reindex the coset sum over `G' ⧸ S'` along the transversal `q ↦ φ q.out`.
+  rw [← hb.sum_comp]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [Function.indTerm_eq_of_mk_eq _ (ClassFunction.mem_iff.mpr A'.char_conj) _ _ _
+    (QuotientGroup.out_eq' _)]
+  have hconj : (φ q.out)⁻¹ * φ g * φ q.out = φ (q.out⁻¹ * g * q.out) := by simp
+  simp only [Function.indTerm_apply, hconj, hφ]
   split_ifs with h
   · exact hA ⟨_, h⟩
   · rfl

@@ -84,13 +84,12 @@ to `(γ, δ) = (α, β)` gives the required criterion `α ≠ β`.
 
 ## Implementation notes
 
-The Mackey criterion `TauCeti.simple_indFDRep_iff` asks for the coefficient field and the group
-to lie in the *same* universe, and the coefficient field here is `ℂ : Type`. The predicate
-`TauCeti.MackeyDisjoint` is itself declared for a field and a group in one universe, and the
-criterion that consumes it ends at Mathlib's `FDRep.simple_iff_end_is_rank_one`, which is stated
-for `{k : Type u} {G : Type u}`. The Mackey argument is therefore run only for `F : Type`, where
-`GL (Fin 2) F` lies in `Type` too. The purely group-theoretic lemmas about the Weyl conjugation
-keep both an arbitrary universe and an arbitrary commutative ring.
+The Mackey criterion `TauCeti.simple_indFDRep_iff` and the predicate `TauCeti.MackeyDisjoint`
+it consumes are both stated for a coefficient field and a group in one universe
+`{k G : Type u}`, and the coefficient field here is `ℂ : Type`. The Mackey argument is therefore
+run only for `F : Type`, where `GL (Fin 2) F` lies in `Type` too. The purely group-theoretic
+lemmas about the Weyl conjugation keep both an arbitrary universe and an arbitrary commutative
+ring.
 
 A finite field `F : Type u` is reached from its small model `Shrink.{0} F : Type` along the ring
 isomorphism `Shrink.ringEquiv`. Over a ring isomorphism `e`, the naturality of induced characters
@@ -334,9 +333,7 @@ theorem character_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) (g : GL 
       (Units.map (e : F →* F') (GL2Borel.diag y).1, Units.map (e : F →* F') (GL2Borel.diag y).2) :=
     fun y => by ext <;> simp [φ]
   rw [GL2PrincipalSeries_def, GL2PrincipalSeries_def]
-  exact character_indFDRep_mulEquiv φ hmem
-    (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Nat.card_pos.ne')) _ _
-    (fun y => by simp [hdiag]) g
+  exact character_indFDRep_mulEquiv φ hmem _ _ (fun y => by simp [hdiag]) g
 
 /-- **The principal series is natural in the field.** Restricting the principal series of
 `GL₂(F')` along the isomorphism `GL₂(e) : GL₂(F) ≃* GL₂(F')` gives the principal series of `GL₂(F)`
@@ -351,11 +348,14 @@ theorem nonempty_iso_res_GL2PrincipalSeries_mapEquiv (α β : F'ˣ →* ℂˣ) :
     exact character_GL2PrincipalSeries_mapEquiv e α β g)
 
 /-- **Irreducibility of the principal series is invariant under a ring isomorphism of the field.**
-Restriction along a group isomorphism is an equivalence of categories, so it preserves and reflects
-simple objects. -/
+For `e : F ≃+* F'` and characters `α, β : F'ˣ →* ℂˣ`, the principal series
+`Ind_B^{GL₂}((α ∘ e) ⊗ (β ∘ e))` of `GL₂(F)` is simple if and only if the principal series
+`Ind_B^{GL₂}(α ⊗ β)` of `GL₂(F')` is simple. -/
 theorem simple_GL2PrincipalSeries_comp_unitsMap_iff (α β : F'ˣ →* ℂˣ) :
     Simple (GL2PrincipalSeries F (α.comp (Units.map (e : F →* F')))
         (β.comp (Units.map (e : F →* F')))) ↔ Simple (GL2PrincipalSeries F' α β) := by
+  -- Restriction along a group isomorphism is an equivalence of categories, so it preserves and
+  -- reflects simple objects.
   obtain ⟨i⟩ := nonempty_iso_res_GL2PrincipalSeries_mapEquiv e α β
   rw [← Simple.iff_of_iso i]
   -- The functor of `Action.resEquiv` is restriction along the same isomorphism
