@@ -35,10 +35,8 @@ these are the expansions of a left and a right parametrix of `Op(a)`.
   `ClassicalSymbol.isSmoothing_toSymbol_sub_of_sharpTerms_right`).
 
 Everything here is a statement about homogeneous terms. That `sharpTerms` gives the expansion of
-the symbol of the composed operators is the composition theorem of the symbol calculus: for a right
-factor of compact spatial support, the composition symbol `TauCeti.ClassicalSymbol.sharp` has the
-terms `sharpTerms` of the expansions of its factors (`TauCeti.ClassicalSymbol.term_sharp`). The
-formal inverses here need not have compact spatial support.
+the symbol of the composed operators is the composition theorem of the symbol calculus, and the
+formal inverses become parametrices of `Op(a)` through it.
 
 ## References
 

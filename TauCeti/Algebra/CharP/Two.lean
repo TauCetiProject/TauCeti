@@ -18,9 +18,7 @@ inverse. Consequently addition is cancellative, even when the given semiring str
 additive cancellation. This supplies the cancellation needed by the grid commutation chain-map
 criterion. The same holds in any module over a semiring of characteristic two
 (`TauCeti.add_self_eq_zero_of_charTwo`), which is how terms appearing twice cancel in sign-free
-differentials, and there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
-Adding two homotopy relations `a + p = D k + k'` and `p + b = D t + t'` cancels the shared term `p`
-(`TauCeti.add_eq_map_add_add_of_charTwo`).
+differentials.
 
 Two consequences for quadratic equations follow. In a ring of characteristic two without zero
 divisors, two roots of `X ^ 2 + t X - s` are equal or differ by `t`
@@ -28,6 +26,7 @@ divisors, two roots of `X ^ 2 + t X - s` are equal or differ by `t`
 characteristic two that translates an element by a scalar is an involution on that element
 (`AlgHom.apply_apply_of_apply_eq_add_algebraMap`), as for the translations permuting these roots.
 
+differentials, and there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
 -/
 
 public section
@@ -64,16 +63,6 @@ theorem add_eq_zero_iff_eq_of_charTwo (R : Type*) {M : Type*} [Semiring R] [Char
     [AddCommMonoid M] [Module R M] {a b : M} : a + b = 0 ↔ a = b := by
   refine ⟨fun h => ?_, fun h => h ▸ add_self_eq_zero_of_charTwo R a⟩
   rw [← add_zero a, ← add_self_eq_zero_of_charTwo R b, ← add_assoc, h, zero_add]
-
-/-- In a module over a semiring of characteristic two, adding the homotopy relations
-`a + p = D k + k'` and `p + b = D t + t'` for an additive map `D` cancels the shared term `p`:
-`a + b = D (k + t) + (k' + t')`. -/
-theorem add_eq_map_add_add_of_charTwo (R : Type*) {V W F : Type*} [Semiring R] [CharP R 2]
-    [AddCommMonoid V] [AddCommMonoid W] [Module R W] [FunLike F V W] [AddHomClass F V W] (D : F)
-    {a b p k' t' : W} {k t : V} (h₁ : a + p = D k + k') (h₂ : p + b = D t + t') :
-    a + b = D (k + t) + (k' + t') := by
-  rw [map_add, add_add_add_comm, ← h₁, ← h₂, add_assoc, ← add_assoc p,
-    add_self_eq_zero_of_charTwo R, zero_add]
 
 end TauCeti
 

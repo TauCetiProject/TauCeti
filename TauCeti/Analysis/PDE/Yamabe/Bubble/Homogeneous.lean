@@ -233,8 +233,6 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
       (memLp_bubble μ hn ht 0).aestronglyMeasurable
       (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)).mpr (memLp_bubble μ hn ht 0)
   have h := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub ENNReal.ofReal_ne_top
-    (r := fun n : ℕ ↦ (n : ℝ) + 1)
-    (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
     (χ.contDiff : ContDiff ℝ 0 (χ : E → ℝ)) χ.eventuallyEq_one
     (B := fun _ ↦ 1) (fun i hi x ↦ by
       obtain rfl : i = 0 := by omega

@@ -35,9 +35,7 @@ rapid decay of every order.
 ## Main results
 
 * `Distribution.localFourier_lineDerivOp`: the localized Fourier transform of a derivative.
-* `Distribution.IsMicrolocallySmoothAt.lineDerivOp`,
-  `Distribution.IsMicrolocallySmoothAt.iteratedLineDerivOp`,
-  `Distribution.waveFrontSet_lineDerivOp_subset`,
+* `Distribution.IsMicrolocallySmoothAt.lineDerivOp`, `Distribution.waveFrontSet_lineDerivOp_subset`,
   `Distribution.waveFrontSet_iteratedLineDerivOp_subset`: the wave front set of a derivative.
 * `Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`: differential
   operators with smooth coefficients do not enlarge the wave front set.
@@ -118,16 +116,6 @@ theorem IsMicrolocallySmoothAt.lineDerivOp (hT : T.IsMicrolocallySmoothAt x ξ) 
     _ ≤ 2 * π * ‖v‖ * C₁ + C₂ := by
         gcongr
         exacts [hC₁ η hη, hC₂ η hη]
-
-/-- An iterated derivative `∂^{m} T` of a distribution microlocally smooth at `(x, ξ)` is
-microlocally smooth there. -/
-theorem IsMicrolocallySmoothAt.iteratedLineDerivOp (hT : T.IsMicrolocallySmoothAt x ξ) {n : ℕ}
-    (m : Fin n → E) : (∂^{m} T).IsMicrolocallySmoothAt x ξ := by
-  induction n with
-  | zero => simpa using hT
-  | succ n ih =>
-    rw [iteratedLineDerivOp_succ_left]
-    exact (ih _).lineDerivOp _
 
 /-- **The wave front set of a derivative** lies in the wave front set of the distribution. -/
 theorem waveFrontSet_lineDerivOp_subset (T : 𝓓'(Ω, ℂ)) (v : E) :

@@ -32,8 +32,6 @@ of the facts that make it a Hopf algebra over `ℤ`
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι`: the comultiplication of a Lie generator.
-* `TauCeti.UniversalEnvelopingAlgebra.isPrimitiveElem_ι`: every canonical Lie image is
-  primitive over any commutative ring.
 * `TauCeti.UniversalEnvelopingAlgebra.counit_ι`: the counit of a Lie generator.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι_pow`: the comultiplication of a generator power.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_ι_dividedPower` and
@@ -160,19 +158,6 @@ theorem comul_ι' (x : L) :
       _root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x) ⊗ₜ[R] 1 +
         1 ⊗ₜ[R] _root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x) := by
   simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using comul_ι R L x
-
-/-- The canonical image of a Lie element is primitive over any commutative ring. -/
-theorem isPrimitiveElem_ι (x : L) :
-    Bialgebra.IsPrimitiveElem R (_root_.UniversalEnvelopingAlgebra.ι R x) := by
-  apply Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr
-  simpa only [add_comm] using comul_ι R L x
-
-/-- Primitivity of a canonical Lie image in the normal form used by `simp`. -/
-@[simp]
-theorem isPrimitiveElem_ι' (x : L) :
-    Bialgebra.IsPrimitiveElem R
-      (_root_.UniversalEnvelopingAlgebra.mkAlgHom R L (TensorAlgebra.ι R x)) := by
-  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using isPrimitiveElem_ι R L x
 
 /-- The bialgebra counit vanishes on Lie generators. -/
 -- `simp`-normal form is `counit_ι'`, since `simp` unfolds `ι` through `ι_apply`.

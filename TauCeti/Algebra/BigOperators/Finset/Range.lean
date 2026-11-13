@@ -37,9 +37,6 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   factorization of finite generating sums.
 * `sum_range_triangle`: summing over pairs `(c, p - c)` with `c ≤ p < K` equals the square
   `range K × range K` when the family vanishes off the triangle.
-* `Finset.sum_range_sum_range_tsub_eq_sum_ite`: the two orderings of a sum over the triples
-  `k + i + j = r`, as in the collection of the terms of a product of two expansions with a third
-  index.
 * `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
 * `sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero`: the product of two sums truncated
@@ -657,23 +654,3 @@ theorem sum_range_succ_smul_pow_sub' {R A : Type*} [CommSemiring R] [Semiring A]
   rw [mul_smul_comm, smul_mul_assoc, ← pow_succ', ← pow_succ]
 
 end TauCeti
-
-namespace Finset
-
-/-- **Reordering a sum over the triples `k + i + j = r`.** Summing over `k ≤ r` and `i ≤ r - k`,
-with `j = r - k - i`, gives the same as summing over the pairs `i + j ≤ r`, with
-`k = r - (i + j)`. -/
-theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : ℕ → ℕ → ℕ → M)
-    (r : ℕ) :
-    ∑ k ∈ range (r + 1), ∑ i ∈ range (r - k + 1), F k i (r - k - i) =
-      ∑ i ∈ range (r + 1), ∑ j ∈ range (r + 1),
-        if i + j ≤ r then F (r - (i + j)) i j else 0 := by
-  rw [← TauCeti.sum_range_triangle (r + 1) _ fun _ _ h ↦ ite_eq_right (by omega),
-    ← sum_flip (fun k ↦ ∑ i ∈ range (r - k + 1), F k i (r - k - i))]
-  refine sum_congr rfl fun p hp ↦ ?_
-  rw [Nat.sub_sub_self (mem_range_succ_iff.1 hp)]
-  refine sum_congr rfl fun i hi ↦ ?_
-  simp only [mem_range] at hp hi
-  rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
-
-end Finset

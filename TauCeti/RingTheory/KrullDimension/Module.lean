@@ -29,8 +29,6 @@ embedded primes.
 
 ## Main results
 
-* `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
-  support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
@@ -44,52 +42,6 @@ open IsLocalRing
 namespace Module
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
-
-/-- Restriction of scalars along a surjective ring homomorphism preserves the support dimension
-of a module: contraction gives an order isomorphism between the two supports. -/
-theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
-    [Module S M] [IsScalarTower R S M]
-    (hsurj : Function.Surjective (algebraMap R S)) : supportDim R M = supportDim S M := by
-  have hmem (q : PrimeSpectrum S) :
-      q.comap (algebraMap R S) ∈ support R M ↔ q ∈ support S M := by
-    refine ⟨?_, fun h ↦ support_subset_preimage_comap (R := R) (A := S) h⟩
-    simp only [mem_support_iff']
-    rintro ⟨m, h⟩
-    refine ⟨m, fun s hs ↦ ?_⟩
-    obtain ⟨r, rfl⟩ := hsurj s
-    simpa only [algebraMap_smul] using h r hs
-  let e : support S M ↪o support R M :=
-    { toFun := fun q ↦ ⟨q.val.comap (algebraMap R S), (hmem q.val).2 q.property⟩
-      inj' := fun _ _ h ↦ Subtype.ext <|
-        PrimeSpectrum.comap_injective_of_surjective _ hsurj (congrArg Subtype.val h)
-      map_rel_iff' := Ideal.comap_le_comap_iff_of_surjective _ hsurj _ _ }
-  refine (Order.krullDim_eq_of_orderIso (OrderIso.ofSurjective e ?_)).symm
-  intro p
-  have hp : p.val ∈ Set.range (PrimeSpectrum.comap (algebraMap R S)) := by
-    rw [range_comap_of_surjective S (algebraMap R S) hsurj,
-      PrimeSpectrum.mem_zeroLocus, SetLike.coe_subset_coe]
-    exact ((Ideal.ker_le_comap (algebraMap R S)).trans_eq Module.comap_annihilator).trans
-      (annihilator_le_of_mem_support p.property)
-  obtain ⟨q, hq⟩ := hp
-  exact ⟨⟨q, (hmem q).1 (hq ▸ p.property)⟩, Subtype.ext hq⟩
-
-/-- The support dimension of a localized module is independent of the presentations of
-both the localized ring and the localized module. -/
-theorem supportDim_eq_of_isLocalizedModule (T : Submonoid R)
-    (B : Type*) [CommRing B] [Algebra R B] [IsLocalization T B]
-    {N : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
-    (f : M →ₗ[R] N) [IsLocalizedModule T f] :
-    supportDim B N = supportDim (Localization T) (LocalizedModule T M) := by
-  let A := Localization T
-  let e : A ≃ₐ[R] B := IsLocalization.algEquiv T A B
-  let : Algebra A B := e.toRingHom.toAlgebra
-  let : Module A N := .compHom N (algebraMap A B)
-  have : IsScalarTower A B N := .of_compHom A B N
-  have : IsScalarTower R A B := .of_algHom e.toAlgHom
-  have : IsScalarTower R A N := .to₁₂₄ R A B N
-  rw [← supportDim_eq_of_surjective (R := A) e.surjective]
-  exact (supportDim_eq_of_equiv
-    ((IsLocalizedModule.iso T f).extendScalarsOfIsLocalization T A)).symm
 
 /-- The support of a nonzero module over a ring of finite Krull dimension, such as a Noetherian
 local ring, has finite dimension: it is neither `⊥` nor `⊤`. -/

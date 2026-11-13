@@ -94,6 +94,12 @@ private theorem outgoing_splitFace_true_zero (hp : (p : ℕ) ≠ 0) :
   rw [outgoing_splitFace, splitFaceCornerOrigin_inr_true_of_lt (Nat.pos_of_ne_zero hp),
     Sum.map_inl]
 
+private theorem incoming_splitFace_true_zero :
+    (C.splitFace f p).incoming ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ = .inr true := by
+  rw [(C.splitFace f p).incoming_mk_of_eq_zero (f := .inr true)
+    (i := (⟨p, Nat.lt_succ_self _⟩ : Fin (p + 1))) rfl (Nat.add_sub_cancel _ _).symm]
+  exact outgoing_splitFace_inr_true_last C f p
+
 /-- A corner of the split face other than the two corners cut by the new edge is a corner of one
 of the two new faces, with the same two sides. -/
 private theorem exists_corner_splitFace_self (k : Fin (C.sides f)) (hk0 : (k : ℕ) ≠ 0)
@@ -168,12 +174,12 @@ private theorem nonempty_vertexLink_path_splitFace_zero {v : C.graph.V}
       ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ (a := m') (b := m)
       (outgoing_splitFace_inr_true_last C f _).symm
       (congrArg (C.splitFace f ⟨0, C.sides_pos f⟩).graph.rev
-        (incoming_splitFace_inr_true_zero C f _).symm)
+        (incoming_splitFace_true_zero C f _).symm)
     exact ⟨(P.comp R).comp Q⟩
   · obtain ⟨P⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
       ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ (a := a) (b := m)
       (ha.trans (outgoing_splitFace_true_zero C f p hp).symm)
-      (congrArg (C.splitFace f p).graph.rev (incoming_splitFace_inr_true_zero C f p).symm)
+      (congrArg (C.splitFace f p).graph.rev (incoming_splitFace_true_zero C f p).symm)
     exact ⟨P.comp Q⟩
 
 /-- In the link of `C.splitFace f p`, the two germs of the corner `p` of the split face are joined

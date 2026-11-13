@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Contour.LogDerivFTC
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 
 /-!

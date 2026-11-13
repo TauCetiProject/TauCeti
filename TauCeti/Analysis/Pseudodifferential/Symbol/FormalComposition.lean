@@ -27,10 +27,7 @@ composition of expansions.
   derivatives of the factors.
 
 Everything here is a statement about homogeneous terms. That `sharpTerms` gives the expansion of
-the symbol of the composed operators is the composition theorem of the symbol calculus: for
-classical symbols `a` and `b`, with `b` of compact spatial support, the composition symbol
-`TauCeti.ClassicalSymbol.sharp`, whose quantization is `Op(a) ∘ Op(b)`, is classical with the terms
-`sharpTerms a.term b.term` (`TauCeti.ClassicalSymbol.term_sharp`).
+the symbol of the composed operators is the composition theorem of the symbol calculus.
 
 ## References
 
@@ -77,22 +74,6 @@ theorem sharpTerm_succ (k : ℕ) :
       (sharpTerm k (b.frequencyDeriv (EuclideanSpace.single j 1))
         (a.spatialDeriv (EuclideanSpace.single j 1))).castDegree (by push_cast; ring) :=
   (rfl)
-
-/-- Transporting the degree of the left factor transports the degree of every term of the formal
-composition. -/
-@[simp]
-theorem sharpTerm_castDegree_left {m'' : ℝ} (h : m' = m'') (k : ℕ) :
-    sharpTerm k (b.castDegree h) a = (sharpTerm k b a).castDegree (by rw [h]) := by
-  subst h
-  rw [castDegree_rfl, castDegree_rfl]
-
-/-- Transporting the degree of the right factor transports the degree of every term of the formal
-composition. -/
-@[simp]
-theorem sharpTerm_castDegree_right {m'' : ℝ} (h : m = m'') (k : ℕ) :
-    sharpTerm k b (a.castDegree h) = (sharpTerm k b a).castDegree (by rw [h]) := by
-  subst h
-  rw [castDegree_rfl, castDegree_rfl]
 
 @[simp]
 theorem coefficient_sharpTerm_zero (p : CoordinateSpace n × CoordinateSpace n) :
@@ -185,15 +166,6 @@ theorem coefficient_sharpTerms (k : ℕ) (z : CoordinateSpace n × CoordinateSpa
 theorem coefficient_sharpTerms_zero (z : CoordinateSpace n × CoordinateSpace n) :
     (sharpTerms q p 0).coefficient z = (q 0).coefficient z ∘L (p 0).coefficient z := by
   simp [coefficient_sharpTerms]
-
-/-- The term `c₁ = q₀ ∘ p₁ + q₁ ∘ p₀ - i ∑ⱼ ∂_{ξⱼ} q₀ ∘ ∂_{xⱼ} p₀` of the formal composition. -/
-theorem coefficient_sharpTerms_one (z : CoordinateSpace n × CoordinateSpace n) :
-    (sharpTerms q p 1).coefficient z =
-      (q 0).coefficient z ∘L (p 1).coefficient z + (q 1).coefficient z ∘L (p 0).coefficient z -
-        Complex.I • ∑ j, ((q 0).frequencyDeriv (EuclideanSpace.single j 1)).coefficient z ∘L
-          ((p 0).spatialDeriv (EuclideanSpace.single j 1)).coefficient z := by
-  simp [coefficient_sharpTerms, Finset.sum_range_succ, sharpTerm_succ, sub_eq_add_neg]
-  abel
 
 /-- The leading term of the formal composition is the composition of the leading terms. -/
 theorem sharpTerms_zero : sharpTerms q p 0 = compTerms q p 0 := by

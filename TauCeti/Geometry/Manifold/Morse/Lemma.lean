@@ -49,10 +49,6 @@ stable and unstable manifolds are then studied.
   `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
   split coordinates has dimension the Morse index, and the contracting factor the complementary
   dimension.
-* `TauCeti.MorseChart.quadratic`: the quadratic normal form of a Morse chart, with
-  `TauCeti.MorseChart.eqOn_quadratic` and `TauCeti.MorseChart.contDiff_quadratic`.
-* `TauCeti.MorseChart.contMDiffOn` and `TauCeti.MorseChart.contMDiffAt`: a function is smooth on
-  the source of a Morse chart.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -168,40 +164,6 @@ include φ in
 /-- A space with a Morse chart is finite-dimensional. -/
 theorem finiteDimensional : FiniteDimensional ℝ E :=
   Module.Finite.equiv φ.coord.symm
-
-/-- The quadratic normal form of a Morse chart, as a function on the model space. -/
-noncomputable def quadratic (z : E) : ℝ :=
-  f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2
-
-/-- The value of the quadratic normal form of a Morse chart. -/
-theorem quadratic_apply (z : E) :
-    φ.quadratic z = f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2 :=
-  (rfl)
-
-/-- On the source of a Morse chart, `f` is the quadratic normal form read in the chart. -/
-theorem eqOn_quadratic : EqOn f (φ.quadratic ∘ φ.toChart) φ.toChart.source := fun y hy ↦ by
-  simp only [comp_apply, quadratic_apply]
-  exact φ.eq_quadratic y hy
-
-/-- The quadratic normal form is smooth. -/
-theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
-  have := φ.finiteDimensional
-  have hL : ContDiff ℝ ∞ (φ.coord : E → Fin (Module.finrank ℝ E) → ℝ) :=
-    (LinearMap.toContinuousLinearMap (φ.coord : E →ₗ[ℝ] Fin (Module.finrank ℝ E) → ℝ)).contDiff
-  have hi (i : Fin (Module.finrank ℝ E)) : ContDiff ℝ ∞ fun z ↦ φ.coord z i := contDiff_pi.1 hL i
-  exact contDiff_const.add (contDiff_const.mul (ContDiff.sum fun i _ ↦
-    contDiff_const.mul ((hi i).pow 2)))
-
-/-- A function is smooth on the source of a Morse chart: there, it is a quadratic polynomial in
-the coordinates of a chart of the maximal atlas. -/
-theorem contMDiffOn : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f φ.toChart.source :=
-  (φ.contDiff_quadratic.contMDiff.comp_contMDiffOn
-    (contMDiffOn_of_mem_maximalAtlas φ.mem_maximalAtlas)).congr φ.eqOn_quadratic
-
-/-- A function is smooth at every point of the source of a Morse chart, in particular at its
-centre. -/
-theorem contMDiffAt {y : M} (hy : y ∈ φ.toChart.source) : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y :=
-  φ.contMDiffOn.contMDiffAt (φ.toChart.open_source.mem_nhds hy)
 
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/

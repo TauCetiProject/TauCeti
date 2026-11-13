@@ -123,7 +123,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 variable [CompleteSpace F] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {lam Lam : ℝ}
   {u : EuclideanSpace ℝ ι → F} {x₀ : EuclideanSpace ℝ ι} {ρ R : ℝ}
 
-omit [CompleteSpace F] in
 /-- **Decay of the `L²` mass for constant coefficients.** Let `A` be a square matrix with
 `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u` be a `C²` solution of
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on the ball `ball x₀ R ⊆ ℝⁿ`, with `‖u‖²` integrable there. Then for every
@@ -142,15 +141,9 @@ theorem setIntegral_ball_norm_sq_le_of_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 
     ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤
       2 ^ Fintype.card ι * √(Lam / lam) ^ Fintype.card ι * (ρ / R) ^ Fintype.card ι *
         ∫ x in ball x₀ R, ‖u x‖ ^ 2 ∂μ := by
-  -- `u ∘ e` is harmonic for a linear change of variables `e`, and so is its image `L ∘ u ∘ e` in
-  -- the completion `F̂`, where the mean-value property is available; `L` preserves norms.
-  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
-  have hL (y : F) : ‖L y‖ = ‖y‖ := UniformSpace.Completion.norm_coe y
   obtain ⟨e, hae, hbe, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := F) hlam hA hA'
-  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (u := L ∘ u) e hae hbe
-    ((harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu).comp_CLM L)
-    (by simpa only [Function.comp_apply, hL] using hint) hρ hρR
-  simp only [Function.comp_apply, hL] at h
+  have h := setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp e hae hbe
+    (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he isOpen_ball hu hLu) hint hρ hρR
   rwa [finrank_euclideanSpace, inv_mul_eq_div, ← Real.sqrt_div' _ hlam.le] at h
 
 /-- **Decay of the `L²` mean oscillation for constant coefficients.** Let `A` be a square matrix

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.PDE.Vortex.Multiplier
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra

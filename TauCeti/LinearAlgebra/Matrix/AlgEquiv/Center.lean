@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 public import Mathlib.LinearAlgebra.Matrix.DualNumber
-import TauCeti.Algebra.DualNumber.Basic
 import Mathlib.LinearAlgebra.Matrix.StdBasis
 
 /-!
@@ -116,7 +115,11 @@ theorem eq_one_of_commute_innerAut_dualNumber
       (DualNumber.eps : DualNumber R) • L (f Y) := by rw [map_smul, hbase']
   apply f.eq_one_of_map_commutator
   intro X Y
-  let u := TauCeti.dualNumberUnit X
+  let u : (DualNumber (Matrix ι ι R))ˣ :=
+    ⟨TrivSqZeroExt.inl 1 + TrivSqZeroExt.inr X,
+      TrivSqZeroExt.inl 1 - TrivSqZeroExt.inr X, by
+        ext <;> simp [TrivSqZeroExt.snd_mul, smul_eq_mul], by
+        ext <;> simp [TrivSqZeroExt.snd_mul, smul_eq_mul]⟩
   let g : GL ι (DualNumber R) := Units.map e.symm.toMonoidHom u
   have hconj (Z : Matrix ι ι R) : Matrix.GeneralLinearGroup.innerAut g (L Z) =
       L Z + (DualNumber.eps : DualNumber R) • L (X * Z - Z * X) := by

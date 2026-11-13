@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.CategoryTheory.Limits.MorphismProperty
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Binary coproducts of finite morphisms
@@ -36,6 +35,8 @@ instance IsFinite.isClosedUnderColimitsOfShape_walkingPair {C : Type*} [Category
     [PreservesColimitsOfShape (Discrete WalkingPair) L] (X : Scheme.{u}) :
     (MorphismProperty.costructuredArrowObj L @IsFinite (X := X)).IsClosedUnderColimitsOfShape
       (Discrete WalkingPair) := by
+  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
   refine CostructuredArrow.isClosedUnderColimitsOfShape (fun D _ ↦ colimit.cocone D)
     (fun D _ ↦ colimit.isColimit D) (fun D _ X s hs ↦ ?_) X
   have hdesc : (colimit.isColimit D).desc (Cocone.mk X s) =

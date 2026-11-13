@@ -8,8 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
-public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
@@ -69,7 +68,6 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
 
 ## Main results
 
-* `PeriodPair.isShortNF_weierstrassCurve`: the curve is in short normal form.
 * `PeriodPair.weierstrassCurve_smul`: rescaling the lattice by `c` changes the curve by the
   variable change with `u = c`.
 * `UpperHalfPlane.G_periodPair`: `G k (ℤ τ + ℤ) = 2 ζ(k) E_k(τ)` for `k ≥ 3`.
@@ -106,9 +104,6 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
   `PeriodPair.pointAddEquivOfLatticeEq_symm_weierstrassPoint`: rescaling naturality of the point
   map, sending the point of `c z` on `E_{cΛ}` to the point of `z` on `E_Λ`. Since the curve only
   depends on the lattice, the same holds for any basis of `cΛ`.
-* `PeriodPair.smul_mk_weierstrassPoint`: the same rescaling as an isomorphism of pointed curves
-  (`TauCeti.PointedWeierstrassCurve`), carrying `E_Λ` with the point of `z` to `E_{cΛ}` with the
-  point of `c z`.
 
 ## References
 
@@ -173,13 +168,9 @@ def weierstrassCurve : WeierstrassCurve ℂ where
   a₄ := -(L.g₂ / 4)
   a₆ := -(L.g₃ / 4)
 
-lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
-lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
-lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
-
-/-- The Weierstrass curve of a lattice is in short normal form. -/
-instance isShortNF_weierstrassCurve : L.weierstrassCurve.IsShortNF :=
-  ⟨L.weierstrassCurve_a₁, L.weierstrassCurve_a₂, L.weierstrassCurve_a₃⟩
+@[simp] lemma weierstrassCurve_a₁ : L.weierstrassCurve.a₁ = 0 := by unfold weierstrassCurve; rfl
+@[simp] lemma weierstrassCurve_a₂ : L.weierstrassCurve.a₂ = 0 := by unfold weierstrassCurve; rfl
+@[simp] lemma weierstrassCurve_a₃ : L.weierstrassCurve.a₃ = 0 := by unfold weierstrassCurve; rfl
 
 @[simp] lemma weierstrassCurve_a₄ : L.weierstrassCurve.a₄ = -(L.g₂ / 4) := by
   unfold weierstrassCurve; rfl
@@ -644,17 +635,5 @@ theorem pointAddEquivOfLatticeEq_symm_weierstrassPoint (h : L'.lattice = (c • 
     (z : ℂ) : (pointAddEquivOfLatticeEq h).symm (L.weierstrassPoint z) =
       L'.weierstrassPoint (c * z) := by
   rw [AddEquiv.symm_apply_eq, pointAddEquivOfLatticeEq_weierstrassPoint]
-
-/-- **Rescaling lattices is an isomorphism of pointed curves.** If `Λ' = c Λ`, the change of
-variables with `u = c` and `r = s = t = 0` carries `E_Λ` with the point of `z` to `E_{Λ'}` with
-the point of `c z`. -/
-theorem smul_mk_weierstrassPoint (h : L'.lattice = (c • L).lattice) (z : ℂ) :
-    (⟨c, 0, 0, 0⟩ : VariableChange ℂ) •
-        (⟨L.weierstrassCurve, L.weierstrassPoint z⟩ : TauCeti.PointedWeierstrassCurve ℂ) =
-      ⟨L'.weierstrassCurve, L'.weierstrassPoint (c * z)⟩ := by
-  refine TauCeti.PointedWeierstrassCurve.ext_cast
-    (weierstrassCurve_eq_smul_of_lattice_eq h).symm ?_
-  rw [← pointAddEquivOfLatticeEq_symm_weierstrassPoint h z]
-  simp [pointAddEquivOfLatticeEq, TauCeti.PointedWeierstrassCurve.smul_point]
 
 end PeriodPair

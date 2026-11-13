@@ -192,7 +192,7 @@ theorem RingHom.injective_of_isIntegral_of_ringKrullDim_le {R S : Type*} [CommRi
   let := f.kerLift.toAlgebra
   have : Algebra.IsIntegral (R ⧸ RingHom.ker f) S := ⟨hf.kerLift⟩
   have hquot : Function.Injective (Ideal.Quotient.mk (RingHom.ker f)) :=
-    (RingHom.injective_iff_ringKrullDim_le_of_surjective _ Ideal.Quotient.mk_surjective).2
+    RingHom.injective_of_surjective_of_ringKrullDim_le _ Ideal.Quotient.mk_surjective
       (hdim.trans (TauCeti.ringKrullDim_le_of_isIntegral (R := R ⧸ RingHom.ker f)))
   rw [RingHom.injective_iff_ker_eq_bot, Ideal.mk_ker] at hquot
   exact (RingHom.injective_iff_ker_eq_bot f).mpr hquot

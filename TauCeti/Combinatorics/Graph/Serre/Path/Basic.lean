@@ -19,9 +19,8 @@ condition retains the distinction between a loop and its reversed dart, and betw
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
 The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
 its decomposition and mapping lemmas support subgraph and based-core constructions. The paths of
-a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, a path whose darts lie
-in a subgraph `Γ.subgraph A D hsrc hrev` lifts to it, with the same reducedness, and a path leaving
-a vertex set crosses its boundary along one of its darts.
+a restriction `Γ.restrict S hS` are the paths of `Γ` whose darts lie in `S`, and a path leaving a
+vertex set crosses its boundary along one of its darts.
 -/
 
 public section
@@ -56,15 +55,6 @@ def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
   induction p with
   | nil => simp
   | cons p e ih => simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
-
-/-- The weight of a path is the ordered product of the weights of the darts it traverses. -/
-theorem Path.weight_eq_prod_map_darts {M : Type*} [Monoid M] (f : Γ.E → M) {a b : Γ.V}
-    (p : Γ.Path a b) :
-    p.weight (fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) => f e.1) =
-      ((Path.darts Γ p).map f).prod := by
-  induction p with
-  | nil => simp
-  | cons p e ih => simp [ih]
 
 /-- A path traverses as many darts as its length. -/
 @[simp] theorem Path.length_darts {a b : Γ.V} (p : Γ.Path a b) :
@@ -331,28 +321,6 @@ theorem preconnected_restrict_iff : (Γ.restrict S hS).Preconnected ↔
     exact ⟨(Γ.exists_restrict_path S hS p hp).choose⟩
 
 end Restrict
-
-/-- A path between vertices of `A` all of whose darts lie in `D` lifts through the inclusion of
-the subgraph. -/
-theorem exists_subgraph_path (A : Set Γ.V) (D : Set Γ.E) (hsrc : ∀ e ∈ D, Γ.src e ∈ A)
-    (hrev : ∀ e ∈ D, Γ.rev e ∈ D) {a b : Γ.V} (p : Γ.Path a b)
-    (hp : ∀ e ∈ Path.darts Γ p, e ∈ D) (ha : a ∈ A) (hb : b ∈ A) :
-    ∃ q : (Γ.subgraph A D hsrc hrev).Path ⟨a, ha⟩ ⟨b, hb⟩,
-      (Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q = p := by
-  induction p with
-  | nil => exact ⟨.nil, rfl⟩
-  | @cons b c p e ih =>
-    have he : e.1 ∈ D := hp e.1 (by simp)
-    obtain ⟨q, rfl⟩ := ih (fun f hf => hp f (by simp [hf])) (e.2.1 ▸ hsrc e.1 he)
-    exact ⟨q.cons ⟨⟨e.1, he⟩, Subtype.ext e.2.1, Subtype.ext e.2.2⟩, rfl⟩
-
-/-- A path in a subgraph is reduced exactly when it is reduced in the ambient graph. -/
-@[simp] theorem isReduced_subgraphInclusion_mapPath_iff (A : Set Γ.V) (D : Set Γ.E)
-    (hsrc : ∀ e ∈ D, Γ.src e ∈ A) (hrev : ∀ e ∈ D, Γ.rev e ∈ D)
-    {a b : (Γ.subgraph A D hsrc hrev).V} (q : (Γ.subgraph A D hsrc hrev).Path a b) :
-    Path.IsReduced Γ ((Γ.subgraphInclusion A D hsrc hrev).toPrefunctor.mapPath q) ↔
-      Path.IsReduced (Γ.subgraph A D hsrc hrev) q :=
-  Hom.isReduced_mapPath_iff _ _ (Γ.subgraphInclusion_mapE_injective A D hsrc hrev) q
 
 /-- Traversing a rose petal and then its reverse is a backtrack. -/
 theorem rose_not_isReduced_backtrack {α : Type*} (a : α) :

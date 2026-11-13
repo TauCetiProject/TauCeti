@@ -245,24 +245,6 @@ theorem contMDiffAt_of_eventually_eq_mk {x : M} {P : M → Fin 3 → ℂ}
   filter_upwards [hf] with y ⟨h, hy⟩
   exact ⟨ne_zero_of_nonsingular h, by rw [Function.comp_apply, ← hy, toProjectivization_mk]⟩
 
-/-- **Local holomorphic representatives.** Every point `P₀` of a complex elliptic curve admits
-a map `s : W.Point → Fin 3 → ℂ` analytic at `P₀` that gives nonsingular homogeneous
-representatives of the points near `P₀`. -/
-theorem exists_contMDiffAt_mk_eq (P₀ : W.Point) :
-    ∃ s : W.Point → Fin 3 → ℂ, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, Fin 3 → ℂ) ω s P₀ ∧
-      ∀ᶠ P in 𝓝 P₀, ∃ h : W.Nonsingular (s P),
-        Point.mk ((nonsingularLift_iff (s P)).mpr h) = P := by
-  obtain ⟨i, hi⟩ := exists_mem_affineOpen P₀.toProjectivization
-  have hU := (isOpen_affineOpen (K := ℂ) i).mem_nhds hi
-  refine ⟨fun P ↦ Fin.insertNth (α := fun _ ↦ ℂ) i 1 (affineChart i P.toProjectivization),
-    ((contMDiffOn_insertNth_affineChart i ω).contMDiffAt hU).comp P₀
-      ((isSmoothEmbedding_toProjectivization W ω).contMDiff P₀), ?_⟩
-  filter_upwards [continuous_toProjectivization.continuousAt.preimage_mem_nhds hU] with P hP
-  have h : Projectivization.mk ℂ _ (Fin.insertNth_one_ne_zero i _) = P.toProjectivization :=
-    (affineChart_symm_apply i _).symm.trans ((affineChart i).left_inv (by rwa [affineChart_source]))
-  exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h.symm⟩,
-    toProjectivization_injective ((toProjectivization_mk _).trans h)⟩
-
 end Point
 
 end WeierstrassCurve.Projective

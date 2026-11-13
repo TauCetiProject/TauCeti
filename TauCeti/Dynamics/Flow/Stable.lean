@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Instances.Real.Lemmas
-public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Dynamics.Flow.Conjugacy
 -- Private: used only for the arithmetic progression tending to infinity.
 import Mathlib.Order.Filter.AtTopBot.Archimedean
@@ -27,8 +26,6 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
 
 * `Flow.stableSet`: points converging to a given point in forward time.
 * `Flow.unstableSet`: points converging to a given point in backward time.
-* `Flow.stableSet_prod` and `Flow.unstableSet_prod`: the stable and unstable sets of a product of
-  flows are the products of the stable and unstable sets.
 * `Flow.isInvariant_stableSet` and `Flow.isInvariant_unstableSet`: invariance
   under time translation (and `Flow.isInvariant_unstableSet_inter_stableSet` for their
   intersection), and `Flow.apply_mem_stableSet_iff` and `Flow.apply_mem_unstableSet_iff`:
@@ -80,26 +77,6 @@ theorem mem_stableSet {φ : _root_.Flow ℝ α} {x y : α} :
 theorem mem_unstableSet {φ : _root_.Flow ℝ α} {x y : α} :
     y ∈ unstableSet φ x ↔ Tendsto (fun t ↦ φ t y) atBot (𝓝 x) :=
   Iff.rfl
-
-/-- The stable set of a point under a product of flows is the product of the stable sets. -/
-@[simp]
-theorem stableSet_prod {β : Type*} [TopologicalSpace β] (φ : _root_.Flow ℝ α)
-    (ψ : _root_.Flow ℝ β) (x : α × β) :
-    stableSet (φ.prod ψ) x = stableSet φ x.1 ×ˢ stableSet ψ x.2 := by
-  obtain ⟨x₁, x₂⟩ := x
-  ext p
-  simp only [mem_stableSet, mem_prod, prod_apply, nhds_prod_eq]
-  exact tendsto_prod_iff'
-
-/-- The unstable set of a point under a product of flows is the product of the unstable sets. -/
-@[simp]
-theorem unstableSet_prod {β : Type*} [TopologicalSpace β] (φ : _root_.Flow ℝ α)
-    (ψ : _root_.Flow ℝ β) (x : α × β) :
-    unstableSet (φ.prod ψ) x = unstableSet φ x.1 ×ˢ unstableSet ψ x.2 := by
-  obtain ⟨x₁, x₂⟩ := x
-  ext p
-  simp only [mem_unstableSet, mem_prod, prod_apply, nhds_prod_eq]
-  exact tendsto_prod_iff'
 
 /-- The stable set of a point is invariant under every time map of the flow. -/
 theorem isInvariant_stableSet (φ : _root_.Flow ℝ α) (x : α) :

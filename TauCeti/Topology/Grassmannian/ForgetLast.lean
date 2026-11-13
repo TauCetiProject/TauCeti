@@ -20,9 +20,8 @@ space of dimension `N - r`. In particular, over the reals the fibre of
 `V_(r+1)(ℝ^N) → V_r(ℝ^N)` is `S^(N-r-1)` when `r < N`. The complement-sphere
 description also applies in rank zero and when there is no room for another vector;
 in the latter case the sphere and the fibre are empty. This is the fibre comparison
-used in the sphere-fibration tower of Stiefel spaces. Over the reals, local triviality and
-the resulting connectivity of Stiefel manifolds are in
-`TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast`.
+used in the sphere-fibration tower of Stiefel spaces. Local triviality and homotopy
+group calculations are not asserted here.
 
 ## References
 

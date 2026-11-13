@@ -14,7 +14,6 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Loop
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Topology.Discrete
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
@@ -67,11 +66,6 @@ Since the charge is the winding number of the boundary loop, it is controlled by
 * it is invariant under homotopies of discs whose boundary circles stay in `{χ(|α|²) = 1}`
   (`integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn`); the interiors of the discs may
   cross the zeros of `α` along the homotopy.
-* it is multiplied by the degree under reparametrization: if a `C²` map `θ` sends the boundary
-  circle of a disc `D₁` into that of `D`, the charge of `σ ∘ θ` on `D₁` is the charge of `σ` on
-  `D` times the winding number of `θ` along the boundary of `D₁`
-  (`exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul`), by the degree law
-  `TauCeti.Contour.windingNumber_comp_eq_mul_of_mem_sphere` for boundary loops.
 
 In Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the
 component of the rescaled spinor along the canonical unit spinor and the cutoff currents converge
@@ -117,9 +111,6 @@ converge, and being integers they are eventually constant
   not change on passing to a subdisc containing the zeros of `α ∘ σ`.
 * `TauCeti.SeibergWitten.integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn`: the charge is
   invariant under homotopies keeping the boundary circle in `{χ(|α|²) = 1}`.
-* `TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul`: the
-  degree law, the charge of `σ ∘ θ` is the degree of `θ` on the boundary circles times the
-  charge of `σ`.
 * `integral_cutoffCurrent_comp_closedBall_eq_sum_integral_discMollification_mul`:
   the charge of a disc whose translates have boundary in `{χ(|α|²) = 1}` is a pairing of the
   cutoff current with the mollified disc.
@@ -478,63 +469,6 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_of_continuousOn {E : Type*}
     (fun p hp θ _ ↦ ne_zero_of_cutoff_eq_one hχ₀ (hbd p hp θ)) hp hq
   rw [hm, hn, Int.cast_inj] at h
   rw [hI₁, hI₂, h]
-
-/-- **The degree law of the disc charge.** Let `θ : ℂ → ℂ` be a `C²` map sending the
-boundary circle of the closed disc `D₁` of radius `r₁` about `z₁` into the boundary circle of the
-closed disc `D` of radius `r > 0` about `z₀`, and let `σ : ℂ → E` be a `C²` disc such that
-`χ(|α|²) = 1` along `σ` of the boundary circle of `D`. Then the charge of `σ ∘ θ` on `D₁` is the
-charge of `σ` on `D` multiplied by the integer degree `n` of `θ` on the boundary circles, the
-winding number of `θ` along the boundary circle of `D₁` around `z₀`. Neither `θ (D₁) ⊆ D` nor any
-condition on `θ` inside `D₁` is needed, and `n` may be negative for orientation-reversing `θ`. -/
-theorem exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ}
-    {σ : ℂ → E} {θ : ℂ → ℂ} {z₀ z₁ : ℂ} {r r₁ : ℝ} (hr : 0 < r) (hr₁ : 0 ≤ r₁)
-    (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0)
-    (hσ : ContDiff ℝ 2 σ) (hθ : ContDiff ℝ 2 θ)
-    (hθs : ∀ z ∈ Metric.sphere z₁ r₁, θ z ∈ Metric.sphere z₀ r)
-    (hbd : ∀ t, χ (normSq (α (σ (circleMap z₀ r t)))) = 1) :
-    ∃ n : ℤ, Contour.windingNumber (θ ∘ circleMap z₁ r₁) (-π) π z₀ = n ∧
-      ∫ z in Metric.closedBall z₁ r₁,
-          (cutoffCurrent χ b α (σ (θ z))).compContinuousLinearMap (fderiv ℝ (σ ∘ θ) z) ![1, I] =
-        n * ∫ z in Metric.closedBall z₀ r,
-          (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] := by
-  set ℓ := θ ∘ circleMap z₁ r₁ with hℓ
-  have hℓs (t : ℝ) : ℓ t ∈ Metric.sphere z₀ r := hθs _ (circleMap_mem_sphere z₁ hr₁ t)
-  -- Every point of the target circle is `circleMap z₀ r t` for some `t`.
-  have hsphere {w : ℂ} (hw : w ∈ Metric.sphere z₀ r) : ∃ t, circleMap z₀ r t = w := by
-    rwa [← Set.mem_range, range_circleMap, abs_of_pos hr]
-  have hbd' (t : ℝ) : χ (normSq (α ((σ ∘ θ) (circleMap z₁ r₁ t)))) = 1 := by
-    obtain ⟨t', ht'⟩ := hsphere (hθs _ (circleMap_mem_sphere z₁ hr₁ t))
-    rw [Function.comp_apply, ← ht']
-    exact hbd t'
-  obtain ⟨m, hm, hI⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr.le hα hb hχ hχ₀ hσ hbd
-  obtain ⟨k, hk, hI₁⟩ :=
-    exists_int_integral_cutoffCurrent_comp_closedBall hr₁ hα hb hχ hχ₀ (hσ.comp hθ) hbd'
-  have hℓc : ContDiff ℝ 1 ℓ := (hθ.comp (contDiff_circleMap z₁ r₁)).of_le one_le_two
-  have hclosed : ℓ (-π) = ℓ π := by
-    simp only [hℓ, Function.comp_apply, ← periodic_circleMap z₁ r₁ (-π)]
-    ring_nf
-  obtain ⟨n, hn⟩ := (IsPiecewiseC1On.of_contDiffOn hℓc.contDiffOn).exists_int_windingNumber
-    hclosed fun t _ h ↦ by
-      have := Metric.mem_sphere.1 (hℓs t)
-      rw [h, dist_self] at this
-      exact hr.ne this
-  -- The boundary loop of `σ ∘ θ` is `α ∘ σ` along `ℓ`, which winds `n` times around the circle.
-  have hw := Contour.windingNumber_comp_eq_mul_of_mem_sphere (g := α ∘ σ) hr
-    (fun w _ ↦ ((hα.comp hσ).of_le one_le_two).contDiffAt)
-    (fun w hw ↦ by
-      obtain ⟨t, rfl⟩ := hsphere hw
-      exact ne_zero_of_cutoff_eq_one hχ₀ (hbd t))
-    hℓc hℓs hclosed (-π)
-  simp only [hℓ, Function.comp_assoc] at hk hw
-  have hπ : -π + 2 * π = π := by ring
-  rw [hπ, hk, hn, hm] at hw
-  refine ⟨n, hn, ?_⟩
-  simp only [Function.comp_apply] at hI₁
-  rw [hI₁, hI]
-  have hkm : (k : ℝ) = n * m := by exact_mod_cast hw
-  rw [hkm]
-  ring
 
 /-! ### Mollified charges and their limits -/
 

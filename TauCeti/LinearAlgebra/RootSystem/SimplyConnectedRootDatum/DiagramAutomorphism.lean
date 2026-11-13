@@ -234,7 +234,7 @@ private theorem funCongrLeft_dualMap_comp_toPerfPair :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.dualMap_apply,
     LinearMap.toPerfPair_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply, RootPairing.flip_toLinearMap, LinearMap.flip_apply,
-    toLinearMap_simplyConnectedRootDatum, dotProduct]
+    toLinearMap_simplyConnectedRootDatum_apply_apply, dotProduct]
   exact (Equiv.sum_comp σ fun i => x (σ.symm i) * y i).symm.trans
     (Finset.sum_congr rfl fun i _ => by rw [Equiv.symm_apply_apply])
 

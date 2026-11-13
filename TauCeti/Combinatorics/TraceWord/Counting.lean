@@ -87,7 +87,9 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
         exact mem_image.mpr ⟨i.val, mem_range.mpr (by omega), by simp [v]⟩
     have hnext (i : ℕ) :
         Fin.ofNat (k + 1) (i + 1) = finRotate (k + 1) (Fin.ofNat (k + 1) i) := by
-      simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+      rw [finRotate_apply]
+      apply Fin.ext
+      simp [Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
     have hedges :
         (((range (k + 1)).filter fun i => v i ≠ v (i + 1)).image fun i => s(v i, v (i + 1))) ⊆
           (({i | w i ≠ w (finRotate (k + 1) i)} : Finset (Fin (k + 1))).image

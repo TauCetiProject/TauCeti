@@ -58,10 +58,6 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   most `n` is a direct factor of a module of constant rank `n`.
 * `Module.finrank_quotient_tensorProduct_eq_rankAtStalk`: the rank of a finite flat module at a
   maximal ideal `P` is the dimension of its reduction modulo `P`.
-* `TauCeti.Module.finrank_eq_of_rankAtStalk_eq`: a free module of constant rank `n` over a
-  nontrivial ring has `Module.finrank` equal to `n`.
-* `TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq`: a finite flat module of constant rank
-  `n` whose base change to a nontrivial ring is free has a base change of `Module.finrank` `n`.
 * `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank is
   constant on the primes under a base change acquires constant rank after that base change.
 
@@ -282,23 +278,6 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
     exact ⟨rankAtStalk M (q₀.comap (algebraMap R T')), funext fun q ↦ by
       rw [rankAtStalk_baseChange, Pi.natCast_apply, h q₀ q, Nat.cast_id]⟩
   · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
-
-/-- A free module of constant rank `n` over a nontrivial ring has `Module.finrank` equal to `n`. -/
-theorem finrank_eq_of_rankAtStalk_eq {R M : Type*} [CommRing R] [Nontrivial R] [AddCommGroup M]
-    [Module R M] [Module.Free R M] {n : ℕ} (h : rankAtStalk (R := R) M = n) :
-    Module.finrank R M = n := by
-  obtain ⟨p⟩ : Nonempty (PrimeSpectrum R) := inferInstance
-  simpa [rankAtStalk_eq_finrank_of_free] using congrFun h p
-
-open scoped TensorProduct in
-/-- If a finite flat module `M` has constant rank `n` and its base change to a nontrivial ring `T`
-is free, then that base change has `Module.finrank` equal to `n`. -/
-theorem finrank_tensorProduct_eq_of_rankAtStalk_eq {R T M : Type*} [CommRing R] [CommRing T]
-    [Algebra R T] [Nontrivial T] [AddCommGroup M] [Module R M] [Module.Flat R M]
-    [Module.Finite R M] [Module.Free T (T ⊗[R] M)] {n : ℕ} (h : rankAtStalk (R := R) M = n) :
-    Module.finrank T (T ⊗[R] M) = n :=
-  finrank_eq_of_rankAtStalk_eq <| funext fun p ↦ by
-    rw [rankAtStalk_baseChange, h, Pi.natCast_apply, Pi.natCast_apply]
 
 end TauCeti.Module
 

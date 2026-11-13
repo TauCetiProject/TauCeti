@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Divisor
-public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Data.Multiset.Fintype
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma

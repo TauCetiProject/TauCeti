@@ -109,14 +109,14 @@ theorem inversions_inv_eq_posRoots {w : P.weylGroup} (h : inversions P b w = pos
     inversions P b w⁻¹ = posRoots P b := by
   rw [inversions_eq_posRoots_iff] at h ⊢
   intro i hi
-  rw [← not_mem_posRoots_iff_mem_negRoots]
+  rw [← notMem_posRoots_iff_mem_negRoots]
   intro hpos
   -- Were the image positive, applying `w` to it would put `i` back among the negative roots.
   have hback : P.weylGroupToPerm w (P.weylGroupToPerm w⁻¹ i) = i := by
     rw [← Equiv.Perm.mul_apply, ← map_mul, mul_inv_cancel, map_one]
     rfl
   have himage := h hpos
-  rw [hback, ← not_mem_posRoots_iff_mem_negRoots] at himage
+  rw [hback, ← notMem_posRoots_iff_mem_negRoots] at himage
   exact himage hi
 
 variable [Finite ι] [IsDomain R] [P.IsCrystallographic]

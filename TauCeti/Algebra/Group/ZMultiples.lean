@@ -17,8 +17,7 @@ For an element `p` of an additive group that is not of finite additive order, th
 the ambient group to be torsion-free. A homomorphism into a torsion-free additive group is
 injective on `zmultiples p` whenever it is nonzero at `p`. If `n ↦ n • g` identifies `ℤ` with a
 group `H`, then any element that an additive endomorphism of `H` sends to `g` is `g` up to a unit
-of `ℤ`, and every surjective additive endomorphism of `H` is an involution. Free generation
-`n ↦ n • g` is transported along additive equivalences.
+of `ℤ`, and every surjective additive endomorphism of `H` is an involution.
 
 ## Main declarations
 
@@ -29,8 +28,6 @@ of `ℤ`, and every surjective additive endomorphism of `H` is an involution. Fr
   an element sent to `g` by an additive endomorphism is a unit multiple of `g`.
 * `AddMonoidHom.involutive_of_surjective`: a surjective additive endomorphism of an infinite cyclic
   group is `±1`, hence an involution.
-* `AddEquiv.bijective_zmultiplesHom_apply_iff`: `n ↦ n • f a` is bijective exactly when
-  `n ↦ n • a` is, for an additive equivalence `f`.
 -/
 
 public section
@@ -104,17 +101,3 @@ theorem involutive_of_surjective {H : Type*} [AddCommGroup H] (f : H →+ H) {g 
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [hfg]
 
 end AddMonoidHom
-
-namespace AddEquiv
-
-/-- An additive equivalence `f` transports free generation: `n ↦ n • f a` is bijective exactly
-when `n ↦ n • a` is. -/
-theorem bijective_zmultiplesHom_apply_iff {A B : Type*} [AddGroup A] [AddGroup B] (f : A ≃+ B)
-    (a : A) :
-    Function.Bijective (zmultiplesHom B (f a)) ↔ Function.Bijective (zmultiplesHom A a) := by
-  have h : ⇑(zmultiplesHom B (f a)) = f ∘ zmultiplesHom A a := by
-    funext n
-    rw [Function.comp_apply, zmultiplesHom_apply, zmultiplesHom_apply, map_zsmul]
-  rw [h, EquivLike.comp_bijective]
-
-end AddEquiv

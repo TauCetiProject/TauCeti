@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.NotSimplyConnected
-public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.LowDimTopology.DehnSurgery.Unknot
 public import TauCeti.LowDimTopology.Heegaard.FundamentalGroup
 
@@ -178,13 +177,21 @@ instance : Nonempty (HeegaardSplitting (Circle × sphere (0 : EuclideanSpace ℝ
   ⟨unknotZeroDehnFilling.heegaardSplitting unknotExteriorHomeomorph fun q ↦
     ⟨q.swap, (unknotExteriorHomeomorph_exteriorBoundaryInclusion q).symm⟩⟩
 
+/-- The product atlas of `S¹ × S²`, read on the normed space `ℝ¹ × ℝ²` of dimension three, as
+`TauCeti.rank_fundamentalGroup_le_heegaardGenus` asks for a model with a norm. Mathlib's product
+atlas is valued in `ModelProd`, a type synonym for the product of the models. This is not an
+instance, so that `S¹ × S²` keeps its single canonical atlas. -/
+private abbrev circleProdSphereChartedSpace :
+    ChartedSpace (EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 2))
+      (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
+  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨finrank_euclideanSpace_fin⟩
+  prodChartedSpace _ _ _ _
+
 /-- The fundamental group of `S¹ × S²` is finitely generated. -/
 instance fg_fundamentalGroup_circle_prod_sphere
     (x : Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
     Group.FG (FundamentalGroup (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) x) :=
-  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨finrank_euclideanSpace_fin⟩
-  letI := chartedSpaceProd (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin 2)) Circle
-    (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
+  letI := circleProdSphereChartedSpace
   (Classical.arbitrary (HeegaardSplitting _)).fg_fundamentalGroup
     (E := EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 2)) (by simp) x
 
@@ -193,9 +200,7 @@ private theorem rank_fundamentalGroup_le_heegaardGenus_circle_prod_sphere
     (x : Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
     Group.rank (FundamentalGroup (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) x) ≤
       heegaardGenus (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
-  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 3)) = 2 + 1) := ⟨finrank_euclideanSpace_fin⟩
-  letI := chartedSpaceProd (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin 2)) Circle
-    (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
+  letI := circleProdSphereChartedSpace
   rank_fundamentalGroup_le_heegaardGenus
     (E := EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 2)) (by simp) x
 

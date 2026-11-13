@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Gaussian lattice sums
@@ -42,12 +41,9 @@ centre `c`.
   through Mathlib's two-variable Jacobi theta function `jacobiTheta₂`.
 * `Real.hasDerivAt_tsum_pow_mul_exp_neg_sub_sq` and `Real.hasDerivAt_gaussianLatticeSum` —
   termwise differentiation in the centre of the lattice sums with weight `n ^ k`.
-* `Real.contDiff_gaussianLatticeSum` — analyticity in the centre, including width zero.
-* `Real.contDiffAt_gaussianLatticeSum` and `Real.contDiffOn_gaussianLatticeSum` — joint real
-  analyticity in the centre and width on `s ≠ 0`, so mixed parameter derivatives exist to every
-  order.
-* `Real.continuousAt_gaussianLatticeSum` and `Real.measurable_gaussianLatticeSum` — joint
-  continuity on `s ≠ 0` and joint measurability.
+* `Real.contDiff_gaussianLatticeSum`, `Real.continuousAt_gaussianLatticeSum` and
+  `Real.measurable_gaussianLatticeSum` — analyticity in the centre, joint continuity on `s ≠ 0`,
+  and joint measurability.
 
 ## References
 
@@ -309,45 +305,26 @@ theorem contDiff_gaussianLatticeSum (s : ℝ) {n : WithTop ℕ∞} :
   exact (contDiff_exp.comp ((contDiff_id.pow 2).neg.div_const _)).mul
     (reCLM.contDiff.comp (hθ.comp hz))
 
-/-- The Gaussian lattice sum is jointly smooth in its centre and width at every nonzero width.
-The order may also be `ω`, giving joint real analyticity. -/
-theorem contDiffAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) {n : WithTop ℕ∞} :
-    ContDiffAt ℝ n (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) := by
-  simp_rw [gaussianLatticeSum_eq_jacobiTheta₂]
-  have hopen : IsOpen {q : ℂ × ℂ | 0 < q.2.im} :=
-    isOpen_lt continuous_const (continuous_im.comp continuous_snd)
-  have hθ : ContDiffAt ℝ n (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
-      (-I * c / (2 * π * s ^ 2), I / (2 * π * s ^ 2)) := by
-    have hd : DifferentiableOn ℂ (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
-        {q | 0 < q.2.im} := fun q hq =>
-      (hasFDerivAt_jacobiTheta₂ q.1 hq).differentiableAt.differentiableWithinAt
-    exact ((hd.contDiffOn_of_finiteDimensional hopen).contDiffAt
-      (hopen.mem_nhds (im_I_div_pos hs))).restrict_scalars ℝ
-  have hden : ((2 * π * s ^ 2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (by positivity)
-  have hd : ContDiffAt ℝ n (fun p : ℝ × ℝ => ((2 * π * p.2 ^ 2 : ℝ) : ℂ)) (c, s) := by
-    exact ofRealCLM.contDiff.contDiffAt.comp (c, s)
-      (contDiffAt_const.mul (contDiffAt_snd.pow 2))
-  have hφ : ContDiffAt ℝ n (fun p : ℝ × ℝ =>
-      ((-I * p.1 / (2 * π * p.2 ^ 2), I / (2 * π * p.2 ^ 2)) : ℂ × ℂ)) (c, s) := by
-    push_cast at hd hden
-    simp only [div_eq_mul_inv]
-    exact ((contDiffAt_const.mul (ofRealCLM.contDiff.contDiffAt.comp (c, s) contDiffAt_fst)).mul
-      (hd.inv hden)).prodMk (contDiffAt_const.mul (hd.inv hden))
-  have hθφ := hθ.comp (c, s) hφ
-  exact (((contDiffAt_fst.pow 2).neg.div (contDiffAt_const.mul (contDiffAt_snd.pow 2))
-    (by positivity)).exp).mul (reCLM.contDiff.contDiffAt.comp (c, s) hθφ)
-
-/-- The Gaussian lattice sum is jointly smooth and real analytic on the open set of
-nonzero widths. -/
-theorem contDiffOn_gaussianLatticeSum {n : WithTop ℕ∞} :
-    ContDiffOn ℝ n (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) {p | p.2 ≠ 0} :=
-  fun p hp => (contDiffAt_gaussianLatticeSum p.1 hp).contDiffWithinAt
-
 /-- The Gaussian lattice sum is jointly continuous in the centre and the width at every nonzero
 width. -/
 theorem continuousAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
-    ContinuousAt (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) :=
-  (contDiffAt_gaussianLatticeSum c hs (n := 0)).continuousAt
+    ContinuousAt (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) := by
+  simp_rw [gaussianLatticeSum_eq_jacobiTheta₂]
+  have hden : ((2 * π * s ^ 2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (by positivity)
+  have hd : ContinuousAt (fun p : ℝ × ℝ => ((2 * π * p.2 ^ 2 : ℝ) : ℂ)) (c, s) := by fun_prop
+  have hφ : ContinuousAt (fun p : ℝ × ℝ =>
+      ((-I * p.1 / (2 * π * p.2 ^ 2), I / (2 * π * p.2 ^ 2)) : ℂ × ℂ)) (c, s) := by
+    push_cast at hd hden
+    exact ((continuousAt_const.mul (continuous_ofReal.continuousAt.comp continuousAt_fst)).div
+      hd hden).prodMk (continuousAt_const.div hd hden)
+  refine ContinuousAt.mul ?_ (continuous_re.continuousAt.comp ?_)
+  · exact continuous_exp.continuousAt.comp
+      ((continuousAt_fst.pow 2).neg.div (continuousAt_const.mul (continuousAt_snd.pow 2))
+        (by positivity))
+  · have hθ : ContinuousAt (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
+        (-I * c / (2 * π * s ^ 2), I / (2 * π * s ^ 2)) :=
+      continuousAt_jacobiTheta₂ _ (im_I_div_pos hs)
+    exact hθ.comp_of_eq hφ rfl
 
 /-- The Gaussian lattice sum is jointly measurable in the centre and the width. -/
 theorem measurable_gaussianLatticeSum :

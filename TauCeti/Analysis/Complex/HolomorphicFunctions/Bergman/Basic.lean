@@ -19,9 +19,6 @@ The Bergman space is the subspace of native `L²` classes with a holomorphic rep
 Its norm is the actual `L²` norm, rather than an auxiliary supremum norm. Values may lie in a
 complete complex normed space; in particular, scalar values give the classical Bergman space.
 
-Evaluation of the holomorphic representative at a point of the open set is a continuous linear
-map (`TauCeti.BergmanSpace.evalCLM`), by the local `L²` bound on compact subsets.
-
 These are the analytic Banach stages used for holomorphic Čech cochains in the finiteness
 argument for compact Riemann-surface cohomology. Sheaf/cochain comparison and the finiteness
 conclusion require additional arguments.
@@ -179,22 +176,6 @@ theorem exists_norm_representative_le {K : Set ℂ} (hK : IsCompact K) (hKU : K 
   exact HolomorphicFunctions.norm_le_Lp_norm (differentiableOn_representative u)
     (coeFn_ae_eq_representative u)
     hr ((closedBall_subset_cthickening hx r).trans hrU)
-
-/-- Evaluation of the holomorphic representative at a point of the open set is a continuous
-linear map from the Bergman space to the values. -/
-def evalCLM {z : ℂ} (hz : z ∈ U) : bergmanSpace F U →L[ℂ] F :=
-  LinearMap.mkContinuousOfExistsBound
-    { toFun := fun u ↦ representative u z
-      map_add' := fun u v ↦ representative_add u v hz
-      map_smul' := fun c u ↦ representative_smul c u hz }
-    (by
-      obtain ⟨C, -, hC⟩ := exists_norm_representative_le (F := F) isCompact_singleton
-        (Set.singleton_subset_iff.2 hz)
-      exact ⟨C, fun u ↦ hC u z (Set.mem_singleton z)⟩)
-
-@[simp]
-theorem evalCLM_apply {z : ℂ} (hz : z ∈ U) (u : bergmanSpace F U) :
-    evalCLM hz u = representative u z := (rfl)
 
 end BergmanSpace
 

@@ -94,8 +94,8 @@ namespace TauCeti.Contour
 /-- **The circular-arc index integral** (Hungerbühler–Wasem (2.4)), on an arbitrary angular
 interval. For the circular arc `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[a, b]`,
 the normalized index integral is the signed angular extent over `2π`:
-`(2πi)⁻¹ ∫_a^b (γ' / (γ − z₀)) dθ = (b − a) / 2π`. The centre is off the arc, so the integrand
-`γ' / (γ − z₀)` is constantly `i` and the value is elementary. This is the general
+`(2πi)⁻¹ ∫_a^b (γ̇ / (γ − z₀)) dθ = (b − a) / 2π`. The centre is off the arc, so the integrand
+`γ̇ / (γ − z₀)` is constantly `i` and the value is elementary. This is the general
 arbitrary-interval statement; `indexIntegral_arc` (`a = 0`) and `windingNumber_circle` are
 derived from it. -/
 theorem indexIntegral_arc_interval {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (a b : ℝ) :
@@ -114,7 +114,7 @@ theorem indexIntegral_arc_interval {z₀ : ℂ} {r : ℝ} (hr : r ≠ 0) (a b : 
 
 /-- **The normalized index integral of a circular arc** (Hungerbühler–Wasem (2.4)). The arc
 `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[0, α]`, has normalized index integral
-`(2πi)⁻¹ ∫_0^α (γ' / (γ − z₀)) dθ = α / 2π`: an arc of *signed* angular extent `α` contributes
+`(2πi)⁻¹ ∫_0^α (γ̇ / (γ − z₀)) dθ = α / 2π`: an arc of *signed* angular extent `α` contributes
 generalized winding number `α/2π`. For `0 ≤ α` the traversal is counterclockwise; for `α < 0`
 the interval `[0, α]` is reversed, the arc runs clockwise, and the contribution is negative.
 

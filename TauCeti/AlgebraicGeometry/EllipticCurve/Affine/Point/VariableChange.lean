@@ -28,10 +28,6 @@ so this applies to the nonsingular points of singular Weierstrass curves as well
   coordinate formulas; `WeierstrassCurve.Affine.Point.equivVariableChange_zero` and
   `WeierstrassCurve.Affine.Point.equivVariableChange_symm_zero`: both fix the point at
   infinity. All four are tagged `@[simp]`.
-* `WeierstrassCurve.Affine.Point.equivVariableChange_one` and
-  `WeierstrassCurve.Affine.Point.equivVariableChange_mul`: the bijections are compatible with the
-  group structure of changes of variables, up to transport of points along `1 • W = W` and
-  `(C * C') • W = C • C' • W`.
 * `WeierstrassCurve.Affine.Point.addEquivVariableChange`: the group isomorphism over a field
   with decidable equality, whose underlying functions are given by
   `WeierstrassCurve.Affine.Point.coe_addEquivVariableChange` and
@@ -169,30 +165,6 @@ private lemma equivVariableChange_symm_apply (P : W.toAffine.Point) :
           ((variableChange_nonsingular (C • W) C⁻¹ x y).mpr
             ((inv_smul_smul C W).symm ▸ h)) := by
   rw [equivVariableChange_symm_apply, mapVariableChangeInvFun_some]
-
-/-- The change-of-variables bijection of the identity change of variables is the transport of
-points along `1 • W = W`. -/
-theorem equivVariableChange_one (P : ((1 : VariableChange R) • W).toAffine.Point) :
-    equivVariableChange W 1 P =
-      cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) (one_smul _ W)) P := by
-  rcases P with _ | ⟨x, y, h⟩
-  · rw [← zero_def, cast_zero (one_smul _ W), equivVariableChange_zero]
-  · rw [cast_some (one_smul _ W)]
-    simp [VariableChange.one_def]
-
-/-- The change-of-variables bijections compose: the bijection of `C * C'` is that of `C`
-followed by that of `C'`, after transporting points along `(C * C') • W = C • C' • W`. -/
-theorem equivVariableChange_mul (C' : VariableChange R)
-    (P : ((C * C') • W).toAffine.Point) :
-    equivVariableChange W (C * C') P = equivVariableChange W C'
-      (equivVariableChange (C' • W) C
-        (cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) (mul_smul C C' W)) P)) := by
-  rcases P with _ | ⟨x, y, h⟩
-  · rw [← zero_def, cast_zero (mul_smul C C' W)]
-    simp
-  · rw [cast_some (mul_smul C C' W)]
-    simp only [equivVariableChange_some, some.injEq, VariableChange.mul_def, Units.val_mul]
-    constructor <;> ring
 
 end Point
 

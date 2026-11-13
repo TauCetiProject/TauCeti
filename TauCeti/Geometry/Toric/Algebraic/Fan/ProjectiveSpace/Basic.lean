@@ -35,7 +35,7 @@ proved in `TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Proj`.
   of them is linearly independent.
 * `TauCeti.Toric.projectiveSpaceCone_compl_none`: the maximal cone omitting the extra generator
   is the positive orthant spanned by the basis.
-* `TauCeti.Toric.projectiveSpaceCone_inf`: the intersection of two cones is
+* `TauCeti.Toric.projectiveSpaceCone_inf`: the intersection of two cones omitting a generator is
   the cone of the intersection of their index sets.
 * `TauCeti.Toric.projectiveSpaceCone_le_iff` and `TauCeti.Toric.projectiveSpaceCone_inj`: a cone
   omitting a generator determines its index set.
@@ -164,17 +164,11 @@ theorem projectiveSpaceCone_compl_none :
     ← range_comp]
   simp [Function.comp_def]
 
-/-- Two cones of the fan of projective space meet in the cone of the intersection of their index
-sets. -/
+/-- Two cones of the fan of projective space, each omitting some generator, meet in the cone of
+the intersection of their index sets. -/
 theorem projectiveSpaceCone_inf (hli : LinearIndependent ℝ fun j ↦ i (b j))
-    {S T : Set (Option ι)} :
+    {S T : Set (Option ι)} (hS : S ≠ univ) (hT : T ≠ univ) :
     projectiveSpaceCone b i S ⊓ projectiveSpaceCone b i T = projectiveSpaceCone b i (S ∩ T) := by
-  rcases eq_or_ne S univ with rfl | hS
-  · rw [univ_inter]
-    exact inf_eq_right.2 (projectiveSpaceCone_mono b (subset_univ _))
-  rcases eq_or_ne T univ with rfl | hT
-  · rw [inter_univ]
-    exact inf_eq_left.2 (projectiveSpaceCone_mono b (subset_univ _))
   refine le_antisymm (fun x ⟨hxS, hxT⟩ ↦ ?_)
     (le_inf (projectiveSpaceCone_mono b inter_subset_left)
       (projectiveSpaceCone_mono b inter_subset_right))
@@ -308,9 +302,9 @@ noncomputable def projectiveSpace (hi : IsIntegralLattice i) : Fan i where
     · rintro ⟨⟨_, ⟨k, hkS, rfl⟩, rfl⟩, hkτ⟩
       exact ⟨_, ⟨k, ⟨hkS, hkτ⟩, rfl⟩, rfl⟩
   inf_isFaceOf_left := by
-    rintro _ _ ⟨S, hS, rfl⟩ ⟨T, _, rfl⟩
+    rintro _ _ ⟨S, hS, rfl⟩ ⟨T, hT, rfl⟩
     have hb := hi.linearIndependent_basis b
-    rw [projectiveSpaceCone_inf b hb, projectiveSpaceCone_eq_hull,
+    rw [projectiveSpaceCone_inf b hb hS hT, projectiveSpaceCone_eq_hull,
       projectiveSpaceCone_eq_hull]
     -- Inside the cone of `S`, the generators indexed by `S ∩ T` span a face.
     have hli := linearIndepOn_projectiveSpaceGenerator b hb hS

@@ -46,7 +46,7 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.pairing_simpleIndex` and `TauCeti.DynkinType.pairingIn_simpleIndex`: the
   Cartan integers at the simple indices are the entries of the Bourbaki-numbered Cartan matrix.
 * `TauCeti.DynkinType.card_support_simplyConnectedBase`: the pinned base has `t.rank` elements.
-* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum` and
+* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum_apply_apply` and
   `TauCeti.DynkinType.coroot'_simplyConnectedRootDatum_apply`: the pinned pairing and coroot
   functionals are given by the dot product, uniformly in the type.
 * `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
@@ -410,7 +410,7 @@ def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
   left_inv i := Fin.ext (by simp [simpleIndex_val])
   right_inv k := Subtype.ext (Fin.ext (by simp [simpleIndex_val]))
 
-@[simp] theorem coe_simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid)
+@[simp] theorem coe_simpleSupportEquivSimplyConnectedBase_apply (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) :
     ((t.simpleSupportEquivSimplyConnectedBase ht i : Fin t.numRoots)) = t.simpleIndex ht i := by
   simp [simpleSupportEquivSimplyConnectedBase]
@@ -424,7 +424,7 @@ theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
 
 /-- **The pinned pairing is the dot product** of the fundamental-weight and simple-coroot
 coordinates, uniformly in the Dynkin type. -/
-theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
+theorem toLinearMap_simplyConnectedRootDatum_apply_apply (t : DynkinType) (ht : t.Valid)
     (x y : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).toLinearMap x y = x ⬝ᵥ y := by
   -- Unlike the entrywise pinning above, no index is retained in a dependent motive here: the case
@@ -469,7 +469,7 @@ theorem coroot'_simplyConnectedRootDatum_apply (t : DynkinType) (ht : t.Valid)
     (k : Fin t.numRoots) (mu : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).coroot' k mu =
       mu ⬝ᵥ (t.simplyConnectedRootDatum ht).coroot k := by
-  rw [LinearMap.flip_apply, t.toLinearMap_simplyConnectedRootDatum ht]
+  rw [LinearMap.flip_apply, t.toLinearMap_simplyConnectedRootDatum_apply_apply ht]
 
 /-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate.
 
@@ -487,7 +487,7 @@ coroot is a standard basis vector, so the dot product picks out one entry. -/
 @[simp] theorem pairing_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).pairing (t.simpleIndex ht i) (t.simpleIndex ht j) =
       t.cartanMatrix i j := by
-  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
+  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply,
     root_simpleIndex, coroot_simpleIndex, dotProduct_single, mul_one]
 
 /-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`.

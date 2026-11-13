@@ -580,7 +580,7 @@ private theorem rootSpace_le_negativeNilradical_sup_borelSubalgebra (α : H.root
   · exact Submodule.mem_sup_right (positiveNilradical_le_borelSubalgebra H b
       (mem_positiveNilradical_of_mem_rootSpace H b hα hx))
   · exact Submodule.mem_sup_left (mem_negativeNilradical_of_mem_rootSpace H b
-      ((not_mem_posRoots_iff_mem_negRoots _ b α).mp hα) hx)
+      ((notMem_posRoots_iff_mem_negRoots _ b α).mp hα) hx)
 
 /-- **The triangular decomposition** `L = n⁻ + (H + n⁺)`: the negative nilradical and the Borel
 subalgebra together span `L`. This is the spanning half of `L = n⁻ ⊕ H ⊕ n⁺`, and it is exactly
@@ -624,7 +624,7 @@ theorem disjoint_negativeNilradical_borelSubalgebra :
     rintro _ ⟨α, hα, rfl⟩ (h0 | ⟨β, hβ, hβα⟩)
     · exact (Finset.mem_filter.mp α.2).2 h0
     · obtain rfl : β = α := Subtype.ext (DFunLike.coe_injective hβα)
-      exact (not_mem_posRoots_iff_mem_negRoots _ b β).mpr hα hβ
+      exact (notMem_posRoots_iff_mem_negRoots _ b β).mpr hα hβ
   have hS : rootSpaceSpan H (negRoots (IsKilling.rootSystem H) b) ≤
       ⨆ χ ∈ S, genWeightSpace L χ :=
     genWeightSpaceSpan_le_iff.mpr fun χ hχ ↦ le_biSup (fun χ ↦ genWeightSpace L χ) hχ

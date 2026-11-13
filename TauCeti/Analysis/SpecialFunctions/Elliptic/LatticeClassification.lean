@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
+import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 
@@ -50,8 +51,6 @@ the lattice of `γ τ` is `(c τ + d)⁻¹ (ℤ τ + ℤ)`.
 * `PeriodPair.lattice_eq_iff_g₂_eq_and_g₃_eq`,
   `PeriodPair.weierstrassCurve_eq_iff_lattice_eq`: a lattice is determined by its invariants,
   equivalently by its Weierstrass curve.
-* `PeriodPair.variableChange_eq_mk_of_smul_eq`: a change of variables between lattice curves is
-  a scaling `(x, y) ↦ (u²x, u³y)`.
 * `PeriodPair.lattice_eq_smul_of_variableChange_smul_eq`: a change of variables with scaling
   factor `u` between lattice curves rescales the lattice by `u`.
 * `WeierstrassCurve.exists_periodPair_variableChange_smul_eq`: every elliptic curve over `ℂ`
@@ -162,18 +161,12 @@ theorem lattice_eq_iff_g₂_eq_and_g₃_eq : L.lattice = L'.lattice ↔ L.g₂ =
   have h6 := (mul_eq_left₀ h₃0).mp hg₃
   exact lattice_smul_eq_self_of_sq_eq_one (by linear_combination h6 - (c : ℂ) ^ 2 * h4)
 
-/-- A change of variables `C` taking `E_Λ` to `E_{Λ'}` is the scaling `(x, y) ↦ (u²x, u³y)`: it has
-`r = s = t = 0`. -/
-theorem variableChange_eq_mk_of_smul_eq {C : VariableChange ℂ}
-    (h : C • L.weierstrassCurve = L'.weierstrassCurve) : C = ⟨C.u, 0, 0, 0⟩ :=
-  have : (C • L.weierstrassCurve).IsShortNF := h ▸ inferInstance
-  C.eq_mk_u_of_isShortNF L.weierstrassCurve (.of_ne_zero two_ne_zero) (.of_ne_zero three_ne_zero)
-
 /-- **Changes of variables between lattice curves are rescalings**: if a change of variables `C`
 takes `E_Λ` to `E_{Λ'}`, then `Λ' = u Λ` for the scaling factor `u` of `C`. -/
 theorem lattice_eq_smul_of_variableChange_smul_eq {C : VariableChange ℂ}
     (h : C • L.weierstrassCurve = L'.weierstrassCurve) : L'.lattice = (C.u • L).lattice := by
-  have : (C • L.weierstrassCurve).IsShortNF := h ▸ inferInstance
+  have : L.weierstrassCurve.IsShortNF := ⟨by simp, by simp, by simp⟩
+  have : (C • L.weierstrassCurve).IsShortNF := h ▸ ⟨by simp, by simp, by simp⟩
   have h2 : IsRegular (2 : ℂ) := .of_ne_zero two_ne_zero
   have h3 : IsRegular (3 : ℂ) := .of_ne_zero three_ne_zero
   have h₄ := variableChange_a₄_of_isShortNF L.weierstrassCurve C h2
@@ -244,10 +237,16 @@ theorem exists_g₂_g₃_eq {a b : ℂ} (hab : a ^ 3 - 27 * b ^ 2 ≠ 0) :
   have : E.IsElliptic := ⟨hΔ ▸ hab.isUnit⟩
   obtain ⟨τ, C, hC⟩ := E.exists_variableChange_smul_weierstrassCurve_periodPair_eq
   -- A change of variables between two short normal forms has `r = s = t = 0`.
+  have : τ.periodPair.weierstrassCurve.IsShortNF := ⟨by simp, by simp, by simp⟩
   have : (C • τ.periodPair.weierstrassCurve).IsShortNF := hC ▸ ⟨rfl, rfl, rfl⟩
+  have h2 : IsRegular (2 : ℂ) := .of_ne_zero two_ne_zero
+  have hs := C.s_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2
+  have hr := C.r_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2 (.of_ne_zero three_ne_zero)
+  have ht := C.t_eq_zero_of_isShortNF τ.periodPair.weierstrassCurve h2
   have hE : (C.u • τ.periodPair).weierstrassCurve = E := by
-    rw [weierstrassCurve_smul, ← hC, ← C.eq_mk_u_of_isShortNF τ.periodPair.weierstrassCurve
-      (.of_ne_zero two_ne_zero) (.of_ne_zero three_ne_zero)]
+    rw [weierstrassCurve_smul, ← hC]
+    congr 1
+    ext <;> simp [hr, hs, ht]
   refine ⟨C.u • τ.periodPair, ?_, ?_⟩
   · linear_combination -4 * (weierstrassCurve_a₄ _).symm.trans (congrArg a₄ hE)
   · linear_combination -4 * (weierstrassCurve_a₆ _).symm.trans (congrArg a₆ hE)

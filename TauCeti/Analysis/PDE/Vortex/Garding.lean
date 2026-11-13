@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp

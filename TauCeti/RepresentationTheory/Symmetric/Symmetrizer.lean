@@ -11,8 +11,6 @@ public import Mathlib.Combinatorics.Enumerative.Partition.YoungDiagram
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.RepresentationTheory.Basic
-public import Mathlib.RingTheory.HopfAlgebra.Convolution
-public import TauCeti.Algebra.MonoidAlgebra.Antipode
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.SubgroupCharSum
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
@@ -34,9 +32,6 @@ Both factors are instances of a single construction: the character sum
 the column antisymmetrizer is the sign character over the column group, so the coefficient
 formula, the two translation laws, the square, and the values on a trivial or full subgroup are
 read off from that shared API instead of being proved once for each factor.
-Both factors are also fixed by the antipode `σ ↦ σ⁻¹` of the group algebra, which therefore
-reverses the Young symmetrizer to `b_t a_t` (`TauCeti.YoungTableau.antipode_youngSymmetrizer`);
-this is the element by which `c_t` acts on a module made a right module through `σ ↦ σ⁻¹`.
 These are the elementary inputs to the essential-idempotence theorem for `c_t` and the
 construction of Specht modules.  The two extreme shapes are also evaluated here: a trivial row or
 column group collapses the corresponding factor to `1`, so on a shape with at most one row the
@@ -144,32 +139,6 @@ theorem columnAntisymmetrizer_eq_subgroupCharSum (t : YoungTableau μ) :
         (colSubgroup t) := by
   rw [columnAntisymmetrizer_def, subgroupCharSum_def]
   simp
-
-/-- The antipode `σ ↦ σ⁻¹` of the group algebra fixes the row symmetrizer, since the row group is
-closed under inversion. -/
-@[simp]
-theorem antipode_rowSymmetrizer (t : YoungTableau μ) :
-    HopfAlgebra.antipode R (rowSymmetrizer (R := R) t) = rowSymmetrizer t := by
-  rw [rowSymmetrizer_eq_subgroupCharSum]
-  exact antipode_subgroupCharSum _ _ fun _ _ => by simp
-
-/-- The antipode `σ ↦ σ⁻¹` of the group algebra fixes the column antisymmetrizer, since the
-column group is closed under inversion and `sgn(σ⁻¹) = sgn(σ)`. -/
-@[simp]
-theorem antipode_columnAntisymmetrizer (t : YoungTableau μ) :
-    HopfAlgebra.antipode R (columnAntisymmetrizer (R := R) t) = columnAntisymmetrizer t := by
-  rw [columnAntisymmetrizer_eq_subgroupCharSum]
-  exact antipode_subgroupCharSum _ _ fun _ _ => by
-    simp only [MonoidHom.coe_comp, Function.comp_apply, Units.coeHom_apply,
-      coe_signLinearCharacter_apply, Equiv.Perm.sign_inv]
-
-/-- **The antipode reverses the Young symmetrizer**: `S(a_t b_t) = b_t a_t`. -/
-@[simp]
-theorem antipode_youngSymmetrizer (t : YoungTableau μ) :
-    HopfAlgebra.antipode R (youngSymmetrizer (R := R) t) =
-      columnAntisymmetrizer t * rowSymmetrizer t := by
-  rw [youngSymmetrizer_def, HopfAlgebra.antipode_mul_antidistrib, antipode_rowSymmetrizer,
-    antipode_columnAntisymmetrizer]
 
 /-- The coefficient of a permutation in the row symmetrizer is its row-group indicator. -/
 @[simp]

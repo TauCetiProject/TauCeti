@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 import Mathlib.Tactic.Algebraize
-import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Affine charts of a base change and their finiteness
@@ -90,6 +89,8 @@ lemma Scheme.Hom.exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : 
       Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away e))) := by
     rw [Category.assoc, hgsnd, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
       ← IsScalarTower.algebraMap_eq]
+  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
   rw [← hrange, ← MorphismProperty.cancel_left_of_respectsIso @IsFinite
     (Scheme.Hom.isoOpensRange _).hom, Scheme.Hom.isoOpensRange_hom_ι_assoc, hι,
     IsFinite.SpecMap_iff]

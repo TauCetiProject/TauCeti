@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!

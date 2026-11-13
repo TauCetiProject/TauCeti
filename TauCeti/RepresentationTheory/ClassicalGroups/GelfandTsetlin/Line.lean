@@ -196,7 +196,7 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
       refine hv (DirectSum.of_injective (β := fun m : interlacingWeights l ↦
         ↥(weylModuleOfShape ℂ n (m : DominantWeight n).detShiftShape).toSubmodule) m
         (e.symm.injective ?_))
-      simpa [ι, DirectSum.lof_eq_of, -EmbeddingLike.map_eq_zero_iff] using congrArg (fun f ↦ f v) h
+      simpa [ι, DirectSum.lof_eq_of] using congrArg (fun f ↦ f v) h
     have hsigma := e.symm.toLinearEquiv.isInternal_sigma_map
       (B := fun m Q ↦ gtLine (m : DominantWeight n) Q) fun m ↦ isInternal_gtLine _
     have hline : gtLine l = (fun x ↦ (gtLine (x.1 : DominantWeight n) x.2).map

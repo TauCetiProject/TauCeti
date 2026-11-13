@@ -86,11 +86,12 @@ theorem isCohenMacaulay_iff (F : X.Modules) :
     F.IsCohenMacaulay ↔ ∀ x : X, Module.IsCohenMacaulay (X.presheaf.stalk x) (F.presheaf.stalk x) :=
   Iff.rfl
 
-/-- Let `F` be a quasi-coherent `𝒪_X`-module and `U` an affine open. The stalk of `F` at a point
-of `U` is Cohen–Macaulay exactly when the localization of `Γ(F, U)` at the corresponding prime of
-`Γ(X, U)` is. -/
+/-- Let `F` be a quasi-coherent `𝒪_X`-module and `U` an affine open with Noetherian ring of
+sections over which `F` has finite sections. The stalk of `F` at a point of `U` is Cohen–Macaulay
+exactly when the localization of `Γ(F, U)` at the corresponding prime of `Γ(X, U)` is. -/
 theorem isCohenMacaulay_stalk_iff_of_isAffineOpen (F : X.Modules) [F.IsQuasicoherent]
-    {U : X.Opens} (hU : IsAffineOpen U) (x : U) :
+    {U : X.Opens} (hU : IsAffineOpen U) [IsNoetherianRing Γ(X, U)]
+    [Module.Finite Γ(X, U) Γ(F, U)] (x : U) :
     Module.IsCohenMacaulay (X.presheaf.stalk x) (F.presheaf.stalk x) ↔
       Module.IsCohenMacaulay (Localization.AtPrime (hU.primeIdealOf x).asIdeal)
         (LocalizedModule (hU.primeIdealOf x).asIdeal.primeCompl Γ(F, U)) :=
@@ -98,10 +99,11 @@ theorem isCohenMacaulay_stalk_iff_of_isAffineOpen (F : X.Modules) [F.IsQuasicohe
   have := F.isLocalizedModule_germₗ x hU
   Module.isCohenMacaulay_iff_of_isLocalizedModule _ (F.germₗ x)
 
-/-- For a module `M` over a ring `R`, the associated `𝒪_{Spec R}`-module `M~` is Cohen–Macaulay
-exactly when every localization `M_p` at a prime is a Cohen–Macaulay `R_p`-module: the stalk of
-`M~` at `p` is `M_p`. -/
-theorem isCohenMacaulay_tilde_iff {R : CommRingCat.{u}} (M : ModuleCat.{u} R) :
+/-- For a finite module `M` over a Noetherian ring `R`, the associated `𝒪_{Spec R}`-module `M~` is
+Cohen–Macaulay exactly when every localization `M_p` at a prime is a Cohen–Macaulay `R_p`-module:
+the stalk of `M~` at `p` is `M_p`. -/
+theorem isCohenMacaulay_tilde_iff {R : CommRingCat.{u}} [IsNoetherianRing R] (M : ModuleCat.{u} R)
+    [Module.Finite R M] :
     (tilde M).IsCohenMacaulay ↔ ∀ (p : Ideal R) [p.IsPrime],
       Module.IsCohenMacaulay (Localization.AtPrime p) (LocalizedModule p.primeCompl M) := by
   -- The stalk of `M~` at `x` is the localization of `M` at the prime `x`.
@@ -159,7 +161,7 @@ theorem isCohenMacaulay_iff_isCohenMacaulay_unit :
 /-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
 `Y` at `f x`, so one is Cohen–Macaulay exactly when the other is. -/
 theorem isCohenMacaulay_stalk_iff_of_isOpenImmersion {Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsOpenImmersion f] (x : X) :
+    [IsOpenImmersion f] [IsLocallyNoetherian Y] (x : X) :
     Module.IsCohenMacaulay (Y.presheaf.stalk (f x)) (Y.presheaf.stalk (f x)) ↔
       Module.IsCohenMacaulay (X.presheaf.stalk x) (X.presheaf.stalk x) :=
   (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv.isCohenMacaulay_self_iff
@@ -186,9 +188,11 @@ theorem isCohenMacaulay_iff_openCover (𝒰 : X.OpenCover) :
   rw [← hy, isCohenMacaulay_stalk_iff_of_isOpenImmersion]
   exact IsCohenMacaulay.isCohenMacaulay_stalk y
 
-/-- Let `U` be an affine open. The local ring of `X` at a point of `U` is Cohen–Macaulay exactly
-when the localization of `Γ(X, U)` at the corresponding prime is. -/
-theorem isCohenMacaulay_stalk_iff_of_isAffineOpen {U : X.Opens} (hU : IsAffineOpen U) (x : U) :
+/-- Let `U` be an affine open with Noetherian ring of sections. The local ring of `X` at a point
+of `U` is Cohen–Macaulay exactly when the localization of `Γ(X, U)` at the corresponding prime
+is. -/
+theorem isCohenMacaulay_stalk_iff_of_isAffineOpen {U : X.Opens} (hU : IsAffineOpen U)
+    [IsNoetherianRing Γ(X, U)] (x : U) :
     Module.IsCohenMacaulay (X.presheaf.stalk x) (X.presheaf.stalk x) ↔
       Module.IsCohenMacaulay (Localization.AtPrime (hU.primeIdealOf x).asIdeal)
         (Localization.AtPrime (hU.primeIdealOf x).asIdeal) := by
@@ -203,6 +207,7 @@ theorem isCohenMacaulay_iff_forall_affineOpens :
   simp only [TauCeti.Ring.isCohenMacaulay_iff]
   refine ⟨fun _ U ↦ ⟨IsLocallyNoetherian.component_noetherian U, fun p _ ↦ ?_⟩, fun h ↦ ?_⟩
   · -- The prime `p` is the prime of the point `U.2.fromSpec y` of `U`, whose stalk is `Γ(X, U)_p`.
+    have := IsLocallyNoetherian.component_noetherian U
     let y : PrimeSpectrum Γ(X, U) := ⟨p, inferInstance⟩
     have hy : U.2.fromSpec y ∈ (U : X.Opens) := U.2.range_fromSpec.le ⟨y, rfl⟩
     have hp : U.2.primeIdealOf ⟨U.2.fromSpec y, hy⟩ = y :=
@@ -214,6 +219,7 @@ theorem isCohenMacaulay_iff_forall_affineOpens :
   · have : IsLocallyNoetherian X := ⟨fun U ↦ (h U).1⟩
     refine ⟨fun x ↦ ?_⟩
     obtain ⟨U, hU, hx, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top x)
+    have := (h ⟨U, hU⟩).1
     exact (isCohenMacaulay_stalk_iff_of_isAffineOpen hU ⟨x, hx⟩).mpr ((h ⟨U, hU⟩).2 _)
 
 /-- The ring of sections over an affine open of a Cohen–Macaulay scheme is Cohen–Macaulay. -/

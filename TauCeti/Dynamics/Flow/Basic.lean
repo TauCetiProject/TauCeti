@@ -23,7 +23,6 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
   and conversely.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
-* `Flow.prod`: the product of two flows with the same time.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
 -/
@@ -68,22 +67,6 @@ theorem orbit_reverse [SubtractionCommMonoid τ] [ContinuousNeg τ] (ϕ : Flow �
   ext y
   simp only [Flow.mem_orbit_iff, Flow.reverse_apply]
   exact ⟨fun ⟨t, ht⟩ ↦ ⟨-t, ht⟩, fun ⟨t, ht⟩ ↦ ⟨-t, by rwa [neg_neg]⟩⟩
-
-/-- The **product of two flows** with the same time: `(ϕ.prod ψ) t (x, y) = (ϕ t x, ψ t y)`. -/
-def prod {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β) :
-    Flow τ (α × β) where
-  toFun t p := (ϕ t p.1, ψ t p.2)
-  cont' := by fun_prop
-  map_add' t₁ t₂ p := by
-    simp only [ϕ.map_add, ψ.map_add]
-  map_zero' p := by
-    simp only [ϕ.map_zero_apply, ψ.map_zero_apply]
-
-/-- A product of flows acts on each component by the corresponding flow. -/
-@[simp]
-theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β)
-    (t : τ) (p : α × β) : ϕ.prod ψ t p = (ϕ t p.1, ψ t p.2) :=
-  (rfl)
 
 /-- **A uniform time to reach an open set.** If the forward orbit of every point of a compact set
 `C` meets an open set `W` at some positive time, then there is one time `T` such that each of these

@@ -39,9 +39,6 @@ For a sphere of dimension `k + 1`, the cube collapse `TauCeti.cubeToSphere` onto
 
 * `TauCeti.tangentCircleGenLoop hu c`: the circles through the points of a generalized loop `c`
   of the equator, as a generalized loop of the sphere.
-* `TauCeti.tangentCircleLoop hu p`: the map `φ_{V,u}` itself, sending a point `q` of the equator
-  to the circle through `p` and `q` as a loop at `p`; `tangentCircleGenLoop` reads it pointwise
-  (`TauCeti.tangentCircleGenLoop_apply`).
 * `TauCeti.isIso_hurewicz_tangentCircleGenLoop`: its Hurewicz class is an isomorphism
   `R ≅ H_{k+1}(S_V; R)` when `c` is surjective off `p` and identifies only boundary points.
 
@@ -62,45 +59,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {u : V}
 
-/-! ### The loops `φ_{V,u}` -/
-
-/-- The map `φ_{V,u}` of Barraud–Damian–Humilière–Oancea, Example 6.20: for a point `p₀` of the
-equator of the unit sphere `S_V` orthogonal to the unit vector `u`, it sends a point `q` of that
-equator to the circle of `S_V` through `p₀` tangent to `u` and through `q`, run from `p₀`
-proportionally to arc length, as a loop at `p₀`. It sends `p₀` to the constant loop
-(`TauCeti.tangentCircleLoop_self`). -/
-def tangentCircleLoop (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
-    C(sphereEquator u, Ω (sphere (0 : V) 1) (p₀ : sphere (0 : V) 1)) where
-  toFun q :=
-    { toFun t := ⟨tangentCircle ((p₀ : sphere (0 : V) 1) : V) u ((q : sphere (0 : V) 1) : V)
-          (2 * π * t),
-        mem_sphere_zero_iff_norm.2 (norm_tangentCircle (mem_sphere_zero_iff_norm.1 p₀.1.2) hu
-          (mem_sphereEquator.1 p₀.2) (mem_sphere_zero_iff_norm.1 q.1.2) (mem_sphereEquator.1 q.2)
-          _)⟩
-      continuous_toFun := ((continuous_tangentCircle _ u).comp
-        (continuous_const.prodMk (continuous_const.mul continuous_subtype_val))).subtype_mk _
-      source' := Subtype.ext (by simp)
-      target' := Subtype.ext (by
-        simpa using tangentCircle_add_two_pi ((p₀ : sphere (0 : V) 1) : V) u
-          ((q : sphere (0 : V) 1) : V) 0) }
-  continuous_toFun := by
-    refine Path.continuous_uncurry_iff.1 (Continuous.subtype_mk ?_ _)
-    exact (continuous_tangentCircle _ u).comp
-      ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-        (continuous_const.mul (continuous_subtype_val.comp continuous_snd)))
-
-@[simp]
-theorem coe_tangentCircleLoop_apply (hu : ‖u‖ = 1) (p₀ q : sphereEquator u) (t : I) :
-    (tangentCircleLoop hu p₀ q t : V) =
-      tangentCircle ((p₀ : sphere (0 : V) 1) : V) u ((q : sphere (0 : V) 1) : V) (2 * π * t) :=
-  (rfl)
-
-/-- The circle through `p₀` and `p₀` is the constant loop. -/
-@[simp]
-theorem tangentCircleLoop_self (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
-    tangentCircleLoop hu p₀ p₀ = Path.refl _ :=
-  Path.ext (funext fun t => Subtype.ext (by simp))
-
 /-! ### The family of circles as a generalized loop -/
 
 variable {k : ℕ} {p₀ : sphereEquator u}
@@ -108,29 +66,29 @@ variable {k : ℕ} {p₀ : sphereEquator u}
 /-- **The circles through the points of a generalized loop of the equator.** For a generalized
 loop `c : I^k → E` of the equator `E` at `p₀`, the generalized loop of the unit sphere at `p₀`
 sending `y` to the point at the angle `2π y₀` of the circle through `p₀` tangent to `u` and through
-`c (Fin.tail y)`: it reads the loops `φ_{V,u}` of the points of `c`, the first cube coordinate
-being the loop parameter (`TauCeti.tangentCircleGenLoop_apply`). -/
+`c (Fin.tail y)`. -/
 def tangentCircleGenLoop (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sphereEquator u) p₀) :
     Ω^ (Fin (k + 1)) (sphere (0 : V) 1) (p₀ : sphere (0 : V) 1) where
   val :=
-    { toFun y := tangentCircleLoop hu p₀ (c (Fin.tail y)) (y 0)
+    { toFun y := ⟨tangentCircle ((p₀ : sphere (0 : V) 1) : V) u
+          ((c (Fin.tail y) : sphere (0 : V) 1) : V) (2 * π * y 0),
+        mem_sphere_zero_iff_norm.2 (norm_tangentCircle (mem_sphere_zero_iff_norm.1 p₀.1.2) hu
+          (mem_sphereEquator.1 p₀.2) (mem_sphere_zero_iff_norm.1 (c (Fin.tail y)).1.2)
+          (mem_sphereEquator.1 (c (Fin.tail y)).2) _)⟩
       continuous_toFun := by
-        have h : Continuous fun q : sphereEquator u × I => tangentCircleLoop hu p₀ q.1 q.2 :=
-          Path.continuous_uncurry_iff.2 (tangentCircleLoop hu p₀).continuous
-        exact h.comp (f := fun y : I^(Fin (k + 1)) => (c (Fin.tail y), y 0)) (by fun_prop) }
+        refine Continuous.subtype_mk ((continuous_tangentCircle _ u).comp
+          (Continuous.prodMk ?_ ?_)) _
+        · exact continuous_subtype_val.comp (continuous_subtype_val.comp
+            (c.1.continuous.comp (continuous_pi fun i ↦ continuous_apply _)))
+        · exact continuous_const.mul (continuous_subtype_val.comp (continuous_apply 0)) }
   property y hy := by
-    dsimp only [ContinuousMap.coe_mk]
+    refine Subtype.ext ((tangentCircle_eq_self_iff hu (mem_sphereEquator.1 p₀.2)
+      (mem_sphereEquator.1 (c (Fin.tail y)).2) _).2 ?_)
     rcases Cube.boundary_fin_succ_iff.1 hy with h | h
-    · rcases h with h | h <;> simp [h]
-    · rw [GenLoop.boundary c _ h, tangentCircleLoop_self, Path.refl_apply]
-
-/-- The generalized loop of circles through the points of a generalized loop `c` of the equator
-reads the loops `φ_{V,u}` of the points of `c`, the first cube coordinate being the loop
-parameter. -/
-theorem tangentCircleGenLoop_apply (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sphereEquator u) p₀)
-    (y : I^(Fin (k + 1))) :
-    tangentCircleGenLoop hu c y = tangentCircleLoop hu p₀ (c (Fin.tail y)) (y 0) :=
-  (rfl)
+    · right
+      rcases h with h | h <;> simp [h]
+    · left
+      rw [GenLoop.boundary c _ h]
 
 @[simp]
 theorem coe_tangentCircleGenLoop_apply (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sphereEquator u) p₀)
@@ -224,7 +182,6 @@ theorem surjective_tangentCircleGenLoop (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sph
   refine ⟨Fin.cons t y, Subtype.ext ?_⟩
   rw [coe_tangentCircleGenLoop_apply, Fin.tail_cons, Fin.cons_zero, hy, ← hθ]
   rw [tangentCircle_def, tangentCircle_def, hc, hs]
-
 
 end TauCeti
 

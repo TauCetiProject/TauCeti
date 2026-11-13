@@ -432,7 +432,7 @@ private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K 
   have hβ := mulVec_nonneg (fun i j ↦ (hK i j).le) hv
   have hcross := mulVec_mul_mulVec_le hK hu hv i i'
   rw [← add_halves K.projectiveDiameter, exp_add, ← sq] at hcross
-  have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hβ i')
+  have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
     ((one_le_div hm).2 hmM.le) (one_le_exp (by linarith [projectiveDiameter_nonneg K])) hcross
   -- `(M / m) • α + β = (M - m) / m • K *ᵥ x` and `α + β = (M - m) • K *ᵥ y`
   have hcongr : ∀ i, M / m * (K *ᵥ (x - m • y)) i + (K *ᵥ (M • y - x)) i =

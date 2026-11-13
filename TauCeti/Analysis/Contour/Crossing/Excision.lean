@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
 
 /-!

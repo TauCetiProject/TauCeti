@@ -296,13 +296,6 @@ def cellDiskPullbackPairMap (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ preimageSkeletonPair p C n :=
   cellDiskPullbackPairι p C n j ≫ cellPullbackPairMap p C n
 
-variable (p C) in
-/-- The projection from the pullback over the cell `j` factors through the pullback over the disks
-of all `n`-cells. -/
-lemma cellDiskPullbackPairMap_def (n : ℕ) (j : cell C n) :
-    cellDiskPullbackPairMap p C n j = cellDiskPullbackPairι p C n j ≫ cellPullbackPairMap p C n :=
-  (rfl)
-
 @[simp]
 lemma coe_cellDiskPullbackPairMap_fst_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :

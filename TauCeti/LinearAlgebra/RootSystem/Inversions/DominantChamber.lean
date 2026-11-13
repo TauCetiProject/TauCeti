@@ -63,7 +63,7 @@ theorem mapsTo_posRoots_of_smul_mem_dominantChamber (w : P.weylGroup)
     MapsTo (P.weylGroupToPerm w) (posRoots P b) (posRoots P b) := by
   intro i hi
   by_contra hneg
-  rw [not_mem_posRoots_iff_mem_negRoots] at hneg
+  rw [notMem_posRoots_iff_mem_negRoots] at hneg
   -- The coroot functional of the image at the moved weight is the coroot functional of the root
   -- at the original weight, hence positive.
   have h := coroot'_nonpos_of_mem_negRoots P b hw hneg

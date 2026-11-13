@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RepresentationTheory.Character
-public import TauCeti.RepresentationTheory.CharacterTwist
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Subrepresentation
@@ -54,8 +53,6 @@ representation of a finite group.
 * `Representation.externalTensor_apply_tmul`: `(g, h)` acts on `v ⊗ w` by `ρ g v ⊗ σ h w`.
 * `Representation.externalTensor_comp_diag`: along the diagonal, the external tensor product
   restricts to the internal one.
-* `Representation.externalTensor_charTwist`: twisting the two factors by linear characters twists
-  the external tensor product by their product.
 * `Representation.char_externalTensor`: the character is `χ_ρ(g) * χ_σ(h)`.
 * `Representation.isIrreducible_externalTensor`: over an algebraically closed field, the external
   tensor product of a finite-dimensional irreducible representation and an irreducible
@@ -120,16 +117,6 @@ theorem externalTensor_comp_inr :
     (ρ.externalTensor σ).comp (MonoidHom.inr G H) = (trivial k H V).tprod σ := by
   ext h : 1
   exact TensorProduct.ext' fun _ _ ↦ by simp
-
-/-- **Twisting the two factors twists the external tensor product**: the external tensor product
-of `charTwist χ ρ` and `charTwist ψ σ` is the twist of `ρ.externalTensor σ` by the character
-`(g, h) ↦ χ g * ψ h` of `G × H`. -/
-theorem externalTensor_charTwist (χ : G →* kˣ) (ψ : H →* kˣ) :
-    (charTwist χ ρ).externalTensor (charTwist ψ σ) =
-      charTwist (χ.comp (MonoidHom.fst G H) * ψ.comp (MonoidHom.snd G H)) (ρ.externalTensor σ) := by
-  ext p : 1
-  exact TensorProduct.ext' fun v w ↦ by
-    simp [TensorProduct.smul_tmul', mul_smul, TensorProduct.tmul_smul, smul_comm (χ p.1 : k)]
 
 /-! ### Functoriality -/
 

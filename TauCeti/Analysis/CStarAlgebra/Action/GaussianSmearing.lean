@@ -198,8 +198,10 @@ theorem entireExtension_gaussianSmear (c : ℝ) (a : A) (z : ℂ) :
 /-- **Gaussian smearings are entire analytic.** -/
 theorem isEntireAnalytic_gaussianSmear (c : ℝ) (a : A) :
     α.IsEntireAnalytic (α.gaussianSmear c a) := by
-  refine (isEntireAnalytic_iff α _).mpr fun t => ?_
-  rw [entireExtension_gaussianSmear, gaussianExtension_ofReal]
+  refine isEntireAnalytic_iff.mpr ⟨?_, fun t => ?_⟩
+  · simpa only [funext (α.entireExtension_gaussianSmear c a)] using
+      α.differentiable_gaussianExtension c a
+  · rw [entireExtension_gaussianSmear, gaussianExtension_ofReal]
 
 /-- The Gaussian smearing is odd in the parameter `c`. -/
 @[simp]

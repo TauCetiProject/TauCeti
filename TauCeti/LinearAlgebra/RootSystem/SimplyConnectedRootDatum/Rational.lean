@@ -80,21 +80,21 @@ reflection permutation is unchanged. -/
 def rationalRootSystem :
     RootPairing (Fin t.numRoots) ℚ (Fin t.rank → ℚ) (Fin t.rank → ℚ) :=
   rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht)
 
 /-- Identify the rational root system with entrywise base change of its integral datum.
 The body of `rationalRootSystem` is not exposed to importing modules, so use this equation
 to apply constructions on base-changed pairings to the rational model. -/
 theorem rationalRootSystem_def :
     t.rationalRootSystem ht = rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
-      (toLinearMap_simplyConnectedRootDatum t ht) :=
+      (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) :=
   (rfl)
 
 /-- The Bourbaki-numbered base of `TauCeti.DynkinType.rationalRootSystem`, supported on the same
 first `t.rank` root indices as the base of the integral datum. -/
 def rationalBase : (t.rationalRootSystem ht).Base :=
   rootPairingBaseChangeBase ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht) (t.simplyConnectedBase ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) (t.simplyConnectedBase ht)
 
 @[simp] theorem root_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).root i k = ((t.simplyConnectedRootDatum ht).root i k : ℚ) := by
@@ -250,7 +250,7 @@ def simpleSupportEquiv : Fin t.rank ≃ (t.rationalBase ht).support :=
 @[simp] theorem coe_simpleSupportEquiv (i : Fin t.rank) :
     ((t.simpleSupportEquiv ht i : Fin t.numRoots)) = t.simpleIndex ht i := by
   let e := supportEquivRootPairingBaseChangeBase ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht) (t.simplyConnectedBase ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) (t.simplyConnectedBase ht)
   let x := t.simpleSupportEquivSimplyConnectedBase ht i
   have hcoe : ((e.symm x : Fin t.numRoots)) = (x : Fin t.numRoots) := by
     calc
@@ -260,7 +260,7 @@ def simpleSupportEquiv : Fin t.rank ≃ (t.rationalBase ht).support :=
   calc
     ((t.simpleSupportEquiv ht i : Fin t.numRoots)) = (e.symm x : Fin t.numRoots) := rfl
     _ = (x : Fin t.numRoots) := hcoe
-    _ = t.simpleIndex ht i := coe_simpleSupportEquivSimplyConnectedBase t ht i
+    _ = t.simpleIndex ht i := coe_simpleSupportEquivSimplyConnectedBase_apply t ht i
 
 variable {t ht} in
 /-- Every Bourbaki-numbered simple root `t.simpleIndex ht i` lies in the support of the pinned

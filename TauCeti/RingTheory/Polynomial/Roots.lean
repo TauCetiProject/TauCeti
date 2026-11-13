@@ -197,7 +197,7 @@ theorem rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F E (f.eval a) = 0)
 theorem rootSet_comp_X_add_C (f : F[X]) (t : F) :
     (f.comp (X + C t)).rootSet E = (· + algebraMap F E t) ⁻¹' f.rootSet E := by
   ext x
-  simp [mem_rootSet', map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
+  simp [mem_rootSet', Polynomial.map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
 
 /-- The bijection `x ↦ x + t` from the roots of `f(X + t)` to the roots of `f`. -/
 def rootSetCompXAddCEquiv (f : F[X]) (t : F) (E : Type*) [CommRing E]
@@ -269,7 +269,7 @@ theorem le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
     exact Multiset.coe_le.2 (List.take_sublist k l).subperm
   · rintro ⟨x, hx⟩
     rw [key] at hx
-    have := roots.le_of_dvd hp hx
+    have := Polynomial.roots.le_of_dvd hp hx
     rw [roots_multiset_prod_X_sub_C] at this
     simpa using Multiset.card_le_card this
 

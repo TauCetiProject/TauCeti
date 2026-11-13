@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 
 /-!
 # Circular averages of the reciprocal kernel

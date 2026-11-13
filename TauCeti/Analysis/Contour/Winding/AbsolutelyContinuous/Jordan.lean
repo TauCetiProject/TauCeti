@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Affine.AddTorsor
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.TangentJump
-import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.NonzeroDeriv

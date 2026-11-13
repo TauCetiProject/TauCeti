@@ -66,7 +66,7 @@ theorem root_eq_coroot_vecMul_cartanMatrix (k : Fin t.numRoots) :
   have := t.isReduced_simplyConnectedRootDatum ht
   set P := t.simplyConnectedRootDatum ht
   have hpairing (i j : Fin t.numRoots) : P.pairing i j = P.root i ⬝ᵥ P.coroot j := by
-    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum]
+    rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply]
   have hsimple (s : Fin t.rank) :
       P.root (t.simpleIndex ht s) = P.coroot (t.simpleIndex ht s) ᵥ* t.cartanMatrix := by
     rw [root_simpleIndex, coroot_simpleIndex, single_one_vecMul]
@@ -106,7 +106,7 @@ theorem pairing_eq_coroot_vecMul_dotProduct (k l : Fin t.numRoots) :
     (t.simplyConnectedRootDatum ht).pairing k l =
       ((t.simplyConnectedRootDatum ht).coroot k ᵥ* t.cartanMatrix) ⬝ᵥ
         (t.simplyConnectedRootDatum ht).coroot l := by
-  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
+  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply,
     t.root_eq_coroot_vecMul_cartanMatrix ht hs]
 
 include hs in

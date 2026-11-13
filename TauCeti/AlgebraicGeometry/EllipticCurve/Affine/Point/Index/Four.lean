@@ -16,6 +16,7 @@ import TauCeti.RingTheory.Henselian.Basic
 -- Proof-only: units and the maximal ideal of a local ring with principal maximal ideal.
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a root of a quadratic with unit discriminant is simple.
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 -- Proof-only: simplicity of a residue root from the quadratic discriminant.
 import TauCeti.Algebra.QuadraticDiscriminant
 
@@ -216,10 +217,9 @@ private theorem exists_mem_farPoints_odd [HenselianLocalRing v.valuationSubring]
     exact hb₆ ⟨e, by rw [b₆, h₃, h₆]; linear_combination ϖ ^ (2 * k + 4) * he⟩
   -- lift the root `t` to a root `Y` of `T² + A₃ T − A₆`
   obtain ⟨Y₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY₀, -, hu⟩ := TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim
-    (I := maximalIdeal v.valuationSubring) (b := A₃) (c := -A₆) (by simpa using hD)
-    ((residue_eq_zero_iff _).1 (by simpa [sub_eq_add_neg] using ht))
-  have hY' : Y ^ 2 + A₃ * Y - A₆ = 0 := by linear_combination hY₀
+  obtain ⟨Y, hY', -, hu⟩ :=
+    TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant hD
+    ((residue_eq_zero_iff _).1 (by simpa using ht))
   -- the point `(0, ϖ^(k+2) Y)`
   have hns : Wo.toAffine.Nonsingular 0 (ϖ ^ (k + 2) * Y) := by
     rw [nonsingular_iff']

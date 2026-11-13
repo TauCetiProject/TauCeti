@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -47,8 +46,6 @@ derivative applies.
   the cotangent bundle.
 * `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
   evaluates a tangent vector through the differential of the map.
-* `TauCeti.isLocalFrameOn_degreeOneEquiv_iff`: real one-forms are a frame of the cotangent bundle
-  on a set exactly when their values are a basis of every cotangent space over it.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
   smooth function is its manifold derivative.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
@@ -342,23 +339,6 @@ theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E'
 end SmoothForm
 
 end OnceDifferentiable
-
-section Coframe
-
-variable [IsManifold I 1 M] {ι : Type*}
-
-/-- Real one-forms form a frame of the cotangent bundle on a set `U` exactly when their values form
-a basis of every cotangent space over `U`: smoothness of the frame is automatic. -/
-theorem isLocalFrameOn_degreeOneEquiv_iff {α : ι → SmoothForm I M ℝ 1} {U : Set M} :
-    IsLocalFrameOn I (E →L[ℝ] ℝ) ∞ (fun i ↦ ⇑(SmoothForm.degreeOneEquiv (α i))) U ↔
-      ∀ x ∈ U, LinearIndependent ℝ (fun i ↦ SmoothForm.degreeOneEquiv (α i) x) ∧
-        ⊤ ≤ Submodule.span ℝ (Set.range fun i ↦ SmoothForm.degreeOneEquiv (α i) x) :=
-  ⟨fun h _ hx ↦ ⟨h.linearIndependent hx, h.generating hx⟩, fun h ↦
-    { linearIndependent := fun hx ↦ (h _ hx).1
-      generating := fun hx ↦ (h _ hx).2
-      contMDiffOn := fun i ↦ (SmoothForm.degreeOneEquiv (α i)).contMDiff.contMDiffOn }⟩
-
-end Coframe
 
 namespace SmoothForm
 

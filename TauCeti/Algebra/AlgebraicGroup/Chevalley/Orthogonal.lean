@@ -111,15 +111,16 @@ theorem closure_simpleRootPair_le_centralizer (i j : Fin t.rank)
     exact hne (Fin.ext (by simpa using congrArg Fin.val h))
   apply D.closure_rootPair_le_centralizer
   · have hpair : (t.simplyConnectedRootDatum ht).pairingIn ℤ (e i) (e j) = 0 := by
-      simpa only [e, coe_simpleSupportEquivSimplyConnectedBase, pairingIn_simpleIndex] using hij
-    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+      simpa only [e, coe_simpleSupportEquivSimplyConnectedBase_apply,
+        pairingIn_simpleIndex] using hij
+    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase_apply] using
       (b.cartanMatrix_apply_eq_zero_iff (e.injective.ne hne)).mp hpair
   · intro h
     apply b.root_ne_neg_of_ne (e i).property (e j).property
-      (by simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using hindices)
-    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+      (by simpa only [e, coe_simpleSupportEquivSimplyConnectedBase_apply] using hindices)
+    simpa only [e, coe_simpleSupportEquivSimplyConnectedBase_apply] using
       add_eq_zero_iff_eq_neg.mp h
-  · simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
+  · simpa only [e, coe_simpleSupportEquivSimplyConnectedBase_apply] using
       b.sub_notMem_range_root (e i).property (e j).property
   · exact sub_ne_zero.mpr ((t.simplyConnectedRootDatum ht).root.injective.ne hindices)
 

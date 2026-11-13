@@ -148,7 +148,7 @@ private theorem bivector_lie_mul_eq_zero
         (mem_positiveNilradical_of_mem_rootSpace H base (α := a) ?_ hu)
       by_contra ha
       have hneg := neg_mem_posRoots_of_mem_negRoots base
-        ((not_mem_posRoots_iff_mem_negRoots _ base a).mp ha)
+        ((notMem_posRoots_iff_mem_negRoots _ base a).mp ha)
       refine hv' (mem_positiveNilradical_of_mem_rootSpace H base hneg ?_)
       rwa [IsKilling.val_neg_root]
   have hmem : ⁅x, u⁆ ∈ positiveNilradical H base := by

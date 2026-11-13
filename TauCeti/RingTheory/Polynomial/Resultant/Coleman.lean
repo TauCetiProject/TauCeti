@@ -222,8 +222,8 @@ theorem colemanDBounded_map (φ : R →+* S) (B P : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).map φ = colemanDBounded (B.map φ) (P.map φ) n m := by
   rw [colemanDBounded, colemanDBounded, ← coe_mapRingHom, ← resultant_map_map]
   congr 1
-  · simp only [coe_mapRingHom, reflect_map, map_map, mapRingHom_comp_C]
-  · simp [map_map, mapRingHom_comp_C]
+  · simp only [coe_mapRingHom, reflect_map, Polynomial.map_map, mapRingHom_comp_C]
+  · simp [Polynomial.map_map, mapRingHom_comp_C]
 
 /-- Coleman's transform of rank `n` is a polynomial of degree at most `n`. -/
 theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
@@ -257,9 +257,9 @@ theorem eval_colemanDBounded (B P : R[X]) (n m : ℕ) (t : R) :
   -- depending on them, so the evaluations at `T = t` are computed separately
   have hC : (evalRingHom t).comp C = RingHom.id R := by ext; simp
   have hf : ((P.reflect n).map C).map (evalRingHom t) = P.reflect n := by
-    simp [map_map, hC]
+    simp [Polynomial.map_map, hC]
   have hg : (1 - C X * B.map C).map (evalRingHom t) = 1 - C t * B := by
-    simp [map_map, hC]
+    simp [Polynomial.map_map, hC]
   rw [← coe_evalRingHom, colemanDBounded, ← resultant_map_map, hf, hg]
 
 /-- Coleman's transform has constant coefficient one. -/
@@ -664,7 +664,7 @@ theorem colemanDSeries_zero_left (F : PowerSeries R) : (0 : R[X]).colemanDSeries
 /-- When `B(0) = 0`, Coleman's transform of `1` is one. -/
 @[simp]
 theorem colemanDSeries_one_right (hB0 : B.coeff 0 = 0) : B.colemanDSeries 1 = 1 := by
-  rw [← coe_one, colemanDSeries_coe hB0, colemanD_def, natDegree_one,
+  rw [← Polynomial.coe_one, colemanDSeries_coe hB0, colemanD_def, natDegree_one,
     colemanDBounded_one_right, pow_zero]
 
 /-- Let `Q(0) = 1` and let `c` invert the leading coefficient of `Q`, so that `B = 1 - c Q*`
@@ -698,7 +698,7 @@ theorem continuous_coeff_colemanDSeries [TopologicalSpace R] [IsTopologicalSemir
       simp [U, Polynomial.map_sum, PowerSeries.trunc_apply,
         Fin.sum_univ_eq_sum_range (fun j ↦ monomial j (PowerSeries.coeff j F))]
     rw [coeff_colemanDSeries_eq_coeff_colemanDBounded, hΦ_def, ← coeff_map, colemanDBounded_map,
-      map_map, hC, map_id, hU]
+      Polynomial.map_map, hC, Polynomial.map_id, hU]
   simp_rw [hΦ]
   exact (MvPolynomial.continuous_eval Φ).comp
     (continuous_pi fun j ↦ PowerSeries.WithPiTopology.continuous_coeff R j)

@@ -18,7 +18,7 @@ of `X` at points of the chart are depth conditions on localizations of `R`.
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.depth_stalk_eq_depth_localization`: for an open immersion
-  `f : Spec R ⟶ X`, `depth 𝒪_{X,f(𝔭)} = depth R_𝔭`.
+  `f : Spec R ⟶ X` with `R` Noetherian, `depth 𝒪_{X,f(𝔭)} = depth R_𝔭`.
 -/
 
 public section
@@ -29,10 +29,10 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-/-- Let `f : Spec R ⟶ X` be an open immersion. The local ring of `X` at the image of a prime `𝔭`
-of `R` has the same depth as `R_𝔭`. -/
-theorem depth_stalk_eq_depth_localization {R : CommRingCat.{u}} {X : Scheme.{u}}
-    (f : Spec R ⟶ X) [IsOpenImmersion f] (p : PrimeSpectrum R) :
+/-- Let `f : Spec R ⟶ X` be an open immersion from the spectrum of a Noetherian ring. The local
+ring of `X` at the image of a prime `𝔭` of `R` has the same depth as `R_𝔭`. -/
+theorem depth_stalk_eq_depth_localization {R : CommRingCat.{u}} [IsNoetherianRing R]
+    {X : Scheme.{u}} (f : Spec R ⟶ X) [IsOpenImmersion f] (p : PrimeSpectrum R) :
     depth (ModuleCat.of (X.presheaf.stalk (f p)) (X.presheaf.stalk (f p))) =
       depth (ModuleCat.of (Localization.AtPrime p.asIdeal) (Localization.AtPrime p.asIdeal)) :=
   have := (IsOpenImmersion.iff_isIso_stalkMap (f := f)).mp inferInstance |>.2 p

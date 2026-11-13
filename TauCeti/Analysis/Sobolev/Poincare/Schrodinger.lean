@@ -6,13 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
-public import TauCeti.Analysis.Sobolev.W1p.Basic
-public import TauCeti.Analysis.Sobolev.W1p.Zero
-public import Mathlib.Analysis.InnerProductSpace.Laplacian
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
-import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
 # A Poincaré inequality for Schrödinger forms with a potential positive at infinity
@@ -37,23 +30,10 @@ is controlled by the integral of `‖u‖²` over `S`, hence again by the potent
 Such an estimate makes `L L*` coercive for a first-order operator `L` whose Weitzenböck formula
 has a potential of this kind.
 
-For an essentially bounded potential `P` on an inner product space, the inequality extends by
-density of test functions (`TauCeti.W1p.denseRange_ofTestFunctionₗ_top`) to the bounded
-Schrödinger form `TauCeti.schrodingerForm`, `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + ∫ P u v`, on all of
-`H¹(E) = W^{1,2}(E)`, which is then coercive.
-
 ## Main results
 
 * `TauCeti.exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq`:
   the inequality above.
-* `TauCeti.schrodingerForm`: the Schrödinger form of a bounded potential as a continuous
-  bilinear form on `H¹(E)`.
-* `TauCeti.integral_value_mul_eq_schrodingerForm`: testing `u ∈ H¹(E)` against `-Δφ + P φ` for
-  a test function `φ` is the Schrödinger form of `u` and `φ`, the link with the weak formulation
-  of `-Δh + P h = g`.
-* `TauCeti.exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq`: the inequality
-  on `H¹(E)`, `c ‖u‖²_{H¹} ≤ ‖∇u‖₂² + ∫ P u²`.
-* `TauCeti.isCoercive_schrodingerForm`: the Schrödinger form is coercive on `H¹(E)`.
 
 ## References
 
@@ -67,8 +47,6 @@ namespace TauCeti
 
 open MeasureTheory Metric Set Module
 open scoped ENNReal
-
-section TestFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -143,142 +121,5 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
     mul_le_mul_of_nonneg_left hDΩ (mul_nonneg ha.le hA), mul_le_mul_of_nonneg_left hYS hB,
     mul_nonneg (by positivity : 0 ≤ a * A + 1) hQΩ,
     mul_nonneg (by positivity : 0 ≤ a * A + B) hQC, mul_nonneg (by positivity : 0 ≤ B + 1) hD₀]
-
-end TestFunction
-
-/-! ### The Schrödinger form on `H¹(E)` -/
-
-section W1p
-
-open Filter TopologicalSpace
-open scoped InnerProductSpace RealInnerProductSpace Laplacian Distributions
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {P : E → ℝ}
-
-/-- The **Schrödinger form** `(u, v) ↦ ∫ ⟪∇u, ∇v⟫ + ∫ P u v` of an essentially bounded potential
-`P`, as a continuous bilinear form on `H¹(E) = W^{1,2}(E)`. It is the `L²` inner product of the
-gradients plus the `L∞`-coefficient form `TauCeti.lpBilinearMap` of `P` on the values, pulled
-back along `u ↦ (∇u, u)`. -/
-noncomputable def schrodingerForm (hP : MemLp P ⊤ (volume : Measure E)) :
-    W1p (volume : Measure E) ⊤ 2 →L[ℝ] W1p (volume : Measure E) ⊤ 2 →L[ℝ] ℝ :=
-  let μ := (volume : Measure E).restrict (⊤ : Opens E)
-  let fst := ContinuousLinearMap.fst ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
-  let snd := ContinuousLinearMap.snd ℝ (Lp E 2 μ) (Lp ℝ 2 μ)
-  let J := W1p.gradientL.prod W1p.valueL
-  let V := lpBilinearMap (p := 2) (q := 2) μ ((hP.restrict _).smul_mul.toLp _)
-  ((innerSL ℝ).bilinearComp (σ₁₃ := RingHom.id ℝ) fst fst + V.bilinearComp snd snd).bilinearComp J J
-
-/-- The Schrödinger form is the integral of `⟪∇u, ∇v⟫ + P u v`. -/
-theorem schrodingerForm_apply (hP : MemLp P ⊤ (volume : Measure E))
-    (u v : W1p (volume : Measure E) ⊤ 2) :
-    schrodingerForm hP u v = (∫ z, ⟪W1p.gradient u z, W1p.gradient v z⟫) +
-      ∫ z, P z * (W1p.value u z * W1p.value v z) := by
-  simp only [schrodingerForm, ContinuousLinearMap.bilinearComp_apply, add_apply,
-    ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
-    lpBilinearMap_apply, W1p.gradientL_apply, W1p.valueL_apply]
-  rw [innerSL_apply_apply, L2.inner_def]
-  have hB := MemLp.coeFn_toLp (E := ℝ →L[ℝ] ℝ →L[ℝ] ℝ)
-    (hP.restrict ((⊤ : Opens E) : Set E)).smul_mul
-  simp only [Opens.coe_top, Measure.restrict_univ] at hB ⊢
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [hB] with z hz
-  simp [hz]
-
-/-- The Schrödinger form on the diagonal is `‖∇u‖₂² + ∫ P u²`. -/
-theorem schrodingerForm_self (hP : MemLp P ⊤ (volume : Measure E))
-    (u : W1p (volume : Measure E) ⊤ 2) :
-    schrodingerForm hP u u = ‖W1p.gradient u‖ ^ 2 + ∫ z, P z * W1p.value u z ^ 2 := by
-  rw [schrodingerForm_apply, ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-  simp only [Opens.coe_top, Measure.restrict_univ, real_inner_self_eq_norm_sq, sq]
-
-/-- For `u ∈ H¹(E)`, testing `u` against `-Δφ + P φ` is the Schrödinger form of `u` and `φ`. -/
-theorem integral_value_mul_eq_schrodingerForm (hP : MemLp P ⊤ (volume : Measure E))
-    (u : W1p (volume : Measure E) ⊤ 2) (φ : 𝓓((⊤ : Opens E), ℝ)) :
-    ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
-      schrodingerForm hP u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) := by
-  have hu : MemLp (W1p.value u : E → ℝ) 2 volume := W1p.memLp_value u
-  have hφ2 : MemLp (φ : E → ℝ) 2 volume :=
-    φ.contDiff.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
-  have hΔ2 : MemLp (Δ (φ : E → ℝ)) 2 volume :=
-    (φ.contDiff.of_le (by simp)).continuous_laplacian.memLp_of_hasCompactSupport
-      φ.hasCompactSupport.laplacian
-  have hibp := (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ
-  simp only [smul_eq_mul] at hibp
-  have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  have hg := W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  rw [schrodingerForm_apply]
-  have e1 : ∫ z, W1p.value u z * (-Δ (φ : E → ℝ) z + P z * φ z) =
-      -(∫ z, Δ (φ : E → ℝ) z * W1p.value u z) + ∫ z, P z * (W1p.value u z * φ z) := by
-    rw [← integral_neg, ← integral_add (f := fun z ↦ -(Δ (φ : E → ℝ) z * W1p.value u z))
-      (hΔ2.integrable_mul hu).neg
-        (memLp_one_iff_integrable.1 (hP.fun_mul (hu.fun_mul hφ2 : MemLp _ 1 volume)))]
-    exact integral_congr_ae (Eventually.of_forall fun z ↦ by ring)
-  rw [e1, hibp, neg_neg]
-  congr 1
-  · refine integral_congr_ae (hg.mono fun z hz ↦ ?_)
-    simp only [hz, real_inner_comm]
-  · exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
-
-/-- The Poincaré inequality for the Schrödinger form, extended from test functions to all of
-`H¹(E)` by density. -/
-private theorem mul_norm_value_sq_le_schrodingerForm [Nontrivial E]
-    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
-    ∃ c > 0, ∀ u : W1p (volume : Measure E) ⊤ 2,
-      c * ‖W1p.value u‖ ^ 2 ≤ schrodingerForm hP u u := by
-  obtain ⟨c, hc, hgap⟩ :=
-    exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
-      (μ := volume) (F := ℝ) (hP.locallyIntegrable le_top) hP₀ ha hPa
-  refine ⟨c, hc, fun u ↦ ?_⟩
-  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 2) (by norm_num)).induction_on
-    u (isClosed_le (continuous_const.mul
-      (((W1p.valueL (mu := volume) (Omega := ⊤) (p := 2)).continuous.congr
-        W1p.valueL_apply).norm.pow 2))
-      ((schrodingerForm hP).continuous.clm_apply continuous_id)) fun φ ↦ ?_
-  have hv := W1p.value_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ
-  rw [schrodingerForm_self, W1p.norm_value_ofTestFunctionₗ_top_sq,
-    W1p.norm_gradient_ofTestFunctionₗ_top_sq]
-  have h := hgap φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-  simp only [Real.norm_eq_abs, sq_abs] at h
-  convert h using 2
-  exact integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
-
-/-- **The Poincaré inequality for a Schrödinger form on `H¹(E)`.** Let `P` be essentially
-bounded, almost everywhere nonnegative, and almost everywhere at least `a > 0` outside the closed
-ball of radius `R`. Then there is `c > 0` with `c ‖u‖²_{H¹} ≤ ‖∇u‖₂² + ∫ P u²` for every
-`u ∈ H¹(E)`. -/
-theorem exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq [Nontrivial E]
-    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
-    ∃ c > 0, ∀ u : W1p (volume : Measure E) ⊤ 2,
-      c * ‖u‖ ^ 2 ≤ ‖W1p.gradient u‖ ^ 2 + ∫ z, P z * W1p.value u z ^ 2 := by
-  obtain ⟨c, hc, hgap⟩ := mul_norm_value_sq_le_schrodingerForm hP hP₀ ha hPa
-  refine ⟨min 1 c / 2, by positivity, fun u ↦ ?_⟩
-  have hgap := hgap u
-  rw [schrodingerForm_self] at hgap
-  have hpot : 0 ≤ ∫ z, P z * W1p.value u z ^ 2 :=
-    integral_nonneg_of_ae (hP₀.mono fun z hz ↦ by positivity)
-  have h1 : min 1 c ≤ 1 := min_le_left _ _
-  have h2 : min 1 c ≤ c := min_le_right _ _
-  have _ : 0 ≤ min 1 c := le_min zero_le_one hc.le
-  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  nlinarith [sq_nonneg ‖W1p.value u‖, sq_nonneg ‖W1p.gradient u‖,
-    mul_le_mul_of_nonneg_right h2 (sq_nonneg ‖W1p.value u‖),
-    mul_le_mul_of_nonneg_right h1 (sq_nonneg ‖W1p.gradient u‖)]
-
-/-- **Coercivity of the Schrödinger form.** Under the hypotheses of
-`TauCeti.exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq`, the Schrödinger
-form is coercive on `H¹(E)`. -/
-theorem isCoercive_schrodingerForm [Nontrivial E] (hP : MemLp P ⊤ (volume : Measure E))
-    (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
-    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z) :
-    IsCoercive (schrodingerForm hP) := by
-  obtain ⟨c, hc, h⟩ :=
-    exists_pos_mul_norm_sq_le_norm_gradient_sq_add_integral_mul_value_sq hP hP₀ ha hPa
-  exact ⟨c, hc, fun u ↦ by rw [schrodingerForm_self, mul_assoc, ← sq]; exact h u⟩
-
-end W1p
 
 end TauCeti

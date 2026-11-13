@@ -206,7 +206,7 @@ lemma mem_posRoots_or_mem_negRoots (i : ι) : i ∈ posRoots P b ∨ i ∈ negRo
   exact em _
 
 /-- A root is negative exactly when it is not positive. -/
-lemma not_mem_posRoots_iff_mem_negRoots (i : ι) :
+lemma notMem_posRoots_iff_mem_negRoots (i : ι) :
     i ∉ posRoots P b ↔ i ∈ negRoots P b := by
   rfl
 

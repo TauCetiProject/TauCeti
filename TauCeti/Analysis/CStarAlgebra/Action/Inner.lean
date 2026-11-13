@@ -85,7 +85,7 @@ theorem entireExtension_cstarAction_mul_I (h : selfAdjoint A) (a : A) (t : ℝ) 
 theorem isEntireAnalytic_cstarAction (h : selfAdjoint A) (a : A) :
     (cstarAction h).IsEntireAnalytic a := by
   rw [isEntireAnalytic_iff, entireExtension_cstarAction]
-  exact fun t => by simp
+  exact ⟨differentiable_exp_smul_mul_mul_exp_neg_smul _ a, fun t => by simp⟩
 
 /-- The orbit `t ↦ exp (ith) a exp (-ith)` of the inner dynamics has derivative `i [h, a]` at
 time `0`. -/

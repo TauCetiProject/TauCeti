@@ -159,7 +159,7 @@ theorem exists_geckWeylRootIndex_eq (k : Fin t.numRoots) :
   obtain ⟨j, hj, w, hw⟩ := exists_mem_support_weylGroupToPerm_eq (t.simplyConnectedBase ht) k
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   refine ⟨l, (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨j, hj⟩, ?_⟩
-  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase, Equiv.apply_symm_apply]
+  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase_apply, Equiv.apply_symm_apply]
   exact hw
 
 /-- The map sending a Weyl word and a node to their root index is surjective. -/

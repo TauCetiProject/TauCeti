@@ -40,8 +40,6 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
   (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
   `G`-group is a `G`-group.
-* `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
-  separated by its coefficients `G` over `G`, the image of `G` is closed under roots.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
   coefficient-preserving homomorphisms to `H` intersect trivially.
 
@@ -208,16 +206,6 @@ theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
     (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
-
-/-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
-of `G` in `K` contains every element of `K` having a nonzero power in it. -/
-theorem mem_range_of_pow_mem_range [HasUniqueRoots K] {ιK : G →* K}
-    (h : IsSeparatedBy ιK (.id G)) {k : K} {n : ℕ} (hn : n ≠ 0) (hk : k ^ n ∈ ιK.range) :
-    k ∈ ιK.range := by
-  -- An element outside the image is nontrivial, so some `G`-homomorphism `K → G` exists.
-  by_contra hk'
-  obtain ⟨φ, -⟩ := h k fun h1 => hk' (h1 ▸ one_mem _)
-  exact hk' (φ.mem_range_of_pow_mem_range hn hk)
 
 end IsSeparatedBy
 

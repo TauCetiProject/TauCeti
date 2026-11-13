@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 import TauCeti.Analysis.Contour.Crossing.Finiteness
-public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+public import TauCeti.Analysis.Contour.Winding.Number.Circle
 public import TauCeti.Analysis.Contour.Winding.Number.Concat
 public import TauCeti.Analysis.Contour.Winding.Number.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Basic

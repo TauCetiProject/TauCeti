@@ -33,8 +33,6 @@ holds on the component.
   component.
 * `RootPairing.isIrreducible_componentPairing`: the component pairing is irreducible when
   `2 ≠ 0` in the field.
-* `RootPairing.componentProj_reflection_of_eq`: the projection onto the component space of `C`
-  carries the reflections at roots of `C` to the reflections of the component pairing.
 
 ## References
 
@@ -122,15 +120,6 @@ theorem coe_componentPairing_reflectionPerm (i j : C.supp) :
 theorem coe_componentPairing_reflection_apply (i : C.supp) (x : P.componentSpace C) :
     ((P.componentPairing C).reflection i x : M) = P.reflection i x :=
   (rfl)
-
-variable {P C} in
-/-- The component projection carries the reflection at a root of `C` to the reflection of the
-component pairing. -/
-theorem componentProj_reflection_of_eq {i : ι} (h : P.componentOf i = C) (x : M) :
-    P.componentProj C (P.reflection i x) =
-      (P.componentPairing C).reflection ⟨i, h⟩ (P.componentProj C x) := by
-  ext
-  rw [coe_componentProj_reflection, coe_componentPairing_reflection_apply]
 
 /-- The non-orthogonality graph of the component pairing is the component itself, as an induced
 subgraph of the ambient non-orthogonality graph. -/

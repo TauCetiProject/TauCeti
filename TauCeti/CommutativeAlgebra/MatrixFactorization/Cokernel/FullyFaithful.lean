@@ -79,9 +79,9 @@ variable {S : Type u} [CommRing S] {w : S}
 
 /-! ### Fullness -/
 
-/-- For a non-zero-divisor `w`, every map between the cokernels of the reductions of two matrix
-factorizations is induced by a morphism of matrix factorizations. -/
-theorem exists_cokernelFunctor_map_baseChangeFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
+/-- Every map between the cokernels of the reductions of two matrix factorizations is induced by
+a morphism of matrix factorizations. -/
+private theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
     {X Y : MatrixFactorization S w}
     (φ : cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X) ⟶
       cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)) :
@@ -132,7 +132,7 @@ theorem quotientGorensteinProjectiveCokernel_full (hw : w ∈ nonZeroDivisors S)
       (IsGorensteinProjective (S ⧸ Ideal.span {w})).ι).Full := by
     rw [quotientGorensteinProjectiveCokernel_comp_ι]
     refine ⟨fun {X Y} φ ↦ ?_⟩
-    obtain ⟨g, hg⟩ := exists_cokernelFunctor_map_baseChangeFunctor_map_eq hw
+    obtain ⟨g, hg⟩ := exists_cokernelFunctor_map_eq hw
       ((forget₂ (FGModuleCat.{u} (S ⧸ Ideal.span {w})) (ModuleCat.{u} _)).preimage φ)
     exact ⟨g, by rw [Functor.comp_map, Functor.comp_map, hg, Functor.map_preimage]⟩
   exact Functor.Full.of_comp_faithful _ (IsGorensteinProjective (S ⧸ Ideal.span {w})).ι
@@ -192,10 +192,9 @@ private theorem exists_sub_mem_range_d₀_and_comp_d₀_mem_range_smul
     exact ⟨y', hy'⟩
   exact ⟨h, ha, hb⟩
 
-/-- For a non-zero-divisor `w`, if the cokernel of the reduction of `g` factors through a
-projective `S/(w)`-module, then `g` is null-homotopic. -/
-theorem mem_nullHomotopic_of_cokernelFunctor_map_baseChangeFunctor_map_eq_comp
-    (hw : w ∈ nonZeroDivisors S)
+/-- If the cokernel of the reduction of `g` factors through a projective `S/(w)`-module, then `g`
+is null-homotopic. -/
+private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ nonZeroDivisors S)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) {Q : ModuleCat.{u} (S ⧸ Ideal.span {w})}
     [Projective Q]
     (i : (cokernelFunctor.obj
@@ -257,7 +256,7 @@ theorem quotientGorensteinProjectiveCokernel_map_mem_projectiveStableIdeal_iff
     rw [Functor.comp_map, hip, ObjectProperty.ι_map, ObjectProperty.FullSubcategory.comp_hom]
   have e := Functor.congr_hom (quotientGorensteinProjectiveCokernel_comp_ι hw).symm g
   rw [hip', Category.assoc, ← Category.assoc] at e
-  exact mem_nullHomotopic_of_cokernelFunctor_map_baseChangeFunctor_map_eq_comp hw g _ _ e
+  exact mem_nullHomotopic_of_cokernelFunctor_map_eq_comp hw g _ _ e
 
 namespace HomotopyCategory
 

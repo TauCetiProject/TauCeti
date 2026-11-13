@@ -37,9 +37,6 @@ maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and hence everywhere.
   the cubical Hurewicz map, transported to simplicial singular homology, for a universal sign `ε`.
 * `HomotopyGroup.bijective_hurewicz` and `HomotopyGroup.hurewiczAddEquiv`: **the Hurewicz
   theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space.
-* `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`: in that range, the Hurewicz class of
-  a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class generates
-  `πₙ₊₂(X, x)` freely.
 
 ## References
 
@@ -169,28 +166,5 @@ theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup 
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
   (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
-
-/-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
-`GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
-theorem hurewiczAddEquiv_ofMul_mk (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
-    (p : Ω^ (Fin (n + 2)) X x) :
-    hurewiczAddEquiv hX (Additive.ofMul ⟦p⟧) = (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
-  rw [hurewiczAddEquiv_apply, hurewiczHom_apply]
-  exact congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) p)
-
-/-- **The Hurewicz class of a generalized loop generates exactly when its homotopy class does.**
-For an `(n + 1)`-connected space, the Hurewicz class of `p` is an isomorphism `ℤ ≅ Hₙ₊₂(X; ℤ)`
-exactly when the class of `p` generates `πₙ₊₂(X, x)` freely: `k ↦ [p]ᵏ` is bijective. -/
-theorem isIso_hurewicz_iff_bijective_zmultiplesHom
-    (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) (p : Ω^ (Fin (n + 2)) X x) :
-    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p) ↔
-      Function.Bijective
-        (zmultiplesHom (Additive (HomotopyGroup (Fin (n + 2)) X x)) (Additive.ofMul ⟦p⟧)) := by
-  have h : ⇑(GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom =
-      zmultiplesHom _ ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) := by
-    funext t
-    rw [zmultiplesHom_apply, ← map_zsmul, smul_eq_mul, mul_one]
-  rw [ConcreteCategory.isIso_iff_bijective, h,
-    ← (hurewiczAddEquiv hX).bijective_zmultiplesHom_apply_iff, hurewiczAddEquiv_ofMul_mk]
 
 end HomotopyGroup

@@ -291,7 +291,9 @@ relative cubical homology. -/
 theorem isIso_homologyMap_cubicalChainComplexMap_of_isIso {P P' : TopPair.{u}} (f : P ⟶ P')
     (n : ℕ) [IsIso (P.singularHomologyMap f (ModuleCat.of k k) n)] :
     IsIso (HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n) := by
-  rw [homologyMap_cubicalChainComplexMap_eq]
+  have := singularCubicalHomologyIso_hom_naturality k f n
+  rw [← Iso.eq_inv_comp] at this
+  rw [this]
   infer_instance
 
 /-- **Excision for cubical homology.** If the interiors of `A` and `B` cover `X`, the inclusion of

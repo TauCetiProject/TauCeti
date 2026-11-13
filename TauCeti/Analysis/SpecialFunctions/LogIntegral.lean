@@ -31,7 +31,6 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 ## Main declarations
 
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
-* `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
@@ -147,19 +146,6 @@ theorem logIntegral_def (x : ℝ) : logIntegral x = ∫ t in (2 : ℝ)..x, (Real
 @[simp]
 theorem logIntegral_two : logIntegral 2 = 0 := by
   rw [logIntegral_def, intervalIntegral.integral_same]
-
-/-- The offset logarithmic integral has derivative `(log x)⁻¹` to the right of `1`. -/
-theorem hasDerivAt_logIntegral {x : ℝ} (hx : 1 < x) :
-    HasDerivAt logIntegral (Real.log x)⁻¹ x := by
-  have hint : IntervalIntegrable (fun t : ℝ ↦ (Real.log t)⁻¹) volume 2 x := by
-    simpa only [pow_one] using intervalIntegrable_inv_log_pow 1 one_lt_two hx
-  simpa only [logIntegral] using! intervalIntegral.integral_hasDerivAt_right hint
-    Real.measurable_log.inv.stronglyMeasurable.stronglyMeasurableAtFilter
-    ((Real.continuousAt_log (zero_lt_one.trans hx).ne').inv₀ (Real.log_pos hx).ne')
-
-/-- The offset logarithmic integral is differentiable on `(1, ∞)`. -/
-theorem differentiableOn_logIntegral : DifferentiableOn ℝ logIntegral (Ioi 1) :=
-  fun _ hx ↦ (hasDerivAt_logIntegral hx).differentiableAt.differentiableWithinAt
 
 /-- The logarithmic integral is nonnegative from its base point on. -/
 theorem logIntegral_nonneg {x : ℝ} (hx : 2 ≤ x) : 0 ≤ logIntegral x := by

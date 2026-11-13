@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Analysis.Normed.Group.Prod
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 

@@ -26,9 +26,7 @@ nonzero coefficients to nonzero coefficients. Mathlib records only the inequalit
 Power series constructed degree by degree are limits of approximations whose consecutive terms
 agree in more and more low degrees; `PowerSeries.exists_forall_le_order_sub` supplies the limit.
 
-A series `X ^ k * f` with `constantCoeff f ≠ 0` has order exactly `k`, over any semiring. If `f`
-has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th power of that
-of `X ^ n` in `f`.
+A series `X ^ k * f` with `constantCoeff f ≠ 0` has order exactly `k`, over any semiring.
 
 ## Main results
 
@@ -40,8 +38,6 @@ of `X ^ n` in `f`.
 
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
-* `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
-  `(coeff n f) ^ k` when `f` has order at least `n`.
 
 ## Provenance
 
@@ -126,15 +122,6 @@ theorem exists_forall_le_order_sub {f : ℕ → R⟦X⟧}
   rw [map_sub, coeff_mk, show i + k + 1 = i + 1 + k by omega, h, sub_self]
 
 end Ring
-
-/-- If `f` has order at least `n`, the coefficient of `X ^ (n * k)` in `f ^ k` is the `k`-th
-power of the coefficient of `X ^ n` in `f`. -/
-theorem coeff_pow_mul_of_le_order {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) (k : ℕ) :
-    coeff (n * k) (f ^ k) = coeff n f ^ k := by
-  obtain ⟨u, rfl⟩ := X_pow_dvd_iff.mpr fun m hm ↦
-    coeff_of_lt_order m ((Nat.cast_lt.mpr hm).trans_le hn)
-  rw [(commute_X_pow u n).symm.mul_pow k, ← pow_mul]
-  simp [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply]
 
 /-- Multiplying a power series with nonzero constant coefficient by `X ^ k` gives a series of
 order exactly `k`. -/

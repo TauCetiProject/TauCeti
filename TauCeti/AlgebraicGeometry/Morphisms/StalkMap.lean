@@ -44,10 +44,6 @@ presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is é
 (`AlgebraicGeometry.Etale.of_comp_surjective`). For an étale surjective `g` this is the statement
 of Stacks, Lemma 35.31.1 (036W), that étaleness is étale local on the source, for `f` locally of
 finite presentation.
-Similarly, if `g` is flat and surjective, `f` and `g ≫ f` are locally of finite type and `g ≫ f`
-is formally unramified, then `f` is formally unramified
-(`AlgebraicGeometry.FormallyUnramified.of_comp_surjective`). No quasi-compactness assumption on
-`g` is needed for either descent statement.
 
 In a commutative square with étale vertical maps, the horizontal maps are étale at
 corresponding points simultaneously, provided the bottom map is locally of finite presentation
@@ -559,16 +555,5 @@ theorem Etale.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) 
   have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
   exact IsZariskiLocalAtSource.of_iSup_eq_top U
     (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
-
-/-- Formal unramifiedness of a morphism locally of finite type descends along a flat
-surjection of its source. The composite is also assumed locally of finite type. -/
-theorem FormallyUnramified.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
-    [Flat g] [Surjective g] [LocallyOfFiniteType f] [LocallyOfFiniteType (g ≫ f)]
-    [FormallyUnramified (g ≫ f)] : FormallyUnramified f := by
-  apply HasRingHomProperty.of_stalkMap RingHom.FormallyUnramified.ofLocalizationPrime
-  intro x
-  obtain ⟨x', rfl⟩ := g.surjective x
-  exact g.formallyUnramified_stalkMap_of_comp f x' (Flat.stalkMap g x')
-    (FormallyUnramified.stalkMap (g ≫ f) x')
 
 end AlgebraicGeometry

@@ -82,8 +82,6 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   type with exponent the multiplicity**, `isotypicComponent A M S ≃ₗ[A] Fin m → S` for
   `m = finrank k (S →ₗ[A] M)`, and
   `TauCeti.finrank_isotypicComponent`: consequently `dim (isotypicComponent A M S) = m · dim S`.
-* `TauCeti.finrank_isotypicComponent_mul_finrank_end`: over an arbitrary field,
-  `dim (isotypicComponent A M S) · dim End_A(S) = m · dim S`.
 * `TauCeti.finrank_linearMap_pos_of_ne_bot`: for a finite-dimensional `M`, the hom space out of
   any nonzero submodule is positive-dimensional.  This asks for neither simplicity nor an
   algebraically closed field, so it lives apart from the results above.
@@ -701,33 +699,15 @@ theorem nonempty_linearEquiv_isotypicComponent :
   rw [hn]
   exact ⟨e⟩
 
-omit [IsAlgClosed k] in
-/-- **The dimension of an isotypic component over an arbitrary field.**  The `S`-isotypic component
-of `M` is a power `S^{⊕ n}`, while each copy of `S` contributes the dimension of the division
-algebra `End_A(S)` to the multiplicity `finrank k (S →ₗ[A] M)`; so the dimension of the component
-times `dim End_A(S)` is the multiplicity times `dim S`. -/
-theorem finrank_isotypicComponent_mul_finrank_end :
-    Module.finrank k ↥(isotypicComponent A M S) * Module.finrank k (Module.End A S)
-      = Module.finrank k (S →ₗ[A] M) * Module.finrank k S := by
-  have : Module.Finite k ↥(isotypicComponent A M S) :=
-    .of_injective ((isotypicComponent A M S).subtype.restrictScalars k) Subtype.val_injective
-  have : Module.Finite A ↥(isotypicComponent A M S) :=
-    Module.Finite.of_restrictScalars_finite k A _
-  obtain ⟨n, ⟨e⟩⟩ := (IsIsotypicOfType.isotypicComponent A M S).linearEquiv_fun
-  rw [(e.restrictScalars k).finrank_eq, ← finrank_linearMap_isotypicComponent (k := k) (M := M),
-    e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (N := fun _ : Fin n ↦ S),
-    Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ ⟨LinearEquiv.refl A S⟩)]
-  simp [Module.finrank_pi_fintype]
-  ring
-
 /-- **The dimension of an isotypic component is the multiplicity times the dimension of its
 type.**  This is the counted form of the isotypic decomposition: the `S`-isotypic component of `M`
 is `S^{⊕ m}` with `m` the multiplicity `finrank k (S →ₗ[A] M)`. -/
 theorem finrank_isotypicComponent :
     Module.finrank k ↥(isotypicComponent A M S)
       = Module.finrank k (S →ₗ[A] M) * Module.finrank k S := by
-  simpa [LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S)] using
-    finrank_isotypicComponent_mul_finrank_end (k := k) (A := A) (M := M) (S := S)
+  obtain ⟨e⟩ := nonempty_linearEquiv_isotypicComponent (k := k) (A := A) (M := M) (S := S)
+  rw [(e.restrictScalars k).finrank_eq]
+  simp [Module.finrank_pi_fintype]
 
 end IsotypicComponent
 

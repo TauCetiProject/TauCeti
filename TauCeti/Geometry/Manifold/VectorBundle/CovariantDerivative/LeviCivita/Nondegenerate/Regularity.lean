@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Family
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Musical
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Existence
 
 /-!
 # Regularity of Levi-Civita connections of nondegenerate metrics
@@ -51,8 +50,6 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 * `contMDiffOn_covariantDerivative_of_isLeviCivitaConnection` and
   `contMDiff_covariantDerivative_of_isLeviCivitaConnection`: joint regularity of the Levi-Civita
   connections of a smooth nondegenerate metric family.
-* `contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection`: joint regularity of
-  `(s, y) ↦ ∇ˢ_X Z (y)` along a parameter curve.
 
 ## References
 
@@ -288,41 +285,6 @@ theorem contMDiff_covariantDerivative_of_isLeviCivitaConnection
   rw [← contMDiffOn_univ, ← univ_prod_univ]
   exact contMDiffOn_covariantDerivative_of_isLeviCivitaConnection hcov hn isOpen_univ
     hY.contMDiffOn
-
-/-- **Joint regularity of Levi-Civita connections along a parameter curve.** Let `c` be a parameter
-curve which is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of the metric at `c s` for
-every `s`. For `X` which is `C²` and `Z` which is `C³` at `x`, the vector fields `∇ˢ_X Z` are
-jointly `C²` in `(s, y)` at `(t, x)`, as a map into the tangent bundle. -/
-theorem contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection
-    (g : ContMDiffNondegenerateMetricFamily I M IP P) {c : ℝ → P}
-    {cov : ℝ → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)} {t : ℝ} {x : M}
-    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
-    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
-    {X Z : Π y : M, TangentSpace I y} (hX : CMDiffAt 2 (T% X) x) (hZ : CMDiffAt 3 (T% Z) x) :
-    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' E q.2 (cov q.1 Z q.2 (X q.2))) (t, x) := by
-  -- `Z` is `C³` on an open neighbourhood `u` of `x`.
-  obtain ⟨u', hu', hZu'⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hZ
-  obtain ⟨u, huu', hu, hxu⟩ := mem_nhds_iff.mp hu'
-  have hZu := hZu'.mono huu'
-  -- The canonical Levi-Civita connections are jointly `C²` along `Z` over `P × u`.
-  have hCov := g.contMDiffOn_covariantDerivative_of_isLeviCivitaConnection
-    (cov := fun p ↦ (g.metric p).leviCivitaConnection) (n := 2)
-    (fun p ↦ (g.metric p).isLeviCivitaConnection_leviCivitaConnection) (by simp) hu hZu
-  have hX' : ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E)) 2
-      (fun r : P × M ↦ TotalSpace.mk' E r.2 (X r.2)) (c t, x) :=
-    hX.comp (c t, x) contMDiffAt_snd
-  have hApply := ((hCov (c t, x) ⟨mem_univ _, hxu⟩).clm_bundle_apply hX'.contMDiffWithinAt)
-    |>.contMDiffAt ((isOpen_univ.prod hu).mem_nhds ⟨mem_univ _, hxu⟩)
-  have hcurve : ContMDiffAt (𝓘(ℝ).prod I) (IP.prod I) 2 (fun q : ℝ × M ↦ (c q.1, q.2)) (t, x) :=
-    (hc.comp (t, x) contMDiffAt_fst).prodMk contMDiffAt_snd
-  refine (hApply.comp (t, x) hcurve).congr_of_eventuallyEq ?_
-  -- Near `x`, `Z` is differentiable, so `∇ˢ_X Z` agrees with the canonical connection there.
-  filter_upwards [continuousAt_snd.preimage_mem_nhds (hu.mem_nhds hxu)] with q hq
-  have hZq : MDiffAt (T% Z) q.2 :=
-    ((hZu q.2 hq).contMDiffAt (hu.mem_nhds hq)).mdifferentiableAt (by simp)
-  simp only [Function.comp_apply]
-  rw [(hcov q.1).uniqueness (g.metric (c q.1)).isLeviCivitaConnection_leviCivitaConnection hZq]
 
 end ContMDiffNondegenerateMetricFamily
 

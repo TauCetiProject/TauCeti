@@ -31,9 +31,6 @@ essentially surjective, hence an equivalence of categories:
 * `TauCeti.IsIwanagaGorenstein.essSurj_toSingularityCategory`: **Buchweitz's theorem**, density:
   Chen's functor is essentially surjective, and hence an equivalence of categories
   (`TauCeti.IsIwanagaGorenstein.isEquivalence_toSingularityCategory`).
-  Chen's functor is a triangle functor for any abelian category
-  (`CategoryTheory.GorensteinProjective.toSingularityCategory_isTriangulated`), so this is an
-  equivalence of triangulated categories.
 
 ## References
 

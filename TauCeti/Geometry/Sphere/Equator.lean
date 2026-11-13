@@ -23,8 +23,6 @@ continuously onto this equator.
 * `LinearIsometryEquiv.sphereToEquator e`: the unit sphere carried onto the equator through a
   linear isometry `e` onto `(ℝ ∙ u)ᗮ`, with `LinearIsometryEquiv.injective_sphereToEquator` and
   `LinearIsometryEquiv.surjective_sphereToEquator`.
-* `TauCeti.orthogonalSphereToEquator u`: its case `e = id`, the unit sphere of `u⊥` as the
-  equator.
 -/
 
 public section
@@ -87,27 +85,3 @@ theorem surjective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
     Subtype.ext (Subtype.ext (by simp))⟩
 
 end LinearIsometryEquiv
-
-namespace TauCeti
-
-variable (u : V) in
-/-- The unit sphere of the orthogonal complement `u⊥` is the equator of the unit sphere orthogonal
-to `u`: the map `LinearIsometryEquiv.sphereToEquator` of the identity of `u⊥`, sending a unit
-vector of `u⊥` to itself. -/
-def orthogonalSphereToEquator : C(sphere (0 : (ℝ ∙ u)ᗮ) 1, sphereEquator u) :=
-  (LinearIsometryEquiv.refl ℝ _).sphereToEquator
-
-@[simp]
-theorem coe_orthogonalSphereToEquator (u : V) (s : sphere (0 : (ℝ ∙ u)ᗮ) 1) :
-    ((orthogonalSphereToEquator u s : sphere (0 : V) 1) : V) = ((s : (ℝ ∙ u)ᗮ) : V) :=
-  (rfl)
-
-theorem injective_orthogonalSphereToEquator (u : V) :
-    Function.Injective (orthogonalSphereToEquator u) :=
-  (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).injective_sphereToEquator
-
-theorem surjective_orthogonalSphereToEquator (u : V) :
-    Function.Surjective (orthogonalSphereToEquator u) :=
-  (LinearIsometryEquiv.refl ℝ (ℝ ∙ u)ᗮ).surjective_sphereToEquator
-
-end TauCeti

@@ -17,11 +17,9 @@ import TauCeti.Analysis.ODE.Wronskian
 `TauCeti.curvatureSine κ` and `TauCeti.curvatureCosine κ` are the fundamental solutions of
 `y'' + κ y = 0`, with initial data `(0, 1)` and `(1, 0)`, respectively. They give the radial
 Jacobi coefficients in the constant-curvature models, including the flat model. The sine is
-positive at positive times before the first spherical zero `π / √κ`, and at every positive time
-in nonpositive curvature, where it vanishes only at the origin; the cosine is positive before the
-spherical half-radius. Near the origin the sine has unit first-order scale,
-`curvatureSine κ t / t → 1`. Rescaling time by `c` rescales the curvature parameter by `c⁻²`:
-`curvatureSine (κ / c ^ 2) (c * t) = c * curvatureSine κ t`.
+positive at positive times before the first spherical zero, and at every positive time in
+nonpositive curvature; the cosine is positive before the spherical half-radius. Near the origin
+the sine has unit first-order scale, `curvatureSine κ t / t → 1`.
 
 The parameter is the coefficient in the scalar ODE; for a geodesic of speed `c` in curvature
 `κ`, use the parameter `κ * c ^ 2`.
@@ -184,83 +182,6 @@ theorem curvatureSine_pos {κ t : ℝ} (ht : 0 < t)
   · rw [curvatureSine_of_neg hκ]
     exact div_pos (sinh_pos_iff.2 (mul_pos (sqrt_pos.2 (neg_pos.2 hκ)) ht))
       (sqrt_pos.2 (neg_pos.2 hκ))
-
-/-- The model sine is nonnegative up to and including the first positive spherical zero. -/
-theorem curvatureSine_nonneg {κ t : ℝ} (ht : 0 ≤ t)
-    (hbound : 0 < κ → t ≤ π / √κ) : 0 ≤ curvatureSine κ t := by
-  rcases lt_trichotomy 0 κ with hκ | rfl | hκ
-  · rw [curvatureSine_of_pos hκ]
-    exact div_nonneg (sin_nonneg_of_nonneg_of_le_pi (mul_nonneg (sqrt_nonneg κ) ht)
-      ((le_div_iff₀' (sqrt_pos.2 hκ)).1 (hbound hκ))) (sqrt_nonneg κ)
-  · simpa using ht
-  · rw [curvatureSine_of_neg hκ]
-    exact div_nonneg (sinh_nonneg_iff.2 (mul_nonneg (sqrt_nonneg _) ht)) (sqrt_nonneg _)
-
-/-- In nonpositive curvature the model sine vanishes only at the origin. -/
-@[simp]
-theorem curvatureSine_eq_zero_iff_of_nonpos {κ t : ℝ} (hκ : κ ≤ 0) :
-    curvatureSine κ t = 0 ↔ t = 0 := by
-  rcases hκ.lt_or_eq with hκ | rfl
-  · have hs := (sqrt_pos.2 (neg_pos.2 hκ)).ne'
-    rw [curvatureSine_of_neg hκ, div_eq_zero_iff, or_iff_left hs, sinh_eq_zero, mul_eq_zero,
-      or_iff_right hs]
-  · simp
-
-/-- The zeros of the model sine are the integer multiples of `π / √κ`. In nonpositive curvature
-`√κ = 0`, so these all collapse to the origin. -/
-theorem curvatureSine_eq_zero_iff {κ t : ℝ} :
-    curvatureSine κ t = 0 ↔ ∃ n : ℤ, n * π / √κ = t := by
-  rcases lt_or_ge 0 κ with hκ | hκ
-  · have hs := (sqrt_pos.2 hκ).ne'
-    rw [curvatureSine_of_pos hκ, div_eq_zero_iff, or_iff_left hs, sin_eq_zero_iff]
-    exact exists_congr fun n ↦ by rw [div_eq_iff hs, mul_comm t]
-  · simp [curvatureSine_eq_zero_iff_of_nonpos hκ, sqrt_eq_zero_of_nonpos hκ, eq_comm]
-
-/-- The model sine vanishes at `π / √κ`, its first positive zero in positive curvature and the
-origin otherwise. -/
-@[simp]
-theorem curvatureSine_pi_div_sqrt (κ : ℝ) : curvatureSine κ (π / √κ) = 0 :=
-  curvatureSine_eq_zero_iff.2 ⟨1, by simp⟩
-
-private theorem curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos {κ c : ℝ}
-    (hc : 0 < c) (t : ℝ) :
-    curvatureSine (κ / c ^ 2) (c * t) = c * curvatureSine κ t ∧
-      curvatureCosine (κ / c ^ 2) (c * t) = curvatureCosine κ t := by
-  have hc2 : 0 < c ^ 2 := by positivity
-  have h₃ (x : ℝ) : x / c * (c * t) = x * t := by field_simp
-  rcases lt_trichotomy 0 κ with hκ | rfl | hκ
-  · have hs := (sqrt_pos.2 hκ).ne'
-    have h₁ : √(κ / c ^ 2) = √κ / c := by rw [sqrt_div' κ hc2.le, sqrt_sq hc.le]
-    rw [curvatureSine_of_pos (div_pos hκ hc2), curvatureCosine_of_pos (div_pos hκ hc2),
-      curvatureSine_of_pos hκ, curvatureCosine_of_pos hκ, h₁, h₃]
-    exact ⟨by field_simp, rfl⟩
-  · simp
-  · have hs := (sqrt_pos.2 (neg_pos.2 hκ)).ne'
-    have h₂ : √(-(κ / c ^ 2)) = √(-κ) / c := by rw [← neg_div, sqrt_div' _ hc2.le, sqrt_sq hc.le]
-    rw [curvatureSine_of_neg (div_neg_of_neg_of_pos hκ hc2),
-      curvatureCosine_of_neg (div_neg_of_neg_of_pos hκ hc2), curvatureSine_of_neg hκ,
-      curvatureCosine_of_neg hκ, h₂, h₃]
-    exact ⟨by field_simp, rfl⟩
-
-/-- **Scaling law** of the model sine: `s_(κ/c²)(c t) = c s_κ(t)`. At `c = 0` both sides
-vanish. -/
-theorem curvatureSine_div_sq_mul (κ c t : ℝ) :
-    curvatureSine (κ / c ^ 2) (c * t) = c * curvatureSine κ t := by
-  rcases lt_trichotomy 0 c with hc | rfl | hc
-  · exact (curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos hc t).1
-  · simp
-  · have h := (curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos (κ := κ)
-      (neg_pos.2 hc) (-t)).1
-    rwa [neg_sq, neg_mul_neg, curvatureSine_neg, neg_mul_neg] at h
-
-/-- **Scaling law** of the model cosine: `c_(κ/c²)(c t) = c_κ(t)` for `c ≠ 0`. -/
-theorem curvatureCosine_div_sq_mul (κ : ℝ) {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
-    curvatureCosine (κ / c ^ 2) (c * t) = curvatureCosine κ t := by
-  rcases hc.lt_or_gt with hc | hc
-  · have h := (curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos (κ := κ)
-      (neg_pos.2 hc) (-t)).2
-    rwa [neg_sq, neg_mul_neg, curvatureCosine_neg] at h
-  · exact (curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos hc t).2
 
 /-- The curvature sine has unit first-order scale at its origin. -/
 theorem tendsto_curvatureSine_div_zero (κ : ℝ) :

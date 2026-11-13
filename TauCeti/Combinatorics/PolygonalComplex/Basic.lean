@@ -178,29 +178,6 @@ theorem incoming_mk_of_eq_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : �
   rw [← h]
   exact C.incoming_nextCorner ⟨f, i⟩
 
-/-- The incoming side of the first corner of a face is its last side. -/
-theorem incoming_mk_zero (f : C.Face) :
-    C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩ =
-      C.side f ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩ :=
-  C.incoming_mk_of_eq_zero rfl rfl
-
-/-- The corner preceding the first corner of a face is its last corner. -/
-theorem prevCorner_mk_zero (f : C.Face) :
-    C.prevCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ =
-      ⟨f, ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩⟩ := by
-  rw [prevCorner_def]
-  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
-  have h := Fin.coe_finRotate_eq_ite ((finRotate (C.sides f)).symm ⟨0, C.sides_pos f⟩)
-  rw [Equiv.apply_symm_apply] at h
-  dsimp only at h ⊢
-  split_ifs at h
-  omega
-
-/-- A face with a single side is attached along a loop. -/
-theorem tgt_side_eq_src_side_of_sides_eq_one {f : C.Face} (hf : C.sides f = 1)
-    (i : Fin (C.sides f)) : C.graph.tgt (C.side f i) = C.graph.src (C.side f i) :=
-  C.tgt_side_eq_src_side (by split_ifs <;> omega)
-
 /-- The two germs of a corner, both starting at its vertex: the reverse of its incoming side and
 its outgoing side. -/
 def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=

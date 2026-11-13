@@ -13,7 +13,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: the coordinates of a solution in `(ϖ)` on the normal form at `IV*`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 -- Proof-only: lifting roots of a quadratic with unit discriminant.
-import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 -- Proof-only: divisibility and the derivative of a quadratic.
 import TauCeti.Algebra.QuadraticDiscriminant
 -- Proof-only: index three from a covering by three cosets.
@@ -292,11 +292,9 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
   -- lift the root of the residue quadratic by Hensel's lemma
   obtain ⟨t, ht⟩ := hroot
   obtain ⟨t₀, rfl⟩ := residue_surjective t
-  obtain ⟨Y, hY₀, -, hu⟩ := TauCeti.HenselianRing.exists_quadratic_root_of_isUnit_discrim
-    (I := maximalIdeal v.valuationSubring) (b := A₃) (c := -A₆)
-    (by simpa using (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
-    ((residue_eq_zero_iff _).1 (by simpa [sub_eq_add_neg] using ht))
-  have hY : Y ^ 2 + A₃ * Y - A₆ = 0 := by linear_combination hY₀
+  obtain ⟨Y, hY, -, hu⟩ := TauCeti.HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
+    ((TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).2 hb)
+    ((residue_eq_zero_iff _).1 (by simpa using ht))
   have hY' : ¬ ϖ ∣ 2 * Y + A₃ := (TauCeti.IsLocalRing.isUnit_iff_not_dvd hϖ).1 hu
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular 0 (ϖ ^ 2 * Y) := by
     rw [nonsingular_iff']

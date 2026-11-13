@@ -31,16 +31,12 @@ root system is irreducible exactly when its graph is connected.
 * `RootPairing.Component`: the connected components of this graph.
 * `RootPairing.componentSpace`, `RootPairing.corootComponentSpace`: the spans of the roots and of
   the coroots in a component.
-* `RootPairing.componentProj`: the projection of a root system onto a component space along the
-  others.
 * `RootPairing.Equiv.nonorthogonalGraphIso`: the graph isomorphism induced by an equivalence.
 
 ## Main results
 
 * `RootPairing.isInternal_componentSpace`: a root system is the internal direct sum of its component
   spaces.
-* `RootPairing.sum_componentProj`: every vector is the sum of its component projections, and
-  `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections.
 * `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
   space of its own component.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
@@ -234,84 +230,6 @@ theorem InvariantForm.apply_eq_zero_of_mem_componentSpace [IsDomain R] [NeZero (
     refine (B.apply_root_root_zero_iff i j).mpr (isOrthogonal_of_componentOf_ne ?_).1
     exact ((C.mem_supp_iff i).mp hi).trans_ne (hCD.trans_eq ((D.mem_supp_iff j).mp hj).symm)
   exact (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
-
-/-! ### Projections onto the component spaces -/
-
-section Projection
-
-variable (P) [P.IsRootSystem]
-
-/-- The projection of the weight space of a root system onto the component space of `C`, along the
-other component spaces. -/
-noncomputable def componentProj (C : P.Component) : M →ₗ[R] P.componentSpace C :=
-  haveI := Classical.decEq P.Component
-  DirectSum.component R P.Component (fun D ↦ P.componentSpace D) C ∘ₗ
-    (LinearEquiv.ofBijective (DirectSum.coeLinearMap P.componentSpace)
-      P.isInternal_componentSpace).symm.toLinearMap
-
-variable {P}
-
-/-- The projection onto a component space is the identity on that space. -/
-theorem componentProj_apply_of_mem {C : P.Component} {x : M} (hx : x ∈ P.componentSpace C) :
-    P.componentProj C x = ⟨x, hx⟩ := by
-  classical
-  exact DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem P.isInternal_componentSpace hx
-
-/-- The projection onto a component space kills the other component spaces. -/
-theorem componentProj_apply_of_ne {C D : P.Component} (hCD : D ≠ C) {x : M}
-    (hx : x ∈ P.componentSpace D) : P.componentProj C x = 0 := by
-  classical
-  exact DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem_ne P.isInternal_componentSpace hCD hx
-
-/-- The projection of a root onto its own component space. -/
-@[simp]
-theorem componentProj_root_self (i : ι) :
-    P.componentProj (P.componentOf i) (P.root i) = ⟨P.root i, root_mem_componentSpace i⟩ :=
-  componentProj_apply_of_mem _
-
-/-- The projection of a root onto the component space of another component vanishes. -/
-theorem componentProj_root_of_ne {C : P.Component} {i : ι} (hi : P.componentOf i ≠ C) :
-    P.componentProj C (P.root i) = 0 :=
-  componentProj_apply_of_ne hi (root_mem_componentSpace i)
-
-/-- **Every vector is the sum of its component projections.** -/
-theorem sum_componentProj [Fintype P.Component] (x : M) : ∑ C, (P.componentProj C x : M) = x := by
-  classical
-  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap P.componentSpace)
-    P.isInternal_componentSpace
-  have h := congrArg (DirectSum.coeLinearMap P.componentSpace) (DirectSum.sum_univ_of (e.symm x))
-  simp only [map_sum, DirectSum.coeLinearMap_of] at h
-  exact h.trans (e.apply_symm_apply x)
-
-/-- **The component projections commute with the reflections**, since every reflection preserves
-every component space. -/
-theorem coe_componentProj_reflection (C : P.Component) (i : ι) (x : M) :
-    (P.componentProj C (P.reflection i x) : M) = P.reflection i (P.componentProj C x) := by
-  have hspan := (IsRootSystem.span_root_eq_top (P := P))
-  have key : (P.componentSpace C).subtype ∘ₗ P.componentProj C ∘ₗ (P.reflection i).toLinearMap =
-      (P.reflection i).toLinearMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C := by
-    refine LinearMap.ext_on_range hspan fun j ↦ ?_
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      Submodule.coe_subtype, ← root_reflectionPerm]
-    by_cases hj : P.componentOf j = C
-    · subst hj
-      have hσ := root_mem_componentSpace (P := P) (P.reflectionPerm i j)
-      rw [componentOf_reflectionPerm] at hσ
-      rw [componentProj_apply_of_mem hσ, componentProj_root_self]
-      exact P.root_reflectionPerm i j
-    · rw [componentProj_root_of_ne hj,
-        componentProj_root_of_ne (by rwa [componentOf_reflectionPerm])]
-      simp
-  exact LinearMap.congr_fun key x
-
-/-- The component projection is unchanged by the reflection at a root of another component. -/
-theorem componentProj_reflection_of_ne {C : P.Component} {i : ι} (h : P.componentOf i ≠ C)
-    (x : M) : P.componentProj C (P.reflection i x) = P.componentProj C x := by
-  ext
-  rw [coe_componentProj_reflection, reflection_apply,
-    coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).2, zero_smul, sub_zero]
-
-end Projection
 
 /-! ### Transport along equivalences -/
 

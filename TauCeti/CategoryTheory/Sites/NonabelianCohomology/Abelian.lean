@@ -13,8 +13,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.EpiMono
-public import TauCeti.Algebra.Category.Grp.ForgetCorepresentable
-public import TauCeti.Algebra.Category.Grp.Limits
 public import TauCeti.CategoryTheory.Sites.EpiMono
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Connecting
 public import TauCeti.GroupTheory.FreeAbelianGroup.Degree
@@ -47,8 +45,6 @@ Two consequences follow.
 
 * `CategoryTheory.abelianSheafToGrpSheaf J`: an abelian sheaf as a sheaf of groups, with
   `CategoryTheory.abelianSheafToGrpSheafObjEquiv` identifying its sections.
-* `CategoryTheory.Sheaf.constIntHomMulEquivSections F`: morphisms from the constant integer
-  presheaf to `F` are its global sections.
 * `CategoryTheory.Sheaf.Torsor.exists_hom_smul_eq_of_injective`: the morphism `u : P → I` above.
 * `CategoryTheory.Sheaf.NonabelianH1.subsingleton_of_injective`: torsors under an injective
   abelian sheaf are trivial.
@@ -104,75 +100,6 @@ lemma abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
     ((abelianSheafToGrpSheaf J).map φ).hom.app U (abelianSheafToGrpSheafObjEquiv F U a) =
       abelianSheafToGrpSheafObjEquiv G U (.ofAdd (φ.hom.app U a.toAdd)) :=
   (rfl)
-
-namespace Sheaf
-
-/-- A global section of the sheaf of groups underlying an abelian sheaf `F` is compatible with the
-restriction maps of `F`. -/
-private lemma map_toAdd_symm_sections (F : Sheaf J AddCommGrpCat.{w})
-    (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ}
-    (f : U ⟶ V) :
-    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd =
-      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.1 V)).toAdd := by
-  have h := abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f
-    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U))
-  rw [MulEquiv.apply_symm_apply] at h
-  rw [(s.2 f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
-
-/-- Morphisms from the constant presheaf `ℤ` to an abelian sheaf `F` are the global sections of
-`F`, through the image of `1`. -/
-def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
-    Multiplicative ((Functor.const Cᵒᵖ).obj (AddCommGrpCat.of (ULift ℤ)) ⟶ F.obj) ≃*
-      (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections where
-  toEquiv := Multiplicative.toAdd.trans
-    { toFun ψ := ⟨fun U ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd (ψ.app U ⟨1⟩)), fun f ↦
-        (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f _).trans
-          (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F _ (.ofAdd a))
-            (NatTrans.naturality_apply ψ f _).symm)⟩
-      invFun s :=
-        { app U := (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-            ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd
-          naturality U V f := by
-            refine (AddCommGrpCat.uliftZMultiplesAddEquiv _).injective ?_
-            -- Both sides are evaluated at `1`; the section `s` is compatible with restriction.
-            simp only [Functor.const_obj_map, Functor.const_obj_obj]
-            rw [AddCommGrpCat.uliftZMultiplesAddEquiv_comp,
-              AddCommGrpCat.uliftZMultiplesAddEquiv_comp,
-              AddEquiv.apply_symm_apply, AddCommGrpCat.uliftZMultiplesAddEquiv_id,
-              AddCommGrpCat.uliftZMultiplesAddEquiv_symm_apply_one, map_toAdd_symm_sections] }
-      left_inv ψ := NatTrans.ext (funext fun U ↦
-        (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm_apply_eq.2 (by
-          rw [MulEquiv.symm_apply_apply, toAdd_ofAdd,
-            AddCommGrpCat.uliftZMultiplesAddEquiv_apply_eq]))
-      right_inv s := Subtype.ext (funext fun U ↦
-        (congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv F U (.ofAdd a))
-          ((AddCommGrpCat.uliftZMultiplesAddEquiv _).apply_symm_apply _)).trans (by simp)) }
-  map_mul' ψ φ := Subtype.ext (funext fun U ↦ by
-    simp only [Equiv.toFun_as_coe, Equiv.trans_apply, Equiv.coe_fn_mk, GrpCat.sections_mul_val,
-      toAdd_mul]
-    rw [← map_mul, ← ofAdd_add, NatTrans.app_add, AddCommGrpCat.hom_add_apply])
-
-/-- The section corresponding to a morphism from the constant integer presheaf is its value
-at `1`. -/
-@[simp]
-lemma constIntHomMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
-    (ψ : Multiplicative ((Functor.const Cᵒᵖ).obj (AddCommGrpCat.of (ULift ℤ)) ⟶ F.obj))
-    (U : Cᵒᵖ) :
-    (constIntHomMulEquivSections F ψ).1 U =
-      abelianSheafToGrpSheafObjEquiv F U (.ofAdd (ψ.toAdd.app U ⟨1⟩)) :=
-  (rfl)
-
-/-- The morphism from the constant integer presheaf corresponding to a global section `s` is, over
-each `U`, the morphism from `ℤ` sending `1` to the value of `s` over `U`. -/
-@[simp]
-lemma constIntHomMulEquivSections_symm_apply_app (F : Sheaf J AddCommGrpCat.{w})
-    (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) :
-    ((constIntHomMulEquivSections F).symm s).toAdd.app U =
-      (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd :=
-  (rfl)
-
-end Sheaf
 
 namespace Sheaf.Torsor
 

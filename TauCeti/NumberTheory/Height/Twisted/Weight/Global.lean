@@ -64,22 +64,6 @@ theorem weight_eq_sum_of_support_subset (L : Ω → ι → Module.Dual K V)
   rw [weight_def]
   exact finsum_eq_sum_of_support_subset _ ((support_localWeight_subset L c U).trans hc)
 
-/-- Finitely supported form weights give only finitely many global subspace weights. -/
-theorem finite_range_weight (L : Ω → ι → Module.Dual K V) {c : Ω → ι → ℝ}
-    (hc : HasFiniteSupport c) : (range (weight L c)).Finite := by
-  classical
-  have hfinite (s : Finset Ω) :
-      (range fun U : Submodule K V ↦ ∑ v ∈ s, localWeight (L v) (c v) U).Finite := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | @insert v s hv ih =>
-      simp only [Finset.sum_insert hv]
-      exact ((finite_range_localWeight (L v) (c v)).image2 (· + ·) ih).subset
-        (by rintro _ ⟨U, rfl⟩; exact ⟨_, ⟨U, rfl⟩, _, ⟨U, rfl⟩, rfl⟩)
-  have heq := funext fun U ↦ weight_eq_sum_of_support_subset L c U hc.coe_toFinset.ge
-  rw [heq]
-  exact hfinite hc.toFinset
-
 /-- Zero form weights give zero global weight. -/
 @[simp]
 theorem weight_zero (L : Ω → ι → Module.Dual K V) (U : Submodule K V) :

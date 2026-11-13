@@ -44,9 +44,8 @@ the support of `M` imposes no condition.
   `IsRegularRing.satisfiesSerreS`).
 * `Module.satisfiesSerreS_self_iff`: a ring satisfies `(S_n)` as a module over itself exactly when
   `depth R_p ≥ min (n, dim R_p)` for every prime `p`.
-* `Ring.SatisfiesSerreR.localization`: `(R_n)` passes to every localization, whose local rings
-  are local rings of `R`. Localization of `(S_n)` for modules is proved in
-  `TauCeti.RingTheory.SerreCondition.Localization`.
+* `Module.SatisfiesSerreS.localization_self` and `Ring.SatisfiesSerreR.localization`: for the ring
+  itself, `(S_n)` and `(R_n)` pass to every localization, whose local rings are local rings of `R`.
 * `Module.forall_satisfiesSerreS_iff_forall_isCohenMacaulay`: a finite module satisfies `(S_n)`
   for every `n` if and only if all of its localizations at primes are Cohen–Macaulay; in
   particular a finite Cohen–Macaulay module over a Noetherian local ring satisfies every `(S_n)`
@@ -170,6 +169,22 @@ theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [
   refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
   let e := LocalizedModule.equivLocalization p.primeCompl
   rw [supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim, depth_eq_of_linearEquiv e]
+
+/-- Serre's condition `(S_n)` for a Noetherian ring passes to its localizations: the local rings
+of a localization `S` of `R` are local rings of `R`. -/
+theorem SatisfiesSerreS.localization_self [IsNoetherianRing R] (h : SatisfiesSerreS n R R)
+    (T : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization T S] :
+    SatisfiesSerreS n S S := by
+  have : IsNoetherianRing S := IsLocalization.isNoetherianRing T S ‹_›
+  rw [satisfiesSerreS_self_iff] at h ⊢
+  intro Q _
+  let P := Q.comap (algebraMap R S)
+  have : IsLocalization.AtPrime (Localization.AtPrime Q) P :=
+    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization T _ Q
+  let e : Localization.AtPrime P ≃+* Localization.AtPrime Q :=
+    (IsLocalization.algEquiv P.primeCompl _ _).toRingEquiv
+  rw [← ringKrullDim_eq_of_ringEquiv e, ← e.depth_self_eq]
+  exact h P
 
 end Module
 

@@ -111,7 +111,7 @@ theorem bijective_aeval_of_irrelevant_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ :
   have hpoly : ringKrullDim (MvPolynomial ι k) = Nat.card ι := by simp
   have := FiniteRingKrullDim.of_ringKrullDim_eq_natCast hpoly
   have hsurj := surjective_aeval_of_irrelevant_le 𝒜 h𝒜 hf h
-  exact ⟨((MvPolynomial.aeval f).toRingHom.injective_iff_ringKrullDim_le_of_surjective hsurj).2
+  exact ⟨(MvPolynomial.aeval f).toRingHom.injective_of_surjective_of_ringKrullDim_le hsurj
     (hpoly ▸ hdim), hsurj⟩
 
 variable [Module.Finite k (irrelevant 𝒜).toIdeal.Cotangent]

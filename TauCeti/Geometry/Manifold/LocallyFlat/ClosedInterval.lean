@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 public import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 
@@ -184,7 +183,9 @@ theorem isBicollar_bicollarOfClosedInterval {β : N × Icc (-1 : ℝ) 1 → M}
     (hdim : Module.finrank ℝ E = Module.finrank ℝ F + 1) :
     IsBicollar (fun x ↦ β (x, ⟨0, by norm_num⟩)) (bicollarOfClosedInterval β) := by
   let : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  let := chartedSpaceProd F ℝ N ℝ
+  -- Read the native product atlas through the definitionally equal `ModelProd` type tag.
+  let : ChartedSpace (F × ℝ) (N × ℝ) :=
+    inferInstanceAs (ChartedSpace (ModelProd F ℝ) (N × ℝ))
   exact ⟨(continuous_bicollarOfClosedInterval hβ).isOpenEmbedding_of_injective
     (E := F × ℝ) (F := E) (injective_bicollarOfClosedInterval hinj)
     (by simpa using hdim.symm), bicollarOfClosedInterval_apply_zero β⟩

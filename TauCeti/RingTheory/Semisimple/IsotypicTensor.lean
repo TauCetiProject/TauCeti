@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Semisimple.Multiplicity
 -- Non-public: the rank criterion for a self-map to be injective is used only inside the proof of
 -- injectivity on a finite-dimensional target; no exported statement mentions a dimension.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space
@@ -52,9 +51,6 @@ particular infinitely many `S j` may occur, with infinite-dimensional multiplici
   multiplicity space**, `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] isotypicComponent A M S`.
 * `TauCeti.isotypicTensorEquiv`: the same for a module that is its own isotypic component,
   `S ⊗[k] (S →ₗ[A] M) ≃ₗ[A] M`.
-* `Module.Basis.isotypicComponentEquiv`: for a finite basis `b` of the multiplicity space, the
-  **splitting of the isotypic component into copies of `S`**,
-  `(ι → S) ≃ₗ[A] isotypicComponent A M S`, `v ↦ ∑ i, b i (v i)`.
 * `TauCeti.directSumIsotypicEval`: the sum of the evaluation maps of a family of modules `S j`.
 * `TauCeti.directSumIsotypicTensorEquiv`: **the isotypic decomposition of a semisimple module**,
   `⨁ⱼ S j ⊗[k] (S j →ₗ[A] M) ≃ₗ[A] M`.
@@ -240,40 +236,6 @@ theorem isotypicTensorEquiv_symm_apply_map (hM : isotypicComponent A M S = ⊤)
   rw [LinearEquiv.apply_symm_apply, isotypicTensorEquiv_map k hM hN, LinearEquiv.apply_symm_apply]
 
 end TauCeti
-
-/-! ### A basis of the multiplicity space -/
-
-namespace Module.Basis
-
-open TauCeti TensorProduct
-
-variable {k A S M ι : Type*} [Field k] [Ring A] [Algebra k A]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [IsSimpleModule A S] [IsAlgClosed k] [FiniteDimensional k S]
-
-open scoped Classical in
-/-- **A basis of the multiplicity space splits the isotypic component into copies of `S`.**  For
-`S` simple and finite-dimensional over the algebraically closed field `k` and a finite basis `b` of
-the multiplicity space `S →ₗ[A] M`, the map `v ↦ ∑ i, b i (v i)` is an isomorphism of `A`-modules
-from `ι → S` onto the `S`-isotypic component of `M`.  This is
-`TauCeti.isotypicComponentTensorEquiv` read through the coordinates of `b`, and the explicit form
-of `TauCeti.nonempty_linearEquiv_isotypicComponent`: the copies of `S` are the ranges of the basis
-maps, and nothing is asked of `M`. -/
-noncomputable def isotypicComponentEquiv [Finite ι] (b : Basis ι k (S →ₗ[A] M)) :
-    (ι → S) ≃ₗ[A] isotypicComponent A M S :=
-  (Finsupp.linearEquivFunOnFinite A S ι).symm ≪≫ₗ (finsuppScalarRight k A S ι).symm ≪≫ₗ
-    AlgebraTensorModule.congr (LinearEquiv.refl A S) b.repr.symm ≪≫ₗ
-    isotypicComponentTensorEquiv k
-
-@[simp]
-theorem isotypicComponentEquiv_apply_coe [Fintype ι] (b : Basis ι k (S →ₗ[A] M)) (v : ι → S) :
-    (b.isotypicComponentEquiv v : M) = ∑ i, b i (v i) := by
-  classical
-  conv_lhs => rw [← Finset.univ_sum_single v]
-  simp [isotypicComponentEquiv, Finsupp.linearEquivFunOnFinite_symm_single]
-
-end Module.Basis
 
 /-! ### The isotypic decomposition of a semisimple module -/
 

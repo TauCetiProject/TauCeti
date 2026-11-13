@@ -37,8 +37,7 @@ Similarly, the components of `C * D⁻¹`, the change of variables carrying `D �
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
-`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`). In particular `C • W` is
-elliptic exactly when `W` is (`isElliptic_smul_iff`).
+`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
 
 The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
@@ -240,13 +239,6 @@ theorem span_variableChange_c₄_Δ (W : WeierstrassCurve R) (C : VariableChange
   rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
     Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
     Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
-
-/-- **Changes of variables preserve ellipticity**: `C • W` is elliptic exactly when `W` is. -/
-theorem isElliptic_smul_iff (C : VariableChange R) (W : WeierstrassCurve R) :
-    (C • W).IsElliptic ↔ W.IsElliptic := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
-  have : (C⁻¹ • C • W).IsElliptic := inferInstance
-  rwa [inv_smul_smul] at this
 
 section BaseChange
 
