@@ -210,16 +210,9 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- **Every element of `U(n)` is a square**: conjugate it into the diagonal torus and take a square
 root on the circle of each diagonal entry. -/
 theorem isSquare (g : unitaryGroup n ℂ) : IsSquare g := by
-  obtain ⟨u, hu⟩ := exists_conj_mem_unitaryTorus g
-  obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hu
-  choose y hy using fun i => Circle.exists_pow_nat_eq (z i) two_ne_zero
-  refine ⟨u⁻¹ * unitaryTorusHom n y * u, ?_⟩
-  have hy' : unitaryTorusHom n y * unitaryTorusHom n y = u * g * u⁻¹ := by
-    rw [← map_mul, ← hz]
-    congr 1
-    funext i
-    simpa [sq] using hy i
-  calc g = u⁻¹ * (u * g * u⁻¹) * u := by group
-    _ = _ := by rw [← hy']; group
+  obtain ⟨z, hz⟩ := exists_isConj_unitaryTorusHom g
+  obtain ⟨c, rfl⟩ := isConj_iff.mp hz.symm
+  choose y hy using fun i => Circle.isSquare (z i)
+  exact (IsSquare.map (unitaryTorusHom n) ⟨y, funext hy⟩).map (MulAut.conj c)
 
 end Matrix.UnitaryGroup
