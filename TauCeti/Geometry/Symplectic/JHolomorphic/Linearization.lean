@@ -117,18 +117,21 @@ theorem cauchyRiemannLinearization_apply (j : U →L[ℝ] U) (J : V → V →L[�
   (rfl)
 
 /-- At a pseudoholomorphic map, the linearization takes values in complex-antilinear
-covectors, even when the target almost complex structure is not integrable. -/
+maps, even when the target almost complex structure is not integrable. -/
 theorem isComplexAntilinear_cauchyRiemannLinearization
     [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
     (j : AlmostComplexStructure U) (J : V → AlmostComplexStructure V)
-    (u ξ : U → V) (x : U) (hu : IsJHolomorphicAt (fun _ ↦ j) J u x)
-    (hJ : DifferentiableAt ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)) :
+    (u ξ : U → V) (x : U) (hu : IsJHolomorphicAt (fun _ ↦ j) J u x) :
     IsComplexAntilinear j.toLinearMap (J (u x)).toLinearMap
       (cauchyRiemannLinearization j.toLinearMap.toContinuousLinearMap
         (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) u ξ x).toLinearMap := by
-  have hT := AlmostComplexStructure.mem_tangentSpace_iff_apply.1
-    (AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt hJ.hasFDerivAt (ξ x))
-  simp only [ContinuousLinearMap.coe_coe] at hT
+  have hT : ∀ v, fderiv ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)
+      (ξ x) (J (u x) v) =
+      -J (u x) (fderiv ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x) (ξ x) v) := by
+    by_cases hJ : DifferentiableAt ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)
+    · exact AlmostComplexStructure.mem_tangentSpace_iff_apply.1
+        (AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt hJ.hasFDerivAt (ξ x))
+    · simp [fderiv_zero_of_not_differentiableAt hJ]
   apply isComplexAntilinear_of_apply
   intro v
   simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
