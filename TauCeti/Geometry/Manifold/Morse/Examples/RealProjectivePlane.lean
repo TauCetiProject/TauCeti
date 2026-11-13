@@ -78,15 +78,23 @@ def realProjPlaneMorseCut (q : ℤ) : ℝ := q - 2⁻¹
 @[simp]
 theorem realProjPlaneMorseCut_apply (q : ℤ) : realProjPlaneMorseCut q = q - 2⁻¹ := (rfl)
 
+/-- The moment function `[x : y : z] ↦ (y² + 2 z²) / (x² + y² + z²)` on `ℝP²`, with weights
+`0, 1, 2`. -/
+private abbrev realProjPlaneMomentFunction : ℙ ℝ (Fin 3 → ℝ) → ℝ :=
+  projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)
+
+/-- The preimage of a closed interval under the moment function is compact. -/
+private theorem isCompact_realProjPlaneMomentFunction_preimage_Icc (a b : ℝ) :
+    IsCompact (realProjPlaneMomentFunction ⁻¹' Icc a b) :=
+  (isClosed_Icc.preimage (contMDiff_projectiveMomentFunction (r := 0) _).continuous).isCompact
+
 /-- The critical points of the moment function with weights `0, 1, 2` on `ℝP²` are the coordinate
 points `[eₖ]`, at the value `k`, of Morse index `k`. -/
 private theorem exists_of_mem_criticalPoints {x : ℙ ℝ (Fin 3 → ℝ)}
-    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ))) :
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction) :
     ∃ k : Fin 3, x = mk ℝ (Pi.single k 1) (by simp) ∧
-      projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x = (k : ℕ) ∧
-      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ)
-        (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x = k := by
+      realProjPlaneMomentFunction x = (k : ℕ) ∧
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction x = k := by
   rw [criticalPoints_projectiveMomentFunction fun i j h ↦ Fin.ext (by exact_mod_cast h)] at hx
   obtain ⟨k, rfl⟩ := hx
   refine ⟨k, rfl, projectiveMomentFunction_mk_single _ k, ?_⟩
@@ -94,12 +102,9 @@ private theorem exists_of_mem_criticalPoints {x : ℙ ℝ (Fin 3 → ℝ)}
 
 /-- A critical point with value in `[a - 1/2, b - 1/2]` has index in `[a, b)`. -/
 private theorem manifoldMorseIndex_mem_Ico_of_mem_criticalPoints {x : ℙ ℝ (Fin 3 → ℝ)}
-    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ))) {a b : ℤ}
-    (h : projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x ∈
-      Icc (realProjPlaneMorseCut a) (realProjPlaneMorseCut b)) :
-    (manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x : ℤ) ∈ Ico a b := by
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction) {a b : ℤ}
+    (h : realProjPlaneMomentFunction x ∈ Icc (realProjPlaneMorseCut a) (realProjPlaneMorseCut b)) :
+    (manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction x : ℤ) ∈ Ico a b := by
   obtain ⟨k, -, hk, hind⟩ := exists_of_mem_criticalPoints hx
   rw [hind, mem_Ico]
   rw [hk] at h
@@ -112,13 +117,11 @@ private theorem manifoldMorseIndex_mem_Ico_of_mem_criticalPoints {x : ℙ ℝ (F
 /-- A critical value in the band `[q - 1/2, q + 1/2]` is `q`, and it is the index of the critical
 point. -/
 private theorem apply_eq_of_mem_criticalPoints {x : ℙ ℝ (Fin 3 → ℝ)}
-    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ))) {q : ℤ}
-    (h : projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x ∈
+    (hx : x ∈ criticalPoints 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction) {q : ℤ}
+    (h : realProjPlaneMomentFunction x ∈
       Icc (realProjPlaneMorseCut q) (realProjPlaneMorseCut (q + 1))) :
-    projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x = q ∧
-      (manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ)
-        (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x : ℤ) = q := by
+    realProjPlaneMomentFunction x = q ∧
+      (manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction x : ℤ) = q := by
   have hq := manifoldMorseIndex_mem_Ico_of_mem_criticalPoints hx h
   obtain ⟨k, -, hk, hind⟩ := exists_of_mem_criticalPoints hx
   rw [hind, mem_Ico] at hq
@@ -128,8 +131,7 @@ private theorem apply_eq_of_mem_criticalPoints {x : ℙ ℝ (Fin 3 → ℝ)}
 
 /-- The cut values `q - 1/2` are regular values. -/
 private theorem isRegularValue_realProjPlaneMorseCut (q : ℤ) :
-    IsRegularValue 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) (realProjPlaneMorseCut q) := by
+    IsRegularValue 𝓘(ℝ, Fin 2 → ℝ) 𝓘(ℝ) realProjPlaneMomentFunction (realProjPlaneMorseCut q) := by
   refine isRegularValue_iff_notMem_image_criticalPoints.2 ?_
   rintro ⟨x, hx, hfx⟩
   obtain ⟨k, -, hk, -⟩ := exists_of_mem_criticalPoints hx
@@ -145,7 +147,7 @@ theorem isCriticalBandCut_realProjPlaneMorseCut :
     IsCriticalBandCut 𝓘(ℝ, Fin 2 → ℝ)
       (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) realProjPlaneMorseCut where
   isCriticalBand q :=
-    ⟨(isClosed_Icc.preimage (contMDiff_projectiveMomentFunction (r := 0) _).continuous).isCompact,
+    ⟨isCompact_realProjPlaneMomentFunction_preimage_Icc _ _,
       q, by simp only [realProjPlaneMorseCut_apply, mem_Ioo]; push_cast; constructor <;> linarith,
       fun _ hx h ↦ (apply_eq_of_mem_criticalPoints hx h).1⟩
 
@@ -161,15 +163,14 @@ abbrev realProjPlaneMorseSpectralSequence :=
 
 /-- The moment function with weights `0, 1, 2` is a Morse function. -/
 private theorem isMorse_realProjPlane :
-    IsMorse 𝓘(ℝ, Fin 2 → ℝ) (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) :=
+    IsMorse 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction :=
   isMorse_projectiveMomentFunction fun i j h ↦ Fin.ext (by exact_mod_cast h)
 
 /-- A band `[q - 1/2, q + 1/2]` contains at most one critical point. -/
 private theorem subsingleton_criticalPoints_inter_preimage_Ioc (q : ℤ) :
-    Subsingleton ↥(criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) ∩
-        (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) ⁻¹'
-          Ioc (realProjPlaneMorseCut q) (realProjPlaneMorseCut (q + 1))) := by
+    Subsingleton ↥(criticalPoints 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction ∩
+      realProjPlaneMomentFunction ⁻¹'
+        Ioc (realProjPlaneMorseCut q) (realProjPlaneMorseCut (q + 1))) := by
   refine ⟨fun ⟨x, hx, hxq⟩ ⟨y, hy, hyq⟩ ↦ Subtype.ext ?_⟩
   obtain ⟨j, rfl, hj, -⟩ := exists_of_mem_criticalPoints hx
   obtain ⟨k, rfl, hk, -⟩ := exists_of_mem_criticalPoints hy
@@ -198,12 +199,10 @@ theorem nonempty_realProjPlaneMorseSpectralSequence_page_two_X_iso {k : ℕ} (hk
   have hval := projectiveMomentFunction_mk_single (𝕜 := ℝ) (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x₀
   have hind := manifoldMorseIndex_projectiveMomentFunction_natCast (𝕜 := ℝ) (n := 2) x₀
   rw [Module.finrank_self, one_mul] at hind
-  have : Nonempty {x : ↥(criticalPoints 𝓘(ℝ, Fin 2 → ℝ)
-      (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) ∩
-        (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) ⁻¹'
-          Ioc (realProjPlaneMorseCut k) (realProjPlaneMorseCut (k + 1))) //
-      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ)
-        (projectiveMomentFunction ℝ fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x = k} :=
+  have : Nonempty {x : ↥(criticalPoints 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction ∩
+      realProjPlaneMomentFunction ⁻¹'
+        Ioc (realProjPlaneMorseCut k) (realProjPlaneMorseCut (k + 1))) //
+      manifoldMorseIndex 𝓘(ℝ, Fin 2 → ℝ) realProjPlaneMomentFunction x = k} :=
     ⟨⟨⟨_, hx₀, by
       simp only [mem_preimage, hval, mem_Ioc, realProjPlaneMorseCut_apply, x₀]
       push_cast
@@ -233,8 +232,8 @@ theorem isZero_realProjPlaneMorseSpectralSequence_page_two_X {pq : ℤ × ℤ}
 
 /-- The sublevels `{f ≤ q - 1/2}` increase with `q`. -/
 private theorem monotone_realProjPlaneSublevel :
-    Monotone fun q : ℤ ↦ {x : ℙ ℝ (Fin 3 → ℝ) |
-      projectiveMomentFunction ℝ (fun i : Fin 3 ↦ ((i : ℕ) : ℝ)) x ≤ realProjPlaneMorseCut q} :=
+    Monotone fun q : ℤ ↦
+      {x : ℙ ℝ (Fin 3 → ℝ) | realProjPlaneMomentFunction x ≤ realProjPlaneMorseCut q} :=
   (sublevel_mono _).comp isCriticalBandCut_realProjPlaneMorseCut.monotone
 
 /-- The pair `({f ≤ b - 1/2}, {f ≤ a - 1/2})` of sublevels, for `a ≤ b`. -/
@@ -248,7 +247,7 @@ private theorem isZero_singularHomology_realProjPlaneBandPair {a b : ℤ} (h : a
     IsZero ((realProjPlaneBandPair h).singularHomology (ModuleCat.of ℤ ℤ) n) :=
   isMorse_realProjPlane.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_ne
     (isCriticalBandCut_realProjPlaneMorseCut.monotone h)
-    (isClosed_Icc.preimage (contMDiff_projectiveMomentFunction (r := 0) _).continuous).isCompact
+    (isCompact_realProjPlaneMomentFunction_preimage_Icc _ _)
     (isRegularValue_realProjPlaneMorseCut a) (isRegularValue_realProjPlaneMorseCut b)
     (fun _ hp hpn ↦ by
       have := manifoldMorseIndex_mem_Ico_of_mem_criticalPoints hp.1 hp.2
@@ -354,9 +353,10 @@ private theorem realProjPlane_singularHomologyδ_eq
   obtain ⟨ψ⟩ := nonempty_singularHomology_one_realProjPlaneBandPair_linearEquiv
   have hcomp : (e₁.toLinearEquiv : _ →ₗ[ℤ] ℤ) ∘ₗ δ.hom =
       g.hom ∘ₗ (e₂.toLinearEquiv : _ →ₗ[ℤ] ℤ) := by
-    ext x
-    change e₁.hom (δ x) = e₁.hom (δ (e₂.inv (e₂.hom x)))
-    rw [e₂.hom_inv_id_apply]
+    rw [Iso.toLinearMap_toLinearEquiv, Iso.toLinearMap_toLinearEquiv, ← ModuleCat.hom_comp,
+      ← ModuleCat.hom_comp]
+    -- `g` is `e₂.inv ≫ δ ≫ e₁.hom` by definition.
+    exact congrArg ModuleCat.Hom.hom (e₂.hom_inv_id_assoc _).symm
   let q : (ℤ ⧸ LinearMap.range g.hom) ≃ₗ[ℤ] ZMod 2 :=
     (LinearMap.cokerEquivOfComp _ _ hcomp).symm ≪≫ₗ
       Submodule.quotEquivOfEq _ _ hrange ≪≫ₗ ι.hom.quotKerEquivOfSurjective hsurj ≪≫ₗ ψ
@@ -364,6 +364,10 @@ private theorem realProjPlane_singularHomologyδ_eq
     ModuleCat.eq_natCast_smul_id_or_eq_neg_natCast_smul_id g (n := 2) q.toEquiv
 
 /-! ### The first differential and the second page -/
+
+/-- Multiplication by `2` on `ℤ` is a monomorphism. -/
+private instance mono_two_smul_id_moduleCatInt : Mono ((2 : ℤ) • 𝟙 (ModuleCat.of ℤ ℤ)) :=
+  ModuleCat.mono_smul_id (IsRegular.of_ne_zero two_ne_zero).isSMulRegular
 
 /-- **The first differential of the critical-band spectral sequence of `ℝP²` is `±2`.** The
 differential of the first page from `(-4, 2)` to `(-2, 1)`, the connecting map
@@ -426,10 +430,7 @@ private theorem realProjPlaneMorseSpectralSequence_page_two_d_neg_two_one_eq_zer
     have hdd := (realProjPlaneMorseSpectralSequence.page 2).d_comp_d (-4, 2) (-2, 1) (0, 0)
     rw [h] at hdd
     simpa [φ] using congrArg (fun ψ ↦ e.inv ≫ ψ ≫ e''.hom) hdd
-  have hφ : φ = 0 := by
-    have := ModuleCat.mono_smul_id (M := ModuleCat.of ℤ ℤ) (c := 2)
-      (IsRegular.of_ne_zero two_ne_zero).isSMulRegular
-    exact (cancel_mono ((2 : ℤ) • 𝟙 _)).1 (by simpa using h2)
+  have hφ : φ = 0 := (cancel_mono ((2 : ℤ) • 𝟙 _)).1 (by simpa using h2)
   have hd : (realProjPlaneMorseSpectralSequence.page 2).d (-2, 1) (0, 0) =
       e'.hom ≫ φ ≫ e''.inv := by
     simp [φ]
@@ -511,8 +512,6 @@ private theorem isZero_realProjPlaneMorseSpectralSequence_page_three_X_neg_four_
   have hin : K.d (-6, 3) (-4, 2) = 0 :=
     realProjPlaneMorseSpectralSequence_page_two_d_eq_zero (Or.inl (by decide))
   have : Mono (K.d (-4, 2) (-2, 1)) := by
-    have := ModuleCat.mono_smul_id (M := ModuleCat.of ℤ ℤ) (c := 2)
-      (IsRegular.of_ne_zero two_ne_zero).isSMulRegular
     rw [h]
     infer_instance
   -- The cycles at `(-4, 2)` vanish, since the differential out of `(-4, 2)` is a monomorphism.
