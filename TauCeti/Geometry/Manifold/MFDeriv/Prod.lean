@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Derivatives of maps that factor through a projection
@@ -225,7 +226,8 @@ theorem mvfderiv_diag_eq_add {S : M × M → F} {q : M}
       (mfderiv I I (@id M) q).prod (mfderiv I I (@id M) q) :=
     mfderiv_prodMk (f := id) (g := id) mdifferentiableAt_id mdifferentiableAt_id
   rw [hd, mfderiv_id]
-  exact mfderiv_prod_eq_add_apply (v := (v, v)) hS
+  -- `(id.prod id) v` is `(v, v)` in the product tangent space.
+  exact (hS.mvfderiv_prod_eq_add_apply (v, v)).trans (add_apply _ _ v).symm
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/

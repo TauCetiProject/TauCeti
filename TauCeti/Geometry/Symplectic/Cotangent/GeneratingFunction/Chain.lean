@@ -94,34 +94,37 @@ theorem mvfderiv_cyclicAction_apply {S : ZMod N → Q × Q → ℝ} {q : ZMod N 
     mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q v =
       ∑ i, (mvfderiv I (fun x ↦ S i (x, q (i + 1))) (q i) (v i) +
         mvfderiv I (fun x ↦ S (i - 1) (q (i - 1), x)) (q i) (v i)) := by
-  -- Each summand of `A` is `S_i` composed with the edge map, so `A` has derivative the sum of
-  -- the derivatives of the `S_i` composed with `v ↦ (v_i, v_(i+1))`.
-  have hfun : cyclicAction S = ∑ i, S i ∘ fun q : ZMod N → Q ↦ (q i, q (i + 1)) := by
+  -- Each summand of `A` is `S_i` composed with the edge map, whose differential is
+  -- `v ↦ (v_i, v_(i+1))`.
+  have hfun : cyclicAction S =
+      fun q' ↦ ∑ i, (S i ∘ fun q : ZMod N → Q ↦ (q i, q (i + 1))) q' := by
     ext q'
     simp [cyclicAction_apply]
-  have hA := HasMFDerivAt.sum (t := Finset.univ) fun i _ ↦
-    (hS i).hasMFDerivAt.comp q (hasMFDerivAt_edge (I := I) i q)
   have hd : mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction S) q v =
-      ∑ i, mfderiv (I.prod I) 𝓘(ℝ) (S i) (q i, q (i + 1)) (v i, v (i + 1)) := by
-    rw [hfun]
-    -- `mvfderiv` is `mfderiv` followed by `NormedSpace.fromTangentSpace`, the identity of `ℝ`,
-    -- and each summand is a composite with `v ↦ (v_i, v_(i+1))`.
-    exact (DFunLike.congr_fun hA.mfderiv v).trans
-      (sum_apply (F := (ZMod N → E) →L[ℝ] ℝ) Finset.univ _ v)
+      ∑ i, mvfderiv (I.prod I) (S i) (q i, q (i + 1)) (v i, v (i + 1)) := by
+    rw [hfun, mvfderiv_fun_sum fun i _ ↦
+      (hS i).comp q (hasMFDerivAt_edge (I := I) i q).mdifferentiableAt]
+    refine (sum_apply (F := (ZMod N → E) →L[ℝ] ℝ) Finset.univ _ v).trans
+      (Finset.sum_congr rfl fun i _ ↦ ?_)
+    refine (mvfderiv_comp_apply q (hS i) (hasMFDerivAt_edge (I := I) i q).mdifferentiableAt
+      v).trans ?_
+    rw [(hasMFDerivAt_edge (I := I) i q).mfderiv]
+    -- The differential `(proj i).prod (proj (i + 1))` of the edge map sends `v` to
+    -- `(v i, v (i + 1))`; `simp` cannot rewrite it across the tangent-space type synonyms.
+    exact congrArg _ (ContinuousLinearMap.prod_apply _ _ v)
   -- Split each derivative of `S_i` into its two partial derivatives, then shift the index of the
   -- second partial derivative by one.
   rw [hd]
-  calc ∑ i, mfderiv (I.prod I) 𝓘(ℝ) (S i) (q i, q (i + 1)) (v i, v (i + 1))
+  calc ∑ i, mvfderiv (I.prod I) (S i) (q i, q (i + 1)) (v i, v (i + 1))
       = ∑ i, (mvfderiv I (fun x ↦ S i (x, q (i + 1))) (q i) (v i) +
           mvfderiv I (fun x ↦ S i (q i, x)) (q (i + 1)) (v (i + 1))) :=
-        Finset.sum_congr rfl fun i _ ↦ mfderiv_prod_eq_add_apply (v := (v i, v (i + 1))) (hS i)
+        Finset.sum_congr rfl fun i _ ↦ (hS i).mvfderiv_prod_eq_add_apply (v i, v (i + 1))
     _ = _ := by
         rw [Finset.sum_add_distrib, Finset.sum_add_distrib]
         congr 1
         refine Fintype.sum_equiv (Equiv.addRight 1) _ _ fun i ↦ ?_
-        simp only [Equiv.coe_addRight, add_sub_cancel_right]
-        -- The two sides differ only in the point at which the tangent space of `ℝ` is taken.
-        rfl
+        dsimp only [Equiv.coe_addRight]
+        simp only [add_sub_cancel_right]
 
 namespace CotangentBundle
 
