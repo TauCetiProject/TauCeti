@@ -230,9 +230,9 @@ theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodu
     one_pow]
 
 omit [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- Scaling an integral lattice `L` of rank `n` by `√m` multiplies its signed discriminant by
-`mⁿ`. For `m = 0` both sides vanish when the space is nontrivial, and equal `1` otherwise; if `L`
-does not span the space, both sides vanish. -/
+/-- Scaling an integral lattice `L` in a space of dimension `n` by `√m` multiplies its signed
+discriminant by `mⁿ`. For `m = 0` both sides vanish when the space is nontrivial, and equal `1`
+otherwise; if `L` does not span the space, both sides vanish. -/
 theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} :
     signedDiscr (√(m : ℝ) • L) = (m : ℤ) ^ finrank ℝ E * signedDiscr L := by
   rcases eq_or_ne m 0 with rfl | hm
