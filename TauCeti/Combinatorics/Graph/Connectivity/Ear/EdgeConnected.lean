@@ -12,9 +12,9 @@ public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 # Edge connectivity from ear decompositions
 
 This file proves the forward direction of the ear characterization of `2`-edge-connected
-multigraphs: adjoining an open or closed ear preserves `2`-edge-connectivity, so every graph
-admitting an ear decomposition is `2`-edge-connected.  The proof works without finiteness
-assumptions on the ambient vertex and edge types.
+multigraphs: adjoining an open or closed ear preserves `2`-edge-connectivity, so every stage graph
+and the final graph of any ear decomposition are `2`-edge-connected.  The proof works without
+finiteness assumptions on the ambient vertex and edge types.
 
 The key point is that an open ear, together with a path in the old graph between its endpoints,
 places every new edge on a cycle.  A closed ear is already such a cycle.  Thus adjoining an ear
@@ -25,8 +25,6 @@ The argument follows the ear-decomposition proof of the bridge criterion in R. D
 -/
 
 public section
-
-open Set
 
 universe u v
 
@@ -40,8 +38,8 @@ namespace EarStart
 theorem isEdgeConnected_two {K : Graph α β} (start : G.EarStart K) :
     K.IsEdgeConnected 2 := by
   cases start with
-  | vertex v => exact IsEdgeConnected.of_subsingleton (by simp)
-  | cycle p hp => exact hp.isEdgeConnected_two_walkGraph
+  | vertex _ => exact IsEdgeConnected.of_subsingleton (by simp)
+  | cycle _ hp => exact hp.isEdgeConnected_two_walkGraph
 
 end EarStart
 
@@ -57,13 +55,12 @@ theorem not_isBridge_add (hH : H.Connected) (hbridge : ∀ e, ¬ H.IsBridge e) (
   rw [edgeSet_add] at heAdd
   rcases heAdd with heH | heEar
   · exact hbridge e (he.anti_of_mem ear.base_le_add heH)
-  obtain ⟨x, p, hp, hep⟩ := ear.exists_isCycle_add_of_mem_edgeSet_toGraph hH heEar
+  obtain ⟨_, p, hp, hep⟩ := ear.exists_isCycle_add_of_mem_edgeSet_toGraph hH heEar
   exact hp.not_isBridge_of_le le_rfl hep he
 
 /-- Adjoining an ear preserves `2`-edge-connectivity. -/
 theorem isEdgeConnected_two_add (hH : H.IsEdgeConnected 2) : ear.add.IsEdgeConnected 2 := by
-  have hV : V(H).Nonempty := ⟨_, ear.toWalk_fst_mem⟩
-  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge hV] at hH
+  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge ear.base_vertexSet_nonempty] at hH
   rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge
     (ear.connected_add hH.1).nonempty]
   exact ⟨ear.connected_add hH.1, ear.not_isBridge_add hH.1 hH.2⟩
@@ -72,15 +69,19 @@ end Ear
 
 namespace EarDecomposition
 
-/-- Every graph admitting an ear decomposition is `2`-edge-connected. -/
-theorem isEdgeConnected_two (d : G.EarDecomposition H) : H.IsEdgeConnected 2 := by
-  rw [← d.graphAfter_last]
-  exact d.graphAfter_induction (P := fun K ↦ K.IsEdgeConnected 2)
+/-- Every stage graph of an ear decomposition is `2`-edge-connected. -/
+theorem isEdgeConnected_two_graphAfter (d : G.EarDecomposition H) (i : Fin (d.length + 1)) :
+    (d.graphAfter i).IsEdgeConnected 2 :=
+  d.graphAfter_induction (P := fun K ↦ K.IsEdgeConnected 2)
     (by rw [initial_eq_graphAfter]; exact d.start.isEdgeConnected_two)
-    (fun i hi ↦ by
-      rw [← d.earAt_fst i] at hi
-      exact (d.earAt i).2.isEdgeConnected_two_add hi)
-    (Fin.last d.length)
+    (fun j hj ↦ by
+      rw [← d.earAt_fst j] at hj
+      exact (d.earAt j).2.isEdgeConnected_two_add hj)
+    i
+
+/-- Every graph admitting an ear decomposition is `2`-edge-connected. -/
+theorem isEdgeConnected_two (d : G.EarDecomposition H) : H.IsEdgeConnected 2 :=
+  d.graphAfter_last ▸ d.isEdgeConnected_two_graphAfter (Fin.last d.length)
 
 end EarDecomposition
 
