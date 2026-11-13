@@ -7,9 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import TauCeti.Probability.Martingale.Convergence
-public import TauCeti.Probability.Process.Filtration.Dense
 public import TauCeti.Topology.Instances.Real.DyadicGrid
 import Mathlib.MeasureTheory.Function.FactorsThrough
+import TauCeti.Probability.Process.Filtration.Dense
 
 /-!
 # Dyadic observations of continuous paths
