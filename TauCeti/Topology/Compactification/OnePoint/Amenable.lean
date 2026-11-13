@@ -64,19 +64,15 @@ theorem amenable_gl_stabilizer [TopologicalSpace (GL (Fin 2) K)]
   let : DiscreteTopology PGL(2, K) := ⟨rfl⟩
   have := amenable_pgl_stabilizer x
   let φ : stabilizer (GL (Fin 2) K) x →* stabilizer PGL(2, K) x :=
-    (ProjGenLinGroup.mk.comp (stabilizer (GL (Fin 2) K) x).subtype).codRestrict
-      (stabilizer PGL(2, K) x) fun g => by
-        rw [MonoidHom.comp_apply, Subgroup.subtype_apply, mem_stabilizer_iff, pglMk_smul]
-        exact mem_stabilizer_iff.mp g.property
+    (ProjGenLinGroup.mk.subgroupComap _).comp
+      (MulEquiv.subgroupCongr (comap_mk_stabilizer x).symm).toMonoidHom
+  have hφ (g : stabilizer (GL (Fin 2) K) x) : (φ g : PGL(2, K)) = ProjGenLinGroup.mk g := rfl
   let ψ : φ.ker →* Subgroup.center (GL (Fin 2) K) :=
     ((stabilizer (GL (Fin 2) K) x).subtype.comp φ.ker.subtype).codRestrict
       (Subgroup.center (GL (Fin 2) K)) fun g => by
-        simp only [MonoidHom.comp_apply, Subgroup.subtype_apply]
         apply ProjGenLinGroup.mk_eq_one.mp
-        have hg := congrArg Subtype.val (MonoidHom.mem_ker.mp g.property)
-        dsimp only [φ] at hg
-        simpa only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-          Subgroup.subtype_apply, OneMemClass.coe_one] using hg
+        simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply, hφ, OneMemClass.coe_one] using
+          congrArg Subtype.val (MonoidHom.mem_ker.mp g.property)
   have hψ : Function.Injective ψ := by
     apply (MonoidHom.injective_codRestrict _ _ _).2
     exact (stabilizer (GL (Fin 2) K) x).subtype_injective.comp φ.ker.subtype_injective
