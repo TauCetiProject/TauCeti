@@ -283,6 +283,13 @@ theorem holomorphicAt_iff_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ)
   ⟨analyticAt_coeff_of_analyticAt ω (chart_mem_maximalAtlas x) he (mem_chart_source ℂ x) hx,
     analyticAt_coeff_of_analyticAt ω he (chart_mem_maximalAtlas x) hx (mem_chart_source ℂ x)⟩
 
+/-- **Holomorphy in chart coordinates.** A `1`-form is holomorphic at the point `e.symm z` with
+coordinate `z ∈ e.target` exactly when its coefficient in the chart `e` of the maximal atlas is
+analytic at `z`. -/
+theorem holomorphicAt_symm_iff_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ}
+    (hz : z ∈ e.target) : ω.HolomorphicAt (e.symm z) ↔ AnalyticAt ℂ (ω.coeff e) z := by
+  rw [holomorphicAt_iff_of_mem_maximalAtlas he (e.map_target hz), e.right_inv hz]
+
 /-- **Chart independence of the order.** The order of a `1`-form at `x` is the meromorphic order of
 its coefficient in any chart of the maximal atlas at `x`. -/
 theorem order_eq_of_mem_maximalAtlas (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source) :
@@ -542,7 +549,7 @@ theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f x) :
   filter_upwards [hf.eventually_analyticAt, nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
     ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz hzt
   exact coeff_mvfderiv (chart_mem_maximalAtlas x) hzt
-    (TauCeti.mdifferentiableAt_symm_of_differentiableAt_comp (chart_mem_maximalAtlas x) hzt
+    (TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm (chart_mem_maximalAtlas x) hzt
       hz.differentiableAt)
 
 /-- Near a point where `f` is holomorphic, the coefficient of `df` in the chart at that point is

@@ -15,8 +15,9 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, and a restriction `Γ.restrict S hS` is acyclic exactly when no
-nonempty reduced closed path of `Γ` has all its darts in `S`.
+An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and a
+restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
+all its darts in `S`.
 
 The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
 since its petal is a reduced loop.
@@ -81,10 +82,16 @@ theorem IsAcyclic.eq_of_isReduced (h : Γ.IsAcyclic) {a b : Γ.V} {p q : Γ.Path
 variable {Γ} in
 /-- An acyclic graph has no loop: a loop dart is a nonempty reduced closed path. -/
 theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt e := by
-  have key : ∀ {a b : Γ.V} (f : Quiver.Hom a b), a ≠ b := by
+  have key : ∀ {a b : Γ.V} (_ : Quiver.Hom a b), a ≠ b := by
     rintro a _ f rfl
     cases h a f.toPath (Path.isReduced_toPath Γ f)
   exact key (Γ.dart e)
+
+variable {Γ} in
+/-- An acyclic graph with at most one vertex has no darts. -/
+theorem IsAcyclic.isEmpty_dart_of_subsingleton (h : Γ.IsAcyclic) [Subsingleton Γ.V] :
+    IsEmpty Γ.E :=
+  ⟨fun e => h.src_ne_tgt e (Subsingleton.elim _ _)⟩
 
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔

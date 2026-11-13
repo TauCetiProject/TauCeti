@@ -55,7 +55,6 @@ namespace TauCeti.Toric
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {σ τ : PointedCone ℝ V}
 
 /-- A ray of a pointed cone is a face whose linear span has real dimension one. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 abbrev ToricRay (σ : PointedCone ℝ V) :=
   {ρ : σ.Face // Module.finrank ℝ (Submodule.span ℝ ((ρ : PointedCone ℝ V) : Set V)) = 1}
 

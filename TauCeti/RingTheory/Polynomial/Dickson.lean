@@ -40,11 +40,11 @@ on homogeneous polynomials of degree `n`.
   of `P_k(t, s²) = s ^ (k - 2) * U_{k-2}(t / (2 s))`.
 * `Polynomial.mk_dickson_two_eval_mul_one_sub_add_eq_one`: the generating function
   `(∑ₙ (dickson 2 a n).eval t * Xⁿ) * (1 - t X + a X²) = 1`.
-* `Polynomial.dickson_two_eval_zero_two_mul`, `Polynomial.dickson_two_one_eval_one_add_three`,
-  `Polynomial.dickson_two_one_eval_neg_one_add_three`: the weights `P_{n+2}(t, 1)` at the traces
+* `Polynomial.dickson_two_eval_zero_two_mul`, `Polynomial.dickson_eval_one_add_three`,
+  `Polynomial.dickson_eval_neg_one_add_three`: the weights `P_{n+2}(t, 1)` at the traces
   `t = 0, 1, -1` of the elliptic elements of `SL(2, ℤ)`, which have periods `4`, `6` and `3` in `n`
-  (`Polynomial.dickson_two_one_eval_one_six_mul_add`,
-  `Polynomial.dickson_two_one_eval_neg_one_three_mul_add`).
+  (`Polynomial.dickson_eval_one_six_mul_add`, `Polynomial.dickson_eval_neg_one_three_mul_add`).
+  The periods at `t = ±1` hold for Dickson polynomials of every kind with parameter `1`.
 
 ## References
 
@@ -174,7 +174,8 @@ theorem mk_dickson_two_eval_mul_one_sub_add_eq_one (t a : R) :
 The elliptic elements `S = !![0, -1; 1, 0]`, `U = !![1, -1; 1, 0]` and `U² = !![0, -1; 1, -1]` of
 `SL(2, ℤ)` have traces `0`, `1` and `-1`, so their traces on binary forms of degree `n` are the
 weights `P_{n+2}(0, 1)`, `P_{n+2}(1, 1)` and `P_{n+2}(-1, 1)`. With parameter `1` the recurrence
-makes these periodic in `n`. -/
+makes these periodic in `n`; at `t = ±1` only the recurrence is used, so the periods hold for the
+values `(dickson k 1 n).eval (±1)` of every kind `k`. -/
 
 /-- `P_{2m+2}(0, a) = (-a) ^ m`. -/
 @[simp]
@@ -187,35 +188,39 @@ theorem dickson_two_eval_zero_two_mul (a : R) (m : ℕ) :
     simp [ih, pow_succ]
     ring
 
-/-- `P_{n+5}(1, 1) = -P_{n+2}(1, 1)`, so `n ↦ P_{n+2}(1, 1)` has period `6`. -/
-theorem dickson_two_one_eval_one_add_three (n : ℕ) :
-    (dickson 2 (1 : R) (n + 3)).eval 1 = -(dickson 2 (1 : R) n).eval 1 := by
+/-- With parameter `1`, the Dickson values at `1` change sign under `n ↦ n + 3`, for every kind
+`k`; for `k = 2` this is `P_{n+5}(1, 1) = -P_{n+2}(1, 1)`. -/
+theorem dickson_eval_one_add_three (k n : ℕ) :
+    (dickson k (1 : R) (n + 3)).eval 1 = -(dickson k (1 : R) n).eval 1 := by
   simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, one_mul]
   ring
 
-/-- `P_{n+5}(-1, 1) = P_{n+2}(-1, 1)`: `n ↦ P_{n+2}(-1, 1)` has period `3`. -/
-theorem dickson_two_one_eval_neg_one_add_three (n : ℕ) :
-    (dickson 2 (1 : R) (n + 3)).eval (-1) = (dickson 2 (1 : R) n).eval (-1) := by
+/-- With parameter `1`, the Dickson values at `-1` are unchanged under `n ↦ n + 3`, for every kind
+`k`; for `k = 2` this is `P_{n+5}(-1, 1) = P_{n+2}(-1, 1)`. -/
+theorem dickson_eval_neg_one_add_three (k n : ℕ) :
+    (dickson k (1 : R) (n + 3)).eval (-1) = (dickson k (1 : R) n).eval (-1) := by
   simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, one_mul]
   ring
 
-/-- `P_{n+2}(1, 1)` has period `6` in `n`. -/
+/-- With parameter `1`, the Dickson values at `1` have period `6` in the index, for every kind
+`k`. -/
 @[simp]
-theorem dickson_two_one_eval_one_six_mul_add (j r : ℕ) :
-    (dickson 2 (1 : R) (6 * j + r)).eval 1 = (dickson 2 (1 : R) r).eval 1 := by
+theorem dickson_eval_one_six_mul_add (k j r : ℕ) :
+    (dickson k (1 : R) (6 * j + r)).eval 1 = (dickson k (1 : R) r).eval 1 := by
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [Nat.mul_succ, add_right_comm, dickson_two_one_eval_one_add_three,
-      dickson_two_one_eval_one_add_three, neg_neg, ih]
+    rw [Nat.mul_succ, add_right_comm, dickson_eval_one_add_three, dickson_eval_one_add_three,
+      neg_neg, ih]
 
-/-- `P_{n+2}(-1, 1)` has period `3` in `n`. -/
+/-- With parameter `1`, the Dickson values at `-1` have period `3` in the index, for every kind
+`k`. -/
 @[simp]
-theorem dickson_two_one_eval_neg_one_three_mul_add (j r : ℕ) :
-    (dickson 2 (1 : R) (3 * j + r)).eval (-1) = (dickson 2 (1 : R) r).eval (-1) := by
+theorem dickson_eval_neg_one_three_mul_add (k j r : ℕ) :
+    (dickson k (1 : R) (3 * j + r)).eval (-1) = (dickson k (1 : R) r).eval (-1) := by
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [Nat.mul_succ, add_right_comm, dickson_two_one_eval_neg_one_add_three, ih]
+    rw [Nat.mul_succ, add_right_comm, dickson_eval_neg_one_add_three, ih]
 
 end Polynomial
