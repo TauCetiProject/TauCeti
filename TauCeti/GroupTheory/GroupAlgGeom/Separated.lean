@@ -37,7 +37,10 @@ then `K` is discriminated by `H` if and only if it is `G`-isomorphic to the coor
 irreducible algebraic set defined by a finite system. This applies for instance to a free group
 of finite rank over itself, which is equationally Noetherian. Over a domain `H`, discrimination is
 separation plus being a domain, so a nonempty algebraic set is irreducible exactly when its
-coordinate group is a domain over `G`.
+coordinate group is a domain over `G`. That a domain coordinate group makes a nonempty algebraic
+set irreducible needs no hypothesis on `H`. In particular a nonempty algebraic set with a CSA
+coordinate group is irreducible as soon as two coefficients do not commute in `H`, since a CSA
+group is a domain over any coefficients that do not commute.
 
 Separated groups also satisfy a descending chain condition. If `H` is equationally Noetherian,
 then in a sequence `K 0 ↠ K 1 ↠ ⋯` of surjective `G`-homomorphisms of groups separated by `H`,
@@ -89,6 +92,8 @@ also cover systems without solutions, whose coordinate group is trivial.
   system.
 * `TauCeti.GroupAlgGeom.isIrreducible_V_iff_isGDomain`: over a domain `H`, a nonempty algebraic
   set is irreducible if and only if its coordinate group is a domain over `G`.
+* `TauCeti.GroupAlgGeom.isIrreducible_V_of_isCSA`: a nonempty algebraic set with a CSA coordinate
+  group is irreducible, provided two coefficients do not commute in `H`.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_ker_eq`: increasing kernels of
   `G`-homomorphisms `G[X] →* K k` into groups separated by an equationally Noetherian `H`, with `X`
   finite, are eventually constant.
@@ -290,17 +295,36 @@ theorem isDiscriminatedBy_iff_exists_coordGroup [Finite X] (hH : IsEquationallyN
   · rw [CoordGroup.coeff_def]
     exact ⟨ψ, hψ⟩
 
+/-- A nonempty algebraic set whose coordinate group is a domain over `G` is irreducible. No
+hypothesis on `H` is needed. Nonemptiness is needed: the empty set is not irreducible, while its
+trivial coordinate group is a domain. -/
+theorem isIrreducible_V_of_isGDomain {S : Set (GX G X)} (hS : (V ι S).Nonempty)
+    (h : IsGDomain (CoordGroup.coeff ι S)) :
+    @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) := by
+  obtain ⟨v, hv⟩ := hS
+  rw [isIrreducible_V_iff_isDiscriminatedBy]
+  exact (CoordGroup.isSeparatedBy_coeff S).isDiscriminatedBy h ⟨CoordGroup.evalGHom v hv⟩
+
 /-- Over a domain `H` over `G`, a nonempty algebraic set is irreducible if and only if its
 coordinate group is a domain over `G`. Nonemptiness is needed: the empty set is not irreducible,
 while its trivial coordinate group is a domain. -/
 theorem isIrreducible_V_iff_isGDomain {S : Set (GX G X)} (hH : IsGDomain ι)
     (hS : (V ι S).Nonempty) :
     @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) ↔
-      IsGDomain (CoordGroup.coeff ι S) := by
+      IsGDomain (CoordGroup.coeff ι S) :=
+  ⟨fun h => (isIrreducible_V_iff_isDiscriminatedBy.1 h).isGDomain hH,
+    isIrreducible_V_of_isGDomain hS⟩
+
+/-- A nonempty algebraic set whose coordinate group is CSA is irreducible, as soon as two
+coefficients do not commute in `H`. They then do not commute in the coordinate group either,
+which makes the CSA coordinate group a domain over `G`. This applies to fully residually free
+coordinate groups over a nonabelian free group. -/
+theorem isIrreducible_V_of_isCSA {S : Set (GX G X)} (hS : (V ι S).Nonempty)
+    (hCSA : Group.IsCSA (CoordGroup ι S)) {a b : G} (hab : ¬Commute (ι a) (ι b)) :
+    @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) := by
   obtain ⟨v, hv⟩ := hS
-  rw [isIrreducible_V_iff_isDiscriminatedBy]
-  exact ⟨fun h => h.isGDomain hH, fun h =>
-    (CoordGroup.isSeparatedBy_coeff S).isDiscriminatedBy h ⟨CoordGroup.evalGHom v hv⟩⟩
+  refine isIrreducible_V_of_isGDomain ⟨v, hv⟩ (.of_isCSA hCSA (a := a) (b := b) fun h => hab ?_)
+  simpa only [GHom.map_coeff] using h.map (CoordGroup.evalGHom v hv)
 
 section FreeGroup
 
