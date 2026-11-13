@@ -20,12 +20,14 @@ Finite generation cannot be dropped: an infinitely generated group, such as the 
 
 The proof has two steps.
 
-* A criterion for hyperbolicity: if `g` moves `x` and a reduced path from `x` to `g • x` is
-  followed by its translate under `g` without backtracking, then the translates of the path by
-  the powers of `g` line up into reduced paths, so `d(x, gⁿ x) = n d(x, g x)` and the orbit of
-  `x` is unbounded (`GTree.dist_pow_smul_eq_mul`, `GTree.isHyperbolic_of_isReduced`). Applied to
-  a shortest path between the fixed point sets of two elliptic elements `s` and `t`, it shows
-  that `s * t` is hyperbolic when these sets are disjoint (`GTree.isHyperbolic_mul_of_disjoint`).
+* A criterion for hyperbolicity: if a reduced path from `x` to `g • x` is followed by its
+  translate under `g` without backtracking, then the translates of the path by the powers of `g`
+  line up into reduced paths, so `d(x, gⁿ x) = n d(x, g x)` (`GTree.dist_pow_smul_eq_mul`).
+  Comparing with a vertex moved by the translation length `ℓ(g)` shows that `x` is moved by
+  exactly `ℓ(g)` (`GTree.dist_smul_eq_translationLength_of_isReduced`), so `g` is hyperbolic if it
+  moves `x` (`GTree.isHyperbolic_of_isReduced`). Applied to a shortest path between the fixed
+  point sets of two elliptic elements `s` and `t`, it shows that `s * t` is hyperbolic when these
+  sets are disjoint (`GTree.isHyperbolic_mul_of_disjoint`).
 * Helly's theorem for subtrees (`SerreGraph.IsTree.helly_theorem`): the fixed point sets of the
   generators are convex and, by the first step, pairwise intersecting, so they have a common
   vertex.
@@ -83,24 +85,14 @@ theorem dist_pow_smul_eq_mul {g : G} {x : T.V} {p : T.Path x (g • x)}
       · simp
     | succ n ih =>
       obtain ⟨q, hq, hqlen, hqlast⟩ := ih
-      let r := (T.action (g ^ n)).toHom.toPrefunctor.mapPath p
-      have hrdarts : Path.darts T.toSerreGraph r =
-          (Path.darts T.toSerreGraph p).map (T.action (g ^ n) • ·) :=
-        (Hom.darts_mapPath _ _ p).trans
-          (List.map_congr_left fun e _ => congrFun (Iso.toHom_mapE _) e)
-      have hr := Hom.isReduced_mapPath_iff _ _ (T.action (g ^ n)).toHom_mapE_injective p
       let r' : T.Path (g ^ n • x) (g ^ (n + 1) • x) :=
-        r.cast
-          (by rw [Hom.toPrefunctor_obj, Iso.toHom_mapV, ← Aut.smul_vertex_def, ← smul_vertex_def])
-          (by rw [Hom.toPrefunctor_obj, Iso.toHom_mapV, ← Aut.smul_vertex_def, ← smul_vertex_def,
-            pow_succ, mul_smul])
+        (smulPath (g ^ n) p).cast rfl (by rw [pow_succ, mul_smul])
       have hr'darts : Path.darts T.toSerreGraph r' =
           (Path.darts T.toSerreGraph p).map (g ^ n • ·) := by
-        rw [Path.darts_cast, hrdarts]
-        simp only [← smul_dart_def]
+        rw [Path.darts_cast, darts_smulPath]
       refine ⟨q.comp r', ?_, ?_, ?_⟩
       · refine (Path.isReduced_comp_iff _ q r').mpr ⟨hq,
-          (Path.isReduced_cast _ _ _ r).mpr (hr.mpr hp), fun e he f hf => ?_⟩
+          by rwa [Path.isReduced_cast, isReduced_smulPath], fun e he f hf => ?_⟩
         rw [hr'darts, List.head?_map, Option.mem_def, Option.map_eq_some_iff] at hf
         obtain ⟨f, hf, rfl⟩ := hf
         exact hqlast e he f hf
@@ -118,6 +110,27 @@ theorem dist_pow_smul_eq_mul {g : G} {x : T.V} {p : T.Path x (g • x)}
   obtain ⟨q, hq, hqlen, -⟩ := key n
   rw [hacyc.dist_eq_length hq, hacyc.dist_eq_length hp, hqlen]
 
+/-- If a reduced path from `x` to `g • x` is followed by its translate under `g` without
+backtracking, then `x` is moved by the translation length of `g`. -/
+theorem dist_smul_eq_translationLength_of_isReduced {g : G} {x : T.V} {p : T.Path x (g • x)}
+    (hp : Path.IsReduced T.toSerreGraph p)
+    (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
+      ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) :
+    T.dist x (g • x) = T.translationLength g := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  refine le_antisymm ?_ (translationLength_le g x)
+  -- Compare the displacements of `x` and `v` under a large power of `g`: the first grows like
+  -- `n d(x, g x)`, the second at most like `n ℓ(g)`, and they differ by at most `2 d(x, v)`.
+  set n := 2 * T.dist x v + 1
+  have h₁ := dist_pow_smul_eq_mul hp hg n
+  have h₂ := T.dist_pow_smul_le g v n
+  have h₃ := T.dist_smul_le_dist_smul_add_two_mul_dist (g ^ n) v x
+  rw [hv] at h₂
+  have h : n * T.dist x (g • x) < n * (T.translationLength g + 1) := by
+    rw [mul_add, mul_one]
+    omega
+  exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left h)
+
 /-- **A criterion for hyperbolicity.** If `g` moves `x` and a reduced path from `x` to `g • x` is
 followed by its translate under `g` without backtracking, then `g` is hyperbolic. -/
 theorem isHyperbolic_of_isReduced {g : G} {x : T.V} (hx : g • x ≠ x) {p : T.Path x (g • x)}
@@ -125,22 +138,8 @@ theorem isHyperbolic_of_isReduced {g : G} {x : T.V} (hx : g • x ≠ x) {p : T.
     (hg : ∀ e ∈ (Path.darts T.toSerreGraph p).getLast?,
       ∀ f ∈ (Path.darts T.toSerreGraph p).head?, g • f ≠ T.rev e) :
     T.IsHyperbolic g := by
-  refine isHyperbolic_iff.mpr fun v hv => ?_
-  -- The orbit of `x` under the powers of `g` stays within `2 d(x, v)` of `x`, but
-  -- `d(x, gⁿ x) = n d(x, g x)` with `d(x, g x) ≥ 1`.
-  have hpos : 0 < T.dist x (g • x) :=
-    Nat.pos_of_ne_zero fun h => hx ((dist_eq_zero_iff (T.nonempty_path _ _)).mp h).symm
-  set n := 2 * T.dist x v + 1
-  have hgv : g ^ n • v = v :=
-    mem_stabilizer_iff.mp ((stabilizer G v).pow_mem (mem_stabilizer_iff.mpr hv) n)
-  have hle : T.dist x (g ^ n • x) ≤ 2 * T.dist x v := by
-    calc T.dist x (g ^ n • x) ≤ T.dist x v + T.dist v (g ^ n • x) :=
-          dist_triangle (T.nonempty_path _ _) (T.nonempty_path _ _)
-      _ = T.dist x v + T.dist (g ^ n • v) (g ^ n • x) := by rw [hgv]
-      _ = 2 * T.dist x v := by rw [dist_smul, dist_comm v x, two_mul]
-  rw [dist_pow_smul_eq_mul hp hg n] at hle
-  have := Nat.le_mul_of_pos_right n hpos
-  omega
+  rw [← translationLength_pos_iff, ← dist_smul_eq_translationLength_of_isReduced hp hg]
+  exact Nat.pos_of_ne_zero fun h => hx ((dist_eq_zero_iff (T.nonempty_path _ _)).mp h).symm
 
 /-! ### Products of elliptic elements -/
 
@@ -157,25 +156,17 @@ theorem isHyperbolic_mul_of_isReduced {s t : G} {a b : T.V} {p : T.Path a b}
   obtain ⟨e, he⟩ : ∃ e, (Path.darts T.toSerreGraph p).getLast? = some e :=
     ⟨_, List.getLast?_eq_some_getLast hne⟩
   -- The path from `b` back along `p` to `a` and then along `s • p` to `s • b = (s * t) • b`.
-  let r := (T.action s).toHom.toPrefunctor.mapPath p
-  have hrdarts : Path.darts T.toSerreGraph r = (Path.darts T.toSerreGraph p).map (T.action s • ·) :=
-    (Hom.darts_mapPath _ _ p).trans (List.map_congr_left fun e _ => congrFun (Iso.toHom_mapE _) e)
-  have hr := Hom.isReduced_mapPath_iff _ _ (T.action s).toHom_mapE_injective p
   have hsb : s • b = (s * t) • b := by rw [mul_smul, ht]
-  let q : T.Path b ((s * t) • b) := p.reverse.comp
-    (r.cast
-      (by rw [Hom.toPrefunctor_obj, Iso.toHom_mapV, ← Aut.smul_vertex_def, ← smul_vertex_def, hs])
-      (by rw [Hom.toPrefunctor_obj, Iso.toHom_mapV, ← Aut.smul_vertex_def, ← smul_vertex_def, hsb]))
+  let q : T.Path b ((s * t) • b) := p.reverse.comp ((smulPath s p).cast hs hsb)
   have hqdarts : Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).reverse.map T.rev ++
       (Path.darts T.toSerreGraph p).map (s • ·) := by
-    rw [Path.darts_comp, Path.darts_reverse, Path.darts_cast, hrdarts]
-    simp only [← smul_dart_def]
+    rw [Path.darts_comp, Path.darts_reverse, Path.darts_cast, darts_smulPath]
   have hq : Path.IsReduced T.toSerreGraph q := by
     refine (Path.isReduced_comp_iff _ _ _).mpr ⟨(Path.isReduced_reverse _ p).mpr hp,
-      (Path.isReduced_cast _ _ _ r).mpr (hr.mpr hp), fun e' he' f' hf' => ?_⟩
+      by rwa [Path.isReduced_cast, isReduced_smulPath], fun e' he' f' hf' => ?_⟩
     simp only [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, hf, Option.map_some,
       Option.mem_some_iff] at he'
-    simp only [Path.darts_cast, hrdarts, List.head?_map, hf, Option.map_some,
+    simp only [Path.darts_cast, darts_smulPath, List.head?_map, hf, Option.map_some,
       Option.mem_some_iff] at hf'
     subst he' hf'
     rw [rev_rev]

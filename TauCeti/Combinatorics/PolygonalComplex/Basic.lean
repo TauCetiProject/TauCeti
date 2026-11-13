@@ -58,6 +58,8 @@ condition into the global statement that every edge lies on one or two face side
   `Nat.card` of the face sides traversing `rev e` or `e`.
 * `TauCeti.PolygonalComplex.linkDegree_eq_sideCount_rev_add_sideCount`: when finitely many face
   sides traverse `e` or its reverse, the degree of the germ `e` is the number of such sides.
+* `TauCeti.PolygonalComplex.isOrientable_iff_forall_outgoing`: orientability in terms of the darts
+  of the side occurrences, without geometric edges.
 
 ## References
 
@@ -306,6 +308,13 @@ theorem linkDegree_eq_sideCount_rev_add_sideCount (e : C.graph.E)
     C.linkDegree e = C.sideCount (C.graph.rev e) + C.sideCount e := by
   rw [linkDegree_eq_natCard_sum, Nat.card_sum, sideCount_def, sideCount_def]
 
+/-- A germ of nonzero link degree, or its reverse, is attached to a face side. -/
+theorem exists_outgoing_of_linkDegree_ne_zero {e : C.graph.E} (h : C.linkDegree e ≠ 0) :
+    ∃ c : C.Corner, C.outgoing c = e ∨ C.outgoing c = C.graph.rev e := by
+  rw [linkDegree_eq_natCard_sum] at h
+  obtain ⟨⟨c, hc⟩ | ⟨c, hc⟩⟩ := (Nat.card_ne_zero.1 h).1
+  exacts [⟨c, .inr hc⟩, ⟨c, .inl hc⟩]
+
 /-- A germ and its reverse have the same link degree: both count the face sides along their
 common edge. -/
 @[simp] theorem linkDegree_rev (e : C.graph.E) :
@@ -395,6 +404,29 @@ theorem isOrientable_iff : C.IsOrientable ↔ ∃ σ : C.Face → Bool, ∀ c c'
     C.graph.toGeomEdge (C.outgoing c) = C.graph.toGeomEdge (C.outgoing c') →
       C.orientedSide σ c' = C.graph.rev (C.orientedSide σ c) :=
   Iff.rfl
+
+/-- Two side occurrences are traversed in opposite directions, for the face orientations `σ`,
+exactly when either their faces are oriented alike and their darts are mutually reverse, or their
+faces are oriented differently and their darts agree. -/
+theorem orientedSide_eq_rev_orientedSide_iff (σ : C.Face → Bool) (c c' : C.Corner) :
+    C.orientedSide σ c' = C.graph.rev (C.orientedSide σ c) ↔
+      (σ c.1 = σ c'.1 ∧ C.outgoing c' = C.graph.rev (C.outgoing c)) ∨
+        (σ c.1 ≠ σ c'.1 ∧ C.outgoing c' = C.outgoing c) := by
+  cases h : σ c.1 <;> cases h' : σ c'.1 <;>
+    simp [orientedSide, h, h', C.graph.rev_injective.eq_iff,
+      ← C.graph.rev_injective.eq_iff (a := C.graph.rev (C.outgoing c'))]
+
+/-- A polygonal complex is orientable exactly when its faces can be oriented so that two distinct
+side occurrences along the same dart lie on faces oriented differently, and two side occurrences
+along mutually reverse darts lie on faces oriented alike. -/
+theorem isOrientable_iff_forall_outgoing :
+    C.IsOrientable ↔ ∃ σ : C.Face → Bool, ∀ c c' : C.Corner, c ≠ c' →
+      (C.outgoing c' = C.outgoing c → σ c.1 ≠ σ c'.1) ∧
+        (C.outgoing c' = C.graph.rev (C.outgoing c) → σ c.1 = σ c'.1) := by
+  refine exists_congr fun σ => forall₃_congr fun c c' _ => ?_
+  rw [SerreGraph.toGeomEdge_eq_toGeomEdge_iff, orientedSide_eq_rev_orientedSide_iff]
+  have := C.graph.rev_ne (C.outgoing c)
+  grind
 
 end PolygonalComplex
 

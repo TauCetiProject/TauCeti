@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import Mathlib.Algebra.Group.TypeTags.Basic
 public import Mathlib.Algebra.Group.Int.Defs
 public import Mathlib.Algebra.Group.Units.Equiv
@@ -21,11 +21,14 @@ close up. The distance between two vertices is the absolute value of the differe
 coordinates.
 
 The coordinate `SerreGraph.lineVertexEquiv` identifies the vertices with the integers, and the
-integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`.
+integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`. This
+action has no inversions, and its quotient graph is a loop: it has a single vertex, and its two
+darts, identified with `Bool` through their orientation by `SerreGraph.lineQuotientDartEquiv`, are
+exchanged by reversal.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §2.2 and §6.4.
+* J.-P. Serre, *Trees*, Chapter I, §2.2, §3.1 and §6.4.
 -/
 
 public section
@@ -179,24 +182,17 @@ def lineShift : Multiplicative ℤ →* line.Aut where
         simp only [lineVertexEquiv_src]
         split_ifs <;> omega
       map_rev _ := rfl }
-  -- After evaluating the identity automorphism as `Equiv.refl` and a product of automorphisms as
-  -- the composite of their equivalences, the `show`s evaluate both sides as above.
+  -- Here the `show`s also evaluate the identity automorphism as `Equiv.refl` and a product of
+  -- automorphisms as the composite of their equivalences.
   map_one' := Iso.ext
-    (fun (v : ℤ) => by
-      rw [Aut.one_equivV]
-      exact show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
-    (fun (e : ℤ × Bool) => by
-      rw [Aut.one_equivE]
-      exact Prod.ext
-        (show (1 : Multiplicative ℤ).toAdd + e.1 = e.1 by rw [toAdd_one, zero_add]) rfl)
+    (fun (v : ℤ) => show (1 : Multiplicative ℤ).toAdd + v = v by rw [toAdd_one, zero_add])
+    (fun (e : ℤ × Bool) => Prod.ext
+      (show (1 : Multiplicative ℤ).toAdd + e.1 = e.1 by rw [toAdd_one, zero_add]) rfl)
   map_mul' x y := Iso.ext
-    (fun (v : ℤ) => by
-      rw [Aut.mul_equivV]
-      exact show (x * y).toAdd + v = x.toAdd + (y.toAdd + v) by rw [toAdd_mul, add_assoc])
-    (fun (e : ℤ × Bool) => by
-      rw [Aut.mul_equivE]
-      exact Prod.ext
-        (show (x * y).toAdd + e.1 = x.toAdd + (y.toAdd + e.1) by rw [toAdd_mul, add_assoc]) rfl)
+    (fun (v : ℤ) => show (x * y).toAdd + v = x.toAdd + (y.toAdd + v) by
+      rw [toAdd_mul, add_assoc])
+    (fun (e : ℤ × Bool) => Prod.ext
+      (show (x * y).toAdd + e.1 = x.toAdd + (y.toAdd + e.1) by rw [toAdd_mul, add_assoc]) rfl)
 
 /-- Translation adds to the coordinate of a vertex. -/
 @[simp] theorem lineVertexEquiv_lineShift_smul (k : Multiplicative ℤ) (v : line.V) :
@@ -205,6 +201,55 @@ def lineShift : Multiplicative ℤ →* line.Aut where
 /-- Translation moves a dart without changing its orientation. -/
 @[simp] theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
     lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) := (rfl)
+
+/-- Translation keeps the orientation of a dart, while reversal changes it: the integers act on
+the line without inversions. -/
+theorem lineShift_smul_ne_rev (k : Multiplicative ℤ) (e : line.E) :
+    lineShift k • e ≠ line.rev e := fun h =>
+  (Bool.eq_not_self _).mp (congrArg Prod.snd ((lineShift_smul_dart k e).symm.trans
+    (h.trans (line_rev e))))
+
+/-! ### The quotient of the line by its translations -/
+
+/-- The quotient of the line by its translations has a single vertex. -/
+instance : Unique (line.quotient lineShift lineShift_smul_ne_rev).V where
+  default := (line.quotientMap lineShift lineShift_smul_ne_rev).mapV (lineVertexEquiv.symm 0)
+  uniq a := by
+    obtain ⟨a, rfl⟩ := quotientMap_mapV_surjective _ _ _ a
+    refine quotientMap_mapV_eq_iff.mpr
+      ⟨Multiplicative.ofAdd (-lineVertexEquiv a), lineVertexEquiv.injective ?_⟩
+    rw [lineVertexEquiv_lineShift_smul, toAdd_ofAdd, neg_add_cancel, Equiv.apply_symm_apply]
+
+/-- The darts of the quotient of the line by its translations are identified with `Bool` through
+their orientation. -/
+def lineQuotientDartEquiv : (line.quotient lineShift lineShift_smul_ne_rev).E ≃ Bool where
+  toFun := quotientLiftE lineShift_smul_ne_rev (fun e : line.E => e.2) fun k e => by
+    rw [lineShift_smul_dart]
+  invFun d := (line.quotientMap lineShift lineShift_smul_ne_rev).mapE (0, d)
+  left_inv y := by
+    obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective _ _ _ y
+    rw [quotientLiftE_quotientMap (fun e : line.E => e.2)]
+    exact quotientMap_mapE_eq_iff.mpr ⟨Multiplicative.ofAdd e.1,
+      (lineShift_smul_dart _ _).trans (Prod.ext (by simp) rfl)⟩
+  right_inv d := quotientLiftE_quotientMap (fun e : line.E => e.2) _ (0, d)
+
+/-- The orbit of a dart of the line under translation is its orientation. -/
+@[simp] theorem lineQuotientDartEquiv_quotientMap (e : line.E) :
+    lineQuotientDartEquiv ((line.quotientMap lineShift lineShift_smul_ne_rev).mapE e) =
+      Prod.snd e :=
+  quotientLiftE_quotientMap (fun e : line.E => e.2) _ e
+
+@[simp] theorem lineQuotientDartEquiv_symm_apply (d : Bool) :
+    lineQuotientDartEquiv.symm d =
+      (line.quotientMap lineShift lineShift_smul_ne_rev).mapE (0, d) := (rfl)
+
+/-- Reversal exchanges the two darts of the quotient of the line by its translations. -/
+@[simp] theorem lineQuotientDartEquiv_rev (y : (line.quotient lineShift lineShift_smul_ne_rev).E) :
+    lineQuotientDartEquiv ((line.quotient lineShift lineShift_smul_ne_rev).rev y) =
+      !lineQuotientDartEquiv y := by
+  obtain ⟨e, rfl⟩ := quotientMap_mapE_surjective _ _ _ y
+  rw [← Hom.map_rev, lineQuotientDartEquiv_quotientMap, lineQuotientDartEquiv_quotientMap]
+  exact congrArg Prod.snd (line_rev e)
 
 end SerreGraph
 end TauCeti

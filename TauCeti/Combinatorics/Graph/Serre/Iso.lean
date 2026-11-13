@@ -69,8 +69,9 @@ variable {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, 
   obtain rfl : φE = ψE := Equiv.ext hE
   rfl
 
-/-- The morphism underlying an isomorphism. -/
-def toHom (φ : Γ.Iso Δ) : Γ.Hom Δ where
+/-- The morphism underlying an isomorphism. The body is exposed so that the image of a path,
+which is indexed by its endpoints, ends at the images of the endpoints without a cast. -/
+@[expose] def toHom (φ : Γ.Iso Δ) : Γ.Hom Δ where
   mapV := φ.equivV
   mapE := φ.equivE
   map_src := φ.map_src
@@ -92,8 +93,9 @@ theorem toHom_injective : Function.Injective (toHom : Γ.Iso Δ → Γ.Hom Δ) :
 @[simp] theorem map_tgt (φ : Γ.Iso Δ) (e : Γ.E) : Δ.tgt (φ.equivE e) = φ.equivV (Γ.tgt e) :=
   φ.toHom.map_tgt Γ e
 
-/-- The identity isomorphism. -/
-@[refl] def refl (Γ : SerreGraph.{u, v}) : Γ.Iso Γ where
+/-- The identity isomorphism. The body is exposed so that the automorphism group of a graph
+acts trivially on vertices and darts by definition. -/
+@[expose, refl] def refl (Γ : SerreGraph.{u, v}) : Γ.Iso Γ where
   equivV := Equiv.refl _
   equivE := Equiv.refl _
   map_src _ := rfl
@@ -106,8 +108,8 @@ theorem toHom_injective : Function.Injective (toHom : Γ.Iso Δ → Γ.Hom Δ) :
 @[simp] theorem refl_toHom (Γ : SerreGraph.{u, v}) : (refl Γ).toHom = Hom.id Γ := by
   ext <;> simp
 
-/-- The inverse isomorphism. -/
-@[symm] def symm (φ : Γ.Iso Δ) : Δ.Iso Γ where
+/-- The inverse isomorphism. The body is exposed for the same reason as that of `refl`. -/
+@[expose, symm] def symm (φ : Γ.Iso Δ) : Δ.Iso Γ where
   equivV := φ.equivV.symm
   equivE := φ.equivE.symm
   map_src e := by rw [Equiv.eq_symm_apply, ← φ.map_src, Equiv.apply_symm_apply]
@@ -131,8 +133,9 @@ theorem toHom_injective : Function.Injective (toHom : Γ.Iso Δ → Γ.Hom Δ) :
     Γ.tgt (φ.equivE.symm e) = φ.equivV.symm (Δ.tgt e) :=
   φ.symm.map_tgt e
 
-/-- The composite of two isomorphisms, `φ` followed by `ψ`. -/
-@[trans] def trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) : Γ.Iso Θ where
+/-- The composite of two isomorphisms, `φ` followed by `ψ`. The body is exposed so that
+composites act on vertices and darts by composition by definition. -/
+@[expose, trans] def trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) : Γ.Iso Θ where
   equivV := φ.equivV.trans ψ.equivV
   equivE := φ.equivE.trans ψ.equivE
   map_src e := by simp
