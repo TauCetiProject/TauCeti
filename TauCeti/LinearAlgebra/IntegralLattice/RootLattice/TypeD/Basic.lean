@@ -7,13 +7,12 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.KleinFour
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
-public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 
 /-!
 # The checkerboard lattice and the type `Dₙ` discriminant form
