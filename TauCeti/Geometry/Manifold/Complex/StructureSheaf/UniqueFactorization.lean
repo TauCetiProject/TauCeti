@@ -153,7 +153,7 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
         (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))} where
   injective := evalVertical_injective x₀ w₀
   monic hw := hw.monic
-  mem_of_dvd hw hp hpw := hw.of_dvd hp hpw
+  mem_of_dvd hw hp hpw := hw.of_dvd (Ideal.IsPrime.isRadical inferInstance) hp hpw
   dvd_iff hw P := (evalVertical_dvd_iff_of_isDistinguishedAt hw).symm
   exists_dvd_sub {w} hw b := by
     obtain ⟨⟨q, r⟩, ⟨_, hdiv⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
@@ -164,15 +164,9 @@ theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
 a unique factorisation domain. -/
 private theorem uniqueFactorizationMonoid_stalk_of_finrank_eq_zero (hE : finrank ℂ E = 0) (x : E) :
     UniqueFactorizationMonoid ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x) := by
-  have hE' : ∀ y : E, y = x := fun y ↦
-    (finrank_zero_iff_forall_zero.1 hE y).trans (finrank_zero_iff_forall_zero.1 hE x).symm
-  refine (RingEquiv.ofBijective (eval 𝓘(ℂ, E) E x)
-    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective _ _ x⟩).symm.toMulEquiv
-      |>.uniqueFactorizationMonoid inferInstance
-  obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
-  refine Eventually.of_forall fun y ↦ ?_
-  rw [hE' y, ← eval_eq_of_toFilterGerm_eq (hφ _ le_rfl), hs, Pi.zero_apply]
+  have : Subsingleton E := Module.finrank_zero_iff.1 hE
+  exact (evalEquivOfNhdsEqPure (I := 𝓘(ℂ, E)) (congrFun (nhds_discrete E) x)).symm.toMulEquiv
+    |>.uniqueFactorizationMonoid inferInstance
 
 /-- If the holomorphic stalks of `E` are unique factorisation domains, so are those of `E × ℂ`. -/
 private theorem uniqueFactorizationMonoid_stalk_prod

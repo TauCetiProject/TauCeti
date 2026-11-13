@@ -65,14 +65,9 @@ variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommG
 private theorem isNoetherianRing_stalk_of_finrank_eq_zero [FiniteDimensional ℂ V]
     (hV : finrank ℂ V = 0) (x : V) :
     IsNoetherianRing ((holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk x) := by
-  have hV' : ∀ y : V, y = x := fun y ↦
-    (finrank_zero_iff_forall_zero.1 hV y).trans (finrank_zero_iff_forall_zero.1 hV x).symm
-  refine isNoetherianRing_of_ringEquiv ℂ (RingEquiv.ofBijective (eval 𝓘(ℂ, V) V x)
-    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective _ _ x⟩).symm
-  obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
-  refine Eventually.of_forall fun y ↦ ?_
-  rw [hV' y, ← eval_eq_of_toFilterGerm_eq (hφ _ le_rfl), hs, Pi.zero_apply]
+  have : Subsingleton V := Module.finrank_zero_iff.1 hV
+  exact isNoetherianRing_of_ringEquiv ℂ
+    (evalEquivOfNhdsEqPure (I := 𝓘(ℂ, V)) (congrFun (nhds_discrete V) x)).symm
 
 /-- If the holomorphic stalks of `V` are Noetherian, so are those of `V × ℂ`: an ideal containing
 a nonzero germ is finitely generated because, after a linear change of coordinates making
