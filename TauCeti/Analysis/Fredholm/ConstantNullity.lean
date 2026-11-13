@@ -157,9 +157,12 @@ theorem IsFredholm.exists_stabilization_isTopCompl_range_iff (hT₀ : IsFredholm
     exact isTopCompl_of_isInvertible_prod_coprod hinv (by omega)
 
 omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- The algebra behind the kernel parametrization: if `S` meets the ranges of both `T₀` and `T`
-trivially, the `E`-component of the kernel section of `T + inclusion_S`, precomposed with
-`ContinuousLinearMap.kerCoprodHom`, is injective with range `ker T`. -/
+/-- The kernel parametrization at a single parameter: if `S` meets the ranges of both `T₀` and
+`T` trivially, the `E`-component of the kernel section of `T + inclusion_S`, precomposed with
+`ContinuousLinearMap.kerCoprodHom`, is injective with range `ker T`. The `T`-side is
+`ContinuousLinearMap.injective_fst_comp_kerSection_coprod` and
+`ContinuousLinearMap.range_fst_comp_kerSection_coprod`; at `T₀` the embedding `kerCoprodHom` is
+onto the stabilized kernel `ker T₀ × 0`. -/
 private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {T₀ T : E →L[𝕜] F}
     {q : (E × S) →L[𝕜] (T₀.coprod S.subtypeL).ker}
     (hinv : ((T.coprod S.subtypeL).prod q).IsInvertible) (hS₀ : Disjoint S T₀.range)
@@ -167,35 +170,16 @@ private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {
     Injective (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerCoprodHom T₀ S.subtypeL) ∧
       (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerCoprodHom T₀ S.subtypeL).range =
         T.ker := by
-  -- Where `S` meets the range of an operator trivially, the stabilized kernel is `ker × 0`.
-  have hprod {T' : E →L[𝕜] F} (h : Disjoint S T'.range) :
-      (T'.coprod S.subtypeL).ker = T'.ker.prod ⊥ := by
-    simpa using ker_coprod_of_disjoint_range (f₂ := S.subtypeL) (by simpa [disjoint_comm] using h)
-  have hker := hprod hS
-  -- Every vector of the stabilized kernel at `x` has vanishing `S`-component.
-  have hmem (g) : (T.coprod S.subtypeL).kerSection q g ∈ T.ker.prod ⊥ :=
-    hker ▸ kerSection_mem_ker g
-  refine ⟨fun v w hvw ↦ ?_, le_antisymm ?_ fun e he ↦ ?_⟩
-  · have h : (T.coprod S.subtypeL).kerSection q (kerCoprodHom T₀ S.subtypeL v) =
-        (T.coprod S.subtypeL).kerSection q (kerCoprodHom T₀ S.subtypeL w) :=
-      Prod.ext hvw (((hmem _).2).trans ((hmem _).2).symm)
-    have h' := congrArg (fun g : (T₀.coprod S.subtypeL).ker ↦ (g : E × S).1)
-      (kerSection_injective hinv h)
-    simp only [kerCoprodHom_apply] at h'
-    exact Subtype.ext h'
-  · rintro _ ⟨v, rfl⟩
-    exact (hmem _).1
-  · -- `(e, 0)` lies in the stabilized kernel, the range of the section; its preimage lies in the
-    -- stabilized kernel at the base point, which is `ker T₀ × 0`.
-    have he' : ((e, 0) : E × S) ∈ (T.coprod S.subtypeL).ker := hker ▸ ⟨he, rfl⟩
-    rw [← range_kerSection hinv] at he'
-    obtain ⟨g, hg⟩ := he'
-    have hg₀ := (hprod hS₀ ▸ g.2 : (g : E × S) ∈ T₀.ker.prod ⊥)
-    refine ⟨⟨(g : E × S).1, hg₀.1⟩, ?_⟩
-    have hgv : kerCoprodHom T₀ S.subtypeL ⟨(g : E × S).1, hg₀.1⟩ = g :=
-      Subtype.ext <| (kerCoprodHom_apply _ _ _).trans
-        (Prod.ext rfl (Submodule.mem_bot 𝕜 |>.mp hg₀.2).symm)
-    simpa [hgv] using congrArg Prod.fst hg
+  have hker₀ : (T₀.coprod S.subtypeL).ker = T₀.ker.prod ⊥ := by
+    simpa using ker_coprod_of_disjoint_range (f₂ := S.subtypeL) (by simpa [disjoint_comm] using hS₀)
+  have hk : Surjective (kerCoprodHom T₀ S.subtypeL) := fun g ↦ by
+    have hg := (hker₀ ▸ g.2 : (g : E × S) ∈ T₀.ker.prod ⊥)
+    exact ⟨⟨(g : E × S).1, hg.1⟩, Subtype.ext <| (kerCoprodHom_apply _ _ _).trans
+      (Prod.ext rfl (Submodule.mem_bot 𝕜 |>.mp hg.2).symm)⟩
+  refine ⟨(injective_fst_comp_kerSection_coprod hinv hS).comp (kerCoprodHom_injective _ _), ?_⟩
+  rw [← range_fst_comp_kerSection_coprod hinv hS]
+  rw [← comp_assoc]
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr hk)
 
 /-- The kernel parametrization of a family of constant nullity, as an explicit formula: on a
 neighbourhood `U` of `x₀`, `κ x` is the `E`-component of the stabilized kernel section, and it is
