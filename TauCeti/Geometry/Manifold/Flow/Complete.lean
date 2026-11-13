@@ -190,7 +190,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
   rcases isEmpty_or_nonempty M with hM | hM
   · exact fun x ↦ isEmptyElim x
   have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     isCompact_univ fun _ _ ↦ mem_univ _
 

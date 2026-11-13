@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
@@ -25,6 +26,8 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
 ## Main results
 
 * `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
+* `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
+  ramified exactly when its residue degree is one.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
 
@@ -109,6 +112,20 @@ theorem inertiaDegree_eq_of_algEquiv {L M : IntermediateField K (SeparableClosur
     exact TauCeti.inertiaDegree_eq_of_algEquiv K L M e
   · rw [inertiaDegree_of_not_finite hL, inertiaDegree_of_not_finite
       fun h ↦ hL (Module.Finite.equiv e.symm.toLinearEquiv)]
+
+/-- A subextension is totally ramified exactly when its totalized residue degree is one; no
+finiteness hypothesis is needed, since an infinite subextension has residue degree zero. -/
+theorem isTotallyRamified_iff_inertiaDegree_eq_one (L : IntermediateField K (SeparableClosure K)) :
+    L.IsTotallyRamified ↔ L.inertiaDegree = 1 := by
+  by_cases h : Module.Finite K L
+  · rw [L.isTotallyRamified_iff, inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact TauCeti.isTotallyRamified_iff_inertiaDegree_eq_one K L
+  · rw [inertiaDegree_of_not_finite h]
+    exact iff_of_false (fun h' ↦ h h'.finite) zero_ne_one
 
 /-- The bottom subextension has residue degree one. -/
 @[simp]

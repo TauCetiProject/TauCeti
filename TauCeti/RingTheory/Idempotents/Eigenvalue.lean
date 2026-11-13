@@ -22,8 +22,11 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 * `Finset.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of
   commuting idempotents is a bounded natural-number cast.
-* `Finset.sum_smul_eq_card_smul_iff`: in characteristic zero, that sum acts on a vector by the
-  number of idempotents exactly when every idempotent in the family fixes the vector.
+* `Finset.sum_smul_eq_card_nsmul_iff`: in an additively torsion-free group, that sum acts on a
+  vector by the number of idempotents exactly when every idempotent in the family fixes the
+  vector.
+* `Finset.sum_smul_eq_card_smul_iff`: the same, with the number cast into a characteristic-zero
+  domain `K` acting on the module.
 -/
 
 public section
@@ -66,6 +69,37 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
         rw [sub_smul, one_smul, ← hpx_eigen, add_sub_cancel_left]
       exact ⟨m + 1, by omega, by rw [Nat.cast_succ, ← hμ, sub_add_cancel]⟩
 
+/-- A sum of pairwise commuting idempotents acts on a vector by the cardinality of the family if and
+only if every idempotent in the family fixes that vector, in an additively torsion-free group. The
+vector may be zero. -/
+theorem sum_smul_eq_card_nsmul_iff [Module.IsTorsionFree ℤ M]
+    (s : Finset ι) (p : ι → A)
+    (hp : ∀ i ∈ s, IsIdempotentElem (p i))
+    (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j)) {x : M} :
+    (∑ i ∈ s, p i) • x = s.card • x ↔ ∀ a ∈ s, p a • x = x := by
+  classical
+  refine ⟨fun heigen a ha => ?_, fun h => ?_⟩
+  · -- Integer eigenvalues act through the `ℤ`-module structure, which commutes with every
+    -- `A`-action.
+    have heigen' : (∑ i ∈ s, p i) • x = (s.card : ℤ) • x := by
+      rwa [← Nat.cast_smul_eq_nsmul ℤ] at heigen
+    -- Otherwise `x - p a • x` would be a nonzero eigenvector of the sum over `s.erase a` with
+    -- eigenvalue `s.card`, exceeding the bound of `exists_eq_natCast_of_sum_smul_eq_smul`.
+    by_contra hfix
+    have hsum : (∑ i ∈ s, p i) • (x - p a • x) = (s.card : ℤ) • (x - p a • x) := by
+      rw [smul_sub, smul_sub, heigen', sum_smul_smul_eq_smul_smul s p hcomm ha heigen']
+    have hpa : p a • (x - p a • x) = 0 := by rw [smul_sub, smul_smul, (hp a ha).eq, sub_self]
+    rw [← sum_erase_add _ _ ha, add_smul, hpa, add_zero] at hsum
+    obtain ⟨m, hm, hcast⟩ := (s.erase a).exists_eq_natCast_of_sum_smul_eq_smul (K := ℤ) p
+      (fun i hi => hp i (mem_of_mem_erase hi)) (hcomm.mono (coe_subset.2 (erase_subset a s)))
+      (sub_ne_zero.2 (Ne.symm hfix)) hsum
+    have := Nat.cast_injective (R := ℤ) hcast
+    have := card_erase_of_mem ha ▸ hm
+    have := card_pos.2 ⟨a, ha⟩
+    omega
+  · rw [sum_smul, sum_congr rfl h, sum_const]
+
+omit [SMulCommClass A K M] in
 /-- In characteristic zero, a sum of pairwise commuting idempotents acts on a vector by the
 cardinality of the family if and only if every idempotent in the family fixes that vector. The
 vector may be zero. -/
@@ -74,22 +108,9 @@ theorem sum_smul_eq_card_smul_iff [CharZero K]
     (hp : ∀ i ∈ s, IsIdempotentElem (p i))
     (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j)) {x : M} :
     (∑ i ∈ s, p i) • x = (s.card : K) • x ↔ ∀ a ∈ s, p a • x = x := by
-  classical
-  refine ⟨fun heigen a ha => ?_, fun h => ?_⟩
-  · -- Otherwise `x - p a • x` would be a nonzero eigenvector of the sum over `s.erase a` with
-    -- eigenvalue `s.card`, exceeding the bound of `exists_eq_natCast_of_sum_smul_eq_smul`.
-    by_contra hfix
-    have hsum : (∑ i ∈ s, p i) • (x - p a • x) = (s.card : K) • (x - p a • x) := by
-      rw [smul_sub, smul_sub, heigen, sum_smul_smul_eq_smul_smul s p hcomm ha heigen]
-    have hpa : p a • (x - p a • x) = 0 := by rw [smul_sub, smul_smul, (hp a ha).eq, sub_self]
-    rw [← sum_erase_add _ _ ha, add_smul, hpa, add_zero] at hsum
-    obtain ⟨m, hm, hcast⟩ := (s.erase a).exists_eq_natCast_of_sum_smul_eq_smul p
-      (fun i hi => hp i (mem_of_mem_erase hi)) (hcomm.mono (coe_subset.2 (erase_subset a s)))
-      (sub_ne_zero.2 (Ne.symm hfix)) hsum
-    have := Nat.cast_injective (R := K) hcast
-    have := card_erase_of_mem ha ▸ hm
-    have := card_pos.2 ⟨a, ha⟩
-    omega
-  · rw [sum_smul, sum_congr rfl h, sum_const, Nat.cast_smul_eq_nsmul]
+  have : HasUniqueDiv M := .of_isTorsionFree K M
+  have : Module.IsTorsionFree ℤ M := inferInstance
+  rw [Nat.cast_smul_eq_nsmul K]
+  exact sum_smul_eq_card_nsmul_iff s p hp hcomm
 
 end Finset

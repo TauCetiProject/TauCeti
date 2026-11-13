@@ -147,7 +147,7 @@ theorem irreducible_of_irreducible_polynomialToOption
     (hm : ω.IsMonicOfDegree s) (h : Irreducible (polynomialToOption ω)) : Irreducible ω := by
   have : Nontrivial Tate := nontrivial_of_ne _ _ hω.coeff_ne_zero
   have : Nontrivial W := (toTate σ K).domain_nontrivial
-  exact h.of_map_of_dvd hm.ne_zero fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
+  exact h.of_map_of_dvd fun p ↦ (polynomialToOption_dvd_iff hω hm p).mp
 
 /-- If a distinguished monic polynomial is prime in `K⟨X, Y⟩†`, it is prime in `K⟨X⟩†[Y]`. This
 holds without assuming `K` complete. -/

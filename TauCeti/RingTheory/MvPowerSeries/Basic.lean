@@ -17,8 +17,10 @@ through the coercion to multivariate power series. It lets coefficient computati
 products use the polynomial API, for example when substituting polynomials into power series.
 The coefficient semiring need only be commutative; no norm or topology is required.
 
-`MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of `(X + Y) ^ n` in
-`R⟦X, Y⟧`, the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring.
+`MvPowerSeries.X_ne_zero` records that every coordinate variable `X s` is nonzero over a nontrivial
+semiring, and `MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of
+`(X + Y) ^ n` in `R⟦X, Y⟧`, the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any
+semiring.
 -/
 
 public section
@@ -40,6 +42,14 @@ end MvPolynomial
 namespace MvPowerSeries
 
 variable {R : Type*} [Semiring R]
+
+/-- Over a nontrivial semiring, every coordinate indeterminate `X s` is nonzero. -/
+@[simp]
+theorem X_ne_zero {σ : Type*} [Nontrivial R] (s : σ) : (X s : MvPowerSeries σ R) ≠ 0 := fun h ↦ by
+  classical
+  have h1 := congrArg (coeff (Finsupp.single s 1)) h
+  rw [coeff_X, ite_eq_left rfl, map_zero] at h1
+  exact one_ne_zero h1
 
 /-- The coefficient of `X^(d 0) Y^(d 1)` in `(X + Y) ^ n` is `n.choose (d 0)` if
 `d 0 + d 1 = n`, and `0` otherwise. -/
