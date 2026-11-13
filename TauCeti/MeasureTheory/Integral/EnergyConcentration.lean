@@ -103,14 +103,14 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
   have hdisj : (Z : Set X).Pairwise (Disjoint on fun z ↦ ball z ε ∩ Ω) :=
     fun z hz z' hz' hne ↦ (ball_disjoint_ball (by linarith [hsep z hz z' hz' hne])).mono
       inter_subset_left inter_subset_left
-  calc Z.card * δ = ∑ z ∈ Z, δ := by simp
+  calc Z.card * δ = ∑ _ ∈ Z, δ := by simp
     _ ≤ ∑ z ∈ Z, ∫ y in ball z ε ∩ Ω, e i y ∂μ := Finset.sum_le_sum hi
     _ = ∫ y in ⋃ z ∈ Z, ball z ε ∩ Ω, e i y ∂μ :=
       (integral_biUnion_finset Z (fun _ _ ↦ measurableSet_ball.inter hΩ) hdisj
         fun _ _ ↦ (hint i).mono_set inter_subset_right).symm
     _ ≤ ∫ y in Ω, e i y ∂μ :=
       setIntegral_mono_set (hint i) (ae_restrict_of_forall_mem hΩ (he i))
-        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallyLE
+        (iUnion₂_subset fun _ _ ↦ inter_subset_right).eventuallySubset
     _ ≤ E := hE i
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
@@ -136,7 +136,7 @@ theorem eventually_le_setIntegral_ball_of_le_measureReal_add_setIntegral_ball {�
     _ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ :=
       setIntegral_mono_set ((hint i).mono_set inter_subset_right)
         (ae_restrict_of_forall_mem (measurableSet_ball.inter hΩ) fun y hy ↦ he i y hy.2)
-        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallyLE
+        (inter_subset_inter_left _ (ball_subset_ball hρ.2.le)).eventuallySubset
 
 /-- **Finitely many blow-up points.** Let `g k` be functions continuous on a measurable set `Ω`,
 and let `e k ≥ 0` be densities on `Ω` with `∫_Ω e k ≤ E`. Suppose that energy at least `δ > 0`
@@ -237,17 +237,17 @@ theorem exists_strictMono_tendsto_atTop_of_forall_eventually_le_setIntegral_ball
   exact squeeze_zero (fun _ ↦ dist_nonneg) (fun k ↦ ((mem_ball.1 (hy k).1).trans (hε k).2).le)
     tendsto_one_div_add_atTop_nhds_zero_nat
 
-/-- **Concentration points are exactly the blow-up points.** Let `Ω` be open in a locally compact
-space and `Z ⊆ Ω` a finite set of points of measure zero, each with a ball of finite measure. Let
-the densities `e n` concentrate energy at least `δ > 0` at every point of `Z`, and let the `g n`
-be uniformly bounded above on every compact subset of `Ω \ Z` and control the `e n`, in the sense
-that `e n` is bounded above wherever `g n` is, uniformly in `n`. Then `Z` is exactly the set of
-points of `Ω` near which the `g n` are not uniformly bounded above. So when the functions of
-`TauCeti.exists_strictMono_finset_forall_le_of_concentration` control its densities and its
-points have measure zero with balls of finite measure, the finite set it produces is determined
-by the subsequence it comes with. -/
-theorem coe_eq_setOf_forall_exists_lt_of_concentration [LocallyCompactSpace X]
-    {g e : ℕ → X → ℝ} {Z : Finset X} (hΩ : IsOpen Ω) (hδ : 0 < δ) (hZΩ : ↑Z ⊆ Ω)
+/-- **Concentration points are exactly the blow-up points.** Let `Ω` be a set and `Z ⊆ Ω` a
+finite set of points of measure zero, each with a ball of finite measure. Let the densities `e n`
+concentrate energy at least `δ > 0` at every point of `Z`, and let the `g n` be uniformly bounded
+above on every compact subset of `Ω \ Z` and control the `e n`, in the sense that `e n` is bounded
+above wherever `g n` is, uniformly in `n`. Then `Z` is exactly the set of points of `Ω` near which
+the `g n` are not uniformly bounded above. So when the functions of
+`TauCeti.exists_strictMono_finset_forall_le_of_concentration` control its densities and its points
+have measure zero with balls of finite measure, the finite set it produces is determined by the
+subsequence it comes with. -/
+theorem coe_eq_setOf_forall_exists_lt_of_concentration
+    {g e : ℕ → X → ℝ} {Z : Finset X} (hδ : 0 < δ) (hZΩ : ↑Z ⊆ Ω)
     (hz : ∀ z ∈ Z, μ {z} = 0) (hfin : ∀ z ∈ Z, ∃ R > 0, μ (ball z R) ≠ ⊤)
     (hge : ∀ M, ∃ M', ∀ n, ∀ y ∈ Ω, g n y ≤ M → e n y ≤ M')
     (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e n y ∂μ)
@@ -261,14 +261,24 @@ theorem coe_eq_setOf_forall_exists_lt_of_concentration [LocallyCompactSpace X]
     obtain ⟨k, hk, hgk⟩ := ((hy.eventually (ball_mem_nhds z hε)).and
       (hgy.eventually_gt_atTop M)).exists
     exact ⟨φ k, y k, ⟨hk, hyΩ k⟩, hgk⟩
-  · -- Off `Z`, a compact neighbourhood of `z` in `Ω \ Z` carries a uniform bound.
+  · -- Off `Z`, a convergent sequence of blow-up points together with its limit is a compact set
+    -- in `Ω \ Z` carrying a uniform bound.
     by_contra hzZ
-    have hnhds : Ω \ ↑Z ∈ 𝓝 z :=
-      (hΩ.sdiff Z.finite_toSet.isClosed).mem_nhds ⟨hzΩ, hzZ⟩
-    obtain ⟨C, hCz, hCZ, hC⟩ := local_compact_nhds hnhds
-    obtain ⟨ε, hε, hεC⟩ := Metric.mem_nhds_iff.1 hCz
-    obtain ⟨M, hM⟩ := hbd C hC hCZ
-    obtain ⟨n, y, hy, hMy⟩ := hunb ε hε M
-    exact (hM n y (hεC hy.1)).not_gt hMy
+    obtain ⟨ε₀, hε₀, hball⟩ := Metric.isOpen_iff.1 Z.finite_toSet.isClosed.isOpen_compl z hzZ
+    choose n y hy hgy using fun k : ℕ ↦ hunb (min ε₀ (1 / (k + 1))) (lt_min hε₀ (by positivity)) k
+    have hyz : Tendsto y atTop (𝓝 z) := by
+      rw [tendsto_iff_dist_tendsto_zero]
+      exact squeeze_zero (fun _ ↦ dist_nonneg)
+        (fun k ↦ ((mem_ball.1 (hy k).1).trans_le (min_le_right _ _)).le)
+        tendsto_one_div_add_atTop_nhds_zero_nat
+    have hsub : insert z (Set.range y) ⊆ Ω \ ↑Z := by
+      rintro _ (rfl | ⟨k, rfl⟩)
+      · exact ⟨hzΩ, hzZ⟩
+      · exact ⟨(hy k).2, fun h ↦
+          hball (mem_ball.2 ((mem_ball.1 (hy k).1).trans_le (min_le_left _ _))) h⟩
+    obtain ⟨M, hM⟩ := hbd _ hyz.isCompact_insert_range hsub
+    obtain ⟨k, hk⟩ := exists_nat_gt M
+    exact ((hM (n k) (y k) (Set.mem_insert_of_mem _ (Set.mem_range_self k))).trans_lt hk).not_gt
+      (hgy k)
 
 end TauCeti

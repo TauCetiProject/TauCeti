@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
+import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # The norm of a multilinear map on an orthonormal basis
@@ -84,9 +85,9 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis
   -- Expand each argument in the basis and use multilinearity.
   have hM : M m = ∑ r : ∀ j, ι j, (∏ j, (b j).repr (m j) (r j)) •
       M fun j => b j (r j) := by
-    conv_lhs => rw [← funext fun j => (b j).sum_repr (m j)]
-    rw [M.map_sum]
-    exact Finset.sum_congr rfl fun r _ => M.map_smul_univ _ _
+    simpa only [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
+      ContinuousMultilinearMap.coe_coe] using
+      M.toMultilinearMap.apply_eq_sum_prod_repr_smul (fun j => (b j).toBasis) m
   rw [hM, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
   rw [norm_smul, norm_prod, mul_comm]

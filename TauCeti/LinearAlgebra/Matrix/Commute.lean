@@ -137,7 +137,7 @@ theorem commute_fin_two_iff (hM : M ∉ Set.range (Matrix.scalar (Fin 2))) :
     -- the ratio of the corresponding entries of `N` and `M` is the coefficient of `M`.
     by_cases h01 : M 0 1 = 0
     · by_cases h10 : M 1 0 = 0
-      · have hd : M 0 0 - M 1 1 ≠ 0 := sub_ne_zero.mpr fun h => hM ⟨h01, h10, h⟩
+      · have _ : M 0 0 - M 1 1 ≠ 0 := sub_ne_zero.mpr fun h => hM ⟨h01, h10, h⟩
         refine exists_eq_scalar_add_smul_fin_two ((N 0 0 - N 1 1) / (M 0 0 - M 1 1)) ?_ ?_ ?_ <;>
           grind
       · refine exists_eq_scalar_add_smul_fin_two (N 1 0 / M 1 0) ?_ ?_ ?_ <;> grind

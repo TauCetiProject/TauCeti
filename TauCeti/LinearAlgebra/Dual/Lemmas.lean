@@ -27,6 +27,8 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
+  nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
   `U`, then `ker f ⊓ U` has codimension one in `U`. This is the relative form of Mathlib's
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
@@ -81,6 +83,25 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section OrderedCommRing
+
+variable {R V : Type*} [CommRing R] [PartialOrder R] [IsOrderedAddMonoid R] [AddCommGroup V]
+  [Module R V]
+
+/-- If `f x = 1`, a functional `g` that is nonnegative on the half-space `{v | 0 ≤ f v}` is the
+multiple `g x • f` of `f`. -/
+theorem apply_eq_mul_apply_of_nonneg (f g : Dual R V) {x : V} (hfx : f x = 1)
+    (hg : ∀ v, 0 ≤ f v → 0 ≤ g v) (u : V) : g u = g x * f u := by
+  -- `g` vanishes on the kernel of `f`, which contains `u - f u • x`.
+  have hker (v : V) (hv : f v = 0) : g v = 0 :=
+    le_antisymm (by simpa using hg (-v) (by simp [hv])) (hg v hv.ge)
+  have hrest : f (u - f u • x) = 0 := by simp [hfx]
+  calc
+    g u = g (f u • x + (u - f u • x)) := by rw [add_sub_cancel]
+    _ = g x * f u := by rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
+
+end OrderedCommRing
 
 section DivisionRing
 

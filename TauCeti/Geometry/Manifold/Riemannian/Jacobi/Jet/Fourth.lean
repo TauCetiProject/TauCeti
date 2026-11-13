@@ -130,8 +130,8 @@ private theorem IsGeodesicCurveOn.mdifferentiableWithinAt_derivJacobiOperator
           (leviCivitaConnection I M) (γ r)) (curveVelocityWithin I γ s r)).flip
           (curveVelocityWithin I γ s r)).flip (curveVelocityWithin I γ s r))) s a := by
   intro normEnd spaceEnd normTwo spaceTwo normThree spaceThree
-    normFiberEnd spaceFiberEnd normFiberTwo spaceFiberTwo normFiberThree spaceFiberThree
-    monoidEnd monoidTwo monoidThree
+    normFiberEnd spaceFiberEnd normFiberTwo spaceFiberTwo normFiberThree _
+    monoidEnd monoidTwo _
   have hvel : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s a := by
     simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
@@ -188,7 +188,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_four_of_eq_zero
     (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ha) hT hT
   have hDU : alongCurveWithin cov γ U s a =
       cov.derivCurvatureTensor cov (γ a) (T a) (D a) (T a) (T a) := by
-    rw [alongCurveWithin_clm_apply_of_eq_zero cov γ J B (hJ.uniqueDiffOn a ha) hB
+    rw [alongCurveWithin_clm_apply_of_eq_zero cov γ J B hB
       ((hJ.contMDiffOn a ha).mdifferentiableWithinAt (by norm_num)) hzero]
     simp only [B, ContinuousLinearMap.flip_apply, derivCurvatureTensorCLM_apply, D]
   have hDT : alongCurveWithin cov γ T s a = 0 :=

@@ -16,7 +16,8 @@ import Mathlib.Topology.UniformSpace.HeineCantor
 # Taylor polynomials and remainder estimates
 
 Remainder bounds and identities for Mathlib's Taylor polynomials `taylorWithinEval f n s x₀ x`,
-including uniform second-order estimates for functions C² near compact sets.
+including uniform second-order estimates for functions C² near compact sets and for
+families whose spatial second derivatives are jointly continuous on a compact cylinder.
 The file provides:
 
 * **Uniform second-order remainder.** For a function C² near a compact set, the
@@ -45,6 +46,8 @@ function divided by its parameter is completely monotone.
 
 * `TauCeti.taylorWithinEval_univ_two`: the quadratic Taylor polynomial expressed using ordinary
   derivatives.
+* `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le_param`: the uniform quadratic
+  remainder estimate for compact parameter families.
 * `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le`: a uniform small-coefficient
   second-order remainder estimate on a compact interval. The variant
   `TauCeti.exists_pos_forall_abs_sub_taylorWithinEval_two_le_of_isCompact` applies to any
@@ -55,6 +58,11 @@ function divided by its parameter is completely monotone.
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
+
+## References
+
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §3.3 (the quadratic remainder estimate used in Itô's formula).
 -/
 
 public section
@@ -103,33 +111,19 @@ theorem taylorWithinEval_univ_two (f : ℝ → ℝ) (x y : ℝ) :
     Nat.cast_one, Nat.cast_zero, zero_add, one_mul, inv_one, pow_one, smul_eq_mul]
   ring
 
-/-- Uniform second-order Taylor remainder estimate for a function C² near a compact interval.
-The coefficient of the squared increment can be made arbitrarily small. -/
-theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
-    (hf : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 f z) {ε : ℝ} (hε : 0 < ε) :
-    ∃ δ > 0, ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ →
-      |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
-  have hu : UniformContinuousOn (iteratedDeriv 2 f) (Icc a b) := by
-    apply isCompact_Icc.uniformContinuousOn_of_continuous
-    intro z hz
-    simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using
-      (((hf z hz).derivWithin (m := 1) (by norm_num)).derivWithin
-        (m := 0) (by norm_num)).continuousAt.continuousWithinAt
-  obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuousOn_iff.1 hu ε hε
-  refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
+/-- Oscillation of the second derivative controls the quadratic Taylor remainder. -/
+theorem abs_sub_taylorWithinEval_two_le_of_abs_iteratedDeriv_two_sub_le {f : ℝ → ℝ} {x y ε : ℝ}
+    (hf : ∀ z ∈ uIcc x y, ContDiffAt ℝ 2 f z)
+    (hosc : ∀ z ∈ uIoo x y, |iteratedDeriv 2 f z - iteratedDeriv 2 f x| ≤ ε) :
+    |f y - taylorWithinEval f 2 univ x y| ≤ ε / 2 * (y - x) ^ 2 := by
   by_cases h : x = y
   · subst y
     simp
   obtain ⟨z, hz, hTaylor⟩ := taylor_mean_remainder_lagrange_iteratedDeriv
-    (n := 1) h (fun t ht ↦ (hf t (uIcc_subset_Icc hx hy ht)).contDiffWithinAt)
-  have hz' : z ∈ Icc a b := uIcc_subset_Icc hx hy (uIoo_subset_uIcc_self hz)
-  have hzx : dist z x < δ := lt_of_le_of_lt
-    (by simpa [Real.dist_eq] using abs_sub_left_of_mem_uIcc (uIoo_subset_uIcc_self hz)) hxy
-  have hd : |iteratedDeriv 2 f z - iteratedDeriv 2 f x| < ε := by
-    simpa [Real.dist_eq] using hδf z hz' x hx hzx
+    (n := 1) h (fun t ht ↦ (hf t ht).contDiffWithinAt)
   have hpoly : taylorWithinEval f 1 (uIcc x y) x y =
       f x + deriv f x * (y - x) := by
-    rw [taylorWithinEval_uIcc_eq_univ h ((hf x hx).of_le (by norm_num))]
+    rw [taylorWithinEval_uIcc_eq_univ h ((hf x left_mem_uIcc).of_le (by norm_num))]
     simp [taylorWithinEval_succ, taylor_within_zero_eval, iteratedDeriv_one,
       smul_eq_mul, mul_comm]
   rw [hpoly] at hTaylor
@@ -141,14 +135,48 @@ theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b
       simpa only [Nat.reduceAdd, Nat.factorial_two, Nat.cast_ofNat] using hTaylor
     rw [iteratedDeriv_succ, iteratedDeriv_one] at hTaylor' ⊢
     linarith
-  rw [heq]
-  calc
-    _ = |iteratedDeriv 2 f z - iteratedDeriv 2 f x| / 2 * (y - x) ^ 2 := by
-      rw [abs_div, abs_mul, abs_pow, sq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2)]
-      ring
-    _ ≤ ε * (y - x) ^ 2 := by
-      gcongr
-      linarith [abs_nonneg (iteratedDeriv 2 f z - iteratedDeriv 2 f x)]
+  rw [heq, abs_div, abs_mul, abs_pow, sq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2)]
+  nlinarith [mul_le_mul_of_nonneg_right (hosc z hz) (sq_nonneg (y - x))]
+
+/-- The spatial quadratic Taylor remainder is uniformly small on a compact parameter/state
+cylinder when the spatial second derivative is jointly continuous there. -/
+theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le_param
+    {A : Type*} [PseudoMetricSpace A] {s : Set A} (hs : IsCompact s)
+    {f : A → ℝ → ℝ} {a b : ℝ}
+    (hf : ∀ u ∈ s, ∀ z ∈ Icc a b, ContDiffAt ℝ 2 (f u) z)
+    (h₂ : ContinuousOn (fun p : A × ℝ ↦ iteratedDeriv 2 (f p.1) p.2) (s ×ˢ Icc a b))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ u ∈ s, ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ →
+      |f u y - taylorWithinEval (f u) 2 univ x y| ≤ ε * (y - x) ^ 2 := by
+  obtain ⟨δ, hδ, hosc⟩ := Metric.uniformContinuousOn_iff.1
+    ((hs.prod isCompact_Icc).uniformContinuousOn_of_continuous h₂) ε hε
+  refine ⟨δ, hδ, fun u hu x hx y hy hxy ↦ ?_⟩
+  have hbound := abs_sub_taylorWithinEval_two_le_of_abs_iteratedDeriv_two_sub_le (ε := ε)
+    (fun z hz ↦ hf u hu z (uIcc_subset_Icc hx hy hz)) (fun z hz ↦ ?_)
+  · exact hbound.trans (by gcongr; linarith)
+  · have hzx : dist (u, z) (u, x) < δ := by
+      rw [Prod.dist_eq]
+      exact max_lt (by simpa using hδ) (by
+        simpa only [Real.dist_eq] using
+          (abs_sub_left_of_mem_uIcc (uIoo_subset_uIcc_self hz)).trans_lt hxy)
+    apply le_of_lt
+    simpa only [Real.dist_eq] using
+      hosc (u, z) ⟨hu, uIcc_subset_Icc hx hy (uIoo_subset_uIcc_self hz)⟩ (u, x) ⟨hu, hx⟩ hzx
+
+/-- Uniform second-order Taylor remainder estimate for a function C² near a compact interval.
+The coefficient of the squared increment can be made arbitrarily small. -/
+theorem exists_pos_forall_abs_sub_taylorWithinEval_two_le {f : ℝ → ℝ} {a b : ℝ}
+    (hf : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 f z) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, |y - x| < δ →
+      |f y - taylorWithinEval f 2 univ x y| ≤ ε * (y - x) ^ 2 := by
+  have h₂ : ContinuousOn (fun p : ℝ × ℝ ↦ iteratedDeriv 2 f p.2) ({0} ×ˢ Icc a b) := by
+    intro p hp
+    simpa only [iteratedDeriv_succ, iteratedDeriv_zero, Function.comp_def] using
+      ((((hf p.2 hp.2).derivWithin (m := 1) (by norm_num)).derivWithin
+        (m := 0) (by norm_num)).continuousAt.comp continuousAt_snd).continuousWithinAt
+  obtain ⟨δ, hδ, hTaylor⟩ := exists_pos_forall_abs_sub_taylorWithinEval_two_le_param
+    (isCompact_singleton (x := (0 : ℝ))) (f := fun _ ↦ f) (fun _ _ ↦ hf) h₂ hε
+  exact ⟨δ, hδ, hTaylor 0 (mem_singleton 0)⟩
 
 /-- Uniform second-order Taylor remainder estimate for a function C² near a compact set.
 Only smoothness at the points of the set is required, even when the set is disconnected. -/

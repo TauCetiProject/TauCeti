@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Taylor.Basic
+public import TauCeti.Analysis.Calculus.Taylor.Parameter
 
 /-!
 # Accumulated Taylor remainders
@@ -45,7 +45,7 @@ theorem sub_sum_taylor_two_eq_sum_sub_taylorWithinEval (f : ℝ → ℝ) (x : �
   rw [← Finset.sum_range_sub (fun i ↦ f (x i)) n, ← Finset.sum_sub_distrib,
     Finset.mul_sum, ← Finset.sum_sub_distrib]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   rw [taylorWithinEval_univ_two]
   ring
 
@@ -97,6 +97,8 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
       1 / 2 * ∑ i ∈ Finset.range (n k),
         deriv (deriv f) (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
   simp_rw [sub_sum_taylor_two_eq_sum_sub_taylorWithinEval]
+  -- The compact set may have gaps where the function is not smooth, so use the compact-set
+  -- estimate rather than the parameter-family estimate on a containing interval.
   have hK : 0 ≤ max K 0 := le_max_right _ _
   apply Metric.tendsto_nhds.2
   intro ε hε
@@ -122,6 +124,7 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {s : Set ℝ} {K : ℝ}
   apply hbound.trans_lt
   rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
   linarith
+
 
 /-- Along grids eventually in a compact metric set with eventually controlled vanishing mesh
 and bounded quadratic sums, the second-order Taylor expansion along a continuous real path has

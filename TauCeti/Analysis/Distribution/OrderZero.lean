@@ -15,10 +15,11 @@ import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 /-!
 # Distributions of order zero are Radon measures
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`. A linear functional `T` on
-the test functions `𝓓(Ω, ℝ)` has **order zero** if on each compact `K ⊆ Ω` it is bounded in the
-sup norm: `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ` supported in `K`. Such a functional is
-the difference of two regular measures on `Ω`:
+Let `Ω` be an open set of a real normed space `E`; the substantive case is finite-dimensional `E`,
+since in infinite dimensions every test function is zero and the statements below hold trivially.
+A linear functional `T` on the test functions `𝓓(Ω, ℝ)` has **order zero** if on each compact
+`K ⊆ Ω` it is bounded in the sup norm: `|T φ| ≤ C_K ‖φ‖_∞` for the test functions `φ`
+supported in `K`. Such a functional is the difference of two regular measures on `Ω`:
 `T φ = ∫ φ dν₁ - ∫ φ dν₂`, and conversely such a difference has order zero
 (`Distribution.forall_exists_abs_le_iff_exists_regular`). The measures are finite on compact
 subsets of `Ω` but need not be finite. The bound is the defining estimate of a distribution of
@@ -28,9 +29,9 @@ with distributions `T : 𝓓'(Ω, ℝ)` as the main case; continuity is not used
 This is how a derivative of locally finite total variation becomes a measure: the distributional
 derivatives of a function of locally bounded variation have order zero.
 
-The proof extends `T` to compactly supported continuous functions on `Ω`. Mollifying a continuous
-function with compact support in `Ω` by bumps of small radius gives test functions supported in a
-fixed compact subset of `Ω` that converge to it uniformly
+For finite-dimensional `E`, the proof extends `T` to compactly supported continuous functions on
+`Ω`. Mollifying a continuous function with compact support in `Ω` by bumps of small radius gives
+test functions supported in a fixed compact subset of `Ω` that converge to it uniformly
 (`Continuous.exists_testFunction_dist_le`), and the sup-norm bound makes the values of `T` along
 such a sequence converge, to a limit independent of the sequence. The extension is a linear
 functional on `C_c(Ω, ℝ)` that is bounded on order intervals, so the Riesz–Markov–Kakutani theorem
@@ -44,7 +45,7 @@ The converse uses the sup-norm bound for integrals of test functions
 
 * `Distribution.forall_exists_abs_le_iff_exists_regular`: a linear functional on the test
   functions has order zero if and only if it is the difference of the integrals against two regular
-  measures on `Ω`.
+  measures on `Ω`. No finite-dimensionality of `E` is assumed.
 
 ## References
 
@@ -293,7 +294,7 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 
 /-! ### The Radon representation -/
 
-omit hT in
+omit hT [FiniteDimensional ℝ E] in
 /-- **A distribution of order zero is a signed Radon measure.** A linear functional `T` on the
 test functions of `Ω` is bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for
 the test functions `φ` supported in `K`, if and only if there are regular measures `ν₁` and `ν₂`
@@ -307,6 +308,14 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
       |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) ↔
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), T φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In an infinite-dimensional space every test function vanishes.
+    have h0 (φ : 𝓓(Ω, ℝ)) : φ = 0 :=
+      TestFunction.ext <| congrFun <|
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.contDiff.continuous).resolve_right hE
+    exact iff_of_true (fun K _ _ => ⟨0, fun φ _ => by simp [h0 φ]⟩)
+      ⟨0, 0, inferInstance, inferInstance, fun φ => by simp [h0 φ]⟩
   refine ⟨fun hT => ?_, ?_⟩
   · have := Ω.isOpen.locallyCompactSpace
     obtain ⟨ν₁, ν₂, h₁, h₂, h⟩ :=

@@ -105,7 +105,7 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
           _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
       _ ≤ ∫ s in Icc a b, ‖f s‖ :=
           setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
+            hsub.eventuallySubset
       _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono
@@ -114,8 +114,8 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
       ≤ volume.restrict (Ioo a b) univ ^ p.toReal⁻¹ *
           ENNReal.ofReal (∫ s in Ioo a b, ‖f s‖) := eLpNorm_le_of_ae_bound hm hbound
     _ = volume (Ioo a b) ^ p.toReal⁻¹ * eLpNorm f 1 (volume.restrict (Ioo a b)) := by
-      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_enorm hf,
-        eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
+      rw [Measure.restrict_apply_univ, ofReal_integral_norm_eq_lintegral_eNorm hf,
+        eLpNorm_one_eq_lintegral_eNorm hf.aestronglyMeasurable]
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s`, based at a point `t₀` of
 `[a, b]`, is at most `b - a` times the `Lᵖ(a, b)` norm of `f`, for `1 ≤ p ≤ ∞`. -/
@@ -153,12 +153,8 @@ the interval is empty and the statement is vacuous. -/
 theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
     ∃ F : ℝ → E, Continuous F ∧ (∀ x ∈ Icc a b, HasDerivAt F (f x) x) ∧
       ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, F y - F x = ∫ z in x..y, f z := by
-  rcases le_or_gt a b with hab | hab
-  swap
-  · exact ⟨0, continuous_const, fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim,
-      fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim⟩
   -- Holding endpoint values constant gives a continuous integrand on the whole line.
-  obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc hab
+  obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc
   let F : ℝ → E := fun t ↦ ∫ x in a..t, g x
   refine ⟨F, (_root_.intervalIntegral.differentiable_integral_of_continuous hg).continuous,
     ?_, ?_⟩

@@ -197,10 +197,11 @@ theorem antitone_comp_neg_gradient
 /-- If a global negative gradient trajectory contains no critical point, then the value of `f` is
 strictly decreasing along it. -/
 theorem strictAnti_comp_neg_gradient
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
-    (hcrit : ∀ t, ∇ f (γ t) ≠ 0) :
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hcrit : ∀ t, ∇ f (γ t) ≠ 0) :
     StrictAnti (f ∘ γ) :=
-  strictAnti_of_hasDerivAt_neg (fun t ↦ hasDerivAt_comp_neg_gradient hγ (hf t))
+  strictAnti_of_hasDerivAt_neg
+    (fun t ↦ hasDerivAt_comp_neg_gradient hγ
+      (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
@@ -213,9 +214,11 @@ theorem integral_norm_gradient_sq_eq_sub
 /-- If the value of `f` is eventually constant along a global negative gradient trajectory, then
 the gradient of `f` vanishes at the corresponding point. -/
 theorem gradient_eq_zero_of_eventually_const_value
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : DifferentiableAt ℝ f (γ t))
-    {c : ℝ} (hval : ∀ᶠ u in 𝓝 t, f (γ u) = c) :
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {c : ℝ} (hval : ∀ᶠ u in 𝓝 t, f (γ u) = c) :
     ∇ f (γ t) = 0 := by
+  by_cases hf : DifferentiableAt ℝ f (γ t)
+  swap
+  · exact gradient_eq_zero_of_not_differentiableAt hf
   have hzero : deriv (f ∘ γ) t = 0 := by
     have heq : (f ∘ γ) =ᶠ[𝓝 t] fun _ ↦ c := hval
     rw [heq.deriv_eq, deriv_const]
@@ -229,7 +232,7 @@ theorem gradient_eq_zero_of_periodic
     {T : ℝ} (hT : 0 < T) (hper : Periodic γ T) (t : ℝ) :
     ∇ f (γ t) = 0 := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  refine gradient_eq_zero_of_eventually_const_value hγ (hf t) (c := f (γ t)) ?_
+  refine gradient_eq_zero_of_eventually_const_value hγ (c := f (γ t)) ?_
   filter_upwards [Icc_mem_nhds (sub_lt_self t hT) (lt_add_of_pos_right t hT)] with u hu
   apply le_antisymm
   · simpa only [Function.comp_apply, hper.sub_eq] using hanti hu.1
