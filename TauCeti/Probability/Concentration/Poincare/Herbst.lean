@@ -9,7 +9,7 @@ public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
-import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Probability.Concentration.SubgaussianTail
 
 /-!
@@ -56,83 +56,12 @@ open scoped ContDiff Topology NNReal
 
 namespace MeasureTheory.Measure
 
-/-- Functions bounded by `|f| + 1` that are uniformly sub-Gaussian about their means have
-uniformly bounded means. -/
-private lemma exists_forall_abs_integral_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : Measurable f) {g : ℕ → Ω → ℝ} {c : ℝ≥0}
-    (hgf : ∀ n x, |g n x| ≤ |f x| + 1)
-    (hsub : ∀ n, HasSubgaussianMGF (fun x ↦ g n x - ∫ y, g n y ∂μ) c μ) :
-    ∃ B, ∀ n, |∫ y, g n y ∂μ| ≤ B := by
-  -- Some sublevel set `S = {|f| ≤ N}` has positive mass.
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, μ {x | |f x| ≤ N} ≠ 0 := by
-    by_contra! H
-    have hU : (⋃ N : ℕ, {x | |f x| ≤ N}) = univ :=
-      eq_univ_of_forall fun x ↦ mem_iUnion.2 (exists_nat_ge |f x|)
-    simpa [hU] using measure_iUnion_null_iff.2 H
-  have hS : MeasurableSet {x | |f x| ≤ N} := measurableSet_le (by fun_prop) measurable_const
-  have hp : 0 < μ.real {x | |f x| ≤ N} := ENNReal.toReal_pos hN (measure_ne_top _ _)
-  refine ⟨N + 1 + 2 * exp (c / 2) / μ.real {x | |f x| ≤ N}, fun n ↦ ?_⟩
-  set m := ∫ y, g n y ∂μ
-  have hX := hsub n
-  -- The first absolute moment about the mean is at most `2 exp (c / 2)`.
-  have habs : ∫ x, |g n x - m| ∂μ ≤ 2 * exp (c / 2) := by
-    calc ∫ x, |g n x - m| ∂μ
-        ≤ ∫ x, (exp (1 * (g n x - m)) + exp ((-1) * (g n x - m))) ∂μ :=
-          integral_mono hX.integrable.abs
-            ((hX.integrable_exp_mul 1).add (hX.integrable_exp_mul (-1))) fun x ↦ by
-              simp only [one_mul, neg_one_mul]
-              linarith [add_one_le_exp |g n x - m|, exp_abs_le (g n x - m)]
-      _ = mgf (fun x ↦ g n x - m) μ 1 + mgf (fun x ↦ g n x - m) μ (-1) :=
-          integral_add (hX.integrable_exp_mul 1) (hX.integrable_exp_mul (-1))
-      _ ≤ exp (c * 1 ^ 2 / 2) + exp (c * (-1) ^ 2 / 2) := add_le_add (hX.mgf_le 1) (hX.mgf_le (-1))
-      _ = 2 * exp (c / 2) := by norm_num; ring
-  -- On `S`, `|g n - m| ≥ |m| - (N + 1)`.
-  have hset : μ.real {x | |f x| ≤ N} * (|m| - (N + 1)) ≤ ∫ x, |g n x - m| ∂μ :=
-    calc μ.real {x | |f x| ≤ N} * (|m| - (N + 1))
-        = ∫ _ in {x | |f x| ≤ N}, (|m| - (N + 1)) ∂μ := by rw [setIntegral_const, smul_eq_mul]
-      _ ≤ ∫ x in {x | |f x| ≤ N}, |g n x - m| ∂μ :=
-          setIntegral_mono_on (integrable_const _).integrableOn hX.integrable.abs.integrableOn hS
-            fun x (hx : |f x| ≤ N) ↦ by
-              linarith [abs_sub_abs_le_abs_sub m (g n x), abs_sub_comm m (g n x), hgf n x]
-      _ ≤ ∫ x, |g n x - m| ∂μ := setIntegral_le_integral hX.integrable.abs (.of_forall fun _ ↦
-          abs_nonneg _)
-  have : |m| - (N + 1) ≤ 2 * exp (c / 2) / μ.real {x | |f x| ≤ N} := by
-    rw [le_div_iff₀ hp]; linarith
-  linarith
-
-/-- A `K`-Lipschitz function is the pointwise limit of smooth functions `g n` with values in
-`[-n, n]`, gradient bounded by `K`, and `|g n| ≤ |f| + 1`. -/
-private lemma exists_seq_contDiff_tendsto_of_lipschitzWith {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) :
-    ∃ g : ℕ → E → ℝ, (∀ n, ContDiff ℝ ∞ (g n)) ∧ (∀ n x, |g n x| ≤ n) ∧
-      (∀ n x, ‖fderiv ℝ (g n) x‖ ≤ K) ∧ (∀ n x, |g n x| ≤ |f x| + 1) ∧
-      ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (f x)) := by
-  have H (n : ℕ) := (hf.lipschitzOnWith (s := {x | f x ∈ Icc (-(n : ℝ)) n}))
-    |>.exists_contDiff_lipschitzWith_mem_Icc_dist_lt (neg_le_self n.cast_nonneg) (fun _ hx ↦ hx)
-      (Nat.one_div_pos_of_nat (n := n))
-  choose g hgs hgK hgI hgf using H
-  have hclose {n : ℕ} {x : E} (hx : |f x| ≤ n) : |g n x - f x| ≤ 1 / ((n : ℝ) + 1) := by
-    rw [← Real.dist_eq]; exact (hgf n x (abs_le.1 hx)).le
-  refine ⟨g, hgs, fun n x ↦ abs_le.2 (hgI n x), fun n x ↦ norm_fderiv_le_of_lipschitz ℝ (hgK n),
-    fun n x ↦ ?_, fun x ↦ ?_⟩
-  · by_cases hx : |f x| ≤ n
-    · have h1 : 1 / ((n : ℝ) + 1) ≤ 1 := (div_le_one (by positivity)).2 (by simp)
-      linarith [abs_sub_abs_le_abs_sub (g n x) (f x), hclose hx]
-    · linarith [abs_le.2 (hgI n x), not_le.1 hx]
-  · obtain ⟨N, hN⟩ := exists_nat_ge |f x|
-    rw [tendsto_iff_dist_tendsto_zero]
-    refine squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
-      tendsto_one_div_add_atTop_nhds_zero_nat
-    filter_upwards [eventually_ge_atTop N] with n hn
-    rw [Real.dist_eq]
-    exact hclose (hN.trans (Nat.cast_le.2 hn))
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  {μ : Measure E} [IsProbabilityMeasure μ] {C K : ℝ≥0}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [OpensMeasurableSpace E] {μ : Measure E} [IsProbabilityMeasure μ] {K : ℝ≥0}
 
 section Bounded
 
-variable {G : E → ℝ} {M : ℝ}
+variable {C : ℝ≥0} {G : E → ℝ} {M : ℝ}
 
 /-- **Herbst's differential inequality.** For a smooth `G` with values in `[-M, M]` and gradient
 bounded by `K`, the logarithmic Sobolev inequality applied to `exp (t G / 2)` gives
@@ -273,25 +202,28 @@ end Bounded
 
 section Lipschitz
 
-variable [FiniteDimensional ℝ E] {f : E → ℝ}
+variable [FiniteDimensional ℝ E] {C : ℝ} {f : E → ℝ}
 
-/-- **Herbst's argument.** Under the logarithmic Sobolev inequality with constant `C`, every
-`K`-Lipschitz function `f` is sub-Gaussian about its mean with variance proxy `C K²`:
+/-- **Herbst's argument.** Under the logarithmic Sobolev inequality with nonnegative constant `C`,
+every `K`-Lipschitz function `f` is sub-Gaussian about its mean with variance proxy `C K²`:
 `∫ exp (t (f - ∫ f dμ)) dμ ≤ exp (C K² t² / 2)` for every `t`, and each of these exponential
 moments is finite. -/
 theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevInequality μ C)
-    (hf : LipschitzWith K f) :
-    HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂μ) (C * K ^ 2) μ := by
-  obtain ⟨g, hgs, hgn, hgK, hgf, hlim⟩ := exists_seq_contDiff_tendsto_of_lipschitzWith hf
+    (hC : 0 ≤ C) (hf : LipschitzWith K f) :
+    HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂μ) (C.toNNReal * K ^ 2) μ := by
+  lift C to ℝ≥0 using hC
+  simp only [Real.toNNReal_coe]
+  obtain ⟨g, hgs, hgn, hgK, hgf, hlim⟩ := hf.exists_seq_contDiff_tendsto
   have hsub (n : ℕ) := h.hasSubgaussianMGF_of_contDiff (hgs n) (hgn n) (hgK n)
-  obtain ⟨B, hB⟩ := exists_forall_abs_integral_le hf.continuous.measurable hgf hsub
+  obtain ⟨B, hB⟩ := hf.continuous.measurable.exists_forall_abs_integral_le_of_hasSubgaussianMGF
+    hgf hsub
   -- Fatou's lemma gives every exponential moment of `f`.
   have hexp (t : ℝ) : Integrable (fun x ↦ exp (t * f x)) μ := by
     refine TauCeti.integrable_of_tendsto_of_integral_le
       (D := exp (|t| * B + C * K ^ 2 * t ^ 2 / 2))
-      (fun n ↦ integrable_exp_mul_of_mem_Icc (hgs n).continuous.aemeasurable
+      (.of_forall fun n ↦ integrable_exp_mul_of_mem_Icc (hgs n).continuous.aemeasurable
         (.of_forall fun x ↦ abs_le.1 (hgn n x)))
-      (fun n ↦ .of_forall fun _ ↦ (exp_pos _).le)
+      (.of_forall fun _ ↦ .of_forall fun _ ↦ (exp_pos _).le)
       (.of_forall fun x ↦ ((hlim x).const_mul t).rexp) (.of_forall fun n ↦ ?_)
     refine (h.mgf_le (hgs n) (hgn n) (hgK n) t).trans (exp_le_exp.2 ?_)
     have : t * ∫ y, g n y ∂μ ≤ |t| * B :=
@@ -311,19 +243,20 @@ theorem LogSobolevInequality.hasSubgaussianMGF_of_lipschitzWith (h : LogSobolevI
   have hpos (t : ℝ) (n : ℕ) : 0 ≤ᵐ[μ] fun x ↦ exp (t * (g n x - ∫ y, g n y ∂μ)) :=
     .of_forall fun _ ↦ (exp_pos _).le
   exact ⟨fun t ↦ TauCeti.integrable_of_tendsto_of_integral_le
-      (fun n ↦ (hsub n).integrable_exp_mul t) (hpos t) (hcent t)
+      (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
       (.of_forall fun n ↦ (hsub n).mgf_le t),
     fun t ↦ TauCeti.integral_le_of_tendsto_of_integral_le
-      (fun n ↦ (hsub n).integrable_exp_mul t) (hpos t) (hcent t)
+      (.of_forall fun n ↦ (hsub n).integrable_exp_mul t) (.of_forall (hpos t)) (hcent t)
       (.of_forall fun n ↦ (hsub n).mgf_le t)⟩
 
 /-- **Gaussian concentration of Lipschitz functions** under a logarithmic Sobolev inequality with
-constant `C`: a `K`-Lipschitz function `f` deviates from its mean by at least `t ≥ 0` with
-probability at most `2 exp (-t² / (2 C K²))`. -/
+nonnegative constant `C`: a `K`-Lipschitz function `f` deviates from its mean by at least `t ≥ 0`
+with probability at most `2 exp (-t² / (2 C K²))`. -/
 theorem LogSobolevInequality.measureReal_abs_sub_integral_ge_le_of_lipschitzWith
-    (h : LogSobolevInequality μ C) (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
-    μ.real {x | t ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-t ^ 2 / (2 * (C * K ^ 2))) := by
-  simpa using (h.hasSubgaussianMGF_of_lipschitzWith hf).measureReal_abs_ge_le ht
+    (h : LogSobolevInequality μ C) (hC : 0 ≤ C) (hf : LipschitzWith K f) {t : ℝ} (ht : 0 ≤ t) :
+    μ.real {x | t ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-t ^ 2 / (2 * (C * (K : ℝ) ^ 2))) := by
+  simpa only [NNReal.coe_mul, NNReal.coe_pow, Real.coe_toNNReal C hC] using
+    (h.hasSubgaussianMGF_of_lipschitzWith hC hf).measureReal_abs_ge_le ht
 
 end Lipschitz
 
