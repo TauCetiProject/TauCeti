@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Algebra.Order.Star.Prod
+public import TauCeti.Analysis.CStarAlgebra.StateSpace
 
 /-!
 # Positive tracial functionals and tracial states
@@ -31,9 +32,10 @@ positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive
 * `TauCeti.PositiveTracialFunctional.toPositiveContinuousLinearMap`: the functional is bounded.
 * `TauCeti.PositiveTracialFunctional.comp`: pullback along a star homomorphism, with
   `comp_id` and `comp_comp`.
-* `TauCeti.PositiveTracialFunctional.IsTracialState`: norm one, and for unital `A`,
-  `isTracialState_iff_map_one`: this means `τ 1 = 1`. Tracial states pull back to tracial states
-  along unital star homomorphisms, `IsTracialState.comp`.
+* `TauCeti.PositiveTracialFunctional.IsTracialState`: the functional is a state, that is, a
+  point of `TauCeti.stateSpace`; equivalently it has norm one, `isTracialState_iff_opNorm_eq_one`,
+  and for unital `A` it takes the value `1` at `1`, `isTracialState_iff_map_one`. Tracial
+  states pull back to tracial states along unital star homomorphisms, `IsTracialState.comp`.
 * `TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`: the pullback of the tracial state
   `(a, b) ↦ b` of `ℂ × ℂ` along `λ ↦ (λ, 0)` is zero, a positive tracial functional that is not
   a state.
@@ -97,26 +99,22 @@ theorem map_mul_comm (τ : PositiveTracialFunctional A) (a b : A) : τ (a * b) =
   τ.map_mul_comm' a b
 
 /-- A positive tracial functional is bounded, as every positive functional on a C⋆-algebra is. -/
-@[expose] noncomputable def toPositiveContinuousLinearMap (τ : PositiveTracialFunctional A) :
+noncomputable def toPositiveContinuousLinearMap (τ : PositiveTracialFunctional A) :
     A →P[ℂ] ℂ :=
   .ofClass τ
 
 @[simp]
 theorem toPositiveContinuousLinearMap_apply (τ : PositiveTracialFunctional A) (a : A) :
     τ.toPositiveContinuousLinearMap a = τ a :=
-  rfl
-
-/-- The bound `‖τ a‖ ≤ ‖τ‖ ‖a‖`, with `‖τ‖` the operator norm of the bounded functional. -/
-theorem norm_apply_le (τ : PositiveTracialFunctional A) (a : A) :
-    ‖τ a‖ ≤ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ * ‖a‖ :=
-  (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ).le_opNorm a
+  (rfl)
 
 /-- **Naturality.** The pullback `τ ∘ φ` of a positive tracial functional along a star
 homomorphism. -/
-@[expose] noncomputable def comp (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[ℂ] B) :
+noncomputable def comp (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[ℂ] B) :
     PositiveTracialFunctional A where
   toPositiveLinearMap := τ.toPositiveLinearMap.comp (.ofClass φ)
   map_mul_comm' a b := by
+    -- the composite evaluates as `τ ∘ φ` by definition; there is no `comp_apply` lemma yet
     change τ (φ (a * b)) = τ (φ (b * a))
     rw [map_mul φ, map_mul φ]
     exact τ.map_mul_comm (φ a) (φ b)
@@ -124,19 +122,32 @@ homomorphism. -/
 @[simp]
 theorem comp_apply (τ : PositiveTracialFunctional B) (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     τ.comp φ a = τ (φ a) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem comp_id (τ : PositiveTracialFunctional A) : τ.comp (NonUnitalStarAlgHom.id ℂ A) = τ :=
-  rfl
+  (rfl)
 
 theorem comp_comp (τ : PositiveTracialFunctional C) (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
     (τ.comp ψ).comp φ = τ.comp (ψ.comp φ) :=
-  rfl
+  (rfl)
 
-/-- A **tracial state**: a positive tracial functional of norm one. -/
+/-- A **tracial state**: a positive tracial functional that is a state, that is, whose bounded
+functional lies in the state space `TauCeti.stateSpace A`. -/
 def IsTracialState (τ : PositiveTracialFunctional A) : Prop :=
-  ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ = 1
+  StrongDual.toWeakDual (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ) ∈ stateSpace A
+
+/-- A positive tracial functional is a tracial state exactly when its bounded functional is a
+point of the state space. -/
+theorem isTracialState_iff_mem_stateSpace (τ : PositiveTracialFunctional A) :
+    τ.IsTracialState ↔
+      StrongDual.toWeakDual (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ) ∈ stateSpace A :=
+  Iff.rfl
+
+/-- A positive tracial functional is a tracial state exactly when it has norm one. -/
+theorem isTracialState_iff_opNorm_eq_one (τ : PositiveTracialFunctional A) :
+    τ.IsTracialState ↔ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ = 1 :=
+  τ.toPositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff
 
 end PositiveTracialFunctional
 
@@ -149,22 +160,20 @@ variable [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 namespace PositiveTracialFunctional
 
-/-- On a unital C⋆-algebra the norm of a positive tracial functional is its value at `1`. -/
-theorem ofReal_norm_eq_map_one (τ : PositiveTracialFunctional A) :
-    (‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ : ℂ) = τ 1 :=
-  τ.toPositiveContinuousLinearMap.ofReal_opNorm_eq_map_one
-
 /-- On a unital C⋆-algebra a positive tracial functional is a tracial state exactly when
 `τ 1 = 1`. -/
 theorem isTracialState_iff_map_one (τ : PositiveTracialFunctional A) :
     τ.IsTracialState ↔ τ 1 = 1 := by
-  rw [IsTracialState, ← ofReal_norm_eq_map_one, Complex.ofReal_eq_one]
+  rw [isTracialState_iff_mem_stateSpace, mem_stateSpace_iff_map_one]
+  simpa using fun _ a (ha : 0 ≤ a) => map_nonneg τ ha
 
 /-- Tracial states pull back to tracial states along unital star homomorphisms. -/
 theorem IsTracialState.comp {τ : PositiveTracialFunctional B} (hτ : τ.IsTracialState)
     (φ : A →⋆ₐ[ℂ] B) : (τ.comp φ.toNonUnitalStarAlgHom).IsTracialState := by
-  rw [isTracialState_iff_map_one] at hτ ⊢
-  simpa using hτ
+  rw [isTracialState_iff_mem_stateSpace]
+  -- both functionals evaluate as `τ ∘ φ`
+  convert mapsTo_pullbackFunctional_stateSpace φ hτ using 1
+  exact DFunLike.ext _ _ fun a => by simp
 
 end PositiveTracialFunctional
 
@@ -175,21 +184,27 @@ section Example
 open PositiveTracialFunctional
 
 /-- The second-coordinate functional `(a, b) ↦ b` on `ℂ × ℂ`, a tracial state. -/
-@[expose] noncomputable def sndTracialFunctional : PositiveTracialFunctional (ℂ × ℂ) where
+noncomputable def sndTracialFunctional : PositiveTracialFunctional (ℂ × ℂ) where
   toPositiveLinearMap := .mk₀ (LinearMap.snd ℂ ℂ ℂ) fun _ hx => hx.2
   map_mul_comm' a b := by simp [mul_comm]
 
+/-- The second-coordinate functional evaluates as `(a, b) ↦ b`. -/
+@[simp]
+theorem sndTracialFunctional_apply (x : ℂ × ℂ) : sndTracialFunctional x = x.2 :=
+  (rfl)
+
+/-- The second-coordinate functional on `ℂ × ℂ` is a tracial state. -/
 theorem sndTracialFunctional_isTracialState : sndTracialFunctional.IsTracialState := by
-  rw [isTracialState_iff_map_one]
-  rfl
+  simp [isTracialState_iff_map_one]
+
+/-- The pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is zero. -/
+theorem sndTracialFunctional_comp_inl_apply (z : ℂ) :
+    sndTracialFunctional.comp (NonUnitalStarAlgHom.inl ℂ ℂ ℂ) z = 0 := by
+  simp
 
 /-- A pullback of a tracial state along a nonunital star homomorphism need not be a state: the
-pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is the zero functional. This is why the pairing with
-`K₀` is set up for positive tracial functionals rather than tracial states. -/
-theorem sndTracialFunctional_comp_inl_apply (z : ℂ) :
-    sndTracialFunctional.comp (NonUnitalStarAlgHom.inl ℂ ℂ ℂ) z = 0 :=
-  rfl
-
+pullback of `(a, b) ↦ b` along `λ ↦ (λ, 0)` is the zero functional. So the natural pairing with
+`K₀` uses positive tracial functionals rather than tracial states. -/
 theorem not_isTracialState_sndTracialFunctional_comp_inl :
     ¬ (sndTracialFunctional.comp (NonUnitalStarAlgHom.inl ℂ ℂ ℂ)).IsTracialState := by
   rw [isTracialState_iff_map_one, sndTracialFunctional_comp_inl_apply]
