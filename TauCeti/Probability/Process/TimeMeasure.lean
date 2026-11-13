@@ -14,8 +14,9 @@ public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 `TauCeti.Probability.timeMeasure T` is Lebesgue measure on `(0,T]` in nonnegative real
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
-The origin has zero mass. Interval masses and restriction to shorter horizons are
-recorded explicitly for time-product measures used in stochastic integration.
+The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
+shorter horizons are recorded explicitly for time-product measures used in stochastic
+integration.
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images.
@@ -89,6 +90,11 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
     (timeMeasure T).restrict (Ioc 0 S) = timeMeasure (min S T) := by
   rw [timeMeasure_def, Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc]
   simp [timeMeasure_def]
+
+/-- Time measure on a shorter horizon is dominated by time measure on a longer one. -/
+theorem timeMeasure_mono {S T : ℝ≥0} (hST : S ≤ T) : timeMeasure S ≤ timeMeasure T := by
+  rw [← min_eq_left hST, ← timeMeasure_restrict]
+  exact Measure.restrict_le_self
 
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
 theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
