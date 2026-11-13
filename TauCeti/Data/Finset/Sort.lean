@@ -11,6 +11,7 @@ public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -30,7 +31,8 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 pairs.
 
 The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
-elements of `s` below it.
+elements of `s` below it. Hence it satisfies a downward-closed predicate exactly when more than
+`m` elements of `s` do, and for a finset of `Fin n` its value is at least `m`.
 
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
@@ -295,6 +297,34 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
   rw [filter_map, card_map]
   simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
     filter_gt_eq_Iio, Fin.card_Iio]
+
+/-- For a predicate `p` downward-closed within `s`, the `m`-th element of `s` in increasing order
+satisfies `p` exactly when more than `m` elements of `s` do. -/
+theorem lt_card_filter_iff_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k)
+    (p : α → Prop) [DecidablePred p] (hp : ∀ x ∈ s, ∀ y ∈ s, y ≤ x → p x → p y) :
+    (m : ℕ) < #{x ∈ s | p x} ↔ p (s.orderEmbOfFin h m) := by
+  conv_lhs => rw [← map_orderEmbOfFin_univ s h, filter_map, card_map]
+  exact Fin.lt_card_filter_univ_iff_apply_of_imp (p ∘ s.orderEmbOfFin h)
+    fun i j hji ↦ hp _ (s.orderEmbOfFin_mem h i) _ (s.orderEmbOfFin_mem h j)
+      ((s.orderEmbOfFin h).monotone hji)
+
+/-- The increasing enumeration of all elements of `Fin n` is the canonical cardinality cast. -/
+theorem orderEmbOfFin_univ_apply (c : Fin #(univ : Finset (Fin n))) :
+    (univ : Finset (Fin n)).orderEmbOfFin rfl c = finCongr (by simp) c := by
+  have hcard : #(univ : Finset (Fin n)) = n := by simp
+  calc
+    _ = (univ : Finset (Fin n)).orderEmbOfFin hcard (finCongr hcard c) :=
+      (orderEmbOfFin_eq_orderEmbOfFin_iff (s := univ) (h := rfl) (h' := hcard)
+        (i := c) (j := finCongr hcard c)).2 rfl
+    _ = finCongr hcard c :=
+      congrFun (Finset.orderEmbOfFin_unique hcard (fun _ ↦ mem_univ _) strictMono_id).symm _
+
+/-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
+theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :
+    (m : ℕ) ≤ s.orderEmbOfFin h m :=
+  calc (m : ℕ) = #{x ∈ s | x < s.orderEmbOfFin h m} := (s.card_filter_lt_orderEmbOfFin h m).symm
+    _ ≤ #(Iio (s.orderEmbOfFin h m)) := card_le_card fun _ hx ↦ mem_Iio.2 (mem_filter.1 hx).2
+    _ = s.orderEmbOfFin h m := Fin.card_Iio _
 
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
