@@ -8,14 +8,22 @@ module
 public import Mathlib.RingTheory.Filtration
 
 /-!
-# Separation by powers of all maximal ideals
+# Consequences of Krull's intersection theorem
 
-For a finite module over a noetherian commutative ring, the intersection of all positive powers
-of all maximal ideals acting on the module is zero. The quantifier over all maximal ideals is
-essential: the powers of one maximal ideal need not separate a nonlocal ring.
+For a finite module over a noetherian commutative ring:
+* the intersection of all positive powers of all maximal ideals acting on the module is zero
+  (`Ideal.iInf_isMaximal_pow_smul_eq_bot`), where the quantifier over all maximal ideals is
+  essential because the powers of one maximal ideal need not separate a nonlocal ring;
+* every submodule `N` is closed in the `I`-adic topology for any ideal `I` contained in the
+  Jacobson radical (`Ideal.iInf_sup_pow_smul_eq_of_le_jacobson`), and in particular every ideal `J`
+  satisfies `⨅ n, J ⊔ I ^ n = J` (`Ideal.iInf_sup_pow_eq_of_le_jacobson`).
 
-The proof uses Mathlib's Krull intersection criterion
-`Ideal.mem_iInf_smul_pow_eq_bot_iff` at a maximal ideal containing the annihilator of an element.
+The proofs use Mathlib's Krull intersection theorems `Ideal.mem_iInf_smul_pow_eq_bot_iff` and
+`Ideal.iInf_pow_smul_eq_bot_of_le_jacobson`.
+
+## References
+
+* H. Matsumura, *Commutative Ring Theory*, Theorem 8.10.
 -/
 
 public section
@@ -51,5 +59,30 @@ theorem iInf_isMaximal_pow_eq_bot :
     (⨅ (m : Ideal R) (_ : m.IsMaximal) (n : ℕ) (_ : 0 < n), m ^ n) = ⊥ := by
   simpa only [Ideal.smul_eq_mul, Ideal.mul_top] using
     (iInf_isMaximal_pow_smul_eq_bot (R := R) (M := R))
+
+/-- Every submodule `N` of a finite module over a noetherian ring `R` is closed in the `I`-adic
+topology for any ideal `I ≤ Ring.jacobson R`: `⨅ n, N ⊔ I ^ n • ⊤ = N`. -/
+theorem iInf_sup_pow_smul_eq_of_le_jacobson (I : Ideal R) (hI : I ≤ Ring.jacobson R)
+    (N : Submodule R M) :
+    (⨅ n : ℕ, N ⊔ I ^ n • ⊤) = N := by
+  refine le_antisymm (fun x hx ↦ ?_) (le_iInf fun _ ↦ le_sup_left)
+  rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mem_bot (R := R),
+    ← I.iInf_pow_smul_eq_bot_of_le_jacobson (M := M ⧸ N) hI, Submodule.mem_iInf]
+  intro n
+  have hmap : (I ^ n • ⊤ : Submodule R M).map N.mkQ ≤ I ^ n • ⊤ := by
+    rw [Submodule.map_le_iff_le_comap]
+    exact Submodule.smul_le.mpr fun r hr m _ ↦ by
+      rw [Submodule.mem_comap, map_smul]
+      exact Submodule.smul_mem_smul hr Submodule.mem_top
+  obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp ((Submodule.mem_iInf _).mp hx n)
+  rw [Submodule.Quotient.mk_add, (Submodule.Quotient.mk_eq_zero N).mpr hu, zero_add, ← N.mkQ_apply]
+  exact hmap (Submodule.mem_map_of_mem hv)
+
+/-- Every ideal `J` of a noetherian ring `R` is closed in the `I`-adic topology for any ideal
+`I ≤ Ring.jacobson R`: `⨅ n, J ⊔ I ^ n = J`. -/
+theorem iInf_sup_pow_eq_of_le_jacobson (I : Ideal R) (hI : I ≤ Ring.jacobson R) (J : Ideal R) :
+    (⨅ n : ℕ, J ⊔ I ^ n) = J := by
+  simpa only [Ideal.smul_eq_mul, Ideal.mul_top] using
+    I.iInf_sup_pow_smul_eq_of_le_jacobson (M := R) hI J
 
 end Ideal
