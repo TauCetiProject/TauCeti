@@ -79,6 +79,13 @@ theorem fourier_one_pow (m : ℕ) :
     fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
   simpa using fourier_pow (T := T) 1 m
 
+/-- Pointwise, the Fourier monomial of natural frequency `m` is the `m`-th power of
+the fundamental monomial. -/
+theorem fourier_one_pow_apply (m : ℕ) (x : AddCircle T) :
+    fourier (m : ℤ) x = fourier 1 x ^ m := by
+  simpa only [ContinuousMap.pow_apply] using
+    (congrArg (fun f : C(AddCircle T, ℂ) ↦ f x) (fourier_one_pow m)).symm
+
 /-- A Fourier monomial turns a sum of points into a product:
 `fourier n (x + y) = fourier n x * fourier n y`. -/
 theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :

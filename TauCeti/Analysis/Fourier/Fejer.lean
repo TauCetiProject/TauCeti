@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.Monomial
 import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Fourier.AddCircle
 
 /-!
 # The normalized Fejér kernel on the circle
@@ -41,6 +43,11 @@ variable {T : ℝ}
 noncomputable def fejerKernel (N : ℕ) (x : AddCircle T) : ℝ :=
   (N : ℝ)⁻¹ * ‖∑ j ∈ Finset.range N, fourier (j : ℤ) x‖ ^ 2
 
+/-- The Fejér kernel is the normalized squared norm of the first `N` Fourier monomials. -/
+theorem fejerKernel_def (N : ℕ) (x : AddCircle T) :
+    fejerKernel N x = (N : ℝ)⁻¹ * ‖∑ j ∈ Finset.range N, fourier (j : ℤ) x‖ ^ 2 := by
+  rfl
+
 /-- The Fejér kernel is nonnegative. -/
 theorem fejerKernel_nonneg (N : ℕ) (x : AddCircle T) : 0 ≤ fejerKernel N x := by
   unfold fejerKernel
@@ -70,17 +77,14 @@ theorem fejerKernel_apply_zero (N : ℕ) : fejerKernel N (0 : AddCircle T) = N :
   · simp [hN]
   · simp [fejerKernel, pow_two, hN]
 
-/-- The geometric-sum identity for the Fejér kernel. This relates its square-sum definition
-to the usual quotient of squared sine functions on a real period interval. -/
+/-- Multiplying the Fejér kernel by `‖fourier 1 x - 1‖²` gives
+`N⁻¹ * ‖fourier N x - 1‖²`, by the geometric-sum identity. -/
 theorem fejerKernel_mul_norm_sq (N : ℕ) (x : AddCircle T) :
     fejerKernel N x * ‖fourier 1 x - 1‖ ^ 2 =
       (N : ℝ)⁻¹ * ‖fourier (N : ℤ) x - 1‖ ^ 2 := by
-  have hp (j : ℕ) : fourier (j : ℤ) x = (fourier 1 x) ^ j := by
-    simpa only [ContinuousMap.pow_apply] using
-      (congrArg (fun f : C(AddCircle T, ℂ) ↦ f x) (fourier_one_pow j)).symm
   have hg := congrArg (fun z : ℂ ↦ ‖z‖ ^ 2) (geom_sum_mul (fourier 1 x) N)
   simp only [norm_mul, mul_pow] at hg
-  simp only [fejerKernel, hp]
+  simp only [fejerKernel_def, fourier_one_pow_apply]
   rw [mul_assoc, hg]
 
 /-- Away from the identity, the Fejér kernels satisfy a bound of order `1 / N`. -/
@@ -109,41 +113,6 @@ theorem ofReal_fejerKernel (N : ℕ) (x : AddCircle T) :
   simp only [map_sum, Finset.sum_mul, Finset.mul_sum, ← fourier_neg, sub_eq_add_neg,
     ← fourier_add]
   rw [Finset.sum_comm]
-
-private theorem sum_fourier_pairs (N m : ℕ) :
-    (∑ i ∈ Finset.range N, ∑ j ∈ Finset.range N,
-      if (i : ℤ) - j = (m : ℤ) then (1 : ℂ) else 0) = (N - m : ℕ) := by
-  have hi (i : ℕ) (hi : i ∈ Finset.range N) :
-      (∑ j ∈ Finset.range N, if (i : ℤ) - j = (m : ℤ) then (1 : ℂ) else 0) =
-        if m ≤ i then 1 else 0 := by
-    by_cases hmi : m ≤ i
-    · rw [ite_eq_left hmi, Finset.sum_eq_single (i - m)]
-      · rw [ite_eq_left (by omega)]
-      · intro j _hj hne
-        rw [ite_eq_right (by omega)]
-      · intro hnot
-        exact (hnot (Finset.mem_range.mpr
-          (lt_of_le_of_lt (Nat.sub_le i m) (Finset.mem_range.mp hi)))).elim
-    · rw [ite_eq_right hmi]
-      apply Finset.sum_eq_zero
-      intro j _
-      rw [ite_eq_right (by omega)]
-  rw [Finset.sum_congr rfl hi, Finset.sum_boole]
-  have hs : (Finset.range N).filter (m ≤ ·) = Finset.Ico m N := by
-    ext i
-    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
-    omega
-  rw [hs, Nat.card_Ico]
-
-private theorem sum_fourier_pairs_int (N : ℕ) (k : ℤ) :
-    (∑ i ∈ Finset.range N, ∑ j ∈ Finset.range N,
-      if (i : ℤ) - j = k then (1 : ℂ) else 0) = (N - k.natAbs : ℕ) := by
-  rcases k.eq_nat_or_neg with ⟨m, rfl | rfl⟩
-  · simpa using sum_fourier_pairs N m
-  · rw [Finset.sum_comm]
-    have heq (i j : ℕ) : (i : ℤ) - j = -(m : ℤ) ↔ (j : ℤ) - i = (m : ℤ) := by omega
-    simp_rw [heq]
-    simpa using sum_fourier_pairs N m
 
 variable [Fact (0 < T)]
 
@@ -175,7 +144,7 @@ theorem fourierCoeff_fejerKernel (N : ℕ) (k : ℤ) :
     intro i _
     rw [fourierCoeff.sum _ _ (fun j _ ↦ hint _)]
     simp only [Finset.sum_apply, fourierCoeff_fourier, Pi.single_apply, eq_comm]
-  rw [hcalc, sum_fourier_pairs_int]
+  rw [hcalc, Finset.sum_range_sum_range_ite_int_sub_eq_nsmul, nsmul_eq_mul, mul_one]
   ring
 
 /-- A positive-order Fejér kernel has mass one for normalized Haar measure. -/
@@ -184,6 +153,7 @@ theorem integral_fejerKernel (N : ℕ) (hN : 0 < N) :
   apply Complex.ofReal_injective
   rw [Complex.ofReal_one, ← integral_complex_ofReal]
   have h := fourierCoeff_fejerKernel (T := T) N 0
-  simpa [fourierCoeff, Nat.ne_of_gt hN] using h
+  rw [fourierCoeff_zero_eq_integral] at h
+  simpa [Nat.ne_of_gt hN] using h
 
 end TauCeti

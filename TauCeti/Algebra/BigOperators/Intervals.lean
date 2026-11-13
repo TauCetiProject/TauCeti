@@ -35,6 +35,9 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 
 ## Main results
 
+* `Finset.sum_range_sum_range_ite_int_sub_eq_nsmul`: pairs `i, j < N` with integer difference
+  `k` contribute `N - k.natAbs` copies of a fixed element of an additive commutative monoid.
+
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
@@ -52,6 +55,43 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 public section
 
 namespace Finset
+
+/-- Counting pairs of natural numbers below `N` with prescribed integer difference, with
+one copy of `c` for each pair. There are `N - |k|` such pairs, truncated to zero. -/
+theorem sum_range_sum_range_ite_int_sub_eq_nsmul {M : Type*} [AddCommMonoid M]
+    (N : ℕ) (k : ℤ) (c : M) :
+    (∑ i ∈ range N, ∑ j ∈ range N, if (i : ℤ) - j = k then c else 0) =
+      (N - k.natAbs) • c := by
+  have hnat (m : ℕ) :
+      (∑ i ∈ range N, ∑ j ∈ range N, if (i : ℤ) - j = (m : ℤ) then c else 0) =
+        (N - m) • c := by
+    have hi (i : ℕ) (hi : i ∈ range N) :
+        (∑ j ∈ range N, if (i : ℤ) - j = (m : ℤ) then c else 0) =
+          if m ≤ i then c else 0 := by
+      by_cases hmi : m ≤ i
+      · rw [ite_eq_left hmi, sum_eq_single (i - m)]
+        · rw [ite_eq_left (by omega)]
+        · intro j _hj hne
+          rw [ite_eq_right (by omega)]
+        · intro hnot
+          exact (hnot (mem_range.mpr
+            (lt_of_le_of_lt (Nat.sub_le i m) (mem_range.mp hi)))).elim
+      · rw [ite_eq_right hmi]
+        apply sum_eq_zero
+        intro j _
+        rw [ite_eq_right (by omega)]
+    rw [sum_congr rfl hi, ← sum_filter, sum_const]
+    have hs : (range N).filter (m ≤ ·) = Ico m N := by
+      ext i
+      simp only [mem_filter, mem_range, mem_Ico]
+      omega
+    rw [hs, Nat.card_Ico]
+  rcases k.eq_nat_or_neg with ⟨m, rfl | rfl⟩
+  · simpa using hnat m
+  · rw [sum_comm]
+    have heq (i j : ℕ) : (i : ℤ) - j = -(m : ℤ) ↔ (j : ℤ) - i = (m : ℤ) := by omega
+    simp_rw [heq]
+    simpa using hnat m
 
 /-- If `m < n`, the summands `f m = β m`, `f n = γ n`, and `f k = γ k + β k` for
 `m < k < n` regroup as the adjacent pairs `β k + γ (k + 1)` over `m ≤ k < n`. -/
