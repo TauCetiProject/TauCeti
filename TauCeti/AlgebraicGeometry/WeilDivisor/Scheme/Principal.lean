@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
-import Mathlib.Topology.KrullDimension
 
 /-!
 # Principal divisors on Noetherian integral schemes
@@ -20,8 +19,6 @@ therefore vanishes on `U`. The codimension-one points outside `U` are finite, by
 
 The main results are:
 
-* `SchemeWeilDivisor.finite_setOfPred_notMem`: a nonempty open misses only finitely many
-  codimension-one points;
 * `SchemeWeilDivisor.finite_support_orderAt`: the orders of a nonzero rational function have
   finite support;
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
@@ -51,18 +48,6 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
-but finitely many codimension-one points. -/
-lemma finite_setOfPred_notMem [IrreducibleSpace X] [NoetherianSpace X]
-    (U : X.Opens) [Nonempty U] :
-    {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
-  have hU := U.isOpen.isClosed_compl
-  have : QuasiSober ((U : Set X)ᶜ : Set X) := hU.isClosedEmbedding_subtypeVal.quasiSober
-  refine ((NoetherianSpace.finite_coheight_one_of_closure_ne_univ (p := (U : Set X)ᶜ) ?_).preimage
-    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.2⟩
-  rw [hU.closure_eq]
-  exact fun h ↦ (Set.nonempty_coe_sort.mp ‹Nonempty U›).ne_empty (compl_eq_top.mp h)
-
 variable [IsIntegral X] [IsNoetherian X]
 
 /-- The orders of a nonzero rational function on a Noetherian integral scheme are nonzero at only
@@ -73,7 +58,7 @@ lemma finite_support_orderAt (f : Additive X.functionFieldˣ) :
     exists_isUnit_germ_eq X ((Additive.toMul f : X.functionFieldˣ) : X.functionField)
       (Units.ne_zero _)
   let : Nonempty U := hU
-  refine (finite_setOfPred_notMem U).subset ?_
+  refine (CodimensionOnePoint.finite_setOfPred_notMem U).subset ?_
   intro x hx
   simp only [Set.mem_ofPred_eq]
   intro hxU

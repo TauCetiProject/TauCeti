@@ -208,7 +208,7 @@ theorem finite_support_orderAt (D : CartierDivisor X) :
   have hDg : D |_ U = rationalUnitClass X U g := by
     rw [rationalUnitClass_apply]
     simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ((SchemeWeilDivisor.finite_setOfPred_notMem U).union
+  refine ((CodimensionOnePoint.finite_setOfPred_notMem U).union
     (SchemeWeilDivisor.finite_support_orderAt g)).subset ?_
   intro y hy
   by_cases hyU : (y : X) ∈ U

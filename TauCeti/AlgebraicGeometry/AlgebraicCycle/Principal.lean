@@ -43,7 +43,7 @@ namespace Scheme
 /-- The orders of a nonzero rational function on a locally Noetherian integral scheme have locally
 finite support. The function is a unit on a nonempty open `U`, where its orders vanish, and a
 Noetherian open `V` contains only finitely many codimension-one points outside `U`
-(`SchemeWeilDivisor.finite_setOfPred_notMem`). -/
+(`CodimensionOnePoint.finite_setOfPred_notMem`). -/
 lemma exists_mem_nhds_finite_inter_support_ord (r : W.functionFieldˣ) (z : W) :
     ∃ t ∈ 𝓝 z, (t ∩ Function.support fun x ↦ W.ord (r : W.functionField) x).Finite := by
   obtain ⟨U, -, f, hU, hfr, hf⟩ := exists_isUnit_germ_eq W (r : W.functionField) r.ne_zero
@@ -56,7 +56,7 @@ lemma exists_mem_nhds_finite_inter_support_ord (r : W.functionFieldˣ) (z : W) :
     obtain ⟨x, hxU, hxV⟩ := nonempty_preirreducible_inter U.isOpen V.isOpen
       (Set.nonempty_coe_sort.mp hU) ⟨z, hzV⟩
     exact ⟨⟨⟨x, hxV⟩, hxU⟩⟩
-  refine ⟨V, V.isOpen.mem_nhds hzV, ((SchemeWeilDivisor.finite_setOfPred_notMem
+  refine ⟨V, V.isOpen.mem_nhds hzV, ((CodimensionOnePoint.finite_setOfPred_notMem
     ((Scheme.Opens.ι V) ⁻¹ᵁ U)).image fun x ↦ (Scheme.Opens.ι V) x.1).subset ?_⟩
   rintro x ⟨hxV, hx⟩
   have hx1 : coheight x = 1 := by
