@@ -14,10 +14,9 @@ Building on `TauCeti.AmbientIsotopy` (an ambient isotopy of a space `Y`: a homot
 identity whose level-preserving total map `I × Y → I × Y` is a homeomorphism), this file makes
 ambient isotopy a relation between maps and shows it is an equivalence relation. Two maps
 `f g : C(X, Y)` are **ambient isotopic** when some ambient isotopy `Φ` of `Y` carries `f` to `g`,
-meaning its final homeomorphism postcomposes `f` to `g`. This is the continuous topological
-relation the geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology`, encoding conventions)
-intends to specialise to smooth embeddings `S¹ ↪ M` to underlie knot equivalence: "isotopy is
-defined generally, then specialised".
+meaning its final homeomorphism postcomposes `f` to `g`. Knot equivalence is ambient isotopy of
+embeddings `S¹ ↪ M`; here the relation is defined for arbitrary continuous maps, with no smooth
+or PL structure.
 
 The reflexivity, symmetry, and transitivity of the relation are powered by three closure
 operations on ambient isotopies themselves, which live beside the `AmbientIsotopy` structure in
@@ -26,7 +25,7 @@ pointwise composition `AmbientIsotopy.trans`, and the pointwise inverse `Ambient
 Because each of their total maps is a composition or inverse of homeomorphisms, none of the
 closure operations needs a separate gluing argument. This is a continuous topological
 generalization of the point-set ambient-isotopy condition in Burde--Zieschang, *Knots*, Chapter 1,
-Definition 1.2, intended for later specialization to embeddings such as knots.
+Definition 1.2.
 
 ## Main definitions
 

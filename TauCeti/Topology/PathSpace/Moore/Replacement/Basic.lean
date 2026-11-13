@@ -21,8 +21,9 @@ at `p e`, with the endpoint map `p' (e, γ) = γ.target`.
   `γ.target` lifts to `s ↦ (e, γ · δ|[0, s])`.  So `p'` is a Hurewicz fibration, whatever `p` is
   (`TauCeti.MooreReplacement.isHurewiczFibration_endpoint`).
 * The inclusion `E → E'`, `e ↦ (e, const)`, is a map over `B` and a homotopy equivalence, with
-  homotopy inverse the projection `(e, γ) ↦ e`: a path shrinks to its start
-  (`TauCeti.MooreReplacement.homotopyEquiv`).
+  homotopy inverse the projection `(e, γ) ↦ e`: shrinking each path to its start is a strong
+  deformation retraction of `E'` onto the image of the inclusion
+  (`TauCeti.MooreReplacement.shrinkHomotopy`, `TauCeti.MooreReplacement.homotopyEquiv`).
 * The fibre `F'` of `p'` over `b` carries the **strict** right action `(e, γ) · ω = (e, γ · ω)` of
   the Moore loops at `b`, continuous in both variables.  No choice of lifting function for `p` is
   involved.
@@ -215,8 +216,10 @@ theorem proj_comp_incl (p : C(E, B)) : (proj p).comp (incl p) = .id E := by
   simp
 
 /-- The homotopy from `incl ∘ proj` to the identity of `E'`, shrinking each path to its start:
-`(s, (e, γ)) ↦ (e, γ|[0, s · γ.length])`. -/
-def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p)) (.id _) where
+`(s, (e, γ)) ↦ (e, γ|[0, s · γ.length])`.  It fixes the constant paths of length zero throughout,
+so it is a strong deformation retraction onto the image of `incl p`. -/
+def shrinkHomotopy (p : C(E, B)) :
+    ContinuousMap.HomotopyRel ((incl p).comp (proj p)) (.id _) (Set.range (incl p)) where
   toFun y := mk y.2.point (y.2.path.truncate (toNNReal y.1 * y.2.path.length))
     (y.2.source_truncate_path _)
   continuous_toFun := continuous_mk (continuous_point.comp continuous_snd)
@@ -225,6 +228,9 @@ def shrinkHomotopy (p : C(E, B)) : ContinuousMap.Homotopy ((incl p).comp (proj p
         (MoorePath.continuous_length.comp (continuous_path.comp continuous_snd)))) _
   map_zero_left x := ext (by simp) (by simp)
   map_one_left x := ext (by simp) (by simp)
+  prop' s := by
+    rintro _ ⟨e, rfl⟩
+    exact ext (by simp) (by simp)
 
 @[simp]
 theorem point_shrinkHomotopy (p : C(E, B)) (y : I × MooreReplacement p) :
@@ -241,7 +247,7 @@ def homotopyEquiv (p : C(E, B)) : ContinuousMap.HomotopyEquiv E (MooreReplacemen
   toFun := incl p
   invFun := proj p
   left_inv := by rw [proj_comp_incl]
-  right_inv := ⟨shrinkHomotopy p⟩
+  right_inv := ⟨(shrinkHomotopy p).toHomotopy⟩
 
 @[simp]
 theorem coe_homotopyEquiv (p : C(E, B)) : ⇑(homotopyEquiv p) = incl p :=

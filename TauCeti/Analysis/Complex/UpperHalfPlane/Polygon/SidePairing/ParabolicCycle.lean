@@ -304,7 +304,6 @@ theorem pairwiseDisjoint_cycleMap_zpow_mul_inv_partialCycleMap_smul_interior_car
     ⟨(by ring : m' + σ.cycleLength j * (K - k').toNat =
       (K - k').toNat * σ.cycleLength j + m'), hm'⟩
   rw [h] at hq
-  have hK : k ≤ K ∧ k' ≤ K := ⟨le_max_left k k', le_max_right k k'⟩
   rw [Prod.mk.injEq]
   omega
 

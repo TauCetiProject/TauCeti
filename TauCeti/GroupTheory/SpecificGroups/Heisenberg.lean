@@ -94,6 +94,10 @@ theorem equivProd_apply (a : HeisenbergGroup R) : equivProd a = (a.x, a.y, a.z) 
 theorem equivProd_symm_apply (a : R × R × R) : equivProd.symm a = ⟨a.1, a.2.1, a.2.2⟩ :=
   (rfl)
 
+/-- The Heisenberg carrier is nonempty whenever its coefficient type is nonempty. -/
+instance [Nonempty R] : Nonempty (HeisenbergGroup R) :=
+  Nonempty.map equivProd.symm inferInstance
+
 instance [Fintype R] : Fintype (HeisenbergGroup R) := Fintype.ofEquiv _ equivProd.symm
 
 instance [Finite R] : Finite (HeisenbergGroup R) := Finite.of_equiv _ equivProd.symm
@@ -265,20 +269,20 @@ theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
 
 /-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
 projection `(x, y, z) ↦ (x, y)`. -/
-def abelianizationMulEquiv : Abelianization (HeisenbergGroup R) ≃* Multiplicative (R × R) :=
+def abelianizationMulEquiv : Group.Abelianization (HeisenbergGroup R) ≃* Multiplicative (R × R) :=
   (QuotientGroup.quotientMulEquivOfEq (commutator_eq_zAxis.trans ker_projXY.symm)).trans
     (QuotientGroup.quotientKerEquivOfRightInverse (projXY : HeisenbergGroup R →* _)
       (fun v ↦ (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R)) fun _ ↦ by rfl)
 
 @[simp]
 theorem abelianizationMulEquiv_of (a : HeisenbergGroup R) :
-    abelianizationMulEquiv (Abelianization.of a) = .ofAdd (a.x, a.y) :=
+    abelianizationMulEquiv (Group.Abelianization.of a) = .ofAdd (a.x, a.y) :=
   (rfl)
 
 @[simp]
 theorem abelianizationMulEquiv_symm_apply (v : Multiplicative (R × R)) :
     abelianizationMulEquiv.symm v =
-      Abelianization.of (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R) :=
+      Group.Abelianization.of (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R) :=
   (rfl)
 
 /-- The Heisenberg group over a commutative ring is isomorphic to its opposite group by

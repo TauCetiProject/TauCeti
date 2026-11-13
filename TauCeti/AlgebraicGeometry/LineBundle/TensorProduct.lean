@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Closure
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Associator
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 
 /-!
@@ -37,8 +37,6 @@ The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, sy
 associativity, and unit isomorphisms provide the categorical API for manipulating tensor products
 of line bundles.
 -/
-
--- This implementation follows `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A.
 
 public section
 

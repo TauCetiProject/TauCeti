@@ -25,6 +25,8 @@ boundary or corners.
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
   Riemannian volume zero.
+* `TauCeti.nullSingletonClass_riemannianVolume`: on a manifold of positive dimension, every point
+  has Riemannian volume zero.
 -/
 
 public noncomputable section
@@ -68,7 +70,7 @@ private theorem riemannianVolume_eq_zero_iff_image_of_measurableSet {α : M} {s 
   constructor
   · intro hz
     have ha := (lintegral_eq_zero_iff' (hd.aemeasurable him)).mp hz
-    have hfalse : ∀ᵐ y ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
+    have hfalse : ∀ᵐ _ ∂(Module.finBasis ℝ E).addHaar.restrict (e '' s), False := by
       filter_upwards [ae_restrict_mem him, ha] with y hy hyzero
       obtain ⟨x, hx, rfl⟩ := hy
       have hp := chartVolumeDensity_pos (I := I) α (by
@@ -157,5 +159,16 @@ theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
     riemannianVolume I M s = 0 := isNullSet_iff_riemannianVolume_eq_zero.mp hs
 
 end Null
+
+section NullSingleton
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
+/-- On a manifold of positive dimension, every point has Riemannian volume zero. -/
+instance nullSingletonClass_riemannianVolume [Nontrivial E] :
+    NullSingletonClass (riemannianVolume I M) :=
+  ⟨fun x ↦ (countable_singleton x).isNullSet.riemannianVolume_eq_zero⟩
+
+end NullSingleton
 
 end TauCeti

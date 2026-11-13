@@ -125,8 +125,7 @@ theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτ
     · rw [h1] at h2; cases h2
     · rw [h1] at h2; cases h2
     · exact ⟨i, (hlt'.trans hlt).ne', htail, hd, Or.inr ⟨h1, hlt'.trans hlt⟩⟩
-  · have hsucc : k < ⟨i.val + 1, hd⟩ := Fin.lt_def.2 (Nat.lt_succ_of_lt hik)
-    refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
+  · refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
     rwa [← hk' i hik]
 
 private theorem thomLT_cmp_neg (s a b : SignType) :
@@ -449,8 +448,8 @@ theorem card_roots_lt_eq_card_filter_thomLT_of_natDegree_le {p : R[X]} {d : ℕ}
 theorem thomLT_or_thomLT_of_mem_thomEncodings (hrolle : PolynomialRolle R) {p : R[X]}
     {σ τ : Fin p.natDegree → SignType} (hσ : σ ∈ p.thomEncodings) (hτ : τ ∈ p.thomEncodings)
     (hne : σ ≠ τ) : ThomLT σ τ ∨ ThomLT τ σ := by
-  obtain ⟨hp, a, ha, rfl⟩ := mem_thomEncodings.1 hσ
-  obtain ⟨-, b, hb, rfl⟩ := mem_thomEncodings.1 hτ
+  obtain ⟨_, a, _, rfl⟩ := mem_thomEncodings.1 hσ
+  obtain ⟨-, b, _, rfl⟩ := mem_thomEncodings.1 hτ
   rw [← lt_iff_thomLT p hrolle hne, ← lt_iff_thomLT p hrolle hne.symm]
   exact lt_or_gt_of_ne fun h ↦ hne (h ▸ rfl)
 

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
@@ -19,17 +20,26 @@ ring maps carry each subgroup into the corresponding subgroup over the target ri
 
 The torus here is parametrized in the chosen basis of the datum's weight lattice, rather than
 by restriction from the full weight lattice. The latter can miss torus points, already for
-adjoint type A₁ over ℚ. All results hold over every commutative ring. We call the generated
-subgroup `borelSubgroup`; we do not identify it with all points of a Borel subgroup scheme
-or assert maximal solvability here. No ordered-product normal form for `U` is assumed.
+adjoint type A₁ over ℚ. The subgroup and membership results hold over every commutative ring.
+We call the generated subgroup `borelSubgroup`; we do not identify it with all points of a Borel
+subgroup scheme or assert maximal solvability here. No ordered-product normal form for `U` is
+assumed.
+The opposite-intersection theorem also shows that a negative root element in `B` must be
+the identity; this detects when conjugating an element of a simple-root subgroup by its pinned
+Weyl representative leaves `B`. Over every nontrivial commutative ring, the simple-root element
+with additive parameter one witnesses that each pinned simple Weyl representative conjugates
+some element of `B` outside `B`. This is the
+noncontainment required by the last Tits-system axiom, without assuming a Bruhat decomposition.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 17 and 18.
-* R. W. Carter, *Simple Groups of Lie Type*, §5.3.
+* R. W. Carter, *Simple Groups of Lie Type*, §5.3 and §8.1.
 -/
 
 public section
+
+open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
@@ -113,5 +123,77 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
     simpa only [Subgroup.mem_comap, D.map_torusPoints] using
       D.range_torusPoints_le_borelSubgroup B
         ⟨fun i => Units.map f.toMonoidHom (s i), rfl⟩
+
+/-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
+the identity. This does not assume that the root parameter is injective. -/
+@[simp]
+theorem rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (a : Multiplicative A) :
+    D.rootSubgroupPoints γ A a ∈ D.borelSubgroup A ↔ D.rootSubgroupPoints γ A a = 1 := by
+  constructor
+  · intro ha
+    obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
+    rw [D.positivePoints_def] at hu
+    obtain ⟨v, hv, hvu⟩ := (D.mem_subsystemPoints_iff _).mp hu
+    rw [← D.positiveSubgroup_def] at hv
+    let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
+    have hm : Function.Injective m :=
+      Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+    let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+      D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) a
+    have hx : x = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
+        (CommAlgCat.of ℤ A) s := by
+      apply hm
+      simpa only [m, x, MulEquiv.toMonoidHom_eq_coe, map_mul,
+        D.coe_rootSubgroupPoints, Subgroup.coe_mul,
+        basisMatrix_kostantTorusPoints, hvu, D.coe_torusPoints,
+        kostantTorusMatrix_apply] using congrArg Subtype.val hs.symm
+    have hxbot : x ∈ (⊥ : Subgroup _) := by
+      rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
+      refine ⟨D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hγ a, ?_⟩
+      rw [hx]
+      exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
+    apply Subtype.ext
+    exact (D.coe_rootSubgroupPoints γ A a).trans
+      ((congrArg m (Subgroup.mem_bot.mp hxbot)).trans m.map_one)
+  · intro ha
+    rw [ha]
+    exact (D.borelSubgroup A).one_mem
+
+/-- Conjugating a positive simple-root element by its pinned Weyl representative lands
+in the positive Borel-type subgroup exactly when that root element is trivial. -/
+@[simp]
+theorem weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff
+    (i : Fin t.rank) (u : Multiplicative A) :
+    D.weylElement (t.simpleIndex ht i) A 1 *
+        D.rootSubgroupPoints (t.simpleIndex ht i) A u *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∈ D.borelSubgroup A ↔
+      D.rootSubgroupPoints (t.simpleIndex ht i) A u = 1 := by
+  rw [← ofAdd_toAdd u]
+  have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm
+      (t.simpleIndex ht i) (t.simpleIndex ht i) ∈
+      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [← t.reflectionPerm_rationalRootSystem ht]
+    exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr
+      (support_subset_posRoots _ _ (t.simpleIndex_mem_support i))
+  rw [D.weylElement_conj_rootSubgroupPoints,
+    D.rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots A hneg,
+    ← D.weylElement_conj_rootSubgroupPoints, conj_eq_one_iff]
+
+/-- Every pinned simple Weyl representative conjugates some element of the positive Borel
+outside that Borel, for every Chevalley datum over a nontrivial commutative ring. -/
+theorem exists_weylElement_conj_notMem_borelSubgroup [Nontrivial A] (i : Fin t.rank) :
+    ∃ b : D.borelSubgroup A,
+      D.weylElement (t.simpleIndex ht i) A 1 * b.val *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ ∉ D.borelSubgroup A := by
+  have hpos : t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+    support_subset_posRoots _ _ (t.simpleIndex_mem_support i)
+  refine ⟨⟨D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd 1),
+    D.positivePoints_le_borelSubgroup A (by
+      rw [D.positivePoints_def]
+      exact D.rootSubgroupPoints_mem_subsystemPoints _ A hpos _)⟩, ?_⟩
+  rw [D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff]
+  exact D.rootSubgroupPoints_ofAdd_one_ne_one A (t.simpleIndex ht i)
 
 end TauCeti.DynkinType.ChevalleyDatum

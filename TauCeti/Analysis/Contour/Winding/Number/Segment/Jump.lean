@@ -283,7 +283,6 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
     ∃ r > 0, ∀ w₁ ∈ ball (v * s + z₀) r, ∀ w₂ ∈ ball (v * s + z₀) r,
       0 < ((w₁ - (v * s + z₀)) / v).im → ((w₂ - (v * s + z₀)) / v).im < 0 →
         windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + 1 := by
-  have hab : a < b := hs.1.trans hs.2
   obtain ⟨r, hr, hoff⟩ :=
     exists_ball_forall_notMem_image_of_eqOn_segment hΓ hbc hseg hv hs hp
   refine ⟨r, hr, ?_⟩

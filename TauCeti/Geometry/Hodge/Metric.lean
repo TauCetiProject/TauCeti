@@ -23,9 +23,6 @@ The construction and sign convention follow Voisin, *Hodge Theory and Complex Al
 
 * `TauCeti.Hodge.Polarization.hodgeInnerProductCore`: the Hodge form packaged as an
   `InnerProductSpace.Core`.
-
-This is the positive Hermitian metric targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`.
 -/
 
 public section

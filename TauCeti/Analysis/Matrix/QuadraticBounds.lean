@@ -19,6 +19,10 @@ parameter space `X` and finite index type `ι`, there are constants `a, b > 0` s
 The same constants work across all parameters and vectors, including in dimension zero.
 These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
+For a single matrix, `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the explicit upper bound
+`A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
+upper ellipticity bound.
+
 The statement is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
 -/
@@ -27,6 +31,14 @@ public section
 
 open Set Metric
 open scoped Matrix
+
+/-- The quadratic form of a real matrix is bounded above by the sum of the absolute values of its
+entries times `‖ξ‖²`. -/
+theorem Matrix.toQuadraticForm'_le_sum_abs_mul_sq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
+    A.toQuadraticForm' ξ ≤ (∑ i, ∑ j, |A i j|) * ‖ξ‖ ^ 2 :=
+  (TauCeti.PDE.toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans
+    (mul_le_mul_of_nonneg_right (TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs A) (sq_nonneg _))
 
 namespace TauCeti
 
