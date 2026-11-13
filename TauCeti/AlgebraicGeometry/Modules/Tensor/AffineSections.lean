@@ -23,7 +23,8 @@ The map is the tensor map of the lax monoidal sections functor
 the sectionwise tensor product `V ↦ Γ(M, V) ⊗[Γ(X, V)] Γ(N, V)`. It is an instance of
 `AlgebraicGeometry.IsAffineOpen.bijective_app_of_isLocalizedModule`: tensor products commute with
 base change, so the restrictions of the sectionwise tensor product from `U` to its basic opens are
-localizations.
+localizations. The proof follows that of
+`AlgebraicGeometry.Scheme.Modules.bijective_symmetricPower_unit_app` for symmetric powers.
 
 ## Main declarations
 
