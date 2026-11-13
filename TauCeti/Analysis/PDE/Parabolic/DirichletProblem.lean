@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.PDE.Parabolic.Existence
-import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
+import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.SeparableMeasure
 
