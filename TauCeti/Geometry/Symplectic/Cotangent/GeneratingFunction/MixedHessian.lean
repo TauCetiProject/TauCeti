@@ -85,6 +85,20 @@ theorem mixedHessian_def (S : M × N → ℝ) (x : M × N) :
       mvfderiv (F := E →L[ℝ] ℝ) J (fun Q ↦ mvfderiv I (fun q ↦ S (q, Q)) x.1) x.2 :=
   (rfl)
 
+/-- The mixed Hessian depends only on the germ of the function. -/
+theorem _root_.Filter.EventuallyEq.mixedHessian_eq {S T : M × N → ℝ} {x : M × N}
+    (h : S =ᶠ[𝓝 x] T) :
+    TauCeti.mixedHessian I J S x = TauCeti.mixedHessian I J T x := by
+  have hs : (fun Q ↦ mvfderiv I (fun q ↦ S (q, Q)) x.1) =ᶠ[𝓝 x.2]
+      fun Q ↦ mvfderiv I (fun q ↦ T (q, Q)) x.1 := by
+    filter_upwards [(continuous_const.prodMk continuous_id).continuousAt.eventually
+      h.eventuallyEq_nhds] with Q hQ
+    have hsQ : (fun q ↦ S (q, Q)) =ᶠ[𝓝 x.1] fun q ↦ T (q, Q) :=
+      (continuous_id.prodMk continuous_const).continuousAt.eventually hQ
+    exact hsQ.mvfderiv_eq (I := I)
+  rw [TauCeti.mixedHessian_def, TauCeti.mixedHessian_def]
+  exact hs.mvfderiv_eq (I := J) (F := E →L[ℝ] ℝ)
+
 /-- **The mixed Hessian on normed spaces.** For a function on a product of normed spaces which is
 `C²` at `x`, the mixed Hessian is the linear mixed Hessian `δQ ↦ D²S (0, δQ) (·, 0)`. -/
 theorem mixedHessian_modelSpace {S : E × E' → ℝ} {x : E × E'} (hS : ContDiffAt ℝ 2 S x) :
