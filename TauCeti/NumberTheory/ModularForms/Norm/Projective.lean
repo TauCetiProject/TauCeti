@@ -535,8 +535,8 @@ section ProjectiveValenceFormula
 
 variable {Γ : Subgroup SL(2, ℤ)}
 
-/-- **Effective stabiliser order `e_x` on the compactified quotient**: `|Stab_{Γ̄}(P)|` at an
-interior orbit `P`, and `1` at every cusp. -/
+/-- **Effective stabiliser order `e_x` on the compactified quotient**: `cardStabilizerOnOrbit P` at
+an interior orbit `P` of `Γ.map sl2zToPSL2R`, and `1` at every cusp. -/
 noncomputable def effectiveStabilizerOrderOnCompactifiedQuotient :
     (Γ.map sl2zToPSL2R).CompactifiedQuotient → ℕ
   | .ofQuotient P => cardStabilizerOnOrbit P
@@ -664,7 +664,7 @@ theorem weightedOrderOnCompactifiedQuotient_nonneg
 
 /-- **Additivity on products**: for nonzero modular forms `f` and `g` on `Γ`, the geometric order of
 `f.mul g` on `(Γ.map sl2zToPSL2R).CompactifiedQuotient` is the sum of their geometric orders. -/
-theorem orderOnCompactifiedQuotient_modularForm_mul
+theorem _root_.ModularForm.orderOnCompactifiedQuotient_mul
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
@@ -672,20 +672,19 @@ theorem orderOnCompactifiedQuotient_modularForm_mul
       orderOnCompactifiedQuotient f x + orderOnCompactifiedQuotient g x := by
   cases x with
   | ofQuotient P =>
-    simp [orderOfVanishingOnEffectiveOrbit_modularForm_mul f g hf hg P]
+    simp [f.orderOfVanishingOnEffectiveOrbit_mul g hf hg P]
   | ofCusp C =>
-    exact orderAtCuspOrbit_modularForm_mul f g hf hg C
+    exact f.orderAtCuspOrbit_mul g hf hg C
 
 /-- Additivity of the weighted geometric order on products of nonzero modular forms. -/
-theorem weightedOrderOnCompactifiedQuotient_modularForm_mul
+theorem _root_.ModularForm.weightedOrderOnCompactifiedQuotient_mul
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     weightedOrderOnCompactifiedQuotient (f.mul g) x =
       weightedOrderOnCompactifiedQuotient f x + weightedOrderOnCompactifiedQuotient g x := by
   rw [weightedOrderOnCompactifiedQuotient, weightedOrderOnCompactifiedQuotient,
-    weightedOrderOnCompactifiedQuotient, orderOnCompactifiedQuotient_modularForm_mul f g hf hg x,
-    add_div]
+    weightedOrderOnCompactifiedQuotient, f.orderOnCompactifiedQuotient_mul g hf hg x, add_div]
 
 /-- A modular form on finite-index `Γ` has nonzero geometric order at only finitely many points of
 `(Γ.map sl2zToPSL2R).CompactifiedQuotient`. -/

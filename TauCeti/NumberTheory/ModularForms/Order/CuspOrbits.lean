@@ -63,7 +63,7 @@ irregular cusp.
 * `TauCeti.ModularForm.orderAtCuspOrbit_cuspOrbit` and
   `TauCeti.ModularForm.orderAtCuspOrbit_cuspOrbitOfSL2Z`: evaluation at any cusp datum or integral
   matrix representative.
-* `TauCeti.ModularForm.orderAtCuspOrbit_modularForm_mul`: additivity on products of nonzero forms.
+* `ModularForm.orderAtCuspOrbit_mul`: additivity on products of nonzero forms.
 * `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_of_isRegularCusp`,
   `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_of_even`, and
   `TauCeti.ModularForm.exists_orderAtCuspOrbit_eq_natCast_add_half_of_odd_of_not_isRegularCusp`:
@@ -534,7 +534,7 @@ theorem orderAtCuspOrbit_zero [Γ.FiniteIndex] (C : (Γ.map sl2zToPSL2R).CuspOrb
 
 /-- **Additivity on products at cusps**: for nonzero modular forms `f` and `g` on `Γ`, the cusp
 order of `f.mul g` at every cusp orbit `C` is the sum of their cusp orders at `C`. -/
-theorem orderAtCuspOrbit_modularForm_mul [Γ.FiniteIndex]
+theorem _root_.ModularForm.orderAtCuspOrbit_mul [Γ.FiniteIndex]
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :

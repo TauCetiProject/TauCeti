@@ -40,9 +40,9 @@ weighted order `2 · ord_P f / |Stab_Γ P|` by the uniform factor `[±Γ : Γ]`.
   `[±Γ : Γ] · |{±I} ∩ Γ| = 2`.
 * `TauCeti.ModularForm.cardStabilizerOnOrbit_eq_card_center_mul_effective`: the matrix stabiliser
   order on an orbit is `|{±I} ∩ Γ|` times the effective stabiliser order `e_P`.
-* `TauCeti.ModularForm.orderOfVanishingOnEffectiveOrbit_modularForm_mul` and
-  `TauCeti.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_modularForm_mul`: additivity under
-  products of nonzero modular forms.
+* `ModularForm.orderOfVanishingOnEffectiveOrbit_mul` and
+  `ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul`: additivity under products of nonzero
+  modular forms.
 * `TauCeti.ModularForm.hasFiniteSupport_orderOfVanishingOnEffectiveOrbit` and
   `TauCeti.ModularForm.hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit`: finite support
   on the effective orbit space.
@@ -237,7 +237,7 @@ theorem orderOfVanishingOnEffectiveOrbit_zero
 
 /-- **Additivity on products**: for nonzero modular forms `f` and `g` of weights `k₁` and `k₂` on
 `Γ`, the vanishing order of `f.mul g` on each effective orbit is the sum of their orders. -/
-theorem orderOfVanishingOnEffectiveOrbit_modularForm_mul
+theorem _root_.ModularForm.orderOfVanishingOnEffectiveOrbit_mul
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
@@ -308,7 +308,7 @@ theorem weightedOrderOfVanishingOnEffectiveOrbit_zero
   simp [weightedOrderOfVanishingOnEffectiveOrbit_def]
 
 /-- Additivity of the projective weighted order on products of nonzero modular forms. -/
-theorem weightedOrderOfVanishingOnEffectiveOrbit_modularForm_mul
+theorem _root_.ModularForm.weightedOrderOfVanishingOnEffectiveOrbit_mul
     (f : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₁)
     (g : ModularForm (Γ : Subgroup (GL (Fin 2) ℝ)) k₂)
     (hf : f ≠ 0) (hg : g ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
@@ -317,7 +317,7 @@ theorem weightedOrderOfVanishingOnEffectiveOrbit_modularForm_mul
         weightedOrderOfVanishingOnEffectiveOrbit g P := by
   rw [weightedOrderOfVanishingOnEffectiveOrbit_def, weightedOrderOfVanishingOnEffectiveOrbit_def,
     weightedOrderOfVanishingOnEffectiveOrbit_def,
-    orderOfVanishingOnEffectiveOrbit_modularForm_mul f g hf hg P, Int.cast_add, add_div]
+    f.orderOfVanishingOnEffectiveOrbit_mul g hf hg P, Int.cast_add, add_div]
 
 /-- Only finitely many effective orbits carry nonzero projective weighted order. -/
 theorem hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex]
