@@ -1,7 +1,8 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2024 David Loeffler; 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Alex Kontorovich, David Loeffler, Heather Macbeth, Sébastien Gouëzel,
+  The Tau Ceti contributors
 -/
 module
 
@@ -21,8 +22,9 @@ A smooth compactly supported function is a Schwartz function, so its Fourier tra
 Schwartz function and therefore decays faster than every negative power of `‖v‖`. This file records
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
 is used in when it weights a comparison test. Without smoothness or compact support, integrating by
-parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` for a `C^N` function
-whose derivatives up to order `N` are integrable. The file also records the angular-frequency form
+parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` when the
+derivatives below order `N` are differentiable and those up to order `N` are integrable. The file
+also records the angular-frequency form
 `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform, whose integrand is
 integrable whenever `f` is.
 
@@ -40,8 +42,9 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le`: the same decay with the weight
   `(1 + ‖v‖) ^ k`.
-* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
-  derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if derivatives below order `N`
+  are differentiable and those up to order `N` are integrable, then
+  `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
   support `tsupport f` is contained in a measurable set `S` of finite volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
@@ -69,6 +72,63 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 public section
 
 open scoped ContDiff FourierTransform
+
+namespace VectorFourier
+
+open Real Complex MeasureTheory Filter TopologicalSpace
+open scoped FourierTransform Topology ContDiff
+
+variable {V W E : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℝ W]
+  [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [MeasurableSpace V] [BorelSpace V]
+  (L : V →L[ℝ] W →L[ℝ] ℝ) {f : V → E}
+
+-- The induction in Mathlib's `fourierIntegral_iteratedFDeriv` only uses differentiability
+-- below the final order; continuity of the final derivative is unnecessary.
+private theorem fourierIntegral_iteratedFDeriv_of_differentiable [FiniteDimensional ℝ V]
+    {μ : Measure V} [Measure.IsAddHaarMeasure μ] {N : ℕ}
+    (hf : ∀ n < N, Differentiable ℝ (iteratedFDeriv ℝ n f))
+    (h'f : ∀ (n : ℕ), n ≤ N → Integrable (iteratedFDeriv ℝ n f) μ) {n : ℕ} (hn : n ≤ N) :
+    fourierIntegral 𝐞 μ L.toLinearMap₁₂ (iteratedFDeriv ℝ n f)
+      = (fun w ↦ fourierPowSMulRight (-L.flip) (fourierIntegral 𝐞 μ L.toLinearMap₁₂ f) w n) := by
+  classical
+  induction n with
+  | zero =>
+    ext w m
+    simp only [iteratedFDeriv_zero_apply, fourierPowSMulRight_apply, pow_zero, Finset.univ_eq_empty,
+      neg_apply, ContinuousLinearMap.flip_apply, Finset.prod_empty, one_smul,
+      fourierIntegral_continuousMultilinearMap_apply' ((h'f 0 bot_le))]
+  | succ n ih =>
+    -- Select the normed structure before transporting integrability through currying.
+    let : NormedAddCommGroup (V →L[ℝ] V [×n]→L[ℝ] E) := inferInstance
+    ext w m
+    have J : Integrable (fderiv ℝ (iteratedFDeriv ℝ n f)) μ := by
+      specialize h'f (n + 1) hn
+      rwa [iteratedFDeriv_succ_eq_comp_left, Function.comp_def,
+          LinearIsometryEquiv.integrable_comp_iff (𝕜 := ℝ) (φ := fderiv ℝ (iteratedFDeriv ℝ n f))]
+        at h'f
+    suffices H : (fourierIntegral 𝐞 μ L.toLinearMap₁₂ (fderiv ℝ (iteratedFDeriv ℝ n f)) w)
+          (m 0) (Fin.tail m) =
+        (-(2 * π * I)) ^ (n + 1) • (∏ x : Fin (n + 1), -L (m x) w) • ∫ v, 𝐞 (-L v w) • f v ∂μ by
+      rw [fourierIntegral_continuousMultilinearMap_apply' (h'f _ hn)]
+      simp only [iteratedFDeriv_succ_apply_left, fourierPowSMulRight_apply, neg_apply,
+        ContinuousLinearMap.flip_apply]
+      rw [← fourierIntegral_continuousMultilinearMap_apply' ((J.apply_continuousLinearMap _)),
+          ← fourierIntegral_continuousLinearMap_apply' J]
+      exact H
+    have h'n : n < N := n.lt_succ_self.trans_le hn
+    rw [fourierIntegral_fderiv _ (h'f n h'n.le)
+      (hf n h'n) J]
+    simp only [ih h'n.le, fourierSMulRight_apply, neg_apply, ContinuousLinearMap.flip_apply,
+      neg_smul, smul_neg, neg_neg, smul_apply, fourierPowSMulRight_apply, ← coe_smul (E := E),
+      smul_smul]
+    congr 1
+    simp only [ofReal_prod, ofReal_neg, pow_succ, mul_neg, Fin.prod_univ_succ, neg_mul,
+      ofReal_mul, neg_neg, Fin.tail_def]
+    ring
+
+end VectorFourier
 
 namespace TauCeti
 
@@ -99,13 +159,18 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f)
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe] at h
 
 open MeasureTheory Real in
-/-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are
-integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
-theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : ContDiff ℝ N f)
+/-- **Integration by parts.** If the derivatives of `f` below order `N` are differentiable
+and its derivatives of order at most `N` are integrable, then
+`(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
+theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ}
+    (hf : ∀ n < N, Differentiable ℝ (iteratedFDeriv ℝ n f))
     (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f)) (w : V) :
     (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ ≤ ∫ v, ‖iteratedFDeriv ℝ N f v‖ := by
-  have key := congrFun (Real.fourier_iteratedFDeriv (N := N) hf
-    (fun n hn ↦ hf' n (mod_cast hn)) le_rfl) w
+  have identity : 𝓕 (iteratedFDeriv ℝ N f) =
+      (fun w ↦ VectorFourier.fourierPowSMulRight (-innerSL ℝ) (𝓕 f) w N) := by
+    rw [← flip_innerSL_real V]
+    exact VectorFourier.fourierIntegral_iteratedFDeriv_of_differentiable (innerSL ℝ) hf hf' le_rfl
+  have key := congrFun identity w
   have hle : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ ≤
       (∫ v, ‖iteratedFDeriv ℝ N f v‖) * ‖w‖ ^ N := by
     refine ((𝓕 (iteratedFDeriv ℝ N f) w).le_opNorm _).trans ?_
@@ -155,7 +220,8 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
   rcases le_total ‖w‖ 1 with hw | hw
   · have h2 : (1 + ‖w‖) ^ N ≤ 2 ^ N := by gcongr; linarith
     exact mul_le_mul h2 h0 (norm_nonneg _) (by positivity)
-  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv hf hint w).trans
+  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
+      (fun n hn ↦ hf.differentiable_iteratedFDeriv (by exact_mod_cast hn)) hint w).trans
       (hle N le_rfl)
     calc (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ (2 * ‖w‖) ^ N * ‖𝓕 f w‖ := by
           gcongr

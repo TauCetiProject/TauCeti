@@ -133,7 +133,8 @@ theorem norm_integral_exp_smul_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y
   set F := 𝓕 (fun y ↦ b (y, ξ)) ((2 * π)⁻¹ • ξ)
   have hA : ‖F‖ ≤ C * w ^ (m / 2) := (Real.norm_fourier_le_integral_norm _ _).trans (h₀ ξ)
   have hB : ‖ξ‖ ^ N * ‖F‖ ≤ C * w ^ (m / 2) := by
-    have h := pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv (hdiff ξ) (hint ξ)
+    have h := pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
+      (fun n hn ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hn)) (hint ξ)
       ((2 * π)⁻¹ • ξ)
     rw [norm_smul, Real.norm_of_nonneg (by positivity), ← mul_assoc,
       mul_inv_cancel₀ (by positivity), one_mul] at h
