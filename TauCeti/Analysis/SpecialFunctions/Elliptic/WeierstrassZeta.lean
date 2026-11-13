@@ -18,11 +18,11 @@ For a pair of periods `L` with lattice `Λ`, the Weierstrass `ζ` function is
 since its terms are `z² / (l² (z - l)) = O(|l|⁻³)`. It is holomorphic away from `Λ` with
 `ζ' = -℘`, and it is odd.
 
-Unlike `℘`, the function `ζ` is not periodic: it is *quasi-periodic*. Since `ζ(z + l) - ζ(z)` has
-derivative `℘(z) - ℘(z + l) = 0` on the connected open set `ℂ ∖ Λ`, it is a constant `η(l)`, the
-quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is additive. At a lattice point
-`l`, a pole of `ζ`, the defining series takes the value `η(l)`, so the quasi-periodicity holds at
-every `z`, and, as `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`.
+Unlike `℘`, the function `ζ` is not `Λ`-periodic (not doubly periodic): it is *quasi-periodic*.
+Since `ζ(z + l) - ζ(z)` has derivative `℘(z) - ℘(z + l) = 0` on the connected open set `ℂ ∖ Λ`, it
+is a constant `η(l)`, the quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is
+additive. At a lattice point `l`, a pole of `ζ`, the defining series takes the value `η(l)`, so the
+quasi-periodicity holds at every `z`, and, as `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`.
 
 The values of `ζ` at the `N`-division points of `ℤ z + ℤ`, corrected by the quasi-periods so as
 to depend only on the division point modulo the lattice, are the building blocks of the weight-one
