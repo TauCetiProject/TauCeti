@@ -199,7 +199,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     calc ∫ z in B, f k (z + c j) = ∫ z in B, f k (z + a) := by simp_rw [ha]
       _ = ∫ z in ball a 1, f k z := by rw [hB, hball a k 0 1, zero_add]
       _ ≤ ∫ z in W, f k z := setIntegral_mono_set (hWint k).1
-          (Eventually.of_forall fun y ↦ hf0 _ _) haW.eventuallyLE
+          (Eventually.of_forall fun y ↦ hf0 _ _) haW.eventuallySubset
       _ ≤ 2 * E := (hWint k).2
   -- On each window, every subsequence has a further subsequence converging off finitely many
   -- bubbling points.
@@ -214,7 +214,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
       fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl, hvc, hvK,
       fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, h.filter_mono hl⟩⟩)
-    (fun j ψ hψ ↦ by
+    (fun j ψ _ ↦ by
       obtain ⟨ψ', Z', v', hψ', hZ', -, hconc, hbd, hvc, hvK, hlim⟩ :=
         hconv (Ω := B) (u := fun k y ↦ u (ψ k) (y + c j)) (E := 2 * E) isOpen_ball
           ball_subset_closedBall
@@ -233,19 +233,19 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       · obtain ⟨M, hM⟩ := hbd C hC hCZ
         refine ⟨M, eventually_map.2 (Eventually.of_forall fun n y hy ↦ ?_)⟩
         simpa [fderiv_comp_add_right] using hM n y hy)
-  choose Z v hZB hconc hbd hvc hvK hlim using hP
+  choose Z v _ hconc hbd hvc hvK hlim using hP
   set l : Filter ℕ := map φ atTop
   -- The bubbling points of all windows, carried back to the plane.
   set Zall : Set (ℝ × ℝ) := ⋃ j, (· + c j) '' (Z j : Set (ℝ × ℝ)) with hZall
   -- The points at which energy at least `δ` concentrates; they include the bubbling points, and
   -- they are invariant under the period `(0, 1)`.
-  set Zc : Set (ℝ × ℝ) := {y | ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y' in ball y ε, f k y'} with hZc
+  set Zc : Set (ℝ × ℝ) := {y | ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y' in ball y ε, f k y'}
   have hZallc : Zall ⊆ Zc := by
     intro y hy ε hε
     obtain ⟨j, z, hz, rfl⟩ := mem_iUnion.1 hy
     filter_upwards [hconc j z hz ε hε] with k hk
     exact (hk.trans (setIntegral_mono_set (hintball (hfa k (c j)) z ε)
-      (Eventually.of_forall fun y ↦ hf0 _ _) inter_subset_left.eventuallyLE)).trans_eq
+      (Eventually.of_forall fun y ↦ hf0 _ _) inter_subset_left.eventuallySubset)).trans_eq
         (hball (c j) k z ε)
   have hZcper (y : ℝ × ℝ) (n : ℤ) (hy : y ∈ Zc) : y + (0, (n : ℝ)) ∈ Zc := by
     intro ε hε
@@ -260,7 +260,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
         filter_upwards [hzc (min ε (1 - z.2)) (lt_min hε (by linarith))] with k hk
         refine hk.trans (setIntegral_mono_set ((hWint k).1.mono_set inter_subset_right)
           (Eventually.of_forall fun y ↦ hf0 _ _)
-          (subset_inter (ball_subset_ball (min_le_left _ _)) fun y hy ↦ ?_).eventuallyLE)
+          (subset_inter (ball_subset_ball (min_le_left _ _)) fun y hy ↦ ?_).eventuallySubset)
         rw [mem_ball, Prod.dist_eq, max_lt_iff, Real.dist_eq, Real.dist_eq, abs_lt, abs_lt] at hy
         have := min_le_right ε (1 - z.2)
         exact ⟨mem_univ _, by linarith [hy.2.1], by linarith [hy.2.2]⟩
