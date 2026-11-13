@@ -20,11 +20,12 @@ For a kernel sequence `X ⟶ Y ⟶ Z` whose last map is right almost split, the 
 The differentials are induced by the two original maps, and the augmentation is the radical
 quotient. Representables are projective in `mod C`, which is the ambient category used here.
 
-We assume weak kernels and binary biproducts so that `mod C` is abelian. In particular the
-construction applies to any abelian category, including finitely generated modules over an
-Artin algebra. The resolution is bounded above by degree two. For an almost-split sequence,
-every chain endomorphism of this resolution lifting the identity of `S_Z` is invertible;
-this is the minimality property of the resolution.
+We assume `C` is a nonempty preadditive category with weak kernels and binary biproducts, so
+that `mod C` is abelian. In particular the construction applies to any abelian category,
+including finitely generated modules over an Artin algebra. The resolution is bounded above by
+degree two. When `C` is moreover balanced and the sequence is almost split, every chain
+endomorphism of this resolution lifting the identity of `S_Z` is invertible; this is the
+minimality property of the resolution.
 
 ## References
 
@@ -182,9 +183,9 @@ theorem simpleFunctorProjectiveResolution_π_f_zero :
     simpleFunctorProjectiveResolutionZeroIso, Iso.refl_hom, Category.id_comp]
   exact ChainComplex.toSingle₀Equiv_symm_apply_f_zero ..
 
-/-- **Minimality of the resolution associated to an almost-split sequence.** Every chain
-endomorphism lifting the identity of the simple functor is an isomorphism. Thus no nonzero
-contractible direct summand can be removed from this resolution. -/
+/-- **Minimality of the resolution associated to an almost-split sequence.** In a balanced
+category, every chain endomorphism lifting the identity of the simple functor is an
+isomorphism. Thus no nonzero contractible direct summand can be removed from this resolution. -/
 theorem IsAlmostSplit.isIso_simpleFunctorProjectiveResolution_of_comp_π_eq [Balanced C]
     {S : ShortComplex C} (hS : S.IsAlmostSplit)
     (α : (S.simpleFunctorProjectiveResolution hS.isRightAlmostSplit_g
