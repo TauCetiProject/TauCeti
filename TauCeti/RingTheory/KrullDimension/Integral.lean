@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.Localization.Integral
 public import TauCeti.RingTheory.IntegralClosure.GoingDown
+import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Quotient
 
 /-!
@@ -28,7 +29,9 @@ Cohen–Seidenberg theorems.
 
 For an injective integral extension both hold, and the two dimensions agree. This is the step
 that reduces the dimension of a finitely generated algebra over a field to that of a polynomial
-ring through Noether normalization.
+ring through Noether normalization. Conversely, an integral homomorphism from a domain of finite
+Krull dimension is injective if the target has at least the dimension of the source. This
+criterion supplies injectivity of finite local maps before applying going down or purity.
 
 ## Main results
 
@@ -37,8 +40,8 @@ ring through Noether normalization.
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
-* `TauCeti.faithfulSMul_of_isIntegral_of_ringKrullDim_le`: conversely, an integral algebra over a
-  domain of finite dimension is injective when `dim R ≤ dim S`.
+* `RingHom.injective_of_isIntegral_of_ringKrullDim_le`: an integral homomorphism from a
+  finite-dimensional domain is injective if the target has at least the source's dimension.
 * `Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime`: along an integral extension,
   heights of all ideals are the heights of their contractions as soon as that holds for primes.
 * `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
@@ -179,35 +182,17 @@ theorem ringKrullDim_eq_of_isIntegral_of_faithfulSMul [Algebra.IsIntegral R S] [
   ringKrullDim_le_of_isIntegral.antisymm <|
     ringKrullDim_le_of_hasGoingUp_of_surjective (Algebra.IsIntegral.comap_surjective R S)
 
-/-- An integral algebra `S` over a domain `R` of finite Krull dimension is faithful, that is,
-`R → S` is injective, as soon as `dim R ≤ dim S`. This is a converse to
-`TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`. -/
-theorem faithfulSMul_of_isIntegral_of_ringKrullDim_le [IsDomain R] [Algebra.IsIntegral R S]
-    (hR : ringKrullDim R ≠ ⊤) (h : ringKrullDim R ≤ ringKrullDim S) : FaithfulSMul R S := by
-  refine (faithfulSMul_iff_algebraMap_injective R S).mpr <|
-    (injective_iff_map_eq_zero _).mpr fun r hr ↦ by_contra fun hr0 ↦ ?_
-  -- `S` is integral over the image of `R`, a quotient of `R` by an ideal containing `r ≠ 0`.
-  let f : R →+* (⊥ : Subalgebra R S) := algebraMap R (⊥ : Subalgebra R S)
-  have hf : Function.Surjective f := fun ⟨s, hs⟩ ↦ by
-    obtain ⟨a, rfl⟩ := Algebra.mem_bot.mp hs
-    exact ⟨a, rfl⟩
-  have hle : ringKrullDim S + 1 ≤ ringKrullDim (⊥ : Subalgebra R S) + 1 := by
-    have : Algebra.IsIntegral (⊥ : Subalgebra R S) S := .tower_top R
-    gcongr
-    exact ringKrullDim_le_of_isIntegral
-  have hdim : ringKrullDim S + 1 ≤ ringKrullDim S := hle.trans <|
-    (ringKrullDim_succ_le_of_surjective f hf (mem_nonZeroDivisors_of_ne_zero hr0)
-      (Subtype.ext hr)).trans h
-  -- This is impossible: `dim S` is at most `dim R < ⊤`, and at least `dim R ≥ 0`.
-  have hS : ringKrullDim S ≠ ⊤ := ne_top_of_le_ne_top hR ringKrullDim_le_of_isIntegral
-  have hS' : ringKrullDim S ≠ ⊥ :=
-    ne_bot_of_le_ne_bot (WithBot.coe_ne_bot (a := 0)) (ringKrullDim_nonneg_of_nontrivial.trans h)
-  generalize ringKrullDim S = d at hdim hS hS'
-  induction d using WithBot.recBotCoe with
-  | bot => exact hS' rfl
-  | coe m =>
-    induction m using ENat.recTopCoe with
-    | top => exact hS rfl
-    | coe n => norm_cast at hdim; omega
-
 end TauCeti
+
+/-- An integral ring homomorphism from a finite-dimensional domain is injective if its target
+has dimension at least that of its source. No domain hypothesis on the target is needed. -/
+theorem RingHom.injective_of_isIntegral_of_ringKrullDim_le {R S : Type*} [CommRing R]
+    [IsDomain R] [FiniteRingKrullDim R] [CommRing S] (f : R →+* S) (hf : f.IsIntegral)
+    (hdim : ringKrullDim R ≤ ringKrullDim S) : Function.Injective f := by
+  let := f.kerLift.toAlgebra
+  have : Algebra.IsIntegral (R ⧸ RingHom.ker f) S := ⟨hf.kerLift⟩
+  have hquot : Function.Injective (Ideal.Quotient.mk (RingHom.ker f)) :=
+    RingHom.injective_of_surjective_of_ringKrullDim_le _ Ideal.Quotient.mk_surjective
+      (hdim.trans (TauCeti.ringKrullDim_le_of_isIntegral (R := R ⧸ RingHom.ker f)))
+  rw [RingHom.injective_iff_ker_eq_bot, Ideal.mk_ker] at hquot
+  exact (RingHom.injective_iff_ker_eq_bot f).mpr hquot

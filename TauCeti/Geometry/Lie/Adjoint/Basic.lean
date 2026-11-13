@@ -144,6 +144,13 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (by simp)]
   rfl
 
+/-- The adjoint action of `g` undoes that of `g⁻¹`: `Ad_g (Ad_{g⁻¹} X) = X`. -/
+theorem adjointContinuousLinearMap_adjointContinuousLinearMap_inv (g : G)
+    (X : GroupLieAlgebra I G) :
+    adjointContinuousLinearMap (I := I) g (adjointContinuousLinearMap (I := I) g⁻¹ X) = X := by
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, mul_inv_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+
 /-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
 actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity
 (zero if `φ` is not differentiable there, in which case both sides vanish). -/
