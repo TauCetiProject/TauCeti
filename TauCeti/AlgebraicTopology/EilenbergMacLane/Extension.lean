@@ -14,8 +14,11 @@ Let `W = TauCeti.EilenbergMacLane.wedge A n` be the wedge of `(n + 2)`-spheres i
 abelian group `A`, let `ψ : Hₙ₊₂(W; ℤ) → A` be linear, and let
 `Y = TauCeti.EilenbergMacLane.presentation A n ψ` be the presentation complex, obtained by
 attaching an `(n + 3)`-cell along every map `g : Sⁿ⁺² → W` whose class `g_*[Sⁿ⁺²]` lies in the
-kernel of `ψ`. This file proves the extension half of Hatcher's Lemma 4.31 and Proposition 4.30
-for this model.
+kernel of `ψ`. Killing the homotopy groups of `Y` above dimension `n + 2` gives a
+`K(im ψ, n + 2)`, since `πₙ₊₂(Y) ≅ Hₙ₊₂(W; ℤ) ⧸ ker ψ`; when `ψ` is surjective this is the model
+`K(A, n + 2)` (`TauCeti.EilenbergMacLane.isEilenbergMacLaneSpace_killHomotopyGroups_presentation`).
+This file proves the extension half of Hatcher's Lemma 4.31 and Proposition 4.30 for this model,
+without assuming that `ψ` is surjective.
 
 * **Extension over the relation cells.** A map `f : W → Z` into a space whose homotopy groups
   vanish below dimension `n + 2` at every point extends over `Y` exactly when the induced map
@@ -29,7 +32,8 @@ for this model.
   surjective with kernel exactly the kernel of `ψ`, then the extension induces a bijection on
   `πₙ₊₂`, by the Hurewicz theorem in `Y` and in `Z`. Since `Z` has no homotopy above dimension
   `n + 2`, it then extends further, over the cells killing the higher homotopy groups of `Y`, to a
-  weak homotopy equivalence from the model `K(A, n + 2)`
+  weak homotopy equivalence from `killHomotopyGroups (n + 3) Y`, the model `K(A, n + 2)` when `ψ`
+  is surjective
   (`TauCeti.EilenbergMacLane.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence`).
 
 So every `K(G, n + 2)` space receiving such a map from the wedge is weakly equivalent to the
@@ -163,8 +167,9 @@ theorem bijective_homotopyGroupMap_of_ker_eq {z : Z}
 Let `Z` be an Eilenberg--Mac Lane space of type `K(G, n + 2)` and `f : W → Z` a map from the wedge
 of `(n + 2)`-spheres, sending its base point to the base point of `Z`. If the induced map
 `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Z; ℤ)` is surjective with kernel the kernel of `ψ`, then `f` extends to a weak
-homotopy equivalence from the model `K(A, n + 2)`: the presentation complex with its homotopy groups
-above dimension `n + 2` killed. -/
+homotopy equivalence from the presentation complex with its homotopy groups above dimension `n + 2`
+killed. In general this source is a `K(im ψ, n + 2)`; it is the model `K(A, n + 2)` when `ψ` is
+surjective. -/
 theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G : Type*} [Group G]
     {z : Z} (hZ : IsEilenbergMacLaneSpace G (n + 2) Z z) (f : wedge A n ⟶ Z)
     (hfz : f (wedgeBase A n) = z)
