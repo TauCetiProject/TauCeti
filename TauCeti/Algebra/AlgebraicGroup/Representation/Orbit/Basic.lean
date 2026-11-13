@@ -38,6 +38,10 @@ trivial coordinate. So the projective orbit machinery applies with the stabilize
   zero this applies to every vector `v` with `𝔤 • v = M`: the orbit of such a vector is open, and
   any two such vectors are conjugate.
 
+The rational orbits form the quotient `TauCeti.Comodule.VectorOrbit k H M` of `M` by conjugacy
+under the rational points of `G`, and each orbit has a geometric image in `P(M × k)`, the image
+of the projective orbit morphism of any of its vectors.
+
 Applied to the adjoint representation, these statements describe the adjoint orbit of an element
 of the Lie algebra as the homogeneous space of its centralizer.
 
@@ -45,6 +49,11 @@ of the Lie algebra as the homogeneous space of its centralizer.
 
 * `Comodule.range_projectiveOrbitMap_subset_basicOpen_snd`: the orbit lies in the affine
   chart `M` of `P(M × k)`.
+* `Comodule.rationalConjugacy`: conjugacy under the rational points of `G`.
+* `Comodule.VectorOrbit`: the rational orbits of `G` in `M`, with constructor
+  `Comodule.VectorOrbit.mk`, induction principle `Comodule.VectorOrbit.ind` and eliminator
+  `Comodule.VectorOrbit.lift`.
+* `Comodule.VectorOrbit.image`: the geometric image of an orbit in `P(M × k)`.
 * `Comodule.coset_stabilizerHopfIdeal_eq_iff_exists_units_matrixCoefficient`: the matrix
   coefficients of `(v, 1)` detect the cosets of the stabilizer of `v`.
 * `Comodule.fppfHomogeneousQuotientIsoVectorOrbitPoints`: `G / Stab_G(v)` is represented
@@ -118,7 +127,124 @@ theorem range_projectiveOrbitMap_mk_one_basePointsRepresentation
     (Module.isUnimodular_mk_one v) ?_
   rw [basePointsRepresentation_prodTrivial, Representation.inv_self_apply]
 
+omit [Module.Finite k M] in
+/-- A rational point carrying the line through `(v, 1)` to the line through `(w, 1)` carries `v`
+to `w`: it cannot rescale the trivial coordinate. -/
+theorem basePointsRepresentation_eq_of_span_eq {g : WithConv (H →ₐ[k] k)} {v w : M}
+    (h : k ∙ basePointsRepresentation (M × k) g ((v, 1) : M × k) = k ∙ ((w, 1) : M × k)) :
+    basePointsRepresentation M g v = w := by
+  rw [basePointsRepresentation_prodTrivial] at h
+  obtain ⟨c, hc⟩ := Submodule.span_singleton_eq_span_singleton.mp h
+  have h1 : (c : k) = 1 := by simpa [Units.smul_def] using congrArg Prod.snd hc
+  simpa [Units.smul_def, h1] using congrArg Prod.fst hc
+
 end Chart
+
+section Conjugacy
+
+variable (k : Type u) (H : Type v) (M : Type w) [Field k] [CommRing H] [HopfAlgebra k H]
+  [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- Conjugacy under the rational points of `G = Spec H`: the vectors `v` and `w` are conjugate
+when some rational point of `G` carries `v` to `w`. -/
+def rationalConjugacy : Setoid M where
+  r v w := ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w
+  iseqv :=
+    { refl v := ⟨1, by simp⟩
+      symm := by
+        rintro v _ ⟨g, rfl⟩
+        exact ⟨g⁻¹, Representation.inv_self_apply _ g v⟩
+      trans := by
+        rintro v _ _ ⟨g, rfl⟩ ⟨g', rfl⟩
+        exact ⟨g' * g, by simp⟩ }
+
+variable {k H M} in
+/-- Unfolding lemma for `TauCeti.Comodule.rationalConjugacy`. -/
+theorem rationalConjugacy_iff {v w : M} :
+    rationalConjugacy k H M v w ↔ ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w :=
+  Iff.rfl
+
+/-- The rational orbits of `G = Spec H` in `M`: the vectors of `M` up to conjugacy by rational
+points of `G`. -/
+def VectorOrbit : Type w :=
+  Quotient (rationalConjugacy k H M)
+
+namespace VectorOrbit
+
+variable {k H M}
+
+/-- The rational orbit of a vector. -/
+def mk (v : M) : VectorOrbit k H M :=
+  Quotient.mk _ v
+
+/-- Every rational orbit is the orbit of a vector. -/
+theorem mk_surjective : Function.Surjective (mk : M → VectorOrbit k H M) :=
+  Quotient.mk_surjective
+
+/-- Induction on rational orbits: it suffices to treat the orbit of each vector. -/
+@[elab_as_elim]
+theorem ind {p : VectorOrbit k H M → Prop} (h : ∀ v, p (mk v)) (O : VectorOrbit k H M) : p O :=
+  Quotient.ind h O
+
+/-- Two vectors have the same rational orbit exactly when a rational point carries one to the
+other. -/
+theorem mk_eq_mk_iff {v w : M} :
+    (mk v : VectorOrbit k H M) = mk w ↔
+      ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w :=
+  Quotient.eq
+
+/-- A vector and its translate by a rational point have the same orbit. -/
+@[simp]
+theorem mk_basePointsRepresentation (g : WithConv (H →ₐ[k] k)) (v : M) :
+    (mk (basePointsRepresentation M g v) : VectorOrbit k H M) = mk v :=
+  (mk_eq_mk_iff.mpr ⟨g, rfl⟩).symm
+
+/-- Descend a function on vectors that is invariant under the rational points of `G` to a
+function on rational orbits. -/
+def lift {α : Sort*} (f : M → α)
+    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v) :
+    VectorOrbit k H M → α :=
+  Quotient.lift f (by
+    rintro v _ ⟨g, rfl⟩
+    exact (hf g v).symm)
+
+/-- The value of a lifted function on the orbit of `v` is its value on `v`. -/
+@[simp]
+theorem lift_mk {α : Sort*} (f : M → α)
+    (hf : ∀ (g : WithConv (H →ₐ[k] k)) (v : M), f (basePointsRepresentation M g v) = f v)
+    (v : M) : lift f hf (mk v : VectorOrbit k H M) = f v :=
+  (rfl)
+
+end VectorOrbit
+
+end Conjugacy
+
+namespace VectorOrbit
+
+section Image
+
+variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
+  [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- The geometric image of a rational orbit in the projective completion `P(M × k)` of `M`: the
+full topological image, including nonclosed points, of the projective orbit morphism of the line
+through `(v, 1)`, for any vector `v` of the orbit. -/
+noncomputable def image (O : VectorOrbit k H M) :
+    Set (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))) :=
+  lift (fun v ↦ Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v)))
+    range_projectiveOrbitMap_mk_one_basePointsRepresentation O
+
+/-- The image of the orbit of `v` is the image of the projective orbit morphism of `(v, 1)`. -/
+@[simp]
+theorem image_mk (v : M) :
+    (mk v : VectorOrbit k H M).image =
+      Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v)) :=
+  (rfl)
+
+end Image
+
+end VectorOrbit
 
 section Coset
 
@@ -275,13 +401,7 @@ theorem exists_basePointsRepresentation_eq_of_finrank_le (v w : M)
     ∃ g : WithConv (H →ₐ[k] k), basePointsRepresentation M g v = w := by
   obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq _ _ _ _
     (finrank_prod_le_of_finrank_le v hv) (finrank_prod_le_of_finrank_le w hw)
-  refine ⟨g, ?_⟩
-  -- The line through `(g v, 1)` is the line through `(w, 1)`; comparing the trivial coordinates
-  -- shows that the scalar relating them is `1`.
-  rw [basePointsRepresentation_prodTrivial] at hg
-  obtain ⟨c, hc⟩ := Submodule.span_singleton_eq_span_singleton.mp hg
-  have h1 : (c : k) = 1 := by simpa [Units.smul_def] using congrArg Prod.snd hc
-  simpa [Units.smul_def, h1] using congrArg Prod.fst hc
+  exact ⟨g, basePointsRepresentation_eq_of_span_eq hg⟩
 
 /-- **Two orbits of full dimension coincide.** If the orbits of `v` and `w` both have dimension
 `dim M`, their topological orbit images in `P(M × k)`, including nonclosed points, are equal. -/
