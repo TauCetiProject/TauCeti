@@ -298,7 +298,7 @@ private theorem cap_zero (k : ℝ) : cap k 0 = 0 := by
   simp [cap]
 
 private theorem nnnorm_deriv_cap_le (k t : ℝ) : ‖deriv (cap k) t‖₊ ≤ 1 := by
-  rw [← NNReal.coe_le_coe, coe_nnnorm, deriv_cap, Real.norm_of_nonneg (by positivity),
+  rw [← NNReal.coe_le_coe, coe_nnNorm, deriv_cap, Real.norm_of_nonneg (by positivity),
     NNReal.coe_one]
   exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (Real.exp_nonneg _))
 
@@ -479,7 +479,7 @@ private theorem tendsto_norm_gradient_capH_sq (v : W1p (volume : Measure ℂ) �
   rw [Real.norm_of_nonneg (by positivity)]
   have h1 : deriv (cap k) (W1p.value v z) ^ 2 ≤ 1 := by
     have := nnnorm_deriv_cap_le k (W1p.value v z)
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one, Real.norm_eq_abs] at this
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one, Real.norm_eq_abs] at this
     nlinarith [abs_nonneg (deriv (cap k) (W1p.value v z)),
       sq_abs (deriv (cap k) (W1p.value v z))]
   nlinarith [sq_nonneg ‖W1p.gradient v z‖]
