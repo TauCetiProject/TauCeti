@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.PowerSeries.Polydisc
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
