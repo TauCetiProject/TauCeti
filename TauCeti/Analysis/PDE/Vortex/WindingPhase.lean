@@ -56,10 +56,10 @@ treated here.
 * `TauCeti.Vortex.gaugeForm_windingPhase`: the logarithmic derivative of the winding phase.
 * `TauCeti.Vortex.gaugeTransform_inv_windingPhase_referenceField`: the end trivialization takes
   the reference field to the vacuum outside the cutoff disc.
-* `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_two_and_three`,
-  `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_zero_and_one`: where the section is `|α|`
-  times the winding phase, the end trivialization has section coordinates `(|α| / 2, 0)` and, by
-  the holomorphicity rows, connection coordinates `(-∂_t ℓ / 2, ∂_s ℓ / 2)` for `ℓ = log |α|²`.
+* `TauCeti.Vortex.gaugeTransform_inv_apply_zero_and_one`: where the section is `|α|` times a
+  differentiable gauge `u`, the holomorphicity rows give the trivialization `u⁻¹ x` connection
+  coordinates `(-∂_t ℓ / 2, ∂_s ℓ / 2)` for `ℓ = log |α|²`; its section coordinates are
+  `(|α| / 2, 0)` (`TauCeti.Vortex.gaugeTransform_inv_apply_two_and_three`).
 * `TauCeti.Vortex.sub_referenceField_apply_eq`: for a vortex normalized at its end, the
   coordinates of `x - x_ref` outside the cutoff disc in terms of `ℓ = log |α|²`.
 * `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`: a vortex normalized at its end
@@ -190,61 +190,40 @@ theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : �
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
-/-- If the section of `x` is `|α|` times the winding phase at `z`, then its end
-trivialization has the real section `|α|` there. -/
-theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
-    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
-  have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
-    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-  rw [sectionValue_gaugeTransform, Pi.inv_apply]
-  nth_rw 1 [hphase]
-  rw [mul_left_comm, h1, mul_one]
-
-/-- If the section of `x` is `|α|` times the winding phase at `z`, then the section coordinates of
-its end trivialization are `(|α| / 2, 0)` there. -/
-theorem gaugeTransform_inv_windingPhase_apply_two_and_three {z : ℂ}
-    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
-    gaugeTransform (windingPhase m)⁻¹ x z 2 = ‖sectionValue x z‖ / 2 ∧
-      gaugeTransform (windingPhase m)⁻¹ x z 3 = 0 := by
-  have hsec := sectionValue_gaugeTransform_inv_windingPhase hphase
-  rw [sectionValue_apply] at hsec
-  have h₂ := congrArg Complex.re hsec
-  have h₃ := congrArg Complex.im hsec
-  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
-    im_ofNat] at h₂ h₃
-  constructor <;> linarith
-
-/-- **The connection of the end trivialization.** Let the section of `x` be `|α|` times the
-winding phase near `z ≠ 0`, with `α(z) ≠ 0`, and let the holomorphicity rows of the vortex
-equation hold at `z`. Then the connection coordinates of the end trivialization at `z` are
-`(-∂_t ℓ / 2, ∂_s ℓ / 2)` for `ℓ = log |α|²`. -/
-theorem gaugeTransform_inv_windingPhase_apply_zero_and_one {z : ℂ} (hz : z ≠ 0)
+/-- **The connection of a trivialization by the phase of the section.** Let the section of `x`
+be `|α|` times a circle-valued gauge `u`, differentiable at `z`, near `z`, with `α(z) ≠ 0`, and let
+the holomorphicity rows of the vortex equation hold at `z`. Then the connection coordinates of the
+trivialization `u⁻¹ x` at `z` are `(-∂_t ℓ / 2, ∂_s ℓ / 2)` for `ℓ = log |α|²`. -/
+theorem gaugeTransform_inv_apply_zero_and_one {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0)
-    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
+    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * u w)
     (hα : sectionValue x z ≠ 0) :
-    gaugeTransform (windingPhase m)⁻¹ x z 0 =
+    gaugeTransform u⁻¹ x z 0 =
         -fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z I / 2 ∧
-      gaugeTransform (windingPhase m)⁻¹ x z 1 =
+      gaugeTransform u⁻¹ x z 1 =
         fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z 1 / 2 := by
-  set u : ℂ → Circle := (windingPhase m)⁻¹
-  set y := gaugeTransform u x
-  have hu := Circle.differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
-  have hre : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
-  have him : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  have hu' := Circle.differentiableAt_coe_inv hu
+  set y := gaugeTransform u⁻¹ x
+  have hre : DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ).re) z :=
+    reCLM.differentiableAt.comp z hu'
+  have him : DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ).im) z :=
+    imCLM.differentiableAt.comp z hu'
   have hpy : DifferentiableAt ℝ (fun w ↦ y w 2) z := by
     simp only [y, gaugeTransform_apply]
     exact (hre.mul hp).sub (him.mul hq)
   have hqy : DifferentiableAt ℝ (fun w ↦ y w 3) z := by
     simp only [y, gaugeTransform_apply]
     exact (him.mul hp).add (hre.mul hq)
-  have h₁y : equation y z 1 = 0 := by rw [equation_gaugeTransform_apply_one hu hp hq, h₁, h₂]; ring
-  have h₂y : equation y z 2 = 0 := by rw [equation_gaugeTransform_apply_two hu hp hq, h₁, h₂]; ring
+  have h₁y : equation y z 1 = 0 := by
+    rw [equation_gaugeTransform_apply_one hu' hp hq, h₁, h₂]; ring
+  have h₂y : equation y z 2 = 0 := by
+    rw [equation_gaugeTransform_apply_two hu' hp hq, h₁, h₂]; ring
   -- The section of `y` is real near `z`, so `∂ q = 0` at `z`.
   have hy3 : (fun w ↦ y w 3) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) :=
-    hphase.mono fun w hw ↦ (gaugeTransform_inv_windingPhase_apply_two_and_three hw).2
-  obtain ⟨hy2z, hy3z⟩ := gaugeTransform_inv_windingPhase_apply_two_and_three hphase.self_of_nhds
+    hphase.mono fun w hw ↦ (gaugeTransform_inv_apply_two_and_three hw).2
+  obtain ⟨hy2z, hy3z⟩ := gaugeTransform_inv_apply_two_and_three hphase.self_of_nhds
   have hdy3 : fderiv ℝ (fun w ↦ y w 3) z = 0 := by rw [hy3.fderiv_eq, fderiv_const_apply]
   have hαy : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0 := by
     rw [hy2z, hy3z]
@@ -279,7 +258,8 @@ theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
       x z 3 - referenceField f m z 3 = referenceField f m z 3 * (‖sectionValue x z‖ - 1) := by
   have hz₀ := ne_zero_of_rOut_le_norm_sq f hrOut
   set u : ℂ → Circle := (windingPhase m)⁻¹
-  obtain ⟨hy0, hy1⟩ := gaugeTransform_inv_windingPhase_apply_zero_and_one hz₀ hp hq h₁ h₂ hphase hα
+  obtain ⟨hy0, hy1⟩ := gaugeTransform_inv_apply_zero_and_one (differentiableAt_windingPhase m hz₀)
+    hp hq h₁ h₂ hphase hα
   -- The reference field in the end trivialization is the vacuum.
   have href := gaugeTransform_inv_windingPhase_referenceField f m hrOut
   have href0 : referenceField f m z 0 - gaugeForm u z 1 = 0 := by
@@ -323,12 +303,12 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
     have hconst : (fun w ↦ (sectionValue (gaugeTransform (windingPhase m)⁻¹ x) w).im) =ᶠ[𝓝 z]
         fun _ ↦ (0 : ℝ) := by
       filter_upwards [hphase] with w hw
-      rw [sectionValue_gaugeTransform_inv_windingPhase hw, ofReal_im]
+      rw [sectionValue_gaugeTransform_inv hw, ofReal_im]
     have h := (imCLM.hasFDerivAt.comp z hsy.hasFDerivAt).fderiv
     have h' := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) (hconst.fderiv_eq.symm.trans h)
     simpa using h'.symm
   have hcov := covariantDerivative_gaugeTransform hu hp hq v
-  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv_windingPhase hphase.self_of_nhds]
+  rw [covariantDerivative_apply, sectionValue_gaugeTransform_inv hphase.self_of_nhds]
     at hcov
   have hval := congrArg Complex.im hcov
   simp only [add_im, him, mul_im, I_re, I_im, ofReal_re, ofReal_im, one_mul, mul_zero,
@@ -352,7 +332,7 @@ private theorem norm_sub_referenceField_le (f : ContDiffBump (0 : ℝ)) {z : ℂ
       2 * ‖covariantDerivative x z I‖ + (1 - ‖sectionValue x z‖ ^ 2) / 2 := by
   have hz := ne_zero_of_rOut_le_norm_sq f hrOut
   -- The section coordinates of the end trivialization are `(|α| / 2, 0)`.
-  obtain ⟨hy2, hy3⟩ := gaugeTransform_inv_windingPhase_apply_two_and_three hphase.self_of_nhds
+  obtain ⟨hy2, hy3⟩ := gaugeTransform_inv_apply_two_and_three hphase.self_of_nhds
   set y := gaugeTransform (windingPhase m)⁻¹ x
   set s := ‖sectionValue x z‖
   -- The connection coordinates of the end trivialization.

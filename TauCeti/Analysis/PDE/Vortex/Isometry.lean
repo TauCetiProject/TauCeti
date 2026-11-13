@@ -412,7 +412,8 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     exact (contDiff_referenceField f m).comp (contDiff_id.add contDiff_const)
   have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
       referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
-    ((contDiff_gaugeTransform hg htr).sub (contDiff_referenceField f m))
+    ((contDiff_gaugeTransform (hg.of_le (by exact_mod_cast le_top)) htr).sub
+      (contDiff_referenceField f m))
     (hasCompactSupport_gaugeTransform_translationGauge_translateField_sub f m a) k
   have hsub : translateField a x - translateField a (referenceField f m) =
       translateField a (x - referenceField f m) := by

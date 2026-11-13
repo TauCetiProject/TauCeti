@@ -47,9 +47,11 @@ away from its zeros, with `c = 1 / 4`.
 
 * `TemperedDistribution.memSobolev_add_two_of_neg_laplacian_add_smul`: for `1 < p < ∞`, a tempered
   distribution of some Sobolev order with `-Δ T + c T ∈ H^{s,p}` lies in `H^{s+2,p}`.
-* `TemperedDistribution.laplacian_toTemperedDistribution_apply_postcompCLM`: the distributional
-  Laplacian of a `C²` function `v ∈ Lᵖ` is its classical Laplacian on compactly supported test
-  functions.
+* `TemperedDistribution.laplacian_toTemperedDistribution_apply_postcompCLM_of_ae_eq`: the
+  distributional Laplacian of a `C²` function `v ∈ Lᵖ` is its classical Laplacian on compactly
+  supported test functions; for real `v`,
+  `laplacian_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq` is the same
+  identity as a real integral.
 * `TemperedDistribution.mem_realSobolevFunctions_add_two_of_sub_laplacian`: for `1 < p < ∞`,
   `c v - Δv ∈ Lᵖ ∩ H^{s,p}` implies `v ∈ Lᵖ ∩ H^{s+2,p}` for a `C²` function `v ∈ Lᵖ`.
 * `TemperedDistribution.mem_realSobolevFunctions_add_two_of_laplacian_eq_mul_exp_sub_one_add`:
@@ -114,22 +116,42 @@ theorem memSobolev_add_two_of_neg_laplacian_add_smul {p : ℝ≥0∞} [Fact (1 �
 
 end inner
 
-/-- On a compactly supported real test function `φ`, the distributional Laplacian of a real `C²`
-function `v ∈ Lᵖ(E)` is integration against its classical Laplacian `Δv`. This is Green's second
-identity; no decay of `v` or of its derivatives at infinity is assumed. -/
-theorem laplacian_toTemperedDistribution_apply_postcompCLM {p : ℝ≥0∞} [Fact (1 ≤ p)] {v : E → ℝ}
-    (hv : ContDiff ℝ 2 v) (hvp : MemLp v p volume) {φ : 𝓢(E, ℝ)} (hφ : HasCompactSupport φ) :
-    Δ (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp (hvp.toLp v)))
-        (φ.postcompCLM Complex.ofRealCLM) = ((∫ x, φ x * Δ v x : ℝ) : ℂ) := by
+/-- On a compactly supported real test function `φ`, the distributional Laplacian of a `C²`
+function `v ∈ Lᵖ(μ)`, given by any almost-everywhere representative `u`, is integration against its
+classical Laplacian `Δv`, for any additive Haar measure `μ`. This is Green's second identity; no
+decay of `v` or of its derivatives at infinity is assumed. -/
+theorem laplacian_toTemperedDistribution_apply_postcompCLM_of_ae_eq {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {μ : Measure E}
+    [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp F p μ} {v : E → F}
+    (hv : ContDiff ℝ 2 v) (hu : u =ᵐ[μ] v) {φ : 𝓢(E, ℝ)} (hφ : HasCompactSupport φ) :
+    Δ (Lp.toTemperedDistribution u) (φ.postcompCLM Complex.ofRealCLM) =
+      ∫ x, φ x • Δ v x ∂μ := by
   let φ' : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ) :=
     ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
-  have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume)
+  have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := μ)
     (hv.contDiffOn (s := (⊤ : TopologicalSpace.Opens E))) φ'
-  simp only [φ', TestFunction.coe_mk, smul_eq_mul] at hgreen
-  rw [laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-    Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hvp.coeFn_toLp]
-  simp only [SchwartzMap.laplacian_apply]
-  rw [hgreen]
+  simp only [φ', TestFunction.coe_mk] at hgreen
+  rw [laplacian_apply_apply, TauCeti.laplacian_postcompCLM, Lp.toTemperedDistribution_apply,
+    ← hgreen]
+  refine integral_congr_ae (hu.mono fun x hx ↦ ?_)
+  simp only [hx, SchwartzMap.postcompCLM_apply, SchwartzMap.laplacian_apply,
+    Complex.ofRealCLM_apply, Complex.coe_smul]
+
+/-- On a compactly supported real test function `φ`, the complex distributional Laplacian of a real
+`C²` function `v ∈ Lᵖ(μ)`, given by any almost-everywhere representative `u`, is the real integral
+of `φ Δv`. -/
+theorem laplacian_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq
+    {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : Lp ℝ p μ} {v : E → ℝ}
+    (hv : ContDiff ℝ 2 v) (hu : u =ᵐ[μ] v) {φ : 𝓢(E, ℝ)} (hφ : HasCompactSupport φ) :
+    Δ (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) (φ.postcompCLM Complex.ofRealCLM) =
+      ((∫ x, φ x * Δ v x ∂μ : ℝ) : ℂ) := by
+  rw [laplacian_toTemperedDistribution_apply_postcompCLM_of_ae_eq
+    (Complex.ofRealCLM.contDiff.comp hv)
+    (((Complex.ofRealCLM.coeFn_compLp u).and hu).mono fun x hx ↦ by simp [hx.1, hx.2]) hφ,
+    ← integral_complex_ofReal]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp only [hv.contDiffAt.laplacian_CLM_comp_left, Function.comp_apply, Complex.ofRealCLM_apply,
+    Complex.real_smul, Complex.ofReal_mul]
 
 /-- **Elliptic regularity for classical functions.** For `1 < p < ∞` and any real `c`, a real `C²`
 function `v ∈ Lᵖ(E)` with `c v - Δv ∈ Lᵖ ∩ H^{s,p}` lies in `Lᵖ ∩ H^{s+2,p}` (these are `H^{s,p}`
@@ -150,7 +172,8 @@ theorem mem_realSobolevFunctions_add_two_of_sub_laplacian {p : ℝ≥0∞} [Fact
     have hφΔ : Integrable (fun x ↦ φ x * Δ v x) :=
       (φ.continuous.mul hΔv).integrable_of_hasCompactSupport hφ.mul_right
     rw [add_apply, neg_apply, smul_apply,
-      laplacian_toTemperedDistribution_apply_postcompCLM hv hvp hφ,
+      laplacian_toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hv
+        hvp.coeFn_toLp hφ,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hvp.coeFn_toLp,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq huf]
     simp_rw [mul_sub, mul_left_comm (φ _) c]

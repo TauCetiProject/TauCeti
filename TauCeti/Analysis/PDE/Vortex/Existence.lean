@@ -238,7 +238,8 @@ def framedVortexSubMulAction (m : ℕ) :
     rintro ⟨hx, hsol, hfr⟩
     obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.2
     simp only [Set.mem_ofPred_eq, framedGaugeGroup_smul]
-    refine ⟨contDiff_gaugeTransform hu hx, fun z ↦ ?_, tendsto_sectionValue_gaugeTransform hu1 hfr⟩
+    refine ⟨contDiff_gaugeTransform (hu.of_le (by exact_mod_cast le_top)) hx, fun z ↦ ?_,
+      tendsto_sectionValue_gaugeTransform hu1 hfr⟩
     rw [equation_gaugeTransform_eq_zero_iff (hu.contDiffAt.of_le (by simp)) fun i ↦
       (((contDiff_piLp 2).1 hx i).differentiable (by simp)).differentiableAt]
     exact hsol z

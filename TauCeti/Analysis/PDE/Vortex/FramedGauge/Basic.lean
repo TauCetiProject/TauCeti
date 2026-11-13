@@ -419,12 +419,12 @@ instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) :=
   have hup := (mem_framedGaugeGroup _).mp u.property
   exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
-/-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
-theorem contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) := by
+/-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
+theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) := by
   exact contDiff_const.clm_comp
-    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp hu) |>.clm_comp
-      (hu.fderiv_right (by simp)))
+    ((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp (conjCLE.contDiff.comp
+      (hu.of_le le_self_add)) |>.clm_comp (hu.fderiv_right le_rfl))
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -463,15 +463,15 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
-/-- Smooth gauges preserve smooth fields. -/
-theorem contDiff_gaugeTransform {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
-    ContDiff ℝ ∞ (gaugeTransform u x) := by
+/-- A `C^(n+1)` gauge preserves `C^n` fields. -/
+theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) := by
   have hg := contDiff_gaugeForm hu
-  have hr := reCLM.contDiff.comp hu
-  have hi := imCLM.contDiff.comp hu
-  have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) :=
+  have hr := reCLM.contDiff.comp (hu.of_le le_self_add)
+  have hi := imCLM.contDiff.comp (hu.of_le le_self_add)
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) :=
     (contDiff_piLp _).mp hx i
   apply (contDiff_piLp _).mpr
   intro i
@@ -599,6 +599,31 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
+/-- If the section of `x` is `|α|` times a circle-valued gauge `u` at `z`, then the trivialization
+`u⁻¹ x` has the real section `|α|` there. -/
+theorem sectionValue_gaugeTransform_inv {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hphase : sectionValue x z = ‖sectionValue x z‖ * u z) :
+    sectionValue (gaugeTransform u⁻¹ x) z = ‖sectionValue x z‖ := by
+  have h1 : ((u z)⁻¹ : Circle) * (u z : ℂ) = 1 := by
+    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
+  rw [sectionValue_gaugeTransform, Pi.inv_apply]
+  nth_rw 1 [hphase]
+  rw [mul_left_comm, h1, mul_one]
+
+/-- If the section of `x` is `|α|` times a circle-valued gauge `u` at `z`, then the section
+coordinates of the trivialization `u⁻¹ x` are `(|α| / 2, 0)` there. -/
+theorem gaugeTransform_inv_apply_two_and_three {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hphase : sectionValue x z = ‖sectionValue x z‖ * u z) :
+    gaugeTransform u⁻¹ x z 2 = ‖sectionValue x z‖ / 2 ∧ gaugeTransform u⁻¹ x z 3 = 0 := by
+  have hsec := sectionValue_gaugeTransform_inv hphase
+  rw [sectionValue_apply] at hsec
+  have h₂ := congrArg Complex.re hsec
+  have h₃ := congrArg Complex.im hsec
+  simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat,
+    im_ofNat] at h₂ h₃
+  constructor <;> linarith
+
 /-- A gauge transformation preserves `|α|² / 4 = x₂² + x₃²` pointwise. -/
 @[simp]
 theorem gaugeTransform_apply_two_sq_add_apply_three_sq (u : ℂ → Circle)
@@ -607,11 +632,12 @@ theorem gaugeTransform_apply_two_sq_add_apply_three_sq (u : ℂ → Circle)
   simp only [gaugeTransform, Fin.isValue, Matrix.cons_val]
   linear_combination (x z 2 ^ 2 + x z 3 ^ 2) * Circle.re_sq_add_im_sq (u z)
 
-/-- A smooth framed gauge preserves smooth fields. -/
-theorem contDiff_framedGaugeGroup_smul (u : framedGaugeGroup)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) : ContDiff ℝ ∞ (u • x) := by
+/-- A smooth framed gauge preserves `C^n` fields, for every `n ≤ ∞`. -/
+theorem contDiff_framedGaugeGroup_smul {n : ℕ∞} (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) : ContDiff ℝ n (u • x) := by
   rw [framedGaugeGroup_smul]
-  exact contDiff_gaugeTransform ((mem_framedGaugeGroup _).1 u.property).1 hx
+  exact contDiff_gaugeTransform
+    (((mem_framedGaugeGroup _).1 u.property).1.of_le (by exact_mod_cast le_top)) hx
 
 /-- A smooth framed gauge preserves the vortex equation, in both directions, at a point where the
 field is differentiable. -/
