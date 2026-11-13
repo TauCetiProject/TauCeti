@@ -89,6 +89,7 @@ theorem isTiedTo_of_mem_connections (hc : (p, μ, q) ∈ Ω.connections) : Ω.Is
   Or.inl hc
 
 /-- Away from the end-points of `μ`, a boundary is tied exactly through a boundary connection. -/
+@[grind =>]
 theorem isTiedTo_iff_mem_connections (hp₁ : p ≠ Ω.left μ) (hp₂ : p ≠ Ω.right μ) :
     Ω.IsTiedTo μ p q ↔ (p, μ, q) ∈ Ω.connections := by
   simp [isTiedTo_iff, hp₁, hp₂]
@@ -103,6 +104,12 @@ theorem isTiedTo_left_iff : Ω.IsTiedTo μ (Ω.left μ) q ↔
   exacts [absurd (Ω.bounds_of_mem_connections _ h).1 (lt_irrefl _), h,
     absurd h (Ω.left_lt_right μ).ne]
 
+/-- The initial boundary of `μ` is tied to the corresponding end-point of `Δ(μ)`: its initial
+boundary when `ε(μ) = ε(Δμ)`, and its terminal boundary otherwise. -/
+theorem isTiedTo_left : Ω.IsTiedTo μ (Ω.left μ)
+    (if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.left (Ω.dual μ) else Ω.right (Ω.dual μ)) :=
+  isTiedTo_left_iff.2 rfl
+
 /-- The terminal boundary of `μ` is tied exactly to the terminal boundary of `Δ(μ)` when
 `ε(μ) = ε(Δμ)`, and exactly to its initial boundary otherwise. -/
 @[simp, grind =]
@@ -112,6 +119,12 @@ theorem isTiedTo_right_iff : Ω.IsTiedTo μ (Ω.right μ) q ↔
   rintro (h | ⟨h, -⟩ | ⟨-, h⟩)
   exacts [absurd (Ω.bounds_of_mem_connections _ h).2.1 (lt_irrefl _),
     absurd h (Ω.left_lt_right μ).ne', h]
+
+/-- The terminal boundary of `μ` is tied to the corresponding end-point of `Δ(μ)`: its terminal
+boundary when `ε(μ) = ε(Δμ)`, and its initial boundary otherwise. -/
+theorem isTiedTo_right : Ω.IsTiedTo μ (Ω.right μ)
+    (if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.right (Ω.dual μ) else Ω.left (Ω.dual μ)) :=
+  isTiedTo_right_iff.2 rfl
 
 /-- A tied boundary of `μ` is not to the left of `μ`. -/
 @[grind →]
@@ -135,6 +148,22 @@ theorem IsTiedTo.dual (h : Ω.IsTiedTo μ p q) : Ω.IsTiedTo (Ω.dual μ) q p :=
 /-- The boundary `q` is `Δ(μ)`-tied to `p` exactly when `p` is `μ`-tied to `q`. -/
 theorem isTiedTo_dual_iff : Ω.IsTiedTo (Ω.dual μ) q p ↔ Ω.IsTiedTo μ p q :=
   ⟨fun h => Ω.dual_involutive μ ▸ h.dual, IsTiedTo.dual⟩
+
+/-- A boundary of `μ` is tied to the initial boundary of `Δ(μ)` exactly when it is the initial
+boundary of `μ` and `ε(μ) = ε(Δμ)`, or the terminal boundary of `μ` and `ε(μ) ≠ ε(Δμ)`. -/
+@[grind =]
+theorem isTiedTo_left_dual_iff : Ω.IsTiedTo μ p (Ω.left (Ω.dual μ)) ↔
+    p = if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.left μ else Ω.right μ := by
+  rw [← isTiedTo_dual_iff, isTiedTo_left_iff, Ω.dual_involutive μ]
+  grind
+
+/-- A boundary of `μ` is tied to the terminal boundary of `Δ(μ)` exactly when it is the terminal
+boundary of `μ` and `ε(μ) = ε(Δμ)`, or the initial boundary of `μ` and `ε(μ) ≠ ε(Δμ)`. -/
+@[grind =]
+theorem isTiedTo_right_dual_iff : Ω.IsTiedTo μ p (Ω.right (Ω.dual μ)) ↔
+    p = if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.right μ else Ω.left μ := by
+  rw [← isTiedTo_dual_iff, isTiedTo_right_iff, Ω.dual_involutive μ]
+  grind
 
 /-- A boundary to which a boundary of `μ` is tied is not to the left of `Δ(μ)`. -/
 @[grind →]
@@ -192,12 +221,19 @@ def tiedBoundary (μ : Fin Ω.numBases) (p : Fin (Ω.numItems + 1)) : Fin (Ω.nu
   if h : ∃ q, Ω.IsTiedTo μ p q then Fin.find (Ω.IsTiedTo μ p) h else p
 
 /-- A boundary of `μ` is tied to `tiedBoundary μ p` exactly when it is tied to some boundary. -/
-@[simp, grind =]
+@[simp]
 theorem isTiedTo_tiedBoundary_iff :
     Ω.IsTiedTo μ p (Ω.tiedBoundary μ p) ↔ ∃ q, Ω.IsTiedTo μ p q := by
   refine ⟨fun h => ⟨_, h⟩, fun h => ?_⟩
   rw [tiedBoundary, dite_eq_left h]
   exact Fin.find_spec h
+
+/-- A boundary of `μ` that is tied to some boundary is tied to `tiedBoundary μ p`. -/
+theorem IsTiedTo.isTiedTo_tiedBoundary (h : Ω.IsTiedTo μ p q) :
+    Ω.IsTiedTo μ p (Ω.tiedBoundary μ p) :=
+  isTiedTo_tiedBoundary_iff.2 ⟨q, h⟩
+
+grind_pattern IsTiedTo.isTiedTo_tiedBoundary => Ω.IsTiedTo μ p q, Ω.tiedBoundary μ p
 
 /-- A boundary of `μ` that is not tied is its own `tiedBoundary`. -/
 theorem tiedBoundary_of_not_exists (h : ¬ ∃ q, Ω.IsTiedTo μ p q) : Ω.tiedBoundary μ p = p :=
@@ -208,21 +244,21 @@ to its terminal boundary otherwise. -/
 @[simp, grind =]
 theorem tiedBoundary_left : Ω.tiedBoundary μ (Ω.left μ) =
     if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.left (Ω.dual μ) else Ω.right (Ω.dual μ) :=
-  isTiedTo_left_iff.1 (isTiedTo_tiedBoundary_iff.2 ⟨_, isTiedTo_left_iff.2 rfl⟩)
+  isTiedTo_left_iff.1 isTiedTo_left.isTiedTo_tiedBoundary
 
 /-- The terminal boundary of `μ` is tied to the terminal boundary of `Δ(μ)` when `ε(μ) = ε(Δμ)`,
 and to its initial boundary otherwise. -/
 @[simp, grind =]
 theorem tiedBoundary_right : Ω.tiedBoundary μ (Ω.right μ) =
     if Ω.sign μ = Ω.sign (Ω.dual μ) then Ω.right (Ω.dual μ) else Ω.left (Ω.dual μ) :=
-  isTiedTo_right_iff.1 (isTiedTo_tiedBoundary_iff.2 ⟨_, isTiedTo_right_iff.2 rfl⟩)
+  isTiedTo_right_iff.1 isTiedTo_right.isTiedTo_tiedBoundary
 
 /-- In a formally consistent generalised equation, `tiedBoundary` is the boundary to which a
 tied boundary is tied. -/
 @[grind =>]
 theorem IsFormallyConsistent.tiedBoundary_eq (hΩ : Ω.IsFormallyConsistent)
     (h : Ω.IsTiedTo μ p q) : Ω.tiedBoundary μ p = q :=
-  hΩ.isTiedTo_unique (isTiedTo_tiedBoundary_iff.2 ⟨q, h⟩) h
+  hΩ.isTiedTo_unique h.isTiedTo_tiedBoundary h
 
 /-- In a formally consistent generalised equation `tiedBoundary μ` is strictly increasing on the
 tied boundaries of a base `μ` with `ε(μ) = ε(Δμ)`. -/
@@ -267,18 +303,18 @@ of `Δ(μ) = [2, 4]`, in this order. -/
 example : (tiedExample true).tiedBoundary 0 0 = 2 ∧ (tiedExample true).tiedBoundary 0 1 = 3 ∧
     (tiedExample true).tiedBoundary 0 2 = 4 :=
   have hΩ := isFormallyConsistent_tiedExample true
-  ⟨hΩ.tiedBoundary_eq (isTiedTo_left_iff.2 rfl),
+  ⟨hΩ.tiedBoundary_eq isTiedTo_left,
     hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections (by decide)),
-    hΩ.tiedBoundary_eq (isTiedTo_right_iff.2 rfl)⟩
+    hΩ.tiedBoundary_eq isTiedTo_right⟩
 
 /-- For opposite signs the boundaries `0, 1, 2` of `μ = [0, 2]` are tied to the boundaries
 `4, 3, 2` of `Δ(μ) = [2, 4]`: the order is reversed. -/
 example : (tiedExample false).tiedBoundary 0 0 = 4 ∧ (tiedExample false).tiedBoundary 0 1 = 3 ∧
     (tiedExample false).tiedBoundary 0 2 = 2 :=
   have hΩ := isFormallyConsistent_tiedExample false
-  ⟨hΩ.tiedBoundary_eq (isTiedTo_left_iff.2 rfl),
+  ⟨hΩ.tiedBoundary_eq isTiedTo_left,
     hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections (by decide)),
-    hΩ.tiedBoundary_eq (isTiedTo_right_iff.2 rfl)⟩
+    hΩ.tiedBoundary_eq isTiedTo_right⟩
 
 /-- The boundary `3` lies outside `μ = [0, 2]`, so it is not `μ`-tied. -/
 example (s : Bool) (q : Fin 5) : ¬ (tiedExample s).IsTiedTo 0 3 q :=
