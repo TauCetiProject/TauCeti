@@ -59,6 +59,8 @@ constant symplectic form on a vector space is its constant linear symplectic ori
   `x` is the symplectic orientation of the tangent space at `x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_eq_of_tames`: forms taming a common almost
   complex structure have the same symplectic orientation.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_reindex_eq_orientationAt_of_tames`: if `σ`
+  tames `J`, the `J`-adapted bases are positive for its symplectic orientation.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`: smooth maps
   between manifolds of the same dimension pulling one nondegenerate form back to another preserve
   the symplectic orientations.
@@ -175,6 +177,34 @@ theorem orientation_eq_of_tames {σ' : SmoothTwoForm I M} (hσ' : σ'.IsNondegen
   Manifold.Orientation.ext fun x ↦ by
     rw [orientationAt_orientation, orientationAt_orientation]
     exact SymplecticForm.Tames.orientation_eq ((hσ.tames_iff).1 hJ x) ((hσ'.tames_iff).1 hJ' x) hk
+
+/-- **`J`-adapted bases are positive for the symplectic orientation.** If `σ` tames `J`, every
+`J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)` of the tangent space at `x`, listed in this
+interleaved order, is positive for the symplectic orientation of `σ`. -/
+theorem orientation_reindex_eq_orientationAt_of_tames {J : SmoothAlmostComplexStructure I M}
+    (hJ : σ.Tames J) {x : M} {n : ℕ} {b : Basis (Fin n × Fin 2) ℝ (TangentSpace I x)}
+    (hb : ∀ i, b (i, 1) = J x (b (i, 0))) (h : n * 2 = k) :
+    (b.reindex (finProdFinEquiv.trans (finCongr h))).orientation =
+      (hσ.orientation hk).orientationAt x := by
+  rw [orientationAt_orientation]
+  exact ((hσ.tames_iff).1 hJ x).orientation_reindex
+    (fun i ↦ (hb i).trans (J.almostComplexStructureAt_apply x _).symm) hk h
+
+/-- **`J`-adapted frames of a surface are positive for the symplectic orientation.** If `σ` tames
+`J` on a surface, every basis `(v, J v)` of the tangent space at `x` is positive for the symplectic
+orientation of `σ`. -/
+theorem orientation_eq_orientationAt_of_tames {J : SmoothAlmostComplexStructure I M}
+    (hJ : σ.Tames J) (h2 : finrank ℝ E = 2) {x : M} {b : Basis (Fin 2) ℝ (TangentSpace I x)}
+    (hb : b 1 = J x (b 0)) :
+    b.orientation = (hσ.orientation h2).orientationAt x := by
+  have h : 1 * 2 = 2 := rfl
+  have hb' : ∀ i, b.reindex (finProdFinEquiv.trans (finCongr h)).symm (i, 1) =
+      J x (b.reindex (finProdFinEquiv.trans (finCongr h)).symm (i, 0)) := fun i ↦ by
+    rw [Subsingleton.elim i 0, Basis.reindex_apply, Basis.reindex_apply, Equiv.symm_symm]
+    exact hb
+  rw [← hσ.orientation_reindex_eq_orientationAt_of_tames h2 hJ hb' h]
+  congr 1
+  exact Basis.eq_of_apply_eq fun i ↦ by simp
 
 section Transport
 
