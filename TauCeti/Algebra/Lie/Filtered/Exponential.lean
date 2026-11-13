@@ -16,7 +16,9 @@ Each element of a positively graded Lie algebra acting by filtration-raising der
 exponentiates to an algebra automorphism of every finite coefficient quotient. The inverse
 is obtained by negating the Lie element. Quotient transitions intertwine these automorphisms,
 and the action depends only on the corresponding Lie truncation. The coefficient algebra
-may be noncommutative, and the original derivations need not be nilpotent.
+may be noncommutative, and the original derivations need not be nilpotent. The coefficient
+algebra must be a `ℚ`-algebra, `[Algebra ℚ A]`, to divide by factorials; the base ring `R`
+can be any commutative ring independently of this rational structure.
 
 The construction uses the existing nilpotent quotient representation and
 `Module.End.expAlgEquiv`. Truncation compatibility is Mathlib's
@@ -44,16 +46,24 @@ section Decomposition
 
 variable [DirectSum.Decomposition ℒ]
 
+-- Division by factorials uses the coefficient algebra's rational structure. The base ring `R`
+-- may be an arbitrary commutative ring, independently of this rational algebra structure.
 variable [Algebra ℚ A]
 
 /-- The exponential of the order-`k` coefficient representation, as an algebra automorphism. -/
 noncomputable def quotientExpLieAction (k : ℕ) (x : L) :
     (A ⧸ F.ideal (k + 1)) ≃ₐ[R] (A ⧸ F.ideal (k + 1)) :=
   (F.quotientLieAction d ℒ k x).expAlgEquiv (F.quotientLieAction_mul d ℒ k x)
-    ⟨k + 1, F.quotientLieAction_pow_eq_zero d ℒ k x⟩
+    (F.isNilpotent_quotientLieAction d ℒ k x)
+
+/-- The quotient exponential has the finite endomorphism exponential as its underlying map. -/
+@[simp]
+theorem quotientExpLieAction_toLinearMap (k : ℕ) (x : L) :
+    (F.quotientExpLieAction d ℒ k x : _ →ₗ[R] _) =
+      IsNilpotent.exp (F.quotientLieAction d ℒ k x) :=
+  Module.End.expAlgEquiv_toLinearMap _ _ _
 
 /-- Evaluation of the finite-order exponential is the finite endomorphism exponential. -/
-@[simp]
 theorem quotientExpLieAction_apply (k : ℕ) (x : L) (a : A ⧸ F.ideal (k + 1)) :
     F.quotientExpLieAction d ℒ k x a = IsNilpotent.exp (F.quotientLieAction d ℒ k x) a :=
   Module.End.expAlgEquiv_apply _ _ _ a
@@ -62,22 +72,17 @@ theorem quotientExpLieAction_apply (k : ℕ) (x : L) (a : A ⧸ F.ideal (k + 1))
 @[simp]
 theorem quotientExpLieAction_neg (k : ℕ) (x : L) :
     F.quotientExpLieAction d ℒ k (-x) = (F.quotientExpLieAction d ℒ k x).symm := by
-  ext a
-  apply (F.quotientExpLieAction d ℒ k x).injective
-  rw [AlgEquiv.apply_symm_apply, quotientExpLieAction_apply,
-    quotientExpLieAction_apply, map_neg]
-  exact LinearMap.congr_fun
-    (IsNilpotent.exp_mul_exp_neg_self
-      ⟨k + 1, F.quotientLieAction_pow_eq_zero d ℒ k x⟩) a
+  simp only [quotientExpLieAction, map_neg]
+  exact (Module.End.expAlgEquiv_symm _ _ _ _).symm
 
 /-- The zero Lie element acts as the identity automorphism. -/
 @[simp]
 theorem quotientExpLieAction_zero (k : ℕ) :
     F.quotientExpLieAction d ℒ k 0 = AlgEquiv.refl := by
-  ext a
-  simp [IsNilpotent.exp_zero]
+  simp [quotientExpLieAction]
 
 /-- Coefficient truncations intertwine the finite-order exponentials. -/
+@[simp]
 theorem factor_quotientExpLieAction {k l : ℕ} (h : k ≤ l) (x : L)
     (a : A ⧸ F.ideal (l + 1)) :
     Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1))
@@ -92,8 +97,8 @@ theorem factor_quotientExpLieAction {k l : ℕ} (h : k ≤ l) (x : L)
   simpa only [f, quotientExpLieAction_apply, LinearMap.comp_apply,
     AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply] using
     (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute
-      ⟨l + 1, F.quotientLieAction_pow_eq_zero d ℒ l x⟩
-      ⟨k + 1, F.quotientLieAction_pow_eq_zero d ℒ k x⟩ hc) a).symm
+      (F.isNilpotent_quotientLieAction d ℒ l x)
+      (F.isNilpotent_quotientLieAction d ℒ k x) hc) a).symm
 
 end Decomposition
 
@@ -102,36 +107,41 @@ section Truncated
 variable [GradedLieAlgebra ℒ] [Algebra ℚ A]
 
 /-- Lie elements with equal order-`k` truncations induce the same coefficient automorphism. -/
-theorem quotientExpLieAction_eq_of_mk_eq (k : ℕ) {x y : L}
+theorem quotientExpLieAction_eq_of_mkQ_eq (k : ℕ) {x y : L}
     (h : (d.degreeIdeal ℒ k).mkQ x = (d.degreeIdeal ℒ k).mkQ y) :
     F.quotientExpLieAction d ℒ k x = F.quotientExpLieAction d ℒ k y := by
-  have hm := congrArg (PositiveDegrees.truncatedLieAction d ℒ (F.toSubmodule R)
-    (F.toSubmodule_antitone R) (F.toSubmodule_zero R) k) h
-  simp only [LieIdeal.mkQ_apply, PositiveDegrees.truncatedLieAction_mk] at hm
   have he : F.quotientLieAction d ℒ k x = F.quotientLieAction d ℒ k y := by
-    let E := Submodule.Quotient.restrictScalarsEquiv R (F.ideal (k + 1))
-    let Q : L →ₗ⁅R⁆ Module.End R (A ⧸ (F.ideal (k + 1)).restrictScalars R) :=
-      PositiveDegrees.quotientLieAction d ℒ (F.toSubmodule R) (F.toSubmodule_antitone R) k
-    have hmQ : Q x = Q y := hm
-    have hq (z : L) : F.quotientLieAction d ℒ k z = E.conjAlgEquiv R (Q z) := (rfl)
-    apply (E.conjAlgEquiv R).symm.injective
-    rw [hq x, hq y, (E.conjAlgEquiv R).symm_apply_apply (Q x),
-      (E.conjAlgEquiv R).symm_apply_apply (Q y)]
-    exact hmQ
+    rw [← F.truncatedLieAction_mk d ℒ k x, ← F.truncatedLieAction_mk d ℒ k y]
+    exact congrArg (F.truncatedLieAction d ℒ k) h
   ext a
   simp only [quotientExpLieAction_apply, he]
 
 /-- Exponentiate an element of the Lie truncation on the matching coefficient quotient. -/
-noncomputable def truncatedExpLieAction (k : ℕ) : d.truncatedLie ℒ k →
-    ((A ⧸ F.ideal (k + 1)) ≃ₐ[R] (A ⧸ F.ideal (k + 1))) :=
-  Quotient.lift (F.quotientExpLieAction d ℒ k) (fun _ _ h =>
-    F.quotientExpLieAction_eq_of_mk_eq d ℒ k (Quotient.sound h))
+noncomputable def truncatedExpLieAction (k : ℕ) (x : d.truncatedLie ℒ k) :
+    (A ⧸ F.ideal (k + 1)) ≃ₐ[R] (A ⧸ F.ideal (k + 1)) :=
+  (F.truncatedLieAction d ℒ k x).expAlgEquiv (F.truncatedLieAction_mul d ℒ k x)
+    (F.isNilpotent_truncatedLieAction d ℒ k x)
+
+/-- The truncated exponential has the finite endomorphism exponential as its underlying map. -/
+@[simp]
+theorem truncatedExpLieAction_toLinearMap (k : ℕ) (x : d.truncatedLie ℒ k) :
+    (F.truncatedExpLieAction d ℒ k x : _ →ₗ[R] _) =
+      IsNilpotent.exp (F.truncatedLieAction d ℒ k x) :=
+  Module.End.expAlgEquiv_toLinearMap _ _ _
+
+/-- The truncated exponential evaluates as the finite endomorphism exponential. -/
+theorem truncatedExpLieAction_apply (k : ℕ) (x : d.truncatedLie ℒ k)
+    (a : A ⧸ F.ideal (k + 1)) :
+    F.truncatedExpLieAction d ℒ k x a =
+      IsNilpotent.exp (F.truncatedLieAction d ℒ k x) a :=
+  Module.End.expAlgEquiv_apply _ _ _ a
 
 /-- On Lie representatives, the truncated exponential is the quotient exponential. -/
 @[simp]
 theorem truncatedExpLieAction_mk (k : ℕ) (x : L) :
     F.truncatedExpLieAction d ℒ k (LieSubmodule.Quotient.mk x) =
-      F.quotientExpLieAction d ℒ k x := (rfl)
+      F.quotientExpLieAction d ℒ k x := by
+  simp [truncatedExpLieAction, quotientExpLieAction]
 
 /-- Zero in the Lie truncation acts as the identity automorphism. -/
 @[simp]
