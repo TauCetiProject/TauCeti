@@ -326,6 +326,18 @@ theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
       (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h
 
+/-- **Continuous Sobolev fields are `Cᵏ`.** For `s > k + 1`, a continuous field in
+`sobolevFields s` is of class `Cᵏ`, by the Sobolev embedding of `H^s(ℂ)` into `Cᵏ`. -/
+theorem contDiff_of_mem_sobolevFields {s : ℝ} {k : ℕ} (hk : k + 1 < s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
+    ContDiff ℝ k y := by
+  have hk' : (finrank ℝ ℂ : ℝ) + 2 * k < 2 * s := by
+    rw [Complex.finrank_real_complex]
+    push_cast
+    linarith
+  exact contDiff_euclidean.2 fun i ↦ contDiff_of_mem_realSobolevFunctions hk'
+    (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)
+
 /-! ### The affine field space -/
 
 /-- The affine space `A_m^s = referenceField f m + sobolevFields s` of framed degree-`m` plane
@@ -364,6 +376,16 @@ theorem framedFieldSpace_eq (f g : ContDiffBump (0 : ℝ)) (m : ℕ) (s : ℝ) :
 theorem framedFieldSpace_mono (f : ContDiffBump (0 : ℝ)) (m : ℕ) {s s' : ℝ} (h : s' ≤ s) :
     framedFieldSpace f m s ≤ framedFieldSpace f m s' :=
   (AffineSubspace.mk'_le_mk'_iff _).2 (sobolevFields_mono h)
+
+/-- **Continuous fields of `A_m^s` are `Cᵏ`.** For `s > k + 1`, a continuous field in `A_m^s` is
+of class `Cᵏ`, since its difference from the smooth reference field is a continuous Sobolev field
+(`contDiff_of_mem_sobolevFields`). -/
+theorem contDiff_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} {k : ℕ}
+    (hk : k + 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hcont : Continuous x) : ContDiff ℝ k x := by
+  have h := contDiff_of_mem_sobolevFields hk (mem_framedFieldSpace.1 hx)
+    (hcont.sub (contDiff_referenceField f m).continuous)
+  simpa using h.add ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top))
 
 /-- The vacuum is a framed field of degree zero. -/
 theorem vacuumField_mem_framedFieldSpace (f : ContDiffBump (0 : ℝ)) (s : ℝ) :

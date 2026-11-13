@@ -15,15 +15,17 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 Framed degree-`m` plane vortex fields form the affine Sobolev space `A_m^k`
 (`TauCeti.Vortex.framedFieldSpace`), on which the Sobolev gauge group `G_(k+1)`
 (`TauCeti.Vortex.sobolevGaugeGroup`) acts by `(a, α) ↦ (a - u⁻¹ du, u α)`. This file proves
-Taubes's classification of the vortices of `A_m^k` modulo `G_(k+1)` by their zeros, for every
-integer `k ≥ 2`, on the vortices that are `C²` as fields.
+Taubes's uniqueness theorem on the Sobolev scale: the zeros are a complete invariant of the
+`G_(k+1)`-orbits of the vortices of `A_m^k`, for every integer `k ≥ 2`, on the vortices that are
+`C²` as fields. For `k ≥ 4` these are all the continuous vortices of `A_m^k`, by Sobolev embedding
+(`TauCeti.Vortex.mem_sobolevVortices_iff_continuous`).
 
 A continuous field of `A_m^k` has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`
 (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`), so the zeros of the section of a `C²` vortex
 of `A_m^k`, counted with multiplicity, form an effective divisor of degree `m`
 (`TauCeti.Vortex.sobolevVortexDivisor`), a point of `Sym ℂ m`. Elements of `G_(k+1)` are
 continuous, so they do not change the divisor. Conversely, two `C²` vortices with the same zeros
-differ by a `C²` gauge tending to one at infinity
+differ by a `C³` gauge tending to one at infinity
 (`TauCeti.Vortex.exists_contDiff_gaugeTransform_eq`, the argument of Taubes's uniqueness theorem),
 and a `C²` gauge carrying one field of `A_m^k` to another lies in `G_(k+1)`
 (`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`). Hence two `C²` vortices of
@@ -40,7 +42,7 @@ For `k ≥ 4` the elements of `G_(k+1)` are `C³`, so they preserve the `C²` vo
 (`TauCeti.Vortex.sobolevVortexSubMulAction`). The divisor then descends to its orbit space, the
 Sobolev moduli of framed vortices, and is injective there
 (`TauCeti.Vortex.sobolevVortexModuliDivisor_injective`). For `k ∈ {2, 3}` the `C²` vortices need
-not be preserved by `G_(k+1)`, and the classification is the orbit statement above.
+not be preserved by `G_(k+1)`, and the result is the orbit statement above.
 
 That every point of `Sym ℂ m` is the divisor of a vortex of `A_m^k` needs, beyond Taubes's
 existence theorem for smooth framed vortices (`TauCeti.Vortex.framedVortexDivisor_surjective`),
@@ -110,7 +112,8 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff {k : ℕ} (hk : 1 < k
       (tendsto_sectionValue_mul_inv_pow hk' hx hxc.continuous)
       (tendsto_sectionValue_mul_inv_pow hk' hy hyc.continuous)
       (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hD')
-    exact ⟨u, mem_sobolevGaugeGroup_of_mem_framedFieldSpace hk hy hu (hux ▸ hx), hux⟩
+    exact ⟨u, mem_sobolevGaugeGroup_of_mem_framedFieldSpace hk hy (hu.of_le (by norm_num))
+      (hux ▸ hx), hux⟩
 
 /-! ### The divisor map on the `C²` vortices of `A_m^k` -/
 
@@ -125,6 +128,15 @@ theorem mem_sobolevVortices {k : ℕ} {x : framedFieldSpace f m k} :
     x ∈ sobolevVortices f m k ↔
       ContDiff ℝ 2 (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧ ∀ z, equation x z = 0 :=
   Iff.rfl
+
+/-- **For `k ≥ 4` the `C²` vortices of `A_m^k` are its continuous vortices**, since the continuous
+fields of `A_m^k` are then `C²` by Sobolev embedding (`contDiff_of_mem_framedFieldSpace`). -/
+theorem mem_sobolevVortices_iff_continuous {k : ℕ} (hk : 3 < k) {x : framedFieldSpace f m k} :
+    x ∈ sobolevVortices f m k ↔
+      Continuous (x : ℂ → EuclideanSpace ℝ (Fin 4)) ∧ ∀ z, equation x z = 0 :=
+  ⟨fun h ↦ ⟨h.1.continuous, h.2⟩, fun h ↦
+    ⟨by exact_mod_cast contDiff_of_mem_framedFieldSpace (k := 2) (by exact_mod_cast hk) x.2 h.1,
+      h.2⟩⟩
 
 variable {k : ℕ} [Fact (1 < k)]
 
@@ -161,12 +173,12 @@ theorem sobolevVortexDivisor_eq_iff {x : sobolevVortices f m k} {D : Sym ℂ m} 
   exact Sym.coe_injective <| Multiset.ext.2 fun z ↦
     congrFun ((isZeroMultiplicity_sectionValue_sobolevVortexDivisor x).unique h) z
 
-/-- **Taubes's classification on the Sobolev scale.** Two `C²` vortices of `A_m^k` have the same
-divisor exactly when they lie in one orbit of the action of `G_(k+1)` on `A_m^k`. -/
-theorem sobolevVortexDivisor_eq_sobolevVortexDivisor_iff {hs : 1 < (k : ℝ) + 1}
-    {x y : sobolevVortices f m k} :
+/-- **Taubes's uniqueness theorem on the Sobolev scale.** Two `C²` vortices of `A_m^k` have the
+same divisor exactly when they lie in one orbit of the action of `G_(k+1)` on `A_m^k`. -/
+theorem sobolevVortexDivisor_eq_sobolevVortexDivisor_iff {x y : sobolevVortices f m k} :
     sobolevVortexDivisor x = sobolevVortexDivisor y ↔
-      ∃ u : sobolevGaugeGroup hs, u • (y : framedFieldSpace f m k) = x := by
+      ∃ u : sobolevGaugeGroup (s := k + 1) (by have := (Fact.out : 1 < k); norm_cast; omega),
+        u • (y : framedFieldSpace f m k) = x := by
   rw [← Sym.coe_inj, ← exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff Fact.out x.1.2 y.1.2
     x.2.1 y.2.1 x.2.2 y.2.2 (isZeroMultiplicity_sectionValue_sobolevVortexDivisor x)
     (isZeroMultiplicity_sectionValue_sobolevVortexDivisor y)]
@@ -174,9 +186,10 @@ theorem sobolevVortexDivisor_eq_sobolevVortexDivisor_iff {hs : 1 < (k : ℝ) + 1
 
 /-- **Uniqueness of the relating gauge.** Two `C²` vortices of `A_m^k` with the same divisor are
 related by exactly one element of `G_(k+1)`. -/
-theorem existsUnique_sobolevGaugeGroup_smul_eq {hs : 1 < (k : ℝ) + 1}
-    {x y : sobolevVortices f m k} (h : sobolevVortexDivisor x = sobolevVortexDivisor y) :
-    ∃! u : sobolevGaugeGroup hs, u • (y : framedFieldSpace f m k) = x := by
+theorem existsUnique_sobolevGaugeGroup_smul_eq {x y : sobolevVortices f m k}
+    (h : sobolevVortexDivisor x = sobolevVortexDivisor y) :
+    ∃! u : sobolevGaugeGroup (s := k + 1) (by have := (Fact.out : 1 < k); norm_cast; omega),
+      u • (y : framedFieldSpace f m k) = x := by
   obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.1 h
   exact ⟨u, hu, fun v hv ↦ IsCancelSMul.right_cancel v u _ (hv.trans hu.symm)⟩
 
@@ -187,11 +200,21 @@ theorem sobolevVortexDivisor_eq_framedVortexDivisor (x : sobolevVortices f m k)
   rw [sobolevVortexDivisor_eq_iff, hx]
   exact isZeroMultiplicity_sectionValue_framedVortexDivisor x'
 
+/-- **Elements of `G_(k+1)` do not change the divisor.** The hypothesis that the transformed field
+is again a `C²` vortex holds automatically for `k ≥ 4` (`smul_mem_sobolevVortices`). -/
+@[simp]
+theorem sobolevVortexDivisor_smul
+    (u : sobolevGaugeGroup (s := k + 1) (by have := (Fact.out : 1 < k); norm_cast; omega))
+    (x : sobolevVortices f m k) (h : u • x.1 ∈ sobolevVortices f m k) :
+    sobolevVortexDivisor ⟨u • x.1, h⟩ = sobolevVortexDivisor x :=
+  sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.2 ⟨u, rfl⟩
+
 /-! ### The Sobolev moduli of framed vortices -/
 
 /-- **`G_(k+1)` preserves the `C²` vortices of `A_m^k` for `k ≥ 4`**, since its elements are then
 `C³` (`contDiff_of_mem_sobolevGaugeGroup`) and the connection loses one derivative of the gauge. -/
-theorem smul_mem_sobolevVortices {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobolevGaugeGroup hs)
+theorem smul_mem_sobolevVortices (hk : 3 < k)
+    (u : sobolevGaugeGroup (s := k + 1) (by norm_cast; omega))
     {x : framedFieldSpace f m k} (hx : x ∈ sobolevVortices f m k) :
     u • x ∈ sobolevVortices f m k := by
   obtain ⟨hxc, hsol⟩ := hx
@@ -204,48 +227,57 @@ theorem smul_mem_sobolevVortices {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobo
       (((contDiff_piLp 2).1 hxc i).differentiable two_ne_zero).differentiableAt]
   exact hsol z
 
-/-- For `k ≥ 4`, elements of `G_(k+1)` do not change the divisor. -/
-@[simp]
-theorem sobolevVortexDivisor_smul {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (u : sobolevGaugeGroup hs)
-    (x : sobolevVortices f m k) :
-    sobolevVortexDivisor ⟨u • x.1, smul_mem_sobolevVortices hk u x.2⟩ = sobolevVortexDivisor x :=
-  sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.2 ⟨u, rfl⟩
-
+variable (f m) in
 /-- **The `C²` framed vortices of `A_m^k` as a sub-action of `G_(k+1)`**, for `k ≥ 4`. -/
-def sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
-    SubMulAction (sobolevGaugeGroup hs) (framedFieldSpace f m k) where
+def sobolevVortexSubMulAction (hk : 3 < k) :
+    SubMulAction (sobolevGaugeGroup (s := k + 1) (by norm_cast; omega))
+      (framedFieldSpace f m k) where
   carrier := sobolevVortices f m k
   smul_mem' u _ hx := smul_mem_sobolevVortices hk u hx
 
 @[simp]
-theorem mem_sobolevVortexSubMulAction {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    {x : framedFieldSpace f m k} :
-    x ∈ sobolevVortexSubMulAction (hs := hs) hk ↔ x ∈ sobolevVortices f m k :=
+theorem mem_sobolevVortexSubMulAction {hk : 3 < k} {x : framedFieldSpace f m k} :
+    x ∈ sobolevVortexSubMulAction f m hk ↔ x ∈ sobolevVortices f m k :=
   Iff.rfl
 
+@[simp]
+theorem coe_sobolevVortexSubMulAction (hk : 3 < k) :
+    (sobolevVortexSubMulAction f m hk : Set (framedFieldSpace f m k)) = sobolevVortices f m k :=
+  (rfl)
+
+/-- `sobolevVortexDivisor_smul` for the elements of the sub-action `sobolevVortexSubMulAction`. -/
+@[simp]
+theorem sobolevVortexDivisor_smul_coe {hk : 3 < k}
+    (u : sobolevGaugeGroup (s := k + 1) (by norm_cast; omega))
+    (x : sobolevVortexSubMulAction f m hk)
+    (h : u • (x : framedFieldSpace f m k) ∈ sobolevVortices f m k) :
+    sobolevVortexDivisor ⟨u • (x : framedFieldSpace f m k), h⟩ =
+      sobolevVortexDivisor ⟨x, (mem_sobolevVortexSubMulAction (f := f) (hk := hk)).1 x.2⟩ :=
+  sobolevVortexDivisor_smul u ⟨x.1, (mem_sobolevVortexSubMulAction (f := f) (hk := hk)).1 x.2⟩ h
+
+variable (f m) in
 /-- **The divisor on the Sobolev moduli of framed vortices.** For `k ≥ 4` the zero divisor descends
 to the `G_(k+1)`-orbits of `C²` vortices of `A_m^k`. -/
-def sobolevVortexModuliDivisor {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
-    MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
-      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) → Sym ℂ m :=
+def sobolevVortexModuliDivisor (hk : 3 < k) :
+    MulAction.orbitRel.Quotient (sobolevGaugeGroup (s := k + 1) (by norm_cast; omega))
+      (sobolevVortexSubMulAction f m hk) → Sym ℂ m :=
   Quotient.lift (fun x ↦ sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩)
     fun x y h ↦ by
       obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-      exact sobolevVortexDivisor_smul hk u ⟨y.1, y.2⟩
+      exact sobolevVortexDivisor_smul_coe u y _
 
 /-- The class of a `C²` vortex of `A_m^k` goes to its divisor. -/
 @[simp]
-theorem sobolevVortexModuliDivisor_mk {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
-    sobolevVortexModuliDivisor hk (Quotient.mk'' x) =
+theorem sobolevVortexModuliDivisor_mk {hk : 3 < k} (x : sobolevVortexSubMulAction f m hk) :
+    sobolevVortexModuliDivisor f m hk (Quotient.mk'' x) =
       sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ :=
   (rfl)
 
 /-- **The Sobolev moduli of framed vortices embed in `Sym ℂ m`** (Taubes's uniqueness theorem on
 the Sobolev scale): for `k ≥ 4`, two `G_(k+1)`-orbits of `C²` vortices of `A_m^k` with the same
 divisor coincide. -/
-theorem sobolevVortexModuliDivisor_injective {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
-    Function.Injective (sobolevVortexModuliDivisor (f := f) (m := m) (hs := hs) hk) :=
+theorem sobolevVortexModuliDivisor_injective (hk : 3 < k) :
+    Function.Injective (sobolevVortexModuliDivisor f m hk) :=
   fun a b ↦ Quotient.inductionOn₂ a b fun x y h ↦ Quotient.sound <|
     MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2 <| by
       obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.1 h

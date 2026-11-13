@@ -47,13 +47,12 @@ nonzero at `z`; the similarity principle upgrades the factor to a `Cᵏ` one wit
 of the two factors there.
 
 For `Cᵏ` vortices, `k ≥ 2`, with the same end framing `α (z) · phase (z) → 1`, where
-`|phase| → 1` (for example the winding phase `(z / |z|) ^ (-m)`), the factor is a `Cᵏ` gauge
-tending to one at infinity which carries one vortex to the other
+`|phase| → 1` (for example the winding phase `(z / |z|) ^ (-m)`), the factor is a gauge tending
+to one at infinity which carries one vortex to the other. Its logarithmic derivative is the
+difference of the two connections, so the gauge is `C^(k+1)`
 (`TauCeti.Vortex.exists_contDiff_gaugeTransform_eq`). For smooth vortices it is therefore an
-element of the smooth framed gauge group. Since a framed gauge is determined by its action on a
-field whose section vanishes only on a nowhere dense set
-(`TauCeti.Vortex.framedGaugeGroup_smul_left_injective`), two smooth framed vortices with the same
-zero multiplicities differ by exactly one framed gauge
+element of the smooth framed gauge group. Since the framed gauge action is free, two smooth framed
+vortices with the same zero multiplicities differ by exactly one framed gauge
 (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`). This is uniqueness modulo the framed
 gauge action for each effective divisor; existence of a vortex with prescribed zeros is not
 addressed here.
@@ -241,12 +240,13 @@ open scoped ContDiff
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- **Vortices with the same zeros differ by a gauge as regular as the fields.** Let `x` and `y`
-be `Cᵏ` solutions of the vortex equation on the plane, `k ≥ 2`, with the same end framing
-`α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding phase
-`(z / |z|) ^ (-m)`. If `n` is a multiplicity function for both sections, meaning that each of them
-factors near every `z` as `(w - z) ^ n z * v w` with `v` continuous and nonzero at `z`, then
-`x = u • y` for a `Cᵏ` circle-valued gauge `u` tending to one at infinity. -/
+/-- **Vortices with the same zeros differ by a gauge one order smoother than the fields.** Let
+`x` and `y` be `Cᵏ` solutions of the vortex equation on the plane, `k ≥ 2`, with the same end
+framing `α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the
+winding phase `(z / |z|) ^ (-m)`. If `n` is a multiplicity function for both sections, meaning that
+each of them factors near every `z` as `(w - z) ^ n z * v w` with `v` continuous and nonzero at
+`z`, then `gaugeTransform u y = x` for a `C^(k+1)` circle-valued gauge `u` tending to one at
+infinity: its logarithmic derivative `u⁻¹ du` is the difference of the two `Cᵏ` connections. -/
 theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : ContDiff ℝ k x)
     (hy : ContDiff ℝ k y) (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     {phase : ℂ → ℂ} (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
@@ -256,7 +256,7 @@ theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : Cont
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
     (hny : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue y w = (w - z) ^ n z * v w) :
-    ∃ u : ℂ → Circle, ContDiff ℝ k (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) ∧
+    ∃ u : ℂ → Circle, ContDiff ℝ (k + 1) (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) ∧
       gaugeTransform u y = x := by
   have hk₁ : (1 : ℕ∞) ≤ k := le_trans (by norm_num) hk
   have hk₂ : ((2 : ℕ∞) : WithTop ℕ∞) ≤ k := by exact_mod_cast hk
@@ -270,9 +270,11 @@ theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : Cont
     (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
   have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
   have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
+  have hyne : ∃ w, sectionValue y w ≠ 0 :=
+    ((hyfr.eventually_ne one_ne_zero).exists).imp fun _ hw ↦ left_ne_zero_of_mul hw
   have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
-    (dense_setOf_sectionValue_ne_zero hk₁ (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol
-      hylim).mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
+    (dense_setOfPred_sectionValue_ne_zero hk₁ (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol
+      hyne).mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
   have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
     have := hα z
     rw [sectionValue_apply, sectionValue_apply] at this
@@ -289,10 +291,20 @@ theorem exists_contDiff_gaugeTransform_eq {k : ℕ∞} (hk : 2 ≤ k) (hx : Cont
     refine hdiv.congr' ?_
     filter_upwards [hyfr.eventually_ne one_ne_zero] with z hz
     rw [Pi.div_apply, hα z, mul_assoc, mul_div_cancel_right₀ _ hz]
-  refine ⟨fun w ↦ Circle.exp (f w), by simpa only [hcoe] using hh,
-    tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm), ?_⟩
-  rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
-  exact hxy.symm
+  have hux : gaugeTransform (fun w ↦ Circle.exp (f w)) y = x := by
+    rw [gaugeTransform_exp (hf.differentiable two_ne_zero)]
+    exact hxy.symm
+  -- Its logarithmic derivative is the difference of the `Cᵏ` connections.
+  have hω : gaugeForm (fun w ↦ Circle.exp (f w)) =
+      fun z ↦ (y z 0 - x z 0) • reCLM + (y z 1 - x z 1) • imCLM :=
+    funext fun z ↦ (gaugeTransform_eq_iff.1 hux z).1
+  refine ⟨fun w ↦ Circle.exp (f w), ?_, tendsto_subtype_rng.2 (hh1.congr fun w ↦ (hcoe w).symm),
+    hux⟩
+  refine contDiff_coe_of_contDiff_gaugeForm ?_ ?_
+  · simpa only [hcoe] using hh.differentiable (lt_of_lt_of_le (by norm_num) hk₂).ne'
+  · rw [hω]
+    exact (((hyi 0).sub (hxi 0)).smul contDiff_const).add
+      (((hyi 1).sub (hxi 1)).smul contDiff_const)
 
 /-- **Uniqueness of framed plane vortices with prescribed zeros, modulo framed gauge.** Let `x`
 and `y` be smooth solutions of the vortex equation on the plane with the same end framing
@@ -312,17 +324,8 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
     ∃! u : framedGaugeGroup, u • y = x := by
   obtain ⟨u, hu, hu1, hxy⟩ := exists_contDiff_gaugeTransform_eq (k := ⊤) le_top hx hy hxsol hysol
     hphase hxfr hyfr hnx hny
-  have hyi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ y w i := (contDiff_piLp 2).1 hy i
-  have hd (i : Fin 4) : Differentiable ℝ fun w ↦ y w i := (hyi i).differentiable (by simp)
-  have hdense : Dense {z | sectionValue y z ≠ 0} :=
-    dense_setOf_sectionValue_ne_zero (k := ⊤) le_top (hyi 0) (hyi 1) (hd 2) (hd 3)
-      (fun w ↦ by simp [hysol w]) (tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr)
-  have hmem : u ∈ framedGaugeGroup := (mem_framedGaugeGroup _).2 ⟨hu, hu1⟩
-  have hsmul : (⟨u, hmem⟩ : framedGaugeGroup) • y = x := by
-    rw [framedGaugeGroup_smul]
-    exact hxy
-  exact ⟨⟨u, hmem⟩, hsmul, fun v hv ↦
-    framedGaugeGroup_smul_left_injective hdense (hv.trans hsmul.symm)⟩
+  let u' : framedGaugeGroup := ⟨u, (mem_framedGaugeGroup _).2 ⟨by simpa using hu, hu1⟩⟩
+  exact ⟨u', hxy, fun v hv ↦ IsCancelSMul.right_cancel v u' y (hv.trans hxy.symm)⟩
 
 end Divisor
 

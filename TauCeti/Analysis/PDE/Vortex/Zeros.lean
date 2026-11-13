@@ -119,14 +119,17 @@ theorem finite_setOfPred_sectionValue_eq_zero
     simp [hz] at hw
   exact finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn ha hα heq htail
 
-/-- A plane vortex section approaching unit modulus is nonzero on a dense set, since it has only
-finitely many zeros. -/
-theorem dense_setOf_sectionValue_ne_zero
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+/-- A nontrivial plane vortex section is nonzero on a dense set, since it vanishes on no
+neighborhood. -/
+theorem dense_setOfPred_sectionValue_ne_zero (hne : ∃ w, sectionValue x w ≠ 0) :
     Dense {w | sectionValue x w ≠ 0} := by
-  refine (dense_univ.sdiff_finite
-    (finite_setOfPred_sectionValue_eq_zero hn hb₁ hb₂ hp hq hhol hlim)).mono fun w hw ↦ ?_
-  simpa only [Set.mem_sdiff, mem_univ, true_and, mem_ofPred_eq] using hw
+  obtain ⟨ha, hα, heq⟩ := section_scalar_equation hb₁ hb₂ hp hq hhol
+  have hneα : ∃ w ∈ (univ : Set ℂ), sectionValue x w ≠ 0 := by
+    simpa only [mem_univ, true_and] using hne
+  refine fun z ↦ mem_closure_iff_frequently.2 ?_
+  simpa only [Filter.not_eventually, mem_ofPred_eq] using
+    not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul hn isOpen_univ
+      isPreconnected_univ ha.contDiffOn hα.differentiableOn (fun w _ ↦ heq w) hneα (mem_univ z)
 
 end LocalFactor
 
