@@ -54,21 +54,6 @@ Then:
   is the analogue, for an arbitrary coefficient module `M`, of the equivalence
   `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`.
 
-**Cup products.** With coefficients `M = k`, the decomposition turns the cup product into a
-multiplication table. The generator satisfies `θ ⌣ θ = 0`
-(`TauCeti.singularCup_singularCohomologyTopCatSphereGenerator_self`), so by the interchange law for
-cross products (`TopCat.singularCup_singularCohomologyMap_snd_add_singularCup`), if `φ` and `ψ`
-decompose as `(b, c)` and `(b', c')` with `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` and `c ∈ Hᵖ(Y)`, then `φ ⌣ ψ` decomposes
-as `(b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`
-(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup`). On `H²(S¹ × Y)` the cup product
-therefore pairs the summand pulled back from `Y` with the summand `θ ⌣ pr₂^* H¹(Y)`, which is
-isotropic. When the cohomology of `Y` vanishes in the degree of `b ⌣ b'`, so does that component
-(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_isZero`). This holds when `Y` is a
-compact manifold without boundary of dimension below that degree and every `k`-module has
-projective dimension at most one, as over `ℤ` or a field
-(`TauCeti.singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace`); for a closed
-three-manifold `Y` the cup product on `H²(S¹ × Y)` is thus off-diagonal in the decomposition.
-
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
 `H²(S¹ × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ (θ ⌣ pr₂^* H¹(Y; ℤ))` of the second cohomology of a product
 with a circle, torsion included; `θ` generates `H¹(S¹; ℤ)`. Under `S¹ ≅ ℝ / ℤ`, `θ` corresponds
@@ -84,6 +69,21 @@ pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_sphere_one_add
 case `n = 1` of `TopCat.mem_range_singularCohomologyMap_snd_sphere_of_injective`, which asks for
 `g` to be injective on `Hⁿ(Y; -)`). For `d = 0` and `ℤ → ℝ`: an integral class of `H²(S¹ × Y)`
 whose real class is pulled back from `Y` is pulled back from `Y` integrally.
+
+**Cup products.** With coefficients `M = k`, the decomposition turns the cup product into a
+multiplication table. The generator satisfies `θ ⌣ θ = 0`
+(`TauCeti.singularCup_singularCohomologyTopCatSphereGenerator_self`), so by the interchange law for
+cross products (`TopCat.singularCup_singularCohomologyMap_snd_add_singularCup`), if `φ` and `ψ`
+decompose as `(b, c)` and `(b', c')` with `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` and `c ∈ Hᵖ(Y)`, then `φ ⌣ ψ` decomposes
+as `(b ⌣ b', c ⌣ b' + (-1)^((d + 1)(p + d + 1)) b ⌣ c')`
+(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup`). On `H²(S¹ × Y)` the cup product
+therefore pairs the summand pulled back from `Y` with the summand `θ ⌣ pr₂^* H¹(Y)`, which is
+isotropic. When the cohomology of `Y` vanishes in the degree of `b ⌣ b'`, so does that component
+(`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_isZero`). This holds when `Y` is a
+compact manifold without boundary of dimension below that degree and every `k`-module has
+projective dimension at most one, as over `ℤ` or a field
+(`TauCeti.singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace`); for a closed
+three-manifold `Y` the cup product on `H²(S¹ × Y)` is thus off-diagonal in the decomposition.
 
 ## References
 

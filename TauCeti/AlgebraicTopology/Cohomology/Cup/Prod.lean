@@ -88,8 +88,8 @@ theorem singularCup_fst_snd_singularCup_fst_snd (hu : u ≫ (β_ R R).hom = u)
 /-- **Cup products of the classes `pr₂^* b + pr₁^* a ⌣ pr₂^* c`**: on `X × Y`, for a cocommutative
 (`hu`) and coassociative (`hu'`) coefficient morphism `u : R ⟶ R ⊗ R` and a commutative (`hμ`) and
 associative (`hμ'`) pairing `μ : M ⊗ M ⟶ M`, let `a ∈ Hᵖ(X)` satisfy `a ⌣ a = 0`, as the generator
-of the top cohomology of a sphere does. For `b ∈ Hᵐ(Y)`, `c ∈ H^q(Y)`, `b' ∈ Hᵐ'(Y)` and
-`c' ∈ H^q'(Y)` with `p + q = m` and `p + q' = m'`,
+of the top cohomology of a positive-dimensional sphere does. For `b ∈ Hᵐ(Y)`, `c ∈ H^q(Y)`,
+`b' ∈ Hᵐ'(Y)` and `c' ∈ H^q'(Y)` with `p + q = m` and `p + q' = m'`,
 
 `(pr₂^* b + pr₁^* a ⌣ pr₂^* c) ⌣ (pr₂^* b' + pr₁^* a ⌣ pr₂^* c')`
 `  = pr₂^* (b ⌣ b') + pr₁^* a ⌣ pr₂^* (c ⌣ b' + (-1)^(p m) b ⌣ c')`. -/
