@@ -39,9 +39,6 @@ difference of dimensions of spaces of square-integrable solutions is
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
 * `TauCeti.hasDerivAt_exp_smul_sub_smul_id`: multiplication by `exp w` turns solutions of
   `v' + A v = 0` into solutions of `u' + (A - w') u = 0`.
-* `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
-  square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
-  `v' + A v = 0`.
 * `TauCeti.weightedSquareIntegrableSolutions A w`: the initial values of the solutions of
   `u' + A u = 0` with `e^w u` square integrable.
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions`:
@@ -49,6 +46,9 @@ difference of dimensions of spaces of square-integrable solutions is
   `v' + (A - w') v = 0`.
 * `TauCeti.weightedSquareIntegrableSolutions_le_of_le_add`: a larger weight gives fewer
   solutions.
+* `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
+  square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
+  `v' + A v = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -137,32 +137,6 @@ theorem hasDerivAt_exp_smul_sub_smul_id {T : F →L[ℝ] F} {u : ℝ → F} {w :
   simp only [sub_apply, smul_apply,
     ContinuousLinearMap.id_apply, map_smul]
   module
-
-/-- **Weighted solutions are square-integrable solutions.** Let `w` have derivative `w'` and be
-bounded below. If `u` is a square-integrable solution of `u' + (A - w') u = 0`, then
-`v = exp (w 0 - w) • u` is a square-integrable solution of `v' + A v = 0` with the same initial
-value. In terms of the trajectory operator, the kernel of `D_A` on the weighted space
-`{u | exp w • u ∈ W^{1,2}}` is contained in its kernel on `W^{1,2}`. -/
-theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w w' : ℝ → ℝ}
-    (hw : ∀ s, HasDerivAt w (w' s) s) (hbdd : BddBelow (range w)) :
-    squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) ≤
-      squareIntegrableSolutions A := by
-  intro x hx
-  obtain ⟨u, rfl, hu, hu2⟩ := mem_squareIntegrableSolutions.1 hx
-  obtain ⟨m, hm⟩ := hbdd
-  refine mem_squareIntegrableSolutions.2
-    ⟨fun s ↦ Real.exp (w 0 - w s) • u s, by simp, fun s ↦ ?_, ?_⟩
-  · convert hasDerivAt_exp_smul_sub_smul_id ((hw s).const_sub (w 0)) (hu s) using 3
-    module
-  · have hcont : Continuous fun s ↦ Real.exp (w 0 - w s) • u s :=
-      continuous_iff_continuousAt.2 fun s ↦
-        (hasDerivAt_exp_smul_sub_smul_id ((hw s).const_sub (w 0)) (hu s)).continuousAt
-    refine (hu2.const_smul (Real.exp (w 0 - m))).of_le hcont.aestronglyMeasurable
-      (.of_forall fun s ↦ ?_)
-    rw [Pi.smul_apply, norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
-      Real.norm_of_nonneg (Real.exp_pos _).le]
-    gcongr
-    exact hm ⟨s, rfl⟩
 
 /-- The initial values at time `0` of the solutions `u : ℝ → F` of `u' + A(s) u = 0` on the whole
 line for which `e^{w(s)} u(s)` is square integrable. For a weight `w` with derivative `w'`, this is
@@ -267,6 +241,18 @@ theorem squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutio
       (squareIntegrableSolutions _).smul_mem (Real.exp (-w 0)) hx
 
 end Weighted
+
+/-- **Weighted solutions are square-integrable solutions.** Let `w` have derivative `w'` and be
+bounded below. If `u` is a square-integrable solution of `u' + (A - w') u = 0`, then
+`v = exp (w 0 - w) • u` is a square-integrable solution of `v' + A v = 0` with the same initial
+value. In terms of the trajectory operator, the kernel of `D_A` on the weighted space
+`{u | exp w • u ∈ W^{1,2}}` is contained in its kernel on `W^{1,2}`. -/
+theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w w' : ℝ → ℝ}
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hbdd : BddBelow (range w)) :
+    squareIntegrableSolutions (fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) ≤
+      squareIntegrableSolutions A :=
+  (squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions hw).trans_le
+    (weightedSquareIntegrableSolutions_le_squareIntegrableSolutions hbdd)
 
 end TauCeti
 
