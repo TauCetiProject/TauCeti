@@ -275,6 +275,16 @@ lemma _root_.ChainComplex.linearYonedaObjMap_comp (X : ChainComplex C α)
   ext i (a : X.X i ⟶ Y)
   exact (Category.assoc a g h).symm
 
+/-- Coefficient maps on cochain complexes are linear in the coefficient morphism: the coefficient
+map of `r • g` is `r` times the coefficient map of `g`. -/
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjMap_smul {S : Type*} [CommRing S] [Linear S C]
+    (X : ChainComplex C α) {Y Z : C} (r : S) (g : Y ⟶ Z) :
+    X.linearYonedaObjMap S (r • g) = r • X.linearYonedaObjMap S g := by
+  -- The coefficient maps are postcomposition by definition (`linearYonedaObjMap_f_hom_apply`).
+  ext i (a : X.X i ⟶ Y)
+  exact Linear.comp_smul _ _ _ a r g
+
 /-- Coefficient maps commute with the maps induced by chain maps: postcomposing with `g : Y ⟶ Z`
 and precomposing with `β : X ⟶ X'` can be done in either order. -/
 @[reassoc]

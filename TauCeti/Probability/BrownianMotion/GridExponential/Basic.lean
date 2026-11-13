@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Exponential
 public import Mathlib.Probability.Martingale.Basic
+public import TauCeti.Probability.Process.Filtration.Comp
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
@@ -214,13 +215,14 @@ The coefficient on each interval is known at its left endpoint, not its right en
 theorem martingale_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
-    Martingale (gridExponential τ θ W)
-      ⟨fun n ↦ ℱ (τ n), ℱ.mono'.comp hτ, fun n ↦ ℱ.le (τ n)⟩ P := by
+    Martingale (gridExponential τ θ W) (ℱ.comp hτ) P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  refine martingale_nat (fun n ↦
-    (hW.adapted.measurable_gridExponential hτ hθ n).stronglyMeasurable)
+  refine martingale_nat (fun n ↦ ?_)
     (hW.integrable_gridExponential hτ hθ hK) fun n ↦ ?_
-  exact (gridExponential_step hW hτ hθ hK n (hW.integrable_gridExponential hτ hθ hK n)).2.symm
+  · simpa only [Filtration.stronglyMeasurable_comp_iff] using
+      (hW.adapted.measurable_gridExponential hτ hθ n).stronglyMeasurable
+  · simpa only [Filtration.comp_apply] using
+      (gridExponential_step hW hτ hθ hK n (hW.integrable_gridExponential hτ hθ hK n)).2.symm
 
 /-- **Normalization.** Bounded predictable grid heights give a likelihood of expectation one. -/
 theorem integral_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)

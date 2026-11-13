@@ -70,6 +70,10 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
+* `TauCeti.norm_deriv_slice_right_le`: the partial derivative in a scalar second variable has
+  norm at most that of the derivative.
+* `ContDiffOn.continuousOn_deriv_slice_right`: the partial derivative in a scalar second variable
+  of a `C¹` map is continuous along every vertical segment inside its open domain.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
@@ -308,6 +312,26 @@ theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
     (hu : DifferentiableAt 𝕜 u (a, t)) :
     HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t :=
   hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
+
+/-- Where `u` is differentiable, its partial derivative in the second variable has norm at most
+the norm of its derivative. -/
+theorem norm_deriv_slice_right_le {u : E × 𝕜 → G} {a : E} {t : 𝕜}
+    (hu : DifferentiableAt 𝕜 u (a, t)) :
+    ‖deriv (fun t ↦ u (a, t)) t‖ ≤ ‖fderiv 𝕜 u (a, t)‖ := by
+  rw [(hasDerivAt_slice_right hu).deriv]
+  simpa using (fderiv 𝕜 u (a, t)).le_opNorm ((0 : E), (1 : 𝕜))
+
+/-- The partial derivative in the second variable of a map that is `C¹` on an open set `U` is
+continuous on every set `K` with `{a} × K ⊆ U`. -/
+theorem _root_.ContDiffOn.continuousOn_deriv_slice_right {u : E × 𝕜 → G} {U : Set (E × 𝕜)}
+    {a : E} {K : Set 𝕜} (hu : ContDiffOn 𝕜 1 u U) (hU : IsOpen U) (hKU : ∀ t ∈ K, (a, t) ∈ U) :
+    ContinuousOn (deriv fun t ↦ u (a, t)) K := by
+  have h : ContinuousOn (fun t ↦ fderiv 𝕜 u (a, t) ((0 : E), (1 : 𝕜))) K :=
+    ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).comp
+      (continuous_const.prodMk continuous_id).continuousOn hKU).clm_apply continuousOn_const
+  refine h.congr fun t ht ↦ ?_
+  exact (hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero _ (hKU t ht)).differentiableAt
+    (hU.mem_nhds (hKU t ht)))).deriv
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
