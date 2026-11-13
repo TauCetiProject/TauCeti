@@ -166,11 +166,16 @@ theorem pow_absNorm_sub_one_div_mem_rootsOfUnity (hP : (absNorm P).Coprime n)
   rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel (dvd_absNorm_sub_one hP),
     pow_absNorm_sub_one_eq_one]
 
+omit [NeZero n] in
 /-- If `N P` is prime to `n` and `𝓞 K` contains a primitive `n`-th root of unity, then the
-exponent `(N P - 1) / n` is positive. -/
-theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) : (absNorm P - 1) / n ≠ 0 :=
-  (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr
-    ⟨absNorm_sub_one_ne_zero P, NeZero.ne n⟩
+exponent `(N P - 1) / n` is positive. Here `n ≠ 0`, since `N P` is prime to `0` only if `N P = 1`,
+which a maximal ideal excludes. -/
+theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) : (absNorm P - 1) / n ≠ 0 := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact absNorm_sub_one_ne_zero P (by rw [(Nat.coprime_zero_right _).mp hP])
+  exact (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr
+    ⟨absNorm_sub_one_ne_zero P, hn⟩
 
 variable (P) in
 /-- **The Teichmüller character.** Let `F` be a finite field with `q` elements and
