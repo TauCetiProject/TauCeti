@@ -35,8 +35,6 @@ open CategoryTheory Limits
 
 universe u v₁ v₂ u₁ u₂
 
-namespace TauCeti
-
 namespace SheafOfModules
 
 section Locality
@@ -47,22 +45,21 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
 
 /-- Shrinking the covering family of local generators keeps each selected family of generators,
 so finite type is preserved. -/
-instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_shrink
+instance LocalGeneratorsData.isFiniteType_shrink
     {M : SheafOfModules.{u} R} (q : M.LocalGeneratorsData) [q.IsFiniteType] :
     q.shrink.IsFiniteType where
-  isFiniteType i :=
-    _root_.SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i.2.choose
+  isFiniteType i := LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i.2.choose
 
 /-- A sheaf of modules with finite-type local generators, indexed in any universe, is of finite
 type. -/
-theorem _root_.SheafOfModules.LocalGeneratorsData.isFiniteType {M : SheafOfModules.{u} R}
+theorem LocalGeneratorsData.isFiniteType {M : SheafOfModules.{u} R}
     (q : M.LocalGeneratorsData) [q.IsFiniteType] : M.IsFiniteType :=
   ⟨q.shrink, inferInstance⟩
 
 /-- Finite type is invariant under isomorphism. -/
-theorem _root_.SheafOfModules.IsFiniteType.of_iso {M N : SheafOfModules.{u} R} (e : M ≅ N)
+theorem IsFiniteType.of_iso {M N : SheafOfModules.{u} R} (e : M ≅ N)
     [M.IsFiniteType] : N.IsFiniteType := by
-  obtain ⟨q, _⟩ := _root_.SheafOfModules.IsFiniteType.exists_localGeneratorsData M
+  obtain ⟨q, _⟩ := IsFiniteType.exists_localGeneratorsData M
   exact (q.ofIsIso e.hom).isFiniteType
 
 variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
@@ -71,12 +68,12 @@ variable [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
 
 /-- If a sheaf of modules is of finite type after restriction to every member of a covering
 family, then it is of finite type. -/
-theorem _root_.SheafOfModules.IsFiniteType.of_coversTop {M : SheafOfModules.{u} R} {I : Type*}
+theorem IsFiniteType.of_coversTop {M : SheafOfModules.{u} R} {I : Type*}
     (X : I → C) (hX : J.CoversTop X) [∀ i, (M.over (X i)).IsFiniteType] : M.IsFiniteType := by
   have h : ∀ i, ∃ D : (M.over (X i)).LocalGeneratorsData, D.IsFiniteType := fun i ↦
-    _root_.SheafOfModules.IsFiniteType.exists_localGeneratorsData (M.over (X i))
+    IsFiniteType.exists_localGeneratorsData (M.over (X i))
   choose D hD using h
-  exact (_root_.SheafOfModules.LocalGeneratorsData.bind X hX D).isFiniteType
+  exact (LocalGeneratorsData.bind X hX D).isFiniteType
 
 end Locality
 
@@ -95,17 +92,16 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : S
 generators of the pushforward of `M`: the cover is formed by the objects of `D` whose image maps
 to a member of the original cover, and the generators are carried as in
 `SheafOfModules.QuasicoherentData.pushforward`. -/
-noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+noncomputable def LocalGeneratorsData.pushforward
+    (η : (SheafOfModules.pushforward φ).obj (unit R) ≅ unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
     (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
       PreservesColimitsOfSize.{u, u} <|
-      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+      SheafOfModules.pushforward.{u} (R := (R.over Y))
         (F := Over.post (X := X) G ⋙ Over.map f)
         (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
-    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M) :
-    _root_.SheafOfModules.LocalGeneratorsData ((_root_.SheafOfModules.pushforward φ).obj M) where
+    {M : SheafOfModules.{u} R} (P : LocalGeneratorsData M) :
+    LocalGeneratorsData ((SheafOfModules.pushforward φ).obj M) where
   I := Σ (X : D) (i : P.I), G.obj X ⟶ P.X i
   X i := i.1
   coversTop Y := by
@@ -114,105 +110,98 @@ noncomputable def _root_.SheafOfModules.LocalGeneratorsData.pushforward
     exact ⟨⟨Z, i, v⟩, ⟨𝟙 _⟩⟩
   generators i := by
     letI overS : SheafOfModules.{u} S ⥤ SheafOfModules.{u} (S.over i.1) :=
-      _root_.SheafOfModules.pushforward (𝟙 _)
+      SheafOfModules.pushforward (𝟙 _)
     letI G' := Over.post (X := i.1) G ⋙ Over.map i.2.2
     letI ψ : S.over i.1 ⟶
         (G'.sheafPushforwardContinuous RingCat.{u} (K.over i.1) (J.over (P.X i.2.1))).obj
           (R.over (P.X i.2.1)) :=
       ((Over.forget i.1).sheafPushforwardContinuous RingCat.{u} (K.over i.1) K).map φ
-    letI e : (_root_.SheafOfModules.pushforward ψ).obj
-        (_root_.SheafOfModules.unit (R.over (P.X i.snd.fst))) ≅
-      _root_.SheafOfModules.unit (S.over i.fst) := overS.mapIso η
-    haveI : PreservesColimitsOfSize.{u, u, _} (_root_.SheafOfModules.pushforward ψ) := h _ _ _
-    exact (P.generators i.2.1).map (_root_.SheafOfModules.pushforward ψ) e.symm
+    letI e : (SheafOfModules.pushforward ψ).obj (unit (R.over (P.X i.snd.fst))) ≅
+      unit (S.over i.fst) := overS.mapIso η
+    haveI : PreservesColimitsOfSize.{u, u, _} (SheafOfModules.pushforward ψ) := h _ _ _
+    exact (P.generators i.2.1).map (SheafOfModules.pushforward ψ) e.symm
 
 /-- Carrying local generators along `G` indexes the cover by an object of `D`, a member of the
 original cover, and a morphism from the image of the former to the latter. -/
 @[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_I
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+theorem LocalGeneratorsData.pushforward_I
+    (η : (SheafOfModules.pushforward φ).obj (unit R) ≅ unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
     (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
       PreservesColimitsOfSize.{u, u} <|
-      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+      SheafOfModules.pushforward.{u} (R := (R.over Y))
         (F := Over.post (X := X) G ⋙ Over.map f)
         (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
-    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M) :
+    {M : SheafOfModules.{u} R} (P : LocalGeneratorsData M) :
     (P.pushforward G φ η h).I = Σ (X : D) (i : P.I), G.obj X ⟶ P.X i :=
   (rfl)
 
 /-- The covering objects of carried local generators are the objects of `D` indexing them. -/
 @[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_X
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+theorem LocalGeneratorsData.pushforward_X
+    (η : (SheafOfModules.pushforward φ).obj (unit R) ≅ unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
     (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
       PreservesColimitsOfSize.{u, u} <|
-      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+      SheafOfModules.pushforward.{u} (R := (R.over Y))
         (F := Over.post (X := X) G ⋙ Over.map f)
         (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
-    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M) :
+    {M : SheafOfModules.{u} R} (P : LocalGeneratorsData M) :
     (P.pushforward G φ η h).X = fun i ↦
-      ((_root_.SheafOfModules.LocalGeneratorsData.pushforward_I G φ η h P).mp i).1 :=
+      ((LocalGeneratorsData.pushforward_I G φ η h P).mp i).1 :=
   (rfl)
 
 /-- The generators of carried local generators are the original generators on the target of the
 indexing morphism, mapped along the pushforward of modules on the slices. -/
 @[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.pushforward_generators
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+theorem LocalGeneratorsData.pushforward_generators
+    (η : (SheafOfModules.pushforward φ).obj (unit R) ≅ unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
     (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
       PreservesColimitsOfSize.{u, u} <|
-      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+      SheafOfModules.pushforward.{u} (R := (R.over Y))
         (F := Over.post (X := X) G ⋙ Over.map f)
         (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
-    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M)
+    {M : SheafOfModules.{u} R} (P : LocalGeneratorsData M)
     (i : (P.pushforward G φ η h).I) :
     (P.pushforward G φ η h).generators i =
-      cast (by rw [_root_.SheafOfModules.LocalGeneratorsData.pushforward_X]; rfl)
-        (letI j := (_root_.SheafOfModules.LocalGeneratorsData.pushforward_I G φ η h P).mp i
+      cast (by rw [LocalGeneratorsData.pushforward_X]; rfl)
+        (letI j := (LocalGeneratorsData.pushforward_I G φ η h P).mp i
         letI overS : SheafOfModules.{u} S ⥤ SheafOfModules.{u} (S.over j.1) :=
-          _root_.SheafOfModules.pushforward (𝟙 _)
+          SheafOfModules.pushforward (𝟙 _)
         letI ψ : S.over j.1 ⟶
             ((Over.post (X := j.1) G ⋙ Over.map j.2.2).sheafPushforwardContinuous RingCat.{u}
               (K.over j.1) (J.over (P.X j.2.1))).obj (R.over (P.X j.2.1)) :=
           ((Over.forget j.1).sheafPushforwardContinuous RingCat.{u} (K.over j.1) K).map φ
-        haveI : PreservesColimitsOfSize.{u, u, _} (_root_.SheafOfModules.pushforward ψ) :=
-          h _ _ _
-        (P.generators j.2.1).map (_root_.SheafOfModules.pushforward ψ) (overS.mapIso η).symm) :=
+        haveI : PreservesColimitsOfSize.{u, u, _} (SheafOfModules.pushforward ψ) := h _ _ _
+        (P.generators j.2.1).map (SheafOfModules.pushforward ψ) (overS.mapIso η).symm) :=
   (rfl)
 
 /-- Carrying local generators along a continuous and cocontinuous functor preserves finiteness. -/
-instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_pushforward
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+instance LocalGeneratorsData.isFiniteType_pushforward
+    (η : (SheafOfModules.pushforward φ).obj (unit R) ≅ unit S)
     [∀ (X : D), (Over.post G).IsContinuous (K.over X) (J.over _)]
     (h : ∀ (X : D) (Y : C) (f : G.obj X ⟶ Y),
       PreservesColimitsOfSize.{u, u} <|
-      _root_.SheafOfModules.pushforward.{u} (R := (R.over Y))
+      SheafOfModules.pushforward.{u} (R := (R.over Y))
         (F := Over.post (X := X) G ⋙ Over.map f)
         (((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ))
-    {M : SheafOfModules.{u} R} (P : _root_.SheafOfModules.LocalGeneratorsData M)
+    {M : SheafOfModules.{u} R} (P : LocalGeneratorsData M)
     [P.IsFiniteType] : (P.pushforward G φ η h).IsFiniteType where
   isFiniteType i :=
-    let _ := _root_.SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := P) i.2.1
-    ⟨_root_.SheafOfModules.GeneratingSections.IsFiniteType.finite (σ := P.generators i.2.1)⟩
+    let _ := LocalGeneratorsData.IsFiniteType.isFiniteType (p := P) i.2.1
+    ⟨GeneratingSections.IsFiniteType.finite (σ := P.generators i.2.1)⟩
 
 /-- The pushforward of a module of finite type along a left adjoint continuous functor, with an
 isomorphism of structure sheaves, is of finite type. -/
-theorem _root_.SheafOfModules.isFiniteType_pushforward_of_isLeftAdjoint
-    (η : (_root_.SheafOfModules.pushforward φ).obj (_root_.SheafOfModules.unit R) ≅
-      _root_.SheafOfModules.unit S)
+theorem isFiniteType_pushforward_of_isLeftAdjoint
+    (η : (pushforward φ).obj (unit R) ≅ unit S)
     [G.IsLeftAdjoint] [hφ : IsIso φ]
     [hG : ∀ X, Functor.IsContinuous (Over.post (X := X) G) (K.over _) (J.over _)]
     [HasPullbacks C] [HasPullbacks D]
     {M : SheafOfModules.{u} R} [hM : M.IsFiniteType] :
-    ((_root_.SheafOfModules.pushforward φ).obj M).IsFiniteType := by
-  obtain ⟨P, _⟩ := _root_.SheafOfModules.IsFiniteType.exists_localGeneratorsData M
+    ((pushforward φ).obj M).IsFiniteType := by
+  obtain ⟨P, _⟩ := IsFiniteType.exists_localGeneratorsData M
   refine (P.pushforward G φ η fun X Y f ↦ ?_).isFiniteType
   let G' := Over.post (X := X) G ⋙ Over.map f
   have : G'.IsContinuous (K.over X) (J.over Y) := Functor.isContinuous_comp _ _ _ (J.over _) _
@@ -221,12 +210,9 @@ theorem _root_.SheafOfModules.isFiniteType_pushforward_of_isLeftAdjoint
       (G'.sheafPushforwardContinuous RingCat.{u} (K.over X) (J.over Y)).obj (R.over Y) :=
     ((Over.forget X).sheafPushforwardContinuous RingCat.{u} (K.over X) K).map φ
   have : IsIso a := Functor.map_isIso _ φ
-  have : (_root_.SheafOfModules.pushforward.{u} a).IsLeftAdjoint :=
-    _root_.SheafOfModules.isLeftAdjoint_pushforward_of_isIso a
+  have : (pushforward.{u} a).IsLeftAdjoint := isLeftAdjoint_pushforward_of_isIso a
   infer_instance
 
 end map
 
 end SheafOfModules
-
-end TauCeti
