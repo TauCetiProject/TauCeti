@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
+import Mathlib.Analysis.Normed.Group.Tannery
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
@@ -29,7 +31,11 @@ forms:
   `℘(x; ℤ z + ℤ) = ∑_m (P(x - m z) - P(m z))` with `P(w) = ∑_n (w + n)⁻²`
   (`TauCeti.UpperHalfPlane.rowSum`), and `P(w)` decays like `e^(-2π |Im w|)` as `|Im w| → ∞`
   (`TauCeti.UpperHalfPlane.norm_rowSum_le`,
-  `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`).
+  `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`);
+* in exponential form, `P(w) = (2π i)² e / (1 - e)²` and
+  `∑_n (w + n)⁻³ = -(2π i)³ e (1 + e) / (2 (1 - e)³)` with `e = e^(2π i w)`, for every `w ∉ ℤ`;
+  similarly `℘'(x; ℤ z + ℤ) = ∑_m -2 ∑_n (x - m z + n)⁻³`. Summed along the rows, these
+  exponential forms are the series of the Tate coordinates.
 
 These are the inputs that make the values of `℘` at the `N`-division points of `ℤ z + ℤ` weight-two
 modular forms of level `Γ(N)`.
@@ -69,7 +75,11 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   `UpperHalfPlane.quasiPeriod_periodPair_smul`: the modular transformation laws of `ζ` and of its
   quasi-periods.
 * `UpperHalfPlane.hasSum_weierstrassP_periodPair_rows`,
+  `UpperHalfPlane.hasSum_derivWeierstrassP_periodPair_rows`,
   `UpperHalfPlane.hasSum_weierstrassZeta_periodPair_rows`: the sums along rows.
+* `TauCeti.UpperHalfPlane.rowSum_eq_cexp`,
+  `TauCeti.UpperHalfPlane.tsum_one_div_add_intCast_pow_three_eq_cexp`: the rows `∑_n (w + n)⁻²`
+  and `∑_n (w + n)⁻³` as rational functions of `e^(2π i w)`, for every `w ∉ ℤ`.
 * `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
   the exponential decay of the rows.
 * `TauCeti.UpperHalfPlane.tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty`,
@@ -370,6 +380,113 @@ lemma rowSum_zero : rowSum 0 = 2 * riemannZeta 2 := by
   exact tsum_congr fun n ↦ by simp
 
 open Filter Topology in
+/-- The row series `∑_n (w + n)^(-k)` is continuous along vertical approach to a real point `w`
+off the integers: the terms `(w + i ε + n)^(-k)` are dominated by `|w + n|^(-k)`. -/
+private theorem tendsto_tsum_one_div_add_intCast_pow {w : ℂ} (hw₀ : w.im = 0)
+    (hw : w ∈ integerComplement) {k : ℕ} (hk : 2 ≤ k) :
+    Tendsto (fun ε : ℝ ↦ ∑' n : ℤ, 1 / (w + ε * Complex.I + n) ^ k) (𝓝 0)
+      (𝓝 (∑' n : ℤ, 1 / (w + n) ^ k)) := by
+  have hsum : Summable fun n : ℤ ↦ ‖1 / (w + n) ^ k‖ := by
+    refine summable_norm_iff.mpr ?_
+    simpa [one_div] using
+      EisensteinSeries.linear_right_summable w 1 (k := k) (by exact_mod_cast hk)
+  refine tendsto_tsum_of_dominated_convergence hsum (fun n ↦ ?_)
+    (Eventually.of_forall fun ε n ↦ ?_)
+  · have hne : w + n ≠ 0 := integerComplement_add_ne_zero hw n
+    have : Tendsto (fun ε : ℝ ↦ w + ε * Complex.I + n) (𝓝 0) (𝓝 (w + n)) := by
+      have hc : Continuous fun ε : ℝ ↦ w + ε * Complex.I + n := by fun_prop
+      simpa using hc.tendsto 0
+    simpa using (this.pow k).inv₀ (pow_ne_zero k hne)
+  · have hre : ‖w + n‖ ≤ ‖w + ε * Complex.I + n‖ := by
+      have h₁ : ‖w + n‖ = |(w + ε * Complex.I + n).re| := by
+        rw [show w + n = ((w.re + n : ℝ) : ℂ) from Complex.ext (by simp) (by simp [hw₀]),
+          Complex.norm_real, Real.norm_eq_abs]
+        simp
+      exact h₁ ▸ abs_re_le_norm _
+    have hpos : 0 < ‖w + n‖ := norm_pos_iff.mpr (integerComplement_add_ne_zero hw n)
+    simp only [one_div, norm_inv, norm_pow]
+    gcongr
+
+open Filter Topology in
+/-- A closed form `g(e^(2π i w))` for the row series `∑_n (w + n)^(-k)`, proved in the upper
+half-plane, extends to every `w ∉ ℤ` when `g(e⁻¹) = (-1)ᵏ g(e)` and `g` is continuous away
+from `1`: the lower half-plane follows by `w ↦ -w`, and the real axis by approaching it
+vertically. -/
+private theorem tsum_one_div_add_intCast_pow_eq {k : ℕ} (hk : 2 ≤ k) {g : ℂ → ℂ}
+    (hg : ∀ w : ℂ, 0 < w.im → ∑' n : ℤ, 1 / (w + n) ^ k = g (cexp (2 * π * Complex.I * w)))
+    (hinv : ∀ e : ℂ, e ≠ 0 → e ≠ 1 → g e⁻¹ = (-1) ^ k * g e)
+    (hcont : ∀ e : ℂ, e ≠ 1 → ContinuousAt g e) {w : ℂ} (hw : w ∈ integerComplement) :
+    ∑' n : ℤ, 1 / (w + n) ^ k = g (cexp (2 * π * Complex.I * w)) := by
+  have he : cexp (2 * π * Complex.I * w) ≠ 1 := by
+    rw [Ne, Complex.exp_eq_one_iff]
+    rintro ⟨n, hn⟩
+    rw [mul_comm] at hn
+    exact hw ⟨n, (mul_right_cancel₀ two_pi_I_ne_zero hn).symm⟩
+  rcases lt_trichotomy w.im 0 with h | h | h
+  · have hneg : ∑' n : ℤ, 1 / (w + n) ^ k = (-1) ^ k * ∑' n : ℤ, 1 / (-w + n) ^ k := by
+      rw [← tsum_mul_left, ← (Equiv.neg ℤ).tsum_eq]
+      refine tsum_congr fun n ↦ ?_
+      have h₁ : ((-1 : ℂ) ^ k)⁻¹ = (-1) ^ k := by rw [← inv_pow, inv_neg, inv_one]
+      simp only [Equiv.neg_apply, Int.cast_neg]
+      rw [show w + -(n : ℂ) = (-1) * (-w + n) by ring, mul_pow, one_div, mul_inv, h₁, one_div]
+    rw [hneg, hg (-w) (by simpa using h),
+      show 2 * π * Complex.I * -w = -(2 * π * Complex.I * w) by ring, Complex.exp_neg,
+      hinv _ (Complex.exp_ne_zero _) he, ← mul_assoc, ← mul_pow]
+    norm_num
+  · have hlim := (tendsto_tsum_one_div_add_intCast_pow h hw hk).mono_left
+      (nhdsWithin_le_nhds (s := Set.Ioi 0))
+    have hcexp : Tendsto (fun ε : ℝ ↦ cexp (2 * π * Complex.I * (w + ε * Complex.I))) (𝓝[>] 0)
+        (𝓝 (cexp (2 * π * Complex.I * w))) := by
+      refine Tendsto.mono_left ?_ nhdsWithin_le_nhds
+      have : Continuous fun ε : ℝ ↦ cexp (2 * π * Complex.I * (w + ε * Complex.I)) := by
+        fun_prop
+      simpa using this.tendsto 0
+    refine tendsto_nhds_unique hlim (((hcont _ he).tendsto.comp hcexp).congr' ?_)
+    filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+    simp only [Function.comp_apply]
+    rw [← hg (w + ε * Complex.I) (by simpa [h] using hε)]
+  · exact hg w h
+
+/-- **The rows in exponential form**: for `w ∉ ℤ` and `e = e^(2π i w)`,
+`∑_n (w + n)⁻² = (2π i)² e / (1 - e)²`, which is `π² / sin² (π w)`. -/
+theorem rowSum_eq_cexp {w : ℂ} (hw : w ∈ integerComplement) :
+    rowSum w = (2 * π * Complex.I) ^ 2 *
+      (cexp (2 * π * Complex.I * w) / (1 - cexp (2 * π * Complex.I * w)) ^ 2) := by
+  rw [rowSum_def]
+  refine tsum_one_div_add_intCast_pow_eq le_rfl
+    (g := fun e ↦ (2 * π * Complex.I) ^ 2 * (e / (1 - e) ^ 2)) (fun w hw ↦ ?_) (fun e _ _ ↦ ?_)
+    (fun e he ↦ ?_) hw
+  · have h := EisensteinSeries.qExpansion_identity (k := 1) le_rfl ⟨w, hw⟩
+    simp only [Nat.reduceAdd, pow_one, Nat.factorial_one, Nat.cast_one, div_one] at h
+    rw [h, tsum_coe_mul_geometric_of_norm_lt_one
+      (UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨w, hw⟩)]
+    ring
+  · rw [inv_div_one_sub_inv_sq]
+    ring
+  · have : (1 - e) ^ 2 ≠ 0 := pow_ne_zero 2 (sub_ne_zero.mpr (Ne.symm he))
+    fun_prop (disch := exact this)
+
+/-- **The cubic rows in exponential form**: for `w ∉ ℤ` and `e = e^(2π i w)`,
+`∑_n (w + n)⁻³ = -(2π i)³ e (1 + e) / (2 (1 - e)³)`. -/
+theorem tsum_one_div_add_intCast_pow_three_eq_cexp {w : ℂ} (hw : w ∈ integerComplement) :
+    ∑' n : ℤ, 1 / (w + n) ^ 3 = -(2 * π * Complex.I) ^ 3 / 2 *
+      (cexp (2 * π * Complex.I * w) * (1 + cexp (2 * π * Complex.I * w)) /
+        (1 - cexp (2 * π * Complex.I * w)) ^ 3) := by
+  refine tsum_one_div_add_intCast_pow_eq (k := 3) (by norm_num)
+    (g := fun e ↦ -(2 * π * Complex.I) ^ 3 / 2 * (e * (1 + e) / (1 - e) ^ 3)) (fun w hw ↦ ?_)
+    (fun e he₀ he₁ ↦ ?_) (fun e he ↦ ?_) hw
+  · have h := EisensteinSeries.qExpansion_identity (k := 2) one_le_two ⟨w, hw⟩
+    simp only [Nat.reduceAdd, Nat.factorial_two, Nat.cast_ofNat] at h
+    rw [h, tsum_sq_mul_geometric_of_norm_lt_one
+      (UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨w, hw⟩)]
+    ring
+  · have h₁ : 1 - e ≠ 0 := sub_ne_zero.mpr (Ne.symm he₁)
+    field_simp
+    ring
+  · have : (1 - e) ^ 3 ≠ 0 := pow_ne_zero 3 (sub_ne_zero.mpr (Ne.symm he))
+    fun_prop (disch := exact this)
+
+open Filter Topology in
 /-- **The rows vanish at `i∞`**: if the imaginary part of `w(z)` grows at least like `c Im z` for
 some `c > 0`, then `P(w(z)) → 0` as `Im z → ∞`. -/
 theorem tendsto_rowSum_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
@@ -441,6 +558,24 @@ theorem hasSum_weierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
     convert hasSum_rowSum (-(x - m * z)) using 2 with n
     ring
   simpa [Function.comp_def] using h₁.sub (hasSum_rowSum ((m : ℂ) * z))
+
+/-- **The derivative of the Weierstrass function of `ℤ z + ℤ` summed along rows**:
+`℘'(x; ℤ z + ℤ) = ∑_m -2 ∑_n (x - m z + n)⁻³`. -/
+theorem hasSum_derivWeierstrassP_periodPair_rows (z : ℍ) (x : ℂ) :
+    HasSum (fun m : ℤ ↦ -2 * ∑' n : ℤ, 1 / (x - m * z + n) ^ 3) (℘'[z.periodPair] x) := by
+  have h := hasSum_derivWeierstrassP_periodPair z x
+  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at h
+  refine h.prod_fiberwise fun m ↦ ?_
+  have hs : Summable fun n : ℤ ↦ 1 / (x - m * z + n) ^ 3 := by
+    simpa [one_div] using
+      EisensteinSeries.linear_right_summable (x - m * z) 1 (k := 3) (by norm_num)
+  have h₁ := hs.hasSum.mul_left (-2)
+  rw [← (Equiv.neg ℤ).hasSum_iff] at h₁
+  convert h₁ using 1
+  ext n
+  simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Equiv.neg_apply, Int.cast_neg]
+  ring
 
 /-- **The Weierstrass `ζ` function of `ℤ z + ℤ` summed along rows**: for `x ∉ ℤ z + ℤ`,
 `ζ(x; ℤ z + ℤ) = ∑_m (π cot (π (x - m z)) + π cot (π m z) + x ∑_n (m z + n)⁻²)`. Each row of the

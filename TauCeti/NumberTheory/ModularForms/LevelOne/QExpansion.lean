@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
@@ -38,6 +39,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 * `TauCeti.ModularForm.qExpansion_E₄_eq`, `TauCeti.ModularForm.qExpansion_E₆_eq`: the
   `q`-expansions `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` and `E₆ = 1 - 504 ∑ σ₅(n) qⁿ`, as images of integral
   power series.
+* `TauCeti.ModularForm.E_apply_eq_divisorSumAt`, `TauCeti.ModularForm.E₄_apply_eq_divisorSumAt`,
+  `TauCeti.ModularForm.E₆_apply_eq_divisorSumAt`: the values `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`,
+  `E₄(z) = 1 + 240 s₃(q)` and `E₆(z) = 1 - 504 s₅(q)` at `q = e^(2π i z)`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
 * `TauCeti.ModularForm.E₄_qExpansion_coeff_of_ne_zero`,
@@ -99,6 +103,30 @@ theorem qExpansion_E₆_eq :
   · simp
   · simp [hm, bernoulli_six]
     norm_num
+
+open scoped Real in
+/-- The value of the normalised Eisenstein series of even weight `k ≥ 4` at `z`, as the sum of its
+`q`-expansion at `q = e^(2π i z)`: `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`. -/
+theorem E_apply_eq_divisorSumAt {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (z : ℍ) :
+    E hk z = 1 - 2 * k / bernoulli k *
+      TauCeti.divisorSumAt (k - 1) (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [q_expansion_bernoulli hk hk2 z, TauCeti.divisorSumAt_def,
+    ← tsum_pnat_eq_tsum_of_eq_zero (by simp)]
+  simp
+
+open scoped Real in
+/-- The value `E₄(z) = 1 + 240 s₃(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₄_apply_eq_divisorSumAt (z : ℍ) :
+    E₄ z = 1 + 240 * TauCeti.divisorSumAt 3 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₄, E_apply_eq_divisorSumAt _ ⟨2, rfl⟩, bernoulli_four]
+  norm_num
+
+open scoped Real in
+/-- The value `E₆(z) = 1 - 504 s₅(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₆_apply_eq_divisorSumAt (z : ℍ) :
+    E₆ z = 1 - 504 * TauCeti.divisorSumAt 5 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₆, E_apply_eq_divisorSumAt _ ⟨3, rfl⟩, bernoulli_six]
+  norm_num
 
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
