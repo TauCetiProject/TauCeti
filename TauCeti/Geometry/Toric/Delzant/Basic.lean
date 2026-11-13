@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.FiniteType
 
 /-!
@@ -69,6 +70,8 @@ freedom of shifting a moment map by a constant.
 
 * `TauCeti.Toric.IsDelzant.isCompact`: a Delzant polytope is compact.
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
+* `TauCeti.Toric.mem_extremePoints_facetPolyhedron_iff_span_eq_top`: in finite dimension, the
+  vertices are the points of the polyhedron at which the active normals span `V`.
 * `TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`: the constraints active at a point of
   a compact facet polyhedron are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
@@ -77,6 +80,8 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
   generate the lattice and number at most `rank N`.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
+* `TauCeti.Toric.IsDelzant.facetPairing_ne_zero`: for an injective lattice map, the facet
+  pairings of a Delzant polytope are nonzero.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
@@ -139,10 +144,22 @@ structure IsDelzant : Prop where
 
 variable {i u c}
 
+theorem facetPolyhedron_def : facetPolyhedron i u c = polyhedron (facetPairing i u) c :=
+  (rfl)
+
 @[simp]
 theorem mem_facetPolyhedron {x : StrongDual ℝ V} :
     x ∈ facetPolyhedron i u c ↔ ∀ j, c j ≤ x (i (u j)) := by
   simp [facetPolyhedron]
+
+/-- The pairing with the `j`-th facet normal vanishes exactly when that normal maps to zero in
+`V`. -/
+@[simp]
+theorem facetPairing_eq_zero_iff {j : ι} : facetPairing i u j = 0 ↔ i (u j) = 0 := by
+  refine ⟨fun h ↦ SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun x ↦ ?_, fun h ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h x
+  · ext x
+    simp [h]
 
 theorem isSmoothVertex_def {x : StrongDual ℝ V} :
     IsSmoothVertex i u c x ↔
@@ -182,6 +199,26 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
       ∀ w : StrongDual ℝ V, (∀ j ∈ activeSet (facetPairing i u) c x, w (i (u j)) = 0) → w = 0 := by
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
+
+/-- **Vertices of a facet polyhedron, by spanning.** In finite dimension, a point `x` of the
+polyhedron is a vertex exactly when the normals active at `x` span `V`. -/
+theorem mem_extremePoints_facetPolyhedron_iff_span_eq_top [Finite ι] [FiniteDimensional ℝ V]
+    {x : StrongDual ℝ V} :
+    x ∈ (facetPolyhedron i u c).extremePoints ℝ ↔ x ∈ facetPolyhedron i u c ∧
+      Submodule.span ℝ ((fun j ↦ i (u j)) '' activeSet (facetPairing i u) c x) = ⊤ := by
+  rw [mem_extremePoints_facetPolyhedron_iff]
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h w hw ↦ ?_⟩
+  · -- A proper subspace is annihilated by a nonzero functional, which is continuous.
+    by_contra hne
+    obtain ⟨f, hf, hfW⟩ :=
+      Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
+    exact hf (LinearMap.toContinuousLinearMap.map_eq_zero_iff.1 (h _ fun j hj ↦
+      LinearMap.le_ker_iff_map.2 hfW (Submodule.subset_span ⟨j, hj, rfl⟩)))
+  · have hle : Submodule.span ℝ ((fun j ↦ i (u j)) '' activeSet (facetPairing i u) c x) ≤
+        LinearMap.ker (w : V →ₗ[ℝ] ℝ) :=
+      Submodule.span_le.2 (by rintro _ ⟨j, hj, rfl⟩; exact hw j hj)
+    rw [h, top_le_iff, LinearMap.ker_eq_top] at hle
+    exact ContinuousLinearMap.coe_injective hle
 
 /-- At a vertex `x`, the active constraints do not all lie in a set `s` of constraints whose
 normals are killed by a nonzero `w ∈ V*`. -/
@@ -263,6 +300,10 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
+
+/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
+theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
+  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
 
 /-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
 Delzant polytope lies on none of its facets. -/

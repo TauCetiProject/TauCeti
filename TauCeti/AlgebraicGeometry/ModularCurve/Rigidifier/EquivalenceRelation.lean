@@ -156,7 +156,7 @@ theorem doubleComp_comp_baseChangeFunctorHom {X : EllObj B}
       f ≫ V.baseChangeFunctorHom (D.rep V) :=
   R.homEquiv.injective (by
     rw [homEquiv_comp_baseChangeFunctorHom, homEquiv_comp_baseChangeFunctorHom,
-      doubleRepresentableBy_homEquiv_doubleComp, whiskerLeft_app_apply]
+      doubleRepresentableBy_homEquiv_doubleComp, Functor.Monoidal.whiskerLeft_app_apply]
     -- whiskering keeps the `𝒫`-structure and projects the pair of `δ`-structures; the left side
     -- applies it to a literal tuple, which `rw` cannot match, so it is computed componentwise
     exact Prod.ext (Functor.Monoidal.whiskerLeft_app_apply_fst _ _)
@@ -174,7 +174,7 @@ theorem doubleComp_comp_doubleSnd {X : EllObj B} {f g : X ⟶ V.baseChangeFuncto
   rw [homEquiv_comp_doubleSnd, homEquiv_comp_baseChangeFunctorHom,
     Functor.Monoidal.whiskerLeft_app_apply_fst, Functor.Monoidal.whiskerLeft_app_apply_fst] at hp
   rw [homEquiv_comp_doubleSnd, homEquiv_comp_doubleSnd, doubleRepresentableBy_homEquiv_doubleComp,
-    whiskerLeft_app_apply]
+    Functor.Monoidal.whiskerLeft_app_apply]
   -- whiskering keeps the `𝒫`-structure, where `hp` applies, and projects the pair of
   -- `δ`-structures, where both sides are the last `δ`-structure of `g`; as above, the left side
   -- is computed componentwise

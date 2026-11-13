@@ -47,8 +47,8 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   (`V^(f) ≤ A ↔ U^(f) ≤ A ∧ -1 ∈ A`), `TauCeti.index_unitsPlusMinus`
   (`[ℤ_2ˣ : V^(f)] = 2 ^ (f - 2)`), `TauCeti.unitsPlusMinus_inf_unitsPrincipal_two`
   (`V^(f) ⊓ U^(2) = U^(f)`) and `TauCeti.unitsPlusMinus_inj`.
-* `TauCeti.unitsPlusMinus_two`, `TauCeti.disjoint_unitsPrincipal_zpowers_neg_one`: the
-  decomposition `ℤ_2ˣ = {±1} × U^(2)`.
+* `TauCeti.unitsPlusMinus_two`, `TauCeti.unitsPlusMinus_max_two`,
+  `TauCeti.disjoint_unitsPrincipal_zpowers_neg_one`: the decomposition `ℤ_2ˣ = {±1} × U^(2)`.
 * `TauCeti.closedSubgroup_units_two_classification`: every nontrivial closed subgroup of `ℤ_2ˣ`
   is a `U^(f)`, a `V^(f)`, `{±1}`, or a twisted subgroup `U^[f]` with its model generator
   `-1 + 2 ^ f`; the lemmas `TauCeti.unitsPrincipal_ne_unitsPlusMinus` and their companions
@@ -107,7 +107,7 @@ theorem mem_unitsPlusMinus_iff {f : ℕ} {u : ℤ_[2]ˣ} :
   constructor
   · intro h
     obtain ⟨y, hy, z, hz, rfl⟩ := Subgroup.mem_sup.mp h
-    rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hz with rfl | rfl
+    rcases Subgroup.mem_zpowers_neg_one_iff.mp hz with rfl | rfl
     · exact Or.inl (by rwa [mul_one])
     · exact Or.inr (by rwa [mul_neg_one, neg_neg])
   · rintro (h | h)
@@ -155,21 +155,21 @@ theorem unitsPlusMinus_two : unitsPlusMinus 2 = ⊤ :=
     rw [neg_mem_unitsPrincipal_two_two_iff]
     exact em _
 
+/-- Below level `2` the group `V^(f)` is all of `ℤ_2ˣ`, so `V^(max f 2) = V^(f)`. -/
+@[simp]
+theorem unitsPlusMinus_max_two (f : ℕ) : unitsPlusMinus (max f 2) = unitsPlusMinus f := by
+  rcases le_or_gt 2 f with hf | hf
+  · rw [max_eq_left hf]
+  · rw [max_eq_right hf.le, unitsPlusMinus_two]
+    exact (eq_top_iff.2 (unitsPlusMinus_two.ge.trans (unitsPlusMinus_antitone hf.le))).symm
+
 /-- `{±1} ⊓ U^(f) = 1` for `f ≥ 2`: the two factors of `ℤ_2ˣ = {±1} × U^(2)` meet trivially. -/
 theorem disjoint_unitsPrincipal_zpowers_neg_one {f : ℕ} (hf : 2 ≤ f) :
     Disjoint (unitsPrincipal 2 f) (Subgroup.zpowers (-1 : ℤ_[2]ˣ)) := by
   refine Subgroup.disjoint_def.mpr fun hx hx' ↦ ?_
-  rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx' with rfl | rfl
+  rcases Subgroup.mem_zpowers_neg_one_iff.mp hx' with rfl | rfl
   · rfl
   · exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp hx) (by omega)
-
-/-- `{±1}` is closed in `ℤ_2ˣ`, being the finite set `{1, -1}`. -/
-theorem isClosed_zpowers_neg_one :
-    IsClosed ((Subgroup.zpowers (-1 : ℤ_[2]ˣ)) : Set ℤ_[2]ˣ) := by
-  apply Set.Finite.isClosed
-  refine ((Set.finite_singleton (-1 : ℤ_[2]ˣ)).insert 1).subset fun x hx ↦ ?_
-  simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
-    (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx
 
 /-! ### Indices and levels of `V^(f)` -/
 
@@ -247,16 +247,16 @@ theorem unitsPrincipal_ne_topologicalClosure_zpowers {f : ℕ} (hf : 2 ≤ f) {u
     unitsPrincipal_antitone 2 hf <| h ▸ Subgroup.le_topologicalClosure _ (Subgroup.mem_zpowers u)
 
 /-- `V^(f) ≠ U^[g]`: `-1 ∈ V^(f)` but `-1 ∉ U^[g]`. -/
-theorem unitsPlusMinus_ne_topologicalClosure_zpowers (f : ℕ) {g : ℕ} (hg : 2 ≤ g) {u : ℤ_[2]ˣ}
+theorem unitsPlusMinus_ne_topologicalClosure_zpowers (f : ℕ) {g : ℕ} {u : ℤ_[2]ˣ}
     (hu : -u ∈ unitsPrincipal 2 g) (hu' : -u ∉ unitsPrincipal 2 (g + 1)) :
     unitsPlusMinus f ≠ (Subgroup.zpowers u).topologicalClosure := fun h ↦
-  neg_one_notMem_topologicalClosure_zpowers_two hg hu hu' (h ▸ neg_one_mem_unitsPlusMinus f)
+  neg_one_notMem_topologicalClosure_zpowers_two hu hu' (h ▸ neg_one_mem_unitsPlusMinus f)
 
 /-- `{±1} ≠ U^[g]`: `-1 ∉ U^[g]`. -/
-theorem zpowers_neg_one_ne_topologicalClosure_zpowers {g : ℕ} (hg : 2 ≤ g) {u : ℤ_[2]ˣ}
+theorem zpowers_neg_one_ne_topologicalClosure_zpowers {g : ℕ} {u : ℤ_[2]ˣ}
     (hu : -u ∈ unitsPrincipal 2 g) (hu' : -u ∉ unitsPrincipal 2 (g + 1)) :
     Subgroup.zpowers (-1 : ℤ_[2]ˣ) ≠ (Subgroup.zpowers u).topologicalClosure := fun h ↦
-  neg_one_notMem_topologicalClosure_zpowers_two hg hu hu' (h ▸ Subgroup.mem_zpowers _)
+  neg_one_notMem_topologicalClosure_zpowers_two hu hu' (h ▸ Subgroup.mem_zpowers _)
 
 /-! ### The classification -/
 
@@ -392,9 +392,10 @@ theorem exists_topologicalClosure_zpowers_eq_of_isClosed_of_neg_one_notMem {A : 
   · exact (h1 (Subgroup.mem_zpowers _)).elim
   · exact ⟨u, rfl⟩
 
-/-- `V^(f)` is **not procyclic** for `f ≥ 2`: `[V^(f) : U^(f+1)] = 4`, while a closed subgroup
+/-- `V^(f)` is not procyclic for `f ≥ 2`: `[V^(f) : U^(f+1)] = 4`, while a closed subgroup
 `closure ⟨u⟩` with `u² ∈ U^(f+1)` is contained in `U^(f+1) ∪ u U^(f+1)`. -/
-theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
+private theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus_of_two_le {f : ℕ}
+    (hf : 2 ≤ f) :
     ¬ ∃ u : ℤ_[2]ˣ, (Subgroup.zpowers u).topologicalClosure = unitsPlusMinus f := by
   rintro ⟨u, hu⟩
   have hu' : u ∈ unitsPlusMinus f :=
@@ -408,6 +409,15 @@ theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} (hf : 
       (sq_mem_unitsPrincipal_succ_of_mem_unitsPlusMinus hu') hb).symm
   rw [relIndex_unitsPrincipal_succ_unitsPlusMinus hf] at h2
   norm_num at h2
+
+/-- `V^(f)` is **not procyclic**, for every level `f`: for `f ≥ 2`, `[V^(f) : U^(f+1)] = 4`, while
+a closed subgroup `closure ⟨u⟩` with `u² ∈ U^(f+1)` is contained in `U^(f+1) ∪ u U^(f+1)`; for
+`f ≤ 2` the group `V^(f)` is all of `ℤ_2ˣ`, which is `V^(2)`. -/
+theorem not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus {f : ℕ} :
+    ¬ ∃ u : ℤ_[2]ˣ, (Subgroup.zpowers u).topologicalClosure = unitsPlusMinus f := by
+  rintro ⟨u, hu⟩
+  exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus_of_two_le (le_max_right f 2)
+    ⟨u, hu.trans (unitsPlusMinus_max_two f).symm⟩
 
 open Subgroup in
 /-- **The level of the second marked value.** Let `f ≥ 2` and let `a`, `b` be units of `ℤ₂` such
@@ -449,7 +459,7 @@ theorem eq_of_topologicalClosure_zpowers_sup_zpowers_eq_unitsPlusMinus {f g : �
       exact topologicalClosure_minimal _ (sup_le (le_topologicalClosure _) (zpowers_le.2
         (unitsPrincipal_succ_le_topologicalClosure_zpowers_two hf hnegf hneg' h3f)))
         (isClosed_topologicalClosure _)
-    exact neg_one_notMem_topologicalClosure_zpowers_two hf hnegf hneg'
+    exact neg_one_notMem_topologicalClosure_zpowers_two hnegf hneg'
       (hle (neg_one_mem_unitsPlusMinus f))
 
 /-! ### The subgroup of squares and the index `(A : A²)` -/
@@ -485,7 +495,7 @@ theorem relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus {A : Su
   · exact Or.inl (Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one
       PadicInt.units_neg_one_ne_one)
   · exact Or.inl (relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two hf
-      (neg_mem_unitsPrincipal_two_of_val_eq hu) (neg_notMem_unitsPrincipal_two_succ_of_val_eq hu))
+      (neg_mem_unitsPrincipal_two_of_val_eq hu))
 
 /-- `(A : A²) = 4` exactly for the subgroups `A = V^(f)`, `f ≥ 2`, among the closed subgroups of
 `ℤ_2ˣ`. -/

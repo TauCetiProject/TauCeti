@@ -459,7 +459,7 @@ private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} 
     rintro rfl
     have h3 : χ (freeProPGen 2 n 3) = 1 := by simpa using h₃
     rw [h3, zpowers_one_eq_bot, sup_bot_eq] at hV
-    exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus hf ⟨_, hV⟩
+    exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨_, hV⟩
   obtain ⟨g, hg, rfl⟩ : ∃ g, 2 ≤ g ∧ q = 2 ^ g := hq.resolve_left hq0
   have h₃g : (χ (freeProPGen 2 n 3) : ℤ_[2]) * (1 - ((2 : ℕ) : ℤ_[2]) ^ g) = 1 := by
     push_cast at h₃ ⊢
@@ -470,7 +470,7 @@ private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} 
   refine ⟨rfl, ?_⟩
   -- `χ(x₄)` topologically generates `U^(f)`, so `(-χ(x₂))⁻¹ ∈ U^(f)` is a `2`-adic power of it.
   have hgen : (zpowers (χ (freeProPGen 2 n 3))).topologicalClosure = unitsPrincipal 2 g :=
-    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one (by omega)
+    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one
       (fun _ ↦ hg) h₃g
   rw [← isProP_units_padicInt_two.mem_topologicalClosure_closure_singleton_iff,
     ← zpowers_eq_closure, hgen]

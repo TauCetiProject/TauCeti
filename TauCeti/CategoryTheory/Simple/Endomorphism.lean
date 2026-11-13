@@ -17,10 +17,11 @@ simple exactly when its endomorphism ring is nontrivial and every nonzero endomo
 unit. This criterion retains division endomorphism rings larger than the coefficient field,
 as occur for representations over nonsplitting fields.
 
-The nontriviality condition excludes zero objects. Splitting is essential for the converse:
-an arbitrary object with a division endomorphism ring need not be simple.
+The sufficiency (`CategoryTheory.simple_of_nontrivial_end_of_isUnit`) needs no kernels, nor do
+its consequences below. The nontriviality condition excludes zero objects. Splitting is essential
+for the converse: an arbitrary object with a division endomorphism ring need not be simple.
 `CategoryTheory.simple_of_ringEquiv_end` transports this criterion along a ring isomorphism
-from a division ring. In a `k`-linear category with kernels in which every object is injective,
+from a division ring. In a `k`-linear category in which every object is injective,
 a one-dimensional endomorphism space suffices for simplicity over any field `k`
 (`CategoryTheory.simple_of_finrank_end_eq_one`); algebraic closure is not needed.
 
@@ -50,43 +51,48 @@ namespace CategoryTheory
 
 open Limits
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasKernels C]
+variable {C : Type*} [Category* C] [Preadditive C]
+
+/-- If every object is injective, an object whose endomorphism ring is nontrivial and in which
+every nonzero element is a unit is simple. -/
+theorem simple_of_nontrivial_end_of_isUnit [∀ Y : C, Injective Y] (X : C)
+    [Nontrivial (End X)] (hunit : ∀ f : End X, f ≠ 0 → IsUnit f) : Simple X := by
+  refine ⟨fun {Y} f _ => ⟨fun hi hf => ?_, fun hf => ?_⟩⟩
+  · have hzero : (1 : End X) = 0 := by
+      apply End.ext
+      simpa using congrArg (fun g : Y ⟶ X => inv f ≫ g) hf
+    exact one_ne_zero hzero
+  · let r := Injective.factorThru (𝟙 Y) f
+    have hfr : f ≫ r = 𝟙 Y := Injective.comp_factorThru (𝟙 Y) f
+    have hp : r ≫ f ≠ 0 := by
+      intro h
+      apply hf
+      calc
+        f = (f ≫ r) ≫ f := by rw [hfr, Category.id_comp]
+        _ = 0 := by rw [Category.assoc, h, comp_zero]
+    have hu : IsUnit (End.of (r ≫ f)) :=
+      hunit _ (fun h => hp (congrArg End.asHom h))
+    have : IsIso (r ≫ f) := (isUnit_iff_isIso _).mp hu
+    have : Epi f := epi_of_epi r f
+    have : IsSplitMono f := IsSplitMono.mk' ⟨r, hfr⟩
+    exact isIso_of_epi_of_isSplitMono f
 
 /-- If every object is injective, simplicity is equivalent to having a nontrivial
 endomorphism ring in which every nonzero element is a unit. -/
-theorem simple_iff_nontrivial_end_and_isUnit [∀ Y : C, Injective Y] (X : C) :
+theorem simple_iff_nontrivial_end_and_isUnit [HasKernels C] [∀ Y : C, Injective Y] (X : C) :
     Simple X ↔ Nontrivial (End X) ∧ ∀ f : End X, f ≠ 0 → IsUnit f := by
   constructor
   · intro h
     exact ⟨inferInstance, fun f hf => isUnit_iff_ne_zero.mpr hf⟩
-  · rintro ⟨hX, hunit⟩
-    have := hX
-    refine ⟨fun {Y} f _ => ⟨fun hi hf => ?_, fun hf => ?_⟩⟩
-    · have hzero : (1 : End X) = 0 := by
-        apply End.ext
-        simpa using congrArg (fun g : Y ⟶ X => inv f ≫ g) hf
-      exact one_ne_zero hzero
-    · let r := Injective.factorThru (𝟙 Y) f
-      have hfr : f ≫ r = 𝟙 Y := Injective.comp_factorThru (𝟙 Y) f
-      have hp : r ≫ f ≠ 0 := by
-        intro h
-        apply hf
-        calc
-          f = (f ≫ r) ≫ f := by rw [hfr, Category.id_comp]
-          _ = 0 := by rw [Category.assoc, h, comp_zero]
-      have hu : IsUnit (End.of (r ≫ f)) :=
-        hunit _ (fun h => hp (congrArg End.asHom h))
-      have : IsIso (r ≫ f) := (isUnit_iff_isIso _).mp hu
-      have : Epi f := epi_of_epi r f
-      have : IsSplitMono f := IsSplitMono.mk' ⟨r, hfr⟩
-      exact isIso_of_epi_of_isSplitMono f
+  · rintro ⟨_, hunit⟩
+    exact simple_of_nontrivial_end_of_isUnit X hunit
 
 /-- If every object is injective, an object whose endomorphism ring is isomorphic to
  a division ring is simple. -/
 theorem simple_of_ringEquiv_end [∀ Y : C, Injective Y] (X : C) {D : Type*}
     [DivisionRing D] (e : D ≃+* End X) : Simple X := by
   have : Nontrivial (End X) := e.symm.toEquiv.nontrivial
-  refine (simple_iff_nontrivial_end_and_isUnit X).mpr ⟨inferInstance, fun f hf => ?_⟩
+  refine simple_of_nontrivial_end_of_isUnit X fun f hf => ?_
   have hne : e.symm f ≠ 0 := by simpa using hf
   simpa using (isUnit_iff_ne_zero.mpr hne).map e.toMonoidHom
 

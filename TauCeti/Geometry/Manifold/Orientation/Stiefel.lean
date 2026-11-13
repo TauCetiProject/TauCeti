@@ -33,6 +33,15 @@ with the tangent vectors read in `Fin 2 → E` through the derivative of the inc
 basis for `O` (`Orientation.orientation_eq_orientationAt_stiefelTwoOrientation_iff`). Reversing `O`
 reverses it (`Orientation.stiefelTwoOrientation_neg`).
 
+The **frame reflection** `(u, v) ↦ (u, -v)` (`TauCeti.stiefelTwoReflection`) is the restriction
+of the linear map `(a, b) ↦ (a, -b)` of determinant `(-1)ⁿ⁺²`. It sends the normals at `(u, v)` to
+`(u, 0)`, `(0, -v)` and `-(-v, u)`, the normals at `(u, -v)` up to the sign of the third, so it
+pulls the top form back to `-(-1)ⁿ⁺² = (-1)ⁿ⁺¹` times itself: it preserves the normal orientation
+when `n` is odd and reverses it when `n` is even
+(`TauCeti.isOrientationPreservingAt_stiefelTwoReflection`,
+`TauCeti.isOrientationReversingAt_stiefelTwoReflection`). This is the sign by which the two
+preimages of a point under the rotation map of Proposition 6.17 are compared.
+
 The orientation is constructed, as for the sphere, from a nowhere-vanishing continuous top form:
 the pullback to the Stiefel manifold of the contraction of a volume form of `Fin 2 → E` with the
 three normal vector fields. It does not vanish because the three normals are sent by the
@@ -53,6 +62,9 @@ these orientations.
   basis of `Fin 2 → E`.
 * `Orientation.stiefelTwoOrientation_neg`: reversing the orientation of `Fin 2 → E` reverses the
   normal orientation.
+* `TauCeti.isOrientationPreservingAt_stiefelTwoReflection`,
+  `TauCeti.isOrientationReversingAt_stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`
+  preserves the normal orientation when `n` is odd and reverses it when `n` is even.
 
 ## References
 
@@ -68,8 +80,8 @@ public section
 
 noncomputable section
 
-open Module Set
-open scoped Manifold RealInnerProductSpace
+open Module Set TauCeti.Manifold.Orientation
+open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
@@ -82,14 +94,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 private theorem finrank_fin_two_fun : finrank ℝ (Fin 2 → E) = 2 * n + 4 := by
   rw [Module.finrank_pi_fintype, Fin.sum_univ_two, Fact.out (p := finrank ℝ E = n + 1 + 1)]
   ring
-
-omit [FiniteDimensional ℝ E] in
-/-- The model space of the Stiefel manifold of orthonormal two-frames has dimension `2 n + 1`. -/
-private theorem finrank_stiefel_two_model :
-    finrank ℝ (Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) = 2 * n + 1 := by
-  rw [Module.finrank_fin_fun, Fact.out (p := finrank ℝ E = n + 1 + 1)]
-  norm_num [Nat.choose]
-  omega
 
 /-- The three normals `(v₀, 0)`, `(0, v₁)`, `(v₁, v₀)` at a pair `v`, the gradients of
 `⟪v₀, v₀⟫ / 2`, `⟪v₁, v₁⟫ / 2` and `⟪v₀, v₁⟫`, followed by a family `t`. -/
@@ -220,12 +224,7 @@ private theorem isUnit_det_stiefelNormalCons (v : stiefel E 2)
   have hli := linearIndependent_stiefelNormalCons v.2
     (b.linearIndependent.map' _ (LinearMap.ker_eq_bot_of_injective
       (injective_mfderiv_coe_stiefel v)))
-    fun i ↦ by
-      have h := LinearMap.mem_range_self (mfderiv
-        𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
-        ((↑) : stiefel E 2 → Fin 2 → E) v).toLinearMap (b i)
-      rw [range_mfderiv_coe_stiefel] at h
-      exact LinearMap.mem_ker.1 h
+    fun i ↦ gramSym2Deriv_mfderiv_coe_stiefel v (b i)
   exact e.is_basis_iff_det.1 ⟨hli, hli.span_eq_top_of_card_eq_finrank'
     (by rw [Fintype.card_fin, finrank_fin_two_fun (n := n)])⟩
 
@@ -233,7 +232,7 @@ private theorem stiefelTopForm_ne_zero (O : _root_.Orientation ℝ (Fin 2 → E)
     (v : stiefel E 2) : stiefelTopForm O v ≠ 0 := by
   let b := Module.finBasisOfFinrankEq ℝ
     (TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) v)
-    (by exact finrank_stiefel_two_model (E := E) (n := n))
+    (by exact finrank_stiefelTwoModel (E := E) (n := n))
   intro h
   have hb := DFunLike.congr_fun h ⇑b
   rw [stiefelTopForm_apply] at hb
@@ -247,7 +246,7 @@ def _root_.Orientation.stiefelTwoOrientation
     (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4))) :
     Manifold.Orientation 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) (stiefel E 2)
       (Fin (2 * n + 1)) :=
-  Manifold.Orientation.ofTopForm finrank_stiefel_two_model (stiefelTopForm O)
+  Manifold.Orientation.ofTopForm finrank_stiefelTwoModel (stiefelTopForm O)
     (isSmoothForm_stiefelTopForm O) (stiefelTopForm_ne_zero O)
 
 /-- The determinant of a basis `e` of orientation `O` has the sign of the top form of the normal
@@ -314,7 +313,7 @@ theorem _root_.Orientation.stiefelTwoOrientation_neg
   have hcard := ((-O).stiefelTwoOrientation.finrank_tangentSpace_eq v).symm
   let b := Module.finBasisOfFinrankEq ℝ
     (TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) v)
-    (by exact finrank_stiefel_two_model (E := E) (n := n))
+    (by exact finrank_stiefelTwoModel (E := E) (n := n))
   let e := O.someBasis (by rw [Fintype.card_fin, finrank_fin_two_fun (n := n)])
   have he : e.orientation = O := O.someBasis_orientation _
   -- Negating the first vector of `e` gives a basis of orientation `-O` and negates determinants.
@@ -340,5 +339,132 @@ theorem _root_.Orientation.stiefelTwoOrientation_neg
     exact (neg_neg (G := _root_.Orientation ℝ
       (TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) v)
       (Fin (2 * n + 1))) _).symm
+
+/-! ### The frame reflection -/
+
+/-- The model space of the Stiefel manifold of orthonormal two-frames of `E`. -/
+local notation "𝓢" => 𝓘(ℝ, Fin (2 * finrank ℝ E - Nat.choose (2 + 1) 2) → ℝ)
+
+/-- The linear map `(a, b) ↦ (a, -b)` of the space of pairs. -/
+private def frameFlip : (Fin 2 → E) →L[ℝ] Fin 2 → E :=
+  ContinuousLinearMap.pi ![ContinuousLinearMap.proj 0, -ContinuousLinearMap.proj 1]
+
+omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
+private theorem frameFlip_apply (w : Fin 2 → E) : frameFlip w = ![w 0, -w 1] := by
+  ext i : 1
+  fin_cases i <;> rfl
+
+omit [Fact (finrank ℝ E = n + 1 + 1)] in
+/-- The map `(a, b) ↦ (a, -b)` has determinant `(-1) ^ finrank ℝ E`. -/
+private theorem det_frameFlip :
+    LinearMap.det (frameFlip (E := E) : (Fin 2 → E) →ₗ[ℝ] Fin 2 → E) = (-1) ^ finrank ℝ E := by
+  have h : (frameFlip (E := E) : (Fin 2 → E) →ₗ[ℝ] Fin 2 → E) =
+      LinearMap.pi fun i ↦ (![LinearMap.id, -LinearMap.id] i : E →ₗ[ℝ] E).comp
+        (LinearMap.proj i) := by
+    refine LinearMap.ext fun w ↦ funext fun i ↦ ?_
+    fin_cases i <;> simp [frameFlip_apply]
+  rw [h, LinearMap.det_pi, Fin.prod_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, LinearMap.det_id, one_mul]
+  rw [← neg_one_smul ℝ (LinearMap.id : E →ₗ[ℝ] E), LinearMap.det_smul, LinearMap.det_id, mul_one]
+
+/-- The derivative of the frame reflection, read in `Fin 2 → E`, is `(a, b) ↦ (a, -b)`. -/
+private theorem mfderiv_coe_mfderiv_stiefelTwoReflection (w : stiefel E 2)
+    (t : TangentSpace 𝓢 w) :
+    mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) (stiefelTwoReflection w)
+        (mfderiv 𝓢 𝓢 stiefelTwoReflection w t) =
+      frameFlip (mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) w t) := by
+  have hι (w' : stiefel E 2) : MDifferentiableAt 𝓢 𝓘(ℝ, Fin 2 → E)
+      ((↑) : stiefel E 2 → Fin 2 → E) w' :=
+    ((contMDiff_coe_stiefel E 2 (r := 1)) w').mdifferentiableAt one_ne_zero
+  have hK : MDifferentiableAt 𝓢 𝓢 (stiefelTwoReflection (E := E)) w :=
+    ((contMDiff_stiefelTwoReflection (r := 1)) w).mdifferentiableAt one_ne_zero
+  have hcomp : ((↑) : stiefel E 2 → Fin 2 → E) ∘ stiefelTwoReflection =
+      frameFlip ∘ ((↑) : stiefel E 2 → Fin 2 → E) := by
+    funext w'
+    simp [frameFlip_apply]
+  rw [← mfderiv_comp_apply w (hι _) hK, hcomp,
+    mfderiv_comp_apply w frameFlip.mdifferentiableAt (hι w), ContinuousLinearMap.mfderiv_eq]
+  -- Both sides now read `frameFlip (mfderiv ... w t)`; they differ only in whether the tangent
+  -- space of the model `𝓘(ℝ, Fin 2 → E)` is written as `TangentSpace` or as `Fin 2 → E`, which
+  -- agree by definition.
+  rfl
+
+/-- The frame reflection pulls the top form of the normal orientation back to `(-1)ⁿ⁺¹` times
+itself: the normals `(u, 0)`, `(0, v)`, `(v, u)` at `(u, v)` are carried by `(a, b) ↦ (a, -b)` to
+`(u, 0)`, `(0, -v)`, `-(-v, u)`, the normals at `(u, -v)` up to the sign of the third. -/
+private theorem mpullback_stiefelTwoReflection_stiefelTopForm
+    (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4))) (w : stiefel E 2) :
+    mpullback 𝓢 𝓢 stiefelTwoReflection (stiefelTopForm O) w =
+      (-(-1) ^ finrank ℝ E : ℝ) • stiefelTopForm O w := by
+  classical
+  ext t
+  rw [mpullback_apply, stiefelTopForm_apply, ContinuousAlternatingMap.smul_apply,
+    stiefelTopForm_apply]
+  simp only [mfderiv_coe_mfderiv_stiefelTwoReflection]
+  set B := O.someBasis (by rw [Fintype.card_fin, finrank_fin_two_fun (n := n)])
+  set τ := fun i ↦ mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) w (t i)
+  -- The normals at `(u, -v)` are the images of those at `(u, v)`, up to the sign of the third.
+  have h₁ : (![(w : Fin 2 → E) 0, 0] : Fin 2 → E) = frameFlip ![(w : Fin 2 → E) 0, 0] := by
+    simp [frameFlip_apply]
+  have h₂ : (![0, -(w : Fin 2 → E) 1] : Fin 2 → E) = frameFlip ![0, (w : Fin 2 → E) 1] := by
+    simp [frameFlip_apply]
+  have h₃ : (![-(w : Fin 2 → E) 1, (w : Fin 2 → E) 0] : Fin 2 → E) =
+      -frameFlip ![(w : Fin 2 → E) 1, (w : Fin 2 → E) 0] := by
+    simp [frameFlip_apply]
+  have hneg (x y z : Fin 2 → E) (r : Fin (2 * n + 1) → Fin 2 → E) :
+      B.det (Fin.cons x (Fin.cons y (Fin.cons (-z) r))) =
+        -B.det (Fin.cons x (Fin.cons y (Fin.cons z r))) := by
+    -- Evaluating `B.det` on `Fin.cons` is, by definition, evaluating its iterated `curryLeft`.
+    change ((B.det.curryLeft x).curryLeft y).curryLeft (-z) r =
+      -((B.det.curryLeft x).curryLeft y).curryLeft z r
+    rw [map_neg, neg_apply]
+  have hfam (x y z : Fin 2 → E)
+      (r : Fin (2 * n + 1) → TangentSpace 𝓘(ℝ, Fin 2 → E) (w : Fin 2 → E)) :
+      (Fin.cons (frameFlip x) (Fin.cons (frameFlip y) (Fin.cons (frameFlip z)
+        (frameFlip ∘ r))) : Fin (2 * n + 1 + 1 + 1 + 1) → Fin 2 → E) =
+        frameFlip ∘ Fin.cons x (Fin.cons y (Fin.cons z r)) := by
+    funext i
+    exact Fin.cases rfl (fun i ↦ Fin.cases rfl (fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i) i) i
+  have hdet := B.det_comp (frameFlip (E := E) : (Fin 2 → E) →ₗ[ℝ] Fin 2 → E)
+    (stiefelNormalCons (w : Fin 2 → E) τ)
+  rw [det_frameFlip, ContinuousLinearMap.coe_coe] at hdet
+  rw [coe_stiefelTwoReflection]
+  -- The `set` above could not abstract `τ` inside `fun i ↦ frameFlip (mfderiv ... w (t i))`, the
+  -- form produced by `mfderiv_coe_mfderiv_stiefelTwoReflection`; that family is `frameFlip ∘ τ`
+  -- once `Function.comp` and the local definition `τ` are unfolded.
+  change B.det (stiefelNormalCons ![(w : Fin 2 → E) 0, -(w : Fin 2 → E) 1] (frameFlip ∘ τ)) = _
+  simp only [stiefelNormalCons, Matrix.cons_val_zero, Matrix.cons_val_one]
+  conv_lhs => rw [h₁, h₂, h₃, hneg, hfam]
+  simp only [stiefelNormalCons] at hdet
+  rw [hdet, smul_eq_mul]
+  ring
+
+/-- **The frame reflection in odd dimension.** When `n` is odd, the frame reflection
+`(u, v) ↦ (u, -v)` of the orthonormal two-frames of the `(n + 2)`-dimensional space `E` preserves
+the normal orientation `O.stiefelTwoOrientation`. -/
+theorem isOrientationPreservingAt_stiefelTwoReflection (hn : Odd n)
+    (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4))) (w : stiefel E 2) :
+    IsOrientationPreservingAt O.stiefelTwoOrientation O.stiefelTwoOrientation
+      stiefelTwoReflection w := by
+  refine isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _ (c := 1)
+    one_pos ?_
+  have hc : (-(-1) ^ finrank ℝ E : ℝ) = 1 := by
+    rw [(Fact.out : finrank ℝ E = n + 1 + 1), pow_succ, pow_succ, hn.neg_one_pow]
+    norm_num
+  rw [mpullback_stiefelTwoReflection_stiefelTopForm, hc]
+
+/-- **The frame reflection in even dimension.** When `n` is even, the frame reflection
+`(u, v) ↦ (u, -v)` of the orthonormal two-frames of the `(n + 2)`-dimensional space `E` reverses
+the normal orientation `O.stiefelTwoOrientation`. -/
+theorem isOrientationReversingAt_stiefelTwoReflection (hn : Even n)
+    (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4))) (w : stiefel E 2) :
+    IsOrientationReversingAt O.stiefelTwoOrientation O.stiefelTwoOrientation
+      stiefelTwoReflection w := by
+  refine isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _ (c := -1)
+    (by norm_num) ?_
+  have hc : (-(-1) ^ finrank ℝ E : ℝ) = -1 := by
+    rw [(Fact.out : finrank ℝ E = n + 1 + 1), pow_succ, pow_succ, hn.neg_one_pow]
+    norm_num
+  rw [mpullback_stiefelTwoReflection_stiefelTopForm, hc]
 
 end TauCeti

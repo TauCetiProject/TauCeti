@@ -150,7 +150,7 @@ theorem weilDifferentialCotrace_ratFuncWeilDifferential
   set ω := weilDifferentialCotrace k' (RatFunc k') (IsFunctionField.ratFunc k)
     (IsFunctionField.ratFunc k') ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩
     with hωdef
-  exact Subtype.ext (eq_ratFuncWeilDifferential ω.2
+  exact Subtype.ext (eq_ratFuncWeilDifferential
     (isGreatest_cotrace_ratFuncWeilDifferential hX hωdef)
     (repartitionDualComponent_cotrace_ratFuncWeilDifferential hX hωdef))
 

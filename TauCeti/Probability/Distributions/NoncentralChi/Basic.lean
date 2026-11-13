@@ -206,7 +206,7 @@ private theorem noncentralChiMeasure_singleton_zero (hs : 0 < s) :
   apply measure_congr
   filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k (δ ^ 2)] with y hy
   simp only [mem_Iic, mem_singleton_iff]
-  exact propext ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
+  exact ⟨fun h ↦ le_antisymm h hy, fun h ↦ h.le⟩
 
 /-- The atom of the degree-zero law at positive scale has mass `exp (-δ ^ 2 / 2)`, including
 mass one at zero noncentrality. -/
@@ -230,9 +230,14 @@ theorem nullSingletonClass_noncentralChiMeasure (hk : 0 < k) (δ : ℝ≥0) (s :
 
 /-- The noncentral chi cdf is the noncentral chi-squared cdf at the squared standardized
 coordinate on the nonnegative half-line, and zero below it. -/
-theorem cdf_noncentralChiMeasure_eq (hk : 0 ≤ k) (hs : 0 < s) (x : ℝ) :
+theorem cdf_noncentralChiMeasure_eq (hs : 0 < s) (x : ℝ) :
     cdf (noncentralChiMeasure k δ s) x =
       if x < 0 then 0 else cdf (noncentralChiSquaredMeasure k (δ ^ 2)) ((x / s) ^ 2) := by
+  rcases lt_or_ge k 0 with hk | hk
+  · rw [noncentralChiMeasure_of_neg hk, noncentralChiSquaredMeasure_of_neg hk, cdf_zero]
+    by_cases hx : x < 0
+    · simp [hx, not_le.mpr hx]
+    · simp [hx, not_lt.mp hx, sq_nonneg]
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk (δ ^ 2)
   rw [noncentralChiMeasure_of_scale_pos hs, Measure.cdf_map_const_mul_sqrt _ hs]
 
@@ -242,7 +247,7 @@ theorem cdf_noncentralChiMeasure_eq_tsum (hk : 0 < k) (hs : 0 < s) (hx : 0 ≤ x
     cdf (noncentralChiMeasure k δ s) x = ∑' n : ℕ,
       (exp (-(δ : ℝ) ^ 2 / 2) * ((δ : ℝ) ^ 2 / 2) ^ n / n.factorial) *
         regularizedGamma ((k + 2 * n) / 2) ((x / s) ^ 2 / 2) := by
-  rw [cdf_noncentralChiMeasure_eq hk.le hs, ite_eq_right (not_lt.mpr hx),
+  rw [cdf_noncentralChiMeasure_eq hs, ite_eq_right (not_lt.mpr hx),
     cdf_noncentralChiSquaredMeasure_eq hk, NNReal.coe_pow]
 
 /-- The cdf at zero is zero at positive degree and is the atom `exp (-δ ^ 2 / 2)` at degree
@@ -250,7 +255,7 @@ zero. -/
 @[simp]
 theorem cdf_noncentralChiMeasure_zero (hk : 0 ≤ k) (hs : 0 < s) :
     cdf (noncentralChiMeasure k δ s) 0 = if k = 0 then exp (-(δ : ℝ) ^ 2 / 2) else 0 := by
-  rw [cdf_noncentralChiMeasure_eq hk hs, ite_eq_right (lt_irrefl 0), zero_div,
+  rw [cdf_noncentralChiMeasure_eq hs, ite_eq_right (lt_irrefl 0), zero_div,
     zero_pow two_ne_zero, cdf_noncentralChiSquaredMeasure_zero hk, NNReal.coe_pow]
 
 /-- Away from the double-zero Dirac boundary, the noncentral chi cdf is strictly increasing on
@@ -261,7 +266,7 @@ theorem strictMonoOn_cdf_noncentralChiMeasure (hk : 0 ≤ k) (hs : 0 < s)
   have hmono := strictMonoOn_cdf_noncentralChiSquaredMeasure hk
     (l := δ ^ 2) (h.imp_right (pow_ne_zero 2))
   intro a ha b hb hab
-  rw [cdf_noncentralChiMeasure_eq hk hs, cdf_noncentralChiMeasure_eq hk hs,
+  rw [cdf_noncentralChiMeasure_eq hs, cdf_noncentralChiMeasure_eq hs,
     ite_eq_right (not_lt.mpr ha), ite_eq_right (not_lt.mpr hb)]
   have ha' : 0 ≤ a / s := div_nonneg ha hs.le
   exact hmono (sq_nonneg _) (sq_nonneg _)

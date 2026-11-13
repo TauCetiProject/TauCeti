@@ -107,7 +107,7 @@ theorem apply_eq_sum_repr_degreeOneBasis (n : pLowerCentralSeries p (freeProP p 
   conv_lhs => rw [← (degreeOneBasis p X).sum_repr (gradedMk p (freeProP p X) 1 n)]
   simp only [Fintype.sum_sum_type, map_add, map_sum, ZMod.map_smul, degreeOneBasis_apply,
     hh.gradedRestrict_degreeOneFamily_inl htrivP haN hbN
-      (ZModModule.char_nsmul_eq_zero p) htrivM htrivA,
+      (ZModModule.char_nsmul_eq_zero p) htrivA,
     hh.gradedRestrict_degreeOneFamily_inr htrivP haN hbN
       (ZModModule.char_nsmul_eq_zero p) htrivM htrivA]
 
@@ -161,7 +161,7 @@ private theorem apply_eq_of_forall_degreeOneBasis
     rcases k with i | ij
     · rw [← hinl i, degreeOneBasis_apply,
         hh.gradedRestrict_degreeOneFamily_inl htriv haN hbN
-          (ZModModule.char_nsmul_eq_zero p) htriv htriv, AddMonoidHom.mul_apply]
+          (ZModModule.char_nsmul_eq_zero p) htriv, AddMonoidHom.mul_apply]
     · rw [← hinr ij, degreeOneBasis_apply,
         hh.gradedRestrict_degreeOneFamily_inr htriv haN hbN
           (ZModModule.char_nsmul_eq_zero p) htriv htriv, AddMonoidHom.mul_apply,

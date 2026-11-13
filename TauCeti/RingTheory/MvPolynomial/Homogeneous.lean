@@ -23,7 +23,9 @@ multiplies its value by `a ^ n`. This permits normalizing linear substitutions w
 expanding the polynomial.
 
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
-notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
+notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
+algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
+`hp.eval_smul` themselves. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
@@ -72,21 +74,13 @@ theorem eval₂_const_mul {σ R S : Type*} [CommSemiring R] [CommSemiring S]
 /-- Scaling the variables of a homogeneous polynomial by a scalar scales its algebra
 evaluation by the corresponding power of that scalar. The scalar algebra may differ
 from the coefficient algebra. -/
-theorem aeval_smul {σ R S A : Type*}
+theorem aeval_smul_of_algebra {σ R S A : Type*}
     [CommSemiring R] [CommSemiring S] [CommSemiring A] [Algebra R A] [Algebra S A]
     {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → A) (a : S) :
     _root_.MvPolynomial.aeval (a • g) p = a ^ n • _root_.MvPolynomial.aeval g p := by
   rw [Pi.smul_def]
   simpa only [_root_.MvPolynomial.aeval_def, Algebra.smul_def, map_pow] using
     hp.eval₂_const_mul (algebraMap R A) g (algebraMap S A a)
-
-/-- Scaling the variables of a homogeneous polynomial scales its evaluation by the
-corresponding power of the scalar. -/
-theorem eval_smul {σ R : Type*} [CommSemiring R]
-    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → R) (a : R) :
-    _root_.MvPolynomial.eval (a • g) p = a ^ n • _root_.MvPolynomial.eval g p := by
-  simpa only [_root_.MvPolynomial.eval, coe_eval₂Hom, Pi.smul_def, smul_eq_mul] using
-    hp.eval₂_const_mul (RingHom.id R) g a
 
 /-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
 `j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
@@ -303,7 +297,7 @@ theorem eval_eq_sum_homogeneousComponent_of_eval_smul {K : Type*} [Field K]
     conv_lhs => rw [← sum_homogeneousComponent P]
     rw [map_sum]
     refine Finset.sum_congr rfl fun d _ => ?_
-    rw [(homogeneousComponent_isHomogeneous d P).eval_smul, smul_eq_mul, zpow_natCast]
+    rw [(homogeneousComponent_isHomogeneous d P).eval_smul, zpow_natCast]
   -- Weighting by `(ζ ^ j) ^ (-a)` and summing over `j` keeps exactly the degrees `d ≡ a`.
   have hweight : ∀ (j : ℕ) (d : ℕ), (ζ ^ j) ^ (-a) * (ζ ^ j) ^ (d : ℤ) = (ζ ^ ((d : ℤ) - a)) ^ j :=
     fun j d => by

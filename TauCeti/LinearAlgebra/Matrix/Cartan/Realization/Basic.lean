@@ -134,6 +134,10 @@ in the coroot span. -/
 def cartanCenter : Submodule K H := LinearMap.ker R.rootEvaluation
 
 omit [Fintype I] in
+/-- The Cartan center is the kernel of evaluation against all the simple roots. -/
+theorem cartanCenter_def : R.cartanCenter = LinearMap.ker R.rootEvaluation := (rfl)
+
+omit [Fintype I] in
 @[simp]
 theorem mem_cartanCenter_iff (h : H) : h ∈ R.cartanCenter ↔ ∀ i, R.root i h = 0 := by
   simp [cartanCenter, LinearMap.mem_ker, funext_iff]
@@ -360,18 +364,29 @@ theorem isMinimal_iff : R.IsMinimal ↔ finrank K H + A.rank = 2 * Fintype.card 
   · intro h
     exact ⟨inferInstance, by omega⟩
 
+omit [FiniteDimensional K H] in
 /-- A realization is minimal exactly when its full center lies in the coroot span. -/
 theorem isMinimal_iff_cartanCenter_le_corootSpan :
     R.IsMinimal ↔ R.cartanCenter ≤ R.corootSpan := by
-  rw [R.isMinimal_iff]
-  have hc := R.finrank_cartanCenter_add_card
-  have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
   constructor
-  · intro h
+  · intro hR
+    have := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    have hc := R.finrank_cartanCenter_add_card
+    have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
     have heq : R.cartanCenter ⊓ R.corootSpan = R.cartanCenter :=
       Submodule.eq_of_le_of_finrank_eq inf_le_left (by omega)
     exact inf_eq_left.mp heq
   · intro h
+    have : FiniteDimensional K R.corootSpan :=
+      FiniteDimensional.span_of_finite K (Set.finite_range _)
+    have : FiniteDimensional K R.cartanCenter := Submodule.finiteDimensional_of_le h
+    have : FiniteDimensional K (H ⧸ R.cartanCenter) :=
+      Module.Finite.equiv (LinearMap.quotKerEquivOfSurjective _ R.rootEvaluation_surjective).symm
+    have : FiniteDimensional K H := Module.Finite.of_submodule_quotient R.cartanCenter
+    rw [R.isMinimal_iff]
+    have hc := R.finrank_cartanCenter_add_card
+    have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
     rw [inf_eq_left.mpr h] at hi
     omega
 

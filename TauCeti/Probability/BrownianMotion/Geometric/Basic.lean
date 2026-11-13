@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.ExponentialMartingale
 public import TauCeti.Probability.Distributions.LogNormal.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Geometric Brownian motion
@@ -22,7 +23,7 @@ the stock price of the Black–Scholes market. This file develops it from its ex
 statement that it solves the differential equation needs Itô calculus and is not proved here.
 
 The main tool is the factorisation `S_t = s e^{μ t} Z_t` through the exponential martingale
-`Z_t = exp (σ W_t - σ² t / 2)`, and more generally, for `s ≥ 0` and every real `q`,
+`Z_t = exp (σ W_t - σ² t / 2)`, and more generally, for every real `q`,
 
 `S_t ^ q = s ^ q * exp ((q μ + q (q - 1) σ² / 2) t) * exp (q σ W_t - q² σ² t / 2)`.
 
@@ -47,7 +48,7 @@ of the discounted process `e^{-μ t} S_t` and the conditional moments `E[S_t ^ q
 * `ProbabilityTheory.IsPreBrownianReal.integral_geometricBrownianMotion`: `E[S_t] = s e^{μ t}`.
 * `ProbabilityTheory.IsPreBrownianReal.memLp_geometricBrownianMotion`: `S_t ∈ Lᵖ` for `p < ∞`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_rpow_geometricBrownianMotion`:
-  `E[S_t ^ q] = s ^ q exp ((q μ + q (q - 1) σ² / 2) t)` for `s ≥ 0` and real `q`.
+  `E[S_t ^ q] = s ^ q exp ((q μ + q (q - 1) σ² / 2) t)` for real `q`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.martingale_discounted_geometricBrownianMotion`:
   the discounted process `e^{-μ t} S_t` is a martingale.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.condExp_rpow_geometricBrownianMotion`: the
@@ -125,15 +126,15 @@ theorem geometricBrownianMotion_eq_riskNeutral (s μ r : ℝ) {σ : ℝ} (hσ : 
     ring
   rw [← geometricBrownianMotion_sub_mul_min s μ σ (-((μ - r) / σ)) W htT ω, hr]
 
-/-- For a nonnegative initial value, a real power `S_t ^ q` of a geometric Brownian motion is
+/-- A real power `S_t ^ q` of a geometric Brownian motion is
 `s ^ q exp ((q μ + q (q - 1) σ² / 2) t)` times the exponential martingale with parameter `q σ`. -/
-theorem rpow_geometricBrownianMotion (hs : 0 ≤ s) (μ σ q : ℝ) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0)
-    (ω : Ω) :
+theorem rpow_geometricBrownianMotion (s μ σ q : ℝ) (W : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
     geometricBrownianMotion s μ σ W t ω ^ q = s ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
       exponentialMartingale (q * σ) W t ω := by
-  rw [geometricBrownianMotion_eq_mul_exponentialMartingale,
-    mul_rpow (by positivity) (exponentialMartingale_pos σ W t ω).le, mul_rpow hs (exp_pos _).le,
-    ← exp_mul, rpow_exponentialMartingale, mul_assoc, ← mul_assoc (exp _), ← exp_add, mul_assoc]
+  rw [geometricBrownianMotion_eq_mul_exponentialMartingale, mul_assoc, mul_comm s,
+    Real.mul_rpow_of_pos_left (mul_pos (exp_pos _) (exponentialMartingale_pos σ W t ω)),
+    mul_rpow (exp_pos _).le (exponentialMartingale_pos σ W t ω).le,
+    ← exp_mul, rpow_exponentialMartingale, add_mul, exp_add]
   ring_nf
 
 /-- Taking the absolute value of a geometric Brownian motion replaces its initial
@@ -150,7 +151,7 @@ theorem abs_rpow_geometricBrownianMotion (s μ σ q : ℝ)
     |geometricBrownianMotion s μ σ W t ω| ^ q =
       |s| ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
         exponentialMartingale (q * σ) W t ω := by
-  rw [abs_geometricBrownianMotion, rpow_geometricBrownianMotion (abs_nonneg s)]
+  rw [abs_geometricBrownianMotion, rpow_geometricBrownianMotion]
 
 end TauCeti.Probability
 
@@ -218,21 +219,20 @@ theorem integral_geometricBrownianMotion (hB : IsPreBrownianReal B P) (s μ σ :
   simp_rw [geometricBrownianMotion_eq_mul_exponentialMartingale, integral_const_mul,
     hB.integral_exponentialMartingale, mul_one]
 
-/-- Every real power of a geometric Brownian motion with nonnegative initial value is
-integrable. -/
-theorem integrable_rpow_geometricBrownianMotion (hB : IsPreBrownianReal B P) (hs : 0 ≤ s)
-    (μ σ q : ℝ) (t : ℝ≥0) :
+/-- Every real power of a geometric Brownian motion is integrable. -/
+theorem integrable_rpow_geometricBrownianMotion (hB : IsPreBrownianReal B P)
+    (s μ σ q : ℝ) (t : ℝ≥0) :
     Integrable (fun ω ↦ geometricBrownianMotion s μ σ B t ω ^ q) P := by
-  simp_rw [rpow_geometricBrownianMotion hs]
+  simp_rw [rpow_geometricBrownianMotion]
   exact (hB.integrable_exponentialMartingale _ t).const_mul _
 
-/-- **The moments of geometric Brownian motion.** For `s ≥ 0` and every real `q`,
+/-- **The moments of geometric Brownian motion.** For every real `q`,
 `E[S_t ^ q] = s ^ q exp ((q μ + q (q - 1) σ² / 2) t)`. -/
-theorem integral_rpow_geometricBrownianMotion (hB : IsPreBrownianReal B P) (hs : 0 ≤ s)
-    (μ σ q : ℝ) (t : ℝ≥0) :
+theorem integral_rpow_geometricBrownianMotion (hB : IsPreBrownianReal B P)
+    (s μ σ q : ℝ) (t : ℝ≥0) :
     ∫ ω, geometricBrownianMotion s μ σ B t ω ^ q ∂P =
       s ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) := by
-  simp_rw [rpow_geometricBrownianMotion hs, integral_const_mul,
+  simp_rw [rpow_geometricBrownianMotion, integral_const_mul,
     hB.integral_exponentialMartingale, mul_one]
 
 end ProbabilityTheory.IsPreBrownianReal
@@ -256,10 +256,10 @@ theorem martingale_discounted_geometricBrownianMotion (hW : IsFilteredPreBrownia
   rw [h]
   exact (hW.martingale_exponentialMartingale σ).smul s
 
-/-- **The conditional moments of geometric Brownian motion.** For `s ≥ 0`, `u ≤ t` and every real
+/-- **The conditional moments of geometric Brownian motion.** For `u ≤ t` and every real
 `q`, `E[S_t ^ q | ℱ_u] = exp ((q μ + q (q - 1) σ² / 2) (t - u)) S_u ^ q`. -/
-theorem condExp_rpow_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P) (hs : 0 ≤ s)
-    (μ σ q : ℝ) {u t : ℝ≥0} (hut : u ≤ t) :
+theorem condExp_rpow_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P)
+    (s μ σ q : ℝ) {u t : ℝ≥0} (hut : u ≤ t) :
     P[fun ω ↦ geometricBrownianMotion s μ σ W t ω ^ q | ℱ u] =ᵐ[P]
       fun ω ↦ exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * (t - u)) *
         geometricBrownianMotion s μ σ W u ω ^ q := by
@@ -267,11 +267,11 @@ theorem condExp_rpow_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ
       (s ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t)) •
         exponentialMartingale (q * σ) W t := by
     ext ω
-    rw [rpow_geometricBrownianMotion hs, Pi.smul_apply, smul_eq_mul]
+    rw [rpow_geometricBrownianMotion, Pi.smul_apply, smul_eq_mul]
   rw [h]
   filter_upwards [condExp_smul (𝕜 := ℝ) _ (exponentialMartingale (q * σ) W t) (ℱ u),
     (hW.martingale_exponentialMartingale (q * σ)).condExp_ae_eq hut] with ω h₁ h₂
-  rw [h₁, Pi.smul_apply, h₂, smul_eq_mul, rpow_geometricBrownianMotion hs]
+  rw [h₁, Pi.smul_apply, h₂, smul_eq_mul, rpow_geometricBrownianMotion]
   generalize q * μ + q * (q - 1) * σ ^ 2 / 2 = c
   rw [mul_sub, exp_sub]
   field_simp

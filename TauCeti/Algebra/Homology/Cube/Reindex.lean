@@ -105,6 +105,7 @@ theorem refl (F : Finset ι ⥤ C) :
     ← eqToHom_map F (by simp : insert a S = (insert a S).map _), ← F.map_comp, ← F.map_comp]
   exact congrArg F.map (Subsingleton.elim _ _)
 
+omit [LinearOrder μ] in
 /-- The composites `α₂ (e₁(S)) ∘ α₁ S`, followed by the identification `e₂(e₁(S)) = (e₂ ∘ e₁)(S)`,
 are compatible with the edge maps when `α₁` and `α₂` are. -/
 theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} {e₁ : ι ≃ κ}
@@ -113,6 +114,7 @@ theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} 
     (h₁ : IsCubeReindexCompatible F G e₁ α₁) (h₂ : IsCubeReindexCompatible G H e₂ α₂) :
     IsCubeReindexCompatible F H (e₁.trans e₂) fun S ↦
       α₁ S ≪≫ α₂ (S.map e₁.toEmbedding) ≪≫ eqToIso (congrArg H.obj (by simp [map_map])) := by
+  classical
   intro S a ha
   simp only [Iso.trans_hom, eqToIso.hom]
   rw [← Category.assoc, h₁ S a ha, Category.assoc, ← Category.assoc (G.map _),

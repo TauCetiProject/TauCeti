@@ -23,13 +23,12 @@ class QueueControlRouting(unittest.TestCase):
         configured = expression(finalizer['env']['CI_PUBLISHER_RUNNER_LABELS'], event='repository_dispatch', action='tauceti-bors-staging')
         self.assertEqual(json.loads(configured), expected)
         steps = finalizer['steps']
-        copy = next(i for i,s in enumerate(steps) if s.get('name') == 'Use the pinned queue finalizer')
         setup = next(i for i,s in enumerate(steps) if s.get('name') == 'Prepare pinned shared tools')
         run = next(i for i,s in enumerate(steps) if s.get('run') == 'python3 scripts/finalize_batch.py')
-        self.assertLess(setup, copy)
-        self.assertLess(copy, run)
-        pin = next(s['with']['ref'] for s in steps if s.get('name') == 'Install workflow-pinned reserved-publisher validation')
+        self.assertLess(setup, run)
+        pin = steps[setup]['with']['tools-ref']
         self.assertRegex(pin, r'^[0-9a-f]{40}$')
+        self.assertNotIn('queue-finalization-tools', str(steps))
 
     def test_smoke_dispatch_cannot_disable_reusable_manual_pr_selection(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/pick-runner.yml').read_text())

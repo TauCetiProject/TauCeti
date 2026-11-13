@@ -24,6 +24,8 @@ with a prescribed differential without requiring a global coordinate chart.
 
 * `TauCeti.exists_contMDiff_hasCompactSupport_mvfderiv_eq`: a compactly supported smooth function
   with prescribed value and derivative at a point.
+* `TauCeti.exists_contMDiffMap_mvfderiv_eq`: the same realization by a bundled smooth map
+  `C^∞⟮I, M; 𝓘(ℝ, F), F⟯`.
 -/
 
 public noncomputable section
@@ -70,5 +72,13 @@ theorem exists_contMDiff_hasCompactSupport_mvfderiv_eq (x : M) (c : F)
     rw [mvfderiv_apply_eq_mfderiv_apply, hd.mfderiv]
     -- `hd` reads `L v` in the target tangent synonym; its underlying vector is still `L v`.
     rfl
+
+/-- Any prescribed value and derivative at a point of a finite-dimensional Hausdorff real
+manifold are realized by a bundled smooth map. -/
+theorem exists_contMDiffMap_mvfderiv_eq (x : M) (c : F) (L : E →L[ℝ] F) :
+    ∃ f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯, f x = c ∧ mvfderiv I f x = L := by
+  obtain ⟨f, hf, -, -, hfx, hL⟩ :=
+    exists_contMDiff_hasCompactSupport_mvfderiv_eq (I := I) x c L Filter.univ_mem
+  exact ⟨⟨f, hf⟩, hfx, hL⟩
 
 end TauCeti

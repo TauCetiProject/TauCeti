@@ -175,9 +175,9 @@ theorem IsNormal.add (hT : IsNormal T) (hS : IsNormal S) : IsNormal (T + S) := b
 theorem IsNormal.smul (hT : IsNormal T) (a : ℝ) : IsNormal (a • T) := by
   cases k
   · rw [isNormal_finZero_iff, FunLike.coe_smul, mass_smul]
-    exact ENNReal.mul_ne_top enorm_ne_top hT
+    exact ENNReal.mul_ne_top eNorm_ne_top hT
   · rw [isNormal_succ_iff, smul_comp, FunLike.coe_smul, FunLike.coe_smul, mass_smul, mass_smul]
-    exact ⟨ENNReal.mul_ne_top enorm_ne_top hT.1, ENNReal.mul_ne_top enorm_ne_top hT.2⟩
+    exact ⟨ENNReal.mul_ne_top eNorm_ne_top hT.1, ENNReal.mul_ne_top eNorm_ne_top hT.2⟩
 
 theorem IsNormal.neg (hT : IsNormal T) : IsNormal (-T) := by
   simpa using hT.smul (-1)
@@ -212,12 +212,24 @@ end Boundary
 
 section CompactSupport
 
-variable [FiniteDimensional ℝ E] {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+variable {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
 
 /-- **Compactly supported locally normal currents are normal.** If the support of a locally normal
 current is a compact subset of `Ω`, then the current and its boundary have finite mass. -/
 theorem IsLocallyNormal.isNormal (hT : IsLocallyNormal T) (hc : IsCompact (dsupport T))
     (hΩ : dsupport T ⊆ Ω) : IsNormal T := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- without finite dimension every test function vanishes, so every current has zero mass
+    have h0 {m : ℕ} (S : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] V) : mass S ≠ ⊤ := by
+      refine ne_top_of_le_ne_top ENNReal.zero_ne_top (mass_le_iff.2 fun φ _ => ?_)
+      obtain h | h := φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous
+      · have : φ = 0 := TestFunction.ext fun x => congrFun h x
+        simp [this]
+      · exact absurd h hE
+    cases k with
+    | zero => exact h0 T
+    | succ k => exact ⟨h0 T, h0 _⟩
   cases k with
   | zero => exact HasLocallyFiniteMass.mass_ne_top hT hc hΩ
   | succ k =>
@@ -248,19 +260,24 @@ theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) (h : Ω' ≤ Ω) :
     rw [isLocallyNormal_finZero_iff, coe_comp]
     exact HasLocallyFiniteMass.comp_monoCLM hT h
   | succ k =>
-    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨hT.1.comp_monoCLM h, hT.2.comp_monoCLM h⟩
 
 /-- **Restriction.** The restriction of a normal current to an open subset `Ω' ⊆ Ω` is normal: its
-mass and the mass of its boundary are local masses of `T` and `∂T` on `Ω'`. -/
-theorem IsNormal.comp_monoCLM (hT : IsNormal T) (h : Ω' ≤ Ω) :
+mass and the mass of its boundary are local masses of `T` and `∂T` on `Ω'`. If `Ω'` is not
+contained in `Ω`, the restriction map is zero. -/
+theorem IsNormal.comp_monoCLM (hT : IsNormal T) :
     IsNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
+  by_cases h : Ω' ≤ Ω
+  swap
+  · rw [monoCLM_eq_zero (fun H => h H.2), comp_zero]
+    exact isNormal_zero
   cases k with
   | zero =>
     rw [isNormal_finZero_iff, coe_comp]
     exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
   | succ k =>
-    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
     exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
       ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
 
@@ -305,8 +322,6 @@ theorem IsNormal.comp_smulLeftCLM (hT : IsNormal T) (hf : ContDiff ℝ (⊤ : �
       (mass_comp_smulLeftCLM_comp_extDerivCLM_le T hf hfC' hdfC')⟩
     exact ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top hT.2,
       ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) ENNReal.coe_ne_top) hT.1⟩
-
-variable [FiniteDimensional ℝ E]
 
 /-- **Cutoffs of locally normal currents are normal.** The product `χ T` of a locally normal
 current with a test function `χ` on `Ω` is a normal current supported in `tsupport χ`. -/

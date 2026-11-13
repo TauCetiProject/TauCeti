@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Convolution.Holder
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -93,15 +94,15 @@ theorem exists_littlewoodPaleyBlock_eq_and_rpow_mul_norm_le_of_holderWith
           gcongr
           exact le_add_of_nonneg_right (by positivity)
   · -- The dyadic block is the convolution with the kernel `Kⱼ = 𝓕⁻ ψⱼ` of integral zero.
-    set σ := φ.inhomogeneousLittlewoodPaleySchwartzMap (j + 1)
+    set σ := φ.inhomogeneousLittlewoodPaleySchwartz (j + 1)
     set K : E → ℂ := 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ))
     have hσK : 𝓕⁻ (σ : E → ℂ) = K := by
-      rw [φ.coe_inhomogeneousLittlewoodPaleySchwartzMap]
+      rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz]
     obtain ⟨g, hg, hgae, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq σ
       (toLpTop volume ℂ f) (q := ∞) le_rfl (by simp)
     rw [hσK, convolution_congr (ContinuousLinearMap.lsmul ℂ ℂ) (ae_eq_refl K)
       (coeFn_toLpTop (𝕜 := ℂ) volume f)] at hgae
-    rw [φ.coe_inhomogeneousLittlewoodPaleySchwartzMap, ← littlewoodPaleyBlock_apply] at hg
+    rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz, ← littlewoodPaleyBlock_apply] at hg
     refine ⟨g, hg, ?_⟩
     have hK : Integrable K := by
       rw [← hσK, ← SchwartzMap.fourierInv_coe]
@@ -185,7 +186,7 @@ def toBesovSpace : HolderSpace α E F →L[ℝ] BesovSpace F φ α ∞ ∞ :=
     rw [hblock]
     calc 2 ^ ((α : ℝ) * j) * ‖g‖ ≤ C * (‖f.toBoundedContinuousFunction‖ + ‖f‖₊) := hgle
       _ ≤ C * 2 * ‖f‖ := by
-        rw [coe_nnnorm, mul_assoc, two_mul]
+        rw [coe_nnNorm, mul_assoc, two_mul]
         gcongr
         exact f.norm_toBoundedContinuousFunction_le
 

@@ -33,7 +33,10 @@ either symmetric or the negative of its flip.
 Away from characteristic two the second alternative is exactly alternation, which gives the
 orthogonal/symplectic dichotomy: an irreducible representation carries at most a line of invariant
 forms, and any nonzero one on it is either symmetric or alternating (in characteristic two it is
-symmetric).
+symmetric).  For an irreducible representation of a finite group over an algebraically closed
+field of characteristic zero, the values `+1` and `-1` of the Frobenius-Schur indicator
+`TauCeti.Representation.frobeniusSchurIndicator` are characterized by these invariant symmetric
+and alternating forms; this file supplies the forms, not the count.
 
 Nothing here needs a finite group, and almost nothing needs finite dimensions: invariance, and the
 symmetric and alternating invariant forms with it, are defined for a representation of a monoid on
@@ -127,10 +130,6 @@ continuous representation.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7, `IsInvariantForm` and the invariant symmetric and alternating forms that the values
-  `+1` and `-1` of the Frobenius-Schur indicator are characterized by.  The indicator itself is
-  `TauCeti.Representation.frobeniusSchurIndicator`; this file supplies the forms, not the count.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 4.
 -/

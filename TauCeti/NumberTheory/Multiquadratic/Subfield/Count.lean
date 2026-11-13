@@ -30,13 +30,14 @@ transports it across the subfield/subspace dictionary
 ## Main results
 
 * `TauCeti.Multiquadratic.card_quadratic_intermediateField_adjoin_range`: under square-class
-  independence, `M = K(rootᵢ : i)` has exactly `2 ^ |ι| - 1` intermediate fields of degree `2`
-  over `K`.
+  independence, for a finite index type `M = K(rootᵢ : i)` has exactly `2 ^ |ι| - 1` intermediate
+  fields of degree `2` over `K`. For an infinite index type `M` has infinitely many quadratic
+  subfields (`TauCeti.Multiquadratic.infinite_quadratic_intermediateField`), and the statement is
+  only the equality of two `Nat.card` expressions that are both `0`.
 
 ## Provenance
 
-The subfield/subspace dictionary this refines is migrated, with the rest of the multiquadratic
-Layer 0, from
+The subfield/subspace dictionary this refines is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
 L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The hyperplane count
 assembles Mathlib's dual-annihilator order isomorphism (`Subspace.orderIsoFiniteDimensional`) with
@@ -99,15 +100,23 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
 /-- **The number of quadratic subfields of a multiquadratic field is `2ⁿ - 1`.** Under
-square-class independence (and `2 ≠ 0`), the multiquadratic field `M = K(rootᵢ : i)`, of degree
-`2 ^ |ι|` over `K`, has exactly `2 ^ |ι| - 1` intermediate fields of degree `2` over `K`. The count
-is that of the hyperplanes of the `𝔽₂`-subspace lattice. -/
-theorem card_quadratic_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K)]
+square-class independence (and `2 ≠ 0`), for a finite index type the multiquadratic field
+`M = K(rootᵢ : i)`, of degree `2 ^ |ι|` over `K`, has exactly `2 ^ |ι| - 1` intermediate fields of
+degree `2` over `K`. The count is that of the hyperplanes of the `𝔽₂`-subspace lattice. For an
+infinite index type `M` has infinitely many quadratic subfields and the statement is only the
+equality of two `Nat.card` expressions that are both `0`, by the convention for the cardinality of
+an infinite type. -/
+theorem card_quadratic_intermediateField_adjoin_range [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
     Nat.card {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2}
       = 2 ^ Nat.card ι - 1 := by
   classical
+  by_cases hι : Finite ι
+  swap
+  · have := not_finite_iff_infinite.mp hι
+    have := infinite_quadratic_intermediateField hroot hindep
+    simp [Nat.card_eq_zero_of_infinite]
   let := Fintype.ofFinite ι
   -- Transport the quadratic subfields to the hyperplanes of `ι → ℤ/2`.
   have hbij : {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2}

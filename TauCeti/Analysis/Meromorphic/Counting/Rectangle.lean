@@ -12,8 +12,12 @@ public import Mathlib.Analysis.Complex.Basic
 # Exact additivity of counts in imaginary height
 
 Rectangles are closed in their real coordinate and half open in their imaginary coordinate.
-Thus a zero on a splitting edge contributes to precisely one of the two pieces. Meromorphy
-on the containing closed rectangle supplies finite divisor support, including at its edges.
+Thus a point on a splitting edge belongs to precisely one of the two pieces, so its divisor
+multiplicity is counted once, in the lower piece. The counts are those of the divisor
+`MeromorphicOn.divisor f U`, which is identically zero unless `f` is meromorphic on `U`: for a
+function that is not meromorphic on `U` every count is zero by convention, and no actual zeros are
+counted. The containing closed rectangle is compact, which supplies finite divisor support,
+including at its edges.
 -/
 
 public section
@@ -25,7 +29,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {f : ℂ → E} {U : Set ℂ} {σ₁ σ₂ t₁ t₂ t₃ : ℝ}
 
-private theorem rectangle_partition (hf : MeromorphicOn f U)
+private theorem rectangle_partition
     (ht12 : t₁ ≤ t₂) (ht23 : t₂ ≤ t₃)
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
     ((Icc σ₁ σ₂ ×ℂ Ioc t₁ t₂) ∪ (Icc σ₁ σ₂ ×ℂ Ioc t₂ t₃) =
@@ -38,36 +42,38 @@ private theorem rectangle_partition (hf : MeromorphicOn f U)
       Ioc_union_Ioc_eq_Ioc ht12 ht23]
   · exact disjoint_left.mpr fun z hz hz' ↦
       disjoint_left.mp (Ioc_disjoint_Ioc_of_le le_rfl) hz.2 hz'.2
-  · apply hf.divisor_finite_inter_support_of_isCompact
+  · apply MeromorphicOn.divisor_finite_inter_support_of_isCompact
       (isCompact_Icc.reProdIm isCompact_Icc) hU
     intro z hz
     exact ⟨hz.1, le_of_lt hz.2.1, hz.2.2.trans ht23⟩
-  · apply hf.divisor_finite_inter_support_of_isCompact
+  · apply MeromorphicOn.divisor_finite_inter_support_of_isCompact
       (isCompact_Icc.reProdIm isCompact_Icc) hU
     intro z hz
     exact ⟨hz.1, ht12.trans (le_of_lt hz.2.1), hz.2.2⟩
 
 /-- Splitting a half-open rectangle in imaginary height adds the signed counts exactly.
-Meromorphy on the containing closed rectangle suffices; no boundary nonvanishing is required. -/
-theorem divisorCount_reProdIm_Ioc_eq_add (hf : MeromorphicOn f U)
+Neither meromorphy nor boundary nonvanishing is required. -/
+theorem divisorCount_reProdIm_Ioc_eq_add
     (ht12 : t₁ ≤ t₂) (ht23 : t₂ ≤ t₃)
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
     divisorCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃) =
       divisorCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₂) +
         divisorCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₂ t₃) := by
-  obtain ⟨hsplit, hdisjoint, hfirst, hsecond⟩ := rectangle_partition hf ht12 ht23 hU
+  obtain ⟨hsplit, hdisjoint, hfirst, hsecond⟩ := rectangle_partition (f := f) ht12 ht23 hU
   rw [← hsplit]
   exact divisorCount_union hdisjoint hfirst hsecond
 
 /-- Splitting a half-open rectangle in imaginary height adds the natural zero counts exactly.
-Zeros on the splitting edge belong to the lower piece and are counted only once. -/
-theorem zeroCount_reProdIm_Ioc_eq_add (hf : MeromorphicOn f U)
+Positive divisor multiplicities on the splitting edge are assigned to the lower piece and counted
+only once. If `f` is not meromorphic on `U` the divisor vanishes, so all counts are zero by
+convention. -/
+theorem zeroCount_reProdIm_Ioc_eq_add
     (ht12 : t₁ ≤ t₂) (ht23 : t₂ ≤ t₃)
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
     zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₃) =
       zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₁ t₂) +
         zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₂ t₃) := by
-  obtain ⟨hsplit, hdisjoint, hfirst, hsecond⟩ := rectangle_partition hf ht12 ht23 hU
+  obtain ⟨hsplit, hdisjoint, hfirst, hsecond⟩ := rectangle_partition (f := f) ht12 ht23 hU
   rw [← hsplit]
   exact zeroCount_union hdisjoint (zeroCount_support_finite hfirst)
     (zeroCount_support_finite hsecond)

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
@@ -21,8 +22,10 @@ by the inverse absolute determinant and precomposes it by the adjoint of the inv
 change of coordinates needed to transport Fourier identities from the standard integer lattice
 to an arbitrary full lattice. For a dilation `x ↦ c • x` it reads
 `𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `n`, so that dilating a function does not
-change the `L¹` norm of its Fourier transform, while replacing `g` by `g (R⁻¹ • ·)`, `R > 0`,
-multiplies the `Lʳ` norm of its inverse Fourier transform by `R ^ (n - n / r)`.
+change the `L¹` norm of its Fourier transform and multiplies the `k`-th moment
+`∫ ‖y‖ ^ k ‖𝓕⁻ f y‖` of its inverse Fourier transform by `|c| ^ k`, while replacing `g` by
+`g (R⁻¹ • ·)`, `R > 0`, multiplies the `Lʳ` norm of its inverse Fourier transform by
+`R ^ (n - n / r)`.
 
 The Jacobian factor comes from Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar`. The formulas use the total Bochner
@@ -36,12 +39,16 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
 * `TauCeti.support_fourier_comp_smul`: dilating a function by `c` dilates the support of its
   Fourier transform by `c`.
+* `TauCeti.integral_rpow_mul_norm_fourierInv_comp_smul`,
+  `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies each
+  moment `∫ ‖y‖ ^ α ‖𝓕⁻ f y‖` of the inverse Fourier transform by `|c| ^ α`.
 * `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
   Fourier transform.
-* `TauCeti.integral_rpow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies each moment
-  `∫ ‖y‖ ^ α ‖𝓕⁻ f y‖` of the inverse Fourier transform by `|c| ^ α`.
 * `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
   Fourier transform.
+* `TauCeti.fourier_comp_sub_const`, `TauCeti.support_fourier_comp_sub_const`: translating a
+  function by `a` multiplies its Fourier transform by the character `𝐞 (-⟪a, ·⟫)`, so the support
+  of the Fourier transform does not change.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
@@ -144,11 +151,18 @@ theorem integral_rpow_mul_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc 
     mul_comm _ (|c| ^ α), mul_assoc, ← mul_assoc _ |c ^ finrank ℝ E|,
     inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
 
+/-- Dilating a function by `c` multiplies the `k`-th moment of its inverse Fourier transform by
+`|c| ^ k`: `∫ ‖y‖ ^ k ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ k ∫ ‖y‖ ^ k ‖𝓕⁻ f y‖`. -/
+theorem integral_norm_pow_mul_norm_fourierInv_comp_smul (f : E → F) (k : ℕ) {c : ℝ}
+    (hc : c ≠ 0) :
+    ∫ y, ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ k * ∫ y, ‖y‖ ^ k * ‖𝓕⁻ f y‖ := by
+  simpa only [Real.rpow_natCast] using integral_rpow_mul_norm_fourierInv_comp_smul f hc k
+
 /-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
 `∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
 theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
     ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
-  simpa using integral_rpow_mul_norm_fourierInv_comp_smul f hc 0
+  simpa using integral_norm_pow_mul_norm_fourierInv_comp_smul f 0 hc
 
 /-- **Dilating a function rescales the `Lʳ` norm of its inverse Fourier transform:** for `R > 0`,
 the inverse Fourier transform of `ξ ↦ g (R⁻¹ • ξ)` has `Lʳ` norm `R ^ (n - n / r)` times that of
@@ -166,6 +180,26 @@ theorem eLpNorm_fourierInv_comp_inv_smul (g : E → F) {R : ℝ} (hR : 0 < R) (r
     ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
     ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hR.le, ← Real.rpow_natCast,
     ← Real.rpow_neg hR.le, ← Real.rpow_add hR, sub_eq_add_neg]
+
+/-! ### Translation -/
+
+/-- **Fourier transform of a translate**: translation becomes modulation,
+`𝓕 (f (· - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ`. -/
+theorem fourier_comp_sub_const (f : E → F) (a ξ : E) :
+    𝓕 (fun x ↦ f (x - a)) ξ = 𝐞 (-⟪a, ξ⟫) • 𝓕 f ξ := by
+  -- On functions, `𝓕` is the Fourier integral for the pairing `innerₗ E`.
+  have h := congrFun (VectorFourier.fourierIntegral_comp_add_right 𝐞 volume (innerₗ E) f (-a)) ξ
+  simp only [Function.comp_def, ← sub_eq_add_neg, map_neg, LinearMap.neg_apply,
+    innerₗ_apply_apply] at h
+  exact h
+
+/-- **Frequencies of a translate**: translating a function does not change the support of its
+Fourier transform. -/
+theorem support_fourier_comp_sub_const (f : E → F) (a : E) :
+    Function.support (𝓕 (fun x ↦ f (x - a))) = Function.support (𝓕 f) := by
+  ext ξ
+  rw [Function.mem_support, Function.mem_support, fourier_comp_sub_const,
+    Circle.smul_def, smul_ne_zero_iff_right (Circle.coe_ne_zero _)]
 
 /-! ### Translation in frequency -/
 

@@ -81,10 +81,13 @@ section Sheafify
 variable {C : Type*} [Category.{u} C] [HasColimits C] [HasTerminal C]
   [HasWeakSheafify (Opens.grothendieckTopology X) C] (P : X.Presheaf C)
 
+omit [HasTerminal C] in
 /-- Sheafification does not change whether a stalk vanishes. -/
 theorem isZero_stalk_sheafify_iff :
     IsZero (stalk (CategoryTheory.sheafify (Opens.grothendieckTopology X) P) x) ↔
       IsZero (P.stalk x) :=
+  have : HasTerminal C := (TopCat.Sheaf.isTerminalOfEmpty
+    ((presheafToSheaf (Opens.grothendieckTopology X) C).obj P)).hasTerminal
   have := stalkFunctor_map_unit_toSheafify_isIso x C P
   (asIso ((stalkFunctor C x).map
     (CategoryTheory.toSheafify (Opens.grothendieckTopology X) P))).isZero_iff.symm

@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.RealForm
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.CompatibleForm
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
-import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -27,17 +27,20 @@ part of a Hermitian metric, it agrees with `g` on `L`, and `i L x` is the `g'`-o
 complement of `L x` at every point. Such metrics therefore exist whenever bundle metrics do,
 for instance over a σ-compact Hausdorff base.
 
-Smoothness of `P` is checked in a local frame `X` of `L`: read in a trivialization, the real
-frame `X` becomes a smooth family of complex-linear isomorphisms `ℂᵏ → F`, and `P` is the
-conjugate by this family of the coordinatewise real part.
+The projection `P` is defined in `TauCeti.Topology.VectorBundle.RealForm`, and its smoothness is
+proved in `TauCeti.Geometry.Manifold.VectorBundle.RealForm`.
+
+Boundary value problems need the relative form. When `L` is only given near a
+closed set `S`, such as the boundary of a manifold with boundary, and is maximal totally real
+over `S`, there is a smooth Hermitian metric with `i L x = (L x)^⊥` at the points of `S`.
 
 ## Main declarations
 
-* `TauCeti.totallyRealProjection`: the fibrewise projection `P x`.
-* `TauCeti.contMDiff_totallyRealProjection`: `P` is a smooth bundle endomorphism.
 * `Bundle.ContMDiffRiemannianMetric.totallyRealCompatible`: the metric `g'`.
 * `TauCeti.exists_contMDiffRiemannianMetric_compatible_totallyReal`: a smooth Hermitian metric
   with `i L x = (L x)^⊥` at every point exists over a σ-compact Hausdorff base.
+* `TauCeti.exists_contMDiffRiemannianMetric_compatible_totallyReal_on`: the same along a closed
+  set `S`, for `L` given only near `S` and maximal totally real over `S`.
 
 ## References
 
@@ -47,134 +50,8 @@ conjugate by this family of the coordinatewise real part.
 
 public noncomputable section
 
-open Bundle Set
+open Bundle Set Topology
 open scoped Manifold ContDiff
-
-namespace TauCeti
-
-section Projection
-
-variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-  [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
-  [TopologicalSpace B] [ChartedSpace H B]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
-  [FiniteDimensional ℂ F]
-  {V : B → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousConstSMul ℂ (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
-  {n : ℕ∞ω} {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
-
-local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F V
-
-variable (F) in
-/-- The projection of a fibre onto a maximal totally real subspace along its `i`-image, as a
-continuous real-linear map. It is continuous because the fibre is finite-dimensional. -/
-def totallyRealProjection
-    (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
-    (x : B) : V x →L[ℝ] V x where
-  toLinearMap := (L x).projection _ (hL x).isCompl
-  cont := by
-    let e := VectorBundle.continuousLinearEquivAt ℝ F V x
-    let : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
-    let f : F →ₗ[ℝ] F := e.toLinearEquiv.toLinearMap ∘ₗ (L x).projection _ (hL x).isCompl ∘ₗ
-      e.symm.toLinearEquiv.toLinearMap
-    have hf : ⇑((L x).projection _ (hL x).isCompl) = e.symm ∘ f ∘ e := by
-      funext v
-      simp [f]
-    -- The `cont` field is stated for the bare `toFun` of the linear map; restate it for the
-    -- function coercion so that `hf` can rewrite it.
-    change Continuous ⇑((L x).projection _ (hL x).isCompl)
-    rw [hf]
-    exact e.symm.continuous.comp (f.continuous_of_finiteDimensional.comp e.continuous)
-
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, ContinuousConstSMul ℂ (V x)] in
-/-- Evaluation of the fibrewise projection. -/
-@[simp]
-theorem totallyRealProjection_apply
-    (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
-    (x : B) (v : V x) : totallyRealProjection F hL x v = (L x).projection _ (hL x).isCompl v :=
-  (rfl)
-
-omit [∀ x, ContinuousConstSMul ℂ (V x)] in
-/-- **The projection onto a smooth totally real subbundle is smooth.** If the fibres of a
-real subbundle `L` with `C^n` local frames are maximal totally real, the projection onto `L`
-along `i L` is a `C^n` section of the endomorphism bundle. -/
-theorem contMDiff_totallyRealProjection [ContMDiffVectorBundle n F V IB]
-    (hLs : HasLocalContMDiffSubbundleFrames IB n F ι L)
-    (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
-    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (F →L[ℝ] F)
-      (E := fun y ↦ V y →L[ℝ] V y) x (totallyRealProjection F hL x)) := by
-  intro x₀
-  let := Fintype.ofFinite ι
-  obtain ⟨U, hU, hx₀, X, hX, hXs⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs x₀
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, ?_⟩
-  set e := trivializationAt F V x₀
-  have he₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x₀
-  let A : B → (ι → ℂ) →L[ℂ] F := IsSubbundleFrameOn.trivOperator ℂ F X x₀
-  have hA : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℂ] F) n A x₀ :=
-    IsSubbundleFrameOn.contMDiffAt_trivOperator
-      (fun i ↦ (hXs i).contMDiffAt (hU.mem_nhds hx₀)) he₀
-  have hAapply {y : B} (hy : y ∈ e.baseSet) (c : ι → ℂ) :
-      A y c = (e ⟨y, ∑ i, c i • X i y⟩).2 :=
-    IsSubbundleFrameOn.trivOperator_apply hy c
-  -- The real frame of `L y` is a complex basis of `V y`.
-  have hAsurj {y : B} (hyU : y ∈ U) (hy : y ∈ e.baseSet) : Function.Surjective (A y) := by
-    intro w
-    have hspan := (hL y).span_complex_eq_top (hX.span_eq hyU)
-    obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℂ).1
-      (hspan ▸ Submodule.mem_top : e.symm y w ∈ Submodule.span ℂ (range (X · y)))
-    exact ⟨c, by rw [hAapply hy, hc, e.apply_mk_symm hy]⟩
-  have hAinj {y : B} (hyU : y ∈ U) (hy : y ∈ e.baseSet) : Function.Injective (A y) := by
-    refine (injective_iff_map_eq_zero (A y)).2 fun c hc ↦ ?_
-    have h := hAapply hy c
-    rw [hc] at h
-    have hc' : ∑ i, c i • X i y = 0 := (e.continuousLinearEquivAt ℂ y hy).injective (by
-      rw [map_zero, Trivialization.continuousLinearEquivAt_apply]
-      exact h.symm)
-    have hli := (hL y).isTotallyReal.linearIndependent_complex (hX.linearIndependent hyU)
-      (fun i ↦ hX.apply_mem i hyU)
-    funext i
-    exact Fintype.linearIndependent_iff.1 hli c hc' i
-  have hleft : (A x₀).HasLeftInverse := by
-    let a := LinearEquiv.ofBijective (A x₀ : (ι → ℂ) →ₗ[ℂ] F)
-      ⟨hAinj hx₀ he₀, hAsurj hx₀ he₀⟩
-    refine ⟨(a.toContinuousLinearEquiv.symm : F →L[ℂ] (ι → ℂ)), fun c ↦ ?_⟩
-    have : a.toContinuousLinearEquiv c = A x₀ c := rfl
-    rw [ContinuousLinearEquiv.coe_coe, ← this, ContinuousLinearEquiv.symm_apply_apply]
-  obtain ⟨Linv, hLinv, hLA⟩ := hA.exists_contMDiffAt_leftInverse hleft
-  let R : (ι → ℂ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.pi fun i ↦
-    Complex.ofRealCLM ∘L Complex.reCLM ∘L ContinuousLinearMap.proj i
-  have hAr : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℝ] F) n (fun y ↦ (A y).restrictScalars ℝ) x₀ :=
-    (ContinuousLinearMap.restrictScalarsL ℂ (ι → ℂ) F ℝ ℝ).contDiff.comp_contMDiffAt hA
-  have hLr : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] (ι → ℂ)) n (fun y ↦ (Linv y).restrictScalars ℝ) x₀ :=
-    (ContinuousLinearMap.restrictScalarsL ℂ F (ι → ℂ) ℝ ℝ).contDiff.comp_contMDiffAt hLinv
-  refine (hAr.clm_comp ((contMDiffAt_const (c := R)).clm_comp hLr)).congr_of_eventuallyEq ?_
-  filter_upwards [hLA, hU.mem_nhds hx₀, e.open_baseSet.mem_nhds he₀] with y hyL hyU hye
-  ext w
-  obtain ⟨c, rfl⟩ := hAsurj hyU hye w
-  have hc : Linv y (A y c) = c := hyL c
-  have hsymm : e.symm y (A y c) = ∑ i, c i • X i y := by
-    rw [hAapply hye, e.symm_apply_apply_mk hye]
-  rw [ContinuousLinearMap.inCoordinates_eq hye hye]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', hc,
-    ContinuousLinearEquiv.coe_coe, Trivialization.continuousLinearEquivAt_symm_apply]
-  rw [hsymm, Trivialization.continuousLinearEquivAt_apply, totallyRealProjection_apply,
-    (hL y).projection_sum_smul (fun i ↦ hX.apply_mem i hyU), hAapply hye]
-  have hR : ∑ i, R c i • X i y = ∑ i, (c i).re • X i y :=
-    Finset.sum_congr rfl fun i _ ↦ by
-      simp only [R, ContinuousLinearMap.pi_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.proj_apply, Complex.reCLM_apply, Complex.ofRealCLM_apply]
-      rw [← smul_one_smul ℂ (c i).re (X i y), Complex.real_smul, mul_one]
-  rw [hR]
-
-end Projection
-
-end TauCeti
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -208,7 +85,7 @@ def totallyRealCompatible (g : ContMDiffRiemannianMetric IB n F V)
   let : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
   let : ∀ x, IsNormableSpace ℝ (V x) := fun x ↦
     (VectorBundle.continuousLinearEquivAt ℝ F V x).isNormableSpace
-  let P := totallyRealProjection F hL
+  let P x := totallyRealProjection F (hL x)
   have hP := contMDiff_totallyRealProjection hLs hL
   have hPJ := hP.clm_bundle_comp (contMDiff_smulIEquiv_bundle (IB := IB) (n := n) (G := F) (W := V))
   let b₁ : TauCeti.Manifold.BilinearSection IB F V ℝ n :=
@@ -302,7 +179,8 @@ variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
   {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
 
-local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F V
+local instance instVectorBundleRealTotallyRealMetric : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
 
 /-- **Existence of metrics compatible with a totally real subbundle.** Let `L` be a `C^n` real
 subbundle of a finite-rank `C^n` complex bundle over a σ-compact Hausdorff manifold, whose fibres
@@ -321,5 +199,116 @@ theorem exists_contMDiffRiemannianMetric_compatible_totallyReal {n : ℕ∞}
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := IB) (n := n) (F := F) (E := V)
   exact ⟨g.totallyRealCompatible hLs hL, g.totallyRealCompatible_inner_smul_I hLs hL,
     g.orthogonal_totallyRealCompatible hLs hL⟩
+
+/-- **Metrics compatible with a totally real subbundle along a closed set.** Let `S` be a closed
+subset of a σ-compact Hausdorff manifold, possibly with boundary or corners, for instance its
+boundary, and let `L` be a family of real subspaces of the fibres of a finite-rank `C^n` complex
+bundle which near every point of `S` has a `C^n` local frame and whose fibres over `S` are maximal
+totally real. There is a `C^n` metric invariant under multiplication by `i`, hence the real part
+of a Hermitian metric, for which `i (L x)` is the orthogonal complement of `L x` at every point of
+`S`. -/
+theorem exists_contMDiffRiemannianMetric_compatible_totallyReal_on {n : ℕ∞}
+    [ContMDiffVectorBundle n F V IB] {S : Set B} (hS : IsClosed S)
+    (hLs : ∀ x ∈ S, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
+      ∃ X : ι → Π x, V x, IsSubbundleFrameOn F L X U ∧ ∀ i, CMDiff[U] n (T% (X i)))
+    (hL : ∀ x ∈ S,
+      IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    ∃ g : ContMDiffRiemannianMetric IB n F V,
+      (∀ x (v w : V x), g.inner x (Complex.I • v) (Complex.I • w) = g.inner x v w) ∧
+      ∀ x ∈ S, LinearMap.BilinForm.orthogonal (g.inner x).toLinearMap₁₂ (L x) =
+        (L x).map ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) := by
+  let : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
+  let : ∀ x, ContinuousConstSMul ℝ (V x) := fun x ↦ inferInstance
+  let : ∀ x, IsNormableSpace ℝ (V x) := fun x ↦
+    (VectorBundle.continuousLinearEquivAt ℝ F V x).isNormableSpace
+  have : ∀ b, ContinuousAdd (V b →L[ℝ] ℝ) := fun b ↦ inferInstance
+  let : ∀ b, AddCommGroup (V b →L[ℝ] V b →L[ℝ] ℝ) := fun b ↦ inferInstance
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := IB) (n := n) (F := F) (E := V)
+  -- Near a point of `S` the fibres of `L` stay maximal totally real, and the compatible form of
+  -- `g` is a local solution; away from `S` the Hermitian average of `g` is one. The conditions
+  -- below are convex at each point, so a smooth partition of unity glues the local solutions.
+  -- The fibrewise conditions: a positive definite symmetric form, invariant under `i`, and over
+  -- `S` making `L` orthogonal to `i L`. Each is convex.
+  let t (b : B) : Set (V b →L[ℝ] V b →L[ℝ] ℝ) := {s | (∀ v w, s v w = s w v) ∧
+    (∀ v, v ≠ 0 → 0 < s v v) ∧ (∀ v w, s (Complex.I • v) (Complex.I • w) = s v w) ∧
+    (b ∈ S → ∀ a ∈ L b, ∀ c ∈ L b, s a (Complex.I • c) = 0)}
+  have ht (b : B) : Convex ℝ (t b) := by
+    rintro s ⟨hs₁, hs₂, hs₃, hs₄⟩ s' ⟨hs₁', hs₂', hs₃', hs₄'⟩ a d ha hd had
+    refine ⟨fun v w ↦ by simp [hs₁ v w, hs₁' v w], fun v hv ↦ ?_,
+      fun v w ↦ by simp [hs₃ v w, hs₃' v w],
+      fun hb x hx y hy ↦ by simp [hs₄ hb x hx y hy, hs₄' hb x hx y hy]⟩
+    have heval : (a • s + d • s') v v = a * s v v + d * s' v v := by simp
+    rw [heval]
+    rcases ha.eq_or_lt with rfl | ha
+    · have hd1 : d = 1 := by simpa using had
+      simpa [hd1] using hs₂' v hv
+    · exact add_pos_of_pos_of_nonneg (mul_pos ha (hs₂ v hv)) (mul_nonneg hd (hs₂' v hv).le)
+  obtain ⟨σ, hσ⟩ := exists_contMDiffSection_forall_mem_convex_of_local (n := n) IB
+    (fun b ↦ V b →L[ℝ] V b →L[ℝ] ℝ) t ht fun x₀ ↦ by
+      by_cases hx₀ : x₀ ∈ S
+      · -- Near a point of `S`: the compatible form of `g`.
+        obtain ⟨U, hU, hx₀U, X, hX, hXs⟩ := hLs x₀ hx₀
+        let W := U ∩ interior {y | IsMaximalTotallyReal
+          ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y)}
+        have hW : IsOpen W := hU.inter isOpen_interior
+        have hx₀W : x₀ ∈ W := ⟨hx₀U, mem_interior_iff_mem_nhds.2
+          (eventually_isMaximalTotallyReal hU hX hx₀U (hL x₀ hx₀))⟩
+        have hLW (y : B) (hy : y ∈ W) :
+            IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y) :=
+          interior_subset hy.2
+        classical
+        let P (y : B) : V y →L[ℝ] V y := if h : IsMaximalTotallyReal
+          ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y) then
+            totallyRealProjection F h else 0
+        have hP (y : B) (hy : y ∈ W) : P y = totallyRealProjection F (hLW y hy) := by
+          dsimp only [P]
+          split_ifs with h
+          · rfl
+          · exact absurd (hLW y hy) h
+        let J (y : B) : V y →L[ℝ] V y := (Complex.smulIEquiv (V y) : V y →L[ℝ] V y)
+        let s (y : B) : V y →L[ℝ] V y →L[ℝ] ℝ :=
+          (g.inner y).bilinearComp (P y) (P y) +
+            (g.inner y).bilinearComp (P y ∘L J y) (P y ∘L J y)
+        have hs (y : B) (hy : y ∈ W) (v w : V y) :
+            s y v w = (hLW y hy).compatibleForm (g.inner y).toLinearMap₁₂ v w := by
+          simp [s, hP y hy, J, Complex.smulIEquiv_apply]
+        refine ⟨W, hW.mem_nhds hx₀W, s, fun y hy ↦ ?_, fun y hy ↦ ?_⟩
+        · have hPy := contMDiffAt_totallyRealProjection hW (hX.mono inter_subset_left)
+            (fun i ↦ (hXs i).mono inter_subset_left) hLW hP hy
+          have hPJy := hPy.clm_bundle_comp
+            (contMDiff_smulIEquiv_bundle (IB := IB) (n := n) (G := F) (W := V) y)
+          exact (((g.contMDiff y).bilinearComp_bundle hPy).add_section
+            ((g.contMDiff y).bilinearComp_bundle hPJy)).contMDiffWithinAt
+        · have hJ := lsmul_I_comp_lsmul_I (E := V y)
+          refine ⟨fun v w ↦ ?_, fun v hv ↦ ?_, fun v w ↦ ?_, fun _ a ha c hc ↦ ?_⟩
+          · rw [hs y hy, hs y hy]
+            exact ((hLW y hy).isSymm_compatibleForm
+              fun a _ b _ ↦ by simpa using g.symm y a b).eq v w
+          · rw [hs y hy]
+            exact (hLW y hy).compatibleForm_pos hJ (fun a _ ha ↦ by simpa using g.pos y a ha) hv
+          · rw [hs y hy, hs y hy]
+            simpa using (hLW y hy).compatibleForm_map_map hJ (g.inner y).toLinearMap₁₂ v w
+          · rw [hs y hy]
+            simpa using (hLW y hy).compatibleForm_apply_map (g.inner y).toLinearMap₁₂ ha hc
+      · -- Away from `S`: the Hermitian average of `g`.
+        refine ⟨Sᶜ, hS.isOpen_compl.mem_nhds hx₀, g.hermitianAverage.inner,
+          g.hermitianAverage.contMDiff.contMDiffOn, fun y hy ↦ ⟨g.hermitianAverage.symm y,
+            g.hermitianAverage.pos y, g.hermitianAverage_inner_smul_I y,
+            fun hyS ↦ absurd hyS hy⟩⟩
+  let G : ContMDiffRiemannianMetric IB n F V :=
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection ⟨σ, σ.contMDiff⟩
+      ((TauCeti.Manifold.mem_positiveDefiniteBilinearSections _).2
+        ⟨(TauCeti.Manifold.mem_symmetricBilinearSections _).2 fun x v w ↦ (hσ x).1 v w,
+          fun x v hv ↦ (hσ x).2.1 v hv⟩)
+  have hGσ (x : B) (v w : V x) : G.inner x v w = σ x v w :=
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner _ _ x v w
+  refine ⟨G, fun x v w ↦ by rw [hGσ, hGσ]; exact (hσ x).2.2.1 v w, fun x hx ↦ ?_⟩
+  -- At a point of `S` the metric is its own compatible form, so `i L` is `L^⊥`.
+  have hJ := lsmul_I_comp_lsmul_I (E := V x)
+  have hG : (G.inner x).toLinearMap₁₂ = (hL x hx).compatibleForm (G.inner x).toLinearMap₁₂ :=
+    (hL x hx).eq_compatibleForm hJ (fun v w ↦ by simpa [hGσ] using (hσ x).2.2.1 v w)
+      (fun _ _ _ _ ↦ rfl) fun a ha c hc ↦ by simpa [hGσ] using (hσ x).2.2.2 hx a ha c hc
+  rw [hG]
+  exact (hL x hx).orthogonal_compatibleForm fun a _ ha ↦ by simpa using G.pos x a ha
 
 end TauCeti
