@@ -19,9 +19,10 @@ function near the whole set, not just its values on that set. This is the domain
 a holomorphic functional calculus near a spectrum, including disconnected spectra.
 
 We construct evaluation and restriction homomorphisms and characterize units by
-nonvanishing on `s`. Consequently the spectrum of a represented germ is exactly the
-image of `s`, and the coordinate germ has spectrum `s`. No compactness or nonemptiness
-is needed; at the empty set the germ algebra is the zero algebra.
+nonvanishing on `s`; the inverse is then represented by the pointwise inverse.
+Consequently the spectrum of a represented germ is exactly the image of `s`, and the
+coordinate germ has spectrum `s`. No compactness or nonemptiness is needed; at the empty
+set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
 and `Filter.Germ` for the quotient and its pointwise operations.
@@ -30,6 +31,7 @@ and `Filter.Germ` for the quotient and its pointwise operations.
 public noncomputable section
 
 open Filter Set Topology
+open scoped Ring
 
 namespace TauCeti
 
@@ -171,6 +173,16 @@ theorem eval_restrict (h : t ⊆ s) (x : ℂ) (hx : x ∈ t) (g : holomorphicGer
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   rfl
 
+/-- A representative with no zero on `s` times its pointwise inverse is the unit germ. -/
+theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
+    ofFun f hf * ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = 1 := by
+  apply Subtype.ext
+  apply Germ.coe_eq.mpr
+  apply eventually_nhdsSet_iff_forall.mpr
+  intro x hx
+  filter_upwards [(hf x hx).continuousAt.eventually_ne (hne x hx)] with z hz
+  exact mul_inv_cancel₀ hz
+
 /-- A holomorphic germ is a unit exactly when it is nonzero at every point of the set. -/
 theorem isUnit_iff (g : holomorphicGerms s) :
     IsUnit g ↔ ∀ (x : ℂ) (hx : x ∈ s), eval x hx g ≠ 0 := by
@@ -180,14 +192,14 @@ theorem isUnit_iff (g : holomorphicGerms s) :
   · obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
     intro h
     have hne : ∀ x ∈ s, f x ≠ 0 := by simpa using h
-    have hinv : AnalyticOnNhd ℂ (fun z ↦ (f z)⁻¹) s := fun x hx ↦ (hf x hx).inv (hne x hx)
-    refine isUnit_iff_exists_inv.mpr ⟨ofFun (fun z ↦ (f z)⁻¹) hinv, ?_⟩
-    apply Subtype.ext
-    apply Germ.coe_eq.mpr
-    apply eventually_nhdsSet_iff_forall.mpr
-    intro x hx
-    filter_upwards [(hf x hx).continuousAt.eventually_ne (hne x hx)] with z hz
-    exact mul_inv_cancel₀ hz
+    exact isUnit_iff_exists_inv.mpr ⟨_, ofFun_mul_ofFun_inv hf hne⟩
+
+/-- The inverse of a germ with no zero on `s` is represented by the pointwise inverse. -/
+theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
+    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = (ofFun f hf)⁻¹ʳ := by
+  have hu : IsUnit (ofFun f hf) := IsUnit.of_mul_eq_one _ (ofFun_mul_ofFun_inv hf hne)
+  rw [eq_comm, ← mul_one (ofFun f hf)⁻¹ʳ, Ring.inverse_mul_eq_iff_eq_mul _ _ _ hu,
+    ofFun_mul_ofFun_inv hf hne]
 
 /-- The spectrum of a holomorphic germ is its set of values on the base set. -/
 theorem spectrum_eq (g : holomorphicGerms s) :
