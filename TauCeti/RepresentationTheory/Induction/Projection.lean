@@ -187,6 +187,12 @@ noncomputable def indProjectionEquiv :
         indProjectionHom_apply_mk]
       simp
 
+/-- `TauCeti.indProjectionEquiv` is `TauCeti.indProjectionHom` in the forward direction. -/
+@[simp]
+theorem indProjectionEquiv_apply (x : IndV φ (ρ.tprod (τ.comp φ))) :
+    indProjectionEquiv φ ρ τ x = indProjectionHom φ ρ τ x :=
+  (rfl)
+
 end Linear
 
 section Rep

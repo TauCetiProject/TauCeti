@@ -83,15 +83,6 @@ section Basic
 
 variable (φ : MorseChart E f x)
 
-/-- The quadratic normal form of a Morse chart, as a function on the model space. -/
-noncomputable def quadratic (z : E) : ℝ :=
-  f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2
-
-/-- On the source of a Morse chart, `f` is the quadratic normal form read in the chart. -/
-theorem eqOn_quadratic : EqOn f (φ.quadratic ∘ φ.toChart) φ.toChart.source := fun y hy ↦ by
-  simp only [comp_apply, quadratic]
-  exact φ.eq_quadratic y hy
-
 /-- The negative gradient `z ↦ L⁻¹ (-(wᵢ (L z)ᵢ)ᵢ)` of the quadratic normal form, read in the
 coordinates of the Morse chart. -/
 noncomputable def linearField (z : E) : E :=
@@ -181,7 +172,7 @@ theorem hasFDerivAt_quadratic (z : E) :
     φ.coordL.hasFDerivAt
   convert h using 1
   · ext v
-    simp [quadratic, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
+    simp [quadratic_apply, diagonalQuadratic_apply, Finset.mul_sum, div_eq_inv_mul]
   · simp
 
 omit [FiniteDimensional ℝ E] in
@@ -239,14 +230,6 @@ theorem hessianQuadraticForm_quadratic (z u : E) :
   have := φ.finiteDimensional
   obtain ⟨B, hB, hBu⟩ := φ.exists_fderiv_quadratic_eq
   rw [hessianQuadraticForm_apply, hB, B.fderiv, hBu]
-
-omit [FiniteDimensional ℝ E] in
-/-- The quadratic normal form is smooth. -/
-theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
-  have := φ.finiteDimensional
-  obtain ⟨B, hB, -⟩ := φ.exists_fderiv_quadratic_eq
-  rw [contDiff_infty_iff_fderiv, hB]
-  exact ⟨fun z ↦ φ.differentiableAt_quadratic z, B.contDiff⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- The derivative of the quadratic normal form along the linear field is `-Σᵢ (L z)ᵢ²`. -/
@@ -372,12 +355,7 @@ theorem mdifferentiable (hX : IsAdaptedPseudoGradient f X) : MDifferentiable �
   -- derivative has a Morse chart, in which `f` is the (smooth) quadratic normal form.
   by_contra hd
   obtain ⟨φ, -⟩ := hX.exists_morseChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
-  have := Module.Finite.equiv φ.coord.symm
-  have h : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) (φ.quadratic ∘ φ.toChart) p :=
-    (φ.differentiableAt_quadratic _).mdifferentiableAt.comp p
-      (φ.mdifferentiableAt_toChart φ.mem_source)
-  exact hd (h.congr_of_eventuallyEq (Filter.eventuallyEq_of_mem
-    (φ.toChart.open_source.mem_nhds φ.mem_source) φ.eqOn_quadratic))
+  exact hd ((φ.contMDiffAt φ.mem_source).mdifferentiableAt (by simp))
 
 /-- **`f` is antitone along every integral curve of an adapted pseudo-gradient.** -/
 theorem antitone_comp {γ : ℝ → M} (hX : IsAdaptedPseudoGradient f X) (hγ : IsMIntegralCurve γ X) :
