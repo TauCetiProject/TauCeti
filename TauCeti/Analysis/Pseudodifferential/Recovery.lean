@@ -58,8 +58,9 @@ The wave packets `u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` of a fixed amplitude `�
 `t → ∞`, in the sense of Hörmander §18.1. For any symbol `a` of order `m`, the uniform bound
 `TauCeti.Symbol.exists_norm_rpow_neg_smul_coefficient_smul_add_le` and the identity above bound
 `‖t ^ (-m) Op(a) u_t (x)‖` uniformly for `t ≥ 1` and positions `x` in a compact set
-(`TauCeti.Symbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_le`). For a classical symbol,
-`TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul` and dominated convergence give
+(`TauCeti.Symbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_cutoffExponential_le`). For a
+classical symbol, `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul` and dominated
+convergence give
 
 `t ^ (-m) exp(-i ⟪x, t ξ⟫) Op(a) u_t (x) → σ(a)(x, ξ) (φ(x) v)`
 
@@ -315,7 +316,7 @@ private lemma norm_integrand_le {a : Symbol n V W m} {K : Set (CoordinateSpace n
 a nonzero frequency `ξ`, a Schwartz amplitude `φ` and `v ∈ V`, the quantizations of the wave
 packets `u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` satisfy `‖t ^ (-m) Op(a) u_t (x)‖ ≤ B` for all `t ≥ 1`
 and positions `x` in a compact set. -/
-theorem exists_norm_rpow_neg_smul_quantizeSchwartzValue_le [CompleteSpace V]
+theorem exists_norm_rpow_neg_smul_quantizeSchwartzValue_cutoffExponential_le [CompleteSpace V]
     (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) (φ : 𝓢(CoordinateSpace n, ℂ)) (v : V) :
     ∃ B, ∀ x ∈ K, ∀ t : ℝ, 1 ≤ t →
@@ -422,7 +423,8 @@ theorem tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential
     rw [map_smul, inner_smul_left, ← mul_assoc, Complex.mul_conj', Complex.real_smul,
       Complex.ofReal_pow]
   simp_rw [← integral_smul, hpair, ← hlim]
-  obtain ⟨B, hB⟩ := a.toSymbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_le hφ hξ φ v
+  obtain ⟨B, hB⟩ :=
+    a.toSymbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_cutoffExponential_le hφ hξ φ v
   refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖φ x‖ * (B * ‖v‖))
     (.of_forall fun t ↦ ?_) ((eventually_ge_atTop 1).mono fun t ht ↦ .of_forall fun x ↦ ?_)
     (φ.integrable.norm.mul_const _) (.of_forall fun x ↦ ?_)
