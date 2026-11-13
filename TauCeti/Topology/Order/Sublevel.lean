@@ -275,12 +275,7 @@ theorem bandPair_neg {a b : β} (hab : a ≤ b) :
   have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by
     ext x
     simp
-  -- Pairs of nested subsets agree when the subsets do; the inclusion proofs are irrelevant.
-  have key {s t s' t' : Set X} (h : s ⊆ t) (h' : s' ⊆ t') (hs : s = s') (ht : t = t') :
-      TopPair.ofInclusion (X := TopCat.of X) h = TopPair.ofInclusion (X := TopCat.of X) h' := by
-    subst hs ht
-    rfl
-  exact key _ _ hlevel (preimage_neg_Icc_neg f a b)
+  exact TopPair.ofInclusion_congr (X := TopCat.of X) _ _ hlevel (preimage_neg_Icc_neg f a b)
 
 end Neg
 

@@ -68,6 +68,12 @@ abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
   TopPair.of (A := TopCat.of s) (X := TopCat.of t)
     (TopCat.ofHom (ContinuousMap.inclusion h)) (Topology.IsEmbedding.inclusion h)
 
+/-- The pairs of nested subsets `s ⊆ t` and `s' ⊆ t'` agree when the subsets do. -/
+lemma ofInclusion_congr {X : TopCat.{u}} {s t s' t' : Set X} (h : s ⊆ t) (h' : s' ⊆ t')
+    (hs : s = s') (ht : t = t') : ofInclusion h = ofInclusion h' := by
+  subst hs ht
+  rfl
+
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 

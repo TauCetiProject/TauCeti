@@ -308,11 +308,6 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ} (n : ℕ)
     -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
     have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
     let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
-    -- Pairs of nested subsets agree when the subsets do; the inclusion proofs are irrelevant.
-    have hpair {s t s' t' : Set Y} (h : s ⊆ t) (h' : s' ⊆ t') (hs : s = s') (ht : t = t') :
-        TopPair.ofInclusion h = TopPair.ofInclusion h' := by
-      subst hs ht
-      rfl
     have hinner (i : ℕ) (hi : i ≤ n) : Module.Finite k
         ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i : ModuleCat k) := by
       -- On `[0, N + 1]`, the `ℤ`-indexed filtration `q ↦ A q.toNat` has the same pairs as `A`.
@@ -321,10 +316,10 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ} (n : ℕ)
         fun q hq ↦ by
           rw [Finset.mem_Ico] at hq
           lift q to ℕ using hq.1
-          rw [hpair _ (hA q.le_succ) (congrArg A (Int.toNat_natCast q))
+          rw [TopPair.ofInclusion_congr _ (hA q.le_succ) (congrArg A (Int.toNat_natCast q))
             (congrArg A Int.toNat_natCast_add_one)]
           exact hfin' q (by lia) i hi
-      rwa [hpair _ (hA (Nat.zero_le (N + 1))) (congrArg A Int.toNat_zero)
+      rwa [TopPair.ofInclusion_congr _ (hA (Nat.zero_le (N + 1))) (congrArg A Int.toNat_zero)
         (congrArg A (Int.toNat_natCast (N + 1)))] at key
     -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by
     -- `TopTriple.innerPair_obj_ofInclusions` and its siblings, which hold by `rfl`.
