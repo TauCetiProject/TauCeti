@@ -91,7 +91,6 @@ theorem IsRealForm.frobeniusSchurIndicator_eq_one [ρ.IsIrreducible] (h : IsReal
     frobeniusSchurIndicator ρ = 1 := by
   have : FiniteDimensional ℂ V := ρ.asModuleEquiv.finiteDimensional
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
-  have : FiniteDimensional ℝ W := h.finiteDimensional_iff.mpr inferInstance
   have hrank : finrank ℝ W = finrank ℂ V := h.finrank_eq
   have : Nontrivial W :=
     Module.nontrivial_of_finrank_pos (R := ℝ) (hrank ▸ Module.finrank_pos)

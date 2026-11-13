@@ -274,20 +274,24 @@ theorem exists_isInvariantSesqForm_isPosSemidef_apply_self_ne_zero (ρ : Represe
       simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, Finsupp.mul_sum]
       exact Finsupp.sum_congr fun i _ => by simp only [RingHom.id_apply]; ring)
   have hH₀apply : ∀ x y : V, H₀ x y = (b.repr x).sum fun i a => (starRingEnd ℂ) a * b.repr y i :=
-    fun x y => rfl
+    fun x y => by simp only [H₀, LinearMap.mk₂'ₛₗ_apply]
   have hH₀nonneg : H₀.IsNonneg := by
     refine ⟨fun x => ?_⟩
-    rw [hH₀apply]
-    exact Finset.sum_nonneg fun i _ => star_mul_self_nonneg _
+    rw [hH₀apply, Finsupp.sum]
+    exact Finset.sum_nonneg fun i _ => by
+      rw [starRingEnd_apply]
+      exact star_mul_self_nonneg _
   have hH₀symm : H₀.IsSymm := hH₀nonneg.isSymm
   have hH₀def : ∀ x : V, H₀ x x = 0 → x = 0 := by
     intro x hx
-    rw [hH₀apply] at hx
+    rw [hH₀apply, Finsupp.sum] at hx
     have hzero : ∀ i, b.repr x i = 0 := by
       intro i
       by_contra hi
       have := (Finset.sum_eq_zero_iff_of_nonneg
-        (fun j (_ : j ∈ (b.repr x).support) => star_mul_self_nonneg (b.repr x j))).mp hx i
+        (fun j (_ : j ∈ (b.repr x).support) => by
+          rw [starRingEnd_apply]
+          exact star_mul_self_nonneg (b.repr x j))).mp hx i
         (Finsupp.mem_support_iff.mpr hi)
       exact hi (by simpa using this)
     exact b.repr.map_eq_zero_iff.mp (Finsupp.ext hzero)

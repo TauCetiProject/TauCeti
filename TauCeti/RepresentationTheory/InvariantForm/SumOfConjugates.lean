@@ -172,12 +172,13 @@ theorem exists_isInvariantForm_isSymm_ne_zero (σ : Representation k G W) [Nontr
     exact TauCeti.permutationForm_self_pos (e.map_ne_zero_iff.mpr hy)
   refine ⟨sumOfConjugatesForm σ B₀, isInvariantForm_sumOfConjugatesForm σ B₀,
     isSymm_sumOfConjugatesForm ?_, ?_⟩
-  · exact ⟨fun x y => TauCeti.permutationForm_comm _ _⟩
+  · refine ⟨fun x y => ?_⟩
+    rw [hB₀, LinearMap.compl₁₂_apply, LinearMap.compl₁₂_apply]
+    exact TauCeti.permutationForm_comm _ _
   · obtain ⟨x, hx⟩ := exists_ne (0 : W)
     intro hzero
     have := posDef_toQuadraticMap_sumOfConjugatesForm (σ := σ) hB₀pos x hx
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hzero] at this
-    exact lt_irrefl _ this
+    simp [hzero] at this
 
 end OrderedField
 
