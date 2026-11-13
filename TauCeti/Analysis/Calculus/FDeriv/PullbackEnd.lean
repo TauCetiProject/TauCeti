@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.Calculus.VectorField
 public import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
@@ -29,11 +28,6 @@ the pullback is `C^n`.
   pullback with `J`.
 * `OpenPartialHomeomorph.symm_pullbackEnd_comp_fderiv`: the derivative of `e` intertwines `J`
   with its pullback along `e.symm`.
-* `OpenPartialHomeomorph.differentiableAt_and_symm_of_contDiffOn`: a `C^n` open partial
-  homeomorphism with `C^n` inverse, `n ≠ 0`, and its inverse are differentiable at corresponding
-  points.
-* `OpenPartialHomeomorph.pullback_symm_apply`: Mathlib's pullback `VectorField.pullback` of a
-  vector field along `e.symm` is its pushforward `De_p (X p)` by `e`.
 * `OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`: the pullback of a field squaring
   to `-1` squares to `-1`.
 -/
@@ -86,28 +80,6 @@ theorem symm_pullbackEnd_comp_fderiv (J : E → E →L[𝕜] E) {p : E} (hp : p 
   refine ContinuousLinearMap.ext fun v ↦ ?_
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, pullbackEnd_apply,
     e.symm_symm, e.left_inv hp, e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs]
-
-/-- An open partial homeomorphism that is `C^n` on its source, with `n ≠ 0` and inverse `C^n` on
-its target, is differentiable at every point `p` of its source, and its inverse is differentiable
-at `e p`. -/
-theorem differentiableAt_and_symm_of_contDiffOn {n : ℕ∞ω} (he : ContDiffOn 𝕜 n e e.source)
-    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {p : E} (hp : p ∈ e.source) :
-    DifferentiableAt 𝕜 e p ∧ DifferentiableAt 𝕜 e.symm (e p) :=
-  ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hp),
-    (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hp))⟩
-
-/-- **Pulling a vector field back along the inverse pushes it forward.** Mathlib's pullback
-`VectorField.pullback` of a vector field `X` on `E` along `e.symm` is, at `e p`, the
-pushforward `De_p (X p)`. -/
-theorem pullback_symm_apply (X : E → E) {p : E} (hp : p ∈ e.source)
-    (he : DifferentiableAt 𝕜 e p) (hs : DifferentiableAt 𝕜 e.symm (e p)) :
-    VectorField.pullback 𝕜 e.symm X (e p) = fderiv 𝕜 e p (X p) := by
-  have hinv : (fderiv 𝕜 e.symm (e p)).IsInvertible :=
-    e.symm.isInvertible_fderiv (e.map_source hp) hs (by rwa [e.symm_symm, e.left_inv hp])
-  have h := VectorField.fderiv_pullback e.symm X (e p) hinv
-  rw [e.left_inv hp] at h
-  exact hinv.injective
-    (h.trans (e.fderiv_symm_apply_fderiv_apply_of_mem_source hp he hs (X p)).symm)
 
 /-- **The pullback of an almost complex structure is an almost complex structure.** If
 `J (e p)` squares to `-1`, so does the pulled-back endomorphism at `p`. -/

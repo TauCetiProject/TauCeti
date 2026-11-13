@@ -34,6 +34,9 @@ them, so the linear equations with arbitrary coefficient fields are special case
 
 * `TauCeti.isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn`: the equation does not depend on
   which weak derivative is used, since weak derivatives agree almost everywhere.
+* `TauCeti.isWeakCauchyRiemannOn_congr` and `TauCeti.isWeakCauchyRiemannOn_congr_ae`: the
+  equation only sees `u` on `U`, and `J` and `η` along the graph of `u` almost everywhere on the
+  interior.
 * `TauCeti.isWeakCauchyRiemannOn_iff_of_contDiffOn`: for `u` of class `C¹` on an open set `Ω`,
   with `J` and `η` continuous along `u`, the predicate is the pointwise equation on `Ω` for the
   classical derivative, for every exponent `p`.
@@ -152,6 +155,25 @@ theorem congr (h : IsWeakCauchyRiemannOn p U J η u) {v : ℂ → V} (huv : Set.
   rwa [← hzv]
 
 end IsWeakCauchyRiemannOn
+
+/-- The predicate only sees the values of `u` on `U`. -/
+theorem isWeakCauchyRiemannOn_congr {v : ℂ → V} (huv : Set.EqOn u v U) :
+    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U J η v :=
+  ⟨fun h => h.congr huv, fun h => h.congr huv.symm⟩
+
+/-- The predicate only sees `J` and `η` along the graph of `u`, almost everywhere on the interior
+of `U`: changing them off this graph, or on a null set of the interior, does not change the
+equation. -/
+theorem isWeakCauchyRiemannOn_congr_ae {J' : ℂ → V → V →L[ℝ] V} {η' : ℂ → V → V}
+    (hJ : ∀ᵐ z ∂volume.restrict (interior U), J z (u z) = J' z (u z))
+    (hη : ∀ᵐ z ∂volume.restrict (interior U), η z (u z) = η' z (u z)) :
+    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U J' η' u := by
+  refine ⟨fun ⟨hc, hu, D, hD, hDp, hae⟩ => ⟨hc, hu, D, hD, hDp, ?_⟩,
+    fun ⟨hc, hu, D, hD, hDp, hae⟩ => ⟨hc, hu, D, hD, hDp, ?_⟩⟩
+  · filter_upwards [hae, hJ, hη] with z hz hJz hηz
+    rwa [← hJz, ← hηz]
+  · filter_upwards [hae, hJ, hη] with z hz hJz hηz
+    rwa [hJz, hηz]
 
 /-- A weak solution is a continuous map in `W^{1,p}_loc` of `U` for which the equation holds with
 every weak derivative on the interior. -/

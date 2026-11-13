@@ -10,12 +10,11 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.Algebra.Module.Determinant
-public import TauCeti.Analysis.Calculus.FDeriv.Equiv
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 
 /-!

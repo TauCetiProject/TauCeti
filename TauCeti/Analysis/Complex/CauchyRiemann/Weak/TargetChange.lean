@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
-public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
+public import TauCeti.Analysis.Calculus.VectorField
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.RealDeriv
 import TauCeti.Analysis.Sobolev.Local.ChainRule
@@ -38,6 +38,8 @@ subsets of `U`, every statement applies verbatim to half-discs.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
   diffeomorphisms of the target. The field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along
   `Ψ.symm` and the term `Ψ_* η` is Mathlib's `VectorField.pullback` along `Ψ.symm`.
+* `TauCeti.isWeakCauchyRiemannOn_iff_continuousLinearEquiv_comp`: invariance under continuous
+  linear equivalences `A` of the target, which transport `J` to `A ∘ J ∘ A⁻¹`.
 * `TauCeti.IsWeakCauchyRiemannOn.contDiffOn_comp_graph_of_intertwine`: domain-dependent changes
   of target coordinates `z ↦ Φ(z, u z)`.
 * `TauCeti.IsWeakCauchyRiemannOn.conj_comp`: complex conjugation transports the standard
@@ -114,9 +116,11 @@ theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   all_goals
     have hx := huΨ (interior_subset hz)
-    obtain ⟨hd, hds⟩ := Ψ.differentiableAt_and_symm_of_contDiffOn hΨ hΨs one_ne_zero hx
+    have hd := (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
+    have hds := (hΨs.differentiableOn one_ne_zero).differentiableAt
+      (Ψ.open_target.mem_nhds (Ψ.map_source hx))
   · exact Ψ.symm_pullbackEnd_comp_fderiv (J z) hx hd hds
-  · exact Ψ.pullback_symm_apply (η z) hx hd hds
+  · exact Ψ.vectorFieldPullback_symm_apply (η z) hx hd hds
 
 /-- **Invariance under `C¹` diffeomorphisms of the target.** For a `C¹` open partial
 homeomorphism `Ψ` with `C¹` inverse whose source contains `u '' U`, `u` is a weak solution for
@@ -135,7 +139,9 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   all_goals
     have hx := huΨ (interior_subset hz)
-    obtain ⟨hd, hds⟩ := Ψ.differentiableAt_and_symm_of_contDiffOn hΨ hΨs one_ne_zero hx
+    have hd := (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
+    have hds := (hΨs.differentiableOn one_ne_zero).differentiableAt
+      (Ψ.open_target.mem_nhds (Ψ.map_source hx))
   · exact (Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds
       (by rwa [Ψ.symm_symm, Ψ.left_inv hx])).symm
   · exact (VectorField.fderiv_pullback Ψ.symm (η z) (Ψ (u z))
@@ -143,6 +149,29 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
         (by rwa [Ψ.symm_symm, Ψ.left_inv hx]))).symm
 
 end Diffeomorphism
+
+/-! ### Linear changes of the target -/
+
+/-- **Invariance under linear changes of the target.** For a continuous linear equivalence
+`A : V ≃L[ℝ] W`, `u` is a weak solution for `J` and `η` exactly when `A ∘ u` is a weak solution
+for `A ∘ J ∘ A⁻¹` and `A ∘ η ∘ A⁻¹`. Each side makes its codomain complete, hence both. -/
+theorem isWeakCauchyRiemannOn_iff_continuousLinearEquiv_comp (A : V ≃L[ℝ] W) :
+    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U
+      (fun z y => (A : V →L[ℝ] W).comp ((J z (A.symm y)).comp (A.symm : W →L[ℝ] V)))
+      (fun z y => A (η z (A.symm y))) (fun z => A (u z)) := by
+  have hcomplete : CompleteSpace V ↔ CompleteSpace W :=
+    completeSpace_congr (e := A.toEquiv) A.isUniformEmbedding
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · have := hcomplete.1 h.completeSpace
+    refine h.contDiffOn_comp_of_intertwine isOpen_univ A.contDiff.contDiffOn (mapsTo_univ _ _)
+      (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => ?_)
+      (Filter.Eventually.of_forall fun z => ?_) <;> simp [A.fderiv]
+  · have := hcomplete.2 h.completeSpace
+    refine (h.contDiffOn_comp_of_intertwine (J' := J) (η' := η) isOpen_univ
+      A.symm.contDiff.contDiffOn (mapsTo_univ _ _)
+      (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => ?_)
+      (Filter.Eventually.of_forall fun z => ?_)).congr fun z _ => A.symm_apply_apply (u z) <;>
+    simp [A.symm.fderiv]
 
 /-! ### Domain-dependent changes of target coordinates -/
 
@@ -224,30 +253,6 @@ example {u : ℂ → ℂ}
     (Filter.Eventually.of_forall fun z => ContinuousLinearMap.ext fun v => ?_)
     (Filter.Eventually.of_forall fun z => by simp [hd])
   simp [hd, mul_left_comm]
-
--- A linear change of target `A` transports `J` to `A ∘ J ∘ A⁻¹` and `η` to `A ∘ η ∘ A⁻¹`.
-example [CompleteSpace V] [CompleteSpace W] (A : V ≃L[ℝ] W) :
-    IsWeakCauchyRiemannOn p U J η u ↔ IsWeakCauchyRiemannOn p U
-      (fun z y => (A : V →L[ℝ] W).comp ((J z (A.symm y)).comp (A.symm : W →L[ℝ] V)))
-      (fun z y => A (η z (A.symm y))) (fun z => A (u z)) := by
-  have h := isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp (p := p) (J := J) (η := η)
-    (U := U) (u := u) (Ψ := A.toHomeomorph.toOpenPartialHomeomorph)
-    (by simpa using A.contDiff.contDiffOn)
-    (by simpa using A.symm.contDiff.contDiffOn) (mapsTo_univ _ _)
-  have e1 : ⇑A.toHomeomorph.toOpenPartialHomeomorph = ⇑A := by ext; simp
-  have e2 : ⇑A.toHomeomorph.toOpenPartialHomeomorph.symm = ⇑A.symm := by ext; simp
-  have hS : (fun z => A.toHomeomorph.toOpenPartialHomeomorph.symm.pullbackEnd (J z)) =
-      fun z y => (A : V →L[ℝ] W).comp ((J z (A.symm y)).comp (A.symm : W →L[ℝ] V)) := by
-    funext z y
-    ext v
-    rw [OpenPartialHomeomorph.pullbackEnd_apply, OpenPartialHomeomorph.symm_symm, e1, e2,
-      A.fderiv, A.symm.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
-  have hT : (fun z => VectorField.pullback ℝ A.toHomeomorph.toOpenPartialHomeomorph.symm (η z)) =
-      fun z y => A (η z (A.symm y)) := by
-    funext z y
-    rw [VectorField.pullback_eq_of_fderiv_eq (M := A.symm) (by rw [e2, A.symm.fderiv]), e2,
-      ContinuousLinearEquiv.symm_symm]
-  rwa [hS, hT, e1] at h
 
 end Checks
 
