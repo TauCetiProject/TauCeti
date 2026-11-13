@@ -45,6 +45,11 @@ away from its zeros, with `c = 1 / 4`.
 
 ## Main results
 
+* `TemperedDistribution.memSobolev_add_two_of_neg_laplacian_add_smul`: for `1 < p < ∞`, a tempered
+  distribution of some Sobolev order with `-Δ T + c T ∈ H^{s,p}` lies in `H^{s+2,p}`.
+* `TemperedDistribution.laplacian_toTemperedDistribution_apply_postcompCLM`: the distributional
+  Laplacian of a `C²` function `v ∈ Lᵖ` is its classical Laplacian on compactly supported test
+  functions.
 * `TemperedDistribution.mem_realSobolevFunctions_add_two_of_sub_laplacian`: for `1 < p < ∞`,
   `c v - Δv ∈ Lᵖ ∩ H^{s,p}` implies `v ∈ Lᵖ ∩ H^{s+2,p}` for a `C²` function `v ∈ Lᵖ`.
 * `TemperedDistribution.mem_realSobolevFunctions_add_two_of_laplacian_eq_mul_exp_sub_one_add`:
@@ -71,6 +76,61 @@ open scoped SchwartzMap Laplacian Distributions ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+section inner
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **Elliptic bootstrap on the Bessel-potential scale.** For `1 < p < ∞` and any real `c`, a
+tempered distribution `T` of some Sobolev order `t` with `-Δ T + c T ∈ H^{s,p}` lies in
+`H^{s+2,p}`. The Bessel potential of order two is `1 - (2π)⁻² Δ`, and
+`Δ T = c T - (-Δ T + c T)`, so the order of `T` gains two at each step until it reaches `s + 2`.
+For `c > 0` and `p = 2` this is one direction of
+`TemperedDistribution.memSobolev_add_two_iff_neg_laplacian_add_smul`, which needs no a priori
+order `t`. -/
+theorem memSobolev_add_two_of_neg_laplacian_add_smul {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {c s t : ℝ} {T : 𝓢'(E, F)} (hT : MemSobolev t p T)
+    (h : MemSobolev s p (-Δ T + c • T)) : MemSobolev (s + 2) p T := by
+  have hstep {r : ℝ} (hr : MemSobolev r p T) : MemSobolev (2 + min r s) p T := by
+    have hJ : besselPotential E F 2 T = T - ((2 * Real.pi) ^ 2)⁻¹ • (c • T - (-Δ T + c • T)) := by
+      rw [besselPotential_two_eq_sub_laplacian]
+      congr 2
+      abel
+    rw [← memSobolev_besselPotential_iff, hJ]
+    have hr' := hr.mono_of_one_lt hp hp_top (min_le_left r s)
+    exact hr'.sub (((hr'.smul_of_tower c).sub
+      (h.mono_of_one_lt hp hp_top (min_le_right r s))).smul_of_tower _)
+  have hall (n : ℕ) : MemSobolev (min (s + 2) (t + 2 * n)) p T := by
+    induction n with
+    | zero => exact hT.mono_of_one_lt hp hp_top (by simp)
+    | succ n ih =>
+      refine (hstep ih).mono_of_one_lt hp hp_top ?_
+      push_cast
+      rw [← min_add_add_left, ← min_add_add_left]
+      simp only [le_min_iff, min_le_iff]
+      exact ⟨⟨Or.inl (by linarith), Or.inr (by linarith)⟩, Or.inl (by linarith)⟩
+  obtain ⟨n, hn⟩ := exists_nat_ge ((s + 2 - t) / 2)
+  have h := hall n
+  rwa [min_eq_left (by linarith)] at h
+
+end inner
+
+/-- On a compactly supported real test function `φ`, the distributional Laplacian of a real `C²`
+function `v ∈ Lᵖ(E)` is integration against its classical Laplacian `Δv`. This is Green's second
+identity; no decay of `v` or of its derivatives at infinity is assumed. -/
+theorem laplacian_toTemperedDistribution_apply_postcompCLM {p : ℝ≥0∞} [Fact (1 ≤ p)] {v : E → ℝ}
+    (hv : ContDiff ℝ 2 v) (hvp : MemLp v p volume) {φ : 𝓢(E, ℝ)} (hφ : HasCompactSupport φ) :
+    Δ (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp (hvp.toLp v)))
+        (φ.postcompCLM Complex.ofRealCLM) = ((∫ x, φ x * Δ v x : ℝ) : ℂ) := by
+  let φ' : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ) :=
+    ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
+  have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume)
+    (hv.contDiffOn (s := (⊤ : TopologicalSpace.Opens E))) φ'
+  simp only [φ', TestFunction.coe_mk, smul_eq_mul] at hgreen
+  rw [laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
+    Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hvp.coeFn_toLp]
+  simp only [SchwartzMap.laplacian_apply]
+  rw [hgreen]
+
 /-- **Elliptic regularity for classical functions.** For `1 < p < ∞` and any real `c`, a real `C²`
 function `v ∈ Lᵖ(E)` with `c v - Δv ∈ Lᵖ ∩ H^{s,p}` lies in `Lᵖ ∩ H^{s+2,p}` (these are `H^{s,p}`
 and `H^{s+2,p}` when `s ≥ 0`). Here `Δv` is the classical Laplacian; no decay of `v` or of its
@@ -81,63 +141,25 @@ theorem mem_realSobolevFunctions_add_two_of_sub_laplacian {p : ℝ≥0∞} [Fact
     v ∈ realSobolevFunctions E (s + 2) p := by
   obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 h
   set T : 𝓢'(E, ℂ) := Lp.toTemperedDistribution (Complex.ofRealCLM.compLp (hvp.toLp v))
-  set U : 𝓢'(E, ℂ) := Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)
-  have hΔv : Continuous (Δ v) := (hv.laplacian (m := 0) (by simp)).continuous
   -- The distributional equation `-Δ T + c T = c v - Δv`, tested on compactly supported functions.
-  have hT : -Δ T + c • T = U := by
+  have hT : -Δ T + c • T = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u) := by
     refine ext_real fun φ hφ ↦ ?_
-    let φ' : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ) :=
-      ⟨φ, φ.smooth ⊤, hφ, by simp only [TopologicalSpace.Opens.coe_top, Set.subset_univ]⟩
-    have hgreen := ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume)
-      (hv.contDiffOn (s := (⊤ : TopologicalSpace.Opens E))) φ'
-    simp only [φ', TestFunction.coe_mk, smul_eq_mul] at hgreen
-    have hT' (ψ : 𝓢(E, ℝ)) : T (ψ.postcompCLM Complex.ofRealCLM) = ((∫ x, ψ x * v x : ℝ) : ℂ) := by
-      rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-        integral_congr_ae (hvp.coeFn_toLp.mono fun x hx ↦ by rw [hx])]
-    have hu' : U (φ.postcompCLM Complex.ofRealCLM) =
-        ((∫ x, φ x * (c * v x - Δ v x) : ℝ) : ℂ) := by
-      rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-        integral_congr_ae (huf.mono fun x hx ↦ by rw [hx])]
-    have hsplit : ∫ x, φ x * (c * v x - Δ v x) = c * (∫ x, φ x * v x) - ∫ x, φ x * Δ v x := by
-      have hcv : Integrable (fun x ↦ c * (φ x * v x)) :=
-        ((φ.continuous.mul hv.continuous).integrable_of_hasCompactSupport hφ.mul_right).const_mul c
-      have hΔ : Integrable (fun x ↦ φ x * Δ v x) :=
-        (φ.continuous.mul hΔv).integrable_of_hasCompactSupport hφ.mul_right
-      rw [← integral_const_mul, ← integral_sub hcv hΔ]
-      congr 1
-      ext x
-      ring
-    have hΔφ : ∫ x, (Δ φ : 𝓢(E, ℝ)) x * v x = ∫ x, φ x * Δ v x := by
-      simp only [SchwartzMap.laplacian_apply]
-      exact hgreen
-    rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      hT', hT', hu', hsplit, hΔφ, Complex.real_smul]
+    have hφv : Integrable (fun x ↦ φ x * v x) :=
+      (φ.continuous.mul hv.continuous).integrable_of_hasCompactSupport hφ.mul_right
+    have hΔv : Continuous (Δ v) := (hv.laplacian (m := 0) (by simp)).continuous
+    have hφΔ : Integrable (fun x ↦ φ x * Δ v x) :=
+      (φ.continuous.mul hΔv).integrable_of_hasCompactSupport hφ.mul_right
+    rw [add_apply, neg_apply, smul_apply,
+      laplacian_toTemperedDistribution_apply_postcompCLM hv hvp hφ,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hvp.coeFn_toLp,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq huf]
+    simp_rw [mul_sub, mul_left_comm (φ _) c]
+    rw [integral_sub (hφv.const_mul c) hφΔ, integral_const_mul, Complex.real_smul]
     push_cast
     ring
-  -- Writing the Bessel potential `J² T = T - (2π)⁻² Δ T` with `Δ T = c T - U`, each step gains
-  -- two derivatives up to the regularity of `U`: `T ∈ H^{min (s + 2) (2n), p}` for every `n`.
-  have hstep {t : ℝ} (ht : MemSobolev t p T) : MemSobolev (2 + min t s) p T := by
-    have hJ : besselPotential E ℂ 2 T = T - (((2 * Real.pi) ^ 2)⁻¹ : ℂ) • (c • T - U) := by
-      rw [besselPotential_two_eq_sub_laplacian, ← hT, RCLike.real_smul_eq_coe_smul (K := ℂ)]
-      simp
-    rw [← memSobolev_besselPotential_iff, hJ]
-    have hT' := ht.mono_of_one_lt hp hp_top (min_le_left t s)
-    exact hT'.sub (((hT'.smul (c : ℂ)).sub (hu.mono_of_one_lt hp hp_top (min_le_right t s))).smul _)
-  have hall (n : ℕ) : MemSobolev (min (s + 2) (2 * n)) p T := by
-    induction n with
-    | zero =>
-      refine (memSobolev_zero_iff.2 ⟨_, rfl⟩).mono_of_one_lt hp hp_top ?_
-      simp
-    | succ n ih =>
-      refine (hstep ih).mono_of_one_lt hp hp_top ?_
-      push_cast
-      rw [← min_add_add_left, ← min_add_add_left]
-      simp only [le_min_iff, min_le_iff]
-      exact ⟨⟨Or.inl (by linarith), Or.inr (by linarith)⟩, Or.inl (by linarith)⟩
-  obtain ⟨n, hn⟩ := exists_nat_ge ((s + 2) / 2)
-  have hT2 := hall n
-  rw [min_eq_left (by linarith)] at hT2
-  exact mem_realSobolevFunctions.2 ⟨hvp.toLp v, hvp.coeFn_toLp, hT2⟩
+  exact mem_realSobolevFunctions.2 ⟨hvp.toLp v, hvp.coeFn_toLp,
+    memSobolev_add_two_of_neg_laplacian_add_smul hp hp_top (memSobolev_zero_iff.2 ⟨_, rfl⟩)
+      (hT ▸ hu)⟩
 
 /-- **Regularity for `Δv = c (exp v - 1) + g`.** In dimension at most three, a real `C²` function
 `v ∈ L²(E)` bounded above and solving `Δv = c (exp v - 1) + g` classically, with

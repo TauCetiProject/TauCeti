@@ -516,6 +516,38 @@ theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}
     ring
   rw [hprod]
 
+/-- Off-shell gauge covariance of the real complex defect. Unlike `equation_gaugeTransform`, this
+needs only a differentiable gauge and a differentiable section. -/
+theorem equation_gaugeTransform_apply_one {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    equation (gaugeTransform u x) z 1 =
+      (u z : ℂ).re * equation x z 1 - (u z : ℂ).im * equation x z 2 := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  simp only [Fin.isValue, equation_apply_one, equation_apply_two, gaugeTransform, Matrix.cons_val,
+    Matrix.cons_val_zero, Matrix.cons_val_one, hp, hq, hr, hi, DifferentiableAt.fun_mul,
+    fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, sub_apply, add_apply, smul_apply, smul_eq_mul,
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu, neg_mul,
+    mul_neg]
+  ring
+
+/-- Off-shell gauge covariance of the imaginary complex defect. Unlike `equation_gaugeTransform`,
+this needs only a differentiable gauge and a differentiable section. -/
+theorem equation_gaugeTransform_apply_two {u : ℂ → Circle}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    equation (gaugeTransform u x) z 2 =
+      (u z : ℂ).im * equation x z 1 + (u z : ℂ).re * equation x z 2 := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
+  simp only [Fin.isValue, equation_apply_one, equation_apply_two, gaugeTransform, Matrix.cons_val,
+    Matrix.cons_val_zero, Matrix.cons_val_one, hp, hq, hr, hi, DifferentiableAt.fun_mul,
+    fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, sub_apply, add_apply, smul_apply, smul_eq_mul,
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu, neg_mul,
+    mul_neg]
+  ring
+
 /-- Off-shell gauge covariance: the curvature defect is unchanged and the complex defect
 is multiplied by the same circle element as the section. -/
 theorem equation_gaugeTransform {u : ℂ → Circle}
@@ -527,21 +559,15 @@ theorem equation_gaugeTransform {u : ℂ → Circle}
         (u z : ℂ).re * equation x z 1 - (u z : ℂ).im * equation x z 2,
         (u z : ℂ).im * equation x z 1 + (u z : ℂ).re * equation x z 2] := by
   have hu' := hu.differentiableAt (by norm_num)
-  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z :=
-    reCLM.differentiableAt.comp z hu'
-  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z :=
-    imCLM.differentiableAt.comp z hu'
   have hg (v : ℂ) : DifferentiableAt ℝ (fun w ↦ gaugeForm u w v) z :=
     (differentiableAt_gaugeForm hu).clm_apply (differentiableAt_const v)
   have hn := Circle.re_sq_add_im_sq (u z)
   ext i
-  fin_cases i <;> simp [gaugeTransform, fderiv_fun_sub, fderiv_fun_add,
-    fderiv_fun_mul, hx, hr, hi, hg, fderiv_re_coe_eq_neg_im_mul_gaugeForm hu',
-    fderiv_im_coe_eq_re_mul_gaugeForm hu', -gaugeForm_apply]
-  · linear_combination (x z 2 ^ 2 + x z 3 ^ 2) / 2 * hn -
-      fderiv_gaugeForm_symm hu 1 I
-  · ring
-  · ring
+  fin_cases i
+  · simp [gaugeTransform, fderiv_fun_sub, hx, hg, -gaugeForm_apply]
+    linear_combination (x z 2 ^ 2 + x z 3 ^ 2) / 2 * hn - fderiv_gaugeForm_symm hu 1 I
+  · exact equation_gaugeTransform_apply_one hu' (hx 2) (hx 3)
+  · exact equation_gaugeTransform_apply_two hu' (hx 2) (hx 3)
 
 /-- A gauge transformation preserves the vortex equation in both directions. -/
 @[simp]
@@ -566,34 +592,6 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
   · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - equation x z 1 * hn
   · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - equation x z 2 * hn
 
-/-- Off-shell gauge covariance of the real complex defect. Unlike `equation_gaugeTransform`, this
-needs only a differentiable gauge and a differentiable section. -/
-theorem equation_gaugeTransform_apply_one {u : ℂ → Circle}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
-    equation (gaugeTransform u x) z 1 =
-      (u z : ℂ).re * equation x z 1 - (u z : ℂ).im * equation x z 2 := by
-  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
-  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
-  simp [gaugeTransform, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, hp, hq, hr, hi,
-    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu,
-    -gaugeForm_apply]
-  ring
-
-/-- Off-shell gauge covariance of the imaginary complex defect. Unlike `equation_gaugeTransform`,
-this needs only a differentiable gauge and a differentiable section. -/
-theorem equation_gaugeTransform_apply_two {u : ℂ → Circle}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
-    equation (gaugeTransform u x) z 2 =
-      (u z : ℂ).im * equation x z 1 + (u z : ℂ).re * equation x z 2 := by
-  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z := reCLM.differentiableAt.comp z hu
-  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z := imCLM.differentiableAt.comp z hu
-  simp [gaugeTransform, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul, hp, hq, hr, hi,
-    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu,
-    -gaugeForm_apply]
-  ring
-
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
 theorem sectionValue_gaugeTransform (u : ℂ → Circle)
@@ -601,11 +599,13 @@ theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
 
-/-- A gauge transformation preserves the norm `|α|` of the section. -/
-theorem norm_sectionValue_gaugeTransform (u : ℂ → Circle)
+/-- A gauge transformation preserves `|α|² / 4 = x₂² + x₃²` pointwise. -/
+@[simp]
+theorem gaugeTransform_apply_two_sq_add_apply_three_sq (u : ℂ → Circle)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖sectionValue (gaugeTransform u x) z‖ = ‖sectionValue x z‖ := by
-  rw [sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
+    gaugeTransform u x z 2 ^ 2 + gaugeTransform u x z 3 ^ 2 = x z 2 ^ 2 + x z 3 ^ 2 := by
+  simp only [gaugeTransform, Fin.isValue, Matrix.cons_val]
+  linear_combination (x z 2 ^ 2 + x z 3 ^ 2) * Circle.re_sq_add_im_sq (u z)
 
 /-- A smooth framed gauge preserves smooth fields. -/
 theorem contDiff_framedGaugeGroup_smul (u : framedGaugeGroup)
@@ -621,15 +621,6 @@ theorem equation_framedGaugeGroup_smul_eq_zero_iff (u : framedGaugeGroup)
   rw [framedGaugeGroup_smul]
   exact equation_gaugeTransform_eq_zero_iff
     ((((mem_framedGaugeGroup _).1 u.property).1.of_le (by norm_cast)).contDiffAt) hx
-
-/-- A framed gauge preserves the limit `|α|² → 1` at infinity. -/
-theorem tendsto_normSq_framedGaugeGroup_smul (u : framedGaugeGroup)
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  refine hlim.congr fun z ↦ ?_
-  rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-    norm_sectionValue_gaugeTransform]
 
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference

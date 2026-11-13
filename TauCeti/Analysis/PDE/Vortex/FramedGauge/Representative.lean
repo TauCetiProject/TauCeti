@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.PDE.Vortex.Multiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 
@@ -187,17 +188,49 @@ private theorem referenceField_apply_mul_exp_sub_one_mem_realSobolevFunctions
     (hvS : ∀ s, v ∈ realSobolevFunctions ℂ s 2) (s : ℝ) :
     (fun z ↦ referenceField f m z i * (Real.exp (v z / 2) - 1)) ∈ realSobolevFunctions ℂ s 2 := by
   obtain ⟨k, hk⟩ := exists_nat_ge (max s 2)
-  have hk2 : (Module.finrank ℝ ℂ : ℝ) < 2 * k := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith [le_max_right s 2]
+  have hk1 : (1 : ℝ) < k := by linarith [le_max_right s 2]
   have he : (fun z ↦ Real.exp (v z / 2) - 1) ∈ realSobolevFunctions ℂ k 2 := by
     simpa only [Pi.smul_apply, smul_eq_mul, one_div_mul_eq_div] using
-      exp_sub_one_mem_realSobolevFunctions hk2 (Submodule.smul_mem _ (1 / 2 : ℝ) (hvS k))
+      exp_sub_one_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hk1)
+        (Submodule.smul_mem _ (1 / 2 : ℝ) (hvS k))
   exact realSobolevFunctions_mono (by norm_num) (by norm_num) ((le_max_left s 2).trans hk)
-    (mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
-      (contDiff_euclidean.1 (contDiff_referenceField f m) i)
-      (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j) he)
+    (mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (by exact_mod_cast hk1)
+      (referenceField_mem_framedFieldSpace f m k) i he)
+
+/-- Half a directional derivative of a smooth function lying in every `H^s` lies in every `H^s`.
+This is the connection part of `x - x_ref` for an end-normalized vortex. -/
+private theorem fderiv_apply_div_two_mem_realSobolevFunctions {v : ℂ → ℝ} (hv : ContDiff ℝ ∞ v)
+    (hvS : ∀ s, v ∈ realSobolevFunctions ℂ s 2) (u : ℂ) (s : ℝ) :
+    (fun z ↦ fderiv ℝ v z u / 2) ∈ realSobolevFunctions ℂ s 2 := by
+  simpa only [Pi.smul_def, smul_eq_mul, inv_mul_eq_div] using
+    Submodule.smul_mem _ (2⁻¹ : ℝ) (realSobolevFunctions_mono (by norm_num) (by norm_num)
+      (le_max_left s 0) (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num)
+        (le_max_right s 0) (hv.of_le (by norm_cast)) (hvS _) u))
+
+/-- **`x - x_ref` from a cutoff of `log |α|²`.** Let `z` lie outside the cutoff disc, let the
+section of a vortex `x` be `|α|` times the winding phase near `z` with `α(z) ≠ 0`, and let `v` agree
+with `ℓ = log |α|²` near `z`. Then at `z`,
+`x - x_ref = (-∂_t v / 2, ∂_s v / 2, x_ref,₂ (exp (v / 2) - 1), x_ref,₃ (exp (v / 2) - 1))`. -/
+private theorem sub_referenceField_apply_eq_of_eventuallyEq_log_normSq
+    (f : ContDiffBump (0 : ℝ)) {z : ℂ} {v : ℂ → ℝ} (hrOut : f.rOut ≤ ‖z‖ ^ 2)
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (hsol : equation x z = 0)
+    (hphase : ∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w)
+    (hα : sectionValue x z ≠ 0)
+    (hv : v =ᶠ[𝓝 z] fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) :
+    x z 0 - referenceField f m z 0 = -fderiv ℝ v z I / 2 ∧
+      x z 1 - referenceField f m z 1 = fderiv ℝ v z 1 / 2 ∧
+      x z 2 - referenceField f m z 2 = referenceField f m z 2 * (Real.exp (v z / 2) - 1) ∧
+      x z 3 - referenceField f m z 3 = referenceField f m z 3 * (Real.exp (v z / 2) - 1) := by
+  have hexp : Real.exp (v z / 2) = ‖sectionValue x z‖ := by
+    rw [hv.self_of_nhds]
+    simp only [← sq_norm_sectionValue, Real.log_pow]
+    rw [Nat.cast_ofNat, mul_div_cancel_left₀ _ two_ne_zero, Real.exp_log (norm_pos_iff.2 hα)]
+  have hd := hv.fderiv_eq (𝕜 := ℝ)
+  obtain ⟨h0, h1, h2, h3⟩ := sub_referenceField_apply_eq f hrOut hp hq (by simp [hsol])
+    (by simp [hsol]) hphase hα
+  exact ⟨by rw [hd]; exact h0, by rw [hd]; exact h1, by rw [hexp]; exact h2,
+    by rw [hexp]; exact h3⟩
 
 /-- **End-normalized vortices lie in every Sobolev field space.** Let `x` be a smooth plane
 vortex with `|α| → 1` at infinity whose section is `|α|` times the winding phase `(z / |z|)^m`
@@ -213,62 +246,44 @@ theorem mem_framedFieldSpace_of_eventually_sectionValue_eq (f : ContDiffBump (0 
     (hxi i).differentiable (by simp) z
   -- A radius beyond which the section is end-normalized, `|α|² > 1 / 2`, and the reference
   -- field is the winding pair.
-  obtain ⟨R, hR0, hR⟩ : ∃ R : ℝ, 0 ≤ R ∧ ∀ z : ℂ, R < ‖z‖ →
-      (∀ᶠ w in 𝓝 z, sectionValue x w = ‖sectionValue x w‖ * windingPhase m w) ∧
-        1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) ∧ f.rOut ≤ ‖z‖ ^ 2 := by
-    have H := hphase.and ((hlim.eventually (lt_mem_nhds (by norm_num : (1 : ℝ) / 2 < 1))).and
-      (tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)))
-    obtain ⟨R₀, -, hR₀⟩ :=
-      hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ H)
-    have hR₀' (w : ℂ) (hw : max R₀ 0 < ‖w‖) :=
-      hR₀ (Set.mem_ofPred.2 ((le_max_left R₀ 0).trans hw.le))
-    refine ⟨max R₀ 0, le_max_right _ _, fun z hz ↦
-      ⟨?_, (hR₀' z hz).2.1, rOut_le_norm_sq f (hR₀' z hz).2.2⟩⟩
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-    exact (hR₀' w (Set.mem_ofPred.1 hw)).1
+  obtain ⟨R₀, hR₀⟩ := closedBall_compl_subset_of_mem_cocompact (hphase.and
+    ((hlim.eventually (lt_mem_nhds (by norm_num : (1 : ℝ) / 2 < 1))).and
+      (tendsto_norm_cocompact_atTop.eventually_gt_atTop (max 1 f.rOut)))) 0
+  set R := max R₀ 0
+  have hR (z : ℂ) (hz : R < ‖z‖) : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z ∧
+      1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) ∧ max 1 f.rOut < ‖z‖ :=
+    hR₀ (by simpa using (le_max_left R₀ 0).trans_lt hz)
   obtain ⟨v, hv, hvS, hvfar⟩ := exists_forall_mem_realSobolevFunctions_eventuallyEq_log_normSq
-    hx hsol hlim hR0 fun z hz ↦ (hR z hz).2.1
+    hx hsol hlim (le_max_right R₀ 0) fun z hz ↦ (hR z hz).2.1
   -- Outside the disc of radius `R + 2`, `x - x_ref` is read off from `v`.
   have hfar (z : ℂ) (hz : R + 2 < ‖z‖) :
       x z 0 - referenceField f m z 0 = -fderiv ℝ v z I / 2 ∧
         x z 1 - referenceField f m z 1 = fderiv ℝ v z 1 / 2 ∧
         x z 2 - referenceField f m z 2 = referenceField f m z 2 * (Real.exp (v z / 2) - 1) ∧
         x z 3 - referenceField f m z 3 = referenceField f m z 3 * (Real.exp (v z / 2) - 1) := by
-    obtain ⟨hph, hnz, hrOut⟩ := hR z (by linarith)
-    have hα : sectionValue x z ≠ 0 := fun h ↦ by
-      have := sq_norm_sectionValue x z
+    obtain ⟨-, hnz, hz1⟩ := hR z (by linarith)
+    refine sub_referenceField_apply_eq_of_eventuallyEq_log_normSq f (rOut_le_norm_sq f hz1)
+      (hxd 2 z) (hxd 3 z) (hsol z) ?_ (fun h ↦ ?_) (hvfar z hz)
+    · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
+        ((by linarith : R < R + 2).trans hz)] with w hw
+      exact (hR w hw).1
+    · have := sq_norm_sectionValue x z
       rw [h, norm_zero] at this
       linarith
-    have hexp : Real.exp (v z / 2) = ‖sectionValue x z‖ := by
-      rw [(hvfar z hz).self_of_nhds]
-      simp only [← sq_norm_sectionValue, Real.log_pow]
-      rw [Nat.cast_ofNat, mul_div_cancel_left₀ _ two_ne_zero,
-        Real.exp_log (norm_pos_iff.2 hα)]
-    have hd := (hvfar z hz).fderiv_eq (𝕜 := ℝ)
-    obtain ⟨h0, h1, h2, h3⟩ := sub_referenceField_apply_eq f hrOut (hxd 2 z) (hxd 3 z)
-      (by simp [hsol z]) (by simp [hsol z]) hph hα
-    exact ⟨by rw [hd]; exact h0, by rw [hd]; exact h1, by rw [hexp]; exact h2,
-      by rw [hexp]; exact h3⟩
   -- A coordinate of `x - x_ref` lies in `H^s` once it agrees far out with a smooth function in
   -- every `H^s`.
   have key (i : Fin 4) (F : ℂ → ℝ) (hF : ContDiff ℝ ∞ F)
       (hFs : ∀ s, F ∈ realSobolevFunctions ℂ s 2)
       (hFeq : ∀ z, R + 2 < ‖z‖ → x z i - referenceField f m z i = F z) :
       (fun z ↦ x z i - referenceField f m z i) ∈ realSobolevFunctions ℂ s 2 :=
-    mem_realSobolevFunctions_of_hasCompactSupport_sub
+    mem_realSobolevFunctions_of_eventuallyEq_cocompact
       (((hxi i).sub (contDiff_euclidean.1 (contDiff_referenceField f m) i)).sub hF)
-      (HasCompactSupport.intro (isCompact_closedBall 0 (R + 2)) fun z hz ↦ by
-        simp [hFeq z (by simpa using hz)])
-      (hFs s)
-  -- The connection part: half a directional derivative of `v`.
+      ((tendsto_norm_cocompact_atTop.eventually_gt_atTop (R + 2)).mono hFeq) (hFs s)
+  -- The connection part is half a derivative of `v`, and the section part is a reference
+  -- coefficient times `exp (v / 2) - 1`.
   have hdv (u : ℂ) : ContDiff ℝ ∞ fun z ↦ fderiv ℝ v z u / 2 :=
     ((hv.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const).div_const 2
-  have hdvS (u : ℂ) (s : ℝ) : (fun z ↦ fderiv ℝ v z u / 2) ∈ realSobolevFunctions ℂ s 2 := by
-    simpa only [Pi.smul_def, smul_eq_mul, inv_mul_eq_div] using
-      Submodule.smul_mem _ (2⁻¹ : ℝ) (realSobolevFunctions_mono (by norm_num) (by norm_num)
-        (le_max_left s 0) (fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num)
-          (le_max_right s 0) (hv.of_le (by norm_cast)) (hvS _) u))
-  -- The section part: a reference coefficient times `exp (v / 2) - 1`.
+  have hdvS := fderiv_apply_div_two_mem_realSobolevFunctions hv hvS
   have hexpC (i : Fin 4) :
       ContDiff ℝ ∞ (fun z ↦ referenceField f m z i * (Real.exp (v z / 2) - 1)) :=
     (contDiff_euclidean.1 (contDiff_referenceField f m) i).mul
@@ -302,7 +317,7 @@ theorem exists_framedGaugeGroup_forall_smul_mem_framedFieldSpace (f : ContDiffBu
     (equation_framedGaugeGroup_smul_eq_zero_iff u
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
   exact mem_framedFieldSpace_of_eventually_sectionValue_eq f (contDiff_framedGaugeGroup_smul u hx)
-    hsol' (tendsto_normSq_framedGaugeGroup_smul u
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)) hu s
+    hsol' ((tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ by
+      simp [framedGaugeGroup_smul]) hu s
 
 end TauCeti.Vortex
