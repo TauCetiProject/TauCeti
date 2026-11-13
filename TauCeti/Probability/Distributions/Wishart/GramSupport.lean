@@ -50,7 +50,7 @@ variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 /-- The exact support of a standard Gaussian-Gram law is the closed
 positive-semidefinite cone with rank at most its degree. -/
 @[simp]
-theorem support_wishartGramMeasure_one (ν p : ℕ) :
+theorem support_wishartGramMeasure_one (ν : ℕ) :
     (wishartGramMeasure ν (1 : Matrix (Fin p) (Fin p) ℝ)).support =
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
@@ -88,8 +88,9 @@ theorem support_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ) :
     simp [Matrix.symmetricCongruenceLinearMap_zero, Set.Nonempty.image_const ⟨0, hmem⟩]
 
 /-- An algebraic characterization of Gaussian-Gram support: positive semidefiniteness,
-rank at most the degree, and invariance under the orthogonal range projector of the scale. -/
-@[simp]
+rank at most the degree, and invariance under congruence with `S * S.covariancePseudoInverse`.
+For positive-semidefinite `S`, this matrix is the orthogonal range projector; for invalid
+scales it is zero, forcing `A = 0`. -/
 theorem mem_support_wishartGramMeasure_iff (ν : ℕ) (S : Matrix (Fin p) (Fin p) ℝ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     A ∈ (wishartGramMeasure ν S).support ↔

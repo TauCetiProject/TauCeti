@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
+import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
 
 /-!
 # Congruence images of bounded-rank positive-semidefinite cones
@@ -89,18 +90,10 @@ theorem isClosed_image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le
       {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
           (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ r}) := by
-  obtain ⟨g, hg⟩ := M.toLin'.rangeRestrict.exists_rightInverse_of_surjective
-    M.toLin'.range_rangeRestrict
-  obtain ⟨f, hf⟩ := g.exists_extend
+  obtain ⟨f, hf⟩ := M.toLin'.exists_comp_comp_eq_self
   let N := LinearMap.toMatrix' f
-  have hMNM : M * N * M = M := by
-    apply Matrix.toLin'.injective
-    simp only [Matrix.toLin'_mul, Matrix.toLin'_toMatrix', N]
-    apply LinearMap.ext
-    intro x
-    have hfx := LinearMap.congr_fun hf (M.toLin'.rangeRestrict x)
-    have hgx := congrArg Subtype.val (LinearMap.congr_fun hg (M.toLin'.rangeRestrict x))
-    exact (congrArg M.toLin' hfx).trans hgx
+  have hMNM : M * N * M = M := Matrix.toLin'.injective (by
+    simpa [Matrix.toLin'_mul, LinearMap.comp_assoc, N] using hf)
   rw [image_symmetricCongruenceLinearMap_setOf_posSemidef_rank_le M N hMNM]
   simpa only [← Set.ofPred_and, id_eq, and_assoc] using
     (isClosed_setOf_posSemidef_rank_le r).inter
