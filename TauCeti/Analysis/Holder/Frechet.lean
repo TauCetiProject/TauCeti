@@ -15,6 +15,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -61,8 +62,6 @@ the Banach space of maps with *globally* bounded `C^{k,α}` norm on `Ω`. On `Ω
   `TauCeti.CkHolderLocSpace.instCompleteSpace`: first countability for proper `E`, and
   completeness for locally compact `E` and complete `F`.
 * `TauCeti.CkHolderLocSpace.not_isNormableSpace`: the topology is not given by a norm.
-* `HolderOnWith.iteratedFDeriv_add`: Hölder bounds on the `n`-th derivatives of two maps give one
-  on the `n`-th derivative of their sum.
 
 ## Implementation notes
 
@@ -89,16 +88,6 @@ open Set Filter Topology TopologicalSpace
 open scoped NNReal BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- If `f` and `g` are `C^n` at every point of `s` and their `n`-th derivatives are `r`-Hölder on
-`s`, then so is the `n`-th derivative of `f + g`, with the sum of the constants. -/
-theorem _root_.HolderOnWith.iteratedFDeriv_add {𝕜 G H : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H] {n : ℕ}
-    {r C C' : ℝ≥0} {f g : G → H} {s : Set G} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 n f) s)
-    (hg : HolderOnWith C' r (iteratedFDeriv 𝕜 n g) s) (hfs : ∀ x ∈ s, ContDiffAt 𝕜 n f x)
-    (hgs : ∀ x ∈ s, ContDiffAt 𝕜 n g x) :
-    HolderOnWith (C + C') r (iteratedFDeriv 𝕜 n (f + g)) s :=
-  (hf.add hg).congr fun x hx => (iteratedFDeriv_add_apply (hfs x hx) (hgs x hx)).symm
 
 /-- The space `C^{k,α}_loc(Ω, F)` of maps that are `C^k` on the open set `Ω` and whose `k`-th
 iterated derivative is `α`-Hölder on every compact subset of `Ω`. An element is a map `E → F`

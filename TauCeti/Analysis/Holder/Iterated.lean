@@ -10,8 +10,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Bounded `C^{k,α}` maps of every order
@@ -51,6 +53,8 @@ conditions are closed under uniform convergence, which gives completeness.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
   derivative fields as continuous linear maps; the second has operator norm at most one.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `HolderOnWith.iteratedFDeriv_add`: Hölder bounds on the `n`-th derivatives of two maps give one
+  on the `n`-th derivative of their sum.
 
 ## References
 
@@ -66,6 +70,16 @@ noncomputable section
 namespace TauCeti
 
 open scoped NNReal BoundedContinuousFunction
+
+/-- If `f` and `g` are `C^n` at every point of `s` and their `n`-th derivatives are `r`-Hölder on
+`s`, then so is the `n`-th derivative of `f + g`, with the sum of the constants. -/
+theorem _root_.HolderOnWith.iteratedFDeriv_add {𝕜 G H : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H] {n : ℕ}
+    {r C C' : ℝ≥0} {f g : G → H} {s : Set G} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 n f) s)
+    (hg : HolderOnWith C' r (iteratedFDeriv 𝕜 n g) s) (hfs : ∀ x ∈ s, ContDiffAt 𝕜 n f x)
+    (hgs : ∀ x ∈ s, ContDiffAt 𝕜 n g x) :
+    HolderOnWith (C + C') r (iteratedFDeriv 𝕜 n (f + g)) s :=
+  (hf.add hg).congr fun x hx => (iteratedFDeriv_add_apply (hfs x hx) (hgs x hx)).symm
 
 universe u v
 
