@@ -17,8 +17,9 @@ The Stallings graphs of three small lists of words over letters `a`, `b`, `c` ar
 with explicit labelled graphs.
 
 * For `[a b, a c]` with `b ≠ c` it has two vertices and three edges: an `a`-edge from the base
-  vertex to the other vertex, and a `b`-edge and a `c`-edge back. For a spanning tree containing
-  the `a`-edge, the tree loops through the positive edges outside it read `a b` and `a c`
+  vertex to the other vertex, and a `b`-edge and a `c`-edge back. The `a`-edge is a spanning
+  tree (`StallingsGraph.abAcTree`). For every spanning tree containing the `a`-edge, the tree
+  loops through the positive edges outside it read `a b` and `a c`
   (`StallingsGraph.image_treeLoopWord_ab_ac`), so these words freely generate the subgroup
   (`StallingsGraph.lift_ab_ac_injective`). The element `b⁻¹ c` is read by crossing the `b`-edge
   backwards and the `c`-edge forwards: it lies in the subgroup, with the expression
@@ -130,11 +131,14 @@ private theorem abAc_restrict_isTree :
         apply Subtype.ext
         cases s <;> cases t <;> first | rfl | simp [Γ, SerreGraph.tgt_def] at h
 
-/-- The spanning tree of the graph of `[a b, a c]` formed by the edge labelled `a`. -/
-private def abAcTree : (abAc a b c).graph.SpanningTree where
+/-- The spanning tree formed by the `a`-edge in the graph with an `a`-edge out of the base
+vertex and a `b`-edge and a `c`-edge back. -/
+def abAcTree : (ofDigraph (0 : Fin 2) ![0, 1, 1] ![1, 0, 0] ![a, b, c]).graph.SpanningTree where
   darts := {e | e.1 = 0}
   rev_mem _ h := h
   isTree := abAc_restrict_isTree a b c
+
+@[simp] theorem abAcTree_darts : (abAcTree a b c).darts = {e | e.1 = 0} := (rfl)
 
 private theorem read_path_of_mem {T : (abAc a b c).graph.SpanningTree}
     (hT : ((0 : Fin 3), true) ∈ T.darts) : (abAc a b c).read (T.path 0 1) = FreeGroup.of a :=
@@ -150,10 +154,11 @@ private theorem treeLoopWord_of_mem {T : (abAc a b c).graph.SpanningTree}
     ← FreeGroup.of.eq_1]
 
 /-- In the graph with an `a`-edge out of the base vertex and a `b`-edge and a `c`-edge back, let
-`T` be a spanning tree containing the `a`-edge. The tree loops through the positive edges
-outside `T` read `a b` and `a c`. For `b ≠ c` this graph is the Stallings graph of `[a b, a c]`
-and is folded, so these words form the free basis `StallingsGraph.freeGroupBasis` of its
-accepted subgroup for `T` and the orientation by forward edges. -/
+`T` be a spanning tree containing the `a`-edge, such as `StallingsGraph.abAcTree`. The tree
+loops through the positive edges outside `T` read `a b` and `a c`. For `b ≠ c` this graph is
+the Stallings graph of `[a b, a c]` and is folded, so these words form the free basis
+`StallingsGraph.freeGroupBasis` of its accepted subgroup for `T` and the orientation by forward
+edges. -/
 theorem image_treeLoopWord_ab_ac
     {T : (ofDigraph (0 : Fin 2) ![0, 1, 1] ![1, 0, 0] ![a, b, c]).graph.SpanningTree}
     (hT : ((0 : Fin 3), true) ∈ T.darts) :
