@@ -12,7 +12,7 @@ public import TauCeti.Algebra.GroupWithZero.Divisibility
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 public import TauCeti.RingTheory.PowerSeries.Support
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
@@ -36,7 +36,6 @@ the lower level. The `q`-expansion results go up only.
 
 * `TauCeti.scaleGL d`: the diagonal element `!![d, 0; 0, 1]` of `GL(2, ℝ)`, a value of
   `TauCeti.diagGL`.
-* `TauCeti.scaleGLRat d`: the same diagonal element over `ℚ`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
 * `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
@@ -48,7 +47,8 @@ the lower level. The `q`-expansion results go up only.
 
 ## Main results
 
-* `TauCeti.map_ratCast_scaleGLRat`: the rational scaling matrix pushes forward to `scaleGL d`.
+* `TauCeti.map_natDiagGL_d_one_eq_scaleGL`: the rational matrix `diag(d, 1)`,
+  `HeckeRing.GLn.natDiagGL 2 ![d, 1]`, pushes forward to `scaleGL d`.
 * `TauCeti.ModularForm.levelRaise_apply`: `(V_d f) τ = f (d τ)`, the defining formula from which
   the algebraic properties (`levelRaise_one_apply`, `ModularForm.levelRaise_one`,
   `levelRaise_levelRaise`, `levelRaise_injective`) all follow by `ext`.
@@ -171,20 +171,21 @@ lemma coe_scaleGL [NeZero d] :
   rw [scaleGL, diagGL_coe, Matrix.diagonal_fin_two]
   simp
 
-/-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but the
-cusp argument needs the same matrix over `ℚ`, because what makes `diag(d, 1)⁻¹ · A` carry cusps to
-cusps is precisely that it is *rational*. -/
-noncomputable def scaleGLRat (d : ℕ) [NeZero d] : GL (Fin 2) ℚ :=
-  diagGL ![Units.mk0 (d : ℚ) (Nat.cast_ne_zero.mpr (NeZero.ne d)), 1]
-
-/-- `scaleGLRat` pushes forward to `scaleGL`. -/
-@[simp] lemma map_ratCast_scaleGLRat (d : ℕ) [NeZero d] :
-    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (scaleGLRat d) = scaleGL d := by
-  refine Units.ext ?_
-  rw [coe_scaleGL]
+/-- **`diag(d, 1)` over `ℚ`.** `scaleGL` is stated over `ℝ`, where the slash action lives, but
+some arguments need the same matrix over `ℚ`: the cusp argument, because what makes
+`diag(d, 1)⁻¹ · A` carry cusps to cusps is precisely that it is *rational*, and the Hecke
+operators, where `HeckeRing.GLn.natDiagGL 2 ![d, 1]` (`HeckeRing.GL2.scaleRep d`) is the
+rational scaling matrix in the diamond-twisted term of `T_p` for a prime `p` and in commuting
+Hecke operators past `V_d`. That rational matrix maps to `scaleGL d`. -/
+@[simp]
+lemma map_natDiagGL_d_one_eq_scaleGL [NeZero d] :
+    Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (HeckeRing.GLn.natDiagGL 2 ![d, 1]) =
+      scaleGL d := by
+  have hd : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
+  apply Units.ext
   ext i j
-  simp only [Matrix.GeneralLinearGroup.map, Units.coe_map, scaleGLRat, diagGL_coe,
-    Matrix.diagonal_fin_two]
+  rw [Matrix.GeneralLinearGroup.map_apply, HeckeRing.GLn.natDiagGL_coe 2 ![d, 1]
+    (fun i ↦ by fin_cases i <;> simp [hd]), coe_scaleGL]
   fin_cases i <;> fin_cases j <;> simp
 
 lemma coe_inv_scaleGL [NeZero d] :
