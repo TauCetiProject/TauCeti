@@ -45,8 +45,6 @@ condition, because they occur twice in the norm of an integral linear combinatio
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section

@@ -158,6 +158,7 @@ open TauCeti.EisensteinSeries
 
 variable {N k : ℕ} [NeZero N]
 
+omit [NeZero N] in
 /-- **The Eisenstein part of the dimension of `M_k(Γ₁(N))`**: in weight `k ≥ 3` and at a level
 `N ∉ {1, 2, 4}`, the modular forms on `Γ₁(N)` have dimension `ε∞(Γ₁(N))` more than the cusp
 forms, where `ε∞(Γ₁(N))` is the number of cusps of `Γ₁(N)`. -/
@@ -166,6 +167,7 @@ theorem finrank_modularForm_Gamma1_eq_finrank_cuspForm_add_card_cuspOrbit (hN : 
     Module.finrank ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
       Module.finrank ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) +
         Nat.card ((Gamma1 N).map sl2zToPSL2R).CuspOrbit := by
+  have : NeZero N := ⟨by omega⟩
   rw [← finrank_congruenceEisensteinSubspace_Gamma1 hN hN4 hk,
     (_root_.ModularForm.CuspForm.equivCuspFormSubmodule _ _).finrank_eq, add_comm]
   exact (Submodule.finrank_add_eq_of_isCompl

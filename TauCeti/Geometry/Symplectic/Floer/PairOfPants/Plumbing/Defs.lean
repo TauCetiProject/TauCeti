@@ -128,6 +128,16 @@ theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf) {
     exact pairOfPantsPerturbation_plumbingMap hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x v
 
+/-- **The plumbed datum on the receiving truncation.** For neck length `L ≥ R + 2`, the plumbed
+perturbation on the truncation `S_R` of the receiving pair of pants is its pair-of-pants
+perturbation. -/
+theorem plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) {R : ℝ} (hRL : R + 2 ≤ L) {w : ℂ} (hw : w ∈ truncation R) (x : M) :
+    plumbedPerturbation Ha Hb q L w x = pairOfPantsPerturbation Hb w x := by
+  have h := (mem_truncation.1 hw).2.2 q
+  rw [endSign_eq_one hq, one_mul] at h
+  exact plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x
+
 /-- On the open region of the end `q` with longitudinal coordinate `> 2`, the plumbed
 perturbation is the pushforward of the inserted datum. This region is independent of length. -/
 theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}

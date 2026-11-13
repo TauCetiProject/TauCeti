@@ -73,9 +73,7 @@ theorem SelfStabilizesCompletely.mem_orbitStable {α : Ordinal.{w}}
     α ∈ orbitStable (L := L) a := by
   rw [mem_orbitStable_iff]
   intro b hab β
-  by_cases hαβ : α ≤ β
-  · exact h.bfEquiv_of_le hαβ hab
-  · exact hab.mono (le_of_not_ge hαβ)
+  exact h.bfEquiv_of_bfEquiv hab
 
 /-- Every tuple has an orbit-stable level, without any countability assumption. -/
 theorem orbitStable_nonempty (a : Fin n → M) : (orbitStable (L := L) a).Nonempty := by

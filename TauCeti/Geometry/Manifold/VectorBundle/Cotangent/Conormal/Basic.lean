@@ -163,7 +163,7 @@ theorem conormal_eq_range_zeroSection {i : Q → M} (hi : Function.Surjective i)
     (hdi : ∀ q, Function.Surjective (mfderiv J I i q)) :
     conormal J I i = range (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)) := by
   refine Subset.antisymm ?_ ?_
-  · rintro w ⟨q, hq, hw⟩
+  · rintro w ⟨q, _, hw⟩
     refine ⟨w.proj, CotangentBundle.ext rfl fun v ↦ ?_⟩
     obtain ⟨u, rfl⟩ := hdi q v
     exact (DFunLike.congr_fun hw u).symm
