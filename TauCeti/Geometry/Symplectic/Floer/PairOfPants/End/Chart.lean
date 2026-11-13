@@ -561,9 +561,9 @@ theorem endChart_eq_positiveEndChart (q : Puncture) (s t : ℝ) :
 theorem positiveEndChart_add_one (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t + 1) = positiveEndChart q (s, t) := by
   rw [positiveEndChart_mk, positiveEndChart_mk]
-  rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · rw [show q.endSign * (t + 1) = q.endSign * t + 1 by rw [h]; ring, endChart_add_one]
-  · rw [show q.endSign * t = q.endSign * (t + 1) + 1 by rw [h]; ring, endChart_add_one]
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h <;> simp only [h, one_mul, neg_one_mul]
+  · exact endChart_add_one q s t
+  · rw [← endChart_add_one q (-s) (-(t + 1)), neg_add, neg_add_cancel_right]
 
 /-- The derivative of the positive end chart is the derivative of the end chart at the reflected
 point, composed with the reflection `v ↦ ±v`. -/
