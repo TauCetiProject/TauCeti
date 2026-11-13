@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
-public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
@@ -16,9 +15,10 @@ import TauCeti.Analysis.Normed.Lp.Reindex
 Let `φ` be a smooth bump function on a real inner product space `E` of finite dimension `n`, with
 inhomogeneous Littlewood–Paley partition `ψ₀ = φ, ψ₁, ψ₂, …` and blocks `Δⱼ`. The Fourier
 transform of the Dirac mass `δ₀` is the constant `1`, so its blocks are the kernels themselves:
-`Δⱼ δ₀ = 𝓕⁻ ψⱼ`, a Schwartz function. Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the kernel `𝓕⁻ ψ_{j+1}` is
-the `L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)`, whose `Lᵖ` norm is `2^{jn/p'}` times that of
-`𝓕⁻ ψ₁`, where `1/p + 1/p' = 1`. The weighted block norms `2^{js} ‖Δⱼ δ₀‖_p` therefore form, from
+`Δⱼ δ₀ = 𝓕⁻ ψⱼ`, a Schwartz function (`TemperedDistribution.littlewoodPaleyBlock_delta_zero`).
+Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the kernel `𝓕⁻ ψ_{j+1}` is the `L¹`-normalised dilate
+`2^{jn} 𝓕⁻ ψ₁ (2^j ·)`, whose `Lᵖ` norm is `2^{jn/p'}` times that of `𝓕⁻ ψ₁`, where
+`1/p + 1/p' = 1`. The weighted block norms `2^{js} ‖Δⱼ δ₀‖_p` therefore form, from
 `j = 1` on, the geometric sequence `C 2^{j (s + n/p')}` with `C > 0` once `n ≥ 1`. This gives the
 exact Besov regularity of `δ₀`: for every `1 ≤ p ≤ ∞` and `q ≠ 0`,
 
@@ -30,11 +30,9 @@ case `p = ∞`. The exponent `-n/p'` is sharp, so the negative regularity of a p
 
 ## Main declarations
 
-* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: `Δⱼ δ₀` is the Schwartz function
-  `𝓕⁻ ψⱼ`.
-* `TemperedDistribution.memBesov_delta_iff`: the exact Besov regularity of `δ₀`.
-* `TemperedDistribution.memBesov_delta`: `δ₀ ∈ B^{-n/p'}_{p,∞}`, in every dimension; at `p = ∞`
-  this is `δ₀ ∈ 𝒞^{-n} = B^{-n}_{∞,∞}`.
+* `TemperedDistribution.memBesov_delta_zero_iff`: the exact Besov regularity of `δ₀`.
+* `TemperedDistribution.memBesov_delta_zero`: `δ₀ ∈ B^{-n/p'}_{p,∞}`, in every dimension; at
+  `p = ∞` this is `δ₀ ∈ 𝒞^{-n} = B^{-n}_{∞,∞}`.
 
 ## References
 
@@ -56,18 +54,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E))
-
-/-- **The blocks of the Dirac mass are the Littlewood–Paley kernels.** The block `Δⱼ δ₀` is the
-Schwartz function `𝓕⁻ ψⱼ`, since the Fourier transform of `δ₀` is `1`. -/
-@[simp]
-theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
-    littlewoodPaleyBlock ℂ φ j (delta 0) =
-      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) := by
-  rw [← fourierInv_toTemperedDistributionCLM_eq, littlewoodPaleyBlock_apply,
-    fourierMultiplierCLM_apply, fourier_delta_zero]
-  congr 1
-  ext u
-  simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
 
 /-- For every `1 ≤ p ≤ ∞`, the block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`. -/
 private theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
@@ -114,7 +100,7 @@ variable (φ)
 `n ≥ 1`, for `1 ≤ p ≤ ∞` with conjugate exponent `p'` and `q ≠ 0`, the Dirac mass `δ₀` lies in the
 Besov space `B^s_{p,q}` exactly when `s < -n/p'`, or `s = -n/p'` and `q = ∞`. Here
 `n/p' = n (1 - 1/p)` with `1/∞ = 0`. -/
-theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (hq : q ≠ 0) :
+theorem memBesov_delta_zero_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (hq : q ≠ 0) :
     (delta (0 : E)).MemBesov φ s p q ↔
       s < -(finrank ℝ E * (1 - p.toReal⁻¹)) ∨ s = -(finrank ℝ E * (1 - p.toReal⁻¹)) ∧ q = ∞ := by
   set f : ℕ → Lp ℂ p (volume : Measure E) :=
@@ -124,7 +110,7 @@ theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 
   have hc : 0 < ‖f 1‖ := by
     refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
     rw [eLpNorm_congr_ae (hfae 1)]
-    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero
+    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
       (zero_lt_one.trans_le Fact.out).ne'
   rw [memBesov_iff_memℓp (f := f) (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]
@@ -142,7 +128,7 @@ theorem memBesov_delta_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fact (1 
 /-- **The Dirac mass lies in `B^{-n/p'}_{p,∞}`.** On a real inner product space of dimension `n`,
 for `1 ≤ p ≤ ∞` with conjugate exponent `p'`, the Dirac mass lies in `B^{-n/p'}_{p,∞}`, where
 `n/p' = n (1 - 1/p)` with `1/∞ = 0`. For `p = ∞` this is `δ₀ ∈ 𝒞^{-n} = B^{-n}_{∞,∞}`. -/
-theorem memBesov_delta (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+theorem memBesov_delta_zero (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     (delta (0 : E)).MemBesov φ (-(finrank ℝ E * (1 - p.toReal⁻¹))) p ∞ := by
   rw [memBesov_iff_memℓp (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]

@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.Distribution.Support
-public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
+public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -84,8 +83,10 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm, and
   `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
-  `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero`:
-  the first one is nonzero in every `Lʳ`.
+  `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`:
+  each kernel `𝓕⁻ ψⱼ` is nonzero in every `Lʳ`.
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: the blocks of the Dirac mass `δ₀` are
+  the kernels `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
@@ -135,13 +136,13 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) (r : ENNR
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (pow_pos two_pos j) r
 
 open MeasureTheory in
-/-- **The first dyadic kernel is nonzero.** On a nontrivial space, `𝓕⁻ ψ₁` has nonzero `Lʳ` norm
-for every `r ≠ 0`: it is continuous, so vanishing almost everywhere would force `ψ₁ = 0`. -/
-theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero [Nontrivial E] {r : ENNReal}
-    (hr : r ≠ 0) :
-    eLpNorm (𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) r volume ≠ 0 := by
-  set σ := φ.inhomogeneousLittlewoodPaleySchwartz 1
-  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz 1
+/-- **The kernels are nonzero.** On a nontrivial space, each `𝓕⁻ ψⱼ` has nonzero `Lʳ` norm for
+every `r ≠ 0`: it is continuous, so vanishing almost everywhere would force `ψⱼ = 0`. -/
+theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero [Nontrivial E] (j : ℕ)
+    {r : ENNReal} (hr : r ≠ 0) :
+    eLpNorm (𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) r volume ≠ 0 := by
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartz j
+  have hσ : (σ : E → ℂ) = _ := φ.coe_inhomogeneousLittlewoodPaleySchwartz j
   rw [← hσ, ← SchwartzMap.fourierInv_coe]
   intro h
   -- `𝓕⁻ σ` is continuous and vanishes almost everywhere, hence it is `0`, and so is `σ`.
@@ -150,7 +151,7 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_one_ne_zero [Nontrivial 
       ((Continuous.ae_eq_iff_eq volume (𝓕⁻ σ).continuous continuous_zero).1
         ((eLpNorm_eq_zero_iff hr).1 h)) x
     simpa using congrArg (fun g : 𝓢(E, ℂ) ↦ (𝓕 g : 𝓢(E, ℂ))) h0
-  obtain ⟨ξ, hξ⟩ := φ.exists_inhomogeneousLittlewoodPaley_one_pos
+  obtain ⟨ξ, hξ⟩ := φ.exists_inhomogeneousLittlewoodPaley_pos j
   have := congrFun hσ ξ
   rw [hσ0, zero_apply] at this
   exact hξ.ne' (Complex.ofReal_eq_zero.1 this.symm)
@@ -423,6 +424,18 @@ theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite [CompleteSpace F] 
   split_ifs
   · rw [FourierTransform.fourierInv_fourier_eq]
   · simp
+
+/-- **The blocks of the Dirac mass are the Littlewood–Paley kernels.** The block `Δⱼ δ₀` is the
+Schwartz function `𝓕⁻ ψⱼ`, since the Fourier transform of `δ₀` is `1`. -/
+@[simp]
+theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
+    littlewoodPaleyBlock ℂ φ j (delta 0) =
+      (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) := by
+  rw [← fourierInv_toTemperedDistributionCLM_eq, littlewoodPaleyBlock_apply,
+    fourierMultiplierCLM_apply, fourier_delta_zero]
+  congr 1
+  ext u
+  simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
 
 section Lp
 
