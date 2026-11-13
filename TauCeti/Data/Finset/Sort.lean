@@ -309,15 +309,13 @@ theorem lt_card_filter_iff_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) 
       ((s.orderEmbOfFin h).monotone hji)
 
 /-- The increasing enumeration of all elements of `Fin n` is the canonical cardinality cast. -/
-theorem orderEmbOfFin_univ_apply (c : Fin #(univ : Finset (Fin n))) :
-    (univ : Finset (Fin n)).orderEmbOfFin rfl c = finCongr (by simp) c := by
-  have hcard : #(univ : Finset (Fin n)) = n := by simp
-  calc
-    _ = (univ : Finset (Fin n)).orderEmbOfFin hcard (finCongr hcard c) :=
-      (orderEmbOfFin_eq_orderEmbOfFin_iff (s := univ) (h := rfl) (h' := hcard)
-        (i := c) (j := finCongr hcard c)).2 rfl
-    _ = finCongr hcard c :=
-      congrFun (Finset.orderEmbOfFin_unique hcard (fun _ ↦ mem_univ _) strictMono_id).symm _
+@[simp]
+theorem orderEmbOfFin_univ_apply {n k : ℕ} (h : #(univ : Finset (Fin n)) = k)
+    (c : Fin k) :
+    (univ : Finset (Fin n)).orderEmbOfFin h c = Fin.cast (h.symm.trans (card_fin n)) c := by
+  exact congrArg (fun f : Fin k ↪o Fin n ↦ f c)
+    (orderEmbOfFin_unique' h (f := (Fin.castOrderIso (h.symm.trans (card_fin n))).toOrderEmbedding)
+      fun _ ↦ mem_univ _).symm
 
 /-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
 theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :

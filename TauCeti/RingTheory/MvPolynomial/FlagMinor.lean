@@ -83,22 +83,19 @@ theorem flagExponent_def (I : Finset (Fin n)) :
         (Fintype.card_fin n)) c)) 1 := by
   rw [flagExponent]
 
-/-- The flag exponent of `I` has entry one at `(i_c, c)` for each `c < #I`, and zero elsewhere. -/
-private theorem flagExponent_apply_sum (I : Finset (Fin n)) (r c : Fin n) :
-    flagExponent I (toLex (r, c)) =
-      ∑ c' : Fin #I, if I.orderEmbOfFin rfl c' = r ∧ (c' : ℕ) = c then 1 else 0 := by
-  rw [flagExponent, Finset.sum_apply']
-  refine Finset.sum_congr rfl fun c' _ ↦ ?_
-  rw [Finsupp.single_apply]
-  simp only [EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, Fin.ext_iff, Fin.val_castLE]
-
 /-- The flag exponent is the indicator of the diagonal positions selected by the row subset. -/
 theorem flagExponent_apply (I : Finset (Fin n)) (r c : Fin n) :
     flagExponent I (toLex (r, c)) =
       if h : (c : ℕ) < #I then
         if I.orderEmbOfFin rfl ⟨c, h⟩ = r then 1 else 0
       else 0 := by
-  rw [flagExponent_apply_sum]
+  have hsum : flagExponent I (toLex (r, c)) =
+      ∑ c' : Fin #I, if I.orderEmbOfFin rfl c' = r ∧ (c' : ℕ) = c then 1 else 0 := by
+    rw [flagExponent_def, Finset.sum_apply']
+    refine Finset.sum_congr rfl fun c' _ ↦ ?_
+    rw [Finsupp.single_apply]
+    simp only [EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq, Fin.ext_iff, Fin.val_castLE]
+  rw [hsum]
   by_cases hc : (c : ℕ) < #I
   · rw [dite_eq_left hc, Finset.sum_eq_single ⟨c, hc⟩]
     · simp
@@ -123,6 +120,17 @@ theorem flagExponent_univ :
   rw [orderEmbOfFin_univ_apply]
   rfl
 
+private theorem singleton_flag_indices (r : Fin n) (c : Fin #{r}) :
+    (({r} : Finset (Fin n)).orderEmbOfFin rfl c,
+      Fin.castLE (({r} : Finset (Fin n)).card_le_univ.trans_eq (Fintype.card_fin n)) c) =
+      (r, ⟨0, r.pos⟩) := by
+  apply Prod.ext
+  · exact mem_singleton.1 (orderEmbOfFin_mem {r} rfl c)
+  · apply Fin.ext
+    have := c.2
+    simp only [Fin.val_castLE, card_singleton] at *
+    omega
+
 /-- A singleton row subset selects its entry in the first column. -/
 @[simp]
 theorem flagExponent_singleton (r : Fin n) :
@@ -130,23 +138,17 @@ theorem flagExponent_singleton (r : Fin n) :
   have : Unique (Fin #{r}) := by
     rw [card_singleton]
     infer_instance
-  rw [flagExponent_def, Fintype.sum_unique]
-  congr 2
-  apply Prod.ext
-  · exact mem_singleton.1 (orderEmbOfFin_mem {r} rfl _)
-  · apply Fin.ext
-    have := (default : Fin #{r}).2
-    simp only [card_singleton] at this
-    simpa using Nat.eq_zero_of_le_zero (Nat.le_of_lt_succ this)
+  rw [flagExponent_def, Fintype.sum_unique, singleton_flag_indices]
 
 /-- The flag exponents do not involve the variables `z_{r,c}` with `r < c`. -/
 theorem flagExponent_apply_eq_zero_of_lt (I : Finset (Fin n)) {r c : Fin n} (hrc : r < c) :
     flagExponent I (toLex (r, c)) = 0 := by
-  rw [flagExponent_apply_sum]
-  refine Finset.sum_eq_zero fun c' _ ↦ ite_eq_right_iff.2 fun ⟨hr, hc⟩ ↦ ?_
-  have := I.val_le_val_orderEmbOfFin rfl c'
-  rw [hr, hc] at this
-  exact ((Fin.lt_def.1 hrc).not_ge this).elim
+  rw [flagExponent_apply]
+  split_ifs with hc hr
+  · have := I.val_le_val_orderEmbOfFin rfl ⟨c, hc⟩
+    rw [hr] at this
+    exact ((Fin.lt_def.1 hrc).not_ge this).elim
+  all_goals rfl
 
 /-! ### The pattern of an exponent -/
 
@@ -196,11 +198,13 @@ theorem exponentPattern_apply_zero (e : Fin n ×ₗ Fin n →₀ ℕ) (c : ℕ) 
 /-- Cumulative sums of natural exponents are nonnegative. -/
 theorem exponentPattern_nonneg (e : Fin n ×ₗ Fin n →₀ ℕ) : 0 ≤ exponentPattern e := by
   intro c j
-  -- Expose the guarded sum through the homomorphism coercion before splitting its condition.
-  change 0 ≤ if h : c < n ∧ j ≤ n then _ else _
-  split_ifs
-  · exact Finset.sum_nonneg fun _ _ ↦ Int.natCast_nonneg _
-  · exact le_rfl
+  rw [Pi.zero_apply, Pi.zero_apply]
+  by_cases hc : c < n
+  · by_cases hj : j ≤ n
+    · rw [exponentPattern_apply e ⟨c, hc⟩ hj]
+      exact Finset.sum_nonneg fun _ _ ↦ Int.natCast_nonneg _
+    · rw [exponentPattern_apply_of_lt e (Nat.lt_of_not_ge hj)]
+  · rw [exponentPattern_apply_of_le e (Nat.le_of_not_gt hc)]
 
 /-- **The array of the flag exponent of `I` is the row-subset pattern of `I`.** -/
 @[simp]
@@ -210,26 +214,21 @@ theorem exponentPattern_flagExponent (I : Finset (Fin n)) :
   rw [GTPattern.rowSubset_apply]
   by_cases h : c < n ∧ j ≤ n
   · rw [exponentPattern_apply _ ⟨c, h.1⟩ h.2]
-    simp only [h.2, true_and, flagExponent_apply_sum, Nat.cast_sum, Nat.cast_ite, Nat.cast_one,
-      Nat.cast_zero]
-    rw [sum_comm]
-    -- Only the `c`-th element of `I` contributes, provided that it lies below row `j`.
-    have hinner (c' : Fin #I) : (∑ r : Fin n with r.val < j,
-        if I.orderEmbOfFin rfl c' = r ∧ (c' : ℕ) = c then (1 : ℤ) else 0) =
-        if (c' : ℕ) = c ∧ ((I.orderEmbOfFin rfl c' : Fin n) : ℕ) < j then 1 else 0 := by
-      by_cases hc' : (c' : ℕ) = c <;> simp [hc', Finset.sum_ite_eq]
-    simp only [hinner]
+    simp only [h.2, true_and, flagExponent_apply]
     by_cases hcI : c < #I
-    · rw [Finset.sum_eq_single ⟨c, hcI⟩ (fun c' _ hc' ↦ ite_eq_right_iff.2 fun h' ↦
-        absurd (Fin.ext h'.1) hc') (by simp)]
+    · simp only [dite_eq_left hcI, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+      rw [Finset.sum_ite_eq]
       have := I.lt_card_filter_iff_orderEmbOfFin rfl ⟨c, hcI⟩ (fun r : Fin n ↦ r.val < j)
         fun _ _ _ _ hle hx ↦ (Fin.le_def.1 hle).trans_lt hx
       simp [← this]
-    · rw [Finset.sum_eq_zero fun (c' : Fin #I) _ ↦ ite_eq_right_iff.2
-          fun (h' : (c' : ℕ) = c ∧ _) ↦ absurd (h'.1 ▸ c'.2) hcI,
-        ite_eq_right_iff.2 fun (h' : c < #{r ∈ I | r.val < j}) ↦
-          absurd (h'.trans_le (card_le_card (filter_subset _ _))) hcI]
-  · have hz : exponentPattern (flagExponent I) c j = 0 := dite_eq_right h
+    · simp only [dite_eq_right hcI, Nat.cast_zero, sum_const_zero]
+      rw [eq_comm, ite_eq_right_iff]
+      intro h'
+      exact (hcI (h'.trans_le (card_le_card (filter_subset _ _)))).elim
+  · have hz : exponentPattern (flagExponent I) c j = 0 := by
+      by_cases hc : c < n
+      · exact exponentPattern_apply_of_lt _ (by omega)
+      · exact exponentPattern_apply_of_le _ (by omega)
     rw [hz, eq_comm, ite_eq_right_iff]
     intro h'
     have := (card_le_card (filter_subset (fun r : Fin n ↦ r.val < j) I)).trans
@@ -298,6 +297,12 @@ theorem mem_closure_range_flagExponent_iff (e : Fin n ×ₗ Fin n →₀ ℕ) :
     map_exponentPattern_closure_range_flagExponent]
   simp only [AddSubmonoid.mem_map, AddSubmonoid.mem_nonneg, GTPattern.coeFnAddMonoidHom_apply]
 
+private theorem coeFnAddMonoidHom_injective :
+    Function.Injective (GTPattern.coeFnAddMonoidHom (n := n)) := by
+  intro P Q h
+  apply DFunLike.coe_injective
+  simpa only [GTPattern.coeFnAddMonoidHom_apply] using h
+
 /-- **The monoid generated by the leading exponents of the flag minors is the monoid of
 nonnegative Gelfand-Tsetlin patterns.** An exponent `e` is sent to the pattern
 `λ_{c,j} = ∑_{r < j} e(r, c)`, and is recovered from it by successive differences
@@ -309,25 +314,21 @@ noncomputable def flagExponentEquiv :
     exponentPattern exponentPattern_injective).trans
       ((AddEquiv.addSubmonoidCongr map_exponentPattern_closure_range_flagExponent).trans
         ((AddSubmonoid.nonneg (GTPattern n)).equivMapOfInjective
-          GTPattern.coeFnAddMonoidHom (fun P Q h ↦ DFunLike.coe_injective (by
-            simpa only [GTPattern.coeFnAddMonoidHom_apply] using h))).symm)
+          GTPattern.coeFnAddMonoidHom coeFnAddMonoidHom_injective).symm)
 
 /-- The pattern corresponding to an exponent `e` is its array `λ_{c,j} = ∑_{r < j} e(r, c)`. -/
 @[simp]
 theorem coe_flagExponentEquiv_apply
     (e : AddSubmonoid.closure (Set.range (flagExponent (n := n)))) :
     ⇑(flagExponentEquiv e : GTPattern n) = exponentPattern (e : Fin n ×ₗ Fin n →₀ ℕ) := by
-  have h := congrArg Subtype.val
-    (((AddSubmonoid.nonneg (GTPattern n)).equivMapOfInjective
-      GTPattern.coeFnAddMonoidHom (fun P Q h ↦ DFunLike.coe_injective (by
-        simpa only [GTPattern.coeFnAddMonoidHom_apply] using h))).apply_symm_apply
-          ((AddEquiv.addSubmonoidCongr map_exponentPattern_closure_range_flagExponent)
-            (((AddSubmonoid.closure (Set.range (flagExponent (n := n)))).equivMapOfInjective
-              exponentPattern exponentPattern_injective) e)))
-  -- Normalize the local equivalence composition before rewriting the opaque imported homomorphism.
-  change GTPattern.coeFnAddMonoidHom (flagExponentEquiv e : GTPattern n) =
-    exponentPattern (e : Fin n ×ₗ Fin n →₀ ℕ) at h
-  simpa only [GTPattern.coeFnAddMonoidHom_apply] using h
+  rw [← GTPattern.coeFnAddMonoidHom_apply, flagExponentEquiv, AddEquiv.trans_apply,
+    AddEquiv.trans_apply, ← AddSubmonoid.coe_equivMapOfInjective_apply
+      (AddSubmonoid.nonneg (GTPattern n)) GTPattern.coeFnAddMonoidHom
+      coeFnAddMonoidHom_injective, AddEquiv.apply_symm_apply]
+  rw [← AddEquiv.toFun_eq_coe]
+  dsimp only [AddEquiv.addSubmonoidCongr]
+  rw [Equiv.toFun_as_coe, Set.equivOfEq_apply,
+    AddSubmonoid.coe_equivMapOfInjective_apply]
 
 /-- On the generated monoid the cumulative sums vanish outside the pattern triangle. -/
 @[simp]
@@ -450,13 +451,7 @@ theorem flagMinor_singleton (r : Fin n) : flagMinor R {r} = X (r, ⟨0, r.pos⟩
   have : Unique (Fin #{r}) := by
     simp only [card_singleton]
     infer_instance
-  rw [Matrix.mvPolynomialMinor_one]
-  congr 2
-  · exact mem_singleton.1 (orderEmbOfFin_mem {r} rfl _)
-  · apply Fin.ext
-    have := (default : Fin #{r}).2
-    simp only [card_singleton] at this
-    simpa using Nat.eq_zero_of_le_zero (Nat.le_of_lt_succ this)
+  rw [Matrix.mvPolynomialMinor_one, singleton_flag_indices]
 
 /-- Flag minors commute with a change of coefficient ring. -/
 @[simp]
