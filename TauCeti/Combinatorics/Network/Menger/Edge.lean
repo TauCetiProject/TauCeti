@@ -22,15 +22,16 @@ of `F`.
 This file proves the local edge form of Menger's theorem for directed networks with finitely many
 vertices and arrows: the largest number of arrow-disjoint `s`–`t` paths equals the least number of
 arrows separating `t` from `s`. Weak duality, that every arrow-disjoint family of `s`–`t` walks has
-at most as many members as every separating set of arrows, needs no finiteness at all: each member
-traverses an arrow of the separating set, and different members traverse different arrows.
+at most as many members as every separating set of arrows, needs no finiteness of the vertex or
+arrow types: each member traverses an arrow of the separating set, and different members traverse
+different arrows.
 
 It also proves the set-to-set form for disjoint vertex sets `A` and `B`. An *`A`–`B` path* runs from
 a vertex of `A` to a vertex of `B` and has no other vertex in `A` or `B`; arrow-disjoint `A`–`B`
 paths may share their endpoints. A set of arrows *separates* `B` from `A` when after deleting it no
 vertex of `B` is reachable from a vertex of `A`. The largest number of arrow-disjoint `A`–`B` paths
-equals the least number of arrows separating `B` from `A`; weak duality again needs neither
-finiteness nor disjointness.
+equals the least number of arrows separating `B` from `A`; weak duality again needs no finiteness of
+the vertex or arrow types.
 
 Attainment is reduced to the max-flow/min-cut theorem over `ℤ` with capacity one on every arrow,
 between the terminals `s` and `t` or between the vertex sets `A` and `B`

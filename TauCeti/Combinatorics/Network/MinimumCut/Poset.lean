@@ -11,7 +11,6 @@ public import TauCeti.Combinatorics.Network.MinimumCut.Residual
 public import TauCeti.Combinatorics.Quiver.StronglyConnectedComponent
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Group.Int
-import Mathlib.Data.Fin.VecNotation
 import Mathlib.Order.Interval.Set.Disjoint
 import Mathlib.Tactic.FinCases
 
@@ -150,15 +149,16 @@ theorem disjoint_Ici_Iic (hst : s ≠ t) (hf : f.IsMaximum) :
   rw [Set.Ici_disjoint_Iic, residualComponent_le_residualComponent]
   exact hf.not_positiveReachable hst
 
-/-- Every minimum cut contains the vertices whose residual component is reachable from the
-component of the source. -/
+/-- For a maximum flow, every minimum cut contains the vertices whose residual component is
+reachable from the component of the source. -/
 theorem mem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent s ≤ f.residualComponent v) : v ∈ S :=
   (hf.forall_isMinimum_mem_iff hS.admissible.ne).2
     (residualComponent_le_residualComponent.1 hv) S hS
 
-/-- No minimum cut contains a vertex whose residual component reaches the component of the sink. -/
+/-- For a maximum flow, no minimum cut contains a vertex whose residual component reaches the
+component of the sink. -/
 theorem notMem_of_residualComponent_le (hf : f.IsMaximum) {S : Finset V}
     (hS : TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) {v : V}
     (hv : f.residualComponent v ≤ f.residualComponent t) : v ∉ S :=
@@ -319,7 +319,8 @@ theorem minimizersOrderIso_symm_bot (hst : s ≠ t) (hf : f.IsMaximum)
   exacts [Set.disjoint_left.1 (hf.disjoint_Ici_Iic hst) (Set.mem_Ici.2 hsv) (Set.mem_Iic.2 hvt),
     h hvt]
 
-/-- The minimum cut is unique exactly when no residual component is free. -/
+/-- For a maximum flow between distinct terminals, the minimum cut is unique exactly when no
+residual component is free. -/
 theorem existsUnique_isMinimum_iff_isEmpty (hst : s ≠ t) (hf : f.IsMaximum) :
     (∃! S, TerminalCut.IsMinimum (cutBound lo hi) {s} {t} S) ↔ IsEmpty f.FreeComponent := by
   rw [hf.existsUnique_isMinimum_iff hst, isEmpty_subtype]
