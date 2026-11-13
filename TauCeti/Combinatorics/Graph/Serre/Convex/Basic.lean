@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
-public import Mathlib.Data.Set.Finite.Basic
 
 /-!
 # Convex sets of vertices
@@ -21,8 +20,7 @@ a path.
 In a tree, a union of convex sets with a common vertex is convex, and a dart between two convex
 sets with a common vertex has both endpoints in one of them: subtrees through a common vertex
 glue to a subtree, without creating new edges. Here the edges of the subgraph on a set of vertices
-are its induced darts, `SerreGraph.inducedDarts`; a finite set of vertices of an acyclic graph
-induces finitely many of them.
+are its induced darts, `SerreGraph.inducedDarts`.
 
 ## References
 
@@ -162,43 +160,7 @@ theorem IsTree.tgt_mem_or_src_mem (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsCo
   rw [Path.darts_comp, List.mem_append] at he
   exact he.imp (hA.tgt_mem hs hcA hq) (hB c hcB _ ht r hr e)
 
-/-! ### The darts induced by a set of vertices -/
-
-variable (Γ) in
-/-- The darts induced by a set of vertices: those with both endpoints in the set. They are the
-darts of the subgraph induced on the set. -/
-def inducedDarts (C : Set Γ.V) : Set Γ.E :=
-  {e | Γ.src e ∈ C ∧ Γ.tgt e ∈ C}
-
-@[simp] theorem mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
-    e ∈ Γ.inducedDarts C ↔ Γ.src e ∈ C ∧ Γ.tgt e ∈ C := Iff.rfl
-
-theorem rev_mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
-    Γ.rev e ∈ Γ.inducedDarts C ↔ e ∈ Γ.inducedDarts C := by
-  rw [mem_inducedDarts_iff, mem_inducedDarts_iff, src_rev, tgt_rev, and_comm]
-
-theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆ Γ.inducedDarts D :=
-  fun _ he => ⟨h he.1, h he.2⟩
-
-@[simp] theorem inducedDarts_empty : Γ.inducedDarts ∅ = ∅ :=
-  Set.eq_empty_of_forall_notMem fun _ he => he.1
-
-@[simp] theorem inducedDarts_univ : Γ.inducedDarts Set.univ = Set.univ :=
-  Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
-
-/-- In an acyclic graph, a single vertex induces no dart. -/
-@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
-    Γ.inducedDarts {v} = ∅ :=
-  Set.eq_empty_of_forall_notMem fun e he => h.src_ne_tgt e (he.1.trans he.2.symm)
-
-/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
-theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
-    (Γ.inducedDarts C).Finite := by
-  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
-    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
-      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
-  rintro _ ⟨e, he, rfl⟩
-  exact ⟨he.1, he.2⟩
+/-! ### Induced darts of unions of convex sets in a tree -/
 
 /-- In a tree, the union of two convex sets with a common vertex induces no dart beyond those
 induced by each of them. -/
@@ -206,8 +168,9 @@ theorem IsTree.inducedDarts_union (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsCo
     (hB : Γ.IsConvex B) (hAB : (A ∩ B).Nonempty) :
     Γ.inducedDarts (A ∪ B) = Γ.inducedDarts A ∪ Γ.inducedDarts B := by
   refine (Set.union_subset (inducedDarts_mono Set.subset_union_left)
-    (inducedDarts_mono Set.subset_union_right)).antisymm' ?_
-  rintro e ⟨hs | hs, ht | ht⟩
+    (inducedDarts_mono Set.subset_union_right)).antisymm' fun e he => ?_
+  simp only [Set.mem_union, mem_inducedDarts_iff] at he ⊢
+  obtain ⟨hs | hs, ht | ht⟩ := he
   · exact Or.inl ⟨hs, ht⟩
   · exact (h.tgt_mem_or_src_mem hA hB hAB hs ht).imp (fun h => ⟨hs, h⟩) fun h => ⟨h, ht⟩
   · exact ((h.tgt_mem_or_src_mem hB hA (Set.inter_comm A B ▸ hAB) hs ht).imp
@@ -221,11 +184,11 @@ theorem IsTree.inducedDarts_iUnion (h : Γ.IsTree) {ι : Sort*} {A : ι → Set 
     Γ.inducedDarts (⋃ i, A i) = ⋃ i, Γ.inducedDarts (A i) := by
   refine Set.Subset.antisymm ?_
     (Set.iUnion_subset fun i => inducedDarts_mono (Set.subset_iUnion A i))
-  rintro e ⟨hs, ht⟩
-  obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hs
-  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp ht
+  intro e he
+  simp only [Set.mem_iUnion, mem_inducedDarts_iff] at he ⊢
+  obtain ⟨⟨i, hi⟩, j, hj⟩ := he
   exact (h.tgt_mem_or_src_mem (hA i) (hA j) ⟨x, hx i, hx j⟩ hi hj).elim
-    (fun h => Set.mem_iUnion.mpr ⟨i, hi, h⟩) fun h => Set.mem_iUnion.mpr ⟨j, h, hj⟩
+    (fun h => ⟨i, hi, h⟩) fun h => ⟨j, h, hj⟩
 
 end SerreGraph
 end TauCeti

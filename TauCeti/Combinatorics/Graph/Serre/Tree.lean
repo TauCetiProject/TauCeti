@@ -15,7 +15,8 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and a
+An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
+darts with the same endpoints, so a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
@@ -109,6 +110,24 @@ theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
     simpa using congrArg (Path.darts Γ)
       (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
   exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic graph, a single vertex induces no dart. -/
+@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
+    Γ.inducedDarts {v} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => by
+    obtain ⟨hs, ht⟩ := mem_inducedDarts_iff.mp he
+    exact h.src_ne_tgt e (hs.trans ht.symm)
+
+variable {Γ} in
+/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
+theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
+    (Γ.inducedDarts C).Finite := by
+  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
+    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
+      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
+  rintro _ ⟨e, he, rfl⟩
+  exact mem_inducedDarts_iff.mp he
 
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔

@@ -21,7 +21,8 @@ The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data a
 unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
-and the darts in `S`.
+and the darts in `S`. For a set `C` of vertices, `Γ.inducedDarts C` is the set of darts with both
+endpoints in `C`: the darts of the subgraph induced on `C`.
 
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
@@ -399,6 +400,33 @@ abbrev restrict : SerreGraph.{u, v} where
     (Γ.restrictInclusion S hS).mapE e = e.1 := (rfl)
 
 end Restrict
+
+section InducedDarts
+
+/-- The darts induced by a set of vertices: those with both endpoints in the set. They are the
+darts of the subgraph induced on the set. -/
+def inducedDarts (C : Set Γ.V) : Set Γ.E :=
+  {e | Γ.src e ∈ C ∧ Γ.tgt e ∈ C}
+
+variable {Γ}
+
+@[simp] theorem mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    e ∈ Γ.inducedDarts C ↔ Γ.src e ∈ C ∧ Γ.tgt e ∈ C := Iff.rfl
+
+theorem rev_mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    Γ.rev e ∈ Γ.inducedDarts C ↔ e ∈ Γ.inducedDarts C := by
+  rw [mem_inducedDarts_iff, mem_inducedDarts_iff, src_rev, tgt_rev, and_comm]
+
+theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆ Γ.inducedDarts D :=
+  fun _ he => ⟨h he.1, h he.2⟩
+
+@[simp] theorem inducedDarts_empty : Γ.inducedDarts ∅ = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ he => he.1
+
+@[simp] theorem inducedDarts_univ : Γ.inducedDarts Set.univ = Set.univ :=
+  Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
+
+end InducedDarts
 
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where
