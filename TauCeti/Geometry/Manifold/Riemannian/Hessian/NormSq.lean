@@ -12,8 +12,8 @@ import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 /-!
 # Hessians of squared norms at zeros
 
-At a zero of a twice differentiable map into a real inner product space, its squared norm has
-vanishing differential and the Hessian of its squared norm is twice the pullback inner product.
+At a zero of a twice differentiable map into a real inner product space, the Hessian of its
+squared norm is twice the pullback inner product.
 This identifies the Hessian of squared Riemannian distance at the centre of a normal chart and
 requires only a continuously differentiable metric on the source manifold.
 -/

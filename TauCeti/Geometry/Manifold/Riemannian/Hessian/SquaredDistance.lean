@@ -59,7 +59,7 @@ theorem contMDiffOn_dist_sq (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r �
     exact image_mono hU
   refine ((contDiff_norm_sq ℝ).contMDiff.comp_contMDiffOn
     (h.contMDiffOn_riemannianLog.mono hsub)).congr fun q hq ↦ ?_
-  simp only [Function.comp_apply, h.dist_eq_norm_riemannianLog hU hq]
+  simp only [Function.comp_apply, h.dist_eq_norm_riemannianLog_of_mem_ball hU hq]
 
 end IsNormalDomain
 
@@ -74,7 +74,7 @@ theorem hessian_dist_sq_self (p : M) (v w : TangentSpace I p) :
   have heq : (fun q ↦ dist p q ^ 2) =ᶠ[𝓝 p]
       fun q ↦ ‖riemannianLog I M p (Metric.ball 0 r) q‖ ^ 2 := by
     filter_upwards [Metric.isOpen_ball.mem_nhds hp] with q hq
-    rw [h.dist_eq_norm_riemannianLog subset_rfl hq]
+    rw [h.dist_eq_norm_riemannianLog_of_mem_ball subset_rfl hq]
   have hdist : ContMDiffAt I 𝓘(ℝ) 2 (fun q ↦ dist p q ^ 2) p :=
     ((h.contMDiffOn_dist_sq subset_rfl).contMDiffAt (Metric.isOpen_ball.mem_nhds hp)).of_le
       (by simp)

@@ -39,8 +39,9 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
   open-ball containment.
 * `pathELength_riemannianExp_smul_eq_edist`: the radial geodesic segment realizes the distance
   between its endpoints.
-* `edist_eq_enorm_riemannianLog`: the distance from `p` is the norm of the logarithm, and
-  `dist_eq_norm_riemannianLog` its version for an ordinary metric on an open ball.
+* `edist_eq_enorm_riemannianLog`: the distance from `p` is the norm of the logarithm.
+  `edist_eq_enorm_riemannianLog_of_mem_ball` and `dist_eq_norm_riemannianLog_of_mem_ball`
+  give the open-ball versions for extended and ordinary metrics, respectively.
 * `image_riemannianExp_ball` and `image_riemannianExp_closedBall`: geodesic balls are metric
   balls, and `image_riemannianExp_ball_eq_ball` its version for an ordinary metric.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
@@ -289,7 +290,7 @@ theorem IsNormalDomain.image_riemannianExp_ball_eq_ball (h : IsNormalDomain I M 
   rw [h.image_riemannianExp_ball hU, Metric.eball_ofReal]
 
 /-- On an open normal ball, the distance from the centre is the norm of the logarithm. -/
-theorem IsNormalDomain.dist_eq_norm_riemannianLog (h : IsNormalDomain I M p U)
+theorem IsNormalDomain.dist_eq_norm_riemannianLog_of_mem_ball (h : IsNormalDomain I M p U)
     (hU : Metric.ball 0 r ⊆ U) (hq : q ∈ Metric.ball p r) :
     dist p q = ‖riemannianLog I M p U q‖ := by
   rw [← h.image_riemannianExp_ball_eq_ball hU] at hq
