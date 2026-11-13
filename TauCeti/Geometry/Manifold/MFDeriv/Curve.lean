@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differentiating along a curve in a manifold
@@ -268,6 +269,19 @@ theorem curveVelocityWithin_subset {u : Set 𝕜} (hus : u ⊆ s)
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply,
     mfderivWithin_subset hus hu.uniqueMDiffWithinAt hγ]
 
+/-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
+within `s`. -/
+@[simp]
+theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
+    curveVelocityWithin 𝓘(𝕜, F) γ s t = derivWithin γ s t := by
+  rw [curveVelocityWithin_apply, mfderivWithin_eq_fderivWithin]
+  exact fderivWithin_derivWithin (f := γ) (s := s) (x := t)
+
+/-- The velocity of a curve in a normed space, read in its own model, is its derivative. -/
+@[simp]
+theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) γ t = deriv γ t := by
+  rw [← curveVelocityWithin_univ, curveVelocityWithin_eq_derivWithin, derivWithin_univ]
+
 end TauCeti.Manifold
 
 namespace MDifferentiableAt
@@ -288,9 +302,9 @@ applied to `w`. -/
 theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
     (hf : MDifferentiableAt 𝓘(𝕜, F) I f (g t)) (hg : HasDerivAt g w t) :
     curveVelocity I (f ∘ g) t = mfderiv 𝓘(𝕜, F) I f (g t) w := by
-  rw [curveVelocity_apply, (hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt).mfderiv]
-  change mfderiv 𝓘(𝕜, F) I f (g t) ((1 : 𝕜) • w) = _
-  rw [one_smul]
+  simpa only [curveVelocityWithin_univ, curveVelocity_eq_deriv, hg.deriv] using
+    curveVelocityWithin_map hf uniqueDiffWithinAt_univ
+      hg.differentiableAt.mdifferentiableAt.mdifferentiableWithinAt
 
 end MDifferentiableAt
 
@@ -440,19 +454,6 @@ would otherwise keep `simp` from reaching. -/
 @[simp]
 theorem curveVelocity_const (x : M) : curveVelocity I (fun _ : 𝕜 ↦ x) t = 0 := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_const]
-
-/-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
-within `s`. -/
-@[simp]
-theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
-    curveVelocityWithin 𝓘(𝕜, F) γ s t = derivWithin γ s t := by
-  rw [curveVelocityWithin_apply, mfderivWithin_eq_fderivWithin]
-  exact fderivWithin_derivWithin (f := γ) (s := s) (x := t)
-
-/-- The velocity of a curve in a normed space, read in its own model, is its derivative. -/
-@[simp]
-theorem curveVelocity_eq_deriv {γ : 𝕜 → F} : curveVelocity 𝓘(𝕜, F) γ t = deriv γ t := by
-  rw [← curveVelocityWithin_univ, curveVelocityWithin_eq_derivWithin, derivWithin_univ]
 
 /-- A map `(a, b) ↦ x b` of the plane, which depends only on the second coordinate, has zero
 differential in the direction of the first coordinate. -/
@@ -636,7 +637,8 @@ theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : �
         (TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)) =
       curveVelocityLiftWithin I γ u t := by
   rw [curveVelocityLiftWithin_apply, curveVelocityWithin_apply]
-  rfl
+  ext <;> simp only [tangentMapWithin_proj, tangentMapWithin_snd, heq_eq_eq]
+  rw [NormedSpace.fromTangentSpace_symm_apply]
 
 /-- Tangent maps carry the velocity lift within a parameter set to the velocity lift of the
 image curve. This is the tangent-bundle form of the within-domain chain rule. -/
