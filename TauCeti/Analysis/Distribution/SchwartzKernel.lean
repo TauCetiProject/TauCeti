@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzKernel
 import TauCeti.Analysis.Distribution.Gluing
-import TauCeti.Analysis.Fourier.Torus.Periodization
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The Schwartz kernel theorem on open sets
@@ -97,26 +97,11 @@ private theorem coe_closedBallCompacts_subset {d : Type*} [Fintype d] {x : d →
 private abbrev SmallBall {d : Type*} [Fintype d] (U : Set (d → ℝ)) : Type _ :=
   {q : (d → ℝ) × ℝ // 0 < q.2 ∧ q.2 < 1 / 2 ∧ closedBall q.1 q.2 ⊆ U}
 
-/-- A closed ball of radius less than `1 / 2` meets none of its translates by nonzero integer
-vectors. -/
-private theorem eq_zero_of_add_mem_closedBall {d : Type*} [Fintype d] {c : d → ℝ} {r : ℝ}
-    (hr : r < 1 / 2) {x : d → ℝ} (hx : x ∈ closedBall c r) {ℓ : d → ℤ}
-    (hxℓ : x + (fun i ↦ (ℓ i : ℝ)) ∈ closedBall c r) : ℓ = 0 :=
-  UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one isBounded_closedBall
-    ((diam_closedBall (nonempty_closedBall.1 ⟨x, hx⟩)).trans_lt (by linarith)) hx hxℓ
-
-/-- Every point of an open set is the centre of a closed ball of radius in `(0, 1 / 2)` contained
-in it. -/
-private theorem exists_closedBall_subset {X : Type*} [PseudoMetricSpace X] {U : Set X}
-    (hU : IsOpen U) {x : X} (hx : x ∈ U) : ∃ r, 0 < r ∧ r < 1 / 2 ∧ closedBall x r ⊆ U := by
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
-  exact ⟨min ε (1 / 4), lt_min hε (by norm_num), (min_le_right _ _).trans_lt (by norm_num),
-    (closedBall_subset_closedBall (min_le_left _ _)).trans hεU⟩
-
 /-- The open balls of half the radius of the small balls in an open set cover it. -/
 private theorem subset_iUnion_ball_smallBall {d : Type*} [Fintype d] {U : Set (d → ℝ)}
     (hU : IsOpen U) : U ⊆ ⋃ i : SmallBall U, ball i.1.1 (i.1.2 / 2) := fun x hx ↦ by
-  obtain ⟨r, hr₀, hr, hrU⟩ := exists_closedBall_subset hU hx
+  obtain ⟨r, hr₀, hr, hrU⟩ :=
+    TauCeti.exists_pos_lt_closedBall_subset (hU.mem_nhds hx) one_half_pos
   exact mem_iUnion.2 ⟨⟨(x, r), hr₀, hr, hrU⟩, mem_ball_self (by positivity)⟩
 
 /-- The open ball of half the radius of a small ball in `U` lies in `U`. -/
@@ -195,8 +180,8 @@ private theorem exists_kernel_halfBox {x : a → ℝ} {y : b → ℝ} {r s : ℝ
   -- The restriction of `B` to tests supported in the small box and its continuity estimate.
   obtain ⟨T, hT, hTuniq⟩ := exists_schwartzKernel_supportedIn
     (B.compl₁₂ (ofSupportedInCLM ℂ hxΩ').toLinearMap (ofSupportedInCLM ℂ hyO').toLinearMap)
-    (hB _ _ hxΩ' hyO') (fun _ hz _ hzℓ ↦ eq_zero_of_add_mem_closedBall hr hz hzℓ)
-    (fun _ hz _ hzℓ ↦ eq_zero_of_add_mem_closedBall hs hz hzℓ) hK₁ hK₂
+    (hB _ _ hxΩ' hyO') (fun _ hz _ ↦ UnitAddTorus.eq_zero_of_add_mem_closedBall hr hz)
+    (fun _ hz _ ↦ UnitAddTorus.eq_zero_of_add_mem_closedBall hs hz) hK₁ hK₂
   refine ⟨T, fun φ ψ ↦ ?_, fun {W} S hW hS Φ hΦ ↦ ?_⟩
   · rw [hT, compl₁₂_apply, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
     congr 2
@@ -222,7 +207,8 @@ private theorem eq_of_isKernelOn {W : Opens ((a → ℝ) × (b → ℝ))}
   · ext Φ
     simpa [sub_eq_zero] using DFunLike.congr_fun h Φ
   -- Around `p`, both kernels restrict to the kernel on a half-size box.
-  obtain ⟨r, hr₀, hr, hrW⟩ := exists_closedBall_subset W.isOpen hp
+  obtain ⟨r, hr₀, hr, hrW⟩ :=
+    TauCeti.exists_pos_lt_closedBall_subset (W.isOpen.mem_nhds hp) one_half_pos
   rw [← closedBall_prod_same] at hrW
   have hxΩ : closedBall p.1 r ⊆ Ω := fun z hz ↦
     (hWΩ (hrW (mk_mem_prod hz (mem_closedBall_self hr₀.le)))).1
