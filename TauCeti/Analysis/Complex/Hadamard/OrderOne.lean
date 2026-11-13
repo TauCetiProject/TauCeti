@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.Divisor
 public import TauCeti.Analysis.Complex.GrowthOrder
+import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.Liouville
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Convex.SimplyConnected
 
@@ -253,30 +255,6 @@ private theorem OrderLE.exists_norm_logDeriv_sub_logDeriv_divisorProductOne_le
         add_le_add_left (landau_bound_le_mul_sqrt hlogK hz1) _
     _ = _ := by ring
 
-/-- `√‖z‖ = o(z)` at infinity. -/
-private theorem isLittleO_sqrt_norm :
-    (fun z : ℂ ↦ √‖z‖) =o[cobounded ℂ] (fun z ↦ z ^ (0 + 1)) := by
-  refine Asymptotics.isLittleO_iff.mpr fun ε hε ↦ ?_
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (1 / ε ^ 2)] with z hz
-  have hz0 : 0 < ‖z‖ := lt_of_lt_of_le (by positivity) hz
-  rw [Real.norm_of_nonneg (Real.sqrt_nonneg _), zero_add, pow_one]
-  have hs := Real.sq_sqrt hz0.le
-  have hεs : 1 / ε ≤ √‖z‖ := (Real.le_sqrt (by positivity) hz0.le).mpr (by rwa [div_pow, one_pow])
-  have h1 : 1 ≤ ε * √‖z‖ := by
-    calc (1 : ℝ) = ε * (1 / ε) := by field_simp
-      _ ≤ ε * √‖z‖ := by gcongr
-  calc √‖z‖ = √‖z‖ * 1 := (mul_one _).symm
-    _ ≤ √‖z‖ * (ε * √‖z‖) := by gcongr
-    _ = ε * ‖z‖ := by linear_combination ε * hs
-
-/-- An entire function that is not identically zero has no zeros in a punctured neighbourhood of
-any point. -/
-private theorem eventually_ne_zero_nhdsNE (hf : Differentiable ℂ f) {w : ℂ} (hw : f w ≠ 0)
-    (z : ℂ) : ∀ᶠ u in 𝓝[≠] z, f u ≠ 0 := by
-  refine ((hf.analyticAt z).eventually_eq_zero_or_eventually_ne_zero).resolve_left fun h ↦ hw ?_
-  exact AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero
-    (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ z) h (Set.mem_univ w)
-
 /-- **Hadamard factorization at order at most one.** An entire function `f` of order at most one
 with `f 0 ≠ 0` is `exp (a + b z)` times the genus-one product over its zeros, with
 `exp a = f 0` and `b = logDeriv f 0`. -/
@@ -307,7 +285,9 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
       have hfar : ∀ᶠ w in 𝓝[≠] z, R₀ < ‖w‖ :=
         nhdsWithin_le_nhds ((continuous_norm.tendsto z).eventually
           (eventually_gt_nhds (by linarith)))
-      filter_upwards [eventually_ne_zero_nhdsNE hf hf0 z, hfar] with w hw hwR
+      filter_upwards [AnalyticOnNhd.eventually_ne_zero_nhdsNE_of_preconnected
+        (fun u _ ↦ hf.analyticAt u) isPreconnected_univ (Set.mem_univ 0) hf0 (Set.mem_univ z),
+        hfar] with w hw hwR
       rw [← sub_eq_of_eq_add' (hlog hw)]
       exact hC w hwR.le hw
     exact le_of_tendsto_of_tendsto
@@ -319,8 +299,8 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
     filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop (R₀ + 1)] with z hz
     rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
     exact hbound z hz
-  obtain ⟨p, hp, hpL⟩ := hdL.exists_eq_polynomial_eval_of_isLittleO_pow
-    (hbigO.trans_isLittleO isLittleO_sqrt_norm)
+  obtain ⟨p, hp, hpL⟩ := hdL.exists_eq_polynomial_eval_of_isLittleO_pow (n := 0)
+    (hbigO.trans_isLittleO (isLittleO_sqrt_norm.congr_right fun z ↦ (pow_one z).symm))
   have hconst (z : ℂ) : deriv L z = deriv L 0 := by
     rw [congrFun hpL z, congrFun hpL 0, Polynomial.eq_C_of_natDegree_le_zero hp]
     simp
