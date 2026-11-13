@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Basic
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Category.Cat
 import Mathlib.CategoryTheory.Equivalence
 import Mathlib.CategoryTheory.Whiskering
 
@@ -329,32 +329,6 @@ private lemma inverse_unit_naturality {a b : B} (f : a ⟶ b) (X : F.obj a) :
   rw [ht']
   exact (Category.comp_id _).symm
 
-private lemma counit_modification {C D E E' : Cat.{v, w}}
-    (T : C ⟶ D) (U : E ⟶ E') (P : E ⟶ C) (Q : E' ⟶ D)
-    (R : C ⟶ E) (S : D ⟶ E') (m : T ≫ S ≅ R ≫ U) (n : U ≫ Q ≅ P ≫ T)
-    (ε : R ≫ P ≅ 𝟙 C) (ε' : S ≫ Q ≅ 𝟙 D)
-    (h : ∀ X, Q.toFunctor.map (m.hom.toNatTrans.app X) ≫
-      n.hom.toNatTrans.app (R.toFunctor.obj X) ≫ T.toFunctor.map (ε.hom.toNatTrans.app X) =
-      ε'.hom.toNatTrans.app (T.toFunctor.obj X)) :
-    T ◁ ε'.hom ≫ ((ρ_ T).hom ≫ (λ_ T).inv) =
-      ((α_ T S Q).inv ≫ m.hom ▷ Q ≫ (α_ R U Q).hom ≫
-        R ◁ n.hom ≫ (α_ R P T).inv) ≫ ε.hom ▷ T := by
-  ext X
-  simpa using (h X).symm
-
-private lemma unit_modification {C D E E' : Cat.{v, w}}
-    (T : C ⟶ D) (U : E ⟶ E') (P : C ⟶ E) (Q : D ⟶ E')
-    (R : E ⟶ C) (S : E' ⟶ D) (m : T ≫ Q ≅ P ≫ U) (n : U ≫ S ≅ R ≫ T)
-    (ι : 𝟙 C ≅ P ≫ R) (ι' : 𝟙 D ≅ Q ≫ S)
-    (h : ∀ X, ι'.hom.toNatTrans.app (T.toFunctor.obj X) ≫
-      S.toFunctor.map (m.hom.toNatTrans.app X) ≫ n.hom.toNatTrans.app (P.toFunctor.obj X) =
-      T.toFunctor.map (ι.hom.toNatTrans.app X)) :
-    T ◁ ι'.hom ≫ ((α_ T Q S).inv ≫ m.hom ▷ S ≫ (α_ P U S).hom ≫
-        P ◁ n.hom ≫ (α_ P R T).inv) =
-      ((ρ_ T).hom ≫ (λ_ T).inv) ≫ ι.hom ▷ T := by
-  ext X
-  simpa using h X
-
 /-- A strong transformation into `Cat` is an equivalence when each component functor is an
 equivalence. Its inverse has the chosen quasi-inverse component functors; its unit and counit
 are their chosen unit and counit isomorphisms. -/
@@ -388,11 +362,11 @@ are their chosen unit and counit isomorphisms. -/
       simpa using! η.inverseNaturality_comp f g X }
   unit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.unitIso)
     (fun {a b} f => by
-      exact unit_modification _ _ _ _ _ _ _ _ _ _
+      exact Cat.unit_modification _ _ _ _ _ _ _ _ _ _
         (fun X => η.inverse_unit_naturality f X))
   counit := isoMk (fun a => Cat.Hom.isoMk (η.app a).toFunctor.asEquivalence.counitIso)
     (fun {a b} f => by
-      exact counit_modification _ _ _ _ _ _ _ _ _ _
+      exact Cat.counit_modification _ _ _ _ _ _ _ _ _ _
         (fun X => η.map_inverseNaturality_hom_app_comp f X))
   left_triangle := by
     apply Iso.ext

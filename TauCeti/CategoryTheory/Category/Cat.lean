@@ -12,7 +12,16 @@ public import Mathlib.CategoryTheory.Category.Cat
 
 A 2-morphism in `Cat` is invertible if all its components are invertible. The associator and
 right unitor of identity functors in the bicategory of categories are identity natural
-transformations.
+transformations. Componentwise identities also imply the modification conditions for
+unit-shaped and counit-shaped components, independently of any equivalence construction.
+
+## Main results
+
+* `Cat.Hom₂.isIso_of_isIso_app`: componentwise invertibility of a 2-morphism implies invertibility.
+* `Cat.associator_id_hom`, `Cat.associator_id_inv`, `Cat.rightUnitor_id_hom`, and
+  `Cat.rightUnitor_id_inv`: coherence maps of identity functors are identities.
+* `Cat.counit_modification` and `Cat.unit_modification`: componentwise criteria for the
+  modification conditions with counit-shaped and unit-shaped components.
 -/
 
 public section
@@ -60,5 +69,37 @@ lemma rightUnitor_id_inv (C : Type w) [Category.{v} C] :
     (ρ_ (𝟙 (Cat.of C))).inv = 𝟙 _ := by
   ext X
   simp
+
+/-- The modification condition for counit-shaped components in `Cat`, reduced to a
+componentwise identity. The isomorphisms `m` and `n` are the naturality cells of the two
+transformations; no adjunction or equivalence assumptions are required. -/
+lemma counit_modification {C D E E' : Cat.{v, w}}
+    (T : C ⟶ D) (U : E ⟶ E') (P : E ⟶ C) (Q : E' ⟶ D)
+    (R : C ⟶ E) (S : D ⟶ E') (m : T ≫ S ≅ R ≫ U) (n : U ≫ Q ≅ P ≫ T)
+    (ε : R ≫ P ≅ 𝟙 C) (ε' : S ≫ Q ≅ 𝟙 D)
+    (h : ∀ X, Q.toFunctor.map (m.hom.toNatTrans.app X) ≫
+      n.hom.toNatTrans.app (R.toFunctor.obj X) ≫ T.toFunctor.map (ε.hom.toNatTrans.app X) =
+      ε'.hom.toNatTrans.app (T.toFunctor.obj X)) :
+    T ◁ ε'.hom ≫ ((ρ_ T).hom ≫ (λ_ T).inv) =
+      ((α_ T S Q).inv ≫ m.hom ▷ Q ≫ (α_ R U Q).hom ≫
+        R ◁ n.hom ≫ (α_ R P T).inv) ≫ ε.hom ▷ T := by
+  ext X
+  simpa using (h X).symm
+
+/-- The modification condition for unit-shaped components in `Cat`, reduced to a
+componentwise identity. The isomorphisms `m` and `n` are the naturality cells of the two
+transformations; no adjunction or equivalence assumptions are required. -/
+lemma unit_modification {C D E E' : Cat.{v, w}}
+    (T : C ⟶ D) (U : E ⟶ E') (P : C ⟶ E) (Q : D ⟶ E')
+    (R : E ⟶ C) (S : E' ⟶ D) (m : T ≫ Q ≅ P ≫ U) (n : U ≫ S ≅ R ≫ T)
+    (ι : 𝟙 C ≅ P ≫ R) (ι' : 𝟙 D ≅ Q ≫ S)
+    (h : ∀ X, ι'.hom.toNatTrans.app (T.toFunctor.obj X) ≫
+      S.toFunctor.map (m.hom.toNatTrans.app X) ≫ n.hom.toNatTrans.app (P.toFunctor.obj X) =
+      T.toFunctor.map (ι.hom.toNatTrans.app X)) :
+    T ◁ ι'.hom ≫ ((α_ T Q S).inv ≫ m.hom ▷ S ≫ (α_ P U S).hom ≫
+        P ◁ n.hom ≫ (α_ P R T).inv) =
+      ((ρ_ T).hom ≫ (λ_ T).inv) ≫ ι.hom ▷ T := by
+  ext X
+  simpa using h X
 
 end CategoryTheory.Cat
